@@ -1,6 +1,7 @@
 import type { MenuController, MenuEntry, MenuTextEntry } from '@weasel-js/menu';
 import { isApplePlatform, modHeld, textOwnsChord } from '@weasel-js/gestures';
 import { editEnd } from '@weasel-js/ui-input';
+import { getOwn } from '@weasel-js/registry';
 
 /** A text row being typed into in a HUD menu: which row, what has been typed so far, and the caret and the other
  *  end of the selection, as code-point offsets into `draft`. `anchor` equals `caret` when nothing is selected.
@@ -161,7 +162,7 @@ function ctrlEdit(edit: HudTextEdit, letter: string, shift: boolean): HudTextEdi
   }
   if (letter === 'y') return edit.kill ? splice(edit, from, to, edit.kill) : edit;
   if (letter === 't') return from === to ? transpose(edit) : edit;
-  const key = CTRL_EDITS[letter];
+  const key = getOwn(CTRL_EDITS, letter);
   return key ? editKey(edit, key, { shift }).edit ?? edit : edit;
 }
 

@@ -9,6 +9,7 @@ import s from '../RegistryInspector.module.css';
 import { SchemaTable } from '../SchemaTable';
 import { GESTURE_BADGE_PROPS } from '../badgeTokens';
 import type { ActionEntry, GestureEntry, PhaseOutputEntry, ToolEntry } from '../registryEntries';
+import { getOwn } from '@weasel-js/registry';
 
 /** Plain-text route notation for a `GestureSpec` — `[*:*] drop`,
  *  `[initial] drag(left) => * +shift` — one route per arg alternative,
@@ -18,14 +19,6 @@ function describeGestureSpec(spec: { kind?: string } | undefined): string {
   if (!spec || !spec.kind) return '(unknown)';
   return routesForSpec(spec as GestureSpec).join(', ') || spec.kind;
 }
-
-/** `GestureSpec.kind` → the `GestureChannels` key a tool's surface records
- *  it under. Only the hyphenated kind differs. This used to be two maps
- *  translating between phase-channel names and spec kinds in both
- *  directions, because a route could be authored in either grammar. */
-export const CHANNEL_FOR_KIND: Readonly<Record<string, string>> = {
-  'keyHeld': 'keyHeld',
-};
 
 export interface ActionBindingRow {
   actionId: string;
@@ -79,9 +72,8 @@ export function GestureDetail({
   tools: readonly ToolEntry[];
   actions: readonly ActionEntry[];
 }) {
-  const channel = CHANNEL_FOR_KIND[entry.id] ?? entry.id;
   const toolRows = tools.flatMap((t) =>
-    (t.surface.gestures as unknown as Record<string, unknown>)[channel]
+    getOwn(t.surface.gestures as unknown as Record<string, unknown>, entry.id)
       ? [{ id: t.id, tool: t }]
       : [],
   );

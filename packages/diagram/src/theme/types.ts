@@ -1,3 +1,4 @@
+import { getOwn } from '@weasel-js/registry';
 import type { EdgeStyle, NodeStyle } from '../dataTypes';
 
 /** The roles every shipped theme styles, with the name a picker shows. */
@@ -51,3 +52,6 @@ export interface DiagramTheme {
 
 /** The document value a theme is saved under: a shipped theme's id, or a whole custom theme. */
 export const DIAGRAM_THEME_KEY = 'diagram:theme';
+
+/** The style of `theme`'s default role. */
+export const defaultRoleStyle = (theme: DiagramTheme): NodeStyle => getOwn(theme.roles, theme.defaultRole)!;

@@ -44,7 +44,7 @@ export interface WgslReflection {
 }
 
 const SCALARS: Record<string, WgslScalar> = { f32: 'f32', i32: 'i32', u32: 'u32' };
-const SUFFIX: Record<string, WgslScalar> = { f: 'f32', i: 'i32', u: 'u32' };
+const SUFFIX: Readonly<Record<'f' | 'i' | 'u', WgslScalar>> = { f: 'f32', i: 'i32', u: 'u32' };
 
 function stripComments(src: string): string {
   return src.replace(/\/\*[\s\S]*?\*\//g, ' ').replace(/\/\/[^\n]*/g, ' ');
@@ -113,9 +113,9 @@ function parseType(
   const scalar = getOwn(SCALARS, s);
   if (scalar) return { kind: 'scalar', scalar };
   let m = /^vec([234])([fiu])$/.exec(s);
-  if (m) return { kind: 'vector', scalar: SUFFIX[m[2]], n: Number(m[1]) as 2 | 3 | 4 };
+  if (m) return { kind: 'vector', scalar: SUFFIX[m[2] as 'f' | 'i' | 'u'], n: Number(m[1]) as 2 | 3 | 4 };
   m = /^vec([234])<(f32|i32|u32)>$/.exec(s);
-  if (m) return { kind: 'vector', scalar: SCALARS[m[2]], n: Number(m[1]) as 2 | 3 | 4 };
+  if (m) return { kind: 'vector', scalar: m[2] as WgslScalar, n: Number(m[1]) as 2 | 3 | 4 };
   m = /^mat([234])x([234])(?:f|<f32>)$/.exec(s);
   if (m) return { kind: 'matrix', cols: Number(m[1]) as 2 | 3 | 4, rows: Number(m[2]) as 2 | 3 | 4 };
   m = /^array<(.+)>$/.exec(s);

@@ -6,7 +6,7 @@
 import { escapeAttr, escapeText, holdsNonXmlChar } from './xmlEscape';
 import type { Path } from '@weasel-js/core';
 import { isSolidPaint } from '@weasel-js/core';
-import { metaAttrsXml, metaElementsXml } from './metaXml';
+import { metaAttrList, metaAttrsXml, metaElementsXml } from './metaXml';
 import type {
   SerializeOptions, SvgGroupNode, SvgInherits,
   SvgNode, SvgImageNode, SvgPathNode, SvgTextNode,
@@ -77,15 +77,7 @@ export function serializeSvg(given: SvgNode[], opts: SerializeOptions = {}): str
   if (opts.width != null) rootAttrs.push(`width="${trimNumber(opts.width)}"`);
   if (opts.height != null) rootAttrs.push(`height="${trimNumber(opts.height)}"`);
   // documentMeta attrs onto the root, in declared-namespace order.
-  if (opts.documentMeta) {
-    for (const prefix of Object.keys(namespaces)) {
-      const bucket = opts.documentMeta[prefix];
-      if (!bucket?.attrs) continue;
-      for (const [name, value] of Object.entries(bucket.attrs)) {
-        rootAttrs.push(`${prefix}:${name}="${escapeAttr(value)}"`);
-      }
-    }
-  }
+  rootAttrs.push(...metaAttrList(opts.documentMeta, namespaces));
 
   // After <defs>, before the geometry.
   const docMetaXml = metaElementsXml(opts.documentMeta, namespaces);

@@ -1,6 +1,18 @@
 /** Reading the elements and attributes in the namespaces a caller names into `NamespaceMeta`. */
 
+import { getOwn, setOwn } from '@weasel-js/registry';
+
 import type { NamespaceMeta, NamespacedElement } from './types';
+
+/** `record[key]` as an own entry, made with `make` where it holds none: a name read from the file may be
+ *  `constructor` or `__proto__`. */
+function ownSlot<V>(record: Record<string, V>, key: string, make: () => NoInfer<V>): V {
+  const have = getOwn(record, key);
+  if (have !== undefined) return have;
+  const made = make();
+  setOwn(record, key, made);
+  return made;
+}
 
 export function collectDocumentMeta(
   root: Element,
@@ -15,8 +27,8 @@ export function collectDocumentMeta(
     if (!a.namespaceURI) continue;
     const prefix = uriToPrefix.get(a.namespaceURI);
     if (!prefix) continue;
-    const bucket = (meta[prefix] ??= {});
-    (bucket.attrs ??= {})[a.localName] = a.value;
+    const bucket = ownSlot(meta, prefix, () => ({}));
+    setOwn((bucket.attrs ??= {}), a.localName, a.value);
   }
 
   // Root-level namespaced child elements. The body of these is collected
@@ -27,9 +39,8 @@ export function collectDocumentMeta(
     if (!c.namespaceURI) continue;
     const prefix = uriToPrefix.get(c.namespaceURI);
     if (!prefix) continue;
-    const bucket = (meta[prefix] ??= {});
-    const elements = (bucket.elements ??= {});
-    const list = (elements[c.localName] ??= []);
+    const bucket = ownSlot(meta, prefix, () => ({}));
+    const list = ownSlot((bucket.elements ??= {}), c.localName, () => []);
     list.push(collectNamespacedElement(c, uriToPrefix));
   }
 
@@ -47,7 +58,7 @@ function collectNamespacedElement(
     // not) under the element — unlike root attrs where we filter by NS.
     // Treat `xmlns:*` as structural and skip.
     if (a.name.startsWith('xmlns')) continue;
-    result.attrs[a.localName] = a.value;
+    setOwn(result.attrs, a.localName, a.value);
   }
 
   let hasChildElements = false;
@@ -57,8 +68,7 @@ function collectNamespacedElement(
     const prefix = uriToPrefix.get(c.namespaceURI);
     if (!prefix) continue;  // child in undeclared NS: drop
     hasChildElements = true;
-    const children = (result.children ??= {});
-    const list = (children[c.localName] ??= []);
+    const list = ownSlot((result.children ??= {}), c.localName, () => []);
     list.push(collectNamespacedElement(c, uriToPrefix));
   }
 
@@ -81,8 +91,8 @@ export function collectElementMeta(
     if (!a.namespaceURI) continue;
     const prefix = uriToPrefix.get(a.namespaceURI);
     if (!prefix) continue;
-    const bucket = (meta[prefix] ??= {});
-    (bucket.attrs ??= {})[a.localName] = a.value;
+    const bucket = ownSlot(meta, prefix, () => ({}));
+    setOwn((bucket.attrs ??= {}), a.localName, a.value);
   }
   // Namespaced child elements on a *standard* SVG element (e.g. a <g>) are
   // also surfaced under elements[] in the same shape used at the root.
@@ -91,9 +101,8 @@ export function collectElementMeta(
     if (!c.namespaceURI) continue;
     const prefix = uriToPrefix.get(c.namespaceURI);
     if (!prefix) continue;
-    const bucket = (meta[prefix] ??= {});
-    const elements = (bucket.elements ??= {});
-    const list = (elements[c.localName] ??= []);
+    const bucket = ownSlot(meta, prefix, () => ({}));
+    const list = ownSlot((bucket.elements ??= {}), c.localName, () => []);
     list.push(collectNamespacedElement(c, uriToPrefix));
   }
   return Object.keys(meta).length > 0 ? meta : undefined;

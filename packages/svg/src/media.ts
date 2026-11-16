@@ -6,7 +6,7 @@
  * as live conditions.
  */
 
-import { ABSOLUTE_PX } from './absoluteUnits';
+import { absolutePx } from './absoluteUnits';
 import { ConditionSyntaxError, evaluateCondition, triAnd, triNot, type Tri } from './condition';
 import { splitTopLevel } from './cssScan';
 
@@ -56,7 +56,7 @@ const own = <V>(table: Readonly<Record<string, V>>, key: string): V | undefined 
 function absoluteLength(raw: string | null): number | undefined {
   const m = raw == null ? null : /^\s*([+-]?(?:\d+\.?\d*|\.\d+)(?:e[+-]?\d+)?)\s*([a-z]*)\s*$/i.exec(raw);
   if (!m) return undefined;
-  const scale = ABSOLUTE_PX[m[2].toLowerCase() || 'px'];
+  const scale = absolutePx(m[2].toLowerCase() || 'px');
   const n = parseFloat(m[1]) * (scale ?? NaN);
   return Number.isFinite(n) && n >= 0 ? n : undefined;
 }
@@ -88,10 +88,12 @@ export function mediaEnvironmentFor(
   };
 }
 
+type Op = '<' | '<=' | '>' | '>=' | '=';
+
 type Tok =
   | { readonly k: 'ident'; readonly v: string }
   | { readonly k: 'num'; readonly v: number; readonly unit: string }
-  | { readonly k: 'op'; readonly v: '<' | '<=' | '>' | '>=' | '=' }
+  | { readonly k: 'op'; readonly v: Op }
   | { readonly k: ':' }
   | { readonly k: '/' };
 
@@ -106,7 +108,7 @@ function tokenize(s: string): Tok[] | null {
     if (!m) return null;
     if (m[1] != null) out.push({ k: 'num', v: parseFloat(m[1]), unit: m[2].toLowerCase() });
     else if (m[3] != null) out.push({ k: 'ident', v: m[3].toLowerCase() });
-    else if (m[4] != null) out.push({ k: 'op', v: m[4] as '<' | '<=' | '>' | '>=' | '=' });
+    else if (m[4] != null) out.push({ k: 'op', v: m[4] as Op });
     else if (m[5] != null) out.push({ k: ':' });
     else out.push({ k: '/' });
   }
@@ -159,7 +161,7 @@ const FONT_PX = 16;
 
 function lengthPx(v: number, unit: string, env: SvgMediaEnvironment): number | null {
   if (unit === '') return v === 0 ? 0 : null;
-  const abs = ABSOLUTE_PX[unit];
+  const abs = absolutePx(unit);
   if (abs != null) return v * abs;
   switch (unit) {
     case 'em': case 'rem': return v * FONT_PX;
@@ -206,7 +208,7 @@ function compare(a: number, op: string, b: number): boolean {
   }
 }
 
-const FLIP: Readonly<Record<string, string>> = { '<': '>', '<=': '>=', '>': '<', '>=': '<=', '=': '=' };
+const FLIP: Readonly<Record<Op, Op>> = { '<': '>', '<=': '>=', '>': '<', '>=': '<=', '=': '=' };
 
 /** One `( … )` feature test. Anything that does not parse as a known feature is unknown. */
 function evaluateFeature(inner: string, env: SvgMediaEnvironment): Tri {
@@ -237,7 +239,7 @@ function evaluateFeature(inner: string, env: SvgMediaEnvironment): Tri {
 
   // Level-4 range syntax: `name op v`, `v op name`, or `v1 op name op v2`.
   const segments: Tok[][] = [[]];
-  const ops: string[] = [];
+  const ops: Op[] = [];
   for (const t of toks) {
     if (t.k === 'op') { ops.push(t.v); segments.push([]); }
     else segments[segments.length - 1].push(t);

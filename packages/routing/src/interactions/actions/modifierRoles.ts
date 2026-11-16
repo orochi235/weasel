@@ -4,7 +4,7 @@
  * move one to another key without forking the action.
  */
 import { isApplePlatform, modKey, type ModifierKey, type ModSpec } from '@weasel-js/gestures';
-import { setOwn } from '@weasel-js/registry';
+import { getOwn, setOwn } from '@weasel-js/registry';
 import type { ModifierState } from '../../vocabulary';
 
 /** The keys that hold a role: any one of them held holds it. `'mod'` is Cmd
@@ -79,7 +79,7 @@ export function withRoleMods<S extends object>(spec: S, roles: ModifierRoles, re
 
 /** `record`'s own entry for `id`: a role named like an `Object.prototype` member must not read the prototype's. */
 const ownOf = <V>(record: Readonly<Record<string, V>> | undefined, id: string): V | undefined =>
-  record && Object.hasOwn(record, id) ? record[id] : undefined;
+  record && getOwn(record, id);
 
 /** Whether any of `keys` is held. */
 export function keysHeld(keys: RoleKeys, modifiers: ModifierState, apple: boolean): boolean {
@@ -149,5 +149,5 @@ export function rebindRoles(roles: ModifierRoles, rebinds: RoleRebinds): Modifie
  */
 export function roleReader<R extends ModifierRoles>(roles: R) {
   return (ctx: { roles?: Readonly<Record<string, boolean>>; modifiers: ModifierState }, id: keyof R & string): boolean =>
-    ownOf(ctx.roles, id) ?? keysHeld(roles[id].keys, ctx.modifiers, isApplePlatform());
+    ownOf(ctx.roles, id) ?? keysHeld(ownOf(roles, id)!.keys, ctx.modifiers, isApplePlatform());
 }

@@ -17,6 +17,7 @@ import type {
   RegistryEnumFilter,
   RegistryEnumSources,
 } from './types';
+import { getOwn } from '@weasel-js/registry';
 
 /** Sources keyed by `source` id, for every `<RegistrySelect>` underneath. */
 export const RegistryEnumSourcesContext =
@@ -49,7 +50,7 @@ export function RegistrySelect({
   control = 'select',
 }: RegistrySelectProps) {
   const sources = useContext(RegistryEnumSourcesContext);
-  const resolver = sources[source];
+  const resolver = getOwn(sources, source);
   if (!resolver) {
     return <Input value={value} onChange={onChange} aria-label={ariaLabel} />;
   }

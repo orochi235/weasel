@@ -60,6 +60,12 @@ describe('reading a Mermaid C4 diagram', () => {
     expect(laid.data.nodes.every((n) => n.at !== undefined)).toBe(true);
   });
 
+  it('reads an argument named $__proto__ as data', () => {
+    const stmt = parseC4('C4Context\n  Person(a, "A", $__proto__="x")').stmts[0] as { args: { named: Record<string, string> } };
+    expect(Object.getPrototypeOf(stmt.args.named)).toBe(Object.prototype);
+    expect(Object.hasOwn(stmt.args.named, '__proto__') && stmt.args.named['__proto__']).toBe('x');
+  });
+
   it('names the line it cannot read', () => {
     expect(() => parseC4('C4Context\n  Person(a, "A"')).toThrow(/^Mermaid, line 2: cannot read/);
     expect(() => parseC4('C4Context\n  Boundary(b, "B") {\n  Person(a, "A")')).toThrow('Mermaid, line 2: a boundary opened here is never closed');

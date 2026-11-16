@@ -42,7 +42,7 @@ export const SHAPES: readonly (readonly [string, readonly (readonly [string, Mer
 
 const WORD = /[\p{L}\p{N}_](?:[\p{L}\p{N}_]|[-.](?=[\p{L}\p{N}_]))*/uy;
 const LINK = /([<ox])?(-{2,}|={2,}|-\.+-?|~{3,})(>|[ox](?![\p{L}\p{N}_]))?/uy;
-const CLOSERS: Readonly<Record<string, RegExp>> = { '-': /\s*(--+[>ox]|---+)/y, '=': /\s*(==+[>ox]|===+)/y, '.': /\s*(\.-+[>ox]?)/y };
+const CLOSERS: Readonly<Record<'-' | '=' | '.', RegExp>> = { '-': /\s*(--+[>ox]|---+)/y, '=': /\s*(==+[>ox]|===+)/y, '.': /\s*(\.-+[>ox]?)/y };
 
 const fail = (line: number, message: string) => lineError('Mermaid', line, message);
 
@@ -273,7 +273,7 @@ class MermaidLexer {
   /** The text of a link opened with `body` and a space, and the head its closing arrow ends in. */
   linkText(body: string): { label: string; end: LinkHead | undefined } {
     const { text } = this;
-    const closer = CLOSERS[body.includes('.') ? '.' : body[0]!]!;
+    const closer = CLOSERS[body.includes('.') ? '.' : body[0] as '-' | '='];
     let k = this.i;
     while (text[k] === ' ' || text[k] === '\t') k++;
     if (text[k] === '"') {

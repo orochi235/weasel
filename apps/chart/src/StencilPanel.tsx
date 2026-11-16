@@ -8,6 +8,7 @@ import { SidebarPanel } from '@weasel-js/ui/components/SidebarPanel';
 import { ToolPalette } from '@weasel-js/ui/components/ToolPalette';
 import { useMemo, useState, type ReactElement, type ReactNode } from 'react';
 import type { ChartScene } from './chartDocument';
+import { getOwn } from '@weasel-js/registry';
 
 /** A stencil's tool, which the Shapes panel holds rather than the main palette. */
 export const isStencilTool = (tool: Tool): boolean => stencilIdOf(tool.id) !== null;
@@ -62,7 +63,7 @@ export function StencilPanel({ tools, scene, theme, scale }: {
     <>
       <MenuButton label="More shapes" items={items} onAction={toggle} />
       {shown.flatMap((id) => {
-        const group = STENCIL_GROUPS[id];
+        const group = getOwn(STENCIL_GROUPS, id);
         return group ? [<GroupPanel key={id} group={group} tools={tools} look={look} />] : [];
       })}
     </>

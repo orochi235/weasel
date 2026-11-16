@@ -43,6 +43,11 @@ function binder(over: Partial<ClipBinder> = {}): ClipBinder & { targets: Record<
 }
 
 describe('bindClip', () => {
+  it('finds no interpolation named like an Object.prototype member', () => {
+    const tint: ClipSampledTrack = { kind: 'sampled', target: 'tint', interpolate: 'toString', keys: [{ t: 0, value: [1] }] };
+    expect(() => bindClip({ ...CLIP, tracks: [tint] }, binder())).toThrow(/no interpolation named "toString"/);
+  });
+
   it('gives each sampled track the target it names, with its keys, weight, and easings', () => {
     const b = binder();
     const live = bindClip(CLIP, b);

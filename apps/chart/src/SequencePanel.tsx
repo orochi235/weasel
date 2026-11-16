@@ -11,6 +11,7 @@ import { ToolPalette } from '@weasel-js/ui/components/ToolPalette';
 import { useState, type ReactElement } from 'react';
 import type { ChartScene } from './chartDocument';
 import { arrowNameOf, commitSelected, foldEach, SequenceEdits } from './SequenceEdits';
+import { getOwn } from '@weasel-js/registry';
 
 /** A sequence tool, which the Sequence panel holds rather than the main palette. */
 export const isSequenceTool = (tool: Tool): boolean => toolSetHas(SEQUENCE_TOOLS, tool.id);
@@ -29,7 +30,7 @@ const MARK: Choice = { tool: 'diagram.sequence.mark', options: SEQUENCE_MARK_OPT
 
 /** The picker's choices, as the option's schema lists them. */
 function choicesOf<T extends string>(c: Choice): readonly { value: T; label: string }[] {
-  const leaf = c.options.prefs.children[c.option];
+  const leaf = getOwn(c.options.prefs.children, c.option);
   const options = leaf && 'options' in leaf ? (leaf.options as readonly PrefEnumOption<T>[]) : [];
   return options.map(({ value, label }) => ({ value, label }));
 }
@@ -37,7 +38,7 @@ function choicesOf<T extends string>(c: Choice): readonly { value: T; label: str
 /** What `c`'s tool adds now, from `values`, and the setter its picker calls. */
 function useChoice<T extends string>(c: Choice, values: ToolOptionValues): [T, (value: T) => void] {
   const params = useToolOptionParams({ id: c.tool, options: c.options }, values);
-  return [params?.[c.option] as T, (value) => setToolOption(c.tool, c.options, values, c.option, value)];
+  return [(params && getOwn(params, c.option)) as T, (value) => setToolOption(c.tool, c.options, values, c.option, value)];
 }
 
 /**

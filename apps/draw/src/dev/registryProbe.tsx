@@ -25,6 +25,7 @@ import { useFileCommands } from '../fileCommands';
 import { useDebugCommands } from './devRoutes';
 import type { DeclaredRoute, ToolSurface, ToolEntry, ActionEntry, CallbackRef, CallbackSource } from './registryEntries';
 import s from './RegistryInspector.module.css';
+import { getOwn, hasOwnKey } from '@weasel-js/registry';
 
 export interface RegistrySnapshot {
   readonly tools: readonly ToolEntry[];
@@ -126,7 +127,7 @@ export function RegistryProbe({ onSnapshot }: ProbeProps) {
           routes,
           declaredRoutes,
           slot,
-          switchShortcut: tools.shortcuts[t.id]?.[0],
+          switchShortcut: getOwn(tools.shortcuts, t.id)?.[0],
           hotkey: def?.hotkey,
           presentation: def?.presentation ? {
             label: def.presentation.label,
@@ -242,19 +243,6 @@ function bestActionHandlerSource(action: unknown): CallbackSource | undefined {
   return sourceOf(a.enabled);
 }
 
-/** `GestureSpec.kind` -> the `GestureChannels` key it sets. */
-const CHANNEL_FOR_KIND: Readonly<Record<string, string>> = {
-  click: 'click',
-  doubleClick: 'doubleClick',
-  pointerDown: 'pointerDown',
-  drag: 'drag',
-  wheel: 'wheel',
-  key: 'key',
-  'keyHeld': 'keyHeld',
-  contextMenu: 'contextMenu',
-  multiTouchTap: 'multiTouchTap',
-};
-
 /** Boolean-only digest of a tool's input surface: which gesture kinds its
  *  bindings declare, and what it emits. Route signatures carry the per-target
  *  detail; this is the at-a-glance row. */
@@ -265,8 +253,7 @@ function summarizeSurface(tool: { bindings?: readonly { spec: { kind: string } }
     multiTouchTap: false,
   };
   for (const b of tool.bindings ?? []) {
-    const channel = CHANNEL_FOR_KIND[b.spec.kind];
-    if (channel) gestures[channel] = true;
+    if (hasOwnKey(gestures, b.spec.kind)) gestures[b.spec.kind] = true;
   }
   return {
     gestures: gestures as unknown as ToolSurface['gestures'],

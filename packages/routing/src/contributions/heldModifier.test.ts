@@ -11,6 +11,7 @@ describe('heldModifierOf', () => {
     expect(heldModifierOf('Control')).toBe('ctrl');
     expect(heldModifierOf('space')).toBeNull();
     expect(heldModifierOf(undefined)).toBeNull();
+    expect(heldModifierOf('constructor')).toBeNull();
   });
 });
 

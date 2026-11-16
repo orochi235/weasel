@@ -1,4 +1,4 @@
-import { isPlainObject } from '@weasel-js/registry';
+import { getOwn, isPlainObject, setOwn } from '@weasel-js/registry';
 
 /** How a value maps to the flat numbers blits moves, and back. */
 export interface Axes<T> {
@@ -29,20 +29,20 @@ function fieldByField(keys: readonly string[]): { add(v: Fields, d: ArrayLike<nu
   const [a, b, c, e] = keys as [string, string, string, string];
   switch (keys.length) {
     case 1: return {
-      add: (v, d) => ({ [a]: v[a]! + d[0]! }),
-      write: (v, o, at) => { o[at] = v[a]!; },
+      add: (v, d) => ({ [a]: getOwn(v, a)! + d[0]! }),
+      write: (v, o, at) => { o[at] = getOwn(v, a)!; },
     };
     case 2: return {
-      add: (v, d) => ({ [a]: v[a]! + d[0]!, [b]: v[b]! + d[1]! }),
-      write: (v, o, at) => { o[at] = v[a]!; o[at + 1] = v[b]!; },
+      add: (v, d) => ({ [a]: getOwn(v, a)! + d[0]!, [b]: getOwn(v, b)! + d[1]! }),
+      write: (v, o, at) => { o[at] = getOwn(v, a)!; o[at + 1] = getOwn(v, b)!; },
     };
     case 3: return {
-      add: (v, d) => ({ [a]: v[a]! + d[0]!, [b]: v[b]! + d[1]!, [c]: v[c]! + d[2]! }),
-      write: (v, o, at) => { o[at] = v[a]!; o[at + 1] = v[b]!; o[at + 2] = v[c]!; },
+      add: (v, d) => ({ [a]: getOwn(v, a)! + d[0]!, [b]: getOwn(v, b)! + d[1]!, [c]: getOwn(v, c)! + d[2]! }),
+      write: (v, o, at) => { o[at] = getOwn(v, a)!; o[at + 1] = getOwn(v, b)!; o[at + 2] = getOwn(v, c)!; },
     };
     case 4: return {
-      add: (v, d) => ({ [a]: v[a]! + d[0]!, [b]: v[b]! + d[1]!, [c]: v[c]! + d[2]!, [e]: v[e]! + d[3]! }),
-      write: (v, o, at) => { o[at] = v[a]!; o[at + 1] = v[b]!; o[at + 2] = v[c]!; o[at + 3] = v[e]!; },
+      add: (v, d) => ({ [a]: getOwn(v, a)! + d[0]!, [b]: getOwn(v, b)! + d[1]!, [c]: getOwn(v, c)! + d[2]!, [e]: getOwn(v, e)! + d[3]! }),
+      write: (v, o, at) => { o[at] = getOwn(v, a)!; o[at + 1] = getOwn(v, b)!; o[at + 2] = getOwn(v, c)!; o[at + 3] = getOwn(v, e)!; },
     };
     default: return null;
   }
@@ -85,28 +85,28 @@ export function axesOf<T>(sample: T): Axes<T> | null {
   if (!isPlainObject(sample)) return null;
   const keys = Object.keys(sample).sort();
   if (keys.length === 0 || !keys.every((k) => typeof sample[k] === 'number')) return null;
-  // An own `__proto__`, as `JSON.parse` makes, assigned would set the prototype: build on none, then spread.
-  const proto = keys.includes('__proto__');
-  const make = (): Fields => (proto ? Object.create(null) as Fields : {});
-  const plain = (o: Fields): Fields => (proto ? { ...o } : o);
+  const put = (o: Fields, k: string, n: number): void => {
+    if (k !== '__proto__') o[k] = n;
+    else setOwn(o, k, n);
+  };
   return {
     count: keys.length,
     shape: `object:${JSON.stringify(keys)}`,
     names: keys,
-    to: (v) => keys.map((k) => (v as Record<string, number>)[k]!),
+    to: (v) => keys.map((k) => getOwn(v as Fields, k)!),
     from: (a, at = 0) => {
-      const out = make();
-      for (let i = 0; i < keys.length; i++) out[keys[i]!] = a[at + i]!;
-      return plain(out) as T;
+      const out: Fields = {};
+      for (let i = 0; i < keys.length; i++) put(out, keys[i]!, a[at + i]!);
+      return out as T;
     },
     ...(fieldByField(keys) ?? {
       add: (v: Fields, delta: ArrayLike<number>) => {
-        const out = make();
-        for (let i = 0; i < keys.length; i++) out[keys[i]!] = v[keys[i]!]! + delta[i]!;
-        return plain(out);
+        const out: Fields = {};
+        for (let i = 0; i < keys.length; i++) put(out, keys[i]!, getOwn(v, keys[i]!)! + delta[i]!);
+        return out;
       },
       write: (v: Fields, out: Buffer, at: number) => {
-        for (let i = 0; i < keys.length; i++) out[at + i] = v[keys[i]!]!;
+        for (let i = 0; i < keys.length; i++) out[at + i] = getOwn(v, keys[i]!)!;
       },
     }) as unknown as Pick<Axes<T>, 'add' | 'write'>,
   };

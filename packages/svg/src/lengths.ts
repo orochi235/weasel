@@ -6,7 +6,7 @@
  * inch. An `em` or `ex` is of the element's computed font size.
  */
 
-import { ABSOLUTE_PX } from './absoluteUnits';
+import { absolutePx } from './absoluteUnits';
 import { emsPer, fontSizeOf } from './fontSize';
 import { styleAt } from './styleAt';
 import { parseViewBoxAttr } from './viewBox';
@@ -64,7 +64,7 @@ function lengthOf(raw: string, el: Element, name: string, axis: LengthAxis, onWa
   const n = Number(m[1]);
   const unit = m[2].toLowerCase();
   if (unit === '') return n;
-  const scale = ABSOLUTE_PX[unit];
+  const scale = absolutePx(unit);
   if (scale != null) return n * scale;
   const ems = emsPer(unit);
   if (ems != null) return n * ems * fontSizeOf(styleAt(el));

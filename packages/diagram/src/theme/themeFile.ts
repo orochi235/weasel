@@ -24,7 +24,7 @@ function checker(errors: string[]) {
   const color = (path: string, v: unknown) => { if (!isColor(v)) errors.push(`${path}: ${JSON.stringify(v)} is not a color`); };
   const box = (path: string, v: unknown) => {
     if (!isObject(v)) return void errors.push(`${path}: missing`);
-    for (const field of ['fill', 'stroke', 'text']) color(`${path}.${field}`, v[field]);
+    for (const field of ['fill', 'stroke', 'text'] as const) color(`${path}.${field}`, v[field]);
   };
   const text = (path: string, v: unknown) => { if (typeof v !== 'string' || v === '') errors.push(`${path}: missing`); };
   const font = (path: string, v: unknown) => {

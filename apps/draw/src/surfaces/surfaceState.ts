@@ -8,6 +8,7 @@ import type { AppCommands } from '../appCommands';
 import { drawPrefs, removeOnceStored, usePref, whenWritable } from '../prefs';
 import { SURFACE_ASSETS } from './assets';
 import type { PanelChrome, SurfaceAsset, SurfaceKind, SurfaceState, SurfacesValue } from './types';
+import { getOwn, setOwn } from '@weasel-js/registry';
 
 /** The surface `asset` is drawn on: the one chosen for it, while it still allows that one, else its default. */
 export function surfaceOf(asset: SurfaceAsset, state: SurfaceState | undefined): SurfaceKind {
@@ -30,12 +31,12 @@ export function useSurfaces(assets: readonly SurfaceAsset[] = SURFACE_ASSETS): S
   const [value, setValue] = usePref('ui.surfaces');
   const patch = useCallback(
     (id: string, fn: (prev: SurfaceState) => SurfaceState) => {
-      setValue((prev) => ({ ...prev, [id]: fn(prev[id] ?? {}) }));
+      setValue((prev) => ({ ...prev, [id]: fn(getOwn(prev, id) ?? {}) }));
     },
     [setValue],
   );
   return useMemo((): SurfaceBinding[] => assets.map((asset): SurfaceBinding => {
-    const state = value[asset.id] ?? {};
+    const state = getOwn(value, asset.id) ?? {};
     const { id } = asset;
     return {
       asset,
@@ -56,17 +57,17 @@ export function useSurfaces(assets: readonly SurfaceAsset[] = SURFACE_ASSETS): S
 export function useChromeCommands(): Pick<AppCommands, 'chromeHidden' | 'toggleChrome'> {
   const [value, setValue] = usePref('ui.surfaces');
   const toggleChrome = useCallback(
-    (id: string) => setValue((prev) => ({ ...prev, [id]: { ...prev[id], hidden: !prev[id]?.hidden } })),
+    (id: string) => setValue((prev) => ({ ...prev, [id]: { ...getOwn(prev, id), hidden: !getOwn(prev, id)?.hidden } })),
     [setValue],
   );
-  return { chromeHidden: (id: string) => !!value[id]?.hidden, toggleChrome };
+  return { chromeHidden: (id: string) => !!getOwn(value, id)?.hidden, toggleChrome };
 }
 
 /** Move asset `id` to `surface`, shown again if it was hidden. Stable for the store's life. */
 export function useSetSurface(): (id: string, surface: SurfaceKind) => void {
   const [, setValue] = usePref('ui.surfaces');
   return useCallback(
-    (id: string, surface: SurfaceKind) => setValue((prev) => ({ ...prev, [id]: { ...prev[id], surface, hidden: false } })),
+    (id: string, surface: SurfaceKind) => setValue((prev) => ({ ...prev, [id]: { ...getOwn(prev, id), surface, hidden: false } })),
     [setValue],
   );
 }
@@ -93,9 +94,8 @@ export function migrateLegacyPanelFlags(
         if (raw == null) continue;
         found.push(key);
         surfaces ??= { ...target.get('ui.surfaces') };
-        if (surfaces[id]?.collapsed === undefined) {
-          surfaces[id] = { ...surfaces[id], collapsed: raw === '1' };
-        }
+        const prev = getOwn(surfaces, id);
+        if (prev?.collapsed === undefined) setOwn(surfaces, id, { ...prev, collapsed: raw === '1' });
       }
     } catch {
       return;

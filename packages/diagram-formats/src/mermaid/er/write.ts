@@ -1,6 +1,7 @@
 /** One graph page as a Mermaid ER diagram: boxes as entities, their rows past the name as attributes, edges as relationships. */
 import type { MarkerRef } from '@weasel-js/core';
 import type { DataNode, LayoutDirection, Row } from '@weasel-js/diagram';
+import { getOwn } from '@weasel-js/registry';
 import type { DiagramDocument, ExportResult, WriteOptions } from '../../document';
 import { edgeStyleIn, graphOut, type GraphOut } from '../../graphWrite';
 import { readsAsStatement, titleLines } from '../common/lines';
@@ -31,7 +32,7 @@ function entityParts(out: GraphOut, node: DataNode): { name: string; attributes:
 }
 
 function end(out: GraphOut, marker: MarkerRef | null | undefined, side: 0 | 1): string {
-  const known = marker === null || marker === undefined ? undefined : ENDS[typeof marker === 'string' ? marker : marker.key];
+  const known = marker === null || marker === undefined ? undefined : getOwn(ENDS, typeof marker === 'string' ? marker : marker.key);
   if (known === undefined) out.warnings.add('Mermaid ER relationships end in crow\'s feet; other ends were written as exactly one.');
   return (known ?? ENDS['crow-one']!)[side];
 }

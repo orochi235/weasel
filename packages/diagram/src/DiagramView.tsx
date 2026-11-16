@@ -26,6 +26,7 @@ import { registerDiagramShape } from './shape';
 import { useSequenceTextEdit } from './sequence/textEdit';
 import { createTextPreset } from '@weasel-js/text-tools';
 import { editPreset, movePreset, pickPreset, resizePreset } from '@weasel-js/editing';
+import { setOwn } from '@weasel-js/registry';
 
 const SHAPE_OUTLINE = { outline: { follow: 'shape' as const } };
 
@@ -213,7 +214,7 @@ const NO_OVERLAYS: readonly never[] = [];
 /** `props` without the ones left unset, for a canvas whose optional props must be absent rather than undefined. */
 function setOnly<T extends object>(props: T): { [K in keyof T]?: Exclude<T[K], undefined | null> } {
   const out: Record<string, unknown> = {};
-  for (const [key, value] of Object.entries(props)) if (value !== undefined && value !== null) out[key] = value;
+  for (const [key, value] of Object.entries(props)) if (value !== undefined && value !== null) setOwn(out, key, value);
   return out as { [K in keyof T]?: Exclude<T[K], undefined | null> };
 }
 

@@ -1,6 +1,7 @@
 // src/tools/useTools.ts
 import { useCallback, useMemo, useRef } from 'react';
 import type { ModeRegistry } from '@weasel-js/modes';
+import { setOwn } from '@weasel-js/registry';
 import { dlog } from '../dlog';
 import type { AnyTool, Tool } from './types';
 import type { HotkeyTrigger } from '../contributions/types';
@@ -138,7 +139,7 @@ export function useTools<TOverlay = KernelOverlay>(
   const slotted = useMemo(() => {
     const registry: Record<string, Tool<TOverlay>> = {};
     for (const [id, tool] of Object.entries(sources.registry)) {
-      registry[id] = declareSlot(tool, 'focus');
+      setOwn(registry, id, declareSlot(tool, 'focus'));
     }
     const ambient = sources.ambient.map((t) => declareSlot(t, 'always'));
     const byId = new Map<string, Contribution<TOverlay>>();

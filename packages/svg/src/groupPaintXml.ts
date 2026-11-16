@@ -4,22 +4,26 @@
  * leave out every attribute of it, and one that does not has to state every
  * attribute a group above it set, or it picks the group's up.
  */
+import { hasOwnKey } from '@weasel-js/registry';
+
 import type { PaintServerRegistry } from './gradients';
 import { paintAttrs, strokeAttrsFor, type Warn } from './strokeAttrs';
 import type { SvgGroupNode, SvgInherits } from './types';
 
-const FILL_ATTRS = ['fill', 'fill-opacity'];
-const STROKE_ATTRS = [
-  'stroke', 'stroke-width', 'stroke-opacity', 'stroke-linecap', 'stroke-linejoin', 'stroke-dasharray',
-  'stroke-dashoffset', 'stroke-miterlimit', 'marker-start', 'marker-mid', 'marker-end',
-];
-
 /** SVG's initial value of each attribute a group can set. */
-const INITIAL: Record<string, string> = {
+const INITIAL = {
   'fill': '#000000', 'fill-opacity': '1', 'stroke': 'none', 'stroke-width': '1', 'stroke-opacity': '1',
   'stroke-linecap': 'butt', 'stroke-linejoin': 'miter', 'stroke-dasharray': 'none', 'stroke-dashoffset': '0',
   'stroke-miterlimit': '4', 'marker-start': 'none', 'marker-mid': 'none', 'marker-end': 'none',
-};
+} as const;
+
+type PaintAttr = keyof typeof INITIAL;
+
+const FILL_ATTRS: readonly PaintAttr[] = ['fill', 'fill-opacity'];
+const STROKE_ATTRS: readonly PaintAttr[] = [
+  'stroke', 'stroke-width', 'stroke-opacity', 'stroke-linecap', 'stroke-linejoin', 'stroke-dasharray',
+  'stroke-dashoffset', 'stroke-miterlimit', 'marker-start', 'marker-mid', 'marker-end',
+];
 
 /** The paint attributes `node` writes on its `<g>`: those it holds and does
  *  not take from a group above, and, of a paint it holds, each attribute
@@ -28,7 +32,7 @@ export function groupPaintAttrs(
   node: SvgGroupNode, registry: PaintServerRegistry, warn: Warn, painted: ReadonlySet<string> = new Set(),
 ): string[] {
   const out: string[] = [];
-  const own = (attrs: string[], family: readonly string[]): void => {
+  const own = (attrs: string[], family: readonly PaintAttr[]): void => {
     const has = new Set(attrNames(attrs));
     out.push(...attrs, ...family.filter((n) => painted.has(n) && !has.has(n)).map((n) => `${n}="${INITIAL[n]}"`));
   };
@@ -53,14 +57,14 @@ const ATTR = /\s([\w:-]+)="[^"]*"/g;
  */
 export function fitLeafXml(xml: string, inherits: SvgInherits | undefined, painted: ReadonlySet<string>): string {
   if (painted.size === 0 && !inherits) return xml;
-  const dropped = new Set([...(inherits?.fill ? FILL_ATTRS : []), ...(inherits?.stroke ? STROKE_ATTRS : [])]);
+  const dropped = new Set<string>([...(inherits?.fill ? FILL_ATTRS : []), ...(inherits?.stroke ? STROKE_ATTRS : [])]);
   let first = true;
   return xml.replace(START_TAG, (_tag, name: string, body: string, close: string) => {
     let attrs = body;
     if (first) attrs = attrs.replace(ATTR, (whole, n: string) => (dropped.has(n) ? '' : whole));
     first = false;
     const has = new Set([...attrs.matchAll(ATTR)].map((m) => m[1]));
-    const resets = [...painted].filter((n) => !has.has(n) && !dropped.has(n) && Object.hasOwn(INITIAL, n));
+    const resets = [...painted].filter((n): n is PaintAttr => !has.has(n) && !dropped.has(n) && hasOwnKey(INITIAL, n));
     return `<${name}${attrs}${resets.map((n) => ` ${n}="${INITIAL[n]}"`).join('')}${close}>`;
   });
 }

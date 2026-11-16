@@ -1,4 +1,5 @@
 /** A Mermaid C4 diagram's grammar: macro calls, boundaries opened by `{`, and a title, each with its line. */
+import { setOwn } from '@weasel-js/registry';
 import { lineError } from '../../lineError';
 import { statementsOf, type MermaidSource } from '../common/lines';
 
@@ -40,7 +41,7 @@ export function argsOf(text: string): C4Args {
   const args: C4Args = { positional: [], named: {} };
   for (const p of parts.map((s) => s.trim())) {
     const named = /^\$(\w+)\s*=\s*(.*)$/s.exec(p);
-    if (named !== null) args.named[named[1]!] = value(named[2]!.trim());
+    if (named !== null) setOwn(args.named, named[1]!, value(named[2]!.trim()));
     else args.positional.push(value(p));
   }
   return args;

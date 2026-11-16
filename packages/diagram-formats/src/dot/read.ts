@@ -6,7 +6,7 @@
  */
 import type { MarkerRef } from '@weasel-js/core';
 import type { DataContainer, DataEdge, DataNode, EdgeStyle, LayoutDirection, NodeStyle } from '@weasel-js/diagram';
-import { compositeKey, freshId } from '@weasel-js/registry';
+import { compositeKey, freshId, getOwn } from '@weasel-js/registry';
 import { checkedColor } from '../colorCheck';
 import type { ImportResult } from '../document';
 import { Membership, Warnings, graphPage } from '../graphRead';
@@ -292,10 +292,11 @@ export function readDot(text: string): ImportResult {
   const ids = clusterIds(r.clusters.keys(), r.nodes);
   const containers = [...r.clusters].map(([id, attrs]) => readCluster(r, id, attrs, ids));
   const rankdir = str(root.graph, 'rankdir')?.toUpperCase();
+  const direction = rankdir !== undefined ? getOwn(DIRECTIONS, rankdir) : undefined;
   const name = root.graph.get('label');
   const page = graphPage({
     name: name !== undefined ? labelLines(name, '', graph.id ?? '').join(' ') : graph.id,
-    ...(rankdir !== undefined && DIRECTIONS[rankdir] ? { direction: DIRECTIONS[rankdir] } : {}),
+    ...(direction !== undefined ? { direction } : {}),
     nodes, edges, containers,
     ...(placed !== null ? { size: placed.size } : {}),
   });

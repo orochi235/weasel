@@ -2,6 +2,7 @@ import {
   EMPHASIS_SLOTS, GRADE_SLOTS, GRADE_TOKENS, resolveCurrentColor, resolveStanceSlots,
   type Emphasis, type Grade, type Stance,
 } from '@weasel-js/theme';
+import { getOwn } from '@weasel-js/registry';
 
 export type WindowLook = Record<
   'surface' | 'border-color' | 'border-style' | 'border-width' | 'tint-mix' | 'tint' | 'title-color' | 'title-case',
@@ -11,7 +12,7 @@ export type WindowLook = Record<
 /** A canvas has no cascade: a `var(--wzl-x)` the generated CSS would write is read from the tokens instead. */
 function tokenValue(tokens: Readonly<Record<string, string>>, css: string): string {
   const name = /^var\((--[\w-]+)\)$/.exec(css)?.[1];
-  return name === undefined ? css : tokens[name];
+  return name === undefined ? css : getOwn(tokens, name) ?? css;
 }
 
 /**
@@ -37,8 +38,8 @@ export function windowLook(
     for (const [slot, css] of Object.entries(EMPHASIS_SLOTS[emphasis])) look[slot as keyof WindowLook] = tokenValue(tokens, css);
   }
   if (grade !== undefined) {
-    const graded = tokens[GRADE_TOKENS[grade]];
-    for (const slot of GRADE_SLOTS) look[slot] = graded;
+    const graded = getOwn(tokens, GRADE_TOKENS[grade]);
+    if (graded !== undefined) for (const slot of GRADE_SLOTS) look[slot] = graded;
   }
   look['title-color'] = resolveCurrentColor(look['title-color'], tokens['--wzl-fg']);
   return look;

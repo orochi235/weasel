@@ -12,6 +12,7 @@ import { can } from './menuBar';
 import type { ChartPages } from './pages/useChartPages';
 import { CHART_DEFAULT_THEME, chartThemeOf } from './theme/themeCommands';
 import { reportFailure } from './reportFailure';
+import { getOwn } from '@weasel-js/registry';
 
 export const IMPORT_ACTION = 'chart.import';
 
@@ -54,7 +55,7 @@ async function pickAndImport(scene: ChartScene, onReplaced: () => void): Promise
 }
 
 function FormatExport({ scene, pages, format }: { scene: ChartScene; pages: ChartPages; format: DiagramFormat }): null {
-  useCommand(FORMAT_EXPORT_ACTIONS[format.id]!, `As ${format.name}…`, () => {
+  useCommand(getOwn(FORMAT_EXPORT_ACTIONS, format.id)!, `As ${format.name}…`, () => {
     let exported;
     try {
       exported = exportChart(scene, format, pages);

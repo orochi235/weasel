@@ -1,6 +1,6 @@
 /** Edits to a pipeline's groups: what each holds, its label, and its box under `nodeGraph`. */
 import type { Vec2 } from '@weasel-js/core/math';
-import { freshId } from '@weasel-js/registry';
+import { freshId, getOwn } from '@weasel-js/registry';
 import type { EffectBox, EffectDoc, EffectGroup, EffectPipeline } from './types';
 
 const groupsOf = (doc: EffectDoc): readonly EffectGroup[] => doc.pipeline.groups ?? [];
@@ -107,7 +107,7 @@ export function moveToGroup(doc: EffectDoc, given: readonly string[], group: str
   if (group !== null && (!groups.some((g) => g.id === group) || given.some((id) => within(groups, group, id)))) return doc;
   const ids = outermost(groups, given);
   const moving = new Set(ids);
-  const boxed = (id: string) => id === group || doc.groupBoxes?.[id] !== undefined;
+  const boxed = (id: string) => id === group || (doc.groupBoxes !== undefined && getOwn(doc.groupBoxes, id) !== undefined);
   const left = pruneGroups(groups, moving, boxed);
   const placed = group === null ? left : left.map((g) => (g.id === group ? { ...g, members: [...g.members, ...ids] } : g));
   return withGroups(doc, placed);

@@ -5,6 +5,7 @@ import { Icon } from '@weasel-js/ui/components/Icon';
 import { ItemList, type ItemListRow } from '@weasel-js/ui/components/ItemList';
 import { useState, type ReactElement } from 'react';
 import './templateDialog.css';
+import { getOwn } from '@weasel-js/registry';
 
 const GROUPS: readonly { id: PageTemplateGroup; label: string }[] = [
   { id: 'diagram', label: 'Diagrams' }, { id: 'sequence', label: 'Sequence' }, { id: 'chart', label: 'Charts' },
@@ -29,7 +30,7 @@ export function TemplateDialog({ title, action, initial, onChoose, onClose }: {
   const footer = (
     <>
       <Button onClick={onClose}>Cancel</Button>
-      <Button stance="confirm" onClick={() => onChoose(PAGE_TEMPLATES[chosen]!)}>{action}</Button>
+      <Button stance="confirm" onClick={() => onChoose(getOwn(PAGE_TEMPLATES, chosen)!)}>{action}</Button>
     </>
   );
   return (

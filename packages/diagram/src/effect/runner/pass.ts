@@ -1,4 +1,4 @@
-import { getOwn } from '@weasel-js/registry';
+import { getOwn, setOwn } from '@weasel-js/registry';
 import { PREVIEW_SIZE, shownPorts, uniqueStages } from '../draw';
 import type { EffectPipeline, EffectRun, EffectStage, EffectStageRun } from '../types';
 import { runOrder } from './order';
@@ -69,9 +69,9 @@ export function createPass(pipeline: EffectPipeline, opts: RunPipelineOptions): 
       if (value === undefined) continue;
       const kind = kindOf(port.type);
       const text = kind?.show !== undefined ? kind.show(value) : plainText(value);
-      if (text !== undefined) values[port.id] = text;
+      if (text !== undefined) setOwn(values, port.id, text);
       const preview = opts.previews === false ? undefined : await kind?.preview?.(value, size);
-      if (preview !== undefined) previews[port.id] = preview;
+      if (preview !== undefined) setOwn(previews, port.id, preview);
     }
     const full: EffectStageRun = {
       ...entry,

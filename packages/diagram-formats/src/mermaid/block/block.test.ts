@@ -87,6 +87,13 @@ describe('reading a Mermaid block diagram', () => {
     expect(() => documentSpecs(read.document)).not.toThrow();
   });
 
+  it('keeps a block named __proto__ as its own grid entry', () => {
+    const grid = page('block-beta\n  columns 3\n  space __proto__:2').layout?.options?.grid;
+    expect(Object.getPrototypeOf(grid!.spans)).toBe(Object.prototype);
+    expect(Object.hasOwn(grid!.spans!, '__proto__') && grid!.spans!['__proto__']).toBe(2);
+    expect(Object.hasOwn(grid!.skips!, '__proto__') && grid!.skips!['__proto__']).toBe(1);
+  });
+
   it('joins a link to a group declared after it', () => {
     const read = readBlockDiagram('block-beta\n  x --> G\n  block:G\n    a\n  end');
     expect(onlyPage(read.document).data.nodes.map((n) => n.id)).toEqual(['x', 'a']);
@@ -124,6 +131,14 @@ describe('writing a Mermaid block diagram', () => {
       const text = writeBlockDiagram({ pages: [{ kind: 'graph', id: 'p', width: 100, height: 100, data: { nodes: [{ id, lines: ['x'] }, { id: 'auto', lines: ['y'] }], edges: [] } }] }).text;
       expect(onlyPage(readBlockDiagram(text).document).data.nodes.map((n) => n.lines)).toEqual([['x'], ['y']]);
     }
+  });
+
+  it('reads a block or group named for an Object.prototype member as having no span, space, columns, or brackets', () => {
+    const { text } = writeBlockDiagram({ pages: [{
+      kind: 'graph', id: 'p', width: 100, height: 100, layout: { name: 'grid', options: { grid: { columns: 2 } } },
+      data: { nodes: [{ id: 'constructor', lines: ['A'], outline: 'toString' }], edges: [], containers: [{ id: 'toString', role: 'container', members: ['constructor'] }] },
+    }] });
+    expect(text).toBe('block-beta\n  columns 2\n  block:toString\n    constructor["A"]\n  end\n');
   });
 
   it('warns that an end it has no head for was written as an arrow', () => {

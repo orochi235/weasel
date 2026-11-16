@@ -11,9 +11,9 @@ import type { GraphNodeDef } from './types';
 export interface NodeWrapper {
   readonly id: string;
   def: GraphNodeDef;
-  /** One stable gain per input port; each feeds `def.inputs[port]` through `inFaders[port]`. */
-  readonly ins: Record<string, GainNode>;
-  readonly inFaders: Record<string, Fader>;
+  /** One stable gain per input port; each feeds `def.inputs[port]` through `inFaders.get(port)`. */
+  readonly ins: Map<string, GainNode>;
+  readonly inFaders: Map<string, Fader>;
   /** The stable output, fed by `def.output` through `outFader`. */
   readonly out: GainNode;
   outFader: Fader;
@@ -37,13 +37,14 @@ export function createWrapper(
   id: string,
   def: GraphNodeDef,
 ): NodeWrapper {
-  // No prototype: a port named `constructor` or `__proto__` is a port like any other.
-  const ins: Record<string, GainNode> = Object.create(null);
-  const inFaders: Record<string, Fader> = Object.create(null);
+  const ins = new Map<string, GainNode>();
+  const inFaders = new Map<string, Fader>();
   for (const port of Object.keys(def.inputs)) {
-    ins[port] = ctx.createGain();
-    inFaders[port] = createFader(ctx, timers, ins[port], def.inputs[port]);
-    inFaders[port].open(0);
+    const gain = ctx.createGain();
+    const fader = createFader(ctx, timers, gain, def.inputs[port]);
+    ins.set(port, gain);
+    inFaders.set(port, fader);
+    fader.open(0);
   }
   const out = ctx.createGain();
   const outFader = createFader(ctx, timers, def.output, out);
@@ -98,7 +99,7 @@ export function releaseOutgoing(w: NodeWrapper, o: Outgoing, when: number): void
 export function releaseWrapper(w: NodeWrapper, when: number): void {
   for (const o of [...w.outgoing]) releaseOutgoing(w, o, when);
   stopWrapper(w, when);
-  for (const f of Object.values(w.inFaders)) f.cut();
+  for (const f of w.inFaders.values()) f.cut();
   w.outFader.cut();
   for (const t of w.taps) t.dispose();
   w.taps.clear();

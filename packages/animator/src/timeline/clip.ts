@@ -1,3 +1,4 @@
+import { getOwn } from '@weasel-js/registry';
 import {
   EASINGS, reviveTypedArrays, tagTypedArrays, type BezierEasing, type EasingName, type EasingSpec,
 } from '@weasel-js/geom';
@@ -106,7 +107,7 @@ function bindTrack(track: ClipTrack, binder: ClipBinder): Track {
   }
   const target = track.target === undefined ? undefined : binder.target?.(track.target);
   if (track.target !== undefined && !target) throw new Error(`bindClip: the binder has no target named "${track.target}".`);
-  const interpolate = track.interpolate === undefined ? undefined : binder.interpolate?.[track.interpolate];
+  const interpolate = track.interpolate === undefined ? undefined : binder.interpolate && getOwn(binder.interpolate, track.interpolate);
   if (track.interpolate !== undefined && !interpolate) {
     throw new Error(`bindClip: the binder has no interpolation named "${track.interpolate}".`);
   }

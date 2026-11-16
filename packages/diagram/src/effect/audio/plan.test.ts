@@ -27,6 +27,12 @@ describe('livePlan', () => {
     ]));
   });
 
+  it('plans a stage whose id is __proto__ as its own node', () => {
+    const p = plan([stage('__proto__', 'audio.oscillator'), stage('out', 'audio.output')], [wire('__proto__', 'out')]);
+    expect(Object.getPrototypeOf(p.nodes)).toBe(Object.prototype);
+    expect(Object.keys(p.nodes)).toEqual(['__proto__']);
+  });
+
   it('keeps every wire into one input so they sum', () => {
     const p = plan(
       [stage('a', 'audio.oscillator'), stage('b', 'audio.oscillator'), stage('gain', 'audio.gain')],

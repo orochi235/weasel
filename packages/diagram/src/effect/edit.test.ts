@@ -91,6 +91,9 @@ describe('edit', () => {
 
   it('moveStages sets places', () => {
     expect(moveStages(built(), [{ id: 'b', x: 1, y: 2 }]).places.b).toEqual({ x: 1, y: 2 });
+    const places = moveStages(built(), [{ id: '__proto__', x: 3, y: 4 }]).places;
+    expect(Object.getPrototypeOf(places)).toBe(Object.prototype);
+    expect(Object.hasOwn(places, '__proto__') && places['__proto__']).toEqual({ x: 3, y: 4 });
   });
 
   it('ensureWireIds returns the same doc when every wire has an id, else mints unused ones', () => {

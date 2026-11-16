@@ -12,7 +12,7 @@ function draw(width: number, height: number, paint: (ctx: OffscreenCanvasRenderi
 
 /** The value on input `port`, or a throw naming it. */
 function need<T>(ctx: EffectEvalContext, port: string): T {
-  const value = ctx.inputs[port];
+  const value = getOwn(ctx.inputs, port);
   if (value === undefined) throw new Error(`${port} is not connected`);
   return value as T;
 }
@@ -76,8 +76,8 @@ export const imageEvaluators: EffectEvaluators = {
     const tested = ctx.stage.split?.input ?? ctx.stage.inputs?.find((p) => p.type === 'number')?.id ?? 'test';
     const taken = decide(ctx, need<number>(ctx, tested));
     const type = ctx.stage.outputs?.find((p) => p.id === taken)?.type;
-    const from = ctx.stage.inputs?.find((p) => p.type === type && ctx.inputs[p.id] !== undefined);
-    return { outputs: taken !== undefined && from !== undefined ? { [taken]: ctx.inputs[from.id] } : {}, ...(taken !== undefined ? { taken } : {}) };
+    const from = ctx.stage.inputs?.find((p) => p.type === type && getOwn(ctx.inputs, p.id) !== undefined);
+    return { outputs: taken !== undefined && from !== undefined ? { [taken]: getOwn(ctx.inputs, from.id) } : {}, ...(taken !== undefined ? { taken } : {}) };
   },
   out: () => ({ outputs: {} }),
 };

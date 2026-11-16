@@ -98,3 +98,6 @@ export function pageNameOf(src: MermaidSource, warnings: Warnings): string | und
 
 /** The front matter naming a page, as lines to start a diagram with. */
 export const titleLines = (name: string | undefined): string[] => (name === undefined ? [] : ['---', `title: ${JSON.stringify(name)}`, '---']);
+
+/** The directions a Mermaid `direction` statement names. */
+export type MermaidDirection = 'TB' | 'TD' | 'BT' | 'LR' | 'RL';

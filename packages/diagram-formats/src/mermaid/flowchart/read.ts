@@ -241,9 +241,10 @@ export function readFlowchart(text: string): ImportResult {
       ...(colors !== undefined ? { colors } : {}),
     };
   });
+  const direction = getOwn(DIRECTIONS, chart.direction);
   const page = graphPage({
     ...(chart.title !== undefined ? { name: chart.title } : {}),
-    ...(DIRECTIONS[chart.direction] !== undefined ? { direction: DIRECTIONS[chart.direction] } : {}),
+    ...(direction !== undefined ? { direction } : {}),
     nodes, edges, containers,
   });
   return { document: { pages: [page] }, warnings: r.warnings.all() };

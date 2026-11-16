@@ -5,7 +5,7 @@ import { edgeStrokeOf } from '../edgeStroke';
 import type { EdgeStyle, NodeStyle } from '../dataTypes';
 import { isShippedTheme } from './themeEdit';
 import { DIAGRAM_THEMES } from './themes';
-import { DIAGRAM_THEME_KEY, type DiagramTheme } from './types';
+import { DIAGRAM_THEME_KEY, defaultRoleStyle, type DiagramTheme } from './types';
 
 /** The style `theme` holds for `role` itself, if any. */
 export const themeRoleStyle = (theme: DiagramTheme, role?: string): NodeStyle | undefined =>
@@ -13,7 +13,7 @@ export const themeRoleStyle = (theme: DiagramTheme, role?: string): NodeStyle | 
 
 /** The style a shape naming `role` is drawn in: that role's, or the theme's default role's. */
 export function roleStyle(theme: DiagramTheme, role?: string): NodeStyle {
-  return themeRoleStyle(theme, role) ?? theme.roles[theme.defaultRole]!;
+  return themeRoleStyle(theme, role) ?? defaultRoleStyle(theme);
 }
 
 /** The style a connector naming `role` is drawn in: the role's stroke, its label in that stroke too;
