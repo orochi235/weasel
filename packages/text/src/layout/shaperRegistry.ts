@@ -2,19 +2,20 @@
  * Where the shaping engine arrives, the way the bidi engine does
  * (`bidiRegistry.ts`): registered once, found by every layout.
  */
-import { bumpTextEngineGeneration } from './engineGeneration';
+import { engineSlot, type RegisterEngineOptions } from './engineSlot';
 import {
   cachedFontVariant, outlineMetrics, type FaceEmbedding, type FontStyle, type OutlineFace, type ResolveResult,
 } from '@weasel-js/font';
 import type { TextShaper } from './shaperSeam';
 
-let registered: TextShaper | null = null;
+const slot = engineSlot<TextShaper>('registerShaper', 'shaper');
 
 /**
  * Give every text layout a shaping engine: `registerShaper(await
  * loadShaper())`, with `loadShaper` from `@weasel-js/text-shaping`. `layoutRuns` uses
  * it whenever its options carry none. Pass `null`, or call the function
  * returned, to take it out again.
+ * A different engine already registered throws unless `opts.replace` is set.
  *
  * Shaping reaches the text whose face has TrueType or OpenType bytes behind
  * it: a face registered with `registerFontOutlines` alone, or a baked or
@@ -24,19 +25,13 @@ let registered: TextShaper | null = null;
  * own glyph draws from the atlas as before; the rest draw from the shaper's
  * glyphs.
  */
-export function registerShaper(shaper: TextShaper | null): () => void {
-  if (registered !== shaper) bumpTextEngineGeneration();
-  registered = shaper;
-  return () => {
-    if (registered !== shaper) return;
-    registered = null;
-    bumpTextEngineGeneration();
-  };
+export function registerShaper(shaper: TextShaper | null, opts?: RegisterEngineOptions): () => void {
+  return slot.register(shaper, opts);
 }
 
 /** The shaper {@link registerShaper} was last given, or null. */
 export function registeredShaper(): TextShaper | null {
-  return registered;
+  return slot.get();
 }
 
 const embeddingOf = new WeakMap<OutlineFace, FaceEmbedding | null>();
@@ -69,7 +64,7 @@ export function shapeableBytes(resolved: ResolveResult): ArrayBuffer | null {
 /** Whether text set in `(family, weight, style)` will be shaped by `shaper`
  *  with OpenType feature `tag` available. */
 export function shapesWithFeature(
-  family: string, weight: number, style: FontStyle, tag: string, shaper: TextShaper | null = registered,
+  family: string, weight: number, style: FontStyle, tag: string, shaper: TextShaper | null = slot.get(),
 ): boolean {
   if (shaper === null) return false;
   const bytes = shapeableBytes(cachedFontVariant(family, weight, style));
