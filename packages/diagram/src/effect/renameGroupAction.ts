@@ -10,7 +10,9 @@ export const RENAME_GROUP_ACTION_ID = 'effect.renameGroup';
 
 /** A double-click on a group's grip ({@link groupAt}), handing `rename` the innermost group there. */
 export function renameGroupContribution(now: () => ReorderSource, rename: (group: string) => void): Contribution {
-  const under = (at: Vec2) => {
+  /** The group a double-click at `at` renames; none without a point, as from a palette. */
+  const under = (at: Vec2 | undefined) => {
+    if (at === undefined) return undefined;
     const { doc, boxOf } = now();
     return groupAt(doc, boxOf, at);
   };
@@ -21,12 +23,11 @@ export function renameGroupContribution(now: () => ReorderSource, rename: (group
       id: RENAME_GROUP_ACTION_ID,
       label: 'Rename group',
       group: 'diagram',
-      enabled: (_, at) => (at === undefined || under(at) !== undefined ? true : ActionDisabledReason.NotApplicable),
+      enabled: (_, at, _carried, params) => (under(at ?? params?.world) !== undefined ? true : ActionDisabledReason.NotApplicable),
       invoker: {
         timing: 'immediate',
         run(_, params) {
-          const world = params?.world;
-          const group = world ? under(world) : undefined;
+          const group = under(params?.world);
           if (group !== undefined) rename(group);
         },
       },
