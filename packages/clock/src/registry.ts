@@ -5,8 +5,9 @@ import type { ClockHandle } from './types';
  *  opaque to the registry, so its root entry needs no DOM. */
 export type ClockTarget = () => object | null;
 
-/** A host's clocks: each run's, by id, and one shared among them. An id has at
- *  most one, and runs playing on the shared clock all hold that one. */
+/** A host's clocks: each run's, by id, and one shared among them. An id shows its
+ *  newest registration, and releasing that one brings back the one it displaced,
+ *  as every kit registry does. Runs playing on the shared clock all hold that one. */
 export interface ClockRegistry {
   /** Publish `handle` under `id` and return its release. `target` names the
    *  element showing it, resolved when read, so a ref filled later works. */
@@ -36,7 +37,7 @@ export interface ClockEntry {
 export function createClockRegistry(shared: ClockHandle | null = null): ClockRegistry {
   const entries = createReflectable<ClockEntry>();
   return {
-    register: (id, handle, target) => entries.set(id, { handle, target }),
+    register: (id, handle, target) => entries.push(id, { handle, target }),
     get: (id) => entries.get(id)?.handle ?? null,
     targets(handle) {
       const found: ClockTarget[] = [];
