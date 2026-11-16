@@ -5,19 +5,6 @@ import { commitGestureOps, readGestureLifecycle, reduceBehaviorEnd, runBehaviorC
 import { clearedSelection, type InsertFrame, type InsertSession } from './session';
 import { createSetSelectionOp } from 'core/ops/select';
 import { insertShape, isCommittableExtent } from './shape';
-import { shapeKindInfo } from 'core/shapeKinds';
-import type { TextEditDep } from '../depSchema';
-
-/**
- * A freshly inserted text box is empty, so it draws nothing and the tool's own
- * `click on selected body → enterTextEdit` binding has nothing visible to
- * click. Drop straight into the caret instead, for every kind that is text —
- * which is also what every other editor does. `textEdit` is optional: without
- * it the node is still committed.
- */
-export function enterInsertedText(textEdit: TextEditDep | undefined, id: string | null, kind: string): void {
-  if (id !== null && shapeKindInfo(kind)?.text) textEdit?.startEdit(id, { caret: 0 });
-}
 
 /** Put back the selection the press cleared, for a draw that ends without
  *  committing. */
@@ -69,7 +56,6 @@ export function commitInsert(
   if (!isCommittableExtent(bounds, extras.kind)) return false;
 
   const id = session.dep.commit(bounds, extras, ends, clearedSelection(session.priorSelection));
-  enterInsertedText(session.textEdit, id === null ? null : String(id), extras.kind);
   return id !== null;
 }
 

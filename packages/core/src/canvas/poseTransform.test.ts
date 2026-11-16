@@ -57,13 +57,13 @@ describe('the render wrap', () => {
   });
 });
 
-describe('the built-in text and image painters', () => {
+describe('the built-in shape and image painters', () => {
   // The svg import of `<text transform="scale(4 1)" font-size="10">`: box and
   // font doubled, the transform carrying the rest.
   const pose: RectPose = { x: 40, y: -6, width: 80, height: 24, transform: [2, 0, 0, 0.5] };
 
   it.each([
-    ['kit:text', { text: 'Hi', style: { fontSize: 20 } }],
+    ['kit:shape', { shape: 'ellipse', fill: { paint: { color: '#abc' } } }],
     ['kit:image', { image: { src: 'a.png' } }],
   ])('%s paints in its box, and the node wrap stretches it four to one', (id, data) => {
     const node = { id: 'n', kind: 'mark', layer: 'main', pose, data };
@@ -80,7 +80,7 @@ describe('the built-in text and image painters', () => {
     expect([m[0] * 120 + m[3] * 18 + m[6], m[1] * 120 + m[4] * 18 + m[7]]).toEqual([160, 12]);
   });
 
-  it('bounds the stretched text four to one', () => {
+  it('bounds the stretched box four to one', () => {
     const b = axisAlignedBounds(pose);
     expect(b.width / b.height).toBeCloseTo((4 * 40) / 12, 9);
   });

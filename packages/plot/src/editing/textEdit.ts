@@ -3,7 +3,9 @@
  * mark whose datum names an `edit` is the spec's text, and closing the editor
  * folds what was typed into one edit of the spec.
  */
-import { isTextData, useLatest, type NodeId, type RectPose, type SceneCanvasTextEditor, type AnyScene } from '@weasel-js/core';
+import { useLatest, type NodeId, type RectPose, type AnyScene } from '@weasel-js/core';
+import { isTextData } from '@weasel-js/text';
+import { type CanvasTextEditorOptions } from '@weasel-js/text-tools';
 import { useMemo } from 'react';
 import type { PlotDatum } from '../marks/types';
 import { textMeasure } from '../measure';
@@ -61,7 +63,7 @@ export function foldPlotText(scene: AnyScene, textId: string, commit: (edit: Plo
  */
 export function usePlotTextEdit(
   scene: AnyScene, commit: (edit: PlotEdit & { label: string }) => void,
-): Exclude<SceneCanvasTextEditor<unknown>, false> {
+): Exclude<CanvasTextEditorOptions<unknown>, false> {
   const latest = useLatest(commit);
   return useMemo(() => ({
     isText: isPlotText,

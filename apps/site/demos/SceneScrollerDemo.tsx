@@ -1,17 +1,9 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import {
-  RIGID_POSE_COMPOSITION,
-  SceneCanvas,
-  WeaselProvider,
-  blur,
-  defaultDrawOne,
-  rectPath,
-  textCommandFromRuns,
-  useScene,
-} from '@weasel-js/core';
+import { RIGID_POSE_COMPOSITION, SceneCanvas, WeaselProvider, blur, defaultDrawOne, rectPath, useScene, textCommandFromRuns } from '@weasel-js/core';
 import { createSlew } from '@weasel-js/animator';
 import { useAnimator } from '@weasel-js/animator/react';
 import { createParallaxLayer } from '@weasel-js/parallax';
+import { createTextPreset } from '@weasel-js/text-tools';
 import type { Dims, DrawCommand, Effect, LayerGroup, RectPose, RenderLayer, SceneCanvasApi } from '@weasel-js/core';
 import { Button } from '@weasel-js/ui/components/Button';
 import { Checkbox } from '@weasel-js/ui/components/Checkbox';
@@ -49,6 +41,7 @@ import css from './SceneScrollerDemo.module.css';
 const W = 720;
 const H = 405;
 const OPENING: Dims = { width: W, height: H };
+const TEXT = createTextPreset({ editor: false });
 
 /** The concussion blur, in px of radius. Each knock adds `perHit` and the
  *  total clears at a fixed rate, so one knock is gone in `clearSeconds` and
@@ -296,6 +289,7 @@ function SceneScrollerDemoInner({ onRestart }: { onRestart: () => void }) {
           className="ckd-canvas"
           scene={scene}
           selectable={false}
+          features={[TEXT]}
           animator={animator}
           ref={canvas}
           onResize={(size) => { dims.current = size; }}

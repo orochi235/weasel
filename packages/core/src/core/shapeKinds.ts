@@ -20,10 +20,7 @@ export interface ShapeKindDescriptor {
   readonly insertPreview: boolean;
   /** The tool family a kind with a tool belongs to: which built-in tool set
    *  names it, and so which palette group it sits in. */
-  readonly family?: 'shape' | 'draw' | 'select' | 'type';
-  /** A node of this kind is a text node: an insert drops into its caret, and
-   *  its properties carry the text groups. Absent, it is not. */
-  readonly text?: boolean;
+  readonly family?: 'shape' | 'draw' | 'select';
   /** The core glyph for a kind with no auto-mounted tool, whose tool's
    *  `presentation.icon` therefore can't be read off a mounted canvas. A kind
    *  with `tool: true` takes its icon from its tool. */
@@ -44,8 +41,6 @@ export const SHAPE_KINDS = {
   pen: { tool: true, insertPreview: false, family: 'draw' },
   pencil: { tool: true, insertPreview: true, family: 'draw' },
   lasso: { tool: true, insertPreview: false, family: 'select' },
-  text: { tool: true, insertPreview: true, text: true, family: 'type' },
-  sticky: { tool: true, insertPreview: true, text: true, family: 'type' },
   image: { tool: false, insertPreview: true, icon: 'image' },
 } as const satisfies Record<string, ShapeKindDescriptor>;
 

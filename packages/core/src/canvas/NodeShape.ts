@@ -32,7 +32,6 @@ import { paintsPose } from './nodeShapes/poseBox';
 import { PATH_POSE_PAINTER } from './nodeShapes/pathPosePainter';
 import { RECT_FALLBACK_PAINTER } from './nodeShapes/rectFallbackPainter';
 import { SHAPE_PAINTER } from './nodeShapes/shapePainter';
-import { TEXT_PAINTER } from './nodeShapes/textPainter';
 import type { NodeShapeEntry, NodeInk, NodeSilhouetteCtx, NodeInkCtx } from './nodeShapeTypes';
 import {
   addBuiltInShape, defaultNodeShapes, effectiveShapes, ensureBuiltInShapes, evaluationOrder, nodeShapesChanged, nodeShapesOf,
@@ -274,7 +273,6 @@ export function _resetShapePaintersForTests(): void {
 }
 
 setBuiltInShapes(() => {
-  addBuiltInShape(TEXT_PAINTER as NodeShapeEntry, 'builtin');
   addBuiltInShape(MEASURE_PAINTER as NodeShapeEntry, 'builtin');
   // Ahead of path/shape/image: a derived node whose `data` also carries a
   // `path`, `shape` or `image` means the derived path, and those three match

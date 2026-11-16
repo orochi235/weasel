@@ -8,27 +8,9 @@ import {
 } from '@weasel-js/routing';
 import { worldEditToStorage } from '@weasel-js/geom';
 import {
-  commitOps,
-  createSetDataOp,
-  deleteNode,
-  derivedDepOf,
-  documentOf,
-  hiddenSourceDeleteOps,
-  insertAt,
-  isTextData,
-  type NodeId,
-  type Op,
-  type PathEffect,
-  pathEffectNode,
-  pathEffectOf,
-  pathEffectParts,
-  resolvePartPaint,
-  registeredPathEffects,
-  type AnyNode,
-  slotOf,
-  pathOperationTags,
-  type AnyScene,
+  commitOps, createSetDataOp, deleteNode, derivedDepOf, documentOf, hiddenSourceDeleteOps, insertAt, type NodeId, type Op, type PathEffect, pathEffectNode, pathEffectOf, pathEffectParts, resolvePartPaint, registeredPathEffects, type AnyNode, slotOf, pathOperationTags, type AnyScene,
 } from '@weasel-js/core';
+import { isTextData } from '@weasel-js/text';
 import { newEffect, withEffectSettings } from './params';
 import { hiddenOnItsOwn, hiddenOps } from './hiding';
 import { icon } from '../icons.gen';

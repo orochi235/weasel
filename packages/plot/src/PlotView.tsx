@@ -2,6 +2,7 @@ import {
   SceneCanvas, WeaselProvider, useLatest, useScene, type NodeId, type Paint, type RectPose, editPreset, pickPreset,
 } from '@weasel-js/core';
 import { useEffect, useMemo, useRef, useState, type ReactElement } from 'react';
+import { createTextPreset } from '@weasel-js/text-tools';
 import { plotEditing } from './editing/plotEditing';
 import { usePlotTextEdit } from './editing/textEdit';
 import type { PlotMeasure } from './measure';
@@ -89,14 +90,15 @@ function Inner({ data, onChange, width, height, theme, measure, background, clas
     label: edit.label, ...(measure ? { measure } : {}),
   }));
 
+  const features = useMemo(() => [...FEATURES, createTextPreset({ editor: textEditor })], [textEditor]);
+
   return (
     <div className={className} data-wzl-plot="">
       <SceneCanvas
         scene={scene}
-        features={FEATURES}
+        features={features}
         enableKeybindings
         ambient={ambient}
-        textEditor={textEditor as never}
         width={width}
         height={height}
         {...(background ? { backgroundFill: background } : {})}

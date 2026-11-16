@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { asNodeId, contentRoots, layoutPages, solid, stickyData, type NodeId } from '@weasel-js/core';
+import { asNodeId, contentRoots, layoutPages, solid, type NodeId } from '@weasel-js/core';
+import { stickyData } from '@weasel-js/text-tools';
 import { openSvgText } from './openSvg';
 import { sceneToSvgString } from './svgExport';
 import { decodeNoteAttrs, encodeNoteAttrs } from './svgNote';

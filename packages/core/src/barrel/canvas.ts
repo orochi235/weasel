@@ -22,7 +22,6 @@ export type { SceneCanvasPointerProps } from '../canvas/SceneCanvas/pointerProps
 export type { SceneCanvasToolProps } from '../canvas/SceneCanvas/toolProps';
 export type { SceneCanvasSampleProps } from '../canvas/SceneCanvas/sampleProps';
 export type { PagePaintedScene, SceneCanvasPaintedBy, WorkerPaintedScene, WorkerSceneSlot } from '../canvas/SceneCanvas/workerProps';
-export type { SceneCanvasTextEditor } from '../canvas/SceneCanvas/defaultTextEditor';
 export type { SceneCanvasGeometry } from '../canvas/SceneCanvas/geometryProps';
 export type { SceneCanvasIngestion } from '../canvas/SceneCanvas/ingestionProps';
 export type { SceneCanvasSceneProps } from '../canvas/SceneCanvas/sceneProps';
@@ -107,7 +106,10 @@ export {
   defaultNodeProperties,
   inferredNodeProperties,
   rotationDegreesUnit,
+  shapePropertiesSchema,
+  type ShapePropertiesExtras,
 } from '../canvas/SceneCanvas/defaultNodeProperties';
+export { registerPaintStandIn, type KeepPaint, type PaintStandIn } from '../canvas/paintStandIns';
 export type { CanvasProps, CanvasRetainOptions } from '../canvas/Canvas';
 export type { CanvasWorkerSurface } from '../canvas/renderWorker/workerStack';
 export { canvasPaintsWith, type CanvasBackend } from '../canvas/canvasBackend';
@@ -144,12 +146,10 @@ export type {
 // OS file drop / clipboard paste / file picker → content-handler registry.
 // `runIngest`, `getContentHandlers` and `kitImageHandler` are deliberately NOT
 // exported — consumers reach the pipeline via `<SceneCanvas ingestion={…}>` and
-// `SceneCanvasApi.ingest`. `kitTextHandler` is a kit handler like the others, and
-// stays exported for code that names it in a `handlers` list.
+// `SceneCanvasApi.ingest`.
 export {
   registerContentHandler,
   openFilePicker,
-  kitTextHandler,
 } from '../domains/ingestion';
 export type {
   ContentHandlerEntry,
@@ -183,3 +183,22 @@ export * from '../layout';
 
 // ─── Drawn boxes: how the transform actions measure a node (the `drawnBoxes` dep) ─────
 export { inkBoxes } from '../canvas/inkBoxes';
+
+// ─── For node kinds and tools another package builds ─────────────────────────
+// What a package teaching the canvas a node kind, or shipping a tool for one, builds on:
+// `@weasel-js/text-tools` is one.
+export { nodeMemo } from '../core/scene/nodeMemo';
+export { PAINT_SLOT } from '../canvas/nodeShapes/memo';
+export { inkReach, strokeOutsetPerAxis } from '../canvas/nodeShapes/nodePaint';
+export { paintsPose } from '../canvas/nodeShapes/poseBox';
+export { sceneDerivedPathOf, scenePaintedPoseOf } from '../canvas/derivedPath';
+export { nodesAsShown, shownLookup } from '../core/scene/nodeAsShown';
+export { targetTransformOf, worldToLocal, type TargetTransform } from '../core/geometry/targetFrame';
+export { indexedCandidates } from '../canvas/pickIndex/scenePickIndex';
+export { findMountedCanvas, type MountedCanvas } from '../canvas/mountedCanvases';
+export { arrivalBounds } from '../domains/ingestion/placement';
+export { insertBindingBehaviors, type InsertToolOptions } from '../tools/builtin/shared/insertToolOptions';
+export {
+  shapeToolOptions, styleOptionLeaves, toolOptionPaint, type InsertStyle, type ShapeToolOptionsSpec, type StyleOptionKey,
+} from '../tools/builtin/shared/styleOptions';
+export { anchorUnder } from '../interactions/actions/defaults/anchorEditing';

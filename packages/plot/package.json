@@ -52,6 +52,7 @@
   },
   "peerDependencies": {
     "@weasel-js/core": "1.19.1",
+    "@weasel-js/text-tools": "1.19.1",
     "react": ">=18"
   },
   "publishConfig": {

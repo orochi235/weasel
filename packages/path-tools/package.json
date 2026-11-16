@@ -57,7 +57,8 @@
     "@weasel-js/registry": "1.19.1",
     "@weasel-js/renderer": "1.19.1",
     "@weasel-js/routing": "1.19.1",
-    "@weasel-js/stroke": "1.19.1"
+    "@weasel-js/stroke": "1.19.1",
+    "@weasel-js/text": "1.19.1"
   },
   "peerDependencies": {
     "@weasel-js/core": "1.19.1",

@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { act, renderHook } from '@testing-library/react';
-import { asNodeId, createScene, textEditJoin } from '@weasel-js/core';
+import { asNodeId, createScene } from '@weasel-js/core';
+import { textEditJoin } from '@weasel-js/text-tools';
 import { DEFAULT_MODES } from '@weasel-js/modes';
 import type { WeaselDrawData, WeaselDrawLayer, WeaselDrawPose } from './drawDocument';
 import { createModeMachine } from './modality/machine';

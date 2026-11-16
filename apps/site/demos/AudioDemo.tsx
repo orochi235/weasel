@@ -1,15 +1,5 @@
 import { useEffect, useRef, useState, useSyncExternalStore } from 'react';
-import {
-  asNodeId,
-  effectivePose,
-  PATH_L,
-  PATH_M,
-  SceneCanvas,
-  solid,
-  textCommandFromRuns,
-  useScene,
-  useSelection, movePreset, pickPreset,
-} from '@weasel-js/core';
+import { asNodeId, effectivePose, PATH_L, PATH_M, SceneCanvas, solid, useScene, useSelection, movePreset, pickPreset, textCommandFromRuns } from '@weasel-js/core';
 import { useAnimator } from '@weasel-js/animator/react';
 import type { DrawCommand, Fill, RenderLayer } from '@weasel-js/core';
 import {

@@ -1,7 +1,7 @@
 import { defineAction, type Action, type ModifierState } from '@weasel-js/routing';
 import { SNAP_ROLES, snapMods } from 'domains/snap/roles';
 import { inPlane, insertLayer } from '../planeInput';
-import { enterInsertedText, restoreSelection } from './commit';
+import { restoreSelection } from './commit';
 import { insertParent } from './parent';
 import { insertKind } from './shape';
 import { clearedSelection } from './session';
@@ -34,7 +34,7 @@ export const placeAction: Action = inPlane(defineAction({
   group: 'insert',
   eligible: { capability: 'creates-shapes' },
   modifierRoles: SNAP_ROLES,
-  requires: ['insert', 'insertInto', 'canDropInto', 'selection', 'snap', 'textEdit', 'scene'],
+  requires: ['insert', 'insertInto', 'canDropInto', 'selection', 'snap', 'scene'],
   invoker: {
     timing: 'immediate',
     run(deps, params) {
@@ -69,9 +69,7 @@ export const placeAction: Action = inPlane(defineAction({
       const id = dep.commit(bounds, extras, ends, clearedSelection(prior));
       if (id === null) {
         restoreSelection({ priorSelection: prior, selection: deps.selection });
-        return;
       }
-      enterInsertedText(deps.textEdit, String(id), extras.kind);
     },
   },
   /** Like `insert`, needs no selection. */

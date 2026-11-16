@@ -1,4 +1,5 @@
 import type { BuiltinToolId } from '@weasel-js/core';
+import type { TextToolId } from '@weasel-js/text-tools';
 import { icon } from '../icons.gen';
 import type { InstrumentList } from '../instrument/types';
 import type { TrialTool } from '../tools/types';
@@ -8,7 +9,7 @@ import type { AnnotationKind } from './types';
 /** Which weasel tool an annotation tool drives, and what kind of mark that
  *  makes. `select` makes none. */
 export interface AnnotationToolInfo {
-  weaselTool: BuiltinToolId;
+  weaselTool: BuiltinToolId | TextToolId;
   kind?: AnnotationKind;
 }
 
@@ -97,7 +98,7 @@ export function annotationToolInfo(id: string | null): AnnotationToolInfo | unde
   return id === null ? undefined : TOOLS[id];
 }
 
-/** Every weasel tool the overlay has to mount for this palette to work. */
-export const ANNOTATION_WEASEL_TOOLS: readonly BuiltinToolId[] = [
+/** Every weasel tool the overlay has to mount for this palette to work: core's built-ins, and text-tools' `text`. */
+export const ANNOTATION_WEASEL_TOOLS: readonly (BuiltinToolId | TextToolId)[] = [
   ...new Set(Object.values(TOOLS).map((t) => t.weaselTool)),
 ];

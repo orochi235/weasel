@@ -7,11 +7,12 @@ import {
   inferredNodeRouting,
   type SelectionApi,
 } from '@weasel-js/core';
+import { textPreset } from '@weasel-js/text-tools';
 import { SelectionPanel } from './SelectionPanel';
 import { renderWithIcons } from '../../../testing/withIcons';
 
-// The kit's own text schema, as apps/draw mounts it — not a fixture standing
-// in for it — so a regression in either the schema or the panel shows here.
+// The text schema `textPreset` brings, in the panel apps/draw mounts it in — not
+// a fixture standing in for it — so a regression in either shows here.
 
 interface TextData { text: string; style?: Record<string, unknown>; verticalAlign?: string }
 interface Pose { x: number; y: number; width: number; height: number }
@@ -32,6 +33,7 @@ function renderText(...styles: (Record<string, unknown> | undefined)[]) {
     <SelectionPanel
       scene={scene}
       selection={{ current: ids } as unknown as SelectionApi}
+      features={[textPreset]}
       properties={inferredNodeProperties}
       routing={inferredNodeRouting}
     />,

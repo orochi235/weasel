@@ -1,5 +1,8 @@
 import {
+  BUILTIN_TOOL_IDS,
+  type BuiltinToolId,
   editPreset,
+  type FeaturePreset,
   type InsertNodeFactory,
   movePreset,
   pickPreset,
@@ -13,6 +16,7 @@ import {
   WeaselProvider,
 } from '@weasel-js/core';
 import type { ToolOptionValues } from '@weasel-js/routing';
+import { createTextTool, textPreset } from '@weasel-js/text-tools';
 import {
   type CSSProperties,
   useCallback,
@@ -111,6 +115,11 @@ export function insertedGeometry(
     shape: roundPoints(toShape(vertices, box)),
   };
 }
+
+/** The text tool, from text-tools: core's built-ins mount by id. */
+const ANNOTATION_TEXT: FeaturePreset = { id: 'annotations:text', tools: [createTextTool()], includes: [textPreset] };
+const FEATURES = [pickPreset, movePreset, transformPreset, editPreset, ANNOTATION_TEXT];
+const BUILTIN_ANNOTATION_TOOLS = ANNOTATION_WEASEL_TOOLS.filter((t): t is BuiltinToolId => (BUILTIN_TOOL_IDS as readonly string[]).includes(t));
 
 /** One factory per weasel tool, each making the mark the rail's tool means. */
 function insertFactories(
@@ -294,7 +303,7 @@ export function AnnotationOverlay({
         <WeaselProvider isolate>
           <ToolBridge toolId={annotationToolInfo(activeToolId)?.weaselTool ?? 'select'} />
           <SceneCanvas<AnnotationData, 'marks', WorldRect>
-            features={[pickPreset, movePreset, transformPreset, editPreset]}
+            features={FEATURES}
             ref={attachSceneCanvas}
             scene={scene}
             width={visible.w}
@@ -302,7 +311,7 @@ export function AnnotationOverlay({
             view={view}
             paintInto={{ canvas, x: visible.x, y: visible.y }}
             inputElement={input}
-            defaultTools={ANNOTATION_WEASEL_TOOLS}
+            defaultTools={BUILTIN_ANNOTATION_TOOLS}
             insertNodeFactories={factories}
             layers={{ scene: { drawOne } }}
           />

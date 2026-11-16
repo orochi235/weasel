@@ -1,10 +1,8 @@
 /** Reading `<text>` and its `<tspan>` runs. */
 
 import type { Matrix, SvgNode, SvgTextNode } from './types';
-import {
-  type StyledRun, type TextStyle, type TextPaint, layoutRuns, resolveRuns,
-  resolveScreenLength, resolveTextStyle,
-} from '@weasel-js/core';
+import { resolveScreenLength } from '@weasel-js/core';
+import { type StyledRun, type TextStyle, type TextPaint, layoutRuns, resolveRuns, resolveTextStyle } from '@weasel-js/text';
 import { multiply, parseTransform, isIdentity } from './transform';
 import { anchorOffset } from './textAnchor';
 import { placeNode } from './placeBox';

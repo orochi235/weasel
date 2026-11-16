@@ -6,34 +6,10 @@
  * the canvas shows.
  */
 import {
-  asPolygonPath,
-  fillInPoseFrame,
-  clipOutline,
-  definesFrame,
-  pathInPoseFrame,
-  pathThroughPoseFrame,
-  poseFrameOf,
-  poseLinearOf,
-  resolveFill,
-  resolveStroke,
-  shapePathOf,
-  type ImageNodeData,
-  type NodeClip,
-  type Path,
-  type Stroke,
-  type StyledRun,
-  type TextStyle,
-  type TextVerticalAlign,
-  type TextFit,
-  type Fill,
-  type Inherit,
-  INHERIT,
-  textFrameOf,
-  type TextEdge,
-  type TextShadow,
-  nodeShapesOf,
-  type NodeShapes,
+  asPolygonPath, fillInPoseFrame, clipOutline, definesFrame, pathInPoseFrame, pathThroughPoseFrame, poseFrameOf, poseLinearOf, resolveFill, resolveStroke, shapePathOf, type ImageNodeData, type NodeClip, type Path, type Stroke, type Fill, type Inherit, INHERIT, nodeShapesOf, type NodeShapes,
 } from '@weasel-js/core';
+import { type StyledRun, type TextStyle, type TextVerticalAlign, type TextFit } from '@weasel-js/text';
+import { textFrameOf, type TextEdge, type TextShadow } from '@weasel-js/text-tools';
 import { groupPaintFromKit, markInherits, NO_UP_PAINT, resolvedData, type SvgKitInherited } from './kitInherits';
 import { painterLeafFromKit, warnOncePerCall } from './painterLeaf';
 import { mapFillPaint } from './fillPaint';

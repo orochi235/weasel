@@ -4,7 +4,9 @@ import {
   registerCanvasFont, registerFontOutlines, outlineStatus,
 } from '@weasel-js/font';
 import { OUTLINE_MIN_SCREEN_PX } from '@weasel-js/core/renderer';
-import type { RectPose, SceneCanvasApi, Stroke, TextNodeData, TextStyle } from '@weasel-js/core';
+import type { RectPose, SceneCanvasApi, Stroke } from '@weasel-js/core';
+import type { TextStyle } from '@weasel-js/text';
+import { createTextPreset, type TextNodeData } from '@weasel-js/text-tools';
 import { InlineRange } from '@weasel-js/ui/components/InlineRange';
 import { Checkbox } from '@weasel-js/ui/components/Checkbox';
 import { Field } from '@weasel-js/ui/components/Field';
@@ -13,6 +15,7 @@ import { DemoStage } from './DemoStage';
 import { useVisiblePoll } from '../useVisiblePoll';
 
 const W = 600, H = 300;
+const TEXT = createTextPreset({ editor: false });
 
 /**
  * The subset Inter that ships beside the baked atlas. Loaded twice, deliberately: once as a CSS
@@ -126,6 +129,7 @@ export function TextOutlinesDemo() {
           className="ckd-canvas"
           backgroundFill={{ color: '#ffffff' }}
           scene={scene}
+          features={[TEXT]}
           view={{ x: 0, y: 0, scale: { x: zoom, y: zoom } }}
         />
       </DemoStage>

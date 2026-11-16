@@ -1,5 +1,6 @@
 /** A text node as the glyph outlines it draws: one path per paint, placed as the canvas places them. */
-import { poseFrameOf, textToPathsByPaint } from '@weasel-js/core';
+import { poseFrameOf } from '@weasel-js/core';
+import { textToPathsByPaint } from '@weasel-js/text';
 import { svgPaintFromKit, svgStrokeFromKit } from './kitPaint';
 import { paintThroughMatrix, strokeThroughMatrix } from './paintThroughMatrix';
 import type { SvgGroupNode, SvgPathNode, SvgTextNode } from './types';

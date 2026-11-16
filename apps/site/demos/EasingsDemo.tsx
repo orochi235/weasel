@@ -1,14 +1,6 @@
 import { useState } from 'react';
 import { EASINGS, type EasingName } from '@weasel-js/geom';
-import {
-  SceneCanvas,
-  linePath,
-  polylineFromPoints,
-  solid,
-  useScene,
-  scenePoseTarget,
-  textCommandFromRuns,
-} from '@weasel-js/core';
+import { SceneCanvas, linePath, polylineFromPoints, solid, useScene, scenePoseTarget, textCommandFromRuns } from '@weasel-js/core';
 import { useAnimator } from '@weasel-js/animator/react';
 import type { Fill, RenderLayer } from '@weasel-js/core';
 import type { DrawCommand } from '@weasel-js/core/renderer';

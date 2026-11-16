@@ -9,7 +9,7 @@ import type { NodeId, Scene } from 'core/scene/types';
 import type { SelectionApi } from 'core/selection/useSelection';
 import { gestureReaders, type GestureReaders } from '../../gestures/shared/screenTolerance';
 import type { GestureContext, InsertBehavior, InsertPoint } from '../../gestures/types';
-import type { InsertDep, CommitSelection, TextEditDep } from '../depSchema';
+import type { InsertDep, CommitSelection } from '../depSchema';
 import { moveGestureAdapter } from '../move/gestureAdapter';
 import { insertParent } from './parent';
 import { insertKind } from './shape';
@@ -24,7 +24,6 @@ export const GESTURE_KEY = 'gesture';
 export interface InsertSession {
   readonly dep: InsertDep;
   /** For the text kind's drop-into-the-caret step. */
-  readonly textEdit: TextEditDep | undefined;
   /** Snaps the drag's start and current point, so the live preview and the
    *  committed geometry agree. Freehand pencil samples are deliberately NOT
    *  snapped — a grid-quantized freehand trail is a staircase, not a stroke. */
@@ -120,7 +119,6 @@ export function beginInsert(
 
   const session: InsertSession = {
     dep,
-    textEdit: ctx.deps.textEdit,
     snap,
     opts,
     priorSelection,

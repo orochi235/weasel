@@ -2,9 +2,9 @@
  * One region of a scene as an SVG document, and the `svg` export format.
  */
 import {
-  captureExport, exportReporter, layoutTextPose, regionsOfOne, registerExportFormat,
-  type ExportFormat, type ExportOptions, type ExportRegion, type ExportRegionSource, type ExportScene, type RenderDiagnosticSink,
+  captureExport, exportReporter, regionsOfOne, registerExportFormat, type ExportFormat, type ExportOptions, type ExportRegion, type ExportRegionSource, type ExportScene, type RenderDiagnosticSink,
 } from '@weasel-js/core';
+import { layoutTextPose } from '@weasel-js/text';
 import { regionSvgNodes, type RegionSvgNodesOptions } from './regionSvgNodes';
 import { serializeSvg } from './serialize';
 import type { SerializeOptions, SvgNode } from './types';

@@ -198,11 +198,9 @@ export type SceneCanvasProps<TData, TLayer extends string, TPose> =
      * - `ingestPreset` — dropped and pasted content: images, SVG, files, and
      *   whatever `ingestion.handlers` accept, on Cmd/Ctrl+V or an OS drop.
      * - `drawPreset` — all of the above.
-     * - `whiteboardPreset` — view, pick, move, resize and edit, with the
-     *   pencil, text and sticky-note tools.
      * - `selectToolsPreset`, `viewToolsPreset`, `shapeToolsPreset`,
-     *   `drawToolsPreset`, `typeToolsPreset`, `pageToolsPreset` — a built-in
-     *   tool set and nothing else.
+     *   `drawToolsPreset`, `pageToolsPreset` — a built-in tool set and
+     *   nothing else.
      *
      * The parts of `editPreset`, `arrangePreset` and `pathsPreset` are presets
      * of their own (`nudgePreset`, `alignPreset`, …), and a package's preset
@@ -394,4 +392,4 @@ export type SceneCanvasProps<TData, TLayer extends string, TPose> =
      * nor picked here. See `CanvasProps.layerOrder`.
      */
     layerOrder?: string[];
-  } & SceneCanvasPointerProps<TData> & SceneCanvasActionProps & SceneCanvasToolProps & SceneCanvasPaintedBy & SceneCanvasSampleProps;
+  } & SceneCanvasPointerProps & SceneCanvasActionProps & SceneCanvasToolProps & SceneCanvasPaintedBy & SceneCanvasSampleProps;

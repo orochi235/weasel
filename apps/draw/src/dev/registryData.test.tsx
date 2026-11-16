@@ -117,9 +117,9 @@ describe('collectShapeTrait — trait tag', () => {
 });
 
 describe('collectPropertiesTrait', () => {
-  it('returns every default kind, tagged with trait: properties, when no live registry is supplied', () => {
+  it("returns every default kind and draw's presets' own, tagged with trait: properties, when no live registry is supplied", () => {
     const entries = collectPropertiesTrait();
-    expect(entries.length).toBe(defaultNodeProperties.length);
+    expect(entries.map((e) => e.id)).toEqual(expect.arrayContaining([...defaultNodeProperties.map((e) => e.name), 'text']));
     for (const entry of entries) {
       expect(entry.kind).toBe('propertiesKind');
       expect(entry.trait).toBe('properties');

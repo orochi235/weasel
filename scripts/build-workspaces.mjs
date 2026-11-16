@@ -40,6 +40,7 @@ export const BUILD_ORDER = [
   '@weasel-js/brush',
   '@weasel-js/animator',
   '@weasel-js/core',
+  '@weasel-js/text-tools',
   '@weasel-js/pdf',
   '@weasel-js/headless',
   '@weasel-js/loupe',

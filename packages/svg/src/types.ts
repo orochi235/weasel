@@ -7,14 +7,9 @@
 import { identity, type Affine } from '@weasel-js/geom';
 import type { SvgMediaEnvironment } from './media';
 import type {
-  Path, Paint, MarkerEntry, MarkerRef, PoseLinear, ScreenLength, Stroke, StrokeAlign, StyledRun, TextStyle,
-  TextVerticalAlign,
-  TextFit,
-  Fill,
-  StrokeNib,
-  VertexWidth,
-  BooleanShapeOp,
+  Path, Paint, MarkerEntry, MarkerRef, PoseLinear, ScreenLength, Stroke, StrokeAlign, Fill, StrokeNib, VertexWidth, BooleanShapeOp,
 } from '@weasel-js/core';
+import type { StyledRun, TextStyle, TextVerticalAlign, TextFit } from '@weasel-js/text';
 
 /**
  * Opaque pass-through bag for namespaced XML content. The package does not

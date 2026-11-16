@@ -6,16 +6,15 @@
 import type { ContentHandlerEntry } from './contentHandlers';
 import { kitImageHandler } from './imageHandler';
 import { kitSvgHandler } from './svgHandler';
-import { kitTextHandler } from './textHandler';
 import { kitWeaselJsonHandler } from './weaselJsonHandler';
 
 /** `<SceneCanvas ingestion={{ kitHandlers }}>`: `true` (the default) keeps every kit handler,
  *  `false` none, and `{ omit }` all but the ids named (`'kit:image'`, `'kit:svg'`,
- *  `'kit:weasel-json'`, `'kit:text'`). */
+ *  `'kit:weasel-json'`). */
 export type KitHandlersOption = boolean | { omit: readonly string[] };
 
 export const KIT_CONTENT_HANDLERS: readonly ContentHandlerEntry[] = [
-  kitImageHandler, kitSvgHandler, kitWeaselJsonHandler, kitTextHandler,
+  kitImageHandler, kitSvgHandler, kitWeaselJsonHandler,
 ];
 
 /** The kit handlers a canvas with `option` routes through. */

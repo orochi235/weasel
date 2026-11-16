@@ -1,11 +1,10 @@
 import { describe, it, expect } from 'vitest';
-import type { ActionDeps, BindingOptions, InvocationCtx } from '@weasel-js/routing';
+import type { ActionDeps } from '@weasel-js/routing';
 import type { NodeId } from 'core/scene/types';
 import { IDENTITY_POSE_COMPOSITION } from 'core/scene/composeFrame';
 import { createScene } from 'core/scene/scene';
 import { gridSource, sessionDep } from 'domains/snap/testing/sessionDep';
 import type { InsertDep, SnapDep } from '../depSchema';
-import { insertAction } from './action';
 import { placeAction } from './placeAction';
 
 function makeInsertDep(): InsertDep & { calls: Array<{ bounds: unknown; extras: Record<string, unknown> }> } {
@@ -17,11 +16,6 @@ function makeInsertDep(): InsertDep & { calls: Array<{ bounds: unknown; extras: 
       return 'new' as NodeId;
     },
   };
-}
-
-function makeTextEditDep() {
-  const calls: Array<{ id: string; opts?: { caret?: number | 'all' } }> = [];
-  return { calls, startEdit(id: string, opts?: { caret?: number | 'all' }) { calls.push({ id, opts }); } };
 }
 
 function makeSelection(ids: string[]) {
@@ -114,34 +108,5 @@ describe('placeAction', () => {
     click({ kind: 'rect', size: { width: 10, height: 10 } }, { insert, selection } as never);
     expect(selection.get()).toEqual(['a']);
   });
-
-  it('drops into the caret of a kind that carries text', () => {
-    const textEdit = makeTextEditDep();
-    click({ kind: 'sticky', size: { width: 40, height: 40 } }, { insert: makeInsertDep(), textEdit } as never);
-    expect(textEdit.calls).toEqual([{ id: 'new', opts: { caret: 0 } }]);
-  });
-
-  it('does not for a kind that carries none', () => {
-    const textEdit = makeTextEditDep();
-    click({ kind: 'rect', size: { width: 40, height: 40 } }, { insert: makeInsertDep(), textEdit } as never);
-    expect(textEdit.calls).toEqual([]);
-  });
 });
 
-describe('insertAction — sticky', () => {
-  it('drops into the caret of a sticky it drew, as it does for text', () => {
-    const insert = makeInsertDep();
-    const textEdit = makeTextEditDep();
-    const ctx: InvocationCtx = {
-      world: { x: 0, y: 0 }, screen: { x: 0, y: 0 },
-      modifiers: { alt: false, ctrl: false, meta: false, shift: false },
-      deps: { insert, textEdit } as never,
-    };
-    if (insertAction.invoker?.timing !== 'ongoing') throw new Error('expected an ongoing invoker');
-    const handle = insertAction.invoker.start(ctx, { params: { kind: 'sticky' } } as BindingOptions);
-    const end: InvocationCtx = { ...ctx, world: { x: 60, y: 40 }, deps: {} };
-    handle.onMove?.(end);
-    handle.onEnd?.(end, 'commit');
-    expect(textEdit.calls).toEqual([{ id: 'new', opts: { caret: 0 } }]);
-  });
-});

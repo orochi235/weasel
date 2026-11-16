@@ -6,9 +6,7 @@ import { useRectTool } from './rect';
 import { useLineTool } from './line';
 import { useEllipseTool } from './ellipse';
 import { usePenTool } from './pen';
-import { useTextTool } from './text';
 import { DEFAULT_SHAPE_PAINT, toolOptionPaint } from './shared/styleOptions';
-import { useStickyTool } from './sticky';
 import { usePencilTool } from './pencil';
 import { createToolOptionValues, setToolOption, toolOptionParams, toolOptionSlot } from '@weasel-js/routing';
 
@@ -37,7 +35,7 @@ describe('polygon and star tool options', () => {
 
 describe('shape tools’ style options', () => {
   const tools = () => renderHook(() => ({
-    rect: useRectTool(), line: useLineTool(), polygon: usePolygonTool(), pen: usePenTool(), text: useTextTool(),
+    rect: useRectTool(), line: useLineTool(), polygon: usePolygonTool(), pen: usePenTool(),
     own: useEllipseTool({ share: { fill: null } }),
   })).result.current;
 
@@ -51,8 +49,6 @@ describe('shape tools’ style options', () => {
     for (const id of ['polygon', 'pen'] as const) {
       expect(toolOptionParams(id, t[id].options!, values).fill).toEqual({ color: '#123456' });
     }
-    // Text keeps a fill of its own kind, so a white shape fill never sets white text.
-    expect(toolOptionSlot('text', t.text.options!, 'fill')).toEqual({ owner: 'shared', key: 'textFill' });
     expect(toolOptionParams('pen', t.pen.options!, values).strokeWidth).toBe(5);
     expect(toolOptionParams('ellipse', t.own.options!, values).fill).toEqual(DEFAULT_SHAPE_PAINT);
   });
@@ -68,7 +64,7 @@ describe('tool option colors', () => {
   it('default in one spelling, so the same color reads as one value across tools', () => {
     const t = renderHook(() => ({
       rect: useRectTool(), line: useLineTool(), polygon: usePolygonTool(), star: useStarTool(), pen: usePenTool(),
-      pencil: usePencilTool(), text: useTextTool(), sticky: useStickyTool(), ellipse: useEllipseTool(),
+      pencil: usePencilTool(), ellipse: useEllipseTool(),
     })).result.current;
     for (const [id, tool] of Object.entries(t)) {
       for (const [key, leaf] of Object.entries(tool.options!.prefs.children)) {
@@ -77,10 +73,7 @@ describe('tool option colors', () => {
         expect(value, `${id}.${key}`).toEqual(toolOptionPaint(value));
       }
     }
-    const black = { color: '#000000' };
-    expect(toolOptionParams('text', t.text.options!, undefined).fill).toEqual(black);
-    expect(toolOptionParams('sticky', t.sticky.options!, undefined).ink).toEqual(black);
-    expect(toolOptionPaint({ kind: 'solid', color: '#000000ff' })).toEqual(black);
+    expect(toolOptionPaint({ kind: 'solid', color: '#000000ff' })).toEqual({ color: '#000000' });
     expect(toolOptionPaint({ color: '#11223380', opacity: 0.5 })).toEqual({ color: '#112233', opacity: 0.25098039215686274 });
   });
 });

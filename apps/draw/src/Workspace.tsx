@@ -1,22 +1,9 @@
 import {
-  BUILTIN_TOOLS,
-  type Measurements,
-  measurementsContribution,
-  measureEndSource,
-  SceneCanvas,
-  type SceneCanvasApi,
-  type SelectionApi,
-  type PlacedPage,
-  type ToolsApi,
-  PATH_GEOMETRY_PROJECTION,
-  type UseSceneTextEditReturn,
-  useEyedropperTool,
-  useMeasureTool,
-  type RenderLayer,
-  type View,
-  createWorkspaceTintLayer
+  BUILTIN_TOOLS, type Measurements, measurementsContribution, measureEndSource, SceneCanvas, type SceneCanvasApi, type SelectionApi, type PlacedPage, type ToolsApi, PATH_GEOMETRY_PROJECTION, useEyedropperTool, useMeasureTool, type RenderLayer, type View, createWorkspaceTintLayer,
 } from '@weasel-js/core';
+import { type UseSceneTextEditReturn } from '@weasel-js/text-tools';
 import { usePathToolsTools } from '@weasel-js/path-tools';
+import { useTextToolsTools } from '@weasel-js/text-tools';
 import { unpackSvgFiles } from '@weasel-js/svg';
 import { SceneGradientHandles } from '@weasel-js/ui/components/GradientEditor';
 import { MeasureReadout } from '@weasel-js/ui/components/MeasureReadout';
@@ -136,6 +123,7 @@ export function Workspace(props: WorkspaceProps): ReactElement {
     openPalette: props.openPalette,
   });
   const pathToolsTools = usePathToolsTools();
+  const textTools = useTextToolsTools();
   const { measurements } = props;
   const measureTool = useMeasureTool({ measurements });
   const pickColor = usePickColor();
@@ -213,7 +201,7 @@ export function Workspace(props: WorkspaceProps): ReactElement {
             routing={DRAW_NODE_ROUTING}
             selection={selection}
             defaultTools={DRAW_TOOLS}
-            tools={{ ...pathToolsTools, measure: measureTool, opacityScrub: opacityScrubTool, eyedropper: eyedropperTool }}
+            tools={{ ...pathToolsTools, ...textTools, measure: measureTool, opacityScrub: opacityScrubTool, eyedropper: eyedropperTool }}
             sampleLayers={props.sampleLayers}
             ingestion={DRAW_INGESTION}
             tune={DRAW_TUNE}

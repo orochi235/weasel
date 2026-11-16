@@ -7,7 +7,7 @@ import { BUILTIN_TOOL_IDS, type BuiltinToolId } from './props';
 import { resolveToolRegistry, type BuiltinTools } from './toolRegistry';
 import type { Tool } from 'tools/overlayBinding';
 import { toolIdsOf, withoutTools } from '@weasel-js/routing';
-import { BUILTIN_TOOLS, PAGE_TOOLS, SHAPE_TOOLS, TYPE_TOOLS } from './builtinToolSets';
+import { BUILTIN_TOOLS, DRAW_TOOLS, PAGE_TOOLS, SHAPE_TOOLS } from './builtinToolSets';
 
 // A kind the resolver has never heard of, so the tests below can only pass by
 // reading the table.
@@ -51,10 +51,10 @@ describe('resolveToolRegistry', () => {
   it('mounts the tools a set names, and a set less some of them', () => {
     const shapes = resolveToolRegistry({ builtins, defaultTools: [SHAPE_TOOLS, 'hand'], enabled: NONE, patch: null });
     expect(Object.keys(shapes)).toEqual(['hand', 'rect', 'ellipse', 'line', 'polygon', 'star']);
-    const cut = resolveToolRegistry({ builtins, defaultTools: [withoutTools(BUILTIN_TOOLS, PAGE_TOOLS, TYPE_TOOLS)], enabled: NONE, patch: null });
+    const cut = resolveToolRegistry({ builtins, defaultTools: [withoutTools(BUILTIN_TOOLS, PAGE_TOOLS, DRAW_TOOLS)], enabled: NONE, patch: null });
     expect(Object.keys(cut)).not.toContain('slice');
-    expect(Object.keys(cut)).not.toContain('sticky');
-    expect(Object.keys(cut)).toContain('pen');
+    expect(Object.keys(cut)).not.toContain('pencil');
+    expect(Object.keys(cut)).toContain('rect');
   });
 
   it('derives the built-in ids from the built-in set', () => {
@@ -62,8 +62,8 @@ describe('resolveToolRegistry', () => {
   });
 
   it("mounts the tools a preset names by set", () => {
-    const enabled = resolveFeatures([{ id: 'mine', tools: [TYPE_TOOLS] }]);
-    expect(Object.keys(resolveToolRegistry({ builtins, enabled, patch: null }))).toEqual(['text', 'sticky']);
+    const enabled = resolveFeatures([{ id: 'mine', tools: [DRAW_TOOLS] }]);
+    expect(Object.keys(resolveToolRegistry({ builtins, enabled, patch: null }))).toEqual(['pen', 'pencil']);
   });
 
   it('mounts nothing when nothing is asked for', () => {

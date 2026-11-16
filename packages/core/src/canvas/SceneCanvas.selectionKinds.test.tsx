@@ -83,12 +83,12 @@ function answers(props: {
 }
 
 describe('the published selection kinds on one canvas', () => {
-  it('are the routing kinds, with an unrouted node left unlabeled', () => {
+  it('are the routing kinds, with an unrouted node (text, on a canvas without textPreset) left unlabeled', () => {
     expect(answers().table).toEqual({
       pathData: { label: 'path', routing: 'path' },
       pathPose: { label: undefined, routing: 'unknown' },
       rect: { label: undefined, routing: 'unknown' },
-      text: { label: 'text', routing: 'text' },
+      text: { label: undefined, routing: 'unknown' },
       image: { label: 'image', routing: 'image' },
       card: { label: undefined, routing: 'unknown' },
       group: { label: 'group', routing: 'group' },

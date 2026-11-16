@@ -1,0 +1,61 @@
+import { describe, it, expect } from 'vitest';
+import { renderHook } from '@testing-library/react';
+import { STICKY_DEFAULTS } from './stickyNode';
+import { useStickyTool } from './useStickyTool';
+import { toolOptionParams, toolOptionSlot } from '@weasel-js/routing';
+import { INSERT_DRAG_MODS, INSERT_REPOSITION_BINDING, solid } from '@weasel-js/core';
+
+const bindingFor = (tool: ReturnType<typeof useStickyTool>, kind: string, target?: string) =>
+  tool.bindings!.find((b) => b.spec.kind === kind && (b.spec as { target?: string }).target === target);
+
+describe('useStickyTool', () => {
+  it('is the sticky tool, bound to S', () => {
+    const { result } = renderHook(() => useStickyTool());
+    expect(result.current.id).toBe('sticky');
+    expect(result.current.keybinding).toEqual({ key: 'S' });
+    expect(result.current.presentation?.label).toBe('Sticky note');
+  });
+
+  it('draws a sticky with a drag, through insert', () => {
+    const { result } = renderHook(() => useStickyTool());
+    expect(bindingFor(result.current, 'drag')).toEqual({
+      spec: { kind: 'drag', mods: INSERT_DRAG_MODS }, actionId: 'insert', opts: { id: 'sticky.drag', params: { kind: 'sticky', minSize: STICKY_DEFAULTS.minSize } },
+    });
+  });
+
+  it('places a default-size sticky with a click, through place', () => {
+    const { result } = renderHook(() => useStickyTool());
+    expect(bindingFor(result.current, 'click')).toEqual({
+      spec: { kind: 'click' }, actionId: 'place', opts: { id: 'sticky.click', params: { kind: 'sticky', minSize: STICKY_DEFAULTS.minSize, size: STICKY_DEFAULTS.size } },
+    });
+  });
+
+  it('edits the selected sticky on a click on it', () => {
+    const { result } = renderHook(() => useStickyTool());
+    expect(bindingFor(result.current, 'click', 'selected-body')?.actionId).toBe('enterTextEdit');
+  });
+
+  it('repositions a sticky mid-draw, as the shape tools do', () => {
+    const { result } = renderHook(() => useStickyTool());
+    expect(result.current.bindings).toContain(INSERT_REPOSITION_BINDING);
+  });
+
+  it('carries the look it is given onto both inserts', () => {
+    const background = { paint: solid('#a6e1ff') };
+    const size = { width: 90, height: 60 };
+    const minSize = { width: 30, height: 20 };
+    const { result } = renderHook(() => useStickyTool({ background, padding: 6, size, minSize, overflow: 'visible' }));
+    const look = { kind: 'sticky', minSize, padding: 6, overflow: 'visible' };
+    expect(bindingFor(result.current, 'drag')?.opts?.params).toEqual(look);
+    expect(bindingFor(result.current, 'click')?.opts?.params).toEqual({ ...look, size });
+    // The paper is the tool's own option, defaulting to the background it is given.
+    expect(toolOptionParams('sticky', result.current.options!, undefined).paper).toEqual(background.paint);
+    expect(toolOptionSlot('sticky', result.current.options!, 'paper').owner).toBe('sticky');
+  });
+
+  it('passes insert behaviors to the drag', () => {
+    const behaviors = [{ id: 'b' }] as never[];
+    const { result } = renderHook(() => useStickyTool({ behaviors }));
+    expect(bindingFor(result.current, 'drag')?.opts?.behaviors).toEqual(behaviors);
+  });
+});

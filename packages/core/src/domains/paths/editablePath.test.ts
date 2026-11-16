@@ -157,6 +157,6 @@ describe('a leaf drawn as its rect pose alone', () => {
 
   it('is not a container, nor a leaf another painter draws', () => {
     expect(classifyPathStorage({ ...node, kind: 'group' })).toBeNull();
-    expect(classifyPathStorage({ ...node, data: { text: 'hi' } })).toBeNull();
+    expect(classifyPathStorage({ ...node, data: { shape: 'ellipse' } })).toBeNull();
   });
 });

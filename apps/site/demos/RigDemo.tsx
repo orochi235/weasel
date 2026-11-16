@@ -18,13 +18,9 @@ import {
   solveIk,
 } from '@weasel-js/animator';
 import { useAnimator } from '@weasel-js/animator/react';
-import type {
-  NodeId,
-  RectPose,
-  RigApply,
-  TextStyle,
-  Fill,
-} from '@weasel-js/core';
+import type { NodeId, RectPose, RigApply, Fill } from '@weasel-js/core';
+import type { TextStyle } from '@weasel-js/text';
+import { createTextPreset } from '@weasel-js/text-tools';
 import type {
   HoldHandle,
   Pose,
@@ -39,6 +35,7 @@ import { Checkbox } from '@weasel-js/ui/components/Checkbox';
 import { DemoStage } from './DemoStage';
 
 const W = 600, H = 340;
+const TEXT = createTextPreset({ editor: false });
 const BONES: { name: string; parent: string | null; x: number; y: number; rotation: number; length: number }[] = [
   { name: 'pelvis', parent: null, x: 0, y: 250, rotation: -Math.PI / 2, length: 80 },
   { name: 'torso', parent: 'pelvis', x: 80, y: 0, rotation: 0, length: 55 },
@@ -273,7 +270,7 @@ export function RigDemo() {
         <SceneCanvas
           className="ckd-canvas"
           scene={scene}
-          features={[pickPreset, movePreset]}
+          features={[pickPreset, movePreset, TEXT]}
           animator={animator}
           layers={{ selectionOverlay: null }}
         />

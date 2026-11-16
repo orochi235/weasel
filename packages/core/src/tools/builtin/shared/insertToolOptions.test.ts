@@ -12,7 +12,6 @@ const tools: Array<[string, (o: InsertToolOptions) => unknown]> = [
   ['polygon', (o) => builtins.usePolygonTool(o)],
   ['star', (o) => builtins.useStarTool(o)],
   ['pencil', (o) => builtins.usePencilTool(o)],
-  ['text', (o) => builtins.useTextTool(o)],
   ['image', (o) => builtins.useImageTool({ src: 'a.png', ...o })],
 ];
 

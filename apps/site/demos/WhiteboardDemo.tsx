@@ -1,4 +1,5 @@
-import { SceneCanvas, asNodeId, solid, stickyData, useScene, useSelection, whiteboardPreset, WeaselProvider } from '@weasel-js/core';
+import { SceneCanvas, asNodeId, solid, useScene, useSelection, WeaselProvider } from '@weasel-js/core';
+import { stickyData, whiteboardPreset } from '@weasel-js/text-tools';
 import { ToolPalette } from '@weasel-js/ui/components/ToolPalette';
 import { DemoStage } from './DemoStage';
 

@@ -3,10 +3,12 @@ import {
   SceneCanvas, asNodeId, createPageRun, createPresentationContribution, createScene, fitViewToPage, createPagesLayer, placedPagesOf,
   solid, type Path, type PlacedPage, type RectPose,
 } from '@weasel-js/core';
+import { createTextPreset } from '@weasel-js/text-tools';
 import { DemoStage } from './DemoStage';
 
 const W = 640, H = 360;
 const SLIDE = { width: 320, height: 180 };
+const TEXT = createTextPreset({ editor: false });
 const SLIDES = [
   { id: 'title', heading: 'Quarterly review', color: '#3d6bd8' },
   { id: 'growth', heading: 'Growth', color: '#2f9e6e' },
@@ -47,6 +49,7 @@ export function SlideNavigationDemo() {
           className="ckd-canvas"
           backgroundFill={{ color: '#2b2b30' }}
           scene={scene}
+          features={[TEXT]}
           layers={layers}
           ambient={ambient}
           {...(start ? { defaultView: start } : {})}

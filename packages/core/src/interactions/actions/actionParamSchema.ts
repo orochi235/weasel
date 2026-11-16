@@ -118,8 +118,6 @@ declare module '@weasel-js/routing' {
     cutPathAtAnchor: Pick<ImmediateParams, 'world'>;
     insertPathAnchor: Pick<ImmediateParams, 'world'>;
     enterPathEdit: Pick<ImmediateParams, 'world'>;
-    editTextAt: Pick<ImmediateParams, 'world'>;
-    editEffectText: Pick<ImmediateParams, 'world'>;
     'eyedropper.pick': Pick<ImmediateParams, 'press'>;
     'pen.placeAnchor': Pick<ImmediateParams, 'press' | 'mods'>;
     'slice.addPoint': Pick<ImmediateParams, 'press'>;

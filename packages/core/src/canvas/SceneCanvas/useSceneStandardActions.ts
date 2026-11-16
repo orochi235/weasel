@@ -38,7 +38,6 @@ import {
   usePathLeafDepSources,
   useSnapDepSource,
   useSurfaceDepSources,
-  useTextEditDepSource,
   useViewDepSource,
 } from '../deps';
 import type { EnteredGroupApi } from '../deps/enteredGroup';
@@ -223,7 +222,6 @@ export function useSceneStandardActions(inputs: SceneStandardActionsInputs): voi
   useDepChangeNotices(editAnchorsExternalState, props.modes);
   useIngestionDepSource(canvasRef, () => currentViewRef.current, ingestion?.resolveSrc, ingestion?.svg, ingestionClipboard, ingestionHandlers);
   useLassoSelectDepSource(scene, selection, poseDescriptor, alphaOf, reachable, regionTargetOf);
-  useTextEditDepSource(scene);
   useEditAnchorsDepSource(scene, selection, adapter, editAnchorsExternalState, tune);
   useSelectionSnapshotDepSource();
   useDispatcherDepSource(dispatcher);

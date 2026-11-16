@@ -1,5 +1,5 @@
 import {
-  DRAW_TOOLS, PAGE_TOOLS, SELECT_TOOLS, SHAPE_TOOLS, TYPE_TOOLS, VIEW_TOOLS,
+  DRAW_TOOLS, PAGE_TOOLS, SELECT_TOOLS, SHAPE_TOOLS, VIEW_TOOLS,
 } from '../builtinToolSets';
 import type { ToolSet } from '@weasel-js/routing';
 import type { FeaturePreset } from '../features';
@@ -16,7 +16,5 @@ export const viewToolsPreset = toolsOf(VIEW_TOOLS, 'View tools');
 export const shapeToolsPreset = toolsOf(SHAPE_TOOLS, 'Shape tools');
 /** The pen and the pencil. */
 export const drawToolsPreset = toolsOf(DRAW_TOOLS, 'Path tools');
-/** Text and the sticky note. */
-export const typeToolsPreset = toolsOf(TYPE_TOOLS, 'Text tools');
 /** The page slicer. */
 export const pageToolsPreset = toolsOf(PAGE_TOOLS, 'Page tools');

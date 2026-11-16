@@ -44,6 +44,8 @@ describe('shape-kind table', () => {
 
   it('lists each family\'s tool kinds in table order', () => {
     expect(kitShapeKindsOf('draw')).toEqual(['pen', 'pencil']);
-    expect(kitShapeKindsOf('type')).toEqual(['text', 'sticky']);
+    expect(kitShapeKindsOf('select')).toEqual(['lasso']);
+    expect(KIT_SHAPE_KINDS).not.toContain('text');
+    expect(KIT_SHAPE_KINDS).not.toContain('sticky');
   });
 });

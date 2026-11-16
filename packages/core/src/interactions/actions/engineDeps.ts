@@ -29,14 +29,14 @@ import type { ColorAtDep, HitTestView, NodeAtPointDep, AreaSelectDep, LassoSelec
 import type { InsertDep, InsertEnds, InsertExtras, PathSymmetryDep, InsertIntoDep, InsertLive } from './insertDeps';
 import type { CommitSelection } from './defaultCommitAdapter';
 import type { LayoutDep, CanDropIntoDep } from './layoutDeps';
-import type { TextEditDep, ClipboardDep, SliceDep } from './editDeps';
+import type { ClipboardDep, SliceDep } from './editDeps';
 
 export type { EnteredGroupApi, TransformFollower, TransformPreviewNode };
 export type { SnapDep, SnapGeometry } from './snapDep';
 export type { ColorAtDep, HitTestView, NodeAtPointDep, AreaSelectDep, LassoSelectDep };
 export type { InsertDep, InsertEnds, InsertExtras, CommitSelection, PathSymmetryDep, InsertIntoDep, InsertLive };
 export type { LayoutDep, CanDropIntoDep };
-export type { TextEditDep, ClipboardDep, SliceDep };
+export type { ClipboardDep, SliceDep };
 
 /** Minimal view API the action layer consumes. */
 export interface ViewApi {
@@ -183,16 +183,6 @@ declare module '@weasel-js/routing' {
     /** The transforms a path being edited should stay its own image under.
      *  Absent: an anchor drag moves only what is dragged. */
     pathSymmetry?: PathSymmetryDep;
-    /**
-     * Text-edit dep — activates the in-place text editing overlay. Sourced
-     * from consumer via `useTextEdit` / `useSceneTextEdit`.
-     *
-     * The optional `isTextNode` predicate guards against entering edit mode on
-     * non-text nodes. A binding can pre-filter instead with a
-     * `target: 'kind:text:selected'` spec; the guard remains for consumers who
-     * bind the broader `'selected-body'` target or opted out of routing.
-     */
-    textEdit: TextEditDep;
     /**
      * Resize-policy dep — bounds constraints, point-snap behaviors and
      * group expansion for `resizeAction`. Optional: when omitted,

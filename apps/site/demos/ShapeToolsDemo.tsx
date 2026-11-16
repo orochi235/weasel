@@ -9,9 +9,6 @@ import { DemoStage } from './DemoStage';
 
 const W = 600, H = 400;
 
-// Text and sticky notes need a text editor wired to the canvas; each has a demo of its own that does.
-const TOOLS = BUILTIN_TOOL_IDS.filter((id) => id !== 'sticky' && id !== 'text');
-
 export function ShapeToolsDemo() {
   const scene = useScene({
     systemLayers: [{ id: 'default' }],
@@ -29,7 +26,7 @@ export function ShapeToolsDemo() {
             scene={scene}
             selection={selection}
             features={[pickPreset]}
-            defaultTools={TOOLS}
+            defaultTools={BUILTIN_TOOL_IDS}
           />
         </DemoStage>
       </div>

@@ -3,7 +3,8 @@
  * leaves whose data has no opacity of its own. Where a fill and a stroke
  * overlap this is not SVG's group compositing, which flattens first.
  */
-import type { Paint, Stroke, StyledRun } from '@weasel-js/core';
+import type { Paint, Stroke } from '@weasel-js/core';
+import type { StyledRun } from '@weasel-js/text';
 import { mapFillPaint } from './fillPaint';
 
 export function fadeFill(fill: Paint, k: number): Paint {

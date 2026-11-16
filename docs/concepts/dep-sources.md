@@ -14,7 +14,6 @@ Actions declare what they need via `requires: ['selection', 'view', ...]`. At di
 | `useAreaSelectDepSource.ts` | `areaSelect` | rubber-band marquee select |
 | `useLassoSelectDepSource.ts` | `lassoSelect` | freehand lasso select |
 | `useInsertDepSource.ts` | `insert` | rect/ellipse/line/polygon/star/pencil tools |
-| `useTextEditDepSource.ts` | `textEdit` | enter-text-edit action (stub by default — see below) |
 | `useEditAnchorsDepSource.ts` | `editAnchors` | polygon anchor-edit |
 
 The remaining standard deps (`selection`, `scene`, `history`, `pointer`, `activeTool`) are registered by `useStandardActions` directly. The split is mostly cosmetic — both routes funnel through `useDepSource`.

@@ -4,7 +4,7 @@
  * new `y`. This writes the `\n` the runs model stores in that shape, and
  * reads it back.
  */
-import type { StyledRun } from '@weasel-js/core';
+import type { StyledRun } from '@weasel-js/text';
 import { readLength } from './lengths';
 import { trimNumber } from './transform';
 import { escapeText } from './xmlEscape';

@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { describe, it, expect, beforeEach } from 'vitest';
 import {
   registerNodeShape,
   findNodeShape,
@@ -8,28 +8,10 @@ import {
   _resetShapePaintersForTests,
   type NodeShapeEntry,
 } from './NodeShape';
-import { registerFont, FIXTURE_FONT } from '@weasel-js/font';
-import { _resetFontRegistryForTests } from '@weasel-js/font/test-seams';
 import { solid, strokeOf } from '../util/paint';
-import { pathContainsPoint, pathFromD, type PolygonPath } from '@weasel-js/geom';
+import { pathFromD, type PolygonPath } from '@weasel-js/geom';
 import type { Node } from 'core/scene/types';
 import type { DrawCommand } from '@weasel-js/renderer';
-
-/** Serve FIXTURE_FONT (glyphs 'A' and 'B') to `registerFont`. */
-function stubFontFetch(): void {
-  const encoder = new TextEncoder();
-  global.fetch = vi.fn().mockImplementation((url: string) => (
-    url.endsWith('.json')
-      ? Promise.resolve({ ok: true, json: () => Promise.resolve(FIXTURE_FONT) })
-      : Promise.resolve({
-        ok: true,
-        blob: () => Promise.resolve(new Blob([encoder.encode('PNG')], { type: 'image/png' })),
-      })
-  )) as typeof fetch;
-  global.createImageBitmap = vi.fn().mockResolvedValue({
-    width: 512, height: 512, close: vi.fn(),
-  } as unknown as ImageBitmap);
-}
 
 function node<TData>(data: TData): Node<TData, 'default', { x: number; y: number; width: number; height: number }> {
   return {
@@ -45,18 +27,17 @@ function node<TData>(data: TData): Node<TData, 'default', { x: number; y: number
 beforeEach(() => {
   // Tests freely register/unregister; reset before each so cross-test
   // pollution can't leak. After reset, only the kit built-ins are
-  // registered (text, path, rect-fallback).
+  // registered.
   _resetShapePaintersForTests();
 });
 
 describe('shape painter registry', () => {
-  it('ships eight built-ins in evaluation order: text → measure → derived → path → shape → image → path-pose → rect-fallback', () => {
+  it('ships seven built-ins in evaluation order: measure → derived → path → shape → image → path-pose → rect-fallback', () => {
     const ids = getNodeShapes().map((p) => p.id);
-    expect(ids).toEqual(['kit:text', 'kit:measure', 'kit:derived', 'kit:path', 'kit:shape', 'kit:image', 'kit:path-pose', 'kit:rect-fallback']);
+    expect(ids).toEqual(['kit:measure', 'kit:derived', 'kit:path', 'kit:shape', 'kit:image', 'kit:path-pose', 'kit:rect-fallback']);
   });
 
   it('findNodeShape returns the first matching painter', () => {
-    expect(findNodeShape(node({ text: 'hi' }))?.id).toBe('kit:text');
     expect(findNodeShape(node({ path: { kind: 'rect', x: 0, y: 0, width: 1, height: 1 } }))?.id).toBe('kit:path');
     expect(findNodeShape(node({ shade: '#abc' }))?.id).toBe('kit:rect-fallback');
     expect(findNodeShape(node({ measure: { start: { x: 0, y: 0 }, end: { x: 1, y: 1 } } }))?.id).toBe('kit:measure');
@@ -70,23 +51,23 @@ describe('shape painter registry', () => {
     };
     registerNodeShape(custom);
     const ids = getNodeShapes().map((p) => p.id);
-    expect(ids).toEqual(['kit:text', 'kit:measure', 'kit:derived', 'kit:path', 'kit:shape', 'kit:image', 'app:heart', 'kit:path-pose', 'kit:rect-fallback']);
+    expect(ids).toEqual(['kit:measure', 'kit:derived', 'kit:path', 'kit:shape', 'kit:image', 'app:heart', 'kit:path-pose', 'kit:rect-fallback']);
     // The fallback matches every rect-posed node, so a painter behind it would never paint one.
     expect(findNodeShape(node({ heart: 'x' }))?.id).toBe('app:heart');
     // A built-in that matches still wins over a normal-priority painter.
     const greedy: NodeShapeEntry = { id: 'app:greedy', matches: () => true, paint: () => [] };
     registerNodeShape(greedy);
-    expect(findNodeShape(node({ text: 'hi' }))?.id).toBe('kit:text');
+    expect(findNodeShape(node({ shape: 'ellipse' }))?.id).toBe('kit:shape');
   });
 
   it("'high' priority painters beat the built-ins", () => {
-    const overrideText: NodeShapeEntry = {
-      id: 'app:loud-text',
-      matches: (n) => (n.data as { text?: string } | null)?.text != null,
+    const overrideShape: NodeShapeEntry = {
+      id: 'app:loud-shape',
+      matches: (n) => (n.data as { shape?: string } | null)?.shape != null,
       paint: () => [{ kind: 'path', path: { kind: 'rect', x: 0, y: 0, width: 1, height: 1 } } as DrawCommand],
     };
-    registerNodeShape(overrideText, { priority: 'high' });
-    expect(findNodeShape(node({ text: 'hi' }))?.id).toBe('app:loud-text');
+    registerNodeShape(overrideShape, { priority: 'high' });
+    expect(findNodeShape(node({ shape: 'ellipse' }))?.id).toBe('app:loud-shape');
   });
 
   it('within a tier, painters run in registration order (first-wins)', () => {
@@ -150,272 +131,6 @@ describe('findShapeSilhouette rotation', () => {
     // Corner (0,0) rotated 90° about center (10,5) lands at (15,-5).
     expect(sil.coords[0]).toBeCloseTo(15);
     expect(sil.coords[1]).toBeCloseTo(-5);
-  });
-});
-
-describe('kit:text painter — rich runs', () => {
-  const pose = { x: 10, y: 20, width: 100, height: 40 };
-  const paintText = (data: unknown): DrawCommand[] => {
-    const n = { ...node(data), pose };
-    return findNodeShape(n)!.paint(n, pose);
-  };
-
-  it('paints a plain-text node as one unstyled run', () => {
-    const [cmd] = paintText({ text: 'hi', style: { fontSize: 16 } });
-    expect(cmd.kind).toBe('text');
-    const text = cmd as Extract<DrawCommand, { kind: 'text' }>;
-    expect(text.runs).toHaveLength(1);
-    expect(text.runs[0].text).toBe('hi');
-  });
-
-  it('paints the node\'s runs when it has them, not the flattened string', () => {
-    // Without this the run algebra is write-only in the default scene layer:
-    // a styled range commits to `data.runs` and paints as if it were never
-    // styled, because the painter re-flattened `data.text`.
-    const [cmd] = paintText({
-      text: 'ab',
-      style: { fontSize: 16 },
-      runs: [{ text: 'a', bold: true }, { text: 'b' }],
-    });
-    const text = cmd as Extract<DrawCommand, { kind: 'text' }>;
-    expect(text.runs.map((r) => r.text)).toEqual(['a', 'b']);
-    expect(text.runs[0].fontWeight).toBeGreaterThan(text.runs[1].fontWeight);
-  });
-
-  it('carries run-level decoration and tracking through to the command', () => {
-    const [cmd] = paintText({
-      text: 'ab',
-      style: { fontSize: 16 },
-      runs: [{ text: 'a', underline: true, letterSpacing: 2 }, { text: 'b' }],
-    });
-    const text = cmd as Extract<DrawCommand, { kind: 'text' }>;
-    expect(text.runs[0].underline).toBe(true);
-    expect(text.runs[0].letterSpacing).toBe(2);
-    expect(text.runs[1].underline).toBe(false);
-  });
-
-  it('falls back to the plain string when `runs` is empty', () => {
-    const [cmd] = paintText({ text: 'hi', style: { fontSize: 16 }, runs: [] });
-    const text = cmd as Extract<DrawCommand, { kind: 'text' }>;
-    expect(text.runs.map((r) => r.text)).toEqual(['hi']);
-  });
-
-  // `kit:shape` and `kit:path` read the same `data.fill` / `data.stroke`.
-  // Text reading them too is what makes a consumer's one set of paint
-  // controls mean the same thing on a text node as on a rect, instead of
-  // silently doing nothing.
-  describe('kit-native paint fields', () => {
-    it('paints the glyphs from data.fill', () => {
-      const [cmd] = paintText({ text: 'hi', fill: { paint: solid('#7fb069') } });
-      const text = cmd as Extract<DrawCommand, { kind: 'text' }>;
-      expect(text.runs.every((r) => r.fill)).toEqual(true);
-      expect(text.runs[0].fill).toEqual({ paint: solid('#7fb069') });
-    });
-
-    it('paints no glyph fill with no data.fill', () => {
-      const [cmd] = paintText({ text: 'hi' });
-      const text = cmd as Extract<DrawCommand, { kind: 'text' }>;
-      expect(text.runs[0].fill ?? null).toBeNull();
-    });
-
-    it('a run fill overrides the node fill', () => {
-      const [cmd] = paintText({
-        text: 'ab',
-        fill: { paint: solid('#7fb069') },
-        runs: [{ text: 'a' }, { text: 'b', fill: { paint: solid('#d4a574') } }],
-      });
-      const text = cmd as Extract<DrawCommand, { kind: 'text' }>;
-      expect(text.runs.map((r) => r.fill)).toEqual([{ paint: solid('#7fb069') }, { paint: solid('#d4a574') }]);
-    });
-
-    it('forwards data.verticalAlign onto the command, alongside the box height', () => {
-      const [cmd] = paintText({ text: 'hi', verticalAlign: 'center' });
-      const text = cmd as Extract<DrawCommand, { kind: 'text' }>;
-      expect(text.verticalAlign).toBe('center');
-      expect(text.height).toBe(pose.height);
-    });
-
-    it('leaves verticalAlign unset when the node does not name one', () => {
-      const [cmd] = paintText({ text: 'hi' });
-      expect((cmd as Extract<DrawCommand, { kind: 'text' }>).verticalAlign).toBeUndefined();
-    });
-
-    it('lifts data.stroke onto the runs whole', () => {
-      const stroke = { paint: { color: '#f00' }, width: 3, cap: 'round' as const };
-      const [cmd] = paintText({ text: 'hi', stroke });
-      const text = cmd as Extract<DrawCommand, { kind: 'text' }>;
-      expect(text.runs[0].stroke).toEqual(stroke);
-    });
-
-    it('takes strokeOf() for the color-and-width case', () => {
-      const [cmd] = paintText({ text: 'hi', stroke: strokeOf('#f00') });
-      const text = cmd as Extract<DrawCommand, { kind: 'text' }>;
-      expect(text.runs[0].stroke).toEqual({ paint: { color: '#f00' }, width: 1 });
-    });
-
-    it('leaves the runs unstroked for stroke: null or no stroke at all', () => {
-      for (const data of [
-        { text: 'hi', stroke: null },
-        { text: 'hi' },
-      ]) {
-        const [cmd] = paintText(data);
-        expect((cmd as Extract<DrawCommand, { kind: 'text' }>).runs[0].stroke).toBeUndefined();
-      }
-    });
-
-    it('a run stroke replaces the node stroke rather than merging', () => {
-      const explicit = { paint: { color: '#00f' }, width: 8, join: 'round' as const };
-      const [cmd] = paintText({
-        text: 'ab',
-        stroke: strokeOf('#f00', 3),
-        runs: [{ text: 'a' }, { text: 'b', stroke: explicit }],
-      });
-      const text = cmd as Extract<DrawCommand, { kind: 'text' }>;
-      expect(text.runs[1].stroke).toEqual(explicit);
-    });
-
-    it('reaches runs-form text too', () => {
-      const [cmd] = paintText({
-        text: 'ab', stroke: strokeOf('#f00', 2), runs: [{ text: 'a' }, { text: 'b' }],
-      });
-      const text = cmd as Extract<DrawCommand, { kind: 'text' }>;
-      expect(text.runs.every((r) => r.stroke?.width === 2)).toBe(true);
-    });
-  });
-
-  // A `TextDrawCommand`'s `y` is the top of the first line box — `layoutRuns`
-  // walks *down* from it to the baseline (`common.base * scale`), and
-  // `verticalAlign` aligns the block within `[y, y + height]`. The painter
-  // used to pass `pose.y + fontSize`, as if `y` were a baseline, which put
-  // every kit:text node's baseline about two ems below its box top and hung
-  // the descenders outside the pose entirely. It also disagreed with
-  // `createTextLayer` and with the DOM editing overlay, both of which anchor
-  // on `pose.y` — so text jumped a whole line on commit.
-  it('anchors the command on the pose box top, not a baseline', () => {
-    for (const fontSize of [16, 48]) {
-      const [cmd] = paintText({ text: 'hi', style: { fontSize } });
-      const text = cmd as Extract<DrawCommand, { kind: 'text' }>;
-      expect(text.x).toBe(pose.x);
-      expect(text.y).toBe(pose.y);
-      // The box forwarded for vertical alignment is the pose's own box.
-      expect(text.height).toBe(pose.height);
-    }
-  });
-
-  it('anchors runs-form text on the pose box top too', () => {
-    const [cmd] = paintText({
-      text: 'ab',
-      style: { fontSize: 48 },
-      runs: [{ text: 'a' }, { text: 'b' }],
-    });
-    const text = cmd as Extract<DrawCommand, { kind: 'text' }>;
-    expect(text.y).toBe(pose.y);
-  });
-
-  it('aligns within the pose width and wraps there only when the style says so', () => {
-    const [cmd] = paintText({ text: 'hi', style: { fontSize: 16, align: 'center' } });
-    const text = cmd as Extract<DrawCommand, { kind: 'text' }>;
-    expect(text.width).toBe(pose.width);
-    expect(text.maxWidth).toBe(Infinity);
-    const [wrapped] = paintText({ text: 'hi', style: { fontSize: 16, wrap: true } });
-    expect((wrapped as Extract<DrawCommand, { kind: 'text' }>).maxWidth).toBe(pose.width);
-  });
-});
-
-describe('kit:text painter — silhouette across a font load', () => {
-  it('measures again once the face has landed', async () => {
-    _resetFontRegistryForTests();
-    stubFontFetch();
-    const pose = { x: 0, y: 0, width: 400, height: 100 };
-    const n = { ...node({ text: 'AB', style: { fontSize: 20 } }), pose };
-    const pending = findShapeSilhouette(n, pose);
-    await registerFont('sans-serif', {}, '/f.json', '/f.png');
-    const landed = findShapeSilhouette(n, pose);
-    expect(landed).not.toBeNull();
-    expect(landed).not.toBe(pending);
-    expect(findShapeSilhouette(n, pose)).toBe(landed);
-  });
-});
-
-describe('kit:text painter — silhouette', () => {
-  // FIXTURE_FONT covers 'A' and 'B' only, and registers under the default
-  // family so `resolveTextStyle` finds it.
-  beforeEach(async () => {
-    _resetFontRegistryForTests();
-    stubFontFetch();
-    await registerFont('sans-serif', {}, '/f.json', '/f.png');
-  });
-
-  const wide = { x: 0, y: 0, width: 400, height: 100 };
-  const textNode = (data: unknown) => ({ ...node(data), pose: wide });
-
-  it('covers the text, not the empty remainder of the wrap box', () => {
-    const n = textNode({ text: 'AB', style: { fontSize: 20 } });
-    const sil = findShapeSilhouette(n, wide)!;
-    expect(sil).not.toBeNull();
-    // Just right of the glyphs, still well inside the pose rect.
-    expect(pathContainsPoint(sil, 5, 5)).toBe(true);
-    expect(pathContainsPoint(sil, 390, 5)).toBe(false);
-    // Below the single line, still inside the 100-tall pose.
-    expect(pathContainsPoint(sil, 5, 90)).toBe(false);
-  });
-
-  it('is one contour per line', () => {
-    const n = textNode({ text: 'AB\nAB', style: { fontSize: 20, lineHeight: 1.2 } });
-    const sil = findShapeSilhouette(n, wide) as PolygonPath;
-    expect(sil.kind).toBe('polygon');
-    expect(pathContainsPoint(sil, 5, 5)).toBe(true);   // line 1
-    expect(pathContainsPoint(sil, 5, 30)).toBe(true);  // line 2
-    expect(pathContainsPoint(sil, 5, 70)).toBe(false); // past the last line
-  });
-
-  // Picking has to follow the paint: a centered glyph that draws halfway down
-  // its box but silhouettes at the top is grabbable off its own ink.
-  it('shifts by the same verticalAlign offset the paint applies', () => {
-    const top = findShapeSilhouette(textNode({ text: 'AB', style: { fontSize: 20 } }), wide) as PolygonPath;
-    const centered = findShapeSilhouette(
-      textNode({ text: 'AB', style: { fontSize: 20 }, verticalAlign: 'center' }),
-      wide,
-    ) as PolygonPath;
-    // The 100-tall box holds one ~24-unit line, so centering drops it ~38 down.
-    expect(centered.coords[1] - top.coords[1]).toBeGreaterThan(20);
-    expect(pathContainsPoint(centered, 5, 5)).toBe(false);
-    expect(pathContainsPoint(centered, 5, 50)).toBe(true);
-  });
-
-  it('returns null for a node with no visible text, so it stays pickable', () => {
-    // An empty box has no lines to cover; a zero-area silhouette would make it
-    // unselectable. `null` means "no opinion" and the caller keeps the AABB.
-    expect(findShapeSilhouette(textNode({ text: '' }), wide)).toBeNull();
-  });
-
-  it('wraps exactly where the paint does', () => {
-    const narrow = { x: 0, y: 0, width: 40, height: 100 };
-    const text = 'AAAA BBBB AAAA';
-    const sil = findShapeSilhouette({ ...node({ text, style: { fontSize: 20 } }), pose: narrow }, narrow)!;
-    // One unwrapped line: ink continues past the 40-unit pose width, and
-    // nothing sits on a second line.
-    expect(pathContainsPoint(sil, 100, 5)).toBe(true);
-    expect(pathContainsPoint(sil, 5, 30)).toBe(false);
-    const wrapped = findShapeSilhouette(
-      { ...node({ text, style: { fontSize: 20, wrap: true } }), pose: narrow }, narrow,
-    )!;
-    // 'AAAA ' is the whole first line, about 62 wide.
-    expect(pathContainsPoint(wrapped, 100, 5)).toBe(false);
-    expect(pathContainsPoint(wrapped, 5, 30)).toBe(true);
-  });
-
-  it('follows center and right alignment within the pose width', () => {
-    const centered = findShapeSilhouette(
-      textNode({ text: 'AB', style: { fontSize: 20, align: 'center' } }), wide,
-    )!;
-    expect(pathContainsPoint(centered, 200, 5)).toBe(true);
-    expect(pathContainsPoint(centered, 5, 5)).toBe(false);
-    const right = findShapeSilhouette(
-      textNode({ text: 'AB', style: { fontSize: 20, align: 'right' } }), wide,
-    )!;
-    expect(pathContainsPoint(right, 395, 5)).toBe(true);
-    expect(pathContainsPoint(right, 5, 5)).toBe(false);
   });
 });
 
@@ -517,8 +232,8 @@ describe('built-in painters need a rect pose', () => {
   const circleNode = <TData>(data: TData) =>
     ({ id: 'c', kind: 'mark', layer: 'default', pose: { cx: 0, cy: 0, r: 5 }, data, parent: null }) as never;
 
-  it('does not hand a circle-posed text node to the text painter', () => {
-    expect(findNodeShape(circleNode({ text: 'hi' }))?.id).not.toBe('kit:text');
+  it('does not hand a circle-posed shape node to the shape painter', () => {
+    expect(findNodeShape(circleNode({ shape: 'ellipse' }))?.id).not.toBe('kit:shape');
   });
 
   it('does not fall back to the rect painter for a circle', () => {
@@ -526,8 +241,8 @@ describe('built-in painters need a rect pose', () => {
   });
 
   it('re-matches when the same data gets a different kind of pose', () => {
-    const data = { text: 'hi' };
-    expect(findNodeShape(node(data))?.id).toBe('kit:text');
-    expect(findNodeShape(circleNode(data))?.id).not.toBe('kit:text');
+    const data = { shape: 'ellipse' };
+    expect(findNodeShape(node(data))?.id).toBe('kit:shape');
+    expect(findNodeShape(circleNode(data))?.id).not.toBe('kit:shape');
   });
 });

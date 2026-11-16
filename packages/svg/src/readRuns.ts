@@ -1,6 +1,7 @@
 /** Reading the runs of a `<text>`: its text and its `<tspan>` children. */
 
-import { type StyledRun, type TextStyle, resolveScreenLength } from '@weasel-js/core';
+import { resolveScreenLength } from '@weasel-js/core';
+import { type StyledRun, type TextStyle } from '@weasel-js/text';
 import { holdsOnlyText, joinLines, type LineTracker, statesLines } from './tspanLines';
 import { TextTurns, turnRuns, turnsOf } from './glyphTurns';
 import { type Piece, placeTspanRun, TextShifts } from './glyphShifts';

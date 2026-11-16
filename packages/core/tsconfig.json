@@ -169,6 +169,8 @@
       "@weasel-js/text-dom": ["../text-dom/src/index.ts"],
       "@weasel-js/text-dom/testing/*": ["../text-dom/src/testing/*"],
       "@weasel-js/text-shaping": ["../text-shaping/src/index.ts"],
+      "@weasel-js/text-tools": ["../text-tools/src/index.ts"],
+      "@weasel-js/text-tools/testing/*": ["../text-tools/src/testing/*"],
       "@weasel-js/theme": ["../theme/src/index.ts"],
       "@weasel-js/theme/react": ["../theme/src/react.tsx"],
       "@weasel-js/theme/engine": ["../theme/src/engine.ts"],

@@ -9,6 +9,7 @@ import type { ActivePaint } from './newShapePaint';
 import { DOCUMENT_UNITS } from './documentUnits';
 import { LayersContent } from './LayersPanel';
 import { DRAW_NODE_ROUTING, drawKindLabel } from './nodeKinds';
+import { DRAW_FEATURES } from './drawFeatures';
 import { WD_RENDERERS } from './paintRenderers';
 import { useSurfaceHost } from './surfaces/hostContext';
 import { useColorContext } from './tools/colorContext';
@@ -22,6 +23,7 @@ export function SelectionProperties(): ReactElement {
       <SelectionPanel
         scene={host.scene}
         selection={host.selection}
+        features={DRAW_FEATURES}
         properties={inferredNodeProperties}
         routing={DRAW_NODE_ROUTING}
         kindLabel={drawKindLabel}

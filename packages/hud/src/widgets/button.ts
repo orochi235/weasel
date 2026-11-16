@@ -2,13 +2,13 @@ import { createEmitter, type Emitter } from '@weasel-js/registry';
 import { createRevision } from '../widget';
 import type { Widget, WidgetBounds, HudDrawCtx, HudKeyEvent, HudPointerEvent } from '../widget';
 import type { DrawCommand } from '@weasel-js/core/renderer';
-import { textCommandFromRuns } from '@weasel-js/core';
 import { roundRectPath } from '@weasel-js/geom';
 import { IDLE_PRESS, isPressKey, pressStep, type PressInput, type PressState } from '@weasel-js/ui-input';
 import {
   envPx, exactly, measureButton, type ButtonFace, type ButtonLayout, type ControlSize, type HeadlessComponent,
 } from '@weasel-js/ui-logic';
 import { hudMeasureEnv } from '../measureEnv';
+import { textCommandFromRuns } from '@weasel-js/core';
 
 /** The events a button reports through `on` / `off`. */
 export type ButtonEvent = 'press' | 'hover' | 'leave';

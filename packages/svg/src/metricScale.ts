@@ -6,8 +6,10 @@
  *
  * A `{ px }` length is pinned to the screen and never scaled.
  */
-import type { MarkerRef, ScreenLength, StyledRun, TextStyle } from '@weasel-js/core';
-import { resolveTextStyle, scaledDash, scaleVertexWidth, type VertexWidth } from '@weasel-js/core';
+import type { MarkerRef, ScreenLength } from '@weasel-js/core';
+import type { StyledRun, TextStyle } from '@weasel-js/text';
+import { scaledDash, scaleVertexWidth, type VertexWidth } from '@weasel-js/core';
+import { resolveTextStyle } from '@weasel-js/text';
 import { carryUserScale } from './userScale';
 
 export function scaleLength(v: ScreenLength, scale: number): ScreenLength {

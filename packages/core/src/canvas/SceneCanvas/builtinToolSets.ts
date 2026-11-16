@@ -15,15 +15,13 @@ export const VIEW_TOOLS: ToolSet<BuiltinToolId> = toolSet('view', ['hand'], { la
 export const SHAPE_TOOLS: ToolSet<BuiltinToolId> = toolSet('shape', kitShapeKindsOf('shape'), { label: 'Shapes' });
 /** The freehand and bezier path tools. */
 export const DRAW_TOOLS: ToolSet<BuiltinToolId> = toolSet('draw', kitShapeKindsOf('draw'), { label: 'Draw' });
-/** The text tools: text and the sticky note. */
-export const TYPE_TOOLS: ToolSet<BuiltinToolId> = toolSet('type', kitShapeKindsOf('type'), { label: 'Type' });
 /** The tools that cut the page itself. */
 export const PAGE_TOOLS: ToolSet<BuiltinToolId> = toolSet('page', ['slice'], { label: 'Page' });
 
 /** The built-in tool sets in palette order: selection and anchor editing, then navigation, then
  *  the tools that make things. Each set is named for the presentation group its tools sit in. */
 export const BUILTIN_TOOL_GROUPS: readonly ToolSet<BuiltinToolId>[] = [
-  SELECT_TOOLS, ANCHOR_TOOLS, VIEW_TOOLS, SHAPE_TOOLS, DRAW_TOOLS, TYPE_TOOLS, PAGE_TOOLS,
+  SELECT_TOOLS, ANCHOR_TOOLS, VIEW_TOOLS, SHAPE_TOOLS, DRAW_TOOLS, PAGE_TOOLS,
 ];
 
 /** The natural order of palette groups, which `ToolPalette` follows unless given its own. */

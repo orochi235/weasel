@@ -6,6 +6,7 @@ import { scenePickSource } from './scenePickSource';
 import { sceneShownToPose } from './derivedPath';
 import { nodeAsShown } from 'core/scene/nodeAsShown';
 import type { DrawCommand } from '@weasel-js/renderer';
+import { boundsOfPath, type Path } from '@weasel-js/geom';
 
 type Layer = 'main';
 interface Data { label: string }
@@ -66,32 +67,32 @@ describe('buildSceneViewCommands — overrides', () => {
     ['', false],
     [' beside a data override', true],
   ])('recomputes a memoized painter after an in-place mutation is committed%s', (_name, withData) => {
-    const scene = createScene<{ text: string; style: { fontFamily: string; fontSize: number } }, Layer>({
+    const scene = createScene<{ shape: string; fill: { paint: { color: string } } }, Layer>({
       systemLayers: [{ id: 'main' }],
     });
     const id = scene.add({
       kind: 'mark', layer: 'main', pose: POSE,
-      data: { text: 'Hello', style: { fontFamily: 'sans-serif', fontSize: 20 } },
+      data: { shape: 'ellipse', fill: { paint: { color: '#abc' } } },
     });
-    const textX = (): number | undefined => {
+    const shapeX = (): number | undefined => {
       let x: number | undefined;
       const find = (cmd: DrawCommand): void => {
-        const c = cmd as { kind: string; x?: number; children?: DrawCommand[] };
-        if (c.kind === 'text') x = c.x;
+        const c = cmd as { kind: string; path?: Path; children?: DrawCommand[] };
+        if (c.kind === 'path' && c.path) x = boundsOfPath(c.path).x;
         for (const child of c.children ?? []) find(child);
       };
       for (const cmd of buildSceneViewCommands(scene, VIEW, defaultDrawOne)) find(cmd);
       return x;
     };
     const buffer = { x: 0, y: 0, width: 10, height: 10 };
-    scene.overrides.set(id, withData ? { pose: buffer, data: (d) => ({ ...d, text: 'Shown' }) } : { pose: buffer });
+    scene.overrides.set(id, withData ? { pose: buffer, data: (d) => ({ ...d, fill: { paint: { color: '#def' } } }) } : { pose: buffer });
 
-    expect(textX()).toBe(0);
+    expect(shapeX()).toBeCloseTo(0);
 
     buffer.x = 120;
     scene.overrides.commit();
 
-    expect(textX()).toBe(120);
+    expect(shapeX()).toBeCloseTo(120);
   });
 
   describe('a data override', () => {

@@ -1,5 +1,5 @@
 import { useMemo, useState, useSyncExternalStore } from 'react';
-import { DrawCanvas, textCommandFromRuns, solid } from '@weasel-js/core';
+import { DrawCanvas, solid, textCommandFromRuns } from '@weasel-js/core';
 import { glyphGeneration, subscribeGlyphReady } from '@weasel-js/font';
 import { DEFAULT_TEXT_STYLE, scriptMetricsFor } from '@weasel-js/text';
 import type { StyledRun, TextStyle } from '@weasel-js/text';

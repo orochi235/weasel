@@ -7,6 +7,8 @@ import { asNodeId, type RectPose } from 'core/scene/types';
 import { effectSourceFor, effectsShowing } from './effectSources';
 import { hiddenSourcesTakenWith } from './hiddenSources';
 import { PATH_EFFECT_DERIVATIONS, withPathEffectsRegistry } from './index';
+import { nodeShapesOf } from 'canvas/nodeShapeRegistry';
+import type { EffectItem } from 'core/scene/pathEffects/source';
 
 const T = asNodeId('t');
 const P = asNodeId('p');
@@ -15,13 +17,16 @@ const S = asNodeId('s');
 const FX = asNodeId('fx');
 const BOX = { x: 0, y: 0, width: 100, height: 20 };
 const line = { path: pathFromD('M0 50 L100 50') };
+const ITEM: EffectItem = { length: 10, middle: 5, parts: [] };
+/** A kind its painter lays out as items, the way `kit:text` lays out its glyphs. */
+const beads = { beads: 3 };
 
 function sceneWith(effect: PathEffect, sources: string[], extra: readonly object[] = []) {
-  return createScene<unknown, 'main', RectPose>({
+  const scene = createScene<unknown, 'main', RectPose>({
     systemLayers: [{ id: 'main' }],
     registry: withPathEffectsRegistry(),
     initial: [
-      { id: T, kind: 'mark', layer: 'main', pose: BOX, data: { text: 'Hi', style: { fontSize: 16 } } },
+      { id: T, kind: 'mark', layer: 'main', pose: BOX, data: beads },
       { id: P, kind: 'mark', layer: 'main', pose: BOX, data: line },
       { id: Q, kind: 'mark', layer: 'main', pose: BOX, data: line },
       { id: S, kind: 'mark', layer: 'main', pose: BOX, data: line },
@@ -29,16 +34,20 @@ function sceneWith(effect: PathEffect, sources: string[], extra: readonly object
       ...(extra as never[]),
     ],
   });
+  nodeShapesOf(scene).register({
+    id: 'test:beads', matches: (n) => typeof n.data === 'object' && n.data !== null && 'beads' in n.data, paint: () => [], effectItems: () => [ITEM],
+  });
+  return scene;
 }
 
 describe('effectSourceFor', () => {
-  it("answers a text-along node's text and path", () => {
+  it("answers a text-along node's items and path", () => {
     const scene = sceneWith({ kind: 'textAlong', hideSources: true }, ['t', 'p']);
     expect(effectSourceFor(scene, FX, 'items')).toBe(T);
     expect(effectSourceFor(scene, FX, 'path')).toBe(P);
   });
 
-  it('answers the path of every along kind, and no text where the shape is not text', () => {
+  it('answers the path of every along kind, and no items where the shape lays out none', () => {
     for (const kind of ['bendAlong', 'repeatAlong'] as const) {
       const scene = sceneWith({ kind, hideSources: true } as PathEffect, ['q', 'p']);
       expect(effectSourceFor(scene, FX, 'path')).toBe(P);

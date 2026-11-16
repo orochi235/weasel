@@ -494,7 +494,7 @@ A drop from your own palette goes through the canvas's `ingestion` handlers:
 a handler gets the drop's world point as `ctx.point` and calls
 `ctx.insert.commit`. Elsewhere, `SceneCanvasApi.clientToWorld` turns a client
 point into a world one. `useStencilInsert` hands any kind that is not a stencil's to
-the `insert` dep it displaced, so core's rect, ellipse and text tools keep working.
+the `insert` dep it displaced, so core's rect and ellipse tools, and text-tools' text tool, keep working.
 
 ### Containers and pools
 

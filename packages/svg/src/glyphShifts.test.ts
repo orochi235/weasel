@@ -2,7 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { registerFont, FIXTURE_FONT } from '@weasel-js/font';
 import { _resetFontRegistryForTests } from '@weasel-js/font/test-seams';
 import { bidi } from '@weasel-js/bidi';
-import { registerBidi } from '@weasel-js/core';
+import { registerBidi } from '@weasel-js/text';
 import { parseSvg } from './parse';
 import { serializeSvg } from './serialize';
 import type { SvgTextNode } from './types';

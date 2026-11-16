@@ -1,12 +1,13 @@
 /**
  * Toolkit Builder — assemble a canvas from one of core's presets and any of its
- * tool presets, with or without `@weasel-js/path-tools`, and inspect the
+ * tool presets, with or without `@weasel-js/path-tools` and `@weasel-js/text-tools`, and inspect the
  * resulting live registry, route table, conflicts, and dispatch trace. Mounted
  * under `#/dev/toolkits` (sibling to `RegistryInspector` at `#/dev/registry`).
  */
 import { asNodeId, type FeaturePreset, type Fill, SceneCanvas, solid, useScene } from '@weasel-js/core';
 import { FEATURE_NAMES, type FeatureName, namedFeatures } from '@weasel-js/core/named-features';
 import { pathTools, usePathToolsTools } from '@weasel-js/path-tools';
+import { textToolsPreset } from '@weasel-js/text-tools';
 import { Select } from '@weasel-js/ui/components/Select';
 import { Switch } from '@weasel-js/ui/components/Switch';
 import { useRegisteredActions } from '@weasel-js/ui/components/Prefs';
@@ -25,7 +26,7 @@ const TOOL_PRESETS = FEATURE_NAMES.filter((f) => f.startsWith('tools:'));
 const BASES = FEATURE_NAMES.filter((f) => !f.startsWith('tools:'));
 const isFeature = (f: string): f is FeatureName => (FEATURE_NAMES as readonly string[]).includes(f);
 
-interface Setup { base: FeatureName; tools: readonly FeatureName[]; paths: boolean }
+interface Setup { base: FeatureName; tools: readonly FeatureName[]; paths: boolean; text: boolean }
 
 function parseSetup(hash: string): Setup {
   const q = hash.includes('?') ? hash.slice(hash.indexOf('?') + 1) : '';
@@ -36,10 +37,12 @@ function parseSetup(hash: string): Setup {
     base: isFeature(base) ? base : 'draw',
     tools: tools === null ? ['tools:shape'] : tools.split(',').filter(isFeature),
     paths: params.get('paths') !== '0',
+    text: params.get('text') !== '0',
   };
 }
 
-const setupKey = ({ base, tools, paths }: Setup): string => `base=${base}&tools=${tools.join(',')}${paths ? '' : '&paths=0'}`;
+const setupKey = ({ base, tools, paths, text }: Setup): string =>
+  `base=${base}&tools=${tools.join(',')}${paths ? '' : '&paths=0'}${text ? '' : '&text=0'}`;
 
 function writeSetup(setup: Setup): void {
   const next = `#/dev/toolkits?${setupKey(setup)}`;
@@ -55,7 +58,7 @@ const INITIAL_NODES = [
   { kind: 'mark' as const, id: asNodeId('r3'), layer: 'default' as const, data: { fill: { paint: solid('#5a8bd0') } }, pose: { x: 140, y: 220, width: 160, height: 60 } },
 ];
 
-function ToolkitForSetup({ base, tools, paths }: Setup): ReactElement {
+function ToolkitForSetup({ base, tools, paths, text }: Setup): ReactElement {
   const scene = useScene<ShapeData, 'default', ShapePose>({
     systemLayers: [{ id: 'default' }],
     initial: INITIAL_NODES,
@@ -63,7 +66,9 @@ function ToolkitForSetup({ base, tools, paths }: Setup): ReactElement {
   const reflection = useToolReflection();
   const actions = useRegisteredActions();
   const pathToolsTools = usePathToolsTools();
-  const features: FeaturePreset[] = [...namedFeatures(base, ...tools), ...(paths ? [pathTools] : [])];
+  const features: FeaturePreset[] = [
+    ...namedFeatures(base, ...tools), ...(paths ? [pathTools] : []), ...(text ? [textToolsPreset] : []),
+  ];
 
   return (
     <div className={s.layout}>
@@ -149,13 +154,16 @@ export function ToolkitBuilder(): ReactElement {
           <Switch isSelected={setup.paths} onChange={(next) => setSetup((prev) => ({ ...prev, paths: next }))}>
             path-tools
           </Switch>
+          <Switch isSelected={setup.text} onChange={(next) => setSetup((prev) => ({ ...prev, text: next }))}>
+            text-tools
+          </Switch>
         </>
       }
     >
       <div className={s.root}>
         <p className={s.subtitle}>
           Mount a SceneCanvas with the chosen preset and tool presets, and with
-          path-tools' presets and tools when it is on, then inspect the live tool
+          path-tools' and text-tools' presets and tools when each is on, then inspect the live tool
           set, action registry, route table, and dispatch trace it produces.
         </p>
         {/* Key by the setup so SceneCanvas rebuilds cleanly when it changes. */}

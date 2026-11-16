@@ -3,7 +3,8 @@
  * entry, so an undo after typing takes the label away rather than leaving an empty one on the edge.
  */
 import { act, renderHook } from '@testing-library/react';
-import { createScene, useSceneTextEdit, type ActionDeps, type Scene } from '@weasel-js/core';
+import { createScene, type ActionDeps, type Scene } from '@weasel-js/core';
+import { useSceneTextEdit } from '@weasel-js/text-tools';
 import { afterEach, describe, expect, it } from 'vitest';
 import { EDGE_DERIVE_PATH } from './edge';
 import { dropEmptyEdgeLabel, editEdgeLabelAction } from './edgeLabel';

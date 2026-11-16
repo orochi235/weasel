@@ -6,34 +6,9 @@
  */
 import { textFrameFields } from './svgNote';
 import {
-  type Fill,
-  type Path,
-  type PlacedPage,
-  type Scene,
-  type Stroke,
-  boundsOfPath,
-  composesFrames,
-  definesFrame,
-  derivedDepOf,
-  documentOf,
-  embedWeaselMetadataInSvg,
-  inheritedPaintIn,
-  withInheritedPaint,
-  fillInPoseFrame,
-  isAnnotationNode,
-  layoutTextPose,
-  pageOfNode,
-  pathEffectOf,
-  pathEffectParts,
-  resolveFill,
-  resolvePartPaint,
-  resolveStroke,
-  pathInPoseFrame,
-  shapeGeneratorOf,
-  unionAABB,
-  type ShapeGenerator,
-  worldPoses,
+  type Fill, type Path, type PlacedPage, type Scene, type Stroke, boundsOfPath, composesFrames, definesFrame, derivedDepOf, documentOf, embedWeaselMetadataInSvg, inheritedPaintIn, withInheritedPaint, fillInPoseFrame, isAnnotationNode, pageOfNode, pathEffectOf, pathEffectParts, resolveFill, resolvePartPaint, resolveStroke, pathInPoseFrame, shapeGeneratorOf, unionAABB, type ShapeGenerator, worldPoses,
 } from '@weasel-js/core';
+import { layoutTextPose } from '@weasel-js/text';
 import {
   serializeSvg,
   warmSvg,

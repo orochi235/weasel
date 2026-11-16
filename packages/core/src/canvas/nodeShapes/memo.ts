@@ -8,7 +8,7 @@
  * ambient readiness.
  *
  * **Only for painters that are a pure function of `(node, pose, data)`.**
- * `kit:text` and `kit:image` do not qualify.
+ * `kit:image` and text-tools' `kit:text` do not qualify.
  */
 export const PAINT_SLOT = 'shape:paint';
 

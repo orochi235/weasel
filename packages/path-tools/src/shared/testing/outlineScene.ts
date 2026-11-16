@@ -10,8 +10,9 @@ import { loadFontOutlines, registerFontOutlines } from '@weasel-js/font';
 import { _resetFontOutlinesForTests, _resetFontRegistryForTests } from '@weasel-js/font/test-seams';
 import { boundsOfPath, type Path, type Rect } from '@weasel-js/geom';
 import {
-  asNodeId, type CreateOutlinesAdapter, createScene, defaultCommitAdapter, type NodeId, sceneNodeOutline, type TextOutlineSource,
+  asNodeId, type CreateOutlinesAdapter, createScene, defaultCommitAdapter, type NodeId, sceneNodeOutline,
 } from '@weasel-js/core';
+import { type TextOutlineSource } from '@weasel-js/text';
 
 const INTER_TTF = resolve(import.meta.dirname, '../../../../../assets/fonts/inter/inter.ttf');
 

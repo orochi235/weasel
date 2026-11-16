@@ -10,7 +10,7 @@ import { toPlane } from 'core/viewport/parallax';
  * The point query `useSelectTool`'s default `pickEvery` asks of a bare adapter:
  * a point at (px, py) with `t` world units of slop. AABB first (cheap), then
  * the painter's ink when `preciseLeaves` asks for it and it is available. A
- * painter with no `silhouette` — or one that returns null, as `kit:text` does
+ * painter with no `silhouette` — or one that returns null, as text-tools' `kit:text` does
  * for an empty node — keeps the AABB answer.
  *
  * The AABB pre-filter is grown by the slop: a shape's outline, and the slop

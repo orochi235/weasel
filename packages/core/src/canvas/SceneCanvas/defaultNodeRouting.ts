@@ -1,6 +1,5 @@
 import { KIT_SHAPE_KINDS } from 'core/shapeKinds';
 import type { NodeRoutingEntry } from 'core/scene/NodeRouting';
-import { isTextData } from '@weasel-js/text';
 
 function isObj(d: unknown): d is Record<string, unknown> {
   return typeof d === 'object' && d !== null;
@@ -26,7 +25,7 @@ export const booleanGroupRouting: NodeRoutingEntry = {
  *
  * Spread it into `<SceneCanvas routing={...}>` when scene data carries a
  * `kind` tag. Data with no `kind` that follows the kit's common shapes
- * (`{ path }`, `{ text }`, `{ image }`) wants `inferredNodeRouting`, which
+ * (`{ path }`, `{ image }`) wants `inferredNodeRouting`, which
  * SceneCanvas applies when `routing` is unset.
  */
 export const defaultNodeRouting: readonly NodeRoutingEntry[] = KIT_SHAPE_KINDS.map(
@@ -42,13 +41,13 @@ export const defaultNodeRouting: readonly NodeRoutingEntry[] = KIT_SHAPE_KINDS.m
  * Routing classifiers used when a consumer doesn't pass `routing` to
  * `<SceneCanvas>`, keyed on the data's shape rather than a `data.kind` tag.
  *
- * Order matters: `'text'` beats `'path'` so an SVG-imported text node
- * carrying a fallback `path` routes to text-edit.
+ * A preset's routing classifies ahead of these: `@weasel-js/text-tools`'
+ * `'text'` beats `'path'`, so an SVG-imported text node carrying a fallback
+ * `path` routes to text-edit.
  */
 export const inferredNodeRouting: readonly NodeRoutingEntry[] = [
   groupNodeRouting,
   booleanGroupRouting,
-  { name: 'text', matches: isTextData },
   { name: 'path', matches: (d) => isObj(d) && d.path != null },
   { name: 'image', matches: (d) => isObj(d) && d.image != null },
 ];

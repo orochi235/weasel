@@ -11,7 +11,8 @@
  * holding the node's frame and opacity, so the clip and mask share its space
  * and the parts composite as one layer.
  */
-import type { Stroke, StyledRun, TextPoseLayout } from '@weasel-js/core';
+import type { Stroke } from '@weasel-js/core';
+import type { StyledRun, TextPoseLayout } from '@weasel-js/text';
 import { maxOf } from '@weasel-js/geom';
 import type { PaintServerRegistry } from './gradients';
 import { WEASEL_NS_PREFIX } from './gradients';

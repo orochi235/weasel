@@ -10,12 +10,14 @@ import {
   type SvgKitLeafData,
   type SvgKitPose,
 } from '@weasel-js/svg';
+import { createTextPreset } from '@weasel-js/text-tools';
 import { SegmentedBar } from '@weasel-js/ui/components/Segmented';
 import s from './SvgDemo.module.css';
 import { DemoStage, DemoStageGroup } from './DemoStage';
 
 const W = 420, H = 320;
 const VIEW = { x: 0, y: 0, width: W, height: H };
+const TEXT = createTextPreset({ editor: false });
 
 type LayerId = 'default';
 
@@ -159,7 +161,7 @@ function SvgRoundTrip() {
           </div>
           <DemoStage width={W} height={H} className={s.stage}>
             <SceneCanvas
-              features={[pickPreset, movePreset, transformPreset]}
+              features={[pickPreset, movePreset, transformPreset, TEXT]}
               className="ckd-canvas"
               backgroundFill={{ color: '#ffffff' }}
               scene={scene}

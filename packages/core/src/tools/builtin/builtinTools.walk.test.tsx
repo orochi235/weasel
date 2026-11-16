@@ -141,8 +141,6 @@ const WALKS: Record<BuiltinToolId, (w: Walk) => void> = {
   polygon: insertsOnDrag,
   star: insertsOnDrag,
   pencil: insertsOnDrag,
-  text: insertsOnDrag,
-  sticky: insertsOnDrag,
   pen: (w) => {
     w.click(240, 240);
     w.click(320, 240);

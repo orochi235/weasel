@@ -1,4 +1,4 @@
-import type { TextPoseLayout } from '@weasel-js/core';
+import type { TextPoseLayout } from '@weasel-js/text';
 import type { NamespaceMeta, SvgTextNode } from './types';
 
 /**

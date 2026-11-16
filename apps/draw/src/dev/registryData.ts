@@ -1,5 +1,6 @@
 import * as Weasel from '@weasel-js/core';
-import { defaultNodeProperties, type NodePropertiesEntry } from '@weasel-js/core';
+import { defaultNodeProperties, nodeTraitsOf, type NodePropertiesEntry } from '@weasel-js/core';
+import { DRAW_FEATURES } from '../drawFeatures';
 import { FEATURE_NAMES, FEATURE_PRESETS } from '@weasel-js/core/named-features';
 import { parseRoute as kitParseRoute, type ParsedRoute as KitParsedRoute } from '@weasel-js/core/routing';
 import { type PrefObject, prefSectionLeaves } from '@weasel-js/prefs';
@@ -196,7 +197,7 @@ function kindIcon(id: Weasel.ShapeKind): ReactNode {
 export function collectPropertiesTrait(
   live?: readonly NodePropertiesEntry[],
 ): readonly PropertiesKindEntry[] {
-  const source = live ?? defaultNodeProperties;
+  const source = live ?? nodeTraitsOf(DRAW_FEATURES, { properties: defaultNodeProperties }).properties;
   // An object leaf's fields are what the kind exposes; the leaf itself is
   // the container.
   const leafPaths = (schema: NodePropertiesEntry['schema']): string[] =>

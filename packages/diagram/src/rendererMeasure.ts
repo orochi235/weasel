@@ -1,4 +1,4 @@
-import { measureTextBounds } from '@weasel-js/core';
+import { measureTextBounds } from '@weasel-js/text';
 import type { MeasureRowText } from './body';
 import { faceCapCenter } from './faceCapCenter';
 import { weightOf } from './rowMeasure';

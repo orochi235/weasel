@@ -1,6 +1,6 @@
 import { prefUnit, type PrefBoundAt, type PrefBooleanEncoding, type PrefEnum, type PrefEnumEncoding, type PrefLeaf, type PrefNumberUnit, type PrefSection } from '@weasel-js/prefs';
 import { inferredNodeRouting } from './defaultNodeRouting';
-import { KIT_SHAPE_KINDS, shapeKindInfo } from 'core/shapeKinds';
+import { KIT_SHAPE_KINDS } from 'core/shapeKinds';
 import { listMarkers, markerGeneration } from '@weasel-js/stroke';
 import { dashForStrokeStyle, strokeDashStyleOf } from '@weasel-js/paint';
 import type { NodePropertiesEntry } from 'core/scene/NodeProperties';
@@ -63,13 +63,6 @@ const markerEncoding: PrefEnumEncoding = {
   write: (value) => (value === '' ? undefined : value),
 };
 
-/** `TextStyle.fontStyle` as an Italic flag. Off removes the field rather than
- *  storing `'normal'`, which is what an absent one already means. */
-const italicEncoding: PrefBooleanEncoding = {
-  read: (stored) => stored === 'italic',
-  write: (on) => (on ? 'italic' : undefined),
-};
-
 const DEFAULT_NIB = { angle: Math.PI / 6, ratio: 0.25 };
 
 /** `Stroke.nib` as a flag: on keeps the nib held, or starts a default one,
@@ -85,20 +78,6 @@ const nibEncoding: PrefBooleanEncoding = {
 const transformEncoding: PrefBooleanEncoding = {
   read: (stored) => poseLinearOf({ transform: stored }) !== null,
   write: (on, pose) => (on ? pose?.transform : undefined),
-};
-
-/** `data.overflow` as a flag: on is `'clip'`, and off removes the key, since
- *  absent draws past the box. */
-const overflowEncoding: PrefBooleanEncoding = {
-  read: (stored) => stored === 'clip',
-  write: (on) => (on ? 'clip' : undefined),
-};
-
-/** `data.fit` as a flag: on is `'shrink'`, and off removes the key, since
- *  absent sets the text at its own size. */
-const fitEncoding: PrefBooleanEncoding = {
-  read: (stored) => stored === 'shrink',
-  write: (on) => (on ? 'shrink' : undefined),
 };
 
 type MarkerOptions = PrefEnum['options'];
@@ -162,18 +141,6 @@ const FILL_LEAF: PrefLeaf = {
   block: true,
   children: {
     paint: { kind: 'paint', name: 'Fill', description: 'Fill paint.', default: { kind: 'solid', color: '#000000ff' }, alpha: true, block: true },
-  },
-};
-
-/** A text node's `data.background`: a `Fill`, as `data.fill` is, painted over
- *  the whole box rather than the glyphs. */
-const BACKGROUND_LEAF: PrefLeaf = {
-  ...FILL_LEAF,
-  name: 'Background',
-  description: 'Paint behind the text, over the whole box.',
-  default: { paint: { kind: 'solid', color: '#ffffffff' } },
-  children: {
-    paint: { kind: 'paint', name: 'Background', description: 'Paint behind the text.', default: { kind: 'solid', color: '#ffffffff' }, alpha: true, block: true },
   },
 };
 
@@ -250,32 +217,32 @@ const LAYOUT: PrefSection = {
   },
 };
 
+/** What {@link shapePropertiesSchema} adds to the standard sections, for a kind with fields of its own. */
+export interface ShapePropertiesExtras {
+  /** Sections ahead of Appearance: what the node *is* outranks how it is painted, as a text node's copy does. */
+  readonly lead?: Readonly<Record<string, PrefSection>>;
+  /** Paints between the fill and the stroke, as a text node's background. */
+  readonly appearance?: Readonly<Record<string, PrefLeaf>>;
+  /** Sections after Appearance. */
+  readonly trail?: Readonly<Record<string, PrefSection>>;
+}
+
 /** Build the standard shape schema — Layout (pose box + rotation) +
- *  Appearance (fill / stroke), optionally a Text group. Matches the kit's
- *  builtin-shape data template (`{ path, fill, stroke?, text? }`,
+ *  Appearance (fill / stroke), and whatever a kind's `extras` add. Matches the
+ *  kit's builtin-shape data template (`{ path, fill, stroke? }`,
  *  `useBuiltinShapeTools`). */
-function shapeSchema(opts: { text?: boolean; generators?: readonly string[]; boolean?: boolean } = {}): PrefSection {
+export function shapePropertiesSchema(extras: ShapePropertiesExtras = {}): PrefSection {
+  return shapeSchema({ ...extras });
+}
+
+function shapeSchema(opts: ShapePropertiesExtras & { generators?: readonly string[]; boolean?: boolean } = {}): PrefSection {
   return {
     name: 'Properties',
     members: {
       layout: LAYOUT,
       ...(opts.boolean ? { boolean: BOOLEAN_SECTION } : {}),
       ...Object.fromEntries((opts.generators ?? []).map((g) => [g, SHAPE_GENERATOR_SECTIONS[g]])),
-      // What the node *is* outranks how it is painted: a text node's copy is
-      // the first thing an editor reaches for.
-      ...(opts.text
-        ? {
-            content: {
-              name: 'Content',
-              members: {
-                // `block`: the content is the section, so a 64px label column
-                // reading "Text" inside a section reading "Text" is one word
-                // twice and a narrower field for the sake of it.
-                'data.text': { kind: 'string', name: 'Text', description: 'Text content.', absentIsDefault: true, default: '', block: true },
-              },
-            },
-          }
-        : {}),
+      ...opts.lead,
       appearance: {
         // Headless: `Fill` and `Stroke` head their own blocks, and an
         // `Appearance` rule over them names neither of the two paints a
@@ -283,77 +250,14 @@ function shapeSchema(opts: { text?: boolean; generators?: readonly string[]; boo
         name: '',
         members: {
           'data.fill': FILL_LEAF,
-          ...(opts.text ? { 'data.background': BACKGROUND_LEAF } : {}),
+          ...opts.appearance,
           // An object leaf: `data.stroke` is a whole `Stroke`, and its fields
           // belong to one value. Sibling leaves addressing into it would each
           // write one field of a value they can only half see.
           'data.stroke': STROKE_LEAF,
         },
       },
-      ...(opts.text
-        ? {
-            text: {
-              // Headless: `Character` and `Paragraph` carry the labels, and a
-              // `Typography` heading over them names nothing a reader can't
-              // already see.
-              name: '',
-              members: {
-                // One object leaf, not a row of siblings addressing into it:
-                // `data.style` is a `TextStyle`, and its character and
-                // paragraph fields are one value that reads as two lists.
-                // The groups head those lists and contribute nothing to the
-                // path — a field inside one is still a field of the style.
-                'data.style': {
-                  kind: 'object',
-                  name: 'Style',
-                  description: 'Typography for the whole node. Its color is the node\'s own `data.fill`, in Appearance.',
-                  default: {},
-                  absentIsDefault: true,
-                  block: true,
-                  children: {
-                    character: {
-                      name: 'Character',
-                      members: {
-                        fontFamily: { kind: 'font-family', name: 'Font', description: 'Registered font family.', absentIsDefault: true, default: 'sans-serif' },
-                        fontSize: { kind: 'number', display: TWO_PLACES, name: 'Size', description: 'Font size, world units.', absentIsDefault: true, default: 16, min: 1, step: 1, pair: { with: 'data.style.fontWeight', label: 'Size / weight' } },
-                        fontWeight: { kind: 'font-weight', name: 'Weight', description: 'Font weight, from the faces the family has.', absentIsDefault: true, default: 400 },
-                        // One row of segments, the strip every text editor
-                        // draws: the slant, the three rules, then the two
-                        // scripts. Italic is a flag here although the field
-                        // is `fontStyle`, whose only other value is upright.
-                        fontStyle: { kind: 'boolean', name: 'Italic', description: 'Set the text in its italic face.', default: false, control: 'toggle', icon: icon('italic'), short: ['I'], pair: { with: ['data.style.underline', 'data.style.strikethrough', 'data.style.overline', 'data.style.script'], label: 'Style' }, encoding: italicEncoding },
-                        underline: { kind: 'boolean', name: 'Underline', description: 'Underline the text.', absentIsDefault: true, default: false, control: 'toggle', icon: icon('underline'), short: ['U'] },
-                        strikethrough: { kind: 'boolean', name: 'Strikethrough', description: 'Strike through the text.', absentIsDefault: true, default: false, control: 'toggle', icon: icon('strikethrough'), short: ['S'] },
-                        overline: { kind: 'boolean', name: 'Overline', description: 'Rule the text above its ascent.', absentIsDefault: true, default: false, control: 'toggle', icon: icon('overline'), short: ['O'] },
-                        script: { kind: 'enum', name: 'Script', description: 'Set the text smaller and raised or lowered, on the line it would otherwise hold.', default: undefined, control: 'toggle', clearable: true, options: [{ value: 'super', label: 'Superscript', icon: icon('superscript') }, { value: 'sub', label: 'Subscript', icon: icon('subscript') }] },
-                        letterSpacing: { kind: 'number', display: TWO_PLACES, name: 'Tracking', description: 'Extra advance per glyph, world units.', absentIsDefault: true, default: 0, step: 0.1 },
-                        textTransform: { kind: 'enum', name: 'Case', description: 'Draw the text in capitals, lowercase or title case. The text itself is unchanged.', absentIsDefault: true, default: 'none', control: 'toggle', options: [{ value: 'none', label: 'None', short: ['–'] }, { value: 'uppercase', label: 'Uppercase', short: ['AA'] }, { value: 'lowercase', label: 'Lowercase', short: ['aa'] }, { value: 'capitalize', label: 'Capitalize', short: ['Aa'] }] },
-                        fontVariantCaps: { kind: 'enum', name: 'Small caps', description: 'Draw lowercase letters as smaller capitals. The text itself is unchanged.', absentIsDefault: true, default: 'normal', control: 'toggle', options: [{ value: 'normal', label: 'Normal', short: ['–'] }, { value: 'small-caps', label: 'Small caps', short: ['Sc'] }] },
-                        lang: { kind: 'string', name: 'Language', description: 'A BCP 47 tag, such as sr or ur, that picks the forms a font draws for that language. Empty means none.', default: '' },
-                      },
-                    },
-                    paragraph: {
-                      name: 'Paragraph',
-                      members: {
-                        lineHeight: { kind: 'number', display: TWO_PLACES, name: 'Leading', description: 'Line height as a multiple of font size.', absentIsDefault: true, default: 1.2, min: 0.5, step: 0.1 },
-                        wrap: { kind: 'boolean', name: 'Wrap', description: 'Break lines between words at the box width.', absentIsDefault: true, default: false, control: 'switch' },
-                        tabSize: { kind: 'number', display: TWO_PLACES, name: 'Tab size', description: 'Distance between tab stops, in spaces.', absentIsDefault: true, default: 8, min: 1, step: 1 },
-                        direction: { kind: 'enum', name: 'Direction', description: 'Reading direction. Auto takes each paragraph\'s from its first strong character.', absentIsDefault: true, default: 'auto', control: 'toggle', options: [{ value: 'auto', label: 'Auto', short: ['Auto'] }, { value: 'ltr', label: 'Left to right', short: ['LTR'] }, { value: 'rtl', label: 'Right to left', short: ['RTL'] }] },
-                        // Last, so the box's vertical alignment — a field of
-                        // the node rather than of its style — follows it.
-                        align: { kind: 'enum', name: 'Align', description: 'Horizontal alignment.', absentIsDefault: true, default: 'left', control: 'toggle', options: [{ value: 'left', label: 'Left', icon: icon('textAlignLeft') }, { value: 'center', label: 'Center', icon: icon('textAlignCenter') }, { value: 'right', label: 'Right', icon: icon('textAlignRight') }, { value: 'justify', label: 'Justify', icon: icon('textAlignJustify') }, { value: 'start', label: 'Start', icon: icon('textAlignStart') }, { value: 'end', label: 'End', icon: icon('textAlignEnd') }] },
-                      },
-                    },
-                  },
-                },
-                'data.padding': { kind: 'number', display: TWO_PLACES, measure: 'length', name: 'Padding', description: 'Inset from the box to the text on every side, world units.', absentIsDefault: true, default: 0, min: 0, step: 1 },
-                'data.verticalAlign': { kind: 'enum', name: 'Vertical', description: 'Where the lines sit in the box\'s height.', absentIsDefault: true, default: 'top', control: 'toggle', options: [{ value: 'top', label: 'Top', icon: icon('textAlignTop') }, { value: 'center', label: 'Middle', icon: icon('textAlignMiddle') }, { value: 'bottom', label: 'Bottom', icon: icon('textAlignBottom') }] },
-                'data.overflow': { kind: 'boolean', name: 'Clip', description: 'Cut the text at the box\'s edge instead of drawing it past.', default: false, control: 'switch', encoding: overflowEncoding },
-                'data.fit': { kind: 'boolean', name: 'Shrink to fit', description: 'Set the text smaller, never larger, until its lines fit the box.', default: false, control: 'switch', encoding: fitEncoding },
-              },
-            },
-          }
-        : {}),
+      ...opts.trail,
     },
   };
 }
@@ -369,7 +273,7 @@ function shapeEntry(name: string): NodePropertiesEntry {
   const generators = GENERATED_KINDS[name];
   return {
     name,
-    schema: shapeSchema({ text: shapeKindInfo(name)?.text ?? false, boolean: name === 'boolean', ...(generators ? { generators } : {}) }),
+    schema: shapeSchema({ boolean: name === 'boolean', ...(generators ? { generators } : {}) }),
     ...(generators ? { settle: settleShapeGenerator } : {}),
   };
 }
@@ -377,14 +281,14 @@ function shapeEntry(name: string): NodePropertiesEntry {
 /**
  * Default properties-trait entries covering the kit's built-in shape
  * kinds (`KIT_SHAPE_KINDS`) — the sibling of `defaultNodeRouting`. Every
- * kind gets the standard box schema; `text` adds a Text group. In
+ * kind gets the standard box schema. In
  * lockstep with `KIT_SHAPE_KINDS` by construction (derived via `.map`).
  */
 export const defaultNodeProperties: readonly NodePropertiesEntry[] = KIT_SHAPE_KINDS.map(shapeEntry);
 
 /**
  * Properties-trait entries for the *inferred* routing kinds
- * (`inferredNodeRouting`: `text` / `path` / `image`) — the vocabulary
+ * (`inferredNodeRouting`: `group` / `boolean` / `path` / `image`) — the vocabulary
  * consumers produce when they don't tag `data.kind` (e.g. WeaselDraw).
  * In lockstep with `inferredNodeRouting` by construction.
  */

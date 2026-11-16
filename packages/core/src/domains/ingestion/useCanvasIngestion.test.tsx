@@ -105,20 +105,20 @@ describe('useCanvasIngestion: handlers', () => {
   it('are the canvas’s own and every kit handler, and none goes in the page-wide registry', () => {
     const before = ids(getContentHandlers());
     const { result } = mount({ options: { handlers: [entry] } });
-    expect(ids(result.current.handlers)).toEqual(['app:x', 'kit:image', 'kit:svg', 'kit:weasel-json', 'kit:text']);
+    expect(ids(result.current.handlers)).toEqual(['app:x', 'kit:image', 'kit:svg', 'kit:weasel-json']);
     expect(ids(getContentHandlers())).toEqual(before);
   });
 
   it('kitHandlers false keeps only the canvas’s own; omit drops the ids named', () => {
     expect(ids(mount({ options: { handlers: [entry], kitHandlers: false } }).result.current.handlers)).toEqual(['app:x']);
-    expect(ids(mount({ options: { kitHandlers: { omit: ['kit:text'] } } }).result.current.handlers))
-      .toEqual(['kit:image', 'kit:svg', 'kit:weasel-json']);
+    expect(ids(mount({ options: { kitHandlers: { omit: ['kit:svg'] } } }).result.current.handlers))
+      .toEqual(['kit:image', 'kit:weasel-json']);
   });
 
   it('keeps one list across renders while the omit list is the same', () => {
-    const { result, rerender } = mount({ options: { kitHandlers: { omit: ['kit:text'] } } });
+    const { result, rerender } = mount({ options: { kitHandlers: { omit: ['kit:svg'] } } });
     const first = result.current.handlers;
-    rerender({ options: { kitHandlers: { omit: ['kit:text'] } } });
+    rerender({ options: { kitHandlers: { omit: ['kit:svg'] } } });
     expect(result.current.handlers).toBe(first);
   });
 

@@ -51,7 +51,7 @@ export const insertAction: Action = inPlane(defineAction({
   group: 'insert',
   eligible: { capability: 'creates-shapes' },
   modifierRoles: SNAP_ROLES,
-  requires: ['insert', 'insertLive', 'insertInto', 'canDropInto', 'selection', 'snap', 'textEdit', 'scene', 'applyOps', 'view', 'kitSettings'],
+  requires: ['insert', 'insertLive', 'insertInto', 'canDropInto', 'selection', 'snap', 'scene', 'applyOps', 'view', 'kitSettings'],
   params: insertParams,
   invoker: {
     timing: 'ongoing',

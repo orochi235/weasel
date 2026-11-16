@@ -1,22 +1,9 @@
 import type {
-  BooleanShapeOp,
-  ImageNodeData,
-  Path,
-  Stroke,
-  StyledRun,
-  TextStyle,
-  TextVerticalAlign,
-  TextFit,
-  Fill,
-  Inherit,
-  PathEffect,
-  Scene,
-  SceneRegistry,
-  ShapeGenerator,
-  MinSize,
-  TextNodeData,
+  BooleanShapeOp, ImageNodeData, Path, Stroke, Fill, Inherit, PathEffect, Scene, SceneRegistry, ShapeGenerator, MinSize,
 } from '@weasel-js/core';
-import { UNION_OF_CHILDREN, unionOfChildren, withPathEffectsRegistry } from '@weasel-js/core';
+import type { StyledRun, TextStyle, TextVerticalAlign, TextFit } from '@weasel-js/text';
+import { TEXT_PAINTER, type TextNodeData } from '@weasel-js/text-tools';
+import { registerNodeShape, UNION_OF_CHILDREN, unionOfChildren, withPathEffectsRegistry } from '@weasel-js/core';
 import { symmetryRegistry } from '@weasel-js/symmetry';
 
 // ─── Document / scene shapes ────────────────────────────────────────────────
@@ -71,6 +58,9 @@ export interface WeaselDrawData extends TextFrameData {
   boolean?: BooleanShapeOp;
   label?: string;
 }
+
+// A drawing lays out its text with no canvas too: an export, or a document reopened and derived before one mounts.
+registerNodeShape(TEXT_PAINTER);
 
 /** The functions a draw document's nodes name by key, for the scene and for
  *  reading a saved document back: a group's hug of its members, a symmetry

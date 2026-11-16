@@ -1,4 +1,5 @@
-import { SceneCanvas, asNodeId, solid, stickyData, useScene, useSelection, editPreset, movePreset, pickPreset, resizePreset, WeaselProvider } from '@weasel-js/core';
+import { SceneCanvas, asNodeId, solid, useScene, useSelection, editPreset, movePreset, pickPreset, resizePreset, WeaselProvider } from '@weasel-js/core';
+import { stickyData, textToolsPreset } from '@weasel-js/text-tools';
 import { ToolPalette } from '@weasel-js/ui/components/ToolPalette';
 import { DemoStage } from './DemoStage';
 
@@ -33,8 +34,8 @@ export function StickyNotesDemo() {
             backgroundFill={{ color: '#f4f1ea' }}
             scene={scene}
             selection={selection}
-            features={[pickPreset, movePreset, resizePreset, editPreset]}
-            defaultTools={['sticky', 'pencil', 'text']}
+            features={[pickPreset, movePreset, resizePreset, editPreset, textToolsPreset]}
+            defaultTools={['pencil']}
           />
         </DemoStage>
       </div>

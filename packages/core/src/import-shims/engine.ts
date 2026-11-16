@@ -162,7 +162,7 @@ export { drawnBoxes, poseBoxes } from '../interactions/actions/drawnBoxes';
 export type { DrawnBoxes, DrawnBoxesDeps, DrawnBoxesSource } from '../interactions/actions/drawnBoxes';
 export { refusalOf } from '../interactions/actions/dropVerdict';
 export type { DropRefusal, DropVerdict } from '../interactions/actions/dropVerdict';
-export type { ClipboardDep, SliceDep, TextEditDep } from '../interactions/actions/editDeps';
+export type { ClipboardDep, SliceDep } from '../interactions/actions/editDeps';
 export type { ResizePolicy, ViewApi } from '../interactions/actions/engineDeps';
 export { ENGINE_STANDARD_ACTIONS } from '../interactions/actions/engineStandardActions';
 export { PATH_GEOMETRY_PROJECTION } from '../interactions/actions/geometryProjection';

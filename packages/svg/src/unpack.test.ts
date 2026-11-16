@@ -3,7 +3,8 @@ import type { SvgNode } from './types';
 import { svgNodesToKitDrafts } from './unpack';
 import { unpackSvgFiles } from './unpackFiles';
 import { parseSvg } from './parse';
-import { DEFAULT_TEXT_FILL, RIGID_POSE_COMPOSITION, getMarker, INHERIT, type IngestCtx, type Op } from '@weasel-js/core';
+import { RIGID_POSE_COMPOSITION, getMarker, INHERIT, type IngestCtx, type Op } from '@weasel-js/core';
+import { DEFAULT_TEXT_FILL } from '@weasel-js/text';
 import { _resetMarkersForTests } from '@weasel-js/core/test-seams';
 
 const rectNode = (x: number, y: number, w: number, h: number, extra: Record<string, unknown> = {}): SvgNode => ({

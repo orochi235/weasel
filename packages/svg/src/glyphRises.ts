@@ -4,7 +4,7 @@
  * carry that as `baselineShift`, one run per stretch of glyphs at one height,
  * until a new line or another move puts the pen somewhere else.
  */
-import { resolveRunFace, resolveTextStyle, scriptMetricsFor, type StyledRun, type TextStyle } from '@weasel-js/core';
+import { resolveRunFace, resolveTextStyle, scriptMetricsFor, type StyledRun, type TextStyle } from '@weasel-js/text';
 import { collapses, readList } from './glyphShifts';
 import { type LineTracker, writtenByWeasel } from './tspanLines';
 

@@ -1,7 +1,7 @@
 import {
-  isPaintKindKnown, loadTextOutlines, warmFonts, warmPaintKinds, type FontRequest, type RenderDiagnostic, type RenderDiagnosticSink,
-  type RenderNeeds,
+  isPaintKindKnown, warmFonts, warmPaintKinds, type FontRequest, type RenderDiagnostic, type RenderDiagnosticSink, type RenderNeeds,
 } from '@weasel-js/core';
+import { loadTextOutlines } from '@weasel-js/text';
 import type { SerializeOptions, SvgNode, SvgTextNode } from './types';
 import { PaintServerRegistry } from './gradients';
 import { registerPaintServers } from './serialize';

@@ -19,22 +19,9 @@ import { groupTakes, NO_TAKES, takesOf, type Takes } from './draftTakes';
 import { framedTextDraft, framedTextParts, type FramedTextParts } from './framedText';
 import { groupBoxParts } from './groupBox';
 import {
-  boundsOfPath,
-  DEFAULT_TEXT_FILL,
-  fillToBoundsFrame,
-  getMarker,
-  INHERIT,
-  registerMarker,
-  solid,
-  unionAABB,
-  type BooleanShapeOp,
-  type Paint,
-  type ImageNodeData,
-  type NodeClip,
-  type Path,
-  type Stroke,
-  type StyledRun,
+  boundsOfPath, fillToBoundsFrame, getMarker, INHERIT, registerMarker, solid, unionAABB, type BooleanShapeOp, type Paint, type ImageNodeData, type NodeClip, type Path, type Stroke,
 } from '@weasel-js/core';
+import { DEFAULT_TEXT_FILL, type StyledRun } from '@weasel-js/text';
 import type { SvgDraftBounds, SvgDraftPose } from './draftPose';
 
 /**

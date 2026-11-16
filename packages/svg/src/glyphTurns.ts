@@ -5,7 +5,7 @@
  * that has a list, and the `<text>`'s where it has none. The runs carry the
  * turn as `rotate`, one run per stretch of glyphs at one angle.
  */
-import type { StyledRun } from '@weasel-js/core';
+import type { StyledRun } from '@weasel-js/text';
 import { collapses } from './glyphShifts';
 
 /** `el`'s own `rotate` list, empty where it has none or white space SVG

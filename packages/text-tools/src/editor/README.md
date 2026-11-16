@@ -1,0 +1,136 @@
+# text
+
+Text as a first-class scene citizen: draw commands, picking, and in-place
+editing. This file is a map, not a tour.
+
+**Typography lives in `@weasel-js/text`** — the run model, style resolution,
+`layoutRuns`, wrap and measurement all moved there so a consumer can lay out
+text without the scene graph. What stays here is what needs a scene, a
+renderer or React. The two halves are described together below, because the
+editing surface is unreadable without the model it edits.
+
+## Runs are the data model
+
+Text isn't a string with one style — it's a sequence of **`StyledRun`s**. The
+conversions in `runs.ts` are the boundary with everything else:
+
+| Function | Direction |
+| --- | --- |
+| `toRuns` | anything → runs |
+| `runsToPlainText` | runs → plain text (clipboard, search) |
+| `runsToMarkdown` / `markdownToRuns` | runs ⇄ an inline grammar, `MARKDOWN_RUN_GRAMMAR` by default |
+
+`runs.ts`, `runs/resolveRuns.ts` and `textStyle.ts` — the conversions above,
+plus `resolveRuns` and `DEFAULT_TEXT_STYLE` / `resolveTextStyle` /
+`fontString` — are in `@weasel-js/text`.
+
+`runs/rangeStyle.ts`, also in `@weasel-js/text`, is the **public run algebra**: `styleAtRange` reports
+what a character range shares (`MIXED` where the runs disagree),
+`applyStyleToRange` patches one, splitting and re-coalescing around it. A
+caret addresses a range, not a path, which is why this is a separate surface
+from the schema-driven property panel.
+
+> **Run-level flags are additive over the node's `TextStyle`.** A run turns
+> `bold` / `italic` / `underline` / `strikethrough` on, never off — setting
+> one to `false` deletes the key, and resolution reads `run.flag ||
+> style.flag`. See that file's header for why, and `docs/TODO.md` for the two
+> ways out if it needs to change.
+
+`letterSpacing` is **world units**, applied after every grapheme cluster
+including the last (CSS semantics). Note that `letter-spacing` is not part of the CSS `font` shorthand — every
+`ctx.font = fontString(style)` / `el.style.font = …` site needs its own
+assignment, which is what `measuredWidth` exists to keep consistent.
+
+## The rendering path, and its one hard requirement
+
+A text node lays out one way, whoever asks. `layoutTextPose` (in
+`@weasel-js/text`) is that decision: the pose width is always the box `align`
+resolves within, and the wrap width only when the style declares `wrap`
+(default `false`). The `kit:text` painter and `createTextLayer` — for text that
+is not in a scene — both emit `textCommandFromPose`, whose options are the
+same ones; `textLineBoxes`, `caretIndexAt`, `fitTextPose` and the edit overlay
+read the same property.
+
+> **The GL renderer uses MSDF text.** Font registration lives in
+> `@weasel-js/font` (`registerFont(family, variant, metricsUrl, atlasUrl)`,
+> re-exported from `@weasel-js/core/renderer`). An unregistered family now
+> renders in the default family with a one-time warning; call
+> `setFontFallbackPolicy('none')` to restore the old hard-miss behavior.
+
+Related: never mipmap the GL texture cache for MSDF atlases — mipmapping
+destroys the distance field.
+
+A text node may carry `background`, a fill over its whole box under the
+glyphs, and `padding`, the inset its lines lay out in (`textBoxOf`). The
+sticky note is nothing more than that. The editor opens over the inset box, and
+`useSceneTextEdit`'s `drawOne` keeps the background painted while the overlay
+stands in for the glyphs.
+
+## Measurement
+
+`measureText` (advance/metrics) and `measureTextBounds` (ink bounds) are
+distinct; `fitTextPose.ts` and `verticalAlign.ts` (both in `@weasel-js/text`) build on them for
+fit-to-box and baseline placement. Every 2D-side width goes through
+`measuredWidth`, which adds tracking the way `layoutRuns` does, and
+`measureText` wraps through the same `wrapLines` as `layoutRuns`, so a box it
+sizes breaks where the GL path breaks.
+
+`lineBoxes.ts` answers the other measurement question: not how big is the
+text, but **where inside its box does it sit**. A text pose is a layout box —
+`"Away"` in a 600-unit box leaves most of the box empty — so anything treating
+the pose as the node's extent claims empty space. `textLineBoxes` returns the
+per-line rects, read straight off `layoutTextPose`'s lines rather than
+re-measured, and honoring `wrap`, `align` and `verticalAlign`. The `kit:text`
+silhouette is built from it, which is how shape-accurate picking stops a text
+box from swallowing clicks on whatever is behind it.
+
+> **`TextDrawCommand.y` is the top of the first line box, not a baseline.**
+> `layoutRuns` walks down from it by half the leading plus the face's ascent, and
+> `verticalAlign` aligns the block within `[y, y + height]`. Passing a
+> baseline there — the canvas-2D `fillText` convention — puts the text about
+> an em too low and hands `verticalAlign` the wrong box.
+
+## Where the rest lives
+
+`rangeStyle` / `flagRange`, the caret-range patch algebra that serves the
+editor, are `@weasel-js/text`'s `runs/`. `layoutRuns` — the runs-aware glyph layout, and the only glyph walk in the
+kit — is `@weasel-js/text`'s `layout/`. The atlas itself (`FontAtlas`,
+`registerFont`) and runtime rasterization are in `@weasel-js/font`.
+
+## Editing
+
+`useTextEdit` is the primitive, in `@weasel-js/text-dom`; `useSceneTextEdit` here is the
+scene-wired version. `domRuns.ts`, beside the primitive, bridges to a DOM editing surface (contenteditable) — text editing
+uses real DOM for IME, spellcheck, and accessibility rather than reimplementing
+a caret on canvas. `hitTest.ts` (in `@weasel-js/text`) provides `pointInTextPose` and `caretIndexAt`
+to map clicks back into the run model; the caret snaps to the advance cells
+`layoutTextPose` produced, so it cannot drift from the painted glyphs. The
+overlay is `white-space: pre-wrap` at the pose width when the style declares
+`wrap`, and `pre` otherwise, sized to its text and grown from the same edge or
+center the canvas aligns the line on.
+
+Two things a consumer building character controls needs:
+
+- **`isEditorChrome`.** Focus moving into a control that styles the text must
+  not commit the edit. Without it, clicking the bar is what destroys the
+  caret it was about to act on.
+- **`selection` / `rangeStyle` / `applyStyleToSelection`.** The published
+  range survives focus leaving the overlay (it clears on `startEdit` and when
+  the edit ends), so a control can read and patch the range it is pointed at
+  even while it holds focus itself.
+
+Set `TextEditScreenPose.zoom` on a canvas that pans or zooms: the overlay is
+then CSS-scaled and every metric on it stays in world units, which is the
+only arrangement in which run-level `fontSize` / `letterSpacing` are right at
+a zoom other than 1.
+
+## Odds and ends
+
+- `markdownText.ts` and `markdownRenderer.ts` (in `@weasel-js/text`) — `layoutMarkdown` and the
+  2D-canvas `createMarkdownRenderer` over it, the richer layout path (`PositionedRun`, `LayoutLine`,
+  `LayoutResult`).
+- `renderLabel.ts` (in `@weasel-js/text`) — the small pill-with-text used for chrome labels, with a
+  pluggable `TextRenderer`. Unrelated to scene text nodes.
+- `textCommand.ts` (in `@weasel-js/renderer`) — the draw-command builders. `textCommandFromPose` is the
+  one for a text node; `textCommand` / `textCommandFromRuns` serve text with
+  no pose (HUD labels, debug overlays).

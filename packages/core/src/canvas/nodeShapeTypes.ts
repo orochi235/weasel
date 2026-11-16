@@ -77,7 +77,7 @@ export type SceneViewDrawOne<TData, TLayer extends string, TPose> = (
  *  default renderer to draw its own node kinds. */
 export interface NodeShapeEntry<TData = unknown, TPose = unknown> {
   /** Stable identifier — used for unregistration and debugging. Pick
-   *  something descriptive: `'kit:text'`, `'app:image'`, etc. */
+   *  something descriptive: `'kit:image'`, `'app:gem'`, etc. */
   id: string;
   /** Returns true when this painter renders the node. The first matching
    *  painter (`'high'` tier first, then `'normal'`) wins. The kit's own
@@ -117,7 +117,7 @@ export interface NodeShapeEntry<TData = unknown, TPose = unknown> {
    *  Culling reads it to skip `paint` for a node outside the view, so a box
    *  that is too small makes the node vanish before it reaches the screen
    *  edge. Leave it undefined, or return `null`, when no cheap conservative
-   *  answer exists (`kit:text` has none short of laying out its glyphs); such
+   *  answer exists (text-tools' `kit:text` has none short of laying out its glyphs); such
    *  a node is always painted. Same cheap-reads rule as `ink`. */
   bounds?(node: Node<TData, string, TPose>, pose: TPose, ctx?: NodeInkCtx): Bounds | null;
   /** Optional: the tight box `paint` covers, stroke as drawn, in `bounds`'

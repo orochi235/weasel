@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
-import { groupNodeRouting, styleAtRange, type NodePropertiesEntry, type NodeRoutingEntry } from '@weasel-js/core';
+import { groupNodeRouting, type NodePropertiesEntry, type NodeRoutingEntry } from '@weasel-js/core';
+import { styleAtRange } from '@weasel-js/text';
 import type { PrefPair } from '@weasel-js/prefs';
 import {
   MIXED,

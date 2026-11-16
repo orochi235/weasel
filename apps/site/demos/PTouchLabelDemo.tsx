@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState, useSyncExternalStore } from 'react';
-import { asNodeId, SceneCanvas, solid, useScene, useSelection, movePreset, pickPreset, transformPreset } from '@weasel-js/core';
+import { asNodeId, nodeShapesOf, SceneCanvas, solid, useScene, useSelection, movePreset, pickPreset, transformPreset } from '@weasel-js/core';
 import { ellipsePath, rectPath } from '@weasel-js/geom';
+import { createTextPreset, TEXT_PAINTER } from '@weasel-js/text-tools';
 import {
   createBrotherPrinter,
   Printers,
@@ -17,6 +18,7 @@ import s from './PTouchLabelDemo.module.css';
 
 const TAPE = tapeForWidthMm(24)!;
 const LENGTH = 288;
+const TEXT = createTextPreset({ editor: false });
 const MEDIA = Printers.ptP710bt.media(TAPE.widthMm);
 const CAN_PRINT = typeof navigator !== 'undefined' && ('usb' in navigator || 'serial' in navigator);
 
@@ -52,6 +54,8 @@ export function PTouchLabelDemo() {
   }, []);
   const [status, setStatus] = useState('');
 
+  // `renderLabel` paints through the scene's own registry, not the canvas's presets.
+  useEffect(() => nodeShapesOf(scene).register(TEXT_PAINTER), [scene]);
   useEffect(() => {
     let live = true;
     void renderLabel({ scene, length: LENGTH, tape: TAPE, media: MEDIA }).then((img) => {
@@ -84,7 +88,7 @@ export function PTouchLabelDemo() {
   return (
     <div className="ckd-demo">
       <DemoStage width={LENGTH} height={TAPE.widthPt}>
-        <SceneCanvas features={[pickPreset, movePreset, transformPreset]} className="ckd-canvas" backgroundFill={{ color: '#ffffff' }} scene={scene} selection={selection} />
+        <SceneCanvas features={[pickPreset, movePreset, transformPreset, TEXT]} className="ckd-canvas" backgroundFill={{ color: '#ffffff' }} scene={scene} selection={selection} />
       </DemoStage>
       <canvas ref={preview} className={s.preview} aria-label="Print preview at the printer's dot pitch" />
       <div className="ckd-row">

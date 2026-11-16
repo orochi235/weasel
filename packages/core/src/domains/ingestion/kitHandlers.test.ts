@@ -10,7 +10,6 @@ describe('kitHandlersFor', () => {
       'kit:weasel-json', // priority -50 — runs before the other kit handlers
       'kit:svg',
       'kit:image',
-      'kit:text', // -110, last, so markup and node payloads in plain text go to the handlers above
     ]);
   });
 
@@ -19,6 +18,6 @@ describe('kitHandlersFor', () => {
   });
 
   it('omit drops the ids named and keeps the rest', () => {
-    expect(ids(kitHandlersFor({ omit: ['kit:text', 'kit:svg'] }))).toEqual(['kit:image', 'kit:weasel-json']);
+    expect(ids(kitHandlersFor({ omit: ['kit:image', 'kit:svg'] }))).toEqual(['kit:weasel-json']);
   });
 });

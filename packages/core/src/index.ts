@@ -28,7 +28,7 @@ export * from './barrel/input';
 export * from './barrel/routing';
 export * from './barrel/canvas';
 export * from './barrel/chrome';
-export * from './barrel/text';
+export * from './barrel/outlines';
 export * from './barrel/paint';
 export * from './barrel/scene';
 export * from './barrel/persistence';
