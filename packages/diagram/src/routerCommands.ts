@@ -74,10 +74,16 @@ function selectedEdges<TPose>(opts: SetRouterOptions<TPose>): { id: string; rout
   return out;
 }
 
+/** The selected connectors `router` would change: those on another router. */
+function routerPlan<TPose>(opts: SetRouterOptions<TPose>, router: string): string[] {
+  return selectedEdges(opts).filter((e) => e.router !== router).map((e) => e.id);
+}
+
 const NO_MODIFIERS = { alt: false, shift: false, meta: false, ctrl: false };
 
 /** The command that puts the selected connectors on `router`, in one history
- *  entry. Active while every selected connector is on it already. */
+ *  entry. Active while every selected connector is on it already, and then
+ *  disabled, as it would change nothing. */
 export function createSetRouterAction<TPose>(router: keyof typeof SET_ROUTER_ACTION_IDS, opts: SetRouterOptions<TPose>): Action {
   const { commit = commitRouterToScene } = opts;
   return {
@@ -89,14 +95,15 @@ export function createSetRouterAction<TPose>(router: keyof typeof SET_ROUTER_ACT
     invoker: {
       timing: 'immediate',
       run(deps) {
-        const edges = selectedEdges(opts).filter((e) => e.router !== router);
+        const ids = routerPlan(opts, router);
+        if (ids.length === 0) return;
         const ctx = { world: { x: 0, y: 0 }, modifiers: NO_MODIFIERS, deps } as InvocationCtx;
-        const all = () => { for (const e of edges) commit({ edgeId: e.id, router }, ctx); };
+        const all = () => { for (const edgeId of ids) commit({ edgeId, router }, ctx); };
         if (deps.scene === undefined) all();
         else deps.scene.batch(`Route ${ROUTER_LABELS[router].toLowerCase()}`, all);
       },
     },
-    enabled: () => (selectedEdges(opts).length > 0 ? true : ActionDisabledReason.NotApplicable),
+    enabled: () => (routerPlan(opts, router).length > 0 ? true : ActionDisabledReason.NotApplicable),
     active: () => {
       const edges = selectedEdges(opts);
       return edges.length > 0 && edges.every((e) => e.router === router);
