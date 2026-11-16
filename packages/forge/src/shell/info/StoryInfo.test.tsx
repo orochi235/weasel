@@ -55,7 +55,7 @@ describe('Get Info', () => {
   it('opens Get Info on Mod+I', async () => {
     mount();
     await waitFor(() => expect(screen.getByRole('region', { name: 'Trial X > A' })).toBeInTheDocument());
-    fireEvent.keyDown(window, { key: 'i', ...MOD });
+    fireEvent.keyDown(document.body, { key: 'i', ...MOD });
     expect(await screen.findByRole('dialog')).toBeInTheDocument();
   });
 
