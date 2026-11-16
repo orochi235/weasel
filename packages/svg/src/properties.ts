@@ -12,7 +12,7 @@
 
 import { clamp01 } from '@weasel-js/geom';
 import type { FontVariantCaps, TextTransform } from '@weasel-js/text';
-import { ABSOLUTE_PX } from './absoluteUnits';
+import { absolutePx } from './absoluteUnits';
 import { parsePaintAttr, parseUrlRef, type ParsedColor } from './color';
 import { DEFAULT_FONT_SIZE, emsPer, fontSizeKeyword } from './fontSize';
 
@@ -44,7 +44,7 @@ function dimension(v: string): { n: number; unit: string } | undefined {
 function pxPer(unit: string, fontSize: number): number | undefined {
   if (unit === '') return 1;
   const ems = emsPer(unit);
-  return ems != null ? ems * fontSize : ABSOLUTE_PX[unit];
+  return ems != null ? ems * fontSize : absolutePx(unit);
 }
 
 /**

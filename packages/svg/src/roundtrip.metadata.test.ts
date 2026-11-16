@@ -101,4 +101,27 @@ describe('round-trip', () => {
     expect(out).not.toContain('bar:rootAttr');
     expect(out).not.toContain('xmlns:bar');
   });
+  it('keeps namespaced names like constructor and __proto__ as data', () => {
+    const namespaces = { foo: 'https://example.com/foo' };
+    const svg = `<svg xmlns="http://www.w3.org/2000/svg" xmlns:foo="https://example.com/foo" foo:constructor="c">`
+      + `<foo:constructor foo:__proto__="p"><foo:toString/></foo:constructor>`
+      + `<g foo:toString="t"><foo:constructor/></g></svg>`;
+    const { documentMeta, nodes } = parseSvg(svg, { namespaces });
+    expect(Object.hasOwn(documentMeta!.foo.attrs!, 'constructor')).toBe(true);
+    const el = documentMeta!.foo.elements!.constructor[0];
+    expect(Object.hasOwn(el.attrs, '__proto__')).toBe(true);
+    expect(Object.getPrototypeOf(el.attrs)).toBe(Object.prototype);
+    expect(el.children!.toString).toHaveLength(1);
+    expect(nodes[0].meta!.foo.attrs!.toString).toBe('t');
+    expect(nodes[0].meta!.foo.elements!.constructor).toHaveLength(1);
+  });
+
+  it('reads no meta for a declared prefix the document does not use', () => {
+    const out = serializeSvg([], {
+      viewBox: { x: 0, y: 0, width: 1, height: 1 },
+      namespaces: { constructor: 'https://example.com/c' },
+      documentMeta: {},
+    });
+    expect(out).toContain('xmlns:constructor=');
+  });
 });
