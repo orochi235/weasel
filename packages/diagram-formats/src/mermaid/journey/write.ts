@@ -4,13 +4,18 @@ import { Warnings } from '../../graphRead';
 import { oneLine } from '../common/text';
 
 /** A step's name as it opens its line: `(untitled)` for none, since Mermaid reads a step only with a name, a leading
- *  `%%` dropped, which would make the line a comment, and `null` for a name whose first word is `title` or `section`,
+ *  `%%` dropped, which would make the line a comment, the `{` after a leading `accTitle` or `accDescr` dropped, which
+ *  would open accessibility text, and `null` for a name whose first word is `title` or `section`,
  *  which Mermaid reads as that statement. */
 function stepName(name: string, warn: (m: string) => void): string | null {
   let out = name;
   if (out.startsWith('%%')) {
     warn('Mermaid reads a line opening with "%%" as a comment; a leading "%%" in step names was dropped.');
     while (out.startsWith('%%')) out = out.replace(/^%+\s*/, '');
+  }
+  if (/^acc(?:Title|Descr)\s*\{/.test(out)) {
+    warn('Mermaid reads a line opening "accTitle {" or "accDescr {" as accessibility text; that "{" in step names was dropped.');
+    out = out.replace(/^(acc(?:Title|Descr))\s*\{\s*/, '$1 ').trim();
   }
   if (/^(?:title|section)(?:\s|$)/.test(out)) {
     warn('Mermaid reads a step named "title …" or "section …" as that statement; those steps were dropped.');
