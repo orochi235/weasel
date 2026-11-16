@@ -1,4 +1,5 @@
 import { earliestRest } from '../springRest';
+import { lerp } from '@weasel-js/geom';
 
 /** A handed-off animation's axes as a pure function of its own clock, which is what lets the
  *  whole run be sampled into keyframes ahead of time. */
@@ -173,7 +174,7 @@ export function keptSamples(times: readonly number[], rows: readonly (readonly n
     for (let k = i + 1; k < j; k++) {
       const u = (times[k]! - times[i]!) / (times[j]! - times[i]!);
       for (let a = 0; a < axes; a++) {
-        const off = Math.abs(rows[k]![a]! - (rows[i]![a]! + (rows[j]![a]! - rows[i]![a]!) * u)) / tol[a]!;
+        const off = Math.abs(rows[k]![a]! - lerp(rows[i]![a]!, rows[j]![a]!, u)) / tol[a]!;
         if (off > worst) { worst = off; at = k; }
       }
     }

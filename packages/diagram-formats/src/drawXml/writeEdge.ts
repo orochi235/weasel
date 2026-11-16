@@ -9,6 +9,7 @@ import type { Warn } from './readStyle';
 import { writeStyle, type StylePart } from './style';
 import { edgeStyle } from './writeStyle';
 import { edgeXml, endLabelXml } from './writeXml';
+import { lerp } from '@weasel-js/geom';
 
 /** What an edge needs of the page it is on. */
 export interface EdgePage {
@@ -33,7 +34,7 @@ function fractionNear(line: readonly Vec2[], p: Vec2): number {
     const b = line[i]!;
     const length = Math.hypot(b.x - a.x, b.y - a.y);
     const t = length === 0 ? 0 : Math.max(0, Math.min(1, ((p.x - a.x) * (b.x - a.x) + (p.y - a.y) * (b.y - a.y)) / (length * length)));
-    const distance = Math.hypot(a.x + t * (b.x - a.x) - p.x, a.y + t * (b.y - a.y) - p.y);
+    const distance = Math.hypot(lerp(a.x, b.x, t) - p.x, lerp(a.y, b.y, t) - p.y);
     if (distance < best.distance) best = { distance, along: total + t * length };
     total += length;
   }
