@@ -60,6 +60,12 @@ describe('createModeDecorations', () => {
     expect(d.paint()).toHaveLength(1);
   });
 
+  it('throws for a mode id the registry does not have', () => {
+    const registry = createModeRegistry({ modes: DEFAULT_MODES, initial: 'normal' });
+    const d = createModeDecorations({ registry });
+    expect(() => d.register('path-edti', () => [])).toThrow(/Unknown mode id: path-edti/);
+  });
+
   it('switching modes swaps which painter is invoked', () => {
     const registry = createModeRegistry({ modes: DEFAULT_MODES, initial: 'normal' });
     const d = createModeDecorations({ registry });

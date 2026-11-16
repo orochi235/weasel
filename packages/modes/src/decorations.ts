@@ -19,8 +19,9 @@ export interface CreateModeDecorationsOptions {
  *  for as long as the mode is active and belong to the mode rather than to any
  *  tool — path-edit's anchor dots and handle lines are the motivating case. */
 export interface ModeDecorations {
-  /** Register (or replace) the painter for a mode id. Returns a release that
-   *  removes it, and does nothing once another painter has replaced it. */
+  /** Register (or replace) the painter for a mode id, which must be one of the
+   *  registry's modes. Returns a release that removes it, and does nothing once
+   *  another painter has replaced it. */
   register(modeId: string, painter: ModeDecorationPainter): () => void;
   /** Paint the active mode's decorations. Returns an empty array if no
    *  painter is registered for the active mode. */
@@ -51,6 +52,7 @@ export function createModeDecorations(opts: CreateModeDecorationsOptions): ModeD
 
   return {
     register(modeId: string, painter: ModeDecorationPainter): () => void {
+      registry.byId(modeId);
       const entry = { painter };
       painters.set(modeId, entry);
       changed();
