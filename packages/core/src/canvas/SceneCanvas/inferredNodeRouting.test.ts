@@ -46,7 +46,9 @@ describe('inferredNodeRouting', () => {
     const r = createNodeRouting();
     for (const k of defaultNodeRouting) r.register(k);
     expect(r.classify({ kind: 'rect' })).toBe('rect');
-    expect(r.classify({ kind: 'pen' })).toBe('pen');
+    expect(r.classify({ kind: 'ellipse' })).toBe('ellipse');
+    // The pen's tool is path-tools', so core keeps no tag for it.
+    expect(r.classify({ kind: 'pen' })).toBe('unknown');
   });
 });
 
