@@ -1,4 +1,4 @@
-import { createEmitter } from '@weasel-js/registry';
+import { after, createEmitter } from '@weasel-js/registry';
 import { onLeave } from './onLeave';
 import { createRemote } from './remote';
 import type { StorageAdapter, StorageChange, SyncStorageAdapter } from './types';
@@ -115,7 +115,7 @@ function buildCache(
   let stopped = !(options.writable ?? true);
   const writable = (): boolean => !unread && !stopped;
   let closed = false;
-  let retryTimer: ReturnType<typeof setTimeout> | null = null;
+  let cancelRetry: (() => void) | null = null;
   let retryWait = retryMs === false ? 0 : retryMs;
   let reading: Promise<boolean> | null = null;
   let warned = false;
@@ -154,8 +154,8 @@ function buildCache(
   let unsubscribe = writable() ? storage.subscribe?.(prefix, remote.apply) : undefined;
 
   const stopRetrying = (): void => {
-    if (retryTimer) clearTimeout(retryTimer);
-    retryTimer = null;
+    cancelRetry?.();
+    cancelRetry = null;
   };
 
   const failed = (error: unknown): void => {
@@ -167,10 +167,10 @@ function buildCache(
       );
     }
     if (retryMs === false || closed || stopped) return;
-    retryTimer = setTimeout(() => {
-      retryTimer = null;
+    cancelRetry = after(retryWait, () => {
+      cancelRetry = null;
       void read();
-    }, retryWait);
+    });
     retryWait = Math.min(retryWait * 2, retryMaxMs);
   };
 

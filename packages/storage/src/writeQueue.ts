@@ -1,3 +1,4 @@
+import { after } from '@weasel-js/registry';
 import type { StorageAdapter } from './types';
 
 /** What the queue holds for a record to delete. */
@@ -45,10 +46,10 @@ export function createWriteQueue(options: WriteQueueOptions): WriteQueue {
   const queued = new Map<string, unknown>();
   // How many writes to each name are on their way to storage.
   const inFlight = new Map<string, number>();
-  let timer: ReturnType<typeof setTimeout> | null = null;
+  let cancelSend: (() => void) | null = null;
   let firstQueuedAt: number | null = null;
   const firstRetryWait = retryMs === false ? 0 : retryMs;
-  let retryTimer: ReturnType<typeof setTimeout> | null = null;
+  let cancelRetry: (() => void) | null = null;
   let retryWait = firstRetryWait;
   let warned = false;
   let sending: Promise<boolean> | null = null;
@@ -57,19 +58,19 @@ export function createWriteQueue(options: WriteQueueOptions): WriteQueue {
     if (!writable() || closed()) return;
     const now = Date.now();
     firstQueuedAt ??= now;
-    if (timer) clearTimeout(timer);
+    cancelSend?.();
     const wait = Math.max(0, Math.min(debounceMs, firstQueuedAt + maxWaitMs - now));
-    timer = setTimeout(() => {
-      timer = null;
+    cancelSend = after(wait, () => {
+      cancelSend = null;
       if (!closed()) void flush();
-    }, wait);
+    });
   };
 
   // One batch is on its way at a time. A rejected write is back in the queue
   // before the next batch is taken, so a newer write to its record stands.
   function flush(): Promise<boolean> {
-    if (timer) clearTimeout(timer);
-    timer = null;
+    cancelSend?.();
+    cancelSend = null;
     firstQueuedAt = null;
     // With nothing on its way the batch leaves in this tick, which a flush
     // on `pagehide` depends on.
@@ -123,17 +124,17 @@ export function createWriteQueue(options: WriteQueueOptions): WriteQueue {
   }
 
   function stopRetrying(): void {
-    if (retryTimer) clearTimeout(retryTimer);
-    retryTimer = null;
+    cancelRetry?.();
+    cancelRetry = null;
   }
 
   function retry(): void {
     stopRetrying();
     if (retryMs === false || closed() || stopped() || queued.size === 0) return;
-    retryTimer = setTimeout(() => {
-      retryTimer = null;
+    cancelRetry = after(retryWait, () => {
+      cancelRetry = null;
       void flush();
-    }, retryWait);
+    });
     retryWait = Math.min(retryWait * 2, retryMaxMs);
   }
 
@@ -151,8 +152,8 @@ export function createWriteQueue(options: WriteQueueOptions): WriteQueue {
     stopRetrying,
     discard: () => {
       queued.clear();
-      if (timer) clearTimeout(timer);
-      timer = null;
+      cancelSend?.();
+      cancelSend = null;
       stopRetrying();
     },
   };
