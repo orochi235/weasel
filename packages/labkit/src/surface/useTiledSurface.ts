@@ -41,6 +41,9 @@ export interface SurfaceHandle {
   /** Re-measure before the next frame. The escape hatch for a host that knows it
    *  moved something a ResizeObserver cannot see. */
   invalidateRects: () => void;
+  /** Publish `el`'s rect under `id`, or with `null` drop it. Throws when another
+   *  element still in the document holds `id`; `registerClear` and
+   *  `registerPainter` throw likewise on an id not yet released. */
   registerTile: (id: string, el: HTMLElement | null) => void;
   /** Register a tenant's whole-buffer clear. Every one registered runs, before
    *  any painter, on a frame where the tile geometry changed — the pixels a
@@ -257,6 +260,7 @@ export function useTiledSurface({ onFrame }: UseTiledSurfaceOptions): SurfaceHan
     (id: string, el: HTMLElement | null) => {
       const known = tiles.current.get(id);
       if (known === el) return;
+      if (el && known?.isConnected) throw takenError('tile', id);
       watch(`tile:${id}`, el, { moves: true });
       if (el) {
         tiles.current.set(id, el);
@@ -273,19 +277,15 @@ export function useTiledSurface({ onFrame }: UseTiledSurfaceOptions): SurfaceHan
     [schedule, watch],
   );
 
-  const registerClear = useCallback((id: string, clear: SurfaceClear) => {
-    clears.current.set(id, clear);
-    return () => {
-      if (clears.current.get(id) === clear) clears.current.delete(id);
-    };
-  }, []);
+  const registerClear = useCallback(
+    (id: string, clear: SurfaceClear) => hold(clears.current, 'clear', id, clear),
+    [],
+  );
 
-  const registerPainter = useCallback((id: string, paint: TilePainter) => {
-    painters.current.set(id, paint);
-    return () => {
-      if (painters.current.get(id) === paint) painters.current.delete(id);
-    };
-  }, []);
+  const registerPainter = useCallback(
+    (id: string, paint: TilePainter) => hold(painters.current, 'painter', id, paint),
+    [],
+  );
 
   const getContainer = useCallback(() => container.current, []);
 
@@ -357,5 +357,20 @@ export function useTiledSurface({ onFrame }: UseTiledSurfaceOptions): SurfaceHan
       inScope,
       subscribeScope,
     ],
+  );
+}
+
+/** Put `value` in `held` under `id`, throwing if something already is there; returns its release. */
+function hold<T>(held: Map<string, T>, kind: 'painter' | 'clear', id: string, value: T): () => void {
+  if (held.has(id)) throw takenError(kind, id);
+  held.set(id, value);
+  return () => {
+    if (held.get(id) === value) held.delete(id);
+  };
+}
+
+function takenError(kind: 'tile' | 'painter' | 'clear', id: string): Error {
+  return new Error(
+    `[labkit] surface ${kind} ${JSON.stringify(id)} is already registered and still live. Give each ${kind} its own id, or release the first before registering another.`,
   );
 }
