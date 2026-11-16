@@ -1,5 +1,5 @@
 import { createValueStore, type ValueStore } from '@weasel-js/registry';
-import type { NodeId, Scene } from 'core/scene/types';
+import type { NodeId, Scene } from '@weasel-js/core';
 import { measurementOf, type Measurement } from './measurement';
 
 /** One value, readable and watchable — what a readout re-renders from. */

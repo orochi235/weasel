@@ -12,7 +12,6 @@
 const RADIX = 'parseInt radix';
 
 export const ACTION_LITERALS: Readonly<Record<string, Readonly<Record<string, string>>>> = {
-  'packages/core/src/domains/measure/measureGestures.ts': { 6: 'reach: how near a press must land to a measurement' },
   'packages/core/src/interactions/actions/defaults/anchorEditing.ts': { 10: 'reach: the `targets.anchorClickPx` kit setting\'s default' },
   'packages/core/src/interactions/actions/defaults/viewportZoom.ts': { 1.25: 'view: the zoom keys\' step, chosen by the variant' },
   'packages/core/src/interactions/actions/distribute/action.tsx': { 3: 'count: the fewest nodes there is a between to distribute' },
@@ -52,6 +51,7 @@ export const ACTION_LITERALS: Readonly<Record<string, Readonly<Record<string, st
     250: 'threshold: how short a press of the quick-lens key is a tap, which closes the lens',
   },
   'packages/loupe/src/actions.ts': { 0.002: 'view: magnification per wheel delta' },
+  'packages/measure/src/measureGestures.ts': { 6: 'reach: how near a press must land to a measurement' },
   'packages/path-tools/src/poise/poiseHandles.ts': { 10: RADIX },
   'packages/path-tools/src/constraints/anchorConstraints.ts': {
     3: 'count: the anchors a two-segment constraint takes', 4: 'count: the anchors a two-segment constraint takes, unshared',

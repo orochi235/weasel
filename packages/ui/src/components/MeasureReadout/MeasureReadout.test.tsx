@@ -2,18 +2,16 @@ import { describe, it, expect } from 'vitest';
 import { act, fireEvent, render, screen } from '@testing-library/react';
 import { IDENTITY_POSE_COMPOSITION,
   ActionsProvider,
-  createMeasurements,
   createScene,
   DepRegistryProvider,
-  measureIds,
-  measureNode,
-  measurementsContribution,
   useDepSource,
   type DepName,
-  type MeasureFrames,
   type NodeId,
   type Scene,
 } from '@weasel-js/core';
+import {
+  createMeasurements, measureIds, measureNode, measurementsContribution, type MeasureFrames,
+} from '@weasel-js/measure';
 import { MeasureReadout } from './MeasureReadout';
 import s from './MeasureReadout.module.css';
 import { RegisterActions } from '@weasel-js/routing/testing/registerAction';

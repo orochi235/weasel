@@ -2,9 +2,10 @@ import { describe, expect, it, vi } from 'vitest';
 import { createHistory } from '@weasel-js/history';
 import type { SerializedHistory } from '@weasel-js/history';
 import type { Op, SerializedScene } from '@weasel-js/core';
+import { measureNode, measurementOf } from '@weasel-js/measure';
 import {
-  asNodeId, buildWeaselClipboardText, createScene, decodeSnapshot, effectivePose, isAnnotationNode, measureNode, measurementOf,
-  parseSnapshot, parseWeaselClipboardText, snapshotReplacer, stringifySnapshot,
+  asNodeId, buildWeaselClipboardText, createScene, decodeSnapshot, effectivePose, isAnnotationNode, parseSnapshot,
+  parseWeaselClipboardText, snapshotReplacer, stringifySnapshot,
 } from '@weasel-js/core';
 import {
   ANNOTATION_LAYER, DRAW_LAYERS, DRAW_REGISTRY, type WeaselDrawData, type WeaselDrawLayer, type WeaselDrawPose,

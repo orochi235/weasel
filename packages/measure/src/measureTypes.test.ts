@@ -1,7 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { createScene } from 'core/scene/scene';
-import { asNodeId, type Scene } from 'core/scene/types';
-import type { RectPose } from 'core/geometry/rectPose';
+import { asNodeId, createScene, type RectPose, type Scene } from '@weasel-js/core';
 import { measureNode } from './measurement';
 import { measurementsContribution } from './measureContribution';
 import { createMeasurements } from './measurements';

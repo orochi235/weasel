@@ -98,7 +98,6 @@ declare module '@weasel-js/routing' {
     'pen.finishOpen': FinishPathParams;
     'slice.finish': FinishPathParams;
     slice: { cut?: 'freehand' };
-    measure: { angleStep?: number };
     lassoSelect: { mode?: LassoHitMode; minVertexSpacing?: number };
     move: MoveParams;
     rotate: RotateParams;
@@ -123,8 +122,6 @@ declare module '@weasel-js/routing' {
     'eyedropper.pick': Pick<ImmediateParams, 'press'>;
     'pen.placeAnchor': Pick<ImmediateParams, 'press' | 'mods'>;
     'slice.addPoint': Pick<ImmediateParams, 'press'>;
-    'measure.pickAt': Pick<ImmediateParams, 'press'>;
-    'measure.pick': Pick<ImmediateParams, 'affordance'>;
     'present.step': { by?: number; to?: 'first' | 'last' };
     'present.go': { to?: string | number };
     setFill: PaintParams;

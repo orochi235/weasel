@@ -98,7 +98,7 @@ in `@weasel-js/editor`).
 | Source | Package | Tier | What it offers |
 |---|---|---|---|
 | `pathSnapSource(opts)` | core | target | path targets: anchors, box centers, crossings, tangent and perpendicular points from the gesture's `origin`, midpoints, extremes, quadrant points, the nearest point on a stroke; `only` and `kinds` pick them |
-| `measureEndSource(opts)` | core | target | measurement ends |
+| `measureEndSource(opts)` | measure | target | measurement ends |
 | `rotationSnapSource()` | core | target | quarter turns and other nodes' angles, for a rotate |
 | `gridSnapSource({ spacing, origin?, unitSystem?, scopes? })` | guides | fallback | the grid line either side of each box or pointer probe, on each axis (the origin probe, on a turned container's lattice; a subject's anchor probes, when it declares any); with `scopes`, on the pitch of the unit scope the subject sits in, or for an insert the scope of its `parent` |
 | `guideSnapSource({ getGuides })` | guides | target | ruler guides |

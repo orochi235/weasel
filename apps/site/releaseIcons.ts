@@ -31,6 +31,7 @@ export const PACKAGE_ICONS: Readonly<Record<string, IconRef>> = {
   kernel3d: icon('kernel3d'),
   labkit: icon('labkit'),
   loupe: icon('loupe'),
+  measure: icon('core:measure'),
   menu: icon('menu'),
   minimap: icon('minimap'),
   modes: icon('modes'),

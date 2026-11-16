@@ -1,5 +1,6 @@
 import { useMemo } from 'react';
-import type { Measurements, SelectionApi } from '@weasel-js/core';
+import type { SelectionApi } from '@weasel-js/core';
+import type { Measurements } from '@weasel-js/measure';
 import type { FilletControlsSelection } from '@weasel-js/path-tools';
 import type { DrawScene } from '../drawDocument';
 import { useSimplifyTolerance } from '../ui/PathCommands';

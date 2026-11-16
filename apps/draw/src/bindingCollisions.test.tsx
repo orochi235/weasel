@@ -8,9 +8,10 @@ import { describe, it, expect, vi, beforeAll, afterEach } from 'vitest';
 import { cleanup } from '@testing-library/react';
 import { renderWithKeys as render } from '@weasel-js/react/testing/giveKeys';
 import {
-  BUILTIN_TOOLS, PATHFINDER_KEYMAP, type Contribution, SceneCanvas, createMeasurements, createScene, measurementsContribution, modeTriggers,
-  useCommand, useEyedropperTool, useMeasureTool,
+  BUILTIN_TOOLS, PATHFINDER_KEYMAP, type Contribution, SceneCanvas, createScene, modeTriggers, useCommand,
+  useEyedropperTool,
 } from '@weasel-js/core';
+import { createMeasurements, measurementsContribution, useMeasureTool } from '@weasel-js/measure';
 import { DEFAULT_MODES } from '@weasel-js/modes';
 import { useHudContribution } from '@weasel-js/hud/react';
 import { usePathToolsTools } from '@weasel-js/path-tools';

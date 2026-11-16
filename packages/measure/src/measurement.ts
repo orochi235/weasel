@@ -1,5 +1,6 @@
-import type { MarkNode, Node, NodeId, RectPose } from 'core/scene/types';
-import { sceneMagnification, type ScopedScene } from 'core/scene/unitScopes';
+import {
+  type MarkNode, type NodeId, type SceneNode, type RectPose, sceneMagnification, type ScopedScene,
+} from '@weasel-js/core';
 import { rectBetween, type Point } from '@weasel-js/geom';
 
 /** A world-space point. */
@@ -76,14 +77,14 @@ export type MeasureEnd = 'start' | 'end';
 
 
 /** The ends `node` measures between, or null when it is not a measurement. */
-export function measureEndsOf(node: Pick<Node<unknown, string, unknown>, 'data'> | undefined): MeasureData['measure'] | null {
+export function measureEndsOf(node: Pick<SceneNode<unknown, string, unknown>, 'data'> | undefined): MeasureData['measure'] | null {
   const m = (node?.data as Partial<MeasureData> | null | undefined)?.measure;
   if (!m || typeof m !== 'object' || !m.start || !m.end) return null;
   return m;
 }
 
 /** The measurement `node` holds, or null when it is not one. */
-export function measurementOf(node: Pick<Node<unknown, string, unknown>, 'data'> | undefined): Measurement | null {
+export function measurementOf(node: Pick<SceneNode<unknown, string, unknown>, 'data'> | undefined): Measurement | null {
   const ends = measureEndsOf(node);
   return ends ? measureBetween(ends.start, ends.end, ends.frames) : null;
 }
@@ -110,7 +111,7 @@ export function measureNode<TLayer extends string>(
 /** `node`'s data and pose with its `which` end moved to `to`, landed in
  *  `frame`. Without `frame` the end keeps the one it had. */
 export function withMeasureEnd(
-  node: Node<unknown, string, unknown>,
+  node: SceneNode<unknown, string, unknown>,
   which: MeasureEnd,
   to: MeasurePoint,
   frame?: NodeId | null,

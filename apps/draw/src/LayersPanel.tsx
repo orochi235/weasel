@@ -1,8 +1,6 @@
 import {
   isGradientPaint,
   isTilePaint,
-  type Measurements,
-  measurementOf,
   inheritedPaintIn,
   type Paint,
   resolveFill,
@@ -10,6 +8,7 @@ import {
   sampleGradientStops,
   type SelectionApi,
 } from '@weasel-js/core';
+import { type Measurements, measurementOf } from '@weasel-js/measure';
 import { decimal, qty } from '@weasel-js/quantity';
 import { Checkbox } from '@weasel-js/ui/components/Checkbox';
 import { useContextMenu } from '@weasel-js/ui/components/Menu';

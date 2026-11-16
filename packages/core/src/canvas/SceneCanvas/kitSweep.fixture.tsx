@@ -17,11 +17,10 @@ import * as guides from '@weasel-js/guides';
 import * as hud from '@weasel-js/hud';
 import * as minimap from '@weasel-js/minimap';
 import * as symmetry from '@weasel-js/symmetry';
+import * as measure from '@weasel-js/measure';
 import { createModeRegistry } from '@weasel-js/modes';
 import { createScene } from 'core/scene/scene';
 import * as builtins from 'tools/builtin';
-import { createMeasurements } from 'domains/measure/measurements';
-import { measurementsContribution } from 'domains/measure/measureContribution';
 import { modeTriggers } from 'domains/modes/modeTriggers';
 import { buildToolActivateBindings, createToolActivateAction } from 'interactions/actions/defaults/toolActivate';
 import { createToolResetToDefaultAction } from 'interactions/actions/defaults/toolResetToDefault';
@@ -134,7 +133,6 @@ function builtinTools(s: Sweep): void {
     pen: builtins.usePenTool(),
     pencil: builtins.usePencilTool(),
     slice: builtins.useSliceTool(),
-    measure: builtins.useMeasureTool({ measurements: createMeasurements({ layer: 'notes' }) }),
     text: builtins.useTextTool(),
     sticky: builtins.useStickyTool(),
     eyedropper: builtins.useEyedropperTool({} as never),
@@ -143,7 +141,7 @@ function builtinTools(s: Sweep): void {
 }
 
 /** Core's generated and factory-built bindings. */
-function coreFactories(s: Sweep, scene: never): void {
+function coreFactories(s: Sweep): void {
   s.value(createToolActivateAction(buildToolActivateBindings([
     { toolId: 'rect', keyOpts: { key: 'R' } }, { toolId: 'rect', keyOpts: { key: 'M' } },
     { toolId: 'hand', keyOpts: { key: 'H' } },
@@ -157,7 +155,6 @@ function coreFactories(s: Sweep, scene: never): void {
   s.value(core.areaSelectContribution(), 'areaSelectContribution');
   s.value(core.dragPanContribution(), 'dragPanContribution');
   s.value(core.createPresentationContribution(), 'createPresentationContribution');
-  s.value(measurementsContribution(scene, createMeasurements({ layer: 'notes' })), 'measurementsContribution');
   const modes = createModeRegistry({
     initial: 'object',
     modes: [
@@ -186,6 +183,9 @@ function packageFactories(s: Sweep, scene: never): void {
   s.value(minimap.createMinimapContribution({} as never), 'minimap.createMinimapContribution');
   s.value(minimap.createLinkedCursorContribution(), 'minimap.createLinkedCursorContribution');
   s.value(symmetry.createSymmetry(scene), 'symmetry.createSymmetry');
+  const measurements = measure.createMeasurements({ layer: 'notes' });
+  s.hook(() => measure.useMeasureTools({ measurements }), 'measure tools');
+  s.value(measure.measurementsContribution(scene, measurements), 'measure.measurementsContribution');
   s.value(diagram.diagramPorts({ participants: () => [] } as never), 'diagram.diagramPorts');
   s.value(diagram.diagramWaypoints({} as never), 'diagram.diagramWaypoints');
   s.value(diagram.diagramLabelDrag({} as never), 'diagram.diagramLabelDrag');
@@ -216,10 +216,11 @@ export function sweepKit(): Sweep {
     [hud as unknown as Record<string, unknown>, 'hud'],
     [minimap as unknown as Record<string, unknown>, 'minimap'],
     [symmetry as unknown as Record<string, unknown>, 'symmetry'],
+    [measure as unknown as Record<string, unknown>, 'measure'],
   ];
   for (const [mod, name] of modules) s.module(mod, name);
   builtinTools(s);
-  coreFactories(s, scene);
+  coreFactories(s);
   packageFactories(s, scene);
   return s;
 }

@@ -1,14 +1,12 @@
 import { describe, expect, it } from 'vitest';
 import type { InvocationCtx, OngoingInvoker } from '@weasel-js/routing';
 import type { UnitScope } from '@weasel-js/quantity';
-import { createScene } from 'core/scene/scene';
-import { asNodeId, type AddNodeSpec, type NodeId, type RectPose } from 'core/scene/types';
+import { type AddNodeSpec, type AnyScene, asNodeId, createScene, type NodeId, type RectPose } from '@weasel-js/core';
 import { measureEndsOf, measureMagnification, measurementOf } from './measurement';
 import { createMeasurements, measureIds } from './measurements';
 import { measureCreateAction, measureDragAction } from './measureGestures';
 import { MEASURE_AFFORDANCE_KIND } from './measureLayer';
 import type { MeasureHit } from './measureHit';
-import type { AnyScene } from 'core/scene/anyScene';
 
 type Pt = { x: number; y: number };
 type Spec = AddNodeSpec<object, 'main' | 'notes', RectPose>;

@@ -1,9 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
-import { createScene } from 'core/scene/scene';
-import { asNodeId, type RectPose, type Scene } from 'core/scene/types';
-import type { SnapMods } from 'interactions/actions/snapDep';
-import { createSnapOutcomeStore } from 'domains/snap/outcomeStore';
-import { createSession2d } from 'domains/snap/session2d';
+import { type AnyScene, asNodeId, createScene, type RectPose, type Scene, type SnapMods } from '@weasel-js/core';
+import { createSnapSession2dForTests } from '@weasel-js/core/test-seams';
 import { measureAt, measureEndSource } from './measureHit';
 import { measureNode } from './measurement';
 
@@ -22,14 +19,12 @@ function shownMoved(s: Scene<unknown, string, unknown>) {
 }
 
 function at(p: { x: number; y: number }, exclude: string[] = [], reach = 8, sc = scene()) {
-  const s = createSession2d({
-    req: { gesture: 'point', press: p, ...(exclude.length ? { ids: exclude } : {}) },
+  const s = createSnapSession2dForTests({
+    gesture: 'point', press: p, ...(exclude.length ? { ids: exclude } : {}),
     sources: [measureEndSource()],
-    probes: [{ id: 'pointer', at: p, role: 'pointer' }],
-    view: () => ({ x: 0, y: 0, scale: { x: 1, y: 1 } }),
+    view: { x: 0, y: 0, scale: { x: 1, y: 1 } },
     reachPx: reach,
-    scene: sc,
-    store: createSnapOutcomeStore(),
+    scene: sc as AnyScene,
   });
   return s.at(p, FREE);
 }

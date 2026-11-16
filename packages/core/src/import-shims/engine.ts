@@ -75,7 +75,7 @@ export type { InheritedPaint, ResolvedPaintFields } from '../core/scene/inherite
 export { UNION_OF_CHILDREN, unionOfChildren } from '../core/scene/kitRegistry';
 export type { AddLayerSpec, LayerRecord, LayerRecordBase, SceneLayerMembers, SystemLayerRecord, SystemLayerSpec, UserLayerRecord } from '../core/scene/layerTypes';
 export type { LayoutFrame, LayoutMove } from '../core/scene/layoutTypes';
-export { nodeAsShown } from '../core/scene/nodeAsShown';
+export { nodeAsShown, nodesAsShown, shownLookup } from '../core/scene/nodeAsShown';
 export type { ShownDataSource } from '../core/scene/nodeAsShown';
 export type { Bivariant, ClipFromPoseFn, CopiesFromPoseFn, DerivePathFn, DerivePoseFn, DerivedDep } from '../core/scene/nodeFnTypes';
 export { contentRoots, hidesSubtree, isNodeHidden, isNodeLocked, isPageStructure, nodeGates, withoutPageStructure } from '../core/scene/nodeGates';
@@ -147,7 +147,7 @@ export type { GatherSnapOptions, GatheredCandidate, SnapCandidateMark } from '..
 export { createSnapOutcomeStore } from '../domains/snap/outcomeStore';
 export type { SnapOutcomeStore } from '../domains/snap/outcomeStore';
 export type { SnapReadoutDep } from '../domains/snap/readoutDep';
-export { SNAP_ANGLE_STEP, SNAP_AXIS_STEP, SNAP_ROLES, snapMods } from '../domains/snap/roles';
+export { SNAP_ANGLE_STEP, SNAP_AXIS_STEP, SNAP_ROLES, SNAP_ROLE_MODS, snapMods } from '../domains/snap/roles';
 export { DEFAULT_SNAP_PX } from '../domains/snap/session2d';
 export { stepAngles } from '../domains/snap/stepAngles';
 export type { AngleCandidate, AngleCollect, Locus, SceneCanvasSnap, SnapAnchors, SnapCollect, SnapFrame, SnapGesture, SnapMark, SnapMarks, SnapProbeAt, SnapReadoutStyle, SnapSide, SnapSource, SourceCandidate } from '../domains/snap/types';
