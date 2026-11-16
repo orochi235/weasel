@@ -108,6 +108,18 @@ describe('writing a Mermaid gantt', () => {
     expect(orphan).toEqual({ text: 'gantt\n  X :1d\n', warnings: ['Mermaid gives no id to a first task, or one after a task with none, unless it has a start of its own; those ids were dropped.'] });
     expect(() => writeMermaidGantt({ ...pageOf(data), data: { kind: 'timeline', sections: [] } })).toThrow(/as a gantt only/);
   });
+
+  it('renames a task id that is a tag word, with a warning, and the starts naming it', () => {
+    const data: GanttData = { kind: 'gantt', dateFormat: 'YYYY-MM-DD', sections: [{ tasks: [
+      { name: 'A', id: 'done', start: { kind: 'date', date: '2024-01-01' }, end: { kind: 'duration', amount: 3, unit: 'd' } },
+      { name: 'B', start: { kind: 'after', ids: ['done'] }, end: { kind: 'duration', amount: 1, unit: 'd' } },
+    ] }] };
+    const { text, warnings } = writeMermaidGantt({ kind: 'plot', id: 'p', width: 10, height: 10, data });
+    const tasks = (readMermaidGantt(text).document.pages[0] as PlotPage).data;
+    expect(tasks).toMatchObject({ sections: [{ tasks: [{ name: 'A', id: 'done_1' }, { name: 'B', start: { kind: 'after', ids: ['done_1'] } }] }] });
+    expect((tasks as GanttData).sections[0]!.tasks[0]!.tags).toBeUndefined();
+    expect(warnings).toContain('Mermaid reads a task id that is a tag word as a tag; those ids were renamed.');
+  });
 });
 
 describe('the Mermaid format', () => {
