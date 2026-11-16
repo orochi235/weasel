@@ -54,7 +54,7 @@ describe('useDocument', () => {
     const { result } = renderHook(() => {
       const [value, setValue] = useState(BASE);
       const doc = useDocument({
-        value, onChange: setValue, base: BASE, same: (a, b) => a.n === b.n, codec, opened: null, taken: false,
+        value, onChange: (next: Doc) => setValue(next), base: BASE, same: (a, b) => a.n === b.n, codec, opened: null, taken: false,
         selection: { get: () => [], set: () => {} }, onCommit: (_before, after) => void seen.push(after),
       });
       return { value, doc };
