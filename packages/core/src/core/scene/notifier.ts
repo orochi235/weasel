@@ -7,6 +7,7 @@ import { createEmitter } from '@weasel-js/registry';
 export interface Notifier {
   /** Count a change, and call the subscribers unless the call is held. */
   notify(): void;
+  /** Starts at 1, since a canvas reports `0` for nothing painted yet. */
   version(): number;
   subscribe(listener: () => void): () => void;
   /** Run `fn` with the calls it causes held, then make one for all of them
@@ -25,7 +26,7 @@ export interface Notifier {
 
 export function createNotifier(): Notifier {
   const changed = createEmitter();
-  let version = 0;
+  let version = 1;
   let held = 0;
   let pending = false;
   const settled = new Set<() => void>();

@@ -142,7 +142,8 @@ export interface CanvasExtensionApi {
   /** The `contentVersion` the current pixels were painted from — on
    *  `<SceneCanvas>`, the scene version. Chrome in lockstep with canvas
    *  content compares this against the version it is about to render and
-   *  defers a frame when they differ. `0` until the first paint lands. */
+   *  defers a frame when they differ. `0` until the first paint lands, which
+   *  no scene version is; `1` once painted on a canvas given no `contentVersion`. */
   getPaintedVersion(): number;
   /**
    * The painted tier's channel for this surface.

@@ -72,7 +72,8 @@ export interface CanvasProps<TPose = unknown> extends SurfaceSizeProps {
   /** The version of whatever content this canvas draws, sampled at paint time
    *  and reported by {@link CanvasExtensionApi.getPaintedVersion}.
    *  `<SceneCanvas>` wires this to `scene.getVersion`. Chrome that must not
-   *  show DOM ahead of pixels compares the two and defers a frame. */
+   *  show DOM ahead of pixels compares the two and defers a frame. Start it at
+   *  1 or above: `0` is the report for nothing painted yet. */
   contentVersion?: () => number;
 
   /** Paint inside the React commit rather than on the next animation frame.

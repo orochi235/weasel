@@ -45,8 +45,8 @@ differs is what it takes to bring the DOM along:
   Chrome that must be in lockstep compares `getPaintedVersion()` — the content
   version the pixels were painted from — against the version it is about to
   render, and defers a frame when they differ. It reads `0` until the first
-  paint lands, and a new scene no write has touched is at version `0` too, so
-  `0` cannot tell "nothing painted yet" from "an empty scene painted".
+  paint lands, which is not a version any scene has: a new scene starts at `1`,
+  so `0` means "nothing painted yet".
 
   So under `useScene(…, { subscribe: false })` a host driving poses from a
   frame loop pays no render per write.
