@@ -8,6 +8,7 @@ import type { EdgeLabelRoom, Graph, GraphEdge, GraphNode } from '../graph';
 import { portSitesOf } from '../ports';
 import { center, extent, graphOrder, seededOrder, type LayoutAxes } from '../layout';
 import { PLACEHOLDER, type Hop, type Rows } from './types';
+import { compositeKey } from '@weasel-js/registry';
 
 /** The ranks with placeholders added, the hops joining adjacent ranks, and
  *  each drawn edge's placeholders from its `from` end to its `to` end, with
@@ -256,7 +257,7 @@ function drawnEdges(edges: readonly GraphEdge[], back: ReadonlySet<string>): Dra
 function dedupe(hops: readonly Hop[]): Hop[] {
   const seen = new Set<string>();
   return hops.filter((h) => {
-    const key = `${h.from}\u0000${h.to}\u0000${h.edge}`;
+    const key = compositeKey([h.from, h.to, h.edge]);
     if (seen.has(key)) return false;
     seen.add(key);
     return true;
