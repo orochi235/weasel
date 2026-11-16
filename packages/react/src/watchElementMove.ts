@@ -8,6 +8,42 @@ function movedTo(box: DOMRectReadOnly, now: DOMRectReadOnly): boolean {
     || Math.abs(now.width - box.width) > 0.5 || Math.abs(now.height - box.height) > 0.5;
 }
 
+const clips = (overflow: string): boolean => overflow !== '' && overflow !== 'visible';
+
+/**
+ * The nearest ancestor that clips `element`'s overflow on its containing-block chain, short of the document: the
+ * root its moves are framed in. Null for a fixed box, whose containing block is the viewport.
+ */
+function clipRootOf(element: Element): Element | null {
+  const view = element.ownerDocument.defaultView;
+  if (!view) return null;
+  const top = element.ownerDocument.documentElement;
+  let position = view.getComputedStyle(element).position;
+  for (let a = element.parentElement; a && a !== top; a = a.parentElement) {
+    if (position === 'fixed') return null;
+    const style = view.getComputedStyle(a);
+    if (position === 'absolute' && style.position === 'static') continue;
+    if (clips(style.overflowX) || clips(style.overflowY)) return a;
+    position = style.position;
+  }
+  return null;
+}
+
+/**
+ * The root margin that shrinks `root`'s frame to `box`: the viewport's, or a clipping element's padding box. Floored,
+ * so the frame holds the box whole.
+ */
+function marginAround(box: DOMRectReadOnly, root: Element | null, doc: HTMLElement): string {
+  const r = root?.getBoundingClientRect();
+  const left = r && root ? r.left + root.clientLeft : 0;
+  const top = r && root ? r.top + root.clientTop : 0;
+  const right = root ? left + root.clientWidth : doc.clientWidth;
+  const bottom = root ? top + root.clientHeight : doc.clientHeight;
+  return [box.top - top, right - box.right, bottom - box.bottom, box.left - left]
+    .map((inset) => `${-Math.floor(inset)}px`)
+    .join(' ');
+}
+
 /**
  * Call `onMove` when `element`'s box moves in the viewport for a reason no
  * event reports: a sibling collapsing, content loading above it. A scroll or a
@@ -21,10 +57,16 @@ function movedTo(box: DOMRectReadOnly, now: DOMRectReadOnly): boolean {
  *
  * A frame only watches from its first report on, so that report is checked
  * against the box the frame was built around: a move in between is reported too.
+ *
+ * An element an ancestor clips is framed inside that ancestor, which is the
+ * observer's root, so no clip stands between the element and its frame; and the
+ * ancestor is watched the same way, for a move that carries both. The clipping
+ * ancestor is the one found when the watch starts.
  */
 export function watchElementMove(element: Element, onMove: () => void): () => void {
   if (typeof IntersectionObserver === 'undefined') return () => {};
-  const root = element.ownerDocument.documentElement;
+  const doc = element.ownerDocument.documentElement;
+  const clipRoot = clipRootOf(element);
   let observer: IntersectionObserver | null = null;
   let shown: IntersectionObserver | null = null;
   let sized: ResizeObserver | null = null;
@@ -96,12 +138,6 @@ export function watchElementMove(element: Element, onMove: () => void): () => vo
       awaitSize();
       return;
     }
-    const insets = [
-      Math.floor(box.top),
-      Math.floor(root.clientWidth - box.right),
-      Math.floor(root.clientHeight - box.bottom),
-      Math.floor(box.left),
-    ];
     let first = true;
     observer = new IntersectionObserver(
       (entries) => {
@@ -129,14 +165,20 @@ export function watchElementMove(element: Element, onMove: () => void): () => vo
           }, 1000);
         }
       },
-      { rootMargin: insets.map((inset) => `${-inset}px`).join(' '), threshold: Math.max(0, Math.min(1, threshold)) || 1 },
+      {
+        root: clipRoot,
+        rootMargin: marginAround(box, clipRoot, doc),
+        threshold: Math.max(0, Math.min(1, threshold)) || 1,
+      },
     );
     observer.observe(element);
   };
 
+  const unwatchClip = clipRoot ? watchElementMove(clipRoot, () => void report()) : undefined;
   frame(1);
   return () => {
     stopped = true;
+    unwatchClip?.();
     disconnect();
   };
 }

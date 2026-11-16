@@ -179,7 +179,7 @@ test('a mark is cut where its target is, and takes no press past it', async () =
   );
 });
 
-test('the box that takes input follows its target when it moves with nothing resizing', async () => {
+test('the box that takes input follows its target either way it moves with nothing resizing', async () => {
   renderWithIcons(
     <div className="lk-clip-lab-host">
       <Lab instruments={[Clipped]} />
@@ -192,11 +192,15 @@ test('the box that takes input follows its target when it moves with nothing res
     ((pane.current as HTMLElement).parentElement as HTMLElement).getBoundingClientRect();
   await waitFor(() => expect(input.getBoundingClientRect().left).toBeCloseTo(shown().left, 0));
 
-  // Widening the neighbor pushes the target right; neither it nor the lab changes size.
+  // Resizing the neighbor moves the target; neither it nor the lab changes size. Leftward,
+  // the part that shows stays over the part the window hides, which is the move the full
+  // fleet runs met (1.23 px) and the tile's own watch missed.
   const before = shown().left;
-  (document.querySelector('.lk-clip-lab-beside') as HTMLElement).classList.add(
-    'lk-clip-lab-beside--wide',
-  );
+  const beside = document.querySelector('.lk-clip-lab-beside') as HTMLElement;
+  beside.classList.add('lk-clip-lab-beside--narrow');
+  expect(shown().left - before).toBeCloseTo(-1.25, 1);
+  await waitFor(() => expect(input.getBoundingClientRect().left).toBeCloseTo(shown().left, 0));
+  beside.classList.replace('lk-clip-lab-beside--narrow', 'lk-clip-lab-beside--wide');
   expect(shown().left - before).toBeCloseTo(7, 0);
   await waitFor(() => expect(input.getBoundingClientRect().left).toBeCloseTo(shown().left, 0));
 });

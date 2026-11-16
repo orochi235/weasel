@@ -103,6 +103,42 @@ describe('watchElementMove', () => {
     await expect.poll(() => onMove.mock.calls.length).toBeGreaterThanOrEqual(1);
   });
 
+  // A layout shift above a clipped pane moves the pane and its clip together. Moving away from the side the clip
+  // hides, the part that shows stays inside the frame built round the whole box, and shows exactly as much.
+  it('reports a move that carries the clipping ancestor with it', async () => {
+    page = document.createElement('div');
+    page.innerHTML =
+      '<div style="margin-left:40px;width:200px;height:100px;overflow:hidden">' +
+      '<div style="margin-left:-100px;width:300px;height:100px"></div></div>';
+    document.body.appendChild(page);
+    const clip = page.firstElementChild as HTMLDivElement;
+    const box = clip.firstElementChild as HTMLDivElement;
+    const onMove = vi.fn();
+    stop = watchElementMove(box, onMove);
+    await baseline();
+    await baseline();
+    onMove.mockClear();
+    clip.style.marginLeft = '38.75px';
+    await expect.poll(() => onMove.mock.calls.length).toBeGreaterThanOrEqual(1);
+  });
+
+  // Hidden on both sides, the box can slide under a still clip with what shows changing neither place nor size.
+  it('reports a move under a clip that hides both of its sides', async () => {
+    page = document.createElement('div');
+    page.innerHTML =
+      '<div style="width:200px;height:100px;overflow:hidden">' +
+      '<div style="margin-left:-100px;width:400px;height:100px"></div></div>';
+    document.body.appendChild(page);
+    const box = page.firstElementChild!.firstElementChild as HTMLDivElement;
+    const onMove = vi.fn();
+    stop = watchElementMove(box, onMove);
+    await baseline();
+    await baseline();
+    onMove.mockClear();
+    box.style.marginLeft = '-103px';
+    await expect.poll(() => onMove.mock.calls.length).toBeGreaterThanOrEqual(1);
+  });
+
   it('stays quiet for a still element a clipping ancestor partly hides', async () => {
     page = document.createElement('div');
     page.innerHTML =
