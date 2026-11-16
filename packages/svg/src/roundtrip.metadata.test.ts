@@ -1,3 +1,4 @@
+import { getOwn } from '@weasel-js/registry';
 import { describe, it, expect } from 'vitest';
 import { parseSvg, serializeSvg } from './index';
 import * as F from './__fixtures__/fixtures';
@@ -108,12 +109,12 @@ describe('round-trip', () => {
       + `<g foo:toString="t"><foo:constructor/></g></svg>`;
     const { documentMeta, nodes } = parseSvg(svg, { namespaces });
     expect(Object.hasOwn(documentMeta!.foo.attrs!, 'constructor')).toBe(true);
-    const el = documentMeta!.foo.elements!.constructor[0];
+    const el = getOwn(documentMeta!.foo.elements!, 'constructor')![0]!;
     expect(Object.hasOwn(el.attrs, '__proto__')).toBe(true);
     expect(Object.getPrototypeOf(el.attrs)).toBe(Object.prototype);
-    expect(el.children!.toString).toHaveLength(1);
-    expect(nodes[0].meta!.foo.attrs!.toString).toBe('t');
-    expect(nodes[0].meta!.foo.elements!.constructor).toHaveLength(1);
+    expect(getOwn(el.children!, 'toString')).toHaveLength(1);
+    expect(getOwn(nodes[0].meta!.foo.attrs!, 'toString')).toBe('t');
+    expect(getOwn(nodes[0].meta!.foo.elements!, 'constructor')).toHaveLength(1);
   });
 
   it('reads no meta for a declared prefix the document does not use', () => {

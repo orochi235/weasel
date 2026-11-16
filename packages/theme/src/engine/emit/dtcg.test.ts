@@ -1,3 +1,4 @@
+import { getOwn } from '@weasel-js/registry';
 import { describe, expect, it } from 'vitest';
 import { loadDTCG } from '../../loadDTCG';
 import { enumerateSelections } from '../../axes';
@@ -11,9 +12,8 @@ describe('toDTCG', () => {
     const axes = { mode: { default: 'dark', values: { dark: {}, toString: {} } } };
     const t = defineTheme({ name: 'x', extends: null, axes, pins: { gap: { value: 1, type: 'constructor' }, tone: { by: 'mode', dark: '#000000', toString: '#ffffff' } } });
     const doc = toDTCG(t);
-    expect(doc.primitives.constructor).toEqual({ $type: 'constructor', gap: { $value: 1 } });
-    expect(Object.hasOwn(doc.modes, 'toString')).toBe(true);
-    expect(doc.modes.toString!.unknown).toEqual({ $type: 'unknown', tone: { $value: '#ffffff' } });
+    expect(getOwn(doc.primitives, 'constructor')).toEqual({ $type: 'constructor', gap: { $value: 1 } });
+    expect(getOwn(getOwn(doc.modes, 'toString') ?? {}, 'unknown')).toEqual({ $type: 'unknown', tone: { $value: '#ffffff' } });
     expect(Object.hasOwn(Object, 'gap')).toBe(false);
     expect(Object.hasOwn(Object.prototype.toString, 'unknown')).toBe(false);
   });
