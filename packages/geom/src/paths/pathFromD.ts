@@ -147,7 +147,7 @@ export function pathFromD(
   for (const { cmd, args } of tokens) {
     const upper = cmd.toUpperCase();
     const relative = cmd !== upper;
-    const argCount = ARG_COUNTS[upper];
+    const argCount = Object.hasOwn(ARG_COUNTS, upper) ? ARG_COUNTS[upper] : undefined;
     if (argCount === undefined) {
       onWarn?.(`unknown path command: ${cmd}`);
       continue;

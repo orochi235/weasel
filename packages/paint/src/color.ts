@@ -314,12 +314,10 @@ const NAMED_COLORS: Record<string, [number, number, number, number]> = (() => {
     tomato: 0xff6347, turquoise: 0x40e0d0, violet: 0xee82ee, wheat: 0xf5deb3,
     white: 0xffffff, whitesmoke: 0xf5f5f5, yellow: 0xffff00, yellowgreen: 0x9acd32,
   };
-  const out: Record<string, [number, number, number, number]> = {
+  const rgba = (n: number): [number, number, number, number] =>
+    [((n >> 16) & 0xff) / 255, ((n >> 8) & 0xff) / 255, (n & 0xff) / 255, 1];
+  return {
     transparent: [0, 0, 0, 0],
+    ...Object.fromEntries(Object.entries(hex).map(([name, n]) => [name, rgba(n)])),
   };
-  for (const name in hex) {
-    const n = hex[name];
-    out[name] = [((n >> 16) & 0xff) / 255, ((n >> 8) & 0xff) / 255, (n & 0xff) / 255, 1];
-  }
-  return out;
 })();

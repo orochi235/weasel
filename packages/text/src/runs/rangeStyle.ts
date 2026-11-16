@@ -194,10 +194,7 @@ export function patchRangeStyle(range: RangeStyle, patch: RunStylePatch): RangeS
   const out: Record<string, unknown> = { ...range };
   const superseded = supersededKey(patch);
   if (superseded !== undefined) delete out[superseded];
-  for (const [key, value] of Object.entries(patch)) {
-    if (value !== undefined) out[key] = value;
-  }
-  return out as RangeStyle;
+  return { ...out, ...Object.fromEntries(Object.entries(patch).filter(([, value]) => value !== undefined)) } as RangeStyle;
 }
 
 /** Apply `patch` to one run, deleting rather than storing "no override". */

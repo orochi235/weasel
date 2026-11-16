@@ -1,6 +1,6 @@
 import { type ConfigShape, f } from '@weasel-js/labkit';
 import { cssColorLiteral } from '@weasel-js/paint';
-import { setOwn } from '@weasel-js/registry';
+import { getOwn, setOwn } from '@weasel-js/registry';
 
 /** A slider over `min`…`max` by `step`, starting at `def`. */
 export const num = (def: number, min: number, max: number, step: number) => f.number(def).range(min, max).step(step);
@@ -23,13 +23,13 @@ export function badgeParams(shape: ConfigShape, values: Params): Params {
 }
 
 /** Whether `key` in `shape` holds a color, which a snippet writes as a color literal. */
-export const isColor = (shape: ConfigShape, key: string): boolean => (shape[key] as unknown as { kind?: string } | undefined)?.kind === 'color';
+export const isColor = (shape: ConfigShape, key: string): boolean => (getOwn(shape, key) as unknown as { kind?: string } | undefined)?.kind === 'color';
 
 /** The values `params` holds that differ from `shape`'s defaults. */
 export function changedParams(shape: ConfigShape, params: Params): Params {
   const defaults = f.schema(shape).defaults() as Params;
   return Object.fromEntries(
-    Object.entries(params).filter(([key, value]) => value !== undefined && value !== null && value !== defaults[key]),
+    Object.entries(params).filter(([key, value]) => value !== undefined && value !== null && value !== getOwn(defaults, key)),
   );
 }
 
