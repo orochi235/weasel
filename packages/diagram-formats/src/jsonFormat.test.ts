@@ -20,13 +20,14 @@ describe('DIAGRAM_JSON', () => {
     expect(DIAGRAM_JSON.read!(DIAGRAM_JSON.write!(doc).text)).toEqual({ document: doc, warnings: [] });
   });
 
-  it('lays out a page whose layout names an Object.prototype key as it does one of an unknown name', () => {
+  it('lays out a page whose layout names an Object.prototype key as it does one of an unknown name', async () => {
     for (const name of ['toString', 'constructor', 'hasOwnProperty']) {
       const text = JSON.stringify({
         format: 'weasel-diagram', version: 1,
         pages: [{ kind: 'graph', id: 'p', width: 100, height: 100, layout: { name }, data: { nodes: [{ id: 'a', lines: ['A'] }, { id: 'b', lines: ['B'] }], edges: [{ from: 'a', to: 'b' }] } }],
       });
-      expect(() => documentSpecs(DIAGRAM_JSON.read!(text).document)).not.toThrow();
+      const { document } = await DIAGRAM_JSON.read!(text);
+      expect(() => documentSpecs(document)).not.toThrow();
     }
   });
 });
