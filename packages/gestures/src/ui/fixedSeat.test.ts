@@ -19,33 +19,42 @@ describe('nearestPortalHost', () => {
 
 describe('fixedSeat', () => {
   it('seats on the body at the viewport origin when nothing above is a host', () => {
-    expect(fixedSeat(mount('<i id="from"></i>'))).toEqual({ host: document.body, left: 0, top: 0 });
+    expect(fixedSeat(mount('<i id="from"></i>'))).toEqual({ host: document.body, left: 0, top: 0, scale: { x: 1, y: 1 } });
   });
 
   it('seats on the host at the viewport origin when the host leaves fixed boxes to the viewport', () => {
     const from = mount('<div data-wzl-theme="x" id="h"><i id="from"></i></div>');
-    expect(fixedSeat(from)).toEqual({ host: document.getElementById('h'), left: 0, top: 0 });
+    expect(fixedSeat(from)).toEqual({ host: document.getElementById('h'), left: 0, top: 0, scale: { x: 1, y: 1 } });
   });
 
   it("answers the host's own corner when the host contains its fixed descendants", () => {
     const from = mount('<div data-wzl-theme="x" id="h" style="transform: translate(1px, 0)"><i id="from"></i></div>');
     const host = document.getElementById('h')!;
     host.getBoundingClientRect = () => ({ left: 40, top: 25, right: 0, bottom: 0, width: 0, height: 0, x: 40, y: 25, toJSON: () => ({}) });
-    expect(fixedSeat(from)).toEqual({ host, left: 40, top: 25 });
+    expect(fixedSeat(from)).toEqual({ host, left: 40, top: 25, scale: { x: 1, y: 1 } });
   });
 
   it("answers the corner of a host's ancestor that contains its fixed descendants", () => {
     const from = mount('<div id="a" style="transform: translate(1px, 0)"><div data-wzl-theme="x" id="h"><i id="from"></i></div></div>');
     const outer = document.getElementById('a')!;
     outer.getBoundingClientRect = () => ({ left: 12, top: 7, right: 0, bottom: 0, width: 0, height: 0, x: 12, y: 7, toJSON: () => ({}) });
-    expect(fixedSeat(from)).toEqual({ host: document.getElementById('h'), left: 12, top: 7 });
+    expect(fixedSeat(from)).toEqual({ host: document.getElementById('h'), left: 12, top: 7, scale: { x: 1, y: 1 } });
+  });
+
+  it('answers the scale the containing block draws its fixed descendants at', () => {
+    const from = mount('<div data-wzl-theme="x" id="h" style="transform: scale(2)"><i id="from"></i></div>');
+    const host = document.getElementById('h')!;
+    Object.defineProperty(host, 'offsetWidth', { value: 100 });
+    Object.defineProperty(host, 'offsetHeight', { value: 50 });
+    host.getBoundingClientRect = () => DOMRect.fromRect({ x: 40, y: 25, width: 200, height: 100 });
+    expect(fixedSeat(from)).toEqual({ host, left: 40, top: 25, scale: { x: 2, y: 2 } });
   });
 
   it("answers the body's corner when the body contains its fixed descendants", () => {
     document.body.style.transform = 'translate(1px, 0)';
     try {
       document.body.getBoundingClientRect = () => ({ left: 3, top: 4, right: 0, bottom: 0, width: 0, height: 0, x: 3, y: 4, toJSON: () => ({}) });
-      expect(fixedSeat(mount('<i id="from"></i>'))).toEqual({ host: document.body, left: 3, top: 4 });
+      expect(fixedSeat(mount('<i id="from"></i>'))).toEqual({ host: document.body, left: 3, top: 4, scale: { x: 1, y: 1 } });
     } finally {
       document.body.style.transform = '';
       delete (document.body as Partial<HTMLElement>).getBoundingClientRect;
