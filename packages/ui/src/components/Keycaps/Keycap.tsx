@@ -5,6 +5,7 @@ import { icon } from '../../icons.gen';
 import s from './Keycaps.module.css';
 import { MODIFIER_LABELS } from '@weasel-js/gestures';
 import { useLegendFit } from './useLegendFit';
+import { getOwn } from '@weasel-js/registry';
 
 const WIDE_GLYPHS = new Set(['⇥', '↵', '␣']);
 const FUNCTION_KEY = /^F([1-9]|1\d|2[0-4])$/;
@@ -85,7 +86,7 @@ export function KeyCap({ label, inverted = false, variant = 'default', className
   const fit = useLegendFit(ref, label, { wrap, font, fixed: fixed ?? (style?.width !== undefined || kind === 'square') });
   const fitted = fit.scale === undefined ? style : ({ ...style, '--key-legend-scale': String(fit.scale) } as CSSProperties);
   const resolvedStyle = font ? { ...fitted, fontFamily: font } : fitted;
-  const glyph = LEGEND_ICONS[fit.label];
+  const glyph = getOwn(LEGEND_ICONS, fit.label);
   return (
     <kbd
       ref={ref}
