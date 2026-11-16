@@ -1,4 +1,4 @@
-import { normalizeZoom } from '@weasel-js/geom';
+import { clamp as clampTo, normalizeZoom } from '@weasel-js/geom';
 import { type LoupePoint, type LoupeRect, loupeSourcePoint } from './geometry';
 
 /** How a loupe magnifies. `'vector'` re-renders the source through a zoomed-in
@@ -101,8 +101,7 @@ export function createLoupeModel(opts: LoupeModelOptions): LoupeModel {
   let aimUnsampled = false;
 
   const clamp = (n: number): number =>
-    normalizeZoom(Math.min(opts.maxFactor ?? Number.POSITIVE_INFINITY,
-                           Math.max(opts.minFactor ?? Number.NEGATIVE_INFINITY, n)));
+    normalizeZoom(clampTo(n, opts.minFactor ?? Number.NEGATIVE_INFINITY, opts.maxFactor ?? Number.POSITIVE_INFINITY));
 
   const sampleColor = () => {
     const hex = surface.sample(aim);

@@ -17,7 +17,7 @@ import { attract } from '@weasel-js/ui-input';
 import { snapRadiusPx as kitSnapRadiusPx } from '../../snap';
 import s from './CurveEditor.module.css';
 import type { CurveLayer, EmptyDownArgs, KeyDownArgs, LayerCtx, LayerGesture, LayerHit, LayerRenderCtx, PlotPoint } from './layerTypes';
-import { lerp, cubicBezierEasing, resolveEasing } from '@weasel-js/geom';
+import { clamp, lerp, cubicBezierEasing, resolveEasing } from '@weasel-js/geom';
 
 type Bezier = readonly [number, number, number, number];
 
@@ -72,7 +72,7 @@ export function keyframeLayerState(keys: readonly Keyframe<number>[]): KeyframeL
 }
 
 function clampTo(v: number, range?: readonly [number, number]): number {
-  return range ? Math.min(range[1], Math.max(range[0], v)) : v;
+  return range ? clamp(v, range[0], range[1]) : v;
 }
 
 function bezierOf(key: Keyframe<number> | undefined): Bezier | null {

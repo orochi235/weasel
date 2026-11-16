@@ -14,11 +14,10 @@ import { type LensActionApi, MAX_LENSES } from './lensActionDefs';
 import { addLensOps, aimAt, lensesOf, lensIdsOf, settingsOf } from './lensScene';
 import type { LensSources } from './lensSource';
 import { BODY_SIZE, type LensScene, type LensSourceKind, type LoupePoint } from './lensTypes';
+import { clamp } from '@weasel-js/geom';
 
 /** Each new lens's body sits this far further along than the last, so lenses added in a row do not stack. */
 const STAGGER = 24;
-
-const clamp = (v: number, lo: number, hi: number) => Math.min(Math.max(v, lo), Math.max(lo, hi));
 
 /** A new body beside its reticle, in lab-body px, flipped left where the right has no room. */
 function bodyBeside(reticle: LoupePoint, box: LayoutBox, n: number): LoupePoint {

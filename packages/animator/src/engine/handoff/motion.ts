@@ -1,5 +1,5 @@
 import { earliestRest } from '../springRest';
-import { lerp } from '@weasel-js/geom';
+import { clamp as clampTo, lerp } from '@weasel-js/geom';
 
 /** A handed-off animation's axes as a pure function of its own clock, which is what lets the
  *  whole run be sampled into keyframes ahead of time. */
@@ -12,7 +12,7 @@ export interface Motion {
   velocity(t: number): number[];
 }
 
-const clamp = (t: number, ms: number): number => Math.min(ms, Math.max(0, t));
+const clamp = (t: number, ms: number): number => clampTo(t, 0, ms);
 
 /** A tween: `path(easing(u))` at linear progress `u`, or a straight line per axis from `from`
  *  by `delta`. */

@@ -1,3 +1,5 @@
+import { clamp01 } from '@weasel-js/geom';
+
 /**
  * A parameter's domain, apart from how it is walked. A scrubber reads it
  * continuously, one value at a time (`at`); a stepped sequence reads every
@@ -26,8 +28,6 @@ export function stepsOf<V>(sweep: Sweep<V>, cap = SWEEP_CAP): { steps: V[]; capp
   }
   return { steps, capped: false };
 }
-
-const clamp01 = (u: number): number => (u <= 0 ? 0 : u >= 1 ? 1 : u);
 
 /** `n` to twelve digits, as a label shows it. */
 const shown = (n: number): number => +n.toPrecision(12);

@@ -11,6 +11,7 @@
  * first two derivatives continuous as well.
  */
 import type { Point } from './cubicMath';
+import { clamp } from '../scalar';
 
 /** The shape of a fitted segment, in its normalized frame. */
 export interface EulerFit {
@@ -30,7 +31,7 @@ const STEPS = 48;
 /** A chord-relative angle past this has no sensible spiral. */
 const MAX_ANGLE = Math.PI * 0.95;
 
-const clampAngle = (a: number): number => Math.max(-MAX_ANGLE, Math.min(MAX_ANGLE, a));
+const clampAngle = (a: number): number => clamp(a, -MAX_ANGLE, MAX_ANGLE);
 
 /** `∫₀^upTo e^{iφ(s)} ds` for the normalized segment `(k0, k1, k2, k3)`. */
 export function integrateEuler(k0: number, k1: number, upTo = 1, k2 = 0, k3 = 0): Point {

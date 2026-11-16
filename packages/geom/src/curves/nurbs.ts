@@ -1,5 +1,6 @@
 import type { CurveRepresentation, Discriminator, SharedAnchor } from './types';
 import { PATH_L, PATH_M } from '../commands';
+import { clamp01 } from '../scalar';
 
 const DEGREE = 3;
 const WEIGHT_MIN = 1e-3;
@@ -65,7 +66,7 @@ function evalNurbs(anchors: SharedAnchor[], u: number): { x: number; y: number }
   if (n === 1) return { x: anchors[0].x, y: anchors[0].y };
   const p = Math.min(DEGREE, n - 1);
   const knots = openUniformKnots(n, p);
-  const clamped = Math.min(Math.max(u, 0), 1);
+  const clamped = clamp01(u);
   const span = findSpan(n, p, clamped, knots);
   const N = basisFunctions(span, clamped, p, knots);
   let wx = 0;
