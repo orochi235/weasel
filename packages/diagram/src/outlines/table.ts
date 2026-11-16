@@ -24,7 +24,7 @@ const BUILTINS = {
 export type BuiltinOutline = keyof typeof BUILTINS;
 
 const table = createReflectable<OutlineDef>();
-for (const [name, def] of Object.entries(BUILTINS)) table.push(name, def as OutlineDef, { source: 'kit' });
+for (const [name, def] of Object.entries(BUILTINS)) table.push(name, def as OutlineDef, { source: 'kit', fallback: true });
 const warned = new Set<string>();
 
 /** Every outline name and the definition it resolves to: the built-ins (source `'kit'`) and what

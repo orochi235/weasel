@@ -1,4 +1,4 @@
-import { describe, expect, it, vi } from 'vitest';
+import { describe, expect, it, onTestFinished, vi } from 'vitest';
 import type { CameraView } from './CameraInput';
 import { createCameraRegistry } from './cameraRegistry';
 
@@ -24,6 +24,8 @@ describe('createCameraRegistry', () => {
   });
 
   it('keeps the newest of a key live, and a release uncovers the one it displaced', () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    onTestFinished(() => warn.mockRestore());
     const reg = createCameraRegistry();
     const first = camera();
     const second = camera();
@@ -38,9 +40,12 @@ describe('createCameraRegistry', () => {
     const offAgain = reg.register('a', second);
     offAgain();
     expect(reg.get('a')).toBe(first);
+    expect(warn).toHaveBeenCalledTimes(2);
   });
 
   it('reflects each key, reporting the camera a newer one covers', () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    onTestFinished(() => warn.mockRestore());
     const reg = createCameraRegistry();
     const first = camera();
     const second = camera();
@@ -49,9 +54,12 @@ describe('createCameraRegistry', () => {
     expect(
       reg.reflection.entries().map((e) => [e.key, e.value, e.shadowed.map((s) => s.value)]),
     ).toEqual([['a', second, [first]]]);
+    expect(warn).toHaveBeenCalledTimes(1);
   });
 
   it('a release takes out its own registration when one camera is registered twice under a key', () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    onTestFinished(() => warn.mockRestore());
     const reg = createCameraRegistry();
     const cam = camera();
     const other = camera();
@@ -61,6 +69,7 @@ describe('createCameraRegistry', () => {
     offFirst();
     expect(reg.get('a')).toBe(cam);
     expect(reg.reflection.entries().map((e) => e.shadowed.map((s) => s.value))).toEqual([[other]]);
+    expect(warn).toHaveBeenCalledTimes(1);
   });
 
   it('tells subscribers when a key changes hands, and stops when they leave', () => {

@@ -63,7 +63,7 @@ export interface MarkerEntry {
 const MARKERS = createReflectable<MarkerEntry>();
 
 function seedBuiltins(): void {
-  for (const entry of BUILTIN_MARKERS) MARKERS.push(entry.id, entry, { source: 'kit' });
+  for (const entry of BUILTIN_MARKERS) MARKERS.push(entry.id, entry, { source: 'kit', fallback: true });
 }
 seedBuiltins();
 

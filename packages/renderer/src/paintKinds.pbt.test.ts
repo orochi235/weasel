@@ -3,7 +3,7 @@
  * included), and loaders, against a model holding each id's stack of entries. A lookup answers the latest entry still
  * registered under its id.
  */
-import { afterEach, describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, onTestFinished, vi } from 'vitest';
 import fc from 'fast-check';
 import {
   _resetPaintDrawKindsForTests, getPaintDrawKind, isPaintKindKnown, registerPaintDrawKind, registerPaintDrawKindLoader,
@@ -91,6 +91,9 @@ afterEach(() => _resetPaintDrawKindsForTests());
 
 describe('paint draw-kind registry, stateful property', () => {
   it('answers the latest entry still registered under each id', () => {
+    // Registrations under one key stack on purpose; @weasel-js/registry tests the clash warning.
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    onTestFinished(() => warn.mockRestore());
     fc.assert(fc.property(fc.commands([register, register, dispose, dispose, loader, disposeLoader], { size: 'large', maxCommands: 40 }), (cmds) => {
       _resetPaintDrawKindsForTests();
       fc.modelRun(() => ({ model: { stacks: new Map(), loaders: new Map() }, real: { disposers: [], loaderDisposers: [] } }), cmds);

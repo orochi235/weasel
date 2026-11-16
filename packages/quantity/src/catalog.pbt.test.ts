@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, onTestFinished, vi } from 'vitest';
 import fc from 'fast-check';
 import { catalogUnit, catalogUnits, registerUnit, unitSpellings, unitSymbol, withUnit, type CatalogUnit, type UnitDefinition } from './catalog';
 import { withSpellings } from './number';
@@ -26,6 +26,9 @@ const builtin = new Map(BUILTIN_KEYS.map((k) => [k, catalogUnit(k)]));
 
 describe('the unit catalog, property', () => {
   it('finds each key under the latest unit registered for it, and takes a unit back out cleanly in any order', () => {
+    // Registrations under one key stack on purpose; @weasel-js/registry tests the clash warning.
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    onTestFinished(() => warn.mockRestore());
     const op = fc.oneof(
       def.map((d) => ({ kind: 'add' as const, d })),
       fc.nat().map((n) => ({ kind: 'remove' as const, n })),

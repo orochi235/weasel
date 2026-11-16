@@ -8,6 +8,8 @@ import {
   type IngestCtx,
 } from './contentHandlers';
 import { itemTypesFromDataTransfer, type IngestItem } from '@weasel-js/routing';
+import { render } from '@testing-library/react';
+import { createElement, StrictMode, useEffect } from 'react';
 
 const png: IngestItem = { kind: 'file', mime: 'image/png', file: new File(['x'], 'a.png', { type: 'image/png' }) };
 const csv: IngestItem = { kind: 'file', mime: 'text/csv', file: new File(['x'], 'a.csv', { type: 'text/csv' }) };
@@ -19,11 +21,14 @@ beforeEach(() => _resetContentHandlersForTests());
 afterEach(() => vi.restoreAllMocks());
 
 describe('registerContentHandler', () => {
-  it('reflects handlers by id, and a second under one id shadows the first until released', async () => {
+  it('reflects handlers by id, and a second under one id shadows the first until released, warning of the clash', async () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
     const first = vi.fn();
     const second = vi.fn();
     registerContentHandler({ id: 'app:csv', match: 'text/csv', handle: first });
     const off = registerContentHandler({ id: 'app:csv', match: 'text/csv', handle: second });
+    expect(warn).toHaveBeenCalledTimes(1);
+    expect(warn.mock.calls[0]![0]).toMatch(/"app:csv"/);
     const [entry] = contentHandlerRegistry.entries();
     expect(entry!.key).toBe('app:csv');
     expect(entry!.value.handle).toBe(second);
@@ -43,6 +48,24 @@ describe('registerContentHandler', () => {
     off(); // second call — must be a no-op
     expect(getContentHandlers().some((h) => h.id === 'u')).toBe(true);
     off2();
+  });
+
+  it('an app handler under a kit id is silent: the kit\'s come by preset, never through the page registry', () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    registerContentHandler({ id: 'kit:image', match: 'image/*', handle: () => {} });
+    expect(warn).not.toHaveBeenCalled();
+  });
+
+  it('a component registering in an effect under StrictMode mounts without a clash', () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    function Registers() {
+      useEffect(() => registerContentHandler({ id: 'app:csv', match: 'text/csv', handle: () => {} }), []);
+      return null;
+    }
+    const { unmount } = render(createElement(StrictMode, null, createElement(Registers)));
+    expect(contentHandlerRegistry.entries().map((e) => [e.key, e.shadowed.length])).toEqual([['app:csv', 0]]);
+    expect(warn).not.toHaveBeenCalled();
+    unmount();
   });
 });
 

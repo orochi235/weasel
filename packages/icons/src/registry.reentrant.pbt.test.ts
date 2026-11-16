@@ -5,7 +5,7 @@
  * checked against a model after each step, and what a listener reads mid-notice agrees with itself. Then a
  * listener that retries a failed variant from inside the failure's notice, against a count of loader failures.
  */
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, onTestFinished, vi } from 'vitest';
 import fc from 'fast-check';
 import { createIconRegistry, IconNamespaceClaimedError, type IconRegistry } from './registry';
 import type { IconRef } from './names';
@@ -198,6 +198,9 @@ function actArb(glyphs: Map<string, IconGlyph>): fc.Arbitrary<Act> {
 
 describe('icon registry with listeners acting mid-notice', () => {
   it('resolves every ref, owner, and entry as the model does, through nested changes', () => {
+    // Registrations under one key stack on purpose; @weasel-js/registry tests the clash warning.
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    onTestFinished(() => warn.mockRestore());
     tally.clear();
     const glyphs = new Map(BODIES.map((b) => [b, glyph(b)]));
     const act = actArb(glyphs);

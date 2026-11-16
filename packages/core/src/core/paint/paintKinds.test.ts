@@ -4,7 +4,7 @@
  * kit edits. Each assertion here is a kit dispatch site that would otherwise
  * fall off the end of a switch.
  */
-import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach, onTestFinished, vi } from 'vitest';
 import type { Paint, PolygonPath } from '@weasel-js/core';
 import { serializeSvg } from '@weasel-js/svg';
 import type { SvgNode } from '@weasel-js/svg';
@@ -168,7 +168,9 @@ describe('paint-kind registry', () => {
     expect(getPaintKind('conic-gradient')?.toSvg).toBeUndefined();
   });
 
-  it('restores the built-in when two overrides are disposed out of order', () => {
+  it('restores the built-in when two overrides are disposed out of order, warning of the clash between them', () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    onTestFinished(() => warn.mockRestore());
     const conic = getPaintKind('conic-gradient')!;
     const a = registerPaintKind({ ...conic, label: 'A' });
     const b = registerPaintKind({ ...conic, label: 'B' });
@@ -176,6 +178,8 @@ describe('paint-kind registry', () => {
     expect(getPaintKind('conic-gradient')?.label).toBe('B');
     b();
     expect(getPaintKind('conic-gradient')).toBe(conic);
+    // One from the paint-kind registry, one from the renderer's draw-kind registry.
+    expect(warn).toHaveBeenCalledTimes(2);
   });
 
   it('reflects an override as a conflict over the kit entry, and notifies subscribers', () => {

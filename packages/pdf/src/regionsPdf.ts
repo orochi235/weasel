@@ -135,5 +135,5 @@ export const PDF_EXPORT: ExportFormat<PdfExportOptions> = {
 
 /** Register the `pdf` export format with `@weasel-js/export`'s registry. Returns the disposer. */
 export function registerPdfExport(): () => void {
-  return registerExportFormat(PDF_EXPORT);
+  return registerExportFormat(PDF_EXPORT, { fallback: true });
 }

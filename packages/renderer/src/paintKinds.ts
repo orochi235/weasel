@@ -8,7 +8,7 @@
  */
 
 import type { ColorSpace, Paint, PaintUnits, GradStop } from '@weasel-js/paint';
-import { createReflectable, type Reflection } from '@weasel-js/registry';
+import { createReflectable, type PushOptions, type Reflection } from '@weasel-js/registry';
 import type { FillPoseBox } from './fillInPoseFrame';
 import type { GlMat3 } from '@weasel-js/geom';
 import type { GpuTexture } from './gpu/types';
@@ -150,8 +150,9 @@ export const paintDrawKindRegistry: Reflection<PaintDrawKind> = KINDS.reflection
 
 /** Register a kind's draw half. Returns a disposer that removes it.
  *  Re-registering an existing id is an override; disposing it uncovers
- *  whatever it displaced. */
-export function registerPaintDrawKind(entry: PaintDrawKind): () => void {
+ *  whatever it displaced. `fallback` marks an engine default, which a later
+ *  registration replaces without the development clash warning. */
+export function registerPaintDrawKind(entry: PaintDrawKind, options?: Pick<PushOptions, 'fallback'>): () => void {
   if ((entry.inPoseFrame === undefined) !== (entry.toBoundsFrame === undefined)) {
     const missing = entry.inPoseFrame === undefined ? 'inPoseFrame' : 'toBoundsFrame';
     throw new Error(
@@ -165,7 +166,7 @@ export function registerPaintDrawKind(entry: PaintDrawKind): () => void {
     // The kind owns the programs it declares: registering it again is a newer copy of them.
     registerProgram(id, src, { replace: true });
   }
-  return KINDS.push(entry.id, entry);
+  return KINDS.push(entry.id, entry, options);
 }
 
 /** A kind's program as the registry holds it: its WGSL inside the paint prelude. */

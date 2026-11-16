@@ -12,7 +12,7 @@ import type {
   ColorSpace, Paint, GradientPaint, GradientKind, GradStop, TileKind, TilePaint,
 } from '@weasel-js/paint';
 import { gradientForBounds, isGradientPaint, isTilePaint, withGradientKind } from '@weasel-js/paint';
-import { createReflectable, type ReflectedEntry, type Reflection } from '@weasel-js/registry';
+import { createReflectable, type PushOptions, type ReflectedEntry, type Reflection } from '@weasel-js/registry';
 import { getPaintDrawKind, registerPaintDrawKind, registerPaintDrawKindLoader } from '@weasel-js/renderer';
 import type { PaintKind, PaintKindEntry, PaintKindFamily } from './paintKindEntry';
 import type { IconRef } from '@weasel-js/icons';
@@ -112,10 +112,10 @@ const LAZY_BUILTINS: ReadonlyArray<readonly [string, PaintKindLoader]> = [
 
 function seed(): void {
   for (const entry of BUILTINS) {
-    KINDS.push(entry.id, entry, { source: 'kit' });
-    registerPaintDrawKind(entry);
+    KINDS.push(entry.id, entry, { source: 'kit', fallback: true });
+    registerPaintDrawKind(entry, { fallback: true });
   }
-  for (const [id, load] of LAZY_BUILTINS) registerPaintKindLoader(id, load);
+  for (const [id, load] of LAZY_BUILTINS) registerPaintKindLoader(id, load, { fallback: true });
 }
 seed();
 
@@ -123,8 +123,10 @@ seed();
 export const paintKindRegistry: Reflection<PaintKindEntry> = KINDS.reflection;
 
 /** Register a paint kind. Returns a disposer that removes it. Re-registering an
- *  existing id is an override; disposing it uncovers whatever it displaced. */
-export function registerPaintKind(entry: PaintKindEntry): () => void {
+ *  existing id is an override; disposing it uncovers whatever it displaced.
+ *  `fallback` marks an engine default, which a later registration replaces
+ *  without the development clash warning. */
+export function registerPaintKind(entry: PaintKindEntry, options?: Pick<PushOptions, 'fallback'>): () => void {
   if ((entry.stopsOf === undefined) !== (entry.fromStops === undefined)) {
     const missing = entry.stopsOf === undefined ? 'stopsOf' : 'fromStops';
     throw new Error(
@@ -134,8 +136,8 @@ export function registerPaintKind(entry: PaintKindEntry): () => void {
   }
   // The draw half goes first: it is the one that can throw, and the editor's
   // list fires its subscribers on push.
-  const dropDraw = registerPaintDrawKind(entry);
-  const dropEntry = KINDS.push(entry.id, entry);
+  const dropDraw = registerPaintDrawKind(entry, options);
+  const dropEntry = KINDS.push(entry.id, entry, options);
   return () => {
     dropEntry();
     dropDraw();
@@ -155,10 +157,10 @@ export function registerPaintKind(entry: PaintKindEntry): () => void {
  * A kind that is already registered never calls its loader. Returns a
  * disposer that removes the loader.
  */
-export function registerPaintKindLoader(id: string, load: PaintKindLoader): () => void {
+export function registerPaintKindLoader(id: string, load: PaintKindLoader, options?: Pick<PushOptions, 'fallback'>): () => void {
   return registerPaintDrawKindLoader(id, async () => {
     const entry = await load();
-    if (entry.id === id && !KINDS.has(id)) registerPaintKind(entry);
+    if (entry.id === id && !KINDS.has(id)) registerPaintKind(entry, options);
     return entry;
   });
 }

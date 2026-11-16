@@ -18,7 +18,7 @@ for (const k of [
   percentKind, fractionKind, ratioKind, multiplierKind, zoomKind,
   unitKind, currencyKind, durationKind, bytesKind,
   romanKind, ordinalKind,
-]) KINDS.push(k.kind, k as DisplayKind<never>, { source: 'kit' });
+]) KINDS.push(k.kind, k as DisplayKind<never>, { source: 'kit', fallback: true });
 
 /** Every display kind by its `kind` tag: the built-ins (source `'kit'`) and what {@link registerDisplayKind}
  *  added, a later registration shadowing an earlier one. */

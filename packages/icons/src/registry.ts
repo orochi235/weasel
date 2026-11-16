@@ -80,7 +80,7 @@ export function createIconRegistry(initial?: IconTable | readonly IconTable[]): 
       return list.flatMap((t) => {
         const held = claims.get(t.namespace);
         claims.set(t.namespace, { owner: t.owner, count: (held?.count ?? 0) + 1 });
-        const offs = Object.keys(t.icons).map((name) => glyphs.push(`${t.namespace}:${name}`, t.icons[name]!, { source: t.owner }));
+        const offs = Object.keys(t.icons).map((name) => glyphs.push(`${t.namespace}:${name}`, t.icons[name]!, { source: t.owner, fallback: true }));
         return [() => unclaim(t.namespace), ...offs];
       });
     });
