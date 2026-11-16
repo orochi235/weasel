@@ -8,7 +8,7 @@ type Sizes = Readonly<Record<string, readonly [number, number]>>;
 /** A graph of nodes sized as given, on the diagonal in order, each in the group `groupOf` names. */
 function graphOf(sizes: Sizes, groups: readonly GraphGroup[] = [], groupOf: Readonly<Record<string, string>> = {}, pinned: readonly string[] = []): Graph {
   const nodes: GraphNode[] = Object.entries(sizes).map(([id, [width, height]], i) => ({
-    id, bounds: { x: i, y: i, width, height }, pinned: pinned.includes(id), ...(groupOf[id] !== undefined ? { group: groupOf[id] } : {}),
+    id, bounds: { x: i, y: i, width, height }, pinned: pinned.includes(id), ...(Object.hasOwn(groupOf, id) ? { group: groupOf[id] } : {}),
   }));
   const byId = new Map(nodes.map((n) => [n.id, n]));
   return { nodes, edges: [], groups, node: (id) => byId.get(id), outgoing: () => [], incoming: () => [] };
@@ -27,6 +27,18 @@ function laid(graph: Graph, opts: LayoutOptions = {}): Record<string, { x: numbe
 const of = (columns: number, more: Omit<GridOptions, 'columns'> = {}): LayoutOptions => ({ grid: { columns, ...more } });
 
 describe('grid', () => {
+  it('places a node named for an Object.prototype member like any other', () => {
+    const sizes = (mid: string) => ({ a: [40, 20], [mid]: [40, 20], b: [40, 20] } as const);
+    const opts = of(2, { spans: { a: 1 }, skips: {} });
+    expect(Object.values(laid(graphOf(sizes('constructor')), opts))).toEqual(Object.values(laid(graphOf(sizes('m')), opts)));
+  });
+
+  it('gives a group named for an Object.prototype member its default columns', () => {
+    const group = (id: string): GraphGroup => ({ id, members: ['b', 'c'], inset });
+    const run = (id: string) => laid(graphOf({ a: [40, 20], b: [40, 20], c: [40, 20] }, [group(id)], { b: id, c: id }), of(2, { groupColumns: {} }));
+    expect(run('toString')).toEqual(run('g'));
+  });
+
   it('fills rows of the given columns in graph order, each column as wide as the widest item', () => {
     const at = laid(graphOf({ a: [40, 20], b: [60, 20], c: [40, 20], d: [40, 30] }), of(3));
     expect(at).toEqual({ a: { x: 0, y: 0 }, b: { x: 60, y: 0 }, c: { x: 140, y: 0 }, d: { x: 0, y: 30 } });
