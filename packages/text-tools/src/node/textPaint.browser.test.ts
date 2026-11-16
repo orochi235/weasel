@@ -8,11 +8,13 @@
  * The batch checks are pixel probes rather than a baseline because a
  * screenshot cannot see which draw a pixel came from.
  */
-import { describe, it, expect, beforeAll } from 'vitest';
+import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 import { registerFont, registerFontOutlines, outlineStatus } from '@weasel-js/font';
 import type { Fill, Paint } from '@weasel-js/paint';
-import { createScene, registerPaintKind, asPaint, type PaintKindEntry, renderSceneToPixels, type RasterImage, defaultDrawOne } from '@weasel-js/core';
-import type { RectPose } from 'core/scene/composePose';
+import {
+  createScene, registerPaintKind, registerNodeShape, asPaint, type PaintKindEntry, renderSceneToPixels, type RasterImage,
+  defaultDrawOne, type RectPose,
+} from '@weasel-js/core';
 import { resolveFillPattern } from '@weasel-js/renderer';
 import { meshFromStops } from '@weasel-js/renderer/mesh';
 import '@weasel-js/core/mesh';
@@ -22,6 +24,7 @@ import { OUTLINE_MIN_SCREEN_PX } from '@weasel-js/renderer';
 import metricsUrl from '../../../../assets/fonts/inter/inter.json?url';
 import atlasUrl from '../../../../assets/fonts/inter/inter.png?url';
 import ttfUrl from '../../../../assets/fonts/inter/inter.ttf?url';
+import { TEXT_PAINTER } from './textPainter';
 
 const FAMILY = 'paint-inter';
 const FONT_SIZE = 32;
@@ -107,7 +110,12 @@ async function loadOutlines(): Promise<void> {
   expect(outlineStatus(FAMILY)).toBe('ready');
 }
 
+// For the whole file: the outlines load in `beforeAll`, from a render.
+let releasePainter: (() => void) | null = null;
+afterAll(() => releasePainter?.());
+
 beforeAll(async () => {
+  releasePainter = registerNodeShape(TEXT_PAINTER);
   await registerFont(FAMILY, {}, metricsUrl, atlasUrl);
   registerFontOutlines(FAMILY, {}, ttfUrl);
   await loadOutlines();
