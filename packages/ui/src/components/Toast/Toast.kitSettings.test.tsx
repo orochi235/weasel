@@ -67,4 +67,20 @@ describe('ToastRegion kit settings', () => {
     expect(warn.mock.calls[0]![0]).toContain('second <ToastRegion>');
     warn.mockRestore();
   });
+
+  it('warns once and times by the constant when toast.ttlMs is not above 0', () => {
+    const q = createToastQueue();
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    renderWithIcons(
+      <KitSettingsProvider value={{ toast: { ttlMs: -5 } }}>
+        <ToastRegion queue={q} />
+      </KitSettingsProvider>,
+    );
+    act(() => q.add('info', 'One'));
+    act(() => q.add('info', 'Two'));
+    expect(timeoutOf(q)).toBe(DEFAULT_TTL_MS);
+    expect(warn).toHaveBeenCalledTimes(1);
+    expect(warn.mock.calls[0]![0]).toContain('toast.ttlMs kit setting is -5');
+    warn.mockRestore();
+  });
 });

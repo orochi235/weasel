@@ -17,8 +17,8 @@ export interface ToastOptions {
   description?: string;
   /**
    * Auto-dismiss delay in ms. Default: the `toast.ttlMs` kit setting a mounted `ToastRegion` sees, else 8000. `null` — sticky until dismissed.
-   * Must be > 0; RAC treats 0 as no timer (sticky). `Infinity`, or a delay past the
-   * longest a browser timer holds (2^31 − 1 ms, about 24.8 days), is sticky too.
+   * Must be > 0: NaN, 0 or a negative delay throws a `RangeError`. `Infinity`, or a delay past the
+   * longest a browser timer holds (2^31 − 1 ms, about 24.8 days), is sticky.
    */
   ttlMs?: number | null;
   /** Stable identity: re-adding with the same id replaces the earlier toast. */
@@ -74,6 +74,19 @@ const RAC_QUEUES = new WeakMap<ToastQueue, UNSTABLE_ToastQueue<ToastContent>>();
 // By queue: the default-ttl reader of each mounted `ToastRegion`, the latest last.
 const REGIONS = new WeakMap<ToastQueue, Array<() => number | undefined>>();
 const warnedTwice = new WeakSet<ToastQueue>();
+const warnedTtls = new Set<string>();
+
+/** What the latest region on `queue` reads for `toast.ttlMs`, or the constant where it reads nothing usable. */
+function defaultTtl(queue: ToastQueue): number {
+  const read = REGIONS.get(queue)?.at(-1)?.();
+  if (read === undefined) return DEFAULT_TTL_MS;
+  if (read > 0) return read;
+  if (isDev() && !warnedTtls.has(String(read))) {
+    warnedTtls.add(String(read));
+    console.warn(`weasel: the toast.ttlMs kit setting is ${read}, but a toast's delay must be above 0; timing toasts by ${DEFAULT_TTL_MS} ms instead.`);
+  }
+  return DEFAULT_TTL_MS;
+}
 
 /**
  * Counts a mounted `ToastRegion` on `queue`, and has `queue` time a toast that
@@ -118,7 +131,11 @@ export class ToastQueue {
   }
 
   add(grade: Grade, title: string, options: ToastOptions = {}): void {
-    const { description, ttlMs = REGIONS.get(this)?.at(-1)?.() ?? DEFAULT_TTL_MS, id } = options;
+    const { description, id } = options;
+    if (options.ttlMs != null && !(options.ttlMs > 0)) {
+      throw new RangeError(`weasel: toast "${title}" has ttlMs ${options.ttlMs}, but it must be above 0. Pass null or Infinity for a toast that stays until dismissed.`);
+    }
+    const ttlMs = options.ttlMs === undefined ? defaultTtl(this) : options.ttlMs;
     const rac = RAC_QUEUES.get(this)!;
     if (id !== undefined) {
       const existing = this.keysById.get(id);
