@@ -151,7 +151,7 @@ function setAt(
   const [head, ...rest] = path.split('.');
   if (head === undefined) return values;
   if (rest.length === 0) return { ...values, [head]: value };
-  const inner = (values[head] as Record<string, unknown> | undefined) ?? {};
+  const inner = ((Object.hasOwn(values, head) && values[head]) || {}) as Record<string, unknown>;
   return { ...values, [head]: setAt(inner, rest.join('.'), value) };
 }
 

@@ -1,5 +1,6 @@
 import type { Theme } from '@weasel-js/theme';
 import { Component, type ReactNode } from 'react';
+import { getOwn } from '@weasel-js/registry';
 import { createKitRoot } from '../../kitIcons';
 import type { Globals } from '../../protocol/messages';
 import { loadIndexBundle, type Loaded } from '../../story/indexBundle';
@@ -65,7 +66,7 @@ export function mountCapture(options: MountCaptureOptions): void {
   let renders = 0;
 
   const importOf = (file: string): Promise<Record<string, unknown>> => {
-    const importer = importers[file];
+    const importer = getOwn(importers, file);
     return importer ? importer() : Promise.reject(new Error(`No importer for ${file}`));
   };
   const loadStory = async (id: string): Promise<Loaded> => {

@@ -1,4 +1,5 @@
 import type { History } from '@weasel-js/core';
+import { getOwn } from '@weasel-js/registry';
 import { createStore, type StateCreator, type StoreApi } from 'zustand/vanilla';
 import type { ClockPosition } from '../clock/trialClock';
 import { applyConfigWrite } from '../config/autoConfig';
@@ -152,7 +153,7 @@ export function createLabStore(options: CreateLabStoreOptions = {}): LabStore {
       set((s) => ({
         trials: s.trials.map((w) => {
           if (w.id !== id) return w;
-          if (w.collapsedSections?.[key] === collapsed) return w;
+          if (w.collapsedSections && getOwn(w.collapsedSections, key) === collapsed) return w;
           return { ...w, collapsedSections: { ...w.collapsedSections, [key]: collapsed } };
         }),
       }));

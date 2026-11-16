@@ -1,4 +1,5 @@
 import type { ToolsApi } from '@weasel-js/core';
+import { getOwn } from '@weasel-js/registry';
 import { useEffect, useRef } from 'react';
 import type { RenderContext } from '../instrument/types';
 
@@ -40,7 +41,9 @@ export function useSceneToolSlot(
     tools.current = next;
     onToolsCreated?.(next);
     slot.setToolShortcuts?.(
-      Object.fromEntries(Object.keys(next.registry).map((id) => [id, next.shortcuts[id] ?? []])),
+      Object.fromEntries(
+        Object.keys(next.registry).map((id) => [id, getOwn(next.shortcuts, id) ?? []]),
+      ),
     );
     const before = sceneSaw.current;
     sceneSaw.current = next.active;

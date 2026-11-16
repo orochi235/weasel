@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState, type CSSProperties, type ReactNode } from 'react';
-import { after } from '@weasel-js/registry';
+import { after, getOwn } from '@weasel-js/registry';
 import { detectPlatform, keyLegendFromCode, type KeyLabels, type LegendStyle, type Platform } from '@weasel-js/gestures';
 import type { ColorSource } from '@weasel-js/paint';
 import { useColorCss } from '@weasel-js/theme/react';
@@ -75,7 +75,7 @@ export function KeyDiagram({
   const captioned = marks !== undefined && Object.values(marks).some((m) => m.caption !== undefined || m.icon !== undefined);
 
   const slot = (key: Pick<PlacedKey, 'code' | 'label'>, place?: PlacedKey) => {
-    const mark = marks?.[key.code];
+    const mark = marks && getOwn(marks, key.code);
     const tint = css(tintSource(mark?.tint));
     const vars = {
       ...(place && { '--x': place.x, '--y': place.y, '--w': place.width }),

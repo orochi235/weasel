@@ -1,6 +1,7 @@
 import type { KeyboardEvent } from 'react';
 import type { TreeDropTarget } from '../../dropTarget';
 import { arrowDir, isNudgeChord } from '@weasel-js/ui-input';
+import { getOwn } from '@weasel-js/registry';
 import { inlineDirection } from '../../useRovingTabIndex';
 import type { TreeNode } from './Tree';
 import { draggedIdsFor, isNoopMove, keyboardTarget, landsInside, nodeById, parentsOf, type KeyboardMove } from './treeMoves';
@@ -23,7 +24,7 @@ interface MoveKeyCtx {
 export function handleMoveKey(e: KeyboardEvent<HTMLElement>, nodeId: string, ctx: MoveKeyCtx): boolean {
   if (!isNudgeChord(e)) return false;
   const across = arrowDir(e.key, { orientation: 'horizontal', dir: inlineDirection(e.currentTarget) });
-  const dir = across === 1 ? 'in' : across === -1 ? 'out' : MOVE_KEYS[e.key];
+  const dir = across === 1 ? 'in' : across === -1 ? 'out' : getOwn(MOVE_KEYS, e.key);
   if (!dir) return false;
   e.preventDefault();
   const { nodes, canDrop } = ctx;

@@ -1,5 +1,6 @@
 import { memo, useCallback, useMemo, useRef, useState, type CSSProperties, type ReactNode } from 'react';
 import { createPortal } from 'react-dom';
+import { getOwn } from '@weasel-js/registry';
 import type { BarOrientation } from '../Bar';
 import { useBarHosts } from './barHosts';
 import { DockBarContext } from './dockContext';
@@ -66,7 +67,7 @@ export function ToolbarDock({ docks, bars, layout, onLayoutChange, movable = fal
   const drawn = (id: string, orientation: BarOrientation) => drawsIn(byId.get(id), orientation);
   const at = orientations(docks, shown, view);
   const [leasts, setLeasts] = useState<Readonly<Record<string, number>>>({});
-  const setLeast = useCallback((id: string, px: number | undefined) => setLeasts((prev) => (prev[id] === px ? prev : withLeast(prev, id, px))), []);
+  const setLeast = useCallback((id: string, px: number | undefined) => setLeasts((prev) => (getOwn(prev, id) === px ? prev : withLeast(prev, id, px))), []);
 
   return (
     <div ref={root} className={[s.root, className].filter(Boolean).join(' ')}>
@@ -78,7 +79,7 @@ export function ToolbarDock({ docks, bars, layout, onLayoutChange, movable = fal
         return (
           <div key={edge} className={s[edge]} data-dock-edge={edge}>
             {filled.map((dock) => {
-              const rows = shown.docks[dock.id]!;
+              const rows = dockRows(shown, dock.id)!;
               return (
                 <div key={dock.id} className={[s.dock, dock.className].filter(Boolean).join(' ')} data-dock={dock.id} data-dock-unavailable={view?.unavailable.has(dock.id) ? '' : undefined}>
                   {rows.map((row, i) => (
@@ -90,7 +91,7 @@ export function ToolbarDock({ docks, bars, layout, onLayoutChange, movable = fal
                         if (!lifted && !drawn(id, orientation)) return spring;
                         return [
                           spring,
-                          <div key={id} ref={lifted ? undefined : hosts.attach(id)} className={s.slot} style={lifted ? undefined : leastSize(leasts[id])} {...{ [DOCK_BAR]: lifted ? undefined : id, [DOCK_END]: end ? '' : undefined }} data-dock-held={lifted ? id : undefined} data-dock-dragging={view?.barId === id ? '' : undefined} data-dock-drop={dropSide(view, id)}>
+                          <div key={id} ref={lifted ? undefined : hosts.attach(id)} className={s.slot} style={lifted ? undefined : leastSize(getOwn(leasts, id))} {...{ [DOCK_BAR]: lifted ? undefined : id, [DOCK_END]: end ? '' : undefined }} data-dock-held={lifted ? id : undefined} data-dock-dragging={view?.barId === id ? '' : undefined} data-dock-drop={dropSide(view, id)}>
                             {lifted && <div className={s.hold} style={holdSize(view)} />}
                           </div>,
                         ];

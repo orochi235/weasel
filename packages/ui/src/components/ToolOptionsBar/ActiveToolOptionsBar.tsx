@@ -1,5 +1,6 @@
 import { setToolOption, useScopedTools, useToolOptionParams, type Tool, type ToolOptionValues, type ToolsApi } from '@weasel-js/core';
 import { ToolOptionsBar, type ToolOptionsBarProps } from './ToolOptionsBar';
+import { getOwn } from '@weasel-js/registry';
 
 /** Props for {@link ActiveToolOptionsBar}. */
 export interface ActiveToolOptionsBarProps extends Omit<ToolOptionsBarProps, 'label' | 'schema' | 'values' | 'onChange' | 'mixed' | 'over'> {
@@ -21,7 +22,7 @@ export interface ActiveToolOptionsBarProps extends Omit<ToolOptionsBarProps, 'la
 export function ActiveToolOptionsBar({ tool, tools, values, children, ...bar }: ActiveToolOptionsBarProps) {
   const scoped = useScopedTools();
   const followed = tools ?? scoped;
-  const shown = tool ?? (followed?.active ? followed.registry[followed.active] : undefined);
+  const shown = tool ?? (followed?.active ? getOwn(followed.registry, followed.active) : undefined);
   const params = useToolOptionParams(shown, values);
   const options = shown?.options;
   if (!shown || !options || !params) return <ToolOptionsBar {...bar}>{children}</ToolOptionsBar>;

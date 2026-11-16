@@ -1,5 +1,6 @@
 import { mkdirSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
+import { getOwn } from '@weasel-js/registry';
 import { html } from './html.ts';
 
 const DIR = 'node_modules/.forge';
@@ -31,7 +32,7 @@ export function hoistPages(
 ): void {
   for (const name of Object.keys(PAGES)) {
     const from = `${DIR}/${name}.html`;
-    const asset = bundle[from];
+    const asset = getOwn(bundle, from);
     if (asset?.type !== 'asset' || asset.source === undefined) continue;
     delete bundle[from];
     emit({ type: 'asset', fileName: `${name}.html`, source: up(asset.source) });

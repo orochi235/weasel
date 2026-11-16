@@ -1,6 +1,7 @@
 import type { TokenEntry } from '@weasel-js/labkit';
 import { resolveTheme, TOKEN_MANIFEST, themeAxes, weaselTheme } from '@weasel-js/theme';
 import { useMemo } from 'react';
+import { getOwn } from '@weasel-js/registry';
 import type { CssVarReport, Globals } from '../../protocol/messages';
 import { useTrialSelection } from './useTrialSelection';
 
@@ -19,7 +20,7 @@ export function useThemeTokens(globals: Globals, vars: readonly CssVarReport[]):
       name: token.name,
       type: token.type,
       group: token.group,
-      value: reported.get(token.name) ?? themed[token.name] ?? token.defaultValue,
+      value: reported.get(token.name) ?? getOwn(themed, token.name) ?? token.defaultValue,
       description: token.description,
     }));
   }, [vars, themed]);

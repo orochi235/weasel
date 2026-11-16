@@ -1,6 +1,7 @@
 import { tryParseColor } from '@weasel-js/core';
 import { type LoupePoint, probeUnderLens } from '@weasel-js/labkit/loupe';
 import { compareSpecificity, type Specificity, specificity, splitTopLevel } from '@weasel-js/svg';
+import { getOwn } from '@weasel-js/registry';
 import { cssRulesOf, sheetsOf, varRefs } from '../../frame/cssVarUse';
 
 /** A color an element shows, and the property it shows it through. */
@@ -154,7 +155,7 @@ function matching(el: Element, list: string): Specificity | null {
 }
 
 function declaredIn(style: CSSStyleDeclaration, property: string): { value: string; important: boolean } | null {
-  for (const name of [property, ...(SHORTHANDS[property] ?? [])]) {
+  for (const name of [property, ...(getOwn(SHORTHANDS, property) ?? [])]) {
     const value = style.getPropertyValue(name).trim();
     if (value) return { value, important: style.getPropertyPriority(name) === 'important' };
   }

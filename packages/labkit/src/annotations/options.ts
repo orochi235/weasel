@@ -1,5 +1,5 @@
 import type { PrefLeaf } from '@weasel-js/prefs';
-import { createEmitter } from '@weasel-js/registry';
+import { createEmitter, getOwn } from '@weasel-js/registry';
 import { type ToolOptions, type ToolOptionValues, toolOptionParams } from '@weasel-js/routing';
 import type { RecordCache } from '@weasel-js/storage';
 import { valueRecord } from '../state/labRecords';
@@ -90,10 +90,10 @@ export function labToolOptionValues(records: RecordCache): ToolOptionValues {
     if (changes.some((c) => c.name === name)) changed.emit();
   });
   const values: ToolOptionValues = {
-    get: (owner) => held()[owner] ?? NONE,
+    get: (owner) => getOwn(held(), owner) ?? NONE,
     set(owner, key, value) {
       const all = held();
-      records.set(name, { ...all, [owner]: { ...all[owner], [key]: value } });
+      records.set(name, { ...all, [owner]: { ...getOwn(all, owner), [key]: value } });
     },
     subscribe: changed.subscribe,
   };

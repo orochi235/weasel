@@ -1,5 +1,7 @@
 import type { ReactNode } from 'react';
 import { isPrefLeaf, prefHeadingKey, type PrefGroup, type PrefLeaf } from '@weasel-js/prefs';
+import { getOwn } from '@weasel-js/registry';
+import { rendererOf } from '../PrefsSource/rendererOf';
 import { HiddenBadge, marksHidden } from './hidden';
 import { offTitle } from './offTitle';
 import { prefRenderContext, renderPrefControl, shownLeaf, type WalkCtx } from './PrefsRow';
@@ -38,9 +40,9 @@ export function groupHeading(ctx: WalkCtx, group: PrefGroup, path: string): Grou
   const off = groupOff(ctx, path);
   const name = offTitle(group.name, off);
   const key = prefHeadingKey(group);
-  const leaf = key === undefined ? undefined : group.children[key];
+  const leaf = key === undefined ? undefined : getOwn(group.children, key);
   const reset = groupReset(ctx, group, path);
-  if (key === undefined || leaf === undefined || !isPrefLeaf(leaf) || ctx.renderers?.[leaf.kind] || ctx.leaves) {
+  if (key === undefined || leaf === undefined || !isPrefLeaf(leaf) || rendererOf(ctx.renderers, leaf.kind) || ctx.leaves) {
     return { off, name, className: undefined, control: reset, entries };
   }
   const own = path === '' ? key : `${path}.${key}`;

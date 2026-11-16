@@ -1,4 +1,5 @@
 import { isPlainObject } from '@weasel-js/core';
+import { getOwn, setOwn } from '@weasel-js/registry';
 import {
   isPrefLeaf, prefClampNumber, prefNumberAt, prefSectionLeaves,
   type PrefLeaf, type PrefNumber, type PrefObject, type PrefSection,
@@ -25,12 +26,13 @@ function objectAtNode(leaf: PrefObject, node: AnyNode, value: unknown, held: unk
   const before = isPlainObject(held) ? held : undefined;
   let out: Record<string, unknown> = value;
   for (const [key, field] of prefSectionLeaves(leaf.children)) {
-    const given = value[key];
-    if (before !== undefined && given === before[key]) continue;
-    const bound = boundAtNode(field, node, given, before?.[key]);
+    const given = getOwn(value, key);
+    const was = before === undefined ? undefined : getOwn(before, key);
+    if (before !== undefined && given === was) continue;
+    const bound = boundAtNode(field, node, given, was);
     if (bound === given) continue;
     if (out === value) out = { ...value };
-    out[key] = bound;
+    setOwn(out, key, bound);
   }
   return out;
 }
@@ -42,7 +44,7 @@ function mapFields(children: PrefObject['children'], fn: (leaf: PrefLeaf) => Pre
     const next = isPrefLeaf(child) ? fn(child) : mapSection(child, fn);
     if (next === child) continue;
     out ??= { ...children };
-    out[key] = next;
+    setOwn(out, key, next);
   }
   return out ?? children;
 }

@@ -1,3 +1,4 @@
+import { getOwn } from '@weasel-js/registry';
 import type { Globals } from '../../protocol/messages';
 import type { IndexBundle } from '../../story/indexBundle';
 import { isGallery } from '../../story/tags';
@@ -17,7 +18,7 @@ export interface IndexEnvInputs {
 /** What every cell of `bundle`'s page shares, in whichever document renders it. */
 export function indexEnvOf(bundle: IndexBundle, { graph, globals, decorators, open }: IndexEnvInputs): IndexEnv {
   const gallery = isGallery(bundle);
-  const dependencies = gallery ? undefined : graph?.[bundle.title];
+  const dependencies = gallery || !graph ? undefined : getOwn(graph, bundle.title);
   return {
     title: bundle.title,
     library: bundle.library,

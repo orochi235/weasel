@@ -53,3 +53,13 @@ describe('labToolOptionValues', () => {
     );
   });
 });
+
+describe('labToolOptionValues by an Object.prototype name', () => {
+  it('holds no options for a tool named `constructor` until one is set, then keeps it as data', async () => {
+    const records = await openRecords({ storage: createMemoryAdapter(), prefix: 'proto:' });
+    const values = labToolOptionValues(records);
+    expect(values.get('constructor')).toEqual({});
+    values.set('constructor', 'width', 3);
+    expect(values.get('constructor')).toEqual({ width: 3 });
+  });
+});

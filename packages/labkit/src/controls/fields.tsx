@@ -38,9 +38,11 @@ export function isSliderLeaf(leaf: PrefLeaf): boolean {
   return field?.kind === 'number' && field.control === 'slider';
 }
 
+type LeafExtra = 'control' | 'debounceMs' | 'max' | 'min' | 'placeholder' | 'step' | 'summary';
+
 /** Reads a labkit-only extra off a leaf. `PrefLeaf` has no field for these,
  *  and extra keys survive the resolve pass at runtime. */
-export function extra<T>(leaf: PrefLeaf, key: string): T | undefined {
+export function extra<T>(leaf: PrefLeaf, key: LeafExtra): T | undefined {
   return (leaf as unknown as Record<string, T | undefined>)[key];
 }
 

@@ -12,6 +12,7 @@ import { FitLabel, labelForms } from '../../FitLabel/FitLabel';
 import type { PropertyBooleanFieldProps } from '../../Properties/PropertyField';
 import { SegmentedBar } from '../../Segmented';
 import { perNodeState } from '../../Prefs/leafField';
+import { rendererOf } from '../../PrefsSource/rendererOf';
 import type { LeafContext, LeafRenderer } from './renderContext';
 import s from './SelectionPanel.module.css';
 
@@ -56,14 +57,13 @@ export function isFlagLeaf(leaf: PrefLeaf, path: string, renderers?: Record<stri
     leaf.kind === 'boolean' &&
     (leaf as PrefBoolean).control === 'toggle' &&
     (leaf as PrefBoolean).readout !== true &&
-    renderers?.[path] === undefined &&
-    renderers?.[leaf.kind] === undefined
+    rendererOf(renderers, path, leaf.kind) === undefined
   );
 }
 
 /** True for an action leaf drawn as its own buttons, which read their own words and want no row label. */
 function builtinActionRow(cell: LeafCell, renderers?: Record<string, LeafRenderer>): boolean {
-  return prefDrawsActionRow(cell.leaf) && renderers?.[cell.ctx.path] === undefined && renderers?.[cell.leaf.kind] === undefined;
+  return prefDrawsActionRow(cell.leaf) && rendererOf(renderers, cell.ctx.path, cell.leaf.kind) === undefined;
 }
 
 /** True for a leaf that can join a flag bar: a paired {@link isFlagLeaf}. */

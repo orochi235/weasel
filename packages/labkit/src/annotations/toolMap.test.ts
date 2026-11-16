@@ -80,3 +80,10 @@ describe('the tools a lab rail carries', () => {
     expect(resolveLabTool(null, [inst()])).toBeNull();
   });
 });
+
+describe('annotationToolInfo by an Object.prototype name', () => {
+  it('reads `constructor` and `toString` as tools it does not drive', () => {
+    expect(annotationToolInfo('constructor')).toBeUndefined();
+    expect(annotationToolInfo('toString')).toBeUndefined();
+  });
+});

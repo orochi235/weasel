@@ -1,7 +1,7 @@
 import { useContext } from 'react';
 import { ArgsContext, coverOf, type LocalArgs } from '../argsContext';
 import { isPortSafe } from '../portSafe';
-import { setOwn } from '@weasel-js/registry';
+import { getOwn, setOwn } from '@weasel-js/registry';
 
 type Args = Record<string, unknown>;
 
@@ -37,7 +37,7 @@ export function useArgs(): [
     const kept: LocalArgs = {};
     for (const [key, value] of Object.entries(patch)) {
       if (sendable(value)) sent.push([key, value]);
-      else setOwn(kept, key, { value, over: coverOf(config[key]) });
+      else setOwn(kept, key, { value, over: coverOf(getOwn(config, key)) });
     }
     setLocal((prev) => ({ ...without(prev, Object.keys(patch)), ...kept }));
     for (const [key, value] of sent) setConfig(key, value);
@@ -51,8 +51,9 @@ export function useArgs(): [
         setConfig(key, defaults[key]);
         continue;
       }
-      if (config[key] === undefined) continue;
-      setOwn(overlay, key, { value: original[key], over: coverOf(config[key]) });
+      const current = getOwn(config, key);
+      if (current === undefined) continue;
+      setOwn(overlay, key, { value: getOwn(original, key), over: coverOf(current) });
       setConfig(key, undefined);
     }
     setLocal((prev) => ({ ...(argNames ? without(prev, keys) : {}), ...overlay }));

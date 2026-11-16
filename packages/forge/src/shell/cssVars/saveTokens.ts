@@ -1,7 +1,8 @@
 import { isPlainObject } from '@weasel-js/core';
 import { type AxisDefs, isByAxis, type Selection, type ThemeDefinition } from '@weasel-js/theme';
 import { axisDependencies } from '@weasel-js/theme/engine';
-import { EditError, type Holder, type ScaleEditResult, type Slot } from './saveScales';
+import { getOwn, setOwn } from '@weasel-js/registry';
+import { EditError, type Holder, ownAt, type ScaleEditResult, type Slot } from './saveScales';
 
 const REFERENCE = /\{[^}]+\}/;
 /** The layers a token's value can be written out in, in the order the definition resolves a name. */
@@ -17,7 +18,7 @@ function derived(entry: unknown): boolean {
 
 /** The axis value `selection` reads for `axis`. Throws when it does not say. */
 function picked(selection: Selection, axis: string, where: string): string {
-  const value = selection[axis];
+  const value = getOwn(selection, axis);
   if (value === undefined || value === 'by') {
     throw new EditError(`${where} differs by ${axis}, and which ${axis} this trial shows is not known`);
   }
@@ -27,7 +28,7 @@ function picked(selection: Selection, axis: string, where: string): string {
 /** `holder[key]` through its per-axis branches; undefined where an entry leaves the selection out, so it writes nothing there. */
 function branchAt(holder: Holder, key: string, where: string, selection: Selection): Slot | undefined {
   let slot: Slot = { holder, key, where };
-  for (let value = holder[key]; isByAxis(value); value = slot.holder[slot.key]) {
+  for (let value = ownAt(holder, key); isByAxis(value); value = ownAt(slot.holder, slot.key)) {
     const at = picked(selection, value.by, slot.where);
     if (!Object.hasOwn(value, at)) return undefined;
     slot = { holder: value as unknown as Holder, key: at, where: `${slot.where}.${at}` };
@@ -42,7 +43,7 @@ function writtenSlot(definition: ThemeDefinition, token: string, selection: Sele
     if (!entries || !Object.hasOwn(entries, token)) continue;
     const slot = branchAt(entries, token, `${layer}.${token}`, selection);
     if (slot === undefined) continue;
-    return derived(slot.holder[slot.key]) ? null : slot;
+    return derived(ownAt(slot.holder, slot.key)) ? null : slot;
   }
   return null;
 }
@@ -51,8 +52,8 @@ function writtenSlot(definition: ThemeDefinition, token: string, selection: Sele
 function dependentAxes(definition: ThemeDefinition, token: string): string[] {
   const { [token]: _pin, ...pins } = definition.pins ?? {};
   const axes = new Set([
-    ...(axisDependencies(definition)[token]?.all ?? []),
-    ...(axisDependencies({ ...definition, pins })[token]?.all ?? []),
+    ...(getOwn(axisDependencies(definition), token)?.all ?? []),
+    ...(getOwn(axisDependencies({ ...definition, pins }), token)?.all ?? []),
   ]);
   return Object.keys(definition.axes ?? {}).filter((axis) => axes.has(axis));
 }
@@ -77,7 +78,7 @@ function pinOver(entry: unknown, axes: readonly string[], selection: Selection, 
   const [axis, ...rest] = axes;
   if (axis === undefined) return literal(entry, value);
   const at = picked(selection, axis, where);
-  const others = entry === undefined ? [] : Object.keys(defs[axis]?.values ?? {}).filter((v) => v !== at);
+  const others = entry === undefined ? [] : Object.keys(getOwn(defs, axis)?.values ?? {}).filter((v) => v !== at);
   return {
     by: axis,
     ...Object.fromEntries(others.map((v) => [v, entry])),
@@ -90,12 +91,12 @@ function writeEdit(root: ThemeDefinition, token: string, value: string, selectio
   if (!Object.hasOwn(axisDependencies(root), token)) throw new EditError(`the theme defines no token "${token}"`);
   const slot = writtenSlot(root, token, selection);
   if (slot) {
-    const entry = slot.holder[slot.key];
-    slot.holder[slot.key] = isPlainObject(entry) ? { ...entry, value } : value;
+    const entry = ownAt(slot.holder, slot.key);
+    setOwn(slot.holder, String(slot.key), isPlainObject(entry) ? { ...entry, value } : value);
     return;
   }
   const pins = ((root as { pins?: Holder }).pins ??= {});
-  pins[token] = pinOver(Object.hasOwn(pins, token) ? pins[token] : undefined, dependentAxes(root, token), selection, value, root.axes ?? {}, `pins.${token}`);
+  setOwn(pins, token, pinOver(ownAt(pins, token), dependentAxes(root, token), selection, value, root.axes ?? {}, `pins.${token}`));
 }
 
 /**

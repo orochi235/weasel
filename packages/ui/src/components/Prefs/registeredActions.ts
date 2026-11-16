@@ -1,6 +1,7 @@
 import { useSyncExternalStore } from 'react';
 import { actionItems, useActionsRegistry, type Action, type ActionItem } from '@weasel-js/core';
 import type { IconSpec } from '@weasel-js/icons';
+import { getOwn } from '@weasel-js/registry';
 import { resolveOrder, type PrefAction, type PrefActions, type PrefLeaf } from '@weasel-js/prefs';
 
 const NONE: readonly Action[] = Object.freeze([]);
@@ -50,11 +51,11 @@ export function actionsLeafActions(
   return items
     .filter((item) => !only || only.includes(item.key) || only.includes(item.action.id))
     .map((item) => {
-      const icon = icons?.[item.key];
+      const icon = icons && getOwn(icons, item.key);
       return {
         kind: 'action',
         // Empty, the button reads the registered action's own label.
-        name: labels?.[item.key] ?? '',
+        name: (labels && getOwn(labels, item.key)) ?? '',
         description: '',
         default: undefined,
         action: item.key,

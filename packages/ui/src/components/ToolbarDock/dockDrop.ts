@@ -187,7 +187,7 @@ const keysFor = (edge: DockEdge | undefined) =>
 export function keyTarget(layout: ToolbarLayout, docks: readonly DockSpec[], bar: DockBar, key: string): BarTarget | null {
   const at = locateBar(layout, bar.id);
   if (!at) return null;
-  const rows = layout.docks[at.dock]!;
+  const rows = dockRows(layout, at.dock)!;
   const [alongBack, alongOn, acrossBack] = keysFor(docks.find((d) => d.id === at.dock)?.edge);
   if (key === alongBack || key === alongOn) return alongTarget(layout, at, key === alongOn);
   const step = key === acrossBack ? -1 : 1;
@@ -209,7 +209,7 @@ export function keyTarget(layout: ToolbarLayout, docks: readonly DockSpec[], bar
 
 /** One slot along its row for the bar at `at`, on or back, crossing to the row's other end at the edge of its own. */
 function alongTarget(layout: ToolbarLayout, at: { dock: string; row: number; index: number; end: boolean }, on: boolean): BarTarget | null {
-  const row = layout.docks[at.dock]![at.row]!;
+  const row = dockRows(layout, at.dock)![at.row]!;
   const starts = startCount(layout, row);
   const place = { dock: at.dock, row: at.row };
   if (!at.end) {
@@ -228,6 +228,6 @@ export function placeWords(layout: ToolbarLayout, docks: readonly DockSpec[], ba
   if (!at) return '';
   const name = state ? `${bar.label} toolbar ${state}` : `${bar.label} toolbar`;
   const line = isVerticalEdge(docks.find((d) => d.id === at.dock)?.edge) ? 'column' : 'row';
-  const where = `${name}, ${line} ${at.row + 1}, position ${at.index + 1} of ${layout.docks[at.dock]![at.row]!.length}`;
+  const where = `${name}, ${line} ${at.row + 1}, position ${at.index + 1} of ${dockRows(layout, at.dock)![at.row]!.length}`;
   return at.end ? `${where}, at the end` : where;
 }

@@ -16,7 +16,7 @@ import { type ArgsScope, ArgsContext, appliedLocal, coverOf, type LocalArgs } fr
 import { type ArgType, argsToSchema, type ControlMatchers } from './argsToSchema';
 import { isPlainObject } from '@weasel-js/core';
 import { withUnsent } from './portSafe';
-import { setOwn } from '@weasel-js/registry';
+import { getOwn, setOwn } from '@weasel-js/registry';
 import { API_EXPORT } from '../story/api';
 import { PROP_ARG_TYPES_EXPORT } from './propArgTypes';
 import { timelineOf } from '../timeline/declare';
@@ -81,7 +81,7 @@ function resolveViewport(parameters: Record<string, unknown>, globals: Record<st
   const selected = globals.viewport as { value?: string; isRotated?: boolean } | undefined;
   const options = (parameters.viewport as { options?: Record<string, { styles?: { width?: string; height?: string } }> } | undefined)
     ?.options;
-  const styles = selected?.value ? options?.[selected.value]?.styles : undefined;
+  const styles = selected?.value && options ? getOwn(options, selected.value)?.styles : undefined;
   const px = (v: string | undefined) => (v && /^\d+(\.\d+)?px$/.test(v) ? Number.parseFloat(v) : Number.NaN);
   const width = px(styles?.width);
   const height = px(styles?.height);
@@ -126,7 +126,7 @@ function Scoped({
   // An entry config has moved past must not come back if config later returns to the value it covered.
   useEffect(() => {
     prune((prev) => {
-      const kept = Object.entries(prev).filter(([key, entry]) => coverOf(config[key]) === entry.over);
+      const kept = Object.entries(prev).filter(([key, entry]) => coverOf(getOwn(config, key)) === entry.over);
       return kept.length === Object.keys(prev).length ? prev : Object.fromEntries(kept);
     });
   }, [config, prune]);

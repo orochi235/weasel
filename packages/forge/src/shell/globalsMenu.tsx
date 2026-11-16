@@ -1,11 +1,12 @@
 import type { LabMenus } from '@weasel-js/labkit';
 import { type PrefGroup, pref } from '@weasel-js/prefs';
 import { useEffect, useMemo } from 'react';
+import { getOwn } from '@weasel-js/registry';
 import type { Globals } from '../protocol/messages';
 import { type GlobalDeclarations, labOptions } from './globals';
 import { useLabGlobals } from './GlobalsToolbar';
 
-const leafPath = (n: number) => `globals.d${n}.v`;
+const leafPath = (n: number): `globals.d${number}.v` => `globals.d${n}.v`;
 
 /**
  * The lab menu bar's Globals menu at `values`: a submenu per declaration holding one enum of the options the
@@ -28,7 +29,7 @@ export function globalsMenu(
       { v: pref.enum(declaration.label, declaration.default, options) },
       { as: 'menu' },
     );
-    current[leafPath(n)] = values[key];
+    current[leafPath(n)] = getOwn(values, key);
     keys.set(leafPath(n), key);
   });
   return {

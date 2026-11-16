@@ -1,5 +1,5 @@
 import type { PrefGroup, PrefLeaf, PrefSection } from '@weasel-js/prefs';
-import { isPlainObject, setOwn } from '@weasel-js/registry';
+import { getOwn, isPlainObject, setOwn } from '@weasel-js/registry';
 
 /**
  * Reading and writing a config tree by dotted path. A schema's leaves address
@@ -13,8 +13,7 @@ import { isPlainObject, setOwn } from '@weasel-js/registry';
 export const isRecord = isPlainObject;
 
 /** `record`'s own value at `key`: a key every object inherits, `constructor` or `toString`, is absent. */
-export const ownAt = <T>(record: Readonly<Record<string, T>>, key: string): T | undefined =>
-  Object.hasOwn(record, key) ? record[key] : undefined;
+export const ownAt = getOwn;
 
 export { setOwn };
 

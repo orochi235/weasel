@@ -1,3 +1,4 @@
+import { getOwn } from '@weasel-js/registry';
 /** Font presets the keycap stories offer, keyed by the name the control shows. */
 export const FONT_PRESETS: Record<string, string> = {
   'system sans': 'ui-sans-serif, system-ui, sans-serif',
@@ -13,5 +14,5 @@ export const FONT_OPTIONS = Object.keys(FONT_PRESETS);
 /** A preset's font-family, or the value itself when it names no preset. */
 export function resolveFont(value: string | undefined): string | undefined {
   if (!value) return undefined;
-  return FONT_PRESETS[value] ?? value;
+  return getOwn(FONT_PRESETS, value) ?? value;
 }

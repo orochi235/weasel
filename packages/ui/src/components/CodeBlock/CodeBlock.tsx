@@ -23,7 +23,7 @@ const UNSTYLED: PrismTheme = { plain: {}, styles: [] };
 
 // The Prism that prism-react-renderer bundles predates its `literal-property` rule, so an object literal's keys read
 // as plain text and `default:` as a keyword. This is that rule; each grammar copied javascript's when it loaded.
-for (const lang of ['javascript', 'typescript', 'jsx', 'tsx']) {
+for (const lang of ['javascript', 'typescript', 'jsx', 'tsx'] as const) {
   const grammar = Prism.languages[lang];
   if (!grammar || 'literal-property' in grammar) continue;
   Prism.languages.insertBefore(lang, 'keyword', {

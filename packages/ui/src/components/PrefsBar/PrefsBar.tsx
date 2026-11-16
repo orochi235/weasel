@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import { getOwn } from '@weasel-js/registry';
+import { getOwn, setOwn } from '@weasel-js/registry';
 import { applyPrefConditions, orderPrefGroup, prefAliasTargets, prefJudge, prefLeafValue, prefReader, prefValueAtPath, createRecordSource, createValuesSource, type PrefAlias, type PrefAliasTargets, type PrefEntry, type PrefGroup, type PrefSection } from '@weasel-js/prefs';
 import type { LiveControl } from '../Prefs/commitPolicy';
 import { entryApplier, type EntryAt } from '../Prefs/entry';
@@ -9,6 +9,7 @@ import type { WalkCtx } from '../Prefs/PrefsRow';
 import { prefFieldChoices, type PrefFieldChoice } from '../Prefs/schema';
 import { PropertyList } from '../Properties/PropertyList';
 import { PropertyRow } from '../Properties/PropertyRow';
+import { rendererOf } from '../PrefsSource/rendererOf';
 import type { LeafCell } from '../inspector/SelectionPanel/cells';
 import type { LeafContext, LeafRenderer } from '../inspector/SelectionPanel/renderContext';
 import { renderBuiltin } from '../inspector/SelectionPanel/renderLeaf';
@@ -110,7 +111,8 @@ function shownNode(node: BarLeafNode, draw: Draw): BarLeafNode {
 
 /** The value a condition reads at `path`: the entry there, else the part of an entry above it that the rest of the path names. */
 export function valueAt(values: Readonly<Record<string, unknown>> | undefined, path: string): unknown {
-  if (values === undefined || Object.hasOwn(values, path)) return values?.[path];
+  if (values === undefined) return undefined;
+  if (Object.hasOwn(values, path)) return values[path];
   for (let dot = path.lastIndexOf('.'); dot > 0; dot = path.lastIndexOf('.', dot - 1)) {
     const head = path.slice(0, dot);
     if (Object.hasOwn(values, head)) return prefValueAtPath(values[head], path.slice(dot + 1));
@@ -167,7 +169,7 @@ function leafCell({ path: own, leaf, at }: BarLeafNode, surface: ControlForm, dr
     ctx,
     ariaLabel: leaf.name,
     render: () => {
-      const custom = renderers?.[own] ?? renderers?.[leaf.kind];
+      const custom = rendererOf(renderers, own, leaf.kind);
       if (!custom) return renderBuiltin(ctx, leaf.name, renderers, { selectionKey: own, surface });
       return drawsBarForm(surface) ? withBarLabel(leaf, custom(ctx)) : custom(ctx);
     },
@@ -194,10 +196,12 @@ function nested(values: Readonly<Record<string, unknown>> | undefined): Record<s
     const segments = path.split('.');
     let at = out;
     for (const segment of segments.slice(0, -1)) {
-      const next = at[segment];
-      at = (at[segment] = next !== null && typeof next === 'object' ? { ...(next as Record<string, unknown>) } : {}) as Record<string, unknown>;
+      const next = getOwn(at, segment);
+      const step: Record<string, unknown> = next !== null && typeof next === 'object' ? { ...(next as Record<string, unknown>) } : {};
+      setOwn(at, segment, step);
+      at = step;
     }
-    at[segments.at(-1)!] = values![path];
+    setOwn(at, segments.at(-1)!, getOwn(values!, path));
   }
   return out;
 }

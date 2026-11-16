@@ -50,3 +50,17 @@ describe('<ControlPanel errors>', () => {
     expect(mount({})).toEqual([]);
   });
 });
+
+describe('<ControlPanel errors> by an Object.prototype name', () => {
+  it('draws no message for a row named `toString` that the errors do not name', () => {
+    renderWithIcons(
+      <ControlPanel
+        schema={resolveConfigSchema(f.schema({ toString: f.string('') }))}
+        config={{ toString: '' }}
+        setConfig={vi.fn()}
+        errors={{}}
+      />,
+    );
+    expect(screen.queryAllByRole('alert')).toEqual([]);
+  });
+});

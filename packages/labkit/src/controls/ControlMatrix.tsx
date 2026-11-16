@@ -1,4 +1,5 @@
 import type { PrefGroup, PrefSection } from '@weasel-js/prefs';
+import { getOwn } from '@weasel-js/registry';
 import type { AppearanceProps } from '@weasel-js/ui/appearance';
 import {
   type CollapseProps,
@@ -208,7 +209,7 @@ export function ControlMatrix({
                     inherited={inherited}
                     hint={inherited ? hintFor(column) : undefined}
                     canUnpin={inherit && !first && !inherited}
-                    summary={row.summary ?? (cell && schema.dialogs[cell.at]?.summary)}
+                    summary={row.summary ?? (cell && getOwn(schema.dialogs, cell.at)?.summary)}
                     disabled={!isLeafEnabled(schema, path, config, over)}
                     setConfig={setConfig}
                     onOpen={(el) => {

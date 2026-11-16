@@ -1,3 +1,4 @@
+import { getOwn } from '@weasel-js/registry';
 import type { LayerListItem } from '@weasel-js/ui/components/LayerList';
 import { useMemo } from 'react';
 import type { CanvasLayerDescriptor } from '../canvas/useLayerScheduler';
@@ -30,7 +31,7 @@ export function useTrialLayers({
   const visibleLayers = useMemo(
     () =>
       (instrument.canvas?.layers ?? [])
-        .filter((l) => layerVisibility[l.id] !== false)
+        .filter((l) => getOwn(layerVisibility, l.id) !== false)
         .map((l) => l.id),
     [instrument.canvas, layerVisibility],
   );
@@ -43,7 +44,7 @@ export function useTrialLayers({
       : baseLayers;
     return ordered.map((layer) => ({
       id: layer.id,
-      visible: layerVisibility[layer.id] !== false,
+      visible: getOwn(layerVisibility, layer.id) !== false,
       timed: layer.timed === true,
       render: (ctx, view, frame) => {
         // Camera applied here, so a layer draws in world coordinates. `zoom`
@@ -81,7 +82,7 @@ export function useTrialLayers({
       id: l.id,
       label: l.label,
       fixed: l.alwaysOn === true,
-      visible: l.alwaysOn === true || layerVisibility[l.id] !== false,
+      visible: l.alwaysOn === true || getOwn(layerVisibility, l.id) !== false,
     }));
   }, [layerDescriptors, layerOrder, layerVisibility]);
 

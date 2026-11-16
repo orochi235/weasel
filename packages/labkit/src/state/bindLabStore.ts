@@ -32,10 +32,9 @@ export interface BindOptions {
 
 function persistedFieldsDiffer(a: TrialRecord, b: TrialRecord): boolean {
   if (a === b) return false;
-  const left = a as unknown as Record<string, unknown>;
-  const right = b as unknown as Record<string, unknown>;
-  for (const key of new Set([...Object.keys(left), ...Object.keys(right)])) {
-    if (key !== 'history' && !Object.is(left[key], right[key])) return true;
+  const fields = [...Object.keys(a), ...Object.keys(b)] as (keyof TrialRecord)[];
+  for (const key of new Set(fields)) {
+    if (key !== 'history' && !Object.is(a[key], b[key])) return true;
   }
   return false;
 }

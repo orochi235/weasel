@@ -5,6 +5,7 @@
  */
 import { Fragment, useId, useMemo, useState } from 'react';
 import type { KeyboardEvent, MouseEvent, ReactNode } from 'react';
+import { getOwn } from '@weasel-js/registry';
 import { dropSide } from '@weasel-js/ui-input';
 import { useReorderDragList } from '../../useReorderDragList';
 import { Disclosure } from '../Disclosure';
@@ -84,7 +85,7 @@ type CellValue = string | number | null | undefined;
 
 /** How `col` reads a row's value: its `accessor`, else the row's property named by its id. */
 const valueOf = <Row,>(col: DataGridColumn<Row>): ((row: Row) => CellValue) =>
-  col.accessor ?? ((row: Row) => (row as unknown as Record<string, unknown>)[col.id] as CellValue);
+  col.accessor ?? ((row: Row) => getOwn(row as unknown as Record<string, unknown>, col.id) as CellValue);
 
 /** Nullish or NaN: a value sorting cannot place, which goes last either way. */
 const unplaced = (v: CellValue): v is null | undefined => v == null || Number.isNaN(v);

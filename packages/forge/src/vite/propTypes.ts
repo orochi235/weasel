@@ -1,6 +1,7 @@
 import { createRequire } from 'node:module';
 import { dirname } from 'node:path';
 import type ts from 'typescript';
+import { setOwn } from '@weasel-js/registry';
 import type { ArgShape, ArgType } from '../csf/argsToSchema.ts';
 import { apiTable, type ReadApi } from './apiTable.ts';
 import { componentOf } from './componentOf.ts';
@@ -146,7 +147,7 @@ function propTable(
     );
     if (!argType) continue;
     const description = tsm.displayPartsToString(prop.getDocumentationComment(checker)).replace(/\s+/g, ' ').trim();
-    argTypes[prop.getName()] = description ? { ...argType, description } : argType;
+    setOwn(argTypes, prop.getName(), description ? { ...argType, description } : argType);
     record(reading, files);
   }
   return { argTypes, sources: [...reading.sources] };
@@ -236,7 +237,7 @@ function shapeOf(reading: Reading, type: ts.Type, depth: number): ArgShape | nul
     const files = declaredIn(prop);
     if (files.some((file) => IN_PACKAGES.test(file) || reading.skipped(file))) return null;
     const field = shapeOf(reading, checker.getTypeOfSymbolAtLocation(prop, reading.at), depth + 1);
-    if (field) fields[prop.getName()] = field;
+    if (field) setOwn(fields, prop.getName(), field);
     else if (!(prop.flags & tsm.SymbolFlags.Optional)) return null;
     record(reading, files);
   }

@@ -15,6 +15,7 @@ import { MapEditor } from './MapEditor';
 import { ActionLeaf } from './ActionLeaf';
 import { ActionsLeaf } from './ActionsLeaf';
 import { PrefMixed } from './PrefMixed';
+import { rendererOf } from '../PrefsSource/rendererOf';
 import { aliasOfNothing, prefDrawsNoControl, PrefWords } from './PrefWords';
 import type { LeafContext, LeafRenderer } from './renderContext';
 import { UnionPicker } from './UnionPicker';
@@ -63,7 +64,7 @@ export function entryContext(
 
 /** A leaf drawn inside another's value: by the surface's renderer for its path or its kind, else the built-in. */
 export function renderNestedLeaf(ctx: LeafContext, parts: LeafParts, name = ctx.pref.name): ReactNode {
-  const custom = parts.renderers?.[ctx.path] ?? parts.renderers?.[ctx.pref.kind];
+  const custom = rendererOf(parts.renderers, ctx.path, ctx.pref.kind);
   return custom ? custom(ctx) : renderLeaf(ctx, { ...parts, nested: true }, name);
 }
 
@@ -140,7 +141,7 @@ export function renderLeaf(ctx: LeafContext, parts: LeafParts, name = ctx.pref.n
 
 /** A leaf's renderer for its kind where the surface has one, else the built-in; for a bar, with its words. */
 export function renderLeafControl(ctx: LeafContext, parts: LeafParts, form: ControlForm = 'row', name?: string): ReactNode {
-  const custom = parts.renderers?.[ctx.pref.kind];
+  const custom = rendererOf(parts.renderers, ctx.pref.kind);
   if (!custom) return renderLeaf(ctx, parts, name, form);
   return drawsBarForm(form) ? withBarLabel(ctx.pref, custom(ctx)) : custom(ctx);
 }

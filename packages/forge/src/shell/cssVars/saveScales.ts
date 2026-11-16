@@ -1,5 +1,6 @@
 import type { TokenScaleRule } from '@weasel-js/labkit';
 import { isByAxis, type AxisDefs, type Selection, type ThemeDefinition } from '@weasel-js/theme';
+import { getOwn, setOwn } from '@weasel-js/registry';
 import type { Globals } from '../../protocol/messages';
 
 /** A scale as the panel left it: what a save writes into the definition. */
@@ -32,21 +33,24 @@ const RULE_KEYS = { factors: 'factors', ratio: 'ratio', step: 'step' } as const;
 export function selectionFor(axes: AxisDefs, globals: Globals): Selection {
   const out: Record<string, string> = {};
   for (const [axis, def] of Object.entries(axes)) {
-    const value = globals[axis];
-    if (value === undefined) out[axis] = def.default;
-    else if (typeof value === 'string' && Object.hasOwn(def.values, value)) out[axis] = value;
+    const value = getOwn(globals, axis);
+    if (value === undefined) setOwn(out, axis, def.default);
+    else if (typeof value === 'string' && Object.hasOwn(def.values, value)) setOwn(out, axis, value);
   }
   return out;
 }
 
 export class EditError extends Error {}
 
+/** `holder`'s own entry at `key`, or undefined: a theme names its tokens and seeds, so `toString` is one of them. */
+export const ownAt = (holder: Holder, key: string | number): unknown => (Object.hasOwn(holder, key) ? holder[key] : undefined);
+
 /** `holder[key]` followed through its per-axis branches to the one `selection` reads. */
 export function branchOf(holder: Holder, key: string | number, where: string, selection: Selection): Slot {
   let slot: Slot = { holder, key, where };
-  for (let value = holder[key]; isByAxis(value); value = slot.holder[slot.key]) {
+  for (let value = ownAt(holder, key); isByAxis(value); value = ownAt(slot.holder, slot.key)) {
     const axis = value.by;
-    const picked = selection[axis];
+    const picked = getOwn(selection, axis);
     if (picked === undefined || picked === 'by' || !Object.hasOwn(value, picked)) {
       throw new EditError(`${slot.where} differs by ${axis}, and which ${axis} this trial shows is not known`);
     }
@@ -60,7 +64,7 @@ function slotOf(root: ThemeDefinition, holder: Holder, key: string | number, whe
   if (depth > 16) throw new EditError(`${where} references itself`);
   const slot = branchOf(holder, key, where, selection);
   const { holder: h, key: k, where: w } = slot;
-  const value = h[k];
+  const value = ownAt(h, k);
   if (typeof value === 'number') return slot;
   if (typeof value === 'string') {
     const ref = SEED_REF.exec(value);
@@ -76,7 +80,7 @@ function slotOf(root: ThemeDefinition, holder: Holder, key: string | number, whe
 /** The factor list the selection reads, through any per-axis branches. */
 function factorsOf(holder: Holder, where: string, selection: Selection): { list: Holder; where: string } {
   const slot = branchOf(holder, 'factors', `${where}.factors`, selection);
-  const value = slot.holder[slot.key];
+  const value = ownAt(slot.holder, slot.key);
   if (!Array.isArray(value)) throw new EditError(`${slot.where} is not a list`);
   return { list: value as unknown as Holder, where: slot.where };
 }
@@ -91,8 +95,8 @@ const plainLiteral = (value: unknown): boolean =>
 function swapRule(scale: Holder, from: string | null, to: string, value: unknown): void {
   const entries = Object.entries(scale);
   for (const [k] of entries) delete scale[k];
-  for (const [k, v] of entries) scale[k === from ? to : k] = k === from ? value : v;
-  if (from === null) scale[to] = value;
+  for (const [k, v] of entries) setOwn(scale, k === from ? to : k, k === from ? value : v);
+  if (from === null) setOwn(scale, to, value);
 }
 
 /**
@@ -151,6 +155,6 @@ export function applyScaleEdits(
     throw e;
   }
 
-  for (const [holder, byKey] of writes) for (const [key, value] of byKey) holder[key] = value;
+  for (const [holder, byKey] of writes) for (const [key, value] of byKey) setOwn(holder, String(key), value);
   return { ok: true, definition: root };
 }

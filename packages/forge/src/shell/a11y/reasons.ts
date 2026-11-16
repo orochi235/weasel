@@ -1,3 +1,4 @@
+import { getOwn } from '@weasel-js/registry';
 import type { A11yNode } from '../../protocol/messages';
 
 /** axe's message keys for a node it could not decide, said for a person deciding whether to look closer. */
@@ -21,5 +22,5 @@ const PLAIN: Record<string, string> = {
 /** Why a review item is there, in plain words: the known reasons rewritten, anything else in axe's own sentence. */
 export function plainReason(reason: A11yNode['reason']): string | null {
   if (!reason) return null;
-  return (reason.key ? PLAIN[reason.key] : undefined) ?? reason.message ?? null;
+  return (reason.key ? getOwn(PLAIN, reason.key) : undefined) ?? reason.message ?? null;
 }

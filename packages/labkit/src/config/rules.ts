@@ -1,3 +1,4 @@
+import { setOwn } from './path';
 import type { ConfigRule, ConfigRuleContext, LeafPatch } from './types';
 
 /** `cellSize` -> `Cell size`. Splits camelCase without shattering acronyms. */
@@ -79,7 +80,7 @@ export function applyRules(
     if (patch === null) continue;
     for (const [k, v] of Object.entries(patch)) {
       if (v !== undefined && acc[k as keyof LeafPatch] === undefined) {
-        (acc as Record<string, unknown>)[k] = v;
+        setOwn(acc as Record<string, unknown>, k, v);
       }
     }
   }
