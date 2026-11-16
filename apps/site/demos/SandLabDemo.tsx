@@ -105,7 +105,7 @@ const brushInstrument = defineInstrument<State, Config>({
   initialState: () => ({ scene: null }),
   tools: {
     tools: [
-      { id: 'select', label: 'Select', icon: icon('core:select') },
+      { id: 'select', label: 'Select', icon: icon('editing:select') },
       { id: 'anchors', label: 'Anchors', icon: icon('core:anchors') },
       { id: 'sand', label: 'Sand', icon: icon('core:sand') },
     ],

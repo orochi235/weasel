@@ -172,16 +172,16 @@ export const AliasesIntoAnotherSchema: Story = {
 };
 
 const ARRANGE_ACTIONS: Action[] = [
-  { id: 'arrange.front', label: 'Bring to front', group: 'arrange', icon: icon('core:bringToFront'), invoker: { timing: 'immediate', run: () => {} } },
-  { id: 'arrange.back', label: 'Send to back', group: 'arrange', icon: icon('core:sendToBack'), invoker: { timing: 'immediate', run: () => {} } },
+  { id: 'arrange.front', label: 'Bring to front', group: 'arrange', icon: icon('editing:bringToFront'), invoker: { timing: 'immediate', run: () => {} } },
+  { id: 'arrange.back', label: 'Send to back', group: 'arrange', icon: icon('editing:sendToBack'), invoker: { timing: 'immediate', run: () => {} } },
   {
     id: 'arrange.flip',
     label: 'Flip',
     group: 'arrange',
     invoker: { timing: 'immediate', run: () => {} },
     variants: [
-      { key: 'x', label: 'Flip horizontally', icon: icon('core:flipX'), params: { axis: 'x' } },
-      { key: 'y', label: 'Flip vertically', icon: icon('core:flipY'), params: { axis: 'y' } },
+      { key: 'x', label: 'Flip horizontally', icon: icon('editing:flipX'), params: { axis: 'x' } },
+      { key: 'y', label: 'Flip vertically', icon: icon('editing:flipY'), params: { axis: 'y' } },
     ],
   },
 ];
@@ -247,10 +247,10 @@ export const OpensNestedGroups: Story = {
 const LENS_ACTIONS: Action[] = [
   { id: 'lens.undo', label: 'Undo', icon: icon('core:undo'), invoker: { timing: 'immediate', run: () => {} } },
   { id: 'lens.redo', label: 'Redo', icon: icon('core:redo'), invoker: { timing: 'immediate', run: () => {} } },
-  { id: 'lens.flipX', label: 'Flip across', icon: icon('core:flipX'), invoker: { timing: 'immediate', run: () => {} } },
-  { id: 'lens.flipY', label: 'Flip down', icon: icon('core:flipY'), invoker: { timing: 'immediate', run: () => {} } },
-  { id: 'lens.front', label: 'Bring to front', icon: icon('core:bringToFront'), invoker: { timing: 'immediate', run: () => {} } },
-  { id: 'lens.back', label: 'Send to back', icon: icon('core:sendToBack'), invoker: { timing: 'immediate', run: () => {} } },
+  { id: 'lens.flipX', label: 'Flip across', icon: icon('editing:flipX'), invoker: { timing: 'immediate', run: () => {} } },
+  { id: 'lens.flipY', label: 'Flip down', icon: icon('editing:flipY'), invoker: { timing: 'immediate', run: () => {} } },
+  { id: 'lens.front', label: 'Bring to front', icon: icon('editing:bringToFront'), invoker: { timing: 'immediate', run: () => {} } },
+  { id: 'lens.back', label: 'Send to back', icon: icon('editing:sendToBack'), invoker: { timing: 'immediate', run: () => {} } },
 ];
 const LENS: PrefGroup = {
   name: 'Lens',

@@ -7,7 +7,7 @@ export const ACTIONS = {
       <rect x="12" y="5" width="6" height="10"/>
       <line x1="10" y1="3" x2="10" y2="17" stroke-dasharray="1.5 1.5"/>
     </g>`,
-  // core:flipX's trapezoids with both halves outlined: an even pair, so the mode never reads as the flip action.
+  // editing:flipX's trapezoids with both halves outlined: an even pair, so the mode never reads as the flip action.
   symmetry: `
     <path d="M1.25 2.5 8.75 6.25 8.75 13.75 1.25 17.5Z M2.5 4.5225 7.5 7.0225 7.5 12.9775 2.5 15.4775Z" fill="currentColor" fill-rule="evenodd" stroke="none"/>
     <path d="M18.75 2.5 11.25 6.25 11.25 13.75 18.75 17.5Z M17.5 4.5225 12.5 7.0225 12.5 12.9775 17.5 15.4775Z" fill="currentColor" fill-rule="evenodd" stroke="none"/>`,

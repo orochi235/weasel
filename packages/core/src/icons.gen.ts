@@ -6,57 +6,28 @@ import { scopedIcon } from '@weasel-js/icons';
 export type CoreIconName =
   | 'anchors'
   | 'arrow'
-  | 'ellipse'
-  | 'eyedropper'
   | 'hand'
   | 'image'
-  | 'lasso'
-  | 'line'
   | 'pen'
   | 'pencil'
-  | 'polygon'
-  | 'rect'
-  | 'select'
   | 'slice'
-  | 'star'
   | 'sticky'
   | 'text'
   | 'unknown'
   | 'cut'
   | 'copy'
   | 'paste'
-  | 'duplicate'
-  | 'transformAgain'
-  | 'group'
-  | 'ungroup'
-  | 'bringForward'
-  | 'bringToFront'
-  | 'sendBackward'
-  | 'sendToBack'
-  | 'flipX'
-  | 'flipY'
   | 'delete'
   | 'undo'
   | 'redo'
   | 'measure'
   | 'tune'
-  | 'alignLeft'
-  | 'alignRight'
-  | 'alignTop'
-  | 'alignBottom'
-  | 'alignCenterX'
-  | 'alignCenterY'
   | 'distributeHorizontal'
   | 'distributeVertical'
   | 'union'
   | 'intersect'
   | 'subtract'
   | 'exclude'
-  | 'divide'
-  | 'crop'
-  | 'trim'
-  | 'booleanGroup'
-  | 'merge'
   | 'join'
   | 'bridge'
   | 'cutAtCrossings'
@@ -144,19 +115,11 @@ export const ICON_GROUPS: readonly { label: string; names: readonly CoreIconName
     "names": [
       "anchors",
       "arrow",
-      "ellipse",
-      "eyedropper",
       "hand",
       "image",
-      "lasso",
-      "line",
       "pen",
       "pencil",
-      "polygon",
-      "rect",
-      "select",
       "slice",
-      "star",
       "sticky",
       "text",
       "unknown"
@@ -167,17 +130,7 @@ export const ICON_GROUPS: readonly { label: string; names: readonly CoreIconName
     "names": [
       "cut",
       "copy",
-      "paste",
-      "duplicate",
-      "transformAgain",
-      "group",
-      "ungroup",
-      "bringForward",
-      "bringToFront",
-      "sendBackward",
-      "sendToBack",
-      "flipX",
-      "flipY"
+      "paste"
     ]
   },
   {
@@ -188,17 +141,6 @@ export const ICON_GROUPS: readonly { label: string; names: readonly CoreIconName
       "redo",
       "measure",
       "tune"
-    ]
-  },
-  {
-    "label": "Align",
-    "names": [
-      "alignLeft",
-      "alignRight",
-      "alignTop",
-      "alignBottom",
-      "alignCenterX",
-      "alignCenterY"
     ]
   },
   {
@@ -214,12 +156,7 @@ export const ICON_GROUPS: readonly { label: string; names: readonly CoreIconName
       "union",
       "intersect",
       "subtract",
-      "exclude",
-      "divide",
-      "crop",
-      "trim",
-      "booleanGroup",
-      "merge"
+      "exclude"
     ]
   },
   {
@@ -339,57 +276,28 @@ declare module '@weasel-js/icons' {
   interface IconName {
     'core:anchors': true;
     'core:arrow': true;
-    'core:ellipse': true;
-    'core:eyedropper': true;
     'core:hand': true;
     'core:image': true;
-    'core:lasso': true;
-    'core:line': true;
     'core:pen': true;
     'core:pencil': true;
-    'core:polygon': true;
-    'core:rect': true;
-    'core:select': true;
     'core:slice': true;
-    'core:star': true;
     'core:sticky': true;
     'core:text': true;
     'core:unknown': true;
     'core:cut': true;
     'core:copy': true;
     'core:paste': true;
-    'core:duplicate': true;
-    'core:transformAgain': true;
-    'core:group': true;
-    'core:ungroup': true;
-    'core:bringForward': true;
-    'core:bringToFront': true;
-    'core:sendBackward': true;
-    'core:sendToBack': true;
-    'core:flipX': true;
-    'core:flipY': true;
     'core:delete': true;
     'core:undo': true;
     'core:redo': true;
     'core:measure': true;
     'core:tune': true;
-    'core:alignLeft': true;
-    'core:alignRight': true;
-    'core:alignTop': true;
-    'core:alignBottom': true;
-    'core:alignCenterX': true;
-    'core:alignCenterY': true;
     'core:distributeHorizontal': true;
     'core:distributeVertical': true;
     'core:union': true;
     'core:intersect': true;
     'core:subtract': true;
     'core:exclude': true;
-    'core:divide': true;
-    'core:crop': true;
-    'core:trim': true;
-    'core:booleanGroup': true;
-    'core:merge': true;
     'core:join': true;
     'core:bridge': true;
     'core:cutAtCrossings': true;

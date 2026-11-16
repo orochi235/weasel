@@ -62,7 +62,7 @@ const reachInstrument = defineInstrument<State, Config>({
     initial: 'reach',
     tools: [
       { id: 'reach', label: 'Reach', icon: icon('ui:arrowRight') },
-      { id: 'select', label: 'Select (then E extends the selection)', icon: icon('core:select') },
+      { id: 'select', label: 'Select (then E extends the selection)', icon: icon('editing:select') },
     ],
   },
   render: (ctx) => <ReachTrial ctx={ctx} />,

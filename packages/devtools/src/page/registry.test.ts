@@ -5,7 +5,7 @@ import { describeRegistry } from './registry';
 const rect = {
   id: 'rect',
   eligibility: { focus: true },
-  presentation: { label: 'Rectangle', icon: 'core:rect', group: 'shapes' },
+  presentation: { label: 'Rectangle', icon: 'editing:rect', group: 'shapes' },
   bindings: [{ spec: { kind: 'drag' }, actionId: 'insert', opts: { params: { shape: 'rect' } } }],
   cursor: 'crosshair',
 } as unknown as Contribution<unknown>;
@@ -51,7 +51,7 @@ describe('describeRegistry', () => {
     const { tools } = setup();
     expect(tools.map((t) => [t.id, t.slot])).toEqual([['rect', 'tool'], ['wheel-zoom', 'ambient'], ['snap', 'contribution']]);
     expect(tools[0]).toEqual({
-      id: 'rect', slot: 'tool', label: 'Rectangle', icon: 'core:rect', group: 'shapes', shortcut: 'R', hotkey: null,
+      id: 'rect', slot: 'tool', label: 'Rectangle', icon: 'editing:rect', group: 'shapes', shortcut: 'R', hotkey: null,
       hidden: false, cursor: 'crosshair', eligibility: { focus: true },
       bindings: [{ actionId: 'insert', spec: { kind: 'drag' }, routes: expect.any(Array), opts: { params: { shape: 'rect' } } }],
       actions: [], deps: [], hasOverlay: false,

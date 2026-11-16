@@ -38,7 +38,7 @@ function loupeContributions(ctx: TrialChromeContext): TrialContribution[] {
       region: 'toolbar',
       group: 'view',
       item: {
-        icon: icon('core:eyedropper'),
+        icon: icon('editing:eyedropper'),
         label: 'Eyedropper',
         pressed: ctx.dropperOn,
         onActivate: ctx.toggleDropper,

@@ -37,7 +37,8 @@ glyph is explicit, through the registry's `override(ref, glyph)`.
 
 | Namespace | Owner | Definitions | Holds |
 |---|---|---|---|
-| `core` | `@weasel-js/core` | `packages/core/icons/` | Tools, edit and history actions, align, booleans, path and anchor commands, text styling, stroke and paint |
+| `core` | `@weasel-js/core` | `packages/core/icons/` | The hand and the viewer's own tools, history, clipboard, the booleans core's nodes name, path and anchor commands, text styling, stroke and paint |
+| `editing` | `@weasel-js/editing` | `packages/editing/icons/` | The tools editing offers (select, lasso, the shapes, the eyedropper), its edit and arrange commands, align, and the rest of the Pathfinder |
 | `ui` | `@weasel-js/ui` | `packages/ui/icons/` | Chrome, state, playback, arrows, key legends, marks, shapes and the rest of the component set |
 | `path-tools` | `@weasel-js/path-tools` | `packages/path-tools/icons/` | The path tools and their commands |
 | `rig` | `@weasel-js/rig` | `packages/rig/icons/` | The bone and weight tools |
@@ -67,7 +68,7 @@ declares a namespace and owner and no groups, so their `icon()` takes qualified 
 
 A new package that draws glyphs also needs an `./icons` export pointing at its built table module
 and a `"weaselIcons": { "table": "./dist/icons.table.json" }` field in `package.json`, with its
-build copying the JSON into `dist`. Core, ui and path-tools show the shape. The build plugin finds
+build copying the JSON into `dist`. Core, editing, ui and path-tools show the shape. The build plugin finds
 an installed package's glyphs through that field.
 
 ## A subject and a mark

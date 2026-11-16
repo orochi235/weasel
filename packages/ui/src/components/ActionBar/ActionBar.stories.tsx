@@ -34,9 +34,9 @@ function makeAction(opts: {
 }
 
 const alignActions: Action[] = [
-  makeAction({ id: 'align.left', label: 'Align Left', group: 'align', icon: icon('core:alignLeft'), shortcut: 'L' }),
-  makeAction({ id: 'align.center', label: 'Align Center', group: 'align', icon: icon('core:alignCenterX'), shortcut: 'C' }),
-  makeAction({ id: 'align.right', label: 'Align Right', group: 'align', icon: icon('core:alignRight'), shortcut: 'R' }),
+  makeAction({ id: 'align.left', label: 'Align Left', group: 'align', icon: icon('editing:alignLeft'), shortcut: 'L' }),
+  makeAction({ id: 'align.center', label: 'Align Center', group: 'align', icon: icon('editing:alignCenterX'), shortcut: 'C' }),
+  makeAction({ id: 'align.right', label: 'Align Right', group: 'align', icon: icon('editing:alignRight'), shortcut: 'R' }),
 ];
 
 const mixedEnabled: Action[] = [

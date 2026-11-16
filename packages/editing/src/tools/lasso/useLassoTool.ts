@@ -66,7 +66,7 @@ export function createLassoTool(
     cursor: 'crosshair',
     presentation: {
       label: 'Lasso',
-      icon: icon('core:lasso'),
+      icon: icon('lasso'),
       group: 'select',
     },
     // The dispatcher invokes `lassoSelectAction`, which owns vertex buffering, overlay state, and the commit-on-end

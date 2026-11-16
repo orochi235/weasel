@@ -12,8 +12,8 @@ export default meta;
 type Story = StoryObj<typeof ToolRail>;
 
 const TOOLS = [
-  { id: 'select', label: 'Select', icon: icon('core:select'), shortcut: { key: 'v' }, group: 'pick' },
-  { id: 'lasso', label: 'Lasso', icon: icon('core:lasso'), shortcut: { key: 'l' }, group: 'pick' },
+  { id: 'select', label: 'Select', icon: icon('editing:select'), shortcut: { key: 'v' }, group: 'pick' },
+  { id: 'lasso', label: 'Lasso', icon: icon('editing:lasso'), shortcut: { key: 'l' }, group: 'pick' },
   { id: 'pen', label: 'Pen', icon: icon('core:pen'), shortcut: { key: 'p' }, group: 'draw' },
   { id: 'text', label: 'Text', icon: icon('core:text'), shortcut: { key: 't' }, group: 'draw' },
   { id: 'hand', label: 'Hand', icon: icon('core:hand'), shortcut: { key: 'h' }, group: 'view' },
@@ -26,9 +26,9 @@ function Demo(props: Partial<ToolRailProps> & { withStack?: boolean; withCommand
   const [grid, setGrid] = useState(false);
   const buttons = TOOLS.map((t) => ({ ...t, active: active === t.id, onPress: () => setActive(t.id) }));
   const shapes = [
-    { id: 'rect', label: 'Rect', icon: icon('core:rect') },
-    { id: 'ellipse', label: 'Ellipse', icon: icon('core:ellipse') },
-    { id: 'star', label: 'Star', icon: icon('core:star') },
+    { id: 'rect', label: 'Rect', icon: icon('editing:rect') },
+    { id: 'ellipse', label: 'Ellipse', icon: icon('editing:ellipse') },
+    { id: 'star', label: 'Star', icon: icon('editing:star') },
   ].map((t) => ({ ...t, active: active === t.id, onPress: () => setActive(t.id) }));
   const items: ToolRailItem[] = [
     ...buttons,
@@ -47,7 +47,7 @@ export const WithCommand: Story = { render: (args) => <Demo {...args} withComman
 export const Disabled: Story = {
   render: () => (
     <ToolRail items={[
-      { id: 'select', label: 'Select', icon: icon('core:select'), active: true, onPress: () => {} },
+      { id: 'select', label: 'Select', icon: icon('editing:select'), active: true, onPress: () => {} },
       { id: 'pen', label: 'Pen', icon: icon('core:pen'), disabled: true, disabledReason: 'Locked layer', onPress: () => {} },
     ]} />
   ),

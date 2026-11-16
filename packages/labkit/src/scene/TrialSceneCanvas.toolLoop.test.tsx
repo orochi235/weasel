@@ -68,8 +68,8 @@ const instrument = (pick: string, everyRender = false) =>
     initialState: () => ({ scene: null }),
     tools: {
       tools: [
-        { id: 'select', label: 'Select', icon: icon('core:select') },
-        { id: 'ellipse', label: 'Ellipse', icon: icon('core:rect') },
+        { id: 'select', label: 'Select', icon: icon('editing:select') },
+        { id: 'ellipse', label: 'Ellipse', icon: icon('editing:rect') },
       ],
     },
     render: (ctx) => <Body ctx={ctx} pick={pick} everyRender={everyRender} />,

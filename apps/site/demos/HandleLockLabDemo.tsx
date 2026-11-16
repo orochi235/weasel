@@ -37,7 +37,7 @@ function HandleLockTrial({ ctx }: { ctx: RenderContext<PathLabState, Record<stri
 const lockInstrument = defineInstrument<PathLabState, Record<string, never>>({
   name: 'Handle locks',
   initialState: () => ({ scene: null }),
-  tools: { tools: [{ id: 'select', label: 'Select', icon: icon('core:select') }] },
+  tools: { tools: [{ id: 'select', label: 'Select', icon: icon('editing:select') }] },
   render: (ctx) => <HandleLockTrial ctx={ctx} />,
 });
 

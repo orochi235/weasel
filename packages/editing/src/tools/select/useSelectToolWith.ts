@@ -258,7 +258,7 @@ export function createSelectToolWith<TNode extends { id: string }, TPose>(
     cursor: 'default',
     presentation: {
       label: 'Select',
-      icon: icon('core:select'),
+      icon: icon('select'),
       group: 'select',
     },
     actions: [pickAction, deepAction, collapseDeferredAction],

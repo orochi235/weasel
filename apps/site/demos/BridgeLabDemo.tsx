@@ -73,7 +73,7 @@ const bridgeInstrument = defineInstrument<State, Config>({
   initialState: () => ({ scene: null }),
   tools: {
     tools: [
-      { id: 'select', label: 'Select', icon: icon('core:select') },
+      { id: 'select', label: 'Select', icon: icon('editing:select') },
       { id: 'pen', label: 'Pen', icon: icon('core:pen') },
     ],
   },

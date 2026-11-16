@@ -167,7 +167,7 @@ const trimInstrument = defineInstrument<State, Config>({
     initial: 'hand',
     tools: [
       { id: 'hand', label: 'Hand', icon: icon('core:hand') },
-      { id: 'select', label: 'Select', icon: icon('core:select') },
+      { id: 'select', label: 'Select', icon: icon('editing:select') },
     ],
   },
   render: (ctx) => <TrimTrial ctx={ctx} />,

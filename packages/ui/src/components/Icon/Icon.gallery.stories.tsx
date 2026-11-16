@@ -1,6 +1,7 @@
 import type { Meta, StoryObj } from '@weasel-js/forge';
 import { toIconRef, type IconRef, type IconTable } from '@weasel-js/icons';
 import { icons as coreIcons } from '@weasel-js/core/icons';
+import { icons as editingIcons } from '@weasel-js/editing/icons';
 import { icons as shapeIcons } from '@weasel-js/icons/shapes';
 import { Icon } from '@weasel-js/ui/components/Icon';
 import { icons as uiIcons } from '@weasel-js/ui/icons';
@@ -78,6 +79,11 @@ export const CoreAtChromeSize: StoryObj = { render: () => <Sheet table={coreIcon
 
 export const CoreAtProofSize: StoryObj = { render: () => <Sheet table={coreIcons} size={160} proof /> };
 
+/** Editing's glyphs — its tools and commands — at the size the toolbar draws them. */
+export const EditingAtChromeSize: StoryObj = { render: () => <Sheet table={editingIcons} size={20} /> };
+
+export const EditingAtProofSize: StoryObj = { render: () => <Sheet table={editingIcons} size={160} proof /> };
+
 /** The plain shapes `@weasel-js/icons` draws, which every package may name. */
 export const ShapesAtChromeSize: StoryObj = { render: () => <Sheet table={shapeIcons} size={20} /> };
 
@@ -97,11 +103,13 @@ export const BothModes: StoryObj = {
       <div data-wzl-mode="light" className={s.modePanel}>
         <Sheet size={20} />
         <Sheet table={coreIcons} size={20} />
+        <Sheet table={editingIcons} size={20} />
         <Sheet table={shapeIcons} size={20} />
       </div>
       <div data-wzl-mode="dark" className={s.modePanel}>
         <Sheet size={20} />
         <Sheet table={coreIcons} size={20} />
+        <Sheet table={editingIcons} size={20} />
         <Sheet table={shapeIcons} size={20} />
       </div>
     </>

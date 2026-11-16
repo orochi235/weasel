@@ -160,8 +160,8 @@ export const flipAction = defineAction({
   group: 'flip',
   tags: ['mirror'],
   variants: [
-    { key: 'x', label: 'Flip Horizontal', icon: icon('core:flipX'), params: { axis: 'x' } },
-    { key: 'y', label: 'Flip Vertical', icon: icon('core:flipY'), params: { axis: 'y' } },
+    { key: 'x', label: 'Flip Horizontal', icon: icon('flipX'), params: { axis: 'x' } },
+    { key: 'y', label: 'Flip Vertical', icon: icon('flipY'), params: { axis: 'y' } },
   ],
   defaultBinding: [
     { spec: { kind: 'key', key: 'h', mods: { shift: true }, phase: BETWEEN_GESTURES }, opts: { id: 'flip.x', params: { axis: 'x' } } },

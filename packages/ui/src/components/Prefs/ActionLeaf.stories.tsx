@@ -97,9 +97,9 @@ export const UnknownKey: Story = {
 };
 
 const FORM_ACTIONS: Action[] = [
-  { id: 'arrange.front', label: 'Bring to front', group: 'arrange', icon: icon('core:bringToFront'), invoker: immediate },
-  { id: 'arrange.back', label: 'Send to back', group: 'arrange', icon: icon('core:sendToBack'), invoker: immediate },
-  { id: 'arrange.group', label: 'Group', group: 'arrange', icon: icon('core:group'), invoker: immediate, enabled: () => 'selection-required' },
+  { id: 'arrange.front', label: 'Bring to front', group: 'arrange', icon: icon('editing:bringToFront'), invoker: immediate },
+  { id: 'arrange.back', label: 'Send to back', group: 'arrange', icon: icon('editing:sendToBack'), invoker: immediate },
+  { id: 'arrange.group', label: 'Group', group: 'arrange', icon: icon('editing:group'), invoker: immediate, enabled: () => 'selection-required' },
   { id: 'doc.export', label: 'Export…', icon: icon('export'), invoker: immediate },
 ];
 

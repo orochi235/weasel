@@ -70,7 +70,7 @@ const segmentInstrument = defineInstrument<State, Config>({
   name: 'Segments',
   config,
   initialState: () => ({ scene: null }),
-  tools: { tools: [{ id: 'select', label: 'Select', icon: icon('core:select') }] },
+  tools: { tools: [{ id: 'select', label: 'Select', icon: icon('editing:select') }] },
   chrome: [{
     id: 'segment-keys',
     region: 'status',

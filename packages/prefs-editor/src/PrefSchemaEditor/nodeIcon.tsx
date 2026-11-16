@@ -16,7 +16,7 @@ const KIND_ICON: Record<PrefKind, IconRef> = {
   boolean: icon('ui:check'),
   string: icon('core:text'),
   enum: icon('ui:chevron'),
-  color: icon('core:eyedropper'),
+  color: icon('editing:eyedropper'),
   paint: icon('core:paintSolid'),
   object: icon('ui:typeBraces'),
   list: icon('ui:layoutRows'),

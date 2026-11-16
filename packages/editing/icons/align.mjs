@@ -1,4 +1,4 @@
-// Drawn from core's alignIcons components.
+// The align commands.
 export const ALIGN = {
   alignLeft: `
     <g fill="currentColor" stroke="none" stroke-width="1" stroke-linecap="butt" stroke-linejoin="miter" transform="scale(1.25)">

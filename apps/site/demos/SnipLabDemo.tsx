@@ -60,7 +60,7 @@ const snipInstrument = defineInstrument<State, Config>({
     initial: 'snip',
     tools: [
       { id: 'snip', label: 'Snip', icon: icon('core:slice') },
-      { id: 'select', label: 'Select', icon: icon('core:select') },
+      { id: 'select', label: 'Select', icon: icon('editing:select') },
     ],
   },
   render: (ctx) => <SnipTrial ctx={ctx} />,

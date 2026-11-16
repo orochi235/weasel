@@ -412,7 +412,7 @@ defineInstrument<SceneTrialState, ConfigOf<typeof config>>({
   name: 'Scene',
   config,
   initialState: () => ({ scene: null }),
-  tools: { tools: [{ id: 'select', label: 'Select', icon: icon('core:select') }, { id: 'rect', label: 'Rectangle', icon: icon('core:rect') }] },
+  tools: { tools: [{ id: 'select', label: 'Select', icon: icon('editing:select') }, { id: 'rect', label: 'Rectangle', icon: icon('editing:rect') }] },
   render: (ctx) => <Body ctx={ctx} />,
 });
 ```

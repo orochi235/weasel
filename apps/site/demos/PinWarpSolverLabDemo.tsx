@@ -85,7 +85,7 @@ const solverInstrument = defineInstrument<State, Config>({
   onConfigChange: (next, prev, state) => (next.preset === prev.preset ? state : { scene: null }),
   tools: {
     tools: [
-      { id: 'select', label: 'Select', icon: icon('core:select') },
+      { id: 'select', label: 'Select', icon: icon('editing:select') },
       { id: 'pin', label: 'Pin Warp', icon: icon('path-tools:pinWarp') },
     ],
     initial: 'pin',

@@ -26,7 +26,11 @@ export default defineConfig({
   plugins: [react(), weaselIcons.vite({ mode: 'library' })],
   build: {
     lib: {
-      entry: { index: resolve(import.meta.dirname, 'src/index.ts'), engine: resolve(import.meta.dirname, 'src/engine.ts') },
+      entry: {
+        index: resolve(import.meta.dirname, 'src/index.ts'),
+        engine: resolve(import.meta.dirname, 'src/engine.ts'),
+        'icons.table': resolve(import.meta.dirname, 'src/icons.table.ts'),
+      },
       formats: ['es'],
     },
     target: 'es2022',

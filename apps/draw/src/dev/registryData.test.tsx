@@ -28,13 +28,13 @@ describe('registryData static collectors', () => {
     const icons = collectIcons([
       entry('undo', [{ key: 'undo', icon: icon('core:undo') }]),
       entry('flip', [
-        { key: 'flip:x', icon: icon('core:flipX') },
-        { key: 'flip:y', icon: icon('core:flipY') },
+        { key: 'flip:x', icon: icon('editing:flipX') },
+        { key: 'flip:y', icon: icon('editing:flipY') },
       ]),
-      entry('app.thing', [{ key: 'app.thing', icon: icon('core:flipY') }]),
+      entry('app.thing', [{ key: 'app.thing', icon: icon('editing:flipY') }]),
       entry('app.bare', [{ key: 'app.bare' }]),
     ]).filter((i) => i.source === 'action');
-    expect(icons.map((i) => i.id)).toEqual(['core:undo', 'core:flipX', 'core:flipY']);
+    expect(icons.map((i) => i.id)).toEqual(['core:undo', 'editing:flipX', 'editing:flipY']);
     expect(icons[2]?.actions).toEqual(['flip:y', 'app.thing']);
   });
 

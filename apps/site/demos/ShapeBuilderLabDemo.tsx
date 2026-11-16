@@ -75,7 +75,7 @@ const shapeBuilderInstrument = defineInstrument<State, Config>({
   tools: {
     initial: 'shapeBuilder',
     tools: [
-      { id: 'select', label: 'Select', icon: icon('core:select') },
+      { id: 'select', label: 'Select', icon: icon('editing:select') },
       { id: 'shapeBuilder', label: 'Shape Builder', icon: icon('core:union') },
     ],
   },

@@ -112,7 +112,7 @@ export function useEyedropperTool(opts: UseEyedropperToolOptions): Tool {
       cursor: cursorFor('eyedropper', { fallback: 'crosshair' }),
       presentation: {
         label: 'Eyedropper',
-        icon: icon('core:eyedropper'),
+        icon: icon('eyedropper'),
         group: 'view',
       },
       actions: [pickAction],

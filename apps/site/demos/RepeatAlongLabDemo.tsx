@@ -83,8 +83,8 @@ const repeatInstrument = defineInstrument<State, Config>({
   initialState: () => ({ scene: null }),
   tools: {
     tools: [
-      { id: 'select', label: 'Select', icon: icon('core:select') },
-      { id: 'rect', label: 'Rectangle', icon: icon('core:rect') },
+      { id: 'select', label: 'Select', icon: icon('editing:select') },
+      { id: 'rect', label: 'Rectangle', icon: icon('editing:rect') },
       { id: 'pen', label: 'Pen', icon: icon('core:pen') },
     ],
   },

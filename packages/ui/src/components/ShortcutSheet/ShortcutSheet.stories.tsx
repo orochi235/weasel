@@ -11,9 +11,9 @@ const tool = (id: string, label: string, name: Parameters<typeof icon>[0]): Tool
   ({ id, presentation: { label, icon: icon(name) } }) as Tool;
 
 const TOOLS: Record<string, Tool> = {
-  select: tool('select', 'Select', 'core:select'),
-  lasso: tool('lasso', 'Lasso', 'core:lasso'),
-  rect: tool('rect', 'Rectangle', 'core:rect'),
+  select: tool('select', 'Select', 'editing:select'),
+  lasso: tool('lasso', 'Lasso', 'editing:lasso'),
+  rect: tool('rect', 'Rectangle', 'editing:rect'),
   pen: tool('pen', 'Pen', 'core:pen'),
   hand: tool('hand', 'Hand', 'core:hand'),
 };

@@ -39,7 +39,7 @@ export function createLineTool(options: InsertToolOptions = {}): Tool {
     presentation: {
       label: 'Line',
       group: 'shape',
-      icon: icon('core:line'),
+      icon: icon('line'),
     },
     bindings: [
       {

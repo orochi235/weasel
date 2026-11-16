@@ -60,8 +60,8 @@ const instrument = defineInstrument<State, Record<string, never>>({
   undo: {},
   tools: {
     tools: [
-      { id: 'select', label: 'Select', icon: icon('core:select') },
-      { id: 'rect', label: 'Rectangle', icon: icon('core:rect') },
+      { id: 'select', label: 'Select', icon: icon('editing:select') },
+      { id: 'rect', label: 'Rectangle', icon: icon('editing:rect') },
     ],
   },
   render: (ctx) => <Body ctx={ctx} />,
@@ -224,10 +224,10 @@ describe('<TrialSceneCanvas> tool keys', () => {
     ...instrument,
     tools: {
       tools: [
-        { id: 'select', label: 'Select', icon: icon('core:select') },
+        { id: 'select', label: 'Select', icon: icon('editing:select') },
         // A stale declaration: the scene's binding, not this, is what the rail shows.
-        { id: 'rect', label: 'Rectangle', icon: icon('core:rect'), shortcut: { key: 'X' } },
-        { id: 'note', label: 'Note', icon: icon('core:select'), shortcut: { key: 'Y' } },
+        { id: 'rect', label: 'Rectangle', icon: icon('editing:rect'), shortcut: { key: 'X' } },
+        { id: 'note', label: 'Note', icon: icon('editing:select'), shortcut: { key: 'Y' } },
       ],
     },
     render: (ctx) => <Rebound ctx={ctx} />,

@@ -70,7 +70,7 @@ const instrument = defineInstrument<PathLabState, Config>({
   name: 'Anchor selection',
   config,
   initialState: () => ({ scene: null }),
-  tools: { tools: [{ id: 'select', label: 'Select', icon: icon('core:select') }] },
+  tools: { tools: [{ id: 'select', label: 'Select', icon: icon('editing:select') }] },
   render: (ctx) => <AnchorSelectTrial ctx={ctx} />,
 });
 

@@ -62,7 +62,7 @@ export function duplicateSelection(
 export const duplicateAction: Action & { requires: string[] } = {
   id: 'duplicate',
   label: 'Duplicate',
-  icon: icon('core:duplicate'),
+  icon: icon('duplicate'),
   group: 'edit',
   // Cmd/Ctrl+D is `transformAgain`, which duplicates when nothing else is
   // there to repeat.

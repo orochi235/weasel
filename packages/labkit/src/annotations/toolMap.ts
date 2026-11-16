@@ -35,7 +35,7 @@ const TOOLS: Record<string, AnnotationToolInfo> = {
 export const ANNOTATION_TOOLS: readonly TrialTool[] = [
   // Not in `TOOLS`: an id the map does not carry is what leaves the overlay idle.
   { id: 'pointer', label: 'Interact', icon: icon('core:hand'), group: 'annotate' },
-  { id: 'select', label: 'Select', icon: icon('core:select'), group: 'annotate' },
+  { id: 'select', label: 'Select', icon: icon('editing:select'), group: 'annotate' },
   {
     id: 'stroke',
     options: MARK_LINE_OPTIONS,
@@ -47,7 +47,7 @@ export const ANNOTATION_TOOLS: readonly TrialTool[] = [
     id: 'line',
     options: MARK_LINE_OPTIONS,
     label: 'Line',
-    icon: icon('core:line'),
+    icon: icon('editing:line'),
     group: 'annotate',
   },
   {
@@ -61,14 +61,14 @@ export const ANNOTATION_TOOLS: readonly TrialTool[] = [
     id: 'rect',
     options: MARK_LINE_OPTIONS,
     label: 'Rectangle',
-    icon: icon('core:rect'),
+    icon: icon('editing:rect'),
     group: 'annotate',
   },
   {
     id: 'ellipse',
     options: MARK_LINE_OPTIONS,
     label: 'Ellipse',
-    icon: icon('core:ellipse'),
+    icon: icon('editing:ellipse'),
     group: 'annotate',
   },
   {

@@ -27,12 +27,12 @@ const LABEL_FOR: Record<AlignEdge, string> = {
   'center-y': 'Align Centers Vertically',
 };
 const ICON_FOR: Record<AlignEdge, IconRef> = {
-  'left': icon('core:alignLeft'),
-  'right': icon('core:alignRight'),
-  'top': icon('core:alignTop'),
-  'bottom': icon('core:alignBottom'),
-  'center-x': icon('core:alignCenterX'),
-  'center-y': icon('core:alignCenterY'),
+  'left': icon('alignLeft'),
+  'right': icon('alignRight'),
+  'top': icon('alignTop'),
+  'bottom': icon('alignBottom'),
+  'center-x': icon('alignCenterX'),
+  'center-y': icon('alignCenterY'),
 };
 
 // ---------------------------------------------------------------------------

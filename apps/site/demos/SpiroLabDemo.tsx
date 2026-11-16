@@ -99,7 +99,7 @@ const spiroInstrument = defineInstrument<State, Config>({
   initialState: () => ({ scene: null }),
   tools: {
     tools: [
-      { id: 'select', label: 'Select', icon: icon('core:select') },
+      { id: 'select', label: 'Select', icon: icon('editing:select') },
       { id: 'spiro', label: 'Spiro', icon: icon('path-tools:spiro') },
     ],
   },

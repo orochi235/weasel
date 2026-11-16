@@ -72,7 +72,7 @@ const tugInstrument = defineInstrument<State, Config>({
   initialState: () => ({ scene: null }),
   tools: {
     tools: [
-      { id: 'select', label: 'Select', icon: icon('core:select') },
+      { id: 'select', label: 'Select', icon: icon('editing:select') },
       { id: 'anchors', label: 'Anchors', icon: icon('core:anchors') },
       { id: 'tug', label: 'Tug', icon: icon('path-tools:tug') },
     ],

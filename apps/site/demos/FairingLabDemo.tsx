@@ -63,7 +63,7 @@ const fairingInstrument = defineInstrument<PathLabState, Config>({
   name: 'Fairing',
   config,
   initialState: () => ({ scene: null }),
-  tools: { tools: [{ id: 'select', label: 'Select', icon: icon('core:select') }] },
+  tools: { tools: [{ id: 'select', label: 'Select', icon: icon('editing:select') }] },
   render: (ctx) => <FairingTrial ctx={ctx} />,
 });
 

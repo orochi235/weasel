@@ -34,7 +34,7 @@ export function createRectTool(options: InsertToolOptions = {}): Tool {
     cursor: cursorFor('crosshair', { mark: 'rect', fallback: 'crosshair' }),
     presentation: {
       label: 'Rectangle',
-      icon: icon('core:rect'),
+      icon: icon('rect'),
       group: 'shape',
     },
     // Single binding: insertAction toggles corner ⇄ center on live Alt

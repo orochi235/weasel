@@ -32,10 +32,10 @@ const ICON_FOR: Record<BooleanOp, IconRef> = {
   intersect: icon('core:intersect'),
   subtract: icon('core:subtract'),
   exclude: icon('core:exclude'),
-  divide: icon('core:divide'),
-  crop: icon('core:crop'),
-  trim: icon('core:trim'),
-  merge: icon('core:merge'),
+  divide: icon('divide'),
+  crop: icon('crop'),
+  trim: icon('trim'),
+  merge: icon('merge'),
 };
 
 /** What a stroked operand gives the built-in Pathfinder actions, and a tool

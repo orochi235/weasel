@@ -33,7 +33,7 @@ export function createEllipseTool(options: InsertToolOptions = {}): Tool {
     presentation: {
       label: 'Ellipse',
       group: 'shape',
-      icon: icon('core:ellipse'),
+      icon: icon('ellipse'),
     },
     bindings: [
       {

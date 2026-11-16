@@ -9,12 +9,12 @@ import { RegisterActions } from '@weasel-js/routing/testing/registerAction';
 export const LAB_ACTIONS: readonly { key: string; name: string; glyph: IconRef }[] = [
   { key: 'undo', name: 'Undo', glyph: icon('core:undo') },
   { key: 'redo', name: 'Redo', glyph: icon('core:redo') },
-  { key: 'flipX', name: 'Flip across', glyph: icon('core:flipX') },
-  { key: 'flipY', name: 'Flip down', glyph: icon('core:flipY') },
-  { key: 'front', name: 'Bring to front', glyph: icon('core:bringToFront') },
-  { key: 'back', name: 'Send to back', glyph: icon('core:sendToBack') },
-  { key: 'group', name: 'Group', glyph: icon('core:group') },
-  { key: 'ungroup', name: 'Ungroup', glyph: icon('core:ungroup') },
+  { key: 'flipX', name: 'Flip across', glyph: icon('editing:flipX') },
+  { key: 'flipY', name: 'Flip down', glyph: icon('editing:flipY') },
+  { key: 'front', name: 'Bring to front', glyph: icon('editing:bringToFront') },
+  { key: 'back', name: 'Send to back', glyph: icon('editing:sendToBack') },
+  { key: 'group', name: 'Group', glyph: icon('editing:group') },
+  { key: 'ungroup', name: 'Ungroup', glyph: icon('editing:ungroup') },
   { key: 'copy', name: 'Copy', glyph: icon('core:copy') },
   { key: 'paste', name: 'Paste', glyph: icon('core:paste') },
 ];

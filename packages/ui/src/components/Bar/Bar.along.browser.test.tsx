@@ -15,7 +15,7 @@ import { RegisterActions } from '@weasel-js/routing/testing/registerAction';
 
 const KEYS = ['undo', 'redo', 'flipX', 'flipY', 'front', 'back'] as const;
 const NAMES = ['Undo', 'Redo', 'Flip across', 'Flip down', 'Bring to front', 'Send to back'];
-const GLYPHS = [icon('core:undo'), icon('core:redo'), icon('core:flipX'), icon('core:flipY'), icon('core:bringToFront'), icon('core:sendToBack')];
+const GLYPHS = [icon('core:undo'), icon('core:redo'), icon('editing:flipX'), icon('editing:flipY'), icon('editing:bringToFront'), icon('editing:sendToBack')];
 
 let presses: string[] = [];
 const ACTIONS: Action[] = KEYS.map((key, i) => ({ id: `lens.${key}`, label: NAMES[i]!, invoker: { timing: 'immediate', run: () => { presses.push(key); } } }));

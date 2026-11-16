@@ -76,7 +76,7 @@ export function createPolygonTool(options: CreatePolygonToolOptions = {}): Tool 
     presentation: {
       label,
       group: 'shape',
-      icon: icon('core:polygon'),
+      icon: icon('polygon'),
     },
     bindings: [
       // Default = drag from corner, consistent with rect/ellipse.

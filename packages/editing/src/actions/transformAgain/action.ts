@@ -44,7 +44,7 @@ function replay(deps: ActionDeps, scene: AnyScene, t: RepeatableTransform): read
 export const transformAgainAction: Action & { requires: string[] } = {
   id: 'transformAgain',
   label: LABEL,
-  icon: icon('core:transformAgain'),
+  icon: icon('transformAgain'),
   group: 'edit',
   defaultBinding: [{ spec: { kind: 'key', key: 'd', mods: { mod: true }, phase: BETWEEN_GESTURES }, opts: { id: 'transformAgain.key' } }],
   eligible: { capability: 'transforms-selection' },

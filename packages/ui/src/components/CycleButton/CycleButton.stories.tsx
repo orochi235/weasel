@@ -37,9 +37,9 @@ export const ColorMode: Story = {
 };
 
 const SHAPES: CycleButtonOption<'rect' | 'ellipse' | 'star'>[] = [
-  { value: 'rect', icon: <Icon name={icon('core:rect')} size={16} />, label: 'Rectangle' },
-  { value: 'ellipse', icon: <Icon name={icon('core:ellipse')} size={16} />, label: 'Ellipse' },
-  { value: 'star', icon: <Icon name={icon('core:star')} size={16} />, label: 'Star' },
+  { value: 'rect', icon: <Icon name={icon('editing:rect')} size={16} />, label: 'Rectangle' },
+  { value: 'ellipse', icon: <Icon name={icon('editing:ellipse')} size={16} />, label: 'Ellipse' },
+  { value: 'star', icon: <Icon name={icon('editing:star')} size={16} />, label: 'Star' },
 ];
 
 /** Any ordered list of options cycles the same way, under its own name. */

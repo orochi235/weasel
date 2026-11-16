@@ -58,7 +58,7 @@ const kneadInstrument = defineInstrument<State, Config>({
   initialState: () => ({ scene: null }),
   tools: {
     tools: [
-      { id: 'select', label: 'Select', icon: icon('core:select') },
+      { id: 'select', label: 'Select', icon: icon('editing:select') },
       { id: 'knead', label: 'Knead', icon: icon('path-tools:knead') },
     ],
     initial: 'knead',

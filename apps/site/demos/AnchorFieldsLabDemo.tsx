@@ -69,7 +69,7 @@ const fieldsInstrument = defineInstrument<State, Config>({
   name: 'Anchor fields',
   config,
   initialState: () => ({ scene: null }),
-  tools: { tools: [{ id: 'select', label: 'Select', icon: icon('core:select') }] },
+  tools: { tools: [{ id: 'select', label: 'Select', icon: icon('editing:select') }] },
   render: (ctx) => <FieldsTrial ctx={ctx} />,
 });
 

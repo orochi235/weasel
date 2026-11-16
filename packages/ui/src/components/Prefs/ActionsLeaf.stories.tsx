@@ -7,16 +7,16 @@ import { icon } from '../../icons.gen';
 import s from '../Bar/Bar.stories.module.css';
 
 const ARRANGE: Action[] = [
-  { id: 'arrange.front', label: 'Bring to front', group: 'arrange', icon: icon('core:bringToFront'), invoker: { timing: 'immediate', run: () => {} } },
-  { id: 'arrange.back', label: 'Send to back', group: 'arrange', icon: icon('core:sendToBack'), invoker: { timing: 'immediate', run: () => {} } },
+  { id: 'arrange.front', label: 'Bring to front', group: 'arrange', icon: icon('editing:bringToFront'), invoker: { timing: 'immediate', run: () => {} } },
+  { id: 'arrange.back', label: 'Send to back', group: 'arrange', icon: icon('editing:sendToBack'), invoker: { timing: 'immediate', run: () => {} } },
   {
     id: 'arrange.flip',
     label: 'Flip',
     group: 'arrange',
     invoker: { timing: 'immediate', run: () => {} },
     variants: [
-      { key: 'x', label: 'Flip horizontally', icon: icon('core:flipX'), params: { axis: 'x' } },
-      { key: 'y', label: 'Flip vertically', icon: icon('core:flipY'), params: { axis: 'y' } },
+      { key: 'x', label: 'Flip horizontally', icon: icon('editing:flipX'), params: { axis: 'x' } },
+      { key: 'y', label: 'Flip vertically', icon: icon('editing:flipY'), params: { axis: 'y' } },
     ],
   },
 ];

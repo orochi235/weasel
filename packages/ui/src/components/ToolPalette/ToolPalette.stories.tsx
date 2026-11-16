@@ -17,9 +17,9 @@ type Story = StoryObj<typeof ToolPalette>;
 
 function fullList(): Tool[] {
   return [
-    { id: 'select', keybinding: { key: 'v' }, presentation: { label: 'Select', icon: icon('core:select'), group: 'select' } } as Tool,
-    { id: 'lasso',  keybinding: { key: 'l' }, presentation: { label: 'Lasso',  icon: icon('core:lasso'),  group: 'select' } } as Tool,
-    { id: 'rect',   keybinding: { key: 'r' }, presentation: { label: 'Rect',   icon: icon('core:rect'),   group: 'shape', description: 'Drag out a rectangle' } } as Tool,
+    { id: 'select', keybinding: { key: 'v' }, presentation: { label: 'Select', icon: icon('editing:select'), group: 'select' } } as Tool,
+    { id: 'lasso',  keybinding: { key: 'l' }, presentation: { label: 'Lasso',  icon: icon('editing:lasso'),  group: 'select' } } as Tool,
+    { id: 'rect',   keybinding: { key: 'r' }, presentation: { label: 'Rect',   icon: icon('editing:rect'),   group: 'shape', description: 'Drag out a rectangle' } } as Tool,
     { id: 'text',   keybinding: { key: 't' }, presentation: { label: 'Text',   icon: icon('core:text'),   group: 'type'   } } as Tool,
     { id: 'pen',    keybinding: { key: 'p' }, presentation: { label: 'Pen',    icon: icon('core:pen'),    group: 'draw'   } } as Tool,
     { id: 'hand',   keybinding: { key: 'h' }, presentation: { label: 'Hand',   icon: icon('core:hand'),   group: 'view'   } } as Tool,
@@ -28,7 +28,7 @@ function fullList(): Tool[] {
 
 function minimalList(): Tool[] {
   return [
-    { id: 'select', keybinding: { key: 'v' }, presentation: { label: 'Select', icon: icon('core:select') } } as Tool,
+    { id: 'select', keybinding: { key: 'v' }, presentation: { label: 'Select', icon: icon('editing:select') } } as Tool,
     { id: 'pen',    keybinding: { key: 'p' }, presentation: { label: 'Pen',    icon: icon('core:pen') } } as Tool,
     { id: 'hand',   keybinding: { key: 'h' }, presentation: { label: 'Hand',   icon: icon('core:hand') } } as Tool,
   ];
@@ -94,11 +94,11 @@ function modalList(): Tool[] {
   const withCaps = (id: string, label: string, glyph: ReturnType<typeof icon>, group: string, capabilities: string[]) =>
     ({ id, eligibility: { focus: true, capabilities }, presentation: { label, icon: glyph, group } }) as Tool;
   return [
-    withCaps('select', 'Select', icon('core:select'), 'select', ['creates-selection']),
+    withCaps('select', 'Select', icon('editing:select'), 'select', ['creates-selection']),
     withCaps('anchors', 'Anchors', icon('core:anchors'), 'path-edit', ['edits-anchors']),
     withCaps('sand', 'Sand', icon('core:sand'), 'path-edit', ['edits-anchors']),
     withCaps('hand', 'Hand', icon('core:hand'), 'view', ['navigation']),
-    withCaps('rect', 'Rect', icon('core:rect'), 'shape', ['creates-shapes']),
+    withCaps('rect', 'Rect', icon('editing:rect'), 'shape', ['creates-shapes']),
   ];
 }
 
@@ -134,10 +134,10 @@ function stackedList(): Tool[] {
     ({ id, keybinding: { key }, presentation: { label, icon: glyph, group: 'shape' } }) as Tool;
   return [
     ...fullList().filter((t) => t.id !== 'rect'),
-    shape('rect', 'Rect', 'm', icon('core:rect')),
-    shape('ellipse', 'Ellipse', 'e', icon('core:ellipse')),
-    shape('polygon', 'Polygon', 'g', icon('core:polygon')),
-    shape('star', 'Star', 's', icon('core:star')),
+    shape('rect', 'Rect', 'm', icon('editing:rect')),
+    shape('ellipse', 'Ellipse', 'e', icon('editing:ellipse')),
+    shape('polygon', 'Polygon', 'g', icon('editing:polygon')),
+    shape('star', 'Star', 's', icon('editing:star')),
     { id: 'pencil', keybinding: { key: 'n' }, presentation: { label: 'Pencil', icon: icon('core:pencil'), group: 'draw' } } as Tool,
   ];
 }

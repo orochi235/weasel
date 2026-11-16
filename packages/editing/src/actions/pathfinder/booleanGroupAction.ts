@@ -74,7 +74,7 @@ export function makeBooleanGroup(scene: AnyScene, ids: readonly string[], op: Bo
 export const makeBooleanGroupAction: Action & { requires: string[] } = {
   id: 'pathfinder.booleanGroup',
   label: 'Make Boolean Group',
-  icon: icon('core:booleanGroup'),
+  icon: icon('booleanGroup'),
   group: 'pathfinder',
   eligible: { capability: 'creates-shapes' },
   requires: ['scene', 'operands', 'applyOps'],

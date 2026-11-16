@@ -102,8 +102,8 @@ export const reorderForwardAction = defineAction({
   label: 'Bring',
   group: 'reorder',
   variants: [
-    { key: 'adjacent', label: 'Bring Forward', icon: icon('core:bringForward'), params: { distance: 'adjacent' } },
-    { key: 'extreme', label: 'Bring to Front', icon: icon('core:bringToFront'), params: { distance: 'extreme' } },
+    { key: 'adjacent', label: 'Bring Forward', icon: icon('bringForward'), params: { distance: 'adjacent' } },
+    { key: 'extreme', label: 'Bring to Front', icon: icon('bringToFront'), params: { distance: 'extreme' } },
   ],
   defaultBinding: [
     {
@@ -158,8 +158,8 @@ export const reorderBackwardAction = defineAction({
   label: 'Send',
   group: 'reorder',
   variants: [
-    { key: 'adjacent', label: 'Send Backward', icon: icon('core:sendBackward'), params: { distance: 'adjacent' } },
-    { key: 'extreme', label: 'Send to Back', icon: icon('core:sendToBack'), params: { distance: 'extreme' } },
+    { key: 'adjacent', label: 'Send Backward', icon: icon('sendBackward'), params: { distance: 'adjacent' } },
+    { key: 'extreme', label: 'Send to Back', icon: icon('sendToBack'), params: { distance: 'extreme' } },
   ],
   defaultBinding: [
     {

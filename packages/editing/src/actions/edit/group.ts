@@ -64,7 +64,7 @@ function groupPlan(deps: ActionDeps) {
 export const groupAction: Action & { requires: string[] } = {
   id: 'group',
   label: 'Group',
-  icon: icon('core:group'),
+  icon: icon('group'),
   group: 'structure',
   defaultBinding: [{ spec: { kind: 'key', key: 'g', mods: { mod: true }, phase: BETWEEN_GESTURES }, opts: { id: 'group.key' } }],
   eligible: { capability: 'edits-page' },
@@ -218,7 +218,7 @@ function ungroupOps(scene: AnyScene, plan: UngroupPlan): Op[] | null {
 export const ungroupAction: Action & { requires: string[] } = {
   id: 'ungroup',
   label: 'Ungroup',
-  icon: icon('core:ungroup'),
+  icon: icon('ungroup'),
   group: 'structure',
   defaultBinding: [{ spec: { kind: 'key', key: 'g', mods: { mod: true, shift: true }, phase: BETWEEN_GESTURES }, opts: { id: 'ungroup.key' } }],
   eligible: { capability: 'edits-page' },

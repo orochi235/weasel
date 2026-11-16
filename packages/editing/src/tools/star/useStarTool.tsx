@@ -79,7 +79,7 @@ export function createStarTool(options: CreateStarToolOptions = {}): Tool {
     presentation: {
       label,
       group: 'shape',
-      icon: icon('core:star'),
+      icon: icon('star'),
     },
     bindings: [
       // Default = drag from corner; anchor dot in the overlay sells

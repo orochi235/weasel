@@ -2,5 +2,124 @@
 
 import { scopedIcon } from '@weasel-js/icons';
 
-/** This package draws no glyphs of its own, so every name it writes is qualified: `icon('ui:close')`. */
-export const icon = scopedIcon<never>('editing');
+/** A glyph this package draws, by its bare name. */
+export type EditingIconName =
+  | 'ellipse'
+  | 'eyedropper'
+  | 'lasso'
+  | 'line'
+  | 'polygon'
+  | 'rect'
+  | 'select'
+  | 'star'
+  | 'duplicate'
+  | 'transformAgain'
+  | 'group'
+  | 'ungroup'
+  | 'bringForward'
+  | 'bringToFront'
+  | 'sendBackward'
+  | 'sendToBack'
+  | 'flipX'
+  | 'flipY'
+  | 'alignLeft'
+  | 'alignRight'
+  | 'alignTop'
+  | 'alignBottom'
+  | 'alignCenterX'
+  | 'alignCenterY'
+  | 'divide'
+  | 'crop'
+  | 'trim'
+  | 'booleanGroup'
+  | 'merge';
+
+/** This package's `icon()`: a bare name means `editing:<name>`. */
+export const icon = scopedIcon<EditingIconName>('editing');
+
+/** This package's glyphs, in the families they were drawn in. */
+export const ICON_GROUPS: readonly { label: string; names: readonly EditingIconName[] }[] = [
+  {
+    "label": "Tools",
+    "names": [
+      "ellipse",
+      "eyedropper",
+      "lasso",
+      "line",
+      "polygon",
+      "rect",
+      "select",
+      "star"
+    ]
+  },
+  {
+    "label": "Edit",
+    "names": [
+      "duplicate",
+      "transformAgain",
+      "group",
+      "ungroup",
+      "bringForward",
+      "bringToFront",
+      "sendBackward",
+      "sendToBack",
+      "flipX",
+      "flipY"
+    ]
+  },
+  {
+    "label": "Align",
+    "names": [
+      "alignLeft",
+      "alignRight",
+      "alignTop",
+      "alignBottom",
+      "alignCenterX",
+      "alignCenterY"
+    ]
+  },
+  {
+    "label": "Booleans",
+    "names": [
+      "divide",
+      "crop",
+      "trim",
+      "booleanGroup",
+      "merge"
+    ]
+  }
+];
+
+declare module '@weasel-js/icons' {
+  interface IconName {
+    'editing:ellipse': true;
+    'editing:eyedropper': true;
+    'editing:lasso': true;
+    'editing:line': true;
+    'editing:polygon': true;
+    'editing:rect': true;
+    'editing:select': true;
+    'editing:star': true;
+    'editing:duplicate': true;
+    'editing:transformAgain': true;
+    'editing:group': true;
+    'editing:ungroup': true;
+    'editing:bringForward': true;
+    'editing:bringToFront': true;
+    'editing:sendBackward': true;
+    'editing:sendToBack': true;
+    'editing:flipX': true;
+    'editing:flipY': true;
+    'editing:alignLeft': true;
+    'editing:alignRight': true;
+    'editing:alignTop': true;
+    'editing:alignBottom': true;
+    'editing:alignCenterX': true;
+    'editing:alignCenterY': true;
+    'editing:divide': true;
+    'editing:crop': true;
+    'editing:trim': true;
+    'editing:booleanGroup': true;
+    'editing:merge': true;
+  }
+}

@@ -78,7 +78,7 @@ const planeWarpInstrument = defineInstrument<State, Config>({
   initialState: () => ({ scene: null }),
   tools: {
     tools: [
-      { id: 'select', label: 'Select', icon: icon('core:select') },
+      { id: 'select', label: 'Select', icon: icon('editing:select') },
       { id: 'plane', label: 'Plane Warp', icon: icon('path-tools:planeWarp') },
     ],
     initial: 'plane',

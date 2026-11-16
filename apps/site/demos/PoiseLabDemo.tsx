@@ -54,7 +54,7 @@ const poiseInstrument = defineInstrument<PathLabState, Config>({
   name: 'Poise',
   config,
   initialState: () => ({ scene: null }),
-  tools: { tools: [{ id: 'select', label: 'Select', icon: icon('core:select') }] },
+  tools: { tools: [{ id: 'select', label: 'Select', icon: icon('editing:select') }] },
   render: (ctx) => <PoiseTrial ctx={ctx} />,
 });
 
