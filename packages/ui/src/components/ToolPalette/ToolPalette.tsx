@@ -1,7 +1,6 @@
 import type { DragEvent, ReactNode } from 'react';
-import { useScopedTools } from '@weasel-js/routing/react';
-import { toolIdsOf, toolSetHas, toolStacksOf, type CarryPayload, type ToolSet } from '@weasel-js/routing';
-import { type Tool, type ToolsApi } from '@weasel-js/core';
+import { useScopedTools, type ToolsApi } from '@weasel-js/routing/react';
+import { toolIdsOf, toolSetHas, toolStacksOf, type CarryPayload, type ToolSet, type Tool } from '@weasel-js/routing';
 import { eligibleContribution, type ModeRegistry } from '@weasel-js/modes';
 import { getOwn } from '@weasel-js/registry';
 import type { Orientation } from '../Run';

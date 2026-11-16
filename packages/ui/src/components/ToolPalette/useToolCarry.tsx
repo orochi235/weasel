@@ -1,6 +1,5 @@
 import { useRef, useState, type PointerEvent, type ReactNode } from 'react';
-import { startCarry, type CarryPayload } from '@weasel-js/routing';
-import { type Tool } from '@weasel-js/core';
+import { startCarry, type CarryPayload, type Tool } from '@weasel-js/routing';
 import { useKitSetting } from '@weasel-js/react';
 import { DragGhost } from '../DragGhost';
 import { isPrimaryPress, pastDragThreshold } from '@weasel-js/gestures';
