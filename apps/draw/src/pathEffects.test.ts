@@ -18,6 +18,7 @@ import { DRAW_REGISTRY, type WeaselDrawData, type WeaselDrawLayer, type WeaselDr
 import { nodeSpecsFromSnapshot, reviveSnapshot } from './persistence';
 import { importSvgText, openSvgText } from './openSvg';
 import { contentRoots, stringifySnapshot } from '@weasel-js/core';
+import { decodeEffectAttrs, encodeEffectAttrs } from './svgEffects';
 import { sceneToSvgString, selectionToSvgString } from './svgExport';
 
 type Spec = AddNodeSpec<WeaselDrawData, WeaselDrawLayer, WeaselDrawPose>;
@@ -103,6 +104,13 @@ function liveSteps(scene: ReturnType<typeof drawScene>) {
 }
 
 describe('a path effect through draw\'s SVG', () => {
+  it('keeps a param JSON cannot write in its group\'s attributes', () => {
+    const effect = { kind: 'zigzag', size: -0, ridges: Infinity } as const;
+    const back = decodeEffectAttrs(encodeEffectAttrs({ id: 'fx', effect, dependsOn: ['a'], parts: [] }));
+    expect(back?.effect).toEqual(effect);
+    expect(Object.is((back?.effect as { size: number }).size, -0)).toBe(true);
+  });
+
   it('reopens live, over the sources it was made from, in its slot on their page', async () => {
     const reopened = drawScene([]);
     openSvgText(reopened, await exportOf(withTween()), 'x.svg');
