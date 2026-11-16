@@ -42,6 +42,14 @@ describe('watching for a hook in the inspected page', () => {
     expect(report.mock.calls).toEqual([[false], [true]]);
   });
 
+  it('waits out a delay longer than one timer holds before the next check', async () => {
+    const p = page();
+    const probe = vi.fn(async () => false);
+    watchHookPresence({ ...p.opts, probe, delays: [0, 2 ** 31] }, () => {});
+    await vi.advanceTimersByTimeAsync(10);
+    expect(probe).toHaveBeenCalledTimes(1);
+  });
+
   it('drops the hook on navigation and looks again', async () => {
     const p = page();
     p.state.hook = true;
