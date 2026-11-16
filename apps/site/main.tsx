@@ -1,7 +1,7 @@
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 import { AmbientContributionsProvider } from '@weasel-js/core';
-import { devtools } from '@weasel-js/devtools/hook';
+import { DEV_DEVTOOLS } from '@weasel-js/devtools/mount';
 import '@weasel-js/theme/fonts.css';
 import './typography.css';
 import { App } from './App';
@@ -13,9 +13,6 @@ window.addEventListener('vite:preloadError', (event) => {
   event.preventDefault();
   window.location.reload();
 });
-
-// Each demo's devtools switch, and the extension, see the canvases that take this; a production build leaves it out.
-const DEV_AMBIENT = import.meta.env.DEV ? [devtools] : [];
 
 const container = document.getElementById('root');
 if (!container) throw new Error('Missing #root element');
@@ -30,7 +27,7 @@ const slot = container as ContainerWithRoot;
 slot.__reactRoot ??= createRoot(slot);
 slot.__reactRoot.render(
   <StrictMode>
-    <AmbientContributionsProvider contributions={DEV_AMBIENT}>
+    <AmbientContributionsProvider contributions={DEV_DEVTOOLS}>
       <App />
     </AmbientContributionsProvider>
   </StrictMode>,
