@@ -95,7 +95,7 @@ export function parseTransform(
       return IDENTITY_MATRIX;
     }
     const name = match[1].toLowerCase();
-    const arity = ARITY[name];
+    const arity = Object.hasOwn(ARITY, name) ? ARITY[name] : undefined;
     if (arity === undefined) {
       onWarn?.(`unsupported transform function: ${match[1]}; transform "${attr}" is ignored`);
       return IDENTITY_MATRIX;

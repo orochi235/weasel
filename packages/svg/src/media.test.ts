@@ -201,3 +201,15 @@ describe('mediaEnvironmentFor', () => {
       .toMatchObject({ width: 1200, height: 20, prefersColorScheme: 'dark' });
   });
 });
+
+describe('evaluateMediaQuery: names spelled like Object.prototype members', () => {
+  it('reads a feature or unit named constructor or __proto__ as unknown', () => {
+    expect(() => q('(constructor)')).not.toThrow();
+    expect(q('(constructor)')).toBe(false);
+    expect(q('(min-constructor: 1px)')).toBe(false);
+    expect(q('(__proto__: 1)')).toBe(false);
+    expect(q('(constructor > 1px)')).toBe(false);
+    expect(q('(min-resolution: 1constructor)')).toBe(false);
+    expect(q('not all and (constructor)')).toBe(q('not all and (unknown-feature)'));
+  });
+});

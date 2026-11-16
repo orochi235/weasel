@@ -49,6 +49,9 @@ export const DEFAULT_MEDIA_ENVIRONMENT: SvgMediaEnvironment = {
   monochrome: 0,
 };
 
+const own = <V>(table: Readonly<Record<string, V>>, key: string): V | undefined =>
+  (Object.hasOwn(table, key) ? table[key] : undefined);
+
 /** An absolute SVG length in px, or undefined for a percentage, a relative unit, or garbage. */
 function absoluteLength(raw: string | null): number | undefined {
   const m = raw == null ? null : /^\s*([+-]?(?:\d+\.?\d*|\.\d+)(?:e[+-]?\d+)?)\s*([a-z]*)\s*$/i.exec(raw);
@@ -182,7 +185,10 @@ function rangeValue(toks: readonly Tok[], type: RangeType, env: SvgMediaEnvironm
   }
   if (toks.length !== 1 || a.k !== 'num') return null;
   if (type === 'length') return lengthPx(a.v, a.unit, env);
-  if (type === 'resolution') return DPPX[a.unit] != null ? a.v * DPPX[a.unit] : null;
+  if (type === 'resolution') {
+    const dppx = own(DPPX, a.unit);
+    return dppx != null ? a.v * dppx : null;
+  }
   return a.unit === '' && Number.isInteger(a.v) ? a.v : null;
 }
 
@@ -210,14 +216,14 @@ function evaluateFeature(inner: string, env: SvgMediaEnvironment): Tri {
 
   if (toks.length === 1) {
     if (first.k !== 'ident') return null;
-    const f = FEATURES[first.v];
+    const f = own(FEATURES, first.v);
     if (!f) return null;
     return f.kind === 'range' ? f.get(env) !== 0 : f.get(env) !== f.off;
   }
 
   if (first.k === 'ident' && toks[1].k === ':') {
     const prefix = /^(min|max)-/.exec(first.v)?.[1];
-    const f = FEATURES[prefix ? first.v.slice(4) : first.v];
+    const f = own(FEATURES, prefix ? first.v.slice(4) : first.v);
     if (!f) return null;
     const rest = toks.slice(2);
     if (f.kind === 'discrete') {
@@ -238,7 +244,7 @@ function evaluateFeature(inner: string, env: SvgMediaEnvironment): Tri {
   }
   if (segments.some((s) => s.length === 0)) return null;
   const featureAt = (s: Tok[]): Feature | undefined =>
-    (s.length === 1 && s[0].k === 'ident' ? FEATURES[s[0].v] : undefined);
+    (s.length === 1 && s[0].k === 'ident' ? own(FEATURES, s[0].v) : undefined);
 
   if (ops.length === 1) {
     const [lhs, rhs] = segments;
