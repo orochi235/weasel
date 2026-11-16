@@ -12,6 +12,20 @@ const core = (icons: Record<string, string>): IconTable => ({
 const ref = (s: string) => s as IconRef;
 
 describe('createIconRegistry', () => {
+  it('reflects every ref, reporting an override and an earlier table as shadowed', () => {
+    const r = createIconRegistry(core({ undo: 'u' }));
+    r.add(core({ undo: 'u2' }));
+    const off = r.override(ref('core:undo'), glyph('mine'), 'app');
+    const [entry] = r.reflection.entries();
+    expect(entry).toMatchObject({ key: 'core:undo', source: 'app' });
+    expect(entry!.value.body).toBe('mine');
+    expect(entry!.shadowed.map((s) => [s.value.body, s.source])).toEqual([['u', '@weasel-js/core'], ['u2', '@weasel-js/core']]);
+    r.add(core({ undo: 'u3' }));
+    expect(r.reflection.get('core:undo')?.body).toBe('mine');
+    off();
+    expect(r.reflection.get('core:undo')?.body).toBe('u3');
+  });
+
   it('looks a glyph up by qualified name', () => {
     const r = createIconRegistry(core({ undo: '<path d="u"/>' }));
     expect(r.get('core:undo')?.body).toBe('<path d="u"/>');
