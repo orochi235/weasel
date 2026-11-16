@@ -36,6 +36,7 @@ function setup() {
     register('history', history);
     register('scene', scene);
     register('selection', { get: () => [], set: () => {} });
+    register('operands', { get: () => [], set: () => {} });
     register('selectionSnapshot', { take: () => () => {} });
     // The stub scene keeps its poses, so the history entry stands in for the ops.
     register('applyOps', (ops: Op[], label: string) => {

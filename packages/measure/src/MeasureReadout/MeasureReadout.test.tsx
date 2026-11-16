@@ -21,6 +21,7 @@ type AnyScene = Scene<unknown, string, unknown>;
 function Deps({ scene, selected }: { scene: AnyScene; selected: string[] }) {
   useDepSource('scene' as DepName, () => scene as never);
   useDepSource('selection' as DepName, () => ({ get: () => selected, set: () => {} }) as never);
+  useDepSource('operands', () => ({ get: () => selected, set: () => {} }) as never);
   return null;
 }
 

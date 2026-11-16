@@ -26,8 +26,8 @@ function rig(scene: AnyScene, ids: readonly string[]) {
   }));
   let batches = 0;
   const applyOps = (ops: Op[], label: string) => { batches++; history.applyOps(ops, label); };
-  const deps = { scene, selection, applyOps } as unknown as ActionDeps;
-  return { deps, history, selection, selected: () => held, batches: () => batches };
+  const deps = { scene, operands: selection, applyOps } as unknown as ActionDeps;
+  return { deps, history, operands: selection, selected: () => held, batches: () => batches };
 }
 
 const pathScene = () =>
@@ -87,7 +87,7 @@ describe('a path command inside a frame', () => {
     const group = scene.add({ kind: 'group', layer: 'main', data: {}, pose: { x: 90, y: 0, width: 20, height: 100, rotation: 0 } } as never);
     const inner = scene.add({ kind: 'mark', parent: group, layer: 'main', data: { path: line(0, 0, 0, 100) }, pose: { x: 10, y: 0, width: 0, height: 100 } } as never);
     const applyOps = (ops: Op[], label: string) => { scene.applyBatch(ops, label, defaultCommitAdapter(scene)); };
-    const deps = { scene, selection: { get: () => [root, inner], set: () => {} }, applyOps } as unknown as ActionDeps;
+    const deps = { scene, operands: { get: () => [root, inner], set: () => {} }, applyOps } as unknown as ActionDeps;
     run(snipAtCrossingsAction, deps);
     const leaves = [...scene.renderOrder()].filter((id) => scene.get(id)!.kind === 'mark');
     const world = pathNodesOf(scene, leaves).map((n) => {

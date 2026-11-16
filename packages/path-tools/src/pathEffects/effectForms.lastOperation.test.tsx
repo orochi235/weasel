@@ -38,6 +38,7 @@ function setup() {
     register('history', scene.history);
     register('scene', scene);
     register('selection', selection);
+    register('operands', selection);
     register('selectionSnapshot', {
       take: () => {
         const was = selected;

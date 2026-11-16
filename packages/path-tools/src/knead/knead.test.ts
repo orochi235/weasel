@@ -13,7 +13,7 @@ function setup(d: string, zoom = 1) {
   const view = { get: () => ({ scale: { x: zoom, y: zoom } }) };
   const batches: Array<{ ops: Op[]; label: string }> = [];
   const applyOps = vi.fn((ops: Op[], label: string) => { batches.push({ ops, label }); });
-  return { deps: { scene, selection, view, applyOps } as never, batches };
+  return { deps: { scene, operands: selection, view, applyOps } as never, batches };
 }
 
 const at = (deps: never, x: number, y: number, params?: Record<string, unknown>) =>
@@ -75,7 +75,7 @@ describe('kneadAction', () => {
       isLocked: (id: string) => id === 'locked',
       isHidden: (id: string) => id === 'hidden',
     };
-    const deps = { scene, selection: { get: () => [], set: vi.fn() }, view: { get: () => ({ scale: { x: 1, y: 1 } }) }, applyOps: vi.fn() } as never;
+    const deps = { scene, operands: { get: () => [], set: vi.fn() }, view: { get: () => ({ scale: { x: 1, y: 1 } }) }, applyOps: vi.fn() } as never;
     expect(kneadAction.enabled!(deps)).toBe(true);
     const handle = invoker.start(at(deps, 50, 0), { params: { radiusPx: 20, strength: 1 } });
     handle.onMove!(at(deps, 50, -10));

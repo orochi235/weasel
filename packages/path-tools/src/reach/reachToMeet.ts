@@ -141,7 +141,7 @@ export const reachToMeetAction = defineAction({
   tags: pathOperationTags('click'),
   group: PATH_GROUP,
   eligible: { capability: 'creates-shapes' },
-  requires: ['selection', 'scene', 'applyOps', 'editAnchors', 'view'],
+  requires: ['operands', 'scene', 'applyOps', 'editAnchors', 'view'],
   params: REACH_TO_MEET_PARAMS,
   invoker: {
     timing: 'immediate',

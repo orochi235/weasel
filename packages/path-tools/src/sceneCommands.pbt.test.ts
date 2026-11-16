@@ -20,7 +20,7 @@ function sceneOf(paths: readonly PolygonPath[]) {
   const loose = scene as unknown as AnyScene;
   const applyOps = (ops: Op[], label = '') => { scene.applyBatch(ops, label, defaultCommitAdapter(loose)); };
   const selection = { get: () => scene.getSelection(), set: (ids: readonly string[]) => scene.setSelection(ids.map(asNodeId)) };
-  const deps = { scene: loose, selection, applyOps, view: VIEW, history: scene.history, notices: { warn: () => {} } } as never;
+  const deps = { scene: loose, operands: selection, applyOps, view: VIEW, history: scene.history, notices: { warn: () => {} } } as never;
   return { scene, deps, ids: paths.map((_, k) => `p${k}`) };
 }
 type H = ReturnType<typeof sceneOf>;

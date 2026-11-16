@@ -39,13 +39,13 @@ export function warpLeavesOf(
 export function selectedWarpLeaves(deps: ActionDeps | undefined): WarpLeaves {
   const scene = deps?.scene as WarpScene | undefined;
   if (!scene) return { paths: [], texts: [] };
-  return warpLeavesOf(scene, deps?.selection?.get() ?? [], deps?.createOutlinesAdapter);
+  return warpLeavesOf(scene, deps?.operands?.get() ?? [], deps?.createOutlinesAdapter);
 }
 
 /** The selection's path leaves alone, for an action that never meets text. */
 export function selectedWarpPaths(deps: ActionDeps | undefined): PathNode[] {
   const scene = deps?.scene as WarpScene | undefined;
-  return scene ? warpLeavesOf(scene, deps?.selection?.get() ?? [], undefined).paths : [];
+  return scene ? warpLeavesOf(scene, deps?.operands?.get() ?? [], undefined).paths : [];
 }
 
 /** The box around `a` and `b`, either of which may be missing. */

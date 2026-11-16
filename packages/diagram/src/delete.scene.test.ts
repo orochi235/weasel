@@ -29,7 +29,7 @@ describe("core's delete on a diagram", () => {
     };
     const action = deletePreset.actions!.find((a) => a.id === 'delete')!;
     const invoker = action.invoker as { run: (deps: ActionDeps) => void };
-    invoker.run({ scene, selection } as unknown as ActionDeps);
+    invoker.run({ scene, operands: selection } as unknown as ActionDeps);
 
     for (const id of ['a', edge, label]) expect(scene.get(id as never)).toBeUndefined();
     expect(scene.get('b' as never)).toBeDefined();
@@ -56,7 +56,7 @@ describe("DiagramView's report-only delete", () => {
     const report = vi.fn();
     const action = reportDeleteAction(report);
     const selection = { get: () => selected, set: vi.fn() };
-    (action.invoker as { run: (deps: ActionDeps) => void }).run({ scene, selection, applyOps: vi.fn() } as unknown as ActionDeps);
+    (action.invoker as { run: (deps: ActionDeps) => void }).run({ scene, operands: selection, applyOps: vi.fn() } as unknown as ActionDeps);
     return { report, scene, selection };
   }
 

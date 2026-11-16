@@ -33,7 +33,7 @@ function setup(selected: string[], registered = true) {
   });
   let current = selected;
   const selection = { get: () => current, set: (next: string[]) => { current = next; } };
-  const deps = { scene, selection } as unknown as InvocationCtx['deps'];
+  const deps = { scene, operands: selection } as unknown as InvocationCtx['deps'];
   return { scene, deps, selected: () => current };
 }
 
@@ -103,7 +103,7 @@ describe('tween', () => {
     run(tweenAction, deps, { steps: 2 });
     const id = selected()[0]!;
     // Named by id, an effect is editable while something else is selected.
-    deps.selection!.set([asNodeId('a')]);
+    deps.operands!.set([asNodeId('a')]);
     expect(editPathEffectAction.enabled!(deps, undefined, undefined, { ids: [id] })).toBe(true);
     expect(editPathEffectAction.enabled!(deps, undefined, undefined, { ids: [id], kind: 'bendAlong' })).not.toBe(true);
     run(editPathEffectAction, deps, { ids: [id], steps: 5 });
@@ -210,10 +210,10 @@ describe('the Edit Path Effect form', () => {
     const { scene, deps, selected } = setup(['a', 'b']);
     run(tweenAction, deps, {});
     const tween = selected()[0]!;
-    (deps.selection as unknown as { set(ids: string[]): void }).set(['a', 'spine']);
+    (deps.operands as unknown as { set(ids: string[]): void }).set(['a', 'spine']);
     run(repeatAlongAction, deps, { count: 3 });
     const repeat = selected()[0]!;
-    (deps.selection as unknown as { set(ids: string[]): void }).set([tween, repeat]);
+    (deps.operands as unknown as { set(ids: string[]): void }).set([tween, repeat]);
     return { scene, deps, tween, repeat };
   }
   const effectOf = (scene: TestScene, id: string) => pathEffectOf(scene.get(id as NodeId))!;
@@ -273,7 +273,7 @@ describe('in a scene whose containers compose frames', () => {
     });
     let current: string[] = [];
     const selection = { get: () => current, set: (next: string[]) => { current = next; } };
-    const deps = { scene, selection } as unknown as InvocationCtx['deps'];
+    const deps = { scene, operands: selection } as unknown as InvocationCtx['deps'];
     return { scene, deps, select: (ids: string[]) => { current = ids; }, selected: () => current };
   }
 

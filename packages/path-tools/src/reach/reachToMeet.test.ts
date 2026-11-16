@@ -23,8 +23,8 @@ function setup(paths: Record<string, string>, selected: string[] = [], extra: Re
   const selection = { get: () => current, set: vi.fn((next: string[]) => { current = next; }) };
   const batches: Array<{ ops: Op[]; label: string }> = [];
   const applyOps = vi.fn((ops: Op[], label: string) => { batches.push({ ops, label }); });
-  const deps = { scene, selection, applyOps, ...extra } as never;
-  return { deps, batches, selection, nodes };
+  const deps = { scene, operands: selection, applyOps, ...extra } as never;
+  return { deps, batches, operands: selection, nodes };
 }
 
 /** `setup` in path edit on `editing`, with `selected` anchors selected; edits land on the node's pose. */

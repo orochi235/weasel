@@ -68,7 +68,7 @@ function setup() {
   const dep = () => (result.current.get as (key: string) => EditAnchorsDep)('editAnchors');
   const followers = () => (result.current.get as (key: string) => TransformFollower[] | undefined)('transformFollowers') ?? [];
   const deps = () => ({
-    editAnchors: dep(), transformFollowers: followers(), selection: { get: () => [editing] }, scene: loose, applyOps: adapter.applyOps,
+    editAnchors: dep(), transformFollowers: followers(), operands: { get: () => [editing] }, scene: loose, applyOps: adapter.applyOps,
   }) as unknown as ActionDeps;
   const points = (id: NodeId) => pathAnchorPoints(scene.get(id)!.pose as PolygonPath);
   const ctx = (x: number, y: number, anchor: number): InvocationCtx => ({
@@ -134,7 +134,7 @@ function setup() {
   };
   /** Drag node `id` whole by `(dx, dy)` with the move action and release; answers each node's preview mid-drag. */
   const moveDrag = (id: NodeId, dx: number, dy: number) => {
-    const moveDeps = { ...deps(), selection: { get: () => [id], adapterMethods: undefined } } as unknown as ActionDeps;
+    const moveDeps = { ...deps(), operands: { get: () => [id], adapterMethods: undefined } } as unknown as ActionDeps;
     const at = (moving: boolean): InvocationCtx => ({
       world: moving ? { x: 50 + dx, y: 50 + dy } : { x: 50, y: 50 }, screen: { x: 0, y: 0 },
       modifiers: { alt: false, ctrl: false, meta: false, shift: false }, deps: moveDeps,

@@ -42,7 +42,7 @@ function setup(selected: string[], sources = ['a', 'b'], effect: PathEffect = { 
   });
   let current = selected;
   const selection = { get: () => current, set: (next: string[]) => { current = next; } };
-  const deps = { scene, selection } as unknown as InvocationCtx['deps'];
+  const deps = { scene, operands: selection } as unknown as InvocationCtx['deps'];
   return { scene, deps, select: (ids: string[]) => { current = ids; }, selected: () => current };
 }
 

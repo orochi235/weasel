@@ -60,7 +60,7 @@ function run(
     world: start,
     screen: { x: 0, y: 0 },
     modifiers: { alt: false, ctrl: false, meta: false, shift: false },
-    deps: { selection: { get: () => [a] as NodeId[] }, scene, snap },
+    deps: { operands: { get: () => [a] as NodeId[] }, scene, snap },
     drag: { start, current: start, delta: { x: 0, y: 0 }, affordance: { kind, anchor } },
   } as unknown as InvocationCtx;
   const moved = { ...base, drag: { ...base.drag!, current: drag, delta: drag } } as InvocationCtx;

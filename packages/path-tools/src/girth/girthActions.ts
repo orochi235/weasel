@@ -64,7 +64,7 @@ export const GIRTH_HOVER_ID = 'girth.hover';
 /** Id of the action that drops the hover mark when the pointer leaves. */
 export const GIRTH_UNHOVER_ID = 'girth.unhover';
 const LABEL = 'Stroke width';
-const REQUIRES = ['scene', 'view', 'selection', 'applyOps'] as const;
+const REQUIRES = ['scene', 'view', 'operands', 'applyOps'] as const;
 
 const found = (deps: ActionDeps, env: GirthEnv, reachPx = env.reachPx()) => {
   const scene = deps.scene as AnyScene | undefined;

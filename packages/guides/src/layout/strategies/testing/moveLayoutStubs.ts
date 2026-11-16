@@ -105,7 +105,7 @@ export function makeCtx(
       : (id) => ((getLayout as Record<string, unknown>)[id] as never) ?? null;
   const layout: LayoutDep = { getLayout: resolve };
   const deps: Record<string, unknown> = {
-    selection: { get: () => selectionIds as NodeId[] },
+    operands: { get: () => selectionIds as NodeId[] },
     scene,
     layout,
   };

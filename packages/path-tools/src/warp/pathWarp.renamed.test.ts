@@ -9,7 +9,7 @@ type S = AnyScene;
 
 const depsOf = (scene: S) => ({
   scene,
-  selection: { get: () => ['a'], set: () => {}, clear: () => {} },
+  operands: { get: () => ['a'], set: () => {}, clear: () => {} },
 }) as unknown as InvocationCtx['deps'];
 
 /** A square warped by dragging one corner of a plane warp. */

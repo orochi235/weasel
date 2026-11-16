@@ -59,7 +59,7 @@ export function warpHandleScratchOf(hit: unknown): WarpHandleScratch | null {
     : null;
 }
 
-const REQUIRES: ('selection' | 'scene' | 'applyOps')[] = ['selection', 'scene', 'applyOps'];
+const REQUIRES: ('operands' | 'scene' | 'applyOps')[] = ['operands', 'scene', 'applyOps'];
 /** What an action that begins a warp reads besides: text it converts first goes through these. */
 const BEGINS = [...REQUIRES, 'history', 'createOutlinesAdapter', 'notices'] as const;
 

@@ -38,7 +38,7 @@ function createPlanCache(opts: () => BooleanOpOptions) {
 
 const enoughSelected = (deps: ActionDeps | undefined): true | ActionDisabledReason => {
   if (!deps?.booleansAdapter) return ActionDisabledReason.NotApplicable;
-  return (deps.selection?.get().length ?? 0) >= 2 ? true : ActionDisabledReason.SelectionRequired;
+  return (deps.operands?.get().length ?? 0) >= 2 ? true : ActionDisabledReason.SelectionRequired;
 };
 
 /** What the tool reads on every gesture: how operands are taken, and what a
@@ -62,7 +62,7 @@ export function createShapeBuilderActions(overlay: PathOverlay, settings: () => 
     overlay.set(faces.map((i): TransientPath => ({ path: plan.faces[i]!.path, role })));
   };
   const eligible = { capability: 'edits-page' } as const;
-  const requires = ['booleansAdapter', 'selection', 'view'] as const;
+  const requires = ['booleansAdapter', 'operands', 'view'] as const;
 
   const hover = defineAction({
     id: 'shapeBuilder.hover',

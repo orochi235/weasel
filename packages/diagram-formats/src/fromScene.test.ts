@@ -21,7 +21,7 @@ function dragBy(scene: DocScene, ids: string[], dx: number): void {
   const at = composeWorldPose(scenePoseAdapter(scene as never), ids[0]!, scene.composition.compose as never) as RectPose;
   const from = { x: at.x + 1, y: at.y + 1 };
   const to = { x: from.x + dx, y: from.y };
-  const base = { world: from, modifiers: MODS, deps: { selection: { get: () => ids }, scene, nodeAtPoint: () => null } };
+  const base = { world: from, modifiers: MODS, deps: { operands: { get: () => ids }, scene, nodeAtPoint: () => null } };
   const handle = (moveAction.invoker as OngoingInvoker).start(base as unknown as InvocationCtx, { params: {} } as never) as OngoingHandle;
   const ctx = { ...base, world: to, drag: { start: from, current: to, delta: { x: dx, y: 0 } } } as unknown as InvocationCtx;
   handle.onMove!(ctx);

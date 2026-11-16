@@ -13,11 +13,11 @@ export const enterTextEditAction: Action & { requires: string[] } = {
   id: 'enterTextEdit',
   label: 'Enter text edit',
   eligible: { mode: 'normal' },
-  requires: ['textEdit', 'selection'],
+  requires: ['textEdit', 'operands'],
   invoker: {
     timing: 'immediate',
     run: (deps) => {
-      const sel = deps.selection?.get() ?? [];
+      const sel = deps.operands?.get() ?? [];
       if (sel.length !== 1) return;
 
       const id = sel[0];

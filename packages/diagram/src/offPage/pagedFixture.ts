@@ -35,7 +35,7 @@ export function dragTo(scene: PagedScene, id: string, x: number, y?: number): vo
   const from = { x: at.x + 1, y: at.y + 1 };
   const delta = { x: x - at.x, y: (y ?? at.y) - at.y };
   const to = { x: from.x + delta.x, y: from.y + delta.y };
-  const deps = { selection: { get: () => [id] }, scene, nodeAtPoint: () => null };
+  const deps = { operands: { get: () => [id] }, scene, nodeAtPoint: () => null };
   const base = { world: from, modifiers: MODS, deps };
   const handle = (moveAction.invoker as OngoingInvoker).start(base as unknown as InvocationCtx, { params: {} } as never) as OngoingHandle;
   const ctx = { ...base, world: to, drag: { start: from, current: to, delta } } as unknown as InvocationCtx;

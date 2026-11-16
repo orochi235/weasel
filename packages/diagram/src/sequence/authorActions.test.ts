@@ -185,7 +185,7 @@ describe('picking and deleting parts', () => {
     const scene = sceneOf();
     scene.add({ id: 'loose', kind: 'mark', layer: 'main', pose: { x: 0, y: 0, width: 1, height: 1 }, data: {} } as never);
     const held = ['seq/head:c', 'seq/frag:f1', 'loose'];
-    run(createSequenceDeleteAction(), { scene, selection: { ...selectionOf(held), adapterMethods: {} } }, {});
+    run(createSequenceDeleteAction(), { scene, operands: { ...selectionOf(held), adapterMethods: {} } }, {});
     const next = dataOf(scene);
     expect(next.participants.map((p) => p.id)).toEqual(['a', 'b']);
     expect(findStep(next.steps, 'f1')).toBeNull();

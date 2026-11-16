@@ -61,7 +61,7 @@ export const setPathStartAction: Action & { requires: string[] } = {
 function selectedPaths(deps: ActionDeps | undefined): { id: string; path: PolygonPath }[] {
   const dep = deps?.editAnchors;
   if (!dep) return [];
-  return (deps?.selection?.get() ?? []).flatMap((id) => {
+  return (deps?.operands?.get() ?? []).flatMap((id) => {
     const path = dep.getEditablePath(id) as PolygonPath | null | undefined;
     return path?.kind === 'polygon' ? [{ id, path }] : [];
   });
@@ -98,7 +98,7 @@ export const reversePathAction: Action & { requires: string[] } = {
   label: REVERSE_LABEL,
   tags: pathOperationTags('command'),
   group: PATH_GROUP,
-  requires: ['editAnchors', 'selection', 'scene', 'applyOps'],
+  requires: ['editAnchors', 'operands', 'scene', 'applyOps'],
   invoker: {
     timing: 'immediate',
     run: (deps) => {

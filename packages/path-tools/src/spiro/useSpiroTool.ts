@@ -67,7 +67,7 @@ function spiroActions(host: SpiroActionsHost): Action[] {
     const { points } = s();
     if (points.length >= 2) {
       const { path, representation } = spiroNodeData([{ points, closed }]);
-      const select = host.options().autoSelect ? selectCommitted(deps.selection) : undefined;
+      const select = host.options().autoSelect ? selectCommitted(deps.operands) : undefined;
       deps.insert?.commit(boundsOfPath(path), { kind: 'path', path, closed, data: { representation } }, undefined, select);
     }
     host.reset();
@@ -80,7 +80,7 @@ function spiroActions(host: SpiroActionsHost): Action[] {
       id: 'spiro.placePoint',
       label: 'Spiro — place point',
       eligible: { capability: 'creates-paths' },
-      requires: ['view', 'pointer', 'insert', 'selection', 'snap'],
+      requires: ['view', 'pointer', 'insert', 'operands', 'snap'],
       invoker: {
         timing: 'immediate',
         run: (deps, p) => {
@@ -101,7 +101,7 @@ function spiroActions(host: SpiroActionsHost): Action[] {
       id: 'spiro.finish',
       label: 'Spiro — finish open curve',
       eligible: { capability: 'creates-paths' },
-      requires: ['insert', 'selection'],
+      requires: ['insert', 'operands'],
       enabled: placing,
       invoker: {
         timing: 'immediate',

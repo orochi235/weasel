@@ -16,7 +16,7 @@ function makeCtx(
     world: { x: 5, y: 5 },
     screen: { x: 5, y: 5 },
     modifiers: { alt: false, ctrl: false, meta: false, shift: false },
-    deps: stubDeps(dep ? { selection: ['node-a'], editAnchors: dep } : { selection: ['node-a'] }),
+    deps: stubDeps(dep ? { operands: ['node-a'], editAnchors: dep } : { operands: ['node-a'] }),
     drag: {
       start: { x: 5, y: 5 },
       current: { x: 5, y: 5 },
@@ -57,7 +57,7 @@ describe('editAnchorsAction descriptor', () => {
   });
 
   it('requires selection dep', () => {
-    expect(editAnchorsAction.requires).toContain('selection');
+    expect(editAnchorsAction.requires).toContain('operands');
   });
 
   it('requires editAnchors dep', () => {
@@ -151,7 +151,7 @@ describe('editAnchorsAction — REAL invoker (anchors)', () => {
       world: { x: 0, y: 0 },
       screen: { x: 0, y: 0 },
       modifiers: { alt: false, ctrl: false, meta: false, shift: false },
-      deps: stubDeps({ selection: ['node-a'], editAnchors: dep }),
+      deps: stubDeps({ operands: ['node-a'], editAnchors: dep }),
       drag: { start: { x: 0, y: 0 }, current: { x: 0, y: 0 }, delta: { x: 0, y: 0 }, affordance },
     };
     const handle = invoker.start(startCtx, undefined);
@@ -181,7 +181,7 @@ describe('editAnchorsAction — REAL invoker (anchors)', () => {
       world: { x: 0, y: 0 },
       screen: { x: 0, y: 0 },
       modifiers: { alt: false, ctrl: false, meta: false, shift: false },
-      deps: stubDeps({ selection: ['node-a'], editAnchors: dep }),
+      deps: stubDeps({ operands: ['node-a'], editAnchors: dep }),
       drag: { start: { x: 0, y: 0 }, current: { x: 0, y: 0 }, delta: { x: 0, y: 0 }, affordance },
     };
     const handle = invoker.start(startCtx, undefined);
@@ -203,7 +203,7 @@ describe('editAnchorsAction — REAL invoker (anchors)', () => {
       world: { x: 5, y: 15 },
       screen: { x: 5, y: 15 },
       modifiers: { alt: false, ctrl: false, meta: false, shift: false },
-      deps: stubDeps({ selection: ['node-a'], editAnchors: dep }),
+      deps: stubDeps({ operands: ['node-a'], editAnchors: dep }),
       drag: { start: { x: 5, y: 15 }, current: { x: 5, y: 15 }, delta: { x: 0, y: 0 }, affordance },
     };
     const handle = invoker.start(ctx, undefined);
@@ -225,7 +225,7 @@ describe('editAnchorsAction — REAL invoker (anchors)', () => {
       world: { x: 5, y: -5 },
       screen: { x: 5, y: -5 },
       modifiers: { alt: false, ctrl: false, meta: false, shift: false },
-      deps: stubDeps({ selection: ['node-a'], editAnchors: dep }),
+      deps: stubDeps({ operands: ['node-a'], editAnchors: dep }),
       drag: { start: { x: 5, y: -5 }, current: { x: 5, y: -5 }, delta: { x: 0, y: 0 }, affordance },
     };
     const handle = invoker.start(startCtx, undefined);
@@ -254,7 +254,7 @@ describe('editAnchorsAction — REAL invoker (anchors)', () => {
       world: { x: 0, y: 0 },
       screen: { x: 0, y: 0 },
       modifiers: { alt: false, ctrl: false, meta: false, shift: false },
-      deps: stubDeps({ selection: ['node-a'], editAnchors: dep }),
+      deps: stubDeps({ operands: ['node-a'], editAnchors: dep }),
       drag: { start: { x: 0, y: 0 }, current: { x: 0, y: 0 }, delta: { x: 0, y: 0 }, affordance },
     };
     const handle = invoker.start(startCtx, undefined);
@@ -289,7 +289,7 @@ describe('editAnchorsAction — REAL invoker (anchors)', () => {
       world: { x: 0, y: 0 },
       screen: { x: 0, y: 0 },
       modifiers: { alt: false, ctrl: false, meta: false, shift: false },
-      deps: stubDeps({ selection: ['node-a'], editAnchors: dep }),
+      deps: stubDeps({ operands: ['node-a'], editAnchors: dep }),
       drag: { start: { x: 0, y: 0 }, current: { x: 0, y: 0 }, delta: { x: 0, y: 0 }, affordance },
     };
     const handle = invoker.start(ctx, undefined);

@@ -271,7 +271,7 @@ export const editAnchorsAction: Action & { requires: string[] } = inPlane({
   cursor: 'pointer',
   eligible: { capability: 'edits-anchors' },
   modifierRoles: EDIT_ANCHORS_ROLES,
-  requires: ['selection', 'editAnchors', 'pathSymmetry', 'snap'],
+  requires: ['operands', 'editAnchors', 'pathSymmetry', 'snap'],
   invoker: {
     timing: 'ongoing',
     start(ctx: InvocationCtx, opts): OngoingHandle {

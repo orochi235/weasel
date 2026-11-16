@@ -22,7 +22,7 @@ function setup(editing = true) {
   });
   const deps = {
     editAnchors: dep,
-    selection: { get: () => ['p1'] },
+    operands: { get: () => ['p1'] },
     applyOps: (ops: unknown[], label: string) => batches.push({ ops, label }),
   } as never;
   const corners = () => pathToAnchors(current).anchors[0].map((a) => [a.x, a.y]);

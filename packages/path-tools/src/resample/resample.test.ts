@@ -17,7 +17,7 @@ function setup() {
   const selection = { get: () => ['a'], set: vi.fn() };
   const batches: Array<{ ops: Op[]; label: string }> = [];
   const applyOps = vi.fn((ops: Op[], label: string) => { batches.push({ ops, label }); });
-  return { deps: { scene, selection, applyOps } as unknown as ActionDeps, batches };
+  return { deps: { scene, operands: selection, applyOps } as unknown as ActionDeps, batches };
 }
 
 const run = (resamplePathAction.invoker as ImmediateInvoker).run;

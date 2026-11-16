@@ -105,7 +105,7 @@ export function reportResizeAction(
 ): Action {
   return createResizeAction({
     commit: (poses, deps) => {
-      const picked = new Set(deps.selection?.get() ?? []);
+      const picked = new Set(deps.operands?.get() ?? []);
       const resizes: NodeResize[] = [];
       for (const [id, pose] of poses) {
         if (!picked.has(id)) continue;

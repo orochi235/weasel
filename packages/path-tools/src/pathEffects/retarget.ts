@@ -26,7 +26,7 @@ const isAlong = (node: AnyNode | undefined): node is AnyNode =>
  *  those two in either order; a reason when the selection is not that. */
 function pathTarget(deps: ActionDeps | undefined): { effect: AnyNode; path: AnyNode } | ActionDisabledReason {
   const scene = deps?.scene as AnyScene | undefined;
-  const nodes = (deps?.selection?.get() ?? []).map((id) => scene?.get(id as NodeId));
+  const nodes = (deps?.operands?.get() ?? []).map((id) => scene?.get(id as NodeId));
   if (!scene || nodes.length !== 2) return ActionDisabledReason.SelectionRequired;
   const effect = nodes.find(isAlong);
   const path = nodes.find((n) => n !== effect);
@@ -51,7 +51,7 @@ export const setEffectPathAction: Action & { requires: string[] } = {
   label: SET_LABEL,
   group: PATH_EFFECTS_GROUP,
   eligible: { capability: 'creates-shapes' },
-  requires: ['selection', 'scene', 'applyOps'],
+  requires: ['operands', 'scene', 'applyOps'],
   invoker: {
     timing: 'immediate',
     run: (deps) => {
@@ -85,7 +85,7 @@ export const releasePathEffectAction: Action & { requires: string[] } = {
   id: 'releasePathEffect',
   label: RELEASE_LABEL,
   group: PATH_EFFECTS_GROUP,
-  requires: ['selection', 'scene', 'applyOps'],
+  requires: ['operands', 'scene', 'applyOps'],
   invoker: {
     timing: 'immediate',
     run: (deps) => {

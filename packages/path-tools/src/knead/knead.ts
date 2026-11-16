@@ -126,7 +126,7 @@ export const kneadAction = defineAction({
   group: PATH_GROUP,
   eligible: { capability: 'creates-shapes' },
   cursor: (params) => brushRing(radiusOf(params)),
-  requires: ['selection', 'scene', 'view', 'applyOps', 'history', 'createOutlinesAdapter', 'notices'],
+  requires: ['operands', 'scene', 'view', 'applyOps', 'history', 'createOutlinesAdapter', 'notices'],
   params: KNEAD_PARAMS,
   invoker: {
     timing: 'ongoing',

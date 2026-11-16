@@ -47,7 +47,7 @@ export const snipPathAction = defineAction({
   tags: pathOperationTags('click'),
   group: PATH_GROUP,
   eligible: { capability: 'creates-shapes' },
-  requires: ['scene', 'applyOps', 'selection', 'view'],
+  requires: ['scene', 'applyOps', 'operands', 'view'],
   params: SNIP_PATH_PARAMS,
   invoker: {
     timing: 'immediate',
@@ -59,7 +59,7 @@ export const snipPathAction = defineAction({
       const ops = gone
         ? [deleteNode(deps.scene as never, target.node, SNIP_LABEL)]
         : reshapeOps(target, result.path, SNIP_LABEL);
-      commitOps(deps, ops, SNIP_LABEL, gone ? { select: (deps.selection?.get() ?? []).filter((id) => id !== target.id) } : {});
+      commitOps(deps, ops, SNIP_LABEL, gone ? { select: (deps.operands?.get() ?? []).filter((id) => id !== target.id) } : {});
     },
   },
   // A click's point enables it, as Reach's does, and the run decides; without one, the press in its params does.

@@ -57,7 +57,7 @@ function setup(composition?: PoseComposition<RectPose>) {
     world: drag ? drag.current : { x: 0, y: 0 },
     screen: { x: 0, y: 0 },
     modifiers: { alt: false, ctrl: false, meta: false, shift: false },
-    deps: { selection: { get: () => [a] }, scene, layout },
+    deps: { operands: { get: () => [a] }, scene, layout },
     drag,
   }) as unknown as InvocationCtx;
   const grab = (): OngoingHandle => (moveAction.invoker as OngoingInvoker).start(ctx(), {}) as OngoingHandle;

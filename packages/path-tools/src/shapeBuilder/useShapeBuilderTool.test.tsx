@@ -29,7 +29,7 @@ function setup(ids: string[] = ['a', 'b'], opts: Parameters<typeof useShapeBuild
   };
   const deps = {
     booleansAdapter: adapter,
-    selection: { get: () => ids },
+    operands: { get: () => ids },
     view: { get: () => VIEW, set: () => {} },
   } as unknown as ActionDeps;
   const actionOf = (id: string): Action => {

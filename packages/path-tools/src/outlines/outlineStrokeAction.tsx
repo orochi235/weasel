@@ -17,7 +17,7 @@ export const outlineStrokeAction: Action = {
   icon: icon('core:outlineStroke'),
   group: 'pathfinder',
   eligible: { capability: 'creates-shapes' },
-  requires: ['selection', 'createOutlinesAdapter', 'view', 'notices'],
+  requires: ['operands', 'createOutlinesAdapter', 'view', 'notices'],
   invoker: {
     timing: 'immediate',
     run: (deps) => {
@@ -28,7 +28,7 @@ export const outlineStrokeAction: Action = {
     },
   } satisfies ImmediateInvoker,
   enabled: (deps) => {
-    const ids = deps?.selection?.get() ?? [];
+    const ids = deps?.operands?.get() ?? [];
     if (ids.length === 0) return ActionDisabledReason.SelectionRequired;
     const adapter = deps?.createOutlinesAdapter;
     return adapter && ids.some((id) => strokeCovers(adapter.getPaint?.(id)?.stroke) || adapter.getOutline(id)?.stroked === true)

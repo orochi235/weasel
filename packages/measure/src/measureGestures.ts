@@ -38,7 +38,7 @@ export function measureCreateAction(ms: Measurements): Action {
     id: MEASURE_ACTION_IDS.measure,
     label: 'Measure',
     modifierRoles: SNAP_ROLES,
-    requires: ['snap', 'scene', 'applyOps', 'selection'],
+    requires: ['snap', 'scene', 'applyOps', 'operands'],
     invoker: {
       timing: 'ongoing',
       // The dispatcher builds deps once, for `start`; later events carry none.
@@ -136,7 +136,7 @@ export function measureDragAction(ms: Measurements): Action {
     id: MEASURE_ACTION_IDS.drag,
     label: 'Drag Measurement',
     modifierRoles: SNAP_ROLES,
-    requires: ['scene', 'snap', 'applyOps', 'selection'],
+    requires: ['scene', 'snap', 'applyOps', 'operands'],
     invoker: {
       timing: 'ongoing',
       start(ctx: InvocationCtx): OngoingHandle {

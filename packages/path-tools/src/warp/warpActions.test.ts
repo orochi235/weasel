@@ -39,7 +39,7 @@ function makeScene(x = 0, y = 0): S {
 
 const depsOf = (scene: S) => ({
   scene,
-  selection: { get: () => ['a'], set: () => {}, clear: () => {} },
+  operands: { get: () => ['a'], set: () => {}, clear: () => {} },
 }) as unknown as InvocationCtx['deps'];
 
 const ctx = (scene: S, world: { x: number; y: number }, drag?: InvocationCtx['drag']): InvocationCtx => ({
@@ -219,7 +219,7 @@ describe('paths warped together', () => {
     }) as unknown as S;
   }
   const pairDeps = (scene: S) => ({
-    scene, selection: { get: () => ['a', 'b'], set: () => {}, clear: () => {} },
+    scene, operands: { get: () => ['a', 'b'], set: () => {}, clear: () => {} },
   }) as unknown as InvocationCtx['deps'];
   const pathOf = (scene: S, id: string) =>
     Array.from((resolveEditablePathOf(scene.get(asNodeId(id)) as never) as PolygonPath).coords);

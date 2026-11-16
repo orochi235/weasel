@@ -39,7 +39,7 @@ function drag(
   dy: number,
 ): void {
   const layout: LayoutDep = { getLayout: (id) => scene.layoutOf(id as NodeId) as never };
-  const deps: Record<string, unknown> = { selection: { get: () => ids }, scene, layout };
+  const deps: Record<string, unknown> = { operands: { get: () => ids }, scene, layout };
   const ctx = (moved: boolean): InvocationCtx => ({
     world: { x: 20 + (moved ? dx : 0), y: 20 + (moved ? dy : 0) },
     screen: { x: 0, y: 0 },

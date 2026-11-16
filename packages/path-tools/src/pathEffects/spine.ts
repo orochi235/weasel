@@ -28,7 +28,7 @@ const isTween = (node: AnyNode | undefined): node is AnyNode =>
  *  two in either order; a reason when the selection is not that. */
 function spineTarget(deps: ActionDeps | undefined): { tween: AnyNode; spine: AnyNode } | ActionDisabledReason {
   const scene = deps?.scene as AnyScene | undefined;
-  const nodes = (deps?.selection?.get() ?? []).map((id) => scene?.get(id as NodeId));
+  const nodes = (deps?.operands?.get() ?? []).map((id) => scene?.get(id as NodeId));
   if (!scene || nodes.length !== 2) return ActionDisabledReason.SelectionRequired;
   const tween = nodes.find(isTween);
   const spine = nodes.find((n) => n !== tween);
@@ -49,7 +49,7 @@ export const setTweenSpineAction: Action & { requires: string[] } = {
   icon: icon('setTweenSpine'),
   group: PATH_EFFECTS_GROUP,
   eligible: { capability: 'creates-shapes' },
-  requires: ['selection', 'scene', 'applyOps'],
+  requires: ['operands', 'scene', 'applyOps'],
   invoker: {
     timing: 'immediate',
     run: (deps) => {
@@ -75,7 +75,7 @@ export const setTweenSpineAction: Action & { requires: string[] } = {
 function tweensWithSpines(deps: ActionDeps | undefined): AnyNode[] {
   const scene = deps?.scene as AnyScene | undefined;
   if (!scene) return [];
-  return (deps?.selection?.get() ?? [])
+  return (deps?.operands?.get() ?? [])
     .map((id) => scene.get(id as NodeId))
     .filter((n): n is AnyNode => isTween(n) && sourcesOf(n).length >= 3);
 }
@@ -92,7 +92,7 @@ export const releaseTweenSpineAction: Action & { requires: string[] } = {
   label: RELEASE_LABEL,
   icon: icon('releaseTweenSpine'),
   group: PATH_EFFECTS_GROUP,
-  requires: ['selection', 'scene', 'applyOps'],
+  requires: ['operands', 'scene', 'applyOps'],
   invoker: {
     timing: 'immediate',
     run: (deps) => {
@@ -110,6 +110,6 @@ export const releaseTweenSpineAction: Action & { requires: string[] } = {
   } satisfies ImmediateInvoker,
   enabled: (deps) => {
     if (tweensWithSpines(deps).length > 0) return true;
-    return (deps?.selection?.get() ?? []).length > 0 ? ActionDisabledReason.NotApplicable : ActionDisabledReason.SelectionRequired;
+    return (deps?.operands?.get() ?? []).length > 0 ? ActionDisabledReason.NotApplicable : ActionDisabledReason.SelectionRequired;
   },
 };

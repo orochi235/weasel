@@ -94,7 +94,7 @@ describe('waypointFollower', () => {
 
   function drag(scene: Scene, ids: string[], during?: (handle: OngoingHandle) => void): void {
     const deps = {
-      selection: { get: () => ids, adapterMethods: undefined }, scene, transformFollowers: [waypointFollower(scene)],
+      operands: { get: () => ids, adapterMethods: undefined }, scene, transformFollowers: [waypointFollower(scene)],
     } as unknown as ActionDeps;
     const at = (moving: boolean) => ({
       world: moving ? { x: 60, y: 25 } : { x: 50, y: 20 }, screen: { x: 0, y: 0 },

@@ -39,7 +39,7 @@ function moveBy(world: W, id: NodeId, by: Vec3): void {
   const press = projectPoint(center, vp)!;
   const to = projectPoint(add(center, by), vp)!;
   const deps = {
-    selection: { get: () => [id], set: () => {} },
+    operands: { get: () => [id], set: () => {} },
     scene: world.scene,
     poseDescriptor: createPoseDescriptor(world),
     snap: createSnap(world, { sources: [groundGridSource({ world, step: 0.5 })] }),

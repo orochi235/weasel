@@ -79,7 +79,7 @@ export const setSpiroKindAction = defineAction({
 /** The selected spiro nodes, or the one in path edit. */
 function spiroTargets(deps: ActionDeps | undefined): AnyNode[] {
   const edited = deps?.editAnchors?.editingId;
-  const ids = edited ? [edited] : (deps?.selection?.get() ?? []);
+  const ids = edited ? [edited] : (deps?.operands?.get() ?? []);
   return ids.flatMap((id) => {
     const node = nodeOf(deps, id);
     return node && spiroOf(node.data) ? [node] : [];
@@ -100,7 +100,7 @@ export const releaseSpiroAction: Action & { requires: string[] } = {
   icon: icon('releaseSpiro'),
   tags: pathOperationTags('command'),
   group: 'spiro',
-  requires: ['selection', 'scene', 'applyOps', 'editAnchors'],
+  requires: ['operands', 'scene', 'applyOps', 'editAnchors'],
   invoker: {
     timing: 'immediate',
     run: (deps) => {

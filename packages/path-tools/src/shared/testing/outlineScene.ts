@@ -52,7 +52,7 @@ export function outlineScene({ outlines = true } = {}) {
   const notices: { warn: Mock } = { warn: vi.fn() };
   const selection = { get: () => scene.getSelection(), set: (ids: readonly string[]) => scene.setSelection(ids.map(asNodeId)) };
   const deps = {
-    scene, selection, history: scene.history, notices,
+    scene, selection, operands: selection, history: scene.history, notices,
     view: { get: () => ({ scale: { x: 1, y: 1 } }) },
     ...(outlines ? { createOutlinesAdapter: adapter } : {}),
   } as never;

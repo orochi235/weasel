@@ -20,7 +20,7 @@ import type {} from '../actionParamSchema';
  *  an editable path. Null when there is none, so the double-click is left to the next binding. */
 function pathEditTarget(deps: ActionDeps | undefined, world: { x: number; y: number } | undefined): string | null {
   const editAnchors = deps?.editAnchors;
-  const selection = deps?.selection;
+  const selection = deps?.operands;
   if (!editAnchors || !selection) return null;
   // The path under the pointer wins: with several selected, the first may not be the one double-clicked.
   const under = world ? deps.nodeAtPoint?.(world) : null;
@@ -53,7 +53,7 @@ export const enterPathEditAction = defineAction({
     opts: { id: 'enterPathEdit.doubleClick' },
   }],
   eligible: { mode: 'normal' },
-  requires: ['editAnchors', 'selection', 'nodeAtPoint', 'hitAt', 'scene'],
+  requires: ['editAnchors', 'operands', 'nodeAtPoint', 'hitAt', 'scene'],
   invoker: {
     timing: 'immediate',
     run(deps, params) {

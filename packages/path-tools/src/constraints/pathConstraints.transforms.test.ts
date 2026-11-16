@@ -59,7 +59,7 @@ function ctx(scene: AnyScene, at: { x: number; y: number }, affordance?: object)
     world: at,
     screen: { x: 0, y: 0 },
     modifiers: { alt: false, ctrl: false, meta: false, shift: false },
-    deps: { selection: { get: () => [ID] as NodeId[] }, scene },
+    deps: { operands: { get: () => [ID] as NodeId[] }, scene },
     drag: { start: at, current: at, delta: { x: 0, y: 0 }, ...(affordance ? { affordance } : {}) },
   } as unknown as InvocationCtx;
 }

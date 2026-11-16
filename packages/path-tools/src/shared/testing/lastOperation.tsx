@@ -22,6 +22,7 @@ export function lastOperationHarness(deps: Record<string, unknown>, actions: rea
   const selection = deps.selection as Selection;
   act(() => {
     for (const [name, value] of Object.entries(deps)) depRegistry!.register(name as DepName, () => value as never);
+    if (!('operands' in deps)) depRegistry!.register('operands', () => selection);
     depRegistry!.register('selectionSnapshot', () => ({
       take: () => {
         const was = [...selection.get()];

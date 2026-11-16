@@ -83,7 +83,7 @@ describe('a group in a scene', () => {
       world: d ? d.current : { x: 0, y: 0 },
       screen: { x: 0, y: 0 },
       modifiers: { alt: false, ctrl: false, meta: false, shift: false },
-      deps: { selection: { get: () => ['G'] }, scene },
+      deps: { operands: { get: () => ['G'] }, scene },
       drag: d,
     }) as never;
     const handle = (moveAction.invoker as OngoingInvoker).start(ctx(), {}) as OngoingHandle;

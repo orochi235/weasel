@@ -56,7 +56,7 @@ export function editHarness(path: PolygonPath) {
   }, { wrapper: ({ children }: { children: ReactNode }) => createElement(DepRegistryProvider, null, children) });
   const dep = () => (result.current.get as (key: string) => EditAnchorsDep)('editAnchors');
   const deps = () => ({
-    editAnchors: dep(), scene: loose, applyOps, selection: { get: () => [id], set: () => {} },
+    editAnchors: dep(), scene: loose, applyOps, operands: { get: () => [id], set: () => {} },
   }) as unknown as ActionDeps;
   return {
     scene, id, deps, unmount,

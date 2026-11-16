@@ -10,7 +10,7 @@ function run(opts: { selected: string[]; editable: string[]; under: string | nul
   const setEditingId = vi.fn();
   const deps = {
     editAnchors: { getEditablePath: (id: string) => (opts.editable.includes(id) ? {} : null), setEditingId },
-    selection: { get: () => opts.selected },
+    operands: { get: () => opts.selected },
     nodeAtPoint: () => opts.under,
   };
   (enterPathEditAction.invoker as ImmediateInvoker).run(deps as never, { world: { x: 5, y: 5 } });
@@ -35,7 +35,7 @@ describe('enterPathEdit', () => {
     const enabled = enterPathEditAction.enabled!;
     const member = {
       editAnchors: { getEditablePath: (id: string) => (id === 'member' ? {} : null) },
-      selection: { get: () => [] },
+      operands: { get: () => [] },
       nodeAtPoint: () => 'member',
     };
     expect(enabled({ ...member, hitAt: hitAt('outer') } as never, { x: 5, y: 5 })).toBe(ActionDisabledReason.NotApplicable);
@@ -45,7 +45,7 @@ describe('enterPathEdit', () => {
   it('stands aside where neither the node under the pointer nor any selected one has an editable path', () => {
     const deps = (under: string | null, selected: string[]) => ({
       editAnchors: { getEditablePath: (id: string) => (id === 'path' ? {} : null) },
-      selection: { get: () => selected },
+      operands: { get: () => selected },
       nodeAtPoint: () => under,
     }) as never;
     const enabled = enterPathEditAction.enabled!;
@@ -68,7 +68,7 @@ describe('enterPathEdit', () => {
       const setEditingId = vi.fn();
       const deps = {
         editAnchors: { getEditablePath: (id: string) => (id === 'p' ? {} : null), setEditingId },
-        selection: { get: () => ['fx'] },
+        operands: { get: () => ['fx'] },
         nodeAtPoint: () => under,
         scene,
       };

@@ -12,7 +12,7 @@ describe('enterTextEditAction (descriptor)', () => {
   });
 
   it('requires = ["textEdit", "selection"]', () => {
-    expect(enterTextEditAction.requires).toEqual(['textEdit', 'selection']);
+    expect(enterTextEditAction.requires).toEqual(['textEdit', 'operands']);
   });
 
   it('invoker.timing = "immediate"', () => {
@@ -22,7 +22,7 @@ describe('enterTextEditAction (descriptor)', () => {
   it('calls startEdit with the single selected id', () => {
     const startEdit = vi.fn();
     const deps = {
-      selection: { get: () => ['node-1'], set: vi.fn() },
+      operands: { get: () => ['node-1'], set: vi.fn() },
       textEdit: { startEdit },
     };
     const inv = enterTextEditAction.invoker;
@@ -35,7 +35,7 @@ describe('enterTextEditAction (descriptor)', () => {
   it('is a no-op when selection is empty', () => {
     const startEdit = vi.fn();
     const deps = {
-      selection: { get: () => [], set: vi.fn() },
+      operands: { get: () => [], set: vi.fn() },
       textEdit: { startEdit },
     };
     const inv = enterTextEditAction.invoker;
@@ -47,7 +47,7 @@ describe('enterTextEditAction (descriptor)', () => {
   it('is a no-op when selection has multiple ids', () => {
     const startEdit = vi.fn();
     const deps = {
-      selection: { get: () => ['node-1', 'node-2'], set: vi.fn() },
+      operands: { get: () => ['node-1', 'node-2'], set: vi.fn() },
       textEdit: { startEdit },
     };
     const inv = enterTextEditAction.invoker;
@@ -67,7 +67,7 @@ describe('enterTextEditAction (descriptor)', () => {
 
   it('is a no-op when textEdit dep is absent', () => {
     const deps = {
-      selection: { get: () => ['node-1'], set: vi.fn() },
+      operands: { get: () => ['node-1'], set: vi.fn() },
     };
     const inv = enterTextEditAction.invoker;
     if (!inv || inv.timing !== 'immediate') throw new Error('expected immediate invoker');
@@ -78,7 +78,7 @@ describe('enterTextEditAction (descriptor)', () => {
     it('calls startEdit when isTextNode returns true', () => {
       const startEdit = vi.fn();
       const deps = {
-        selection: { get: () => ['node-1'], set: vi.fn() },
+        operands: { get: () => ['node-1'], set: vi.fn() },
         textEdit: { startEdit, isTextNode: () => true },
       };
       const inv = enterTextEditAction.invoker;
@@ -90,7 +90,7 @@ describe('enterTextEditAction (descriptor)', () => {
     it('is a no-op when isTextNode returns false (non-text node selected)', () => {
       const startEdit = vi.fn();
       const deps = {
-        selection: { get: () => ['rect-1'], set: vi.fn() },
+        operands: { get: () => ['rect-1'], set: vi.fn() },
         textEdit: { startEdit, isTextNode: () => false },
       };
       const inv = enterTextEditAction.invoker;
@@ -102,7 +102,7 @@ describe('enterTextEditAction (descriptor)', () => {
     it('calls startEdit without isTextNode (fires unconditionally when pred absent)', () => {
       const startEdit = vi.fn();
       const deps = {
-        selection: { get: () => ['any-node'], set: vi.fn() },
+        operands: { get: () => ['any-node'], set: vi.fn() },
         textEdit: { startEdit }, // no isTextNode
       };
       const inv = enterTextEditAction.invoker;

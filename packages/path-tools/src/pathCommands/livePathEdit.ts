@@ -51,7 +51,7 @@ export function livePathEdit<P = Record<string, unknown>>(spec: LivePathEditSpec
     icon: spec.icon,
     tags: pathOperationTags('command'),
     eligible: { capability: 'creates-shapes' },
-    requires: ['selection', 'scene', 'applyOps'],
+    requires: ['operands', 'scene', 'applyOps'],
     params: spec.params,
     invoker: {
       timing: 'ongoing',

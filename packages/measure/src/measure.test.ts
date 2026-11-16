@@ -43,7 +43,7 @@ function setup() {
     ...measureCommands(ms), measureCreateAction(ms), measurePickAtAction(ms), measureDragAction(ms),
   ];
   const action = (id: string): Action => actions.find((a) => a.id === id)!;
-  const deps: Record<string, unknown> = { scene: scene as unknown as AnyScene, selection };
+  const deps: Record<string, unknown> = { scene: scene as unknown as AnyScene, operands: selection };
   const pose = (id: string) => scene.get(id as never)!.pose as RectPose;
 
   const ctx = (world: Pt, from: Pt, extra: Partial<InvocationCtx> = {}): InvocationCtx => ({

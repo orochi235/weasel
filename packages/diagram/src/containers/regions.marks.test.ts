@@ -25,7 +25,7 @@ function build(scene: ReturnType<typeof makeScene>, id: string, at: RectPose): s
 
 function drag(scene: ReturnType<typeof makeScene>, ids: string[], from: Vec2, to: Vec2): void {
   const deps = {
-    selection: { get: () => ids, adapterMethods: undefined },
+    operands: { get: () => ids, adapterMethods: undefined },
     scene,
     layout: { getLayout: (id: string) => scene.layoutOf(id as NodeId) },
     canDropInto: diagramCanDropInto(scene),

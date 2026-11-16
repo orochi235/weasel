@@ -36,7 +36,7 @@ function moveBy(ms: Measurements): Action {
     label: MOVE_LABEL,
     group: 'measure',
     eligible: { capability: 'transforms-selection' },
-    requires: ['selection', 'scene', 'applyOps', 'geometryProjection', 'poseDescriptor', 'transformFollowers'],
+    requires: ['operands', 'scene', 'applyOps', 'geometryProjection', 'poseDescriptor', 'transformFollowers'],
     enabled: transformable(ms, travels),
     invoker: {
       timing: 'immediate',
@@ -54,7 +54,7 @@ function rotateBy(ms: Measurements): Action {
     label: ROTATE_LABEL,
     group: 'measure',
     eligible: { capability: 'transforms-selection' },
-    requires: ['selection', 'scene', 'applyOps', 'poseDescriptor', 'view', 'boundsIncludeStroke', 'drawnBoxes', 'transformFollowers'],
+    requires: ['operands', 'scene', 'applyOps', 'poseDescriptor', 'view', 'boundsIncludeStroke', 'drawnBoxes', 'transformFollowers'],
     enabled: transformable(ms, turns),
     invoker: {
       timing: 'immediate',
@@ -76,7 +76,7 @@ function remove(ms: Measurements): Action {
     id: MEASURE_ACTION_IDS.delete,
     label: MEASURE_LABELS.delete,
     group: 'measure',
-    requires: ['scene', 'applyOps', 'selection'],
+    requires: ['scene', 'applyOps', 'operands'],
     // Declining with nothing measured leaves Delete to the ambient `delete`.
     enabled: (deps) => {
       const c = current(deps, ms);
@@ -104,7 +104,7 @@ function clearAll(ms: Measurements): Action {
     id: MEASURE_ACTION_IDS.clear,
     label: MEASURE_LABELS.clear,
     group: 'measure',
-    requires: ['scene', 'applyOps', 'selection'],
+    requires: ['scene', 'applyOps', 'operands'],
     enabled: (deps) => {
       const ids = all(deps);
       if (ids.length === 0) return ActionDisabledReason.NotApplicable;

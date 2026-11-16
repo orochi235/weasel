@@ -16,7 +16,7 @@ function setup(selected: string) {
   });
   const report = vi.fn();
   const action = createStepReorderAction(report);
-  const deps = { scene, selection: { get: () => [selected] } } as unknown as ActionDeps;
+  const deps = { scene, operands: { get: () => [selected] } } as unknown as ActionDeps;
   const step = (axis: 'x' | 'y', step: -1 | 1) => {
     const params = { axis, step };
     const enabled = action.enabled!(deps, undefined, undefined, params) === true;

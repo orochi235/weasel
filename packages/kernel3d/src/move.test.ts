@@ -83,7 +83,7 @@ describe('geometryProjection in a 3D host', () => {
     const { projection, seen } = recorder();
 
     drag({
-      selection: { get: () => [id], set: () => {} },
+      operands: { get: () => [id], set: () => {} },
       scene,
       poseDescriptor,
       geometryProjection: projection,
@@ -123,7 +123,7 @@ describe('a 3D move of several roots', () => {
 
   it('drags every root by the world delta it lands the first one', () => {
     const { scene, ids, before, poseDescriptor } = twoRoots();
-    drag({ selection: { get: () => ids, set: () => {} }, scene, poseDescriptor }, { x: 40, y: 10 });
+    drag({ operands: { get: () => ids, set: () => {} }, scene, poseDescriptor }, { x: 40, y: 10 });
 
     const first = movedBy(scene.get(ids[0]!)!.pose, before[0]!);
     const second = movedBy(scene.get(ids[1]!)!.pose, before[1]!);
@@ -168,7 +168,7 @@ describe('a 3D move of several roots', () => {
     const to = projectPoint(add(onA, wanted), vp)!;
 
     drag({
-      selection: { get: () => [a!, b!], set: () => {} },
+      operands: { get: () => [a!, b!], set: () => {} },
       scene,
       poseDescriptor: createPoseDescriptor(world),
       snap: createSnap(world, { sources: [boxSnapSource(world)] }),
@@ -188,7 +188,7 @@ describe('a 3D move through a camera that casts no ray', () => {
     const before = scene.get(id)!.pose;
     let vp = viewport();
     const poseDescriptor = createPoseDescriptor({ scene, viewport: () => vp, bounds: boundsOfTestNode });
-    const deps = { selection: { get: () => [id], set: () => {} }, scene, poseDescriptor };
+    const deps = { operands: { get: () => [id], set: () => {} }, scene, poseDescriptor };
     drag(deps, { x: 40, y: 10 });
     const after = scene.get(id)!.pose;
     expect(after).not.toEqual(before);
@@ -213,7 +213,7 @@ describe('a 3D move whose camera stops casting rays mid-drag', () => {
     const at = (dx: number) => ({
       world: { x: start.x + dx, y: start.y }, screen: start,
       modifiers: { alt: false, ctrl: false, meta: false, shift: false },
-      deps: { selection: { get: () => [id], set: () => {} }, scene, poseDescriptor },
+      deps: { operands: { get: () => [id], set: () => {} }, scene, poseDescriptor },
       drag: { start, current: { x: start.x + dx, y: start.y }, delta: { x: dx, y: 0 } },
     }) as unknown as InvocationCtx;
     const handle = invoker.start({ ...at(0), drag: undefined } as unknown as InvocationCtx, undefined);
@@ -243,7 +243,7 @@ describe('a 3D move of several roots, one stored under a container', () => {
 
   it('drags the framed root by the world delta it lands the first one', () => {
     const { scene, ids, poseDescriptor, moved } = framedRoots();
-    drag({ selection: { get: () => ids, set: () => {} }, scene, poseDescriptor }, { x: 40, y: 10 });
+    drag({ operands: { get: () => ids, set: () => {} }, scene, poseDescriptor }, { x: 40, y: 10 });
     const { lead, framed } = moved();
     expect(lead.x).not.toBeCloseTo(0, 3);
     expect(framed.x).toBeCloseTo(lead.x, 9);
@@ -264,7 +264,7 @@ describe('a 3D move of several roots, one stored under a container', () => {
     const world = { scene, viewport: close, bounds: boundsOfTestNode };
     expect(screenBoxOf(world, ids[1]!, close())).toBeNull();
     expect(screenBoxOf(world, ids[0]!, close())).not.toBeNull();
-    drag({ selection: { get: () => ids, set: () => {} }, scene, poseDescriptor: createPoseDescriptor(world) }, { x: 40, y: 10 });
+    drag({ operands: { get: () => ids, set: () => {} }, scene, poseDescriptor: createPoseDescriptor(world) }, { x: 40, y: 10 });
     const { lead: l, framed } = moved();
     expect(l.x + l.z).not.toBeCloseTo(0, 3);
     expect(framed.x).toBeCloseTo(l.x, 9);

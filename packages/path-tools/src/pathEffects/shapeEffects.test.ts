@@ -30,7 +30,7 @@ function setup(selected: string[], registered = true) {
   });
   let current = selected;
   const selection = { get: () => current, set: (next: string[]) => { current = next; } };
-  const deps = { scene, selection } as unknown as InvocationCtx['deps'];
+  const deps = { scene, operands: selection } as unknown as InvocationCtx['deps'];
   return { scene, deps, selected: () => current };
 }
 

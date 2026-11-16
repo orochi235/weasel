@@ -27,7 +27,7 @@ export const PATH_EFFECTS_GROUP = 'pathEffects';
 function selectedLeaves(deps: ActionDeps | undefined, min = 2): AnyNode[] | null {
   const scene = deps?.scene as AnyScene | undefined;
   if (!scene || registeredPathEffects(scene.registry) === null) return null;
-  const leaves = (deps?.selection?.get() ?? [])
+  const leaves = (deps?.operands?.get() ?? [])
     .map((id) => scene.get(id as NodeId))
     .filter((n): n is AnyNode => n !== undefined && n.kind === 'mark');
   return leaves.length >= min ? leaves : null;
@@ -37,7 +37,7 @@ function selectedLeaves(deps: ActionDeps | undefined, min = 2): AnyNode[] | null
 export function selectedEffects(deps: ActionDeps | undefined, ids?: readonly string[], kind?: unknown): AnyNode[] {
   const scene = deps?.scene as AnyScene | undefined;
   if (!scene) return [];
-  return (ids ?? deps?.selection?.get() ?? [])
+  return (ids ?? deps?.operands?.get() ?? [])
     .map((id) => scene.get(id as NodeId))
     .filter((n): n is AnyNode => {
       const effect = n === undefined ? null : pathEffectOf(n);
@@ -91,7 +91,7 @@ function createEffectAction<const Id extends CreateId>(spec: CreateSpec<Id>) {
     // key reads as another glyph.
     defaultBinding: [{ spec: { kind: 'key', key: spec.key, code: spec.code, mods: { alt: true, shift: true }, phase: BETWEEN_GESTURES }, opts: { id: `${spec.id}.key` } }],
     eligible: { capability: 'creates-shapes' },
-    requires: ['selection', 'scene', 'applyOps'],
+    requires: ['operands', 'scene', 'applyOps'],
     invoker: {
       timing: 'immediate',
       run: (deps, params) => {
@@ -226,7 +226,7 @@ export const editPathEffectAction = defineAction({
   id: 'editPathEffect',
   label: EDIT_LABEL,
   icon: icon('core:tune'),
-  requires: ['selection', 'scene', 'applyOps'],
+  requires: ['operands', 'scene', 'applyOps'],
   settings: pathEffectSettingsForm,
   enabled: (deps, _at, _carried, p) => holdsEffect(deps, p?.ids, p?.kind),
   invoker: {
@@ -273,7 +273,7 @@ export const expandPathEffectAction: Action & { requires: string[] } = {
   group: PATH_EFFECTS_GROUP,
   defaultBinding: [{ spec: { kind: 'key', key: 'e', code: 'KeyE', mods: { alt: true, shift: true }, phase: BETWEEN_GESTURES }, opts: { id: 'expandPathEffect.key' } }],
   eligible: { capability: 'creates-shapes' },
-  requires: ['selection', 'scene', 'applyOps'],
+  requires: ['operands', 'scene', 'applyOps'],
   invoker: {
     timing: 'immediate',
     run: (deps) => {

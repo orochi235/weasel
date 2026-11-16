@@ -52,7 +52,7 @@ export function readPathEffectSettings(deps: ActionDeps): ActionSettingsState {
   const scene = deps.scene as AnyScene | undefined;
   const fields = new SettingsFields();
   const counts: Record<string, number> = Object.fromEntries(Object.values(COUNT).map((name) => [name, 0]));
-  for (const id of deps.selection?.get() ?? []) {
+  for (const id of deps.operands?.get() ?? []) {
     const effect = pathEffectOf(scene?.get(id as NodeId));
     if (!effect) continue;
     counts[COUNT[effect.kind]]!++;

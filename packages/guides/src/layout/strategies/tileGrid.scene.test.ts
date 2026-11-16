@@ -73,7 +73,7 @@ describe('tileGrid as a scene layout', () => {
       world: { x: x ?? 425, y: 25 },
       screen: { x: 0, y: 0 },
       modifiers: { alt: false, ctrl: false, meta: false, shift: false },
-      deps: { selection: { get: () => [z] }, scene, layout },
+      deps: { operands: { get: () => [z] }, scene, layout },
       drag: x === undefined ? undefined : { start: { x: 425, y: 25 }, current: { x, y: 25 }, delta: { x: x - 425, y: 0 } },
     }) as unknown as InvocationCtx;
     const h = (moveAction.invoker as OngoingInvoker).start(ctx(), {}) as OngoingHandle;

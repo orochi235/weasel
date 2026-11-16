@@ -48,7 +48,7 @@ const parentOf = (scene: Scene, id: string) => scene.get(id as NodeId)?.parent ?
 
 function drag(scene: Scene, ids: string[], from: Vec2, to: Vec2): OngoingHandle {
   const deps = {
-    selection: { get: () => ids, adapterMethods: undefined },
+    operands: { get: () => ids, adapterMethods: undefined },
     scene,
     layout: { getLayout: (id: string) => scene.layoutOf(id as NodeId) },
     canDropInto: diagramCanDropInto(scene),
@@ -112,7 +112,7 @@ describe('containers in a scene', () => {
     const scene = makeScene();
     const id = build(scene, 'container', { x: 100, y: 100, width: 240, height: 160 });
     shape(scene, 's', { x: 150, y: 150, width: 40, height: 20 }, id);
-    const deps = { selection: { get: () => [id] }, scene } as unknown as ActionDeps;
+    const deps = { operands: { get: () => [id] }, scene } as unknown as ActionDeps;
     const ctx = (current: Vec2) => ({
       world: current, screen: current, modifiers: { alt: false, ctrl: false, meta: false, shift: false }, deps,
       drag: {
@@ -198,7 +198,7 @@ describe('pools in a scene', () => {
     shape(scene, 's', { x: 100, y: 30, width: 40, height: 20 }, first);
     const entries = scene.historyIndex();
     const nudge = nudgePreset.actions!.find((a) => a.id === 'nudge.down')!.invoker as { run: (d: never, p?: never) => void };
-    nudge.run({ scene, selection: { get: () => [first!] } } as never, { magnitude: 'large' } as never);
+    nudge.run({ scene, operands: { get: () => [first!] } } as never, { magnitude: 'large' } as never);
     expect(pose(scene, first!)).toEqual({ x: 32, y: 0, width: 448, height: 120 });
     expect(pose(scene, 's')).toMatchObject({ y: 30 });
     expect(scene.historyIndex()).toBe(entries + 1);

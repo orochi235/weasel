@@ -152,7 +152,7 @@ export function usePenTool(
         set.closed.push(...addedClosed.slice(1));
       })!;
       if (samePath(next.path, cont.original)) return;
-      edit.applyEdit(cont.id, next.path, 'Continue path', next.origins, optsRef.current.autoSelect ? selectCommitted(deps.selection) : undefined);
+      edit.applyEdit(cont.id, next.path, 'Continue path', next.origins, optsRef.current.autoSelect ? selectCommitted(deps.operands) : undefined);
     },
     [optsRef],
   );
@@ -174,7 +174,7 @@ export function usePenTool(
       s.finishedSubpaths.every((sp) => sp.closed) &&
       (open === null || open.closed);
     const path = buildPath(s.finishedSubpaths, open);
-    const select = optsRef.current.autoSelect ? selectCommitted(deps.selection) : undefined;
+    const select = optsRef.current.autoSelect ? selectCommitted(deps.operands) : undefined;
     deps.insert?.commit(boundsOfPath(path), { kind: 'path', path, closed: allClosed, style: penOptionValues(optsRef.current.toolOptions, deps).style }, undefined, select);
     resetScratch(s);
   }, [commitContinuation, optsRef]);
@@ -330,7 +330,7 @@ export function usePenTool(
         id: 'pen.placeAnchor',
         label: 'Pen — place anchor',
         eligible: { capability: 'creates-paths' },
-        requires: ['view', 'pointer', 'areaSelect', 'editAnchors', 'scene', 'applyOps', 'insert', 'selection', 'snap', 'toolOptionValues'],
+        requires: ['view', 'pointer', 'areaSelect', 'editAnchors', 'scene', 'applyOps', 'insert', 'operands', 'snap', 'toolOptionValues'],
         invoker: {
           timing: 'immediate',
           run: (deps, p) => {
@@ -373,7 +373,7 @@ export function usePenTool(
         id: 'pen.finishOpen',
         label: 'Pen — finish open path',
         eligible: { capability: 'creates-paths' },
-        requires: ['editAnchors', 'insert', 'selection', 'toolOptionValues'],
+        requires: ['editAnchors', 'insert', 'operands', 'toolOptionValues'],
         // Needs a path, or a double click's own lone anchor, to take back. Declining lets a
         // ⌘-click with fewer than two anchors reach the plain-click binding.
         enabled: () => (anchorCount(s()) >= 2 || s().current?.followsClose ? true : ActionDisabledReason.NotApplicable),
@@ -403,7 +403,7 @@ export function usePenTool(
         label: 'Pen — drag out a bezier handle',
         eligible: { capability: 'creates-paths' },
         modifierRoles: PEN_HANDLE_ROLES,
-        requires: ['view', 'pointer', 'areaSelect', 'editAnchors', 'scene', 'applyOps', 'insert', 'selection', 'snap', 'toolOptionValues'],
+        requires: ['view', 'pointer', 'areaSelect', 'editAnchors', 'scene', 'applyOps', 'insert', 'operands', 'snap', 'toolOptionValues'],
         invoker: {
           timing: 'ongoing' as const,
           start: (ctx: InvocationCtx) => {
@@ -468,7 +468,7 @@ export function usePenTool(
         id: 'pen.finish',
         label: 'Pen — finish path',
         eligible: { capability: 'creates-paths' },
-        requires: ['editAnchors', 'insert', 'selection', 'toolOptionValues'],
+        requires: ['editAnchors', 'insert', 'operands', 'toolOptionValues'],
         enabled: () => (anchorCount(s()) > 0 ? true : ActionDisabledReason.NotApplicable),
         invoker: {
           timing: 'immediate' as const,

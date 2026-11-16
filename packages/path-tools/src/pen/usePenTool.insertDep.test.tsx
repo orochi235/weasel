@@ -25,6 +25,7 @@ describe('usePenTool — through the kit insert dep', () => {
     function Wire() {
       useInsertDepSource(scene, { applyOps: (ops, label) => scene.applyBatch(ops, label ?? '', defaultCommitAdapter(scene, selection.adapterMethods)) });
       useDepSource('selection', () => selection);
+      useDepSource('operands', () => selection);
       reg = useDepRegistry();
       tool = usePenTool();
       return null;
@@ -68,6 +69,7 @@ describe('usePenTool — through the kit insert dep', () => {
       useInsertDepSource(scene, adapter);
       useEditAnchorsDepSource(scene, selection, adapter);
       useDepSource('selection', () => selection);
+      useDepSource('operands', () => selection);
       useDepSource('areaSelect', () => ({ hitTestArea: (b: Parameters<typeof hitTestArea>[1]) => hitTestArea(scene, b) }) as never);
       reg = useDepRegistry();
       tool = usePenTool();

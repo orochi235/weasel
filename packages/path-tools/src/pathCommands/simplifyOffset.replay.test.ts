@@ -23,7 +23,7 @@ function setup() {
   };
   const selection = { get: () => ['a'], set: vi.fn() };
   const batches: Op[][] = [];
-  const deps = { scene, selection, applyOps: (ops: Op[]) => { batches.push(ops); } } as unknown as InvocationCtx['deps'];
+  const deps = { scene, operands: selection, applyOps: (ops: Op[]) => { batches.push(ops); } } as unknown as InvocationCtx['deps'];
   const ctx = (params?: Record<string, unknown>): InvocationCtx => ({
     world: { x: 0, y: 0 }, screen: { x: 0, y: 0 }, modifiers: { alt: false, ctrl: false, meta: false, shift: false }, deps,
     ...(params ? { params } : {}),

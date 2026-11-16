@@ -45,7 +45,7 @@ const selectionOf = (ids: string[]) => ({ get: () => ids.map(asNodeId) });
 describe('createOutlinesAction', () => {
   it('declares every dep it reads', () => {
     const { adapter } = makeAdapter({});
-    const bag: Record<string, unknown> = { selection: selectionOf([]), createOutlinesAdapter: adapter };
+    const bag: Record<string, unknown> = { operands: selectionOf([]), createOutlinesAdapter: adapter };
     const registry = { get: (name: string) => bag[name] } as unknown as DepRegistry;
     const deps = buildDepsFromRequires(createOutlinesAction, registry);
     expect(() => createOutlinesAction.enabled?.(deps)).not.toThrow();
@@ -54,11 +54,11 @@ describe('createOutlinesAction', () => {
 
   it('is enabled only while the selection holds a node with an outline', () => {
     const { adapter } = makeAdapter({ g: lateOutline() });
-    expect(createOutlinesAction.enabled?.(stubDeps({ selection: selectionOf(['g']), createOutlinesAdapter: adapter })))
+    expect(createOutlinesAction.enabled?.(stubDeps({ operands: selectionOf(['g']), createOutlinesAdapter: adapter })))
       .toBe(true);
-    expect(createOutlinesAction.enabled?.(stubDeps({ selection: selectionOf(['shape']), createOutlinesAdapter: adapter })))
+    expect(createOutlinesAction.enabled?.(stubDeps({ operands: selectionOf(['shape']), createOutlinesAdapter: adapter })))
       .toBe(ActionDisabledReason.NotApplicable);
-    expect(createOutlinesAction.enabled?.(stubDeps({ selection: selectionOf([]), createOutlinesAdapter: adapter })))
+    expect(createOutlinesAction.enabled?.(stubDeps({ operands: selectionOf([]), createOutlinesAdapter: adapter })))
       .toBe(ActionDisabledReason.SelectionRequired);
   });
 

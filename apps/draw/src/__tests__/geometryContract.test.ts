@@ -110,7 +110,7 @@ function ongoing(action: Action): OngoingInvoker {
 
 function baseDeps(scene: StubScene, id: string) {
   return {
-    selection: { get: () => [id] },
+    operands: { get: () => [id] },
     scene,
     applyOps: applyOpsTo(scene),
   };

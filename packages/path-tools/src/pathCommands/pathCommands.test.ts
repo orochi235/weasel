@@ -30,8 +30,8 @@ function setup(paths: Record<string, PolygonPath | Stored>, selected: string[], 
   const selection = { get: () => current, set: vi.fn((next: string[]) => { current = next; }) };
   const batches: Array<{ ops: Op[]; label: string }> = [];
   const applyOps = vi.fn((ops: Op[], label: string) => { batches.push({ ops, label }); });
-  const deps = { scene, selection, applyOps, ...extra } as unknown as InvocationCtx['deps'];
-  return { deps, batches, selection };
+  const deps = { scene, operands: selection, applyOps, ...extra } as unknown as InvocationCtx['deps'];
+  return { deps, batches, operands: selection };
 }
 
 const ctx = (deps: InvocationCtx['deps'], params?: Record<string, unknown>): InvocationCtx => ({

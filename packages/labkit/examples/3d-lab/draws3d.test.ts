@@ -201,7 +201,7 @@ describe('a frame drawn mid-drag', () => {
   function startDrag(scene: SolidScene, id: NodeId) {
     const selection = { get: () => [id], set: () => {} };
     const deps = {
-      selection,
+      operands: selection,
       scene,
       poseDescriptor: createPoseDescriptor({
         scene,

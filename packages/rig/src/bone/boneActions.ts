@@ -65,7 +65,7 @@ function dragAction(env: BoneEnv, editing: () => true | ActionDisabledReason): A
     id: 'bone.drag',
     label: 'Bone — move a joint or draw a bone',
     eligible,
-    requires: ['view', 'selection', 'applyOps'],
+    requires: ['view', 'operands', 'applyOps'],
     enabled: editing,
     invoker: {
       timing: 'ongoing',
@@ -135,7 +135,7 @@ export function createBoneActions(env: BoneEnv): Action[] {
       id: 'bone.remove',
       label: 'Bone — remove the active joint',
       eligible,
-      requires: ['selection', 'applyOps'],
+      requires: ['operands', 'applyOps'],
       // Declining with no joint active leaves Delete to the ambient `delete`.
       enabled: hasActive,
       invoker: {

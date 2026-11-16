@@ -24,7 +24,7 @@ describe('a warp drag under a quantize rule', () => {
     const ctx = (at: { x: number; y: number }): InvocationCtx => ({
       world: at,
       modifiers: { alt: false, ctrl: false, meta: false, shift: false },
-      deps: { scene, selection: { get: () => ['a'], set: () => {}, clear: () => {} } } as unknown as InvocationCtx['deps'],
+      deps: { scene, operands: { get: () => ['a'], set: () => {}, clear: () => {} } } as unknown as InvocationCtx['deps'],
       drag: {
         start: from, current: at, delta: { x: at.x - from.x, y: at.y - from.y },
         affordance: { kind: 'layer:warp-plane', payload: { warpId: null, index: 2 } },

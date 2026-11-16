@@ -46,7 +46,7 @@ function dragAlong(r: Rig, axis: WorldAxis, by: number, deps: Record<string, unk
   const b = projectPoint(add(pose.position, shift), r.vp)!;
   const to = { x: press.x + b.x - a.x, y: press.y + b.y - a.y };
   const all = {
-    selection: r.selection, scene: r.world.scene, poseDescriptor: createPoseDescriptor(r.world), ...deps,
+    operands: r.selection, scene: r.world.scene, poseDescriptor: createPoseDescriptor(r.world), ...deps,
   };
   const ctx = (p: { x: number; y: number }) => ({
     world: p, screen: p, modifiers: KEYS, deps: all,

@@ -125,7 +125,7 @@ export function createWeightActions(env: WeightEnv): Action[] {
       id: 'weight.paint',
       label: 'Weight — paint the active joint\'s weights',
       eligible,
-      requires: ['view', 'selection', 'applyOps'],
+      requires: ['view', 'operands', 'applyOps'],
       params: WEIGHT_BRUSH_PARAMS,
       cursor: (params) => brushRing(radiusOf(params)),
       enabled: () => (activeJoint(env) !== null ? true : ActionDisabledReason.NotApplicable),
@@ -160,7 +160,7 @@ export function createWeightActions(env: WeightEnv): Action[] {
       id: 'weight.click',
       label: 'Weight — pick a joint, or dab its weight',
       eligible,
-      requires: ['view', 'selection', 'applyOps'],
+      requires: ['view', 'operands', 'applyOps'],
       enabled: editing,
       invoker: {
         timing: 'immediate',

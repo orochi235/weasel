@@ -60,7 +60,7 @@ export const resamplePathAction = defineAction({
   icon: icon('resamplePath'),
   tags: pathOperationTags('command'),
   eligible: { capability: 'creates-shapes' },
-  requires: ['selection', 'scene', 'applyOps'],
+  requires: ['operands', 'scene', 'applyOps'],
   params: RESAMPLE_PARAMS,
   invoker: {
     timing: 'immediate',

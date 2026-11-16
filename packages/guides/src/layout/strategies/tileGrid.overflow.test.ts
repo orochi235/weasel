@@ -56,7 +56,7 @@ function setup(opts: Partial<TileGridOptions<RectPose>>, held = 4) {
       screen: { x: 0, y: 0 },
       modifiers: { alt: false, ctrl: false, meta: false, shift: false },
       deps: {
-        selection: { get: () => [x] }, scene, layout,
+        operands: { get: () => [x] }, scene, layout,
         ...(reparentOnDrop ? { nodeAtPoint: () => G } : {}),
       },
       drag: d,

@@ -30,7 +30,7 @@ describe('useSpiroTool', () => {
         return id;
       },
     };
-    const deps = { insert, selection, view: { get: () => ({ x: 0, y: 0, scale: { x: 1, y: 1 } }) } } as unknown as ActionDeps;
+    const deps = { insert, operands: selection, view: { get: () => ({ x: 0, y: 0, scale: { x: 1, y: 1 } }) } } as unknown as ActionDeps;
     const { result } = renderHook(() => useSpiroTool());
     const run = (id: string, params?: Record<string, unknown>) => {
       const action = result.current.actions!.find((a) => a.id === id)!;
@@ -51,7 +51,7 @@ describe('useSpiroTool', () => {
     const scene = createScene<object, 'main', RectPose>({ systemLayers: [{ id: 'main' }] });
     const committed: unknown[] = [];
     const insert = { commit: (_b: unknown, extras: unknown) => { committed.push(extras); return scene.mintId(); } } as unknown as InsertDep;
-    const deps = { insert, selection: { get: () => [], set: () => {} }, view: { get: () => ({ x: 0, y: 0, scale: { x: 1, y: 1 } }) } } as unknown as ActionDeps;
+    const deps = { insert, operands: { get: () => [], set: () => {} }, view: { get: () => ({ x: 0, y: 0, scale: { x: 1, y: 1 } }) } } as unknown as ActionDeps;
     const wrapper = ({ children }: { children: ReactNode }) => (
       <KitSettingsProvider value={{ targets: { penCloseHitPx: 20 } }}>{children}</KitSettingsProvider>
     );

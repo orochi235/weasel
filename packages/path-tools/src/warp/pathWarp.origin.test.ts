@@ -23,7 +23,7 @@ const cornerOf = (w: PlaneWarp, i: number): [number, number] => [w.corners[i].x,
 
 const depsOf = (scene: S) => ({
   scene,
-  selection: { get: () => ['a'], set: () => {}, clear: () => {} },
+  operands: { get: () => ['a'], set: () => {}, clear: () => {} },
 }) as unknown as InvocationCtx['deps'];
 
 describe('a warp on a polygon pose measured from an origin', () => {

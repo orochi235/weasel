@@ -47,7 +47,7 @@ function rig(initial: unknown[], selected: string[]) {
   const undo = () => {
     for (const op of [...entries.pop()!].reverse()) op.invert().apply(adapter);
   };
-  const deps = { scene, selection, applyOps } as unknown as ActionDeps;
+  const deps = { scene, operands: selection, applyOps } as unknown as ActionDeps;
   return { scene, deps, undo, selected: () => current, select: (ids: string[]) => { current = ids; } };
 }
 

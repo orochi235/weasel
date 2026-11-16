@@ -48,7 +48,7 @@ export const snipAtCrossingsAction: Action & { requires: string[] } = {
   group: PATH_GROUP,
   tags: pathOperationTags('command'),
   eligible: { capability: 'creates-shapes' },
-  requires: ['selection', 'scene', 'applyOps'],
+  requires: ['operands', 'scene', 'applyOps'],
   invoker: {
     timing: 'immediate',
     run: (deps) => {
@@ -63,7 +63,7 @@ export const snipAtCrossingsAction: Action & { requires: string[] } = {
         copies.forEach((copy, k) => ops.push(insertAt(copy, at < 0 ? at : at + k, CUT_LABEL)));
         made.set(node.id, copies.map((c) => c.id));
       }
-      const selected = deps.selection?.get() ?? [];
+      const selected = deps.operands?.get() ?? [];
       commitOps(deps, ops, CUT_LABEL, { select: selected.flatMap((id) => made.get(id) ?? [id]) });
     },
   } satisfies ImmediateInvoker,
@@ -154,7 +154,7 @@ export function joinPathsCommand(
     group: PATH_GROUP,
     tags: pathOperationTags('command'),
     eligible: { capability: 'creates-shapes' },
-    requires: ['selection', 'scene', 'applyOps', 'editAnchors'],
+    requires: ['operands', 'scene', 'applyOps', 'editAnchors'],
     invoker: {
       timing: 'immediate',
       run: (deps, params) => {

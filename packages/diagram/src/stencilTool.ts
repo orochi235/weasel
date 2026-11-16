@@ -119,7 +119,7 @@ export function useStencilInsert(stencils: readonly DiagramStencil[], opts: Sten
         if (stencil === undefined) return fallback?.commit(bounds, extras, ends, select) ?? null;
         const built = build(bounds, extras, ends);
         if (built === null) return null;
-        const deps = { scene, applyOps: registry.get('applyOps'), selection: registry.get('selection') };
+        const deps = { scene, applyOps: registry.get('applyOps'), operands: registry.get('operands') };
         const label = `Insert ${stencil.label}`;
         commitOps(deps as unknown as ActionDeps, [...built.ops, ...commitSelectionOps(select, built.id, label)], label);
         return built.id;

@@ -57,7 +57,7 @@ export function penDeps(a: ReturnType<typeof makeAdapter>, noBuild = false) {
         },
       }),
     },
-    selection: { get: () => [] as string[], set: a.setSelection },
+    operands: { get: () => [] as string[], set: a.setSelection },
   };
 }
 

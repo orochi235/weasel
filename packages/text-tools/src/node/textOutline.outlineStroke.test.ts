@@ -85,7 +85,7 @@ describe('applyOutlineStroke on text', () => {
 
   it('the action is enabled on stroked text', () => {
     const h = harness({ data: { text: 'I', style, fill: { paint: { color: '#000' } }, stroke: { paint: RED, width: 6 } }, pose });
-    const deps = stubDeps({ selection: { get: () => [asNodeId('label')] }, createOutlinesAdapter: h.adapter });
+    const deps = stubDeps({ operands: { get: () => [asNodeId('label')] }, createOutlinesAdapter: h.adapter });
     expect(outlineStrokeAction.enabled?.(deps)).toBe(true);
     (outlineStrokeAction.invoker as ImmediateInvoker).run(deps, {});
     expect(h.made).toHaveLength(2);

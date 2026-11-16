@@ -66,7 +66,7 @@ const STEPS: readonly { key: string; role: string; axis: 'x' | 'y'; step: -1 | 1
 /** The order a step along `params` leaves the selected node's group in, or `null` where it moves nothing: off any
  *  reorderable group, along the other axis, or past either end. */
 function stepPlan(deps: ActionDeps | undefined, params: Readonly<Record<string, unknown>> | undefined): ReorderChange | null {
-  const target = targetAt(deps, deps?.selection?.get()[0]);
+  const target = targetAt(deps, deps?.operands?.get()[0]);
   if (target === null || params?.axis !== target.axis) return null;
   const { members, member } = target;
   const at = members.indexOf(member);
@@ -84,7 +84,7 @@ export function createStepReorderAction(report: (change: ReorderChange) => void)
       spec: { kind: 'key' as const, key, mods: { alt: true }, phase: BETWEEN_GESTURES },
       opts: { id: `${STEP_REORDER_ACTION_ID}.${role}`, params: { axis, step } },
     })),
-    requires: ['scene', 'selection'],
+    requires: ['scene', 'operands'],
     invoker: {
       timing: 'immediate',
       run(deps, params) {
