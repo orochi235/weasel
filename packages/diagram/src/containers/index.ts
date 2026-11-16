@@ -9,6 +9,7 @@ export {
   CONTAINER_HEADER, CONTAINER_LAYOUTS, DIAGRAM_CONTAINER_LAYOUT, DIAGRAM_LANE_COLUMNS_LAYOUT, DIAGRAM_LANE_ROWS_LAYOUT,
   DIAGRAM_POOL_COLUMNS_LAYOUT, DIAGRAM_POOL_ROWS_LAYOUT, LANE_HEADER_SIZE, containerShape, laneHeader,
 } from './layouts';
+export type { ContainerLayoutKey } from './layouts';
 export {
   CONTAINER_STENCILS, addLane, canReleaseMembers, containerBuild, lanesOf, poolAxisOf, releaseMembers,
 } from './containerStencils';

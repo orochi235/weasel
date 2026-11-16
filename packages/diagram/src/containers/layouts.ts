@@ -28,7 +28,7 @@ export const DIAGRAM_LANE_ROWS_LAYOUT = 'diagram:lane-rows';
 export const DIAGRAM_LANE_COLUMNS_LAYOUT = 'diagram:lane-columns';
 
 /** The key of a layout this package registers for a container. */
-type ContainerLayoutKey = typeof DIAGRAM_CONTAINER_LAYOUT | typeof DIAGRAM_POOL_ROWS_LAYOUT | typeof DIAGRAM_POOL_COLUMNS_LAYOUT
+export type ContainerLayoutKey = typeof DIAGRAM_CONTAINER_LAYOUT | typeof DIAGRAM_POOL_ROWS_LAYOUT | typeof DIAGRAM_POOL_COLUMNS_LAYOUT
   | typeof DIAGRAM_LANE_ROWS_LAYOUT | typeof DIAGRAM_LANE_COLUMNS_LAYOUT;
 
 /** Every container layout this package registers, by key. */
