@@ -1,4 +1,4 @@
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, describe, expect, it, onTestFinished, vi } from 'vitest';
 import { boundsOfPath, rectPath } from '@weasel-js/core';
 import { boxForContent, contentBox, outlineDetail, outlinePath, type Bounds } from '../outline';
 import { outlineFromD, outlineRegistry, registerOutline } from './table';
@@ -32,6 +32,8 @@ describe('registerOutline', () => {
   });
 
   it('a disposer takes out its own registration of a definition registered twice', () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    onTestFinished(() => warn.mockRestore());
     const shared = def(3);
     const first = registerOutline('test:shared', shared);
     const between = registerOutline('test:shared', def(4));
@@ -41,6 +43,7 @@ describe('registerOutline', () => {
     expect(outlinePath('test:shared', BOX)).toEqual(rectPath(10, 20, 3, 40));
     second();
     between();
+    expect(warn).toHaveBeenCalledOnce();
   });
 
   it('resolves a registered name through outlinePath, contentBox, and boxForContent', () => {

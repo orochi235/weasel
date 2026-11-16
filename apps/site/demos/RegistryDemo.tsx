@@ -19,14 +19,16 @@ const CURSORS: Record<Source, Record<Tool, string>> = {
 };
 
 /** Each tool's CSS cursor, keyed by tool id. */
-const cursors = createReflectable<string>();
+const cursors = createReflectable<string>({ name: 'cursors' });
 const { reflection } = cursors;
+
+const sourceOf = (r: Registrant<string>) => (r.fallback ? `${r.source} (fallback)` : r.source);
 
 function Entry({ id, registrant, source }: { id: string; registrant: Registrant<string>; source?: boolean }) {
   return (
     <span className={s.registrant}>
       <code>{registrant.value}</code>
-      {source && <span className={s.source}>{registrant.source}</span>}
+      {source && <span className={s.source}>{sourceOf(registrant)}</span>}
       <Button variant="ghost" size="sm" onClick={() => cursors.release(id, registrant)}>release</Button>
     </span>
   );
@@ -36,7 +38,8 @@ export function RegistryDemo() {
   const [tool, setTool] = useState<Tool>('pen');
   const version = useSyncExternalStore(reflection.subscribe, reflection.getVersion);
   const entries = reflection.entries();
-  const push = (source: Source) => cursors.push(tool, CURSORS[source][tool], { source });
+  // The kit's cursors are defaults, so a plugin pushing over one is an override, not a clash.
+  const push = (source: Source) => cursors.push(tool, CURSORS[source][tool], { source, fallback: source === 'kit' });
 
   return (
     <div className={s.demo}>
@@ -62,7 +65,7 @@ export function RegistryDemo() {
             <tr key={e.key}>
               <th scope="row">{e.key}</th>
               <td><Entry id={e.key} registrant={e.live} /></td>
-              <td>{e.source}</td>
+              <td>{sourceOf(e.live)}</td>
               <td>
                 <span className={s.stack}>
                   {e.shadowed.map((r, i) => <Entry key={i} id={e.key} registrant={r} source />)}

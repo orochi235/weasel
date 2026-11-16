@@ -4,7 +4,7 @@
  * each namespace's owner, the entries, and the version after every step; then variants provided, loaded,
  * and settled in any order against a model of their states.
  */
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, onTestFinished, vi } from 'vitest';
 import fc from 'fast-check';
 import { createIconRegistry, IconNamespaceClaimedError, type IconRegistry } from './registry';
 import type { IconRef } from './names';
@@ -189,6 +189,9 @@ const commands = fc.commands([
 
 describe('icon registry against a model', () => {
   it('resolves every ref, owner, and entry as the model does after every step', () => {
+    // Registrations under one key stack on purpose; @weasel-js/registry tests the clash warning.
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    onTestFinished(() => warn.mockRestore());
     tally.clear();
     fc.assert(fc.property(fc.array(tableArb, { maxLength: 2 }), commands, (seed, cmds) => {
       const m: Model = { tables: [], overrides: [] };

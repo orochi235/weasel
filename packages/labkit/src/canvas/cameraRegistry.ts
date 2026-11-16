@@ -20,7 +20,7 @@ export interface CameraRegistry {
 
 /** An empty in-memory `CameraRegistry`. */
 export function createCameraRegistry(): CameraRegistry {
-  const cameras = createReflectable<CameraView>();
+  const cameras = createReflectable<CameraView>({ name: 'cameras' });
   return {
     register: (key, camera) => cameras.push(key, camera),
     get: (key) => cameras.get(key) ?? null,

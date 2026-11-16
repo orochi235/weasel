@@ -1,9 +1,11 @@
-import { describe, expect, it, vi } from 'vitest';
+import { describe, expect, it, onTestFinished, vi } from 'vitest';
 import { createClock } from './clock';
 import { createClockRegistry } from './registry';
 
 describe('createClockRegistry', () => {
   it('reflects each id with its clock, a second registration shadowing the first', () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    onTestFinished(() => warn.mockRestore());
     const registry = createClockRegistry();
     const first = createClock({});
     const second = createClock({});
@@ -13,9 +15,12 @@ describe('createClockRegistry', () => {
     expect(registry.reflection.entries().map((e) => [e.key, e.value.handle, e.shadowed.length])).toEqual([
       ['t1', second, 1], ['t2', first, 0],
     ]);
+    expect(warn).toHaveBeenCalledOnce();
   });
 
   it('brings a shadowed clock back when the one over it is released', () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    onTestFinished(() => warn.mockRestore());
     const registry = createClockRegistry();
     const first = createClock({});
     const second = createClock({});
@@ -23,6 +28,7 @@ describe('createClockRegistry', () => {
     const releaseSecond = registry.register('t1', second);
     releaseSecond();
     expect(registry.get('t1')).toBe(first);
+    expect(warn).toHaveBeenCalledOnce();
   });
 
   it('publishes a clock under its trial id until released', () => {
@@ -44,6 +50,8 @@ describe('createClockRegistry', () => {
   });
 
   it('leaves a newer registration alone when a stale release runs', () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    onTestFinished(() => warn.mockRestore());
     const registry = createClockRegistry();
     const first = createClock({});
     const second = createClock({});
@@ -51,6 +59,7 @@ describe('createClockRegistry', () => {
     registry.register('t1', second);
     releaseFirst();
     expect(registry.get('t1')).toBe(second);
+    expect(warn).toHaveBeenCalledOnce();
   });
 
   it('lists the shared clock, and each clock once however many trials hold it', () => {

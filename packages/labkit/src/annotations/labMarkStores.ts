@@ -19,7 +19,7 @@ export interface LabMarkStores {
 
 /** A registry of trials' mark stores. */
 export function createLabMarkStores(): LabMarkStores {
-  const stores = createReflectable<AnnotationsApi>();
+  const stores = createReflectable<AnnotationsApi>({ name: 'mark stores' });
   /** The live store's subscription, per trial. */
   const listening = new Map<string, () => void>();
   let listed: readonly AnnotationsApi[] = [];

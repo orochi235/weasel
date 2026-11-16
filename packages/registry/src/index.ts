@@ -18,6 +18,7 @@ export type {
   Registrant,
   RegisterOptions,
   PushOptions,
+  ReflectableOptions,
 } from './reflectable';
 export { after, LONGEST_TIMER_MS } from './after';
 export { createLatest, type Latest } from './latest';

@@ -4,11 +4,11 @@
  * svg and pdf register theirs (`registerSvgExport`, `registerPdfExport`), so it
  * depends on neither.
  */
-import { createReflectable, type Reflection } from '@weasel-js/registry';
+import { createReflectable, type PushOptions, type Reflection } from '@weasel-js/registry';
 import type { ExportFormat, ExportOptions, ExportRegion, ExportRegions, ExportScene } from './exportTypes';
 import { PNG_EXPORT } from './regionPng';
 
-const FORMATS = createReflectable<ExportFormat>();
+const FORMATS = createReflectable<ExportFormat>({ name: 'export formats' });
 
 // The built-ins go in on first use, not at module load: a bundler may drop an
 // import kept only for its side effect, and the registry would come up empty.
@@ -16,11 +16,12 @@ let builtInsRegistered = false;
 function ensureBuiltIns(): void {
   if (builtInsRegistered) return;
   builtInsRegistered = true;
-  FORMATS.push(PNG_EXPORT.id, PNG_EXPORT as ExportFormat, { source: 'kit' });
+  FORMATS.push(PNG_EXPORT.id, PNG_EXPORT as ExportFormat, { source: 'kit', fallback: true });
 }
 
 /** Every registered export format, keyed by id, with the overrides each displaced. */
 export const exportFormatRegistry: Reflection<ExportFormat> = {
+  name: FORMATS.name,
   get: (id) => { ensureBuiltIns(); return FORMATS.get(id); },
   has: (id) => { ensureBuiltIns(); return FORMATS.has(id); },
   entries: () => { ensureBuiltIns(); return FORMATS.entries(); },
@@ -31,11 +32,15 @@ export const exportFormatRegistry: Reflection<ExportFormat> = {
 /**
  * Register an export format. Returns a disposer that removes this
  * registration. Registering an id already held overrides it, `png` included;
- * disposing uncovers what it displaced.
+ * disposing uncovers what it displaced. `fallback` marks an engine default,
+ * which a later registration replaces without the development clash warning.
  */
-export function registerExportFormat<TOptions extends ExportOptions>(format: ExportFormat<TOptions>): () => void {
+export function registerExportFormat<TOptions extends ExportOptions>(
+  format: ExportFormat<TOptions>,
+  options?: Pick<PushOptions, 'fallback'>,
+): () => void {
   ensureBuiltIns();
-  return FORMATS.push(format.id, format as ExportFormat);
+  return FORMATS.push(format.id, format as ExportFormat, options);
 }
 
 let listed: { from: readonly unknown[]; formats: readonly ExportFormat[] } | null = null;

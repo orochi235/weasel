@@ -6,7 +6,7 @@
  * which registrant object is live), that a snapshot is the same frozen array until the next change, the version,
  * and how many times listeners heard.
  */
-import { describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import fc from 'fast-check';
 import { createReflectable, type Reflectable, type Registrant } from './reflectable';
 import { runs, tally, timeoutFor } from './pbt.fixture';
@@ -220,6 +220,9 @@ function check(m: Model, real: Real, before: { entries: readonly unknown[]; vers
 }
 
 describe('createReflectable, against a model', () => {
+  // Random pushes stack on purpose; reflectable.test.ts covers the clash warning.
+  beforeEach(() => { vi.spyOn(console, 'warn').mockImplementation(() => {}); });
+  afterEach(() => { vi.restoreAllMocks(); });
   it('lists, looks up, versions, and notifies as the model says through long runs of writes', () => {
     fc.assert(fc.property(fc.array(op, { minLength: 1, maxLength: 80 }), (ops) => {
       const m: Model = { stacks: new Map(), made: [], handles: [], version: 0, listening: [], heard: 0 };

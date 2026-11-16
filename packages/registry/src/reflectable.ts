@@ -1,4 +1,5 @@
 import { createEmitter } from './emitter';
+import { isDev } from './isDev';
 
 /** One registrant of a key: its value and, when the registrant named one, where it came from. */
 export interface Registrant<V> {
@@ -6,12 +7,14 @@ export interface Registrant<V> {
   readonly source: string | undefined;
   /** The tier `push` placed it in, when it was given one: see {@link PushOptions.rank}. */
   readonly rank?: number;
+  /** Set when `push` registered it as an engine default: see {@link PushOptions.fallback}. */
+  readonly fallback?: true;
 }
 
 /** One key as a reflection reports it. */
 export interface ReflectedEntry<V, K = string> extends Registrant<V> {
   readonly key: K;
-  /** The registrant whose `value` and `source` this entry carries. The same
+  /** The registrant whose `value`, `source`, `rank` and `fallback` this entry carries. The same
    *  object across snapshots, and the one `shadowed` lists once it is
    *  displaced, so it identifies the registrant to {@link Reflectable.release}. */
   readonly live: Registrant<V>;
@@ -30,6 +33,8 @@ export interface ReflectedEntry<V, K = string> extends Registrant<V> {
  * `entries`, which returns the same frozen array until the next change.
  */
 export interface Reflection<V, K = string> {
+  /** What the registry holds, in a few plain words (`'paint kinds'`), when it was given one. */
+  readonly name?: string;
   get(key: K): V | undefined;
   has(key: K): boolean;
   /** Every key's live registrant, in the order each key was first registered. */
@@ -38,6 +43,13 @@ export interface Reflection<V, K = string> {
   subscribe(listener: () => void): () => void;
   /** Advances on every change. */
   getVersion(): number;
+}
+
+/** Options for {@link createReflectable}. */
+export interface ReflectableOptions {
+  /** What the registry holds, in a few plain words: `'paint kinds'`, `'cameras'`. Its reflection reports it,
+   *  and its development warnings lead with it. */
+  name?: string;
 }
 
 /** Options for {@link Reflectable.push} and {@link Reflectable.set}. */
@@ -53,6 +65,10 @@ export interface PushOptions extends RegisterOptions {
    *  every one ranked higher, so an override tier can stay live over registrants
    *  that arrive after it. Default 0. */
   rank?: number;
+  /** An engine default, meant to be replaced. Pushing over a registrant of the
+   *  same rank that is not a fallback is a clash, warned of once in development;
+   *  over a fallback, or at a higher rank, it is a deliberate override. */
+  fallback?: boolean;
 }
 
 /**
@@ -88,13 +104,43 @@ export interface Reflectable<V, K = string> extends Reflection<V, K> {
   readonly reflection: Reflection<V, K>;
 }
 
+function registrantOf<V>(value: V, options: PushOptions | undefined): Registrant<V> {
+  const registrant: { value: V; source: string | undefined; rank?: number; fallback?: true } = { value, source: options?.source };
+  if (options?.rank !== undefined) registrant.rank = options.rank;
+  if (options?.fallback) registrant.fallback = true;
+  return Object.freeze(registrant);
+}
+
+/** The development warning for a push over a same-rank registrant that is not a fallback: once per key and
+ *  pair of sources while the key stays held. */
+function createClashWarnings<K, V>(name: string | undefined) {
+  const prefix = name === undefined ? 'weasel' : `weasel ${name}`;
+  const warned = new Map<K, Set<string>>();
+  const named = (r: Registrant<V>) => (r.source === undefined ? 'an unnamed registrant' : `"${r.source}"`);
+  return {
+    warn(key: K, under: Registrant<V>, over: Registrant<V>): void {
+      const pair = `${under.source ?? ''}\u0000${over.source ?? ''}`;
+      const seen = warned.get(key) ?? new Set<string>();
+      if (seen.has(pair)) return;
+      warned.set(key, seen.add(pair));
+      console.warn(
+        `${prefix}: ${named(over)} registered "${String(key)}" over ${named(under)}, which is not an engine default. ` +
+        'The newer one is live; release one, or push the override at a higher rank.',
+      );
+    },
+    forget: (key: K) => { warned.delete(key); },
+    clear: () => { warned.clear(); },
+  };
+}
+
 /**
  * Create a keyed store with a uniform reflection surface.
  *
  * Deliberately only the cross-cutting part of a registry: validation, lookup
  * fallbacks and lifecycle stay with the registry that embeds it.
  */
-export function createReflectable<V, K = string>(): Reflectable<V, K> {
+export function createReflectable<V, K = string>(options?: ReflectableOptions): Reflectable<V, K> {
+  const name = options?.name;
   const stacks = new Map<K, Registrant<V>[]>();
   const listeners = createEmitter();
   let version = 0;
@@ -114,11 +160,10 @@ export function createReflectable<V, K = string>(): Reflectable<V, K> {
     listeners.emit();
   }
 
-  const registrantOf = (value: V, options: PushOptions | undefined): Registrant<V> => Object.freeze(
-    options?.rank === undefined ? { value, source: options?.source } : { value, source: options.source, rank: options.rank },
-  );
+  const clashes = createClashWarnings<K, V>(name);
 
   const reflection: Reflection<V, K> = {
+    ...(name === undefined ? {} : { name }),
     get: (key) => stacks.get(key)?.at(-1)?.value,
     has: (key) => stacks.has(key),
     entries() {
@@ -128,6 +173,8 @@ export function createReflectable<V, K = string>(): Reflectable<V, K> {
         const live = stack.at(-1)!;
         entries.push(Object.freeze({
           key, live, value: live.value, source: live.source, shadowed: Object.freeze(stack.slice(0, -1)),
+          ...(live.rank === undefined ? {} : { rank: live.rank }),
+          ...(live.fallback ? { fallback: true as const } : {}),
         }));
       }
       snapshot = { revision, entries: Object.freeze(entries) };
@@ -142,7 +189,10 @@ export function createReflectable<V, K = string>(): Reflectable<V, K> {
     const i = stack ? stack.lastIndexOf(registrant) : -1;
     if (i === -1) return false;
     stack!.splice(i, 1);
-    if (stack!.length === 0) stacks.delete(key);
+    if (stack!.length === 0) {
+      stacks.delete(key);
+      clashes.forget(key);
+    }
     changed();
     return true;
   }
@@ -159,6 +209,8 @@ export function createReflectable<V, K = string>(): Reflectable<V, K> {
       else {
         let at = stack.length;
         while (at > 0 && (stack[at - 1]!.rank ?? 0) > rank) at--;
+        const under = stack[at - 1];
+        if (under && !under.fallback && (under.rank ?? 0) === rank && isDev()) clashes.warn(key, under, registrant);
         stack.splice(at, 0, registrant);
       }
       changed();
@@ -177,11 +229,13 @@ export function createReflectable<V, K = string>(): Reflectable<V, K> {
       };
     },
     delete(key) {
+      clashes.forget(key);
       if (!stacks.delete(key)) return false;
       changed();
       return true;
     },
     clear() {
+      clashes.clear();
       if (stacks.size === 0) return;
       stacks.clear();
       changed();

@@ -1,4 +1,4 @@
-import { describe, it, expect, afterEach, vi } from 'vitest';
+import { afterEach, describe, expect, it, onTestFinished, vi } from 'vitest';
 import {
   registerMarker, getMarker, listMarkers, markerRegistry, _resetMarkersForTests,
   type MarkerEntry,
@@ -44,13 +44,18 @@ describe('marker registry', () => {
   });
 
   it('ignores a disposer whose entry was already replaced', () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    onTestFinished(() => warn.mockRestore());
     const first = registerMarker(TRIANGLE);
     registerMarker({ ...TRIANGLE, inset: 9 });
     first();
     expect(getMarker('app:tri')?.inset).toBe(9);
+    expect(warn).toHaveBeenCalledOnce();
   });
 
   it('restores the built-in when two overrides are disposed out of order', () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    onTestFinished(() => warn.mockRestore());
     const builtin = getMarker('arrow');
     const a = registerMarker({ ...TRIANGLE, id: 'arrow', inset: 1 });
     const b = registerMarker({ ...TRIANGLE, id: 'arrow', inset: 2 });
@@ -58,6 +63,7 @@ describe('marker registry', () => {
     expect(getMarker('arrow')?.inset).toBe(2);
     b();
     expect(getMarker('arrow')).toBe(builtin);
+    expect(warn).toHaveBeenCalledOnce();
   });
 
   it('reflects an override as a conflict over the kit entry, and notifies subscribers', () => {

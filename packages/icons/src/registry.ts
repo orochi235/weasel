@@ -46,7 +46,7 @@ const OVERRIDE_RANK = 1;
 
 /** A registry, optionally seeded with tables; each `add` and `override` returns its own release function. */
 export function createIconRegistry(initial?: IconTable | readonly IconTable[]): IconRegistry {
-  const glyphs = createReflectable<IconGlyph>();
+  const glyphs = createReflectable<IconGlyph>({ name: 'icons' });
   // How many live tables hold each namespace, and whose it is while any do.
   const claims = new Map<string, { owner: string; count: number }>();
   let snapshot: { from: readonly ReflectedEntry<IconGlyph>[]; entries: readonly IconEntry[] } | null = null;
@@ -80,7 +80,7 @@ export function createIconRegistry(initial?: IconTable | readonly IconTable[]): 
       return list.flatMap((t) => {
         const held = claims.get(t.namespace);
         claims.set(t.namespace, { owner: t.owner, count: (held?.count ?? 0) + 1 });
-        const offs = Object.keys(t.icons).map((name) => glyphs.push(`${t.namespace}:${name}`, t.icons[name]!, { source: t.owner }));
+        const offs = Object.keys(t.icons).map((name) => glyphs.push(`${t.namespace}:${name}`, t.icons[name]!, { source: t.owner, fallback: true }));
         return [() => unclaim(t.namespace), ...offs];
       });
     });

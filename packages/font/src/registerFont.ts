@@ -39,7 +39,7 @@ export interface FontEntry {
 /** One family's registered faces, keyed `${weight}|${style}`. */
 export type FontFamilyFaces = ReadonlyMap<string, FontEntry>;
 
-const registry = createReflectable<FontFamilyFaces>();
+const registry = createReflectable<FontFamilyFaces>({ name: 'fonts' });
 
 /** Every registered family and its faces, in registration order. `listFonts`
  *  is the same set shaped for a font picker. */

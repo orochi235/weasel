@@ -13,7 +13,7 @@ export interface MountedCanvas {
   getView(): View;
 }
 
-const mounted = createReflectable<MountedCanvas, HTMLElement>();
+const mounted = createReflectable<MountedCanvas, HTMLElement>({ name: 'mounted canvases' });
 
 /** Every mounted kit canvas by its element. A canvas mounting on an element another holds replaces it. */
 export const mountedCanvasRegistry: Reflection<MountedCanvas, HTMLElement> = mounted.reflection;

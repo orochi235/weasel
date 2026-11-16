@@ -92,5 +92,5 @@ export const SVG_EXPORT: ExportFormat<SvgExportOptions> = {
 
 /** Register the `svg` export format with `@weasel-js/export`'s registry. Returns the disposer. */
 export function registerSvgExport(): () => void {
-  return registerExportFormat(SVG_EXPORT);
+  return registerExportFormat(SVG_EXPORT, { fallback: true });
 }

@@ -1,9 +1,9 @@
 /**
  * Property tests of holds and the registry. `holdAt` pauses a clock at a shown time in its first pass and keeps it
  * there through declarations and duration writes until something else moves it; `holdElapsed` of a recorded
- * position brings a clock back where the recorded one stood. The registry against a plain model of its entries.
+ * position brings a clock back where the recorded one stood. The registry against a plain model of each id's stack of registrations.
  */
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, onTestFinished, vi } from 'vitest';
 import fc from 'fast-check';
 import { clockPosition, createClock } from './clock';
 import { holdAt, holdElapsed, shownInPass } from './hold';
@@ -94,23 +94,23 @@ describe('holdElapsed', () => {
 
 describe('createClockRegistry — stateful model', () => {
   interface Entry { handle: number; target: number | null; token: number }
-  /** Each id's registrations oldest first; the last is live, the rest shadowed. */
   interface Model { stacks: Map<string, Entry[]>; notified: number; next: number }
   interface Real { reg: ReturnType<typeof createClockRegistry>; handles: ClockHandle[]; targets: ClockTarget[]; releases: Map<number, () => void>; notified: number; shared: ClockHandle | null }
   const ids = fc.constantFrom('a', 'b', '__proto__', 'constructor');
   type Cmd = fc.Command<Model, Real>;
 
-  const live = (m: Model): Entry[] => [...m.stacks.values()].map((s) => s.at(-1)!);
+  const liveOf = (m: Model): Entry[] => [...m.stacks.values()].map((stack) => stack.at(-1)!);
+
   const check = (m: Model, r: Real): void => {
     for (const id of ['a', 'b', '__proto__', 'constructor']) {
       const e = m.stacks.get(id)?.at(-1);
       expect(r.reg.get(id)).toBe(e ? r.handles[e.handle] : null);
     }
-    const all = new Set<ClockHandle>([...(r.shared ? [r.shared] : []), ...live(m).map((e) => r.handles[e.handle]!)]);
+    const all = new Set<ClockHandle>([...(r.shared ? [r.shared] : []), ...liveOf(m).map((e) => r.handles[e.handle]!)]);
     expect(new Set(r.reg.all())).toEqual(all);
     expect([...r.reg.all()].length).toBe(all.size);
     r.handles.forEach((h, i) => {
-      const mine = live(m).filter((e) => e.handle === i);
+      const mine = liveOf(m).filter((e) => e.handle === i);
       const want = mine.some((e) => e.target === null) ? [] : mine.map((e) => r.targets[e.target!]);
       expect(r.reg.targets(h)).toEqual(want);
     });
@@ -147,7 +147,10 @@ describe('createClockRegistry — stateful model', () => {
     })),
   ], { maxCommands: 25 });
 
-  it('shows each id\'s newest registration, brings back the one beneath on its release, and reports every change', () => {
+  it('holds each id\'s newest registration until its own release, and reports every change', () => {
+    // Registrations under one id stack on purpose; the registry's clash warning is tested in @weasel-js/registry.
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    onTestFinished(() => warn.mockRestore());
     fc.assert(fc.property(fc.boolean(), commands, (withShared, cmds) => {
       const handles = [createClock({}), createClock({ duration: 100 }), createClock({ rate: 1 })];
       const shared = withShared ? handles[0]! : null;

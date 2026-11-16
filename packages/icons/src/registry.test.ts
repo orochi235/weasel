@@ -153,6 +153,18 @@ describe('merged namespaces and overrides', () => {
     expect(r.entries()).toEqual([]);
     expect(r.owner('core')).toBeUndefined();
   });
+
+  it('merges a later table over a glyph silently, and warns when two overrides claim one glyph', () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const r = createIconRegistry(core({ undo: 'u' }));
+    r.add(core({ undo: 'u2' }));
+    r.override(ref('core:undo'), glyph('a'), 'app');
+    expect(warn).not.toHaveBeenCalled();
+    r.override(ref('core:undo'), glyph('b'), 'plugin');
+    expect(warn).toHaveBeenCalledOnce();
+    expect(warn.mock.calls[0]![0]).toMatch(/"plugin" registered "core:undo" over "app"/);
+    warn.mockRestore();
+  });
 });
 
 describe('variants', () => {

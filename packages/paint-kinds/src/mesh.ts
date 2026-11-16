@@ -9,6 +9,6 @@
 import { registerPaintKind } from './paintKinds';
 import { meshGradientKind } from './meshKind';
 
-registerPaintKind(meshGradientKind);
+registerPaintKind(meshGradientKind, { fallback: true });
 
 export { meshGradientKind };

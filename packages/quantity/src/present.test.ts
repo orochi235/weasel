@@ -1,4 +1,4 @@
-import { afterEach, describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, onTestFinished, vi } from 'vitest';
 import {
   amount,
   bytes,
@@ -348,10 +348,12 @@ describe('registerDisplayKind', () => {
     unregister = registerDisplayKind({ ...fractionKind, speak: () => 'mine' });
     const entry = displayKindRegistry.entries().find((e) => e.key === 'fraction')!;
     expect(entry.source).toBeUndefined();
-    expect(entry.shadowed).toEqual([{ value: fractionKind, source: 'kit' }]);
+    expect(entry.shadowed).toEqual([{ value: fractionKind, source: 'kit', fallback: true }]);
   });
 
   it('removing the newer of two registrations of one kind restores the older, as registerUnit does', () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    onTestFinished(() => warn.mockRestore());
     const older = registerDisplayKind({ ...fractionKind, speak: () => 'older' });
     const newer = registerDisplayKind({ ...fractionKind, speak: () => 'newer' });
     expect(qty(1 / 12, fraction()).spoken).toBe('newer');
@@ -359,6 +361,7 @@ describe('registerDisplayKind', () => {
     expect(qty(1 / 12, fraction()).spoken).toBe('older');
     older();
     expect(displayKindOf(fraction())).toBe(fractionKind);
+    expect(warn).toHaveBeenCalledOnce();
   });
 });
 

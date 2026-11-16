@@ -86,7 +86,7 @@ interface FaceSlot extends OutlineFaceInfo {
   load: Promise<void> | null;
 }
 
-const slots = createReflectable<FaceSlot>();
+const slots = createReflectable<FaceSlot>({ name: 'font outlines' });
 
 /** Every registered outline face, keyed `family|weight|style`. */
 export const fontOutlineRegistry: Reflection<OutlineFaceInfo> = slots.reflection;

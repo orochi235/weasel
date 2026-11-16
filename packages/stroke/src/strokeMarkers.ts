@@ -60,10 +60,10 @@ export interface MarkerEntry {
   toSvg?(id: string, entry: MarkerEntry): string;
 }
 
-const MARKERS = createReflectable<MarkerEntry>();
+const MARKERS = createReflectable<MarkerEntry>({ name: 'stroke markers' });
 
 function seedBuiltins(): void {
-  for (const entry of BUILTIN_MARKERS) MARKERS.push(entry.id, entry, { source: 'kit' });
+  for (const entry of BUILTIN_MARKERS) MARKERS.push(entry.id, entry, { source: 'kit', fallback: true });
 }
 seedBuiltins();
 

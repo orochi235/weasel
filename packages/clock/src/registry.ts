@@ -22,8 +22,7 @@ export interface ClockRegistry {
   all(): Iterable<ClockHandle>;
   /** Fires after any register or release. Shaped for `useSyncExternalStore`. */
   subscribe(listener: () => void): () => void;
-  /** Each id's clock and the target it named. A second registration under an id replaces the first
-   *  rather than shadowing it. */
+  /** Each id's clock and the target it named, with the registrations a second one under its id shadows. */
   readonly reflection: Reflection<ClockEntry>;
 }
 
@@ -35,7 +34,7 @@ export interface ClockEntry {
 
 /** An in-memory `ClockRegistry`, holding the shared clock when given one. */
 export function createClockRegistry(shared: ClockHandle | null = null): ClockRegistry {
-  const entries = createReflectable<ClockEntry>();
+  const entries = createReflectable<ClockEntry>({ name: 'clocks' });
   return {
     register: (id, handle, target) => entries.push(id, { handle, target }),
     get: (id) => entries.get(id)?.handle ?? null,

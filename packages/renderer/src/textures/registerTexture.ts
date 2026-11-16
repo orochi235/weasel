@@ -18,7 +18,7 @@ export interface TextureEntry {
 }
 
 let counter = 0;
-const registry = createReflectable<TextureEntry>();
+const registry = createReflectable<TextureEntry>({ name: 'textures' });
 
 /** Every registered texture, keyed by its handle id. */
 export const textureRegistry: Reflection<TextureEntry> = registry.reflection;
