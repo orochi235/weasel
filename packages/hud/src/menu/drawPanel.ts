@@ -17,6 +17,7 @@ import { colorCommands, numberCommands, swatchCommand, textCommands, typingComma
 import { measureLabel } from './measureLabel';
 import { menuMeasureEnv } from './menuEnv';
 import type { HudTextEdit } from './textEdit';
+import { getOwn } from '@weasel-js/registry';
 
 /** A row's shortcut as the DOM menu prints it, or undefined. */
 const shortcutOf = (e: MenuEntry): string | undefined => {
@@ -179,7 +180,7 @@ export function drawPanel(
 /** The color a graded item or submenu row draws its label and icon in, when the theme has its grade's token. */
 function gradedInk(e: MenuEntry, t: HudDrawCtx['tokens']): string | undefined {
   const grade = e.kind === 'item' || e.kind === 'submenu' ? e.grade : undefined;
-  return grade ? (t as Readonly<Record<string, string | undefined>>)[GRADE_TOKENS[grade]] : undefined;
+  return grade ? getOwn(t as Readonly<Record<string, string | undefined>>, GRADE_TOKENS[grade]) : undefined;
 }
 
 /** Index of the entry under panel-local `y`, or null. */
