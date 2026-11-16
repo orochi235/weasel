@@ -1,8 +1,7 @@
 import { type ReactElement } from 'react';
 import { isGradientPaint, type ColorSpace, type Paint } from '@weasel-js/paint';
-import { switchGradientKind, type PaintKind } from '@weasel-js/paint-kinds';
+import { switchGradientKind, type PaintKind, nativeSvgKind, nativeSvgSpace } from '@weasel-js/paint-kinds';
 import { useGradientKinds, usePaintKind } from '@weasel-js/paint-kinds/react';
-import { nativeSvgKind, nativeSvgSpace } from '@weasel-js/svg';
 import { paintKindEditor } from '../PaintInput/paintKindEditor';
 import { SegmentedBar, type SegmentedBarItem } from '../Segmented';
 import { GradientStops } from './GradientStops';

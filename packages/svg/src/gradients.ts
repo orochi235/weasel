@@ -7,8 +7,8 @@
  */
 
 import { pathToD } from '@weasel-js/geom';
-import { getPaintKind } from '@weasel-js/paint-kinds';
-import { getMarker, isPatternPaint, isTileKind } from '@weasel-js/core';
+import { getPaintKind, nativeSvgKind, nativeSvgSpace } from '@weasel-js/paint-kinds';
+import { getMarker, isPatternPaint } from '@weasel-js/core';
 import type { Paint, GradStop, PaintUnits, MarkerRef, Path } from '@weasel-js/core';
 import { parseRatio, readStops, stopsXml } from './gradientStops';
 import { trimNumber } from './transform';
@@ -34,15 +34,6 @@ export type GradientTable = Map<string, Paint>;
 export const WEASEL_NS = 'urn:weasel-js:svg';
 export const WEASEL_NS_PREFIX = 'wzl';
 
-/** `true` when SVG has a paint server for this kind, so the reference needs no
- *  fallback color and the root needs no foreign namespace. */
-/** Whether SVG has its own paint server for paint kind `kind`: solids, the
- *  linear and radial gradients, and patterns. Any other kind is written in
- *  weasel's namespace with a fallback color, which other renderers paint flat. */
-export function nativeSvgKind(kind: string): boolean {
-  return kind === 'solid' || kind === 'linear-gradient' || kind === 'radial-gradient' || kind === 'texture' || kind === 'image' || isTileKind(kind);
-}
-
 function hasNativeSvgForm(paint: Paint): boolean {
   return nativeSvgKind(paint.kind ?? 'solid');
 }
@@ -57,12 +48,6 @@ function hasNativeSvgForm(paint: Paint): boolean {
  */
 const INTERPOLATE_SPACES = new Set(['rgb', 'oklab', 'oklch']);
 
-/** Whether a gradient interpolating through `space` blends the same in every
- *  SVG renderer — only sRGB, the default. A perceptual space still exports,
- *  but renderers other than weasel blend it in sRGB. */
-export function nativeSvgSpace(space: string | null | undefined): boolean {
-  return !space || space === 'rgb';
-}
 
 /** The `wzl:interpolate` attribute a gradient needs, or `''` for the sRGB
  *  default every other renderer already assumes. */

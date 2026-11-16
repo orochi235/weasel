@@ -10,7 +10,7 @@ import fc from 'fast-check';
 import { parseSvg } from './parse';
 import type { SvgNode, SvgPaint } from './types';
 import { runs, timeoutFor } from './pbt.fixture';
-import { escapeAttr, escapeText } from './xmlEscape';
+import { escapeAttr, escapeText } from '@weasel-js/registry';
 
 const N = 200;
 

@@ -11,11 +11,10 @@ import {
   type TilePaint,
   type TilePatternSpec,
 } from '@weasel-js/paint';
-import { seedTile } from '@weasel-js/paint-kinds';
+import { seedTile, tilePreviewCssUrl } from '@weasel-js/paint-kinds';
 import { DEG_TO_RAD, RAD_TO_DEG, wrapAngle } from '@weasel-js/geom';
 import { useLatestOnly } from '@weasel-js/react';
 import { unit } from '@weasel-js/quantity';
-import { tilePreviewCssUrl } from '@weasel-js/svg';
 import { Icon } from '../Icon';
 import { icon } from '../../icons.gen';
 import { UnitField } from '../NumberField';

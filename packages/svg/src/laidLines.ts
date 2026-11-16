@@ -9,7 +9,7 @@ import type { LaidOutCell, LaidOutLineBox, TextPoseLayout } from '@weasel-js/tex
 import { maxOf, minOf } from '@weasel-js/geom';
 import { LINES_ATTR, type LinePiece } from './tspanLines';
 import { trimNumber } from './transform';
-import { escapeText } from './xmlEscape';
+import { escapeText } from '@weasel-js/registry';
 
 /** The `<text>` attribute saying its lines were written from a layout. */
 export const LAID_ATTR = 'data-weasel-layout';

@@ -1,5 +1,5 @@
 /**
- * Escaping for the XML this package writes by hand.
+ * Escaping for XML written by hand: SVG, a paint kind's `toSvg`, a diagram format.
  *
  * XML 1.0 cannot hold most C0 controls, U+FFFE, U+FFFF, or half a surrogate
  * pair, even as character references, and a parser rejects the whole

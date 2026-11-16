@@ -160,7 +160,7 @@
     "longestFunction": 165
   },
   "packages/svg/src/gradients.ts": {
-    "lines": 510
+    "lines": 495
   },
   "packages/text-dom/src/useTextEdit.ts": {
     "lines": 427,

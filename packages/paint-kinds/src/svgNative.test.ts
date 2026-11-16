@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { nativeSvgKind, nativeSvgSpace } from './index';
+import { nativeSvgKind, nativeSvgSpace } from './svgNative';
 
 describe('what SVG carries natively', () => {
   it('has a paint server for solids, the two SVG gradients and patterns, and nothing else', () => {

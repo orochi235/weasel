@@ -7,7 +7,7 @@ import { describe, it, expect } from 'vitest';
 import fc from 'fast-check';
 import { parseSvg } from './parse';
 import { serializeSvg } from './serialize';
-import { escapeAttr, escapeText } from './xmlEscape';
+import { escapeAttr, escapeText } from '@weasel-js/registry';
 
 const RUNS = Number(globalThis.process?.env?.WEASEL_PBT_RUNS) || 150;
 const TIMEOUT = Math.max(5_000, RUNS * 10);

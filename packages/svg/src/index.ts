@@ -18,11 +18,9 @@
 
 export { parseSvg } from './parse';
 export { serializeSvg } from './serialize';
-export { escapeAttr, escapeText } from './xmlEscape';
+export { escapeAttr, escapeText } from '@weasel-js/registry';
 export { svgNeeds, warmSvg } from './warm';
 export { svgTextOutlines } from './textOutlines';
-export { tilePreviewSvg, tilePreviewCssUrl } from './patterns';
-export { nativeSvgKind, nativeSvgSpace } from './gradients';
 export { specificity, compareSpecificity, type Specificity } from './specificity';
 export { splitTopLevel } from './cssScan';
 export { evaluateMediaQuery, DEFAULT_MEDIA_ENVIRONMENT, type SvgMediaEnvironment } from './media';

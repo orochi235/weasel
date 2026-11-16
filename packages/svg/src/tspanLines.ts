@@ -7,7 +7,7 @@
 import type { StyledRun } from '@weasel-js/text';
 import { readLength } from './lengths';
 import { trimNumber } from './transform';
-import { escapeText } from './xmlEscape';
+import { escapeText } from '@weasel-js/registry';
 
 /**
  * How many lines a line-opening `<tspan>` steps down. A browser skips the

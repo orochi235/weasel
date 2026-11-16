@@ -13,7 +13,7 @@ import { getMarker, resolveMarkerSize } from '@weasel-js/core';
 import type { MarkerEntry, MarkerPaint, MarkerRef, ScreenLength } from '@weasel-js/core';
 import { RAD_TO_DEG, pathToD } from '@weasel-js/geom';
 import { trimNumber } from './transform';
-import { escapeAttr } from './xmlEscape';
+import { escapeAttr } from '@weasel-js/registry';
 
 /** The private namespace prefix; `gradients.ts` owns the namespace itself. */
 const WZL = 'wzl';

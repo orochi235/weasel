@@ -20,3 +20,5 @@ export type { PaintKindLoader } from './paintKinds';
 export { asPaint } from './paintKindEntry';
 export type { PaintKind, PaintKindEditorProps, PaintKindEntry, PaintKindFamily } from './paintKindEntry';
 export type { PaintKindsIconName } from './icons.gen';
+export { nativeSvgKind, nativeSvgSpace } from './svgNative';
+export { tilePreviewCssUrl, tilePreviewSvg, tileShapeXml } from './tileSvg';

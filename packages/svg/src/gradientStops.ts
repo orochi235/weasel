@@ -3,7 +3,7 @@ import { sampleGradientStops, type ColorSpace, type GradStop } from '@weasel-js/
 import { ownProp, ownValue } from './cascade';
 import { readProperty } from './properties';
 import { trimNumber } from './transform';
-import { escapeAttr } from './xmlEscape';
+import { escapeAttr } from '@weasel-js/registry';
 
 /** Parse a `stop-opacity` / offset value that may carry a `%` suffix. */
 export function parseRatio(raw: string): number {
