@@ -8,7 +8,7 @@ import {
   type DevtoolsRegistry, type DevtoolsRequest, type DevtoolsRootInfo, type DevtoolsRootState, type DevtoolsTraceSlice,
   type PageMessage, type PanelTransport, type SerializedValue,
 } from '@weasel-js/core/devtools-protocol';
-import { createEmitter } from '@weasel-js/registry';
+import { createEmitter, deepEqual } from '@weasel-js/registry';
 
 /** A request as a caller writes it: the client adds the protocol, the request id and the root. */
 export type DevtoolsRequestBody = DevtoolsRequest extends infer R
@@ -68,7 +68,9 @@ export function createDevtoolsClient(transport: PanelTransport): DevtoolsClient 
   let nextId = 1;
 
   const set = (patch: Partial<DevtoolsClientState>): void => {
-    state = { ...state, ...patch };
+    const next = { ...state, ...patch };
+    if (deepEqual(next, state)) return;
+    state = next;
     listeners.emit();
   };
 
