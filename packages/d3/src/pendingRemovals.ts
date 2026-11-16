@@ -1,25 +1,19 @@
 import type { NodeId } from '@weasel-js/core';
+import { createKeyedEmitter, type KeyedEmitter } from '@weasel-js/registry';
 
 /** Per scene, the nodes a `.remove()` transition will delete when it ends,
- *  each with the cancel that keeps it. Keyed weakly so a dropped scene takes
+ *  each with the cancels that keep it. Keyed weakly so a dropped scene takes
  *  its entries with it. */
-const PENDING_REMOVALS = new WeakMap<object, Map<NodeId, Set<() => void>>>();
+const PENDING_REMOVALS = new WeakMap<object, KeyedEmitter<NodeId>>();
 
-export function pendingFor(scene: object): Map<NodeId, Set<() => void>> {
-  let map = PENDING_REMOVALS.get(scene);
-  if (!map) {
-    map = new Map();
-    PENDING_REMOVALS.set(scene, map);
+/** Hold `cancel` as one of the removals pending for `id`. Returns the release. */
+export function registerRemoval(scene: object, id: NodeId, cancel: () => void): () => void {
+  let removals = PENDING_REMOVALS.get(scene);
+  if (!removals) {
+    removals = createKeyedEmitter<NodeId>();
+    PENDING_REMOVALS.set(scene, removals);
   }
-  return map;
-}
-
-export function unregisterRemoval(scene: object, id: NodeId, cancel: () => void): void {
-  const map = PENDING_REMOVALS.get(scene);
-  const set = map?.get(id);
-  if (!map || !set) return;
-  set.delete(cancel);
-  if (set.size === 0) map.delete(id);
+  return removals.subscribe(id, cancel);
 }
 
 /**
@@ -27,7 +21,5 @@ export function unregisterRemoval(scene: object, id: NodeId, cancel: () => void)
  * for that node only, so the node stays in the scene.
  */
 export function cancelPendingRemoval(scene: object, id: NodeId): void {
-  const set = PENDING_REMOVALS.get(scene)?.get(id);
-  if (!set) return;
-  for (const cancel of [...set]) cancel();
+  PENDING_REMOVALS.get(scene)?.emit(id);
 }

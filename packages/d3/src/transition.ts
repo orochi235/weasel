@@ -2,7 +2,7 @@ import type { NodeId, PoseDescriptor, Scene } from '@weasel-js/core';
 import type { Animator, AnimationHandle, EasingFn } from '@weasel-js/animator';
 import { after, createEmitter } from '@weasel-js/registry';
 import { transitionCancelKey } from './cancelKey';
-import { pendingFor, unregisterRemoval } from './pendingRemovals';
+import { registerRemoval } from './pendingRemovals';
 import type { D3Transition } from './types';
 import { lerp } from '@weasel-js/geom';
 
@@ -99,7 +99,7 @@ function makeStage<TData, TPose>(
   const children: Stage[] = [];
   let removeOnEnd = false;
   let removalArmed = false;
-  const removalCancels: Array<[NodeId, () => void]> = [];
+  const removalReleases: Array<[NodeId, () => void]> = [];
 
   let scheduled = false;
   let startFired = false;
@@ -272,13 +272,10 @@ function makeStage<TData, TPose>(
     if (removalArmed || canceled) return;
     removalArmed = true;
     ids.forEach((id, i) => {
-      const cancel = (): void => stage.root.cancelItem(i);
-      removalCancels.push([id, cancel]);
-      const set = pendingFor(scene).get(id) ?? new Set<() => void>();
-      set.add(cancel);
-      pendingFor(scene).set(id, set);
+      const release = registerRemoval(scene, id, () => stage.root.cancelItem(i));
+      removalReleases.push([id, release]);
       stage.whenItemDone(i, () => {
-        unregisterRemoval(scene, id, cancel);
+        release();
         if (present(i)) scene.remove(id);
       });
     });
@@ -331,8 +328,8 @@ function makeStage<TData, TPose>(
         canceled = true;
         ids.forEach((_, i) => stopItem(i));
         itemWaiters.clear();
-        for (const [id, cancel] of removalCancels) unregisterRemoval(scene, id, cancel);
-        removalCancels.length = 0;
+        for (const [, release] of removalReleases) release();
+        removalReleases.length = 0;
         onInterrupt.emit();
         endResolved = true;
         resolveEnd?.();
@@ -347,8 +344,7 @@ function makeStage<TData, TPose>(
         stopItem(i);
         if (interrupted) interruptedItem = true;
       }
-      const cancel = removalCancels.find(([id]) => id === ids[i])?.[1];
-      if (cancel) unregisterRemoval(scene, ids[i], cancel);
+      removalReleases.find(([id]) => id === ids[i])?.[1]();
       for (const child of children) child.cancelItem(i, interrupted);
       settleIfDone();
     },
