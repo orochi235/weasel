@@ -178,9 +178,10 @@ describe('a path being anchor-edited, with its node selected', () => {
   });
 
   it('stops being one everywhere when the mode stops permitting anchor edits', () => {
-    const modes = createModeRegistry({ modes: DEFAULT_MODES, initial: 'path-edit' });
+    const modes = createModeRegistry({ modes: DEFAULT_MODES, initial: 'normal' });
     const t = setup({ modes });
     t.enter();
+    act(() => modes.setMode('path-edit'));
     expect(t.overlayCommands()).toBe(5);
     act(() => modes.setMode('normal'));
     expect(t.depEditingId()).toBe('');
