@@ -11,7 +11,7 @@ import { checkProps, dashOf, mermaidColor, nodeColors, px } from '../common/styl
 import { textLines } from '../common/text';
 import type { LinkHead, MermaidShape } from './lex';
 import { parseFlowchart, type MermaidLink, type MermaidNodeRef, type MermaidStmt, type StyleProps } from './parse';
-import { getOwn } from '@weasel-js/registry';
+import { freshId, getOwn } from '@weasel-js/registry';
 
 const DIRECTIONS: Readonly<Record<string, LayoutDirection>> = {
   TB: 'down', TD: 'down', BT: 'up', LR: 'right', RL: 'left', 'v': 'down', '^': 'up', '>': 'right', '<': 'left',
@@ -198,6 +198,18 @@ function subgraphIdsOf(stmts: readonly MermaidStmt[], out = new Set<string>()): 
   return out;
 }
 
+/** Container ids for subgraphs: each its own, else, where a node has that id too, the first free `id-n`. */
+function subgraphContainerIds(subgraphs: readonly string[], nodes: ReadonlyMap<string, unknown>): Map<string, string> {
+  const taken = new Set([...nodes.keys(), ...subgraphs]);
+  const out = new Map<string, string>();
+  for (const id of subgraphs) {
+    const pick = nodes.has(id) ? freshId(id, taken) : id;
+    taken.add(pick);
+    out.set(id, pick);
+  }
+  return out;
+}
+
 /** Reads a Mermaid flowchart into a one-page document, its `notation` unset. Throws, naming the line, on text that is not one. */
 export function readFlowchart(text: string): ImportResult {
   const chart = parseFlowchart(text);
@@ -214,11 +226,12 @@ export function readFlowchart(text: string): ImportResult {
     const { colors: _c, ...rest } = edge;
     return colors !== undefined ? { ...rest, colors } : rest;
   });
+  const containerIds = subgraphContainerIds([...r.subgraphs.keys()], r.nodes);
   const containers: DataContainer[] = [...r.subgraphs].map(([id, title]) => {
-    const members = r.membership.members(id);
+    const members = r.membership.members(id, containerIds);
     const colors = nodeColors(r.propsOf(id, false), r.warnings);
     return {
-      id, role: 'container', label: title !== undefined ? textLines(title).filter((l) => l !== '').join(' ') : id,
+      id: containerIds.get(id)!, role: 'container', label: title !== undefined ? textLines(title).filter((l) => l !== '').join(' ') : id,
       ...(members.length > 0 ? { members } : {}),
       ...(colors !== undefined ? { colors } : {}),
     };

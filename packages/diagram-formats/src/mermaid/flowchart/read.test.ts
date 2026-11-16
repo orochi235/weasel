@@ -4,6 +4,7 @@ import { describe, expect, it } from 'vitest';
 import { asGraph } from '../../testing/asGraph';
 import type { DataNode, DiagramData } from '@weasel-js/diagram';
 import { readFlowchart } from './read';
+import { documentSpecs } from '../../toScene';
 
 const FLOW = readFileSync(join(__dirname, '..', '..', '__fixtures__', 'mermaid', 'flowchart', 'flow.mmd'), 'utf8');
 const page = (text: string) => readFlowchart(text).document.pages.map(asGraph)[0]!;
@@ -103,5 +104,13 @@ describe('reading Mermaid', () => {
     expect(readFlowchart('flowchart TD\nA ~~~ B\nA --x B').warnings).toEqual([
       'Mermaid invisible links were dropped.', 'Mermaid cross ends read as arrows.',
     ]);
+  });
+
+  it('gives a subgraph a container id of its own where a node has its id', () => {
+    const read = readFlowchart('flowchart TD\nsubgraph O\n  subgraph A\n    B\n  end\nend\nA[x] --> B');
+    const data = asGraph(read.document.pages[0]!).data;
+    expect(data.containers?.map((c) => [c.id, c.members])).toEqual([['O', ['A-1']], ['A-1', ['B']]]);
+    expect(data.edges).toMatchObject([{ from: 'A', to: 'B' }]);
+    expect(() => documentSpecs(read.document)).not.toThrow();
   });
 });
