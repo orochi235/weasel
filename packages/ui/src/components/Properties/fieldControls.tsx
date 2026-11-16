@@ -95,7 +95,7 @@ function BooleanControl(p: PropertyBooleanFieldProps) {
   if (p.control === 'switch') {
     return (
       <Dimmed mixed={p.mixed} unset={p.unset}>
-        <Switch className={p.className} isSelected={on} disabled={p.disabled} disabledReason={p.disabledReason} onChange={p.onChange} aria-label={p.name} />
+        <Switch className={p.className} isSelected={on} disabled={p.disabled} disabledReason={p.disabledReason} onChange={(next) => p.onChange(next)} aria-label={p.name} />
       </Dimmed>
     );
   }
