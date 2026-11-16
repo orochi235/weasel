@@ -12,6 +12,7 @@ import { PathBuilder } from './builder';
 import { pathToCubicContours, type CubicSegment } from './cubicContours';
 import type { Point } from './cubicMath';
 import { measurePath, type PathMeasure } from './pathMeasure';
+import { worldCoords } from './pathOrigin';
 import { schneiderFit } from './schneiderFit';
 
 /** How a shape is laid along its spine. */
@@ -101,7 +102,8 @@ function appendBent(
     samples.push(warp(x, y));
   }
   const fit = schneiderFit(samples, tolerance);
-  const { commands, coords } = fit;
+  const { commands } = fit;
+  const coords = worldCoords(fit);
   // The fit opens with an M at the first sample, which the pen already holds.
   for (let i = 1, ci = 2; i < commands.length; i++, ci += 6) {
     b.curveTo(coords[ci]!, coords[ci + 1]!, coords[ci + 2]!, coords[ci + 3]!, coords[ci + 4]!, coords[ci + 5]!);

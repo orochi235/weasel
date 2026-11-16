@@ -5,7 +5,8 @@
  * Numeric capacity grows by doubling — typical for amortized O(1) push.
  *
  * Also exposes `rectPath` / `polygonFromPoints` shortcuts for the common
- * cases. `rectPath` returns the lighter `RectPath` subtype, not a polygon.
+ * cases. `rectPath` returns the lighter `RectPath` subtype, not a polygon;
+ * the others measure a shape far from 0 from an origin, as `autoOrigin` does.
  */
 
 import { rectToContour } from '../box';
@@ -194,7 +195,7 @@ export function asPolygonPath(path: Path): PolygonPath {
 export function polylineFromPoints(
   points: readonly { x: number; y: number }[],
 ): PolygonPath | RectPath {
-  const b = new PathBuilder();
+  const b = new PathBuilder().autoOrigin();
   const first = points[0];
   if (!first) return rectPath(0, 0, 0, 0);
   b.moveTo(first.x, first.y);
@@ -218,7 +219,7 @@ export function polygonFromPoints(
       fillRule: opts.fillRule ?? 'nonzero',
     };
   }
-  const b = new PathBuilder();
+  const b = new PathBuilder().autoOrigin();
   if (opts.fillRule) b.setFillRule(opts.fillRule);
   b.moveTo(points[0].x, points[0].y);
   for (let i = 1; i < points.length; i++) b.lineTo(points[i].x, points[i].y);
@@ -240,7 +241,7 @@ export function ellipsePath(
   const ry = bounds.height / 2;
   const ox = rx * ELLIPSE_KAPPA;
   const oy = ry * ELLIPSE_KAPPA;
-  const b = new PathBuilder();
+  const b = new PathBuilder().autoOrigin();
   b.moveTo(cx + rx, cy);
   b.curveTo(cx + rx, cy + oy, cx + ox, cy + ry, cx, cy + ry);
   b.curveTo(cx - ox, cy + ry, cx - rx, cy + oy, cx - rx, cy);
@@ -258,7 +259,7 @@ export function regularPolygonPath(
   sides: number,
   rotation = 0,
 ): PolygonPath {
-  const b = new PathBuilder();
+  const b = new PathBuilder().autoOrigin();
   for (let i = 0; i < sides; i++) {
     const a = rotation + (i / sides) * Math.PI * 2;
     const x = center.x + radius * Math.cos(a);
@@ -278,7 +279,7 @@ export function starPath(
   innerRadius: number = outerRadius / 2,
   rotation = 0,
 ): PolygonPath {
-  const b = new PathBuilder();
+  const b = new PathBuilder().autoOrigin();
   const n = points * 2;
   for (let i = 0; i < n; i++) {
     const a = rotation + (i / n) * Math.PI * 2;
@@ -296,7 +297,7 @@ export function linePath(
   a: { x: number; y: number },
   b: { x: number; y: number },
 ): PolygonPath {
-  const pb = new PathBuilder();
+  const pb = new PathBuilder().autoOrigin();
   pb.moveTo(a.x, a.y);
   pb.lineTo(b.x, b.y);
   return pb.build();
