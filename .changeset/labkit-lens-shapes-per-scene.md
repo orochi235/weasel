@@ -2,6 +2,8 @@
 '@weasel-js/labkit': patch
 ---
 
-Each loupe paints its lenses with its own painters, registered on its own lens scene, so two loupes on one page no longer share the first one's.
+Two loupes on one page each paint their lenses with their own painters.
+
+The lens painters are registered on the loupe's own lens scene rather than page-wide.
 
 <!-- entry: fix -->
