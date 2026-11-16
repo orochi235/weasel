@@ -1504,6 +1504,7 @@
     "constrainPathEdit": "function",
     "constraintAnchors": "function",
     "containerScrollAction": "const",
+    "contentHandlerRegistry": "const",
     "contentRoots": "function",
     "contextMenuAction": "const",
     "contrastLineColor": "function",

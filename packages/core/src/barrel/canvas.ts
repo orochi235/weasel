@@ -151,6 +151,7 @@ export type {
 // kit's handlers come with `@weasel-js/editing`'s `ingestPreset`.
 export {
   registerContentHandler,
+  contentHandlerRegistry,
   openFilePicker,
 } from '../domains/ingestion';
 export type {

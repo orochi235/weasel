@@ -18,6 +18,7 @@ import type { OperandsDep } from 'interactions/actions/operands';
 import type { Op } from 'core/ops/types';
 import type { ClipboardIngestCtx, InsertDep, SnapDep, SvgIngestOptions } from 'interactions/actions/depSchema';
 import { admitIngestMime, type ActionDeps, type IngestItem } from '@weasel-js/routing';
+import { createReflectable, type Reflection } from '@weasel-js/registry';
 
 /** Context handed to every content handler for one ingest event. */
 export interface IngestCtx {
@@ -71,8 +72,8 @@ export interface IngestCtx {
  *  matched by MIME glob or predicate and run highest-priority first; the kit's
  *  own register at a low priority so a consumer's handler wins by default. */
 export interface ContentHandlerEntry {
-  /** Stable identifier — used for unregistration and debugging
-   *  (`'kit:image'`, `'app:csv'`). */
+  /** Stable identifier (`'kit:image'`, `'app:csv'`). A handler registered
+   *  under an id another holds stands in for it until released. */
   id: string;
   /** MIME glob(s) (`'image/*'`, `'text/csv'`) or an item predicate. A drop
    *  or paste keeps string flavors of any exact MIME named here or in
@@ -90,8 +91,15 @@ export interface ContentHandlerEntry {
   handle(items: IngestItem[], ctx: IngestCtx): void | Promise<void>;
 }
 
-const HANDLERS: ContentHandlerEntry[] = [];
-const RELEASES = new Map<ContentHandlerEntry, (() => void)[]>();
+const HANDLERS = createReflectable<ContentHandlerEntry>();
+/** Every registration's removal, for the test reset. */
+const REGISTERED = new Set<() => void>();
+
+/** The handlers {@link registerContentHandler} put in for every canvas, by id: a handler registered under
+ *  an id another holds shadows it, and only the live one of each id runs. */
+export const contentHandlerRegistry: Reflection<ContentHandlerEntry> = HANDLERS.reflection;
+
+const registered = (): ContentHandlerEntry[] => HANDLERS.entries().map((e) => e.value);
 
 /** The exact MIMEs a handler names, for string flavors to be kept. A glob
  *  names no one flavor, and `application/octet-stream` is what an untyped
@@ -99,16 +107,6 @@ const RELEASES = new Map<ContentHandlerEntry, (() => void)[]>();
 function namedMimes(entry: ContentHandlerEntry): string[] {
   const named = [...(typeof entry.match === 'function' ? [] : [entry.match].flat()), ...(entry.types ?? [])];
   return [...new Set(named)].filter((m) => !m.includes('*') && m !== 'application/octet-stream');
-}
-
-function unregister(entry: ContentHandlerEntry): void {
-  const i = HANDLERS.indexOf(entry);
-  if (i < 0) return;
-  HANDLERS.splice(i, 1);
-  // The same entry may be registered more than once; each registration admitted once.
-  const releases = RELEASES.get(entry);
-  releases?.pop()?.();
-  if (releases?.length === 0) RELEASES.delete(entry);
 }
 
 /** Keep the string flavors `entries` name exactly, as registering them would, until the
@@ -126,17 +124,18 @@ export function admitHandlerMimes(entries: readonly ContentHandlerEntry[]): () =
 /** Register a content handler for every canvas on the page. Returns a disposer that removes
  *  it. A handler for one canvas goes in that canvas's `ingestion.handlers` instead. */
 export function registerContentHandler(entry: ContentHandlerEntry): () => void {
-  HANDLERS.push(entry);
+  const release = HANDLERS.push(entry.id, entry);
   const admits = namedMimes(entry).map(admitIngestMime);
-  const releases = RELEASES.get(entry) ?? [];
-  releases.push(() => admits.forEach((release) => release()));
-  RELEASES.set(entry, releases);
   let removed = false;
-  return () => {
+  const remove = (): void => {
     if (removed) return;
     removed = true;
-    unregister(entry);
+    REGISTERED.delete(remove);
+    release();
+    admits.forEach((r) => r());
   };
+  REGISTERED.add(remove);
+  return remove;
 }
 
 function byPriority(handlers: readonly ContentHandlerEntry[]): ContentHandlerEntry[] {
@@ -146,13 +145,13 @@ function byPriority(handlers: readonly ContentHandlerEntry[]): ContentHandlerEnt
 /** Snapshot of registered handlers, priority-ordered (stable within ties —
  *  registration order; Array.prototype.sort is stable per ES2019). */
 export function getContentHandlers(): readonly ContentHandlerEntry[] {
-  return byPriority(HANDLERS);
+  return byPriority(registered());
 }
 
 /** The handlers an arrival on one canvas routes through: the canvas's own, then the
  *  registry's, priority-ordered, so at equal priority the canvas's own run first. */
 export function handlersFor(own: readonly ContentHandlerEntry[] | undefined): ContentHandlerEntry[] {
-  return byPriority([...(own ?? []), ...HANDLERS]);
+  return byPriority([...(own ?? []), ...registered()]);
 }
 
 /** Options for {@link runIngest}. */
@@ -191,7 +190,7 @@ function entryMatches(entry: ContentHandlerEntry, item: IngestItem): boolean {
  */
 export function couldClaim(
   items: readonly IngestItem[],
-  handlers: readonly ContentHandlerEntry[] = HANDLERS,
+  handlers: readonly ContentHandlerEntry[] = registered(),
 ): boolean {
   return items.some((item) => {
     if ((item as { kind?: string }).kind !== undefined) return handlers.some((h) => entryMatches(h, item));
@@ -250,5 +249,5 @@ export async function runIngest(
 
 /** @internal test seam — clear the registry. Not part of the public barrel. */
 export function _resetContentHandlersForTests(): void {
-  while (HANDLERS.length > 0) unregister(HANDLERS[0]!);
+  for (const remove of [...REGISTERED]) remove();
 }

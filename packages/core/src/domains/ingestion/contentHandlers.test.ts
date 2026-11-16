@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import {
   registerContentHandler,
+  contentHandlerRegistry,
   getContentHandlers,
   runIngest,
   _resetContentHandlersForTests,
@@ -18,6 +19,20 @@ beforeEach(() => _resetContentHandlersForTests());
 afterEach(() => vi.restoreAllMocks());
 
 describe('registerContentHandler', () => {
+  it('reflects handlers by id, and a second under one id shadows the first until released', async () => {
+    const first = vi.fn();
+    const second = vi.fn();
+    registerContentHandler({ id: 'app:csv', match: 'text/csv', handle: first });
+    const off = registerContentHandler({ id: 'app:csv', match: 'text/csv', handle: second });
+    const [entry] = contentHandlerRegistry.entries();
+    expect(entry!.key).toBe('app:csv');
+    expect(entry!.value.handle).toBe(second);
+    expect(entry!.shadowed.map((s) => s.value.handle)).toEqual([first]);
+    expect(getContentHandlers()).toHaveLength(1);
+    off();
+    expect(contentHandlerRegistry.get('app:csv')?.handle).toBe(first);
+  });
+
   it('returns a disposer that removes the entry; double-call is safe', () => {
     const off = registerContentHandler({ id: 't', match: 'text/plain', handle: () => {} });
     expect(getContentHandlers().some((h) => h.id === 't')).toBe(true);
