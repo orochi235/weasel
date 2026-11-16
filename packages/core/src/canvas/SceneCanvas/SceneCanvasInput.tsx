@@ -7,7 +7,6 @@ import type { SelectionApi } from '@weasel-js/routing';
 import type { RuleCtx } from 'domains/chrome-caps';
 import type { Affordance } from 'affordances/types';
 import type { PoseDescriptor } from 'core/geometry/poseDescriptor';
-import type { UseResizeOptions } from 'interactions/gestures/resizeOptions';
 import { useContext, useEffect, useInsertionEffect, type MutableRefObject, type RefObject } from 'react';
 import { SnapSourceRegistryContext } from 'domains/snap/registry';
 import type { SnapOutcomeStore } from 'domains/snap/outcomeStore';
@@ -21,7 +20,7 @@ import { useModeDefaultToolDepSource } from '../deps/modeDefaultTool';
 import { useCanvasToolOptionValues } from '../../tools/toolOptions';
 import { useHitObserver } from '../useHitObserver';
 import type { CanvasViewState } from '../useCanvasView';
-import { GeometryProjectionRegistrar, ResizePolicyRegistrar } from './poseRegistrars';
+import { GeometryProjectionRegistrar } from './poseRegistrars';
 import { usePointerPublisher } from './PointerProviderIfRoot';
 import type { BridgeAdapter, SceneCanvasProps } from './props';
 import type { NodeAtPoint } from './useNodeAtPoint';
@@ -123,7 +122,7 @@ export function SceneCanvasInput(p: SceneCanvasInputProps) {
   const { publish, picking: source, ...gestures } = p.content;
   const contentBounds = useContentBounds({ scene, ...source, ...gestures });
   useInsertionEffect(() => { publish(contentBounds); });
-  const { selectTool, enableKeybindings = true } = props;
+  const { enableKeybindings = true } = props;
   const snapRegistry = useContext(SnapSourceRegistryContext);
   useEffect(() => {
     dlog('scene-canvas', 'mount');
@@ -139,7 +138,7 @@ export function SceneCanvasInput(p: SceneCanvasInputProps) {
     selection, enteredGroup: picking.enteredGroup, scene, adapter: picking.adapter, standardActions: p.tools.standardActions,
     currentViewRef: viewState.viewRef, onViewChange: viewState.setViewFromInput,
     poseDescriptor: p.descriptor, dispatcher: p.dispatcher,
-    pickEvery: picking.pickEvery, layerIsPainted: picking.viewLayerGate, alphaOf: picking.alphaOf, reachable: picking.reachable,
+    pickEvery: picking.pickEvery, layerIsPainted: picking.viewLayerGate,
     viewAnimation: p.camera.viewAnimation, contentBounds, editAnchorsExternalState: p.pathEdit.state,
     canvasRef: canvas.elementRef, canvasApiRef: canvas.apiRef, ingestionClipboard: p.ingestionClipboard,
     ingestionHandlers: p.ingestionHandlers,
@@ -202,14 +201,7 @@ export function SceneCanvasInput(p: SceneCanvasInputProps) {
   });
 
   // Mounted only when passed: an empty default registered with the deps above would land
-  // after, and over, a dep one of these registered (child effects run first). Absent
+  // after, and over, a dep it registered (child effects run first). Absent
   // `geometryProjection` leaves the dep undefined.
-  return (
-    <>
-      {selectTool?.resize
-        ? <ResizePolicyRegistrar options={selectTool.resize as UseResizeOptions<unknown>} />
-        : null}
-      {props.geometryProjection ? <GeometryProjectionRegistrar projection={props.geometryProjection} /> : null}
-    </>
-  );
+  return props.geometryProjection ? <GeometryProjectionRegistrar projection={props.geometryProjection} /> : null;
 }

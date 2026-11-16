@@ -3,11 +3,12 @@ import type { ImmediateInvoker, InvocationCtx, OngoingInvoker } from '@weasel-js
 import { FRAME_FIXTURE_IDSForTests as FRAME_FIXTURE_IDS, FRAME_FIXTURE_WORLDForTests as FRAME_FIXTURE_WORLD, makeFrameFixtureForTests as makeFrameFixture } from '@weasel-js/core/test-seams';
 import type { RectPose, AnyScene } from '@weasel-js/core/engine';
 import type { SelectionApi } from '@weasel-js/core';
-import { scenePoseFrame, moveAction } from '@weasel-js/core/engine';
-import { cloneAction } from '@weasel-js/core';
+import { scenePoseFrame } from '@weasel-js/core/engine';
 import { duplicateAction } from '../edit/duplicate';
 import { nudgeRightAction } from '../edit/nudge';
 import { transformAgainAction } from './action';
+import { moveAction } from '../move/action';
+import { cloneAction } from '../clone/action';
 
 /** Child `a` of a group turned a quarter turn: its parent's +x is the world's +y. */
 function setup() {

@@ -6,9 +6,10 @@ import { describe, it, expect } from 'vitest';
 import type { ImmediateInvoker } from '@weasel-js/routing';
 import { makeFrameFixtureForTests as makeFrameFixture, expectSamePoseForTests as expectSamePose, FRAME_FIXTURE_IDSForTests as FRAME_FIXTURE_IDS, FRAME_FIXTURE_LOCALForTests as FRAME_FIXTURE_LOCAL } from '@weasel-js/core/test-seams';
 import { IDENTITY_POSE_COMPOSITION, type PoseComposition, scenePoseFrame } from '@weasel-js/core/engine';
-import { asNodeId, type NodeId, type RectPose, rotateSelectionOps, shapeSources } from '@weasel-js/core';
+import { asNodeId, type NodeId, type RectPose, shapeSources } from '@weasel-js/core';
 import type { AnyScene } from '@weasel-js/core/engine';
 import { alignRightAction, distributeHorizontalAction, flipAction } from '@weasel-js/editing';
+import { rotateSelectionOps } from '../../../actions/rotate/replay';
 
 const { group, upright, turned } = FRAME_FIXTURE_IDS;
 const r = asNodeId('r');

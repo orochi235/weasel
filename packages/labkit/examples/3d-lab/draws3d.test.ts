@@ -1,16 +1,10 @@
 import { describe, expect, it } from 'vitest';
-import {
-  createPoseFeed,
-  moveAction,
-  type GesturePreviewSource,
-  type InvocationCtx,
-  type NodeId,
-} from '@weasel-js/core';
-import { createScene } from '@weasel-js/core';
+import { createPoseFeed, type GesturePreviewSource, type InvocationCtx, type NodeId, createScene } from '@weasel-js/core';
 import { quatFromAxisAngle } from '@weasel-js/geom/3d';
 import { POSE3_COMPOSITION, createCamera, createPoseDescriptor } from '@weasel-js/kernel3d';
 import { applyFeedDelta, solidsToDraw, type SolidRecord } from './draws3d';
 import { aabbOfSolid, createSolidScene, pose3, type SolidScene } from './scene3d';
+import { moveAction } from '@weasel-js/editing';
 
 function firstId(scene: SolidScene) {
   return scene.renderOrderNodes()[0].id;

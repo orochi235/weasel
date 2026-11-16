@@ -8,7 +8,7 @@ import { useEffect } from 'react';
 import { useStableByContent } from '@weasel-js/react';
 import { createExtensionRegistry, ExtensionConflictError, sameList } from '@weasel-js/registry';
 import type { NodeRoutingEntry } from 'core/scene/NodeRouting';
-import { kitBuildsInsert, type InsertNodeFactories, type InsertNodeFactory } from '../deps/insert';
+import type { InsertNodeFactories, InsertNodeFactory } from '../deps/insertFactories';
 import { nodeShapesOf, type NodeShapeEntry } from '../NodeShape';
 import type { EnabledPresets, FeaturePreset, PresetNodeShape } from './features';
 import { inferredNodeRouting } from './defaultNodeRouting';
@@ -117,7 +117,7 @@ export function usePresetShapes(enabled: EnabledPresets, scene: object): void {
   }, [shapes, scene]);
 }
 
-/** Whether an `insert` of `kind` builds a node on a canvas with these factories. */
-export function insertBuilds(kind: string, factories: InsertNodeFactories | undefined): boolean {
-  return factories?.[kind] !== undefined || kitBuildsInsert(kind);
+/** Whether an `insert` of `kind` builds a node on a canvas with these factories and presets. */
+export function insertBuilds(kind: string, factories: InsertNodeFactories | undefined, kinds: ReadonlySet<string>): boolean {
+  return factories?.[kind] !== undefined || kinds.has(kind);
 }

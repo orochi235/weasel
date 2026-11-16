@@ -41,11 +41,10 @@ export { tuneAction } from '@weasel-js/routing';
 export { roleReader, roleMods, keysHeld, modifierStateOf } from '@weasel-js/routing';
 export type { ModifierRole, ModifierRoles, RoleKeys, RoleRebinds } from '@weasel-js/routing';
 export type {
-  ActionParamSchema, ActionTunings, NudgeParams,
+  ActionParamSchema, ActionTunings, NudgeParams, ReparentOnDrop,
   FinishPathParams, IngestParams, InsertParams, MoveParams, PaintParams, RotateParams,
   PlaceParams, CountStepParams, OpacityParams, ViewportZoomParams, WheelScrollParams, PickParams,
 } from '../interactions/actions/actionParamSchema';
-export type { ReparentOnDrop } from '../interactions/actions/move/session';
 export { bindAction, defineAction, dynamicActionId, routedOpts } from '@weasel-js/routing';
 export type {
   ActionOf, ActionParamsOf, ActionSettingsOf, ActionVariantOf, BindingOf, DynamicActionId, InvokeParams,
@@ -59,16 +58,6 @@ export { declaredToolShortcuts, toolShortcutsOf } from '@weasel-js/routing';
 export type { ToolShortcuts } from '@weasel-js/routing';
 export { describeShortcuts } from '@weasel-js/routing';
 export type { DescribeShortcutsOptions, ShortcutGroup, ShortcutRow, ShortcutsDescription, ShortcutTool } from '@weasel-js/routing';
-export { moveAction } from '../interactions/actions/move/action';
-export { createResizeAction, resizeAction, type ResizeActionOptions } from '../interactions/actions/resize/action';
-export { rotateAction } from '../interactions/actions/rotate/action';
-export { areaSelectAction } from '../interactions/actions/defaults/areaSelect';
-export { insertAction, INSERT_DRAG_MODS } from '../interactions/actions/insert/action';
-export { insertParams, POLYGON_INSERT_PARAMS, STAR_INSERT_PARAMS } from '../interactions/actions/insert/params';
-export { placeAction } from '../interactions/actions/insert/placeAction';
-export { insertRepositionAction, INSERT_REPOSITION_BINDING } from '../interactions/actions/insert/repositionAction';
-export { clearSelectionAction } from '../interactions/actions/defaults/clearSelection';
-export { cloneAction } from '../interactions/actions/clone/action';
 export { inPlane, selectionLayer, insertLayer, editingLayer } from '../interactions/actions/planeInput';
 export type { EditedLayerOf } from '../interactions/actions/planeInput';
 export { viewportDragPanAction } from '../interactions/actions/defaults/viewportDragPan';
@@ -88,7 +77,6 @@ export {
   containerScrollAction, scrollRange, scrollableAt, type ScrollRange, type ScrollableContainer,
 } from '../interactions/actions/defaults/containerScroll';
 export { NUDGE_LABEL, nudgeDelta, nudgeSpec, type NudgeDirection } from '../interactions/actions/defaults/nudgeSteps';
-export { lassoSelectAction } from '../interactions/actions/lasso-select/action';
 export {
   commitDeleteToScene, createDeleteAction, deleteAction, hiddenSourceDeleteOps, type DeleteActionOptions,
 } from '../interactions/actions/defaults/delete';
@@ -156,10 +144,6 @@ export { insertSite, type InsertSite, type InsertSiteOptions } from '../canvas/d
 export type { GeometryProjection, PoseChange } from '../interactions/actions/geometryProjection';
 export { PATH_GEOMETRY_PROJECTION } from '../interactions/actions/geometryProjection';
 export { refusalOf, type DropRefusal, type DropVerdict } from '../interactions/actions/dropVerdict';
-export {
-  useResizePolicy,
-  type UseResizePolicyOptions,
-} from '../canvas/deps/resizePolicy';
 export { usePoseDescriptorDepSource } from '../canvas/deps/poseDescriptor';
 export {
   CORNER_ANCHORS, RESIZE_HANDLE_ANCHORS, EDGE_HANDLE_MIN_RADII, handlePoint, isCornerHandle, resizeHandlesFor,
@@ -253,8 +237,3 @@ export type {
 
 // ─── Typed scratch keys: shared typed access to ctx.scratch (behaviors) ─────
 export { scratchKey, getScratch, setScratch, deleteScratch, type ScratchKey, type ScratchStore } from '@weasel-js/routing';
-export type { UseLassoSelectOptions } from '../interactions/actions/lasso-select';
-export {
-  selectFromLasso,
-  type SelectFromLassoOptions,
-} from '../interactions/actions/lasso-select/behaviors/selectFromLasso';

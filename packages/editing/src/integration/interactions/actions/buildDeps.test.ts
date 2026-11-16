@@ -13,9 +13,11 @@ import { describe, it, expect, vi, afterEach } from 'vitest';
 import { buildDepsFromRequires } from '@weasel-js/routing';
 import type { DepRegistry } from '@weasel-js/routing/react';
 import type { Action } from '@weasel-js/routing';
-import { moveAction } from '@weasel-js/core/engine';
-import { resizeAction, rotateAction, cloneAction } from '@weasel-js/core';
 import { flipAction, alignLeftAction, distributeHorizontalAction, groupAction, duplicateAction, nudgeUpAction, nudgeDownAction, nudgeLeftAction, nudgeRightAction } from '@weasel-js/editing';
+import { moveAction } from '../../../actions/move/action';
+import { resizeAction } from '../../../actions/resize/action';
+import { rotateAction } from '../../../actions/rotate/action';
+import { cloneAction } from '../../../actions/clone/action';
 
 const PROJECTION = { token: 'geometry-projection-stub' };
 

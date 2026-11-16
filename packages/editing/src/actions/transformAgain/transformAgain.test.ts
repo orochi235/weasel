@@ -1,12 +1,16 @@
 import { describe, it, expect } from 'vitest';
 import { ActionDisabledReason, buildRuleCtx, type ImmediateInvoker, type InvocationCtx, type OngoingInvoker } from '@weasel-js/routing';
-import { createScene, asNodeId, type RectPose, moveAction } from '@weasel-js/core/engine';
+import { createScene, asNodeId, type RectPose } from '@weasel-js/core/engine';
 import type { SelectionApi } from '@weasel-js/core';
-import { rotateAction, resizeAction, cloneAction, lastTransform, recordTransform } from '@weasel-js/core';
+import { lastTransform, recordTransform } from '@weasel-js/core';
 import { duplicateAction } from '../edit/duplicate';
 import { nudgeRightAction } from '../edit/nudge';
 import { transformAgainAction } from './action';
 import type { AnyScene } from '@weasel-js/core/engine';
+import { moveAction } from '../move/action';
+import { rotateAction } from '../rotate/action';
+import { resizeAction } from '../resize/action';
+import { cloneAction } from '../clone/action';
 
 const box = (x: number, y: number, w = 10, h = 10): RectPose => ({ x, y, width: w, height: h });
 

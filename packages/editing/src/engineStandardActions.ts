@@ -1,12 +1,20 @@
 import type { Action } from '@weasel-js/routing';
-import { cloneAction, cancelGestureAction, clearSelectionAction, deleteAction, redoAction, undoAction, placeAction, insertRepositionAction, insertRotateAction, lassoSelectAction } from '@weasel-js/core';
-import { areaSelectAction, insertAction, moveAction } from '@weasel-js/core/engine';
+import { cancelGestureAction, deleteAction, redoAction, undoAction } from '@weasel-js/core';
 import { duplicateAction } from './actions/edit/duplicate';
 import { escapeAction } from './actions/edit/escape';
 import { groupAction, ungroupAction } from './actions/edit/group';
 import { nudgeDownAction, nudgeLeftAction, nudgeRightAction, nudgeUpAction } from './actions/edit/nudge';
 import { selectAllAction } from './actions/edit/selectAll';
 import { transformAgainAction } from './actions/transformAgain/action';
+import { cloneAction } from './actions/clone/action';
+import { clearSelectionAction } from './actions/select/clearSelection';
+import { placeAction } from './actions/insert/placeAction';
+import { insertRepositionAction } from './actions/insert/repositionAction';
+import { insertRotateAction } from './actions/insert/rotateAction';
+import { lassoSelectAction } from './actions/lassoSelect/action';
+import { areaSelectAction } from './actions/select/areaSelect';
+import { insertAction } from './actions/insert/action';
+import { moveAction } from './actions/move/action';
 
 /**
  * The kit-standard actions a host of any dimension registers: history,

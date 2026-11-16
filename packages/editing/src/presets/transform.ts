@@ -1,7 +1,12 @@
-import { cloneAction, moveAction, resizeAction, rotateAction, PRESET_CHROME } from '@weasel-js/core';
+import { PRESET_CHROME } from '@weasel-js/core';
 import type { FeaturePreset } from '@weasel-js/core';
 import { selectionMoveContribution, selectionResizeContribution, selectionRotateContribution } from '../tools/select/selectionContributions';
 import { selectionPreset } from './selection';
+import { cloneAction } from '../actions/clone/action';
+import { moveAction } from '../actions/move/action';
+import { resizeAction } from '../actions/resize/action';
+import { rotateAction } from '../actions/rotate/action';
+import { ResizePolicyDeps } from '../deps/presetDeps';
 
 /** The selection outline, drawn only while this is on. */
 export const outlinePreset: FeaturePreset = {
@@ -18,6 +23,7 @@ export const resizePreset: FeaturePreset = {
   label: 'Resize',
   refines: ['move'],
   actions: [resizeAction],
+  components: [ResizePolicyDeps],
   ambient: () => selectionResizeContribution(),
   chrome: PRESET_CHROME.resize,
   includes: [selectionPreset],

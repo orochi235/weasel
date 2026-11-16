@@ -4,10 +4,11 @@
  * derives from.
  */
 import { describe, it, expect } from 'vitest';
-import { moveAction, createScene, effectivePose } from '@weasel-js/core/engine';
+import { createScene, effectivePose } from '@weasel-js/core/engine';
 import type { ImmediateInvoker, InvocationCtx, OngoingHandle, OngoingInvoker, SelectionApi } from '@weasel-js/routing';
 import type { DerivedDep, NodeId, RectPose } from '@weasel-js/core';
 import { nudgeRightAction } from '@weasel-js/editing';
+import { moveAction } from '../../../../actions/move/action';
 
 type S = ReturnType<typeof createScene<object, 'main', RectPose>>;
 

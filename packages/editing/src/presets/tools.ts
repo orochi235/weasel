@@ -8,6 +8,11 @@ import { createRectTool } from '../tools/rect/useRectTool';
 import { createStarTool } from '../tools/star/useStarTool';
 import { SELECT_TOOLS, SHAPE_TOOLS } from '../tools/toolSets';
 import type {} from '../tools/toolOptions';
+import { areaSelectAction } from '../actions/select/areaSelect';
+import { clearSelectionAction } from '../actions/select/clearSelection';
+import { lassoSelectAction } from '../actions/lassoSelect/action';
+import { RegionSelectDeps } from '../deps/presetDeps';
+import { insertPreset } from './insert';
 import { selectionPreset } from './selection';
 
 /** Offers the select tool and the lasso by id, mounted where something names them: `selectToolsPreset`,
@@ -15,6 +20,8 @@ import { selectionPreset } from './selection';
 export const selectToolKitPreset: FeaturePreset = {
   id: 'toolkit:select',
   label: 'Selection tools, offered',
+  toolActions: [areaSelectAction, lassoSelectAction, clearSelectionAction],
+  components: [RegionSelectDeps],
   build: (ctx) => ({
     tools: {
       select: createSelectToolWith(() => ctx.adapter() as unknown as SelectAdapter<{ id: string }, unknown>, () => {
@@ -48,7 +55,7 @@ export const shapeToolKitPreset: FeaturePreset = {
       },
     };
   },
-  includes: [selectionPreset],
+  includes: [insertPreset],
 };
 
 /** The select tool and the lasso. */

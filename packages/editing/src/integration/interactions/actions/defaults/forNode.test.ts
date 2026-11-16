@@ -5,10 +5,13 @@
  */
 import { describe, expect, it } from 'vitest';
 import type { Action, InvocationCtx, SelectionApi } from '@weasel-js/routing';
-import { createScene, RECT_POSE_DESCRIPTOR, type PoseDescriptor, moveAction } from '@weasel-js/core/engine';
+import { createScene, RECT_POSE_DESCRIPTOR, type PoseDescriptor } from '@weasel-js/core/engine';
 import type { NodeId } from '@weasel-js/core';
-import { cloneAction, rotateAction, resizeAction } from '@weasel-js/core';
 import { nudgeRightAction, duplicateAction } from '@weasel-js/editing';
+import { moveAction } from '../../../../actions/move/action';
+import { cloneAction } from '../../../../actions/clone/action';
+import { rotateAction } from '../../../../actions/rotate/action';
+import { resizeAction } from '../../../../actions/resize/action';
 
 interface Pose { x: number; y: number; width: number; height: number; rotation?: number; via?: string }
 interface PosedNode { data: { own: boolean } }

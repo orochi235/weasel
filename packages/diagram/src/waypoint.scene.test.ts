@@ -1,7 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import {
-  createScene, moveAction, type ActionDeps, type ImmediateInvoker, type InvocationCtx, type OngoingHandle, type OngoingInvoker, type RectPose,
-} from '@weasel-js/core';
+import { createScene, type ActionDeps, type ImmediateInvoker, type InvocationCtx, type OngoingHandle, type OngoingInvoker, type RectPose } from '@weasel-js/core';
 import type { Vec2 } from '@weasel-js/core/math';
 import { EDGE_DERIVE_PATH, withDiagramRegistry } from './edge';
 import type { DiagramEdge } from './edgeTrait';
@@ -15,6 +13,7 @@ import { routesOf } from './routeWrites';
 import { createResetRouteAction } from './routeCommands';
 import { commitRouteToScene } from './waypointAction';
 import { waypointFollower } from './waypointFollower';
+import { moveAction } from '@weasel-js/editing';
 
 const edgeOf = (scene: { get(id: never): { data: unknown } | undefined }, id: string) =>
   (scene.get(id as never)!.data as { diagram: DiagramEdge }).diagram;

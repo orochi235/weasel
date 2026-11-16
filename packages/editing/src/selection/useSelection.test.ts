@@ -5,8 +5,7 @@ import { renderThenAbandon } from '@weasel-js/react/testing/abandonRender';
 import type { SelectionApi } from '@weasel-js/routing';
 import type { SelectionStore } from '@weasel-js/core/engine';
 import { useSelection } from './useSelection';
-import { asNodeId } from '@weasel-js/core/engine';
-import { createScene } from '@weasel-js/core/engine';
+import { asNodeId, createScene } from '@weasel-js/core/engine';
 
 const NO_MODS = { shift: false, meta: false, ctrl: false };
 const a = asNodeId('a');

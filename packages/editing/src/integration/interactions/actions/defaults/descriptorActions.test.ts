@@ -2,9 +2,10 @@ import { describe, it, expect } from 'vitest';
 import { IDENTITY_POSE_COMPOSITION, createScene } from '@weasel-js/core/engine';
 import type { NodeId, Scene } from '@weasel-js/core';
 import type { ImmediateInvoker, InvocationCtx } from '@weasel-js/routing';
-import { cloneAction, rotateAction } from '@weasel-js/core';
 import { circleForTests as circle, CIRCLE_POSE_DESCRIPTORForTests as CIRCLE_POSE_DESCRIPTOR, type CirclePoseForTests as CirclePose } from '@weasel-js/core/test-seams';
 import { flipAction, alignLeftAction, distributeHorizontalAction, nudgeRightAction, duplicateAction } from '@weasel-js/editing';
+import { cloneAction } from '../../../../actions/clone/action';
+import { rotateAction } from '../../../../actions/rotate/action';
 
 type S = Scene<object, 'main', CirclePose>;
 const scene = (): S => createScene<object, 'main', CirclePose>({ composition: IDENTITY_POSE_COMPOSITION, systemLayers: [{ id: 'main' }] });

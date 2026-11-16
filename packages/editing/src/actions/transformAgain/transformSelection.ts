@@ -2,7 +2,9 @@ import type { ActionDeps } from '@weasel-js/routing';
 import type { Op } from '@weasel-js/core';
 import type { AnyScene } from '@weasel-js/core/engine';
 import { commitTransformOps } from '@weasel-js/core/engine';
-import { moveNodesOps, resizeSelectionOps, rotateSelectionOps, recordTransform, type RepeatableTransform } from '@weasel-js/core';
+import { moveNodesOps, recordTransform, type RepeatableTransform } from '@weasel-js/core';
+import { resizeSelectionOps } from '../resize/replay';
+import { rotateSelectionOps } from '../rotate/replay';
 
 /** A move, rotate or resize the selection can be given: a {@link RepeatableTransform} other than a duplicate. */
 export type SelectionTransform = Exclude<RepeatableTransform, { kind: 'duplicate' }>;

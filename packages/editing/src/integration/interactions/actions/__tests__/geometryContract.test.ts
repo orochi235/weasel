@@ -10,30 +10,21 @@
  * filling the pose box.
  */
 
-import { IDENTITY_POSE_COMPOSITION, createPoseOverrides, PATH_GEOMETRY_PROJECTION, moveAction } from '@weasel-js/core/engine';
+import { IDENTITY_POSE_COMPOSITION, createPoseOverrides, PATH_GEOMETRY_PROJECTION } from '@weasel-js/core/engine';
 import { describe, it, expect } from 'vitest';
 import { stubDepsForTests as stubDeps } from '@weasel-js/core/test-seams';
 import type { PoseOverrides } from '@weasel-js/core/engine';
 import type { NodeId, Op, ResizeAnchor } from '@weasel-js/core';
 import type { InvocationCtx, OngoingInvoker, ImmediateInvoker, Action } from '@weasel-js/routing';
 
-import {
-  rectPath,
-  ellipsePath,
-  starPath,
-  regularPolygonPath,
-  PathBuilder,
-  boundsOfPath,
-  pathInWorld,
-  pathUnion,
-  pathIntersect,
-  pathSubtract,
-} from '@weasel-js/core';
+import { rectPath, ellipsePath, starPath, regularPolygonPath, PathBuilder, boundsOfPath, pathInWorld, pathUnion, pathIntersect, pathSubtract } from '@weasel-js/core';
 import type { Path } from '@weasel-js/geom';
 import { splitPathBySegment } from '@weasel-js/geom/booleans';
 
-import { resizeAction, rotateAction } from '@weasel-js/core';
 import { flipAction, nudgeRightAction } from '@weasel-js/editing';
+import { moveAction } from '../../../../actions/move/action';
+import { resizeAction } from '../../../../actions/resize/action';
+import { rotateAction } from '../../../../actions/rotate/action';
 
 interface AABBPose {
   x: number;

@@ -91,7 +91,7 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
   const getNodeAtPointRef = useLatest(picking.getNodeAtPoint);
   const tools = useSceneCanvasTools({
     props: props as SceneCanvasToolProps, move: picking.moveOptions, enabled, traits,
-    build: { scene, adapter, poseDescriptor: descriptor, picking, selection, selectTool: selectToolWithDefaults, canvasApiRef },
+    build: { scene, adapter, poseDescriptor: descriptor, picking, selection, selectTool: selectToolWithDefaults, canvasApiRef, insertNodeFactories: traits.props.insertNodeFactories },
   });
 
   // The wrapper's `<InputScope>` provides it.
@@ -169,7 +169,7 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
         canvas={{ elementRef: internalCanvasRef, apiRef: canvasApiRef, ready: canvasReady }} snapSources={enabled.snapSources} snapStore={layered.snapStore}
       />
       <SurfaceDeclarations views={props.views} entries={contributionEntries(tools.tools)} added={addedViews} />
-      <PresetComponents parts={enabled.components} scene={scene as Scene<unknown, string, unknown>} canvasRef={internalCanvasRef} paintsInto={!!props.paintInto} />
+      <PresetComponents parts={enabled.components} scene={scene as Scene<unknown, string, unknown>} canvasRef={internalCanvasRef} paintsInto={!!props.paintInto} canvas={tools.buildCtx} />
       {props.children}
     </CanvasKitProviders>
   );

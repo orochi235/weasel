@@ -16,38 +16,17 @@ export {
 export type { OriginProjection } from '../interactions/gestures/shared';
 
 // ─── Drag-action hooks: move / resize / rotate / insert / area-select / etc. ─
-export type { UseMoveOptions } from '../interactions/actions/move';
-export {
-  AUTO_POSE_DESCRIPTOR,
-  isPathLike,
-  isRectPose,
-  RECT_POSE_DESCRIPTOR,
-  ROTATED_POSE_DESCRIPTOR,
-  poseDescriptorForNode,
-  cornerResizeHandles,
-  fixedCornerOf,
-  hitCornerHandle,
-} from '../interactions/actions/resize';
-export type {
-  UseResizeOptions,
-  PoseDescriptor,
-  TranslateLead,
-  CornerHandle,
-} from '../interactions/actions/resize';
-export {
-  pointInRotatedRect,
-  rotatedRectCorners,
-  rectCorners,
-  rotatePoint,
-  aabbCenter,
-  rotationHandle,
-  hitRotationHandle,
-  DEFAULT_ROTATION_HANDLE_DISTANCE,
-} from '../interactions/actions/rotate';
-export type {
-  UseRotateOptions,
-  RotationHandle,
-} from '../interactions/actions/rotate';
+export type { UseMoveOptions } from '../interactions/gestures/moveOptions';
+export type { UseResizeOptions } from '../interactions/gestures/resizeOptions';
+export type { UseRotateOptions } from '../interactions/gestures/rotateOptions';
+export { AUTO_POSE_DESCRIPTOR, isPathLike, isRectPose } from '../core/geometry/autoPoseDescriptor';
+export { RECT_POSE_DESCRIPTOR, ROTATED_POSE_DESCRIPTOR, poseDescriptorForNode } from '../core/geometry/poseDescriptor';
+export type { PoseDescriptor, TranslateLead } from '../core/geometry/poseDescriptor';
+export { cornerResizeHandles, fixedCornerOf, hitCornerHandle } from '../core/geometry/resizeHandles';
+export type { CornerHandle } from '../core/geometry/resizeHandles';
+export { pointInRotatedRect, rotatedRectCorners, rectCorners, rotatePoint, aabbCenter } from '../core/geometry/rotatedRect';
+export { rotationHandle, hitRotationHandle, DEFAULT_ROTATION_HANDLE_DISTANCE } from '../core/geometry/rotationHandle';
+export type { RotationHandle } from '../core/geometry/rotationHandle';
 export { useDragRect } from '../interactions/gestures/dragRect';
 export type {
   DragRectController,
@@ -132,8 +111,6 @@ export { lastTransform, recordTransform, forgetTransform } from '../interactions
 export type { RepeatableTransform } from '../interactions/actions/transform-again/memory';
 export { requiresSelection } from '../interactions/actions/defaults/requiresSelection';
 export type { CloneBehavior, CloneBehaviorResult, CloneEnd } from '../interactions/gestures/types';
-// snapToContainer / snapBackOrDelete are NOT re-exported at top level —
-// import them from '@weasel-js/core/move'.
 
 // ─── Animation primitives (tween, spring, easings) ──────────────────────────
 export * from '../animation';

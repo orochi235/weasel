@@ -11,14 +11,11 @@ import { describe, it, expect, vi, beforeAll, afterEach } from 'vitest';
 import { act, cleanup } from '@testing-library/react';
 import { renderWithKeys as render } from '@weasel-js/react/testing/giveKeys';
 import { polygonFromPoints, type Path } from '@weasel-js/geom';
-import type { View } from '@weasel-js/core';
+import type { View, ToolsApi } from '@weasel-js/core';
 import { toolIdsOf } from '@weasel-js/routing';
 import { useActionsRegistry, useDepRegistry } from '@weasel-js/routing/react';
-import { createScene } from '@weasel-js/core/engine';
-import { solid } from '@weasel-js/core';
-import { asNodeId, type Scene } from '@weasel-js/core/engine';
-import type { ToolsApi } from '@weasel-js/core';
-import { SceneCanvas } from '@weasel-js/core';
+import { createScene, asNodeId, type Scene } from '@weasel-js/core/engine';
+import { solid, SceneCanvas } from '@weasel-js/core';
 import { drawPreset } from '../presets/composites';
 import { BUILTIN_TOOL_GROUPS, BUILTIN_TOOL_IDS, type KitToolId } from './toolSets';
 

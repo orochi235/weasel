@@ -1,10 +1,8 @@
 /** A paged diagram scene for tests: two 200 by 100 pages, 40 apart (p1 spans x 0..200, p2 x 240..440), with the
  *  pasteboard on, and a drag through the move action. */
-import {
-  createPageRun, createScene, moveAction, placeOnPages, worldPoses,
-  type InvocationCtx, type NodeId, type OngoingHandle, type OngoingInvoker, type RectPose, type Scene,
-} from '@weasel-js/core';
+import { createPageRun, createScene, placeOnPages, worldPoses, type InvocationCtx, type NodeId, type OngoingHandle, type OngoingInvoker, type RectPose, type Scene } from '@weasel-js/core';
 import { withDiagramRegistry } from '../edge';
+import { moveAction } from '@weasel-js/editing';
 
 export type PagedScene = Scene<unknown, 'main', RectPose>;
 

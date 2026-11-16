@@ -1,15 +1,14 @@
 import { useMemo } from 'react';
 import { defineTool } from '@weasel-js/core';
 import type { Tool } from '@weasel-js/core';
-import { INSERT_REPOSITION_BINDING } from '@weasel-js/core';
 import { insertBindingBehaviors, type InsertToolOptions } from '../shared/insertToolOptions';
 import { DEFAULT_SHAPE_PAINT, shapeToolOptions } from '../shared/styleOptions';
 import { shareToolOptions } from '@weasel-js/routing';
 import type { WorldPoint } from '@weasel-js/routing';
 import { cursorFor } from '@weasel-js/cursor';
 import { icon } from '../../icons.gen';
-import { INSERT_DRAG_MODS } from '@weasel-js/core';
-import type {} from '@weasel-js/core';
+import { INSERT_REPOSITION_BINDING } from '../../actions/insert/repositionAction';
+import { INSERT_DRAG_MODS } from '../../actions/insert/action';
 
 /** An endpoint of a line, in world coordinates. */
 export type LinePoint = WorldPoint;

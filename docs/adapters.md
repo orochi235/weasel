@@ -13,7 +13,8 @@ never hold one. To hand the same scene to something outside the canvas — a
 pose animation, a clipboard, a tool hook — build it yourself:
 
 ```tsx
-import { useScene, useSceneAdapter, useSelection, tweenPose } from '@weasel-js/core';
+import { useScene, useSceneAdapter, tweenPose } from '@weasel-js/core';
+import { useSelection } from '@weasel-js/editing';
 
 const scene = useScene({ items: RECTS });
 const selection = useSelection();

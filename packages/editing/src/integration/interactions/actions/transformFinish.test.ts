@@ -1,10 +1,11 @@
 import { describe, expect, it, vi } from 'vitest';
 import type { ActionDeps, ImmediateInvoker, InvocationCtx, OngoingHandle, OngoingInvoker, SelectionApi } from '@weasel-js/routing';
-import { createScene, createSetDataOp, moveAction, commitTransformOps, type TransformFollower, createInsertOp } from '@weasel-js/core/engine';
+import { createScene, createSetDataOp, commitTransformOps, type TransformFollower, createInsertOp } from '@weasel-js/core/engine';
 import type { Op } from '@weasel-js/core';
 import type { RectPose } from '@weasel-js/core/engine';
 import { lastTransform } from '@weasel-js/core';
 import { alignRightAction, nudgeRightAction } from '@weasel-js/editing';
+import { moveAction } from '../../../actions/move/action';
 
 const box = (x: number, y: number): RectPose => ({ x, y, width: 10, height: 10 });
 

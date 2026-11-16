@@ -6,8 +6,8 @@ import { DepRegistryProvider, useDepRegistry, useDepSource, type DepRegistry } f
 import { buildDepsFromRequires } from '@weasel-js/routing';
 import {
   hitTestAreaForTests as hitTestArea, useEditAnchorsDepSourceForTests as useEditAnchorsDepSource,
-  useInsertDepSourceForTests as useInsertDepSource,
 } from '@weasel-js/core/test-seams';
+import { useInsertDepSource } from '@weasel-js/editing';
 import { createScene, defaultCommitAdapter } from '@weasel-js/core';
 
 describe('usePenTool — through the kit insert dep', () => {

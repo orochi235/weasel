@@ -7,29 +7,12 @@
  */
 
 import { describe, it, expect } from 'vitest';
-import {
-  // public action descriptors apps/draw gets via `toolBundle="exhaustive"`
-  resizeAction,
-  moveAction,
-  rotateAction,
-  // public geometry surface apps/draw uses
-  rectPath,
-  ellipsePath,
-  starPath,
-  regularPolygonPath,
-  PathBuilder,
-  boundsOfPath,
-  pathInWorld,
-  pathUnion,
-  pathIntersect,
-  pathSubtract,
-  splitPathBySegment,
-  createPoseOverrides,
-  IDENTITY_POSE_COMPOSITION,
-} from '@weasel-js/core';
+import { // public geometry surface apps/draw uses
+  rectPath, ellipsePath, starPath, regularPolygonPath, PathBuilder, boundsOfPath, pathInWorld, pathUnion, pathIntersect, pathSubtract, splitPathBySegment, createPoseOverrides, IDENTITY_POSE_COMPOSITION } from '@weasel-js/core';
 import type {
   Path, ResizeAnchor, InvocationCtx, OngoingInvoker, Action, Op, PoseOverrides,
 } from '@weasel-js/core';
+import { moveAction, resizeAction, rotateAction } from '@weasel-js/editing';
 
 interface WeaselDrawPose {
   x: number;

@@ -17,7 +17,7 @@ import { TEXT_PAINTER } from './node/textPainter';
 import { stickyNodeFactory } from './tools/sticky/stickyNode';
 import { createStickyTool, type UseStickyToolOptions } from './tools/sticky/useStickyTool';
 import { createTextTool } from './tools/text/useTextTool';
-import { editPreset, movePreset, pickPreset, resizePreset } from '@weasel-js/editing';
+import { editPreset, insertPreset, movePreset, pickPreset, resizePreset } from '@weasel-js/editing';
 
 /** Routes a leaf whose `data.text` is a string as `'text'`, ahead of the canvas's own routing, so an
  *  SVG-imported text node carrying a fallback `path` routes to text edit. */
@@ -64,14 +64,15 @@ export interface TextToolsPresetOptions extends Pick<UseStickyToolOptions, 'beha
   text?: FeaturePreset;
 }
 
-/** The text and sticky-note tools, with the text preset whose actions and inserts they bind. */
+/** The text and sticky-note tools, with the text preset whose actions they bind and editing's `insertPreset`,
+ *  whose `insert` action and dep they insert through. */
 export function createTextToolsPreset(options: TextToolsPresetOptions = {}): FeaturePreset {
   const { behaviors, share, sticky, text = textPreset } = options;
   return {
     id: 'tools:text',
     label: 'Text tools',
     tools: [createTextTool({ behaviors, share }), createStickyTool({ ...sticky, behaviors, share })],
-    includes: [text],
+    includes: [text, insertPreset],
   };
 }
 

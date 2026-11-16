@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { renderHook } from '@testing-library/react';
 import { useImageTool } from './useImageTool';
-import { INSERT_REPOSITION_BINDING } from '@weasel-js/core';
+import { INSERT_REPOSITION_BINDING } from '../../actions/insert/repositionAction';
 
 const insertParams = (tool: ReturnType<typeof useImageTool>) =>
   tool.bindings![0].opts!.params as Record<string, unknown>;

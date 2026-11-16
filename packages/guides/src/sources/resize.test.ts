@@ -1,21 +1,11 @@
 /** A resize of a turned node snapping to alignment lines through the session. */
 import { describe, expect, it } from 'vitest';
-import {
-  createScene,
-  createSnapOutcomeStore,
-  resizeAction,
-  rotatePoint,
-  type InvocationCtx,
-  type NodeId,
-  type ResizeAnchor,
-  type SnapDep,
-  type SnapSource,
-  type AnyScene,
-} from '@weasel-js/core';
+import { createScene, createSnapOutcomeStore, rotatePoint, type InvocationCtx, type NodeId, type ResizeAnchor, type SnapDep, type SnapSource, type AnyScene } from '@weasel-js/core';
 import { createSnapSession2dForTests } from '@weasel-js/core/test-seams';
 import type { Guide } from '../guides/types';
 import { alignmentSnapSource } from './alignment';
 import { spacingSnapSource } from './spacing';
+import { resizeAction } from '@weasel-js/editing';
 
 type Pose = { x: number; y: number; width: number; height: number; rotation?: number };
 // 100x40 turned a quarter turn about its center (50, 20): the ink spans

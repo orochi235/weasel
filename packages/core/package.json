@@ -57,21 +57,9 @@
       "types": "./dist/mesh.d.ts",
       "import": "./dist/mesh.js"
     },
-    "./move": {
-      "types": "./dist/move.d.ts",
-      "import": "./dist/move.js"
-    },
-    "./resize": {
-      "types": "./dist/resize.d.ts",
-      "import": "./dist/resize.js"
-    },
     "./clipboard": {
       "types": "./dist/clipboard.d.ts",
       "import": "./dist/clipboard.js"
-    },
-    "./clone": {
-      "types": "./dist/clone.d.ts",
-      "import": "./dist/clone.js"
     },
     "./json": {
       "types": "./dist/json.d.ts",

@@ -6,9 +6,9 @@ import { describe, it, expect, vi, beforeAll, afterEach } from 'vitest';
 import { act, cleanup, render } from '@testing-library/react';
 import { useDepRegistry, type DepRegistry } from '@weasel-js/routing/react';
 import type { ActionDeps } from '@weasel-js/routing';
-import { SceneCanvas, asNodeId, createScene, placeAction } from '@weasel-js/core';
+import { SceneCanvas, asNodeId, createScene } from '@weasel-js/core';
 import { textPreset } from '../presets';
-import { editPreset } from '@weasel-js/editing';
+import { editPreset, placeAction } from '@weasel-js/editing';
 
 beforeAll(() => {
   const proto = HTMLCanvasElement.prototype as unknown as Record<string, unknown>;

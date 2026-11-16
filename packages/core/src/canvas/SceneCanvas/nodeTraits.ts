@@ -4,7 +4,7 @@
  */
 import type { NodeRoutingEntry } from 'core/scene/NodeRouting';
 import type { NodePropertiesEntry } from 'core/scene/NodeProperties';
-import type { InsertNodeFactories, InsertNodeFactory } from '../deps/insert';
+import type { InsertNodeFactories, InsertNodeFactory } from '../deps/insertFactories';
 import type { NodeShapeEntry } from '../NodeShape';
 import { resolveFeatures, type FeaturePreset, type PresetNodeShape } from './features';
 import { inferredNodeProperties } from './defaultNodeProperties';

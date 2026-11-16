@@ -1,12 +1,13 @@
 import { describe, expect, it, vi } from 'vitest';
 import { createElement, type ReactNode } from 'react';
 import { renderHook } from '@testing-library/react';
-import { INSERT_DRAG_MODS, commitOps, createPageRun, createScene, DepRegistryProvider, useDepRegistry, useDepSource, type ActionDeps, type InsertDep, type RectPose } from '@weasel-js/core';
+import { commitOps, createPageRun, createScene, DepRegistryProvider, useDepRegistry, useDepSource, type ActionDeps, type InsertDep, type RectPose } from '@weasel-js/core';
 import { withDiagramRegistry } from './edge';
 import { FLOWCHART_STENCILS, stencilBuild, stencilKind } from './stencil';
 import { DEFAULT_NODE_STYLE } from './fromData';
 import { CONTAINER_STENCILS, lanesOf } from './containers/containerStencils';
 import { useStencilInsert, useStencilTool, type StencilInsertOptions } from './stencilTool';
+import { INSERT_DRAG_MODS } from '@weasel-js/editing';
 
 const byId = (id: string) => FLOWCHART_STENCILS.find((s) => s.id === id)!;
 

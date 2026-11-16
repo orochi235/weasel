@@ -57,12 +57,35 @@ export {
 } from './tools/select/groupEntry';
 export { drawPreset, pickPreset, transformPreset } from './presets/composites';
 export { ingestPreset } from './presets/ingest';
+export { insertPreset } from './presets/insert';
 export {
   FEATURE_ACTION_IDS, FEATURE_NAMES, FEATURE_PRESETS, KIT_STANDARD_ACTIONS, namedFeatures, type FeatureName,
 } from './namedPresets';
 export {
   useStandardActions, KIT_STANDARD_ACTION_IDS, type UseStandardActionsOptions,
 } from './useStandardActions';
+
+export { moveAction } from './actions/move/action';
+export { snapToContainer, snapBackOrDelete, clampMove, type ClampMoveOptions } from './actions/move/behaviors';
+export { cloneAction } from './actions/clone/action';
+export { createResizeAction, resizeAction, type ResizeActionOptions } from './actions/resize/action';
+export { clampMinSize } from './actions/resize/behaviors';
+export { useResizePolicy, resizePolicyOptions, type UseResizePolicyOptions } from './deps/resizePolicy';
+export { rotateAction } from './actions/rotate/action';
+export { areaSelectAction } from './actions/select/areaSelect';
+export { clearSelectionAction } from './actions/select/clearSelection';
+export { lassoSelectAction } from './actions/lassoSelect/action';
+export type { UseLassoSelectOptions } from './actions/lassoSelect/options';
+export { selectFromLasso, type SelectFromLassoOptions } from './actions/lassoSelect/behaviors/selectFromLasso';
+export { insertAction, INSERT_DRAG_MODS } from './actions/insert/action';
+export { insertParams, POLYGON_INSERT_PARAMS, STAR_INSERT_PARAMS } from './actions/insert/params';
+export { placeAction } from './actions/insert/placeAction';
+export { insertRepositionAction, INSERT_REPOSITION_BINDING } from './actions/insert/repositionAction';
+export { insertRotateAction } from './actions/insert/rotateAction';
+export {
+  DEFAULT_STROKE_WIDTH, insertStyleOf, STYLE_OPTION_KEYS, type InsertStyle, type StyleOptionKey,
+} from './actions/insert/style';
+export { KIT_INSERT_KINDS, useInsertDepSource } from './deps/insert';
 
 export { flipAction } from './actions/flip/action';
 export type { FlipAxis, FlipPivot } from './actions/flip/helpers';

@@ -1,8 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import {
-  IDENTITY_POSE_COMPOSITION, createScene, moveAction, moveNodes, moveNodesOps,
-  type GeometryProjection, type InvocationCtx, type NodeId, type PoseChange,
-} from '@weasel-js/core';
+import { IDENTITY_POSE_COMPOSITION, createScene, moveNodes, moveNodesOps, type GeometryProjection, type InvocationCtx, type NodeId, type PoseChange } from '@weasel-js/core';
 import type { Affine } from '@weasel-js/geom';
 import { createCamera } from './camera';
 import { add, intersectRayPlane, pointOnRay, sub, type Vec3 } from '@weasel-js/geom/3d';
@@ -14,6 +11,7 @@ import {
   boundsOfTestNode, createFramedTestScene, createTestScene, type TestScene,
 } from './testScene';
 import { POSE3_COMPOSITION } from './composePose3';
+import { moveAction } from '@weasel-js/editing';
 
 function viewport(): Viewport3d {
   return {

@@ -13,7 +13,7 @@ import { describe, it, expect } from 'vitest';
 import { HANDLE_BASE_PX, ROTATION_HANDLE_BASE_PX } from '../core/device/targets';
 import { COARSE_TARGET_SCALE, resolveDeviceProfile } from '@weasel-js/routing';
 import { DEFAULT_HANDLE_SIZE, mergeLayersWithDefaults } from './SceneCanvas';
-import { DEFAULT_ROTATION_HANDLE_DISTANCE } from '../interactions/actions/rotate';
+import { DEFAULT_ROTATION_HANDLE_DISTANCE } from '../core/geometry/rotationHandle';
 import { createCornerResizeAffordance } from '../affordances/cornerResize';
 import { buildAffordanceAt, chromeAffordances } from './affordanceAt';
 import type { ChromeState } from 'core/selection/chromeState';

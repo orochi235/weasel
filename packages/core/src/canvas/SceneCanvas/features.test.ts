@@ -10,7 +10,6 @@ import {
   type FeaturePreset,
 } from './features';
 import { BASELINE_ACTION_IDS } from './presets/baseline';
-import { TOOL_DRIVEN_ACTION_IDS } from './presets/toolDriven';
 import { PRESET_OWNED_CHROME } from './presets/chrome';
 import { defaultVisibilityRules, never } from 'domains/chrome-caps';
 import { MIDDLE_DRAG_PAN_ID } from 'tools/builtin/hand/dragPanContribution';
@@ -30,7 +29,10 @@ describe('FEATURE_ACTION_IDS', () => {
     for (const [feature, ids] of Object.entries(FEATURE_ACTION_IDS)) {
       for (const id of ids) owners.set(id, [...(owners.get(id) ?? []), feature]);
     }
-    for (const id of TOOL_DRIVEN_ACTION_IDS) owners.set(id, [...(owners.get(id) ?? []), 'tool']);
+    // A tool action a preset also registers is that preset's; the rest belong to the tools that bind them.
+    for (const p of Object.values(FEATURE_PRESETS)) {
+      for (const { id } of p.toolActions ?? []) if (!owners.has(id)) owners.set(id, ['tool']);
+    }
     for (const id of BASELINE_ACTION_IDS) owners.set(id, [...(owners.get(id) ?? []), 'baseline']);
 
     for (const id of KIT_STANDARD_ACTION_IDS) {

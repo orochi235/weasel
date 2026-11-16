@@ -1,8 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import { IDENTITY_POSE_COMPOSITION,
-  createScene, insertAction, placeAction,
-  type ImmediateInvoker, type InvocationCtx, type NodeId, type OngoingInvoker, type SnapSource,
-} from '@weasel-js/core';
+import { IDENTITY_POSE_COMPOSITION, createScene, type ImmediateInvoker, type InvocationCtx, type NodeId, type OngoingInvoker, type SnapSource } from '@weasel-js/core';
 import { add, intersectRayPlane, pointOnRay, type Vec3 } from '@weasel-js/geom/3d';
 import { createKitSettingsStore } from '@weasel-js/react';
 import { MAX_PITCH, createCamera } from '../camera';
@@ -12,6 +9,7 @@ import { aabbOfPose, pose3, type Pose3 } from '../pose3';
 import { projectPoint, rayAt, type Viewport3d } from '../project';
 import type { Scene3d, World3d } from '../world';
 import { alignPlaneSource, boxSnapSource, groundGridSource } from './sources';
+import { insertAction, placeAction } from '@weasel-js/editing';
 
 type Point = { x: number; y: number };
 type W = World3d<object, 'solids'>;

@@ -12,6 +12,7 @@ import { setStrokeWidthAction } from '../actions/edit/setStrokeWidth';
 import { setVertexColorAction } from '../actions/edit/setVertexColor';
 import { transformAgainAction } from '../actions/transformAgain/action';
 import { nudgeDownAction, nudgeLeftAction, nudgeRightAction, nudgeUpAction } from '../actions/edit/nudge';
+import { insertPreset } from './insert';
 import { clipboardCopyAction, clipboardCutAction, clipboardPasteAction, clipboardPasteEventAction } from '../actions/clipboard/action';
 import { selectionPreset } from './selection';
 
@@ -54,7 +55,7 @@ export const clipboardPreset: FeaturePreset = {
   id: 'clipboard',
   label: 'Clipboard',
   actions: [clipboardCutAction, clipboardCopyAction, clipboardPasteAction, clipboardPasteEventAction],
-  includes: [selectionPreset],
+  includes: [insertPreset],
 };
 
 /** Every edit preset above, and their keys. */

@@ -28,7 +28,7 @@ import type { SurfaceContribution } from '../surfaceContribution';
 import type { CustomLayerEntry } from '../layerSlots';
 import type { NodeRoutingEntry } from 'core/scene/NodeRouting';
 import type { NodePropertiesEntry } from 'core/scene/NodeProperties';
-import type { InsertNodeFactories } from '../deps/insert';
+import type { InsertNodeFactories } from '../deps/insertFactories';
 import type { NodeShapeEntry, RegisterNodeShapeOptions } from '../NodeShape';
 import type { ContentHandlerEntry } from 'domains/ingestion/contentHandlers';
 import type { ComponentType, MutableRefObject } from 'react';
@@ -44,6 +44,8 @@ export interface PresetComponentProps {
   readonly canvasRef: MutableRefObject<HTMLElement | null>;
   /** Whether the canvas paints into an element the host owns (`paintInto`) rather than its own. */
   readonly paintsInto: boolean;
+  /** What a preset's `build` is handed, for a component publishing what the canvas reads live. */
+  readonly canvas: PresetBuildContext;
 }
 
 /** A shape painter a preset installs, with the tier it registers in. */
@@ -87,6 +89,9 @@ export interface FeaturePreset {
    *  are standard actions: `<SceneCanvas actions>` overrides and mutes them,
    *  and `tune` reaches them. */
   readonly actions?: readonly Action[];
+  /** Actions it brings for tools: each registers only when a tool or binding on the canvas names it, so a tool
+   *  this preset offers works whichever presets mount it, and a canvas that mounts none registers none. */
+  readonly toolActions?: readonly Action[];
   /** Tools it mounts: a built-in by id or a set of them, or a tool of its own. */
   readonly tools?: readonly (ToolEntry<string> | Tool)[];
   /** Its ambient bindings: an always-live entry routing a gesture to its
@@ -127,6 +132,9 @@ export interface FeaturePreset {
    */
   readonly routing?: readonly NodeRoutingEntry[];
   readonly insertNodeFactories?: InsertNodeFactories;
+  /** Insert kinds its `insert` dep builds with no factory: a tool inserting only kinds no factory and no
+   *  preset builds is left off the canvas. */
+  readonly insertKinds?: readonly string[];
   readonly shapes?: readonly (NodeShapeEntry<never, never> | PresetNodeShape)[];
   readonly properties?: readonly NodePropertiesEntry[];
   /** Entries installed beside `<SceneCanvas ambient>`, with every role they
@@ -171,6 +179,10 @@ export interface EnabledPresets {
   readonly layers: Readonly<Record<string, CustomLayerEntry>>;
   /** Their components, each once, in order. */
   readonly components: readonly ComponentType<PresetComponentProps>[];
+  /** Their tool actions, each once, in order. */
+  readonly toolActions: readonly Action[];
+  /** The insert kinds they build with no factory. */
+  readonly insertKinds: ReadonlySet<string>;
   /** Their content handlers, in order. */
   readonly contentHandlers: readonly ContentHandlerEntry[];
   /** Their `build`s, in order, each once. */
@@ -238,6 +250,8 @@ export function resolveFeatures(
     snapSources: presets.flatMap((p) => p.snapSources ?? []),
     layers: Object.assign({}, ...presets.map((p) => p.layers ?? {})) as Record<string, CustomLayerEntry>,
     components: [...new Set(presets.flatMap((p) => p.components ?? []))],
+    toolActions: [...new Set(presets.flatMap((p) => p.toolActions ?? []))],
+    insertKinds: new Set(presets.flatMap((p) => p.insertKinds ?? [])),
     contentHandlers: presets.flatMap((p) => p.contentHandlers ?? []),
     builds: [...new Set(presets.flatMap((p) => (p.build ? [p.build] : [])))],
     selection: selectionOf(presets),

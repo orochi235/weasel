@@ -1,11 +1,10 @@
 import { describe, expect, it } from 'vitest';
 import { boundsOfPath, rectPath } from '@weasel-js/geom';
 import type { ImmediateInvoker, InvocationCtx, OngoingHandle, OngoingInvoker } from '@weasel-js/routing';
-import {
-  asNodeId, createScene, derivedDepOf, derivedPartsOf, effectivePose, moveAction, RIGID_POSE_COMPOSITION, type NodeId, PATH_EFFECT_DERIVATIONS, pathEffectOf, pathEffectParts, type RectPose, resolveFill, type Scene, sceneFromJSON, withPathEffectsRegistry,
-} from '@weasel-js/core';
+import { asNodeId, createScene, derivedDepOf, derivedPartsOf, effectivePose, RIGID_POSE_COMPOSITION, type NodeId, PATH_EFFECT_DERIVATIONS, pathEffectOf, pathEffectParts, type RectPose, resolveFill, type Scene, sceneFromJSON, withPathEffectsRegistry } from '@weasel-js/core';
 import { tweenAction, bendAlongAction, editPathEffectAction, expandPathEffectAction, repeatAlongAction } from './actions';
 import { pathEffectSettingsParams, readPathEffectSettings } from './settingsForm';
+import { moveAction } from '@weasel-js/editing';
 
 type TestScene = Scene<unknown, 'default', RectPose>;
 

@@ -1,7 +1,10 @@
 import { useMemo, type RefObject } from 'react';
 import { useLatest } from '@weasel-js/react';
 import type { SelectionApi, WorldPoint } from '@weasel-js/routing';
-import type { Scene } from 'core/scene/types';
+import { asNodeId, type Scene } from 'core/scene/types';
+import { pressTarget } from 'tools/builtin/pressTarget';
+import type { EnteredGroupApi } from '../deps/enteredGroup';
+import type { InsertNodeFactories } from '../deps/insertFactories';
 import type { Bounds } from 'core/viewport/fitViewToBounds';
 import type { PoseDescriptor } from 'core/geometry/poseDescriptor';
 import type { Tool } from 'tools/overlayBinding';
@@ -21,6 +24,13 @@ export interface CanvasPickers {
   between(from: string, to: string): readonly string[];
   /** `id`'s world box as the chrome draws it, or null. */
   boundsOf(id: string): Bounds | null;
+  /** Whether `id` takes hits: what a region select may take, as a press may. */
+  reachable(id: string): boolean;
+  /** The node selecting a hit on `id` selects, inside the entered group, as a click picks. */
+  targetOf(id: string): string;
+  /** The composed paint alpha, where the canvas fades anything, so a region select passes over what is painted
+   *  at zero; absent, everything paints whole. */
+  alphaOf(): ((id: string) => number) | undefined;
 }
 
 /** What a canvas hands a preset's `build`: `toolOptions`, and everything else read live, so a tool built once
@@ -39,6 +49,8 @@ export interface PresetBuildContext {
   selectTool(): SceneCanvasSelectTool<unknown> & { extendClickLocked?: () => boolean };
   /** Ask for a frame: for a tool whose preview changes between pointer events, as a polygon's side count does. */
   requestRedraw(): void;
+  /** The insert factories the canvas builds with: its presets', then its `insertNodeFactories` prop by kind. */
+  insertNodeFactories(): InsertNodeFactories | undefined;
 }
 
 /** What the canvas reads its presets' `build` context from. */
@@ -51,8 +63,12 @@ export interface PresetBuildSource {
     pickBestIn: CanvasPickers['bestIn'];
     between: CanvasPickers['between'];
     boundsOf: (id: string) => Bounds | null;
+    reachable: (id: string) => boolean;
+    alphaOf: ((id: string) => number) | undefined;
+    enteredGroup: EnteredGroupApi;
   };
   selection: SelectionApi;
+  insertNodeFactories: InsertNodeFactories | undefined;
   selectTool: unknown;
   toolOptions: SceneCanvasToolOptions | undefined;
   /** The surface's handle, which a redraw is asked of. */
@@ -64,7 +80,7 @@ export interface PresetBuildSource {
 export function usePresetBuilds(
   builds: readonly NonNullable<FeaturePreset['build']>[],
   source: PresetBuildSource,
-): { tools: Readonly<Record<string, Tool>>; contributions: readonly SurfaceContribution[] } {
+): { tools: Readonly<Record<string, Tool>>; contributions: readonly SurfaceContribution[]; ctx: PresetBuildContext } {
   const live = useLatest(source);
   const toolOptions = useStableToolOptions(source.toolOptions);
   const ctx = useMemo<PresetBuildContext>(() => ({
@@ -75,11 +91,20 @@ export function usePresetBuilds(
     selection: () => live.current.selection,
     selectTool: () => (live.current.selectTool ?? {}) as ReturnType<PresetBuildContext['selectTool']>,
     requestRedraw: () => { live.current.canvasApiRef.current?.requestRedraw(); },
+    insertNodeFactories: () => live.current.insertNodeFactories,
     pick: {
       pressEvery: (world, viewId) => live.current.picking.pressEvery(world, viewId),
       bestIn: (world, viewId) => live.current.picking.pickBestIn(world, viewId),
       between: (from, to) => live.current.picking.between(from, to),
       boundsOf: (id) => live.current.picking.boundsOf(id),
+      reachable: (id) => live.current.picking.reachable(id),
+      alphaOf: () => live.current.picking.alphaOf,
+      targetOf: (id) => {
+        const { scene, picking } = live.current;
+        const sc = scene as Scene<unknown, string, unknown>;
+        const tree = { getParent: (n: string) => sc.get(asNodeId(n))?.parent ?? null, getNode: (n: string) => sc.get(asNodeId(n)) };
+        return pressTarget(tree, id, picking.enteredGroup.get());
+      },
     },
   }), [toolOptions, live]);
   return useMemo(() => {
@@ -90,7 +115,7 @@ export function usePresetBuilds(
       Object.assign(tools, out.tools);
       contributions.push(...(out.contributions ?? []));
     }
-    return { tools, contributions };
+    return { tools, contributions, ctx };
   }, [builds, ctx]);
 }
 

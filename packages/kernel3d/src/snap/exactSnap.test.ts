@@ -4,10 +4,7 @@
  * the commit, so a grid line at 0.5 is stored as 0.5.
  */
 import { describe, expect, it } from 'vitest';
-import {
-  IDENTITY_POSE_COMPOSITION, createScene, insertAction, moveAction, placeAction,
-  type ImmediateInvoker, type InvocationCtx, type NodeId, type OngoingInvoker,
-} from '@weasel-js/core';
+import { IDENTITY_POSE_COMPOSITION, createScene, type ImmediateInvoker, type InvocationCtx, type NodeId, type OngoingInvoker } from '@weasel-js/core';
 import { add, type Vec3 } from '@weasel-js/geom/3d';
 import { createCamera } from '../camera';
 import { createPoseDescriptor, createSnap } from '../deps';
@@ -16,6 +13,7 @@ import { aabbOfPose, pose3, type Pose3 } from '../pose3';
 import { projectPoint, type Viewport3d } from '../project';
 import type { Scene3d, World3d } from '../world';
 import { groundGridSource } from './sources';
+import { insertAction, moveAction, placeAction } from '@weasel-js/editing';
 
 type W = World3d<object, 'solids'>;
 const KEYS = { alt: false, ctrl: false, meta: false, shift: false };

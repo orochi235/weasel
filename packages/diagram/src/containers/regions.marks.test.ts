@@ -1,7 +1,5 @@
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
-import {
-  commitOps, createScene, moveAction, type ActionDeps, type InvocationCtx, type NodeId, type OngoingHandle, type OngoingInvoker, type RectPose,
-} from '@weasel-js/core';
+import { commitOps, createScene, type ActionDeps, type InvocationCtx, type NodeId, type OngoingHandle, type OngoingInvoker, type RectPose } from '@weasel-js/core';
 import type { Vec2 } from '@weasel-js/core/math';
 import { AUTO_POSE_DESCRIPTOR } from 'core/geometry/autoPoseDescriptor';
 import { pickWalk, scenePickSource } from 'canvas/pickWalk';
@@ -11,6 +9,7 @@ import { withDiagramRegistry } from '../edge';
 import { registerDiagramShape } from '../shape';
 import { diagramCanDropInto } from './canDropInto';
 import { CONTAINER_STENCILS, containerBuild, lanesOf } from './containerStencils';
+import { moveAction } from '@weasel-js/editing';
 
 const makeScene = () =>
   createScene<Record<string, unknown>, 'main', RectPose>({ systemLayers: [{ id: 'main' }], registry: withDiagramRegistry() });

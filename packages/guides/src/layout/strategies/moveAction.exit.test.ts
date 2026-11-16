@@ -5,19 +5,10 @@
  * a container it no longer sits in.
  */
 import { describe, expect, it } from 'vitest';
-import {
-  createScene,
-  moveAction,
-  RECT_POSE_COMPOSITION,
-  type InvocationCtx,
-  type LayoutDep,
-  type NodeId,
-  type OngoingHandle,
-  type OngoingInvoker,
-  type RectPose,
-} from '@weasel-js/core';
+import { createScene, RECT_POSE_COMPOSITION, type InvocationCtx, type LayoutDep, type NodeId, type OngoingHandle, type OngoingInvoker, type RectPose } from '@weasel-js/core';
 import { freeform } from './freeform';
 import { snapPoint } from './snapPoint';
+import { moveAction } from '@weasel-js/editing';
 
 const box = (x: number, y: number, w = 20, h = 20): RectPose => ({ x, y, width: w, height: h });
 

@@ -926,7 +926,7 @@ are drawn in.
 the kit's rect-driven machinery. Required methods: `getBounds(pose) → Bounds`
 (AABB), `remapBounds(pose, src, dst) → TPose` (affine remap on resize or group
 scale), `fromBounds(bounds, template) → TPose`. Optional: `translate`, `lerp`, `getRotation`. Used by
-`resizeAction`, area-select, snap, and animation helpers. Built-ins:
+`@weasel-js/editing`'s `resizeAction` and area select, snap, and animation helpers. Built-ins:
 `RECT_POSE_DESCRIPTOR` (identity for rect poses), `ROTATED_POSE_DESCRIPTOR`,
 `pathPoseDescriptor`. Distinct from [OriginProjection](#snap-source) which handles
 snap-point extraction for non-rect poses. See `packages/core/src/core/geometry/poseDescriptor.ts`.

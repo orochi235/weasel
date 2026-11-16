@@ -7,12 +7,10 @@
  */
 export { hitTestArea, hitTestAreaPolygon, type AABBBounds } from './hitTestArea';
 export { useViewDepSource } from './view';
-export { useAreaSelectDepSource } from './areaSelect';
 export { useNodeAtPointDepSource } from './nodeAtPoint';
-export { useLassoSelectDepSource } from './lassoSelect';
 export { useEditAnchorsDepSource } from './editAnchors';
 export { useSelectionSnapshotDepSource } from './selectionSnapshot';
-export { useInsertDepSource, type InsertNodeFactory, type InsertNodeFactories, type InsertedNode, type KitInsertKind } from './insert';
+export type { InsertNodeFactory, InsertNodeFactories, InsertedNode, KitInsertKind } from './insertFactories';
 export { useSnapDepSource } from './snap';
 export { useTransformFollower } from './transformFollowers';
 export { useSliceDepSource } from './slice';
@@ -24,11 +22,6 @@ export { useSurfaceDepSources } from './surface';
 export { useKitSettingsDepSource } from './kitSettings';
 export { useDepChangeNotices } from './changes';
 export { useDispatcherDepSource } from './dispatcher';
-export {
-  useResizePolicy,
-  resizePolicyOptions,
-  type UseResizePolicyOptions,
-} from './resizePolicy';
 export { usePoseDescriptorDepSource } from './poseDescriptor';
 export { useLayoutDepSource } from './layout';
 export { useGeometryProjection } from './geometryProjection';

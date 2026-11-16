@@ -5,23 +5,10 @@
 import { describe, expect, it } from 'vitest';
 import { act, renderHook } from '@testing-library/react';
 import { linear } from '@weasel-js/geom';
-import {
-  createReflowTransition,
-  createScene,
-  effectivePose,
-  moveAction,
-  type InvocationCtx,
-  type LayoutDep,
-  type NodeId,
-  type OngoingHandle,
-  type OngoingInvoker,
-  type PoseComposition,
-  RECT_POSE_COMPOSITION,
-  type RectPose,
-  type ReflowTransition,
-} from '@weasel-js/core';
+import { createReflowTransition, createScene, effectivePose, type InvocationCtx, type LayoutDep, type NodeId, type OngoingHandle, type OngoingInvoker, type PoseComposition, RECT_POSE_COMPOSITION, type RectPose, type ReflowTransition } from '@weasel-js/core';
 import { useAnimator } from '@weasel-js/animator/react';
 import { tileGrid } from './tileGrid';
+import { moveAction } from '@weasel-js/editing';
 
 type Drag = { start: { x: number; y: number }; current: { x: number; y: number }; delta: { x: number; y: number } };
 

@@ -1,16 +1,13 @@
 import { useMemo } from 'react';
 import { useLatest } from '@weasel-js/react';
 import { createLatest } from '@weasel-js/registry';
-import { defineTool } from '@weasel-js/core';
+import { defineTool, THROUGH_CHROME } from '@weasel-js/core';
 import type { Tool } from '@weasel-js/core';
-import type { HotkeyTrigger } from '@weasel-js/routing';
-import type { ToolKeybinding } from '@weasel-js/routing';
+import type { HotkeyTrigger, ToolKeybinding, ActionDeps, WorldPoint } from '@weasel-js/routing';
 import { defineAction, type Action } from '@weasel-js/routing';
 import { cursorFor } from '@weasel-js/cursor';
 import { icon } from '../../icons.gen';
-import type { ActionDeps, WorldPoint } from '@weasel-js/routing';
 import { viewWorldToScreen } from '@weasel-js/geom';
-import { THROUGH_CHROME } from '@weasel-js/core';
 import type {} from '@weasel-js/core';
 
 /** Options for `useEyedropperTool`. */

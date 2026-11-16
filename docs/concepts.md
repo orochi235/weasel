@@ -165,7 +165,7 @@ something that has no scene, like a package that knows nothing of scenes. Where
 a scene exists, render it with one of the components above.
 
 ```tsx
-import { SceneCanvas, useScene, useSelection } from '@weasel-js/core';
+import { SceneCanvas, useScene } from '@weasel-js/core';
 import { MinimapCanvas } from '@weasel-js/minimap';
 import { useState } from 'react';
 import type { View } from '@weasel-js/core';
@@ -975,7 +975,7 @@ and run on ambient bindings alone.
 ```tsx
 import { SceneCanvas, useScene } from '@weasel-js/core';
 import { createGridLayer } from '@weasel-js/guides';
-import { drawPreset } from '@weasel-js/editing';
+import { drawPreset, useSelection } from '@weasel-js/editing';
 
 type Swatch = { color: string };
 

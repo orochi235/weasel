@@ -1,13 +1,13 @@
 /**
  * One quantity, one answer: the extent of a nascent (pre-commit) insert.
  *
- * The painter (`useDispatcherOverlayLayer`), the commit factory
- * (`canvas/deps/insert`) and the reported gesture bounds
+ * The painter (`useDispatcherOverlayLayer`) and the reported gesture bounds
  * (`dispatcherInsertBounds`) each need "how big is the thing being
- * inserted". These tests pin all three to `insertPreviewExtent`.
+ * inserted". These tests pin both to `insertPreviewExtent`, as
+ * `@weasel-js/editing`'s insert dep tests pin the commit.
  */
-import { describe, it, expect, vi } from 'vitest';
-import { render, renderHook } from '@testing-library/react';
+import { describe, it, expect } from 'vitest';
+import { renderHook } from '@testing-library/react';
 import type { View } from 'core/viewport/view';
 import type { DrawCommand, PathDrawCommand } from '@weasel-js/renderer';
 import type { Dispatcher } from '@weasel-js/routing';
@@ -15,9 +15,6 @@ import type { OngoingHandle, OngoingOverlay } from '@weasel-js/routing';
 import { useDispatcherOverlayLayer } from './SceneCanvas/useDispatcherOverlayLayer';
 import { createGestureSource, dispatcherInsertBounds } from './SceneCanvas/dispatcherGestureBounds';
 import { insertPreviewExtent } from './insertPreviewExtent';
-import { useInsertDepSource } from './deps/insert';
-import { DepRegistryProvider, useDepRegistry, type DepRegistry } from '@weasel-js/routing/react';
-import type { Scene } from 'core/scene/types';
 
 const VIEW: View = { x: 0, y: 0, scale: { x: 1, y: 1 } };
 const DIMS = { width: 800, height: 600, dpr: 1 };
@@ -68,39 +65,6 @@ function paintedPoints(ov: InsertPreview): { x: number; y: number }[] {
     ];
   }
   return [];
-}
-
-function makeScene(): Scene<unknown, string, unknown> {
-  return {
-    layers: [{ id: 'default' }],
-    renderOrder: () => [],
-    get: () => undefined as never,
-    mintId: () => 'inserted',
-    roots: [],
-  } as unknown as Scene<unknown, string, unknown>;
-}
-
-/** Pose the commit factory writes for the same overlay. */
-function committedPose(ov: InsertPreview): { x: number; y: number; width: number; height: number } {
-  const applyOps = vi.fn();
-  let reg!: DepRegistry;
-  function Wire() {
-    useInsertDepSource(makeScene(), { applyOps });
-    return null;
-  }
-  function Capture() {
-    reg = useDepRegistry();
-    return null;
-  }
-  render(
-    <DepRegistryProvider>
-      <Wire />
-      <Capture />
-    </DepRegistryProvider>,
-  );
-  const dep = (reg.get as (k: string) => { commit: (b: unknown, e: unknown) => unknown })('insert');
-  dep.commit(ov.bounds, ov.extras);
-  return applyOps.mock.calls[0][0][0].args.node.pose;
 }
 
 function containsAll(
@@ -211,9 +175,9 @@ describe('reported gesture bounds match the painted preview', () => {
       expect(containsAll(reported[0], pts)).toBe(true);
     });
 
-    it(`equals the committed pose — ${name}`, () => {
+    it(`equals the extent the insert commits — ${name}`, () => {
       const reported = dispatcherInsertBounds(makeDispatcher([handleFor(ov)]));
-      expect(reported[0]).toEqual(committedPose(ov));
+      expect(reported[0]).toEqual(insertPreviewExtent(ov).bounds);
     });
   }
 });

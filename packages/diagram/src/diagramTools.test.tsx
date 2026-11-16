@@ -9,6 +9,7 @@ import { renderWithKeys as render } from '@weasel-js/react/testing/giveKeys';
 import {
   SceneCanvas, createScene, toolGaps, toolIdsOf, useActionsRegistry, type ActionsRegistry, type RectPose, type ToolsApi,
 } from '@weasel-js/core';
+import { insertPreset } from '@weasel-js/editing';
 import { withDiagramRegistry } from './edge';
 import { diagramEdgeOf } from './edgeTrait';
 import { DIAGRAM_TOOLS, STENCIL_TOOLS, useDiagramTools } from './diagramTools';
@@ -44,7 +45,7 @@ function mount() {
     const tools = useDiagramTools<RectPose>({ connector, stencils: FLOWCHART_STENCILS });
     built = tools;
     return (
-      <SceneCanvas scene={scene} layers={{}} width={600} height={400} tools={tools} onToolsCreated={(t) => { api.tools = t; }}>
+      <SceneCanvas scene={scene} layers={{}} width={600} height={400} features={[insertPreset]} tools={tools} onToolsCreated={(t) => { api.tools = t; }}>
         <Insert />
       </SceneCanvas>
     );

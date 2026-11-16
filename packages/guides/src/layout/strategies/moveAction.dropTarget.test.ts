@@ -1,11 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import {
-  moveAction,
-  type InvocationCtx,
-  type LayoutDep,
-  type LayoutStrategy,
-  type NodeId,
-} from '@weasel-js/core';
+import { type InvocationCtx, type LayoutDep, type LayoutStrategy, type NodeId } from '@weasel-js/core';
 import { tileGrid } from './tileGrid';
 import {
   squarePolygon,
@@ -13,6 +7,7 @@ import {
   makeScene,
   makeCtx,
 } from './testing/moveLayoutStubs';
+import { moveAction } from '@weasel-js/editing';
 
 describe('moveAction layout drop-target mode', () => {
   type Mode = NonNullable<LayoutDep['dropTarget']>;

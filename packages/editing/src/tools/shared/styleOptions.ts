@@ -6,10 +6,11 @@
  */
 import type { PrefGroup, PrefLeaf } from '@weasel-js/prefs-schema';
 import { isSolidPaint, type Paint } from '@weasel-js/paint';
-import { DEFAULT_STROKE_WIDTH, type InsertStyle, type StyleOptionKey } from '@weasel-js/core';
+import { cycleFill, solid, toHex8 } from '@weasel-js/core';
 import type { ToolOptions } from '@weasel-js/routing';
-import { cycleFill, solid } from '@weasel-js/core';
-import { toHex8 } from '@weasel-js/core';
+import { DEFAULT_STROKE_WIDTH } from '../../actions/insert/style';
+import { type InsertStyle } from '../../actions/insert/style';
+import { type StyleOptionKey } from '../../actions/insert/style';
 
 /** The kit's color for a new shape: the first of its palette. */
 export const DEFAULT_SHAPE_PAINT: Paint = solid(cycleFill(0));

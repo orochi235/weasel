@@ -8,10 +8,9 @@ import type { ReactElement } from 'react';
 import { renderWithKeys as render } from '@weasel-js/react/testing/giveKeys';
 import { createToolOptionValues, SHARED_TOOL_OPTIONS, type LastOperationStore, type ToolOptionValues } from '@weasel-js/routing';
 import { DepRegistryProvider, lastOperationOf, useActionsRegistry } from '@weasel-js/routing/react';
-import { SceneCanvas } from '@weasel-js/core';
+import { SceneCanvas, useToolOptionValues } from '@weasel-js/core';
 import { createScene } from '@weasel-js/core/engine';
 import type { Scene } from '@weasel-js/core/engine';
-import { useToolOptionValues } from '@weasel-js/core';
 import { DEFAULT_SHAPE_PAINT } from './shared/styleOptions';
 import { shapeToolKitPreset } from '../presets/tools';
 

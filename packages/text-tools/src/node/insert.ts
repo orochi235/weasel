@@ -1,9 +1,10 @@
 /** How a text node is inserted: what `textPreset` gives the canvas's `insert` dep for `text`, and the hooks a node
  *  made to be typed into commits with. */
 import { DEFAULT_TEXT_FILL } from '@weasel-js/text';
-import type { InsertedNode, InsertNodeFactory, InsertStyle } from '@weasel-js/core';
+import type { InsertedNode, InsertNodeFactory } from '@weasel-js/core';
 import { textEditJoin } from '../editor/sceneTextDrafts';
 import type {} from '../editor/textEditDep';
+import { type InsertStyle } from '@weasel-js/editing';
 
 /**
  * `data` inserted: an empty node is made to be typed into, so its commit opens the run its first edit joins (one

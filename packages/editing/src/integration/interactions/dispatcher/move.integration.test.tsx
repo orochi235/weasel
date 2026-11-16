@@ -5,11 +5,12 @@ import { render, act } from '@testing-library/react';
 import { useRef } from 'react';
 import { ActionsProvider, useActionsRegistry, DepRegistryProvider, useDepRegistry, ActiveToolContextProvider, useGestureDispatcher } from '@weasel-js/routing/react';
 import type {} from '@weasel-js/core'; // augments DepSchema with 'selection' and 'scene'
-import { moveAction, createScene, asNodeId } from '@weasel-js/core/engine';
+import { createScene, asNodeId } from '@weasel-js/core/engine';
 import { undoAction } from '@weasel-js/core';
 import type { Scene } from '@weasel-js/core/engine';
 import type { SelectionApi } from '@weasel-js/routing';
 import { flipAction, reorderForwardAction, nudgeRightAction, clipboardCopyAction, clipboardCutAction, selectAllAction, transformAgainAction, duplicateAction, groupAction } from '@weasel-js/editing';
+import { moveAction } from '../../../actions/move/action';
 
 type D = { kind: 'rect' };
 type L = 'main';

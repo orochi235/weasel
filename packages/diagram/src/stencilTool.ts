@@ -3,10 +3,7 @@
  * drag to core's `insert` action, and the `insert` dep that builds the body.
  */
 import { useMemo } from 'react';
-import {
-  commitOps, defineTool, commitSelectionOps, insertSite, scenePoseFrame, useDepRegistry, useDepSource, useLatest, INSERT_DRAG_MODS, INSERT_REPOSITION_BINDING,
-  type ActionDeps, type InsertDep, type NodeId, type Op, type Tool,
-} from '@weasel-js/core';
+import { commitOps, defineTool, commitSelectionOps, insertSite, scenePoseFrame, useDepRegistry, useDepSource, useLatest, type ActionDeps, type InsertDep, type NodeId, type Op, type Tool } from '@weasel-js/core';
 import type { MeasureRowText } from './body';
 import { diagramDropParentAt, type DropParentScene } from './containers/canDropInto';
 import { containerBuild, type ContainerStencil } from './containers/containerStencils';
@@ -14,6 +11,7 @@ import type { NodeStyle } from './dataTypes';
 import { stencilBuild, stencilIdOf, stencilKind, type DiagramStencil } from './stencil';
 import { roleStyle } from './theme/resolve';
 import type { DiagramTheme } from './theme/types';
+import { INSERT_DRAG_MODS, INSERT_REPOSITION_BINDING } from '@weasel-js/editing';
 
 /** The tool that draws `stencil`, a shape's or a container's: its id is the stencil's insert kind. */
 export function stencilTool(stencil: Pick<DiagramStencil, 'id' | 'label' | 'description' | 'icon'>): Tool {

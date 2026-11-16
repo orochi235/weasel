@@ -1,8 +1,10 @@
-import { areaSelectAction, clearSelectionAction, lassoSelectAction } from '@weasel-js/core';
 import type { FeaturePreset } from '@weasel-js/core';
 import { createGroupEntryContribution } from '../tools/select/groupEntry';
 import { selectToolsPreset } from './tools';
 import { selectionPreset } from './selection';
+import { areaSelectAction } from '../actions/select/areaSelect';
+import { clearSelectionAction } from '../actions/select/clearSelection';
+import { lassoSelectAction } from '../actions/lassoSelect/action';
 
 /** The select and lasso tools: click, marquee, lasso, and clearing on an empty click; and entering a group on a
  *  double-click and leaving it on Escape. */

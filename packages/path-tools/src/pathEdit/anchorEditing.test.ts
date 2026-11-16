@@ -2,7 +2,6 @@ import { describe, expect, it, vi } from 'vitest';
 import { PathBuilder, type PolygonPath, pathToAnchors } from '@weasel-js/geom';
 import { ActionDisabledReason, type InvocationCtx, type OngoingInvoker, type ImmediateInvoker } from '@weasel-js/routing';
 import { createEditAnchorsDepForTests as makeEditAnchorsDep } from '@weasel-js/core/test-seams';
-import { areaSelectAction } from '@weasel-js/core';
 import { icons } from '@weasel-js/core/icons';
 import type { IconSpec } from '@weasel-js/icons';
 import {
@@ -13,6 +12,7 @@ import {
 } from './anchorEditing';
 import { nudgeAnchorsUpAction, nudgeAnchorsRightAction } from './anchorNudge';
 import { createKitSettingsStore } from '@weasel-js/react';
+import { areaSelectAction } from '@weasel-js/editing';
 
 /** Closed triangle at (0,0)-(10,0)-(10,10). Three anchors, flat 0..2. */
 function triangle(): PolygonPath {

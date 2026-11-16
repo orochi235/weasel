@@ -1,12 +1,12 @@
 import { describe, it, expect } from 'vitest';
 import { matchSorted, type ScopedBinding, type GestureBinding } from '@weasel-js/routing';
-import { snapToContainer } from '@weasel-js/core';
 import {
   selectionMoveBindings,
   selectionMoveContribution,
   selectionTransformBindings,
   selectionTransformContribution,
 } from './selectionContributions';
+import { snapToContainer } from '../../actions/move/behaviors/snapToContainer';
 
 describe('selectionMoveBindings — binding opts', () => {
   it('threads move.behaviors into the move binding opts', () => {

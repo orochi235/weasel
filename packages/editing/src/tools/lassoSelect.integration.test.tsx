@@ -3,14 +3,11 @@
 import { describe, it, expect, beforeAll, vi } from 'vitest';
 import { render, act } from '@testing-library/react';
 import { useRef } from 'react';
-import { ActionsProvider, useActionsRegistry } from '@weasel-js/routing/react';
-import { DepRegistryProvider, useDepRegistry } from '@weasel-js/routing/react';
+import { ActionsProvider, useActionsRegistry, DepRegistryProvider, useDepRegistry, ActiveToolContextProvider, useGestureDispatcher } from '@weasel-js/routing/react';
 import '@weasel-js/core';
-import { ActiveToolContextProvider } from '@weasel-js/routing/react';
-import { useGestureDispatcher } from '@weasel-js/routing/react';
-import { lassoSelectAction } from '@weasel-js/core';
 import type { LassoSelectDep } from '@weasel-js/core/engine';
 import type { Contribution } from '@weasel-js/core';
+import { lassoSelectAction } from '../actions/lassoSelect/action';
 
 beforeAll(() => {
   const proto = HTMLCanvasElement.prototype as unknown as {

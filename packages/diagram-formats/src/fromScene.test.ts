@@ -1,12 +1,11 @@
 import { describe, expect, it } from 'vitest';
-import {
-  composeWorldPose, createScene, moveAction, scenePoseAdapter, type InvocationCtx, type OngoingHandle, type OngoingInvoker, type RectPose,
-} from '@weasel-js/core';
+import { composeWorldPose, createScene, scenePoseAdapter, type InvocationCtx, type OngoingHandle, type OngoingInvoker, type RectPose } from '@weasel-js/core';
 import { diagramScene, offPageOps, setDiagramColor, withDiagramRegistry, type DataEdge, type DataNode } from '@weasel-js/diagram';
 import { documentFromScene } from './fromScene';
 import { documentSpecs } from './toScene';
 import { DOC_DATA, MEASURE, docScene, drawnScene, type DocScene } from './testing/docScene';
 import { asGraph } from './testing/asGraph';
+import { moveAction } from '@weasel-js/editing';
 
 const pageOf = (scene: DocScene, id: string) => documentFromScene(scene).pages.map(asGraph).find((p) => p.id === id)!;
 const nodeOf = (scene: DocScene, page: string, id: string): DataNode => pageOf(scene, page).data.nodes.find((n) => n.id === id)!;

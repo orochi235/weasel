@@ -3,19 +3,7 @@
  * action keeps its gesture and swaps its commit for one that reports a data
  * edit, so the host changes its data and the view follows through the specs.
  */
-import {
-  createDeleteAction,
-  createResizeAction,
-  dragPanContribution,
-  useLatest,
-  type Action,
-  type ActionsProp,
-  type Contribution,
-  type FeaturePreset,
-  type RectPose,
-  type SurfaceContribution,
-  type AnyScene,
-} from '@weasel-js/core';
+import { createDeleteAction, dragPanContribution, useLatest, type Action, type ActionsProp, type Contribution, type FeaturePreset, type RectPose, type SurfaceContribution, type AnyScene } from '@weasel-js/core';
 import { useMemo } from 'react';
 import { isBodyEnd } from './connectTargets';
 import { diagramContainerOf, titleIdOf } from './containers/trait';
@@ -34,6 +22,7 @@ import type { DeleteReport, DiagramViewProps, NodeResize, ReconnectChange } from
 import { diagramSequence } from './sequence/actions';
 import type { SequenceEdit } from './sequence/commit';
 import { createSequenceDeleteAction } from './sequence/select';
+import { createResizeAction } from '@weasel-js/editing';
 
 const AMBIENT = [dragPanContribution()];
 // A drag on empty canvas pans: the select tool's marquee would outrank the ambient pan.

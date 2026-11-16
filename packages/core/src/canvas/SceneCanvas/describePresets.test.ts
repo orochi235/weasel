@@ -25,7 +25,7 @@ describe('describePresets', () => {
 
   it('marks the presets with a code role as atoms, and only those', () => {
     const atoms = core.filter((d) => d.atom).map((d) => d.id).sort();
-    expect(atoms).toEqual(['move', 'outline', 'resize', 'rotate', 'select', 'selection', 'toolkit:select', 'toolkit:shape', 'view']);
+    expect(atoms).toEqual(['insert', 'move', 'outline', 'resize', 'rotate', 'select', 'selection', 'toolkit:select', 'toolkit:shape', 'view']);
   });
 
   it('reads a label, or the id where there is none', () => {

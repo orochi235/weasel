@@ -12,7 +12,7 @@ import { createScene } from '@weasel-js/core/engine';
 import { polygonFromPoints } from '@weasel-js/geom';
 import { useActionsRegistry, useDepRegistry } from '@weasel-js/routing/react';
 import type { Action, SelectionApi } from '@weasel-js/routing';
-import { KIT_STANDARD_ACTION_IDS, drawPreset, editPreset, movePreset, outlinePreset, pickPreset, resizePreset, rotatePreset, selectPreset, transformPreset, shapeToolKitPreset } from '@weasel-js/editing';
+import { KIT_STANDARD_ACTION_IDS, insertPreset, drawPreset, editPreset, movePreset, outlinePreset, pickPreset, resizePreset, rotatePreset, selectPreset, transformPreset, shapeToolKitPreset } from '@weasel-js/editing';
 
 type D = { kind: 'rect' };
 type L = 'main';
@@ -336,7 +336,7 @@ describe('<SceneCanvas features>', () => {
   });
 });
 
-describe('the insert dep’s paint', () => {
+describe('insertPreset’s insert dep paint', () => {
   it('paints a kit shape with the style its extras carry', () => {
     let commit!: (bounds: unknown, extras: unknown) => NodeId | null;
     function Grab() {
@@ -348,7 +348,7 @@ describe('the insert dep’s paint', () => {
     }
     const scene = createScene<Record<string, unknown>, L, P>({ systemLayers: [{ id: 'main' }] });
     render(
-      <SceneCanvas scene={scene} width={200} height={200}>
+      <SceneCanvas scene={scene} width={200} height={200} features={[insertPreset]}>
         <Grab />
       </SceneCanvas>,
     );
@@ -368,7 +368,7 @@ describe('the insert dep’s paint', () => {
     }
     const scene = createScene<{ path: Record<string, unknown> }, L, P>({ systemLayers: [{ id: 'main' }] });
     render(
-      <SceneCanvas scene={scene} width={200} height={200}>
+      <SceneCanvas scene={scene} width={200} height={200} features={[insertPreset]}>
         <Grab />
       </SceneCanvas>,
     );

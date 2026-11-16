@@ -69,7 +69,7 @@ const isFile = (path: string) => ['', '.ts', '.tsx', '.mjs'].some((ext) => exist
 describe('weaselAliases', () => {
   it('sends a subpath to the file its entry is built from, not to the file of the same name', () => {
     expect(inRepo('@weasel-js/diagram/layout')).toBe('packages/diagram/src/layout.entry.ts');
-    expect(inRepo('@weasel-js/core/move')).toBe('packages/core/src/import-shims/move.ts');
+    expect(inRepo('@weasel-js/core/mesh')).toBe('packages/core/src/import-shims/mesh.ts');
     expect(inRepo('@weasel-js/forge/play')).toBe('packages/forge/src/test/play.ts');
     expect(inRepo('@weasel-js/labkit/weasel-canvas')).toBe('packages/labkit/src/passthrough/weasel-canvas.ts');
     expect(inRepo('@weasel-js/ui/components/Button')).toBe('packages/ui/src/components/Button/index.ts');

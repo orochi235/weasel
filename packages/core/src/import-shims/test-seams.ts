@@ -41,7 +41,6 @@ export {
   hitTestArea as hitTestAreaForTests, type AABBBounds, type RegionQueryOptions,
 } from 'canvas/deps/hitTestArea';
 export type { ScenePickSourceOptions, ViewPickGates } from 'canvas/pickWalk';
-export { useInsertDepSource as useInsertDepSourceForTests } from 'canvas/deps/insert';
 
 export { FRAME_FIXTURE_IDS as FRAME_FIXTURE_IDSForTests, FRAME_FIXTURE_LOCAL as FRAME_FIXTURE_LOCALForTests, expectSamePose as expectSamePoseForTests, makeFrameFixture as makeFrameFixtureForTests } from '../core/scene/frameFixture';
 
@@ -57,3 +56,12 @@ export { assertFinite as assertFiniteForTests, drive as driveForTests } from '..
 export type { Pt as PtForTests } from '../interactions/actions/drag.pbt.fixture';
 export { depsOf as depsOfForTests, makeScene as makeSceneForTests, rectPose as rectPoseForTests, runs as runsForTests, tally as tallyForTests, timeoutFor as timeoutForForTests } from '../interactions/actions/pbt.fixture';
 export type { TestScene as TestSceneForTests } from '../interactions/actions/pbt.fixture';
+
+export { ON_PAGE as ON_PAGEForTests, PAGE_A as PAGE_AForTests, PAGE_B as PAGE_BForTests, pagedScene as pagedSceneForTests } from '../core/pages/pagedFixture';
+export { gridSource as gridSourceForTests, lineSource as lineSourceForTests, sessionDep as sessionDepForTests } from '../domains/snap/testing/sessionDep';
+export { dragCtx as dragCtxForTests, handleAffordance as handleAffordanceForTests } from '../interactions/actions/drag.pbt.fixture';
+export type { Gesture as GestureForTests } from '../interactions/actions/drag.pbt.fixture';
+export { heldPose as heldPoseForTests, moveEnd as moveEndForTests } from '../interactions/actions/testUtils';
+
+export { createGestureSource as createGestureSourceForTests } from '../canvas/SceneCanvas/dispatcherGestureBounds';
+export { usePreviewGhostLayer as usePreviewGhostLayerForTests } from '../canvas/SceneCanvas/usePreviewGhostLayer';

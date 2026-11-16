@@ -5,20 +5,9 @@
  */
 import { describe, expect, it } from 'vitest';
 import { act } from '@testing-library/react';
-import {
-  createInsertOp,
-  createReparentOp,
-  createScene,
-  defaultCommitAdapter,
-  moveAction,
-  type InvocationCtx,
-  type LayoutDep,
-  type NodeId,
-  type OngoingHandle,
-  type OngoingInvoker,
-  type RectPose,
-} from '@weasel-js/core';
+import { createInsertOp, createReparentOp, createScene, defaultCommitAdapter, type InvocationCtx, type LayoutDep, type NodeId, type OngoingHandle, type OngoingInvoker, type RectPose } from '@weasel-js/core';
 import { tileGrid, type TileGridOptions } from './tileGrid';
+import { moveAction } from '@weasel-js/editing';
 
 const rect = (x: number, y: number, width = 50, height = 50): RectPose => ({ x, y, width, height });
 

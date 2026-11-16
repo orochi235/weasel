@@ -1,12 +1,10 @@
 import { describe, it, expect, vi } from 'vitest';
 import { renderHook } from '@testing-library/react';
 import { useEyedropperTool } from './useEyedropperTool';
-import type { Action } from '@weasel-js/routing';
-import type { ActionDeps } from '@weasel-js/routing';
-import type { NodeId } from '@weasel-js/core';
+import type { Action, ActionDeps } from '@weasel-js/routing';
+import type { NodeId, Tool } from '@weasel-js/core';
 import { createElement } from 'react';
 import { renderThenAbandon } from '@weasel-js/react/testing/abandonRender';
-import type { Tool } from '@weasel-js/core';
 
 /** Pull the tool's own `eyedropper.pick` action off `ToolDef.actions`. */
 function pickActionOf(tool: { actions?: readonly Action[] }): Action {

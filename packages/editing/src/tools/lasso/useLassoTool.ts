@@ -2,11 +2,10 @@ import { useMemo } from 'react';
 import { useLatest } from '@weasel-js/react';
 import { defineTool } from '@weasel-js/core';
 import type { Tool } from '@weasel-js/core';
-import type { UseLassoSelectOptions } from '@weasel-js/core';
 import type { LassoHitMode } from '@weasel-js/core/engine';
 import { withToolOptionDefault, type ToolKeybinding, type ToolOptions } from '@weasel-js/routing';
 import { icon } from '../../icons.gen';
-import type {} from '@weasel-js/core';
+import type { UseLassoSelectOptions } from '../../actions/lassoSelect/options';
 
 /** The lasso's options: which shapes its loop selects, its own rather than shared. */
 export const LASSO_TOOL_OPTIONS: ToolOptions = {

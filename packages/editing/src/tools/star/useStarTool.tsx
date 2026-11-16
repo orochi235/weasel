@@ -1,16 +1,15 @@
 import { useCallback, useMemo, useState } from 'react';
 import { defineTool } from '@weasel-js/core';
 import type { Tool } from '@weasel-js/core';
-import { INSERT_REPOSITION_BINDING } from '@weasel-js/core';
 import { insertBindingBehaviors, type InsertToolOptions } from '../shared/insertToolOptions';
 import { defineAction, shareToolOptions, withToolOptionDefault, type WorldPoint } from '@weasel-js/routing';
-import { STAR_INSERT_PARAMS } from '@weasel-js/core';
 import { DEFAULT_SHAPE_PAINT, shapeToolOptions } from '../shared/styleOptions';
 import { stepCountOption } from '../shared/countOption';
 import { cursorFor } from '@weasel-js/cursor';
 import { icon } from '../../icons.gen';
-import { INSERT_DRAG_MODS } from '@weasel-js/core';
-import type {} from '@weasel-js/core';
+import { INSERT_REPOSITION_BINDING } from '../../actions/insert/repositionAction';
+import { STAR_INSERT_PARAMS } from '../../actions/insert/params';
+import { INSERT_DRAG_MODS } from '../../actions/insert/action';
 
 /** A point in world coordinates. */
 export type StarPoint = WorldPoint;

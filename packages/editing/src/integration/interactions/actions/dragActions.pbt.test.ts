@@ -10,10 +10,15 @@ import fc from 'fast-check';
 import type { Action, ImmediateInvoker } from '@weasel-js/routing';
 import type { NodeId } from '@weasel-js/core';
 import type { RectPose } from '@weasel-js/core/engine';
-import { createInsertOp, defaultCommitAdapter, moveAction, areaSelectAction } from '@weasel-js/core/engine';
-import { createReparentOp, createSetHiddenOp, createSetLockedOp, hitTestArea, resizeAction, rotateAction, cloneAction, deleteAction } from '@weasel-js/core';
+import { createInsertOp, defaultCommitAdapter } from '@weasel-js/core/engine';
+import { createReparentOp, createSetHiddenOp, createSetLockedOp, hitTestArea, deleteAction } from '@weasel-js/core';
 import { depsOfForTests as depsOf, makeSceneForTests as makeScene, rectPoseForTests as rectPose, runsForTests as runs, tallyForTests as tally, timeoutForForTests as timeoutFor, type TestSceneForTests as TestScene, assertFiniteForTests as assertFinite, driveForTests as drive, type PtForTests as Pt } from '@weasel-js/core/test-seams';
 import { alignCenterXAction, alignLeftAction, distributeHorizontalAction, reorderForwardAction, flipAction, nudgeRightAction, duplicateAction, groupAction, ungroupAction } from '@weasel-js/editing';
+import { moveAction } from '../../../actions/move/action';
+import { areaSelectAction } from '../../../actions/select/areaSelect';
+import { resizeAction } from '../../../actions/resize/action';
+import { rotateAction } from '../../../actions/rotate/action';
+import { cloneAction } from '../../../actions/clone/action';
 
 interface Real { scene: TestScene }
 interface Model { states: unknown[]; cursor: number }

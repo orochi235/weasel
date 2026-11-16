@@ -1,0 +1,74 @@
+import { defineAction, type Action } from '@weasel-js/routing';
+import type { InvocationCtx } from '@weasel-js/routing';
+import { transformPreview, finiteFrame, closeGesture, runBehaviorCancel, inPlane, selectionLayer, rotateCursorAt, recordTransform } from '@weasel-js/core';
+import { commitRotate } from './commit';
+import { nextFrame } from './frame';
+import { beginRotate, type RotateFrame } from './session';
+import { SNAP_ROLES } from '@weasel-js/core/engine';
+import type {} from '@weasel-js/core';
+
+/**
+ * Pointer-driven rotation of the selection, committed as one undo entry.
+ *
+ * A pose whose descriptor has no `withRotation`, or reports
+ * `supportsRotation` false, is left alone. The first rotated node's angle
+ * snaps through the `snap` dep's session — quarter turns and other nodes'
+ * angles, 15 degree steps while `snap.constrain` (Shift) is held — and the
+ * rest of the selection turns by the same amount. Behaviors
+ * (`opts.behaviors`) then see that node's turned pose; a pose one returns
+ * from `onMove` sets the rotation for the whole selection.
+ */
+export const rotateAction: Action = inPlane(defineAction({
+  id: 'rotate',
+  label: 'Rotate',
+  // No default binding: a bare `{ kind: 'drag' }` makes any drag no active
+  // tool claimed rotate a non-empty selection. The rotation handle binds it
+  // (`selectionRotateBindings`).
+  eligible: { capability: 'transforms-selection' },
+  modifierRoles: SNAP_ROLES,
+  requires: ['operands', 'scene', 'applyOps', 'poseDescriptor', 'view', 'boundsIncludeStroke', 'drawnBoxes', 'kitSettings', 'snap', 'transformFollowers'],
+  invoker: {
+    timing: 'ongoing',
+    start(ctx, opts) {
+      const begun = beginRotate(ctx, opts);
+      if (!begun) return {};
+      const { session, readers } = begun;
+      const subject = [...(ctx.deps.operands?.get() ?? [])] as string[];
+      const hold = session.scene.overrides.hold();
+      const preview = transformPreview(ctx.deps, session.scene, () => frame.previews);
+      let frame: RotateFrame = { swept: 0, delta: 0, previews: new Map() };
+      let pointer = ctx.world;
+      session.lifecycle.start(session.gestureCtx.draggedIds);
+      return {
+        kind: 'rotate',
+        cursor: () => {
+          const scale = ctx.deps.view?.get().scale;
+          return scale ? rotateCursorAt(session.turn.pivot, pointer, scale) : undefined;
+        },
+        onMove(moveCtx: InvocationCtx): void {
+          pointer = moveCtx.world;
+          frame = finiteFrame(frame, moveCtx, () => nextFrame(session, readers, moveCtx, frame.swept), (f) => f.previews);
+          hold.set(preview.poses());
+        },
+        onEnd(_endCtx: InvocationCtx, reason: 'commit' | 'cancel'): void {
+          let committed = false;
+          try {
+            if (reason === 'commit') {
+              committed = commitRotate(session, frame);
+              if (committed) {
+                const pivot = session.ids.length > 1 && !session.turn.useUnionPivot ? 'each' : 'union';
+                recordTransform(session.scene, { kind: 'rotate', angle: frame.delta, pivot }, subject);
+              }
+            } else runBehaviorCancel(session.behaviors, session.gestureCtx);
+          } finally {
+            session.snap.end();
+            closeGesture({ hold, previews: frame.previews, behaviors: session.behaviors, ctx: session.gestureCtx, lifecycle: session.lifecycle }, committed);
+          }
+        },
+        previewIds: preview.previewIds,
+        previewData: preview.previewData,
+      };
+    },
+  },
+  enabled: () => true,
+}), selectionLayer);

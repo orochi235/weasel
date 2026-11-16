@@ -11,13 +11,12 @@ import {
   useActiveToolContext, useDepSource, useGestureDispatcher, type ActiveToolContextValue,
 } from '@weasel-js/routing/react';
 import '@weasel-js/core';
-import { insertAction } from '@weasel-js/core/engine';
-import { insertRepositionAction } from '@weasel-js/core';
+import { useTools, useHandTool } from '@weasel-js/core';
 import type { InsertDep, InsertLive } from '@weasel-js/core/engine';
-import { useTools } from '@weasel-js/core';
 import { useRectTool } from './rect';
-import { useHandTool } from '@weasel-js/core';
 import type { NodeId } from '@weasel-js/core';
+import { insertAction } from '../actions/insert/action';
+import { insertRepositionAction } from '../actions/insert/repositionAction';
 
 beforeAll(() => {
   const proto = HTMLCanvasElement.prototype as unknown as {

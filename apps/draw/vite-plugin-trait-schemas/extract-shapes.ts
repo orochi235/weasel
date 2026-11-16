@@ -1,8 +1,8 @@
 /**
  * Produces a `ShapeSchema` per member of `KIT_SHAPE_KINDS`. Each kit shape is
  * created via `makeLeaf(idCall, poseLiteral, dataLiteral)`: we find the
- * `const <id> =` binding that synthesizes the tool and walk its initializer
- * for the first `makeLeaf(...)` call.
+ * `<id>:` entry (or `const <id> =` binding) that builds the tool and walk its
+ * initializer for the first `makeLeaf(...)` call.
  *
  * The pose/data arguments are not always plain object literals. In those
  * cases we fall back to the closest object literal in the initializer, and tag
@@ -14,13 +14,14 @@ import {
   SyntaxKind,
   type ObjectLiteralExpression,
   type CallExpression,
+  type PropertyAssignment,
   type VariableDeclaration,
 } from 'ts-morph';
 import { resolve } from 'node:path';
 import type { PropertyDescriptor, ShapeSchema } from '../src/dev/traitSchemas.types.ts';
 import { srcRef, sourceFileOrThrow, readJsDoc } from './extract.ts';
 
-const SOURCE = 'packages/core/src/canvas/SceneCanvas/useBuiltinShapeTools.tsx';
+const SOURCE = 'packages/editing/src/presets/tools.ts';
 
 /** Map from binding identifier inside the hook to public shape-kind id. */
 const BINDING_TO_KIND: Record<string, string> = {
@@ -80,13 +81,18 @@ export function extractShapes(project: Project, repoRoot: string): Record<string
   return out;
 }
 
-function findBinding(sf: ReturnType<Project['getSourceFile']>, name: string): VariableDeclaration | null {
+function findBinding(sf: ReturnType<Project['getSourceFile']>, name: string): VariableDeclaration | PropertyAssignment | null {
   if (!sf) return null;
-  // Shape-tool bindings live inside `useBuiltinShapeTools`'s function body,
-  // not at the source-file top level, so we have to walk descendants.
-  let found: VariableDeclaration | null = null;
+  // Shape tools are built inside a preset's `build`, not at the source-file
+  // top level, so we have to walk descendants.
+  let found: VariableDeclaration | PropertyAssignment | null = null;
   sf.forEachDescendant((node, traverse) => {
     if (found) { traverse.stop(); return; }
+    if (node.getKind() === SyntaxKind.PropertyAssignment) {
+      const p = node as PropertyAssignment;
+      if (p.getName() === name) { found = p; traverse.stop(); }
+      return;
+    }
     if (node.getKind() !== SyntaxKind.VariableDeclaration) return;
     const d = node as VariableDeclaration;
     if (d.getName() === name) { found = d; traverse.stop(); return; }

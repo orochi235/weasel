@@ -4,18 +4,9 @@
  * picked.
  */
 import { describe, expect, it } from 'vitest';
-import {
-  createScene,
-  moveAction,
-  RIGID_POSE_COMPOSITION,
-  type InvocationCtx,
-  type LayoutDep,
-  type NodeId,
-  type OngoingHandle,
-  type OngoingInvoker,
-  type RectPose,
-} from '@weasel-js/core';
+import { createScene, RIGID_POSE_COMPOSITION, type InvocationCtx, type LayoutDep, type NodeId, type OngoingHandle, type OngoingInvoker, type RectPose } from '@weasel-js/core';
 import { tileGrid } from './tileGrid';
+import { moveAction } from '@weasel-js/editing';
 
 const box = (x: number, y = 0, w = 50, h = 50): RectPose => ({ x, y, width: w, height: h });
 

@@ -1,11 +1,11 @@
 import { useMemo } from 'react';
-import { defineTool, INSERT_DRAG_MODS } from '@weasel-js/core';
+import { defineTool } from '@weasel-js/core';
 import type { Tool } from '@weasel-js/core';
 import { shareToolOptions } from '@weasel-js/routing';
 import { cursorFor } from '@weasel-js/cursor';
 import { icon } from '../icons.gen';
 import type {} from '../actionParamSchema';
-import { DEFAULT_SHAPE_PAINT, insertBindingBehaviors, type InsertToolOptions, shapeToolOptions } from '@weasel-js/editing';
+import { DEFAULT_SHAPE_PAINT, insertBindingBehaviors, type InsertToolOptions, shapeToolOptions, INSERT_DRAG_MODS } from '@weasel-js/editing';
 
 /** A single pointer sample captured during a freehand pencil stroke.
  *

@@ -445,8 +445,8 @@ adds itself:
 
 | Behavior | From | What it does | Turned on by |
 |---|---|---|---|
-| `snapToContainer(...)` | `@weasel-js/core/move` | After the pointer dwells over a container, snaps each dragged node to the slot `findTarget` gives it, and reparents on release. | in `behaviors` |
-| `snapBackOrDelete(...)` | `@weasel-js/core/move` | Released near where it started, the selection returns home; released far away, it returns or is deleted. | in `behaviors` |
+| `snapToContainer(...)` | `@weasel-js/editing` | After the pointer dwells over a container, snaps each dragged node to the slot `findTarget` gives it, and reparents on release. | in `behaviors` |
+| `snapBackOrDelete(...)` | `@weasel-js/editing` | Released near where it started, the selection returns home; released far away, it returns or is deleted. | in `behaviors` |
 | `momentum(...)` | `@weasel-js/core` | Keeps a flicked node coasting after release, and records the whole flick as one undo step. | in `behaviors` |
 | layout drop | the move action | Drops the selection into the layout container under it: previews the slot and the siblings that make room, and commits the container's `commitDrop`. Released outside every layout container, each source container's `releaseDrop` decides, and a node let go outside its container leaves it. | a layout on a container (`SceneNode.layout`) |
 | page drop | the move action | Keeps a paged scene's content on its pages: a page's child released on another page moves into it, and one released off every page goes to the top of the tree with the pasteboard on, or stays in its page with the pasteboard off. | a paged scene |
@@ -490,12 +490,9 @@ here stops matching it.
 
 <!-- snippet: tests/consumers/gem-extension/src/gem.ts#gem-kind -->
 ```ts
-import {
-  defineTool, solid,
-  INSERT_DRAG_MODS, INSERT_REPOSITION_BINDING,
-  type InsertNodeFactory, type NodeShapeEntry, type RectPose,
-} from '@weasel-js/core';
+import { defineTool, solid, type InsertNodeFactory, type NodeShapeEntry, type RectPose } from '@weasel-js/core';
 import { pathFromD } from '@weasel-js/geom';
+import { INSERT_DRAG_MODS, INSERT_REPOSITION_BINDING } from '@weasel-js/editing';
 
 export interface GemData { gem: { color: string; facets: number } }
 
@@ -588,11 +585,11 @@ selection between them, and keep it in the scene so undo restores it:
 
 <!-- snippet: tests/consumers/gem-extension/src/editor.tsx#gem-editor -->
 ```tsx
-import { IconRegistryProvider, SceneCanvas, useSelection, type FeaturePreset, type RectPose, type Scene, type SceneCanvasHit, type ToolsApi } from '@weasel-js/core';
+import { IconRegistryProvider, SceneCanvas, type FeaturePreset, type RectPose, type Scene, type SceneCanvasHit, type ToolsApi } from '@weasel-js/core';
 import { SelectionPanel } from '@weasel-js/ui';
 import { kitIcons } from '@weasel-js/ui/kit-icons';
 import { gemFeature } from './index.js';
-import { drawPreset } from '@weasel-js/editing';
+import { drawPreset, useSelection } from '@weasel-js/editing';
 
 const FEATURES: readonly FeaturePreset[] = [drawPreset, gemFeature];
 

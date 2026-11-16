@@ -1,8 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import {
-  moveAction,
-  type InvocationCtx,
-} from '@weasel-js/core';
+import { type InvocationCtx } from '@weasel-js/core';
 import { tileGrid } from './tileGrid';
 import {
   ABSOLUTE,
@@ -10,6 +7,7 @@ import {
   makeScene,
   makeCtx,
 } from './testing/moveLayoutStubs';
+import { moveAction } from '@weasel-js/editing';
 
 describe('moveAction layout reflow', () => {
   it('writes the dropped child pose LOCAL to the destination container', () => {

@@ -13,17 +13,13 @@ import type { Scene } from 'core/scene/types';
 import type { SelectionApi } from '@weasel-js/routing';
 import type { View } from 'core/viewport/view';
 import type { ViewApi } from 'interactions/actions/depSchema';
-import { useAreaSelectDepSource } from './areaSelect';
-import { useLassoSelectDepSource } from './lassoSelect';
 import { useDispatcherDepSource } from './dispatcher';
 import { useEditAnchorsDepSource, type EditAnchorsStateRef } from './editAnchors';
 import { useGeometryProjection } from './geometryProjection';
 import { useIngestionDepSource } from './ingestion';
-import { useInsertDepSource } from './insert';
 import { useLayoutDepSource } from './layout';
 import { useNodeAtPointDepSource } from './nodeAtPoint';
 import { usePoseDescriptorDepSource } from './poseDescriptor';
-import { useResizePolicy } from './resizePolicy';
 import { useSnapDepSource } from './snap';
 import { createSnapOutcomeStore } from 'domains/snap/outcomeStore';
 import type { SnapSource } from 'domains/snap/types';
@@ -65,22 +61,6 @@ const sceneWith = (get: (id: string) => unknown = () => undefined) =>
   }) as unknown as Scene<unknown, string, unknown>;
 
 describe('dep sources after an abandoned render', () => {
-  it('areaSelect reads the committed selection', () => {
-    const scene = sceneWith();
-    const reg = registryAfterAbandon(selectionOf(['a']), selectionOf(['b']), (s) => {
-      useAreaSelectDepSource(scene, s);
-    });
-    expect(dep(reg, 'areaSelect').getSelection()).toEqual(['a']);
-  });
-
-  it('lassoSelect reads the committed selection', () => {
-    const scene = sceneWith();
-    const reg = registryAfterAbandon(selectionOf(['a']), selectionOf(['b']), (s) => {
-      useLassoSelectDepSource(scene, s);
-    });
-    expect(dep(reg, 'lassoSelect').getSelection()).toEqual(['a']);
-  });
-
   it('dispatcher cancels through the committed dispatcher', () => {
     const a = { cancelAll: vi.fn() } as unknown as Dispatcher;
     const b = { cancelAll: vi.fn() } as unknown as Dispatcher;
@@ -135,24 +115,6 @@ describe('dep sources after an abandoned render', () => {
     expect(dep(reg, 'ingestion').svg).toBe(a);
   });
 
-  it('insert commits through the committed factories and adapter', () => {
-    const make = () => ({
-      factory: vi.fn(() => ({ data: {} })),
-      adapter: { applyOps: vi.fn() },
-    });
-    const a = make();
-    const b = make();
-    const scene = sceneWith();
-    const reg = registryAfterAbandon(a, b, (x) => {
-      useInsertDepSource(scene, x.adapter, { rect: x.factory });
-    });
-    dep(reg, 'insert').commit({ x: 0, y: 0, width: 10, height: 10 }, { kind: 'rect' });
-    expect(a.factory).toHaveBeenCalled();
-    expect(a.adapter.applyOps).toHaveBeenCalled();
-    expect(b.factory).not.toHaveBeenCalled();
-    expect(b.adapter.applyOps).not.toHaveBeenCalled();
-  });
-
   it('layout reads the committed drop target', () => {
     const scene = sceneWith();
     const reg = registryAfterAbandon(
@@ -175,11 +137,6 @@ describe('dep sources after an abandoned render', () => {
     const b = {};
     const reg = registryAfterAbandon(a, b, (d) => { usePoseDescriptorDepSource(d as never); });
     expect(dep(reg, 'poseDescriptor')).toBe(a);
-  });
-
-  it('resizePolicy reads the committed options', () => {
-    const reg = registryAfterAbandon({ label: 'a' }, { label: 'b' }, (o) => { useResizePolicy(o); });
-    expect(dep(reg, 'resizePolicy').label).toBe('a');
   });
 
   it('slice hands out the committed dep', () => {

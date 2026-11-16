@@ -1,3 +1,4 @@
+import { useMemo } from 'react';
 import { usePresetBuilds, type PresetBuildSource } from './presetBuild';
 import type { EnabledPresets, FeatureBindingOptions } from './features';
 import { BASELINE_ACTIONS } from './presets/baseline';
@@ -44,12 +45,13 @@ export function useSceneCanvasTools(args: {
     built,
   });
   usePublishTools(tools);
+  const pool = useMemo(() => [...builtinToolActions, ...enabled.toolActions], [enabled]);
   const { contributions, standardActions } = useFeatureBindings({
-    enabled, pool: builtinToolActions, baseline: BASELINE_ACTIONS,
+    enabled, pool, baseline: BASELINE_ACTIONS,
     tools,
     surface,
     move: args.move as FeatureBindingOptions['move'],
     rotate: (props.selectTool?.rotate || undefined) as FeatureBindingOptions['rotate'],
   });
-  return { tools, internal, takeover, surface, contributions, standardActions };
+  return { tools, internal, takeover, surface, contributions, standardActions, buildCtx: built.ctx };
 }

@@ -1,7 +1,7 @@
 import type { Action } from '@weasel-js/routing';
 import type { Dispatcher, WorldPoint } from '@weasel-js/routing';
 import { useActionsRegistry, useDepRegistry, useDepSource } from '@weasel-js/routing/react';
-import { asNodeId, type Scene } from 'core/scene/types';
+import type { Scene } from 'core/scene/types';
 import type { SelectionApi } from '@weasel-js/routing';
 import { useDecayLoop } from 'core/viewport/useDecayLoop';
 import type { ViewAnimationApi } from 'core/viewport/useViewAnimation';
@@ -21,7 +21,6 @@ import type { SnapSourceRegistry } from 'domains/snap/registry';
 import type { SnapSource } from 'domains/snap/types';
 import type { CanvasExtensionApi } from '../canvasExtension';
 import {
-  useAreaSelectDepSource,
   useDebugDepSource,
   usePreviewPathsDepSource,
   useDepChangeNotices,
@@ -30,8 +29,6 @@ import {
   useSelectionSnapshotDepSource,
   useEnteredGroupApiSource,
   useIngestionDepSource,
-  useInsertDepSource,
-  useLassoSelectDepSource,
   useLayoutDepSource,
   useNodeAtPointDepSource,
   usePoseDescriptorDepSource,
@@ -42,7 +39,6 @@ import {
   useViewDepSource,
 } from '../deps';
 import type { EnteredGroupApi } from '../deps/enteredGroup';
-import { pressTarget } from 'tools/builtin/pressTarget';
 import type { BridgeAdapter, SceneCanvasProps } from './props';
 import { useActionsPropResolver } from './useActionsPropResolver';
 import { useActionTunings, useBindingOverrides } from './useActionTunings';
@@ -52,7 +48,7 @@ import { useViewportActions, viewportZoomOption } from './useViewportActions';
 export type StandardActionsProps = Pick<
   SceneCanvasProps<unknown, string, unknown>,
   | 'actions' | 'tune' | 'bindingOverrides' | 'geometry' | 'viewport' | 'layoutDropTarget'
-  | 'reflowTransition' | 'insertNodeFactories' | 'ingestion' | 'snap' | 'modes'
+  | 'reflowTransition' | 'ingestion' | 'snap' | 'modes'
 >;
 
 /** What `<SceneCanvas>` hands {@link useSceneStandardActions}. */
@@ -81,11 +77,6 @@ export interface SceneStandardActionsInputs {
   /** This canvas's own view gate for scene layers, published on the `view`
    *  dep and read by the selecting actions. Absent when it hides nothing. */
   layerIsPainted?: (layerId: string) => boolean;
-  /** The composed paint alpha, when the consumer fades anything, so a region
-   *  select passes over what is painted at zero. */
-  alphaOf?: (id: string) => number;
-  /** Whether a node takes hits: what a region select may take, as a press may. */
-  reachable?: (id: string) => boolean;
   /** The canvas's camera runner, published on the `view` dep so
    *  `viewport.zoom`'s discrete branches can animate. */
   viewAnimation: ViewAnimationApi;
@@ -120,7 +111,7 @@ export interface SceneStandardActionsInputs {
 export function useSceneStandardActions(inputs: SceneStandardActionsInputs): void {
   const {
     props, viewOn, selection, enteredGroup, scene, adapter, standardActions, currentViewRef,
-    onViewChange, poseDescriptor, dispatcher, pickEvery, layerIsPainted, alphaOf, reachable, viewAnimation,
+    onViewChange, poseDescriptor, dispatcher, pickEvery, layerIsPainted, viewAnimation,
     editAnchorsExternalState, snap, canvasRef, canvasApiRef, ingestionClipboard,
     ingestionHandlers,
   } = inputs;
@@ -184,18 +175,9 @@ export function useSceneStandardActions(inputs: SceneStandardActionsInputs): voi
 
   // Per-dep wiring modules under `src/canvas/deps/`. See each file for the
   // dep's contract and trade-offs.
-  const regionTargetOf = useMemo(() => {
-    const tree = {
-      getParent: (id: string) => scene.get(asNodeId(id))?.parent ?? null,
-      getNode: (id: string) => scene.get(asNodeId(id)),
-    };
-    return (id: string) => pressTarget(tree, id, enteredGroup.get());
-  }, [scene, enteredGroup]);
-  useAreaSelectDepSource(scene, selection, poseDescriptor, alphaOf, reachable, regionTargetOf);
   useNodeAtPointDepSource(pickEvery);
   useLayoutDepSource(scene, props.layoutDropTarget, reflowTransition);
   useEnteredGroupApiSource(enteredGroup);
-  useInsertDepSource(scene, adapter, props.insertNodeFactories);
   const operands = useLiveOperands();
   usePathLeafDepSources(scene, operands, adapter, poseDescriptor);
   useSnapDepSource(
@@ -223,7 +205,6 @@ export function useSceneStandardActions(inputs: SceneStandardActionsInputs): voi
   usePreviewPathsDepSource(canvasApiRef);
   useDepChangeNotices(editAnchorsExternalState, props.modes);
   useIngestionDepSource(canvasRef, () => currentViewRef.current, ingestion?.resolveSrc, ingestion?.svg, ingestionClipboard, ingestionHandlers);
-  useLassoSelectDepSource(scene, selection, poseDescriptor, alphaOf, reachable, regionTargetOf);
   useEditAnchorsDepSource(scene, selection, adapter, editAnchorsExternalState, tune);
   useSelectionSnapshotDepSource();
   useDispatcherDepSource(dispatcher);

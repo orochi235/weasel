@@ -10,14 +10,6 @@ export {
   type ToolActivateKeyOptions,
   type ToolActivateBindingSpec,
 } from './toolActivate';
-export { moveAction } from '../move/action';
-export { resizeAction } from '../resize/action';
-export { rotateAction } from '../rotate/action';
-export { areaSelectAction } from './areaSelect';
-export { insertAction, INSERT_DRAG_MODS } from '../insert/action';
-export { insertRepositionAction, INSERT_REPOSITION_BINDING } from '../insert/repositionAction';
-export { cloneAction } from '../clone/action';
-export { lassoSelectAction } from '../lasso-select/action';
 export { pinchZoomAction } from './pinchZoom';
 export { viewportWheelPanAction } from './viewportWheelPan';
 export { containerScrollAction, scrollRange, scrollableAt } from './containerScroll';

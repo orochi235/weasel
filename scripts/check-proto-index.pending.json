@@ -4,7 +4,6 @@
   "packages/core/src/animation/rig/rigNode.ts",
   "packages/core/src/animation/rig/rigSeat.ts",
   "packages/core/src/animation/rig/skinBinding.ts",
-  "packages/core/src/canvas/deps/insert.ts",
   "packages/core/src/canvas/layerOrder.ts",
   "packages/core/src/canvas/layerSlots.ts",
   "packages/core/src/canvas/pathOverlay.ts",

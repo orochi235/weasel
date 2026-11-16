@@ -1,6 +1,6 @@
 import { useCallback, useMemo } from 'react';
 import type { NodeRoutingEntry } from 'core/scene/NodeRouting';
-import type { InsertNodeFactories } from '../deps/insert';
+import type { InsertNodeFactories } from '../deps/insertFactories';
 import type { EnabledPresets } from './features';
 import { insertBuilds, presetInsertFactories, presetRouting, usePresetShapes } from './presetTraits';
 
@@ -23,6 +23,7 @@ export function usePresetTraits(
     [enabled, props.insertNodeFactories],
   );
   usePresetShapes(enabled, scene);
-  const builds = useCallback((kind: string) => insertBuilds(kind, insertNodeFactories), [insertNodeFactories]);
+  const builds = useCallback(
+    (kind: string) => insertBuilds(kind, insertNodeFactories, enabled.insertKinds), [insertNodeFactories, enabled]);
   return { routing, props: { routing, insertNodeFactories }, insertBuilds: builds };
 }

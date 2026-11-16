@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { renderHook } from '@testing-library/react';
 import { useTextTool } from './useTextTool';
-import { INSERT_REPOSITION_BINDING } from '@weasel-js/core';
+import { INSERT_REPOSITION_BINDING } from '@weasel-js/editing';
 
 /**
  * useTextTool is now a thin declarative wrapper. The

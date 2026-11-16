@@ -7,7 +7,6 @@ import type { DragSample, ImmediateParams, WorldPoint } from '@weasel-js/routing
 import type { IngestItem } from '@weasel-js/gestures';
 import type { LassoHitMode } from 'core/adapters/types';
 import type { GestureLifecycleOptions } from './gestureLifecycle';
-import type { ReparentOnDrop } from './move/session';
 import type { DragPanParams } from './defaults/viewportDragPan';
 import type { Paint, VertexWidth } from '@weasel-js/paint';
 import type { EditAnchorsParams } from './edit-anchors/params';
@@ -31,6 +30,10 @@ export type ViewportZoomParams = { kind?: 'wheel' | 'pinch' | 'in' | 'out' | 're
 export type WheelScrollParams = { axis?: 'both' | 'x' | 'y'; swapAxis?: boolean } & Pick<ImmediateParams, 'deltaX' | 'deltaY'>;
 /** The params of a click picking what is under it. */
 export type PickParams = Pick<ImmediateParams, 'world' | 'mods' | 'viewId'>;
+/** Allowed values for `move`'s `reparentOnDrop` param. `'off'` (the default) translates only. `'top'` lands the
+ *  moved node at the top of the container under the cursor. `'above'` lands it immediately above the hit sibling
+ *  in z-order (falling back to `'top'` when the hit is itself a container or shares no parent with the moved node). */
+export type ReparentOnDrop = 'off' | 'top' | 'above';
 /** `move`'s params: its history and lifecycle, where a drop lands the moved nodes, and the ids a drag carries. */
 export type MoveParams = GestureLifecycleOptions & {
   reparentOnDrop?: ReparentOnDrop;

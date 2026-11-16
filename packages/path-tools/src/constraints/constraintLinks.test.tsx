@@ -4,11 +4,7 @@ import { createElement, type ReactNode } from 'react';
 import { pathAnchorPoints, polygonFromPoints, type PathConstraint, type PolygonPath } from '@weasel-js/geom';
 import type { ActionDeps, ImmediateInvoker, InvocationCtx, OngoingInvoker } from '@weasel-js/routing';
 import { DepRegistryProvider, useDepRegistry } from '@weasel-js/routing/react';
-import {
-  IDENTITY_POSE_COMPOSITION, createScene, createTransformOp, defaultCommitAdapter, effectivePose, moveAction,
-  findNodeShape, type EditAnchorsDep, type NodeId, type Op, type PathEditMark, type SelectionApi,
-  type TransformFollower, type AnyScene,
-} from '@weasel-js/core';
+import { IDENTITY_POSE_COMPOSITION, createScene, createTransformOp, defaultCommitAdapter, effectivePose, findNodeShape, type EditAnchorsDep, type NodeId, type Op, type PathEditMark, type SelectionApi, type TransformFollower, type AnyScene } from '@weasel-js/core';
 import { pathEditPreset } from '../pathsPreset';
 import { deleteAnchorsAction } from '../pathEdit/anchorEditing';
 import { editAnchorsAction } from '../pathEdit/editAnchors/editAnchors';
@@ -18,6 +14,7 @@ import {
 import { constraintLinkConflictsOf, constraintLinkNode, constraintLinkOf } from './constraintLinks';
 import { linkAnchorAction } from './linkAnchor';
 import { createConstraintsExtension } from './constraintsExtension';
+import { moveAction } from '@weasel-js/editing';
 
 type Data = { constraints?: PathConstraint[]; constraintLink?: PathConstraint };
 

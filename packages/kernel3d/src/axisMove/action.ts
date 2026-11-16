@@ -10,7 +10,7 @@
  * rather than reading the drag as a move on the node's level.
  */
 
-import { SNAP_ROLES, moveAction, type SnapDep, type SnapSession } from '@weasel-js/core/engine';
+import { SNAP_ROLES, type SnapDep, type SnapSession } from '@weasel-js/core/engine';
 import {
   roleMods, type Action, type AffordanceHit, type Contribution, type InvocationCtx, type NodeId, type OngoingHandle,
 } from '@weasel-js/routing';
@@ -19,6 +19,7 @@ import { viewportOf, type World3d } from '../world';
 import {
   AXIS_DIRECTIONS, WORLD_AXES, axisHandleAt, axisHandles, type AxisHandle, type AxisHandleOptions, type WorldAxis,
 } from './handles';
+import { moveAction } from '@weasel-js/editing/engine';
 
 /** The axis move's action id. */
 export const AXIS_MOVE_ACTION_ID = 'move3d.axis';

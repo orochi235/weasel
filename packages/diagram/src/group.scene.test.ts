@@ -1,11 +1,9 @@
 import { describe, expect, it } from 'vitest';
-import {
-  createScene, derivedDepOf, effectivePose, moveAction, pointAlongPath,
-  type OngoingHandle, type OngoingInvoker, type RectPose,
-} from '@weasel-js/core';
+import { createScene, derivedDepOf, effectivePose, pointAlongPath, type OngoingHandle, type OngoingInvoker, type RectPose } from '@weasel-js/core';
 import { withDiagramRegistry } from './edge';
 import { diagramScene, edgeIdOf, type DiagramData } from './fromData';
 import { fitDiagram } from './DiagramView';
+import { moveAction } from '@weasel-js/editing';
 
 const DATA: DiagramData = {
   nodes: [{ id: 'a', lines: ['a'] }, { id: 'b', lines: ['b'] }, { id: 'x', lines: ['outside'] }],

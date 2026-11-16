@@ -1,9 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import {
-  moveAction,
-  type InvocationCtx,
-  createTransformOp,
-} from '@weasel-js/core';
+import { type InvocationCtx, createTransformOp } from '@weasel-js/core';
 import { tileGrid } from './tileGrid';
 import {
   type P,
@@ -11,6 +7,7 @@ import {
   type GetLayout,
   makeCtx,
 } from './testing/moveLayoutStubs';
+import { moveAction } from '@weasel-js/editing';
 
 describe('moveAction layout reflow', () => {
   it('commits commitDrop ops on a same-container grid swap', () => {

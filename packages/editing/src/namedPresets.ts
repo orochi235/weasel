@@ -16,13 +16,15 @@ import { ingestPreset } from './presets/ingest';
 import { pathfinderPreset } from './presets/pathfinder';
 import { selectPreset } from './presets/select';
 import { selectionPreset } from './presets/selection';
-import { toolDrivenActions, viewToolsPreset, BASELINE_ACTIONS, viewPreset } from '@weasel-js/core';
+import { viewToolsPreset, BASELINE_ACTIONS, viewPreset } from '@weasel-js/core';
+import { insertPreset } from './presets/insert';
 import { selectToolKitPreset, selectToolsPreset, shapeToolKitPreset, shapeToolsPreset } from './presets/tools';
 import { movePreset, outlinePreset, resizePreset, rotatePreset } from './presets/transform';
 
 /** Each kit preset by name, each after the presets it includes. */
 export const FEATURE_PRESETS = {
   selection: selectionPreset,
+  insert: insertPreset,
   'toolkit:select': selectToolKitPreset,
   'toolkit:shape': shapeToolKitPreset,
   'tools:select': selectToolsPreset,
@@ -82,10 +84,10 @@ export const FEATURE_ACTION_IDS = Object.fromEntries(
   FEATURES.map((f): [FeatureName, readonly string[]] => [f, (FEATURE_PRESETS[f].actions ?? []).map((a) => a.id)]),
 ) as Readonly<Record<FeatureName, readonly string[]>>;
 
-/** Every kit-standard action: the baseline, each kit preset's in table order, then the
- *  tool-driven ones. */
-export const KIT_STANDARD_ACTIONS: readonly Action[] = [
+/** Every kit-standard action, each once: the baseline, then each kit preset's actions in table order, then its
+ *  tool actions. */
+export const KIT_STANDARD_ACTIONS: readonly Action[] = [...new Map([
   ...BASELINE_ACTIONS,
   ...FEATURES.flatMap((f) => FEATURE_PRESETS[f].actions ?? []),
-  ...toolDrivenActions,
-];
+  ...FEATURES.flatMap((f) => FEATURE_PRESETS[f].toolActions ?? []),
+].map((a): [string, Action] => [a.id, a])).values()];

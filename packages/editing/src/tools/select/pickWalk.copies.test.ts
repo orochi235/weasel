@@ -1,12 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import { multiply, scale, translate, type Affine } from '@weasel-js/geom';
-import { AUTO_POSE_DESCRIPTOR } from '@weasel-js/core/engine';
+import { AUTO_POSE_DESCRIPTOR, createScene, asNodeId } from '@weasel-js/core/engine';
 import type { RectPose } from '@weasel-js/core/engine';
-import { createScene } from '@weasel-js/core/engine';
-import { asNodeId } from '@weasel-js/core/engine';
 import { adapterPointQuery } from './adapterPointQuery';
-import { hitTestArea } from '@weasel-js/core';
-import { pickWalk, scenePickSource } from '@weasel-js/core';
+import { hitTestArea, pickWalk, scenePickSource } from '@weasel-js/core';
 
 const pointQuery = adapterPointQuery<RectPose>(AUTO_POSE_DESCRIPTOR as never, false);
 

@@ -203,6 +203,3 @@ export type { PickBroad, PickCandidate } from '../canvas/pickWalk';
 export type { ClipBearing } from '../canvas/ownClip';
 export { findMountedCanvas, type MountedCanvas } from '../canvas/mountedCanvases';
 export { arrivalBounds } from '../domains/ingestion/placement';
-export {
-  DEFAULT_STROKE_WIDTH, insertStyleOf, STYLE_OPTION_KEYS, type InsertStyle, type StyleOptionKey,
-} from '../interactions/actions/insert/style';

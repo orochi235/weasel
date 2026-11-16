@@ -1,16 +1,12 @@
 import { describe, it, expect } from 'vitest';
-import {
-  moveAction,
-  type InvocationCtx,
-  type ReflowTransition,
-  type NodeId,
-} from '@weasel-js/core';
+import { type InvocationCtx, type ReflowTransition, type NodeId } from '@weasel-js/core';
 import {
   type P,
   type StubScene,
   makeScene,
   makeCtx,
 } from './testing/moveLayoutStubs';
+import { moveAction } from '@weasel-js/editing';
 
 describe('moveAction with a reflow transition', () => {
   /** Records what the action asks of the transition, and when. */

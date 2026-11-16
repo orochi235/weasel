@@ -4,9 +4,8 @@ import type { Tool } from '@weasel-js/core';
 import { insertBindingBehaviors, type InsertToolOptions } from '../shared/insertToolOptions';
 import { icon } from '../../icons.gen';
 import { SHAPE_KINDS } from '@weasel-js/core/engine';
-import { INSERT_DRAG_MODS } from '@weasel-js/core';
-import { INSERT_REPOSITION_BINDING } from '@weasel-js/core';
-import type {} from '@weasel-js/core';
+import { INSERT_DRAG_MODS } from '../../actions/insert/action';
+import { INSERT_REPOSITION_BINDING } from '../../actions/insert/repositionAction';
 
 /** Options for `useImageTool`. */
 export interface UseImageToolOptions extends InsertToolOptions {

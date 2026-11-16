@@ -8,11 +8,11 @@ import { render, act } from '@testing-library/react';
 import { useRef } from 'react';
 import { ActionsProvider, useActionsRegistry, DepRegistryProvider, useDepRegistry, ActiveToolContextProvider, useGestureDispatcher } from '@weasel-js/routing/react';
 import type {} from '@weasel-js/core'; // augments DepSchema with 'selection' and 'scene'
-import { resizeAction } from '@weasel-js/core';
 import { createScene, asNodeId } from '@weasel-js/core/engine';
 import type { Scene } from '@weasel-js/core/engine';
 import type { SelectionApi, AffordanceHit } from '@weasel-js/routing';
 import { SELECTION_TRANSFORM_ID, selectionTransformContribution } from '@weasel-js/editing';
+import { resizeAction } from '../../../actions/resize/action';
 
 type D = { kind: 'rect' };
 type L = 'main';

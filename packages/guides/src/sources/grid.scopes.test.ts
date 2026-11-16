@@ -1,21 +1,10 @@
 import { describe, expect, it } from 'vitest';
-import {
-  createScene,
-  insertAction,
-  RIGID_POSE_COMPOSITION,
-  type Bounds,
-  type InsertDep,
-  type InvocationCtx,
-  type NodeId,
-  type OngoingInvoker,
-  type SnapDep,
-  type UnitScope,
-  type AnyScene,
-} from '@weasel-js/core';
+import { createScene, RIGID_POSE_COMPOSITION, type Bounds, type InsertDep, type InvocationCtx, type NodeId, type OngoingInvoker, type SnapDep, type UnitScope, type AnyScene } from '@weasel-js/core';
 import { createSnapSession2dForTests } from '@weasel-js/core/test-seams';
 import { transformPoint, invert, rotateAboutPoint, type Affine } from '@weasel-js/geom';
 import { gridSnapSource } from './grid';
 import { drive, expectNear, moveBy } from './testing/session';
+import { insertAction } from '@weasel-js/editing';
 
 const KEYS = { alt: false, ctrl: false, meta: false, shift: false };
 

@@ -8,12 +8,17 @@ import type {
   Action, BindingOptions, DepRegistry, InvocationCtx, OngoingHandle, OngoingInvoker, OngoingOverlay,
 } from '@weasel-js/routing';
 import { buildDepsFromRequires } from '@weasel-js/routing';
-import { createScene, moveAction, insertAction } from '@weasel-js/core/engine';
-import { asNodeId, type NodeId, type RectPose, type Scene, resizeAction, rotateAction, cloneAction, inPlane, selectionLayer } from '@weasel-js/core';
+import { createScene } from '@weasel-js/core/engine';
+import { asNodeId, type NodeId, type RectPose, type Scene, inPlane, selectionLayer } from '@weasel-js/core';
 import type { SelectionApi } from '@weasel-js/routing';
 import type { View } from '@weasel-js/core';
 import type { InsertDep, SnapDep, ViewApi, SnapBegin } from '@weasel-js/core/engine';
 import { nudgeRightAction } from '@weasel-js/editing';
+import { moveAction } from '../../../actions/move/action';
+import { insertAction } from '../../../actions/insert/action';
+import { resizeAction } from '../../../actions/resize/action';
+import { rotateAction } from '../../../actions/rotate/action';
+import { cloneAction } from '../../../actions/clone/action';
 
 // Camera panned to x=100 at 2x; the sky does not zoom and pans with it, so its
 // world is the camera's doubled and shifted: plane = (2x - 100, 2y).
