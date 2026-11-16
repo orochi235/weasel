@@ -1,6 +1,7 @@
 import { solid } from '@weasel-js/paint';
 import { SceneCanvas, useScene, type SolidPaint } from '@weasel-js/core';
-import { LayerList, useSceneLayerList } from '@weasel-js/ui/components/LayerList';
+import { useSceneLayerList } from '@weasel-js/ui-canvas/components/SceneLayerList';
+import { LayerList } from '@weasel-js/ui/components/LayerList';
 import type { CSSProperties } from 'react';
 import { DemoStage } from './DemoStage';
 import s from './LayerListDemo.module.css';

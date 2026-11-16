@@ -6,7 +6,7 @@ import {
 } from '@weasel-js/path-tools';
 import { TEXT_TOOLS } from '@weasel-js/text-tools';
 import { ActionBar } from '@weasel-js/ui/components/ActionBar';
-import { CharacterOptions } from '@weasel-js/ui/components/inspector/CharacterOptions';
+import { CharacterOptions } from '@weasel-js/ui-canvas/components/inspector/CharacterOptions';
 import { ActiveToolOptionsBar } from '@weasel-js/ui/components/ToolOptionsBar';
 import { drawToolOptionValues } from './toolOptions';
 import { CommandPalette } from '@weasel-js/ui/components/CommandPalette';

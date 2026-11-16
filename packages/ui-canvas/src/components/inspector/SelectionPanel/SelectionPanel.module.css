@@ -1,0 +1,26 @@
+/* A field's text is set at its row label's size. */
+.root {
+  display: flex;
+  flex-direction: column;
+  font-size: var(--wzl-params-text-size, var(--wzl-font-size-sm));
+  color: var(--wzl-fg);
+  --wzl-field-font-size: var(--wzl-params-text-size, var(--wzl-font-size-sm));
+}
+
+.header {
+  display: flex;
+  align-items: baseline;
+  gap: var(--wzl-space-4);
+  padding: var(--wzl-space-4) 0;
+  border-block-end: 1px solid var(--wzl-border);
+}
+
+.kind {
+  font-weight: var(--wzl-font-weight-bold);
+  font-size: var(--wzl-font-size);
+}
+
+.breakdown {
+  font-size: var(--wzl-font-size-sm);
+  opacity: 0.6;
+}

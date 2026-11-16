@@ -1,0 +1,293 @@
+// Pure record→panel derivations for a panel of prefs leaves over a set of
+// records, as SelectionPanel draws one over scene nodes. Kept free of React so
+// intersection/aggregation semantics are unit-testable.
+//
+// Path convention (see core `NodePropertiesEntry`): a node's property
+// schema is a `PrefSection`, so a leaf's OWN KEY is its node path — a dotted
+// path of any depth rooted at `pose` or `data` (`pose.x`, `data.fill`,
+// `data.style.fontSize`), or a field the node declares for its children
+// (`clip`, `units`) — and a section's key is no part of it. A
+// preferences schema (`PrefGroup`) reads the other way and is not accepted.
+
+import type { IconSpec } from '@weasel-js/icons';
+import {
+  isPrefLeaf,
+  pairRuns,
+  prefAliasTargets,
+  prefHeadingKey,
+  prefLeafValue,
+  prefSectionPath,
+  sharedReading,
+  type PrefAlias,
+  type PrefAliasTargets,
+  type PrefBarLead,
+  type PrefBarOverflow,
+  type PrefLeaf,
+  type PrefSection,
+  type PrefSectionAs,
+} from '@weasel-js/prefs';
+import type { Paint } from '@weasel-js/paint';
+import { setOwn, MIXED, type Mixed } from '@weasel-js/registry';
+
+// Re-exported under its existing public name here: the kit-wide "these
+// values disagree" sentinel (`@weasel-js/core`'s `MIXED`) also covers
+// multi-node aggregation, so this panel doesn't get its own symbol.
+export { MIXED };
+export type { Mixed };
+
+/**
+ * One editable property in a {@link SelectionPanel}, paired with the dotted
+ * node path it reads and writes.
+ */
+export interface PanelLeaf {
+  /** Dotted node path the value is read and written at: the leaf's key in the schema, or for an alias its
+   *  target's. */
+  path: string;
+  leaf: PrefLeaf;
+  /** An alias's own key in the schema, where `path` is its target's. */
+  own?: string;
+}
+
+/** What tells one leaf of a panel from another: two aliases of one leaf share a `path`. */
+export const panelLeafKey = (leaf: PanelLeaf): string => leaf.own ?? leaf.path;
+
+/**
+ * One labeled row of a panel section. Holds several leaves when the schema
+ * paired them.
+ */
+export interface PanelRow {
+  label: string;
+  leaves: PanelLeaf[];
+  /** The path of the leaf whose `pair` made the row, when one did. */
+  pair?: string;
+}
+
+/**
+ * A titled block of rows, derived from one section of a properties schema, and the sections nested in it. `key` is
+ * that section's schema key.
+ */
+export interface PanelSection {
+  key: string;
+  /** The path its conditions name it by (`prefSectionPath`). */
+  path: string;
+  name: string;
+  /** How the section is drawn; unset, a heading over its rows. */
+  as?: PrefSectionAs;
+  /** Drawn as a bar: what happens to the cells its line has no room for. */
+  overflow?: PrefBarOverflow;
+  /** Drawn as a bar: what its line starts with. */
+  lead?: PrefBarLead;
+  /** The glyph naming it, which a bar can start its line with. */
+  icon?: IconSpec;
+  /** The motif its frame is drawn in, by name, where it is drawn framed. */
+  motif?: string;
+  /** The key of the leaf drawn in its heading, which stays among its rows until it is drawn there. */
+  heading?: string;
+  /** Its heading offers a reset of every leaf under it (`PrefSection.resettable`). */
+  resettable?: true;
+  /** Its rows and the sections nested in it, in schema order. */
+  items: PanelItem[];
+}
+
+/** One child of a {@link PanelSection}: a row, or a section nested in it. */
+export type PanelItem = PanelRow | PanelSection;
+
+/** Whether `item` is a nested section rather than a row. */
+export const isPanelSection = (item: PanelItem): item is PanelSection => 'items' in item;
+
+/** The rows of `section` itself, without those of the sections nested in it. */
+export const panelOwnRows = (section: PanelSection): PanelRow[] =>
+  section.items.filter((item): item is PanelRow => !isPanelSection(item));
+
+/** Every row of `section`, those of the sections nested in it included, in order. */
+export const panelRowsOf = (section: PanelSection): PanelRow[] =>
+  section.items.flatMap((item) => (isPanelSection(item) ? panelRowsOf(item) : [item]));
+
+const ALWAYS = (): boolean => true;
+
+/** Leaves and the sections between them as items: each run of neighboring leaves paired, and a section ending a run. */
+function panelItems<T>(entries: Iterable<T>, leaves: (entry: T) => PanelLeaf | undefined, section: (entry: T) => PanelSection | null): PanelItem[] {
+  const items: PanelItem[] = [];
+  let run: PanelLeaf[] = [];
+  const flush = (): void => {
+    items.push(...pairRows(run));
+    run = [];
+  };
+  for (const entry of entries) {
+    const leaf = leaves(entry);
+    if (leaf) {
+      run.push(leaf);
+      continue;
+    }
+    flush();
+    const nested = section(entry);
+    if (nested) items.push(nested);
+  }
+  flush();
+  return items;
+}
+
+/** A schema as panel sections. Each section keeps its nested sections, as an object leaf's does; top-level leaves
+ *  get an untitled leading section. An alias becomes the leaf of `targets` it points at, as a form draws it, unless
+ *  `rawAliases` keeps it for a renderer of the kind; an alias of nothing stays an alias either way. Without
+ *  `targets` an alias points into `schema` itself. */
+function flatten(schema: PrefSection, rawAliases: boolean, targets?: PrefAliasTargets): PanelSection[] {
+  const sections: PanelSection[] = [];
+  const untitled: PanelLeaf[] = [];
+  const into = targets ?? prefAliasTargets(schema, () => ALWAYS, { showHidden: true });
+  const shown = (key: string, leaf: PrefLeaf): PanelLeaf => {
+    const target = leaf.kind === 'alias' && !rawAliases ? into.shown(leaf as PrefAlias) : undefined;
+    return target ? { ...target, own: key } : { path: key, leaf };
+  };
+  const section = (key: string, child: PrefSection, path: string): PanelSection => {
+    const heading = prefHeadingKey(child);
+    const items = panelItems(
+      Object.entries(child.members),
+      ([at, member]) => (isPrefLeaf(member) ? shown(at, member) : undefined),
+      ([at, member]) => (isPrefLeaf(member) ? null : section(at, member, prefSectionPath(path, at))),
+    );
+    return { key, path, name: child.name, ...(child.as ? { as: child.as } : {}), ...(child.overflow ? { overflow: child.overflow } : {}), ...(child.lead ? { lead: child.lead } : {}), ...(child.icon ? { icon: child.icon } : {}), ...(child.motif ? { motif: child.motif } : {}), ...(heading ? { heading } : {}), ...(child.resettable ? { resettable: true as const } : {}), items };
+  };
+
+  for (const [key, child] of Object.entries(schema.members)) {
+    if (isPrefLeaf(child)) untitled.push(shown(key, child));
+    else sections.push(section(key, child, prefSectionPath('', key)));
+  }
+  if (untitled.length > 0) {
+    sections.unshift({ key: '', path: '', name: '', items: pairRows(untitled) });
+  }
+  return sections;
+}
+
+/** Merge each leaf a `pair` names into the row of the leaf that names it,
+ *  where they run consecutively, labeled as the pair says. */
+export function pairRows(leaves: readonly PanelLeaf[]): PanelRow[] {
+  return pairRuns(leaves, (item) => [panelLeafKey(item), item.leaf] as const).map(({ items, pair }) => ({
+    label: pair?.label ?? items[0]!.leaf.name,
+    leaves: items,
+    ...(pair ? { pair: pair.key } : {}),
+  }));
+}
+
+const NOTHING: PrefSection = { name: '', members: {} };
+
+/** One record a panel edits, such as a scene node, as the panel reads it. */
+export interface PanelRecord {
+  /** What the record holds at a leaf's dotted path; `undefined` for nothing there. */
+  valueAt(path: string): unknown;
+  /** What an `'inherit'` fill and stroke on it would take from what holds it. Absent where nothing does. */
+  paintAbove?(): PanelPaintAbove;
+}
+
+/** The fill and stroke an `'inherit'` paint takes, each with the paint it resolves to. */
+export interface PanelPaintAbove {
+  readonly fill: { readonly paint: Paint } | null;
+  readonly stroke: { readonly paint: Paint } | null;
+}
+
+/** A kind's properties schema, by the kind's name: what core's `NodePropertiesEntry` carries. */
+export interface PanelSchemaEntry {
+  readonly name: string;
+  readonly schema: PrefSection;
+}
+
+/** One kind's schema as a panel draws it now. */
+export interface PanelShown {
+  /** The schema narrowed to what is drawn. Null is nothing. */
+  schema: PrefSection | null;
+  /** What the schema's aliases are drawn from. Default: the schema as handed back. */
+  targets?: PrefAliasTargets;
+}
+
+/**
+ * The schema the panel shows for a set of kinds: one kind → its full
+ * schema; several → the intersection by (path, leaf kind), shaped by the
+ * first kind's section/row layout. Kinds without a registered schema
+ * contribute nothing, so their presence collapses the intersection.
+ * `rawAliases` leaves each alias leaf as it is written, for a caller that
+ * draws the kind itself. `shownOf` narrows each kind's schema before it is
+ * read, to what that kind draws now, and says where its aliases point.
+ */
+export function effectiveSections(
+  kinds: readonly string[],
+  entries: readonly PanelSchemaEntry[],
+  rawAliases = false,
+  shownOf?: (schema: PrefSection) => PanelShown,
+): PanelSection[] {
+  const uniq = [...new Set(kinds)];
+  if (uniq.length === 0) return [];
+  const byName = new Map(entries.map((e) => [e.name, e]));
+  const schemas = uniq.map((k) => byName.get(k)?.schema);
+  if (schemas.some((s) => s === undefined)) return [];
+  const [flatFirst, ...rest] = (schemas as PrefSection[]).map((schema) => {
+    const shown: PanelShown = shownOf ? shownOf(schema) : { schema };
+    return flatten(shown.schema ?? NOTHING, rawAliases, shown.targets);
+  });
+
+  if (rest.length === 0) return flatFirst;
+
+  // '\0' delimiter: path and kind strings are unconstrained, so a
+  // printable separator could collide with real content.
+  const leafKey = (l: PanelLeaf): string => `${panelLeafKey(l)}\0${l.leaf.kind}`;
+  const restKeys = rest.map((flat) => new Set(flat.flatMap(panelRowsOf).flatMap((r) => r.leaves).map(leafKey)));
+  const keep = (l: PanelLeaf): boolean =>
+    restKeys.every((set) => set.has(leafKey(l)));
+  // Paired again, since a pair may have lost a leaf to the other kinds.
+  const narrow = (section: PanelSection): PanelSection | null => {
+    const items = panelItems<PanelSection | PanelLeaf>(
+      section.items.flatMap((item): Array<PanelSection | PanelLeaf> => (isPanelSection(item) ? [item] : item.leaves.filter(keep))),
+      (item) => ('items' in item ? undefined : item),
+      (item) => narrow(item as PanelSection),
+    );
+    return items.length > 0 ? { ...section, items } : null;
+  };
+  return flatFirst.map(narrow).filter((section): section is PanelSection => section !== null);
+}
+
+/** Immutably set `value` at a dotted path within `root`, cloning each level
+ *  on the way down so React sees new object identities. Arrays stay arrays
+ *  (an array intermediate is shallow-copied, not flattened into `{0: ...}`)
+ *  — the write-side twin of reading a record at a path, so a schema author who
+ *  gets a working read gets a working write. */
+export function setAtPath(root: object, segments: readonly string[], value: unknown): object {
+  const [head, ...rest] = segments as [string, ...string[]];
+  const copy = (Array.isArray(root) ? [...root] : { ...root }) as Record<string, unknown>;
+  if (rest.length === 0) {
+    put(copy, head, value);
+    return copy;
+  }
+  const child = Object.hasOwn(root, head) ? (root as Record<string, unknown>)[head] : undefined;
+  const childObj = Array.isArray(child)
+    ? [...child]
+    : child != null && typeof child === 'object'
+      ? { ...child }
+      : {};
+  put(copy, head, setAtPath(childObj, rest, value));
+  return copy;
+}
+
+/** An own key, even one named like a prototype member; an array's `length` is already one, and is assigned. */
+const put = (copy: Record<string, unknown>, key: string, value: unknown): void => {
+  if (Array.isArray(copy) && key === 'length') copy.length = value as number;
+  else setOwn(copy, key, value);
+};
+
+/** What a node holding `held` at a leaf's path shows there ({@link prefLeafValue}). Holding nothing reads as the
+ *  leaf's default only where it says absence means that, else as `undefined`, which a panel draws as unset. */
+export const nodeLeafValue = (leaf: PrefLeaf, held: unknown): unknown =>
+  prefLeafValue(leaf, held, { unset: leaf.absentIsDefault !== true });
+
+/** The one value `values` all are, or `MIXED`. */
+export function sharedValue(values: readonly unknown[]): unknown | Mixed {
+  const reading = sharedReading(values);
+  return reading.mixed ? MIXED : reading.value;
+}
+
+/** `'rect ×2 · text'` — kinds in first-seen order with counts. */
+export function kindBreakdown(kinds: readonly string[]): string {
+  const counts = new Map<string, number>();
+  for (const k of kinds) counts.set(k, (counts.get(k) ?? 0) + 1);
+  return [...counts.entries()]
+    .map(([k, n]) => (n > 1 ? `${k} ×${n}` : k))
+    .join(' · ');
+}

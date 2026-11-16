@@ -1,8 +1,8 @@
 // #region gem-editor
 import { IconRegistryProvider } from '@weasel-js/icons/react';
 import { SceneCanvas, type FeaturePreset, type RectPose, type Scene, type SceneCanvasHit, type ToolsApi } from '@weasel-js/core';
-import { SelectionPanel } from '@weasel-js/ui';
-import { kitIcons } from '@weasel-js/ui/kit-icons';
+import { SelectionPanel } from '@weasel-js/ui-canvas';
+import { kitIcons } from '@weasel-js/ui-canvas/kit-icons';
 import { gemFeature } from './index.js';
 import { drawPreset, useSelection } from '@weasel-js/editing';
 

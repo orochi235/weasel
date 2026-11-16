@@ -265,6 +265,11 @@ export default [
               message:
                 "Import from a subpath (@weasel-js/ui/components/<Name>, or another in ui's package.json exports) instead of the barrel.",
             },
+            {
+              name: '@weasel-js/ui-canvas',
+              message:
+                "Import from a subpath (@weasel-js/ui-canvas/components/<Name>, or another in ui-canvas's package.json exports) instead of the barrel.",
+            },
           ],
         },
       ],

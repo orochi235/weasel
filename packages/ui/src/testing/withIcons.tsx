@@ -2,7 +2,15 @@ import type { ReactElement, ReactNode } from 'react';
 import { render, type RenderOptions } from '@testing-library/react';
 import { IconRegistryProvider } from '@weasel-js/icons/react';
 import type { IconTable } from '@weasel-js/icons';
-import { kitIcons } from '@weasel-js/ui/kit-icons';
+import { icons as coreIcons } from '@weasel-js/core/icons';
+import { icons as editingIcons } from '@weasel-js/editing/icons';
+import { icons as shapeIcons } from '@weasel-js/icons/shapes';
+import { icons as paintKindIcons } from '@weasel-js/paint-kinds/icons';
+import { icons as uiIcons } from '../icons.table';
+
+// What `@weasel-js/ui-canvas/kit-icons` lists, which ui cannot import: core's and editing's tables, for the
+// stories and tests that name their glyphs.
+const kitIcons: readonly IconTable[] = [coreIcons, editingIcons, shapeIcons, paintKindIcons, uiIcons];
 
 type Wrapper = (props: { children: ReactNode }) => ReactElement;
 

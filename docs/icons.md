@@ -232,8 +232,8 @@ draws nothing in production. Development is `isDev()` from `@weasel-js/registry`
 `@weasel-js/react`), which reads `process.env.NODE_ENV` inside a `try`, so a production bundle
 folds it to `false`.
 
-A unit test that draws a glyph mounts a registry holding `kitIcons`, core's and ui's tables
-(`@weasel-js/ui/kit-icons`): `renderWithIcons` in `packages/ui/src/testing/withIcons.tsx` in
+A unit test that draws a glyph mounts a registry holding every kit table: `renderWithIcons` in
+`packages/ui/src/testing/withIcons.tsx`, or in ui-canvas's own `src/testing/withIcons.tsx`, in
 place of `render`, or its `withIcons` as the `wrapper` of `renderSettled`. A test drawing another
 table's glyphs too passes it as `icons`, or builds its wrapper with `iconsWrapper`: apps/draw's and
 the site's tests import theirs from each app's `testIcons.ts`. jsdom cannot show
@@ -282,7 +282,7 @@ const ICONS = [coreIcons, uiIcons];
 </IconRegistryProvider>
 ```
 
-`kitIcons` from `@weasel-js/ui/kit-icons` is that list of core's, editing's, the shapes', the paint kinds' and ui's tables, whole.
+`kitIcons` from `@weasel-js/ui-canvas/kit-icons` is that list of core's, editing's, the shapes', the paint kinds' and ui's tables, whole.
 
 A component that lists glyphs rather than naming them asks for a variant by name:
 `useIconVariant('all')` runs the app's loader once, adds its tables, and returns

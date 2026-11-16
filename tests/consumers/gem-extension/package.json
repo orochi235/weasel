@@ -18,6 +18,7 @@
     "@weasel-js/paint": "*",
     "@weasel-js/routing": "*",
     "@weasel-js/ui": "*",
+    "@weasel-js/ui-canvas": "*",
     "react": "^19.2.4",
     "react-dom": "^19.2.4"
   },

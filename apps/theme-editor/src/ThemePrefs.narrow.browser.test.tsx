@@ -4,7 +4,7 @@ import './app.css';
 import { cleanup, fireEvent, render, screen, within } from '@testing-library/react';
 import { IconRegistryProvider } from '@weasel-js/icons/react';
 import { createMemoryAdapter } from '@weasel-js/storage';
-import { kitIcons } from '@weasel-js/ui/kit-icons';
+import { kitIcons } from '@weasel-js/ui-canvas/kit-icons';
 import { afterEach, expect, test } from 'vitest';
 import { page } from 'vitest/browser';
 import { ThemePrefs } from './ThemePrefs';

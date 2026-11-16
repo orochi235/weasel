@@ -64,6 +64,7 @@ export const BUILD_ORDER = [
   '@weasel-js/symmetry',
   '@weasel-js/rig',
   '@weasel-js/ui',
+  '@weasel-js/ui-canvas',
   '@weasel-js/measure',
   '@weasel-js/prefs-editor',
   '@weasel-js/hud',

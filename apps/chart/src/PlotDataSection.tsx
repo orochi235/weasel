@@ -1,5 +1,5 @@
 import { plotRootContaining, plotRootOf, replacePlotData } from '@weasel-js/plot';
-import { PlotDataPanel } from '@weasel-js/ui/components/PlotDataPanel';
+import { PlotDataPanel } from '@weasel-js/ui-canvas/components/PlotDataPanel';
 import type { ReactElement } from 'react';
 import type { ChartScene } from './chartDocument';
 

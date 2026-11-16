@@ -6,7 +6,7 @@ import { PrefsBar } from '../PrefsBar/PrefsBar';
 import { ActionsLeaf } from '../Prefs/ActionsLeaf';
 import type { Orientation } from '../Run';
 import type { ControlSizeProps } from '../ControlSize';
-import type { LeafRenderer } from '../inspector/SelectionPanel/renderContext';
+import type { LeafRenderer } from '../PanelCells/renderContext';
 import type { DisableableProps } from '../Disabled';
 
 /** Which actions an {@link ActionBar} draws: one group's, or every one carrying a tag. */

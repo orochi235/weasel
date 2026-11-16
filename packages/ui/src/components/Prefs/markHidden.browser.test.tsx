@@ -4,7 +4,7 @@ import type { SelectionApi } from '@weasel-js/routing';
 import { IDENTITY_POSE_COMPOSITION, asNodeId, createScene, type NodePropertiesEntry, type NodeRoutingEntry } from '@weasel-js/core';
 import type { PrefGroup, PrefLeaf, PrefSection } from '@weasel-js/prefs';
 import { afterEach, expect, it } from 'vitest';
-import { SelectionPanel } from '@weasel-js/ui/components/inspector/SelectionPanel';
+import { SelectionPanel } from '@weasel-js/ui/components/PanelCells';
 import { PrefsForm } from '@weasel-js/ui/components/Prefs';
 
 // The mark's dimming and the badge's box are the stylesheet's, which jsdom does not load.

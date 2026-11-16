@@ -1,7 +1,7 @@
 import { solid, strokeOf } from '@weasel-js/paint';
 import { SceneCanvas, useScene, defaultNodeRouting, defaultNodeProperties, asNodeId } from '@weasel-js/core';
 import type { Stroke, Fill, RectPose } from '@weasel-js/core';
-import { SelectionPanel } from '@weasel-js/ui/components/inspector/SelectionPanel';
+import { SelectionPanel } from '@weasel-js/ui-canvas/components/inspector/SelectionPanel';
 import { DemoStage } from './DemoStage';
 import { editPreset, pickPreset, useSelection } from '@weasel-js/editing';
 

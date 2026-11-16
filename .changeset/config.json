@@ -50,6 +50,7 @@
       "@weasel-js/guides",
       "@weasel-js/theme",
       "@weasel-js/ui",
+      "@weasel-js/ui-canvas",
       "@weasel-js/hud",
       "@weasel-js/labkit",
       "@weasel-js/audio",

@@ -1,5 +1,5 @@
 import { IconRegistryProvider } from '@weasel-js/icons/react';
-import { kitIcons } from '@weasel-js/ui/kit-icons';
+import { kitIcons } from '@weasel-js/ui-canvas/kit-icons';
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 import 'windease/styles.css';

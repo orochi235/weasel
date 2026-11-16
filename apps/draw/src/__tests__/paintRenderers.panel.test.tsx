@@ -9,7 +9,7 @@ import {
   inferredNodeRouting,
   rectPath,
 } from '@weasel-js/core';
-import { SelectionPanel } from '@weasel-js/ui/components/inspector/SelectionPanel';
+import { SelectionPanel } from '@weasel-js/ui-canvas/components/inspector/SelectionPanel';
 import { WD_RENDERERS } from '../paintRenderers';
 import { renderWithIcons } from '../testIcons';
 

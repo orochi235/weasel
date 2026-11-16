@@ -1,7 +1,7 @@
 import type { Paint } from '@weasel-js/core';
 import { useActionEdit } from '@weasel-js/ui/components/ActionEdit';
 import { PaintInput } from '@weasel-js/ui/components/PaintInput';
-import { nestedPaintValue, type LeafContext, type LeafRenderer } from '@weasel-js/ui/components/inspector/SelectionPanel';
+import { nestedPaintValue, type LeafContext, type LeafRenderer } from '@weasel-js/ui/components/PanelCells';
 
 /** The actions a paint leaf writes through. */
 type PaintActionId = 'setFill' | 'setStroke';

@@ -5,7 +5,7 @@ import { pathsPreset, usePencilTool } from '@weasel-js/path-tools';
 import { ColorField } from '@weasel-js/ui/components/ColorField';
 import { FillStrokeSwatch } from '@weasel-js/ui/components/FillStrokeSwatch';
 import type { PaintSlot } from '@weasel-js/paint';
-import { SceneGradientHandles } from '@weasel-js/ui/components/GradientEditor';
+import { SceneGradientHandles } from '@weasel-js/ui-canvas/components/SceneGradientHandles';
 import { Field } from '@weasel-js/ui/components/Field';
 import { InlineRange } from '@weasel-js/ui/components/InlineRange';
 import { useActionEdit } from '@weasel-js/ui/components/ActionEdit';

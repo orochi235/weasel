@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { DIAGRAM_MERMAID, type PlotPage } from '@weasel-js/diagram-formats';
 import { PlotView, type PlotData } from '@weasel-js/plot';
-import { PlotDataPanel } from '@weasel-js/ui/components/PlotDataPanel';
+import { PlotDataPanel } from '@weasel-js/ui-canvas/components/PlotDataPanel';
 import gantt from './plotKinds/gantt.mmd?raw';
 import gitgraph from './plotKinds/gitgraph.mmd?raw';
 import journey from './plotKinds/journey.mmd?raw';

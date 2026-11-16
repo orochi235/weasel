@@ -1,7 +1,7 @@
 import { fireEvent, render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import { PropertyField } from './PropertyField';
-import { pick } from './testing/selectRow';
+import { pick } from '../../testing/selectRow';
 
 describe('color field', () => {
   it('previews the new hex as it is picked, and commits it once the picker is left', () => {

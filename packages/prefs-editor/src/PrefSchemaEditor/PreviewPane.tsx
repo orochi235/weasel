@@ -6,9 +6,22 @@ import {
   isPrefSection, prefAliasTarget, prefLeafAt, prefSectionLeaves, prefValueAtPath, type PrefAlias, type PrefGroup,
   type PrefSection,
 } from '@weasel-js/prefs';
+import { SelectionPanel } from '@weasel-js/ui-canvas';
 import {
-  BarMenu, DragGhost, InlineRange, type LeafRenderer, type PrefDrop, PrefsDialog, type PrefSelectHow, PrefsForm,
-  ResizeHandle, resolveIcon, SelectionPanel, setAtPath, SidebarPanel, Switch, useBarMenuResolver,
+  BarMenu,
+  DragGhost,
+  InlineRange,
+  type LeafRenderer,
+  type PrefDrop,
+  PrefsDialog,
+  type PrefSelectHow,
+  PrefsForm,
+  ResizeHandle,
+  resolveIcon,
+  setAtPath,
+  SidebarPanel,
+  Switch,
+  useBarMenuResolver,
   useRegisteredActions,
 } from '@weasel-js/ui';
 import type { DefaultEdit } from './defaults';

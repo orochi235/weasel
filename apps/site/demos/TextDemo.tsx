@@ -5,7 +5,7 @@ import { textPreset, useSceneTextEdit } from '@weasel-js/text-tools';
 import type { Fill, RectPose } from '@weasel-js/core';
 import { gridSnapSource } from '@weasel-js/guides';
 import type { StyledRun, TextStyle, TextVerticalAlign } from '@weasel-js/text';
-import { CharacterOptions, isCharacterChrome } from '@weasel-js/ui/components/inspector/CharacterOptions';
+import { CharacterOptions, isCharacterChrome } from '@weasel-js/ui-canvas/components/inspector/CharacterOptions';
 import { DemoStage } from './DemoStage';
 import { editPreset, movePreset, pickPreset, resizePreset } from '@weasel-js/editing';
 

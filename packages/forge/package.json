@@ -84,6 +84,7 @@
     "@weasel-js/svg": "1.19.1",
     "@weasel-js/theme": "1.19.1",
     "@weasel-js/ui": "1.19.1",
+    "@weasel-js/ui-canvas": "1.19.1",
     "axe-core": "^4.13.0",
     "chai": "^6.2.2",
     "typescript": "~6.0.2"

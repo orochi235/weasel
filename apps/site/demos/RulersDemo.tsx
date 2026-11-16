@@ -3,7 +3,7 @@ import { solid } from '@weasel-js/paint';
 import { asNodeId, RIGID_POSE_COMPOSITION, SceneCanvas, useScene, type Fill, type GroupBoxData, type RectPose, type Stroke, type UnitScope, viewPreset } from '@weasel-js/core';
 import { createGuidesLayer, createRulers, guideSnapSource, useGuides } from '@weasel-js/guides';
 import { METRIC_MM } from '@weasel-js/quantity';
-import { Rulers } from '@weasel-js/ui/components/Rulers';
+import { Rulers } from '@weasel-js/ui-canvas/components/Rulers';
 import { DemoStage } from './DemoStage';
 import { movePreset, selectPreset } from '@weasel-js/editing';
 
