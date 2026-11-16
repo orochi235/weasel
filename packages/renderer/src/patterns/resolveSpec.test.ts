@@ -37,6 +37,13 @@ describe('resolvePatternSpec', () => {
     expect(a?.id).not.toBe(b?.id);
     expect(a?.id).not.toBe(c?.id);
   });
+
+  it('keeps a key named __proto__ in a spec from JSON as part of its id', () => {
+    const a = resolvePatternSpec(HATCH);
+    const b = resolvePatternSpec(JSON.parse('{"kind":"hatch","color":"#0fb5a8","__proto__":{"size":3}}') as TilePatternSpec);
+    expect(b?.id).not.toBe(a?.id);
+    expect(b?.id).toContain('__proto__');
+  });
 });
 
 describe('the pattern tile cache', () => {
