@@ -301,6 +301,15 @@ describe('createReflectable clash warning', () => {
     expect(warn).not.toHaveBeenCalled();
   });
 
+  it('is silent when the same value is pushed again under its key', () => {
+    const warn = spyWarn();
+    const r = createReflectable<string>();
+    const value = 'shared';
+    r.push('k', value, { source: 'a' });
+    r.push('k', value, { source: 'b' });
+    expect(warn).not.toHaveBeenCalled();
+  });
+
   it('warns of a clash under a higher-ranked registrant too', () => {
     const warn = spyWarn();
     const r = createReflectable<string>();

@@ -66,7 +66,7 @@ export interface PushOptions extends RegisterOptions {
    *  that arrive after it. Default 0. */
   rank?: number;
   /** An engine default, meant to be replaced. Pushing over a registrant of the
-   *  same rank that is not a fallback is a clash, warned of once in development;
+   *  same rank that is not a fallback, holding a different value, is a clash, warned of once in development;
    *  over a fallback, or at a higher rank, it is a deliberate override. */
   fallback?: boolean;
 }
@@ -210,7 +210,7 @@ export function createReflectable<V, K = string>(options?: ReflectableOptions): 
         let at = stack.length;
         while (at > 0 && (stack[at - 1]!.rank ?? 0) > rank) at--;
         const under = stack[at - 1];
-        if (under && !under.fallback && (under.rank ?? 0) === rank && isDev()) clashes.warn(key, under, registrant);
+        if (under && !under.fallback && under.value !== value && (under.rank ?? 0) === rank && isDev()) clashes.warn(key, under, registrant);
         stack.splice(at, 0, registrant);
       }
       changed();
