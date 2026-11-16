@@ -6,7 +6,7 @@
  * to the bit.
  */
 
-import { segmentTFrom } from './points';
+import { segmentTFrom, squaresHeld } from './points';
 import { lerp } from './scalar';
 import type { Point } from './paths/cubicMath';
 
@@ -17,9 +17,20 @@ export function distance2(a: Point, b: Point): number {
   return dx * dx + dy * dy;
 }
 
-/** Euclidean distance between two points. */
+/** The length of (dx, dy), finite wherever the length itself is, by the same steps as `./points`' `distance`.
+ *  Not public. */
+export function lengthOf(dx: number, dy: number): number {
+  const s = dx * dx + dy * dy;
+  if (squaresHeld(s)) return Math.sqrt(s);
+  const most = Math.max(Math.abs(dx), Math.abs(dy));
+  if (!(most > 0) || most === Infinity) return Math.sqrt(s);
+  const qx = dx / most, qy = dy / most;
+  return most * Math.sqrt(qx * qx + qy * qy);
+}
+
+/** Euclidean distance between two points, finite wherever the distance itself is. */
 export function distance(a: Point, b: Point): number {
-  return Math.sqrt(distance2(a, b));
+  return lengthOf(a.x - b.x, a.y - b.y);
 }
 
 /** The point `t` of the way from `a` to `b`; `t` outside [0, 1] extrapolates. */
@@ -33,7 +44,11 @@ export function segmentT(
   px: number, py: number, ax: number, ay: number, bx: number, by: number,
 ): number {
   const vx = bx - ax, vy = by - ay;
-  return segmentTFrom((px - ax) * vx + (py - ay) * vy, vx * vx + vy * vy);
+  const wv = (px - ax) * vx + (py - ay) * vy, vv = vx * vx + vy * vy;
+  const most = Math.max(Math.abs(vx), Math.abs(vy));
+  if ((squaresHeld(vv) && wv === wv) || !(most > 0) || most === Infinity) return segmentTFrom(wv, vv);
+  const ux = vx / most, uy = vy / most;
+  return segmentTFrom(((px - ax) / most) * ux + ((py - ay) / most) * uy, ux * ux + uy * uy);
 }
 
 /** Squared distance from (px,py) to segment (ax,ay)-(bx,by), endpoint-clamped. */
@@ -50,5 +65,6 @@ export function pointSegmentDist2(
 export function pointSegmentDist(
   px: number, py: number, ax: number, ay: number, bx: number, by: number,
 ): number {
-  return Math.sqrt(pointSegmentDist2(px, py, ax, ay, bx, by));
+  const t = segmentT(px, py, ax, ay, bx, by);
+  return lengthOf(px - (t === 1 ? bx : lerp(ax, bx, t)), py - (t === 1 ? by : lerp(ay, by, t)));
 }

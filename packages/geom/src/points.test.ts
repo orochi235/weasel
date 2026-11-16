@@ -83,3 +83,17 @@ describe('point distance and lerp', () => {
     expect(distance2([0, 0, 0], [1, 2, 2])).toBe(9);
   });
 });
+
+describe('points at either end of the double range', () => {
+  it('measure distances and segment parameters as they do at 1, in every tier', () => {
+    for (const s of [1e-200, 1e200]) {
+      const p = [0, 4 * s], a = [-s, 0], b = [s, 0];
+      expect(segmentT(p, a, b)).toBe(0.5);
+      expect(segmentT2D(0, 4 * s, -s, 0, s, 0)).toBe(0.5);
+      expect(pointSegmentDist(p, a, b) / s).toBeCloseTo(4, 12);
+      expect(pointSegmentDist2D(0, 4 * s, -s, 0, s, 0)).toBe(pointSegmentDist(p, a, b));
+      expect(distance([0, 0], [3 * s, 4 * s]) / s).toBeCloseTo(5, 12);
+      expect(distance2D({ x: 0, y: 0 }, { x: 3 * s, y: 4 * s })).toBe(distance([0, 0], [3 * s, 4 * s]));
+    }
+  });
+});

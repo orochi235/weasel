@@ -21,9 +21,26 @@ export function distance2(a: readonly number[], b: readonly number[]): number {
   return s;
 }
 
-/** Euclidean distance between two points. */
+/** Whether a sum of squares kept its terms: it neither fell to where its root loses precision nor overflowed.
+ *  Otherwise the caller measures again with every term divided by the largest. Shared with `./points2`; not
+ *  public. */
+export function squaresHeld(s: number): boolean {
+  return s > 1e-290 && s < Infinity;
+}
+
+/** Euclidean distance between two points, finite wherever the distance itself is. */
 export function distance(a: readonly number[], b: readonly number[]): number {
-  return Math.sqrt(distance2(a, b));
+  const s = distance2(a, b);
+  if (squaresHeld(s)) return Math.sqrt(s);
+  let most = 0;
+  for (let i = 0; i < a.length; i++) most = Math.max(most, Math.abs(a[i]! - b[i]!));
+  if (!(most > 0) || most === Infinity) return Math.sqrt(s);
+  let r = 0;
+  for (let i = 0; i < a.length; i++) {
+    const q = (a[i]! - b[i]!) / most;
+    r += q * q;
+  }
+  return most * Math.sqrt(r);
 }
 
 /** The point `t` of the way from `a` to `b`; `t` outside [0, 1] extrapolates. */
@@ -47,9 +64,19 @@ export function segmentTFrom(wv: number, vv: number): number {
 export function segmentT(p: readonly number[], a: readonly number[], b: readonly number[]): number {
   let wv = 0;
   let vv = 0;
+  let most = 0;
   for (let i = 0; i < a.length; i++) {
     const v = b[i]! - a[i]!;
     wv += (p[i]! - a[i]!) * v;
+    vv += v * v;
+    most = Math.max(most, Math.abs(v));
+  }
+  if ((squaresHeld(vv) && wv === wv) || !(most > 0) || most === Infinity) return segmentTFrom(wv, vv);
+  wv = 0;
+  vv = 0;
+  for (let i = 0; i < a.length; i++) {
+    const v = (b[i]! - a[i]!) / most;
+    wv += ((p[i]! - a[i]!) / most) * v;
     vv += v * v;
   }
   return segmentTFrom(wv, vv);
@@ -73,5 +100,5 @@ export function pointSegmentDist2(p: readonly number[], a: readonly number[], b:
 
 /** Distance from `p` to segment `a`–`b`. */
 export function pointSegmentDist(p: readonly number[], a: readonly number[], b: readonly number[]): number {
-  return Math.sqrt(pointSegmentDist2(p, a, b));
+  return distance(p, closestPointOnSegment(p, a, b));
 }
