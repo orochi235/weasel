@@ -59,10 +59,18 @@ export function useClipboard<TItem>(options: UseClipboardOptions<TItem>): Clipbo
     // The in-memory copy is already made; a producer that throws, or a browser with no clipboard API, costs only
     // the OS write.
     let flavors: ClipboardFlavors | null = null;
-    try {
-      flavors = o.produceFlavors?.({ items }) ?? defaultFlavors(items, o.jsonReplacer);
-    } catch (err) {
-      dwarn('clipboard', `flavor producer threw — skipping OS write: ${String(err)}`);
+    if (o.produceFlavors) {
+      try {
+        flavors = o.produceFlavors({ items });
+      } catch (err) {
+        console.error('weasel useClipboard: produceFlavors threw, so the OS clipboard was not written.', err);
+      }
+    } else {
+      try {
+        flavors = defaultFlavors(items, o.jsonReplacer);
+      } catch (err) {
+        dwarn('clipboard', `default flavors threw — skipping OS write: ${String(err)}`);
+      }
     }
     if (flavors) void writeOsClipboard(flavors);
   }, [opts]);

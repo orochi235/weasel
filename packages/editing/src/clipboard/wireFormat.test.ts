@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import {
   WEASEL_CLIPBOARD_MIME,
   buildWeaselClipboardText,
@@ -28,6 +28,18 @@ describe('weasel clipboard wire format', () => {
     const out = parseWeaselClipboardText(text, reviver) as Array<{ buf: Float32Array }>;
     expect(out[0].buf).toBeInstanceOf(Float32Array);
     expect(Array.from(out[0].buf)).toEqual([1, 2]);
+  });
+
+  it('declines with a console error when the reviver throws, and quietly on malformed text', () => {
+    const error = vi.spyOn(console, 'error').mockImplementation(() => {});
+    const boom = new Error('boom');
+    const text = buildWeaselClipboardText([{ id: 'a' }]);
+    expect(parseWeaselClipboardText(text, () => { throw boom; })).toBeNull();
+    expect(error).toHaveBeenCalledWith(expect.stringContaining('paste reviver threw'), boom);
+    error.mockClear();
+    expect(parseWeaselClipboardText('{not json', (_k, v) => v)).toBeNull();
+    expect(error).not.toHaveBeenCalled();
+    error.mockRestore();
   });
 
   it('sniff rejects near-misses', () => {
