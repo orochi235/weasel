@@ -1,6 +1,6 @@
 import { describe, it, expectTypeOf } from 'vitest';
 import type { ActionDeps, DepSchema, InvocationCtx } from '@weasel-js/routing';
-import type { SelectionApi } from 'core/selection/useSelection';
+import type { SelectionApi } from '@weasel-js/routing';
 import type { History } from '@weasel-js/history';
 import type { ActiveToolContextValue } from '@weasel-js/routing/react';
 import './depSchema';

@@ -1,10 +1,10 @@
 import { useEffect, useMemo, useRef } from 'react';
-import { asNodeId, createTransformOp, SceneCanvas, WeaselProvider, useScene, useSelection, solid, useVelocityTracker } from '@weasel-js/core';
+import { asNodeId, createTransformOp, SceneCanvas, WeaselProvider, useScene, solid, useVelocityTracker } from '@weasel-js/core';
 import { createGridLayer } from '@weasel-js/guides';
 import type { Dims, Fill, MoveBehavior, RectPose as Pose } from '@weasel-js/core';
 import type { Animator, PhysicsHandle } from '@weasel-js/animator';
 import { DemoStage } from '../DemoStage';
-import { movePreset, pickPreset } from '@weasel-js/editing';
+import { movePreset, pickPreset, useSelection } from '@weasel-js/editing';
 
 interface Vec2 { x: number; y: number }
 

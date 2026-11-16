@@ -1,8 +1,9 @@
-import { SceneCanvas, asNodeId, solid, useScene, useSelection, WeaselProvider } from '@weasel-js/core';
+import { SceneCanvas, asNodeId, solid, useScene, WeaselProvider } from '@weasel-js/core';
 import { usePencilTool } from '@weasel-js/path-tools';
 import { stickyData, whiteboardPreset } from '@weasel-js/text-tools';
 import { ToolPalette } from '@weasel-js/ui/components/ToolPalette';
 import { DemoStage } from './DemoStage';
+import { useSelection } from '@weasel-js/editing';
 
 const W = 560, H = 360;
 

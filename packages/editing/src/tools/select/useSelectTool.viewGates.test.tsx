@@ -5,10 +5,11 @@
  */
 import { describe, it, expect } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
-import { useSelection, asNodeId } from '@weasel-js/core/engine';
+import { asNodeId } from '@weasel-js/core/engine';
 import { useSelectTool, type UseSelectToolOptions } from './useSelectTool';
 import { rectListAdapter } from './testing/rectListAdapter';
 import type { Action, ActionDeps } from '@weasel-js/routing';
+import { useSelection } from '../../selection/useSelection';
 
 interface Rect { id: string; layer: string; x: number; y: number; width: number; height: number }
 interface Pose { x: number; y: number; width: number; height: number }

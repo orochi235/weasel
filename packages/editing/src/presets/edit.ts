@@ -13,22 +13,24 @@ import { setVertexColorAction } from '../actions/edit/setVertexColor';
 import { transformAgainAction } from '../actions/transformAgain/action';
 import { nudgeDownAction, nudgeLeftAction, nudgeRightAction, nudgeUpAction } from '../actions/edit/nudge';
 import { clipboardCopyAction, clipboardCutAction, clipboardPasteAction, clipboardPasteEventAction } from '../actions/clipboard/action';
+import { selectionPreset } from './selection';
 
 /** Escape, and canceling the gesture in flight. */
-export const escapePreset: FeaturePreset = { id: 'escape', label: 'Escape', actions: [escapeAction, cancelGestureAction] };
+export const escapePreset: FeaturePreset = { id: 'escape', label: 'Escape', actions: [escapeAction, cancelGestureAction], includes: [selectionPreset] };
 /** The context menu. */
-export const contextMenuPreset: FeaturePreset = { id: 'contextMenu', label: 'Context menu', actions: [contextMenuAction] };
+export const contextMenuPreset: FeaturePreset = { id: 'contextMenu', label: 'Context menu', actions: [contextMenuAction], includes: [selectionPreset] };
 /** Cmd/Ctrl+A. */
-export const selectAllPreset: FeaturePreset = { id: 'selectAll', label: 'Select all', actions: [selectAllAction] };
+export const selectAllPreset: FeaturePreset = { id: 'selectAll', label: 'Select all', actions: [selectAllAction], includes: [selectionPreset] };
 /** Duplicate, and repeating the last transform. */
-export const duplicatePreset: FeaturePreset = { id: 'duplicate', label: 'Duplicate', actions: [duplicateAction, transformAgainAction] };
+export const duplicatePreset: FeaturePreset = { id: 'duplicate', label: 'Duplicate', actions: [duplicateAction, transformAgainAction], includes: [selectionPreset] };
 /** Deleting the selection. */
-export const deletePreset: FeaturePreset = { id: 'delete', label: 'Delete', actions: [deleteAction] };
+export const deletePreset: FeaturePreset = { id: 'delete', label: 'Delete', actions: [deleteAction], includes: [selectionPreset] };
 /** Group and ungroup. */
-export const groupPreset: FeaturePreset = { id: 'group', label: 'Group', actions: [groupAction, ungroupAction] };
+export const groupPreset: FeaturePreset = { id: 'group', label: 'Group', actions: [groupAction, ungroupAction], includes: [selectionPreset] };
 /** The arrow keys. */
 export const nudgePreset: FeaturePreset = {
   id: 'nudge', label: 'Nudge', actions: [nudgeUpAction, nudgeDownAction, nudgeLeftAction, nudgeRightAction],
+  includes: [selectionPreset],
 };
 /** Fill and stroke, their opacities, the stroke's width, and a path's vertex colors. */
 export const stylePreset: FeaturePreset = {
@@ -37,6 +39,7 @@ export const stylePreset: FeaturePreset = {
   actions: [
     setFillAction, setStrokeAction, setFillOpacityAction, setStrokeOpacityAction, setStrokeWidthAction, setVertexColorAction,
   ],
+  includes: [selectionPreset],
 };
 
 /**
@@ -51,6 +54,7 @@ export const clipboardPreset: FeaturePreset = {
   id: 'clipboard',
   label: 'Clipboard',
   actions: [clipboardCutAction, clipboardCopyAction, clipboardPasteAction, clipboardPasteEventAction],
+  includes: [selectionPreset],
 };
 
 /** Every edit preset above, and their keys. */

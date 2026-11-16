@@ -8,7 +8,7 @@
 import type { ResizeHandleLayout } from 'interactions/actions/resize/cornerHandles';
 import { createContext, useContext, type ReactNode } from 'react';
 import type { UseViewHelpersOptions } from './useViewHelpers';
-import type { SelectionApi } from 'core/selection/useSelection';
+import type { SelectionApi } from '@weasel-js/routing';
 import type { View } from 'core/viewport/view';
 import type { Bounds } from 'core/viewport/fitViewToBounds';
 import type { PlaneMap } from 'core/viewport/parallax';

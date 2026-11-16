@@ -9,10 +9,9 @@ import type { ReactNode } from 'react';
 import { SceneCanvas } from './SceneCanvas';
 import { createScene } from 'core/scene/scene';
 import type { NodeId } from 'core/scene/types';
-import { useSelection } from 'core/selection/useSelection';
 import type { SceneCanvasApi } from './canvasExtension';
 import type { SceneCanvasViewport } from './SceneCanvas/viewportProp';
-import { drawPreset } from '@weasel-js/editing';
+import { drawPreset, useSelection } from '@weasel-js/editing';
 
 type D = { kind: 'rect' };
 type L = 'main';

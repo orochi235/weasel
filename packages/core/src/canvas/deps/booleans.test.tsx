@@ -6,9 +6,9 @@ import { boundsOfPath, type Path } from '@weasel-js/geom';
 import { SceneCanvas } from 'canvas/SceneCanvas';
 import { createScene } from 'core/scene/scene';
 import type { NodeId } from 'core/scene/types';
-import { useSelection, type SelectionApi } from 'core/selection/useSelection';
+import type { SelectionApi } from '@weasel-js/routing';
 import { defineTool } from 'tools/overlayBinding';
-import { drawPreset } from '@weasel-js/editing';
+import { drawPreset, useSelection } from '@weasel-js/editing';
 
 type P = { x: number; y: number; width: number; height: number };
 type D = { path: Path; fill: { paint: { color: string } } };

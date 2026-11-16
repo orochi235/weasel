@@ -1,5 +1,5 @@
-import { ANCHORS_GROUP, PATH_GROUP, always, asNodeId, createScene, never, type RectPose, solid, useSelection, pathNode } from '@weasel-js/core';
-import { pathsPreset } from '@weasel-js/path-tools';
+import { ANCHORS_GROUP, PATH_GROUP, always, asNodeId, createScene, never, type RectPose, solid, pathNode } from '@weasel-js/core';
+import { pathsPreset, PATH_DIRECTION_CHROME_ID, pathStructurePreset } from '@weasel-js/path-tools';
 import {
   type ConfigOf,
   defineInstrument,
@@ -11,13 +11,12 @@ import {
   useTrialScene,
 } from '@weasel-js/labkit';
 import { FloatingPanel } from '@weasel-js/ui/components/FloatingPanel';
-import { PATH_DIRECTION_CHROME_ID, pathStructurePreset } from '@weasel-js/path-tools';
 import { ActionBar } from '@weasel-js/ui/components/ActionBar';
 import { useMemo } from 'react';
 import '@weasel-js/labkit/styles.css';
 import 'windease/styles.css';
 import { icon } from '../icons.gen';
-import { movePreset, pickPreset } from '@weasel-js/editing';
+import { movePreset, pickPreset, useSelection } from '@weasel-js/editing';
 
 const config = f.schema({
   arrows: f.boolean(true).label('Direction arrows'),

@@ -1,4 +1,4 @@
-import type { SelectionApi } from './useSelection';
+import type { SelectionApi } from '@weasel-js/routing';
 
 type AdapterMethods = SelectionApi['adapterMethods'];
 

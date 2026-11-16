@@ -14,10 +14,11 @@ import { describe, it, expect } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
 import { sceneToAdapter, useScene } from '@weasel-js/core';
 import type { UseSceneOptions } from '@weasel-js/core/engine';
-import { useSelection, asNodeId } from '@weasel-js/core/engine';
+import { asNodeId } from '@weasel-js/core/engine';
 import { useSelectTool } from './useSelectTool';
 import { rectPath } from '@weasel-js/geom';
 import type { Action, ActionDeps } from '@weasel-js/routing';
+import { useSelection } from '../../selection/useSelection';
 
 interface Item { label: string }
 type Pose = { x: number; y: number; width: number; height: number };

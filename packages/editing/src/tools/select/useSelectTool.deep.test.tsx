@@ -9,9 +9,10 @@ import { matchSorted, type ScopedBinding } from '@weasel-js/routing';
 import type { Action, ActionDeps } from '@weasel-js/routing';
 import { sceneToAdapter, useScene, scenePickSource, pickWalk } from '@weasel-js/core';
 import type { UseSceneOptions } from '@weasel-js/core/engine';
-import { useSelection, asNodeId, AUTO_POSE_DESCRIPTOR } from '@weasel-js/core/engine';
+import { asNodeId, AUTO_POSE_DESCRIPTOR } from '@weasel-js/core/engine';
 import { useSelectTool } from './useSelectTool';
 import { adapterPointQuery } from './adapterPointQuery';
+import { useSelection } from '../../selection/useSelection';
 
 type Pose = { x: number; y: number; width: number; height: number };
 type Mods = { alt: boolean; ctrl: boolean; meta: boolean; shift: boolean };

@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, useSyncExternalStore } from 'react';
-import { asNodeId, nodeShapesOf, SceneCanvas, solid, useScene, useSelection } from '@weasel-js/core';
+import { asNodeId, nodeShapesOf, SceneCanvas, solid, useScene } from '@weasel-js/core';
 import { ellipsePath, rectPath } from '@weasel-js/geom';
 import { createTextPreset, TEXT_PAINTER } from '@weasel-js/text-tools';
 import {
@@ -15,7 +15,7 @@ import { downloadBlob } from '@weasel-js/storage';
 import { Button } from '@weasel-js/ui/components/Button';
 import { DemoStage } from './DemoStage';
 import s from './PTouchLabelDemo.module.css';
-import { movePreset, pickPreset, transformPreset } from '@weasel-js/editing';
+import { movePreset, pickPreset, transformPreset, useSelection } from '@weasel-js/editing';
 
 const TAPE = tapeForWidthMm(24)!;
 const LENGTH = 288;

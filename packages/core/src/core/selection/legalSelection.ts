@@ -1,6 +1,6 @@
 import { useEffect } from 'react';
 import type { NodeId } from 'core/scene/types';
-import type { SelectionApi } from './useSelection';
+import type { SelectionApi } from '@weasel-js/routing';
 
 /** `ids` as the scene's own selection would hold them (`Scene.selectable`). */
 export type Selectable = (ids: readonly NodeId[]) => readonly NodeId[];

@@ -11,7 +11,7 @@ import { effectivePose } from 'core/scene/effectivePose';
 import { nodeAsShown } from 'core/scene/nodeAsShown';
 import { createScene } from 'core/scene/scene';
 import type { DerivedDep, RectPose } from 'core/scene/types';
-import type { SelectionApi } from 'core/selection/useSelection';
+import type { SelectionApi } from '@weasel-js/routing';
 import { moveAction } from './move/action';
 import type { TransformFollower } from './transformFinish';
 

@@ -13,7 +13,7 @@ import { undoAction } from '../actions/defaults/undoRedo';
 import { createScene } from 'core/scene/scene';
 import { asNodeId } from 'core/scene/types';
 import type { Scene } from 'core/scene/types';
-import type { SelectionApi } from 'core/selection/useSelection';
+import type { SelectionApi } from '@weasel-js/routing';
 import { flipAction, reorderForwardAction, nudgeRightAction, clipboardCopyAction, clipboardCutAction, selectAllAction, transformAgainAction, duplicateAction, groupAction } from '@weasel-js/editing';
 
 type D = { kind: 'rect' };

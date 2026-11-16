@@ -3,7 +3,7 @@ import { render } from '@testing-library/react';
 import { DepRegistryProvider, useDepRegistry, type DepRegistry } from '@weasel-js/routing/react';
 import { useAreaSelectDepSource } from './areaSelect';
 import type { Scene, NodeId } from 'core/scene/types';
-import type { SelectionApi } from 'core/selection/useSelection';
+import type { SelectionApi } from '@weasel-js/routing';
 import { IDENTITY_POSE_COMPOSITION } from 'core/scene/composePose';
 
 function makeScene(): Scene<unknown, string, unknown> {

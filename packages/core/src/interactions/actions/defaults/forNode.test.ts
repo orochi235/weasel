@@ -8,7 +8,7 @@ import type { Action, InvocationCtx } from '@weasel-js/routing';
 import { createScene } from 'core/scene/scene';
 import type { NodeId } from 'core/scene/types';
 import { RECT_POSE_DESCRIPTOR, type PoseDescriptor } from 'core/geometry/poseDescriptor';
-import type { SelectionApi } from 'core/selection/useSelection';
+import type { SelectionApi } from '@weasel-js/routing';
 import { cloneAction } from '../clone/action';
 import { moveAction } from '../move/action';
 import { rotateAction } from '../rotate/action';

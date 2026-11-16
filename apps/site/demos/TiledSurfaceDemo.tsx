@@ -1,9 +1,9 @@
 import { useEffect, useLayoutEffect, useRef, useState, type RefObject } from 'react';
-import { PathBuilder, SceneCanvas, WeaselProvider, asNodeId, createScene, solid, useSelection } from '@weasel-js/core';
+import { PathBuilder, SceneCanvas, WeaselProvider, asNodeId, createScene, solid } from '@weasel-js/core';
 import type { Path, RectPose, SceneCanvasApi, View, Fill } from '@weasel-js/core';
 import { createLoupe } from '@weasel-js/hud';
 import { useHud, useHudContribution } from '@weasel-js/hud/react';
-import { movePreset, pickPreset } from '@weasel-js/editing';
+import { movePreset, pickPreset, useSelection } from '@weasel-js/editing';
 
 interface NodeData { fill: Fill; path?: Path }
 

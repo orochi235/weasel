@@ -6,7 +6,7 @@
  * `'@weasel-js/routing'` in their own files.
  */
 
-import type { SelectionApi } from 'core/selection/useSelection';
+import type { SelectionApi } from '@weasel-js/routing';
 import type { View } from 'core/viewport/view';
 import type { FramedBox } from '@weasel-js/geom';
 import type { PlaneMap } from 'core/viewport/parallax';

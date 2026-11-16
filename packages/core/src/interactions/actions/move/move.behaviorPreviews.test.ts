@@ -9,7 +9,7 @@ import type { BindingOptions, InvocationCtx, OngoingHandle, OngoingInvoker } fro
 import { createScene } from 'core/scene/scene';
 import { effectivePose } from 'core/scene/effectivePose';
 import type { NodeId, RectPose } from 'core/scene/types';
-import type { SelectionApi } from 'core/selection/useSelection';
+import type { SelectionApi } from '@weasel-js/routing';
 import type { BehaviorResult, MoveBehavior } from '../../gestures/types';
 import type { LayoutStrategy } from '../../../layout/types';
 

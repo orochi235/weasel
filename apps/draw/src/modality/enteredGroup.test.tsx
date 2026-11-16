@@ -7,7 +7,7 @@ import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
 import { act, cleanup, fireEvent, screen } from '@testing-library/react';
 import { renderWithKeys as render } from '@weasel-js/react/testing/giveKeys';
 import { useState, type ReactElement } from 'react';
-import { SceneCanvas, asNodeId, createScene, pathFromD, solid, useSelection, createWorkspaceTintLayer, type PolygonPath, type SelectionApi } from '@weasel-js/core';
+import { SceneCanvas, asNodeId, createScene, pathFromD, solid, createWorkspaceTintLayer, type PolygonPath, type SelectionApi } from '@weasel-js/core';
 import { TextEditDepPublisher } from '@weasel-js/editor';
 import type { DrawScene } from '../drawDocument';
 import { useTextEditSession } from '../useTextEditSession';
@@ -18,7 +18,7 @@ import { useModality, type UseModalityReturn } from './useModality';
 import { useModeId } from './useModeId';
 import { pathsPreset } from '@weasel-js/path-tools';
 import { textPreset } from '@weasel-js/text-tools';
-import { drawPreset } from '@weasel-js/editing';
+import { drawPreset, useSelection } from '@weasel-js/editing';
 
 beforeAll(() => {
   const proto = HTMLCanvasElement.prototype as unknown as Record<string, unknown>;

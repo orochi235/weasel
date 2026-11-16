@@ -17,7 +17,7 @@ import type { EditAnchorsDep } from 'interactions/actions/depSchema';
 import { commitSelectionOps } from 'interactions/actions/defaultCommitAdapter';
 import { locksOf, type EditAnchorsParams } from 'interactions/actions/edit-anchors/params';
 import type { Scene, NodeId } from 'core/scene/types';
-import type { SelectionApi } from 'core/selection/useSelection';
+import type { SelectionApi } from '@weasel-js/routing';
 import type { PointOrigin, PolygonPath } from '@weasel-js/geom';
 import { anchorDataPatch } from 'domains/paths/anchorData';
 import { classifyPathStorage, pathEditPathOf, resolveEditablePathOf } from 'domains/paths/editablePath';

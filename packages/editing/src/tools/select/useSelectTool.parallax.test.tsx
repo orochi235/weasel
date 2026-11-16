@@ -5,10 +5,11 @@
 import { describe, it, expect } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
 import { useScene, useSceneAdapter } from '@weasel-js/core';
-import { useSelection, asNodeId } from '@weasel-js/core/engine';
+import { asNodeId } from '@weasel-js/core/engine';
 import { useSelectTool } from './useSelectTool';
 import type { Action, ActionDeps } from '@weasel-js/routing';
 import type { View } from '@weasel-js/core';
+import { useSelection } from '../../selection/useSelection';
 
 type Pose = { x: number; y: number; width: number; height: number };
 

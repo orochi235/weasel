@@ -5,6 +5,7 @@
  * @packageDocumentation
  */
 export { ENGINE_STANDARD_ACTIONS } from './engineStandardActions';
+export { createSelection, useSelection, type UseSelectionOptions } from './selection/useSelection';
 export { createSelectToolWith, useSelectToolWith, type SelectAdapter, type UseSelectToolOptions } from './tools/select/useSelectToolWith';
 export { selectionMoveContribution, type SelectionMoveOptions } from './tools/select/selectionContributions';
 export { createGroupEntryContribution, useGroupEntryContribution, GROUP_ENTRY_ID } from './tools/select/groupEntry';

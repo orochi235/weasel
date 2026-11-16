@@ -8,7 +8,7 @@ import { render } from '@testing-library/react';
 import { DepRegistryProvider, useDepRegistry, type DepRegistry } from '@weasel-js/routing/react';
 import { pathInWorld, transformPath, translate, type PolygonPath } from '@weasel-js/geom';
 import type { Scene, NodeId } from 'core/scene/types';
-import type { SelectionApi } from 'core/selection/useSelection';
+import type { SelectionApi } from '@weasel-js/routing';
 import { useInsertDepSource } from './insert';
 import { useEditAnchorsDepSource } from './editAnchors';
 import { inferredNodeProperties, defaultNodeProperties } from '../SceneCanvas/defaultNodeProperties';

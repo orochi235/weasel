@@ -2,11 +2,10 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, act } from '@testing-library/react';
 import React from 'react';
-import { SceneCanvas, useScene, useSelection } from '@weasel-js/core';
-import type { Contribution, SceneCanvasApi, SelectionApi } from '@weasel-js/core';
-import { selectToolKitPreset, shapeToolKitPreset, type KitToolId } from '@weasel-js/editing';
+import { SceneCanvas, useScene } from '@weasel-js/core';
+import type { Contribution, SceneCanvasApi, SelectionApi, ClaimableGesture } from '@weasel-js/core';
+import { selectToolKitPreset, shapeToolKitPreset, type KitToolId, useSelection } from '@weasel-js/editing';
 import { useHud, useHudContribution } from './react';
-import type { ClaimableGesture } from '@weasel-js/core';
 import type { HudPointerEvent, Widget } from './widget';
 import { _resetFontRegistryForTests } from '@weasel-js/font/test-seams';
 

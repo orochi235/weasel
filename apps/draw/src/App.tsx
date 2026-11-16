@@ -2,7 +2,7 @@
  * WeaselDraw's editor: one `<SceneCanvas features={[drawPreset, pathTools]}>` with every built-in tool over a
  * `useScene` document, saved to the session (IndexedDB, or localStorage without it) 300 ms after each change.
  */
-import { useScene, useSelection } from '@weasel-js/core';
+import { useScene } from '@weasel-js/core';
 import { createRecentColorsStore, RecentColorsProvider } from '@weasel-js/ui/components/RecentColors';
 import { type ReactElement, useState } from 'react';
 import './app.css';
@@ -13,6 +13,7 @@ import { loadInitial, loadInitialDoc } from './sceneLoading';
 import { ColorContextProvider } from './tools/colorContext/ColorContextProvider';
 import { drawToolOptionValues } from './toolOptions';
 import { useSessionPersistence } from './useSessionPersistence';
+import { useSelection } from '@weasel-js/editing';
 
 const RECENT_COLORS_KEY = 'weaseldraw:recent-colors';
 

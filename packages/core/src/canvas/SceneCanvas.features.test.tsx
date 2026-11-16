@@ -15,7 +15,7 @@ import type { Scene, NodeId } from 'core/scene/types';
 import { useActionsRegistry, useDepRegistry } from '@weasel-js/routing/react';
 import type { Action } from '@weasel-js/routing';
 import type { ToolsApi } from '../tools/overlayBinding';
-import type { SelectionApi } from 'core/selection/useSelection';
+import type { SelectionApi } from '@weasel-js/routing';
 import { viewPreset } from 'canvas/SceneCanvas/presets';
 import { KIT_STANDARD_ACTION_IDS, drawPreset, editPreset, movePreset, outlinePreset, pickPreset, resizePreset, rotatePreset, selectPreset, transformPreset, shapeToolKitPreset } from '@weasel-js/editing';
 
@@ -109,17 +109,19 @@ describe('a bare <SceneCanvas>', () => {
     expect(seen.actionIds.filter((i) => i.startsWith('tool.'))).toEqual([]);
   });
 
-  it('keeps a selection that input does not set', () => {
-    const { seen, canvas, id } = mount();
+  it('keeps the selection the app sets, which neither input nor its own api writes', () => {
+    const { seen, canvas, id, scene } = mount();
     click(canvas, [10, 10]);
     expect(seen.selection!.get()).toEqual([]);
     act(() => seen.selection!.set([id]));
+    expect(seen.selection!.get()).toEqual([]);
+    act(() => scene.setSelection([id]));
     expect(seen.selection!.get()).toEqual([id]);
   });
 
   it('does not move the selection on drag', () => {
-    const { seen, canvas, id, scene } = mount();
-    act(() => seen.selection!.set([id]));
+    const { canvas, id, scene } = mount();
+    act(() => scene.setSelection([id]));
     drag(canvas, [10, 10], [40, 10]);
     expect(xOf(scene, id)).toBe(0);
   });
@@ -139,8 +141,8 @@ describe('a bare <SceneCanvas>', () => {
   });
 
   it('keeps the selection on Escape', () => {
-    const { seen, tools, id } = mount();
-    act(() => seen.selection!.set([id]));
+    const { seen, tools, id, scene } = mount();
+    act(() => scene.setSelection([id]));
     key('Escape');
     expect(seen.selection!.get()).toEqual([id]);
     expect(tools().active).toBe(null);
@@ -229,8 +231,8 @@ describe('<SceneCanvas features>', () => {
 
   it("'outline' draws the selection outline without mounting the select tool", () => {
     const helpersRef: { current: CanvasHelpers<P> | null } = { current: null };
-    const { seen, id, tools } = mount({ features: [outlinePreset], helpersRef });
-    act(() => seen.selection!.set([id]));
+    const { id, tools, scene } = mount({ features: [outlinePreset], helpersRef });
+    act(() => scene.setSelection([id]));
     expect(helpersRef.current!.getIsVisible()('selection.outline')).toBe(true);
     expect(Object.keys(tools().registry)).toEqual([]);
     expect(tools().active).toBe(null);

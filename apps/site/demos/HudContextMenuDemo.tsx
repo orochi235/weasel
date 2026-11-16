@@ -1,11 +1,11 @@
 import { useEffect } from 'react';
-import { ActionsProvider, SceneCanvas, rectPath, solid, useIconRegistry, useMenuHost, useMenus, useScene, useSelection } from '@weasel-js/core';
+import { ActionsProvider, SceneCanvas, rectPath, solid, useIconRegistry, useMenuHost, useMenus, useScene } from '@weasel-js/core';
 import type { Fill, MenuDef, NodeId, Path } from '@weasel-js/core';
 import { attachMenuHost } from '@weasel-js/hud';
 import { pref } from '@weasel-js/prefs';
 import { useHud, useHudContribution } from '@weasel-js/hud/react';
 import { DemoStage } from './DemoStage';
-import { arrangePreset, editPreset, movePreset, pickPreset } from '@weasel-js/editing';
+import { arrangePreset, editPreset, movePreset, pickPreset, useSelection } from '@weasel-js/editing';
 
 interface NodeData { path: Path; fill: Fill }
 interface Pose { x: number; y: number; width: number; height: number }

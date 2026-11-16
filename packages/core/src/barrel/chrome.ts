@@ -4,16 +4,10 @@
  * @packageDocumentation
  */
 
-// ─── Selection state hook ───────────────────────────────────────────────────
-export { useSelection } from '../core/selection/useSelection';
-export type {
-  SelectionApi,
-  SelectionMode,
-  SelectionExtendKey,
-  UseSelectionOptions,
-  SelectionStore,
-} from '../core/selection/useSelection';
-export type { SelectionFactory, SelectionOptions } from '../core/selection/selectionContract';
+// ─── Selection: the contract, and the view a canvas keeps with no preset building one ──
+export type { SelectionApi, SelectionMode, SelectionExtendKey } from '@weasel-js/routing';
+export type { SelectionFactory, SelectionOptions, SelectionStore } from '../core/selection/selectionContract';
+export { viewerSelection } from '../core/selection/viewerSelection';
 
 // ─── The entered group: the group a press resolves inside of ────────────────
 export { createEnteredGroup, useEnteredGroup } from '../canvas/deps/enteredGroup';

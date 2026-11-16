@@ -4,7 +4,7 @@ import { createScene } from 'core/scene/scene';
 import { createSetDataOp } from 'core/ops/setData';
 import type { Op } from 'core/ops/types';
 import type { RectPose } from 'core/scene/types';
-import type { SelectionApi } from 'core/selection/useSelection';
+import type { SelectionApi } from '@weasel-js/routing';
 import { moveAction } from './move/action';
 import { commitTransformOps, type TransformFollower } from './transformFinish';
 import { createInsertOp } from 'core/ops/create';

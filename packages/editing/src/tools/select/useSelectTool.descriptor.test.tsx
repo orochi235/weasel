@@ -1,10 +1,11 @@
 import { describe, it, expect } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
 import { sceneToAdapter, useScene } from '@weasel-js/core';
-import { IDENTITY_POSE_COMPOSITION, useSelection, asNodeId } from '@weasel-js/core/engine';
+import { IDENTITY_POSE_COMPOSITION, asNodeId } from '@weasel-js/core/engine';
 import { useSelectTool } from './useSelectTool';
 import type { Action, ActionDeps } from '@weasel-js/routing';
 import { circleForTests as circle, CIRCLE_POSE_DESCRIPTORForTests as CIRCLE_POSE_DESCRIPTOR, type CirclePoseForTests as CirclePose } from '@weasel-js/core/test-seams';
+import { useSelection } from '../../selection/useSelection';
 
 describe('useSelectTool — default pickEvery reads the descriptor', () => {
   it('selects a circle pressed at its center', () => {

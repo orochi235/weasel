@@ -9,7 +9,7 @@ import type { ImmediateInvoker, InvocationCtx, OngoingHandle, OngoingInvoker } f
 import { createScene } from 'core/scene/scene';
 import { effectivePose } from 'core/scene/effectivePose';
 import type { DerivedDep, NodeId, RectPose } from 'core/scene/types';
-import type { SelectionApi } from 'core/selection/useSelection';
+import type { SelectionApi } from '@weasel-js/routing';
 import { nudgeRightAction } from '@weasel-js/editing';
 
 type S = ReturnType<typeof createScene<object, 'main', RectPose>>;

@@ -7,7 +7,7 @@ import { describe, expect, it } from 'vitest';
 import type { Action, InvocationCtx } from '@weasel-js/routing';
 import { createScene } from 'core/scene/scene';
 import type { NodeId, RectPose } from 'core/scene/types';
-import type { SelectionApi } from 'core/selection/useSelection';
+import type { SelectionApi } from '@weasel-js/routing';
 import { unionOfChildren } from 'core/scene/kitRegistry';
 import { moveSources, shapeSources } from '../selectionSubtree';
 import { resizeAction } from '../resize/action';

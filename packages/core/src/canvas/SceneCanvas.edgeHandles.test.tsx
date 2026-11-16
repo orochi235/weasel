@@ -10,7 +10,7 @@ import { SceneCanvas } from './SceneCanvas';
 import { createScene } from 'core/scene/scene';
 import type { NodeId } from 'core/scene/types';
 import { useDepRegistry } from '@weasel-js/routing/react';
-import type { SelectionApi } from 'core/selection/useSelection';
+import type { SelectionApi } from '@weasel-js/routing';
 import { useOptionalViewRegistry, type ViewRegistry } from './viewRegistry';
 import { movePreset, pickPreset, resizePreset } from '@weasel-js/editing';
 

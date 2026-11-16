@@ -3,7 +3,7 @@ import { render, act } from '@testing-library/react';
 import { DepRegistryProvider, useDepRegistry, type DepRegistry } from '@weasel-js/routing/react';
 import { useEditAnchorsDepSource } from './editAnchors';
 import type { Scene, NodeId } from 'core/scene/types';
-import type { SelectionApi } from 'core/selection/useSelection';
+import type { SelectionApi } from '@weasel-js/routing';
 
 function Capture({ onR }: { onR: (r: DepRegistry) => void }) {
   const r = useDepRegistry();

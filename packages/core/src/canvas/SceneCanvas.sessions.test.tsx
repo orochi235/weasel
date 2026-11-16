@@ -10,7 +10,8 @@ import { SceneCanvas } from './SceneCanvas';
 import { createScene } from 'core/scene/scene';
 import { createEditingSession } from 'core/scene/editingSession';
 import { asNodeId, type Scene } from 'core/scene/types';
-import type { SelectionApi } from 'core/selection/useSelection';
+import type { SelectionApi } from '@weasel-js/routing';
+import { selectionPreset } from '@weasel-js/editing';
 
 type D = { kind: 'rect' };
 type L = 'main';
@@ -51,10 +52,10 @@ function mountTwo(left: Scene<D, L, P>, right: Scene<D, L, P>) {
   const r: { deps?: () => Deps } = {};
   render(
     <>
-      <SceneCanvas<D, L, P> scene={left} width={200} height={200} selectionOptions={{ mode: 'multi' }}>
+      <SceneCanvas<D, L, P> features={[selectionPreset]} scene={left} width={200} height={200} selectionOptions={{ mode: 'multi' }}>
         <Probe into={l} />
       </SceneCanvas>
-      <SceneCanvas<D, L, P> scene={right} width={200} height={200} selectionOptions={{ mode: 'multi' }}>
+      <SceneCanvas<D, L, P> features={[selectionPreset]} scene={right} width={200} height={200} selectionOptions={{ mode: 'multi' }}>
         <Probe into={r} />
       </SceneCanvas>
     </>,

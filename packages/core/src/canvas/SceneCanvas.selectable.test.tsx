@@ -11,8 +11,8 @@ import { useOptionalViewInputs } from './viewInputs';
 import { useDepRegistry } from '@weasel-js/routing/react';
 import { createScene } from 'core/scene/scene';
 import { asNodeId, type Scene } from 'core/scene/types';
-import { useSelection, type SelectionApi } from 'core/selection/useSelection';
-import { pickPreset } from '@weasel-js/editing';
+import type { SelectionApi } from '@weasel-js/routing';
+import { pickPreset, useSelection, selectionPreset } from '@weasel-js/editing';
 
 type D = { kind: 'rect' };
 type L = 'main';
@@ -59,7 +59,7 @@ function mount(selectable: boolean, withOwn = false) {
     seen.own = own;
     return (
       <SceneCanvas<D, L, P>
-        scene={scene} width={200} height={200} selectable={selectable}
+        scene={scene} width={200} height={200} selectable={selectable} features={[selectionPreset]}
         {...(withOwn ? { selection: own } : {})}
       >
         <Probe seen={seen} />

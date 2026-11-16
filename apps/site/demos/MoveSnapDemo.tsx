@@ -1,8 +1,8 @@
 import { useMemo } from 'react';
-import { asNodeId, SceneCanvas, solid, useDepSource, useScene, useSelection, type Fill } from '@weasel-js/core';
+import { asNodeId, SceneCanvas, solid, useDepSource, useScene, type Fill } from '@weasel-js/core';
 import { snapToContainer, snapBackOrDelete } from '@weasel-js/core/move';
 import { DemoStage } from './DemoStage';
-import { movePreset, pickPreset } from '@weasel-js/editing';
+import { movePreset, pickPreset, useSelection } from '@weasel-js/editing';
 
 /** The kit's default painter fills a rect-posed node with its `data.fill`. */
 interface NodeData { fill: Fill }

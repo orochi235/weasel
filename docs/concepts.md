@@ -910,9 +910,13 @@ selection, one per package.
 
 ## Selection mode
 
-Click policy belongs to the selection, not the canvas:
+Click policy belongs to the selection, not the canvas: editing's
 `useSelection({ mode })`, or `<SceneCanvas selectionOptions={{ mode }}>` for
-the selection the canvas builds when it is not handed one.
+the selection a canvas's presets build when it is not handed one. Every editing
+preset that writes the selection includes `selectionPreset`, whose factory
+(`createSelection`) builds it; a canvas with none of them keeps a selection
+nothing it runs writes (`viewerSelection`), which the app, undo and redo still
+move.
 
 - `single` (default): a click replaces the selection with the clicked node,
   modifiers or not. It is a click rule, not a cap — a marquee, lasso,

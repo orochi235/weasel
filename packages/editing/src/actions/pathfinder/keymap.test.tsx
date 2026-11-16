@@ -3,10 +3,11 @@ import { describe, it, expect, vi, beforeAll } from 'vitest';
 import { act } from '@testing-library/react';
 import { renderWithKeys as render } from '@weasel-js/react/testing/giveKeys';
 import type { Path } from '@weasel-js/geom';
-import { SceneCanvas, useSelection, type SelectionApi } from '@weasel-js/core';
+import { SceneCanvas, type SelectionApi } from '@weasel-js/core';
 import { createScene } from '@weasel-js/core/engine';
 import { PATHFINDER_KEYMAP } from './keymap';
 import { drawPreset } from '../../index';
+import { useSelection } from '../../selection/useSelection';
 
 type P = { x: number; y: number; width: number; height: number };
 type D = { path: Path; fill: { paint: { color: string } } };

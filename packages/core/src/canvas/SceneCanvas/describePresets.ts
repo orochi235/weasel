@@ -5,7 +5,7 @@ export type { PresetDescription };
 
 const ATOM_ROLES = [
   'ambient', 'moveBehaviors', 'snapSources', 'layers', 'chrome', 'chromeRules', 'pathEdit', 'contributions', 'refines',
-  'components', 'contentHandlers',
+  'components', 'contentHandlers', 'build', 'selection',
 ] as const satisfies readonly (keyof FeaturePreset)[];
 
 const filled = (v: unknown): boolean =>

@@ -1,17 +1,8 @@
-import {
-  asNodeId,
-  createScene,
-  pathFromD,
-  pathNode,
-  solid,
-  useSelection,
-  type NodeId,
-  type Path,
-  type RectPose,
-} from '@weasel-js/core';
+import { asNodeId, createScene, pathFromD, pathNode, solid, type NodeId, type Path, type RectPose } from '@weasel-js/core';
 import { type SceneTrialState, useTrialScene, type RenderContext } from '@weasel-js/labkit';
 import { createPathEditHost } from '@weasel-js/path-tools';
 import { useState } from 'react';
+import { useSelection } from '@weasel-js/editing';
 
 /** The node every path-edit lab opens on, already selected and in path edit. */
 export const LAB_PATH_ID: NodeId = asNodeId('path');

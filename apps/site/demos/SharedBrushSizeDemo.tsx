@@ -1,9 +1,5 @@
 import { useMemo, useState } from 'react';
-import {
-  type Action, commitOps, createDeleteOp, createInsertOp, createToolOptionValues, defineAction, defineTool, ellipsePath,
-  type InvocationCtx, type RectPose, resolveParams, SceneCanvas, shareToolOptions, solid, type Tool,
-  type ToolOptions, type ToolOptionShare, useScene, useSelection, WeaselProvider,
-} from '@weasel-js/core';
+import { type Action, commitOps, createDeleteOp, createInsertOp, createToolOptionValues, defineAction, defineTool, ellipsePath, type InvocationCtx, type RectPose, resolveParams, SceneCanvas, shareToolOptions, solid, type Tool, type ToolOptions, type ToolOptionShare, useScene, WeaselProvider } from '@weasel-js/core';
 import { pxReach } from '@weasel-js/geom';
 import { pref, PX_UNIT } from '@weasel-js/prefs';
 import { brushRing } from '@weasel-js/cursor';
@@ -12,6 +8,7 @@ import { ToolPalette } from '@weasel-js/ui/components/ToolPalette';
 import { ActiveToolOptionsBar } from '@weasel-js/ui/components/ToolOptionsBar';
 import { Checkbox } from '@weasel-js/ui/components/Checkbox';
 import { DemoStage } from './DemoStage';
+import { useSelection } from '@weasel-js/editing';
 
 type Point = { x: number; y: number };
 const DOT = '#5b7bd5';

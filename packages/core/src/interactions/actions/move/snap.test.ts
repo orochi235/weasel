@@ -6,7 +6,7 @@ import { pathFromD, type Point } from '@weasel-js/geom';
 import { IDENTITY_POSE_COMPOSITION } from 'core/scene/composeFrame';
 import { createScene } from 'core/scene/scene';
 import { asNodeId } from 'core/scene/types';
-import type { SelectionApi } from 'core/selection/useSelection';
+import type { SelectionApi } from '@weasel-js/routing';
 import type { SnapTarget } from 'core/adapters/types';
 import { createSnapOutcomeStore } from 'domains/snap/outcomeStore';
 import { sceneSession2d } from 'domains/snap/sceneSession2d';

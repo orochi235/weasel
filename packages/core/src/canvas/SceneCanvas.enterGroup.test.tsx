@@ -11,11 +11,10 @@ import { pathFromD, type PolygonPath } from '@weasel-js/geom';
 import { modeTriggers } from 'domains/modes/modeTriggers';
 import { createScene } from 'core/scene/scene';
 import { asNodeId } from 'core/scene/types';
-import { useSelection, type SelectionApi } from 'core/selection/useSelection';
-import type { BindingOverrides } from '@weasel-js/routing';
+import type { SelectionApi, BindingOverrides } from '@weasel-js/routing';
 import { createEnteredGroup, useEnteredGroup, type EnteredGroupApi } from './deps/enteredGroup';
 import { SceneCanvas } from './SceneCanvas';
-import { drawPreset } from '@weasel-js/editing';
+import { drawPreset, useSelection } from '@weasel-js/editing';
 
 beforeAll(() => {
   const proto = HTMLCanvasElement.prototype as unknown as Record<string, unknown>;

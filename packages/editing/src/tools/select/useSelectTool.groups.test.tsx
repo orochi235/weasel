@@ -7,9 +7,10 @@ import { describe, it, expect } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
 import { sceneToAdapter, useScene, pickTopMostHit } from '@weasel-js/core';
 import type { UseSceneOptions } from '@weasel-js/core/engine';
-import { useSelection, asNodeId, scenePoseFrame, moveAction } from '@weasel-js/core/engine';
+import { asNodeId, scenePoseFrame, moveAction } from '@weasel-js/core/engine';
 import { useSelectTool } from './useSelectTool';
 import type { Action, ActionDeps, InvocationCtx } from '@weasel-js/routing';
+import { useSelection } from '../../selection/useSelection';
 
 type Pose = { x: number; y: number; width: number; height: number };
 type Mods = { alt: boolean; ctrl: boolean; meta: boolean; shift: boolean };

@@ -2,7 +2,7 @@ import type { Action } from '@weasel-js/routing';
 import type { Dispatcher, WorldPoint } from '@weasel-js/routing';
 import { useActionsRegistry, useDepRegistry, useDepSource } from '@weasel-js/routing/react';
 import { asNodeId, type Scene } from 'core/scene/types';
-import type { SelectionApi } from 'core/selection/useSelection';
+import type { SelectionApi } from '@weasel-js/routing';
 import { useDecayLoop } from 'core/viewport/useDecayLoop';
 import type { ViewAnimationApi } from 'core/viewport/useViewAnimation';
 import type { View } from 'core/viewport/view';

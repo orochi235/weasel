@@ -2,12 +2,13 @@
 import { vi } from 'vitest';
 import { render, act } from '@testing-library/react';
 import React from 'react';
-import { ActionsProvider, SceneCanvas, useScene, useSelection } from '@weasel-js/core';
+import { ActionsProvider, SceneCanvas, useScene } from '@weasel-js/core';
 import type { SceneCanvasApi } from '@weasel-js/core';
 import { KitSettingsProvider } from '@weasel-js/react';
 import { useHud, useHudContribution } from './react';
 import type { HudPointerEvent, Widget } from './widget';
 import { _resetFontRegistryForTests } from '@weasel-js/font/test-seams';
+import { useSelection } from '@weasel-js/editing';
 
 interface Empty { id: string }
 

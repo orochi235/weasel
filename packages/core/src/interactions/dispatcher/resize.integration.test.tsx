@@ -15,7 +15,7 @@ import { resizeAction } from '../actions/resize/action';
 import { createScene } from 'core/scene/scene';
 import { asNodeId } from 'core/scene/types';
 import type { Scene } from 'core/scene/types';
-import type { SelectionApi } from 'core/selection/useSelection';
+import type { SelectionApi } from '@weasel-js/routing';
 import type { AffordanceHit } from '@weasel-js/routing';
 import { SELECTION_TRANSFORM_ID, selectionTransformContribution } from '@weasel-js/editing';
 

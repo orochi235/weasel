@@ -3,12 +3,11 @@ import { pref } from '@weasel-js/prefs-schema';
 import { render, act } from '@testing-library/react';
 import { useEffect, useRef } from 'react';
 import { ActionsProvider, useMenuHost, useMenus } from '@weasel-js/routing/react';
-import type { MenuHost } from '@weasel-js/routing';
+import type { MenuHost, SelectionApi } from '@weasel-js/routing';
 import { SceneCanvas } from '../../../canvas/SceneCanvas';
 import { createScene } from 'core/scene/scene';
 import type { NodeId } from 'core/scene/types';
-import { useSelection, type SelectionApi } from 'core/selection/useSelection';
-import { editPreset, pickPreset } from '@weasel-js/editing';
+import { editPreset, pickPreset, useSelection } from '@weasel-js/editing';
 
 type D = { kind: string };
 type P = { x: number; y: number; width: number; height: number };

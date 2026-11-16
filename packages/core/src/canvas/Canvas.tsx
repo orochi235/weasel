@@ -26,7 +26,7 @@ import type { CanvasProps } from './canvasProps';
 import { useLatest } from '@weasel-js/react';
 import { SurfaceCanvas } from './SurfaceCanvas';
 import { useSurfaceSize } from './useSurfaceSize';
-import type { SelectionApi } from 'core/selection/useSelection';
+import type { SelectionApi } from '@weasel-js/routing';
 import { AUTO_POSE_DESCRIPTOR } from 'core/geometry/autoPoseDescriptor';
 import type { PoseDescriptor } from 'interactions/actions/resize/geometry';
 import { useDebugSink } from '../debug/useDebugSink';

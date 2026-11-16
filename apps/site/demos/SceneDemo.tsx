@@ -1,10 +1,10 @@
 import { useState } from 'react';
-import { SceneCanvas, WeaselProvider, sceneFromJSON, useSelection } from '@weasel-js/core';
+import { SceneCanvas, WeaselProvider, sceneFromJSON } from '@weasel-js/core';
 import type { SerializedScene, Fill, RectPose } from '@weasel-js/core';
 import { ActionBar } from '@weasel-js/ui/components/ActionBar';
 import sceneJson from './data/scene.scene.json';
 import { DemoStage } from './DemoStage';
-import { editPreset, movePreset, pickPreset } from '@weasel-js/editing';
+import { editPreset, movePreset, pickPreset, useSelection } from '@weasel-js/editing';
 
 interface NodeData { fill?: Fill; label?: string }
 

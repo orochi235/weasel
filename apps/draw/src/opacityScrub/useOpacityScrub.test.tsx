@@ -5,12 +5,12 @@
 import { describe, it, expect, vi, beforeAll, afterEach } from 'vitest';
 import { act, cleanup } from '@testing-library/react';
 import { renderWithKeys as render } from '@weasel-js/react/testing/giveKeys';
-import { ActionsProvider, SceneCanvas, asNodeId, inferredNodeProperties, paintAlpha, solid, toolGaps, useScene, useSelection, type View, type Fill, type Tool } from '@weasel-js/core';
+import { ActionsProvider, SceneCanvas, asNodeId, inferredNodeProperties, paintAlpha, solid, toolGaps, useScene, type View, type Fill, type Tool } from '@weasel-js/core';
 import { SelectionPanel } from '@weasel-js/ui/components/inspector/SelectionPanel';
 import { WD_RENDERERS } from '../paintRenderers';
 import { useOpacityScrub } from './useOpacityScrub';
 import { withIcons } from '../testIcons';
-import { drawPreset } from '@weasel-js/editing';
+import { drawPreset, useSelection } from '@weasel-js/editing';
 
 type D = { fill?: Fill | null; text?: string };
 type L = 'main';

@@ -5,7 +5,7 @@ import type { Point } from '@weasel-js/geom';
 import { IDENTITY_POSE_COMPOSITION } from 'core/scene/composeFrame';
 import { createScene } from 'core/scene/scene';
 import { asNodeId } from 'core/scene/types';
-import type { SelectionApi } from 'core/selection/useSelection';
+import type { SelectionApi } from '@weasel-js/routing';
 import { createSnapOutcomeStore } from 'domains/snap/outcomeStore';
 import { sceneSession2d } from 'domains/snap/sceneSession2d';
 import type { SnapSource } from 'domains/snap/types';

@@ -5,7 +5,7 @@ import { useLatest } from '@weasel-js/react';
 import { doubleClickTarget } from '../doubleClickTarget';
 import { useEnteredGroup } from '../deps/enteredGroup';
 import { createEnteredGroupScope } from 'domains/selection/enteredGroupScope';
-import type { SelectionApi } from 'core/selection/useSelection';
+import type { SelectionApi } from '@weasel-js/routing';
 import type { CanvasExtensionApi } from '../canvasExtension';
 import type { View } from 'core/viewport/view';
 import type { PoseDescriptor } from 'interactions/actions/resize/geometry';

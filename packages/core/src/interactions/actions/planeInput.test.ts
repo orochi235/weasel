@@ -10,7 +10,7 @@ import type {
 import { buildDepsFromRequires } from '@weasel-js/routing';
 import { createScene } from 'core/scene/scene';
 import { asNodeId, type NodeId, type RectPose, type Scene } from 'core/scene/types';
-import type { SelectionApi } from 'core/selection/useSelection';
+import type { SelectionApi } from '@weasel-js/routing';
 import type { View } from 'core/viewport/view';
 import { moveAction } from './move/action';
 import { resizeAction } from './resize/action';

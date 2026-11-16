@@ -9,7 +9,7 @@ import { renderWithKeys as render } from '@weasel-js/react/testing/giveKeys';
 import { useActionsRegistry, useDepRegistry } from '@weasel-js/routing/react';
 import { createScene } from 'core/scene/scene';
 import type { NodeId } from 'core/scene/types';
-import type { SelectionApi } from 'core/selection/useSelection';
+import type { SelectionApi } from '@weasel-js/routing';
 import type { ToolsApi } from '../tools/overlayBinding';
 import { SceneCanvas } from './SceneCanvas';
 import { presetToolIds, resolveFeatures, type FeaturePreset } from './SceneCanvas/features';

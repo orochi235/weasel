@@ -4,7 +4,7 @@ import type React from 'react';
 import type { Paint } from '@weasel-js/paint';
 import type { FlattenTolerance, ImageMinification, ShaderProgramHandle } from '@weasel-js/renderer';
 import type { LayerGroup, RedrawSource, RenderLayer } from 'core/layers/render';
-import type { SelectionApi } from 'core/selection/useSelection';
+import type { SelectionApi } from '@weasel-js/routing';
 import type { Bounds } from 'core/viewport/fitViewToBounds';
 import type { PoseDescriptor } from 'interactions/actions/resize/geometry';
 import type { CanvasDebugSink, DebugFlags } from '../debug/types';

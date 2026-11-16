@@ -13,7 +13,7 @@ import { createScene } from 'core/scene/scene';
 import type { Scene, NodeId } from 'core/scene/types';
 import { useActionsRegistry, useDepRegistry } from '@weasel-js/routing/react';
 import { isRotateHandle } from '@weasel-js/routing';
-import type { SelectionApi } from 'core/selection/useSelection';
+import type { SelectionApi } from '@weasel-js/routing';
 import { always } from 'domains/chrome-caps';
 import { pickPreset, transformPreset } from '@weasel-js/editing';
 

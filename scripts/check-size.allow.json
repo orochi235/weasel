@@ -19,7 +19,7 @@
     "longestFunction": 162
   },
   "packages/core/src/canvas/CanvasView.tsx": {
-    "longestFunction": 222
+    "longestFunction": 220
   },
   "packages/core/src/core/scene/kitOps.ts": {
     "longestFunction": 167

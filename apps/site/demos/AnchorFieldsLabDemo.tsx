@@ -1,4 +1,4 @@
-import { asNodeId, createScene, type RectPose, solid, useSelection, pathNode } from '@weasel-js/core';
+import { asNodeId, createScene, type RectPose, solid, pathNode } from '@weasel-js/core';
 import { pathsPreset } from '@weasel-js/path-tools';
 import {
   type ConfigOf,
@@ -15,7 +15,7 @@ import { AnchorFields } from '@weasel-js/ui/components/inspector/AnchorFields';
 import '@weasel-js/labkit/styles.css';
 import 'windease/styles.css';
 import { icon } from '../icons.gen';
-import { movePreset, pickPreset } from '@weasel-js/editing';
+import { movePreset, pickPreset, useSelection } from '@weasel-js/editing';
 
 /** Document units: points, 72 to the inch. */
 const UNITS = { pt: 1, in: 72, mm: 72 / 25.4 };

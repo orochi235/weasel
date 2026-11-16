@@ -58,12 +58,12 @@ describe('resolveFeatures', () => {
   });
 
   it('turns on only what it is handed: nothing implies view', () => {
-    expect(ids(['outline'])).toEqual(['outline']);
+    expect(ids(['outline'])).toEqual(['selection', 'outline']);
   });
 
   it('turns on select and outline under pick, and resize and rotate under transform', () => {
-    expect(ids(['pick'])).toEqual(['toolkit:select', 'tools:select', 'select', 'outline', 'pick']);
-    expect(ids(['transform'])).toEqual(['resize', 'rotate', 'transform']);
+    expect(ids(['pick'])).toEqual(['selection', 'toolkit:select', 'tools:select', 'select', 'outline', 'pick']);
+    expect(ids(['transform'])).toEqual(['selection', 'resize', 'rotate', 'transform']);
   });
 
   it('registers resize without rotate', () => {
@@ -86,7 +86,7 @@ describe('resolveFeatures', () => {
 
   it('takes a preset object beside the names, once however often it is named', () => {
     const mine: FeaturePreset = { id: 'mine', actions: [action('mine.go')] };
-    expect(ids(['select', mine, mine])).toEqual(['toolkit:select', 'tools:select', 'select', 'mine']);
+    expect(ids(['select', mine, mine])).toEqual(['selection', 'toolkit:select', 'tools:select', 'select', 'mine']);
     expect(actionIds([mine]).has('mine.go')).toBe(true);
   });
 

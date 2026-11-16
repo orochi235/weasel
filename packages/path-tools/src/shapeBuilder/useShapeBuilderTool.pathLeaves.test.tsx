@@ -3,9 +3,9 @@ import { describe, it, expect, vi, beforeAll } from 'vitest';
 import { act } from '@testing-library/react';
 import { renderWithKeys as render } from '@weasel-js/react/testing/giveKeys';
 import { boundsOfPath, type Path } from '@weasel-js/geom';
-import { createScene, SceneCanvas, useSelection, type NodeId, type SelectionApi } from '@weasel-js/core';
+import { createScene, SceneCanvas, type NodeId, type SelectionApi } from '@weasel-js/core';
 import { useShapeBuilderTool } from './useShapeBuilderTool';
-import { drawPreset } from '@weasel-js/editing';
+import { drawPreset, useSelection } from '@weasel-js/editing';
 
 type P = { x: number; y: number; width: number; height: number };
 type D = { path: Path; fill: { paint: { color: string } } };

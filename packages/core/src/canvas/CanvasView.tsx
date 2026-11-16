@@ -14,7 +14,7 @@ import { createViewportLayer } from 'domains/viewports/viewportLayer';
 import { createDispatcher } from '@weasel-js/routing';
 import type { IngestionDep, ViewApi } from 'interactions/actions/depSchema';
 import { viewportWorldRect } from 'core/viewport/viewportWorldRect';
-import { useSelection } from 'core/selection/useSelection';
+import { NO_SELECTION } from 'core/selection/viewerSelection';
 import { AUTO_POSE_DESCRIPTOR } from 'core/geometry/autoPoseDescriptor';
 import type { PoseDescriptor } from 'interactions/actions/resize/geometry';
 import { useViewHelpers } from './useViewHelpers';
@@ -75,11 +75,9 @@ export function CanvasView(props: CanvasViewProps): null {
   const depRegistry = useOptionalDepRegistry();
   const depRegistryRef = useLatest(depRegistry);
 
-  // A view acts on its surface's session. Hooks run unconditionally; this one's
-  // selection is read only by a view outside a surface.
+  // A view acts on its surface's session; one outside a surface has no selection.
   const inputs = useOptionalViewInputs();
-  const unshared = useSelection();
-  const shared = inputs?.selectionApi ?? unshared;
+  const shared = inputs?.selectionApi ?? NO_SELECTION;
 
   // Everything the registration reads is behind a ref: the registration object
   // is registered once and must not churn, but what it answers with has to be

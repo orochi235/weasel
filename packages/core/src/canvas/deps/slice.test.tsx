@@ -6,16 +6,15 @@ import { describe, it, expect, vi, afterEach } from 'vitest';
 import { act, cleanup } from '@testing-library/react';
 import { renderWithKeys as render } from '@weasel-js/react/testing/giveKeys';
 import { useDepRegistry, useDepSource, type DepRegistry } from '@weasel-js/routing/react';
-import { boundsOfPath, rectPath, type Path } from '@weasel-js/geom';
+import { boundsOfPath, rectPath, type Path, pathInWorld } from '@weasel-js/geom';
 import { SceneCanvas } from 'canvas/SceneCanvas';
 import { createScene } from 'core/scene/scene';
 import { asNodeId, type NodeId, type RectPose, type Scene } from 'core/scene/types';
-import { useSelection, type SelectionApi } from 'core/selection/useSelection';
+import type { SelectionApi } from '@weasel-js/routing';
 import { RECT_POSE_COMPOSITION, RIGID_POSE_COMPOSITION } from 'core/scene/composePose';
 import type { SliceDep } from 'interactions/actions/depSchema';
 import type { PoseDescriptor } from 'core/geometry/poseDescriptor';
-import { pathInWorld } from '@weasel-js/geom';
-import { drawPreset } from '@weasel-js/editing';
+import { drawPreset, useSelection } from '@weasel-js/editing';
 
 afterEach(() => { cleanup(); });
 

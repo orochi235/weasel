@@ -1,7 +1,7 @@
-import { SceneCanvas, solid, useScene, useSelection, pathNode } from '@weasel-js/core';
+import { SceneCanvas, solid, useScene, pathNode } from '@weasel-js/core';
 import { pathsPreset } from '@weasel-js/path-tools';
 import { DemoStage } from './DemoStage';
-import { movePreset, pickPreset } from '@weasel-js/editing';
+import { movePreset, pickPreset, useSelection } from '@weasel-js/editing';
 
 const W = 480, H = 300;
 

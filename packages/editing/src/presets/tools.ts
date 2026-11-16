@@ -8,6 +8,7 @@ import { createRectTool } from '../tools/rect/useRectTool';
 import { createStarTool } from '../tools/star/useStarTool';
 import { SELECT_TOOLS, SHAPE_TOOLS } from '../tools/toolSets';
 import type {} from '../tools/toolOptions';
+import { selectionPreset } from './selection';
 
 /** Offers the select tool and the lasso by id, mounted where something names them: `selectToolsPreset`,
  *  `defaultTools={['lasso']}`. The select tool picks with the canvas's pickers and its `selectTool` options. */
@@ -26,6 +27,7 @@ export const selectToolKitPreset: FeaturePreset = {
       lasso: createLassoTool(ctx.toolOptions.lasso ?? {}),
     },
   }),
+  includes: [selectionPreset],
 };
 
 /** Offers the shape tools by id, mounted where something names them: `shapeToolsPreset`, `defaultTools={['rect']}`.
@@ -46,6 +48,7 @@ export const shapeToolKitPreset: FeaturePreset = {
       },
     };
   },
+  includes: [selectionPreset],
 };
 
 /** The select tool and the lasso. */

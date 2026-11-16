@@ -1,9 +1,9 @@
-import { SceneCanvas, solid, useScene, useSelection, type SolidPaint } from '@weasel-js/core';
+import { SceneCanvas, solid, useScene, type SolidPaint } from '@weasel-js/core';
 import { LayerList, useSceneLayerList } from '@weasel-js/ui/components/LayerList';
 import type { CSSProperties } from 'react';
 import { DemoStage } from './DemoStage';
 import s from './LayerListDemo.module.css';
-import { pickPreset } from '@weasel-js/editing';
+import { pickPreset, useSelection } from '@weasel-js/editing';
 
 interface Rect { id: string; x: number; y: number; width: number; height: number; fill: { paint: SolidPaint } }
 

@@ -1,4 +1,4 @@
-import { asNodeId, createScene, type RectPose, solid, useSelection } from '@weasel-js/core';
+import { asNodeId, createScene, type RectPose, solid } from '@weasel-js/core';
 import { createSpacingHintsPreset } from '@weasel-js/guides';
 import {
   type ConfigOf,
@@ -14,7 +14,7 @@ import { useMemo } from 'react';
 import { icon } from '../icons.gen';
 import '@weasel-js/labkit/styles.css';
 import 'windease/styles.css';
-import { drawPreset } from '@weasel-js/editing';
+import { drawPreset, useSelection } from '@weasel-js/editing';
 
 const config = f.schema({
   spacing: f.boolean(true).label('Equal-spacing snap'),

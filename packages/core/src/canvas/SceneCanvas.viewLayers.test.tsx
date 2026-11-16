@@ -12,14 +12,14 @@ import { giveKeys, renderWithKeys as render } from '@weasel-js/react/testing/giv
 import { useEffect, useRef, type ReactNode } from 'react';
 import { createScene } from 'core/scene/scene';
 import { asNodeId, type Node, type Scene } from 'core/scene/types';
-import { useSelection, type SelectionApi } from 'core/selection/useSelection';
+import type { SelectionApi } from '@weasel-js/routing';
 import type { DrawCommand, GroupDrawCommand } from '@weasel-js/renderer';
 import type { RenderLayer } from 'core/layers/render';
 import { useOptionalViewRegistry, type ViewRegistry } from './viewRegistry';
 import { SceneCanvas } from './SceneCanvas';
 import type { SceneCanvasApi } from './canvasExtension';
 import type { CanvasHelpers } from './useViewHelpers';
-import { drawPreset } from '@weasel-js/editing';
+import { drawPreset, useSelection } from '@weasel-js/editing';
 
 const painted = vi.hoisted(() => new Map<unknown, readonly unknown[]>());
 

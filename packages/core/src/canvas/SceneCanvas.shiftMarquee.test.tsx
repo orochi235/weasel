@@ -4,8 +4,8 @@ import { render, act } from '@testing-library/react';
 import { SceneCanvas } from './SceneCanvas';
 import { createScene } from 'core/scene/scene';
 import type { NodeId } from 'core/scene/types';
-import { useSelection, type SelectionApi } from 'core/selection/useSelection';
-import { drawPreset } from '@weasel-js/editing';
+import type { SelectionApi } from '@weasel-js/routing';
+import { drawPreset, useSelection } from '@weasel-js/editing';
 
 type P = { x: number; y: number; width: number; height: number };
 

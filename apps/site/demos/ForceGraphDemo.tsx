@@ -1,14 +1,5 @@
 import { useCallback, useMemo, useRef, useState } from 'react';
-import {
-  SceneCanvas,
-  bodyPredicate,
-  defineTool,
-  dragPanContribution,
-  useScene,
-  useSelection,
-  ellipsePath,
-  linePath, viewPreset,
-} from '@weasel-js/core';
+import { SceneCanvas, bodyPredicate, defineTool, dragPanContribution, useScene, ellipsePath, linePath, viewPreset } from '@weasel-js/core';
 import type {
   Action,
   Tool,
@@ -28,6 +19,7 @@ import { Select } from '@weasel-js/ui/components/Select';
 import { bakeGraphPoses, syncGraphPoses } from './forceGraph/overrides';
 import s from './ForceGraphDemo.module.css';
 import { DemoStage } from './DemoStage';
+import { useSelection } from '@weasel-js/editing';
 
 const W = 600, H = 400;
 const BOUNDS = { width: W, height: H };

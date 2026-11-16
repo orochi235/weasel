@@ -1,9 +1,10 @@
 import { useState } from 'react';
-import { asNodeId, SceneCanvas, solid, useScene, useSelection, viewPreset } from '@weasel-js/core';
+import { asNodeId, SceneCanvas, solid, useScene, viewPreset } from '@weasel-js/core';
 import type { Fill, Stroke, View } from '@weasel-js/core';
 import num from '@weasel-js/theme/numeric.module.css';
 import { Button } from '@weasel-js/ui/components/Button';
 import { DemoStage } from './DemoStage';
+import { useSelection } from '@weasel-js/editing';
 
 interface NodeData { fill: Fill; stroke?: Stroke }
 type LayerId = 'default';

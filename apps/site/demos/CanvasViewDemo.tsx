@@ -1,10 +1,10 @@
 import { useState } from 'react';
-import { asNodeId, CanvasView, PointerContextProvider, SceneCanvas, solid, usePointerPosition, useScene, useSelection, viewPreset } from '@weasel-js/core';
+import { asNodeId, CanvasView, PointerContextProvider, SceneCanvas, solid, usePointerPosition, useScene, viewPreset } from '@weasel-js/core';
 import type { Fill, RectPose, View } from '@weasel-js/core';
 import { Button } from '@weasel-js/ui/components/Button';
 import styles from './CanvasViewDemo.module.css';
 import { DemoStage } from './DemoStage';
-import { movePreset, pickPreset } from '@weasel-js/editing';
+import { movePreset, pickPreset, useSelection } from '@weasel-js/editing';
 
 interface NodeData { fill: Fill }
 type LayerId = 'default';

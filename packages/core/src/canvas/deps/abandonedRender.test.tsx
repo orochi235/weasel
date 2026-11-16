@@ -10,7 +10,7 @@ import { DepRegistryProvider, useDepRegistry, useDepSource, type DepRegistry } f
 import type { Dispatcher } from '@weasel-js/routing';
 import { IDENTITY_POSE_COMPOSITION } from 'core/scene/composePose';
 import type { Scene } from 'core/scene/types';
-import type { SelectionApi } from 'core/selection/useSelection';
+import type { SelectionApi } from '@weasel-js/routing';
 import type { View } from 'core/viewport/view';
 import type { ViewApi } from 'interactions/actions/depSchema';
 import { useAreaSelectDepSource } from './areaSelect';

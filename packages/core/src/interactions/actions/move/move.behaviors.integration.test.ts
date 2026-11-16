@@ -7,7 +7,7 @@ import type { MoveBehavior } from '../../gestures/types';
 import type { InvocationCtx, BindingOptions, OngoingHandle, OngoingInvoker } from '@weasel-js/routing';
 import { createScene } from 'core/scene/scene';
 import { asNodeId } from 'core/scene/types';
-import type { SelectionApi } from 'core/selection/useSelection';
+import type { SelectionApi } from '@weasel-js/routing';
 import type { SnapTarget } from 'core/adapters/types';
 
 /** A behavior that rounds the first dragged origin to a 20-unit lattice. */

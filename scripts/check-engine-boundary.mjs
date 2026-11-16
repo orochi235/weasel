@@ -20,7 +20,8 @@ export const ENTRY = 'import-shims/engine.ts';
 export const SEEDS = [
   'core/scene/scene.ts',
   'core/scene/composeFrame.ts',
-  'core/selection/useSelection.ts',
+  'core/selection/selectionContract.ts',
+  'core/selection/viewerSelection.ts',
   'domains/snap/types.ts',
   'domains/snap/roles.ts',
   'domains/snap/session2d.ts',

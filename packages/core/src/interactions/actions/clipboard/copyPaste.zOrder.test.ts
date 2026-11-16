@@ -2,7 +2,7 @@
 import { describe, expect, it } from 'vitest';
 import { createScene } from 'core/scene/scene';
 import type { RectPose } from 'core/scene/types';
-import type { SelectionApi } from 'core/selection/useSelection';
+import type { SelectionApi } from '@weasel-js/routing';
 import { sceneToAdapter } from 'canvas/sceneAdapter';
 import { createInsertOp } from 'core/ops/create';
 import { defaultCommitAdapter } from '../defaultCommitAdapter';

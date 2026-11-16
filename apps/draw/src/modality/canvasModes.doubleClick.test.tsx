@@ -8,7 +8,7 @@ import { act, cleanup } from '@testing-library/react';
 import { renderWithKeys as render } from '@weasel-js/react/testing/giveKeys';
 import { useState, type ReactElement } from 'react';
 import { createScopingDim, DEFAULT_MODES } from '@weasel-js/modes';
-import { SceneCanvas, asNodeId, createEnteredGroup, createScene, hasEditablePath, pathFromD, solid, useSelection, type EnteredGroupApi, type PolygonPath } from '@weasel-js/core';
+import { SceneCanvas, asNodeId, createEnteredGroup, createScene, hasEditablePath, pathFromD, solid, type EnteredGroupApi, type PolygonPath } from '@weasel-js/core';
 import type { DrawScene } from '../drawDocument';
 import { createModeMachine, type ModeMachine } from './machine';
 import { modeScope } from './modeScope';
@@ -16,7 +16,7 @@ import { modePathEdit } from './pathEditHost';
 import { useCanvasModes } from './useCanvasModes';
 import { pathsPreset } from '@weasel-js/path-tools';
 import { textPreset } from '@weasel-js/text-tools';
-import { drawPreset } from '@weasel-js/editing';
+import { drawPreset, useSelection } from '@weasel-js/editing';
 
 beforeAll(() => {
   (HTMLCanvasElement.prototype as unknown as { getContext: () => null }).getContext = () => null;

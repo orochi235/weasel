@@ -12,7 +12,7 @@ import { expectSamePose } from 'core/scene/frameFixture';
 import { scenePoseFrame } from '../poseFrame';
 import { sceneGestureFrames } from '../gestureFrames';
 import type { NodeId, RectPose } from 'core/scene/types';
-import type { SelectionApi } from 'core/selection/useSelection';
+import type { SelectionApi } from '@weasel-js/routing';
 
 type S = ReturnType<typeof createScene<object, 'main', RectPose>>;
 

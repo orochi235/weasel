@@ -1,7 +1,7 @@
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { act, cleanup, fireEvent, screen, within } from '@testing-library/react';
 import { useState } from 'react';
-import { ActionsProvider, createScene, useSelection, type Action } from '@weasel-js/core';
+import { ActionsProvider, createScene, type Action } from '@weasel-js/core';
 import { createMeasurements } from '@weasel-js/measure';
 import { FILLET_CONTROLS_PROMPT, type FilletControlsSelection } from '@weasel-js/path-tools';
 import { RegisterActions } from '@weasel-js/routing/testing/registerAction';
@@ -15,6 +15,7 @@ import { ColorContextProvider } from '../tools/colorContext';
 import { SurfaceHostContext } from './hostContext';
 import { StripDock } from './StripSurfaces';
 import type { SidebarHost } from './types';
+import { useSelection } from '@weasel-js/editing';
 
 beforeAll(() => {
   if (typeof window !== 'undefined' && !window.localStorage) {

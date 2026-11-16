@@ -8,8 +8,8 @@ import { page } from 'vitest/browser';
 import { createElement } from 'react';
 import { createRoot, type Root } from 'react-dom/client';
 import { flushSync } from 'react-dom';
-import { SceneCanvas, createScene, asNodeId, type RectPose, useSelection } from '@weasel-js/core';
-import { outlinePreset } from '@weasel-js/editing';
+import { SceneCanvas, createScene, asNodeId, type RectPose } from '@weasel-js/core';
+import { outlinePreset, useSelection } from '@weasel-js/editing';
 
 const W = 340;
 const H = 200;

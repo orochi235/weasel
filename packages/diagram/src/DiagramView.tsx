@@ -1,4 +1,4 @@
-import { canvasToClient, SceneCanvas, useDepSource, useLatest, useScene, useSelection, viewRectToScreen, WeaselProvider, type FeaturePreset, type RectPose, type CanvasSize, type Scene, type SceneCanvasApi, type SceneCanvasHit, viewPreset } from '@weasel-js/core';
+import { canvasToClient, SceneCanvas, useDepSource, useLatest, useScene, viewRectToScreen, WeaselProvider, type FeaturePreset, type RectPose, type CanvasSize, type Scene, type SceneCanvasApi, type SceneCanvasHit, viewPreset } from '@weasel-js/core';
 import { adoptCssOnce } from '@weasel-js/react';
 import { forwardRef, useCallback, useEffect, useImperativeHandle, useMemo, useRef, useState, type ReactElement, type Ref, type RefObject } from 'react';
 import { createSpecRouter } from './avoid/specRoutes';
@@ -25,7 +25,7 @@ import { useSceneSync } from './sceneSync';
 import { registerDiagramShape } from './shape';
 import { useSequenceTextEdit } from './sequence/textEdit';
 import { createTextPreset } from '@weasel-js/text-tools';
-import { editPreset, movePreset, pickPreset, resizePreset } from '@weasel-js/editing';
+import { editPreset, movePreset, pickPreset, resizePreset, useSelection } from '@weasel-js/editing';
 
 const SHAPE_OUTLINE = { outline: { follow: 'shape' as const } };
 

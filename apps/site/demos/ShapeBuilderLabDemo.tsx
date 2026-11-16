@@ -1,4 +1,4 @@
-import { asNodeId, createScene, ellipsePath, type Path, type RectPose, solid, useSelection } from '@weasel-js/core';
+import { asNodeId, createScene, ellipsePath, type Path, type RectPose, solid } from '@weasel-js/core';
 import { useShapeBuilderTool, pathsPreset } from '@weasel-js/path-tools';
 import {
   type ConfigOf,
@@ -14,7 +14,7 @@ import { useMemo } from 'react';
 import '@weasel-js/labkit/styles.css';
 import 'windease/styles.css';
 import { icon } from '../icons.gen';
-import { drawPreset } from '@weasel-js/editing';
+import { drawPreset, useSelection } from '@weasel-js/editing';
 
 const config = f.schema({
   mode: f.enum('merge', [

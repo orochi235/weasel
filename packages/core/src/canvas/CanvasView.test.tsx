@@ -13,7 +13,7 @@ import type { View } from 'core/viewport/view';
 import type { ViewApi } from 'interactions/actions/depSchema';
 import type { RenderLayer } from 'core/layers/render';
 import { ViewRegistryProvider, useOptionalViewRegistry, type ViewRegistry } from './viewRegistry';
-import type { SelectionApi } from 'core/selection/useSelection';
+import type { SelectionApi } from '@weasel-js/routing';
 import type { NodeId } from 'core/scene/types';
 import type { Bounds } from 'core/viewport/fitViewToBounds';
 import { createSelectionOverlayLayer } from 'domains/selection/overlay';

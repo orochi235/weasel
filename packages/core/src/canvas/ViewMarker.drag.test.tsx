@@ -14,7 +14,7 @@ import { SceneCanvas } from './SceneCanvas';
 import { CanvasView } from './CanvasView';
 import { ViewMarker } from './ViewMarker';
 import { createScene } from 'core/scene/scene';
-import { useSelection, type SelectionApi } from 'core/selection/useSelection';
+import type { SelectionApi } from '@weasel-js/routing';
 import { useSceneAdapter } from './useSceneAdapter';
 import { useTools, type ToolsApi } from '../tools/overlayBinding';
 import { WeaselProvider } from '../WeaselProvider';
@@ -24,7 +24,7 @@ import type { View } from 'core/viewport/view';
 import type { NodeId } from 'core/scene/types';
 import type { ViewMarkerProps } from 'domains/viewports/viewMarker';
 import { createViewMarkerContribution } from 'domains/viewports/viewMarkerDrag';
-import { drawPreset, useSelectTool } from '@weasel-js/editing';
+import { drawPreset, useSelectTool, useSelection } from '@weasel-js/editing';
 
 type D = { kind: 'rect' };
 type P = { x: number; y: number; width: number; height: number };

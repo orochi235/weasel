@@ -14,7 +14,7 @@ import { createScene } from 'core/scene/scene';
 import { effectivePose } from 'core/scene/effectivePose';
 import { unionOfChildren } from 'core/scene/kitRegistry';
 import type { NodeId, RectPose } from 'core/scene/types';
-import type { SelectionApi } from 'core/selection/useSelection';
+import type { SelectionApi } from '@weasel-js/routing';
 
 type S = ReturnType<typeof createScene<object, 'main', RectPose>>;
 

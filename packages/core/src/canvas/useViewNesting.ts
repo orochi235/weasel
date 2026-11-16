@@ -6,7 +6,7 @@
 import { useCallback, useRef, useState } from 'react';
 import type { Dims, RenderLayer } from 'core/layers/render';
 import type { View } from 'core/viewport/view';
-import type { SelectionApi } from 'core/selection/useSelection';
+import type { SelectionApi } from '@weasel-js/routing';
 import type { CanvasViewProps, ViewRect } from './canvasViewProps';
 import { createSceneLayerGate, viewPaintedLayers } from './sceneLayerPaint';
 import type { ViewRegistration, ViewRegistry } from './viewRegistry';

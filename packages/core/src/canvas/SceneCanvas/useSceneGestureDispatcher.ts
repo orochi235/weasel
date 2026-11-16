@@ -44,7 +44,7 @@ export interface SceneGestureDispatcherInputs {
   keyboard: boolean;
   /** Take the keyboard on mount. Wired to `claimKeys`. */
   claimKeys: boolean;
-  selectionRef?: React.RefObject<import('core/selection/useSelection').SelectionApi>;
+  selectionRef?: React.RefObject<import('@weasel-js/routing').SelectionApi>;
   boundsOf?: (id: string) => import('core/viewport/fitViewToBounds').Bounds | null;
   /** The parallax plane a node is drawn through, under the surface's camera —
    *  so path anchors are hit where the plane draws them. */

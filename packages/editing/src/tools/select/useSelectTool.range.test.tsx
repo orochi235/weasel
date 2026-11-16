@@ -7,9 +7,10 @@ import { afterEach, beforeEach, describe, it, expect, vi } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
 import type { Action, ActionDeps } from '@weasel-js/routing';
 import { sceneToAdapter } from '@weasel-js/core';
-import { createScene, asNodeId, type RectPose, type Scene, useSelection } from '@weasel-js/core/engine';
+import { createScene, asNodeId, type RectPose, type Scene } from '@weasel-js/core/engine';
 import { makeFrameFixtureForTests as makeFrameFixture } from '@weasel-js/core/test-seams';
 import { useSelectTool } from './useSelectTool';
+import { useSelection } from '../../selection/useSelection';
 
 type Mods = { alt: boolean; ctrl: boolean; meta: boolean; shift: boolean };
 const NO_MODS: Mods = { alt: false, ctrl: false, meta: false, shift: false };

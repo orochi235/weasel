@@ -6,17 +6,16 @@
  */
 import { describe, expect, it } from 'vitest';
 import { PathBuilder } from '@weasel-js/geom';
-import type { ActionDeps, ImmediateInvoker } from '@weasel-js/routing';
+import type { ActionDeps, ImmediateInvoker, InvocationCtx, OngoingInvoker } from '@weasel-js/routing';
 import { createHistory } from '@weasel-js/history';
 import type { Op } from 'core/ops/types';
 import { createScene } from 'core/scene/scene';
 import { IDENTITY_POSE_COMPOSITION } from 'core/scene/composeFrame';
 import type { NodeId } from 'core/scene/types';
 import { defaultCommitAdapter } from './defaultCommitAdapter';
-import { duplicateSelection } from '@weasel-js/editing';
+import { duplicateSelection, groupAction } from '@weasel-js/editing';
 import { deleteAction } from './defaults/delete';
 import { cloneAction } from './clone/action';
-import type { InvocationCtx, OngoingInvoker } from '@weasel-js/routing';
 import { createElement } from 'react';
 import { render } from '@testing-library/react';
 import { DepRegistryProvider, useDepRegistry, type DepRegistry } from '@weasel-js/routing/react';
@@ -26,7 +25,6 @@ import { insertAction } from './insert/action';
 import { placeAction } from './insert/placeAction';
 import { createInsertOp } from 'core/ops/create';
 import type { InsertBehavior } from '../gestures/types';
-import { groupAction } from '@weasel-js/editing';
 
 type AnyScene = ReturnType<typeof createScene<object, 'main', unknown>>;
 

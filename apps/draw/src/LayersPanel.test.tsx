@@ -1,12 +1,13 @@
 import { describe, expect, it, beforeAll, beforeEach } from 'vitest';
 import { fireEvent, screen } from '@testing-library/react';
-import { asNodeId, createScene, rectPath, solid, useSelection } from '@weasel-js/core';
+import { asNodeId, createScene, rectPath, solid } from '@weasel-js/core';
 import { createMeasurements, measureNode } from '@weasel-js/measure';
 import { ANNOTATION_LAYER, DRAW_LAYERS, type WeaselDrawData, type WeaselDrawLayer, type WeaselDrawPose } from './drawDocument';
 import { useState } from 'react';
 import { LayersContent, layerSwatch } from './LayersPanel';
 import { drawPrefs } from './prefs';
 import { renderWithIcons } from './testIcons';
+import { useSelection } from '@weasel-js/editing';
 
 // jsdom can leave `window.localStorage` undefined; the prefs store needs one.
 beforeAll(() => {

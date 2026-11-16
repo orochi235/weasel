@@ -12,10 +12,11 @@ import { describe, it, expect } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
 import { sceneToAdapter, useScene } from '@weasel-js/core';
 import type { UseSceneOptions } from '@weasel-js/core/engine';
-import { useSelection, asNodeId } from '@weasel-js/core/engine';
+import { asNodeId } from '@weasel-js/core/engine';
 import { useSelectTool, type UseSelectToolOptions } from './useSelectTool';
 import type { Fill } from '@weasel-js/paint';
 import type { Action, ActionDeps } from '@weasel-js/routing';
+import { useSelection } from '../../selection/useSelection';
 
 interface Item { shape?: string; fill?: Fill; color?: string }
 type Pose = { x: number; y: number; width: number; height: number };

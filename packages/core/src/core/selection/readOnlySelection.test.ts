@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { createSelectionStore } from '@weasel-js/select';
 import { asNodeId, type NodeId } from 'core/scene/types';
 import { readOnlySelection } from './readOnlySelection';
-import type { SelectionApi } from './useSelection';
+import type { SelectionApi } from '@weasel-js/routing';
 
 const A = asNodeId('a');
 const B = asNodeId('b');

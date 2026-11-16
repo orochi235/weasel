@@ -1,4 +1,4 @@
-import { asNodeId, createScene, PATH_EFFECT_DERIVATIONS, pathEffectNode, pathNode, type RectPose, solid, strokeOf, useSelection, withPathEffectsRegistry } from '@weasel-js/core';
+import { asNodeId, createScene, PATH_EFFECT_DERIVATIONS, pathEffectNode, pathNode, type RectPose, solid, strokeOf, withPathEffectsRegistry } from '@weasel-js/core';
 import { pathEffectsPreset, pathsPreset, usePenTool } from '@weasel-js/path-tools';
 import {
   type ConfigOf,
@@ -14,7 +14,7 @@ import '@weasel-js/labkit/styles.css';
 import 'windease/styles.css';
 import { PathEffectFrame, usePathEffectProbe, usePathEffectSettings } from './pathEffectLab';
 import { icon } from '../icons.gen';
-import { drawPreset } from '@weasel-js/editing';
+import { drawPreset, useSelection } from '@weasel-js/editing';
 
 const FEATURES = [drawPreset, pathsPreset, pathEffectsPreset] as const;
 

@@ -16,7 +16,7 @@ import { RIGID_POSE_COMPOSITION } from 'core/scene/composePose';
 import { expectSamePose } from 'core/scene/frameFixture';
 import { scenePoseFrame } from '../poseFrame';
 import type { NodeId, RectPose } from 'core/scene/types';
-import type { SelectionApi } from 'core/selection/useSelection';
+import type { SelectionApi } from '@weasel-js/routing';
 
 type S = ReturnType<typeof createScene<object, 'main', RectPose>>;
 

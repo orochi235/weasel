@@ -15,7 +15,8 @@ export type { SceneCanvasLongPress } from './longPressProps';
 import { Yoke } from '@weasel-js/routing/react';
 import type { Op } from 'core/ops/types';
 import type { Node } from 'core/scene/types';
-import type { SelectionApi, UseSelectionOptions } from 'core/selection/useSelection';
+import type { SelectionApi } from '@weasel-js/routing';
+import type { SelectionOptions } from 'core/selection/selectionContract';
 import type { SceneCanvasSnap } from 'domains/snap/types';
 import type { GeometryProjection } from 'interactions/actions/geometryProjection';
 import type { PoseDescriptor } from 'interactions/actions/resize/geometry';
@@ -155,20 +156,22 @@ export type SceneCanvasProps<TData, TLayer extends string, TPose> =
     /** External-content ingestion: OS drop, clipboard paste, the file picker. See {@link SceneCanvasIngestion}. */
     ingestion?: SceneCanvasIngestion;
 
+    /** The selection the canvas draws and writes through in place of its own; a viewer takes one too. */
     selection?: SelectionApi;
-    selectionOptions?: UseSelectionOptions;
+    /** The click policy a preset's factory builds the selection with; `initial` seeds an empty scene. */
+    selectionOptions?: SelectionOptions;
 
     /**
      * `false` stops the canvas writing the selection: no click, marquee,
      * lasso, action or tool, and no op committed through the adapter it hands
      * its tools. The consumer's own `SelectionApi` — the `selection` prop, or
-     * `useSelection({ scene })` — still writes, and the canvas draws what it
+     * editing's `useSelection({ scene })` — still writes, and the canvas draws what it
      * holds. Undo and redo still restore the selection each history entry
      * recorded. Default `true`.
      *
      * Click policy (whether Cmd-click toggles and Shift-click ranges) is the selection's `mode`:
-     * `useSelection({ mode: 'multi' })`, or `selectionOptions={{ mode: 'multi' }}`
-     * for the selection the canvas builds itself.
+     * editing's `useSelection({ mode: 'multi' })`, or `selectionOptions={{ mode: 'multi' }}`
+     * for the selection the canvas's presets build.
      */
     selectable?: boolean;
 

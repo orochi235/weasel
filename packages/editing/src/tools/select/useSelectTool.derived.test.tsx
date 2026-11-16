@@ -5,9 +5,9 @@
 import { describe, it, expect } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
 import { PATH_L, PATH_M, type Path } from '@weasel-js/geom';
-import { useSelection } from '@weasel-js/core/engine';
 import { useSelectTool, type UseSelectToolOptions } from './useSelectTool';
 import type { Action, ActionDeps } from '@weasel-js/routing';
+import { useSelection } from '../../selection/useSelection';
 
 type Pose = { x: number; y: number; width: number; height: number };
 interface Item {

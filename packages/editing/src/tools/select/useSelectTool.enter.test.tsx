@@ -9,11 +9,12 @@ import { actionBindings, isBody, matchSorted, type ScopedBinding } from '@weasel
 import type { Action, ActionDeps } from '@weasel-js/routing';
 import { sceneToAdapter, useScene, scenePickSource, pickWalk } from '@weasel-js/core';
 import type { UseSceneOptions } from '@weasel-js/core/engine';
-import { useSelection, asNodeId, AUTO_POSE_DESCRIPTOR, createEnteredGroup, visualBoundsViaDescriptor } from '@weasel-js/core/engine';
+import { asNodeId, AUTO_POSE_DESCRIPTOR, createEnteredGroup, visualBoundsViaDescriptor } from '@weasel-js/core/engine';
 import { createGroupEntryContribution } from './groupEntry';
 import { useSelectTool } from './useSelectTool';
 import { adapterPointQuery } from './adapterPointQuery';
 import { escapeAction } from '@weasel-js/editing';
+import { useSelection } from '../../selection/useSelection';
 
 type Pose = { x: number; y: number; width: number; height: number };
 const NO_MODS = { alt: false, ctrl: false, meta: false, shift: false };

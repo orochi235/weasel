@@ -1,12 +1,14 @@
 import { cloneAction, moveAction, resizeAction, rotateAction, PRESET_CHROME } from '@weasel-js/core';
 import type { FeaturePreset } from '@weasel-js/core';
 import { selectionMoveContribution, selectionResizeContribution, selectionRotateContribution } from '../tools/select/selectionContributions';
+import { selectionPreset } from './selection';
 
 /** The selection outline, drawn only while this is on. */
 export const outlinePreset: FeaturePreset = {
   id: 'outline',
   label: 'Outline',
   chrome: PRESET_CHROME.outline,
+  includes: [selectionPreset],
 };
 
 /** Resize handles, drawn and bound. A handle sits over the selected body, so
@@ -18,6 +20,7 @@ export const resizePreset: FeaturePreset = {
   actions: [resizeAction],
   ambient: () => selectionResizeContribution(),
   chrome: PRESET_CHROME.resize,
+  includes: [selectionPreset],
 };
 
 /** The rotation handle, drawn and bound. It refines `move` as `resize` does. */
@@ -28,6 +31,7 @@ export const rotatePreset: FeaturePreset = {
   actions: [rotateAction],
   ambient: ({ rotate }) => selectionRotateContribution({ rotate }),
   chrome: PRESET_CHROME.rotate,
+  includes: [selectionPreset],
 };
 
 /** Drag a body to move it, Alt-drag to clone it, under any tool that does not
@@ -37,4 +41,5 @@ export const movePreset: FeaturePreset = {
   label: 'Move',
   actions: [moveAction, cloneAction],
   ambient: ({ move }) => selectionMoveContribution({ move }),
+  includes: [selectionPreset],
 };

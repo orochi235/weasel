@@ -11,14 +11,14 @@ import { createScopingDim, DEFAULT_MODES } from '@weasel-js/modes';
 import { registerFontOutlines, type OutlineFace } from '@weasel-js/font';
 import { _resetFontOutlinesForTests, _resetFontRegistryForTests } from '@weasel-js/font/test-seams';
 import { loadTextOutlines, type TextOutlineSource } from '@weasel-js/text';
-import { SceneCanvas, asNodeId, createScene, hasEditablePath, PATH_EFFECT_DERIVATIONS, pathEffectNode, pathFromD, useDepSource, useSelection, withPathEffectsRegistry } from '@weasel-js/core';
+import { SceneCanvas, asNodeId, createScene, hasEditablePath, PATH_EFFECT_DERIVATIONS, pathEffectNode, pathFromD, useDepSource, withPathEffectsRegistry } from '@weasel-js/core';
 import type { DrawScene } from '../drawDocument';
 import { createModeMachine, type ModeMachine } from './machine';
 import { modeScope } from './modeScope';
 import { modePathEdit } from './pathEditHost';
 import { useCanvasModes } from './useCanvasModes';
 import { textPreset } from '@weasel-js/text-tools';
-import { drawPreset } from '@weasel-js/editing';
+import { drawPreset, useSelection } from '@weasel-js/editing';
 
 beforeAll(() => {
   (HTMLCanvasElement.prototype as unknown as { getContext: () => null }).getContext = () => null;

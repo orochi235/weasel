@@ -1,6 +1,6 @@
 import { useState, type ComponentType, type ReactNode } from 'react';
 import type { Meta, StoryObj } from '@weasel-js/forge';
-import { ActionsProvider, DepRegistryProvider, asNodeId, createScene, useAction, useCommand, useDepSource, useSelection } from '@weasel-js/core';
+import { ActionsProvider, DepRegistryProvider, asNodeId, createScene, useAction, useCommand, useDepSource } from '@weasel-js/core';
 import { CommandBar, type CommandBarProps } from './CommandBar';
 import { StripDock } from './surfaces/StripSurfaces';
 import { EDITOR_ACTIONS, EDITOR_PREFERENCES_KEY } from '@weasel-js/editor';
@@ -16,7 +16,7 @@ import type { WeaselDrawData, WeaselDrawLayer, WeaselDrawPose } from './drawDocu
 import { useDebugCommands } from './dev/devRoutes';
 import { useFileCommands } from './fileCommands';
 import './app.css';
-import { useStandardActions } from '@weasel-js/editing';
+import { useStandardActions, useSelection } from '@weasel-js/editing';
 
 // Every strip is drawn from the action registry,
 // so the story registers the kit actions and the app's own itself, the way

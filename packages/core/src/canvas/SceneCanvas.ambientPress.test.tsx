@@ -6,13 +6,12 @@
 import { describe, it, expect, vi, beforeAll } from 'vitest';
 import { render, act } from '@testing-library/react';
 import type { ReactNode } from 'react';
-import type { Action } from '@weasel-js/routing';
+import type { Action, SelectionApi } from '@weasel-js/routing';
 import { SceneCanvas } from './SceneCanvas';
 import { createScene } from 'core/scene/scene';
 import type { Scene, NodeId } from 'core/scene/types';
 import type { Contribution } from '../tools/overlayBinding';
-import { useSelection, type SelectionApi } from 'core/selection/useSelection';
-import { drawPreset } from '@weasel-js/editing';
+import { drawPreset, useSelection } from '@weasel-js/editing';
 
 type D = { kind: 'rect' };
 type L = 'main';

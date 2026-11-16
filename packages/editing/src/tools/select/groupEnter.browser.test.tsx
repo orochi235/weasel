@@ -10,8 +10,9 @@ import { useDepRegistry, type DepRegistry } from '@weasel-js/routing/react';
 import { createModeRegistry, DEFAULT_MODES } from '@weasel-js/modes';
 import { pathFromD, type PolygonPath } from '@weasel-js/geom';
 import { giveKeys } from '@weasel-js/react/testing/giveKeys';
-import { SceneCanvas, modeTriggers, createScene, asNodeId, useSelection, type SelectionApi } from '@weasel-js/core';
+import { SceneCanvas, modeTriggers, createScene, asNodeId, type SelectionApi } from '@weasel-js/core';
 import { drawPreset } from '@weasel-js/editing';
+import { useSelection } from '../../selection/useSelection';
 
 type D = { path?: PolygonPath; fill?: unknown };
 const FILL = { paint: { kind: 'solid', color: '#000000' } };

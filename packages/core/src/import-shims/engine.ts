@@ -127,8 +127,7 @@ export type { QuantizeRule, SceneOptions, SceneQuantize, UseSceneOptions } from 
 export { localizeInScene, localizeWorldPoses, worldPosesOf } from '../core/scene/worldSave';
 export type { PlacedSpec } from '../core/scene/worldSave';
 export type { SelectionFactory, SelectionOptions, SelectionStore } from '../core/selection/selectionContract';
-export { useSelection } from '../core/selection/useSelection';
-export type { UseSelectionOptions } from '../core/selection/useSelection';
+export { viewerSelection } from '../core/selection/viewerSelection';
 export { KIT_SHAPE_KINDS, SHAPE_KINDS, kitShapeKindsOf } from '../core/shapeKinds';
 export type { BuiltinShapeToolId, KitInsertShape, ShapeKind, ShapeKindDescriptor, ShapeKindsWhere } from '../core/shapeKinds';
 export { fitViewToBounds, hasExtent } from '../core/viewport/fitViewToBounds';

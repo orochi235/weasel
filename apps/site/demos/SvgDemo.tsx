@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState, useSyncExternalStore } from 'react';
-import { RIGID_POSE_COMPOSITION, SceneCanvas, WeaselProvider, useScene, useSelection } from '@weasel-js/core';
+import { RIGID_POSE_COMPOSITION, SceneCanvas, WeaselProvider, useScene } from '@weasel-js/core';
 import {
   parseSvg,
   serializeSvg,
@@ -14,7 +14,7 @@ import { createTextPreset } from '@weasel-js/text-tools';
 import { SegmentedBar } from '@weasel-js/ui/components/Segmented';
 import s from './SvgDemo.module.css';
 import { DemoStage, DemoStageGroup } from './DemoStage';
-import { movePreset, pickPreset, transformPreset } from '@weasel-js/editing';
+import { movePreset, pickPreset, transformPreset, useSelection } from '@weasel-js/editing';
 
 const W = 420, H = 320;
 const VIEW = { x: 0, y: 0, width: W, height: H };

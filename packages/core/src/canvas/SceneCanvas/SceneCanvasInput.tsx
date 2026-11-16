@@ -3,7 +3,7 @@ import { useLatest } from '@weasel-js/react';
 import type { Dispatcher } from '@weasel-js/routing';
 import { useDepSource } from '@weasel-js/routing/react';
 import type { Scene } from 'core/scene/types';
-import type { SelectionApi } from 'core/selection/useSelection';
+import type { SelectionApi } from '@weasel-js/routing';
 import type { RuleCtx } from 'domains/chrome-caps';
 import type { Affordance } from 'affordances/types';
 import type { PoseDescriptor } from 'interactions/actions/resize/geometry';

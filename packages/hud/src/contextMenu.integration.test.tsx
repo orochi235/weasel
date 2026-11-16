@@ -3,12 +3,12 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { pref } from '@weasel-js/prefs';
 import { render, act } from '@testing-library/react';
 import React from 'react';
-import { ActionsProvider, SceneCanvas, useScene, useSelection } from '@weasel-js/core';
+import { ActionsProvider, SceneCanvas, useScene } from '@weasel-js/core';
 import type { SceneCanvasApi, SurfaceContribution } from '@weasel-js/core';
 import { useHud, useHudContribution } from './react';
 import type { Widget } from './widget';
 import { _resetFontRegistryForTests } from '@weasel-js/font/test-seams';
-import { editPreset } from '@weasel-js/editing';
+import { editPreset, useSelection } from '@weasel-js/editing';
 
 interface Empty { id: string }
 

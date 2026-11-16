@@ -5,7 +5,7 @@ import { IDENTITY_POSE_COMPOSITION } from 'core/scene/composeFrame';
 import { createScene } from 'core/scene/scene';
 import { asNodeId, type Scene } from 'core/scene/types';
 import { RECT_POSE_DESCRIPTOR, type PoseDescriptor } from 'core/geometry/poseDescriptor';
-import type { SelectionApi } from 'core/selection/useSelection';
+import type { SelectionApi } from '@weasel-js/routing';
 import type { SnapDep } from '../snapDep';
 import type { MoveBehavior } from '../../gestures/types';
 import { moveAction } from './action';

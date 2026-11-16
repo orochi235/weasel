@@ -9,7 +9,7 @@ import { createScene } from 'core/scene/scene';
 import { createTransformOp } from 'core/ops/transform';
 import type { Op } from 'core/ops/types';
 import type { NodeId, RectPose } from 'core/scene/types';
-import type { SelectionApi } from 'core/selection/useSelection';
+import type { SelectionApi } from '@weasel-js/routing';
 import type { MoveBehavior, MoveEnd } from '../../gestures/types';
 
 type S = ReturnType<typeof createScene<object, 'main', RectPose>>;

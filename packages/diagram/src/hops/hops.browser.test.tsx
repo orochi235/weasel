@@ -7,12 +7,12 @@ import { afterEach, describe, expect, it } from 'vitest';
 import { createElement } from 'react';
 import { createRoot, type Root } from 'react-dom/client';
 import { flushSync } from 'react-dom';
-import { createScene, SceneCanvas, useSelection, type RectPose, type Scene, viewPreset } from '@weasel-js/core';
+import { createScene, SceneCanvas, type RectPose, type Scene, viewPreset } from '@weasel-js/core';
 import { EDGE_DERIVE_PATH, withDiagramRegistry, registerDiagramShape, useHops } from '@weasel-js/diagram';
 import { HOPS_DOC_KEY } from '@weasel-js/diagram/layout';
 import type { DiagramEdge } from '../edgeTrait';
 import { canvasGl } from '@weasel-js/core/testing/canvasPixels';
-import { movePreset, pickPreset } from '@weasel-js/editing';
+import { movePreset, pickPreset, useSelection } from '@weasel-js/editing';
 
 type HopScene = Scene<unknown, 'main', RectPose>;
 

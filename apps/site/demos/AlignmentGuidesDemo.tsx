@@ -1,9 +1,9 @@
-import { asNodeId, SceneCanvas, useScene, useSelection, rectPath, solid, viewPreset, WeaselProvider } from '@weasel-js/core';
+import { asNodeId, SceneCanvas, useScene, rectPath, solid, viewPreset, WeaselProvider } from '@weasel-js/core';
 import { alignmentSnapSource, spacingSnapSource } from '@weasel-js/guides';
 import type { Fill, Path, RectPose } from '@weasel-js/core';
 import { ToolPalette } from '@weasel-js/ui/components/ToolPalette';
 import { DemoStage } from './DemoStage';
-import { movePreset, pickPreset, shapeToolKitPreset } from '@weasel-js/editing';
+import { movePreset, pickPreset, shapeToolKitPreset, useSelection } from '@weasel-js/editing';
 
 // The same `{ path, fill }` shape the rect tool's insert dep mints, so the
 // kit's path painter draws both without a custom drawOne.

@@ -8,16 +8,15 @@ import { act, cleanup } from '@testing-library/react';
 import { renderWithKeys as render } from '@weasel-js/react/testing/giveKeys';
 import { useCallback } from 'react';
 import { useActionsRegistry, useDepSource, useOptionalDepRegistry } from '@weasel-js/routing/react';
-import type { ActionsRegistry } from '@weasel-js/routing';
+import type { ActionsRegistry, SelectionApi } from '@weasel-js/routing';
 import { useClipboardOps } from 'interactions/actions/clipboard/clipboardOps';
 import { useSceneAdapter } from './useSceneAdapter';
 import { pathFromD, type PolygonPath } from '@weasel-js/geom';
 import { createScene } from 'core/scene/scene';
 import { asNodeId, type NodeId } from 'core/scene/types';
-import { useSelection, type SelectionApi } from 'core/selection/useSelection';
 import { createEnteredGroup } from './deps/enteredGroup';
 import { SceneCanvas } from './SceneCanvas';
-import { drawPreset } from '@weasel-js/editing';
+import { drawPreset, useSelection } from '@weasel-js/editing';
 
 beforeAll(() => {
   const proto = HTMLCanvasElement.prototype as unknown as Record<string, unknown>;

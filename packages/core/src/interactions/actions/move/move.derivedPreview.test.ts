@@ -11,7 +11,7 @@ import { moveAction } from './action';
 import type { InvocationCtx, OngoingHandle, OngoingInvoker } from '@weasel-js/routing';
 import { createScene } from 'core/scene/scene';
 import { asNodeId, type NodeId } from 'core/scene/types';
-import type { SelectionApi } from 'core/selection/useSelection';
+import type { SelectionApi } from '@weasel-js/routing';
 import { resolveDerivedPath, sceneDepLookup } from 'canvas/derivedPath';
 import { linePath, type Path } from '@weasel-js/geom';
 

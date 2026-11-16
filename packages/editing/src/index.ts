@@ -11,6 +11,7 @@ import type {} from './actionParamSchema';
 export type { AlignParams, DistributeParams, FlipParams, ReorderParams } from './actionParamSchema';
 
 export { selectPreset } from './presets/select';
+export { selectionPreset } from './presets/selection';
 export { movePreset, outlinePreset, resizePreset, rotatePreset } from './presets/transform';
 export {
   clipboardPreset, contextMenuPreset, deletePreset, duplicatePreset, editPreset, escapePreset, groupPreset,
@@ -78,6 +79,7 @@ export type {
 } from './actions/distribute';
 
 export { ENGINE_STANDARD_ACTIONS } from './engineStandardActions';
+export { createSelection, useSelection, type UseSelectionOptions } from './selection/useSelection';
 export { escapeAction } from './actions/edit/escape';
 export { selectAllAction } from './actions/edit/selectAll';
 export { duplicateAction, duplicateSelection } from './actions/edit/duplicate';

@@ -6,7 +6,7 @@ import { SceneCanvas } from './SceneCanvas';
 import type { CanvasHelpers } from './useViewHelpers';
 import { createScene } from 'core/scene/scene';
 import { useDepRegistry } from '@weasel-js/routing/react';
-import type { SelectionApi } from 'core/selection/useSelection';
+import type { SelectionApi } from '@weasel-js/routing';
 import { modifierHeld } from 'domains/chrome-caps';
 import { createGLRecorder } from '@weasel-js/renderer/testing/glRecorder';
 import { pickPreset } from '@weasel-js/editing';

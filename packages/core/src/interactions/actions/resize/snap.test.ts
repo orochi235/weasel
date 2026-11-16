@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest';
 import type { InvocationCtx, OngoingHandle, OngoingInvoker, ResizeAnchor } from '@weasel-js/routing';
 import { createScene } from 'core/scene/scene';
 import { asNodeId, type NodeId } from 'core/scene/types';
-import type { SelectionApi } from 'core/selection/useSelection';
+import type { SelectionApi } from '@weasel-js/routing';
 import type { Bounds } from 'core/viewport/fitViewToBounds';
 import { createSnapOutcomeStore } from 'domains/snap/outcomeStore';
 import { sceneSession2d } from 'domains/snap/sceneSession2d';

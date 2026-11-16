@@ -3,7 +3,7 @@ import { act, renderHook } from '@testing-library/react';
 import { createScene } from 'core/scene/scene';
 import { asNodeId, type NodeId } from 'core/scene/types';
 import { legalSelection, settleSelection } from './legalSelection';
-import { useSelection } from './useSelection';
+import { useSelection } from '@weasel-js/editing';
 
 const ids = (list: string[]) => list.map(asNodeId);
 const none = { shift: false, meta: false, ctrl: false };
