@@ -11,7 +11,7 @@ import { StateView } from './StateView';
 
 afterEach(cleanup);
 
-test('a drag across the overlay switches turns on each one it crosses', async () => {
+test('a drag across the overlay switches turns on each one it crosses, and an Alt-drag shows those alone', async () => {
   const overlays: Record<string, boolean> = Object.fromEntries(DEBUG_FEATURES.map((f) => [f, false]));
   const client = {
     onChanged: () => () => {},
@@ -25,4 +25,7 @@ test('a drag across the overlay switches turns on each one it crosses', async ()
   sweepAcross(switches.slice(0, 3));
   await act(async () => {});
   expect(DEBUG_FEATURES.filter((f) => overlays[f])).toEqual(DEBUG_FEATURES.slice(0, 3));
+  sweepAcross(switches.slice(3, 5), { altKey: true });
+  await act(async () => {});
+  expect(DEBUG_FEATURES.filter((f) => overlays[f])).toEqual(DEBUG_FEATURES.slice(3, 5));
 });

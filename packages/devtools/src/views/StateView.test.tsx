@@ -31,11 +31,11 @@ const flip = async (name: string, altKey = false): Promise<void> => {
 };
 
 describe('<StateView> overlays', () => {
-  it('sends only the flag a click flips', async () => {
+  it('turns on the flag a click flips, leaving the rest as they were', async () => {
     const page = fakePage(['bounds']);
     renderWithIcons(<StateView client={page.client} rootId="r" />);
     await flip('ids');
-    expect(page.sent).toEqual([{ ids: true }]);
+    expect(page.on()).toEqual(['bounds', 'ids']);
   });
 
   it('shows one overlay alone on Alt-click, and every overlay on a second', async () => {
