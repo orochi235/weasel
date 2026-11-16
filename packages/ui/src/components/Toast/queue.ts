@@ -1,6 +1,7 @@
 import { UNSTABLE_ToastQueue } from 'react-aria-components';
 import { flushSync } from 'react-dom';
 import { prefersReducedMotion } from '@weasel-js/react';
+import { isDev } from '@weasel-js/registry';
 import type { Grade } from '../appearance';
 
 /** Kit-owned payload rendered inside each toast. */
@@ -70,17 +71,27 @@ function viewTransitionWrapUpdate(fn: () => void): void {
 // containment rule. `racQueueOf` below is the folder-internal accessor.
 const RAC_QUEUES = new WeakMap<ToastQueue, UNSTABLE_ToastQueue<ToastContent>>();
 
-const DEFAULT_TTLS = new WeakMap<ToastQueue, () => number | undefined>();
+// By queue: the default-ttl reader of each mounted `ToastRegion`, the latest last.
+const REGIONS = new WeakMap<ToastQueue, Array<() => number | undefined>>();
+const warnedTwice = new WeakSet<ToastQueue>();
 
 /**
- * Has `queue` time a toast that sets no `ttlMs` by `read`, falling back to
- * the constant where it answers `undefined`, until the returned release.
+ * Counts a mounted `ToastRegion` on `queue`, and has `queue` time a toast that
+ * sets no `ttlMs` by `read` while it is the latest region mounted, falling back
+ * to the constant where it answers `undefined`, until the returned release.
  * Folder-internal: `ToastRegion` feeds it the kit settings.
  */
-export function readDefaultTtl(queue: ToastQueue, read: () => number | undefined): () => void {
-  DEFAULT_TTLS.set(queue, read);
+export function holdRegion(queue: ToastQueue, read: () => number | undefined): () => void {
+  const readers = REGIONS.get(queue) ?? [];
+  REGIONS.set(queue, readers);
+  readers.push(read);
+  if (readers.length > 1 && isDev() && !warnedTwice.has(queue)) {
+    warnedTwice.add(queue);
+    console.warn('weasel: a second <ToastRegion> is mounted on one toast queue, so every toast draws twice. Mount one region per queue, or give the other its own `createToastQueue()`.');
+  }
   return () => {
-    if (DEFAULT_TTLS.get(queue) === read) DEFAULT_TTLS.delete(queue);
+    const at = readers.indexOf(read);
+    if (at >= 0) readers.splice(at, 1);
   };
 }
 
@@ -107,7 +118,7 @@ export class ToastQueue {
   }
 
   add(grade: Grade, title: string, options: ToastOptions = {}): void {
-    const { description, ttlMs = DEFAULT_TTLS.get(this)?.() ?? DEFAULT_TTL_MS, id } = options;
+    const { description, ttlMs = REGIONS.get(this)?.at(-1)?.() ?? DEFAULT_TTL_MS, id } = options;
     const rac = RAC_QUEUES.get(this)!;
     if (id !== undefined) {
       const existing = this.keysById.get(id);
