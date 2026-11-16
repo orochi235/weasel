@@ -26,6 +26,7 @@
     "@weasel-js/gestures": "1.19.1",
     "@weasel-js/paint": "1.19.1",
     "@weasel-js/react": "1.19.1",
+    "@weasel-js/registry": "1.19.1",
     "@weasel-js/text": "1.19.1",
     "@weasel-js/ui-input": "1.19.1"
   },
