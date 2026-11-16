@@ -22,6 +22,6 @@ export { after } from './after';
 export { createLatest, type Latest } from './latest';
 export { MIXED } from './mixed';
 export type { Mixed } from './mixed';
-export { codePointFloor } from './codePointFloor';
+export { codePointFloor, isOneChar } from './codePoint';
 export { matchQuery, hasTag, foldText } from './match';
 export type { Findable, QueryMatch } from './match';

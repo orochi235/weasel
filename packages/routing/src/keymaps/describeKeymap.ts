@@ -2,8 +2,7 @@
  * What a hint, a menu or a binding list shows for a keymap: its rows, Escape
  * first, and each key's path through the leaders that reach it.
  */
-import { detectPlatform, formatShortcut, keyLegendsFromMods, type GestureSpec, type LogicalMod, type Platform } from '@weasel-js/gestures';
-import type { MenuShortcut } from '@weasel-js/menu';
+import { detectPlatform, formatShortcut, keyLegendsFromMods, type GestureSpec, type LogicalMod, type Platform, type ShortcutInput } from '@weasel-js/gestures';
 import type { Action } from '../interactions/actions/action';
 import { actionBindings, type GestureBinding } from '../interactions/actions/binding';
 import { keySpecShortcut, paramsMatch } from '../interactions/actions/actionShortcuts';
@@ -14,7 +13,7 @@ import type { OpenKeymap } from './keymapStack';
 
 /** One row of a keymap's hint: a key chip, or a pointer gesture in words, and what it does. */
 export interface KeymapRow {
-  shortcut?: MenuShortcut;
+  shortcut?: ShortcutInput;
   gesture?: string;
   label: string;
 }
@@ -94,16 +93,16 @@ export function describeKeymap(
 export function keymapShortcuts(
   def: KeymapDef,
   overrides: ResolvedBindingOverrides = NO_OVERRIDES,
-): ReadonlyMap<string, readonly MenuShortcut[]> {
+): ReadonlyMap<string, readonly ShortcutInput[]> {
   const leaderChip = overriddenBindings(actionBindings({ id: keymapLeaderId(def.id), defaultBinding: leaderBindings(def) }), null, overrides)
     .map((b) => keySpecShortcut(b.spec))
     .find((c) => c !== undefined);
-  const out = new Map<string, MenuShortcut[]>();
+  const out = new Map<string, ShortcutInput[]>();
   for (const b of overriddenBindings(def.bindings, def.id, overrides)) {
     if (b.spec.kind !== 'key') continue;
     const chip = keySpecShortcut(b.spec);
     if (!chip) continue;
-    const withPath: MenuShortcut = leaderChip ? { ...chip, leader: [{ label: def.label, shortcut: leaderChip }] } : chip;
+    const withPath: ShortcutInput = leaderChip ? { ...chip, leader: [{ label: def.label, shortcut: leaderChip }] } : chip;
     out.set(b.actionId, [...(out.get(b.actionId) ?? []), withPath]);
   }
   return out;

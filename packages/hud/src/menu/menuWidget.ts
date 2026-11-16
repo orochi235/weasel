@@ -15,7 +15,8 @@ import { caretAt, caretX } from './valueRows';
 import { createTextEditor, editMods } from './textEdit';
 import { DEFAULT_MENU_PALETTE, withColorPickers } from './colorPicker';
 import type { Point } from '@weasel-js/geom';
-import { chordKey, type StepRepeatOptions } from '@weasel-js/ui-input';
+import { chordKey } from '@weasel-js/gestures';
+import type { StepRepeatOptions } from '@weasel-js/ui-input';
 import { chipUnder, createChipHold, levelAt } from './chipRepeat';
 
 const CLAIMS: readonly ClaimableGesture[] = ['pointer', 'doubleClick', 'contextMenu', 'longPress', 'wheel'];

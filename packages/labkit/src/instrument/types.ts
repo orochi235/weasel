@@ -1,7 +1,7 @@
 import type { PointerContextValue } from '@weasel-js/core';
 import type { Vec3 } from '@weasel-js/geom/3d';
+import type { ShortcutInput } from '@weasel-js/gestures';
 import type { Camera3d, OrbitLimits } from '@weasel-js/kernel3d';
-import type { MenuShortcut } from '@weasel-js/menu';
 import type { ReactNode } from 'react';
 import type { AnnotationsCapability } from '../annotations/types';
 import type { CameraGestures } from '../canvas/cameraGestures';
@@ -51,7 +51,7 @@ export interface RenderContext<TS = unknown, TC = unknown> {
     /** Reports the keys that activate each of the instrument's tools now, every tool it holds named, a keyless one
      *  with none: the trial's rail then shows these in place of each `TrialTool.shortcut`. `TrialSceneCanvas`
      *  reports its scene's. */
-    setToolShortcuts: (shortcuts: Readonly<Record<string, readonly MenuShortcut[]>>) => void;
+    setToolShortcuts: (shortcuts: Readonly<Record<string, readonly ShortcutInput[]>>) => void;
     /** The canvas layers currently shown, in declaration order. labkit skips a
      *  hidden layer's `draw`, so this is the only way to know what was
      *  painted — a legend listing rows the view did not draw needs it. */

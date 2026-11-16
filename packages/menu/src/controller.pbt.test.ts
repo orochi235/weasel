@@ -9,7 +9,8 @@
  */
 import { describe, expect, it } from 'vitest';
 import fc from 'fast-check';
-import { EMPTY_TYPEAHEAD, TYPEAHEAD_RESET_MS, isOneChar, type TypeaheadBuffer } from '@weasel-js/ui-input';
+import { isOneChar } from '@weasel-js/registry';
+import { EMPTY_TYPEAHEAD, TYPEAHEAD_RESET_MS, type TypeaheadBuffer } from '@weasel-js/ui-input';
 import { spinKey } from '@weasel-js/quantity';
 import { foldText } from '@weasel-js/registry';
 import { accessLetter } from './access';

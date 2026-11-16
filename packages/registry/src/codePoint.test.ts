@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import fc from 'fast-check';
-import { codePointFloor } from './codePointFloor';
+import { codePointFloor, isOneChar } from './codePoint';
 
 describe('codePointFloor', () => {
   it('steps back off the middle of a surrogate pair and leaves any other offset', () => {
@@ -20,5 +20,15 @@ describe('codePointFloor', () => {
       const head = [...s.slice(0, cut)];
       expect(head).toEqual([...s].slice(0, head.length));
     }));
+  });
+});
+
+describe('isOneChar', () => {
+  it('counts one code point as one character, an astral one included', () => {
+    expect(isOneChar('a')).toBe(true);
+    expect(isOneChar('😀')).toBe(true);
+    expect(isOneChar('')).toBe(false);
+    expect(isOneChar('ab')).toBe(false);
+    expect(isOneChar('Enter')).toBe(false);
   });
 });

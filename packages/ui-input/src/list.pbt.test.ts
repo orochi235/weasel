@@ -7,7 +7,8 @@ import fc from 'fast-check';
 import { firstStop, rovingKey, rowKey, stepStop, type ListShape } from './list';
 import { at, items, runs, tally, timeoutFor, type Item } from './pbt.fixture';
 import { treeKey, type TreeShape } from './tree';
-import { isOneChar, typeaheadMatch, typeaheadStep, type TypeaheadBuffer } from './typeahead';
+import { isOneChar } from '@weasel-js/registry';
+import { typeaheadMatch, typeaheadStep, type TypeaheadBuffer } from './typeahead';
 
 const RUNS = 300;
 const shapeOf = (wrap: boolean): ListShape<Item> => ({ canStop: (i) => i.stop, wrap });

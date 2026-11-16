@@ -108,7 +108,8 @@ export { ANY_MODS, hitPredicate, bodyPredicate } from './ui/spec';
 
 // Pure matcher functions
 export { matchSpec, matchModifiers, matchKey, matchKeyEvent, matchTarget, matchPhase, parseTargetSpec, chordCodesFor } from './ui/match';
-export { CHORD_MODIFIERS } from '@weasel-js/ui-input';
+export { CHORD_MODIFIERS, chordKey, codeLetter } from './ui/keyLetter';
+export type { ChordSource } from './ui/keyLetter';
 export { mimeMatchesGlob, matchIngestTypes, UNKNOWN_MIME } from './ui/ingestTypes';
 export type { PhaseContext, ModifiersEvent, TargetSpecForm } from './ui/match';
 export { isApplePlatform, isContextPress, modHeld, modKey } from './ui/platform';

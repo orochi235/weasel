@@ -583,7 +583,7 @@ a keymap's own `eligibility.keymap.unbound` overrides (decided 2026-10-20). The
 `key` and `keyHeld` halves of one keystroke are ruled on together: closes made
 during one raw input apply when it ends, and the keymap's verdict on the first
 half decides the second. `<KeymapHint>` (`@weasel-js/ui`) lists the open
-keymap's rows, Escape first, from `useOpenKeymap`; a `MenuShortcut` carries the
+keymap's rows, Escape first, from `useOpenKeymap`; a `ShortcutInput` (`@weasel-js/gestures`) carries the
 leaders that reach it. `formatShortcutParts` gives them as `leader` beside the
 key's own chips, `formatShortcut` writes them `Loupe ▸ 2`, and `KeySequence`
 (its `leader` prop) and `ShortcutKeys` draw them as labels before the keycaps.

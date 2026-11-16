@@ -5,7 +5,7 @@
  * rebound and an unbound one is gone.
  */
 import type { IconSpec } from '@weasel-js/icons';
-import type { MenuShortcut } from '@weasel-js/menu';
+import type { ShortcutInput } from '@weasel-js/gestures';
 import type { Action } from '../interactions/actions/action';
 import { actionBindings } from '../interactions/actions/binding';
 import { actionItems, actionItemTitle, type ActionItem } from '../interactions/actions/actionItems';
@@ -23,7 +23,7 @@ export interface ShortcutRow {
   label: string;
   icon?: IconSpec;
   /** Every key bound to it, first the one a chip shows. Empty for a tool with none. */
-  shortcuts: readonly MenuShortcut[];
+  shortcuts: readonly ShortcutInput[];
 }
 
 /** A titled run of rows. */
@@ -57,7 +57,7 @@ export interface DescribeShortcutsOptions {
   toolSets?: readonly ToolSet[];
 }
 
-const NONE: readonly MenuShortcut[] = Object.freeze([]);
+const NONE: readonly ShortcutInput[] = Object.freeze([]);
 const OTHER = 'other';
 
 /** A group id as a heading: `path-edit` reads `Path edit`. */
@@ -66,7 +66,7 @@ function groupTitle(id: string): string {
   return words.length === 0 ? id : words[0]!.toUpperCase() + words.slice(1);
 }
 
-function toolRow(id: string, tool: ShortcutTool, keys: readonly MenuShortcut[] | undefined): ShortcutRow {
+function toolRow(id: string, tool: ShortcutTool, keys: readonly ShortcutInput[] | undefined): ShortcutRow {
   const icon = tool.presentation?.icon;
   return { id, label: tool.presentation?.label ?? id, ...(icon ? { icon } : {}), shortcuts: keys ?? NONE };
 }
@@ -98,7 +98,7 @@ function entriesOf(action: Action): readonly ActionItem[] {
   return items.length > 0 ? items : [{ key: action.id, action, label: action.label, ...(action.icon ? { icon: action.icon } : {}), tags: [] }];
 }
 
-function entryRow(item: ActionItem, shortcuts: readonly MenuShortcut[]): ShortcutRow {
+function entryRow(item: ActionItem, shortcuts: readonly ShortcutInput[]): ShortcutRow {
   return { id: item.key, label: actionItemTitle(item), ...(item.icon ? { icon: item.icon } : {}), shortcuts };
 }
 
