@@ -48,7 +48,7 @@ export {
 export { trackOrigins, type NodeOrigins } from './edit/nodeOrigins';
 export { asWorkspace, catalogIn, ONE, oneAssetCodec, sameSchema, schemaOf } from './edit/oneAsset';
 export { deadPointers, drawnLeaf, pointerAttributes, pointerTarget } from './edit/pointers';
-export { type PresetDescription } from './edit/presets';
+export { type PresetDescription } from '@weasel-js/pref-schema';
 export { type RegisteredAction } from './edit/registeredActionAttrs';
 export { schemaCodec } from './edit/schemaCodec';
 export { aliasNodes, aliasOf, canAlias, copyNodes, VALUE_LINKS, type LinkRule } from './edit/schemaCopy';

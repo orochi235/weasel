@@ -3,7 +3,7 @@ import type { MenuColorEntry, MenuEntry, MenuItemEntry, MenuNumberEntry, MenuTex
 import {
   pref, type PrefField, type PrefGroup, type PrefLeaf, type PrefList, type PrefMap, type PrefObject, type PrefPaint,
   type PrefUnion,
-} from '@weasel-js/prefs';
+} from '@weasel-js/pref-schema';
 import { resolveSchemaMenu, type MenuSources } from './resolveMenu';
 import { pathSegment, pathSegments } from './compoundRows';
 

@@ -1,6 +1,6 @@
 /** Plain examples of the Shift+wheel size step, the first a wheel delta its property test shrank to. */
 import { afterEach, expect, it, vi } from 'vitest';
-import type { PrefNumber } from '@weasel-js/prefs';
+import type { PrefNumber } from '@weasel-js/pref-schema';
 import type { ImmediateInvoker } from '../interactions/actions/invoker';
 import { createToolOptionValues, type ToolOptions } from './toolOptions';
 import { toolOptionSteps, WHEEL_SIZE_MAX_STEPS } from './toolOptionSteps';

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { PREF_KIND_TRAITS, prefDrawsSeveral, prefIsCompound } from './kinds';
-import { PREF_KINDS } from './schema';
+import { PREF_KINDS } from '@weasel-js/pref-schema';
 
 const leaf = (kind: string) => ({ kind });
 

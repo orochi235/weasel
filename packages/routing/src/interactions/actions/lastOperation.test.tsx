@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 import { act, render } from '@testing-library/react';
 import { createHistory, type History, type Op } from '@weasel-js/history';
-import { pref } from '@weasel-js/prefs';
+import { pref } from '@weasel-js/pref-schema';
 import type { Action } from './action';
 import { ActionsProvider, useActionsRegistry } from './ActionsProvider';
 import { DepRegistryProvider, useDepRegistry, type DepName, type DepRegistry } from './depRegistry';

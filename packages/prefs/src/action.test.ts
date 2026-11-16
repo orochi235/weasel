@@ -1,15 +1,11 @@
 import { createMemoryAdapter, createRecordCache } from '@weasel-js/storage';
 import { describe, expect, expectTypeOf, it } from 'vitest';
-import type { PrefAction, PrefActions } from './action';
-import { pref } from './build';
+import { type PrefAction, type PrefActions, pref, type PrefGroup, prefHoldsValue, isBuiltinPref } from '@weasel-js/pref-schema';
 import { checkPrefCondition } from './conditionCheck';
 import { prefsCss } from './css';
 import { prefsDefaultsSource } from './defaultsSource';
-import type { PrefGroup } from './groups';
-import { prefHoldsValue } from './helpers';
 import { prefDrawsSeveral, prefIsCompound } from './kinds';
 import type { PrefPath } from './paths';
-import { isBuiltinPref } from './schema';
 import { createPrefsStore } from './store';
 
 const arrange: PrefActions = { kind: 'actions', name: 'Arrange', description: '', default: undefined, group: 'arrange' };

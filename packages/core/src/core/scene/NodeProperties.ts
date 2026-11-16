@@ -1,4 +1,4 @@
-import type { PrefSection } from '@weasel-js/prefs';
+import type { PrefSection } from '@weasel-js/pref-schema';
 
 /**
  * One kind's entry in the **properties trait's** registry: a declarative

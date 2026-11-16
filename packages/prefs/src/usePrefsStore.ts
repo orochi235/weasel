@@ -1,6 +1,6 @@
 import type { OwnedRecordCache, StorageAdapter, SyncStorageAdapter } from '@weasel-js/storage';
 import { useCallback, useSyncExternalStore } from 'react';
-import type { PrefGroup } from './groups';
+import type { PrefGroup } from '@weasel-js/pref-schema';
 import { openPrefsCacheSync, type PrefsOptions } from './open';
 import { createPrefsStore, type PrefsStore } from './store';
 

@@ -1,15 +1,8 @@
 // What is wrong with a condition as one of a schema's: what a store warns of
 // and a schema editor marks.
 
-import { formOf, ORDERINGS, partsOf, type PrefConditionValue, type PrefTest } from './condition';
-import type { PrefGroup, PrefSection } from './groups';
-import { isPrefLeaf, isPrefSection, prefHoldsValue } from './helpers';
-import { prefLeavesHolding, prefLeavesHoldingIn, prefSchemaHolding, UNSEEN } from './holding';
-import { PREF_CONDITION_FIELDS, type PrefConditionField } from './judge';
-import type { PrefList } from './list';
-import type { PrefMap } from './map';
-import { isBuiltinPref, type PrefEnum, type PrefLeaf, type PrefObject } from './schema';
-import type { PrefUnion } from './union';
+import { type PrefConditionValue, type PrefTest, type PrefGroup, type PrefSection, isPrefLeaf, isPrefSection, prefHoldsValue, prefSchemaHolding, PREF_CONDITION_FIELDS, type PrefConditionField, type PrefList, type PrefMap, isBuiltinPref, type PrefEnum, type PrefLeaf, type PrefObject, type PrefUnion } from '@weasel-js/pref-schema';
+import { formOf, ORDERINGS, partsOf, prefLeavesHolding, prefLeavesHoldingIn, UNSEEN } from '@weasel-js/pref-schema/internal';
 
 /** One thing wrong with a condition: it is not one, it reads a path no leaf
  *  holds a value at, it compares a leaf against a value it never holds — an

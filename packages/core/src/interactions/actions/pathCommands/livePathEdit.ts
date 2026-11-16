@@ -1,7 +1,7 @@
 import type { Action, InvocationCtx } from '@weasel-js/routing';
 import { ActionDisabledReason, defineAction, resolveParams } from '@weasel-js/routing';
 import type { PolygonPath } from '@weasel-js/geom';
-import type { PrefGroup, PrefNumber } from '@weasel-js/prefs';
+import type { PrefGroup, PrefNumber } from '@weasel-js/pref-schema';
 import type { Op } from 'core/ops/types';
 import { selectedPathNodes, withPath, type PathNode } from './pathNodes';
 import { commitOps } from '../defaultCommitAdapter';

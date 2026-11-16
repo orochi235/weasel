@@ -1,5 +1,5 @@
 import type { BodyTarget } from '@weasel-js/gestures';
-import type { PrefGroup } from '@weasel-js/prefs';
+import type { PrefGroup } from '@weasel-js/pref-schema';
 
 /** Which canvas hit a menu answers. Every field given must match. */
 export interface MenuWhen {

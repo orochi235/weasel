@@ -53,6 +53,7 @@ export type PrefCondition =
 /** Reads the value a test compares: at `path` from the schema root, or with `from`, from the entry being drawn. */
 export type PrefConditionReader = (path: string, from?: 'item') => unknown;
 
+/** The `PrefTest` keys that compare a number by order. */
 export const ORDERINGS = ['above', 'below', 'atLeast', 'atMost'] as const;
 const TEST_KEYS: ReadonlySet<string> = new Set(['path', 'from', 'is', 'isNot', 'in', ...ORDERINGS]);
 

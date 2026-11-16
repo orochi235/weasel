@@ -4,13 +4,11 @@ import type { PrefBlend } from './blend';
 import { checkPrefConditions } from './conditionCheck';
 import { autoRecord, recordValue } from './stamp';
 import { prefCanAuto, prefStartsAuto } from './autoReset';
-import { assignPrefValueAtPath, prefHoldsValue, prefLeaves, setOwnPrefValue, VERSION_RECORD } from './helpers';
-import { isPrefScope, selectionWeights, type PrefScope, type PrefSelection, type PrefWeights } from './scope';
+import { prefHoldsValue, prefLeaves, VERSION_RECORD, isPrefScope, type PrefScope, type PrefSelection, type PrefWeights, type PrefValidator, type PrefGroup } from '@weasel-js/pref-schema';
+import { assignPrefValueAtPath, setOwnPrefValue, selectionWeights } from '@weasel-js/pref-schema/internal';
 import { createSnapshots, resolveHeld, selectionAt, weightsUnder, type SnapshotSource } from './snapshot';
 import { checkPrefSplits, prefSelectors, admittedSelectors } from './splitCheck';
 import type { PrefPath, PrefValueAt } from './paths';
-import type { PrefValidator } from './repair';
-import type { PrefGroup } from './groups';
 import { prefWrites } from './storeWrites';
 
 /** One leaf changing, as a store subscriber hears it: the value readers now

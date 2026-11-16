@@ -2,7 +2,7 @@
 // `resetPlanAt` says what the reset writes; a source says what it reads.
 
 import { leafIsAtReset, resetPlanAt, type LeafReading, type ResetWrite } from '../autoReset';
-import type { PrefLeaf } from '../schema';
+import type { PrefLeaf } from '@weasel-js/pref-schema';
 import type { PrefsSource } from './prefsSource';
 
 /** What a reset reads of `source`: nothing for a leaf an `enableIf` disables, which no reset reaches. */

@@ -1,6 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { repairPrefValue } from './repair';
-import type { PrefLeaf } from './schema';
+import { repairPrefValue, type PrefLeaf } from '@weasel-js/pref-schema';
 import { prefType } from './type';
 
 const Stop = prefType('GradientStop', {

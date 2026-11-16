@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
 import type { IconRef } from '@weasel-js/icons';
-import type { PrefGroup } from '@weasel-js/prefs';
+import type { PrefGroup } from '@weasel-js/pref-schema';
 import { defineTool } from '../../overlayBinding';
 import type { Tool } from '../../overlayBinding';
 import { insertBindingBehaviors, type InsertToolOptions } from '../shared/insertToolOptions';

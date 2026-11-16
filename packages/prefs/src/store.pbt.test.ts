@@ -1,9 +1,8 @@
 import fc from 'fast-check';
 import { createMemoryAdapter, createRecordCache } from '@weasel-js/storage';
 import { describe, expect, it, vi } from 'vitest';
-import type { PrefGroup } from './groups';
-import { admits, leaf, runs, sameValue, stored, tally, timeoutFor, valueOf } from './pbt.fixture';
-import type { PrefLeaf } from './schema';
+import type { PrefGroup, PrefLeaf } from '@weasel-js/pref-schema';
+import { admits, leaf, runs, sameValue, stored, tally, timeoutFor, valueOf } from '@weasel-js/pref-schema/testing/pbt.fixture';
 import { isStampedRecord } from './stamp';
 import { createPrefsStore } from './store';
 

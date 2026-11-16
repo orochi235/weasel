@@ -9,7 +9,7 @@ import type { IconSpec } from '@weasel-js/icons';
 import type { CursorSpec } from '@weasel-js/cursor';
 import type { ActionDeps, Invoker } from './invoker';
 import type { ActionSettings } from './actionSettings';
-import type { PrefGroup } from '@weasel-js/prefs';
+import type { PrefGroup } from '@weasel-js/pref-schema';
 import type { BindingSource } from './binding';
 import type { DepName } from '../../index';
 import type { IngestItem } from '@weasel-js/gestures';

@@ -5,37 +5,150 @@
  * @packageDocumentation
  */
 export {
+  applyPrefConditions,
+  applyPrefEntryConditions,
   filterPrefSubtree,
   flattenPrefValues,
-  isPrefLeaf,
-  isPrefSection,
-  nestPrefValues,
-  prefDisplayBounds,
-  prefHoldsValue,
-  prefLeafAt,
-  prefLeaves,
-  prefSectionLeaves,
-  prefValueAtPath,
-  VERSION_RECORD,
-  visiblePrefSubtree,
-} from './helpers';
-export { prefClampNumber, prefNumberAt, type PrefBoundAt, type PrefBoundReader } from './bounds';
-export type { PrefAction, PrefActionContext, PrefActionControl, PrefActions, PrefGrade } from './action';
-export { prefTabRuns, type PrefTabRun } from './tabRuns';
-export { prefLeavesTagged, prefLeafTags } from './tags';
-export {
+  isBuiltinPref,
   isPrefCondition,
+  isPrefLeaf,
+  isPrefLinearUnit,
+  isPrefScope,
+  isPrefSection,
   mapPrefConditionPaths,
+  nestPrefValues,
+  pairRowsOf,
+  pref,
+  PREF_CONDITION_FIELDS,
+  PREF_ELSE,
+  PREF_ENTRY,
+  PREF_KINDS,
+  PREF_STATUS,
+  prefAliasedLeaf,
+  prefAliasName,
+  prefAliasTarget,
+  prefAsBox,
+  prefClampNumber,
   prefConditionHolds,
   prefConditionPaths,
   prefConditionReadsItem,
+  prefDisplayBounds,
+  prefGroupIsPage,
+  prefHoldsValue,
   prefIsEnabled,
   prefIsShown,
+  prefJudge,
+  prefLeafAt,
+  prefLeafValue,
+  prefLeaves,
+  prefNumberAt,
+  prefObjectBase,
+  prefObjectField,
+  prefObjectWithField,
+  prefOverrideOptions,
+  prefOverridesOf,
+  prefReader,
+  prefSchemaHolding,
+  prefScopedDefault,
+  prefScopeOptionValue,
+  prefScopeSelectors,
+  prefScopesOf,
+  prefScopeValue,
+  prefSectionLeaves,
+  prefSectionPath,
+  prefShownReader,
+  prefShownValue,
+  prefStatusAt,
+  prefStatusIn,
+  prefStatusUnder,
+  prefUnit,
+  prefUnitAccepts,
+  prefValueAbsent,
+  prefValueAtPath,
+  prefVariantDefault,
+  prefVariantOf,
+  PX_UNIT,
+  repairPrefValue,
+  resolvePrefUnit,
+  VERSION_RECORD,
+  visiblePrefSubtree,
+  type BuiltinPref,
+  type PrefAction,
+  type PrefActionContext,
+  type PrefActionControl,
+  type PrefActions,
+  type PrefAlias,
+  type PrefAuto,
+  type PrefBarLead,
+  type PrefBarOverflow,
+  type PrefBase,
+  type PrefBoolean,
+  type PrefBooleanControl,
+  type PrefBooleanEncoding,
+  type PrefBoundAt,
+  type PrefBoundReader,
+  type PrefColor,
   type PrefCondition,
+  type PrefConditionField,
+  type PrefConditionJudge,
   type PrefConditionReader,
+  type PrefConditionsApplied,
+  type PrefConditionsOptions,
   type PrefConditionValue,
+  type PrefCustom,
+  type PrefEntry,
+  type PrefEntryApplied,
+  type PrefEnum,
+  type PrefEnumBase,
+  type PrefEnumControl,
+  type PrefEnumEncoding,
+  type PrefEnumOption,
+  type PrefField,
+  type PrefFunctionUnit,
+  type PrefGrade,
+  type PrefGroup,
+  type PrefGroupAs,
+  type PrefKind,
+  type PrefLabel,
+  type PrefLeaf,
+  type PrefLeafRest,
+  type PrefLinearUnit,
+  type PrefList,
+  type PrefListControl,
+  type PrefMap,
+  type PrefNumber,
+  type PrefNumberBase,
+  type PrefNumberControl,
+  type PrefNumberScale,
+  type PrefNumberUnit,
+  type PrefObject,
+  type PrefOverrides,
+  type PrefOverridesLookup,
+  type PrefOwner,
+  type PrefPaint,
+  type PrefPair,
+  type PrefScope,
+  type PrefScopeSpec,
+  type PrefSection,
+  type PrefSectionAs,
+  type PrefSelection,
+  type PrefSeparator,
+  type PrefStatus,
+  type PrefStatusAtOptions,
+  type PrefString,
+  type PrefStringControl,
   type PrefTest,
-} from './condition';
+  type PrefUnion,
+  type PrefUnitText,
+  type PrefValidator,
+  type PrefValueBase,
+  type PrefWeighted,
+  type PrefWeights,
+  type PresetDescription,
+  type ResolvedPrefUnit,
+} from '@weasel-js/pref-schema';
+export { prefTabRuns, type PrefTabRun } from './tabRuns';
+export { prefLeavesTagged, prefLeafTags } from './tags';
 export {
   checkPrefCondition,
   checkPrefConditions,
@@ -43,30 +156,6 @@ export {
   type PrefConditionSite,
   type PrefSchemaConditionProblem,
 } from './conditionCheck';
-export {
-  applyPrefConditions,
-  applyPrefEntryConditions,
-  PREF_CONDITION_FIELDS,
-  PREF_ENTRY,
-  PREF_STATUS,
-  prefJudge,
-  prefReader,
-  prefStatusAt,
-  prefStatusIn,
-  prefSectionPath,
-  prefStatusUnder,
-  type PrefConditionField,
-  type PrefConditionJudge,
-  type PrefConditionsApplied,
-  type PrefConditionsOptions,
-  type PrefEntry,
-  type PrefEntryApplied,
-  type PrefOwner,
-  type PrefStatus,
-  type PrefStatusAtOptions,
-} from './status';
-export { prefShownReader, prefShownValue } from './shown';
-export { prefLeafValue, prefValueAbsent } from './leafValue';
 export {
   prefAutoValue,
   prefCanAuto,
@@ -86,91 +175,22 @@ export {
   type LeafReading,
   type ResetWrite,
 } from './autoReset';
-export {
-  isPrefScope,
-  scopeSelectors as prefScopeSelectors,
-  memberAt as prefScopeValue,
-  overrideOptions as prefOverrideOptions,
-  scopeOptionValue as prefScopeOptionValue,
-  PREF_ELSE,
-  type PrefScope,
-  type PrefSelection,
-  type PrefOverrides,
-  type PrefOverridesLookup,
-  type PrefWeighted,
-  type PrefWeights,
-} from './scope';
 export { prefWeightAxes, type PrefWeightAxes } from './weightAxes';
 export { PREF_BLENDS, type PrefBlend } from './blend';
 export { checkPrefSplits, type PrefSplitProblem } from './splitCheck';
-export { prefOverridesOf, prefScopedDefault, prefScopesOf, type PrefScopeSpec } from './scopeSpec';
-export { pref, type PrefLeafRest } from './build';
 export { prefsCss, prefsCssAttributes, type PrefsCssOptions, type PrefsCssSource } from './css';
 export { prefsDefaultsSource } from './defaultsSource';
 export { kitSettingsCssOptions } from './kitCss';
-export { prefSchemaHolding } from './holding';
-export { prefAliasedLeaf, prefAliasName, prefAliasTarget, type PrefAlias } from './alias';
 export { prefAliasTargets, type PrefAliasTargets, type PrefAliasTargetsOptions } from './aliasTargets';
-export type { PrefLabel, PrefSeparator } from './label';
-export { prefObjectBase, prefObjectField, prefObjectWithField } from './object';
-export type { PrefList, PrefListControl } from './list';
-export type { PrefMap } from './map';
-export { prefVariantDefault, prefVariantOf, type PrefUnion } from './union';
 export { prefType } from './type';
-export { prefAsBox, prefGroupIsPage } from './groups';
 export { prefFitsHeading, prefHeadingKey } from './heading';
-export type { PrefBarLead, PrefBarOverflow, PrefGroup, PrefGroupAs, PrefSection, PrefSectionAs } from './groups';
 export type { PrefAtPath, PrefFieldsOf, PrefPath, PrefValueAt, PrefValueOf } from './paths';
 export type { PrefsMigration } from './migrate';
 export { openPrefs, openPrefsSync, type PrefsOptions } from './open';
-export { repairPrefValue, type PrefValidator } from './repair';
 export type { PrefChange, PrefsStore } from './store';
-export {
-  isPrefLinearUnit,
-  prefUnit,
-  PX_UNIT,
-  prefUnitAccepts,
-  resolvePrefUnit,
-  type PrefFunctionUnit,
-  type PrefLinearUnit,
-  type PrefNumberUnit,
-  type PrefUnitText,
-  type ResolvedPrefUnit,
-} from './unit';
 export { prefLeafInScopes, scopedPrefUnit } from './scopedUnit';
 export { pairRuns, type PairRun } from './pair';
 export { PREF_KIND_TRAITS, prefDrawsSeveral, prefIsCompound, type PrefKindTraits } from './kinds';
-export {
-  isBuiltinPref,
-  PREF_KINDS,
-  pairRowsOf,
-  type BuiltinPref,
-  type PrefAuto,
-  type PrefBase,
-  type PrefValueBase,
-  type PrefBoolean,
-  type PrefBooleanControl,
-  type PrefBooleanEncoding,
-  type PrefColor,
-  type PrefCustom,
-  type PrefEnum,
-  type PrefEnumBase,
-  type PrefEnumOption,
-  type PrefNumberBase,
-  type PrefEnumControl,
-  type PrefEnumEncoding,
-  type PrefField,
-  type PrefKind,
-  type PrefLeaf,
-  type PrefNumber,
-  type PrefNumberControl,
-  type PrefNumberScale,
-  type PrefObject,
-  type PrefPaint,
-  type PrefPair,
-  type PrefString,
-  type PrefStringControl,
-} from './schema';
 export { mergePrefGroups } from './merge';
 export { orderPrefGroup, resolveOrder, type PrefOrder } from './order';
 export { LEAF_FREE, sharedReading, type LeafState, type PrefsSource, type SourceWriteOptions } from './sources/prefsSource';

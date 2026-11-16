@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { prefIsEnabled, prefIsShown, prefNumberAt, prefSectionLeaves, type PrefBoolean, type PrefEnum, type PrefLeaf, type PrefNumber, type PrefSection, type PrefObject } from '@weasel-js/prefs';
+import { prefIsEnabled, prefIsShown, prefNumberAt, prefSectionLeaves, type PrefBoolean, type PrefEnum, type PrefLeaf, type PrefNumber, type PrefSection, type PrefObject } from '@weasel-js/pref-schema';
 import { defaultNodeProperties, inferredNodeProperties } from './defaultNodeProperties';
 import { KIT_SHAPE_KINDS } from 'core/shapeKinds';
 import { getMarker, registerMarker } from '@weasel-js/stroke';

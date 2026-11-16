@@ -5,7 +5,7 @@
 import { describe, expect, it } from 'vitest';
 import fc from 'fast-check';
 import { isPrefLeaf, type PrefGroup, type PrefLeaf } from '@weasel-js/prefs';
-import { prefGroup, runs, segment, tally, timeoutFor } from '../pbt.fixture';
+import { prefGroup, runs, segment, tally, timeoutFor } from '@weasel-js/pref-schema/testing/pbt.fixture';
 import { stillUnplaced, unplacedAt } from './unplaced';
 
 const RUNS = 300;

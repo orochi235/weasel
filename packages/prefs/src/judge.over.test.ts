@@ -1,9 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { checkPrefCondition, checkPrefConditions } from './conditionCheck';
-import type { PrefGroup, PrefSection } from './groups';
-import { prefSchemaHolding } from './holding';
-import { prefJudge, prefReader } from './judge';
-import type { PrefBooleanEncoding, PrefLeaf } from './schema';
+import { type PrefGroup, type PrefSection, prefSchemaHolding, prefJudge, prefReader, type PrefBooleanEncoding, type PrefLeaf } from '@weasel-js/pref-schema';
 
 const flag = (name: string, extra: Record<string, unknown> = {}): PrefLeaf =>
   ({ kind: 'boolean', name, description: '', default: false, ...extra }) as PrefLeaf;

@@ -2,12 +2,7 @@
 // schema's own conditions leave it. Every surface that draws an alias asks
 // here, whether the schema is its own or another's.
 
-import { prefAliasedLeaf, prefAliasTarget, type PrefAlias } from './alias';
-import type { PrefGroup, PrefSection } from './groups';
-import { prefLeafAt, visiblePrefSubtree } from './helpers';
-import type { PrefConditionJudge, PrefEntry } from './judge';
-import type { PrefLeaf, PrefObject } from './schema';
-import { applyPrefConditions, applyPrefEntryConditions, type PrefConditionsApplied, type PrefEntryApplied } from './status';
+import { prefAliasedLeaf, prefAliasTarget, type PrefAlias, type PrefGroup, type PrefSection, prefLeafAt, visiblePrefSubtree, type PrefConditionJudge, type PrefEntry, type PrefLeaf, type PrefObject, applyPrefConditions, applyPrefEntryConditions, type PrefConditionsApplied, type PrefEntryApplied } from '@weasel-js/pref-schema';
 
 /** What an alias row reads of the leaf it shows: the schema that leaf is in, as that schema's own conditions leave it. */
 export interface PrefAliasTargets {

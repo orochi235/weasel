@@ -1,8 +1,6 @@
 import { createMemoryAdapter, createRecordCache } from '@weasel-js/storage';
 import { describe, expect, expectTypeOf, it } from 'vitest';
-import { prefAliasedLeaf, prefAliasName, prefAliasTarget, type PrefAlias } from './alias';
-import type { PrefGroup, PrefSection } from './groups';
-import { prefHoldsValue, prefLeafAt } from './helpers';
+import { prefAliasedLeaf, prefAliasName, prefAliasTarget, type PrefAlias, type PrefGroup, type PrefSection, prefHoldsValue, prefLeafAt } from '@weasel-js/pref-schema';
 import type { PrefPath } from './paths';
 import { createPrefsStore } from './store';
 

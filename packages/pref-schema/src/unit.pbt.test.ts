@@ -1,6 +1,6 @@
 import fc from 'fast-check';
 import { describe, expect, it } from 'vitest';
-import { runs, tally, timeoutFor } from './pbt.fixture';
+import { runs, tally, timeoutFor } from './testing/pbt.fixture';
 import { resolvePrefUnit } from './unit';
 
 /** A short decimal as its digits and places, and as a number. */

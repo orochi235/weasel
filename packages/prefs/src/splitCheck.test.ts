@@ -1,6 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import type { PrefGroup } from './groups';
-import { prefLeaves } from './helpers';
+import { type PrefGroup, prefLeaves } from '@weasel-js/pref-schema';
 import { checkPrefSplits, prefSelectors } from './splitCheck';
 
 const option = (value: string) => ({ value, label: value });

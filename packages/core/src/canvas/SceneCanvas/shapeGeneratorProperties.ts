@@ -1,4 +1,4 @@
-import type { PrefSection } from '@weasel-js/prefs';
+import type { PrefSection } from '@weasel-js/pref-schema';
 import { decimal } from '@weasel-js/quantity';
 import { SHAPE_COUNT_RANGE, STAR_RATIO_RANGE } from 'domains/paths/shapeGenerator';
 

@@ -5,7 +5,7 @@
  */
 import { describe, expect, it } from 'vitest';
 import fc from 'fast-check';
-import type { PrefNumber } from '@weasel-js/prefs';
+import type { PrefNumber } from '@weasel-js/pref-schema';
 import { runs, tally } from '../pbt.fixture';
 import {
   createToolOptionValues, heldToolOptions, keepToolOptions, setToolOption, steppedOption, toolOptionParams,

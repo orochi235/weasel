@@ -8,9 +8,8 @@
 import fc from 'fast-check';
 import { createMemoryAdapter, createRecordCache } from '@weasel-js/storage';
 import { describe, expect, it } from 'vitest';
-import type { PrefGroup } from './groups';
-import { runs, tally, timeoutFor } from './pbt.fixture';
-import { PREF_ELSE } from './scope';
+import { type PrefGroup, PREF_ELSE } from '@weasel-js/pref-schema';
+import { runs, tally, timeoutFor } from '@weasel-js/pref-schema/testing/pbt.fixture';
 import { createPrefsStore, type PrefChange, type PrefsStore } from './store';
 
 const MODES = ['a', 'b', 'c'] as const;

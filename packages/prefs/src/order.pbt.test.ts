@@ -1,8 +1,8 @@
 import fc from 'fast-check';
 import { describe, expect, it } from 'vitest';
-import type { PrefGroup } from './groups';
+import type { PrefGroup } from '@weasel-js/pref-schema';
 import { orderPrefGroup, resolveOrder } from './order';
-import { runs, tally, timeoutFor } from './pbt.fixture';
+import { runs, tally, timeoutFor } from '@weasel-js/pref-schema/testing/pbt.fixture';
 
 const name: fc.Arbitrary<string> = fc.constantFrom('a', 'b', 'c', 'd', 'e', '__proto__', 'constructor');
 

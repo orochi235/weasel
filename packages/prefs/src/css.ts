@@ -2,13 +2,9 @@
 // of the selectors shares, and one for each choice a split value tells apart.
 
 import { catalogUnit } from '@weasel-js/quantity';
-import type { PrefGroup } from './groups';
-import { prefHoldsValue, prefLeaves, prefValueAtPath } from './helpers';
-import { isPrefScope, scopeOptionValue, type PrefScope, type PrefOverridesLookup, type PrefSelection } from './scope';
-import { overridesOfPref } from './scopeSpec';
-import type { PrefEnum, PrefLeaf, PrefNumber } from './schema';
+import { type PrefGroup, prefHoldsValue, prefLeaves, prefValueAtPath, isPrefScope, type PrefScope, type PrefOverridesLookup, type PrefSelection, type PrefEnum, type PrefLeaf, type PrefNumber, resolvePrefUnit } from '@weasel-js/pref-schema';
+import { scopeOptionValue, overridesOfPref } from '@weasel-js/pref-schema/internal';
 import { prefSelectors } from './splitCheck';
-import { resolvePrefUnit } from './unit';
 import { compositeKey } from '@weasel-js/registry';
 
 /** How {@link prefsCss} names and writes things. */

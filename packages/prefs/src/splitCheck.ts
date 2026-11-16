@@ -1,12 +1,8 @@
 // Which leaves a schema lets a value be split by, and what is wrong with a
 // `scopes` that names something else: what a store warns of.
 
-import type { PrefGroup } from './groups';
-import { prefHoldsValue, prefLeaves } from './helpers';
-import { overrideOptions } from './scope';
-import { prefOverridesOf, scopeSelectorsOf } from './scopeSpec';
-import { scopeSelectors } from './scope';
-import type { PrefEnum, PrefLeaf } from './schema';
+import { type PrefGroup, prefHoldsValue, prefLeaves, prefOverridesOf, type PrefEnum, type PrefLeaf } from '@weasel-js/pref-schema';
+import { overrideOptions, scopeSelectorsOf, scopeSelectors } from '@weasel-js/pref-schema/internal';
 
 /** One thing wrong with a pref's scopes, or with what the schema admits. */
 export interface PrefSplitProblem {

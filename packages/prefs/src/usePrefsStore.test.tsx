@@ -2,7 +2,7 @@ import { act, renderHook } from '@testing-library/react';
 import { createMemoryAdapter, type SyncStorageAdapter } from '@weasel-js/storage';
 import { StrictMode } from 'react';
 import { describe, expect, it } from 'vitest';
-import type { PrefGroup } from './groups';
+import type { PrefGroup } from '@weasel-js/pref-schema';
 import { usePrefsStore } from './react';
 import { recordValue } from './stamp';
 

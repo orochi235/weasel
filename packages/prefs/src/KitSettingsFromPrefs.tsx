@@ -2,8 +2,7 @@ import { adoptCss, KitSettingsProvider, styleRootOf, type KitSettingsOverrides }
 import { useLayoutEffect, useRef, useSyncExternalStore, type ReactNode } from 'react';
 import { prefsCss, prefsCssAttributes } from './css';
 import { claimAttributes, releaseAttributes } from './hostAttributes';
-import type { PrefGroup } from './groups';
-import { prefValueAtPath } from './helpers';
+import { type PrefGroup, prefValueAtPath } from '@weasel-js/pref-schema';
 import { kitSettingsCssOptions } from './kitCss';
 import type { PrefsStore } from './store';
 

@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import type { PrefNumber } from '@weasel-js/prefs';
+import type { PrefNumber } from '@weasel-js/pref-schema';
 import type { ImmediateInvoker } from '../interactions/actions/invoker';
 import { defineTool } from './defineTool';
 import { createToolOptionValues, steppedOption, toolOptionParams, type ToolOptions } from './toolOptions';

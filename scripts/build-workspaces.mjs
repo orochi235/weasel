@@ -22,6 +22,7 @@ export const BUILD_ORDER = [
   '@weasel-js/menu',
   '@weasel-js/gestures',
   '@weasel-js/paint',
+  '@weasel-js/pref-schema',
   '@weasel-js/prefs',
   '@weasel-js/select',
   '@weasel-js/modes',

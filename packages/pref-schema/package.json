@@ -1,0 +1,57 @@
+{
+  "name": "@weasel-js/pref-schema",
+  "version": "1.19.1",
+  "description": "The declaration half of @weasel-js/prefs: pref builders, leaf, group and section types, units, conditions and leaf status, and repairing a value against a leaf. No store, no storage, no React.",
+  "weasel": {
+    "tier": "base"
+  },
+  "license": "MIT",
+  "type": "module",
+  "sideEffects": false,
+  "main": "./dist/index.js",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./internal": {
+      "types": "./dist/internal.d.ts",
+      "import": "./dist/internal.js"
+    },
+    "./package.json": "./package.json"
+  },
+  "author": "orochi235",
+  "homepage": "https://orochi235.github.io/weasel/",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/orochi235/weasel.git",
+    "directory": "packages/pref-schema"
+  },
+  "bugs": {
+    "url": "https://github.com/orochi235/weasel/issues"
+  },
+  "dependencies": {
+    "@weasel-js/icons": "1.19.1",
+    "@weasel-js/paint": "1.19.1",
+    "@weasel-js/quantity": "1.19.1",
+    "@weasel-js/registry": "1.19.1"
+  },
+  "engines": {
+    "node": ">=24"
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
+  "scripts": {
+    "build": "tsup",
+    "test": "node ../../scripts/package-test.mjs"
+  },
+  "publishConfig": {
+    "access": "public",
+    "provenance": true
+  }
+}

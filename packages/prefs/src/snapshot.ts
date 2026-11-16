@@ -4,11 +4,8 @@
 
 import type { OwnedRecordCache } from '@weasel-js/storage';
 import { blendPref, type PrefBlend } from './blend';
-import { assignPrefValueAtPath, setOwnPrefValue } from './helpers';
-import { overridesOfPref, prefScopedDefault } from './scopeSpec';
-import { isPrefScope, scopeSelectors, repairScope, selectionWeights, weighScope, type PrefScope, type PrefSelection, type PrefWeights } from './scope';
-import { type PrefValidator, repairPrefValue } from './repair';
-import type { PrefLeaf } from './schema';
+import { assignPrefValueAtPath, setOwnPrefValue, overridesOfPref, scopeSelectors, repairScope, selectionWeights, weighScope } from '@weasel-js/pref-schema/internal';
+import { prefScopedDefault, isPrefScope, type PrefScope, type PrefSelection, type PrefWeights, type PrefValidator, repairPrefValue, type PrefLeaf } from '@weasel-js/pref-schema';
 import { isAutoRecord, recordValue } from './stamp';
 import { prefCanAuto, prefStartsAuto } from './autoReset';
 

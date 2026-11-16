@@ -6,7 +6,7 @@
  * is replayed by its handle (`OngoingHandle.replay`).
  */
 import type { History } from '@weasel-js/history';
-import { prefLeaves, type PrefGroup } from '@weasel-js/prefs';
+import { prefLeaves, type PrefGroup } from '@weasel-js/pref-schema';
 import { createEmitter, getOwn, setOwn } from '@weasel-js/registry';
 import type { Action } from './action';
 import { resolveParams, type ImmediateInvoker, type OngoingHandle, type OngoingInvoker } from './invoker';
