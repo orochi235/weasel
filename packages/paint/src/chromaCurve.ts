@@ -1,4 +1,4 @@
-import { lerp } from './lerp';
+import { lerp } from './scalar';
 
 /**
  * A chroma envelope over lightness, as three linear segments: flat at `cBot`

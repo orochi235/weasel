@@ -1,7 +1,7 @@
 // sRGB ↔ OKLab conversion. Reference: https://bottosson.github.io/posts/oklab/
 
 import { lerpHueDeg, wrapDeg, type HueInterpolation } from './hue';
-import { lerp } from './lerp';
+import { clamp01, lerp } from './scalar';
 import { byteHex, hexToRgbBytes } from './hex';
 import { hslToSrgb, srgbToHsl } from './hsl';
 import { shortArc } from './shortArc';
@@ -309,8 +309,6 @@ const lerp3 = (a: Rgb, b: Rgb, t: number): [number, number, number] => [
   lerp(a[1], b[1], t),
   lerp(a[2], b[2], t),
 ];
-
-const clamp01 = (v: number): number => (v < 0 ? 0 : v > 1 ? 1 : v);
 
 const srgbToOklabFloat = (c: Rgb): [number, number, number] =>
   linearSrgbToOklab(srgbToLinear(c[0]), srgbToLinear(c[1]), srgbToLinear(c[2]));

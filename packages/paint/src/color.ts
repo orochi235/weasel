@@ -2,6 +2,7 @@ import { linearToSrgb, oklabToLinearSrgb, oklchToOklab } from './colorSpaces';
 import { hslToSrgb } from './hsl';
 import { byteHex, parseHexBytes } from './hex';
 import { wrapDeg } from './hue';
+import { clamp01 } from './scalar';
 
 /**
  * Parse a CSS color string into [r, g, b, a] with 0..1 components.
@@ -266,10 +267,6 @@ function parseHue(tok: string): number | null {
 /** An OKLab lightness: a percent or a unitless number 0..1. */
 function parsePercentOrNumber(tok: string): number | null {
   return parseChannel(tok, 1);
-}
-
-function clamp01(n: number): number {
-  return n < 0 ? 0 : n > 1 ? 1 : n;
 }
 
 // CSS Color Module Level 4 named colors. Stored as already-resolved tuples so
