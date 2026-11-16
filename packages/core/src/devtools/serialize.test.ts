@@ -57,6 +57,8 @@ describe('serialize', () => {
     expect(serialize([1, 2, 3, 4], { items: 2 })).toEqual([1, 2, { $type: 'more', count: 2 }]);
     expect(serialize({ a: 1, b: 2, c: 3 }, { items: 1 })).toEqual({ a: 1, $more: 2 });
     expect(serialize('abcdef', { chars: 3 })).toBe('abc…');
+    expect(serialize('ab😀cd', { chars: 3 })).toBe('ab…');
+    expect(serialize('abc😀d', { chars: 3 })).toBe('abc…');
   });
 
   it('writes an invalid date rather than throwing on it', () => {

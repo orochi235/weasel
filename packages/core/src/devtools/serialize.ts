@@ -39,7 +39,7 @@ export interface SerializeLimits {
   depth?: number;
   /** Array, map, set and object entries past this many are cut, with a note of how many. */
   items?: number;
-  /** Strings longer than this are cut, ending in `…`. */
+  /** Strings longer than this many UTF-16 units are cut, ending in `…`, never inside a surrogate pair. */
   chars?: number;
 }
 
@@ -92,6 +92,9 @@ function isTyped(value: object): value is ArrayBufferView {
     && TYPED.some((T) => tagOf(value) === T.name);
 }
 
+/** `at`, or one unit sooner when it falls between the halves of a surrogate pair. */
+const cutAt = (s: string, at: number): number => (at > 0 && /[\uD800-\uDBFF]/.test(s[at - 1]!) && /[\uDC00-\uDFFF]/.test(s[at] ?? '') ? at - 1 : at);
+
 const tagged = (tag: SerializedTag): SerializedValue => tag as SerializedValue;
 
 /** `value` as plain data: anything JSON cannot say tagged, cycles marked, and every size capped. */
@@ -105,7 +108,7 @@ export function serialize(value: unknown, limits: SerializeLimits = {}): Seriali
 
   const walk = (v: unknown, level: number): SerializedValue => {
     switch (typeof v) {
-      case 'string': return v.length > chars ? `${v.slice(0, chars)}…` : v;
+      case 'string': return v.length > chars ? `${v.slice(0, cutAt(v, chars))}…` : v;
       case 'number':
         return Number.isFinite(v) ? v : tagged({ $type: 'number', value: String(v) as 'NaN' | 'Infinity' | '-Infinity' });
       case 'boolean': return v;
