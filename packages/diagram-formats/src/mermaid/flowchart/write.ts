@@ -6,6 +6,7 @@ import { changed, edgeStyleIn, graphOut, hexColor, nodeLines, nodeStyleIn, type 
 import { styleProps } from '../common/styles';
 import { mermaidIds, mermaidText } from '../common/text';
 import { withEdgeIds } from '../../graphRead';
+import { REST_KEYWORDS } from './lex';
 import { DOTTED_DASH } from './read';
 
 const HEADER: Readonly<Record<LayoutDirection, string>> = { down: 'TD', up: 'BT', right: 'LR', left: 'RL' };
@@ -32,7 +33,7 @@ class MermaidWriter {
   constructor(readonly out: GraphOut) {
     const items = [...out.page.data.nodes.map((n) => n.id), ...out.clusterIds];
     const edgeIds = out.edges.flatMap((e) => (e.id !== undefined ? [e.id] : []));
-    this.ids = mermaidIds([...items, ...edgeIds], { unicode: true });
+    this.ids = mermaidIds([...items, ...edgeIds], { unicode: true, reserved: [...REST_KEYWORDS] });
     this.named = this.namedEdges(items.map((id) => this.id(id)));
   }
 

@@ -27,7 +27,7 @@ export interface MermaidLex {
 }
 
 /** Keywords whose line runs to its end as one `rest` token. */
-const REST_KEYWORDS = new Set([
+export const REST_KEYWORDS: ReadonlySet<string> = new Set([
   'flowchart', 'graph', 'flowchart-elk', 'subgraph', 'style', 'classDef', 'class', 'linkStyle', 'click', 'direction',
   'accTitle', 'accDescr',
 ]);

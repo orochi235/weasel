@@ -194,4 +194,11 @@ describe('writing Mermaid', () => {
     const data: DiagramData = { nodes: [{ id: 'a' }, { id: 'b' }], edges: [{ from: 'a', to: 'b', colors: { trim: { end: 0.5 } } }] };
     expect(writeFlowchart(pageOf(data)).warnings).toEqual(['Mermaid draws a connector whole; trims were dropped.']);
   });
+
+  it('renames a node named accTitle or accDescr, so its edges read back', () => {
+    for (const id of ['accTitle', 'accDescr']) {
+      const text = writeFlowchart({ pages: [{ kind: 'graph', id: 'p', width: 100, height: 100, data: { nodes: [{ id }, { id: 'b' }], edges: [{ from: id, to: 'b' }] } }] }).text;
+      expect(asGraph(readFlowchart(text).document.pages[0]!).data.edges).toHaveLength(1);
+    }
+  });
 });
