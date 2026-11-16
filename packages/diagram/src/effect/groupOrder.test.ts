@@ -5,7 +5,7 @@ import type { LookOrder } from './draw';
 import { editorScene } from './editorMapping';
 import { groupLabelIdOf } from '../dataGroups';
 import { groupMove, stageMove, type ReorderSource } from './editorReorder';
-import { groupGripOf, groupRuns, groupSlotsAt } from './groupOrder';
+import { groupAt, groupGripOf, groupRuns, groupSlotsAt } from './groupOrder';
 import { mainChain } from './mainChain';
 import { io, SKIP, w } from './skipFixture';
 import type { EffectDoc, EffectGroup, EffectPipeline } from './types';
@@ -88,6 +88,15 @@ describe('groupGripOf', () => {
     const grip = groupGripOf(source.doc, 'g', source.boxOf)!;
     expect(grip).toEqual({ x: box.x, y: box.y, width: box.width, height: Math.min(source.boxOf('a')!.y, source.boxOf('b')!.y) - box.y });
     expect(contains(grip, source.boxOf(groupLabelIdOf('g'))!)).toBe(true);
+  });
+});
+
+describe('groupAt', () => {
+  it('answers over groups that hold each other in a loop', () => {
+    const doc = docOf([{ id: 'A', members: ['B'] }, { id: 'B', members: ['A'] }, { id: 'C', members: ['s'] }]);
+    const tops: Record<string, number> = { A: 0, B: 10, C: 0, s: 10 };
+    const boxOf = (id: string) => (Object.hasOwn(tops, id) ? { x: 0, y: tops[id]!, width: 100, height: 100 } : undefined);
+    expect(['A', 'C']).toContain(groupAt(doc, boxOf, { x: 5, y: 5 }));
   });
 });
 
