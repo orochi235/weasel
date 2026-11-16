@@ -1,6 +1,6 @@
 import { createContext, useContext, useRef, type KeyboardEvent as ReactKeyboardEvent, type ReactElement, type ReactNode } from 'react';
 import { useHandleDrag } from '@weasel-js/core';
-import { arrowMove } from '@weasel-js/ui-input';
+import { arrowMove } from '@weasel-js/quantity';
 import s from './handleOverlay.module.css';
 
 /** The pieces every paint-geometry overlay draws with — `GradientHandles`

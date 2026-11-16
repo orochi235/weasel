@@ -10,7 +10,7 @@ import { Diamond } from './Diamond';
 import { sampleByInterpolation, type InterpolationMode } from '@weasel-js/geom';
 import { hitTestAnchor, hitTestCurve } from './hitTest';
 import { isHiddenAnchor, isPinnedEndpointAt } from './anchorRules';
-import { arrowMove } from '@weasel-js/ui-input';
+import { arrowMove } from '@weasel-js/quantity';
 import { dlog } from '../../dlog';
 import s from './CurveEditor.module.css';
 import type {

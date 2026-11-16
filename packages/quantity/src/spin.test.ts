@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { canSpin, clampToBounds, snapToStep, spinKey } from './spin';
+import { arrowMove, canSpin, clampToBounds, snapToStep, spinKey } from './spin';
 
 describe('snapToStep', () => {
   it('lands on the step grid without float dust', () => {
@@ -85,5 +85,15 @@ describe('canSpin', () => {
     const b = { step: 1, min: 0, max: 3, endless: 'max' as const };
     expect(canSpin('ArrowUp', 3, b)).toBe(true);
     expect(canSpin('ArrowUp', Infinity, b)).toBe(false);
+  });
+});
+
+describe('arrowMove', () => {
+  it('moves on a plane in screen axes, ten steps with shift', () => {
+    expect(arrowMove('ArrowUp', false)).toEqual({ dx: 0, dy: -1 });
+    expect(arrowMove('ArrowDown', false)).toEqual({ dx: 0, dy: 1 });
+    expect(arrowMove('ArrowRight', true)).toEqual({ dx: 10, dy: 0 });
+    expect(arrowMove('ArrowLeft', true)).toEqual({ dx: -10, dy: 0 });
+    expect(arrowMove('End', false)).toBeNull();
   });
 });

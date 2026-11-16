@@ -4,7 +4,7 @@ import { DisclosureMark } from '../Disclosure';
 import type { FocusHoldAttrs } from '../Disabled/controlHold';
 import s from './Timeline.module.css';
 import { spanPercent, toPercent, type TimeWindow } from './timeScale';
-import { arrowMove } from '@weasel-js/ui-input';
+import { arrowMove } from '@weasel-js/quantity';
 import { LaneGraph } from './LaneGraph';
 import type { LaneRow } from './lanes';
 import { useKeyDrag } from './useKeyDrag';

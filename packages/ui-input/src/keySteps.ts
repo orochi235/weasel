@@ -14,14 +14,6 @@ export function arrowSteps(key: string, shift: boolean, dir: 'ltr' | 'rtl' = 'lt
   return d === 0 ? null : d * steps;
 }
 
-/** Steps an arrow key asks for on a plane, in screen axes: `dy` is positive toward ArrowDown.
- *  One step, or {@link COARSE_STEPS} with Shift; `null` for any other key. */
-export function arrowMove(key: string, shift: boolean): { dx: number; dy: number } | null {
-  const steps = arrowSteps(key, shift);
-  if (steps === null) return null;
-  return key === 'ArrowRight' || key === 'ArrowLeft' ? { dx: steps, dy: 0 } : { dx: 0, dy: -steps };
-}
-
 /** What a key does along a range: {@link arrowSteps}, the Page keys ({@link COARSE_STEPS} steps),
  *  or Home and End (an end of the range). `null` for any other key. */
 export function rangeKey(key: string, shift: boolean, dir: 'ltr' | 'rtl' = 'ltr'): number | 'home' | 'end' | null {

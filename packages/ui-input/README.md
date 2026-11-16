@@ -81,10 +81,11 @@ run on these.
 
 ## Steps and sliders
 
-`arrowSteps`, `arrowMove` and `rangeKey` are what an arrow key asks for: one step, or `COARSE_STEPS`
+`arrowSteps` and `rangeKey` are what an arrow key asks for: one step, or `COARSE_STEPS`
 (ten) with Shift or a Page key, and Home and End for a range's ends. `sliderKey` turns one key into
 a thumb's next value, by step or by whole stops, across an endless end and inside its neighbors;
-`@weasel-js/ui`'s `Slider` runs on it.
+`@weasel-js/ui`'s `Slider` runs on it. The same keys on a plane, as a `{ dx, dy }` move, are
+`arrowMove` in `@weasel-js/quantity`.
 
 `sliderAt(f, shape)` is the pointer's half: the value picked at fraction `f` of the track, on the
 step grid, inside `min` to `max`, and pulled onto a stop within `pull` unless `free`. The shape

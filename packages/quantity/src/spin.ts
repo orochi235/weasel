@@ -74,6 +74,19 @@ export function canSpin(key: string, from: number, bounds: SpinBounds): boolean 
 /** How many steps a coarse key press takes: an arrow with Shift held, or Page Up and Page Down. */
 export const COARSE_STEPS = 10;
 
+/** Steps an arrow key asks for on a plane, in screen axes: `dy` is positive toward ArrowDown.
+ *  One step, or {@link COARSE_STEPS} with Shift; `null` for any other key. */
+export function arrowMove(key: string, shift: boolean): { dx: number; dy: number } | null {
+  const n = shift ? COARSE_STEPS : 1;
+  switch (key) {
+    case 'ArrowRight': return { dx: n, dy: 0 };
+    case 'ArrowLeft': return { dx: -n, dy: 0 };
+    case 'ArrowDown': return { dx: 0, dy: n };
+    case 'ArrowUp': return { dx: 0, dy: -n };
+    default: return null;
+  }
+}
+
 function finiteSpin(key: string, from: number, bounds: SpinBounds): number | null {
   const by = (n: number) => {
     const places = Math.max(decimalPlaces(from), decimalPlaces(bounds.step));
