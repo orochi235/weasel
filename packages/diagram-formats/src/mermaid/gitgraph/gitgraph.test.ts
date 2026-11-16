@@ -118,6 +118,16 @@ describe('writing a Mermaid gitGraph', () => {
     expect(() => writeMermaidGitGraph(pageOf({ ...trunk, commands: [{ kind: 'branch', name: 'main' }] }))).toThrow(/another branch by that name/);
     expect(() => writeMermaidGitGraph({ ...pageOf(trunk), data: { kind: 'pie', slices: [] } as never })).toThrow(/as a gitGraph only/);
   });
+
+  it('rounds a branch order that is not a whole number, and drops one below zero or not a number, with warnings', () => {
+    const orders = [1.5, -1, Number.NaN];
+    const data = { kind: 'gitgraph' as const, commands: orders.map((order, i) => ({ kind: 'branch' as const, name: `b${i}`, order })) };
+    const { text, warnings } = writeMermaidGitGraph({ kind: 'plot', id: 'p', width: 10, height: 10, data });
+    expect((readMermaidGitGraph(text).document.pages[0] as PlotPage).data).toMatchObject({
+      commands: [{ name: 'b0', order: 2 }, { name: 'b1' }, { name: 'b2' }],
+    });
+    expect(warnings).toEqual(['Mermaid branch orders are whole numbers; others were rounded.', 'Mermaid branch orders are whole numbers from 0; others were dropped.']);
+  });
 });
 
 describe('the Mermaid format', () => {

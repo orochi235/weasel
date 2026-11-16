@@ -20,12 +20,25 @@ const branchName = (s: string, warn: Warn): string => (/^[^\s"]+$/.test(s) ? s :
 const attrs = (pairs: readonly [string, string | number | undefined, boolean][], warn: Warn): string =>
   pairs.flatMap(([key, value, quote]) => (value === undefined ? [] : [` ${key}: ${quote ? quoted(String(value), warn) : value}`])).join('');
 
+/** A branch's order as Mermaid reads one, a whole number from 0: rounded, with a warning, where it is a number that is
+ *  not one, and dropped, with a warning, where no whole number from 0 is near it. */
+function branchOrder(order: number | undefined, warn: Warn): number | undefined {
+  if (order === undefined) return undefined;
+  const n = Math.round(order);
+  if (!Number.isSafeInteger(n) || n < 0) {
+    warn('Mermaid branch orders are whole numbers from 0; others were dropped.');
+    return undefined;
+  }
+  if (n !== order) warn('Mermaid branch orders are whole numbers; others were rounded.');
+  return n;
+}
+
 function commandLine(cmd: GitCommand, main: (name: string) => string, warn: Warn): string {
   switch (cmd.kind) {
     case 'commit':
       return `commit${attrs([['id', cmd.id, true], ['type', cmd.type, false], ['tag', cmd.tag, true], ['msg', cmd.message, true]], warn)}`;
     case 'branch':
-      return `branch ${branchName(main(cmd.name), warn)}${attrs([['order', cmd.order, false]], warn)}`;
+      return `branch ${branchName(main(cmd.name), warn)}${attrs([['order', branchOrder(cmd.order, warn), false]], warn)}`;
     case 'checkout':
       return `checkout ${branchName(main(cmd.name), warn)}`;
     case 'merge':
