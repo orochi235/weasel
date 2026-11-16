@@ -117,6 +117,7 @@ export * from './components/TextArea';
 export * from './components/CycleButton';
 export * from './components/Timeline';
 export * from './components/Toast';
+export * from './components/ToggleChips';
 export * from './components/TokenField';
 export * from './components/TokenPanel';
 export * from './components/ToolbarDock';

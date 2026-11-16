@@ -1,0 +1,48 @@
+/* ToggleChips: chips in a wrapping row. A chip draws whatever its label is; the set only says whether it is on,
+   dimming and desaturating the chips that are off. */
+.root {
+  --_off-opacity: 0.4;
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--wzl-space-1);
+  user-select: none;
+  -webkit-user-select: none;
+  touch-action: none;
+}
+
+.chip {
+  display: inline-flex;
+  align-items: center;
+  padding: 0;
+  margin: 0;
+  border: none;
+  background: none;
+  font: inherit;
+  color: inherit;
+  border-radius: var(--wzl-radius-sm);
+  cursor: pointer;
+  transition: opacity var(--wzl-motion-fast), filter var(--wzl-motion-fast);
+}
+
+.chip:focus-visible {
+  outline: 2px solid var(--wzl-focus-ring);
+  outline-offset: 1px;
+}
+
+.chip:where([data-state='off']) {
+  opacity: var(--_off-opacity);
+  filter: saturate(0);
+}
+
+.chip:where([data-state='mixed']) {
+  opacity: calc((1 + var(--_off-opacity)) / 2);
+}
+
+.chip:where([data-state='off']):hover:not(:disabled, [aria-disabled='true']) {
+  opacity: calc((1 + var(--_off-opacity)) / 2);
+}
+
+.chip:is(:disabled, [aria-disabled='true']) {
+  filter: var(--wzl-disabled-filter);
+  cursor: not-allowed;
+}
