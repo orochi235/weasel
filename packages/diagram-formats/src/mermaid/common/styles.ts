@@ -7,6 +7,7 @@ import type { NodeStyle } from '@weasel-js/diagram';
 import type { Warnings } from '../../graphRead';
 import { checkedColor } from '../../colorCheck';
 import { hexColor } from '../../graphWrite';
+import { mermaidNumber } from './number';
 
 /** A style's `key:value` pairs, in order. */
 export type StyleProps = [string, string][];
@@ -37,10 +38,27 @@ export function checkProps(props: StyleProps, warnings: Warnings): void {
   for (const [key] of props) if (!KEPT.includes(key)) warnings.list('Mermaid style properties a diagram does not hold were dropped', key);
 }
 
-/** A CSS length in px as a number. */
-export const px = (v: string): number => Number(v.replace(/px$/, ''));
-/** A `stroke-dasharray` as numbers. */
-export const dashOf = (v: string): number[] => v.split(/[\s,]+/).filter((s) => s !== '').map(px);
+const NOT_LENGTHS = 'Mermaid style lengths that are not numbers were dropped';
+
+/** A CSS length in px as a number, `undefined` for one that is not a number. */
+const px = (v: string): number | undefined => mermaidNumber(v.trim().replace(/px$/, ''));
+
+/** A `stroke-width` as a number; `undefined`, with a warning, for one that is not a number. */
+export function strokeWidthOf(v: string | undefined, warnings: Warnings): number | undefined {
+  if (v === undefined) return undefined;
+  const n = px(v);
+  if (n === undefined) warnings.list(NOT_LENGTHS, `stroke-width:${v}`);
+  return n;
+}
+
+/** A `stroke-dasharray` as numbers; `undefined`, with a warning, for one with a length that is not a number. */
+export function dashOf(v: string | undefined, warnings: Warnings): number[] | undefined {
+  if (v === undefined) return undefined;
+  const dash = v.split(/[\s,]+/).filter((s) => s !== '').map(px);
+  if (dash.every((n) => n !== undefined)) return dash;
+  warnings.list(NOT_LENGTHS, `stroke-dasharray:${v}`);
+  return undefined;
+}
 
 /** A color a Mermaid file names, or `undefined`, with a warning, when a diagram cannot draw it. */
 export const mermaidColor = (css: string | undefined, warnings: Warnings): string | undefined =>
@@ -51,12 +69,14 @@ export function nodeColors(props: ReadonlyMap<string, string>, warnings: Warning
   const fill = mermaidColor(props.get('fill'), warnings);
   const stroke = mermaidColor(props.get('stroke'), warnings);
   const text = mermaidColor(props.get('color'), warnings);
+  const strokeWidth = strokeWidthOf(props.get('stroke-width'), warnings);
+  const dash = dashOf(props.get('stroke-dasharray'), warnings);
   const colors: Partial<NodeStyle> = {
     ...(fill !== undefined ? { fill } : {}),
     ...(stroke !== undefined ? { stroke } : {}),
     ...(text !== undefined ? { text } : {}),
-    ...(props.has('stroke-width') ? { strokeWidth: px(props.get('stroke-width')!) } : {}),
-    ...(props.has('stroke-dasharray') ? { dash: dashOf(props.get('stroke-dasharray')!) } : {}),
+    ...(strokeWidth !== undefined ? { strokeWidth } : {}),
+    ...(dash !== undefined ? { dash } : {}),
   };
   return Object.keys(colors).length > 0 ? colors : undefined;
 }

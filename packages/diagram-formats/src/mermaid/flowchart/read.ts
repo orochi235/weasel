@@ -7,7 +7,7 @@ import type { MarkerRef } from '@weasel-js/core';
 import type { DataContainer, DataEdge, DataNode, EdgeStyle, LayoutDirection, Outline } from '@weasel-js/diagram';
 import type { ImportResult } from '../../document';
 import { Membership, Warnings, graphPage } from '../../graphRead';
-import { checkProps, dashOf, mermaidColor, nodeColors, px } from '../common/styles';
+import { checkProps, dashOf, mermaidColor, nodeColors, strokeWidthOf } from '../common/styles';
 import { textLines } from '../common/text';
 import type { LinkHead, MermaidShape } from './lex';
 import { parseFlowchart, type MermaidLink, type MermaidNodeRef, type MermaidStmt, type StyleProps } from './parse';
@@ -179,8 +179,13 @@ function edgeColors(base: Partial<EdgeStyle> | undefined, props: StyleProps, war
       const color = mermaidColor(v, warnings);
       if (color !== undefined) colors[k === 'stroke' ? 'stroke' : 'label'] = color;
     }
-    else if (k === 'stroke-width') colors.width = px(v);
-    else if (k === 'stroke-dasharray') colors.dash = dashOf(v);
+    else if (k === 'stroke-width') {
+      const width = strokeWidthOf(v, warnings);
+      if (width !== undefined) colors.width = width;
+    } else if (k === 'stroke-dasharray') {
+      const dash = dashOf(v, warnings);
+      if (dash !== undefined) colors.dash = dash;
+    }
   }
   return Object.keys(colors).length > 0 ? colors : undefined;
 }

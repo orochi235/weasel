@@ -113,4 +113,12 @@ describe('reading Mermaid', () => {
     expect(data.edges).toMatchObject([{ from: 'A', to: 'B' }]);
     expect(() => documentSpecs(read.document)).not.toThrow();
   });
+
+  it('drops a stroke width or dash that is not a number, with a warning', () => {
+    const read = readFlowchart('flowchart TD\nA-->B\nstyle A stroke-width:thick,stroke-dasharray:5 abc\nlinkStyle 0 stroke-width:thick');
+    const data = asGraph(read.document.pages[0]!).data;
+    expect(data.nodes.find((n) => n.id === 'A')!.colors).toBeUndefined();
+    expect(data.edges[0]!.colors).toBeUndefined();
+    expect(read.warnings).toContain('Mermaid style lengths that are not numbers were dropped: stroke-width:thick, stroke-dasharray:5 abc.');
+  });
 });
