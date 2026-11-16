@@ -8,7 +8,15 @@
  *  Magic-byte sniffing on load keeps pre-gzip recordings playable.
  */
 
-import type { Recording } from './recorder';
+import type { RecordedEvent, Recording } from './recorder';
+
+const EVENT_TYPES: ReadonlySet<unknown> = new Set<RecordedEvent['type']>([
+  'pointerdown', 'pointermove', 'pointerup', 'pointercancel', 'wheel', 'keydown', 'keyup',
+]);
+
+/** Whether `e` is an event replay can dispatch: an object naming one of the recorded types. */
+const isRecordedEvent = (e: unknown): boolean =>
+  typeof e === 'object' && e !== null && EVENT_TYPES.has((e as { type?: unknown }).type);
 
 /** RFC 1952 gzip identification: every gzip stream starts with these bytes. */
 const GZIP_MAGIC_0 = 0x1f;
@@ -112,6 +120,8 @@ function asRecording(text: string): Recording {
   const rec = json as Partial<Record<keyof Recording, unknown>>;
   if (rec.version !== 1) throw missing('version 1 marker');
   if (!Array.isArray(rec.events)) throw missing('events list');
+  const bad = rec.events.findIndex((e) => !isRecordedEvent(e));
+  if (bad >= 0) throw new Error(`This file is not a WeaselDraw recording: its event ${bad + 1} is not a pointer, wheel or key event.`);
   if (rec.scene === undefined || (rec.scene !== null && typeof rec.scene !== 'object')) throw missing('scene');
   return json as Recording;
 }
