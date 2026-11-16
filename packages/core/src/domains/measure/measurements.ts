@@ -1,27 +1,9 @@
-import { createEmitter } from '@weasel-js/registry';
+import { createValueStore, type ValueStore } from '@weasel-js/registry';
 import type { NodeId, Scene } from 'core/scene/types';
 import { measurementOf, type Measurement } from './measurement';
 
 /** One value, readable and watchable — what a readout re-renders from. */
-export interface MeasureCell<T> {
-  get(): T;
-  set(next: T): void;
-  subscribe(listener: () => void): () => void;
-}
-
-function cell<T>(initial: T): MeasureCell<T> {
-  let value = initial;
-  const changed = createEmitter();
-  return {
-    get: () => value,
-    set: (next) => {
-      if (Object.is(next, value)) return;
-      value = next;
-      changed.emit();
-    },
-    subscribe: changed.subscribe,
-  };
-}
+export type MeasureCell<T> = ValueStore<T>;
 
 /**
  * Where a scene's measurements go, and the state around them that is not
@@ -51,9 +33,9 @@ export interface Measurements {
 export function createMeasurements(options: { layer: string }): Measurements {
   return {
     layer: options.layer,
-    picked: cell<NodeId | null>(null),
-    draft: cell<Measurement | null>(null),
-    measuring: cell(false),
+    picked: createValueStore<NodeId | null>(null),
+    draft: createValueStore<Measurement | null>(null),
+    measuring: createValueStore(false),
   };
 }
 
