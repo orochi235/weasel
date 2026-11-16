@@ -141,6 +141,11 @@ describe('lengthTable', () => {
     expect(() => lengthAtAnchor(hand, 1)).toThrow(/lengthTable/);
   });
 
+  it('anchorAtLength answers the later anchor where a pen lift sits at length 0', () => {
+    const t = lengthTable([{ points: [0, 0, 0, 0], closed: false }, { points: [10, 0, 20, 0], closed: false }], 2);
+    expect(anchorAtLength(t, 0)).toBe(2);
+  });
+
   it('anchorAtLength inverts lengthAtAnchor', () => {
     const t = lengthTable([anchored([0, 0, 3, 0, 3, 4], false, 0), anchored([10, 0, 10, 2], false, 3)], 2);
     for (const a of [0, 0.5, 1, 1.25, 3, 3.5, 4]) expect(anchorAtLength(t, lengthAtAnchor(t, a))).toBeCloseTo(a, 12);

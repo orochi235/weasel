@@ -139,7 +139,7 @@ export function anchorAtLength(t: LengthTable, s: number): number {
   const { bpAnchor, bpLength } = tableInternals(t);
   const n = bpAnchor.length;
   if (n === 0) return 0;
-  if (s <= bpLength[0]) return bpAnchor[0];
+  if (s < bpLength[0]) return bpAnchor[0];
   if (s >= bpLength[n - 1]) return bpAnchor[n - 1];
   let lo = 0;
   let hi = n - 1;
