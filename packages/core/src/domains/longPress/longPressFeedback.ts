@@ -136,7 +136,7 @@ export function createLongPressFeedbackContribution(
     return () => {
       offStore();
       clearTimeout(appear);
-      looks.delete(store);
+      if (looks.get(store) === look) looks.delete(store);
       offLayer();
       api.requestRedraw();
     };
