@@ -96,6 +96,7 @@ export function ColorField(props: ColorFieldProps) {
           id={id}
           className={s.color}
           value={rgb6}
+          placeholder={mixed || unset}
           refuses={hold.refuses}
           {...hold.attrs}
           aria-label={props['aria-label'] ?? 'Color'}

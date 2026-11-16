@@ -16,9 +16,11 @@ export interface ColorChipProps
   extends Omit<InputHTMLAttributes<HTMLInputElement>, 'type' | 'value' | 'onInput' | 'onChange' | 'onBlur'> {
   /** The color shown while no pick is under way, `#rrggbb`. */
   value: string;
+  /** `value` stands in for colors that are not one (a mixed or unset field), so every pick is a change. */
+  placeholder?: boolean;
   /** Every tick of the picker, as `#rrggbb`. */
   onInput?: (rgb: string) => void;
-  /** Once when the picker closes or the chip loses focus, if the pick moved. Return the color actually applied
+  /** Once when the picker closes or the chip loses focus, if the pick moved or `value` is a placeholder. Return the color actually applied
    *  when it differs from the pick, and the recent colors record that instead. */
   onChange: (rgb: string) => AppliedColor;
   /** Drop every pick: the chip is disabled or read-only. */
@@ -31,7 +33,7 @@ export interface ColorChipProps
  * does every paint editor built on it.
  */
 export function ColorChip(
-  { value, onInput, onChange, refuses = false, onClick, ...input }: ColorChipProps,
+  { value, placeholder = false, onInput, onChange, refuses = false, onClick, ...input }: ColorChipProps,
 ): ReactElement {
   // Tracks the picker through a pick, and the color it began from; the prop only catches up on commit.
   const [draft, setDraft] = useState<{ rgb: string; from: string } | null>(null);
@@ -39,7 +41,7 @@ export function ColorChip(
   const commit = (): void => {
     if (draft === null) return;
     setDraft(null);
-    if (draft.rgb.toLowerCase() !== draft.from.toLowerCase()) recordApplied(onChange(draft.rgb), draft.rgb);
+    if (placeholder || draft.rgb.toLowerCase() !== draft.from.toLowerCase()) recordApplied(onChange(draft.rgb), draft.rgb);
   };
   const picker = usePickerClose(commit);
 

@@ -117,6 +117,18 @@ describe('ColorField', () => {
     expect(container.querySelector('[data-mixed]')).not.toBeNull();
   });
 
+  it('commits a mixed pick that ends on black, the placeholder it draws', () => {
+    const onChange = vi.fn();
+    const { container } = render(<ColorField mixed alpha onInput={() => {}} onChange={onChange} aria-label="Fill" />);
+    const input = screen.getByLabelText('Fill');
+    fireEvent.input(input, { target: { value: '#ff0000' } });
+    fireEvent.input(input, { target: { value: '#000000' } });
+    fireEvent.blur(input);
+    expect(onChange).toHaveBeenCalledTimes(1);
+    expect(onChange).toHaveBeenCalledWith('#000000ff');
+    expect(container.querySelector('[data-mixed]')).not.toBeNull();
+  });
+
   it('mixed disables the opacity slider until the first color edit', () => {
     render(<ColorField mixed alpha onChange={() => {}} aria-label="Fill" />);
     expect(screen.getByLabelText('Fill opacity')).toBeDisabled();
