@@ -11,7 +11,7 @@ export {
 } from './typeahead';
 export type { TypeaheadBuffer, TypeaheadShape } from './typeahead';
 export { tabSort, tabStep } from './tabOrder';
-export { COARSE_STEPS, arrowSteps, arrowMove, rangeKey } from './keySteps';
+export { COARSE_STEPS, arrowSteps, rangeKey } from './keySteps';
 export { usableStops, attract, evenMap, sliderAt, clampOrdered, sliderKey } from './slider';
 export type { SliderStop, SliderKeyShape, SliderAtShape, TrackMap } from './slider';
 export { spanPlace, spanValue, spanShare, spanMap, spanHold, spanPan, spanZoom } from './span';

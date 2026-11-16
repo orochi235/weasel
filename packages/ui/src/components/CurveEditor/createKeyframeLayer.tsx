@@ -12,12 +12,11 @@ import { cubicBezierEasing, isPrimaryPress, resolveEasing } from '@weasel-js/cor
 import { type EasingFn, type Keyframe } from '@weasel-js/animator';
 import { Diamond } from './Diamond';
 import { hitTestAnchor, hitTestCurve } from './hitTest';
-import { arrowMove, attract } from '@weasel-js/ui-input';
+import { arrowMove } from '@weasel-js/quantity';
+import { attract } from '@weasel-js/ui-input';
 import { snapRadiusPx as kitSnapRadiusPx } from '../../snap';
 import s from './CurveEditor.module.css';
-import type {
-  CurveLayer, EmptyDownArgs, KeyDownArgs, LayerCtx, LayerGesture, LayerHit, LayerRenderCtx, PlotPoint,
-} from './layerTypes';
+import type { CurveLayer, EmptyDownArgs, KeyDownArgs, LayerCtx, LayerGesture, LayerHit, LayerRenderCtx, PlotPoint } from './layerTypes';
 import { lerp } from '@weasel-js/geom';
 
 type Bezier = readonly [number, number, number, number];

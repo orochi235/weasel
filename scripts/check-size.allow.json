@@ -208,7 +208,7 @@
     "longestFunction": 309
   },
   "packages/ui/src/components/CurveEditor/createKeyframeLayer.tsx": {
-    "lines": 432,
+    "lines": 431,
     "longestFunction": 290
   },
   "packages/ui/src/components/DataGrid/DataGrid.tsx": {

@@ -36,7 +36,7 @@ binding.transition()
 ```
 
 `.transition()` needs the `animator` option. Force layouts come from
-`useSimulation` in `@weasel-js/core` rather than this package. The site's
+`useSimulation` in `@weasel-js/simulation` rather than this package. The site's
 `ForceGraphDemo` and `D3SortableDemo` show both.
 
 ## License

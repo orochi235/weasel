@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { arrowMove, arrowSteps, rangeKey } from './keySteps';
+import { arrowSteps, rangeKey } from './keySteps';
 
 describe('arrow-key steps', () => {
   it('takes one step, or ten with shift, positive toward right and up', () => {
@@ -22,11 +22,5 @@ describe('arrow-key steps', () => {
     expect(rangeKey('ArrowUp', false, 'rtl')).toBe(1);
     expect(rangeKey('PageDown', false, 'rtl')).toBe(-10);
     expect(rangeKey('End', false, 'rtl')).toBe('end');
-  });
-
-  it('moves on a plane in screen axes', () => {
-    expect(arrowMove('ArrowUp', false)).toEqual({ dx: 0, dy: -1 });
-    expect(arrowMove('ArrowLeft', true)).toEqual({ dx: -10, dy: 0 });
-    expect(arrowMove('End', false)).toBeNull();
   });
 });

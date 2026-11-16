@@ -1,4 +1,4 @@
-// `@weasel-js/core/math` — the geometry and simulation primitives, with no
+// `@weasel-js/core/math` — the geometry primitives, with no
 // React anywhere in the import graph.
 //
 // The barrel reaches the canvas and the hooks, so importing `@weasel-js/core`
@@ -38,7 +38,6 @@ export {
 export type { Vec2 } from 'core/geometry/vec2';
 export type { PoseDescriptor } from 'core/geometry/poseDescriptor';
 export { translatePoseViaDescriptor } from 'core/geometry/poseDescriptor';
-export { createSimulation } from '@weasel-js/simulation';
 export type {
   Simulation,
   SimulationCore,

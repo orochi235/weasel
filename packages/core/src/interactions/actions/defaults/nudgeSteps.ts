@@ -1,4 +1,4 @@
-import { arrowMove } from '@weasel-js/ui-input';
+import { arrowMove } from '@weasel-js/quantity';
 import type { GestureBinding } from '@weasel-js/routing';
 import { BETWEEN_GESTURES } from '@weasel-js/routing';
 

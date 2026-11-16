@@ -6,7 +6,8 @@
 import { describe, expect, it } from 'vitest';
 import fc from 'fast-check';
 import { tabSort, tabStep } from './tabOrder';
-import { COARSE_STEPS, arrowMove, arrowSteps, rangeKey } from './keySteps';
+import { arrowMove } from '@weasel-js/quantity';
+import { COARSE_STEPS, arrowSteps, rangeKey } from './keySteps';
 import { runs, tally, timeoutFor } from './pbt.fixture';
 import { editEnd, imeKey } from './textCommit';
 
