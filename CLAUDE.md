@@ -166,6 +166,10 @@ loop that measures elapsed time also needs `onResume` to rebase its clock, or an
 hour in a background tab arrives as one hour-long frame and it reports that as
 real. Full rule: `docs/proposals/2026-08-26-loops-stop-when-unseen.md`.
 
+A timer whose delay is not a constant waits through `after` (`@weasel-js/registry`), which waits out a delay
+past 2^31 − 1 ms and never fires on `Infinity`, where `setTimeout` fires both at once. `npm run check:timers`
+fails a bare `setTimeout` with a computed delay.
+
 ## Drawing icons
 
 Where glyphs live, how code names one, and how a build trims them, and the rules for drawing
