@@ -1,6 +1,7 @@
 import {
   PATH_C, PATH_L, PATH_M, PATH_Q, PATH_Z, asPolygonPath, lengthAtCurve, pathLengthTable, runSegments,
   splitCubicAt, splitQuadraticAt, splitSubpaths, type CurvePosition, type LengthTable, type Path, type PolygonPath,
+  lerp,
 } from '@weasel-js/geom';
 import type { StrokeTrim } from '@weasel-js/paint';
 import { trimSpan } from './trimSpan';
@@ -112,7 +113,7 @@ function writeRun(
 /** Segment `c`, drawn by `cmd`, between parameters `t0` and `t1`, as its pen then its coords. */
 function subSegment(cmd: number, c: number[], t0: number, t1: number): number[] {
   if (cmd === PATH_L) {
-    const at = (t: number) => [c[0] + (c[2] - c[0]) * t, c[1] + (c[3] - c[1]) * t];
+    const at = (t: number) => [lerp(c[0], c[2], t), lerp(c[1], c[3], t)];
     return [...at(t0), ...at(t1)];
   }
   const split = (p: number[], t: number): [number[], number[]] => (cmd === PATH_Q

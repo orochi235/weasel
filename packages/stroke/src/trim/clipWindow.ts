@@ -1,4 +1,4 @@
-import { pathLengthTable, type CurvePosition, type Path } from '@weasel-js/geom';
+import { pathLengthTable, lerp, type CurvePosition, type Path } from '@weasel-js/geom';
 import { anchorParamsBetween, type Mesh, polylineAtCurve } from '@weasel-js/geom/tessellate';
 import type { StrokeTrim } from '@weasel-js/paint';
 import type { MeasuredPolyline } from '../tessellate/dash';
@@ -97,7 +97,7 @@ function inRibbonMeasure(sub: ClipSubpath, length: number): number {
   }
   const span = world[hi] - world[lo];
   const f = span > EPS ? Math.min(Math.max((length - world[lo]) / span, 0), 1) : 0;
-  return ribbon[lo] + (ribbon[hi] - ribbon[lo]) * f;
+  return lerp(ribbon[lo], ribbon[hi], f);
 }
 
 /**
@@ -146,16 +146,16 @@ function stationAt(piece: MeasuredPolyline, s: number, leaving: boolean, width: 
   const span = L[i + 1] - L[i];
   if (!(span > EPS)) return null;
   const f = Math.min(Math.max((s - L[i]) / span, 0), 1);
-  const lerp = (a: ArrayLike<number>) => a[i] + (a[i + 1] - a[i]) * f;
+  const along = (a: ArrayLike<number>) => lerp(a[i], a[i + 1], f);
   const W = piece.widths, O = piece.offsets;
   const A = piece.anchorA, B = piece.anchorB, T = piece.anchorT;
   const [a, b, t] = A && B && T ? anchorParamsBetween(A[i], B[i], T[i], A[i + 1], B[i + 1], T[i + 1], f) : [0, 0, 0];
   return {
     a, b, t,
-    x: p[i * 2] + (p[i * 2 + 2] - p[i * 2]) * f,
-    y: p[i * 2 + 1] + (p[i * 2 + 3] - p[i * 2 + 1]) * f,
-    w: W ? lerp(W) : width,
-    o: O ? lerp(O) : 0,
+    x: lerp(p[i * 2], p[i * 2 + 2], f),
+    y: lerp(p[i * 2 + 1], p[i * 2 + 3], f),
+    w: W ? along(W) : width,
+    o: O ? along(O) : 0,
     ux: (p[i * 2 + 2] - p[i * 2]) / span,
     uy: (p[i * 2 + 3] - p[i * 2 + 1]) / span,
   };

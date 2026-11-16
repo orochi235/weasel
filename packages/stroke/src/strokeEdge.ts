@@ -2,7 +2,7 @@
  * Where a stroke's outline edge runs near a point: what an editor that drags a
  * stroke's edge hit-tests and measures against.
  */
-import { pointInPath, segmentT, type Path } from '@weasel-js/geom';
+import { pointInPath, segmentT, lerp, type Path } from '@weasel-js/geom';
 import { extractPolylines } from '@weasel-js/geom/tessellate';
 import type { Stroke } from '@weasel-js/paint';
 import { strokeFlattening } from './tessellate/flattening';
@@ -84,8 +84,8 @@ export function strokeEdgeNear(
       const fx = ax + dx * f, fy = ay + dy * f;
       const rx = -dy / len, ry = dx / len;
       const d = (x - fx) * rx + (y - fy) * ry;
-      const w = W ? W[i] + (W[j] - W[i]) * f : width;
-      const o = O ? O[i] + (O[j] - O[i]) * f : 0;
+      const w = W ? lerp(W[i], W[j], f) : width;
+      const o = O ? lerp(O[i], O[j], f) : 0;
       const side: StrokeSide = inked ?? (d >= 0 ? 'right' : 'left');
       const scale = inked ? 2 : 1;
       const left = inked === 'right' ? 0 : scale * (w / 2 - o);
