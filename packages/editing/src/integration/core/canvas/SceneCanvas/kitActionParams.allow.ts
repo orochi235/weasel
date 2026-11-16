@@ -41,6 +41,9 @@ export const ACTION_LITERALS: Readonly<Record<string, Readonly<Record<string, st
     0.5: 'view: a zoom-out step halves the magnification, chosen by the action',
     250: 'threshold: how short a press of the quick-lens key is a tap, which closes the lens',
   },
+  'packages/labkit/src/clock/useTransportKeys.ts': {
+    0.05: 'view: the share of a pass an arrow key moves the playhead, which commits nothing to the history',
+  },
   'packages/loupe/src/actions.ts': { 0.002: 'view: magnification per wheel delta' },
   'packages/measure/src/measureGestures.ts': { 6: 'reach: how near a press must land to a measurement' },
   'packages/path-tools/src/pathEdit/editAnchors/editAnchors.ts': { 10: RADIX },
