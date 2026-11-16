@@ -42,9 +42,11 @@ describe('the lane resize action', () => {
       drag: { start: { x: 200, y: 120 }, current: at, delta: { x: at.x - 200, y: at.y - 120 }, affordance: { kind: 'layer:diagram-lanes', payload } },
     }) as unknown as InvocationCtx;
     const handle = (action.invoker as OngoingInvoker).start(ctx({ x: 200, y: 120 }), undefined) as OngoingHandle;
-    handle.onMove!(ctx(to));
+    if (handle.onMove === undefined) return handle;
+    handle.onMove(ctx(to));
     during?.(handle);
     handle.onEnd!(ctx(to), 'commit');
+    return handle;
   }
 
   it('resizes the lane, moves the later lanes and what they hold, and grows the pool, in one entry', () => {
@@ -61,6 +63,19 @@ describe('the lane resize action', () => {
     expect(worldOf(h.scene, 'm')).toMatchObject({ y: 180 });
     expect(pose(h.scene, h.poolId)).toMatchObject({ height: 270 });
     expect(h.scene.historyIndex()).toBe(entries + 1);
+  });
+
+  it('offers no boundary, and hands the drag on, where the resize would write a locked lane or title', () => {
+    for (const lock of ['first', 'second', 'firstTitle', 'poolTitle'] as const) {
+      const h = pool();
+      const id = { first: h.first, second: h.second, firstTitle: `${h.first}/title`, poolTitle: `${h.poolId}/title` }[lock];
+      h.scene.setLocked(id as NodeId, true);
+      const regions = createLaneAffordance(h.scene as never).regions({} as never).map((r) => r.id);
+      expect(regions).not.toContain(`${h.first}:boundary`);
+      const entries = h.scene.historyIndex();
+      expect(resize(h, { x: 200, y: 150 })).toEqual({});
+      expect(h.scene.historyIndex()).toBe(entries);
+    }
   });
 
   it('stops a lane at its least size', () => {
