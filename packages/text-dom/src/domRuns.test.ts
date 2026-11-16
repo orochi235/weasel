@@ -90,6 +90,11 @@ describe('runsToDom', () => {
     expect(domToRuns(parent)).toEqual([{ text: 'a' }]);
   });
 
+  it('leaves a fill the CSS color carries off the fill attribute, whatever order its keys are in', () => {
+    runsToDom([{ text: 'a', fill: { paint: { color: 'rgb(255, 0, 0)', kind: 'solid' } } }], parent);
+    expect(parent.querySelector('span[data-run]')!.hasAttribute('data-fill')).toBe(false);
+  });
+
   it('carries an unfilled run through the overlay and back', () => {
     const runs = [{ text: 'a', fill: null }, { text: 'b' }, { text: 'c', fill: { paint: { kind: 'solid' as const, color: '#ff0000' } } }];
     runsToDom(runs, parent);
