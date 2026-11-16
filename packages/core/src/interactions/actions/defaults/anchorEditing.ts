@@ -39,7 +39,7 @@ import {
 import { pathToAnchors, type PolygonPath } from '@weasel-js/geom';
 import { pxReach, rectBetween } from '@weasel-js/geom';
 import { selectionAfterAnchorPress } from '../edit-anchors/action';
-import { deleteSelectedMark, markUnder } from './pathEditMarks';
+import { canDeleteSelectedMark, deleteSelectedMark, markUnder } from './pathEditMarks';
 import { inPlane, editingLayer } from '../planeInput';
 import { pathOperationTags } from '../pathGestureTags';
 import { BETWEEN_GESTURES } from '@weasel-js/routing';
@@ -206,7 +206,7 @@ export const deleteAnchorsAction: Action & { requires: string[] } = {
   // that would leave a lone anchor.
   enabled: (deps) => {
     const dep = depOf(deps);
-    if (dep?.selectedMark) return true;
+    if (dep?.selectedMark) return canDeleteSelectedMark(dep) ? true : ActionDisabledReason.NotApplicable;
     const selection = requiresAnchorSelection(deps);
     if (selection !== true) return selection;
     const doomed = [...dep!.selectedAnchors];

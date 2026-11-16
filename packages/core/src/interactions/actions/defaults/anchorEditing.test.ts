@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 import { PathBuilder, type PolygonPath, pathToAnchors } from '@weasel-js/geom';
-import type { InvocationCtx, OngoingInvoker, ImmediateInvoker } from '@weasel-js/routing';
+import { ActionDisabledReason, type InvocationCtx, type OngoingInvoker, type ImmediateInvoker } from '@weasel-js/routing';
 import { makeEditAnchorsDep } from '../testUtils';
 import { areaSelectAction } from './areaSelect';
 import { icons } from '../../../icons.table';
@@ -240,6 +240,22 @@ describe('enabled gates (the non-modal fall-through)', () => {
     expect(deleteAnchorsAction.enabled?.(dep2(empty))).not.toBe(true);
     const { dep: sel } = depOverPath(triangle(), [0]);
     expect(deleteAnchorsAction.enabled?.(dep2(sel))).toBe(true);
+  });
+
+  it('deleteAnchors is off for a selected mark its owner cannot delete', () => {
+    const mark = { owner: 'ext', index: 0 };
+    const node = { kind: 'mark' } as never;
+    const over = (ext: object, store: object | undefined) => ({
+      ...depOverPath(triangle(), []).dep,
+      getNodeShape: () => node,
+      selectedMark: mark,
+      extensions: [{ id: 'ext', ...ext }] as never,
+      ...(store ? { store: store as never } : {}),
+    });
+    const deleteMark = vi.fn();
+    expect(deleteAnchorsAction.enabled?.(dep2(over({}, {})))).toBe(ActionDisabledReason.NotApplicable);
+    expect(deleteAnchorsAction.enabled?.(dep2(over({ deleteMark }, undefined)))).toBe(ActionDisabledReason.NotApplicable);
+    expect(deleteAnchorsAction.enabled?.(dep2(over({ deleteMark }, {})))).toBe(true);
   });
 
   it('cutPathAtAnchor only needs an edit target, not a selection', () => {
