@@ -1,6 +1,7 @@
 import { afterEach, describe, expect, it } from 'vitest';
 import { act, renderHook } from '@testing-library/react';
 import { drawPreset, type FeaturePreset } from '@weasel-js/core';
+import { textToolsPreset } from '@weasel-js/text-tools';
 import { chartPrefs } from './prefs';
 import { useChartSnap } from './useChartSnap';
 
@@ -12,7 +13,7 @@ afterEach(() => {
 
 const PAGE = { x: 0, y: 0, width: 1056, height: 816 };
 
-const presetOf = (features: readonly FeaturePreset[]) => features.find((f) => f !== drawPreset);
+const presetOf = (features: readonly FeaturePreset[]) => features.find((f) => f !== drawPreset && f !== textToolsPreset);
 const sourceIds = (preset: FeaturePreset | undefined) => (preset?.snapSources ?? []).map((s) => s.id).sort();
 
 describe('useChartSnap', () => {
@@ -20,7 +21,7 @@ describe('useChartSnap', () => {
     const { result } = renderHook(() => useChartSnap(PAGE, '#ffffff'));
     expect(result.current.gridLayer).toBeUndefined();
     expect(result.current.snap.sources ?? []).toEqual([]);
-    expect(result.current.features[0]).toBe(drawPreset);
+    expect(result.current.features.slice(0, 2)).toEqual([drawPreset, textToolsPreset]);
     expect(sourceIds(presetOf(result.current.features))).toEqual(['alignment', 'spacing']);
   });
 
@@ -39,7 +40,7 @@ describe('useChartSnap', () => {
     expect(sourceIds(presetOf(result.current.features))).toEqual(['alignment']);
     expect(presetOf(result.current.features)?.contributions ?? []).toEqual([]);
     act(() => { chartPrefs().set('view.alignmentSnap', false); });
-    expect(result.current.features).toEqual([drawPreset]);
+    expect(result.current.features).toEqual([drawPreset, textToolsPreset]);
   });
 
   it('keeps every value by identity across renders until its prefs change', () => {
