@@ -1,4 +1,4 @@
-import { useElementSize } from '@weasel-js/core';
+import { useElementSize } from '@weasel-js/routing/react';
 import { registerCanvasFont } from '@weasel-js/font';
 import { f, meta, story } from '@weasel-js/forge';
 import { useMemo, useRef, useState } from 'react';

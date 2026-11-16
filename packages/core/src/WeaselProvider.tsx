@@ -3,7 +3,7 @@ import { IconRegistryScope, type IconRegistryProviderProps } from '@weasel-js/ic
 import { DepRegistryProviderIfRoot } from './canvas/SceneCanvas/DepRegistryProviderIfRoot';
 import { ActionsProviderIfRoot } from './canvas/SceneCanvas/ActionsProviderIfRoot';
 import { PointerProviderIfRoot } from './canvas/SceneCanvas/PointerProviderIfRoot';
-import { ToolsScope } from './tools/toolsScope';
+import { ToolsScope } from '@weasel-js/routing/react';
 import { ActiveToolContextProvider, ActiveToolContextProviderIfRoot } from '@weasel-js/routing/react';
 import {
   SelectionContextProvider,

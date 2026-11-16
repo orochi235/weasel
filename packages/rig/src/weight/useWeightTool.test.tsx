@@ -1,10 +1,10 @@
 import { describe, expect, it } from 'vitest';
 import { renderHook } from '@testing-library/react';
 import { polygonFromPoints, type Path } from '@weasel-js/geom';
-import { actionCursor, createToolOptionValues, type Action, type ActionDeps, type ActionTuning, type InvocationCtx } from '@weasel-js/routing';
+import { actionCursor, createToolOptionValues, type Action, type ActionDeps, type ActionTuning, type InvocationCtx, tuneToolOptions } from '@weasel-js/routing';
 import { brushRing } from '@weasel-js/cursor';
 import type { RenderLayer } from '@weasel-js/core';
-import { createScene, tuneToolOptions } from '@weasel-js/core';
+import { createScene } from '@weasel-js/core';
 import type { RectPose } from '@weasel-js/core';
 import type { Skin } from '@weasel-js/animator';
 import { IDENTITY_JOINT, type Skeleton } from '@weasel-js/animator';

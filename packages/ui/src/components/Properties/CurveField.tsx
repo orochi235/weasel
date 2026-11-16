@@ -1,4 +1,4 @@
-import { useElementSize } from '@weasel-js/core';
+import { useElementSize } from '@weasel-js/routing/react';
 import { useCallback, useMemo, useRef } from 'react';
 import { snapToStep } from '@weasel-js/quantity';
 import { dlog } from '../../dlog';

@@ -11,7 +11,7 @@ import { describe, expect, it } from 'vitest';
 import { useClientToWorld } from 'canvas/useClientToWorld';
 import { regionOnCanvas } from 'canvas/readback';
 import { sceneNodeClientRect } from './sceneNodeClientRect';
-import { useElementSize } from './useCanvasSize';
+import { useElementSize } from '@weasel-js/routing/react';
 import { clientToWorld } from './clientToWorld';
 import { layoutBoxOf } from '@weasel-js/routing';
 

@@ -1,5 +1,6 @@
 import { useMemo, useRef, useState, type ReactElement } from 'react';
-import { useElementSize, useLatest } from '@weasel-js/core';
+import { useElementSize } from '@weasel-js/routing/react';
+import { useLatest } from '@weasel-js/core';
 import { type Keyframe } from '@weasel-js/animator';
 import { maxOf, minOf } from '@weasel-js/geom';
 import { LayeredCurveEditor } from '../CurveEditor/LayeredCurveEditor';

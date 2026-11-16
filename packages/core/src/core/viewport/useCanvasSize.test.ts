@@ -2,7 +2,8 @@ import { beforeAll, describe, expect, it, vi } from 'vitest';
 import { useRef } from 'react';
 import { createElement } from 'react';
 import { render, renderHook, act } from '@testing-library/react';
-import { useCanvasSize, useElementSize } from './useCanvasSize';
+import { useElementSize } from '@weasel-js/routing/react';
+import { useCanvasSize } from './useCanvasSize';
 import { makeMatchMedia } from '../../testing/matchMedia';
 
 beforeAll(() => {

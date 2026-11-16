@@ -198,6 +198,7 @@ export {
 export { DEFAULT_KEYMAP_UNBOUND, type GestureKitSettings } from './kitSettings';
 export { openPointerSession } from './interactions/pointerSession';
 export { startThresholdDrag } from './interactions/thresholdDrag';
+export { tuneToolOptions } from './tools/tuneToolOptions';
 export type { ThresholdDragOptions, ThresholdDragHandle } from './interactions/thresholdDrag';
 export { startCarry } from './interactions/carry';
 export type { Carry, CarryCallbacks, CarryPayload, CarryPointer, CarryStage } from './interactions/carry';

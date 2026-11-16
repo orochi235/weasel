@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
-import { createToolOptionValues, defineTool, type ActionTuning, type ToolOptions, type ToolOptionValues } from '@weasel-js/routing';
-import { tuneToolOptions } from './toolOptions';
+import { createToolOptionValues, defineTool, type ActionTuning, type ToolOptions, type ToolOptionValues } from '../index';
+import { tuneToolOptions } from './tuneToolOptions';
 
 const OPTIONS: ToolOptions = {
   actionId: 'brush',

@@ -1,6 +1,7 @@
 import { useMemo } from 'react';
 import { solid } from '@weasel-js/paint';
-import { SceneCanvas, WeaselProvider, useScene, type Fill, useScopedTools } from '@weasel-js/core';
+import { useScopedTools } from '@weasel-js/routing/react';
+import { SceneCanvas, WeaselProvider, useScene, type Fill } from '@weasel-js/core';
 import {
   buildRouteRegistry,
   canonicalModifiers,

@@ -1,6 +1,6 @@
 import { createContext, useContext, useLayoutEffect, useState, useSyncExternalStore, type ReactNode } from 'react';
 import { createEmitter } from '@weasel-js/registry';
-import type { ToolsApi } from './overlayBinding';
+import type { ToolsApi } from './useTools';
 
 /** Where a canvas publishes its tools, for a palette or a bar inside it or beside it. The canvas that published
  *  last holds it, as the actions registry of a shared scope follows the canvas that joined it last. */
