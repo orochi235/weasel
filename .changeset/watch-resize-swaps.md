@@ -6,6 +6,6 @@
 '@weasel-js/labkit': patch
 ---
 
-core's host anchor, diagram's overlays, prefs-editor's identity form, forge's index and labkit's stages watch for resizes through react's `watchResize`.
+These packages watch for resizes through react's `watchResize` rather than a `ResizeObserver` of their own.
 
 <!-- entry: internal -->

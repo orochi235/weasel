@@ -1,4 +1,5 @@
 import { type RefObject, useLayoutEffect, useMemo, useSyncExternalStore } from 'react';
+import { watchResize } from '@weasel-js/react';
 import { layoutBoxOf } from './clientToCanvas';
 
 /** An element's size in CSS pixels. */
@@ -23,7 +24,7 @@ const UNMEASURED: ElementSize = { width: 0, height: 0 };
 function elementSizeStore(containerRef: RefObject<HTMLElement | null>, beforePaint: boolean) {
   let size = UNMEASURED;
   let el: HTMLElement | null = null;
-  let observer: ResizeObserver | null = null;
+  let unwatch: (() => void) | undefined;
   let pending: ReturnType<typeof setTimeout> | undefined;
   let changed: (() => void) | null = null;
   const measure = (): boolean => {
@@ -34,28 +35,27 @@ function elementSizeStore(containerRef: RefObject<HTMLElement | null>, beforePai
     size = { width: rect.width, height: rect.height };
     return true;
   };
+  const resized = (): void => {
+    // A store update renders on a microtask, still inside the browser's resize loop; a task waits for it.
+    if (beforePaint) { if (measure()) changed?.(); }
+    else pending ??= setTimeout(() => { pending = undefined; if (measure()) changed?.(); }, 0);
+  };
   /** Watch whatever the ref holds now. Returns whether the size moved. */
   const follow = (): boolean => {
     const next = containerRef.current;
     if (next === el) return false;
-    if (el) observer?.unobserve(el);
+    unwatch?.();
     el = next;
-    if (el) observer?.observe(el);
+    unwatch = changed ? watchResize(el, resized) : undefined;
     return measure();
   };
   return {
     subscribe(onChange: () => void): () => void {
       changed = onChange;
-      // Absent under jsdom and in older embedders: a measurement per element is all there is.
-      observer = typeof ResizeObserver === 'undefined' ? null : new ResizeObserver(() => {
-        // A store update renders on a microtask, still inside the browser's resize loop; a task waits for it.
-        if (beforePaint) { if (measure()) changed?.(); }
-        else pending ??= setTimeout(() => { pending = undefined; if (measure()) changed?.(); }, 0);
-      });
       if (follow()) onChange();
       return () => {
-        observer?.disconnect();
-        observer = null;
+        unwatch?.();
+        unwatch = undefined;
         el = null;
         changed = null;
         clearTimeout(pending);
