@@ -1,6 +1,7 @@
 // A number leaf's display unit: the stored value stays canonical (radians, millimeters), and a UI converts
 // at its edge. A unit is data where the conversion is linear, and a pair of functions where it is not.
 
+import { setOwn } from '@weasel-js/registry';
 import { decimal, decimalPlaces, formatUnit, unitScale, unitSymbol, type Display, type Unit, type UnitEntry, type UnitScale, type UnitSystem, type UnitTable } from '@weasel-js/quantity';
 
 /** What both forms of a unit say about the text around the number. */
@@ -144,7 +145,7 @@ export function prefUnit(
     // `(n * factor + offset - self.offset) / self.factor`.
     const factor = other.factor / self.factor;
     const offset = (other.offset - self.offset) / self.factor;
-    accepts[name] = offset === 0 ? factor : { factor, offset };
+    setOwn(accepts, name, offset === 0 ? factor : { factor, offset });
   }
   return {
     suffix,

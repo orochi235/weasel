@@ -118,6 +118,11 @@ describe('repairPrefValue', () => {
     expect(repairPrefValue(custom, 'pen', throwing)).toBe('select');
   });
 
+  it('runs no validator for a kind named like an Object.prototype member', () => {
+    const custom = { kind: 'toString', name: 'R', description: '', default: 'select' } as PrefLeaf;
+    expect(repairPrefValue(custom, 'pen', {})).toBe('pen');
+  });
+
   it('lets a validator override a built-in kind', () => {
     expect(repairPrefValue(num(), 150, { number: (v) => v })).toBe(150);
   });

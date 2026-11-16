@@ -1,6 +1,6 @@
 import { isPaint, tryParseColor } from '@weasel-js/paint';
 import { endlessAllows } from '@weasel-js/quantity';
-import { codePointFloor, isPlainObject } from '@weasel-js/registry';
+import { codePointFloor, getOwn, isPlainObject, setOwn } from '@weasel-js/registry';
 import { prefClampNumber } from './bounds';
 import { prefSectionLeaves } from './helpers';
 import type { PrefList } from './list';
@@ -23,7 +23,7 @@ export function repairPrefValue(
     if (stored === 'Infinity') stored = Infinity;
     else if (stored === '-Infinity') stored = -Infinity;
   }
-  const validate = validators?.[leaf.kind];
+  const validate = validators && getOwn(validators, leaf.kind);
   if (validate) {
     try {
       const out = validate(stored, leaf);
@@ -81,7 +81,7 @@ function repairFields(leaf: PrefObject, stored: Record<string, unknown>, validat
   for (const [key, field] of prefSectionLeaves(leaf.children)) {
     if (!Object.hasOwn(stored, key) || stored[key] === undefined) continue;
     const read = repairPrefValue(field, stored[key], validators);
-    if (read !== stored[key]) (out ??= { ...stored })[key] = read;
+    if (read !== stored[key]) setOwn((out ??= { ...stored }), key, read);
   }
   return out ?? stored;
 }
@@ -93,7 +93,7 @@ function repairMap(leaf: PrefMap, stored: unknown, validators: Validators): unkn
   let out: Record<string, unknown> | undefined;
   for (const [key, value] of Object.entries(held)) {
     const read = repairPrefValue(leaf.item, value, validators);
-    if (read !== value) (out ??= { ...held })[key] = read;
+    if (read !== value) setOwn((out ??= { ...held }), key, read);
   }
   return out ?? stored;
 }
