@@ -149,7 +149,7 @@ export type { AsyncOption, AsyncOptionsResult, UseAsyncOptionsProps } from './us
 export { I18nProvider, useFieldLocale } from './useFieldLocale';
 export { IDLE_SETTLE_MS, useIdleSettle } from './useIdleSettle';
 export { heirOf, type FocusRow } from './useRemovedRowFocus';
-export { swallowNextClick, useReorderDragList } from './useReorderDragList';
+export { useReorderDragList } from './useReorderDragList';
 export type {
   ReorderItem,
   UseReorderDragListOptions,

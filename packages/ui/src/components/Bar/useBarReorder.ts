@@ -1,11 +1,10 @@
 import { useEffect, useRef, type PointerEvent as ReactPointerEvent, type RefObject } from 'react';
-import { startThresholdDrag, type ThresholdDragHandle } from '@weasel-js/routing';
+import { startThresholdDrag, swallowNextClick, type ThresholdDragHandle } from '@weasel-js/routing';
 import { isPrimaryPress, modHeld } from '@weasel-js/gestures';
 import { gapByMidpoint, isNoopDrop } from '@weasel-js/ui-input';
 import type { PrefOrder } from '@weasel-js/prefs';
 import { useKitSetting, useLatest } from '@weasel-js/react';
 import { maxOf, minOf } from '@weasel-js/geom';
-import { swallowNextClick } from '../../useReorderDragList';
 import { BAR_IN, BAR_UNIT, barUnitKey, movedOrder } from './barOrder';
 
 /** Set on the elements of the unit a reorder is dragging. */

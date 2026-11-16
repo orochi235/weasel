@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import type { ReactNode, PointerEvent as ReactPointerEvent, RefCallback } from 'react';
-import { startThresholdDrag, type ThresholdDragHandle } from '@weasel-js/routing';
+import { startThresholdDrag, swallowNextClick, type ThresholdDragHandle } from '@weasel-js/routing';
 import { gapByMidpoint, isNoopDrop, nudgeGap } from '@weasel-js/ui-input';
 import { useKitSetting, useLatest } from '@weasel-js/react';
 import { modKey, isInControlWithin } from '@weasel-js/gestures';
@@ -279,7 +279,9 @@ export function useReorderDragList(opts: UseReorderDragListOptions): ReorderDrag
         const { onPress } = optsRef.current;
         if (onPress) {
           onPress(id, mods);
-          swallowNextClick(container);
+          // The session captured the pointer on the container, so the release's click may still reach the row,
+          // which `onPress` has already reported.
+          swallowNextClick(container, { keepDefault: true });
         }
         reset();
       },
@@ -312,16 +314,4 @@ export function useReorderDragList(opts: UseReorderDragListOptions): ReorderDrag
     },
     state,
   };
-}
-
-/**
- * The session captured the pointer on the container, so browsers disagree on
- * where the release's click lands; it may still reach the row. `onPress` has
- * already reported this press, so that click is dropped rather than read as a
- * second one. It is dispatched in the same task as the release.
- */
-export function swallowNextClick(container: HTMLElement): void {
-  const swallow = (e: Event) => { e.stopPropagation(); };
-  container.addEventListener('click', swallow, true);
-  setTimeout(() => { container.removeEventListener('click', swallow, true); }, 0);
 }

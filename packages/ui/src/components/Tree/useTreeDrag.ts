@@ -1,9 +1,9 @@
 import { useCallback, useEffect, useRef, useState, type PointerEvent as ReactPointerEvent, type Ref } from 'react';
 import { useKitSetting, useLatest } from '@weasel-js/react';
 import { after } from '@weasel-js/registry';
-import { startThresholdDrag, type ThresholdDragHandle } from '@weasel-js/routing';
+import { startThresholdDrag, swallowNextClick, type ThresholdDragHandle } from '@weasel-js/routing';
 import { resolveDrop, type DropIndent, type DropMark, type DropRow, type ResolvedDrop, type TreeDropTarget } from '../../dropTarget';
-import { swallowNextClick, type PressModifiers, type ReorderGhost } from '../../useReorderDragList';
+import type { PressModifiers, ReorderGhost } from '../../useReorderDragList';
 import { inlineDirection } from '../../useRovingTabIndex';
 import { draggedIdsFor, isNoopMove, landsInside } from './treeMoves';
 import type { TreeNode } from './Tree';
@@ -218,7 +218,7 @@ export function useTreeDrag(opts: UseTreeDragOptions) {
       },
       onClick: () => {
         o.current.onPress(id, mods);
-        swallowNextClick(box);
+        swallowNextClick(box, { keepDefault: true });
         reset();
       },
       onCancel: reset,
