@@ -52,10 +52,12 @@ export const averageAnchorsAction: Action & { requires: string[] } = {
       commitAnchorEdit(dep, 'Average anchors', (set) => averageAnchorsAt(set, selected, axisOf(params)));
     },
   } as ImmediateInvoker,
-  enabled: (deps) => {
+  enabled: (deps, _at, _carried, params) => {
     const dep = depOf(deps);
     if (!dep || dep.selectedAnchors.size < 2) return ActionDisabledReason.SelectionRequired;
-    return true;
+    const selected = [...dep.selectedAnchors];
+    return anchorEditWouldChange(deps, (set) => averageAnchorsAt(set, selected, axisOf(params)))
+      ? true : ActionDisabledReason.NotApplicable;
   },
 };
 

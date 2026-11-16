@@ -32,7 +32,8 @@ export interface JoinOptions {
 /**
  * Move each anchor in `flatIndexes` to their mean position, along `axis`.
  * Each anchor carries its handles with it. Returns false, changing nothing,
- * when fewer than two of the indexes name anchors.
+ * when fewer than two of the indexes name anchors, or when every one already
+ * sits on the mean (within 1e-9 of the coordinates' magnitude).
  */
 export function averageAnchorsAt(set: AnchorSet, flatIndexes: Iterable<number>, axis: AverageAxis = 'both'): boolean {
   const picked: { flat: number; a: PenAnchor }[] = [];
@@ -43,6 +44,9 @@ export function averageAnchorsAt(set: AnchorSet, flatIndexes: Iterable<number>, 
   if (picked.length < 2) return false;
   const mx = picked.reduce((s, p) => s + p.a.x, 0) / picked.length;
   const my = picked.reduce((s, p) => s + p.a.y, 0) / picked.length;
+  const off = (to: number, at: number) => Math.abs(to - at) > 1e-9 * Math.max(1, Math.abs(to), Math.abs(at));
+  const moves = picked.some(({ a }) => (axis !== 'y' && off(mx, a.x)) || (axis !== 'x' && off(my, a.y)));
+  if (!moves) return false;
   for (const { flat, a } of picked) {
     translateAnchorBy(set, flat, axis === 'y' ? 0 : mx - a.x, axis === 'x' ? 0 : my - a.y);
   }
