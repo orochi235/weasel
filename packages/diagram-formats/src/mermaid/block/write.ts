@@ -9,6 +9,9 @@ import { BRACKETS } from '../flowchart/write';
 
 const ANONYMOUS = /^block-\d+$/;
 
+/** Words a block diagram reads as a keyword where a block's id would stand. */
+const BLOCK_WORDS = ['block', 'space', 'columns'];
+
 type Item = { node: DataNode } | { cluster: Cluster };
 
 class BlockWriter {
@@ -18,7 +21,7 @@ class BlockWriter {
   readonly order: ReadonlyMap<string, number>;
 
   constructor(readonly out: GraphOut) {
-    this.ids = mermaidIds([...out.page.data.nodes.map((n) => n.id), ...out.clusterIds], { unicode: true });
+    this.ids = mermaidIds([...out.page.data.nodes.map((n) => n.id), ...out.clusterIds], { unicode: true, reserved: BLOCK_WORDS });
     this.grid = out.page.layout?.name === 'grid' ? out.page.layout.options?.grid ?? {} : {};
     this.order = new Map(out.page.data.nodes.map((n, i) => [n.id, i]));
   }

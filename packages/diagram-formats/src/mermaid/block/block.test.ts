@@ -118,4 +118,11 @@ describe('writing a Mermaid block diagram', () => {
     }] });
     expect(text).toBe('block-beta\n  a(["A"])\n  b[" "]\n  a -- "x" --> b\n');
   });
+
+  it('renames a block whose id the reader takes for a keyword, so it reads back', () => {
+    for (const id of ['block', 'space', 'columns']) {
+      const text = writeBlockDiagram({ pages: [{ kind: 'graph', id: 'p', width: 100, height: 100, data: { nodes: [{ id, lines: ['x'] }, { id: 'auto', lines: ['y'] }], edges: [] } }] }).text;
+      expect(onlyPage(readBlockDiagram(text).document).data.nodes.map((n) => n.lines)).toEqual([['x'], ['y']]);
+    }
+  });
 });
