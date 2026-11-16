@@ -1,4 +1,4 @@
-import { createScene, screenToWorld, solid, viewToTransform, movePreset, pickPreset, transformPreset, viewPreset } from '@weasel-js/core';
+import { clientToCanvas, createScene, screenToWorld, solid, viewToTransform, movePreset, pickPreset, transformPreset, viewPreset } from '@weasel-js/core';
 import type { AddNodeSpec, Fill, Paint, RectPose, UnitSystem, View } from '@weasel-js/core';
 import { createGridLayer } from '@weasel-js/guides';
 import { useMemo, useRef } from 'react';
@@ -107,9 +107,7 @@ function GardenBody({ ctx }: { ctx: RenderContext<GardenState, GardenConfig> }) 
     e.preventDefault();
     const host = canvasHostRef.current;
     if (!host) return;
-    const r = host.getBoundingClientRect();
-    const sx = e.clientX - r.left;
-    const sy = e.clientY - r.top;
+    const [sx, sy] = clientToCanvas(host, e.clientX, e.clientY);
     const [wx, wy] = screenToWorld(sx, sy, viewToTransform(viewRef.current));
     const s = KIND_SIZE[kind];
     scene.add({

@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import {
+  clientToCanvas,
   dragPointOf,
   useDragGesture,
   useDragRect,
@@ -291,8 +292,11 @@ export function GesturesDemo() {
     else if (m === 'rect') { e.currentTarget.setPointerCapture(e.pointerId); rect.start(p.worldX, p.worldY, modsOf(e)); }
     else if (m === 'radial') { e.currentTarget.setPointerCapture(e.pointerId); radial.start(p.worldX, p.worldY, modsOf(e)); }
     else if (m === 'threshold') {
-      const r = canvasRef.current!.getBoundingClientRect();
-      const local = (cx: number, cy: number) => ({ x: cx - r.left, y: cy - r.top });
+      const canvas = canvasRef.current!;
+      const local = (cx: number, cy: number) => {
+        const [x, y] = clientToCanvas(canvas, cx, cy);
+        return { x, y };
+      };
       thO.current = { ...local(e.clientX, e.clientY), cur: local(e.clientX, e.clientY), engaged: false };
       setReadout(`threshold ${TH}px · engaged ✗ — no move events until you cross the dead-zone`);
       draw();

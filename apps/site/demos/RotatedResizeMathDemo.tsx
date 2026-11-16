@@ -7,6 +7,7 @@
 import { useCallback, useMemo, useRef, useState } from 'react';
 import {
   clientToCanvas,
+  layoutBoxOf,
   pointInRotatedRect,
   rotatePoint,
   useHandleDrag,
@@ -75,8 +76,8 @@ export function RotatedResizeMathDemo() {
     const canvas = wrapper.querySelector('canvas');
     if (!canvas) return null;
     const [x, y] = clientToCanvas(canvas, e.clientX, e.clientY);
-    const rect = canvas.getBoundingClientRect();
-    if (x < 0 || y < 0 || x > rect.width || y > rect.height) return null;
+    const { width, height } = layoutBoxOf(canvas);
+    if (x < 0 || y < 0 || x > width || y > height) return null;
     return { x, y };
   };
 
