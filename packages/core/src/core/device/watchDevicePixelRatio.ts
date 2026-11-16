@@ -1,3 +1,5 @@
+import { watchMedia } from '@weasel-js/react';
+
 /**
  * Call `onChange` each time `window.devicePixelRatio` changes: the window
  * moved to a display of another density, or the page zoomed. Returns the
@@ -8,22 +10,22 @@
  * density on every change.
  */
 export function watchDevicePixelRatio(onChange: (dpr: number) => void): () => void {
-  if (typeof window === 'undefined' || typeof window.matchMedia !== 'function') return () => {};
+  if (typeof window === 'undefined' || typeof matchMedia !== 'function') return () => {};
   let disposed = false;
-  let query: MediaQueryList | null = null;
+  let stop = (): void => {};
+  const density = (): number => window.devicePixelRatio || 1;
   const onDensity = (): void => {
     if (disposed) return;
     arm();
-    onChange(window.devicePixelRatio || 1);
+    onChange(density());
   };
   function arm(): void {
-    query?.removeEventListener('change', onDensity);
-    query = window.matchMedia(`(resolution: ${window.devicePixelRatio || 1}dppx)`);
-    query.addEventListener('change', onDensity);
+    stop();
+    stop = watchMedia(`(resolution: ${density()}dppx)`, onDensity);
   }
   arm();
   return () => {
     disposed = true;
-    query?.removeEventListener('change', onDensity);
+    stop();
   };
 }
