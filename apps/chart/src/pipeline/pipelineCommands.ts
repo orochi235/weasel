@@ -10,7 +10,7 @@ import { ARRANGE_MENU } from './pipelineGroups';
 import { LOOK_MENU } from './pipelineLook';
 import { PIPELINE_PAGE_MENU } from './pipelinePages';
 import { RUN_MENU, SHOW_MENU } from './pipelineRun';
-import { PIPELINE_FILE_EXTENSION, emptyPipeline, pipelineFromJson, type PipelineDoc } from './usePipelineDoc';
+import { PIPELINE_FILE_EXTENSION, emptyPipeline, pipelineFromJson, pipelineToJson, type PipelineDoc } from './usePipelineDoc';
 import { reportFailure } from '../reportFailure';
 
 export const PIPELINE_ACTIONS = {
@@ -56,7 +56,7 @@ export function usePipelineCommands(pipeline: PipelineDoc, onReplaced: () => voi
     openPipeline(pipeline, onReplaced).catch(reportFailure('Could not open the file'));
   });
   useSaveCommand(PIPELINE_ACTIONS.save, 'Save', () => {
-    downloadBlob(new Blob([JSON.stringify(pipeline.doc)], { type: 'application/json' }), `pipeline${PIPELINE_FILE_EXTENSION}`);
+    downloadBlob(new Blob([pipelineToJson(pipeline.doc)], { type: 'application/json' }), `pipeline${PIPELINE_FILE_EXTENSION}`);
   });
   useCommand(PIPELINE_ACTIONS.undo, 'Undo', () => pipeline.undo(), {
     enabled: () => can(pipeline.canUndo),
