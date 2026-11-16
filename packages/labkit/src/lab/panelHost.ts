@@ -1,4 +1,4 @@
-import { createEmitter } from '@weasel-js/registry';
+import { createReflectable, type Reflection } from '@weasel-js/registry';
 import { createContext, useContext } from 'react';
 
 /** Where an undocked panel's DOM lives. The panel's *content* stays owned by
@@ -9,20 +9,21 @@ export interface PanelHostRegistry {
   set: (key: string, el: HTMLElement | null) => void;
   get: (key: string) => HTMLElement | null;
   subscribe: (fn: () => void) => () => void;
+  /** Each key's host element. */
+  readonly reflection: Reflection<HTMLElement>;
 }
 
 export function createPanelHostRegistry(): PanelHostRegistry {
-  const hosts = new Map<string, HTMLElement>();
-  const changed = createEmitter();
+  const hosts = createReflectable<HTMLElement>();
   return {
     set: (key, el) => {
       if ((hosts.get(key) ?? null) === el) return;
       if (el) hosts.set(key, el);
       else hosts.delete(key);
-      changed.emit();
     },
     get: (key) => hosts.get(key) ?? null,
-    subscribe: changed.subscribe,
+    subscribe: hosts.subscribe,
+    reflection: hosts.reflection,
   };
 }
 

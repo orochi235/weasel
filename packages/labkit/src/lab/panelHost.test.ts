@@ -18,4 +18,17 @@ describe('createPanelHostRegistry', () => {
     expect(calls).toBe(2);
     expect(hosts.get('a')).toBeNull();
   });
+
+  it('reflects each key and its host, a new host for a key replacing the old', () => {
+    const hosts = createPanelHostRegistry();
+    const a = document.createElement('div');
+    const b = document.createElement('div');
+    hosts.set('x', a);
+    hosts.set('y', a);
+    hosts.set('x', b);
+    expect(hosts.reflection.entries().map((e) => [e.key, e.value, e.shadowed.length])).toEqual([
+      ['x', b, 0],
+      ['y', a, 0],
+    ]);
+  });
 });
