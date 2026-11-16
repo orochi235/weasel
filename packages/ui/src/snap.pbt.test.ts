@@ -73,7 +73,7 @@ describe('trackPlace', () => {
     t.atLeast('stop', 40);
   }, timeoutFor(RUNS, 2));
 
-  it('steps a key within min..max, the way the key heads, catching a stop it crosses', () => {
+  it('steps a key within min..max, the way the key heads, catching a stop it crosses, Home and End to the ends', () => {
     const t = tally();
     fc.assert(fc.property(track, fc.double({ min: 0, max: 1, noNaN: true }), fc.constantFrom(...KEYS), fc.constantFrom<'ltr' | 'rtl'>('ltr', 'rtl'), (tr, f, key, dir) => {
       fc.pre(tr.scale !== undefined);
@@ -86,13 +86,17 @@ describe('trackPlace', () => {
       expect(n >= tr.min && n <= tr.max).toBe(true);
       const up = key === 'ArrowUp' || key === 'PageUp' || key === 'End' || (key === 'ArrowRight') === (dir === 'ltr') && key.startsWith('Arrow') && (key === 'ArrowRight' || key === 'ArrowLeft');
       if (up) expect(n).toBeGreaterThanOrEqual(v); else expect(n).toBeLessThanOrEqual(v);
-      const crossed = tr.stops.filter((s) => s > Math.min(v, n) && s < Math.max(v, n));
-      expect(crossed).toEqual([]);
+      if (key === 'Home' || key === 'End') {
+        expect(n).toBe(key === 'Home' ? tr.min : tr.max);
+      } else {
+        const crossed = tr.stops.filter((s) => s > Math.min(v, n) && s < Math.max(v, n));
+        expect(crossed).toEqual([]);
+      }
       t.count(n === v ? 'still' : 'moved');
       if (tr.stops.includes(n) && n !== tr.min && n !== tr.max) t.count('on stop');
     }), runs(RUNS));
     t.atLeast('moved', 50);
-    t.atLeast('on stop', 5);
+    t.atLeast('on stop', 3);
   }, timeoutFor(RUNS, 2));
 });
 

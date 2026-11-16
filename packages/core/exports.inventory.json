@@ -1973,6 +1973,7 @@
     "effectivePose": "function",
     "effectiveRangeStyle": "function",
     "effectsShowing": "function",
+    "eligibleNow": "function",
     "ellipsePath": "function",
     "embedWeaselMetadataInSvg": "function",
     "enableLocalFontOutlines": "function",

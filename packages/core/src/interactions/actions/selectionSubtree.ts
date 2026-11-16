@@ -7,11 +7,11 @@ import { composesFrames } from 'core/scene/composeFrame';
 import { translatePoseViaDescriptor, type PoseDescriptor } from 'core/geometry/poseDescriptor';
 import type { AnyScene } from 'core/scene/anyScene';
 
-/** The ids in `ids` that are in the scene and that no ancestor in `ids` holds, less pages and the
- *  page run, which no action copies or moves. */
+/** The ids in `ids` that are in the scene and that no other id in `ids` holds, pages and the page run left out
+ *  first, since no action copies or moves them: a page selected with its content does not swallow that content. */
 export function selectedRoots(scene: AnyScene, ids: readonly string[]): NodeId[] {
   const parentOf = (id: string) => scene.get(asNodeId(id))?.parent ?? null;
-  return withoutPageStructure(scene, outermost(ids, parentOf).map((id) => asNodeId(id)))
+  return outermost(withoutPageStructure(scene, ids.map((id) => asNodeId(id))), parentOf)
     .filter((id) => scene.get(id) !== undefined);
 }
 
