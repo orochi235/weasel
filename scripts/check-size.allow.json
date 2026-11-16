@@ -50,7 +50,7 @@
     "longestFunction": 139
   },
   "packages/d3/src/transition.ts": {
-    "lines": 419,
+    "lines": 417,
     "longestFunction": 333
   },
   "packages/font/src/registerFont.ts": {

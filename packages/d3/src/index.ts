@@ -7,6 +7,7 @@
 // protocol is contract-compatible, so `import { forceManyBody } from
 // 'd3-force'` works without anything from this package.
 export { d3Bind } from './bind';
+export { transitionCancelKey } from './cancelKey';
 export type {
   BindOptions,
   D3Binding,
