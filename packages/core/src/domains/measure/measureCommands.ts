@@ -25,14 +25,18 @@ function current(deps: ActionDeps | undefined, ms: Measurements): { id: NodeId; 
   return id !== null && m ? { id, m } : null;
 }
 
-/** Enabled with a measurement to apply and a selection to apply it to. */
-function transformable(ms: Measurements) {
+/** Enabled with a measurement `moves` reads as a change and a selection to apply it to. */
+function transformable(ms: Measurements, moves: (m: Measurement) => boolean) {
   return (deps?: ActionDeps) => {
     const c = current(deps, ms);
-    if (!c || c.m.distance === 0) return ActionDisabledReason.NotApplicable;
+    if (!c || !moves(c.m)) return ActionDisabledReason.NotApplicable;
     return requiresSelection(deps);
   };
 }
+
+const travels = (m: Measurement): boolean => m.distance !== 0;
+/** A measurement along the x axis turns nothing. */
+const turns = (m: Measurement): boolean => m.distance !== 0 && m.angle !== 0;
 
 function moveBy(ms: Measurements): Action {
   return {
@@ -41,7 +45,7 @@ function moveBy(ms: Measurements): Action {
     group: 'measure',
     eligible: { capability: 'transforms-selection' },
     requires: ['selection', 'scene', 'applyOps', 'geometryProjection', 'poseDescriptor', 'transformFollowers'],
-    enabled: transformable(ms),
+    enabled: transformable(ms, travels),
     invoker: {
       timing: 'immediate',
       run: (deps) => {
@@ -66,7 +70,7 @@ function rotateBy(ms: Measurements): Action {
     group: 'measure',
     eligible: { capability: 'transforms-selection' },
     requires: ['selection', 'scene', 'applyOps', 'poseDescriptor', 'view', 'boundsIncludeStroke', 'drawnBoxes', 'transformFollowers'],
-    enabled: transformable(ms),
+    enabled: transformable(ms, turns),
     invoker: {
       timing: 'immediate',
       run: (deps) => {

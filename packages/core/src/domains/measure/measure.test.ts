@@ -264,7 +264,15 @@ describe('transform by the measurement', () => {
     rig.measure({ x: 0, y: 0 }, { x: 5, y: 0 });
     expect(rig.enabled(MEASURE_ACTION_IDS.moveBy).enabled).toBe(true);
     rig.selection.set([]);
-    expect(rig.enabled(MEASURE_ACTION_IDS.rotateBy)).toMatchObject({ enabled: false, reason: ActionDisabledReason.SelectionRequired });
+    expect(rig.enabled(MEASURE_ACTION_IDS.moveBy)).toMatchObject({ enabled: false, reason: ActionDisabledReason.SelectionRequired });
+  });
+
+  it('turns nothing by a measurement along the x axis, and says so', () => {
+    const rig = setup();
+    rig.measure({ x: 0, y: 0 }, { x: 5, y: 0 });
+    expect(rig.enabled(MEASURE_ACTION_IDS.rotateBy)).toMatchObject({ enabled: false, reason: ActionDisabledReason.NotApplicable });
+    rig.measure({ x: 0, y: 0 }, { x: 5, y: -5 });
+    expect(rig.enabled(MEASURE_ACTION_IDS.rotateBy).enabled).toBe(true);
   });
 });
 
