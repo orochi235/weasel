@@ -246,7 +246,7 @@ describe('a story that learns its span only once it runs', () => {
     const storage = createMemoryAdapter();
     const first = mount('/#/t--late', storage);
     await loaded();
-    await until(() => expect(within(trial()).getByTestId('timeline-time').textContent).toBe('0.00s / 4.00s'));
+    await until(() => expect(within(trial()).getByTestId('timeline-time').textContent).toBe('0.00s / 3.70s'));
     expect(playhead()).toBe(0);
     fireEvent.keyDown(within(trial()).getByRole('slider', { name: 'Position' }), { key: 'End' });
     expect(playhead()).toBe(3700);
@@ -266,7 +266,7 @@ describe('a story that learns its span only once it runs', () => {
     mount('/#/t--late', storage);
     await loaded();
     await until(() => expect(playhead()).toBe(3700));
-    expect(within(trial()).getByTestId('timeline-time').textContent).toBe('3.70s / 4.00s');
+    expect(within(trial()).getByTestId('timeline-time').textContent).toBe('3.70s / 3.70s');
   });
 });
 

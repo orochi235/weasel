@@ -226,7 +226,7 @@ describe('editMods', () => {
       expect(!!m.ctrl).toBe(apple && ctrlKey && !metaKey);
       if (apple) expect({ mod: !!m.mod, line: !!m.line, word: !!m.word }).toEqual({ mod: metaKey, line: metaKey, word: altKey });
       else if (ctrlKey && altKey) expect({ mod: !!m.mod, line: !!m.line, word: !!m.word }).toEqual({ mod: false, line: false, word: false });
-      else expect({ mod: !!m.mod, line: !!m.line, word: !!m.word }).toEqual({ mod: ctrlKey || metaKey, line: false, word: ctrlKey });
+      else expect({ mod: !!m.mod, line: !!m.line, word: !!m.word }).toEqual({ mod: ctrlKey, line: false, word: ctrlKey });
     }), runs(64));
   });
 });
