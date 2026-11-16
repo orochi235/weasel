@@ -8,14 +8,14 @@ export function midiToFrequency(midi: number): number {
   return 440 * 2 ** ((midi - 69) / 12);
 }
 
-const LETTERS: Record<string, number> = { c: 0, d: 2, e: 4, f: 5, g: 7, a: 9, b: 11 };
+const LETTERS = { c: 0, d: 2, e: 4, f: 5, g: 7, a: 9, b: 11 } as const;
 
 /** MIDI number of a scientific pitch name: C4 is 60. Accepts any run of `#`
  *  or `b` after the letter. */
 export function noteToMidi(name: string): number {
   const m = /^([A-Ga-g])([#b]*)(-?\d+)$/.exec(name.trim());
   if (!m) throw new Error(`@weasel-js/audio: cannot read "${name}" as a note name`);
-  let semitone = LETTERS[m[1].toLowerCase()];
+  let semitone: number = LETTERS[m[1].toLowerCase() as keyof typeof LETTERS];
   for (const acc of m[2]) semitone += acc === '#' ? 1 : -1;
   return (Number(m[3]) + 1) * 12 + semitone;
 }

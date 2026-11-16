@@ -61,7 +61,7 @@ export function patternVoicePeaks(
     }
   }
 
-  const peaks: Record<string, number> = {};
+  const peaks: [string, number][] = [];
   for (const [bus, list] of edges) {
     // A voice ending as another starts has freed its slot.
     list.sort((a, b) => a.at - b.at || a.by - b.by);
@@ -71,7 +71,7 @@ export function patternVoicePeaks(
       held += edge.by;
       peak = Math.max(peak, held);
     }
-    peaks[bus] = peak;
+    peaks.push([bus, peak]);
   }
-  return peaks;
+  return Object.fromEntries(peaks);
 }
