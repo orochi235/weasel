@@ -1,7 +1,6 @@
 import type { Meta, StoryObj } from '@weasel-js/forge';
 import { useState } from 'react';
-import { solid } from '@weasel-js/paint';
-import { type Inherit, type Paint } from '@weasel-js/core';
+import { solid, type Inherit, type Paint } from '@weasel-js/paint';
 import { PaintInput } from '@weasel-js/ui/components/PaintInput';
 
 const meta: Meta<typeof PaintInput> = {

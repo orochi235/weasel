@@ -1,12 +1,8 @@
 import { useCallback, useState, type ReactElement } from 'react';
 import {
-  isPatternPaint,
   switchGradientKind,
   usePaintKind,
   usePaintKinds,
-  INHERIT,
-  type Inherit,
-  type Paint,
   type PaintKind,
   type PaintKindEntry,
 } from '@weasel-js/core';
@@ -18,7 +14,7 @@ import { OpacityRange } from '../OpacityRange/OpacityRange';
 import { GradientEditor } from '../GradientEditor';
 import { paintKindEditor } from './paintKindEditor';
 import { PatternPicker } from '../PatternPicker';
-import { paintPreviewCss, solidColorOf, getAlpha01, paintAlpha, paintWithAlpha, solid, toHex8, withAlpha01 } from '@weasel-js/paint';
+import { paintPreviewCss, solidColorOf, getAlpha01, paintAlpha, paintWithAlpha, solid, toHex8, withAlpha01, isPatternPaint, INHERIT, type Inherit, type Paint } from '@weasel-js/paint';
 import { SegmentedBar, type SegmentedBarItem } from '../Segmented';
 import s from './PaintInput.module.css';
 

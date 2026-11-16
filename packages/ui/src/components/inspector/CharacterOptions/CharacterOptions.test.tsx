@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 import { screen, fireEvent } from '@testing-library/react';
-import { MIXED } from '@weasel-js/core';
+import { MIXED } from '@weasel-js/registry';
 import { CharacterOptions, isCharacterChrome } from './CharacterOptions';
 import { renderWithIcons } from '../../../testing/withIcons';
 

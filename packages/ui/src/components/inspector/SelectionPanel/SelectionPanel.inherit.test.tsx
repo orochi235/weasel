@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { screen, fireEvent, within } from '@testing-library/react';
-import { createScene, asNodeId, INHERIT, inferredNodeProperties, inferredNodeRouting } from '@weasel-js/core';
+import { INHERIT } from '@weasel-js/paint';
+import { createScene, asNodeId, inferredNodeProperties, inferredNodeRouting } from '@weasel-js/core';
 import { SelectionPanel } from './SelectionPanel';
 import { type Layer, type Pose, selectionOf } from './testing/rectScene';
 import { renderWithIcons } from '../../../testing/withIcons';

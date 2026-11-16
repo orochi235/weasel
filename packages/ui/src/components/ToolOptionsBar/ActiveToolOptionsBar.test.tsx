@@ -1,6 +1,7 @@
 import { act, fireEvent, screen } from '@testing-library/react';
 import { beforeAll, describe, expect, it, vi } from 'vitest';
-import { SceneCanvas, WeaselProvider, createScene, createToolOptionValues, defineTool, type ToolOptions } from '@weasel-js/core';
+import { createToolOptionValues, defineTool, type ToolOptions } from '@weasel-js/routing';
+import { SceneCanvas, WeaselProvider, createScene } from '@weasel-js/core';
 import { pref, PX_UNIT } from '@weasel-js/prefs';
 import { renderWithIcons } from '../../testing/withIcons';
 import { ActiveToolOptionsBar } from './ActiveToolOptionsBar';

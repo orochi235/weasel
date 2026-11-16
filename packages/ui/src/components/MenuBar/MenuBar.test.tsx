@@ -1,6 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { act, cleanup, fireEvent, render, screen } from '@testing-library/react';
-import { ActionsProvider, type Action } from '@weasel-js/core';
+import { ActionsProvider } from '@weasel-js/routing/react';
+import type { Action } from '@weasel-js/routing';
 import { pref, type PrefGroup } from '@weasel-js/prefs';
 import { MenuBar } from './MenuBar';
 import { menuBarTitles } from './menuBarTitles';

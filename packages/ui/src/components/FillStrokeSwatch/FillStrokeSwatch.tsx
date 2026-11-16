@@ -1,6 +1,5 @@
 import { useRef, useState, type ReactElement } from 'react';
-import type { Paint } from '@weasel-js/core';
-import { paintPreviewCss, type PaintSlot } from '@weasel-js/paint';
+import { paintPreviewCss, type PaintSlot, type Paint } from '@weasel-js/paint';
 import { Button } from '../Button';
 import { PaintEditorPopover } from '../PaintField/PaintEditorPopover';
 import { useOverlayPortal, type OverlayPortalProps } from '../../overlays/portalHost';

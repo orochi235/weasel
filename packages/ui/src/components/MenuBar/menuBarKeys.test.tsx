@@ -6,10 +6,9 @@ import {
   DepRegistryProvider,
   useActionsRegistry,
   useGestureDispatcher,
-  type Action,
-  type ActionsRegistry,
   type UseGestureDispatcherOptions,
-} from '@weasel-js/core';
+} from '@weasel-js/routing/react';
+import type { Action, ActionsRegistry } from '@weasel-js/routing';
 import { isApplePlatform } from '@weasel-js/gestures';
 import { pref, type PrefGroup } from '@weasel-js/prefs';
 import { MenuBar, type MenuAccessChord } from './MenuBar';

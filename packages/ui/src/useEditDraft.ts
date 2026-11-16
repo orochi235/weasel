@@ -1,5 +1,5 @@
 import { useCallback, useState } from 'react';
-import { useLatest } from '@weasel-js/core';
+import { useLatest } from '@weasel-js/react';
 import { deepEqual } from '@weasel-js/registry';
 
 /** The edit callbacks a control reports through, as `docs/conventions.md` ("Edit callbacks") defines them. */

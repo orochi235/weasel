@@ -1,6 +1,7 @@
 import type { Meta, StoryObj } from '@weasel-js/forge';
 import { useState } from 'react';
-import { declaredToolShortcuts, toolSet, withoutTools, type Tool, type ToolsApi } from '@weasel-js/core';
+import { declaredToolShortcuts, toolSet, withoutTools } from '@weasel-js/routing';
+import { type Tool, type ToolsApi } from '@weasel-js/core';
 import { createModeRegistry, DEFAULT_MODES } from '@weasel-js/modes';
 import { ToolPalette, type ToolPaletteProps } from '@weasel-js/ui/components/ToolPalette';
 import { icon } from '../../icons.gen';

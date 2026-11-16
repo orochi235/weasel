@@ -1,7 +1,7 @@
 import { describe, it, expect, vi } from 'vitest';
 import { screen, fireEvent } from '@testing-library/react';
-import type { Paint } from '@weasel-js/core';
-import { seedMeshPatch, type MeshGradientPaint } from '@weasel-js/core/mesh';
+import type { Paint } from '@weasel-js/paint';
+import { seedMeshPatch, type MeshGradientPaint } from '@weasel-js/renderer/mesh';
 import { MeshEditor } from './MeshEditor';
 import { PaintInput } from '../PaintInput';
 import { renderWithIcons } from '../../testing/withIcons';

@@ -1,6 +1,6 @@
 import { useCallback } from 'react';
 import type { MouseEvent } from 'react';
-import { useMenuHost } from '@weasel-js/core';
+import { useMenuHost } from '@weasel-js/routing/react';
 
 /** An `onContextMenu` handler that opens menu `menu` at the pointer, with `params` passed to
  *  every item. Selecting what was clicked stays the caller's job. The handler changes identity

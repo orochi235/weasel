@@ -1,4 +1,4 @@
-import type { ShortcutGroup, ShortcutRow, ShortcutsDescription } from '@weasel-js/core';
+import type { ShortcutGroup, ShortcutRow, ShortcutsDescription } from '@weasel-js/routing';
 import { detectPlatform, formatShortcutParts, type Platform } from '@weasel-js/gestures';
 import { foldText } from '@weasel-js/registry';
 import { keyLegendsFromFormatted } from '../Keycaps/keyLegendsFromFormatted';

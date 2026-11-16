@@ -3,7 +3,8 @@ import { useState } from 'react';
 import { screen, fireEvent, act } from '@testing-library/react';
 import { renderWithIcons } from '../../testing/withIcons';
 import { ToolPalette, type ToolPaletteProps } from './ToolPalette';
-import { declaredToolShortcuts, toolSet, type Tool, type ToolsApi } from '@weasel-js/core';
+import { declaredToolShortcuts, toolSet } from '@weasel-js/routing';
+import { type Tool, type ToolsApi } from '@weasel-js/core';
 
 const tool = (id: string, group = 'shape'): Tool =>
   ({ id, keybinding: { key: id[0] }, presentation: { label: id, group } }) as Tool;

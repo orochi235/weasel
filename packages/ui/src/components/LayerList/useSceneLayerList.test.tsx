@@ -1,4 +1,5 @@
-import { asNodeId, createPageRun, createScene, type NodeId, type RectPose, type SelectionApi, sceneToAdapter } from '@weasel-js/core';
+import type { NodeId, SelectionApi } from '@weasel-js/routing';
+import { asNodeId, createPageRun, createScene, type RectPose, sceneToAdapter } from '@weasel-js/core';
 import { renderHook } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import type { LayerListItem } from './LayerList';

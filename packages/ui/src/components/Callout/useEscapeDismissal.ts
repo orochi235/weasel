@@ -1,5 +1,5 @@
 import { type ContextType, useCallback, useContext, useMemo, useRef } from 'react';
-import { useLatest } from '@weasel-js/core';
+import { useLatest } from '@weasel-js/react';
 import { OverlayTriggerStateContext } from 'react-aria-components';
 
 /** What `Callout` wires in: the trigger state to hand its popover, the close report, and the dialog's ref. */

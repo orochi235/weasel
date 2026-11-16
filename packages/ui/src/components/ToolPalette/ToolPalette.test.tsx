@@ -2,7 +2,8 @@ import { describe, it, expect, vi } from 'vitest';
 import { screen, fireEvent, act } from '@testing-library/react';
 import { renderWithIcons } from '../../testing/withIcons';
 import { ToolPalette } from './ToolPalette';
-import { declaredToolShortcuts, toolSet, type Tool, type ToolsApi } from '@weasel-js/core';
+import { declaredToolShortcuts, toolSet } from '@weasel-js/routing';
+import { type Tool, type ToolsApi } from '@weasel-js/core';
 import { createModeRegistry } from '@weasel-js/modes';
 import { DEFAULT_MODES } from '@weasel-js/modes/presets/default';
 

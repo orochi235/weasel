@@ -6,8 +6,9 @@ import {
   type PointerEvent as ReactPointerEvent,
   type ReactNode,
 } from 'react';
-import { historyKey, openPointerSession, useLatest, type PointerSession } from '@weasel-js/core';
-import { useKitSettings } from '@weasel-js/react';
+import { historyKey } from '@weasel-js/gestures';
+import { openPointerSession, type PointerSession } from '@weasel-js/routing';
+import { useKitSettings, useLatest } from '@weasel-js/react';
 import {
   Plot2D,
   type Plot2DHandle,

@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import type { Paint } from '@weasel-js/core';
+import type { Paint } from '@weasel-js/paint';
 import type { LeafReading, PrefLeaf, PrefsSource } from '@weasel-js/prefs';
 import type { LiveControl } from '../Prefs/commitPolicy';
 import type { EntryAt } from '../Prefs/entry';

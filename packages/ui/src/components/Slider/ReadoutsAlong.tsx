@@ -1,5 +1,5 @@
 import { useEffect, useLayoutEffect, useRef, type CSSProperties, type ReactElement, type ReactNode } from 'react';
-import { useLatest } from '@weasel-js/core';
+import { useLatest } from '@weasel-js/react';
 import on from '../Along/onRun.module.css';
 import s from './Slider.module.css';
 import { GAP, staggerRows } from './staggerRows';

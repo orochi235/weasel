@@ -1,5 +1,6 @@
 import { useScopedTools, useToolOptionParams } from '@weasel-js/routing/react';
-import { setToolOption, type Tool, type ToolOptionValues, type ToolsApi } from '@weasel-js/core';
+import { setToolOption, type ToolOptionValues } from '@weasel-js/routing';
+import { type Tool, type ToolsApi } from '@weasel-js/core';
 import { ToolOptionsBar, type ToolOptionsBarProps } from './ToolOptionsBar';
 import { getOwn } from '@weasel-js/registry';
 

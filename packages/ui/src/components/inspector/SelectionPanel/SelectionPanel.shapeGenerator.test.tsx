@@ -1,15 +1,13 @@
 import { describe, expect, it } from 'vitest';
 import { act, fireEvent, screen } from '@testing-library/react';
+import { pathInWorld, starPath, type PolygonPath } from '@weasel-js/geom';
+import type { SelectionApi } from '@weasel-js/routing';
 import {
   asNodeId,
   createScene,
   inferredNodeProperties,
   inferredNodeRouting,
-  pathInWorld,
   shapeGeneratorOf,
-  starPath,
-  type PolygonPath,
-  type SelectionApi,
 } from '@weasel-js/core';
 import { SelectionPanel } from './SelectionPanel';
 import { renderWithIcons } from '../../../testing/withIcons';

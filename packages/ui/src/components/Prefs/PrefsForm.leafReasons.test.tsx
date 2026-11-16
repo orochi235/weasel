@@ -1,6 +1,7 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { act, cleanup, fireEvent, renderHook, screen } from '@testing-library/react';
-import { asNodeId, createScene, IDENTITY_POSE_COMPOSITION, type NodePropertiesEntry, type NodeRoutingEntry, type SelectionApi } from '@weasel-js/core';
+import type { SelectionApi } from '@weasel-js/routing';
+import { asNodeId, createScene, IDENTITY_POSE_COMPOSITION, type NodePropertiesEntry, type NodeRoutingEntry } from '@weasel-js/core';
 import type { PrefAction, PrefGroup, PrefLeaf } from '@weasel-js/prefs';
 import { PrefsForm } from './PrefsForm';
 import { useLeafAction } from './useLeafAction';

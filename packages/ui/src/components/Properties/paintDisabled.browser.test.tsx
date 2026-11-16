@@ -1,6 +1,6 @@
 import '@weasel-js/theme/tokens.css';
 import { cleanup, screen } from '@testing-library/react';
-import { gradientForBounds, type Paint } from '@weasel-js/core';
+import { gradientForBounds, type Paint } from '@weasel-js/paint';
 import { afterEach, expect, it } from 'vitest';
 import { userEvent } from 'vitest/browser';
 import { PropertyControl } from '@weasel-js/ui/components/Properties';

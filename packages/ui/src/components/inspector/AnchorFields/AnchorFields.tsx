@@ -1,5 +1,6 @@
 import { type ReactNode, useState } from 'react';
-import { type AnchorField, type AnchorFieldsApi, useAnchorFields } from '@weasel-js/core';
+import type { AnchorField } from '@weasel-js/geom';
+import { type AnchorFieldsApi, useAnchorFields } from '@weasel-js/core';
 import type { UnitTable } from '@weasel-js/quantity';
 import { PropertyField, PropertyList } from '../../Properties';
 

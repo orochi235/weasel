@@ -1,6 +1,7 @@
 import type { Meta, StoryObj } from '@weasel-js/forge';
 import { useState } from 'react';
-import { ActionsProvider, type Action } from '@weasel-js/core';
+import { ActionsProvider } from '@weasel-js/routing/react';
+import type { Action } from '@weasel-js/routing';
 import { pref, type PrefGroup } from '@weasel-js/prefs';
 import { MenuBar, type MenuBarProps } from '@weasel-js/ui/components/MenuBar';
 import s from './MenuBar.stories.module.css';

@@ -1,5 +1,5 @@
 import { useCallback } from 'react';
-import { useLatest } from '@weasel-js/core';
+import { useLatest } from '@weasel-js/react';
 import type { SliderProps, Thumb } from './types';
 
 /**

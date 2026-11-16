@@ -1,4 +1,4 @@
-import type { SelectionApi } from '@weasel-js/core';
+import type { SelectionApi } from '@weasel-js/routing';
 import { createSelectionSource, type LeafState, type SelectionSource } from '@weasel-js/prefs';
 import type { LeafWrites } from './commitLeaf';
 import { nodeLeafValue, nodeValueAt, panelLeafKey, type AnyNode, type PanelLeaf } from './model';

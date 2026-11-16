@@ -1,4 +1,4 @@
-import { clientToCanvas } from '@weasel-js/core';
+import { clientToCanvas } from '@weasel-js/routing';
 import type { Point } from '@weasel-js/geom';
 
 /**

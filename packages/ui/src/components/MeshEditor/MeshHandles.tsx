@@ -1,12 +1,7 @@
 import { type ReactElement } from 'react';
-import { asPaint, type Paint } from '@weasel-js/core';
-import {
-  meshGuides,
-  meshHandles,
-  moveMeshHandle,
-  type MeshGradientPaint,
-  type MeshHandle,
-} from '@weasel-js/core/mesh';
+import type { Paint } from '@weasel-js/paint';
+import { meshGuides, meshHandles, moveMeshHandle, type MeshGradientPaint, type MeshHandle } from '@weasel-js/renderer/mesh';
+import { asPaint } from '@weasel-js/core';
 import { useTints } from '@weasel-js/theme/react';
 import { handleHalf } from '../../handles';
 import { useEditDraft } from '../../useEditDraft';

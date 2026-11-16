@@ -1,5 +1,5 @@
 import { useMemo, useState, type ReactElement } from 'react';
-import type { Action } from '@weasel-js/core';
+import type { Action } from '@weasel-js/routing';
 import { f, meta, story } from '@weasel-js/forge';
 import { pref, type PrefGroup, type PrefOrder } from '@weasel-js/prefs';
 import { PrefsBar } from '@weasel-js/ui/components/PrefsBar';

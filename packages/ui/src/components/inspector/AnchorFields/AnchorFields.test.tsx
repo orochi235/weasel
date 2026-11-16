@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 import { fireEvent, render, screen } from '@testing-library/react';
-import type { AnchorFieldValues } from '@weasel-js/core';
+import type { AnchorFieldValues } from '@weasel-js/geom';
 import { AnchorFields } from './AnchorFields';
 
 function setup(values: AnchorFieldValues) {

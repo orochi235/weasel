@@ -3,7 +3,8 @@ import { useState } from 'react';
 import { cleanup, render, screen } from '@testing-library/react';
 import { afterEach, expect, it } from 'vitest';
 import { userEvent } from 'vitest/browser';
-import { declaredToolShortcuts, type Tool, type ToolsApi } from '@weasel-js/core';
+import { declaredToolShortcuts } from '@weasel-js/routing';
+import { type Tool, type ToolsApi } from '@weasel-js/core';
 import { ToolPalette } from '@weasel-js/ui/components/ToolPalette';
 
 afterEach(cleanup);

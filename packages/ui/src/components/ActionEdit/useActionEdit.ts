@@ -1,5 +1,7 @@
 import { useMemo } from 'react';
-import { useLatest, useOngoingAction, type InvokeParams } from '@weasel-js/core';
+import { useLatest } from '@weasel-js/react';
+import { useOngoingAction } from '@weasel-js/routing/react';
+import type { InvokeParams } from '@weasel-js/routing';
 import { useEditDraft, type EditCallbacks } from '../../useEditDraft';
 
 /** What {@link useActionEdit} hands a control: the edit callbacks, and the value to draw. */

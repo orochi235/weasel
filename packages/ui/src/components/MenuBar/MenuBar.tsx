@@ -1,6 +1,7 @@
 import { useCallback, useId, useMemo, useRef, useState, type KeyboardEvent } from 'react';
 import { createPortal } from 'react-dom';
-import { useLatest, type OpenMenu } from '@weasel-js/core';
+import { useLatest } from '@weasel-js/react';
+import type { OpenMenu } from '@weasel-js/routing';
 import type { PrefGroup } from '@weasel-js/prefs';
 import { PrefsBar, barReader } from '../PrefsBar/PrefsBar';
 import { useBarMenuResolver } from '../Bar/BarMenu';

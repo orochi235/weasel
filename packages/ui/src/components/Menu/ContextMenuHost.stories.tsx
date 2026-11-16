@@ -1,8 +1,7 @@
 import type { Meta, StoryObj } from '@weasel-js/forge';
 import { useEffect, useMemo, useState } from 'react';
-import {
-  ActionDisabledReason, ActionsProvider, useMenuHost, useMenus, type Action, type MenuDef,
-} from '@weasel-js/core';
+import { ActionDisabledReason, type Action, type MenuDef } from '@weasel-js/routing';
+import { ActionsProvider, useMenuHost, useMenus } from '@weasel-js/routing/react';
 import { pref } from '@weasel-js/prefs';
 import { ContextMenuHost, useContextMenu } from '@weasel-js/ui/components/Menu';
 import s from './ContextMenuHost.stories.module.css';

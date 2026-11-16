@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, screen } from '@testing-library/react';
-import type { Action } from '@weasel-js/core';
+import type { Action } from '@weasel-js/routing';
 import { pref } from '@weasel-js/prefs';
 import { PrefsForm } from '../../Prefs/PrefsForm';
 import { renderWithIcons } from '../../../testing/withIcons';

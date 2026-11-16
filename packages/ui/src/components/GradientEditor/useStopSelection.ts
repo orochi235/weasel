@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import type { GradStop } from '@weasel-js/core';
+import type { GradStop } from '@weasel-js/paint';
 
 /** Stop indexes in the order the stops sit along the gradient; stops at one offset keep their stored order. */
 export function stopOrder(stops: readonly GradStop[]): number[] {

@@ -1,14 +1,7 @@
 import type { Meta, StoryObj } from '@weasel-js/forge';
-import {
-  ActionsProvider,
-  createKeymapStack,
-  DepRegistryProvider,
-  held,
-  key,
-  useDepSource,
-  type Action,
-  type GestureBinding,
-} from '@weasel-js/core';
+import { ActionsProvider, DepRegistryProvider, useDepSource } from '@weasel-js/routing/react';
+import { createKeymapStack, type Action, type GestureBinding } from '@weasel-js/routing';
+import { held, key } from '@weasel-js/gestures';
 import { useState } from 'react';
 import { KeymapHint } from '@weasel-js/ui/components/KeymapHint';
 import { RegisterActions } from '@weasel-js/routing/testing/registerAction';

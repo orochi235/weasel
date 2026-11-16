@@ -1,8 +1,9 @@
 import { useRef, useState, type PointerEvent, type ReactNode } from 'react';
-import { pastDragThreshold, startCarry, type CarryPayload, type Tool } from '@weasel-js/core';
+import { startCarry, type CarryPayload } from '@weasel-js/routing';
+import { type Tool } from '@weasel-js/core';
 import { useKitSetting } from '@weasel-js/react';
 import { DragGhost } from '../DragGhost';
-import { isPrimaryPress } from '@weasel-js/gestures';
+import { isPrimaryPress, pastDragThreshold } from '@weasel-js/gestures';
 
 interface GhostState {
   node: ReactNode;

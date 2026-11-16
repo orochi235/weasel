@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react';
-import { actionItems, dynamicActionId, useActionsRegistry, type ActionItem } from '@weasel-js/core';
+import { actionItems, dynamicActionId, type ActionItem } from '@weasel-js/routing';
+import { useActionsRegistry } from '@weasel-js/routing/react';
 import type { PrefAction } from '@weasel-js/prefs';
 import type { Grade } from '@weasel-js/theme';
 import { resolveIcon } from '../Icon/resolveIcon';

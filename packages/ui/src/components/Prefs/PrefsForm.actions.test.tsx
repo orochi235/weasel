@@ -1,7 +1,8 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, screen } from '@testing-library/react';
 import type { ReactNode } from 'react';
-import { ActionsProvider, type Action } from '@weasel-js/core';
+import { ActionsProvider } from '@weasel-js/routing/react';
+import type { Action } from '@weasel-js/routing';
 import { pref, type PrefGroup } from '@weasel-js/prefs';
 import { PrefsForm } from './PrefsForm';
 import { actionLeafVariants } from './registeredActions';

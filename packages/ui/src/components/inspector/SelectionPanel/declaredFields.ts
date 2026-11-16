@@ -1,4 +1,5 @@
-import type { NodeClip, NodeId, SceneNode } from '@weasel-js/core';
+import type { NodeId } from '@weasel-js/routing';
+import type { NodeClip, SceneNode } from '@weasel-js/core';
 import type { UnitScope } from '@weasel-js/quantity';
 
 /** The scene methods that record a declared field. */

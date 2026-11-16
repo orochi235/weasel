@@ -1,5 +1,5 @@
 import { useEffect, useRef, type PointerEvent as ReactPointerEvent } from 'react';
-import { openPointerSession, pastDragThreshold, type PointerSession } from '@weasel-js/core';
+import { openPointerSession, type PointerSession } from '@weasel-js/routing';
 import { useKitSetting } from '@weasel-js/react';
 import { clamp } from '@weasel-js/geom';
 import type { SliderGeometry } from './sliderGeometry';
@@ -7,7 +7,7 @@ import { resolveBounds } from './stops';
 import type { SliderProps, Thumb } from './types';
 import type { useScale } from './useSpan';
 import { useLatestHandlers } from './useLatestHandlers';
-import { isPrimaryPress } from '@weasel-js/gestures';
+import { isPrimaryPress, pastDragThreshold } from '@weasel-js/gestures';
 import { sameThumbValues } from './tagged';
 
 /** What a region drag reads: the thumbs and their handlers, the span, and the map and geometry a pointer goes through. */

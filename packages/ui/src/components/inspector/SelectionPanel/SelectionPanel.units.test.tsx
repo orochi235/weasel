@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
-import { asNodeId, createScene, type NodePropertiesEntry, type UnitScope } from '@weasel-js/core';
+import type { UnitScope } from '@weasel-js/quantity';
+import { asNodeId, createScene, type NodePropertiesEntry } from '@weasel-js/core';
 import { SelectionPanel } from './SelectionPanel';
 import { type Data, type Layer, type Pose, routing, selectionOf } from './testing/rectScene';
 

@@ -1,11 +1,11 @@
 import { type ReactElement } from 'react';
-import { asPaint, type ColorSpace, type Paint } from '@weasel-js/core';
-import type { MeshGradientPaint } from '@weasel-js/core/mesh';
+import type { MeshGradientPaint } from '@weasel-js/renderer/mesh';
+import { asPaint } from '@weasel-js/core';
 import { ColorField } from '../ColorField';
 import { holdScope, useControlAccess, type HoldProps } from '../Disabled';
 import { heldState } from '../Disabled/controlHold';
 import { SegmentedBar, type SegmentedBarItem } from '../Segmented';
-import { paintPreviewCss } from '@weasel-js/paint';
+import { paintPreviewCss, type ColorSpace, type Paint } from '@weasel-js/paint';
 import s from './MeshEditor.module.css';
 
 const SPACES: readonly SegmentedBarItem<ColorSpace>[] = [

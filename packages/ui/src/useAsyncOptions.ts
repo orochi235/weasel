@@ -1,6 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { useLatest } from '@weasel-js/core';
-import { useLatestOnly } from '@weasel-js/react';
+import { useLatestOnly, useLatest } from '@weasel-js/react';
 import { after } from '@weasel-js/registry';
 import type { ListOption } from './components/listOption';
 import type { OptionKey } from './optionKey';

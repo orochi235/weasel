@@ -1,5 +1,5 @@
 import { useState, type ReactElement } from 'react';
-import type { EasingSpec } from '@weasel-js/core';
+import type { EasingSpec } from '@weasel-js/geom';
 import type { Meta, StoryObj } from '@weasel-js/forge';
 import { PropertyList, PropertyRow } from '@weasel-js/ui/components/Properties';
 import { EasingPicker, type EasingPickerProps } from '@weasel-js/ui/components/EasingPicker';

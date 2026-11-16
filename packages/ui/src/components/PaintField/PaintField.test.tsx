@@ -1,6 +1,7 @@
 import { describe, it, expect, vi } from 'vitest';
 import { act, screen, fireEvent } from '@testing-library/react';
-import { asPaint, registerPaintKind, type Paint } from '@weasel-js/core';
+import type { Paint } from '@weasel-js/paint';
+import { asPaint, registerPaintKind } from '@weasel-js/core';
 import { PaintField } from './PaintField';
 import { renderWithIcons } from '../../testing/withIcons';
 

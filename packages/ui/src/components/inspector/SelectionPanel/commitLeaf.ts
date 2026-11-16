@@ -1,4 +1,5 @@
-import { asNodeId, type NodeId, type NodePropertiesEntry, type Scene, type SelectionApi } from '@weasel-js/core';
+import type { NodeId, SelectionApi } from '@weasel-js/routing';
+import { asNodeId, type NodePropertiesEntry, type Scene } from '@weasel-js/core';
 import { prefStoredReset } from '@weasel-js/prefs';
 import { boundAtNode } from './nodeBounds';
 import { declaredField, nodeRoot } from './declaredFields';

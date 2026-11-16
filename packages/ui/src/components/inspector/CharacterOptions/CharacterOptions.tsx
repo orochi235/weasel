@@ -7,10 +7,10 @@
  * `MIXED` becomes a path in the bar's `mixed` set, so each control shows its
  * own indeterminate presentation.
  */
-import { isSolidPaint, MIXED, resolveFill, resolveScreenLength } from '@weasel-js/core';
+import { isSolidPaint, resolveFill, resolveScreenLength, type ScreenLength } from '@weasel-js/paint';
+import { MIXED } from '@weasel-js/registry';
 import { numericWeight, SCRIPT_METRICS, scriptMetricsFor } from '@weasel-js/text';
 import { CHARACTER_OPTIONS } from './characterSchema';
-import type { ScreenLength } from '@weasel-js/core';
 import type { RangeStyle, RunStylePatch, StyledRun } from '@weasel-js/text';
 import { ToolOptionsBar } from '../../ToolOptionsBar';
 import type { ReactNode } from 'react';

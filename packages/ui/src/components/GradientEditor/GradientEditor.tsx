@@ -1,11 +1,9 @@
 import { type ReactElement } from 'react';
+import { isGradientPaint, type ColorSpace, type Paint } from '@weasel-js/paint';
 import {
-  isGradientPaint,
   switchGradientKind,
   useGradientKinds,
   usePaintKind,
-  type ColorSpace,
-  type Paint,
   type PaintKind,
 } from '@weasel-js/core';
 import { nativeSvgKind, nativeSvgSpace } from '@weasel-js/svg';

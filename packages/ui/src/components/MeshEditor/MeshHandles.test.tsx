@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeAll } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
-import { meshFromStops, seedMeshPatch, type MeshGradientPaint } from '@weasel-js/core/mesh';
+import { meshFromStops, seedMeshPatch, type MeshGradientPaint } from '@weasel-js/renderer/mesh';
 import { handleHalf } from '../../handles';
 import { MeshHandles } from './MeshHandles';
 

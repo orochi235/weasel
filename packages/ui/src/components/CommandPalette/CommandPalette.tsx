@@ -6,13 +6,8 @@ import {
   type KeyboardEvent as ReactKeyboardEvent,
 } from 'react';
 import { imeKey, stepStop } from '@weasel-js/ui-input';
-import {
-  actionItemShortcuts,
-  actionItemTitle,
-  dynamicActionId,
-  useSelectionContext,
-  type ActionItem,
-} from '@weasel-js/core';
+import { actionItemShortcuts, actionItemTitle, dynamicActionId, type ActionItem } from '@weasel-js/routing';
+import { useSelectionContext } from '@weasel-js/routing/react';
 import { Dialog } from '../Dialog';
 import { useAppearance } from '../appearance';
 import { PrefsDialog } from '../Prefs/PrefsDialog';

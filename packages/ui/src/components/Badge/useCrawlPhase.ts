@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { useVisibleRaf } from '@weasel-js/core';
+import { useVisibleRaf } from '@weasel-js/react';
 
 /** A 0..1 phase that advances `crawl` cycles a second (0.2 for `true`), and rests at 0 when `crawl` is off. */
 export function useCrawlPhase(crawl: boolean | number | undefined): number {

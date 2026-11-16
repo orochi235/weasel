@@ -1,14 +1,7 @@
 import { useCallback, useMemo, useRef, useSyncExternalStore } from 'react';
 import { deepEqual } from '@weasel-js/registry';
-import {
-  actionSettingsParams,
-  buildDepsFromRequires,
-  dynamicActionId,
-  readActionSettings,
-  useActionsRegistry,
-  useOptionalDepRegistry,
-  type ActionItem,
-} from '@weasel-js/core';
+import { actionSettingsParams, buildDepsFromRequires, dynamicActionId, readActionSettings, type ActionItem } from '@weasel-js/routing';
+import { useActionsRegistry, useOptionalDepRegistry } from '@weasel-js/routing/react';
 import type { PrefGroup } from '@weasel-js/prefs';
 
 /** An action's settings form as a prefs form draws it. */

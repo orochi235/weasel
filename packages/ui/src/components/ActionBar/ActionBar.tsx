@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import { taggedActionItems } from '@weasel-js/core';
+import { taggedActionItems } from '@weasel-js/routing';
 import type { IconSpec } from '@weasel-js/icons';
 import type { PrefActions, PrefGroup } from '@weasel-js/prefs';
 import { PrefsBar } from '../PrefsBar/PrefsBar';

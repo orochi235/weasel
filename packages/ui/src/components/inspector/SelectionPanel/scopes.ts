@@ -1,4 +1,5 @@
-import { asNodeId, sceneSharedUnitScopes, type ScopedScene, type UnitScope } from '@weasel-js/core';
+import type { UnitScope } from '@weasel-js/quantity';
+import { asNodeId, sceneSharedUnitScopes, type ScopedScene } from '@weasel-js/core';
 import { prefLeafInScopes } from '@weasel-js/prefs';
 import { isPanelSection, type AnyNode, type PanelItem, type PanelSection } from './model';
 

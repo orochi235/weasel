@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 import { fireEvent, screen } from '@testing-library/react';
-import { asNodeId, createScene, type NodePropertiesEntry, type NodeRoutingEntry, type SelectionApi } from '@weasel-js/core';
+import type { SelectionApi } from '@weasel-js/routing';
+import { asNodeId, createScene, type NodePropertiesEntry, type NodeRoutingEntry } from '@weasel-js/core';
 import type { PrefLeaf, PrefList } from '@weasel-js/prefs';
 import { prefListIsText } from '../../Prefs';
 import { SelectionPanel } from './SelectionPanel';

@@ -1,4 +1,6 @@
-import { type BoundGesture, type CommandOptions, type KeySpec, useCommand } from '@weasel-js/core';
+import type { BoundGesture } from '@weasel-js/routing';
+import { useCommand, type CommandOptions } from '@weasel-js/routing/react';
+import type { KeySpec } from '@weasel-js/gestures';
 
 /** The id of the command that opens the shortcut sheet. */
 export const SHORTCUT_SHEET_ID = 'shortcuts.show';

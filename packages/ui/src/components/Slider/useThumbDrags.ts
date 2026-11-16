@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState, type PointerEvent as ReactPointerEvent } from 'react';
-import { openPointerSession, type PointerSession } from '@weasel-js/core';
+import { openPointerSession, type PointerSession } from '@weasel-js/routing';
 import { snapToStep } from '@weasel-js/quantity';
 import { clamp, maxOf, minOf } from '@weasel-js/geom';
 import { DROP_OFF, type SliderGeometry } from './sliderGeometry';

@@ -1,6 +1,6 @@
 import { describe, it, expect, vi } from 'vitest';
 import { fireEvent, screen, within } from '@testing-library/react';
-import { ActionsProvider } from '@weasel-js/core';
+import { ActionsProvider } from '@weasel-js/routing/react';
 import type { PrefGroup, PrefLeaf } from '@weasel-js/prefs';
 import { icon } from '../../icons.gen';
 import { PrefsBar } from '../PrefsBar/PrefsBar';

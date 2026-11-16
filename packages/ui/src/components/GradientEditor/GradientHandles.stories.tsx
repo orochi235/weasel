@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from '@weasel-js/forge';
 import { useState } from 'react';
-import type { GradientPaint } from '@weasel-js/core';
+import type { GradientPaint } from '@weasel-js/paint';
 import { GradientHandles } from '@weasel-js/ui/components/GradientEditor';
 import s from './GradientHandles.stories.module.css';
 

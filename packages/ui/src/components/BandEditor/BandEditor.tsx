@@ -9,7 +9,7 @@ import {
   type ReactElement,
   type ReactNode,
 } from 'react';
-import { openPointerSession, type PointerSession } from '@weasel-js/core';
+import { openPointerSession, type PointerSession } from '@weasel-js/routing';
 import { focusedControlOwnsKey, isEditableTarget, isPrimaryPress } from '@weasel-js/gestures';
 import { decimal, type Display, type Quantity } from '@weasel-js/quantity';
 import s from './BandEditor.module.css';

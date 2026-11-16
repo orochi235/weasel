@@ -1,6 +1,8 @@
 import { afterEach, describe, expect, it } from 'vitest';
 import { cleanup, render, screen } from '@testing-library/react';
-import { IDENTITY_POSE_COMPOSITION, ActionsProvider, asNodeId, createScene, type Action, type NodePropertiesEntry, type NodeRoutingEntry, type SelectionApi } from '@weasel-js/core';
+import { ActionsProvider } from '@weasel-js/routing/react';
+import type { Action, SelectionApi } from '@weasel-js/routing';
+import { IDENTITY_POSE_COMPOSITION, asNodeId, createScene, type NodePropertiesEntry, type NodeRoutingEntry } from '@weasel-js/core';
 import { pref, type PrefLeaf } from '@weasel-js/prefs';
 import { SelectionPanel } from './SelectionPanel';
 import { RegisterAction } from '@weasel-js/routing/testing/registerAction';

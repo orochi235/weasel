@@ -4,13 +4,15 @@ import {
   decomposePatternTransform,
   isImagePatternPaint,
   isTilePaint,
-  seedTile,
   TILE_KINDS,
   type ImagePatternPaint,
   type PatternPaint,
   type TileKind,
   type TilePaint,
   type TilePatternSpec,
+} from '@weasel-js/paint';
+import {
+  seedTile,
 } from '@weasel-js/core';
 import { DEG_TO_RAD, RAD_TO_DEG, wrapAngle } from '@weasel-js/geom';
 import { useLatestOnly } from '@weasel-js/react';

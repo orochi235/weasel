@@ -1,5 +1,4 @@
-import { isPlainObject } from '@weasel-js/core';
-import { getOwn, setOwn } from '@weasel-js/registry';
+import { getOwn, setOwn, isPlainObject } from '@weasel-js/registry';
 import {
   isPrefLeaf, prefClampNumber, prefNumberAt, prefSectionLeaves,
   type PrefLeaf, type PrefNumber, type PrefObject, type PrefSection,

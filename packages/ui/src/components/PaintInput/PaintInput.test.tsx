@@ -1,13 +1,12 @@
 import { describe, it, expect, vi, afterEach } from 'vitest';
 import { useState } from 'react';
 import { act, cleanup, screen, fireEvent, within } from '@testing-library/react';
+import type { Paint, GradientPaint } from '@weasel-js/paint';
+import { seedMeshPatch } from '@weasel-js/renderer/mesh';
 import {
   asPaint,
   registerPaintKind,
-  type Paint,
-  type GradientPaint,
 } from '@weasel-js/core';
-import { seedMeshPatch } from '@weasel-js/core/mesh';
 import { renderWithIcons } from '../../testing/withIcons';
 import { PaintInput } from './PaintInput';
 

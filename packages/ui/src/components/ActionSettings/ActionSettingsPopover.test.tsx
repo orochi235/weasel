@@ -1,6 +1,7 @@
 import { afterEach, expect, it } from 'vitest';
 import { cleanup, fireEvent, renderHook, screen } from '@testing-library/react';
-import { ActionsProvider, type Action, type ActionItem } from '@weasel-js/core';
+import { ActionsProvider } from '@weasel-js/routing/react';
+import type { Action, ActionItem } from '@weasel-js/routing';
 import type { PrefGroup } from '@weasel-js/prefs';
 import { renderWithIcons } from '../../testing/withIcons';
 import { ActionSettingsPopover } from './ActionSettingsPopover';

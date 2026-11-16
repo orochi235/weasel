@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState, type RefObject } from 'react';
-import { scrolledPlaceOf } from '@weasel-js/core';
+import { scrolledPlaceOf } from '@weasel-js/routing';
 import { prefersReducedMotion } from '@weasel-js/react';
 import { compositeKey } from '@weasel-js/registry';
 

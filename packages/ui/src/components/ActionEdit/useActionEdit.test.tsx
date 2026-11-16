@@ -1,7 +1,8 @@
 import { describe, it, expect } from 'vitest';
 import { act, fireEvent, render, screen } from '@testing-library/react';
 import { useEffect } from 'react';
-import { ActionsProvider, createDispatcher, dynamicActionId, useActionsRegistry, type Action, type ActionsRegistry } from '@weasel-js/core';
+import { ActionsProvider, useActionsRegistry } from '@weasel-js/routing/react';
+import { createDispatcher, dynamicActionId, type Action, type ActionsRegistry } from '@weasel-js/routing';
 import { InlineRange } from '../InlineRange';
 import { Slider } from '../Slider';
 import { useActionEdit } from './useActionEdit';

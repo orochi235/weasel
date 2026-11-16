@@ -1,11 +1,11 @@
 import { describe, it, expect } from 'vitest';
 import { cleanup, screen, fireEvent, within } from '@testing-library/react';
+import type { SelectionApi } from '@weasel-js/routing';
 import {
   createScene,
   asNodeId,
   inferredNodeProperties,
   inferredNodeRouting,
-  type SelectionApi,
 } from '@weasel-js/core';
 import { textPreset } from '@weasel-js/text-tools';
 import { SelectionPanel } from './SelectionPanel';

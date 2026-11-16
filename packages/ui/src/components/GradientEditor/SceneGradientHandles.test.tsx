@@ -1,20 +1,15 @@
 import { beforeAll, describe, expect, it } from 'vitest';
 import { useEffect, useRef, useState, type ReactElement, type ReactNode } from 'react';
 import { render, screen, fireEvent } from '@testing-library/react';
+import { ActionsProvider, useActionsRegistry } from '@weasel-js/routing/react';
+import { createDispatcher, type Action } from '@weasel-js/routing';
+import type { Paint, GradientPaint, Stroke, Fill } from '@weasel-js/paint';
+import { seedMeshPatch, type MeshGradientPaint } from '@weasel-js/renderer/mesh';
 import {
-  ActionsProvider,
-  createDispatcher,
   createScene,
   asNodeId,
-  useActionsRegistry,
-  type Action,
-  type Paint,
-  type GradientPaint,
   type RectPose,
-  type Stroke,
-  type Fill,
 } from '@weasel-js/core';
-import { seedMeshPatch, type MeshGradientPaint } from '@weasel-js/core/mesh';
 import { SceneGradientHandles } from './SceneGradientHandles';
 
 const STOPS = [

@@ -1,5 +1,6 @@
 import { useId, useMemo, useState, useSyncExternalStore } from 'react';
-import { describeShortcuts, useActionsRegistry, type Action, type ShortcutGroup, type ShortcutRow, type ShortcutTool, type ToolSet } from '@weasel-js/core';
+import { describeShortcuts, type Action, type ShortcutGroup, type ShortcutRow, type ShortcutTool, type ToolSet } from '@weasel-js/routing';
+import { useActionsRegistry } from '@weasel-js/routing/react';
 import { formatShortcut, isApplePlatform, type Platform } from '@weasel-js/gestures';
 import { Dialog } from '../Dialog';
 import { Icon } from '../Icon/Icon';

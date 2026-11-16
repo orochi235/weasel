@@ -1,4 +1,7 @@
 import { useMemo, useSyncExternalStore, type ReactNode } from 'react';
+import type { SelectionApi } from '@weasel-js/routing';
+import type { UnitScope } from '@weasel-js/quantity';
+import { useLatest } from '@weasel-js/react';
 import {
   asNodeId,
   nodeTraitsOf,
@@ -7,9 +10,6 @@ import {
   type NodePropertiesEntry,
   type NodeRoutingEntry,
   type Scene,
-  type SelectionApi,
-  type UnitScope,
-  useLatest,
 } from '@weasel-js/core';
 import { leafWrites } from './commitLeaf';
 import { panelSource } from './panelSource';

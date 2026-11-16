@@ -1,5 +1,5 @@
 import { useMemo, useState, type KeyboardEvent as ReactKeyboardEvent, type ReactElement, type ReactNode } from 'react';
-import type { EasingSpec } from '@weasel-js/core';
+import type { EasingSpec } from '@weasel-js/geom';
 import { isEditableTarget } from '@weasel-js/gestures';
 import type { Keyframe, SampledTrack, Track } from '@weasel-js/animator';
 import type { HoldProps } from '../Disabled';

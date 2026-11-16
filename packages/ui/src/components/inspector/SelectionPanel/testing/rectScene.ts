@@ -1,10 +1,10 @@
+import type { SelectionApi } from '@weasel-js/routing';
 import {
   createScene,
   asNodeId,
   rotationDegreesUnit,
   type NodePropertiesEntry,
   type NodeRoutingEntry,
-  type SelectionApi,
 } from '@weasel-js/core';
 
 export interface Data { kind: string; fill?: string; label?: string }

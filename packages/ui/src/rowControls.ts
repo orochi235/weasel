@@ -1,5 +1,5 @@
 import type { KeyboardEvent } from 'react';
-import { CONTROL_SELECTOR } from '@weasel-js/core';
+import { CONTROL_SELECTOR } from '@weasel-js/gestures';
 import { arrowDir } from '@weasel-js/ui-input';
 import { inlineDirection } from './useRovingTabIndex';
 

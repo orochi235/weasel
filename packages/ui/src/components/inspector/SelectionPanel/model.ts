@@ -9,12 +9,10 @@
 // preferences schema (`PrefGroup`) reads the other way and is not accepted.
 
 import {
-  MIXED,
   routeKind,
-  type Mixed,
+  type AnyNode,
   type NodePropertiesEntry,
   type NodeRoutingEntry,
-  type AnyNode,
 } from '@weasel-js/core';
 import type { IconSpec } from '@weasel-js/icons';
 import {
@@ -33,7 +31,7 @@ import {
   type PrefSection,
   type PrefSectionAs,
 } from '@weasel-js/prefs';
-import { setOwn } from '@weasel-js/registry';
+import { setOwn, MIXED, type Mixed } from '@weasel-js/registry';
 import { declaredField, nodeRoot } from './declaredFields';
 
 // Re-exported under its existing public name here: the kit-wide "these

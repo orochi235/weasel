@@ -15,7 +15,8 @@ import { renderCells, type LeafCell, type RenderedCell } from './cells';
 import { MIXED, nodeValueAt, panelLeafKey, sharedValue, type AnyNode, type PanelLeaf, type PanelRow } from './model';
 import { leafAcross } from './nodeBounds';
 import type { PanelInherit, LeafContext, LeafRenderer } from './renderContext';
-import { INHERIT, type InheritedPaint } from '@weasel-js/core';
+import { INHERIT } from '@weasel-js/paint';
+import { type InheritedPaint } from '@weasel-js/core';
 import { renderBuiltin } from './renderLeaf';
 
 /** What every leaf of one panel reads, whichever row it sits in. */

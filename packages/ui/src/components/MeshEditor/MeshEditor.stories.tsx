@@ -1,7 +1,7 @@
 import type { Meta, StoryObj } from '@weasel-js/forge';
 import { useState } from 'react';
-import type { Paint } from '@weasel-js/core';
-import { meshFromStops, seedMeshPatch, type MeshGradientPaint } from '@weasel-js/core/mesh';
+import type { Paint } from '@weasel-js/paint';
+import { meshFromStops, seedMeshPatch, type MeshGradientPaint } from '@weasel-js/renderer/mesh';
 import { MeshEditor } from '@weasel-js/ui/components/MeshEditor';
 
 const meta: Meta<typeof MeshEditor> = {

@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, it } from 'vitest';
 import { act, cleanup, fireEvent, screen } from '@testing-library/react';
 import { renderSettled } from '@weasel-js/react/testing/renderSettled';
-import { ActionsProvider, useCommand } from '@weasel-js/core';
+import { ActionsProvider, useCommand } from '@weasel-js/routing/react';
 import type { PrefGroup } from '@weasel-js/prefs';
 import { BarMenu } from './BarMenu';
 import { RunScope } from '../Run';

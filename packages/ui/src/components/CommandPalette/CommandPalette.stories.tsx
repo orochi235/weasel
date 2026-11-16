@@ -1,6 +1,7 @@
 import type { Meta, StoryObj } from '@weasel-js/forge';
 import { useState } from 'react';
-import { ActionDisabledReason, ActionsProvider, type Action } from '@weasel-js/core';
+import { ActionDisabledReason, type Action } from '@weasel-js/routing';
+import { ActionsProvider } from '@weasel-js/routing/react';
 import { Button } from '@weasel-js/ui/components/Button';
 import { CommandPalette } from '@weasel-js/ui/components/CommandPalette';
 import { RegisterActions } from '@weasel-js/routing/testing/registerAction';

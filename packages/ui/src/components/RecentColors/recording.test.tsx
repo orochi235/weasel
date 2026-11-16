@@ -1,7 +1,7 @@
 import { describe, it, expect, vi } from 'vitest';
 import type { ReactNode } from 'react';
 import { screen, fireEvent } from '@testing-library/react';
-import type { GradientPaint } from '@weasel-js/core';
+import type { GradientPaint } from '@weasel-js/paint';
 import { ColorField } from '../ColorField';
 import { FillStrokeSwatch } from '../FillStrokeSwatch';
 import { GradientEditor } from '../GradientEditor';

@@ -8,7 +8,7 @@ import {
   type ReactNode,
   type Ref,
 } from 'react';
-import { isInControlWithin } from '@weasel-js/core';
+import { isInControlWithin } from '@weasel-js/gestures';
 import { intentOf, rangeOf, select as selectFrom, type SelectPolicy } from '@weasel-js/select';
 import { listKeys, modsOf, selectModifiers, type PressModifiers } from '../../useReorderDragList';
 import { useRowNavigation } from '../../useRowNavigation';

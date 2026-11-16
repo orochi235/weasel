@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
 import type { Meta, StoryObj } from '@weasel-js/forge';
-import type { LastOperation, LastOperationStore } from '@weasel-js/core';
+import type { LastOperation, LastOperationStore } from '@weasel-js/routing';
 import { pref } from '@weasel-js/prefs';
 import { LastOperationPanel, type LastOperationPanelProps } from '@weasel-js/ui/components/LastOperationPanel';
 import { Button } from '@weasel-js/ui/components/Button';

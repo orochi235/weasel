@@ -1,6 +1,7 @@
 import '@weasel-js/theme/tokens.css';
 import { cleanup, render, screen } from '@testing-library/react';
-import { asNodeId, createScene, type NodePropertiesEntry, type NodeRoutingEntry, type SelectionApi } from '@weasel-js/core';
+import type { SelectionApi } from '@weasel-js/routing';
+import { asNodeId, createScene, type NodePropertiesEntry, type NodeRoutingEntry } from '@weasel-js/core';
 import type { PrefLeaf, PrefSection } from '@weasel-js/prefs';
 import { afterEach, expect, it } from 'vitest';
 import { SelectionPanel } from '@weasel-js/ui/components/inspector/SelectionPanel';

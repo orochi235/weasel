@@ -1,15 +1,8 @@
 import { useCallback, useContext, useEffect, useMemo } from 'react';
+import { ActionsProvider, ActiveToolContextProvider, DepRegistryProvider, useActionsRegistry, useGestureDispatcher } from '@weasel-js/routing/react';
+import { DEFAULT_ALLOWED_CAPABILITIES, buildRuleCtx, type Action, type ActionsRegistry } from '@weasel-js/routing';
+import { useLatest } from '@weasel-js/react';
 import {
-  ActionsProvider,
-  ActiveToolContextProvider,
-  DEFAULT_ALLOWED_CAPABILITIES,
-  DepRegistryProvider,
-  buildRuleCtx,
-  useActionsRegistry,
-  useGestureDispatcher,
-  useLatest,
-  type Action,
-  type ActionsRegistry,
   type Tool,
 } from '@weasel-js/core';
 import { accessLetter } from '@weasel-js/menu';

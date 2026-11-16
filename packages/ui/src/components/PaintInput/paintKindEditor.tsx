@@ -1,6 +1,6 @@
 import type { ComponentType, ReactElement } from 'react';
 import type { PaintKindEditorProps, PaintKindEntry } from '@weasel-js/core';
-import type { MESH_GRADIENT_KIND, MeshGradientPaint } from '@weasel-js/core/mesh';
+import type { MESH_GRADIENT_KIND, MeshGradientPaint } from '@weasel-js/renderer/mesh';
 import { MeshEditor } from '../MeshEditor/MeshEditor';
 
 type KindEditor = ComponentType<PaintKindEditorProps>;

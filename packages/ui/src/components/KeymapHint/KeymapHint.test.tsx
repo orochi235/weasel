@@ -1,15 +1,8 @@
 import { describe, it, expect } from 'vitest';
 import { act, render, screen } from '@testing-library/react';
-import {
-  ActionsProvider,
-  createKeymapStack,
-  DepRegistryProvider,
-  key,
-  useAction,
-  useDepSource,
-  type Action,
-  type KeymapStack,
-} from '@weasel-js/core';
+import { ActionsProvider, DepRegistryProvider, useAction, useDepSource } from '@weasel-js/routing/react';
+import { createKeymapStack, type Action, type KeymapStack } from '@weasel-js/routing';
+import { key } from '@weasel-js/gestures';
 import { KeymapHint } from './KeymapHint';
 
 const zoom: Action = { id: 'zoom', label: 'Zoom in' };

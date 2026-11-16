@@ -3,7 +3,9 @@ import {
   defaultCommitAdapter, dispatchApplyBatch, isAnnotationLayer, pageName, pageOfNode, pageRunOf, placedPagesOf,
   withoutPageStructure,
 } from '@weasel-js/core';
-import type { NodeId, Op, Scene, SceneNode, SelectionApi } from '@weasel-js/core';
+import type { NodeId, SelectionApi } from '@weasel-js/routing';
+import type { Op } from '@weasel-js/history';
+import type { Scene, SceneNode } from '@weasel-js/core';
 import type { LayerListItem, LayerListProps } from './LayerList';
 
 /** The id prefix of an annotation layer's own row, which holds its nodes. */

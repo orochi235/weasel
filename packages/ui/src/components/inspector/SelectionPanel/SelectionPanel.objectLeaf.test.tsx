@@ -1,10 +1,9 @@
 import { describe, it, expect } from 'vitest';
 import { screen, fireEvent } from '@testing-library/react';
+import { dashForStrokeStyle, strokeDashStyleOf } from '@weasel-js/paint';
 import {
   createScene,
   asNodeId,
-  dashForStrokeStyle,
-  strokeDashStyleOf,
   type NodePropertiesEntry,
   type NodeRoutingEntry,
 } from '@weasel-js/core';

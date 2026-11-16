@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from '@weasel-js/forge';
-import { MIXED } from '@weasel-js/core';
+import { MIXED } from '@weasel-js/registry';
 import { CharacterOptions } from '@weasel-js/ui/components/inspector/CharacterOptions';
 
 const meta: Meta = { title: 'ui/inspector/CharacterOptions' };

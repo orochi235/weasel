@@ -1,7 +1,8 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen, within } from '@testing-library/react';
 import { useState, type ReactNode } from 'react';
-import { ActionsProvider, type Action } from '@weasel-js/core';
+import { ActionsProvider } from '@weasel-js/routing/react';
+import type { Action } from '@weasel-js/routing';
 import type { PrefGroup, PrefLeaf } from '@weasel-js/prefs';
 import { PrefsBar } from '../PrefsBar/PrefsBar';
 import { RegisterActions } from '@weasel-js/routing/testing/registerAction';

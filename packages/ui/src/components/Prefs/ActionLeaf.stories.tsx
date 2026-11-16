@@ -1,6 +1,7 @@
 import type { Meta, StoryObj } from '@weasel-js/forge';
 import { useState, type ReactNode } from 'react';
-import { ActionsProvider, type Action } from '@weasel-js/core';
+import { ActionsProvider } from '@weasel-js/routing/react';
+import type { Action } from '@weasel-js/routing';
 import { pref, type PrefAction, type PrefGroup } from '@weasel-js/prefs';
 import { ActionLeaf, PrefsForm } from '@weasel-js/ui/components/Prefs';
 import s from '../Bar/Bar.stories.module.css';

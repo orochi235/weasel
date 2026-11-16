@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 import { fireEvent, screen } from '@testing-library/react';
-import { declaredToolShortcuts, type Tool, type ToolsApi } from '@weasel-js/core';
+import { declaredToolShortcuts } from '@weasel-js/routing';
+import { type Tool, type ToolsApi } from '@weasel-js/core';
 import { KitSettingsProvider } from '@weasel-js/react';
 import { renderWithIcons } from '../../testing/withIcons';
 import { ToolPalette } from './ToolPalette';

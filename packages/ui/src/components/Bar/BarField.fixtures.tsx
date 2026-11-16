@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import type { Paint } from '@weasel-js/core';
+import type { Paint } from '@weasel-js/paint';
 import type { PropertyControlProps } from '@weasel-js/ui/components/Properties';
 import { Icon } from '@weasel-js/ui/components/Icon';
 import { icon } from '../../icons.gen';

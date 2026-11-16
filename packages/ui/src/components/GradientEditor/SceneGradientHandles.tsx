@@ -1,22 +1,14 @@
 import { useLayoutEffect, useRef, type ReactElement, type RefObject } from 'react';
+import { fillInPoseFrame, fillToBoundsFrame } from '@weasel-js/renderer';
+import { isGradientPaint, resolveFill, resolveStroke, type Paint, type GradientPaint, type Stroke, type Fill, type Inherit } from '@weasel-js/paint';
+import { useOngoingAction } from '@weasel-js/routing/react';
+import type { View } from '@weasel-js/geom';
+import { isMeshGradientPaint, type MeshGradientPaint } from '@weasel-js/renderer/mesh';
 import {
-  fillInPoseFrame,
-  fillToBoundsFrame,
-  isGradientPaint,
   useNodeOverlayFrame,
-  useOngoingAction,
-  type Paint,
-  type GradientPaint,
   type RectPose,
   type Scene,
-  type Stroke,
-  type View,
-  type Fill,
-  type Inherit,
-  resolveFill,
-  resolveStroke,
 } from '@weasel-js/core';
-import { isMeshGradientPaint, type MeshGradientPaint } from '@weasel-js/core/mesh';
 import { MeshHandles } from '../MeshEditor/MeshHandles';
 import { GradientHandles } from './GradientHandles';
 import type { PaintSlot } from '@weasel-js/paint';

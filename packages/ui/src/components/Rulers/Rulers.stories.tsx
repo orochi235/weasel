@@ -1,5 +1,6 @@
 import { useMemo, type ReactElement } from 'react';
-import type { ActionDeps, CanvasExtensionApi, ContributionFrameCtx, ImmediateInvoker } from '@weasel-js/core';
+import type { ActionDeps, ImmediateInvoker } from '@weasel-js/routing';
+import type { CanvasExtensionApi, ContributionFrameCtx } from '@weasel-js/core';
 import type { Meta, StoryObj } from '@weasel-js/forge';
 import { createRulers } from '@weasel-js/guides';
 import { IMPERIAL_INCHES, METRIC_MM, type UnitScope } from '@weasel-js/quantity';

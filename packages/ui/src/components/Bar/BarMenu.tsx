@@ -1,12 +1,7 @@
 import { useEffect, useRef, type ReactNode } from 'react';
-import {
-  buildDepsFromRequires,
-  dynamicActionId,
-  resolveSchemaMenu,
-  useLatest,
-  useActionsRegistry,
-  useOptionalDepRegistry,
-} from '@weasel-js/core';
+import { buildDepsFromRequires, dynamicActionId, resolveSchemaMenu } from '@weasel-js/routing';
+import { useLatest } from '@weasel-js/react';
+import { useActionsRegistry, useOptionalDepRegistry } from '@weasel-js/routing/react';
 import type { PrefGroup } from '@weasel-js/prefs';
 import type { MenuEntry } from '@weasel-js/menu';
 import { useMenuTrigger } from '../Menu/useMenuTrigger';

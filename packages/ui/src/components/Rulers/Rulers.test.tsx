@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import { act, render } from '@testing-library/react';
-import type { ActionDeps, CanvasExtensionApi, ContributionFrameCtx, ImmediateInvoker, View } from '@weasel-js/core';
+import type { ActionDeps, ImmediateInvoker } from '@weasel-js/routing';
+import type { View } from '@weasel-js/geom';
+import type { CanvasExtensionApi, ContributionFrameCtx } from '@weasel-js/core';
 import { createRulers } from '@weasel-js/guides';
 import { IMPERIAL_INCHES } from '@weasel-js/quantity';
 import { Rulers } from './Rulers';

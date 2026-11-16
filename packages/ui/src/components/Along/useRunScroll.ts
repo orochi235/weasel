@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState, type FocusEvent as ReactFocusEvent, type PointerEvent as ReactPointerEvent, type RefObject } from 'react';
-import { DRAG_THRESHOLD_PX, openPointerSession, type PointerSession } from '@weasel-js/core';
-import { isPrimaryPress, modHeld } from '@weasel-js/gestures';
+import { openPointerSession, type PointerSession } from '@weasel-js/routing';
+import { isPrimaryPress, modHeld, DRAG_THRESHOLD_PX } from '@weasel-js/gestures';
 import { clamp, lerp, type RunSpot, type TrackRun } from '@weasel-js/geom';
 import { wheelPixels } from '@weasel-js/ui-input';
 import { useKitSetting, useLatest, usePrefersReducedMotion, useVisibleRaf } from '@weasel-js/react';

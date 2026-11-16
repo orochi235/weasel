@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeAll } from 'vitest';
 import { act, render, screen, fireEvent } from '@testing-library/react';
 import { useState } from 'react';
-import type { GradientPaint } from '@weasel-js/core';
+import type { GradientPaint } from '@weasel-js/paint';
 import { GradientHandles } from './GradientHandles';
 import { handleHalf } from '../../handles';
 
