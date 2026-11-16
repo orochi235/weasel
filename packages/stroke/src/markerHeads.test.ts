@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import { boundsOfPath, pathFromD } from '@weasel-js/geom';
 import type { Stroke } from '@weasel-js/paint';
 import { markerHeads, markerPlacementMap, markerPlacements, markerShape } from './markerHeads';
@@ -48,5 +48,17 @@ describe('markerPlacements', () => {
         }
       });
     }
+  });
+});
+
+describe('markerPlacements with an unknown key', () => {
+  it('places no head and warns once per key', () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const stroke: Stroke = { paint: INK, width: 3, markerStart: 'arow', markerEnd: 'arow' };
+    expect(markerPlacements(CHEVRON, stroke, 3, undefined)).toEqual([]);
+    expect(markerPlacements(CHEVRON, stroke, 3, undefined)).toEqual([]);
+    expect(warn).toHaveBeenCalledTimes(1);
+    expect(warn.mock.calls[0]![0]).toContain('"arow"');
+    warn.mockRestore();
   });
 });

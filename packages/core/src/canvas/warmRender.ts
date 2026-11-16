@@ -24,8 +24,8 @@ export interface WarmRenderOptions<TData = unknown, TLayer extends string = stri
   paintKinds?: readonly string[];
   /** With `render` or `commands`, hears what they will draw without: a face or paint kind that
    *  failed to load, a kind nothing registered, a picture that did not load,
-   *  a shader program with no GLSL. Given it, a failed load is reported here
-   *  and does not reject. */
+   *  a shader program with no GLSL, a marker nothing registered. Given it, a
+   *  failed load is reported here and does not reject. */
   report?: RenderDiagnosticSink;
 }
 
