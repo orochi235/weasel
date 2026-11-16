@@ -4,6 +4,7 @@ import {
   type PrefField, type PrefGroup, type PrefLeaf, type PrefList, type PrefMap, type PrefObject, type PrefPaint,
   type PrefUnion,
 } from '@weasel-js/prefs-schema';
+import { getOwn } from '@weasel-js/registry';
 import { sep } from './separators';
 
 /** How values are read and written where a set of rows is drawn. */
@@ -54,7 +55,7 @@ function setIn(container: unknown, segs: readonly string[], value: unknown): unk
     return out;
   }
   const base = isRecord(container) ? container : {};
-  const next = setIn(base[head], rest, value);
+  const next = setIn(getOwn(base, head), rest, value);
   if (next !== undefined) return { ...base, [head]: next };
   const { [head]: _dropped, ...kept } = base;
   return kept;
@@ -67,7 +68,7 @@ function below(outer: MenuAccess, path: string, held: () => unknown, writable: b
   const values = (p: string): unknown => {
     if (!inside(p)) return outer.values(p);
     let cur = held();
-    for (const seg of pathSegments(rel(p))) cur = cur !== null && typeof cur === 'object' ? (cur as Record<string, unknown>)[seg] : undefined;
+    for (const seg of pathSegments(rel(p))) cur = cur !== null && typeof cur === 'object' ? getOwn(cur as Record<string, unknown>, seg) : undefined;
     return cur;
   };
   const { onChange } = outer;

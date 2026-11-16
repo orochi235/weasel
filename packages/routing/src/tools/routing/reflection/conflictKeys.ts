@@ -1,4 +1,5 @@
 import { CHORD_MODIFIERS, chordCodesFor, matchPhase, type PhaseSpec } from '@weasel-js/gestures';
+import { getOwn } from '@weasel-js/registry';
 import type { ParsedModifiers } from '../routeGrammar';
 import { VALID_MOD_NAMES } from '../routeGrammar';
 import { PREDICATE_TARGET, type RegistryEntry } from './registry';
@@ -29,9 +30,9 @@ function sameParams(a: unknown, b: unknown): boolean {
   if (a === b) return true;
   if (typeof a !== 'object' || typeof b !== 'object' || a === null || b === null) return false;
   if (Array.isArray(a) !== Array.isArray(b)) return false;
-  const keys = Object.keys(a);
-  return keys.length === Object.keys(b).length
-    && keys.every((k) => sameParams((a as Record<string, unknown>)[k], (b as Record<string, unknown>)[k]));
+  const entries = Object.entries(a);
+  return entries.length === Object.keys(b).length
+    && entries.every(([k, v]) => Object.hasOwn(b, k) && sameParams(v, getOwn(b as Record<string, unknown>, k)));
 }
 
 /** One key per way an entry can win a press: each modifier state its spec

@@ -4,6 +4,7 @@
  * Shift+wheel moves the size.
  */
 import type { PrefNumber } from '@weasel-js/prefs-schema';
+import { getOwn } from '@weasel-js/registry';
 import type { KeySpec } from '@weasel-js/gestures';
 import { ActionDisabledReason, type Action } from '../interactions/actions/action';
 import type { ActionDeps, ImmediateInvoker } from '../interactions/actions/invoker';
@@ -35,7 +36,7 @@ const STEPS: readonly StepSpec[] = [
 function stepOption(
   toolId: string, options: ToolOptions, values: ToolOptionValues, step: ToolOptionStep, leaf: PrefNumber, dir: 1 | -1,
 ): void {
-  const held = toolOptionParams(toolId, options, values)[step.option];
+  const held = getOwn(toolOptionParams(toolId, options, values), step.option);
   const current = typeof held === 'number' ? held : leaf.default ?? 0;
   setToolOption(toolId, options, values, step.option, steppedOption(leaf, current, step, dir));
 }

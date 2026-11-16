@@ -2,6 +2,7 @@
  * The keys that activate each tool, as chrome shows them: read from the live
  * `tool.activate` bindings, so a rebound or unbound key reaches every palette.
  */
+import { setOwn } from '@weasel-js/registry';
 import type { Action } from '../interactions/actions/action';
 import { actionShortcuts, type ActionShortcut } from '../interactions/actions/actionShortcuts';
 import type { AnyTool } from './types';
@@ -21,7 +22,7 @@ export function toolShortcutsOf(actions: readonly Action[], toolIds: Iterable<st
   const out: Record<string, readonly ActionShortcut[]> = {};
   for (const toolId of toolIds) {
     const keys = actionShortcuts(activate, { toolId });
-    if (keys.length > 0) out[toolId] = keys;
+    if (keys.length > 0) setOwn(out, toolId, keys);
   }
   return out;
 }
@@ -33,7 +34,7 @@ export function declaredToolShortcuts(tools: Readonly<Record<string, AnyTool>>):
     const b = tool.keybinding;
     if (!b) continue;
     const keys = (typeof b.key === 'string' ? [b.key] : b.key).filter((k) => k.length > 0);
-    if (keys.length > 0) out[id] = keys.map((key) => ({ key, mod: b.mod === true, alt: b.alt === true, shift: b.shift === true }));
+    if (keys.length > 0) setOwn(out, id, keys.map((key) => ({ key, mod: b.mod === true, alt: b.alt === true, shift: b.shift === true })));
   }
   return out;
 }

@@ -1,4 +1,5 @@
 import type { GestureSpec, ModSpec } from '@weasel-js/gestures';
+import { getOwn } from '@weasel-js/registry';
 import type { GestureBinding } from '../interactions/actions/binding';
 import type { HotkeyTrigger } from './types';
 
@@ -11,7 +12,7 @@ const MODIFIER_OF: Readonly<Record<string, Modifier>> = {
 
 /** The modifier an offhand `trigger` holds down, or `null` for any other key. */
 export function heldModifierOf(trigger: HotkeyTrigger | undefined): Modifier | null {
-  return trigger === undefined ? null : MODIFIER_OF[trigger] ?? null;
+  return trigger === undefined ? null : getOwn(MODIFIER_OF, trigger) ?? null;
 }
 
 const loosened = new WeakMap<GestureBinding, Partial<Record<Modifier, GestureBinding>>>();
