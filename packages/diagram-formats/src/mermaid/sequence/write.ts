@@ -8,7 +8,7 @@ import { arrowOf, mermaidSeqText, typeOf } from './syntax';
 const SECTION_WORDS = { loop: null, alt: 'else', opt: null, par: 'and', critical: 'option', break: null, region: null } as const;
 
 /** Words a sequence reads as a statement when a line opens with one, however the line goes on. */
-const SEQUENCE_WORDS = ['title', 'accTitle', 'accDescr'];
+const SEQUENCE_WORDS = ['title', 'accTitle', 'accDescr', 'link', 'links', 'properties', 'details'];
 
 /** Every participant id `data` names: declared, and named by a step. */
 function namedIds(data: SequenceData): string[] {

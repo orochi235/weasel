@@ -55,4 +55,11 @@ describe('writeMermaidSequence', () => {
     const doc: DiagramDocument = { pages: [pageOf(CHECKOUT)] };
     expect(DIAGRAM_MERMAID.write!(doc).text).toBe(writeMermaidSequence(pageOf(CHECKOUT)).text);
   });
+
+  it('renames a participant whose id the reader takes for a menu statement, so its messages read back', () => {
+    for (const id of ['links', 'link', 'properties', 'details']) {
+      const data: SequenceData = { participants: [{ id }, { id: 'B' }], steps: [{ kind: 'message', id: 'm1', from: id, to: 'B', line: 'solid', head: 'arrow', text: 'hi' }] };
+      expect(pageOf(writeMermaidSequence(page(data)).text).data.steps).toHaveLength(1);
+    }
+  });
 });
