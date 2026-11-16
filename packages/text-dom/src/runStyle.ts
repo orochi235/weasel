@@ -3,7 +3,7 @@
  * ancestors say, read into a `StyleState`, and a `StyledRun` built from one.
  */
 
-import type { Fill, ScreenLength, Stroke } from '@weasel-js/paint';
+import { isPaint, type Fill, type ScreenLength, type Stroke } from '@weasel-js/paint';
 import type { FontVariantCaps, StyledRun, TextTransform } from '@weasel-js/text';
 
 /** Holds, as JSON, a run fill its span's CSS color cannot say: a gradient, a
@@ -105,14 +105,19 @@ export function cssFontVariant(el: HTMLElement): FontVariantCaps | undefined {
   return v === 'small-caps' || v === 'normal' ? v : undefined;
 }
 
-/** `el`'s `name` attribute where it holds JSON. Pasted markup can carry
+const paintsOrNone = (v: unknown): boolean =>
+  typeof v === 'object' && v !== null && !Array.isArray(v) && ((v as Fill).paint === undefined || isPaint((v as Fill).paint));
+
+/** Whether `v` reads as a run's fill: `null`, or an object whose paint, if any, is one. */
+const isRunFill = (v: unknown): boolean => v === null || paintsOrNone(v);
+
+/** `el`'s `name` attribute where it holds JSON `fits` takes. Pasted markup can carry
  *  anything there, and `toRun` parses it. */
-function jsonAttr(el: Element, name: string): string | undefined {
+function jsonAttr(el: Element, name: string, fits: (v: unknown) => boolean): string | undefined {
   const raw = el.getAttribute(name);
   if (raw == null) return undefined;
   try {
-    JSON.parse(raw);
-    return raw;
+    return fits(JSON.parse(raw)) ? raw : undefined;
   } catch {
     return undefined;
   }
@@ -193,11 +198,11 @@ export function styleStateFromElement(el: Element, parent: StyleState): StyleSta
     // The attribute holds the run's family; the CSS holds the face it maps to.
     const family = el.getAttribute('data-font-family') ?? el.style.fontFamily;
     if (family) next.fontFamily = family;
-    const strokeJson = jsonAttr(el, STROKE_ATTR);
+    const strokeJson = jsonAttr(el, STROKE_ATTR, paintsOrNone);
     if (strokeJson !== undefined) next.strokeJson = strokeJson;
     const rotate = parseFloat(el.getAttribute(ROTATE_ATTR) ?? '');
     if (Number.isFinite(rotate)) next.rotate = rotate;
-    const fillJson = jsonAttr(el, FILL_ATTR);
+    const fillJson = jsonAttr(el, FILL_ATTR, isRunFill);
     if (fillJson !== undefined) {
       next.fillJson = fillJson;
       next.color = undefined;
