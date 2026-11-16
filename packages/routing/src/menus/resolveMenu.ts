@@ -11,7 +11,7 @@ import type { Action } from '../interactions/actions/action';
 import type { ActionDeps } from '../interactions/actions/invoker';
 import { actionItems, type ActionItem } from '../interactions/actions/actionItems';
 import { actionItemShortcuts, type ActionShortcut } from '../interactions/actions/actionShortcuts';
-import { evaluateActive, evaluateEnabled } from '../interactions/actions/actionEnabled';
+import { evaluateActive, evaluateEnabled, type ActionEnabledResult } from '../interactions/actions/actionEnabled';
 import { actionSettingsParams, readActionSettings } from '../interactions/actions/actionSettings';
 import { isDev } from '@weasel-js/react';
 import { sep, tidy, withReason } from './separators';
@@ -27,6 +27,8 @@ import type { Point } from '@weasel-js/geom';
 export interface MenuSources {
   actions(): readonly Action[];
   depsFor(action: Action): ActionDeps | undefined;
+  /** Whether `action`'s `eligible` rule lets it run now. A row it refuses is disabled. Absent, every action may. */
+  eligible?(action: Action): boolean;
   trigger(id: string, params?: Record<string, unknown>): boolean;
   /** The value at a leaf's dotted path. Booleans, enums, and numbers are left
    *  out of a menu without both this and `onChange`, colors and strings without
@@ -67,7 +69,9 @@ const withAccess = (access?: string): { access?: string } => (access ? { access 
 function itemOf(ctx: Ctx, it: ActionItem, key: string, label: string, off: boolean, access?: string): MenuEntry {
   const deps = ctx.src.depsFor(it.action);
   const params = { ...ctx.params, ...it.params, ...(ctx.at ? { world: ctx.at } : {}) };
-  const { enabled, reason } = evaluateEnabled(it.action, deps, ctx.at, params);
+  const { enabled, reason }: ActionEnabledResult = ctx.src.eligible?.(it.action) === false
+    ? { enabled: false }
+    : evaluateEnabled(it.action, deps, ctx.at, params);
   const why = !off && reason !== undefined ? { disabledReason: reason } : {};
   if (it.action.settings) return settingsOf(ctx, it, key, label, off || !enabled, why, access);
   return {

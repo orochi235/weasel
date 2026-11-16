@@ -73,15 +73,16 @@ export interface ActionsRegistry {
    *  schema does not name takes none, and one held only at runtime is passed
    *  as `dynamicActionId(id)` to take any.
    *  Returns whether it ran one: `false` for an unknown id, for an action
-   *  whose `enabled` refuses or whose `run` returns `'pass'`, and for an
+   *  whose `eligible` rule the `ruleCtx` dep in scope refuses, whose `enabled`
+   *  refuses or whose `run` returns `'pass'`, and for an
    *  ongoing-invoker action, which
    *  `trigger` cannot reach (see `begin`). `enabled` is asked at
    *  `params.world`, and with no point when that is absent. */
   trigger<Id extends string>(id: Id, params?: InvokeParams<Id>): boolean;
   /** Show what firing `id` with `params` would do, by its `Action.preview`,
    *  and return what takes it down; calling that twice is harmless. Shows
-   *  nothing for an unknown id, one with no preview, and one whose `enabled`
-   *  refuses, asked as `trigger` asks it. */
+   *  nothing for an unknown id, one with no preview, and one whose `eligible`
+   *  rule or `enabled` refuses, asked as `trigger` asks them. */
   preview<Id extends string>(id: Id, params?: InvokeParams<Id>): () => void;
   /**
    * Subscribe to registry mutations. The callback fires after any

@@ -9,7 +9,8 @@ import { useKitSettings, useLatest } from '@weasel-js/react';
 import { useActiveToolContext } from '../actions/activeToolContext';
 import { actionsNodeOf } from '../actions/ActionsProvider';
 import type { ActionSource } from '../actions/action';
-import { useDepRegistry } from '../actions/depRegistry';
+import { useDepRegistry, type DepRegistry } from '../actions/depRegistry';
+import type { RuleCtx } from '../../eligibility';
 import { useToolLifecycle } from '../../tools/useToolLifecycle';
 import { createDispatcher, createDispatchTrace, type Dispatcher, type DispatcherContext } from './dispatcher';
 import { attachInput } from './attachInput';
@@ -20,6 +21,17 @@ import type { DispatcherViewTarget, UseGestureDispatcherOptions } from './gestur
 export type {
   DispatcherChannels, DispatcherViewTarget, HeldPointerFeed, UseGestureDispatcherOptions, ViewIdResolver,
 } from './gestureDispatcherOptions';
+
+/** Publish `getRuleCtx` as the `ruleCtx` dep, for whatever asks an `eligible` rule outside dispatch. */
+function usePublishRuleCtx(depRegistry: DepRegistry, getRuleCtx: (() => RuleCtx | undefined) | undefined): void {
+  const getRuleCtxRef = useLatest(getRuleCtx);
+  const wired = getRuleCtx !== undefined;
+  useEffect(() => {
+    if (!wired) return;
+    const now = () => getRuleCtxRef.current?.();
+    return depRegistry.register('ruleCtx', () => now);
+  }, [depRegistry, wired, getRuleCtxRef]);
+}
 
 /**
  * Attach the input pipeline to a canvas: DOM pointer, wheel, keyboard, and
@@ -55,6 +67,7 @@ export function useGestureDispatcher(opts: UseGestureDispatcherOptions): void {
   const [ownTrace] = useState(createDispatchTrace);
   const trace = traceOpt ?? ownTrace;
   useEffect(() => depRegistry.register('dispatchTrace', () => trace), [depRegistry, trace]);
+  usePublishRuleCtx(depRegistry, getRuleCtx);
 
   const dispatcherRef = useRef<Dispatcher | null>(null);
   dispatcherRef.current ??= dispatcherOpt ?? createDispatcher();

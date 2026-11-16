@@ -33,6 +33,7 @@ import { tuneAction, tunedParams, underFirst, type ActionTuning } from './tuning
 import { overrideActionBindings, resolveBindingOverrides, type BindingOverrides, type ResolvedBindingOverrides } from './bindingOverrides';
 import { LastOperationKeeper, type LastOperationHost } from './lastOperation';
 import { showPreview } from './showPreview';
+import { eligibleNow } from '../dispatcher/ranking';
 import type { History } from '@weasel-js/history';
 
 /** @internal Provided by `<ActionsProvider>`, `<InputScope>` and `<Yoke>`. */
@@ -183,6 +184,11 @@ export class ActionsNode extends ScopeNode<ActionsNode> {
     return depsFor(a, this.start().deps());
   }
 
+  /** Whether `a`'s `eligible` rule lets it run in the active scope now, read through its `ruleCtx` dep. */
+  eligibleNow(a: Action): boolean {
+    return eligibleNow(a, this.start().deps()?.get('ruleCtx'));
+  }
+
   /** The menu host of this node's tree, made by its root on first ask. Rows
    *  resolve and run against the active scope, as chrome's `trigger` does. */
   menuHost(): MenuHost {
@@ -190,6 +196,7 @@ export class ActionsNode extends ScopeNode<ActionsNode> {
     return root.host ??= createMenuHost({
       actions: () => root.registry.list(),
       depsFor: (a) => root.depsOf(a),
+      eligible: (a) => root.eligibleNow(a),
       trigger: (id, params) => root.registry.trigger(dynamicActionId(id), params),
       activeTool: () => root.start().deps()?.get('activeTool')?.active ?? null,
     });
@@ -290,7 +297,7 @@ export class ActionsNode extends ScopeNode<ActionsNode> {
       const params = given as Record<string, unknown> | undefined;
       const leaf = this.start();
       const a = leaf.resolve(id);
-      if (!a?.invoker || a.invoker.timing !== 'immediate') return false;
+      if (!a?.invoker || a.invoker.timing !== 'immediate' || !leaf.eligibleNow(a)) return false;
       const deps = leaf.depsOf(a);
       if (!evaluateEnabled(a, deps, pointOf(params), params).enabled) return false;
       try {
@@ -303,7 +310,8 @@ export class ActionsNode extends ScopeNode<ActionsNode> {
     preview: <Id extends string>(id: Id, given?: InvokeParams<Id>) => {
       const params = given as Record<string, unknown> | undefined;
       const leaf = this.start();
-      return showPreview(leaf.resolve(id), (a) => leaf.depsOf(a), params, pointOf(params));
+      const a = leaf.resolve(id);
+      return showPreview(a && leaf.eligibleNow(a) ? a : undefined, (it) => leaf.depsOf(it), params, pointOf(params));
     },
     subscribe: (listener: () => void) => this.tree.listeners.subscribe(listener),
     setDispatcher: (d: Dispatcher | null) => pushOwner(this.dispatchers, d),

@@ -4,6 +4,7 @@ import {
   useOptionalDepRegistry,
   actionItems,
   buildDepsFromRequires,
+  eligibleNow,
   evaluateEnabled,
   matchActionItem,
   type ActionItem,
@@ -35,7 +36,12 @@ export function usePaletteItems(open: boolean, query: string): PaletteItems {
 
   const enabledByKey = useMemo<ReadonlyMap<string, ActionEnabledResult>>(() => {
     const m = new Map<string, ActionEnabledResult>();
+    const ruleCtx = depReg?.get('ruleCtx');
     for (const item of allItems) {
+      if (!eligibleNow(item.action, ruleCtx)) {
+        m.set(item.key, { enabled: false });
+        continue;
+      }
       const deps = depReg ? buildDepsFromRequires(item.action, depReg) : undefined;
       m.set(item.key, evaluateEnabled(item.action, deps, undefined, item.params));
     }
