@@ -1,4 +1,5 @@
 import { useLayoutEffect, useRef, type ReactNode } from 'react';
+import { scrolledPlaceOf } from '@weasel-js/core';
 import { ItemList, type ItemListRow } from '../ItemList';
 import s from './HistoryList.module.css';
 
@@ -50,7 +51,7 @@ export function HistoryList({
     const box = scroller.current;
     const row = box?.querySelector<HTMLElement>(`[data-row-index="${current}"]`);
     if (!box || !row) return;
-    const top = row.getBoundingClientRect().top - box.getBoundingClientRect().top + box.scrollTop;
+    const top = scrolledPlaceOf(row, box).y;
     if (top < box.scrollTop) box.scrollTop = top;
     else if (top + row.offsetHeight > box.scrollTop + box.clientHeight) box.scrollTop = top + row.offsetHeight - box.clientHeight;
   }, [current, entries.length]);
