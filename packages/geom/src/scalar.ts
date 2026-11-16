@@ -36,10 +36,8 @@ export function clamp01(v: number): number {
  *  an attribute. A non-finite `n` writes `'0'`. */
 export function trimNumber(n: number, places = 6): string {
   if (!Number.isFinite(n)) return '0';
-  const k = 10 ** places;
-  const rounded = Math.round(n * k) / k;
-  // Past about 1e302, `n * k` overflows; a number that large has no decimals to round.
-  return String(Number.isFinite(rounded) ? rounded : n);
+  // `toFixed` rounds the exact value; scaling by 10^places first loses the digits past 2^53.
+  return String(Number(n.toFixed(Math.min(100, Math.max(0, places)))) + 0);
 }
 
 /** The number `t` of the way from `a` to `b`; `t` outside [0, 1] extrapolates. Exactly `b` at `t = 1`, which
