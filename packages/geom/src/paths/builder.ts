@@ -12,7 +12,8 @@
 
 import { rectToContour } from '../box';
 import { forEachSegment, PATH_C, PATH_L, PATH_M, PATH_Q, PATH_Z } from '../commands';
-import type { Path, PathFillRule, PolygonPath, RectPath } from '../path';
+import type { Path, PathFillRule, PathOpenFill, PolygonPath, RectPath } from '../path';
+import type { CornerSpec } from './cornerSpec';
 import { originFor } from './pathOrigin';
 
 /** Fluent builder for `PolygonPath`; hides the `Uint8Array`/`Float32Array` encoding behind move/line/curve/close calls. */
@@ -20,6 +21,8 @@ export class PathBuilder {
   private cmds: number[] = [];
   private xs: number[] = [];
   private fillRule: PathFillRule = 'nonzero';
+  private openFill: PathOpenFill | undefined;
+  private corners: readonly (CornerSpec | null)[] | undefined;
   private origin: { x: number; y: number } | undefined;
   private auto = false;
   /** The open subpath's start, in the path's own space. */
@@ -28,7 +31,7 @@ export class PathBuilder {
   /** The last command was `Z`, so the next drawing one opens a subpath. */
   private closed = false;
 
-  /** Seed a builder with an existing `PolygonPath`. Useful for extending
+  /** Seed a builder with an existing `PolygonPath`, its fill settings, corners and origin. Useful for extending
    *  an in-flight path with another segment (e.g. appending a cubic to
    *  the end of a curve in response to a user action) without hand-
    *  reaching into the `commands` / `coords` typed arrays.
@@ -42,6 +45,8 @@ export class PathBuilder {
     b.cmds = Array.from(path.commands);
     b.xs = Array.from(path.coords);
     b.fillRule = path.fillRule;
+    b.openFill = path.openFill;
+    b.corners = path.corners;
     if (path.origin) b.origin = { x: path.origin.x, y: path.origin.y };
     const ox = b.origin?.x ?? 0, oy = b.origin?.y ?? 0;
     forEachSegment(path.commands, path.coords, (cmd, ci, penX, penY, _i, opens) => {
@@ -89,6 +94,12 @@ export class PathBuilder {
 
   setFillRule(rule: PathFillRule): this {
     this.fillRule = rule;
+    return this;
+  }
+
+  /** Whether the built path's open subpaths fill. Unset, the engine default. */
+  setOpenFill(rule: PathOpenFill | undefined): this {
+    this.openFill = rule;
     return this;
   }
 
@@ -147,6 +158,8 @@ export class PathBuilder {
       commands: new Uint8Array(this.cmds),
       coords: new Float32Array(this.xs),
       fillRule: this.fillRule,
+      ...(this.openFill !== undefined ? { openFill: this.openFill } : {}),
+      ...(this.corners ? { corners: this.corners } : {}),
       ...(this.origin ? { origin: { ...this.origin } } : {}),
     };
   }

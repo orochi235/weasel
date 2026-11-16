@@ -1,5 +1,7 @@
 import { describe, expect, it } from 'vitest';
-import { PathBuilder, asPolygonPath, polygonFromPoints, rectPath } from './builder';
+import { PathBuilder, asPolygonPath, polygonFromPoints, polylineFromPoints, rectPath } from './builder';
+import { withCorner } from './cornerSpec';
+import type { PolygonPath } from '../path';
 import { countPathAnchors } from './anchors';
 import { PATH_C, PATH_L, PATH_M, PATH_Q, PATH_Z } from '../commands';
 
@@ -35,6 +37,13 @@ describe('PathBuilder after close()', () => {
     const p = PathBuilder.fromPath(closed).lineTo(120, 120).build();
     expect(Array.from(p.commands)).toEqual([PATH_M, PATH_L, PATH_Z, PATH_M, PATH_L]);
     expect(Array.from(p.coords).slice(4)).toEqual([5, 5, 20, 20]);
+  });
+
+  it('keeps the seed path\'s open-fill rule and corners', () => {
+    const seed = withCorner({ ...polylineFromPoints([{ x: 0, y: 0 }, { x: 10, y: 0 }, { x: 10, y: 10 }]) as PolygonPath, openFill: 'none' }, 1, { shape: 'round', radius: 2 });
+    const p = PathBuilder.fromPath(seed).lineTo(0, 10).build();
+    expect(p.openFill).toBe('none');
+    expect(p.corners).toEqual(seed.corners);
   });
 });
 
