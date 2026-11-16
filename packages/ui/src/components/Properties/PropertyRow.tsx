@@ -7,6 +7,7 @@ import { InsideRow, useRowState } from './rowScope';
 import s from './Properties.module.css';
 import { holdScope, useDisabled, type DisableableProps } from '../Disabled';
 import { ReasonTold } from '../Disabled/Disabled';
+import { watchResize } from '@weasel-js/react';
 
 /** Which control shape a row holds, which decides its intrinsic layout. */
 export type PropertyRowVariant = 'default' | 'color' | 'checkbox';
@@ -202,7 +203,7 @@ function useMultiline(
   useLayoutEffect(() => {
     const row = rowRef.current;
     const label = labelRef.current;
-    if (!enabled || !row || !label || typeof ResizeObserver === 'undefined') {
+    if (!enabled || !row || !label) {
       setMultiline(false);
       return;
     }
@@ -218,11 +219,7 @@ function useMultiline(
       );
       setMultiline(labelWraps || tallChild);
     };
-    const observer = new ResizeObserver(measure);
-    observer.observe(row);
-    observer.observe(label);
-    for (const child of Array.from(row.children)) observer.observe(child);
-    return () => observer.disconnect();
+    return watchResize([row, label, ...row.children], measure);
   }, [rowRef, labelRef, enabled]);
   return multiline;
 }

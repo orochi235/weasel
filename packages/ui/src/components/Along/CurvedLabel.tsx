@@ -6,6 +6,7 @@ import { placeStyle } from './placeOnRun';
 import { useInlineDirection } from './useRowRun';
 import on from './onRun.module.css';
 import s from './CurvedLabel.module.css';
+import { watchResize } from '@weasel-js/react';
 
 /** Props of `CurvedLabel`. */
 export interface CurvedLabelProps {
@@ -47,11 +48,8 @@ export function CurvedLabel({ text, offset = 0, shift = 0, className }: CurvedLa
       setLengths((prev) => (prev.length === widths.length && prev.every((w, i) => w === widths[i]) ? prev : widths));
     };
     measure();
-    if (typeof ResizeObserver === 'undefined') return;
     // A web font landing after mount, or any other change to a span's size, changes its width.
-    const watch = new ResizeObserver(measure);
-    for (const el of spans) watch.observe(el);
-    return () => watch.disconnect();
+    return watchResize(spans, measure);
   }, [chars, laid]);
 
   const cls = className ? `${s.label} ${className}` : s.label;

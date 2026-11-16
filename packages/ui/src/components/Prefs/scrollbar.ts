@@ -1,3 +1,5 @@
+import { watchResize } from '@weasel-js/react';
+
 /**
  * Sets `data-scrollbar` on `el` while its scrollbar takes room of its own (a classic one, as macOS draws with a
  * mouse connected), and clears it while the scrollbar is laid over the box. A stylesheet that pads the far side to
@@ -12,9 +14,6 @@ export function markScrollbar(el: HTMLElement): (() => void) | undefined {
     el.toggleAttribute('data-scrollbar', taken > 1);
   };
   read();
-  if (typeof ResizeObserver === 'undefined') return undefined;
   // A classic scrollbar arriving narrows the content box, which is what this observes.
-  const observer = new ResizeObserver(read);
-  observer.observe(el);
-  return () => observer.disconnect();
+  return watchResize(el, read);
 }

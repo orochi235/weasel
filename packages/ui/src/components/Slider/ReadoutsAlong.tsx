@@ -1,5 +1,5 @@
 import { useEffect, useLayoutEffect, useRef, type CSSProperties, type ReactElement, type ReactNode } from 'react';
-import { useLatest } from '@weasel-js/react';
+import { useLatest, watchResize } from '@weasel-js/react';
 import on from '../Along/onRun.module.css';
 import s from './Slider.module.css';
 import { GAP, staggerRows } from './staggerRows';
@@ -25,10 +25,7 @@ export function ReadoutsAlong({ readouts, place, length }: {
   });
   useLayoutEffect(() => restack.current());
   useEffect(() => {
-    if (typeof ResizeObserver === 'undefined') return;
-    const observer = new ResizeObserver(() => restack.current());
-    for (const el of ref.current?.children ?? []) observer.observe(el);
-    return () => observer.disconnect();
+    return watchResize(ref.current?.children, () => restack.current());
   }, [readouts.length, restack]);
 
   return (

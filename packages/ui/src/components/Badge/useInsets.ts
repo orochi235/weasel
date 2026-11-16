@@ -5,6 +5,7 @@ import { fitInsets, outlinePoints } from './bases/inscribedRect';
 import { inwardReach } from './composeOutline';
 import type { BadgeEffectSpec } from './effects';
 import { cssPx } from '../../cssPx';
+import { watchResize } from '@weasel-js/react';
 
 const NONE: ShapeInsets = { top: 0, right: 0, bottom: 0, left: 0 };
 const SIDES = ['top', 'right', 'bottom', 'left'] as const;
@@ -47,14 +48,11 @@ function useMeasured(ref: RefObject<HTMLElement | null>, enabled: boolean): Meas
     };
     const r = el.getBoundingClientRect();
     set(r.width, r.height);
-    if (typeof ResizeObserver === 'undefined') return;
     // The observer's size is the layout's own, where a bounding rect is scaled by any transform.
-    const ro = new ResizeObserver(([entry]) => {
-      const box = entry.borderBoxSize?.[0];
+    return watchResize(el, ([entry]) => {
+      const box = entry?.borderBoxSize?.[0];
       if (box) set(box.inlineSize, box.blockSize);
     });
-    ro.observe(el);
-    return () => ro.disconnect();
   }, [ref, enabled]);
   return enabled ? measured : null;
 }

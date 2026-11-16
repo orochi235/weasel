@@ -1,4 +1,5 @@
 import { useCallback, useLayoutEffect, useState } from 'react';
+import { watchResize } from '@weasel-js/react';
 
 /**
  * Whether a field down a side bar is too wide for it, and so turns to read
@@ -25,10 +26,7 @@ export function useTurnToFit(on: boolean, barClass: string): { ref: (el: HTMLEle
       setWide(Number.isFinite(cap) && width > cap + 0.5);
     };
     measure();
-    if (typeof ResizeObserver === 'undefined') return undefined;
-    const ro = new ResizeObserver(measure);
-    ro.observe(el);
-    return () => ro.disconnect();
+    return watchResize(el, measure);
   }, [on, el, barClass]);
 
   return { ref, turned: on && wide };
