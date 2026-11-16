@@ -39,6 +39,7 @@ const isMetadataBearingSvg = (text: string): boolean =>
   && sniffSvgText(text)
   && extractWeaselClipboardFromSvg(text) !== null;
 
+/** The content handler that pastes nodes a kit canvas copied, from the clipboard's weasel JSON or an SVG carrying it. */
 export const kitWeaselJsonHandler: ContentHandlerEntry = {
   id: 'kit:weasel-json',
   // Above the other kit handlers (-100/-90) so weasel payloads never fall

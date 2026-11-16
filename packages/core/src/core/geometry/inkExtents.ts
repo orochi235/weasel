@@ -12,6 +12,7 @@ export interface InkExtents {
 
 export const NO_INK_EXTENTS: InkExtents = Object.freeze({ left: 0, top: 0, right: 0, bottom: 0 });
 
+/** Whether `e` reaches no further than the box on any side: {@link NO_INK_EXTENTS}'s value. */
 export function isNoInkExtents(e: InkExtents): boolean {
   return e.left === 0 && e.top === 0 && e.right === 0 && e.bottom === 0;
 }

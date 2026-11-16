@@ -98,6 +98,7 @@ export function claimable(
   return !carried || couldClaim(carried.items, handlers) ? true : ActionDisabledReason.NotApplicable;
 }
 
+/** Ingest: places what a drop or a paste brings, through the canvas's content handlers. */
 export const ingestAction = defineAction({
   id: 'ingest',
   label: 'Insert external content',

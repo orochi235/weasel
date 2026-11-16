@@ -153,7 +153,7 @@ export function resolveEntries(
   return entries;
 }
 
-/** @internal How many of `sel` give an operand, read without outlining a stroke: what the Pathfinder actions'
+/** How many of `sel` give an operand, read without outlining a stroke: what the Pathfinder actions'
  *  `enabled` counts. An outline that cannot be built yet counts, so a run can say why it stopped. */
 export function countOperands(adapter: BooleansAdapter, sel: readonly NodeId[]): number {
   let n = 0;

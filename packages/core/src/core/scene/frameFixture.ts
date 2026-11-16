@@ -20,6 +20,7 @@ export interface FrameFixtureData {
 
 export type FrameFixtureLayer = 'main';
 
+/** The ids of the frame fixture's nodes: the group and the children inside it. */
 export const FRAME_FIXTURE_IDS = {
   group: asNodeId('g'),
   upright: asNodeId('a'),
@@ -49,6 +50,7 @@ export const FRAME_FIXTURE_LOCAL: Record<string, RectPose> = {
   b: { x: 40, y: 60, width: 40, height: 20, rotation: Math.PI / 2 },
 };
 
+/** The fixture scene: a group turned 90° holding two children at local offsets, one turned again, under `composition`. */
 export function makeFrameFixture(
   composition: PoseComposition<RectPose> = RIGID_POSE_COMPOSITION,
 ): Scene<FrameFixtureData, FrameFixtureLayer, RectPose> {

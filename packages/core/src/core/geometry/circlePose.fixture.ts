@@ -5,8 +5,10 @@ import type { PoseDescriptor } from './poseDescriptor';
  *  read it except through its descriptor. */
 export interface CirclePose { cx: number; cy: number; r: number }
 
+/** A circle pose centered at (`cx`, `cy`) with radius `r`. */
 export const circle = (cx: number, cy: number, r: number): CirclePose => ({ cx, cy, r });
 
+/** The descriptor that reads and writes a {@link CirclePose} through its bounds. */
 export const CIRCLE_POSE_DESCRIPTOR: PoseDescriptor<CirclePose> = {
   getBounds: (p) => ({ x: p.cx - p.r, y: p.cy - p.r, width: 2 * p.r, height: 2 * p.r }),
   remapBounds: (p, src, dst) => {

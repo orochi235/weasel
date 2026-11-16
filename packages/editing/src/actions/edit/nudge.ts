@@ -68,7 +68,11 @@ function makeNudgeAction(dir: NudgeDirection): Action & { requires: string[] } {
   };
 }
 
+/** Nudge up: the Up arrow, a big step with Shift. */
 export const nudgeUpAction    = makeNudgeAction('up');
+/** Nudge down: the Down arrow, a big step with Shift. */
 export const nudgeDownAction  = makeNudgeAction('down');
+/** Nudge left: the Left arrow, a big step with Shift. */
 export const nudgeLeftAction  = makeNudgeAction('left');
+/** Nudge right: the Right arrow, a big step with Shift. */
 export const nudgeRightAction = makeNudgeAction('right');

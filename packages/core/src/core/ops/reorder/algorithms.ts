@@ -15,6 +15,7 @@ function partition(list: string[], moving: string[]): { kept: string[]; movedInO
   return { kept, movedInOrder };
 }
 
+/** `list` with each of `ids` one step later (nearer the front), a run of them moving as a block. */
 export function bringForward(list: string[], ids: string[]): string[] {
   const movingSet = new Set(ids);
   const out = list.slice();
@@ -30,6 +31,7 @@ export function bringForward(list: string[], ids: string[]): string[] {
   return out;
 }
 
+/** `list` with each of `ids` one step earlier (nearer the back), a run of them moving as a block. */
 export function sendBackward(list: string[], ids: string[]): string[] {
   const movingSet = new Set(ids);
   const out = list.slice();
@@ -43,11 +45,13 @@ export function sendBackward(list: string[], ids: string[]): string[] {
   return out;
 }
 
+/** `list` with `ids` moved to its end (the front), in their own order. */
 export function bringToFront(list: string[], ids: string[]): string[] {
   const { kept, movedInOrder } = partition(list, ids);
   return [...kept, ...movedInOrder];
 }
 
+/** `list` with `ids` moved to its start (the back), in their own order. */
 export function sendToBack(list: string[], ids: string[]): string[] {
   const { kept, movedInOrder } = partition(list, ids);
   return [...movedInOrder, ...kept];
