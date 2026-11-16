@@ -41,6 +41,22 @@ describe('useSessionPersistence', () => {
     expect(JSON.parse(localStorage.getItem('test:scene')!)).toMatchObject({ version: 3, nodes: [] });
   });
 
+  it('reports a loadHistory that throws as a failed restore, or logs it with no onHistoryRestore', () => {
+    const scene = createScene<unknown, 'main', unknown>({ composition: IDENTITY_POSE_COMPOSITION, systemLayers: [{ id: 'main' }] });
+    const boom = new Error('bad history');
+    const loadHistory = (): unknown => { throw boom; };
+    const outcomes: unknown[] = [];
+    const reported = renderHook(() => useSessionPersistence(scene, {
+      sceneKey: 'test:scene', historyKey: 'test:history', loadHistory, onHistoryRestore: (o) => outcomes.push(o),
+    }));
+    expect(outcomes).toEqual([{ status: 'failed', error: boom }]);
+    reported.unmount();
+    const error = vi.spyOn(console, 'error').mockImplementation(() => {});
+    renderHook(() => useSessionPersistence(scene, { sceneKey: 'test:scene', historyKey: 'test:history', loadHistory }));
+    expect(error).toHaveBeenCalledWith(expect.stringContaining('loadHistory threw'), boom);
+    error.mockRestore();
+  });
+
   it('drops a saved undo stack recorded while the pages were a core:pages value', () => {
     localStorage.setItem('test:scene', JSON.stringify({ version: 3, systemLayers: [{ id: 'main' }], nodes: [], doc: { 'core:pages': { pages: [] } } }));
     localStorage.setItem('test:history', '{"not":"read"}');
