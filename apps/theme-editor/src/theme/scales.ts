@@ -1,3 +1,4 @@
+import { getOwn, setOwn } from '@weasel-js/registry';
 import { enumerateSelections, type AxisDefs, type Selection, type ThemeDefinition } from '@weasel-js/theme';
 import { axisDependencies, declaredSteps, derive, mergeChain, type Lookup } from '@weasel-js/theme/engine';
 
@@ -15,7 +16,7 @@ export interface ScaleTable {
 
 export function scaleTable(def: ThemeDefinition, lookup: Lookup, scale: string): ScaleTable {
   const merged = mergeChain(def, lookup);
-  const entry = merged.scales?.[scale];
+  const entry = getOwn(merged.scales ?? {}, scale);
   if (!entry) return { steps: [], columns: [] };
   const steps = declaredSteps(entry);
   const deps = axisDependencies(def, lookup);
@@ -26,7 +27,7 @@ export function scaleTable(def: ThemeDefinition, lookup: Lookup, scale: string):
     const values: Record<string, string> = {};
     for (const step of steps) {
       const token = tokens[`${scale}-${step}`];
-      if (token) values[step] = String(token.value);
+      if (token) setOwn(values, step, String(token.value));
     }
     const label = Object.entries(selection).map(([axis, value]) => `${axis}=${value}`).join(', ') || 'value';
     return { label, selection, values };

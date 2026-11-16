@@ -1,3 +1,4 @@
+import { getOwn, setOwn } from '@weasel-js/registry';
 import { enumerateSelections, fullSelection, isByAxis, pick } from '../../axes.ts';
 import type { SerializableColorList } from '../../colorListItems.ts';
 import { AXES_EXT, overrideKey, RAMPS_EXT, TINTS_EXT, type DtcgAxesExtension } from '../../dtcg/axesExtension.ts';
@@ -8,6 +9,15 @@ import type { Theme } from '../../theme.ts';
 
 /** A DTCG group: tokens of one `$type`, by name. */
 export type DtcgGroup = Record<string, unknown> & { $type: string };
+
+/** `record`'s own entry at `key`, made and stored first when it has none. */
+function ownEntry<V>(record: Record<string, V>, key: string, make: () => V): V {
+  const had = getOwn(record, key);
+  if (had !== undefined) return had;
+  const made = make();
+  setOwn(record, key, made);
+  return made;
+}
 
 interface Layer {
   primitives: Record<string, DtcgGroup>;
@@ -62,16 +72,16 @@ export function toDTCG(theme: Theme): DtcgExport {
   };
 
   const put = (into: Record<string, DtcgGroup>, name: string, t: RawToken) => {
-    into[t.type] ??= { $type: t.type };
+    const group = ownEntry(into, t.type, () => ({ $type: t.type }));
     const extensions = {
       ...(t.alpha !== undefined ? { [ALPHA_EXT]: t.alpha } : {}),
       ...(t.scope !== undefined ? { [SCOPE_EXT]: t.scope } : {}),
     };
-    into[t.type][name] = {
+    setOwn(group, name, {
       $value: alias(t.value),
       ...(t.description ? { $description: t.description } : {}),
       ...(Object.keys(extensions).length > 0 ? { $extensions: extensions } : {}),
-    };
+    });
   };
 
   /** Every axis a token branches on, and the keys of its mode branches. */
@@ -86,7 +96,7 @@ export function toDTCG(theme: Theme): DtcgExport {
   };
 
   const base: Layer = { primitives: {}, modes: {} };
-  for (const mode of declaredModes) base.modes[mode] = {};
+  for (const mode of declaredModes) setOwn(base.modes, mode, {});
   const overrides: Record<string, Layer> = {};
   const varies: Record<string, string[]> = {};
 
@@ -95,12 +105,12 @@ export function toDTCG(theme: Theme): DtcgExport {
     const modeKeys = new Set<string>();
     scan(raw, used, modeKeys);
     const varying = nonMode.filter((a) => used.has(a));
-    if (varying.length > 0) varies[name] = varying;
+    if (varying.length > 0) setOwn(varies, name, varying);
     const modes = used.has('mode') ? [...new Set([...declaredModes, ...modeKeys])] : [];
 
-    for (const combo of enumerateSelections(Object.fromEntries(varying.map((a) => [a, axes[a]])))) {
+    for (const combo of enumerateSelections(Object.fromEntries(varying.map((a) => [a, getOwn(axes, a)!])))) {
       const key = overrideKey(axes, combo);
-      const layer = key === '' ? base : (overrides[key] ??= { primitives: {}, modes: {} });
+      const layer = key === '' ? base : ownEntry(overrides, key, (): Layer => ({ primitives: {}, modes: {} }));
       const sel = { ...defaults, ...combo };
       if (modes.length === 0) {
         const p = pick(raw, sel);
@@ -114,7 +124,7 @@ export function toDTCG(theme: Theme): DtcgExport {
         put(layer.primitives, name, first.value);
         continue;
       }
-      for (const [mode, p] of picked) if (p.ok) put((layer.modes[mode] ??= {}), name, p.value);
+      for (const [mode, p] of picked) if (p.ok) put(ownEntry(layer.modes, mode, () => ({})), name, p.value);
     }
   }
 

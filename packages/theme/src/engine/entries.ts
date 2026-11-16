@@ -1,5 +1,5 @@
 /** Settling a definition entry's `by`s and seeds, and reading a ramp or scale entry into the values `derive` makes tokens of. */
-import { isPlainObject } from '@weasel-js/registry';
+import { hasOwnKey, isPlainObject, setOwn } from '@weasel-js/registry';
 import { isByAxis, pick, type Selection } from '../axes.ts';
 import { DEFAULT_CONSTRAINTS, type Anchor, type Constraints } from './color/generate.ts';
 import { categoricalRamp, lightnessRamp } from './ramps.ts';
@@ -8,7 +8,6 @@ import type { Issue } from './types.ts';
 
 const SEED_REF = /^\{seeds\.([\w-]+)\}$/;
 const HEX = /^#[0-9a-f]{6}$/i;
-const has = (o: object, key: string) => Object.hasOwn(o, key);
 
 export interface SettleContext {
   readonly sel: Selection;
@@ -48,14 +47,14 @@ export function settle(v: unknown, path: string, ctx: SettleContext): Settled {
     for (const [k, x] of Object.entries(v)) {
       const s = settle(x, `${path}.${k}`, ctx);
       ok = s.ok && ok;
-      value[k] = s.value;
+      setOwn(value, k, s.value);
     }
     return { value, ok };
   }
   if (typeof v === 'string') {
     const m = SEED_REF.exec(v.trim());
     if (!m) return { value: v, ok: true };
-    if (has(ctx.seeds, m[1])) return { value: ctx.seeds[m[1]], ok: true };
+    if (hasOwnKey(ctx.seeds, m[1])) return { value: ctx.seeds[m[1]], ok: true };
     // A declared seed that did not resolve already reported its missing axis value.
     if (!ctx.declaredSeeds.has(m[1])) ctx.issues.push({ kind: 'invalid', path, message: `unknown seed "${m[1]}"` });
     return { value: undefined, ok: false };
@@ -128,7 +127,7 @@ export function rampColors(name: string, r: Record<string, unknown>, steps: read
     const peak = r.chroma === undefined ? 0 : atLeastZero(read.num(chroma.peak, `${path}.chroma.peak`), `${path}.chroma.peak`);
     const anchor: Record<string, string> = {};
     for (const [step, v] of Object.entries(read.record(r.anchor, `${path}.anchor`))) {
-      if (typeof v === 'string' && HEX.test(v)) anchor[step] = v;
+      if (typeof v === 'string' && HEX.test(v)) setOwn(anchor, step, v);
       else read.fail(`${path}.anchor.${step}`, 'expected a hex color');
     }
     const params = {
@@ -148,7 +147,7 @@ export function rampColors(name: string, r: Record<string, unknown>, steps: read
     const gates: Record<string, unknown> = {};
     for (const [k, v] of Object.entries(read.record(r.gates, `${path}.gates`))) {
       const at = `${path}.gates.${k}`;
-      if (!has(DEFAULT_CONSTRAINTS, k) || k === 'count' || k === 'anchors') read.fail(at, 'unknown gate');
+      if (!hasOwnKey(DEFAULT_CONSTRAINTS, k) || k === 'count' || k === 'anchors') read.fail(at, 'unknown gate');
       else if (k === 'surface') {
         if (typeof v === 'string' && HEX.test(v)) gates[k] = v;
         else read.fail(at, 'expected a hex color');

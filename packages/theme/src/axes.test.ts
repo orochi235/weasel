@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { enumerateSelections, fullSelection, isByAxis, pick, selectionKey, type AxisDefs } from './axes';
+import { overrideKey } from './dtcg/axesExtension';
 import type { LightnessRampDef, ThemeDefinition } from './definition';
 
 const AXES: AxisDefs = {
@@ -15,6 +16,12 @@ describe('axes', () => {
   it('reads an axis value named like an Object.prototype member as unknown', () => {
     expect(fullSelection(AXES, { mode: 'toString', density: 'constructor' })).toEqual({ mode: 'dark', density: 'comfortable' });
     expect(pick({ by: 'mode', dark: 1, light: 2 }, { mode: 'toString' })).toEqual({ ok: false, axis: 'mode', value: 'toString' });
+  });
+
+  it('reads a selection that leaves out an axis named constructor as holding no value for it', () => {
+    expect(pick({ by: 'constructor', a: 1 }, {})).toEqual({ ok: false, axis: 'constructor', value: '' });
+    const axes: AxisDefs = { constructor: { default: 'a', values: { a: {}, b: {} } }, ...AXES };
+    expect(overrideKey(axes, { density: 'compact' })).toBe('density=compact');
   });
 
   it('enumerates the cross product in declaration order', () => {

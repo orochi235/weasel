@@ -1,3 +1,4 @@
+import { getOwn } from '@weasel-js/registry';
 import { isByAxis, type PinValue, type Theme, type ThemeDefinition, type Varying } from '@weasel-js/theme';
 import {
   bakeChain,
@@ -46,7 +47,7 @@ export function ownTokenNames(def: ThemeDefinition): string[] {
 
 /** A pin that fails at this selection (a `by` missing its value, an unknown seed) leaves no token, or leaves the rule's. */
 export const pinApplies = (result: DeriveResult, name: string): boolean =>
-  result.provenance[name]?.pinned === true || result.provenance[name]?.layer === 'pins';
+  getOwn(result.provenance, name)?.pinned === true || getOwn(result.provenance, name)?.layer === 'pins';
 
 /** Each own token counts once, under the layer that produced it; the Pins row counts the pins that apply, and how many override a generator. */
 export function countTokens(def: ThemeDefinition, result: DeriveResult): Counts {
@@ -62,7 +63,7 @@ export function countTokens(def: ThemeDefinition, result: DeriveResult): Counts 
   let overridden = 0;
   let total = 0;
   for (const name of ownTokenNames(def)) {
-    const p = result.provenance[name];
+    const p = getOwn(result.provenance, name);
     if (!p) continue;
     total += 1;
     if (p.pinned) overridden += 1;
@@ -74,7 +75,7 @@ export function countTokens(def: ThemeDefinition, result: DeriveResult): Counts 
   for (const name of Object.keys(def.pins ?? {})) {
     if (!pinApplies(result, name)) continue;
     layers.pins.count += 1;
-    if (result.provenance[name]?.pinned) layers.pins.pinned += 1;
+    if (getOwn(result.provenance, name)?.pinned) layers.pins.pinned += 1;
   }
   return { overridden, total, layers };
 }
@@ -112,19 +113,19 @@ export function removePin(def: ThemeDefinition, name: string): ThemeDefinition {
 
 /** Drops the definition's own pins on every step of `ramp`. A pin a parent holds stays. */
 export function adoptGenerated(def: ThemeDefinition, lookup: Lookup, ramp: string): ThemeDefinition {
-  const entry = mergeChain(def, lookup).ramps?.[ramp];
+  const entry = getOwn(mergeChain(def, lookup).ramps ?? {}, ramp);
   if (!entry) return def;
   return declaredSteps(entry).reduce((d, step) => removePin(d, `${ramp}-${step}`), def);
 }
 
 /** Replaces a ramp's entry; a ramp the definition only inherits is copied in first. */
 export function setRamp(def: ThemeDefinition, lookup: Lookup, ramp: string, update: (entry: RampDef) => RampDef): ThemeDefinition {
-  const current = def.ramps?.[ramp] ?? mergeChain(def, lookup).ramps?.[ramp];
+  const current = getOwn(def.ramps ?? {}, ramp) ?? getOwn(mergeChain(def, lookup).ramps ?? {}, ramp);
   return current ? { ...def, ramps: withEntry(def.ramps, ramp, update(current)) } : def;
 }
 
 export function setScale(def: ThemeDefinition, lookup: Lookup, scale: string, update: (entry: ScaleDef) => ScaleDef): ThemeDefinition {
-  const current = def.scales?.[scale] ?? mergeChain(def, lookup).scales?.[scale];
+  const current = getOwn(def.scales ?? {}, scale) ?? getOwn(mergeChain(def, lookup).scales ?? {}, scale);
   return current ? { ...def, scales: withEntry(def.scales, scale, update(current)) } : def;
 }
 
@@ -152,8 +153,8 @@ export function stepOf(name: string, result: DeriveResult): string | undefined {
   const seen = new Set<string>();
   for (let n: string | undefined = name; n !== undefined && !seen.has(n); ) {
     seen.add(n);
-    if (result.provenance[n]?.layer === 'ramps') return n;
-    const value: unknown = result.tokens[n]?.value;
+    if (getOwn(result.provenance, n)?.layer === 'ramps') return n;
+    const value: unknown = getOwn(result.tokens, n)?.value;
     n = typeof value === 'string' ? REF.exec(value.trim())?.[1] : undefined;
   }
   return undefined;

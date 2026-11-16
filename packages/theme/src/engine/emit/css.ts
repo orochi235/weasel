@@ -1,3 +1,4 @@
+import { getOwn, setOwn } from '@weasel-js/registry';
 import { axisScheme, enumerateSelections, fullSelection, pickAll, wzlAttr, type AxisDefs, type Selection } from '../../axes.ts';
 import { tokenAt } from '../../chainTokens.ts';
 import { mixAlpha } from '../../dtcg/color.ts';
@@ -17,7 +18,7 @@ export interface EmitInput {
 /** A reference becomes `var()` (or `color-mix()` with an alpha); a literal is resolved. */
 export function cssValue(name: string, token: RawToken): string {
   const target = refTarget(token.value);
-  if (target === null) return resolveTokens({ [name]: token })[name];
+  if (target === null) return getOwn(resolveTokens({ [name]: token }), name)!;
   if (token.alpha === undefined) return `var(--wzl-${target})`;
   return mixAlpha(`var(--wzl-${target})`, token.alpha);
 }
@@ -32,7 +33,7 @@ function axisSets(axes: AxisDefs): string[][] {
 
 function combinations(axes: AxisDefs, set: readonly string[]): Selection[] {
   let out: Record<string, string>[] = [{}];
-  for (const axis of set) out = out.flatMap((s) => Object.keys(axes[axis].values).map((v) => ({ ...s, [axis]: v })));
+  for (const axis of set) out = out.flatMap((s) => Object.keys(getOwn(axes, axis)!.values).map((v) => ({ ...s, [axis]: v })));
   return out;
 }
 
@@ -44,8 +45,8 @@ function checkSchemes({ name, axes }: BakedTheme): void {
 /** The theme's axes followed by any the default has and it lacks; a shared axis gets both themes' values. */
 function combineAxes(own: AxisDefs, other: AxisDefs): AxisDefs {
   const out: Record<string, AxisDefs[string]> = {};
-  for (const [name, def] of Object.entries(own)) out[name] = { ...def, values: { ...other[name]?.values, ...def.values } };
-  for (const [name, def] of Object.entries(other)) if (!out[name]) out[name] = def;
+  for (const [name, def] of Object.entries(own)) setOwn(out, name, { ...def, values: { ...getOwn(other, name)?.values, ...def.values } });
+  for (const [name, def] of Object.entries(other)) if (!Object.hasOwn(out, name)) setOwn(out, name, def);
   return out;
 }
 
@@ -115,9 +116,9 @@ function blocks(lines: string[], plan: Plan, selector: (attrs: string) => string
     const schemeAxis = set.length === 1 ? set[0] : undefined;
 
     for (const combo of combinations(axes, set)) {
-      const scheme = schemeAxis ? axisScheme(plan.schemes, schemeAxis, combo[schemeAxis]) : undefined;
+      const scheme = schemeAxis ? axisScheme(plan.schemes, schemeAxis, getOwn(combo, schemeAxis)!) : undefined;
       if (ownFirst.length === 0 && !scheme) continue;
-      const attrs = set.map((a) => wzlAttr(a, combo[a])).join('');
+      const attrs = set.map((a) => wzlAttr(a, getOwn(combo, a)!)).join('');
       const decls = ownFirst.flatMap((name) => {
         const token = plan.value(name, combo);
         return token ? [`  --wzl-${name}: ${cssValue(name, token)};`] : [];
@@ -165,8 +166,8 @@ export function emitCss(themes: readonly EmitInput[]): string {
     axes,
     schemes: t.baked.axes,
     names: resolved.names.filter((n) => redeclared.has(n)),
-    all: (n) => union(axes, t.deps[n]?.all, def.deps[n]?.all),
-    own: (n) => union(axes, t.deps[n]?.own, def.deps[n]?.own),
+    all: (n) => union(axes, getOwn(t.deps, n)?.all, getOwn(def.deps, n)?.all),
+    own: (n) => union(axes, getOwn(t.deps, n)?.own, getOwn(def.deps, n)?.own),
     value: (n, sel) => resolved.token(n, sel),
   }));
 
@@ -183,7 +184,7 @@ export function emitCss(themes: readonly EmitInput[]): string {
   // applyTheme would otherwise get dark colors with light native widgets.
   lines.push(':root {');
   for (const axis of Object.values(axes)) {
-    const scheme = axis.values[axis.default]?.scheme;
+    const scheme = getOwn(axis.values, axis.default)?.scheme;
     if (scheme) lines.push(`  color-scheme: ${scheme};`);
   }
   for (const [name, token] of Object.entries(rootValues)) {
@@ -192,9 +193,9 @@ export function emitCss(themes: readonly EmitInput[]): string {
   }
   lines.push('}', '');
 
-  const reset = Object.keys(rootValues).filter((n) => redeclared.has(n) && (def.deps[n]?.all.length ?? 0) === 0);
+  const reset = Object.keys(rootValues).filter((n) => redeclared.has(n) && (getOwn(def.deps, n)?.all.length ?? 0) === 0);
   if (reset.length > 0) {
-    lines.push(`${wzlAttr('theme', theme)} {`, ...reset.map((n) => `  --wzl-${n}: ${cssValue(n, rootValues[n])};`), '}', '');
+    lines.push(`${wzlAttr('theme', theme)} {`, ...reset.map((n) => `  --wzl-${n}: ${cssValue(n, getOwn(rootValues, n)!)};`), '}', '');
   }
 
   blocks(
@@ -204,9 +205,9 @@ export function emitCss(themes: readonly EmitInput[]): string {
       axes,
       schemes: axes,
       names: Object.keys(def.baked.tokens),
-      all: (n) => def.deps[n]?.all ?? [],
-      own: (n) => def.deps[n]?.own ?? [],
-      value: (n, sel) => pickAll(def.baked.tokens, fullSelection(axes, sel))[n],
+      all: (n) => getOwn(def.deps, n)?.all ?? [],
+      own: (n) => getOwn(def.deps, n)?.own ?? [],
+      value: (n, sel) => getOwn(pickAll(def.baked.tokens, fullSelection(axes, sel)), n),
     },
     (attrs) => [`${wzlAttr('theme', theme)}${attrs},`, `${attrs} {`],
   );

@@ -1,3 +1,4 @@
+import { getOwn } from '@weasel-js/registry';
 import { fullSelection, pickAll } from '../../axes.ts';
 import { resolveTokens } from '../../dtcg/resolve.ts';
 import { TOKEN_HOOKS } from '../../hooks.ts';
@@ -18,7 +19,7 @@ export function emitManifest({ baked }: EmitInput): string {
   const all = pickAll(baked.tokens, fullSelection(baked.axes, {}));
   const resolved = resolveTokens(all);
   const rows = Object.entries(all).map(([name, token]) =>
-    row(name, token.type, resolved[name], token.description ?? '', false),
+    row(name, token.type, getOwn(resolved, name)!, token.description ?? '', false),
   );
   // Hooks last, and sorted, so a name moving between the two lists is one
   // block of diff rather than a reshuffle.

@@ -1,3 +1,4 @@
+import { setOwn } from '@weasel-js/registry';
 import { withAlpha } from './color.ts';
 import type { FlatTokens, ResolvedTokenMap, TokenValue } from './types.ts';
 import { serializeTokenValue } from './value.ts';
@@ -48,7 +49,7 @@ export function resolveTokens(tokens: FlatTokens): ResolvedTokenMap {
     if (token.alpha !== undefined) value = withAlpha(value, token.alpha);
 
     inProgress.delete(name);
-    out[name] = value;
+    setOwn(out, name, value);
     return value;
   };
 

@@ -1,3 +1,4 @@
+import { getOwn } from '@weasel-js/registry';
 import { isByAxis, type ResolvedTheme } from '@weasel-js/theme';
 import { declaredSteps, toLch, type DeriveResult, type LightnessRampDef, type RampDef } from '@weasel-js/theme/engine';
 
@@ -36,15 +37,15 @@ function spreadOf(ds: readonly number[]): number | null {
 
 export function rampView(name: string, entry: RampDef, result: DeriveResult, resolved: ResolvedTheme): RampView {
   const final = resolved as Readonly<Record<string, string>>;
-  const steps = declaredSteps(entry)
-    .filter((step) => Object.hasOwn(result.tokens, `${name}-${step}`))
-    .map((step): StepView => {
-      const token = `${name}-${step}`;
-      const p = result.provenance[token];
-      const hex = final[`--wzl-${token}`] ?? String(result.tokens[token].value);
-      const generated = p?.pinned && typeof p.generated?.value === 'string' ? p.generated.value : undefined;
-      return { step, token, hex, L: lightnessOf(hex), pinned: p?.pinned ?? false, generated };
-    });
+  const steps = declaredSteps(entry).flatMap((step): StepView[] => {
+    const token = `${name}-${step}`;
+    const derived = getOwn(result.tokens, token);
+    if (!derived) return [];
+    const p = getOwn(result.provenance, token);
+    const hex = final[`--wzl-${token}`] ?? String(derived.value);
+    const generated = p?.pinned && typeof p.generated?.value === 'string' ? p.generated.value : undefined;
+    return [{ step, token, hex, L: lightnessOf(hex), pinned: p?.pinned ?? false, generated }];
+  });
   const dL = deltas(steps.map((s) => s.L));
   const generatedDL = deltas(steps.map((s) => lightnessOf(s.generated ?? s.hex)));
   return {
@@ -59,17 +60,23 @@ export function rampView(name: string, entry: RampDef, result: DeriveResult, res
   };
 }
 
-/** `curve`, `lightness.0`, `chroma.peak`: one level of nesting, which is all a lightness ramp has. */
-export function readParam(entry: LightnessRampDef, key: string): unknown {
-  const [head, tail] = key.split('.');
-  const top = (entry as unknown as Record<string, unknown>)[head];
+/** A lightness ramp field the editor's sliders set: one level of nesting at most, which is all a lightness ramp has. */
+export type RampParam = 'curve' | 'hue' | 'lightness.0' | 'lightness.1' | 'chroma.peak' | 'chroma.lightBias' | 'chroma.darkBias';
+type ParamHead = 'curve' | 'hue' | 'lightness' | 'chroma';
+type ParamTail = '0' | '1' | 'peak' | 'lightBias' | 'darkBias';
+
+const paramPath = (key: RampParam) => key.split('.') as [ParamHead, ParamTail?];
+
+export function readParam(entry: LightnessRampDef, key: RampParam): unknown {
+  const [head, tail] = paramPath(key);
+  const top = (entry as unknown as Record<ParamHead, unknown>)[head];
   if (tail === undefined || isByAxis(top)) return top;
-  return top && typeof top === 'object' ? (top as Record<string, unknown>)[tail] : undefined;
+  return top && typeof top === 'object' ? (top as Partial<Record<ParamTail, unknown>>)[tail] : undefined;
 }
 
-export function writeParam(entry: LightnessRampDef, key: string, value: number): LightnessRampDef {
-  const [head, tail] = key.split('.');
-  const top = (entry as unknown as Record<string, unknown>)[head];
+export function writeParam(entry: LightnessRampDef, key: RampParam, value: number): LightnessRampDef {
+  const [head, tail] = paramPath(key);
+  const top = (entry as unknown as Record<ParamHead, unknown>)[head];
   if (isByAxis(top)) throw new Error(`${head} varies by ${top.by}; write each branch instead`);
   if (tail === undefined) return { ...entry, [head]: value };
   if (Array.isArray(top)) {

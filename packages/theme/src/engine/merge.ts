@@ -1,3 +1,4 @@
+import { setOwn } from '@weasel-js/registry';
 import { type AxisDefs, isByAxis, mergeAxes } from '../axes.ts';
 import type { ThemeDefinition } from '../definition.ts';
 import { alwaysDeclaredSteps } from './steps.ts';
@@ -23,8 +24,8 @@ function fillFromParent(child: unknown, parent: unknown, axes: AxisDefs): unknow
   const out: Record<string, unknown> = { ...child };
   for (const v of values) {
     if (Object.hasOwn(out, v)) continue;
-    out[v] = isByAxis(parent) && parent.by === child.by ? (Object.hasOwn(parent, v) ? parent[v] : undefined) : parent;
-    if (out[v] === undefined) delete out[v];
+    const inherited = isByAxis(parent) && parent.by === child.by ? (Object.hasOwn(parent, v) ? parent[v] : undefined) : parent;
+    if (inherited !== undefined) setOwn(out, v, inherited);
   }
   return out;
 }

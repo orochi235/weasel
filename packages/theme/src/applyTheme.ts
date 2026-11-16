@@ -7,8 +7,6 @@ import { warnThemeOnce } from './warnOnce';
 
 export { __resetThemeSheet } from './themeSheet';
 
-const CLOSER: Readonly<Record<string, string>> = { '(': ')', '[': ']' };
-
 /**
  * Whether `value` can stand as a declaration's value: no `;`, `{`, `}` or comment opener outside a
  * quoted string, no line break inside one (CSS ends the string there), no quote or bracket left
@@ -28,7 +26,8 @@ function declarable(value: string): boolean {
       else if (c === '\n' || c === '\r' || c === '\f') return false;
     } else if (c === '"' || c === "'") quote = c;
     else if (c === ';' || c === '{' || c === '}' || (c === '/' && value[i + 1] === '*')) return false;
-    else if (CLOSER[c]) open.push(CLOSER[c]);
+    else if (c === '(') open.push(')');
+    else if (c === '[') open.push(']');
     else if (c === ')' || c === ']') {
       if (open.pop() !== c) return false;
     }
@@ -76,13 +75,14 @@ export function applyTheme(el: HTMLElement, theme: Theme, selection: Selection =
 
   const axes = themeAxes(theme);
   const sel = fullSelection(axes, selection);
-  const names = Object.keys(axes);
-  const scheme = names.map((a) => axisScheme(axes, a, sel[a])).find((s) => s !== undefined);
+  const picked = Object.entries(sel);
+  const names = picked.map(([a]) => a);
+  const scheme = picked.map(([a, v]) => axisScheme(axes, a, v)).find((s) => s !== undefined);
   const body = [
     ...(scheme ? [`color-scheme: ${scheme};`] : []),
     ...declarations(theme, options.weights ? blendTheme(theme, options.weights, sel) : resolveTheme(theme, sel)),
   ].join(' ');
-  const selector = `${wzlAttr('theme', theme.name)}${names.map((a) => wzlAttr(a, sel[a])).join('')}`;
+  const selector = `${wzlAttr('theme', theme.name)}${picked.map(([a, v]) => wzlAttr(a, v)).join('')}`;
   // Held before the last one is let go, so re-applying the same rule rewrites nothing.
   const { variant, release: releaseRule } = holdRule(styleRootOf(el), selector, body);
   const prior = holds.get(el);
@@ -91,7 +91,7 @@ export function applyTheme(el: HTMLElement, theme: Theme, selection: Selection =
   for (const a of prior?.axes ?? []) if (!names.includes(a)) el.removeAttribute(`data-wzl-${a}`);
 
   el.setAttribute('data-wzl-theme', wzlValue(theme.name));
-  for (const a of names) el.setAttribute(`data-wzl-${a}`, wzlValue(sel[a]));
+  for (const [a, v] of picked) el.setAttribute(`data-wzl-${a}`, wzlValue(v));
   if (variant === 0) el.removeAttribute('data-wzl-variant');
   else el.setAttribute('data-wzl-variant', String(variant));
 

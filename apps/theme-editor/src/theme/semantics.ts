@@ -1,3 +1,4 @@
+import { getOwn } from '@weasel-js/registry';
 import { isByAxis, type Selection, type ThemeDefinition, type Varying } from '@weasel-js/theme';
 import { contrast, type SemanticRule } from '@weasel-js/theme/engine';
 import type { ModeView } from './draft';
@@ -52,7 +53,7 @@ export function defaultRule(
 export function pickRule(rule: Varying<SemanticRule>, selection: Selection): SemanticRule | undefined {
   let r: unknown = rule;
   while (isByAxis(r)) {
-    const value = selection[r.by];
+    const value = getOwn(selection, r.by);
     if (value === undefined || !Object.hasOwn(r, value)) return undefined;
     r = (r as Record<string, unknown>)[value];
   }
@@ -96,11 +97,11 @@ const text = (v: unknown) => (typeof v === 'string' ? v : JSON.stringify(v));
 export function semanticRows(draft: ThemeDefinition, merged: ThemeDefinition, views: readonly ModeView[]): SemanticRowView[] {
   return Object.entries(merged.semantics ?? {}).map(([name, rule]) => {
     const cells = views
-      .filter((v) => Object.hasOwn(v.result.tokens, name))
-      .map((v): SemanticCell => {
+      .flatMap((v): SemanticCell[] => {
+        const token = getOwn(v.result.tokens, name);
+        if (!token) return [];
         const final = v.resolved as Readonly<Record<string, string>>;
-        const token = v.result.tokens[name];
-        const p = v.result.provenance[name];
+        const p = getOwn(v.result.provenance, name)!;
         const hex = final[`--wzl-${name}`] ?? text(token.value);
         const picked = pickRule(rule, v.selection);
         const wanted = [
@@ -111,14 +112,14 @@ export function semanticRows(draft: ThemeDefinition, merged: ThemeDefinition, vi
           const other = final[`--wzl-${w.against}`];
           return { ...w, ratio: HEX.test(hex) && other !== undefined && HEX.test(other) ? contrast(hex, other) : null };
         });
-        return {
+        return [{
           mode: v.mode,
           hex,
           step: stepOf(name, v.result),
           produced: text(p.pinned ? p.generated?.value : token.value),
           pin: p.pinned ? text(token.value) : undefined,
           checks,
-        };
+        }];
       });
     const all = cells.flatMap((c) => c.checks);
     const measured = all.filter((c): c is ContrastCheck & { ratio: number } => c.ratio !== null);
