@@ -9,7 +9,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { useLatest, useVisibleRaf } from '@weasel-js/react';
 import type { TextStyle } from '@weasel-js/text';
 import { resolveTextStyle } from '@weasel-js/text';
-import { editEnd, imeKey } from '@weasel-js/ui-input';
+import { editEnd, imeKey, timerScheduler } from '@weasel-js/ui-input';
 import { historyKey } from '@weasel-js/gestures';
 import type { StyledRun } from '@weasel-js/text';
 import { domToRuns, type OverlayRunBase } from './domRuns';
@@ -270,11 +270,11 @@ export function useTextEdit(
     const release = () => {
       if (!held) return;
       held = false;
-      clearTimeout(holdTimer);
+      cancelHold();
       place();
       overlay.style.opacity = '';
     };
-    const holdTimer = held ? setTimeout(release, holdFor) : undefined;
+    const cancelHold = held ? timerScheduler.set(release, holdFor) : () => {};
     void hold?.then(release);
 
     const range = openingRange(overlay, initialCaretRef.current);
@@ -381,7 +381,7 @@ export function useTextEdit(
 
     return () => {
       held = false;
-      clearTimeout(holdTimer);
+      cancelHold();
       frameLoop.cancel();
       tickRef.current = () => {};
       for (const [type, fn] of listeners) overlay.removeEventListener(type, fn);

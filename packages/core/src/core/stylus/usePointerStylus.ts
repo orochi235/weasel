@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState, type RefObject } from 'react';
 import { useLatest } from '@weasel-js/react';
+import { after } from '@weasel-js/registry';
 import { getStylusData, type StylusData } from './stylus';
 
 /** State exposed by `usePointerStylus` — the most recent stylus snapshot
@@ -61,10 +62,9 @@ export function usePointerStylus(
           ? target
           : target.current ?? window;
 
-    let trailing: ReturnType<typeof setTimeout> | undefined;
+    let cancelTrailing = (): void => {};
     const commit = (sample: StylusData, now: number) => {
-      clearTimeout(trailing);
-      trailing = undefined;
+      cancelTrailing();
       lastCommit.current = now;
       setState((prev) => ({ ...sample, hovering: prev.hovering }));
     };
@@ -77,8 +77,8 @@ export function usePointerStylus(
       const sample = getStylusData(e);
       const wait = minGap - (now - lastCommit.current);
       if (minGap > 0 && wait > 0) {
-        clearTimeout(trailing);
-        trailing = setTimeout(() => commit(sample, performance.now()), wait);
+        cancelTrailing();
+        cancelTrailing = after(wait, () => commit(sample, performance.now()));
         return;
       }
       commit(sample, now);
@@ -101,7 +101,7 @@ export function usePointerStylus(
       el.removeEventListener('pointermove', onMove);
       el.removeEventListener('pointerenter', onEnter);
       el.removeEventListener('pointerleave', onLeave);
-      clearTimeout(trailing);
+      cancelTrailing();
     };
   }, [target, optsRef]);
 

@@ -68,6 +68,16 @@ describe('usePointerStylus', () => {
       expect(result.current.pressure).toBeCloseTo(0.9);
     });
 
+    it('holds the last throttled sample for the whole of a gap longer than one timer holds', () => {
+      vi.useFakeTimers({ toFake: ['performance', 'setTimeout', 'clearTimeout'] });
+      const { result } = renderHook(() => usePointerStylus(undefined, { maxFps: 1000 / 2 ** 32 }));
+      act(() => { dispatchMove(window, { pointerType: 'pen', pressure: 0.1 }); });
+      vi.advanceTimersByTime(1);
+      act(() => { dispatchMove(window, { pointerType: 'pen', pressure: 0.9 }); });
+      act(() => { vi.advanceTimersByTime(1); });
+      expect(result.current.pressure).toBeCloseTo(0.1);
+    });
+
     it('commits the first move even when the clock reads zero', () => {
       const { result } = renderHook(() => usePointerStylus(undefined, { maxFps: 30 }));
       expect(performance.now()).toBe(0);

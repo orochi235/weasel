@@ -14,6 +14,7 @@ export function nibWidthScale(nib: StrokeNib): WidthScale {
   return (tx, ty) => {
     const across = ex * ty - ey * tx;
     const along = ex * tx + ey * ty;
+    // eslint-disable-next-line no-restricted-syntax -- (tx, ty) is a unit tangent, so neither square leaves [0, 1]
     return Math.sqrt(across * across + r * r * along * along);
   };
 }

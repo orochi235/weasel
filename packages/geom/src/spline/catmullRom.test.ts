@@ -84,3 +84,15 @@ describe('sampleCurve', () => {
     }
   });
 });
+
+describe('sampleCurve at either end of the double range', () => {
+  it('samples finite points between anchors spaced near the smallest or largest doubles', () => {
+    for (const scale of [1e-200, 1e200]) {
+      const anchors: Point[] = [{ x: 0, y: 0 }, { x: scale, y: scale }, { x: 2 * scale, y: 0 }, { x: 3 * scale, y: scale }];
+      for (const p of sampleCurve(anchors, 8)) {
+        expect(Number.isFinite(p.x / scale) && Number.isFinite(p.y / scale), `${scale}`).toBe(true);
+        expect(Math.abs(p.x / scale)).toBeLessThanOrEqual(3);
+      }
+    }
+  });
+});

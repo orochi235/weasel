@@ -3,7 +3,7 @@
  * its curve parameter, and how far away it lies.
  */
 import { cubicEvalAt, elevateQuadraticToCubic } from './curve';
-import { segmentT } from './points2';
+import { lengthOf, segmentT } from './points2';
 import { lerp } from './scalar';
 import { polynomialRoots01 } from './polyRoots';
 import { forEachSegment, PATH_M, PATH_L, PATH_Q, PATH_C, PATH_Z } from './commands';
@@ -33,7 +33,7 @@ export function nearestOnLine(
   const t = segmentT(px, py, x0, y0, x1, y1);
   const x = t === 1 ? x1 : lerp(x0, x1, t);
   const y = t === 1 ? y1 : lerp(y0, y1, t);
-  return { x, y, t, dist: Math.sqrt((px - x) * (px - x) + (py - y) * (py - y)) };
+  return { x, y, t, dist: lengthOf(px - x, py - y) };
 }
 
 /** Coarse samples per cubic. Each local minimum among them is refined, so this

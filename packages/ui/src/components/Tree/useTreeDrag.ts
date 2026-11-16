@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState, type PointerEvent as ReactPointerEvent, type Ref } from 'react';
 import { useKitSetting } from '@weasel-js/react';
+import { after } from '@weasel-js/registry';
 import { isInControlWithin, startThresholdDrag, useLatest, type ThresholdDragHandle } from '@weasel-js/core';
 import { resolveDrop, type DropIndent, type DropMark, type DropRow, type ResolvedDrop, type TreeDropTarget } from '../../dropTarget';
 import { swallowNextClick, type PressModifiers, type ReorderGhost } from '../../useReorderDragList';
@@ -93,11 +94,11 @@ const IDLE: TreeDragState ={ dragging: null, effect: 'move', mark: null, ghost: 
 export function useTreeDrag(opts: UseTreeDragOptions) {
   const o = useLatest({ ...opts, hoverExpandMs: useKitSetting('tree.hoverExpandMs') ?? HOVER_EXPAND_MS, dragPx: useKitSetting('gestures.dragPx') });
   const drag = useRef<ThresholdDragHandle | null>(null);
-  const hover = useRef<{ id: string; timer: ReturnType<typeof setTimeout> } | null>(null);
+  const hover = useRef<{ id: string; cancel: () => void } | null>(null);
   const [state, setState] = useState<TreeDragState>(IDLE);
 
   const clearHover = () => {
-    if (hover.current) clearTimeout(hover.current.timer);
+    hover.current?.cancel();
     hover.current = null;
   };
   useEffect(() => () => { drag.current?.cancel(); clearHover(); }, []);
@@ -173,7 +174,7 @@ export function useTreeDrag(opts: UseTreeDragOptions) {
       if (into && !o.current.expanded.has(into)) {
         if (hover.current?.id !== into) {
           clearHover();
-          hover.current = { id: into, timer: setTimeout(() => o.current.expand(into), o.current.hoverExpandMs) };
+          hover.current = { id: into, cancel: after(o.current.hoverExpandMs, () => o.current.expand(into)) };
         }
       } else {
         clearHover();

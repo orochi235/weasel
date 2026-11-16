@@ -1,5 +1,6 @@
 import { useEffect, useRef } from 'react';
 import { useKitSetting, useLatest } from '@weasel-js/react';
+import { after } from '@weasel-js/registry';
 import type {} from './kitSettings';
 
 /** How long typing rests before a field that settles when idle commits its draft. */
@@ -18,19 +19,19 @@ export function useIdleSettle(settle: () => void, enabled?: boolean): { typed():
   const on = enabled ?? kitOn ?? SETTLE_WHEN_IDLE;
   const ms = useKitSetting('typing.idleMs') ?? IDLE_SETTLE_MS;
   const latest = useLatest(settle);
-  const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const cancel = useRef<(() => void) | null>(null);
   const stop = (): void => {
-    if (timer.current !== null) clearTimeout(timer.current);
-    timer.current = null;
+    cancel.current?.();
+    cancel.current = null;
   };
   useEffect(() => stop, []);
   return {
     typed: () => {
       stop();
-      if (on) timer.current = setTimeout(() => {
-        timer.current = null;
+      if (on) cancel.current = after(ms, () => {
+        cancel.current = null;
         latest.current();
-      }, ms);
+      });
     },
     stop,
   };

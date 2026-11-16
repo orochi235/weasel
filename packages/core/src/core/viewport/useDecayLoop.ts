@@ -79,7 +79,7 @@ export function useDecayLoop() {
     const f = Math.pow(s.friction, dt / 16.67);
     s.vx *= f;
     s.vy *= f;
-    const speed = Math.sqrt(s.vx * s.vx + s.vy * s.vy);
+    const speed = Math.hypot(s.vx, s.vy);
     if (speed < s.minSpeed) {
       stateRef.current = null;
       frameLoop.cancel();

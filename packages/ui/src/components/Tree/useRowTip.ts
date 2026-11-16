@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { useKitSetting } from '@weasel-js/react';
+import { after } from '@weasel-js/registry';
 import type {} from '../../kitSettings';
 
 /** How long the pointer or keyboard focus rests on a row before its tooltip opens. */
@@ -18,18 +19,18 @@ export interface RowTip {
 export function useRowTip(): { tip: RowTip | null; rest(id: string, el: HTMLElement): void; clear(): void } {
   const [tip, setTip] = useState<RowTip | null>(null);
   const restMs = useKitSetting('tree.tipRestMs') ?? REST_MS;
-  const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const cancelRest = useRef<(() => void) | null>(null);
   const clear = (): void => {
-    if (timer.current !== null) clearTimeout(timer.current);
-    timer.current = null;
+    cancelRest.current?.();
+    cancelRest.current = null;
     setTip((cur) => (cur === null ? cur : null));
   };
   const rest = (id: string, el: HTMLElement): void => {
-    if (timer.current !== null) clearTimeout(timer.current);
-    timer.current = setTimeout(() => setTip({ id, el }), restMs);
+    cancelRest.current?.();
+    cancelRest.current = after(restMs, () => setTip({ id, el }));
   };
   useEffect(() => () => {
-    if (timer.current !== null) clearTimeout(timer.current);
+    cancelRest.current?.();
   }, []);
   return { tip, rest, clear };
 }

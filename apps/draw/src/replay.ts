@@ -10,6 +10,7 @@
  *     paints get a chance to run before the next input lands.
  */
 
+import { after } from '@weasel-js/registry';
 import { decodeModifiers, type Recording, type RecordedEvent } from './recorder';
 
 export interface ReplayOptions {
@@ -37,7 +38,7 @@ function rafTick(): Promise<void> {
 
 function sleep(ms: number): Promise<void> {
   if (ms <= 0) return Promise.resolve();
-  return new Promise((resolve) => setTimeout(resolve, ms));
+  return new Promise((resolve) => { after(ms, resolve); });
 }
 
 function pickTarget(rec: RecordedEvent, canvas: HTMLCanvasElement): EventTarget {

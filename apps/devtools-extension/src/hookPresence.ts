@@ -4,6 +4,7 @@
  * after load, so the check repeats until a hook turns up.
  */
 import type { ExtensionApi } from './browserApi';
+import { after } from '@weasel-js/registry';
 import { probeRequest } from './envelope';
 
 export interface PresenceOptions {
@@ -23,7 +24,7 @@ export function watchHookPresence(opts: PresenceOptions, report: (present: boole
   const delays = opts.delays ?? DEFAULT_DELAYS;
   let generation = 0;
   let last: boolean | null = null;
-  let timer: ReturnType<typeof setTimeout> | null = null;
+  let cancelPoll = (): void => {};
 
   const tell = (present: boolean): void => {
     if (present === last) return;
@@ -31,18 +32,18 @@ export function watchHookPresence(opts: PresenceOptions, report: (present: boole
     report(present);
   };
   const poll = (gen: number, step: number): void => {
-    timer = setTimeout(() => {
+    cancelPoll = after(delays[step], () => {
       opts.probe().catch(() => false).then((present) => {
         if (gen !== generation) return;
         if (present) return tell(true);
         if (step + 1 >= delays.length) tell(false);
         poll(gen, Math.min(step + 1, delays.length - 1));
       });
-    }, delays[step]);
+    });
   };
   const restart = (): void => {
     generation++;
-    if (timer) clearTimeout(timer);
+    cancelPoll();
     // The old page and its hook are gone; the panel drops its view before the new page answers.
     if (last) tell(false);
     last = null;
@@ -53,7 +54,7 @@ export function watchHookPresence(opts: PresenceOptions, report: (present: boole
   restart();
   return () => {
     generation++;
-    if (timer) clearTimeout(timer);
+    cancelPoll();
     off();
   };
 }

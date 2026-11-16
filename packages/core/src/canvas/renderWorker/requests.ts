@@ -1,3 +1,5 @@
+import { after } from '@weasel-js/registry';
+
 /** Requests the page sends a worker and the answers it waits on, matched by id. */
 export interface Requests<T> {
   /** Send a request under a fresh id, and wait for its answer: `missing` when none comes within
@@ -23,12 +25,12 @@ export interface RequestBounds<T> {
 
 export function createRequests<T>(bounds: RequestBounds<T>): Requests<T> {
   let next = 0;
-  const waiting = new Map<number, { answer: (value: T) => void; timer: ReturnType<typeof setTimeout> | undefined }>();
+  const waiting = new Map<number, { answer: (value: T) => void; cancel: () => void }>();
   const finish = (id: number, value: T) => {
     const entry = waiting.get(id);
     if (!entry) return;
     waiting.delete(id);
-    clearTimeout(entry.timer);
+    entry.cancel();
     entry.answer(value);
   };
   return {
@@ -36,15 +38,13 @@ export function createRequests<T>(bounds: RequestBounds<T>): Requests<T> {
       const id = ++next;
       let resolve!: (value: T) => void;
       const promise = new Promise<T>((r) => { resolve = r; });
-      const timer = Number.isFinite(bounds.timeout)
-        ? setTimeout(() => { finish(id, bounds.missing()); bounds.onTimeout?.(); }, bounds.timeout)
-        : undefined;
-      waiting.set(id, { answer: (value) => { settled?.(value); resolve(value); }, timer });
+      const cancel = after(bounds.timeout, () => { finish(id, bounds.missing()); bounds.onTimeout?.(); });
+      waiting.set(id, { answer: (value) => { settled?.(value); resolve(value); }, cancel });
       try {
         send(id);
       } catch (e) {
         waiting.delete(id);
-        clearTimeout(timer);
+        cancel();
         throw e;
       }
       return promise;

@@ -6,10 +6,11 @@ import type { SnapTarget } from 'core/adapters/types';
 import type { BehaviorResult, CloneBehavior, MoveBehavior, MoveEnd, GestureContext } from '../../../gestures/types';
 import { scratchKey, getScratch, setScratch } from '@weasel-js/routing';
 import { holderOf } from '@weasel-js/select';
+import { after } from '@weasel-js/registry';
 
 interface SnapState<TPose> {
   pendingTargetId: string | null;
-  pendingTimer: ReturnType<typeof setTimeout> | null;
+  cancelPending: (() => void) | null;
   committedSnap: SnapTarget<TPose> | null;
 }
 
@@ -22,7 +23,7 @@ const STATE = scratchKey<SnapState<unknown>>('snapToContainer');
 function getState<TPose>(ctx: GestureContext<TPose>): SnapState<TPose> {
   let s = getScratch(ctx.scratch, STATE) as SnapState<TPose> | undefined;
   if (!s) {
-    s = { pendingTargetId: null, pendingTimer: null, committedSnap: null };
+    s = { pendingTargetId: null, cancelPending: null, committedSnap: null };
     setScratch(ctx.scratch, STATE, s as SnapState<unknown>);
   }
   return s;
@@ -34,10 +35,8 @@ function intoDragged<TPose>(ctx: GestureContext<TPose>, snap: SnapTarget<TPose>)
 }
 
 function clearTimer<TPose>(s: SnapState<TPose>) {
-  if (s.pendingTimer !== null) {
-    clearTimeout(s.pendingTimer);
-    s.pendingTimer = null;
-  }
+  s.cancelPending?.();
+  s.cancelPending = null;
   s.pendingTargetId = null;
 }
 
@@ -125,10 +124,10 @@ export function snapToContainer<TPose>(args: {
     }
     clearTimer(s);
     s.pendingTargetId = target.parentId;
-    s.pendingTimer = setTimeout(() => {
+    s.cancelPending = after(dwellMs, () => {
       s.committedSnap = target;
-      s.pendingTimer = null;
-    }, dwellMs);
+      s.cancelPending = null;
+    });
     return left;
   };
   const cancel = (ctx: GestureContext<TPose>): void => { clearTimer(getState<TPose>(ctx)); };

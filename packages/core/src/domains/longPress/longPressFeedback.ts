@@ -7,6 +7,7 @@
  */
 import type { LongPressState } from '@weasel-js/routing';
 import { prefersReducedMotion } from '@weasel-js/react';
+import { after } from '@weasel-js/registry';
 import type { RenderLayer } from 'core/layers/render';
 import { ellipsePath, polylineFromPoints, type Path } from '@weasel-js/geom';
 import type { DrawCommand } from '@weasel-js/renderer';
@@ -113,11 +114,10 @@ export function createLongPressFeedbackContribution(
     const look: Look = { color: '', reduced: false };
     looks.set(store, look);
     const offLayer = api.registerLayer(ringLayer(store, look));
-    let appear: ReturnType<typeof setTimeout> | undefined;
+    let cancelAppear = (): void => {};
 
     const onChange = (): void => {
-      clearTimeout(appear);
-      appear = undefined;
+      cancelAppear();
       const p = store.get();
       if (p?.armed) {
         look.color = typeof opts.color === 'function' ? opts.color() : (opts.color ?? accentColorOf(api.element));
@@ -126,7 +126,7 @@ export function createLongPressFeedbackContribution(
           : opts.reducedMotion;
         // A static ring changes once, when it appears; nothing needs frames.
         const wait = delay - (nowMs() - p.startedAt);
-        if (look.reduced && wait > 0) appear = setTimeout(() => { api.requestRedraw(); }, wait);
+        if (look.reduced && wait > 0) cancelAppear = after(wait, () => { api.requestRedraw(); });
       }
       api.requestRedraw();
     };
@@ -135,7 +135,7 @@ export function createLongPressFeedbackContribution(
     onChange();
     return () => {
       offStore();
-      clearTimeout(appear);
+      cancelAppear();
       looks.delete(store);
       offLayer();
       api.requestRedraw();

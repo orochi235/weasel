@@ -1,3 +1,4 @@
+import { after } from '@weasel-js/registry';
 import { Transport } from '@weasel-js/ui/components/Transport';
 import { useEffect, useRef } from 'react';
 import { useTrialClock } from './hooks';
@@ -45,11 +46,10 @@ export function TrialTransport({
   useEffect(() => {
     if (replay === undefined || touched || !ended || !clock?.seekable || speed === undefined)
       return;
-    const id = setTimeout(() => {
+    return after(replay, () => {
       clock.seek(0);
       clock.rate = speed;
-    }, replay);
-    return () => clearTimeout(id);
+    });
   }, [replay, touched, ended, clock, speed]);
 
   if (!clock || !control) return null;

@@ -2,6 +2,7 @@ import {
   createPointerRecognizer, DOUBLE_CLICK_MAX_MS,
   type EventModifiers, type InputEvent, type PointerSample, type RecognizerClock,
 } from '@weasel-js/gestures';
+import { after } from '@weasel-js/registry';
 import { specOf, take, type CaptureKind, type CapturedSpec } from './captureSpec';
 
 /** The click-and-drag thresholds a capture reads, each defaulting to its constant. */
@@ -21,8 +22,8 @@ const sampleOf = (e: PointerEvent): PointerSample => ({
 
 const browserClock: RecognizerClock = {
   now: () => performance.now(),
-  setTimer: (fn, ms) => setTimeout(fn, ms),
-  clearTimer: (t) => { clearTimeout(t as ReturnType<typeof setTimeout>); },
+  setTimer: (fn, ms) => after(ms, fn),
+  clearTimer: (cancel) => { (cancel as () => void)(); },
 };
 
 /**
@@ -38,7 +39,7 @@ export function capturePointer(
   listen: (type: string, fn: (e: Event) => void) => void,
   done: (spec: CapturedSpec) => void,
 ): () => void {
-  let pendingClick: ReturnType<typeof setTimeout> | null = null;
+  let cancelClick = (): void => {};
   let dragMods: EventModifiers | null = null;
 
   const recognized = (ev: InputEvent): 'handled' | 'unhandled' => {
@@ -51,8 +52,8 @@ export function capturePointer(
         if (!kinds.has('click')) return 'unhandled';
         const spec = specOf('click', ev, apple);
         if (!kinds.has('doubleClick')) { done(spec); return 'handled'; }
-        if (pendingClick) clearTimeout(pendingClick);
-        pendingClick = setTimeout(() => { done(spec); }, thresholds.doubleClickMs ?? DOUBLE_CLICK_MAX_MS);
+        cancelClick();
+        cancelClick = after(thresholds.doubleClickMs ?? DOUBLE_CLICK_MAX_MS, () => { done(spec); });
         return 'handled';
       }
       case 'doubleclick':
@@ -121,7 +122,7 @@ export function capturePointer(
   }
 
   return () => {
-    if (pendingClick) clearTimeout(pendingClick);
+    cancelClick();
     recognizer.reset();
   };
 }

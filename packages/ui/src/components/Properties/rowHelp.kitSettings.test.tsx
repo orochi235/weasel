@@ -42,4 +42,8 @@ describe('useRowHelp kit settings', () => {
     cleanup();
     expect(openAfter({ help: { focusDelayMs: 2000 } }, FOCUS_DELAY)).toBe(false);
   });
+
+  it('waits out a help.focusDelayMs longer than one timer holds', () => {
+    expect(openAfter({ help: { focusDelayMs: 2 ** 31 } }, 1)).toBe(false);
+  });
 });

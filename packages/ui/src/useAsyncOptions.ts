@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useLatest } from '@weasel-js/core';
+import { after } from '@weasel-js/registry';
 import type { ListOption } from './components/listOption';
 import type { OptionKey } from './optionKey';
 
@@ -71,7 +72,7 @@ export function useAsyncOptions<T extends OptionKey = string>({
       return;
     }
 
-    const timer = setTimeout(() => {
+    return after(debounceMs, () => {
       const mine = ++issued.current;
       const controller = new AbortController();
       inFlight.current?.abort();
@@ -94,9 +95,7 @@ export function useAsyncOptions<T extends OptionKey = string>({
           setLoading(false);
         },
       );
-    }, debounceMs);
-
-    return () => clearTimeout(timer);
+    });
   }, [inputValue, debounceMs, minLength, loadRef]);
 
   useEffect(() => () => inFlight.current?.abort(), []);

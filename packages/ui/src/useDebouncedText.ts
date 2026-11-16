@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { after } from '@weasel-js/registry';
 
 /**
  * Live text held locally between debounced commits, so typing into a control that writes as it changes does
@@ -14,7 +15,7 @@ export function useDebouncedText(
   const [local, setLocal] = useState(value);
   const lastExternal = useRef(value);
   // The text typed since the last write, and the timer that will write it.
-  const pending = useRef<{ text: string; timer: ReturnType<typeof setTimeout> } | null>(null);
+  const pending = useRef<{ text: string; cancel: () => void } | null>(null);
   const latestWrite = useRef(write);
   useEffect(() => {
     latestWrite.current = write;
@@ -24,7 +25,7 @@ export function useDebouncedText(
     const waiting = pending.current;
     if (waiting === null) return;
     pending.current = null;
-    clearTimeout(waiting.timer);
+    waiting.cancel();
     if (!commit) return;
     lastExternal.current = waiting.text;
     latestWrite.current(waiting.text);
@@ -48,7 +49,7 @@ export function useDebouncedText(
     type: (next) => {
       setLocal(next);
       settle(false);
-      pending.current = { text: next, timer: setTimeout(() => settle(true), debounceMs) };
+      pending.current = { text: next, cancel: after(debounceMs, () => settle(true)) };
       if (debounceMs === 0) settle(true);
     },
     flush: () => settle(true),

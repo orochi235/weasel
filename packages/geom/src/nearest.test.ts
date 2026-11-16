@@ -172,3 +172,11 @@ describe('nearestOnPath', () => {
     expect(nearestOnPath(Uint8Array.of(PATH_M), Float64Array.of(1, 1), 0, 0)).toBeNull();
   });
 });
+
+describe('nearestOnLine at either end of the double range', () => {
+  it('reports the distance to a probe past 1e154 or below 1e-154 away', () => {
+    for (const scale of [1e-200, 1e200]) {
+      expect(nearestOnLine(0, 4 * scale, -scale, 0, scale, 0).dist / scale).toBeCloseTo(4, 12);
+    }
+  });
+});

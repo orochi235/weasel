@@ -39,7 +39,7 @@ function difference(c: ArrayLike<number>, dim: number, a: number, b: number): [n
 }
 
 function unit(x: number, y: number, z: number): [number, number, number] | null {
-  const l = Math.sqrt(x * x + y * y + z * z);
+  const l = Math.hypot(x, y, z);
   return l > 0 ? [x / l, y / l, z / l] : null;
 }
 

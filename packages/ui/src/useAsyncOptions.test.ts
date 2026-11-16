@@ -38,6 +38,15 @@ describe('useAsyncOptions', () => {
     expect(load).toHaveBeenCalledWith('re', expect.any(AbortSignal));
   });
 
+  it('waits out a debounce longer than one timer holds', async () => {
+    const load = vi.fn().mockResolvedValue([]);
+    const { result } = renderHook(() => useAsyncOptions({ load, debounceMs: 2 ** 31 }));
+
+    act(() => result.current.onInputChange('re'));
+    await act(async () => void vi.advanceTimersByTime(1));
+    expect(load).not.toHaveBeenCalled();
+  });
+
   it('coalesces keystrokes inside the debounce window into one call', async () => {
     const load = vi.fn().mockResolvedValue([]);
     const { result } = renderHook(() => useAsyncOptions({ load, debounceMs: 150 }));

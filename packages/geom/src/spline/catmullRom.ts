@@ -18,9 +18,7 @@ export function sampleSteps(n: number): number {
 }
 
 function knot(a: Point, b: Point, alpha: number): number {
-  const dx = b.x - a.x;
-  const dy = b.y - a.y;
-  return Math.pow(Math.sqrt(dx * dx + dy * dy), alpha);
+  return Math.pow(Math.hypot(b.x - a.x, b.y - a.y), alpha);
 }
 
 /**

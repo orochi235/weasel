@@ -318,6 +318,8 @@ export default [
     /**
      * Routing declares these schemas and core re-exports them. An augmentation of the re-export merges
      * into a copy apart from the kit's own entries, and which copy a reference sees depends on file order.
+     * A root of a sum of squares overflows past 1e154 and underflows below 1e-154, where the length it
+     * measures is still a number.
      */
     files: ['**/*.{ts,tsx}'],
     rules: {
@@ -331,6 +333,9 @@ export default [
           "SwitchStatement[discriminant.object.name=/^(e|ev|evt|event)$/][discriminant.property.name='key'] > SwitchCase[test.value=/^[A-Za-z]$/]",
         ].join(', '),
         message: "Match a letter key through matchKeyEvent (@weasel-js/gestures) or chordKey (@weasel-js/ui-input), or fold its case: e.key is 'Z' under Caps Lock, and a chord on a Russian layout types 'я'.",
+      }, {
+        selector: "CallExpression[callee.object.name='Math'][callee.property.name='sqrt'] > BinaryExpression[operator='+']:has(> BinaryExpression[operator='*'])",
+        message: 'Measure a length with Math.hypot (or geom\'s distance): the squares overflow past 1e154 and underflow below 1e-154, where the length is still a number.',
       }],
     },
   },

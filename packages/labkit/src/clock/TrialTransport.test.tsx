@@ -173,6 +173,16 @@ describe('<TrialTransport>', () => {
     expect(c().elapsed).toBe(1000);
   });
 
+  it('holds a finished run for the whole of a replay longer than one timer holds', async ({
+    mount,
+  }) => {
+    vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] });
+    await mount({ duration: 1000 }, { replay: 2 ** 31 });
+    act(() => c().seek(1000));
+    act(() => vi.advanceTimersByTime(1));
+    expect(c().elapsed).toBe(1000);
+  });
+
   it("offers the clock's rates, and steps through them", async ({ mount }) => {
     await mount({ duration: 64_000, rates: [1 / 16, 0.25, 1] }, { keys: true });
     key(' ');

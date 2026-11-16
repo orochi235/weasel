@@ -30,7 +30,7 @@ export function multiTouchGeometry(positions: Iterable<Point>): MultiTouchGeomet
   const angle = (Math.atan2(dy, dx) * 180) / Math.PI;
   return {
     centroid: { x: sumX / pts.length, y: sumY / pts.length },
-    spread: Math.sqrt(dx * dx + dy * dy),
+    spread: Math.hypot(dx, dy),
     angle: angle === -180 ? 180 : angle,
   };
 }
