@@ -1,4 +1,5 @@
 import type { Contribution, Tool } from '../../tools/overlayBinding';
+import { usePresetBuilds, type PresetBuildSource } from './presetBuild';
 import type { EnabledPresets, FeatureBindingOptions } from './features';
 import { BASELINE_ACTIONS } from './presets/baseline';
 import { builtinToolActions } from './presets/toolDriven';
@@ -27,8 +28,11 @@ export function useSceneCanvasTools(args: {
   groupEntry: Contribution;
   /** Whether an insert of a kind builds a node on this canvas. */
   insertBuilds?: (kind: string) => boolean;
+  /** What the enabled presets' `build`s are handed, less `toolOptions`, which is the prop's. */
+  build: Omit<PresetBuildSource, 'toolOptions'>;
 }) {
   const { props, select, enabled } = args;
+  const built = usePresetBuilds(enabled.builds, { ...args.build, toolOptions: props.toolOptions });
   const { tools, internal, takeover, surface } = useCanvasTools({
     select,
     groupEntry: enabled.has('select') ? args.groupEntry : null,
@@ -44,6 +48,7 @@ export function useSceneCanvasTools(args: {
     modes: props.modes,
     onToolsCreated: props.onToolsCreated,
     insertBuilds: args.insertBuilds,
+    built,
   });
   usePublishTools(tools);
   const { contributions, standardActions } = useFeatureBindings({

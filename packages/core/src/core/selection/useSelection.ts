@@ -1,6 +1,7 @@
 import { useLayoutEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react';
 import { useLatest } from '@weasel-js/react';
-import { createSelectionStore, intentOf, select, type SelectContext, type SelectionStore as Store } from '@weasel-js/select';
+import { createSelectionStore, intentOf, select, type SelectContext } from '@weasel-js/select';
+import type { SelectionOptions, SelectionStore } from './selectionContract';
 import { modKey } from '@weasel-js/gestures';
 import type { NodeId } from 'core/scene/types';
 import { dlog } from 'debug/flag';
@@ -9,38 +10,15 @@ import { dlog } from 'debug/flag';
 import type { SelectionApi, SelectionMode, SelectionExtendKey } from '@weasel-js/routing';
 export type { SelectionApi, SelectionMode, SelectionExtendKey };
 
-/** Somewhere selection can live outside this hook. `Scene` satisfies it;
- *  so does any store with the same three methods. */
-export type SelectionStore = Store<NodeId>;
+export type { SelectionStore };
 
-/** Options for {@link useSelection}. */
-export interface UseSelectionOptions {
-  /** Default `'single'`. */
-  mode?: SelectionMode;
-  /** The key that adds or removes the pressed id. Default Cmd on Apple platforms, Ctrl
-   *  elsewhere. Ignored in single-mode. */
-  extend?: SelectionExtendKey;
-  /** The key that selects everything from the last pressed id to this one,
-   *  along `order` or what the click hands `applyClick`. Default `'shift'`,
-   *  unless `extend` is `'shift'`, which leaves nothing ranging. It beats
-   *  `extend` when both name one key. Ignored in single-mode. */
-  range?: SelectionExtendKey;
-  /** The sequence a range walks: a layer panel's rows, a timeline's tracks.
-   *  Default is the order the `scene` paints in, back to front; with neither,
-   *  the range key replaces. */
-  order?: () => Iterable<NodeId>;
-  /** Default `[]`. */
-  initial?: readonly NodeId[];
+/** Options for {@link useSelection}: a {@link SelectionOptions}, and the store to keep it on. */
+export interface UseSelectionOptions extends SelectionOptions {
   /** Keep the selection on this store rather than in the hook, so every
    *  consumer of the same scene shares one selection and undo / redo can
    *  restore it. `initial` then only seeds a store that has none yet.
    *  Omit it and the hook owns a selection nobody else sees. */
   scene?: SelectionStore;
-  /** When `true`, every mutator (`set`/`add`/`remove`/`toggle`/`clear`/
-   *  `applyClick`) is a no-op — selection stays at whatever `initial`
-   *  pinned it to. With `scene`, only this hook is held: undo, redo and other
-   *  hooks on that store still move it, and `initial` seeds it only when empty. */
-  lock?: boolean;
 }
 
 /** What a range press resolves against: the surface's own `between`, else the order to walk. */

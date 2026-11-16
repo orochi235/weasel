@@ -147,7 +147,9 @@ export type {
 } from '../canvas/layerSlots';
 export type { SceneSlotConfig } from '../canvas/buildSceneLayer';
 export type { BuiltinToolId } from '../canvas/SceneCanvas';
-export type { FeatureBindingOptions, FeaturePreset, PresetComponentProps, PresetNodeShape } from '../canvas/SceneCanvas/features';
+export type { FeatureBindingOptions, FeaturePreset, PresetBuild, PresetComponentProps, PresetNodeShape } from '../canvas/SceneCanvas/features';
+export type { CanvasPickers, PresetBuildContext } from '../canvas/SceneCanvas/presetBuild';
+export type { SceneCanvasToolOptions } from '../canvas/SceneCanvas/toolProps';
 export {
   nodeKindPreset, nodeTraitsOf, type NodeKindPresetSpec, type NodeTraitBase, type NodeTraits,
 } from '../canvas/SceneCanvas/nodeTraits';

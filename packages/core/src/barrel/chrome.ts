@@ -13,6 +13,7 @@ export type {
   UseSelectionOptions,
   SelectionStore,
 } from '../core/selection/useSelection';
+export type { SelectionFactory, SelectionOptions } from '../core/selection/selectionContract';
 
 // ─── The entered group: the group a press resolves inside of ────────────────
 export { createEnteredGroup, useEnteredGroup } from '../canvas/deps/enteredGroup';

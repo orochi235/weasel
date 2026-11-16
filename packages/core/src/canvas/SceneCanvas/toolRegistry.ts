@@ -16,8 +16,10 @@ export type BuiltinTools = Record<BuiltinToolId, Tool>;
 
 export interface ResolveToolRegistryArgs {
   builtins: BuiltinTools;
+  /** Tools the enabled presets' `build`s offer by id, over `builtins`. */
+  offered?: Readonly<Record<string, Tool>>;
   /** Built-ins asked for, by id or by set. */
-  defaultTools?: readonly ToolEntry<BuiltinToolId>[];
+  defaultTools?: readonly ToolEntry<string>[];
   /** The presets the canvas runs with, each bringing the tools it names. */
   enabled: EnabledPresets;
   patch: ToolsPatch | null;
@@ -41,14 +43,16 @@ export interface ResolveToolRegistryArgs {
  */
 export function resolveToolRegistry(args: ResolveToolRegistryArgs): Record<string, Tool> {
   const { builtins, enabled, patch, dev = isDev() } = args;
+  const offered: Record<string, Tool> = { ...builtins, ...args.offered };
   const defaultTools = toolIdsOf(args.defaultTools ?? []);
   const registry: Record<string, Tool> = {};
   const preset = presetBuiltinTools(enabled);
-  for (const id of BUILTIN_TOOL_IDS) {
+  const ids = [...new Set<string>([...BUILTIN_TOOL_IDS, ...Object.keys(offered)])];
+  for (const id of ids) {
     const patched = patch?.[id];
-    if (patched === false) continue;
+    if (patched === false || !Object.hasOwn(offered, id)) continue;
     const asked = patched === true || defaultTools.includes(id) || preset.has(id);
-    if (asked) setOwn(registry, id, builtins[id]);
+    if (asked) setOwn(registry, id, offered[id]);
   }
   for (const [id, tool] of Object.entries(presetOwnTools(enabled))) {
     if (patch?.[id] === false) continue;
@@ -64,8 +68,8 @@ export function resolveToolRegistry(args: ResolveToolRegistryArgs): Record<strin
   for (const [id, value] of Object.entries(patch ?? {})) {
     if (value === false) continue;
     if (value === true) {
-      if (dev && !(BUILTIN_TOOL_IDS as readonly string[]).includes(id)) {
-        console.warn(`[SceneCanvas] tools.${id}=true is not a known built-in id; ignoring`);
+      if (dev && !Object.hasOwn(offered, id)) {
+        console.warn(`[SceneCanvas] tools.${id}=true names no tool this canvas offers; ignoring`);
       }
       continue;
     }

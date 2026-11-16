@@ -77,6 +77,8 @@ export function useCanvasTools(args: {
   onToolsCreated: Props['onToolsCreated'];
   /** Whether an insert of a kind builds a node here: a preset's tool that could insert nothing is left out. */
   insertBuilds?: (kind: string) => boolean;
+  /** What the enabled presets' `build`s make on this canvas. */
+  built?: { tools: Readonly<Record<string, Tool>>; contributions: readonly SurfaceContribution[] };
 }): {
   /** What the canvas routes input through: the takeover, or `internal`. */
   tools: ToolsApi;
@@ -98,6 +100,7 @@ export function useCanvasTools(args: {
     toolOptions,
     inertia,
     insertBuilds: args.insertBuilds,
+    offered: args.built?.tools,
   });
 
   const defaultPressFeedback = useMemo(() => createLongPressFeedbackContribution(), []);
@@ -106,12 +109,13 @@ export function useCanvasTools(args: {
   const defaultMarkerDrag = useMemo(() => createViewMarkerContribution(), []);
   const markerDrag = args.actions === null ? null : defaultMarkerDrag;
   const groupEntry = args.actions === null ? null : args.groupEntry;
+  const builtContributions = args.built?.contributions;
   const mergedAmbient = useMemo(
     () => [
-      ...presetContributions(enabled), ...(groupEntry ? [groupEntry] : []), ...(ambient ?? []),
-      ...(pressFeedback ? [pressFeedback] : []), ...(markerDrag ? [markerDrag] : []),
+      ...presetContributions(enabled), ...(builtContributions ?? []), ...(groupEntry ? [groupEntry] : []),
+      ...(ambient ?? []), ...(pressFeedback ? [pressFeedback] : []), ...(markerDrag ? [markerDrag] : []),
     ],
-    [enabled, groupEntry, ambient, pressFeedback, markerDrag],
+    [enabled, builtContributions, groupEntry, ambient, pressFeedback, markerDrag],
   );
 
   const internal = useTools({

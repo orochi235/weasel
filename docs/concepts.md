@@ -882,6 +882,32 @@ descriptor in the route grammar (alongside `keyDown` / `keyUp`), so route
 strings like `[*:initial] keyHeld(Space)` parse, format, and render in
 the inspector exactly like other gestures.
 
+### What a feature builds from the canvas
+
+Most of a preset is data: actions, bindings, chrome ids, layers. What has to be made from the canvas it runs on
+comes from two more roles, which is how an editing layer hands a canvas its select tool, its shape tools and its
+selection without the canvas building any of them in:
+
+| Role | Called with | Gives |
+|---|---|---|
+| `build(ctx)` | the scene, the adapter, the pose descriptor, `toolOptions`, and, read live, the canvas's pickers (`ctx.pick`), its selection and its `selectTool` options | `tools` the preset offers by id, and `contributions` |
+| `selection(store, options)` | the scene's selection store and `selectionOptions`, read live | the `SelectionApi` the canvas's tools and actions write through |
+
+Neither is a hook. The canvas calls `build` once per preset and again only when the scene, the adapter or
+`toolOptions` changes, so whatever a tool needs at gesture time it reads from `ctx` then. A tool a `build`
+offers is mounted only when something names its id: a preset's `tools` (alone or in a set such as
+`SHAPE_TOOLS`), `defaultTools`, or a `tools` patch setting it `true`. A package adds its own `toolOptions`
+keys by declaration merging on `SceneCanvasToolOptions`.
+
+**`<SceneCanvas selection>` stays in core, typed by the contract, and editing fills it (2026-11-16).** The
+selection is read across the viewer as well as written by editing: the scene keeps it on its history entries,
+the canvas publishes it to a surrounding `SelectionContext`, the adapter answers `getSelection`, and the
+chrome draws it. So core owns the contract: `SelectionApi` (declared in `@weasel-js/routing`), and
+`SelectionOptions` and `SelectionFactory` beside it. An app handing a viewer the selection it keeps elsewhere
+passes `selection` without loading editing, and editing's presets bring the factory that makes a canvas's own
+selection answer clicks. Moving the prop to editing would have needed a second way to hand a canvas a
+selection, one per package.
+
 ## Selection mode
 
 Click policy belongs to the selection, not the canvas:

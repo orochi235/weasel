@@ -26,7 +26,6 @@ import type { PathEditExtension } from 'domains/paths/pathEditExtension';
 import type { SnapSource } from 'domains/snap/types';
 import type { SurfaceContribution } from '../surfaceContribution';
 import type { CustomLayerEntry } from '../layerSlots';
-import type { BuiltinToolId } from './props';
 import type { NodeRoutingEntry } from 'core/scene/NodeRouting';
 import type { NodePropertiesEntry } from 'core/scene/NodeProperties';
 import type { InsertNodeFactories } from '../deps/insert';
@@ -34,6 +33,8 @@ import type { NodeShapeEntry, RegisterNodeShapeOptions } from '../NodeShape';
 import type { ContentHandlerEntry } from 'domains/ingestion/contentHandlers';
 import type { ComponentType, MutableRefObject } from 'react';
 import type { Scene } from 'core/scene/types';
+import type { SelectionFactory } from 'core/selection/selectionContract';
+import type { PresetBuildContext } from './presetBuild';
 
 /** What a canvas hands each of its presets' {@link FeaturePreset.components}. */
 export interface PresetComponentProps {
@@ -49,6 +50,18 @@ export interface PresetComponentProps {
 export interface PresetNodeShape {
   readonly painter: NodeShapeEntry<never, never>;
   readonly priority?: RegisterNodeShapeOptions['priority'];
+}
+
+/** What a preset's {@link FeaturePreset.build} returns: the parts it makes from the canvas it runs on. */
+export interface PresetBuild {
+  /**
+   * Tools it offers, by id. One is mounted when a preset's `tools` names its id (alone or in a set), when
+   * `<SceneCanvas defaultTools>` does, or when a `tools` patch sets it `true`; a tool offered and named by nobody
+   * is not. Between presets offering one id, the later preset's wins.
+   */
+  readonly tools?: Readonly<Record<string, Tool>>;
+  /** Entries installed as {@link FeaturePreset.contributions} are, after them. */
+  readonly contributions?: readonly SurfaceContribution[];
 }
 
 /** What a preset's ambient bindings are built from: the `selectTool` options
@@ -75,7 +88,7 @@ export interface FeaturePreset {
    *  and `tune` reaches them. */
   readonly actions?: readonly Action[];
   /** Tools it mounts: a built-in by id or a set of them, or a tool of its own. */
-  readonly tools?: readonly (ToolEntry<BuiltinToolId> | Tool)[];
+  readonly tools?: readonly (ToolEntry<string> | Tool)[];
   /** Its ambient bindings: an always-live entry routing a gesture to its
    *  actions under any tool that does not claim the gesture itself. */
   readonly ambient?: (options: FeatureBindingOptions) => Contribution;
@@ -126,6 +139,18 @@ export interface FeaturePreset {
   readonly components?: readonly ComponentType<PresetComponentProps>[];
   /** Content handlers ingestion tries after the canvas's own `ingestion.handlers` and the kit's. */
   readonly contentHandlers?: readonly ContentHandlerEntry[];
+  /**
+   * The parts it makes from the canvas it runs on: tools it offers by id, and contributions. Not a hook: the
+   * canvas calls it once per canvas and preset, and again only when the scene, the adapter or `toolOptions`
+   * changes; everything else the context gives is read live through it.
+   */
+  readonly build?: (ctx: PresetBuildContext) => PresetBuild;
+  /**
+   * What builds the canvas's own selection: the api its tools and actions write through, over the scene's
+   * selection store. One per canvas; two presets with different factories throw. With none the canvas keeps a
+   * selection no input writes, and `<SceneCanvas selection>` replaces whichever it would build.
+   */
+  readonly selection?: SelectionFactory;
   /** Ids of presets whose actions, and those of every preset they include,
    *  this one's register ahead of, so that where both bind one gesture, this
    *  one's is tried first: anchor nudging ahead of node nudging. A preset named
@@ -148,6 +173,10 @@ export interface EnabledPresets {
   readonly components: readonly ComponentType<PresetComponentProps>[];
   /** Their content handlers, in order. */
   readonly contentHandlers: readonly ContentHandlerEntry[];
+  /** Their `build`s, in order, each once. */
+  readonly builds: readonly NonNullable<FeaturePreset['build']>[];
+  /** The one selection factory they give, if any. */
+  readonly selection: SelectionFactory | undefined;
   /** Whether a preset with this id is on. */
   has(id: string): boolean;
 }
@@ -210,8 +239,21 @@ export function resolveFeatures(
     layers: Object.assign({}, ...presets.map((p) => p.layers ?? {})) as Record<string, CustomLayerEntry>,
     components: [...new Set(presets.flatMap((p) => p.components ?? []))],
     contentHandlers: presets.flatMap((p) => p.contentHandlers ?? []),
+    builds: [...new Set(presets.flatMap((p) => (p.build ? [p.build] : [])))],
+    selection: selectionOf(presets),
     has: (id) => byId.has(id),
   };
+}
+
+/** The one selection factory `presets` give, or undefined. */
+function selectionOf(presets: readonly FeaturePreset[]): SelectionFactory | undefined {
+  let found: { id: string; factory: SelectionFactory } | undefined;
+  for (const p of presets) {
+    if (!p.selection || found?.factory === p.selection) continue;
+    if (found) throw new Error(`[SceneCanvas] presets "${found.id}" and "${p.id}" both build the canvas's selection`);
+    found = { id: p.id, factory: p.selection };
+  }
+  return found?.factory;
 }
 
 const ROTATION_HANDLE: ChromeId = 'selection.rotation-handle';
@@ -238,7 +280,7 @@ export function presetActions(enabled: EnabledPresets): Action[] {
 }
 
 /** Whether a preset's `tools` entry names built-ins, by id or set, rather than being a tool of its own. */
-export const namesBuiltins = (t: ToolEntry<BuiltinToolId> | Tool): t is ToolEntry<BuiltinToolId> =>
+export const namesBuiltins = (t: ToolEntry<string> | Tool): t is ToolEntry<string> =>
   typeof t === 'string' || 'members' in t;
 
 /** The ids of the tools `preset` mounts itself: built-ins with their sets opened, then tools of its own. */
@@ -247,9 +289,9 @@ export const presetToolIds = (preset: FeaturePreset): string[] => {
   return [...toolIdsOf(tools.filter(namesBuiltins)), ...tools.filter((t): t is Tool => !namesBuiltins(t)).map((t) => t.id)];
 };
 
-/** The built-in tool ids the given presets mount. */
-export function presetBuiltinTools(enabled: EnabledPresets): Set<BuiltinToolId> {
-  const ids = new Set<BuiltinToolId>();
+/** The offered tool ids the given presets mount, by id or set. */
+export function presetBuiltinTools(enabled: EnabledPresets): Set<string> {
+  const ids = new Set<string>();
   for (const p of enabled.presets) {
     for (const id of toolIdsOf((p.tools ?? []).filter(namesBuiltins))) ids.add(id);
   }

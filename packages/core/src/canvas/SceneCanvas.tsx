@@ -82,7 +82,7 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
   const enabled = useEnabledFeatures(props.features, selectToolOpts?.rotate !== false);
   const traits = usePresetTraits(enabled, scene, props);
   const kinds = useNodeKinds(scene, traits.routing);
-  const selection = useCanvasSelection({ scene, props, selectable, kindOf: kinds.kindOf });
+  const selection = useCanvasSelection({ scene, props, selectable, kindOf: kinds.kindOf, factory: enabled.selection });
   useViewportWithoutView(viewport, enabled);
   const { pathEditState, selectToolWithDefaults } = useSceneCanvasPathEdit({
     host: props.pathEdit, opening: props.defaultPathEdit, getActiveMode, scene, selection,
@@ -93,8 +93,8 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
   const getNodeAtPointRef = useLatest(picking.getNodeAtPoint);
   const groupEntry = useGroupEntryContribution({ pickHit: picking.pickBestIn, tree: adapter, boxOf: boundsOf });
   const tools = useSceneCanvasTools({
-    props: props as SceneCanvasToolProps, select: picking.selectTool, move: picking.moveOptions,
-    enabled, groupEntry, insertBuilds: traits.insertBuilds,
+    props: props as SceneCanvasToolProps, select: picking.selectTool, move: picking.moveOptions, enabled, groupEntry,
+    insertBuilds: traits.insertBuilds, build: { scene, adapter, poseDescriptor: descriptor, picking, selection, selectTool: selectToolWithDefaults },
   });
 
   // The wrapper's `<InputScope>` provides it.

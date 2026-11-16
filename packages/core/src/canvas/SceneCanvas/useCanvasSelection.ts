@@ -1,4 +1,6 @@
-import { useMemo } from 'react';
+import { useMemo, useSyncExternalStore } from 'react';
+import { useLatest } from '@weasel-js/react';
+import type { SelectionFactory } from 'core/selection/selectionContract';
 import type { Node, NodeId, Scene } from 'core/scene/types';
 import { useLegalSelection } from 'core/selection/legalSelection';
 import { readOnlySelection } from 'core/selection/readOnlySelection';
@@ -27,8 +29,10 @@ export function useCanvasSelection<TData, TLayer extends string, TPose>(args: {
   selectable: boolean;
   /** The canvas's routing kind, published for each node unless `describeKind` is given. */
   kindOf: ((node: { kind: string; data: TData }) => string) | undefined;
+  /** What an enabled preset builds the canvas's own selection with. */
+  factory?: SelectionFactory;
 }): SelectionApi {
-  const { scene, selectable, kindOf } = args;
+  const { scene, selectable, kindOf, factory } = args;
   const { selection: supplied, selectionOptions: options, describeKind } = args.props;
   const describe = useMemo(() => describeKind ?? (kindOf && ((node: Node<TData, TLayer, TPose>) => {
     const kind = kindOf(node);
@@ -38,8 +42,11 @@ export function useCanvasSelection<TData, TLayer extends string, TPose>(args: {
     () => ({ scene, ...(options ?? {}) }),
     [scene, options],
   );
-  const internal = useSelection(derivedOptions);
-  const base = useLegalSelection(supplied ?? internal, scene);
+  const fallback = useSelection(derivedOptions);
+  const live = useLatest(options ?? {});
+  const built = useMemo(() => factory?.(scene, () => live.current), [factory, scene, live]);
+  useSyncExternalStore(scene.subscribe, () => scene.getSelection());
+  const base = useLegalSelection(supplied ?? built ?? fallback, scene);
   const selection = selectable ? base : readOnlySelection(base);
   usePublishSceneSelection(scene, selection.current as readonly NodeId[], describe);
   return selection;

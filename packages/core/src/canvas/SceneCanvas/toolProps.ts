@@ -3,6 +3,13 @@ import type { Tool, ToolsApi } from '../../tools/overlayBinding';
 import type { BuiltinToolId } from './builtinToolSets';
 import type { BuiltinToolOptions } from './useBuiltinShapeTools';
 
+/**
+ * `<SceneCanvas toolOptions>`: options per offered tool, keyed by the tool, handed to every preset's `build`. A
+ * package offering tools adds its keys by declaration merging, as `@weasel-js/editing` adds `lasso` and `insert`.
+ */
+// eslint-disable-next-line @typescript-eslint/no-empty-object-type -- filled by declaration merging
+export interface SceneCanvasToolOptions extends BuiltinToolOptions {}
+
 /** The `<SceneCanvas>` props that pick a canvas's tools and hold their options. */
 export interface SceneCanvasToolProps {
   /** Extra tools or overrides keyed by id, or a full `ToolsApi` takeover.
@@ -38,12 +45,10 @@ export interface SceneCanvasToolProps {
    * `['rect']` brings `insert`. Ignored under a full `ToolsApi` takeover in
    * `tools`; the patch form of `tools` lays over it.
    */
-  defaultTools?: readonly ToolEntry<BuiltinToolId>[];
+  defaultTools?: readonly ToolEntry<BuiltinToolId | (string & {})>[];
 
-  /** Per-tool option overrides for the built-in tools. Each entry is a
-   *  narrow subset of the underlying hook's options surface — `lasso.mode`,
-   *  `rig.state`, etc. */
-  toolOptions?: BuiltinToolOptions;
+  /** Options for the offered tools, by tool: `lasso.mode`, `insert.behaviors`. */
+  toolOptions?: SceneCanvasToolOptions;
   /** Where the tools' option values (`ToolDef.options`) are kept, published as the `toolOptionValues` dep: what
    *  an options row such as ui's `<ActiveToolOptionsBar>` reads and writes, and what each tool's actions are
    *  tuned from. Default: a store the canvas holds in memory. */
