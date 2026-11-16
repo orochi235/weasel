@@ -1,6 +1,6 @@
 import type { History, SerializedHistory } from '@weasel-js/history';
 import { createKeyedEmitter } from '@weasel-js/registry';
-import { onLeave } from '@weasel-js/storage';
+import { onLeave, readLocal, writeLocal } from '@weasel-js/storage';
 import { useEffect } from 'react';
 
 /** A history saved with the state it ends on. */
@@ -26,17 +26,11 @@ const SAVED_CHARS = 1_000_000;
 /** How long the history rests before it is saved: a slider drag changes it every tick. */
 const SAVE_MS = 400;
 
-export function parseSavedHistory<T>(raw: string | null): SavedLabHistory<T> | null {
-  if (!raw) return null;
-  let parsed: unknown;
-  try {
-    parsed = JSON.parse(raw);
-  } catch {
-    return null;
-  }
-  const saved = parsed as Partial<SavedLabHistory<T>> | null;
-  const history = saved?.history;
-  if (!saved || !('state' in saved) || history?.version !== 1) return null;
+function savedHistoryOf<T>(value: unknown): SavedLabHistory<T> | null {
+  if (typeof value !== 'object' || value === null) return null;
+  const saved = value as Partial<SavedLabHistory<T>>;
+  const history = saved.history;
+  if (!('state' in saved) || history?.version !== 1) return null;
   if (!Array.isArray(history.undoStack) || !Array.isArray(history.redoStack)) return null;
   return saved as SavedLabHistory<T>;
 }
@@ -44,20 +38,8 @@ export function parseSavedHistory<T>(raw: string | null): SavedLabHistory<T> | n
 /** A history kept in `localStorage` under `key`. Without storage, nothing is kept. */
 export function localHistoryStore<T>(key: string): LabHistoryStore<T> {
   return {
-    load: () => {
-      try {
-        return parseSavedHistory<T>(localStorage.getItem(key));
-      } catch {
-        return null;
-      }
-    },
-    save: (saved) => {
-      try {
-        localStorage.setItem(key, JSON.stringify(saved));
-      } catch {
-        // Private windows and full quotas both land here.
-      }
-    },
+    load: () => savedHistoryOf<T>(readLocal(key)),
+    save: (saved) => void writeLocal(key, saved),
     onClear: (cancel) => pending.subscribe(key, cancel),
   };
 }
@@ -65,9 +47,7 @@ export function localHistoryStore<T>(key: string): LabHistoryStore<T> {
 /** Forget the history saved under `key`, and the saves of it still to come. */
 export function clearSavedHistory(key: string): void {
   pending.emit(key);
-  try {
-    localStorage.removeItem(key);
-  } catch {}
+  writeLocal(key, undefined);
 }
 
 /** `saved` with the steps farthest from its present cut, oldest undo first, until it fits. */

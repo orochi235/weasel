@@ -1,5 +1,6 @@
 import type { ThemeDefinition } from '@weasel-js/theme';
 import { isUnreadableKey, readStored, writeSession } from '@weasel-js/editor';
+import { localStorageAdapter, readLocal, writeLocal } from '@weasel-js/storage';
 import { clearSavedHistory, type LabHistoryStore, localHistoryStore } from '../historyStorage';
 
 export interface StoredDraft {
@@ -52,12 +53,9 @@ export function loadDraft(name: string): StoredDraft | null {
 /** Every theme with a draft in storage, so a new theme not yet saved survives a reload. */
 export function draftNames(): string[] {
   try {
-    const names: string[] = [];
-    for (let i = 0; i < localStorage.length; i++) {
-      const key = localStorage.key(i);
-      if (key?.startsWith(DRAFT_PREFIX) && !isUnreadableKey(key)) names.push(key.slice(DRAFT_PREFIX.length));
-    }
-    return names;
+    return localStorageAdapter
+      .listSync(DRAFT_PREFIX)
+      .flatMap(([key]) => (isUnreadableKey(key) ? [] : [key.slice(DRAFT_PREFIX.length)]));
   } catch {
     return [];
   }
@@ -72,15 +70,10 @@ export const persistDraft = (draft: StoredDraft): Promise<boolean> =>
 export const clearDraft = (name: string): Promise<boolean> => writeSession([draftKey(name), undefined]);
 
 export function loadLastTheme(): string | null {
-  try {
-    return localStorage.getItem(LAST_KEY);
-  } catch {
-    return null;
-  }
+  const name = readLocal(LAST_KEY);
+  return typeof name === 'string' ? name : null;
 }
 
 export function persistLastTheme(name: string): void {
-  try {
-    localStorage.setItem(LAST_KEY, name);
-  } catch {}
+  writeLocal(LAST_KEY, name);
 }
