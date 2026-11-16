@@ -42,6 +42,7 @@ export { PAGE_CLIP, pageClip } from '../core/pages/pageClip';
 export { PAGES_DOC_KEY, createPageRun, isPaged, pageNodeOf, pageOfNode, pageRunOf, pagesOf, placedPagesOf } from '../core/pages/pageNodes';
 export type { CreatePageRunOptions, PageInfo, PageRunInfo, PageTreeReader, PagesDoc } from '../core/pages/pageNodes';
 export { followerHome, groupingSite, pasteboardOn } from '../core/pages/pagePlacement';
+export type { GroupingSite } from '../core/pages/pagePlacement';
 export { PAGE_RUN, pageRunLayout } from '../core/pages/pageRunLayout';
 export { adjacentPage, layoutPages, pageAt, pageHolding, pageName, pageOfBounds, pagesBounds } from '../core/pages/pages';
 export type { Page, PageLayoutOptions, PlacedPage } from '../core/pages/pages';

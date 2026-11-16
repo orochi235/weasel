@@ -14,10 +14,12 @@ import { createScene } from 'core/scene/scene';
 import { RIGID_POSE_COMPOSITION, type PoseComposition } from 'core/scene/composePose';
 import { asNodeId, type RectPose, type Scene } from 'core/scene/types';
 
+/** The data each frame fixture node carries. */
 export interface FrameFixtureData {
   label: string;
 }
 
+/** The frame fixture's one layer. */
 export type FrameFixtureLayer = 'main';
 
 /** The ids of the frame fixture's nodes: the group and the children inside it. */

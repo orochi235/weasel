@@ -35,11 +35,19 @@ const MESH_MODULE = /renderer\/(dist\/mesh\.|src\/meshPaint\/)|core\/paint\/mesh
 const MESH_REGISTRATION = /label:\s*(`Mesh`|"Mesh")/;
 
 // A canvas handed one preset object carries that preset's actions, the undo and redo every canvas has, and the
-// actions the built-in tools bind; no other preset's: not core's named presets, and none of the heavy action families.
+// actions the built-in tools bind; no other preset's: not the named presets, and none of the heavy action families.
 const CANVAS_PROBE = 'SceneCanvas, selectPreset';
-const UNASKED_PRESET = /core\/dist\/(canvas\/SceneCanvas\/(namedPresets|presets\/(?!select|chrome|toolDriven|baseline|tools|index))|interactions\/actions\/(booleans|outlines|pathCommands|pathEffects)\/)/;
+const CANVAS_FROM = { SceneCanvas: '@weasel-js/core', selectPreset: '@weasel-js/editing' };
+const UNASKED_PRESET = new RegExp([
+  /core\/dist\/(canvas\/SceneCanvas\/presets\/(?!view|chrome|toolDriven|baseline|index)|interactions\/actions\/(booleans|outlines|pathCommands|pathEffects)\/)/.source,
+  /editing\/dist\/(namedPresets|presets\/(?!select|tools|index)|actions\/)/.source,
+].join('|'));
 
-const entryCode = (symbol, from) => `import { ${symbol} } from '${from}';\nconsole.log(${symbol});\n`;
+/** A one-line consumer entry: `symbol` from `from`, or each name from the spec `from` maps it to. */
+const entryCode = (symbol, from) => {
+  const specs = typeof from === 'string' ? { [symbol]: from } : from;
+  return `${Object.entries(specs).map(([name, spec]) => `import { ${name} } from '${spec}';`).join('\n')}\nconsole.log(${symbol});\n`;
+};
 const EXTERNAL = [/^react($|\/)/, /^react-dom($|\/)/];
 
 /** A one-line consumer entry plus every chunk it imports statically, as
@@ -178,7 +186,7 @@ for (const bundler of Object.keys(BUNDLERS)) {
   }
 
   {
-    const { bytes, modules } = await measureOrExplain(bundler, CANVAS_PROBE, '@weasel-js/core');
+    const { bytes, modules } = await measureOrExplain(bundler, CANVAS_PROBE, CANVAS_FROM);
     const unasked = modules.filter((m) => UNASKED_PRESET.test(m));
     line(bundler, CANVAS_PROBE, bytes, unasked.length ? 'OTHER PRESETS' : 'ok, its preset only');
     if (unasked.length) {

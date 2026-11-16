@@ -40,3 +40,6 @@ export { resizeSelectionOps } from '../interactions/actions/resize/replay';
 export { rotateSelectionOps } from '../interactions/actions/rotate/replay';
 export { selectedRoots, storedDelta } from '../interactions/actions/selectionSubtree';
 export { finishTransformOps } from '../interactions/actions/transformFinish';
+export type { CopyPose } from '../interactions/actions/defaults/copySubtree';
+export type { FollowerMove } from '../interactions/actions/followerMoves';
+export type { GroupingSite } from '../core/pages/pagePlacement';

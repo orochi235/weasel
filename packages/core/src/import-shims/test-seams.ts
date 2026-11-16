@@ -51,3 +51,4 @@ export { CIRCLE_POSE_DESCRIPTOR as CIRCLE_POSE_DESCRIPTORForTests, circle as cir
 export type { CirclePose as CirclePoseForTests } from '../core/geometry/circlePose.fixture';
 export { FRAME_FIXTURE_WORLD as FRAME_FIXTURE_WORLDForTests } from '../core/scene/frameFixture';
 export { _resetContentHandlersForTests } from 'domains/ingestion/contentHandlers';
+export type { FrameFixtureData as FrameFixtureDataForTests, FrameFixtureLayer as FrameFixtureLayerForTests } from '../core/scene/frameFixture';
