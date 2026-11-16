@@ -52,9 +52,8 @@ export function StateView({ client, rootId }: DevtoolsViewProps): ReactElement {
           sweep
           items={DEBUG_FEATURES.map((flag) => ({ value: flag, label: flag }))}
           value={DEBUG_FEATURES.filter((flag) => st.overlays[flag] === true)}
-          // Every flag, not only the ones that differ from this render: a sweep reports each step from its own copy.
           onChange={(on) => {
-            const overlays = Object.fromEntries(DEBUG_FEATURES.map((flag) => [flag, on.includes(flag)]));
+            const overlays = Object.fromEntries(DEBUG_FEATURES.filter((flag) => on.includes(flag) !== (st.overlays[flag] === true)).map((flag) => [flag, on.includes(flag)]));
             steer(client.request(rootId, { type: 'set-overlays', overlays }));
           }}
         />

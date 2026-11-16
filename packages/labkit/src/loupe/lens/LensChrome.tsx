@@ -1,6 +1,5 @@
 import { useActionsRegistry } from '@weasel-js/core';
 import { SegmentedBar } from '@weasel-js/ui/components/Segmented';
-import { useValueChanges } from '@weasel-js/ui/value-changes';
 import { useLensResolution, useShownSource } from './LensSlot';
 import { LENS_ACTION_IDS } from './lensActionDefs';
 import { type LensSlotProps, requestsOf } from './lensSource';
@@ -55,7 +54,6 @@ export function LensChrome<C>({
     shownRequests.length > 0 &&
     shownRequests.every((r) => gridFits(shown.source?.kind ?? null, r.factor, r.dpr)) &&
     !difference;
-  const readoutChanges = useValueChanges(settings.readouts);
   const at = { lensId: lens.lensId, reticle, source: shown.source?.kind ?? null };
   const fire = (id: string | undefined): void => {
     if (id === undefined) return;
@@ -99,8 +97,8 @@ export function LensChrome<C>({
           sweep
           // Each readout is its own toggle action, fired once for each one a press, a solo or a sweep step moves.
           onChange={(next) => {
-            const changes = readoutChanges(next);
-            for (const t of READOUT_TOGGLES) if (changes.has(t.readout)) fire(t.id);
+            for (const t of READOUT_TOGGLES)
+              if (next.includes(t.readout) !== settings.readouts.includes(t.readout)) fire(t.id);
           }}
         />
         {settings.compare !== null ? (

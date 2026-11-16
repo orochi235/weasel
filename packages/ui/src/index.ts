@@ -144,7 +144,6 @@ export { nodeText } from './nodeText';
 export type { OptionKey } from './optionKey';
 export * from './overlays/portalHost';
 export { selectionRoving } from './selectionRoving';
-export { useValueChanges } from './useValueChanges';
 export { tiling, tilingRoving } from './tiling';
 export type { TileAttrs, TilingProps } from './tiling';
 export { useAsyncOptions } from './useAsyncOptions';

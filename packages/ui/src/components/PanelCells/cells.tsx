@@ -4,7 +4,6 @@
  * bar.
  */
 import type { ReactNode } from 'react';
-import { useValueChanges } from '../../useValueChanges';
 import type { PrefBoolean, PrefLeaf } from '@weasel-js/prefs';
 import { prefDrawsNoControl } from '../Prefs/PrefWords';
 import { prefDrawsActionRow } from '../Prefs/registeredActions';
@@ -136,7 +135,6 @@ function FlagBar({ run, ariaLabel }: { run: readonly LeafCell[]; ariaLabel: stri
     return { cell: c, field };
   });
   const on = flags.filter((f) => !f.field.mixed && f.field.value === true).map((f) => f.cell.key);
-  const changesOf = useValueChanges(on);
   return (
     <SegmentedBar<string>
       mode="multiple"
@@ -158,10 +156,9 @@ function FlagBar({ run, ariaLabel }: { run: readonly LeafCell[]; ariaLabel: stri
       // and inside an object leaf would fabricate values for the other two.
       mixedValues={flags.filter((f) => f.field.mixed).map((f) => f.cell.key)}
       onChange={(next) => {
-        const changes = changesOf(next);
         for (const { cell, field } of flags) {
-          const now = changes.get(cell.key);
-          if (now !== undefined) field.onChange(now);
+          const now = next.includes(cell.key);
+          if (now !== on.includes(cell.key)) field.onChange(now);
         }
       }}
     />

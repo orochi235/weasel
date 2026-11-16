@@ -50,10 +50,6 @@
       "types": "./dist/useRovingTabIndex.d.ts",
       "import": "./dist/useRovingTabIndex.js"
     },
-    "./value-changes": {
-      "types": "./dist/useValueChanges.d.ts",
-      "import": "./dist/useValueChanges.js"
-    },
     "./style.css": "./dist/style.css",
     "./package.json": "./package.json"
   },
