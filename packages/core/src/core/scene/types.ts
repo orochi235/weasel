@@ -1,4 +1,5 @@
 import type { History } from '@weasel-js/history';
+import type { Reflection } from '@weasel-js/registry';
 import type { SceneHistoryPersistence, SceneReplay } from './historyForm';
 import type { LayoutStrategy } from '../../layout/types';
 import type { AddLayerSpec, LayerRecord, SceneLayerMembers, SystemLayerRecord, SystemLayerSpec, UserLayerRecord } from './layerTypes';
@@ -234,6 +235,9 @@ export interface Scene<TData, TLayer extends string, TPose = RectPose>
   /** Teach the scene an op kind of its own: how to apply a payload and how to
    *  revert it. `kit:` kinds are reserved and throw. */
   registerOp<P>(kind: string, handler: RegisteredOp<P>): void;
+  /** Every op kind the scene knows, the kit's own `kit:` kinds included, by kind. A kind
+   *  registered again replaces the handler before, so nothing is shadowed. */
+  readonly registeredOps: Reflection<RegisteredOp<unknown>>;
   /** Apply a payload of a kind {@link Scene.registerOp} taught, recorded as
    *  any other edit is: one undoable step, or part of the open `batch`. */
   recordOp<P>(op: { kind: string; payload: P }): void;

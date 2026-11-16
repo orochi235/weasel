@@ -3,12 +3,13 @@
  * `atomically` opened, so an edit that is refused partway can take back what
  * it already did.
  */
+import type { Reflection } from '@weasel-js/registry';
 import type { NodeId, RegisteredOp } from './types';
 
 /** What the log needs from the scene it reverts. */
 export interface AppliedLogEnv {
   /** The op table a logged kind is reverted through. */
-  registered: ReadonlyMap<string, RegisteredOp<unknown>>;
+  registered: Pick<Reflection<RegisteredOp<unknown>>, 'get'>;
   /** Run with the lock guard lifted: a revert restores a state that was legal. */
   lifted<T>(fn: () => T): T;
   getSelection(): readonly NodeId[];

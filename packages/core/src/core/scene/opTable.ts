@@ -4,6 +4,7 @@
  * from one.
  */
 import type { Op } from 'core/ops/types';
+import { createReflectable, type Reflection } from '@weasel-js/registry';
 import type { RegisteredOp } from './types';
 
 /** What the table asks of the scene when one of its ops runs. */
@@ -23,7 +24,8 @@ export interface OpTableEnv {
 }
 
 export interface OpTable {
-  handlers: ReadonlyMap<string, RegisteredOp<unknown>>;
+  /** Every kind registered, by name; a kind registered again replaces the handler before. */
+  handlers: Reflection<RegisteredOp<unknown>>;
   register(kind: string, handler: RegisteredOp<unknown>): void;
   /** Apply a kind's forward half. Throws when nothing is registered for it. */
   run(kind: string, payload: unknown): void;
@@ -45,7 +47,7 @@ const REVERT = 'revert:';
 export const revertName = (kind: string): string => `${REVERT}${kind}`;
 
 export function createOpTable(env: OpTableEnv): OpTable {
-  const handlers = new Map<string, RegisteredOp<unknown>>();
+  const handlers = createReflectable<RegisteredOp<unknown>>();
 
   function handlerFor(kind: string): RegisteredOp<unknown> {
     const handler = handlers.get(kind);
@@ -96,7 +98,7 @@ export function createOpTable(env: OpTableEnv): OpTable {
   }
 
   return {
-    handlers,
+    handlers: handlers.reflection,
     register: (kind, handler) => { handlers.set(kind, handler); },
     run: (kind, payload) => handlerFor(kind).apply(payload),
     op: (kind, payload) => op(kind, payload),
