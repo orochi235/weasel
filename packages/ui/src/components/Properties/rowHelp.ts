@@ -1,5 +1,6 @@
 import { useEffect, useId, useState, type RefObject } from 'react';
 import { useKitSetting, useLatest } from '@weasel-js/react';
+import { after } from '@weasel-js/registry';
 import type {} from '../../kitSettings';
 
 const CONTROLS = 'input, select, textarea, button, [tabindex]:not([tabindex="-1"])';
@@ -57,19 +58,19 @@ export function useRowHelp(cue: RefObject<HTMLElement | null>, within: string | 
     // description on a later render writes over this one.
     const watch = new MutationObserver(describe);
     watch.observe(row, { childList: true, subtree: true, attributes: true, attributeFilter: ['aria-describedby'] });
-    let timer: ReturnType<typeof setTimeout> | undefined;
+    let cancelOpen = (): void => {};
     // A press in the row is what brought the focus that follows it. `:focus-visible` cannot say so: a text field
     // matches it however it was focused.
     let pressed = false;
     const onFocus = (e: Event): void => {
       if (pressed || cue.current?.parentElement?.contains(e.target as Node)) return;
-      clearTimeout(timer);
-      timer = setTimeout(() => setOpen(true), delay.current);
+      cancelOpen();
+      cancelOpen = after(delay.current, () => setOpen(true));
     };
     const onBlur = (e: Event): void => {
       if (row.contains((e as FocusEvent).relatedTarget as Node | null)) return;
       pressed = false;
-      clearTimeout(timer);
+      cancelOpen();
       setOpen(false);
     };
     const onDown = (): void => {
@@ -85,7 +86,7 @@ export function useRowHelp(cue: RefObject<HTMLElement | null>, within: string | 
     return () => {
       watch.disconnect();
       release();
-      clearTimeout(timer);
+      cancelOpen();
       row.removeEventListener('focusin', onFocus);
       row.removeEventListener('focusout', onBlur);
       row.removeEventListener('pointerdown', onDown);
