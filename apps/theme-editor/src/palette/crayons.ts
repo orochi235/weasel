@@ -1,4 +1,5 @@
 import { chromaCap, toHex, vividAt, type Anchor } from '@weasel-js/theme/engine';
+import { getOwn } from '@weasel-js/registry';
 
 /**
  * Named colors, each declared as a hue and a lightness — never as a hex.
@@ -84,7 +85,7 @@ export type CrayonName = keyof typeof CRAYONS;
 
 /** The color a named crayon resolves to. */
 export function crayonHex(name: string): string {
-  const row = CRAYONS[name];
+  const row = getOwn(CRAYONS, name);
   if (!row) return '#000000';
   const [hue, lightness, fraction] = row;
   return fraction === undefined
@@ -93,7 +94,7 @@ export function crayonHex(name: string): string {
 }
 
 export function crayonAnchor(name: string): Anchor {
-  const row = CRAYONS[name];
+  const row = getOwn(CRAYONS, name);
   if (!row) return { name, hue: 0, lightness: 0.6 };
   const [hue, lightness, fraction] = row;
   return {
