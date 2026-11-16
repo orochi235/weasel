@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { GLYPHS } from '@weasel-js/cursor';
 import { createPaintedCursorLayer } from './paintedCursorLayer';
 import { createPaintedCursorState } from '@weasel-js/cursor';
@@ -49,6 +49,24 @@ describe('createPaintedCursorLayer', () => {
     expect(JSON.stringify(marked).length).toBeGreaterThan(JSON.stringify(layer.draw(null, VIEW(), DIMS)).length);
     state.setBase({ kind: 'painted', glyph: 'pencil', mark: 'add', angle: 0, size: 200 });
     expect(layer.draw(null, VIEW(), DIMS)).toEqual([]);
+  });
+
+  it('draws nothing for a glyph the set lacks, warning once per name', () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    try {
+      const state = createPaintedCursorState();
+      const layer = createPaintedCursorLayer(state);
+      state.setPointer(100, 50);
+      state.setBase({ kind: 'painted', glyph: 'crosshiar', angle: 0, size: 200 } as unknown as PaintedCursor);
+      expect(layer.draw(null, VIEW(), DIMS)).toEqual([]);
+      expect(layer.draw(null, VIEW(), DIMS)).toEqual([]);
+      state.setBase({ kind: 'painted', glyph: 'pencil', mark: 'add', angle: 0, size: 200 });
+      expect(layer.draw(null, VIEW(), DIMS)).toEqual([]);
+      expect(warn).toHaveBeenCalledTimes(1);
+      expect(String(warn.mock.calls[0]![0])).toContain('"crosshiar"');
+    } finally {
+      warn.mockRestore();
+    }
   });
 
   it('is screen-space, so the glyph does not pan with the camera', () => {

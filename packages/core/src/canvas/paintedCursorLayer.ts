@@ -7,7 +7,8 @@
  * and `view.scale` is read for that.
  */
 
-import { cursorGlyph } from '@weasel-js/cursor';
+import { isDev } from '@weasel-js/registry';
+import { cursorGlyph, GLYPHS } from '@weasel-js/cursor';
 import {
   chromeLineWidthScale,
   cursorPaintMatrix,
@@ -52,6 +53,14 @@ function commandFor(op: CursorPaintOp): PathDrawCommand {
   };
 }
 
+const warnedGlyphs = new Set<string>();
+
+function warnUnknownGlyph(name: string): void {
+  if (warnedGlyphs.has(name) || !isDev()) return;
+  warnedGlyphs.add(name);
+  console.warn(`[weasel] painted cursor glyph "${name}" is not in the cursor set, so no cursor is drawn. Use a name from \`GLYPHS\`.`);
+}
+
 /**
  * A screen-space layer that draws the glyph `state` currently holds at the pointer,
  * or nothing when it holds none. `<Canvas>` mounts one over its own state already.
@@ -70,6 +79,7 @@ export function createPaintedCursorLayer(state: PaintedCursorState): RenderLayer
         glyph = cursorGlyph(cursor.glyph, { mark: cursor.mark });
       } catch {
         // A name the set lacks, or a mark on a glyph with no slot: draw nothing rather than throw mid-frame.
+        if (!Object.hasOwn(GLYPHS, cursor.glyph)) warnUnknownGlyph(cursor.glyph);
         return [];
       }
 
