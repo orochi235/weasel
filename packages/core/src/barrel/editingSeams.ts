@@ -91,5 +91,6 @@ export { effectivePoseFrom, previewPoseIn, previewSourcesFrom } from '../canvas/
 export { framedBounds } from '../core/geometry/poseDescriptor';
 export { angleOf, normalToWorld, targetCorners } from '../core/geometry/targetFrame';
 export { drawnPose, leafPath, storePiece } from '../canvas/deps/pathLeaf';
+export type { DrawnPose } from '../canvas/deps/pathLeaf';
 export { sceneInheritedPaintOf } from '../canvas/inheritedPaints';
 export { booleanOfPaths } from '../core/geometry/booleanOfPaths';

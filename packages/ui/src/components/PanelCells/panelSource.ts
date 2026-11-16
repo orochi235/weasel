@@ -2,14 +2,12 @@ import type { SelectionApi } from '@weasel-js/routing';
 import { createSelectionSource, type LeafState, type SelectionSource } from '@weasel-js/prefs';
 import { nodeLeafValue, panelLeafKey, type PanelLeaf, type PanelRecord } from './model';
 
-type Next = (prev: unknown) => unknown;
-
 /** A panel's writes into the selected records. */
 export interface LeafWrites {
   /** The value an edit settles on: one undo step, from where each record was before any draft of it. */
-  commit(selection: Pick<SelectionApi, 'current'>, leaf: PanelLeaf, next: Next): void;
+  commit(selection: Pick<SelectionApi, 'current'>, leaf: PanelLeaf, next: (prev: unknown) => unknown): void;
   /** A value on the way there, as a slider's drag passes through: written, and kept out of undo. */
-  draft(selection: Pick<SelectionApi, 'current'>, leaf: PanelLeaf, next: Next): void;
+  draft(selection: Pick<SelectionApi, 'current'>, leaf: PanelLeaf, next: (prev: unknown) => unknown): void;
   /** Each of `leaves` back as its schema says (`prefStoredReset`), in every selected record, as one undo step. */
   reset(selection: Pick<SelectionApi, 'current'>, leaves: readonly PanelLeaf[], label: string): void;
 }

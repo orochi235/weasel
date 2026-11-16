@@ -322,6 +322,7 @@
     "DrawnBoxes": "type",
     "DrawnBoxesDeps": "type",
     "DrawnBoxesSource": "type",
+    "DrawnPose": "type",
     "DropRefusal": "type",
     "DropRegion": "type",
     "DropSpec": "type",
