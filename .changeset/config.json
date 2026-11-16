@@ -27,6 +27,7 @@
       "@weasel-js/dither",
       "@weasel-js/pdf",
       "@weasel-js/storage",
+      "@weasel-js/pref-schema",
       "@weasel-js/prefs",
       "@weasel-js/prefs-editor",
       "@weasel-js/select",

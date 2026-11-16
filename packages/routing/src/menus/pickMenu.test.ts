@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { pref } from '@weasel-js/prefs';
+import { pref } from '@weasel-js/pref-schema';
 import { mergeMenuDefs, pickMenu } from './pickMenu';
 import { resolveMenu, type MenuSources } from './resolveMenu';
 import type { MenuDef } from './types';

@@ -2,15 +2,10 @@
 // selectors name where the pref is scoped.
 
 import type { OwnedRecordCache } from '@weasel-js/storage';
-import { prefSectionLeaves } from './helpers';
-import type { PrefList } from './list';
-import { dropUnlisted, isPrefScope, mapScopeValues, repairScope, writeDeclared, type PrefSelection } from './scope';
-import type { PrefMap } from './map';
-import type { PrefLeaf, PrefObject } from './schema';
+import { prefSectionLeaves, type PrefList, isPrefScope, type PrefSelection, type PrefMap, type PrefLeaf, type PrefObject, prefScopedDefault, prefVariantOf, type PrefUnion } from '@weasel-js/pref-schema';
+import { dropUnlisted, mapScopeValues, repairScope, writeDeclared, overridesOfPref, scopeSelectorsOf } from '@weasel-js/pref-schema/internal';
 import { optionsOf, selectionAt } from './snapshot';
-import { overridesOfPref, prefScopedDefault, scopeSelectorsOf } from './scopeSpec';
 import { isAutoRecord, recordValue, stampRecord } from './stamp';
-import { prefVariantOf, type PrefUnion } from './union';
 
 /** JSON storage cannot keep an infinity; `repairPrefValue` reads these back. */
 const encodeInfinity = (leaf: PrefLeaf, value: unknown): unknown => {

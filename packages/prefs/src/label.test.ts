@@ -1,9 +1,7 @@
 import { createMemoryAdapter, createRecordCache } from '@weasel-js/storage';
 import { describe, expect, expectTypeOf, it } from 'vitest';
-import { prefHoldsValue } from './helpers';
-import type { PrefLabel, PrefSeparator } from './label';
+import { prefHoldsValue, type PrefLabel, type PrefSeparator, isBuiltinPref, type PrefBoolean } from '@weasel-js/pref-schema';
 import type { PrefPath } from './paths';
-import { isBuiltinPref, type PrefBoolean } from './schema';
 import { createPrefsStore } from './store';
 
 const note: PrefLabel = { kind: 'label', name: 'Applies to new shapes only.', description: '', default: undefined };

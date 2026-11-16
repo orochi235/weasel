@@ -1,6 +1,6 @@
 import fc from 'fast-check';
 import { describe, expect, it } from 'vitest';
-import { admits, leaf, runs, sameValue, stored, tally, timeoutFor, valueOf } from './pbt.fixture';
+import { admits, leaf, runs, sameValue, stored, tally, timeoutFor, valueOf } from './testing/pbt.fixture';
 import { repairPrefValue } from './repair';
 
 describe('repairPrefValue, properties', () => {

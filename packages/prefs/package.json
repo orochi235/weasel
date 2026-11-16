@@ -3,7 +3,7 @@
   "version": "1.19.1",
   "description": "A preferences schema, a store that loads, validates, migrates and persists values against it, and React hooks over the store.",
   "weasel": {
-    "tier": "base"
+    "tier": "other"
   },
   "license": "MIT",
   "type": "module",
@@ -55,8 +55,8 @@
   "dependencies": {
     "@weasel-js/geom": "1.19.1",
     "@weasel-js/history": "1.19.1",
-    "@weasel-js/icons": "1.19.1",
     "@weasel-js/paint": "1.19.1",
+    "@weasel-js/pref-schema": "1.19.1",
     "@weasel-js/quantity": "1.19.1",
     "@weasel-js/react": "1.19.1",
     "@weasel-js/registry": "1.19.1",

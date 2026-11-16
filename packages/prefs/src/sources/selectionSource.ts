@@ -1,7 +1,5 @@
 import type { ResetWrite } from '../autoReset';
-import type { PrefSection } from '../groups';
-import { prefLeafValue } from '../leafValue';
-import type { PrefLeaf } from '../schema';
+import { type PrefSection, prefLeafValue, type PrefLeaf } from '@weasel-js/pref-schema';
 import { sourceResetPlan } from './policy';
 import { LEAF_FREE, sharedReading, type LeafState, type PrefsSource, type SourceWriteOptions } from './prefsSource';
 

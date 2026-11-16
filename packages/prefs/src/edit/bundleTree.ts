@@ -1,5 +1,5 @@
 import { setOwn } from '@weasel-js/registry';
-import type { PresetDescription } from './presets';
+import type { PresetDescription } from '@weasel-js/pref-schema';
 import { isPrefLeaf, isPrefSection, type PrefAction, type PrefAlias, type PrefGroup, type PrefLeaf } from '../index';
 import { actionLeafKey } from './actionLeaves';
 import type { CustomKinds } from './kindSchemas';

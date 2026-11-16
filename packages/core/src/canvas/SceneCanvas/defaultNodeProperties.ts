@@ -1,4 +1,4 @@
-import { prefUnit, type PrefBoundAt, type PrefBooleanEncoding, type PrefEnum, type PrefEnumEncoding, type PrefLeaf, type PrefNumberUnit, type PrefSection } from '@weasel-js/prefs';
+import { prefUnit, type PrefBoundAt, type PrefBooleanEncoding, type PrefEnum, type PrefEnumEncoding, type PrefLeaf, type PrefNumberUnit, type PrefSection } from '@weasel-js/pref-schema';
 import { inferredNodeRouting } from './defaultNodeRouting';
 import { KIT_SHAPE_KINDS, shapeKindInfo } from 'core/shapeKinds';
 import { listMarkers, markerGeneration } from '@weasel-js/stroke';

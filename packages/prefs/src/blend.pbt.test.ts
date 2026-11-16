@@ -1,8 +1,8 @@
 import fc from 'fast-check';
 import { describe, expect, it } from 'vitest';
 import { blendPref } from './blend';
-import { runs, tally, timeoutFor } from './pbt.fixture';
-import type { PrefColor, PrefNumber } from './schema';
+import { runs, tally, timeoutFor } from '@weasel-js/pref-schema/testing/pbt.fixture';
+import type { PrefColor, PrefNumber } from '@weasel-js/pref-schema';
 
 const NUMBER: PrefNumber = { kind: 'number', name: 'N', description: '', default: 0 };
 const COLOR: PrefColor = { kind: 'color', name: 'C', description: '', default: '#000000' };

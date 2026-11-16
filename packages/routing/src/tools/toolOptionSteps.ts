@@ -3,7 +3,7 @@
  * size and `Shift+[` `Shift+]` the strength while the tool is active, and a
  * Shift+wheel moves the size.
  */
-import type { PrefNumber } from '@weasel-js/prefs';
+import type { PrefNumber } from '@weasel-js/pref-schema';
 import type { KeySpec } from '@weasel-js/gestures';
 import { ActionDisabledReason, type Action } from '../interactions/actions/action';
 import type { ActionDeps, ImmediateInvoker } from '../interactions/actions/invoker';

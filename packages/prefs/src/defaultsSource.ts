@@ -1,10 +1,8 @@
 import type { PrefsCssSource } from './css';
-import type { PrefGroup } from './groups';
-import { assignPrefValueAtPath, prefHoldsValue, prefLeaves } from './helpers';
-import { isPrefScope, selectionWeights, type PrefSelection } from './scope';
+import { type PrefGroup, prefHoldsValue, prefLeaves, isPrefScope, type PrefSelection, prefScopedDefault } from '@weasel-js/pref-schema';
+import { assignPrefValueAtPath, selectionWeights } from '@weasel-js/pref-schema/internal';
 import { readStored, resolveHeld, selectionAt } from './snapshot';
 import { prefSelectors, admittedSelectors } from './splitCheck';
-import { prefScopedDefault } from './scopeSpec';
 
 /**
  * A schema's defaults read the way a store at defaults reads them, a split

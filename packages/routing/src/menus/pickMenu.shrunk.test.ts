@@ -1,6 +1,6 @@
 /** Children `mergeMenuDefs` lost, as its property test shrank them. */
 import { describe, expect, it } from 'vitest';
-import { pref } from '@weasel-js/prefs';
+import { pref } from '@weasel-js/pref-schema';
 import { mergeMenuDefs } from './pickMenu';
 
 describe('mergeMenuDefs, shrunk', () => {

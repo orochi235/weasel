@@ -7,7 +7,7 @@
 import { describe, expect, it } from 'vitest';
 import fc from 'fast-check';
 import type { PrefGroup, PrefLeaf } from '@weasel-js/prefs';
-import { runs, tally, timeoutFor } from '../pbt.fixture';
+import { runs, tally, timeoutFor } from '@weasel-js/pref-schema/testing/pbt.fixture';
 import { addNode, childrenOf, moveNodes, nodeAt, outermost, removeNodes, renameKey, type SchemaNode } from './schemaEdit';
 
 const RUNS = 120;

@@ -1,6 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { pref } from './build';
-import { prefLeaves } from './helpers';
+import { pref, prefLeaves } from '@weasel-js/pref-schema';
 import { mergePrefGroups } from './merge';
 
 const ui = pref.group('Components', {

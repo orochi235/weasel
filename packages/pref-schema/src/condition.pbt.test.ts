@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest';
 import {
   isPrefCondition, mapPrefConditionPaths, ORDERINGS, prefConditionHolds, prefConditionPaths, type PrefCondition, type PrefConditionValue, type PrefTest,
 } from './condition';
-import { runs, tally, timeoutFor } from './pbt.fixture';
+import { runs, tally, timeoutFor } from './testing/pbt.fixture';
 
 const PATHS = ['a', 'b', 'c.d'];
 const value = fc.constantFrom<PrefConditionValue>(null, true, false, 0, 1, 2, -1, '', 'x', 'y');

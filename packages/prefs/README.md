@@ -42,6 +42,11 @@ It takes an adapter that reads synchronously, and components naming the same
 `storage` and `prefix` with different schemas each get a store over the same
 records.
 
+The declarations — `pref`, the leaf, group and section types, units,
+conditions and leaf status — live in `@weasel-js/pref-schema`, which this
+package re-exports whole. A package that only declares settings, as core and
+routing do, depends on that one and never reaches the store or storage.
+
 ## Tags
 
 A leaf, a group, and a section can each carry `tags`: words a settings search

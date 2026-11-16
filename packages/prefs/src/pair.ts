@@ -1,4 +1,4 @@
-import { pairRowsOf, type PrefLeaf } from './schema';
+import { pairRowsOf, type PrefLeaf } from '@weasel-js/pref-schema';
 
 /** Neighboring items one row draws, in {@link pairRuns}' answer. */
 export interface PairRun<T> {

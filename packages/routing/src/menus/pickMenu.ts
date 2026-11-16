@@ -1,6 +1,6 @@
 import { freshId } from '@weasel-js/registry';
 import type { MenuDef, MenuHit, MenuWhen, OwnedMenuDef } from './types';
-import type { PrefGroup } from '@weasel-js/prefs';
+import type { PrefGroup } from '@weasel-js/pref-schema';
 
 const oneOf = <T>(want: T | readonly T[] | undefined, got: T | undefined) =>
   want === undefined || (Array.isArray(want) ? (want as readonly T[]).includes(got as T) : want === got);

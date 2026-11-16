@@ -6,7 +6,7 @@ import { resolveParams, type BindingOptions, type InvocationCtx } from './invoke
 import type { Action } from './action';
 import { invokedParams, tuneAction } from './tuning';
 import { actionShortcuts } from './actionShortcuts';
-import { pref } from '@weasel-js/prefs';
+import { pref } from '@weasel-js/pref-schema';
 import { ActionsProvider, useActionsRegistry } from './ActionsProvider';
 import { dynamicActionId } from './actionIds';
 

@@ -3,7 +3,7 @@ import {
   prefHoldsValue, prefLeaves, prefObjectBase, prefVariantDefault, prefVariantOf,
   type PrefField, type PrefGroup, type PrefLeaf, type PrefList, type PrefMap, type PrefObject, type PrefPaint,
   type PrefUnion,
-} from '@weasel-js/prefs';
+} from '@weasel-js/pref-schema';
 import { sep } from './separators';
 
 /** How values are read and written where a set of rows is drawn. */

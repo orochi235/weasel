@@ -1,4 +1,4 @@
-import type { PrefLeaf } from './schema';
+import type { PrefLeaf } from '@weasel-js/pref-schema';
 
 /**
  * `leaf` as a named type: the same leaf carrying `name` in its `type` field.

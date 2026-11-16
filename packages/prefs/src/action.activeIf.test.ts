@@ -1,9 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import type { PrefAction } from './action';
+import { type PrefAction, type PrefGroup, type PrefLeaf, applyPrefConditions, applyPrefEntryConditions, prefJudge, prefReader } from '@weasel-js/pref-schema';
 import { checkPrefConditions } from './conditionCheck';
-import type { PrefGroup } from './groups';
-import type { PrefLeaf } from './schema';
-import { applyPrefConditions, applyPrefEntryConditions, prefJudge, prefReader } from './status';
 
 const clear: PrefAction = {
   kind: 'action', name: 'Clear all', description: '', default: undefined, action: 'doc.clear',

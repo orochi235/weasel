@@ -2,10 +2,7 @@
 // lab's controls.
 
 import { deepEqual } from '@weasel-js/registry';
-import type { PrefGroup, PrefSection } from './groups';
-import { isPrefLeaf, isPrefSection, prefHoldsValue } from './helpers';
-import type { PrefLeaf } from './schema';
-import { prefLeafValue } from './leafValue';
+import { type PrefGroup, type PrefSection, isPrefLeaf, isPrefSection, prefHoldsValue, type PrefLeaf, prefLeafValue } from '@weasel-js/pref-schema';
 
 /** Whether a leaf can be auto: one holding a value that opts in by declaring `auto`. A leaf without it never is. */
 export function prefCanAuto(leaf: PrefLeaf): boolean {

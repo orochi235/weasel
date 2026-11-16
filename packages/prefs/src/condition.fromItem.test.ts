@@ -1,16 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import {
-  isPrefCondition,
-  mapPrefConditionPaths,
-  prefConditionHolds,
-  prefConditionPaths,
-  prefConditionReadsItem,
-  type PrefCondition,
-} from './condition';
+import { isPrefCondition, mapPrefConditionPaths, prefConditionHolds, prefConditionPaths, prefConditionReadsItem, type PrefCondition, type PrefGroup, type PrefList, type PrefLeaf } from '@weasel-js/pref-schema';
 import { checkPrefCondition, checkPrefConditions } from './conditionCheck';
-import type { PrefGroup } from './groups';
-import type { PrefList } from './list';
-import type { PrefLeaf } from './schema';
 
 const mode = { kind: 'enum', name: 'Mode', description: '', default: 'ease', options: [{ value: 'ease', label: 'Ease' }, { value: 'hold', label: 'Hold' }] } as PrefLeaf;
 const num = (extra: Partial<PrefLeaf> = {}): PrefLeaf => ({ kind: 'number', name: 'N', description: '', default: 0, ...extra }) as PrefLeaf;

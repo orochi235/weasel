@@ -1,4 +1,4 @@
-import { pref, type PrefGroup } from '@weasel-js/prefs';
+import { pref, type PrefGroup } from '@weasel-js/pref-schema';
 import { SHAPE_COUNT_RANGE, SHAPE_DEFAULTS, STAR_RATIO_RANGE } from 'domains/paths/shapeGenerator';
 import { insertKind } from './shape';
 

@@ -1,6 +1,6 @@
 /** A `menus` list on an ambient contribution is defined on the surface's menu host. */
 import { describe, it, expect, vi, beforeAll } from 'vitest';
-import { pref } from '@weasel-js/prefs';
+import { pref } from '@weasel-js/pref-schema';
 import { act, render } from '@testing-library/react';
 import { useEffect } from 'react';
 import { ActionsProvider, useMenuHost, useOptionalDepRegistry, type DepRegistry } from '@weasel-js/routing/react';

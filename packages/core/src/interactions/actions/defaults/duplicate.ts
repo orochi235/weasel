@@ -9,7 +9,7 @@ import { storedDelta } from '../selectionSubtree';
 import { recordTransform } from '../transform-again/memory';
 import { icon } from '../../../icons.gen';
 import { BETWEEN_GESTURES } from '@weasel-js/routing';
-import { pref } from '@weasel-js/prefs';
+import { pref } from '@weasel-js/pref-schema';
 
 /** Same nudge `sceneToAdapter.getPasteOffset` gives a paste, so duplicate and
  *  paste land in the same place rather than disagreeing by a few units. */

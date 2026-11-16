@@ -1,8 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { checkPrefCondition } from './conditionCheck';
-import type { PrefGroup } from './groups';
-import { prefValueAtPath } from './helpers';
-import { prefShownReader } from './shown';
+import { type PrefGroup, prefValueAtPath, prefShownReader } from '@weasel-js/pref-schema';
 
 const field = { kind: 'field', name: 'F', description: '', default: '' } as const;
 const SCHEMA = {

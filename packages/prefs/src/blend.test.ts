@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { blendPref } from './blend';
-import type { PrefLeaf } from './schema';
+import type { PrefLeaf } from '@weasel-js/pref-schema';
 
 const leaf = (kind: string, extra: object = {}): PrefLeaf => ({ kind, name: 'x', description: '', default: undefined, ...extra }) as PrefLeaf;
 const at = (...pairs: [unknown, number][]) => pairs.map(([value, weight]) => ({ value, weight }));

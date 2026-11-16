@@ -2,8 +2,7 @@ import { createMemoryAdapter, localStorageAdapter, urlHashAdapter } from '@wease
 import { recordValue } from './stamp';
 import { describe, expect, it, vi } from 'vitest';
 import { openPrefs, openPrefsSync } from './open';
-import type { PrefGroup } from './groups';
-import { VERSION_RECORD } from './helpers';
+import { type PrefGroup, VERSION_RECORD } from '@weasel-js/pref-schema';
 
 const SCHEMA = {
   name: 'Test',

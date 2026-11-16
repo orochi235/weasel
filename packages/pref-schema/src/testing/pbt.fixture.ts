@@ -6,11 +6,11 @@
 import fc from 'fast-check';
 import { isPaint, tryParseColor } from '@weasel-js/paint';
 import { isPlainObject } from '@weasel-js/registry';
-import type { PrefGroup } from './groups';
-import type { PrefList } from './list';
-import type { PrefMap } from './map';
-import type { PrefBoolean, PrefColor, PrefEnum, PrefField, PrefLeaf, PrefNumber, PrefObject, PrefPaint, PrefString } from './schema';
-import type { PrefUnion } from './union';
+import type { PrefGroup } from '../groups';
+import type { PrefList } from '../list';
+import type { PrefMap } from '../map';
+import type { PrefBoolean, PrefColor, PrefEnum, PrefField, PrefLeaf, PrefNumber, PrefObject, PrefPaint, PrefString } from '../schema';
+import type { PrefUnion } from '../union';
 
 /** `{ numRuns: n }`, or the count in `WEASEL_PBT_RUNS` when set: a deep run on the fleet raises every property's at once. */
 export function runs(n: number): { numRuns: number } {

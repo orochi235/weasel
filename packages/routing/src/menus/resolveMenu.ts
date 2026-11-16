@@ -6,7 +6,7 @@ import {
   type PrefAction, type PrefBoolean, type PrefColor, type PrefConditionReader, type PrefEnum, type PrefGroup,
   type PrefField, type PrefGroupAs, type PrefLeaf, type PrefList, type PrefMap, type PrefNumber, type PrefObject,
   type PrefPaint, type PrefSection, type PrefString, type PrefUnion,
-} from '@weasel-js/prefs';
+} from '@weasel-js/pref-schema';
 import type { Action } from '../interactions/actions/action';
 import type { ActionDeps } from '../interactions/actions/invoker';
 import { actionItems, type ActionItem } from '../interactions/actions/actionItems';

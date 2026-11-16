@@ -1,5 +1,5 @@
 import type { OwnedRecordCache } from '@weasel-js/storage';
-import { VERSION_RECORD } from './helpers';
+import { VERSION_RECORD } from '@weasel-js/pref-schema';
 import { isAutoRecord, readRecord, stampRecord } from './stamp';
 
 const isVersion = (v: unknown): v is number => typeof v === 'number' && Number.isInteger(v) && v >= 0;

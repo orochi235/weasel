@@ -1,7 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 import { AUTO } from '../autoReset';
-import type { PrefGroup } from '../groups';
-import type { PrefLeaf } from '../schema';
+import type { PrefGroup, PrefLeaf } from '@weasel-js/pref-schema';
 import { createSelectionSource } from './selectionSource';
 import { createRecordSource, createValuesSource } from './valuesSource';
 

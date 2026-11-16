@@ -6,7 +6,7 @@
 import { simplifyPath } from '@weasel-js/geom';
 import { offsetPath, type OffsetPathOptions } from '@weasel-js/stroke';
 import { DEFAULT_MITER_LIMIT } from '@weasel-js/paint';
-import { pref, type PrefNumber } from '@weasel-js/prefs';
+import { pref, type PrefNumber } from '@weasel-js/pref-schema';
 import type { Op } from 'core/ops/types';
 import type { ActionParamsOf } from '@weasel-js/routing';
 import { livePathEdit } from './livePathEdit';
