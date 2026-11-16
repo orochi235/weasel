@@ -57,6 +57,11 @@ describe('filterComponents', () => {
     expect(filterComponents(rows, '  ')).toHaveLength(2);
   });
 
+  it('finds a decomposed story name by its composed spelling', () => {
+    const accented = buildComponents([entry('ui/Foundations/Button', 'Cafe\u0301', UI)]);
+    expect(filterComponents(accented, 'café').flatMap((r) => r.entries.map((e) => e.name))).toEqual(['Cafe\u0301']);
+  });
+
   it('matches on the library tag', () => {
     expect(filterComponents(rows, 'labkit').map((r) => r.label)).toEqual(['JobProgress']);
   });

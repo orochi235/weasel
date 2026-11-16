@@ -82,6 +82,11 @@ describe('filterTree', () => {
     expect(shape(filterTree(tree, 'index'))).toEqual([]);
   });
 
+  it('finds a decomposed story name by its composed spelling', () => {
+    const accented = buildTree([entry('Kit/Menu', 'Cafe\u0301')]);
+    expect(shape(filterTree(accented, 'café'))).toEqual([{ 'Kit/': [{ 'Menu/': ['Cafe\u0301'] }] }]);
+  });
+
   it('drops folders left with nothing in them', () => {
     expect(filterTree(tree, 'nothing matches this')).toEqual([]);
   });

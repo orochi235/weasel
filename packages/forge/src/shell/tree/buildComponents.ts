@@ -1,3 +1,4 @@
+import { foldText } from '@weasel-js/registry';
 import { indexEntries } from '../../story/indexPages';
 import type { Libraries } from '../../story/library';
 import type { IndexEntry } from '../../story/types';
@@ -79,19 +80,19 @@ function disambiguate(rows: readonly ComponentRow[]): void {
 }
 
 /** The components whose name, library or story names contain `query`,
- *  ignoring case. A matching component keeps its index page and all its
+ *  ignoring case and how accents are encoded. A matching component keeps its index page and all its
  *  stories; a component matching only through one story keeps just the
  *  stories that matched. */
 export function filterComponents(rows: readonly ComponentRow[], query: string): ComponentRow[] {
-  const needle = query.trim().toLowerCase();
+  const needle = foldText(query.trim());
   if (!needle) return [...rows];
   const out: ComponentRow[] = [];
   for (const row of rows) {
-    if (`${row.path}/${row.library}`.toLowerCase().includes(needle)) {
+    if (foldText(`${row.path}/${row.library}`).includes(needle)) {
       out.push(row);
       continue;
     }
-    const entries = row.entries.filter((entry) => entry.name.toLowerCase().includes(needle));
+    const entries = row.entries.filter((entry) => foldText(entry.name).includes(needle));
     if (entries.length > 0) out.push({ path: row.path, label: row.label, library: row.library, entries });
   }
   return out;
