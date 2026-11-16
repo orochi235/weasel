@@ -30,6 +30,7 @@ import {
   type Stroke,
   type Vec2,
 } from '@weasel-js/core';
+import { getOwn } from '@weasel-js/registry';
 import { bodyAt, createTargets, DEFAULT_SNAP_RADIUS, isBodyEnd, type ConnectEnd } from './connectTargets';
 import { DEFAULT_EDGE_STYLE } from './dataStyles';
 import { EDGE_DERIVE_PATH, ROUTERS, type Router } from './edge';
@@ -238,7 +239,7 @@ export function createConnectAction<TPose>(opts: ConnectActionOptions<TPose>): A
   const commit = opts.commit
     ?? ((edge: PendingEdge, ctx: InvocationCtx) => commitEdgeToScene(edge, ctx, stroke ? { stroke } : {}));
   const routers = opts.routers ?? ROUTERS;
-  const route: Router = routers[routerKey] ?? routers['straight'] ?? ROUTERS['straight']!;
+  const route: Router = getOwn(routers, routerKey) ?? getOwn(routers, 'straight') ?? ROUTERS['straight']!;
   const targets = createTargets({ ...opts, canConnect, snapRadius, bodies: opts.bodies ?? false });
 
   /** What the press starts from: the pressed port, else — with

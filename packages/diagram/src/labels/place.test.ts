@@ -25,6 +25,12 @@ describe('placeLabels', () => {
     expect(placeLabels(input)).toEqual(new Map([['e/label', null]]));
   });
 
+  it('reads a station named for an Object.prototype member as the middle', () => {
+    const shapes = [{ id: 's', box: { x: 170, y: -30, width: 60, height: 25 } }];
+    const run = (at: string) => placeLabels({ shapes, routes: [flat('e')], labels: [label('e', { at, offset: 9 } as never)] }).get('e/label');
+    expect(run('toString')).toEqual(run('mid'));
+  });
+
   it('flips to the other side of the line when a shape covers it', () => {
     const input = { shapes: [{ id: 's', box: { x: 170, y: -30, width: 60, height: 25 } }], routes: [flat('e')], labels: [label('e')] };
     expect(placeLabels(input).get('e/label')).toEqual({ at: 0.5, offset: -9 });

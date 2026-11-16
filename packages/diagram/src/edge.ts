@@ -24,6 +24,7 @@ import {
   type SceneRegistry,
   type Vec2,
 } from '@weasel-js/core';
+import { getOwn } from '@weasel-js/registry';
 import { ANCHOR_DERIVE_POSE, DIAGRAM_ANCHOR, DIAGRAM_GROUP, GROUP_DERIVE_POSE } from './group';
 import { CONTAINER_LAYOUTS } from './containers/layouts';
 import { DIAGRAM_LABEL, LABEL_DERIVE_POSE } from './label';
@@ -109,7 +110,7 @@ function facing(ports: readonly Port[], toward: Vec2): Port | undefined {
 
 /** The router an edge is drawn with: the one it names, else `straight`. */
 export function routerOf(edge: { router?: string }, routers: Readonly<Record<string, Router>> = ROUTERS): Router {
-  return (edge.router !== undefined && routers[edge.router]) || straight;
+  return (edge.router !== undefined ? getOwn(routers, edge.router) : undefined) ?? straight;
 }
 
 /** Options for {@link edgeDerivePath}. */

@@ -51,11 +51,48 @@ export interface EffectRunner {
   dispose(): void;
 }
 
+/** The pass a runner steps, if one is under way. */
+interface Stepping {
+  pass: EffectPass | null;
+}
+
+function drop(stepping: Stepping): void {
+  stepping.pass?.dispose();
+  stepping.pass = null;
+}
+
+/** Evaluates the next stage of the pass `stepping` holds, made by `make` when none is, and returns
+ *  the run to show: after the last stage it starts over, and a pass dropped while its stage was
+ *  under way frees what that stage made and the step goes on with a new one. */
+async function stepRun(stepping: Stepping, make: () => EffectPass): Promise<EffectRun> {
+  let wrapped = false;
+  for (;;) {
+    const pass = stepping.pass ??= make();
+    const before = new Set(previewsOf(pass.run));
+    let at: string | undefined;
+    try {
+      at = await pass.step();
+    } finally {
+      if (stepping.pass !== pass) {
+        pass.dispose();
+        closeBitmaps(previewsOf(pass.run).filter((b) => !before.has(b)));
+      }
+    }
+    if (stepping.pass !== pass) continue;
+    if (at === undefined && !wrapped) {
+      wrapped = true;
+      drop(stepping);
+      continue;
+    }
+    return at === undefined ? pass.run : { ...pass.run, at };
+  }
+}
+
 /** A runner over `opts.pipeline`, with nothing run yet. */
 export function createEffectRunner(opts: EffectRunnerOptions): EffectRunner {
   let { pipeline, ...options } = opts;
   let state: EffectRunnerState = { run: undefined, playing: false, time: 0 };
-  let stepping: EffectPass | null = null;
+  const stepping: Stepping = { pass: null };
   let controller = new AbortController();
   let tail: Promise<void> = Promise.resolve();
   let pending = 0;
@@ -73,10 +110,7 @@ export function createEffectRunner(opts: EffectRunnerOptions): EffectRunner {
     set({ run });
   };
   const passOptions = (time: number): RunPipelineOptions => ({ ...options, time, signal: controller.signal });
-  const dropStepping = () => {
-    stepping?.dispose();
-    stepping = null;
-  };
+  const dropStepping = () => drop(stepping);
   const enqueue = (task: (signal: AbortSignal) => Promise<void>): Promise<void> => {
     const signal = controller.signal;
     pending++;
@@ -95,14 +129,14 @@ export function createEffectRunner(opts: EffectRunnerOptions): EffectRunner {
   };
 
   const stepOnce = (time: number) => async () => {
-    let pass = stepping ??= createPass(pipeline, passOptions(time));
-    let at = await pass.step();
-    if (at === undefined) {
-      dropStepping();
-      pass = stepping = createPass(pipeline, passOptions(time));
-      at = await pass.step();
-    }
-    publish(at === undefined ? pass.run : { ...pass.run, at });
+    publish(await stepRun(stepping, () => createPass(pipeline, passOptions(time))));
+  };
+  const reset = () => {
+    controller.abort();
+    controller = new AbortController();
+    dropStepping();
+    behind = false;
+    set({ run: undefined, playing: false, time: 0 });
   };
 
   return {
@@ -113,13 +147,7 @@ export function createEffectRunner(opts: EffectRunnerOptions): EffectRunner {
     },
     play: () => { if (!state.playing) set({ playing: true }); },
     pause: () => { if (state.playing) set({ playing: false }); },
-    reset() {
-      controller.abort();
-      controller = new AbortController();
-      dropStepping();
-      behind = false;
-      set({ run: undefined, playing: false, time: 0 });
-    },
+    reset,
     advance(seconds) {
       if (!state.playing) return;
       state = { ...state, time: state.time + seconds };
@@ -158,7 +186,7 @@ export function createEffectRunner(opts: EffectRunnerOptions): EffectRunner {
     },
     subscribe: listeners.subscribe,
     dispose() {
-      this.reset();
+      reset();
       closeBitmaps(published.flatMap(previewsOf));
       published = [];
     },

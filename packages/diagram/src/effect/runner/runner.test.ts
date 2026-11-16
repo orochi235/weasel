@@ -138,4 +138,42 @@ describe('createEffectRunner', () => {
     runner.drawn(runner.state.run);
     expect(t.closed).toBe(false);
   });
+
+  it('disposes when its dispose is called on its own', () => {
+    const { dispose } = createEffectRunner({ pipeline: PIPELINE, evaluators: EVAL });
+    expect(() => dispose()).not.toThrow();
+  });
+
+  it('closes the previews of a whole run reset partway', async () => {
+    let finish!: () => void;
+    const made: (ImageBitmap & { closed: boolean })[] = [];
+    const kinds: EffectValueKinds = { number: { preview: () => { const b = bitmap(); made.push(b); return b; } } };
+    const slow: EffectEvaluators = { ...EVAL, inc: async (ctx) => { await new Promise<void>((r) => { finish = r; }); return EVAL.inc!(ctx); } };
+    const runner = createEffectRunner({ pipeline: PIPELINE, evaluators: slow, kinds });
+    void runner.run();
+    await settled();
+    runner.reset();
+    finish();
+    await settled();
+    expect(made.length).toBeGreaterThan(0);
+    expect(made.every((b) => b.closed)).toBe(true);
+  });
+
+  it('starts a step under way over on a pipeline set meanwhile, and frees what the old step made', async () => {
+    let finish!: () => void;
+    const disposed: unknown[] = [];
+    const kinds: EffectValueKinds = { number: { dispose: (v) => { disposed.push(v); } } };
+    const slow: EffectEvaluators = { ...EVAL, inc: async (ctx) => { await new Promise<void>((r) => { finish = r; }); return EVAL.inc!(ctx); } };
+    const runner = createEffectRunner({ pipeline: PIPELINE, evaluators: slow, kinds });
+    await runner.step();
+    const stepping = runner.step();
+    await settled();
+    const only: EffectPipeline = { stages: [stage('u', 'clock')], wires: [] };
+    runner.setPipeline(only);
+    finish();
+    await stepping;
+    expect(disposed).toContain(1);
+    expect(runner.state.run).toMatchObject({ at: 'u' });
+    expect(Object.keys(runner.state.run!.stages)).toEqual(['u']);
+  });
 });

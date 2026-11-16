@@ -61,7 +61,11 @@ function parentsOf(doc: EffectDoc): Map<string, string> {
 /** The innermost group whose grip holds `at`, of those `among` admits. */
 export function groupAt(doc: EffectDoc, boxOf: ReorderSource['boxOf'], at: Vec2, among: (group: string) => boolean = () => true): string | undefined {
   const parent = parentsOf(doc);
-  const depth = (id: string): number => (parent.has(id) ? 1 + depth(parent.get(id)!) : 0);
+  const depth = (id: string): number => {
+    const seen = new Set<string>();
+    for (let at = parent.get(id); at !== undefined && !seen.has(at); at = parent.get(at)) seen.add(at);
+    return seen.size;
+  };
   const held = (doc.pipeline.groups ?? []).filter((g) => {
     const grip = among(g.id) ? groupGripOf(doc, g.id, boxOf) : undefined;
     return grip !== undefined && rectContainsPoint(grip, at.x, at.y);

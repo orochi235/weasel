@@ -1,3 +1,4 @@
+import { getOwn } from '@weasel-js/registry';
 import { PREVIEW_SIZE, shownPorts, uniqueStages } from '../draw';
 import type { EffectPipeline, EffectRun, EffectStage, EffectStageRun } from '../types';
 import { runOrder } from './order';
@@ -44,14 +45,17 @@ export function createPass(pipeline: EffectPipeline, opts: RunPipelineOptions): 
   const signal = opts.signal ?? new AbortController().signal;
   let run: EffectRun = { stages: {} };
 
+  const kindOf = (type: string) => (opts.kinds ? getOwn(opts.kinds, type) : undefined);
+
   const inputsOf = (stage: EffectStage): Record<string, unknown> => {
-    const inputs: Record<string, unknown> = {};
+    const inputs = new Map<string, unknown>();
     for (const w of pipeline.wires) {
-      if (w.to.stage !== stage.id || inputs[w.to.port] !== undefined) continue;
-      const value = made.get(w.from.stage)?.[w.from.port];
-      if (value !== undefined) inputs[w.to.port] = value;
+      if (w.to.stage !== stage.id || inputs.has(w.to.port)) continue;
+      const from = made.get(w.from.stage);
+      const value = from && getOwn(from, w.from.port);
+      if (value !== undefined) inputs.set(w.to.port, value);
     }
-    return inputs;
+    return Object.fromEntries(inputs);
   };
 
   const record = async (
@@ -60,11 +64,10 @@ export function createPass(pipeline: EffectPipeline, opts: RunPipelineOptions): 
     made.set(stage.id, outputs);
     const values: Record<string, string> = {};
     const previews: Record<string, ImageBitmap> = {};
-    const seen = { ...inputs, ...outputs };
     for (const port of shownPorts(stage)) {
-      const value = seen[port.id];
+      const value = Object.hasOwn(outputs, port.id) ? outputs[port.id] : getOwn(inputs, port.id);
       if (value === undefined) continue;
-      const kind = opts.kinds?.[port.type];
+      const kind = kindOf(port.type);
       const text = kind?.show !== undefined ? kind.show(value) : plainText(value);
       if (text !== undefined) values[port.id] = text;
       const preview = opts.previews === false ? undefined : await kind?.preview?.(value, size);
@@ -80,7 +83,7 @@ export function createPass(pipeline: EffectPipeline, opts: RunPipelineOptions): 
 
   const evaluate = async (stage: EffectStage, inputs: Record<string, unknown>) => {
     if (stage.bypassed === true) return record(stage, inputs, passThrough(stage, inputs), {});
-    const evaluator: EffectEvaluator | undefined = stage.type === undefined ? undefined : opts.evaluators[stage.type];
+    const evaluator: EffectEvaluator | undefined = stage.type === undefined ? undefined : getOwn(opts.evaluators, stage.type);
     const params = paramValues(stage);
     const start = performance.now();
     try {
@@ -114,10 +117,10 @@ export function createPass(pipeline: EffectPipeline, opts: RunPipelineOptions): 
       const done = new Set<unknown>();
       for (const [id, outputs] of made) {
         for (const port of stages.get(id)?.outputs ?? []) {
-          const value = outputs[port.id];
+          const value = getOwn(outputs, port.id);
           if (value === undefined || given.has(value) || done.has(value)) continue;
           done.add(value);
-          opts.kinds?.[port.type]?.dispose?.(value);
+          kindOf(port.type)?.dispose?.(value);
         }
       }
       made.clear();
@@ -127,12 +130,12 @@ export function createPass(pipeline: EffectPipeline, opts: RunPipelineOptions): 
 
 /** Each output's value for a bypassed stage: its first input of the same type that has one. */
 function passThrough(stage: EffectStage, inputs: Readonly<Record<string, unknown>>): Record<string, unknown> {
-  const out: Record<string, unknown> = {};
+  const out = new Map<string, unknown>();
   for (const port of stage.outputs ?? []) {
-    const from = (stage.inputs ?? []).find((i) => i.type === port.type && inputs[i.id] !== undefined);
-    if (from !== undefined) out[port.id] = inputs[from.id];
+    const value = (stage.inputs ?? []).filter((i) => i.type === port.type).map((i) => getOwn(inputs, i.id)).find((v) => v !== undefined);
+    if (value !== undefined) out.set(port.id, value);
   }
-  return out;
+  return Object.fromEntries(out);
 }
 
 function plainText(value: unknown): string | undefined {

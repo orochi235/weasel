@@ -1,4 +1,5 @@
 /** Reading and writing a scene's {@link DIAGRAM_TYPE_DOC_KEY} value. Each write is one undo entry. */
+import { getOwn } from '@weasel-js/registry';
 import { DIAGRAM_TYPES, FLOWCHART_TYPE } from './catalog';
 import { DIAGRAM_TYPE_DOC_KEY, FLOWCHART_NOTATION, type DiagramType, type DiagramTypeDoc } from './types';
 
@@ -22,7 +23,7 @@ export interface DiagramTypeWriteOptions {
 
 /** A new document's value for type `id`: it, and its groups. Flowchart for an id `types` lacks. */
 export function diagramTypeDocValue(id: string, types: Readonly<Record<string, DiagramType>> = DIAGRAM_TYPES): DiagramTypeDoc {
-  const type = types[id] ?? FLOWCHART_TYPE;
+  const type = getOwn(types, id) ?? FLOWCHART_TYPE;
   return { type: type.id, groups: [...type.groups] };
 }
 
@@ -30,7 +31,7 @@ export function diagramTypeDocValue(id: string, types: Readonly<Record<string, D
  *  reads as flowchart with its groups. */
 export function diagramTypeDocOf(scene: DiagramTypeReadable, types: Readonly<Record<string, DiagramType>> = DIAGRAM_TYPES): DiagramTypeDoc {
   const value = scene.doc.get(DIAGRAM_TYPE_DOC_KEY) as Partial<DiagramTypeDoc> | null | undefined;
-  const id = typeof value?.type === 'string' && types[value.type] !== undefined ? value.type : null;
+  const id = typeof value?.type === 'string' && getOwn(types, value.type) !== undefined ? value.type : null;
   if (id === null) return diagramTypeDocValue(FLOWCHART_TYPE.id, types);
   const groups = Array.isArray(value?.groups) ? value.groups.filter((g): g is string => typeof g === 'string') : null;
   return groups === null ? diagramTypeDocValue(id, types) : { type: id, groups };
@@ -38,7 +39,7 @@ export function diagramTypeDocOf(scene: DiagramTypeReadable, types: Readonly<Rec
 
 /** The type a scene holds, as {@link diagramTypeDocOf} reads it. */
 export function diagramTypeOf(scene: DiagramTypeReadable, types: Readonly<Record<string, DiagramType>> = DIAGRAM_TYPES): DiagramType {
-  return types[diagramTypeDocOf(scene, types).type] ?? FLOWCHART_TYPE;
+  return getOwn(types, diagramTypeDocOf(scene, types).type) ?? FLOWCHART_TYPE;
 }
 
 /** The notation a graph page of the scene's type is written in. */
@@ -58,7 +59,7 @@ function write(scene: DiagramTypeScene, value: DiagramTypeDoc, label: string): v
 /** Makes the scene type `id`, its shown groups replaced by the type's. */
 export function setDiagramType(scene: DiagramTypeScene, id: string, opts: DiagramTypeWriteOptions = {}): void {
   const value = diagramTypeDocValue(id, opts.types);
-  write(scene, value, opts.label ?? `Diagram type: ${(opts.types ?? DIAGRAM_TYPES)[value.type]?.label ?? value.type}`);
+  write(scene, value, opts.label ?? `Diagram type: ${getOwn(opts.types ?? DIAGRAM_TYPES, value.type)?.label ?? value.type}`);
 }
 
 /** Shows stencil group `id` after the ones shown. Nothing when it is shown already. */

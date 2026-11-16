@@ -15,6 +15,7 @@
  */
 import type { Vec2 } from '@weasel-js/core/math';
 import { maxOf, minOf } from '@weasel-js/geom';
+import { getOwn } from '@weasel-js/registry';
 import type { Graph, GraphGroup } from './graph';
 import { DEFAULT_NODE_GAP, graphOrder, pinnedSet, translated, type LayoutFn } from './layout';
 
@@ -62,10 +63,10 @@ function deal(ids: readonly string[], sizeOf: (id: string) => Size, columns: num
   let row = 0;
   let col = 0;
   for (const id of ids) {
-    col += Math.max(0, Math.floor(grid.skips?.[id] ?? 0));
+    col += Math.max(0, Math.floor((grid.skips && getOwn(grid.skips, id)) ?? 0));
     row += Math.floor(col / columns);
     col %= columns;
-    const span = Math.min(columns, Math.max(1, Math.floor(grid.spans?.[id] ?? 1)));
+    const span = Math.min(columns, Math.max(1, Math.floor((grid.spans && getOwn(grid.spans, id)) ?? 1)));
     if (col + span > columns) {
       row++;
       col = 0;
@@ -118,7 +119,7 @@ export const grid: LayoutFn = (graph, opts = {}) => {
     const done = level === null ? undefined : inner.get(level);
     if (done !== undefined) return done;
     const ids = byLevel.get(level) ?? [];
-    const columns = Math.max(1, Math.floor((level === null ? spec.columns : spec.groupColumns?.[level]) ?? ids.length));
+    const columns = Math.max(1, Math.floor((level === null ? spec.columns : spec.groupColumns && getOwn(spec.groupColumns, level)) ?? ids.length));
     const laid = place(deal(ids, sizeOf, columns, spec), gap, rowGap);
     if (level !== null) inner.set(level, laid);
     return laid;

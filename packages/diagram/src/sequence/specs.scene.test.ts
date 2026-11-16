@@ -19,6 +19,17 @@ type Painted = { stroke?: { paint: { color: string } }; text?: string };
 describe('sequenceSpecs', () => {
   const specs = sequenceSpecs(data, { id: 'seq', at: { x: 100, y: 50 } });
 
+  it('refuses data two of whose parts would share an id', () => {
+    const clash = { participants: [{ id: 'A' }, { id: 'A/text' }], steps: [{ kind: 'message' as const, id: 'm', from: 'A', to: 'A/text', text: 'hi', line: 'solid' as const, head: 'arrow' as const }] };
+    expect(() => sequenceSpecs(clash, { id: 'seq' })).toThrow('"seq/head:A/text"');
+  });
+
+  it('draws a message head it does not know, toString included, with no marker', () => {
+    const odd = { ...data, steps: [{ kind: 'message' as const, id: 'm', from: 'a', to: 'b', line: 'solid' as const, head: 'toString' as never }] };
+    const line = sequenceSpecs(odd, { id: 'seq' }).find((s) => s.id === 'seq/msg:m')!.data as { stroke: { markerEnd?: unknown } };
+    expect(line.stroke.markerEnd).toBeUndefined();
+  });
+
   it('makes one root holding the data, every part its child, taking no press', () => {
     const [root, ...parts] = specs;
     expect(sequenceRootOf(root!)?.sequence).toBe(data);

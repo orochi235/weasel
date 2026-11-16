@@ -19,6 +19,14 @@ const groups = (d: EffectDoc) => d.pipeline.groups ?? [];
 const group = (d: EffectDoc, id: string) => groups(d).find((g) => g.id === id);
 
 describe('groupStages', () => {
+  it('groups a group named beside its own member, the member staying inside it', () => {
+    const doc: EffectDoc = { ...DOC, pipeline: { ...DOC.pipeline, groups: [{ id: 'G', members: ['a'] }] } };
+    const next = groupStages(doc, ['G', 'a']);
+    const id = nextGroupId(doc.pipeline);
+    expect(group(next, 'G')!.members).toEqual(['a']);
+    expect(group(next, id)!.members).toEqual(['G']);
+  });
+
   it('nests a new group inside the group all its stages share, where the first one was', () => {
     const next = groupStages(DOC, ['b', 'c'], 'Pair');
     const id = nextGroupId(DOC.pipeline);
@@ -66,6 +74,15 @@ describe('renameGroup', () => {
 });
 
 describe('moveToGroup', () => {
+  it('moves a group named beside its own member, still holding it', () => {
+    const doc: EffectDoc = { ...DOC, pipeline: { ...DOC.pipeline, groups: [{ id: 'G', members: ['a'] }, { id: 'H', members: ['b'] }] } };
+    for (const to of ['H', null]) {
+      const next = moveToGroup(doc, ['G', 'a'], to);
+      expect(group(next, 'G')!.members).toEqual(['a']);
+      if (to !== null) expect(group(next, 'H')!.members).toEqual(['b', 'G']);
+    }
+  });
+
   it('moves stages into a group, out of the one they were in', () => {
     const next = moveToGroup(DOC, ['d'], 'inner');
     expect(group(next, 'inner')!.members).toEqual(['b', 'c', 'd']);

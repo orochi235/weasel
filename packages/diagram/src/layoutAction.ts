@@ -39,6 +39,10 @@ export const LAYOUTS: Readonly<Record<string, LayoutFn>> = Object.freeze({
   grid,
 });
 
+/** The layout `algorithm` names: itself when it is one, else its key in {@link LAYOUTS}, else `layered`. */
+export const layoutOf = (algorithm: string | LayoutFn): LayoutFn =>
+  typeof algorithm === 'function' ? algorithm : getOwn(LAYOUTS, algorithm) ?? layered;
+
 /** Options for {@link applyLayout}. */
 export interface ApplyLayoutOptions<TPose> {
   geometry?: PoseDescriptor<TPose>;
@@ -166,7 +170,7 @@ export function layoutDiagram<TPose>(
   algorithm: string | LayoutFn,
   opts: LayoutDiagramOptions<TPose> = {},
 ): number {
-  const fn = typeof algorithm === 'function' ? algorithm : getOwn(LAYOUTS, algorithm) ?? layered;
+  const fn = layoutOf(algorithm);
   const graph = buildGraph(source, {
     ...(opts.read ? { read: opts.read } : {}),
     ...(opts.geometry ? { geometry: opts.geometry } : {}),

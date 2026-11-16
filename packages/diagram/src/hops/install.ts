@@ -11,7 +11,7 @@ import { samePoints } from '../edgeTrait';
 import { edgeHops } from './crossings';
 import { hopFollower } from './follower';
 import { edgePolylines, hopDataOps, inOrUnder, sceneEdges, type AnyScene, type SceneEdge } from './sceneEdges';
-import { HOPS_DOC_KEY, type HopsDocValue } from './types';
+import { HOPS_DOC_KEY, type EdgeHop, type HopsDocValue } from './types';
 
 /** Options for {@link installHops} and `useHops`: how a connector routes, as
  *  its own `derivePath` does. */
@@ -88,11 +88,21 @@ export function installHops<TPose>(scene: Scene<unknown, string, TPose>, opts: H
   const sc = scene as unknown as AnyScene;
   const polylineOf = edgePolylines(sc, opts);
   let held: Held | null = null;
+  // Connectors whose hops were computed while locked, so never written: each is due again once unlocked.
+  const stale = new Set<string>();
+  const write = (hops: ReadonlyMap<string, readonly EdgeHop[]>) => {
+    for (const id of hops.keys()) {
+      if (sc.isLocked(id as never)) stale.add(id);
+      else stale.delete(id);
+    }
+    return hopDataOps(sc, hops);
+  };
+  const unlocked = () => [...stale].filter((id) => !sc.isLocked(id as never));
 
   const full = (edges: SceneEdge[], r: number) => {
     const order = edges.map((e) => e.node.id);
     held = { polylines: allPolylines(edges, polylineOf), order, r };
-    return hopDataOps(sc, edgeHops(held.polylines, order, r));
+    return write(edgeHops(held.polylines, order, r));
   };
 
   const pass = (summary: SceneEditSummary) => {
@@ -100,7 +110,9 @@ export function installHops<TPose>(scene: Scene<unknown, string, TPose>, opts: H
     const keyed = summary.docChanged.has(HOPS_DOC_KEY);
     if (value === undefined) {
       held = null;
-      return keyed ? hopDataOps(sc, new Map(sceneEdges(sc).map((e) => [e.node.id, []]))) : null;
+      const cleared = keyed ? sceneEdges(sc).map((e) => e.node.id) : unlocked();
+      const ops = cleared.length === 0 ? [] : write(new Map(cleared.map((id) => [id, []])));
+      return ops.length === 0 ? null : ops;
     }
     const edges = sceneEdges(sc);
     const order = edges.map((e) => e.node.id);
@@ -128,14 +140,15 @@ export function installHops<TPose>(scene: Scene<unknown, string, TPose>, opts: H
       h.polylines.delete(id);
     }
     h.order = order;
-    if (boxes.length === 0) return null;
-    const affected = new Set(dirty);
+    const freed = unlocked().filter((id) => h.polylines.has(id));
+    if (boxes.length === 0 && freed.length === 0) return null;
+    const affected = new Set([...dirty, ...freed]);
     for (const [id, points] of h.polylines) {
       if (affected.has(id)) continue;
       const box = boxOf(points, 0);
       if (boxes.some((b) => meets(box, b))) affected.add(id);
     }
-    const ops = hopDataOps(sc, edgeHops(h.polylines, order, r, affected));
+    const ops = write(edgeHops(h.polylines, order, r, affected));
     return ops.length === 0 ? null : ops;
   };
 

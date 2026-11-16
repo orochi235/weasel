@@ -6,6 +6,7 @@
  */
 import { RIGID_POSE_COMPOSITION, localizeWorldPoses, type PoseComposition, type RectPose } from '@weasel-js/core';
 import type { Vec2 } from '@weasel-js/core/math';
+import { getOwn } from '@weasel-js/registry';
 import type { MeasureRowText } from '../body';
 import { withColors } from '../dataColors';
 import type { DiagramSceneData, DiagramSpec, NodeStyle } from '../dataTypes';
@@ -130,7 +131,7 @@ function messageSpecs(out: PartSpecs, steps: readonly SeqStep[], layout: Sequenc
     const at = msg.kind === 'message' ? byId.get(msg.id) : undefined;
     if (at === undefined || msg.kind !== 'message') continue;
     const s = msg;
-    const marker = MARKERS[msg.head];
+    const marker = getOwn(MARKERS, msg.head) ?? null;
     const stroke = {
       paint: { color: edge.stroke }, width, ...(msg.line === 'dashed' ? { dash: DASH } : {}),
       ...(marker !== null ? { markerEnd: marker } : {}), ...(marker !== null && msg.both ? { markerStart: marker } : {}),
@@ -222,7 +223,8 @@ const crossGrip = (x: number, y: number): SeqRect => {
  * The root and parts of a sequence diagram: its root at `at`, sized to the
  * layout, holding `data`; boxes, fragments, lifelines, activations, messages,
  * notes, and heads drawn over one another in that order, each from the
- * theme's roles, its own colors over them.
+ * theme's roles, its own colors over them. Throws when two parts would share
+ * an id, as a participant `A/text` beside `A` would.
  */
 export function sequenceSpecs<TLayer extends string = 'main'>(data: SequenceData, opts: SequenceSpecsOptions<TLayer>): DiagramSpec<TLayer>[] {
   const theme = opts.theme ?? diagramThemeFrom(undefined);
@@ -241,6 +243,12 @@ export function sequenceSpecs<TLayer extends string = 'main'>(data: SequenceData
   noteSpecs(out, data.steps, layout, theme);
   headSpecs(out, data, layout, theme);
   fragmentSpecs(out, data.steps, layout, theme, false);
+  const made = new Set<string>();
+  for (const spec of out.specs) {
+    const id = String(spec.id);
+    if (made.has(id)) throw new Error(`sequenceSpecs: two parts would share the scene id "${id}"`);
+    made.add(id);
+  }
   const layer = (opts.layer ?? 'main') as TLayer;
   return localizeWorldPoses(out.specs, opts.composition ?? RIGID_POSE_COMPOSITION).map((s) => ({ ...s, layer })) as DiagramSpec<TLayer>[];
 }

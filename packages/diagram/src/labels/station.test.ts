@@ -13,6 +13,13 @@ function roundTrips(path: typeof straight, at: number, offset: number) {
   expect(spot.offset).toBeCloseTo(offset, 6);
 }
 
+describe('labelCenter', () => {
+  it.each(['toString', 'constructor'])('stands a label at %s in the middle', (at) => {
+    const named = labelCenter(straight, { at } as never, SIZE);
+    expect(named).toEqual(labelCenter(straight, { at: 'mid' }, SIZE));
+  });
+});
+
 describe('labelSpotAt', () => {
   it.each([[0.25, 0], [0.8, 30], [0.1, -22]])('round-trips labelCenter at %s, offset %s', (at, offset) => {
     for (const path of [straight, elbow]) roundTrips(path, at, offset);

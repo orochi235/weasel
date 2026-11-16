@@ -23,6 +23,15 @@ describe('the diagram type a scene holds', () => {
     expect(diagramTypeDocOf(scene)).toEqual(FLOWCHART);
   });
 
+  it.each(['constructor', 'toString'])('reads type id %s as flowchart', (id) => {
+    const scene = newScene();
+    scene.doc.set(DIAGRAM_TYPE_DOC_KEY, { type: id });
+    expect(diagramTypeDocOf(scene)).toEqual(FLOWCHART);
+    scene.doc.set(DIAGRAM_TYPE_DOC_KEY, { type: id, groups: ['containers'] });
+    expect(diagramTypeOf(scene)).toBe(DIAGRAM_TYPES.flowchart);
+    expect(diagramTypeDocValue(id)).toEqual(FLOWCHART);
+  });
+
   it('reads the type and groups it holds, from the catalog it is given', () => {
     const scene = newScene();
     scene.doc.set(DIAGRAM_TYPE_DOC_KEY, { type: 'org', groups: ['flowchart'] });

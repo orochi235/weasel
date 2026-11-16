@@ -1,19 +1,25 @@
 import type { Stroke } from '@weasel-js/core';
+import { getOwn } from '@weasel-js/registry';
 import { labelStyleOf } from '../edgeLabel';
 import { edgeStrokeOf } from '../edgeStroke';
 import type { EdgeStyle, NodeStyle } from '../dataTypes';
+import { isShippedTheme } from './themeEdit';
 import { DIAGRAM_THEMES } from './themes';
 import { DIAGRAM_THEME_KEY, type DiagramTheme } from './types';
 
+/** The style `theme` holds for `role` itself, if any. */
+export const themeRoleStyle = (theme: DiagramTheme, role?: string): NodeStyle | undefined =>
+  role !== undefined ? getOwn(theme.roles, role) : undefined;
+
 /** The style a shape naming `role` is drawn in: that role's, or the theme's default role's. */
 export function roleStyle(theme: DiagramTheme, role?: string): NodeStyle {
-  return (role !== undefined ? theme.roles[role] : undefined) ?? theme.roles[theme.defaultRole]!;
+  return themeRoleStyle(theme, role) ?? theme.roles[theme.defaultRole]!;
 }
 
 /** The style a connector naming `role` is drawn in: the role's stroke, its label in that stroke too;
  *  with no role, the theme's own connector and label colors. */
 export function roleEdgeStyle(theme: DiagramTheme, role?: string): EdgeStyle {
-  const own = role !== undefined ? theme.roles[role] : undefined;
+  const own = themeRoleStyle(theme, role);
   if (own !== undefined) return { ...theme.edge, stroke: own.stroke, label: own.stroke };
   return { ...theme.edge, label: theme.edge.label ?? theme.label.fill };
 }
@@ -40,7 +46,7 @@ export const themeLabelStyle = (theme: DiagramTheme) => labelStyleOf(themeLabelF
 /** The theme a document value names: a shipped theme by id, or a whole theme. `fallback` for none,
  *  or for an id no shipped theme has. */
 export function diagramThemeFrom(value: unknown, fallback: DiagramTheme = DIAGRAM_THEMES.night!): DiagramTheme {
-  if (typeof value === 'string') return DIAGRAM_THEMES[value] ?? fallback;
+  if (typeof value === 'string') return getOwn(DIAGRAM_THEMES, value) ?? fallback;
   if (value !== null && typeof value === 'object' && 'roles' in value) return value as DiagramTheme;
   return fallback;
 }
@@ -52,4 +58,4 @@ export function diagramThemeOf(scene: { doc: { get(key: string): unknown } }, fa
 
 /** What `diagram:theme` holds for `theme`: a shipped theme's id, or the whole theme. */
 export const themeDocValue = (theme: DiagramTheme): string | DiagramTheme =>
-  DIAGRAM_THEMES[theme.id] === theme ? theme.id : theme;
+  isShippedTheme(theme) ? theme.id : theme;

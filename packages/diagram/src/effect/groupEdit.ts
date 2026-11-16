@@ -33,6 +33,10 @@ export function pruneGroups(
 /** The group holding `id` directly, if any. */
 const parentOf = (groups: readonly EffectGroup[], id: string) => groups.find((g) => g.members.includes(id));
 
+/** `ids` without repeats, and without any inside another of them, which carries it. */
+const outermost = (groups: readonly EffectGroup[], ids: readonly string[]): string[] =>
+  [...new Set(ids)].filter((id, _i, all) => !all.some((o) => o !== id && within(groups, id, o)));
+
 /** `group` if no stage or group has it, else `group-2`, `group-3`, … */
 export function nextGroupId(p: EffectPipeline): string {
   const used = new Set([...p.stages.map((s) => s.id), ...(p.groups ?? []).map((g) => g.id)]);
@@ -43,12 +47,14 @@ export function nextGroupId(p: EffectPipeline): string {
  * Groups `ids`, stages or groups, in a new group whose id is
  * {@link nextGroupId}'s. It nests inside the group all of them share, where
  * the first of them was; otherwise it goes at the top level, taking them out
- * of the groups they were in.
+ * of the groups they were in. One of `ids` inside another goes with it.
  */
-export function groupStages(doc: EffectDoc, ids: readonly string[], label?: string): EffectDoc {
-  if (ids.length === 0) return doc;
+export function groupStages(doc: EffectDoc, given: readonly string[], label?: string): EffectDoc {
+  if (given.length === 0) return doc;
   const id = nextGroupId(doc.pipeline);
   const groups = groupsOf(doc);
+  const ids = outermost(groups, given);
+  if (ids.length === 0) return doc;
   const parents = new Set(ids.map((m) => parentOf(groups, m)?.id));
   const shared = parents.size === 1 ? [...parents][0] : undefined;
   const taken = new Set(ids);
@@ -83,9 +89,10 @@ export function renameGroup(doc: EffectDoc, id: string, label: string): EffectDo
   }));
 }
 
-/** Whether `inner` is `outer` or inside it. */
+/** Whether `inner` is `outer` or inside it. Groups holding each other in a loop end the climb. */
 function within(groups: readonly EffectGroup[], inner: string, outer: string): boolean {
-  for (let at: string | undefined = inner; at !== undefined; at = parentOf(groups, at)?.id) if (at === outer) return true;
+  let at: string | undefined = inner;
+  for (let climbed = 0; at !== undefined && climbed <= groups.length; climbed++, at = parentOf(groups, at)?.id) if (at === outer) return true;
   return false;
 }
 
@@ -93,10 +100,12 @@ function within(groups: readonly EffectGroup[], inner: string, outer: string): b
  * Moves `ids`, stages or groups, into group `group`, or to the top level for
  * `null`, out of the groups they were in. A group left empty goes too unless
  * it has a box. `doc` itself when `group` is unknown or inside one of `ids`.
+ * One of `ids` inside another goes with it.
  */
-export function moveToGroup(doc: EffectDoc, ids: readonly string[], group: string | null): EffectDoc {
+export function moveToGroup(doc: EffectDoc, given: readonly string[], group: string | null): EffectDoc {
   const groups = groupsOf(doc);
-  if (group !== null && (!groups.some((g) => g.id === group) || ids.some((id) => within(groups, group, id)))) return doc;
+  if (group !== null && (!groups.some((g) => g.id === group) || given.some((id) => within(groups, group, id)))) return doc;
+  const ids = outermost(groups, given);
   const moving = new Set(ids);
   const boxed = (id: string) => id === group || doc.groupBoxes?.[id] !== undefined;
   const left = pruneGroups(groups, moving, boxed);

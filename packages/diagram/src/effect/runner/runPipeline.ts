@@ -1,5 +1,6 @@
 import type { EffectPipeline, EffectRun } from '../types';
 import { createPass, type RunPipelineOptions } from './pass';
+import { closeBitmaps, previewsOf } from './previews';
 
 /**
  * One whole run of `pipeline`, stage by stage in `runOrder`. A stage with
@@ -7,13 +8,17 @@ import { createPass, type RunPipelineOptions } from './pass';
  * first input of each output's type through; a throwing evaluator sets the
  * stage's `error` and leaves what it feeds unreached; stages on a cycle never
  * run. Every value the run made is disposed before it resolves; the previews
- * in the run are the caller's to close. Rejects once `signal` aborts.
+ * in the run are the caller's to close. Rejects once `signal` aborts, closing
+ * the previews it made.
  */
 export async function runPipeline(pipeline: EffectPipeline, opts: RunPipelineOptions): Promise<EffectRun> {
   const pass = createPass(pipeline, opts);
   try {
     while ((await pass.step()) !== undefined);
     return pass.run;
+  } catch (err) {
+    closeBitmaps(previewsOf(pass.run));
+    throw err;
   } finally {
     pass.dispose();
   }

@@ -3,7 +3,7 @@ import { createScene, type InvocationCtx, type Scene } from '@weasel-js/core';
 import { buildGraph } from './graph';
 import { layered } from './layered';
 import { planOf } from './layout';
-import { LAYOUTS, applyLayout, createLayoutAction } from './layoutAction';
+import { LAYOUTS, applyLayout, createLayoutAction, layoutOf } from './layoutAction';
 import { sceneParticipants } from './portLayer';
 import { routesOf } from './routeWrites';
 
@@ -40,6 +40,13 @@ function chain(): Scene<Data, 'main', Rect> {
 
 const graphOf = (scene: Scene<Data, 'main', Rect>) =>
   buildGraph<Rect>(sceneParticipants(scene as never));
+
+describe('layoutOf', () => {
+  it('reads a key LAYOUTS holds, and anything else as layered', () => {
+    expect(layoutOf('tree')).toBe(LAYOUTS.tree);
+    for (const key of ['constructor', 'toString', 'nope']) expect(layoutOf(key)).toBe(layered);
+  });
+});
 
 describe('applyLayout', () => {
   it('moves the whole diagram in one undo entry', () => {

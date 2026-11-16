@@ -31,8 +31,7 @@ import { grownBy } from './footprint';
 import { graphOf, labelFollowsLayout, type EdgeLabelRoom, type GraphEdge, type GraphGroup, type GraphNode } from './graph';
 import { LABEL_PLACEMENT } from './labelTrait';
 import { asideFace, rowTextStyle, textFace, type DiagramTextStyle } from './rowStyle';
-import { layered } from './layered';
-import { LAYOUTS } from './layoutAction';
+import { layoutOf } from './layoutAction';
 import { planOf, type LayoutFn, type LayoutOptions, type LayoutPlan } from './layout';
 import { markSpecs } from './marks';
 import { authoredOver } from './route';
@@ -305,7 +304,7 @@ function layOut(
   const graph = graphOf(visible, expandGroupEdges(graphEdges, graphGroups), graphGroups);
   const layout: LayoutFn | null = typeof opts.layout === 'function' ? opts.layout
     : opts.layout === 'none' ? null
-    : LAYOUTS[opts.layout ?? 'layered'] ?? layered;
+    : layoutOf(opts.layout ?? 'layered');
   const layoutOptions: LayoutOptions = { order: 'barycenter', ...opts.layoutOptions };
   const plan = layout === null ? null : planOf(layout, graph, layoutOptions);
   const moved = plan?.moves ?? new Map<string, Vec2>();

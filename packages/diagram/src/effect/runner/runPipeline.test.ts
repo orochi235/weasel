@@ -24,6 +24,23 @@ const EVAL: EffectEvaluators = {
 };
 
 describe('runPipeline', () => {
+  it('fails a stage whose type names an Object.prototype member as having no evaluator', async () => {
+    const run = await runPipeline({ stages: [stage('a', 'toString')], wires: [] }, { evaluators: {} });
+    expect(run.stages.a).toMatchObject({ error: 'no evaluator for type "toString"' });
+  });
+
+  it('feeds an input port named for an Object.prototype member, bypassed or not', async () => {
+    const p: EffectPipeline = {
+      stages: [stage('src', 'two'), stage('dbl', 'double', ['constructor']), stage('skip', 'double', ['toString'], ['out'], { bypassed: true })],
+      wires: [wire('src', 'dbl', 'out', 'constructor'), wire('src', 'skip', 'out', 'toString')],
+    };
+    const evaluators = { ...EVAL, double: ({ inputs }: { inputs: Readonly<Record<string, unknown>> }) => ({ outputs: { out: (inputs['constructor'] as number) * 2 } }) };
+    const run = await runPipeline(p, { evaluators });
+    expect(run.stages.dbl!.values).toEqual({ out: '4' });
+    expect(run.stages.skip!.values).toEqual({ out: '2' });
+  });
+
+
   it('evaluates stages in order, feeding each its wired inputs and its params, and shows each value', async () => {
     const p: EffectPipeline = {
       stages: [

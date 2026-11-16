@@ -9,19 +9,27 @@ export function backEdges(graph: Graph): Set<string> {
   const done = new Set<string>();
   const onStack = new Set<string>();
 
-  const walk = (id: string): void => {
-    if (done.has(id)) return;
-    onStack.add(id);
-    for (const edge of graph.outgoing(id)) {
-      if (edge.to === id) continue;
-      if (onStack.has(edge.to)) back.add(edge.id);
-      else walk(edge.to);
+  for (const node of graph.nodes) {
+    if (done.has(node.id)) continue;
+    onStack.add(node.id);
+    const stack = [{ id: node.id, next: 0 }];
+    while (stack.length > 0) {
+      const top = stack[stack.length - 1]!;
+      const edge = graph.outgoing(top.id)[top.next++];
+      if (edge === undefined) {
+        stack.pop();
+        onStack.delete(top.id);
+        done.add(top.id);
+      } else if (edge.to === top.id || done.has(edge.to)) {
+        continue;
+      } else if (onStack.has(edge.to)) {
+        back.add(edge.id);
+      } else {
+        onStack.add(edge.to);
+        stack.push({ id: edge.to, next: 0 });
+      }
     }
-    onStack.delete(id);
-    done.add(id);
-  };
-
-  for (const node of graph.nodes) walk(node.id);
+  }
   return back;
 }
 
@@ -29,25 +37,34 @@ export function backEdges(graph: Graph): Set<string> {
  *  `back`. Every node with no predecessor is rank 0. */
 export function ranksOf(graph: Graph, back: ReadonlySet<string>): Map<string, number> {
   const ranks = new Map<string, number>();
+  // A node still being resolved counts as rank 0, which only a missed back
+  // edge can reach: a wrong rank rather than a walk that never ends.
   const resolving = new Set<string>();
 
-  const rankOf = (id: string): number => {
-    const known = ranks.get(id);
-    if (known !== undefined) return known;
-    // Only reachable if `back` missed an edge; guarding here keeps a bad
-    // cycle-breaker from recursing forever rather than reporting a wrong rank.
-    if (resolving.has(id)) return 0;
-    resolving.add(id);
-    let rank = 0;
-    for (const edge of graph.incoming(id)) {
-      if (back.has(edge.id) || edge.from === id) continue;
-      rank = Math.max(rank, rankOf(edge.from) + 1);
+  for (const node of graph.nodes) {
+    if (ranks.has(node.id)) continue;
+    resolving.add(node.id);
+    const stack = [{ id: node.id, next: 0, rank: 0 }];
+    while (stack.length > 0) {
+      const top = stack[stack.length - 1]!;
+      const edge = graph.incoming(top.id)[top.next++];
+      if (edge === undefined) {
+        stack.pop();
+        resolving.delete(top.id);
+        ranks.set(top.id, top.rank);
+        const below = stack[stack.length - 1];
+        if (below !== undefined) below.rank = Math.max(below.rank, top.rank + 1);
+        continue;
+      }
+      if (back.has(edge.id) || edge.from === top.id) continue;
+      const known = ranks.get(edge.from) ?? (resolving.has(edge.from) ? 0 : undefined);
+      if (known !== undefined) {
+        top.rank = Math.max(top.rank, known + 1);
+        continue;
+      }
+      resolving.add(edge.from);
+      stack.push({ id: edge.from, next: 0, rank: 0 });
     }
-    resolving.delete(id);
-    ranks.set(id, rank);
-    return rank;
-  };
-
-  for (const node of graph.nodes) rankOf(node.id);
+  }
   return ranks;
 }
