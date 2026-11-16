@@ -120,6 +120,17 @@ describe('page edits', () => {
     expect(worldX(scene, onB)).toBe(200);
   });
 
+  it('throws on an unknown page id, recording nothing', () => {
+    const { scene } = setup();
+    const depth = scene.history.undoDepth();
+    expect(() => removePage(scene, 'pg-typo')).toThrow(/removePage: unknown page id "pg-typo"/);
+    expect(() => movePage(scene, 'pg-typo', 0)).toThrow(/movePage: unknown page id/);
+    expect(() => resizePage(scene, 'pg-typo', { width: 1, height: 1 })).toThrow(/resizePage: unknown page id/);
+    expect(() => renamePage(scene, 'pg-typo', 'x')).toThrow(/renamePage: unknown page id/);
+    expect(scene.history.undoDepth()).toBe(depth);
+    expect(pagesOf(scene)).toEqual(TWO);
+  });
+
   it('throws on a NaN index to addPage or movePage, recording nothing; ±Infinity is held to either end', () => {
     const { scene } = setup();
     const depth = scene.history.undoDepth();
@@ -194,14 +205,14 @@ describe('making a Continuous scene paged', () => {
     expect(scene.get(far)!.pose).toMatchObject({ x: 900 });
   });
 
-  it('leaves a scene with no pages as it is, with no undo entry, on an edit that adds none', () => {
+  it('leaves a scene with no pages as it is, with no undo entry, on an edit naming a page, which throws', () => {
     const scene = createScene<{ n: string }, 'l', Pose>({ systemLayers: [{ id: 'l' }] });
     const r = scene.add({ kind: 'mark', layer: 'l', pose: { x: 900, y: 10, width: 10, height: 10 }, data: { n: 'r' } });
     const entries = scene.historyIndex();
-    renamePage(scene, 'a', 'A');
-    movePage(scene, 'a', 1);
-    resizePage(scene, 'a', { width: 10, height: 10 });
-    removePage(scene, 'a');
+    expect(() => renamePage(scene, 'a', 'A')).toThrow(/unknown page id "a"/);
+    expect(() => movePage(scene, 'a', 1)).toThrow(/unknown page id "a"/);
+    expect(() => resizePage(scene, 'a', { width: 10, height: 10 })).toThrow(/unknown page id "a"/);
+    expect(() => removePage(scene, 'a')).toThrow(/unknown page id "a"/);
     expect(pagesOf(scene)).toBeNull();
     expect(scene.roots).toEqual([r]);
     expect(scene.historyIndex()).toBe(entries);

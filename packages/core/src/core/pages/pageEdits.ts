@@ -110,6 +110,12 @@ export function setPages<TData, TLayer extends string, TPose>(
   });
 }
 
+function requirePage(pages: readonly Page[], id: string, caller: string): number {
+  const at = pages.findIndex((p) => p.id === id);
+  if (at < 0) throw new Error(`${caller}: unknown page id "${id}"`);
+  return at;
+}
+
 function edit<TData, TLayer extends string, TPose>(
   scene: Scene<TData, TLayer, TPose>,
   fallback: string,
@@ -135,16 +141,19 @@ export function addPage<TData, TLayer extends string, TPose>(
   });
 }
 
-/** Delete page `id`, what is on it, and every node that follows any of that, as one entry. */
+/** Delete page `id`, what is on it, and every node that follows any of that, as one entry. Throws on an unknown id. */
 export function removePage<TData, TLayer extends string, TPose>(
   scene: Scene<TData, TLayer, TPose>,
   id: string,
   options: PageEditOptions = {},
 ): void {
-  edit(scene, 'Delete page', options, (pages) => pages.filter((p) => p.id !== id));
+  edit(scene, 'Delete page', options, (pages) => {
+    pages.splice(requirePage(pages, id, 'removePage'), 1);
+    return pages;
+  });
 }
 
-/** Move page `id` to `index` in the page order. */
+/** Move page `id` to `index` in the page order. Throws on an unknown id or a NaN index. */
 export function movePage<TData, TLayer extends string, TPose>(
   scene: Scene<TData, TLayer, TPose>,
   id: string,
@@ -153,35 +162,37 @@ export function movePage<TData, TLayer extends string, TPose>(
 ): void {
   edit(scene, 'Move page', options, (pages) => {
     const to = heldIndex(index, pages.length - 1, 'movePage');
-    const at = pages.findIndex((p) => p.id === id);
-    if (at < 0) return pages;
-    const [page] = pages.splice(at, 1);
+    const [page] = pages.splice(requirePage(pages, id, 'movePage'), 1);
     pages.splice(to, 0, page!);
     return pages;
   });
 }
 
-/** Give page `id` a new size. What is on it keeps its place on it; the pages after it shift. */
+/** Give page `id` a new size. What is on it keeps its place on it; the pages after it shift. Throws on an unknown id. */
 export function resizePage<TData, TLayer extends string, TPose>(
   scene: Scene<TData, TLayer, TPose>,
   id: string,
   size: { readonly width: number; readonly height: number },
   options: PageEditOptions = {},
 ): void {
-  edit(scene, 'Resize page', options, (pages) =>
-    pages.map((p) => (p.id === id ? { ...p, width: size.width, height: size.height } : p)));
+  edit(scene, 'Resize page', options, (pages) => {
+    const at = requirePage(pages, id, 'resizePage');
+    pages[at] = { ...pages[at]!, width: size.width, height: size.height };
+    return pages;
+  });
 }
 
-/** Rename page `id`; an empty name removes it. */
+/** Rename page `id`; an empty name removes it. Throws on an unknown id. */
 export function renamePage<TData, TLayer extends string, TPose>(
   scene: Scene<TData, TLayer, TPose>,
   id: string,
   name: string,
   options: PageEditOptions = {},
 ): void {
-  edit(scene, 'Rename page', options, (pages) => pages.map((p) => {
-    if (p.id !== id) return p;
-    const { name: _old, ...rest } = p;
-    return name === '' ? rest : { ...rest, name };
-  }));
+  edit(scene, 'Rename page', options, (pages) => {
+    const at = requirePage(pages, id, 'renamePage');
+    const { name: _old, ...rest } = pages[at]!;
+    pages[at] = name === '' ? rest : { ...rest, name };
+    return pages;
+  });
 }
