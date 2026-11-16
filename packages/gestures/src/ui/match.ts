@@ -6,7 +6,7 @@ import type { PhaseAtom } from '../grammar/routeGrammar';
 import { matchIngestTypes } from './ingestTypes';
 import { matchTarget } from './matchTarget';
 import { isApplePlatform } from './platform';
-import { chordKey, codeLetter } from '@weasel-js/ui-input';
+import { chordKey, codeLetter } from './keyLetter';
 
 export { matchTarget, parseTargetSpec } from './matchTarget';
 export type { TargetSpecForm } from './matchTarget';

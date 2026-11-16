@@ -2,8 +2,8 @@
 
 The vocabulary weasel uses to say which user input fires what, and the pure
 functions that decide whether an input matches. It has no React and no scene,
-and depends only on `@weasel-js/ui-input` and `@weasel-js/menu`, which have
-neither, so it can run in a test, a worker, or a host that is not weasel at all.
+and depends only on `@weasel-js/registry`, which has neither, so it can run in a
+test, a worker, or a host that is not weasel at all.
 
 Part of [weasel](https://github.com/orochi235/weasel), a domain-agnostic
 scene-graph engine for React. See the

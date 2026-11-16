@@ -1,5 +1,6 @@
+import type { ShortcutInput } from '@weasel-js/gestures';
 import type { IconSpec } from '@weasel-js/icons';
-import type { MenuEntry, MenuShortcut } from '@weasel-js/menu';
+import type { MenuEntry } from '@weasel-js/menu';
 import type { AppearanceProps } from '@weasel-js/ui/appearance';
 import type { ReactNode } from 'react';
 import type { AutoReports } from '../config/autoReports';
@@ -21,7 +22,7 @@ export interface CommandItem<TCtx = TrialChromeContext> {
   icon: IconSpec;
   label: string;
   /** Shown in the tooltip, written for the platform it runs on. Not bound here — the trial owns its keymap. */
-  shortcut?: MenuShortcut;
+  shortcut?: ShortcutInput;
   disabled?: boolean;
   /** Why it is disabled, read in its tooltip while it is. */
   disabledReason?: string;
@@ -54,7 +55,7 @@ export interface ToolbarMenuItem<TCtx = TrialChromeContext> {
   /** Render the label beside the glyph rather than only in the tooltip. */
   showLabel?: boolean;
   /** Shown in the tooltip, written for the platform it runs on. Not bound here — the trial owns its keymap. */
-  shortcut?: MenuShortcut;
+  shortcut?: ShortcutInput;
   disabled?: boolean;
   /** Why it is disabled, read in its tooltip while it is. */
   disabledReason?: string;
@@ -70,7 +71,7 @@ export interface ToolItem {
   icon: IconSpec;
   label: string;
   /** Shown in the tooltip, written for the platform it runs on. Not bound here — the trial owns its keymap. */
-  shortcut?: MenuShortcut;
+  shortcut?: ShortcutInput;
   disabled?: boolean;
   /** Why it is disabled, read in its tooltip while it is. */
   disabledReason?: string;
@@ -153,7 +154,7 @@ export interface ToolSlotContext {
   setActiveTool: (id: string) => void;
   /** The keys that activate each tool now, as the instrument's own input reports them (a weasel scene's live
    *  `ToolsApi.shortcuts`): a tool named here shows these on the rail in place of its declared `shortcut`. */
-  toolShortcuts?: Readonly<Record<string, readonly MenuShortcut[]>>;
+  toolShortcuts?: Readonly<Record<string, readonly ShortcutInput[]>>;
 }
 
 /** What a sidebar region reflects and writes: which sections are folded, and —

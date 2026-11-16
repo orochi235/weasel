@@ -1491,7 +1491,7 @@ Calls the round made:
 
 - loupe's `pixelHex` and `sourcePixel` are gone and `CanvasSource.sample` became `pixel`, folding three samplers
   into one for the eyedropper: breaking, said in the changeset. Not yet ruled whether deprecated wrappers come back.
-- A list or menu counts a typed key by code point (`isOneChar` in ui-input), so an emoji types and an access letter
+- A list or menu counts a typed key by code point (`isOneChar` in registry), so an emoji types and an access letter
   can be one.
 - `lerpHueDeg` with `longer` and two equal hues stays put, where CSS goes a full turn, because an achromatic endpoint
   takes the other side's hue and a full turn would spin a ramp to white or black. Left as is.
@@ -2241,7 +2241,7 @@ Calls the lanes made without a ruling:
   rows, core's devtools registry, draw's registry inspector and tools widget, and labkit's trial rail all read it, so
   a key rebound through `bindingOverrides` reaches each and an unbound one drops its chip. `ToolPalette`'s
   `lookupShortcut` and `ToolPresentation.shortcut`, the two ways to restate a key by hand, are gone (2026-11-13).
-- A labkit chrome item's `shortcut` is a `MenuShortcut`, formatted by `formatShortcut` in every region; a header item
+- A labkit chrome item's `shortcut` is a `ShortcutInput`, formatted by `formatShortcut` in every region; a header item
   that binds `keys` shows its command's live key, and a `TrialTool` the trial's scene holds shows the scene's key.
   The site's lab demos no longer restate their tools' keys: several had drifted (the Reach lab said U, the knead
   lab S) (2026-11-13).

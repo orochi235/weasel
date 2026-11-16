@@ -1,19 +1,5 @@
+import type { ShortcutInput } from '@weasel-js/gestures';
 import type { Display, Endless, InfinityText, UnitTable } from '@weasel-js/quantity';
-
-/** A key chip: the key, and which modifiers are held with it. `@weasel-js/routing`
- *  derives these from action bindings as `ActionShortcut`; `@weasel-js/gestures`
- *  formats them as `ShortcutInput`. A tool's `keybinding` has this shape too. */
-export interface MenuShortcut {
-  /** A list names spellings of one keycap (`['[', '{']`); the first is drawn. */
-  key: string | readonly string[];
-  mod?: boolean;
-  alt?: boolean;
-  /** `'optional'` matches held or not, and draws as an optional key. */
-  shift?: boolean | 'optional';
-  /** For a key inside a keymap: the keymaps that lead to it, outermost first,
-   *  each by its label and its leader's shortcut. Drawn `Loupe ▸ 2`. */
-  leader?: readonly { label: string; shortcut: Omit<MenuShortcut, 'leader'> }[];
-}
 
 /** How serious a row is, as `@weasel-js/theme`'s `Grade`: `'danger'` for one that destroys something. A
  *  renderer draws a row in its grade's color. */
@@ -27,7 +13,7 @@ export interface MenuItemEntry {
   /** Opaque to the model; each renderer knows what it can draw. */
   icon?: unknown;
   /** Keys a renderer draws as chips, or text it prints as written. */
-  shortcut?: MenuShortcut | string;
+  shortcut?: ShortcutInput | string;
   disabled?: boolean;
   /** Why a disabled row cannot be chosen: a sentence, or a symbolic code a renderer maps to words, such as
    *  `@weasel-js/routing`'s `ActionDisabledReason`. */

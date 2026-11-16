@@ -1,7 +1,7 @@
 import { heldAt } from './heldAt';
-import { chordKey } from './keyLetter';
+import { chordKey } from '@weasel-js/gestures';
 import { treeKey, type TreeShape } from './tree';
-import { isOneChar } from './typeahead';
+import { isOneChar } from '@weasel-js/registry';
 
 /** How a list's items are read: which ones the highlight can land on, and which way its arrows run. */
 export interface ListShape<T> {

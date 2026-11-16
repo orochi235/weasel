@@ -1,4 +1,4 @@
-import { isOneChar } from './typeahead';
+import { isOneChar } from '@weasel-js/registry';
 
 /** The letter or digit the physical key `code` bears (`KeyZ` is `'Z'`, `Digit1` is `'1'`), or undefined for any
  *  other key. */

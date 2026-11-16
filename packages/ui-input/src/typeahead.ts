@@ -1,4 +1,4 @@
-import { foldText } from '@weasel-js/registry';
+import { foldText, isOneChar } from '@weasel-js/registry';
 import { heldAt } from './heldAt';
 import type { ListShape } from './list';
 
@@ -9,11 +9,6 @@ export interface TypeaheadShape<T> extends Pick<ListShape<T>, 'canStop'> {
 
 /** How long typing can pause before the typeahead buffer starts over, in milliseconds. */
 export const TYPEAHEAD_RESET_MS = 500;
-
-/** Whether `text` is one typed character, counted by code point: an emoji is one, though it takes two UTF-16 units. */
-export function isOneChar(text: string): boolean {
-  return text.length > 0 && text.length <= 2 && [...text].length === 1;
-}
 
 /** What has been typed so far, and when the last key came. */
 export interface TypeaheadBuffer {

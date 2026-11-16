@@ -1,6 +1,6 @@
 import type { DragEvent, PointerEvent, ReactNode } from 'react';
 import type { IconSpec } from '@weasel-js/icons';
-import type { MenuShortcut } from '@weasel-js/menu';
+import type { ShortcutInput } from '@weasel-js/gestures';
 
 /** What every item on a {@link ToolRail} has: its id and the run it sits in. */
 export interface ToolRailPlaced {
@@ -18,7 +18,7 @@ export interface ToolRailButton extends ToolRailPlaced {
   /** What it does: the tooltip reads it in place of `label`. */
   description?: string;
   /** The key that presses it, which the button's chip and tooltip show and a stack's menu row draws. */
-  shortcut?: MenuShortcut;
+  shortcut?: ShortcutInput;
   /** Reads as current: `aria-current`, the pressed look, and the rail's tab stop. */
   active?: boolean;
   disabled?: boolean;

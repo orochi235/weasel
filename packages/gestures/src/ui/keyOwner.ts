@@ -1,4 +1,4 @@
-import { isOneChar } from '@weasel-js/ui-input';
+import { isOneChar } from '@weasel-js/registry';
 import { isApplePlatform } from './platform';
 
 /** The `<input>` types a person types text into. An unknown or missing `type` is `text`. */

@@ -5,3 +5,8 @@ export function codePointFloor(s: string, at: number): number {
   const after = s.charCodeAt(at);
   return before >= 0xd800 && before <= 0xdbff && after >= 0xdc00 && after <= 0xdfff ? at - 1 : at;
 }
+
+/** Whether `text` is one typed character, counted by code point: an emoji is one, though it takes two UTF-16 units. */
+export function isOneChar(text: string): boolean {
+  return text.length > 0 && text.length <= 2 && [...text].length === 1;
+}

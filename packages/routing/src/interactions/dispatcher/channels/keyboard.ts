@@ -1,5 +1,6 @@
 /** The keyboard channel: window keydown and keyup as `key` and `keyHeld` input. */
-import { codeLetter, isOneChar } from '@weasel-js/ui-input';
+import { codeLetter } from '@weasel-js/gestures';
+import { isOneChar } from '@weasel-js/registry';
 import { focusedControlOwnsKey, isEditableTarget } from '../../keyHelpers';
 import type { DispatchCore } from '../dispatchCore';
 import type { KeyReach } from '../dispatcherApi';

@@ -2,17 +2,16 @@
  * Project an action's keyboard bindings into the shape a shortcut chip
  * renders from (`formatShortcut` / `formatShortcutParts` in `@weasel-js/ui`).
  */
-import type { GestureSpec } from '@weasel-js/gestures';
-import type { MenuShortcut } from '@weasel-js/menu';
+import type { GestureSpec, ShortcutInput } from '@weasel-js/gestures';
 import type { Action } from './action';
 import type { ActionItem } from './actionItems';
 import { actionBindings } from './binding';
 import { resolveParams } from './bindingOpts';
 import { invokedParams } from './tuning';
 
-/** One keyboard shortcut, flattened for display: the chip a menu row draws
- *  (`MenuShortcut` in `@weasel-js/menu`, `ShortcutInput` in `@weasel-js/gestures`). */
-export type ActionShortcut = MenuShortcut;
+/** One keyboard shortcut, flattened for display: the chip a menu row draws (`ShortcutInput` in
+ *  `@weasel-js/gestures`). */
+export type ActionShortcut = ShortcutInput;
 
 /**
  * The chip form of a single gesture spec, or `undefined` when the spec has
