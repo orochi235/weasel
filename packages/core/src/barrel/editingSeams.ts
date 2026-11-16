@@ -1,4 +1,8 @@
-/** Core helpers `@weasel-js/editing` reads: the scene, pose and commit plumbing its actions are built on. */
+/**
+ * Core helpers `@weasel-js/editing` reads: the scene, pose and commit plumbing its actions are built on.
+ *
+ * @packageDocumentation
+ */
 export { PRESET_CHROME } from '../canvas/SceneCanvas/presets/chrome';
 export { toolDrivenActions } from '../canvas/SceneCanvas/presets/toolDriven';
 export { isNoInkExtents } from '../core/geometry/inkExtents';
