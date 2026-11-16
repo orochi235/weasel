@@ -1,4 +1,5 @@
 /** A pie compiled to its slices and legend. */
+import { percent, present } from '@weasel-js/quantity';
 import { maxOf } from '@weasel-js/geom';
 import { CHART_PAD as PAD, chartTitle } from '../chartTitle';
 import { spanMark } from '../marks/boxes';
@@ -23,7 +24,7 @@ const LEGEND_GAP = 16;
 const LABEL_RADIUS = 0.75;
 
 /** A slice's share of the whole, as Mermaid writes it: rounded to a whole percent. */
-export const piePercent = (value: number, total: number): string => `${total > 0 ? ((value / total) * 100).toFixed(0) : '0'}%`;
+export const piePercent = (value: number, total: number): string => present(total > 0 ? value / total : 0, percent()).text;
 
 /** A slice's value as the legend shows it with `showData`. */
 export const pieValueText = (value: number): string => `[${value}]`;
