@@ -111,6 +111,11 @@ export interface LabBaseProps {
    *  turns them on and off, and a stored lab keeps that choice over this.
    *  Hidden marks are kept, not dropped. */
   marks?: boolean;
+  /** Register the lab's canvases with the devtools hook (`@weasel-js/devtools/mount`'s `ShellDevtools`), for the
+   *  devtools panel and the browser extension. Default: in a development build only, unless a `devtools` entry
+   *  provided above the lab (`devtoolsOff` among them) says otherwise. `false` withholds it; `true` mounts it in a
+   *  production build too. */
+  devtools?: boolean;
   /** Offer the keyboard shortcut sheet: `shortcuts.show` on Shift+/, a row in the Lab menu, and the sheet, listing
    *  every key bound in the lab and the focused trial. Default `true`. */
   shortcuts?: boolean;

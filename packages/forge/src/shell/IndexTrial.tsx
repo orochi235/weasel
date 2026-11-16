@@ -5,6 +5,7 @@ import { indexEnvOf } from '../frame/index/indexEnv';
 import { IndexPage } from '../frame/index/IndexPage';
 import type { Globals } from '../protocol/messages';
 import type { IndexBundle } from '../story/indexBundle';
+import { frameDecorators } from '../frame/frameDecorators';
 import { DependenciesContext } from './dependencies';
 import { LiveCopies } from './loupe/LiveCopies';
 import { TrialHost } from './TrialHost';
@@ -27,7 +28,7 @@ export function IndexTrial({ bundle, setup, config }: IndexTrialProps) {
     setRoute(id, { inPlace: true });
   };
   const render = (globals: Globals) => (
-    <IndexPage env={indexEnvOf(bundle, { graph, globals, decorators: setup.decorators ?? [], open })} render={bundle.render} />
+    <IndexPage env={indexEnvOf(bundle, { graph, globals, decorators: frameDecorators(setup), open })} render={bundle.render} />
   );
   return (
     <>

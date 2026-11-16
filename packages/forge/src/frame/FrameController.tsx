@@ -17,6 +17,7 @@ import { createOverrides } from './cssVars';
 import { watchCssVars } from './cssVarsWatch';
 import { followDocumentScroll } from './documentScroll';
 import { createGlobalsTarget, type GlobalsTarget } from './globalsTarget';
+import { frameDecorators } from './frameDecorators';
 import { StoryHost } from './StoryHost';
 
 /** The frame config: what `defineFrameConfig` returns and the `frameConfig` module default-exports. */
@@ -40,6 +41,12 @@ export interface FrameSetup {
   prepare?: (story: LoadedStory) => void | Promise<void>;
   /** Icon tables registered beside the kit's in every frame: an app's own, for its stories' glyphs. */
   icons?: readonly IconTable[];
+  /**
+   * Register each story's canvases with the devtools hook, as `<Lab devtools>` does: by default in a development
+   * build only, unless a `devtools` entry provided above the story says otherwise. `false` withholds it; `true` mounts
+   * it in a production build too.
+   */
+  devtools?: boolean;
 }
 
 /** Inputs to `startFrame`: the story, the channel to the shell, and the element to render into. */
@@ -88,7 +95,7 @@ export function startFrame({ story, channel, container, setup = {} }: StartFrame
   wrapper.className = `fg-frame fg-frame--${story.layout}`;
   container.append(wrapper);
   const root = createKitRoot(wrapper, setup.icons);
-  const decorators = setup.decorators ?? [];
+  const decorators = frameDecorators(setup);
 
   let initialized = false;
   let rendered = false;

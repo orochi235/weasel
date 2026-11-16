@@ -8,6 +8,7 @@ import { describeSchema } from '../../protocol/schema';
 import type { IndexBundle } from '../../story/indexBundle';
 import { runAxe } from '../a11y';
 import type { FrameSetup } from '../FrameController';
+import { frameDecorators } from '../frameDecorators';
 import { createGlobalsTarget } from '../globalsTarget';
 import { indexEnvOf } from './indexEnv';
 import { IndexPage } from './IndexPage';
@@ -60,7 +61,7 @@ export function startIndex(options: StartIndexOptions): () => void {
     const env = indexEnvOf(options.bundle, {
       graph: null,
       globals,
-      decorators: setup.decorators ?? [],
+      decorators: frameDecorators(setup),
       open: (id) => send({ type: 'open', id }),
     });
     root.render(

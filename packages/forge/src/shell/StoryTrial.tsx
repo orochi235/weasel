@@ -3,8 +3,9 @@ import { useLatest } from '@weasel-js/core';
 import { type RefObject, useCallback, useContext, useEffect, useRef, useState } from 'react';
 import type { FrameSetup } from '../frame/FrameController';
 import type { Globals } from '../protocol/messages';
-import type { Decorator, LoadedStory } from '../story/types';
+import type { LoadedStory } from '../story/types';
 import { ClockContext } from '../timeline/context';
+import { frameDecorators } from '../frame/frameDecorators';
 import { isForgePath, storyConfig } from './globals';
 import { LiveCopies, StoryCopy } from './loupe/LiveCopies';
 import { StoryBody } from './StoryBody';
@@ -22,7 +23,6 @@ export interface StoryTrialProps {
   onError?: (error: unknown) => void;
 }
 
-const NO_DECORATORS: readonly Decorator[] = [];
 
 /** A story rendered in the workshop document, inside a `TrialHost`, from the trial's own config and state. */
 export function StoryTrial({ story, setup, ctx, hostRef, onRendered, onError }: StoryTrialProps) {
@@ -64,7 +64,7 @@ export function StoryTrial({ story, setup, ctx, hostRef, onRendered, onError }: 
   const trialClock = useTrialClockHandle();
   const clock = spec ? trialClock : null;
 
-  const decorators = setup.decorators ?? NO_DECORATORS;
+  const decorators = frameDecorators(setup);
   const latestError = useLatest(onError);
   const reportError = useCallback((error: unknown) => latestError.current?.(error), [latestError]);
   const body = {

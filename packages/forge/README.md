@@ -58,7 +58,10 @@ The vite plugin takes two optional config modules:
   `preview`, and `prepare`, awaited before a story first renders, which is
   where to import what only some stories need. `applyGlobals` is handed a
   target: its `root`, a `scope` selector matching only that root, and
-  `style(css)` for a rule that should reach that story alone.
+  `style(css)` for a rule that should reach that story alone. In a
+  development build every story's canvases register with the devtools hook,
+  as in any `<Lab>`; `devtools: false` turns that off, and `true` keeps it in
+  production.
 - `shellConfig` default-exports `defineShellConfig({...})`: lab chrome, control
   renderers, and global declarations. Only the workshop page imports it.
   `title` names the workshop in its header and as the document title

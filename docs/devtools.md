@@ -9,24 +9,44 @@ The panel is `@weasel-js/devtools` ("Mounting the panel", below); the browser ex
 
 ## What the page publishes
 
-A page publishes nothing until a canvas takes the `devtools` contribution from
-`@weasel-js/devtools/hook`. That contribution's `attach` installs the hook on
-`window.__weaselDevtools__`, once per page, and registers its canvas as a **root**, which leaves when
-the canvas unmounts. Every canvas below an `AmbientContributionsProvider` takes it:
+A page publishes nothing until a canvas takes the `devtools` contribution. Its `attach` installs the
+hook on `window.__weaselDevtools__`, once per page, and registers its canvas as a **root**, which
+leaves when the canvas unmounts. Without it a canvas keeps no root, no history record and no coord
+trace (2026-11-15).
+
+**A kit shell takes it by default in development (2026-11-15).** `<Lab>`, `EditorShell` and forge's
+story frames wrap their canvases in `ShellDevtools` from `@weasel-js/devtools/mount`, which gives
+every canvas below them `devtools` when `isDev()` holds (`process.env.NODE_ENV` is not
+`production`). It is `lazyDevtools`, which loads the hook by dynamic import on first attach, so a
+production bundle never loads it. Each shell takes the same switch:
+
+| Shell | Switch |
+|---|---|
+| `<Lab>` (labkit) | `devtools` prop |
+| `EditorShell` (editor) | `devtools` prop |
+| a forge frame | `devtools` in `defineFrameConfig` |
+
+`false` withholds it; `true` mounts it in a production build too. Left out, a `devtools` entry
+provided above the shell decides, and with none, the build does. So an app turns it off for every
+shell under it by providing `devtoolsOff`, an entry with the `devtools` id and no roles that
+replaces any `devtools` entry provided further out:
 
 ```tsx
 import { AmbientContributionsProvider } from '@weasel-js/core';
-import { devtools } from '@weasel-js/devtools/hook';
+import { devtoolsOff } from '@weasel-js/devtools/mount';
 
-const DEV_AMBIENT = import.meta.env.DEV ? [devtools] : [];
-<AmbientContributionsProvider contributions={DEV_AMBIENT}><App /></AmbientContributionsProvider>;
+const OFF = [devtoolsOff];
+<AmbientContributionsProvider contributions={OFF}><App /></AmbientContributionsProvider>;
 ```
 
-One canvas takes it with `<SceneCanvas ambient={[devtools]}>`. A canvas whose `tools` prop is a
-`ToolsApi` takeover ignores provided entries, as it does for any ambient contribution, so it takes
-`devtools` in its takeover's `ambient`. Whether a production build takes it is the app's call
-(2026-10-18); without it, the build carries none of the hook's code and a canvas keeps no root, no
-history record and no coord trace (2026-11-15).
+A bare `<SceneCanvas>` takes it only when asked, since core cannot depend on devtools. Every
+canvas below an `AmbientContributionsProvider` given `DEV_DEVTOOLS` (`[lazyDevtools]` in
+development, `[]` in production) takes it, as draw's dev surfaces and the site's demos do;
+`<SceneCanvas ambient={[devtools]}>` gives one canvas the eager contribution from
+`@weasel-js/devtools/hook`, and a canvas's own `ambient` entry wins over any provided one. A canvas
+whose `tools` prop is a `ToolsApi` takeover ignores provided entries, as it does for any ambient
+contribution, so it takes `devtools` in its takeover's `ambient`. Whether a production build takes
+it is the app's call (2026-10-18).
 
 The contribution reads its canvas through the canvas's api and its `scene`, `selection`,
 `dispatchTrace`, and `inspection` deps. `inspection` is core's `CanvasInspection`, which `<SceneCanvas>` sources for any
@@ -61,6 +81,8 @@ extension's background and content scripts, import:
 
 `@weasel-js/devtools/hook` holds the page's side: `devtools`, `attachDevtools`, and the hook's and
 roots' constructors (`installDevtoolsHook`, `createDevtoolsHook`, `createDevtoolsRoot`).
+`@weasel-js/devtools/mount` holds what loads it lazily: `lazyDevtools`, `DEV_DEVTOOLS`,
+`devtoolsOff` and `ShellDevtools`.
 
 ## Messages
 
@@ -161,8 +183,8 @@ stacks above the detail, and the tabs wrap onto a second row.
 
 It says `yo` on mount and `bye` on unmount, which drops its highlight and overlay flags. Mount it
 in development only, behind a lazy import, so production bundles leave it out:
-`import.meta.env.DEV ? lazy(() => import('./Devtools')) : null`. The repo mounts it that way, with
-`devtools` provided above the app's canvases in development, in three places: draw's right sidebar (a folding Devtools panel), each demo page of the site (a
+`import.meta.env.DEV ? lazy(() => import('./Devtools')) : null`. The repo mounts it that way, beside
+canvases that take `devtools` in development, in three places: draw's right sidebar (a folding Devtools panel), each demo page of the site (a
 Devtools switch in the demo's header, which splits the page with the demo narrowing), and forge (a Devtools global in the workshop toolbar, which
 puts the panel beside the story). `tabs={['dispatch']}` shows a subset; draw's Toolkit Builder
 uses it for its dispatch widget. Draw's Bundle Inspector (`#/dev/registry`) keeps only draw's static
