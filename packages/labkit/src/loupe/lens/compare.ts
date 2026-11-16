@@ -64,7 +64,7 @@ export function createSeamPreview(): SeamPreview {
   return {
     get: (lensId) => seams.get(lensId),
     set(lensId, seam) {
-      if (seams.get(lensId) === seam) return;
+      if (Object.is(seams.get(lensId), seam)) return;
       if (seam === undefined) seams.delete(lensId);
       else seams.set(lensId, seam);
       version += 1;
