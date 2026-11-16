@@ -46,4 +46,12 @@ describe('carrying edits onto a changed source', () => {
     expect(carry({ o: [1, 2] }, { o: [1, 2] }, { o: [1, 2, 3] })).toEqual({ o: [1, 2, 3] });
     expect(carry({ o: [2, 1] }, { o: [1, 2] }, { o: [1, 2, 3] })).toEqual({ o: [2, 1] });
   });
+
+  it('carries keys named like Object.prototype members as the reader wrote them', () => {
+    expect(carry({ a: 1, toString: 2 }, { a: 1 }, { a: 3 })).toEqual({ a: 3, toString: 2 });
+    const mine = JSON.parse('{"a": 1, "__proto__": {"x": 1}}') as unknown;
+    const out = carry(mine, { a: 1 }, { a: 3 }) as Record<string, unknown>;
+    expect(Object.getPrototypeOf(out)).toBe(Object.prototype);
+    expect(Object.keys(out)).toEqual(['a', '__proto__']);
+  });
 });
