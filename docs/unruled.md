@@ -2442,13 +2442,10 @@ Calls the lanes made without a ruling:
 - 2026-11-15 (the controller's call): resize constraints get `moveGestureAdapter` over the scene as `ctx.adapter`, and
   insert behaviors get one whenever the canvas has a scene. Both had `undefined` cast to `MoveAdapter`. A scene-less
   insert, where the `insert` dep mints the node, still passes none behind the required type.
-- Open: whether moving a node into a container should honor `MoveAdapter.findSnapTarget`
-  (`packages/core/src/core/adapters/types.ts`), which `docs/adapters.md` describes and nothing calls, or whether the
-  field and its paragraph go.
+- Ruled 2026-11-15: `MoveAdapter.findSnapTarget` is deleted; nothing called it.
 - Open: whether a reader may split or join a scoped pref. `packages/prefs/README.md` says never; the `scopes` JSDoc in
   `packages/prefs/src/schema.ts` says an open entry may.
-- Open: whether a new scene starts at version 1, so that `getPaintedVersion()`'s `0` means "nothing painted yet" again
-  (`core/scene/notifier.ts`, `canvas/useCanvasPaint.ts`). `docs/concepts.md` now says a fresh scene is also at 0.
+- Ruled 2026-11-15: a new scene starts at version 1, so `getPaintedVersion()`'s `0` means nothing painted yet.
 
 ## Audit round twenty-seven (2026-11-15): by failure class
 
@@ -2464,18 +2461,38 @@ Calls the lanes made without a ruling:
   timelines nest past 1000, rather than overflowing the stack.
 - 2026-11-15 (the lane's call): a d3 transition handler passed to `on('end')` twice runs once, as every `createEmitter`
   listener does.
-- Open: whether d3 transition cancel keys move to `compositeKey`. Today `d3-transition:${name}:${nodeId}`
-  (`packages/d3/src/transition.ts`) lets a name `a:b` on node `c` cancel a name `a` on node `b:c`; the format is in the
-  JSDoc, so a consumer may build it by hand.
-- Open: whether eslint adopts type-aware linting for reads and writes keyed by a `string` into a `string`-indexed object,
-  the one guard that closes the prototype-key class. The config's opening comment rules type-aware rules out.
-- Open: whether the snapshot codec keeps non-finite plain numbers; `stringifySnapshot` writes `Infinity` and `NaN` as
-  `null` (`core/persistence/codec.ts`), and the 2026-11-10 ruling covered typed arrays only.
-- Open: whether a "set to X" router action is disabled when every selected connector already uses X
-  (`packages/diagram/src/routerCommands.ts`); the 2026-11-10 ruling says disable, which greys the pressed toolbar segment.
-- Open: whether `diagram.layout` is disabled when the layout would move nothing (`layoutAction.ts`), which means running
-  the layout inside `enabled`.
-- Open: whether `diagram.addLane` declines a click on a lane boundary; its `enabled` does not see the press's affordance.
+- Ruled 2026-11-15: d3 cancel keys are built by `transitionCancelKey`, on `compositeKey`; the format is no longer documented.
+- Ruled 2026-11-15: eslint takes typed parsing for one rule, `weasel/no-proto-index`; its unfixed files sit on a pending list that `check:proto-pending` lets only shrink (TODO).
+- Ruled 2026-11-15: snapshots keep `Infinity`, `-Infinity`, `NaN` and `-0` as `{ "__num": … }` tags, and the kit's default clipboard writes through the codec.
+- Ruled 2026-11-15: a router command is disabled when every selected connector already uses it.
+- Ruled 2026-11-15: `diagram.layout` is disabled when the layout would move nothing; `enabled` and `run` share one memoized plan.
+- Ruled 2026-11-15 (Claude's pick, delegated): `diagram.addLane` returns `'pass'` on a click off its button, so the press goes to the next binding.
 - Open: whether a bar floated again at its own spot rises to the top of the stack (`ToolbarDock/dockDrop.ts`), as now.
-- Open: whether HUD text fields read Meta as mod off Apple (`packages/hud/src/menu/textEdit.ts`), where `modHeld` reads
-  Ctrl only.
+- Ruled 2026-11-15: HUD text fields read mod through gestures' `modHeld`, Ctrl only off Apple.
+
+
+## Audit round twenty-eight (2026-11-15): blind pairs
+
+- 2026-11-15 (the controller's call): a line-mode wheel counts 16 px a line everywhere (`WHEEL_LINE_PX`, `@weasel-js/ui-input`);
+  labkit's annotation scrolling had counted 40.
+- 2026-11-15 (the lane's call): a draw-style XML group inside a swimlane is dropped with a warning and its shapes stay in
+  the swimlane, since the scene refuses a node in both (`drawXml/readPage.ts`, `keptGroups`).
+- 2026-11-15 (the lane's call): a requirement or kanban field name of several words is written with underscores, with a
+  warning (`common/text.ts`, `fieldName`).
+- 2026-11-15 (the lane's call): a Mermaid gantt task id that reads as a tag word is renamed (`done` to `done_1`) with its
+  `after`/`until` references, with a warning.
+- 2026-11-15 (the lane's call): a DOT cluster inside a colored one writes `color=""` and `fontcolor=""`, and the reader takes
+  `""` as unset. That Graphviz reads `""` as its default is unverified.
+- 2026-11-15 (the lane's call): a mode-barred action is refused by `ActionsRegistry.trigger`, context menus, the command
+  palette and `ActionBar`, through a `ruleCtx` dep and `eligibleNow`; only the dispatcher had checked `eligible`.
+- 2026-11-15 (the lane's call): a moved modifier role's new keys start a drag only on bindings that already allowed its
+  declared keys, so which binding wins a modified drag does not change.
+- 2026-11-15 (the lane's call): a built `PolygonPath` is never written in place, so its hit-test and length caches stay
+  keyed by identity; `PathBuilder`'s doc no longer invites in-place writes.
+- 2026-11-15 (the lane's call): `sequenceSpecs` refuses sequence data whose part ids would collide (`A` beside `A/text`).
+- Ruled 2026-11-15: `Transport` takes `timeReadout` (`'absolute'`, the default, or `'elapsed'`) and `formatTime`.
+- Open: whether an octant-spline badge's end-anchor weights do anything now that its ends are flat, which decides whether
+  ui-lab's spline editor keeps a weight control there (`Badge/bases/OctantSpline.tsx`).
+- Open: whether an interior octant-spline weight other than 1 may kink the curve, against the doc's "C² across the whole octant".
+- Ruled 2026-11-15: `checkPipeline` reports a `group-loop` problem once per loop.
+- Open: whether `createDeleteAction({ commit })` keeps its old gate for a page-only selection, now that it is disabled there.
