@@ -47,7 +47,7 @@
     "longestFunction": 145
   },
   "packages/forge/src/shell/tree/StoryTree.tsx": {
-    "longestFunction": 228
+    "longestFunction": 227
   },
   "packages/forge/src/shell/useStoryRegistry.ts": {
     "longestFunction": 183

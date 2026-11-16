@@ -194,20 +194,11 @@
 
 .fg-tree__libraries {
   display: flex;
-  flex-wrap: wrap;
+  flex-direction: column;
   gap: var(--wzl-space-xs);
-  margin: 0;
-  padding: 0;
-  border: 0;
-}
-
-/* An inline badge rides the label's text baseline and hangs below the checkbox; as a flex item it is a box the label can center. */
-.fg-tree__library {
-  display: flex;
 }
 
 .fg-tree__libraries-legend {
-  padding: 0;
   color: var(--wzl-fg-muted);
   font-size: var(--wzl-font-size-sm);
 }
