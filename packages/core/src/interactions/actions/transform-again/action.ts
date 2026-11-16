@@ -1,11 +1,10 @@
-import type { Action, ActionDeps } from '@weasel-js/routing';
+import { ActionDisabledReason, eligibleNow, type Action, type ActionDeps, type ActionUnavailable } from '@weasel-js/routing';
 import type { Op } from 'core/ops/types';
 import type { Scene } from 'core/scene/types';
-import { commitTransformOps, transformApplyOps } from '../transformFinish';
-import { DUPLICATE_OFFSET, duplicateSelection } from '../defaults/duplicate';
-import { translateSelection } from '../defaults/nudge';
-import { requiresSelection } from '../defaults/requiresSelection';
-import { poseDescriptorOf } from '../poseDescriptorDep';
+import { commitTransformOps, finishTransformOps } from '../transformFinish';
+import { DUPLICATE_OFFSET, duplicateAction, duplicateSelection } from '../defaults/duplicate';
+import { moveNodesOps } from '../moveNodes';
+import { requiresContent, requiresSelection } from '../defaults/requiresSelection';
 import { resizeSelectionOps } from '../resize/replay';
 import { rotateSelectionOps } from '../rotate/replay';
 import { lastTransform, recordTransform, type RepeatableTransform } from './memory';
@@ -17,30 +16,39 @@ const LABEL = 'Transform Again';
 /** With nothing recorded yet, a repeat is a plain duplicate. */
 const FIRST: RepeatableTransform = { kind: 'duplicate', dx: DUPLICATE_OFFSET, dy: DUPLICATE_OFFSET };
 
-function commit(deps: ActionDeps, ops: Op[]): boolean {
-  return commitTransformOps(deps, ops, LABEL);
+type AnyScene = Scene<unknown, string, unknown>;
+
+/** The batch repeating `t`, a move, rotate or resize, on `selected`, finished as a transform; empty when it changes nothing. */
+function transformOps(deps: ActionDeps, scene: AnyScene, selected: readonly string[], t: Exclude<RepeatableTransform, { kind: 'duplicate' }>): Op[] {
+  switch (t.kind) {
+    case 'translate':
+      return moveNodesOps(scene, selected, { dx: t.dx, dy: t.dy }, deps, LABEL);
+    case 'rotate':
+      return rotateSelectionOps(scene, selected, deps, t.angle, t.pivot, LABEL);
+    case 'scale':
+      return resizeSelectionOps(scene, selected, t.anchor, t.to, deps, LABEL);
+  }
+}
+
+/** Whether repeating `t` now would change anything: a duplicate where the
+ *  mode lets Duplicate run and the selection holds content, a transform
+ *  where it builds a batch the followers accept. */
+function canRepeat(deps: ActionDeps, scene: AnyScene, t: RepeatableTransform): true | ActionUnavailable {
+  if (t.kind === 'duplicate') {
+    if (!eligibleNow(duplicateAction, deps.ruleCtx)) return ActionDisabledReason.NotApplicable;
+    return requiresContent(1)(deps);
+  }
+  const ops = transformOps(deps, scene, deps.selection!.get() as string[], t);
+  const all = ops.length > 0 ? finishTransformOps(deps, ops, LABEL) : null;
+  return all && all.length > 0 ? true : ActionDisabledReason.NotApplicable;
 }
 
 /** Apply `t` to the selection as one undo entry. Returns the ids selected
  *  afterwards, or null when nothing changed. */
-function replay(deps: ActionDeps, scene: Scene<unknown, string, unknown>, t: RepeatableTransform): readonly string[] | null {
-  const selection = deps.selection!;
-  const selected = selection.get() as string[];
-  switch (t.kind) {
-    case 'duplicate':
-      return duplicateSelection(deps, t.dx, t.dy, LABEL);
-    case 'translate':
-      return translateSelection(
-        selection, scene, t.dx, t.dy, transformApplyOps(deps), deps.geometryProjection,
-        poseDescriptorOf(deps.poseDescriptor), LABEL,
-      ) ? selected : null;
-    case 'rotate':
-      return commit(deps, rotateSelectionOps(
-        scene, selected, deps, t.angle, t.pivot, LABEL,
-      )) ? selected : null;
-    case 'scale':
-      return commit(deps, resizeSelectionOps(scene, selected, t.anchor, t.to, deps, LABEL)) ? selected : null;
-  }
+function replay(deps: ActionDeps, scene: AnyScene, t: RepeatableTransform): readonly string[] | null {
+  if (t.kind === 'duplicate') return duplicateSelection(deps, t.dx, t.dy, LABEL);
+  const selected = deps.selection!.get() as string[];
+  return commitTransformOps(deps, transformOps(deps, scene, selected, t), LABEL) ? selected : null;
 }
 
 /**
@@ -59,7 +67,7 @@ export const transformAgainAction: Action & { requires: string[] } = {
   eligible: { capability: 'transforms-selection' },
   requires: [
     'scene', 'selection', 'applyOps', 'poseDescriptor', 'geometryProjection', 'resizePolicy', 'view',
-    'boundsIncludeStroke', 'drawnBoxes', 'transformFollowers',
+    'boundsIncludeStroke', 'drawnBoxes', 'transformFollowers', 'ruleCtx',
   ],
   invoker: {
     timing: 'immediate',
@@ -67,9 +75,14 @@ export const transformAgainAction: Action & { requires: string[] } = {
       const scene = deps.scene;
       if (!scene || !deps.selection || deps.selection.get().length === 0) return;
       const t = lastTransform(scene) ?? FIRST;
+      if (canRepeat(deps, scene, t) !== true) return;
       const subject = replay(deps, scene, t);
       if (subject) recordTransform(scene, t, subject);
     },
   },
-  enabled: requiresSelection,
+  enabled: (deps) => {
+    const selected = requiresSelection(deps);
+    if (selected !== true || !deps?.scene) return selected;
+    return canRepeat(deps, deps.scene, lastTransform(deps.scene) ?? FIRST);
+  },
 };
