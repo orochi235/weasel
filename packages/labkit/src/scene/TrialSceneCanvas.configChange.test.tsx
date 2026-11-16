@@ -1,6 +1,7 @@
 import { act, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { asNodeId, createScene, type Scene } from '@weasel-js/core';
+import { drawPreset } from '@weasel-js/editing';
 import { renderSettled } from '@weasel-js/react/testing/renderSettled';
 import { withIcons } from '@weasel-js/ui/testing/withIcons';
 import { beforeAll, describe, expect, it, vi } from 'vitest';
@@ -12,7 +13,6 @@ import { Lab } from '../lab/Lab';
 import { useTrialConfigChange } from '../trial/trialConfigChange';
 import { TrialSceneCanvas } from './TrialSceneCanvas';
 import { type SceneTrialState, useTrialScene } from './useTrialScene';
-import { drawPreset } from '@weasel-js/editing';
 
 beforeAll(() => {
   HTMLCanvasElement.prototype.getContext = vi.fn(

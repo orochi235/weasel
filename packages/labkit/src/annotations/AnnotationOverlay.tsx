@@ -1,4 +1,17 @@
-import { BUILTIN_TOOL_IDS, type BuiltinToolId, type FeaturePreset, type InsertNodeFactory, registerNodeShape, SceneCanvas, type SceneCanvasApi, useActiveToolContext, useLatest, type View, WeaselProvider } from '@weasel-js/core';
+import {
+  BUILTIN_TOOL_IDS,
+  type BuiltinToolId,
+  type FeaturePreset,
+  type InsertNodeFactory,
+  registerNodeShape,
+  SceneCanvas,
+  type SceneCanvasApi,
+  useActiveToolContext,
+  useLatest,
+  type View,
+  WeaselProvider,
+} from '@weasel-js/core';
+import { editPreset, movePreset, pickPreset, transformPreset } from '@weasel-js/editing';
 import { usePencilTool } from '@weasel-js/path-tools';
 import type { ToolOptionValues } from '@weasel-js/routing';
 import { createTextTool, textPreset } from '@weasel-js/text-tools';
@@ -37,7 +50,6 @@ import type {
 import { useLabToolOptionValues } from './useLabToolOptions';
 import { fitView, toWeaselView } from './view';
 import { useWheelHandOff } from './wheelScroll';
-import { editPreset, movePreset, pickPreset, transformPreset } from '@weasel-js/editing';
 
 /** Props for `<AnnotationOverlay>`. */
 export interface AnnotationOverlayProps {
