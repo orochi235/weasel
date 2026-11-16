@@ -18,5 +18,6 @@ export type {
 export { after } from './after';
 export { MIXED } from './mixed';
 export type { Mixed } from './mixed';
+export { codePointFloor } from './codePointFloor';
 export { matchQuery, hasTag, foldText } from './match';
 export type { Findable, QueryMatch } from './match';

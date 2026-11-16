@@ -1,6 +1,6 @@
 import { isPaint, tryParseColor } from '@weasel-js/paint';
 import { endlessAllows } from '@weasel-js/quantity';
-import { isPlainObject } from '@weasel-js/registry';
+import { codePointFloor, isPlainObject } from '@weasel-js/registry';
 import { prefClampNumber } from './bounds';
 import { prefSectionLeaves } from './helpers';
 import type { PrefList } from './list';
@@ -40,7 +40,7 @@ export function repairPrefValue(
     case 'string': {
       const { maxLength } = leaf as PrefString;
       if (typeof stored !== 'string') return leaf.default;
-      return maxLength !== undefined && stored.length > maxLength ? stored.slice(0, maxLength) : stored;
+      return maxLength !== undefined && stored.length > maxLength ? stored.slice(0, codePointFloor(stored, maxLength)) : stored;
     }
     case 'field':
       return typeof stored === 'string' ? stored : leaf.default;

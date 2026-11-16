@@ -25,6 +25,14 @@ describe('KeyCap', () => {
     expect(container.querySelector('kbd')?.getAttribute('data-kind')).toBe('square');
   });
 
+  it('gives one character a square chip however many code units it takes', () => {
+    for (const label of ['😀', '\u{1D465}', 'E\u0301']) {
+      const { container, unmount } = renderWithIcons(<KeyCap label={label} />);
+      expect(container.querySelector('kbd')?.getAttribute('data-kind')).toBe('square');
+      unmount();
+    }
+  });
+
   it('draws a symbol legend as an icon, keeping its character as hidden text', () => {
     const kbd = renderWithIcons(<KeyCap label="⌘" />).container.querySelector('kbd')!;
     expect(kbd.querySelector('svg')).not.toBeNull();

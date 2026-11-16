@@ -320,6 +320,10 @@ describe('several paths at once', () => {
     expect(outermost(['a/x', 'b', 'b/x', 'a'])).toEqual(['b', 'a']);
   });
 
+  it('names a path given twice once', () => {
+    expect(outermost(['b', 'a', 'b'])).toEqual(['b', 'a']);
+  });
+
   it('lists what a drag of several carries in the schema\'s own order', () => {
     expect(carried(ROOT, ['z', 'b/x', 'a/y', 'b'])).toEqual(['a/y', 'b', 'z']);
   });

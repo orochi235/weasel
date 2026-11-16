@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useIconVariant } from '@weasel-js/core';
 import { RegistryBrowser, type RegistryBrowserPick, type RegistryCategory } from '@weasel-js/devtools';
+import { matchQuery } from '@weasel-js/registry';
 import { Badge } from '@weasel-js/ui/components/Badge';
 import { Icon } from '@weasel-js/ui/components/Icon';
 import s from './RegistryInspector.module.css';
@@ -94,12 +95,9 @@ export function RegistryInspector() {
   }, [bundles, icons, shapeKinds, propertiesEntries, gestures, phaseOutputs, opKinds, slots, coreExports, meta]);
 
   // Clear selection when the active filters narrow past the selected entry.
-  const lower = textFilter.trim().toLowerCase();
   if (selected) {
     const inTree = nodes.some((n) => n.entries.some((e) => e.kind === selected.kind && e.id === selected.id));
-    const matches = !lower
-      || selected.id.toLowerCase().includes(lower)
-      || selected.label.toLowerCase().includes(lower);
+    const matches = matchQuery(textFilter, { text: [selected.label, selected.id] }) !== null;
     if (!inTree || !matches) setSelected(null);
   }
 

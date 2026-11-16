@@ -76,6 +76,12 @@ describe('RegistryBrowser', () => {
     expect(item('useRectTool')).toBeTruthy();
   });
 
+  it('matches an accented label typed composed or decomposed alike', () => {
+    renderWithIcons(browser({ categories: [{ id: 'ops', label: 'Ops', entries: [{ id: 'cafe', label: 'Cafe\u0301' }] }] }));
+    filter('café');
+    expect(item('Cafe\u0301')).toBeTruthy();
+  });
+
   it('keeps categories open while filtering, and restores the unfiltered state after', () => {
     renderWithIcons(browser());
     filter('e');

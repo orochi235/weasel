@@ -324,6 +324,13 @@ export default [
       'no-restricted-syntax': ['error', {
         selector: "TSModuleDeclaration[id.value='@weasel-js/core'] TSInterfaceDeclaration[id.name=/^(DepSchema|ActionParamSchema|OverlaySchema)$/]",
         message: "Augment '@weasel-js/routing', which declares this interface: an augmentation of core's re-export merges into a separate copy.",
+      }, {
+        selector: [
+          "BinaryExpression[operator=/^[!=]==?$/][left.object.name=/^(e|ev|evt|event)$/][left.property.name='key'][right.value=/^[A-Za-z]$/]",
+          "BinaryExpression[operator=/^[!=]==?$/][right.object.name=/^(e|ev|evt|event)$/][right.property.name='key'][left.value=/^[A-Za-z]$/]",
+          "SwitchStatement[discriminant.object.name=/^(e|ev|evt|event)$/][discriminant.property.name='key'] > SwitchCase[test.value=/^[A-Za-z]$/]",
+        ].join(', '),
+        message: "Match a letter key through matchKeyEvent (@weasel-js/gestures) or chordKey (@weasel-js/ui-input), or fold its case: e.key is 'Z' under Caps Lock, and a chord on a Russian layout types 'я'.",
       }],
     },
   },

@@ -4,6 +4,7 @@
  * shows a live canvas's tools, actions and deps or an app's static catalog.
  */
 import { useEffect, useMemo, useRef, useState, type ReactElement, type ReactNode } from 'react';
+import { matchQuery, type Findable } from '@weasel-js/registry';
 import { Badge } from '@weasel-js/ui/components/Badge';
 import { Input } from '@weasel-js/ui/components/Input';
 import { Tree, filterTree, treeBranchIds, type TreeNode } from '@weasel-js/ui/components/Tree';
@@ -62,7 +63,7 @@ const countBadge = (count: number, className?: string) => (
 
 function treeOf(categories: readonly RegistryCategory[]) {
   const picks = new Map<string, RegistryBrowserPick>();
-  const texts = new Map<string, string[]>();
+  const texts = new Map<string, Findable>();
   const out: TreeNode[] = [];
   const groups = new Map<string, TreeNode & { children: TreeNode[] }>();
   for (const c of categories) {
@@ -73,7 +74,7 @@ function treeOf(categories: readonly RegistryCategory[]) {
       children: c.entries.map((e) => {
         const key = leafKey(c.id, e.id);
         picks.set(key, { category: c.id, id: e.id });
-        texts.set(key, [e.label, ...(e.match ?? [])].map((t) => t.toLowerCase()));
+        texts.set(key, { text: [e.label, ...(e.match ?? [])] });
         return { id: key, label: e.label, textValue: e.label, trailing: e.trailing };
       }),
     };
@@ -119,9 +120,9 @@ export function RegistryBrowser(props: RegistryBrowserProps): ReactElement {
   }
 
   const { nodes, picks, texts } = useMemo(() => treeOf(categories), [categories]);
-  const q = filter.trim().toLowerCase();
+  const q = filter.trim();
   const shown = useMemo(
-    () => (q ? filterTree(nodes, (n) => texts.get(n.id)?.some((t) => t.includes(q)) ?? false) : nodes),
+    () => (q ? filterTree(nodes, (n) => { const t = texts.get(n.id); return t !== undefined && matchQuery(q, t) !== null; }) : nodes),
     [nodes, texts, q],
   );
   const selectedIds = selected ? [leafKey(selected.category, selected.id)] : [];

@@ -1,3 +1,4 @@
+import { foldText } from '@weasel-js/registry';
 import { indexEntries } from '../../story/indexPages';
 import { restatesTitle } from '../breadcrumb';
 import { isGallery } from '../../story/tags';
@@ -85,21 +86,21 @@ export function buildTree(index: readonly IndexEntry[]): TreeNode[] {
 }
 
 /**
- * The stories whose `title/name` contains `query`, ignoring case, with their ancestors. A folder keeps its index
+ * The stories whose `title/name` contains `query`, ignoring case and how accents are encoded, with their ancestors. A folder keeps its index
  * page only when its own path matches.
  */
 export function filterTree(nodes: TreeNode[], query: string): TreeNode[] {
-  const needle = query.trim().toLowerCase();
+  const needle = foldText(query.trim());
   if (!needle) return nodes;
   const walk = (list: TreeNode[]): TreeNode[] =>
     list.flatMap((node): TreeNode[] => {
       if (node.kind === 'story') {
-        return `${node.entry.title}/${node.entry.name}`.toLowerCase().includes(needle) ? [node] : [];
+        return foldText(`${node.entry.title}/${node.entry.name}`).includes(needle) ? [node] : [];
       }
       const children = walk(node.children);
       if (children.length === 0) return [];
       const { index: page, ...folder } = node;
-      return [page && node.path.toLowerCase().includes(needle) ? { ...folder, children, index: page } : { ...folder, children }];
+      return [page && foldText(node.path).includes(needle) ? { ...folder, children, index: page } : { ...folder, children }];
     });
   return walk(nodes);
 }

@@ -7,6 +7,7 @@
  * keys that start with `$` arrive with one more `$` in front ({@link escapeKey}), so the only unescaped `$` keys
  * are the serializer's own: `$type`, `$class` (an instance's class) and `$more` (how many keys were cut).
  */
+import { codePointFloor } from '@weasel-js/registry';
 
 /** What {@link serialize} produces: JSON-safe apart from `undefined`, which structured clone carries. */
 export type SerializedValue =
@@ -39,7 +40,7 @@ export interface SerializeLimits {
   depth?: number;
   /** Array, map, set and object entries past this many are cut, with a note of how many. */
   items?: number;
-  /** Strings longer than this are cut, ending in `…`. */
+  /** Strings longer than this many UTF-16 units are cut, ending in `…`, never inside a surrogate pair. */
   chars?: number;
 }
 
@@ -105,7 +106,7 @@ export function serialize(value: unknown, limits: SerializeLimits = {}): Seriali
 
   const walk = (v: unknown, level: number): SerializedValue => {
     switch (typeof v) {
-      case 'string': return v.length > chars ? `${v.slice(0, chars)}…` : v;
+      case 'string': return v.length > chars ? `${v.slice(0, codePointFloor(v, chars))}…` : v;
       case 'number':
         return Number.isFinite(v) ? v : tagged({ $type: 'number', value: String(v) as 'NaN' | 'Infinity' | '-Infinity' });
       case 'boolean': return v;

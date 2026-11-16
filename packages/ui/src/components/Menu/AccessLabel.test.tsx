@@ -24,6 +24,20 @@ describe('AccessLabel', () => {
     expect(container.querySelector('span span')!.textContent).toBe('E');
   });
 
+  it('finds the letter by cluster, so a capital whose lowercase is longer does not shift it', () => {
+    const { container } = render(<AccessLabel label="İstanbul" access="s" />);
+    expect(container.querySelector('span span')!.textContent).toBe('s');
+  });
+
+  it('matches a letter written decomposed, and not the bare base of an accented letter', () => {
+    const decomposed = 'Cafe\u0301';
+    const accented = render(<AccessLabel label={decomposed} access="é" />);
+    expect(accented.container.querySelector('span span')!.textContent).toBe('e\u0301');
+    accented.unmount();
+    const { container } = render(<AccessLabel label={`${decomposed} e`} access="e" />);
+    expect(container.querySelector('span span')!.previousSibling!.textContent).toBe(`${decomposed} `);
+  });
+
   it('draws the plain label when the letter is absent or none is declared', () => {
     for (const access of ['q', undefined]) {
       const { container, unmount } = render(<AccessLabel label="File" access={access} />);

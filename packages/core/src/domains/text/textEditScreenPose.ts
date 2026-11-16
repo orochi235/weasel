@@ -1,10 +1,10 @@
-import { poseFrameOf } from '@weasel-js/geom';
+import { meanScale, poseFrameOf } from '@weasel-js/geom';
 import { resolveScreenLength } from '@weasel-js/paint';
 import { DEFAULT_TEXT_STYLE, textFitScale, type StyledRun } from '@weasel-js/text';
 import type { TextEditClipRect, TextEditScreenPose } from '@weasel-js/text-dom';
 import type { RectPose } from 'core/geometry/unionBounds';
 import type { View } from '../../core/viewport/view';
-import { textBoxOf, type TextOverflow } from '../../canvas/nodeShapes/textPainter';
+import { textBoxOf, textLayoutScale, type TextOverflow } from '../../canvas/nodeShapes/textPainter';
 import type { TextReads } from './textHitAt';
 
 /** What the overlay's pose reads of a node's `data`. */
@@ -25,19 +25,20 @@ export function screenPoseOf<TData>(
   const inset = textBoxOf({ padding: read.padding(d) }, painted);
   const box = screenBoxOf({ ...painted, ...inset }, view, origin);
   const style = read.style(d);
-  // `kit:text` lays the text out at scale 1, a `{ px }` size as that many world units.
+  const runs = read.runs(d) as StyledRun[] | undefined;
+  const scale = textLayoutScale({ style, runs }, view ? meanScale(view.scale) : undefined);
   const k = textFitScale({
-    ...inset, text: read.text(d), runs: read.runs(d) as StyledRun[] | undefined, style,
+    ...inset, text: read.text(d), runs, style,
     verticalAlign: read.verticalAlign(d), fit: read.fit?.(d),
-  });
+  }, scale);
   const clip = read.overflow(d) === 'clip' ? clipToBox(inset, painted) : null;
   return {
     ...box,
     width: box.width / k,
     height: box.height / k,
     zoom: box.zoom * k,
-    fontSize: resolveScreenLength(style?.fontSize ?? DEFAULT_TEXT_STYLE.fontSize, 1),
-    pxScale: 1,
+    fontSize: resolveScreenLength(style?.fontSize ?? DEFAULT_TEXT_STYLE.fontSize, scale),
+    pxScale: scale,
     verticalAlign: read.verticalAlign(d),
     ...(clip ? { clip: { top: clip.top / k, left: clip.left / k, bottom: clip.bottom / k, right: clip.right / k } } : {}),
   };
