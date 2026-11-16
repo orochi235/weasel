@@ -38,6 +38,7 @@ import {
   type RangeEdge,
 } from './bands';
 import { sameSeams, seamGhost } from './seamGhost';
+import { alongTrack } from '../../alongTrack';
 
 export type { Band, RangeEdge, BandTick };
 
@@ -194,11 +195,7 @@ export function BandEditor<T, F extends Quantity = number>(props: BandEditorProp
   const trackWidth = (): number => trackRef.current?.getBoundingClientRect().width ?? 0;
 
   /** Unclamped: an edge drag reads the pointer past either end of the track. */
-  const rawUnitAt = (clientX: number): number => {
-    const rect = trackRef.current?.getBoundingClientRect();
-    if (!rect || rect.width === 0) return 0;
-    return (clientX - rect.left) / rect.width;
-  };
+  const rawUnitAt = (clientX: number): number => alongTrack(trackRef.current, clientX)?.f ?? 0;
   const unitAt = (clientX: number): number => clamp01(rawUnitAt(clientX));
 
   const snapped = (unit: number, altKey: boolean): number => {

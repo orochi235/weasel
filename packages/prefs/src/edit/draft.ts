@@ -1,5 +1,6 @@
 import { isPlainObject } from '@weasel-js/registry';
 import { type SerializedHistory, type SerializedHistoryEntry, type SerializedOp } from '@weasel-js/history';
+import { sameStored } from '@weasel-js/storage';
 import { carry } from './carry';
 import { SWAP, type DraftStorage } from './document';
 import { isPrefLeaf, type PrefLeaf } from '../index';
@@ -240,10 +241,10 @@ export function openDraft<R extends SchemaRoot>(key: string, source: R, storage?
   const draft = readDraft(key, storage);
   if (!draft) return null;
   const now = JSON.parse(JSON.stringify(packDraft(source, source, types))) as unknown;
-  const moved = draft.source !== undefined && JSON.stringify(draft.source) !== JSON.stringify(now);
+  const moved = draft.source !== undefined && !sameStored(draft.source, now);
   const onto = (packed: unknown): unknown => (moved ? carry(packed, draft.source, now) : packed);
   const schema = onto(draft.schema);
-  if (moved && JSON.stringify(schema) === JSON.stringify(now)) {
+  if (moved && sameStored(schema, now)) {
     dropDraft(key, storage);
     return null;
   }

@@ -48,6 +48,30 @@ const plugins = {
     'effect-cleanup': effectCleanup } },
 };
 
+/**
+ * Routing declares these schemas and core re-exports them. An augmentation of the re-export merges
+ * into a copy apart from the kit's own entries, and which copy a reference sees depends on file order.
+ * A root of a sum of squares overflows past 1e154 and underflows below 1e-154, where the length it
+ * measures is still a number.
+ */
+const RESTRICTED_EVERYWHERE = [{
+  selector: "TSModuleDeclaration[id.value='@weasel-js/core'] TSInterfaceDeclaration[id.name=/^(DepSchema|ActionParamSchema|OverlaySchema)$/]",
+  message: "Augment '@weasel-js/routing', which declares this interface: an augmentation of core's re-export merges into a separate copy.",
+}, {
+  selector: [
+    "BinaryExpression[operator=/^[!=]==?$/][left.object.name=/^(e|ev|evt|event)$/][left.property.name='key'][right.value=/^[A-Za-z]$/]",
+    "BinaryExpression[operator=/^[!=]==?$/][right.object.name=/^(e|ev|evt|event)$/][right.property.name='key'][left.value=/^[A-Za-z]$/]",
+    "SwitchStatement[discriminant.object.name=/^(e|ev|evt|event)$/][discriminant.property.name='key'] > SwitchCase[test.value=/^[A-Za-z]$/]",
+  ].join(', '),
+  message: "Match a letter key through matchKeyEvent (@weasel-js/gestures) or chordKey (@weasel-js/ui-input), or fold its case: e.key is 'Z' under Caps Lock, and a chord on a Russian layout types 'я'.",
+}, {
+  selector: "CallExpression[callee.object.name='Math'][callee.property.name='sqrt'] > BinaryExpression[operator='+']:has(> BinaryExpression[operator='*'])",
+  message: 'Measure a length with Math.hypot (or geom\'s distance): the squares overflow past 1e154 and underflow below 1e-154, where the length is still a number.',
+}, {
+  selector: "VariableDeclarator[id.name=/^(mine|ticket)$/] > UpdateExpression[operator='++'][prefix=true]",
+  message: "Take a ticket from createLatest (@weasel-js/registry) or useLatestOnly (@weasel-js/react) instead of counting requests by hand: one way to decide which async answer is the newest.",
+}];
+
 export default [
   {
     ignores: [
@@ -335,30 +359,23 @@ export default [
     rules: { 'weasel/no-hand-lerp': 'error' },
   },
   {
-    /**
-     * Routing declares these schemas and core re-exports them. An augmentation of the re-export merges
-     * into a copy apart from the kit's own entries, and which copy a reference sees depends on file order.
-     * A root of a sum of squares overflows past 1e154 and underflows below 1e-154, where the length it
-     * measures is still a number.
-     */
     files: ['**/*.{ts,tsx}'],
+    rules: { 'no-restricted-syntax': ['error', ...RESTRICTED_EVERYWHERE] },
+  },
+  {
+    /** Shipped and demo source, where each of these decisions has one helper every caller uses. */
+    files: ['packages/**/*.{ts,tsx}', 'apps/**/*.{ts,tsx}'],
+    ignores: ['**/*.{test,spec}.{ts,tsx}', '**/__tests__/**', '**/testing/**', '**/*.stories.{ts,tsx}'],
     rules: {
-      'no-restricted-syntax': ['error', {
-        selector: "TSModuleDeclaration[id.value='@weasel-js/core'] TSInterfaceDeclaration[id.name=/^(DepSchema|ActionParamSchema|OverlaySchema)$/]",
-        message: "Augment '@weasel-js/routing', which declares this interface: an augmentation of core's re-export merges into a separate copy.",
+      'no-restricted-syntax': ['error', ...RESTRICTED_EVERYWHERE, {
+        selector: "BinaryExpression[operator=/^[!=]==?$/][left.callee.object.name='JSON'][left.callee.property.name='stringify'][right.callee.object.name='JSON'][right.callee.property.name='stringify']",
+        message: "Compare with deepEqual (@weasel-js/registry), or sameStored (@weasel-js/storage) for stored values whose key order counts: JSON text reads key order.",
       }, {
-        selector: [
-          "BinaryExpression[operator=/^[!=]==?$/][left.object.name=/^(e|ev|evt|event)$/][left.property.name='key'][right.value=/^[A-Za-z]$/]",
-          "BinaryExpression[operator=/^[!=]==?$/][right.object.name=/^(e|ev|evt|event)$/][right.property.name='key'][left.value=/^[A-Za-z]$/]",
-          "SwitchStatement[discriminant.object.name=/^(e|ev|evt|event)$/][discriminant.property.name='key'] > SwitchCase[test.value=/^[A-Za-z]$/]",
-        ].join(', '),
-        message: "Match a letter key through matchKeyEvent (@weasel-js/gestures) or chordKey (@weasel-js/ui-input), or fold its case: e.key is 'Z' under Caps Lock, and a chord on a Russian layout types 'я'.",
+        selector: "CallExpression[callee.property.name='writeText']:matches([callee.object.name='clipboard'], [callee.object.property.name='clipboard'])",
+        message: 'Copy with copyText (@weasel-js/react), which answers false where there is no clipboard or the write is refused, rather than throwing.',
       }, {
-        selector: "CallExpression[callee.object.name='Math'][callee.property.name='sqrt'] > BinaryExpression[operator='+']:has(> BinaryExpression[operator='*'])",
-        message: 'Measure a length with Math.hypot (or geom\'s distance): the squares overflow past 1e154 and underflow below 1e-154, where the length is still a number.',
-      }, {
-        selector: "VariableDeclarator[id.name=/^(mine|ticket)$/] > UpdateExpression[operator='++'][prefix=true]",
-        message: "Take a ticket from createLatest (@weasel-js/registry) or useLatestOnly (@weasel-js/react) instead of counting requests by hand: one way to decide which async answer is the newest.",
+        selector: "BinaryExpression[operator='-']:matches([left.property.name=/^client[XY]$/], [left.name=/^client[XY]$/])[right.property.name=/^(left|top)$/]",
+        message: 'Map a client point through clientToCanvas, or clientToCanvasRect for a box measured once (@weasel-js/core): an offset from the client rect is off by any scale an ancestor draws the element at.',
       }],
     },
   },

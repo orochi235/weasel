@@ -5,6 +5,7 @@ export function copyText(text: string): Promise<boolean> {
   const clipboard = typeof navigator === 'undefined' ? undefined : navigator.clipboard;
   if (!clipboard?.writeText) return Promise.resolve(false);
   try {
+    // eslint-disable-next-line no-restricted-syntax -- the one call every copy goes through.
     return clipboard.writeText(text).then(() => true, () => false);
   } catch {
     return Promise.resolve(false);

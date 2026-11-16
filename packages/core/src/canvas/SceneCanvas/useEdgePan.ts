@@ -100,7 +100,9 @@ function edgePan(read: () => EdgePanInputs) {
     const pull = (inside: number) => (zone > 0
       ? speed * Math.min(1, Math.max(0, (zone - inside) / zone))
       : inside < 0 ? speed : 0);
+    // eslint-disable-next-line no-restricted-syntax -- the zone is a band of the screen, measured in client px.
     const x = pull(r.right - at.clientX) - pull(at.clientX - r.left);
+    // eslint-disable-next-line no-restricted-syntax -- as above.
     const y = pull(r.bottom - at.clientY) - pull(at.clientY - r.top);
     return x === 0 && y === 0 ? null : { x, y, dims: { width: r.width, height: r.height } };
   };

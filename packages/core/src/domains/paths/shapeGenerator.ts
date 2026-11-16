@@ -23,6 +23,7 @@ import {
   type PathInWorldPose,
   type PolygonPath,
 } from '@weasel-js/geom';
+import { deepEqual } from '@weasel-js/registry';
 
 /** A regular polygon's parameters. `rotation` is the angle of its first
  *  vertex, in radians, inside the pose's own rotation. */
@@ -168,7 +169,7 @@ export function settleShapeGenerator<N extends { pose: unknown; data: unknown }>
   if (data === null || typeof data !== 'object' || !('generator' in data)) return next;
   const raw = data.generator;
   const held = shapeGeneratorOf(prev.data);
-  if (held !== null && JSON.stringify(raw) === JSON.stringify(held)) return next;
+  if (held !== null && deepEqual(raw, held)) return next;
   const regenerated = held !== null && isShapeGenerator(raw) && raw.kind === held.kind
     ? regenerateShape({ pose: next.pose as PathInWorldPose, data: { ...data, generator: held } }, raw)
     : null;

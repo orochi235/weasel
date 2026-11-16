@@ -1,3 +1,4 @@
+import { sameStored } from '@weasel-js/storage';
 import { carry } from './carry';
 import { packDraft, unpackDraft, type DraftStorage } from './draft';
 import type { SchemaRoot } from './schemaEdit';
@@ -45,5 +46,5 @@ export function dropSent(draftKey: string, storage?: DraftStorage): void {
 export function afterTaken<R extends SchemaRoot>(schema: R, sent: unknown, source: R, types?: PrefTypes): R {
   const now = json(packDraft(source, source, types));
   const next = carry(json(packDraft(schema, source, types)), sent, now);
-  return JSON.stringify(next) === JSON.stringify(now) ? source : unpackDraft(next, source, types);
+  return sameStored(next, now) ? source : unpackDraft(next, source, types);
 }

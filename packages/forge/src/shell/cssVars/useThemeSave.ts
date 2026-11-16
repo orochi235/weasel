@@ -1,6 +1,7 @@
 import { type AxisDefs, THEME_SOURCES } from '@weasel-js/theme';
 import { httpThemeApi, type ThemeApi } from '@weasel-js/theme/engine';
 import { useMemo, useState } from 'react';
+import { deepEqual } from '@weasel-js/registry';
 import type { Globals } from '../../protocol/messages';
 import type { CssOverrides } from './overrides';
 import { applyScaleEdits, type ScaleEdit } from './saveScales';
@@ -75,7 +76,7 @@ export function useThemeSave({ trialId, globals, themeApi, scales, overrides, hi
       const api = themeApi ?? httpThemeApi();
       const stored = await api.get(THEME_NAME);
       const file = `themes/${THEME_NAME}.json`;
-      if (JSON.stringify(stored.definition) !== JSON.stringify(THEME_SOURCES[THEME_NAME])) {
+      if (!deepEqual(stored.definition, THEME_SOURCES[THEME_NAME])) {
         setNotice({ outcome: 'error', text: `${file} has changed since this page loaded. Reload to edit against it.` });
         return;
       }

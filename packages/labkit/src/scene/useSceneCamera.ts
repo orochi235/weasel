@@ -8,6 +8,7 @@ import { type RefObject, useMemo } from 'react';
 import type { CameraView } from '../canvas/CameraInput';
 import { usePublishCamera } from '../canvas/cameraRegistry';
 import { clampZoomAbout } from '../canvas/cameraView';
+import { hostBox } from '../canvas/hostBox';
 
 const HOME: View = { x: 0, y: 0, scale: { x: 1, y: 1 } };
 
@@ -27,7 +28,7 @@ export function useSceneCamera(
       set: (next) =>
         api.current?.setView(clampZoomAbout(get(), next, DEFAULT_MIN_ZOOM, DEFAULT_MAX_ZOOM)),
       hostSize: () => {
-        const box = host.current?.getBoundingClientRect();
+        const box = hostBox(host.current);
         return box ? { width: box.width, height: box.height } : null;
       },
       zoomRange: () => ({ min: DEFAULT_MIN_ZOOM, max: DEFAULT_MAX_ZOOM }),

@@ -1,4 +1,5 @@
 import { viewScreenToWorld, type View } from '@weasel-js/geom';
+import { clientToCanvasRect } from '@weasel-js/routing';
 
 /**
  * Map a browser client coord pair to world coords.
@@ -19,8 +20,7 @@ export function clientToWorld(
   origin: { left: number; top: number; scale?: { x: number; y: number } },
   view: View,
 ): [number, number] {
-  const sx = origin.scale?.x ?? 1;
-  const sy = origin.scale?.y ?? 1;
-  const world = viewScreenToWorld(view, { x: (clientX - origin.left) / sx, y: (clientY - origin.top) / sy });
+  const [x, y] = clientToCanvasRect(origin, clientX, clientY);
+  const world = viewScreenToWorld(view, { x, y });
   return [world.x, world.y];
 }

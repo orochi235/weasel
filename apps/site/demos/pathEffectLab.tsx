@@ -7,6 +7,7 @@ import { type ActionParamSchema, type ActionTunings, boundsOfPath, derivedDepOf,
 import { PATH_EFFECTS_GROUP } from '@weasel-js/path-tools';
 import { ActionBar } from '@weasel-js/ui/components/ActionBar';
 import { useTrialConfigChange } from '@weasel-js/labkit';
+import { deepEqual } from '@weasel-js/registry';
 import { type ReactNode, useEffect, useMemo } from 'react';
 import s from './pathEffectLab.module.css';
 
@@ -30,7 +31,7 @@ export function usePathEffectSettings<TC, K extends LabEffectKind>(
   const registry = useActionsRegistry();
   useTrialConfigChange<TC>((next, prev) => {
     const settings = settingsOf(next);
-    if (JSON.stringify(settings) === JSON.stringify(settingsOf(prev))) return;
+    if (deepEqual(settings, settingsOf(prev))) return;
     const ids = [...scene.renderOrder()].filter((id) => pathEffectOf(scene.get(id))?.kind === kind);
     if (ids.length > 0) registry?.trigger('editPathEffect', { ...settings, ids });
   });

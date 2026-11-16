@@ -39,6 +39,11 @@ describe('gantt structure', () => {
     compiles(d);
   });
 
+  it('hands back the same chart for a start or end that is the task\'s own, whatever order its keys are in', () => {
+    expect(setGanttTaskStart(CHAIN, 0, 0, { date: '2024-01-01', kind: 'date' })).toBe(CHAIN);
+    expect(setGanttTaskEnd(CHAIN, 0, 0, { unit: 'd', amount: 2, kind: 'duration' })).toBe(CHAIN);
+  });
+
   it('takes a removed task\'s id out of every dependency on it', () => {
     const d = removeGanttTask(CHAIN, 0, 0);
     expect(d.sections[1]!.tasks[0]).toEqual({ name: 'two', start: { kind: 'previous' }, end: { kind: 'duration', amount: 1, unit: 'd' } });

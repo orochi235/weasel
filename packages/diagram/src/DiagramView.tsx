@@ -1,4 +1,5 @@
 import {
+  canvasToClient,
   SceneCanvas,
   useDepSource,
   useLatest,
@@ -269,10 +270,12 @@ function useDiagramApi(
     rectOf: (id) => {
       const canvas = canvasRef.current;
       const world = worldRectOf(scene, id);
-      const r = canvas?.element?.getBoundingClientRect();
-      if (canvas == null || world === null || r === undefined) return null;
+      const el = canvas?.element;
+      if (canvas == null || world === null || el == null) return null;
       const rect = viewRectToScreen(canvas.getView(), world);
-      return { ...rect, x: rect.x + r.left, y: rect.y + r.top };
+      const [x0, y0] = canvasToClient(el, rect.x, rect.y);
+      const [x1, y1] = canvasToClient(el, rect.x + rect.width, rect.y + rect.height);
+      return { x: x0, y: y0, width: x1 - x0, height: y1 - y0 };
     },
     subscribeFrame: (fn) => canvasRef.current?.subscribeFrame(() => fn()) ?? (() => {}),
   }), [canvasRef, live, scene, setRun, fitNow]);

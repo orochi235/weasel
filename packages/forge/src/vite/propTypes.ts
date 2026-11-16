@@ -222,6 +222,7 @@ function shapeOf(reading: Reading, type: ts.Type, depth: number): ArgShape | nul
   if (checker.isTupleType(whole)) {
     const items = checker.getTypeArguments(whole as ts.TypeReference).map((item) => shapeOf(reading, item, depth + 1));
     const [first] = items;
+    // eslint-disable-next-line no-restricted-syntax -- node loads this plugin from source, so it imports no package; one builder made every shape.
     const same = first && items.every((item) => JSON.stringify(item) === JSON.stringify(first));
     return same ? { name: 'array', value: first } : null;
   }

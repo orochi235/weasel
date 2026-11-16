@@ -260,7 +260,8 @@ export {
 } from './ingestion/ingestItems';
 export type { IngestItem } from '@weasel-js/gestures';
 export {
-  canvasToClient, clientScaleOf, clientToCanvas, clientToCanvasRect, layoutBoxOf, type LayoutBox, type ShownElement,
+  canvasToClient, clientScaleOf, clientToCanvas, clientToCanvasRect, layoutBoxOf, scrolledPlaceOf, type LayoutBox, type ShownElement,
+  type ShownScroller,
 } from './viewport/clientToCanvas';
 export { dlog, dwarn, isDebugEnabled } from './dlog';
 

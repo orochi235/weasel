@@ -1,4 +1,4 @@
-import { localStorageAdapter, openRecordsSync, type OwnedRecordCache, type RecordCache } from '@weasel-js/storage';
+import { localStorageAdapter, openRecordsSync, sameStored, type OwnedRecordCache, type RecordCache } from '@weasel-js/storage';
 
 /** One stored entry: its key and the value it holds. A value JSON reads back as itself, so that every storage
  *  adapter keeps it exactly; core's `encodeSnapshot` makes one of a snapshot holding typed arrays. */
@@ -79,16 +79,6 @@ const keyOf = ({ records, name }: SessionSlot): string => `${records.prefix}${na
 /** Whether `key` is where {@link readStored} keeps an unreadable entry aside, not an entry of its own. */
 export const isUnreadableKey = (key: string): boolean => key.endsWith(UNREADABLE);
 
-function sameValue(a: unknown, b: unknown): boolean {
-  if (a === b) return true;
-  if (a === undefined || b === undefined) return false;
-  try {
-    return JSON.stringify(a) === JSON.stringify(b);
-  } catch {
-    return false;
-  }
-}
-
 // The unreadable entries not yet known to be kept aside, each by the cache it was read from and its name there, and
 // its value. One read through `sessionSlots`' own `localStorage` caches is held by its key, since every call opens
 // caches of its own.
@@ -107,7 +97,7 @@ function hold(slot: SessionSlot, value: unknown): void {
 }
 
 const keptAside = (aside: SessionSlot, value: unknown): boolean =>
-  !aside.records.pending(aside.name) && sameValue(aside.records.get(aside.name), value);
+  !aside.records.pending(aside.name) && sameStored(aside.records.get(aside.name), value);
 
 function keepUnreadable(slot: SessionSlot, value: unknown, err: unknown): void {
   const aside = asideOf(slot);
@@ -117,7 +107,7 @@ function keepUnreadable(slot: SessionSlot, value: unknown, err: unknown): void {
     console.error(`weasel: the entry under "${keyOf(slot)}" could not be read, and could not be kept aside`, err);
     return;
   }
-  if (sameValue(aside.records.get(aside.name), value)) return;
+  if (sameStored(aside.records.get(aside.name), value)) return;
   aside.records.set(aside.name, value);
   console.error(
     `weasel: the entry under "${keyOf(slot)}" could not be read; it is being kept under "${keyOf(aside)}", and nothing is saved over it until it is`,
@@ -138,10 +128,10 @@ function secureUnreadable(doc: SessionSlot): Promise<boolean> | true {
     return true;
   };
   // Written over by someone else since: there is nothing left here to keep.
-  if (!sameValue(doc.records.has(doc.name) ? doc.records.get(doc.name) : undefined, value)) return release();
+  if (!sameStored(doc.records.has(doc.name) ? doc.records.get(doc.name) : undefined, value)) return release();
   if (keptAside(aside, value)) return release();
   return (async () => {
-    if (aside.records.writable && !sameValue(aside.records.get(aside.name), value)) aside.records.set(aside.name, value);
+    if (aside.records.writable && !sameStored(aside.records.get(aside.name), value)) aside.records.set(aside.name, value);
     if (aside.records.pending(aside.name)) await aside.records.flush();
     if (aside.records.writable && keptAside(aside, value)) return release();
     console.error(`weasel: the unreadable entry under "${keyOf(doc)}" could not be kept under "${keyOf(aside)}"; it is not saved over`);

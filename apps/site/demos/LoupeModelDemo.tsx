@@ -7,6 +7,7 @@ import {
   type LoupeRect,
   type LoupeSurface,
 } from '@weasel-js/loupe';
+import { clientToCanvas } from '@weasel-js/routing';
 import s from './LoupeModelDemo.module.css';
 import { decimal, qty } from '@weasel-js/quantity';
 
@@ -91,8 +92,8 @@ function LoupeStage({ loupe, picked }: { loupe: LoupeModel; picked: string | nul
   }, [loupe]);
 
   const toSurface = (e: React.PointerEvent | React.MouseEvent): LoupePoint => {
-    const r = e.currentTarget.getBoundingClientRect();
-    return { x: e.clientX - r.left, y: e.clientY - r.top };
+    const [x, y] = clientToCanvas(e.currentTarget, e.clientX, e.clientY);
+    return { x, y };
   };
 
   // The stage is drawn 1:1, so the outer view is the identity.

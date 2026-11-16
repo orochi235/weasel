@@ -5,6 +5,7 @@ import {
   type MarkerEntry, type MarkerPaint,
 } from '@weasel-js/core';
 import { DEG_TO_RAD, joinPaths, worldCoords } from '@weasel-js/geom';
+import { deepEqual } from '@weasel-js/registry';
 import type { Matrix, SvgNode, ScreenLength } from './types';
 import { multiply, parseTransform } from './transform';
 import { styleAt } from './styleAt';
@@ -272,7 +273,7 @@ function markerEntryFrom(
   const outline = outlinePaint !== 'none' && outlineWidth > 0
     ? { width: outlineWidth, paint: outlinePaint }
     : false;
-  if (parts.some((p) => JSON.stringify(p.style) !== JSON.stringify(first))) {
+  if (parts.some((p) => !deepEqual(p.style, first))) {
     onWarn(`<marker id="${id}"> paints its parts differently; all take the first part's paint`);
   }
 

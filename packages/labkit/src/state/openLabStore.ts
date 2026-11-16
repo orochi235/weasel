@@ -3,6 +3,7 @@ import {
   openRecords,
   type RecordCache,
   type StorageAdapter,
+  sameStored,
 } from '@weasel-js/storage';
 import { type BindOptions, bindLabStore } from './bindLabStore';
 import {
@@ -17,7 +18,6 @@ import {
   quarantineDocument,
   readLegacyDocument,
   runMigrations,
-  sameStored,
 } from './document';
 import { hydrateSnapshots, hydrateTrials } from './hydrate';
 import {

@@ -1,3 +1,5 @@
+import { clientScaleOf } from './clientScale';
+
 /**
  * Elements an overlay may portal into: anything a theme has been stamped on
  * (`applyTheme` / `<ThemeProvider>` write both attributes), plus anything
@@ -29,20 +31,22 @@ function containsFixed(el: Element): boolean {
 }
 
 /**
- * Where a `position: fixed` element following the pointer mounts: `host`, and
- * the client-space point its `left: 0; top: 0` lands on.
+ * Where a `position: fixed` element following the pointer mounts: `host`, the
+ * client-space point its `left: 0; top: 0` lands on, and the client px per CSS
+ * px an ancestor transform draws it at.
  */
 export interface FixedSeat {
   host: HTMLElement;
   left: number;
   top: number;
+  scale: { x: number; y: number };
 }
 
 /**
  * The seat for something drawn at a client-space point on behalf of `from`, a
  * drag ghost above all: the nearest portal host, so it resolves the theme
  * `from` is drawn in, or the body. Subtract `left` and `top` from the client
- * point to place it.
+ * point, and divide by `scale`, to place it.
  */
 export function fixedSeat(from: Element | null | undefined): FixedSeat {
   const host = nearestPortalHost(from) ?? document.body;
@@ -50,7 +54,7 @@ export function fixedSeat(from: Element | null | undefined): FixedSeat {
   for (let el: Element | null = host; el !== null; el = el.parentElement) {
     if (!containsFixed(el)) continue;
     const rect = el.getBoundingClientRect();
-    return { host, left: rect.left, top: rect.top };
+    return { host, left: rect.left, top: rect.top, scale: clientScaleOf(el, rect) };
   }
-  return { host, left: 0, top: 0 };
+  return { host, left: 0, top: 0, scale: { x: 1, y: 1 } };
 }

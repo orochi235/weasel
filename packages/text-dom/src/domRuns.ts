@@ -17,6 +17,7 @@ import {
   type FontVariantCaps, type ResolvedTextStyle, type StyledRun, type TextTransform,
 } from '@weasel-js/text';
 import { cssFontFamily } from '@weasel-js/font';
+import { deepEqual } from '@weasel-js/registry';
 import { BLOCK_TAGS } from './domOffsets';
 import {
   BOLD_ATTR, cssFontVariant, EMPTY_STYLE, FILL_ATTR, FONT_SCALE_ATTR, fontScalePercent, FONT_SIZE_PX_ATTR, LETTER_SPACING_PX_ATTR, isSmallCapsPiece, ROTATE_ATTR, STROKE_ATTR, styleEquals,
@@ -205,7 +206,7 @@ export function runsToDom(
     // The CSS color carries the fill only where `domToRuns` reads it back as the very same one: it drops an
     // opacity, respells `#f00` as `rgb(255, 0, 0)`, and refuses a color it cannot parse.
     const shown: Fill = { paint: { kind: 'solid', color: span.style.color } };
-    if (run.fill !== undefined && JSON.stringify(run.fill) !== JSON.stringify(shown)) {
+    if (run.fill !== undefined && !deepEqual(run.fill, shown, { undefinedAsAbsent: true })) {
       span.setAttribute(FILL_ATTR, JSON.stringify(run.fill));
     }
     // Black, as an unfilled node edits in: no CSS color leaves it legible.

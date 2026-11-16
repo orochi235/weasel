@@ -95,6 +95,14 @@ describe('ingesting a marker the kit has no key for', () => {
     expect(entry.inset ?? 0).toBe(0);
   });
 
+  it('reads parts painted alike as alike, whichever element set each property', () => {
+    const def = '<marker id="two" viewBox="0 0 10 10" refX="10" refY="5">'
+      + '<path d="M0 0 L5 5 L0 10 Z" fill="#ff0000" stroke="#000"/>'
+      + '<g stroke="#000"><path d="M5 0 L10 5 L5 10 Z" fill="#ff0000"/></g></marker>';
+    const { warnings } = parseSvg(lineWith('marker-end="url(#two)"', def));
+    expect(warnings).toEqual([]);
+  });
+
   it('turns an orient="auto" start marker around, since the kit reverses every start', () => {
     const { nodes, markers } = parseSvg(lineWith('marker-start="url(#tri)" marker-end="url(#tri)"'));
     const stroke = (nodes[0] as SvgPathNode).stroke!;

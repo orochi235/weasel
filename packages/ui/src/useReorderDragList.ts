@@ -243,6 +243,7 @@ export function useReorderDragList(opts: UseReorderDragListOptions): ReorderDrag
     const pressed = e.currentTarget as Element;
     const rowEl = rowElements(container, optsRef.current).find((child) => child.contains(pressed)) ?? pressed;
     const row = rowEl.getBoundingClientRect();
+    // eslint-disable-next-line no-restricted-syntax -- the ghost is placed at a client point, which DragGhost maps into its seat.
     const grab = { x: e.clientX - row.left, y: e.clientY - row.top };
     const ghostAt = (ev: { clientX: number; clientY: number }): ReorderGhost => ({
       ids: draggedIds,

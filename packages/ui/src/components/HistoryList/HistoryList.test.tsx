@@ -45,6 +45,18 @@ describe('HistoryList', () => {
     expect(screen.getByRole('option', { name: 'Initial' }).className).not.toMatch(/muted/);
   });
 
+  it('scrolls the current entry into view in its own px when an ancestor draws the list at twice its size', () => {
+    const view = render(<HistoryList entries={ENTRIES} current={0} onJump={() => {}} />);
+    const box = view.container.firstElementChild as HTMLElement;
+    const row = box.querySelector<HTMLElement>('[data-row-index="2"]')!;
+    for (const [k, v] of Object.entries({ offsetWidth: 100, offsetHeight: 50, clientHeight: 50 })) Object.defineProperty(box, k, { value: v });
+    Object.defineProperty(row, 'offsetHeight', { value: 20 });
+    box.getBoundingClientRect = () => DOMRect.fromRect({ x: 0, y: 0, width: 200, height: 100 });
+    row.getBoundingClientRect = () => DOMRect.fromRect({ x: 0, y: 200, width: 200, height: 40 });
+    view.rerender(<HistoryList entries={ENTRIES} current={2} onJump={() => {}} />);
+    expect(box.scrollTop).toBe(70);
+  });
+
   it('takes a name of its own', () => {
     render(<HistoryList entries={ENTRIES} current={0} onJump={() => {}} aria-label="Undo steps" />);
     expect(screen.getByRole('listbox', { name: 'Undo steps' })).toBeInTheDocument();

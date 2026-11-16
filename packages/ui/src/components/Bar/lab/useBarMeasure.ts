@@ -1,4 +1,5 @@
 import { useLayoutEffect, useState, type RefObject } from 'react';
+import { deepEqual } from '@weasel-js/registry';
 import type { Point, TrackShape } from '@weasel-js/geom';
 import { cssPx } from '../../../cssPx';
 
@@ -80,7 +81,7 @@ export function useBarMeasure(root: RefObject<HTMLElement | null>, shape: TrackS
     if (!el) return;
     const update = (): void => {
       const next = read(el, shape, reading);
-      setState((prev) => (JSON.stringify(prev) === JSON.stringify(next) ? prev : next));
+      setState((prev) => (deepEqual(prev, next) ? prev : next));
     };
     update();
     const mo = new MutationObserver(update);

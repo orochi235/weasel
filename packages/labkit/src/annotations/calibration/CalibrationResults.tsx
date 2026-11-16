@@ -1,3 +1,4 @@
+import { copyText } from '@weasel-js/react';
 import { Button } from '@weasel-js/ui/components/Button';
 import { type RefObject, useState } from 'react';
 import { useAnnotations } from '../AnnotationsContext';
@@ -68,9 +69,8 @@ export function CalibrationResults({
 
   const copy = () => {
     const report = calibrationReport(api, config, scores, picture.current);
-    navigator.clipboard.writeText(JSON.stringify(report, null, 2)).then(
-      () => setCopied('copied'),
-      () => setCopied('failed'),
+    void copyText(JSON.stringify(report, null, 2)).then((took) =>
+      setCopied(took ? 'copied' : 'failed'),
     );
   };
 

@@ -1,4 +1,5 @@
 import { useLayoutEffect, useState, type RefObject } from 'react';
+import { deepEqual } from '@weasel-js/registry';
 import { RAD_TO_DEG, type TrackShape } from '@weasel-js/geom';
 
 /** One thumb as the page shows it. */
@@ -55,7 +56,7 @@ export function useTwinMeasure(root: RefObject<HTMLElement | null>, shape: Track
     if (!el) return;
     const update = (): void => {
       const next = read(el, shape);
-      setReading((prev) => (JSON.stringify(prev) === JSON.stringify(next) ? prev : next));
+      setReading((prev) => (deepEqual(prev, next) ? prev : next));
     };
     update();
     const mo = new MutationObserver(update);

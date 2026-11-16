@@ -102,7 +102,8 @@ export type { VisibleRaf, VisibleRafOptions, VisibleRafTarget } from '@weasel-js
 // ─── Viewport: wheel / velocity / decay / pinch / camera animation ──────────
 export * from '../core/viewport/wheelHandler';
 export {
-  canvasToClient, clientScaleOf, clientToCanvas, layoutBoxOf, type LayoutBox, type ShownElement,
+  canvasToClient, clientScaleOf, clientToCanvas, layoutBoxOf, scrolledPlaceOf, type LayoutBox, type ShownElement,
+  type ShownScroller,
 } from '@weasel-js/routing';
 export { useVelocityTracker } from '../core/viewport/useVelocityTracker';
 export { createVelocityTracker } from '../core/viewport/createVelocityTracker';

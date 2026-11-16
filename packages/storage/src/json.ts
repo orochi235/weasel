@@ -16,6 +16,21 @@ export function toJson(value: unknown): string {
   return JSON.stringify(value, (_, v: unknown) => (typeof v === 'bigint' ? v.toString() : v)) ?? 'null';
 }
 
+/** Whether a store keeping what JSON keeps holds `a` and `b` alike: the same JSON text, keys in the order written, a
+ *  `bigint` as {@link toJson} writes it. A value JSON cannot write, such as one holding a cycle, is alike only to
+ *  itself. Key order counts: a read back from storage keeps the order it was written in. */
+export function sameStored(a: unknown, b: unknown): boolean {
+  if (Object.is(a, b)) return true;
+  try {
+    const text = JSON.stringify(a, bigintAsDigits);
+    return text !== undefined && text === JSON.stringify(b, bigintAsDigits);
+  } catch {
+    return false;
+  }
+}
+
+const bigintAsDigits = (_: string, v: unknown): unknown => (typeof v === 'bigint' ? v.toString() : v);
+
 /** A check for an adapter that stores JSON: warns once per key about a value JSON would change. */
 export function jsonLossWarner(substrate: string): (key: string, value: unknown) => void {
   const warned = new Set<string>();

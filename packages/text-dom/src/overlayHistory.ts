@@ -4,6 +4,7 @@
  * moment a script writes the overlay's DOM, which every restyle, paste, and armed character does, so after one Cmd+B
  * nothing typed before it could be undone.
  */
+import { deepEqual } from '@weasel-js/registry';
 import type { StyledRun, TextStyle } from '@weasel-js/text';
 import type { TextEditSelection } from './textEditTypes';
 
@@ -93,7 +94,7 @@ export function overlayHistory(host: {
 }
 
 function sameContent(a: OverlayState, b: OverlayState): boolean {
-  return JSON.stringify([a.runs, a.style]) === JSON.stringify([b.runs, b.style]);
+  return deepEqual([a.runs, a.style], [b.runs, b.style], { undefinedAsAbsent: true });
 }
 
 /** Whether `sel` is a collapsed caret at `caret`'s. */

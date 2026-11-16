@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState, type RefObject } from 'react';
+import { scrolledPlaceOf } from '@weasel-js/core';
 import { prefersReducedMotion } from '@weasel-js/react';
 import { compositeKey } from '@weasel-js/registry';
 
@@ -131,7 +132,7 @@ export function useScrollSpy(options: UseScrollSpyOptions): ScrollSpy {
     settle();
     root.addEventListener('scrollend', release);
     root.addEventListener('scroll', settle, { passive: true });
-    const top = el.getBoundingClientRect().top - root.getBoundingClientRect().top + root.scrollTop;
+    const top = scrolledPlaceOf(el, root).y;
     root.scrollTo?.({ top, behavior: prefersReducedMotion() ? 'auto' : 'smooth' });
   }, [rootRef, measure]);
 

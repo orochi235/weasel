@@ -157,6 +157,7 @@ const overRows = (dock: DockBox, along: number): boolean => dock.rows.length > 0
 /** `layout` with `barId` moved to `to`, or null where that changes nothing. */
 export function movedLayout(layout: ToolbarLayout, barId: string, to: BarTarget): ToolbarLayout | null {
   const next = moveBar(layout, barId, to);
+  // eslint-disable-next-line no-restricted-syntax -- key order counts: `floating`'s is the order its bars stack in.
   return JSON.stringify(next) === JSON.stringify(layout) ? null : next;
 }
 

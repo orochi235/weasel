@@ -1,5 +1,5 @@
 import { isPlainObject } from '@weasel-js/registry';
-import type { StorageAdapter } from '@weasel-js/storage';
+import { type StorageAdapter, sameStored } from '@weasel-js/storage';
 import { labStorageKey } from './helpers';
 import type { LabDocument, LabMode, Migration, SavedSnapshot, SerializedTrial } from './types';
 import type { UndockedPanels } from './undock';
@@ -122,12 +122,6 @@ export async function readLegacyDocument(
     layout: bucketOr(layout, {}, 'layout', 'object'),
     mode,
   };
-}
-
-/** Whether two stored values hold the same data. Stored values are
- *  structured-clone copies, so identity says nothing. */
-export function sameStored(a: unknown, b: unknown): boolean {
-  return JSON.stringify(a) === JSON.stringify(b);
 }
 
 /** Delete `keys` and read each back, so an adapter whose delete silently did

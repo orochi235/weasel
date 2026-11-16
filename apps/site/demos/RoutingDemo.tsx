@@ -4,6 +4,7 @@ import {
   ActionDisabledReason,
   DEFAULT_ALLOWED_CAPABILITIES,
   buildRuleCtx,
+  clientToCanvas,
   createDepRegistry,
   createDispatcher,
   defineTool,
@@ -295,11 +296,10 @@ export function RoutingDemo() {
     if (e.button !== 0) return;
     const svg = e.currentTarget;
     svg.focus();
-    const rect = svg.getBoundingClientRect();
-    const toWorld = (cx: number, cy: number) => ({
-      x: cx - rect.left - boardRef.current.pan.x,
-      y: cy - rect.top - boardRef.current.pan.y,
-    });
+    const toWorld = (cx: number, cy: number) => {
+      const [x, y] = clientToCanvas(svg, cx, cy);
+      return { x: x - boardRef.current.pan.x, y: y - boardRef.current.pan.y };
+    };
     const start = toWorld(e.clientX, e.clientY);
     const b = boardRef.current;
     const hit = boxAt(b, start.x, start.y);

@@ -72,7 +72,9 @@ function defaultGhost(source: HTMLElement, payload: DragPayload): HTMLElement {
 }
 
 function positionGhost(el: HTMLElement, seat: FixedSeat, x: number, y: number) {
-  el.style.transform = `translate(${x - seat.left - el.offsetWidth / 2}px, ${y - seat.top - el.offsetHeight / 2}px) scale(0.92)`;
+  const left = (x - seat.left) / seat.scale.x - el.offsetWidth / 2;
+  const top = (y - seat.top) / seat.scale.y - el.offsetHeight / 2;
+  el.style.transform = `translate(${left}px, ${top}px) scale(0.92)`;
 }
 
 /** Call one of a drop zone's callbacks. `activeDrag` is module state that gates every later drag, so a callback

@@ -1,9 +1,6 @@
-/** What these conversions read off an element: any `Element` is one, and an `HTMLElement` also reports its layout size. */
-export interface ShownElement {
-  getBoundingClientRect(): { left: number; top: number; width?: number; height?: number };
-  offsetWidth?: number;
-  offsetHeight?: number;
-}
+import { clientScaleOf, type ShownElement } from '@weasel-js/gestures';
+
+export { clientScaleOf, type ShownElement };
 
 /** An element's box: client position, and size in its own CSS pixels. */
 export interface LayoutBox {
@@ -13,25 +10,6 @@ export interface LayoutBox {
   height: number;
   /** Client pixels per CSS pixel of the element, per axis. */
   scale: { x: number; y: number };
-}
-
-// `offsetWidth` is rounded to a whole px, so an unscaled box would otherwise
-// read a fractional width as a scale a hair off 1.
-function axisScale(client: number, layout: number): number {
-  return layout > 0 && Math.abs(client - layout) > 0.5 ? client / layout : 1;
-}
-
-/**
- * How much ancestor transforms (a `scale()`, a zoomed stage) enlarge `el` on
- * screen, per axis: its client rect over its own layout box. 1 on an axis
- * whose layout size is unknown, as for an element that is not an
- * `HTMLElement`. A rotated ancestor reads as the scale of its bounding box.
- */
-export function clientScaleOf(
-  el: ShownElement,
-  rect: { width?: number; height?: number } = el.getBoundingClientRect(),
-): { x: number; y: number } {
-  return { x: axisScale(rect.width ?? 0, el.offsetWidth ?? 0), y: axisScale(rect.height ?? 0, el.offsetHeight ?? 0) };
 }
 
 /**
@@ -56,8 +34,7 @@ export function clientToCanvas(
   clientX: number,
   clientY: number,
 ): [number, number] {
-  const { left, top, scale } = layoutBoxOf(canvas);
-  return [(clientX - left) / scale.x, (clientY - top) / scale.y];
+  return clientToCanvasRect(layoutBoxOf(canvas), clientX, clientY);
 }
 
 /** The inverse of {@link clientToCanvas}: a point in `canvas`'s CSS pixels as client coords. */
@@ -70,16 +47,35 @@ export function canvasToClient(
   return [left + x * scale.x, top + y * scale.y];
 }
 
+/** What {@link scrolledPlaceOf} reads off a scroller: its box, its border, and how far it is scrolled. */
+export interface ShownScroller extends ShownElement {
+  scrollLeft: number;
+  scrollTop: number;
+  clientLeft?: number;
+  clientTop?: number;
+}
+
 /**
- * Rect-taking variant of `clientToCanvas` for call sites that already hold a
- * `DOMRect` (or any `{ left, top }` object) and don't have a canvas element
- * in scope. It knows nothing of an ancestor transform; pass the element to
- * `clientToCanvas` where there may be one.
+ * Where `el` sits in `scroller`'s scrolled content, in the scroller's own CSS px: the `scrollLeft` and `scrollTop`
+ * that would put `el`'s top-left corner at the scroller's top-left, inside its border. An ancestor transform drawing
+ * both at another size is divided out, as {@link clientToCanvas} divides it.
+ */
+export function scrolledPlaceOf(el: Pick<ShownElement, 'getBoundingClientRect'>, scroller: ShownScroller): { x: number; y: number } {
+  const r = el.getBoundingClientRect();
+  const [x, y] = clientToCanvas(scroller, r.left, r.top);
+  return { x: x - (scroller.clientLeft ?? 0) + scroller.scrollLeft, y: y - (scroller.clientTop ?? 0) + scroller.scrollTop };
+}
+
+/**
+ * Box-taking variant of `clientToCanvas`, for a box measured once and read on
+ * every move: a {@link LayoutBox}, or any `{ left, top }`. Its `scale`, when it
+ * has one, is divided out; a bare `DOMRect` has none and maps unscaled.
  */
 export function clientToCanvasRect(
-  rect: { left: number; top: number },
+  rect: { left: number; top: number; scale?: { x: number; y: number } },
   clientX: number,
   clientY: number,
 ): [number, number] {
-  return [clientX - rect.left, clientY - rect.top];
+  // eslint-disable-next-line no-restricted-syntax -- the one place a client point is taken off a box's corner.
+  return [(clientX - rect.left) / (rect.scale?.x ?? 1), (clientY - rect.top) / (rect.scale?.y ?? 1)];
 }

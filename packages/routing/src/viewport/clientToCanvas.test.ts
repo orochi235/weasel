@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { canvasToClient, clientToCanvas, layoutBoxOf } from './clientToCanvas';
+import { canvasToClient, clientToCanvas, clientToCanvasRect, layoutBoxOf, scrolledPlaceOf } from './clientToCanvas';
 
 /** A 200×100 element laid out at client (10, 20), shown at `scale` by an ancestor transform. */
 function shown(scale: number, layout = { width: 200, height: 100 }): HTMLElement {
@@ -36,5 +36,21 @@ describe('clientToCanvas under an ancestor transform', () => {
     const el = document.createElement('div');
     el.getBoundingClientRect = () => ({ left: 5, top: 5, width: 50, height: 50 }) as DOMRect;
     expect(clientToCanvas(el, 30, 30)).toEqual([25, 25]);
+  });
+});
+
+describe('scrolledPlaceOf', () => {
+  it("answers in the scroller's own px, scrolled and inside its border, whatever scale an ancestor draws it at", () => {
+    const scroller = shown(2);
+    for (const [k, v] of Object.entries({ scrollTop: 30, scrollLeft: 5, clientTop: 1, clientLeft: 1 })) Object.defineProperty(scroller, k, { value: v });
+    const row = { getBoundingClientRect: () => DOMRect.fromRect({ x: 30, y: 60, width: 40, height: 20 }) };
+    expect(scrolledPlaceOf(row, scroller)).toEqual({ x: 14, y: 49 });
+  });
+});
+
+describe('clientToCanvasRect', () => {
+  it("divides out a layout box's scale, and maps a bare rect unscaled", () => {
+    expect(clientToCanvasRect(layoutBoxOf(shown(2)), 50, 60)).toEqual([20, 20]);
+    expect(clientToCanvasRect({ left: 10, top: 20 }, 50, 60)).toEqual([40, 40]);
   });
 });

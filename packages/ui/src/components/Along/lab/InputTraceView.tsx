@@ -1,4 +1,5 @@
 import { useLayoutEffect, useRef, useState, type ReactElement } from 'react';
+import { deepEqual } from '@weasel-js/registry';
 import { Along } from '@weasel-js/ui/components/Along';
 import { PrefsBar } from '@weasel-js/ui/components/PrefsBar';
 import { Button } from '@weasel-js/ui/components/Button';
@@ -27,7 +28,7 @@ function useTabOrder(root: React.RefObject<HTMLElement | null>, tick: unknown): 
     const update = (): void => {
       const els = tabOrder(el);
       const next = { names: els.map(describe), focused: els.indexOf(document.activeElement as HTMLElement) };
-      setOrder((prev) => (JSON.stringify(prev) === JSON.stringify(next) ? prev : next));
+      setOrder((prev) => (deepEqual(prev, next) ? prev : next));
     };
     update();
   }, [root, tick]);

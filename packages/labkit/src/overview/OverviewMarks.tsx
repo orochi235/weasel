@@ -10,6 +10,7 @@ import { useAnnotationsOptional } from '../annotations/AnnotationsContext';
 import { markSvgNodes } from '../annotations/svgNodes';
 import type { AnnotationsApi } from '../annotations/types';
 import type { CameraContextValue } from '../canvas/CameraInput';
+import { hostBox } from '../canvas/hostBox';
 import { useLabCommandsOptional } from '../lab/LabContext';
 
 /** A target's box, in the camera's frame-local units. */
@@ -20,19 +21,23 @@ interface LocalRect {
   h: number;
 }
 
-/** Where `el` sits in the camera's frame-local units: its screen rect,
- *  measured against the camera's element, through the camera. */
-function localRectOf(el: HTMLElement, camera: CameraContextValue): LocalRect | null {
-  const host = camera.element();
-  if (!host) return null;
+/** Where `el` sits in the camera's frame-local units: its client rect, measured against the camera's element in
+ *  that element's own px, through the camera. */
+export function localRectOf(
+  el: HTMLElement,
+  camera: Pick<CameraContextValue, 'element' | 'view'>,
+): LocalRect | null {
+  const h = hostBox(camera.element());
+  if (!h) return null;
   const r = el.getBoundingClientRect();
-  const h = host.getBoundingClientRect();
   const v = camera.view.get();
+  const sx = h.scaleX * v.scale.x;
+  const sy = h.scaleY * v.scale.y;
   return {
-    x: (r.left - h.left) / v.scale.x + v.x,
-    y: (r.top - h.top) / v.scale.y + v.y,
-    w: r.width / v.scale.x,
-    h: r.height / v.scale.y,
+    x: (r.left - h.left) / sx + v.x,
+    y: (r.top - h.top) / sy + v.y,
+    w: r.width / sx,
+    h: r.height / sy,
   };
 }
 

@@ -125,6 +125,8 @@ export { formatShortcut, formatShortcutParts, SHORTCUT_LEADER_SEPARATOR } from '
 export { bindingSpec, held, key, keySpecRoute, unbound } from './ui/keySugar';
 export type { BindingOverrideInput } from './ui/keySugar';
 export type { ShortcutInput, FormatShortcutOptions, ShortcutLeaderStep, ShortcutParts } from './ui/formatShortcut';
+export { clientScaleOf } from './ui/clientScale';
+export type { ShownElement } from './ui/clientScale';
 export { fixedSeat, nearestPortalHost } from './ui/fixedSeat';
 export type { FixedSeat } from './ui/fixedSeat';
 

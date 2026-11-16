@@ -5,6 +5,7 @@ import { sliderAt, spanMap } from '@weasel-js/ui-input';
 import { useSnapRadiusPx } from '../../snap';
 import type { TimeWindow } from './timeScale';
 import { isPrimaryPress } from '@weasel-js/gestures';
+import { alongTrack } from '../../alongTrack';
 
 /** What a lane's pointer reads: its track, the window laid across it, and the keys on it. */
 export interface KeyDragArgs {
@@ -38,10 +39,7 @@ export function useKeyDrag(a: KeyDragArgs) {
   const snapRadiusPx = useSnapRadiusPx();
   const dragPx = useKitSetting('gestures.dragPx');
 
-  const place = (clientX: number): { f: number; width: number } => {
-    const rect = trackRef.current?.getBoundingClientRect();
-    return rect && rect.width > 0 ? { f: (clientX - rect.left) / rect.width, width: rect.width } : { f: 0, width: 0 };
-  };
+  const place = (clientX: number): { f: number; width: number } => alongTrack(trackRef.current, clientX) ?? { f: 0, width: 0 };
   // The track reads ruler times, which `snapTimes` are; the row's keys are measured from its own start.
   const track = { min: offset, max: Infinity, ...spanMap(win) };
   const msAt = (clientX: number): number => sliderAt(place(clientX).f, track) - offset;
