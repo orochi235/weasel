@@ -1,4 +1,4 @@
-import { isPlainObject } from '@weasel-js/registry';
+import { isPlainObject, setOwn } from '@weasel-js/registry';
 import { axisNameProblem, isByAxis, type AxisDefs, type Varying } from './axes.ts';
 import type { SerializableColorList } from './colorListItems.ts';
 import type { PinObject, PinValue, ThemeDefinition } from './definition.ts';
@@ -30,7 +30,7 @@ const isPinObject = (v: PinValue): v is PinObject =>
 function toRaw(v: Varying<PinValue>): Varying<RawToken> {
   if (isByAxis(v)) {
     const out: Record<string, unknown> = { by: v.by };
-    for (const [k, x] of Object.entries(v)) if (k !== 'by') out[k] = toRaw(x as Varying<PinValue>);
+    for (const [k, x] of Object.entries(v)) if (k !== 'by') setOwn(out, k, toRaw(x as Varying<PinValue>));
     return out as Varying<RawToken>;
   }
   const obj: PinObject = isPinObject(v) ? v : { value: v as TokenValue };
@@ -72,7 +72,7 @@ export function defineTheme(input: ThemeInput): Theme {
   const tokens: Record<string, Varying<RawToken>> = {};
   for (const [name, v] of Object.entries({ ...input.components, ...input.pins })) {
     if (!isSafeTokenName(name)) throw new Error(`Theme "${input.name}": ${unsafeTokenName(name)}`);
-    tokens[name] = toRaw(v);
+    setOwn(tokens, name, toRaw(v));
   }
   return {
     name: input.name,

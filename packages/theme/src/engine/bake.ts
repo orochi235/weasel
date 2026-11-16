@@ -1,4 +1,4 @@
-import { deepEqual } from '@weasel-js/registry';
+import { deepEqual, setOwn } from '@weasel-js/registry';
 import { enumerateSelections, fullSelection, selectionKey, type AxisDefs, type Selection, type Varying } from '../axes.ts';
 import { tokenAt } from '../chainTokens.ts';
 import type { SerializableColorList } from '../colorListItems.ts';
@@ -46,7 +46,7 @@ function table(def: ThemeDefinition, axes: AxisDefs, lookup: Lookup | undefined)
   for (const sel of enumerateSelections(axes)) {
     const { tokens } = derive(def, sel, lookup);
     const normalized: Record<string, RawToken> = {};
-    for (const [name, t] of Object.entries(tokens)) normalized[name] = normalize(t);
+    for (const [name, t] of Object.entries(tokens)) setOwn(normalized, name, normalize(t));
     out.set(selectionKey(axes, sel), normalized);
   }
   return out;
@@ -96,26 +96,26 @@ function bakeOver(definition: ThemeDefinition, merged: ThemeDefinition, above: r
     // A selection this definition produced nothing at cannot unset the token, so it never counts as a change.
     if (selections.every((sel) => at(sel, name) === undefined || same(at(sel, name), inherited(sel, name)))) continue;
 
-    const varying = Object.keys(axes).filter((axis) =>
-      selections.some((sel) => Object.keys(axes[axis].values).some((v) => !same(at(sel, name), at({ ...sel, [axis]: v }, name)))),
+    const varying = Object.entries(axes).filter(([axis, d]) =>
+      selections.some((sel) => Object.keys(d.values).some((v) => !same(at(sel, name), at({ ...sel, [axis]: v }, name)))),
     );
 
     const build = (i: number, sel: Record<string, string>): Varying<RawToken> | undefined => {
       if (i === varying.length) return at(fullSelection(axes, sel), name);
-      const axis = varying[i];
+      const [axis, d] = varying[i];
       const branch: Record<string, unknown> = { by: axis };
       let any = false;
-      for (const v of Object.keys(axes[axis].values)) {
+      for (const v of Object.keys(d.values)) {
         const x = build(i + 1, { ...sel, [axis]: v });
         if (x !== undefined) {
-          branch[v] = x;
+          setOwn(branch, v, x);
           any = true;
         }
       }
       return any ? (branch as Varying<RawToken>) : undefined;
     };
     const value = build(0, {});
-    if (value !== undefined) tokens[name] = value;
+    if (value !== undefined) setOwn(tokens, name, value);
   }
 
   const ramps = Object.fromEntries(Object.entries(definition.ramps ?? {}).map(([name, entry]) => [name, declaredSteps(entry)]));

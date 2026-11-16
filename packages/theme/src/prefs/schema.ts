@@ -1,4 +1,5 @@
 import { isPrefScope, prefLeaves, prefScopeSelectors, type PrefGroup, type PrefLeaf, type PrefScope, type PrefScopeSpec } from '@weasel-js/prefs';
+import { getOwn, setOwn } from '@weasel-js/registry';
 import { selectionKey } from '../axes.ts';
 import { weaselTheme, type Theme } from '../theme.ts';
 import { prefOfCss, tokenLeafKind } from './leaf.ts';
@@ -40,8 +41,8 @@ function tokenLeaf(row: TokenRow, table: ReturnType<typeof tokenTable>): PrefLea
     ...tokenLeafKind(row), name, description: row.description, default: undefined as unknown,
     ...(name === row.name ? {} : { tags: [row.name] }),
   } as PrefLeaf;
-  const fallback = row.css[selectionKey(table.axes, {})] ?? Object.values(row.css)[0];
-  const held = foldAxes(table.axes, (selection) => prefOfCss(leaf, row.css[selectionKey(table.axes, selection)] ?? fallback), scopeByAxis);
+  const fallback = getOwn(row.css, selectionKey(table.axes, {})) ?? Object.values(row.css)[0];
+  const held = foldAxes(table.axes, (selection) => prefOfCss(leaf, getOwn(row.css, selectionKey(table.axes, selection)) ?? fallback), scopeByAxis);
   leaf.default = prefOfCss(leaf, fallback);
   // Auto is following the theme, which computes the value; a pin goes over it.
   leaf.auto = { on: true, value: held };
@@ -73,19 +74,23 @@ export function themePrefsSchema(theme: Theme = weaselTheme): PrefGroup {
   const table = tokenTable(theme);
   const axes: Record<string, PrefLeaf> = {};
   for (const [axis, def] of Object.entries(table.axes)) {
-    axes[axis] = {
+    setOwn(axes, axis, {
       kind: 'enum',
       name: labeled(axis),
       description: '',
       default: def.default,
       options: Object.keys(def.values).map((value) => ({ value, label: labeled(value) })),
-    };
+    } satisfies PrefLeaf);
   }
   const children: Record<string, PrefGroup> = { [THEME_PREFS_AXIS]: { name: 'Axes', children: axes } };
   for (const row of table.rows) {
     const key = groupKey(row.group);
-    if (!Object.hasOwn(children, key)) children[key] = { name: labeled(row.group), resettable: true, children: {} };
-    children[key].children[row.name] = tokenLeaf(row, table);
+    let group = getOwn(children, key);
+    if (!group) {
+      group = { name: labeled(row.group), resettable: true, children: {} };
+      setOwn(children, key, group);
+    }
+    setOwn(group.children, row.name, tokenLeaf(row, table));
   }
   return { name: `${labeled(theme.name)} theme`, children };
 }

@@ -3,6 +3,17 @@ import { loadDTCG } from './loadDTCG';
 import { resolveTheme } from './resolveTheme';
 
 describe('loadDTCG', () => {
+  it('gives a mode named toString that the axes extension leaves out no scheme, not a built-in', () => {
+    const theme = loadDTCG({
+      name: 'acme',
+      modes: { dark: { color: { $type: 'color', surface: { $value: '#000000' } } }, toString: { color: { $type: 'color', surface: { $value: '#ffffff' } } } },
+      $extensions: { 'com.weasel.axes': { axes: { mode: { default: 'dark', values: { dark: { scheme: 'dark' } } } } } },
+    });
+    expect(Object.hasOwn(theme.axes.mode!.values, 'toString')).toBe(true);
+    expect(theme.axes.mode!.values.toString).toEqual({});
+    expect(resolveTheme(theme, { mode: 'toString' })['--wzl-surface']).toBe('#ffffff');
+  });
+
   it('builds a Theme from a DTCG document', () => {
     const theme = loadDTCG({
       name: 'acme',

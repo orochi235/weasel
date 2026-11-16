@@ -1,3 +1,4 @@
+import { setOwn } from '@weasel-js/registry';
 import { ALPHA_EXT, isSafeTokenName, SCOPE_EXT, unsafeTokenName, type FlatTokens, type RawToken } from './types';
 import { readDtcgValue } from './value';
 
@@ -52,7 +53,7 @@ export function flattenTokens(doc: Record<string, unknown>): FlatTokens {
         description: node.$description,
         ...(scope ? { scope } : {}),
       };
-      out[leaf] = token;
+      setOwn(out, leaf, token);
     }
   }
 

@@ -1,5 +1,6 @@
 // Every token of a theme as the prefs bridge reads it: what it is, and the CSS it resolves to at each selection.
 
+import { getOwn, setOwn } from '@weasel-js/registry';
 import { enumerateSelections, isByAxis, selectionKey, type AxisDefs, type Selection } from '../axes.ts';
 import { TOKEN_MANIFEST, type TokenManifestEntry } from '../generated/manifest.ts';
 import { resolveTheme, themeAxes, themeChain } from '../resolveTheme.ts';
@@ -75,8 +76,8 @@ export function tokenTable(theme: Theme): TokenTable {
     const said = own.get(name);
     const css: Record<string, string> = {};
     for (const [key, tokens] of resolved) {
-      const value = tokens[PREFIX + name];
-      if (value !== undefined) css[key] = value;
+      const value = getOwn(tokens, PREFIX + name);
+      if (value !== undefined) setOwn(css, key, value);
     }
     rows.push({
       name,
@@ -105,11 +106,11 @@ export function foldAxes(
   at: (selection: Selection) => unknown,
   split: (axis: string, members: Record<string, unknown>) => unknown,
 ): unknown {
-  const names = Object.keys(axes);
+  const entries = Object.entries(axes);
   const walk = (i: number, selection: Selection): unknown => {
-    if (i === names.length) return at(selection);
-    const axis = names[i]!;
-    const members = Object.keys(axes[axis]!.values).map((value): [string, unknown] => [value, walk(i + 1, { ...selection, [axis]: value })]);
+    if (i === entries.length) return at(selection);
+    const [axis, def] = entries[i]!;
+    const members = Object.keys(def.values).map((value): [string, unknown] => [value, walk(i + 1, { ...selection, [axis]: value })]);
     const first = JSON.stringify(members[0]![1]);
     return members.every(([, member]) => JSON.stringify(member) === first) ? members[0]![1] : split(axis, Object.fromEntries(members));
   };

@@ -7,6 +7,17 @@ import { defineTheme, weaselTheme } from '../../theme';
 import { toDTCG } from './dtcg';
 
 describe('toDTCG', () => {
+  it('writes a token type and a mode named like Object.prototype members as groups of their own', () => {
+    const axes = { mode: { default: 'dark', values: { dark: {}, toString: {} } } };
+    const t = defineTheme({ name: 'x', extends: null, axes, pins: { gap: { value: 1, type: 'constructor' }, tone: { by: 'mode', dark: '#000000', toString: '#ffffff' } } });
+    const doc = toDTCG(t);
+    expect(doc.primitives.constructor).toEqual({ $type: 'constructor', gap: { $value: 1 } });
+    expect(Object.hasOwn(doc.modes, 'toString')).toBe(true);
+    expect(doc.modes.toString!.unknown).toEqual({ $type: 'unknown', tone: { $value: '#ffffff' } });
+    expect(Object.hasOwn(Object, 'gap')).toBe(false);
+    expect(Object.hasOwn(Object.prototype.toString, 'unknown')).toBe(false);
+  });
+
   it('round-trips the built-in theme through loadDTCG', () => {
     const back = loadDTCG({ ...toDTCG(weaselTheme), extends: null });
     for (const mode of ['dark', 'light']) {

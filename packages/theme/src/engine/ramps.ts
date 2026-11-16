@@ -1,4 +1,5 @@
 import { lerp } from '@weasel-js/geom';
+import { getOwn, setOwn } from '@weasel-js/registry';
 import { lerpHueDeg } from '@weasel-js/paint';
 import { DEFAULT_CONSTRAINTS, generate, type Anchor, type Constraints } from './color/generate.ts';
 import { toHex, toLch } from './color/oklch.ts';
@@ -43,7 +44,7 @@ export function lightnessRamp(p: LightnessParams): Record<string, string> {
   const max = envelopeMax(lightBias, p.darkBias);
 
   const anchors = p.steps.flatMap((s, i) => {
-    const hex = p.anchor?.[s];
+    const hex = getOwn(p.anchor ?? {}, s);
     if (hex === undefined) return [];
     const { C, H } = toLch(hex);
     return [{ i, hue: H, peak: C }];
@@ -61,15 +62,15 @@ export function lightnessRamp(p: LightnessParams): Record<string, string> {
 
   const out: Record<string, string> = {};
   p.steps.forEach((step, i) => {
-    const fixed = p.anchor?.[step];
+    const fixed = getOwn(p.anchor ?? {}, step);
     if (fixed !== undefined) {
-      out[step] = fixed.toLowerCase();
+      setOwn(out, step, fixed.toLowerCase());
       return;
     }
     const t = at(i);
     const L = lerp(p.lightness[0], p.lightness[1], lerp(t, smoothstep(t), p.curve));
     const { hue, peak } = hueAndPeak(i);
-    out[step] = toHex(L, Math.min((peak * envelope(t, lightBias, p.darkBias)) / max, MAX_CHROMA), hue);
+    setOwn(out, step, toHex(L, Math.min((peak * envelope(t, lightBias, p.darkBias)) / max, MAX_CHROMA), hue));
   });
   return out;
 }
@@ -86,7 +87,7 @@ export function categoricalRamp(
   const palette = generate({ ...DEFAULT_CONSTRAINTS, ...gates, count: steps.length, anchors });
   const colors: Record<string, string> = {};
   steps.forEach((step, i) => {
-    colors[step] = palette.swatches[i].hex.toLowerCase();
+    setOwn(colors, step, palette.swatches[i].hex.toLowerCase());
   });
   return { colors, feasible: palette.feasible };
 }

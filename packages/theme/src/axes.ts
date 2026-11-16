@@ -1,4 +1,4 @@
-import { isPlainObject } from '@weasel-js/registry';
+import { getOwn, isPlainObject, setOwn } from '@weasel-js/registry';
 
 /** One value of an axis. `scheme` becomes `color-scheme` in that value's CSS blocks. */
 export interface AxisValue {
@@ -48,8 +48,8 @@ export function fullSelection(axes: AxisDefs, selection: Selection = {}): Select
   const out: Record<string, string> = {};
   for (const [name, def] of Object.entries(axes)) {
     const v = Object.hasOwn(selection, name) ? selection[name] : undefined;
-    if (v !== undefined && Object.hasOwn(def.values ?? {}, v)) out[name] = v;
-    else if (typeof def.default === 'string') out[name] = def.default;
+    if (v !== undefined && Object.hasOwn(def.values ?? {}, v)) setOwn(out, name, v);
+    else if (typeof def.default === 'string') setOwn(out, name, def.default);
   }
   return out;
 }
@@ -58,7 +58,7 @@ export function fullSelection(axes: AxisDefs, selection: Selection = {}): Select
 export function mergeAxes(parent: AxisDefs, child: AxisDefs): AxisDefs {
   const out: Record<string, AxisDef> = { ...parent };
   for (const [name, def] of Object.entries(child)) {
-    out[name] = { ...def, values: { ...parent[name]?.values, ...def.values } };
+    setOwn(out, name, { ...def, values: { ...getOwn(parent, name)?.values, ...def.values } });
   }
   return out;
 }
@@ -95,14 +95,14 @@ export function wzlAttr(attr: string, value: string): string {
 /** `mode=dark,density=compact`, axes in declaration order. */
 export function selectionKey(axes: AxisDefs, selection: Selection): string {
   const full = fullSelection(axes, selection);
-  return Object.keys(axes).map((a) => `${a}=${full[a]}`).join(',');
+  return Object.keys(axes).map((a) => `${a}=${getOwn(full, a)}`).join(',');
 }
 
 export function pick<T>(v: Varying<T>, selection: Selection): Picked<T> {
   let cur: unknown = v;
   while (isByAxis(cur)) {
     const axis = cur.by;
-    const value = selection[axis];
+    const value = getOwn(selection, axis);
     if (value === undefined || value === 'by' || !Object.hasOwn(cur, value)) return { ok: false, axis, value: value ?? '' };
     cur = cur[value];
   }
@@ -114,7 +114,7 @@ export function pickAll<T>(record: Readonly<Record<string, Varying<T>>>, selecti
   const out: Record<string, T> = {};
   for (const [name, v] of Object.entries(record)) {
     const picked = pick(v, selection);
-    if (picked.ok) out[name] = picked.value;
+    if (picked.ok) setOwn(out, name, picked.value);
   }
   return out;
 }

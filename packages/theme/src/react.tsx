@@ -93,7 +93,7 @@ export function ThemeProvider({
   }, [theme, value]);
   useLayoutEffect(() => () => release.current?.(), []);
 
-  const attrs = Object.fromEntries(Object.keys(axes).map((a) => [`data-wzl-${a}`, wzlValue(full[a])]));
+  const attrs = Object.fromEntries(Object.entries(full).map(([a, v]) => [`data-wzl-${a}`, wzlValue(v)]));
   return (
     <ThemeContext.Provider value={value}>
       <div ref={ref} className={className} style={style} data-wzl-theme={wzlValue(theme.name)} {...attrs}>
