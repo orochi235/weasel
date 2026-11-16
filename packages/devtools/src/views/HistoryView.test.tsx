@@ -1,7 +1,7 @@
 /** The History tab against a page it does not have: a client whose slices the test writes. */
 import { afterEach, describe, expect, it } from 'vitest';
 import { act, cleanup, fireEvent, screen, waitFor } from '@testing-library/react';
-import type { DevtoolsArea, DevtoolsHistoryRecord, DevtoolsHistorySlice } from '@weasel-js/core/devtools-protocol';
+import type { DevtoolsArea, DevtoolsHistoryRecord, DevtoolsHistorySlice } from '../protocol';
 import { renderWithIcons } from '@weasel-js/ui/testing/withIcons';
 import type { DevtoolsClient } from '../client';
 import { HistoryView } from './HistoryView';

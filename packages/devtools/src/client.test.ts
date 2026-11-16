@@ -1,8 +1,6 @@
 import { describe, it, expect, vi } from 'vitest';
-import {
-  DEVTOOLS_PROTOCOL, createDevtoolsHook, createDevtoolsRoot, createInPageTransports,
-  type DevtoolsRootSource, type PageMessage, type PanelMessage, type PanelTransport,
-} from '@weasel-js/core/devtools-protocol';
+import { DEVTOOLS_PROTOCOL, createInPageTransports, type PageMessage, type PanelMessage, type PanelTransport } from './protocol';
+import { createDevtoolsHook, createDevtoolsRoot, type DevtoolsRootSource } from './hook';
 import { createDispatchTrace, createTraceRing } from '@weasel-js/core/routing';
 import { connectDevtools, createDevtoolsClient } from './client';
 import { createInPagePanelTransport } from './inPageTransport';

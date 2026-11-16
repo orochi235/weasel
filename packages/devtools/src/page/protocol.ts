@@ -2,7 +2,7 @@
  * The messages a devtools panel and a page running weasel exchange. Plain
  * data only, so the same messages cross a direct call or `window.postMessage`.
  */
-import type { DebugFeature } from '../debug/types';
+import type { DebugFeature } from '@weasel-js/core';
 import type { SerializedValue } from './serialize';
 
 /** Bumped on any change a panel built against the previous number would misread. */

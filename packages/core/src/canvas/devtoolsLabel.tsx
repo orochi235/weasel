@@ -4,7 +4,8 @@ const DevtoolsLabelContext = createContext<string | null>(null);
 
 /** Props for `<DevtoolsLabel>`. */
 export interface DevtoolsLabelProps {
-  /** The name a devtools panel lists each canvas below this under, unless the canvas has an `aria-label` or id. */
+  /** The name a devtools panel lists each canvas below this under, unless the canvas has an `aria-label` or id.
+   *  The canvas hands it on as its `inspection` dep's `label()`. */
   value: string;
   children?: ReactNode;
 }

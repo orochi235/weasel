@@ -38,7 +38,7 @@ import { useSceneCanvasPathEdit } from './SceneCanvas/useSceneCanvasPathEdit';
 import { useSceneCanvasTools, type SceneCanvasToolProps } from './SceneCanvas/useSceneCanvasTools';
 import { ToolsScope } from '../tools/toolsScope';
 import { hiddenChromeOf, useSceneCanvasChrome } from './SceneCanvas/useSceneChrome';
-import { useDevtoolsOverride } from '../devtools/useDevtoolsRoot';
+import { useDebugOverride } from '../debug/override';
 import { useSceneRedrawSources } from './SceneCanvas/useSceneRedrawSources';
 import { useSceneWorkerSurface } from './SceneCanvas/useSceneWorkerSurface';
 import { useScenePicking } from './SceneCanvas/useScenePicking';
@@ -61,7 +61,7 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
   ref: React.ForwardedRef<SceneCanvasApi>,
 ) {
   const { selectTool: selectToolOpts, selectable = true, viewport, modes } = props;
-  const devtools = useDevtoolsOverride(props.debug), { debug } = devtools;
+  const debugOverride = useDebugOverride(props.debug), { debug } = debugOverride;
   const descriptor = (props.poseDescriptor ?? AUTO_POSE_DESCRIPTOR) as PoseDescriptor<TPose>;
   const deviceProfile = useDeviceProfile();
   const scene = useBakedScene(props.scene, props.composition);
@@ -167,7 +167,7 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
         picking={{ ...picking, adapter: adapter as unknown as BridgeAdapter }} nodeAtPointRef={getNodeAtPointRef}
         tools={tools} viewOn={enabled.has('view')} camera={{ viewState, viewAnimation }}
         dispatcher={dispatcher} pathEdit={{ state: pathEditState }} content={{ publish: publishContent, gestureSource, previewPoseExtra, picking } as ContentSource}
-        chrome={chrome} overlay={layered} ingestionClipboard={ingestionClipboard} ingestionHandlers={ingestionHandlers} devtools={devtools}
+        chrome={chrome} overlay={layered} ingestionClipboard={ingestionClipboard} ingestionHandlers={ingestionHandlers} debug={debugOverride}
         canvas={{ elementRef: internalCanvasRef, apiRef: canvasApiRef, ready: canvasReady }} snapSources={enabled.snapSources} snapStore={layered.snapStore}
       />
       <SurfaceDeclarations views={props.views} entries={contributionEntries(tools.tools)} added={addedViews} />

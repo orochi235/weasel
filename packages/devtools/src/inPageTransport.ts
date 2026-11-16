@@ -1,6 +1,5 @@
-import {
-  createInPageTransports, installDevtoolsHook, type PanelTransport, type WeaselDevtoolsHook,
-} from '@weasel-js/core/devtools-protocol';
+import { createInPageTransports, type PanelTransport } from './protocol';
+import { installDevtoolsHook, type WeaselDevtoolsHook } from './hook';
 
 /**
  * A panel's end of a connection to this page's own hook. Each `yo` opens a

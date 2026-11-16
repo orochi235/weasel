@@ -9,30 +9,48 @@ The panel is `@weasel-js/devtools` ("Mounting the panel", below); the browser ex
 
 ## What the page publishes
 
-Each mounted `<SceneCanvas>` is a **root**. It registers with the hook on mount and leaves on
-unmount, labeled by its `aria-label`, else its DOM id, else the `value` of the nearest
+A page publishes nothing until a canvas takes the `devtools` contribution from
+`@weasel-js/devtools/hook`. That contribution's `attach` installs the hook on
+`window.__weaselDevtools__`, once per page, and registers its canvas as a **root**, which leaves when
+the canvas unmounts. Every canvas below an `AmbientContributionsProvider` takes it:
+
+```tsx
+import { AmbientContributionsProvider } from '@weasel-js/core';
+import { devtools } from '@weasel-js/devtools/hook';
+
+const DEV_AMBIENT = import.meta.env.DEV ? [devtools] : [];
+<AmbientContributionsProvider contributions={DEV_AMBIENT}><App /></AmbientContributionsProvider>;
+```
+
+One canvas takes it with `<SceneCanvas ambient={[devtools]}>`. A canvas whose `tools` prop is a
+`ToolsApi` takeover ignores provided entries, as it does for any ambient contribution, so it takes
+`devtools` in its takeover's `ambient`. Whether a production build takes it is the app's call
+(2026-10-18); without it, the build carries none of the hook's code and a canvas keeps no root, no
+history record and no coord trace (2026-11-15).
+
+The contribution reads its canvas through the canvas's api and its `scene`, `selection`,
+`dispatchTrace`, and `inspection` deps. `inspection` is core's `CanvasInspection`, which `<SceneCanvas>` sources for any
+inspector: its tools, preset contributions, node kinds, actions and dep registries, the debug flags
+in effect and a setter laying flags over them, its `clientToWorld` trace (kept only once asked
+for), its test probes, its `<DevtoolsLabel>`, and a change feed.
+
+A root is labeled by its canvas's `aria-label`, else its DOM id, else the `value` of the nearest
 `<DevtoolsLabel>` above it, else the `aria-label` of its nearest labeled ancestor, else its root id.
-A host that frames canvases it did not write wraps them in `<DevtoolsLabel>`: a labkit trial does,
-with its title, so a canvas in a trial is not named after the pane it sits in. A root's dimension is `3d` when its first
-node's pose has a `position.z`, else `2d`.
+A host that frames canvases it did not write wraps them in `<DevtoolsLabel>`, which stays in core so
+the host need not depend on devtools: a labkit trial does, with its title, so a canvas in a trial is
+not named after the pane it sits in. A root's dimension is `3d` when its first node's pose has a
+`position.z`, else `2d`.
 
 `window.__weaselDevtools__` is `{ protocol, kitVersion, roots(), root(id), register(root),
 connect(transport, opening?) }`.
-
-| Build | Hook installed |
-|---|---|
-| dev (`isDev()`) | by the first `<SceneCanvas>` to mount |
-| production | only when the app imports `@weasel-js/core/devtools` (decided per app, 2026-10-18) |
-
-A production build carries the hook's code either way; without the import it never installs it.
 
 The panel inspects and steers; it never edits the scene (2026-10-18).
 
 ## Connecting
 
-A transport is `send(message)` plus `onMessage(listener)`, from `@weasel-js/core/devtools`, or from
-`@weasel-js/core/devtools-protocol`, which exports the same without installing a hook — what a panel
-in its own window, such as the extension's, imports:
+A transport is `send(message)` plus `onMessage(listener)`, from `@weasel-js/devtools/protocol`, which
+installs nothing and loads neither React nor core — what a panel in its own window, and the
+extension's background and content scripts, import:
 
 - `createInPageTransports()` — both ends in one page, delivered by direct call. Pass `page` to
   `hook.connect` and talk over `panel`. A session ends at `bye`, so a panel that reconnects needs a
@@ -40,6 +58,9 @@ in its own window, such as the extension's, imports:
 - `createWindowPanelTransport()` — over `window.postMessage`, in an envelope tagged
   `source: 'weasel-devtools'`. Installing the hook starts a `message` listener, so a content script
   needs no access to page objects: its `yo` opens the connection, replacing any earlier one.
+
+`@weasel-js/devtools/hook` holds the page's side: `devtools`, `attachDevtools`, and the hook's and
+roots' constructors (`installDevtoolsHook`, `createDevtoolsHook`, `createDevtoolsRoot`).
 
 ## Messages
 
@@ -75,8 +96,9 @@ capped.
 ## Traces
 
 A canvas keeps two rolling buffers of 200: its dispatchers' decisions (`DispatchTrace`, on every
-`DispatcherContext` and published as the `dispatchTrace` dep) and its `clientToWorld` conversions.
-Both record in a dev build, and in production only while a panel is connected.
+`DispatcherContext` and published as the `dispatchTrace` dep) and, from the moment the `devtools`
+contribution asks for it, its `clientToWorld` conversions. Both record in a dev build, and in
+production only while a panel is connected.
 
 ## Registry
 
@@ -97,8 +119,8 @@ A binding is `{ actionId, spec, routes, opts }`, where `routes` is the spec in t
 
 ## History
 
-A canvas keeps a rolling buffer of its scene's history steps, 200 long, fed by
-`History.observe` on `scene.history`. Like the traces, it records in a dev build, and in production
+The `devtools` contribution keeps a rolling buffer of its canvas's scene's history steps, 200 long,
+fed by `History.observe` on `scene.history`. Like the traces, it records in a dev build, and in production
 only while a panel is connected. Each record is `{ ts, step, entries, position }`:
 
 - `step` — `push`, `coalesce` (a push merged into the entry on top), `undo`, `redo`, `goto`,
@@ -117,7 +139,7 @@ inside a mode's journal reach the scene's history only when the journal commits,
 ## Mounting the panel
 
 `DevtoolsPanel` from `@weasel-js/devtools` takes the panel's end of any transport and fills its
-container. In the page itself:
+container. In the page itself, beside canvases that take `devtools` (above):
 
 ```tsx
 import { DevtoolsPanel, createInPagePanelTransport } from '@weasel-js/devtools';
@@ -139,8 +161,8 @@ stacks above the detail, and the tabs wrap onto a second row.
 
 It says `yo` on mount and `bye` on unmount, which drops its highlight and overlay flags. Mount it
 in development only, behind a lazy import, so production bundles leave it out:
-`import.meta.env.DEV ? lazy(() => import('./Devtools')) : null`. The repo mounts it that way in
-three places: draw's right sidebar (a folding Devtools panel), each demo page of the site (a
+`import.meta.env.DEV ? lazy(() => import('./Devtools')) : null`. The repo mounts it that way, with
+`devtools` provided above the app's canvases in development, in three places: draw's right sidebar (a folding Devtools panel), each demo page of the site (a
 Devtools switch in the demo's header, which splits the page with the demo narrowing), and forge (a Devtools global in the workshop toolbar, which
 puts the panel beside the story). `tabs={['dispatch']}` shows a subset; draw's Toolkit Builder
 uses it for its dispatch widget. Draw's Bundle Inspector (`#/dev/registry`) keeps only draw's static
@@ -150,7 +172,8 @@ catalog (bundles, gestures, slots, ops, icons, traits); a canvas's live registry
 
 `apps/devtools-extension` hosts `DevtoolsPanel` in the browser's own devtools, for Chrome, Edge, and
 Firefox, and for Safari through an Xcode wrapper. Its content script relays
-`createWindowPanelTransport`'s envelopes, so it works on any page with a hook, frames included. A
+`createWindowPanelTransport`'s envelopes, so it works on any page with a hook, frames included: a
+page whose canvases take `devtools`. A
 content script connects only while a panel is open on its tab. Its toolbar button badges each tab with
 the number of canvases the page's hook reports. Building it, loading it unpacked, and
 packaging it for Safari are in its [README](../apps/devtools-extension/README.md).

@@ -1,7 +1,7 @@
 /** History steps as rows, newest first, each keyed by its place in the page's ring; a row opens to the entries it touched
  *  and each entry's ops. */
 import { useState, type ReactElement } from 'react';
-import type { DevtoolsHistoryRecord } from '@weasel-js/core/devtools-protocol';
+import type { DevtoolsHistoryRecord } from '../protocol';
 import { Code } from '@weasel-js/ui/components/Code';
 import { DataGrid, type DataGridColumn } from '@weasel-js/ui/components/DataGrid';
 import { formatAge } from './formatAge';

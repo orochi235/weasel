@@ -1,6 +1,6 @@
 import { describe, it, expect, vi } from 'vitest';
 import { portPair, type FakePort } from '../testing/fakePorts';
-import { DEVTOOLS_PROTOCOL as PROTOCOL } from '@weasel-js/core/devtools-protocol';
+import { DEVTOOLS_PROTOCOL as PROTOCOL } from '@weasel-js/devtools/protocol';
 import { PORT_PAGE, PORT_PANEL } from '../envelope';
 import { createRelay } from './relay';
 

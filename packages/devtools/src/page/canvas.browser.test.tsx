@@ -6,8 +6,9 @@ import { describe, it, expect, afterEach } from 'vitest';
 import { createElement } from 'react';
 import { createRoot, type Root } from 'react-dom/client';
 import { flushSync } from 'react-dom';
-import { SceneCanvas, createScene } from '@weasel-js/core';
-import { DEVTOOLS_PROTOCOL, type PanelMessage, createInPageTransports } from '@weasel-js/core/devtools';
+import { AmbientContributionsProvider, SceneCanvas, createScene } from '@weasel-js/core';
+import { DEVTOOLS_PROTOCOL, type PanelMessage, createInPageTransports } from './protocol';
+import { devtools } from './attach';
 import { pixelAt } from '@weasel-js/core/testing/canvasPixels';
 
 let root: Root | null = null;
@@ -34,9 +35,9 @@ async function mount() {
   host = document.createElement('div');
   document.body.appendChild(host);
   root = createRoot(host);
-  flushSync(() => root!.render(createElement(SceneCanvas, {
+  flushSync(() => root!.render(createElement(AmbientContributionsProvider, { contributions: [devtools] }, createElement(SceneCanvas, {
     scene, width: 100, height: 100, dpr: 1, 'aria-label': 'overlay check',
-  })));
+  }))));
   await settle();
   const canvas = host.querySelector('canvas')!;
   const hook = window.__weaselDevtools__!;

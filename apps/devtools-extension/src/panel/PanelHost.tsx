@@ -4,7 +4,7 @@
  * so it says `yo` to the new page's hook.
  */
 import { useEffect, useState } from 'react';
-import type { PanelTransport } from '@weasel-js/core/devtools-protocol';
+import type { PanelTransport } from '@weasel-js/devtools/protocol';
 import { DevtoolsPanel } from '@weasel-js/devtools';
 import { watchHookPresence, type PresenceOptions } from '../hookPresence';
 import s from './panel.module.css';
@@ -21,8 +21,8 @@ export function PanelHost({ presence, transport }: { presence: PresenceOptions; 
   if (!state.present) {
     return (
       <p className={s.state}>
-        No weasel on this page. The panel connects once a page mounts a weasel canvas in a dev build, or
-        imports <code>@weasel-js/core/devtools</code>.
+        No weasel on this page. The panel connects once a page mounts a canvas that takes the
+        {' '}<code>devtools</code> contribution from <code>@weasel-js/devtools/hook</code>.
       </p>
     );
   }

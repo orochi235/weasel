@@ -2,7 +2,7 @@
  * One panel's connection to the page: the handshake, every request, the
  * change notices, and the overrides the panel holds, which go when it does.
  */
-import { VERSION } from '../version';
+import { VERSION } from '@weasel-js/core';
 import { answer } from './handlers';
 import { createNotices, type DevtoolsSchedule } from './notices';
 import {

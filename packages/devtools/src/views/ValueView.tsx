@@ -1,6 +1,6 @@
 /** A serialized value as a reader expects to see it: tagged values named, containers folding, cuts and cycles marked. */
 import { useState, type ReactElement, type ReactNode } from 'react';
-import { unescapeKey, type SerializedValue } from '@weasel-js/core/devtools-protocol';
+import { unescapeKey, type SerializedValue } from '../protocol';
 import { Disclosure } from '@weasel-js/ui/components/Disclosure';
 import s from './ValueView.module.css';
 

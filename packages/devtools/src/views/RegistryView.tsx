@@ -5,7 +5,7 @@
  * and no notice reports that.
  */
 import { useMemo, useState, type ReactElement } from 'react';
-import type { DevtoolsRegistry } from '@weasel-js/core/devtools-protocol';
+import type { DevtoolsRegistry } from '../protocol';
 import { useRootQuery } from '../hooks';
 import type { DevtoolsViewProps } from '../tabs';
 import { RegistryBrowser, type RegistryBrowserPick, type RegistryCategory } from './RegistryBrowser';

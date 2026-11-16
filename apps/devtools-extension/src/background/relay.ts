@@ -5,7 +5,7 @@
  */
 import {
   DEVTOOLS_PROTOCOL, isPageMessage, isPanelMessage, type DevtoolsRootInfo, type PageMessage, type PanelMessage,
-} from '@weasel-js/core/devtools-protocol';
+} from '@weasel-js/devtools/protocol';
 import type { PortLike } from '../browserApi';
 import { PORT_PAGE, PORT_PANEL, isPanelHello } from '../envelope';
 import { scopePageMessage, unscopeRootId } from './frames';

@@ -17,7 +17,11 @@ export default defineConfig({
   css: { modules: { generateScopedName: stableScopedName } },
   build: {
     lib: {
-      entry: { index: resolve(import.meta.dirname, 'src/index.ts') },
+      entry: {
+        index: resolve(import.meta.dirname, 'src/index.ts'),
+        hook: resolve(import.meta.dirname, 'src/hook.ts'),
+        protocol: resolve(import.meta.dirname, 'src/protocol.ts'),
+      },
       formats: ['es'],
       cssFileName: 'style',
     },

@@ -3,7 +3,7 @@
  * published as `window.__weaselDevtools__`.
  */
 import { createEmitter } from '@weasel-js/registry';
-import { VERSION } from '../version';
+import { VERSION } from '@weasel-js/core';
 import { DEVTOOLS_PROTOCOL, type DevtoolsRootInfo, type PanelMessage } from './protocol';
 import { isPanelMessage } from './messageShape';
 import type { DevtoolsRoot } from './root';

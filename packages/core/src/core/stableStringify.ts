@@ -1,6 +1,6 @@
 /**
  * JSON with object keys sorted, so two equal values produce one string. What JSON cannot write and would throw on
- * is written with the tags devtools serialization uses: a bigint as `{"$type":"bigint","value":"10"}`, a reference
+ * is written with the tags `@weasel-js/devtools`' serialization uses: a bigint as `{"$type":"bigint","value":"10"}`, a reference
  * to an object that contains it as `{"$type":"cycle"}`.
  */
 export function stableStringify(value: unknown): string {

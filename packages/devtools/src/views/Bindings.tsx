@@ -1,6 +1,6 @@
 /** An entry's gesture bindings: each route drawn in the route grammar, beside the action it reaches. */
 import type { ReactElement } from 'react';
-import type { DevtoolsBinding } from '@weasel-js/core/devtools-protocol';
+import type { DevtoolsBinding } from '../protocol';
 import { Code } from '@weasel-js/ui/components/Code';
 import { GestureRoute } from './GestureRoute';
 import { ValueView } from './ValueView';

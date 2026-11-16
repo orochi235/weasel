@@ -1,17 +1,14 @@
-/** A mounted `<SceneCanvas>` answers a devtools panel through `window.__weaselDevtools__`. */
+/** A `<SceneCanvas>` that took the `devtools` contribution answers a panel through `window.__weaselDevtools__`. */
 import { describe, it, expect, vi, beforeAll, afterEach } from 'vitest';
-import { useState } from 'react';
+import { useState, type ReactNode } from 'react';
 import { render, act, cleanup } from '@testing-library/react';
 import type { DepName } from '@weasel-js/routing';
 import { useDepSource } from '@weasel-js/routing/react';
-import { SceneCanvas } from './SceneCanvas';
-import { useScene } from 'core/scene/useScene';
-import type { NodeId, Scene } from 'core/scene/types';
+import { AmbientContributionsProvider, DevtoolsLabel, SceneCanvas, drawPreset, useScene, type NodeId, type Scene } from '@weasel-js/core';
 import { createGLRecorder } from '@weasel-js/renderer/testing/glRecorder';
-import { DEVTOOLS_PROTOCOL, type PageMessage, type PanelMessage } from '../devtools/protocol';
-import { createInPageTransports } from '../devtools/transport';
-import { DevtoolsLabel } from '../devtools/label';
-import { drawPreset } from 'canvas/SceneCanvas/presets';
+import { DEVTOOLS_PROTOCOL, type PageMessage, type PanelMessage } from './protocol';
+import { createInPageTransports } from './transport';
+import { devtools } from './attach';
 
 type D = { color: string };
 type L = 'main';
@@ -25,6 +22,12 @@ beforeAll(() => {
 afterEach(() => {
   cleanup();
 });
+
+const DEVTOOLS = [devtools];
+
+function WithDevtools({ children }: { children: ReactNode }) {
+  return <AmbientContributionsProvider contributions={DEVTOOLS}>{children}</AmbientContributionsProvider>;
+}
 
 function ExtraDep() {
   useDepSource('clock' as DepName, () => 0 as never);
@@ -44,7 +47,7 @@ function mount() {
     scene = s;
     return <SceneCanvas features={[drawPreset]} scene={s} width={200} height={200} aria-label="board">{child && <ExtraDep />}</SceneCanvas>;
   }
-  render(<Harness />);
+  render(<WithDevtools><Harness /></WithDevtools>);
   const hook = window.__weaselDevtools__!;
   const { page, panel } = createInPageTransports();
   const close = hook.connect(page);
@@ -65,8 +68,18 @@ function mount() {
   return { scene: () => scene!, sup, result, close, rootId, showChild: (on: boolean) => showChild(on) };
 }
 
-describe('SceneCanvas devtools root', () => {
-  it('registers with the hook a dev build installs, labeled from aria-label', () => {
+describe('the devtools contribution on a SceneCanvas', () => {
+  it('registers nothing, and installs no hook, without the contribution', () => {
+    delete window.__weaselDevtools__;
+    function Bare() {
+      const s = useScene<D, L, P>({ systemLayers: [{ id: 'main' }], initial: [] });
+      return <SceneCanvas scene={s} width={50} height={50} aria-label="bare" />;
+    }
+    render(<Bare />);
+    expect(window.__weaselDevtools__).toBeUndefined();
+  });
+
+  it('registers with the hook it installs, labeled from aria-label', () => {
     const { sup, close } = mount();
     expect(sup.roots.at(-1)).toMatchObject({ label: 'board', dimension: '2d' });
     close();
@@ -156,7 +169,7 @@ describe('SceneCanvas devtools root', () => {
       const s = useScene<D, L, P>({ systemLayers: [{ id: 'main' }], initial: [] });
       return <section aria-label="Pan and zoom"><SceneCanvas scene={s} width={50} height={50} /></section>;
     }
-    render(<Unlabeled />);
+    render(<WithDevtools><Unlabeled /></WithDevtools>);
     expect(window.__weaselDevtools__!.roots().map((r) => r.label)).toContain('Pan and zoom');
   });
 
@@ -169,7 +182,7 @@ describe('SceneCanvas devtools root', () => {
         </DevtoolsLabel>
       );
     }
-    render(<InTrial />);
+    render(<WithDevtools><InTrial /></WithDevtools>);
     const labels = window.__weaselDevtools__!.roots().map((r) => r.label);
     expect(labels).toContain('Trial one');
     expect(labels).not.toContain('Content');

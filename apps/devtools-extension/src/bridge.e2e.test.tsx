@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, afterEach } from 'vitest';
 import { render, screen, waitFor } from '@testing-library/react';
 import { createDispatchTrace, createTraceRing } from '@weasel-js/routing';
-import { createDevtoolsRoot, installDevtoolsHook, type DevtoolsRootSource } from '@weasel-js/core/devtools-protocol';
+import { createDevtoolsRoot, installDevtoolsHook, type DevtoolsRootSource } from '@weasel-js/devtools/hook';
 import { portPair } from './testing/fakePorts';
 import { PORT_PAGE } from './envelope';
 import { createContentBridge } from './content/bridge';
