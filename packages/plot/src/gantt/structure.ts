@@ -2,6 +2,7 @@
  * Edits to a gantt's sections and tasks as collections, a task's every field, and the chart's settings, as plain data
  * in and out. A task taken out, or renamed, takes its id out of every `after` and `until` that named it.
  */
+import { deepEqual } from '@weasel-js/registry';
 import { freshName, insertAt, moveAt, removeAt, updateAt, withOptional } from '../editing/lists';
 import { ganttTasks } from './schedule';
 import type { GanttData, GanttEnd, GanttSection, GanttStart, GanttTag, GanttTask } from './types';
@@ -130,11 +131,11 @@ export const setGanttTaskTags = (data: GanttData, section: number, task: number,
 
 /** `data` with a task starting at `start`, as written. */
 export const setGanttTaskStart = (data: GanttData, section: number, task: number, start: GanttStart): GanttData =>
-  withTask(data, section, task, (t) => (JSON.stringify(t.start) === JSON.stringify(start) ? t : { ...t, start }), 'setGanttTaskStart');
+  withTask(data, section, task, (t) => (deepEqual(t.start, start) ? t : { ...t, start }), 'setGanttTaskStart');
 
 /** `data` with a task ending at `end`, as written. */
 export const setGanttTaskEnd = (data: GanttData, section: number, task: number, end: GanttEnd): GanttData =>
-  withTask(data, section, task, (t) => (JSON.stringify(t.end) === JSON.stringify(end) ? t : { ...t, end }), 'setGanttTaskEnd');
+  withTask(data, section, task, (t) => (deepEqual(t.end, end) ? t : { ...t, end }), 'setGanttTaskEnd');
 
 /** `data` with one of its text settings set to `value`, trimmed; an empty one drops it, for the default. */
 export function setGanttSetting(data: GanttData, key: 'dateFormat' | 'axisFormat' | 'todayMarker', value: string | undefined): GanttData {
