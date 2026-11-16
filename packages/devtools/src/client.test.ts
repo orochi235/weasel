@@ -143,6 +143,23 @@ describe('connectDevtools', () => {
     await expect(client.request(t.root.id, { type: 'get-state' })).resolves.toMatchObject({ activeTool: 'select' });
   });
 
+  it('notifies nobody for a message that leaves its state as it was', () => {
+    const page = new Set<(m: PageMessage) => void>();
+    const transport: PanelTransport = { send: () => {}, onMessage: (l) => { page.add(l); return () => page.delete(l); } };
+    const emit = (m: PageMessage): void => { for (const l of page) l(m); };
+    const client = connectDevtools(transport);
+    const info = (id: string) => ({ id, label: id, dimension: '2d' as const });
+    emit({ type: 'sup', protocol: DEVTOOLS_PROTOCOL, kitVersion: '1', roots: [info('a'), info('b')] });
+    const held = client.state();
+    const heard = vi.fn();
+    client.subscribe(heard);
+    emit({ type: 'sup', protocol: DEVTOOLS_PROTOCOL, kitVersion: '1', roots: [info('a'), info('b')] });
+    emit({ type: 'root-added', protocol: DEVTOOLS_PROTOCOL, root: info('b') });
+    emit({ type: 'root-removed', protocol: DEVTOOLS_PROTOCOL, rootId: 'c' });
+    expect(heard).not.toHaveBeenCalled();
+    expect(client.state()).toBe(held);
+  });
+
   it('rejects a request still pending about a root the page removes, and keeps the rest', async () => {
     const page = new Set<(m: PageMessage) => void>();
     const sent: PanelMessage[] = [];

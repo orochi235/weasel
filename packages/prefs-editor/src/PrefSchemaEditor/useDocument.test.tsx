@@ -49,6 +49,22 @@ function setup(storage = memory(), same?: (a: Doc, b: Doc) => boolean) {
 }
 
 describe('useDocument', () => {
+  it('records no step, and hands nothing on, for a commit of the value it holds', () => {
+    const seen: Doc[] = [];
+    const { result } = renderHook(() => {
+      const [value, setValue] = useState(BASE);
+      const doc = useDocument({
+        value, onChange: (next: Doc) => setValue(next), base: BASE, same: (a, b) => a.n === b.n, codec, opened: null, taken: false,
+        selection: { get: () => [], set: () => {} }, onCommit: (_before, after) => void seen.push(after),
+      });
+      return { value, doc };
+    });
+    act(() => result.current.doc.commit({ n: 0 }));
+    expect(result.current.doc.canUndo).toBe(false);
+    expect(result.current.value).toBe(BASE);
+    expect(seen).toEqual([]);
+  });
+
   it('commits an edit, steps back from it, and steps forward again', () => {
     const { result } = setup();
     act(() => result.current.doc.commit({ n: 1 }));

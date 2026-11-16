@@ -16,6 +16,25 @@ describe('createClock', () => {
     expect(clock.inert).toBe(true);
   });
 
+  it('wakes and notifies nobody for a rate, loop or seek that leaves it where it stands', () => {
+    const { clock } = started({ duration: 1000, rate: 1, loop: 2 });
+    clock.sync(100);
+    clock.seek(1000);
+    const heard = vi.fn();
+    const woke = vi.fn();
+    clock.subscribe(heard);
+    clock.onWake(woke);
+    clock.rate = 1;
+    clock.loop = 2;
+    clock.seek(1000);
+    expect(heard).not.toHaveBeenCalled();
+    expect(woke).not.toHaveBeenCalled();
+    clock.seek(1000, 'end');
+    clock.ramp(2, 100);
+    clock.rate = 1;
+    expect(heard).toHaveBeenCalledTimes(3);
+  });
+
   it('opens at the declared rate', () => {
     const { clock } = createClock({ rate: 2 });
     expect(clock.rate).toBe(2);

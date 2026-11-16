@@ -39,6 +39,21 @@ describe('createSymmetry', () => {
     expect(sym.active()).toBeNull();
   });
 
+  it('notifies nobody and records nothing for a write that changes nothing', () => {
+    const { scene, sym, group, leaf } = setup();
+    let calls = 0;
+    sym.subscribe(() => { calls++; });
+    const steps = scene.history.undoDepth;
+    sym.setActive(group);
+    sym.update(leaf, { spec: { kind: 'radial', count: 5 } });
+    sym.preview(asNodeId('nope'), { center: { x: 5, y: 5 } });
+    sym.update(group, { spec: { ...sym.read(group)!.spec } });
+    sym.update(group, { center: { ...sym.read(group)!.center } });
+    sym.bake(leaf);
+    expect(calls).toBe(0);
+    expect(scene.history.undoDepth).toBe(steps);
+  });
+
   it('mirrors about the group\'s center', () => {
     const { scene, group } = setup();
     const [m] = copiesOf(scene, group);

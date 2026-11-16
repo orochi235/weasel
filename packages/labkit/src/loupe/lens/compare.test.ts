@@ -167,3 +167,18 @@ describe('the seam', () => {
     expect(settingsOf(api.scene, lensId)?.seam).toBe(0.5);
   });
 });
+
+describe('createSeamPreview', () => {
+  it('notifies nobody for a write of the seam it holds, NaN included', () => {
+    const preview = createSeamPreview();
+    let calls = 0;
+    preview.subscribe(() => {
+      calls++;
+    });
+    preview.set('a', Number.NaN);
+    preview.set('a', Number.NaN);
+    preview.set('b', undefined);
+    expect(calls).toBe(1);
+    expect(preview.version()).toBe(1);
+  });
+});

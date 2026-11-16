@@ -3,7 +3,7 @@
  * and the edits on one: adding a lane to a pool, and releasing a container's
  * members.
  */
-import { RIGID_POSE_COMPOSITION, createInsertOp, localizeWorldPoses, scenePoseFrame, type NodeId, type Op, type PoseComposition, type RectPose, type AnyScene } from '@weasel-js/core';
+import { RIGID_POSE_COMPOSITION, createInsertOp, localizeWorldPoses, reachesLocked, scenePoseFrame, type NodeId, type Op, type PoseComposition, type RectPose, type AnyScene } from '@weasel-js/core';
 import type { IconSpec } from '@weasel-js/icons';
 import type { NodeStyle } from '../dataTypes';
 import { diagramThemeOf } from '../theme/resolve';
@@ -130,32 +130,49 @@ function releasedFrom(scene: AnyScene, id: NodeId): NodeId {
   return around !== undefined && diagramContainerOf(around)?.role === 'pool' ? around.id : id;
 }
 
-/**
- * Remove container `id` and keep its members, which take its place in its
- * parent, as one history entry. A pool's members are its lanes' members, and
- * a lane's go past its pool. Connectors on what is removed go with it.
- * Nothing changes when that parent's frame is singular, where the members
- * could not keep their places.
- */
-export function releaseMembers(scene: AnyScene, id: string): void {
+/** What releasing container `id` writes: each member, moved to `parent` at `index` on, stored at its `locals`.
+ *  Null when there is nothing to release: `id` is no container, the release would write a locked node, or a
+ *  member would land in a singular frame and could not keep its place. */
+function releasePlan(scene: AnyScene, id: string) {
   const node = scene.get(id as NodeId);
   const trait = node === undefined ? null : diagramContainerOf(node);
-  if (node === undefined || trait === null) return;
+  if (node === undefined || trait === null || reachesLocked(scene as never, [node.id])) return null;
   const membersOf = (c: NodeId) => scene.childrenOf(c).filter((m) => m !== titleIdOf(c as string));
   const members = trait.role === 'pool' ? membersOf(node.id).flatMap(membersOf) : membersOf(node.id);
   const beside = releasedFrom(scene, node.id);
+  // A lane's pool restacks the lanes left: it, its title and they are written too.
+  const restacked = beside === node.id ? [] : [beside, titleIdOf(beside), ...membersOf(beside)];
+  if (restacked.some((id) => scene.isLocked(id as NodeId))) return null;
   const parent = scene.get(beside)!.parent;
   const index = (parent === null ? scene.roots : scene.childrenOf(parent)).indexOf(beside);
   // Read where each draws before the first move: it is stored in a frame that is about to go.
   const frame = scenePoseFrame(scene);
   const locals = members.map((m) => frame.localUnder(parent, frame.world(m)));
-  // A member landing in a singular frame could not keep its place, so none is released.
-  if (locals.some((p) => p === null)) return;
+  if (locals.some((p) => p === null)) return null;
+  return { id: node.id, members, parent, index, locals };
+}
+
+/** Whether {@link releaseMembers} would change anything for `id`. */
+export function canReleaseMembers(scene: AnyScene, id: string): boolean {
+  return releasePlan(scene, id) !== null;
+}
+
+/**
+ * Remove container `id` and keep its members, which take its place in its
+ * parent, as one history entry. A pool's members are its lanes' members, and
+ * a lane's go past its pool. Connectors on what is removed go with it.
+ * Nothing changes when that parent's frame is singular, where the members
+ * could not keep their places, or when the release would write a locked node.
+ */
+export function releaseMembers(scene: AnyScene, id: string): void {
+  const plan = releasePlan(scene, id);
+  if (plan === null) return;
+  const { members, parent, index, locals } = plan;
   scene.batch('Release members', () => {
     members.forEach((m, k) => {
       scene.move(m, parent, index + k);
       scene.setPose(m, locals[k]);
     });
-    scene.remove(node.id);
+    scene.remove(plan.id);
   });
 }

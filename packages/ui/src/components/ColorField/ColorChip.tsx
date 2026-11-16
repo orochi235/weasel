@@ -33,13 +33,13 @@ export interface ColorChipProps
 export function ColorChip(
   { value, onInput, onChange, refuses = false, onClick, ...input }: ColorChipProps,
 ): ReactElement {
-  // Tracks the picker through a pick; the prop only catches up on commit.
-  const [draft, setDraft] = useState<string | null>(null);
+  // Tracks the picker through a pick, and the color it began from; the prop only catches up on commit.
+  const [draft, setDraft] = useState<{ rgb: string; from: string } | null>(null);
   const recordApplied = useRecordApplied();
   const commit = (): void => {
     if (draft === null) return;
     setDraft(null);
-    recordApplied(onChange(draft), draft);
+    if (draft.rgb.toLowerCase() !== draft.from.toLowerCase()) recordApplied(onChange(draft.rgb), draft.rgb);
   };
   const picker = usePickerClose(commit);
 
@@ -48,12 +48,12 @@ export function ColorChip(
       {...input}
       ref={picker}
       type="color"
-      value={draft ?? value}
+      value={draft?.rgb ?? value}
       onClick={refuses ? (e) => e.preventDefault() : onClick}
       onInput={(e) => {
         if (refuses) return;
         const rgb = (e.target as HTMLInputElement).value;
-        setDraft(rgb);
+        setDraft((held) => ({ rgb, from: held?.from ?? value }));
         onInput?.(rgb);
       }}
       onBlur={commit}

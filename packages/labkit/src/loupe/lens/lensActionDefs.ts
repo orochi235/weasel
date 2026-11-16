@@ -18,6 +18,7 @@ import {
   type NodeId,
   type Op,
 } from '@weasel-js/core';
+import { deepEqual } from '@weasel-js/registry';
 import type { Contribution, GestureBinding } from '@weasel-js/routing';
 import { ANY_MODS, defineAction } from '@weasel-js/routing';
 import type {} from '../../actionParamSchema';
@@ -148,34 +149,52 @@ function nextDprs(dprs: readonly number[]): readonly number[] {
 type Run<C> = (lensId: string, settings: LensSettings<C>) => void;
 type Patch<C> = (s: LensSettings<C>) => Partial<Omit<LensSettings<C>, 'aim'>>;
 
+/** Whether `patch` would change anything `s` holds. */
+const changes = <C>(s: LensSettings<C>, patch: Partial<LensSettings<C>>): boolean =>
+  Object.entries(patch).some(([k, v]) => !deepEqual(v, s[k as keyof LensSettings<C>]));
+
 /** Builds actions that apply to the current lens, declining while none is up. */
 function lensActionFactory<C>(api: LensActionApi<C>) {
-  const lensUp = () => (api.current() === null ? ActionDisabledReason.NotApplicable : true);
+  /** The current lens and its settings, or null with none up. */
+  const lens = () => {
+    const lensId = api.current();
+    const settings = lensId === null ? null : settingsOf(api.scene, lensId);
+    return lensId === null || settings === null ? null : { lensId, settings };
+  };
   const on = (
     id: LensActionId,
     label: string,
     run: Run<C>,
-    enabled: () => true | string = () => true,
+    enabled: (settings: LensSettings<C>) => true | string = () => true,
   ): Action => ({
     id,
     label,
     group: 'loupe',
     enabled: () => {
-      const up = lensUp();
-      if (up !== true) return up;
-      return enabled();
+      const up = lens();
+      return up === null ? ActionDisabledReason.NotApplicable : enabled(up.settings);
     },
     invoker: {
       timing: 'immediate',
       run() {
-        const lensId = api.current();
-        const settings = lensId === null ? null : settingsOf(api.scene, lensId);
-        if (lensId !== null && settings !== null) run(lensId, settings);
+        const up = lens();
+        if (up !== null && enabled(up.settings) === true) run(up.lensId, up.settings);
       },
     },
   });
-  const set = (id: LensActionId, label: string, patch: Patch<C>, enabled?: () => true | string) =>
-    on(id, label, (lensId, s) => api.apply(setLensOps(api.scene, lensId, patch(s))), enabled);
+  /** An action writing `patch` to the lens's settings: disabled where the write would change nothing. */
+  const set = (
+    id: LensActionId,
+    label: string,
+    patch: Patch<C>,
+    enabled: () => true | string = () => true,
+  ) =>
+    on(
+      id,
+      label,
+      (lensId, s) => api.apply(setLensOps(api.scene, lensId, patch(s))),
+      (s) => (changes(s, patch(s)) ? enabled() : ActionDisabledReason.NotApplicable),
+    );
   return { on, set };
 }
 

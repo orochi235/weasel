@@ -23,7 +23,7 @@ import {
   type AnyScene,
 } from '@weasel-js/core';
 import { lanesOf, poolAxisOf } from './containerStencils';
-import { diagramContainerOf } from './trait';
+import { diagramContainerOf, titleIdOf } from './trait';
 import { payloadOf } from '../payload';
 
 /** The layer id the lane affordances are composed into. */
@@ -71,6 +71,13 @@ export function poolsOf(scene: AnyScene): PoolLanes[] {
     });
   }
   return out;
+}
+
+/** Whether resizing the lane at `index` of `pool` would write a locked node: the lane, the lanes after it, or the
+ *  lane's or the pool's title. The boundary is offered, and the resize runs, only where this is false. */
+export function laneResizeLocked(scene: AnyScene, pool: PoolLanes, index: number): boolean {
+  const writes = [titleIdOf(pool.id), titleIdOf(pool.lanes[index]!.id), ...pool.lanes.slice(index).map((l) => l.id)];
+  return writes.some((id) => scene.isLocked(id as NodeId));
 }
 
 /** Options for {@link laneLayer}. */
@@ -127,7 +134,8 @@ export function createLaneAffordance(scene: AnyScene, opts: LaneLayerOptions = {
       for (const pool of poolsOf(scene)) {
         if (!paintsLayer(state, scene.get(pool.id as NodeId)!.layer)) continue;
         const cursor = pool.axis === 'y' ? 'row-resize' : 'col-resize';
-        for (const lane of pool.lanes) {
+        for (const [index, lane] of pool.lanes.entries()) {
+          if (laneResizeLocked(scene, pool, index)) continue;
           out.push({
             id: `${lane.id}:boundary`,
             targetId: null,

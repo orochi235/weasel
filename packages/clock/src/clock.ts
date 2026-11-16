@@ -230,6 +230,7 @@ function clockOf(run: Run, hub: Hub, seekable: boolean, rates: readonly number[]
     },
     set rate(next: number) {
       checkRate(next, seekable);
+      if (Object.is(next, run.rate) && run.ramp === null) return;
       run.rate = next;
       run.ramp = null;
       change(run, hub);
@@ -240,6 +241,7 @@ function clockOf(run: Run, hub: Hub, seekable: boolean, rates: readonly number[]
     },
     set loop(next: boolean | number) {
       checkLoop(next);
+      if (next === run.loop) return;
       const { pass, into } = passOf(run);
       run.loop = next;
       run.span = run.duration * passesOf(run.loop);
@@ -262,8 +264,10 @@ function clockOf(run: Run, hub: Hub, seekable: boolean, rates: readonly number[]
       if (!seekable) throw new Error('this clock is not seekable');
       const to = clamp(run, target);
       if (!Number.isFinite(to)) throw new RangeError(`a clock seeks to a time in its run, not ${target}`);
+      const was = { elapsed: run.elapsed, pass: passAt(run), phase: phaseAt(run) };
       run.elapsed = to;
       run.edge = line === 'end';
+      if (Object.is(to, was.elapsed) && passAt(run) === was.pass && phaseAt(run) === was.phase) return;
       change(run, hub);
       hub.subs.emit();
     },

@@ -18,8 +18,11 @@ import {
 } from '@weasel-js/core';
 import type { Vec2 } from '@weasel-js/core/math';
 import { grabPortAction, grabPortBindings } from '../connect';
-import { addLane, releaseMembers } from './containerStencils';
-import { LANE_AFFORDANCE_KIND, LANE_LAYER_ID, laneLayer, laneScratchOf, poolsOf, type LaneLayerOptions, type PoolLanes } from './laneBoundaryLayer';
+import { addLane, canReleaseMembers, releaseMembers } from './containerStencils';
+import {
+  LANE_AFFORDANCE_KIND, LANE_LAYER_ID, laneLayer, laneResizeLocked, laneScratchOf, poolsOf, type LaneLayerOptions,
+  type PoolLanes,
+} from './laneBoundaryLayer';
 import { MIN_LANE_SIZE } from './laneStack';
 import { titleInFrame } from './titlePose';
 import { diagramContainerOf, titleIdOf } from './trait';
@@ -115,7 +118,7 @@ export function createLaneResizeAction(opts: LaneActionOptions): Action {
         const pressed = laneScratchOf(ctx.drag?.affordance);
         const pool = poolsOf(opts.scene).find((p) => p.id === pressed?.poolId);
         const index = pool?.lanes.findIndex((l) => l.id === pressed?.laneId) ?? -1;
-        if (pressed === null || pool === undefined || index < 0) return {};
+        if (pressed === null || pool === undefined || index < 0 || laneResizeLocked(opts.scene, pool, index)) return {};
         const lane = pool.lanes[index]!;
         const start = pool.axis === 'y' ? lane.pose.height : lane.pose.width;
         const press: Vec2 = ctx.drag?.start ?? ctx.world;
@@ -169,12 +172,9 @@ export function createAddLaneAction(opts: LaneActionOptions): Action {
   });
 }
 
-/** The selected containers, pools, and lanes. */
+/** The selected containers, pools, and lanes, that a release would change. */
 const selectedContainers = (opts: LaneActionOptions): string[] =>
-  (opts.selected?.() ?? []).filter((id) => {
-    const node = opts.scene.get(id as NodeId);
-    return node !== undefined && diagramContainerOf(node) !== null;
-  });
+  (opts.selected?.() ?? []).filter((id) => canReleaseMembers(opts.scene, id));
 
 /** The `diagram.releaseMembers` command: removes each selected container and
  *  keeps what it holds, in one history entry. */

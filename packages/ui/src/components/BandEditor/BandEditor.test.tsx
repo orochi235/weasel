@@ -132,6 +132,35 @@ describe('drag in flight', () => {
   });
 });
 
+describe('a previewing caller', () => {
+  /** A caller that shows each preview as its value, as an undo-backed one does. */
+  function Previewing({ onChange }: { onChange: (next: Band<string>[]) => void }) {
+    const [held, setHeld] = useState(bands());
+    const [live, setLive] = useState<Band<string>[] | null>(null);
+    return (
+      <BandEditor
+        value={live ?? held}
+        min={MIN}
+        max={MAX}
+        scale="linear"
+        onInput={setLive}
+        onChange={(next) => { setLive(null); setHeld(next); onChange(next); }}
+      />
+    );
+  }
+
+  it('hears the commit of a seam drag measured from where the drag began, not from its own preview', () => {
+    const onChange = vi.fn();
+    const { container } = render(<Previewing onChange={onChange} />);
+    const seam = () => container.querySelectorAll<HTMLElement>('[role="slider"]')[0]!;
+    fireEvent.pointerDown(seam(), { clientX: 80, clientY: 20, button: 0 });
+    fireEvent.pointerMove(document, { clientX: 160, clientY: 20 });
+    fireEvent.pointerUp(document, { clientX: 160, clientY: 20 });
+    expect(onChange).toHaveBeenCalledTimes(1);
+    expect(froms(onChange.mock.calls[0]![0])).toEqual([0, 40, 60]);
+  });
+});
+
 describe('seam drag', () => {
   it('previews on every move and commits once at the end', () => {
     const { seams, onInput, onChange } = setup();

@@ -10,7 +10,7 @@ export {
   DIAGRAM_POOL_COLUMNS_LAYOUT, DIAGRAM_POOL_ROWS_LAYOUT, LANE_HEADER_SIZE, containerShape, laneHeader,
 } from './layouts';
 export {
-  CONTAINER_STENCILS, addLane, containerBuild, lanesOf, poolAxisOf, releaseMembers,
+  CONTAINER_STENCILS, addLane, canReleaseMembers, containerBuild, lanesOf, poolAxisOf, releaseMembers,
 } from './containerStencils';
 export type { ContainerBuildOptions, ContainerStencil } from './containerStencils';
 export { firstLanes, regionSpecs } from './regionSpecs';
