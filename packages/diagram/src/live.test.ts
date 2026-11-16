@@ -183,6 +183,16 @@ describe('useLiveLayout', () => {
     expect(s.historyEntries().at(-1)?.label).toBe('Layout');
   });
 
+  it('runs an algorithm named for an Object.prototype member as layered', () => {
+    const named = live('constructor');
+    const plain = live('layered');
+    for (const run of [named, plain]) {
+      act(() => { run.handle().start(); });
+      act(() => { run.clock.frames(4); });
+    }
+    expect(named.scene.get(named.b)!.pose).toEqual(plain.scene.get(plain.b)!.pose);
+  });
+
   it('settles through the committed options, not an abandoned render\'s', () => {
     const s = scene();
     const clock = makeClock();

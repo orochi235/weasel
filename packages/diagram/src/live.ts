@@ -31,7 +31,7 @@ import { easeInOutQuad } from '@weasel-js/geom';
 import { chain } from './chain';
 import { grid } from './grid';
 import { layered } from './layered';
-import { LAYOUTS, layoutPoses } from './layoutAction';
+import { layoutOf, layoutPoses } from './layoutAction';
 import { planOf, plannerPlan, type LayoutFn, type LayoutOptions, type LayoutPlan, type LayoutPlanner } from './layout';
 import { sameGraph, shapeOf, usePendingPlan } from './livePlan';
 import {
@@ -122,7 +122,7 @@ function planFor<TPose>(graph: Graph, o: UseLiveLayoutOptions<TPose>): LayoutPla
   const algorithm = o.algorithm ?? 'force';
   if (algorithm === 'force') return null;
   if (typeof algorithm === 'object') return plannerPlan(algorithm, graph, o.layout);
-  return planOf(typeof algorithm === 'function' ? algorithm : LAYOUTS[algorithm] ?? layered, graph, o.layout);
+  return planOf(layoutOf(algorithm), graph, o.layout);
 }
 
 /** The producer that eases from `graph` to `plan`, or relaxes `graph` when
