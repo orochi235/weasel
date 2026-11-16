@@ -17,7 +17,7 @@ import { attract } from '@weasel-js/ui-input';
 import { snapRadiusPx as kitSnapRadiusPx } from '../../snap';
 import s from './CurveEditor.module.css';
 import type { CurveLayer, EmptyDownArgs, KeyDownArgs, LayerCtx, LayerGesture, LayerHit, LayerRenderCtx, PlotPoint } from './layerTypes';
-import { clamp, lerp, cubicBezierEasing, resolveEasing } from '@weasel-js/geom';
+import { clamp, cubicBezierEasing, lerp, resolveEasing, trimNumber } from '@weasel-js/geom';
 
 type Bezier = readonly [number, number, number, number];
 
@@ -186,7 +186,7 @@ export function createKeyframeLayer(cfg: KeyframeLayerOptions = {}): CurveLayer<
   }
 
   const path = (pts: readonly PlotPoint[]): string =>
-    pts.map((p, i) => `${i === 0 ? 'M' : 'L'}${p.x.toFixed(2)},${p.y.toFixed(2)}`).join('');
+    pts.map((p, i) => `${i === 0 ? 'M' : 'L'}${trimNumber(p.x, 2)},${trimNumber(p.y, 2)}`).join('');
 
   // ── render ──────────────────────────────────────────────────────────
   function render(state: KeyframeLayerState, ctx: LayerRenderCtx): ReactNode {

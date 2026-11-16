@@ -61,8 +61,8 @@ describe('createKeyframeLayer — rendering', () => {
   it('draws the eased curve from the first key to the last', () => {
     render(<Harness />);
     const d = document.querySelector('[data-curve-element="curve"]')!.getAttribute('d')!;
-    expect(d.startsWith('M0.00,100.00')).toBe(true);
-    expect(d.endsWith('L200.00,50.00')).toBe(true);
+    expect(d.startsWith('M0,100')).toBe(true);
+    expect(d.endsWith('L200,50')).toBe(true);
   });
 
   // The diamond's size is an SVG geometry attribute, readable here; the token

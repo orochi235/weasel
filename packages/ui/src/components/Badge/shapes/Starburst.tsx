@@ -1,5 +1,5 @@
 import type { ShapeModule } from '../types';
-import { DEG_TO_RAD, lerp } from '@weasel-js/geom';
+import { DEG_TO_RAD, lerp, trimNumber } from '@weasel-js/geom';
 
 /** What `shapeParams` takes on a `starburst` badge. */
 export interface BadgeStarburstShapeParams {
@@ -33,7 +33,7 @@ function starburstPath(points: number, outerR: number, innerR: number, rotationD
   if (rnd <= 0) {
     let d = '';
     for (let i = 0; i < pts.length; i++) {
-      d += (i === 0 ? 'M ' : ' L ') + pts[i][0].toFixed(2) + ' ' + pts[i][1].toFixed(2);
+      d += (i === 0 ? 'M ' : ' L ') + trimNumber(pts[i][0], 2) + ' ' + trimNumber(pts[i][1], 2);
     }
     return d + ' Z';
   }
@@ -47,9 +47,9 @@ function starburstPath(points: number, outerR: number, innerR: number, rotationD
     const enterY = lerp(curr[1], prev[1], t);
     const exitX = lerp(curr[0], next[0], t);
     const exitY = lerp(curr[1], next[1], t);
-    if (i === 0) d += `M ${enterX.toFixed(2)} ${enterY.toFixed(2)}`;
-    else d += ` L ${enterX.toFixed(2)} ${enterY.toFixed(2)}`;
-    d += ` Q ${curr[0].toFixed(2)} ${curr[1].toFixed(2)} ${exitX.toFixed(2)} ${exitY.toFixed(2)}`;
+    if (i === 0) d += `M ${trimNumber(enterX, 2)} ${trimNumber(enterY, 2)}`;
+    else d += ` L ${trimNumber(enterX, 2)} ${trimNumber(enterY, 2)}`;
+    d += ` Q ${trimNumber(curr[0], 2)} ${trimNumber(curr[1], 2)} ${trimNumber(exitX, 2)} ${trimNumber(exitY, 2)}`;
   }
   return d + ' Z';
 }

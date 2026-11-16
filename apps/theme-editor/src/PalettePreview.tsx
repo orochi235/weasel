@@ -1,3 +1,4 @@
+import { trimNumber } from '@weasel-js/geom';
 import { copyText } from '@weasel-js/react';
 import { useFlash } from './useFlash';
 import { Button } from '@weasel-js/ui/components/Button';
@@ -18,14 +19,14 @@ type Point = readonly [x: number, y: number];
 function smoothPath(points: readonly Point[]): string {
   if (points.length < 2) return '';
   const at = (i: number) => points[Math.max(0, Math.min(points.length - 1, i))];
-  let d = `M${at(0)[0].toFixed(1)},${at(0)[1].toFixed(1)}`;
+  let d = `M${trimNumber(at(0)[0], 1)},${trimNumber(at(0)[1], 1)}`;
   for (let i = 0; i < points.length - 1; i += 1) {
     const [p0, p1, p2, p3] = [at(i - 1), at(i), at(i + 1), at(i + 2)];
     const c1x = p1[0] + (p2[0] - p0[0]) / 6;
     const c1y = p1[1] + (p2[1] - p0[1]) / 6;
     const c2x = p2[0] - (p3[0] - p1[0]) / 6;
     const c2y = p2[1] - (p3[1] - p1[1]) / 6;
-    d += ` C${c1x.toFixed(1)},${c1y.toFixed(1)} ${c2x.toFixed(1)},${c2y.toFixed(1)} ${p2[0].toFixed(1)},${p2[1].toFixed(1)}`;
+    d += ` C${trimNumber(c1x, 1)},${trimNumber(c1y, 1)} ${trimNumber(c2x, 1)},${trimNumber(c2y, 1)} ${trimNumber(p2[0], 1)},${trimNumber(p2[1], 1)}`;
   }
   return d;
 }

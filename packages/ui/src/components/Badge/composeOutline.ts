@@ -1,3 +1,4 @@
+import { trimNumber } from '@weasel-js/geom';
 import type { BaseSampler } from './bases/types';
 import { EFFECTS, type BadgeEffectSpec } from './effects';
 
@@ -12,7 +13,7 @@ function closedPath(at: (sCss: number) => { x: number; y: number }, totalCss: nu
   let d = '';
   for (let i = 0; i < SAMPLES; i++) {
     const p = at((i / SAMPLES) * totalCss);
-    d += `${i === 0 ? 'M' : ' L'} ${p.x.toFixed(3)} ${p.y.toFixed(3)}`;
+    d += `${i === 0 ? 'M' : ' L'} ${trimNumber(p.x, 3)} ${trimNumber(p.y, 3)}`;
   }
   return `${d} Z`;
 }

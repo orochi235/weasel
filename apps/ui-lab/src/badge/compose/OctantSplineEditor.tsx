@@ -2,7 +2,7 @@ import {
   ActionsProvider, ActiveToolContextProvider, DepRegistryProvider, type Tool, useAction, useActionsRegistry,
   useGestureDispatcher, type WorldPoint,
 } from '@weasel-js/core';
-import { invert, transformPoint } from '@weasel-js/geom';
+import { invert, transformPoint, trimNumber } from '@weasel-js/geom';
 import { useLatest } from '@weasel-js/react';
 import { type RefObject, useMemo, useRef, useState } from 'react';
 import { type SplineEditorInput, splineEditorActions } from './splineActions';
@@ -70,16 +70,16 @@ function Grid({ mode }: { mode: SplineMode }) {
       {RINGS.map((r) => (
         <path
           key={r}
-          d={`M ${r} 0 A ${r} ${r} 0 0 0 ${(r * Math.cos(end)).toFixed(2)} ${(-r * Math.sin(end)).toFixed(2)}`}
+          d={`M ${r} 0 A ${r} ${r} 0 0 0 ${trimNumber(r * Math.cos(end), 2)} ${trimNumber(-r * Math.sin(end), 2)}`}
           fill="none"
           className={s.ring}
           strokeWidth="0.3"
         />
       ))}
       <line x1="0" y1="0" x2={RAY_LENGTH} y2="0" className={s.ray} strokeWidth="0.4" strokeDasharray="1.5 1.5" />
-      <line x1="0" y1="0" x2={endX.toFixed(2)} y2={endY.toFixed(2)} className={s.ray} strokeWidth="0.4" strokeDasharray="1.5 1.5" />
+      <line x1="0" y1="0" x2={trimNumber(endX, 2)} y2={trimNumber(endY, 2)} className={s.ray} strokeWidth="0.4" strokeDasharray="1.5 1.5" />
       <text x="76" y="2" fontSize="3" className={s.rayLabel}>cardinal (s = 0)</text>
-      <text x={(endX + 2).toFixed(2)} y={(endY - 1).toFixed(2)} fontSize="3" className={s.rayLabel}>
+      <text x={trimNumber(endX + 2, 2)} y={trimNumber(endY - 1, 2)} fontSize="3" className={s.rayLabel}>
         {mode === 'octant' ? 'diagonal (s = 1)' : 'next cardinal (s = 1)'}
       </text>
     </>
@@ -89,7 +89,7 @@ function Grid({ mode }: { mode: SplineMode }) {
 function AnchorDot({ anchor, at, pinned, active }: { anchor: SplineAnchor; at: { x: number; y: number }; pinned: boolean; active: boolean }) {
   return (
     <g>
-      <line x1="0" y1="0" x2={at.x.toFixed(2)} y2={at.y.toFixed(2)} className={s.spoke} strokeWidth="0.25" />
+      <line x1="0" y1="0" x2={trimNumber(at.x, 2)} y2={trimNumber(at.y, 2)} className={s.spoke} strokeWidth="0.25" />
       <circle
         className={s.dot}
         data-pinned={pinned || undefined}
@@ -139,7 +139,7 @@ export function OctantSplineEditor({ anchors, mode, evalAtS, onAnchorDraft, onAn
         >
           <Grid mode={mode} />
           <polyline
-            points={samples.map((p) => `${p.x.toFixed(2)},${p.y.toFixed(2)}`).join(' ')}
+            points={samples.map((p) => `${trimNumber(p.x, 2)},${trimNumber(p.y, 2)}`).join(' ')}
             className={s.curve}
             strokeWidth="0.7"
             vectorEffect="non-scaling-stroke"

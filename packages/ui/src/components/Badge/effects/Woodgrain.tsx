@@ -1,3 +1,4 @@
+import { trimNumber } from '@weasel-js/geom';
 import { useId } from 'react';
 import type { EffectModule } from '../bases/types';
 
@@ -29,7 +30,7 @@ const Woodgrain: EffectModule<BadgeWoodgrainEffectParams> = {
       // Two control points, slight vertical wobble.
       const dy1 = osc(i * 2 + 1) * 4;
       const dy2 = osc(i * 2 + 2) * 4;
-      lines.push(`M -5 ${y.toFixed(2)} Q 35 ${(y + dy1).toFixed(2)} 60 ${y.toFixed(2)} T 105 ${(y + dy2).toFixed(2)}`);
+      lines.push(`M -5 ${trimNumber(y, 2)} Q 35 ${trimNumber(y + dy1, 2)} 60 ${trimNumber(y, 2)} T 105 ${trimNumber(y + dy2, 2)}`);
     }
     const knotPositions: [number, number][] = [];
     for (let i = 0; i < cfg.knots; i++) {

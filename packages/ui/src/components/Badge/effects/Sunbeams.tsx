@@ -2,7 +2,7 @@ import { cssColorLiteral, type ColorSource } from '@weasel-js/paint';
 import { useColorCss } from '@weasel-js/theme/react';
 import { useId } from 'react';
 import type { EffectModule } from '../bases/types';
-import { DEG_TO_RAD } from '@weasel-js/geom';
+import { DEG_TO_RAD, trimNumber } from '@weasel-js/geom';
 
 /** What an effect of type `sunbeams` takes as `params`. */
 export interface BadgeSunbeamsEffectParams {
@@ -86,7 +86,7 @@ const Sunbeams: EffectModule<BadgeSunbeamsEffectParams> = {
         [x1 - halfShear, yBot],
       ];
       beams.push({
-        points: pts.map(([px, py]) => `${px.toFixed(3)},${py.toFixed(3)}`).join(' '),
+        points: pts.map(([px, py]) => `${trimNumber(px, 3)},${trimNumber(py, 3)}`).join(' '),
         opacity: Math.max(0, Math.min(cfg.opacity * opacityMult(i), 1)),
       });
       cursorX += nominalWidthVb + gapVb;
