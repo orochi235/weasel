@@ -86,6 +86,20 @@ describe('<TrialOverview>', () => {
     expect(px(h.content, '--lk-stage-y')).toBeCloseTo(-150);
   });
 
+  it('moves the stage camera to the pressed point when an ancestor draws the overview at twice its size', async () => {
+    const h = await mount();
+    Object.defineProperty(h.box, 'offsetWidth', { value: 200 });
+    Object.defineProperty(h.box, 'offsetHeight', { value: 150 });
+    (h.box as HTMLElement).getBoundingClientRect = () =>
+      DOMRect.fromRect({ x: 0, y: 0, width: 400, height: 300 });
+    await act(async () => {
+      pointer(h.box, 'pointerdown', 200, 150);
+      pointer(h.box, 'pointerup', 200, 150, 0);
+    });
+    expect(px(h.content, '--lk-stage-x')).toBeCloseTo(-200);
+    expect(px(h.content, '--lk-stage-y')).toBeCloseTo(-150);
+  });
+
   it('follows a drag with the camera, and never pans the stage by it', async () => {
     const h = await mount();
     await act(async () => {

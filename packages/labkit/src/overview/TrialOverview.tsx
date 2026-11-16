@@ -49,6 +49,7 @@ import {
 } from '../canvas/CameraInput';
 import { CanvasStackContext } from '../canvas/CanvasStackContext';
 import { fromCameraView } from '../canvas/cameraView';
+import { clientToHost, hostBox } from '../canvas/hostBox';
 import { type ThemeColorSpec, useThemeColors } from '../canvas/useThemeColors';
 import type { ViewportSize, WorldFrame } from '../canvas/worldSpec';
 import {
@@ -345,10 +346,8 @@ function OverviewDispatch({
   }, [registry]);
 
   const clientToLocal = useMemo(
-    () => (cx: number, cy: number) => {
-      const r = boxRef.current?.getBoundingClientRect();
-      return viewScreenToWorld(fitRef.current, { x: cx - (r?.left ?? 0), y: cy - (r?.top ?? 0) });
-    },
+    () => (cx: number, cy: number) =>
+      viewScreenToWorld(fitRef.current, clientToHost(hostBox(boxRef.current), cx, cy)),
     [boxRef, fitRef],
   );
 
