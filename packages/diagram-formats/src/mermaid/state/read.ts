@@ -87,9 +87,8 @@ class StateReader {
   }
 
   describe(id: string, text: string, scope: string | null): void {
-    const comp = this.composites.get(id);
-    if (comp !== undefined) {
-      comp.label = decodeEntities(text, true);
+    if (this.compositeIds.has(id)) {
+      this.compositeOf(id).label = decodeEntities(text, true);
       return;
     }
     const d = this.draft(id, scope);

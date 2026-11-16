@@ -75,6 +75,10 @@ describe('reading a Mermaid state diagram', () => {
     expect(() => documentSpecs(regions.document)).not.toThrow();
     expect(onlyPage(regions.document).data.containers?.[0]?.lanes?.map((l) => l.id)).toEqual(['X-region-2', 'X-region-3']);
   });
+
+  it('labels a composite state with a description given before its block', () => {
+    expect(page('stateDiagram-v2\nX : Big\nstate X {\n a\n}').data.containers?.[0]).toMatchObject({ id: 'X', label: 'Big' });
+  });
 });
 
 describe('writing a Mermaid state diagram', () => {
