@@ -14,6 +14,7 @@ import type {
 import num from '@weasel-js/theme/numeric.module.css';
 import { Button } from '@weasel-js/ui/components/Button';
 import { Checkbox } from '@weasel-js/ui/components/Checkbox';
+import { CheckboxGroup } from '@weasel-js/ui/components/CheckboxGroup';
 import { InlineRange } from '@weasel-js/ui/components/InlineRange';
 import { DemoStage } from './DemoStage';
 import { movePreset, pickPreset, useSelection } from '@weasel-js/editing';
@@ -312,14 +313,15 @@ export function AudioDemo() {
           </div>
           <div className="ckd-panel-title">music inserts</div>
           <div className="ckd-bus">
-            {EFFECTS.map((name) => (
-              <Checkbox
-                key={name} isSelected={effectsOn[name]} disabled={!kit}
-                onChange={(on) => toggleEffect(name, on)}
-              >
-                {name}
-              </Checkbox>
-            ))}
+            <CheckboxGroup<EffectName>
+              aria-label="Music inserts"
+              orientation="horizontal"
+              sweep
+              disabled={!kit}
+              items={EFFECTS.map((name) => ({ value: name, label: name }))}
+              value={EFFECTS.filter((name) => effectsOn[name])}
+              onChange={(on) => { for (const name of EFFECTS) toggleEffect(name, on.includes(name)); }}
+            />
           </div>
         </div>
       </div>
