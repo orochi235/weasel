@@ -4,7 +4,7 @@ import { createInsertOp } from 'core/ops/create';
 import { createReparentOp } from 'core/ops/reparent';
 import { createDeleteOp } from 'core/ops/delete';
 import { createSetDependsOnOp } from 'core/ops/setDependsOn';
-import { withoutPageStructure } from 'core/scene/nodeGates';
+import { selectedRoots } from '../selectionSubtree';
 import { groupingSite } from 'core/pages/pagePlacement';
 import { pageOfNode } from 'core/pages/pageNodes';
 import { followerOpsFor } from '../followerMoves';
@@ -29,7 +29,7 @@ import type { AnyScene } from 'core/scene/anyScene';
 function groupPlan(deps: ActionDeps) {
   const scene = deps.scene;
   if (!deps.selection || !scene) return null;
-  const ids = withoutPageStructure(scene, deps.selection.get() as readonly NodeId[]);
+  const ids = selectedRoots(scene, deps.selection.get() as readonly string[]);
   const nodes = inPaintOrder(scene, ids
     .map((id) => scene.get(id as NodeId))
     .filter((n): n is NonNullable<typeof n> => n !== undefined));

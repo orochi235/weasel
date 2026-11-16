@@ -617,7 +617,10 @@ rest are ranked best-first:
 
 It fires the first whose `enabled()` passes. A dispatcher with no rule context
 (`getRuleCtx` absent, or answering `undefined`) evaluates no `eligible` rule, so
-nothing is dropped and step 4 does nothing. Step 4 is how context wins a tie:
+nothing is dropped and step 4 does nothing. A dispatcher given one publishes it
+as the `ruleCtx` dep, and `ActionsRegistry.trigger`, menus, the command palette
+and action bars read an action's `eligible` rule through it (`eligibleNow`), so
+a mode that bars an action's binding bars its row and button too. Step 4 is how context wins a tie:
 in path edit, Escape exits the edit instead of resetting the tool. A plain drag
 carries no intent of its own, so no kit action binds one by default: the select
 tool marquees, the shape tools insert and the hand tool pans through their own

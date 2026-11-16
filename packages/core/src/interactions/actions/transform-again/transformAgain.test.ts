@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import type { ImmediateInvoker, InvocationCtx, OngoingInvoker } from '@weasel-js/routing';
+import { ActionDisabledReason, buildRuleCtx, type ImmediateInvoker, type InvocationCtx, type OngoingInvoker } from '@weasel-js/routing';
 import { createScene } from 'core/scene/scene';
 import { asNodeId, type RectPose } from 'core/scene/types';
 import type { SelectionApi } from 'core/selection/useSelection';
@@ -162,6 +162,43 @@ describe('transformAgain', () => {
     rig.again();
     rig.scene.undo();
     expect(rig.pose(rig.ids[0])).toMatchObject({ x: 20, y: 0 });
+  });
+});
+
+describe('transformAgain enabled', () => {
+  const freeTransform = () => buildRuleCtx({
+    focused: true, selection: [], multiActive: false,
+    modifiers: { alt: false, ctrl: false, meta: false, shift: false },
+    action: { kind: null, id: null }, hover: null, mode: 'free-transform',
+    allowedCapabilities: new Set(['transforms-selection'] as const),
+  });
+
+  it('is off, and copies nothing, where the mode bars the duplicate it would repeat', () => {
+    const rig = setup([box(0, 0)]);
+    const deps = { ...rig.deps, ruleCtx: freeTransform };
+    expect(transformAgainAction.enabled!(deps as never)).toBe(ActionDisabledReason.NotApplicable);
+    (transformAgainAction.invoker as ImmediateInvoker).run(deps as never);
+    expect(rig.scene.nodes.size).toBe(1);
+    expect(rig.selection.get()).toEqual(rig.ids);
+  });
+
+  it('still repeats a move there', () => {
+    const rig = setup([box(0, 0)]);
+    recordTransform(rig.scene, { kind: 'translate', dx: 5, dy: 0 }, rig.ids);
+    const deps = { ...rig.deps, ruleCtx: freeTransform };
+    expect(transformAgainAction.enabled!(deps as never)).toBe(true);
+    (transformAgainAction.invoker as ImmediateInvoker).run(deps as never);
+    expect(rig.pose(rig.ids[0])).toMatchObject({ x: 5, y: 0 });
+  });
+
+  it('is off where the repeat would change nothing, as a resize of a locked node', () => {
+    const rig = setup([box(0, 0)]);
+    const locked = rig.scene.add({ kind: 'mark', layer: 'main', data: {}, pose: box(50, 50), locked: true } as never) as string;
+    recordTransform(rig.scene, { kind: 'scale', to: { x: 0, y: 0, width: 2, height: 2 }, anchor: { x: 'min', y: 'min' } }, rig.ids);
+    rig.selection.set([asNodeId(locked)]);
+    expect(transformAgainAction.enabled!(rig.deps as never)).toBe(ActionDisabledReason.NotApplicable);
+    rig.again();
+    expect(rig.pose(locked)).toMatchObject({ x: 50, y: 50, width: 10, height: 10 });
   });
 });
 

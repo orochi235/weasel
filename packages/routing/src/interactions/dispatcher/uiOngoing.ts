@@ -35,6 +35,7 @@ export function createUiOngoing(
       try { prevHandle.onEnd(uiInvocationCtx(deps), 'commit'); }
       catch (e) { console.error(`weasel dispatcher: prior UI handle for "${actionId}" threw on auto-commit`, e); }
     }
+    notify();
   }
 
   function control(actionId: string, gestureId: string, handle: OngoingHandle, deps: ActionDeps): UiOngoingControl {

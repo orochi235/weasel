@@ -56,6 +56,28 @@ describe('averageAnchorsAction', () => {
   });
 });
 
+describe('averageAnchorsAction enabled', () => {
+  const stacked = () => new PathBuilder().moveTo(0, 0).lineTo(5, 5).lineTo(5, 5).lineTo(5, 9).build();
+
+  it('is off, and commits nothing, where the anchors already sit on their mean', () => {
+    const { deps, commits } = setup(stacked(), [1, 2]);
+    expect(averageAnchorsAction.enabled!(deps, undefined, undefined, { axis: 'both' })).toBe(ActionDisabledReason.NotApplicable);
+    run(averageAnchorsAction, deps, { axis: 'both' });
+    expect(commits).toHaveLength(0);
+  });
+
+  it('answers per axis', () => {
+    const { deps } = setup(stacked(), [1, 3]);
+    expect(averageAnchorsAction.enabled!(deps, undefined, undefined, { axis: 'x' })).toBe(ActionDisabledReason.NotApplicable);
+    expect(averageAnchorsAction.enabled!(deps, undefined, undefined, { axis: 'y' })).toBe(true);
+  });
+
+  it('is off for a selection naming no anchor of the path', () => {
+    const { deps } = setup(twoLines(), [7, 8]);
+    expect(averageAnchorsAction.enabled!(deps)).toBe(ActionDisabledReason.NotApplicable);
+  });
+});
+
 describe('joinAnchorsAction', () => {
   it('joins two subpaths at the selected ends and clears the anchor selection', () => {
     const { deps, dep, commits } = setup(twoLines(), [1, 2]);

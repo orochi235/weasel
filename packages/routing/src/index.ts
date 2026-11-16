@@ -49,6 +49,10 @@ export interface DepSchema {
   menuHost?: import('./menus/menuHost').MenuHost;
   /** The canvas's dispatch trace, for a dep to record a mode switch into. */
   dispatchTrace?: import('./interactions/dispatcher/dispatchTrace').DispatchTrace;
+  /** The canvas's rule context now, its surface's own camera's: what an `eligible` rule is evaluated against
+   *  outside dispatch, by `ActionsRegistry.trigger`, a menu, a palette or a bar. A dispatcher given
+   *  `getRuleCtx` publishes it. */
+  ruleCtx?: () => import('./eligibility').RuleCtx | undefined;
   /** The keymaps open on the canvas: what a leader opens and a hint reads. */
   keymaps?: import('./keymaps/keymapStack').KeymapStack;
   /** Every selection the host holds, captured so the last operation can put it back before it reruns. */
@@ -171,6 +175,7 @@ export {
 } from './interactions/actions/toolOffhand';
 export type { ToolOffhandBindingSpec } from './interactions/actions/toolOffhand';
 export { BETWEEN_GESTURES } from './interactions/actions/betweenGestures';
+export { eligibleNow } from './interactions/dispatcher/ranking';
 
 // ─── dispatcher ───────────────────────────────────────────────────────────
 export {

@@ -147,6 +147,12 @@ describe('snipAtCrossingsAction', () => {
   it('needs two paths', () => {
     expect(snipAtCrossingsAction.enabled!(setup({ a: line(0, 0, 1, 1) }, ['a']).deps)).toBe(ActionDisabledReason.SelectionRequired);
   });
+
+  it('is off for paths that do not cross', () => {
+    const { deps } = setup({ a: line(0, 0, 10, 0), b: line(0, 5, 10, 5) }, ['a', 'b']);
+    expect(snipAtCrossingsAction.enabled!(deps)).toBe(ActionDisabledReason.NotApplicable);
+    expect(snipAtCrossingsAction.enabled!(setup({ a: line(0, 0, 10, 10), b: line(0, 10, 10, 0) }, ['a', 'b']).deps)).toBe(true);
+  });
 });
 
 describe('joinPathsAction', () => {

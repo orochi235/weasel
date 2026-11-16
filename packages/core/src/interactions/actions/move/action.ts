@@ -1,4 +1,5 @@
 import { defineAction, type Action } from '@weasel-js/routing';
+import { createEmitter } from '@weasel-js/registry';
 import type { InvocationCtx } from '@weasel-js/routing';
 import { transformPreview } from '../transformFinish';
 import { finiteFrame } from '../finiteFrame';
@@ -51,6 +52,17 @@ export const moveAction: Action = inPlane(defineAction({
       const preview = transformPreview(ctx.deps, session.scene, () => frame.previews);
       // Where the last move put the pointer; null until the first.
       let engaged: { x: number; y: number } | null = null;
+      let lastMove: InvocationCtx | null = null;
+      const shown = createEmitter();
+      const show = (moveCtx: InvocationCtx): void => {
+        frame = finiteFrame(frame, moveCtx, () => nextFrame(session, readers, moveCtx), (f) => f.previews);
+        hold.set(preview.poses());
+      };
+      session.gestureCtx.refresh = () => {
+        if (!lastMove) return;
+        show(lastMove);
+        shown.emit();
+      };
       return {
         kind: 'move',
         autoPan: true,
@@ -58,9 +70,10 @@ export const moveAction: Action = inPlane(defineAction({
           if (!moveCtx.drag) return;
           if (!engaged) session.lifecycle.start(session.ids as unknown as string[]);
           engaged = moveCtx.world;
-          frame = finiteFrame(frame, moveCtx, () => nextFrame(session, readers, moveCtx), (f) => f.previews);
-          hold.set(preview.poses());
+          lastMove = moveCtx;
+          show(moveCtx);
         },
+        subscribe: (changed) => shown.subscribe(changed),
         onEnd(endCtx: InvocationCtx, reason: 'commit' | 'cancel'): void {
           let committed = false;
           try {

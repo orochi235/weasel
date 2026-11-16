@@ -12,26 +12,30 @@ import { warnTextOutlines, type NoticesDep } from '../notices';
 type OutlinesFailure = { kind: 'failed'; error: TextOutlinesError };
 
 /**
- * Run `apply`, an outline conversion of `adapter`'s selection, waiting first
+ * Run `apply`, an outline conversion of the adapter's selection, waiting first
  * for any face whose outlines are registered but not yet loaded — a face is
  * parsed on first use, so the first conversion in a session would otherwise
- * fail. Warns the user through `notices` (under `tag` on the console without
- * it) when the selection still cannot be converted.
+ * fail. The retry converts what was selected when it was asked, whatever is
+ * selected by then, and a node deleted meanwhile is left out. Warns the user
+ * through `notices` (under `tag` on the console without it) when the selection
+ * still cannot be converted.
  */
 export async function withTextOutlines<R extends { kind: string } | OutlinesFailure>(
   adapter: CreateOutlinesAdapter,
-  apply: () => R,
+  apply: (adapter: CreateOutlinesAdapter) => R,
   tag: string,
   notices?: NoticesDep,
 ): Promise<R> {
   const failure = (r: R): TextOutlinesError | null => (r.kind === 'failed' ? (r as OutlinesFailure).error : null);
-  let result = apply();
+  const asked = [...adapter.getSelection()] as NodeId[];
+  let result = apply(adapter);
   if (failure(result)?.reason === 'outlines-loading') {
-    const texts = [...adapter.getSelection()]
-      .map((id) => adapter.getTextSource(id as NodeId))
+    const texts = asked
+      .map((id) => adapter.getTextSource(id))
       .filter((t): t is TextNodeSource => t !== undefined);
     await Promise.all(texts.map((t) => loadTextOutlines(t.data)));
-    result = apply();
+    const held: CreateOutlinesAdapter = Object.create(adapter, { getSelection: { value: () => asked } });
+    result = apply(held);
   }
   const error = failure(result);
   if (error) warnTextOutlines(notices, tag, error);
@@ -40,7 +44,7 @@ export async function withTextOutlines<R extends { kind: string } | OutlinesFail
 
 /** {@link applyCreateOutlines} through {@link withTextOutlines}. */
 export function runCreateOutlines(adapter: CreateOutlinesAdapter, notices?: NoticesDep): Promise<CreateOutlinesResult> {
-  return withTextOutlines(adapter, () => applyCreateOutlines(adapter), 'createOutlines', notices);
+  return withTextOutlines(adapter, (a) => applyCreateOutlines(a), 'createOutlines', notices);
 }
 
 /**

@@ -21,7 +21,7 @@ function clampAxis(d: number, lo: number, hi: number, min: number, max: number):
 
 /**
  * Move behavior that keeps the dragged nodes inside `bounds`: the drag's translation is
- * clamped so the box around every dragged node's start pose, moved by it, stays in the rect.
+ * clamped so the box around every dragged node's start pose in world, moved by it, stays in the rect.
  * The clamp applies to the preview and the commit alike, so a node let go past an edge lands
  * on it. Put it after behaviors that reshape the translation, so it has the last word.
  */
@@ -33,7 +33,7 @@ export function clampMove<TPose>(opts: ClampMoveOptions<TPose>): MoveBehavior<TP
       const starts: Rect[] = [];
       for (const id of ctx.draggedIds) {
         const pose = ctx.origin.get(id);
-        if (pose !== undefined) starts.push(d.getBounds(pose));
+        if (pose !== undefined) starts.push(d.getBounds(ctx.frames ? ctx.frames.toWorld(id, pose) : pose));
       }
       const u = unionRects(starts);
       if (!u) return undefined;

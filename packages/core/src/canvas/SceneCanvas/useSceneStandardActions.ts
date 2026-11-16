@@ -52,7 +52,7 @@ import { useViewportActions, viewportZoomOption } from './useViewportActions';
 export type StandardActionsProps = Pick<
   SceneCanvasProps<unknown, string, unknown>,
   | 'actions' | 'tune' | 'bindingOverrides' | 'geometry' | 'viewport' | 'layoutDropTarget'
-  | 'reflowTransition' | 'insertNodeFactories' | 'ingestion' | 'snap'
+  | 'reflowTransition' | 'insertNodeFactories' | 'ingestion' | 'snap' | 'modes'
 >;
 
 /** What `<SceneCanvas>` hands {@link useSceneStandardActions}. */
@@ -220,7 +220,7 @@ export function useSceneStandardActions(inputs: SceneStandardActionsInputs): voi
   );
   useDebugDepSource(canvasApiRef);
   usePreviewPathsDepSource(canvasApiRef);
-  useDepChangeNotices(editAnchorsExternalState);
+  useDepChangeNotices(editAnchorsExternalState, props.modes);
   useIngestionDepSource(canvasRef, () => currentViewRef.current, ingestion?.resolveSrc, ingestion?.svg, ingestionClipboard, ingestionHandlers);
   useLassoSelectDepSource(scene, selection, poseDescriptor, alphaOf, reachable, regionTargetOf);
   useTextEditDepSource(scene);

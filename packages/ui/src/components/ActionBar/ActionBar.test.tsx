@@ -128,6 +128,30 @@ describe('ActionBar', () => {
     expect(off.getAttribute('aria-description')).toBe('Selection required');
   });
 
+  it('disables a button whose action the ruleCtx dep bars', () => {
+    const barred = makeAction({ id: 'barred', eligible: { capability: 'edits-page' } });
+    function Mode() {
+      useDepSource('ruleCtx', () => () => ({
+        focused: true, selection: [], multiActive: false,
+        modifiers: { alt: false, ctrl: false, meta: false, shift: false },
+        action: { kind: null, id: null }, hover: null, mode: 'free-transform',
+        allowedCapabilities: new Set(['transforms-selection'] as const),
+      }));
+      return null;
+    }
+    renderWithIcons(
+      <DepRegistryProvider>
+        <ActionsProvider>
+          <RegisterAction action={barred} />
+          <Mode />
+          <ActionBar group="demo" />
+        </ActionsProvider>
+      </DepRegistryProvider>,
+    );
+    const button = item('barred') as HTMLButtonElement;
+    expect(button.disabled || button.getAttribute('aria-disabled') === 'true').toBe(true);
+  });
+
   // Dep sources publish on commit, so the render that changes one reads the
   // one before it; the bar has to catch up once it commits.
   it('follows a dep that changes in the same render as the bar', () => {

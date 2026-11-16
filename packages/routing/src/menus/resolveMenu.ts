@@ -11,7 +11,7 @@ import type { Action } from '../interactions/actions/action';
 import type { ActionDeps } from '../interactions/actions/invoker';
 import { actionItems, type ActionItem } from '../interactions/actions/actionItems';
 import { actionItemShortcuts, type ActionShortcut } from '../interactions/actions/actionShortcuts';
-import { evaluateActive, evaluateEnabled } from '../interactions/actions/actionEnabled';
+import { evaluateActive, evaluateEnabled, type ActionEnabledResult } from '../interactions/actions/actionEnabled';
 import { actionSettingsParams, readActionSettings } from '../interactions/actions/actionSettings';
 import { isDev } from '@weasel-js/react';
 import { sep, tidy, withReason } from './separators';
@@ -27,10 +27,13 @@ import type { Point } from '@weasel-js/geom';
 export interface MenuSources {
   actions(): readonly Action[];
   depsFor(action: Action): ActionDeps | undefined;
+  /** Whether `action`'s `eligible` rule lets it run now. A row it refuses is disabled. Absent, every action may. */
+  eligible?(action: Action): boolean;
   trigger(id: string, params?: Record<string, unknown>): boolean;
   /** The value at a leaf's dotted path. Booleans, enums, and numbers are left
-   *  out of a menu without both this and `onChange`, colors and strings without
-   *  this, and `showIf`/`enableIf` are checked only with it. */
+   *  out of a menu without both this and `onChange`; colors, strings, objects,
+   *  lists, maps, unions, fields and paints without this; and `showIf`/`enableIf`
+   *  are checked only with it. */
   values?(path: string): unknown;
   onChange?(path: string, value: unknown): void;
   /** The schema an `alias` leaf's `of` is read in. Default: the menu's own. */
@@ -67,7 +70,9 @@ const withAccess = (access?: string): { access?: string } => (access ? { access 
 function itemOf(ctx: Ctx, it: ActionItem, key: string, label: string, off: boolean, access?: string): MenuEntry {
   const deps = ctx.src.depsFor(it.action);
   const params = { ...ctx.params, ...it.params, ...(ctx.at ? { world: ctx.at } : {}) };
-  const { enabled, reason } = evaluateEnabled(it.action, deps, ctx.at, params);
+  const { enabled, reason }: ActionEnabledResult = ctx.src.eligible?.(it.action) === false
+    ? { enabled: false }
+    : evaluateEnabled(it.action, deps, ctx.at, params);
   const why = !off && reason !== undefined ? { disabledReason: reason } : {};
   if (it.action.settings) return settingsOf(ctx, it, key, label, off || !enabled, why, access);
   return {
@@ -171,12 +176,12 @@ function rowsOf(ctx: Ctx, leaf: PrefLeaf, key: string, path: string, off: boolea
     case 'number': return numberRows(ctx.src, leaf as PrefNumber, key, path, off);
     case 'color': return colorRows(ctx.src, leaf as PrefColor, key, path, off);
     case 'string': return stringRows(ctx.src, leaf as PrefString, key, path, off);
-    case 'object': return objectRows(drawIn(ctx), leaf as PrefObject, key, path, off);
-    case 'list': return listRows(drawIn(ctx), leaf as PrefList, key, path, off);
-    case 'map': return mapRows(drawIn(ctx), leaf as PrefMap, key, path, off);
-    case 'union': return unionRows(drawIn(ctx), leaf as PrefUnion, key, path, off);
-    case 'field': return fieldRows(drawIn(ctx), leaf as PrefField, key, path, off);
-    case 'paint': return paintRows(drawIn(ctx), leaf as PrefPaint, key, path, off);
+    case 'object': return compound(ctx, (draw) => objectRows(draw, leaf as PrefObject, key, path, off));
+    case 'list': return compound(ctx, (draw) => listRows(draw, leaf as PrefList, key, path, off));
+    case 'map': return compound(ctx, (draw) => mapRows(draw, leaf as PrefMap, key, path, off));
+    case 'union': return compound(ctx, (draw) => unionRows(draw, leaf as PrefUnion, key, path, off));
+    case 'field': return compound(ctx, (draw) => fieldRows(draw, leaf as PrefField, key, path, off));
+    case 'paint': return compound(ctx, (draw) => paintRows(draw, leaf as PrefPaint, key, path, off));
     case 'separator': return [sep(key)];
     case 'label':
       return [{ kind: 'item', key, label: leaf.name, ...withAccess(leaf.access), disabled: true, run: noop }];
@@ -205,12 +210,17 @@ function through(ctx: Ctx, access: MenuAccess, entry = ctx.entry): Ctx {
   };
 }
 
+/** A compound leaf's rows, drawn in `ctx`; none where nothing reads its value. */
+function compound(ctx: Ctx, rows: (draw: MenuDraw) => MenuEntry[]): MenuEntry[] {
+  return ctx.src.values ? rows(drawIn(ctx, ctx.src.values)) : [];
+}
+
 /** What a compound leaf drawn in `ctx` draws its parts with. */
-function drawIn(ctx: Ctx): MenuDraw {
-  const { values, onChange } = ctx.src;
+function drawIn(ctx: Ctx, values: (path: string) => unknown): MenuDraw {
+  const { onChange } = ctx.src;
   return {
     root: ctx.src.over ?? ctx.root,
-    access: { values: values!, ...(onChange ? { onChange } : {}) },
+    access: { values, ...(onChange ? { onChange } : {}) },
     leaf: (leaf, key, access, off, entry) => leafRows(through(ctx, access, entry), leaf, key, key, off),
     fields: (fields, prefix, access, off) => {
       const status = { ...PREF_STATUS, enabled: !off };

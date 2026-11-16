@@ -1,6 +1,7 @@
 import { useLayoutEffect, useReducer, useSyncExternalStore } from 'react';
 import {
   buildDepsFromRequires,
+  eligibleNow,
   evaluateActive,
   evaluateEnabled,
   useOptionalDepRegistry,
@@ -28,8 +29,9 @@ export function useActionStates(items: readonly ActionItem[]): ActionState[] {
   const depReg = useOptionalDepRegistry();
   const read = (item: ActionItem): ActionState => {
     const deps = depReg ? buildDepsFromRequires(item.action, depReg) : undefined;
-    const { enabled, reason } = evaluateEnabled(item.action, deps, undefined, item.params);
     const active = evaluateActive(item.action, deps, item.params);
+    if (!eligibleNow(item.action, depReg?.get('ruleCtx'))) return { enabled: false, active };
+    const { enabled, reason } = evaluateEnabled(item.action, deps, undefined, item.params);
     return { enabled, active, ...(reason !== undefined ? { reason } : {}) };
   };
   // The snapshot is what the chrome shows, so a notice that changes none of

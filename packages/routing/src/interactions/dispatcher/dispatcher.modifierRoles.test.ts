@@ -2,7 +2,7 @@ import { describe, it, expect, vi } from 'vitest';
 import type { Action } from '../actions/action';
 import type { InvocationCtx } from '../actions/invoker';
 import { tuneAction } from '../actions/tuning';
-import { roleReader } from '../actions/modifierRoles';
+import { roleMods, roleReader } from '../actions/modifierRoles';
 import { createDispatcher } from './dispatcher';
 import type { InputEvent } from './matcher';
 import { makeRegistry, makeCtx } from './testing/dispatcherStubs';
@@ -95,6 +95,24 @@ describe('modifier roles', () => {
     d.handleInput(pointer('pointermove', { shift: true }), ctx);
     d.handleInput(pointer('pointermove', { ctrl: true }), ctx);
     expect(seen.map((r) => r?.['handle.holdAngle'])).toEqual([false, false, true]);
+  });
+
+  it("lets a drag start with a moved role's new key held, where the binding let its declared key be", () => {
+    const pressed = (action: Action, mods: Mods) => {
+      const { seen, start } = recorder();
+      const withStart = { ...action, invoker: { timing: 'ongoing', start: start as never } } as Action;
+      createDispatcher().handleInput(pointer('pointerdown', mods), makeCtx({ actions: makeRegistry([withStart]) }));
+      return seen.length > 0;
+    };
+    const base = holdAction(vi.fn());
+    const spec = { kind: 'drag' as const, mods: roleMods(base.modifierRoles!) };
+    const tuned = tuneAction({ ...base, defaultBinding: [{ spec }] }, [{ roles: { 'handle.holdAngle': ['alt'] } }]);
+    expect(pressed(tuned, { alt: true })).toBe(true);
+    const own = { ...base, defaultBinding: [{ spec, opts: { roles: { 'handle.holdAngle': ['alt'] } } }] } as Action;
+    expect(pressed(own, { alt: true })).toBe(true);
+    // A binding that never let the declared key be held from the press is left as it is.
+    const bare = tuneAction(base, [{ roles: { 'handle.holdAngle': ['alt'] } }]);
+    expect(pressed(bare, { alt: true })).toBe(false);
   });
 
   it('reads the default keys where nothing resolved the roles', () => {

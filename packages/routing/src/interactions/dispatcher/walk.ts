@@ -9,6 +9,7 @@ import { actionBindings, routedOpts, type GestureBinding } from '../actions/bind
 import { NO_OVERRIDES } from '../actions/bindingOverrides';
 import { buildDepsFromRequires } from '../actions/buildDeps';
 import { resolveParams } from '../actions/bindingOpts';
+import { withRoleMods } from '../actions/modifierRoles';
 import type { ActionDeps } from '../actions/invoker';
 import { assembleEntries, scopeBindings } from '../../contributions/assemble';
 import type { DispatcherContext, ResolvedCandidate } from './dispatcherApi';
@@ -47,11 +48,12 @@ function assembleScopedBindings(ctx: DispatcherContext, event?: InputEvent): Sco
   const overrides = ctx.bindingOverrides?.() ?? NO_OVERRIDES;
   const result: ScopedBinding[] = scopeBindings(ordered, state, overrides)
     .filter((sb) => live(sb.binding));
-  if (ctx.keymapPass === 'only') return result.filter((sb) => sb.ownerId === openKeymap);
+  const actions = ctx.actions.list();
+  if (ctx.keymapPass === 'only') return withRoles(result.filter((sb) => sb.ownerId === openKeymap), actions);
 
   // Actions have no owning tool — `'&'`-channel phase atoms on their
   // bindings won't match.
-  for (const action of ctx.actions.list()) {
+  for (const action of actions) {
     const targetScope: BindingScope = action.scope === 'hotkey' ? 'hotkey' : 'ambient';
     // The registry has already laid binding overrides over an action's own.
     for (const binding of actionBindings(action)) {
@@ -59,7 +61,20 @@ function assembleScopedBindings(ctx: DispatcherContext, event?: InputEvent): Sco
     }
   }
 
-  return result;
+  return withRoles(result, actions);
+}
+
+/** `bindings` with each one's spec letting a modifier role a tuning or its `opts.roles` moved be held from the press
+ *  on its new keys, as it let the declared ones ({@link withRoleMods}). */
+function withRoles(bindings: ScopedBinding[], actions: readonly Action[]): ScopedBinding[] {
+  const roled = new Map(actions.filter((a) => a.modifierRoles).map((a) => [a.id, a.modifierRoles!]));
+  if (roled.size === 0) return bindings;
+  return bindings.map((sb) => {
+    const roles = roled.get(sb.binding.actionId);
+    if (!roles) return sb;
+    const spec = withRoleMods(sb.binding.spec, roles, sb.binding.opts?.roles);
+    return spec === sb.binding.spec ? sb : { ...sb, binding: { ...sb.binding, spec } };
+  });
 }
 
 /** Whether any live binding's spec passes `test`. Asks no `enabled`, and needs
@@ -175,7 +190,7 @@ export function walk(
     if (result === 'empty-handle') { push({ kind: 'empty-handle' }); continue; }
     push({ kind: result === 'fired' ? 'fired' : 'misbound' });
     stop = result;
-    winner = { match, action };
+    if (result === 'fired') winner = { match, action };
   }
   return { steps, stop, winner };
 }

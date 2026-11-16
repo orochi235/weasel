@@ -29,14 +29,26 @@ export function markUnder(dep: EditAnchorsDep, deps: ActionDeps | undefined, wx:
   return null;
 }
 
-/** Delete the selected extension mark. False when none is selected, or its
- *  owner cannot delete it. */
-export function deleteSelectedMark(dep: EditAnchorsDep): boolean {
+/** How the selected extension mark would be deleted, or null when none is selected or its owner cannot delete it. */
+function selectedMarkDelete(dep: EditAnchorsDep): (() => void) | null {
   const mark = dep.selectedMark;
   const owner = mark ? dep.extensions?.find((e) => e.id === mark.owner) : undefined;
   const target = owner?.deleteMark && dep.store ? editTargetOf(dep) : null;
-  if (!mark || !target) return false;
-  owner!.deleteMark!(target, mark.index, dep.store!);
+  if (!mark || !target) return null;
+  return () => owner!.deleteMark!(target, mark.index, dep.store!);
+}
+
+/** Whether {@link deleteSelectedMark} would delete a mark. */
+export function canDeleteSelectedMark(dep: EditAnchorsDep): boolean {
+  return selectedMarkDelete(dep) !== null;
+}
+
+/** Delete the selected extension mark. False when none is selected, or its
+ *  owner cannot delete it. */
+export function deleteSelectedMark(dep: EditAnchorsDep): boolean {
+  const del = selectedMarkDelete(dep);
+  if (!del) return false;
+  del();
   dep.setSelectedMark?.(null);
   return true;
 }

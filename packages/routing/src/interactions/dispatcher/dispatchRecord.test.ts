@@ -245,6 +245,20 @@ describe('the dispatch record', () => {
     expect(rows(lastRecord())).toEqual(['bail first empty-handle', 'pan order fired']);
   });
 
+  it('records a misbound candidate as nothing fired', () => {
+    const error = vi.spyOn(console, 'error').mockImplementation(() => {});
+    const held: Action = {
+      id: 'held', label: 'held', defaultBinding: { kind: 'pointerDown' },
+      invoker: { timing: 'ongoing', start: () => ({ onEnd: vi.fn() }) },
+    };
+    createDispatcher().handleInput(press({ stage: 'press' }), ctxOf([held]));
+    const record = lastRecord();
+    expect(rows(record)).toEqual(['held first misbound']);
+    expect(record.fired).toBeNull();
+    expect(record.outcome).toBe('unhandled');
+    error.mockRestore();
+  });
+
   it('marks a record from explain() as predicted, with a would-fire winner, and invokes nothing', () => {
     const { run, ctx } = escapeScenario();
     const r = createDispatcher().explain(escapeKey, ctx);

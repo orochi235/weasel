@@ -63,6 +63,14 @@ export function isEligible(action: Action, ruleCtx: RuleCtx): boolean {
   return evaluate(eligibleToRule(action.eligible), ruleCtx);
 }
 
+/** Whether `action` may run under what a `ruleCtx` dep answers now. With no
+ *  dep, or one answering `undefined`, every action may, as the dispatcher
+ *  reads a missing rule context. */
+export function eligibleNow(action: Action, ruleCtx: (() => RuleCtx | undefined) | undefined): boolean {
+  const r = ruleCtx?.();
+  return r === undefined || isEligible(action, r);
+}
+
 /** Render an `eligible` rule for display. `evaluate()` returns a bare
  *  boolean, so there is no reason string to carry — the rule itself is the
  *  most informative thing available. */
@@ -181,5 +189,6 @@ export interface Walked {
   /** Why the walk ended: a candidate fired (or would), one was misbound, or
    *  every candidate was exhausted. */
   stop: 'fired' | 'misbound' | 'exhausted';
+  /** The candidate that fired, or would; null when the walk stopped on a misbound one. */
   winner: { match: MatchResult; action: Action } | null;
 }

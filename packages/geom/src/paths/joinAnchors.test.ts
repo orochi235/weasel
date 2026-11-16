@@ -12,6 +12,13 @@ function twoLines(): AnchorSet {
 }
 
 describe('averageAnchorsAt', () => {
+  it('changes nothing, and says so, when the anchors already sit on their mean', () => {
+    const set: AnchorSet = { anchors: [[pt(5, 5), pt(5, 5), pt(5, 9)]], closed: [false] };
+    expect(averageAnchorsAt(set, [0, 1])).toBe(false);
+    expect(averageAnchorsAt(set, [0, 2], 'x')).toBe(false);
+    expect(averageAnchorsAt(set, [0, 2], 'y')).toBe(true);
+  });
+
   it('stacks the anchors on their mean, handles carried along', () => {
     const set: AnchorSet = {
       anchors: [[pt(0, 0), { x: 10, y: 20, inHandle: pt(8, 20) }, pt(20, 40)]],

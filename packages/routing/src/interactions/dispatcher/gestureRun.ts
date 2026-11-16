@@ -170,9 +170,9 @@ export function pumpGesture(run: GestureRun, event: InputEvent, reach?: KeyReach
   if (event.kind === 'multitouch' && event.centroid !== undefined) {
     const gestureId = gestureIdFor(event);
     const handle = inFlight.handles.get(gestureId);
-    if (handle?.onMove) {
+    if (handle) {
       run.facts.turn(gestureId, event);
-      handle.onMove(ctxFor(run, event, {}, gestureId));
+      handle.onMove?.(ctxFor(run, event, {}, gestureId));
       return 'handled';
     }
     // A hand is doing one multitouch gesture at a time, but the gesture id

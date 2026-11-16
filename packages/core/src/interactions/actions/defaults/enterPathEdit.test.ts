@@ -34,8 +34,25 @@ describe('enterPathEdit', () => {
       ...(named ? { doubleClick: { bodyTarget: 'unselected-body' as const, bodyKind: 'group', id: named } } : {}),
     });
     const enabled = enterPathEditAction.enabled!;
-    expect(enabled({ hitAt: hitAt('outer') } as never, { x: 5, y: 5 })).toBe(ActionDisabledReason.NotApplicable);
-    expect(enabled({ hitAt: hitAt(undefined) } as never, { x: 5, y: 5 })).toBe(true);
+    const member = {
+      editAnchors: { getEditablePath: (id: string) => (id === 'member' ? {} : null) },
+      selection: { get: () => [] },
+      nodeAtPoint: () => 'member',
+    };
+    expect(enabled({ ...member, hitAt: hitAt('outer') } as never, { x: 5, y: 5 })).toBe(ActionDisabledReason.NotApplicable);
+    expect(enabled({ ...member, hitAt: hitAt(undefined) } as never, { x: 5, y: 5 })).toBe(true);
+  });
+
+  it('stands aside where neither the node under the pointer nor any selected one has an editable path', () => {
+    const deps = (under: string | null, selected: string[]) => ({
+      editAnchors: { getEditablePath: (id: string) => (id === 'path' ? {} : null) },
+      selection: { get: () => selected },
+      nodeAtPoint: () => under,
+    }) as never;
+    const enabled = enterPathEditAction.enabled!;
+    expect(enabled(deps('text', []), { x: 5, y: 5 })).toBe(ActionDisabledReason.NotApplicable);
+    expect(enabled(deps('text', ['path']), { x: 5, y: 5 })).toBe(true);
+    expect(enabled(deps(null, []))).toBe(ActionDisabledReason.NotApplicable);
   });
 
   describe('on a text-along node hiding its sources', () => {

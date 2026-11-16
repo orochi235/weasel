@@ -1,6 +1,5 @@
 import type { BooleanShapeOp } from 'core/geometry/booleanOfPaths';
 import { booleanGroupFields } from 'core/scene/booleanGroup';
-import { withoutPageStructure } from 'core/scene/nodeGates';
 import { groupingSite } from 'core/pages/pagePlacement';
 import { pageOfNode } from 'core/pages/pageNodes';
 import { followerMoveOps, followerMoves } from '../followerMoves';
@@ -12,9 +11,10 @@ import type { Op } from 'core/ops/types';
 import { AUTO_POSE_DESCRIPTOR } from 'core/geometry/autoPoseDescriptor';
 import { unionBounds } from 'core/geometry/unionBounds';
 import type { Node, NodeId } from 'core/scene/types';
-import type { Action } from '@weasel-js/routing';
+import { ActionDisabledReason, type Action } from '@weasel-js/routing';
 import { requiresContent } from '../defaults/requiresSelection';
 import { scenePoseFrame } from '../poseFrame';
+import { selectedRoots } from '../selectionSubtree';
 import { inPaintOrder, slotAbove } from '../groupSlot';
 import { icon } from '../../../icons.gen';
 import type { AnyScene } from 'core/scene/anyScene';
@@ -27,8 +27,9 @@ const PAINT_KEYS = ['fill', 'stroke'] as const;
  * screen, unless the operands lie wholly off every page with the pasteboard
  * off and move onto one, and a node following one that changes page goes
  * where `followerMoves` says. The group wears the frontmost
- * operand's `fill` and `stroke`. Null when fewer than two
- * of `ids` are nodes on one layer, or when one would land in a singular frame.
+ * operand's `fill` and `stroke`. The operands are the outermost of `ids`, so a selected node's selected
+ * descendant stays where it is. Null when fewer than two operands are nodes on one layer, or when one would land in
+ * a singular frame.
  */
 export function booleanGroupOps(
   scene: AnyScene,
@@ -36,8 +37,8 @@ export function booleanGroupOps(
   op: BooleanShapeOp = 'union',
   label = 'Make Boolean Group',
 ): { ops: Op[]; group: NodeId } | null {
-  const nodes = inPaintOrder(scene, ids
-    .map((id) => scene.get(id as NodeId))
+  const nodes = inPaintOrder(scene, selectedRoots(scene, ids)
+    .map((id) => scene.get(id))
     .filter((n): n is Node<unknown, string, unknown> => n !== undefined));
   if (nodes.length < 2 || new Set(nodes.map((n) => n.layer)).size > 1) return null;
   const front = nodes.at(-1)!;
@@ -96,9 +97,13 @@ export const makeBooleanGroupAction: Action & { requires: string[] } = {
     run: (deps) => {
       const { scene, selection } = deps;
       if (!scene || !selection) return;
-      const made = booleanGroupOps(scene as AnyScene, withoutPageStructure(scene, selection.get()));
+      const made = booleanGroupOps(scene as AnyScene, selection.get());
       if (made) commitOps(deps, made.ops, 'Make Boolean Group', { select: [made.group] });
     },
   },
-  enabled: requiresContent(2),
+  enabled: (deps) => {
+    const given = requiresContent(2)(deps);
+    if (given !== true) return given;
+    return selectedRoots(deps!.scene as AnyScene, deps!.selection!.get()).length >= 2 ? true : ActionDisabledReason.SelectionRequired;
+  },
 };

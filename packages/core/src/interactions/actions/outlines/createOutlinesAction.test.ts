@@ -70,6 +70,21 @@ describe('runCreateOutlines', () => {
     expect(applyOps).toHaveBeenCalledTimes(1);
   });
 
+  it('converts what was selected when it was asked, once the face loads', async () => {
+    registerFontOutlines('late-inter-2', {}, new Uint8Array(readFileSync(INTER_TTF)).buffer);
+    const style = { fontFamily: 'late-inter-2', fontSize: 40 };
+    const pose = { x: 0, y: 0, width: 100, height: 60 };
+    let selected = ['a'];
+    const converted: string[] = [];
+    const { adapter } = makeAdapter({ a: { data: { text: 'H', style }, pose }, b: { data: { text: 'I', style }, pose } });
+    adapter.getSelection = () => selected.map(asNodeId);
+    adapter.createPathNode = (_path, source) => { converted.push(source); return { id: `outlined-${source}` }; };
+    const pending = runCreateOutlines(adapter);
+    selected = ['b'];
+    expect((await pending).kind).toBe('applied');
+    expect(converted).toEqual(['a']);
+  });
+
   it('warns and changes nothing when a face has no outlines at all', async () => {
     const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
     const { adapter, applyOps } = makeAdapter({

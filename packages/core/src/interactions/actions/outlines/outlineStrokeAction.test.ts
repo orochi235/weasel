@@ -50,6 +50,14 @@ describe('outlineStrokeAction', () => {
     expect(on([])).toBe(ActionDisabledReason.SelectionRequired);
   });
 
+  it('is off for a stroke that covers nothing, which run would leave alone', () => {
+    const { adapter, created } = makeAdapter({ hair: { fill: null, stroke: { paint: { color: '#000' }, width: 0 } } });
+    const deps = stubDeps({ selection: selectionOf(['hair']), createOutlinesAdapter: adapter });
+    expect(outlineStrokeAction.enabled?.(deps)).toBe(ActionDisabledReason.NotApplicable);
+    (outlineStrokeAction.invoker as ImmediateInvoker).run(deps, {});
+    expect(created).toHaveLength(0);
+  });
+
   it('outlines a { px } width at the view scale', () => {
     const { adapter, created } = makeAdapter({ line: STROKED });
     const view = { get: () => ({ x: 0, y: 0, scale: { x: 4, y: 4 } }) };

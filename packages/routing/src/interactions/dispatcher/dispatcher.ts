@@ -51,7 +51,7 @@ export { filterEligible, preferContextual } from './ranking';
 export function createDispatcher(opts?: {
   getAction?: (id: string) => Action | undefined;
 }): Dispatcher {
-  const inFlight = createInFlightGestures();
+  const inFlight = createInFlightGestures(() => notify());
   const facts = createGestureFacts();
 
   /** Subscribers fired after every state mutation. Layers that read from
