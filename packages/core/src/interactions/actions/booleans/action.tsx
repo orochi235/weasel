@@ -7,6 +7,7 @@ import { ActionDisabledReason } from '@weasel-js/routing';
 import type { ActionDeps, ImmediateInvoker } from '@weasel-js/routing';
 import { icon } from '../../../icons.gen';
 import { warnTextOutlines } from '../notices';
+import type { NodeId } from 'core/scene/types';
 
 const ID_FOR: Record<BooleanOp, string> = {
   union: 'pathfinder.union',
@@ -88,7 +89,7 @@ function makePathfinderAction(op: BooleanOp): Action {
       const ids = deps?.selection?.get() ?? [];
       if (ids.length < 2) return ActionDisabledReason.SelectionRequired;
       const adapter = deps?.booleansAdapter;
-      return adapter && countOperands(adapter, adapter.getSelection()) >= 2 ? true : ActionDisabledReason.NotApplicable;
+      return adapter && countOperands(adapter, [...adapter.getSelection()] as NodeId[]) >= 2 ? true : ActionDisabledReason.NotApplicable;
     },
   };
 }
