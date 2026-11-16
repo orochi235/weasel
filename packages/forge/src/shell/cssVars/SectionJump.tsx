@@ -1,4 +1,5 @@
 import type { IconRef } from '@weasel-js/icons';
+import { scrolledPlaceOf } from '@weasel-js/routing';
 import { Icon } from '@weasel-js/ui/components/Icon';
 import { SegmentedBar, type SegmentedBarItem } from '@weasel-js/ui/components/Segmented';
 import { TOKEN_CATEGORIES, type TokenCategory } from '@weasel-js/ui/components/TokenPanel';
@@ -81,7 +82,7 @@ export function SectionJump() {
     if (!panel || !target || !scroller) return;
     held.current = true;
     setCurrent(next);
-    scroller.scrollTop += target.getBoundingClientRect().top - readLine(panel);
+    scroller.scrollTop = scrolledPlaceOf(target, scroller).y;
   };
 
   return (
