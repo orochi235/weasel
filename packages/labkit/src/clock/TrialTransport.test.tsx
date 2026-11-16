@@ -69,7 +69,7 @@ describe('<TrialTransport>', () => {
 
   it("shows the clock's origin and opens at its speed", async ({ mount }) => {
     await mount({ duration: 3000, origin: -500, speed: 0.5 });
-    expect(screen.getByTestId('timeline-time')).toHaveTextContent('-0.50s / 3.00s');
+    expect(screen.getByTestId('timeline-time')).toHaveTextContent('-0.50s / 2.50s');
     press('Play');
     expect(c().rate).toBe(0.5);
   });

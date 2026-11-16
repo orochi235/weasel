@@ -6,6 +6,9 @@ import st from './Transport.stories.module.css';
 const meta: Meta<typeof Transport> = {
   title: 'ui/Transport',
   component: Transport,
+  argTypes: {
+    timeReadout: { control: 'inline-radio', options: ['absolute', 'elapsed'] },
+  },
 };
 export default meta;
 
@@ -42,6 +45,12 @@ function Harness(
 
 export const Full: Story = {
   args: { paused: true, loop: true, rate: 1, playhead: 4200, duration: 12000, reverse: false },
+  render: (args) => <Harness args={args} />,
+};
+/** A span starting below zero, where the two readouts differ: `absolute` reads the playhead over
+ *  the end time, `elapsed` the time since the start over the duration. */
+export const PreRoll: Story = {
+  args: { paused: true, loop: true, rate: 1, start: -1500, playhead: -1500, duration: 12000, timeReadout: 'absolute' },
   render: (args) => <Harness args={args} />,
 };
 export const PlayOnly: Story = {
