@@ -13,21 +13,6 @@ export {
   deriveParallaxView, planeMap, toPlane, fromPlane, rectToPlane, rectFromPlane, planeToPlane, planeMatrix,
 } from '../core/viewport/parallax';
 export type { ParallaxOptions, ScalarOrXY, PlaneMap } from '../core/viewport/parallax';
-export {
-  createSimulation,
-  DEFAULT_ALPHA_DECAY,
-  DEFAULT_ALPHA_MIN,
-  DEFAULT_VELOCITY_DECAY,
-} from '@weasel-js/simulation';
-export type {
-  Simulation,
-  SimulationCore,
-  SimulationForce,
-  SimulationNode,
-  SimulationOptions,
-  UseSimulationOptions,
-} from '@weasel-js/simulation';
-export { useSimulation } from '@weasel-js/simulation/react';
 export * from '../domains/poseRun';
 export * from '../domains/presentation';
 export { useNodeOverlayFrame } from '../core/viewport/useNodeOverlayFrame';

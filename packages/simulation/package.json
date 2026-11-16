@@ -3,7 +3,7 @@
   "version": "1.19.1",
   "description": "A velocity-Verlet N-body integrator that takes d3-force's forces, and a hook that runs it on a frame loop. The root entry has no React and no DOM.",
   "weasel": {
-    "tier": "base"
+    "tier": "other"
   },
   "license": "MIT",
   "type": "module",
