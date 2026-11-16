@@ -8,17 +8,17 @@ export class NumberNode<T extends number | undefined = number> extends BaseNode<
 
   /** Bound the value. A number with both bounds renders as a slider. */
   range(min: number, max: number): this {
-    return this.ann({ min, max });
+    return this.ann(checkedBounds('range', min, max));
   }
 
   /** Bound the value from below only. The row stays a typed field. */
   min(min: number): this {
-    return this.ann({ min });
+    return this.ann({ min: checkedBounds('min', min, this.annotations.max).min });
   }
 
   /** Bound the value from above only. The row stays a typed field. */
   max(max: number): this {
-    return this.ann({ max });
+    return this.ann({ max: checkedBounds('max', this.annotations.min, max).max });
   }
 
   /** Let the value be unset: emptying the field writes `undefined`, and an unset value draws as an empty field
@@ -105,4 +105,21 @@ export class NumberNode<T extends number | undefined = number> extends BaseNode<
   input(): this {
     return this.ann({ control: 'input' });
   }
+}
+
+/** `min` and `max` as given, after throwing on a bound that is not a finite number or a `min` above `max`. */
+function checkedBounds<Min extends number | undefined, Max extends number | undefined>(
+  call: 'range' | 'min' | 'max',
+  min: Min,
+  max: Max,
+): { min: Min; max: Max } {
+  for (const bound of [min, max]) {
+    if (bound !== undefined && !Number.isFinite(bound)) {
+      throw new Error(`labkit: f.number().${call}() was given ${String(bound)}; a bound must be a finite number.`);
+    }
+  }
+  if (min !== undefined && max !== undefined && min > max) {
+    throw new Error(`labkit: f.number().${call}() leaves min ${min} above max ${max}; swap them.`);
+  }
+  return { min, max };
 }

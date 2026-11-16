@@ -3,6 +3,7 @@ import type { Theme } from '@weasel-js/theme';
 import type { LeafRenderer } from '@weasel-js/labkit/config';
 import type { FrameSetup } from './frame/FrameController';
 import type { Globals } from './protocol/messages';
+import { checkShellConfig } from './shell/checkShellConfig';
 import type { GlobalDeclarations } from './shell/globals';
 import type { Library } from './story/library';
 
@@ -44,7 +45,9 @@ export function defineFrameConfig(config: FrameSetup): FrameSetup {
   return config;
 }
 
-/** A shell config module's default export. */
+/** A shell config module's default export. Throws on a global whose `default` no option offers, whose `under` names
+ *  no top-level global, or that offers the value `lab`, and on a `loupe.modeGlobal` naming no global. */
 export function defineShellConfig(config: ShellConfig): ShellConfig {
+  checkShellConfig(config.globals, config.loupe?.modeGlobal);
   return config;
 }

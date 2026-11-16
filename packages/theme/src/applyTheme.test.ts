@@ -1,5 +1,6 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { applyTheme, __resetThemeSheet } from './applyTheme';
+import { declaredSelection } from './resolveTheme';
 import { defineTheme, weaselTheme } from './theme';
 
 /** Read whichever delivery mechanism applyTheme chose. */
@@ -23,6 +24,43 @@ describe('applyTheme', () => {
     applyTheme(el, weaselTheme, { mode: 'light' });
     expect(el.getAttribute('data-wzl-theme')).toBe('weasel');
     expect(el.getAttribute('data-wzl-mode')).toBe('light');
+  });
+
+  describe('a selection the theme cannot take', () => {
+    const modeOnly = (name: string) =>
+      defineTheme({ name, extends: null, axes: { mode: { default: 'dark', values: { dark: {}, light: {} } } } });
+    const warnings = (spy: { mock: { calls: unknown[][] } }, name: string) =>
+      spy.mock.calls.map(([m]) => String(m)).filter((m) => m.includes(`"${name}"`));
+
+    it('warns once of an axis value the theme lacks, and applies the default', () => {
+      const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+      const el = document.createElement('div');
+      applyTheme(el, modeOnly('drak-value'), { mode: 'drak' });
+      applyTheme(document.createElement('div'), modeOnly('drak-value'), { mode: 'drak' });
+      expect(el.getAttribute('data-wzl-mode')).toBe('dark');
+      expect(warnings(warn, 'drak-value')).toEqual([
+        '[weasel theme] applyTheme: theme "drak-value" has no mode "drak"; using "dark". Its mode values: dark, light.',
+      ]);
+      warn.mockRestore();
+    });
+
+    it('warns once of an axis the theme does not declare', () => {
+      const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+      applyTheme(document.createElement('div'), modeOnly('mdoe-name'), { mdoe: 'dark' });
+      applyTheme(document.createElement('div'), modeOnly('mdoe-name'), { mdoe: 'light' });
+      expect(warnings(warn, 'mdoe-name')).toHaveLength(1);
+      expect(warnings(warn, 'mdoe-name')[0]).toMatch(/declares no axis "mdoe", so it is ignored\. Its axes: mode\./);
+      warn.mockRestore();
+    });
+
+    it('stays quiet about an undeclared axis given `ignoreUnknownAxes`, or once `declaredSelection` drops it', () => {
+      const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+      const theme = modeOnly('shared-selection');
+      applyTheme(document.createElement('div'), theme, { mode: 'light', density: 'roomy' }, { ignoreUnknownAxes: true });
+      applyTheme(document.createElement('div'), theme, declaredSelection(theme, { mode: 'light', density: 'roomy' }));
+      expect(warnings(warn, 'shared-selection')).toEqual([]);
+      warn.mockRestore();
+    });
   });
 
   it('leaves out a token value that would end its declaration or rule, and warns once', () => {

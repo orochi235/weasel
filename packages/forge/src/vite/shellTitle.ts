@@ -1,6 +1,8 @@
 import { readFileSync } from 'node:fs';
+import type { Logger } from 'vite';
 import type * as t from '@babel/types';
 import { type Bindings, calleeOf, exportedName, objectOf, parseFile, prop, stringOf } from './ast.ts';
+import { warnOnce } from './warnOnce.ts';
 
 /** A shell config module's default export as the object literal its source writes, with the file's top-level `const`s. */
 function configOf(code: string, file: string): { config: t.ObjectExpression | null; bindings: Bindings } | null {
@@ -59,14 +61,19 @@ const originOf = (url: string | undefined): string[] => {
 
 /**
  * The origins a shell config's `capture.allowOrigins` lists, read from its source as the title is: the dev server
- * reads it without running the module. An entry that is not a string written out, or not a URL, is left out.
+ * reads it without running the module. An entry that is not a string written out, or not a URL, is left out, and
+ * handed to `dropped` as its source text.
  */
-export function shellAllowOrigins(code: string, file: string): string[] {
+export function shellAllowOrigins(code: string, file: string, dropped?: (entry: string) => void): string[] {
   const read = configOf(code, file);
   if (!read) return [];
   const capture = objectOf(prop(read.config, 'capture'), read.bindings, new Set());
   const list = arrayOf(prop(capture, 'allowOrigins'), read.bindings);
-  return (list?.elements ?? []).flatMap((el) => (el && el.type !== 'SpreadElement' ? originOf(stringOf(el, read.bindings)) : []));
+  return (list?.elements ?? []).flatMap((el) => {
+    const origins = el && el.type !== 'SpreadElement' ? originOf(stringOf(el, read.bindings)) : [];
+    if (origins.length === 0 && el) dropped?.(code.slice(el.start ?? 0, el.end ?? 0));
+    return origins;
+  });
 }
 
 /** What the dev server reads from a shell config module's source. */
@@ -75,8 +82,9 @@ export interface ShellFields {
   allowOrigins: readonly string[];
 }
 
-/** Reads `file`'s shell fields; none when there is no file or it cannot be read. */
-export function readShellFields(file: string | undefined): ShellFields {
+/** Reads `file`'s shell fields; none when there is no file or it cannot be read. Warns once through `logger` of
+ *  each `allowOrigins` entry left out. */
+export function readShellFields(file: string | undefined, logger?: Logger): ShellFields {
   let code: string;
   try {
     if (file === undefined) throw new Error('no shell config');
@@ -84,5 +92,12 @@ export function readShellFields(file: string | undefined): ShellFields {
   } catch {
     return { title: undefined, allowOrigins: [] };
   }
-  return { title: shellTitle(code, file), allowOrigins: shellAllowOrigins(code, file) };
+  return { title: shellTitle(code, file), allowOrigins: shellAllowOrigins(code, file, (entry) => warnDroppedOrigin(logger, entry)) };
+}
+
+function warnDroppedOrigin(logger: Logger | undefined, entry: string): void {
+  warnOnce(
+    logger,
+    `[forge] capture.allowOrigins entry ${entry} is not a URL written out as a string, so captures will not load from it. Write it with its scheme, as 'https://fonts.gstatic.com'.`,
+  );
 }

@@ -236,6 +236,23 @@ describe('forge vite plugin, served apart from the shared fixture', () => {
     await expect.poll(async () => indexOf(s), FOLLOWS).toContain('ui-bad--fixed');
   });
 
+  it('warns once when two story files declare one story id', async () => {
+    const warnings: string[] = [];
+    const customLogger = createLogger('silent');
+    customLogger.warn = (msg) => {
+      warnings.push(msg);
+    };
+    const { server: s } = await start(
+      { 'a.stories.tsx': story('ui/Button', 'Primary'), 'b.stories.tsx': story('ui/Button', 'Primary', 'Other') },
+      { customLogger },
+    );
+    await indexOf(s);
+    await indexOf(s);
+    expect(warnings.filter((w) => w.includes('ui-button--primary'))).toEqual([
+      '[forge] story id ui-button--primary is declared by a.stories.tsx, b.stories.tsx; the workshop shows only the first. Rename one of the exports, or retitle one file.',
+    ]);
+  });
+
   it("titles a native story by its meta when forge's meta reaches it through a helper module, and re-decides when the helper changes", async () => {
     const forgeEntry = join(import.meta.dirname, '../index.ts');
     const native = (from: string) =>

@@ -7,7 +7,6 @@ import { fullSelection, selectionKey, wzlValue, type Selection } from './axes';
 import { resolveTheme, themeAxes, type ResolvedTheme } from './resolveTheme';
 import { weaselTheme, type Theme } from './theme';
 import { useResolvedColorMode } from './useColorMode';
-import { warnThemeOnce } from './warnOnce';
 
 export {
   useColorModePreference,
@@ -38,9 +37,11 @@ const NO_PALETTE: Palette = { entries: [] };
 export interface ThemeProviderProps {
   readonly theme?: Theme;
   /** Axis values, e.g. `{ mode: 'light' }`. A missing axis takes its default. `mode: 'auto'`
-   *  follows the OS setting, live; any other value the theme lacks takes the default, with a
-   *  warning in development. */
+   *  follows the OS setting, live; any other value the theme lacks takes the default, and an axis
+   *  the theme does not declare is ignored, each with a warning in development. */
   readonly selection?: Selection;
+  /** Leave unwarned a selection axis the theme does not declare: for one selection shared across themes on purpose. */
+  readonly ignoreUnknownAxes?: boolean;
   /** The colors a `tint` index picks from in this subtree. Absent: the theme's own. */
   readonly tints?: ColorList;
   /** Colors a `ColorRef` names in this subtree, answered before the theme's own names. Absent: none. */
@@ -66,6 +67,7 @@ export function ThemeProvider({
   selection,
   tints,
   palette = NO_PALETTE,
+  ignoreUnknownAxes = false,
   className,
   style,
   children,
@@ -76,7 +78,6 @@ export function ThemeProvider({
   const systemMode = useResolvedColorMode(autoMode ? 'auto' : 'dark');
   const given = autoMode ? { ...selection, mode: systemMode } : selection;
   const full = fullSelection(axes, given);
-  warnUnknownAxisValues(theme, axes, given);
   // Keyed on the selection's content: callers pass a fresh object every render.
   const key = selectionKey(axes, full);
 
@@ -88,9 +89,11 @@ export function ThemeProvider({
 
   // Applying again replaces what the element held, so only the unmount releases.
   const release = useRef<(() => void) | null>(null);
+  // Handed the selection as given, not `full`, so applyTheme can warn of what it sets aside.
   useLayoutEffect(() => {
-    if (ref.current) release.current = applyTheme(ref.current, theme, value.selection);
-  }, [theme, value]);
+    if (ref.current) release.current = applyTheme(ref.current, theme, given, { ignoreUnknownAxes });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [theme, value, ignoreUnknownAxes]);
   useLayoutEffect(() => () => release.current?.(), []);
 
   const attrs = Object.fromEntries(Object.entries(full).map(([a, v]) => [`data-wzl-${a}`, wzlValue(v)]));
@@ -101,18 +104,6 @@ export function ThemeProvider({
       </div>
     </ThemeContext.Provider>
   );
-}
-
-function warnUnknownAxisValues(theme: Theme, axes: ReturnType<typeof themeAxes>, selection: Selection | undefined): void {
-  if (!selection) return;
-  for (const [axis, value] of Object.entries(selection)) {
-    const def = Object.hasOwn(axes, axis) ? axes[axis] : undefined;
-    if (!def || Object.hasOwn(def.values, value)) continue;
-    warnThemeOnce(
-      `axis\0${theme.name}\0${axis}\0${value}`,
-      `ThemeProvider: theme "${theme.name}" has no ${axis} "${value}"; using "${def.default}". Its ${axis} values: ${Object.keys(def.values).join(', ')}.`,
-    );
-  }
 }
 
 /** The theme in force. Throws outside a `<ThemeProvider>`; use

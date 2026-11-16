@@ -84,6 +84,15 @@ describe('createPrefsStore', () => {
     expect(store.isSet('name')).toBe(false);
   });
 
+  it('warns and stores nothing on a reset of a path with no leaf at or under it', () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const { store } = make([['view.density', 10]]);
+    store.reset('veiw.gap');
+    store.reset('view');
+    expect(warn.mock.calls.map((c) => c[0])).toEqual(['[prefs] no leaf at or under "veiw.gap"; ignoring the reset']);
+    warn.mockRestore();
+  });
+
   it('builds a resolved value tree and keeps its identity until something changes', () => {
     const { store } = make([['name', 'doc']]);
     const first = store.values();

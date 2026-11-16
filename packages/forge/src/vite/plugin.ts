@@ -20,6 +20,7 @@ import { storybookShims } from './storybookShims.ts';
 import { storyGlobOf } from './storyGlob.ts';
 import { MODULES, PREFIX, virtualModules } from './virtualModules.ts';
 import { titleStandIn } from './componentOf.ts';
+import { warnShared } from './titleReport.ts';
 import { warnWhenWatchIsSilent } from './watchProbe.ts';
 import { watchRecovery } from './watchRecovery.ts';
 import { settledWatch } from './watchSettle.ts';
@@ -171,7 +172,7 @@ export function forge(options: ForgeOptions): Plugin[] {
     );
     return byFile;
   };
-  const index = () => byComponent([...files().values()].flat());
+  const index = () => warnShared(byComponent([...files().values()].flat()), root, logger);
 
   /**
    * Decides, for each of `targets`, which imports reached through another module are forge's `meta`/`story`, and
@@ -215,7 +216,7 @@ export function forge(options: ForgeOptions): Plugin[] {
   }
 
   /** What the shell config's source names under `at`: its title, undefined and so the default when unread. */
-  const shellUnder = (at: string) => readShellFields(options.shellConfig ? resolve(at, options.shellConfig) : undefined);
+  const shellUnder = (at: string) => readShellFields(options.shellConfig ? resolve(at, options.shellConfig) : undefined, logger);
 
   const modules = virtualModules(options, { index, files, root: () => root, base: () => base });
   let capture: CaptureEndpoint | null = null;
