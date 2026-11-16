@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, type PointerEvent, type ReactNode } from 'react';
-import { startThresholdDrag, type ThresholdDragHandle } from '@weasel-js/core';
+import { startThresholdDrag, type ThresholdDragHandle } from '@weasel-js/routing';
 import type { PrefGroup, PrefSection } from '@weasel-js/prefs';
 import { useKitSetting } from '@weasel-js/react';
 import type { IconRef } from '@weasel-js/icons';

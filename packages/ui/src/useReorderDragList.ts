@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import type { ReactNode, PointerEvent as ReactPointerEvent, RefCallback } from 'react';
-import { isInControlWithin, startThresholdDrag, useLatest, type ThresholdDragHandle } from '@weasel-js/core';
+import { startThresholdDrag, type ThresholdDragHandle } from '@weasel-js/routing';
+import { isInControlWithin, useLatest } from '@weasel-js/core';
 import { gapByMidpoint, isNoopDrop, nudgeGap } from '@weasel-js/ui-input';
 import { useKitSetting } from '@weasel-js/react';
 import { modKey } from '@weasel-js/gestures';

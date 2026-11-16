@@ -1,7 +1,8 @@
 import { useCallback, useEffect, useRef, useState, type PointerEvent as ReactPointerEvent, type Ref } from 'react';
 import { useKitSetting } from '@weasel-js/react';
 import { after } from '@weasel-js/registry';
-import { isInControlWithin, startThresholdDrag, useLatest, type ThresholdDragHandle } from '@weasel-js/core';
+import { startThresholdDrag, type ThresholdDragHandle } from '@weasel-js/routing';
+import { isInControlWithin, useLatest } from '@weasel-js/core';
 import { resolveDrop, type DropIndent, type DropMark, type DropRow, type ResolvedDrop, type TreeDropTarget } from '../../dropTarget';
 import { swallowNextClick, type PressModifiers, type ReorderGhost } from '../../useReorderDragList';
 import { inlineDirection } from '../../useRovingTabIndex';

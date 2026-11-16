@@ -1,5 +1,5 @@
 import { useEffect, useRef, type PointerEvent as ReactPointerEvent, type RefObject } from 'react';
-import { startThresholdDrag, type ThresholdDragHandle } from '@weasel-js/core';
+import { startThresholdDrag, type ThresholdDragHandle } from '@weasel-js/routing';
 import { isPrimaryPress, modHeld } from '@weasel-js/gestures';
 import { gapByMidpoint, isNoopDrop } from '@weasel-js/ui-input';
 import type { PrefOrder } from '@weasel-js/prefs';

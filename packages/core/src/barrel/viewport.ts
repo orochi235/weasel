@@ -34,7 +34,6 @@ export type { Scale2 } from '@weasel-js/geom';
 export type { ScreenSlop, PickSlop } from '../core/viewport/screenSlop';
 export * from '../interactions/gestures/handleDrag';
 export * from '../interactions/gestures/pointerDrag';
-export * from '../interactions/gestures/thresholdDrag';
 export * from '../core/viewport/useCanvasSize';
 export {
   COARSE_TARGET_SCALE,

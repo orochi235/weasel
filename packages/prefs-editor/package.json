@@ -50,6 +50,7 @@
     "@weasel-js/quantity": "1.19.1",
     "@weasel-js/react": "1.19.1",
     "@weasel-js/registry": "1.19.1",
+    "@weasel-js/routing": "1.19.1",
     "@weasel-js/ui": "1.19.1",
     "@weasel-js/ui-input": "1.19.1",
     "react-aria-components": "1.22.1"

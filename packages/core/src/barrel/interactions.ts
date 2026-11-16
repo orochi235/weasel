@@ -68,11 +68,6 @@ export type {
   UseHandleDragOptions,
   UseHandleDragReturn,
 } from '../interactions/gestures/handleDrag';
-export { startThresholdDrag } from '../interactions/gestures/thresholdDrag';
-export type {
-  ThresholdDragOptions,
-  ThresholdDragHandle,
-} from '../interactions/gestures/thresholdDrag';
 export { enumerateAnchors, withCoord, type PathAnchor } from '../interactions/actions/edit-anchors/geometry';
 export {
   locksOf, type EditAnchorsParams, type HandleLock, type HandleLocks,

@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { DRAG_THRESHOLD_PX } from '@weasel-js/routing';
+import { DRAG_THRESHOLD_PX } from '@weasel-js/gestures';
 import { startThresholdDrag } from './thresholdDrag';
 
 interface FakeReactPointer {

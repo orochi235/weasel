@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useLayoutEffect, useRef, useState, type KeyboardEvent as ReactKeyboardEvent, type PointerEvent as ReactPointerEvent, type RefObject } from 'react';
-import { startThresholdDrag, type ThresholdDragHandle } from '@weasel-js/core';
+import { startThresholdDrag, type ThresholdDragHandle } from '@weasel-js/routing';
 import { useKitSetting, useLatest } from '@weasel-js/react';
 import { deepEqual } from '@weasel-js/registry';
 import { swallowNextClick } from '../../useReorderDragList';
