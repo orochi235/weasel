@@ -39,6 +39,10 @@ export interface LengthTable {
   readonly runStart: Float64Array;
   /** The anchor range: per subpath, the segments between its anchors, a closed one's closing edge included. */
   readonly segments: number;
+  /** The point the runs' points are measured from, as `PolygonPath.origin` is: a point read off the table, by
+   *  `pointAtLength` or any other query, plus this is in the path's own space. Absent is the zero point.
+   *  `pathLengthTable` carries the path's. */
+  readonly origin?: { readonly x: number; readonly y: number };
 }
 
 /** @internal What the queries read, kept off the public shape. */

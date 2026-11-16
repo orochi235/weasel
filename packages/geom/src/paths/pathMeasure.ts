@@ -79,7 +79,7 @@ interface Segment {
 }
 
 /**
- * Measure `path` by arc length. Subpaths are measured in order and treated as
+ * Measure `path` by arc length, in the path's own space. Subpaths are measured in order and treated as
  * one run, the way a browser measures a whole `<path>`. Returns `null` for a
  * path with no points; a path of zero length answers at its single point,
  * heading along +X.
@@ -90,6 +90,8 @@ export function measurePath(path: Path, opts: MeasurePathOptions = {}): PathMeas
     opts.flattenTolerance === undefined ? {} : { flattenTolerance: opts.flattenTolerance },
   );
   const table = pathLengthTable(path);
+  const ox = table.origin?.x ?? 0;
+  const oy = table.origin?.y ?? 0;
   const cornerTolerance = opts.keepCorners ? (opts.flattenTolerance ?? 0.5) : null;
   const segments: Segment[] = [];
   let first: Point | undefined;
@@ -99,7 +101,7 @@ export function measurePath(path: Path, opts: MeasurePathOptions = {}): PathMeas
     if (pl.points.length === 0) return;
     contours++;
     lastClosed = pl.closed;
-    first ??= { x: pl.points[0]!, y: pl.points[1]! };
+    first ??= { x: pl.points[0]! + ox, y: pl.points[1]! + oy };
     const startIndex = segments.length;
     pushChords(pl, r, table, segments);
     smoothVertexHeadings(segments, startIndex, pl.closed, cornerTolerance);
@@ -126,7 +128,7 @@ export function measurePath(path: Path, opts: MeasurePathOptions = {}): PathMeas
   const pointAt = (seg: Segment, s: number): Point => {
     if (seg.curve === undefined) seg.curve = segmentArc(table, seg.run, seg.seg);
     const point = pointOnSegmentOnly(table, seg.run, seg.seg, s, seg.curve, scratch);
-    return { x: point[0], y: point[1] };
+    return { x: point[0] + ox, y: point[1] + oy };
   };
   return {
     length: total,
@@ -142,7 +144,8 @@ export function measurePath(path: Path, opts: MeasurePathOptions = {}): PathMeas
       const l = Math.hypot(x, y);
       return { point, tangent: l === 0 ? { x: seg.tx, y: seg.ty } : { x: x / l, y: y / l } };
     },
-    nearest(p) {
+    nearest(q) {
+      const p = { x: q.x - ox, y: q.y - oy };
       let best = segments[0]!;
       let bestU = 0;
       let bestDist = Infinity;
@@ -157,7 +160,7 @@ export function measurePath(path: Path, opts: MeasurePathOptions = {}): PathMeas
       }
       const s = best.start + best.arc * bestU;
       const point = pointAt(best, s);
-      return { s, dist: Math.hypot(p.x - point.x, p.y - point.y), point, tangent: { x: best.tx, y: best.ty } };
+      return { s, dist: Math.hypot(q.x - point.x, q.y - point.y), point, tangent: { x: best.tx, y: best.ty } };
     },
   };
 }

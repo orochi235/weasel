@@ -96,4 +96,10 @@ describe('tweenPose along a pathMotion', () => {
     frame(150);
     expect(effectivePose(scene, scene.get(id)!)).toEqual(to);
   });
+
+  it('rides a path measured from an origin where the origin puts it', () => {
+    const far = pathFromD('M 20000 0 L 20010 0');
+    expect(far.origin).toBeDefined();
+    expect(center(pathMotion<Box>(far).at(BOX, 0))).toEqual({ x: 20000, y: 0 });
+  });
 });

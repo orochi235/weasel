@@ -7,6 +7,10 @@ import { cornerFrames, resolveCorners } from './corners';
 import { withCorner } from './cornerSpec';
 import { pathToCubicContours } from './cubicContours';
 import { pathDistanceToPoint } from './pathDistance';
+import { measurePath } from './pathMeasure';
+import { pointAlongPath } from './pathAt';
+import { pathLengthTable } from '../along/pathTable';
+import { pointAtLength } from '../along/positions';
 import { pathFromD } from './pathFromD';
 import { ORIGIN_THRESHOLD, joinPaths, originFor, worldCoords } from './pathOrigin';
 import { pathToD } from './pathToD';
@@ -148,5 +152,19 @@ describe('producers that pick an origin', () => {
     expect(p.origin).toBeDefined();
     expect(worldCoords(p)[0]).toBeCloseTo(X, 6);
     expect(pathFromD('M1 1L2 2').origin).toBeUndefined();
+  });
+
+  it('measure the path by length where its origin puts it', () => {
+    const p = square();
+    const m = measurePath(p)!;
+    expect(m.at(0).point.x).toBeCloseTo(X, 6);
+    expect(m.at(0.5).point).toEqual({ x: expect.closeTo(X + 0.5, 6), y: 1 });
+    const near = m.nearest({ x: X + 0.25, y: 0.5 });
+    expect(near.s).toBeCloseTo(0.25, 6);
+    expect(near.dist).toBeCloseTo(0.5, 6);
+    expect(pointAlongPath(pathFromD('M20000 0 L20010 0'), 0)!.point).toEqual({ x: 20000, y: 0 });
+    const table = pathLengthTable(p);
+    expect(table.origin).toEqual(p.origin);
+    expect(pointAtLength(table, 0).point[0] + table.origin!.x).toBeCloseTo(X, 6);
   });
 });

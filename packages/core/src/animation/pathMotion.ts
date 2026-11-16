@@ -57,6 +57,8 @@ export function pathMotion<TPose = Bounds>(path: Path | LengthTable, opts: PathM
   const ax = opts.anchor?.x ?? 0.5;
   const ay = opts.anchor?.y ?? 0.5;
   const offset = opts.rotationOffset ?? 0;
+  const ox = table.origin?.x ?? 0;
+  const oy = table.origin?.y ?? 0;
 
   const at = (pose: TPose, u: number): TPose => {
     const f = Number.isNaN(u) ? 0 : Math.min(Math.max(u, 0), 1);
@@ -74,7 +76,7 @@ export function pathMotion<TPose = Bounds>(path: Path | LengthTable, opts: PathM
     const sin = Math.sin(rotation);
     const anchorX = b.x + b.width / 2 + cos * dx - sin * dy;
     const anchorY = b.y + b.height / 2 + sin * dx + cos * dy;
-    return translatePoseViaDescriptor(placed, point[0] - anchorX, point[1] - anchorY, base);
+    return translatePoseViaDescriptor(placed, point[0] + ox - anchorX, point[1] + oy - anchorY, base);
   };
 
   const baseLerp = base.lerp;
