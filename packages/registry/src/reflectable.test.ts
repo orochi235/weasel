@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import { createReflectable, type Reflection } from './reflectable';
+import { createReflectable, valuesOf, type Reflection } from './reflectable';
 
 describe('createReflectable', () => {
   it('answers get/has for what was set, and lists entries in first-registration order', () => {
@@ -261,5 +261,19 @@ describe('createReflectable', () => {
     r.subscribe(listener);
     expect(() => r.batch(() => { r.set('a', 1); throw new Error('x'); })).toThrow('x');
     expect(listener).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe('valuesOf', () => {
+  it('reads live values in key order, the same array until the entries change', () => {
+    const r = createReflectable<number>();
+    const values = valuesOf(r);
+    r.set('b', 2);
+    r.push('a', 1);
+    const first = values();
+    expect(first).toEqual([2, 1]);
+    expect(values()).toBe(first);
+    r.push('a', 3);
+    expect(values()).toEqual([2, 3]);
   });
 });
