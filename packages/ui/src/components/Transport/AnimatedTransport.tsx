@@ -4,7 +4,7 @@ import { Transport, type TransportProps } from './Transport';
 import { useTimelinePlayback } from './useTimelinePlayback';
 
 /** Props for {@link AnimatedTransport}: `<Transport>`'s presentation, less what it reads off `handle`. */
-export interface AnimatedTransportProps extends Pick<TransportProps, 'rates' | 'formatRate'> {
+export interface AnimatedTransportProps extends Pick<TransportProps, 'rates' | 'formatRate' | 'timeReadout' | 'formatTime'> {
   handle: TimelineHandle;
   /** `false` leaves out the scrub bar. */
   scrub?: false;

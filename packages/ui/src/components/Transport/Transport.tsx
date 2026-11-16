@@ -44,6 +44,22 @@ export interface TransportProps extends HoldProps {
   reverse?: boolean;
   /** Flips the direction. Omitted, there is no reverse switch. */
   onReverseChange?: (reverse: boolean) => void;
+  /** Which two times the readout shows. Default `'absolute'`. */
+  timeReadout?: TimeReadout;
+  /** The whole readout's text, in place of `timeReadout`'s. */
+  formatTime?: (time: PlayheadTime) => string;
+}
+
+/** The two readings of {@link Transport}'s readout: `'absolute'` is the playhead over the end time,
+ *  `start + duration`; `'elapsed'` is the time since `start` over the duration. They read alike when
+ *  `start` is 0. */
+export type TimeReadout = 'absolute' | 'elapsed';
+
+/** What a `formatTime` is handed, in ms. `playhead` is held to `[start, start + duration]`. */
+export interface PlayheadTime {
+  playhead: number;
+  start: number;
+  duration: number;
 }
 
 const seconds = (ms: number): string => `${(ms / 1000).toFixed(2)}s`;
@@ -51,32 +67,41 @@ const spokenSeconds = (ms: number): string => `${(ms / 1000).toFixed(2)} seconds
 const multiplierText = (r: number): string => qty(r, RATE).text;
 const multiplierSpoken = (r: number): string => qty(r, RATE).spoken;
 
-/** The playhead over the duration, in seconds, in a cell that holds its width. */
+const readouts: Record<TimeReadout, (time: PlayheadTime) => string> = {
+  absolute: ({ playhead, start, duration }) => `${seconds(playhead)} / ${seconds(start + duration)}`,
+  elapsed: ({ playhead, start, duration }) => `${seconds(playhead - start)} / ${seconds(duration)}`,
+};
+
+/** The playhead, as `timeReadout` or `formatTime` reads it, in a cell as wide as the widest of its
+ *  readings at `start` and at the end. */
 export function PlayheadReadout({
   playhead,
   duration,
   start = 0,
+  timeReadout = 'absolute',
+  formatTime,
 }: {
   playhead: number;
   duration: number;
   start?: number;
+  timeReadout?: TimeReadout;
+  formatTime?: (time: PlayheadTime) => string;
 }): ReactElement {
+  const read = formatTime ?? readouts[timeReadout];
   const shown = Math.min(Math.max(playhead, start), start + duration);
-  const widest = [seconds(start), seconds(start + duration)].reduce((a, b) => (b.length > a.length ? b : a));
+  const bounds = [...new Set([read({ playhead: start, start, duration }), read({ playhead: start + duration, start, duration })])];
   return (
     <span className={s.time}>
-      <span data-testid="timeline-time">
-        {seconds(shown)} / {seconds(duration)}
-      </span>
+      <span data-testid="timeline-time">{read({ playhead: shown, start, duration })}</span>
       <span className={s.sizer} aria-hidden="true">
-        <span>{widest} / {seconds(duration)}</span>
+        {bounds.map((text) => <span key={text}>{text}</span>)}
       </span>
     </span>
   );
 }
 
 /** Play/pause, a reverse switch, a loop switch, a rate slider, a scrub bar,
- *  and the playhead over the duration in seconds. Holds no state: every
+ *  and the playhead as a time readout, in seconds by default. Holds no state: every
  *  control reports through a callback, and the reverse switch and scrub bar
  *  appear only with theirs. It reads left to right in a right-to-left
  *  locale too, as playback controls do. */
@@ -167,7 +192,10 @@ export function Transport(props: TransportProps): ReactElement {
         />
       ) : null}
 
-      <PlayheadReadout playhead={playhead} duration={duration} start={start} />
+      <PlayheadReadout
+        playhead={playhead} duration={duration} start={start}
+        timeReadout={props.timeReadout} formatTime={props.formatTime}
+      />
     </div>,
   ));
 }

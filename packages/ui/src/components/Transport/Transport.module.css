@@ -32,8 +32,8 @@
 }
 
 /* The playhead rewrites this every frame and gains a digit at 10s. Its sizer
-   holds the cell at the duration's width, so a transport sized to its content
-   does not widen; last in the row, it also takes whatever slack the row has. */
+   holds the cell at the widest of its readings at the start and the end, so a
+   transport sized to its content does not widen; last in the row, it also takes whatever slack the row has. */
 .time {
   composes: numeric from '@weasel-js/theme/numeric.module.css';
   display: inline-grid;

@@ -47,10 +47,42 @@ describe('Transport', () => {
 
   it('shows a playhead before zero and spans the scrub bar from start', () => {
     renderWithIcons(<Transport {...props} start={-500} duration={3000} playhead={-500} onSeek={() => {}} />);
-    expect(screen.getByTestId('timeline-time')).toHaveTextContent('-0.50s / 3.00s');
+    expect(screen.getByTestId('timeline-time')).toHaveTextContent('-0.50s / 2.50s');
     const bar = screen.getByRole('slider', { name: 'Position' });
     expect(bar).toHaveAttribute('aria-valuemin', '-500');
     expect(bar).toHaveAttribute('aria-valuemax', '2500');
+  });
+
+  it('reads the playhead over the end time by default', () => {
+    renderWithIcons(<Transport {...props} start={1000} duration={2000} playhead={3000} />);
+    expect(screen.getByTestId('timeline-time')).toHaveTextContent('3.00s / 3.00s');
+  });
+
+  it('reads the time since start over the duration as elapsed', () => {
+    const { rerender } = renderWithIcons(
+      <Transport {...props} start={1000} duration={2000} playhead={3000} timeReadout="elapsed" />,
+    );
+    expect(screen.getByTestId('timeline-time')).toHaveTextContent('2.00s / 2.00s');
+    rerender(<Transport {...props} start={-500} duration={3000} playhead={-500} timeReadout="elapsed" />);
+    expect(screen.getByTestId('timeline-time')).toHaveTextContent('0.00s / 3.00s');
+  });
+
+  it('reads as formatTime says, handed the playhead held to the timeline', () => {
+    const formatTime = vi.fn(({ playhead, start, duration }: { playhead: number; start: number; duration: number }) =>
+      `frame ${(playhead - start) / 40} of ${duration / 40}`);
+    renderWithIcons(
+      <Transport {...props} start={1000} duration={2000} playhead={9000} timeReadout="elapsed" formatTime={formatTime} />,
+    );
+    expect(screen.getByTestId('timeline-time')).toHaveTextContent('frame 50 of 50');
+    expect(formatTime).toHaveBeenCalledWith({ playhead: 3000, start: 1000, duration: 2000 });
+  });
+
+  it('sizes a formatted readout for its readings at start and at the end', () => {
+    renderWithIcons(
+      <Transport {...props} duration={12000} playhead={0} formatTime={({ playhead }) => `${playhead / 1000}s`} />,
+    );
+    const sizer = screen.getByTestId('timeline-time').parentElement?.querySelector('[aria-hidden="true"]');
+    expect([...sizer!.children].map((c) => c.textContent)).toEqual(['0s', '12s']);
   });
 
   it('sizes the readout for the widest playhead it can show', () => {

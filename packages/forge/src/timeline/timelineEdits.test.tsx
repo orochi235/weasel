@@ -197,6 +197,6 @@ describe('the Playhead stories', () => {
     mount('/#/p--lead-in-once');
     await until(() => expect(screen.getByText(/^Lead-in/)).toBeInTheDocument(), { timeout: 15_000 });
     expect(screen.getByText(/^Lead-in/).textContent).toContain('1.00s to go');
-    expect(within(trial()).getByTestId('timeline-time').textContent).toBe('-1.00s / 3.00s');
+    expect(within(trial()).getByTestId('timeline-time').textContent).toBe('-1.00s / 2.00s');
   });
 });
