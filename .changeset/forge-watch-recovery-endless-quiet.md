@@ -2,6 +2,6 @@
 '@weasel-js/forge': patch
 ---
 
-`watchRecovery` with a `quietMs` past what one timer holds, `Infinity` among them, checks files only as they are served instead of every millisecond.
+`watchRecovery` given a `quietMs` too long for one timer, such as `Infinity`, checks files only as they are served, not every millisecond.
 
 <!-- entry: fix -->
