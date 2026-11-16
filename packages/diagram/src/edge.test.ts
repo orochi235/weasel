@@ -130,6 +130,7 @@ describe('routerOf', () => {
     expect(routerOf({ router: 'orthogonal' })).toBe(ROUTERS['orthogonal']);
     expect(routerOf({})).toBe(straight);
     expect(routerOf({ router: 'nope' })).toBe(straight);
+    for (const key of ['toString', 'constructor', 'valueOf']) expect(routerOf({ router: key })).toBe(straight);
     const mine = () => [];
     expect(routerOf({ router: 'mine' }, { mine })).toBe(mine);
   });
