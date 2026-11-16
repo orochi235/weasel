@@ -10,6 +10,14 @@ const skeleton: Skeleton = {
 };
 
 describe('skeletonAxes', () => {
+  it('reads and writes a joint named like an Object.prototype member as its own', () => {
+    const axes = skeletonAxes({ joints: [{ name: 'constructor', parent: null, bind: { ...IDENTITY_JOINT } }, { name: '__proto__', parent: 'constructor', bind: { ...IDENTITY_JOINT } }] });
+    expect(axes.to({})).toEqual([0, 0, 0, 1, 1, 0, 0, 0, 1, 1]);
+    const pose = axes.from([1, 2, 3, 4, 5, 6, 7, 8, 9, 10]);
+    expect(Object.getPrototypeOf(pose)).toBe(Object.prototype);
+    expect(Object.keys(pose)).toEqual(['constructor', '__proto__']);
+  });
+
   it('lays out five axes a joint in skeleton order, each rotation an angle', () => {
     const axes = skeletonAxes(skeleton);
     expect(axes.count).toBe(10);

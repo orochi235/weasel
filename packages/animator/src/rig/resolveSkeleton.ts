@@ -1,3 +1,4 @@
+import { getOwn } from '@weasel-js/registry';
 import { mat3, type GlMat3 } from '@weasel-js/geom';
 import type { JointTransform, Pose, Skeleton } from './types';
 
@@ -36,7 +37,7 @@ export function toMat3(t: JointTransform): GlMat3 {
 export function resolveSkeleton(skeleton: Skeleton, pose: Pose): Map<string, GlMat3> {
   const out = new Map<string, GlMat3>();
   for (const joint of skeleton.joints) {
-    const local = toMat3(compose(joint.bind, pose[joint.name]));
+    const local = toMat3(compose(joint.bind, getOwn(pose, joint.name)));
     if (joint.parent == null) {
       out.set(joint.name, local);
       continue;

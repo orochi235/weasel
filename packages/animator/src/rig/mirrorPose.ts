@@ -1,3 +1,4 @@
+import { getOwn, setOwn } from '@weasel-js/registry';
 import type { JointTransform, Pose, Skeleton } from './types';
 
 /**
@@ -16,12 +17,12 @@ export function mirrorPose(skeleton: Skeleton, pose: Pose): Pose {
   const names = new Set([...binds.keys(), ...Object.keys(pose)]);
   for (const name of names) {
     const bind = binds.get(name);
-    const d = pose[name];
-    out[name] = {
+    const d = getOwn(pose, name);
+    setOwn(out, name, {
       ...d,
       x: -2 * (bind?.x ?? 0) - (d?.x ?? 0),
       rotation: -2 * (bind?.rotation ?? 0) - (d?.rotation ?? 0),
-    };
+    });
   }
   return out;
 }

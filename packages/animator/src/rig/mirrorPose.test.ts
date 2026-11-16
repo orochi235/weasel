@@ -28,6 +28,14 @@ const FLIP = (() => {
 })();
 
 describe('mirrorPose', () => {
+  it('reads and writes a joint named like an Object.prototype member as its own', () => {
+    const rig: Skeleton = { joints: [{ name: 'constructor', parent: null, bind: { x: 2, y: 0, rotation: 0, scaleX: 1, scaleY: 1 } }] };
+    expect(mirrorPose(rig, {}).constructor).toMatchObject({ x: -4 });
+    const out = mirrorPose(rig, JSON.parse('{"__proto__": {"x": 1}}') as Pose);
+    expect(Object.getPrototypeOf(out)).toBe(Object.prototype);
+    expect(Object.keys(out)).toContain('__proto__');
+  });
+
   it('resolves every joint to the reflection of the original across the root axis', () => {
     const original = resolveSkeleton(SKELETON, POSE);
     const mirrored = resolveSkeleton(SKELETON, mirrorPose(SKELETON, POSE));

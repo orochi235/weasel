@@ -1,3 +1,4 @@
+import { getOwn, setOwn } from '@weasel-js/registry';
 import { mat3, wrapAngle, type GlMat3 } from '@weasel-js/geom';
 import { compose, resolveSkeleton, toMat3 } from './resolveSkeleton';
 import type { Joint, Pose, Skeleton } from './types';
@@ -109,7 +110,7 @@ export function solveIk(skeleton: Skeleton, pose: Pose, options: SolveIkOptions)
 
   const rootParent = chain[0].parent;
   const base = rootParent == null ? mat3.identity() : resolveSkeleton(skeleton, pose).get(rootParent)!;
-  const rot = chain.map((joint) => clampAngle(wrapAngle(pose[joint.name]?.rotation ?? 0, 'min'), limits?.[joint.name]));
+  const rot = chain.map((joint) => clampAngle(wrapAngle(getOwn(pose, joint.name)?.rotation ?? 0, 'min'), limits && getOwn(limits, joint.name)));
 
   let worlds: GlMat3[] = [];
   const resolve = () => {
@@ -117,7 +118,7 @@ export function solveIk(skeleton: Skeleton, pose: Pose, options: SolveIkOptions)
     let parent = base;
     for (let i = 0; i < n; i += 1) {
       const joint = chain[i];
-      parent = mat3.multiply(parent, toMat3(compose(joint.bind, { ...pose[joint.name], rotation: rot[i] })));
+      parent = mat3.multiply(parent, toMat3(compose(joint.bind, { ...getOwn(pose, joint.name), rotation: rot[i] })));
       worlds.push(parent);
     }
   };
@@ -136,7 +137,7 @@ export function solveIk(skeleton: Skeleton, pose: Pose, options: SolveIkOptions)
     const [gx, gy] = mat3.apply(inv, goal.x, goal.y);
     if (Math.hypot(ex - ox, ey - oy) < 1e-9 || Math.hypot(gx - ox, gy - oy) < 1e-9) return false;
     const want = wrapAngle(rot[i] + Math.atan2(gy - oy, gx - ox) - Math.atan2(ey - oy, ex - ox), 'min');
-    rot[i] = clampAngle(want, limits?.[chain[i].name]);
+    rot[i] = clampAngle(want, limits && getOwn(limits, chain[i].name));
     resolve();
     return Math.abs(wrapAngle(rot[i] - want, 'min')) > 1e-9;
   };
@@ -147,7 +148,7 @@ export function solveIk(skeleton: Skeleton, pose: Pose, options: SolveIkOptions)
   };
   const result = (iterations: number): IkResult => {
     const out: Pose = { ...pose };
-    chain.forEach((joint, i) => { out[joint.name] = { ...pose[joint.name], rotation: rot[i] }; });
+    chain.forEach((joint, i) => { setOwn(out, joint.name, { ...getOwn(pose, joint.name), rotation: rot[i] }); });
     const d = distance();
     return { pose: out, distance: d, reached: d <= tolerance, iterations };
   };

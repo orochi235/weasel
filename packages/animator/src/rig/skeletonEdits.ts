@@ -1,3 +1,4 @@
+import { setOwn } from '@weasel-js/registry';
 import { mat3 } from '@weasel-js/geom';
 import { resolveSkeleton } from './resolveSkeleton';
 import type { Skin } from './skin';
@@ -83,6 +84,6 @@ export function removeJoint(skeleton: Skeleton, name: string): { skeleton: Skele
 export function dropSkinJoints(skin: Skin, joints: readonly string[]): Skin {
   if (!joints.some((j) => Object.hasOwn(skin, j))) return skin;
   const out: Record<string, readonly number[]> = {};
-  for (const j in skin) if (!joints.includes(j)) out[j] = skin[j];
+  for (const j in skin) if (!joints.includes(j)) setOwn(out, j, skin[j]);
   return out;
 }

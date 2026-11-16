@@ -2,6 +2,16 @@ import { describe, expect, it } from 'vitest';
 import { axesOf } from './axes';
 
 describe('axesOf', () => {
+  it('reads a field named like an Object.prototype member only where the value holds it', () => {
+    const a = axesOf({ constructor: 1, toString: 2 })!;
+    expect(a.to({ constructor: 3, toString: 4 })).toEqual([3, 4]);
+    expect(a.add({} as never, [1, 1])).toEqual({ constructor: NaN, toString: NaN });
+    const proto = axesOf(JSON.parse('{"__proto__": 1, "x": 2}') as Record<string, number>)!;
+    const out = proto.from([5, 6]) as Record<string, number>;
+    expect(Object.getPrototypeOf(out)).toBe(Object.prototype);
+    expect(Object.hasOwn(out, '__proto__') && out.x).toBe(6);
+  });
+
   it('reads a number as one axis', () => {
     const a = axesOf(3)!;
     expect(a.count).toBe(1);
