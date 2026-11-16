@@ -11,7 +11,7 @@ export type { EnteredGroupApi } from '../canvas/deps/enteredGroup';
 export type { GesturePreviewSource } from '../canvas/gestureBounds';
 export { insertPreviewExtent } from '../canvas/insertPreviewExtent';
 export type { InsertPreviewExtent, InsertPreviewGeometry, InsertPreviewLike, InsertPreviewOverlay } from '../canvas/insertPreviewExtent';
-export type { AreaSelectAdapter, ClipboardSnapshot, InsertAdapter, LassoHitMode, LassoSelectAdapter, LayerEnumerableAdapter, MoveAdapter, OrderedAdapter, PasteCtx, PasteOmission, RegionPickView, ResizeAdapter, RotateAdapter, SnapTarget } from '../core/adapters/types';
+export type { AreaSelectAdapter, ClipboardSnapshot, InsertAdapter, LassoHitMode, LassoSelectAdapter, LayerEnumerableAdapter, MoveAdapter, OrderedAdapter, PasteCtx, PasteOmission, RegionPickView, SnapTarget } from '../core/adapters/types';
 export { watchDevicePixelRatio } from '../core/device/watchDevicePixelRatio';
 export { AUTO_POSE_DESCRIPTOR, isPathLike, isRectPose } from '../core/geometry/autoPoseDescriptor';
 export type { BooleanShapeOp } from '../core/geometry/booleanOfPaths';

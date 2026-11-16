@@ -203,7 +203,7 @@ whatever sits outside the canvas, such as a pose animation. A flat list of
 items is a scene too: `useScene({ items })`.
 
 Each reader asks for a narrow slice of the contract (`MoveAdapter`,
-`ResizeAdapter`, `InsertAdapter`, `AreaSelectAdapter`, `RotateAdapter`), and
+`InsertAdapter`, `AreaSelectAdapter`), and
 the scene's adapter satisfies all of them. A store the kit does not own gets a
 hand-written adapter implementing the slices its readers take. See
 [adapters.md](./adapters.md).

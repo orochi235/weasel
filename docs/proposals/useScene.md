@@ -25,7 +25,7 @@ Source-of-truth files:
 The kit offers two ways to wire a scene into `<Canvas>`:
 
 1. **Explicit adapter.** The consumer implements a `MoveAdapter` /
-   `ResizeAdapter` / etc., owns the underlying state shape, and passes
+   `InsertAdapter` / etc., owns the underlying state shape, and passes
    `<Canvas adapter={...} />`. Maximum flexibility, maximum boilerplate.
 
 2. **Inline-props shorthand.** `<Canvas items setItems toPose fromPose
@@ -326,8 +326,7 @@ Two things to notice:
 
 ## Migration / compatibility
 
-- The existing `MoveAdapter` / `ResizeAdapter` / `RotateAdapter` /
-  `InsertAdapter` contracts stay. Tier (3) is unchanged. Consumers with
+- The existing `MoveAdapter` / `InsertAdapter` contracts stay. Tier (3) is unchanged. Consumers with
   external stores keep their current path.
 - The inline-props shorthand stays. Tier (1) remains the lowest-ceremony
   option for genuinely flat scenes; nothing about its surface changed to

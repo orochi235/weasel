@@ -264,8 +264,7 @@ The object the interaction layer reads a scene through and writes it back throug
 poses, hit results, selection, and the mutators an `Op` applies. `sceneToAdapter`
 builds one from a `Scene` (a `SceneCanvasAdapter`), and `<SceneCanvas>` does that
 itself. Each reader takes a narrow structural slice of it: `MoveAdapter`,
-`ResizeAdapter`, `RotateAdapter`, `AreaSelectAdapter`, `InsertAdapter`,
-`OrderedAdapter`. A store the kit does not own gets a hand-written object
+`AreaSelectAdapter`, `InsertAdapter`, `OrderedAdapter`. A store the kit does not own gets a hand-written object
 implementing the slices its readers take. See
 `packages/core/src/core/adapters/types.ts` and `docs/adapters.md`.
 

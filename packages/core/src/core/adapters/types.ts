@@ -110,30 +110,6 @@ export interface MoveAdapter<TNode extends { id: string }, TPose> {
   getLayout?(containerId: string): import('../../layout/types').LayoutStrategy<TPose> | null;
 }
 
-/** Narrow adapter for resize. */
-export interface ResizeAdapter<
-  TNode extends { id: string },
-  TPose,
-> {
-  getNode(id: string): TNode | undefined;
-  getPose(id: string): TPose;
-  setPose(id: string, pose: TPose): void;
-  /** Optional: see MoveAdapter.applyOps. */
-  applyOps?(ops: Op[], label: string): void;
-}
-
-/** Narrow adapter for rotate, which mutates pose only and never reparents. */
-export interface RotateAdapter<
-  TNode extends { id: string },
-  TPose,
-> {
-  getNode(id: string): TNode | undefined;
-  getPose(id: string): TPose;
-  setPose(id: string, pose: TPose): void;
-  /** Optional: see MoveAdapter.applyOps. */
-  applyOps?(ops: Op[], label: string): void;
-}
-
 /** The view a region pick answers for. */
 export interface RegionPickView {
   /** The camera the region was drawn under. With it, a node on a parallax
