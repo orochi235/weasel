@@ -12,10 +12,7 @@ import {
   clientToPlotPoint, modelToPlot, plotToModel,
   type ModelRange, type Point,
 } from './geometry';
-import {
-  formatTick, linearScale, tickDecimals,
-  type TickFormatCtx, type TickFormatter,
-} from '@weasel-js/plot/scales';
+import { formatTick, linearScale, tickDecimals, type TickFormatCtx, type TickFormatter } from '@weasel-js/scales';
 import s from './Plot2D.module.css';
 import { dlog } from '../../dlog';
 

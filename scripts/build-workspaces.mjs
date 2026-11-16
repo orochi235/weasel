@@ -17,6 +17,7 @@ export const BUILD_ORDER = [
   '@weasel-js/icons-plugin',
   '@weasel-js/history',
   '@weasel-js/quantity',
+  '@weasel-js/scales',
   '@weasel-js/ui-logic',
   '@weasel-js/gestures',
   '@weasel-js/ui-input',

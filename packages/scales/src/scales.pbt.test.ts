@@ -4,7 +4,7 @@
  */
 import { describe, expect, it } from 'vitest';
 import fc from 'fast-check';
-import { anyFinite, runs, tally, timeoutFor } from '../pbt.fixture';
+import { anyFinite, runs, tally, timeoutFor } from './pbt.fixture';
 import { bandScale } from './band';
 import { linearScale, niceDomain } from './linear';
 import { logScale } from './log';

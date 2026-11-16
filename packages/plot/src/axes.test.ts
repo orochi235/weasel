@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { axisMarks, axisRoom } from './axes';
-import { bandScale } from './scales/band';
-import { linearScale } from './scales/linear';
+import { bandScale } from '@weasel-js/scales';
+import { linearScale } from '@weasel-js/scales';
 import { PLOT_THEME } from './theme';
 
 const measure = (text: string) => ({ width: text.length * 10, height: 20 });

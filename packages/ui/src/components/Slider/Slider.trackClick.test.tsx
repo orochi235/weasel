@@ -2,7 +2,7 @@ import { describe, it, expect, vi } from 'vitest';
 import { render, fireEvent } from '@testing-library/react';
 import { Slider } from './Slider';
 import { stubRect } from './testing/stubRect';
-import { logScale } from '@weasel-js/plot/scales';
+import { logScale } from '@weasel-js/scales';
 
 describe('Slider track click', () => {
   const renderTrackClick = (props: Partial<Parameters<typeof Slider>[0]> = {}) => {

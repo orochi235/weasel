@@ -1,7 +1,7 @@
 import { clamp, clamp01 } from '@weasel-js/geom';
 import { snapToStep, spinKey } from '@weasel-js/quantity';
 import { arrowSteps, usableStops } from '@weasel-js/ui-input';
-import type { ContinuousScaleFactory } from '@weasel-js/plot/scales';
+import type { ContinuousScaleFactory } from '@weasel-js/scales';
 import { keyLanding } from './sliderStops';
 
 /**

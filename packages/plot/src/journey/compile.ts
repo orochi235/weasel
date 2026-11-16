@@ -7,9 +7,9 @@ import { ruleMark } from '../marks/paths';
 import { textMark } from '../marks/text';
 import type { PlotMark } from '../marks/types';
 import type { PlotMeasure } from '../measure';
-import { bandScale, type BandScale } from '../scales/band';
-import { linearScale, type LinearScale } from '../scales/linear';
-import { ordinalScale, type OrdinalScale } from '../scales/ordinal';
+import { bandScale, type BandScale } from '@weasel-js/scales';
+import { linearScale, type LinearScale } from '@weasel-js/scales';
+import { ordinalScale, type OrdinalScale } from '@weasel-js/scales';
 import { seriesColor, type PlotTheme } from '../theme';
 import type { JourneyData } from './types';
 

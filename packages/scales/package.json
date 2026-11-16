@@ -1,0 +1,50 @@
+{
+  "name": "@weasel-js/scales",
+  "version": "1.19.1",
+  "description": "Scales: values onto a range and back, linear, log, power, warped, time, band, ordinal and polar; the ticks an axis marks; and how they read. No React, no DOM and no scene.",
+  "weasel": {
+    "tier": "other"
+  },
+  "license": "MIT",
+  "type": "module",
+  "sideEffects": false,
+  "main": "./dist/index.js",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./package.json": "./package.json"
+  },
+  "author": "orochi235",
+  "homepage": "https://orochi235.github.io/weasel/",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/orochi235/weasel.git",
+    "directory": "packages/scales"
+  },
+  "bugs": {
+    "url": "https://github.com/orochi235/weasel/issues"
+  },
+  "engines": {
+    "node": ">=24"
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
+  "scripts": {
+    "build": "tsup",
+    "test": "node ../../scripts/package-test.mjs"
+  },
+  "dependencies": {
+    "@weasel-js/geom": "1.19.1"
+  },
+  "publishConfig": {
+    "access": "public",
+    "provenance": true
+  }
+}

@@ -1,12 +1,11 @@
 /**
  * `@weasel-js/plot` — charts on weasel's scene graph. The lower layer is
- * scales, axes and marks, each mark keeping the datum it draws; the upper is
+ * axes and marks over `@weasel-js/scales`, each mark keeping the datum it draws; the upper is
  * chart specs (`PlotData`) that `plotSpecs` compiles to one root node holding
  * the spec and its marks under it, edited by dragging the marks.
  *
  * @packageDocumentation
  */
-export * from './scales.entry';
 
 export type {
   MarkKind, PlotBox, PlotDatum, PlotMark, PlotMarkData, PlotMarkTrait, PlotPoint, SolidFill, SolidStroke,

@@ -1,9 +1,9 @@
-import type { PlotPoint } from '../marks/types';
+import type { Point } from '@weasel-js/geom';
 import { linearScale } from './linear';
 
 /** Options for {@link polarScale}. */
 export interface PolarScaleOptions {
-  center: PlotPoint;
+  center: Point;
   /** The radius the domain's ends sit at: inner, then outer. */
   radius: readonly [number, number];
   domain: readonly [number, number];
@@ -16,7 +16,7 @@ export interface PolarScaleOptions {
 /** A scale over spokes from a center, as a radar chart's axes are: a value along each of `axes` evenly spaced spokes. */
 export interface PolarScale {
   readonly kind: 'polar';
-  readonly center: PlotPoint;
+  readonly center: Point;
   readonly radius: readonly [number, number];
   readonly domain: readonly [number, number];
   readonly axes: number;
@@ -25,10 +25,10 @@ export interface PolarScale {
   /** How far from the center `value` sits on every axis. */
   radiusAt(value: number): number;
   /** Where `value` sits on axis `i`. */
-  point(i: number, value: number): PlotPoint;
+  point(i: number, value: number): Point;
   /** The value of the point on axis `i` nearest `at`, clamped to the domain; with `open`, a point past the rim reads
    *  past the domain's outer end, and only the inner end clamps. */
-  valueAt(i: number, at: PlotPoint, open?: boolean): number;
+  valueAt(i: number, at: Point, open?: boolean): number;
   /** The distance between ticks when about `count` are asked for. */
   tickStep(count?: number): number;
   /** Round values across the domain, about `count` of them. */

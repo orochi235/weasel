@@ -84,6 +84,7 @@
     "@weasel-js/registry": "1.19.1",
     "@weasel-js/renderer": "1.19.1",
     "@weasel-js/routing": "1.19.1",
+    "@weasel-js/scales": "1.19.1",
     "@weasel-js/select": "1.19.1",
     "@weasel-js/svg": "1.19.1",
     "@weasel-js/text": "1.19.1",

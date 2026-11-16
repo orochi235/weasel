@@ -25,6 +25,7 @@
       "@weasel-js/clock",
       "@weasel-js/stroke",
       "@weasel-js/renderer",
+      "@weasel-js/scales",
       "@weasel-js/dither",
       "@weasel-js/pdf",
       "@weasel-js/storage",

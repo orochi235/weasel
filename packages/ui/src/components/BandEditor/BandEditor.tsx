@@ -16,7 +16,7 @@ import s from './BandEditor.module.css';
 import { QuantityText } from '../QuantityText';
 import { attract } from '@weasel-js/ui-input';
 import { useSnapRadiusPx } from '../../snap';
-import { linearScale, type ContinuousScaleFactory } from '@weasel-js/plot/scales';
+import { linearScale, type ContinuousScaleFactory } from '@weasel-js/scales';
 import { clamp01 } from '@weasel-js/geom';
 import { prefNumberScale } from '../Prefs/prefNumberScale';
 import { trackOf, withinAxis } from './scale';

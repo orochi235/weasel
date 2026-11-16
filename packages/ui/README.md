@@ -52,7 +52,7 @@ trims the tables to the glyphs an app uses is in
 [icons](https://github.com/orochi235/weasel/blob/main/docs/icons.md).
 
 A `Slider` or `BandEditor` that maps values onto its track non-linearly takes a
-scale from `@weasel-js/plot/scales`: `<Slider scale={logScale} … />`. `Plot2D`'s
+scale from `@weasel-js/scales`: `<Slider scale={logScale} … />`. `Plot2D`'s
 generated ticks and the `Timeline` ruler's come from the same scales, and a
 custom `TickSettings.format` receives their `TickFormatCtx`.
 
