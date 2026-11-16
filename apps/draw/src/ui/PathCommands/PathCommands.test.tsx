@@ -3,8 +3,8 @@ import { act, cleanup, fireEvent, render, screen } from '@testing-library/react'
 
 const edits = vi.hoisted(() => new Map<string, { input: ReturnType<typeof vi.fn>; commit: ReturnType<typeof vi.fn>; cancel: ReturnType<typeof vi.fn> }>());
 
-vi.mock('@weasel-js/core', async (importOriginal) => ({
-  ...(await importOriginal<typeof import('@weasel-js/core')>()),
+vi.mock('@weasel-js/routing/react', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('@weasel-js/routing/react')>()),
   useOngoingAction: (id: string) => {
     if (!edits.has(id)) edits.set(id, { input: vi.fn(), commit: vi.fn(), cancel: vi.fn() });
     return edits.get(id)!;
