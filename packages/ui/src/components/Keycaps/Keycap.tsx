@@ -4,6 +4,7 @@ import type { IconRef } from '@weasel-js/icons';
 import { icon } from '../../icons.gen';
 import s from './Keycaps.module.css';
 import { MODIFIER_LABELS } from '@weasel-js/gestures';
+import { graphemeEnds } from '@weasel-js/text';
 import { useLegendFit } from './useLegendFit';
 
 const WIDE_GLYPHS = new Set(['⇥', '↵', '␣']);
@@ -29,12 +30,12 @@ export type KeycapKind = 'modifier' | 'wide' | 'square';
 
 /**
  * Picks the chip width for a legend — modifier glyphs and anything longer
- * than one character get the wider forms.
+ * than one character, counted as the reader sees them, get the wider forms.
  */
 export function inferKeycapKind(label: string): KeycapKind {
   if (label === '⇪' || MODIFIER_LABELS.has(label)) return 'modifier';
   if (WIDE_GLYPHS.has(label)) return 'wide';
-  if (label.length > 1) return 'wide';
+  if (graphemeEnds(label).length > 1) return 'wide';
   return 'square';
 }
 
