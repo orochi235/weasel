@@ -63,7 +63,7 @@ const DEFAULTS: Required<BadgeQuatrefoilBaseParams> = {
 
 function smoothMax(a: number, b: number, g: number): number {
   const d = a - b;
-  return (a + b + Math.sqrt(d * d + g * g)) / 2;
+  return (a + b + Math.hypot(d, g)) / 2;
 }
 
 /** Generalised superellipse-style profile from (0, 0) to (1, 1) with asymmetric exponents
