@@ -236,6 +236,16 @@ describe('viewportDragPanAction without screenDelta', () => {
     // then stuck, because the view it was measured against had already moved.
     expect(view._value.x).toBe(-100);
   });
+
+  it('carries on from a zoom made elsewhere mid-drag', () => {
+    const view = makeView({ x: 0, y: 0, scale: { x: 1, y: 1 } });
+    const handle = getOngoingInvoker(viewportDragPanAction).start(makeCtx(view));
+    handle.onMove!(move(view, 10, 0));
+    expect(view._value.x).toBe(-10);
+    view.set({ ...view._value, scale: { x: 2, y: 2 } });
+    handle.onMove!(move(view, 20, 0));
+    expect(view._value.x).toBe(-15);
+  });
 });
 
 

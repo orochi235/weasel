@@ -26,9 +26,9 @@ interface DragPanScratch {
  *
  * A world delta is self-referential mid-pan — its two ends were measured under
  * different views — so it cannot simply be scaled. Undoing each end against the
- * view that produced it recovers the client delta exactly, since
- * `world = (client - origin) / scale + view` and neither the canvas origin nor
- * the scale moves during a pan.
+ * view that produced it, its offset and its scale, recovers the client delta
+ * exactly, since `world = (client - origin) / scale + view` and the canvas
+ * origin does not move during a pan.
  */
 function screenDeltaFromWorld(
   drag: NonNullable<InvocationCtx['drag']>,
@@ -37,8 +37,8 @@ function screenDeltaFromWorld(
   const v0 = scratch.startView;
   const now = scratch.view.get();
   return {
-    x: (drag.current.x - now.x - (drag.start.x - v0.x)) * v0.scale.x,
-    y: (drag.current.y - now.y - (drag.start.y - v0.y)) * v0.scale.y,
+    x: (drag.current.x - now.x) * now.scale.x - (drag.start.x - v0.x) * v0.scale.x,
+    y: (drag.current.y - now.y) * now.scale.y - (drag.start.y - v0.y) * v0.scale.y,
   };
 }
 
