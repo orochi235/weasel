@@ -7,6 +7,7 @@ import type {
   BendAlongEffect, TweenEffect, PathEffect, PuckerBloatEffect, RepeatAlongEffect, RoughenEffect, TextAlongEffect, ZigzagEffect,
 } from '@weasel-js/core';
 import { effectSettingDefaults } from './effectForms';
+import { getOwn } from '@weasel-js/registry';
 
 type Params = Record<string, unknown> | undefined;
 
@@ -87,7 +88,7 @@ export function withEffectSettings(effect: PathEffect, params: Params): PathEffe
 }
 
 /** The default of `kind`'s required setting `field`, from its form. */
-const required = (kind: PathEffect['kind'], field: string): number => effectSettingDefaults(kind)[field] as number;
+const required = (kind: PathEffect['kind'], field: string): number => getOwn(effectSettingDefaults(kind), field) as number;
 
 /** What a new effect of `kind` starts from, before its params: the settings it cannot leave unset, at their
  *  forms' defaults. */

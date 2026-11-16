@@ -17,6 +17,7 @@ import { icon } from '../icons.gen';
 import { pathEffectSettingsForm } from './settingsForm';
 import { PATH_EFFECT_PARAMS } from './effectForms';
 import type {} from '../actionParamSchema';
+import { getOwn } from '@weasel-js/registry';
 
 /** The `group` every path-effect action is in, for an `<ActionBar>`. */
 export const PATH_EFFECTS_GROUP = 'pathEffects';
@@ -253,7 +254,7 @@ export const editPathEffectAction = defineAction({
 function sameEffect(a: PathEffect, b: PathEffect): boolean {
   const keys = new Set([...Object.keys(a), ...Object.keys(b)]);
   for (const k of keys) {
-    if ((a as unknown as Record<string, unknown>)[k] !== (b as unknown as Record<string, unknown>)[k]) return false;
+    if (getOwn(a as unknown as Record<string, unknown>, k) !== getOwn(b as unknown as Record<string, unknown>, k)) return false;
   }
   return true;
 }

@@ -1,4 +1,5 @@
 import type { ActionSettingsState } from '@weasel-js/routing';
+import { getOwn, setOwn } from '@weasel-js/registry';
 
 /**
  * A settings form's values gathered across a selection: each field holds the
@@ -14,8 +15,14 @@ export class SettingsFields {
     if (!this.seen.has(path)) {
       this.seen.set(path, value);
       const dot = path.indexOf('.');
-      if (dot < 0) this.values[path] = value;
-      else ((this.values[path.slice(0, dot)] ??= {}) as Record<string, unknown>)[path.slice(dot + 1)] = value;
+      if (dot < 0) {
+        setOwn(this.values, path, value);
+      } else {
+        const head = path.slice(0, dot);
+        let section = getOwn(this.values, head) as Record<string, unknown> | undefined;
+        if (section === undefined) setOwn(this.values, head, section = {});
+        setOwn(section, path.slice(dot + 1), value);
+      }
     } else if (this.seen.get(path) !== value) {
       this.mixed.add(path);
     }

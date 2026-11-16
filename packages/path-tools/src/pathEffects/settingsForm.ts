@@ -9,13 +9,14 @@ import { SettingsFields } from '../settingsFields';
 import { effectSettingDefaults, PATH_EFFECT_PARAMS } from './effectForms';
 import { effectSettings } from './params';
 import type { EditPathEffectParams } from '../actionParamSchema';
+import { getOwn } from '@weasel-js/registry';
 
 type Kind = PathEffect['kind'];
 const KINDS: readonly Kind[] = ['tween', 'bendAlong', 'repeatAlong', 'textAlong', 'roughen', 'zigzag', 'puckerBloat'];
-const COUNT: Record<Kind, string> = {
+const COUNT = {
   tween: 'tweens', bendAlong: 'bends', repeatAlong: 'repeats', textAlong: 'texts',
   roughen: 'roughens', zigzag: 'zigzags', puckerBloat: 'puckerBloats',
-};
+} as const satisfies Record<Kind, string>;
 const COUNT_NAME: Record<Kind, string> = {
   tween: 'Selected tweens', bendAlong: 'Selected bends', repeatAlong: 'Selected repeats', textAlong: 'Selected texts',
   roughen: 'Selected roughens', zigzag: 'Selected zigzags', puckerBloat: 'Selected puckers and bloats',
@@ -51,13 +52,13 @@ export const PATH_EFFECT_SETTINGS_SCHEMA: PrefGroup = {
 export function readPathEffectSettings(deps: ActionDeps): ActionSettingsState {
   const scene = deps.scene as AnyScene | undefined;
   const fields = new SettingsFields();
-  const counts: Record<string, number> = Object.fromEntries(Object.values(COUNT).map((name) => [name, 0]));
+  const counts = Object.fromEntries(Object.values(COUNT).map((name) => [name, 0])) as Record<(typeof COUNT)[Kind], number>;
   for (const id of deps.operands?.get() ?? []) {
     const effect = pathEffectOf(scene?.get(id as NodeId));
     if (!effect) continue;
     counts[COUNT[effect.kind]]!++;
     for (const [field, fallback] of Object.entries(DEFAULTS[effect.kind])) {
-      fields.add(`${effect.kind}.${field}`, (effect as unknown as Record<string, unknown>)[field] ?? fallback);
+      fields.add(`${effect.kind}.${field}`, getOwn(effect as unknown as Record<string, unknown>, field) ?? fallback);
     }
   }
   return fields.state(counts);
