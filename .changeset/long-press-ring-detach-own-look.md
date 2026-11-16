@@ -2,6 +2,6 @@
 '@weasel-js/core': patch
 ---
 
-The long-press ring keeps filling on a canvas whose feedback was attached again over the same press store after an earlier attach was detached.
+The long-press ring keeps filling when its feedback is attached twice over one press store and the earlier attach detaches.
 
 <!-- entry: fix -->
