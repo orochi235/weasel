@@ -6,6 +6,7 @@ import { sliderAt, spanMap, spanPan, spanZoom } from '@weasel-js/ui-input';
 import { Ruler, RulerMark, type RulerSpacing } from '../Ruler';
 import { MIN_SPAN_MS, TICK_SPACING_PX, type TimeWindow } from './timeScale';
 import { isPrimaryPress } from '@weasel-js/gestures';
+import { alongTrack } from '../../alongTrack';
 
 /** One wheel notch's zoom factor. */
 const ZOOM_STEP = 0.0015;
@@ -46,9 +47,8 @@ export function TimeRuler(props: TimeRulerProps): ReactElement {
 
   const widthOf = (): number => trackRef.current?.getBoundingClientRect().width ?? 0;
   const msAt = (clientX: number): number => {
-    const rect = trackRef.current?.getBoundingClientRect();
-    if (!rect || rect.width === 0) return win.from;
-    return sliderAt((clientX - rect.left) / rect.width, { min: win.from, max: win.to, ...spanMap(win) });
+    const at = alongTrack(trackRef.current, clientX);
+    return at ? sliderAt(at.f, { min: win.from, max: win.to, ...spanMap(win) }) : win.from;
   };
 
   // `capture: false`: the session tracks the pointer off the ruler on its own,
