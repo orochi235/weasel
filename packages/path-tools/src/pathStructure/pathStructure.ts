@@ -8,7 +8,8 @@ import {
   editAnchorSetTracked, flatIndexesAfterReverse, locateAnchor, reverseSubpaths, setSubpathStart, subpathsOfAnchors,
   type AnchorSet, type PolygonPath,
 } from '@weasel-js/geom';
-import { ANCHORS_GROUP, PATH_GROUP, anchorEditWouldChange, commitAnchorEdit, commitOps, depOf, pathOperationTags, type Op } from '@weasel-js/core';
+import { ANCHORS_GROUP, PATH_GROUP, commitOps, pathOperationTags, type Op } from '@weasel-js/core';
+import { anchorEditWouldChange, commitAnchorEdit, depOf } from '../pathEdit/anchorEditing';
 import { icon } from '../icons.gen';
 
 const START_LABEL = 'Make start point';

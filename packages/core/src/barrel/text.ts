@@ -136,19 +136,7 @@ export type {
 } from '@weasel-js/text';
 
 // ─── Create Outlines and Outline Stroke: text and strokes to path geometry ───────────────────────────
-export {
-  applyCreateOutlines,
-  applyOutlineStroke,
-  strokeRegion,
-  useCreateOutlinesAdapter,
-} from '../interactions/actions/outlines';
+export { strokeRegion, type StrokeRegionOptions } from '../domains/paths/strokeRegion';
 export { warnUser, warnTextOutlines } from '../interactions/actions/notices';
 export { useNotices } from '../interactions/actions/useNotices';
 export type { NoticesDep, NoticeOptions } from '../interactions/actions/notices';
-export type {
-  CreateOutlinesAdapter,
-  CreateOutlinesResult,
-  OutlinePathSpec,
-  OutlineStrokeResult,
-  StrokeRegionOptions,
-} from '../interactions/actions/outlines';

@@ -6,15 +6,8 @@
 import type { ActionDeps } from '@weasel-js/routing';
 import { unionRects } from '@weasel-js/geom';
 import type { WarpBox } from '@weasel-js/geom/warp';
-import {
-  type CreateOutlinesAdapter,
-  drawnAABBOf,
-  type NodeId,
-  type PathNode,
-  pathNodesOf,
-  shownNodeOf,
-  type AnyScene,
-} from '@weasel-js/core';
+import { drawnAABBOf, type NodeId, type PathNode, pathNodesOf, shownNodeOf, type AnyScene } from '@weasel-js/core';
+import { type CreateOutlinesAdapter } from '../outlines/createOutlines';
 import { leavesOf } from '../shared/scenePaths';
 
 type WarpScene = Pick<AnyScene, 'get' | 'childrenOf'>;

@@ -10,23 +10,13 @@ import {
 import { pathWarpMap, warpControls, type PathWarp } from '@weasel-js/geom/warp';
 import type { DrawCommand } from '@weasel-js/renderer';
 import {
-  type Affordance,
-  type AffordanceRegion,
-  type ChromeState,
-  composeAffordanceLayer,
-  type CreateOutlinesAdapter,
-  DEFAULT_OVERLAY_STYLE,
-  type RenderLayer,
-  type View,
-  viewToTransform,
-  worldToScreen,
-  type AnyScene,
+  type Affordance, type AffordanceRegion, type ChromeState, composeAffordanceLayer, DEFAULT_OVERLAY_STYLE,
+  type RenderLayer, type View, viewToTransform, worldToScreen, type AnyScene,
 } from '@weasel-js/core';
+import { type CreateOutlinesAdapter } from '../outlines/createOutlines';
 import { warpLeavesOf } from './warpSelection';
 import type { WarpHandleScratch, WarpLive } from './warpActions';
-import {
-  freshWarp, freshWarpBox, splitByWarp, type WarpKind, type WarpSettings,
-} from './warpTargets';
+import { freshWarp, freshWarpBox, splitByWarp, type WarpKind, type WarpSettings } from './warpTargets';
 import type { WarpBox } from '@weasel-js/geom/warp';
 
 /** The id of the layer showing a `kind` warp's controls. A binding reaches

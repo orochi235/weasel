@@ -10,8 +10,6 @@
 import { useEllipseTool } from 'tools/builtin/ellipse/useEllipseTool';
 import { useLassoTool } from 'tools/builtin/lasso/useLassoTool';
 import { useLineTool } from 'tools/builtin/line/useLineTool';
-import { usePencilTool } from 'tools/builtin/pencil/usePencilTool';
-import { usePenTool } from 'tools/builtin/pen/usePenTool';
 import { usePolygonTool } from 'tools/builtin/polygon/usePolygonTool';
 import { useRectTool } from 'tools/builtin/rect/useRectTool';
 import { useStarTool } from 'tools/builtin/star/useStarTool';
@@ -29,15 +27,13 @@ import type { BuiltinShapeToolId } from 'core/shapeKinds';
 export interface BuiltinToolOptions {
   lasso?: { mode?: LassoHitMode };
   /** Insert-action options for every drag-to-insert tool (rect / ellipse /
-   *  line / polygon / star / pencil / text / sticky): `behaviors` become each insert
+   *  line / polygon / star / text / sticky): `behaviors` become each insert
    *  binding's `opts.behaviors`, the way `selectTool.move.behaviors` do for
    *  move. */
   insert?: InsertToolOptions;
   /** The look of the notes the sticky tool makes: paper, ink, padding,
    *  typography, and the size a click places. */
   sticky?: StickyStyle;
-  /** The knife: screen px around the first point within which a click closes the cut. */
-  slice?: { closeHitRadius?: number };
 }
 
 // `BuiltinShapeToolId` / `KIT_SHAPE_KINDS` derive from the `core/shapeKinds`
@@ -68,10 +64,8 @@ export function useBuiltinShapeTools(args: UseBuiltinShapeToolsArgs = {}): Built
   const line = useLineTool(insert);
   const polygon = usePolygonTool(insert);
   const star = useStarTool(insert);
-  const pencil = usePencilTool(insert);
-  const pen = usePenTool();
   const lasso = useLassoTool(options?.lasso ?? {});
   const text = useTextTool(insert);
   const sticky = useStickyTool({ ...insert, ...options?.sticky });
-  return { rect, ellipse, line, polygon, star, pen, pencil, lasso, text, sticky };
+  return { rect, ellipse, line, polygon, star, lasso, text, sticky };
 }

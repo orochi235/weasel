@@ -14,7 +14,6 @@ import * as builtins from './index';
 describe('built-in tool capabilities', () => {
   const cases: Array<[string, () => { eligibility?: { capabilities?: readonly string[] } } | null, readonly string[]]> = [
     ['hand', () => builtins.useHandTool({}), ['navigation']],
-    ['anchors', () => builtins.anchorsTool, ['edits-anchors']],
     ['select', () => builtins.useSelectTool({} as never, {} as never), ['creates-selection']],
     ['lasso', () => builtins.useLassoTool(), ['creates-selection']],
     ['rect', () => builtins.useRectTool(), ['creates-shapes']],
@@ -22,11 +21,6 @@ describe('built-in tool capabilities', () => {
     ['line', () => builtins.useLineTool(), ['creates-shapes']],
     ['star', () => builtins.useStarTool({} as never), ['creates-shapes']],
     ['polygon', () => builtins.usePolygonTool({} as never), ['creates-shapes']],
-    ['pen', () => {
-      return builtins.usePenTool() as unknown as { eligibility?: { capabilities?: readonly string[] } };
-    }, ['creates-paths']],
-    ['pencil', () => builtins.usePencilTool(), ['creates-paths']],
-    ['slice', () => builtins.useSliceTool(), ['edits-page']],
     ['text', () => builtins.useTextTool(), ['creates-text']],
     ['sticky', () => builtins.useStickyTool(), ['creates-text']],
     ['eyedropper', () => builtins.useEyedropperTool({} as never), ['samples-color']],

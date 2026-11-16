@@ -9,9 +9,8 @@ import { resolve } from 'node:path';
 import { loadFontOutlines, registerFontOutlines } from '@weasel-js/font';
 import { _resetFontOutlinesForTests, _resetFontRegistryForTests } from '@weasel-js/font/test-seams';
 import { boundsOfPath, type Path, type Rect } from '@weasel-js/geom';
-import {
-  asNodeId, type CreateOutlinesAdapter, createScene, defaultCommitAdapter, type NodeId, type TextOutlineSource,
-} from '@weasel-js/core';
+import { asNodeId, createScene, defaultCommitAdapter, type NodeId, type TextOutlineSource } from '@weasel-js/core';
+import { type CreateOutlinesAdapter } from '../../outlines/createOutlines';
 
 const INTER_TTF = resolve(import.meta.dirname, '../../../../../assets/fonts/inter/inter.ttf');
 

@@ -1,5 +1,5 @@
 import { IDENTITY_POSE_COMPOSITION, createScene, ellipsePath, pathFromD, drawPreset } from '@weasel-js/core';
-import { snipPreset, useSnipTool } from '@weasel-js/path-tools';
+import { snipPreset, useSnipTool, pathsPreset } from '@weasel-js/path-tools';
 import {
   type ConfigOf,
   defineInstrument,
@@ -16,7 +16,7 @@ import '@weasel-js/labkit/styles.css';
 import 'windease/styles.css';
 import { icon } from '../icons.gen';
 
-const FEATURES = [drawPreset, snipPreset] as const;
+const FEATURES = [drawPreset, pathsPreset, snipPreset] as const;
 
 const config = f.schema({
   reach: f.number(6).range(2, 20).step(1).suffix('px').label('Click reach'),

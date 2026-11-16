@@ -81,7 +81,7 @@
   "packages/devtools/src/page/registry.ts",
   "packages/devtools/src/page/serialize.ts",
   "packages/core/src/interactions/actions/defaults/paintActionTestUtils.ts",
-  "packages/core/src/interactions/actions/pathCommands/livePathEdit.ts",
+  "packages/path-tools/src/pathCommands/livePathEdit.ts",
   "packages/core/src/interactions/actions/useActionSet.ts",
   "packages/core/src/tools/builtin/shared/countOption.ts",
   "packages/diagram-formats/src/dot/read.ts",

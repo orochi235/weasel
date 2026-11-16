@@ -18,7 +18,7 @@ export { stepAngles } from '../domains/snap/stepAngles';
 export { useSnapSource } from '../domains/snap/registry';
 export { rotationSnapSource } from '../domains/snap/rotationSource';
 export { pathSnapSource, type PathSnapSourceOptions } from '../domains/paths/pathSnap/pathSnapSource';
-export { DEFAULT_SNAP_PX } from '../domains/snap/session2d';
+export { DEFAULT_SNAP_PX, inputSession } from '../domains/snap/session2d';
 export { createSnapReadoutLayer } from '../domains/snap/readoutLayer';
 export { measuredSegmentCommands, pillCommands, tickedSegment } from '../domains/snap/readoutDraw';
 export type { SnapReadoutDep } from '../domains/snap/readoutDep';

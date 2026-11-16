@@ -5,10 +5,8 @@
  */
 import { ActionDisabledReason, BETWEEN_GESTURES, defineAction } from '@weasel-js/routing';
 import { convertSegments, editAnchorSetTracked, segmentsBetweenAnchors, type SegmentType } from '@weasel-js/geom';
-import {
-  ANCHORS_GROUP,
-  anchorEditWouldChange, commitAnchorEdit, depOf, editingLayer, inPlane, pathOperationTags, segmentUnder,
-} from '@weasel-js/core';
+import { ANCHORS_GROUP, editingLayer, inPlane, pathOperationTags, segmentUnder } from '@weasel-js/core';
+import { anchorEditWouldChange, commitAnchorEdit, depOf } from '../pathEdit/anchorEditing';
 import { icon } from '../icons.gen';
 import type {} from '../actionParamSchema';
 

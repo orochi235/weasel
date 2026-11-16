@@ -19,7 +19,8 @@
  */
 
 import {
-  type Action, type ActionDeps, ActionDisabledReason, defineAction, type InvocationCtx, isPoiseGrip, type OngoingHandle, roleMods,
+  type Action, type ActionDeps, ActionDisabledReason, defineAction, type InvocationCtx, isPoiseGrip,
+  type OngoingHandle, roleMods,
 } from '@weasel-js/routing';
 import {
   poiseFactorToward,
@@ -32,9 +33,11 @@ import {
   type PointOrigin,
   type PolygonPath,
 } from '@weasel-js/geom';
-import {
-  commitAnchorEdit, type EditAnchorsDep, editedPathSymmetries, editingLayer, HANDLE_LOCK_ROLES, inPlane, locksInForce, pathEditPreview, pathOperationTags,
-} from '@weasel-js/core';
+import { type EditAnchorsDep, editingLayer, inPlane, pathOperationTags } from '@weasel-js/core';
+import { commitAnchorEdit } from '../pathEdit/anchorEditing';
+import { editedPathSymmetries } from '../pathEdit/editAnchors/symmetry';
+import { HANDLE_LOCK_ROLES, locksInForce } from '../pathEdit/editAnchors/handleDrag';
+import { pathEditPreview } from '../pathEdit/editAnchors/preview';
 import { icon } from '../icons.gen';
 import type {} from '../actionParamSchema';
 

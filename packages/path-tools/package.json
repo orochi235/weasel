@@ -1,7 +1,7 @@
 {
   "name": "@weasel-js/path-tools",
   "version": "1.19.1",
-  "description": "Path-editing tools for a weasel canvas, as presets an app opts into: brushes, bridge, Snip and Reach, curvature, Poise, path constraints, Fillet, path effects, warps, and the Girth and Shape Builder tools.",
+  "description": "Path-editing tools for a weasel canvas, as presets an app opts into: path edit and anchor editing, the pen, pencil and knife, path commands, Create Outlines, brushes, bridge, Snip and Reach, curvature, Poise, path constraints, Fillet, path effects, warps, and the Girth and Shape Builder tools.",
   "weasel": {
     "tier": "plugin"
   },
@@ -57,7 +57,8 @@
     "@weasel-js/registry": "1.19.1",
     "@weasel-js/renderer": "1.19.1",
     "@weasel-js/routing": "1.19.1",
-    "@weasel-js/stroke": "1.19.1"
+    "@weasel-js/stroke": "1.19.1",
+    "@weasel-js/text": "1.19.1"
   },
   "peerDependencies": {
     "@weasel-js/core": "1.19.1",

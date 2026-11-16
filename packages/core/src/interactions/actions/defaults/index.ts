@@ -9,45 +9,16 @@ export {
   alignLeftAction, alignRightAction, alignTopAction, alignBottomAction,
   alignCenterXAction, alignCenterYAction,
 } from '../align/action';
-export {
-  distributeHorizontalAction, distributeVerticalAction,
-} from '../distribute/action';
+export { distributeHorizontalAction, distributeVerticalAction } from '../distribute/action';
 export {
   pathfinderUnionAction, pathfinderSubtractAction, pathfinderIntersectAction,
   pathfinderExcludeAction, pathfinderDivideAction, pathfinderCropAction,
   pathfinderTrimAction, pathfinderMergeAction,
 } from '../booleans/action';
-export { createOutlinesAction } from '../outlines/createOutlinesAction';
-export { outlineStrokeAction } from '../outlines/outlineStrokeAction';
 export {
   commitDeleteToScene, createDeleteAction, deleteAction, hiddenSourceDeleteOps, type DeleteActionOptions,
 } from './delete';
 export { groupAction, ungroupAction } from './group';
-export {
-  deleteAnchorsAction,
-  cutPathAtAnchorAction,
-  marqueeAnchorsAction,
-  selectAnchorAction,
-  anchorEditWouldChange,
-  commitAnchorEdit,
-  depOf,
-  requiresAnchorSelection,
-} from './anchorEditing';
-export {
-  nudgeAnchorsUpAction,
-  nudgeAnchorsDownAction,
-  nudgeAnchorsLeftAction,
-  nudgeAnchorsRightAction,
-} from './anchorNudge';
-export { setAnchorFieldAction, type SetAnchorFieldParams } from './anchorFields';
-export {
-  retractHandlesAction, makeHandlesSymmetricAction, createHandleCommand, type HandleEdit, type HandleScope,
-} from './anchorHandles';
-export { averageAnchorsAction, joinAnchorsAction, joinSelectedAnchors } from './anchorJoin';
-export { editTargetOf } from './pathEditMarks';
-export {
-  simplifyPathAction, offsetPathAction, snipAtCrossingsAction, joinPathsAction, joinPathsCommand, planJoin,
-} from '../pathCommands';
 export { undoAction, redoAction } from './undoRedo';
 export { clipboardCopyAction, clipboardCutAction, clipboardPasteAction, clipboardPasteEventAction } from '../clipboard/action';
 export { createToolOffhandAction, buildToolOffhandBindings, TOOL_OFFHAND_ID, type ToolOffhandBindingSpec } from '@weasel-js/routing';
@@ -65,7 +36,6 @@ export { areaSelectAction } from './areaSelect';
 export { insertAction, INSERT_DRAG_MODS } from '../insert/action';
 export { insertRepositionAction, INSERT_REPOSITION_BINDING } from '../insert/repositionAction';
 export { cloneAction } from '../clone/action';
-export { editAnchorsAction } from '../edit-anchors/action';
 export { lassoSelectAction } from '../lasso-select/action';
 export { pinchZoomAction } from './pinchZoom';
 export { viewportWheelPanAction } from './viewportWheelPan';

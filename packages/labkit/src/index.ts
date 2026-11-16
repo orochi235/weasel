@@ -155,7 +155,7 @@ export {
 export type { MarkStyle, PaintableMark } from './annotations/paint';
 export { MARK_COLOR, MARK_TEXT_SIZE, MARK_WIDTH, markCommands } from './annotations/paint';
 export { markSvgNodes } from './annotations/svgNodes';
-export type { AnnotationToolInfo } from './annotations/toolMap';
+export type { AnnotationToolInfo, AnnotationWeaselTool } from './annotations/toolMap';
 export {
   ANNOTATION_TOOLS,
   ANNOTATION_WEASEL_TOOLS,

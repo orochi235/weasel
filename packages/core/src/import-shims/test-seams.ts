@@ -7,7 +7,8 @@
  * building on path edit test against the real thing, and a fake adapter's
  * flat tree lets one test a commit through ops. A snap session built straight
  * from a scene lets a package's snap source be tested without mounting a
- * canvas. These live here rather than on the package barrel so that reaching
+ * canvas. The insert dep's source and the area hit test let a package's
+ * drawing tool commit and pick against a scene of its own. These live here rather than on the package barrel so that reaching
  * for them is a deliberate import of a test surface, not something an
  * application finds by autocomplete.
  *
@@ -24,7 +25,7 @@ export function _resetPaintKindsForTests(): void {
 }
 
 export { _resetMarkersForTests } from '@weasel-js/stroke/test-seams';
-export { makeEditAnchorsDep as createEditAnchorsDepForTests } from 'interactions/actions/testUtils';
+export { makeEditAnchorsDep as createEditAnchorsDepForTests, stubDeps as stubDepsForTests } from 'interactions/actions/testUtils';
 export {
   useEditAnchorsDepSource as useEditAnchorsDepSourceForTests, type EditAnchorsStateRef,
 } from 'canvas/deps/editAnchors';
@@ -33,3 +34,8 @@ export { rootsTree as rootsTreeForTests } from 'core/adapters/testing/rootsTree'
 export {
   createSnapSession2d as createSnapSession2dForTests, type SnapSession2dOptions,
 } from 'domains/snap/sceneSession2d';
+export {
+  gridSource as gridSnapSourceForTests, sceneOfPaths as sceneOfPathsForTests, sessionDep as snapSessionDepForTests,
+} from 'domains/snap/testing/sessionDep';
+export { hitTestArea as hitTestAreaForTests } from 'canvas/deps/hitTestArea';
+export { useInsertDepSource as useInsertDepSourceForTests } from 'canvas/deps/insert';

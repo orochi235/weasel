@@ -12,7 +12,8 @@ import {
 } from './prefs';
 import { drawToolOptionValues } from './toolOptions';
 import { INITIAL_FILL } from './newShapePaint';
-import { PEN_TOOL_OPTIONS, RECT_TOOL_OPTIONS, setToolOption, toolOptionPaint, toolOptionParams } from '@weasel-js/core';
+import { RECT_TOOL_OPTIONS, setToolOption, toolOptionPaint, toolOptionParams } from '@weasel-js/core';
+import { PEN_TOOL_OPTIONS } from '@weasel-js/path-tools';
 
 // jsdom 26 + Node 26 currently leaves `window.localStorage` returning
 // `undefined` from its native getter. Swap in a plain in-memory Storage so

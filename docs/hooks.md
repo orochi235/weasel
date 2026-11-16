@@ -75,9 +75,10 @@ would — so there is one code path, not two.
 
 ### Kit-standard actions
 
-Registered by `useStandardActions`. "Default binding" is what the action
-answers to with no tool involvement; actions with no default binding fire only
-via a tool's `bindings` or a `trigger` call.
+Registered by `useStandardActions`, and the path-edit, path-command and outline
+actions by `@weasel-js/path-tools`' `pathsPreset` (marked *path-tools* below).
+"Default binding" is what the action answers to with no tool involvement;
+actions with no default binding fire only via a tool's `bindings` or a `trigger` call.
 
 **Keyboard**
 
@@ -97,12 +98,12 @@ via a tool's `bindings` or a `trigger` call.
 | `nudge.up` / `.down` / `.left` / `.right` | Arrow key (`magnitude: 'small'`), Shift+Arrow (`'big'`) |
 | `reorder.forward` | Mod+] (`distance: 'adjacent'`), Mod+Shift+] and Mod+Alt+] (`'extreme'`) |
 | `reorder.backward` | Mod+[ (`'adjacent'`), Mod+Shift+[ and Mod+Alt+[ (`'extreme'`) |
-| `createOutlines` | Mod+Enter |
-| `joinPaths` | Mod+J; in path edit `joinAnchors` answers it |
-| `averageAnchors` | Mod+Alt+Shift+J (`axis: 'both'`) |
-| `exitPathEdit` | Escape; with a tool on other than the mode's `defaultTool` it returns to that tool instead (`returnToModeDefault`), so a second Escape leaves path edit. A mode shortcut's `exit` and `cancel` do the same |
-| `deleteAnchors` | Delete, Backspace (phase `initial`) |
-| `nudgeAnchors.<dir>` | Arrow / Shift+Arrow, as `nudge` |
+| `createOutlines` (*path-tools*) | Mod+Enter |
+| `joinPaths` (*path-tools*) | Mod+J; in path edit `joinAnchors` answers it |
+| `averageAnchors` (*path-tools*) | Mod+Alt+Shift+J (`axis: 'both'`) |
+| `exitPathEdit` (*path-tools*) | Escape; with a tool on other than the mode's `defaultTool` it returns to that tool instead (`returnToModeDefault`), so a second Escape leaves path edit. A mode shortcut's `exit` and `cancel` do the same |
+| `deleteAnchors` (*path-tools*) | Delete, Backspace (phase `initial`) |
+| `nudgeAnchors.<dir>` (*path-tools*) | Arrow / Shift+Arrow, as `nudge` |
 
 Mod+Alt+bracket as well as Mod+Shift+bracket for the extreme reorders: some
 browsers take Mod+Shift+bracket for tab switching before the page sees it. On
@@ -113,16 +114,16 @@ macOS Option+bracket emits a curly quote, so both codepoints are listed.
 | Action id | Default binding |
 |---|---|
 | `move` | drag on `selected-body` |
-| `editAnchors` | drag whose press hit an anchor or control-handle affordance; it ties `move` on specificity, and `move` turns those presses down, as it does a segment's or a path-tools poise grip's (`isPathEditPart`) |
-| `bendSegment` | drag whose press hit the edited path's `segment` affordance, between anchors; `move` turns those down too |
-| `marqueeAnchors` | drag on `empty` |
-| `enterPathEdit` | double-click on a body |
+| `editAnchors` (*path-tools*) | drag whose press hit an anchor or control-handle affordance; it ties `move` on specificity, and `move` turns those presses down, as it does a segment's or a path-tools poise grip's (`isPathEditPart`) |
+| `bendSegment` (*path-tools*) | drag whose press hit the edited path's `segment` affordance, between anchors; `move` turns those down too |
+| `marqueeAnchors` (*path-tools*) | drag on `empty` |
+| `enterPathEdit` (*path-tools*) | double-click on a body |
 | `editTextAt` | double-click on a body: opens the text node under the pointer (the `textEdit` feature) |
 | `menu.context` | the `contextMenu` gesture |
-| `selectAnchor` | click |
-| `editEffectText` | click on a body: in path edit on a path an effect hides, a click on that effect opens its text, off the open path's anchors |
-| `insertPathAnchor` | Alt+click |
-| `cutPathAtAnchor` | Alt+Shift+click |
+| `selectAnchor` (*path-tools*) | click |
+| `editEffectText` (*path-tools*) | click on a body: in path edit on a path an effect hides, a click on that effect opens its text, off the open path's anchors |
+| `insertPathAnchor` (*path-tools*) | Alt+click |
+| `cutPathAtAnchor` (*path-tools*) | Alt+Shift+click |
 | `viewport.pinchZoom` | two-finger `multiTouch` |
 | `ingest` | `drop` or `paste`, any modifiers |
 | `clipboard.pasteEvent` | `paste` carrying `text/plain`, any modifiers — registered only where `ingest` is not |
@@ -133,7 +134,7 @@ A plain drag carries no intent, so no action answers one by default. The tools
 and contributions that want one bind it: `areaSelect` from the select tool (or,
 under every tool, `areaSelectContribution()`), `insert` and
 `insert.adjustRotation` from the shape tools, `lassoSelect` from the lasso tool,
-`slice` from the slice tool, `viewport.dragPan` from the hand tool (or, on any
+`slice` from path-tools' slice tool, `viewport.dragPan` from the hand tool (or, on any
 unclaimed drag, `dragPanContribution()`), and `resize`, `rotate` and `clone`
 from the `resize`, `rotate` and `move` presets' selection contributions.
 

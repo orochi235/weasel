@@ -7,8 +7,8 @@ or removes one.
 
 **Status:** *main* is merged; *landing* is adopted and on its way through its own branch;
 *audition* is a lab on an unmerged branch (see the audition branches in `docs/TODO.md`), not yet
-adopted. **Package:** *core* ships with `@weasel-js/core`'s `paths` preset; *path-tools* is in
-`@weasel-js/path-tools`, registered by its family's preset (see that package's README).
+adopted. **Package:** *core* is in `@weasel-js/core`; *path-tools* is in `@weasel-js/path-tools`, registered
+by its family's preset (path edit and the path commands by `pathsPreset`; see that package's README).
 
 **Tags:** every operation listed here carries the tag `path` and its section's tag, from
 `PATH_GESTURE_TAGS` in `@weasel-js/core`, so `actionsTagged(actions, 'path-click')` gathers a
@@ -21,9 +21,9 @@ Tag: `path-drag`
 
 | Operation | Action id | What the drag does | Default binding | Status | Package |
 |---|---|---|---|---|---|
-| Edit anchors | `editAnchors` | Moves anchors and handles | Drag on an anchor or handle | main | core |
-| Bend segment | `bendSegment` | Reshapes a segment by its middle; on a spiro curve, with `spiroPreset` on, adds a smooth point there and drags it | Drag on a segment | main | core |
-| Marquee-select anchors | `marqueeAnchors` | Selects anchors in a box | Drag on empty canvas | main | core |
+| Edit anchors | `editAnchors` | Moves anchors and handles | Drag on an anchor or handle | main | path-tools |
+| Bend segment | `bendSegment` | Reshapes a segment by its middle; on a spiro curve, with `spiroPreset` on, adds a smooth point there and drags it | Drag on a segment | main | path-tools |
+| Marquee-select anchors | `marqueeAnchors` | Selects anchors in a box | Drag on empty canvas | main | path-tools |
 | Handle locks | `handleLock.angle`, `handleLock.length` | Hold a handle's angle or length during a drag | Toggles; Mod while dragging holds length | main | path-tools |
 | Poise | `poiseHandles` | Scales a segment's two handles together from a grip on its poise line; a length lock holds it still | Drag a poise grip, shown under `path-edit.poise` | main | path-tools |
 | Path constraints | `constrainAnchors`, `unconstrainAnchors` | Keep geometric relations (parallel, level, fixed) during any anchor drag | C / Shift+C in its lab; Alt+Shift and a letter, and a Constraints menu, in WeaselDraw | main | path-tools |
@@ -40,14 +40,14 @@ Tag: `path-click`
 
 | Operation | Action id | What the click does | Default binding | Status | Package |
 |---|---|---|---|---|---|
-| Select anchor | `selectAnchor` | Selects an anchor | Click | main | core |
-| Insert anchor | `insertPathAnchor` | Adds an anchor on the segment | Alt+click | main | core |
-| Cut path at anchor | `cutPathAtAnchor` | Opens the path there | Alt+Shift+click | main | core |
+| Select anchor | `selectAnchor` | Selects an anchor | Click | main | path-tools |
+| Insert anchor | `insertPathAnchor` | Adds an anchor on the segment | Alt+click | main | path-tools |
+| Cut path at anchor | `cutPathAtAnchor` | Opens the path there | Alt+Shift+click | main | path-tools |
 | Equalize handles | `equalizeHandles` | Gives a segment's two handles one proportion of the way to their corner | Double-click a poise grip | main | path-tools |
 | Snip | `snipPath` | Removes the piece between the nearest crossings | Click with the Snip tool (Y) | main | path-tools |
 | Reach | `reachToMeet` | Carries an open end to the next stroke | Click with the Reach tool (Shift+U) | main | path-tools |
 | Convert segment | `convertSegmentAt` | Flips the segment between straight and curved | Shift+double-click in path edit | main | path-tools |
-| Slice | `slice` | Cuts shapes along a drawn line | Slice tool (K) | main | core |
+| Slice | `slice` | Cuts shapes along a drawn line | Slice tool (K) | main | path-tools |
 
 ## Brush strokes over a path
 
@@ -74,21 +74,21 @@ Tag: `path-command`
 
 | Operation | Action id | What it does | Default binding | Status | Package |
 |---|---|---|---|---|---|
-| Join | `joinPaths` | Joins two open ends with a straight segment | Mod+J | main | core |
-| Join anchors | `joinAnchors` | The same, from two selected end anchors | Mod+J in path edit | main | core |
+| Join | `joinPaths` | Joins two open ends with a straight segment | Mod+J | main | path-tools |
+| Join anchors | `joinAnchors` | The same, from two selected end anchors | Mod+J in path edit | main | path-tools |
 | Bridge | `bridgePaths` | Joins two open ends with a curve along each end's heading | Alt+J | main | path-tools |
 | Bridge anchors | `bridgeAnchors` | The same, from two selected end anchors | Alt+J in path edit | main | path-tools |
-| Average anchors | `averageAnchors` | Moves selected anchors to their mean, or lines them up on one axis | Mod+Alt+Shift+J | main | core |
-| Cut at crossings | `snipAtCrossings` | Splits paths where they cross | — | main | core |
-| Simplify | `simplifyPath` | Removes anchors the curve does not need | — | main | core |
-| Offset path | `offsetPath` | Grows or shrinks the outline by a distance | — | main | core |
+| Average anchors | `averageAnchors` | Moves selected anchors to their mean, or lines them up on one axis | Mod+Alt+Shift+J | main | path-tools |
+| Cut at crossings | `snipAtCrossings` | Splits paths where they cross | — | main | path-tools |
+| Simplify | `simplifyPath` | Removes anchors the curve does not need | — | main | path-tools |
+| Offset path | `offsetPath` | Grows or shrinks the outline by a distance | — | main | path-tools |
 | Segment type | `convertSegments` | Turns selected segments straight or curved, or flips them | Shift+C in path edit | main | path-tools |
 | Make start point | `setPathStart` | Makes the selected anchor its subpath's start | — | main | path-tools |
 | Reverse path direction | `reversePath` | Runs the edited subpaths, or the selected paths, the other way | — | main | path-tools |
-| Anchor fields | `setAnchorField` | Moves the selected anchors, or a lone anchor's handle, to a typed number | Typed into `<AnchorFields>` | main | core |
-| Retract handles | `retractHandles` | Collapses selected anchors' handles | — | main | core |
-| Make handles symmetric | `makeHandlesSymmetric` | Equal length, opposite direction | — | main | core |
-| Delete anchors | `deleteAnchors` | Removes selected anchors | Delete | main | core |
+| Anchor fields | `setAnchorField` | Moves the selected anchors, or a lone anchor's handle, to a typed number | Typed into `<AnchorFields>` | main | path-tools |
+| Retract handles | `retractHandles` | Collapses selected anchors' handles | — | main | path-tools |
+| Make handles symmetric | `makeHandlesSymmetric` | Equal length, opposite direction | — | main | path-tools |
+| Delete anchors | `deleteAnchors` | Removes selected anchors | Delete | main | path-tools |
 | Set fillets | `setFillets` | Gives the selected corners a `corner-shape` keyword or `superellipse()` parameter, a radius, or both | — (the fillet controls panel) | main | path-tools |
 | Next fillet shape | `cycleFillet` | Steps the selected corners to the next `corner-shape` keyword | K in its lab only | main | path-tools |
 | Fairing | `fairAnchors` | Rescales a smooth anchor's handles so curvature is continuous | H in its lab only | main | path-tools |

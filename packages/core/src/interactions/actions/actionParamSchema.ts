@@ -10,12 +10,11 @@ import type { GestureLifecycleOptions } from './gestureLifecycle';
 import type { ReparentOnDrop } from './move/session';
 import type { DragPanParams } from './defaults/viewportDragPan';
 import type { Paint, VertexWidth } from '@weasel-js/paint';
-import type { OffsetPathOptions } from '@weasel-js/stroke';
 import type { AlignReference } from './align/align';
 import type { DistributeMode } from './distribute/distribute';
 import type { FlipAxis, FlipPivot } from './flip/helpers';
 import type { EditAnchorsParams } from './edit-anchors/params';
-import type { SetAnchorFieldParams } from './defaults/anchorFields';
+import type { SetAnchorFieldParams } from 'domains/paths/useAnchorFields';
 
 /** `align.*`'s params. */
 export type AlignParams = {
@@ -67,8 +66,6 @@ export type RotateParams = GestureLifecycleOptions & { pivot?: 'each' | 'union' 
 export type FinishPathParams = { viaDoubleClick?: boolean };
 /** `setFill`'s and `setStroke`'s params: a hex color, or a whole paint, which shadows the color. */
 export type PaintParams = { color?: string; paint?: Paint | null };
-/** `offsetPath`'s params: how far to grow each outline (a negative distance shrinks it), and how its corners join. */
-export type OffsetPathParams = { distance?: number; join?: OffsetPathOptions['join']; miterLimit?: number };
 /** `ingest`'s params: what a drop or a paste brings and where it landed. */
 export type IngestParams = { items?: readonly IngestItem[]; world?: WorldPoint };
 
@@ -95,9 +92,6 @@ declare module '@weasel-js/routing' {
     'insert.adjustRotation': Pick<ImmediateParams, 'deltaY'>;
     'polygon.adjustSides': CountStepParams;
     'star.adjustPoints': CountStepParams;
-    'pen.finishOpen': FinishPathParams;
-    'slice.finish': FinishPathParams;
-    slice: { cut?: 'freehand' };
     lassoSelect: { mode?: LassoHitMode; minVertexSpacing?: number };
     move: MoveParams;
     rotate: RotateParams;
@@ -113,15 +107,8 @@ declare module '@weasel-js/routing' {
     'select.collapseDeferred': Pick<ImmediateParams, 'mods'>;
     'group.enter': Pick<ImmediateParams, 'world' | 'viewId'>;
     'group.leave': Pick<ImmediateParams, 'world'>;
-    selectAnchor: { additive?: boolean } & Pick<ImmediateParams, 'world'>;
-    cutPathAtAnchor: Pick<ImmediateParams, 'world'>;
-    insertPathAnchor: Pick<ImmediateParams, 'world'>;
-    enterPathEdit: Pick<ImmediateParams, 'world'>;
     editTextAt: Pick<ImmediateParams, 'world'>;
-    editEffectText: Pick<ImmediateParams, 'world'>;
     'eyedropper.pick': Pick<ImmediateParams, 'press'>;
-    'pen.placeAnchor': Pick<ImmediateParams, 'press' | 'mods'>;
-    'slice.addPoint': Pick<ImmediateParams, 'press'>;
     'present.step': { by?: number; to?: 'first' | 'last' };
     'present.go': { to?: string | number };
     setFill: PaintParams;
@@ -130,8 +117,6 @@ declare module '@weasel-js/routing' {
     setStrokeOpacity: OpacityParams;
     setStrokeWidth: { width?: number; vertexWidths?: readonly VertexWidth[] | null };
     setVertexColor: { index?: number; rgba?: readonly [number, number, number, number] | null };
-    simplifyPath: { tolerance?: number };
-    offsetPath: OffsetPathParams;
     editAnchors: EditAnchorsParams;
     setAnchorField: SetAnchorFieldParams;
   }

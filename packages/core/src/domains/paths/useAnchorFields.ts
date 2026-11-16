@@ -3,10 +3,31 @@
  * a panel showing the selected anchors' numbers and writing typed ones back.
  */
 import { useMemo, useSyncExternalStore } from 'react';
-import type { AnchorField, AnchorFieldValues, NumberEntry } from '@weasel-js/geom';
+import {
+  pathToAnchors, readAnchorFields, type AnchorField, type AnchorFieldValues, type NumberEntry, type PolygonPath,
+} from '@weasel-js/geom';
+import type { ActionDeps } from '@weasel-js/routing';
 import { useActionsRegistry, useOptionalDepRegistry } from '@weasel-js/routing/react';
-import { anchorFieldsOf } from 'interactions/actions/defaults/anchorFields';
 import type {} from '../../interactions/actions/actionParamSchema';
+
+/** What `setAnchorField` takes: the field, and either the value every
+ *  selected anchor gets (`to`) or the amount added to each one's own (`by`).
+ *  `@weasel-js/path-tools` registers the action. */
+export interface SetAnchorFieldParams {
+  field: AnchorField;
+  to?: number;
+  by?: number;
+}
+
+/** What the anchor fields show for the path being edited in `deps`: `{}`
+ *  outside path edit or with no anchor selected. */
+export function anchorFieldsOf(deps: Pick<ActionDeps, 'editAnchors'> | undefined): AnchorFieldValues {
+  const dep = deps?.editAnchors;
+  if (!dep?.editingId || dep.selectedAnchors.size === 0) return {};
+  const path = dep.getEditablePath(dep.editingId) as PolygonPath | null | undefined;
+  if (!path || path.kind !== 'polygon') return {};
+  return readAnchorFields(pathToAnchors(path), dep.selectedAnchors);
+}
 
 /** What {@link useAnchorFields} answers. */
 export interface AnchorFieldsApi {

@@ -4,8 +4,9 @@ import { renderWithKeys as render } from '@weasel-js/react/testing/giveKeys';
 import { polygonFromPoints } from '@weasel-js/geom';
 import type { ActionTunings } from '@weasel-js/routing';
 import {
-  asNodeId, type CanvasExtensionApi, type ChromeState, createScene, type RenderLayer, SceneCanvas, pathsPreset,
+  asNodeId, type CanvasExtensionApi, type ChromeState, createScene, type RenderLayer, SceneCanvas,
 } from '@weasel-js/core';
+import { pathsPreset } from '../pathsPreset';
 import { useClothWarpTool, type UseClothWarpToolOptions } from './useWarpTool';
 
 type P = { x: number; y: number; width: number; height: number };

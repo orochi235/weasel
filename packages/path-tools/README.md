@@ -11,15 +11,18 @@ scene-graph engine for React. See the
 npm install @weasel-js/path-tools
 ```
 
-Core keeps basic path editing: anchors and handles, bending a segment, Join,
-Average, Cut at crossings, Simplify, and Offset. This package adds the rest,
-on core's public surface:
+Core keeps the path geometry, the path-edit state and its overlay. This package
+holds the editing itself, on core's public surface: path edit and its anchors
+tool, anchors and handles, bending a segment, Join, Average, Cut at crossings,
+Simplify, Offset, Create Outlines and Outline Stroke, the pen, the pencil and
+the knife, and the tools below.
 
 ```tsx
 import { drawPreset, SceneCanvas } from '@weasel-js/core';
-import { pathTools } from '@weasel-js/path-tools';
+import { pathTools, usePathToolsTools } from '@weasel-js/path-tools';
 
-<SceneCanvas scene={scene} features={[drawPreset, pathTools]} />;
+const tools = usePathToolsTools();
+<SceneCanvas scene={scene} features={[drawPreset, pathTools]} tools={tools} />;
 ```
 
 `pathTools` turns every family on but Drape and handle snapping, which
@@ -28,6 +31,7 @@ and an app that imports only some never loads the others:
 
 | Preset | What it adds |
 |---|---|
+| `pathsPreset` | Path edit (`pathEditPreset`: double-click a path to open it, the `anchors` tool, anchor and handle editing, bending a segment), its keys (`anchorKeysPreset`), the path commands (`pathCommandsPreset`: Simplify, Offset, Cut at crossings, Join), and Create Outlines and Outline Stroke (`outlinesPreset`). Every other preset here assumes it |
 | `sandPreset` | `sand`, which `useSandTool` binds: Sand, a path-edit tool that refits the curve it passes over |
 | `handleLocksPreset` | The `handleLock.angle` and `handleLock.length` toggles |
 | `createDrapePreset` | Drape: dragging anchors also moves the anchors near them along the path, by a falloff over a radius in screen pixels that the wheel scrubs mid-drag; the reach is drawn as a band. Not in `pathTools` |
@@ -49,9 +53,12 @@ and an app that imports only some never loads the others:
 | `pathEffectsPreset` | Tween, Bend along, Repeat along, Text along, Roughen, Zigzag, and Pucker & Bloat, and the actions that edit, release and expand them |
 | `warpPreset` | Expand and configure a held warp; `usePlaneWarpTool`, `useClothWarpTool`, and `usePinWarpTool` bring their own drags |
 
-`PATH_EDIT_TOOLS` names the path-edit tools, Sand and Tug, and `usePathEditTools` builds them,
-beside `RESHAPE_TOOLS` and `usePathToolsTools`. Each carries `edits-anchors`, so only path edit allows it, and its
-binding outranks anchor editing's; path edit starts on core's `anchors` tool.
+`PATH_EDIT_TOOLS` names the path-edit tools, the anchors tool, Sand and Tug, and `usePathEditTools` builds them,
+beside `DRAW_TOOLS` (the pen and pencil), `SLICE_TOOLS` (the knife), `RESHAPE_TOOLS` and `usePathToolsTools`.
+Each path-edit tool carries `edits-anchors`, so only path edit allows it; Sand's and Tug's bindings outrank anchor
+editing's, and path edit starts on the `anchors` tool, which binds nothing. The pen's, pencil's and knife's dot sizes
+and reaches are kit settings (`targets.pen*`, `targets.slice*`, `targets.anchorClickPx`), whose prefs schema is
+`pathToolsKitSettingsSchema`.
 
 `createPathEditHost()` is a `<SceneCanvas pathEdit>` host that holds the open path and its selected anchors itself
 and says when either changes, so the one object is also a `redrawOn` source and what a panel over the open path

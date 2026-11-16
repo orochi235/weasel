@@ -1,4 +1,5 @@
 import { SceneCanvas, asNodeId, solid, stickyData, useScene, useSelection, whiteboardPreset, WeaselProvider } from '@weasel-js/core';
+import { usePencilTool } from '@weasel-js/path-tools';
 import { ToolPalette } from '@weasel-js/ui/components/ToolPalette';
 import { DemoStage } from './DemoStage';
 
@@ -19,6 +20,7 @@ const INITIAL = [
 ];
 
 export function WhiteboardDemo() {
+  const pencil = usePencilTool();
   const scene = useScene({ systemLayers: [{ id: 'default' }], initial: INITIAL });
   const selection = useSelection({ scene, mode: 'multi' });
   return (
@@ -32,6 +34,7 @@ export function WhiteboardDemo() {
             scene={scene}
             selection={selection}
             features={[whiteboardPreset]}
+            tools={{ pencil }}
           />
         </DemoStage>
       </div>

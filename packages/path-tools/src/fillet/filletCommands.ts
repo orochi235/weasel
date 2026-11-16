@@ -14,7 +14,8 @@ import {
   type PolygonPath,
 } from '@weasel-js/geom';
 import { pref } from '@weasel-js/prefs';
-import { ANCHORS_GROUP, depOf, pathOperationTags, requiresAnchorSelection, type EditAnchorsDep } from '@weasel-js/core';
+import { ANCHORS_GROUP, pathOperationTags, type EditAnchorsDep } from '@weasel-js/core';
+import { depOf, requiresAnchorSelection } from '../pathEdit/anchorEditing';
 import { DEFAULT_FILLET_SHAPE, editedPath } from './editFillet';
 import { icon } from '../icons.gen';
 import type { SetFilletsParams } from '../actionParamSchema';

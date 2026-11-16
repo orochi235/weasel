@@ -869,7 +869,7 @@ they fit.
   `nudge.*`, `reorder.*`, `selectAll`, `escape`, and the rest. Presets carry
   the descriptors, and `<SceneCanvas>` or `useStandardActions` registers them.
 - **Tools** (depend on gestures + actions): `useSelectTool`, `useRectTool` and
-  the other shape tools, `useHandTool`, `usePenTool`, the viewport tools.
+  the other shape tools, `useHandTool`, the viewport tools; `@weasel-js/path-tools`' `usePenTool`.
 - **Top-level** (depends on most things): `<Canvas>`, `<SceneCanvas>`.
 
 This order is descriptive, not enforced; TypeScript module imports are the actual

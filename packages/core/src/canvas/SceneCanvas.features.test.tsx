@@ -276,7 +276,7 @@ describe('<SceneCanvas features>', () => {
   it("'draw' registers every kit action a bare canvas leaves out", () => {
     const { seen, tools } = mount({ features: [drawPreset] });
     expect(tools().active).toBe('select');
-    expect(Object.keys(tools().registry).sort()).toEqual(['anchors', 'hand', 'lasso', 'select']);
+    expect(Object.keys(tools().registry).sort()).toEqual(['hand', 'lasso', 'select']);
     const missing = KIT_STANDARD_ACTION_IDS.filter((i) => !seen.actionIds.includes(i));
     // The actions that belong to insert and text tools stay out, and so does
     // the paste `edit` binds, because `ingest` answers the same event.
@@ -393,10 +393,8 @@ describe('the insert dep’s paint', () => {
 
 describe('<SceneCanvas pathEdit>', () => {
   it('leaves which path is being edited to the host', () => {
-    let actions!: { trigger(id: string): void };
     let deps!: { get(key: string): unknown };
     function Grab() {
-      actions = useActionsRegistry() as typeof actions;
       deps = useDepRegistry() as typeof deps;
       return null;
     }
@@ -415,7 +413,7 @@ describe('<SceneCanvas pathEdit>', () => {
       </SceneCanvas>,
     );
 
-    act(() => actions.trigger('enterPathEdit'));
+    act(() => editAnchors().setEditingId(id));
     expect(host.setEditingId).toHaveBeenLastCalledWith(id);
     expect(editAnchors().editingId).toBe(id);
 

@@ -8,7 +8,8 @@ import { describe, it, expect } from 'vitest';
 import fc from 'fast-check';
 import { pathToAnchors, PATH_Z, type PolygonPath } from '@weasel-js/geom';
 import type { Action, ImmediateInvoker } from '@weasel-js/routing';
-import { deleteAnchorsAction, nudgeAnchorsLeftAction, nudgeAnchorsUpAction } from '@weasel-js/core';
+import { deleteAnchorsAction } from './pathEdit/anchorEditing';
+import { nudgeAnchorsLeftAction, nudgeAnchorsUpAction } from './pathEdit/anchorNudge';
 import {
   ANCHOR_SELECTION_GROUP, addExtremeAnchorsAction, bridgeAnchorsAction, FILLET_SHAPE_OPTIONS, constrainAnchorsAction, convertSegmentsAction, cycleFilletAction,
   growAnchorSelectionAction, handleLockAngleAction, handleLockLengthAction, fairAnchorsAction,

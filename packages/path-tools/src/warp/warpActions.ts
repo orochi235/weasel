@@ -2,7 +2,7 @@
  * The warp actions. A warp tool binds the per-kind ones (`<kind>.drag`,
  * `pin.addPin`, `pin.removePin`) and owns them; `expandWarp` and
  * `configureWarp` work on whatever warp the selection holds and ship with
- * the `paths` preset.
+ * `warpPreset`.
  */
 import {
   type Action, type ActionDeps, ActionDisabledReason, defineAction, type ImmediateInvoker, type ImmediateParams, type OngoingHandle,

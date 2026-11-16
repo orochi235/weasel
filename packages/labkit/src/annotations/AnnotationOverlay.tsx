@@ -1,4 +1,5 @@
 import {
+  type BuiltinToolId,
   editPreset,
   type InsertNodeFactory,
   movePreset,
@@ -12,6 +13,7 @@ import {
   type View,
   WeaselProvider,
 } from '@weasel-js/core';
+import { usePencilTool } from '@weasel-js/path-tools';
 import type { ToolOptionValues } from '@weasel-js/routing';
 import {
   type CSSProperties,
@@ -48,6 +50,9 @@ import type {
 import { useLabToolOptionValues } from './useLabToolOptions';
 import { fitView, toWeaselView } from './view';
 import { useWheelHandOff } from './wheelScroll';
+
+/** The annotation tools' weasel tools `<SceneCanvas>` builds in; the pencil is mounted from path-tools. */
+const BUILTIN_TOOLS = ANNOTATION_WEASEL_TOOLS.filter((t): t is BuiltinToolId => t !== 'pencil');
 
 /** Props for `<AnnotationOverlay>`. */
 export interface AnnotationOverlayProps {
@@ -139,6 +144,23 @@ function insertFactories(
 }
 
 /** The whole target's camera, shifted so the canvas starts at the part that shows. */
+/** What the pane's canvas mounts to make marks: the weasel tools the rail's tools drive, and an insert
+ *  factory for each that reads the tool the pane holds now. */
+function useMarkTools(target: AnnotationTarget, activeToolId: string | null, config: unknown) {
+  // Read in the insert factory, which is built once and must see the tool the
+  // pane is holding now — `arrow` and `stroke` are indistinguishable from
+  // `line` and `pencil` at the weasel end.
+  const toolRef = useLatest(activeToolId);
+  const configRef = useLatest(config);
+  const optionValues = useLabToolOptionValues();
+  const pencil = usePencilTool();
+  return {
+    defaultTools: BUILTIN_TOOLS,
+    tools: { pencil },
+    insertNodeFactories: insertFactories(target, toolRef, configRef, optionValues),
+  };
+}
+
 function cameraFor(target: AnnotationTarget, { rect, visible }: Placement): View {
   const whole = target.view ?? fitView(target.content, { w: rect.w, h: rect.h }, target.shown);
   return toWeaselView({
@@ -172,12 +194,7 @@ export function AnnotationOverlay({
   const sceneCanvas = useRef<SceneCanvasApi | null>(null);
   useEffect(() => registerNodeShape(POINT_MARK_SHAPE, { priority: 'high' }), []);
 
-  // Read in the insert factory, which is built once and must see the tool the
-  // pane is holding now — `arrow` and `stroke` are indistinguishable from
-  // `line` and `pencil` at the weasel end.
-  const toolRef = useLatest(activeToolId);
-  const configRef = useLatest(config);
-  const optionValues = useLabToolOptionValues();
+  const markTools = useMarkTools(target, activeToolId, config);
 
   const id = target.id;
   // The surface's tile namespace is the whole lab's, and every trial of an
@@ -262,8 +279,6 @@ export function AnnotationOverlay({
     meaning,
   });
 
-  const factories = insertFactories(target, toolRef, configRef, optionValues);
-
   // A measured rect has nowhere to live but the element's own style. Set as
   // custom properties, which the stylesheet reads — the sanctioned use.
   const box = {
@@ -302,8 +317,7 @@ export function AnnotationOverlay({
             view={view}
             paintInto={{ canvas, x: visible.x, y: visible.y }}
             inputElement={input}
-            defaultTools={ANNOTATION_WEASEL_TOOLS}
-            insertNodeFactories={factories}
+            {...markTools}
             layers={{ scene: { drawOne } }}
           />
         </WeaselProvider>

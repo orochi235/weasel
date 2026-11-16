@@ -6,7 +6,8 @@
  */
 
 import {
-  type Action, type ActionDeps, ActionDisabledReason, type ActionParamsOf, type ActionVariantOf, defineAction, type ImmediateInvoker,
+  type Action, type ActionDeps, ActionDisabledReason, type ActionParamsOf, type ActionVariantOf, defineAction,
+  type ImmediateInvoker,
 } from '@weasel-js/routing';
 import { deepEqual } from '@weasel-js/registry';
 import {
@@ -18,7 +19,9 @@ import {
   type PathConstraintKind,
   type PolygonPath,
 } from '@weasel-js/geom';
-import { depOf, deleteSelectedMark, type EditAnchorsDep, pathOperationTags } from '@weasel-js/core';
+import { type EditAnchorsDep, pathOperationTags } from '@weasel-js/core';
+import { depOf } from '../pathEdit/anchorEditing';
+import { deleteSelectedMark } from '../pathEdit/pathEditMarks';
 import { constraintsOf } from './pathConstraints';
 import { editedPath, selectedConstraintOf, setConstraints } from './constraintsExtension';
 import { icon } from '../icons.gen';

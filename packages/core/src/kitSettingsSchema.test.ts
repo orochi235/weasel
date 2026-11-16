@@ -8,11 +8,6 @@ import { ANCHOR_HIT_BASE_PX, HANDLE_BASE_PX, ROTATION_HANDLE_BASE_PX } from 'cor
 import { DEFAULT_VIEW_ANIMATION_MS } from 'core/viewport/useViewAnimation';
 import { DEFAULT_PICK_TOLERANCE_PX } from 'canvas/SceneCanvas/useSceneSelectTool';
 import { SEGMENT_HIT_PX } from 'interactions/actions/defaults/segmentUnder';
-import { ANCHOR_CLICK_PX } from 'interactions/actions/defaults/anchorEditing';
-import {
-  ANCHOR_RADIUS_PX, CLOSE_HINT_RADIUS_PX, HANDLE_DOT_RADIUS_PX, PEN_CLOSE_HIT_PX,
-} from 'domains/paths/penPreviewLayer';
-import { SLICE_CLOSE_HIT_PX, VERTEX_RADIUS_PX } from 'tools/builtin/slice/useSliceTool';
 import { DEFAULT_SNAP_PX } from 'domains/snap/session2d';
 import { coreKitSettingsSchema } from './kitSettingsSchema';
 
@@ -30,15 +25,8 @@ const CONSTANTS: Pick<KitSettings, 'gestures' | 'view'> & { targets: Record<stri
     anchorHitPx: ANCHOR_HIT_BASE_PX,
     rotationDistancePx: ROTATION_HANDLE_BASE_PX,
     segmentHitPx: SEGMENT_HIT_PX,
-    anchorClickPx: ANCHOR_CLICK_PX,
     pickTolerancePx: DEFAULT_PICK_TOLERANCE_PX,
     snapPx: DEFAULT_SNAP_PX,
-    penAnchorRadiusPx: ANCHOR_RADIUS_PX,
-    penHandleDotRadiusPx: HANDLE_DOT_RADIUS_PX,
-    penCloseHintRadiusPx: CLOSE_HINT_RADIUS_PX,
-    penCloseHitPx: PEN_CLOSE_HIT_PX,
-    sliceVertexRadiusPx: VERTEX_RADIUS_PX,
-    sliceCloseHitPx: SLICE_CLOSE_HIT_PX,
   },
   view: { animationMs: DEFAULT_VIEW_ANIMATION_MS },
 };

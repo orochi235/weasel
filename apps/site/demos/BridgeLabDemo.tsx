@@ -1,5 +1,5 @@
 import { ANCHORS_GROUP, PATH_GROUP, type ActionTunings, asNodeId, createScene, PathBuilder, type PolygonPath, type RectPose, solid, drawPreset, pathNode } from '@weasel-js/core';
-import { bridgePreset, DEFAULT_BRIDGE_TENSION } from '@weasel-js/path-tools';
+import { bridgePreset, DEFAULT_BRIDGE_TENSION, pathsPreset, usePenTool } from '@weasel-js/path-tools';
 import {
   type ConfigOf,
   defineInstrument,
@@ -17,7 +17,7 @@ import '@weasel-js/labkit/styles.css';
 import 'windease/styles.css';
 import { icon } from '../icons.gen';
 
-const FEATURES = [drawPreset, bridgePreset] as const;
+const FEATURES = [drawPreset, pathsPreset, bridgePreset] as const;
 
 const config = f.schema({
   tension: f.number(DEFAULT_BRIDGE_TENSION).range(0, 1.5).step(0.05).label('Tension'),
@@ -43,6 +43,7 @@ const createLabScene = () =>
   });
 
 function BridgeTrial({ ctx }: { ctx: RenderContext<State, Config> }) {
+  const pen = usePenTool();
   const scene = useTrialScene(ctx, createLabScene);
   const { tension } = ctx.config;
   const tune = useMemo<ActionTunings>(() => ({
@@ -55,7 +56,7 @@ function BridgeTrial({ ctx }: { ctx: RenderContext<State, Config> }) {
     <PathLabStage bar={<><ActionBar group={PATH_GROUP} /><ActionBar group={ANCHORS_GROUP} /></>}>
       <TrialSceneCanvas
         features={FEATURES}
-        defaultTools={['pen']}
+        tools={{ pen }}
         scene={scene}
         trial={ctx.trial}
         tune={tune}

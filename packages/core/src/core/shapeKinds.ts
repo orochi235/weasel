@@ -12,7 +12,8 @@ import type { CoreIconName } from '../icons.gen';
 export interface ShapeKindDescriptor {
   /** Mounted as a built-in shape tool by `useBuiltinShapeTools`, and so a
    *  member of `BuiltinShapeToolId` / `KIT_SHAPE_KINDS`. `image` is false:
-   *  `useImageTool` needs a `src` and can't be auto-mounted. */
+   *  `useImageTool` needs a `src` and can't be auto-mounted. So are `pen` and
+   *  `pencil`, whose tools `@weasel-js/path-tools` ships. */
   readonly tool: boolean;
   /** `insertAction` emits an `insertPreview` overlay for this kind, and the
    *  dispatcher overlay layer knows how to draw it. Kinds without one still
@@ -20,12 +21,13 @@ export interface ShapeKindDescriptor {
   readonly insertPreview: boolean;
   /** The tool family a kind with a tool belongs to: which built-in tool set
    *  names it, and so which palette group it sits in. */
-  readonly family?: 'shape' | 'draw' | 'select' | 'type';
+  readonly family?: 'shape' | 'select' | 'type';
   /** A node of this kind is a text node: an insert drops into its caret, and
    *  its properties carry the text groups. Absent, it is not. */
   readonly text?: boolean;
   /** The core glyph for a kind with no auto-mounted tool, whose tool's
-   *  `presentation.icon` therefore can't be read off a mounted canvas. A kind
+   *  `presentation.icon` therefore can't be read off a mounted canvas: `image`, and the pen and
+   *  pencil, whose tools are `@weasel-js/path-tools`'. A kind
    *  with `tool: true` takes its icon from its tool. */
   readonly icon?: CoreIconName;
 }
@@ -41,8 +43,8 @@ export const SHAPE_KINDS = {
   line: { tool: true, insertPreview: true, family: 'shape' },
   polygon: { tool: true, insertPreview: true, family: 'shape' },
   star: { tool: true, insertPreview: true, family: 'shape' },
-  pen: { tool: true, insertPreview: false, family: 'draw' },
-  pencil: { tool: true, insertPreview: true, family: 'draw' },
+  pen: { tool: false, insertPreview: false, icon: 'pen' },
+  pencil: { tool: false, insertPreview: true, icon: 'pencil' },
   lasso: { tool: true, insertPreview: false, family: 'select' },
   text: { tool: true, insertPreview: true, text: true, family: 'type' },
   sticky: { tool: true, insertPreview: true, text: true, family: 'type' },

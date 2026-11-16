@@ -60,7 +60,7 @@ describe('resolveFeatures', () => {
   });
 
   it('turns on, under draw, every core preset but the tools that make things and the shorthands beside it', () => {
-    const left = ['tools:shape', 'tools:draw', 'tools:type', 'tools:page', 'pick', 'transform', 'whiteboard'];
+    const left = ['tools:shape', 'tools:type', 'pick', 'transform', 'whiteboard'];
     expect(ids(['draw']).sort()).toEqual(FEATURE_NAMES.filter((f) => !left.includes(f)).sort());
   });
 
@@ -117,9 +117,9 @@ describe('resolveFeatures', () => {
   });
 
   it('places a preset refining a bundle ahead of everything that bundle includes', () => {
-    const widgets: FeaturePreset = { id: 'widgets', refines: ['paths'] };
-    const order = ids(['paths', widgets]);
-    for (const inner of ['anchorKeys', 'pathfinder', 'pathEdit', 'paths']) {
+    const widgets: FeaturePreset = { id: 'widgets', refines: ['edit'] };
+    const order = ids(['edit', widgets]);
+    for (const inner of ['nudge', 'delete', 'escape', 'edit']) {
       expect(order.indexOf('widgets'), inner).toBeLessThan(order.indexOf(inner));
     }
   });
@@ -185,7 +185,7 @@ describe('FEATURE_PRESETS', () => {
     for (const [id, row] of leaves) {
       expect([...presetBuiltinTools(resolve([id]))], id).toEqual(presetToolIds(row));
     }
-    expect([...presetBuiltinTools(all)].sort()).toEqual(['anchors', 'hand', 'lasso', 'select']);
+    expect([...presetBuiltinTools(all)].sort()).toEqual(['hand', 'lasso', 'select']);
   });
 
   it("installs each preset's ambient entry alone, and handles ahead of the body when together", () => {

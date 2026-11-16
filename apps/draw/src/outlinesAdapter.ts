@@ -1,11 +1,5 @@
-import {
-  type CreateOutlinesAdapter,
-  defaultCommitAdapter,
-  pathNode,
-  type SelectionApi,
-  UNION_OF_CHILDREN,
-  unionOfChildren,
-} from '@weasel-js/core';
+import { defaultCommitAdapter, pathNode, type SelectionApi, UNION_OF_CHILDREN, unionOfChildren } from '@weasel-js/core';
+import { type CreateOutlinesAdapter } from '@weasel-js/path-tools';
 import { pathPaintAt, textSourceOf, worldPathOf } from './booleansAdapter';
 import { carriedData, type DrawScene } from './drawDocument';
 

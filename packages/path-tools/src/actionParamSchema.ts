@@ -4,8 +4,10 @@
  */
 import type { CornerShape, PathConstraintKind, SegmentType, SpiroKind } from '@weasel-js/geom';
 import type { AffordanceHit, ImmediateParams } from '@weasel-js/routing';
+import type { OffsetPathOptions } from '@weasel-js/stroke';
 import type {
   BendAlongEffect, TweenEffect, PathEffect, PuckerBloatEffect, RepeatAlongEffect, RoughenEffect, TextAlongEffect, ZigzagEffect,
+  FinishPathParams,
 } from '@weasel-js/core';
 import type { ConstrainAnchorsParams } from './constraints/anchorConstraints';
 import type { TugPathParams } from './tug/tugPath';
@@ -32,8 +34,23 @@ export type EditPathEffectParams = TweenParams & PathEffectParams<BendAlongEffec
   & PathEffectParams<TextAlongEffect> & PathEffectParams<RoughenEffect> & PathEffectParams<ZigzagEffect>
   & PathEffectParams<PuckerBloatEffect> & { ids?: readonly string[]; kind?: PathEffect['kind'] };
 
+/** `offsetPath`'s params: how far to grow each outline (a negative distance shrinks it), and how its corners join. */
+export type OffsetPathParams = { distance?: number; join?: OffsetPathOptions['join']; miterLimit?: number };
+
 declare module '@weasel-js/routing' {
   interface ActionParamSchema {
+    'pen.finishOpen': FinishPathParams;
+    'pen.placeAnchor': Pick<ImmediateParams, 'press' | 'mods'>;
+    'slice.finish': FinishPathParams;
+    'slice.addPoint': Pick<ImmediateParams, 'press'>;
+    slice: { cut?: 'freehand' };
+    selectAnchor: { additive?: boolean } & Pick<ImmediateParams, 'world'>;
+    cutPathAtAnchor: Pick<ImmediateParams, 'world'>;
+    insertPathAnchor: Pick<ImmediateParams, 'world'>;
+    enterPathEdit: Pick<ImmediateParams, 'world'>;
+    editEffectText: Pick<ImmediateParams, 'world'>;
+    simplifyPath: { tolerance?: number };
+    offsetPath: OffsetPathParams;
     tween: TweenParams;
     bendAlong: PathEffectParams<BendAlongEffect>;
     repeatAlong: PathEffectParams<RepeatAlongEffect>;

@@ -1,11 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import { PathBuilder, boundsOfPath, pathInWorld, type PolygonPath } from '@weasel-js/geom';
-import type { ImmediateInvoker, InvocationCtx } from '@weasel-js/routing';
 import type { Op } from 'core/ops/types';
 import { createScene } from 'core/scene/scene';
-import type { NodeId, RectPose } from 'core/scene/types';
+import type { RectPose } from 'core/scene/types';
 import { defaultCommitAdapter } from 'interactions/actions/defaultCommitAdapter';
-import { snipAtCrossingsAction } from './cutJoin';
 import { pathCopy, pathNodesOf, reshapeOps } from './pathNodes';
 import type { AnyScene } from 'core/scene/anyScene';
 
@@ -60,18 +58,5 @@ describe('path nodes inside a frame', () => {
     expect(node.parent).toBe(group);
     const shown = pathInWorld((node.data as { path: PolygonPath }).path, { ...(node.pose as RectPose), x: (node.pose as RectPose).x + 90 });
     expect(boundsOfPath(shown)).toMatchObject({ x: 100, y: 10, height: 10 });
-  });
-
-  it('cuts across a framed group at the crossing', () => {
-    const { scene, root, group, inner } = crossing();
-    const deps = { scene, selection: { get: () => [root, inner], set: () => {} }, applyOps: apply(scene) } as unknown as InvocationCtx['deps'];
-    (snipAtCrossingsAction.invoker as ImmediateInvoker).run(deps!, undefined as never);
-    const leaves = [...scene.renderOrder()].filter((id) => scene.get(id)!.kind === 'mark');
-    const world = pathNodesOf(scene, leaves).map((n) => {
-      const b = boundsOfPath(n.path);
-      return [b.x, b.y, b.x + b.width, b.y + b.height];
-    });
-    expect(world).toEqual([[50, 50, 100, 50], [100, 50, 150, 50], [100, 0, 100, 50], [100, 50, 100, 100]]);
-    expect(leaves.slice(2).every((id) => scene.get(id as NodeId)!.parent === group)).toBe(true);
   });
 });

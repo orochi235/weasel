@@ -1,5 +1,5 @@
 import { type ActionTunings, asNodeId, boundsOfPath, createScene, type PathConstraint, type PathConstraintKind, type PolygonPath, polygonFromPoints, type RectPose, solid, worldEditToStorage, drawPreset } from '@weasel-js/core';
-import { CONSTRAINT_KIND_LABELS, constraintConflictsOf, constraintsOf, constraintsPreset } from '@weasel-js/path-tools';
+import { CONSTRAINT_KIND_LABELS, constraintConflictsOf, constraintsOf, constraintsPreset, pathsPreset } from '@weasel-js/path-tools';
 import {
   type ConfigOf,
   defineInstrument,
@@ -16,7 +16,7 @@ import 'windease/styles.css';
 import s from './PathConstraintsLabDemo.module.css';
 import { icon } from '../icons.gen';
 
-const FEATURES = [drawPreset, constraintsPreset] as const;
+const FEATURES = [drawPreset, pathsPreset, constraintsPreset] as const;
 
 const config = f.schema({
   kind: f.enum<PathConstraintKind>('perpendicular', (Object.entries(CONSTRAINT_KIND_LABELS) as [PathConstraintKind, string][]).map(([value, label]) => ({ value, label })))

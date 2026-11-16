@@ -24,9 +24,7 @@ export {
   type SelectionTransformOptions,
   type SelectionRotateOptions,
 } from './select';
-export {
-  createGroupEntryContribution, useGroupEntryContribution, GROUP_ENTRY_ID,
-} from './select/groupEntry';
+export { createGroupEntryContribution, useGroupEntryContribution, GROUP_ENTRY_ID } from './select/groupEntry';
 export type { EnterGroupOptions, LeaveGroupOptions } from '../../interactions/actions/defaults/enterGroup';
 export { pressTarget, type PressTargetTree } from './pressTarget';
 // `useResizeTool` and the legacy `useResize` hook are deleted. Resize is
@@ -34,7 +32,6 @@ export { pressTarget, type PressTargetTree } from './pressTarget';
 // point snap, group expansion); pose geometry comes from `poseDescriptor`.
 export { pickTopMostHit, type PickTopMostHitAdapter } from './pickTopMostHit';
 export { useHandTool, dragPanContribution, DRAG_PAN_ID, middleDragPanContribution, MIDDLE_DRAG_PAN_ID } from './hand';
-export { anchorsTool, ANCHORS_TOOL_ID } from './anchors';
 export { useTextTool, TEXT_TOOL_OPTIONS } from './text';
 export {
   useStickyTool, stickyData, stickyNodeFactory, STICKY_DEFAULTS, STICKY_TOOL_OPTIONS,
@@ -43,21 +40,12 @@ export {
 // useWheelZoomTool, useWheelPanTool, useKeyboardZoomTool are dissolved.
 // Viewport zoom and pan are now handled by the viewport.zoom and viewport.pan
 // action descriptors registered via useStandardActions + useGestureDispatcher.
-export { PEN_TOOL_OPTIONS } from './pen/penOptions';
 export {
-  DEFAULT_SHAPE_PAINT, DEFAULT_STROKE_WIDTH, shapeToolOptions, STYLE_OPTION_KEYS, styleOptionLeaves, toolOptionPaint,
+  DEFAULT_SHAPE_PAINT, DEFAULT_STROKE_WIDTH, insertStyleOf, shapeToolOptions, STYLE_OPTION_KEYS, styleOptionLeaves, toolOptionPaint,
   type InsertStyle, type ShapeToolOptionsSpec, type StyleOptionKey,
 } from './shared/styleOptions';
-export {
-  usePenTool,
-  type UsePenToolOptions,
-  type PenScratch,
-  type PenContinuation,
-  type PenDraftAnchor,
-  type PenSubpath,
-} from './pen';
 export { useRectTool, RECT_TOOL_OPTIONS } from './rect';
-export type { InsertToolOptions } from './shared/insertToolOptions';
+export { insertBindingBehaviors, type InsertToolOptions } from './shared/insertToolOptions';
 export { createPointerFollower, type PointerFollower } from './shared/pointerFollower';
 export { useEllipseTool, ELLIPSE_TOOL_OPTIONS } from './ellipse';
 export { useImageTool, type UseImageToolOptions } from './image';
@@ -69,5 +57,3 @@ export { useLineTool, LINE_TOOL_OPTIONS, type LinePoint } from './line';
 export { useLassoTool, LASSO_TOOL_OPTIONS, type UseLassoToolOptions } from './lasso';
 export { usePolygonTool, POLYGON_TOOL_OPTIONS, type UsePolygonToolOptions } from './polygon';
 export { useStarTool, STAR_TOOL_OPTIONS, type UseStarToolOptions } from './star';
-export { usePencilTool, PENCIL_TOOL_OPTIONS, type PencilPoint } from './pencil';
-export { useSliceTool, type UseSliceToolOptions, type SliceScratch } from './slice';

@@ -1,5 +1,5 @@
 import { type ActionTunings, PathBuilder, drawPreset } from '@weasel-js/core';
-import { ANCHOR_SELECTION_GROUP, anchorSelectionPreset } from '@weasel-js/path-tools';
+import { ANCHOR_SELECTION_GROUP, anchorSelectionPreset, pathsPreset } from '@weasel-js/path-tools';
 import {
   type ConfigOf,
   defineInstrument,
@@ -44,7 +44,7 @@ function flower() {
 }
 
 const FLOWER = flower();
-const features = [drawPreset, anchorSelectionPreset] as const;
+const features = [drawPreset, pathsPreset, anchorSelectionPreset] as const;
 
 function AnchorSelectTrial({ ctx }: { ctx: RenderContext<PathLabState, Config> }) {
   const { scene, selection, pathEdit } = usePathEditTrial(ctx, FLOWER, { fill: '#f2c6de' });

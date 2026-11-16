@@ -1,4 +1,5 @@
 import { createScene, type RectPose, solid, drawPreset } from '@weasel-js/core';
+import { pathsPreset, usePenTool } from '@weasel-js/path-tools';
 import { createGridLayer, gridSnapSource } from '@weasel-js/guides';
 import {
   type ConfigOf,
@@ -40,6 +41,7 @@ const createLabScene = () =>
   });
 
 function SceneTrial({ ctx }: { ctx: RenderContext<State, Config> }) {
+  const pen = usePenTool();
   const scene = useTrialScene(ctx, createLabScene);
   const { snap, spacing } = ctx.config;
 
@@ -58,8 +60,9 @@ function SceneTrial({ ctx }: { ctx: RenderContext<State, Config> }) {
 
   return (
     <TrialSceneCanvas
-      features={[drawPreset]}
-      defaultTools={['rect', 'pen']}
+      features={[drawPreset, pathsPreset]}
+      defaultTools={['rect']}
+      tools={{ pen }}
       scene={scene}
       trial={ctx.trial}
       snap={snapTo}

@@ -143,9 +143,7 @@ export type {
 export type { ProgramSource } from '@weasel-js/renderer';
 export type { ShaderProgram } from '@weasel-js/renderer';
 
-export {
-  registerMarker, getMarker, listMarkers, markerRegistry,
-} from '@weasel-js/stroke';
+export { registerMarker, getMarker, listMarkers, markerRegistry } from '@weasel-js/stroke';
 export type { MarkerEntry, MarkerCtx, MarkerPaint } from '@weasel-js/stroke';
 export { markerInset, markerKeyOf, resolveMarkerSize, strokeInsets } from '@weasel-js/stroke';
 export { markerSites } from '@weasel-js/stroke';
@@ -169,7 +167,7 @@ export {
 } from '../util/paint';
 export type { Palette, PaletteEntry } from '@weasel-js/paint';
 export { pathPaintOf } from '../canvas/nodeShapes/nodePaint';
-export type { PathPaint } from '../canvas/nodeShapes/nodePaint';
+export type { PaintedPath, PathPaint } from '../canvas/nodeShapes/nodePaint';
 export { strokedBounds, type ScreenMap } from '../canvas/nodeShapes/strokedBounds';
 
 // ─── Color helpers (parse / normalize / convert) ────────────────────────────

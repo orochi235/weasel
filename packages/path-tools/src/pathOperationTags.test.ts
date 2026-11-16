@@ -2,7 +2,8 @@ import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import type { Action } from '@weasel-js/routing';
-import { actionsTagged, PATH_GESTURE_TAGS, pathsPreset, sliceAction, type FeaturePreset } from '@weasel-js/core';
+import { actionsTagged, PATH_GESTURE_TAGS, pathfinderPreset, type FeaturePreset } from '@weasel-js/core';
+import { sliceAction } from './slice/slice';
 import { pathTools } from './presets';
 import {
   createAddPinAction, createRemovePinAction, createWarpDragAction, createWarpGrabAction,
@@ -32,10 +33,10 @@ function presetActions(preset: FeaturePreset): Action[] {
 
 const WARPS: WarpKind[] = ['plane', 'cloth', 'pin'];
 
-/** Core's `paths` preset and the slice tool, `pathTools`, and the warp tools'
+/** Core's pathfinder, the slice tool, `pathTools` (which includes `pathsPreset`), and the warp tools'
  *  own actions: everything that can carry a path operation. */
 const ALL: Action[] = [
-  ...presetActions(pathsPreset), sliceAction,
+  ...presetActions(pathfinderPreset), sliceAction,
   ...presetActions(pathTools),
   ...WARPS.flatMap((k) => [createWarpDragAction(k), createWarpGrabAction(k)]),
   createAddPinAction(), createRemovePinAction(),

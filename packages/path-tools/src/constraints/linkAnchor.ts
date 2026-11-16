@@ -21,17 +21,10 @@ import {
   type Point,
 } from '@weasel-js/geom';
 import {
-  annotationLayerIds,
-  commitOps,
-  createInsertOp,
-  editAnchorsAction,
-  pathEditPathOf,
-  pathOperationTags,
-  type EditAnchorsDep,
-  type NodeId,
-  type SceneNode,
-  type AnyScene,
+  annotationLayerIds, commitOps, createInsertOp, pathEditPathOf, pathOperationTags, type EditAnchorsDep, type NodeId,
+  type SceneNode, type AnyScene,
 } from '@weasel-js/core';
+import { editAnchorsAction } from '../pathEdit/editAnchors/editAnchors';
 import { pref, PX_UNIT } from '@weasel-js/prefs';
 import { constraintLinkNode, constraintLinkOf } from './constraintLinks';
 import type {} from '../actionParamSchema';

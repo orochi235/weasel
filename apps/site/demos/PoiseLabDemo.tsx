@@ -1,4 +1,5 @@
-import { editingAnchors, never, movePreset, pathsPreset, pickPreset } from '@weasel-js/core';
+import { editingAnchors, never, movePreset, pickPreset } from '@weasel-js/core';
+import { pathsPreset } from '@weasel-js/path-tools';
 import { poisePreset, createCurvatureCombPreset } from '@weasel-js/path-tools';
 import {
   type ConfigOf,

@@ -5,7 +5,7 @@
  */
 import { describe, it, expect } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
-import { actionBindings, matchSorted, type ScopedBinding } from '@weasel-js/routing';
+import { actionBindings, isBody, matchSorted, type ScopedBinding } from '@weasel-js/routing';
 import type { Action, ActionDeps } from '@weasel-js/routing';
 import { sceneToAdapter } from 'canvas/sceneAdapter';
 import { useScene } from 'core/scene/useScene';
@@ -17,7 +17,6 @@ import { pickWalk } from 'canvas/pickWalk';
 import { AUTO_POSE_DESCRIPTOR } from 'core/geometry/autoPoseDescriptor';
 import { createEnteredGroup } from 'canvas/deps/enteredGroup';
 import { escapeAction } from '../../../interactions/actions/defaults/escape';
-import { enterPathEditAction } from '../../../interactions/actions/defaults/enterPathEdit';
 import { visualBoundsViaDescriptor } from 'core/geometry/poseDescriptor';
 import { createGroupEntryContribution } from './groupEntry';
 import { useSelectTool } from './useSelectTool';
@@ -207,11 +206,12 @@ describe('bindings', () => {
   ];
   const pointer = { x: 0, y: 0, clientX: 0, clientY: 0, altKey: false, ctrlKey: false, metaKey: false, shiftKey: false };
 
-  it('a double-click on a body ranks group.enter above enterPathEdit, both ambient', () => {
+  it('a double-click on a body ranks group.enter above an ambient body double-click such as path-tools\' enterPathEdit', () => {
     const h = harness([]);
-    const paths: ScopedBinding[] = actionBindings(enterPathEditAction).map((binding) => ({
-      binding: { ...binding, actionId: 'enterPathEdit' } as ScopedBinding['binding'], scope: 'ambient' as const, ownerId: null,
-    }));
+    const paths: ScopedBinding[] = [{
+      binding: { spec: { kind: 'doubleClick', target: { kindOf: isBody } }, actionId: 'enterPathEdit' } as ScopedBinding['binding'],
+      scope: 'ambient' as const, ownerId: null,
+    }];
     const event = { kind: 'doubleclick' as const, ...pointer, bodyTarget: 'unselected-body' as const, stage: 'press' as const };
     const ranked = matchSorted(event as never, [...paths, ...scoped(h)], true);
     expect(ranked[0]?.binding.actionId).toBe('group.enter');

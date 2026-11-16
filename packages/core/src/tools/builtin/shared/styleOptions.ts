@@ -11,7 +11,9 @@ import type { ToolOptions } from '@weasel-js/routing';
 import { cycleFill, solid } from '../../../util/paint';
 import { toHex8 } from '../../../util/color';
 
-export { DEFAULT_STROKE_WIDTH, STYLE_OPTION_KEYS, type InsertStyle, type StyleOptionKey } from 'interactions/actions/insert/style';
+export {
+  DEFAULT_STROKE_WIDTH, insertStyleOf, STYLE_OPTION_KEYS, type InsertStyle, type StyleOptionKey,
+} from 'interactions/actions/insert/style';
 
 /** The kit's color for a new shape: the first of its palette. */
 export const DEFAULT_SHAPE_PAINT: Paint = solid(cycleFill(0));

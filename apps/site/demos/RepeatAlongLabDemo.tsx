@@ -10,7 +10,7 @@ import {
   useSelection,
   withPathEffectsRegistry, drawPreset,
 } from '@weasel-js/core';
-import { pathEffectsPreset } from '@weasel-js/path-tools';
+import { pathEffectsPreset, pathsPreset, usePenTool } from '@weasel-js/path-tools';
 import {
   type ConfigOf,
   defineInstrument,
@@ -26,7 +26,7 @@ import 'windease/styles.css';
 import { PathEffectFrame, usePathEffectProbe, usePathEffectSettings } from './pathEffectLab';
 import { icon } from '../icons.gen';
 
-const FEATURES = [drawPreset, pathEffectsPreset] as const;
+const FEATURES = [drawPreset, pathsPreset, pathEffectsPreset] as const;
 
 const config = f.schema({
   count: f.number(9).range(1, 40).step(1).label('Copies'),
@@ -64,6 +64,7 @@ function createLabScene() {
 }
 
 function RepeatTrial({ ctx }: { ctx: RenderContext<State, Config> }) {
+  const pen = usePenTool();
   const scene = useTrialScene(ctx, createLabScene);
   const selection = useSelection({ scene, initial: [TRACK] });
   // A repeat made from the bar or with Alt+Shift+R takes the panel's settings.
@@ -74,7 +75,8 @@ function RepeatTrial({ ctx }: { ctx: RenderContext<State, Config> }) {
     <PathEffectFrame>
       <TrialSceneCanvas
         features={FEATURES}
-        defaultTools={['rect', 'pen']}
+        defaultTools={['rect']}
+        tools={{ pen }}
         scene={scene}
         selection={selection}
         trial={ctx.trial}

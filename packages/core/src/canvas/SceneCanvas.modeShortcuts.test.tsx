@@ -33,9 +33,11 @@ afterEach(() => { cleanup(); vi.restoreAllMocks(); });
 const ID = asNodeId('a');
 /** A soft mode that still lets a drag marquee, so a gesture can be in flight when Escape lands. */
 const WORKING: ModeDefinition = { ...NORMAL, id: 'working', label: 'Working', exit: { shortcut: 'Escape' } };
+/** A mode that starts on a tool of its own, as path edit starts on path-tools' anchors tool. */
+const TOOLED: ModeDefinition = { ...NORMAL, id: 'tooled', label: 'Tooled', defaultTool: 'select', exit: { shortcut: 'Escape' } };
 
 function setup(initial: string, handlers: ModeShortcutHandlers, { wireMode = true } = {}) {
-  const registry: ModeRegistry = createModeRegistry({ modes: [...DEFAULT_MODES, WORKING], initial });
+  const registry: ModeRegistry = createModeRegistry({ modes: [...DEFAULT_MODES, WORKING, TOOLED], initial });
   const scene = createScene<D, L, P>({ systemLayers: [{ id: 'main' }] });
   scene.add({ id: ID, kind: 'mark', data: { kind: 'rect' }, layer: 'main', pose: { x: 0, y: 0, width: 10, height: 10 } });
   scene.setSelection([ID]);
@@ -74,12 +76,12 @@ describe('mode shortcuts', () => {
 
   it("return to the mode's default tool on Escape first, and leave on the next", () => {
     const exit = vi.fn();
-    const t = setup('path-edit', { exit });
-    expect(t.tools.current?.active).toBe('anchors');
+    const t = setup('tooled', { exit });
+    expect(t.tools.current?.active).toBe('select');
     act(() => t.tools.current!.setActive('hand'));
     t.key('Escape');
     expect(exit).not.toHaveBeenCalled();
-    expect(t.tools.current?.active).toBe('anchors');
+    expect(t.tools.current?.active).toBe('select');
     t.key('Escape');
     expect(exit).toHaveBeenCalledOnce();
   });

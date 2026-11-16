@@ -1,6 +1,6 @@
 /**
  * `<SceneCanvas>` publishes a working `slice` dep over its own scene, so the
- * kit slice tool cuts with nothing else wired.
+ * slice tool (`@weasel-js/path-tools`) cuts with nothing else wired.
  */
 import { describe, it, expect, vi, afterEach } from 'vitest';
 import { act, cleanup } from '@testing-library/react';
@@ -11,7 +11,6 @@ import { SceneCanvas } from 'canvas/SceneCanvas';
 import { createScene } from 'core/scene/scene';
 import { asNodeId, type NodeId, type RectPose, type Scene } from 'core/scene/types';
 import { useSelection, type SelectionApi } from 'core/selection/useSelection';
-import { useSliceTool } from 'tools/builtin/slice';
 import { RECT_POSE_COMPOSITION, RIGID_POSE_COMPOSITION } from 'core/scene/composePose';
 import type { SliceDep } from 'interactions/actions/depSchema';
 import type { PoseDescriptor } from 'core/geometry/poseDescriptor';
@@ -55,7 +54,6 @@ function mount(scene: S, opts: {
     return null;
   }
   function Harness() {
-    const slice = useSliceTool();
     sel = useSelection({ scene: scene as never, initial: (opts.select ?? []) as NodeId[] });
     return (
       <SceneCanvas<Data, Layer, RectPose>
@@ -65,7 +63,6 @@ function mount(scene: S, opts: {
         layers={{}}
         width={400}
         height={400}
-        tools={{ slice }}
         {...(opts.poseDescriptor ? { poseDescriptor: opts.poseDescriptor } : {})}
       >
         <Capture />
@@ -73,10 +70,10 @@ function mount(scene: S, opts: {
       </SceneCanvas>
     );
   }
-  const { container } = render(<Harness />);
+  render(<Harness />);
   const commit = (cut: { x: number; y: number }[]) =>
     act(() => { ((reg.get as (n: string) => unknown)('slice') as SliceDep).commit(cut); });
-  return { commit, selection: () => sel, canvas: container.querySelector('canvas')! };
+  return { commit, selection: () => sel };
 }
 
 describe('the default slice dep', () => {
@@ -352,20 +349,5 @@ describe('the default slice dep', () => {
     commit(across);
     expect(own.commit).toHaveBeenCalledTimes(1);
     expect(leaves(scene).map((n) => n.id)).toEqual(['sq']);
-  });
-
-  it('is what the slice tool cuts through, with nothing else wired', () => {
-    const scene = makeScene();
-    const { canvas } = mount(scene);
-    const pointer = (type: string, x: number, y: number) =>
-      canvas.dispatchEvent(new PointerEvent(type, { bubbles: true, clientX: x, clientY: y, pointerId: 1 }));
-    act(() => { document.dispatchEvent(new KeyboardEvent('keydown', { bubbles: true, key: 'k', code: 'KeyK' })); });
-    act(() => {
-      pointer('pointerdown', -10, 50);
-      pointer('pointermove', 60, 50);
-      pointer('pointermove', 120, 50);
-      pointer('pointerup', 120, 50);
-    });
-    expect(leaves(scene)).toHaveLength(2);
   });
 });

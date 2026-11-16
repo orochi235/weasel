@@ -164,9 +164,7 @@ export {
 } from '@weasel-js/geom';
 export { pathInPoseFrame, pathInWorld, worldEditToStorage, type PathInWorldPose } from '@weasel-js/geom';
 export { poseRotationOf, rotatePathAround, type PoseRotation } from '@weasel-js/geom';
-export {
-  poseFrameOf, poseFrameInverseOf, poseLinearOf, pathThroughPoseFrame, type PoseLinear,
-} from '@weasel-js/geom';
+export { poseFrameOf, poseFrameInverseOf, poseLinearOf, pathThroughPoseFrame, type PoseLinear } from '@weasel-js/geom';
 export {
   reachToMeet, kneadPath, type KneadPathOptions, intersectSegments, tugOpenEnd, openEndRay, openPathEnds, pathCrossings, pathSegments, snipPathAt,
   type ReachToMeetOptions, type OpenPathEnd, type PathCrossing, type PathSegment, type PathStop, type SegmentCrossing, type SnipPathOptions, type SnipResult,
@@ -179,12 +177,6 @@ export { pathSnapGlyph, PATH_SNAP_LABELS } from './pathSnap/glyphs';
 export { createPathLayer, type CreatePathLayerOptions } from './pathLayer';
 export { pathPoseDescriptor } from 'core/geometry/pathPoseDescriptor';
 export { pathOriginProjection } from './originProjection';
-export {
-  createPenPreviewLayer,
-  PEN_CLOSE_HIT_PX,
-  type CreatePenPreviewLayerOptions,
-  type PenPreviewStyle,
-} from './penPreviewLayer';
 export {
   createPathEditingOverlayLayer,
   type CreatePathEditingOverlayLayerOptions,

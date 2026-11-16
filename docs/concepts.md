@@ -93,11 +93,15 @@ those on too; any of them can also be passed alone:
 | `transformPreset` | `resizePreset` and `rotatePreset` |
 | `editPreset` | `escapePreset` (Escape, cancel-gesture), `contextMenuPreset`, `selectAllPreset`, `duplicatePreset` (with transform-again), `deletePreset`, `groupPreset`, `nudgePreset`, `stylePreset` (fill and stroke), `clipboardPreset`, `textEditPreset` (a double-click on text opens it in place); Cmd/Ctrl+V pastes nodes a kit canvas copied, and nothing else |
 | `arrangePreset` | `flipPreset`, `reorderPreset`, `alignPreset`, `distributePreset` |
-| `pathsPreset` | `anchorKeysPreset` (anchor nudge and delete, Escape out of path edit, each tried ahead of its node-level twin), `pathfinderPreset`, `outlinesPreset`, `pathEditPreset`, `pathCommandsPreset` |
+| `pathfinderPreset` | the pathfinder booleans and the live boolean group |
 | `ingestPreset` | dropped and pasted content: images, SVG, files, and consumer content handlers, on Cmd/Ctrl+V or an OS drop |
 | `drawPreset` | every preset above but `pickPreset` and `transformPreset`, whose parts it includes itself |
-| `whiteboardPreset` | the pencil, text and the sticky note (`WHITEBOARD_TOOLS`), with view, pick, move, resize, and edit |
-| `shapeToolsPreset`, `drawToolsPreset`, `typeToolsPreset`, `pageToolsPreset` | the tools that make things: shapes, the pen and pencil, text and the sticky note, the page slicer |
+| `whiteboardPreset` | text and the sticky note (`WHITEBOARD_TOOLS`), with view, pick, move, resize, and edit |
+| `shapeToolsPreset`, `typeToolsPreset` | the tools that make things: shapes, text and the sticky note |
+
+Path edit, the pen, the pencil, the knife, the path commands and Create Outlines are
+`@weasel-js/path-tools`': its `pathsPreset` (`anchorKeysPreset`, `outlinesPreset`, `pathEditPreset`,
+`pathCommandsPreset`), which `pathTools` includes, and the tools `usePathToolsTools` builds.
 
 A preset holding only actions, tools, and includes is a bundle; one with any
 other role (an ambient binding, chrome, an ordering rule) is an atom, whose

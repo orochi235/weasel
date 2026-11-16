@@ -10,7 +10,7 @@ import { act, cleanup } from '@testing-library/react';
 import { renderWithKeys as render } from '@weasel-js/react/testing/giveKeys';
 import { pathInWorld, polygonFromPoints, type Path } from '@weasel-js/geom';
 import { createModeRegistry, DEFAULT_MODES } from '@weasel-js/modes';
-import { useActionsRegistry, useDepRegistry } from '@weasel-js/routing/react';
+import { useDepRegistry } from '@weasel-js/routing/react';
 import { createScene } from 'core/scene/scene';
 import { asNodeId, type NodeId } from 'core/scene/types';
 import type { RenderLayer } from 'core/layers/render';
@@ -56,13 +56,11 @@ function setup(props: Record<string, unknown> = {}) {
   }
   scene.setSelection([A]);
   const grabbed = {} as {
-    actions: { trigger(id: string): boolean };
     deps: { get(key: string): unknown };
     views: ViewRegistry;
     inputs: SurfaceViewInputs;
   };
   function Grab() {
-    grabbed.actions = useActionsRegistry() as typeof grabbed.actions;
     grabbed.deps = useDepRegistry() as typeof grabbed.deps;
     grabbed.views = useOptionalViewRegistry()!;
     grabbed.inputs = useOptionalViewInputs()!;
@@ -86,7 +84,8 @@ function setup(props: Record<string, unknown> = {}) {
   const pointer = (type: string, x: number, y: number, init: PointerEventInit = {}) =>
     canvas.dispatchEvent(new PointerEvent(type, { bubbles: true, clientX: x, clientY: y, pointerId: 1, button: 0, ...init }));
   return {
-    enter: () => act(() => { grabbed.actions.trigger('enterPathEdit'); }),
+    /** Path edit's entry, as `@weasel-js/path-tools`' `enterPathEdit` makes it on the selected path. */
+    enter: () => act(() => { (grabbed.deps.get('editAnchors') as { setEditingId(id: string): void }).setEditingId(A); }),
     select: (ids: NodeId[]) => act(() => { scene.setSelection(ids); }),
     remove: (id: NodeId) => act(() => { scene.remove(id); }),
     /** What hit-testing reads: `anchorStateFrom` takes its id from this dep. */
@@ -150,14 +149,6 @@ describe('a path being anchor-edited, with its node selected', () => {
     expect(t.ruleSaysEditing()).toBe(true);
     t.shiftClick(200, 120);
     expect(t.selection()).toEqual([A]);
-  });
-
-  it('has grabbable anchors', () => {
-    const t = setup();
-    t.enter();
-    const before = t.worldCoords(A);
-    t.drag([140, 100], [150, 90]);
-    expect(anchorsMoved(before, t.worldCoords(A))).toBe(1);
   });
 
   // A proxy for the repaint: jsdom paints nothing, so this asserts the

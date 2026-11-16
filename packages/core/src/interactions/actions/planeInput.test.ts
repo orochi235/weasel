@@ -18,10 +18,6 @@ import { rotateAction } from './rotate/action';
 import { cloneAction } from './clone/action';
 import { insertAction } from './insert/action';
 import { nudgeRightAction } from './defaults/nudge';
-import { editAnchorsAction } from './edit-anchors/action';
-import { selectAnchorAction, marqueeAnchorsAction } from './defaults/anchorEditing';
-import { makeEditAnchorsDep } from './testUtils';
-import { PATH_L, PATH_M, PATH_Z, type PolygonPath } from '@weasel-js/geom';
 import { inPlane, selectionLayer } from './planeInput';
 import type { InsertDep, SnapDep, ViewApi } from './depSchema';
 import type { SnapBegin } from './snapDep';
@@ -85,14 +81,6 @@ function drag(
   return handle;
 }
 
-/** M(100,100) L(140,100) L(120,140) Z, in the sky's world. */
-const triangle = (): PolygonPath => ({
-  kind: 'polygon',
-  commands: new Uint8Array([PATH_M, PATH_L, PATH_L, PATH_Z]),
-  coords: new Float32Array([100, 100, 140, 100, 120, 140]),
-  fillRule: 'nonzero',
-});
-
 const poseOf = (scene: S, id: string) => scene.get(asNodeId(id))!.pose as RectPose;
 
 describe('editing a node on a parallax plane', () => {
@@ -127,43 +115,6 @@ describe('editing a node on a parallax plane', () => {
     const copy = scene.renderOrderNodes().find((n) => n.id !== 'sun')!;
     expect(copy.layer).toBe('sky');
     expect(copy.pose).toMatchObject({ x: 120, y: 100 });
-  });
-
-  it('drags a path anchor on a plane as far as the pointer went', () => {
-    const scene = makeScene();
-    const edits: PolygonPath[] = [];
-    const editAnchors = makeEditAnchorsDep({
-      editingId: 'sun',
-      getEditablePath: () => triangle(),
-      applyEdit: (_id, p) => { edits.push(p as PolygonPath); },
-    });
-    // Anchor 0 is sky (100,100), camera (100,50); 10 camera right is 20 sky.
-    drag(editAnchorsAction, scene, { x: 100, y: 50 }, { x: 110, y: 50 }, {
-      deps: { editAnchors },
-      affordance: { kind: 'anchor:0', targetIds: ['sun'] },
-    });
-    expect(Array.from(edits[0].coords.slice(0, 2))).toEqual([120, 100]);
-  });
-
-  it('selects the path anchor a click lands on where the plane draws it', () => {
-    const scene = makeScene();
-    const editAnchors = makeEditAnchorsDep({ editingId: 'sun', getEditablePath: () => triangle() });
-    const run = selectAnchorAction.invoker;
-    if (run?.timing !== 'immediate') throw new Error('expected immediate');
-    // Anchor 1 is sky (140,100): camera (120,50).
-    run.run(
-      { editAnchors, scene, view: viewDep(), selection: { get: () => [] } } as never,
-      { world: { x: 120, y: 50 }, additive: false },
-    );
-    expect([...editAnchors.selectedAnchors]).toEqual([1]);
-  });
-
-  it('marquees path anchors on a plane where the plane draws them', () => {
-    const scene = makeScene();
-    const editAnchors = makeEditAnchorsDep({ editingId: 'sun', getEditablePath: () => triangle() });
-    // Camera 115..125 x 45..55 is sky 130..150 x 90..110: anchor 1 only.
-    drag(marqueeAnchorsAction, scene, { x: 115, y: 45 }, { x: 125, y: 55 }, { deps: { editAnchors } });
-    expect([...editAnchors.selectedAnchors]).toEqual([1]);
   });
 
   it('nudges a plane node one unit of its own world, whatever the camera', () => {

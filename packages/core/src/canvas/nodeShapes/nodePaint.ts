@@ -128,6 +128,11 @@ export interface PathPaint {
   stroke?: Stroke;
 }
 
+/** A world-space path and the paint it is to wear. */
+export interface PaintedPath extends PathPaint {
+  path: Path;
+}
+
 /** {@link PathPaint} of a node that keeps its paint in `data.fill` and
  *  `data.stroke`, as the built-in path painter draws it: a stroke or a fill
  *  with no `paint` is none, and an `'inherit'` one is `inherited`'s. */

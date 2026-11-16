@@ -10,9 +10,8 @@ import {
   cornerAnchors, everyNthAnchor, growAnchorSelection, invertAnchorSelection, pathToAnchors,
   shrinkAnchorSelection, smoothAnchors, type AnchorSet, type PolygonPath,
 } from '@weasel-js/geom';
-import {
-  depOf, pathOperationTags, requiresAnchorSelection, type EditAnchorsDep, type KeySpec,
-} from '@weasel-js/core';
+import { pathOperationTags, type EditAnchorsDep, type KeySpec } from '@weasel-js/core';
+import { depOf, requiresAnchorSelection } from '../pathEdit/anchorEditing';
 import { icon, type PathToolsIconName } from '../icons.gen';
 import { pref, type PrefGroup } from '@weasel-js/prefs';
 
