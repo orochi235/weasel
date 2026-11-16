@@ -3,7 +3,7 @@ import type { DataEdge, DataNode, EdgeStyle, NodeStyle } from '@weasel-js/diagra
 import type { DiagramDocument, ExportResult, WriteOptions } from '../../document';
 import { edgeStyleIn, graphOut, nodeLines, type Cluster, type GraphOut } from '../../graphWrite';
 import { arrowHead } from '../common/styles';
-import { mermaidIds, mermaidQuoted } from '../common/text';
+import { mermaidIds, mermaidQuoted, oneLine } from '../common/text';
 import { elementParts, hasTechnology, macroOf } from './kinds';
 import { C4_HEADERS } from './parse';
 import { BOUNDARY_TYPES, C4_NOTATIONS } from './read';
@@ -96,7 +96,8 @@ export function writeC4(doc: DiagramDocument, opts?: WriteOptions): ExportResult
   const header = C4_HEADERS.find((h) => C4_NOTATIONS[h] === out.page.notation) ?? 'C4Context';
   const w = new C4Writer(out, header === 'C4Deployment');
   w.lines.push(header);
-  if (out.page.name !== undefined) w.lines.push(`  title ${out.page.name.replace(/\n/g, ' ')}`);
+  const title = out.page.name === undefined ? '' : oneLine(out.page.name, 'C4', (m) => out.warnings.add(m)).trim();
+  if (title !== '') w.lines.push(`  title ${title}`);
   for (const n of out.nodes) w.element(n, '  ');
   for (const c of out.clusters) w.boundary(c, '  ');
   for (const e of out.edges) w.rel(e);

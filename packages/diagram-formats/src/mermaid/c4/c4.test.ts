@@ -109,4 +109,12 @@ describe('writing a Mermaid C4 diagram', () => {
     const { warnings } = writeC4({ pages: [{ kind: 'graph', id: 'p', width: 100, height: 100, data: { nodes: [{ id: 'a' }, { id: 'b' }], edges: [{ from: 'a', to: 'b', colors: { markerEnd: 'diamond' } }] } }] });
     expect(warnings).toContain('Mermaid C4 links end in arrows; other ends were written as arrows.');
   });
+
+  it('writes no title line for a blank page name, so the file reads back', () => {
+    for (const name of ['', ' ']) {
+      const { text } = writeC4({ pages: [{ kind: 'graph', id: 'p', name, width: 100, height: 100, data: { nodes: [{ id: 'a' }], edges: [] } }] });
+      expect(text).not.toContain('title');
+      expect(() => readC4(text)).not.toThrow();
+    }
+  });
 });
