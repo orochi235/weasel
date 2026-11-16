@@ -2,7 +2,8 @@
 import type { DataEdge, DataNode, EdgeStyle, NodeStyle } from '@weasel-js/diagram';
 import type { DiagramDocument, ExportResult, WriteOptions } from '../../document';
 import { edgeStyleIn, graphOut, nodeLines, type Cluster, type GraphOut } from '../../graphWrite';
-import { mermaidIds, mermaidQuoted } from '../common/text';
+import { arrowHead } from '../common/styles';
+import { mermaidIds, mermaidQuoted, oneLine } from '../common/text';
 import { elementParts, hasTechnology, macroOf } from './kinds';
 import { C4_HEADERS } from './parse';
 import { BOUNDARY_TYPES, C4_NOTATIONS } from './read';
@@ -66,8 +67,9 @@ class C4Writer {
 
   rel(e: DataEdge): void {
     const style = edgeStyleIn(this.out, e);
-    const start = style.markerStart !== null && style.markerStart !== undefined;
-    const end = style.markerEnd !== null && style.markerEnd !== undefined;
+    const warn = (m: string) => this.out.warnings.add(m);
+    const start = arrowHead(style.markerStart, 'C4', warn);
+    const end = arrowHead(style.markerEnd, 'C4', warn);
     const way = REL_WAYS[`${e.fromPort ?? ''} ${e.toPort ?? ''}`];
     const macro = start && !end ? 'Rel_Back' : start ? 'BiRel' : way !== undefined ? `Rel_${way}` : 'Rel';
     if (!start && !end) this.out.warnings.add('Mermaid C4 relationships always have a head; unmarked edges were written with one.');
@@ -94,7 +96,8 @@ export function writeC4(doc: DiagramDocument, opts?: WriteOptions): ExportResult
   const header = C4_HEADERS.find((h) => C4_NOTATIONS[h] === out.page.notation) ?? 'C4Context';
   const w = new C4Writer(out, header === 'C4Deployment');
   w.lines.push(header);
-  if (out.page.name !== undefined) w.lines.push(`  title ${out.page.name.replace(/\n/g, ' ')}`);
+  const title = out.page.name === undefined ? '' : oneLine(out.page.name, 'C4', (m) => out.warnings.add(m)).trim();
+  if (title !== '') w.lines.push(`  title ${title}`);
   for (const n of out.nodes) w.element(n, '  ');
   for (const c of out.clusters) w.boundary(c, '  ');
   for (const e of out.edges) w.rel(e);

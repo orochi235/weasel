@@ -147,6 +147,15 @@ describe('writing draw-style XML', () => {
     expect(cell(one, '1').getAttribute('vertex')).toBe('1');
     expect(cell(one, '1').getAttribute('parent')).toBe('1-2');
   });
+
+  it('gives an end label cell an id no other cell has', () => {
+    const doc: DiagramDocument = { pages: [{ kind: 'graph', id: 'p', width: 300, height: 100, data: {
+      nodes: [{ id: 'a', lines: ['A'], at: { x: 0, y: 0 } }, { id: 'e/label:from', lines: ['B'], at: { x: 200, y: 0 } }],
+      edges: [{ id: 'e', from: 'a', to: 'e/label:from', endLabels: { from: '1' } }],
+    } }] };
+    const ids = [...xml(DRAW_XML.write!(doc).text).getElementsByTagName('mxCell')].map((c) => c.getAttribute('id'));
+    expect(new Set(ids).size).toBe(ids.length);
+  });
 });
 
 describe('writing what the format cannot carry', () => {

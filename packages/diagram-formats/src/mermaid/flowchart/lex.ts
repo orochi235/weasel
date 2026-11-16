@@ -27,7 +27,7 @@ export interface MermaidLex {
 }
 
 /** Keywords whose line runs to its end as one `rest` token. */
-const REST_KEYWORDS = new Set([
+export const REST_KEYWORDS: ReadonlySet<string> = new Set([
   'flowchart', 'graph', 'flowchart-elk', 'subgraph', 'style', 'classDef', 'class', 'linkStyle', 'click', 'direction',
   'accTitle', 'accDescr',
 ]);
@@ -113,7 +113,8 @@ class MermaidLexer {
 
   directive(): void {
     const end = this.text.indexOf('}%%', this.i);
-    const stop = end < 0 ? this.text.length : end + 3;
+    if (end < 0) throw fail(this.line, 'a directive opened here is never closed');
+    const stop = end + 3;
     for (let k = this.i; k < stop; k++) if (this.text[k] === '\n') this.line++;
     this.i = stop;
     this.directives++;

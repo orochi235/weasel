@@ -64,8 +64,9 @@ function statementOf(keyword: string, rest: string, line: number): MermaidStmt {
   if (keyword === 'class') return { kind: 'class', ids: first.split(','), className: more.join(' '), line };
   if (keyword === 'style') return { kind: 'style', id: first, props: propsOf(remainder), line };
   if (keyword === 'linkStyle') {
-    const indexes = first === 'default' ? 'default' : first.split(',').map(Number);
-    if (indexes !== 'default' && indexes.some(Number.isNaN)) throw lineError('Mermaid', line, `"${first}" is not a list of link numbers`);
+    const parts = first.split(',');
+    if (first !== 'default' && parts.some((p) => !/^\d+$/.test(p))) throw lineError('Mermaid', line, `"${first}" is not a list of link numbers`);
+    const indexes = first === 'default' ? 'default' : parts.map(Number);
     return { kind: 'linkStyle', indexes, props: propsOf(remainder), line };
   }
   return { kind: 'other', keyword, line };

@@ -3,12 +3,17 @@ import type { DataContainer, DataNode } from '@weasel-js/diagram';
 import type { DiagramDocument, ExportResult, WriteOptions } from '../../document';
 import { graphOut, type GraphOut } from '../../graphWrite';
 import { titleLines } from '../common/lines';
-import { mermaidEscaped, mermaidIds } from '../common/text';
+import { fieldName, mermaidEscaped, mermaidIds, oneLine } from '../common/text';
 
 const GENERATED = /^(?:column|card)-\d+$/;
 
-/** A metadata value, quoted with whichever quote it does not hold. */
-const metaValue = (v: string): string => (v.includes("'") ? `"${v.replace(/"/g, "'")}"` : `'${v}'`);
+/** A metadata value, quoted with whichever quote it does not hold; one holding both has its double quotes written as
+ *  single ones, which `warn` hears. */
+function metaValue(v: string, warn: (message: string) => void): string {
+  if (!v.includes("'")) return `'${v}'`;
+  if (v.includes('"')) warn('Mermaid kanban metadata values hold one kind of quote; double quotes were written as single ones.');
+  return `"${v.replace(/"/g, "'")}"`;
+}
 
 /** Text in a column's or card's brackets: one line, a closing bracket written as a reference. */
 const bracketed = (text: string): string => `[${mermaidEscaped([text], { also: /\]/g })}]`;
@@ -31,7 +36,8 @@ class KanbanWriter {
     this.written.add(n.id);
     const rows = n.rows ?? (n.lines ?? []).map((text) => ({ kind: 'label' as const, text }));
     const text = rows.flatMap((r) => (r.kind === 'label' ? [r.text] : [])).join(' ');
-    const meta = rows.flatMap((r) => (r.kind === 'field' ? [`${r.label}: ${metaValue(r.value)}`] : []));
+    const warn = (m: string) => this.out.warnings.add(m);
+    const meta = rows.flatMap((r) => (r.kind === 'field' ? [`${fieldName(r.label, /[^\w-]+/g, 'kanban', warn)}: ${metaValue(oneLine(r.value, 'kanban', warn), warn)}`] : []));
     if (rows.some((r) => r.kind !== 'label' && r.kind !== 'field')) this.out.warnings.add('Mermaid kanban cards hold text and metadata only; other rows were dropped.');
     this.lines.push(`    ${this.head(n.id)}${bracketed(text)}${meta.length > 0 ? `@{ ${meta.join(', ')} }` : ''}`);
   }

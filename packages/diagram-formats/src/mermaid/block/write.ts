@@ -3,11 +3,14 @@ import type { DataEdge, DataNode, GridOptions } from '@weasel-js/diagram';
 import type { DiagramDocument, ExportResult, WriteOptions } from '../../document';
 import { edgeStyleIn, graphOut, nodeLines, type Cluster, type GraphOut } from '../../graphWrite';
 import { titleLines } from '../common/lines';
-import { styleProps } from '../common/styles';
+import { arrowHead, styleProps } from '../common/styles';
 import { mermaidIds, mermaidText } from '../common/text';
 import { BRACKETS } from '../flowchart/write';
 
 const ANONYMOUS = /^block-\d+$/;
+
+/** Words a block diagram reads as a keyword where a block's id would stand. */
+const BLOCK_WORDS = ['block', 'space', 'columns'];
 
 type Item = { node: DataNode } | { cluster: Cluster };
 
@@ -18,7 +21,7 @@ class BlockWriter {
   readonly order: ReadonlyMap<string, number>;
 
   constructor(readonly out: GraphOut) {
-    this.ids = mermaidIds([...out.page.data.nodes.map((n) => n.id), ...out.clusterIds], { unicode: true });
+    this.ids = mermaidIds([...out.page.data.nodes.map((n) => n.id), ...out.clusterIds], { unicode: true, reserved: BLOCK_WORDS });
     this.grid = out.page.layout?.name === 'grid' ? out.page.layout.options?.grid ?? {} : {};
     this.order = new Map(out.page.data.nodes.map((n, i) => [n.id, i]));
   }
@@ -76,8 +79,9 @@ class BlockWriter {
   link(e: DataEdge): string {
     const { markerStart, markerEnd, dash, width } = edgeStyleIn(this.out, e);
     const body = dash !== undefined ? '-.-' : (width ?? 0) >= 3 ? '==' : '--';
-    const end = markerEnd !== null && markerEnd !== undefined;
-    const start = markerStart !== null && markerStart !== undefined;
+    const warn = (m: string) => this.out.warnings.add(m);
+    const end = arrowHead(markerEnd, 'block diagram', warn);
+    const start = arrowHead(markerStart, 'block diagram', warn);
     const tail = end ? '>' : body === '--' ? '-' : body === '==' ? '=' : '';
     const from = this.id(e.from);
     const to = this.id(e.to);

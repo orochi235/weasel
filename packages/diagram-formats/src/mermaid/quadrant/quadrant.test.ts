@@ -132,6 +132,13 @@ describe('writing a Mermaid quadrant chart', () => {
     ]);
     expect(() => writeMermaidQuadrant({ ...page, data: { kind: 'pie', slices: [] } })).toThrow(/as a quadrant chart only; the page holds a pie/);
   });
+
+  it('writes a point color holding commas in hex, and drops a size that is not a number, so the chart reads back', () => {
+    const data = { kind: 'quadrant' as const, points: [{ name: 'A', x: 0.5, y: 0.5, style: { color: 'rgb(1, 2, 3)', radius: Number.NaN } }] };
+    const { text, warnings } = writeMermaidQuadrant({ kind: 'plot', id: 'p', width: 10, height: 10, data });
+    expect((readMermaidQuadrant(text).document.pages[0] as PlotPage).data).toMatchObject({ points: [{ name: 'A', style: { color: '#010203' } }] });
+    expect(warnings).toContain('Mermaid point radii and stroke widths are numbers; others were dropped.');
+  });
 });
 
 describe('the Mermaid format', () => {

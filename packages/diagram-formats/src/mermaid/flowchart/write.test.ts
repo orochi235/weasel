@@ -194,4 +194,19 @@ describe('writing Mermaid', () => {
     const data: DiagramData = { nodes: [{ id: 'a' }, { id: 'b' }], edges: [{ from: 'a', to: 'b', colors: { trim: { end: 0.5 } } }] };
     expect(writeFlowchart(pageOf(data)).warnings).toEqual(['Mermaid draws a connector whole; trims were dropped.']);
   });
+
+  it('renames a node named accTitle or accDescr, so its edges read back', () => {
+    for (const id of ['accTitle', 'accDescr']) {
+      const text = writeFlowchart({ pages: [{ kind: 'graph', id: 'p', width: 100, height: 100, data: { nodes: [{ id }, { id: 'b' }], edges: [{ from: id, to: 'b' }] } }] }).text;
+      expect(asGraph(readFlowchart(text).document.pages[0]!).data.edges).toHaveLength(1);
+    }
+  });
+
+  it('warns that an end it has no head for was written as an arrow', () => {
+    for (const markerEnd of ['diamond', 'crow-many'] as const) {
+      const { text, warnings } = writeFlowchart({ pages: [{ kind: 'graph', id: 'p', width: 100, height: 100, data: { nodes: [{ id: 'a' }, { id: 'b' }], edges: [{ from: 'a', to: 'b', colors: { markerEnd } }] } }] });
+      expect(text).toContain('a --> b');
+      expect(warnings).toContain('Mermaid flowchart links end in arrows or circles; other ends were written as arrows.');
+    }
+  });
 });

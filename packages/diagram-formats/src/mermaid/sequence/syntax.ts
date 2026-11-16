@@ -1,5 +1,6 @@
 /** The pieces of Mermaid's `sequenceDiagram` syntax both the reader and the writer know: arrows, participant types, and text. */
 import type { Outline, SeqMessage } from '@weasel-js/diagram';
+import { drawableColor } from '../../colorCheck';
 import { markupLines } from '../../graphRead';
 
 /** A message's arrow, as its line, head, and whether it has a head at both ends. */
@@ -48,3 +49,10 @@ const ENTITIES: Readonly<Record<string, string>> = { '#': '#35;', ';': '#59;', '
  *  reference of it. */
 export const mermaidSeqText = (text: string): string =>
   text.split('\n').map((l) => l.replace(/[#;<>]|&(?=&*[#;])/g, (c) => ENTITIES[c]!)).join('<br>');
+
+/** The color a box's or a rect's text opens with, or `undefined`: a function or hex color, or a bare word only where it
+ *  names one. */
+export function leadingColor(text: string): string | undefined {
+  const color = /^(rgba?\([^)]*\)|hsla?\([^)]*\)|#[0-9a-f]{3,8}\b|[a-z]+(?=\s|$))/i.exec(text)?.[0];
+  return color !== undefined && (!/^[a-z]+$/i.test(color) || drawableColor(color)) ? color : undefined;
+}

@@ -17,7 +17,15 @@ function item(x: { id: string; label?: string }, warn: (m: string) => void): str
   return `${id}["${label.replace(/"/g, "'")}"]`;
 }
 
-const option = (key: string, value: number | string | boolean | undefined): string[] => (value === undefined ? [] : [`  ${key} ${value}`]);
+const option = (key: string, value: string | boolean | undefined): string[] => (value === undefined ? [] : [`  ${key} ${value}`]);
+
+/** A number option's line, none for one unset, or, with a warning, for one that is not a finite number. */
+function numberOption(key: string, value: number | undefined, warn: (m: string) => void): string[] {
+  if (value === undefined) return [];
+  if (Number.isFinite(value)) return [`  ${key} ${value}`];
+  warn('Mermaid radar max, min and ticks are numbers; ones that were not were dropped.');
+  return [];
+}
 
 /** Writes `page`'s radar as Mermaid. Throws on a page holding another kind of chart. */
 export function writeMermaidRadar(page: PlotPage): ExportResult {
@@ -37,8 +45,8 @@ export function writeMermaidRadar(page: PlotPage): ExportResult {
     lines.push(`  curve ${item(c, warn)}{${values.map((v) => (v !== undefined && Number.isFinite(v) ? v : 0)).join(', ')}}`);
   }
   lines.push(
-    ...option('max', data.max), ...option('min', data.min), ...option('graticule', data.graticule),
-    ...option('ticks', data.ticks), ...option('showLegend', data.showLegend),
+    ...numberOption('max', data.max, warn), ...numberOption('min', data.min, warn), ...option('graticule', data.graticule),
+    ...numberOption('ticks', data.ticks, warn), ...option('showLegend', data.showLegend),
   );
   return { text: `${lines.join('\n')}\n`, warnings };
 }

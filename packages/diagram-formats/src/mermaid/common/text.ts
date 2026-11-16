@@ -30,6 +30,14 @@ export function oneLine(text: string, kind: string, warn: (message: string) => v
   return text.replace(/\s*[\r\n]+\s*/g, ' ');
 }
 
+/** `label` as the name of a field a kind reads only some characters in: each run of those `other` matches written as one
+ *  `_`. `warn` hears, naming `kind`, when that changed it. */
+export function fieldName(label: string, other: RegExp, kind: string, warn: (message: string) => void): string {
+  const name = label.replace(other, '_') || '_';
+  if (name !== label) warn(`Mermaid ${kind} field names are one word; other characters in them were written as underscores.`);
+  return name;
+}
+
 /** Text a kind that splits its lines on `:` writes, as a gantt and a timeline do: on one line, with a `#` and a `:`
  *  spelled `#35;` and `#58;`, which {@link numberedText} reads back. */
 export const spelledLine = (text: string, kind: string, warn: (message: string) => void): string =>

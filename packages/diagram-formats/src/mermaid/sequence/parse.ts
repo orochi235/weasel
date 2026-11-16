@@ -112,26 +112,26 @@ export function parseSequence(text: string): ParsedSequence {
   const { lines, first, title } = body(text, dropped);
   const stmts: SeqStmt[] = [];
   let header = false;
-  let inDescr = false;
-  let inDirective = false;
+  let inDescr: number | null = null;
+  let inDirective: number | null = null;
   lines.forEach((raw, k) => {
     const line = first + k;
-    if (inDescr) {
-      inDescr = !raw.includes('}');
+    if (inDescr !== null) {
+      if (raw.includes('}')) inDescr = null;
       return;
     }
-    if (inDirective) {
-      inDirective = !raw.includes('}%%');
+    if (inDirective !== null) {
+      if (raw.includes('}%%')) inDirective = null;
       return;
     }
     if (/^\s*%%\{/.test(raw) && !raw.includes('}%%')) {
       dropped.push('Mermaid configuration directives were dropped.');
-      inDirective = true;
+      inDirective = line;
       return;
     }
     if (/^\s*accDescr\s*\{/.test(raw)) {
       dropped.push('Accessibility titles and descriptions were dropped.');
-      inDescr = !raw.includes('}');
+      if (!raw.includes('}')) inDescr = line;
       return;
     }
     if (!header) {
@@ -147,6 +147,8 @@ export function parseSequence(text: string): ParsedSequence {
     const stmt = statementOf(raw, line, dropped);
     if (stmt !== null) stmts.push(stmt);
   });
+  if (inDirective !== null) throw lineError('Mermaid', inDirective, 'a directive opened here is never closed');
+  if (inDescr !== null) throw lineError('Mermaid', inDescr, 'an accDescr block is never closed');
   if (!header) throw lineError('Mermaid', first, 'expected "sequenceDiagram", found the end of the file');
   return { stmts, ...(title !== undefined ? { title } : {}), dropped };
 }

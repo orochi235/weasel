@@ -2,6 +2,7 @@
 import type { DataEdge, DataNode } from '@weasel-js/diagram';
 import type { DiagramDocument, ExportResult, WriteOptions } from '../../document';
 import { edgeStyleIn, graphOut, nodeLines, type Cluster, type GraphOut } from '../../graphWrite';
+import { arrowHead } from '../common/styles';
 import { titleLines } from '../common/lines';
 import { mermaidEscaped, mermaidIds, oneLine } from '../common/text';
 import type { ArchSide } from './parse';
@@ -59,21 +60,18 @@ class ArchWriter {
       this.out.warnings.add('Mermaid architecture services wear only its built-in icons; other outlines were dropped.');
     }
     const one = oneTitle(text, (m) => this.out.warnings.add(m));
-    const named = text.length === 0 || one === n.id ? '' : `[${title(one)}]`;
+    const named = text.length === 0 || one === this.id(n.id) ? '' : `[${title(one)}]`;
     this.lines.push(`  service ${this.id(n.id)}${icon !== undefined ? `(${icon})` : ''}${named}${this.in(n.id)}`);
   }
 
-  /** An edge's end: a service and its side, or a service in a group and `{group}`. Null for an empty group. */
+  /** An edge's end: a service and its side, or a service directly in a group and `{group}`. Null for a group with no
+   *  service directly in it, which `{group}` cannot name: it names the service's own group. */
   end(id: string, port: string | undefined, fallback: ArchSide): string | null {
     const c = this.clusters.get(id);
     const side = PORT_SIDES.get(port ?? '') ?? fallback;
     if (c === undefined) return `${this.id(id)}:${side}`;
-    const inside = this.firstNode(c);
+    const inside = c.nodes[0];
     return inside === undefined ? null : `${this.id(inside)}{group}:${side}`;
-  }
-
-  firstNode(c: Cluster): string | undefined {
-    return c.nodes[0] ?? c.clusters.map((k) => this.firstNode(k)).find((n) => n !== undefined);
   }
 
   edge(e: DataEdge): void {
@@ -81,13 +79,14 @@ class ArchWriter {
     const from = this.end(e.from, e.fromPort ?? e.routedPorts?.from, 'R');
     const to = this.end(e.to, e.toPort ?? e.routedPorts?.to, 'L');
     if (from === null || to === null) {
-      this.out.warnings.add('Mermaid architecture edges meet a group through a service in it; edges to empty groups were dropped.');
+      this.out.warnings.add('Mermaid architecture edges meet a group through a service in it; edges to groups holding no service of their own were dropped.');
       return;
     }
     if (e.label !== undefined && e.label !== '') this.out.warnings.add('Mermaid architecture edges have no labels; they were dropped.');
     const [name, side] = to.split(/:(?=[LRTB]$)/) as [string, string];
-    const start = style.markerStart !== null && style.markerStart !== undefined ? '<' : '';
-    const end = style.markerEnd !== null && style.markerEnd !== undefined ? '>' : '';
+    const warn = (m: string) => this.out.warnings.add(m);
+    const start = arrowHead(style.markerStart, 'architecture', warn) ? '<' : '';
+    const end = arrowHead(style.markerEnd, 'architecture', warn) ? '>' : '';
     this.lines.push(`  ${from} ${start}--${end} ${side}:${name}`);
   }
 }

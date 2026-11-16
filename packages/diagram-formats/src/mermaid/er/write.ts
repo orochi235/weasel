@@ -48,7 +48,8 @@ export function writeErDiagram(doc: DiagramDocument, opts?: WriteOptions): Expor
   if (page.direction !== undefined && page.direction !== 'down') lines.push(`  direction ${HEADER[page.direction]}`);
   for (const n of page.data.nodes) {
     const { name, attributes } = entityParts(out, n);
-    const head = name === n.id ? ids.get(n.id)! : `${ids.get(n.id)!}["${mermaidEscaped([name])}"]`;
+    const id = ids.get(n.id)!;
+    const head = name === id ? id : `${id}["${mermaidEscaped([name])}"]`;
     if (attributes.length === 0) lines.push(`  ${head}`);
     else lines.push(`  ${head} {`, ...attributes.map((a) => `    ${a}`), '  }');
   }

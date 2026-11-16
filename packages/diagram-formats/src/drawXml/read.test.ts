@@ -7,6 +7,7 @@ import { DRAW_XML } from './format';
 import { outlineOf } from './readStyle';
 import { parseStyle } from './style';
 import { asGraph } from '../testing/asGraph';
+import { documentSpecs } from '../toScene';
 
 const fixture = (name: string): string => readFileSync(join(__dirname, 'fixtures', name), 'utf8');
 const read = (text: string) => Promise.resolve(DRAW_XML.read!(text));
@@ -218,5 +219,47 @@ describe('reading malformed files', () => {
       <mxCell id="d" value="D" vertex="1" parent="a"><mxGeometry x="1" y="1" width="10" height="10" as="geometry"/></mxCell>
     </root></mxGraphModel>`);
     expect([...nodes(document).keys()].sort()).toEqual(['a', 'c', 'd']);
+  });
+});
+
+describe('reading groups and connectors in a model', () => {
+  it('drops a group inside a swimlane, with a warning, its shapes kept in the swimlane', async () => {
+    const { document, warnings } = await read(`<mxGraphModel><root><mxCell id="0"/><mxCell id="1" parent="0"/>
+      <mxCell id="c" value="C" style="swimlane;" vertex="1" parent="1"><mxGeometry x="0" y="0" width="300" height="200" as="geometry"/></mxCell>
+      <mxCell id="g" style="group;" vertex="1" parent="c"><mxGeometry x="10" y="30" width="200" height="40" as="geometry"/></mxCell>
+      <mxCell id="a" value="A" vertex="1" parent="g"><mxGeometry x="0" y="0" width="40" height="20" as="geometry"/></mxCell>
+      <mxCell id="b" value="B" vertex="1" parent="g"><mxGeometry x="100" y="0" width="40" height="20" as="geometry"/></mxCell>
+    </root></mxGraphModel>`);
+    const page = document.pages.map(asGraph)[0]!;
+    expect(page.data.groups).toBeUndefined();
+    expect(regions(document).get('c')!.members).toEqual(['a', 'b']);
+    expect(warnings).toContain('Groups inside a container or lane were dropped; their shapes stay in it.');
+    expect(() => documentSpecs(document)).not.toThrow();
+  });
+
+  it('drops a group holding no shape from its group\'s members, and an edge to it with the loose-end warning', async () => {
+    const { document, warnings } = await read(`<mxGraphModel><root><mxCell id="0"/><mxCell id="1" parent="0"/>
+      <mxCell id="g1" style="group;" vertex="1" parent="1"><mxGeometry x="0" y="0" width="200" height="100" as="geometry"/></mxCell>
+      <mxCell id="a" value="A" vertex="1" parent="g1"><mxGeometry x="0" y="0" width="40" height="20" as="geometry"/></mxCell>
+      <mxCell id="g2" style="group;" vertex="1" parent="g1"><mxGeometry x="100" y="0" width="40" height="20" as="geometry"/></mxCell>
+      <mxCell id="b" value="B" vertex="1" parent="1"><mxGeometry x="300" y="0" width="40" height="20" as="geometry"/></mxCell>
+      <mxCell id="e" edge="1" parent="1" source="b" target="g2"><mxGeometry relative="1" as="geometry"/></mxCell>
+    </root></mxGraphModel>`);
+    const page = document.pages.map(asGraph)[0]!;
+    expect(page.data.groups).toEqual([{ id: 'g1', members: ['a'] }]);
+    expect(page.data.edges).toEqual([]);
+    expect(warnings).toContain('Connectors with a loose end, or with an end on another connector, were left out.');
+  });
+
+  it('moves a waypoint left of the page onto it, and grows the page to hold one past its right edge', async () => {
+    const { document } = await read(`<mxGraphModel><root><mxCell id="0"/><mxCell id="1" parent="0"/>
+      <mxCell id="a" value="A" vertex="1" parent="1"><mxGeometry x="0" y="0" width="40" height="20" as="geometry"/></mxCell>
+      <mxCell id="b" value="B" vertex="1" parent="1"><mxGeometry x="240" y="0" width="40" height="20" as="geometry"/></mxCell>
+      <mxCell id="e" edge="1" parent="1" source="a" target="b"><mxGeometry relative="1" as="geometry">
+        <Array as="points"><mxPoint x="-80" y="10"/><mxPoint x="500" y="10"/></Array></mxGeometry></mxCell>
+    </root></mxGraphModel>`);
+    const page = document.pages.map(asGraph)[0]!;
+    expect(edges(document).get('e')!.waypoints).toEqual([{ x: 40, y: 10 }, { x: 620, y: 10 }]);
+    expect(page.width).toBe(660);
   });
 });

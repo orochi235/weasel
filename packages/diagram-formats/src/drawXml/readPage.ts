@@ -27,7 +27,7 @@ function claim(ids: IdSpace, cellId: string, pageId: string): string {
   return id;
 }
 
-interface Reader { page: PageCells; idOf: ReadonlyMap<RawCell, string>; warn: Warn }
+interface Reader { page: PageCells; idOf: ReadonlyMap<RawCell, string>; groups: ReadonlySet<RawCell>; warn: Warn }
 
 const labelOf = (cell: RawCell): string | undefined => {
   const text = valueLines(cell).join(' ');
@@ -79,17 +79,37 @@ function readRegion(r: Reader, cell: RawCell): DataContainer {
   return { ...common, role: 'pool', axis, lanes };
 }
 
-function readGroup({ page, idOf }: Reader, cell: RawCell): DataGroup | null {
-  const members = page.childrenOf(cell.id).filter((c) => page.kindOf(c) === 'shape' || page.kindOf(c) === 'group').map((c) => idOf.get(c)!);
-  return members.length === 0 ? null : { id: idOf.get(cell)!, members };
+const groupMembers = (page: PageCells, cell: RawCell, kept: (c: RawCell) => boolean): RawCell[] =>
+  page.childrenOf(cell.id).filter((c) => page.kindOf(c) === 'shape' || (page.kindOf(c) === 'group' && kept(c)));
+
+/** The group cells a page keeps: those holding a shape or a kept group, outside every container, pool and lane, whose
+ *  shapes belong to the region alone. Warns of a group dropped from a region. */
+function keptGroups(page: PageCells, warn: Warn): Set<RawCell> {
+  const seen = new Map<RawCell, boolean>();
+  const kept = (cell: RawCell): boolean => {
+    let keep = seen.get(cell);
+    if (keep === undefined) {
+      keep = page.regionOf(cell) === null && groupMembers(page, cell, kept).length > 0;
+      seen.set(cell, keep);
+    }
+    return keep;
+  };
+  const groups = page.cells.filter((c) => page.kindOf(c) === 'group');
+  if (groups.some((c) => page.regionOf(c) !== null)) warn('Groups inside a container or lane were dropped; their shapes stay in it.');
+  return new Set(groups.filter(kept));
+}
+
+function readGroup({ page, idOf, groups }: Reader, cell: RawCell): DataGroup {
+  return { id: idOf.get(cell)!, members: groupMembers(page, cell, (c) => groups.has(c)).map((c) => idOf.get(c)!) };
 }
 
 const moved = (p: Vec2, by: Vec2): Vec2 => ({ x: p.x + by.x, y: p.y + by.y });
 
-function readEdge({ page, idOf, warn }: Reader, cell: RawCell, byCellId: ReadonlyMap<string, RawCell>): DataEdge | null {
+function readEdge({ page, idOf, groups, warn }: Reader, cell: RawCell, byCellId: ReadonlyMap<string, RawCell>): DataEdge | null {
   const end = (id: string | null) => {
     const target = id === null ? undefined : byCellId.get(id);
-    return target === undefined || page.kindOf(target) === 'edge' || page.kindOf(target) === 'label' ? undefined : idOf.get(target);
+    if (target === undefined || (page.kindOf(target) === 'group' && !groups.has(target))) return undefined;
+    return page.kindOf(target) === 'edge' || page.kindOf(target) === 'label' ? undefined : idOf.get(target);
   };
   const from = end(cell.source);
   const to = end(cell.target);
@@ -120,11 +140,12 @@ function readEdge({ page, idOf, warn }: Reader, cell: RawCell, byCellId: Readonl
   };
 }
 
-/** What sits left of or above the page moves onto it, and the page grows to hold what is on it. */
+/** What sits left of or above the page moves onto it, waypoints among it, and the page grows to hold what is on it. */
 function fitted(data: DiagramData, src: PageSource): { data: DiagramData; width: number; height: number } {
   const boxes: Box[] = [
     ...data.nodes.map((n) => ({ ...n.at!, width: n.width ?? 0, height: n.height ?? 0 })),
     ...(data.containers ?? []).map((c) => c.box!),
+    ...data.edges.flatMap((e) => (e.waypoints ?? []).map((p) => ({ ...p, width: 0, height: 0 }))),
   ];
   if (boxes.length === 0) return { data, width: src.width ?? 2 * PAGE_MARGIN, height: src.height ?? 2 * PAGE_MARGIN };
   const minX = boxes.reduce((m, b) => Math.min(m, b.x), Infinity);
@@ -148,10 +169,10 @@ export function readPage(model: Element, src: PageSource, ids: IdSpace, warn: Wa
   for (const cell of page.cells) {
     if (page.kindOf(cell) !== 'layer' && page.kindOf(cell) !== 'label') idOf.set(cell, claim(ids, cell.id, src.id));
   }
-  const reader: Reader = { page, idOf, warn };
+  const reader: Reader = { page, idOf, groups: keptGroups(page, warn), warn };
   const byCellId = new Map(page.cells.map((c) => [c.id, c]));
   const of = (kind: string) => page.cells.filter((c) => page.kindOf(c) === kind);
-  const groups = of('group').map((c) => readGroup(reader, c)).filter((g): g is DataGroup => g !== null);
+  const groups = of('group').filter((c) => reader.groups.has(c)).map((c) => readGroup(reader, c));
   const containers = page.cells.filter((c) => page.kindOf(c) === 'container' || page.kindOf(c) === 'pool').map((c) => readRegion(reader, c));
   const data: DiagramData = {
     nodes: of('shape').map((c) => readNode(reader, c)),

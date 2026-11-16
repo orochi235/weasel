@@ -3,12 +3,12 @@ import type { SeqParticipant, SeqStep, SequenceData } from '@weasel-js/diagram';
 import type { ExportResult, SequencePage } from '../../document';
 import { Warnings } from '../../graphRead';
 import { mermaidIds } from '../common/text';
-import { arrowOf, mermaidSeqText, typeOf } from './syntax';
+import { arrowOf, leadingColor, mermaidSeqText, typeOf } from './syntax';
 
 const SECTION_WORDS = { loop: null, alt: 'else', opt: null, par: 'and', critical: 'option', break: null, region: null } as const;
 
 /** Words a sequence reads as a statement when a line opens with one, however the line goes on. */
-const SEQUENCE_WORDS = ['title', 'accTitle', 'accDescr'];
+const SEQUENCE_WORDS = ['title', 'accTitle', 'accDescr', 'link', 'links', 'properties', 'details'];
 
 /** Every participant id `data` names: declared, and named by a step. */
 function namedIds(data: SequenceData): string[] {
@@ -70,9 +70,10 @@ class SequenceWriter {
         open = null;
       }
       if (box !== undefined && open !== box.id) {
-        const color = box.colors?.fill;
         if (box.colors !== undefined && Object.keys(box.colors).some((k) => k !== 'fill')) this.warnings.add('Box colors other than the fill were dropped.');
-        this.out(1, ['box', color, box.label === undefined ? undefined : mermaidSeqText(box.label)].filter((s) => s !== undefined).join(' '));
+        const label = box.label === undefined ? undefined : mermaidSeqText(box.label);
+        const color = box.colors?.fill ?? (label !== undefined && leadingColor(label) !== undefined ? 'transparent' : undefined);
+        this.out(1, ['box', color, label].filter((s) => s !== undefined).join(' '));
         open = box.id;
       }
       this.out(open === null ? 1 : 2, this.declaration(p, false));

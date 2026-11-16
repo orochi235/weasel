@@ -33,10 +33,11 @@ const POINTS_PER_INCH = 72;
 const round = (n: number) => Math.round(n * 100) / 100;
 const str = (attrs: Attrs, key: string) => attrs.get(key)?.value;
 
-/** A color attribute as CSS reads it, or `undefined`, with a warning, when it names a color a diagram cannot draw. */
+/** A color attribute as CSS reads it; `undefined` for one unset or set to `""`, Graphviz's default, and, with a warning,
+ *  for one naming a color a diagram cannot draw. */
 function colorAttr(r: DotReader, attrs: Attrs, key: string): string | undefined {
   const raw = str(attrs, key);
-  return raw === undefined ? undefined : checkedColor(dotColor(raw) ?? raw, 'DOT', (lead, item) => r.warnings.list(lead, item));
+  return raw === undefined || raw === '' ? undefined : checkedColor(dotColor(raw) ?? raw, 'DOT', (lead, item) => r.warnings.list(lead, item));
 }
 
 /** An attribute as a number, or `undefined`, with a warning, when it is not one. */
@@ -242,7 +243,7 @@ function readCluster(r: DotReader, id: string, attrs: Attrs, ids: ReadonlyMap<st
   };
   const label = attrs.get('label');
   const lines = label === undefined ? [] : labelLines(label, id, r.graph.id ?? '');
-  const members = r.membership.members(id).map((m) => ids.get(m) ?? m);
+  const members = r.membership.members(id, ids);
   return {
     id: ids.get(id)!, role: 'container',
     ...(lines.length > 0 ? { label: lines.join(' ') } : {}),

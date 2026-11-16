@@ -4,6 +4,7 @@ import { describe, expect, it } from 'vitest';
 import { diagramThemeFrom } from '@weasel-js/diagram';
 import { laidOutPage } from '../../pageLayout';
 import { onlyPage, sortedPage } from '../../testing/samePage';
+import { documentSpecs } from '../../toScene';
 import { parseBlockDiagram } from './parse';
 import { readBlockDiagram } from './read';
 import { writeBlockDiagram } from './write';
@@ -79,6 +80,19 @@ describe('reading a Mermaid block diagram', () => {
     expect(() => parseBlockDiagram('block-beta\n  a --> space')).toThrow(/^Mermaid, line 2: cannot read "a --> space"/);
     expect(() => parseBlockDiagram('block-beta\n  end')).toThrow('Mermaid, line 2: "end" closes no block');
   });
+
+  it('gives an anonymous group an id no block holds', () => {
+    const read = readBlockDiagram('block-beta\n  block-1\n  block\n    a\n  end');
+    expect(onlyPage(read.document).data.containers!.map((c) => c.id)).toEqual(['block-2']);
+    expect(() => documentSpecs(read.document)).not.toThrow();
+  });
+
+  it('joins a link to a group declared after it', () => {
+    const read = readBlockDiagram('block-beta\n  x --> G\n  block:G\n    a\n  end');
+    expect(onlyPage(read.document).data.nodes.map((n) => n.id)).toEqual(['x', 'a']);
+    expect(onlyPage(read.document).data.edges).toMatchObject([{ from: 'x', to: 'G' }]);
+    expect(() => documentSpecs(read.document)).not.toThrow();
+  });
 });
 
 describe('writing a Mermaid block diagram', () => {
@@ -103,5 +117,17 @@ describe('writing a Mermaid block diagram', () => {
       data: { nodes: [{ id: 'a', lines: ['A'], outline: 'stadium' }, { id: 'b' }], edges: [{ from: 'a', to: 'b', label: 'x' }] },
     }] });
     expect(text).toBe('block-beta\n  a(["A"])\n  b[" "]\n  a -- "x" --> b\n');
+  });
+
+  it('renames a block whose id the reader takes for a keyword, so it reads back', () => {
+    for (const id of ['block', 'space', 'columns']) {
+      const text = writeBlockDiagram({ pages: [{ kind: 'graph', id: 'p', width: 100, height: 100, data: { nodes: [{ id, lines: ['x'] }, { id: 'auto', lines: ['y'] }], edges: [] } }] }).text;
+      expect(onlyPage(readBlockDiagram(text).document).data.nodes.map((n) => n.lines)).toEqual([['x'], ['y']]);
+    }
+  });
+
+  it('warns that an end it has no head for was written as an arrow', () => {
+    const { warnings } = writeBlockDiagram({ pages: [{ kind: 'graph', id: 'p', width: 100, height: 100, data: { nodes: [{ id: 'a' }, { id: 'b' }], edges: [{ from: 'a', to: 'b', colors: { markerEnd: 'diamond' } }] } }] });
+    expect(warnings).toContain('Mermaid block diagram links end in arrows; other ends were written as arrows.');
   });
 });

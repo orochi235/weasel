@@ -110,6 +110,13 @@ describe('writing a Mermaid xychart', () => {
       'Mermaid holds no missing values; they were written as 0.',
     ]);
   });
+
+  it('drops an axis range with an end that is not a number, with a warning, so the chart reads back', () => {
+    const data = { kind: 'xychart' as const, x: { kind: 'range' as const, title: 'T', min: Number.NaN, max: 10 }, y: { min: 0, max: Number.POSITIVE_INFINITY }, series: [] };
+    const { text, warnings } = writeMermaidXychart({ kind: 'plot', id: 'p', width: 10, height: 10, data });
+    expect(() => readMermaidXychart(text)).not.toThrow();
+    expect(warnings).toContain('Mermaid axis ranges run between two numbers; ranges with an end that is not one were dropped.');
+  });
 });
 
 describe('the Mermaid format', () => {

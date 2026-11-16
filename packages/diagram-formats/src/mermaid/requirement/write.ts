@@ -6,13 +6,17 @@ import { graphOut } from '../../graphWrite';
 import type { Warnings } from '../../graphRead';
 import { titleLines } from '../common/lines';
 import { styleProps } from '../common/styles';
-import { oneLine } from '../common/text';
+import { fieldName, oneLine } from '../common/text';
 import { BLOCK_KINDS, RELATIONS } from './parse';
 
 const HEADER: Readonly<Record<LayoutDirection, string>> = { down: 'TB', up: 'BT', right: 'LR', left: 'RL' };
 
 /** A name as Mermaid reads it: bare when it is one word, else quoted. */
 const nameOf = (name: string): string => (/^[\w-]+$/.test(name) ? name : `"${name.replace(/"/g, "'")}"`);
+
+/** A field's value as the reader takes it back: quoted where it opens and closes with a quote, or with a space,
+ *  which the reader would strip. */
+const fieldValue = (v: string): string => (/^".*"$/s.test(v) || v !== v.trim() ? `"${v}"` : v);
 
 /** A box's block kind, from a `<<kind>>` row, and its fields; a text row past the divider reads as `key: value`. */
 function blockOf(node: DataNode, warnings: Warnings): { type: string; fields: [string, string][] } {
@@ -25,7 +29,7 @@ function blockOf(node: DataNode, warnings: Warnings): { type: string; fields: [s
   let past = false;
   for (const r of rows) {
     if (r.kind === 'divider') past = true;
-    else if (r.kind === 'field') fields.push([r.label, oneLine(r.value, 'requirement', (m) => warnings.add(m))]);
+    else if (r.kind === 'field') fields.push([fieldName(r.label, /\W+/g, 'requirement', (m) => warnings.add(m)), oneLine(r.value, 'requirement', (m) => warnings.add(m))]);
     else if (r.kind === 'label' && past) {
       const kv = /^(\w+)\s*:\s*(.*)$/s.exec(oneLine(r.text, 'requirement', (m) => warnings.add(m)));
       if (kv !== null) fields.push([kv[1]!, kv[2]!]);
@@ -68,7 +72,7 @@ export function writeRequirementDiagram(doc: DiagramDocument, opts?: WriteOption
   const name = (id: string) => nameOf(names.get(id) ?? id);
   for (const n of page.data.nodes) {
     const { type, fields } = blockOf(n, warnings);
-    lines.push(`  ${type} ${name(n.id)} {`, ...fields.map(([k, v]) => `    ${k}: ${v}`), '  }');
+    lines.push(`  ${type} ${name(n.id)} {`, ...fields.map(([k, v]) => `    ${k}: ${fieldValue(v)}`), '  }');
   }
   for (const e of out.edges) {
     if (!out.byId.has(e.from) || !out.byId.has(e.to)) continue;

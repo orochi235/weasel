@@ -9,7 +9,7 @@ import type { DiagramDocument, ExportResult, WriteOptions } from '../../document
 import { edgeStyleIn, graphOut, nodeLines, type Cluster, type GraphOut } from '../../graphWrite';
 import { titleLines } from '../common/lines';
 import { styleProps } from '../common/styles';
-import { mermaidEscaped, mermaidIds } from '../common/text';
+import { lineOpening, mermaidEscaped, mermaidIds } from '../common/text';
 
 const HEADER: Readonly<Record<LayoutDirection, string>> = { down: 'TB', up: 'BT', right: 'LR', left: 'RL' };
 
@@ -48,7 +48,7 @@ class StateWriter {
       this.lines.push(`${indent}state ${id} <<${outs > ins ? 'fork' : 'join'}>>`);
     } else if (node.outline === 'diamond' && lines.length === 0) {
       this.lines.push(`${indent}state ${id} <<choice>>`);
-    } else if (lines.length === 0 || (lines.length === 1 && lines[0] === node.id)) {
+    } else if (lines.length === 0 || (lines.length === 1 && lines[0] === id)) {
       this.lines.push(`${indent}${id}`);
     } else {
       const described = lines.slice(1).filter((l) => l.trim() !== '');
@@ -61,7 +61,7 @@ class StateWriter {
   }
 
   cluster(c: Cluster, indent: string): void {
-    const head = c.label !== undefined && c.label !== c.id ? `state "${mermaidEscaped([c.label])}" as ${this.id(c.id)}` : `state ${this.id(c.id)}`;
+    const head = c.label !== undefined && c.label !== this.id(c.id) ? `state "${mermaidEscaped([c.label])}" as ${this.id(c.id)}` : `state ${this.id(c.id)}`;
     this.lines.push(`${indent}${head} {`);
     if (this.pools.has(c.id)) {
       c.clusters.forEach((lane, i) => {
@@ -107,7 +107,7 @@ class StateWriter {
         continue;
       }
       if (text.length === 1) this.lines.push(`  note right of ${this.id(target.to)} : ${text[0]}`);
-      else this.lines.push(`  note right of ${this.id(target.to)}`, ...text.map((t) => `    ${t}`), '  end note');
+      else this.lines.push(`  note right of ${this.id(target.to)}`, ...text.map((t) => `    ${lineOpening(t, ['end note'])}`), '  end note');
     }
   }
 

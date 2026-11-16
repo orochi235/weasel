@@ -6,6 +6,7 @@ import { changed, edgeStyleIn, graphOut, hexColor, nodeLines, nodeStyleIn, type 
 import { styleProps } from '../common/styles';
 import { mermaidIds, mermaidText } from '../common/text';
 import { withEdgeIds } from '../../graphRead';
+import { REST_KEYWORDS } from './lex';
 import { DOTTED_DASH } from './read';
 
 const HEADER: Readonly<Record<LayoutDirection, string>> = { down: 'TD', up: 'BT', right: 'LR', left: 'RL' };
@@ -32,7 +33,7 @@ class MermaidWriter {
   constructor(readonly out: GraphOut) {
     const items = [...out.page.data.nodes.map((n) => n.id), ...out.clusterIds];
     const edgeIds = out.edges.flatMap((e) => (e.id !== undefined ? [e.id] : []));
-    this.ids = mermaidIds([...items, ...edgeIds], { unicode: true });
+    this.ids = mermaidIds([...items, ...edgeIds], { unicode: true, reserved: [...REST_KEYWORDS] });
     this.named = this.namedEdges(items.map((id) => this.id(id)));
   }
 
@@ -79,7 +80,9 @@ class MermaidWriter {
     const { markerStart, markerEnd, dash, width } = edgeStyleIn(this.out, edge);
     const head = (m: typeof markerEnd) => {
       if (m === null || m === undefined) return '';
-      if ((typeof m === 'string' ? m : m.key) === 'circle') return 'o';
+      const key = typeof m === 'string' ? m : m.key;
+      if (key === 'circle') return 'o';
+      if (key !== 'arrow') this.out.warnings.add('Mermaid flowchart links end in arrows or circles; other ends were written as arrows.');
       return '>';
     };
     const end = head(markerEnd);

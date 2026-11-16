@@ -3,6 +3,7 @@ import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import type { DataNode } from '@weasel-js/diagram';
 import { onlyPage, sortedPage } from '../../testing/samePage';
+import { documentSpecs } from '../../toScene';
 import { parseClassDiagram } from './parse';
 import { readClassDiagram } from './read';
 import { writeClassDiagram } from './write';
@@ -67,6 +68,12 @@ describe('reading a Mermaid class diagram', () => {
     expect(() => parseClassDiagram('classDiagram\nA ==> B')).toThrow(/^Mermaid, line 2: cannot read "A ==> B"/);
     expect(() => parseClassDiagram('classDiagram\nnamespace N {\nclass A')).toThrow('Mermaid, line 2: a block opened here is never closed');
   });
+
+  it('gives a note an id no class holds', () => {
+    const read = readClassDiagram('classDiagram\nclass note-1\nnote "hi"');
+    expect(onlyPage(read.document).data.nodes.map((n) => n.id)).toEqual(['note-1', 'note-2']);
+    expect(() => documentSpecs(read.document)).not.toThrow();
+  });
 });
 
 describe('writing a Mermaid class diagram', () => {
@@ -93,5 +100,25 @@ describe('writing a Mermaid class diagram', () => {
     expect(text).toContain('class a["A"] {\n    x\n    go()\n  }');
     expect(text).toContain('a --> b');
     expect(warnings).toContain('Mermaid class diagrams have only UML ends; others were written as arrows.');
+  });
+
+  it('keeps a class\'s name when its id is written cleaned', () => {
+    const text = writeClassDiagram({ pages: [{ kind: 'graph', id: 'p', width: 100, height: 100, data: { nodes: [{ id: 'my class', lines: ['my class'] }], edges: [] } }] }).text;
+    expect(page(text).data.nodes[0]!.rows).toContainEqual({ kind: 'label', text: 'my class' });
+  });
+
+  it('keeps a backslash and the n after it in a note line', () => {
+    const text = writeClassDiagram({ pages: [{ kind: 'graph', id: 'p', width: 100, height: 100, data: { nodes: [{ id: 'n', outline: 'note', lines: ['C:\\new', 'two'] }], edges: [] } }] }).text;
+    expect(page(text).data.nodes[0]!.lines).toEqual(['C:\\new', 'two']);
+  });
+
+  it('drops a connector to a namespace, with a warning, rather than name a class for it', () => {
+    const { text, warnings } = writeClassDiagram({ pages: [{ kind: 'graph', id: 'p', width: 100, height: 100, data: {
+      nodes: [{ id: 'a' }, { id: 'b' }, { id: 'n', outline: 'note', lines: ['hi'] }], edges: [{ from: 'b', to: 'g' }, { from: 'n', to: 'g' }],
+      containers: [{ id: 'g', role: 'container', members: ['a'] }],
+    } }] });
+    expect(page(text).data.nodes.map((n) => n.id).sort()).toEqual(['a', 'b', 'note-1']);
+    expect(page(text).data.edges).toEqual([]);
+    expect(warnings).toContain('Mermaid class relations join classes; connectors to namespaces were dropped.');
   });
 });

@@ -104,4 +104,17 @@ describe('writing a Mermaid C4 diagram', () => {
     }] });
     expect(text).toBe('C4Deployment\n  Person_Ext(u, "User")\n  Deployment_Node(n, "Server") {\n    System(a, "A", "does things")\n  }\n  Rel(u, a, "")\n');
   });
+
+  it('warns that an end it has no head for was written as an arrow', () => {
+    const { warnings } = writeC4({ pages: [{ kind: 'graph', id: 'p', width: 100, height: 100, data: { nodes: [{ id: 'a' }, { id: 'b' }], edges: [{ from: 'a', to: 'b', colors: { markerEnd: 'diamond' } }] } }] });
+    expect(warnings).toContain('Mermaid C4 links end in arrows; other ends were written as arrows.');
+  });
+
+  it('writes no title line for a blank page name, so the file reads back', () => {
+    for (const name of ['', ' ']) {
+      const { text } = writeC4({ pages: [{ kind: 'graph', id: 'p', name, width: 100, height: 100, data: { nodes: [{ id: 'a' }], edges: [] } }] });
+      expect(text).not.toContain('title');
+      expect(() => readC4(text)).not.toThrow();
+    }
+  });
 });

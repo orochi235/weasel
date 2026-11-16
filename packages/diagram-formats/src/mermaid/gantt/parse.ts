@@ -3,7 +3,8 @@ import { parseGanttEnd, parseGanttStart, type GanttTag, type GanttTask } from '@
 import { lineError } from '../../lineError';
 import { numberedText } from '../common/text';
 
-const TAGS = new Set(['done', 'active', 'crit', 'milestone', 'vert']);
+/** Words a task's items open with as its tags, rather than its id. */
+export const TAGS: ReadonlySet<string> = new Set(['done', 'active', 'crit', 'milestone', 'vert']);
 
 /** A task line read: the task, or `'vert'` for a vertical marker, which a chart does not hold. */
 export function parseGanttTask(text: string, line: number): GanttTask | 'vert' {

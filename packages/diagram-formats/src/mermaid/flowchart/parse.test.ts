@@ -50,4 +50,10 @@ describe('parseFlowchart', () => {
     expect(() => parseFlowchart('flowchart TD\nsubgraph s\nA')).toThrow(/line 2.*"end"/);
     expect(() => parseFlowchart('flowchart TD\nA\nend')).toThrow(/line 3/);
   });
+
+  it('refuses a linkStyle list with an empty or a non-integer entry', () => {
+    for (const list of ['1,,1', '1,', ',1', '1.5', '-1']) {
+      expect(() => parseFlowchart(`flowchart TD\nA-->B\nB-->C\nlinkStyle ${list} stroke:#ff0000`)).toThrow(`"${list}" is not a list of link numbers`);
+    }
+  });
 });

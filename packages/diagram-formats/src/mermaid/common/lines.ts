@@ -30,7 +30,8 @@ export interface MermaidSource {
 
 const widthOf = (lead: string): number => [...lead].reduce((n, c) => n + (c === '\t' ? 4 : 1), 0);
 
-/** Splits `text` into statements. Throws, naming the line, on an `accDescr { … }` never closed or a diagram with no header. */
+/** Splits `text` into statements. Throws, naming the line, on an `accDescr { … }` or a `%%{ … }%%` never closed, or a
+ *  diagram with no header. */
 export function statementsOf(text: string): MermaidSource {
   const source = text.replace(/\r\n?/g, '\n');
   const front = frontMatter(source);
@@ -46,6 +47,7 @@ export function statementsOf(text: string): MermaidSource {
     if (trimmed.startsWith('%%{')) {
       directives++;
       while (!raw[k]!.includes('}%%') && k < raw.length - 1) k++;
+      if (!raw[k]!.includes('}%%')) throw lineError('Mermaid', line, 'a directive opened here is never closed');
       continue;
     }
     if (trimmed === '' || trimmed.startsWith('%%')) continue;

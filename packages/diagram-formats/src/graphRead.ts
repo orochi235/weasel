@@ -86,11 +86,28 @@ export class Membership {
     else this.warnings.list(`${this.format} nodes in two clusters, kept in the first`, node);
   }
 
-  /** Each cluster's direct members, nodes in the order first placed and nested clusters after. */
-  members(cluster: string): string[] {
+  /** Each cluster's direct members, nodes in the order first placed and nested clusters after, each nested cluster
+   *  under the id `clusterIds` gives it where it gives one. */
+  members(cluster: string, clusterIds?: ReadonlyMap<string, string>): string[] {
     const nodes = [...this.parent].filter(([, p]) => p === cluster).map(([id]) => id);
-    const clusters = [...this.clusterParent].filter(([, p]) => p === cluster).map(([id]) => id);
+    const clusters = [...this.clusterParent].filter(([, p]) => p === cluster).map(([id]) => clusterIds?.get(id) ?? id);
     return [...nodes, ...clusters];
+  }
+}
+
+/** Ids a reader gives what its file names none for: each the first free `base-n`, counting from `from` (1 unset), free
+ *  of every id in `taken` and of each it gave before. */
+export class IdMint {
+  private readonly taken: Set<string>;
+
+  constructor(taken: Iterable<string>) {
+    this.taken = new Set(taken);
+  }
+
+  next(base: string, from = 1): string {
+    const id = freshId(base, this.taken, { from });
+    this.taken.add(id);
+    return id;
   }
 }
 

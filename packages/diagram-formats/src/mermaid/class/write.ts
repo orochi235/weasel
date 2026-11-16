@@ -44,7 +44,7 @@ class ClassWriter {
     for (const n of out.page.data.nodes) {
       if (n.outline !== 'note') continue;
       const own = out.edges.filter((e) => e.from === n.id || e.to === n.id);
-      const target = own.length === 1 && own[0]!.from === n.id ? own[0]! : null;
+      const target = own.length === 1 && own[0]!.from === n.id && out.byId.has(own[0]!.to) ? own[0]! : null;
       if (own.length > (target !== null ? 1 : 0)) out.warnings.add('Mermaid notes join one class; their other connectors were dropped.');
       this.notes.set(n.id, target);
     }
@@ -59,8 +59,8 @@ class ClassWriter {
     const { annotations, name, attributes, methods } = classParts(node);
     const id = this.id(node.id);
     const generic = /^(.*)<([^<>]*)>$/.exec(name);
-    const head = name === node.id ? id
-      : generic !== null && generic[1] === node.id ? `${id}~${generic[2]}~`
+    const head = name === id ? id
+      : generic !== null && generic[1] === id ? `${id}~${generic[2]}~`
         : `${id}["${spelled(name)}"]`;
     const members = [...attributes, ...methods].map((m) => oneLine(m, 'class diagram member', (w) => this.out.warnings.add(w)).trim());
     const kept = members.filter((m) => m !== '}' && readsAsStatement(m));
@@ -79,7 +79,7 @@ class ClassWriter {
     for (const id of c.nodes) this.node(this.out.byId.get(id)!, `${indent}  `);
     for (const child of c.clusters) this.cluster(child, `${indent}  `);
     this.lines.push(`${indent}}`);
-    if (c.label !== undefined && c.label !== c.id) this.out.warnings.add('Mermaid names a namespace by its id; container titles were dropped.');
+    if (c.label !== undefined && c.label !== this.id(c.id)) this.out.warnings.add('Mermaid names a namespace by its id; container titles were dropped.');
   }
 
   head(marker: MarkerRef | null | undefined, side: 0 | 1): string {
@@ -100,7 +100,7 @@ class ClassWriter {
 
   noteLines(): void {
     for (const [id, target] of this.notes) {
-      const text = spelled((this.out.byId.get(id)!.lines ?? []).join('\\n'));
+      const text = (this.out.byId.get(id)!.lines ?? []).map((l) => spelled(l).replace(/\\/g, '#92;')).join('\\n');
       this.lines.push(target === null ? `  note "${text}"` : `  note for ${this.id(target.to)} "${text}"`);
     }
   }
@@ -127,6 +127,10 @@ export function writeClassDiagram(doc: DiagramDocument, opts?: WriteOptions): Ex
   const noteEdges = new Set([...w.notes.values()].filter((e) => e !== null));
   for (const e of out.edges) {
     if (noteEdges.has(e) || w.notes.has(e.from) || w.notes.has(e.to)) continue;
+    if (!out.byId.has(e.from) || !out.byId.has(e.to)) {
+      out.warnings.add('Mermaid class relations join classes; connectors to namespaces were dropped.');
+      continue;
+    }
     w.lines.push(w.relation(e));
   }
   w.noteLines();

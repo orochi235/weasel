@@ -3,6 +3,7 @@ import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import type { DataNode } from '@weasel-js/diagram';
 import { onlyPage, sortedPage } from '../../testing/samePage';
+import { documentSpecs } from '../../toScene';
 import { parseStateDiagram } from './parse';
 import { readStateDiagram } from './read';
 import { writeStateDiagram } from './write';
@@ -65,6 +66,19 @@ describe('reading a Mermaid state diagram', () => {
     expect(() => parseStateDiagram('stateDiagram-v2\nnote right of A\nx')).toThrow('Mermaid, line 2: a note opened here has no "end note"');
     expect(() => parseStateDiagram('stateDiagram-v2\n--')).toThrow('Mermaid, line 2: "--" divides only a composite state');
   });
+
+  it('gives a note and a concurrent region ids no state holds', () => {
+    const notes = readStateDiagram('stateDiagram-v2\nnote-1 --> B\nnote right of B : hi');
+    expect(page('stateDiagram-v2\nnote-1 --> B\nnote right of B : hi').data.nodes.map((n) => n.id)).toEqual(['note-1', 'B', 'note-2']);
+    expect(() => documentSpecs(notes.document)).not.toThrow();
+    const regions = readStateDiagram('stateDiagram-v2\nstate X {\n a\n --\n b\n}\nX-region-1 --> c');
+    expect(() => documentSpecs(regions.document)).not.toThrow();
+    expect(onlyPage(regions.document).data.containers?.[0]?.lanes?.map((l) => l.id)).toEqual(['X-region-2', 'X-region-3']);
+  });
+
+  it('labels a composite state with a description given before its block', () => {
+    expect(page('stateDiagram-v2\nX : Big\nstate X {\n a\n}').data.containers?.[0]).toMatchObject({ id: 'X', label: 'Big' });
+  });
 });
 
 describe('writing a Mermaid state diagram', () => {
@@ -90,5 +104,20 @@ describe('writing a Mermaid state diagram', () => {
       data: { nodes: [{ id: 'a' }, { id: 'b' }], edges: [{ from: 'a', to: 'b', colors: { dash: [2, 2] } }] },
     }] });
     expect(warnings).toContain('Mermaid draws every transition alike; their dashes and ends were dropped.');
+  });
+
+  it('keeps a state\'s line and a composite state\'s label when their ids are written cleaned', () => {
+    const text = writeStateDiagram({ pages: [{ kind: 'graph', id: 'p', width: 100, height: 100, data: {
+      nodes: [{ id: 'my state', lines: ['my state'] }], edges: [], containers: [{ id: 'my box', role: 'container', label: 'my box', members: ['my state'] }],
+    } }] }).text;
+    expect(page(text).data.nodes[0]!.lines).toEqual(['my state']);
+    expect(page(text).data.containers?.[0]?.label).toBe('my box');
+  });
+
+  it('writes a note line reading "end note" so it does not close the note', () => {
+    const text = writeStateDiagram({ pages: [{ kind: 'graph', id: 'p', width: 100, height: 100, data: {
+      nodes: [{ id: 'a' }, { id: 'n', outline: 'note', lines: ['end note', 'z'] }], edges: [{ from: 'n', to: 'a' }],
+    } }] }).text;
+    expect(page(text).data.nodes.find((n) => n.outline === 'note')!.lines).toEqual(['end note', 'z']);
   });
 });

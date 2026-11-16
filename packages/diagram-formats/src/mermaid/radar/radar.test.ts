@@ -115,6 +115,13 @@ describe('writing a Mermaid radar', () => {
     ]);
     expect(() => writeMermaidRadar({ ...page, data: { kind: 'pie', slices: [] } as never })).toThrow(/as a radar only/);
   });
+
+  it('drops a max, min or ticks that is not a number, with a warning, so the chart reads back', () => {
+    const data = { kind: 'radar' as const, axes: [{ id: 'a' }, { id: 'b' }, { id: 'c' }], curves: [], max: Number.NaN, min: Number.NEGATIVE_INFINITY, ticks: Number.NaN };
+    const { text, warnings } = writeMermaidRadar({ kind: 'plot', id: 'p', width: 10, height: 10, data });
+    expect(() => readMermaidRadar(text)).not.toThrow();
+    expect(warnings).toContain('Mermaid radar max, min and ticks are numbers; ones that were not were dropped.');
+  });
 });
 
 describe('the Mermaid format', () => {

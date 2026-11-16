@@ -9,15 +9,22 @@ const category = (s: string): string => (/^[\w.-]+$/.test(s) ? s : mermaidQuoted
 
 const titled = (title: string | undefined): string => (title !== undefined ? ` ${mermaidQuoted(title)}` : '');
 
-function xAxisLine(x: NonNullable<XyChartData['x']>): string | null {
-  if (x.kind === 'range') return `x-axis${titled(x.title)} ${x.min} --> ${x.max}`;
+const RANGE_DROPPED = 'Mermaid axis ranges run between two numbers; ranges with an end that is not one were dropped.';
+
+function xAxisLine(x: NonNullable<XyChartData['x']>, warn: (m: string) => void): string | null {
+  if (x.kind === 'range' && Number.isFinite(x.min) && Number.isFinite(x.max)) return `x-axis${titled(x.title)} ${x.min} --> ${x.max}`;
+  if (x.kind === 'range') {
+    warn(RANGE_DROPPED);
+    return x.title !== undefined ? `x-axis${titled(x.title)}` : null;
+  }
   if (x.categories.length === 0) return x.title !== undefined ? `x-axis${titled(x.title)}` : null;
   return `x-axis${titled(x.title)} [${x.categories.map(category).join(', ')}]`;
 }
 
 function yAxisLine(y: NonNullable<XyChartData['y']>, warn: (m: string) => void): string | null {
-  const both = y.min !== undefined && y.max !== undefined;
-  if (!both && (y.min !== undefined || y.max !== undefined)) warn('Mermaid holds both ends of the y axis or neither; its one end was dropped.');
+  const both = y.min !== undefined && y.max !== undefined && Number.isFinite(y.min) && Number.isFinite(y.max);
+  if (y.min !== undefined && y.max !== undefined && !both) warn(RANGE_DROPPED);
+  else if (!both && (y.min !== undefined || y.max !== undefined)) warn('Mermaid holds both ends of the y axis or neither; its one end was dropped.');
   if (!both && y.title === undefined) return null;
   return `y-axis${titled(y.title)}${both ? ` ${y.min} --> ${y.max}` : ''}`;
 }
@@ -32,7 +39,7 @@ export function writeMermaidXychart(page: PlotPage): ExportResult {
   };
   const lines = [data.orientation === 'horizontal' ? 'xychart-beta horizontal' : 'xychart-beta'];
   if (data.title !== undefined) lines.push(`  title ${mermaidQuoted(data.title)}`);
-  const x = data.x && xAxisLine(data.x);
+  const x = data.x && xAxisLine(data.x, warn);
   if (x) lines.push(`  ${x}`);
   const y = data.y && yAxisLine(data.y, warn);
   if (y) lines.push(`  ${y}`);

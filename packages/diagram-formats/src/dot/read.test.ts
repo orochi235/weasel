@@ -165,4 +165,9 @@ describe('reading DOT', () => {
   it('names the line of a syntax error', () => {
     expect(() => readDot('digraph {\n a -> ;\n}')).toThrow(/DOT, line 2/);
   });
+
+  it('keeps a node in a cluster under its own id where a cluster is named as the node is', () => {
+    const data = page('digraph { subgraph cluster_a { cluster_a; b } }').data;
+    expect(data.containers?.map((c) => [c.id, c.members])).toEqual([['a', ['cluster_a', 'b']]]);
+  });
 });

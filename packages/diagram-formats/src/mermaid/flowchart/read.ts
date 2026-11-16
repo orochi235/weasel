@@ -7,11 +7,11 @@ import type { MarkerRef } from '@weasel-js/core';
 import type { DataContainer, DataEdge, DataNode, EdgeStyle, LayoutDirection, Outline } from '@weasel-js/diagram';
 import type { ImportResult } from '../../document';
 import { Membership, Warnings, graphPage } from '../../graphRead';
-import { checkProps, dashOf, mermaidColor, nodeColors, px } from '../common/styles';
+import { checkProps, dashOf, mermaidColor, nodeColors, strokeWidthOf } from '../common/styles';
 import { textLines } from '../common/text';
 import type { LinkHead, MermaidShape } from './lex';
 import { parseFlowchart, type MermaidLink, type MermaidNodeRef, type MermaidStmt, type StyleProps } from './parse';
-import { getOwn } from '@weasel-js/registry';
+import { freshId, getOwn } from '@weasel-js/registry';
 
 const DIRECTIONS: Readonly<Record<string, LayoutDirection>> = {
   TB: 'down', TD: 'down', BT: 'up', LR: 'right', RL: 'left', 'v': 'down', '^': 'up', '>': 'right', '<': 'left',
@@ -179,8 +179,13 @@ function edgeColors(base: Partial<EdgeStyle> | undefined, props: StyleProps, war
       const color = mermaidColor(v, warnings);
       if (color !== undefined) colors[k === 'stroke' ? 'stroke' : 'label'] = color;
     }
-    else if (k === 'stroke-width') colors.width = px(v);
-    else if (k === 'stroke-dasharray') colors.dash = dashOf(v);
+    else if (k === 'stroke-width') {
+      const width = strokeWidthOf(v, warnings);
+      if (width !== undefined) colors.width = width;
+    } else if (k === 'stroke-dasharray') {
+      const dash = dashOf(v, warnings);
+      if (dash !== undefined) colors.dash = dash;
+    }
   }
   return Object.keys(colors).length > 0 ? colors : undefined;
 }
@@ -195,6 +200,18 @@ function edgeIdsOf(stmts: readonly MermaidStmt[], out = new Set<string>()): Set<
 
 function subgraphIdsOf(stmts: readonly MermaidStmt[], out = new Set<string>()): Set<string> {
   for (const s of stmts) if (s.kind === 'subgraph') subgraphIdsOf(s.stmts, out.add(s.id));
+  return out;
+}
+
+/** Container ids for subgraphs: each its own, else, where a node has that id too, the first free `id-n`. */
+function subgraphContainerIds(subgraphs: readonly string[], nodes: ReadonlyMap<string, unknown>): Map<string, string> {
+  const taken = new Set([...nodes.keys(), ...subgraphs]);
+  const out = new Map<string, string>();
+  for (const id of subgraphs) {
+    const pick = nodes.has(id) ? freshId(id, taken) : id;
+    taken.add(pick);
+    out.set(id, pick);
+  }
   return out;
 }
 
@@ -214,11 +231,12 @@ export function readFlowchart(text: string): ImportResult {
     const { colors: _c, ...rest } = edge;
     return colors !== undefined ? { ...rest, colors } : rest;
   });
+  const containerIds = subgraphContainerIds([...r.subgraphs.keys()], r.nodes);
   const containers: DataContainer[] = [...r.subgraphs].map(([id, title]) => {
-    const members = r.membership.members(id);
+    const members = r.membership.members(id, containerIds);
     const colors = nodeColors(r.propsOf(id, false), r.warnings);
     return {
-      id, role: 'container', label: title !== undefined ? textLines(title).filter((l) => l !== '').join(' ') : id,
+      id: containerIds.get(id)!, role: 'container', label: title !== undefined ? textLines(title).filter((l) => l !== '').join(' ') : id,
       ...(members.length > 0 ? { members } : {}),
       ...(colors !== undefined ? { colors } : {}),
     };

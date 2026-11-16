@@ -76,8 +76,11 @@ export function writeEdge(edge: DataEdge, page: EdgePage): string | null {
   const label = labelGeometry(edge.labelPlacement, [center(from), ...points, center(to)]);
   const id = freshId(edgeIdOf(edge), page.taken, { from: 2, bare: true });
   page.taken.add(id);
-  const ends = (['from', 'to'] as const).filter((end) => edge.endLabels?.[end])
-    .map((end) => endLabelXml({ id: endLabelIdOf(id, end), value: edge.endLabels![end]!, parent: id }, end === 'from' ? -1 : 1));
+  const ends = (['from', 'to'] as const).filter((end) => edge.endLabels?.[end]).map((end) => {
+    const labelId = freshId(endLabelIdOf(id, end), page.taken, { from: 2, bare: true });
+    page.taken.add(labelId);
+    return endLabelXml({ id: labelId, value: edge.endLabels![end]!, parent: id }, end === 'from' ? -1 : 1);
+  });
   return edgeXml({ id, value: edge.label ?? '', style, parent: page.layer, source: edge.from, target: edge.to }, label, points)
     + ends.join('');
 }

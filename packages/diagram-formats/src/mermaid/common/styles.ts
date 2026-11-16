@@ -3,10 +3,12 @@
  * share: CSS-like `key:value` lists read into a node's own colors, and its
  * colors written back as one.
  */
+import type { MarkerRef } from '@weasel-js/core';
 import type { NodeStyle } from '@weasel-js/diagram';
 import type { Warnings } from '../../graphRead';
 import { checkedColor } from '../../colorCheck';
 import { hexColor } from '../../graphWrite';
+import { mermaidNumber } from './number';
 
 /** A style's `key:value` pairs, in order. */
 export type StyleProps = [string, string][];
@@ -37,10 +39,27 @@ export function checkProps(props: StyleProps, warnings: Warnings): void {
   for (const [key] of props) if (!KEPT.includes(key)) warnings.list('Mermaid style properties a diagram does not hold were dropped', key);
 }
 
-/** A CSS length in px as a number. */
-export const px = (v: string): number => Number(v.replace(/px$/, ''));
-/** A `stroke-dasharray` as numbers. */
-export const dashOf = (v: string): number[] => v.split(/[\s,]+/).filter((s) => s !== '').map(px);
+const NOT_LENGTHS = 'Mermaid style lengths that are not numbers were dropped';
+
+/** A CSS length in px as a number, `undefined` for one that is not a number. */
+const px = (v: string): number | undefined => mermaidNumber(v.trim().replace(/px$/, ''));
+
+/** A `stroke-width` as a number; `undefined`, with a warning, for one that is not a number. */
+export function strokeWidthOf(v: string | undefined, warnings: Warnings): number | undefined {
+  if (v === undefined) return undefined;
+  const n = px(v);
+  if (n === undefined) warnings.list(NOT_LENGTHS, `stroke-width:${v}`);
+  return n;
+}
+
+/** A `stroke-dasharray` as numbers; `undefined`, with a warning, for one with a length that is not a number. */
+export function dashOf(v: string | undefined, warnings: Warnings): number[] | undefined {
+  if (v === undefined) return undefined;
+  const dash = v.split(/[\s,]+/).filter((s) => s !== '').map(px);
+  if (dash.every((n) => n !== undefined)) return dash;
+  warnings.list(NOT_LENGTHS, `stroke-dasharray:${v}`);
+  return undefined;
+}
 
 /** A color a Mermaid file names, or `undefined`, with a warning, when a diagram cannot draw it. */
 export const mermaidColor = (css: string | undefined, warnings: Warnings): string | undefined =>
@@ -51,14 +70,24 @@ export function nodeColors(props: ReadonlyMap<string, string>, warnings: Warning
   const fill = mermaidColor(props.get('fill'), warnings);
   const stroke = mermaidColor(props.get('stroke'), warnings);
   const text = mermaidColor(props.get('color'), warnings);
+  const strokeWidth = strokeWidthOf(props.get('stroke-width'), warnings);
+  const dash = dashOf(props.get('stroke-dasharray'), warnings);
   const colors: Partial<NodeStyle> = {
     ...(fill !== undefined ? { fill } : {}),
     ...(stroke !== undefined ? { stroke } : {}),
     ...(text !== undefined ? { text } : {}),
-    ...(props.has('stroke-width') ? { strokeWidth: px(props.get('stroke-width')!) } : {}),
-    ...(props.has('stroke-dasharray') ? { dash: dashOf(props.get('stroke-dasharray')!) } : {}),
+    ...(strokeWidth !== undefined ? { strokeWidth } : {}),
+    ...(dash !== undefined ? { dash } : {}),
   };
   return Object.keys(colors).length > 0 ? colors : undefined;
+}
+
+/** Whether `marker` draws a head, for a kind that draws every head as an arrow. `warn` hears, naming `kind`, of a head
+ *  that is not one. */
+export function arrowHead(marker: MarkerRef | null | undefined, kind: string, warn: (message: string) => void): boolean {
+  if (marker === null || marker === undefined) return false;
+  if ((typeof marker === 'string' ? marker : marker.key) !== 'arrow') warn(`Mermaid ${kind} links end in arrows; other ends were written as arrows.`);
+  return true;
 }
 
 /** A node's colors as a style's properties, `fill:#ff0000,color:#000000`. */

@@ -96,6 +96,13 @@ describe('writing a Mermaid journey', () => {
     ]);
     expect(() => writeMermaidJourney({ ...page, data: { kind: 'pie', slices: [] } })).toThrow(/as a journey only; the page holds a pie/);
   });
+
+  it('drops the "{" after a step name opening accDescr, with a warning, so the journey reads back', () => {
+    const data = { kind: 'journey' as const, sections: [{ tasks: [{ name: 'accDescr { x', score: 3, actors: [] }, { name: 'b', score: 2, actors: [] }] }] };
+    const { text, warnings } = writeMermaidJourney({ kind: 'plot', id: 'p', width: 10, height: 10, data });
+    expect(plotOf(text).data).toMatchObject({ sections: [{ tasks: [{ name: 'accDescr x' }, { name: 'b' }] }] });
+    expect(warnings).toContain('Mermaid reads a line opening "accTitle {" or "accDescr {" as accessibility text; that "{" in step names was dropped.');
+  });
 });
 
 describe('the Mermaid format', () => {
