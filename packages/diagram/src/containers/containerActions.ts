@@ -18,7 +18,7 @@ import {
 } from '@weasel-js/core';
 import type { Vec2 } from '@weasel-js/core/math';
 import { grabPortAction, grabPortBindings } from '../connect';
-import { addLane, releaseMembers } from './containerStencils';
+import { addLane, canReleaseMembers, releaseMembers } from './containerStencils';
 import {
   LANE_AFFORDANCE_KIND, laneLayer, laneResizeLocked, laneScratchOf, poolsOf, type LaneLayerOptions, type PoolLanes,
 } from './laneBoundaryLayer';
@@ -171,12 +171,9 @@ export function createAddLaneAction(opts: LaneActionOptions): Action {
   });
 }
 
-/** The selected containers, pools, and lanes. */
+/** The selected containers, pools, and lanes, that a release would change. */
 const selectedContainers = (opts: LaneActionOptions): string[] =>
-  (opts.selected?.() ?? []).filter((id) => {
-    const node = opts.scene.get(id as NodeId);
-    return node !== undefined && diagramContainerOf(node) !== null;
-  });
+  (opts.selected?.() ?? []).filter((id) => canReleaseMembers(opts.scene, id));
 
 /** The `diagram.releaseMembers` command: removes each selected container and
  *  keeps what it holds, in one history entry. */

@@ -99,6 +99,17 @@ describe('the release members command', () => {
     expect(h.scene.get('m' as NodeId)!.parent).toBeNull();
     expect(h.scene.historyIndex()).toBe(entries + 1);
   });
+
+  it('is disabled over a container holding a locked member, which it could not move', () => {
+    const h = pool();
+    h.scene.setLocked('m' as NodeId, true);
+    const action = createReleaseMembersAction({ scene: h.scene as never, selected: () => [h.poolId] });
+    expect(action.enabled!({} as never)).not.toBe(true);
+    const entries = h.scene.historyIndex();
+    expect(() => (action.invoker as ImmediateInvoker).run({ scene: h.scene } as never, undefined)).not.toThrow();
+    expect(h.scene.get(h.poolId as NodeId)).toBeDefined();
+    expect(h.scene.historyIndex()).toBe(entries);
+  });
 });
 
 describe('the add-lane action', () => {
