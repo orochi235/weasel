@@ -30,6 +30,11 @@ describe('a read-only field', () => {
     expect(screen.queryByRole('button')).toBeNull();
   });
 
+  it('draws an unset switch as the dash, not Off', () => {
+    render(<PropertyControl kind="boolean" name="Snap" value={undefined} readOnly onChange={noop} />);
+    expect(shown('Snap')).toBe('—');
+  });
+
   it('says Mixed for values that disagree', () => {
     render(<PropertyControl kind="number" name="Width" value={undefined} mixed readOnly onChange={noop} />);
     expect(shown('Width')).toBe('Mixed');

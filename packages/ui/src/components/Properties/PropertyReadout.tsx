@@ -30,7 +30,7 @@ function readoutBody(p: PropertyControlProps): ReactNode {
   if (p.mixed) return <span className={s.none}>Mixed</span>;
   switch (p.kind) {
     case 'boolean':
-      return p.value === true ? 'On' : 'Off';
+      return p.value === undefined ? none() : p.value ? 'On' : 'Off';
     case 'number':
       return <NumberText {...p} />;
     case 'enum': {
