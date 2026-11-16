@@ -23,7 +23,7 @@ export const outlineStrokeAction: Action = {
       const adapter = deps.createOutlinesAdapter;
       if (!adapter) return;
       const scale = deps.view?.get().scale;
-      void withTextOutlines(adapter, () => applyOutlineStroke(adapter, scale ? { scale } : {}), 'outlineStroke', deps.notices);
+      void withTextOutlines(adapter, (a) => applyOutlineStroke(a, scale ? { scale } : {}), 'outlineStroke', deps.notices);
     },
   } satisfies ImmediateInvoker,
   enabled: (deps) => {
