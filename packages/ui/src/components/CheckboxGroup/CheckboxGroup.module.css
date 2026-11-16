@@ -1,0 +1,18 @@
+.root {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--wzl-space-3);
+}
+
+.root[data-orientation='horizontal'] {
+  flex-direction: row;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--wzl-space-3) var(--wzl-space-6);
+}
+
+/* What a sweep reaches: the box and its label, nothing beside them. */
+.item {
+  display: flex;
+}
