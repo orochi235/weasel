@@ -36,3 +36,13 @@ it('marks a non-printing row, and offers only the controls its row allows', () =
   expect(screen.getAllByRole('checkbox').map((c) => c.getAttribute('aria-label'))).toEqual(['Show Measurements']);
   expect(screen.getAllByRole('button', { name: /^Remove/ }).map((b) => b.getAttribute('aria-label'))).toEqual(['Remove Measurement']);
 });
+
+it('keeps the remove column in a row that cannot be removed, beside one that can', () => {
+  // A proxy for the alignment `LayerList.browser.test.tsx` measures: every row holds one item in that column.
+  renderWithIcons(
+    <LayerList items={[{ id: 'a', label: 'Alpha' }, { id: 'b', label: 'Beta', removable: false }]} onRemove={() => {}} onVisibilityChange={() => {}} />,
+  );
+  const tails = screen.getAllByRole('checkbox').map((box) => box.parentElement!.lastElementChild!);
+  expect(tails[0]).toBe(screen.getByRole('button', { name: 'Remove Alpha' }));
+  expect(tails[1]!.className).toMatch(/removeSlot/);
+});

@@ -69,6 +69,12 @@
 }
 
 /* The lock column, at the row's end. */
+/* The width a row's remove button takes, kept by a row that has none. */
+.removeSlot {
+  flex: 0 0 auto;
+  width: var(--wzl-control-h-sm);
+}
+
 .lockToggle {
   display: inline-flex;
   align-items: center;

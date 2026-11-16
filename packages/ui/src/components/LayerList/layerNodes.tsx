@@ -66,14 +66,17 @@ function Controls({ item, props }: { item: LayerListItem; props: LayerListProps 
           <VisibilityCheck item={item} items={props.items} onChange={onVisibilityChange} />
         ))}
       <LockToggle item={item} props={props} />
-      {onRemove && !item.fixed && !item.locked && item.removable !== false && (
-        <Button {...CLOSE_BUTTON_PROPS}
-          aria-label={`Remove ${item.label}`}
-          disabled={access.state !== 'enabled'}
-          disabledReason={access.reason}
-          onClick={() => onRemove(item.id)}
-        />
-      )}
+      {onRemove &&
+        (item.fixed || item.locked || item.removable === false ? (
+          <span className={s.removeSlot} />
+        ) : (
+          <Button {...CLOSE_BUTTON_PROPS}
+            aria-label={`Remove ${item.label}`}
+            disabled={access.state !== 'enabled'}
+            disabledReason={access.reason}
+            onClick={() => onRemove(item.id)}
+          />
+        ))}
     </>
   );
 }
