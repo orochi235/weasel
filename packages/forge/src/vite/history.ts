@@ -1,7 +1,7 @@
 import { execFile } from 'node:child_process';
 import { existsSync, readFileSync } from 'node:fs';
 import { dirname, join, posix, resolve } from 'node:path';
-import { setOwn } from '@weasel-js/registry';
+import { setOwn } from './ownKeys';
 import type { ComponentHistory } from '../story/types.ts';
 
 /** Runs git in `cwd` and answers its stdout. */

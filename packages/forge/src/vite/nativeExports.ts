@@ -1,5 +1,5 @@
 import type * as t from '@babel/types';
-import { getOwn } from '@weasel-js/registry';
+import { getOwn } from './ownKeys';
 import { type Bindings, isLiteralValue } from './ast.ts';
 
 type Fn = t.ArrowFunctionExpression | t.FunctionExpression | t.FunctionDeclaration;

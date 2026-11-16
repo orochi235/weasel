@@ -1,6 +1,6 @@
 import { mkdirSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { getOwn } from '@weasel-js/registry';
+import { getOwn } from './ownKeys';
 import { html } from './html.ts';
 
 const DIR = 'node_modules/.forge';

@@ -1,5 +1,5 @@
 import type { ViteDevServer } from 'vite';
-import { getOwn } from '@weasel-js/registry';
+import { getOwn } from './ownKeys';
 import { type CaptureEndpoint, serveCapture } from './capture/endpoint.ts';
 import { CAPTURE_PAGES } from './capture/payload.ts';
 import { html } from './html.ts';

@@ -1,4 +1,4 @@
-import { getOwn, setOwn } from '@weasel-js/registry';
+import { getOwn, setOwn } from './ownKeys';
 import { parseFile } from './ast.ts';
 import { indexProgram, scan } from './indexFile.ts';
 import { type Foreign, type ForeignStories, isFn, mayBeStory, mayReturnStory, type Scope } from './nativeExports.ts';

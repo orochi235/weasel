@@ -1,7 +1,7 @@
 import { globSync, readFileSync, statSync } from 'node:fs';
 import { basename, relative, resolve, sep } from 'node:path';
 import type { EnvironmentModuleNode, Logger, Plugin, ViteDevServer } from 'vite';
-import { getOwn } from '@weasel-js/registry';
+import { getOwn } from './ownKeys';
 import { byComponent } from '../story/indexPages.ts';
 import type { DepGraph, IndexEntry } from '../story/types.ts';
 import { hoistPages, writePages } from './build.ts';
