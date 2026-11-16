@@ -56,9 +56,9 @@ function derivative(c: ArrayLike<number>, dim: number): Float64Array {
 function speedAt(der: Float64Array, dim: number, t: number): number {
   const x = (der[0] * t + der[1]) * t + der[2];
   const y = (der[3] * t + der[4]) * t + der[5];
-  if (dim === 2) return Math.sqrt(x * x + y * y);
+  if (dim === 2) return Math.hypot(x, y);
   const z = (der[6] * t + der[7]) * t + der[8];
-  return Math.sqrt(x * x + y * y + z * z);
+  return Math.hypot(x, y, z);
 }
 
 /** The squared length of the second derivative at `t`. */
