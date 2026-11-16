@@ -1,4 +1,4 @@
-import { useLatest } from '@weasel-js/react';
+import { isDev, useLatest } from '@weasel-js/react';
 import { itemsFromFiles, type ActionsRegistry, type IngestItem } from '@weasel-js/routing';
 import type { InsertAdapter } from 'core/adapters/types';
 import type { ClipboardIngestCtx } from 'interactions/actions/depSchema';
@@ -20,6 +20,23 @@ function keptHandlers(presetHandlers: readonly ContentHandlerEntry[], option: Ki
   if (option === true) return presetHandlers;
   const off = (id: string) => id.startsWith('kit:') && (option === false || option.omit.includes(id));
   return presetHandlers.filter((h) => !off(h.id));
+}
+
+const warnedOmits = new Set<string>();
+
+/** Warns, once per id, about an `omit` entry that names no kit handler the presets brought. */
+function warnUnmatchedOmits(omit: readonly string[], presetHandlers: readonly ContentHandlerEntry[]): void {
+  for (const id of omit) {
+    if (warnedOmits.has(id)) continue;
+    if (id.startsWith('kit:') && presetHandlers.some((h) => h.id === id)) continue;
+    warnedOmits.add(id);
+    const kitIds = presetHandlers.filter((h) => h.id.startsWith('kit:')).map((h) => `'${h.id}'`);
+    console.warn(
+      `[weasel] ingestion.kitHandlers.omit names '${id}', which is no kit handler this canvas's presets brought, ` +
+      `so it omits nothing. ${kitIds.length > 0 ? `The kit handlers here are ${kitIds.join(', ')}.` : 'No preset here brings a kit handler.'} ` +
+      'Only `kit:` ids can be omitted; leave out the preset that brings any other handler.',
+    );
+  }
 }
 
 /** What `useCanvasIngestion` reads of `<SceneCanvas ingestion>`. */
@@ -67,6 +84,9 @@ export function useCanvasIngestion(
     [own, omitted, presetHandlers],
   );
   useEffect(() => admitHandlerMimes(handlers), [handlers]);
+  useEffect(() => {
+    if (omitted && isDev()) warnUnmatchedOmits(omitted.split('\n'), presetHandlers);
+  }, [omitted, presetHandlers]);
 
   const reviver = options?.clipboard?.reviver;
   const enabled = options?.clipboard?.enabled !== false;

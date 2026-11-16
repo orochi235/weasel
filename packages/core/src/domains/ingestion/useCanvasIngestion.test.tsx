@@ -121,6 +121,20 @@ describe('useCanvasIngestion: handlers', () => {
       .toEqual(['kit:image', 'kit:weasel-json', 'text:x']);
   });
 
+  it('warns once about an omit entry naming no kit handler the presets brought', () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    try {
+      mount({ options: { kitHandlers: { omit: ['kit:svg', 'kit:imag', 'text:x'] } }, presetHandlers: PRESETS });
+      mount({ options: { kitHandlers: { omit: ['kit:imag'] } }, presetHandlers: PRESETS });
+      const named = warn.mock.calls.map(([message]) => String(message));
+      expect(named).toHaveLength(2);
+      expect(named[0]).toContain("'kit:imag'");
+      expect(named[1]).toContain("'text:x'");
+    } finally {
+      warn.mockRestore();
+    }
+  });
+
   it('keeps one list across renders while the omit list is the same', () => {
     const { result, rerender } = mount({ options: { kitHandlers: { omit: ['kit:svg'] } }, presetHandlers: PRESETS });
     const first = result.current.handlers;
