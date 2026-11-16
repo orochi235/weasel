@@ -9,7 +9,7 @@ import type { DiagramDocument, ExportResult, WriteOptions } from '../../document
 import { edgeStyleIn, graphOut, nodeLines, type Cluster, type GraphOut } from '../../graphWrite';
 import { titleLines } from '../common/lines';
 import { styleProps } from '../common/styles';
-import { mermaidEscaped, mermaidIds } from '../common/text';
+import { lineOpening, mermaidEscaped, mermaidIds } from '../common/text';
 
 const HEADER: Readonly<Record<LayoutDirection, string>> = { down: 'TB', up: 'BT', right: 'LR', left: 'RL' };
 
@@ -107,7 +107,7 @@ class StateWriter {
         continue;
       }
       if (text.length === 1) this.lines.push(`  note right of ${this.id(target.to)} : ${text[0]}`);
-      else this.lines.push(`  note right of ${this.id(target.to)}`, ...text.map((t) => `    ${t}`), '  end note');
+      else this.lines.push(`  note right of ${this.id(target.to)}`, ...text.map((t) => `    ${lineOpening(t, ['end note'])}`), '  end note');
     }
   }
 

@@ -113,4 +113,11 @@ describe('writing a Mermaid state diagram', () => {
     expect(page(text).data.nodes[0]!.lines).toEqual(['my state']);
     expect(page(text).data.containers?.[0]?.label).toBe('my box');
   });
+
+  it('writes a note line reading "end note" so it does not close the note', () => {
+    const text = writeStateDiagram({ pages: [{ kind: 'graph', id: 'p', width: 100, height: 100, data: {
+      nodes: [{ id: 'a' }, { id: 'n', outline: 'note', lines: ['end note', 'z'] }], edges: [{ from: 'n', to: 'a' }],
+    } }] }).text;
+    expect(page(text).data.nodes.find((n) => n.outline === 'note')!.lines).toEqual(['end note', 'z']);
+  });
 });
