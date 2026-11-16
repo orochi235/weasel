@@ -1,3 +1,5 @@
+import { setOwn } from '@weasel-js/registry';
+
 /** A scale's base and exactly one of `step`, `ratio` or `factors`. */
 export interface ScaleParams {
   readonly base: number;
@@ -24,7 +26,7 @@ export function scale(steps: readonly string[], p: ScaleParams): Record<string, 
     if (p.factors !== undefined) v = p.base * p.factors[i];
     else if (p.step !== undefined) v = p.base + p.step * i;
     else v = p.base * p.ratio! ** i;
-    out[name] = `${Math.round(v)}px`;
+    setOwn(out, name, `${Math.round(v)}px`);
   });
   return out;
 }

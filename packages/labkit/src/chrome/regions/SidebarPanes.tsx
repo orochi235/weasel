@@ -1,3 +1,4 @@
+import { getOwn } from '@weasel-js/registry';
 import { type RefCallback, useCallback, useMemo, useState } from 'react';
 import { asNodeId, stripStrategy } from 'windease';
 import { Panel, Provider, StrategyRegistryProvider, Zone } from 'windease/react';
@@ -167,7 +168,7 @@ export function SidebarPanes<TCtx extends SidebarSlotContext = TrialChromeContex
   );
   if (shown.length === 0) return null;
   const folded = (c: RegionContribution<TCtx>) =>
-    ctx.collapsedSections[c.id] ?? (c.item as SidebarSection).defaultCollapsed ?? false;
+    getOwn(ctx.collapsedSections, c.id) ?? (c.item as SidebarSection).defaultCollapsed ?? false;
   const filler = shown.filter((c) => !c.render && !folded(c)).at(-1)?.id;
 
   return (
@@ -192,7 +193,7 @@ export function SidebarPanes<TCtx extends SidebarSlotContext = TrialChromeContex
                 barRef={barRef}
                 collapsed={!c.render && folded(c)}
                 fills={c.id === filler}
-                height={heights[c.id]}
+                height={getOwn(heights, c.id)}
                 onHeight={(h) => onHeightsChange?.({ ...heights, [c.id]: h })}
               />
             ))}

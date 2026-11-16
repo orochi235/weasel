@@ -1,5 +1,6 @@
 // The component's own entry, not the barrel: the barrel would bring every weasel-ui component into each frame.
 import { Focusable, Tooltip, TooltipTrigger } from '@weasel-js/ui/components/Tooltip';
+import { getOwn } from '@weasel-js/registry';
 import type { ApiTypeDef } from '../../story/api';
 import { Description } from './Description';
 
@@ -38,7 +39,7 @@ function Defined({ name, def }: { name: string; def: ApiTypeDef }) {
 export function TypeText({ text, types }: { text: string; types: Readonly<Record<string, ApiTypeDef>> | undefined }) {
   if (!types) return text;
   return text.split(PARTS).map((part, i) => {
-    const def = i % 2 === 1 ? types[part] : undefined;
+    const def = i % 2 === 1 ? getOwn(types, part) : undefined;
     return def ? <Defined key={i} name={part} def={def} /> : part;
   });
 }

@@ -1,6 +1,7 @@
 import { globSync, readFileSync, statSync } from 'node:fs';
 import { basename, relative, resolve, sep } from 'node:path';
 import type { EnvironmentModuleNode, Logger, Plugin, ViteDevServer } from 'vite';
+import { getOwn } from './ownKeys';
 import { byComponent } from '../story/indexPages.ts';
 import type { DepGraph, IndexEntry } from '../story/types.ts';
 import { hoistPages, writePages } from './build.ts';
@@ -207,7 +208,7 @@ export function forge(options: ForgeOptions): Plugin[] {
     const sources = Object.values(graph).flatMap((entry) => (entry.source === null ? [] : [entry.source]));
     const histories = await (history ??= createHistoryReader(root)).read(sources);
     for (const entry of Object.values(graph)) {
-      const found = entry.source === null ? undefined : histories[entry.source];
+      const found = entry.source === null ? undefined : getOwn(histories, entry.source);
       if (found) entry.history = found;
     }
     return graph;
@@ -338,7 +339,7 @@ export function forge(options: ForgeOptions): Plugin[] {
           settledAll ??= settle([...files().keys()], async (spec, importer) => (await this.resolve(spec, importer))?.id ?? null);
           await settledAll;
         }
-        if (name !== 'deps.js') return modules[name]?.();
+        if (name !== 'deps.js') return getOwn(modules, name)?.();
         const graph = await graphOf(async (spec, importer) => (await this.resolve(spec, importer))?.id ?? null);
         depsSent = JSON.stringify(graph);
         return `export default ${depsSent};\n`;

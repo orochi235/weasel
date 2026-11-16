@@ -1,3 +1,4 @@
+import { getOwn } from '@weasel-js/registry';
 import type { ThemeDefinition } from '@weasel-js/theme';
 import type { Lookup, ScaleDef } from '@weasel-js/theme/engine';
 import { Button } from '@weasel-js/ui/components/Button';
@@ -90,10 +91,11 @@ function ScaleSection({
                     <code>{token}</code>
                   </th>
                   {table.columns.map((c) => {
-                    const px = pxOf(c.values[step]);
+                    const value = getOwn(c.values, step);
+                    const px = pxOf(value);
                     return (
                       <td key={c.label} className={styles.ladderCell}>
-                        <span className={styles.num}>{c.values[step]}</span>
+                        <span className={styles.num}>{value}</span>
                         {px !== undefined && <span className={styles.ladderBar} style={{ width: `${(px / widest) * 100}%` }} />}
                       </td>
                     );

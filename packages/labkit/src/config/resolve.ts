@@ -37,7 +37,7 @@ const ownAuto = (patch: LeafPatch): PrefAuto | undefined => {
  *  rule chain can fill rather than a settled `undefined`. */
 function defined(annotations: Record<string, unknown>): LeafPatch {
   const out: Record<string, unknown> = {};
-  for (const [k, v] of Object.entries(annotations)) if (v !== undefined) out[k] = v;
+  for (const [k, v] of Object.entries(annotations)) if (v !== undefined) setOwn(out, k, v);
   return out as LeafPatch;
 }
 

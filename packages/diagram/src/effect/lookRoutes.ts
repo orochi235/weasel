@@ -3,6 +3,7 @@
  *  drawn from. */
 import { RIGID_POSE_COMPOSITION, worldPosesOf } from '@weasel-js/core';
 import type { Vec2 } from '@weasel-js/core/math';
+import { getOwn } from '@weasel-js/registry';
 import { diagramScene, edgeIdOf } from '../fromData';
 import { type DiagramSpec } from '../dataTypes';
 import { portOf } from '../ports';
@@ -76,7 +77,7 @@ export function applyLookRoutes(
   const edges = built.data.edges.map((e) => {
     const id = edgeIdOf(e);
     const wire = built.wireOf(id);
-    const route = wire === undefined ? undefined : routes[wire];
+    const route = wire === undefined ? undefined : getOwn(routes, wire);
     const ends = route === undefined ? undefined : wireEnds(specs, id);
     if (route === undefined || ends === undefined || !near(ends[0], route.ends[0]) || !near(ends[1], route.ends[1])) return e;
     held = true;

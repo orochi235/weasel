@@ -96,3 +96,25 @@ describe('<ControlMatrix> folding', () => {
     expect(screen.getByRole('button', { name: 'Defaults' }).closest('table')).not.toBeNull();
   });
 });
+
+describe('<ControlPanel> fold keys', () => {
+  it('reads a group named for an Object.prototype key as unfolded when nothing folds it', () => {
+    const named = resolveConfigSchema(
+      f.schema({ toString: f.group({ inner: f.boolean(false) }).label('toString') }),
+      [],
+    );
+    render(
+      <ControlPanel
+        schema={named}
+        config={{ toString: { inner: false } }}
+        setConfig={() => {}}
+        collapsed={{}}
+        onCollapse={() => {}}
+      />,
+    );
+    expect(screen.getByRole('button', { name: 'toString' })).toHaveAttribute(
+      'aria-expanded',
+      'true',
+    );
+  });
+});

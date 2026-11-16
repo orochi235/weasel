@@ -4,6 +4,7 @@ import type { PolygonPath } from '@weasel-js/geom';
 import type { PrefGroup, PrefNumber } from '@weasel-js/prefs';
 import type { Op } from '@weasel-js/core';
 import { commitOps, type PathNode, pathOperationTags, selectedPathNodes, withPath } from '@weasel-js/core';
+import { getOwn } from '@weasel-js/registry';
 
 /** What one live path command does with its parameter, reading params `P`. */
 export interface LivePathEditSpec<P = Record<string, unknown>> {
@@ -40,7 +41,7 @@ function sameParams(a: object, b: object): boolean {
  * operation, which its handle replays from the paths as they were at the start.
  */
 export function livePathEdit<P = Record<string, unknown>>(spec: LivePathEditSpec<P>): Action {
-  const leaf = spec.params.children[spec.param] as PrefNumber | undefined;
+  const leaf = getOwn(spec.params.children, spec.param) as PrefNumber | undefined;
   if (leaf?.kind !== 'number' || typeof leaf.default !== 'number') {
     throw new Error(`livePathEdit: "${spec.id}" has no number leaf "${spec.param}" with a default in its params`);
   }

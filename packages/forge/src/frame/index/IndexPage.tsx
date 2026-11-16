@@ -22,6 +22,7 @@ import { IndexApi } from './IndexApi';
 import { LabBadge } from './LabBadge';
 import { LibraryBadge } from './LibraryBadge';
 import num from '@weasel-js/theme/numeric.module.css';
+import { getOwn } from '@weasel-js/registry';
 
 export { type IndexEnv, IndexEnvContext } from './envContext';
 
@@ -204,7 +205,7 @@ export function IndexHistory() {
 function StorySection({ story, variants }: { story: LoadedStory; variants: boolean }) {
   const env = useEnv();
   const headingId = useId();
-  const description = env.descriptions[story.id];
+  const description = getOwn(env.descriptions, story.id);
   const gallery = !env.gallery && env.galleries?.includes(story.id);
   const lab = env.labs?.includes(story.id) ?? false;
   return (

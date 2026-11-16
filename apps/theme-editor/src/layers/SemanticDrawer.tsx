@@ -1,3 +1,4 @@
+import { getOwn } from '@weasel-js/registry';
 import { isByAxis, type AxisDefs, type Varying } from '@weasel-js/theme';
 import type { SemanticRule } from '@weasel-js/theme/engine';
 import { Button } from '@weasel-js/ui/components/Button';
@@ -124,7 +125,7 @@ function RuleFields({
           label="Ramp"
           value={rule.ramp}
           options={rampOptions}
-          onChange={(ramp) => onChange({ ...rule, ramp, step: ramps[ramp]?.[0] ?? '' }, 'ramp')}
+          onChange={(ramp) => onChange({ ...rule, ramp, step: getOwn(ramps, ramp)?.[0] ?? '' }, 'ramp')}
         />
         {isByAxis(rule.step) ? (
           <p className={styles.paramNote}>The step varies by {rule.step.by}; edit it in the definition file.</p>
@@ -133,7 +134,7 @@ function RuleFields({
             kind="enum"
             label="Step"
             value={rule.step}
-            options={(ramps[rule.ramp] ?? []).map((s) => ({ value: s, label: s }))}
+            options={(getOwn(ramps, rule.ramp) ?? []).map((s) => ({ value: s, label: s }))}
             onChange={(step) => onChange({ ...rule, step }, 'step')}
           />
         )}
@@ -147,9 +148,9 @@ export function SemanticDrawer({ name, rule, row, axes, ramps, semantics, issues
   const modeValues = Object.keys(axes.mode?.values ?? {});
   const varies = isByAxis(rule);
   const axis = varies ? rule.by : 'mode';
-  const values = varies ? Object.keys(axes[rule.by]?.values ?? rule).filter((k) => k !== 'by') : modeValues;
+  const values = varies ? Object.keys(getOwn(axes, rule.by)?.values ?? rule).filter((k) => k !== 'by') : modeValues;
   const [branch, setBranch] = useState(() => (varies ? values.find((v) => Object.hasOwn(rule, v)) : undefined) ?? values[0] ?? '');
-  const current = (varies ? (rule as unknown as Record<string, unknown>)[branch] : rule) as Varying<SemanticRule> | undefined;
+  const current = (varies ? getOwn(rule as unknown as Record<string, unknown>, branch) : rule) as Varying<SemanticRule> | undefined;
   const others = semantics.filter((n) => n !== name);
   const present = varies ? Object.entries(rule).find(([k]) => k !== 'by')?.[1] : undefined;
 

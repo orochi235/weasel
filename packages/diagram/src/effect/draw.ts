@@ -1,10 +1,11 @@
 /** What every look shares: how a type is colored, how a stage and a wire are
  *  styled, and the lookups a look does over a pipeline. */
+import { getOwn } from '@weasel-js/registry';
 import type { Row } from '../body';
 import { edgeIdOf } from '../fromData';
 import { type DataEdge, type DataNode, type DiagramData, type DiagramSceneOptions, type EdgeStyle, type NodeStyle } from '../dataTypes';
 import { DIAGRAM_THEMES } from '../theme/themes';
-import type { DiagramTheme } from '../theme/types';
+import { defaultRoleStyle, type DiagramTheme } from '../theme/types';
 import type { PortSpec } from '../types';
 import { checkPipeline } from './check';
 import { formatParam } from './stageTypes';
@@ -68,22 +69,21 @@ export function typeColors(
   for (const stage of pipeline.stages) {
     for (const port of [...(stage.inputs ?? []), ...(stage.outputs ?? [])]) {
       if (colors.has(port.type)) continue;
-      colors.set(port.type, given[port.type] ?? series[colors.size % series.length]!);
+      colors.set(port.type, getOwn(given, port.type) ?? series[colors.size % series.length]!);
     }
   }
-  return (type) => (type === undefined ? UNTYPED : colors.get(type) ?? given[type] ?? UNTYPED);
+  return (type) => (type === undefined ? UNTYPED : colors.get(type) ?? getOwn(given, type) ?? UNTYPED);
 }
 
 /** Whether `type` is one the pipeline's `types` mark as `control`. */
 export function isControl(pipeline: EffectPipeline, type: string | undefined): boolean {
-  return type !== undefined && pipeline.types?.[type]?.control === true;
+  return type !== undefined && pipeline.types !== undefined && getOwn(pipeline.types, type)?.control === true;
 }
 
 /** The node style the shipped looks give a stage: the theme's default role, or dashed in its
  *  muted role when the stage is bypassed. */
 export function stageStyle(stage: EffectStage, theme: DiagramTheme = LOOK_THEME): NodeStyle {
-  const { roles, defaultRole } = theme;
-  return stage.bypassed === true ? { ...(roles.muted ?? roles[defaultRole]!), dash: BYPASSED_DASH } : roles[defaultRole]!;
+  return stage.bypassed === true ? { ...(theme.roles.muted ?? defaultRoleStyle(theme)), dash: BYPASSED_DASH } : defaultRoleStyle(theme);
 }
 
 /** The edge style the shipped looks give a wire: `color`, dashed for a
@@ -281,7 +281,7 @@ export function sceneStyles(
   const wires = new Map(edges.map((e) => [edgeIdOf(e.edge), e.style]));
   return {
     theme,
-    nodeStyle: (n) => nodes.get(n.id) ?? theme.roles[theme.defaultRole]!,
+    nodeStyle: (n) => nodes.get(n.id) ?? defaultRoleStyle(theme),
     edgeStyle: (e) => wires.get(edgeIdOf(e)) ?? wireStyle(UNTYPED, false, false),
   };
 }

@@ -173,6 +173,20 @@ describe('emitCss', () => {
     }
   });
 
+  it('emits a default theme axis named toString, which the other theme lacks, as it emits any other', () => {
+    const sheetFor = (axis: string) => {
+      const tb: ThemeDefinition = {
+        name: 'tb',
+        axes: { ...MODE, [axis]: { default: 'a', values: { a: {}, b: {} } } },
+        pins: { tone: { by: axis, a: { value: '1px', type: 'dimension' }, b: { value: '2px', type: 'dimension' } } },
+      };
+      const to: ThemeDefinition = { name: 'to', axes: MODE, pins: { tone: { value: '9px', type: 'dimension' } } };
+      const own = (def: ThemeDefinition, isDefault: boolean) => ({ baked: bake(def), deps: axisDependencies(def), isDefault });
+      return emitCss([own(tb, true), own(to, false)]);
+    };
+    expect(sheetFor('toString')).toBe(sheetFor('density').replaceAll('data-wzl-density', 'data-wzl-toString'));
+  });
+
   it('resets the default theme inside a subtree of another theme', () => {
     const sheet = emitCss([input(base), input(child, false)]);
     const got = computed(sheet, [{}, { theme: 'child', mode: 'dark' }, { theme: 'base', mode: 'dark' }]);

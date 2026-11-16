@@ -1,8 +1,10 @@
 import type { GpuUniformData, GpuUniformType } from '../types';
 
+type UniformCall = Extract<keyof WebGL2RenderingContext, `uniform${string}v`>;
+
 /** The `uniform*v` call each element type is written with, and whether it
  *  takes a transpose flag. */
-const UPLOADS: Readonly<Record<GpuUniformType, { fn: string; matrix?: true }>> = {
+const UPLOADS: Readonly<Record<GpuUniformType, { fn: UniformCall; matrix?: true }>> = {
   float: { fn: 'uniform1fv' }, vec2: { fn: 'uniform2fv' }, vec3: { fn: 'uniform3fv' }, vec4: { fn: 'uniform4fv' },
   int: { fn: 'uniform1iv' }, ivec2: { fn: 'uniform2iv' }, ivec3: { fn: 'uniform3iv' }, ivec4: { fn: 'uniform4iv' },
   bool: { fn: 'uniform1iv' }, bvec2: { fn: 'uniform2iv' }, bvec3: { fn: 'uniform3iv' }, bvec4: { fn: 'uniform4iv' },
@@ -28,7 +30,7 @@ export function setUniformData(
   data: GpuUniformData, offset?: number, count?: number,
 ): void {
   const upload = UPLOADS[type];
-  const fn = (gl as unknown as Record<string, (...args: unknown[]) => void>)[upload.fn];
+  const fn = gl[upload.fn] as (...args: unknown[]) => void;
   const ranged = offset !== undefined || count !== undefined;
   const args: unknown[] = upload.matrix ? [loc, false, data] : [loc, data];
   if (ranged) args.push(offset ?? 0, count ?? data.length - (offset ?? 0));

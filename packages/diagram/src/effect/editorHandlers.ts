@@ -1,6 +1,7 @@
 /** `EffectEditor`'s edit callbacks: each turns what `DiagramView` reports
  *  into an edit of the latest doc. */
 import { RIGID_POSE_COMPOSITION, worldPosesOf, type PlacedSpec, type RectPose } from '@weasel-js/core';
+import { getOwn } from '@weasel-js/registry';
 import type { CanConnect } from '../connect';
 import { isBodyEnd } from '../connectTargets';
 import type { DeleteReport, DiagramEdit, LabelMove, ReconnectChange, RouteChange } from '../DiagramView';
@@ -105,7 +106,8 @@ export function editHandlers(now: () => EditorNow, unpick: () => void, rename: (
       if (id === undefined) return null;
       if (look === 'nodeGraph') return setWireRoute(d, id, c.waypoints);
       if (c.waypoints.length === 0) {
-        const was = d.lookRoutes?.[look]?.[id];
+        const routes = d.lookRoutes?.[look];
+        const was = routes && getOwn(routes, id);
         return was === undefined ? null : setLookRoute(d, look, id, [], was.ends);
       }
       const ends = wireEnds(specs, c.edge);
@@ -113,7 +115,7 @@ export function editHandlers(now: () => EditorNow, unpick: () => void, rename: (
     }),
     onMoveLabel: (m: LabelMove) => commit('Move label', (d, b) => {
       const id = b.wireOf(m.edge);
-      if (id === undefined || (m.placement === null && d.labels?.[id] === undefined)) return null;
+      if (id === undefined || (m.placement === null && (d.labels === undefined || getOwn(d.labels, id) === undefined))) return null;
       return setWireLabel(d, id, m.placement);
     }),
     onDelete: (r: DeleteReport) => commit('Delete', (d, b) => {

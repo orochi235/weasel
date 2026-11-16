@@ -33,19 +33,19 @@ export function createPanNode(ctx: BaseAudioContext, opts: { pan?: number } = {}
 export function createMixNode(ctx: BaseAudioContext, opts: { inputs: readonly string[] }): GraphNodeDef {
   if (opts.inputs.length === 0) throw new RangeError('@weasel-js/audio: a mix needs at least one input');
   const output = ctx.createGain();
-  // No prototype: an input named `__proto__` is an input like any other.
-  const inputs: Record<string, AudioNode> = Object.create(null);
-  const params: Record<string, (value: number, rampMs: number) => void> = Object.create(null);
+  const seen = new Set<string>();
+  const inputs: [string, AudioNode][] = [];
+  const params: [string, (value: number, rampMs: number) => void][] = [];
   for (const name of opts.inputs) {
-    if (Object.prototype.hasOwnProperty.call(inputs, name)) {
-      throw new RangeError(`@weasel-js/audio: a mix has two inputs named "${name}"`);
-    }
+    if (seen.has(name)) throw new RangeError(`@weasel-js/audio: a mix has two inputs named "${name}"`);
+    seen.add(name);
     const level = ctx.createGain();
     level.connect(output);
-    inputs[name] = level;
-    params[name] = (value, rampMs) => writeParam(ctx, level.gain, value, rampMs);
+    inputs.push([name, level]);
+    params.push([name, (value, rampMs) => writeParam(ctx, level.gain, value, rampMs)]);
   }
-  return { inputs, output, params };
+  // `fromEntries` defines each name as an own key, so an input named `__proto__` is an input like any other.
+  return { inputs: Object.fromEntries(inputs), output, params: Object.fromEntries(params) };
 }
 
 /** Wrap an insert effect as a node with one port, `in`. */

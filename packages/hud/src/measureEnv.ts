@@ -2,6 +2,7 @@ import type { MeasureEnv } from '@weasel-js/ui-logic';
 import { cachedFontVariant, metricsOf } from '@weasel-js/font';
 import { expandVars, type ResolvedTheme } from '@weasel-js/theme';
 import { measureLabel } from './menu/measureLabel';
+import { getOwn } from '@weasel-js/registry';
 
 /**
  * A HUD's {@link MeasureEnv}: tokens from its resolved theme, and text measured in `font`, the face a widget draws
@@ -15,7 +16,7 @@ export function hudMeasureEnv(
   const tokens = ctx.tokens as Readonly<Record<string, string>>;
   return {
     token(name) {
-      const raw = overrides?.[name] ?? tokens[name];
+      const raw = (overrides && getOwn(overrides, name)) ?? getOwn(tokens, name);
       return raw !== undefined && raw.includes('var(') ? expandVars(raw, tokens) : raw;
     },
     text: (text, spec) => ({ width: measureLabel(text, spec.size, family), ...lineExtent(family, spec.size) }),

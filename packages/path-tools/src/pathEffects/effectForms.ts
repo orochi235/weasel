@@ -5,6 +5,7 @@
  */
 import { pref, prefLeaves, type PrefGroup } from '@weasel-js/prefs';
 import type { PathEffect } from '@weasel-js/core';
+import { setOwn } from '@weasel-js/registry';
 
 const ALIGN = [{ value: 'start', label: 'Start' }, { value: 'center', label: 'Center' }, { value: 'end', label: 'End' }];
 
@@ -85,6 +86,6 @@ export const PATH_EFFECT_PARAMS: { readonly [K in PathEffect['kind']]: PrefGroup
 /** Each setting of a `kind` effect and its default, by name. */
 export function effectSettingDefaults(kind: PathEffect['kind']): Record<string, unknown> {
   const out: Record<string, unknown> = {};
-  for (const [path, leaf] of prefLeaves(PATH_EFFECT_PARAMS[kind])) out[path] = leaf.default;
+  for (const [path, leaf] of prefLeaves(PATH_EFFECT_PARAMS[kind])) setOwn(out, path, leaf.default);
   return out;
 }

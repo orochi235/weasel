@@ -1,6 +1,11 @@
 import { StrictMode } from 'react';
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { afterAll, afterEach, describe, expect, it, vi } from 'vitest';
 import { act, fireEvent, render } from '@testing-library/react';
+import { PTouchLabelDemo } from '../PTouchLabelDemo';
+
+// The demo reads WebUSB support at import; giving it before the import spares a cold re-import under
+// vi.resetModules, which ran past the timeout on a loaded node.
+vi.hoisted(() => { Object.defineProperty(navigator, 'usb', { value: {}, configurable: true }); });
 
 const printers: { disposed: boolean }[] = [];
 const printed: { disposed: boolean }[] = [];
@@ -20,12 +25,10 @@ vi.mock('@weasel-js/p-touch', async (importOriginal) => ({
 }));
 
 describe('PTouchLabelDemo', () => {
-  afterEach(() => { vi.unstubAllGlobals(); printers.length = 0; printed.length = 0; });
+  afterEach(() => { printers.length = 0; printed.length = 0; });
+  afterAll(() => { Reflect.deleteProperty(navigator, 'usb'); });
 
   it('prints with a live printer under StrictMode, whose remount disposes the first one', async () => {
-    vi.stubGlobal('navigator', { ...navigator, usb: {} });
-    vi.resetModules();
-    const { PTouchLabelDemo } = await import('../PTouchLabelDemo');
     const { getByRole } = render(<StrictMode><PTouchLabelDemo /></StrictMode>);
     await act(async () => { fireEvent.click(getByRole('button', { name: 'Print' })); });
     expect(printed).toEqual([{ disposed: false }]);

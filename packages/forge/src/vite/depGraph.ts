@@ -1,6 +1,7 @@
 import { type ParserPlugin, parse } from '@babel/parser';
 import type * as t from '@babel/types';
 import { dirname, relative, sep } from 'node:path';
+import { getOwn, setOwn } from './ownKeys';
 import { isGallery } from '../story/tags.ts';
 import type { ComponentDeps, DepGraph, IndexEntry } from '../story/types.ts';
 import { titleStandIn } from './componentOf.ts';
@@ -222,7 +223,7 @@ export function createDepGraph({ root, read }: DepGraphOptions): DepGraphBuilder
 
       const graph: DepGraph = {};
       for (const [title, key] of components) {
-        graph[title] = { source: key ? relative(root, fileOfKey(key)).split(sep).join('/') : null, uses: [], usedBy: [] };
+        setOwn(graph, title, { source: key ? relative(root, fileOfKey(key)).split(sep).join('/') : null, uses: [], usedBy: [] });
       }
       for (const [title, key] of components) {
         if (!key) continue;
@@ -230,9 +231,9 @@ export function createDepGraph({ root, read }: DepGraphOptions): DepGraphBuilder
         for (const target of await reached(key)) {
           for (const other of byKey.get(target) ?? []) if (other !== title) uses.add(other);
         }
-        const node = graph[title] as ComponentDeps;
+        const node = getOwn(graph, title) as ComponentDeps;
         node.uses = [...uses].sort();
-        for (const other of node.uses) graph[other]?.usedBy.push(title);
+        for (const other of node.uses) getOwn(graph, other)?.usedBy.push(title);
       }
       for (const node of Object.values(graph)) node.usedBy.sort();
       return Object.fromEntries(Object.entries(graph).sort(([a], [b]) => a.localeCompare(b)));

@@ -4,7 +4,7 @@ import type { GraphNodeDef } from './types';
 import { releaseOutgoing, startWrapper, type NodeWrapper, type Outgoing } from './wrapper';
 
 export interface ReplaceHooks {
-  /** Close every edge into `w.ins[port]`; called before the port is dropped. */
+  /** Close every edge into `w.ins.get(port)`; called before the port is dropped. */
   closePort(port: string): void;
   /** Called when the old def has faded out and been disposed, to wake `settled`. */
   onSettle(): void;
@@ -27,20 +27,21 @@ export function replaceDef(
 ): void {
   const old: Outgoing = {
     def: w.def,
-    faders: [...Object.values(w.inFaders), w.outFader],
+    faders: [...w.inFaders.values(), w.outFader],
     running: w.running,
   };
   w.outgoing.add(old);
 
-  for (const port of Object.keys(w.ins)) {
-    if (Object.prototype.hasOwnProperty.call(next.inputs, port)) continue;
+  for (const port of [...w.ins.keys()]) {
+    if (Object.hasOwn(next.inputs, port)) continue;
     hooks.closePort(port);
-    delete w.ins[port];
-    delete w.inFaders[port];
+    w.ins.delete(port);
+    w.inFaders.delete(port);
   }
   for (const port of Object.keys(next.inputs)) {
-    w.ins[port] ??= ctx.createGain();
-    w.inFaders[port] = openFader(ctx, timers, w.ins[port], next.inputs[port], ms);
+    let gain = w.ins.get(port);
+    if (!gain) w.ins.set(port, (gain = ctx.createGain()));
+    w.inFaders.set(port, openFader(ctx, timers, gain, next.inputs[port], ms));
   }
   w.outFader = openFader(ctx, timers, next.output, w.out, ms);
   w.def = next;

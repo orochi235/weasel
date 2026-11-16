@@ -1,3 +1,4 @@
+import { getOwn, setOwn } from '@weasel-js/registry';
 import type { PrefWeights } from '@weasel-js/prefs-schema';
 
 /** How a {@link PrefWeights} maps to numbers: the shape `@weasel-js/animator`'s `createTarget` takes as `axes`. */
@@ -19,11 +20,12 @@ export function prefWeightAxes(options: Readonly<Record<string, readonly string[
   return {
     count: pairs.length,
     names: pairs.map(([by, option]) => `${by}.${option}`),
-    to: (weights) => pairs.map(([by, option]) => weights[by]?.[option] ?? 0),
+    to: (weights) => pairs.map(([by, option]) => getOwn(getOwn(weights, by) ?? {}, option) ?? 0),
     from: (axes) => {
       const out: Record<string, Record<string, number>> = {};
       pairs.forEach(([by, option], i) => {
-        (out[by] ??= {})[option] = axes[i] ?? 0;
+        if (!Object.hasOwn(out, by)) setOwn(out, by, {});
+        setOwn(getOwn(out, by)!, option, axes[i] ?? 0);
       });
       return out;
     },

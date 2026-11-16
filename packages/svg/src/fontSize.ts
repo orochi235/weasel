@@ -4,35 +4,35 @@
  * reader converts with {@link emsPer} against {@link fontSizeOf}.
  */
 
-import { ABSOLUTE_PX } from './absoluteUnits';
+import { getOwn } from '@weasel-js/registry';
+
+import { absolutePx } from './absoluteUnits';
 
 /** CSS's `medium`, the size in effect where nothing sets one. */
 export const DEFAULT_FONT_SIZE = 16;
 
 // No font metrics are at hand here, so `ex` takes CSS's fallback of half an em.
-const EMS: Readonly<Record<string, number>> = Object.assign(Object.create(null), { em: 1, ex: 0.5 });
+const EMS: Readonly<Record<string, number>> = { em: 1, ex: 0.5 };
 
 /** How many ems one of `unit` is; `undefined` for a unit that is not font-relative. */
 export function emsPer(unit: string): number | undefined {
-  return EMS[unit.toLowerCase()];
+  return getOwn(EMS, unit.toLowerCase());
 }
 
 // CSS Fonts 4's table for a 16px `medium`, and its suggested step for the two relative keywords.
-const KEYWORD_PX: Readonly<Record<string, number>> = Object.assign(Object.create(null), {
+const KEYWORD_PX: Readonly<Record<string, number>> = {
   'xx-small': 9, 'x-small': 10, small: 13, medium: DEFAULT_FONT_SIZE,
   large: 18, 'x-large': 24, 'xx-large': 32, 'xxx-large': 48,
-});
-const KEYWORD_SCALE: Readonly<Record<string, number>> = Object.assign(Object.create(null), {
-  larger: 1.2, smaller: 1 / 1.2,
-});
+};
+const KEYWORD_SCALE: Readonly<Record<string, number>> = { larger: 1.2, smaller: 1 / 1.2 };
 
 /** What a `font-size` keyword stands for: a size in user units, or a multiple
  *  of the parent's size; `undefined` for anything else. */
 export function fontSizeKeyword(raw: string): { size: number } | { scale: number } | undefined {
   const word = raw.trim().toLowerCase();
-  const size = KEYWORD_PX[word];
+  const size = getOwn(KEYWORD_PX, word);
   if (size != null) return { size };
-  const scale = KEYWORD_SCALE[word];
+  const scale = getOwn(KEYWORD_SCALE, word);
   return scale == null ? undefined : { scale };
 }
 
@@ -58,7 +58,7 @@ function computedFontSize(raw: string, parentSize: number): number | undefined {
   if (unit === '%') return (n / 100) * parentSize;
   const ems = emsPer(unit);
   if (ems != null) return n * ems * parentSize;
-  const scale = ABSOLUTE_PX[unit];
+  const scale = absolutePx(unit);
   return scale == null ? undefined : n * scale;
 }
 
@@ -88,6 +88,6 @@ export function computeFontRelative(style: FontRelativeStyle, parentSize: number
   for (const prop of LENGTH_PROPERTIES) {
     const value = style[prop];
     if (value == null) continue;
-    style[prop] = value.replace(FONT_RELATIVE, (_, n: string, unit: string) => String(Number(n) * EMS[unit.toLowerCase()] * size));
+    style[prop] = value.replace(FONT_RELATIVE, (_, n: string, unit: string) => String(Number(n) * emsPer(unit)! * size));
   }
 }

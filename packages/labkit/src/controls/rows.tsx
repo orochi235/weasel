@@ -1,4 +1,5 @@
 import type { PrefLeaf } from '@weasel-js/prefs';
+import { getOwn } from '@weasel-js/registry';
 import {
   PropertyCaption,
   PropertyRow,
@@ -32,12 +33,12 @@ function pairError(
   cells: readonly PairCellSpec[],
   errors: Readonly<Record<string, ReactNode>> | undefined,
 ): ReactNode {
-  const said = cells.filter(({ path }) => errors?.[path] != null);
-  if (said.length < 2) return said[0] && errors?.[said[0].path];
+  const said = cells.filter(({ path }) => errors && getOwn(errors, path) != null);
+  if (said.length < 2) return said[0] && errors && getOwn(errors, said[0].path);
   return said.map(({ path }, i) => (
     <Fragment key={path}>
       {i > 0 && ' '}
-      {errors?.[path]}
+      {errors && getOwn(errors, path)}
     </Fragment>
   ));
 }

@@ -1,9 +1,10 @@
-import { isPlainObject } from '@weasel-js/registry';
+import { getOwn, isPlainObject, setOwn } from '@weasel-js/registry';
 import { enumerateSelections, isByAxis, pick, type Selection } from '../axes.ts';
 import { refTarget } from '../dtcg/resolve.ts';
 import type { SemanticRule, ThemeDefinition } from '../definition.ts';
 import { mergeChain, type Lookup } from './merge.ts';
 import { ruleProblem } from './ruleShape.ts';
+import { withoutUnsafeNames } from './safeNames.ts';
 import { declaredSteps } from './steps.ts';
 
 /** The axes one token's value can change with. */
@@ -101,9 +102,12 @@ function closure(nodes: ReadonlyMap<string, Node>, ownSets: ReadonlyMap<string, 
 const readableRules = (rule: unknown): SemanticRule[] =>
   leaves(rule).filter((l): l is SemanticRule => isPlainObject(l) && ruleProblem(l) === undefined);
 
-/** Every token of the definition, `extends` chain included, mapped to the axes it depends on, in axis declaration order. */
+/**
+ * Every token of the definition that `derive` gives, `extends` chain included, mapped to the axes it depends on, in
+ * axis declaration order.
+ */
 export function axisDependencies(definition: ThemeDefinition, lookup?: Lookup): Record<string, AxisDependency> {
-  const def = mergeChain(definition, lookup);
+  const def = withoutUnsafeNames(mergeChain(definition, lookup));
   const nodes = new Map<string, Node>();
 
   /** Step token → the ramps that declare it. */
@@ -139,7 +143,7 @@ export function axisDependencies(definition: ThemeDefinition, lookup?: Lookup): 
       else if ('from' in l) add(l.from);
       else if ('ref' in l) add(l.ref);
     }
-    const pin = def.pins?.[name];
+    const pin = getOwn(def.pins ?? {}, name);
     if (pin !== undefined) {
       const n = node();
       scan(pin, n);
@@ -157,7 +161,7 @@ export function axisDependencies(definition: ThemeDefinition, lookup?: Lookup): 
         for (const r of rampsOf(leaf.from)) {
           n.edges.add(stepsKey(r));
           // darker and lighter read which end of the ramp is darker.
-          if (leaf.dir !== 'away') for (const s of declaredSteps(def.ramps?.[r])) n.edges.add(`${r}-${s}`);
+          if (leaf.dir !== 'away') for (const s of declaredSteps(getOwn(def.ramps ?? {}, r))) n.edges.add(`${r}-${s}`);
         }
       }
       if ('step' in leaf) {
@@ -167,7 +171,7 @@ export function axisDependencies(definition: ThemeDefinition, lookup?: Lookup): 
       if ('contrast' in leaf) {
         n.edges.add(stepsKey(leaf.ramp));
         for (const a of leaf.contrast.against) n.edges.add(a);
-        for (const s of declaredSteps(def.ramps?.[leaf.ramp])) n.edges.add(`${leaf.ramp}-${s}`);
+        for (const s of declaredSteps(getOwn(def.ramps ?? {}, leaf.ramp))) n.edges.add(`${leaf.ramp}-${s}`);
       }
     }
     nodes.set(name, n);
@@ -195,7 +199,7 @@ export function axisDependencies(definition: ThemeDefinition, lookup?: Lookup): 
     const out = new Set(n.axes);
     for (const seed of n.seeds) {
       const s = node();
-      scan(def.seeds?.[seed], s);
+      scan(getOwn(def.seeds ?? {}, seed), s);
       for (const a of s.axes) out.add(a);
     }
     return out;
@@ -207,6 +211,6 @@ export function axisDependencies(definition: ThemeDefinition, lookup?: Lookup): 
   const all = closure(nodes, ownSets);
 
   const result: Record<string, AxisDependency> = {};
-  for (const name of nodes.keys()) if (!name.includes('.')) result[name] = { own: sorted(ownSets.get(name)!), all: sorted(all.get(name)!) };
+  for (const name of nodes.keys()) if (!name.includes('.')) setOwn(result, name, { own: sorted(ownSets.get(name)!), all: sorted(all.get(name)!) });
   return result;
 }

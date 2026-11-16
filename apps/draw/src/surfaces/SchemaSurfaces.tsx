@@ -9,6 +9,7 @@ import { SidebarPanel } from '@weasel-js/ui/components/SidebarPanel';
 import { switchMenuId, switchSchema, SurfaceSwitchButton } from './surfaceSwitch';
 import type { PanelChrome, SurfaceAsset, SchemaBinding } from './types';
 import s from './SchemaSurfaces.module.css';
+import { getOwn } from '@weasel-js/registry';
 
 const ignore = (): void => {};
 
@@ -72,7 +73,7 @@ export function SchemaMenu({ asset, order }: { asset: SurfaceAsset; order?: Pref
   );
   return (
     <div className={s.slot} onContextMenu={openSwitch}>
-      <BarMenu label={asset.label} icon={resolveIcon(asset.schema.icon)} schema={schema} values={(path) => values?.[path]} {...(onChange ? { onChange } : {})} />
+      <BarMenu label={asset.label} icon={resolveIcon(asset.schema.icon)} schema={schema} values={(path) => (values ? getOwn(values, path) : undefined)} {...(onChange ? { onChange } : {})} />
     </div>
   );
 }

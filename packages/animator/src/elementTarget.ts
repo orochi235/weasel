@@ -68,7 +68,7 @@ function writeStyle(el: StyledElement, css: ElementStyle): void {
   for (const key in css) {
     const v = String(css[key]);
     if (key.startsWith('--')) el.style.setProperty(key, v);
-    else (el.style as unknown as Record<string, string>)[key] = v;
+    else if (key !== '__proto__') (el.style as unknown as Record<string, string>)[key] = v;
   }
 }
 

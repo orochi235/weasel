@@ -1,4 +1,5 @@
 import { useLatest } from '@weasel-js/core';
+import { getOwn, setOwn } from '@weasel-js/registry';
 import {
   Children,
   type ReactNode,
@@ -207,7 +208,7 @@ export function Workspace({
       const kind = String(id).startsWith('lk-panel-') ? PANEL_KIND : KIND;
       store.registerNode(createNode({ kind, id, parentId: ZONE_ID, focus: true })); // eslint-disable-line weasel/effect-cleanup -- the store owns its tiles; this reconciles them with nodeIds
       store.showNode(id);
-      const saved = layoutRef.current?.[id];
+      const saved = layoutRef.current && getOwn(layoutRef.current, id);
       if (saved) store.patchPlacement(id, saved);
     }
     store.setChildOrder(ZONE_ID, [...nodeIds]);
@@ -226,7 +227,7 @@ export function Workspace({
       const next: TrialLayout = {};
       for (const child of store.getChildren(ZONE_ID)) {
         const extent = extentOf(store, child.id);
-        if (extent) next[child.id] = extent;
+        if (extent) setOwn(next, child.id, extent);
       }
       onLayoutChangeRef.current?.(next);
     });

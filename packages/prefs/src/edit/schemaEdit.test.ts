@@ -24,6 +24,10 @@ describe('schemaEdit', () => {
     expect(nodeAt(ROOT, 'a/nope')).toBeUndefined();
   });
 
+  it('finds no node to edit at a key named like an Object.prototype member', () => {
+    expect(() => setAttribute(ROOT, 'a/constructor', 'name', 'C')).toThrow('no node at a/constructor');
+  });
+
   it('adds at an index, into a group or an object leaf', () => {
     const next = addNode(ROOT, 'a', 'w', { kind: 'boolean', name: 'W', description: '', default: true }, 1);
     expect(keys(next, 'a')).toEqual(['x', 'w', 'y']);

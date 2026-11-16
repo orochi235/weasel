@@ -3,7 +3,7 @@
  * under, and the `toolOptionValues` that reads and writes them there.
  */
 import type { PrefGroup, PrefLeaf } from '@weasel-js/prefs-schema';
-import { deepEqual } from '@weasel-js/registry';
+import { deepEqual, getOwn, setOwn } from '@weasel-js/registry';
 import { SHARED_TOOL_OPTIONS, toolOptionSlot, type ToolOptions, type ToolOptionValues } from './toolOptions';
 
 /** A tool as these read it: its id and its options. */
@@ -43,14 +43,14 @@ export function toolOptionsPrefs(tools: Iterable<OptionedTool>, spec: ToolOption
     const own: Record<string, PrefLeaf | PrefGroup> = {};
     for (const [key, leaf] of Object.entries(options.prefs.children)) {
       const slot = toolOptionSlot(tool.id, options, key);
-      if (slot.owner === tool.id) own[key] = leaf;
-      else if (!Object.hasOwn(shared, slot.key)) shared[slot.key] = leaf;
+      if (slot.owner === tool.id) setOwn(own, key, leaf);
+      else if (!Object.hasOwn(shared, slot.key)) setOwn(shared, slot.key, leaf);
     }
-    if (Object.keys(own).length > 0) children[tool.id] = { ...options.prefs, children: own };
+    if (Object.keys(own).length > 0) setOwn(children, tool.id, { ...options.prefs, children: own });
   }
   for (const [key, value] of Object.entries(spec.shared ?? {})) {
-    const leaf = shared[key];
-    if (leaf && 'kind' in leaf) shared[key] = { ...leaf, default: value } as PrefLeaf;
+    const leaf = getOwn(shared, key);
+    if (leaf && 'kind' in leaf) setOwn(shared, key, { ...leaf, default: value } as PrefLeaf);
   }
   if (Object.keys(shared).length > 0) {
     children[SHARED_TOOL_OPTIONS] = { name: 'Shared', description: 'Settings every tool naming them uses.', children: shared };
@@ -62,7 +62,7 @@ const pathOf = (base: string, owner: string, key: string) => (base ? `${base}.${
 
 function subtree(values: Record<string, unknown>, base: string): Record<string, unknown> | undefined {
   let at: unknown = values;
-  for (const part of base ? base.split('.') : []) at = (at as Record<string, unknown> | undefined)?.[part];
+  for (const part of base ? base.split('.') : []) at = at && typeof at === 'object' ? getOwn(at as Record<string, unknown>, part) : undefined;
   return at && typeof at === 'object' ? (at as Record<string, unknown>) : undefined;
 }
 
@@ -81,7 +81,8 @@ export function prefsToolOptionValues(store: ToolOptionPrefsStore, base: string)
       const values = store.values();
       const hit = cache.get(owner);
       if (hit && hit.values === values) return hit.out;
-      const held = subtree(values, base)?.[owner];
+      const tree = subtree(values, base);
+      const held = tree && getOwn(tree, owner);
       let out = held && typeof held === 'object' ? (held as Readonly<Record<string, unknown>>) : NONE;
       // An unchanged answer keeps its identity, so a subscriber comparing it sees no change.
       if (hit && deepEqual(hit.out, out)) out = hit.out;

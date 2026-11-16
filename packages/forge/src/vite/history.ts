@@ -1,6 +1,7 @@
 import { execFile } from 'node:child_process';
 import { existsSync, readFileSync } from 'node:fs';
 import { dirname, join, posix, resolve } from 'node:path';
+import { setOwn } from './ownKeys';
 import type { ComponentHistory } from '../story/types.ts';
 
 /** Runs git in `cwd` and answers its stdout. */
@@ -116,12 +117,12 @@ export function createHistoryReader(root: string, git: Git = runGit): HistoryRea
       const named = (await git(['name-rev', '--tags', '--name-only', ...refs, ...commits], top)).split('\n');
       paths.forEach((path, i) => {
         const { created, modified } = dates.get(path)!;
-        history[inRepo.get(path)!] = {
+        setOwn(history, inRepo.get(path)!, {
           created,
           modified,
           introduced: versionOf(named[2 * i] ?? ''),
           modifiedIn: versionOf(named[2 * i + 1] ?? ''),
-        };
+        });
       });
     }
     return history;

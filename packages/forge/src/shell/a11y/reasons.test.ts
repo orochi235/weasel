@@ -18,4 +18,9 @@ describe('plainReason', () => {
     expect(plainReason(undefined)).toBeNull();
     expect(plainReason({ key: 'neverHeardOfIt' })).toBeNull();
   });
+
+  it('reads a reason named for an Object member as one it has no words for', () => {
+    expect(plainReason({ key: 'toString', message: 'axe says so' })).toBe('axe says so');
+    expect(plainReason({ key: 'constructor' })).toBeNull();
+  });
 });

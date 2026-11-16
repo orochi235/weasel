@@ -1,4 +1,5 @@
 import { mixRgbaWeighted, parseColor, rgbaToHex } from '@weasel-js/paint';
+import { getOwn, setOwn } from '@weasel-js/registry';
 import { fullSelection, type Selection } from './axes.ts';
 import { readCssNumber } from './cssNumber.ts';
 import { resolveTheme, themeAxes, type ResolvedTheme } from './resolveTheme.ts';
@@ -56,8 +57,9 @@ export function blendTheme(theme: Theme, weights: AxisWeights, selection: Select
   const axes = themeAxes(theme);
   let at: { selection: Selection; weight: number }[] = [{ selection: fullSelection(axes, selection), weight: 1 }];
   for (const [axis, shares] of Object.entries(weights)) {
-    if (!Object.hasOwn(axes, axis)) continue;
-    const positive = Object.entries(shares).filter(([value, share]) => share > 0 && Object.hasOwn(axes[axis]!.values, value));
+    const values = getOwn(axes, axis)?.values;
+    if (!values) continue;
+    const positive = Object.entries(shares).filter(([value, share]) => share > 0 && Object.hasOwn(values, value));
     if (positive.length === 0) continue;
     // An infinite share takes the whole axis, as a split pref's infinite weight does (prefs' `blend.ts`).
     const infinite = positive.filter(([, share]) => share === Infinity);
@@ -73,7 +75,11 @@ export function blendTheme(theme: Theme, weights: AxisWeights, selection: Select
   const out: Record<string, string> = {};
   const names = new Set(resolved.flatMap((one) => Object.keys(one.tokens)));
   for (const name of names) {
-    out[name] = blend(resolved.filter((one) => one.tokens[name] !== undefined).map((one) => ({ css: one.tokens[name]!, weight: one.weight })));
+    const members = resolved.flatMap((one) => {
+      const css = getOwn(one.tokens, name);
+      return css === undefined ? [] : [{ css, weight: one.weight }];
+    });
+    setOwn(out, name, blend(members));
   }
   return out as ResolvedTheme;
 }

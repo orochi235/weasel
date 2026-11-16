@@ -1,3 +1,4 @@
+import { getOwn, setOwn } from '@weasel-js/registry';
 import { axisIndexes } from '../axisNames';
 import type { TargetAxes } from '../target';
 import { IDENTITY_JOINT, type JointTransform, type Pose, type Skeleton } from './types';
@@ -38,7 +39,7 @@ export function skeletonAxes(skeleton: Skeleton): TargetAxes<Pose> {
     to(pose) {
       const out = new Array<number>(names.length * n);
       for (let j = 0; j < names.length; j++) {
-        const joint = pose[names[j]!];
+        const joint = getOwn(pose, names[j]!);
         for (let f = 0; f < n; f++) out[j * n + f] = joint?.[FIELDS[f]!] ?? IDENTITY_JOINT[FIELDS[f]!];
       }
       return out;
@@ -46,21 +47,21 @@ export function skeletonAxes(skeleton: Skeleton): TargetAxes<Pose> {
     add(pose, delta) {
       const out: Pose = {};
       for (let j = 0; j < names.length; j++) {
-        const joint = pose[names[j]!];
+        const joint = getOwn(pose, names[j]!);
         const at = j * n;
-        out[names[j]!] = {
+        setOwn(out, names[j]!, {
           x: (joint?.x ?? IDENTITY_JOINT.x) + delta[at]!,
           y: (joint?.y ?? IDENTITY_JOINT.y) + delta[at + 1]!,
           rotation: (joint?.rotation ?? IDENTITY_JOINT.rotation) + delta[at + 2]!,
           scaleX: (joint?.scaleX ?? IDENTITY_JOINT.scaleX) + delta[at + 3]!,
           scaleY: (joint?.scaleY ?? IDENTITY_JOINT.scaleY) + delta[at + 4]!,
-        };
+        });
       }
       return out;
     },
     write(pose, out, at) {
       for (let j = 0; j < names.length; j++) {
-        const joint = pose[names[j]!];
+        const joint = getOwn(pose, names[j]!);
         for (let f = 0; f < n; f++) out[at + j * n + f] = joint?.[FIELDS[f]!] ?? IDENTITY_JOINT[FIELDS[f]!];
       }
     },
@@ -68,7 +69,7 @@ export function skeletonAxes(skeleton: Skeleton): TargetAxes<Pose> {
       const pose: Pose = {};
       for (let j = 0; j < names.length; j++) {
         const at = j * n;
-        pose[names[j]!] = { x: axes[at]!, y: axes[at + 1]!, rotation: axes[at + 2]!, scaleX: axes[at + 3]!, scaleY: axes[at + 4]! };
+        setOwn(pose, names[j]!, { x: axes[at]!, y: axes[at + 1]!, rotation: axes[at + 2]!, scaleX: axes[at + 3]!, scaleY: axes[at + 4]! });
       }
       return pose;
     },

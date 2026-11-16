@@ -1,4 +1,5 @@
 import type { AnalyserTap, AudioGraph } from '@weasel-js/audio';
+import { getOwn, setOwn } from '@weasel-js/registry';
 import { PREVIEW_SIZE } from '../draw';
 import { closeBitmaps, previewsOf } from '../runner/previews';
 import type { EffectRun, EffectStageRun } from '../types';
@@ -61,7 +62,7 @@ export function createLivePreviews(): LivePreviews {
       const paint = mode === 'scope' ? drawScope : drawSpectrum;
       const stages: Record<string, EffectStageRun> = { ...errorsRun(errors).stages };
       for (const [id, tap] of taps) {
-        stages[id] = { ...stages[id], previews: { out: paint(tap, { width: PREVIEW_SIZE, height: PREVIEW_SIZE }) } };
+        setOwn(stages, id, { ...getOwn(stages, id), previews: { out: paint(tap, { width: PREVIEW_SIZE, height: PREVIEW_SIZE }) } });
       }
       return { stages };
     },

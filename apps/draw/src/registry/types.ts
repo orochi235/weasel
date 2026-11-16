@@ -8,6 +8,8 @@
  *     `source` id to the live option list (filtered as requested).
  */
 
+import { getOwn } from '@weasel-js/registry';
+
 /** One row in a registry-enum dropdown. `value` is what's stored; `label`
  *  is what's shown. */
 export type RegistryEnumOption = { value: string; label: string };
@@ -36,7 +38,7 @@ export function matchesRegistryFilter<T>(item: T, filter?: RegistryEnumFilter): 
   if (typeof filter === 'function') return filter(item as unknown);
   const obj = item as unknown as Record<string, unknown>;
   for (const k of Object.keys(filter)) {
-    if (obj?.[k] !== filter[k]) return false;
+    if ((obj == null ? undefined : getOwn(obj, k)) !== filter[k]) return false;
   }
   return true;
 }

@@ -1,7 +1,7 @@
 import { Lab, type LabContribution } from '@weasel-js/labkit';
 import { LABS, THEME_EDITOR_LAB } from '@shared/labs';
 import { fullSelection, type Selection, type ThemeDefinition } from '@weasel-js/theme';
-import { deepEqual } from '@weasel-js/registry';
+import { deepEqual, getOwn } from '@weasel-js/registry';
 import type { IssueReport, Lookup, PutResult, StoredTheme } from '@weasel-js/theme/engine';
 import { Button } from '@weasel-js/ui/components/Button';
 import { Dialog } from '@weasel-js/ui/components/Dialog';
@@ -230,7 +230,7 @@ export function ThemeWorkbench({ api, themes, stored, start, onPick, onSaved, on
   const counts = countTokens(draft, derived.primary.result);
   // A pinned token jumps to Pins: the pin is what decides its value.
   const layerOf = (token: string): LayerId =>
-    pinApplies(derived.primary.result, token) ? 'pins' : (derived.primary.result.provenance[token]?.layer ?? 'pins');
+    pinApplies(derived.primary.result, token) ? 'pins' : (getOwn(derived.primary.result.provenance, token)?.layer ?? 'pins');
   const jump = (tokens: readonly string[]) => {
     if (tokens.length === 0) return;
     setLayer(layerOf(tokens[0]));
@@ -271,7 +271,7 @@ export function ThemeWorkbench({ api, themes, stored, start, onPick, onSaved, on
             aria-label={axis}
             width="fit"
             options={Object.keys(def.values).map((v) => ({ value: v, label: `${axis}: ${v}` }))}
-            selectedKey={fullSelection(derived.axes, axisValues)[axis]}
+            selectedKey={getOwn(fullSelection(derived.axes, axisValues), axis)}
             onSelectionChange={(v) => setAxisValues((s) => ({ ...s, [axis]: v }))}
           />
         ))}

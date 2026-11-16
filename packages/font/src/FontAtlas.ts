@@ -84,7 +84,9 @@ const KERNING_FIELDS = ['first', 'second', 'amount'] as const;
 
 /** Throws, naming the field, unless `entry` is an object whose every one of `fields` is a finite number: layout and
  *  the quads it draws read each of them. */
-function checkFinite(name: string, entry: unknown, fields: readonly string[]): void {
+type NumericField = (typeof CHAR_FIELDS)[number] | (typeof KERNING_FIELDS)[number];
+
+function checkFinite(name: string, entry: unknown, fields: readonly NumericField[]): void {
   if (typeof entry !== 'object' || entry === null) throw new Error(`parseBmFont: ${name} must be an object`);
   for (const f of fields) {
     const v = (entry as Record<string, unknown>)[f];

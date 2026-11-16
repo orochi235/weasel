@@ -1,4 +1,5 @@
 import type * as t from '@babel/types';
+import { getOwn } from './ownKeys';
 import { type Bindings, isLiteralValue } from './ast.ts';
 
 type Fn = t.ArrowFunctionExpression | t.FunctionExpression | t.FunctionDeclaration;
@@ -24,9 +25,9 @@ export interface Foreign {
 }
 
 export const foreignFrom = (known: ForeignStories): Foreign => ({
-  value: (name) => known.values[name],
-  call: (name) => known.calls[name],
-  reexport: (name) => known.reexports[name],
+  value: (name) => getOwn(known.values, name),
+  call: (name) => getOwn(known.calls, name),
+  reexport: (name) => getOwn(known.reexports, name),
 });
 
 /** What a file is read against: its top-level bindings, its callees that are forge's, and what its imports are. */

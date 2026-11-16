@@ -3,7 +3,7 @@ import { diagramScene, type DiagramSpec } from '../fromData';
 import { NO_VALUE, PROBLEM_COLOR, previewRowId, valueRowId } from './draw';
 import { nodeGraph } from './nodeGraph';
 import { rack } from './rack';
-import { AT_COLOR, costText, paintRun } from './run';
+import { AT_COLOR, costText, paintRun, unreachedStages } from './run';
 import type { EffectPipeline, EffectRun } from './types';
 
 /** `src` into a decision that sends the signal to `soft` or `hard`. */
@@ -264,5 +264,12 @@ describe('a cost over a symbol whose title sits above it', () => {
     expect(pose(title).y + pose(title).height).toBeLessThanOrEqual(pose(box).y);
     const cost = specs.find((s) => s.id === 'q/cost')!;
     expect(pose(cost).y + pose(cost).height).toBeLessThanOrEqual(pose(title).y);
+  });
+});
+
+describe('unreachedStages', () => {
+  it('counts a stage named for an Object.prototype member unreached when the run has no entry for it', () => {
+    const pipeline: EffectPipeline = { stages: [{ id: 'constructor', title: 'c' }, { id: 'toString', title: 't' }], wires: [] };
+    expect([...unreachedStages(pipeline, { stages: {} })]).toEqual(['constructor', 'toString']);
   });
 });

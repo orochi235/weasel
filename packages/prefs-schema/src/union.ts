@@ -1,3 +1,4 @@
+import { getOwn } from '@weasel-js/registry';
 import type { PrefValueBase, PrefObject } from './schema';
 
 /**
@@ -19,14 +20,14 @@ export interface PrefUnion extends PrefValueBase<'union', unknown> {
 /** The variant `value` is, or `undefined` when its tag names none. */
 export function prefVariantOf(leaf: PrefUnion, value: unknown): [key: string, variant: PrefObject] | undefined {
   if (value === null || typeof value !== 'object' || Array.isArray(value)) return undefined;
-  const key = (value as Record<string, unknown>)[leaf.tag];
+  const key = getOwn(value as Record<string, unknown>, leaf.tag);
   if (typeof key !== 'string' || !Object.hasOwn(leaf.variants, key)) return undefined;
   return [key, leaf.variants[key]!];
 }
 
 /** The value a union takes on switching to the variant at `key`: that variant's default, tagged. */
 export function prefVariantDefault(leaf: PrefUnion, key: string): Record<string, unknown> {
-  const held = leaf.variants[key]?.default;
+  const held = getOwn(leaf.variants, key)?.default;
   const fields = held !== null && typeof held === 'object' ? (held as Record<string, unknown>) : {};
   return { ...fields, [leaf.tag]: key };
 }

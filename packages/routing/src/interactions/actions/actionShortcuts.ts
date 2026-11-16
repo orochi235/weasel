@@ -3,6 +3,7 @@
  * renders from (`formatShortcut` / `formatShortcutParts` in `@weasel-js/ui`).
  */
 import type { GestureSpec, ShortcutInput } from '@weasel-js/gestures';
+import { getOwn } from '@weasel-js/registry';
 import type { Action } from './action';
 import type { ActionItem } from './actionItems';
 import { actionBindings } from './binding';
@@ -85,5 +86,5 @@ export function actionItemShortcuts(item: ActionItem): string | readonly ActionS
 /** Whether `bound` (a binding's `opts.params`) carries every value in `wanted`. */
 export function paramsMatch(bound: unknown, wanted: Readonly<Record<string, unknown>>): boolean {
   if (typeof bound !== 'object' || bound === null) return false;
-  return Object.entries(wanted).every(([k, v]) => (bound as Record<string, unknown>)[k] === v);
+  return Object.entries(wanted).every(([k, v]) => getOwn(bound as Record<string, unknown>, k) === v);
 }

@@ -6,6 +6,7 @@
  */
 import type { IconSpec } from '@weasel-js/icons';
 import type { ShortcutInput } from '@weasel-js/gestures';
+import { getOwn } from '@weasel-js/registry';
 import type { Action } from '../interactions/actions/action';
 import { actionBindings } from '../interactions/actions/binding';
 import { actionItems, actionItemTitle, type ActionItem } from '../interactions/actions/actionItems';
@@ -84,7 +85,7 @@ function describeTools(
     for (const id of ids) {
       if (placed.has(id) || !shown.includes(id)) continue;
       placed.add(id);
-      group.rows.push(toolRow(id, tools[id]!, keys[id]));
+      group.rows.push(toolRow(id, getOwn(tools, id)!, getOwn(keys, id)));
     }
   };
   for (const set of sets) take(set.id, set.label ?? groupTitle(set.id), toolIdsOf([set]));
@@ -113,7 +114,7 @@ function heldTools(offhand: Action, tools: Readonly<Record<string, ShortcutTool>
   for (const toolId of ids) {
     const shortcuts = actionShortcuts(offhand, { toolId }, 'keyHeld');
     if (shortcuts.length === 0) continue;
-    const tool = tools[toolId];
+    const tool = getOwn(tools, toolId);
     rows.push(tool ? { ...toolRow(toolId, tool, shortcuts), id: `${offhand.id}:${toolId}` } : { id: `${offhand.id}:${toolId}`, label: toolId, shortcuts });
   }
   return rows;

@@ -43,6 +43,14 @@ describe('derive, names Object.prototype holds', () => {
     expect(issues).toEqual([]);
     expect(tokens.text!.value).toBe('{gray-900}');
   });
+
+  it('colors a lightness ramp step named toString, which no anchor names', () => {
+    const def: ThemeDefinition = { name: 't', ramps: { gray: { kind: 'lightness', steps: ['toString', 'valueOf'], lightness: [0.97, 0.16] } } };
+    const { tokens, issues } = derive(def);
+    expect(issues).toEqual([]);
+    expect(tokens['gray-toString']!.value).toMatch(/^#[0-9a-f]{6}$/);
+    expect(tokens['gray-valueOf']!.value).toMatch(/^#[0-9a-f]{6}$/);
+  });
 });
 
 describe('derive, categorical gates', () => {

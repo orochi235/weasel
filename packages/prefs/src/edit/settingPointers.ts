@@ -1,3 +1,4 @@
+import { setOwn } from '@weasel-js/registry';
 import { isPrefLeaf, prefHoldsValue, type PrefGroup } from '../index';
 import { pointersIn, pointerTarget } from './pointers';
 import { aliasOf, canAlias, childrenOf, joinPath, keyOf, nodeAt, uniqueKey, type ChildMap, type SchemaNode, type SchemaRoot } from './schemaEdit';
@@ -28,7 +29,7 @@ export function pointersTo(over: SchemaRoot, path: string): { key: string; node:
   const settings = settingsUnder(over, path);
   if (settings.length === 0) return undefined;
   const children: ChildMap = {};
-  for (const at of settings) children[uniqueKey(children, keyOf(at))] = aliasOf(over, at);
+  for (const at of settings) setOwn(children, uniqueKey(children, keyOf(at)), aliasOf(over, at));
   return { key: keyOf(path), node: { name: node.name, as: 'section', children } as PrefGroup };
 }
 

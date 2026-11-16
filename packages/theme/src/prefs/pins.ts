@@ -1,4 +1,5 @@
 import { isPrefScope, PREF_ELSE, prefLeaves, type PrefEnum, type PrefGroup, type PrefLeaf, type PrefScope } from '@weasel-js/prefs';
+import { getOwn, setOwn } from '@weasel-js/registry';
 import { selectionKey, type Selection, type Varying } from '../axes.ts';
 import type { PinValue } from '../definition.ts';
 import { defineTheme, type Theme } from '../theme.ts';
@@ -30,8 +31,8 @@ function pinOf(leaf: PrefLeaf, held: unknown, options: OptionsOf): Varying<PinVa
   if (!isPrefScope(held)) return cssOfPref(leaf, held);
   const out: Record<string, unknown> = { by: themeAxisOf(held.$by) ?? held.$by };
   const shared = Object.hasOwn(held, PREF_ELSE);
-  for (const value of shared ? options(held.$by) : []) out[value] = pinOf(leaf, held[PREF_ELSE], options);
-  for (const [value, member] of Object.entries(held.$in)) out[value] = pinOf(leaf, member, options);
+  for (const value of shared ? options(held.$by) : []) setOwn(out, value, pinOf(leaf, held[PREF_ELSE], options));
+  for (const [value, member] of Object.entries(held.$in)) setOwn(out, value, pinOf(leaf, member, options));
   return out as Varying<PinValue>;
 }
 
@@ -40,7 +41,7 @@ export function themePrefsSelection(store: ThemePrefsSource): Selection {
   const out: Record<string, string> = {};
   for (const path of prefLeaves(store.schema).keys()) {
     const axis = themeAxisOf(path);
-    if (axis !== undefined) out[axis] = store.get(path) as string;
+    if (axis !== undefined) setOwn(out, axis, store.get(path) as string);
   }
   return out;
 }
@@ -57,7 +58,7 @@ export function themePrefsPins(store: ThemePrefsSource): Record<string, Varying<
   const options = optionsIn(store.schema);
   for (const [path, leaf] of prefLeaves(store.schema)) {
     if (themeAxisOf(path) !== undefined || !store.isSet(path)) continue;
-    out[themeTokenOf(path)] = pinOf(leaf, store.scope(path) ?? store.get(path), options);
+    setOwn(out, themeTokenOf(path), pinOf(leaf, store.scope(path) ?? store.get(path), options));
   }
   return out;
 }
@@ -93,21 +94,21 @@ export function themePrefsValues(
     if (themeAxisOf(path) !== undefined || store.isSet(path)) continue;
     const resolved = css.get(themeTokenOf(path));
     if (!resolved || Object.values(resolved).some((text) => prefOfCss(leaf, text) === undefined)) continue;
-    const held = foldAxes(axes, (selection) => prefOfCss(leaf, resolved[selectionKey(axes, selection)]), scopeByAxis);
+    const held = foldAxes(axes, (selection) => prefOfCss(leaf, getOwn(resolved, selectionKey(axes, selection))), scopeByAxis);
     if (isPrefScope(held)) scopes.set(path, held);
     else scopes.delete(path);
-    const value = prefOfCss(leaf, resolved[now]);
+    const value = prefOfCss(leaf, getOwn(resolved, now));
     const dot = path.indexOf('.');
     if (dot < 0) {
-      values[path] = value;
+      setOwn(values, path, value);
       continue;
     }
     const group = path.slice(0, dot);
     if (!copied.has(group)) {
       copied.add(group);
-      values[group] = { ...(values[group] as Record<string, unknown>) };
+      setOwn(values, group, { ...(getOwn(values, group) as Record<string, unknown>) });
     }
-    (values[group] as Record<string, unknown>)[themeTokenOf(path)] = value;
+    setOwn(getOwn(values, group) as Record<string, unknown>, themeTokenOf(path), value);
   }
   return { values, scopes };
 }

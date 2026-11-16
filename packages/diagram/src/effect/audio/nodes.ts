@@ -1,3 +1,4 @@
+import { getOwn } from '@weasel-js/registry';
 import {
   compressorNode, createFileSourceNode, createGainNode, createMixNode, createNoiseNode, createOscillatorNode,
   createPanNode, delayNode, filterNode, reverbNode, type GraphNodeDef,
@@ -22,7 +23,10 @@ const node = (
   settingIds: readonly string[], levels: readonly string[],
   make: (ctx: BaseAudioContext, opts: never) => GraphNodeDef,
 ): AudioStageNode => ({
-  settings: (params) => Object.fromEntries(settingIds.filter((id) => params[id] !== undefined).map((id) => [id, params[id]])),
+  settings: (params) => Object.fromEntries(settingIds.flatMap((id) => {
+    const value = getOwn(params, id);
+    return value === undefined ? [] : [[id, value]];
+  })),
   levels,
   build: (ctx, settings, levels) => make(ctx, { ...settings, ...levels } as never),
 });
@@ -50,7 +54,7 @@ export const audioStageNodes: AudioStageNodes = {
     levels: ['a', 'b'],
     build: (ctx, _settings, levels) => {
       const def = createMixNode(ctx, { inputs: ['a', 'b'] });
-      for (const id of ['a', 'b']) if (levels[id] !== undefined) def.params[id]!(levels[id], 0);
+      for (const id of ['a', 'b'] as const) if (levels[id] !== undefined) def.params[id]!(levels[id], 0);
       return def;
     },
   },

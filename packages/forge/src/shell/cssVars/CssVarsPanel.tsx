@@ -22,6 +22,7 @@ import { Checkbox } from '@weasel-js/ui/components/Checkbox';
 import { Icon } from '@weasel-js/ui/components/Icon';
 import { icon } from '../../icons.gen';
 import { useCallback, useContext, useMemo, useRef, useState } from 'react';
+import { getOwn, setOwn } from '@weasel-js/registry';
 import type { Globals } from '../../protocol/messages';
 import { effectiveGlobals, GLOBALS_KEY } from '../globals';
 import { StoryGlobalsContext } from '../StoryGlobalsContext';
@@ -85,7 +86,7 @@ function scaleValues(source: ScaleSource, next: TokenScale): [string, string][] 
     ...(rule.kind === 'factors' ? { factors: rule.factors } : rule.kind === 'ratio' ? { ratio: rule.ratio } : { step: rule.step }),
   });
   return source.steps.flatMap((step, i) => {
-    const value = values[step];
+    const value = getOwn(values, step);
     const name = source.tokens[i];
     return value !== undefined && name !== undefined ? [[name, value]] : [];
   });
@@ -113,10 +114,10 @@ function standingScale(source: ScaleSource, amounts: readonly number[]): TokenSc
  */
 function unsavedScales(edited: Readonly<Record<string, TokenScale>>, overrides: Readonly<Record<string, string>>): UnsavedScale[] {
   return SCALE_SOURCES.flatMap((source): UnsavedScale[] => {
-    const edit = edited[source.group];
-    if (!edit || !source.tokens.every((name) => overrides[name] !== undefined)) return [];
+    const edit = getOwn(edited, source.group);
+    if (!edit || !source.tokens.every((name) => getOwn(overrides, name) !== undefined)) return [];
     const { name, group } = source;
-    const tokens = scaleValues(source, edit).filter(([token, value]) => overrides[token] === value).map(([token]) => token);
+    const tokens = scaleValues(source, edit).filter(([token, value]) => getOwn(overrides, token) === value).map(([token]) => token);
     return [{ name, group, tokens, edit: { base: edit.base, rule: edit.rule } }];
   });
 }
@@ -162,7 +163,7 @@ export function CssVarsPanel({ globals = NO_GLOBALS, themeApi }: CssVarsPanelPro
   const query = filter.trim().toLowerCase();
   const shown = tokens
     .map((token) => {
-      const override = overrides[token.name];
+      const override = getOwn(overrides, token.name);
       return override === undefined ? token : { ...token, value: override, overridden: true };
     })
     .filter((token) => !query || token.name.toLowerCase().includes(query) || token.value.toLowerCase().includes(query));
@@ -174,8 +175,8 @@ export function CssVarsPanel({ globals = NO_GLOBALS, themeApi }: CssVarsPanelPro
     for (const source of SCALE_SOURCES) {
       const amounts = source.tokens.map((name) => Number.parseFloat(values.get(name) ?? ''));
       if (amounts.some(Number.isNaN)) continue;
-      const own = source.tokens.some((name) => overrides[name] !== undefined) ? edited[source.group] : undefined;
-      out[source.group] = own ?? standingScale(source, amounts);
+      const own = source.tokens.some((name) => getOwn(overrides, name) !== undefined) ? getOwn(edited, source.group) : undefined;
+      setOwn(out, source.group, own ?? standingScale(source, amounts));
     }
     return out;
   }, [tab, shown, overrides, edited]);
@@ -186,7 +187,7 @@ export function CssVarsPanel({ globals = NO_GLOBALS, themeApi }: CssVarsPanelPro
     setOverrides(to.overrides);
     setEdited(to.scales);
     for (const name of new Set([...Object.keys(from.overrides), ...Object.keys(to.overrides)])) {
-      if (from.overrides[name] !== to.overrides[name]) send?.({ type: 'vars.set', name, value: to.overrides[name] ?? null });
+      if (getOwn(from.overrides, name) !== getOwn(to.overrides, name)) send?.({ type: 'vars.set', name, value: getOwn(to.overrides, name) ?? null });
     }
   });
   const write = (name: string, value: string | null) => {

@@ -7,7 +7,7 @@ import type { DataEdge, DataNode, Row } from '@weasel-js/diagram';
 import type { ImportResult } from '../../document';
 import { Warnings, graphPage } from '../../graphRead';
 import { DIRECTIONS } from '../class/read';
-import { pageNameOf } from '../common/lines';
+import { pageNameOf, type MermaidDirection } from '../common/lines';
 import { StyleSheet } from '../common/styles';
 import { parseRequirementDiagram } from './parse';
 
@@ -18,7 +18,7 @@ export function readRequirementDiagram(text: string): ImportResult {
   const styles = new StyleSheet(warnings);
   const blocks = new Map<string, { type: string; fields: [string, string][] } | null>();
   const edges: DataEdge[] = [];
-  let direction: string | undefined;
+  let direction: MermaidDirection | undefined;
   for (const s of stmts) {
     if (s.kind === 'block') blocks.set(s.name, { type: s.type, fields: s.fields });
     else if (s.kind === 'relation') {

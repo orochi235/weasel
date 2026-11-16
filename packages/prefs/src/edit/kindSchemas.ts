@@ -1,3 +1,4 @@
+import { getOwn, setOwn } from '@weasel-js/registry';
 import {
   isPrefLeaf,
   isPrefSection,
@@ -190,10 +191,10 @@ export function attributeSchema(
   const auto = autoAttrs(node);
   const entry = item && !typed ? entryAttrs(item, custom) : {};
   const fields = node as unknown as Record<string, unknown>;
-  for (const attrs of [shared, own]) for (const k of Object.keys(attrs)) if (containsCode(fields[k])) delete attrs[k];
+  for (const attrs of [shared, own]) for (const k of Object.keys(attrs)) if (containsCode(getOwn(fields, k))) delete attrs[k];
   const rows = autoRowsOf(node) as Record<string, unknown>;
-  for (const k of Object.keys(auto)) if (containsCode(rows[k])) delete auto[k];
-  for (const k of Object.keys(entry)) if (containsCode((item as unknown as Record<string, unknown>)[k])) delete entry[k];
+  for (const k of Object.keys(auto)) if (containsCode(getOwn(rows, k))) delete auto[k];
+  for (const k of Object.keys(entry)) if (containsCode(getOwn(item as unknown as Record<string, unknown>, k))) delete entry[k];
   // What a type holds beyond the fields its use sets is the type's to show, where it is declared.
   const undrawn = node.kind === 'separator' ? SEPARATOR_UNDRAWN : NO_ATTRS;
   // Every leaf carries a `default`, which says nothing of one that holds no value.
@@ -302,11 +303,11 @@ export function convertLeaf(leaf: PrefLeaf, choice: string, custom: CustomKinds 
     }
     if (SLOTS.has(k)) {
       // What is inside a leaf goes with it to any kind that keeps it the same way.
-      if (!typed && Object.hasOwn(blank, k)) next[k] = v;
+      if (!typed && Object.hasOwn(blank, k)) setOwn(next, k, v);
       else dropped.push(k);
       continue;
     }
-    if (keep.has(k) && (typed || offers(attrs[k], v))) next[k] = v;
+    if (keep.has(k) && (typed || offers(getOwn(attrs, k), v))) setOwn(next, k, v);
     else dropped.push(k);
   }
   return { leaf: next as unknown as PrefLeaf, dropped };

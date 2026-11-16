@@ -2,6 +2,7 @@ import { isPlainObject } from '@weasel-js/core';
 import type { IconSpec } from '@weasel-js/icons';
 import type { LabMode } from '@weasel-js/labkit';
 import { type ConfigSchema, f } from '@weasel-js/labkit/config';
+import { getOwn } from '@weasel-js/registry';
 import type { Globals } from '../protocol/messages';
 
 /** One value a global offers. */
@@ -89,7 +90,7 @@ export function labOptions(declaration: GlobalDeclaration, globals: Globals): Gl
 /** `values` with each `App` replaced by what its declaration reads from `chrome`; `values` itself when none is. */
 export function followApp(declarations: GlobalDeclarations, values: Globals, chrome: LabChrome): Globals {
   const followed = Object.entries(declarations).flatMap(([key, { follows }]) =>
-    follows && values[key] === FOLLOW_APP ? [[key, follows(chrome)] as const] : [],
+    follows && getOwn(values, key) === FOLLOW_APP ? [[key, follows(chrome)] as const] : [],
   );
   return followed.length === 0 ? values : { ...values, ...Object.fromEntries(followed) };
 }
@@ -112,7 +113,7 @@ export function labGlobals(declarations: GlobalDeclarations, stored: unknown): G
   return Object.fromEntries(
     Object.entries(declarations).map(([key, declaration]) => {
       const shown = shownOptions(declaration, offered).filter((option) => !option.disabled);
-      const value = offered[key];
+      const value = getOwn(offered, key);
       if (value === FOLLOW_APP && declaration.follows) return [key, value];
       if (shown.length === 0 || shown.some((option) => option.value === value)) return [key, value];
       const at = (v: unknown) => declaration.options.findIndex((option) => option.value === v);
@@ -141,7 +142,7 @@ export function storyConfig(config: unknown, previous?: unknown): unknown {
   const rest = Object.fromEntries(Object.entries(config).filter(([key]) => !FORGE_KEYS.has(key)));
   if (isRecord(previous)) {
     const keys = Object.keys(rest);
-    if (keys.length === Object.keys(previous).length && keys.every((key) => rest[key] === previous[key])) return previous;
+    if (keys.length === Object.keys(previous).length && keys.every((key) => rest[key] === getOwn(previous, key))) return previous;
   }
   return rest;
 }

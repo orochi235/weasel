@@ -99,6 +99,12 @@ describe('a CSS unit on a geometry attribute', () => {
     expect(warnings).toEqual([]);
   });
 
+  it('reads a unit named for an Object.prototype member as unconverted', () => {
+    const { nodes, warnings } = parseSvg(`<svg ${NS}><rect width="5constructor" height="4tostring"/></svg>`);
+    expect((nodes[0] as SvgPathNode).path).toMatchObject({ width: 5, height: 4 });
+    expect(warnings).toHaveLength(2);
+  });
+
   it('takes px as user units, silently', () => {
     const { nodes, warnings } = parseSvg(`<svg ${NS}><rect width="30px" height="2e1"/></svg>`);
     expect((nodes[0] as SvgPathNode).path).toMatchObject({ width: 30, height: 20 });

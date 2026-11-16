@@ -1,6 +1,7 @@
 import { useLayoutEffect, useMemo, useRef, type KeyboardEvent, type ReactNode } from 'react';
 import type { IconRef } from '@weasel-js/icons';
 import type { ColorSource } from '@weasel-js/paint';
+import { getOwn } from '@weasel-js/registry';
 import { useColorCss } from '@weasel-js/theme/react';
 import { dropSide, moveItems, nudgeOf, soloChanges } from '@weasel-js/ui-input';
 import { useReorderDragList } from '../../useReorderDragList';
@@ -120,7 +121,7 @@ export function EffectList<T extends EffectListItem>({
       ref={drag.containerProps.ref}
     >
       {items.map((item, i) => {
-        const kind = kinds[item.kind];
+        const kind = getOwn(kinds, item.kind);
         const side = dropSide(targetIndex, i, items.length);
         return (
           <EffectCard

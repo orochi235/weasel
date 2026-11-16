@@ -8,6 +8,7 @@ import { withBarLabel } from '../../Bar/renderBarLeaf';
 import { drawsBarForm, type ControlForm } from '../../ActionButton/controlForm';
 import { resolveIcon } from '../../Icon/resolveIcon';
 import { objectFieldContext } from '../../Prefs/objectFieldContext';
+import { rendererOf } from '../../PrefsSource/rendererOf';
 import { nodeLeafValue } from './model';
 import type { LeafCell } from './cells';
 import type { LeafContext, LeafRenderer } from './renderContext';
@@ -31,7 +32,7 @@ function renderField(
   childCtx: LeafContext,
   surface: ControlForm,
 ): ReactNode {
-  const custom = renderers?.[childCtx.path] ?? renderers?.[child.kind];
+  const custom = rendererOf(renderers, childCtx.path, child.kind);
   if (drawsBarForm(surface)) {
     return custom
       ? withBarLabel(child, custom(childCtx))

@@ -35,7 +35,8 @@ function tokenize(text: string): Token[] {
     if (!m) throw new Error(`unitExpr: cannot read '${text.slice(at).trim()}' in '${text}'`);
     at = TOKEN.lastIndex;
     if (m[1] === undefined) {
-      tokens.push({ kind: 'op', op: OPS[m[3]!] ?? m[3]! });
+      const op = m[3]!;
+      tokens.push({ kind: 'op', op: Object.hasOwn(OPS, op) ? OPS[op]! : op });
       continue;
     }
     const value = Number(m[1]);

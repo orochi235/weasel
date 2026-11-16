@@ -14,6 +14,7 @@ import { SURFACE_ASSETS } from './surfaces/assets';
 import { ALL_CHROME, type ChromeItem } from './surfaces/chrome';
 import { surfaceOf } from './surfaces/surfaceState';
 import type { SurfaceAsset, SurfaceKind, SurfacesValue } from './surfaces/types';
+import { getOwn } from '@weasel-js/registry';
 
 /** Dev mode: the Vite dev server sets `import.meta.env.DEV`. In a
  *  production bundle this is false, so the toggle and any hidden prefs
@@ -80,7 +81,7 @@ export function SurfacesEditor({ ctx }: { ctx: LeafContext }) {
   const pref = ctx.pref as WeaselDrawPrefData;
   const surfaces = (ctx.value ?? {}) as SurfacesValue;
   const update = (id: string, patch: SurfacesValue[string]): void => {
-    ctx.setValue({ ...surfaces, [id]: { ...surfaces[id], ...patch } });
+    ctx.setValue({ ...surfaces, [id]: { ...getOwn(surfaces, id), ...patch } });
   };
   const flag = (field: 'hidden' | 'collapsed', header: string, verb: string): DataGridColumn<ChromeRow> => ({
     id: field,
@@ -89,7 +90,7 @@ export function SurfacesEditor({ ctx }: { ctx: LeafContext }) {
     className: 'wd-prefs-flag',
     render: ({ id, label, asset }) => field === 'collapsed' && !asset ? null : (
       <Checkbox
-        isSelected={!!surfaces[id]?.[field]}
+        isSelected={!!getOwn(surfaces, id)?.[field]}
         onChange={(v) => update(id, { [field]: v })}
         aria-label={`${verb} ${label}`}
       />
@@ -107,7 +108,7 @@ export function SurfacesEditor({ ctx }: { ctx: LeafContext }) {
           width="fit"
           aria-label={`Show ${asset.label} as`}
           options={asset.surfaces.map((value) => ({ value, label: SURFACE_NAMES[value] }))}
-          selectedKey={surfaceOf(asset, surfaces[asset.id])}
+          selectedKey={surfaceOf(asset, getOwn(surfaces, asset.id))}
           onSelectionChange={(surface) => update(asset.id, { surface })}
         />
       ),

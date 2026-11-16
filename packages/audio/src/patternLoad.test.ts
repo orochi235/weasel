@@ -5,6 +5,12 @@ import { patternVoicePeaks } from './patternLoad';
 const base = { tempo: 120, lookahead: 0 };
 
 describe('patternVoicePeaks', () => {
+  it('counts a bus named __proto__ as its own entry', () => {
+    const peaks = patternVoicePeaks([{ step: 0, length: 1, pitch: 220, bus: '__proto__' }], { ...base, loop: false });
+    expect(Object.getPrototypeOf(peaks)).toBe(Object.prototype);
+    expect(Object.entries(peaks)).toEqual([['__proto__', 1]]);
+  });
+
   it('counts the voices sounding at once on each bus', () => {
     const peaks = patternVoicePeaks([
       { step: 0, length: 4, pitch: 220, bus: 'music' },

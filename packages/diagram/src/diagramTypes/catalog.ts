@@ -1,3 +1,4 @@
+import { getOwn } from '@weasel-js/registry';
 import type { ContainerStencil } from '../containers/containerStencils';
 import { icon } from '../icons.gen';
 import { BPMN_GROUP } from '../stencils/bpmn';
@@ -166,7 +167,7 @@ export const isContainerStencil = (stencil: DiagramStencil | ContainerStencil): 
 export function groupStencils(
   ids: readonly string[], catalog: Readonly<Record<string, StencilGroup>> = STENCIL_GROUPS,
 ): (DiagramStencil | ContainerStencil)[] {
-  return ids.flatMap((id) => catalog[id]?.stencils ?? []);
+  return ids.flatMap((id) => getOwn(catalog, id)?.stencils ?? []);
 }
 
 /** The ids of `group`'s stencils. */

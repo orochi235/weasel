@@ -13,6 +13,7 @@ import {
   isImagePatternPaint, isTileKind, isTilePaint, patternPlacementOf, tileSpecOf,
   type CommandPaint, type Paint, type PosedPaint, type TilePaint, type TilePatternSpec,
 } from '@weasel-js/paint';
+import { setOwn } from '@weasel-js/registry';
 import {
   ownTextureIds, registerTextureAs, textureRegistry, unregisterTexture,
   type TextureHandle,
@@ -35,7 +36,7 @@ const cache = new Map<string, TextureHandle | null>();
 function specId(spec: TilePatternSpec): string {
   const bag = spec as unknown as Record<string, unknown>;
   const sorted: Record<string, unknown> = {};
-  for (const k of Object.keys(bag).sort()) sorted[k] = bag[k];
+  for (const k of Object.keys(bag).sort()) setOwn(sorted, k, bag[k]);
   return ID_PREFIX + JSON.stringify(sorted);
 }
 

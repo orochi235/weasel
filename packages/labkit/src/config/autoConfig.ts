@@ -1,14 +1,14 @@
 import { type PrefLeaf, prefAutoValue, prefStartsAuto } from '@weasel-js/prefs';
 import { isAuto } from './auto';
 import { configLeaves } from './leaves';
-import { isRecord, setOwn, valueAtPath, withValueAtPath } from './path';
+import { isRecord, ownAt, setOwn, valueAtPath, withValueAtPath } from './path';
 import type { ResolvedConfig } from './types';
 
 type Resolver = (config: Record<string, unknown>) => unknown;
 
 /** Reads a labkit-only extra off a resolved leaf. `PrefLeaf` has no field for
  *  these; they ride as extra keys and survive the resolve walk. */
-function extra<T>(leaf: PrefLeaf, key: string): T | undefined {
+function extra<T>(leaf: PrefLeaf, key: 'autoResolve' | 'autoQuote'): T | undefined {
   return (leaf as unknown as Record<string, T | undefined>)[key];
 }
 
@@ -176,7 +176,12 @@ function withoutAuto(value: unknown, at: string, held: unknown, unpin: string[])
   if (!isRecord(value)) return value;
   let out: Record<string, unknown> | undefined;
   for (const [key, child] of Object.entries(value)) {
-    const next = withoutAuto(child, `${at}.${key}`, isRecord(held) ? held[key] : undefined, unpin);
+    const next = withoutAuto(
+      child,
+      `${at}.${key}`,
+      isRecord(held) ? ownAt(held, key) : undefined,
+      unpin,
+    );
     if (next === child) continue;
     out ??= { ...value };
     setOwn(out, key, next);

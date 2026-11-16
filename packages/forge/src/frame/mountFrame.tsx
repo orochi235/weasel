@@ -1,3 +1,4 @@
+import { getOwn } from '@weasel-js/registry';
 import { openChannel } from '../protocol/channel';
 import { FRAME_HELLO, type FromFrame, PORT_HANDOFF, type ToFrame } from '../protocol/messages';
 import { indexId, isIndexId } from '../story/indexPages';
@@ -60,7 +61,7 @@ export async function mountFrame(options: MountFrameOptions): Promise<void> {
   const importOf = (file: string): Promise<Record<string, unknown>> => {
     let loading = imports.get(file);
     if (!loading) {
-      const importer = options.importers[file];
+      const importer = getOwn(options.importers, file);
       if (!importer) throw new Error(`No importer for ${file}`);
       loading = importer();
       imports.set(file, loading);
@@ -75,7 +76,7 @@ export async function mountFrame(options: MountFrameOptions): Promise<void> {
   const early = location.hash.slice(1) || null;
   // Only starts the fetch; whoever awaits the import later sees its outcome.
   for (const file of new Set(early === null ? [] : entriesOf(early).map((e) => e.file))) {
-    if (options.importers[file]) importOf(file).catch(() => {});
+    if (Object.hasOwn(options.importers, file)) importOf(file).catch(() => {});
   }
 
   const handoff = waitForHandoff();

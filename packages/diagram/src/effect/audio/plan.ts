@@ -1,4 +1,5 @@
 import type { GraphTarget } from '@weasel-js/audio';
+import { getOwn, setOwn } from '@weasel-js/registry';
 import { uniqueStages } from '../draw';
 import { runOrder } from '../runner/order';
 import { paramValues } from '../runner/params';
@@ -35,8 +36,8 @@ export const edgeKey = (e: PlanEdge): string =>
 function levelsOf(levels: readonly string[], params: Readonly<Record<string, unknown>>): Record<string, number> {
   const out: Record<string, number> = {};
   for (const id of levels) {
-    const v = params[id];
-    if (typeof v === 'number') out[id] = v;
+    const v = getOwn(params, id);
+    if (typeof v === 'number') setOwn(out, id, v);
   }
   return out;
 }
@@ -50,7 +51,7 @@ export function livePlan(pipeline: EffectPipeline, nodes: AudioStageNodes, sourc
   const { order, cyclic } = runOrder(pipeline);
   const planNodes: Record<string, PlanNode> = {};
   const errors: Record<string, string> = {};
-  for (const id of cyclic) if (stages.has(id)) errors[id] = 'on a feedback loop';
+  for (const id of cyclic) if (stages.has(id)) setOwn(errors, id, 'on a feedback loop');
 
   /** The planned nodes whose sound leaves each stage: itself, or what a bypassed stage carries on. */
   const origins = new Map<string, readonly string[]>();
@@ -72,12 +73,12 @@ export function livePlan(pipeline: EffectPipeline, nodes: AudioStageNodes, sourc
       continue;
     }
     if (!isOutput) {
-      const entry = nodes[stage.type!]!;
+      const entry = getOwn(nodes, stage.type!)!;
       const params = paramValues(stage);
       try {
-        planNodes[id] = { type: stage.type!, settings: entry.settings(params, sources), levels: levelsOf(entry.levels, params) };
+        setOwn(planNodes, id, { type: stage.type!, settings: entry.settings(params, sources), levels: levelsOf(entry.levels, params) });
       } catch (err) {
-        errors[id] = err instanceof Error ? err.message : String(err);
+        setOwn(errors, id, err instanceof Error ? err.message : String(err));
         continue;
       }
       origins.set(id, [id]);

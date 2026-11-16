@@ -114,8 +114,8 @@ function prune(
     const sectionChildren: PrefGroup['children'] = {};
     const sectionValues: Record<string, unknown> = {};
     for (const k of keys) {
-      setOwn(sectionChildren, k, children[k]);
-      setOwn(sectionValues, k, values[k]);
+      setOwn(sectionChildren, k, ownAt(children, k));
+      setOwn(sectionValues, k, ownAt(values, k));
     }
     markHeading(resolved, section.label, section.paths, at, sectionChildren);
     const reordered: PrefGroup['children'] = {};
@@ -127,7 +127,7 @@ function prune(
       }
       if (keys.includes(k)) continue;
       setOwn(reordered, k, child);
-      setOwn(revalued, k, values[k]);
+      setOwn(revalued, k, ownAt(values, k));
     }
     replace(children, reordered);
     replace(values, revalued);

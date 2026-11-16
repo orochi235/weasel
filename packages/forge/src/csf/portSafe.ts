@@ -2,27 +2,26 @@ import { isPlainObject } from '@weasel-js/core';
 import { setOwn } from '@weasel-js/registry';
 
 const g = globalThis as Record<string, unknown>;
+const CLONED_NAMES = [
+  'Date',
+  'RegExp',
+  'ArrayBuffer',
+  'DataView',
+  'Int8Array',
+  'Uint8Array',
+  'Uint8ClampedArray',
+  'Int16Array',
+  'Uint16Array',
+  'Int32Array',
+  'Uint32Array',
+  'Float16Array',
+  'Float32Array',
+  'Float64Array',
+  'BigInt64Array',
+  'BigUint64Array',
+] as const;
 const CLONED_WHOLE = new Set<unknown>(
-  [
-    'Date',
-    'RegExp',
-    'ArrayBuffer',
-    'DataView',
-    'Int8Array',
-    'Uint8Array',
-    'Uint8ClampedArray',
-    'Int16Array',
-    'Uint16Array',
-    'Int32Array',
-    'Uint32Array',
-    'Float16Array',
-    'Float32Array',
-    'Float64Array',
-    'BigInt64Array',
-    'BigUint64Array',
-  ]
-    .map((name) => (g[name] as { prototype?: object } | undefined)?.prototype)
-    .filter(Boolean),
+  CLONED_NAMES.map((name) => (g[name] as { prototype?: object } | undefined)?.prototype).filter(Boolean),
 );
 
 /** Own keys a clone keeps: enumerable string keys, plus an array's `length`. */

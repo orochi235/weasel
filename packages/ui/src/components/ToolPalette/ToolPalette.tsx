@@ -1,6 +1,7 @@
 import type { DragEvent, ReactNode } from 'react';
 import { toolIdsOf, toolSetHas, toolStacksOf, useScopedTools, type CarryPayload, type Tool, type ToolSet, type ToolsApi } from '@weasel-js/core';
 import { eligibleContribution, type ModeRegistry } from '@weasel-js/modes';
+import { getOwn } from '@weasel-js/registry';
 import type { Orientation } from '../Run';
 import { ToolRail, type StackCycleModifier, type ToolRailButton, type ToolRailItem } from '../ToolRail';
 import s from './ToolPalette.module.css';
@@ -120,7 +121,7 @@ function ToolPaletteRail(props: ToolPaletteProps & { tools: ToolsApi }) {
       icon: tool.presentation?.icon ?? icon('core:unknown'),
       label: tool.presentation?.label ?? tool.id,
       description: tool.presentation?.description,
-      shortcut: tools.shortcuts[tool.id]?.[0],
+      shortcut: getOwn(tools.shortcuts, tool.id)?.[0],
       active: tools.active === tool.id,
       ...(enabled ? {} : { disabled: true, disabledReason }),
       onPress: () => { if (!carry.carried()) tools.setActive(tool.id); },

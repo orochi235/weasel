@@ -11,6 +11,7 @@ import { ResetControl } from '../../Properties/ResetControl';
 import { FORM_FRAMES } from '../../Prefs/frames';
 import { HiddenBadge, hiddenAttrs } from '../../Prefs/hidden';
 import { offTitle } from '../../Prefs/offTitle';
+import { rendererOf } from '../../PrefsSource/rendererOf';
 import { prefDrawsNoControl } from '../../Prefs/PrefWords';
 import { prefDrawsActionRow } from '../../Prefs/registeredActions';
 import { RAIL_ATTR, selectionAttrs } from '../../Prefs/selection';
@@ -113,7 +114,7 @@ function headingRow(section: PanelSection, scope: PanelCellScope): PanelRow | un
   if (section.heading === undefined || !sectionHeaded(section)) return undefined;
   const row = panelOwnRows(section).find((r) => r.leaves.length === 1 && panelLeafKey(r.leaves[0]!) === section.heading);
   const only = row?.leaves[0];
-  if (!only || scope.renderers?.[only.path] || scope.renderers?.[only.leaf.kind]) return undefined;
+  if (!only || rendererOf(scope.renderers, only.path, only.leaf.kind)) return undefined;
   return row;
 }
 

@@ -1,4 +1,5 @@
 /** A Mermaid flowchart's grammar, read to a syntax tree with each statement's line. */
+import { setOwn } from '@weasel-js/registry';
 import { lineError } from '../../lineError';
 import { propsOf, type StyleProps } from '../common/styles';
 import { lexFlowchart, type LinkHead, type MermaidShape, type MermaidToken } from './lex';
@@ -47,7 +48,7 @@ export interface MermaidFlowchart {
 
 function metaOf(text: string): Record<string, string> {
   const out: Record<string, string> = {};
-  for (const [k, v] of propsOf(text)) out[k] = /^".*"$/.test(v) ? v.slice(1, -1) : v;
+  for (const [k, v] of propsOf(text)) setOwn(out, k, /^".*"$/.test(v) ? v.slice(1, -1) : v);
   return out;
 }
 

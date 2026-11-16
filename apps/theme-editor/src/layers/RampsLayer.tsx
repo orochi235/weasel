@@ -1,3 +1,4 @@
+import { getOwn } from '@weasel-js/registry';
 import { isByAxis, type PinValue, type ThemeDefinition, type Varying } from '@weasel-js/theme';
 import {
   DEFAULT_CONSTRAINTS,
@@ -162,7 +163,7 @@ export function RampsLayer({ draft, derived, lookup, highlight, focused, onFocus
   const allIssues = derived.views.flatMap((v) => v.result.issues);
   const issuesOf = (name: string) => issuesAt(allIssues, 'ramps', name);
   const hexIn = (v: ModeView, s: StepView) =>
-    (v.resolved as Readonly<Record<string, string>>)[`--wzl-${s.token}`] ?? String(v.result.tokens[s.token]?.value ?? s.hex);
+    (v.resolved as Readonly<Record<string, string>>)[`--wzl-${s.token}`] ?? String(getOwn(v.result.tokens, s.token)?.value ?? s.hex);
   const pinOf = (s: StepView): Varying<PinValue> => {
     const byMode = derived.views.map((v) => [v.mode, hexIn(v, s)] as const);
     if (byMode.some(([mode]) => mode === undefined) || byMode.every(([, hex]) => hex === byMode[0][1])) return { value: s.hex, type: 'color' };
@@ -179,7 +180,7 @@ export function RampsLayer({ draft, derived, lookup, highlight, focused, onFocus
         const view = rampView(name, entry, derived.primary.result, derived.primary.resolved);
         const lit = (token: string) => highlight.includes(token);
         const issues = issuesOf(name);
-        const authored = view.steps.some((s) => derived.primary.result.provenance[s.token]?.layer === 'pins');
+        const authored = view.steps.some((s) => getOwn(derived.primary.result.provenance, s.token)?.layer === 'pins');
         const own = Object.hasOwn(draft.ramps ?? {}, name);
         const infeasible = allIssues.some((i) => i.kind === 'infeasible-ramp' && i.ramp === name);
         return (

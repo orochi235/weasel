@@ -2,6 +2,7 @@
 // that, and not the stored form: a person writes "is on" about an Italic
 // toggle, whatever string the toggle stores.
 
+import { getOwn } from '@weasel-js/registry';
 import type { PrefConditionReader } from './condition';
 import type { PrefGroup, PrefSection } from './groups';
 import { prefLeavesHolding, prefLeavesHoldingIn, prefSchemaHolding, UNSEEN } from './holding';
@@ -10,7 +11,7 @@ import type { PrefBoolean, PrefEnum, PrefLeaf } from './schema';
 type Siblings = Record<string, unknown> | undefined;
 
 const variantOf = (value: unknown, tag: string): unknown =>
-  typeof value === 'object' && value !== null ? (value as Record<string, unknown>)[tag] : undefined;
+  typeof value === 'object' && value !== null ? getOwn(value as Record<string, unknown>, tag) : undefined;
 
 /** What the control over `leaf` shows for `stored`: what its `encoding` reads it as, else `stored` itself.
  *  `siblings` is the object the leaf is a field of. */

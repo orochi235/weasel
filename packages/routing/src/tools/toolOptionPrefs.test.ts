@@ -96,3 +96,22 @@ describe('prefsToolOptionValues', () => {
     expect(listener).toHaveBeenCalledTimes(2);
   });
 });
+
+describe('tool ids and option keys named like Object.prototype members', () => {
+  it('keeps a tool named __proto__ and an option named constructor as their own groups and leaves', () => {
+    const opts: ToolOptions = {
+      actionId: 'insert',
+      prefs: { name: 'Odd', children: { constructor: { kind: 'number', name: 'C', description: '', default: 1 } } },
+    };
+    const group = toolOptionsPrefs([{ id: '__proto__', options: opts }]);
+    expect(Object.getPrototypeOf(group.children)).toBe(Object.prototype);
+    expect(Object.hasOwn(group.children, '__proto__')).toBe(true);
+    const tool = group.children['__proto__'] as { children: Record<string, unknown> };
+    expect(Object.hasOwn(tool.children, 'constructor')).toBe(true);
+  });
+
+  it('reads nothing for a tool named toString that the store holds no values for', () => {
+    const values = prefsToolOptionValues(fakeStore(), 'tools');
+    expect(values.get('toString')).toEqual({});
+  });
+});

@@ -1,3 +1,4 @@
+import { setOwn } from '@weasel-js/registry';
 import { fullSelection, mergeAxes, pick, type AxisDefs, type Selection, type Varying } from './axes.ts';
 import type { FlatTokens, RawToken } from './dtcg/types.ts';
 
@@ -40,7 +41,7 @@ export function tokensAt(chain: readonly ChainLink[], selection: Selection): Fla
   chain.forEach((link, i) => {
     for (const [name, v] of Object.entries(link.tokens)) {
       const picked = pick(v, local[i]);
-      if (picked.ok) out[name] = picked.value;
+      if (picked.ok) setOwn(out, name, picked.value);
     }
   });
   return out;

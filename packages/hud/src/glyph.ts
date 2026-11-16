@@ -3,6 +3,7 @@ import {
   DEG_TO_RAD, identity, mat3, multiply, pathFromD, rotateAboutPoint, scale, translate, type Affine, type Path,
 } from '@weasel-js/geom';
 import { ICON_FRAME, iconParts, layerMarkup, markLayers, type IconGlyph, type IconRegistry, type IconSpec } from '@weasel-js/icons';
+import { setOwn } from '@weasel-js/registry';
 
 /** The attributes a glyph's elements inherit, as `<Icon>`'s root `<svg>` sets them. */
 const ROOT: Readonly<Record<string, string>> = {
@@ -29,7 +30,7 @@ interface Tag { close: boolean; name: string; attrs: Record<string, string>; sel
 function* tags(body: string): Generator<Tag> {
   for (const m of body.matchAll(/<(\/?)([a-zA-Z]+)((?:\s+[\w:-]+="[^"]*")*)\s*(\/?)>/g)) {
     const attrs: Record<string, string> = {};
-    for (const a of m[3]!.matchAll(/([\w:-]+)="([^"]*)"/g)) attrs[a[1]!] = a[2]!;
+    for (const a of m[3]!.matchAll(/([\w:-]+)="([^"]*)"/g)) setOwn(attrs, a[1]!, a[2]!);
     yield { close: m[1] === '/', name: m[2]!, attrs, selfClosing: m[4] === '/' };
   }
 }
@@ -123,7 +124,7 @@ interface Frame { attrs: Readonly<Record<string, string>>; children: DrawCommand
 
 function frameFor(t: Tag, parent: Readonly<Record<string, string>>): Frame {
   const attrs = { ...parent };
-  for (const [k, v] of Object.entries(t.attrs)) if (INHERITED.has(k)) attrs[k] = v;
+  for (const [k, v] of Object.entries(t.attrs)) if (INHERITED.has(k)) setOwn(attrs, k, v);
   const children: DrawCommand[] = [];
   const group: Frame['group'] = { kind: 'group', children };
   const m = transformOf(t.attrs.transform);

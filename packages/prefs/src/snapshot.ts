@@ -2,6 +2,7 @@
 // the value each resolves to under the selectors' own values. Rebuilt when a
 // record changes, reusing what it read from the records that did not.
 
+import { getOwn } from '@weasel-js/registry';
 import type { OwnedRecordCache } from '@weasel-js/storage';
 import { blendPref, type PrefBlend } from './blend';
 import { assignPrefValueAtPath, setOwnPrefValue, overridesOfPref, scopeSelectors, repairScope, selectionWeights, weighScope } from '@weasel-js/prefs-schema/internal';
@@ -152,14 +153,17 @@ export function weightsUnder(
 ): PrefWeights {
   const out: Record<string, Record<string, number>> = {};
   for (const [path, options] of selectors) {
-    const own = Object.hasOwn(given, path) ? given[path] : undefined;
+    const own = getOwn(given, path);
     setOwnPrefValue(out, path, own
-      ? Object.fromEntries(options.filter((option) => (own[option] ?? 0) > 0).map((option) => [option, own[option]!]))
-      : { [selection[path]!]: 1 });
+      ? Object.fromEntries(options.filter((option) => (getOwn(own, option) ?? 0) > 0).map((option) => [option, getOwn(own, option)!]))
+      : { [getOwn(selection, path)!]: 1 });
   }
   for (const path of admitted) {
     if (Object.hasOwn(given, path)) setOwnPrefValue(out, path, { ...given[path] });
-    else if (selection[path] !== undefined) setOwnPrefValue(out, path, { [selection[path]]: 1 });
+    else {
+      const option = getOwn(selection, path);
+      if (option !== undefined) setOwnPrefValue(out, path, { [option]: 1 });
+    }
   }
   return out;
 }

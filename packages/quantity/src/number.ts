@@ -122,16 +122,18 @@ function readNumber(text: string, units?: Readonly<UnitTable>): number {
   if (units) {
     units = withSpellings(units);
     const trimmed = text.trim();
-    const name = unitSuffixOf(trimmed, units);
-    if (name !== undefined) {
+    const unit = unitSuffixOf(trimmed, units);
+    if (unit !== undefined) {
       const terms = compoundTermsOf(trimmed, units);
-      if (terms !== undefined && terms.length > 1) return compoundValue(terms, trimmed, units);
-      const { factor, offset } = entryScale(units[name]!);
+      if (terms !== undefined && terms.length > 1) return compoundValue(terms, trimmed);
+      const [name, entry] = unit;
+      const { factor, offset } = entryScale(entry);
       return scaled(readNumber(trimmed.slice(0, -name.length)), factor) + offset;
     }
   }
   let t = hyphenated(text.trim());
-  const exponent = EXPONENTS[t.slice(-1).toLowerCase()];
+  const suffix = t.slice(-1).toLowerCase();
+  const exponent = Object.hasOwn(EXPONENTS, suffix) ? EXPONENTS[suffix] : undefined;
   if (exponent !== undefined) t = t.slice(0, -1).trimEnd();
   // `Number` alone also reads `0x10`, `0b11`, and `1e400`, none of which is a typed amount.
   if (!DECIMAL_NUMBER.test(t)) return Number.NaN;
@@ -230,15 +232,16 @@ export type UnitTable = Record<string, UnitEntry>;
  * units: `"` wherever `in` is, `ft` wherever `'` is.
  */
 export function withSpellings(units: Readonly<UnitTable>): Readonly<UnitTable> {
-  let out: UnitTable | undefined;
+  const named = new Set(Object.keys(units));
+  const added: [string, UnitEntry][] = [];
   for (const [known, entry] of Object.entries(units)) {
     for (const n of unitSpellings(known)) {
-      if (units[n] !== undefined || out?.[n] !== undefined) continue;
-      out ??= { ...units };
-      out[n] = entry;
+      if (named.has(n)) continue;
+      named.add(n);
+      added.push([n, entry]);
     }
   }
-  return out ?? units;
+  return added.length === 0 ? units : { ...units, ...Object.fromEntries(added) };
 }
 
 /** Divided by the reciprocal below 1: 12 * 0.1 is 1.2000000000000002, 12 / 10 is 1.2. */
@@ -251,14 +254,14 @@ function scaled(n: number, factor: number): number {
  * `<number><unit>` term — which is what tells `5ft 3in` from a malformed
  * `5ft 3`. Undefined when the text is not a run of whole terms.
  */
-function compoundTermsOf(text: string, units: Readonly<UnitTable>): string[] | undefined {
-  const names: string[] = [];
+function compoundTermsOf(text: string, units: Readonly<UnitTable>): [string, UnitEntry][] | undefined {
+  const names: [string, UnitEntry][] = [];
   let rest = text.trimEnd();
   while (rest !== '') {
-    const name = unitSuffixOf(rest, units);
-    if (name === undefined) return undefined;
-    names.push(name);
-    const before = rest.slice(0, -name.length);
+    const unit = unitSuffixOf(rest, units);
+    if (unit === undefined) return undefined;
+    names.push(unit);
+    const before = rest.slice(0, -unit[0].length);
     const m = new RegExp(`(?:${TERM_NUMBER})\\s*$`).exec(before);
     if (!m) return undefined;
     rest = before.slice(0, m.index).trimEnd();
@@ -274,13 +277,13 @@ function compoundTermsOf(text: string, units: Readonly<UnitTable>): string[] | u
  * −57. Offsets have no meaning in a sum — 1K + 2degC is not a temperature —
  * so a term carrying one makes the whole value unreadable.
  */
-function compoundValue(names: string[], text: string, units: Readonly<UnitTable>): number {
+function compoundValue(names: [string, UnitEntry][], text: string): number {
   const digits = text.match(new RegExp(TERM_NUMBER, 'g'));
   if (!digits || digits.length !== names.length) return Number.NaN;
   const sign = /^\s*[-\u2212]/.test(text) ? -1 : 1;
   let total = 0;
-  for (const [i, name] of names.entries()) {
-    const { factor, offset } = entryScale(units[name]!);
+  for (const [i, [, entry]] of names.entries()) {
+    const { factor, offset } = entryScale(entry);
     if (offset !== 0) return Number.NaN;
     total += scaled(Number(digits[i]), factor);
   }
@@ -288,8 +291,8 @@ function compoundValue(names: string[], text: string, units: Readonly<UnitTable>
 }
 
 /** The longest unit name `text` ends with — exact case first, then any case. */
-function unitSuffixOf(text: string, units: Readonly<UnitTable>): string | undefined {
-  const names = Object.keys(units).filter((n) => n !== '').sort((a, b) => b.length - a.length);
+function unitSuffixOf(text: string, units: Readonly<UnitTable>): [string, UnitEntry] | undefined {
+  const named = Object.entries(units).filter(([n]) => n !== '').sort(([a], [b]) => b.length - a.length);
   const lower = text.toLowerCase();
-  return names.find((n) => text.endsWith(n)) ?? names.find((n) => lower.endsWith(n.toLowerCase()));
+  return named.find(([n]) => text.endsWith(n)) ?? named.find(([n]) => lower.endsWith(n.toLowerCase()));
 }

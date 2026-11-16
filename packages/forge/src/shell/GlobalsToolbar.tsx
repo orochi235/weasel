@@ -6,6 +6,7 @@ import { Callout } from '@weasel-js/ui/components/Callout';
 import { Icon } from '@weasel-js/ui/components/Icon';
 import { icon as glyph } from '../icons.gen';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { getOwn } from '@weasel-js/registry';
 import type { Globals } from '../protocol/messages';
 import { followApp, type GlobalDeclaration, type GlobalDeclarations, type GlobalOption, labGlobals, labOptions } from './globals';
 
@@ -46,7 +47,7 @@ function GlobalSelect({ name, declaration, values, set, labeled = false }: Globa
     <Select
       {...(labeled ? { label: declaration.label } : { 'aria-label': declaration.label })}
       width={labeled ? 'fill' : 'fit'}
-      selectedKey={String(values[name])}
+      selectedKey={String(getOwn(values, name))}
       onSelectionChange={(value) => set(name, value)}
       options={labOptions(declaration, values).map(selectOption)}
     />

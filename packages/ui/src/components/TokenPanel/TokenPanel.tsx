@@ -1,4 +1,5 @@
 import { type CSSProperties, memo, useCallback, useMemo, useState } from 'react';
+import { getOwn } from '@weasel-js/registry';
 import { Focusable } from '../Tooltip/Focusable';
 import { DisclosureRow } from '../Disclosure';
 import { holdScope, useControlAccess, type HoldProps } from '../Disabled';
@@ -260,7 +261,7 @@ function Section({
                 key={`scale:${item.group}`}
                 group={item.group}
                 tokens={item.tokens}
-                generator={scales?.[item.group]}
+                generator={scales && getOwn(scales, item.group)}
                 prefix={prefix}
                 onChange={onChange}
                 onScaleChange={onScaleChange}

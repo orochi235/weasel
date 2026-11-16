@@ -2,7 +2,7 @@ import { useMemo } from 'react';
 import type { IconSpec } from '@weasel-js/icons';
 import type { MenuGrade } from '@weasel-js/menu';
 import { useLatest, useStableByContent } from '@weasel-js/react';
-import { deepEqual, isPlainObject } from '@weasel-js/registry';
+import { deepEqual, getOwn, isPlainObject } from '@weasel-js/registry';
 import type { ActionUnavailable } from './action';
 import type { ActionSettingsState } from './actionSettings';
 import type { BoundGesture } from './binding';
@@ -138,6 +138,9 @@ function live<T>(value: T, at: () => unknown): T {
   if (Array.isArray(value)) return value.map((v, i) => live(v, () => (at() as unknown[] | undefined)?.[i])) as T;
   if (!isPlainObject(value)) return value;
   return Object.fromEntries(
-    Object.entries(value).map(([k, v]) => [k, live(v, () => (at() as Record<string, unknown> | undefined)?.[k])]),
+    Object.entries(value).map(([k, v]) => [k, live(v, () => {
+      const now = at();
+      return now !== null && typeof now === 'object' ? getOwn(now as Record<string, unknown>, k) : undefined;
+    })]),
   ) as T;
 }

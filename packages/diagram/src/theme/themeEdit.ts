@@ -3,7 +3,7 @@
  * one it was given alone, so a shipped theme is never changed.
  */
 import { DIAGRAM_THEMES } from './themes';
-import { DIAGRAM_ROLES, type DiagramTheme } from './types';
+import { DIAGRAM_ROLES, defaultRoleStyle, type DiagramTheme } from './types';
 import { getOwn } from '@weasel-js/registry';
 
 /** Where one value sits in a {@link DiagramTheme}. */
@@ -34,7 +34,7 @@ export const editableTheme = (theme: DiagramTheme): DiagramTheme => (isShippedTh
 /** The value at `path` in `theme`. */
 export function themeValue(theme: DiagramTheme, path: ThemePath): unknown {
   let at: unknown = theme;
-  for (const key of path) at = (at as Record<string | number, unknown> | undefined)?.[key];
+  for (const key of path) at = at !== null && typeof at === 'object' && Object.hasOwn(at, key) ? (at as Record<string | number, unknown>)[key] : undefined;
   return at;
 }
 
@@ -47,7 +47,7 @@ function setIn(at: unknown, path: readonly (string | number)[], value: unknown):
     return copy;
   }
   const obj = (at ?? {}) as Record<string, unknown>;
-  return { ...obj, [key!]: setIn(obj[key!], rest, value) };
+  return { ...obj, [key!]: setIn(Object.hasOwn(obj, key!) ? obj[key!] : undefined, rest, value) };
 }
 
 /** `theme` with `value` at `path`; everything else shared with it. */
@@ -71,7 +71,7 @@ export function addThemeRole(theme: DiagramTheme, label: string): { theme: Diagr
   let id = base;
   for (let n = 2; Object.hasOwn(theme.roles, id); n++) id = `${base}-${n}`;
   return {
-    theme: { ...theme, roles: { ...theme.roles, [id]: { ...theme.roles[theme.defaultRole]! } }, roleLabels: { ...theme.roleLabels, [id]: label } },
+    theme: { ...theme, roles: { ...theme.roles, [id]: { ...defaultRoleStyle(theme) } }, roleLabels: { ...theme.roleLabels, [id]: label } },
     id,
   };
 }

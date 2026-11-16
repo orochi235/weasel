@@ -12,6 +12,7 @@ import {
   resolvePrefUnit,
 } from '@weasel-js/prefs';
 import { qty, withUnit } from '@weasel-js/quantity';
+import { getOwn } from '@weasel-js/registry';
 import { prefFieldProps } from '@weasel-js/ui/components/Prefs';
 import { RowScope, stepDisplay } from '@weasel-js/ui/components/Properties';
 import type { InDialogOptions, LeafRenderer } from '../config/types';
@@ -56,11 +57,11 @@ function entryText(leaf: PrefLeaf, value: unknown): string | undefined {
   if (own) return own(value);
   const object = objectOf(leaf, value);
   for (const [key] of object ? prefSectionLeaves(object.children) : []) {
-    const field = value[key];
+    const field = getOwn(value, key);
     if (typeof field === 'string' && field !== '') return field;
   }
   if (leaf.kind !== 'union') return undefined;
-  const tag = value[(leaf as PrefUnion).tag];
+  const tag = getOwn(value, (leaf as PrefUnion).tag);
   return typeof tag === 'string' ? tag : undefined;
 }
 

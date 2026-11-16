@@ -1,3 +1,4 @@
+import { getOwn, setOwn } from './ownKeys';
 import { parseFile } from './ast.ts';
 import { indexProgram, scan } from './indexFile.ts';
 import { type Foreign, type ForeignStories, isFn, mayBeStory, mayReturnStory, type Scope } from './nativeExports.ts';
@@ -19,14 +20,14 @@ async function settled<T>(read: (foreign: Foreign) => T, ask: Ask): Promise<{ re
     const fresh: [Kind, string][] = [];
     const answer = (kind: Kind) => (name: string) => {
       if (!asked.has(`${kind}:${name}`)) fresh.push([kind, name]);
-      return known[kind][name];
+      return getOwn(known[kind], name);
     };
     const result = read({ value: answer('values'), call: answer('calls'), reexport: answer('reexports') });
     if (fresh.length === 0) return { result, known };
     for (const [kind, name] of fresh) {
       asked.add(`${kind}:${name}`);
       const found = await ask(kind, name);
-      if (found !== undefined) known[kind][name] = found;
+      if (found !== undefined) setOwn(known[kind], name, found);
     }
   }
 }

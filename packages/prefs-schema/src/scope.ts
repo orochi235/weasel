@@ -3,7 +3,7 @@
 // options, the order, which options keep their own value, and how a value
 // is repaired and blended.
 
-import { isPlainObject } from '@weasel-js/registry';
+import { getOwn, isPlainObject, setOwn } from '@weasel-js/registry';
 
 /** The key of a scope's shared value: what every option without a value of its own reads and writes. */
 export const PREF_ELSE = '$else';
@@ -115,7 +115,7 @@ export function weighScope(stored: unknown, weights: PrefWeights, absent: unknow
       out.push({ value, weight });
       return;
     }
-    const given = weights[value.$by];
+    const given = getOwn(weights, value.$by);
     if (given === undefined) {
       if (hasRest(value)) walk(value[PREF_ELSE], weight);
       return;
@@ -131,7 +131,7 @@ export function weighScope(stored: unknown, weights: PrefWeights, absent: unknow
 /** The one value `selection` names. A selector it leaves out reads the shared value; an option the scope holds nothing for reads as `absent`. */
 export function memberAt(stored: unknown, selection: PrefSelection, absent: unknown, overridesOf?: PrefOverridesLookup): unknown {
   let value = stored;
-  while (isPrefScope(value)) value = scopeOptionValue(value, selection[value.$by], absent, overridesOf);
+  while (isPrefScope(value)) value = scopeOptionValue(value, getOwn(selection, value.$by), absent, overridesOf);
   return value;
 }
 
@@ -167,11 +167,11 @@ export function writeDeclared(
     const shared = isPrefScope(stored) ? memberAt(stored, now, absent, overridesOf) : stored;
     scope = held ? { $by: by, $in: {}, [PREF_ELSE]: shared } : { $by: by, $in: {} };
   }
-  const option = under[by];
+  const option = getOwn(under, by);
   if (option === undefined || shares(scope, option, overridesOf)) {
     return withRest(scope, writeDeclared(scope[PREF_ELSE], inner, under, now, next, absent, overridesOf, hasRest(scope)));
   }
-  const own = scope.$in[option];
+  const own = getOwn(scope.$in, option);
   const kept = isPrefScope(own) && own.$by === inner[0] ? writeDeclared(own, inner, under, now, next, absent, overridesOf) : next;
   return { ...scope, $in: { ...scope.$in, [option]: kept } };
 }
@@ -180,7 +180,7 @@ function mapMembers(scope: PrefScope, fn: (member: unknown) => unknown): PrefSco
   let out: Record<string, unknown> | undefined;
   for (const [option, value] of Object.entries(scope.$in)) {
     const next = fn(value);
-    if (next !== value) (out ??= { ...scope.$in })[option] = next;
+    if (next !== value) setOwn((out ??= { ...scope.$in }), option, next);
   }
   const mapped = out ? { ...scope, $in: out } : scope;
   if (!hasRest(scope)) return mapped;

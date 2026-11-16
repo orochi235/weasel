@@ -134,3 +134,16 @@ describe('upgradeScope', () => {
     for (const value of [4, 'x', null, [1], { $of: { a: 1 } }, { $by: MODE, $of: {}, other: 1 }]) expect(upgradeScope(value)).toBe(value);
   });
 });
+
+describe('a selector or option named like an Object.prototype member', () => {
+  it('reads as one the weights and the selection leave out', () => {
+    const scope = { $by: 'constructor', $in: { a: 1 }, [PREF_ELSE]: 5 };
+    expect(weighScope(scope, {}, 0)).toEqual([{ value: 5, weight: 1 }]);
+    expect(memberAt(scope, {}, 0)).toBe(5);
+  });
+
+  it('writes the shared value where the selection names no option', () => {
+    const scope = { $by: 'toString', $in: { a: 1 }, [PREF_ELSE]: 5 };
+    expect(writeDeclared(scope, ['toString'], {}, {}, 9, 0)).toEqual({ $by: 'toString', $in: { a: 1 }, [PREF_ELSE]: 9 });
+  });
+});

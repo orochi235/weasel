@@ -1,4 +1,5 @@
 import type { GlMat3, Path } from '@weasel-js/geom';
+import { getOwn } from '@weasel-js/registry';
 import type { DrawCommand } from '../DrawCommand';
 import type { Effect } from '../effects/types';
 import type { ShaderUniform } from '../shaders/registerProgram';
@@ -100,9 +101,9 @@ function sameEffects(a: readonly Effect[] | undefined, b: readonly Effect[] | un
 
 function sameUniforms(a: Record<string, ShaderUniform> | undefined, b: Record<string, ShaderUniform> | undefined): boolean {
   if (a === b) return true;
-  const ka = Object.keys(a ?? {});
-  if (ka.length !== Object.keys(b ?? {}).length) return false;
-  return ka.every((k) => sameUniform(a![k], b?.[k]));
+  const ea = Object.entries(a ?? {});
+  if (ea.length !== Object.keys(b ?? {}).length) return false;
+  return ea.every(([k, u]) => sameUniform(u, b && getOwn(b, k)));
 }
 
 function sameUniform(a: ShaderUniform, b: ShaderUniform | undefined): boolean {

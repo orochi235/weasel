@@ -1,4 +1,5 @@
 import { matchKeyEvent, textOwnsChord } from '@weasel-js/gestures';
+import { getOwn } from '@weasel-js/registry';
 import type { StyleToggle } from './textEditTypes';
 
 /**
@@ -33,7 +34,7 @@ const UNSHIFT: Readonly<Record<string, string>> = { '+': '=', _: '-' };
  *  Ctrl chords are its text editing ({@link textOwnsChord}), so there only Cmd styles. */
 export function toggleForKey(e: KeyboardEvent, apple?: boolean): StyleToggle | null {
   if ((!e.metaKey && !e.ctrlKey) || textOwnsChord(e, apple)) return null;
-  const unshifted = UNSHIFT[e.key];
+  const unshifted = getOwn(UNSHIFT, e.key);
   const named = (key: string): boolean => unshifted === key || matchKeyEvent(e, key);
   return STYLE_SHORTCUTS.find((s) => s.shift === e.shiftKey && named(s.key))?.toggle ?? null;
 }

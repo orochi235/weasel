@@ -1,10 +1,11 @@
-import { isPlainObject } from '@weasel-js/registry';
+import { getOwn, hasOwnKey, isPlainObject, setOwn } from '@weasel-js/registry';
 import { fullSelection, isByAxis, pick, type Selection, type Varying } from '../axes.ts';
 import type { PinObject, PinValue, ThemeDefinition } from '../definition.ts';
 import { isSafeTokenName, unsafeTokenName, type RawToken, type TokenValue } from '../dtcg/types.ts';
 import { axisIssues } from './axisIssues.ts';
 import { isRecord, rampColors, scaleValues, settle, stepNames, type SettleContext } from './entries.ts';
 import { mergeChain, type Lookup } from './merge.ts';
+import { withoutUnsafeNames } from './safeNames.ts';
 import { checkSemantics, deriveSemantics } from './semantics.ts';
 import { declaredSteps } from './steps.ts';
 import type { DeriveResult, Issue, Layer, Provenance } from './types.ts';
@@ -13,9 +14,7 @@ const SEED_REF = /^\{seeds\.([\w-]+)\}$/;
 const REF = /^\{([^}]+)\}$/;
 const UNTYPED = 'unknown';
 /** The ramp and scale fields that take `by` and `{seeds.name}`. Descriptions are text and are never settled. */
-const PARAMS = ['kind', 'steps', 'lightness', 'curve', 'hue', 'chroma', 'anchor', 'gates', 'anchors', 'base', 'step', 'ratio', 'factors'];
-
-const has = (o: object, key: string) => Object.hasOwn(o, key);
+const PARAMS = ['kind', 'steps', 'lightness', 'curve', 'hue', 'chroma', 'anchor', 'gates', 'anchors', 'base', 'step', 'ratio', 'factors'] as const;
 
 function refName(value: TokenValue): string | undefined {
   return typeof value === 'string' ? REF.exec(value.trim())?.[1] : undefined;
@@ -30,8 +29,8 @@ function checkReferences(tokens: Readonly<Record<string, RawToken>>, failed: Rea
     while (name !== undefined && !done.has(name)) {
       if (trail.includes(name)) throw new Error(`Reference cycle at token "${name}" (${[...trail, name].join(' → ')})`);
       trail.push(name);
-      const target = refName(tokens[name].value);
-      if (target !== undefined && !has(tokens, target)) {
+      const target = refName(getOwn(tokens, name)!.value);
+      if (target !== undefined && !hasOwnKey(tokens, target)) {
         if (!failed.has(target)) throw new Error(`Token "${name}" references "${target}", which is not defined`);
         name = undefined;
       } else {
@@ -54,34 +53,39 @@ function inferTypes(tokens: Record<string, RawToken>, provenance: Record<string,
     const typeOf = (start: string): string => {
       const trail: string[] = [];
       let type = UNTYPED;
-      for (let name: string | undefined = start; name !== undefined && has(tokens, name); name = refName(tokens[name].value)) {
+      for (let name = start, token = getOwn(tokens, name); token !== undefined; ) {
         const known = memo.get(name);
         if (known !== undefined) {
           type = known;
           break;
         }
         trail.push(name);
-        if (tokens[name].type !== UNTYPED) {
-          type = tokens[name].type;
+        if (token.type !== UNTYPED) {
+          type = token.type;
           break;
         }
+        const next = refName(token.value);
+        if (next === undefined) break;
+        name = next;
+        token = getOwn(tokens, name);
       }
       for (const name of trail) {
-        if (type !== UNTYPED && tokens[name].type === UNTYPED) tokens[name] = { ...tokens[name], type };
+        const token = getOwn(tokens, name)!;
+        if (type !== UNTYPED && token.type === UNTYPED) setOwn(tokens, name, { ...token, type });
         memo.set(name, type);
       }
       return type;
     };
     for (const name of Object.keys(tokens)) typeOf(name);
     for (const name of Object.keys(tokens)) {
-      const p = provenance[name];
+      const p = getOwn(provenance, name)!;
       const generated = p.generated;
       const target = generated?.type === UNTYPED ? refName(generated.value) : undefined;
       const type = target === undefined ? UNTYPED : typeOf(target);
       if (!generated || type === UNTYPED) continue;
-      provenance[name] = { ...p, generated: { ...generated, type } };
+      setOwn(provenance, name, { ...p, generated: { ...generated, type } });
       if (tokens[name].type === UNTYPED) {
-        tokens[name] = { ...tokens[name], type };
+        setOwn(tokens, name, { ...tokens[name], type });
         changed = true;
       }
     }
@@ -96,21 +100,6 @@ function inferTypes(tokens: Record<string, RawToken>, provenance: Record<string,
 const isPinObject = (v: PinValue): v is PinObject =>
   isPlainObject(v) && 'value' in v;
 
-const NAMED_LAYERS = ['ramps', 'scales', 'semantics', 'components', 'pins'] as const;
-
-function withoutUnsafeNames(def: ThemeDefinition, issues: Issue[]): ThemeDefinition {
-  let out = def;
-  for (const layer of NAMED_LAYERS) {
-    const entries = def[layer];
-    if (!entries || Object.keys(entries).every(isSafeTokenName)) continue;
-    for (const n of Object.keys(entries)) {
-      if (!isSafeTokenName(n)) issues.push({ kind: 'invalid', path: `${layer}.${n}`, message: unsafeTokenName(n) });
-    }
-    out = { ...out, [layer]: Object.fromEntries(Object.entries(entries).filter(([n]) => isSafeTokenName(n))) };
-  }
-  return out;
-}
-
 /** Derive every token of `definition` for one selection. Unmet rules are reported in `issues`; cycles and dangling references throw. */
 export function derive(definition: ThemeDefinition, selection: Selection = {}, lookup?: Lookup): DeriveResult {
   const issues: Issue[] = [];
@@ -120,7 +109,7 @@ export function derive(definition: ThemeDefinition, selection: Selection = {}, l
   const seeds: Record<string, number | string> = {};
   for (const [k, v] of Object.entries(def.seeds ?? {})) {
     const picked = pick(v, sel);
-    if (picked.ok) seeds[k] = picked.value;
+    if (picked.ok) setOwn(seeds, k, picked.value);
     else issues.push({ kind: 'missing-axis-value', path: `seeds.${k}`, axis: picked.axis, value: picked.value });
   }
   const ctx: SettleContext = { sel, seeds, declaredSeeds: new Set(Object.keys(def.seeds ?? {})), issues };
@@ -137,8 +126,8 @@ export function derive(definition: ThemeDefinition, selection: Selection = {}, l
       return;
     }
     producer.set(name, path);
-    tokens[name] = token;
-    provenance[name] = { layer, rule, pinned: false };
+    setOwn(tokens, name, token);
+    setOwn(provenance, name, { layer, rule, pinned: false });
   };
   /** `steps`, when they settled, are this selection's; otherwise every step the entry could declare is exempt. */
   const failEntry = (name: string, entry: unknown, steps: readonly string[] | undefined) => {
@@ -165,7 +154,7 @@ export function derive(definition: ThemeDefinition, selection: Selection = {}, l
     const r: Record<string, unknown> = { ...raw };
     let settled = true;
     for (const key of PARAMS) {
-      if (!has(raw, key)) continue;
+      if (!hasOwnKey(raw, key)) continue;
       const s = settle(raw[key], `${path}.${key}`, ctx);
       r[key] = s.value;
       settled = s.ok && settled;
@@ -184,7 +173,7 @@ export function derive(definition: ThemeDefinition, selection: Selection = {}, l
     return settled && steps ? { ok: true, r, steps } : { ok: false, steps };
   };
   const describe = (r: Record<string, unknown>, step: string) => {
-    const d = isRecord(r.describe) ? r.describe[step] : undefined;
+    const d = isRecord(r.describe) ? getOwn(r.describe, step) : undefined;
     return typeof d === 'string' ? d : undefined;
   };
 
@@ -192,14 +181,14 @@ export function derive(definition: ThemeDefinition, selection: Selection = {}, l
   for (const [name, entry] of Object.entries(def.ramps ?? {})) {
     const path = `ramps.${name}`;
     const e = settleEntry(entry, path);
-    if (e.steps) rampSteps[name] = e.steps;
+    if (e.steps) setOwn(rampSteps, name, e.steps);
     const colors = e.ok ? rampColors(name, e.r, e.steps, ctx) : undefined;
     if (!e.ok || !colors) {
       failEntry(name, entry, e.steps);
       continue;
     }
     for (const step of e.steps) {
-      put(`${name}-${step}`, { type: 'color', value: colors[step], alpha: undefined, description: describe(e.r, step) }, 'ramps', String(e.r.kind), path);
+      put(`${name}-${step}`, { type: 'color', value: getOwn(colors, step)!, alpha: undefined, description: describe(e.r, step) }, 'ramps', String(e.r.kind), path);
     }
   }
 
@@ -212,7 +201,7 @@ export function derive(definition: ThemeDefinition, selection: Selection = {}, l
       continue;
     }
     for (const st of e.steps) {
-      put(`${name}-${st}`, { type: 'dimension', value: out.values[st], alpha: undefined, description: describe(e.r, st) }, 'scales', out.rule, path);
+      put(`${name}-${st}`, { type: 'dimension', value: getOwn(out.values, st)!, alpha: undefined, description: describe(e.r, st) }, 'scales', out.rule, path);
     }
   }
 
@@ -220,12 +209,12 @@ export function derive(definition: ThemeDefinition, selection: Selection = {}, l
   const seeded = (obj: PinObject, path?: string): PinObject | undefined => {
     const m = typeof obj.value === 'string' ? SEED_REF.exec(obj.value.trim()) : null;
     if (!m) return obj;
-    if (has(seeds, m[1])) return { ...obj, value: seeds[m[1]] };
+    if (hasOwnKey(seeds, m[1])) return { ...obj, value: seeds[m[1]] };
     if (path !== undefined && !ctx.declaredSeeds.has(m[1])) issues.push({ kind: 'invalid', path, message: `unknown seed "${m[1]}"` });
     return undefined;
   };
   const pinned = (name: string): PinObject | undefined => {
-    const v = def.pins && has(def.pins, name) ? def.pins[name] : undefined;
+    const v = def.pins && hasOwnKey(def.pins, name) ? def.pins[name] : undefined;
     const picked = v === undefined ? undefined : pick(v, sel);
     if (!picked?.ok) return undefined;
     return seeded(isPinObject(picked.value) ? picked.value : { value: picked.value });
@@ -233,12 +222,12 @@ export function derive(definition: ThemeDefinition, selection: Selection = {}, l
   const semantics = def.semantics ?? {};
   const components = def.components ?? {};
   const component = (name: string): PinObject | undefined => {
-    const picked = has(components, name) ? pick(components[name], sel) : undefined;
+    const picked = hasOwnKey(components, name) ? pick(components[name], sel) : undefined;
     if (!picked?.ok) return undefined;
     return seeded(isPinObject(picked.value) ? picked.value : { value: picked.value });
   };
   const known = (name: string) =>
-    has(tokens, name) || failed.has(name) || has(semantics, name) || has(components, name) || has(def.pins ?? {}, name);
+    hasOwnKey(tokens, name) || failed.has(name) || hasOwnKey(semantics, name) || hasOwnKey(components, name) || hasOwnKey(def.pins ?? {}, name);
   const derived = deriveSemantics(semantics, { sel, tokens, ramps: rampSteps, pinned, component, known, issues });
   for (const name of Object.keys(semantics)) {
     const d = derived.get(name);
@@ -265,7 +254,7 @@ export function derive(definition: ThemeDefinition, selection: Selection = {}, l
   }
 
   for (const [name, v] of Object.entries(def.pins ?? {})) {
-    const prior = has(tokens, name) ? tokens[name] : undefined;
+    const prior = hasOwnKey(tokens, name) ? tokens[name] : undefined;
     // A by-axis pin that leaves this selection out overrides nothing here.
     if (prior && !pick(v, sel).ok) continue;
     const token = toToken(v, `pins.${name}`, prior);
@@ -273,10 +262,10 @@ export function derive(definition: ThemeDefinition, selection: Selection = {}, l
       if (!prior) failed.add(name);
       continue;
     }
-    tokens[name] = token;
-    provenance[name] = prior
-      ? { ...provenance[name], pinned: true, generated: prior }
-      : { layer: 'pins', rule: 'value', pinned: false };
+    setOwn(tokens, name, token);
+    setOwn(provenance, name, prior
+      ? { ...getOwn(provenance, name)!, pinned: true, generated: prior }
+      : { layer: 'pins', rule: 'value', pinned: false });
   }
 
   checkReferences(tokens, failed);

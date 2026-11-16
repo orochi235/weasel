@@ -4,6 +4,7 @@
  * containers, and `columns`, spans, and `space`s as the page layout's grid.
  */
 import type { MarkerRef } from '@weasel-js/core';
+import { setOwn } from '@weasel-js/registry';
 import type { DataContainer, DataEdge, DataNode, EdgeStyle, GridOptions, Outline } from '@weasel-js/diagram';
 import type { ImportResult, PageLayout } from '../../document';
 import { IdMint, Warnings, graphPage } from '../../graphRead';
@@ -43,7 +44,7 @@ class BlockReader {
     if (item.text !== undefined) node.lines = textLines(item.text);
     if (item.shape === 'arrow') this.warnings.add('Mermaid block arrows read as rectangles; their directions were dropped.');
     else if (item.shape !== undefined) node.outline = SHAPE_OUTLINES[item.shape] ?? this.unknownShape(item.shape);
-    if (item.span !== undefined && item.span > 1) this.grid.spans[item.id] = item.span;
+    if (item.span !== undefined && item.span > 1) setOwn(this.grid.spans, item.id, item.span);
   }
 
   unknownShape(name: string): Outline {
@@ -74,7 +75,7 @@ class BlockReader {
           }
           const fresh = !this.nodes.has(item.id);
           this.block(item, members);
-          if (fresh && skip > 0) this.grid.skips[item.id] = skip;
+          if (fresh && skip > 0) setOwn(this.grid.skips, item.id, skip);
           skip = 0;
         }
       } else if (s.kind === 'links') {
@@ -85,13 +86,13 @@ class BlockReader {
         const inner: string[] = [];
         this.groups.set(id, inner);
         members.push(id);
-        if (skip > 0) this.grid.skips[id] = skip;
+        if (skip > 0) setOwn(this.grid.skips, id, skip);
         skip = 0;
-        if (s.span !== undefined && s.span > 1) this.grid.spans[id] = s.span;
+        if (s.span !== undefined && s.span > 1) setOwn(this.grid.spans, id, s.span);
         this.walk(s.stmts, id, inner);
       } else if (s.kind === 'columns') {
         if (level === null) this.top = s.n;
-        else if (s.n !== undefined) this.grid.columns[level] = s.n;
+        else if (s.n !== undefined) setOwn(this.grid.columns, level, s.n);
       } else if (s.kind === 'style') this.styles.statement(s.text);
       else this.warnings.list('Mermaid statements a diagram does not hold were dropped', s.keyword);
     }

@@ -1,5 +1,5 @@
 import type { Vec2 } from '@weasel-js/core/math';
-import { freshId } from '@weasel-js/registry';
+import { freshId, setOwn } from '@weasel-js/registry';
 import type { DiagramLabel } from '../labelTrait';
 import { pruneGroups } from './groupEdit';
 import { pruneLookRoutes } from './lookRoutes';
@@ -117,7 +117,7 @@ export function setParam(doc: EffectDoc, stage: string, param: string, control: 
 /** Pins each stage at its new position. */
 export function moveStages(doc: EffectDoc, moves: readonly { id: string; x: number; y: number }[]): EffectDoc {
   const places = { ...doc.places };
-  for (const m of moves) places[m.id] = { x: m.x, y: m.y };
+  for (const m of moves) setOwn(places, m.id, { x: m.x, y: m.y });
   return { ...doc, places };
 }
 

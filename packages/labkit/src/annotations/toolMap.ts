@@ -1,4 +1,5 @@
 import type { KitToolId } from '@weasel-js/editing';
+import { getOwn } from '@weasel-js/registry';
 import type { TextToolId } from '@weasel-js/text-tools';
 import { icon } from '../icons.gen';
 import type { InstrumentList } from '../instrument/types';
@@ -99,7 +100,7 @@ export function annotationToolOptions(id: string | null): TrialTool['options'] {
 
 /** What `id` drives, or undefined for a tool that is not one of these. */
 export function annotationToolInfo(id: string | null): AnnotationToolInfo | undefined {
-  return id === null ? undefined : TOOLS[id];
+  return id === null ? undefined : getOwn(TOOLS, id);
 }
 
 /** Every weasel tool the overlay has to mount for this palette to work: core's built-ins, path-tools' pencil,

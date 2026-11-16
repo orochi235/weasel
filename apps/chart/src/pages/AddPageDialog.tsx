@@ -4,13 +4,14 @@ import type { ReactElement } from 'react';
 import type { ChartScene } from '../chartDocument';
 import { TemplateDialog } from '../templates/TemplateDialog';
 import type { ChartPages } from './useChartPages';
+import { getOwn } from '@weasel-js/registry';
 
 /**
  * Adds a page made from `template` after the page in view, a graph page the size of that one, and goes to it. A graph
  * page's stencil groups join the Shapes panel's, so its symbols are there to draw with. One undo entry.
  */
 export function addChartPage(scene: ChartScene, pages: ChartPages, template: PageTemplate, theme: DiagramTheme): void {
-  const groups = template.diagramType !== undefined ? DIAGRAM_TYPES[template.diagramType]?.groups ?? [] : [];
+  const groups = template.diagramType !== undefined ? getOwn(DIAGRAM_TYPES, template.diagramType)?.groups ?? [] : [];
   pages.add({
     make: ({ index, size }) => scene.batch('Add page', () => {
       const added = addTemplatePage(scene, template, {

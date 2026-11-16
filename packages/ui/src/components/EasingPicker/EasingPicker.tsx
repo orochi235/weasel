@@ -2,6 +2,7 @@ import type { ReactElement } from 'react';
 import type { HoldProps } from '../Disabled';
 import { useNativeHold } from '../Disabled/nativeHold';
 import { usePropertyRow } from '../Properties/rowScope';
+import { getOwn } from '@weasel-js/registry';
 import { EASING_NAMES, easingBezier, easingLabel, sampleEasing, type EasingSpec } from '@weasel-js/geom';
 import s from './EasingPicker.module.css';
 
@@ -83,7 +84,7 @@ export function EasingPicker(props: EasingPickerProps): ReactElement {
           className={s.convert}
           {...hold.attrs}
           aria-readonly={undefined}
-          onClick={() => onChange({ bezier: BEZIER_OF[selectValue] ?? DEFAULT_BEZIER })}
+          onClick={() => onChange({ bezier: getOwn(BEZIER_OF, selectValue) ?? DEFAULT_BEZIER })}
         >
           Convert to bezier
         </button>

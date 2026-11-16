@@ -5,6 +5,7 @@ import {
   type ToolShortcuts,
 } from '@weasel-js/routing';
 import { formatShortcut } from '@weasel-js/gestures';
+import { getOwn } from '@weasel-js/registry';
 import type {
   DevtoolsActionEntry, DevtoolsBinding, DevtoolsRegistry, DevtoolsToolEntry,
 } from './protocol';
@@ -57,7 +58,7 @@ function toolOf(
     label: p?.label ?? entry.id,
     icon: iconText(p?.icon),
     group: p?.group ?? null,
-    shortcut: formatShortcut(shortcuts[entry.id]?.[0]) ?? null,
+    shortcut: formatShortcut(getOwn(shortcuts, entry.id)?.[0]) ?? null,
     hotkey: entry.eligibility?.offhand ?? null,
     hidden: p?.hide === true,
     cursor: serialize(entry.cursor),

@@ -41,4 +41,13 @@ describe('prefWeightAxes', () => {
     const mode = prefWeightAxes({ [MODE]: ['dark', 'light'] });
     expect(store.get('gap', { weights: mode.from([0.25, 0.75]) })).toBe(7);
   });
+
+  it('keeps a selector or option named like an Object.prototype member as data', () => {
+    const axes = prefWeightAxes(JSON.parse('{"__proto__": ["toString"]}') as Record<string, string[]>);
+    const weights = axes.from([0.5]);
+    expect(Object.getPrototypeOf(weights)).toBe(Object.prototype);
+    expect(Object.hasOwn(weights, '__proto__')).toBe(true);
+    expect(axes.to(weights)).toEqual([0.5]);
+    expect(prefWeightAxes({ a: ['constructor'] }).to({ a: {} })).toEqual([0]);
+  });
 });

@@ -69,9 +69,10 @@ export function liveOf(stored: unknown): LabState {
 /** Each stored constraint whose kind matches its default's, the default for the rest. `NaN` is stored as `null`. */
 function constraintsOf(stored: unknown): Constraints {
   const from = (typeof stored === 'object' && stored !== null ? stored : {}) as Record<string, unknown>;
-  const out: Record<string, unknown> = { ...INITIAL.c };
-  for (const [key, fallback] of Object.entries(INITIAL.c)) {
+  const out: Record<keyof Constraints, unknown> = { ...INITIAL.c };
+  for (const key of Object.keys(INITIAL.c) as (keyof Constraints)[]) {
     if (!Object.hasOwn(from, key)) continue;
+    const fallback = INITIAL.c[key];
     const value = from[key];
     const fits = Array.isArray(fallback)
       ? Array.isArray(value)

@@ -1,6 +1,7 @@
 import { useLatest } from '@weasel-js/core';
 import type { Instrument, InstrumentList } from '@weasel-js/labkit';
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
+import { getOwn } from '@weasel-js/registry';
 import type { FrameSetup } from '../frame/FrameController';
 import type { FrameImporters } from '../frame/mountFrame';
 import { stableStringify } from '../protocol/messages';
@@ -136,7 +137,7 @@ export function useStoryRegistry(index: readonly IndexEntry[], options: StoryReg
   const importOf = useCallback((file: string): Promise<Record<string, unknown>> => {
     let loading = imports.current.get(file);
     if (!loading) {
-      const importer = liveRef.current.importers?.[file];
+      const importer = getOwn(liveRef.current.importers ?? {}, file);
       if (!importer) missing.current.add(file);
       loading = importer ? importer() : Promise.reject(new Error(`No importer for ${file}`));
       imports.current.set(file, loading);
@@ -202,7 +203,7 @@ export function useStoryRegistry(index: readonly IndexEntry[], options: StoryReg
 
   useEffect(() => {
     for (const file of [...missing.current]) {
-      if (!importers?.[file]) continue;
+      if (!importers || !getOwn(importers, file)) continue;
       missing.current.delete(file);
       reload(file);
     }

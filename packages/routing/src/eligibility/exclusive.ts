@@ -1,4 +1,5 @@
 import type { ActiveMode, CapabilityTag } from '@weasel-js/modes';
+import { getOwn } from '@weasel-js/registry';
 import { ALWAYS, NEVER, checkCapability, checkMode, isAllRule, isAnyRule, isNotRule, isWhenRule, type Rule, type Selector } from './rule';
 
 /**
@@ -179,8 +180,7 @@ function rulesEqual(a: unknown, b: unknown): boolean {
   if (a === b) return true;
   if (typeof a !== 'object' || typeof b !== 'object' || a === null || b === null) return false;
   if (Array.isArray(a) !== Array.isArray(b)) return false;
-  const ka = Object.keys(a);
-  const kb = Object.keys(b);
-  if (ka.length !== kb.length) return false;
-  return ka.every((k) => rulesEqual((a as Record<string, unknown>)[k], (b as Record<string, unknown>)[k]));
+  const ea = Object.entries(a);
+  if (ea.length !== Object.keys(b).length) return false;
+  return ea.every(([k, v]) => Object.hasOwn(b, k) && rulesEqual(v, getOwn(b as Record<string, unknown>, k)));
 }

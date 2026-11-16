@@ -4,7 +4,7 @@ import { blocked, drop, findLive, logical, reaches, touches, type Edge } from '.
 import { createFader } from './fader';
 import { replaceDef } from './replace';
 import type { GraphNodeDef, GraphTarget } from './types';
-import { closesCycle, duplicateNode, noNode, noParam, noPort, owns } from './errors';
+import { closesCycle, duplicateNode, noNode, noParam, noPort } from './errors';
 import type { GraphView } from './validate';
 import { createWrapper, releaseWrapper, type NodeWrapper } from './wrapper';
 
@@ -25,13 +25,13 @@ export interface EditsDeps {
 function target(live: (id: string) => NodeWrapper, to: GraphTarget): [NodeWrapper | null, string] {
   if ('output' in to) return [null, ''];
   const w = live(to.node);
-  if (!owns(w.ins, to.port)) throw noPort(to.node, to.port);
+  if (!w.ins.has(to.port)) throw noPort(to.node, to.port);
   return [w, to.port];
 }
 
 function viewOf(nodes: ReadonlyMap<string, NodeWrapper>, edges: readonly Edge[]): GraphView {
   return {
-    nodes: new Map([...nodes].map(([id, w]) => [id, { ports: new Set(Object.keys(w.ins)), params: w.def.params }])),
+    nodes: new Map([...nodes].map(([id, w]) => [id, { ports: new Set(w.ins.keys()), params: w.def.params }])),
     edges: edges.filter(logical).map((e) => ({ from: e.from.id, to: e.to?.id ?? null, port: e.port })),
   };
 }
@@ -53,7 +53,7 @@ export function createEdits(deps: EditsDeps) {
 
   const wire = (e: Edge): void => {
     e.state = 'open';
-    e.fader = createFader(ctx, timers, e.from.out, e.to ? e.to.ins[e.port] : output);
+    e.fader = createFader(ctx, timers, e.from.out, e.to ? e.to.ins.get(e.port)! : output);
     e.fader.open(fade());
   };
 
@@ -142,7 +142,7 @@ export function createEdits(deps: EditsDeps) {
     },
     set(id: string, param: string, value: number, rampMs?: number): void {
       const w = live(id);
-      if (!owns(w.def.params, param)) throw noParam(id, param);
+      if (!Object.hasOwn(w.def.params, param)) throw noParam(id, param);
       checkParam(value, rampMs);
       w.def.params[param](value, rampMs ?? fade());
     },

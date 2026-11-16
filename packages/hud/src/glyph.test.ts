@@ -13,6 +13,11 @@ function paths(cmds: readonly DrawCommand[], above: readonly GroupDrawCommand[] 
 }
 
 describe('glyphCommands', () => {
+  it('keeps an attribute named __proto__ as data, leaving the glyph drawn', () => {
+    const found = paths(glyphCommands(glyph('<path __proto__="x" constructor="y" d="M0 0 L20 20"/>'), at));
+    expect(found).toHaveLength(1);
+  });
+
   it("scales the 20×20 viewBox into the square, and strokes as <Icon>'s root does, in the given color", () => {
     const [root] = glyphCommands(glyph('<path d="M0 0 L20 20"/>'), at);
     expect(root!.kind).toBe('group');

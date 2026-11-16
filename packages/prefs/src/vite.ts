@@ -4,6 +4,7 @@
  *
  * @packageDocumentation
  */
+import { getOwn } from '@weasel-js/registry';
 import { resolve } from 'node:path';
 import { runnerImport, type Plugin, type ResolvedConfig } from 'vite';
 import { prefsCss, type PrefsCssOptions } from './css';
@@ -45,7 +46,7 @@ export function weaselPrefsCss(options: WeaselPrefsCssOptions): Plugin {
       });
       read.add(file);
       for (const dependency of dependencies) read.add(dependency);
-      const schema = module[name] as PrefGroup | undefined;
+      const schema = getOwn(module, name) as PrefGroup | undefined;
       if (!schema || typeof schema !== 'object' || !('children' in schema)) {
         throw new Error(`[weasel-prefs] ${id} exports no PrefGroup named "${name}"`);
       }

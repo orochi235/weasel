@@ -195,4 +195,11 @@ describe('axisDependencies', () => {
     });
     expect(pinned.edge).toEqual({ own: [], all: ['density'] });
   });
+
+  it('leaves out a token named __proto__ or one with a character a token cannot carry, which derive refuses', () => {
+    const pins = JSON.parse('{"__proto__": "1px", "a b": "2px", "a": "3px"}') as Record<string, string>;
+    const deps = axisDependencies({ name: 't', pins });
+    expect(Object.keys(deps)).toEqual(['a']);
+    expect(Object.hasOwn(deps, '__proto__')).toBe(false);
+  });
 });

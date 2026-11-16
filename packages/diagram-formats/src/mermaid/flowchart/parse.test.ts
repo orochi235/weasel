@@ -21,6 +21,13 @@ describe('parseFlowchart', () => {
     }]);
   });
 
+  it('reads a metadata key named __proto__ as data', () => {
+    const { stmts } = parseFlowchart('flowchart TD\nD@{ __proto__: hex }');
+    const meta = (stmts[0] as { groups: { meta?: Record<string, string> }[][] }).groups[0]![0]!.meta!;
+    expect(Object.getPrototypeOf(meta)).toBe(Object.prototype);
+    expect(Object.hasOwn(meta, '__proto__') && meta['__proto__']).toBe('hex');
+  });
+
   it('reads subgraphs, nested, in each of their spellings', () => {
     const { stmts } = parseFlowchart('flowchart TD\nsubgraph one [First]\n direction LR\n a\n subgraph two\n b\n end\nend\nsubgraph "Quoted title"\nend\nsubgraph s3["Bracket"]\nend');
     expect(stmts).toMatchObject([

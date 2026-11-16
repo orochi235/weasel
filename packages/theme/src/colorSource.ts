@@ -18,6 +18,7 @@ import {
   type ColorList,
   type ColorSourceContext,
 } from './colorListItems.ts';
+import { getOwn } from '@weasel-js/registry';
 import { resolveCurrentColor } from './currentColor.ts';
 
 /** The name the tint list answers to: `{ ref: 'tint', index: 2 }` is the third tint, wrapping. */
@@ -46,7 +47,7 @@ function propertyOf(ref: ColorRef, ctx: ColorSourceContext): string | null {
 }
 
 function tokenLiteral(property: string, ctx: ColorSourceContext): ColorLiteral | null {
-  const value = (ctx.resolved as Readonly<Record<string, string>>)[property];
+  const value = getOwn(ctx.resolved as Readonly<Record<string, string>>, property);
   if (value === undefined) return null;
   try {
     return parsed(resolveCurrentColor(value, ctx.resolved['--wzl-fg']));

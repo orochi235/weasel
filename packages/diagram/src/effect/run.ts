@@ -5,6 +5,7 @@
  */
 import { RIGID_POSE_COMPOSITION, worldPosesOf, bitmapSrc } from '@weasel-js/core';
 import { minOf } from '@weasel-js/geom';
+import { getOwn } from '@weasel-js/registry';
 import type { DiagramSpec } from '../dataTypes';
 import { estimatedWidth } from '../rowMeasure';
 import {
@@ -48,7 +49,7 @@ export function paintRun(
     const ends = wireEnds(spec);
     if (ends === null) continue;
     const exit = exits.get(spec.id as string) ?? { stage: ends.from, port: ends.fromPort };
-    const taken = run.stages[exit.stage]?.taken;
+    const taken = getOwn(run.stages, exit.stage)?.taken;
     if (unreached.has(ends.from) || unreached.has(ends.to) || unreached.has(exit.stage)
       || (taken !== undefined && exit.port !== taken)) {
       passed.add(spec.id as string);
@@ -58,16 +59,17 @@ export function paintRun(
   const values = new Map<string, string>();
   const previews = new Map<string, ImageBitmap>();
   for (const [id, stage] of stages) {
+    const entry = getOwn(run.stages, id);
     for (const p of shownPorts(stage)) {
-      values.set(`${id}/${valueRowId(p.id)}`, `${p.label ?? p.id}: ${run.stages[id]?.values?.[p.id] ?? NO_VALUE}`);
-      const preview = run.stages[id]?.previews?.[p.id];
+      values.set(`${id}/${valueRowId(p.id)}`, `${p.label ?? p.id}: ${(entry?.values && getOwn(entry.values, p.id)) ?? NO_VALUE}`);
+      const preview = entry?.previews && getOwn(entry.previews, p.id);
       if (preview !== undefined) previews.set(`${id}/${previewRowId(p.id)}`, preview);
     }
   }
 
   const thrownSecond = new Set([...stages.values()].filter((s) => {
     const outs = s.outputs ?? [];
-    return outs.length === 2 && run.stages[s.id]?.taken === outs[1]!.id;
+    return outs.length === 2 && getOwn(run.stages, s.id)?.taken === outs[1]!.id;
   }).map((s) => s.id));
 
   const out = specs.map((spec): DiagramSpec => {
@@ -89,7 +91,7 @@ export function paintRun(
   });
   for (const spec of specs) {
     const id = spec.id as string;
-    const entry = stages.has(id) ? run.stages[id] : undefined;
+    const entry = stages.has(id) ? getOwn(run.stages, id) : undefined;
     const note = entry?.error ?? (entry?.cost !== undefined ? costText(entry.cost) : undefined);
     if (note !== undefined) out.push(costSpec(spec, specs.filter((s) => owner(s) === id), stages.get(id)!, note, entry?.error !== undefined));
   }
@@ -99,7 +101,7 @@ export function paintRun(
 /** The ids of the stages `run` never reached: every one it has no entry for. */
 export function unreachedStages(pipeline: EffectPipeline, run: EffectRun | undefined): Set<string> {
   if (run === undefined) return new Set();
-  return new Set(uniqueStages(pipeline).map((s) => s.id).filter((id) => run.stages[id] === undefined));
+  return new Set(uniqueStages(pipeline).map((s) => s.id).filter((id) => getOwn(run.stages, id) === undefined));
 }
 
 /** The stage a spec belongs to: the stage's own box, a row under it, or a mark

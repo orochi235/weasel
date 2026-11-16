@@ -1,15 +1,19 @@
 import { num } from './num';
 import { name, type PdfDict, PdfRef } from './objects';
 
+type Prefix = 'GS' | 'Sh' | 'Im' | 'F' | 'P';
+/** A resource name this page hands out: a prefix and a count. */
+type ResourceName = `${Prefix}${number}`;
+
 /** Hands out resource names (`GS1`, `Sh1`, …) for one page and writes them as its `/Resources`. */
 export class PageResources {
-  private readonly gstates = new Map<string, string>();
-  private readonly masks = new Map<number, string>();
+  private readonly gstates = new Map<string, ResourceName>();
+  private readonly masks = new Map<number, ResourceName>();
   private readonly refs = {
-    Shading: new Map<number, string>(),
-    XObject: new Map<number, string>(),
-    Font: new Map<number, string>(),
-    Pattern: new Map<number, string>(),
+    Shading: new Map<number, ResourceName>(),
+    XObject: new Map<number, ResourceName>(),
+    Font: new Map<number, ResourceName>(),
+    Pattern: new Map<number, ResourceName>(),
   };
 
   extGState(fillAlpha: number, strokeAlpha: number): string {
@@ -35,7 +39,7 @@ export class PageResources {
     return n;
   }
 
-  private nextGState(): string {
+  private nextGState(): ResourceName {
     return `GS${this.gstates.size + this.masks.size + 1}`;
   }
 
@@ -52,11 +56,11 @@ export class PageResources {
     return this.named('Pattern', 'P', ref);
   }
 
-  private named(kind: keyof PageResources['refs'], prefix: string, ref: PdfRef): string {
+  private named(kind: keyof PageResources['refs'], prefix: Prefix, ref: PdfRef): string {
     const m = this.refs[kind];
     let n = m.get(ref.id);
     if (n === undefined) {
-      n = `${prefix}${m.size + 1}`;
+      n = `${prefix}${m.size + 1}` as const;
       m.set(ref.id, n);
     }
     return n;
@@ -75,7 +79,8 @@ export class PageResources {
       }
       out.ExtGState = g;
     }
-    for (const [kind, m] of Object.entries(this.refs)) {
+    for (const kind of Object.keys(this.refs) as (keyof PageResources['refs'])[]) {
+      const m = this.refs[kind];
       if (!m.size) continue;
       const d: Record<string, PdfRef> = {};
       for (const [id, n] of m) d[n] = new PdfRef(id);

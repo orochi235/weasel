@@ -13,18 +13,20 @@ interface DeclaredField {
   write(scene: DeclaredWrites, id: NodeId, value: unknown): void;
 }
 
-const DECLARED: Readonly<Record<string, DeclaredField>> = {
+const DECLARED = {
   clip: { write: (scene, id, value) => scene.setClip(id, (value ?? null) as NodeClip | null) },
   units: { write: (scene, id, value) => scene.setUnits(id, (value ?? null) as UnitScope | null) },
-};
+} as const satisfies Readonly<Record<string, DeclaredField>>;
+
+const isDeclared = (head: string | undefined): head is keyof typeof DECLARED => head !== undefined && Object.hasOwn(DECLARED, head);
 
 /** The declared field a path's first segment names, if it names one. */
 export const declaredField = (head: string | undefined): DeclaredField | undefined =>
-  head !== undefined && Object.hasOwn(DECLARED, head) ? DECLARED[head] : undefined;
+  isDeclared(head) ? DECLARED[head] : undefined;
 
 /** What `node` holds in the field a path's first segment names: `pose`, `data`, or a declared field. */
 export function nodeRoot(node: SceneNode<unknown, string, unknown>, head: string | undefined): unknown {
   if (head === 'pose') return node.pose;
   if (head === 'data') return node.data;
-  return declaredField(head) ? (node as unknown as Record<string, unknown>)[head!] : undefined;
+  return isDeclared(head) ? (node as unknown as Record<keyof typeof DECLARED, unknown>)[head] : undefined;
 }
