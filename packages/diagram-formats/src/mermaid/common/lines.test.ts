@@ -20,6 +20,7 @@ describe('statementsOf', () => {
 
   it('names the line of an accDescr block never closed, and of a file with no header', () => {
     expect(() => statementsOf('classDiagram\naccDescr {\nnever')).toThrow('Mermaid, line 2: an accDescr block is never closed');
+    expect(() => statementsOf('classDiagram\n%%{init: {}\nclass A')).toThrow('Mermaid, line 2: a directive opened here is never closed');
     expect(() => statementsOf('---\ntitle: x\n---\n%% only')).toThrow('Mermaid, line 4: the diagram has no header');
   });
 });

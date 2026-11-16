@@ -18,6 +18,7 @@ describe('lexFlowchart', () => {
       ['word:flowchart', 1], ['rest:LR', 1], [';', 1], ['word:accDescr', 2], ['rest:two\nlines', 2], [';', 5], ['word:A', 6],
     ]);
     expect(() => lexFlowchart('flowchart LR\naccDescr {\nnever')).toThrow('Mermaid, line 2: an accDescr block is never closed');
+    expect(() => lexFlowchart('flowchart TD\n%%{init: {}\nA-->B')).toThrow('Mermaid, line 2: a directive opened here is never closed');
   });
 
   it('ends a keyword line at a semicolon outside quotes only, so a quoted title may hold a character reference', () => {

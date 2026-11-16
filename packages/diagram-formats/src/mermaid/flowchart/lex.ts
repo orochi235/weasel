@@ -113,7 +113,8 @@ class MermaidLexer {
 
   directive(): void {
     const end = this.text.indexOf('}%%', this.i);
-    const stop = end < 0 ? this.text.length : end + 3;
+    if (end < 0) throw fail(this.line, 'a directive opened here is never closed');
+    const stop = end + 3;
     for (let k = this.i; k < stop; k++) if (this.text[k] === '\n') this.line++;
     this.i = stop;
     this.directives++;

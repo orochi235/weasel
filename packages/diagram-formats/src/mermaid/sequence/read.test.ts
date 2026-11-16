@@ -127,4 +127,9 @@ describe('readMermaidSequence', () => {
     expect(read.document.pages[0]!.kind).toBe('sequence');
     expect(DIAGRAM_MERMAID.kinds).toContain('sequence');
   });
+
+  it('names the line of a directive or an accDescr block never closed', () => {
+    expect(() => readMermaidSequence('sequenceDiagram\n%%{init: {}\nA->>B: hi')).toThrow('Mermaid, line 2: a directive opened here is never closed');
+    expect(() => readMermaidSequence('sequenceDiagram\naccDescr {\nA->>B: hi')).toThrow('Mermaid, line 2: an accDescr block is never closed');
+  });
 });
