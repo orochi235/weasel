@@ -1,3 +1,4 @@
+import { writeLocal } from '@weasel-js/storage';
 import { readStored, useSessionPersistence as useEditorSession } from '@weasel-js/editor';
 import type { DrawScene } from './drawDocument';
 import { retireLegacyDoc } from './docPersistence';
@@ -6,7 +7,7 @@ import { LEGACY_HISTORY_KEY, LS_KEY, SCENE_HISTORY_KEY } from './sceneLoading';
 import { sessionRecords } from './sessionRecords';
 
 function loadHistory(): unknown {
-  try { localStorage.removeItem(LEGACY_HISTORY_KEY); } catch { /* best-effort */ }
+  writeLocal(LEGACY_HISTORY_KEY, undefined);
   return readStored(SCENE_HISTORY_KEY, (value) => value, () => null, sessionRecords());
 }
 
