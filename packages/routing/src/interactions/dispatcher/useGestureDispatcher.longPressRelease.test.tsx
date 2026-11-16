@@ -20,7 +20,7 @@ afterEach(() => { vi.useRealTimers(); });
 
 type Kind = 'longPress' | 'contextMenu' | 'click';
 
-function mount(kinds: Kind[]): { fired: string[]; fire: (type: string, x: number) => void } {
+function mount(kinds: Kind[], longPress?: { duration: number }): { fired: string[]; fire: (type: string, x: number) => void } {
   const fired: string[] = [];
   const marker = (kind: Kind): Action => ({
     id: `test.${kind}`, label: kind, defaultBinding: { kind },
@@ -35,7 +35,7 @@ function mount(kinds: Kind[]): { fired: string[]; fire: (type: string, x: number
     const ref = useRef<HTMLCanvasElement | null>(null);
     for (const k of kinds) registry?.register(marker(k));
     registry?.register(drag);
-    useGestureDispatcher({ canvasRef: ref, actions: registry!, entriesById: new Map() });
+    useGestureDispatcher({ canvasRef: ref, actions: registry!, entriesById: new Map(), longPress });
     return <canvas ref={ref} data-testid="c" />;
   }
   render(
@@ -91,5 +91,16 @@ describe('releasing a press after its long-press fired', () => {
     hold();
     fire('pointerup', 50);
     expect(fired).toEqual(['click']);
+  });
+});
+
+describe('a hold longer than one timer holds', () => {
+  it('fires its long-press only once the hold is up', () => {
+    const { fired, fire } = mount(['longPress'], { duration: 2 ** 31 });
+    fire('pointerdown', 50);
+    act(() => { vi.advanceTimersByTime(1); });
+    expect(fired).toEqual([]);
+    act(() => { vi.advanceTimersByTime(2 ** 31); });
+    expect(fired).toEqual(['longPress']);
   });
 });

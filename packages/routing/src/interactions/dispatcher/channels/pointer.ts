@@ -7,6 +7,7 @@ import {
   type ClickMemory, type HeldPress, type PointerButton, type PointerSample, type PressSample, type RecognizerClock,
 } from '@weasel-js/gestures';
 import type { KitSettingsStore } from '@weasel-js/react';
+import { after } from '@weasel-js/registry';
 import { heldWithin, openPointerSession, type PointerSession } from '../../pointerSession';
 import { pressedNestedIn, type PointerDispatchCore } from '../dispatchCore';
 import { multiTouchGestureId } from '../dispatcher';
@@ -106,15 +107,15 @@ function holdClock(core: PointerDispatchCore): { clock: RecognizerClock; routeTo
       setTimer: (fn, ms) => {
         const view = core.routedView();
         holdView = { id: view };
-        return setTimeout(() => {
+        return after(ms, () => {
           holdView = null;
           core.setRoutedView(view);
           fn();
-        }, ms);
+        });
       },
-      clearTimer: (timer) => {
+      clearTimer: (cancel) => {
         holdView = null;
-        clearTimeout(timer as ReturnType<typeof setTimeout>);
+        (cancel as () => void)();
       },
     },
     routeToPress: () => { if (holdView) core.setRoutedView(holdView.id); },
