@@ -1,4 +1,5 @@
 import { useState, type CSSProperties, type ReactElement } from 'react';
+import { pageName } from '@weasel-js/core';
 import { Along, type AlongArc } from '@weasel-js/ui/components/Along';
 import { PageTabs } from '@weasel-js/ui/components/PageTabs';
 import { Tab, TabList, TabPanel, Tabs } from '@weasel-js/ui/components/Tabs';
@@ -71,6 +72,7 @@ export function TabsArcView({ config }: { config: TabsArcConfig }): ReactElement
           <Along arc={bottom}>
             <PageTabs
               pages={pages}
+              labelOf={pageName}
               current={current}
               onSelect={setCurrent}
               onRename={(id, name) => setPages((ps) => ps.map((p) => (p.id === id ? { ...p, name } : p)))}

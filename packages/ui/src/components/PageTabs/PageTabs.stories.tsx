@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { pageName } from '@weasel-js/core';
 import type { Meta, StoryObj } from '@weasel-js/forge';
 import { PageTabs, type PageTabItem } from '@weasel-js/ui/components/PageTabs';
 import s from './PageTabs.stories.module.css';
@@ -20,6 +21,7 @@ function Document({ args, initial, current: start = initial[0]?.id ?? null }: { 
       {...args}
       aria-label="Pages"
       pages={pages}
+      labelOf={pageName}
       current={current}
       onSelect={setCurrent}
       onRename={(id, name) => setPages((ps) => ps.map((p) => (p.id === id ? { ...p, name } : p)))}
@@ -46,7 +48,7 @@ export const NoneLit: Story = {
 /** Without the editing callbacks the strip only navigates: no + button, no rename, no drag. */
 export const NavigateOnly: Story = {
   render: (args) => (
-    <PageTabs {...args} pages={[{ id: 'a' }, { id: 'b' }, { id: 'c' }]} current="b" onSelect={() => {}} />
+    <PageTabs {...args} pages={[{ id: 'a' }, { id: 'b' }, { id: 'c' }]} labelOf={pageName} current="b" onSelect={() => {}} />
   ),
 };
 

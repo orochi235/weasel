@@ -1,4 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
+import { pageName } from '@weasel-js/core';
 import { fireEvent, render, screen } from '@testing-library/react';
 import type { ReactNode } from 'react';
 import { Disabled, ReadOnly } from '../Disabled';
@@ -8,7 +9,7 @@ const PAGES = [{ id: 'a', name: 'Cover' }, { id: 'b' }, { id: 'c' }];
 
 function setup(wrap: (node: ReactNode) => ReactNode, props: Partial<PageTabsProps<{ id: string; name?: string }>> = {}) {
   const calls = { onSelect: vi.fn(), onRename: vi.fn(), onMove: vi.fn(), onAdd: vi.fn() };
-  render(<>{wrap(<PageTabs aria-label="Pages" pages={PAGES} current="a" {...calls} {...props} />)}</>);
+  render(<>{wrap(<PageTabs aria-label="Pages" pages={PAGES} current="a" labelOf={pageName} {...calls} {...props} />)}</>);
   const list = screen.getByRole('tablist');
   list.setPointerCapture = vi.fn();
   list.releasePointerCapture = vi.fn();

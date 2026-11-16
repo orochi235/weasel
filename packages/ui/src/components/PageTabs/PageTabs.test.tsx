@@ -1,4 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
+import { pageName } from '@weasel-js/core';
 import { act, fireEvent, render, screen } from '@testing-library/react';
 import { PageTabs, type PageTabsProps } from './PageTabs';
 
@@ -8,7 +9,7 @@ function setup(props: Partial<PageTabsProps<{ id: string; name?: string }>> = {}
   const handlers = {
     onSelect: vi.fn(), onRename: vi.fn(), onMove: vi.fn(), onAdd: vi.fn(), onTabContextMenu: vi.fn(),
   };
-  const view = render(<PageTabs aria-label="Pages" pages={PAGES} current="a" {...handlers} {...props} />);
+  const view = render(<PageTabs aria-label="Pages" pages={PAGES} current="a" labelOf={pageName} {...handlers} {...props} />);
   const list = screen.getByRole('tablist');
   list.setPointerCapture = vi.fn();
   list.releasePointerCapture = vi.fn();
@@ -34,7 +35,7 @@ describe('PageTabs', () => {
     const { view, ...handlers } = setup({ panelId: 'canvas' });
     await settled();
     expect(screen.getAllByRole('tab').map((t) => t.getAttribute('aria-controls'))).toEqual(['canvas', null, null]);
-    view.rerender(<PageTabs aria-label="Pages" pages={PAGES} current="c" panelId="canvas" {...handlers} />);
+    view.rerender(<PageTabs aria-label="Pages" pages={PAGES} current="c" panelId="canvas" labelOf={pageName} {...handlers} />);
     await settled();
     expect(screen.getAllByRole('tab').map((t) => t.getAttribute('aria-controls'))).toEqual([null, null, 'canvas']);
   });

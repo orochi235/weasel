@@ -1,4 +1,5 @@
 import { afterAll, afterEach, beforeAll, describe, expect, test, vi } from 'vitest';
+import { pageName } from '@weasel-js/core';
 import { act, cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { arcShape, trackRun, type Point } from '@weasel-js/geom';
 import { Along, arcInBox, type AlongArc } from '../Along';
@@ -30,7 +31,7 @@ function setup(props: Partial<PageTabsProps<{ id: string; name?: string }>> = {}
   const handlers = { onSelect: vi.fn(), onRename: vi.fn(), onMove: vi.fn(), onAdd: vi.fn() };
   render(
     <Along arc={TOP}>
-      <PageTabs aria-label="Pages" pages={PAGES} current="a" {...handlers} {...props} />
+      <PageTabs aria-label="Pages" pages={PAGES} current="a" labelOf={pageName} {...handlers} {...props} />
     </Along>,
   );
   const list = screen.getByRole('tablist');
