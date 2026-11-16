@@ -12,6 +12,7 @@ export { pageLocalStorage } from './pageStorage';
 export { type Notifier, useNotified } from './useNotified';
 export { useNearViewport } from './useNearViewport';
 export { watchElementMove } from './watchElementMove';
+export { watchResize, type ResizeTargets } from './watchResize';
 export { matchesMedia, useMediaQuery, watchMedia } from './media';
 export type { MediaQueryOptions } from './media';
 export { prefersReducedMotion, usePrefersReducedMotion } from './reducedMotion';
