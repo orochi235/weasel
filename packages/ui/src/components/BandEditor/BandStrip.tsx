@@ -1,6 +1,7 @@
 import type { CSSProperties, MouseEvent as ReactMouseEvent, PointerEvent as ReactPointerEvent, ReactElement, ReactNode } from 'react';
 import { qty, type Display, type Quantity } from '@weasel-js/quantity';
 import { Slider, type BoundsCtx, type Thumb } from '../Slider';
+import { useFieldLocale } from '../../useFieldLocale';
 import type { ContinuousScaleFactory } from '@weasel-js/scale';
 import s from './BandEditor.module.css';
 import { bandBounds, type Band } from './bands';
@@ -53,13 +54,14 @@ const values = (thumbs: readonly Thumb[]): number[] => thumbs.map((t) => t.value
  */
 export function BandStrip<T, F extends Quantity>(props: BandStripProps<T, F>): ReactElement {
   const { bands, shown, lo, hi, scale, display, selectedIndex, hold } = props;
+  const locale = useFieldLocale();
   const selects = hold.access.state !== 'disabled';
   const neighbors = ({ thumbs, index }: BoundsCtx): [number, number] =>
     [thumbs[index - 1]?.value ?? lo, thumbs[index + 1]?.value ?? hi];
   const thumbs: Thumb[] = bands.slice(1).map((band, k) => ({
     value: band.from,
     label: `Seam ${k + 1}`,
-    valueText: qty(shown[k + 1]!.from, display).spoken,
+    valueText: qty(shown[k + 1]!.from, display, { locale }).spoken,
     bounds: neighbors,
   }));
   const { toUnit, fromUnit } = props;

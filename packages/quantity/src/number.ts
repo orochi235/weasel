@@ -1,5 +1,6 @@
 import { entryScale, type UnitEntry } from './units';
 import { unitSpellings } from './catalog';
+import { defaultLocale } from './fieldLocale';
 
 /**
  * The real MINUS SIGN (U+2212), which display formatting uses instead of the
@@ -15,7 +16,7 @@ export const MINUS_SIGN = '−';
  */
 export function formatNumber(value: number, options?: Intl.NumberFormatOptions): string {
   const formatted = Number.isFinite(value)
-    ? unsignedZero(value, (n) => n.toLocaleString(undefined, options))
+    ? unsignedZero(value, (n) => n.toLocaleString(defaultLocale(), options))
     : String(value);
   return signed(formatted);
 }
@@ -75,7 +76,7 @@ const EXPONENTS: Record<string, number> = { k: 3, m: 6, b: 9, t: 12 };
  * stays the `K`/`M`/`B`/`T` that {@link parseNumber} reads in any locale, where
  * `Intl`'s own compact words (`2 Mio.`) would not read back.
  */
-export function formatCompact(value: number, decimals = 0, locale = 'en-US'): string {
+export function formatCompact(value: number, decimals = 0, locale = defaultLocale()): string {
   if (!Number.isFinite(value)) return formatNumber(value);
   if (belowCompact(value, decimals)) {
     const plain = { useGrouping: false, minimumFractionDigits: decimals, maximumFractionDigits: decimals };
@@ -112,7 +113,7 @@ export function belowCompact(value: number, decimals: number): boolean {
  * name is read first: the longest match wins, exact case before any case, and
  * a unit beats a magnitude suffix, so with `m` accepted `2m` is `2 * units.m`.
  */
-export function parseNumber(text: string, units?: Readonly<UnitTable>, locale = 'en-US'): number {
+export function parseNumber(text: string, units?: Readonly<UnitTable>, locale = defaultLocale()): number {
   const n = readNumber(delocalized(text, locale), units);
   return Number.isNaN(n) && locale !== 'en-US' ? readNumber(delocalized(text, 'en-US'), units) : n;
 }

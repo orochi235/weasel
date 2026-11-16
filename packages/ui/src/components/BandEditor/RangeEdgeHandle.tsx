@@ -9,6 +9,7 @@ import s from './BandEditor.module.css';
 import { edgeReach, scaleEdges, unitEdges, type Band, type RangeEdge } from './bands';
 import type { ContinuousScaleFactory } from '@weasel-js/scale';
 import { unitScale } from './scale';
+import { useFieldLocale } from '../../useFieldLocale';
 import { arrowStep, pct } from './track';
 import { isPrimaryPress } from '@weasel-js/gestures';
 import type { ControlHold } from '../Disabled/controlHold';
@@ -48,6 +49,7 @@ export interface RangeEdgeHandleProps<T> {
  */
 export function RangeEdgeHandle<T>(props: RangeEdgeHandleProps<T>): ReactElement {
   const { edge, committed, min, max, at, limits, scale, display } = props;
+  const locale = useFieldLocale();
   const edges = unitEdges(committed, scale, min, max);
   const locked = committed.map((b) => b.locked === true);
   const unit = unitScale(scale, min, max);
@@ -118,7 +120,7 @@ export function RangeEdgeHandle<T>(props: RangeEdgeHandleProps<T>): ReactElement
       aria-valuemin={Number.isFinite(reachLo) ? fromBase(reachLo) : undefined}
       aria-valuemax={Number.isFinite(reachHi) ? fromBase(reachHi) : undefined}
       aria-valuenow={at}
-      aria-valuetext={qty(props.tagged ?? at, display).spoken}
+      aria-valuetext={qty(props.tagged ?? at, display, { locale }).spoken}
       data-range-edge={edge}
       onPointerDown={props.hold.gate(onPointerDown)}
       onKeyDown={props.hold.gate(onKeyDown)}

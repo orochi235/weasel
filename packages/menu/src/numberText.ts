@@ -1,4 +1,4 @@
-import { decimal, endless, fieldLocale, qty, withUnit, type Display } from '@weasel-js/quantity';
+import { decimal, defaultLocale, endless, fieldLocale, qty, withUnit, type Display } from '@weasel-js/quantity';
 import type { MenuNumberEntry } from './entries';
 
 const FULL_PRECISION = decimal({ maxPlaces: 20, grouping: false });
@@ -13,7 +13,7 @@ export function menuNumberDisplay(e: Pick<MenuNumberEntry, 'display' | 'infinity
  *  `locale` as `fieldLocale` settles it, as a field would show it, then its unit, which an infinity goes without. A
  *  dash for none. */
 export function menuNumberText(
-  value: number | undefined, e: Pick<MenuNumberEntry, 'display' | 'infinity' | 'suffix'> = {}, locale = 'en-US',
+  value: number | undefined, e: Pick<MenuNumberEntry, 'display' | 'infinity' | 'suffix'> = {}, locale = defaultLocale(),
 ): string {
   if (value === undefined) return '—';
   const text = qty(value, menuNumberDisplay(e), { locale: fieldLocale(locale) }).text;

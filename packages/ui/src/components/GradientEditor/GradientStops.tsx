@@ -1,17 +1,17 @@
-import { useEffect, useRef, type CSSProperties, type ReactElement, type ReactNode } from 'react';
+import { useEffect, useMemo, useRef, type CSSProperties, type ReactElement, type ReactNode } from 'react';
 import { sampleGradientStops, type GradStop, type GradientPaint, type Paint } from '@weasel-js/paint';
 import { Slider, type Thumb } from '../Slider';
 import { paintGradientTrack } from '../Slider/paintGradientTrack';
 import { POSITION_FORMAT, StopEditor } from './StopEditor';
 import { stopOrder, useStopSelection } from './useStopSelection';
 import s from './GradientStops.module.css';
+import { useFieldLocale } from '../../useFieldLocale';
 
 /** Fewer than two stops is not a gradient any renderer can ramp between. */
 const MIN_STOPS = 2;
 
 const HANDLE = '[role="slider"]';
 
-const position = new Intl.NumberFormat('en-US', POSITION_FORMAT);
 
 type StopThumb = Thumb & { color: string };
 
@@ -51,6 +51,8 @@ export function GradientStops(props: GradientStopsProps): ReactElement {
   const stops = value.stops;
   const space = value.interpolate ?? 'rgb';
   const order = stopOrder(stops);
+  const locale = useFieldLocale();
+  const position = useMemo(() => new Intl.NumberFormat(locale, POSITION_FORMAT), [locale]);
   const { selected, select, removing } = useStopSelection(stops, props.selectedStop, props.onSelectedStopChange);
 
   const trackRef = useRef<HTMLDivElement | null>(null);
