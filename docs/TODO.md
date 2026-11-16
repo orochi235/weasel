@@ -298,6 +298,12 @@ Owner tags, after the priority (2026-10-26):
   the scene, recording nothing and running no handler, or joining the scene edit's entry. Closes when the symmetry
   lab's center drag is one Undo, panel and group together.
 
+- **(P3) [maintainer] Trials in one labkit workspace have no way to share params.** Each trial owns its own
+  settings, so two trials meant to show one setting from different angles each get their own copy, and editing it
+  in one leaves the other behind. Wants a way for trials to declare that a param is shared, and a decision on where
+  the shared value lives, how undo records an edit to it, and which panel shows it (2026-11-16). Closes when two
+  trials in one workspace can declare a shared param and an edit in either reaches both.
+
 - **(P3) [maintainer] A labkit tile drag shows its node's UUID as the ghost.** `<Workspace reorderable>` mounts
   windease's `DragProvider` with its default overlay, which labels the chip with the node's `meta.title` and falls
   back to its id; labkit sets no title, so dragging a trial by its title bar shows a UUID in an unthemed blue chip
