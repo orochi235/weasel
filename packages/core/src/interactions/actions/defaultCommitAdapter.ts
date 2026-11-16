@@ -65,7 +65,8 @@ export function operandMethods(operands: OperandsDep | undefined): CommitSelecti
  *  taken at its word. */
 export function commitOps(deps: ActionDeps, ops: Op[], label: string, opts: { select?: readonly string[] } = {}): boolean {
   const { select } = opts;
-  const operands = deps.operands;
+  // Read only when needed: a dispatcher's deps throw on a dep the action did not declare.
+  const operands = select !== undefined ? deps.operands : undefined;
   if (select !== undefined && operands) {
     if (ops.length === 0) {
       operands.set(select.map(asNodeId));
@@ -80,7 +81,7 @@ export function commitOps(deps: ActionDeps, ops: Op[], label: string, opts: { se
   }
   const scene = deps.scene as Scene<unknown, string, unknown> | undefined;
   if (!scene) return false;
-  return scene.applyBatch(ops, label, defaultCommitAdapter(scene, operandMethods(operands)));
+  return scene.applyBatch(ops, label, defaultCommitAdapter(scene, operandMethods(operands ?? deps.operands)));
 }
 
 /** The selection change a commit that makes or edits one node puts in its own

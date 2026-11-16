@@ -30,7 +30,7 @@ function brushTool(id: string, label: string, act: Act, share?: ToolOptionShare)
   const options = shareToolOptions(own, share);
   const radiusOf = (p: Readonly<BrushParams> | undefined) => p?.radiusPx ?? prefs.children.radiusPx.default;
   const action: Action = defineAction<string, BrushParams>({
-    id, label, params: prefs, requires: ['scene', 'view', 'applyOps', 'selection'],
+    id, label, params: prefs, requires: ['scene', 'view', 'applyOps', 'operands'],
     cursor: (params) => brushRing(radiusOf(params)),
     invoker: {
       timing: 'ongoing',

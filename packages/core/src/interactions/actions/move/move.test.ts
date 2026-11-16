@@ -326,7 +326,7 @@ describe('moveAction descriptor', () => {
     handle.onMove!({
       ...ctx,
       drag: { start: { x: 0, y: 0 }, current: { x: 50, y: 50 }, delta: { x: 50, y: 50 } },
-    } as InvocationCtx);
+    } as unknown as InvocationCtx);
     expect(Array.from(handle.previewIds!() ?? []).length).toBe(1);
     handle.onEnd!(ctx as InvocationCtx, 'cancel');
     expect(Array.from(handle.previewIds!() ?? [])).toEqual([]);
@@ -438,17 +438,17 @@ describe('moveAction — reparentOnDrop', () => {
         ...(nodeAtPoint ? { nodeAtPoint } : {}),
       },
     };
-    const handle = invoker.start(baseCtx as InvocationCtx, opts);
+    const handle = invoker.start(baseCtx as unknown as InvocationCtx, opts);
     handle.onMove!({
       ...baseCtx,
       drag: { start: { x: 0, y: 0 }, current: { x: delta.x, y: delta.y }, delta },
-    } as InvocationCtx);
+    } as unknown as InvocationCtx);
     handle.onEnd!(
       {
         ...baseCtx,
         world: drop,
         drag: { start: { x: 0, y: 0 }, current: { x: delta.x, y: delta.y }, delta },
-      } as InvocationCtx,
+      } as unknown as InvocationCtx,
       'commit',
     );
   }
@@ -610,7 +610,7 @@ describe('moveAction — reparentOnDrop', () => {
     };
     const opts: BindingOptions = { params: { reparentOnDrop: 'top' } };
     const drag = { start: { x: 0, y: 0 }, current: { x: 105, y: 105 }, delta: { x: 105, y: 105 } };
-    const handle = invoker.start(baseCtx as InvocationCtx, opts);
+    const handle = invoker.start(baseCtx as unknown as InvocationCtx, opts);
     handle.onMove!({ ...baseCtx, drag } as InvocationCtx);
     handle.onEnd!({ ...baseCtx, world: { x: 105, y: 105 }, drag } as InvocationCtx, 'commit');
 

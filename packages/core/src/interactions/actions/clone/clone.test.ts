@@ -247,7 +247,7 @@ describe('cloneAction descriptor', () => {
 
     const copies = [...scene.nodes.keys()].filter((id) => id !== 'a' && id !== 'b');
     expect(copies).toHaveLength(2);
-    expect((ctx.deps.operands as { get(): string[] }).get()).toEqual(copies);
+    expect((ctx.deps.operands as unknown as { get(): string[] }).get()).toEqual(copies);
   });
 
   it('a canceled or zero-delta clone leaves the selection alone', () => {
@@ -262,7 +262,7 @@ describe('cloneAction descriptor', () => {
     canceled.onEnd!({ ...(ctx as InvocationCtx), drag }, 'cancel');
     const still = invoker.start(ctx as InvocationCtx, undefined);
     still.onEnd!(ctx as InvocationCtx, 'commit');
-    expect((ctx.deps.operands as { get(): string[] }).get()).toEqual(['a']);
+    expect((ctx.deps.operands as unknown as { get(): string[] }).get()).toEqual(['a']);
   });
 
   it('routes commit through the consumer applyOps hook once with insert ops + "Clone" label', () => {

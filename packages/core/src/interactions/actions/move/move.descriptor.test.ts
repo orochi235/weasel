@@ -34,9 +34,9 @@ function drag(
     },
   };
   const d = { start: { x: 0, y: 0 }, current: { x: delta.x, y: delta.y }, delta };
-  const handle = invoker.start(base as InvocationCtx, opts);
-  handle.onMove!({ ...base, drag: d } as InvocationCtx);
-  handle.onEnd!({ ...base, world: d.current, drag: d } as InvocationCtx, 'commit');
+  const handle = invoker.start(base as unknown as InvocationCtx, opts);
+  handle.onMove!({ ...base, drag: d } as unknown as InvocationCtx);
+  handle.onEnd!({ ...base, world: d.current, drag: d } as unknown as InvocationCtx, 'commit');
 }
 
 describe('moveAction — non-rect poses through the descriptor', () => {
@@ -82,11 +82,11 @@ describe('moveAction — non-rect poses through the descriptor', () => {
         layout: { getLayout: (cid: string) => (cid === box ? layout : null) },
       },
     };
-    const handle = invoker.start(base as InvocationCtx, undefined);
+    const handle = invoker.start(base as unknown as InvocationCtx, undefined);
     handle.onMove!({
       ...base,
       drag: { start: { x: 0, y: 0 }, current: { x: 100, y: 100 }, delta: { x: 100, y: 100 } },
-    } as InvocationCtx);
+    } as unknown as InvocationCtx);
     expect(probes).toEqual([{ x: 100, y: 100 }]);
   });
 });
