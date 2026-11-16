@@ -17,6 +17,7 @@ export type {
   ReflectedEntry,
   Registrant,
   RegisterOptions,
+  PushOptions,
 } from './reflectable';
 export { after } from './after';
 export { createLatest, type Latest } from './latest';

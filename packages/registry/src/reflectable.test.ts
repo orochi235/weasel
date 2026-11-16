@@ -210,4 +210,55 @@ describe('createReflectable', () => {
     r.set(k, 'v');
     expect(r.get(k)).toBe('v');
   });
+  it('push with a rank stays under higher-ranked registrants that came before it', () => {
+    const r = createReflectable<string>();
+    r.push('k', 'override', { rank: 1, source: 'app' });
+    r.push('k', 'table-a');
+    const releaseB = r.push('k', 'table-b');
+    const [entry] = r.entries();
+    expect(entry).toMatchObject({ value: 'override', source: 'app' });
+    expect(entry!.live.rank).toBe(1);
+    expect(entry!.shadowed.map((s) => s.value)).toEqual(['table-a', 'table-b']);
+    r.release('k', entry!.live);
+    expect(r.get('k')).toBe('table-b');
+    releaseB();
+    expect(r.get('k')).toBe('table-a');
+  });
+
+  it('the release set returns removes its registrant, and does nothing once a later set replaced it', () => {
+    const r = createReflectable<string>();
+    const first = r.set('k', 'a');
+    const second = r.set('k', 'b');
+    first();
+    expect(r.get('k')).toBe('b');
+    second();
+    expect(r.has('k')).toBe(false);
+  });
+
+  it('batch announces everything it changed as one change, and nothing when it changed nothing', () => {
+    const r = createReflectable<number>();
+    const listener = vi.fn();
+    r.subscribe(listener);
+    const before = r.getVersion();
+    const out = r.batch(() => {
+      r.set('a', 1);
+      r.batch(() => r.push('b', 2));
+      expect(listener).not.toHaveBeenCalled();
+      expect(r.get('b')).toBe(2);
+      return 'done';
+    });
+    expect(out).toBe('done');
+    expect(listener).toHaveBeenCalledTimes(1);
+    expect(r.getVersion()).toBe(before + 1);
+    r.batch(() => {});
+    expect(listener).toHaveBeenCalledTimes(1);
+  });
+
+  it('batch still announces when its callback throws', () => {
+    const r = createReflectable<number>();
+    const listener = vi.fn();
+    r.subscribe(listener);
+    expect(() => r.batch(() => { r.set('a', 1); throw new Error('x'); })).toThrow('x');
+    expect(listener).toHaveBeenCalledTimes(1);
+  });
 });
