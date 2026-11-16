@@ -4,7 +4,7 @@ import {
   type PrefSection,
 } from '@weasel-js/prefs';
 import {
-  Button, Checkbox, CLOSE_BUTTON_PROPS, Code, type ListOption, prefFieldProps, PropertyControl, Select,
+  Button, CheckboxGroup, CLOSE_BUTTON_PROPS, Code, type ListOption, prefFieldProps, PropertyControl, Select,
 } from '@weasel-js/ui';
 import {
   clauseChoices, clausesOf, type Comparison, COMPARISON_LABEL, comparisonsFor, type ConditionLeaf, leafKey,
@@ -53,13 +53,10 @@ function ValueControl({ label, row, leaf, comparison, onChange }: {
   if (op === 'in') {
     const picked = (row.test.in ?? []) as readonly string[];
     return (
-      <div className={s.choices} role="group" aria-label={`${label}s`}>
-        {options.map((option) => (
-          <Checkbox key={option.value} isSelected={picked.includes(option.value)}
-            onChange={(on) => onChange(withValue(row, comparison, on ? [...picked, option.value] : picked.filter((v) => v !== option.value)))}>
-            {option.label}
-          </Checkbox>
-        ))}
+      <div className={s.choices}>
+        <CheckboxGroup aria-label={`${label}s`} orientation="horizontal" sweep
+          items={options.map((option) => ({ value: option.value, label: option.label }))}
+          value={picked} onChange={(next) => onChange(withValue(row, comparison, next))} />
       </div>
     );
   }

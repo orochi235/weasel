@@ -4,6 +4,8 @@ import { afterEach, expect, test } from 'vitest';
 import type { PrefCondition, PrefGroup, PrefLeaf } from '@weasel-js/prefs';
 import { PrefConditionEditor } from '@weasel-js/prefs-editor';
 import { renderWithIcons } from '@weasel-js/ui/testing/withIcons';
+import { sweepAcross } from '@weasel-js/ui/testing/sweep';
+import { useState } from 'react';
 
 // Whether a row's controls wrap inside a narrow column or push it wider is layout, which jsdom does not do.
 // The test page is 414px wide, so that is as wide a column as these can ask about.
@@ -73,4 +75,15 @@ test('a pref and its comparison share a line where the column has room, and the 
   expect(wide.comparison.left).toBeGreaterThanOrEqual(wide.pref.right);
   const narrow = at(200);
   expect(narrow.comparison.top).toBeGreaterThanOrEqual(narrow.pref.bottom);
+});
+
+test('a drag across a one-of clause\'s options sets each one it reaches to what the press set the first', () => {
+  function Editor() {
+    const [value, setValue] = useState<PrefCondition>({ path: 'canvas.units', in: [] });
+    return <PrefConditionEditor aria-label="Shown if" schema={SCHEMA} value={value} onChange={(next) => setValue(next ?? value)} />;
+  }
+  renderWithIcons(<div style={{ width: 400 }}><Editor /></div>);
+  const options = within(screen.getByRole('group', { name: /values$/ })).getAllByRole('checkbox') as HTMLInputElement[];
+  sweepAcross(options);
+  expect(options.map((o) => o.checked)).toEqual([true, true, true]);
 });
