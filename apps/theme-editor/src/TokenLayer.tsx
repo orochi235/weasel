@@ -1,3 +1,4 @@
+import { getOwn } from '@weasel-js/registry';
 import { parseTokenValue, type ThemeDefinition } from '@weasel-js/theme';
 import type { DeriveResult } from '@weasel-js/theme/engine';
 import { TokenPanel } from '@weasel-js/ui/components/TokenPanel';
@@ -33,7 +34,7 @@ export function TokenLayer({ layer, draft, result, highlight, onChange }: TokenL
       if (value === null) return;
       const key = name.slice('seeds.'.length);
       onChange(
-        { ...draft, seeds: { ...draft.seeds, [key]: keepNumberness(value, draft.seeds?.[key]) } },
+        { ...draft, seeds: { ...draft.seeds, [key]: keepNumberness(value, getOwn(draft.seeds ?? {}, key)) } },
         `seed:${key}`,
         `Edit ${name}`,
       );
@@ -43,7 +44,7 @@ export function TokenLayer({ layer, draft, result, highlight, onChange }: TokenL
       onChange(removePin(draft, name), `pin:${name}`, `Reset ${name}`);
       return;
     }
-    const token = result.tokens[name];
+    const token = getOwn(result.tokens, name);
     onChange(
       setPin(draft, name, {
         value: parseTokenValue(token?.type ?? 'string', value),

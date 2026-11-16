@@ -1,3 +1,4 @@
+import { getOwn } from '@weasel-js/registry';
 import { serializeTokenValue, type ThemeDefinition } from '@weasel-js/theme';
 import type { DeriveResult } from '@weasel-js/theme/engine';
 import { inferTokenType, type TokenEntry } from '@weasel-js/ui/components/TokenPanel';
@@ -29,19 +30,18 @@ export function layerEntries(layer: LayerId, def: ThemeDefinition, result: Deriv
   const names =
     layer === 'pins'
       ? Object.keys(def.pins ?? {}).filter((n) => pinApplies(result, n))
-      : ownTokenNames(def).filter((n) => result.provenance[n]?.layer === layer);
-  return names
-    .filter((name) => Object.hasOwn(result.tokens, name))
-    .map((name) => {
-      const token = result.tokens[name];
-      const p = result.provenance[name];
-      return {
-        name,
-        type: token.type,
-        group: groupOf(name),
-        value: serializeTokenValue(token.type, token.value),
-        // A pin is itself the override; in any other layer only one that replaced a generated value is.
-        overridden: layer === 'pins' || (p.pinned === true && p.generated !== undefined),
-      };
-    });
+      : ownTokenNames(def).filter((n) => getOwn(result.provenance, n)?.layer === layer);
+  return names.flatMap((name) => {
+    const token = getOwn(result.tokens, name);
+    if (!token) return [];
+    const p = getOwn(result.provenance, name)!;
+    return [{
+      name,
+      type: token.type,
+      group: groupOf(name),
+      value: serializeTokenValue(token.type, token.value),
+      // A pin is itself the override; in any other layer only one that replaced a generated value is.
+      overridden: layer === 'pins' || (p.pinned === true && p.generated !== undefined),
+    }];
+  });
 }

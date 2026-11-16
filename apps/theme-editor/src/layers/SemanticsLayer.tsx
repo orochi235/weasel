@@ -1,3 +1,4 @@
+import { getOwn } from '@weasel-js/registry';
 import type { ThemeDefinition } from '@weasel-js/theme';
 import { declaredSteps, mergeChain, type Lookup } from '@weasel-js/theme/engine';
 import { Button } from '@weasel-js/ui/components/Button';
@@ -127,7 +128,7 @@ export function SemanticsLayer({ draft, derived, lookup, highlight, onChange }: 
         <SemanticDrawer
           key={open.name}
           name={open.name}
-          rule={chain.semantics?.[open.name] ?? derived.merged.semantics![open.name]}
+          rule={getOwn(chain.semantics ?? {}, open.name) ?? getOwn(derived.merged.semantics ?? {}, open.name)!}
           row={open}
           axes={chain.axes ?? {}}
           ramps={ramps}

@@ -2,7 +2,7 @@ import { resolveTheme, type ThemeDefinition } from '@weasel-js/theme';
 import { derive } from '@weasel-js/theme/engine';
 import { describe, expect, it } from 'vitest';
 import { child, lookupOf, weasel } from './fixtures';
-import { adoptGenerated, countTokens, removePin, ruleSummary, runtimeTheme, setPin, stepOf } from './model';
+import { adoptGenerated, countTokens, removePin, ruleSummary, runtimeTheme, setPin, setRamp, stepOf } from './model';
 
 const lookup = lookupOf(child);
 
@@ -31,6 +31,22 @@ describe('countTokens', () => {
     const def = { ...weasel, pins: { ...weasel.pins, gap: { by: 'mode', dark: { value: '4px', type: 'dimension' } } } } as ThemeDefinition;
     const at = (mode: string) => countTokens(def, derive(def, { mode }, lookup)).layers.pins.count;
     expect(at('dark')).toBe(at('light') + 1);
+  });
+});
+
+describe('names Object.prototype holds', () => {
+  it('counts no token for a pin named constructor that has no value at this selection', () => {
+    const def = { name: 'p', pins: { constructor: { by: 'mode', light: { value: '#ffffff', type: 'color' } } } } as ThemeDefinition;
+    const counts = countTokens(def, derive(def, { mode: 'dark' }));
+    expect(counts).toMatchObject({ overridden: 0, total: 0 });
+  });
+
+  it('copies in an inherited ramp named constructor before editing it', () => {
+    const gray = { kind: 'lightness', steps: ['50', '900'], lightness: [0.97, 0.16] } as const;
+    const base: ThemeDefinition = { name: 'base', ramps: { constructor: gray } };
+    const kid: ThemeDefinition = { name: 'kid', extends: 'base', ramps: {} };
+    const edited = setRamp(kid, (n) => (n === 'base' ? base : undefined), 'constructor', (e) => ({ ...e, curve: 0.5 }) as typeof e);
+    expect(edited.ramps!.constructor).toEqual({ ...gray, curve: 0.5 });
   });
 });
 
