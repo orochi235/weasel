@@ -110,5 +110,5 @@ export function strftime(t: number, format: string): string {
     H: () => pad(hour), I: () => pad(hour % 12 === 0 ? 12 : hour % 12), M: () => pad(d.getUTCMinutes()),
     S: () => pad(d.getUTCSeconds()), p: () => (hour < 12 ? 'AM' : 'PM'), j: () => pad(yearDay, 3), '%': () => '%',
   };
-  return format.replace(/%(.)/g, (all, c: string) => field[c]?.() ?? all);
+  return format.replace(/%(.)/g, (all, c: string) => (Object.hasOwn(field, c) ? field[c]!() : all));
 }

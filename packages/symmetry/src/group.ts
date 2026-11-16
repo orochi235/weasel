@@ -55,7 +55,9 @@ export function specOfData(data: unknown): SymmetrySpec {
   if (typeof s !== 'object' || s === null) return { ...DEFAULT_SYMMETRY };
   const out: Record<string, unknown> = { ...DEFAULT_SYMMETRY };
   for (const [k, v] of Object.entries(s)) {
-    if (k === 'glideRows' ? typeof v === 'boolean' : Object.hasOwn(DEFAULT_SYMMETRY, k) && typeof v === typeof out[k]) out[k] = v;
+    if (k === 'glideRows') {
+      if (typeof v === 'boolean') out.glideRows = v;
+    } else if (Object.hasOwn(out, k) && typeof v === typeof out[k]) out[k] = v;
   }
   if (!Object.hasOwn(SYMMETRY_KINDS, out.kind as string)) out.kind = DEFAULT_SYMMETRY.kind;
   if (!CELL_KINDS.includes(out.cell as string)) out.cell = DEFAULT_SYMMETRY.cell;
