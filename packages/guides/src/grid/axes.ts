@@ -1,4 +1,5 @@
 import type { PerAxis, PlaneValue } from '@weasel-js/core';
+import { isDev } from '@weasel-js/registry';
 
 /** A length on a grid: a bare number, or a value tagged with a unit. */
 export type GridLength = Exclude<PlaneValue, PerAxis<unknown>>;
@@ -7,8 +8,9 @@ export type GridLength = Exclude<PlaneValue, PerAxis<unknown>>;
  * One axis of a grid: a pitch from zero; a pitch with an `offset` its lines
  * pass through, limited to `from`..`to` (inclusive); or lines at explicit
  * positions, for uneven bays. Positions are measured from the grid's origin:
- * a container's corner, or the root's origin. A pitch that is not a positive
- * finite number gives the axis no lines.
+ * a container's corner, or the root's origin. A pitch of 0 gives the axis no
+ * lines. So does a negative, NaN or infinite pitch, or `from` past `to`, with a
+ * development warning.
  */
 export type GridAxis =
   | GridLength
@@ -36,16 +38,31 @@ export function resolveGridLines(spacing: GridSpacing, read: (v: GridLength, axi
   const on = (axis: 'x' | 'y'): AxisLines | null => {
     const a = isGridLength(spacing) ? spacing : spacing[axis];
     if (a === undefined) return null;
+    let lines: AxisLines | Invalid | null;
     try {
-      return resolveAxis(a, (v) => read(v, axis));
+      lines = resolveAxis(a, (v) => read(v, axis));
     } catch (e) {
       throw new Error(`${axis} axis: ${e instanceof Error ? e.message : String(e)}`);
     }
+    if (lines === null || !('invalid' in lines)) return lines;
+    warnInvalid(`${axis} axis: ${lines.invalid}`);
+    return null;
   };
   return { x: on('x'), y: on('y') };
 }
 
-function resolveAxis(a: GridAxis, read: (v: GridLength) => number): AxisLines | null {
+/** Why an axis's lines could not be laid. */
+interface Invalid { invalid: string }
+
+const warnedInvalid = new Set<string>();
+
+function warnInvalid(why: string): void {
+  if (!isDev() || warnedInvalid.has(why)) return;
+  warnedInvalid.add(why);
+  console.warn(`weasel grid: ${why}, so the axis has no lines. Use a pitch of 0 for none.`);
+}
+
+function resolveAxis(a: GridAxis, read: (v: GridLength) => number): AxisLines | Invalid | null {
   if (isGridLength(a)) return periodic(read(a), 0, -Infinity, Infinity);
   if ('at' in a) {
     const at = [...new Set(a.at.map(read))].filter(Number.isFinite).sort((p, q) => p - q);
@@ -59,8 +76,11 @@ function resolveAxis(a: GridAxis, read: (v: GridLength) => number): AxisLines | 
   );
 }
 
-function periodic(pitch: number, offset: number, from: number, to: number): AxisLines | null {
-  return pitch > 0 && Number.isFinite(pitch) && from <= to ? { pitch, offset, from, to } : null;
+function periodic(pitch: number, offset: number, from: number, to: number): AxisLines | Invalid | null {
+  if (pitch === 0) return null;
+  if (!(pitch > 0) || !Number.isFinite(pitch)) return { invalid: `pitch ${pitch} is not a positive finite number` };
+  if (!(from <= to)) return { invalid: `from ${from} is past to ${to}` };
+  return { pitch, offset, from, to };
 }
 
 const EPS = 1e-9;
