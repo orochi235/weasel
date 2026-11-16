@@ -552,16 +552,6 @@ only story runner in the repo.
 
 ## Release-gate & build hygiene
 
-- **(P2) [agent] One browser test file whose import fails takes down the real clicks and hovers of the files
-  beside it.** Vite answers the failed transform with a 500 and lays `<vite-error-overlay>` over every tab it
-  serves, and Playwright then reports "`<vite-error-overlay>` intercepts pointer events" until each test times
-  out. Reproduced on the fleet (2026-11-16, `uifix-overlay-probe`): a file importing a missing `.module.css` beside
-  `Tree.tooltip`, `Bar.menu` and `ToolPalette.stacks` failed all five of their tests, which pass alone; on
-  `batch/2026-11-16-ui` one stale import in `sunkenBox.browser.test.tsx` failed 24 tests in 10 other files.
-  Neither `server.hmr.overlay: false` on the browser project nor a `vite-error-overlay { display: none }` rule in
-  `vitest.browser.setup.ts` stopped it: the overlay is likely drawn in the orchestrator page, outside the test
-  iframe the setup runs in. Closes when that probe's three files pass beside the broken one.
-
 - **(P2) `packages/svg/src/textModes.test.ts` fails 2 outline-mode tests in a worktree linked by
   `scripts/link-workspaces.mjs`** and passes 11 of 11 in the main checkout and on the fleet (2026-11-15): text
   bounds come out about 8% off (`18.26 >= 20`, `324.2 <= 300`), in every linked worktree, branch changes or not.
