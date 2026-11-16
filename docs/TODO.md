@@ -250,14 +250,22 @@ Owner tags, after the priority (2026-10-26):
 
 ### Core layering
 
-- **(P2) Split core into a viewer core and an editing layer** (queued 2026-11-15, after the text-out-of-core and
-  prefs-schema branches merge). Core is a viewer plus an editor today: 293 of its 1,057 shipped files mention
-  selection, and 45 editing actions take the `selection` dep as what they act on. First an operands contract in core
-  (a dep type: the ids an edit acts on), which those actions read instead of `selection`; then a package above core
-  provides it from selection (the store over `@weasel-js/select`, press-to-select, the select tool, marquee and lasso,
-  the selection overlay and handles, `<SceneCanvas selection>`), and the editing actions and their tools follow it.
-  Closes when core's shipped source names no selection implementation and a canvas with no editing layer mounted
-  draws and pans.
+- **(P2) Split core into a viewer core and an editing layer** (queued 2026-11-15; the operands contract and the first
+  half of the move landed 2026-11-16 on `editing-layer`). Editing actions act on core's `operands` dep
+  (`interactions/actions/operands.ts`), and `@weasel-js/editing` holds the presets, the preset names,
+  `useStandardActions`, `ENGINE_STANDARD_ACTIONS`, and the arrange, edit, clipboard, Transform Again and Pathfinder
+  actions. Still in core, because `<SceneCanvas>` builds them in rather than taking them from a feature: the
+  selection store and `<SceneCanvas selection>` (`core/selection`, `useCanvasSelection`), the select tool and press-to-
+  select (`tools/builtin/select`, `useSceneSelectTool`), marquee and lasso (`areaSelect`, `lasso-select`, their deps),
+  the selection overlay, handles and chrome (`domains/selection`, `affordances/`, `useSelectionOverlayLayer`,
+  `useSceneChrome`), move, resize, rotate and clone with the selection contributions, insert and the shape tools
+  (`useBuiltinShapeTools`, `SELECT_TOOLS`/`SHAPE_TOOLS`), paste and drop (`domains/ingestion`, clipboard ops), and the
+  helpers `barrel/editingSeams.ts` exports for the moved code. The next step is an extension point through which a
+  feature hands `<SceneCanvas>` its select tool, shape tools and selection chrome, so those can leave. Also open: an
+  `./engine` entry for editing, since `ENGINE_STANDARD_ACTIONS` now loads editing's main entry; the editing glyphs are
+  still drawn in core (`core:` names); the moved core tests that mount editing presets still live in core and import
+  `@weasel-js/editing`. Closes when core's shipped source names no selection implementation and a canvas with no
+  editing layer mounted draws and pans.
 
 ### Extension authoring and published consumers
 
