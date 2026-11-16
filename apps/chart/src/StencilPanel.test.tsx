@@ -75,7 +75,7 @@ describe('StencilPanel', () => {
 
   it("draws each stencil's own glyph, not the unknown-tool placeholder", () => {
     const drawn = (name: IconSpec) => renderWithIcons(<Icon name={name} />).container.querySelector('svg')!.innerHTML;
-    const placeholder = drawn(toIconRef('core:unknown')!);
+    const placeholder = drawn(toIconRef('ui:unknown')!);
     const stencils = [...FLOWCHART_STENCILS, ...CONTAINER_STENCILS];
     const glyphs = stencils.map((s) => drawn(s.icon!));
     panel();
@@ -90,7 +90,7 @@ describe('StencilPanel', () => {
 
   it('gives every shipped stencil a glyph of its own', () => {
     const drawn = (name: IconSpec) => renderWithIcons(<Icon name={name} />).container.querySelector('svg')!.innerHTML;
-    const placeholder = drawn(toIconRef('core:unknown')!);
+    const placeholder = drawn(toIconRef('ui:unknown')!);
     for (const s of Object.values(STENCIL_GROUPS).flatMap((g) => g.stencils)) expect(drawn(s.icon!), s.id).not.toBe(placeholder);
   });
 

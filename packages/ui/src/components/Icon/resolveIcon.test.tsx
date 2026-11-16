@@ -4,7 +4,7 @@ import { withIcons } from '../../testing/withIcons';
 import { icon } from '../../icons.gen';
 import { resolveIcon } from './resolveIcon';
 
-/** Path data from `core:unknown`'s question mark, which a name the registry lacks draws in development. */
+/** Path data from `ui:unknown`'s question mark, which a name the registry lacks draws in development. */
 const PLACEHOLDER_PATH = 'M 7.5 8 Q 7.5 5.5 10 5.5';
 
 let warn: MockInstance<typeof console.warn>;

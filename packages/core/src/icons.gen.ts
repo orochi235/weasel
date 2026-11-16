@@ -13,7 +13,6 @@ export type CoreIconName =
   | 'slice'
   | 'sticky'
   | 'text'
-  | 'unknown'
   | 'cut'
   | 'copy'
   | 'paste'
@@ -121,8 +120,7 @@ export const ICON_GROUPS: readonly { label: string; names: readonly CoreIconName
       "pencil",
       "slice",
       "sticky",
-      "text",
-      "unknown"
+      "text"
     ]
   },
   {
@@ -283,7 +281,6 @@ declare module '@weasel-js/icons' {
     'core:slice': true;
     'core:sticky': true;
     'core:text': true;
-    'core:unknown': true;
     'core:cut': true;
     'core:copy': true;
     'core:paste': true;

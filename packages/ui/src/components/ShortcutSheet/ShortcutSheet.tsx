@@ -6,7 +6,6 @@ import { Icon } from '../Icon/Icon';
 import { ShortcutKeys } from '../Keycaps';
 import { sheetParts, sheetPlatform } from './sheetRows';
 import styles from './ShortcutSheet.module.css';
-import { BUILTIN_TOOL_GROUPS } from '@weasel-js/editing';
 
 /** Props for {@link ShortcutSheet}. */
 export interface ShortcutSheetProps {
@@ -14,8 +13,8 @@ export interface ShortcutSheetProps {
   onOpenChange: (open: boolean) => void;
   /** The tools whose keys it lists, each under its name and glyph. Absent, it lists no tools. */
   tools?: { readonly registry: Readonly<Record<string, ShortcutTool>> } | null;
-  /** The sets the tools are grouped by, in order; tools in none follow under "Other tools". Default core's
-   *  `BUILTIN_TOOL_GROUPS`. */
+  /** The sets the tools are grouped by, in order; tools in none follow under "Other tools". Default none, so every
+   *  tool is under "Other tools"; a canvas built on editing's tools passes its `BUILTIN_TOOL_GROUPS`. */
   toolSets?: readonly ToolSet[];
   /** Write keys as a Mac's keyboard prints them. Default: whether this is an Apple platform, as the dispatcher reads `mod`. */
   apple?: boolean;
@@ -24,6 +23,7 @@ export interface ShortcutSheetProps {
 }
 
 const NO_ACTIONS: readonly Action[] = [];
+const NO_SETS: readonly ToolSet[] = [];
 const noSubscribe = () => () => {};
 
 function Row({ row, platform }: { row: ShortcutRow; platform: Platform }) {
@@ -62,7 +62,7 @@ function Group({ group, platform }: { group: ShortcutGroup; platform: Platform }
  * a key, written as shown (`⇧⌘Z`) or spelled out (`Cmd+Shift+Z`). Open it from `useShortcutSheetCommand`.
  */
 export function ShortcutSheet({
-  open, onOpenChange, tools, toolSets = BUILTIN_TOOL_GROUPS, apple = isApplePlatform(), title = 'Keyboard shortcuts',
+  open, onOpenChange, tools, toolSets = NO_SETS, apple = isApplePlatform(), title = 'Keyboard shortcuts',
 }: ShortcutSheetProps) {
   const registry = useActionsRegistry();
   const actions = useSyncExternalStore(

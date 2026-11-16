@@ -6,6 +6,9 @@ import { declaredToolShortcuts, toolSet, type Tool, type ToolsApi } from '@wease
 import { createModeRegistry } from '@weasel-js/modes';
 import { DEFAULT_MODES } from '@weasel-js/modes/presets/default';
 
+/** Editing's palette group order: selection, navigation, then the tools that make things. */
+const GROUP_ORDER = ['select', 'view', 'shape'];
+
 function fakeTool(id: string, group?: string, label?: string): Tool {
   return {
     id,
@@ -94,7 +97,7 @@ describe('ToolPalette', () => {
 });
 
 describe('ToolPalette — grouping', () => {
-  it('renders groups in the natural order (select, view, shape, type)', () => {
+  it('renders groups in groupOrder, then the rest in registry order', () => {
     const tools = fakeTools([
       fakeTool('text', 'type'),
       fakeTool('select', 'select'),
@@ -102,7 +105,7 @@ describe('ToolPalette — grouping', () => {
       fakeTool('rect', 'shape'),
       fakeTool('lasso', 'select'),
     ]);
-    renderWithIcons(<ToolPalette tools={tools} />);
+    renderWithIcons(<ToolPalette tools={tools} groupOrder={GROUP_ORDER} />);
     expect(screen.getAllByRole('button').map((b) => b.textContent)).toEqual([
       expect.stringContaining('select'),
       expect.stringContaining('lasso'),
@@ -119,12 +122,29 @@ describe('ToolPalette — grouping', () => {
       fakeTool('weird', 'experimental'),
       fakeTool('hand', 'view'),
     ]);
-    renderWithIcons(<ToolPalette tools={tools} />);
+    renderWithIcons(<ToolPalette tools={tools} groupOrder={GROUP_ORDER} />);
     expect(screen.getAllByRole('button').map((b) => b.textContent)).toEqual([
       expect.stringContaining('select'),
       expect.stringContaining('hand'),
       expect.stringContaining('weird'),
       expect.stringContaining('Orphan'),
+    ]);
+  });
+
+  it('orders groups and tools by an include set when given no order of its own', () => {
+    const tools = fakeTools([
+      fakeTool('rect', 'shape'),
+      fakeTool('hand', 'view'),
+      fakeTool('lasso', 'select'),
+      fakeTool('select', 'select'),
+    ]);
+    const include = toolSet('all', [toolSet('select', ['select', 'lasso']), toolSet('view', ['hand']), toolSet('shape', ['rect'])]);
+    renderWithIcons(<ToolPalette tools={tools} include={include} />);
+    expect(screen.getAllByRole('button').map((b) => b.textContent)).toEqual([
+      expect.stringContaining('select'),
+      expect.stringContaining('lasso'),
+      expect.stringContaining('hand'),
+      expect.stringContaining('rect'),
     ]);
   });
 
@@ -375,7 +395,7 @@ describe('ToolPalette — mode eligibility', () => {
   it('Home / End land on eligible tools', () => {
     const reg = createModeRegistry({ modes: DEFAULT_MODES, initial: 'path-edit' });
     const tools = makeTools(selectTool, anchorTool, handTool);
-    renderWithIcons(<ToolPalette tools={tools} modeRegistry={reg} />);
+    renderWithIcons(<ToolPalette tools={tools} modeRegistry={reg} groupOrder={GROUP_ORDER} />);
     const anchorBtn = screen.getByRole('button', { name: /anchor/i });
     const handBtn = screen.getByRole('button', { name: /hand/i });
 
@@ -390,7 +410,7 @@ describe('ToolPalette — mode eligibility', () => {
     const reg = createModeRegistry({ modes: DEFAULT_MODES, initial: 'path-edit' });
     // `makeTools` makes the first tool active — here, the ineligible one.
     const tools = makeTools(selectTool, anchorTool, handTool);
-    renderWithIcons(<ToolPalette tools={tools} modeRegistry={reg} />);
+    renderWithIcons(<ToolPalette tools={tools} modeRegistry={reg} groupOrder={GROUP_ORDER} />);
     const selectBtn = screen.getByRole('button', { name: /select/i }) as HTMLButtonElement;
     const handBtn = screen.getByRole('button', { name: /hand/i }) as HTMLButtonElement;
     expect(selectBtn.tabIndex).toBe(-1);

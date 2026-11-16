@@ -38,7 +38,7 @@ const SVG_BASE: SVGProps<SVGSVGElement> = {
 };
 
 /** Renders the glyph the icon registry in scope holds for `name`, with the mark a spec names unless `mark`
- *  replaces it. A name it lacks draws `core:unknown`'s placeholder in dev, warning once, and nothing in production. */
+ *  replaces it. A name it lacks draws `ui:unknown`'s placeholder in dev, warning once, and nothing in production. */
 export function Icon({
   name: spec,
   className,

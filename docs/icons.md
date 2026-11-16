@@ -226,7 +226,7 @@ batch.
 read from data, and `actionIcon(ref)` an action's icon. Outside ui, `useIconGlyph(ref)` from `@weasel-js/icons/react`
 returns the glyph itself.
 
-A name the registry lacks draws `core:unknown`'s question mark and warns once in development, and
+A name the registry lacks draws `ui:unknown`'s question mark and warns once in development, and
 draws nothing in production. Development is `isDev()` from `@weasel-js/registry` (re-exported by
 `@weasel-js/react`), which reads `process.env.NODE_ENV` inside a `try`, so a production bundle
 folds it to `false`.

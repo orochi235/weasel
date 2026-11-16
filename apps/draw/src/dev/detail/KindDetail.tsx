@@ -24,7 +24,7 @@ export function ShapeKindDetail({
     <div>
       <div className={s.toolHeader}>
         <span className={s.toolIcon} aria-hidden>
-          {entry.icon ?? <Icon name={icon('core:unknown')} />}
+          {entry.icon ?? <Icon name={icon('ui:unknown')} />}
         </span>
         <h2 className={s.detailHeading}>{entry.id}</h2>
       </div>
