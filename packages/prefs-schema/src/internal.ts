@@ -6,7 +6,7 @@
  */
 export { formOf, ORDERINGS, partsOf, type Form } from './condition';
 export { assignPrefValueAtPath, setOwnPrefValue } from './helpers';
-export { prefLeavesHolding, prefLeavesHoldingIn, UNSEEN, type PrefLeavesFound } from './holding';
+export { prefLeavesHolding, prefLeavesHoldingIn, UNSEEN, type PrefLeavesFound, type PrefHeld, type PrefHeldVariant } from './holding';
 export {
   dropUnlisted,
   mapScopeValues,
