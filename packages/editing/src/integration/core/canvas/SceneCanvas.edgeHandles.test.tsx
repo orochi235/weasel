@@ -6,12 +6,12 @@ import { describe, it, expect, vi, beforeAll } from 'vitest';
 import { useEffect } from 'react';
 import { act } from '@testing-library/react';
 import { renderWithKeys as render } from '@weasel-js/react/testing/giveKeys';
-import { SceneCanvas } from './SceneCanvas';
-import { createScene } from 'core/scene/scene';
-import type { NodeId } from 'core/scene/types';
+import { SceneCanvas } from '@weasel-js/core';
+import { createScene } from '@weasel-js/core/engine';
+import type { NodeId } from '@weasel-js/core';
 import { useDepRegistry } from '@weasel-js/routing/react';
 import type { SelectionApi } from '@weasel-js/routing';
-import { useOptionalViewRegistry, type ViewRegistry } from './viewRegistry';
+import { useOptionalViewRegistryForTests as useOptionalViewRegistry, type ViewRegistryForTests as ViewRegistry } from '@weasel-js/core/test-seams';
 import { movePreset, pickPreset, resizePreset } from '@weasel-js/editing';
 
 type D = { kind: 'rect' };

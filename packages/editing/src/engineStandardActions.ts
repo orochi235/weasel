@@ -1,5 +1,5 @@
 import type { Action } from '@weasel-js/routing';
-import { cancelGestureAction, deleteAction, redoAction, undoAction } from '@weasel-js/core';
+import { cancelGestureAction, redoAction, undoAction } from '@weasel-js/core';
 import { duplicateAction } from './actions/edit/duplicate';
 import { escapeAction } from './actions/edit/escape';
 import { groupAction, ungroupAction } from './actions/edit/group';
@@ -15,6 +15,7 @@ import { lassoSelectAction } from './actions/lassoSelect/action';
 import { areaSelectAction } from './actions/select/areaSelect';
 import { insertAction } from './actions/insert/action';
 import { moveAction } from './actions/move/action';
+import { deleteAction } from './actions/delete/delete';
 
 /**
  * The kit-standard actions a host of any dimension registers: history,

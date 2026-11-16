@@ -5,13 +5,13 @@
 import { describe, it, expect, vi, beforeAll } from 'vitest';
 import { render, act } from '@testing-library/react';
 import { useEffect } from 'react';
-import { SceneCanvas } from './SceneCanvas';
-import { CanvasView } from './CanvasView';
-import { createScene } from 'core/scene/scene';
-import type { RenderLayer } from 'core/layers/render';
-import { useOptionalViewRegistry, type ViewRegistry } from './viewRegistry';
-import type { NodeId } from 'core/scene/types';
-import type { Bounds } from 'core/viewport/fitViewToBounds';
+import { SceneCanvas } from '@weasel-js/core';
+import { CanvasView } from '@weasel-js/core';
+import { createScene } from '@weasel-js/core/engine';
+import type { RenderLayer } from '@weasel-js/core';
+import { useOptionalViewRegistryForTests as useOptionalViewRegistry, type ViewRegistryForTests as ViewRegistry } from '@weasel-js/core/test-seams';
+import type { NodeId } from '@weasel-js/core';
+import type { Bounds } from '@weasel-js/core';
 import { drawPreset } from '@weasel-js/editing';
 
 type P = { x: number; y: number; width: number; height: number };

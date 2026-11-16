@@ -1,13 +1,13 @@
-import type { Node, NodeId, Scene } from 'core/scene/types';
-import type { Op } from 'core/ops/types';
-import { createDeleteOp } from 'core/ops/delete';
-import { commitOps } from '../defaultCommitAdapter';
+import type { SceneNode as Node, NodeId, Scene } from '@weasel-js/core';
+import type { Op } from '@weasel-js/core';
+import { createDeleteOp } from '@weasel-js/core';
+import { commitOps } from '@weasel-js/core/engine';
 import { ActionDisabledReason, type Action, type ActionDeps } from '@weasel-js/routing';
-import { requiresContent } from './requiresSelection';
-import { reachesLocked } from './lockedReach';
-import { icon } from '../../../icons.gen';
-import { hiddenSourcesTakenWith } from 'domains/pathEffects/hiddenSources';
-import { withoutPageStructure } from 'core/scene/nodeGates';
+import { requiresContent } from '@weasel-js/core';
+import { reachesLocked } from '@weasel-js/core';
+import { icon } from '../../icons.gen';
+import { hiddenSourcesTakenWith } from '@weasel-js/core';
+import { withoutPageStructure } from '@weasel-js/core/engine';
 import { BETWEEN_GESTURES } from '@weasel-js/routing';
 
 /** `id`'s slot among the scene roots or its parent's children, or `-1`. */
@@ -120,7 +120,7 @@ export function createDeleteAction(opts: DeleteActionOptions = {}): Action & { r
   return {
     id: 'delete',
     label: 'Delete',
-    icon: icon('delete'),
+    icon: icon('core:delete'),
     group: 'edit',
     // Suppressed while any tool is mid-gesture — accidentally hitting
     // Delete during a drag shouldn't wipe the selection out from under

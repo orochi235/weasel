@@ -1,16 +1,13 @@
 import { describe, expect, it, vi, beforeAll } from 'vitest';
 import { render, act } from '@testing-library/react';
 import { KitSettingsProvider } from '@weasel-js/react';
-import { SceneCanvas } from './SceneCanvas';
-import { useScene } from 'core/scene/useScene';
-import { createScene } from 'core/scene/scene';
-import {
-  DEFAULT_HANDLE_SIZE,
-  defaultDrawOne,
-  mergeLayersWithDefaults,
-} from './SceneCanvas';
-import { defaultPaintBounds } from './defaultDrawOne';
-import { layersOverPresets } from './SceneCanvas/mergeLayers';
+import { SceneCanvas } from '@weasel-js/core';
+import { useScene } from '@weasel-js/core';
+import { createScene } from '@weasel-js/core/engine';
+import { DEFAULT_HANDLE_SIZE, defaultDrawOne } from '@weasel-js/core';
+import { mergeLayersWithDefaultsForTests as mergeLayersWithDefaults } from '@weasel-js/core/test-seams';
+import { defaultPaintBounds } from '@weasel-js/core';
+import { layersOverPresetsForTests as layersOverPresets } from '@weasel-js/core/test-seams';
 import { pickPreset, resizePreset } from '@weasel-js/editing';
 
 // jsdom doesn't implement getContext or pointer capture; stub minimally.

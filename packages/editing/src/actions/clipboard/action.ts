@@ -1,11 +1,12 @@
 import { ActionDisabledReason, defineAction, type Action, BETWEEN_GESTURES } from '@weasel-js/routing';
-import { commitDeleteToScene, deleteEnabled, requiresSelection } from '@weasel-js/core';
+import { requiresSelection } from '@weasel-js/core';
 import { kitWeaselJsonHandler } from '../../ingest/weaselJsonHandler';
 import type { NodeId } from '@weasel-js/core';
 import { claimable, INGEST_REQUIRES, ingestFromEvent } from '../edit/ingest';
 import { ANY_MODS } from '@weasel-js/gestures';
 import { icon } from '../../icons.gen';
 import type {} from '@weasel-js/core';
+import { commitDeleteToScene, deleteEnabled } from '../delete/delete';
 
 /**
  * Static descriptor for the `clipboard.copy` Action (Cmd/Ctrl+C).

@@ -29,7 +29,7 @@ allowed* (`eligible` / `enabled`), and *how it's reached by default*
 (`defaultBinding`).
 
 ```ts
-// packages/core/src/interactions/actions/defaults/delete.ts: what
+// packages/editing/src/actions/delete/delete.ts: what
 // createDeleteAction() returns, and `deleteAction` is
 {
   id: 'delete',

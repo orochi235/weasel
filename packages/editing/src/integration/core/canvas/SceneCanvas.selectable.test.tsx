@@ -6,11 +6,11 @@
  */
 import { describe, it, expect, vi, beforeAll } from 'vitest';
 import { render, act, fireEvent } from '@testing-library/react';
-import { SceneCanvas } from './SceneCanvas';
-import { useOptionalViewInputs } from './viewInputs';
+import { SceneCanvas } from '@weasel-js/core';
+import { useOptionalViewInputsForTests as useOptionalViewInputs } from '@weasel-js/core/test-seams';
 import { useDepRegistry } from '@weasel-js/routing/react';
-import { createScene } from 'core/scene/scene';
-import { asNodeId, type Scene } from 'core/scene/types';
+import { createScene } from '@weasel-js/core/engine';
+import { asNodeId, type Scene } from '@weasel-js/core/engine';
 import type { SelectionApi } from '@weasel-js/routing';
 import { pickPreset, useSelection, selectionPreset } from '@weasel-js/editing';
 

@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import { act, renderHook } from '@testing-library/react';
-import { createScene } from 'core/scene/scene';
-import { asNodeId, type NodeId } from 'core/scene/types';
-import { legalSelection, settleSelection } from './legalSelection';
+import { createScene } from '@weasel-js/core/engine';
+import { asNodeId, type NodeId } from '@weasel-js/core';
+import { legalSelectionForTests as legalSelection, settleSelectionForTests as settleSelection } from '@weasel-js/core/test-seams';
 import { useSelection } from '@weasel-js/editing';
 
 const ids = (list: string[]) => list.map(asNodeId);

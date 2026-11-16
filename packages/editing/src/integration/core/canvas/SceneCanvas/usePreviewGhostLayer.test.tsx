@@ -6,18 +6,18 @@
  */
 import { describe, it, expect } from 'vitest';
 import { renderHook } from '@testing-library/react';
-import { createScene } from 'core/scene/scene';
-import type { View } from 'core/viewport/view';
+import { createScene } from '@weasel-js/core/engine';
+import type { View } from '@weasel-js/core';
 import type { DrawCommand, GroupDrawCommand } from '@weasel-js/renderer';
-import type { Node } from 'core/scene/types';
+import type { SceneNode as Node } from '@weasel-js/core/engine';
 import type { Dispatcher } from '@weasel-js/routing';
 import type { InvocationCtx, OngoingHandle, OngoingInvoker } from '@weasel-js/routing';
-import { usePreviewGhostLayer } from './usePreviewGhostLayer';
+import { usePreviewGhostLayerForTests as usePreviewGhostLayer } from '@weasel-js/core/test-seams';
 import { renderThenAbandon } from '@weasel-js/react/testing/abandonRender';
-import type { GesturePreviewSource } from '../gestureBounds';
+import type { GesturePreviewSource } from '@weasel-js/core/engine';
 import { INHERIT } from '@weasel-js/paint';
-import { withInheritedPaints } from '../inheritedPaints';
-import type { NodePaintCtx } from '../nodeShapeTypes';
+import { withInheritedPaints } from '@weasel-js/core';
+import type { NodePaintCtx } from '@weasel-js/core';
 import { setFillAction } from '@weasel-js/editing';
 
 interface Data { label: string }

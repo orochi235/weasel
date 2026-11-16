@@ -1,18 +1,18 @@
 import { describe, it, expect } from 'vitest';
 import type { Action } from '@weasel-js/routing';
+import type { FeaturePreset } from '@weasel-js/core';
 import {
-  resolveFeatures,
-  presetActions,
-  presetAmbient,
-  presetBuiltinTools,
-  presetChromeRules,
-  presetToolIds,
-  type FeaturePreset,
-} from './features';
-import { BASELINE_ACTION_IDS } from './presets/baseline';
-import { PRESET_OWNED_CHROME } from './presets/chrome';
-import { defaultVisibilityRules, never } from 'domains/chrome-caps';
-import { MIDDLE_DRAG_PAN_ID } from 'tools/builtin/hand/dragPanContribution';
+  resolveFeaturesForTests as resolveFeatures,
+  presetActionsForTests as presetActions,
+  presetAmbientForTests as presetAmbient,
+  presetBuiltinToolsForTests as presetBuiltinTools,
+  presetChromeRulesForTests as presetChromeRules,
+  presetToolIdsForTests as presetToolIds,
+} from '@weasel-js/core/test-seams';
+import { BASELINE_ACTION_IDS } from '@weasel-js/core';
+import { PRESET_OWNED_CHROME } from '@weasel-js/core';
+import { defaultVisibilityRules, never } from '@weasel-js/core';
+import { MIDDLE_DRAG_PAN_ID } from '@weasel-js/core';
 import { BUILTIN_TOOL_IDS, KIT_STANDARD_ACTION_IDS, FEATURE_ACTION_IDS, FEATURE_NAMES, FEATURE_PRESETS, namedFeatures, type FeatureName, SELECTION_MOVE_ID, SELECTION_RESIZE_ID, SELECTION_ROTATE_ID } from '@weasel-js/editing';
 
 // Names keep these tables readable; `namedFeatures` maps each to its object.

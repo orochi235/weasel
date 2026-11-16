@@ -1,4 +1,4 @@
-import { cancelGestureAction, deleteAction, contextMenuAction } from '@weasel-js/core';
+import { cancelGestureAction, contextMenuAction } from '@weasel-js/core';
 import type { FeaturePreset } from '@weasel-js/core';
 import { duplicateAction } from '../actions/edit/duplicate';
 import { escapeAction } from '../actions/edit/escape';
@@ -15,6 +15,7 @@ import { nudgeDownAction, nudgeLeftAction, nudgeRightAction, nudgeUpAction } fro
 import { insertPreset } from './insert';
 import { clipboardCopyAction, clipboardCutAction, clipboardPasteAction, clipboardPasteEventAction } from '../actions/clipboard/action';
 import { selectionPreset } from './selection';
+import { deleteAction } from '../actions/delete/delete';
 
 /** Escape, and canceling the gesture in flight. */
 export const escapePreset: FeaturePreset = { id: 'escape', label: 'Escape', actions: [escapeAction, cancelGestureAction], includes: [selectionPreset] };

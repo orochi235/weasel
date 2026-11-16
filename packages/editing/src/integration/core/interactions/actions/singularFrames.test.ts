@@ -6,14 +6,14 @@
 import { describe, expect, it, vi } from 'vitest';
 import type { ImmediateInvoker } from '@weasel-js/routing';
 import { ActionDisabledReason } from '@weasel-js/routing';
-import { createScene } from 'core/scene/scene';
-import { asNodeId, type NodeId, type RectPose, type Scene } from 'core/scene/types';
-import { childVerdict } from './admitsChild';
-import { insertParent } from '../../canvas/deps/insertParent';
-import { followerMove } from './followerMoves';
-import { moveNodes } from './moveNodes';
-import { scenePoseFrame } from './poseFrame';
-import { siteIn } from 'canvas/deps/insertSite';
+import { createScene } from '@weasel-js/core/engine';
+import { asNodeId, type NodeId, type RectPose, type Scene } from '@weasel-js/core';
+import { childVerdict } from '@weasel-js/core';
+import { insertParent } from '@weasel-js/core';
+import { followerMove } from '@weasel-js/core';
+import { moveNodes } from '@weasel-js/core';
+import { scenePoseFrame } from '@weasel-js/core/engine';
+import { siteInForTests as siteIn } from '@weasel-js/core/test-seams';
 import { groupAction, ungroupAction, booleanGroupOps } from '@weasel-js/editing';
 
 const [FLAT, A, B, G, E, C] = ['flat', 'a', 'b', 'g', 'e', 'c'].map(asNodeId);

@@ -1,8 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { ActionDisabledReason } from '@weasel-js/routing';
 import { createScene, asNodeId, type RectPose } from '@weasel-js/core/engine';
-import { deleteAction } from '@weasel-js/core';
-import { duplicateAction, clipboardCutAction } from '@weasel-js/editing';
+import { duplicateAction, clipboardCutAction, deleteAction } from '@weasel-js/editing';
 
 function pageOnly() {
   const scene = createScene<object, 'main', RectPose>({ systemLayers: [{ id: 'main' }] });

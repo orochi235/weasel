@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
-import { describePresets, isAtom } from './describePresets';
-import { presetToolIds, type FeaturePreset } from './features';
+import { describePresets, isAtom } from '@weasel-js/core';
+import type { FeaturePreset } from '@weasel-js/core';
+import { presetToolIdsForTests as presetToolIds } from '@weasel-js/core/test-seams';
 import { FEATURE_PRESETS } from '@weasel-js/editing';
 
 const core = describePresets({ '@weasel-js/core': Object.values(FEATURE_PRESETS) });

@@ -3,7 +3,7 @@ import { useMemo } from 'react';
 import { useLatest } from '@weasel-js/react';
 import {
   createEnterGroupAction, createLeaveGroupAction, type EnterGroupOptions, type LeaveGroupOptions,
-} from '@weasel-js/core';
+} from '../../actions/group/enterGroup';
 import type { Contribution } from '@weasel-js/core';
 import { onBody, onEmptyCanvas } from './selectionContributions';
 import { BETWEEN_GESTURES } from '@weasel-js/routing';

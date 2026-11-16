@@ -5,11 +5,11 @@ import {
   SHAPE_KINDS,
   shapeKindInfo,
   shapeKindsWhere,
-} from './shapeKinds';
-import type { ShapeKindsWhere } from './shapeKinds';
+} from '@weasel-js/core/engine';
+import type { ShapeKindsWhere } from '@weasel-js/core/engine';
 import { BUILTIN_TOOL_IDS } from '@weasel-js/editing';
-import { defaultNodeRouting } from 'canvas/SceneCanvas/defaultNodeRouting';
-import { defaultNodeProperties } from 'canvas/SceneCanvas/defaultNodeProperties';
+import { defaultNodeRouting } from '@weasel-js/core';
+import { defaultNodeProperties } from '@weasel-js/core';
 
 /** A tenth kind, added the way a real one would be. */
 const EXTENDED = {

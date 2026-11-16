@@ -5,16 +5,7 @@
  * from their root's data, one edit per root, and the rest of the selection as
  * core's delete would.
  */
-import {
-  commitDeleteToScene,
-  createDeleteAction,
-  defineAction,
-  type Action,
-  type ActionDeps,
-  type NodeId,
-  type SelectionApi,
-  type AnyScene,
-} from '@weasel-js/core';
+import { defineAction, type Action, type ActionDeps, type NodeId, type SelectionApi, type AnyScene } from '@weasel-js/core';
 import { removeBox, removeParticipant } from './author';
 import { removeMarks, removeStep } from './authorSteps';
 import { sequenceCommitOf, type SequenceEditOptions } from './commit';
@@ -22,6 +13,7 @@ import { sequenceScratchOf, type SequenceScratch } from './layer';
 import { sequencePartOf, sequenceRootOf } from './trait';
 import type { SeqMarkRef, SequenceData } from './types';
 import type {} from '../actionParamSchema';
+import { commitDeleteToScene, createDeleteAction } from '@weasel-js/editing';
 
 /** The action a click on a sequence part runs. */
 export const SELECT_SEQUENCE_PART_ACTION_ID = 'diagram.sequence.select';

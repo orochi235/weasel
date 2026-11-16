@@ -1,6 +1,3 @@
-export {
-  commitDeleteToScene, createDeleteAction, deleteAction, hiddenSourceDeleteOps, type DeleteActionOptions,
-} from './delete';
 export { undoAction, redoAction } from './undoRedo';
 export { createToolOffhandAction, buildToolOffhandBindings, TOOL_OFFHAND_ID, type ToolOffhandBindingSpec } from '@weasel-js/routing';
 export {

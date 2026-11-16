@@ -3,12 +3,12 @@ import { registerFontOutlines, type OutlineFace } from '@weasel-js/font';
 import { loadTextOutlines } from '@weasel-js/text';
 import { rectPath } from '@weasel-js/geom';
 import type { ImmediateInvoker, InvocationCtx } from '@weasel-js/routing';
-import { createScene, deleteAction, type NodeId, pathEffectOf, type RectPose, type Scene, withPathEffectsRegistry } from '@weasel-js/core';
+import { createScene, type NodeId, pathEffectOf, type RectPose, type Scene, withPathEffectsRegistry } from '@weasel-js/core';
 import { bendAlongAction, editPathEffectAction, expandPathEffectAction, repeatAlongAction, textAlongAction } from './actions';
 import { releasePathEffectAction, setEffectPathAction } from './retarget';
 import { pathEffectSettingsParams, readPathEffectSettings } from './settingsForm';
 import { withTextPainter } from '@weasel-js/text-tools/testing/textPainter';
-import { clipboardCutAction } from '@weasel-js/editing';
+import { clipboardCutAction, deleteAction } from '@weasel-js/editing';
 
 withTextPainter();
 

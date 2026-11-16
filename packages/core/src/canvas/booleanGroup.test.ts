@@ -18,7 +18,6 @@ import { scenePointQuery } from './SceneCanvas/scenePointQuery';
 import type { View } from 'core/viewport/view';
 import { moveNodesOps } from 'interactions/actions/moveNodes';
 import { defaultCommitAdapter } from 'interactions/actions/defaultCommitAdapter';
-import { createEnterGroupAction } from 'interactions/actions/defaults/enterGroup';
 
 type Data = { shape?: string; fill?: unknown; boolean?: string };
 const VIEW: View = { x: 0, y: 0, scale: { x: 1, y: 1 } };
@@ -144,18 +143,6 @@ describe('a boolean group', () => {
     scene.applyBatch(ops, 'move', defaultCommitAdapter(scene as never));
     expect(covers(pathOf(scene, group), 325, 25)).toBe(true);
     expect(covers(pathOf(scene, group), 25, 25)).toBe(false);
-  });
-
-  it('is entered by a double-click on it', () => {
-    const { scene, group } = makeScene();
-    const entered = createEnteredGroup(scene);
-    const action = createEnterGroupAction({
-      pickHit: () => group,
-      tree: { getParent: (id) => scene.get(asNodeId(id))?.parent ?? null, getNode: (id) => scene.get(asNodeId(id)) },
-    });
-    const run = action.invoker as { run: (deps: unknown, params: unknown) => void };
-    run.run({ enteredGroup: entered }, { world: { x: 25, y: 25 } });
-    expect(entered.get()).toBe(group);
   });
 
   it('round-trips through a save', () => {

@@ -3,12 +3,12 @@
  */
 import { describe, it, expect, vi } from 'vitest';
 import { buildDeleteOps, createDeleteAction, deleteAction } from './delete';
-import { createScene } from 'core/scene/scene';
-import type { GroupNode, RectPose } from 'core/scene/types';
+import { createScene } from '@weasel-js/core/engine';
+import type { GroupNode, RectPose } from '@weasel-js/core/engine';
 import type { ImmediateInvoker } from '@weasel-js/routing';
-import type { NodeId } from 'core/scene/types';
-import { asNodeId } from 'core/scene/types';
-import type { Op } from 'core/ops/types';
+import type { NodeId } from '@weasel-js/core';
+import { asNodeId } from '@weasel-js/core/engine';
+import type { Op } from '@weasel-js/core';
 import { PATH_M, type PolygonPath } from '@weasel-js/geom';
 
 // ---------------------------------------------------------------------------

@@ -3,7 +3,6 @@
 // `defineDragInsertTool` was removed earlier for the same reason: every
 // insert tool now declares its gesture via `Tool.bindings` and delegates
 // to the dispatcher's `insertAction`.
-export type { EnterGroupOptions, LeaveGroupOptions } from '../../interactions/actions/defaults/enterGroup';
 export { pressTarget, type PressTargetTree } from './pressTarget';
 // `useResizeTool` and the legacy `useResize` hook are deleted. Resize is
 // dispatcher-driven via `resizeAction` + the `resizePolicy` dep (constraints,

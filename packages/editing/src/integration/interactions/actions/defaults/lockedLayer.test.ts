@@ -4,9 +4,9 @@
  */
 import { describe, expect, it } from 'vitest';
 import { createScene } from '@weasel-js/core/engine';
-import { asNodeId, type NodeId, deleteAction } from '@weasel-js/core';
+import { asNodeId, type NodeId } from '@weasel-js/core';
 import { ActionDisabledReason, type Action } from '@weasel-js/routing';
-import { reorderForwardAction, nudgeRightAction, groupAction, ungroupAction } from '@weasel-js/editing';
+import { reorderForwardAction, nudgeRightAction, groupAction, ungroupAction, deleteAction } from '@weasel-js/editing';
 
 type Layer = 'base' | 'art';
 const POSE = { x: 0, y: 0, width: 10, height: 10 };

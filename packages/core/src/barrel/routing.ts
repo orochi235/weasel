@@ -77,9 +77,6 @@ export {
   containerScrollAction, scrollRange, scrollableAt, type ScrollRange, type ScrollableContainer,
 } from '../interactions/actions/defaults/containerScroll';
 export { NUDGE_LABEL, nudgeDelta, nudgeSpec, type NudgeDirection } from '../interactions/actions/defaults/nudgeSteps';
-export {
-  commitDeleteToScene, createDeleteAction, deleteAction, hiddenSourceDeleteOps, type DeleteActionOptions,
-} from '../interactions/actions/defaults/delete';
 export { reachesLocked } from '../interactions/actions/defaults/lockedReach';
 export {
   pinchZoomAction,

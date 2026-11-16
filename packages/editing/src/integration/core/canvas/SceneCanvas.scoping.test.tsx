@@ -1,9 +1,9 @@
 import { describe, it, expect, vi, beforeAll } from 'vitest';
 import { render, act } from '@testing-library/react';
-import { buildSceneLayer } from './buildSceneLayer';
-import { SceneCanvas } from './SceneCanvas';
-import { createScene } from 'core/scene/scene';
-import { sceneToAdapter } from './sceneAdapter';
+import { buildSceneLayerForTests as buildSceneLayer } from '@weasel-js/core/test-seams';
+import { SceneCanvas } from '@weasel-js/core';
+import { createScene } from '@weasel-js/core/engine';
+import { sceneToAdapter } from '@weasel-js/core';
 import type { DrawCommand } from '@weasel-js/renderer';
 import { drawPreset, pickPreset } from '@weasel-js/editing';
 

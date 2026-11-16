@@ -1,13 +1,12 @@
 import { describe, expect, it } from 'vitest';
 import { actionItems } from '@weasel-js/routing';
-import { undoAction, redoAction } from './undoRedo';
-import { deleteAction } from './delete';
-import { icons } from '../../../icons.table';
+import { undoAction, redoAction } from '@weasel-js/core';
+import { iconsForTests as icons } from '@weasel-js/core/test-seams';
 import { icons as editingIcons } from '@weasel-js/editing/icons';
 
 const TABLES = { [icons.namespace]: icons, [editingIcons.namespace]: editingIcons };
 import { iconParts } from '@weasel-js/icons';
-import { reorderForwardAction, reorderBackwardAction, flipAction, clipboardCopyAction, clipboardCutAction, clipboardPasteAction, duplicateAction, transformAgainAction, groupAction, ungroupAction } from '@weasel-js/editing';
+import { reorderForwardAction, reorderBackwardAction, flipAction, clipboardCopyAction, clipboardCutAction, clipboardPasteAction, duplicateAction, transformAgainAction, groupAction, ungroupAction, deleteAction } from '@weasel-js/editing';
 
 describe('default edit-action icons', () => {
   const items = [

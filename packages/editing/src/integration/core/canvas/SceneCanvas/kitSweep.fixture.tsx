@@ -1,3 +1,4 @@
+/// <reference types="vite/client" />
 /**
  * Every binding the kit ships, gathered in one place: every action, preset and
  * contribution the packages export as a value, and the tools and contributions

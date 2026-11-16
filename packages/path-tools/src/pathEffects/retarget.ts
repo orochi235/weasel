@@ -4,12 +4,11 @@
  * it where the effect hides its sources, and undoes as one step.
  */
 import { type Action, type ActionDeps, ActionDisabledReason, type ImmediateInvoker } from '@weasel-js/routing';
-import {
-  commitOps, createSetDependsOnOp, deleteNode, hiddenSourceDeleteOps, hiddenSourcesTakenWith, type NodeId, type Op, pathEffectOf, type AnyNode, sourcesOf, type AnyScene,
-} from '@weasel-js/core';
+import { commitOps, createSetDependsOnOp, deleteNode, hiddenSourcesTakenWith, type NodeId, type Op, pathEffectOf, type AnyNode, sourcesOf, type AnyScene } from '@weasel-js/core';
 import { isTextData } from '@weasel-js/text';
 import { PATH_EFFECTS_GROUP, selectedEffects } from './actions';
 import { releasedOps, takenOps } from './hiding';
+import { hiddenSourceDeleteOps } from '@weasel-js/editing';
 
 /** Whether `effect` reading `target` would loop: `target` is already one of
  *  its sources, or derives from it. */

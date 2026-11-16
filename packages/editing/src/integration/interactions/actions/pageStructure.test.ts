@@ -2,8 +2,8 @@
 import { describe, expect, it } from 'vitest';
 import { asNodeId, RECT_POSE_DESCRIPTOR, scenePoseFrame, pressTarget } from '@weasel-js/core/engine';
 import { ON_PAGEForTests as R, PAGE_AForTests as A, PAGE_BForTests as B, pagedSceneForTests as pagedScene } from '@weasel-js/core/test-seams';
-import { sceneToAdapter, deleteAction, hitTestArea } from '@weasel-js/core';
-import { duplicateSelection, flipAction, selectAllAction, clipboardCutAction, groupAction, ungroupAction, makeBooleanGroupAction } from '@weasel-js/editing';
+import { sceneToAdapter, hitTestArea } from '@weasel-js/core';
+import { duplicateSelection, flipAction, selectAllAction, clipboardCutAction, groupAction, ungroupAction, makeBooleanGroupAction, deleteAction } from '@weasel-js/editing';
 import { pickContainer } from '../../../actions/move/layout/container';
 import type { RectPose } from '@weasel-js/core/engine';
 import { areaSelectAction } from '../../../actions/select/areaSelect';

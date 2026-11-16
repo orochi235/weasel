@@ -2111,8 +2111,8 @@ Calls the lanes made without a ruling:
 
 ## Audit round twenty-two (2026-11-13): bundled default bindings
 
-- Two collision tests hold the bindings: core's `kitBindingCollisions.test.tsx` loads every binding the kit ships at
-  once (the sweep in `kitSweep.fixture.tsx`, tool keys as one `tool.activate`) and runs the dev route-conflict check
+- Two collision tests hold the bindings: editing's `kitBindingCollisions.test.tsx` loads every binding the kit ships at
+  once (the sweep in `packages/editing/src/integration/core/canvas/SceneCanvas/kitSweep.fixture.tsx`, tool keys as one `tool.activate`) and runs the dev route-conflict check
   over it, with kernel3d as a scope of its own; draw's `bindingCollisions.test.tsx` mounts draw's features, entries,
   tools, tunings and commands on one canvas. Neither found a collision once `reportRouteConflicts` stopped counting
   `hover` bindings, which all run (2026-11-13).

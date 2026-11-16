@@ -11,8 +11,8 @@ import { createRoot, type Root } from 'react-dom/client';
 import { flushSync } from 'react-dom';
 import { SceneCanvas, createScene } from '@weasel-js/core';
 import { buildWeaselClipboardText } from '@weasel-js/core/clipboard';
-import type { FeaturePreset } from './SceneCanvas/features';
-import type { Scene } from '../core/scene/types';
+import type { FeaturePreset } from '@weasel-js/core';
+import type { Scene } from '@weasel-js/core/engine';
 import { giveKeys } from '@weasel-js/react/testing/giveKeys';
 import { editPreset } from '@weasel-js/editing';
 

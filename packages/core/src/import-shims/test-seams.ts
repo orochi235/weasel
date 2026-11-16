@@ -73,9 +73,22 @@ export { useSelectionOverlayLayer as useSelectionOverlayLayerForTests } from '..
 export { buildAffordanceAt as buildAffordanceAtForTests, chromeAffordances as chromeAffordancesForTests } from '../canvas/affordanceAt';
 export { createSlopsDebugLayer as createSlopsDebugLayerForTests } from '../canvas/slopsDebugLayer';
 export { useViewHelpers as useViewHelpersForTests } from '../canvas/useViewHelpers';
+export type { UseViewHelpersOptions as UseViewHelpersOptionsForTests } from '../canvas/useViewHelpers';
 export { ViewInputsProvider as ViewInputsProviderForTests } from '../canvas/viewInputs';
 export { ViewRegistryProvider as ViewRegistryProviderForTests, useOptionalViewRegistry as useOptionalViewRegistryForTests } from '../canvas/viewRegistry';
 export type { ViewRegistry as ViewRegistryForTests } from '../canvas/viewRegistry';
 export { targetSizesPx as targetSizesPxForTests } from '../core/device/targets';
+export type { TargetSizesPx as TargetSizesPxForTests } from '../core/device/targets';
 
 export { getContentHandlers as getContentHandlersForTests } from '../domains/ingestion/contentHandlers';
+
+export { dispatcherInsertBounds as dispatcherInsertBoundsForTests } from '../canvas/SceneCanvas/dispatcherGestureBounds';
+export { presetActions as presetActionsForTests, presetAmbient as presetAmbientForTests, presetBuiltinTools as presetBuiltinToolsForTests, presetChromeRules as presetChromeRulesForTests, presetToolIds as presetToolIdsForTests, resolveFeatures as resolveFeaturesForTests } from '../canvas/SceneCanvas/features';
+export { layersOverPresets as layersOverPresetsForTests } from '../canvas/SceneCanvas/mergeLayers';
+export { useDispatcherOverlayLayer as useDispatcherOverlayLayerForTests } from '../canvas/SceneCanvas/useDispatcherOverlayLayer';
+export { buildSceneLayer as buildSceneLayerForTests } from '../canvas/buildSceneLayer';
+export { siteIn as siteInForTests } from '../canvas/deps/insertSite';
+export { useOptionalViewInputs as useOptionalViewInputsForTests } from '../canvas/viewInputs';
+export type { SurfaceViewInputs as SurfaceViewInputsForTests } from '../canvas/viewInputs';
+export { legalSelection as legalSelectionForTests, settleSelection as settleSelectionForTests } from '../core/selection/legalSelection';
+export { icons as iconsForTests } from '../icons.table';

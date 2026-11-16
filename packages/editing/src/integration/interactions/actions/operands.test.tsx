@@ -8,8 +8,8 @@ import { renderWithKeys as render } from '@weasel-js/react/testing/giveKeys';
 import { useActionsRegistry, useDepSource } from '@weasel-js/routing/react';
 import type { ActionsRegistry, ImmediateInvoker } from '@weasel-js/routing';
 import { createScene, operandList, type OperandsDep } from '@weasel-js/core/engine';
-import { asNodeId, type NodeId, SceneCanvas, deleteAction } from '@weasel-js/core';
-import { drawPreset, nudgeRightAction } from '@weasel-js/editing';
+import { asNodeId, type NodeId, SceneCanvas } from '@weasel-js/core';
+import { drawPreset, nudgeRightAction, deleteAction } from '@weasel-js/editing';
 
 beforeAll(() => {
   const proto = HTMLCanvasElement.prototype as unknown as Record<string, unknown>;

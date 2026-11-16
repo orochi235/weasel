@@ -57,6 +57,12 @@ export {
 export {
   createGroupEntryContribution, useGroupEntryContribution, GROUP_ENTRY_ID, GROUP_LEAVE_PRESS_BINDING,
 } from './tools/select/groupEntry';
+export {
+  commitDeleteToScene, createDeleteAction, deleteAction, hiddenSourceDeleteOps, type DeleteActionOptions,
+} from './actions/delete/delete';
+export {
+  createEnterGroupAction, createLeaveGroupAction, type EnterGroupOptions, type LeaveGroupOptions,
+} from './actions/group/enterGroup';
 export { drawPreset, pickPreset, transformPreset } from './presets/composites';
 export { ingestPreset } from './presets/ingest';
 export { KIT_CONTENT_HANDLERS } from './ingest/kitHandlers';

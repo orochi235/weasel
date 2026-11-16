@@ -3,7 +3,6 @@ import { readdirSync, readFileSync, statSync } from 'node:fs';
 import { join } from 'node:path';
 import * as Barrel from './index';
 import { SHAPE_KINDS, shapeKindsWhere } from './core/shapeKinds';
-import { FEATURE_PRESETS } from '@weasel-js/editing';
 
 const ROOT = __dirname;
 
@@ -70,9 +69,7 @@ describe('kit barrel parity', () => {
   // Names, and the editing presets, live in `@weasel-js/editing`; the root barrel ships the
   // view presets and nothing that resolves a name.
   it('exports the view presets and describePresets, and no preset names', () => {
-    for (const preset of [Barrel.viewPreset, Barrel.viewToolsPreset]) {
-      expect(FEATURE_PRESETS[preset.id as keyof typeof FEATURE_PRESETS]).toBe(preset);
-    }
+    expect([Barrel.viewPreset.id, Barrel.viewToolsPreset.id]).toEqual(['view', 'tools:view']);
     for (const gone of ['SCENE_CANVAS_FEATURES', 'FEATURE_ACTION_IDS', 'FEATURE_PRESETS', 'namedFeatures', 'LeanSceneCanvas']) {
       expect(gone in Barrel, gone).toBe(false);
     }

@@ -6,17 +6,17 @@
 import { describe, it, expect, vi, beforeAll } from 'vitest';
 import { render, act } from '@testing-library/react';
 import { createRef, useEffect, type ReactNode, type Ref } from 'react';
-import { SceneCanvas } from './SceneCanvas';
-import { CanvasView } from './CanvasView';
-import { createScene } from 'core/scene/scene';
-import type { NodeId } from 'core/scene/types';
-import type { View } from 'core/viewport/view';
+import { SceneCanvas } from '@weasel-js/core';
+import { CanvasView } from '@weasel-js/core';
+import { createScene } from '@weasel-js/core/engine';
+import type { NodeId } from '@weasel-js/core';
+import type { View } from '@weasel-js/core';
 import type { DrawCommand, GroupDrawCommand, PathDrawCommand } from '@weasel-js/renderer';
 import type { PolygonPath } from '@weasel-js/geom';
-import type { CanvasViewCamera, SceneCanvasApi } from './canvasExtension';
-import type { AimHeldViewProps, CameraHeldViewProps } from './canvasViewProps';
-import { ViewMarker } from './ViewMarker';
-import { useOptionalViewRegistry, type ViewRegistry } from './viewRegistry';
+import type { CanvasViewCamera, SceneCanvasApi } from '@weasel-js/core';
+import type { AimHeldViewProps, CameraHeldViewProps } from '@weasel-js/core';
+import { ViewMarker } from '@weasel-js/core';
+import { useOptionalViewRegistryForTests as useOptionalViewRegistry, type ViewRegistryForTests as ViewRegistry } from '@weasel-js/core/test-seams';
 import { drawPreset } from '@weasel-js/editing';
 
 type D = { kind: 'rect' };

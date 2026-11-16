@@ -13,7 +13,7 @@ import type { Action } from '@weasel-js/routing';
 import { sweepKit } from './kitSweep.fixture';
 import { ACTION_LITERALS } from './kitActionParams.allow';
 
-const ROOT = join(__dirname, '../../../../..');
+const ROOT = join(__dirname, '../../../../../../..');
 
 /** Params a function form is asked with, to reach each form it can answer: every kind of shape an insert makes,
  *  and a run naming every setting. */

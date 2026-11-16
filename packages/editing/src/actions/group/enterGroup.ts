@@ -1,10 +1,9 @@
 import { rectContainsPoint, type Rect } from '@weasel-js/geom';
 import type { Action, ActionDeps, WorldPoint } from '@weasel-js/routing';
 import { ActionDisabledReason, defineAction } from '@weasel-js/routing';
-import { isEnterable, type EnteredGroupApi } from 'canvas/deps/enteredGroup';
-import type { NodeId } from 'core/scene/types';
-import { pressTarget, type PressTargetTree } from '../../../tools/builtin/pressTarget';
-import type {} from '../actionParamSchema';
+import { isEnterable, type NodeId } from '@weasel-js/core';
+import { pressTarget, type EnteredGroupApi, type PressTargetTree } from '@weasel-js/core/engine';
+import type {} from '@weasel-js/core';
 
 /** What `group.enter` reads: the node under a point and the tree above it. */
 export interface EnterGroupOptions {

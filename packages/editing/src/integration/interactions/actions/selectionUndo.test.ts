@@ -10,8 +10,7 @@ import type { ActionDeps, ImmediateInvoker, InvocationCtx, OngoingInvoker } from
 import { createHistory } from '@weasel-js/history';
 import type { Op, NodeId } from '@weasel-js/core';
 import { createScene, IDENTITY_POSE_COMPOSITION, defaultCommitAdapter, createInsertOp } from '@weasel-js/core/engine';
-import { duplicateSelection, groupAction } from '@weasel-js/editing';
-import { deleteAction } from '@weasel-js/core';
+import { duplicateSelection, groupAction, deleteAction } from '@weasel-js/editing';
 import { cloneAction } from '../../../actions/clone/action';
 import { createElement } from 'react';
 import { render } from '@testing-library/react';

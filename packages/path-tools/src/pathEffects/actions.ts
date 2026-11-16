@@ -7,9 +7,7 @@ import {
   type Action, type ActionDeps, ActionDisabledReason, type ActionParamsOf, BETWEEN_GESTURES, defineAction, type ImmediateInvoker,
 } from '@weasel-js/routing';
 import { worldEditToStorage } from '@weasel-js/geom';
-import {
-  commitOps, createSetDataOp, deleteNode, derivedDepOf, documentOf, hiddenSourceDeleteOps, insertAt, type NodeId, type Op, type PathEffect, pathEffectNode, pathEffectOf, pathEffectParts, resolvePartPaint, registeredPathEffects, type AnyNode, slotOf, pathOperationTags, type AnyScene,
-} from '@weasel-js/core';
+import { commitOps, createSetDataOp, deleteNode, derivedDepOf, documentOf, insertAt, type NodeId, type Op, type PathEffect, pathEffectNode, pathEffectOf, pathEffectParts, resolvePartPaint, registeredPathEffects, type AnyNode, slotOf, pathOperationTags, type AnyScene } from '@weasel-js/core';
 import { isTextData } from '@weasel-js/text';
 import { newEffect, withEffectSettings } from './params';
 import { hiddenOnItsOwn, hiddenOps } from './hiding';
@@ -18,6 +16,7 @@ import { pathEffectSettingsForm } from './settingsForm';
 import { PATH_EFFECT_PARAMS } from './effectForms';
 import type {} from '../actionParamSchema';
 import { getOwn } from '@weasel-js/registry';
+import { hiddenSourceDeleteOps } from '@weasel-js/editing';
 
 /** The `group` every path-effect action is in, for an `<ActionBar>`. */
 export const PATH_EFFECTS_GROUP = 'pathEffects';

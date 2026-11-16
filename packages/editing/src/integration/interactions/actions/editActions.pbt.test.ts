@@ -11,9 +11,9 @@ import type { Action, ImmediateInvoker } from '@weasel-js/routing';
 import type { NodeId, Bounds } from '@weasel-js/core';
 import type { RectPose } from '@weasel-js/core/engine';
 import { createInsertOp, defaultCommitAdapter, scenePoseFrame, drawnBoxes, withoutPageStructure } from '@weasel-js/core/engine';
-import { createReparentOp, createSetHiddenOp, createSetLockedOp, deleteAction, uncarried } from '@weasel-js/core';
+import { createReparentOp, createSetHiddenOp, createSetLockedOp, uncarried } from '@weasel-js/core';
 import { depsOfForTests as depsOf, makeSceneForTests as makeScene, rectPoseForTests as rectPose, runsForTests as runs, tallyForTests as tally, timeoutForForTests as timeoutFor, type TestSceneForTests as TestScene } from '@weasel-js/core/test-seams';
-import { alignLeftAction, alignRightAction, alignTopAction, alignBottomAction, alignCenterXAction, alignCenterYAction, distributeHorizontalAction, distributeVerticalAction, reorderForwardAction, reorderBackwardAction, flipAction, nudgeUpAction, nudgeDownAction, nudgeLeftAction, nudgeRightAction, duplicateAction, groupAction, ungroupAction } from '@weasel-js/editing';
+import { alignLeftAction, alignRightAction, alignTopAction, alignBottomAction, alignCenterXAction, alignCenterYAction, distributeHorizontalAction, distributeVerticalAction, reorderForwardAction, reorderBackwardAction, flipAction, nudgeUpAction, nudgeDownAction, nudgeLeftAction, nudgeRightAction, duplicateAction, groupAction, ungroupAction, deleteAction } from '@weasel-js/editing';
 
 interface Real { scene: TestScene }
 interface Model { states: unknown[]; cursor: number }

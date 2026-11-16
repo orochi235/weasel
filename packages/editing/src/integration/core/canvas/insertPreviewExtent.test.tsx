@@ -8,13 +8,13 @@
  */
 import { describe, it, expect } from 'vitest';
 import { renderHook } from '@testing-library/react';
-import type { View } from 'core/viewport/view';
+import type { View } from '@weasel-js/core';
 import type { DrawCommand, PathDrawCommand } from '@weasel-js/renderer';
 import type { Dispatcher } from '@weasel-js/routing';
 import type { OngoingHandle, OngoingOverlay } from '@weasel-js/routing';
-import { useDispatcherOverlayLayer } from './SceneCanvas/useDispatcherOverlayLayer';
-import { createGestureSource, dispatcherInsertBounds } from './SceneCanvas/dispatcherGestureBounds';
-import { insertPreviewExtent } from './insertPreviewExtent';
+import { useDispatcherOverlayLayerForTests as useDispatcherOverlayLayer } from '@weasel-js/core/test-seams';
+import { createGestureSourceForTests as createGestureSource, dispatcherInsertBoundsForTests as dispatcherInsertBounds } from '@weasel-js/core/test-seams';
+import { insertPreviewExtent } from '@weasel-js/core/engine';
 
 const VIEW: View = { x: 0, y: 0, scale: { x: 1, y: 1 } };
 const DIMS = { width: 800, height: 600, dpr: 1 };

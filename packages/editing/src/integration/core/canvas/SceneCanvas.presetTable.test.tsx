@@ -10,11 +10,11 @@ import { useActionsRegistry, useDepRegistry } from '@weasel-js/routing/react';
 import { createScene } from 'core/scene/scene';
 import type { NodeId } from 'core/scene/types';
 import type { SelectionApi } from '@weasel-js/routing';
-import type { ToolsApi } from '../tools/overlayBinding';
-import { SceneCanvas } from './SceneCanvas';
-import { presetToolIds, resolveFeatures, type FeaturePreset } from './SceneCanvas/features';
-import { BASELINE_ACTION_IDS } from './SceneCanvas/presets/baseline';
-import type { CanvasHelpers } from './useViewHelpers';
+import type { ToolsApi } from 'tools/overlayBinding';
+import { SceneCanvas } from 'canvas/SceneCanvas';
+import { presetToolIds, resolveFeatures, type FeaturePreset } from 'canvas/SceneCanvas/features';
+import { BASELINE_ACTION_IDS } from 'canvas/SceneCanvas/presets/baseline';
+import type { CanvasHelpers } from 'canvas/useViewHelpers';
 import { KIT_STANDARD_ACTION_IDS, FEATURE_NAMES, FEATURE_PRESETS } from '@weasel-js/editing';
 
 type P = { x: number; y: number; width: number; height: number; rotation: number };
@@ -23,8 +23,8 @@ const mounted: { ambient: string[] } = { ambient: [] };
 
 // The preset entries reach the dispatcher as the dispatcher hook's `contributions`
 // input and are visible nowhere else.
-vi.mock('./SceneCanvas/useSceneGestureDispatcher', async (importOriginal) => {
-  const real = await importOriginal<typeof import('./SceneCanvas/useSceneGestureDispatcher')>();
+vi.mock('canvas/SceneCanvas/useSceneGestureDispatcher', async (importOriginal) => {
+  const real = await importOriginal<typeof import('canvas/SceneCanvas/useSceneGestureDispatcher')>();
   return {
     ...real,
     useSceneGestureDispatcher: (props: Parameters<typeof real.useSceneGestureDispatcher>[0]) => {
