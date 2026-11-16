@@ -16,13 +16,13 @@ import { RegisterActions } from '@weasel-js/routing/testing/registerAction';
 
 /** Every dispatcher mounted, by its options: how the test reaches the registry the bar's own dispatcher reads. */
 const mounted = vi.hoisted(() => [] as UseGestureDispatcherOptions[]);
-vi.mock('@weasel-js/core', async (importOriginal) => {
-  const core = await importOriginal<typeof import('@weasel-js/core')>();
+vi.mock('@weasel-js/routing/react', async (importOriginal) => {
+  const routing = await importOriginal<typeof import('@weasel-js/routing/react')>();
   return {
-    ...core,
+    ...routing,
     useGestureDispatcher: (opts: UseGestureDispatcherOptions) => {
       mounted.push(opts);
-      core.useGestureDispatcher(opts);
+      routing.useGestureDispatcher(opts);
     },
   };
 });

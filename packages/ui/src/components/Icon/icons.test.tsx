@@ -2,6 +2,7 @@ import { render } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import { icons as coreIcons } from '@weasel-js/core/icons';
 import { icons as shapeIcons } from '@weasel-js/icons/shapes';
+import { icons as paintKindIcons } from '@weasel-js/paint-kinds/icons';
 import { Icon } from './Icon';
 import { isFillable } from './Icon';
 import { ICON_GROUPS, MARK_GROUP, icon, type UiIconName } from '../../icons.gen';
@@ -189,8 +190,13 @@ describe('the check glyph', () => {
 
 // Drawn in ui's definitions once, now core's to name on its actions, tools and leaves.
 describe('core-owned glyphs', () => {
-  it.each(['undo', 'redo', 'delete', 'bold', 'capButt', 'paintSolid', 'textAlignLeft'])('%s is core\'s, not ui\'s', (name) => {
+  it.each(['undo', 'redo', 'delete', 'bold', 'capButt', 'textAlignLeft'])('%s is core\'s, not ui\'s', (name) => {
     expect(coreIcons.icons[name]).toBeDefined();
     expect(uiIcons.icons[name]).toBeUndefined();
+  });
+
+  it("draws the solid paint glyph in paint-kinds, not ui", () => {
+    expect(paintKindIcons.icons.solid).toBeDefined();
+    expect(uiIcons.icons.paintSolid).toBeUndefined();
   });
 });
