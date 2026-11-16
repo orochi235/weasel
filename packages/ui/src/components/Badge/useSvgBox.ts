@@ -11,13 +11,17 @@ export function useSvgBox(ref: RefObject<SVGElement | null>, when: unknown = tru
     const el = when ? ref.current : null;
     const svg = el?.ownerSVGElement ?? el;
     if (!svg) return;
-    const update = () => {
-      const r = svg.getBoundingClientRect();
-      if (r.width > 0 && r.height > 0) setBox({ w: r.width, h: r.height });
+    const set = (w: number, h: number) => {
+      if (w > 0 && h > 0) setBox((was) => (was.w === w && was.h === h ? was : { w, h }));
     };
-    update();
+    const r = svg.getBoundingClientRect();
+    set(r.width, r.height);
     if (typeof ResizeObserver === 'undefined') return;
-    const ro = new ResizeObserver(update);
+    // The observer's size is the layout's own, where a bounding rect is scaled by any transform.
+    const ro = new ResizeObserver(([entry]) => {
+      const size = entry?.borderBoxSize?.[0];
+      if (size) set(size.inlineSize, size.blockSize);
+    });
     ro.observe(svg);
     return () => ro.disconnect();
   }, [ref, when]);
