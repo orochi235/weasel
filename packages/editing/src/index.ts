@@ -8,6 +8,8 @@
  */
 import type {} from './actionParamSchema';
 
+export type { EditingIconName } from './icons.gen';
+
 export type { AlignParams, DistributeParams, FlipParams, ReorderParams } from './actionParamSchema';
 
 export { selectPreset } from './presets/select';
