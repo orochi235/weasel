@@ -3,6 +3,18 @@ import { createClock } from './clock';
 import { createClockRegistry } from './registry';
 
 describe('createClockRegistry', () => {
+  it('reflects each id with its clock, a second registration replacing the first', () => {
+    const registry = createClockRegistry();
+    const first = createClock({});
+    const second = createClock({});
+    registry.register('t1', first);
+    registry.register('t2', first);
+    registry.register('t1', second);
+    expect(registry.reflection.entries().map((e) => [e.key, e.value.handle, e.shadowed.length])).toEqual([
+      ['t1', second, 0], ['t2', first, 0],
+    ]);
+  });
+
   it('publishes a clock under its trial id until released', () => {
     const registry = createClockRegistry();
     const handle = createClock({});
