@@ -28,4 +28,15 @@ describe('DebugOverlayDemo', () => {
     await act(async () => { finish(); });
     expect(made.filter((u) => !revoked.includes(u))).toEqual([]);
   });
+
+  it('shows one overlay alone on Alt-click, and every overlay on a second', () => {
+    const { getByRole } = render(<DebugOverlayDemo />);
+    const bar = getByRole('group', { name: 'Debug overlays' });
+    const segments = [...bar.querySelectorAll('button')];
+    const pressed = () => segments.map((b) => b.getAttribute('aria-pressed'));
+    fireEvent.click(segments[1]!, { altKey: true });
+    expect(pressed()).toEqual(segments.map((_, i) => String(i === 1)));
+    fireEvent.click(segments[1]!, { altKey: true });
+    expect(pressed()).toEqual(segments.map(() => 'true'));
+  });
 });
