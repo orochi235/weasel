@@ -1,5 +1,5 @@
 import { savedAtOf, writeSession } from '@weasel-js/editor';
-import { createIndexedDbAdapter, localStorageAdapter, openRecords, type RecordCache } from '@weasel-js/storage';
+import { createIndexedDbAdapter, localStorageAdapter, openRecords, sameStored, type RecordCache } from '@weasel-js/storage';
 import { DOC_KEY } from './docPersistence';
 import { LS_KEY, SCENE_HISTORY_KEY } from './sceneLoading';
 import { holdSessionRecords } from './sessionRecords';
@@ -53,7 +53,7 @@ async function moveFromLocalStorage(records: RecordCache): Promise<void> {
     if (local === undefined) return;
     const kept = records.get(LS_KEY);
     if (!localIsNewer(kept, local)) {
-      if (savedAtOf(local) === undefined && !sameValue(kept, local) && !(await setAside(records, local))) return;
+      if (savedAtOf(local) === undefined && !sameStored(kept, local) && !(await setAside(records, local))) return;
       return clearLocal(found);
     }
     // The copy in IndexedDB goes whole: an undo stack or document left from it would load beside the other drawing.
@@ -96,14 +96,6 @@ function localIsNewer(inRecords: unknown, inLocal: unknown): boolean {
   if (local === undefined) return false;
   const kept = savedAtOf(inRecords);
   return kept === undefined || local > kept;
-}
-
-function sameValue(a: unknown, b: unknown): boolean {
-  try {
-    return JSON.stringify(a) === JSON.stringify(b);
-  } catch {
-    return false;
-  }
 }
 
 /** Close the session {@link openSession} opened and forget it, so the next call opens again. For tests. */
