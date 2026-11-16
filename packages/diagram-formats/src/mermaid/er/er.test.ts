@@ -73,6 +73,13 @@ describe('writing a Mermaid ER diagram', () => {
     expect(warnings).toContain('Mermaid ER relationships end in crow\'s feet; other ends were written as exactly one.');
   });
 
+  it('writes an end named for an Object.prototype member as exactly one', () => {
+    const { text } = writeErDiagram({ pages: [{
+      kind: 'graph', id: 'p', width: 100, height: 100, data: { nodes: [{ id: 'a' }, { id: 'b' }], edges: [{ from: 'a', to: 'b', colors: { markerEnd: 'constructor' } }] },
+    }] });
+    expect(text).toContain('a ||--|| b : ""');
+  });
+
   it('keeps an entity\'s name when its id is written cleaned', () => {
     const text = writeErDiagram({ pages: [{ kind: 'graph', id: 'p', width: 100, height: 100, data: { nodes: [{ id: 'my entity', lines: ['my entity'] }], edges: [] } }] }).text;
     expect(page(text).data.nodes[0]!.rows?.[0]).toEqual({ kind: 'label', text: 'my entity' });

@@ -8,7 +8,7 @@ import type { DataContainer, DataEdge, DataNode, LayoutDirection } from '@weasel
 import type { ImportResult } from '../../document';
 import { IdMint, Membership, Warnings, decodeEntities, graphPage } from '../../graphRead';
 import { DIRECTIONS } from '../class/read';
-import { pageNameOf } from '../common/lines';
+import { pageNameOf, type MermaidDirection } from '../common/lines';
 import { StyleSheet } from '../common/styles';
 import { parseStateDiagram, type StateStmt, type StateType } from './parse';
 
@@ -30,7 +30,7 @@ class StateReader {
   readonly edges: DataEdge[] = [];
   readonly notes: DataNode[] = [];
   readonly noteEdges: DataEdge[] = [];
-  direction: string | undefined;
+  direction: MermaidDirection | undefined;
 
   constructor(readonly compositeIds: ReadonlySet<string>, readonly mint: IdMint) {}
 

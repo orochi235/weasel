@@ -1,6 +1,6 @@
 /** A Mermaid class diagram's grammar, read to statements with each one's line. */
 import { lineError } from '../../lineError';
-import { statementsOf, type MermaidSource, type Statement } from '../common/lines';
+import { statementsOf, type MermaidDirection, type MermaidSource, type Statement } from '../common/lines';
 
 /** A relation's end: `<|` or `|>` inheritance, `*` composition, `o` aggregation, `<` or `>` an arrow. */
 export type ClassHead = 'triangle' | 'diamond' | 'hollow-diamond' | 'arrow';
@@ -22,7 +22,7 @@ export type ClassStmt =
   | { kind: 'namespace'; id: string; stmts: ClassStmt[]; line: number }
   | { kind: 'note'; for?: string; text: string; line: number }
   | { kind: 'cssClass'; ids: string[]; name: string; line: number }
-  | { kind: 'direction'; value: string; line: number }
+  | { kind: 'direction'; value: MermaidDirection; line: number }
   | { kind: 'style'; text: string; line: number }
   | { kind: 'other'; keyword: string; line: number };
 
@@ -37,7 +37,8 @@ const CLASS = /^class\s+([\w-]+)(?:~([^~]*)~)?(?:\s*\[\s*"([^"]*)"\s*\])?(?::::(
 const RELATION = new RegExp(
   `^${ID}(?:\\s+"([^"]*)")?\\s*(<\\||\\*|o|<)?(--|\\.\\.)(\\|>|\\*|o|>)?\\s*(?:"([^"]*)"\\s*)?${ID}(?:\\s*:\\s*(.*))?$`, 's',
 );
-const HEADS: Readonly<Record<string, ClassHead>> = { '<|': 'triangle', '|>': 'triangle', '*': 'diamond', o: 'hollow-diamond', '<': 'arrow', '>': 'arrow' };
+type HeadToken = '<|' | '|>' | '*' | 'o' | '<' | '>';
+const HEADS: Readonly<Record<HeadToken, ClassHead>> = { '<|': 'triangle', '|>': 'triangle', '*': 'diamond', o: 'hollow-diamond', '<': 'arrow', '>': 'arrow' };
 const MEMBER = /^([\w-]+)\s*:\s*(.+)$/s;
 const NOTE = /^note\s+(?:for\s+([\w-]+)\s+)?"(.*)"$/s;
 
@@ -47,8 +48,8 @@ function relationOf(m: RegExpExecArray, line: number): ClassStmt {
   const [, from, fromCard, start, body, end, toCard, to, label] = m as unknown as (string | undefined)[];
   return {
     kind: 'relation', from: from!, to: to!, dashed: body === '..', line,
-    ...(start !== undefined ? { start: HEADS[start]! } : {}),
-    ...(end !== undefined ? { end: HEADS[end]! } : {}),
+    ...(start !== undefined ? { start: HEADS[start as HeadToken] } : {}),
+    ...(end !== undefined ? { end: HEADS[end as HeadToken] } : {}),
     ...(fromCard !== undefined ? { fromCard } : {}),
     ...(toCard !== undefined ? { toCard } : {}),
     ...(label !== undefined && label.trim() !== '' ? { label: label.trim() } : {}),
@@ -89,7 +90,7 @@ class ClassParser {
     const css = /^cssClass\s+"([^"]+)"\s+([\w-]+)$/.exec(text);
     if (css !== null) return { kind: 'cssClass', ids: css[1]!.split(',').map((s) => s.trim()), name: css[2]!, line };
     const dir = /^direction\s+(TB|TD|BT|LR|RL)$/.exec(text);
-    if (dir !== null) return { kind: 'direction', value: dir[1]!, line };
+    if (dir !== null) return { kind: 'direction', value: dir[1] as MermaidDirection, line };
     if (/^(classDef|style)\s/.test(text)) return { kind: 'style', text, line };
     const member = MEMBER.exec(text);
     if (member !== null) return { kind: 'member', id: member[1]!, member: memberOf(member[2]!.trim()), line };

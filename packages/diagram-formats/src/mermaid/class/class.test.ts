@@ -102,6 +102,13 @@ describe('writing a Mermaid class diagram', () => {
     expect(warnings).toContain('Mermaid class diagrams have only UML ends; others were written as arrows.');
   });
 
+  it('writes an end named for an Object.prototype member as an arrow', () => {
+    const { text } = writeClassDiagram({ pages: [{
+      kind: 'graph', id: 'p', width: 100, height: 100, data: { nodes: [{ id: 'a' }, { id: 'b' }], edges: [{ from: 'a', to: 'b', colors: { markerEnd: 'toString' } }] },
+    }] });
+    expect(text).toContain('a --> b');
+  });
+
   it('keeps a class\'s name when its id is written cleaned', () => {
     const text = writeClassDiagram({ pages: [{ kind: 'graph', id: 'p', width: 100, height: 100, data: { nodes: [{ id: 'my class', lines: ['my class'] }], edges: [] } }] }).text;
     expect(page(text).data.nodes[0]!.rows).toContainEqual({ kind: 'label', text: 'my class' });

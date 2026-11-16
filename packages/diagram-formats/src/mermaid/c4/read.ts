@@ -5,6 +5,7 @@
  */
 import type { MarkerRef } from '@weasel-js/core';
 import type { DataContainer, DataEdge, DataNode, EdgeStyle, NodeStyle } from '@weasel-js/diagram';
+import { getOwn } from '@weasel-js/registry';
 import type { ImportResult } from '../../document';
 import { Warnings, decodeEntities, graphPage } from '../../graphRead';
 import { lineError } from '../../lineError';
@@ -20,7 +21,8 @@ export const BOUNDARY_TYPES: Readonly<Record<string, string | null>> = {
 };
 
 /** Each relationship macro's ports, from end then to end, by the way it says the target lies. */
-const REL_PORTS: Readonly<Record<string, readonly [string, string] | undefined>> = {
+type RelWay = 'U' | 'Up' | 'D' | 'Down' | 'L' | 'Left' | 'R' | 'Right' | 'Back';
+const REL_PORTS: Readonly<Partial<Record<RelWay, readonly [string, string]>>> = {
   U: ['n', 's'], Up: ['n', 's'], D: ['s', 'n'], Down: ['s', 'n'], L: ['w', 'e'], Left: ['w', 'e'], R: ['e', 'w'], Right: ['e', 'w'],
 };
 const REL = /^(Rel|BiRel|RelIndex)(?:_(U|Up|D|Down|L|Left|R|Right|Back))?$/;
@@ -75,7 +77,7 @@ class C4Reader {
   boundary(s: Extract<C4Stmt, { kind: 'call' }>, members: string[]): void {
     const [alias, title, type] = s.args.positional;
     if (alias === undefined) throw lineError('Mermaid', s.line, `${s.macro} needs an alias`);
-    const fixed = BOUNDARY_TYPES[s.macro];
+    const fixed = getOwn(BOUNDARY_TYPES, s.macro);
     if (s.macro === 'Node_L' || s.macro === 'Node_R') this.warnings.add('Mermaid C4 deployment node sides were dropped.');
     this.extras(s.args, fixed !== null ? 2 : 3);
     const kindText = fixed ?? text(type);
@@ -89,7 +91,7 @@ class C4Reader {
   }
 
   rel(s: Extract<C4Stmt, { kind: 'call' }>): void {
-    const [, macro, way] = REL.exec(s.macro)! as unknown as [string, string, string | undefined];
+    const [, macro, way] = REL.exec(s.macro)! as unknown as [string, string, RelWay | undefined];
     const args = macro === 'RelIndex' ? s.args.positional.slice(1) : s.args.positional;
     if (macro === 'RelIndex') this.warnings.add('Mermaid C4 relationship indexes were dropped.');
     const [from, to, label, tech] = args;

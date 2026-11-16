@@ -1,5 +1,6 @@
 /** One graph page as a Mermaid block diagram: its grid layout's columns, spans, and spaces, and containers as groups. */
 import type { DataEdge, DataNode, GridOptions } from '@weasel-js/diagram';
+import { getOwn } from '@weasel-js/registry';
 import type { DiagramDocument, ExportResult, WriteOptions } from '../../document';
 import { edgeStyleIn, graphOut, nodeLines, type Cluster, type GraphOut } from '../../graphWrite';
 import { titleLines } from '../common/lines';
@@ -39,7 +40,7 @@ class BlockWriter {
   }
 
   span(id: string): string {
-    const n = this.grid.spans?.[id];
+    const n = (this.grid.spans && getOwn(this.grid.spans, id));
     return n !== undefined && n > 1 ? `:${n}` : '';
   }
 
@@ -48,7 +49,7 @@ class BlockWriter {
     items.sort((a, b) => this.first(a) - this.first(b));
     for (const item of items) {
       const id = 'node' in item ? item.node.id : item.cluster.id;
-      const skip = this.grid.skips?.[id] ?? 0;
+      const skip = (this.grid.skips && getOwn(this.grid.skips, id)) ?? 0;
       if (skip > 0) this.lines.push(`${indent}${skip === 1 ? 'space' : `space:${skip}`}`);
       if ('node' in item) this.lines.push(`${indent}${this.block(item.node)}${this.span(id)}`);
       else this.group(item.cluster, indent);
@@ -58,7 +59,7 @@ class BlockWriter {
   block(node: DataNode): string {
     const text = nodeLines(node, this.out.warnings, 'Mermaid');
     const outline = node.outline ?? 'rect';
-    const brackets = typeof outline === 'string' ? BRACKETS[outline] : undefined;
+    const brackets = typeof outline === 'string' ? getOwn(BRACKETS, outline) : undefined;
     if (brackets === undefined) this.out.warnings.add('Mermaid has no bracket shape for some outlines; they were written as rectangles.');
     const id = this.id(node.id);
     if (outline === 'rect' && id === node.id && text.length === 1 && text[0] === id) return id;
@@ -69,7 +70,7 @@ class BlockWriter {
   group(c: Cluster, indent: string): void {
     const named = !ANONYMOUS.test(c.id) || this.span(c.id) !== '';
     this.lines.push(`${indent}block${named ? `:${this.id(c.id)}${this.span(c.id)}` : ''}`);
-    const columns = this.grid.groupColumns?.[c.id];
+    const columns = this.grid.groupColumns && getOwn(this.grid.groupColumns, c.id);
     if (columns !== undefined) this.lines.push(`${indent}  columns ${columns}`);
     this.level(c.nodes.map((id) => this.out.byId.get(id)!), c.clusters, `${indent}  `);
     this.lines.push(`${indent}end`);

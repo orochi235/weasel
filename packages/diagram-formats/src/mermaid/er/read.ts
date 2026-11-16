@@ -9,7 +9,7 @@ import type { DataEdge, DataNode, Row } from '@weasel-js/diagram';
 import type { ImportResult } from '../../document';
 import { Warnings, decodeEntities, graphPage } from '../../graphRead';
 import { DIRECTIONS } from '../class/read';
-import { pageNameOf } from '../common/lines';
+import { pageNameOf, type MermaidDirection } from '../common/lines';
 import { StyleSheet } from '../common/styles';
 import { parseErDiagram, type ErAttribute, type ErCardinality } from './parse';
 
@@ -33,7 +33,7 @@ export function readErDiagram(text: string): ImportResult {
     return entities.get(id)!;
   };
   const edges: DataEdge[] = [];
-  let direction: string | undefined;
+  let direction: MermaidDirection | undefined;
   for (const s of stmts) {
     if (s.kind === 'entity') {
       const e = entity(s.id);

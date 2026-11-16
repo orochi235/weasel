@@ -7,11 +7,11 @@ import type { MarkerRef } from '@weasel-js/core';
 import type { DataContainer, DataEdge, DataNode, EdgeStyle, LayoutDirection, Row } from '@weasel-js/diagram';
 import type { ImportResult } from '../../document';
 import { IdMint, Membership, Warnings, decodeEntities, graphPage } from '../../graphRead';
-import { pageNameOf } from '../common/lines';
+import { pageNameOf, type MermaidDirection } from '../common/lines';
 import { StyleSheet } from '../common/styles';
 import { parseClassDiagram, type ClassHead, type ClassMember, type ClassStmt } from './parse';
 
-export const DIRECTIONS: Readonly<Record<string, LayoutDirection>> = { TB: 'down', TD: 'down', BT: 'up', LR: 'right', RL: 'left' };
+export const DIRECTIONS: Readonly<Record<MermaidDirection, LayoutDirection>> = { TB: 'down', TD: 'down', BT: 'up', LR: 'right', RL: 'left' };
 
 /** Each end a relation draws, by its head and whether its line is dashed. */
 export function headMarker(head: ClassHead | undefined, dashed: boolean): MarkerRef | null {
@@ -33,7 +33,7 @@ class ClassReader {
   readonly edges: DataEdge[] = [];
   readonly noteEdges: DataEdge[] = [];
   readonly namespaces: string[] = [];
-  direction: string | undefined;
+  direction: MermaidDirection | undefined;
 
   constructor(readonly mint: IdMint) {}
 

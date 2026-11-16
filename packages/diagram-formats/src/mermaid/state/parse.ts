@@ -1,6 +1,6 @@
 /** A Mermaid state diagram's grammar, read to statements with each one's line. */
 import { lineError } from '../../lineError';
-import { statementsOf, type MermaidSource, type Statement } from '../common/lines';
+import { statementsOf, type MermaidDirection, type MermaidSource, type Statement } from '../common/lines';
 
 /** A state's kind, when `<<…>>` names one. */
 export type StateType = 'fork' | 'join' | 'choice';
@@ -12,7 +12,7 @@ export type StateStmt =
   | { kind: 'composite'; id: string; label?: string; regions: StateStmt[][]; line: number }
   | { kind: 'note'; side: 'left' | 'right'; id: string; text: string; line: number }
   | { kind: 'assign'; id: string; name: string; line: number }
-  | { kind: 'direction'; value: string; line: number }
+  | { kind: 'direction'; value: MermaidDirection; line: number }
   | { kind: 'style'; text: string; line: number }
   | { kind: 'other'; keyword: string; line: number };
 
@@ -76,7 +76,7 @@ class StateParser {
     const note = NOTE.exec(text);
     if (note !== null) return [{ kind: 'note', side: note[1] as 'left' | 'right', id: note[2]!, text: note[3] ?? this.noteBody(line), line }];
     const dir = /^direction\s+(TB|TD|BT|LR|RL)$/.exec(text);
-    if (dir !== null) return [{ kind: 'direction', value: dir[1]!, line }];
+    if (dir !== null) return [{ kind: 'direction', value: dir[1] as MermaidDirection, line }];
     if (/^(classDef|class|style)\s/.test(text)) return [{ kind: 'style', text, line }];
     const bare = BARE.exec(text);
     if (bare !== null) {

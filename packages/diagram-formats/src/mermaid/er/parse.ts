@@ -1,6 +1,6 @@
 /** A Mermaid entity-relationship diagram's grammar, read to statements with each one's line. */
 import { lineError } from '../../lineError';
-import { statementsOf, type MermaidSource, type Statement } from '../common/lines';
+import { statementsOf, type MermaidDirection, type MermaidSource, type Statement } from '../common/lines';
 import { unquote } from '../common/text';
 
 /** How many of an entity a relationship's end allows. */
@@ -17,7 +17,7 @@ export interface ErAttribute {
 export type ErStmt =
   | { kind: 'entity'; id: string; label?: string; attributes: ErAttribute[]; cssClass?: string; line: number }
   | { kind: 'relation'; from: string; to: string; fromCard: ErCardinality; toCard: ErCardinality; dashed: boolean; label: string; line: number }
-  | { kind: 'direction'; value: string; line: number }
+  | { kind: 'direction'; value: MermaidDirection; line: number }
   | { kind: 'style'; text: string; line: number };
 
 /** A whole ER diagram. */
@@ -26,8 +26,10 @@ export interface ErDiagram {
   stmts: ErStmt[];
 }
 
-const LEFT: Readonly<Record<string, ErCardinality>> = { '|o': 'zero-one', '||': 'one', '}o': 'zero-many', '}|': 'one-many' };
-const RIGHT: Readonly<Record<string, ErCardinality>> = { 'o|': 'zero-one', '||': 'one', 'o{': 'zero-many', '|{': 'one-many' };
+type LeftEnd = '|o' | '||' | '}o' | '}|';
+type RightEnd = 'o|' | '||' | 'o{' | '|{';
+const LEFT: Readonly<Record<LeftEnd, ErCardinality>> = { '|o': 'zero-one', '||': 'one', '}o': 'zero-many', '}|': 'one-many' };
+const RIGHT: Readonly<Record<RightEnd, ErCardinality>> = { 'o|': 'zero-one', '||': 'one', 'o{': 'zero-many', '|{': 'one-many' };
 const RELATION = /^([\w-]+)\s*(\|o|\|\||\}o|\}\|)(--|\.\.)(o\||\|\||o\{|\|\{)\s*([\w-]+)\s*:\s*(.*)$/s;
 const ENTITY = /^([\w-]+)(?:\s*\[\s*(?:"([^"]*)"|([^\]]*))\s*\])?(?::::([\w-]+))?\s*(\{\s*\}?)?$/;
 /** An attribute line: a type, a name, keys, and a quoted comment. */
@@ -71,12 +73,12 @@ export function parseErDiagram(text: string): ErDiagram {
     const { text: t, line } = source.body[at.i++]!;
     const rel = RELATION.exec(t);
     if (rel !== null) {
-      const [, from, left, body, right, to, label] = rel as unknown as string[];
-      stmts.push({ kind: 'relation', from: from!, to: to!, fromCard: LEFT[left!]!, toCard: RIGHT[right!]!, dashed: body === '..', label: unquote(label!.trim()), line });
+      const [, from, left, body, right, to, label] = rel as unknown as [string, string, LeftEnd, string, RightEnd, string, string];
+      stmts.push({ kind: 'relation', from: from!, to: to!, fromCard: LEFT[left], toCard: RIGHT[right], dashed: body === '..', label: unquote(label!.trim()), line });
       continue;
     }
     const dir = /^direction\s+(TB|TD|BT|LR|RL)$/.exec(t);
-    if (dir !== null) stmts.push({ kind: 'direction', value: dir[1]!, line });
+    if (dir !== null) stmts.push({ kind: 'direction', value: dir[1] as MermaidDirection, line });
     else if (/^(classDef|class|style)\s/.test(t)) stmts.push({ kind: 'style', text: t, line });
     else {
       const ent = ENTITY.exec(t);

@@ -1,6 +1,7 @@
 /** One graph page as a Mermaid class diagram: boxes as classes, containers as namespaces, `note` shapes as notes. */
 import type { MarkerRef } from '@weasel-js/core';
 import type { DataEdge, DataNode, LayoutDirection, Row } from '@weasel-js/diagram';
+import { getOwn } from '@weasel-js/registry';
 import type { DiagramDocument, ExportResult, WriteOptions } from '../../document';
 import { edgeStyleIn, graphOut, type Cluster, type GraphOut } from '../../graphWrite';
 import { readsAsStatement, titleLines } from '../common/lines';
@@ -84,7 +85,7 @@ class ClassWriter {
 
   head(marker: MarkerRef | null | undefined, side: 0 | 1): string {
     if (marker === null || marker === undefined) return '';
-    const known = HEADS[typeof marker === 'string' ? marker : marker.key];
+    const known = getOwn(HEADS, typeof marker === 'string' ? marker : marker.key);
     if (known === undefined) this.out.warnings.add('Mermaid class diagrams have only UML ends; others were written as arrows.');
     return (known ?? HEADS.arrow!)[side];
   }

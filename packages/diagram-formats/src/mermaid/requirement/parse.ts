@@ -1,6 +1,6 @@
 /** A Mermaid requirement diagram's grammar, read to statements with each one's line. */
 import { lineError } from '../../lineError';
-import { statementsOf, type MermaidSource } from '../common/lines';
+import { statementsOf, type MermaidDirection, type MermaidSource } from '../common/lines';
 import { unquote } from '../common/text';
 
 /** The block keywords: the requirement kinds, and `element`. */
@@ -14,7 +14,7 @@ export const RELATIONS = ['contains', 'copies', 'derives', 'satisfies', 'verifie
 export type RequirementStmt =
   | { kind: 'block'; type: (typeof BLOCK_KINDS)[number]; name: string; fields: [string, string][]; line: number }
   | { kind: 'relation'; from: string; to: string; type: (typeof RELATIONS)[number]; line: number }
-  | { kind: 'direction'; value: string; line: number }
+  | { kind: 'direction'; value: MermaidDirection; line: number }
   | { kind: 'style'; text: string; line: number };
 
 /** A whole requirement diagram. */
@@ -56,7 +56,7 @@ export function parseRequirementDiagram(text: string): RequirementDiagram {
     } else if (back !== null) {
       stmts.push({ kind: 'relation', from: unquote(back[3]!), type: back[2] as (typeof RELATIONS)[number], to: unquote(back[1]!), line });
     } else if (/^direction\s+(TB|TD|BT|LR|RL)$/.test(t)) {
-      stmts.push({ kind: 'direction', value: t.split(/\s+/)[1]!, line });
+      stmts.push({ kind: 'direction', value: t.split(/\s+/)[1] as MermaidDirection, line });
     } else if (/^(classDef|class|style)\s/.test(t)) {
       stmts.push({ kind: 'style', text: t, line });
     } else {
