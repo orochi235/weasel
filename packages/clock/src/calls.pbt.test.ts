@@ -159,9 +159,23 @@ describe('wakes, frames, and notices — model', () => {
       // Whether a change since the last sync has woken it: the next change does not wake it again.
       let woke = false;
       let changed = false;
+      // Whether a ramp may still be running, which a write of the rate it stands at replaces.
+      let ramping = false;
       for (const o of list) {
-        const was = { ...seen, elapsed: c.elapsed, inert: c.inert, rate: c.rate, duration: c.duration };
+        const was = { ...seen, elapsed: c.elapsed, inert: c.inert, rate: c.rate, duration: c.duration, loop: c.loop, pass: c.pass, phase: c.phase };
         apply(h, o, now);
+        const rateWrite = o.kind === 'rate' || (o.kind === 'ramp' && !(o.over > 0));
+        const sameRate = (o.kind === 'rate' || o.kind === 'ramp') && rateWrite && Object.is(o.to, was.rate);
+        const quiet = (sameRate && !ramping)
+          || (o.kind === 'loop' && o.to === was.loop)
+          || (o.kind === 'seek' && Object.is(c.elapsed, was.elapsed) && c.pass === was.pass && c.phase === was.phase);
+        if (o.kind === 'ramp' && o.over > 0) ramping = true;
+        else if (rateWrite) ramping = false;
+        if (quiet || (sameRate && seen.subs === was.subs)) {
+          expect(seen).toEqual({ wakes: was.wakes, frames: was.frames, subs: was.subs });
+          t.count('quiet');
+          continue;
+        }
         if (o.kind === 'sync') {
           if (was.inert) {
             expect(c.elapsed).toBe(was.elapsed);
@@ -186,7 +200,7 @@ describe('wakes, frames, and notices — model', () => {
         t.count(o.kind);
       }
     }), runs(RUNS));
-    for (const k of ['rate', 'seek', 'declare', 'override', 'inert sync']) t.atLeast(k, RUNS / 10);
+    for (const k of ['rate', 'seek', 'declare', 'override', 'inert sync', 'quiet']) t.atLeast(k, RUNS / 10);
   }, timeoutFor(RUNS, 3));
 });
 
