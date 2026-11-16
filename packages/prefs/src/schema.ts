@@ -161,7 +161,7 @@ export interface PrefString extends PrefValueBase<'string', string> {
   /** What an empty field shows in its place: the value something else falls back to, as a file name does. */
   placeholder?: string;
   /** The most characters the field takes, counted as an `<input>`'s `maxLength` counts them. A longer stored
-   *  value reads cut to this length. */
+   *  value reads cut to this length, or one shorter where that would split a surrogate pair. */
   maxLength?: number;
 }
 /**

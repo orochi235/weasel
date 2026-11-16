@@ -7,6 +7,7 @@
  * keys that start with `$` arrive with one more `$` in front ({@link escapeKey}), so the only unescaped `$` keys
  * are the serializer's own: `$type`, `$class` (an instance's class) and `$more` (how many keys were cut).
  */
+import { codePointFloor } from '@weasel-js/registry';
 
 /** What {@link serialize} produces: JSON-safe apart from `undefined`, which structured clone carries. */
 export type SerializedValue =
@@ -92,9 +93,6 @@ function isTyped(value: object): value is ArrayBufferView {
     && TYPED.some((T) => tagOf(value) === T.name);
 }
 
-/** `at`, or one unit sooner when it falls between the halves of a surrogate pair. */
-const cutAt = (s: string, at: number): number => (at > 0 && /[\uD800-\uDBFF]/.test(s[at - 1]!) && /[\uDC00-\uDFFF]/.test(s[at] ?? '') ? at - 1 : at);
-
 const tagged = (tag: SerializedTag): SerializedValue => tag as SerializedValue;
 
 /** `value` as plain data: anything JSON cannot say tagged, cycles marked, and every size capped. */
@@ -108,7 +106,7 @@ export function serialize(value: unknown, limits: SerializeLimits = {}): Seriali
 
   const walk = (v: unknown, level: number): SerializedValue => {
     switch (typeof v) {
-      case 'string': return v.length > chars ? `${v.slice(0, cutAt(v, chars))}…` : v;
+      case 'string': return v.length > chars ? `${v.slice(0, codePointFloor(v, chars))}…` : v;
       case 'number':
         return Number.isFinite(v) ? v : tagged({ $type: 'number', value: String(v) as 'NaN' | 'Infinity' | '-Infinity' });
       case 'boolean': return v;
