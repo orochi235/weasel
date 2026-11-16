@@ -16,6 +16,7 @@ import { pointRegionLive, pointRegionScreenQuad, transformOf } from 'affordances
 import { PATH_L, PATH_M, PATH_Z, viewWorldToScreen } from '@weasel-js/geom';
 import { chromeStateFrom, isVisibleFrom } from './drawEnvelope';
 
+/** Options for {@link createSlopsDebugLayer}. */
 export interface CreateSlopsDebugLayerOptions {
   /** The affordances the canvas hit-tests — `chromeAffordances`, the same
    *  list handed to `buildAffordanceAt`. */

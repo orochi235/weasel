@@ -44,6 +44,7 @@ export interface ChromeAffordanceOptions {
   selectionChrome?: SelectionChrome;
 }
 
+/** What `buildAffordanceAt` reads, live, to find the affordance under a point. */
 export interface BuildAffordanceAtOptions extends ChromeAffordanceOptions {
   /** Live ChromeState at call time — current selection plus effective bounds,
    *  including in-flight move/resize ghost poses. */

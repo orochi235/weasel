@@ -4,7 +4,7 @@
  */
 import type { Action, ActionDeps, BindingOptions, InvocationCtx, OngoingHandle } from '@weasel-js/routing';
 import { RESIZE_HANDLE_ANCHORS } from '../gestures/resizeHandles';
-import type { TestScene } from './pbt.fixture';
+import type { TestScene } from './pbtScene.fixture';
 
 /** A point, as the drag properties generate it. */
 export interface Pt { x: number; y: number }

@@ -6,5 +6,6 @@
  */
 export {
   __setImageMeasureForTests, __setFileToDataUriForTests, _resetImageHandlerSeamsForTests,
+  type Measure, type ToDataUri,
 } from './ingest/imageHandler';
 export { __setSvgMeasureForTests, _resetSvgHandlerSeamsForTests } from './ingest/svgHandler';

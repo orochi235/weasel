@@ -3,7 +3,7 @@ import { adapterDerivedPathOf } from './adapterDerivedPath';
 import type { AdapterPickGates, PickCandidate, PickSource } from './pickWalk';
 
 /** The adapter surface the walk can reach without a `Scene`. */
-interface PickAdapter<TPose> {
+export interface PickAdapter<TPose> {
   /** Composed world pose, when the adapter has a composition strategy.
    *  Falls back to `getPose`, which is the same value under the
    *  absolute-pose model. */

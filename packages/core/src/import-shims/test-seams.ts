@@ -44,7 +44,7 @@ export type { ScenePickSourceOptions, ViewPickGates } from 'canvas/pickWalk';
 
 export { FRAME_FIXTURE_IDS as FRAME_FIXTURE_IDSForTests, FRAME_FIXTURE_LOCAL as FRAME_FIXTURE_LOCALForTests, expectSamePose as expectSamePoseForTests, makeFrameFixture as makeFrameFixtureForTests } from '../core/scene/frameFixture';
 
-export { runs as pbtRunsForTests, tally as pbtTallyForTests, timeoutFor as pbtTimeoutForTests } from 'interactions/actions/pbt.fixture';
+export { runs as pbtRunsForTests, tally as pbtTallyForTests, timeoutFor as pbtTimeoutForTests } from 'interactions/actions/pbtScene.fixture';
 
 export { CIRCLE_POSE_DESCRIPTOR as CIRCLE_POSE_DESCRIPTORForTests, circle as circleForTests } from '../core/geometry/circlePose.fixture';
 export type { CirclePose as CirclePoseForTests } from '../core/geometry/circlePose.fixture';
@@ -54,8 +54,8 @@ export type { FrameFixtureData as FrameFixtureDataForTests, FrameFixtureLayer as
 
 export { assertFinite as assertFiniteForTests, drive as driveForTests } from '../interactions/actions/drag.pbt.fixture';
 export type { Pt as PtForTests } from '../interactions/actions/drag.pbt.fixture';
-export { depsOf as depsOfForTests, makeScene as makeSceneForTests, rectPose as rectPoseForTests, runs as runsForTests, tally as tallyForTests, timeoutFor as timeoutForForTests } from '../interactions/actions/pbt.fixture';
-export type { TestScene as TestSceneForTests } from '../interactions/actions/pbt.fixture';
+export { depsOf as depsOfForTests, makeScene as makeSceneForTests, runs as runsForTests, tally as tallyForTests, timeoutFor as timeoutForForTests } from '../interactions/actions/pbtScene.fixture';
+export type { TestScene as TestSceneForTests } from '../interactions/actions/pbtScene.fixture';
 
 export { ON_PAGE as ON_PAGEForTests, PAGE_A as PAGE_AForTests, PAGE_B as PAGE_BForTests, pagedScene as pagedSceneForTests } from '../core/pages/pagedFixture';
 export { gridSource as gridSourceForTests, lineSource as lineSourceForTests, sessionDep as sessionDepForTests } from '../domains/snap/testing/sessionDep';
@@ -92,3 +92,15 @@ export { useOptionalViewInputs as useOptionalViewInputsForTests } from '../canva
 export type { SurfaceViewInputs as SurfaceViewInputsForTests } from '../canvas/viewInputs';
 export { legalSelection as legalSelectionForTests, settleSelection as settleSelectionForTests } from '../core/selection/legalSelection';
 export { icons as iconsForTests } from '../icons.table';
+
+export type { BuildAffordanceAtOptions, ChromeAffordanceOptions } from '../canvas/affordanceAt';
+export type { ChromeCaps, ViewRuleInputs } from '../domains/chrome-caps/useChromeCaps';
+export type { CreateSlopsDebugLayerOptions } from '../canvas/slopsDebugLayer';
+export type { DispatcherOverlayStyle } from '../canvas/SceneCanvas/useDispatcherOverlayLayer';
+export type { EnabledPresets } from '../canvas/SceneCanvas/features';
+export type { HierarchicalAdapter } from '../canvas/buildSceneTree';
+export type { PickView } from '../canvas/SceneCanvas/useScenePickers';
+export type { Selectable } from '../core/selection/legalSelection';
+export type { SurfaceHandle, ViewRegistration } from '../canvas/viewRegistry';
+export type { ViewMarkerRegistry } from '../canvas/viewMarkers';
+export type { ViewHelpersBundle } from '../canvas/useViewHelpers';

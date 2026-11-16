@@ -11,8 +11,10 @@ import { arrivalBounds } from '@weasel-js/core';
 
 const VIEWPORT_FIT = 0.9;
 
+/** Measures an image file's natural size. */
 export type Measure = (file: File) => Promise<{ width: number; height: number }>;
-type ToDataUri = (file: File) => Promise<string>;
+/** Reads a file as a `data:` URI, as an image node's `src`. */
+export type ToDataUri = (file: File) => Promise<string>;
 
 const defaultMeasure: Measure = async (file) => {
   const bitmap = await createImageBitmap(file);

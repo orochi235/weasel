@@ -40,7 +40,8 @@ const CANVAS_PROBE = 'SceneCanvas, selectPreset';
 const CANVAS_FROM = { SceneCanvas: '@weasel-js/core', selectPreset: '@weasel-js/editing' };
 const UNASKED_PRESET = new RegExp([
   /core\/dist\/(canvas\/SceneCanvas\/presets\/(?!view|chrome|toolDriven|baseline|index)|interactions\/actions\/(booleans|outlines|pathCommands|pathEffects)\/)/.source,
-  /editing\/dist\/(namedPresets|presets\/(?!select|tools|index)|actions\/)/.source,
+  // selectPreset's own: the area and lasso selects, clearing, and entering a group.
+  /editing\/dist\/(namedPresets|presets\/(?!select|tools|index)|actions\/(?!select\/|lassoSelect\/|group\/enterGroup))/.source,
 ].join('|'));
 
 /** A one-line consumer entry: `symbol` from `from`, or each name from the spec `from` maps it to. */

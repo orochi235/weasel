@@ -14,6 +14,7 @@ import { fnFieldsOfNode } from './nodeFnFields';
 import { statedFields } from './statedFields';
 import { asNodeId, type Node, type Scene } from './types';
 
+/** The calls an op commits through: the scene's tree, read, and each field an op writes. */
 export interface SceneMutators<TData, TLayer extends string, TPose> {
   getNode(id: string): Node<TData, TLayer, TPose> | undefined;
   getParent(id: string): string | null;

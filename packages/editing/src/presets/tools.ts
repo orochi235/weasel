@@ -60,9 +60,9 @@ export const shapeToolKitPreset: FeaturePreset = {
 
 /** The select tool and the lasso. */
 export const selectToolsPreset: FeaturePreset = {
-  id: `tools:${SELECT_TOOLS.id}`, label: 'Selection tools', tools: [SELECT_TOOLS], includes: [selectToolKitPreset],
+  id: 'tools:select', label: 'Selection tools', tools: [SELECT_TOOLS], includes: [selectToolKitPreset],
 };
 /** The tools that drag out a primitive: rect, ellipse, line, polygon, star. */
 export const shapeToolsPreset: FeaturePreset = {
-  id: `tools:${SHAPE_TOOLS.id}`, label: 'Shape tools', tools: [SHAPE_TOOLS], includes: [shapeToolKitPreset],
+  id: 'tools:shape', label: 'Shape tools', tools: [SHAPE_TOOLS], includes: [shapeToolKitPreset],
 };

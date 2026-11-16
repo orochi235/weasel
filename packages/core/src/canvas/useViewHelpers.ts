@@ -163,6 +163,7 @@ export interface UseViewHelpersOptions<TPose> {
   layerIsPainted?: ((layerId: string) => boolean) | undefined;
 }
 
+/** What {@link useViewHelpers} returns: the view's helpers. */
 export interface ViewHelpersBundle<TPose> {
   helpers: CanvasViewHelpers<TPose>;
 }

@@ -120,7 +120,7 @@ export function commitGestureOps(
 
 /** The trailing argument of {@link reduceBehaviorEnd}: what `TEnd` adds to
  *  `BehaviorEnd`, required exactly when it adds something. */
-type OwnEndFields<TEnd extends BehaviorEnd> = keyof Omit<TEnd, keyof BehaviorEnd> extends never
+export type OwnEndFields<TEnd extends BehaviorEnd> = keyof Omit<TEnd, keyof BehaviorEnd> extends never
   ? [own?: Omit<TEnd, keyof BehaviorEnd>]
   : [own: Omit<TEnd, keyof BehaviorEnd>];
 

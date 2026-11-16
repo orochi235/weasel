@@ -1,11 +1,8 @@
 import { boundsOfPath } from '@weasel-js/geom';
 import { pickWalk, type AdapterPickGates, type PickCandidate, type PickSource } from 'canvas/pickWalk';
-import { adapterPickSource } from 'canvas/adapterPickSource';
+import { adapterPickSource, type PickAdapter } from 'canvas/adapterPickSource';
 import { poseDescriptorForNode, visualBoundsViaDescriptor, type PoseDescriptor } from 'core/geometry/poseDescriptor';
 import type { Bounds } from 'core/viewport/fitViewToBounds';
-
-/** The adapter reads `centersBetween` walks: a tree and each node's world pose. */
-type SpanAdapter<TPose> = Parameters<typeof adapterPickSource<TPose>>[0];
 
 /**
  * A range for the select tool over a bare adapter: every node a pick can reach whose center
@@ -13,7 +10,7 @@ type SpanAdapter<TPose> = Parameters<typeof adapterPickSource<TPose>>[0];
  * order. Empty when either end is not reachable.
  */
 export function centersBetween<TPose>(
-  adapter: SpanAdapter<TPose>,
+  adapter: PickAdapter<TPose>,
   descriptor: PoseDescriptor<TPose>,
   gates: AdapterPickGates = {},
 ): (from: string, to: string) => string[] {

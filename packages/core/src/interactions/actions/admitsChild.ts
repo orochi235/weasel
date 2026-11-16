@@ -9,7 +9,7 @@ import type { AnyScene } from 'core/scene/anyScene';
 
 /** What deciding whether a parent takes children reads of a scene. A `Scene` satisfies it; one with a
  *  `composition` is a whole scene, whose frames are read too. */
-interface ChildReader {
+export interface ChildReader {
   get(id: NodeId): {
     kind: string; parent?: NodeId | null; page?: unknown; pageRun?: unknown; dependsOn?: unknown;
   } | undefined;
