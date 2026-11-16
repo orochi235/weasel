@@ -22,6 +22,10 @@
       "types": "./dist/hook.d.ts",
       "import": "./dist/hook.js"
     },
+    "./mount": {
+      "types": "./dist/mount.d.ts",
+      "import": "./dist/mount.js"
+    },
     "./protocol": {
       "types": "./dist/protocol.d.ts",
       "import": "./dist/protocol.js"

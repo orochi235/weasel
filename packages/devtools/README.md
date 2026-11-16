@@ -31,6 +31,12 @@ const transport = createInPagePanelTransport();
 A canvas that does not take `devtools` is not listed, and pays nothing for it.
 `<SceneCanvas ambient={[devtools]}>` hands it to one canvas.
 
+Kit shells (`<Lab>`, `EditorShell`, forge's frames) take it by default in a
+development build, through `ShellDevtools` from `@weasel-js/devtools/mount`,
+which loads the hook only when a canvas attaches. `devtools={false}` on a shell
+turns it off; `devtoolsOff` provided above them turns it off for all of them.
+`DEV_DEVTOOLS` is the same default for an app's own provider over bare canvases.
+
 The panel fills its container, so give the container a size.
 
 | Tab | Shows | Steers |
@@ -51,6 +57,7 @@ one is left.
 |---|---|
 | `@weasel-js/devtools` | the panel, its protocol client, `createInPagePanelTransport` |
 | `@weasel-js/devtools/hook` | the page's side: the `devtools` contribution, the hook on `window.__weaselDevtools__`, roots |
+| `@weasel-js/devtools/mount` | `lazyDevtools`, `DEV_DEVTOOLS`, `devtoolsOff`, and `ShellDevtools`, the default kit shells mount |
 | `@weasel-js/devtools/protocol` | the messages, transports and serializer; no React and no core, for an extension's scripts |
 
 ## Transports
