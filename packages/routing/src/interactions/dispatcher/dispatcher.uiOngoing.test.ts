@@ -200,6 +200,25 @@ describe('Dispatcher.beginUiOngoing', () => {
   });
 });
 
+describe('a begin that commits the prior handle and starts nothing', () => {
+  it('still tells subscribers the prior one ended', () => {
+    let second = false;
+    const action: Action = {
+      id: 'test', label: 'test',
+      invoker: { timing: 'ongoing', start: () => (second ? {} : { onEnd: vi.fn() }) },
+    };
+    const d = createDispatcher({ getAction: () => action });
+    d.beginUiOngoing('test', {}, {});
+    const sub = vi.fn();
+    d.subscribe(sub);
+    const before = d.getVersion();
+    second = true;
+    expect(d.beginUiOngoing('test', {}, {})).toBeNull();
+    expect(sub).toHaveBeenCalled();
+    expect(d.getVersion()).toBeGreaterThan(before);
+  });
+});
+
 describe('a UI handle ending', () => {
   it('is out of flight before its onEnd runs, as a gesture is', () => {
     let seen: number | null = null;
