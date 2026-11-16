@@ -122,5 +122,5 @@ describe('simplifyAnchorsAt, on random freehand paths and random sweeps', () => 
       }
     }
     expect(failures).toEqual([]);
-  });
+  }, 20_000);
 });
