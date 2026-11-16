@@ -69,3 +69,38 @@ describe('a multitouch handle ends when the finger count moves on', () => {
     expect(log).toEqual(['start:zoom', 'end:zoom:cancel', 'start:swipe']);
   });
 });
+
+describe('a multitouch handle with no onMove', () => {
+  it('stays the one gesture until the hand lifts', () => {
+    const log: string[] = [];
+    const hold = {
+      id: 'hold', label: 'hold',
+      invoker: {
+        timing: 'ongoing',
+        start: () => {
+          log.push('start');
+          return { kind: 'hold', onEnd: (_c: unknown, r: string) => log.push(`end:${r}`) };
+        },
+      },
+    } as unknown as Action;
+    const tool = {
+      id: 'gestures', eligibility: { always: true },
+      bindings: [{ spec: { kind: 'multiTouch', fingers: 2 }, actionId: 'hold' }],
+    } as unknown as Tool;
+    const actions = {
+      register: vi.fn(), unregister: vi.fn(), mute: vi.fn(), subscribe: vi.fn(),
+      trigger: vi.fn(), begin: vi.fn(), setDispatcher: vi.fn(), list: () => [hold],
+    } as unknown as ActionsRegistry;
+    const depRegistry: DepRegistry = { register: vi.fn().mockReturnValue(() => {}), get: vi.fn() as DepRegistry['get'] };
+    const ctx: DispatcherContext = {
+      depRegistry, actions, activeToolId: 'select', hotkeyStack: [],
+      entriesById: new Map([['gestures', tool]]), apple: false,
+    };
+    const d = createDispatcher({ getAction: (id) => (id === 'hold' ? hold : undefined) });
+
+    for (let i = 0; i < 3; i++) d.handleInput(touch(2), ctx);
+    d.handleInput({ ...touch(2), centroid: undefined, end: 'commit' } as unknown as InputEvent, ctx);
+
+    expect(log).toEqual(['start', 'end:commit']);
+  });
+});
