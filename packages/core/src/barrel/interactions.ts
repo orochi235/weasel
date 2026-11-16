@@ -61,13 +61,6 @@ export type { Carry, CarryCallbacks, CarryPayload, CarryPointer, CarryStage } fr
 export { sweepAction, SWEEP_BINDING } from '@weasel-js/routing';
 export { BETWEEN_GESTURES } from '@weasel-js/routing';
 export type { SweepItem, SweepOptions, SweepPress, SweepRun } from '@weasel-js/routing';
-export { useHandleDrag } from '../interactions/gestures/handleDrag';
-export type {
-  HandleDragPoint,
-  HandleDragEnd,
-  UseHandleDragOptions,
-  UseHandleDragReturn,
-} from '../interactions/gestures/handleDrag';
 export { enumerateAnchors, withCoord, type PathAnchor } from '../interactions/actions/edit-anchors/geometry';
 export {
   locksOf, type EditAnchorsParams, type HandleLock, type HandleLocks,

@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef } from 'react';
 import { useLatest } from '@weasel-js/react';
-import { clientToCanvasRect, layoutBoxOf, openPointerSession, type PointerSession, type PointerSessionCancelReason } from '@weasel-js/routing';
+import { clientToCanvasRect, layoutBoxOf } from '../../viewport/clientToCanvas';
+import { openPointerSession, type PointerSession, type PointerSessionCancelReason } from '../pointerSession';
 import { isPrimaryPress } from '@weasel-js/gestures';
 
 /** A 2D point in the rect element's local coordinate space. */

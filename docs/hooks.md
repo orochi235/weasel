@@ -269,7 +269,7 @@ not routed by the dispatcher — you own the pointer events.
 | `useDragGesture(opts)` | The base. Threshold-gated `idle` → `pending` → `active` lifecycle with per-gesture `scratch`; ctx carries both world and client coordinates. `onStart` / `onActivate` / `onMove` / `onEnd` / `onCancel`. |
 | `useDragRect(opts)` | `useDragGesture` producing live `bounds` from start→current, with `minBounds` and an `isSubThreshold` flag on the end ctx. `setStart` / `setCurrent` let you override mid-gesture. |
 | `useDragRadial(opts)` | `useDragGesture` producing `{ center, radius, rotation }`, with `minRadius`. |
-| `useHandleDrag(opts)` | Returns `{ onPointerDown }` for a DOM/SVG handle; reports coordinates local to the handle's owning `<svg>` (or a `getRect` override). |
+| `useHandleDrag(opts)` | From `@weasel-js/routing/react`. Returns `{ onPointerDown }` for a DOM/SVG handle; reports coordinates local to the handle's owning `<svg>` (or a `getRect` override). |
 | `startThresholdDrag(e, opts)` | From `@weasel-js/routing`. Not a hook — call it from a `pointerdown` handler. Captures the pointer, activates past `threshold` (default 4px), then `onMove` / `onCommit` / `onCancel`. Returns `{ isDragging(), cancel() }`. |
 | `useDragHandle()` / `useDropZone()` | DOM-level cross-surface drag with a typed `DragPayload` (`{ kind, ids, data }`) and a global drop-zone registry — for dragging between panels and the canvas. |
 

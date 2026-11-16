@@ -1,12 +1,12 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { startThresholdDrag } from '@weasel-js/routing';
+import { useHandleDrag } from '@weasel-js/routing/react';
 import {
   clientToCanvas,
   dragPointOf,
   useDragGesture,
   useDragRect,
   useDragRadial,
-  useHandleDrag,
   useDragHandle,
   useDropZone,
   useKeyModifiers,

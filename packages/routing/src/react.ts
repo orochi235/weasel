@@ -54,6 +54,10 @@ export { useTools } from './tools/useTools';
 export type { UseToolsOptions, ToolsApi } from './tools/useTools';
 export { ToolsScope, usePublishTools, useScopedTools } from './tools/toolsScope';
 export { useElementSize } from './viewport/useElementSize';
+export { useHandleDrag } from './interactions/handleDrag/handleDrag';
+export type {
+  HandleDragEnd, HandleDragPoint, UseHandleDragOptions, UseHandleDragReturn,
+} from './interactions/handleDrag/handleDrag';
 export type { ElementSize, ElementSizeOptions } from './viewport/useElementSize';
 export {
   useCanvasToolOptionValues, useToolOptionParams, useToolOptionTunings, useToolOptionValues,
