@@ -81,6 +81,11 @@ function claimOf(e: InputEvent): Claim | undefined {
   return ('affordance' in e ? e.affordance : undefined) as Claim | undefined;
 }
 
+/** The `owner` of the affordance `e` hit, `null` when it hit none. */
+export function affordanceOwnerOf(e: InputEvent): string | null {
+  return claimOf(e)?.owner ?? null;
+}
+
 /** Event kind → the claim token that covers it. `null` for events a positional
  *  claim has no opinion about — keys, drops, pastes, multitouch. */
 function claimGestureOf(e: InputEvent): ClaimableGesture | null {

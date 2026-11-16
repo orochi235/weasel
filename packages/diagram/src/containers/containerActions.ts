@@ -19,7 +19,7 @@ import {
 import type { Vec2 } from '@weasel-js/core/math';
 import { grabPortAction, grabPortBindings } from '../connect';
 import { addLane, releaseMembers } from './containerStencils';
-import { LANE_AFFORDANCE_KIND, laneLayer, laneScratchOf, poolsOf, type LaneLayerOptions, type PoolLanes } from './laneBoundaryLayer';
+import { LANE_AFFORDANCE_KIND, LANE_LAYER_ID, laneLayer, laneScratchOf, poolsOf, type LaneLayerOptions, type PoolLanes } from './laneBoundaryLayer';
 import { MIN_LANE_SIZE } from './laneStack';
 import { titleInFrame } from './titlePose';
 import { diagramContainerOf, titleIdOf } from './trait';
@@ -212,7 +212,7 @@ export function diagramContainers(opts: LaneActionOptions): SurfaceContribution 
   const target = `affordance:${LANE_AFFORDANCE_KIND}` as const;
   return {
     id: 'weasel-diagram-containers',
-    eligibility: { claimed: true },
+    eligibility: { claimed: [LANE_LAYER_ID] },
     layers: [laneLayer(opts.scene, opts)],
     actions: [
       createLaneResizeAction(opts), createAddLaneAction(opts), createReleaseMembersAction(opts), grabPortAction(GRAB_LANE_ACTION_ID),

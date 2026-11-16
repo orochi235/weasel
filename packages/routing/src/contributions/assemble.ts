@@ -42,6 +42,8 @@ export interface AssemblyInputs {
   allowedCapabilities?: ReadonlySet<CapabilityTag>;
   /** The innermost open keymap's id, if one is open. */
   openKeymap?: string | null;
+  /** See {@link EligibilityState.inputOwner}. */
+  inputOwner?: string | null;
 }
 
 /**
@@ -74,6 +76,7 @@ export function assembleEntries<T extends Contribution<unknown>>(
       focusedId: inputs.focusedId,
       engagedIds: new Set(inputs.hotkeyStack),
       ...(inputs.openKeymap ? { openKeymap: inputs.openKeymap } : {}),
+      ...(inputs.inputOwner !== undefined ? { inputOwner: inputs.inputOwner } : {}),
       ...(allowed ? { allows: (tags: readonly CapabilityTag[]) => capabilitiesAllowed(allowed, tags) } : {}),
     },
   };

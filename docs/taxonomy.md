@@ -126,7 +126,11 @@ several at once — the hand tool is palette-selectable and space-held:
   engages it only between gestures; mid-gesture it belongs to the gesture's
   own tool (Space repositions a shape being drawn).
 - `always` — live regardless of what is focused.
-- `claimed` — live only for input this entry's own affordances produced.
+- `claimed` — live only for input that hit one of this entry's own affordances:
+  a hit whose `owner` is the entry's id, or, with `claimed: [ids]`, one of those
+  ids (the layers it registers under ids of their own). Input that hit no
+  affordance, a keystroke among it, never reaches it; an entry that also wants
+  keys declares `always` beside it.
 - `capabilities` — modality filter, applied wherever it would otherwise be live.
 - `keymap` — live only while it is the innermost [keymap](#keymap-and-leader) open,
   at the hotkey tier.

@@ -3,8 +3,8 @@
  * hands to `<SceneCanvas ambient={…}>`.
  *
  * **Ambient, not a tool.** A port is grabbable whatever tool is active:
- * `claimed` makes an entry live for a press its own layer's affordance
- * claimed, and dormant otherwise.
+ * `claimed`, naming the entry's layer, makes it live for input that hit that
+ * layer, and dormant otherwise.
  *
  * **The affordance layer is in `layers`, not `overlay`.** An overlay is
  * painted and never hit-tested, so a port layer there would paint every port
@@ -34,9 +34,9 @@ import { EDIT_EDGE_LABEL_ACTION_ID } from './edgeLabel';
 import { createSetHopsAction } from './hops/hopsAction';
 import { createResetLabelAction } from './labelCommands';
 import { MOVE_LABEL_ACTION_ID, createLabelDragAction, type LabelDragOptions } from './labelDragAction';
-import { LABEL_DRAG_AFFORDANCE_KIND, labelDragLayer, labelScratchOf } from './labelDragLayer';
+import { LABEL_DRAG_AFFORDANCE_KIND, LABEL_DRAG_LAYER_ID, labelDragLayer, labelScratchOf } from './labelDragLayer';
 import { portLayer } from './portLayer';
-import type { PortAffordanceOptions } from './portAffordance';
+import { PORT_LAYER_ID, type PortAffordanceOptions } from './portAffordance';
 import { REMOVE_WAYPOINT_ACTION_ID, createRemoveWaypointAction, createResetRouteAction } from './routeCommands';
 import { routerActions } from './routerCommands';
 import { ROUTE_EDIT_ACTION_ID, createRouteEditAction, type RouteEditOptions } from './waypointAction';
@@ -63,8 +63,9 @@ export function diagramPorts<TPose>(opts: DiagramContributionOptions<TPose>): Su
   const actionId = opts.id ?? CONNECT_ACTION_ID;
   return {
     id: 'weasel-diagram',
-    eligibility: { claimed: true },
-    layers: [portLayer(opts.participants, opts)],
+    eligibility: { claimed: [PORT_LAYER_ID] },
+    // `opts.id` names the connect action; the layer keeps its own id.
+    layers: [portLayer(opts.participants, { ...opts, id: PORT_LAYER_ID })],
     actions: [createConnectAction({ ...opts, id: actionId }), grabPortAction()],
     bindings: [connectBinding(actionId), ...grabPortBindings()],
   };
@@ -88,7 +89,7 @@ export function diagramWaypoints<TPose>(
   const target = `affordance:${WAYPOINT_AFFORDANCE_KIND}` as const;
   return {
     id: 'weasel-diagram-waypoints',
-    eligibility: { claimed: true },
+    eligibility: { claimed: [WAYPOINT_LAYER_ID] },
     // `opts.id` names the drag action; the layer keeps its own id.
     layers: [waypointLayer(opts.participants, opts.selected, { ...opts, id: WAYPOINT_LAYER_ID })],
     actions: [
@@ -151,7 +152,7 @@ export function diagramLabelDrag(
   const target = `affordance:${LABEL_DRAG_AFFORDANCE_KIND}` as const;
   return {
     id: 'weasel-diagram-label-drag',
-    eligibility: { claimed: true },
+    eligibility: { claimed: [LABEL_DRAG_LAYER_ID] },
     layers: [labelDragLayer(opts.scene, opts.cursor !== undefined ? { cursor: opts.cursor } : {})],
     actions: [
       createLabelDragAction({ ...opts, id: actionId }),

@@ -8,7 +8,7 @@ import type { Action, InvocationCtx, OngoingHandle, RectPose, SurfaceContributio
 import { moveParticipant, moveStep, reconnectMessage } from './edit';
 import { sequenceCommitOf, type SequenceEditOptions } from './commit';
 import { SELECT_SEQUENCE_PART_ACTION_ID, selectSequencePartAction } from './select';
-import { SEQUENCE_AFFORDANCE_KIND, placedSequences, sequenceLayer, sequenceScratchOf, type PlacedSequence, type SequenceScratch } from './layer';
+import { SEQUENCE_AFFORDANCE_KIND, SEQUENCE_LAYER_ID, placedSequences, sequenceLayer, sequenceScratchOf, type PlacedSequence, type SequenceScratch } from './layer';
 import { sequencePartOf, sequenceRootOf } from './trait';
 import type { SequenceData } from './types';
 
@@ -152,7 +152,7 @@ export function diagramSequence(opts: SequenceEditOptions & { scene: AnyScene })
   const target = `affordance:${SEQUENCE_AFFORDANCE_KIND}` as const;
   return {
     id: 'weasel-diagram-sequence',
-    eligibility: { claimed: true },
+    eligibility: { claimed: [SEQUENCE_LAYER_ID] },
     layers: [sequenceLayer(opts.scene)],
     actions: [createSequenceDragAction({ ...opts, id: actionId }), grab, selectSequencePartAction],
     bindings: [

@@ -173,7 +173,10 @@ Those declare a different condition:
 - `focus` — selectable as the focused entry, one at a time.
 - `offhand` — also live while a key is held.
 - `always` — live whatever is focused.
-- `claimed` — live only for input this entry's own affordances produced.
+- `claimed` — live only for input that hit one of this entry's own
+  affordances: a hit whose `owner` is the entry's id, or one of the ids a
+  `claimed: [ids]` list names (`diagramPorts` lists its port layer's). No
+  keystroke reaches it.
 - `keymap` — live only while it is the innermost open keymap, at the hotkey
   tier (open one with a leader, `keymapContribution`).
 - `capabilities` — a modality filter over whichever of the above holds.
