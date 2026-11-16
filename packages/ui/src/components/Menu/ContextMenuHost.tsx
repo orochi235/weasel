@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useId, useLayoutEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react';
 import { createPortal } from 'react-dom';
 import { createMenuController, withLinks, type MenuController, type Rect } from '@weasel-js/menu';
+import { useWindowEvent } from '@weasel-js/react';
 import { useMenuHost } from '@weasel-js/routing/react';
 import type { MenuHost, OpenMenu } from '@weasel-js/routing';
 import { MenuPanel } from './MenuPanel';
@@ -62,15 +63,9 @@ export function OpenPanels({ open, close, takeFocus = true, labelledBy, inside, 
   useLayoutEffect(() => { edge.current = onEdge; });
   // `open` is a dependency so a new menu arms again while the prop stays true.
   useLayoutEffect(() => { release.current = releaseRuns; }, [releaseRuns, open]);
-  useEffect(() => {
-    const disarm = () => { release.current = false; };
-    window.addEventListener('pointerup', disarm);
-    window.addEventListener('pointercancel', disarm);
-    return () => {
-      window.removeEventListener('pointerup', disarm);
-      window.removeEventListener('pointercancel', disarm);
-    };
-  }, []);
+  const disarm = () => { release.current = false; };
+  useWindowEvent('pointerup', disarm);
+  useWindowEvent('pointercancel', disarm);
   // Built where it is disposed, so StrictMode's rerun of this effect gets a live one.
   useLayoutEffect(() => {
     const c = createMenuController({

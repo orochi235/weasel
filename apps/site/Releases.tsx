@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useWindowEvent } from '@weasel-js/react';
 import RELEASES from 'virtual:changelogs';
 import num from '@weasel-js/theme/numeric.module.css';
 import { type Filter, matches, NO_FILTER, type Tag, TAGS } from '@shared/releases';
@@ -48,11 +49,7 @@ export function Releases() {
   const [filter, setFilter] = useState<Filter>(readFilter);
   const [linked] = useState(() => new URLSearchParams(window.location.search).get(VERSION_PARAM));
 
-  useEffect(() => {
-    const onPop = () => setFilter(readFilter());
-    window.addEventListener('popstate', onPop);
-    return () => window.removeEventListener('popstate', onPop);
-  }, []);
+  useWindowEvent('popstate', () => setFilter(readFilter()));
 
   useEffect(() => {
     writeFilter(filter);

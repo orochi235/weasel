@@ -1,6 +1,6 @@
-import { useCallback, useEffect, useId, useRef, useState, type MouseEvent, type PointerEvent, type ReactElement, type ReactNode, type RefObject } from 'react';
+import { useCallback, useId, useRef, useState, type MouseEvent, type PointerEvent, type ReactElement, type ReactNode, type RefObject } from 'react';
 import { createPortal } from 'react-dom';
-import { useLatest } from '@weasel-js/react';
+import { useLatest, useWindowEvent } from '@weasel-js/react';
 import type { OpenMenu } from '@weasel-js/routing';
 import type { MenuEntry, MenuSide } from '@weasel-js/menu';
 import { OpenPanels } from './ContextMenuHost';
@@ -61,11 +61,7 @@ export function useMenuTrigger(portalContainer?: Element | null): MenuTrigger {
   const isOpen = useLatest(open !== null);
 
   // A press that lands elsewhere will not click the button, so it cancels what an earlier one left.
-  useEffect(() => {
-    const away = (e: globalThis.PointerEvent) => { if (!inside(e.target)) closedByPress.current = false; };
-    window.addEventListener('pointerdown', away, true);
-    return () => window.removeEventListener('pointerdown', away, true);
-  }, [inside]);
+  useWindowEvent('pointerdown', (e) => { if (!inside(e.target)) closedByPress.current = false; }, { capture: true });
 
   const press = useCallback(() => {
     closedByPress.current = isOpen.current;

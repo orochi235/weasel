@@ -1,4 +1,5 @@
-import { Suspense, lazy, useEffect, useState } from 'react';
+import { Suspense, lazy, useState } from 'react';
+import { useWindowEvent } from '@weasel-js/react';
 import { CanvasBackendProvider } from '@weasel-js/core';
 import { FrontPage } from './FrontPage/FrontPage';
 import { atFront } from './routes';
@@ -16,11 +17,7 @@ export function App() {
   const [front, setFront] = useState(atFront);
   const [backend] = useState(backendFromUrl);
 
-  useEffect(() => {
-    const onHash = () => setFront(atFront());
-    window.addEventListener('hashchange', onHash);
-    return () => window.removeEventListener('hashchange', onHash);
-  }, []);
+  useWindowEvent('hashchange', () => setFront(atFront()));
 
   return (
     <CanvasBackendProvider value={backend}>

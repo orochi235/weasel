@@ -1,6 +1,7 @@
 import '@weasel-js/theme/tokens.css';
 import '@weasel-js/theme/fonts.css';
-import { StrictMode, Suspense, lazy, use, useEffect, useState } from 'react';
+import { StrictMode, Suspense, lazy, use, useState } from 'react';
+import { useWindowEvent } from '@weasel-js/react';
 import { createRoot } from 'react-dom/client';
 import { IconRegistryProvider } from '@weasel-js/icons/react';
 import { AmbientContributionsProvider, WeaselProvider } from '@weasel-js/core';
@@ -65,11 +66,7 @@ migrateLegacyPanelFlags();
  *  surfaces get theirs from a `<WeaselProvider>`. */
 function Root() {
   const [hash, setHash] = useState(() => window.location.hash);
-  useEffect(() => {
-    const onHash = () => setHash(window.location.hash);
-    window.addEventListener('hashchange', onHash);
-    return () => window.removeEventListener('hashchange', onHash);
-  }, []);
+  useWindowEvent('hashchange', () => setHash(window.location.hash));
   // The inspector is read rather than worked in, so it sets its text a density up.
   const inspector = hash.startsWith('#/dev/registry');
   const dev = hash.startsWith('#/dev/toolkits') ? (

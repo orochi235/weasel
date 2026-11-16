@@ -1,5 +1,6 @@
 import { type InstrumentList, TrialIdContext, useLabContext, useTrialState } from '@weasel-js/labkit';
 import { type ConfigSchema, valueAtPath } from '@weasel-js/labkit/config';
+import { useWindowEvent } from '@weasel-js/react';
 import { useEffect, useRef, useState } from 'react';
 import { knobPaths, knobsToParams, paramsToKnobs, paramsToPins, reservedParams, sameKnob, withoutPins } from '../route/url';
 import { routedTrial } from './routedTrial';
@@ -22,14 +23,10 @@ function KnobSync({ schema, config }: KnobSyncProps) {
   const reading = useRef(true);
   const [typed, setTyped] = useState(0);
 
-  useEffect(() => {
-    const onHashChange = (): void => {
-      reading.current = true;
-      setTyped((n) => n + 1);
-    };
-    window.addEventListener('hashchange', onHashChange);
-    return () => window.removeEventListener('hashchange', onHashChange);
-  }, []);
+  useWindowEvent('hashchange', () => {
+    reading.current = true;
+    setTyped((n) => n + 1);
+  });
 
   useEffect(() => {
     if (reading.current && takeRouteFromTrial()) reading.current = false;
