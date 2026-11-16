@@ -123,6 +123,21 @@ describe('Badge removable', () => {
     expect(getByRole('button', { name: 'Remove' })).toBeDefined();
   });
 
+  it('runs a removable label\'s own onClick and onKeyUp before the badge\'s', () => {
+    const calls: string[] = [];
+    const labelProps = { onClick: () => calls.push('own click'), onKeyUp: () => calls.push('own up') };
+    const { unmount } = render(<Badge onClick={() => calls.push('act')} onRemove={() => {}} labelProps={labelProps}>x</Badge>);
+    const label = screen.getByRole('button', { name: 'x' });
+    fireEvent.click(label);
+    fireEvent.keyUp(label, { key: ' ' });
+    expect(calls).toEqual(['own click', 'act', 'own up', 'act']);
+    unmount();
+    calls.length = 0;
+    render(<Badge href="#x" onClick={() => calls.push('act')} onRemove={() => {}} labelProps={labelProps}>y</Badge>);
+    fireEvent.click(screen.getByText('y'));
+    expect(calls).toEqual(['own click', 'act']);
+  });
+
   it('fires onRemove without firing wrapper onClick', () => {
     const onClick = vi.fn();
     const onRemove = vi.fn();

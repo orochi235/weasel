@@ -1,4 +1,4 @@
-import type { FocusEvent, HTMLAttributes, KeyboardEvent, ReactNode } from 'react';
+import type { FocusEvent, HTMLAttributes, KeyboardEvent, MouseEvent, ReactNode } from 'react';
 import s from './Badge.module.css';
 import { Focusable, Tooltip, TooltipTrigger } from '../Tooltip';
 
@@ -46,20 +46,23 @@ export function BadgeTarget(props: BadgeTargetProps) {
     'aria-label': props['aria-label'],
     onFocus: (e: FocusEvent<HTMLElement>) => { extra?.onFocus?.(e); onFocusChange(true); },
     onBlur: (e: FocusEvent<HTMLElement>) => { extra?.onBlur?.(e); onFocusChange(false); },
+    onClick: (e: MouseEvent<HTMLElement>) => {
+      extra?.onClick?.(e);
+      if (!e.defaultPrevented) onClick?.();
+    },
   };
   const onOwnKey = (key: string, act: (e: KeyboardEvent) => void) => (e: KeyboardEvent) => {
     if (e.key === key && e.target === e.currentTarget) act(e);
   };
   let target;
   if (element === 'a') {
-    target = <a {...shared} href={href} onClick={onClick}>{children}</a>;
+    target = <a {...shared} href={href}>{children}</a>;
   } else if (element === 'button') {
     target = (
       <span
         {...shared}
         role="button"
         tabIndex={0}
-        onClick={onClick}
         onKeyDown={(e) => {
           extra?.onKeyDown?.(e);
           if (e.defaultPrevented) return;
@@ -67,7 +70,11 @@ export function BadgeTarget(props: BadgeTargetProps) {
           // Space acts on release, as a native button does; held, it must not scroll the page.
           onOwnKey(' ', (ev) => ev.preventDefault())(e);
         }}
-        onKeyUp={onOwnKey(' ', () => onClick?.())}
+        onKeyUp={(e) => {
+          extra?.onKeyUp?.(e);
+          if (e.defaultPrevented) return;
+          onOwnKey(' ', () => onClick?.())(e);
+        }}
       >
         {children}
       </span>
