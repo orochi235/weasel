@@ -248,6 +248,17 @@ Owner tags, after the priority (2026-10-26):
 
 ## Scene, adapters & layout
 
+### Core layering
+
+- **(P2) Split core into a viewer core and an editing layer** (queued 2026-11-15, after the text-out-of-core and
+  prefs-schema branches merge). Core is a viewer plus an editor today: 293 of its 1,057 shipped files mention
+  selection, and 45 editing actions take the `selection` dep as what they act on. First an operands contract in core
+  (a dep type: the ids an edit acts on), which those actions read instead of `selection`; then a package above core
+  provides it from selection (the store over `@weasel-js/select`, press-to-select, the select tool, marquee and lasso,
+  the selection overlay and handles, `<SceneCanvas selection>`), and the editing actions and their tools follow it.
+  Closes when core's shipped source names no selection implementation and a canvas with no editing layer mounted
+  draws and pans.
+
 ### Extension authoring and published consumers
 
 ---
