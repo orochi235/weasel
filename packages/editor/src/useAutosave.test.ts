@@ -75,14 +75,25 @@ describe('useAutosave', () => {
     vi.useFakeTimers();
     vi.spyOn(console, 'warn').mockImplementation(() => {});
     const onSaved = vi.fn();
-    renderHook(() => useAutosave(() => { throw new Error('cycle'); }, { onSaved }));
+    const cycle = new Error('cycle');
+    renderHook(() => useAutosave(() => { throw cycle; }, { onSaved }));
     await vi.advanceTimersByTimeAsync(300);
-    expect(onSaved).toHaveBeenLastCalledWith(false);
+    expect(onSaved).toHaveBeenLastCalledWith(false, cycle);
     onSaved.mockClear();
     vi.spyOn(window, 'localStorage', 'get').mockImplementation(() => { throw new Error('denied'); });
     renderHook(() => useAutosave(write('a'), { onSaved }));
     await vi.advanceTimersByTimeAsync(300);
     expect(onSaved).toHaveBeenLastCalledWith(false);
+  });
+
+  it('logs a write that throws when there is no onSaved to hear it', async () => {
+    vi.useFakeTimers();
+    const error = vi.spyOn(console, 'error').mockImplementation(() => {});
+    const cycle = new Error('cycle');
+    renderHook(() => useAutosave(() => { throw cycle; }));
+    await vi.advanceTimersByTimeAsync(300);
+    expect(error).toHaveBeenCalledWith(expect.stringContaining('write threw'), cycle);
+    error.mockRestore();
   });
 
   it('writes to the records it is given, and reports a write they refuse', async () => {

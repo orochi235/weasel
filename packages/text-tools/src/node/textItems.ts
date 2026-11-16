@@ -8,13 +8,24 @@ import {
   loadTextOutlines, textClusters, TextOutlinesError, type TextCluster, type TextOutlineSource,
 } from '@weasel-js/text';
 import { noteFontRead, type EffectItem } from '@weasel-js/core';
+import { isDev } from '@weasel-js/registry';
+
+const warnedFamilies = new Set<string>();
+
+function warnFamily(family: string, message: string, cause?: unknown): void {
+  if (!isDev() || warnedFamilies.has(family)) return;
+  warnedFamilies.add(family);
+  console.warn(`weasel textEffectItems: ${message}`, ...(cause === undefined ? [] : [cause]));
+}
 
 /**
  * The clusters of `data`'s first line as items, laid in `pose`'s box width.
  * The pose's scale grows them; its rotation and skew are dropped, since the
  * path an effect lays them along decides their turn. `[]` while a face's
  * outlines are loading — the load is started, and the font read is noted so
- * the derivation re-runs once it lands.
+ * the derivation re-runs once it lands. `[]` too when the text cannot have
+ * outlines at all (no outlines registered, a failed load, an emoji), with a
+ * development warning once per family.
  */
 export function textEffectItems(data: TextOutlineSource, pose: PathInWorldPose): readonly EffectItem[] {
   noteFontRead();
@@ -23,7 +34,13 @@ export function textEffectItems(data: TextOutlineSource, pose: PathInWorldPose):
     clusters = textClusters(data, { width: pose.width });
   } catch (err) {
     if (!(err instanceof TextOutlinesError)) throw err;
-    loadTextOutlines(data).catch(() => {});
+    if (err.reason === 'outlines-loading') {
+      loadTextOutlines(data).catch((cause: unknown) => {
+        warnFamily(err.family, `loading the outlines of "${err.family}" failed, so its text lays no items.`, cause);
+      });
+    } else {
+      warnFamily(err.family, `text in "${err.family}" lays no items along the path: ${err.message}`);
+    }
     return [];
   }
   const k = scaleOf(pose);

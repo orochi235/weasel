@@ -65,7 +65,7 @@
     "longestFunction": 281
   },
   "packages/history/src/history.ts": {
-    "longestFunction": 348
+    "longestFunction": 347
   },
   "packages/hud/src/attach.ts": {
     "longestFunction": 135

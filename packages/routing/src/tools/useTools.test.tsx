@@ -46,6 +46,30 @@ describe('useTools ids', () => {
   });
 });
 
+describe('useTools registry ids', () => {
+  function mount(opts: Parameters<typeof useTools>[0]): ToolsApi {
+    let tools!: ToolsApi;
+    function Host(): null {
+      tools = useTools(opts);
+      return null;
+    }
+    render(<ActiveToolContextProvider><Host /></ActiveToolContextProvider>);
+    return tools;
+  }
+
+  it('throws when a registry key differs from its tool id', () => {
+    expect(() => mount({ registry: { pen: a } })).toThrow(/registry key "pen" holds the tool "a"/);
+  });
+
+  it('throws when two different tools share an id', () => {
+    expect(() => mount({ registry: { a }, ambient: [tool('a')] })).toThrow(/two different tools share the id "a"/);
+  });
+
+  it('merges one tool object passed in both registry and ambient', () => {
+    expect(mount({ registry: { a }, ambient: [a] }).has('a')).toBe(true);
+  });
+});
+
 describe('useTools after an abandoned render', () => {
   it('answers has() from the committed registry', () => {
     expect(setup().committed().has('b')).toBe(false);

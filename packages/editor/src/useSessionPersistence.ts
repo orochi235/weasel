@@ -16,12 +16,13 @@ export interface SessionPersistenceOptions {
   /** Where the scene and its undo stack are kept, the keys their records' names: a cache opened before the scene is
    *  made, so its reads are ready. Defaults to `localStorage`, under the keys themselves. */
   records?: RecordCache;
-  /** Read the saved undo stack, as `pairHistory` wrote it; defaults to the `historyKey` entry. Return null for none. */
+  /** Read the saved undo stack, as `pairHistory` wrote it; defaults to the `historyKey` entry. Return null for none.
+   *  A throw starts the stack empty and is reported through `onHistoryRestore`, or `console.error` without one. */
   loadHistory?: () => unknown;
   /** How long after a change the save runs, as `useAutosave` takes it. Defaults to 300 ms. */
   debounceMs?: number;
-  /** Called after every save attempt with whether the scene was written. */
-  onSaved?: (ok: boolean) => void;
+  /** Called after every save attempt with whether the scene was written, and the error when encoding it threw. */
+  onSaved?: (ok: boolean, error?: unknown) => void;
   /** How the saved undo stack is restored (`Scene.restoreHistory`'s `recovery`). Defaults to `'strict'`, under which
    *  a stack naming an op this build cannot replay is dropped whole. */
   historyRecovery?: HistoryRecovery;
@@ -69,8 +70,13 @@ export function useSessionPersistence<D, L extends string, P>(
     const slots = sessionSlots(records);
     const history = slots.slot(historyKey);
     let snap: unknown = null;
-    try { snap = loadHistory ? loadHistory() : readSlot(history, (value) => value, () => null); } catch { /* treated as none */ }
-    if (snap !== null) {
+    let loadFailed: { status: 'failed'; error: unknown } | null = null;
+    try { snap = loadHistory ? loadHistory() : readSlot(history, (value) => value, () => null); }
+    catch (error) { loadFailed = { status: 'failed', error }; }
+    if (loadFailed) {
+      if (onHistoryRestore) onHistoryRestore(loadFailed);
+      else console.error('weasel useSessionPersistence: loadHistory threw, so the undo stack starts empty.', loadFailed.error);
+    } else if (snap !== null) {
       let outcome: HistoryRestore | { status: 'failed'; error: unknown };
       // A stack this build cannot restore must not wedge every boot: it is dropped, and the stack starts empty.
       try { outcome = restorePairedHistory(scene, snap, { recovery: historyRecovery ?? 'strict' }); }
@@ -94,7 +100,7 @@ export function useSessionPersistence<D, L extends string, P>(
       dependents: [[historyKey, saved.history]],
     };
   }, {
-    onSaved: (ok) => optsRef.current.onSaved?.(ok),
+    ...(opts.onSaved ? { onSaved: (ok: boolean, error?: unknown) => optsRef.current.onSaved?.(ok, error) } : {}),
     ...(opts.records ? { records: opts.records } : {}),
     ...(opts.debounceMs !== undefined ? { debounceMs: opts.debounceMs } : {}),
   });

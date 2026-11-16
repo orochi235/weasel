@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { dataRegionStyle } from '../dataStyles';
 import { diagramThemeFrom, roleEdgeStyle, roleStyle, themeDocValue } from './resolve';
 import { DIAGRAM_THEMES } from './themes';
@@ -8,7 +8,18 @@ const PROTO_KEYS = ['constructor', 'toString', 'valueOf', 'hasOwnProperty'];
 
 describe('theme lookups by a name from data', () => {
   it.each(PROTO_KEYS)('reads %s as no theme, falling back', (key) => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
     expect(diagramThemeFrom(key, paper)).toBe(paper);
+    warn.mockRestore();
+  });
+
+  it('falls back for an id no shipped theme has, warning once per id', () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    expect(diagramThemeFrom('papper', paper)).toBe(paper);
+    expect(diagramThemeFrom('papper', paper)).toBe(paper);
+    expect(warn).toHaveBeenCalledTimes(1);
+    expect(warn.mock.calls[0]![0]).toContain("no theme named 'papper'");
+    warn.mockRestore();
   });
 
   it.each(PROTO_KEYS)('reads role %s as the default role', (key) => {

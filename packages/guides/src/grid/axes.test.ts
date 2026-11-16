@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { IMPERIAL_INCHES } from '@weasel-js/core';
 import { cellOf, linesIn, linesNear, mapLines, nearestLine, resolveGridLines, type AxisLines } from './axes';
 import { gridFit } from './fit';
@@ -14,8 +14,27 @@ describe('resolveGridLines', () => {
     expect(resolveGridLines({ y: { at: [30, 0, 10, 10] } }, bare)).toEqual({ x: null, y: { at: [0, 10, 30] } });
   });
 
-  it('gives no lines for a pitch that is not positive', () => {
+  it('gives no lines for a pitch that is not positive, warning for all but 0', () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    expect(resolveGridLines({ x: 0 }, bare)).toEqual({ x: null, y: null });
+    expect(warn).not.toHaveBeenCalled();
     expect(resolveGridLines({ x: 0, y: -4 }, bare)).toEqual({ x: null, y: null });
+    expect(resolveGridLines({ y: -4 }, bare)).toEqual({ x: null, y: null });
+    expect(warn).toHaveBeenCalledTimes(1);
+    expect(warn.mock.calls[0]![0]).toContain('y axis: pitch -4 is not a positive finite number');
+    warn.mockRestore();
+  });
+
+  it('warns for a NaN or infinite pitch, and for from past to', () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    expect(resolveGridLines({ x: Number.NaN, y: Infinity }, bare)).toEqual({ x: null, y: null });
+    expect(resolveGridLines({ x: { pitch: 10, from: 100, to: 0 } }, bare)).toEqual({ x: null, y: null });
+    expect(warn.mock.calls.map((c) => c[0])).toEqual([
+      expect.stringContaining('x axis: pitch NaN'),
+      expect.stringContaining('y axis: pitch Infinity'),
+      expect.stringContaining('x axis: from 100 is past to 0'),
+    ]);
+    warn.mockRestore();
   });
 
   it('reads every length of an axis in its units, and names the axis that fails', () => {
