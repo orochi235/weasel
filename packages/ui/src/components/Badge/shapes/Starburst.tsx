@@ -1,5 +1,5 @@
 import type { ShapeModule } from '../types';
-import { DEG_TO_RAD } from '@weasel-js/geom';
+import { DEG_TO_RAD, lerp } from '@weasel-js/geom';
 
 /** What `shapeParams` takes on a `starburst` badge. */
 export interface BadgeStarburstShapeParams {
@@ -43,10 +43,10 @@ function starburstPath(points: number, outerR: number, innerR: number, rotationD
     const curr = pts[i];
     const next = pts[(i + 1) % pts.length];
     const t = rnd * 0.45;
-    const enterX = curr[0] + (prev[0] - curr[0]) * t;
-    const enterY = curr[1] + (prev[1] - curr[1]) * t;
-    const exitX = curr[0] + (next[0] - curr[0]) * t;
-    const exitY = curr[1] + (next[1] - curr[1]) * t;
+    const enterX = lerp(curr[0], prev[0], t);
+    const enterY = lerp(curr[1], prev[1], t);
+    const exitX = lerp(curr[0], next[0], t);
+    const exitY = lerp(curr[1], next[1], t);
     if (i === 0) d += `M ${enterX.toFixed(2)} ${enterY.toFixed(2)}`;
     else d += ` L ${enterX.toFixed(2)} ${enterY.toFixed(2)}`;
     d += ` Q ${curr[0].toFixed(2)} ${curr[1].toFixed(2)} ${exitX.toFixed(2)} ${exitY.toFixed(2)}`;

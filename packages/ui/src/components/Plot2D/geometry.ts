@@ -1,3 +1,5 @@
+import { lerp } from '@weasel-js/geom';
+
 /**
  * Coordinate transforms (model ↔ plot) for Plot2D. Pure / deterministic —
  * no DOM, no React, no state.
@@ -47,8 +49,8 @@ export function plotToModel(p: Point, m: ModelRange, plot: PlotSize): Point {
   const xFrac = p.x / plot.width;
   const yFrac = 1 - p.y / plot.height;
   return {
-    x: m.xMin + xFrac * (m.xMax - m.xMin),
-    y: m.yMin + yFrac * (m.yMax - m.yMin),
+    x: lerp(m.xMin, m.xMax, xFrac),
+    y: lerp(m.yMin, m.yMax, yFrac),
   };
 }
 
