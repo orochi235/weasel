@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState, type RefObject } from 'react';
 import { prefersReducedMotion } from '@weasel-js/react';
+import { compositeKey } from '@weasel-js/registry';
 
 /** One observed section: its id and its top edge, in the container's
  *  coordinates (its `getBoundingClientRect().top` less the container's). */
@@ -74,7 +75,7 @@ export function useScrollSpy(options: UseScrollSpyOptions): ScrollSpy {
   const heldRef = useRef<string | null>(null);
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const releaseRef = useRef<(() => void) | null>(null);
-  const key = ids.join('\u0000');
+  const key = compositeKey(ids);
 
   const measure = useCallback((): void => {
     const root = rootRef.current;

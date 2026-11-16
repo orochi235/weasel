@@ -1,5 +1,6 @@
 import { useLayoutEffect, useRef, useState, type RefObject } from 'react';
 import { cssPx } from '../../cssPx';
+import { compositeKey } from '@weasel-js/registry';
 
 const same = (a: ReadonlyMap<string, number>, b: ReadonlyMap<string, number>): boolean =>
   a.size === b.size && [...a].every(([key, length]) => b.get(key) === length);
@@ -34,7 +35,7 @@ export function useItemLengths(root: RefObject<HTMLElement | null>, keys: readon
   const known = useRef(new Map<string, number>());
   const observer = useRef<ResizeObserver | null>(null);
   const [lengths, setLengths] = useState<ReadonlyMap<string, number>>(() => new Map());
-  const signature = keys.join('\n');
+  const signature = compositeKey(keys);
 
   // A part like a bar's More button comes and goes with what fits, which no key says, so every commit looks again.
   useLayoutEffect(() => {
