@@ -10,7 +10,7 @@ import { Diamond } from './Diamond';
 import { type InterpolationMode, sampleByInterpolation, trimNumber } from '@weasel-js/geom';
 import { hitTestAnchor, hitTestCurve } from './hitTest';
 import { isHiddenAnchor, isPinnedEndpointAt } from './anchorRules';
-import { arrowMove } from '@weasel-js/quantity';
+import { arrowMove, decimal, present } from '@weasel-js/quantity';
 import { dlog } from '../../dlog';
 import s from './CurveEditor.module.css';
 import type {
@@ -34,7 +34,7 @@ export const CURVE_HIT_PX = 8;
 /** An arrow-key nudge, as a fraction of the range; shift takes ten. */
 const KEY_STEP_FRACTION = 0.01;
 
-const formatCoord = (n: number): string => String(Number(n.toFixed(3)));
+const formatCoord = (n: number): string => present(n, decimal({ maxPlaces: 3 })).spoken;
 
 // ── Helpers ───────────────────────────────────────────────────────────
 

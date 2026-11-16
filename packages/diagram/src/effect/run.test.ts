@@ -91,7 +91,7 @@ describe('paintRun', () => {
     const box = byId(painted, 'soft').pose as { x: number; y: number; width: number };
     const cost = byId(painted, 'soft/cost');
     const at = cost.pose as { x: number; y: number; width: number; height: number };
-    expect((cost.data as { text: string }).text).toBe('1235 ms');
+    expect((cost.data as { text: string }).text).toBe('1,235 ms');
     expect(at.x + at.width).toBeCloseTo(box.x + box.width);
     expect(at.y + at.height).toBeLessThanOrEqual(box.y);
     expect(painted.some((s) => s.id === 'hard/cost')).toBe(false);
@@ -195,7 +195,7 @@ describe('paintRun on awkward pipelines', () => {
 
 describe('costText', () => {
   it('gives three figures, and whole milliseconds from 100 up', () => {
-    expect([costText(0.4213), costText(12.345), costText(1234.5)]).toEqual(['0.421 ms', '12.3 ms', '1235 ms']);
+    expect([costText(0.4213), costText(12.345), costText(1234.5)]).toEqual(['0.421 ms', '12.3 ms', '1,235 ms']);
   });
 });
 

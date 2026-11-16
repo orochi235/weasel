@@ -5,6 +5,7 @@
  */
 import { RIGID_POSE_COMPOSITION, worldPosesOf, bitmapSrc } from '@weasel-js/core';
 import { minOf } from '@weasel-js/geom';
+import { formatNumber, withUnit } from '@weasel-js/quantity';
 import { getOwn } from '@weasel-js/registry';
 import type { DiagramSpec } from '../dataTypes';
 import { estimatedWidth } from '../rowMeasure';
@@ -182,6 +183,6 @@ function costSpec(stage: DiagramSpec, own: readonly DiagramSpec[], of: EffectSta
 
 /** A cost in milliseconds, to three figures. */
 export function costText(ms: number): string {
-  if (ms >= 100) return `${Math.round(ms)} ms`;
-  return `${Number(ms.toPrecision(3))} ms`;
+  const shown = ms >= 100 ? formatNumber(ms, { maximumFractionDigits: 0 }) : formatNumber(ms, { maximumSignificantDigits: 3 });
+  return withUnit(shown, 'ms', { space: true });
 }
