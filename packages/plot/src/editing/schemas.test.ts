@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { compilePlot, type PlotData, type PlotKind } from '../plotData';
 import { PLOT_THEME } from '../theme';
 import { plotSchemaOf, plotTablesIn } from './schemas';
+import { plotEditorOf } from './editors';
 import type { PlotColumn, PlotScope, PlotTable, PlotValue } from './schemaTypes';
 
 const measure = (text: string) => ({ width: text.length * 7, height: 14 });
@@ -91,3 +92,12 @@ function exercise(table: PlotTable, scope: PlotScope, start: PlotData): PlotData
   }
   return data;
 }
+
+describe('a chart kind named like an Object.prototype member', () => {
+  it('has no compiler, schema, or editor', () => {
+    const data = { kind: 'constructor' } as unknown as PlotData;
+    expect(() => compilePlot(data, { width: 100, height: 100 }, PLOT_THEME, { text: () => ({ width: 1, height: 1 }) } as never)).toThrow(/no chart of kind/);
+    expect(() => plotSchemaOf(data)).toThrow(/no schema/);
+    expect(plotEditorOf(data)).toBeNull();
+  });
+});

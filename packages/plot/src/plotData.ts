@@ -22,6 +22,7 @@ import { compileTimeline } from './timeline/compile';
 import type { TimelineData } from './timeline/types';
 import { compileXyChart } from './xychart/compile';
 import type { XyChartData } from './xychart/types';
+import { getOwn } from '@weasel-js/registry';
 
 /** A chart, as data: one spec per kind, told apart by `kind`. */
 export type PlotData =
@@ -52,7 +53,7 @@ const COMPILERS: { readonly [K in PlotKind]: PlotCompiler<Extract<PlotData, { ki
 export function compilePlot(
   data: PlotData, size: { width: number; height: number }, theme: PlotTheme, measure: PlotMeasure,
 ): PlotMark[] {
-  const compile = COMPILERS[data.kind] as PlotCompiler<PlotData> | undefined;
+  const compile = getOwn(COMPILERS, data.kind) as PlotCompiler<PlotData> | undefined;
   if (compile === undefined) throw new Error(`compilePlot: no chart of kind "${(data as { kind: string }).kind}"`);
   return compile(data, size, theme, measure).marks;
 }

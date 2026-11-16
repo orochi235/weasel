@@ -13,6 +13,7 @@ import { sankeyEditor } from '../sankey/editor';
 import type { PlotTheme } from '../theme';
 import { timelineEditor } from '../timeline/editor';
 import { xyEditor } from '../xychart/editor';
+import { getOwn } from '@weasel-js/registry';
 
 /** A handle a press can take: where it stands in the plot's coordinates, and the cursor over it. */
 export interface PlotHandle {
@@ -53,7 +54,7 @@ const EDITORS: { readonly [K in PlotKind]?: PlotEditor<Extract<PlotData, { kind:
 
 /** The edits `data`'s kind allows, or `null` for a kind with none. */
 export const plotEditorOf = (data: PlotData): PlotEditor<PlotData> | null =>
-  (EDITORS[data.kind] as PlotEditor<PlotData> | undefined) ?? null;
+  (getOwn(EDITORS, data.kind) as PlotEditor<PlotData> | undefined) ?? null;
 
 /** A handle list as an array, whatever {@link PlotEditor.handle} returned. */
 export const handlesOf = (h: PlotHandle | readonly PlotHandle[] | null): readonly PlotHandle[] =>
