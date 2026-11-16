@@ -21,7 +21,12 @@ describe('the annotation tool table', () => {
     // Against the kit's own lists, not a retyped copy: a tool id that stops
     // being built in should fail here rather than in a silent no-op palette.
     // The pencil is path-tools', which the overlay mounts beside the built-ins, and text is text-tools'.
-    const mountable = new Set<string>([...KIT_SHAPE_KINDS, 'select', 'pencil', ...toolIdsOf([TEXT_TOOLS])]);
+    const mountable = new Set<string>([
+      ...KIT_SHAPE_KINDS,
+      'select',
+      'pencil',
+      ...toolIdsOf([TEXT_TOOLS]),
+    ]);
     for (const t of ANNOTATION_TOOLS) {
       const info = annotationToolInfo(t.id);
       if (!info) continue;

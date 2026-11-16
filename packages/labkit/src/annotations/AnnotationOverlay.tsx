@@ -118,9 +118,15 @@ export function insertedGeometry(
 }
 
 /** The text tool, from text-tools; the pencil is mounted from path-tools, and core's built-ins by id. */
-const ANNOTATION_TEXT: FeaturePreset = { id: 'annotations:text', tools: [createTextTool()], includes: [textPreset] };
+const ANNOTATION_TEXT: FeaturePreset = {
+  id: 'annotations:text',
+  tools: [createTextTool()],
+  includes: [textPreset],
+};
 const FEATURES = [pickPreset, movePreset, transformPreset, editPreset, ANNOTATION_TEXT];
-const BUILTIN_ANNOTATION_TOOLS = ANNOTATION_WEASEL_TOOLS.filter((t): t is BuiltinToolId => (BUILTIN_TOOL_IDS as readonly string[]).includes(t));
+const BUILTIN_ANNOTATION_TOOLS = ANNOTATION_WEASEL_TOOLS.filter((t): t is BuiltinToolId =>
+  (BUILTIN_TOOL_IDS as readonly string[]).includes(t),
+);
 
 /** One factory per weasel tool, each making the mark the rail's tool means. */
 function insertFactories(

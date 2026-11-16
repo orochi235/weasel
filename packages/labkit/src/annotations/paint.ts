@@ -1,5 +1,13 @@
 import type { CommandStroke, DrawCommand, NodeShapeEntry, Path, View } from '@weasel-js/core';
-import { ellipsePath, HANDLE_BASE_PX, linePath, PathBuilder, pxExtent, rectPath, textCommand } from '@weasel-js/core';
+import {
+  ellipsePath,
+  HANDLE_BASE_PX,
+  linePath,
+  PathBuilder,
+  pxExtent,
+  rectPath,
+  textCommand,
+} from '@weasel-js/core';
 import { boxOf, fromShape, type WorldRect } from './frac';
 import type { AnnotationData } from './types';
 
