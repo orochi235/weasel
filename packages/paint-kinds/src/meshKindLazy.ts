@@ -1,7 +1,7 @@
 /**
- * The paint-kind registry's dynamic-import target for `mesh-gradient`. core's
+ * The paint-kind registry's dynamic-import target for `mesh-gradient`. The
  * build replaces this module's dist file with a self-contained bundle; see
- * `selfContainedLazyKinds` in `packages/core/vite.config.ts`.
+ * `selfContainedLazyKinds` in `tsup.config.ts`.
  *
  * @packageDocumentation
  */
