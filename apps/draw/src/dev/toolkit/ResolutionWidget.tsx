@@ -163,6 +163,7 @@ export function ResolutionWidget({
           mode="multiple"
           size="sm"
           aria-label="modifiers"
+          sweep
           items={MOD_KEYS.map((m) => ({ value: m, label: m }))}
           value={MOD_KEYS.filter((m) => mods[m])}
           onChange={(next) => setMods(Object.fromEntries(next.map((m) => [m, true])))}

@@ -126,4 +126,15 @@ describe('ResolutionWidget', () => {
     expect(screen.getByRole('button', { name: 'shift' }).getAttribute('aria-pressed')).toBe('true');
     expect(screen.getByText('No binding matches this input.')).toBeTruthy();
   });
+
+  it('holds one modifier alone on Alt-click, and every modifier on a second', () => {
+    renderWidget();
+    const pressed = () => ['shift', 'alt', 'meta', 'ctrl'].map((m) => screen.getByRole('button', { name: m }).getAttribute('aria-pressed'));
+    fireEvent.click(screen.getByRole('button', { name: 'shift' }));
+    fireEvent.click(screen.getByRole('button', { name: 'alt' }));
+    fireEvent.click(screen.getByRole('button', { name: 'meta' }), { altKey: true });
+    expect(pressed()).toEqual(['false', 'false', 'true', 'false']);
+    fireEvent.click(screen.getByRole('button', { name: 'meta' }), { altKey: true });
+    expect(pressed()).toEqual(['true', 'true', 'true', 'true']);
+  });
 });
