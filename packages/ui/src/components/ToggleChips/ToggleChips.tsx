@@ -1,5 +1,5 @@
 import { type ReactElement, type ReactNode } from 'react';
-import { selection, type MultipleSelection } from '@weasel-js/ui-input';
+import { selection, soloFrom, type MultipleSelection } from '@weasel-js/ui-input';
 import { SegmentSweeper, SWEEP_INDEX_ATTR, useSweepGuard } from '../Segmented/segmentSweep';
 import type { SegmentedSweepProps } from '../Segmented/SegmentedBar';
 import { selectionRoving } from '../../selectionRoving';
@@ -33,6 +33,8 @@ export type ToggleChipsProps<V extends string | number = string> = Omit<Multiple
  * list of values that are on. A chip that is off is drawn dimmed. It is `SegmentedBar`'s `'multiple'` mode in a
  * different layout: the same selection, the same keys (the arrows move focus, Space and Enter flip the focused chip),
  * and with `sweep` the same drag, which sets every chip it reaches to what the press set the first one to.
+ * Alt-clicking a chip, or Alt+Space or Alt+Enter, solos it: it on and every other chip off, or, when that already
+ * holds, every chip on. An Alt-drag solos the chips it reaches.
  */
 export function ToggleChips<V extends string | number = string>(props: ToggleChipsProps<V>): ReactElement {
   const { items, className } = props;
@@ -58,8 +60,10 @@ export function ToggleChips<V extends string | number = string>(props: ToggleChi
               className={s.chip}
               data-state={state}
               {...(props.sweep ? { [SWEEP_INDEX_ATTR]: i } : {})}
-              onClick={() => {
-                if (usable(i) && !guard.sweeping()) model.press(i);
+              onClick={(event) => {
+                if (!usable(i) || guard.sweeping()) return;
+                if (event.altKey) soloFrom(model, i, items.length, usable);
+                else model.press(i);
               }}
             >
               {item.label}

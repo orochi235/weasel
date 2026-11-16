@@ -1,5 +1,5 @@
 import '@weasel-js/theme/tokens.css';
-import { act, cleanup, render, screen } from '@testing-library/react';
+import { act, cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { useState } from 'react';
 import { afterEach, expect, test } from 'vitest';
 import { Badge } from '@weasel-js/ui/components/Badge';
@@ -28,12 +28,18 @@ function Chips() {
 }
 
 /** Fires `type` at the element the page draws at (`x`, `y`). */
-function fire(type: string, x: number, y: number): void {
+function fire(type: string, x: number, y: number, altKey = false): void {
   const el = document.elementFromPoint(x, y)!;
   act(() => {
-    el.dispatchEvent(new PointerEvent(type, { bubbles: true, pointerId: 1, pointerType: 'mouse', button: 0, buttons: 1, clientX: x, clientY: y }));
+    el.dispatchEvent(new PointerEvent(type, { bubbles: true, pointerId: 1, pointerType: 'mouse', button: 0, buttons: 1, clientX: x, clientY: y, altKey }));
   });
 }
+
+const middle = (el: HTMLElement) => {
+  const r = el.getBoundingClientRect();
+  return { x: r.left + r.width / 2, y: r.top + r.height / 2 };
+};
+const on = (chips: HTMLElement[]) => chips.filter((chip) => chip.getAttribute('aria-pressed') === 'true');
 
 test('the chips wrap, a drag down onto the next line turns off both chips it crosses, and off chips draw dimmed', async () => {
   render(<Chips />);
@@ -55,4 +61,23 @@ test('the chips wrap, a drag down onto the next line turns off both chips it cro
   const on = chips.find((chip) => chip.getAttribute('aria-pressed') === 'true')!;
   // Past the opacity transition.
   await expect.poll(() => Number(getComputedStyle(chips[0]!).opacity)).toBeLessThan(Number(getComputedStyle(on).opacity));
+});
+
+test('an Alt-drag along a line solos the chips it reaches, and an Alt-click on the only one on turns them all back on', async () => {
+  render(<Chips />);
+  const chips = screen.getAllByRole('button');
+  const a = middle(chips[0]!);
+  const b = middle(chips[1]!);
+  expect(Math.round(chips[1]!.getBoundingClientRect().top)).toBe(Math.round(chips[0]!.getBoundingClientRect().top));
+  fire('pointerdown', a.x, a.y, true);
+  fire('pointermove', b.x, b.y);
+  fire('pointerup', b.x, b.y);
+  expect(on(chips)).toEqual([chips[0], chips[1]]);
+
+  // Past the click a sweep's release makes, which the sweep swallows.
+  await new Promise((resolve) => setTimeout(resolve, 0));
+  fireEvent.click(chips[0]!, { altKey: true });
+  expect(on(chips)).toEqual([chips[0]]);
+  fireEvent.click(chips[0]!, { altKey: true });
+  expect(on(chips)).toEqual(chips);
 });

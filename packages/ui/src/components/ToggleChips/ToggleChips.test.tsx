@@ -64,6 +64,39 @@ describe('ToggleChips', () => {
     expect(pressed()).toEqual(['false', 'true', 'false', 'true', 'false']);
   });
 
+  describe('solo', () => {
+    it('turns an Alt-clicked chip on and every other off, in one change, and the same Alt-click turns them back on', () => {
+      const seen: string[][] = [];
+      render(<Chips initial={['a', 'd']} seen={seen} />);
+      const buttons = screen.getAllByRole('button');
+      fireEvent.click(buttons[1]!, { altKey: true });
+      expect(pressed()).toEqual(['false', 'true', 'false', 'false', 'false']);
+      fireEvent.click(buttons[1]!, { altKey: true });
+      expect(pressed()).toEqual(['true', 'true', 'false', 'true', 'true']);
+      expect(seen).toEqual([['b'], ['b', 'a', 'd', 'e']]);
+    });
+
+    it('leaves a disabled chip as it is, and counts a mixed chip as off', () => {
+      const onChange = vi.fn();
+      const on = [{ value: 'x', label: 'X', disabled: true }, ...ITEMS.slice(0, 2)];
+      const { rerender } = render(<ToggleChips items={on} value={['x', 'a']} mixedValues={['b']} onChange={onChange} />);
+      fireEvent.click(screen.getAllByRole('button')[1]!, { altKey: true });
+      expect(onChange).toHaveBeenLastCalledWith(['x', 'a', 'b']);
+      rerender(<ToggleChips items={on} value={['x']} mixedValues={['b']} onChange={onChange} />);
+      fireEvent.click(screen.getAllByRole('button')[1]!, { altKey: true });
+      expect(onChange).toHaveBeenLastCalledWith(['x', 'a']);
+    });
+
+    it('solos the focused chip on Alt+Space and Alt+Enter', () => {
+      render(<Chips initial={['a', 'b']} />);
+      const buttons = screen.getAllByRole('button');
+      fireEvent.keyDown(buttons[3]!, { key: ' ', altKey: true });
+      expect(pressed()).toEqual(['false', 'false', 'false', 'true', 'false']);
+      fireEvent.keyDown(buttons[3]!, { key: 'Enter', altKey: true });
+      expect(pressed()).toEqual(['true', 'true', 'false', 'true', 'true']);
+    });
+  });
+
   describe('sweep', () => {
     /** Lays the chips out as 10px columns and returns a pointer driver. */
     function setup(initial: string[] = []) {
@@ -71,10 +104,10 @@ describe('ToggleChips', () => {
       render(<Chips initial={initial} sweep seen={seen} />);
       const buttons = screen.getAllByRole('button');
       document.elementFromPoint = (x: number) => buttons[Math.floor(x / 10)] ?? null;
-      const fire = (type: string, x: number): void => {
+      const fire = (type: string, x: number, altKey = false): void => {
         const el = buttons[Math.floor(x / 10)] ?? buttons[0]!;
         act(() => {
-          el.dispatchEvent(new PointerEvent(type, { bubbles: true, pointerId: 1, button: 0, buttons: 1, clientX: x, clientY: 5 }));
+          el.dispatchEvent(new PointerEvent(type, { bubbles: true, pointerId: 1, button: 0, buttons: 1, clientX: x, clientY: 5, altKey }));
         });
       };
       return { seen, buttons, fire };
@@ -107,6 +140,31 @@ describe('ToggleChips', () => {
       fire('pointermove', 35);
       fire('pointercancel', 35);
       expect(pressed()).toEqual(['false', 'false', 'false', 'false', 'true']);
+    });
+
+    it('solos what an Alt-drag reaches, from the states at the press, wherever Alt is at the release', () => {
+      const { fire } = setup(['d', 'e']);
+      fire('pointerdown', 5, true);
+      fire('pointermove', 15);
+      fire('pointermove', 5);
+      fire('pointerup', 5);
+      expect(pressed()).toEqual(['true', 'true', 'false', 'false', 'false']);
+    });
+
+    it('turns every chip back on from an Alt-drag that stays on the one chip on', () => {
+      const { fire } = setup(['b']);
+      fire('pointerdown', 11, true);
+      fire('pointermove', 19, true);
+      fire('pointerup', 19, true);
+      expect(pressed()).toEqual(['true', 'true', 'false', 'true', 'true']);
+    });
+
+    it('puts the chips back when an Alt-drag is canceled', () => {
+      const { fire } = setup(['d', 'e']);
+      fire('pointerdown', 5, true);
+      fire('pointermove', 15, true);
+      fire('pointercancel', 15, true);
+      expect(pressed()).toEqual(['false', 'false', 'false', 'true', 'true']);
     });
   });
 });
