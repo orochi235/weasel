@@ -58,6 +58,16 @@ describe('KeyDiagram', () => {
     act(() => vi.advanceTimersByTime(200));
     expect(root(container).dataset.up).toBeUndefined();
   });
+
+  it('stays up for the whole of a linger longer than one timer holds', () => {
+    vi.useFakeTimers();
+    const root = (c: HTMLElement) => c.firstElementChild as HTMLElement;
+    const linger = 2 ** 31 / 1000;
+    const { container, rerender } = render(<KeyDiagram layout={KEYBOARD_LAYOUTS.macos} linger={linger} held={new Set(['KeyA'])} />);
+    rerender(<KeyDiagram layout={KEYBOARD_LAYOUTS.macos} linger={linger} />);
+    act(() => vi.advanceTimersByTime(1));
+    expect(root(container).dataset.up).toBe('true');
+  });
 });
 
 describe('useHeldKeys', () => {

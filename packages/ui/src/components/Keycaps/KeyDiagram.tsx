@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState, type CSSProperties, type ReactNode } from 'react';
+import { after } from '@weasel-js/registry';
 import { detectPlatform, keyLegendFromCode, type KeyLabels, type LegendStyle, type Platform } from '@weasel-js/gestures';
 import type { ColorSource } from '@weasel-js/paint';
 import { useColorCss } from '@weasel-js/theme/react';
@@ -133,8 +134,7 @@ function useLinger(busy: boolean, linger: number | undefined): boolean {
   }
   useEffect(() => {
     if (!lingering || linger === undefined) return;
-    const timer = setTimeout(() => setLingering(false), linger * 1000);
-    return () => clearTimeout(timer);
+    return after(linger * 1000, () => setLingering(false));
   }, [lingering, linger]);
   return linger === undefined || busy || lingering;
 }
