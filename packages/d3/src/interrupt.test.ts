@@ -4,6 +4,7 @@ import { useScene, linear } from '@weasel-js/core';
 import { useAnimator } from '@weasel-js/animator/react';
 import type { Animator } from '@weasel-js/animator';
 import { d3Bind } from './bind';
+import { transitionCancelKey } from './cancelKey';
 
 interface Datum {
   id: string;
@@ -49,7 +50,7 @@ function setup() {
       .pose((d) => ({ x: d.x, y: 0, width: 10, height: 10 }))
       .join();
   const x = (id: string) => scene.current.get(id as never)?.pose.x;
-  return { clock, bind, x };
+  return { clock, bind, x, animator: () => animator.current as Animator };
 }
 
 const settled = async (p: Promise<void>): Promise<boolean> => {
@@ -127,5 +128,33 @@ describe('d3Bind transition — interrupting one node', () => {
     act(() => s.clock.advance(0));
     act(() => s.clock.advance(1000));
     expect(s.x('a')).toBeCloseTo(200, 6);
+  });
+});
+
+describe('d3Bind transition — cancel keys', () => {
+  it('a transition named `a:b` on node `c` leaves one named `a` on node `b:c` running', () => {
+    const s = setup();
+    act(() => void s.bind([{ id: 'c', x: 0 }, { id: 'b:c', x: 0 }]));
+    act(() => {
+      const sel = s.bind([{ id: 'c', x: 100 }, { id: 'b:c', x: 100 }]);
+      sel.filter((d) => d.id === 'b:c').transition('a').duration(100).ease(linear).end();
+      sel.filter((d) => d.id === 'c').transition('a:b').duration(100).ease(linear).end();
+    });
+    act(() => s.clock.advance(0));
+    act(() => s.clock.advance(200));
+    expect(s.x('b:c')).toBeCloseTo(100, 6);
+    expect(s.x('c')).toBeCloseTo(100, 6);
+  });
+
+  it('transitionCancelKey names the tween animator.cancelKey stops', () => {
+    const s = setup();
+    act(() => void s.bind([{ id: 'a', x: 0 }]));
+    act(() => void s.bind([{ id: 'a', x: 100 }]).transition('move').duration(100).ease(linear).end());
+    act(() => s.clock.advance(0));
+    act(() => s.clock.advance(50));
+    const mid = s.x('a')!;
+    act(() => s.animator().cancelKey(transitionCancelKey('move', 'a')));
+    act(() => s.clock.advance(100));
+    expect(s.x('a')).toBeCloseTo(mid, 6);
   });
 });

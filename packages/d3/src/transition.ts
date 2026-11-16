@@ -1,6 +1,7 @@
 import type { NodeId, PoseDescriptor, Scene } from '@weasel-js/core';
 import type { Animator, AnimationHandle, EasingFn } from '@weasel-js/animator';
 import { after, createEmitter } from '@weasel-js/registry';
+import { transitionCancelKey } from './cancelKey';
 import { pendingFor, unregisterRemoval } from './pendingRemovals';
 import type { D3Transition } from './types';
 import { lerp } from '@weasel-js/geom';
@@ -73,10 +74,7 @@ interface Stage {
  * on a transition chained to it. The first transition in a chain tweens each
  * node from `priorPoses[id]` → the joined pose (or its `.pose()` target); a
  * chained one tweens from wherever the previous one left the node, and only
- * when it has a `.pose()`.
- *
- * The cancelKey is `d3-transition:<name>:<nodeId>` for pose tweens and
- * `d3-transition:<name>:<nodeId>:<tweenName>` for custom tweens.
+ * when it has a `.pose()`. {@link transitionCancelKey} names its tweens.
  */
 export function createTransition<TData, TPose>(
   ctx: TransitionCtx<TData, TPose>,
@@ -113,7 +111,7 @@ function makeStage<TData, TPose>(
   let itemsLeft = ids.length;
   /** Where the first transition in a chain heads by default: the post-join pose. */
   const joinedPoses = new Map<NodeId, TPose>();
-  const nsOf = (i: number): string => `d3-transition:${name}:${ids[i]}`;
+  const nsOf = (i: number): string => transitionCancelKey(name, ids[i]);
   const stops = ids.map((_, i) => (): void => stage.root.cancelItem(i, true));
   const track = (i: number): void => void liveIn(ctx.animator, nsOf(i)).set(stops[i], stage.root);
   const untrack = (i: number): void => untrackItem(ctx.animator, nsOf(i), stops[i]);
@@ -215,7 +213,7 @@ function makeStage<TData, TPose>(
     for (const ct of customTweens) {
       const fromVal = ct.from(d, i);
       const toVal = ct.to(d, i);
-      const customKey = `${ns}:${ct.name}`;
+      const customKey = transitionCancelKey(name, id, ct.name);
       jobs.push((done) => {
         pushTo(
           handles,

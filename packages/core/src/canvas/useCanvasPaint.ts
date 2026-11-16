@@ -35,8 +35,8 @@ export interface PaintFrame {
 }
 
 /**
- * Which content version the last paint showed. `markPainted` records the current one, read
- * from `contentVersion`'s latest committed value.
+ * Which content version the last paint showed, `0` before the first. `markPainted` records the
+ * current one, read from `contentVersion`'s latest committed value, or `1` without one.
  */
 export function usePaintedVersion(contentVersion: (() => number) | undefined): {
   getPaintedVersion: () => number;
@@ -46,7 +46,7 @@ export function usePaintedVersion(contentVersion: (() => number) | undefined): {
   const paintedVersionRef = useRef(0);
   const getPaintedVersion = useCallback(() => paintedVersionRef.current, []);
   const markPainted = useCallback(() => {
-    paintedVersionRef.current = contentVersionRef.current?.() ?? 0;
+    paintedVersionRef.current = contentVersionRef.current?.() ?? 1;
   }, [contentVersionRef]);
   return { getPaintedVersion, markPainted };
 }

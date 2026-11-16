@@ -47,6 +47,16 @@ const newScene = () => {
 };
 
 describe('SceneCanvas scene subscription', () => {
+  it('reports a painted untouched scene apart from nothing painted yet', async () => {
+    const scene = createScene<D, L, P>({ systemLayers: [{ id: 'main' }] });
+    const apiRef = { current: null as SceneCanvasApi | null };
+    render(<SceneCanvas<D, L, P> ref={apiRef} scene={scene} width={200} height={150} />);
+    expect(apiRef.current!.getPaintedVersion()).toBe(0);
+    await frame();
+    expect(scene.getVersion()).toBe(1);
+    expect(apiRef.current!.getPaintedVersion()).toBe(1);
+  });
+
   it('repaints on a pose write without committing', async () => {
     const scene = newScene();
     const apiRef = { current: null as SceneCanvasApi | null };

@@ -401,6 +401,14 @@ describe('painted content version', () => {
     expect(apiRef.current!.getPaintedVersion()).toBe(7);
   });
 
+  it('reports 1 once painted when nothing gives a contentVersion, so 0 still means nothing painted', async () => {
+    const apiRef = { current: null as CanvasExtensionApi | null };
+    render(<Canvas ref={apiRef} width={100} height={80} layers={{}} defaultView={IDENTITY} />);
+    expect(apiRef.current!.getPaintedVersion()).toBe(0);
+    await frame();
+    expect(apiRef.current!.getPaintedVersion()).toBe(1);
+  });
+
   it('reads the contentVersion the latest render passed', async () => {
     const apiRef = { current: null as CanvasExtensionApi | null };
     const layers = {};

@@ -2,6 +2,7 @@ import { asNodeId, RECT_POSE_DESCRIPTOR } from '@weasel-js/core';
 import type { NodeId, PoseDescriptor, Scene } from '@weasel-js/core';
 import type { Animator } from '@weasel-js/animator';
 import { cancelPendingRemoval } from './pendingRemovals';
+import { transitionCancelKey } from './cancelKey';
 import { createTransition, interruptNode } from './transition';
 import type {
   BindOptions,
@@ -240,7 +241,7 @@ function createSelection<TData, TPose>(
     },
     interrupt(name?: string) {
       if (!animator) return sel;
-      for (const id of ids) interruptNode(animator, `d3-transition:${name ?? ''}:${id}`);
+      for (const id of ids) interruptNode(animator, transitionCancelKey(name ?? '', id));
       return sel;
     },
   };

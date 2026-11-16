@@ -77,10 +77,6 @@ build what their behaviors read over the scene.
 with `null` naming the root. Array order **is** z-order: index 0 is the bottom.
 Hit-tests walk it in reverse and render layers walk it forward.
 
-`MoveAdapter.findSnapTarget?(draggedId, worldX, worldY)` returns
-`{ parentId, slotPose, metadata? }`, where the dragged node would re-parent to
-if released. The kit treats `metadata` as opaque; renderers consume it.
-
 ## Writing one by hand
 
 Write an adapter when the kit does not own the store — a Redux or CRDT

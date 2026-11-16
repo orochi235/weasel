@@ -5,6 +5,13 @@ import { createSceneSelection } from './sceneSelection';
 afterEach(() => vi.restoreAllMocks());
 
 describe('createNotifier', () => {
+  it('starts at version 1 and counts each change', () => {
+    const notifier = createNotifier();
+    expect(notifier.version()).toBe(1);
+    notifier.notify();
+    expect(notifier.version()).toBe(2);
+  });
+
   it('still tells the subscribers after one that throws', () => {
     const logged = vi.spyOn(console, 'error').mockImplementation(() => {});
     const notifier = createNotifier();
