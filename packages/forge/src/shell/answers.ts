@@ -41,7 +41,10 @@ export function createAnswerBook(): AnswerBook {
     hold(config) {
       const key = keyOf(config);
       held.set(key, (held.get(key) ?? 0) + 1);
+      let released = false;
       return () => {
+        if (released) return;
+        released = true;
         const count = (held.get(key) ?? 1) - 1;
         if (count > 0) held.set(key, count);
         else held.delete(key);

@@ -85,4 +85,16 @@ describe('createAnswerBook', () => {
     book.record({ configKey: key, hidden: ['d'], errors: {} });
     expect(fn).toHaveBeenCalledTimes(1);
   });
+
+  it("lets a release called twice take back only its own hold, not another trial's", () => {
+    const book = createAnswerBook();
+    const fn = vi.fn();
+    book.subscribe(fn);
+    const first = book.hold(config);
+    book.hold(config);
+    first();
+    first();
+    book.record({ configKey: key, hidden: ['d'], errors: {} });
+    expect(fn).toHaveBeenCalledTimes(1);
+  });
 });
