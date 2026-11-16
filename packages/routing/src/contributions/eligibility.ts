@@ -13,6 +13,20 @@ export interface EligibilityState {
   allows?: (tags: readonly CapabilityTag[]) => boolean;
   /** The innermost open keymap's id: the one keymap entry that is live. */
   openKeymap?: string | null;
+  /** The `owner` of the affordance the input being routed hit, `null` when it
+   *  hit none. Absent when no input is being routed (drawing overlays, asking
+   *  whether any binding could match), where a `claimed` entry counts as live. */
+  inputOwner?: string | null;
+}
+
+/** Whether a hit `owner` produced is entry `id`'s own under its `claimed` declaration. */
+export function ownsAffordance(
+  id: string,
+  claimed: NonNullable<Eligibility['claimed']>,
+  owner: string | null,
+): boolean {
+  if (owner === null) return false;
+  return owner === id || (claimed !== true && claimed.includes(owner));
 }
 
 /**
@@ -29,6 +43,8 @@ export function liveScope(
   if (eligibility.keymap) return state.openKeymap === id ? 'hotkey' : null;
   if (state.engagedIds?.has(id)) return 'hotkey';
   if (eligibility.focus && state.focusedId === id) return 'active';
-  if (eligibility.always || eligibility.claimed) return 'ambient';
+  if (eligibility.always) return 'ambient';
+  const claimed = eligibility.claimed;
+  if (claimed && (state.inputOwner === undefined || ownsAffordance(id, claimed, state.inputOwner))) return 'ambient';
   return null;
 }

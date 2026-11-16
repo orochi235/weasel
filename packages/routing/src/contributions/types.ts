@@ -49,8 +49,11 @@ export interface Eligibility {
   offhand?: HotkeyTrigger;
   /** Live regardless of what is focused. */
   always?: boolean;
-  /** Live only for input this entry's own affordances produced. */
-  claimed?: boolean;
+  /** Live only for input that hit one of this entry's own affordances: one
+   *  whose `owner` is the entry's id, or, given a list, one of its ids (the
+   *  layers and affordances the entry hit-tests under ids of their own).
+   *  Input that hit no affordance, a keystroke among it, never reaches it. */
+  claimed?: true | readonly string[];
   /** Modality filter, applied wherever it would otherwise be live. */
   capabilities?: CapabilityTag[];
   /** A keymap: live only while it is the innermost one open, at the hotkey

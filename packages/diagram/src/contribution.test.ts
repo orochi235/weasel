@@ -46,9 +46,16 @@ describe('diagramPorts', () => {
     expect(c.actions!.every((a) => a.defaultBinding === undefined)).toBe(true);
   });
 
-  it('is ambient — a port is grabbable whatever tool is active', () => {
+  it('is ambient — a port is grabbable whatever tool is active — for input that hit its own layer', () => {
     const c = diagramPorts<Rect>({ participants: PARTICIPANTS });
-    expect(c.eligibility).toEqual({ claimed: true });
+    expect(c.eligibility).toEqual({ claimed: [PORT_LAYER_ID] });
+    expect(c.layers?.map((l) => l.id)).toEqual([PORT_LAYER_ID]);
+  });
+
+  it('keeps the port layer its own id when the connect action is renamed', () => {
+    const c = diagramPorts<Rect>({ participants: PARTICIPANTS, id: 'my.connect' });
+    expect(c.layers?.map((l) => l.id)).toEqual([PORT_LAYER_ID]);
+    expect(c.eligibility).toEqual({ claimed: [PORT_LAYER_ID] });
   });
 
   it('carries the port layer as a registered layer, never as a painted overlay', () => {

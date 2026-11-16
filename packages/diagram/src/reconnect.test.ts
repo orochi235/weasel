@@ -250,7 +250,7 @@ describe('the edge-end affordance', () => {
     const contribution = diagramEdgeEnds<Rect>({ participants: PARTICIPANTS, selected: () => ['ab'] });
     expect(contribution.layers?.map((l) => l.id)).toEqual(['diagram-edge-ends']);
     expect(EDGE_END_AFFORDANCE_KIND).toBe('layer:diagram-edge-ends');
-    expect(contribution.eligibility).toEqual({ claimed: true });
+    expect(contribution.eligibility).toEqual({ claimed: ['diagram-edge-ends'] });
     expect(contribution.bindings).toEqual(expect.arrayContaining([
       {
         spec: { kind: 'drag', target: `affordance:${EDGE_END_AFFORDANCE_KIND}` },

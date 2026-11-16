@@ -25,7 +25,7 @@ describe('liveScope', () => {
     expect(liveScope('viewport', { always: true }, state)).toBe('ambient');
   });
 
-  it('gives a claimed-only entry ambient scope', () => {
+  it('gives a claimed-only entry ambient scope while no input is being routed', () => {
     expect(liveScope('weasel-hud', { claimed: true }, state)).toBe('ambient');
   });
 
@@ -79,5 +79,32 @@ describe('liveScope reads the host-reported hotkey engagement', () => {
 
   it('leaves an entry the host did not engage at its declared tier', () => {
     expect(liveScope('rect', { always: true }, engaged)).toBe('ambient');
+  });
+});
+
+describe('liveScope holds a claimed entry to input that hit its own affordances', () => {
+  const routing = (inputOwner: string | null) => ({ focusedId: null, inputOwner });
+
+  it('makes it live for a hit whose owner is its own id', () => {
+    expect(liveScope('weasel-hud', { claimed: true }, routing('weasel-hud'))).toBe('ambient');
+  });
+
+  it('makes it live for a hit owned by an id it names', () => {
+    expect(liveScope('weasel-plot', { claimed: ['plot-handles'] }, routing('plot-handles'))).toBe('ambient');
+    expect(liveScope('weasel-plot', { claimed: ['plot-handles'] }, routing('weasel-plot'))).toBe('ambient');
+  });
+
+  it('leaves it dormant for a hit another entry or the kit produced', () => {
+    expect(liveScope('weasel-hud', { claimed: true }, routing('weasel-measure'))).toBeNull();
+    expect(liveScope('weasel-plot', { claimed: ['plot-handles'] }, routing('corner-resize'))).toBeNull();
+  });
+
+  it('leaves it dormant for input that hit no affordance, a keystroke among it', () => {
+    expect(liveScope('weasel-hud', { claimed: true }, routing(null))).toBeNull();
+  });
+
+  it('leaves its other conditions unfiltered', () => {
+    expect(liveScope('x', { claimed: true, always: true }, routing(null))).toBe('ambient');
+    expect(liveScope('x', { claimed: true, focus: true }, { focusedId: 'x', inputOwner: null })).toBe('active');
   });
 });

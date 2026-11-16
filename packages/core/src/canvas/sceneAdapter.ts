@@ -13,8 +13,6 @@ import type {
   RegionPickView,
   LayerEnumerableAdapter,
   MoveAdapter,
-  ResizeAdapter,
-  RotateAdapter,
 } from 'core/adapters/types';
 import type { LayoutStrategy } from '../layout/types';
 import type { Op } from 'core/ops/types';
@@ -88,13 +86,11 @@ export interface SceneAdapterSelection {
 }
 
 /** Everything the interaction layer can ask of a scene, as one type: the
- *  move, resize, rotate, selection, layer and reorder contracts combined.
+ *  move, selection, layer and reorder contracts combined.
  *  `<SceneCanvas>` synthesizes one of these, which is why most consumers never
  *  touch an adapter directly. */
 export type SceneCanvasAdapter<TData, TLayer extends string, TPose> =
   & MoveAdapter<Node<TData, TLayer, TPose>, TPose>
-  & ResizeAdapter<Node<TData, TLayer, TPose>, TPose>
-  & RotateAdapter<Node<TData, TLayer, TPose>, TPose>
   & AreaSelectAdapter
   & LassoSelectAdapter
   & LayerEnumerableAdapter<TLayer>

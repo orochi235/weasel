@@ -18,7 +18,8 @@ const IDS = ['a', 'b', 'c', 'd'];
 const DEPS = ['scene', 'snap', 'grid'];
 
 const eligibility: fc.Arbitrary<Eligibility> = fc.record({
-  focus: fc.boolean(), always: fc.boolean(), claimed: fc.boolean(),
+  focus: fc.boolean(), always: fc.boolean(),
+  claimed: fc.constantFrom<true | readonly string[]>(true, ['x'], ['x', 'y']),
   offhand: fc.constantFrom('space', 'alt', 'ctrl', 'meta', 'shift', 'Shift', 'z'),
   capabilities: fc.subarray(['c1', 'c2']),
   keymap: fc.constantFrom<true | { unbound?: 'modal' | 'cascade' }>(true, { unbound: 'modal' }),
@@ -55,6 +56,7 @@ const inputs = fc.record({
   hotkeyStack: fc.array(fc.constantFrom(...IDS, 'gone'), { maxLength: 4 }),
   allowedCapabilities: fc.option(fc.subarray(['c1', 'c2']).map((c) => new Set(c)), { nil: undefined }),
   openKeymap: fc.option(fc.constantFrom(...IDS, ''), { nil: undefined }),
+  inputOwner: fc.option(fc.option(fc.constantFrom(...IDS, 'x', 'y', 'z'), { nil: null }), { nil: undefined }),
 });
 
 describe('assembleEntries', () => {
@@ -67,6 +69,7 @@ describe('assembleEntries', () => {
       if (held.length > 1) t.hit('stacked');
       expect([...state.engagedIds ?? []].sort()).toEqual([...new Set(inp.hotkeyStack)].sort());
       expect(state.openKeymap).toBe(inp.openKeymap ? inp.openKeymap : undefined);
+      expect(state.inputOwner).toBe(inp.inputOwner);
       expect(state.allows !== undefined).toBe(inp.allowedCapabilities !== undefined);
     }), runs(300));
     t.expectHit('stacked');
@@ -87,7 +90,9 @@ describe('scopeBindings', () => {
         else if (el.keymap) scope = inp.openKeymap === e.id ? 'hotkey' : null;
         else if (inp.hotkeyStack.includes(e.id)) scope = 'hotkey';
         else if (el.focus && inp.focusedId === e.id) scope = 'active';
-        else if (el.always || el.claimed) scope = 'ambient';
+        else if (el.always) scope = 'ambient';
+        else if (el.claimed && (inp.inputOwner === undefined || (inp.inputOwner !== null
+          && (inp.inputOwner === e.id || (el.claimed !== true && el.claimed.includes(inp.inputOwner)))))) scope = 'ambient';
         else scope = null;
         expect(liveScope(e.id, el, state)).toBe(scope);
         if (scope === null) return [];

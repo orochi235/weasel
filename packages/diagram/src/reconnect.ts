@@ -224,7 +224,7 @@ export function diagramEdgeEnds<TPose>(
   const actionId = opts.id ?? RECONNECT_ACTION_ID;
   return {
     id: 'weasel-diagram-edge-ends',
-    eligibility: { claimed: true },
+    eligibility: { claimed: [EDGE_END_LAYER_ID] },
     // `opts.id` names the action; the layer keeps its own id.
     layers: [edgeEndLayer(opts.participants, opts.selected, { ...opts, id: EDGE_END_LAYER_ID })],
     actions: [createReconnectAction({ ...opts, id: actionId }), grabPortAction(GRAB_EDGE_END_ACTION_ID)],

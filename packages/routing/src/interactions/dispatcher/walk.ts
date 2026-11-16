@@ -15,7 +15,7 @@ import type { DispatcherContext, ResolvedCandidate } from './dispatcherApi';
 import type { WalkStep } from './dispatchRecord';
 import { carriedBy, worldPointOf } from './inputFacts';
 import type { BindingScope, InputEvent, MatchResult, ScopedBinding } from './matcher';
-import { matchSortedWithBarred, specificity } from './matcher';
+import { affordanceOwnerOf, matchSortedWithBarred, specificity } from './matcher';
 import {
   describeEligible, isEligible, liveForKeys, liveInView, preferContextual, preferViewScoped, ruleCtxOf,
   type Ranking, type Walked,
@@ -27,8 +27,10 @@ export type AttemptResult = 'fired' | 'empty-handle' | 'misbound';
 export type Attempt = (match: MatchResult, action: Action, deps: ActionDeps) => AttemptResult;
 
 /** Every registered entry's bindings, tiered by what the entry declares about
- *  its own eligibility, then the actions registry's. */
-function assembleScopedBindings(ctx: DispatcherContext): ScopedBinding[] {
+ *  its own eligibility, then the actions registry's. Given the input being
+ *  routed, a `claimed` entry's bindings are there only when it hit one of the
+ *  entry's affordances. */
+function assembleScopedBindings(ctx: DispatcherContext, event?: InputEvent): ScopedBinding[] {
   // `allowedCapabilities` is absent for a consumer with no mode system, who
   // supplies no `getRuleCtx`, and then every entry is permitted.
   const allowedCapabilities = ctx.getRuleCtx?.()?.allowedCapabilities;
@@ -38,6 +40,7 @@ function assembleScopedBindings(ctx: DispatcherContext): ScopedBinding[] {
     hotkeyStack: ctx.hotkeyStack,
     ...(allowedCapabilities ? { allowedCapabilities } : {}),
     ...(openKeymap ? { openKeymap } : {}),
+    ...(event ? { inputOwner: affordanceOwnerOf(event) } : {}),
   });
   const view = ctx.viewId ?? null;
   const live = (b: GestureBinding): boolean => liveInView(b, view) && liveForKeys(b, ctx.keyReach);
@@ -85,7 +88,7 @@ export function rank(
 ): Ranking {
   const view = ctx.viewId ?? null;
   const outcome = matchSortedWithBarred(
-    event, assembleScopedBindings(ctx), ctx.apple, engaged, { collectBarred },
+    event, assembleScopedBindings(ctx, event), ctx.apple, engaged, { collectBarred },
   );
   const sorted = preferViewScoped(outcome.matches, view);
   const actionMap = buildActionMap(ctx.actions);

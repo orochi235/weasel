@@ -126,7 +126,11 @@ several at once — the hand tool is palette-selectable and space-held:
   engages it only between gestures; mid-gesture it belongs to the gesture's
   own tool (Space repositions a shape being drawn).
 - `always` — live regardless of what is focused.
-- `claimed` — live only for input this entry's own affordances produced.
+- `claimed` — live only for input that hit one of this entry's own affordances:
+  a hit whose `owner` is the entry's id, or, with `claimed: [ids]`, one of those
+  ids (the layers it registers under ids of their own). Input that hit no
+  affordance, a keystroke among it, never reaches it; an entry that also wants
+  keys declares `always` beside it.
 - `capabilities` — modality filter, applied wherever it would otherwise be live.
 - `keymap` — live only while it is the innermost [keymap](#keymap-and-leader) open,
   at the hotkey tier.
@@ -264,8 +268,7 @@ The object the interaction layer reads a scene through and writes it back throug
 poses, hit results, selection, and the mutators an `Op` applies. `sceneToAdapter`
 builds one from a `Scene` (a `SceneCanvasAdapter`), and `<SceneCanvas>` does that
 itself. Each reader takes a narrow structural slice of it: `MoveAdapter`,
-`ResizeAdapter`, `RotateAdapter`, `AreaSelectAdapter`, `InsertAdapter`,
-`OrderedAdapter`. A store the kit does not own gets a hand-written object
+`AreaSelectAdapter`, `InsertAdapter`, `OrderedAdapter`. A store the kit does not own gets a hand-written object
 implementing the slices its readers take. See
 `packages/core/src/core/adapters/types.ts` and `docs/adapters.md`.
 
