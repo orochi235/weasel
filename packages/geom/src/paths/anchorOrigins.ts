@@ -8,6 +8,7 @@ import { anchorsToPath, pathToAnchors, type PenAnchor } from './anchors';
 import type { AnchorSet } from './anchorEdits';
 import type { Point } from './cubicMath';
 import { worldCoords } from './pathOrigin';
+import { lerp } from '../scalar';
 
 /**
  * Where a point of an edited path came from: point `a` of the path before the edit, or for a
@@ -202,6 +203,6 @@ export function remapPointValues(
   return origins.map((o) => {
     if (!o) return 0;
     const a = values[o.a] ?? 0;
-    return o.t === 0 ? a : a + ((values[o.b] ?? 0) - a) * o.t;
+    return o.t === 0 ? a : lerp(a, values[o.b] ?? 0, o.t);
   });
 }

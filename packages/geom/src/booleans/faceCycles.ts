@@ -1,3 +1,5 @@
+import { lerp } from '../scalar';
+
 /** The cycles of a linked arrangement, the connected pieces they belong to, and each input's winding in each. */
 
 /** Half-edges as `arrangement.ts` stores them: `h` runs from `origin[h]` to `origin[h ^ 1]`. */
@@ -94,7 +96,7 @@ export function cycleWindings(a: Linked, c: Cycles, runs: readonly (readonly num
       const u = a.origin[2 * e]!, w = a.origin[2 * e + 1]!;
       const y0 = a.ys[u]!, y1 = a.ys[w]!;
       if ((y0 > py) === (y1 > py) || edgePiece(e) === piece) continue;
-      const x = a.xs[u]! + ((py - y0) / (y1 - y0)) * (a.xs[w]! - a.xs[u]!);
+      const x = lerp(a.xs[u]!, a.xs[w]!, (py - y0) / (y1 - y0));
       if (x <= px) continue;
       const sign = y1 > y0 ? 1 : -1;
       const r = runs[e]!;

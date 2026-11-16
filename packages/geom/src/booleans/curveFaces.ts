@@ -11,6 +11,7 @@ import { parseContours, extentOf } from './contours';
 import { type Along, type LineSeg, arrangeLines, linkFaces } from './arrangement';
 import { type Cycles, type Linked, cyclesOf, cycleWindings, leftmost } from './faceCycles';
 import { type Polish, type PolishStats, polishCrossings } from './crossingPolish';
+import { lerp } from '../scalar';
 
 /** Two faces whose boundaries share `length` of edge; `a` is -1 for the uncovered side, else `a < b`. */
 export interface FaceNeighbor {
@@ -131,7 +132,7 @@ function ringHolds(a: Linked, cycle: readonly number[], px: number, py: number):
   for (const h of cycle) {
     const x0 = a.xs[a.origin[h]], y0 = a.ys[a.origin[h]];
     const x1 = a.xs[a.origin[h ^ 1]], y1 = a.ys[a.origin[h ^ 1]];
-    if ((y0 > py) !== (y1 > py) && px < x0 + ((py - y0) / (y1 - y0)) * (x1 - x0)) inside = !inside;
+    if ((y0 > py) !== (y1 > py) && px < lerp(x0, x1, (py - y0) / (y1 - y0))) inside = !inside;
   }
   return inside;
 }

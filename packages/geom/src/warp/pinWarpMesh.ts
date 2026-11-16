@@ -17,6 +17,7 @@ import { refineTriangulation } from './refine';
 import { addOrigin } from '../paths/pathOrigin';
 import { nearestOnLine } from '../nearest';
 import { pointSegmentDist } from '../points2';
+import { lerp } from '../scalar';
 
 /** A pin warp's mesh, and the vertex standing for each pin. */
 export interface PinWarpMesh extends ArapMesh {
@@ -61,7 +62,7 @@ function resample(coords: number[], start: number, end: number, h: number): Mesh
     const steps = Math.max(1, Math.ceil(Math.hypot(coords[2 * j] - ax, coords[2 * j + 1] - ay) / h));
     for (let k = 0; k < steps; k++) {
       const t = k / steps;
-      out.push({ x: ax + (coords[2 * j] - ax) * t, y: ay + (coords[2 * j + 1] - ay) * t, pins: [] });
+      out.push({ x: lerp(ax, coords[2 * j], t), y: lerp(ay, coords[2 * j + 1], t), pins: [] });
     }
   }
   return out.filter((p, i) => {
@@ -122,7 +123,7 @@ function placePin(regions: Region[], pin: Point, k: number, h: number): void {
   }
   const ring = near.region.rings[near.ring];
   const a = ring[near.edge], b = ring[(near.edge + 1) % ring.length];
-  const at = { x: a.x + (b.x - a.x) * near.t, y: a.y + (b.y - a.y) * near.t };
+  const at = { x: lerp(a.x, b.x, near.t), y: lerp(a.y, b.y, near.t) };
   const da = Math.hypot(at.x - a.x, at.y - a.y), db = Math.hypot(at.x - b.x, at.y - b.y);
   if (Math.min(da, db) <= snap) (da <= db ? a : b).pins.push(k);
   else ring.splice(near.edge + 1, 0, { ...at, pins: [k] });

@@ -1,6 +1,7 @@
 /** Rebuilding outlines as the non-crossing boundary of their fill. */
 
 import { forEachCrossing } from './sweep';
+import { lerp } from '../scalar';
 
 /** Flattened contours with each vertex's anchor parameterization. */
 export interface FlattenedContours {
@@ -139,8 +140,8 @@ function cutAtCrossings(edges: Edge[], max: number): boolean {
     if (++count > max) return true;
     const e = edges[ei];
     const node = {
-      x: e.from.x + (e.to.x - e.from.x) * s,
-      y: e.from.y + (e.to.y - e.from.y) * s,
+      x: lerp(e.from.x, e.to.x, s),
+      y: lerp(e.from.y, e.to.y, s),
       ...anchorsAlong(e, s),
     };
     e.cuts.push({ s, node });
@@ -223,7 +224,7 @@ function cutAt(e: Edge, p: Node, eps: number): void {
  *  curve's run, else the nearer end's. */
 function anchorsAlong(e: Edge, s: number): { a: number; b: number; t: number } {
   const { from, to } = e;
-  if (from.a === to.a && from.b === to.b) return { a: from.a, b: from.b, t: from.t + (to.t - from.t) * s };
+  if (from.a === to.a && from.b === to.b) return { a: from.a, b: from.b, t: lerp(from.t, to.t, s) };
   const near = s < 0.5 ? from : to;
   return { a: near.a, b: near.b, t: near.t };
 }

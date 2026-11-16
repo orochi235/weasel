@@ -10,6 +10,7 @@ import type { PolygonPath } from '../path';
 import type { Point } from './cubicMath';
 import { worldCoords } from './pathOrigin';
 import { segmentLength, segmentTAtLength } from './segmentLength';
+import { lerp } from '../scalar';
 
 /** One segment as a cubic; a line has its controls on its ends. */
 export interface Seg {
@@ -120,7 +121,7 @@ export function paramAtLength(seg: Seg, s: number): number {
 
 export function pointAt(seg: Seg, t: number): Point {
   if (seg.line) {
-    return { x: seg.p0.x + (seg.p3.x - seg.p0.x) * t, y: seg.p0.y + (seg.p3.y - seg.p0.y) * t };
+    return { x: lerp(seg.p0.x, seg.p3.x, t), y: lerp(seg.p0.y, seg.p3.y, t) };
   }
   const { p0, c1, c2, p3 } = seg;
   const [x, y] = cubicEvalAt(p0.x, p0.y, c1.x, c1.y, c2.x, c2.y, p3.x, p3.y, t);

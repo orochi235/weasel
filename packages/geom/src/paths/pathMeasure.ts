@@ -11,6 +11,7 @@ import { pointOnSegmentOnly } from '../along/positions';
 import type { Path } from '../path';
 import { extractPolylines, type Polyline } from '../tessellate/polyline';
 import type { Point } from './cubicMath';
+import { lerp } from '../scalar';
 
 /** A point on a path and its heading there. */
 export interface PathStation {
@@ -136,8 +137,8 @@ export function measurePath(path: Path, opts: MeasurePathOptions = {}): PathMeas
       const point = pointAt(seg, target);
       if (!smooth) return { point, tangent: { x: seg.tx, y: seg.ty } };
       const u = seg.arc > 0 ? Math.min(Math.max((target - seg.start) / seg.arc, 0), 1) : 0;
-      const x = seg.t0x + (seg.t1x - seg.t0x) * u;
-      const y = seg.t0y + (seg.t1y - seg.t0y) * u;
+      const x = lerp(seg.t0x, seg.t1x, u);
+      const y = lerp(seg.t0y, seg.t1y, u);
       const l = Math.hypot(x, y);
       return { point, tangent: l === 0 ? { x: seg.tx, y: seg.ty } : { x: x / l, y: y / l } };
     },
@@ -147,7 +148,7 @@ export function measurePath(path: Path, opts: MeasurePathOptions = {}): PathMeas
       let bestDist = Infinity;
       for (const seg of segments) {
         const u = Math.min(Math.max(((p.x - seg.ax) * seg.tx + (p.y - seg.ay) * seg.ty) / seg.len, 0), 1);
-        const d = Math.hypot(p.x - (seg.ax + (seg.bx - seg.ax) * u), p.y - (seg.ay + (seg.by - seg.ay) * u));
+        const d = Math.hypot(p.x - lerp(seg.ax, seg.bx, u), p.y - lerp(seg.ay, seg.by, u));
         if (d < bestDist) {
           best = seg;
           bestU = u;
@@ -179,7 +180,7 @@ function pushChords(pl: Polyline, r: number, table: LengthTable, segments: Segme
     if (aligned) k++;
     const at = Math.max(k, 0);
     segOf[i] = Math.min(at, c.length - 2);
-    lenOf[i] = aligned || !T ? c[at]! : c[at]! + T[i]! * (c[at + 1]! - c[at]!);
+    lenOf[i] = aligned || !T ? c[at]! : lerp(c[at]!, c[at + 1]!, T[i]!);
   }
   const last = pl.closed ? count : count - 1;
   for (let i = 0; i < last; i++) {

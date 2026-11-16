@@ -1,3 +1,5 @@
+import { lerp } from '../scalar';
+
 /**
  * The anchor parameters `(A, B, t)` of a point a fraction `frac` of the way
  * from one polyline point to the next: `t` interpolated when both lie between
@@ -8,6 +10,6 @@ export function anchorParamsBetween(
   a1: number, b1: number, t1: number,
   frac: number,
 ): [number, number, number] {
-  if (a0 === a1 && b0 === b1) return [a0, b0, t0 + (t1 - t0) * frac];
+  if (a0 === a1 && b0 === b1) return [a0, b0, lerp(t0, t1, frac)];
   return frac < 0.5 ? [a0, b0, t0] : [a1, b1, t1];
 }

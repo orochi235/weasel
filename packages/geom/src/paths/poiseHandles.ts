@@ -3,6 +3,7 @@ import { isStraightSegment, segmentEnds, type PenAnchor } from './anchors';
 import { moveHandleSymmetric, type AnchorSymmetry } from './anchorSymmetry';
 import type { Point } from './cubicMath';
 import { distance } from '../points2';
+import { lerp } from '../scalar';
 
 /** A curved segment's poise line: from its first handle's tip to its
  *  second's, with a grip at the middle. */
@@ -168,5 +169,5 @@ function rayCrossing(p: Point, u: Point, q: Point, v: Point): { ta: number; tb: 
 }
 
 function scaledFrom(anchor: Point, handle: Point, k: number): Point {
-  return { x: anchor.x + (handle.x - anchor.x) * k, y: anchor.y + (handle.y - anchor.y) * k };
+  return { x: lerp(anchor.x, handle.x, k), y: lerp(anchor.y, handle.y, k) };
 }

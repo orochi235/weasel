@@ -28,6 +28,7 @@ import {
 import { editAnchorSetTracked } from './anchorOrigins';
 import { cubicPointAt, splitCubicAtT } from './cubicMath';
 import { fitCubicThroughDeletion } from './spanFit';
+import { lerp } from '../scalar';
 
 /** Subpath-major anchor model — the decoded form of a `PolygonPath`. */
 export interface AnchorSet {
@@ -165,8 +166,8 @@ export function insertAnchorOnSegment(
   const at = args.segIdx + 1;
   if (isStraightSegment(a, b)) {
     set.anchors[args.sub].splice(at, 0, {
-      x: a.x + (b.x - a.x) * args.t,
-      y: a.y + (b.y - a.y) * args.t,
+      x: lerp(a.x, b.x, args.t),
+      y: lerp(a.y, b.y, args.t),
     });
     return flatAnchorIndex(set, args.sub, at);
   }
@@ -230,7 +231,7 @@ export function segmentAt(
 }
 
 function pointOnSegment(a: PenAnchor, b: PenAnchor, t: number): { x: number; y: number } {
-  if (isStraightSegment(a, b)) return { x: a.x + (b.x - a.x) * t, y: a.y + (b.y - a.y) * t };
+  if (isStraightSegment(a, b)) return { x: lerp(a.x, b.x, t), y: lerp(a.y, b.y, t) };
   return cubicPointAt(a, a.outHandle ?? a, b.inHandle ?? b, b, t);
 }
 

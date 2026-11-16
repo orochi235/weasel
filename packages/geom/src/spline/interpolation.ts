@@ -9,6 +9,7 @@
 import type { Point } from '../paths/cubicMath';
 import { sampleCatmullRom, sampleSteps } from './catmullRom';
 import { sampleMonotone } from './monotone';
+import { lerp } from '../scalar';
 
 /** Supported interpolation modes. All are interpolating (pass through
  *  every anchor); the differences are in tangent computation and
@@ -39,7 +40,7 @@ function sampleLinear(
       if (s === 0) { out.push(a); continue; }
       if (s === samplesPerSegment) { out.push(b); continue; }
       const t = s / samplesPerSegment;
-      out.push({ x: a.x + (b.x - a.x) * t, y: a.y + (b.y - a.y) * t });
+      out.push({ x: lerp(a.x, b.x, t), y: lerp(a.y, b.y, t) });
     }
   }
   return out;

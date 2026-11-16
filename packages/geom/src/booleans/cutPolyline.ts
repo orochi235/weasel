@@ -1,7 +1,7 @@
 /** The cut polyline itself: where it crosses itself, and the loops it closes inside a path. */
 
 import { pointInPolygon } from '../polyline';
-import { nearlyParallel } from '../scalar';
+import { nearlyParallel, lerp } from '../scalar';
 import type { Point } from '../paths/cubicMath';
 import { type Contour, evalSeg, reverseContour, sampleContour, signedArea } from './contourSegments';
 import { type Crossing, findCrossings } from './cutCrossings';
@@ -77,7 +77,7 @@ function pointAt(cut: Point[], s: number): Point {
   const k = Math.min(Math.floor(s), cut.length - 2);
   const f = s - k;
   const a = cut[k], b = cut[k + 1];
-  return { x: a.x + f * (b.x - a.x), y: a.y + f * (b.y - a.y) };
+  return { x: lerp(a.x, b.x, f), y: lerp(a.y, b.y, f) };
 }
 
 /**

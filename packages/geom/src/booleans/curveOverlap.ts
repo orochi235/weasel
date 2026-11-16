@@ -4,6 +4,7 @@ import type { Point } from '../paths/cubicMath';
 import { nearestOnCubic, nearestOnLine, nearestOnQuadratic, type CurveNearest } from '../nearest';
 import { type Seg, evalSeg } from './contourSegments';
 import type { Edge } from './curveEdges';
+import { lerp } from '../scalar';
 
 /** The point on `s` nearest `p`. */
 export function nearestOnSeg(s: Seg, p: Point): CurveNearest {
@@ -46,7 +47,7 @@ export function sharedStretch(a: Seg, b: Seg, snap: number): [OverlapEnd, Overla
     for (let j = i + 1; j < ends.length; j++) {
       const [e, f] = ends[i].ta <= ends[j].ta ? [ends[i], ends[j]] : [ends[j], ends[i]];
       if (best && f.ta - e.ta <= best[1].ta - best[0].ta) continue;
-      const on = SAMPLES.every((s) => nearestOnSeg(b, evalSeg(a, e.ta + (f.ta - e.ta) * s)).dist <= snap);
+      const on = SAMPLES.every((s) => nearestOnSeg(b, evalSeg(a, lerp(e.ta, f.ta, s))).dist <= snap);
       if (on) best = [e, f];
     }
   }

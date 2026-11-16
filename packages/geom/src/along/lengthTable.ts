@@ -1,6 +1,7 @@
 import { segmentLength } from '../paths/segmentLength';
 import { arcLookup, type ArcLookup } from './arcLookup';
 import { segmentCoords } from './bezier';
+import { lerp } from '../scalar';
 
 /** One subpath of a path in pen order: points joined by straight segments, or by curves where `controls` gives them. */
 export interface LengthRun {
@@ -123,7 +124,7 @@ export function lengthAtAnchor(t: LengthTable, anchor: number): number {
   }
   const span = bpAnchor[hi] - bpAnchor[lo];
   const f = span > 0 ? (anchor - bpAnchor[lo]) / span : 1;
-  return bpLength[lo] + f * (bpLength[hi] - bpLength[lo]);
+  return lerp(bpLength[lo], bpLength[hi], f);
 }
 
 /** The authored anchor position at pen length `s`: the inverse of
@@ -144,7 +145,7 @@ export function anchorAtLength(t: LengthTable, s: number): number {
     else hi = mid;
   }
   const f = (s - bpLength[lo]) / (bpLength[hi] - bpLength[lo]);
-  return bpAnchor[lo] + f * (bpAnchor[hi] - bpAnchor[lo]);
+  return lerp(bpAnchor[lo], bpAnchor[hi], f);
 }
 
 /** The pen-order length at the start of subpath `subpath`; a fractional part

@@ -112,3 +112,12 @@ describe('splitLineAt', () => {
     expect(splitLineAt(0, 0, 10, 20, 0.25)).toEqual([[0, 0, 2.5, 5], [2.5, 5, 10, 20]]);
   });
 });
+
+describe('splitting at t = 1', () => {
+  it("ends the first half on the curve's own end, where a hand lerp misses it by an ulp", () => {
+    expect(0.7 + (0.1 - 0.7) * 1).not.toBe(0.1);
+    expect(splitLineAt(0.7, 0.7, 0.1, 0.1, 1)[0].slice(2)).toEqual([0.1, 0.1]);
+    expect(splitQuadraticAt(0.7, 0.7, 0.7, 0.7, 0.1, 0.1, 1)[0].slice(4)).toEqual([0.1, 0.1]);
+    expect(splitCubicAt(0.7, 0.7, 0.7, 0.7, 0.7, 0.7, 0.1, 0.1, 1)[0].slice(6)).toEqual([0.1, 0.1]);
+  });
+});

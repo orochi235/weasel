@@ -1,6 +1,7 @@
 import type { PenAnchor } from './anchors';
 import { cubicPointAt, type Point } from './cubicMath';
 import { fitCubicWithTangents } from './schneiderFit';
+import { lerp } from '../scalar';
 
 const SAMPLES_PER_SEGMENT = 16;
 const SPLIT_SEARCH_STEPS = 40;
@@ -36,7 +37,7 @@ export function fitCubicThroughDeletion(
   let hi = 0.98;
   const phi = (Math.sqrt(5) - 1) / 2;
   let m1 = hi - phi * (hi - lo);
-  let m2 = lo + phi * (hi - lo);
+  let m2 = lerp(lo, hi, phi);
   let e1 = fitAt(m1).error;
   let e2 = fitAt(m2).error;
   for (let i = 0; i < SPLIT_SEARCH_STEPS; i++) {
@@ -45,7 +46,7 @@ export function fitCubicThroughDeletion(
       m1 = hi - phi * (hi - lo); e1 = fitAt(m1).error;
     } else {
       lo = m1; m1 = m2; e1 = e2;
-      m2 = lo + phi * (hi - lo); e2 = fitAt(m2).error;
+      m2 = lerp(lo, hi, phi); e2 = fitAt(m2).error;
     }
   }
   const { cp1, cp2 } = fitCubicWithTangents(samples, tStart, tEnd, {

@@ -3,6 +3,7 @@ import { segmentAt } from './anchorHandles';
 import { eulerCurvatureAt, eulerPointAt } from '../paths/eulerSpiral';
 import { SPIRO_KINDS, solveSpiro, type SpiroPoint, type SpiroSegment } from '../paths/spiro';
 import { spiroToPath } from '../paths/spiroPath';
+import { lerp } from '../scalar';
 
 const pointsOf = (anchors: SharedAnchor[]): SpiroPoint[] =>
   anchors.map((a) => ({ x: a.x, y: a.y, kind: a.spiroType ?? 'smooth' }));
@@ -21,7 +22,7 @@ export const spiro: CurveRepresentation = {
     if (anchors.length < 2) return { x: anchors[0]?.x ?? 0, y: anchors[0]?.y ?? 0 };
     const { seg, s } = locate(anchors, t);
     if (seg.spiral) return eulerPointAt(seg.spiral, s);
-    return { x: seg.from.x + (seg.to.x - seg.from.x) * s, y: seg.from.y + (seg.to.y - seg.from.y) * s };
+    return { x: lerp(seg.from.x, seg.to.x, s), y: lerp(seg.from.y, seg.to.y, s) };
   },
   toPath(anchors) {
     if (anchors.length < 2) {
