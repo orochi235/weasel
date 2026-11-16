@@ -109,6 +109,26 @@ describe('Timeline', () => {
     expect((next[0] as SampledTrack<number>).keys.map((k) => k.t)).toEqual([500, 800]);
   });
 
+  it('commits nothing for a key drag released where it began', () => {
+    const onChange = vi.fn();
+    renderWithIcons(<Timeline {...base} tracks={tracks()} onChange={onChange} />);
+    const key = screen.getAllByTestId('timeline-key')[0];
+    fireEvent.pointerDown(key, { clientX: 0, clientY: 10, button: 0 });
+    fireEvent.pointerMove(document, { clientX: 100, clientY: 10 });
+    fireEvent.pointerMove(document, { clientX: 0, clientY: 10 });
+    fireEvent.pointerUp(document, { clientX: 0, clientY: 10 });
+    expect(onChange).not.toHaveBeenCalled();
+  });
+
+  it('commits nothing for an arrow key on a key that cannot move', () => {
+    const onChange = vi.fn();
+    renderWithIcons(<Timeline {...base} tracks={tracks()} onChange={onChange} />);
+    const first = screen.getAllByTestId('timeline-key')[0];
+    first.focus();
+    fireEvent.keyDown(first, { key: 'ArrowLeft' });
+    expect(onChange).not.toHaveBeenCalled();
+  });
+
   it('reports live positions through onInput without committing', () => {
     const onInput = vi.fn();
     const onChange = vi.fn();

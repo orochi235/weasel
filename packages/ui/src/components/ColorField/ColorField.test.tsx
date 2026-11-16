@@ -85,6 +85,33 @@ describe('ColorField', () => {
     expect(onChange).toHaveBeenCalledWith('#112233ff');
   });
 
+  it('commits an opacity change whose input and change arrive with no render between', () => {
+    const onChange = vi.fn();
+    render(<ColorField value="#11223380" alpha onChange={onChange} aria-label="Fill" />);
+    fireEvent.change(screen.getByLabelText('Fill opacity'), { target: { value: '100' } });
+    expect(onChange).toHaveBeenCalledTimes(1);
+    expect(onChange).toHaveBeenCalledWith('#112233ff');
+  });
+
+  it('commits nothing for an opacity press released where it began', () => {
+    const onChange = vi.fn();
+    render(<ColorField value="#11223380" alpha onChange={onChange} aria-label="Fill" />);
+    const slider = screen.getByLabelText('Fill opacity');
+    fireEvent.pointerDown(slider);
+    fireEvent.pointerUp(slider);
+    expect(onChange).not.toHaveBeenCalled();
+  });
+
+  it('reports a canceled opacity drag: the starting color to onInput, then onCancel, and no commit', () => {
+    const calls: string[] = [];
+    render(<ColorField value="#11223380" alpha onInput={(hex) => calls.push(hex)} onChange={() => { calls.push('change'); }} onCancel={() => calls.push('cancel')} aria-label="Fill" />);
+    const slider = screen.getByLabelText('Fill opacity');
+    fireEvent.pointerDown(slider);
+    fireEvent.input(slider, { target: { value: '100' } });
+    fireEvent.keyDown(slider, { key: 'Escape' });
+    expect(calls).toEqual(['#112233ff', '#11223380', 'cancel']);
+  });
+
   it('does not double-commit when blur follows pointer-up', () => {
     const onChange = vi.fn();
     render(<ColorField value="#11223380" alpha onChange={onChange} aria-label="Fill" />);
@@ -97,6 +124,18 @@ describe('ColorField', () => {
 
   it('mixed renders the indeterminate chip and no value', () => {
     const { container } = render(<ColorField mixed alpha onChange={() => {}} aria-label="Fill" />);
+    expect(container.querySelector('[data-mixed]')).not.toBeNull();
+  });
+
+  it('commits a mixed pick that ends on black, the placeholder it draws', () => {
+    const onChange = vi.fn();
+    const { container } = render(<ColorField mixed alpha onInput={() => {}} onChange={onChange} aria-label="Fill" />);
+    const input = screen.getByLabelText('Fill');
+    fireEvent.input(input, { target: { value: '#ff0000' } });
+    fireEvent.input(input, { target: { value: '#000000' } });
+    fireEvent.blur(input);
+    expect(onChange).toHaveBeenCalledTimes(1);
+    expect(onChange).toHaveBeenCalledWith('#000000ff');
     expect(container.querySelector('[data-mixed]')).not.toBeNull();
   });
 

@@ -1,14 +1,11 @@
+import { wheelPixels } from '@weasel-js/ui-input';
 import { type RefObject, useContext, useEffect } from 'react';
 import { CameraWheelContext } from '../canvas/CameraWheelContext';
 
-/** Pixels per wheel line, for a wheel event that reports in lines. */
-const LINE_PX = 40;
-
 function pixelDelta(e: WheelEvent, el: Element): { x: number; y: number } {
-  const unit = (page: number) => (e.deltaMode === 1 ? LINE_PX : e.deltaMode === 2 ? page : 1);
+  const px = wheelPixels(e, { x: el.clientWidth, y: el.clientHeight });
   // A mouse without a horizontal wheel sends shift+wheel as vertical; the page scrolls sideways for it.
-  const [dx, dy] = e.shiftKey && e.deltaX === 0 ? [e.deltaY, 0] : [e.deltaX, e.deltaY];
-  return { x: dx * unit(el.clientWidth), y: dy * unit(el.clientHeight) };
+  return e.shiftKey && e.deltaX === 0 ? { x: px.y, y: 0 } : px;
 }
 
 function scrolls(el: Element, axis: 'x' | 'y', delta: number): boolean {

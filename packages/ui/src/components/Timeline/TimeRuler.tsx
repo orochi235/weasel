@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, type PointerEvent as ReactPointerEvent, typ
 import { openPointerSession, useLatest, type PointerSession } from '@weasel-js/core';
 import s from './Timeline.module.css';
 import { decimalsOf, linearScale, type TickSet } from '@weasel-js/plot/scales';
-import { sliderAt, spanMap, spanPan, spanZoom } from '@weasel-js/ui-input';
+import { sliderAt, spanMap, spanPan, spanZoom, wheelPixels } from '@weasel-js/ui-input';
 import { Ruler, RulerMark, type RulerSpacing } from '../Ruler';
 import { MIN_SPAN_MS, TICK_SPACING_PX, type TimeWindow } from './timeScale';
 import { isPrimaryPress } from '@weasel-js/gestures';
@@ -67,14 +67,15 @@ export function TimeRuler(props: TimeRulerProps): ReactElement {
   };
 
   const onWheel = useLatest((e: WheelEvent): void => {
+    const width = widthOf();
+    const px = wheelPixels(e, { x: width, y: width });
     if (e.ctrlKey) {
       e.preventDefault();
-      onWindowChange(spanZoom(win, msAt(e.clientX), Math.exp(e.deltaY * ZOOM_STEP), bounds, MIN_SPAN_MS));
+      onWindowChange(spanZoom(win, msAt(e.clientX), Math.exp(px.y * ZOOM_STEP), bounds, MIN_SPAN_MS));
       return;
     }
-    const width = widthOf();
     const perPx = width === 0 ? 0 : (win.to - win.from) / width;
-    const delta = Math.abs(e.deltaX) > Math.abs(e.deltaY) ? e.deltaX : e.deltaY;
+    const delta = Math.abs(px.x) > Math.abs(px.y) ? px.x : px.y;
     const next = spanPan(win, delta * perPx, bounds);
     // At either end the wheel goes back to scrolling the page.
     if (next.from === win.from && next.to === win.to) return;

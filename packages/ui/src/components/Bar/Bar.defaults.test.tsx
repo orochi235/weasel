@@ -27,6 +27,12 @@ describe('Bar defaults', () => {
     expect(spin('Kern').disabled).toBe(false);
   });
 
+  it('shows the default of a leaf keyed like an Object.prototype member', () => {
+    const own: PrefGroup = pref.group('Own', { constructor: pref.number('Ctor', 7) }, { as: 'bar' });
+    renderWithIcons(<PrefsBar schema={own} values={{}} />);
+    expect(spin('Ctor').value).toBe('7');
+  });
+
   it('shows a held value over the default', () => {
     renderWithIcons(<PrefsBar schema={schema} values={{ size: 20, bold: false }} />);
     expect(spin('Size').value).toBe('20');

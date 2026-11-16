@@ -194,6 +194,21 @@ describe('ActionLeaf', () => {
     await act(async () => { settle(); });
     expect(button).not.toBeDisabled();
   });
+
+  it('clears its pending state when the promise `run` returned rejects, raising nothing of its own', async () => {
+    const failed = Promise.reject(new Error('export failed'));
+    failed.catch(() => {});
+    const thenable = { then: vi.fn((ok: () => void, fail: (e: unknown) => void) => failed.then(ok, fail)) };
+    for (const out of [failed, thenable]) {
+      const { unmount } = render(<ActionLeaf leaf={leaf({ name: 'Export', run: () => out as Promise<void> })} path="file.export" />);
+      const button = screen.getByRole('button', { name: 'Export' });
+      fireEvent.click(button);
+      expect(button).toBeDisabled();
+      await act(async () => { await failed.catch(() => {}); });
+      expect(button).not.toBeDisabled();
+      unmount();
+    }
+  });
 });
 
 /** Enter keyboard modality, then focus: React Aria opens a tooltip only on focus-visible. */

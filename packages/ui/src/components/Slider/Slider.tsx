@@ -75,7 +75,7 @@ export function Slider<T extends Thumb<Quantity> = Thumb>(props: SliderProps<T>)
       thumbs={thumbs}
       onInput={next => onInput(outward(next))}
       onChange={next => onChange(outward(next))}
-      keyStep={keyStep && ((t, steps, i) => keyStep(retagThumb<T>(t), steps, i))}
+      keyStep={keyStep && ((t, steps, i) => keyStep(shown(t), steps, i))}
       onAddThumb={onAddThumb && (at => { const made = onAddThumb(at); return made && untagThumb(made); })}
       renderRegion={renderRegion && endless !== undefined ? (r => renderRegion({ ...r, from: fromTrack(r.from), to: fromTrack(r.to) })) : renderRegion}
       renderReadout={(t, i) => (renderReadout ? renderReadout(shown(t), i) : <QuantityText value={shown(t).value} display={display ?? READOUT} locale={locale} mute />)}

@@ -20,7 +20,7 @@ import { useControlAccess } from '../Disabled';
 import { useNativeHold } from '../Disabled/nativeHold';
 import { useFieldControl, type FieldControlAttrs } from '../Field/fieldSemantics';
 import { trackPlace } from './sliderScale';
-import { catchStop, useTrackStops } from './sliderStops';
+import { keyLanding, useTrackStops } from './sliderStops';
 import { attachesUnit, UnitSuffix } from './unitSuffix';
 
 /** A slider's props with a commit-only caller's drag drawn locally, so the controlled track follows the pointer. */
@@ -351,7 +351,7 @@ function EditableReadout({ named, value, min, max, step, reach, settle, onTrack,
             const from = onTrack(Number.isNaN(typed) ? value : typed);
             const spun = spinKey(e.key, from, { step, ...reach });
             if (spun === null) return;
-            const next = catchStop(from, spun, stops);
+            const next = keyLanding(e.key, from, spun, stops);
             e.preventDefault();
             onCommit(settle(next));
             // A step is committed already; the box shows the value it comes back as.

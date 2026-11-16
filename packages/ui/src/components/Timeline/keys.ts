@@ -50,6 +50,14 @@ function replaceAtPath(tracks: readonly Track[], path: readonly number[], next: 
   return out;
 }
 
+/** The time of the key or event crossing `sel` addresses, in its track's own time. */
+export function keyTime(tracks: readonly Track[], sel: KeySelection): number | undefined {
+  const track = trackAtPath(tracks, sel.trackPath);
+  if (track?.kind === 'sampled') return (track as SampledTrack<unknown>).keys[sel.keyIndex]?.t;
+  if (track?.kind === 'event') return (track as EventTrack).events[sel.keyIndex]?.t;
+  return undefined;
+}
+
 /** Move a key or an event crossing to `toMs`, clamped at zero. `toMs` is in the
  *  addressed track's own time, not the ruler's — a nested track's keys are
  *  measured from its parent's `at`.

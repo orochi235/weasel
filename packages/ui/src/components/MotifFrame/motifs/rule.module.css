@@ -63,8 +63,14 @@
 }
 
 /* Being out of flow, the twisty would sit on the leading rule; the rule stops at its box instead. */
-.title:has(> .mid > .twisty) > hr:first-child {
+.title:has(> .mid > .twisty:not([data-end])) > hr:first-child {
   margin-inline-end: calc(
+    var(--wzl-disclosure-target, var(--wzl-control-h-sm)) + var(--wzl-disclosure-gap, 4px) - var(--wzl-space-4)
+  );
+}
+
+.title:has(> .mid > .twisty[data-end]) > hr:last-child {
+  margin-inline-start: calc(
     var(--wzl-disclosure-target, var(--wzl-control-h-sm)) + var(--wzl-disclosure-gap, 4px) - var(--wzl-space-4)
   );
 }
@@ -74,4 +80,9 @@
   inset-inline-end: calc(100% + var(--wzl-disclosure-gap, 4px));
   top: 50%;
   translate: 0 -50%;
+}
+
+.twisty[data-end] {
+  inset-inline-end: auto;
+  inset-inline-start: calc(100% + var(--wzl-disclosure-gap, 4px));
 }

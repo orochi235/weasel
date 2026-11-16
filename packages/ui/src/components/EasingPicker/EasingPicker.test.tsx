@@ -40,6 +40,15 @@ describe('EasingPicker', () => {
     expect(screen.getByText('cubic-bezier(0.4, 0, 0.2, 1)')).toBeInTheDocument();
   });
 
+  it('shows a hand-written function as custom and offers no conversion of it', () => {
+    const onChange = vi.fn();
+    render(<EasingPicker value={(t) => t ** 4} onChange={onChange} />);
+    expect((screen.getByRole('combobox') as HTMLSelectElement).value).toBe('custom');
+    expect(screen.queryByRole('button', { name: 'Convert to bezier' })).toBeNull();
+    fireEvent.change(screen.getByRole('combobox'), { target: { value: 'linear' } });
+    expect(onChange).toHaveBeenCalledWith(undefined);
+  });
+
   it('converts a named easing to control points on request', () => {
     const onChange = vi.fn();
     render(<EasingPicker value="easeInOutCubic" onChange={onChange} />);

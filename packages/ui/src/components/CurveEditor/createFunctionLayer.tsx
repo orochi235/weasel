@@ -93,6 +93,7 @@ export function createFunctionLayer(cfg: FunctionLayerOptions = {}): CurveLayer<
   const domain = cfg.domain ?? '2d';
   const endpoints = cfg.endpoints ?? 'free';
   const constrain = cfg.constrain ?? 'none';
+  const ordered = constrain === 'function' || domain === '1d';
   const addPointMode = cfg.addPointMode ?? 'click-curve';
   const interpolation = resolveInterpolation(cfg);
   const interactive = cfg.interactive !== false;
@@ -228,7 +229,7 @@ export function createFunctionLayer(cfg: FunctionLayerOptions = {}): CurveLayer<
       ny = points[index].y;
     } else if (endpoints === 'pinned-x' && isEndpoint) {
       nx = index === 0 ? xMin : xMax;
-    } else if (constrain === 'function' || domain === '1d') {
+    } else if (ordered) {
       const epsilon = constrain === 'function'
         ? (xMax - xMin) / 1000
         : 0;
@@ -311,7 +312,7 @@ export function createFunctionLayer(cfg: FunctionLayerOptions = {}): CurveLayer<
       // against a neighbor (mouse jitter would otherwise drop a phantom
       // point directly above an existing anchor). Snap to dragging the
       // neighbor instead.
-      if (constrain === 'function' || domain === '1d') {
+      if (ordered) {
         const epsilon = constrain === 'function'
           ? (ctx.modelRange.xMax - ctx.modelRange.xMin) / 1000
           : 0;
@@ -346,12 +347,11 @@ export function createFunctionLayer(cfg: FunctionLayerOptions = {}): CurveLayer<
     if (cfg.maxPoints !== undefined && state.points.length >= cfg.maxPoints) return;
 
     const clamped = clampToModelRange(model, ctx);
-    let insertIndex = state.points.length;
-    if (domain === '1d') {
-      for (let i = 0; i < state.points.length; i++) {
-        if (state.points[i].x > clamped.x) { insertIndex = i; break; }
-      }
-    }
+    const count = state.points.length;
+    const pinned = endpoints !== 'free' && count >= 2;
+    const after = state.points.findIndex((p) => p.x > clamped.x);
+    const insertIndex = !ordered ? count - (pinned ? 1 : 0) : after === -1 ? count : after;
+    if (pinned && (insertIndex === 0 || insertIndex === count)) return;
     const nextPoints = [...state.points.slice(0, insertIndex), clamped, ...state.points.slice(insertIndex)];
     extra.commit({ ...state, points: nextPoints, activeIndex: null });
     return;

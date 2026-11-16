@@ -100,9 +100,11 @@ export function useLeafAction(leaf: PrefAction, path: string, disabled = false, 
       const out = leaf.run?.({ path });
       if (typeof out?.then !== 'function') return;
       setPending(true);
-      void out.finally(() => {
+      // Both arms: a rejection is the caller's to handle, and a derived promise left unhandled would raise it again.
+      const done = (): void => {
         if (mounted.current) setPending(false);
-      });
+      };
+      out.then(done, done);
     },
     label,
     description,

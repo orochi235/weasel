@@ -32,7 +32,7 @@ export interface GradientEditorProps extends DisableableProps {
   value: Paint;
   onInput?: (next: Paint) => void;
   onChange: (next: Paint) => void;
-  /** A stop drag was canceled, by Escape or a lost pointer. */
+  /** A stop drag or an opacity drag was canceled, by Escape or a lost pointer. */
   onCancel?: () => void;
   /** Show the kind switch — every registered gradient kind. Default true;
    *  turn it off when the surrounding UI already owns the kind. */
@@ -141,7 +141,7 @@ export function GradientEditor(props: GradientEditorProps): ReactElement {
     );
     const Editor = paintKindEditor(entry);
     if (Editor) {
-      return <><Editor value={value} onInput={onInput} onChange={onChange} />{spaceBar}</>;
+      return <><Editor value={value} onInput={onInput} onChange={onChange} onCancel={onCancel} />{spaceBar}</>;
     }
     if (isGradientPaint(value)) {
       return (

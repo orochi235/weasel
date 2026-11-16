@@ -4,6 +4,8 @@ import { describe, expect, it, vi } from 'vitest';
 import { stubRect } from '../Slider/testing/stubRect';
 import { PropertyField } from './PropertyField';
 import { catchStop } from './sliderStops';
+import { trackPlace } from './sliderScale';
+import { logScale } from '@weasel-js/plot/scales';
 
 /** A slider over 0..100 holding its own value, reporting moves and the release apart. */
 function Detents({ start = 40, step = 1, onInput = () => {}, onChange = () => {} }: {
@@ -92,6 +94,30 @@ describe('a slider with stops', () => {
     expect(onChange).toHaveBeenLastCalledWith(50);
     fireEvent.keyDown(readout, { key: 'ArrowUp' });
     expect(onChange).toHaveBeenLastCalledWith(55);
+  });
+
+  it('sends Home and End on the readout to the ends, past a stop', () => {
+    const onChange = vi.fn();
+    render(<Detents start={10} onChange={onChange} />);
+    const readout = screen.getByRole('spinbutton');
+    fireEvent.keyDown(readout, { key: 'End' });
+    expect(onChange).toHaveBeenLastCalledWith(100);
+    fireEvent.keyDown(readout, { key: 'Home' });
+    expect(onChange).toHaveBeenLastCalledWith(0);
+  });
+
+  it('sends Home and End on the track to the ends, past a stop', () => {
+    const onChange = vi.fn();
+    render(<Detents start={10} onChange={onChange} />);
+    fireEvent.keyDown(track(), { key: 'End' });
+    expect(onChange).toHaveBeenLastCalledWith(100);
+  });
+
+  it('sends Home and End on a scaled track to the ends, past a stop', () => {
+    const place = trackPlace(logScale, 1, 1000, 1, [10]);
+    expect(place.keyStep('Home', 500)).toBe(1);
+    expect(place.keyStep('End', 5)).toBe(1000);
+    expect(place.keyStep('ArrowDown', 11)).toBe(10);
   });
 
   it('draws each stop on the track', () => {

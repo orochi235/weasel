@@ -32,6 +32,8 @@ export interface PaintKindEditorProps {
   value: Paint;
   onInput?(next: Paint): void;
   onChange(next: Paint): void;
+  /** An edit was abandoned, after `onInput` got its starting paint back. */
+  onCancel?(): void;
 }
 
 /**

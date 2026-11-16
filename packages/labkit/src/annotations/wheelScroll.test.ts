@@ -1,3 +1,4 @@
+import { WHEEL_LINE_PX } from '@weasel-js/ui-input';
 import { afterEach, expect, it } from 'vitest';
 import { scrollUnder } from './wheelScroll';
 
@@ -39,7 +40,7 @@ it('converts lines to pixels, and turns shift+vertical into sideways', () => {
   const { target, scroll, box } = setup();
   document.elementsFromPoint = () => [box, scroll];
   scrollUnder(new WheelEvent('wheel', { deltaY: 2, deltaMode: 1 }), box, target);
-  expect(scroll.scrollTop).toBe(80);
+  expect(scroll.scrollTop).toBe(2 * WHEEL_LINE_PX);
   scrollUnder(new WheelEvent('wheel', { deltaY: 10, shiftKey: true }), box, target);
   expect(scroll.scrollLeft).toBe(10);
 });

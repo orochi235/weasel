@@ -61,14 +61,19 @@ function focusOnTrigger(): boolean {
 
 /**
  * While a tooltip is open, react-aria stops every Escape at the document, to close it. This runs at
- * the window, ahead of that, and for an Escape pressed away from the trigger turns the stop into a
- * no-op for that one event: the tooltip still closes, and the key still reaches where it was pressed.
+ * the window, ahead of that, and for an Escape pressed away from the trigger turns a stop made at the document into a
+ * no-op for that one event: the tooltip still closes, the key still reaches where it was pressed, and a stop made there
+ * still holds.
  */
 function useEscapePassesThrough(open: boolean): void {
   useEffect(() => {
     if (!open) return;
     const onKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape' && !focusOnTrigger()) e.stopPropagation = () => {};
+      if (e.key !== 'Escape' || focusOnTrigger()) return;
+      const stop = e.stopPropagation.bind(e);
+      e.stopPropagation = () => {
+        if (e.currentTarget !== document) stop();
+      };
     };
     window.addEventListener('keydown', onKeyDown, true);
     return () => window.removeEventListener('keydown', onKeyDown, true);

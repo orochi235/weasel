@@ -130,6 +130,8 @@ export interface PaintInputProps {
   /** Once per gesture. Return the paint actually applied when it differs, and a
    *  solid's recent color records that paint's color instead. */
   onChange: (next: Paint | null) => Paint | null | void;
+  /** An edit was abandoned, by Escape or a lost pointer, after `onInput` got its starting paint back. */
+  onCancel?: () => void;
   /** Names the paint this control edits — `Fill`, `Color`. Carried by the
    *  solid body's swatch, which is the part with a value to announce. */
   'aria-label'?: string;
@@ -148,7 +150,7 @@ export interface PaintInputProps {
 export function PaintInput(props: PaintInputProps): ReactElement {
   const {
     value: given, mixed = false, unset = false, kinds, allowNone = true,
-    subject, onInput, onChange, className,
+    subject, onInput, onChange, onCancel, className,
   } = props;
   const inheriting = given === INHERIT;
   const value = ownPaint(given);
@@ -227,6 +229,7 @@ export function PaintInput(props: PaintInputProps): ReactElement {
           currentColor={currentColor}
           onInput={onInput}
           onChange={onChange}
+          onCancel={onCancel}
           ariaLabel={ariaLabel}
         />
       )}
@@ -243,6 +246,7 @@ interface PaintBodyProps {
   currentColor: () => string;
   onInput?: (next: Paint | null) => void;
   onChange: (next: Paint | null) => Paint | null | void;
+  onCancel?: () => void;
   ariaLabel?: string;
 }
 
@@ -253,7 +257,7 @@ function appliedColor(applied: Paint | null | void): string | undefined {
 
 /** The editor for whichever kind the bar has lit. */
 function PaintBody(props: PaintBodyProps): ReactElement | null {
-  const { value, mixed, valueKind, currentColor, onInput, onChange, ariaLabel } = props;
+  const { value, mixed, valueKind, currentColor, onInput, onChange, onCancel, ariaLabel } = props;
   return renderBody();
 
   /** A solid's alpha rides its swatch; every other kind has no one color to
@@ -268,6 +272,7 @@ function PaintBody(props: PaintBodyProps): ReactElement | null {
             aria-label={ariaLabel}
             onInput={onInput && ((a01) => onInput(paintWithAlpha(paint, a01)))}
             onChange={(a01) => onChange(paintWithAlpha(paint, a01))}
+            onCancel={onCancel}
           />
         </div>
       </>
@@ -282,6 +287,7 @@ function PaintBody(props: PaintBodyProps): ReactElement | null {
           aria-label={ariaLabel}
           onInput={(color) => onInput?.(solidFromField(color))}
           onChange={(color) => appliedColor(onChange(solidFromField(color)))}
+          onCancel={onCancel}
         />
       );
     }
@@ -296,12 +302,13 @@ function PaintBody(props: PaintBodyProps): ReactElement | null {
           kindSwitch={false}
           onInput={onInput}
           onChange={onChange}
+          onCancel={onCancel}
         />
       ));
     }
     const Editor = paintKindEditor(valueKind);
     if (Editor) {
-      return withOpacity(value, <Editor value={value} onInput={onInput} onChange={onChange} />);
+      return withOpacity(value, <Editor value={value} onInput={onInput} onChange={onChange} onCancel={onCancel} />);
     }
     if (isPatternPaint(value)) {
       return withOpacity(
@@ -322,6 +329,7 @@ function PaintBody(props: PaintBodyProps): ReactElement | null {
         aria-label={ariaLabel}
         onInput={(color) => onInput?.(solidFromField(color))}
         onChange={(color) => appliedColor(onChange(solidFromField(color)))}
+        onCancel={onCancel}
       />
     );
   }

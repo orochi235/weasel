@@ -36,6 +36,8 @@ export interface PaintFieldProps extends OverlayPortalProps, HoldProps {
   /** Once per gesture. Return the paint actually applied when it differs, and a
    *  solid's recent color records that paint's color instead. */
   onChange: (next: Paint | null) => Paint | null | void;
+  /** An edit inside the popover was abandoned, after `onInput` got its starting paint back. */
+  onCancel?: () => void;
   /** Names the paint this field edits — `Fill`, `Color`. */
   'aria-label'?: string;
   className?: string;
@@ -63,7 +65,7 @@ function kindLabel(paint: Paint | Inherit | null | undefined, mixed: boolean, la
 export function PaintField(props: PaintFieldProps): ReactElement {
   const {
     value, mixed = false, unset = false, kinds, allowNone = true,
-    onInput, onChange, className, portalContainer,
+    onInput, onChange, onCancel, className, portalContainer,
   } = props;
   const ariaLabel = props['aria-label'];
   // Disabled or read-only, the trigger shows the paint and opens nothing.
@@ -103,6 +105,7 @@ export function PaintField(props: PaintFieldProps): ReactElement {
           inherit={props.inherit}
           onInput={onInput}
           onChange={onChange}
+          onCancel={onCancel}
           aria-label={ariaLabel}
         />,
       )}

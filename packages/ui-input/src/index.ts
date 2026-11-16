@@ -27,6 +27,8 @@ export { IDLE_PRESS, pressStep, isPressKey } from './press';
 export type { PressState, PressInput } from './press';
 export type { NudgeKey } from './reorder';
 export { EDGE_SCROLL_MARGIN, edgePush, edgeScroll } from './edgeScroll';
+export { WHEEL_LINE_PX, wheelPixels } from './wheel';
+export type { WheelDeltas } from './wheel';
 export { HEADING_DRIFT, headingOf, headingCost, nearestToward } from './spatial';
 export type { Heading } from './spatial';
 export { soloChanges } from './solo';

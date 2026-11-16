@@ -27,7 +27,8 @@ export interface BadgeOctantSplineBaseParams {
   /** Per-anchor weight (0..3). The spline passes through every anchor exactly; the weight
    *  biases how strongly that anchor influences the rest of the curve. Default 1 = pure
    *  C² interpolation; <1 lets the curve sweep past the anchor; >1 makes the curve hug the
-   *  anchor more tightly (sharper local bend). */
+   *  anchor more tightly (sharper local bend). The two end anchors' weights do nothing in
+   *  `octant-spline`, whose ends stay flat. */
   w0?: number; w1?: number; w2?: number; w3?: number; w4?: number; w5?: number;
   w6?: number; w7?: number; w8?: number; w9?: number; w10?: number; w11?: number;
   rotation?: number;
@@ -133,8 +134,21 @@ interface CompiledSpline {
   M: number[];
 }
 
+/**
+ * The spline's second derivatives with each anchor's weight applied. An end's own term is then
+ * re-solved from its flat-end condition, given its weighted neighbor, so the curve still leaves both
+ * ends with zero slope; an end anchor's weight therefore has nothing left to bend.
+ */
 function compileSpline(anchors: readonly Anchor[]): CompiledSpline {
-  return { anchors, M: solveCubicSpline(anchors) };
+  const flat = solveCubicSpline(anchors);
+  const n = anchors.length - 1;
+  if (n < 2) return { anchors, M: flat };
+  const M = flat.map((m, i) => m * anchors[i].w);
+  const h0 = Math.max(1e-9, anchors[1].s - anchors[0].s);
+  const hn = Math.max(1e-9, anchors[n].s - anchors[n - 1].s);
+  M[0] = (3 / h0) * ((anchors[1].r - anchors[0].r) / h0 - (h0 / 6) * M[1]);
+  M[n] = (3 / hn) * (-(anchors[n].r - anchors[n - 1].r) / hn - (hn / 6) * M[n - 1]);
+  return { anchors, M };
 }
 
 function evalCompiled(s: number, spline: CompiledSpline): number {
@@ -152,12 +166,10 @@ function evalCompiled(s: number, spline: CompiledSpline): number {
   if (h <= 0) return p0.r;
   const A = (p1.s - s) / h;
   const B = (s - p0.s) / h;
-  // Per-anchor weight scales the standard cubic-spline second-derivative term per side:
-  // both weights = 1 is the pure cubic spline, > 1 sharpens, < 1 smooths past.
   const liftA = ((A * A * A - A) * h * h) / 6;
   const liftB = ((B * B * B - B) * h * h) / 6;
   const baseLine = A * p0.r + B * p1.r;
-  const curvatureTerm = liftA * M[i] * p0.w + liftB * M[i + 1] * p1.w;
+  const curvatureTerm = liftA * M[i] + liftB * M[i + 1];
   return baseLine + curvatureTerm;
 }
 

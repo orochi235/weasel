@@ -1,4 +1,4 @@
-import { headingTag, withMotifClass } from '../root';
+import { headingTag, withMotifClass, twistySides } from '../root';
 import type { Motif } from '../types';
 import s from './sheet.module.css';
 
@@ -19,18 +19,18 @@ export function sheet(): Motif<Record<string, never>> {
           {inline}
         </Heading>
       );
-      const end = twistyAt === 'end';
+      const fold = twistySides({ twisty, twistyAt });
       // Actions sit outside the heading, so they neither take its type nor join its accessible name.
       const head =
         actions == null && twisty == null && leading == null ? (
           titled
         ) : (
           <div className={s.head}>
-            {!end && twisty}
+            {fold.start}
             {leading}
             {titled}
             {actions != null && <div className={s.actions}>{actions}</div>}
-            {end && twisty}
+            {fold.end}
           </div>
         );
       return (

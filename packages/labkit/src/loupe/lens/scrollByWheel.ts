@@ -1,5 +1,4 @@
-/** How far one line and one page of a wheel go, in px, for the deltaModes that are not px. */
-const LINE_PX = 16;
+import { wheelPixels } from '@weasel-js/ui-input';
 
 const SCROLLS = new Set(['auto', 'scroll', 'overlay']);
 
@@ -28,14 +27,7 @@ function parentOf(el: Element): Element | null {
  */
 export function scrollByWheel(from: Element, wheel: WheelEvent): boolean {
   for (let el: Element | null = from; el; el = parentOf(el)) {
-    const scale =
-      wheel.deltaMode === WheelEvent.DOM_DELTA_LINE
-        ? LINE_PX
-        : wheel.deltaMode === WheelEvent.DOM_DELTA_PAGE
-          ? el.clientHeight
-          : 1;
-    const dx = wheel.deltaX * scale;
-    const dy = wheel.deltaY * scale;
+    const { x: dx, y: dy } = wheelPixels(wheel, { x: el.clientWidth, y: el.clientHeight });
     const style = (el.ownerDocument.defaultView ?? window).getComputedStyle(el);
     const x = canMove(el, style.overflowX, el.scrollLeft, el.scrollWidth - el.clientWidth, dx);
     const y = canMove(el, style.overflowY, el.scrollTop, el.scrollHeight - el.clientHeight, dy);

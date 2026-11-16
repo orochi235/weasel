@@ -47,7 +47,9 @@ export function EasingPicker(props: EasingPickerProps): ReactElement {
   const bezier = easingBezier(value);
   const label = easingLabel(value);
   const named = bezier === null && (EASING_NAMES as string[]).includes(label);
-  const selectValue = bezier !== null ? 'custom' : named ? label : 'linear';
+  // Neither a name nor control points: a function the picker can show but not convert.
+  const custom = !named;
+  const selectValue = custom ? 'custom' : label;
 
   const points = sampleEasing(value, PREVIEW_SAMPLES)
     .map((v, i) => `${(i / (PREVIEW_SAMPLES - 1)) * 100},${100 - v * 100}`)
@@ -62,7 +64,7 @@ export function EasingPicker(props: EasingPickerProps): ReactElement {
     >
       <option value="linear">linear</option>
       {EASING_NAMES.filter((n) => n !== 'linear').map((n) => <option key={n} value={n}>{n}</option>)}
-      {bezier !== null ? <option value="custom">custom</option> : null}
+      {custom ? <option value="custom">custom</option> : null}
     </select>
   );
 
@@ -75,7 +77,7 @@ export function EasingPicker(props: EasingPickerProps): ReactElement {
         </label>
       )}
 
-      {bezier !== null ? <span className={s.easingLabel}>{label}</span> : (
+      {custom ? <span className={s.easingLabel}>{label}</span> : (
         <button
           type="button"
           className={s.convert}

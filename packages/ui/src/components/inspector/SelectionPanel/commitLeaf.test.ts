@@ -28,6 +28,19 @@ describe('leafWrites', () => {
     expect(pose()).toEqual({ x: 50, opacity: 0.8 });
   });
 
+  it('keeps a change made after a draft that never committed, through a reset or a commit sent with no draft', () => {
+    for (const end of ['reset', 'commit'] as const) {
+      const { scene, selection, pose } = setup();
+      const w = leafWrites(scene);
+      w.draft(selection, leaf, () => 0.7);
+      w.draft(selection, leaf, () => 0.5);
+      scene.batch('Move', () => scene.setPose(asNodeId('a'), { ...pose(), x: 50 }));
+      if (end === 'reset') w.reset(selection, [leaf], 'Opacity');
+      else w.commit(selection, leaf, () => 0.8);
+      expect(pose()).toEqual({ x: 50, opacity: end === 'reset' ? 1 : 0.8 });
+    }
+  });
+
   it('undoes a committed edit to where it began, before its drafts', () => {
     const { scene, selection, pose } = setup();
     const w = leafWrites(scene);

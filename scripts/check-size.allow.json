@@ -186,7 +186,7 @@
     "longestFunction": 132
   },
   "packages/ui/src/components/Badge/bases/RoundedRect.tsx": {
-    "longestFunction": 150
+    "longestFunction": 136
   },
   "packages/ui/src/components/Badge/effects/Aqua.tsx": {
     "longestFunction": 122

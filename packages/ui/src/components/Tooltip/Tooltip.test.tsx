@@ -109,6 +109,28 @@ describe('Tooltip', () => {
     expect(onOpenChange).toHaveBeenCalledWith(false);
   });
 
+  it('leaves a stop the Escape meets where it was pressed in force', () => {
+    const onWindowKey = vi.fn();
+    window.addEventListener('keydown', onWindowKey);
+    try {
+      render(
+        <>
+          <TooltipTrigger open>
+            <Focusable><button type="button">Save</button></Focusable>
+            <Tooltip>Save the document</Tooltip>
+          </TooltipTrigger>
+          <input data-testid="field" onKeyDown={(e) => e.stopPropagation()} />
+        </>,
+      );
+      const field = screen.getByTestId('field');
+      act(() => field.focus());
+      fireEvent.keyDown(field, { key: 'Escape' });
+      expect(onWindowKey).not.toHaveBeenCalled();
+    } finally {
+      window.removeEventListener('keydown', onWindowKey);
+    }
+  });
+
   it("keeps an Escape pressed on the tooltip's own trigger for the tooltip", () => {
     const onDocumentKey = vi.fn();
     document.addEventListener('keydown', onDocumentKey);

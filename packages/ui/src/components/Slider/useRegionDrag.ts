@@ -8,6 +8,7 @@ import type { SliderProps, Thumb } from './types';
 import type { useScale } from './useSpan';
 import { useLatestHandlers } from './useLatestHandlers';
 import { isPrimaryPress } from '@weasel-js/gestures';
+import { sameThumbValues } from './tagged';
 
 /** What a region drag reads: the thumbs and their handlers, the span, and the map and geometry a pointer goes through. */
 export interface RegionDragArgs<T extends Thumb> {
@@ -66,7 +67,7 @@ export function useRegionDrag<T extends Thumb>({ props, min, max, scale, geometr
       },
       onEnd: () => {
         sessionRef.current = null;
-        if (latest) onChange(latest);
+        if (latest && !sameThumbValues(latest, thumbs)) onChange(latest);
       },
       onCancel: () => {
         sessionRef.current = null;

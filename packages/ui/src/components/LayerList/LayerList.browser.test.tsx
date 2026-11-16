@@ -24,3 +24,19 @@ test('a row\'s first gridcell adds no box, so its content lays out as the row\'s
   expect(label.top).toBeGreaterThanOrEqual(box.top);
   expect(label.bottom).toBeLessThanOrEqual(box.bottom);
 });
+
+test('a row with no remove button keeps its toggles in the column of a row that has one', () => {
+  renderWithIcons(
+    <div style={{ width: 240 }}>
+      <LayerList
+        items={[{ id: 'a', label: 'Alpha' }, { id: 'b', label: 'Beta', removable: false }, { id: 'c', label: 'Gamma', locked: true }]}
+        onRemove={() => {}}
+        onVisibilityChange={() => {}}
+        onLockChange={() => {}}
+      />
+    </div>,
+  );
+  const left = (name: string) => screen.getByRole('checkbox', { name }).getBoundingClientRect().left;
+  expect(left('Show Beta')).toBe(left('Show Alpha'));
+  expect(left('Show Gamma')).toBe(left('Show Alpha'));
+});

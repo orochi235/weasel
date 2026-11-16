@@ -159,6 +159,16 @@ describe('CurveField', () => {
     expect(onChange.mock.calls).toEqual([[[0, 0.5, 1, 1]]]);
   });
 
+  it('snaps a dragged point exactly onto the step grid, counted from min', () => {
+    const onChange = vi.fn();
+    render(<CurveField values={[0, 0, 1, 1]} min={0} max={1} step={0.1} width={200} onChange={onChange} />);
+    drag([], [{ x: 0, y: 0.31 }, { x: 1, y: 0.69 }]);
+    expect(onChange.mock.calls).toEqual([[[0, 0.3, 1, 0.7]]]);
+    render(<CurveField values={[0, 0.05, 1, 1]} min={0.05} max={1} step={0.1} width={200} onChange={onChange} />);
+    drag([], [{ x: 0, y: 0.31 }, { x: 1, y: 1 }]);
+    expect(onChange).toHaveBeenLastCalledWith([0, 0.35, 1, 1]);
+  });
+
   it('disables its buttons while disabled', () => {
     render(
       <CurveField values={[0, 0, 1, 1]} min={0} max={1} step={0.01} width={200} defaults={[0, 0, 1, 1]} onChange={() => {}} disabled />,
