@@ -1,5 +1,6 @@
 import { type ConfigShape, f } from '@weasel-js/labkit';
 import { cssColorLiteral } from '@weasel-js/paint';
+import { setOwn } from '@weasel-js/registry';
 
 /** A slider over `min`…`max` by `step`, starting at `def`. */
 export const num = (def: number, min: number, max: number, step: number) => f.number(def).range(min, max).step(step);
@@ -16,7 +17,7 @@ export function badgeParams(shape: ConfigShape, values: Params): Params {
   const out: Params = {};
   for (const [key, value] of Object.entries(values)) {
     if (value === undefined || value === null) continue;
-    out[key] = isColor(shape, key) ? cssColorLiteral(String(value)) : value;
+    setOwn(out, key, isColor(shape, key) ? cssColorLiteral(String(value)) : value);
   }
   return out;
 }
