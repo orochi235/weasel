@@ -1,5 +1,5 @@
 import { useLatest } from '@weasel-js/react';
-import { createLongPressStore, type Dispatcher, type DispatchTrace, type TraceRing, type WorldPoint } from '@weasel-js/routing';
+import { createLongPressStore, type Dispatcher, type TraceRing, type WorldPoint } from '@weasel-js/routing';
 import {
   useActionsRegistry, useDepRegistry, useGestureDispatcher, type DepRegistry, type HeldPointerFeed,
 } from '@weasel-js/routing/react';
@@ -66,8 +66,8 @@ export interface SceneGestureDispatcherInputs {
   /** Pre-created dispatcher to pump events into. When omitted,
    *  `useGestureDispatcher` creates one internally (legacy path). */
   dispatcher?: Dispatcher;
-  /** Where the dispatcher records its decisions and `clientToWorld` its conversions. */
-  traces: { dispatch: DispatchTrace; coords: TraceRing<CoordTraceEntry> };
+  /** Where `clientToWorld` records its conversions; null records none. */
+  coords: () => TraceRing<CoordTraceEntry> | null;
   /** Chrome-caps visibility resolver factory. Threaded into
    *  `buildAffordanceAt` so the hit-test pipeline gates corner / rotate /
    *  anchor affordances on the same chrome ids the renderer uses. */
@@ -213,7 +213,7 @@ function useClassifyTarget(
 export function useSceneGestureDispatcher(inputs: SceneGestureDispatcherInputs): void {
   const {
     canvasRef, canvasApiRef, tools, contributions, enabled, keyboard, claimKeys, viewRef,
-    kindOfNode, dispatcher, traces, getRuleCtx, onDoubleClick, onClick,
+    kindOfNode, dispatcher, coords, getRuleCtx, onDoubleClick, onClick,
     longPress: { duration: longPressDuration, haptics: longPressHaptics } = {},
   } = inputs;
   const registry = useActionsRegistry();
@@ -243,9 +243,10 @@ export function useSceneGestureDispatcher(inputs: SceneGestureDispatcherInputs):
     const api = canvasApiRef.current;
     const [x, y] = api ? api.clientToWorld(clientX, clientY) : [clientX, clientY];
     const world = clampWorldRef.current?.({ x, y }) ?? { x, y };
-    traceConversion(traces.coords, clientX, clientY, api ? canvasRef.current : null, viewRef?.current, world);
+    const ring = coords();
+    if (ring) traceConversion(ring, clientX, clientY, api ? canvasRef.current : null, viewRef?.current, world);
     return world;
-  }, [canvasRef, canvasApiRef, viewRef, traces.coords, clampWorldRef]);
+  }, [canvasRef, canvasApiRef, viewRef, coords, clampWorldRef]);
 
   // Stable callback that asks the canvas to redraw. Reads via ref so the
   // identity stays stable while the underlying API binds after mount.
@@ -282,7 +283,6 @@ export function useSceneGestureDispatcher(inputs: SceneGestureDispatcherInputs):
     affordanceAt: affordanceWithLayers,
     classifyTarget,
     dispatcher,
-    trace: traces.dispatch,
     clientToWorld,
     requestRedraw,
     paintedCursor,

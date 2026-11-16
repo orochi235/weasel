@@ -7,7 +7,7 @@ import {
   DEVTOOLS_PROTOCOL, isPageMessage, type DevtoolsArea, type DevtoolsHistorySlice, type DevtoolsNodeDetail, type DevtoolsNodeSummary,
   type DevtoolsRegistry, type DevtoolsRequest, type DevtoolsRootInfo, type DevtoolsRootState, type DevtoolsTraceSlice,
   type PanelTransport, type SerializedValue,
-} from '@weasel-js/core/devtools-protocol';
+} from './protocol';
 import { createEmitter, deepEqual } from '@weasel-js/registry';
 
 /** A request as a caller writes it: the client adds the protocol, the request id and the root. */

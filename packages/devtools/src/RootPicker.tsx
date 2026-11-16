@@ -1,5 +1,5 @@
 import type { ReactElement } from 'react';
-import type { DevtoolsRootInfo } from '@weasel-js/core/devtools-protocol';
+import type { DevtoolsRootInfo } from './protocol';
 import { Select } from '@weasel-js/ui/components/Select';
 import s from './DevtoolsPanel.module.css';
 

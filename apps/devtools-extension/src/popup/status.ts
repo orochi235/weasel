@@ -10,7 +10,7 @@ export function popupStatus(tab: TabWeasel | null, mac: boolean): PopupStatus {
     return {
       title: 'No weasel on this page',
       lines: [
-        'A dev build hooks in when its first canvas mounts. A production build hooks in only if it imports @weasel-js/core/devtools.',
+        'A page hooks in once a canvas that takes the devtools contribution from @weasel-js/devtools/hook mounts.',
       ],
     };
   }

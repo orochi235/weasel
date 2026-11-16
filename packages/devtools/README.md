@@ -1,8 +1,8 @@
 # @weasel-js/devtools
 
-A devtools panel for weasel canvases. It connects to the devtools hook every
-`<SceneCanvas>` registers with (`@weasel-js/core/devtools`), and reads and
-steers each canvas on the page: it never edits a scene.
+A devtools panel for weasel canvases, and the hook a page installs for it. Each
+`<SceneCanvas>` that takes the `devtools` contribution registers with the hook,
+and the panel reads and steers it: it never edits a scene.
 
 Part of [weasel](https://github.com/orochi235/weasel), a domain-agnostic
 scene-graph engine for React. See the
@@ -13,15 +13,23 @@ npm install @weasel-js/devtools
 ```
 
 ```tsx
+import { AmbientContributionsProvider } from '@weasel-js/core';
 import { DevtoolsPanel, createInPagePanelTransport } from '@weasel-js/devtools';
+import { devtools } from '@weasel-js/devtools/hook';
 import '@weasel-js/devtools/style.css';
 
 const transport = createInPagePanelTransport();
 
-<div className="devtools-dock">
-  <DevtoolsPanel transport={transport} />
-</div>;
+<AmbientContributionsProvider contributions={[devtools]}>
+  <App />
+  <div className="devtools-dock">
+    <DevtoolsPanel transport={transport} />
+  </div>
+</AmbientContributionsProvider>;
 ```
+
+A canvas that does not take `devtools` is not listed, and pays nothing for it.
+`<SceneCanvas ambient={[devtools]}>` hands it to one canvas.
 
 The panel fills its container, so give the container a size.
 
@@ -36,6 +44,14 @@ The panel fills its container, so give the container a size.
 
 `tabs={['dispatch']}` shows only the tabs named, and drops the tab bar when
 one is left.
+
+## Entries
+
+| Entry | Holds |
+|---|---|
+| `@weasel-js/devtools` | the panel, its protocol client, `createInPagePanelTransport` |
+| `@weasel-js/devtools/hook` | the page's side: the `devtools` contribution, the hook on `window.__weaselDevtools__`, roots |
+| `@weasel-js/devtools/protocol` | the messages, transports and serializer; no React and no core, for an extension's scripts |
 
 ## Transports
 

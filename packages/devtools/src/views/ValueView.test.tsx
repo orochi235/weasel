@@ -1,6 +1,6 @@
 import { render, screen, within } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
-import { serialize } from '@weasel-js/core/devtools-protocol';
+import { serialize } from '../protocol';
 import { ValueView } from './ValueView';
 
 /** The text of the row a key names, at any depth. */

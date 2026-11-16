@@ -1,6 +1,7 @@
 import { act, cleanup, render } from '@testing-library/react';
 import { afterEach, beforeAll, describe, expect, it } from 'vitest';
-import { pathInWorld, type Path } from '@weasel-js/core';
+import { AmbientContributionsProvider, pathInWorld, type Path } from '@weasel-js/core';
+import { devtools } from '@weasel-js/devtools/hook';
 import { PathAnchorEditDemo } from '../PathAnchorEditDemo';
 
 // jsdom's canvas rect is all zeros and the view is identity, so client
@@ -46,6 +47,8 @@ function fired(): string[] {
   return log.flatMap((e) => (e.kind === 'dispatch' && e.fired ? [e.fired] : []));
 }
 
+const DEVTOOLS = [devtools];
+
 /** Unit normal pointing out of the kite across its first edge, (140,40) → (220,140). */
 const OUT = { x: 100 / Math.hypot(100, 80), y: -80 / Math.hypot(100, 80) };
 
@@ -62,7 +65,7 @@ describe('PathAnchorEditDemo', () => {
   // SceneCanvas branches that run when `modes` is absent: no
   // eligibility filter, and nothing revoking edit mode.
   it('enters anchor editing on double-click, drags one anchor, and exits on Escape', () => {
-    const { container } = render(<PathAnchorEditDemo />);
+    const { container } = render(<AmbientContributionsProvider contributions={DEVTOOLS}><PathAnchorEditDemo /></AmbientContributionsProvider>);
     const canvas = container.querySelector('canvas')!;
     const before = kiteCoords();
 
@@ -85,7 +88,7 @@ describe('PathAnchorEditDemo', () => {
   });
 
   it('inserts an anchor where an Alt+click lands on a segment', () => {
-    const { container } = render(<PathAnchorEditDemo />);
+    const { container } = render(<AmbientContributionsProvider contributions={DEVTOOLS}><PathAnchorEditDemo /></AmbientContributionsProvider>);
     const canvas = container.querySelector('canvas')!;
     doubleClick(canvas, 140, 140);
     const before = kiteCoords();
@@ -105,7 +108,7 @@ describe('PathAnchorEditDemo', () => {
   });
 
   it('splits the closing edge of a closed path', () => {
-    const { container } = render(<PathAnchorEditDemo />);
+    const { container } = render(<AmbientContributionsProvider contributions={DEVTOOLS}><PathAnchorEditDemo /></AmbientContributionsProvider>);
     const canvas = container.querySelector('canvas')!;
     doubleClick(canvas, 140, 140);
     const before = kiteCoords();
@@ -116,7 +119,7 @@ describe('PathAnchorEditDemo', () => {
   });
 
   it('leaves the path alone when the Alt+click misses every segment', () => {
-    const { container } = render(<PathAnchorEditDemo />);
+    const { container } = render(<AmbientContributionsProvider contributions={DEVTOOLS}><PathAnchorEditDemo /></AmbientContributionsProvider>);
     const canvas = container.querySelector('canvas')!;
     doubleClick(canvas, 140, 140);
     const before = kiteCoords();
@@ -130,7 +133,7 @@ describe('PathAnchorEditDemo', () => {
 
   it('bends a segment dragged from just outside or just inside its edge', () => {
     for (const side of [1, -1]) {
-      const { container, unmount } = render(<PathAnchorEditDemo />);
+      const { container, unmount } = render(<AmbientContributionsProvider contributions={DEVTOOLS}><PathAnchorEditDemo /></AmbientContributionsProvider>);
       const canvas = container.querySelector('canvas')!;
       doubleClick(canvas, 140, 140);
       const before = kiteCoords();
@@ -149,7 +152,7 @@ describe('PathAnchorEditDemo', () => {
   });
 
   it('shows the insert cursor only over a segment while Alt is down', () => {
-    const { container } = render(<PathAnchorEditDemo />);
+    const { container } = render(<AmbientContributionsProvider contributions={DEVTOOLS}><PathAnchorEditDemo /></AmbientContributionsProvider>);
     const canvas = container.querySelector('canvas')!;
     doubleClick(canvas, 140, 140);
     const hover = (x: number, y: number, altKey: boolean) => {

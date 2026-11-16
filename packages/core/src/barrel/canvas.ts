@@ -171,8 +171,10 @@ export type { CreateChildrenLayerOptions } from '../core/layers/children';
 
 // ─── Debug overlay subsystem (URL-flagged tree-shakeable) ───────────────────
 export * from '../debug';
-export { DevtoolsLabel, useDevtoolsLabel } from '../devtools/label';
-export type { DevtoolsLabelProps } from '../devtools/label';
+export { DevtoolsLabel, useDevtoolsLabel } from '../canvas/devtoolsLabel';
+export type { DevtoolsLabelProps } from '../canvas/devtoolsLabel';
+export type { CanvasInspection, CanvasInspectionChange } from '../canvas/deps/inspection';
+export type { CoordTraceEntry } from '../canvas/SceneCanvas/coordTrace';
 
 // ─── Layout: the contract a container's layout strategy implements. The
 // strategies themselves (freeform, tileGrid, snapPoint) are in @weasel-js/guides.

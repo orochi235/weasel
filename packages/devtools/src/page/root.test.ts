@@ -1,7 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { createDispatchTrace, createTraceRing } from '@weasel-js/routing';
-import { createScene } from 'core/scene/scene';
-import type { NodeId } from 'core/scene/types';
+import { createScene, type NodeId } from '@weasel-js/core';
 import type { DevtoolsArea } from './protocol';
 import { createDevtoolsRoot, type DevtoolsRootSource } from './root';
 

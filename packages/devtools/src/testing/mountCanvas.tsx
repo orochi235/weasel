@@ -1,7 +1,7 @@
 /** A `<SceneCanvas>` in jsdom with a small scene, for the panel's tests: a group holding one leaf, and a second leaf. */
 import { vi } from 'vitest';
 import { SceneCanvas, useScene, type NodeId } from '@weasel-js/core';
-import type { DevtoolsRoot } from '@weasel-js/core/devtools-protocol';
+import { devtools, type DevtoolsRoot } from '../hook';
 import { createGLRecorder } from '@weasel-js/renderer/testing/glRecorder';
 
 type Data = { label: string; paint?: () => void };
@@ -13,6 +13,8 @@ export function stubWebGL(): void {
   const proto = HTMLCanvasElement.prototype as unknown as { getContext: (...args: unknown[]) => unknown };
   proto.getContext = vi.fn((kind: unknown) => (kind === 'webgl2' ? recorder.gl : null));
 }
+
+const AMBIENT = [devtools];
 
 export function TestCanvas({ label = 'board' }: { label?: string }) {
   const scene = useScene<Data, 'main', Pose>({
@@ -26,7 +28,7 @@ export function TestCanvas({ label = 'board' }: { label?: string }) {
       { id: 'solo' as NodeId, kind: 'mark', layer: 'main', pose: { x: 60, y: 60, width: 20, height: 20 }, data: { label: 'solo' } },
     ],
   });
-  return <SceneCanvas scene={scene} width={200} height={200} tools={{ hand: true }} aria-label={label} />;
+  return <SceneCanvas scene={scene} width={200} height={200} tools={{ hand: true }} ambient={AMBIENT} aria-label={label} />;
 }
 
 /** The root a mounted canvas registered, by its label. */

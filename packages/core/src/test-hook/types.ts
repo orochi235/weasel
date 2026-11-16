@@ -8,7 +8,7 @@ export interface TestHookRefs {
   getSelectionIds: () => readonly string[];
   getView: () => View;
   getActiveToolId: () => string | null;
-  /** Where registered probes live: the canvas's devtools root, so a panel reads them too. */
+  /** Where registered probes live: the canvas's own map, which its `inspection` dep hands an inspector too. */
   probes?: Map<string, () => unknown>;
 }
 

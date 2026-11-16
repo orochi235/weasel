@@ -2,7 +2,8 @@ import '@weasel-js/theme/tokens.css';
 import '@weasel-js/theme/fonts.css';
 import { StrictMode, Suspense, lazy, use, useEffect, useState } from 'react';
 import { createRoot } from 'react-dom/client';
-import { IconRegistryProvider, WeaselProvider } from '@weasel-js/core';
+import { AmbientContributionsProvider, IconRegistryProvider, WeaselProvider } from '@weasel-js/core';
+import { devtools } from '@weasel-js/devtools/hook';
 import { ThemeProvider } from '@weasel-js/theme/react';
 import icons from 'virtual:weasel-icons';
 import { App } from './App';
@@ -39,6 +40,9 @@ function SessionApp() {
   use(sessionOpened);
   return <App />;
 }
+
+// The devtools sidebar panel, and the extension, see the canvases that take this; a production build leaves it out.
+const DEV_AMBIENT = import.meta.env.DEV ? [devtools] : [];
 
 const container = document.getElementById('root');
 if (!container) throw new Error('Missing #root element');
@@ -100,7 +104,9 @@ slot.__reactRoot ??= createRoot(slot);
 slot.__reactRoot.render(
   <StrictMode>
     <IconRegistryProvider icons={icons} variants={ICON_VARIANTS}>
-      <Root />
+      <AmbientContributionsProvider contributions={DEV_AMBIENT}>
+        <Root />
+      </AmbientContributionsProvider>
     </IconRegistryProvider>
   </StrictMode>,
 );

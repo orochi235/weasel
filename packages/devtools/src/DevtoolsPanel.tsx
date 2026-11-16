@@ -1,5 +1,5 @@
 import { useState, type ReactElement } from 'react';
-import type { PanelTransport } from '@weasel-js/core/devtools-protocol';
+import type { PanelTransport } from './protocol';
 import { Icon } from '@weasel-js/ui/components/Icon';
 import { Tab, TabList, TabPanel, Tabs } from '@weasel-js/ui/components/Tabs';
 import { useDevtoolsClient } from './hooks';

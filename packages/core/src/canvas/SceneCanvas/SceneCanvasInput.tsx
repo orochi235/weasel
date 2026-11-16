@@ -31,7 +31,8 @@ import { useContentBounds } from './useContentBounds';
 import type { GestureSource } from '../gestureBounds';
 import type { Bounds } from 'core/viewport/fitViewToBounds';
 import { useSceneGestureDispatcher } from './useSceneGestureDispatcher';
-import { useCanvasDevtoolsRoot, type CanvasDevtools } from './useCanvasDevtoolsRoot';
+import { useCanvasInspection } from '../deps/inspection';
+import type { DebugFlags } from '../../debug/types';
 import type { useScenePicking } from './useScenePicking';
 import {
   useSceneStandardActions, type SceneStandardActionsInputs, type StandardActionsProps,
@@ -104,7 +105,8 @@ export interface SceneCanvasInputProps {
   snapSources: readonly SnapSource[];
   /** The outcome store the canvas's readout layer draws. */
   snapStore: SnapOutcomeStore;
-  devtools: CanvasDevtools;
+  /** The `debug` in effect, and the setter for the flags an inspector lays over it. */
+  debug: { debug: DebugFlags | false | undefined; setOverride(flags: DebugFlags | null): void };
 }
 
 /**
@@ -155,9 +157,10 @@ export function SceneCanvasInput(p: SceneCanvasInputProps) {
   const onClick = useHitObserver(props.onClick, p.nodeAtPointRef);
   const selectionRef = useLatest(selection);
   const { targetScale } = useDeviceProfile();
-  const { root, traces } = useCanvasDevtoolsRoot({
-    scene, selection, viewState, tools: p.tools.tools, contributions: p.tools.contributions, routing: props.routing,
-    element: canvas.elementRef, api: canvas.apiRef, devtools: p.devtools,
+  const inspection = useCanvasInspection({
+    scene, selection: selection.current as readonly string[] | undefined, tools: p.tools.tools,
+    contributions: p.tools.contributions, routing: props.routing,
+    debug: p.debug.debug, setDebugOverride: p.debug.setOverride,
   });
   const edgePanProp = props.viewport?.edgePan;
   const edgePan = useEdgePan({
@@ -174,7 +177,7 @@ export function SceneCanvasInput(p: SceneCanvasInputProps) {
     boundsOf: picking.boundsOf, planeOfNode: picking.planeOfNode,
     pickEvery: picking.pickEvery, pickBest: picking.pickBest, kindOfNode: picking.kindOfNode,
     doubleClickNames: picking.doubleClickNames,
-    viewRef: viewState.viewRef, dispatcher: p.dispatcher, traces,
+    viewRef: viewState.viewRef, dispatcher: p.dispatcher, coords: inspection.coords,
     getIsVisibleForCanvas: chrome.getIsVisible, getRuleCtx: chrome.getRuleCtx,
     targetScale, handleHitRadius: overlay.resizeHandles.hitRadiusPx,
     edgeHandles: overlay.resizeHandles.edges,
@@ -195,7 +198,7 @@ export function SceneCanvasInput(p: SceneCanvasInputProps) {
     getSelectionIds: () => (selection.current as readonly string[] | undefined) ?? [],
     getView: () => viewState.viewRef.current,
     getActiveToolId: () => p.tools.tools.active ?? null,
-    probes: root.probes,
+    probes: inspection.probes,
   });
 
   // Mounted only when passed: an empty default registered with the deps above would land

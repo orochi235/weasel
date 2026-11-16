@@ -8,8 +8,8 @@ Safari takes the Chrome build through an Xcode wrapper. Private: it is not publi
 Its toolbar button shows whether a tab runs weasel: the badge counts the page's canvases (`•` for a
 hook with none), and clicking it names the kit version and says where the panel is.
 
-The panel tab appears once the inspected page has a hook. That means a dev build with a mounted
-`<SceneCanvas>`, or a production build that imports `@weasel-js/core/devtools`.
+The panel tab appears once the inspected page has a hook: once a canvas that takes the `devtools`
+contribution from `@weasel-js/devtools/hook` mounts, in any build.
 
 ## Build
 

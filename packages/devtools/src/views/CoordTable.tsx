@@ -1,6 +1,6 @@
 /** `clientToWorld` conversions, newest first: where the pointer was, the camera it was read under, and the world point it became. */
 import type { ReactElement } from 'react';
-import { serializedNumber, type SerializedValue } from '@weasel-js/core/devtools-protocol';
+import { serializedNumber, type SerializedValue } from '../protocol';
 import { DataGrid, type DataGridColumn } from '@weasel-js/ui/components/DataGrid';
 import { formatAge } from './formatAge';
 import s from './TraceTable.module.css';

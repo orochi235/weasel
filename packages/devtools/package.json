@@ -1,7 +1,7 @@
 {
   "name": "@weasel-js/devtools",
   "version": "1.19.1",
-  "description": "A devtools panel for weasel canvases: each canvas's scene tree, state, dispatch trace and frame stats, read and steered over the devtools hook's protocol.",
+  "description": "A devtools panel for weasel canvases, and the hook a page installs for it: each canvas's scene tree, state, dispatch trace and frame stats, read and steered over the hook's protocol.",
   "weasel": {
     "tier": "plugin"
   },
@@ -17,6 +17,14 @@
     ".": {
       "types": "./dist/index.d.ts",
       "import": "./dist/index.js"
+    },
+    "./hook": {
+      "types": "./dist/hook.d.ts",
+      "import": "./dist/hook.js"
+    },
+    "./protocol": {
+      "types": "./dist/protocol.d.ts",
+      "import": "./dist/protocol.js"
     },
     "./style.css": "./dist/style.css",
     "./package.json": "./package.json"
@@ -45,9 +53,11 @@
   },
   "dependencies": {
     "@weasel-js/gestures": "1.19.1",
+    "@weasel-js/history": "1.19.1",
     "@weasel-js/icons": "1.19.1",
     "@weasel-js/react": "1.19.1",
     "@weasel-js/registry": "1.19.1",
+    "@weasel-js/routing": "1.19.1",
     "@weasel-js/ui": "1.19.1"
   },
   "peerDependencies": {

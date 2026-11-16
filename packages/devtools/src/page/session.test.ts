@@ -1,8 +1,7 @@
 import { describe, it, expect, vi } from 'vitest';
 import { createDispatchTrace, createTraceRing } from '@weasel-js/routing';
-import { createScene } from 'core/scene/scene';
-import type { NodeId } from 'core/scene/types';
-import type { CoordTraceEntry } from '../canvas/SceneCanvas/coordTrace';
+import { createScene, type NodeId } from '@weasel-js/core';
+import type { CoordTraceEntry } from '@weasel-js/core';
 import { createDevtoolsHook } from './hook';
 import { DEVTOOLS_PROTOCOL, type PageMessage, type PanelMessage } from './protocol';
 import { createDevtoolsRoot, type DevtoolsRootSource } from './root';
@@ -26,7 +25,8 @@ function setup() {
   const coords = createTraceRing<CoordTraceEntry>(10, false);
   const history = createTraceRing<DevtoolsHistoryRecord>(200, false);
   recordHistory(scene.history, history);
-  const registryListeners = new Set<() => void>();
+  const probes = new Map<string, () => unknown>();
+  const registryListeners = new Set<(area: 'registry') => void>();
   const registry: DevtoolsRegistry = { tools: [], actions: [], deps: [{ name: 'selection', depth: 0, stacked: 1 }], routingKinds: ['rect'] };
   const source: DevtoolsRootSource = {
     label: () => 'main canvas',
@@ -44,8 +44,9 @@ function setup() {
     overlays: () => ({ bounds: true, theme: { bounds: 'red' } }),
     setOverride,
     registry: () => registry,
-    subscribeRegistry: (l) => { registryListeners.add(l); return () => { registryListeners.delete(l); }; },
+    subscribe: (l) => { registryListeners.add(l); return () => { registryListeners.delete(l); }; },
     history,
+    probes,
   };
   const root = createDevtoolsRoot(source);
   let flush: (() => void) | null = null;
@@ -67,8 +68,8 @@ function setup() {
     return reply.result;
   };
   return {
-    scene, group, leaf, root, hook, panel, heard, ask, result, close, unregister, trace, coords, setOverride,
-    registryChanged: () => { for (const l of registryListeners) l(); },
+    scene, group, leaf, root, hook, probes, panel, heard, ask, result, close, unregister, trace, coords, setOverride,
+    registryChanged: () => { for (const l of registryListeners) l('registry'); },
     flush: () => { const f = flush; flush = null; f?.(); },
     get selection() { return selection; },
     get tool() { return tool; },
@@ -108,7 +109,7 @@ describe('devtools session', () => {
 
   it('reports state, frame stats and probes', () => {
     const t = setup();
-    t.root.probes.set('answer', () => 42);
+    t.probes.set('answer', () => 42);
     t.panel.send({ type: 'yo', protocol: P });
     expect(t.result({ type: 'get-state' })).toEqual({
       selection: [], view: { x: 0, y: 0, scale: { x: 2, y: 2 } }, activeTool: 'select',

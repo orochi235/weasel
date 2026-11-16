@@ -1,8 +1,9 @@
 /**
  * @weasel-js/devtools — a panel that reads and steers every `<SceneCanvas>` on
- * a page through the devtools hook (`@weasel-js/core/devtools`). Mount
- * `DevtoolsPanel` over any transport; `connectDevtools` is the same protocol
- * client without React.
+ * a page that took the `devtools` contribution (`@weasel-js/devtools/hook`).
+ * Mount `DevtoolsPanel` over any transport; `connectDevtools` is the same
+ * protocol client without React. The messages and transports are
+ * `@weasel-js/devtools/protocol`.
  *
  * @packageDocumentation
  */

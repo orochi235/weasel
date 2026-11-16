@@ -8,8 +8,6 @@ const shims = [
   'clipboard',
   'clone',
   'json',
-  'devtools',
-  'devtools-protocol',
   'patterns-builtin',
   'renderer',
   'routing',

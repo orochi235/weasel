@@ -1,5 +1,5 @@
 /** A root's history steps read a slice at a time through their cursor, the stack's entries along with them on request. */
-import type { DevtoolsHistorySlice } from '@weasel-js/core/devtools-protocol';
+import type { DevtoolsHistorySlice } from './protocol';
 import type { DevtoolsClient } from './client';
 
 /** A cursor over one root's history steps. */

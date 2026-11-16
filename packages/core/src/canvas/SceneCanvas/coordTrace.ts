@@ -2,8 +2,8 @@ import type { TraceRing } from '@weasel-js/routing';
 import type { View } from 'core/viewport/view';
 
 /** One `clientToWorld` call, so a cursor position can be reconciled with the
- *  world point it became. A canvas keeps these beside its dispatch trace, and
- *  the devtools hook's `get-trace` reads them. */
+ *  world point it became. A canvas keeps these once an inspector asks for
+ *  them (`CanvasInspection.coords`). */
 export interface CoordTraceEntry {
   ts: number;
   clientX: number;

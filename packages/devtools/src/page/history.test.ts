@@ -1,7 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { createTraceRing } from '@weasel-js/routing';
-import { createScene } from 'core/scene/scene';
-import type { NodeId } from 'core/scene/types';
+import { createScene, type NodeId } from '@weasel-js/core';
 import { HISTORY_RECORD_LIMITS, recordHistory } from './history';
 import type { DevtoolsHistoryRecord } from './protocol';
 

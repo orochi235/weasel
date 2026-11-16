@@ -1,7 +1,7 @@
 /** What travels between the extension's parts, beyond core's own protocol messages. */
 import {
   DEVTOOLS_ENVELOPE, isDevtoolsEnvelope, type DevtoolsEnvelope, type PageMessage, type PanelMessage,
-} from '@weasel-js/core/devtools-protocol';
+} from '@weasel-js/devtools/protocol';
 
 /** Whether a posted message's `data` is devtools traffic sent by `side`. */
 export function envelopeFrom(data: unknown, side: DevtoolsEnvelope['side']): data is DevtoolsEnvelope {

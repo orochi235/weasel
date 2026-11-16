@@ -1,13 +1,10 @@
 /**
- * A root: what one mounted `<SceneCanvas>` exposes to the devtools hook and to
- * the test hook. The canvas supplies live getters; the root adds change
- * versions and the probe registry.
+ * A root: what one mounted `<SceneCanvas>` exposes to the devtools hook. The
+ * canvas supplies live getters; the root adds change versions.
  */
 import { createEmitter } from '@weasel-js/registry';
 import type { DispatchTrace, TraceRing } from '@weasel-js/routing';
-import type { Scene } from 'core/scene/types';
-import type { CoordTraceEntry } from '../canvas/SceneCanvas/coordTrace';
-import type { DebugFlags } from '../debug/types';
+import type { CoordTraceEntry, DebugFlags, Scene } from '@weasel-js/core';
 import type {
   DevtoolsArea, DevtoolsHistoryRecord, DevtoolsOverlays, DevtoolsRegistry, DevtoolsRootInfo,
 } from './protocol';
@@ -33,8 +30,10 @@ export interface DevtoolsRootSource {
   setOverride(override: { overlays: DevtoolsOverlays; highlight: readonly string[] } | null): void;
   /** What the canvas has registered, described when asked. Absent, `get-registry` is refused. */
   registry?(): DevtoolsRegistry;
-  /** Hear that what {@link DevtoolsRootSource.registry} describes may have changed. Returns the unsubscribe. */
-  subscribeRegistry?(listener: () => void): () => void;
+  /** Hear the changes the source reports itself, by area, while something listens to the root. Returns the unsubscribe. */
+  subscribe?(listener: (area: DevtoolsArea) => void): () => void;
+  /** Name-keyed values `get-state` reads. */
+  probes?: ReadonlyMap<string, () => unknown>;
   /** The scene's history steps. Absent, `get-history` is refused. */
   history?: TraceRing<DevtoolsHistoryRecord>;
 }
@@ -44,8 +43,8 @@ export interface DevtoolsRoot {
   readonly id: string;
   readonly source: DevtoolsRootSource;
   info(): DevtoolsRootInfo;
-  /** Name-keyed probes; the test hook's `registerProbe` writes here. */
-  readonly probes: Map<string, () => unknown>;
+  /** Name-keyed probes: the source's, which the test hook's `registerProbe` writes. */
+  readonly probes: ReadonlyMap<string, () => unknown>;
   version(area: DevtoolsArea): number;
   /** Say that `area` changed. The scene and the trace say so themselves while anything listens. */
   notify(area: DevtoolsArea): void;
@@ -54,6 +53,7 @@ export interface DevtoolsRoot {
 }
 
 let nextId = 1;
+const NO_PROBES: ReadonlyMap<string, () => unknown> = new Map();
 
 /** A root over `source`, with a fresh page-unique id. */
 export function createDevtoolsRoot(source: DevtoolsRootSource): DevtoolsRoot {
@@ -62,9 +62,13 @@ export function createDevtoolsRoot(source: DevtoolsRootSource): DevtoolsRoot {
     scene: 0, selection: 0, view: 0, tool: 0, trace: 0, registry: 0, history: 0,
   };
   const listeners = createEmitter<[area: DevtoolsArea]>();
-  const notify = (area: DevtoolsArea): void => {
+  const bump = (area: DevtoolsArea): void => {
     versions[area]++;
     listeners.emit(area);
+  };
+  const notify = (area: DevtoolsArea): void => {
+    if (area === 'scene') followScene();
+    bump(area);
   };
 
   // Attached only while something listens, so a root nobody inspects holds no
@@ -87,14 +91,14 @@ export function createDevtoolsRoot(source: DevtoolsRootSource): DevtoolsRoot {
       const next = s.getContentVersion();
       if (next === content) return;
       content = next;
-      notify('scene');
+      bump('scene');
     });
   };
   const attach = (): void => {
     const offs = [
       source.trace.subscribe(() => notify('trace')),
       source.history?.subscribe(() => notify('history')),
-      source.subscribeRegistry?.(() => notify('registry')),
+      source.subscribe?.(notify),
     ];
     detach = () => {
       for (const off of offs) off?.();
@@ -108,12 +112,9 @@ export function createDevtoolsRoot(source: DevtoolsRootSource): DevtoolsRoot {
     id,
     source,
     info: () => ({ id, label: source.label() || id, dimension: source.dimension }),
-    probes: new Map(),
+    get probes() { return source.probes ?? NO_PROBES; },
     version: (area) => versions[area],
-    notify(area) {
-      if (area === 'scene') followScene();
-      notify(area);
-    },
+    notify,
     subscribe(listener) {
       const off = listeners.subscribe(listener);
       if (!detach) attach();
