@@ -25,6 +25,10 @@ describe('selectionFor', () => {
   it('leaves out an axis whose global names a member of every object, as the engine does (found by saveTokens.pbt)', () => {
     expect(selectionFor({ mode: { default: 'dark', values: { dark: {} } } }, { mode: 'hasOwnProperty' })).toEqual({});
   });
+
+  it('defaults an axis named for an Object member that no global names', () => {
+    expect(selectionFor({ constructor: { default: 'a', values: { a: {} } } }, {})).toEqual({ constructor: 'a' });
+  });
 });
 
 describe('applyScaleEdits', () => {

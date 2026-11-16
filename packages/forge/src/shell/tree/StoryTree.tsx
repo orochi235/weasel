@@ -3,6 +3,7 @@ import { Checkbox } from '@weasel-js/ui/components/Checkbox';
 import { SegmentedBar, type SegmentedBarItem } from '@weasel-js/ui/components/Segmented';
 import { Tree, type TreeNode as UiTreeNode, type TreeProps } from '@weasel-js/ui/components/Tree';
 import { type ReactNode, useContext, useEffect, useId, useMemo, useRef, useState } from 'react';
+import { getOwn } from '@weasel-js/registry';
 import { formatRoute } from '../../route/url';
 import { indexEntries } from '../../story/indexPages';
 import { isGallery, isLab } from '../../story/tags';
@@ -96,7 +97,7 @@ export function StoryTree({ ctx, index }: StoryTreeProps) {
   const view = [chosen, 'components' as const, 'gallery' as const].find(enabled) ?? chosen;
   // The package filter runs on the index, so it means the same thing in both
   // views rather than once per view's own grouping.
-  const kept = useMemo(() => index.filter((entry) => !hidden[table.of(entry)]), [index, hidden, table]);
+  const kept = useMemo(() => index.filter((entry) => !getOwn(hidden, table.of(entry))), [index, hidden, table]);
   // Galleries list only in their own view, grouped the way Components groups.
   const [galleryEntries, rest] = useMemo(() => {
     const yes: IndexEntry[] = [];
@@ -152,7 +153,7 @@ export function StoryTree({ ctx, index }: StoryTreeProps) {
     return { nodes: convert(shown), byId: ids, folders };
   }, [shown, openIds]);
   const expanded = useMemo(
-    () => new Set(folderIds.filter((id) => filtering || (folds[pathOf(byId, id)] ?? routeAncestors.has(pathOf(byId, id))))),
+    () => new Set(folderIds.filter((id) => filtering || (getOwn(folds, pathOf(byId, id)) ?? routeAncestors.has(pathOf(byId, id))))),
     [folderIds, byId, filtering, folds, routeAncestors],
   );
 
@@ -184,7 +185,7 @@ export function StoryTree({ ctx, index }: StoryTreeProps) {
   // already toggled the fold, so the stored fold goes back to what it was, less a manual close, which would
   // outrank the selection.
   const openIndex = (path: string, page: IndexEntry, another: boolean): void => {
-    const was = folds[path];
+    const was = getOwn(folds, path);
     setFolds(({ [path]: _toggled, ...rest }) => (was ? { ...rest, [path]: was } : rest));
     activate(page, another);
   };
@@ -271,7 +272,7 @@ export function StoryTree({ ctx, index }: StoryTreeProps) {
         {libraries.map((library) => (
           <Checkbox
             key={library}
-            isSelected={!hidden[library]}
+            isSelected={!getOwn(hidden, library)}
             onChange={(on) => setHidden((prev) => ({ ...prev, [library]: !on }))}
           >
             <span className="fg-tree__library">

@@ -1,5 +1,6 @@
 import { type ConfigSchema, type ConfigShape, isConfigBranch, isEntryShown, resolveConfigSchema, titleCase } from '@weasel-js/labkit/config';
 import { isPlainObject } from '@weasel-js/core';
+import { getOwn } from '@weasel-js/registry';
 
 export interface VariantValue {
   value: unknown;
@@ -59,7 +60,7 @@ export function mergeConfig(base: unknown, over: unknown): unknown {
   const keys = [...Object.keys(base), ...Object.keys(over).filter((key) => !Object.hasOwn(base, key))];
   // Built from entries, so a key named `__proto__` stays an own key rather than setting the prototype.
   return Object.fromEntries(
-    keys.map((key) => [key, Object.hasOwn(over, key) ? mergeConfig(Object.hasOwn(base, key) ? base[key] : undefined, over[key]) : base[key]]),
+    keys.map((key) => [key, Object.hasOwn(over, key) ? mergeConfig(getOwn(base, key), over[key]) : getOwn(base, key)]),
   );
 }
 
@@ -68,5 +69,5 @@ export function withValueAt(config: unknown, path: string, value: unknown): unkn
   const [head, ...rest] = path.split('.');
   if (head === undefined) return value;
   const record = isPlainObject(config) ? config : {};
-  return { ...record, [head]: rest.length === 0 ? value : withValueAt(record[head], rest.join('.'), value) };
+  return { ...record, [head]: rest.length === 0 ? value : withValueAt(getOwn(record, head), rest.join('.'), value) };
 }

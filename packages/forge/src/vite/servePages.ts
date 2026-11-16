@@ -1,4 +1,5 @@
 import type { ViteDevServer } from 'vite';
+import { getOwn } from '@weasel-js/registry';
 import { type CaptureEndpoint, serveCapture } from './capture/endpoint.ts';
 import { CAPTURE_PAGES } from './capture/payload.ts';
 import { html } from './html.ts';
@@ -22,7 +23,7 @@ export function servePages(server: ViteDevServer, base: string, shell: () => She
     const path = url.split('?')[0] ?? '/';
     const prefix = base.endsWith('/') ? base.slice(0, -1) : base;
     const page = path === prefix ? '/' : path.startsWith(`${prefix}/`) ? path.slice(prefix.length) : null;
-    const entry = req.method === 'GET' && page !== null ? PAGES[page] : undefined;
+    const entry = req.method === 'GET' && page !== null ? getOwn(PAGES, page) : undefined;
     if (!entry) return next();
     server.transformIndexHtml(url, html(entry, 'serve', shell().title)).then(
       (doc) => {

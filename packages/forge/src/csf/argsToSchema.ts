@@ -2,7 +2,7 @@ import { type ConfigNode, type ConfigSchema, type ConfigShape, f, ObjectNode, Un
 import { isPlainObject } from '@weasel-js/core';
 import { iconFromData } from '@weasel-js/ui/components/Icon';
 import { sameKnob } from '../route/url';
-import { setOwn } from '@weasel-js/registry';
+import { getOwn, setOwn } from '@weasel-js/registry';
 import { portSafePart } from './portSafe';
 
 /** Storybook's conditional control: shown only while an arg, or a global, meets the test. */
@@ -202,7 +202,7 @@ function controlled(control: Control, argType: ArgType, has: boolean, value: unk
       const node = f.enum(
         def<string>(),
         icons ? options.map((value) => {
-          const ref = iconFromData(icons[value]);
+          const ref = iconFromData(getOwn(icons, value));
           return { value, label: value, ...(ref ? { icon: ref } : {}) };
         }) : options,
       );
@@ -251,7 +251,7 @@ export function argsToSchema(
   for (const key of new Set([...Object.keys(args), ...Object.keys(argTypes)])) {
     const has = Object.hasOwn(args, key);
     // A control carries only what crosses the port; the frame puts the rest back from `args` (`withUnsent`).
-    const part = has ? portSafePart(args[key]) : null;
+    const part = has ? portSafePart(getOwn(args, key)) : null;
     if (has && !part) continue;
     const value = part?.value;
     const argType = Object.hasOwn(argTypes, key) ? argTypes[key] : undefined;

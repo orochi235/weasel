@@ -1,4 +1,5 @@
 import { type Context, createContext, type Dispatch, type SetStateAction } from 'react';
+import { getOwn } from '@weasel-js/registry';
 import { stableStringify } from '../protocol/messages';
 
 type Args = Record<string, unknown>;
@@ -18,7 +19,7 @@ export const coverOf = (value: unknown): string => stableStringify(value) ?? ' u
 export const appliedLocal = (local: LocalArgs, config: Args): Args =>
   Object.fromEntries(
     Object.entries(local)
-      .filter(([key, entry]) => coverOf(config[key]) === entry.over)
+      .filter(([key, entry]) => coverOf(getOwn(config, key)) === entry.over)
       .map(([key, entry]) => [key, entry.value]),
   );
 
