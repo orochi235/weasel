@@ -41,7 +41,8 @@ export function nestRings(flat: FlattenedContours): Ring[] {
 
 /** Whether `r` lies inside `o`, given that neither crosses the other. Judged
  *  at the first vertex of `r` not on `o`'s outline, since one on it is
- *  inside or out by rounding. */
+ *  inside or out by rounding, then at the first such edge midpoint. A ring
+ *  lying wholly on `o`'s outline traces it, and is inside. */
 function contains(coords: number[], o: Ring, box: number[], r: Ring): boolean {
   const eps = Math.max(box[2] - box[0], box[3] - box[1]) * 1e-9;
   for (let i = r.start; i < r.end; i++) {
@@ -49,7 +50,12 @@ function contains(coords: number[], o: Ring, box: number[], r: Ring): boolean {
     if (x < box[0] || x > box[2] || y < box[1] || y > box[3]) return false;
     if (!onOutline(coords, o, x, y, eps)) return pointInPolygon(coords, x, y, o.start, o.end);
   }
-  return false;
+  for (let i = r.start; i < r.end; i++) {
+    const j = i + 1 === r.end ? r.start : i + 1;
+    const x = (coords[i * 2] + coords[j * 2]) / 2, y = (coords[i * 2 + 1] + coords[j * 2 + 1]) / 2;
+    if (!onOutline(coords, o, x, y, eps)) return pointInPolygon(coords, x, y, o.start, o.end);
+  }
+  return true;
 }
 
 function onOutline(coords: number[], o: Ring, x: number, y: number, eps: number): boolean {
