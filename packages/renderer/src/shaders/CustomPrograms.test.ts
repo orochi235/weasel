@@ -57,3 +57,17 @@ describe('CustomPrograms on a restored context', () => {
     expect(programs.registry.has('fx')).toBe(false);
   });
 });
+
+describe('CustomPrograms.ensure', () => {
+  beforeEach(() => _resetProgramRegistryForTests());
+
+  it('warns once for a program id nothing registered', () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const programs = new CustomPrograms(device().gpu);
+    expect(programs.ensure('never-registered')).toBeNull();
+    expect(programs.ensure('never-registered')).toBeNull();
+    expect(warn).toHaveBeenCalledTimes(1);
+    expect(warn.mock.calls[0]![0]).toContain('"never-registered"');
+    warn.mockRestore();
+  });
+});

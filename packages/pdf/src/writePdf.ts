@@ -51,9 +51,9 @@ export interface WritePdfOptions {
   rasterize?: (commands: readonly DrawCommand[], rect: Rect, scale: number, view: GlMat3 | undefined) => Promise<RasterPixels>;
 }
 
-/** A glyph or command the writer left out of the file, with the reason. */
+/** A glyph or command the writer left out of the file, or a face it could not embed, with the reason. */
 export interface PdfSkip {
-  kind: 'glyph' | 'command';
+  kind: 'glyph' | 'command' | 'font';
   detail: string;
 }
 
@@ -105,7 +105,7 @@ async function writePages(pages: readonly PdfPage[], opts: WritePdfOptions, defl
   const info = objects.alloc();
   const skipped: PdfSkip[] = [];
   const kids: PdfRef[] = [];
-  const fonts = new DocumentFonts(objects, opts.fonts, opts.subsetFonts !== false);
+  const fonts = new DocumentFonts(objects, opts.fonts, opts.subsetFonts !== false, skipped);
   const langs = new Set<string | undefined>();
 
   for (const page of pages) {

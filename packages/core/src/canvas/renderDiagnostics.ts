@@ -1,20 +1,22 @@
 /** What a headless render or an export draws short of what it was asked for, and why. */
 import type { DrawCommand } from '@weasel-js/renderer';
 import { getProgramSource, imageStatus, isPaintKindKnown } from '@weasel-js/renderer';
+import { getMarker, markerKeyOf } from '@weasel-js/stroke';
 import { renderNeeds } from './renderNeeds';
 
 /**
  * What a render lost: a picture that did not load (`image`), a face that did
  * not (`font`), a paint kind nothing registered or that failed to load
  * (`paint-kind`), a shader program with no source the target draws
- * (`shader`), or anything else a format cannot hold (`unsupported`).
+ * (`shader`), a stroke's marker head nothing registered (`marker`), or
+ * anything else a format cannot hold (`unsupported`).
  */
-export type RenderDiagnosticKind = 'image' | 'font' | 'paint-kind' | 'shader' | 'unsupported';
+export type RenderDiagnosticKind = 'image' | 'font' | 'paint-kind' | 'shader' | 'marker' | 'unsupported';
 
 /** One thing a render drew without, or drew in part. */
 export interface RenderDiagnostic {
   readonly kind: RenderDiagnosticKind;
-  /** What it names: the picture's source, the font family, the paint kind's or program's id, or what a format could not hold. */
+  /** What it names: the picture's source, the font family, the paint kind's, program's or marker's id, or what a format could not hold. */
   readonly subject: string;
   /** A sentence saying what was left out, for a person to read. */
   readonly message: string;
@@ -30,8 +32,9 @@ export const imageDiagnostic = (src: string): RenderDiagnostic =>
 /**
  * Report what `commands` will draw without when a WebGL2 renderer draws them:
  * each paint kind nothing registered or loads, each image pattern and each of
- * `images`, the pictures building them asked for, that failed to load, and
- * each shader program with no GLSL source.
+ * `images`, the pictures building them asked for, that failed to load,
+ * each shader program with no GLSL source, and each marker a stroke names
+ * that nothing registered.
  */
 export function reportCommandLosses(commands: readonly DrawCommand[], images: readonly string[], report: RenderDiagnosticSink): void {
   const needs = renderNeeds(commands);
@@ -48,6 +51,23 @@ export function reportCommandLosses(commands: readonly DrawCommand[], images: re
       report({ kind: 'shader', subject: id, message: `the shader program "${id}" has no GLSL source; what it draws is left out` });
     }
   }
+  for (const key of markerKeys(commands)) {
+    if (getMarker(key) === undefined) {
+      report({ kind: 'marker', subject: key, message: `no marker "${key}" is registered; the heads it names are left out` });
+    }
+  }
+}
+
+function markerKeys(commands: readonly DrawCommand[], out = new Set<string>()): Set<string> {
+  for (const c of commands) {
+    if (c.kind === 'group') markerKeys(c.children, out);
+    else if (c.kind === 'path' && c.stroke) {
+      for (const ref of [c.stroke.markerStart, c.stroke.markerMid, c.stroke.markerEnd]) {
+        if (ref !== undefined) out.add(markerKeyOf(ref));
+      }
+    }
+  }
+  return out;
 }
 
 function shaderPrograms(commands: readonly DrawCommand[], out = new Set<string>()): Set<string> {

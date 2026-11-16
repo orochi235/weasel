@@ -1,8 +1,9 @@
 /**
- * The atlas registry through `fc.commands` runs of eager and lazy registrations that load or fail, warms, and the
- * settling of loads in flight, over families named like `Object.prototype` members and like the registry's own keys
- * (`a|400`): after every step each variant is loaded, declared, loading, or absent as a model says, and `getFont`,
- * `listFonts`, `fontPending`, and `warmFonts` answer for it alone, and a landed variant resolves to itself, cached or not.
+ * The atlas registry through `fc.commands` runs of eager and lazy registrations that load or fail (a variant held
+ * under other URLs refuses them), warms, and the settling of loads in flight, over families named like
+ * `Object.prototype` members and like the registry's own keys (`a|400`): after every step each variant is loaded,
+ * declared, loading, or absent as a model says, and `getFont`, `listFonts`, `fontPending`, and `warmFonts` answer for
+ * it alone, and a landed variant resolves to itself, cached or not.
  */
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import fc from 'fast-check';
@@ -28,7 +29,6 @@ interface Model {
 interface Real { t: ReturnType<typeof tally> }
 
 const flush = () => new Promise<void>((r) => setTimeout(r, 0));
-let calls = 0;
 
 /** Fetches held until a settle releases them, so a load is in flight for exactly as long as the model says. */
 let held: (() => void)[] = [];
@@ -85,12 +85,19 @@ class Register implements fc.AsyncCommand<Model, Real> {
   check = () => true;
   async run(m: Model, r: Real): Promise<void> {
     const dir = this.ok ? 'ok' : 'bad';
-    const n = calls++;
-    registerFont(this.family, this.variant, `/${dir}/${n}.json`, `/${dir}/${n}.png`, { lazy: this.lazy }).catch(() => {});
-    m.registered.add(this.family);
     const variants = variantsOf(m, this.family);
     const key = keyOf(this.variant);
     const was = variants.get(key);
+    const register = () => registerFont(this.family, this.variant, `/${dir}/f.json`, `/${dir}/f.png`, { lazy: this.lazy });
+    // A variant held under the other URLs refuses them and changes nothing.
+    if (was !== undefined && was.ok !== this.ok) {
+      expect(register).toThrow(/already registered/);
+      r.t.count('refused');
+      check(m);
+      return;
+    }
+    register().catch(() => {});
+    m.registered.add(this.family);
     if (was?.state === 'loaded' || was?.state === 'loading') r.t.count('joined');
     else if (this.lazy) { if (!was) variants.set(key, { state: 'declared', ok: this.ok }); }
     else variants.set(key, { state: 'loading', ok: this.ok });
@@ -181,6 +188,7 @@ describe('atlas registry, stateful', () => {
     t.atLeast('warm resolved', 50);
     t.atLeast('warm rejected', 50);
     t.atLeast('joined', 8);
+    t.atLeast('refused', 8);
     t.atLeast('resolved', 25);
   }, timeoutFor(RUNS, 40));
 });

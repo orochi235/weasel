@@ -1,7 +1,9 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { documentOf, pageNodeOf, viewportWorldRect } from '@weasel-js/core';
 import { plainScene } from './testing/plainScene';
-import { _resetExportFormatsForTests, exportFormatRegistry, exportFormats, exportRegions, registerExportFormat } from './exportFormats';
+import {
+  _resetExportFormatsForTests, exportFormatRegistry, exportFormats, exportRegions, pickExportOptions, registerExportFormat,
+} from './exportFormats';
 import { exportPages } from './exportPages';
 import type { ExportFormat, ExportOptions, ExportRegion } from './exportTypes';
 import { exportRegionsOf } from './captureExport';
@@ -105,6 +107,38 @@ describe('exportRegions', () => {
     await exportRegions(scene, () => [pages[0]!], 'one');
     expect(calls).toHaveLength(1);
     await expect(exportRegions(scene, () => pages, 'one')).rejects.toThrow(/one region to a file.*handed 2/);
+  });
+});
+
+describe('format options', () => {
+  type Opts = ExportOptions & { level?: number };
+  const declaring = (): ExportFormat<Opts> => ({ ...(fake('one', false) as ExportFormat<Opts>), options: ['level'] });
+
+  it('warns once about a key the chosen format neither shares nor declares', async () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    registerExportFormat(declaring());
+    const { scene, pages } = plainScene();
+    await exportRegions(scene, [pages[0]!], 'one', { background: '#fff', level: 2 });
+    expect(warn).not.toHaveBeenCalled();
+    await exportRegions(scene, [pages[0]!], 'one', { levle: 2 });
+    await exportRegions(scene, [pages[0]!], 'one', { levle: 2 });
+    expect(warn).toHaveBeenCalledTimes(1);
+    expect(warn.mock.calls[0]![0]).toMatch(/"one" format does not read the option "levle"/);
+    warn.mockRestore();
+  });
+
+  it('checks nothing for a format that declares no options', async () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    registerExportFormat(fake('one', false));
+    const { scene, pages } = plainScene();
+    await exportRegions(scene, [pages[0]!], 'one', { anything: 1 });
+    expect(warn).not.toHaveBeenCalled();
+    warn.mockRestore();
+  });
+
+  it('picks the shared and declared options a format reads, leaving out the undefined', () => {
+    const picked = pickExportOptions(declaring(), { strict: true, background: undefined, level: 3, other: 1 } as Opts);
+    expect(picked).toEqual({ strict: true, level: 3 });
   });
 });
 

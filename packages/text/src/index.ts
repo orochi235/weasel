@@ -59,6 +59,7 @@ export type { BidiEngine, BidiReordering, BidiAnalysis } from './layout/bidiSeam
 export { registerBidi, registeredBidi, paragraphDirection, warnRtlWithoutEngine } from './layout/bidiRegistry';
 export type { TextShaper, ShapedGlyph, ShapedCluster } from './layout/shaperSeam';
 export { registerShaper, registeredShaper, warnShapingWithoutEngine } from './layout/shaperRegistry';
+export type { RegisterEngineOptions } from './layout/engineSlot';
 export { textEngineGeneration } from './layout/engineGeneration';
 export type { LayoutRunsOptions } from './layout/layoutOpts';
 export type {

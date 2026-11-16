@@ -4,7 +4,7 @@
  * svg and pdf register theirs (`registerSvgExport`, `registerPdfExport`), so it
  * depends on neither.
  */
-import { createReflectable, type Reflection } from '@weasel-js/registry';
+import { createReflectable, isDev, type Reflection } from '@weasel-js/registry';
 import type { ExportFormat, ExportOptions, ExportRegion, ExportRegions, ExportScene } from './exportTypes';
 import { PNG_EXPORT } from './regionPng';
 
@@ -65,6 +65,7 @@ export function exportRegions(
     const known = exportFormats().map((f) => f.id).join(', ');
     return Promise.reject(new Error(`exportRegions: no export format "${formatId}" is registered (registered: ${known})`));
   }
+  warnUnreadOptions(format, opts);
   if (typeof regions !== 'function') {
     try {
       checkCount(format, regions);
@@ -74,6 +75,35 @@ export function exportRegions(
     return format.export(scene, regions, opts);
   }
   return format.export(scene, (doc) => checkCount(format, regions(doc)), opts);
+}
+
+/** The keys every format reads, {@link ExportOptions}'s. */
+const SHARED_OPTIONS: readonly (keyof ExportOptions)[] = ['background', 'onDiagnostic', 'strict'];
+
+const warnedOptions = new Set<string>();
+
+function warnUnreadOptions(format: ExportFormat, opts: Readonly<Record<string, unknown>>): void {
+  if (!format.options || !isDev()) return;
+  const reads = new Set<string>([...SHARED_OPTIONS, ...format.options]);
+  for (const key of Object.keys(opts)) {
+    if (reads.has(key) || warnedOptions.has(`${format.id}\0${key}`)) continue;
+    warnedOptions.add(`${format.id}\0${key}`);
+    console.warn(
+      `exportRegions: the "${format.id}" format does not read the option "${key}", so it is ignored ` +
+      `(it reads: ${[...reads].join(', ')}). Check the spelling, or whether another format takes it.`,
+    );
+  }
+}
+
+/** The options `format` reads out of `opts`, the shared ones and those it declares, leaving out any undefined. */
+export function pickExportOptions<TOptions extends ExportOptions>(
+  format: ExportFormat<TOptions>, opts: TOptions,
+): Partial<TOptions> {
+  const out: Partial<TOptions> = {};
+  for (const key of [...SHARED_OPTIONS, ...(format.options ?? [])] as (keyof TOptions)[]) {
+    if (opts[key] !== undefined) out[key] = opts[key];
+  }
+  return out;
 }
 
 function checkCount(format: ExportFormat, regions: readonly ExportRegion[]): readonly ExportRegion[] {
@@ -89,4 +119,5 @@ export function _resetExportFormatsForTests(): void {
   FORMATS.clear();
   builtInsRegistered = false;
   listed = null;
+  warnedOptions.clear();
 }

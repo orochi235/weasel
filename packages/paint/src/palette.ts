@@ -45,7 +45,8 @@ export type PaletteEntry =
   | { readonly name: string; readonly color: ColorSource }
   | { readonly name: string; readonly colors: ColorSeqFn };
 
-/** A set of named colors that {@link ColorRef}s resolve against. When two entries share a name, the first wins. */
+/** A set of named colors that {@link ColorRef}s resolve against. Each entry's name is its own: resolving
+ *  against a palette with two entries of one name throws. */
 export interface Palette {
   readonly entries: readonly PaletteEntry[];
 }
@@ -66,7 +67,12 @@ const refKey = (name: string, index: number): string => `${index}:${name}`;
 
 function resolver(palette: Palette, external?: ExternalColors) {
   const byName = new Map<string, PaletteEntry>();
-  for (const e of palette.entries) if (!byName.has(e.name)) byName.set(e.name, e);
+  for (const e of palette.entries) {
+    if (byName.has(e.name)) {
+      throw new Error(`weasel palette: two entries are named "${e.name}"; give each entry a name of its own.`);
+    }
+    byName.set(e.name, e);
+  }
 
   const ctx = (visiting: ReadonlySet<string>): ColorFnContext => ({ resolve: (s) => visit(s, visiting) });
 

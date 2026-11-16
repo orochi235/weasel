@@ -1,7 +1,7 @@
 /**
  * Stateful property test of the paint draw-kind registry: registrations, overrides, disposals in any order (twice
- * included), and loaders, against a model holding each id's stack of entries. A lookup answers the latest entry still
- * registered under its id.
+ * included), and loaders, against a model holding each id's stack of entries and of loaders. A lookup answers the
+ * latest entry still registered under its id.
  */
 import { afterEach, describe, expect, it } from 'vitest';
 import fc from 'fast-check';
@@ -15,7 +15,7 @@ const IDS = ['pbt-a', 'pbt-b', 'pbt-c'] as const;
 
 interface Model {
   stacks: Map<string, PaintDrawKind[]>;
-  loaders: Map<string, () => Promise<PaintDrawKind>>;
+  loaders: Map<string, (() => Promise<PaintDrawKind>)[]>;
 }
 interface Real {
   disposers: { dispose: () => void; entry: PaintDrawKind; id: string }[];
@@ -29,7 +29,7 @@ function check(m: Model): void {
     const stack = m.stacks.get(id) ?? [];
     // A loader that never resolves keeps a lookup's load from changing the registry under the test.
     expect(getPaintDrawKind(id)).toBe(stack.at(-1));
-    expect(isPaintKindKnown(id)).toBe(stack.length > 0 || m.loaders.has(id));
+    expect(isPaintKindKnown(id)).toBe(stack.length > 0 || (m.loaders.get(id)?.length ?? 0) > 0);
   }
 }
 
@@ -68,7 +68,7 @@ const loader = fc.constantFrom(...IDS).map((id): Cmd => ({
   run(m, r) {
     const load = () => new Promise<PaintDrawKind>(() => {});
     r.loaderDisposers.push({ dispose: registerPaintDrawKindLoader(id, load), load, id });
-    m.loaders.set(id, load);
+    m.loaders.set(id, [...(m.loaders.get(id) ?? []), load]);
     t.count('loader');
     check(m);
   },
@@ -81,7 +81,10 @@ const disposeLoader = fc.nat().map((n): Cmd => ({
     if (r.loaderDisposers.length === 0) return;
     const d = r.loaderDisposers[n % r.loaderDisposers.length]!;
     d.dispose();
-    if (m.loaders.get(d.id) === d.load) { m.loaders.delete(d.id); t.count('loader gone'); } else t.count('loader kept');
+    const stack = m.loaders.get(d.id) ?? [];
+    const at = stack.lastIndexOf(d.load);
+    t.count(at < 0 ? 'loader dispose again' : at === stack.length - 1 ? 'loader dispose top' : 'loader dispose under');
+    if (at >= 0) m.loaders.set(d.id, stack.filter((_, i) => i !== at));
     check(m);
   },
   toString: () => `disposeLoader(${n})`,
@@ -95,6 +98,6 @@ describe('paint draw-kind registry, stateful property', () => {
       _resetPaintDrawKindsForTests();
       fc.modelRun(() => ({ model: { stacks: new Map(), loaders: new Map() }, real: { disposers: [], loaderDisposers: [] } }), cmds);
     }), runs(200));
-    for (const k of ['register', 'override', 'dispose top', 'dispose under', 'dispose again', 'loader', 'loader gone', 'loader kept']) t.atLeast(k, 20);
+    for (const k of ['register', 'override', 'dispose top', 'dispose under', 'dispose again', 'loader', 'loader dispose top', 'loader dispose under', 'loader dispose again']) t.atLeast(k, 20);
   });
 });

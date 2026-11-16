@@ -11,14 +11,7 @@ import { drawTriangles } from './drawTriangles';
 import { clipTest } from './stencil';
 import { projFor } from './uniforms';
 import { isDev } from '@weasel-js/registry';
-
-const warnedUniforms = new Set<string>();
-
-function warnOnce(key: string, message: string): void {
-  if (warnedUniforms.has(key)) return;
-  warnedUniforms.add(key);
-  if (isDev()) console.warn(message);
-}
+import { warnMissingProgram, warnOnce } from '../warnOnce';
 
 export function warnOnceUniform(programId: string, name: string): void {
   warnOnce(
@@ -151,8 +144,8 @@ export function drawShader(ctx: DrawContext, cmd: ShaderDrawCommand): void {
 
   const program = ctx.ensureProgram?.(cmd.program.id) ?? programRegistry.get(cmd.program.id);
   if (!program) {
-    warnOnce(
-      `${cmd.program.id}:(program)`,
+    warnMissingProgram(
+      cmd.program.id,
       `weasel drawShader: program "${cmd.program.id}" has no compiled program on this ` +
       'renderer. Register its source with the module-level registerProgram() first; a ' +
       'source that failed to compile is reported above.',

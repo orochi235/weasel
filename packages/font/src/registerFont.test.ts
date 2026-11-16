@@ -70,6 +70,55 @@ describe('registerFont', () => {
       registerFont('bad', {}, '/bad.json', '/bad.png'),
     ).rejects.toThrow('weasel registerFont');
   });
+
+  it('throws when a variant is registered again with other URLs, eager or lazy, and keeps the first', async () => {
+    await registerFont('inter', {}, '/a.json', '/a.png');
+    const first = getFont('inter', 400, 'normal');
+    await registerFont('inter', {}, '/a.json', '/a.png');
+    expect(() => registerFont('inter', {}, '/b.json', '/b.png')).toThrow(/"inter" 400\/normal.*\/a\.json and \/a\.png, not \/b\.json and \/b\.png/);
+    expect(() => registerFont('inter', {}, '/b.json', '/b.png', { lazy: true })).toThrow(/replace: true/);
+    expect(getFont('inter', 400, 'normal')).toBe(first);
+  });
+
+  it('swaps in other URLs with replace, fetching them for a loaded variant', async () => {
+    await registerFont('inter', {}, '/a.json', '/a.png');
+    const first = getFont('inter', 400, 'normal');
+    await registerFont('inter', {}, '/b.json', '/b.png', { replace: true });
+    expect(getFont('inter', 400, 'normal')).not.toBe(first);
+    expect((global.fetch as ReturnType<typeof vi.fn>).mock.calls.map((c) => c[0])).toContain('/b.json');
+    await registerFont('inter', {}, '/b.json', '/b.png');
+  });
+
+  it('keeps a superseded fetch from landing over its replacement', async () => {
+    const stub = global.fetch as ReturnType<typeof vi.fn>;
+    const answer = stub.getMockImplementation()!;
+    let release!: () => void;
+    const held = new Promise<void>((r) => { release = r; });
+    stub.mockImplementationOnce((url: string) => held.then(() => answer(url)));
+    const slow = registerFont('inter', {}, '/a.json', '/a.png');
+    await registerFont('inter', {}, '/b.json', '/b.png', { replace: true });
+    const replaced = getFont('inter', 400, 'normal');
+    expect(replaced).not.toBeNull();
+    release();
+    await slow;
+    expect(getFont('inter', 400, 'normal')).toBe(replaced);
+  });
+
+  it('points a lazy declaration at the URLs that replace its own', async () => {
+    const declared = registerFont('inter', {}, '/a.json', '/a.png', { lazy: true });
+    registerFont('inter', {}, '/b.json', '/b.png', { lazy: true, replace: true });
+    await warmFonts(['inter']);
+    await declared;
+    const urls = (global.fetch as ReturnType<typeof vi.fn>).mock.calls.map((c) => c[0]);
+    expect(urls).toEqual(['/b.json', '/b.png']);
+  });
+
+  it('takes other URLs after the first ones failed to load', async () => {
+    (global.fetch as ReturnType<typeof vi.fn>).mockRejectedValueOnce(new Error('network error'));
+    await expect(registerFont('inter', {}, '/bad.json', '/bad.png')).rejects.toThrow();
+    await registerFont('inter', {}, '/a.json', '/a.png');
+    expect(getFont('inter', 400, 'normal')).not.toBeNull();
+  });
 });
 
 describe('registerFont variants', () => {

@@ -55,6 +55,16 @@ describe('exportPagesFile', () => {
     expect(downloadBlob).toHaveBeenCalledWith(expect.any(Blob), 'art - Cover.one');
   });
 
+  it('passes a format that declares its options only the ones it reads', async () => {
+    const format = fake('titled', false);
+    Object.assign(format, { options: ['title'] });
+    const { scene, pages } = twoPages();
+    await exportPagesFile(scene, format, [pages[0]!], DOC);
+    const opts = vi.mocked(format.export).mock.calls[0]![2];
+    expect(opts).toMatchObject({ title: 'art - Cover' });
+    expect(opts).not.toHaveProperty('scale');
+  });
+
   it('names a file of several pages for the document', async () => {
     const format = fake('many', true);
     const { scene, pages } = twoPages();
