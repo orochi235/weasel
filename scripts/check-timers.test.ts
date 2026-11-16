@@ -12,6 +12,10 @@ describe('timerOffenders', () => {
     expect(lines('setTimeout(f, ms);\nwindow.setTimeout(f, opts.delay);\nsetTimeout(f, linger * 1000);\nsetTimeout(f, wait());\n')).toEqual([1, 2, 3, 4]);
   });
 
+  it('catches a setInterval the same way', () => {
+    expect(lines('setInterval(f, 16);\nsetInterval(f, TICK_MS);\nsetInterval(f, quietMs);\ntimer.setInterval(f, opts.every);\n')).toEqual([3, 4]);
+  });
+
   it('catches a call split across lines, by the line of its delay', () => {
     expect(lines('setTimeout(() => {\n  run();\n}, delayMs);\n')).toEqual([3]);
   });
