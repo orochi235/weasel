@@ -112,3 +112,14 @@ describe('weasel clipboard wire format', () => {
     expect(parsed[0]).toEqual({ id: 'a', kind: 'group', data: { fill: '#fff' } });
   });
 });
+
+describe('the wire format by default', () => {
+  it('carries a path\'s typed arrays and a non-finite number between two kit canvases', () => {
+    const node = { id: 'p', pose: { commands: new Uint8Array([0, 1]), coords: new Float32Array([0, 0, 10, 5]) }, data: { max: Infinity, bias: -0 } };
+    const [back] = parseWeaselClipboardText(buildWeaselClipboardText([node]))! as [typeof node];
+    expect(back.pose.commands).toEqual(new Uint8Array([0, 1]));
+    expect(back.pose.coords).toEqual(new Float32Array([0, 0, 10, 5]));
+    expect(back.data.max).toBe(Infinity);
+    expect(Object.is(back.data.bias, -0)).toBe(true);
+  });
+});

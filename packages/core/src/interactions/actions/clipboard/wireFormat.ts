@@ -1,3 +1,4 @@
+import { decodeSnapshot, snapshotReplacer } from 'core/persistence/codec';
 import { dwarn } from 'debug/flag';
 
 /** MIME type the kit writes its full-fidelity clipboard payload under, so a
@@ -15,10 +16,14 @@ interface WeaselClipboardPayload { weaselClipboard: 1; nodes: unknown[] }
  *  node's `derivePath`). A scene adapter's snapshot also carries each one's
  *  `SceneRegistry` key (`clipFromPoseKey`, `derivePathKey`, …), which does
  *  cross, and its paste restores the function from the pasting scene's
- *  registry. A function that is not registered does not survive. */
-export function buildWeaselClipboardText(items: unknown[], replacer?: (key: string, value: unknown) => unknown): string {
+ *  registry. A function that is not registered does not survive. Written with the snapshot codec unless
+ *  `replacer` says otherwise, so typed arrays and non-finite numbers cross. */
+export function buildWeaselClipboardText(
+  items: unknown[],
+  replacer: (key: string, value: unknown) => unknown = snapshotReplacer,
+): string {
   const payload: WeaselClipboardPayload = { weaselClipboard: 1, nodes: items };
-  return JSON.stringify(payload, replacer as Parameters<typeof JSON.stringify>[1]);
+  return JSON.stringify(payload, replacer);
 }
 
 const isPayload = (parsed: Partial<WeaselClipboardPayload> | null): parsed is WeaselClipboardPayload =>
@@ -75,12 +80,13 @@ export function extractWeaselClipboardFromSvg(svgText: string): string | null {
 }
 
 /** Parse wire text to snapshot items, or null when malformed/mismatched
- *  (callers decline to the next content handler). */
+ *  (callers decline to the next content handler). Decoded with the snapshot codec unless `reviver` says otherwise. */
 export function parseWeaselClipboardText(text: string, reviver?: (key: string, value: unknown) => unknown): unknown[] | null {
   try {
     const parsed = JSON.parse(text, reviver as Parameters<typeof JSON.parse>[1]) as
       Partial<WeaselClipboardPayload> | null;
-    return isPayload(parsed) ? parsed.nodes : null;
+    if (!isPayload(parsed)) return null;
+    return reviver ? parsed.nodes : (decodeSnapshot(parsed.nodes) as unknown[]);
   } catch (err) {
     dwarn('clipboard', `weasel payload failed to parse: ${String(err)}`);
     return null;

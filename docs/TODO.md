@@ -250,29 +250,6 @@ Owner tags, after the priority (2026-10-26):
 
 ### Extension authoring and published consumers
 
-- **(P2) [agent] The kit's default clipboard writes node data as plain JSON.** `useClipboard`'s
-  `jsonReplacer` and `<SceneCanvas ingestion={{ clipboard: { reviver } }}>` both default to none
-  (`packages/core/src/interactions/actions/clipboard/osClipboard.ts`, `weaselJsonHandler.ts`), so a
-  copy between two default canvases writes a path's typed arrays as objects of numbered keys and
-  `Infinity` as `null`; only draw passes `snapshotReplacer` and decodes (read 2026-11-15, not run).
-  Closes when the default JSON flavor writes with `snapshotReplacer` and the default paste decodes
-  with `decodeSnapshot`, with a test copying a path and an `Infinity` between default canvases.
-- **(P2) [maintainer] The rulers' look is provisional.** `<Rulers>` (`packages/ui/src/components/Rulers`)
-  draws with theme tokens only: `--wzl-surface` strips, `--wzl-fg-muted` ticks and labels at
-  `--wzl-font-size-2xs`, a `--wzl-border` edge, an `--wzl-accent` pointer marker, 20 px thick, minor
-  ticks 35% of the strip, labeled steps at most 100 px apart (2026-11-07). Nobody has looked at it in
-  a browser yet; draw shows it under View > Show rulers and the site under the Rulers demo. Closes
-  when the maintainer settles the look and the component draws it.
-- **(P3) [maintainer] draw's guides are not saved with the document.** Guides dragged off draw's
-  rulers live for the session (`apps/draw/src/useRulers.ts`); saving them is a change to the saved
-  SVG. Closes when the maintainer rules whether and how a document keeps its guides, and draw does it.
-- **(P3) [maintainer] A container with an output-grid `drawn` pose clips its children at its stored
-  pose.** `buildSceneTree` paints and culls a node at the quantize rule's drawn pose (2026-11-11), but
-  takes its `clip: 'outline'` (`ownClipOf`) from the pose it is stored at, so the clip can sit up to
-  a grid cell off the container's painted edge. Children still compose from the stored pose, and
-  picking reads it by design. Closes when the maintainer rules whether a clip follows the drawn pose,
-  and the walk does what was ruled.
-
 ---
 
 ## Audio
@@ -560,6 +537,13 @@ only story runner in the repo.
 ---
 
 ## Release-gate & build hygiene
+
+- **(P2) `weasel/no-proto-index` has 773 sites pending in 308 files** (2026-11-15): reads and writes of a
+  `string`-indexed object with a `string` key, which go through `Object.prototype` for a name like `toString`. The
+  files are listed in `scripts/eslint/no-proto-index.pending.json`,
+  skipped by lint, and `npm run check:proto-pending` fails when a listed file is clean, so the list only shrinks;
+  `-- --scan` lists every site. Most sit in theme (125), prefs (85), forge (80), diagram (60), ui (53), core (51).
+  Closes when the pending list is empty.
 
 - **(P2) `packages/svg/src/textModes.test.ts` fails 2 outline-mode tests in a worktree linked by
   `scripts/link-workspaces.mjs`** and passes 11 of 11 in the main checkout and on the fleet (2026-11-15): text
