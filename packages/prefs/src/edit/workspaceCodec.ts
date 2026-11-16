@@ -1,3 +1,4 @@
+import { readLocal, writeLocal } from '@weasel-js/storage';
 import { getOwn, isPlainObject, setOwn } from '@weasel-js/registry';
 import { type SerializedHistory, type SerializedHistoryEntry, type SerializedOp } from '@weasel-js/history';
 import type { DocumentCodec, DraftStorage, OpenedDocument } from './document';
@@ -69,13 +70,8 @@ function zipStacks(each: ReadonlyArray<SerializedHistory | null | undefined>, ba
 }
 
 function readWorkspace(key: string, storage?: DraftStorage): StoredWorkspace | null {
-  try {
-    const raw = (storage ?? localStorage).getItem(key);
-    const draft: unknown = raw === null ? null : JSON.parse(raw);
-    return isPlainObject(draft) && typeof draft.savedAt === 'number' && isPlainObject(draft.assets) ? (draft as unknown as StoredWorkspace) : null;
-  } catch {
-    return null;
-  }
+  const draft = readLocal(key, storage);
+  return isPlainObject(draft) && typeof draft.savedAt === 'number' && isPlainObject(draft.assets) ? (draft as unknown as StoredWorkspace) : null;
 }
 
 /**
@@ -124,13 +120,8 @@ export function workspaceCodec(types: PrefTypes): DocumentCodec<Workspace> {
           const { steps, ...rest } = JSON.parse(kept.text()!) as Record<string, unknown>;
           setOwn(assets, asset.id, keep > 0 ? { ...rest, steps } : rest);
         }
-        try {
-          (storage ?? localStorage).setItem(key, JSON.stringify({ savedAt, assets } satisfies StoredWorkspace));
-          return;
-        } catch {
-          // Private windows and full quotas throw; the editor goes on with what was kept before.
-          if (keep === 0) return;
-        }
+        // Private windows and full quotas refuse it; the editor goes on with what was kept before.
+        if (writeLocal(key, { savedAt, assets } satisfies StoredWorkspace, storage) || keep === 0) return;
       }
     },
     dropDraft,

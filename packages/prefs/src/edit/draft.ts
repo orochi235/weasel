@@ -1,6 +1,6 @@
 import { getOwn, isPlainObject, setOwn } from '@weasel-js/registry';
 import { type SerializedHistory, type SerializedHistoryEntry, type SerializedOp } from '@weasel-js/history';
-import { sameStored } from '@weasel-js/storage';
+import { readLocal, sameStored, writeLocal } from '@weasel-js/storage';
 import { carry } from './carry';
 import { SWAP, type DraftStorage } from './document';
 import { isPrefLeaf, type PrefLeaf } from '../index';
@@ -223,13 +223,8 @@ export function unpackSteps<R extends SchemaRoot>(stored: StoredSteps, source: R
 
 /** The draft saved under `key`; `null` when there is none, or storage cannot be read. */
 function readDraft(key: string, storage?: DraftStorage): StoredDraft | null {
-  try {
-    const raw = (storage ?? localStorage).getItem(key);
-    const draft: unknown = raw === null ? null : JSON.parse(raw);
-    return isPlainObject(draft) && typeof draft.savedAt === 'number' && isPlainObject(draft.schema) ? (draft as unknown as StoredDraft) : null;
-  } catch {
-    return null;
-  }
+  const draft = readLocal(key, storage);
+  return isPlainObject(draft) && typeof draft.savedAt === 'number' && isPlainObject(draft.schema) ? (draft as unknown as StoredDraft) : null;
 }
 
 /**
@@ -265,21 +260,12 @@ export function saveDraft(key: string, schema: SchemaRoot, source: SchemaRoot, s
   const packed = packDraft(schema, source, types);
   for (let keep = STEPS_KEPT; ; keep >>= 1) {
     const draft: StoredDraft = { savedAt, schema: packed, source: packDraft(source, source, types), ...(keep > 0 ? { steps: packSteps(stacks, schema, source, keep, types) } : {}) };
-    try {
-      (storage ?? localStorage).setItem(key, JSON.stringify(draft));
-      return;
-    } catch {
-      // Private windows and full quotas throw; the editor goes on with what was kept before.
-      if (keep === 0) return;
-    }
+    // Private windows and full quotas refuse it; the editor goes on with what was kept before.
+    if (writeLocal(key, draft, storage) || keep === 0) return;
   }
 }
 
 /** Remove the draft under `key`. */
 export function dropDraft(key: string, storage?: DraftStorage): void {
-  try {
-    (storage ?? localStorage).removeItem(key);
-  } catch {
-    // Storage that cannot be reached holds nothing to remove.
-  }
+  writeLocal(key, undefined, storage);
 }
