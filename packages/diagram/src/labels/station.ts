@@ -9,9 +9,13 @@ import {
   type CurveNearest,
 } from '@weasel-js/geom';
 import type { DiagramLabel, LabelSpot } from '../labelTrait';
+import { getOwn } from '@weasel-js/registry';
 import { subpathOf } from '../subpaths';
 
-const NAMED = { start: 0, mid: 0.5, end: 1 } as const;
+const NAMED: Readonly<Record<string, number>> = { start: 0, mid: 0.5, end: 1 };
+
+/** How far along its route, from 0 to 1, a label at `at` stands: a named station's fraction, else the middle. */
+export const namedStation = (at: number | string): number => typeof at === 'number' ? at : getOwn(NAMED, at) ?? 0.5;
 
 /** The point on each segment of `path` nearest `near`, how far it is, and the heading of the path there. */
 function segmentStations(path: Path, near: Vec2): { point: Vec2; tangent: Vec2; dist: number }[] {
@@ -67,7 +71,7 @@ export function labelCenter(whole: Path, label: DiagramLabel, size: { width: num
   const at = label.placed ?? label;
   const station = typeof at.at === 'object'
     ? nearestStation(path, at.at.near) ?? pointAlongPath(path, 0.5)
-    : pointAlongPath(path, typeof at.at === 'number' ? at.at : NAMED[at.at] ?? 0.5);
+    : pointAlongPath(path, namedStation(at.at));
   if (station === null) return null;
   const beside = besideStation(station.point, station.tangent, at.offset ?? 0, size);
   const end = label.placed !== undefined || label.inset === undefined ? 0 : label.at === 'start' ? 1 : label.at === 'end' ? -1 : 0;

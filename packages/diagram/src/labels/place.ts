@@ -9,7 +9,7 @@ import { nearestOnLine, rectBetween } from '@weasel-js/geom';
 import { SpatialHash } from '../avoid/hash';
 import type { DiagramLabel, LabelSpot } from '../labelTrait';
 import type { Bounds } from '../outline';
-import { labelCenter } from './station';
+import { labelCenter, namedStation } from './station';
 
 /** A connector's route as placement reads it: every point it runs through,
  *  its ends included. */
@@ -81,8 +81,6 @@ interface Field {
   gap: number;
 }
 
-const NAMED = { start: 0, mid: 0.5, end: 1 } as const;
-
 const grow = (b: Bounds, by: number): Bounds => ({ x: b.x - by, y: b.y - by, width: b.width + 2 * by, height: b.height + 2 * by });
 
 function overlapArea(a: Bounds, b: Bounds): number {
@@ -134,7 +132,7 @@ function candidatesOf(label: PlaceLabel, route: Route, tries: number, spacing: n
   const out: Candidate[] = [{ placement: { at, offset, ...(inset !== undefined ? { inset } : {}) }, spot: null }];
   const length = route.length;
   if (length === 0) return out;
-  const start = typeof at === 'object' ? arcNearest(route.points, at.near) : (typeof at === 'number' ? at : NAMED[at] ?? 0.5) * length;
+  const start = typeof at === 'object' ? arcNearest(route.points, at.near) : namedStation(at) * length;
   const sides = offset === 0 ? [0] : [offset, -offset];
   const push = (s: number, side: number) => {
     const spot = { at: s / length, offset: side };
