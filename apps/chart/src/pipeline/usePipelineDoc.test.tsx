@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { act, cleanup, renderHook } from '@testing-library/react';
 import { IMAGE_STAGE_TYPES, addStage, stageFromType, type EffectDoc } from '@weasel-js/diagram/effect';
-import { PIPELINE_STORAGE_KEY, pipelineFromJson, usePipelineDoc } from './usePipelineDoc';
+import { PIPELINE_STORAGE_KEY, emptyPipeline, pipelineFromJson, pipelineToJson, usePipelineDoc } from './usePipelineDoc';
 
 const blur = IMAGE_STAGE_TYPES.find((t) => t.type === 'blur')!;
 const source = IMAGE_STAGE_TYPES.find((t) => t.type === 'source')!;
@@ -53,6 +53,29 @@ describe('usePipelineDoc', () => {
     const second = renderHook(() => usePipelineDoc());
     expect(second.result.current.doc).toEqual(next);
     expect(second.result.current.canUndo).toBe(false);
+  });
+
+  /** A blur stage whose radius has no upper bound. */
+  const unbounded = (): EffectDoc => {
+    const doc = addStage(emptyPipeline(), stageFromType(blur, 'blur'));
+    const [stage] = doc.pipeline.stages;
+    const param = { id: 'radius', label: 'Radius', value: '2', control: { kind: 'number' as const, value: 2, min: 0, max: Infinity } };
+    return { ...doc, pipeline: { ...doc.pipeline, stages: [{ ...stage!, params: [param] }] } };
+  };
+
+  it('reopens a saved pipeline whose param has no upper bound', () => {
+    const first = renderHook(() => usePipelineDoc());
+    const doc = unbounded();
+    act(() => first.result.current.change(doc, 'Add stage'));
+    first.unmount();
+
+    const second = renderHook(() => usePipelineDoc());
+    expect(second.result.current.doc).toEqual(doc);
+  });
+
+  it('opens a saved file whose param has no upper bound', () => {
+    const doc = unbounded();
+    expect(pipelineFromJson(pipelineToJson(doc))).toEqual(doc);
   });
 
   it('loads stored JSON written under its key', () => {

@@ -1,3 +1,4 @@
+import { decodeSnapshot, encodeSnapshot, stringifySnapshot } from '@weasel-js/core';
 import { readStored, useAutosave } from '@weasel-js/editor';
 import { readEffectDoc, type EffectDoc } from '@weasel-js/diagram/effect';
 import { createHistory, swapOp } from '@weasel-js/history';
@@ -15,9 +16,13 @@ const EMPTY: EffectDoc = { pipeline: { stages: [], wires: [], types: { number: {
 /** An empty pipeline, as New makes. */
 export const emptyPipeline = (): EffectDoc => EMPTY;
 
+/** The pipeline as the text a `.weaselpipeline.json` file holds: core's snapshot codec, so a param's `max: Infinity`
+ *  reads back as itself. */
+export const pipelineToJson = (doc: EffectDoc): string => stringifySnapshot(doc);
+
 /** The pipeline a saved one holds, as `JSON.parse` reads its text. Throws on a value that is not one. */
 export function pipelineFromSaved(parsed: unknown): EffectDoc {
-  const doc = readEffectDoc(parsed);
+  const doc = readEffectDoc(decodeSnapshot(parsed));
   return doc.pipeline.types ? doc : { ...doc, pipeline: { ...doc.pipeline, types: EMPTY.pipeline.types } };
 }
 
@@ -48,7 +53,7 @@ export function usePipelineDoc(storageKey: string = PIPELINE_STORAGE_KEY): Pipel
     current.current = next;
     setDoc(next);
   }, []);
-  useAutosave(() => ({ primary: [storageKey, doc] }), { revision: doc, onSaved: reportPipelineSave });
+  useAutosave(() => ({ primary: [storageKey, encodeSnapshot(doc)] }), { revision: doc, onSaved: reportPipelineSave });
 
   const change = useCallback((next: EffectDoc, label: string, coalesceKey?: string) => {
     history.apply(swapOp({

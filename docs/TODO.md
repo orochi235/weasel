@@ -250,6 +250,13 @@ Owner tags, after the priority (2026-10-26):
 
 ### Extension authoring and published consumers
 
+- **(P2) [agent] The kit's default clipboard writes node data as plain JSON.** `useClipboard`'s
+  `jsonReplacer` and `<SceneCanvas ingestion={{ clipboard: { reviver } }}>` both default to none
+  (`packages/core/src/interactions/actions/clipboard/osClipboard.ts`, `weaselJsonHandler.ts`), so a
+  copy between two default canvases writes a path's typed arrays as objects of numbered keys and
+  `Infinity` as `null`; only draw passes `snapshotReplacer` and decodes (read 2026-11-15, not run).
+  Closes when the default JSON flavor writes with `snapshotReplacer` and the default paste decodes
+  with `decodeSnapshot`, with a test copying a path and an `Infinity` between default canvases.
 - **(P2) [maintainer] The rulers' look is provisional.** `<Rulers>` (`packages/ui/src/components/Rulers`)
   draws with theme tokens only: `--wzl-surface` strips, `--wzl-fg-muted` ticks and labels at
   `--wzl-font-size-2xs`, a `--wzl-border` edge, an `--wzl-accent` pointer marker, 20 px thick, minor

@@ -2,11 +2,11 @@
  * A live path effect in an SVG file. The effect exports as a group of the
  * paths it shows, so any reader sees what draw shows; on that group the
  * `wd:` namespace carries what keeps it live — `effect`, the node's
- * `data.pathEffect` as JSON, and `depends-on`, its sources' `leaf-id`s as a
+ * `data.pathEffect` through core's snapshot codec, and `depends-on`, its sources' `leaf-id`s as a
  * JSON list. Every exported leaf carries its scene id as `wd:leaf-id` for
  * `depends-on` to name.
  */
-import { pathEffectOf, type PathEffect } from '@weasel-js/core';
+import { parseSnapshot, pathEffectOf, stringifySnapshot, type PathEffect } from '@weasel-js/core';
 import type { Obj } from './svgObj';
 
 /** A path effect in transit: the effect, its sources' ids, and the paths it
@@ -30,7 +30,7 @@ const EFFECT_KINDS: ReadonlySet<string> = new Set<PathEffect['kind']>([
 
 /** The `wd:` attributes of an effect's group. */
 export function encodeEffectAttrs(o: EffectObj): Record<string, string> {
-  return { 'leaf-id': o.id, effect: JSON.stringify(o.effect), 'depends-on': JSON.stringify(o.dependsOn) };
+  return { 'leaf-id': o.id, effect: stringifySnapshot(o.effect), 'depends-on': JSON.stringify(o.dependsOn) };
 }
 
 /** The effect a group's `wd:` attributes name, or `null` where they name
@@ -38,7 +38,7 @@ export function encodeEffectAttrs(o: EffectObj): Record<string, string> {
 export function decodeEffectAttrs(attrs: Readonly<Record<string, string>> | undefined): EffectAttrs | null {
   if (attrs?.effect === undefined || attrs['depends-on'] === undefined) return null;
   try {
-    const effect = pathEffectOf({ data: { pathEffect: JSON.parse(attrs.effect) as unknown } });
+    const effect = pathEffectOf({ data: { pathEffect: parseSnapshot(attrs.effect) } });
     const dependsOn: unknown = JSON.parse(attrs['depends-on']);
     if (
       !effect || !EFFECT_KINDS.has(effect.kind)

@@ -17,15 +17,25 @@ export type TypedArrayTag = keyof typeof TYPED_ARRAY_CONSTRUCTORS;
 /** A typed array of numbers: what a `Path` keeps its commands and coords in. */
 export type NumberTypedArray = InstanceType<(typeof TYPED_ARRAY_CONSTRUCTORS)[TypedArrayTag]>;
 
-/** A typed array as JSON holds it: its type's tag and its numbers, each non-finite one and `-0` by name,
- *  since JSON writes those as `null` and `0`. */
+/** A number JSON cannot write, by the name it is written under instead: `JSON.stringify` writes a non-finite
+ *  number as `null` and `-0` as `0`. */
+export type NumberName = 'NaN' | 'Infinity' | '-Infinity' | '-0';
+
+/** The name `n` is written under where JSON cannot write it, else `undefined`. */
+export const numberName = (n: number): NumberName | undefined =>
+  Object.is(n, -0) ? '-0' : Number.isFinite(n) ? undefined : (String(n) as NumberName);
+
+/** The number a {@link NumberName} names, or `undefined` for anything else. */
+export const namedNumber = (v: unknown): number | undefined =>
+  v === 'NaN' || v === 'Infinity' || v === '-Infinity' || v === '-0' ? Number(v) : undefined;
+
+/** A typed array as JSON holds it: its type's tag and its numbers, each one JSON cannot write by its name. */
 export interface TaggedTypedArray {
   __ta: TypedArrayTag;
-  data: (number | 'NaN' | 'Infinity' | '-Infinity' | '-0')[];
+  data: (number | NumberName)[];
 }
 
-const written = (n: number): TaggedTypedArray['data'][number] =>
-  Object.is(n, -0) ? '-0' : Number.isFinite(n) ? n : (String(n) as 'NaN');
+const written = (n: number): TaggedTypedArray['data'][number] => numberName(n) ?? n;
 
 const TAGS = new Map<string, TypedArrayTag>(
   (Object.keys(TYPED_ARRAY_CONSTRUCTORS) as TypedArrayTag[]).map((tag) => [TYPED_ARRAY_CONSTRUCTORS[tag].name, tag]),
@@ -46,7 +56,7 @@ export function untagTypedArray(value: unknown): NumberTypedArray | undefined {
   if (value === null || typeof value !== 'object') return undefined;
   const { __ta: tag, data } = value as Partial<TaggedTypedArray>;
   if (typeof tag !== 'string' || !Object.hasOwn(TYPED_ARRAY_CONSTRUCTORS, tag) || !Array.isArray(data)) return undefined;
-  return TYPED_ARRAY_CONSTRUCTORS[tag].from(data.map(Number));
+  return TYPED_ARRAY_CONSTRUCTORS[tag].from(data.map((v) => namedNumber(v) ?? Number(v)));
 }
 
 const isPlain = (value: unknown): value is Record<string, unknown> => classOf(value) === 'Object';
