@@ -7,7 +7,8 @@ import { createElement } from 'react';
 import { createRoot, type Root } from 'react-dom/client';
 import { flushSync } from 'react-dom';
 import { AmbientContributionsProvider, SceneCanvas, createScene } from '@weasel-js/core';
-import { DEVTOOLS_PROTOCOL, type PanelMessage, createInPageTransports } from './protocol';
+import { DEVTOOLS_PROTOCOL, type PanelMessage } from './protocol';
+import { createInPageTransports } from './transport';
 import { devtools } from './attach';
 import { pixelAt } from '@weasel-js/core/testing/canvasPixels';
 
