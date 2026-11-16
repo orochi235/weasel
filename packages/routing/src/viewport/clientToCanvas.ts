@@ -76,5 +76,6 @@ export function clientToCanvasRect(
   clientX: number,
   clientY: number,
 ): [number, number] {
+  // eslint-disable-next-line no-restricted-syntax -- the one place a client point is taken off a box's corner.
   return [(clientX - rect.left) / (rect.scale?.x ?? 1), (clientY - rect.top) / (rect.scale?.y ?? 1)];
 }

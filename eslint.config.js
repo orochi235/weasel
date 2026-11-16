@@ -338,6 +338,9 @@ export default [
       }, {
         selector: "CallExpression[callee.property.name='writeText']:matches([callee.object.name='clipboard'], [callee.object.property.name='clipboard'])",
         message: 'Copy with copyText (@weasel-js/react), which answers false where there is no clipboard or the write is refused, rather than throwing.',
+      }, {
+        selector: "BinaryExpression[operator='-']:matches([left.property.name=/^client[XY]$/], [left.name=/^client[XY]$/])[right.property.name=/^(left|top)$/]",
+        message: 'Map a client point through clientToCanvas, or clientToCanvasRect for a box measured once (@weasel-js/core): an offset from the client rect is off by any scale an ancestor draws the element at.',
       }],
     },
   },
