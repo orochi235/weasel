@@ -56,6 +56,17 @@ describe('ColorField', () => {
     expect(onChange).toHaveBeenCalledWith('#44556602');
   });
 
+  it('commits nothing for a pick that ends on the color it began from, whatever a previewing caller shows meanwhile', () => {
+    const onChange = vi.fn();
+    const { rerender } = render(<ColorField value="#112233ff" alpha onChange={onChange} aria-label="Fill" />);
+    const input = screen.getByLabelText('Fill');
+    fireEvent.input(input, { target: { value: '#445566' } });
+    rerender(<ColorField value="#445566ff" alpha onChange={onChange} aria-label="Fill" />);
+    fireEvent.input(input, { target: { value: '#112233' } });
+    fireEvent.blur(input);
+    expect(onChange).not.toHaveBeenCalled();
+  });
+
   it('does not commit on blur with no preceding input (no-op-blur guard)', () => {
     const onChange = vi.fn();
     render(<ColorField value="#112233ff" alpha onChange={onChange} aria-label="Fill" />);
