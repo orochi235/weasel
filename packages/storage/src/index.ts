@@ -2,7 +2,7 @@ export { createDefaultStorage, defaultStorage, fallbackStorage } from './default
 export { type IndexedDbAdapterOptions, createIndexedDbAdapter, indexedDbAdapter } from './indexedDb';
 export { createMemoryAdapter, noneAdapter } from './memory';
 export { urlHashAdapter } from './urlHashAdapter';
-export { localStorageAdapter, readLocal, sessionStorageAdapter, writeLocal } from './webStorage';
+export { localStorageAdapter, readLocal, sessionStorageAdapter, type StorageArea, writeLocal } from './webStorage';
 export {
   createRecordCache,
   openRecords,

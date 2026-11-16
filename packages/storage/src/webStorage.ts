@@ -100,7 +100,8 @@ export const sessionStorageAdapter: SyncStorageAdapter = webStorage(
   false,
 ).adapter;
 
-type StorageArea = Pick<Storage, 'getItem' | 'setItem' | 'removeItem'>;
+/** A store shaped like `localStorage`, as much of it as {@link readLocal} and {@link writeLocal} use. */
+export type StorageArea = Pick<Storage, 'getItem' | 'setItem' | 'removeItem'>;
 
 const warnAreaLoss = jsonLossWarner('Web Storage');
 
