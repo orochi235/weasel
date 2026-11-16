@@ -1,5 +1,24 @@
-import { type ActionsRegistry, canvasToClient, effectivePose, type NodeId, type RectPose, SceneCanvas, type SceneCanvasApi, useTransformFollower, type View, viewWorldToScreen, WeaselProvider } from '@weasel-js/core';
-import { editPreset, movePreset, pickPreset, transformPreset, commitDeleteToScene, createDeleteAction } from '@weasel-js/editing';
+import {
+  type ActionsRegistry,
+  canvasToClient,
+  effectivePose,
+  type NodeId,
+  type RectPose,
+  SceneCanvas,
+  type SceneCanvasApi,
+  useTransformFollower,
+  type View,
+  viewWorldToScreen,
+  WeaselProvider,
+} from '@weasel-js/core';
+import {
+  commitDeleteToScene,
+  createDeleteAction,
+  editPreset,
+  movePreset,
+  pickPreset,
+  transformPreset,
+} from '@weasel-js/editing';
 import {
   type CSSProperties,
   type ReactNode,

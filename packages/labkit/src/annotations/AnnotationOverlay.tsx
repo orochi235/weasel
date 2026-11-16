@@ -15,6 +15,7 @@ import {
   type KitToolId,
   movePreset,
   pickPreset,
+  shapeToolKitPreset,
   transformPreset,
 } from '@weasel-js/editing';
 import { usePencilTool } from '@weasel-js/path-tools';
@@ -119,13 +120,20 @@ export function insertedGeometry(
   };
 }
 
-/** The text tool, from text-tools; the pencil is mounted from path-tools, and core's built-ins by id. */
+/** The text tool, from text-tools; the pencil is mounted from path-tools, and editing's shape tools by id. */
 const ANNOTATION_TEXT: FeaturePreset = {
   id: 'annotations:text',
   tools: [createTextTool()],
   includes: [textPreset],
 };
-const FEATURES = [pickPreset, movePreset, transformPreset, editPreset, ANNOTATION_TEXT];
+const FEATURES = [
+  pickPreset,
+  movePreset,
+  transformPreset,
+  editPreset,
+  shapeToolKitPreset,
+  ANNOTATION_TEXT,
+];
 const BUILTIN_ANNOTATION_TOOLS = ANNOTATION_WEASEL_TOOLS.filter((t): t is KitToolId =>
   (BUILTIN_TOOL_IDS as readonly string[]).includes(t),
 );
