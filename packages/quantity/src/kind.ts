@@ -35,11 +35,11 @@ export interface DisplayKind<D extends Display = Display> {
   mathml?(value: number, display: D, ctx: FormatContext): string | undefined;
 }
 
-const ESCAPES: Record<string, string> = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' };
+const ESCAPES = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' } as const;
 
 /** `s` safe to interpolate into the HTML and MathML the kinds write. */
 export function escapeMarkup(s: string): string {
-  return s.replace(/[&<>"]/g, (c) => ESCAPES[c]!);
+  return s.replace(/[&<>"]/g, (c) => ESCAPES[c as keyof typeof ESCAPES]);
 }
 
 /** Parts joined into plain text. */
