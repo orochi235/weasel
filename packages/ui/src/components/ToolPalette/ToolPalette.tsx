@@ -1,7 +1,5 @@
 import type { DragEvent, ReactNode } from 'react';
-import {
-  BUILTIN_TOOL_IDS, TOOL_GROUP_ORDER, toolIdsOf, toolSetHas, toolStacksOf, useScopedTools, type CarryPayload, type Tool, type ToolSet, type ToolsApi,
-} from '@weasel-js/core';
+import { toolIdsOf, toolSetHas, toolStacksOf, useScopedTools, type CarryPayload, type Tool, type ToolSet, type ToolsApi } from '@weasel-js/core';
 import { eligibleContribution, type ModeRegistry } from '@weasel-js/modes';
 import type { Orientation } from '../Run';
 import { ToolRail, type StackCycleModifier, type ToolRailButton, type ToolRailItem } from '../ToolRail';
@@ -11,6 +9,7 @@ import { icon } from '../../icons.gen';
 import { groupTools } from './order';
 import { slotsOf, stackIndex } from './stacks';
 import { useToolCarry } from './useToolCarry';
+import { BUILTIN_TOOL_IDS, TOOL_GROUP_ORDER } from '@weasel-js/editing';
 
 /** Props for {@link ToolPalette}. */
 export interface ToolPaletteProps extends DisableableProps {

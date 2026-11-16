@@ -1,9 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import { renderHook } from '@testing-library/react';
 import { createToolOptionValues, setToolOption, toolOptionParams, toolOptionSlot } from '@weasel-js/routing';
-import { toolOptionPaint, useRectTool } from '@weasel-js/core';
 import { useStickyTool } from './sticky/useStickyTool';
 import { useTextTool } from './text/useTextTool';
+import { toolOptionPaint, useRectTool } from '@weasel-js/editing';
 
 const tools = () => renderHook(() => ({
   rect: useRectTool(), text: useTextTool(), sticky: useStickyTool(),

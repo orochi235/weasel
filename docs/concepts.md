@@ -890,11 +890,11 @@ selection without the canvas building any of them in:
 
 | Role | Called with | Gives |
 |---|---|---|
-| `build(ctx)` | the scene, the adapter, the pose descriptor, `toolOptions`, and, read live, the canvas's pickers (`ctx.pick`), its selection and its `selectTool` options | `tools` the preset offers by id, and `contributions` |
+| `build(ctx)` | `toolOptions`, and, read live, the canvas's scene, adapter, pose descriptor, pickers (`ctx.pick`), selection and `selectTool` options | `tools` the preset offers by id, and `contributions` |
 | `selection(store, options)` | the scene's selection store and `selectionOptions`, read live | the `SelectionApi` the canvas's tools and actions write through |
 
-Neither is a hook. The canvas calls `build` once per preset and again only when the scene, the adapter or
-`toolOptions` changes, so whatever a tool needs at gesture time it reads from `ctx` then. A tool a `build`
+Neither is a hook. The canvas calls `build` once per preset and again only when `toolOptions` changes, so whatever
+a tool needs at gesture time it reads from `ctx` then. A tool a `build`
 offers is mounted only when something names its id: a preset's `tools` (alone or in a set such as
 `SHAPE_TOOLS`), `defaultTools`, or a `tools` patch setting it `true`. A package adds its own `toolOptions`
 keys by declaration merging on `SceneCanvasToolOptions`.

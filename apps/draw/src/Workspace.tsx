@@ -1,16 +1,4 @@
-import {
-  BUILTIN_TOOLS,
-  SceneCanvas,
-  type SceneCanvasApi,
-  type SelectionApi,
-  type PlacedPage,
-  type ToolsApi,
-  PATH_GEOMETRY_PROJECTION,
-  useEyedropperTool,
-  type RenderLayer,
-  type View,
-  createWorkspaceTintLayer
-} from '@weasel-js/core';
+import { SceneCanvas, type SceneCanvasApi, type SelectionApi, type PlacedPage, type ToolsApi, PATH_GEOMETRY_PROJECTION, type RenderLayer, type View, createWorkspaceTintLayer } from '@weasel-js/core';
 import {
   type Measurements, measurementsContribution, measureEndSource, MeasureReadout, useMeasureTool,
 } from '@weasel-js/measure';
@@ -49,6 +37,7 @@ import { DRAW_NODE_ROUTING } from './nodeKinds';
 import { usePathOverlays } from './usePathOverlays';
 import { useSymmetry } from './useSymmetry';
 import { useSpacingHints } from './useSpacingHints';
+import { BUILTIN_TOOLS, useEyedropperTool } from '@weasel-js/editing';
 
 const DRAW_TOOLS = [BUILTIN_TOOLS];
 

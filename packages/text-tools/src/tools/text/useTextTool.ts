@@ -2,7 +2,8 @@ import { useMemo } from 'react';
 import { shareToolOptions } from '@weasel-js/routing';
 import { DEFAULT_TEXT_FILL } from '@weasel-js/text';
 import { icon } from '../../icons.gen';
-import { defineTool, INSERT_DRAG_MODS, INSERT_REPOSITION_BINDING, insertBindingBehaviors, shapeToolOptions, type InsertToolOptions, type Tool } from '@weasel-js/core';
+import { defineTool, INSERT_DRAG_MODS, INSERT_REPOSITION_BINDING, type Tool } from '@weasel-js/core';
+import { insertBindingBehaviors, shapeToolOptions, type InsertToolOptions } from '@weasel-js/editing';
 
 const PRESENTATION = {
   label: 'Text',

@@ -1,13 +1,13 @@
 import { describe, it, expect, vi, beforeAll } from 'vitest';
 import { createEvent, act } from '@testing-library/react';
 import { renderWithKeys as render } from '@weasel-js/react/testing/giveKeys';
-import { SceneCanvas, BUILTIN_TOOL_IDS } from './SceneCanvas';
+import { SceneCanvas } from './SceneCanvas';
 import { useScene } from 'core/scene/useScene';
 import { asNodeId } from 'core/scene/types';
 import { useTools } from '../tools/overlayBinding';
 import { defineTool } from '../tools/overlayBinding';
 import { WeaselProvider } from '../WeaselProvider';
-import { drawPreset } from '@weasel-js/editing';
+import { drawPreset, BUILTIN_TOOL_IDS } from '@weasel-js/editing';
 
 // jsdom doesn't implement getContext or pointer capture; stub minimally.
 beforeAll(() => {

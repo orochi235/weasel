@@ -53,7 +53,6 @@ import type { CanvasExtensionApi, SceneCanvasApi } from './canvasExtension';
 import { ViewRegistryProvider } from './viewRegistry';
 import { useChromeColor } from './accentColor';
 import { ENTERED_FRAME_COLOR, ENTERED_FRAME_TOKEN } from 'domains/selection/enteredGroupFrame';
-export type { BuiltinToolOptions } from './SceneCanvas/useBuiltinShapeTools';
 export { defaultDrawOne } from './defaultDrawOne';
 export { rotateAroundAABBCenter } from './poseRotation';
 
@@ -93,8 +92,8 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
   const getNodeAtPointRef = useLatest(picking.getNodeAtPoint);
   const groupEntry = useGroupEntryContribution({ pickHit: picking.pickBestIn, tree: adapter, boxOf: boundsOf });
   const tools = useSceneCanvasTools({
-    props: props as SceneCanvasToolProps, select: picking.selectTool, move: picking.moveOptions, enabled, groupEntry,
-    insertBuilds: traits.insertBuilds, build: { scene, adapter, poseDescriptor: descriptor, picking, selection, selectTool: selectToolWithDefaults },
+    props: props as SceneCanvasToolProps, select: picking.selectTool, move: picking.moveOptions, enabled, groupEntry, traits,
+    build: { scene, adapter, poseDescriptor: descriptor, picking, selection, selectTool: selectToolWithDefaults, canvasApiRef },
   });
 
   // The wrapper's `<InputScope>` provides it.
@@ -221,11 +220,8 @@ export const SceneCanvas = /* @__PURE__ */ forwardRef(SceneCanvasWrapper) as <
   props: SceneCanvasProps<TData, TLayer, TPose> & { ref?: React.Ref<SceneCanvasApi> },
 ) => ReturnType<typeof SceneCanvasInner>;
 
-export { DEFAULT_HANDLE_SIZE, BUILTIN_TOOL_IDS } from './SceneCanvas/props';
-export {
-  BUILTIN_TOOLS, BUILTIN_TOOL_GROUPS, TOOL_GROUP_ORDER,
-  SELECT_TOOLS, VIEW_TOOLS, SHAPE_TOOLS,
-} from './SceneCanvas/builtinToolSets';
+export { DEFAULT_HANDLE_SIZE } from './SceneCanvas/props';
+export { VIEW_TOOLS } from './SceneCanvas/builtinToolSets';
 export { mergeLayersWithDefaults } from './SceneCanvas/mergeLayers';
 export type {
   SceneCanvasProps, SceneCanvasHit, SceneCanvasLayers, SceneCanvasLongPress, BuiltinToolId,

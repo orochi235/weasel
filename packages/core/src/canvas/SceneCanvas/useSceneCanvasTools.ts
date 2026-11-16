@@ -26,8 +26,8 @@ export function useSceneCanvasTools(args: {
   enabled: EnabledPresets;
   /** Entering and leaving groups, installed with the `select` preset. */
   groupEntry: Contribution;
-  /** Whether an insert of a kind builds a node on this canvas. */
-  insertBuilds?: (kind: string) => boolean;
+  /** The presets' node traits, whose `insertBuilds` says whether an insert of a kind builds a node on this canvas. */
+  traits: { insertBuilds?: (kind: string) => boolean };
   /** What the enabled presets' `build`s are handed, less `toolOptions`, which is the prop's. */
   build: Omit<PresetBuildSource, 'toolOptions'>;
 }) {
@@ -39,7 +39,6 @@ export function useSceneCanvasTools(args: {
     enabled,
     tools: props.tools,
     defaultTools: props.defaultTools,
-    toolOptions: props.toolOptions,
     inertia: props.viewport?.inertia,
     ambient: props.ambient,
     actions: props.actions,
@@ -47,7 +46,7 @@ export function useSceneCanvasTools(args: {
     defaultActiveTool: props.defaultActiveTool,
     modes: props.modes,
     onToolsCreated: props.onToolsCreated,
-    insertBuilds: args.insertBuilds,
+    insertBuilds: args.traits.insertBuilds,
     built,
   });
   usePublishTools(tools);

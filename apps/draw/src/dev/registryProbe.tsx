@@ -1,20 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { EDITOR_ACTIONS, EDITOR_PREFERENCES_KEY } from '@weasel-js/editor';
-import {
-  actionBindings,
-  actionItems,
-  keySpecShortcut,
-  SceneCanvas,
-  defaultNodeRouting,
-  defaultNodeProperties,
-  useActionsRegistry,
-  useCommand,
-  useScene,
-  type NodePropertiesEntry,
-  type ToolDef,
-  type ToolsApi,
-  BUILTIN_TOOL_IDS,
-} from '@weasel-js/core';
+import { actionBindings, actionItems, keySpecShortcut, SceneCanvas, defaultNodeRouting, defaultNodeProperties, useActionsRegistry, useCommand, useScene, type NodePropertiesEntry, type ToolDef, type ToolsApi } from '@weasel-js/core';
 import { routesForSpec } from '@weasel-js/core/routing';
 import { actionIcon } from '@weasel-js/ui/components/Icon';
 import { appCommandsContribution, type AppCommands } from '../appCommands';
@@ -25,6 +11,7 @@ import { useFileCommands } from '../fileCommands';
 import { useDebugCommands } from './devRoutes';
 import type { DeclaredRoute, ToolSurface, ToolEntry, ActionEntry, CallbackRef, CallbackSource } from './registryEntries';
 import s from './RegistryInspector.module.css';
+import { BUILTIN_TOOL_IDS } from '@weasel-js/editing';
 
 export interface RegistrySnapshot {
   readonly tools: readonly ToolEntry[];

@@ -1,4 +1,4 @@
-import type { BuiltinToolId } from '@weasel-js/core';
+import type { KitToolId } from '@weasel-js/editing';
 import type { TextToolId } from '@weasel-js/text-tools';
 import { icon } from '../icons.gen';
 import type { InstrumentList } from '../instrument/types';
@@ -8,7 +8,7 @@ import type { AnnotationKind } from './types';
 
 /** A weasel tool an annotation tool drives: one `<SceneCanvas>` builds in, the pencil, which is
  *  `@weasel-js/path-tools`', or `@weasel-js/text-tools`' text. */
-export type AnnotationWeaselTool = BuiltinToolId | 'pencil' | TextToolId;
+export type AnnotationWeaselTool = KitToolId | 'pencil' | TextToolId;
 
 /** Which weasel tool an annotation tool drives, and what kind of mark that
  *  makes. `select` makes none. */

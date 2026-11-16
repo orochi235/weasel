@@ -64,7 +64,6 @@ export function useCanvasTools(args: {
   enabled: EnabledPresets;
   tools: Props['tools'];
   defaultTools: Props['defaultTools'];
-  toolOptions: Props['toolOptions'];
   /** `viewport.inertia`, which is the hand tool's. */
   inertia: NonNullable<Props['viewport']>['inertia'];
   ambient: Props['ambient'];
@@ -88,7 +87,7 @@ export function useCanvasTools(args: {
   /** The surface's own always-on entries a takeover's ambient leaves out: they apply under it too. */
   surface: readonly SurfaceContribution[];
 } {
-  const { select, enabled, tools: toolsProp, defaultTools, toolOptions, inertia, defaultActiveTool, modes, onToolsCreated } = args;
+  const { select, enabled, tools: toolsProp, defaultTools, inertia, defaultActiveTool, modes, onToolsCreated } = args;
   const ambient = useWithProvidedAmbient(args.ambient);
 
   const takeover = toolsProp && isToolsApi(toolsProp) ? toolsProp : null;
@@ -97,7 +96,6 @@ export function useCanvasTools(args: {
     enabled,
     defaultTools,
     patch: toolsProp && !isToolsApi(toolsProp) ? toolsProp : null,
-    toolOptions,
     inertia,
     insertBuilds: args.insertBuilds,
     offered: args.built?.tools,

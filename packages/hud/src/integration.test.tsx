@@ -3,7 +3,8 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, act } from '@testing-library/react';
 import React from 'react';
 import { SceneCanvas, useScene, useSelection } from '@weasel-js/core';
-import type { BuiltinToolId, Contribution, SceneCanvasApi, SelectionApi } from '@weasel-js/core';
+import type { Contribution, SceneCanvasApi, SelectionApi } from '@weasel-js/core';
+import { shapeToolKitPreset, type KitToolId } from '@weasel-js/editing';
 import { useHud, useHudContribution } from './react';
 import type { ClaimableGesture } from '@weasel-js/core';
 import type { HudPointerEvent, Widget } from './widget';
@@ -37,7 +38,7 @@ interface Empty { id: string }
 function Harness(
   { apiOut, defaultActiveTool, items, extraAmbient }:
   {
-    apiOut: HarnessApi; defaultActiveTool?: BuiltinToolId; items?: readonly Empty[];
+    apiOut: HarnessApi; defaultActiveTool?: KitToolId; items?: readonly Empty[];
     extraAmbient?: readonly Contribution[];
   },
 ) {
@@ -58,6 +59,7 @@ function Harness(
       scene={scene}
       selection={selection}
       layers={{}}
+      features={[shapeToolKitPreset]}
       ambient={[hudTool, ...(extraAmbient ?? [])]}
       {...(defaultActiveTool
         ? { defaultActiveTool, defaultTools: ['select', defaultActiveTool] }
@@ -69,7 +71,7 @@ function Harness(
 async function mount(
   apiOut: HarnessApi,
   opts: {
-    defaultActiveTool?: BuiltinToolId; items?: readonly Empty[];
+    defaultActiveTool?: KitToolId; items?: readonly Empty[];
     extraAmbient?: readonly Contribution[];
   } = {},
 ) {

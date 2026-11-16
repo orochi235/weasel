@@ -203,7 +203,6 @@ export type { PickBroad, PickCandidate } from '../canvas/pickWalk';
 export type { ClipBearing } from '../canvas/ownClip';
 export { findMountedCanvas, type MountedCanvas } from '../canvas/mountedCanvases';
 export { arrivalBounds } from '../domains/ingestion/placement';
-export { insertBindingBehaviors, type InsertToolOptions } from '../tools/builtin/shared/insertToolOptions';
 export {
-  shapeToolOptions, styleOptionLeaves, toolOptionPaint, type InsertStyle, type ShapeToolOptionsSpec, type StyleOptionKey,
-} from '../tools/builtin/shared/styleOptions';
+  DEFAULT_STROKE_WIDTH, insertStyleOf, STYLE_OPTION_KEYS, type InsertStyle, type StyleOptionKey,
+} from '../interactions/actions/insert/style';

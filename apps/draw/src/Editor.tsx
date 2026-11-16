@@ -1,15 +1,4 @@
-import {
-  placedPagesOf,
-  type SceneCanvasApi,
-  type SelectionApi,
-  SELECT_TOOLS,
-  SHAPE_TOOLS,
-  VIEW_TOOLS,
-  type ToolsApi,
-  useCanvasSize,
-  type View,
-  withoutTools,
-} from '@weasel-js/core';
+import { placedPagesOf, type SceneCanvasApi, type SelectionApi, VIEW_TOOLS, type ToolsApi, useCanvasSize, type View, withoutTools } from '@weasel-js/core';
 import { createMeasurements } from '@weasel-js/measure';
 import type { ModeRegistry } from '@weasel-js/modes';
 import {
@@ -54,6 +43,7 @@ import { useRightSidebarWidth } from './useRightSidebarWidth';
 import { useHoldContentUnderChrome } from './useHoldContentUnderChrome';
 import { useTextEditSession } from './useTextEditSession';
 import { Workspace } from './Workspace';
+import { SELECT_TOOLS, SHAPE_TOOLS } from '@weasel-js/editing';
 
 /** Core's tool sets and path-tools' path-edit, drawing, and knife sets, in palette order. */
 const TOOL_SETS = [SELECT_TOOLS, PATH_EDIT_TOOLS, VIEW_TOOLS, SHAPE_TOOLS, DRAW_TOOLS, TEXT_TOOLS, SLICE_TOOLS];

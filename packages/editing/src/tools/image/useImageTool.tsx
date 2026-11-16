@@ -1,0 +1,62 @@
+import { useMemo } from 'react';
+import { defineTool } from '@weasel-js/core';
+import type { Tool } from '@weasel-js/core';
+import { insertBindingBehaviors, type InsertToolOptions } from '../shared/insertToolOptions';
+import { icon } from '../../icons.gen';
+import { SHAPE_KINDS } from '@weasel-js/core/engine';
+import { INSERT_DRAG_MODS } from '@weasel-js/core';
+import { INSERT_REPOSITION_BINDING } from '@weasel-js/core';
+import type {} from '@weasel-js/core';
+
+/** Options for `useImageTool`. */
+export interface UseImageToolOptions extends InsertToolOptions {
+  /** Image source for inserted nodes — a URL, a `blob:` URL, or a
+   *  `data:image/…;base64,…` URI. Stored verbatim on each new node's
+   *  `data.image.src`. */
+  src: string;
+  label?: string;
+  /** What the live drag paints. `'bitmap'` (default) previews the decoded
+   *  image inside the drag bounds, falling back to the outline until it
+   *  decodes; `'outline'` never draws the image. */
+  preview?: 'bitmap' | 'outline';
+}
+
+/**
+ * Drag-to-insert image tool. A drag-rect commits a leaf node with
+ * `data: { image: { src } }` through the dispatcher's `insertAction` + the
+ * kit's `insert` dep (the same path the shape tools use); the `kit:image`
+ * painter renders it once the bitmap decodes.
+ *
+ * Thin declarative veneer — the node is minted by `useInsertDepSource`'s
+ * `'image'` case, not the tool. `src` is baked into the binding's `params`
+ * so the insert dep can stamp it onto the new node.
+ */
+export function useImageTool(options: UseImageToolOptions): Tool {
+  const { src, label = 'Image', preview = 'bitmap', behaviors } = options;
+  return useMemo(
+    () =>
+      defineTool({
+        id: 'image',
+        capabilities: ['creates-shapes'],
+        hookName: 'useImageTool',
+        cursor: 'crosshair',
+        presentation: {
+          label,
+          group: 'shape',
+          icon: icon(`core:${SHAPE_KINDS.image.icon}`),
+        },
+        // Declarative binding routes empty-space drags through the
+        // dispatcher + insertAction; `kind: 'image'` selects the insert
+        // dep's image factory and `src` rides along on the new node.
+        bindings: [
+          {
+            spec: { kind: 'drag', mods: INSERT_DRAG_MODS },
+            actionId: 'insert',
+            opts: { id: 'image.drag', params: { kind: 'image', src, preview }, ...insertBindingBehaviors(behaviors) },
+          },
+          INSERT_REPOSITION_BINDING,
+        ],
+      }),
+    [src, label, preview, behaviors],
+  );
+}

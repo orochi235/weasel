@@ -62,7 +62,7 @@ describe('FeaturePreset.build', () => {
     let ctx!: PresetBuildContext;
     const kit: FeaturePreset = { id: 'kit', build: (c) => { ctx = c; return {}; } };
     const { scene, id } = mount([kit]);
-    expect(ctx.scene).toBe(scene);
+    expect(ctx.scene()).toBe(scene);
     expect(ctx.pick.pressEvery({ x: 10, y: 10 })).toEqual([id]);
     expect(ctx.pick.bestIn({ x: 80, y: 80 })).toBeNull();
     expect(ctx.pick.boundsOf(id)).toMatchObject({ x: 0, y: 0, width: 50, height: 50 });
@@ -70,13 +70,19 @@ describe('FeaturePreset.build', () => {
     expect(ctx.selection().get()).toEqual([id]);
   });
 
-  it('builds once, not on every render', () => {
+  it('builds once, not on every render, and not again for a new scene', () => {
     const build = vi.fn(() => ({}));
     const kit: FeaturePreset = { id: 'kit', build };
-    const { scene, id } = mount([kit]);
+    const first = makeScene();
+    let ctx: PresetBuildContext | undefined;
+    const spy: FeaturePreset = { id: 'spy', build: (c) => { ctx = c; return {}; } };
+    const { rerender } = render(<SceneCanvas scene={first.scene} layers={{}} width={100} height={100} features={[kit, spy]} />);
     const calls = build.mock.calls.length;
-    act(() => { scene.setSelection([id]); });
+    act(() => { first.scene.setSelection([first.id]); });
+    const second = makeScene();
+    rerender(<SceneCanvas scene={second.scene} layers={{}} width={100} height={100} features={[kit, spy]} />);
     expect(build.mock.calls.length).toBe(calls);
+    expect(ctx!.scene()).toBe(second.scene);
   });
 
   it('installs the contributions it builds', () => {

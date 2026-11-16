@@ -1,8 +1,8 @@
-import { SceneCanvas, useScene, useSelection, BUILTIN_TOOL_IDS, WeaselProvider } from '@weasel-js/core';
+import { SceneCanvas, useScene, useSelection, WeaselProvider } from '@weasel-js/core';
 import { usePencilTool, usePenTool, useSliceTool } from '@weasel-js/path-tools';
 import { ToolPalette } from '@weasel-js/ui/components/ToolPalette';
 import { DemoStage } from './DemoStage';
-import { pickPreset } from '@weasel-js/editing';
+import { pickPreset, BUILTIN_TOOL_IDS, shapeToolKitPreset } from '@weasel-js/editing';
 
 const W = 600, H = 400;
 
@@ -25,7 +25,7 @@ export function ShapeToolsDemo() {
             className="ckd-canvas"
             scene={scene}
             selection={selection}
-            features={[pickPreset]}
+            features={[pickPreset, shapeToolKitPreset]}
             defaultTools={BUILTIN_TOOL_IDS}
             tools={{ pen, pencil, slice }}
           />

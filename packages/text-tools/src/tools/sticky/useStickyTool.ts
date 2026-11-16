@@ -4,7 +4,8 @@ import { icon } from '../../icons.gen';
 import { STICKY_DEFAULTS, type StickyStyle } from './stickyNode';
 import { shareToolOptions, withToolOptionDefault, type ToolOptions } from '@weasel-js/routing';
 import type { Paint } from '@weasel-js/paint';
-import { defineTool, INSERT_DRAG_MODS, INSERT_REPOSITION_BINDING, insertBindingBehaviors, styleOptionLeaves, toolOptionPaint, type InsertToolOptions, type Tool } from '@weasel-js/core';
+import { defineTool, INSERT_DRAG_MODS, INSERT_REPOSITION_BINDING, type Tool } from '@weasel-js/core';
+import { insertBindingBehaviors, styleOptionLeaves, toolOptionPaint, type InsertToolOptions } from '@weasel-js/editing';
 
 /** Options for `useStickyTool`: the look of the notes it makes, and the
  *  insert behaviors every drag-to-insert tool takes. Keep object options

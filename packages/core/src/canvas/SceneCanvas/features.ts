@@ -141,8 +141,8 @@ export interface FeaturePreset {
   readonly contentHandlers?: readonly ContentHandlerEntry[];
   /**
    * The parts it makes from the canvas it runs on: tools it offers by id, and contributions. Not a hook: the
-   * canvas calls it once per canvas and preset, and again only when the scene, the adapter or `toolOptions`
-   * changes; everything else the context gives is read live through it.
+   * canvas calls it once per canvas and preset, and again only when `toolOptions` changes; everything else the
+   * context gives is read live through it.
    */
   readonly build?: (ctx: PresetBuildContext) => PresetBuild;
   /**

@@ -1,18 +1,7 @@
 import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
 import { act, cleanup, fireEvent, screen, within } from '@testing-library/react';
 import { renderWithKeys as render } from '@weasel-js/react/testing/giveKeys';
-import {
-  ActionsProvider,
-  BUILTIN_TOOL_IDS,
-  DepRegistryProvider,
-  SceneCanvas,
-  asNodeId,
-  createScene,
-  useActionsRegistry,
-  type ActionsRegistry,
-  type ToolsApi,
-  pagesOf,
-} from '@weasel-js/core';
+import { ActionsProvider, DepRegistryProvider, SceneCanvas, asNodeId, createScene, useActionsRegistry, type ActionsRegistry, type ToolsApi, pagesOf } from '@weasel-js/core';
 import { isPrefLeaf, type PrefGroup } from '@weasel-js/prefs';
 import { MenuBar } from '@weasel-js/ui/components/MenuBar';
 import { appCommandsContribution, type AppCommands } from './appCommands';
@@ -23,6 +12,7 @@ import { DRAW_MENU_BAR } from './menuBar';
 import { registerDrawExports } from './exportPage';
 import { saveSvgFile } from './saveSvg';
 import { withIcons } from './testIcons';
+import { BUILTIN_TOOL_IDS } from '@weasel-js/editing';
 
 vi.mock('./saveSvg', () => ({ saveSvgFile: vi.fn(async () => {}) }));
 vi.mock('./openSvg', () => ({ openSvgFile: vi.fn(async () => {}), importSvgFile: vi.fn(async () => {}) }));

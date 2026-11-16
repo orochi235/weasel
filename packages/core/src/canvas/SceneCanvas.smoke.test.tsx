@@ -10,13 +10,13 @@
 import { describe, it, expect, vi, beforeAll } from 'vitest';
 import { act } from '@testing-library/react';
 import { renderWithKeys as render } from '@weasel-js/react/testing/giveKeys';
-import { SceneCanvas, BUILTIN_TOOL_IDS } from './SceneCanvas';
+import { SceneCanvas } from './SceneCanvas';
 import { createScene } from 'core/scene/scene';
 import type { Scene, NodeId } from 'core/scene/types';
 import type { ActionDisabledReason } from '@weasel-js/routing';
 import { defaultNodeRouting } from './SceneCanvas/defaultNodeRouting';
 import type { NodeRoutingEntry } from '../core/scene/NodeRouting';
-import { drawPreset } from '@weasel-js/editing';
+import { drawPreset, BUILTIN_TOOL_IDS } from '@weasel-js/editing';
 
 type D = { kind: string; path?: unknown; fill?: string };
 type L = 'main';

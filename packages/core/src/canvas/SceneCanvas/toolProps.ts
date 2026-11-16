@@ -1,14 +1,13 @@
 import type { ToolEntry, ToolOptionValues } from '@weasel-js/routing';
 import type { Tool, ToolsApi } from '../../tools/overlayBinding';
 import type { BuiltinToolId } from './builtinToolSets';
-import type { BuiltinToolOptions } from './useBuiltinShapeTools';
 
 /**
  * `<SceneCanvas toolOptions>`: options per offered tool, keyed by the tool, handed to every preset's `build`. A
  * package offering tools adds its keys by declaration merging, as `@weasel-js/editing` adds `lasso` and `insert`.
  */
 // eslint-disable-next-line @typescript-eslint/no-empty-object-type -- filled by declaration merging
-export interface SceneCanvasToolOptions extends BuiltinToolOptions {}
+export interface SceneCanvasToolOptions {}
 
 /** The `<SceneCanvas>` props that pick a canvas's tools and hold their options. */
 export interface SceneCanvasToolProps {

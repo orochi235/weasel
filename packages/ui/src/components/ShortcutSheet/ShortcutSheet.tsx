@@ -1,14 +1,12 @@
 import { useId, useMemo, useState, useSyncExternalStore } from 'react';
-import {
-  BUILTIN_TOOL_GROUPS, describeShortcuts, useActionsRegistry,
-  type Action, type ShortcutGroup, type ShortcutRow, type ShortcutTool, type ToolSet,
-} from '@weasel-js/core';
+import { describeShortcuts, useActionsRegistry, type Action, type ShortcutGroup, type ShortcutRow, type ShortcutTool, type ToolSet } from '@weasel-js/core';
 import { formatShortcut, isApplePlatform, type Platform } from '@weasel-js/gestures';
 import { Dialog } from '../Dialog';
 import { Icon } from '../Icon/Icon';
 import { ShortcutKeys } from '../Keycaps';
 import { sheetParts, sheetPlatform } from './sheetRows';
 import styles from './ShortcutSheet.module.css';
+import { BUILTIN_TOOL_GROUPS } from '@weasel-js/editing';
 
 /** Props for {@link ShortcutSheet}. */
 export interface ShortcutSheetProps {

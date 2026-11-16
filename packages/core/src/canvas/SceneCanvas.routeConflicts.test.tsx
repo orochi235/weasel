@@ -11,7 +11,7 @@
  */
 import { describe, it, expect, vi, beforeAll, afterEach } from 'vitest';
 import { render } from '@testing-library/react';
-import { SceneCanvas, BUILTIN_TOOL_IDS, type BuiltinToolId } from './SceneCanvas';
+import { SceneCanvas } from './SceneCanvas';
 import { useScene } from 'core/scene/useScene';
 import { asNodeId } from 'core/scene/types';
 import type { FeaturePreset } from './SceneCanvas/features';
@@ -20,7 +20,7 @@ import { useSelection } from 'core/selection/useSelection';
 import { useSceneAdapter } from './useSceneAdapter';
 import { useSelectTool } from '../tools/builtin/select/useSelectTool';
 import { useTools } from '../tools/overlayBinding';
-import { arrangePreset, drawPreset, editPreset, movePreset, pickPreset, transformPreset } from '@weasel-js/editing';
+import { arrangePreset, drawPreset, editPreset, movePreset, pickPreset, transformPreset, BUILTIN_TOOL_IDS, type KitToolId } from '@weasel-js/editing';
 
 beforeAll(() => {
   const proto = HTMLCanvasElement.prototype as unknown as {
@@ -51,13 +51,13 @@ type L = 'main';
 type P = { x: number; y: number; width: number; height: number };
 
 /** The tool sets the removed `toolBundle` presets named, each under `draw`. */
-const TOOL_SETS: Record<string, readonly BuiltinToolId[]> = {
+const TOOL_SETS: Record<string, readonly KitToolId[]> = {
   draw: [],
   'draw + shapes': ['rect', 'ellipse', 'line'],
   'draw + every built-in': BUILTIN_TOOL_IDS,
 };
 
-function Harness({ tools }: { tools: readonly BuiltinToolId[] }) {
+function Harness({ tools }: { tools: readonly KitToolId[] }) {
   const scene = useScene<D, L, P>({
     systemLayers: [{ id: 'main' }],
     initial: [{

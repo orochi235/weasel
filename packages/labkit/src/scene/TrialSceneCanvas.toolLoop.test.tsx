@@ -1,7 +1,7 @@
 /** The trial's tool slot and the canvas's active tool settle, whatever each side is handed. */
 import { act, renderHook, screen } from '@testing-library/react';
-import { createScene, type ToolsApi, useEllipseTool, useLatest } from '@weasel-js/core';
-import { drawPreset } from '@weasel-js/editing';
+import { createScene, type ToolsApi, useLatest } from '@weasel-js/core';
+import { drawPreset, useEllipseTool } from '@weasel-js/editing';
 import { renderSettled } from '@weasel-js/react/testing/renderSettled';
 import { withIcons } from '@weasel-js/ui/testing/withIcons';
 import { StrictMode, useEffect } from 'react';

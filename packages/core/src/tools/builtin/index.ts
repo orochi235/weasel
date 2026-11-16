@@ -35,20 +35,4 @@ export { useHandTool, dragPanContribution, DRAG_PAN_ID, middleDragPanContributio
 // useWheelZoomTool, useWheelPanTool, useKeyboardZoomTool are dissolved.
 // Viewport zoom and pan are now handled by the viewport.zoom and viewport.pan
 // action descriptors registered via useStandardActions + useGestureDispatcher.
-export {
-  DEFAULT_SHAPE_PAINT, DEFAULT_STROKE_WIDTH, insertStyleOf, shapeToolOptions, STYLE_OPTION_KEYS, styleOptionLeaves, toolOptionPaint,
-  type InsertStyle, type ShapeToolOptionsSpec, type StyleOptionKey,
-} from './shared/styleOptions';
-export { useRectTool, RECT_TOOL_OPTIONS } from './rect';
-export { insertBindingBehaviors, type InsertToolOptions } from './shared/insertToolOptions';
-export { createPointerFollower, type PointerFollower } from './shared/pointerFollower';
-export { useEllipseTool, ELLIPSE_TOOL_OPTIONS } from './ellipse';
-export { useImageTool, type UseImageToolOptions } from './image';
-export {
-  useEyedropperTool,
-  type UseEyedropperToolOptions,
-} from './eyedropper';
-export { useLineTool, LINE_TOOL_OPTIONS, type LinePoint } from './line';
-export { useLassoTool, LASSO_TOOL_OPTIONS, type UseLassoToolOptions } from './lasso';
-export { usePolygonTool, POLYGON_TOOL_OPTIONS, type UsePolygonToolOptions } from './polygon';
-export { useStarTool, STAR_TOOL_OPTIONS, type UseStarToolOptions } from './star';
+

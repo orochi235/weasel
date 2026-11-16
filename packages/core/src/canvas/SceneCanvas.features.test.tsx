@@ -17,7 +17,7 @@ import type { Action } from '@weasel-js/routing';
 import type { ToolsApi } from '../tools/overlayBinding';
 import type { SelectionApi } from 'core/selection/useSelection';
 import { viewPreset } from 'canvas/SceneCanvas/presets';
-import { KIT_STANDARD_ACTION_IDS, drawPreset, editPreset, movePreset, outlinePreset, pickPreset, resizePreset, rotatePreset, selectPreset, transformPreset } from '@weasel-js/editing';
+import { KIT_STANDARD_ACTION_IDS, drawPreset, editPreset, movePreset, outlinePreset, pickPreset, resizePreset, rotatePreset, selectPreset, transformPreset, shapeToolKitPreset } from '@weasel-js/editing';
 
 type D = { kind: 'rect' };
 type L = 'main';
@@ -287,12 +287,12 @@ describe('<SceneCanvas features>', () => {
   });
 
   it('registers the kit actions a registered tool binds', () => {
-    const { seen } = mount({ defaultTools: ['rect'] });
+    const { seen } = mount({ features: [shapeToolKitPreset], defaultTools: ['rect'] });
     expect(seen.actionIds).toContain('insert');
   });
 
   it('defaultActiveTool overrides the select default', () => {
-    const { tools } = mount({ features: [pickPreset], defaultTools: ['rect'], defaultActiveTool: 'rect' });
+    const { tools } = mount({ features: [pickPreset, shapeToolKitPreset], defaultTools: ['rect'], defaultActiveTool: 'rect' });
     expect(tools().active).toBe('rect');
   });
 

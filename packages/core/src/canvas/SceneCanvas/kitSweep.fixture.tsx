@@ -21,7 +21,10 @@ import * as symmetry from '@weasel-js/symmetry';
 import * as measure from '@weasel-js/measure';
 import { createModeRegistry } from '@weasel-js/modes';
 import { createScene } from 'core/scene/scene';
-import * as builtins from 'tools/builtin';
+import * as coreTools from 'tools/builtin';
+import * as editing from '@weasel-js/editing';
+
+const builtins = { ...coreTools, ...editing };
 import { modeTriggers } from 'domains/modes/modeTriggers';
 import { buildToolActivateBindings, createToolActivateAction } from 'interactions/actions/defaults/toolActivate';
 import { createToolResetToDefaultAction } from 'interactions/actions/defaults/toolResetToDefault';
@@ -132,7 +135,7 @@ function builtinTools(s: Sweep): void {
     star: builtins.useStarTool({} as never),
     polygon: builtins.usePolygonTool({} as never),
     eyedropper: builtins.useEyedropperTool({} as never),
-  }), 'core builtin tools');
+  }), 'kit tools');
 }
 
 /** Core's generated and factory-built bindings. */
@@ -203,6 +206,7 @@ export function sweepKit(): Sweep {
   const modules: [Record<string, unknown>, string][] = [
     [routing as unknown as Record<string, unknown>, 'routing'],
     [core as unknown as Record<string, unknown>, 'core'],
+    [editing as unknown as Record<string, unknown>, 'editing'],
     [pathTools as unknown as Record<string, unknown>, 'path-tools'],
     [textTools as unknown as Record<string, unknown>, 'text-tools'],
     [diagram as unknown as Record<string, unknown>, 'diagram'],

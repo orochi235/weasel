@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest';
-import { BUILTIN_TOOL_IDS, TOOL_GROUP_ORDER, type Tool } from '@weasel-js/core';
+import { type Tool } from '@weasel-js/core';
 import { groupTools } from './order';
+import { BUILTIN_TOOL_IDS, TOOL_GROUP_ORDER } from '@weasel-js/editing';
 
 const tool = (id: string, group?: string): Tool => ({ id, presentation: { label: id, group } }) as Tool;
 const ids = (groups: ReturnType<typeof groupTools>) => groups.map(({ key, tools }) => [key, tools.map((t) => t.id)]);

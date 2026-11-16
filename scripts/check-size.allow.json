@@ -138,7 +138,7 @@
     "longestFunction": 138
   },
   "packages/path-tools/src/pen/usePenTool.ts": {
-    "lines": 593,
+    "lines": 591,
     "longestFunction": 432
   },
   "packages/path-tools/src/slice/useSliceTool.ts": {

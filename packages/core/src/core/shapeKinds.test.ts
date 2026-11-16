@@ -7,7 +7,7 @@ import {
   shapeKindsWhere,
 } from './shapeKinds';
 import type { ShapeKindsWhere } from './shapeKinds';
-import { BUILTIN_TOOL_IDS } from 'canvas/SceneCanvas';
+import { BUILTIN_TOOL_IDS } from '@weasel-js/editing';
 import { defaultNodeRouting } from 'canvas/SceneCanvas/defaultNodeRouting';
 import { defaultNodeProperties } from 'canvas/SceneCanvas/defaultNodeProperties';
 

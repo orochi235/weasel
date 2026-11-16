@@ -6,14 +6,12 @@ import { afterEach, beforeAll, expect, it, vi } from 'vitest';
 import { cleanup, render } from '@testing-library/react';
 import icons from 'virtual:weasel-icons';
 import { iconSpecRefs } from '@weasel-js/icons';
-import {
-  ActionsProvider, BUILTIN_TOOL_IDS, DepRegistryProvider, SceneCanvas, createScene, useActionsRegistry,
-  type ActionsRegistry, type ToolsApi,
-} from '@weasel-js/core';
+import { ActionsProvider, DepRegistryProvider, SceneCanvas, createScene, useActionsRegistry, type ActionsRegistry, type ToolsApi } from '@weasel-js/core';
 import { usePathToolsTools } from '@weasel-js/path-tools';
 import { appCommandsContribution, type AppCommands } from './appCommands';
 import type { WeaselDrawData, WeaselDrawLayer, WeaselDrawPose } from './drawDocument';
 import { DRAW_FEATURES } from './drawFeatures';
+import { BUILTIN_TOOL_IDS } from '@weasel-js/editing';
 
 beforeAll(() => {
   (HTMLCanvasElement.prototype as unknown as { getContext: () => null }).getContext = () => null;

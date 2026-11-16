@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useMemo, type RefObject } from 'react';
 import { useLatest } from '@weasel-js/react';
 import type { SelectionApi, WorldPoint } from '@weasel-js/routing';
 import type { Scene } from 'core/scene/types';
@@ -23,12 +23,13 @@ export interface CanvasPickers {
   boundsOf(id: string): Bounds | null;
 }
 
-/** What a canvas hands a preset's `build`: its scene and adapter, and the rest read live. */
+/** What a canvas hands a preset's `build`: `toolOptions`, and everything else read live, so a tool built once
+ *  reads the canvas as it is when a gesture runs. */
 export interface PresetBuildContext {
-  readonly scene: Scene<unknown, string, unknown>;
+  scene(): Scene<unknown, string, unknown>;
   /** The adapter the canvas's tools and actions drive. */
-  readonly adapter: SceneCanvasAdapter<unknown, string, unknown>;
-  readonly poseDescriptor: PoseDescriptor<unknown>;
+  adapter(): SceneCanvasAdapter<unknown, string, unknown>;
+  poseDescriptor(): PoseDescriptor<unknown>;
   readonly pick: CanvasPickers;
   /** `<SceneCanvas toolOptions>`, stable while its entries' fields are. */
   readonly toolOptions: SceneCanvasToolOptions;
@@ -36,6 +37,8 @@ export interface PresetBuildContext {
   selection(): SelectionApi;
   /** `<SceneCanvas selectTool>`, with `extendClickLocked` set while a path's anchors are edited. */
   selectTool(): SceneCanvasSelectTool<unknown> & { extendClickLocked?: () => boolean };
+  /** Ask for a frame: for a tool whose preview changes between pointer events, as a polygon's side count does. */
+  requestRedraw(): void;
 }
 
 /** What the canvas reads its presets' `build` context from. */
@@ -52,32 +55,33 @@ export interface PresetBuildSource {
   selection: SelectionApi;
   selectTool: unknown;
   toolOptions: SceneCanvasToolOptions | undefined;
+  /** The surface's handle, which a redraw is asked of. */
+  canvasApiRef: RefObject<{ requestRedraw(): void } | null>;
 }
 
 /** What every enabled preset's `build` makes on this canvas: the tools offered by id, later presets' winning, and
- *  the contributions in preset order. The context is stable while the scene, adapter and tool options are, with
- *  the selection, the pickers and the select tool's options read live. */
+ *  the contributions in preset order. The context is stable while the tool options are. */
 export function usePresetBuilds(
   builds: readonly NonNullable<FeaturePreset['build']>[],
   source: PresetBuildSource,
 ): { tools: Readonly<Record<string, Tool>>; contributions: readonly SurfaceContribution[] } {
   const live = useLatest(source);
   const toolOptions = useStableToolOptions(source.toolOptions);
-  const { scene, adapter, poseDescriptor } = source;
   const ctx = useMemo<PresetBuildContext>(() => ({
-    scene: scene as PresetBuildContext['scene'],
-    adapter: adapter as PresetBuildContext['adapter'],
-    poseDescriptor: poseDescriptor as PresetBuildContext['poseDescriptor'],
+    scene: () => live.current.scene as ReturnType<PresetBuildContext['scene']>,
+    adapter: () => live.current.adapter as ReturnType<PresetBuildContext['adapter']>,
+    poseDescriptor: () => live.current.poseDescriptor as ReturnType<PresetBuildContext['poseDescriptor']>,
     toolOptions,
     selection: () => live.current.selection,
     selectTool: () => (live.current.selectTool ?? {}) as ReturnType<PresetBuildContext['selectTool']>,
+    requestRedraw: () => { live.current.canvasApiRef.current?.requestRedraw(); },
     pick: {
       pressEvery: (world, viewId) => live.current.picking.pressEvery(world, viewId),
       bestIn: (world, viewId) => live.current.picking.pickBestIn(world, viewId),
       between: (from, to) => live.current.picking.between(from, to),
       boundsOf: (id) => live.current.picking.boundsOf(id),
     },
-  }), [scene, adapter, poseDescriptor, toolOptions, live]);
+  }), [toolOptions, live]);
   return useMemo(() => {
     const tools: Record<string, Tool> = {};
     const contributions: SurfaceContribution[] = [];

@@ -4,7 +4,6 @@ import type { Tool } from 'tools/overlayBinding';
 import type { EnabledPresets } from './features';
 import type { ToolEntry } from '@weasel-js/routing';
 import { resolveToolRegistry, type ToolsPatch } from './toolRegistry';
-import { useBuiltinShapeTools, type BuiltinToolOptions } from './useBuiltinShapeTools';
 
 export interface UseBuiltinToolsArgs {
   /** The canvas's select tool, which is built from its scene and pickers. */
@@ -12,7 +11,6 @@ export interface UseBuiltinToolsArgs {
   enabled: EnabledPresets;
   defaultTools?: readonly ToolEntry<string>[];
   patch: ToolsPatch | null;
-  toolOptions?: BuiltinToolOptions;
   /** `viewport.inertia`, which is the hand tool's. */
   inertia?: boolean | InertiaOptions;
   insertBuilds?: (kind: string) => boolean;
@@ -23,11 +21,10 @@ export interface UseBuiltinToolsArgs {
 /** The registry of tools `<SceneCanvas>` mounts for itself. Every built-in's
  *  hook runs on every render; `resolveToolRegistry` decides which are in. */
 export function useBuiltinTools(args: UseBuiltinToolsArgs): Record<string, Tool> {
-  const { select, enabled, defaultTools, patch, toolOptions, inertia, insertBuilds, offered } = args;
+  const { select, enabled, defaultTools, patch, inertia, insertBuilds, offered } = args;
   const hand = useHandTool({ inertia });
-  const shapes = useBuiltinShapeTools({ options: toolOptions });
   return resolveToolRegistry({
-    builtins: { select, hand, ...shapes },
+    builtins: { select, hand },
     offered,
     defaultTools,
     enabled,

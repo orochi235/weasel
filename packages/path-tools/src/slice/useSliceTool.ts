@@ -1,8 +1,6 @@
 import { useMemo, useRef } from 'react';
 import { useKitSettings, useLatest } from '@weasel-js/react';
-import {
-  createPointerFollower, defineTool, OVERLAY_ROLE_STROKES, viewToTransform, worldToScreen,
-} from '@weasel-js/core';
+import { defineTool, OVERLAY_ROLE_STROKES, viewToTransform, worldToScreen } from '@weasel-js/core';
 import type { RenderLayer, Tool } from '@weasel-js/core';
 import type { DrawCommand } from '@weasel-js/renderer';
 import type { Action, ActionDeps, InvocationCtx, ToolKeybinding } from '@weasel-js/routing';
@@ -14,6 +12,7 @@ import { createEmitter } from '@weasel-js/registry';
 import { icon } from '../icons.gen';
 import type { GestureBinding } from '@weasel-js/routing';
 import type {} from '../actionParamSchema';
+import { createPointerFollower } from '@weasel-js/editing';
 
 /** Options for `useSliceTool`. */
 export interface UseSliceToolOptions {

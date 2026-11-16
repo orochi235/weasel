@@ -4,8 +4,8 @@
 
 A preset can build tools and contributions from the canvas it runs on, and build the canvas's selection.
 
-`FeaturePreset.build(ctx)` is handed the canvas's scene, adapter, pose descriptor, `toolOptions`, and, read live,
-its pickers (`ctx.pick`), selection and `selectTool` options. It returns `tools` the preset offers by id, mounted when
+`FeaturePreset.build(ctx)` is handed `toolOptions` and, read live, the canvas's scene, adapter, pose descriptor,
+pickers (`ctx.pick`), selection and `selectTool` options; it runs again only when `toolOptions` changes. It returns `tools` the preset offers by id, mounted when
 a preset's `tools`, `defaultTools` or a `tools` patch names them, and `contributions`, installed after the presets'
 own. `FeaturePreset.selection` is a `SelectionFactory`, `(store, options) => SelectionApi`, that builds the selection
 the canvas writes through; one per canvas. Neither is a hook. `SceneCanvasToolOptions` takes a package's own

@@ -154,17 +154,12 @@ export {
   nodeKindPreset, nodeTraitsOf, type NodeKindPresetSpec, type NodeTraitBase, type NodeTraits,
 } from '../canvas/SceneCanvas/nodeTraits';
 export { describePresets, isAtom, type PresetDescription } from '../canvas/SceneCanvas/describePresets';
-export { BUILTIN_TOOL_IDS, rotateAroundAABBCenter } from '../canvas/SceneCanvas';
-export {
-  BUILTIN_TOOLS, BUILTIN_TOOL_GROUPS, TOOL_GROUP_ORDER,
-  SELECT_TOOLS, VIEW_TOOLS, SHAPE_TOOLS,
-} from '../canvas/SceneCanvas';
+export { rotateAroundAABBCenter, VIEW_TOOLS } from '../canvas/SceneCanvas';
 export * from '../canvas/SceneCanvas/presets';
-export { KIT_SHAPE_KINDS, SHAPE_KINDS } from '../core/shapeKinds';
+export { KIT_SHAPE_KINDS, kitShapeKindsOf, SHAPE_KINDS } from '../core/shapeKinds';
 export type {
   BuiltinShapeToolId, KitInsertShape, ShapeKind, ShapeKindDescriptor, ShapeKindsWhere,
 } from '../core/shapeKinds';
-export type { BuiltinToolOptions } from '../canvas/SceneCanvas/useBuiltinShapeTools';
 export type { InsertNodeFactory, InsertNodeFactories, InsertedNode, KitInsertKind, PreviewPathsDep } from '../canvas/deps';
 export { useTransformFollower } from '../canvas/deps';
 export type {
@@ -198,8 +193,6 @@ export type {
 export type { UseHandToolOptions } from '../tools/builtin/hand/useHandTool';
 // UseWheelPanToolOptions and WheelPanInertiaConfig removed (useWheelPanTool dissolved).
 export type { SelectAdapter } from '../tools/builtin/select/useSelectTool';
-export type { PolygonPoint } from '../tools/builtin/polygon/usePolygonTool';
-export type { StarPoint } from '../tools/builtin/star/useStarTool';
 export type { UseSceneTrivialOptions } from '../core/scene/useScene';
 export type { DefaultLayer } from '../core/scene/trivialScene';
 export { shapePathOf } from '../canvas/nodeShapes/shapePainter';

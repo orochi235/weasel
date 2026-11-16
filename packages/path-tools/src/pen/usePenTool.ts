@@ -1,9 +1,6 @@
 import { useCallback, useMemo, useReducer, useRef, useState } from 'react';
 import { useKitSettings, useLatest } from '@weasel-js/react';
-import {
-  commitOps, createDeleteOp, createPointerFollower, defineTool, pointSnap, resolveEditablePathOf, selectCommitted,
-  snapMods,
-} from '@weasel-js/core';
+import { commitOps, createDeleteOp, defineTool, pointSnap, resolveEditablePathOf, selectCommitted, snapMods } from '@weasel-js/core';
 import type { ModifierState, Op, Tool } from '@weasel-js/core';
 import type { Action, ToolOptionShare } from '@weasel-js/routing';
 import { ActionDisabledReason, defineAction } from '@weasel-js/routing';
@@ -16,6 +13,7 @@ import { cursorFor } from '@weasel-js/cursor';
 import { icon } from '../icons.gen';
 import { penOptionValues, penToolOptions } from './penOptions';
 import { anchorCount, buildPath, freshScratch, resetScratch, startSubpath } from './penScratch';
+import { createPointerFollower } from '@weasel-js/editing';
 
 /**
  * In-progress pen anchor. A click places a corner, with no handles. A drag

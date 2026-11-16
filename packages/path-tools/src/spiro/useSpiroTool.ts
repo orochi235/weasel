@@ -4,12 +4,13 @@ import type { Action, ActionDeps, ModifierState } from '@weasel-js/routing';
 import { ActionDisabledReason, defineAction } from '@weasel-js/routing';
 import { cursorFor } from '@weasel-js/cursor';
 import { boundsOfPath, isSpiroKind, withinPxRadius, type SpiroKind, type SpiroPoint } from '@weasel-js/geom';
-import { createPointerFollower, defineTool, pointSnap, selectCommitted, snapMods, type Tool } from '@weasel-js/core';
+import { defineTool, pointSnap, selectCommitted, snapMods, type Tool } from '@weasel-js/core';
 import { PEN_CLOSE_HIT_PX } from '../pen/penPreviewLayer';
 import { icon } from '../icons.gen';
 import { createSpiroPreviewLayer, type SpiroPreviewState } from './spiroPreviewLayer';
 import { spiroNodeData } from './spiroShape';
 import type {} from '../actionParamSchema';
+import { createPointerFollower } from '@weasel-js/editing';
 
 /** Options for {@link useSpiroTool}. */
 export interface UseSpiroToolOptions {

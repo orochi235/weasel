@@ -16,11 +16,13 @@ import { ingestPreset } from './presets/ingest';
 import { pathfinderPreset } from './presets/pathfinder';
 import { selectPreset } from './presets/select';
 import { toolDrivenActions, viewToolsPreset, BASELINE_ACTIONS, viewPreset } from '@weasel-js/core';
-import { selectToolsPreset, shapeToolsPreset } from './presets/tools';
+import { selectToolKitPreset, selectToolsPreset, shapeToolKitPreset, shapeToolsPreset } from './presets/tools';
 import { movePreset, outlinePreset, resizePreset, rotatePreset } from './presets/transform';
 
 /** Each kit preset by name, each after the presets it includes. */
 export const FEATURE_PRESETS = {
+  'toolkit:select': selectToolKitPreset,
+  'toolkit:shape': shapeToolKitPreset,
   'tools:select': selectToolsPreset,
   'tools:view': viewToolsPreset,
   'tools:shape': shapeToolsPreset,

@@ -43,3 +43,4 @@ export { finishTransformOps } from '../interactions/actions/transformFinish';
 export type { CopyPose } from '../interactions/actions/defaults/copySubtree';
 export type { FollowerMove } from '../interactions/actions/followerMoves';
 export type { GroupingSite } from '../core/pages/pagePlacement';
+export { THROUGH_CHROME } from '../tools/builtin/throughChrome';

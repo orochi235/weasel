@@ -18,7 +18,29 @@ export {
 } from './presets/edit';
 export { alignPreset, arrangePreset, distributePreset, flipPreset, reorderPreset } from './presets/arrange';
 export { pathfinderPreset } from './presets/pathfinder';
-export { selectToolsPreset, shapeToolsPreset } from './presets/tools';
+export { selectToolKitPreset, selectToolsPreset, shapeToolKitPreset, shapeToolsPreset } from './presets/tools';
+import type {} from './tools/toolOptions';
+export {
+  BUILTIN_TOOL_GROUPS, BUILTIN_TOOL_IDS, BUILTIN_TOOLS, SELECT_TOOLS, SHAPE_TOOLS, TOOL_GROUP_ORDER, type KitToolId,
+} from './tools/toolSets';
+export {
+  DEFAULT_SHAPE_PAINT, shapeToolOptions, styleOptionLeaves, toolOptionPaint, type ShapeToolOptionsSpec,
+} from './tools/shared/styleOptions';
+export { insertBindingBehaviors, type InsertToolOptions } from './tools/shared/insertToolOptions';
+export { createPointerFollower, type PointerFollower } from './tools/shared/pointerFollower';
+export { createRectTool, useRectTool, RECT_TOOL_OPTIONS } from './tools/rect';
+export { createEllipseTool, useEllipseTool, ELLIPSE_TOOL_OPTIONS } from './tools/ellipse';
+export { createLineTool, useLineTool, LINE_TOOL_OPTIONS, type LinePoint } from './tools/line';
+export {
+  createPolygonTool, usePolygonTool, POLYGON_TOOL_OPTIONS, type CreatePolygonToolOptions, type PolygonPoint,
+  type UsePolygonToolOptions,
+} from './tools/polygon';
+export {
+  createStarTool, useStarTool, STAR_TOOL_OPTIONS, type CreateStarToolOptions, type StarPoint, type UseStarToolOptions,
+} from './tools/star';
+export { createLassoTool, useLassoTool, LASSO_TOOL_OPTIONS, type UseLassoToolOptions } from './tools/lasso';
+export { useImageTool, type UseImageToolOptions } from './tools/image';
+export { useEyedropperTool, type UseEyedropperToolOptions } from './tools/eyedropper';
 export { drawPreset, pickPreset, transformPreset } from './presets/composites';
 export { ingestPreset } from './presets/ingest';
 export {

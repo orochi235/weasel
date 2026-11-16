@@ -1,9 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import { renderHook } from '@testing-library/react';
 import { createToolOptionValues, setToolOption, toolOptionParams } from '@weasel-js/routing';
-import { toolOptionPaint, useRectTool, type InsertToolOptions } from '@weasel-js/core';
 import { usePenTool } from './pen/usePenTool';
 import { usePencilTool } from './pencil/usePencilTool';
+import { toolOptionPaint, useRectTool, type InsertToolOptions } from '@weasel-js/editing';
 
 describe('the pen\'s and pencil\'s tool options', () => {
   it('share the shape tools\' fill and stroke width', () => {

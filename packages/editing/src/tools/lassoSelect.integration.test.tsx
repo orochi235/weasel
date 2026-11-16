@@ -1,0 +1,200 @@
+/** Integration tests for lassoSelectAction via the gesture dispatcher. */
+
+import { describe, it, expect, beforeAll, vi } from 'vitest';
+import { render, act } from '@testing-library/react';
+import { useRef } from 'react';
+import { ActionsProvider, useActionsRegistry } from '@weasel-js/routing/react';
+import { DepRegistryProvider, useDepRegistry } from '@weasel-js/routing/react';
+import '@weasel-js/core';
+import { ActiveToolContextProvider } from '@weasel-js/routing/react';
+import { useGestureDispatcher } from '@weasel-js/routing/react';
+import { lassoSelectAction } from '@weasel-js/core';
+import type { LassoSelectDep } from '@weasel-js/core/engine';
+import type { Contribution } from '@weasel-js/core';
+
+beforeAll(() => {
+  const proto = HTMLCanvasElement.prototype as unknown as {
+    getContext: (...args: unknown[]) => unknown;
+    setPointerCapture: (...args: unknown[]) => void;
+    releasePointerCapture: (...args: unknown[]) => void;
+  };
+  proto.getContext = vi.fn(() => null);
+  proto.setPointerCapture = vi.fn();
+  proto.releasePointerCapture = vi.fn();
+});
+
+function makeLassoDepFactory(hits: string[] = [], initial: string[] = []) {
+  let selection = initial.slice();
+  const dep: LassoSelectDep & { calls: { hitTestLasso: unknown[]; setSelection: unknown[][] } } = {
+    calls: { hitTestLasso: [], setSelection: [] },
+    hitTestLasso(polygon, mode) {
+      this.calls.hitTestLasso.push({ polygon: polygon.slice(), mode });
+      return hits;
+    },
+    hitTestArea(_bounds) {
+      return hits;
+    },
+    getSelection() { return selection; },
+    setSelection(ids) {
+      this.calls.setSelection.push(ids.slice());
+      selection = ids;
+    },
+  };
+  return dep;
+}
+
+/** The active lasso tool, carrying the binding `useLassoTool` declares. */
+const LASSO_TOOLS: ReadonlyMap<string, Contribution> = new Map([
+  ['lasso', {
+    id: 'lasso',
+    eligibility: { focus: true },
+    bindings: [{ spec: { kind: 'drag', mods: { shift: 'optional' } }, actionId: 'lassoSelect' }],
+  }],
+]);
+
+function MountDispatcher({ canvasRef }: { canvasRef: React.RefObject<HTMLCanvasElement | null> }) {
+  const registry = useActionsRegistry();
+  useGestureDispatcher({ canvasRef, actions: registry!, entriesById: LASSO_TOOLS });
+  return <canvas ref={canvasRef} data-testid="canvas" />;
+}
+
+function RegisterLassoSelectDep({ dep }: { dep: LassoSelectDep }) {
+  const registry = useDepRegistry();
+  registry.register('lassoSelect', () => dep);
+  return null;
+}
+
+function RegisterLassoSelect() {
+  const registry = useActionsRegistry();
+  if (registry && !registry.list().find((a) => a.id === 'lassoSelect')) {
+    registry.register({ ...lassoSelectAction, enabled: () => true });
+  }
+  return null;
+}
+
+function buildHarness(dep: LassoSelectDep) {
+  function Harness() {
+    const ref = useRef<HTMLCanvasElement | null>(null);
+    return (
+      <DepRegistryProvider>
+        <ActiveToolContextProvider initialActive="lasso">
+            <ActionsProvider>
+              <RegisterLassoSelectDep dep={dep} />
+              <RegisterLassoSelect />
+              <MountDispatcher canvasRef={ref} />
+            </ActionsProvider>
+        </ActiveToolContextProvider>
+      </DepRegistryProvider>
+    );
+  }
+  return Harness;
+}
+
+function firePointerDown(canvas: HTMLElement, opts: { clientX: number; clientY: number; shiftKey?: boolean }) {
+  canvas.dispatchEvent(
+    new PointerEvent('pointerdown', {
+      bubbles: true,
+      clientX: opts.clientX,
+      clientY: opts.clientY,
+      shiftKey: opts.shiftKey ?? false,
+    }),
+  );
+}
+
+function firePointerMove(canvas: HTMLElement, opts: { clientX: number; clientY: number; shiftKey?: boolean }) {
+  canvas.dispatchEvent(
+    new PointerEvent('pointermove', {
+      bubbles: true,
+      clientX: opts.clientX,
+      clientY: opts.clientY,
+      shiftKey: opts.shiftKey ?? false,
+    }),
+  );
+}
+
+function firePointerUp(canvas: HTMLElement, opts: { clientX: number; clientY: number; shiftKey?: boolean }) {
+  canvas.dispatchEvent(
+    new PointerEvent('pointerup', {
+      bubbles: true,
+      clientX: opts.clientX,
+      clientY: opts.clientY,
+      shiftKey: opts.shiftKey ?? false,
+    }),
+  );
+}
+
+function firePointerCancel(canvas: HTMLElement) {
+  canvas.dispatchEvent(
+    new PointerEvent('pointercancel', { bubbles: true }),
+  );
+}
+
+describe('lassoSelectAction integration', () => {
+  it('drag → commit calls hitTestLasso and updates selection', () => {
+    const dep = makeLassoDepFactory(['nodeA', 'nodeB']);
+    const Harness = buildHarness(dep);
+    const { getByTestId } = render(<Harness />);
+    const canvas = getByTestId('canvas');
+
+    act(() => {
+      firePointerDown(canvas, { clientX: 0, clientY: 0 });
+    });
+    act(() => {
+      // Move enough to accumulate 3+ vertices (spacing > 2px each)
+      firePointerMove(canvas, { clientX: 10, clientY: 0 });
+      firePointerMove(canvas, { clientX: 10, clientY: 10 });
+      firePointerMove(canvas, { clientX: 0, clientY: 10 });
+    });
+    act(() => {
+      firePointerUp(canvas, { clientX: 0, clientY: 10 });
+    });
+
+    expect(dep.calls.hitTestLasso.length).toBe(1);
+    expect(dep.calls.setSelection).toEqual([['nodeA', 'nodeB']]);
+  });
+
+  it('pointercancel → cancel → no selection change', () => {
+    const dep = makeLassoDepFactory(['nodeA']);
+    const Harness = buildHarness(dep);
+    const { getByTestId } = render(<Harness />);
+    const canvas = getByTestId('canvas');
+
+    act(() => {
+      firePointerDown(canvas, { clientX: 0, clientY: 0 });
+    });
+    act(() => {
+      firePointerMove(canvas, { clientX: 10, clientY: 0 });
+      firePointerMove(canvas, { clientX: 10, clientY: 10 });
+    });
+    act(() => {
+      firePointerCancel(canvas);
+    });
+
+    expect(dep.calls.setSelection).toEqual([]);
+  });
+
+  it('shift drag extends existing selection (merge without duplicates)', () => {
+    const dep = makeLassoDepFactory(['nodeB'], ['nodeA']);
+    const Harness = buildHarness(dep);
+    const { getByTestId } = render(<Harness />);
+    const canvas = getByTestId('canvas');
+
+    act(() => {
+      firePointerDown(canvas, { clientX: 0, clientY: 0, shiftKey: true });
+    });
+    act(() => {
+      firePointerMove(canvas, { clientX: 10, clientY: 0, shiftKey: true });
+      firePointerMove(canvas, { clientX: 10, clientY: 10, shiftKey: true });
+      firePointerMove(canvas, { clientX: 0, clientY: 10, shiftKey: true });
+    });
+    act(() => {
+      firePointerUp(canvas, { clientX: 0, clientY: 10, shiftKey: true });
+    });
+
+    // nodeA (existing) + nodeB (hit) merged
+    const lastSet = dep.calls.setSelection[dep.calls.setSelection.length - 1] as string[];
+    expect(lastSet).toContain('nodeA');
+    expect(lastSet).toContain('nodeB');
+    expect(lastSet.length).toBe(2);
+  });
+});

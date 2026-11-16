@@ -1,6 +1,4 @@
 import {
-  BUILTIN_TOOL_IDS,
-  type BuiltinToolId,
   type FeaturePreset,
   type InsertNodeFactory,
   registerNodeShape,
@@ -11,7 +9,14 @@ import {
   type View,
   WeaselProvider,
 } from '@weasel-js/core';
-import { editPreset, movePreset, pickPreset, transformPreset } from '@weasel-js/editing';
+import {
+  BUILTIN_TOOL_IDS,
+  editPreset,
+  type KitToolId,
+  movePreset,
+  pickPreset,
+  transformPreset,
+} from '@weasel-js/editing';
 import { usePencilTool } from '@weasel-js/path-tools';
 import type { ToolOptionValues } from '@weasel-js/routing';
 import { createTextTool, textPreset } from '@weasel-js/text-tools';
@@ -121,7 +126,7 @@ const ANNOTATION_TEXT: FeaturePreset = {
   includes: [textPreset],
 };
 const FEATURES = [pickPreset, movePreset, transformPreset, editPreset, ANNOTATION_TEXT];
-const BUILTIN_ANNOTATION_TOOLS = ANNOTATION_WEASEL_TOOLS.filter((t): t is BuiltinToolId =>
+const BUILTIN_ANNOTATION_TOOLS = ANNOTATION_WEASEL_TOOLS.filter((t): t is KitToolId =>
   (BUILTIN_TOOL_IDS as readonly string[]).includes(t),
 );
 

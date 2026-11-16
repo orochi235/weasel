@@ -9,11 +9,11 @@
 import { describe, it, expect, vi, beforeAll } from 'vitest';
 import { act } from '@testing-library/react';
 import { renderWithKeys as render } from '@weasel-js/react/testing/giveKeys';
-import { SceneCanvas, BUILTIN_TOOL_IDS } from './SceneCanvas';
+import { SceneCanvas } from './SceneCanvas';
 import { createScene } from 'core/scene/scene';
 import type { Scene } from 'core/scene/types';
 import { ActiveToolContextProvider, useActiveToolContext } from '@weasel-js/routing/react';
-import { drawPreset } from '@weasel-js/editing';
+import { drawPreset, BUILTIN_TOOL_IDS } from '@weasel-js/editing';
 
 type D = { kind: 'rect' };
 type L = 'main';

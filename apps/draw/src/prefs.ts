@@ -1,10 +1,7 @@
 // WeaselDraw's per-user preferences: the schema, and the store over
 // localStorage that holds them, one record per leaf.
 
-import {
-  ELLIPSE_TOOL_OPTIONS, LINE_TOOL_OPTIONS, POLYGON_TOOL_OPTIONS, RECT_TOOL_OPTIONS, STAR_TOOL_OPTIONS,
-  toolOptionsPrefs, type OptionedTool,
-} from '@weasel-js/core';
+import { toolOptionsPrefs, type OptionedTool } from '@weasel-js/core';
 import { PEN_TOOL_OPTIONS, PENCIL_TOOL_OPTIONS } from '@weasel-js/path-tools';
 import { STICKY_TOOL_OPTIONS, TEXT_TOOL_OPTIONS } from '@weasel-js/text-tools';
 import { SAND_TOOL_OPTIONS, KNEAD_TOOL_OPTIONS } from '@weasel-js/path-tools';
@@ -33,6 +30,7 @@ import {
   dropPathToolsChrome, fillRuleToToolOptions, panelsToSurfaces, pathAidsToGroup, renamePathAids, renamePathTools,
 } from './surfaces/prefsMigration';
 import type { SurfacesValue } from './surfaces/types';
+import { ELLIPSE_TOOL_OPTIONS, LINE_TOOL_OPTIONS, POLYGON_TOOL_OPTIONS, RECT_TOOL_OPTIONS, STAR_TOOL_OPTIONS } from '@weasel-js/editing';
 
 // ──────────────────────────────────────────────────────────────────────────
 // Types

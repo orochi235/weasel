@@ -11,6 +11,7 @@ import { SceneCanvas } from './SceneCanvas';
 import { useScene } from 'core/scene/useScene';
 import type { SceneCanvasApi } from './canvasExtension';
 import type { RenderLayer } from 'core/layers/render';
+import { shapeToolKitPreset } from '@weasel-js/editing';
 
 beforeAll(() => {
   const proto = HTMLCanvasElement.prototype as unknown as Record<string, unknown>;
@@ -89,6 +90,7 @@ function RectHarness({ apiOut }: { apiOut: { sceneRef: { current: ReturnType<typ
       height={200}
       scene={scene}
       layers={{}}
+      features={[shapeToolKitPreset]}
       defaultTools={['rect']}
       defaultActiveTool="rect"
     />
@@ -150,6 +152,7 @@ function OwnerProbeHarness({ apiOut, layerId }: {
       height={200}
       scene={scene}
       layers={{}}
+      features={[shapeToolKitPreset]}
       defaultTools={['rect']}
       defaultActiveTool="rect"
     />

@@ -1,6 +1,4 @@
-import {
-  BUILTIN_TOOL_GROUPS, SceneCanvas, createToolOptionValues, isToolSet, useCanvasSize, useLatest, useScene, useSelection, type Tool, type ToolsApi,
-} from '@weasel-js/core';
+import { SceneCanvas, createToolOptionValues, isToolSet, useCanvasSize, useLatest, useScene, useSelection, type Tool, type ToolsApi } from '@weasel-js/core';
 import { isTextData } from '@weasel-js/text';
 import { TEXT_TOOLS, useSceneTextEdit } from '@weasel-js/text-tools';
 import {
@@ -36,6 +34,7 @@ import {
 } from './useChartDiagram';
 import { useChartSnap } from './useChartSnap';
 import './workspace.css';
+import { BUILTIN_TOOL_GROUPS } from '@weasel-js/editing';
 
 // Module consts: SceneCanvas keys its wiring off these props' identity.
 const FALLBACK_PAGE = { x: 0, y: 0, ...CHART_PAGE };

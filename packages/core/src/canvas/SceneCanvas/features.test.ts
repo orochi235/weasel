@@ -12,7 +12,6 @@ import {
 import { BASELINE_ACTION_IDS } from './presets/baseline';
 import { TOOL_DRIVEN_ACTION_IDS } from './presets/toolDriven';
 import { PRESET_OWNED_CHROME } from './presets/chrome';
-import { BUILTIN_TOOL_IDS } from './props';
 import { defaultVisibilityRules, never } from 'domains/chrome-caps';
 import {
   SELECTION_MOVE_ID,
@@ -20,7 +19,7 @@ import {
   SELECTION_ROTATE_ID,
 } from 'tools/builtin/select/selectionContributions';
 import { MIDDLE_DRAG_PAN_ID } from 'tools/builtin/hand/dragPanContribution';
-import { KIT_STANDARD_ACTION_IDS, FEATURE_ACTION_IDS, FEATURE_NAMES, FEATURE_PRESETS, namedFeatures, type FeatureName } from '@weasel-js/editing';
+import { BUILTIN_TOOL_IDS, KIT_STANDARD_ACTION_IDS, FEATURE_ACTION_IDS, FEATURE_NAMES, FEATURE_PRESETS, namedFeatures, type FeatureName } from '@weasel-js/editing';
 
 // Names keep these tables readable; `namedFeatures` maps each to its object.
 type Entry = FeatureName | FeaturePreset;
@@ -68,7 +67,7 @@ describe('resolveFeatures', () => {
   });
 
   it('turns on select and outline under pick, and resize and rotate under transform', () => {
-    expect(ids(['pick'])).toEqual(['tools:select', 'select', 'outline', 'pick']);
+    expect(ids(['pick'])).toEqual(['toolkit:select', 'tools:select', 'select', 'outline', 'pick']);
     expect(ids(['transform'])).toEqual(['resize', 'rotate', 'transform']);
   });
 
@@ -92,7 +91,7 @@ describe('resolveFeatures', () => {
 
   it('takes a preset object beside the names, once however often it is named', () => {
     const mine: FeaturePreset = { id: 'mine', actions: [action('mine.go')] };
-    expect(ids(['select', mine, mine])).toEqual(['tools:select', 'select', 'mine']);
+    expect(ids(['select', mine, mine])).toEqual(['toolkit:select', 'tools:select', 'select', 'mine']);
     expect(actionIds([mine]).has('mine.go')).toBe(true);
   });
 
