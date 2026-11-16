@@ -16,5 +16,6 @@ export const LIBRARIES: readonly Library[] = [
   { path: '/packages/prefs-editor/', label: 'prefs-editor' },
   { path: '/packages/devtools/', label: 'devtools' },
   { path: '/packages/hud/', label: 'hud' },
+  { path: '/packages/measure/', label: 'measure' },
   { path: '/apps/draw/', label: 'draw', tint: tint('rose') },
 ];
