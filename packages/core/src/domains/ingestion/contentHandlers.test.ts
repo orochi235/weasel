@@ -21,21 +21,21 @@ beforeEach(() => _resetContentHandlersForTests());
 afterEach(() => vi.restoreAllMocks());
 
 describe('registerContentHandler', () => {
-  it('reflects handlers by id, and a second under one id shadows the first until released, warning of the clash', async () => {
-    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
-    const first = vi.fn();
-    const second = vi.fn();
-    registerContentHandler({ id: 'app:csv', match: 'text/csv', handle: first });
-    const off = registerContentHandler({ id: 'app:csv', match: 'text/csv', handle: second });
-    expect(warn).toHaveBeenCalledTimes(1);
-    expect(warn.mock.calls[0]![0]).toMatch(/"app:csv"/);
+  it('reflects handlers by id, the same entry registered again held until both registrations release', () => {
+    vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const handle = vi.fn();
+    const csvHandler = { id: 'app:csv', match: 'text/csv', handle };
+    const offFirst = registerContentHandler(csvHandler);
+    const offSecond = registerContentHandler(csvHandler);
     const [entry] = contentHandlerRegistry.entries();
     expect(entry!.key).toBe('app:csv');
-    expect(entry!.value.handle).toBe(second);
-    expect(entry!.shadowed.map((s) => s.value.handle)).toEqual([first]);
+    expect(entry!.value).toBe(csvHandler);
+    expect(entry!.shadowed.map((r) => r.value)).toEqual([csvHandler]);
     expect(getContentHandlers()).toHaveLength(1);
-    off();
-    expect(contentHandlerRegistry.get('app:csv')?.handle).toBe(first);
+    offSecond();
+    expect(contentHandlerRegistry.get('app:csv')).toBe(csvHandler);
+    offFirst();
+    expect(contentHandlerRegistry.has('app:csv')).toBe(false);
   });
 
   it('returns a disposer that removes the entry; double-call is safe', () => {
