@@ -12,6 +12,7 @@ import {
   type NodeId, type RectPose, type Scene, type SelectionApi, type View, drawPreset,
 } from '@weasel-js/core';
 import { registerCanvasFont } from '@weasel-js/font';
+import { textPreset } from '@weasel-js/text-tools';
 import { EDGE_DERIVE_PATH, withDiagramRegistry, registerDiagramShape, diagramOffPage, installOffPageMarkers } from '@weasel-js/diagram';
 import { canvasGl } from '@weasel-js/core/testing/canvasPixels';
 
@@ -53,7 +54,7 @@ function Stage({ scene }: { scene: OffPageScene }) {
   view = v;
   selection = useSelection({ scene, mode: 'single' });
   return createElement(SceneCanvas<unknown, 'main', RectPose>, {
-    scene, selection, features: [drawPreset], width: W, height: H, view: v, onViewChange: setV,
+    scene, selection, features: [drawPreset, textPreset], width: W, height: H, view: v, onViewChange: setV,
     backgroundFill: { color: '#000000' }, ambient: AMBIENT,
   });
 }
