@@ -6,7 +6,7 @@ import type { NodeId } from 'core/scene/types';
 import { applyBooleanOp, previewBooleanOp, type BooleansAdapter } from './booleans';
 import { rootsTree } from 'core/adapters/testing/rootsTree';
 import type { TransientPath } from 'canvas/pathOverlay';
-import { pathfinderCropAction, pathfinderDivideAction, pathfinderUnionAction } from './action';
+import { pathfinderCropAction, pathfinderDivideAction, pathfinderUnionAction } from '@weasel-js/editing';
 
 const RED = { color: '#f00' };
 const rect = (x: number, y: number, width: number, height: number): Path => ({ kind: 'rect', x, y, width, height });

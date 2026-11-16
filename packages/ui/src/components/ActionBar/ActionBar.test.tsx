@@ -1,17 +1,6 @@
 import { describe, it, expect, vi } from 'vitest';
 import { screen, fireEvent, act } from '@testing-library/react';
-import {
-  ActionsProvider,
-  DepRegistryProvider,
-  useDepSource,
-  useDepRegistry,
-  type DepRegistry,
-  type DepName,
-  clipboardCutAction,
-  clipboardCopyAction,
-  clipboardPasteAction,
-  type Action,
-} from '@weasel-js/core';
+import { ActionsProvider, DepRegistryProvider, useDepSource, useDepRegistry, type DepRegistry, type DepName, type Action } from '@weasel-js/core';
 import type { IconRef } from '@weasel-js/icons';
 import { ActionBar } from './ActionBar';
 import { icon } from '../../icons.gen';
@@ -19,6 +8,7 @@ import { Icon } from '../Icon/Icon';
 import { renderWithIcons } from '../../testing/withIcons';
 import barStyles from '../Bar/Bar.module.css';
 import { RegisterAction, RegisterActions } from '@weasel-js/routing/testing/registerAction';
+import { clipboardCutAction, clipboardCopyAction, clipboardPasteAction } from '@weasel-js/editing';
 
 /**
  * Test harness: registers a set of `Action` descriptors on mount via

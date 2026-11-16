@@ -6,7 +6,7 @@ import type { SelectionApi } from 'core/selection/useSelection';
 import { sceneToAdapter } from 'canvas/sceneAdapter';
 import { createInsertOp } from 'core/ops/create';
 import { defaultCommitAdapter } from '../defaultCommitAdapter';
-import { duplicateSelection } from '../defaults/duplicate';
+import { duplicateSelection } from '@weasel-js/editing';
 
 type D = { label: string };
 

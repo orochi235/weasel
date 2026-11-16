@@ -1,6 +1,4 @@
-import {
-  type Contribution, PATHFINDER_KEYMAP, type SelectionApi, type SurfaceContribution, useLatest, type View,
-} from '@weasel-js/core';
+import { type Contribution, type SelectionApi, type SurfaceContribution, useLatest, type View } from '@weasel-js/core';
 import { useHudContribution } from '@weasel-js/hud/react';
 import { createEmitter } from '@weasel-js/registry';
 import { useLayoutEffect, useMemo } from 'react';
@@ -12,6 +10,7 @@ import { hasCompoundPath, releaseCompoundPaths } from './releaseCompound';
 import { CHROME_ITEMS } from './surfaces/chrome';
 import { useChromeCommands } from './surfaces/surfaceState';
 import { colorContribution, useColorContext } from './tools/colorContext';
+import { PATHFINDER_KEYMAP } from '@weasel-js/editing';
 
 export interface EditorAmbientArgs {
   scene: DrawScene;

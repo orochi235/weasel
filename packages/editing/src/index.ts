@@ -41,3 +41,26 @@ export { useDistribute } from './actions/distribute';
 export type {
   DistributeAdapter, DistributeAxis, DistributeMode, UseDistributeOptions, UseDistributeReturn,
 } from './actions/distribute';
+
+export { ENGINE_STANDARD_ACTIONS } from './engineStandardActions';
+export { escapeAction } from './actions/edit/escape';
+export { selectAllAction } from './actions/edit/selectAll';
+export { duplicateAction, duplicateSelection } from './actions/edit/duplicate';
+export { groupAction, ungroupAction } from './actions/edit/group';
+export { nudgeUpAction, nudgeDownAction, nudgeLeftAction, nudgeRightAction } from './actions/edit/nudge';
+export { setFillAction } from './actions/edit/setFill';
+export { setFillOpacityAction } from './actions/edit/setFillOpacity';
+export { setStrokeAction } from './actions/edit/setStroke';
+export { setStrokeOpacityAction } from './actions/edit/setStrokeOpacity';
+export { setStrokeWidthAction } from './actions/edit/setStrokeWidth';
+export { setVertexColorAction } from './actions/edit/setVertexColor';
+export { ingestAction } from './actions/edit/ingest';
+export { transformAgainAction } from './actions/transformAgain/action';
+export { transformSelection, type SelectionTransform } from './actions/transformAgain/transformSelection';
+export { clipboardCopyAction, clipboardCutAction, clipboardPasteAction, clipboardPasteEventAction } from './actions/clipboard/action';
+export {
+  PATHFINDER_STROKES, pathfinderUnionAction, pathfinderSubtractAction, pathfinderIntersectAction,
+  pathfinderExcludeAction, pathfinderDivideAction, pathfinderCropAction, pathfinderTrimAction, pathfinderMergeAction,
+} from './actions/pathfinder/action';
+export { booleanGroupOps, makeBooleanGroup, makeBooleanGroupAction } from './actions/pathfinder/booleanGroupAction';
+export { PATHFINDER_KEYMAP, PATHFINDER_KEYMAP_ID, PATHFINDER_LEADER } from './actions/pathfinder/keymap';

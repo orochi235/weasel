@@ -1,7 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { transformPoint } from '@weasel-js/geom';
+import { transformPoint, poseFrameOf } from '@weasel-js/geom';
 import { RECT_POSE_DESCRIPTOR } from '@weasel-js/core';
-import { poseFrameOf } from '@weasel-js/geom';
 import type { RectPose } from '@weasel-js/core';
 import { flipPoseViaDescriptor, type FlipAxis } from './helpers';
 

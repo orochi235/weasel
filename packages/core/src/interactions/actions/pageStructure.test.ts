@@ -4,20 +4,16 @@ import { asNodeId } from 'core/scene/types';
 import { RECT_POSE_DESCRIPTOR } from 'core/geometry/poseDescriptor';
 import { ON_PAGE as R, PAGE_A as A, PAGE_B as B, pagedScene } from 'core/pages/pagedFixture';
 import { sceneToAdapter } from 'canvas/sceneAdapter';
-import { selectAllAction } from './defaults/selectAll';
 import { deleteAction } from './defaults/delete';
-import { duplicateSelection } from './defaults/duplicate';
-import { clipboardCutAction } from './clipboard/action';
+import { duplicateSelection } from '@weasel-js/editing';
 import { pickContainer } from './move/layout/container';
-import { groupAction, ungroupAction } from './defaults/group';
-import { makeBooleanGroupAction } from './booleans/booleanGroupAction';
 import { scenePoseFrame } from './poseFrame';
 import type { RectPose } from 'core/scene/types';
 import { areaSelectAction } from './defaults/areaSelect';
 import { hitTestArea } from 'canvas/deps/hitTestArea';
 import { pressTarget } from 'tools/builtin/pressTarget';
 import type { InvocationCtx } from '@weasel-js/routing';
-import { flipAction } from '@weasel-js/editing';
+import { flipAction, selectAllAction, clipboardCutAction, groupAction, ungroupAction, makeBooleanGroupAction } from '@weasel-js/editing';
 
 /** A selection that holds whatever it was given, as a caller's own api may. */
 function heldSelection(ids: string[]) {

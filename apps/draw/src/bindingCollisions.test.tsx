@@ -7,10 +7,7 @@
 import { describe, it, expect, vi, beforeAll, afterEach } from 'vitest';
 import { cleanup } from '@testing-library/react';
 import { renderWithKeys as render } from '@weasel-js/react/testing/giveKeys';
-import {
-  BUILTIN_TOOLS, PATHFINDER_KEYMAP, type Contribution, SceneCanvas, createScene, modeTriggers, useCommand,
-  useEyedropperTool,
-} from '@weasel-js/core';
+import { BUILTIN_TOOLS, type Contribution, SceneCanvas, createScene, modeTriggers, useCommand, useEyedropperTool } from '@weasel-js/core';
 import { createMeasurements, measurementsContribution, useMeasureTool } from '@weasel-js/measure';
 import { DEFAULT_MODES } from '@weasel-js/modes';
 import { useHudContribution } from '@weasel-js/hud/react';
@@ -33,6 +30,7 @@ import { modePathEdit } from './modality/pathEditHost';
 import { modalityShortcuts } from './modality/shortcuts';
 import { useOpacityScrub } from './opacityScrub/useOpacityScrub';
 import { usePageCommands } from './pages/pageCommands';
+import { PATHFINDER_KEYMAP } from '@weasel-js/editing';
 
 beforeAll(() => {
   const proto = HTMLCanvasElement.prototype as unknown as {

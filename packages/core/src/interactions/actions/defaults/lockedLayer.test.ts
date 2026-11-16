@@ -6,10 +6,8 @@ import { describe, expect, it } from 'vitest';
 import { createScene } from 'core/scene/scene';
 import { asNodeId, type NodeId } from 'core/scene/types';
 import { deleteAction } from './delete';
-import { nudgeRightAction } from './nudge';
-import { groupAction, ungroupAction } from './group';
 import { ActionDisabledReason, type Action } from '@weasel-js/routing';
-import { reorderForwardAction } from '@weasel-js/editing';
+import { reorderForwardAction, nudgeRightAction, groupAction, ungroupAction } from '@weasel-js/editing';
 
 type Layer = 'base' | 'art';
 const POSE = { x: 0, y: 0, width: 10, height: 10 };

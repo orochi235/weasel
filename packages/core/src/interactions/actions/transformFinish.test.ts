@@ -6,11 +6,10 @@ import type { Op } from 'core/ops/types';
 import type { RectPose } from 'core/scene/types';
 import type { SelectionApi } from 'core/selection/useSelection';
 import { moveAction } from './move/action';
-import { nudgeRightAction } from './defaults/nudge';
 import { commitTransformOps, type TransformFollower } from './transformFinish';
 import { createInsertOp } from 'core/ops/create';
 import { lastTransform } from './transform-again/memory';
-import { alignRightAction } from '@weasel-js/editing';
+import { alignRightAction, nudgeRightAction } from '@weasel-js/editing';
 
 const box = (x: number, y: number): RectPose => ({ x, y, width: 10, height: 10 });
 

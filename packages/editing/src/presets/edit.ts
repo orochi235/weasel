@@ -1,11 +1,18 @@
-import { cancelGestureAction, deleteAction, duplicateAction, escapeAction, contextMenuAction, groupAction, ungroupAction, selectAllAction, setFillAction, setFillOpacityAction, setStrokeAction, setStrokeOpacityAction, setStrokeWidthAction, setVertexColorAction, transformAgainAction } from '@weasel-js/core';
-import {
-  nudgeDownAction, nudgeLeftAction, nudgeRightAction, nudgeUpAction,
-} from '@weasel-js/core';
-import {
-  clipboardCopyAction, clipboardCutAction, clipboardPasteAction, clipboardPasteEventAction,
-} from '@weasel-js/core';
+import { cancelGestureAction, deleteAction, contextMenuAction } from '@weasel-js/core';
 import type { FeaturePreset } from '@weasel-js/core';
+import { duplicateAction } from '../actions/edit/duplicate';
+import { escapeAction } from '../actions/edit/escape';
+import { groupAction, ungroupAction } from '../actions/edit/group';
+import { selectAllAction } from '../actions/edit/selectAll';
+import { setFillAction } from '../actions/edit/setFill';
+import { setFillOpacityAction } from '../actions/edit/setFillOpacity';
+import { setStrokeAction } from '../actions/edit/setStroke';
+import { setStrokeOpacityAction } from '../actions/edit/setStrokeOpacity';
+import { setStrokeWidthAction } from '../actions/edit/setStrokeWidth';
+import { setVertexColorAction } from '../actions/edit/setVertexColor';
+import { transformAgainAction } from '../actions/transformAgain/action';
+import { nudgeDownAction, nudgeLeftAction, nudgeRightAction, nudgeUpAction } from '../actions/edit/nudge';
+import { clipboardCopyAction, clipboardCutAction, clipboardPasteAction, clipboardPasteEventAction } from '../actions/clipboard/action';
 
 /** Escape, and canceling the gesture in flight. */
 export const escapePreset: FeaturePreset = { id: 'escape', label: 'Escape', actions: [escapeAction, cancelGestureAction] };

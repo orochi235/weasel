@@ -8,11 +8,8 @@ import type { NodeId } from 'core/scene/types';
 import type { RectPose } from 'core/geometry/rectPose';
 import { createSetLockedOp } from 'core/ops/nodeFlags';
 import { defaultCommitAdapter } from './defaultCommitAdapter';
-import { duplicateAction } from './defaults/duplicate';
-import { nudgeRightAction } from './defaults/nudge';
-import { groupAction } from './defaults/group';
 import { depsOf, makeScene, type TestScene } from './pbt.fixture';
-import { alignCenterXAction, alignLeftAction, distributeVerticalAction, distributeHorizontalAction, flipAction, reorderForwardAction } from '@weasel-js/editing';
+import { alignCenterXAction, alignLeftAction, distributeVerticalAction, distributeHorizontalAction, flipAction, reorderForwardAction, duplicateAction, nudgeRightAction, groupAction } from '@weasel-js/editing';
 
 function add(scene: TestScene, pose: RectPose, kind: 'mark' | 'group' = 'mark', parent: NodeId | null = null): NodeId {
   const id = scene.mintId();

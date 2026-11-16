@@ -1,8 +1,8 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { UNKNOWN_MIME } from '@weasel-js/gestures';
 import type { IngestItem } from '@weasel-js/routing';
-import { ingestAction } from 'interactions/actions/defaults/ingest';
 import { couldClaim, registerContentHandler, _resetContentHandlersForTests } from './contentHandlers';
+import { ingestAction } from '@weasel-js/editing';
 
 const png: IngestItem = { kind: 'file', mime: 'image/png', file: new File(['x'], 'a.png', { type: 'image/png' }) };
 const txt: IngestItem = { kind: 'string', mime: 'text/plain', text: 'hi' };

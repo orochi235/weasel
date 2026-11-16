@@ -6,7 +6,7 @@
  */
 import type { Action } from '@weasel-js/routing';
 import { KIT_STANDARD_ACTIONS } from './namedPresets';
-import { useActionSet, useStandardDeps, type StandardDeps } from '@weasel-js/core';
+import { useActionSet, useStandardDeps, type StandardDeps } from '@weasel-js/core/engine';
 
 /** Options for `useStandardActions`: which actions to register, and the deps they read. */
 export interface UseStandardActionsOptions extends StandardDeps {

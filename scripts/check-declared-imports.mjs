@@ -23,7 +23,7 @@ const PACKAGES = join(ROOT, 'packages');
 const NOT_SHIPPED = /(\.(test|stories|story|fixtures?|bench)\.|\.d\.ts$|\/__tests__\/|\/testing\/|\/test\/|\/test-utils\/|\/fixtures\/|test-setup\.|\/components\/[^/]+\/lab\/)/;
 // Helpers only test files import, whose names do not say so. Each must exist.
 const TEST_HELPERS = [
-  'packages/core/src/interactions/actions/defaults/paintActionTestUtils.ts',
+  'packages/editing/src/actions/edit/paintActionTestUtils.ts',
   'packages/forge/src/shell/labHarness.ts',
   'packages/forge/src/timeline/workshopHarness.tsx',
   'packages/storage/src/adapterContract.ts',

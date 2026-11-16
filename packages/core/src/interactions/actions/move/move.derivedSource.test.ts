@@ -5,12 +5,12 @@
  */
 import { describe, it, expect } from 'vitest';
 import { moveAction } from './action';
-import { nudgeRightAction } from '../defaults/nudge';
 import type { ImmediateInvoker, InvocationCtx, OngoingHandle, OngoingInvoker } from '@weasel-js/routing';
 import { createScene } from 'core/scene/scene';
 import { effectivePose } from 'core/scene/effectivePose';
 import type { DerivedDep, NodeId, RectPose } from 'core/scene/types';
 import type { SelectionApi } from 'core/selection/useSelection';
+import { nudgeRightAction } from '@weasel-js/editing';
 
 type S = ReturnType<typeof createScene<object, 'main', RectPose>>;
 

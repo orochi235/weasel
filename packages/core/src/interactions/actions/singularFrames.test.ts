@@ -8,14 +8,13 @@ import type { ImmediateInvoker } from '@weasel-js/routing';
 import { ActionDisabledReason } from '@weasel-js/routing';
 import { createScene } from 'core/scene/scene';
 import { asNodeId, type NodeId, type RectPose, type Scene } from 'core/scene/types';
-import { groupAction, ungroupAction } from './defaults/group';
-import { booleanGroupOps } from './booleans/booleanGroupAction';
 import { childVerdict } from './admitsChild';
 import { insertParent } from './insert/parent';
 import { followerMove } from './followerMoves';
 import { moveNodes } from './moveNodes';
 import { scenePoseFrame } from './poseFrame';
 import { siteIn } from 'canvas/deps/insertSite';
+import { groupAction, ungroupAction, booleanGroupOps } from '@weasel-js/editing';
 
 const [FLAT, A, B, G, E, C] = ['flat', 'a', 'b', 'g', 'e', 'c'].map(asNodeId);
 const mark = (x: number, y: number): RectPose => ({ x, y, width: 10, height: 10 });

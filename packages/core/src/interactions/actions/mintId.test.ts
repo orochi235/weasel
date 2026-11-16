@@ -8,7 +8,7 @@ import { createScene } from 'core/scene/scene';
 import { asNodeId, type NodeId, type Scene } from 'core/scene/types';
 import { sceneToAdapter } from '../../canvas/sceneAdapter';
 import { copySelection } from './defaults/copySubtree';
-import { groupAction } from './defaults/group';
+import { groupAction } from '@weasel-js/editing';
 
 interface Pose { x: number; y: number; width: number; height: number }
 

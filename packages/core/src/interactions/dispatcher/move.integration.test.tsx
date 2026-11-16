@@ -9,18 +9,12 @@ import '../actions/depSchema'; // augments DepSchema with 'selection' and 'scene
 import { ActiveToolContextProvider } from '@weasel-js/routing/react';
 import { useGestureDispatcher } from '@weasel-js/routing/react';
 import { moveAction } from '../actions/move/action';
-import { nudgeRightAction } from '../actions/defaults/nudge';
-import { clipboardCopyAction, clipboardCutAction } from '../actions/clipboard/action';
-import { selectAllAction } from '../actions/defaults/selectAll';
-import { transformAgainAction } from '../actions/transform-again/action';
-import { duplicateAction } from '../actions/defaults/duplicate';
-import { groupAction } from '../actions/defaults/group';
 import { undoAction } from '../actions/defaults/undoRedo';
 import { createScene } from 'core/scene/scene';
 import { asNodeId } from 'core/scene/types';
 import type { Scene } from 'core/scene/types';
 import type { SelectionApi } from 'core/selection/useSelection';
-import { flipAction, reorderForwardAction } from '@weasel-js/editing';
+import { flipAction, reorderForwardAction, nudgeRightAction, clipboardCopyAction, clipboardCutAction, selectAllAction, transformAgainAction, duplicateAction, groupAction } from '@weasel-js/editing';
 
 type D = { kind: 'rect' };
 type L = 'main';

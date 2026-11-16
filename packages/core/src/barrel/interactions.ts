@@ -130,7 +130,6 @@ export type { PoseFrame, PoseReading } from '../interactions/actions/poseFrame';
 export type { SpatialReference, SpatialReferenceSources } from '../interactions/actions/spatialReference';
 export { lastTransform, recordTransform, forgetTransform } from '../interactions/actions/transform-again/memory';
 export type { RepeatableTransform } from '../interactions/actions/transform-again/memory';
-export { transformSelection, type SelectionTransform } from '../interactions/actions/transform-again/transformSelection';
 export { requiresSelection } from '../interactions/actions/defaults/requiresSelection';
 export type { CloneBehavior, CloneBehaviorResult, CloneEnd } from '../interactions/gestures/types';
 // snapToContainer / snapBackOrDelete are NOT re-exported at top level —

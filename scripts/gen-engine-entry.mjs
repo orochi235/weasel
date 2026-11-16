@@ -22,7 +22,7 @@ const OUT = join(SRC, ENTRY);
 export const HOST = [
   'moveAction', 'insertAction', 'areaSelectAction', 'createInsertOp',
   'useSelectToolWith', 'selectionMoveContribution', 'useGroupEntryContribution',
-  'useActionSet', 'useStandardDeps', 'StandardDeps', 'ENGINE_STANDARD_ACTIONS',
+  'useActionSet', 'useStandardDeps', 'StandardDeps',
   'createPoseFeed', 'FeedDelta', 'createEnteredGroupScope', 'useEnteredGroup',
   'documentOf', 'scenePoseFrame', 'GesturePreviewSource',
   'createEditingSession', 'isEditingSession', 'useEditingSession', 'EditingSession',

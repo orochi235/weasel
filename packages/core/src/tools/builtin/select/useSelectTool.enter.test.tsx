@@ -16,11 +16,11 @@ import { scenePickSource } from 'canvas/scenePickSource';
 import { pickWalk } from 'canvas/pickWalk';
 import { AUTO_POSE_DESCRIPTOR } from 'core/geometry/autoPoseDescriptor';
 import { createEnteredGroup } from 'canvas/deps/enteredGroup';
-import { escapeAction } from '../../../interactions/actions/defaults/escape';
 import { visualBoundsViaDescriptor } from 'core/geometry/poseDescriptor';
 import { createGroupEntryContribution } from './groupEntry';
 import { useSelectTool } from './useSelectTool';
 import { adapterPointQuery } from './adapterPointQuery';
+import { escapeAction } from '@weasel-js/editing';
 
 type Pose = { x: number; y: number; width: number; height: number };
 const NO_MODS = { alt: false, ctrl: false, meta: false, shift: false };

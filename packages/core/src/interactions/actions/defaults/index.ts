@@ -1,19 +1,7 @@
-export { selectAllAction } from './selectAll';
-export { escapeAction } from './escape';
-export { duplicateAction } from './duplicate';
-export { transformAgainAction } from '../transform-again/action';
-export { nudgeUpAction, nudgeDownAction, nudgeLeftAction, nudgeRightAction } from './nudge';
-export {
-  pathfinderUnionAction, pathfinderSubtractAction, pathfinderIntersectAction,
-  pathfinderExcludeAction, pathfinderDivideAction, pathfinderCropAction,
-  pathfinderTrimAction, pathfinderMergeAction,
-} from '../booleans/action';
 export {
   commitDeleteToScene, createDeleteAction, deleteAction, hiddenSourceDeleteOps, type DeleteActionOptions,
 } from './delete';
-export { groupAction, ungroupAction } from './group';
 export { undoAction, redoAction } from './undoRedo';
-export { clipboardCopyAction, clipboardCutAction, clipboardPasteAction, clipboardPasteEventAction } from '../clipboard/action';
 export { createToolOffhandAction, buildToolOffhandBindings, TOOL_OFFHAND_ID, type ToolOffhandBindingSpec } from '@weasel-js/routing';
 export {
   createToolActivateAction,

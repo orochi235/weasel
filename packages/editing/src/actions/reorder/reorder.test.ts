@@ -1,10 +1,8 @@
 import { describe, it, expect, vi, type Mock } from 'vitest';
 import { stubDepsForTests as stubDeps } from '@weasel-js/core/test-seams';
 import { reorderForwardAction, reorderBackwardAction } from './reorder';
-import type { Action } from '@weasel-js/routing';
+import type { Action, BoundGesture, ImmediateInvoker } from '@weasel-js/routing';
 import { asNodeId, type NodeId } from '@weasel-js/core';
-import type { BoundGesture } from '@weasel-js/routing';
-import type { ImmediateInvoker } from '@weasel-js/routing';
 import type { Op } from '@weasel-js/core';
 import { matchSpec } from '@weasel-js/gestures';
 import type { InputEvent, ModifiersEvent } from '@weasel-js/gestures';

@@ -49,6 +49,7 @@
   },
   "dependencies": {
     "@weasel-js/cursor": "1.19.1",
+    "@weasel-js/editing": "1.19.1",
     "@weasel-js/icons": "1.19.1",
     "@weasel-js/modes": "1.19.1",
     "@weasel-js/paint": "1.19.1",
@@ -70,7 +71,6 @@
     "provenance": true
   },
   "devDependencies": {
-    "@weasel-js/editing": "1.19.1",
     "@weasel-js/text-tools": "1.19.1"
   }
 }

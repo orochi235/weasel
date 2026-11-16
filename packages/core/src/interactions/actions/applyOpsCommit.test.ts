@@ -10,8 +10,7 @@ import type { Op } from 'core/ops/types';
 import { createScene } from 'core/scene/scene';
 import type { NodeId, RectPose } from 'core/scene/types';
 import { defaultCommitAdapter } from './defaultCommitAdapter';
-import { makeBooleanGroupAction } from './booleans/booleanGroupAction';
-import { groupAction, ungroupAction } from './defaults/group';
+import { makeBooleanGroupAction, groupAction, ungroupAction } from '@weasel-js/editing';
 
 function rig<TPose>(scene: ReturnType<typeof createScene<object, 'main', TPose>>, ids: readonly string[]) {
   let held = [...ids] as NodeId[];

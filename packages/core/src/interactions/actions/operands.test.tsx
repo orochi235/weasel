@@ -12,9 +12,8 @@ import { asNodeId, type NodeId } from 'core/scene/types';
 import { SceneCanvas } from 'canvas/SceneCanvas';
 import { operandList, type OperandsDep } from './operands';
 import { deleteAction } from './defaults/delete';
-import { nudgeRightAction } from './defaults/nudge';
 import type { ImmediateInvoker } from '@weasel-js/routing';
-import { drawPreset } from '@weasel-js/editing';
+import { drawPreset, nudgeRightAction } from '@weasel-js/editing';
 
 beforeAll(() => {
   const proto = HTMLCanvasElement.prototype as unknown as Record<string, unknown>;

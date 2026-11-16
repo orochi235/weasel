@@ -98,16 +98,9 @@ export {
   createPinchZoomAction,
   type PinchZoomOptions,
 } from '../interactions/actions/defaults/pinchZoom';
-export {
-  clipboardCopyAction,
-  clipboardCutAction,
-  clipboardPasteAction,
-  clipboardPasteEventAction,
-} from '../interactions/actions/clipboard/action';
 export type { SliceDep, ClipboardDep, OperandsDep } from '../interactions/actions/depSchema';
 export { operandList } from '../interactions/actions/operands';
 export { useActionSet, useStandardDeps } from '../interactions/actions/useActionSet';
-export { ENGINE_STANDARD_ACTIONS } from '../interactions/actions/engineStandardActions';
 export type { StandardDeps } from '../interactions/actions/useActionSet';
 // Scene-backed op applier for the consumer `applyOps` commit hook — applies a
 // default action's committed ops directly to the scene in its native (local)

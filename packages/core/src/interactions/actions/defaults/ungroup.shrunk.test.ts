@@ -7,9 +7,8 @@ import { describe, expect, it } from 'vitest';
 import { ActionDisabledReason, type ImmediateInvoker } from '@weasel-js/routing';
 import { createScene } from 'core/scene/scene';
 import type { NodeId } from 'core/scene/types';
-import { groupAction, ungroupAction } from './group';
 import { deleteAction } from './delete';
-import { clipboardCutAction } from '../clipboard/action';
+import { groupAction, ungroupAction, clipboardCutAction } from '@weasel-js/editing';
 
 const POSE = { x: 0, y: 0, width: 5, height: 5 };
 

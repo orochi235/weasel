@@ -46,3 +46,8 @@ export { useInsertDepSource as useInsertDepSourceForTests } from 'canvas/deps/in
 export { FRAME_FIXTURE_IDS as FRAME_FIXTURE_IDSForTests, FRAME_FIXTURE_LOCAL as FRAME_FIXTURE_LOCALForTests, expectSamePose as expectSamePoseForTests, makeFrameFixture as makeFrameFixtureForTests } from '../core/scene/frameFixture';
 
 export { runs as pbtRunsForTests, tally as pbtTallyForTests, timeoutFor as pbtTimeoutForTests } from 'interactions/actions/pbt.fixture';
+
+export { CIRCLE_POSE_DESCRIPTOR as CIRCLE_POSE_DESCRIPTORForTests, circle as circleForTests } from '../core/geometry/circlePose.fixture';
+export type { CirclePose as CirclePoseForTests } from '../core/geometry/circlePose.fixture';
+export { FRAME_FIXTURE_WORLD as FRAME_FIXTURE_WORLDForTests } from '../core/scene/frameFixture';
+export { _resetContentHandlersForTests } from 'domains/ingestion/contentHandlers';

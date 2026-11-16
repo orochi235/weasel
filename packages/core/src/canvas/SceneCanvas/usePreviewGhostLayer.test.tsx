@@ -12,13 +12,13 @@ import type { DrawCommand, GroupDrawCommand } from '@weasel-js/renderer';
 import type { Node } from 'core/scene/types';
 import type { Dispatcher } from '@weasel-js/routing';
 import type { InvocationCtx, OngoingHandle, OngoingInvoker } from '@weasel-js/routing';
-import { setFillAction } from 'interactions/actions/defaults/setFill';
 import { usePreviewGhostLayer } from './usePreviewGhostLayer';
 import { renderThenAbandon } from '@weasel-js/react/testing/abandonRender';
 import type { GesturePreviewSource } from '../gestureBounds';
 import { INHERIT } from '@weasel-js/paint';
 import { withInheritedPaints } from '../inheritedPaints';
 import type { NodePaintCtx } from '../nodeShapeTypes';
+import { setFillAction } from '@weasel-js/editing';
 
 interface Data { label: string }
 interface Pose { x: number; y: number; width: number; height: number }

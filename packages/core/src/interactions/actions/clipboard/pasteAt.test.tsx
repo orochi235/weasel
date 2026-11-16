@@ -1,11 +1,11 @@
 import { describe, expect, it } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
 import { useClipboardOps } from './clipboardOps';
-import { clipboardPasteAction } from './action';
 import type { InsertAdapter } from '../../..';
 import type { ActionDeps } from '@weasel-js/routing';
 import { asNodeId } from 'core/scene/types';
 import { rootsTree } from 'core/adapters/testing/rootsTree';
+import { clipboardPasteAction } from '@weasel-js/editing';
 
 interface Obj { id: string; x: number; y: number }
 type Pt = { x: number; y: number };

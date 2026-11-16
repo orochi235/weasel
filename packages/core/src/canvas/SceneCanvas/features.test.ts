@@ -250,7 +250,7 @@ describe('namedFeatures', () => {
     expect(namedFeatures()).toEqual([]);
   });
 
-  it('throws on a name no core preset has', () => {
-    expect(() => namedFeatures('nope' as FeatureName)).toThrow(/no core preset is named "nope"/);
+  it('throws on a name no kit preset has', () => {
+    expect(() => namedFeatures('nope' as FeatureName)).toThrow(/no kit preset is named "nope"/);
   });
 });

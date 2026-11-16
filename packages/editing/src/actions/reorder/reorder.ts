@@ -1,11 +1,10 @@
 import { createReorderOp, defaultCommitAdapter, operandMethods, bringForward, bringToFront, sendBackward, sendToBack, requiresSelection } from '@weasel-js/core';
 import type { OperandsDep, NodeId, Scene, Op } from '@weasel-js/core';
 import type { ActionDeps } from '@weasel-js/routing';
-import { ActionDisabledReason, defineAction } from '@weasel-js/routing';
+import { ActionDisabledReason, defineAction, BETWEEN_GESTURES } from '@weasel-js/routing';
 import type { ReorderParams } from '../../actionParamSchema';
 import { sameList } from '@weasel-js/registry';
 import { icon } from '../../icons.gen';
-import { BETWEEN_GESTURES } from '@weasel-js/routing';
 
 // ---------------------------------------------------------------------------
 // Shared helper

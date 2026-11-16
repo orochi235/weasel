@@ -1,9 +1,6 @@
-import {
-  pathfinderCropAction, pathfinderDivideAction, pathfinderExcludeAction, pathfinderIntersectAction,
-  pathfinderMergeAction, pathfinderSubtractAction, pathfinderTrimAction, pathfinderUnionAction,
-} from '@weasel-js/core';
-import { makeBooleanGroupAction } from '@weasel-js/core';
 import type { FeaturePreset } from '@weasel-js/core';
+import { pathfinderCropAction, pathfinderDivideAction, pathfinderExcludeAction, pathfinderIntersectAction, pathfinderMergeAction, pathfinderSubtractAction, pathfinderTrimAction, pathfinderUnionAction } from '../actions/pathfinder/action';
+import { makeBooleanGroupAction } from '../actions/pathfinder/booleanGroupAction';
 
 /** The pathfinder booleans, and the live boolean group. */
 export const pathfinderPreset: FeaturePreset = {

@@ -1,0 +1,101 @@
+import { vi, type Mock } from 'vitest';
+import { stubDepsForTests as stubDeps } from '@weasel-js/core/test-seams';
+import { asNodeId } from '@weasel-js/core/engine';
+import type { NodeId, Op } from '@weasel-js/core';
+import type { Action, InvocationCtx, OngoingHandle, BindingOptions } from '@weasel-js/routing';
+
+/**
+ * The fake scene / selection / ctx trio the four paint-action suites run
+ * against. `TData` is whichever slice of node data the action under test owns
+ * — `{ fill }` or `{ stroke }`.
+ */
+
+interface FakeNode<TData> { id: NodeId; kind: 'mark'; pose: unknown; data: TData }
+
+export interface FakeScene<TData> {
+  get(id: NodeId): FakeNode<TData> | null;
+  childrenOf(id: NodeId): NodeId[];
+  update: Mock<(id: NodeId, patch: { data: unknown }) => void>;
+  setPose: Mock;
+  batch: Mock<(label: string, fn: () => void) => void>;
+  applyBatch: Mock<(opList: unknown[], label: string, adapter: unknown) => void>;
+  renderOrder(): NodeId[];
+  updates: Array<{ id: string; data: unknown }>;
+  batches: string[];
+}
+
+export interface FakeSelection {
+  get(): NodeId[];
+  current: NodeId[];
+  set: Mock; add: Mock; remove: Mock; toggle: Mock; clear: Mock; contains: Mock;
+}
+
+/**
+ * A scene recording what the action wrote.
+ *
+ * `applyBatch` mirrors the real one: it records a single undo entry and applies
+ * each op through the supplied adapter. The actions pass `defaultCommitAdapter`,
+ * whose `setData` calls `scene.update({ data })` — so every op routes back
+ * through `update` here and populates `updates`.
+ */
+export function makeScene<TData extends object>(nodes: Record<string, TData>): FakeScene<TData> {
+  const current: Record<string, FakeNode<TData>> = {};
+  for (const [id, d] of Object.entries(nodes)) {
+    current[id] = { id: asNodeId(id), kind: 'mark', pose: {}, data: { ...d } };
+  }
+  const updates: Array<{ id: string; data: unknown }> = [];
+  const batches: string[] = [];
+  return {
+    get: (id: NodeId) => current[id as unknown as string] ?? null,
+    childrenOf: () => [],
+    update: vi.fn((id: NodeId, patch: { data: unknown }) => {
+      updates.push({ id: id as unknown as string, data: patch.data });
+      current[id as unknown as string].data = patch.data as never;
+    }),
+    setPose: vi.fn(),
+    batch: vi.fn((label: string, fn: () => void) => { batches.push(label); fn(); }),
+    applyBatch: vi.fn((opList: unknown[], label: string, adapter: unknown) => {
+      batches.push(label);
+      for (const op of opList as Array<{ apply(a: unknown): void }>) op.apply(adapter);
+    }),
+    renderOrder: () => Object.keys(current).map((id) => asNodeId(id)),
+    updates,
+    batches,
+  };
+}
+
+export function makeSelection(ids: string[]): FakeSelection {
+  return {
+    get: () => ids.map(asNodeId),
+    current: ids.map(asNodeId),
+    set: vi.fn(), add: vi.fn(), remove: vi.fn(), toggle: vi.fn(), clear: vi.fn(),
+    contains: vi.fn().mockReturnValue(false),
+  };
+}
+
+export function makeCtx(opts: {
+  selectionIds: string[];
+  scene: ReturnType<typeof makeScene>;
+  params?: Record<string, unknown>;
+  applyOps?: (ops: Op[], label: string) => void;
+}): InvocationCtx {
+  return {
+    world: { x: 0, y: 0 },
+    screen: { x: 0, y: 0 },
+    modifiers: { alt: false, ctrl: false, meta: false, shift: false },
+    deps: stubDeps({
+      operands: makeSelection(opts.selectionIds),
+      scene: opts.scene,
+      ...(opts.applyOps ? { applyOps: opts.applyOps } : {}),
+    }),
+    params: opts.params,
+  };
+}
+
+/** The action's ongoing invoker, narrowed — every paint action has one. */
+export function ongoingInvoker(
+  action: Action,
+): { start: (ctx: InvocationCtx, opts?: BindingOptions) => OngoingHandle } {
+  if (action.invoker?.timing !== 'ongoing') throw new Error('not ongoing');
+  return action.invoker;
+}

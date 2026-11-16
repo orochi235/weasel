@@ -9,12 +9,11 @@ import { createScene } from 'core/scene/scene';
 import type { NodeId } from 'core/scene/types';
 import { RECT_POSE_DESCRIPTOR, type PoseDescriptor } from 'core/geometry/poseDescriptor';
 import type { SelectionApi } from 'core/selection/useSelection';
-import { nudgeRightAction } from './nudge';
-import { duplicateAction } from './duplicate';
 import { cloneAction } from '../clone/action';
 import { moveAction } from '../move/action';
 import { rotateAction } from '../rotate/action';
 import { resizeAction } from '../resize/action';
+import { nudgeRightAction, duplicateAction } from '@weasel-js/editing';
 
 interface Pose { x: number; y: number; width: number; height: number; rotation?: number; via?: string }
 interface PosedNode { data: { own: boolean } }

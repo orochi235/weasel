@@ -40,7 +40,7 @@ import { scenePickIds } from './scenePickIds';
 import type { Bounds } from '../core/viewport/fitViewToBounds';
 import { scenePoseTarget } from '../animation/poseTarget';
 import { pasteSceneSnapshot, snapshotSceneSelection, type SceneClipboardEnv } from './sceneClipboard';
-import { DUPLICATE_OFFSET } from '../interactions/actions/defaults/duplicate';
+import { DUPLICATE_OFFSET } from '../interactions/actions/duplicateOffset';
 
 /** A scene adapter's pose reads: the stored pose, the world pose, and the fold between them. */
 function scenePoseReads<TData, TLayer extends string, TPose>(scene: Scene<TData, TLayer, TPose>) {

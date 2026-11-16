@@ -1,0 +1,27 @@
+import type { Action } from '@weasel-js/routing';
+import type { Fill } from '@weasel-js/paint';
+import { createPaintAction } from './createPaintAction';
+import type { OpacityParams } from '@weasel-js/core';
+import { paintWithAlpha, solid, DEFAULT_FILL_COLOR } from '@weasel-js/core';
+
+/**
+ * Static descriptor for the `setFillOpacity` Action.
+ *
+ * `params.alpha01` (0..1) becomes each node's fill paint `opacity`, leaving
+ * the rest of the paint — color, gradient stops, pattern — alone. That is the
+ * one alpha slot a gradient or a pattern has, so it is the slot all of them
+ * use. A node with no fill yet takes the kit's default one.
+ */
+export const setFillOpacityAction: Action = createPaintAction<
+  number,
+  Fill,
+  'fill',
+  OpacityParams
+>({
+  id: 'setFillOpacity',
+  label: 'Set fill opacity',
+  dataKey: 'fill',
+  initialState: (pick) => pick('alpha01') ?? 1,
+  readParams: (_prev, params) => params?.alpha01 ?? null,
+  merge: (prev, alpha01) => ({ ...prev, paint: paintWithAlpha(prev?.paint ?? solid(DEFAULT_FILL_COLOR), alpha01) }),
+});

@@ -14,17 +14,14 @@ import { createInsertOp } from 'core/ops/create';
 import { createReparentOp } from 'core/ops/reparent';
 import { createSetHiddenOp, createSetLockedOp } from 'core/ops/nodeFlags';
 import { defaultCommitAdapter } from './defaultCommitAdapter';
-import { nudgeUpAction, nudgeDownAction, nudgeLeftAction, nudgeRightAction } from './defaults/nudge';
-import { duplicateAction } from './defaults/duplicate';
 import { deleteAction } from './defaults/delete';
-import { groupAction, ungroupAction } from './defaults/group';
 import { scenePoseFrame } from './poseFrame';
 import { uncarried } from './selectionSubtree';
 import { drawnBoxes } from './drawnBoxes';
 import { withoutPageStructure } from 'core/scene/nodeGates';
 import type { Bounds } from 'core/viewport/fitViewToBounds';
 import { depsOf, makeScene, rectPose, runs, tally, timeoutFor, type TestScene } from './pbt.fixture';
-import { alignLeftAction, alignRightAction, alignTopAction, alignBottomAction, alignCenterXAction, alignCenterYAction, distributeHorizontalAction, distributeVerticalAction, reorderForwardAction, reorderBackwardAction, flipAction } from '@weasel-js/editing';
+import { alignLeftAction, alignRightAction, alignTopAction, alignBottomAction, alignCenterXAction, alignCenterYAction, distributeHorizontalAction, distributeVerticalAction, reorderForwardAction, reorderBackwardAction, flipAction, nudgeUpAction, nudgeDownAction, nudgeLeftAction, nudgeRightAction, duplicateAction, groupAction, ungroupAction } from '@weasel-js/editing';
 
 interface Real { scene: TestScene }
 interface Model { states: unknown[]; cursor: number }

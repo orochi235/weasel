@@ -9,10 +9,9 @@ import {
 } from './helpers';
 import type { PointerContextValue } from '@weasel-js/routing/react';
 import type { ActionDeps } from '@weasel-js/routing';
-import { ActionDisabledReason, defineAction } from '@weasel-js/routing';
+import { ActionDisabledReason, defineAction, BETWEEN_GESTURES } from '@weasel-js/routing';
 import type { FlipParams } from '../../actionParamSchema';
 import { icon } from '../../icons.gen';
-import { BETWEEN_GESTURES } from '@weasel-js/routing';
 
 /**
  * The world mirror about `axis` through the center of `pivotWorld`, written in

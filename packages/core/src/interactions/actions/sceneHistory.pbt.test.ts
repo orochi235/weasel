@@ -20,7 +20,7 @@ import { createSetLayerOp } from 'core/ops/setLayer';
 import { createSetHiddenOp, createSetLockedOp } from 'core/ops/nodeFlags';
 import { createSetDependsOnOp } from 'core/ops/setDependsOn';
 import { defaultCommitAdapter } from './defaultCommitAdapter';
-import { groupAction, ungroupAction } from './defaults/group';
+import { groupAction, ungroupAction } from '@weasel-js/editing';
 
 type S = Scene<Record<string, never>, 'main' | 'top', RectPose>;
 interface Real { scene: S; adapter: ReturnType<typeof defaultCommitAdapter<RectPose>> }

@@ -1,10 +1,11 @@
 import type { Action, ActionDeps } from '@weasel-js/routing';
 import { ActionDisabledReason } from '@weasel-js/routing';
-import { type AnyScene, commitOps, type NodeId, reachesLocked, requiresSelection, transformSelection } from '@weasel-js/core';
+import { type AnyScene, commitOps, type NodeId, reachesLocked, requiresSelection } from '@weasel-js/core';
 import { measurementOf, type Measurement } from './measurement';
 import { currentMeasureId, measureIds, type Measurements } from './measurements';
 import { deleteMeasureOps, MEASURE_LABELS } from './measureEdits';
 import { MEASURE_ACTION_IDS } from './actionIds';
+import { transformSelection } from '@weasel-js/editing';
 
 const MOVE_LABEL = 'Move by Measurement';
 const ROTATE_LABEL = 'Rotate by Measurement';

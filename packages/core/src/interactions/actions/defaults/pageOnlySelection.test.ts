@@ -3,8 +3,7 @@ import { ActionDisabledReason } from '@weasel-js/routing';
 import { createScene } from 'core/scene/scene';
 import { asNodeId, type RectPose } from 'core/scene/types';
 import { deleteAction } from './delete';
-import { duplicateAction } from './duplicate';
-import { clipboardCutAction } from '../clipboard/action';
+import { duplicateAction, clipboardCutAction } from '@weasel-js/editing';
 
 function pageOnly() {
   const scene = createScene<object, 'main', RectPose>({ systemLayers: [{ id: 'main' }] });

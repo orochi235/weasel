@@ -1,11 +1,11 @@
 import { describe, expect, it } from 'vitest';
 import { createScene, type NodeId, type RectPose } from '@weasel-js/core';
-import { ungroupAction } from 'interactions/actions/defaults/group';
 import type { ImmediateInvoker } from '@weasel-js/routing';
 import { isBodyOrRegion, isDiagramBody } from './bodyNode';
 import { buildBody } from './buildBody';
 import { withDiagramRegistry } from './edge';
 import type { BodySpec, MeasureRowText } from './body';
+import { ungroupAction } from '@weasel-js/editing';
 
 const measure: MeasureRowText = (text) => ({ width: text.length * 10, height: 20 });
 const spec: BodySpec = {

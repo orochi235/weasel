@@ -17,10 +17,10 @@ import { resizeAction } from './resize/action';
 import { rotateAction } from './rotate/action';
 import { cloneAction } from './clone/action';
 import { insertAction } from './insert/action';
-import { nudgeRightAction } from './defaults/nudge';
 import { inPlane, selectionLayer } from './planeInput';
 import type { InsertDep, SnapDep, ViewApi } from './depSchema';
 import type { SnapBegin } from './snapDep';
+import { nudgeRightAction } from '@weasel-js/editing';
 
 // Camera panned to x=100 at 2x; the sky does not zoom and pans with it, so its
 // world is the camera's doubled and shifted: plane = (2x - 100, 2y).

@@ -3,12 +3,10 @@ import { IDENTITY_POSE_COMPOSITION } from 'core/scene/composeFrame';
 import { createScene } from 'core/scene/scene';
 import type { NodeId, Scene } from 'core/scene/types';
 import type { ImmediateInvoker, InvocationCtx } from '@weasel-js/routing';
-import { nudgeRightAction } from './nudge';
-import { duplicateAction } from './duplicate';
 import { cloneAction } from '../clone/action';
 import { rotateAction } from '../rotate/action';
 import { circle, CIRCLE_POSE_DESCRIPTOR, type CirclePose } from 'core/geometry/circlePose.fixture';
-import { flipAction, alignLeftAction, distributeHorizontalAction } from '@weasel-js/editing';
+import { flipAction, alignLeftAction, distributeHorizontalAction, nudgeRightAction, duplicateAction } from '@weasel-js/editing';
 
 type S = Scene<object, 'main', CirclePose>;
 const scene = (): S => createScene<object, 'main', CirclePose>({ composition: IDENTITY_POSE_COMPOSITION, systemLayers: [{ id: 'main' }] });

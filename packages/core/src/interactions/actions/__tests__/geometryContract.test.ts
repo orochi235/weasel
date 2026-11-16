@@ -40,8 +40,7 @@ import { PATH_GEOMETRY_PROJECTION } from '../geometryProjection';
 import { resizeAction } from '../resize/action';
 import { moveAction } from '../move/action';
 import { rotateAction } from '../rotate/action';
-import { nudgeRightAction } from '../defaults/nudge';
-import { flipAction } from '@weasel-js/editing';
+import { flipAction, nudgeRightAction } from '@weasel-js/editing';
 
 interface AABBPose {
   x: number;

@@ -323,12 +323,6 @@ export {
   previewBooleanOp,
   resolveBooleanOperands,
   commitBooleanPieces,
-  PATHFINDER_STROKES,
-  PATHFINDER_KEYMAP,
-  PATHFINDER_KEYMAP_ID,
-  PATHFINDER_LEADER,
-  booleanGroupOps,
-  makeBooleanGroup,
 } from '../interactions/actions/booleans';
 export type {
   BooleanOp,

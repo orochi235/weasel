@@ -16,16 +16,8 @@ import type { Action } from '@weasel-js/routing';
 import { moveAction } from './move/action';
 import { resizeAction } from './resize/action';
 import { rotateAction } from './rotate/action';
-import { groupAction } from './defaults/group';
 import { cloneAction } from './clone/action';
-import { duplicateAction } from './defaults/duplicate';
-import {
-  nudgeUpAction,
-  nudgeDownAction,
-  nudgeLeftAction,
-  nudgeRightAction,
-} from './defaults/nudge';
-import { flipAction, alignLeftAction, distributeHorizontalAction } from '@weasel-js/editing';
+import { flipAction, alignLeftAction, distributeHorizontalAction, groupAction, duplicateAction, nudgeUpAction, nudgeDownAction, nudgeLeftAction, nudgeRightAction } from '@weasel-js/editing';
 
 const PROJECTION = { token: 'geometry-projection-stub' };
 
