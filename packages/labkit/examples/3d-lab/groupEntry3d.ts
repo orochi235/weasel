@@ -7,11 +7,12 @@
  */
 
 import { useEffect, useMemo } from 'react';
-import { createEnteredGroupScope, useEnteredGroup, useGroupEntryContribution, type EnteredGroupApi } from '@weasel-js/core/engine';
+import { createEnteredGroupScope, useEnteredGroup, type EnteredGroupApi } from '@weasel-js/core/engine';
 import { useDepSource } from '@weasel-js/routing/react';
 import { type NodeId, type Tool } from '@weasel-js/routing';
 import { screenBoxOf, type ScreenBox, type Viewport3d, type World3d } from '@weasel-js/kernel3d';
 import type { SolidData, SolidLayer } from './scene3d';
+import { useGroupEntryContribution } from '@weasel-js/editing/engine';
 
 type SolidWorld = World3d<SolidData, SolidLayer>;
 type Pick = (point: { x: number; y: number }, exclude?: Iterable<NodeId>) => NodeId | null;

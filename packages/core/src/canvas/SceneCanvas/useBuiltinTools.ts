@@ -6,8 +6,6 @@ import type { ToolEntry } from '@weasel-js/routing';
 import { resolveToolRegistry, type ToolsPatch } from './toolRegistry';
 
 export interface UseBuiltinToolsArgs {
-  /** The canvas's select tool, which is built from its scene and pickers. */
-  select: Tool;
   enabled: EnabledPresets;
   defaultTools?: readonly ToolEntry<string>[];
   patch: ToolsPatch | null;
@@ -21,10 +19,10 @@ export interface UseBuiltinToolsArgs {
 /** The registry of tools `<SceneCanvas>` mounts for itself. Every built-in's
  *  hook runs on every render; `resolveToolRegistry` decides which are in. */
 export function useBuiltinTools(args: UseBuiltinToolsArgs): Record<string, Tool> {
-  const { select, enabled, defaultTools, patch, inertia, insertBuilds, offered } = args;
+  const { enabled, defaultTools, patch, inertia, insertBuilds, offered } = args;
   const hand = useHandTool({ inertia });
   return resolveToolRegistry({
-    builtins: { select, hand },
+    builtins: { hand },
     offered,
     defaultTools,
     enabled,

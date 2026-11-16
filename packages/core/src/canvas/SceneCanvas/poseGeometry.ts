@@ -3,7 +3,7 @@
  * `PoseDescriptor`, defaulting to `AUTO_POSE_DESCRIPTOR`, so a consumer-supplied descriptor
  * reaches hit-test, marquee, and bounds extraction alike.
  */
-import type { Bounds } from 'tools/builtin/select';
+import type { Bounds } from 'core/viewport/fitViewToBounds';
 import { transformPoint, pointInPath, strokeHitTest, type Affine } from '@weasel-js/geom';
 import type { PoseDescriptor } from 'interactions/actions/resize/geometry';
 import { framedBounds } from 'core/geometry/poseDescriptor';

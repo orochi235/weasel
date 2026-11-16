@@ -33,9 +33,6 @@
   "packages/core/src/domains/selection/overlay.ts": {
     "lines": 420
   },
-  "packages/core/src/tools/builtin/select/useSelectToolWith.ts": {
-    "longestFunction": 144
-  },
   "packages/d3/src/bind.ts": {
     "longestFunction": 139
   },

@@ -1,4 +1,4 @@
-import type { Bounds } from 'tools/builtin/select';
+import type { Bounds } from 'core/viewport/fitViewToBounds';
 import type { WorldPoint } from '@weasel-js/routing';
 import type { RegionPickView } from 'core/adapters/types';
 

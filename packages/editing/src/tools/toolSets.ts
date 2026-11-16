@@ -1,8 +1,8 @@
 import { KIT_SHAPE_KINDS, kitShapeKindsOf, VIEW_TOOLS, type BuiltinShapeToolId, type BuiltinToolId } from '@weasel-js/core';
 import { toolIdsOf, toolSet, type ToolSet } from '@weasel-js/routing';
 
-/** Every tool id the kit ships: core's own (`select`, `hand`) and the ones editing's presets offer. */
-export type KitToolId = BuiltinToolId | BuiltinShapeToolId;
+/** Every tool id the kit ships: core's own (the hand) and the ones editing's presets offer. */
+export type KitToolId = BuiltinToolId | 'select' | BuiltinShapeToolId;
 
 /** The selection tools: click and marquee, and the lasso. */
 export const SELECT_TOOLS: ToolSet<KitToolId> = toolSet('select', ['select', ...kitShapeKindsOf('select')], { label: 'Select' });

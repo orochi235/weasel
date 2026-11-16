@@ -8,23 +8,12 @@
 import { describe, it, expect } from 'vitest';
 import { render, act } from '@testing-library/react';
 import { useCallback, useMemo, useRef, useState } from 'react';
-import {
-  ActionsProvider,
-  ActiveToolContextProvider,
-  DepRegistryProvider,
-  useActionsRegistry,
-  useActiveToolContext,
-  useDepSource,
-  useGestureDispatcher,
-  useSelectTool,
-  type InsertDep,
-  type NodeId,
-  type Tool,
-} from '@weasel-js/core';
+import { ActionsProvider, ActiveToolContextProvider, DepRegistryProvider, useActionsRegistry, useActiveToolContext, useDepSource, useGestureDispatcher, type InsertDep, type NodeId, type Tool } from '@weasel-js/core';
 import { createCamera, createNodeAtPoint, screenBoxOf, type Viewport3d } from '@weasel-js/kernel3d';
 import { STACK, aabbOfSolid, createSolidScene, type SolidNode } from './scene3d';
 import { useGroupEntry3d, type GroupEntry3d } from './groupEntry3d';
 import { useBoxInsert } from './insert3d';
+import { useSelectTool } from '@weasel-js/editing';
 
 const VIEWPORT: Viewport3d = {
   camera: createCamera({ distance: 14, pitch: 0.45, yaw: 0.6, target: { x: 0, y: 0.5, z: 0 } }),

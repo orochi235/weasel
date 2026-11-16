@@ -14,7 +14,7 @@ import { useSceneAdapter } from '../useSceneAdapter';
 import type { SceneCanvasProps } from './props';
 import { useNodeAtPoint } from './useNodeAtPoint';
 import type { NodeKinds } from './useNodeKinds';
-import { useSceneSelectTool, type UseSceneSelectToolArgs } from './useSceneSelectTool';
+import { useScenePickers, type UseScenePickersArgs } from './useScenePickers';
 import { useOptionalViewRegistry } from '../viewRegistry';
 import { useViewLayerGate } from '../useViewLayerGate';
 
@@ -33,7 +33,7 @@ export function useScenePicking<TData, TLayer extends string, TPose>(args: {
   descriptor: PoseDescriptor<TPose>;
   props: PickingProps<TData, TLayer, TPose>;
   viewRef: RefObject<View>;
-  selectTool: UseSceneSelectToolArgs<TData, TLayer, TPose>['selectTool'];
+  selectTool: UseScenePickersArgs<TData, TLayer, TPose>['selectTool'];
   kinds: NodeKinds<TData>;
   /** The surface's handle, whose id frames `geometry.picking: 'pixels'` reads. */
   canvasApiRef: RefObject<CanvasExtensionApi | null>;
@@ -77,7 +77,7 @@ export function useScenePicking<TData, TLayer extends string, TPose>(args: {
 
   // Stable, so the pickers keyed on it are not rebuilt every render.
   const getView = useCallback(() => viewRef.current, [viewRef]);
-  const selectTool = useSceneSelectTool({
+  const selectTool = useScenePickers({
     scene,
     adapter,
     poseDescriptor: descriptor,

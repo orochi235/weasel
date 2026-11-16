@@ -1,6 +1,7 @@
 import type { FeaturePreset } from '@weasel-js/core';
 import { createEllipseTool } from '../tools/ellipse/useEllipseTool';
 import { createLassoTool } from '../tools/lasso/useLassoTool';
+import { createSelectToolWith, type SelectAdapter } from '../tools/select/useSelectToolWith';
 import { createLineTool } from '../tools/line/useLineTool';
 import { createPolygonTool } from '../tools/polygon/usePolygonTool';
 import { createRectTool } from '../tools/rect/useRectTool';
@@ -8,11 +9,23 @@ import { createStarTool } from '../tools/star/useStarTool';
 import { SELECT_TOOLS, SHAPE_TOOLS } from '../tools/toolSets';
 import type {} from '../tools/toolOptions';
 
-/** Offers the lasso by id, mounted where something names it: `selectToolsPreset`, `defaultTools={['lasso']}`. */
+/** Offers the select tool and the lasso by id, mounted where something names them: `selectToolsPreset`,
+ *  `defaultTools={['lasso']}`. The select tool picks with the canvas's pickers and its `selectTool` options. */
 export const selectToolKitPreset: FeaturePreset = {
   id: 'toolkit:select',
   label: 'Selection tools, offered',
-  build: (ctx) => ({ tools: { lasso: createLassoTool(ctx.toolOptions.lasso ?? {}) } }),
+  build: (ctx) => ({
+    tools: {
+      select: createSelectToolWith(() => ctx.adapter() as unknown as SelectAdapter<{ id: string }, unknown>, () => {
+        const { pickBest, extendClickLocked } = ctx.selectTool();
+        return {
+          pickEvery: ctx.pick.pressEvery, between: ctx.pick.between,
+          ...(pickBest ? { pickBest } : {}), ...(extendClickLocked ? { extendClickLocked } : {}),
+        };
+      }),
+      lasso: createLassoTool(ctx.toolOptions.lasso ?? {}),
+    },
+  }),
 };
 
 /** Offers the shape tools by id, mounted where something names them: `shapeToolsPreset`, `defaultTools={['rect']}`.

@@ -13,13 +13,8 @@ import { BASELINE_ACTION_IDS } from './presets/baseline';
 import { TOOL_DRIVEN_ACTION_IDS } from './presets/toolDriven';
 import { PRESET_OWNED_CHROME } from './presets/chrome';
 import { defaultVisibilityRules, never } from 'domains/chrome-caps';
-import {
-  SELECTION_MOVE_ID,
-  SELECTION_RESIZE_ID,
-  SELECTION_ROTATE_ID,
-} from 'tools/builtin/select/selectionContributions';
 import { MIDDLE_DRAG_PAN_ID } from 'tools/builtin/hand/dragPanContribution';
-import { BUILTIN_TOOL_IDS, KIT_STANDARD_ACTION_IDS, FEATURE_ACTION_IDS, FEATURE_NAMES, FEATURE_PRESETS, namedFeatures, type FeatureName } from '@weasel-js/editing';
+import { BUILTIN_TOOL_IDS, KIT_STANDARD_ACTION_IDS, FEATURE_ACTION_IDS, FEATURE_NAMES, FEATURE_PRESETS, namedFeatures, type FeatureName, SELECTION_MOVE_ID, SELECTION_RESIZE_ID, SELECTION_ROTATE_ID } from '@weasel-js/editing';
 
 // Names keep these tables readable; `namedFeatures` maps each to its object.
 type Entry = FeatureName | FeaturePreset;

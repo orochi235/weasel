@@ -41,6 +41,19 @@ export {
 export { createLassoTool, useLassoTool, LASSO_TOOL_OPTIONS, type UseLassoToolOptions } from './tools/lasso';
 export { useImageTool, type UseImageToolOptions } from './tools/image';
 export { useEyedropperTool, type UseEyedropperToolOptions } from './tools/eyedropper';
+export {
+  createSelectTool, createSelectToolWith, useSelectTool, useSelectToolWith, type SelectAdapter, type UseSelectToolOptions,
+} from './tools/select/useSelectTool';
+export {
+  selectionMoveContribution, selectionMoveBindings, selectionTransformContribution, selectionTransformBindings,
+  selectionResizeContribution, selectionResizeBindings, selectionRotateContribution, selectionRotateBindings,
+  areaSelectContribution, onBody, onEmptyCanvas, AREA_SELECT_ID, SELECTION_MOVE_ID, SELECTION_TRANSFORM_ID,
+  SELECTION_RESIZE_ID, SELECTION_ROTATE_ID, type SelectionMoveOptions, type SelectionTransformOptions,
+  type SelectionRotateOptions,
+} from './tools/select/selectionContributions';
+export {
+  createGroupEntryContribution, useGroupEntryContribution, GROUP_ENTRY_ID, GROUP_LEAVE_PRESS_BINDING,
+} from './tools/select/groupEntry';
 export { drawPreset, pickPreset, transformPreset } from './presets/composites';
 export { ingestPreset } from './presets/ingest';
 export {

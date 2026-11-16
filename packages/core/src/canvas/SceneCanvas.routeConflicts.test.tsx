@@ -18,9 +18,8 @@ import type { FeaturePreset } from './SceneCanvas/features';
 import { WeaselProvider } from '../WeaselProvider';
 import { useSelection } from 'core/selection/useSelection';
 import { useSceneAdapter } from './useSceneAdapter';
-import { useSelectTool } from '../tools/builtin/select/useSelectTool';
 import { useTools } from '../tools/overlayBinding';
-import { arrangePreset, drawPreset, editPreset, movePreset, pickPreset, transformPreset, BUILTIN_TOOL_IDS, type KitToolId } from '@weasel-js/editing';
+import { arrangePreset, drawPreset, editPreset, movePreset, pickPreset, transformPreset, BUILTIN_TOOL_IDS, type KitToolId, useSelectTool } from '@weasel-js/editing';
 
 beforeAll(() => {
   const proto = HTMLCanvasElement.prototype as unknown as {

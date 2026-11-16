@@ -12,12 +12,12 @@ import '../actions/depSchema'; // augments DepSchema with 'selection' and 'scene
 import { ActiveToolContextProvider } from '@weasel-js/routing/react';
 import { useGestureDispatcher } from '@weasel-js/routing/react';
 import { resizeAction } from '../actions/resize/action';
-import { SELECTION_TRANSFORM_ID, selectionTransformContribution } from '../../tools/builtin/select/selectionContributions';
 import { createScene } from 'core/scene/scene';
 import { asNodeId } from 'core/scene/types';
 import type { Scene } from 'core/scene/types';
 import type { SelectionApi } from 'core/selection/useSelection';
 import type { AffordanceHit } from '@weasel-js/routing';
+import { SELECTION_TRANSFORM_ID, selectionTransformContribution } from '@weasel-js/editing';
 
 type D = { kind: 'rect' };
 type L = 'main';

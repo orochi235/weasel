@@ -42,7 +42,6 @@ import { useDebugOverride } from '../debug/override';
 import { useSceneRedrawSources } from './SceneCanvas/useSceneRedrawSources';
 import { useSceneWorkerSurface } from './SceneCanvas/useSceneWorkerSurface';
 import { useScenePicking } from './SceneCanvas/useScenePicking';
-import { useGroupEntryContribution } from 'tools/builtin/select/groupEntry';
 import { useNodeKinds } from './SceneCanvas/useNodeKinds';
 import { usePresetTraits } from './SceneCanvas/usePresetTraits';
 import { useMagnificationCheck } from './SceneCanvas/useMagnificationCheck';
@@ -90,9 +89,8 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
   const picking = useScenePicking({ scene, selection, descriptor, props, viewRef, selectTool: selectToolWithDefaults, kinds, canvasApiRef });
   const { adapter, boundsOf, planeOfNode } = picking;
   const getNodeAtPointRef = useLatest(picking.getNodeAtPoint);
-  const groupEntry = useGroupEntryContribution({ pickHit: picking.pickBestIn, tree: adapter, boxOf: boundsOf });
   const tools = useSceneCanvasTools({
-    props: props as SceneCanvasToolProps, select: picking.selectTool, move: picking.moveOptions, enabled, groupEntry, traits,
+    props: props as SceneCanvasToolProps, move: picking.moveOptions, enabled, traits,
     build: { scene, adapter, poseDescriptor: descriptor, picking, selection, selectTool: selectToolWithDefaults, canvasApiRef },
   });
 

@@ -16,6 +16,10 @@
       "types": "./dist/index.d.ts",
       "import": "./dist/index.js"
     },
+    "./engine": {
+      "types": "./dist/engine.d.ts",
+      "import": "./dist/engine.js"
+    },
     "./package.json": "./package.json"
   },
   "author": "orochi235",
@@ -41,13 +45,15 @@
     "test": "node ../../scripts/package-test.mjs"
   },
   "dependencies": {
+    "@weasel-js/cursor": "1.19.1",
     "@weasel-js/gestures": "1.19.1",
     "@weasel-js/icons": "1.19.1",
     "@weasel-js/paint": "1.19.1",
     "@weasel-js/prefs-schema": "1.19.1",
     "@weasel-js/react": "1.19.1",
     "@weasel-js/registry": "1.19.1",
-    "@weasel-js/routing": "1.19.1"
+    "@weasel-js/routing": "1.19.1",
+    "@weasel-js/select": "1.19.1"
   },
   "peerDependencies": {
     "@weasel-js/core": "1.19.1",

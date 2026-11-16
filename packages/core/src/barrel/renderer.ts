@@ -192,7 +192,6 @@ export type {
 } from '../core/viewport/useViewAnimation';
 export type { UseHandToolOptions } from '../tools/builtin/hand/useHandTool';
 // UseWheelPanToolOptions and WheelPanInertiaConfig removed (useWheelPanTool dissolved).
-export type { SelectAdapter } from '../tools/builtin/select/useSelectTool';
 export type { UseSceneTrivialOptions } from '../core/scene/useScene';
 export type { DefaultLayer } from '../core/scene/trivialScene';
 export { shapePathOf } from '../canvas/nodeShapes/shapePainter';

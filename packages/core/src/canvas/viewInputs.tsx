@@ -13,7 +13,7 @@ import type { View } from 'core/viewport/view';
 import type { Bounds } from 'core/viewport/fitViewToBounds';
 import type { PlaneMap } from 'core/viewport/parallax';
 import type { ChromeCaps } from 'domains/chrome-caps/useChromeCaps';
-import type { PickView } from './SceneCanvas/useSceneSelectTool';
+import type { PickView } from './SceneCanvas/useScenePickers';
 import type { WorldPoint } from '@weasel-js/routing';
 
 export type { ViewRuleInputs } from 'domains/chrome-caps/useChromeCaps';

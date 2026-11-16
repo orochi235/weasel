@@ -6,7 +6,7 @@ import { DEFAULT_KEYMAP_UNBOUND } from '@weasel-js/routing';
 import type { KitSettings } from '@weasel-js/react';
 import { ANCHOR_HIT_BASE_PX, HANDLE_BASE_PX, ROTATION_HANDLE_BASE_PX } from 'core/device/targets';
 import { DEFAULT_VIEW_ANIMATION_MS } from 'core/viewport/useViewAnimation';
-import { DEFAULT_PICK_TOLERANCE_PX } from 'canvas/SceneCanvas/useSceneSelectTool';
+import { DEFAULT_PICK_TOLERANCE_PX } from 'canvas/SceneCanvas/useScenePickers';
 import { SEGMENT_HIT_PX } from 'interactions/actions/defaults/segmentUnder';
 import { DEFAULT_SNAP_PX } from 'domains/snap/session2d';
 import { coreKitSettingsSchema } from './kitSettingsSchema';

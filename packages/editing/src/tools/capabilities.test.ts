@@ -1,7 +1,8 @@
 import { describe, it, expect } from 'vitest';
 import { renderHook } from '@testing-library/react';
-import { useHandTool, useSelectTool } from '@weasel-js/core';
+import { useHandTool } from '@weasel-js/core';
 import * as editing from '../index';
+import { useSelectTool } from './select/useSelectTool';
 
 const builtins = { ...editing, useHandTool, useSelectTool };
 

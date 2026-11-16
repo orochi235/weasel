@@ -6,7 +6,7 @@ import {
   useSyncExternalStore,
   type ReactNode,
 } from 'react';
-import { CANVAS_CONTEXT_ATTRIBUTES, WeaselProvider, createPoseFeed, createSnapOutcomeStore, useSelectToolWith, selectionMoveContribution, useStandardDeps, useActionSet } from '@weasel-js/core/engine';
+import { CANVAS_CONTEXT_ATTRIBUTES, WeaselProvider, createPoseFeed, createSnapOutcomeStore, useStandardDeps, useActionSet } from '@weasel-js/core/engine';
 import { DEFAULT_ALLOWED_CAPABILITIES, buildRuleCtx, createDispatcher, type Dispatcher, type NodeId, type Tool, type WorldPoint } from '@weasel-js/routing';
 import { useAction, useActionsRegistry, useActiveToolContext, useDepSource, useGestureDispatcher, useTools } from '@weasel-js/routing/react';
 import { ToolPalette } from '@weasel-js/ui/components/ToolPalette';
@@ -50,7 +50,7 @@ import { useBoxTool } from './tools3d';
 import { useGroupEntry3d, type GroupEntry3d } from './groupEntry3d';
 import { useBoxInsert } from './insert3d';
 import { useSolidSelection } from './selection3d';
-import { ENGINE_STANDARD_ACTIONS } from '@weasel-js/editing';
+import { useSelectToolWith, selectionMoveContribution, ENGINE_STANDARD_ACTIONS } from '@weasel-js/editing/engine';
 
 interface SolidState {
   /** Kept only so labkit has something to persist; the scene itself is a ref. */

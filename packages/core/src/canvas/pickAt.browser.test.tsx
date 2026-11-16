@@ -14,7 +14,7 @@ import { registerProgram, type DrawCommand } from '@weasel-js/renderer';
 import type { RectPose } from 'core/scene/composePose';
 import { renderHook } from '@testing-library/react';
 import { useSceneAdapter } from '@weasel-js/core';
-import { useSceneSelectTool } from '@weasel-js/core/testing/canvas';
+import { useScenePickers } from '@weasel-js/core/testing/canvas';
 
 /** Opaque inside the circle its bounds hold, transparent outside it. */
 const DISC = registerProgram('pick-at-browser-disc', { glsl: { frag: `#version 300 es
@@ -88,7 +88,7 @@ describe("geometry.picking: 'pixels' on a real canvas", () => {
       scene, width: 100, height: 100, dpr: 1, ref: api, layers: { scene: { drawOne } },
     } as never)));
     await settle();
-    const { result } = renderHook(() => useSceneSelectTool({
+    const { result } = renderHook(() => useScenePickers({
       scene: scene as never, adapter: useSceneAdapter(scene) as never,
       geometry: { picking: 'pixels', pickTolerancePx: 0 },
       getView: () => ({ x: 0, y: 0, scale: { x: 1, y: 1 } }),

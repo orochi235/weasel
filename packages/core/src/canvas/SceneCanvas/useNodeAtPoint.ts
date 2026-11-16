@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
 import { makeGetNodeAtPoint, type NodeAtPointHit } from '../getNodeAtPoint';
-import type { PickView } from './useSceneSelectTool';
+import type { PickView } from './useScenePickers';
 import type { WorldPoint } from '@weasel-js/routing';
 
 export type NodeAtPoint = (world: WorldPoint, view?: PickView | null) => NodeAtPointHit | null;

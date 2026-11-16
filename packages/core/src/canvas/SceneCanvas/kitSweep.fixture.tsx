@@ -146,11 +146,11 @@ function coreFactories(s: Sweep): void {
   ])), 'tool.activate');
   s.value(createToolResetToDefaultAction(() => null), 'tool.resetToDefault');
   s.value(routing.createToolOffhandAction(routing.buildToolOffhandBindings([{ toolId: 'hand', key: ' ' }])), 'tool.offhand');
-  s.value(core.selectionMoveContribution({ reparentOnDrop: 'top' }), 'selectionMoveContribution');
-  s.value(core.selectionTransformContribution(), 'selectionTransformContribution');
-  s.value(core.selectionResizeContribution(), 'selectionResizeContribution');
-  s.value(core.selectionRotateContribution(), 'selectionRotateContribution');
-  s.value(core.areaSelectContribution(), 'areaSelectContribution');
+  s.value(editing.selectionMoveContribution({ reparentOnDrop: 'top' }), 'selectionMoveContribution');
+  s.value(editing.selectionTransformContribution(), 'selectionTransformContribution');
+  s.value(editing.selectionResizeContribution(), 'selectionResizeContribution');
+  s.value(editing.selectionRotateContribution(), 'selectionRotateContribution');
+  s.value(editing.areaSelectContribution(), 'areaSelectContribution');
   s.value(core.dragPanContribution(), 'dragPanContribution');
   s.value(core.createPresentationContribution(), 'createPresentationContribution');
   const modes = createModeRegistry({

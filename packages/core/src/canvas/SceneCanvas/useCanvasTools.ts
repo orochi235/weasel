@@ -57,10 +57,6 @@ export function useEnabledFeatures(
  * `defaultTools` name, patched by a `tools` record.
  */
 export function useCanvasTools(args: {
-  /** The canvas's select tool, which is built from its scene and pickers. */
-  select: Tool;
-  /** The canvas's group entry and leave, or null where the select preset is off. */
-  groupEntry: Contribution | null;
   enabled: EnabledPresets;
   tools: Props['tools'];
   defaultTools: Props['defaultTools'];
@@ -87,12 +83,11 @@ export function useCanvasTools(args: {
   /** The surface's own always-on entries a takeover's ambient leaves out: they apply under it too. */
   surface: readonly SurfaceContribution[];
 } {
-  const { select, enabled, tools: toolsProp, defaultTools, inertia, defaultActiveTool, modes, onToolsCreated } = args;
+  const { enabled, tools: toolsProp, defaultTools, inertia, defaultActiveTool, modes, onToolsCreated } = args;
   const ambient = useWithProvidedAmbient(args.ambient);
 
   const takeover = toolsProp && isToolsApi(toolsProp) ? toolsProp : null;
   const registry = useBuiltinTools({
-    select,
     enabled,
     defaultTools,
     patch: toolsProp && !isToolsApi(toolsProp) ? toolsProp : null,
@@ -106,14 +101,13 @@ export function useCanvasTools(args: {
   const pressFeedback = feedbackOpt === true ? defaultPressFeedback : feedbackOpt || null;
   const defaultMarkerDrag = useMemo(() => createViewMarkerContribution(), []);
   const markerDrag = args.actions === null ? null : defaultMarkerDrag;
-  const groupEntry = args.actions === null ? null : args.groupEntry;
   const builtContributions = args.built?.contributions;
   const mergedAmbient = useMemo(
     () => [
-      ...presetContributions(enabled), ...(builtContributions ?? []), ...(groupEntry ? [groupEntry] : []),
+      ...presetContributions(enabled), ...(builtContributions ?? []),
       ...(ambient ?? []), ...(pressFeedback ? [pressFeedback] : []), ...(markerDrag ? [markerDrag] : []),
     ],
-    [enabled, builtContributions, groupEntry, ambient, pressFeedback, markerDrag],
+    [enabled, builtContributions, ambient, pressFeedback, markerDrag],
   );
 
   const internal = useTools({

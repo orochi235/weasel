@@ -1,4 +1,4 @@
-import type { PickView } from './SceneCanvas/useSceneSelectTool';
+import type { PickView } from './SceneCanvas/useScenePickers';
 import type { WorldPoint } from '@weasel-js/routing';
 
 /** The hit record returned by a `getNodeAtPoint` function. */

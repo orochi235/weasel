@@ -69,7 +69,7 @@ export type { SceneDoc, SceneDocValues, SerializedDoc } from '../core/scene/docV
 export { createEditingSession, isEditingSession } from '../core/scene/editingSession';
 export type { EditingSession } from '../core/scene/editingSession';
 export type { SceneEditPass, SceneEditPassOptions, SceneEditPasses, SceneEditSummary } from '../core/scene/editPass';
-export { definesFrame, derivedDepOf, derivedPose, documentDepOf, documentPose, effectivePose } from '../core/scene/effectivePose';
+export { definesFrame, derivedDepOf, derivedPose, documentDepOf, documentPose, effectivePose, isEnvelope } from '../core/scene/effectivePose';
 export type { PoseSource, PosedNode } from '../core/scene/effectivePose';
 export { SCENE_HISTORY_FORM } from '../core/scene/historyForm';
 export type { SceneHistoryPersistence, SceneReplay, SerializedSceneHistory } from '../core/scene/historyForm';
@@ -173,6 +173,7 @@ export type { ClipboardDep, SliceDep } from '../interactions/actions/editDeps';
 export type { ResizePolicy, ViewApi } from '../interactions/actions/engineDeps';
 export { PATH_GEOMETRY_PROJECTION, geometryDataOp } from '../interactions/actions/geometryProjection';
 export type { GeometryProjection, PoseChange } from '../interactions/actions/geometryProjection';
+export { gestureLifecycleParams } from '../interactions/actions/gestureLifecycle';
 export type { GestureLifecycleOptions } from '../interactions/actions/gestureLifecycle';
 export { insertAction } from '../interactions/actions/insert/action';
 export type { InsertDep, InsertEnds, InsertExtras, InsertIntoDep, InsertLive, PathSymmetryDep } from '../interactions/actions/insertDeps';
@@ -200,8 +201,6 @@ export type { ActionBehavior, AreaSelectOverlay, BehaviorEnd, BehaviorResult, Bo
 export type { ContainerBounds, DropRegion, DropTarget, LayoutArrival, LayoutChild, LayoutContainer, LayoutDragged, LayoutDropTargetMode, LayoutSnap, LayoutStrategy, ReflowGlideOptions, ReflowTransition } from '../layout/types';
 export { pressTarget } from '../tools/builtin/pressTarget';
 export type { PressTargetTree } from '../tools/builtin/pressTarget';
-export { useGroupEntryContribution } from '../tools/builtin/select/groupEntry';
-export { selectionMoveContribution } from '../tools/builtin/select/selectionContributions';
+export { rangeAmong } from '../tools/builtin/select/selectRange';
 export type { RangeBetween, SelectRangeDep } from '../tools/builtin/select/selectRange';
-export { useSelectToolWith } from '../tools/builtin/select/useSelectToolWith';
 export { WeaselProvider } from '../WeaselProvider';

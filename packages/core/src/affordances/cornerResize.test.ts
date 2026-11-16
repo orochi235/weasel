@@ -6,7 +6,7 @@ import type { ChromeState } from 'core/selection/chromeState';
 import type { View } from 'core/viewport/view';
 import type { CursorGlyphSpec } from '@weasel-js/cursor';
 import { asNodeId } from 'core/scene/types';
-import { MULTI_RESIZE_TARGET_ID } from 'tools/builtin/select';
+import { MULTI_RESIZE_TARGET_ID } from 'core/selection/selectionTarget';
 
 const NO_MOD = { alt: false, shift: false, meta: false, ctrl: false };
 const VIEW = { x: 0, y: 0, scale: { x: 1, y: 1 } };

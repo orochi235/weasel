@@ -1,4 +1,3 @@
-import type { Contribution, Tool } from '../../tools/overlayBinding';
 import { usePresetBuilds, type PresetBuildSource } from './presetBuild';
 import type { EnabledPresets, FeatureBindingOptions } from './features';
 import { BASELINE_ACTIONS } from './presets/baseline';
@@ -20,22 +19,17 @@ export type SceneCanvasToolProps = Pick<
  *  presets bring. */
 export function useSceneCanvasTools(args: {
   props: SceneCanvasToolProps;
-  select: Tool;
   /** The select tool's move options, which the selection's `move` binding takes. */
   move: unknown;
   enabled: EnabledPresets;
-  /** Entering and leaving groups, installed with the `select` preset. */
-  groupEntry: Contribution;
   /** The presets' node traits, whose `insertBuilds` says whether an insert of a kind builds a node on this canvas. */
   traits: { insertBuilds?: (kind: string) => boolean };
   /** What the enabled presets' `build`s are handed, less `toolOptions`, which is the prop's. */
   build: Omit<PresetBuildSource, 'toolOptions'>;
 }) {
-  const { props, select, enabled } = args;
+  const { props, enabled } = args;
   const built = usePresetBuilds(enabled.builds, { ...args.build, toolOptions: props.toolOptions });
   const { tools, internal, takeover, surface } = useCanvasTools({
-    select,
-    groupEntry: enabled.has('select') ? args.groupEntry : null,
     enabled,
     tools: props.tools,
     defaultTools: props.defaultTools,

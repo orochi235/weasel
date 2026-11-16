@@ -1,10 +1,6 @@
 import { cloneAction, moveAction, resizeAction, rotateAction, PRESET_CHROME } from '@weasel-js/core';
-import {
-  selectionMoveContribution,
-  selectionResizeContribution,
-  selectionRotateContribution,
-} from '@weasel-js/core';
 import type { FeaturePreset } from '@weasel-js/core';
+import { selectionMoveContribution, selectionResizeContribution, selectionRotateContribution } from '../tools/select/selectionContributions';
 
 /** The selection outline, drawn only while this is on. */
 export const outlinePreset: FeaturePreset = {

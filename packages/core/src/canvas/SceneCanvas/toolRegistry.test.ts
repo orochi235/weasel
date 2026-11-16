@@ -9,7 +9,7 @@ import { toolSet, withoutTools } from '@weasel-js/routing';
 const tool = (id: string): Tool => ({ id, eligibility: { focus: true } }) as Tool;
 const builtins = Object.fromEntries(BUILTIN_TOOL_IDS.map((id) => [id, tool(id)])) as BuiltinTools;
 /** What a package's `build` offers by id, in its order. */
-const OFFERED_IDS = ['lasso', 'rect', 'ellipse', 'star'];
+const OFFERED_IDS = ['select', 'lasso', 'rect', 'ellipse', 'star'];
 const offered = Object.fromEntries(OFFERED_IDS.map((id) => [id, tool(id)]));
 const SHAPES = toolSet('shape', ['rect', 'ellipse', 'star']);
 const selectPreset: FeaturePreset = { id: 'select', tools: ['select', 'lasso'] };
@@ -58,10 +58,10 @@ describe('resolveToolRegistry', () => {
   });
 
   it('lets an offered tool stand in for one of core\'s own', () => {
-    const select = tool('select');
-    const registry = resolveToolRegistry({ ...args, offered: { ...offered, select }, enabled: resolveFeatures([selectPreset]) });
-    expect(Object.keys(registry)).toEqual(['select', 'lasso']);
-    expect(registry.select).toBe(select);
+    const hand = tool('hand');
+    const registry = resolveToolRegistry({ ...args, offered: { ...offered, hand }, enabled: resolveFeatures([viewPreset]) });
+    expect(Object.keys(registry)).toEqual(['hand']);
+    expect(registry.hand).toBe(hand);
   });
 
   it('brings the tools a preset names and the hand with view', () => {
@@ -72,8 +72,8 @@ describe('resolveToolRegistry', () => {
   it("mounts a preset's own tool after the offered ones, and a patch's false drops it", () => {
     const own = tool('own');
     const enabled = resolveFeatures([selectPreset, { id: 'mine', tools: ['hand', own] }]);
-    expect(Object.keys(resolveToolRegistry({ ...args, enabled }))).toEqual(['select', 'hand', 'lasso', 'own']);
-    expect(Object.keys(resolveToolRegistry({ ...args, enabled, patch: { own: false } }))).toEqual(['select', 'hand', 'lasso']);
+    expect(Object.keys(resolveToolRegistry({ ...args, enabled }))).toEqual(['hand', 'select', 'lasso', 'own']);
+    expect(Object.keys(resolveToolRegistry({ ...args, enabled, patch: { own: false } }))).toEqual(['hand', 'select', 'lasso']);
   });
 
   it('drops a requested tool the patch sets to false', () => {
@@ -97,7 +97,7 @@ describe('resolveToolRegistry', () => {
     const mine = tool('own');
     const enabled = resolveFeatures([selectPreset, viewPreset, { id: 'mine', tools: [own] }]);
     const registry = resolveToolRegistry({ ...args, defaultTools: ['rect'], enabled, patch: { hand, own: mine }, dev: true });
-    expect(Object.keys(registry)).toEqual(['select', 'hand', 'lasso', 'rect', 'own']);
+    expect(Object.keys(registry)).toEqual(['hand', 'select', 'lasso', 'rect', 'own']);
     expect(registry.hand).toBe(hand);
     expect(registry.own).toBe(mine);
     expect(warn).not.toHaveBeenCalled();

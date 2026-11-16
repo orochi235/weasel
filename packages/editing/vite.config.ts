@@ -25,7 +25,10 @@ const external = (id: string) =>
 export default defineConfig({
   plugins: [react(), weaselIcons.vite({ mode: 'library' })],
   build: {
-    lib: { entry: { index: resolve(import.meta.dirname, 'src/index.ts') }, formats: ['es'] },
+    lib: {
+      entry: { index: resolve(import.meta.dirname, 'src/index.ts'), engine: resolve(import.meta.dirname, 'src/engine.ts') },
+      formats: ['es'],
+    },
     target: 'es2022',
     minify: false,
     sourcemap: true,
