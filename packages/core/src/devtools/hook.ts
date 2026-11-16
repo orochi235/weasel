@@ -5,6 +5,7 @@
 import { createEmitter } from '@weasel-js/registry';
 import { VERSION } from '../version';
 import { DEVTOOLS_PROTOCOL, type DevtoolsRootInfo, type PanelMessage } from './protocol';
+import { isPanelMessage } from './messageShape';
 import type { DevtoolsRoot } from './root';
 import type { DevtoolsSchedule } from './notices';
 import { openSession, type SessionHost } from './session';
@@ -75,9 +76,9 @@ function serveWindow(hook: WeaselDevtoolsHook): void {
   const transport = createWindowPageTransport();
   let close: (() => void) | null = null;
   window.addEventListener('message', (e) => {
-    if (!isDevtoolsEnvelope(e.data) || e.data.side !== 'panel' || e.data.message.type !== 'yo') return;
+    if (!isDevtoolsEnvelope(e.data) || e.data.side !== 'panel' || !isPanelMessage(e.data.message) || e.data.message.type !== 'yo') return;
     close?.();
-    close = hook.connect(transport, e.data.message as PanelMessage);
+    close = hook.connect(transport, e.data.message);
   });
 }
 

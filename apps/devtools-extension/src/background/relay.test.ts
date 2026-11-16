@@ -201,3 +201,31 @@ describe('the background relay', () => {
     expect(content.received).toEqual([]);
   });
 });
+
+describe('a malformed message', () => {
+  it.each([
+    null,
+    { type: 'sup', protocol: P, kitVersion: '1', roots: 5 },
+    { type: 'root-added', protocol: P },
+    { type: 'result', protocol: P },
+  ])('from a page, %j, is dropped', (m) => {
+    const { page, panel } = setup();
+    const content = page(1, 2);
+    const devtools = panel(1);
+    devtools.postMessage(yo);
+    expect(() => content.postMessage(m)).not.toThrow();
+    expect(devtools.received).toEqual([]);
+  });
+
+  it.each([
+    null,
+    { type: 'get-node', protocol: P, requestId: 1 },
+    { type: 'select', protocol: P, requestId: 1, rootId: 'r', ids: 'r' },
+  ])('from a panel, %j, is dropped', (m) => {
+    const { page, panel } = setup();
+    const content = page(1);
+    const devtools = panel(1);
+    expect(() => devtools.postMessage(m)).not.toThrow();
+    expect(content.received).toEqual([]);
+  });
+});

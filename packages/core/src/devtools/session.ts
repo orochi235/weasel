@@ -6,8 +6,9 @@ import { VERSION } from '../version';
 import { answer } from './handlers';
 import { createNotices, type DevtoolsSchedule } from './notices';
 import {
-  DEVTOOLS_PROTOCOL, type DevtoolsOverlays, type DevtoolsResult, type PageMessage, type PanelMessage,
+  DEVTOOLS_PROTOCOL, type DevtoolsOverlays, type DevtoolsResult, type PageMessage,
 } from './protocol';
+import { isPanelMessage } from './messageShape';
 import type { DevtoolsRoot } from './root';
 import type { PageTransport } from './transport';
 
@@ -23,7 +24,8 @@ export interface SessionHost {
 }
 
 export interface DevtoolsSession {
-  receive(message: PanelMessage): void;
+  /** Answer `message`, which may be anything posted to the page: one that is not a panel's message is refused. */
+  receive(message: unknown): void;
   close(): void;
 }
 
@@ -85,7 +87,12 @@ export function openSession(host: SessionHost, transport: PageTransport): Devtoo
 
   return {
     receive(message) {
-      if (closed) return;
+      if (closed || typeof message !== 'object' || message === null) return;
+      if (!isPanelMessage(message)) {
+        const { requestId, type } = message as { requestId?: unknown; type?: unknown };
+        fail(Number.isSafeInteger(requestId) ? requestId as number : null, `not a devtools request: ${JSON.stringify(String(type))}`);
+        return;
+      }
       const requestId = 'requestId' in message ? message.requestId : null;
       if (message.protocol !== DEVTOOLS_PROTOCOL) {
         fail(requestId, `protocol mismatch: the page speaks ${DEVTOOLS_PROTOCOL}, the panel ${String(message.protocol)}`);

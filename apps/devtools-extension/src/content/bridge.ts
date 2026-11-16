@@ -3,7 +3,7 @@
  * between the page's window and a port to the background. It reads only
  * `message` events, never page objects.
  */
-import type { PanelMessage } from '@weasel-js/core/devtools-protocol';
+import { isPageMessage, isPanelMessage } from '@weasel-js/core/devtools-protocol';
 import type { PortLike } from '../browserApi';
 import { envelopeFrom, wrap } from '../envelope';
 
@@ -12,11 +12,11 @@ export function createContentBridge(win: Window, port: PortLike, onClose?: () =>
   let protocol: number | null = null;
 
   const fromPage = (e: MessageEvent): void => {
-    if (e.source !== win || !envelopeFrom(e.data, 'page')) return;
+    if (e.source !== win || !envelopeFrom(e.data, 'page') || !isPageMessage(e.data.message)) return;
     port.postMessage(e.data.message);
   };
-  const fromPanel = (m: unknown): void => {
-    const message = m as PanelMessage;
+  const fromPanel = (message: unknown): void => {
+    if (!isPanelMessage(message)) return;
     if (message.type === 'yo') protocol = message.protocol;
     else if (message.type === 'bye') protocol = null;
     win.postMessage(wrap('panel', message), '*');

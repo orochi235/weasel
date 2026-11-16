@@ -4,9 +4,9 @@
  * its change notices. The views, the extension and tests all drive this.
  */
 import {
-  DEVTOOLS_PROTOCOL, type DevtoolsArea, type DevtoolsHistorySlice, type DevtoolsNodeDetail, type DevtoolsNodeSummary,
+  DEVTOOLS_PROTOCOL, isPageMessage, type DevtoolsArea, type DevtoolsHistorySlice, type DevtoolsNodeDetail, type DevtoolsNodeSummary,
   type DevtoolsRegistry, type DevtoolsRequest, type DevtoolsRootInfo, type DevtoolsRootState, type DevtoolsTraceSlice,
-  type PageMessage, type PanelTransport, type SerializedValue,
+  type PanelTransport, type SerializedValue,
 } from '@weasel-js/core/devtools-protocol';
 import { createEmitter } from '@weasel-js/registry';
 
@@ -81,8 +81,8 @@ export function createDevtoolsClient(transport: PanelTransport): DevtoolsClient 
     }
   };
 
-  const receive = (m: PageMessage): void => {
-    if (state.status === 'closed') return;
+  const receive = (m: unknown): void => {
+    if (state.status === 'closed' || !isPageMessage(m)) return;
     switch (m.type) {
       case 'sup':
         set({ status: 'connected', kitVersion: m.kitVersion, roots: m.roots, error: null });
