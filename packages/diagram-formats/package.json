@@ -56,5 +56,8 @@
   "publishConfig": {
     "access": "public",
     "provenance": true
+  },
+  "devDependencies": {
+    "@weasel-js/text-tools": "1.19.1"
   }
 }
