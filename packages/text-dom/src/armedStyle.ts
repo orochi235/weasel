@@ -32,7 +32,7 @@ export function armPatch(caret: RunStylePatch, armed: RunStylePatch, patch: RunS
     const flag = FLAGS.has(key);
     // `null` is a value here (no fill), not the absence of one.
     if (flag ? (from[key] ?? false) === (target[key] ?? false) : JSON.stringify(from[key]) === JSON.stringify(target[key])) continue;
-    out[key] = key in target ? target[key] : (flag ? false : undefined);
+    out[key] = Object.hasOwn(target, key) ? target[key] : (flag ? false : undefined);
   }
   return out as RunStylePatch;
 }

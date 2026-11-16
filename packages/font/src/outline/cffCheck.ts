@@ -38,7 +38,7 @@ export function checkCff(cff: DataView): void {
     const operands = top.get(op);
     if (operands === undefined) continue;
     if (operands.length !== count || !operands.every(Number.isInteger)) throw bad(`Top DICT operator ${op} holds ${operands.join(' ')}`);
-    if (op in PREDEFINED && operands[0]! < PREDEFINED[op]!) continue;
+    if (Object.hasOwn(PREDEFINED, op) && operands[0]! < PREDEFINED[op]!) continue;
     if (op === 18) checkPrivate(cff, operands[1]!, operands[0]!);
     else if (operands[0]! < 0 || operands[0]! >= cff.byteLength) throw bad(`Top DICT operator ${op} points past the table`);
     if (op === 17 || op === 1236) readIndex(cff, operands[0]!, op === 17 ? 'CharStrings INDEX' : 'FDArray INDEX');

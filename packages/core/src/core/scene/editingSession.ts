@@ -56,7 +56,7 @@ export function documentScene(scene: object): object {
 function wrapped<T extends object>(target: T, run: <R>(fn: () => R) => R, own: PropertyDescriptorMap = {}): T {
   const methods: PropertyDescriptorMap = {};
   for (const key of Object.getOwnPropertyNames(target)) {
-    if (key in own) continue;
+    if (Object.hasOwn(own, key)) continue;
     const held = Object.getOwnPropertyDescriptor(target, key);
     const fn = held?.value as unknown;
     if (typeof fn !== 'function') continue;

@@ -56,7 +56,7 @@ export function createFrameWriter(): FrameWriter {
   /** The alpha last sent per node, holding only those `alphaFor` dims. */
   const alphas = new Map<string, number>();
   const changed = (key: keyof typeof sent, value: unknown): boolean => {
-    if (key in sent && sent[key] === value) return false;
+    if (Object.hasOwn(sent, key) && sent[key] === value) return false;
     sent[key] = value;
     return true;
   };

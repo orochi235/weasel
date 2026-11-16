@@ -74,7 +74,7 @@ async function open(options: NodeRasterHostOptions): Promise<Open> {
     const opened: Open = { browser, context, page, crashed: false };
     page.on('crash', () => { opened.crashed = true; });
     await page.addScriptTag({ content: script });
-    const ready = await page.evaluate((key) => key in globalThis, PAGE_GLOBAL);
+    const ready = await page.evaluate((key) => Object.hasOwn(globalThis, key), PAGE_GLOBAL);
     if (!ready) throw new Error('node raster host: the page script ran but never called `serveHeadlessPage`');
     return opened;
   } catch (err) {

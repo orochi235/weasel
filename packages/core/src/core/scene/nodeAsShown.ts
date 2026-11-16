@@ -38,7 +38,7 @@ export function nodeAsShown<TNode extends { id: NodeId; data?: unknown }>(
   overrides: ShownDataSource,
   node: TNode,
 ): TNode {
-  if (SHOWN in node) return node;
+  if (Object.hasOwn(node, SHOWN)) return node;
   const data = overrides.read(node.id)?.data;
   if (data === undefined) return node;
   const held = shownCopies.get(node);

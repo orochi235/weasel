@@ -13,6 +13,6 @@ export function useTrialSelection(axes: AxisDefs, globals: Globals): Selection {
   const osMode = useResolvedColorMode(isColorModePreference(mode) ? mode : 'auto');
   return useMemo(() => {
     const selection = selectionFor(axes, globals);
-    return axes.mode && osMode in axes.mode.values ? { mode: osMode, ...selection } : selection;
+    return axes.mode && Object.hasOwn(axes.mode.values, osMode) ? { mode: osMode, ...selection } : selection;
   }, [axes, globals, osMode]);
 }

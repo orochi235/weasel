@@ -47,7 +47,7 @@ export function useHostConditions(
   useLayoutEffect(() => {
     const overrides = overridesRef.current;
     if (!overrides) return;
-    for (const name of Object.keys(applied.current)) if (!(name in persisted)) overrides.set(name, null);
+    for (const name of Object.keys(applied.current)) if (!Object.hasOwn(persisted, name)) overrides.set(name, null);
     for (const [name, value] of Object.entries(persisted)) overrides.set(name, value);
     applied.current = { ...persisted };
   }, [host, hostId, persisted]);

@@ -48,7 +48,7 @@ export function booleanGroupOps(
   if (shift.dx !== 0 || shift.dy !== 0) for (const [id, p] of worlds) worlds.set(id, translate!(p, shift.dx, shift.dy));
   const index = slotAbove(scene, parent, front.id);
   const own = (front.data ?? {}) as Record<string, unknown>;
-  const data = { boolean: op, ...Object.fromEntries(PAINT_KEYS.filter((k) => k in own).map((k) => [k, own[k]])) };
+  const data = { boolean: op, ...Object.fromEntries(PAINT_KEYS.filter((k) => Object.hasOwn(own, k)).map((k) => [k, own[k]])) };
   const page = parent === null ? null : pageOfNode(scene, parent);
   const followers = followerMoves(scene, new Map(nodes.map((n) => [n.id as string, page])));
   const locals = new Map<NodeId, unknown>();

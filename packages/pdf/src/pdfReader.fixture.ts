@@ -74,7 +74,7 @@ export class Lexer {
       const c = this.b[this.at++]!;
       if (c === 0x5c) {
         const e = String.fromCharCode(this.b[this.at++]!);
-        if (e in ESC) out.push(ESC[e]!);
+        if (Object.hasOwn(ESC, e)) out.push(ESC[e]!);
         else if (/[0-7]/.test(e)) {
           let oct = e;
           while (oct.length < 3 && /[0-7]/.test(String.fromCharCode(this.b[this.at]!))) oct += String.fromCharCode(this.b[this.at++]!);

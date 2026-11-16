@@ -43,7 +43,7 @@ const end = (id: string) => `/* END GENERATED stance rules: ${id} */`;
 const stanceVar = (name: string, fallback: string) => `var(${`--wzl-stance-${name}`}, ${fallback})`;
 
 const slotDecls = (surface: StanceSurface, pairs: [string, string][]) =>
-  pairs.filter(([name]) => name in surface.base).map(([name, value]) => `  --_s-${name}: ${value};`);
+  pairs.filter(([name]) => Object.hasOwn(surface.base, name)).map(([name, value]) => `  --_s-${name}: ${value};`);
 
 function emphasisRules(surface: StanceSurface): string[] {
   return Object.entries(EMPHASIS_SLOTS).flatMap(([level, slots]) => {
@@ -67,7 +67,7 @@ function gradeRules(surface: StanceSurface): string[] {
 }
 
 export function stanceCss(surface: StanceSurface): string {
-  const slots = STANCE_SLOTS.filter((slot) => slot.name in surface.base);
+  const slots = STANCE_SLOTS.filter((slot) => Object.hasOwn(surface.base, slot.name));
   const block = (selector: string, decl: (name: string) => string) =>
     `${selector} {\n${slots.map(({ name }) => `  --_s-${name}: ${decl(name)};`).join('\n')}\n}`;
 

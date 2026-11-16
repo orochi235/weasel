@@ -66,7 +66,7 @@ export function nestedBoxOf(
   id: string,
   inset: number,
 ): Rect {
-  const rs = groups[id]!.map((m) => (m in groups ? nestedBoxOf(at, groups, m, inset) : at.get(m)!));
+  const rs = groups[id]!.map((m) => (Object.hasOwn(groups, m) ? nestedBoxOf(at, groups, m, inset) : at.get(m)!));
   const x = Math.min(...rs.map((r) => r.x)) - inset;
   const y = Math.min(...rs.map((r) => r.y)) - inset;
   return {

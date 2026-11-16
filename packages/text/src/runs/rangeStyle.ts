@@ -206,7 +206,7 @@ function patchRun(run: StyledRun, patch: RunStylePatch): StyledRun {
   const superseded = supersededKey(patch);
   if (superseded !== undefined) delete next[superseded];
   for (const key of STYLE_KEYS) {
-    if (!(key in patch)) continue;
+    if (!Object.hasOwn(patch, key)) continue;
     const value = patch[key];
     // `false` is not a storable state — it means "no run-level override",
     // same as `undefined`. Deleting keeps one canonical form.
