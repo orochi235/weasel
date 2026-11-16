@@ -88,7 +88,7 @@ describe('weaselAliases', () => {
 
   it('resolves every weasel specifier the repo imports to a file that exists', () => {
     // Only a build produces these.
-    const built = new Set(['@weasel-js/ui/style.css', '@weasel-js/core/style.css', '@weasel-js/devtools/style.css', '@weasel-js/prefs-editor/style.css', '@weasel-js/measure/style.css']);
+    const built = new Set(['@weasel-js/ui/style.css', '@weasel-js/core/style.css', '@weasel-js/devtools/style.css', '@weasel-js/prefs-editor/style.css', '@weasel-js/measure/style.css', '@weasel-js/ui-canvas/style.css']);
     const broken: string[] = [];
     for (const [specifier, file] of importedSpecifiers()) {
       if (built.has(specifier)) continue;

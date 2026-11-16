@@ -10,6 +10,7 @@ const tint = (swatch: string): Library['tint'] => ({ ref: `--forge-library-${swa
  */
 export const LIBRARIES: readonly Library[] = [
   { path: '/packages/ui/', label: 'ui', tint: tint('amber') },
+  { path: '/packages/ui-canvas/', label: 'ui-canvas' },
   { path: '/packages/labkit/', label: 'labkit', tint: tint('teal') },
   { path: '/packages/forge/', label: 'forge', tint: tint('blue') },
   { path: '/packages/diagram/', label: 'diagram', tint: tint('teal') },
