@@ -1,6 +1,6 @@
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { act, cleanup, fireEvent, screen, within } from '@testing-library/react';
-import { ActionsProvider, DepRegistryProvider, SceneCanvas, createScene, useLatest, drawPreset } from '@weasel-js/core';
+import { ActionsProvider, DepRegistryProvider, SceneCanvas, createScene, useLatest } from '@weasel-js/core';
 import { MenuBar } from '@weasel-js/ui/components/MenuBar';
 import { useMemo } from 'react';
 import { appCommandsContribution, type AppCommands } from '../appCommands';
@@ -11,6 +11,7 @@ import { renderWithIcons } from '../testIcons';
 import { CHROME_ITEMS, ShowChrome } from './chrome';
 import { StripDock } from './StripSurfaces';
 import { useChromeCommands } from './surfaceState';
+import { drawPreset } from '@weasel-js/editing';
 
 beforeAll(() => {
   const proto = HTMLCanvasElement.prototype as unknown as { getContext: (...args: unknown[]) => unknown };

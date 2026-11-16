@@ -21,16 +21,13 @@ import { rotateAction } from './rotate/action';
 import { areaSelectAction } from './defaults/areaSelect';
 import { cloneAction } from './clone/action';
 import type { ImmediateInvoker } from '@weasel-js/routing';
-import { alignCenterXAction, alignLeftAction } from './align/action';
-import { distributeHorizontalAction } from './distribute/action';
-import { reorderForwardAction } from './defaults/reorder';
 import { nudgeRightAction } from './defaults/nudge';
-import { flipAction } from './flip/action';
 import { duplicateAction } from './defaults/duplicate';
 import { deleteAction } from './defaults/delete';
 import { groupAction, ungroupAction } from './defaults/group';
 import { depsOf, makeScene, rectPose, runs, tally, timeoutFor, type TestScene } from './pbt.fixture';
 import { assertFinite, drive, type Pt } from './drag.pbt.fixture';
+import { alignCenterXAction, alignLeftAction, distributeHorizontalAction, reorderForwardAction, flipAction } from '@weasel-js/editing';
 
 interface Real { scene: TestScene }
 interface Model { states: unknown[]; cursor: number }

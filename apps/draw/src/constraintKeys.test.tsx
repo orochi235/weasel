@@ -5,10 +5,7 @@
 import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
 import { act, cleanup } from '@testing-library/react';
 import { renderWithKeys as render } from '@weasel-js/react/testing/giveKeys';
-import {
-  ActionsProvider, DepRegistryProvider, SceneCanvas, asNodeId, createScene, pathFromD, useActionsRegistry,
-  type PathConstraint, type PolygonPath, drawPreset,
-} from '@weasel-js/core';
+import { ActionsProvider, DepRegistryProvider, SceneCanvas, asNodeId, createScene, pathFromD, useActionsRegistry, type PathConstraint, type PolygonPath } from '@weasel-js/core';
 import { browserReservedChord } from '@weasel-js/routing';
 import type { KeySpec } from '@weasel-js/gestures';
 import { constrainAnchorsAction, constraintsPreset, unconstrainAnchorsAction, pathsPreset } from '@weasel-js/path-tools';
@@ -17,6 +14,7 @@ import { DEFAULT_MODES } from '@weasel-js/modes';
 import { createModeMachine } from './modality/machine';
 import { modePathEdit } from './modality/pathEditHost';
 import { DRAW_TUNE } from './constraintKeys';
+import { drawPreset } from '@weasel-js/editing';
 
 beforeAll(() => {
   (HTMLCanvasElement.prototype as unknown as { getContext: () => null }).getContext = () => null;

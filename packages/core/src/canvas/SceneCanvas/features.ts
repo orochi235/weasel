@@ -178,7 +178,7 @@ export function resolveFeatures(
   };
   for (const f of features ?? []) {
     if (typeof f === 'string') {
-      throw new Error(`[SceneCanvas] features takes preset objects, not names; pass the preset for "${f as string}" or namedFeatures("${f as string}") from @weasel-js/core/named-features`);
+      throw new Error(`[SceneCanvas] features takes preset objects, not names; pass the preset for "${f as string}" or namedFeatures("${f as string}") from @weasel-js/editing`);
     }
     add(f);
   }

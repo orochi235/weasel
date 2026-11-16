@@ -1,7 +1,8 @@
-import { asNodeId, key, keymapContribution, SceneCanvas, arrangePreset, movePreset, pickPreset, transformPreset } from '@weasel-js/core';
+import { asNodeId, key, keymapContribution, SceneCanvas } from '@weasel-js/core';
 import { KeymapHint } from '@weasel-js/ui/components/KeymapHint';
 import { DemoStage } from './DemoStage';
 import s from './KeymapDemo.module.css';
+import { arrangePreset, movePreset, pickPreset, transformPreset } from '@weasel-js/editing';
 
 const W = 420, H = 300;
 

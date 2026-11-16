@@ -1,8 +1,9 @@
 import { useState } from 'react';
-import { SceneCanvas, asNodeId, createScene, RIGID_POSE_COMPOSITION, solid, movePreset, pickPreset } from '@weasel-js/core';
+import { SceneCanvas, asNodeId, createScene, RIGID_POSE_COMPOSITION, solid } from '@weasel-js/core';
 import type { Fill, GroupBoxData, RectPose, Stroke } from '@weasel-js/core';
 import { tileGrid } from '@weasel-js/guides';
 import { DemoStage } from './DemoStage';
+import { movePreset, pickPreset } from '@weasel-js/editing';
 
 type Data = GroupBoxData & { fill?: Fill; stroke?: Stroke };
 

@@ -8,7 +8,7 @@ import { SceneCanvas } from '../../../canvas/SceneCanvas';
 import { createScene } from 'core/scene/scene';
 import type { NodeId } from 'core/scene/types';
 import { useSelection, type SelectionApi } from 'core/selection/useSelection';
-import { editPreset, pickPreset } from 'canvas/SceneCanvas/presets';
+import { editPreset, pickPreset } from '@weasel-js/editing';
 
 type D = { kind: string };
 type P = { x: number; y: number; width: number; height: number };

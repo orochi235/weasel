@@ -6,10 +6,11 @@ import { describe, it, expect, vi, beforeAll, afterEach } from 'vitest';
 import { createEvent, act, cleanup } from '@testing-library/react';
 import { renderWithKeys as render } from '@weasel-js/react/testing/giveKeys';
 import type { PolygonPath } from '@weasel-js/geom';
-import { SceneCanvas, BUILTIN_TOOL_IDS, createScene, drawPreset } from '@weasel-js/core';
+import { SceneCanvas, BUILTIN_TOOL_IDS, createScene } from '@weasel-js/core';
 import { gridSnapSourceForTests as gridSource } from '@weasel-js/core/test-seams';
 import { pathTools } from '../presets';
 import { usePathToolsTools } from '../toolSets';
+import { drawPreset } from '@weasel-js/editing';
 
 beforeAll(() => {
   const proto = HTMLCanvasElement.prototype as unknown as Record<string, unknown>;

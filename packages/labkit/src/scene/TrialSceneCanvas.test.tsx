@@ -1,6 +1,6 @@
 import { act, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { asNodeId, createScene, drawPreset, key, type Scene, type ToolsApi } from '@weasel-js/core';
+import { asNodeId, createScene, key, type Scene, type ToolsApi } from '@weasel-js/core';
 import { giveKeys } from '@weasel-js/react/testing/giveKeys';
 import { renderSettled } from '@weasel-js/react/testing/renderSettled';
 import { withIcons } from '@weasel-js/ui/testing/withIcons';
@@ -12,6 +12,7 @@ import type { RenderContext } from '../instrument/types';
 import { Lab } from '../lab/Lab';
 import { TrialSceneCanvas } from './TrialSceneCanvas';
 import { type SceneTrialState, useTrialScene } from './useTrialScene';
+import { drawPreset } from '@weasel-js/editing';
 
 beforeAll(() => {
   HTMLCanvasElement.prototype.getContext = vi.fn(

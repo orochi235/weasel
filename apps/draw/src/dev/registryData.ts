@@ -1,7 +1,7 @@
 import * as Weasel from '@weasel-js/core';
 import { defaultNodeProperties, nodeTraitsOf, type NodePropertiesEntry } from '@weasel-js/core';
 import { DRAW_FEATURES } from '../drawFeatures';
-import { FEATURE_NAMES, FEATURE_PRESETS } from '@weasel-js/core/named-features';
+import { FEATURE_NAMES, FEATURE_PRESETS } from '@weasel-js/editing';
 import { parseRoute as kitParseRoute, type ParsedRoute as KitParsedRoute } from '@weasel-js/core/routing';
 import { type PrefObject, prefSectionLeaves } from '@weasel-js/prefs';
 import { iconSpecRefs, toIconRef } from '@weasel-js/icons';

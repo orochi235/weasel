@@ -7,7 +7,7 @@ import { SceneCanvas } from 'canvas/SceneCanvas';
 import { createScene } from 'core/scene/scene';
 import { useSelection, type SelectionApi } from 'core/selection/useSelection';
 import { PATHFINDER_KEYMAP } from './keymap';
-import { drawPreset } from 'canvas/SceneCanvas/presets';
+import { drawPreset } from '@weasel-js/editing';
 
 type P = { x: number; y: number; width: number; height: number };
 type D = { path: Path; fill: { paint: { color: string } } };

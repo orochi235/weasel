@@ -6,15 +6,13 @@
 import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
 import { act, cleanup } from '@testing-library/react';
 import { renderWithKeys as render } from '@weasel-js/react/testing/giveKeys';
-import {
-  ActionsProvider, DepRegistryProvider, SceneCanvas, asNodeId, createScene, hasEditablePath, pathFromD,
-  rectPath, useActionsRegistry, useDepRegistry, type Path, type PolygonPath, drawPreset,
-} from '@weasel-js/core';
+import { ActionsProvider, DepRegistryProvider, SceneCanvas, asNodeId, createScene, hasEditablePath, pathFromD, rectPath, useActionsRegistry, useDepRegistry, type Path, type PolygonPath } from '@weasel-js/core';
 import { pathsPreset } from '@weasel-js/path-tools';
 import { useMemo } from 'react';
 import { DEFAULT_MODES } from '@weasel-js/modes';
 import { createModeMachine } from './machine';
 import { modePathEdit } from './pathEditHost';
+import { drawPreset } from '@weasel-js/editing';
 
 beforeAll(() => {
   (HTMLCanvasElement.prototype as unknown as { getContext: () => null }).getContext = () => null;

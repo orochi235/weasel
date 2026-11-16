@@ -21,7 +21,7 @@ import { ViewInputsProvider } from './viewInputs';
 import { AUTO_POSE_DESCRIPTOR } from 'core/geometry/autoPoseDescriptor';
 import { DeviceProfileProvider } from 'core/device/useDeviceProfile';
 import type { DeviceProfile } from 'core/device/types';
-import { drawPreset } from 'canvas/SceneCanvas/presets';
+import { drawPreset } from '@weasel-js/editing';
 
 type D = { kind: 'rect' };
 type L = 'main';

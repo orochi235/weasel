@@ -1,4 +1,4 @@
-import { useLatest, movePreset, pickPreset } from '@weasel-js/core';
+import { useLatest } from '@weasel-js/core';
 import { pathsPreset } from '@weasel-js/path-tools';
 import { DEG_TO_RAD } from '@weasel-js/geom';
 import { type ConfigOf, defineInstrument, f, Lab, type RenderContext, TrialSceneCanvas } from '@weasel-js/labkit';
@@ -8,6 +8,7 @@ import { icon } from '../icons.gen';
 import { BLOB, type PathLabState, usePathEditTrial } from './pathEditLabScene';
 import '@weasel-js/labkit/styles.css';
 import 'windease/styles.css';
+import { movePreset, pickPreset } from '@weasel-js/editing';
 
 const config = f.schema({
   snap: f.boolean(true).label('Snap handle angle'),

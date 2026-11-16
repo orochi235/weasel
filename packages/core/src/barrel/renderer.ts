@@ -157,7 +157,6 @@ export {
   BUILTIN_TOOLS, BUILTIN_TOOL_GROUPS, TOOL_GROUP_ORDER,
   SELECT_TOOLS, VIEW_TOOLS, SHAPE_TOOLS,
 } from '../canvas/SceneCanvas';
-export { BASELINE_ACTION_IDS, TOOL_DRIVEN_ACTION_IDS } from '../canvas/SceneCanvas/namedPresets';
 export * from '../canvas/SceneCanvas/presets';
 export { KIT_SHAPE_KINDS, SHAPE_KINDS } from '../core/shapeKinds';
 export type {

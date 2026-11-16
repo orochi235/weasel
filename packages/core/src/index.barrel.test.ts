@@ -3,7 +3,7 @@ import { readdirSync, readFileSync, statSync } from 'node:fs';
 import { join } from 'node:path';
 import * as Barrel from './index';
 import { SHAPE_KINDS, shapeKindsWhere } from './core/shapeKinds';
-import { FEATURE_PRESETS } from 'canvas/SceneCanvas/namedPresets';
+import { FEATURE_PRESETS } from '@weasel-js/editing';
 
 const ROOT = __dirname;
 
@@ -67,11 +67,11 @@ describe('kit barrel parity', () => {
   // same (canvas) layer, so it's in lockstep by construction — no cross-layer
   // parity test needed (the two no longer straddle a boundary).
 
-  // Names live behind `@weasel-js/core/named-features`; the root barrel ships
-  // the preset objects and nothing that resolves a name.
-  it('exports every core preset object and describePresets, and no preset names', () => {
-    for (const [name, preset] of Object.entries(FEATURE_PRESETS)) {
-      expect(Object.values(Barrel), name).toContain(preset);
+  // Names, and the editing presets, live in `@weasel-js/editing`; the root barrel ships the
+  // view presets and nothing that resolves a name.
+  it('exports the view presets and describePresets, and no preset names', () => {
+    for (const preset of [Barrel.viewPreset, Barrel.viewToolsPreset]) {
+      expect(FEATURE_PRESETS[preset.id as keyof typeof FEATURE_PRESETS]).toBe(preset);
     }
     for (const gone of ['SCENE_CANVAS_FEATURES', 'FEATURE_ACTION_IDS', 'FEATURE_PRESETS', 'namedFeatures', 'LeanSceneCanvas']) {
       expect(gone in Barrel, gone).toBe(false);

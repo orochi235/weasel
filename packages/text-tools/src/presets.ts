@@ -4,9 +4,7 @@
  * sticky-note tools, and `whiteboardPreset` a whiteboard made with them.
  */
 import { isTextData } from '@weasel-js/text';
-import {
-  editPreset, movePreset, pickPreset, resizePreset, viewPreset, type FeaturePreset, type NodeRoutingEntry,
-} from '@weasel-js/core';
+import { viewPreset, type FeaturePreset, type NodeRoutingEntry } from '@weasel-js/core';
 import { editEffectTextAction } from './actions/editEffectText';
 import { editTextAtAction } from './actions/editTextAt';
 import { enterTextEditAction } from './actions/enterTextEdit';
@@ -19,6 +17,7 @@ import { TEXT_PAINTER } from './node/textPainter';
 import { stickyNodeFactory } from './tools/sticky/stickyNode';
 import { createStickyTool, type UseStickyToolOptions } from './tools/sticky/useStickyTool';
 import { createTextTool } from './tools/text/useTextTool';
+import { editPreset, movePreset, pickPreset, resizePreset } from '@weasel-js/editing';
 
 /** Routes a leaf whose `data.text` is a string as `'text'`, ahead of the canvas's own routing, so an
  *  SVG-imported text node carrying a fallback `path` routes to text edit. */

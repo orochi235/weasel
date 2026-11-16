@@ -7,13 +7,11 @@ import type { ImmediateInvoker } from '@weasel-js/routing';
 import { makeFrameFixture, expectSamePose, FRAME_FIXTURE_IDS, FRAME_FIXTURE_LOCAL } from 'core/scene/frameFixture';
 import { IDENTITY_POSE_COMPOSITION, type PoseComposition } from 'core/scene/composePose';
 import { asNodeId, type NodeId, type RectPose } from 'core/scene/types';
-import { alignRightAction } from './align/action';
-import { distributeHorizontalAction } from './distribute/action';
-import { flipAction } from './flip/action';
 import { rotateSelectionOps } from './rotate/replay';
 import { scenePoseFrame } from './poseFrame';
 import { shapeSources } from './selectionSubtree';
 import type { AnyScene } from 'core/scene/anyScene';
+import { alignRightAction, distributeHorizontalAction, flipAction } from '@weasel-js/editing';
 
 const { group, upright, turned } = FRAME_FIXTURE_IDS;
 const r = asNodeId('r');

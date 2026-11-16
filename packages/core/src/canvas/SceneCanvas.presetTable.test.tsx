@@ -10,12 +10,12 @@ import { useActionsRegistry, useDepRegistry } from '@weasel-js/routing/react';
 import { createScene } from 'core/scene/scene';
 import type { NodeId } from 'core/scene/types';
 import type { SelectionApi } from 'core/selection/useSelection';
-import { KIT_STANDARD_ACTION_IDS } from 'interactions/actions/useStandardActions';
 import type { ToolsApi } from '../tools/overlayBinding';
 import { SceneCanvas } from './SceneCanvas';
 import { presetToolIds, resolveFeatures, type FeaturePreset } from './SceneCanvas/features';
-import { BASELINE_ACTION_IDS, FEATURE_NAMES, FEATURE_PRESETS } from './SceneCanvas/namedPresets';
+import { BASELINE_ACTION_IDS } from './SceneCanvas/presets/baseline';
 import type { CanvasHelpers } from './useViewHelpers';
+import { KIT_STANDARD_ACTION_IDS, FEATURE_NAMES, FEATURE_PRESETS } from '@weasel-js/editing';
 
 type P = { x: number; y: number; width: number; height: number; rotation: number };
 

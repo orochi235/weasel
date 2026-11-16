@@ -14,7 +14,7 @@ import type { RenderLayer } from 'core/layers/render';
 import type { SceneCanvasApi } from './canvasExtension';
 import type { MoveBehavior } from 'interactions/gestures/types';
 import { screenTolerance } from 'interactions/gestures/shared/screenTolerance';
-import { drawPreset } from 'canvas/SceneCanvas/presets';
+import { drawPreset } from '@weasel-js/editing';
 
 type D = { kind: 'rect' };
 type P = { x: number; y: number; width: number; height: number };

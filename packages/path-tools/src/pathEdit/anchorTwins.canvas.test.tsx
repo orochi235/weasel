@@ -8,8 +8,9 @@ import { act } from '@testing-library/react';
 import { renderWithKeys as render } from '@weasel-js/react/testing/giveKeys';
 import { countPathAnchors, pathToAnchors, polygonFromPoints, type PolygonPath } from '@weasel-js/geom';
 import { useActionsRegistry, useDepRegistry } from '@weasel-js/routing/react';
-import { createScene, drawPreset, SceneCanvas } from '@weasel-js/core';
+import { createScene, SceneCanvas } from '@weasel-js/core';
 import { pathsPreset } from '../pathsPreset';
+import { drawPreset } from '@weasel-js/editing';
 
 beforeAll(() => {
   HTMLCanvasElement.prototype.getContext = vi.fn(() => null) as unknown as HTMLCanvasElement['getContext'];

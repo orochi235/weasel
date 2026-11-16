@@ -1,10 +1,4 @@
-import {
-  asNodeId,
-  createScene,
-  type RectPose,
-  solid,
-  drawPreset,
-} from '@weasel-js/core';
+import { asNodeId, createScene, type RectPose, solid } from '@weasel-js/core';
 import {
   createMeasurements, measureNode, measureEndSource, measurementsContribution, MeasureReadout, useMeasureTool,
 } from '@weasel-js/measure';
@@ -25,6 +19,7 @@ import 'windease/styles.css';
 import s from './MeasureLabDemo.module.css';
 import { icon } from '../icons.gen';
 import { DEG_TO_RAD } from '@weasel-js/geom';
+import { drawPreset } from '@weasel-js/editing';
 
 const config = f.schema({
   snap: f.boolean(true).label('Snap to grid'),

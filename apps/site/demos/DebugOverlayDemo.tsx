@@ -1,14 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import {
-  DEFAULT_HANDLE_SIZE,
-  rasterToPng,
-  debugSnapshotArgs,
-  renderDebugSnapshot,
-  SceneCanvas,
-  solid,
-  useScene,
-  warmRender, movePreset, pickPreset, transformPreset, viewPreset,
-} from '@weasel-js/core';
+import { DEFAULT_HANDLE_SIZE, rasterToPng, debugSnapshotArgs, renderDebugSnapshot, SceneCanvas, solid, useScene, warmRender, viewPreset } from '@weasel-js/core';
 import { gridSnapSource } from '@weasel-js/guides';
 import type {
   DebugFlags,
@@ -20,6 +11,7 @@ import type {
 import { Button } from '@weasel-js/ui/components/Button';
 import { SegmentedBar } from '@weasel-js/ui/components/Segmented';
 import { DemoStage } from './DemoStage';
+import { movePreset, pickPreset, transformPreset } from '@weasel-js/editing';
 
 interface Box { id: string; x: number; y: number; width: number; height: number; fill: Fill }
 

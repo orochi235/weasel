@@ -7,14 +7,12 @@ import { afterEach, describe, expect, it } from 'vitest';
 import { createElement, useState } from 'react';
 import { createRoot, type Root } from 'react-dom/client';
 import { flushSync } from 'react-dom';
-import {
-  SceneCanvas, createPageRun, createScene, fitViewToPage, placeOnPages, placedPagesOf, useSelection,
-  type NodeId, type RectPose, type Scene, type SelectionApi, type View, drawPreset,
-} from '@weasel-js/core';
+import { SceneCanvas, createPageRun, createScene, fitViewToPage, placeOnPages, placedPagesOf, useSelection, type NodeId, type RectPose, type Scene, type SelectionApi, type View } from '@weasel-js/core';
 import { registerCanvasFont } from '@weasel-js/font';
 import { textPreset } from '@weasel-js/text-tools';
 import { EDGE_DERIVE_PATH, withDiagramRegistry, registerDiagramShape, diagramOffPage, installOffPageMarkers } from '@weasel-js/diagram';
 import { canvasGl } from '@weasel-js/core/testing/canvasPixels';
+import { drawPreset } from '@weasel-js/editing';
 
 type OffPageScene = Scene<unknown, 'main', RectPose>;
 

@@ -6,8 +6,6 @@
  * action composes. These run on `frameFixture`, where they differ.
  */
 import { describe, it, expect } from 'vitest';
-import { alignLeftAction } from '../align/action';
-import { distributeHorizontalAction } from '../distribute/action';
 import {
   makeFrameFixture,
   expectSamePose,
@@ -17,6 +15,7 @@ import {
 } from 'core/scene/frameFixture';
 import { asNodeId, type NodeId, type RectPose, type Scene } from 'core/scene/types';
 import type { ImmediateInvoker } from '@weasel-js/routing';
+import { alignLeftAction, distributeHorizontalAction } from '@weasel-js/editing';
 
 const { group, upright, turned } = FRAME_FIXTURE_IDS;
 const third = asNodeId('c');

@@ -13,15 +13,14 @@ import { nudgeRightAction } from '../actions/defaults/nudge';
 import { clipboardCopyAction, clipboardCutAction } from '../actions/clipboard/action';
 import { selectAllAction } from '../actions/defaults/selectAll';
 import { transformAgainAction } from '../actions/transform-again/action';
-import { flipAction } from '../actions/flip/action';
 import { duplicateAction } from '../actions/defaults/duplicate';
 import { groupAction } from '../actions/defaults/group';
 import { undoAction } from '../actions/defaults/undoRedo';
-import { reorderForwardAction } from '../actions/defaults/reorder';
 import { createScene } from 'core/scene/scene';
 import { asNodeId } from 'core/scene/types';
 import type { Scene } from 'core/scene/types';
 import type { SelectionApi } from 'core/selection/useSelection';
+import { flipAction, reorderForwardAction } from '@weasel-js/editing';
 
 type D = { kind: 'rect' };
 type L = 'main';

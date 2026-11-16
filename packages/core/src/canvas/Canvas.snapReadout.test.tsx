@@ -10,7 +10,7 @@ import { createScene } from 'core/scene/scene';
 import type { SceneCanvasSnap } from 'domains/snap/types';
 import type { SnapReadoutDep } from 'domains/snap/readoutDep';
 import { SceneCanvas } from './SceneCanvas';
-import { drawPreset } from 'canvas/SceneCanvas/presets';
+import { drawPreset } from '@weasel-js/editing';
 
 const painted = vi.hoisted(() => ({ commands: [] as readonly unknown[] }));
 

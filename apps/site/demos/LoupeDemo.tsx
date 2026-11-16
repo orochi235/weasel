@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { SceneCanvas, solid, useLatest, useScene, movePreset, pickPreset } from '@weasel-js/core';
+import { SceneCanvas, solid, useLatest, useScene } from '@weasel-js/core';
 import type { Fill, RenderLayer, SceneCanvasApi } from '@weasel-js/core';
 import type { DrawCommand } from '@weasel-js/core/renderer';
 import { useHud, useHudContribution } from '@weasel-js/hud/react';
@@ -10,6 +10,7 @@ import { InlineRange } from '@weasel-js/ui/components/InlineRange';
 import { SegmentedBar, type SegmentedBarItem } from '@weasel-js/ui/components/Segmented';
 import { DemoStage } from './DemoStage';
 import s from './LoupeDemo.module.css';
+import { movePreset, pickPreset } from '@weasel-js/editing';
 
 const W = 600, H = 400;
 const MODES: SegmentedBarItem<LoupeMode>[] = [{ value: 'vector', label: 'vector' }, { value: 'pixel', label: 'pixel' }];

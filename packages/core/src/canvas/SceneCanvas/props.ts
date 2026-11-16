@@ -209,7 +209,7 @@ export type SceneCanvasProps<TData, TLayer extends string, TPose> =
      * goes beside them. Undo and redo are always on. Tools add the actions
      * they bind (a shape tool `insert`, the hand tool drag-pan), and `actions`
      * adds, overrides or removes on top. `namedFeatures` in
-     * `@weasel-js/core/named-features` maps core's names to these objects.
+     * `@weasel-js/editing` maps core's names to these objects.
      */
     features?: readonly FeaturePreset[];
 

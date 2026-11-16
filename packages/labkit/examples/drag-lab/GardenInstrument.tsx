@@ -1,4 +1,4 @@
-import { clientToCanvas, createScene, screenToWorld, solid, viewToTransform, movePreset, pickPreset, transformPreset, viewPreset } from '@weasel-js/core';
+import { clientToCanvas, createScene, screenToWorld, solid, viewToTransform, viewPreset } from '@weasel-js/core';
 import type { AddNodeSpec, Fill, Paint, RectPose, UnitSystem, View } from '@weasel-js/core';
 import { createGridLayer } from '@weasel-js/guides';
 import { useMemo, useRef } from 'react';
@@ -10,6 +10,7 @@ import {
   TrialSceneCanvas,
   useTrialScene,
 } from '@weasel-js/labkit';
+import { movePreset, pickPreset, transformPreset } from '@weasel-js/editing';
 
 type Kind = 'tree' | 'shrub' | 'flower';
 

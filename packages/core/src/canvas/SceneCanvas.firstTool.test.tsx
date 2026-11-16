@@ -6,7 +6,7 @@ import { createScene } from 'core/scene/scene';
 import { useAction, useOngoingAction } from '@weasel-js/routing/react';
 import { dynamicActionId, type Action } from '@weasel-js/routing';
 import { createGLRecorder } from '@weasel-js/renderer/testing/glRecorder';
-import { drawPreset } from 'canvas/SceneCanvas/presets';
+import { drawPreset } from '@weasel-js/editing';
 
 beforeAll(() => {
   const recorder = createGLRecorder();

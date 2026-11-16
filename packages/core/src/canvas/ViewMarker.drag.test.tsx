@@ -25,7 +25,7 @@ import type { View } from 'core/viewport/view';
 import type { NodeId } from 'core/scene/types';
 import type { ViewMarkerProps } from 'domains/viewports/viewMarker';
 import { createViewMarkerContribution } from 'domains/viewports/viewMarkerDrag';
-import { drawPreset } from 'canvas/SceneCanvas/presets';
+import { drawPreset } from '@weasel-js/editing';
 
 type D = { kind: 'rect' };
 type P = { x: number; y: number; width: number; height: number };

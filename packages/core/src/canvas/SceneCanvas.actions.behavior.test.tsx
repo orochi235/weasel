@@ -4,7 +4,7 @@ import { renderWithKeys as render } from '@weasel-js/react/testing/giveKeys';
 import { SceneCanvas } from './SceneCanvas';
 import { createScene } from 'core/scene/scene';
 import type { Scene } from 'core/scene/types';
-import { drawPreset } from 'canvas/SceneCanvas/presets';
+import { drawPreset } from '@weasel-js/editing';
 
 type D = { kind: 'rect' };
 type L = 'main';

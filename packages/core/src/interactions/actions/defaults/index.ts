@@ -3,13 +3,6 @@ export { escapeAction } from './escape';
 export { duplicateAction } from './duplicate';
 export { transformAgainAction } from '../transform-again/action';
 export { nudgeUpAction, nudgeDownAction, nudgeLeftAction, nudgeRightAction } from './nudge';
-export { reorderForwardAction, reorderBackwardAction } from './reorder';
-export { flipAction } from '../flip/action';
-export {
-  alignLeftAction, alignRightAction, alignTopAction, alignBottomAction,
-  alignCenterXAction, alignCenterYAction,
-} from '../align/action';
-export { distributeHorizontalAction, distributeVerticalAction } from '../distribute/action';
 export {
   pathfinderUnionAction, pathfinderSubtractAction, pathfinderIntersectAction,
   pathfinderExcludeAction, pathfinderDivideAction, pathfinderCropAction,

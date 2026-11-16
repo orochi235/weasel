@@ -1,0 +1,189 @@
+import { IDENTITY_POSE_COMPOSITION, asNodeId, createPoseOverrides } from '@weasel-js/core';
+import { describe, it, expect, vi } from 'vitest';
+import { stubDepsForTests as stubDeps } from '@weasel-js/core/test-seams';
+import {
+  distributeHorizontalAction,
+  distributeVerticalAction,
+} from './action';
+import type { NodeId } from '@weasel-js/core';
+import { ActionDisabledReason } from '@weasel-js/routing';
+import type { ImmediateInvoker } from '@weasel-js/routing';
+
+interface Pose { x: number; y: number; width: number; height: number; rotation?: number }
+
+function makeScene(poses: Record<string, Pose>) {
+  const current = { ...poses };
+  const setPose = vi.fn((id: string, pose: Pose) => { current[id] = pose; });
+  const scene = {
+    get: (id: string) => ({ pose: current[id], id: asNodeId(id), children: [] }),
+    overrides: createPoseOverrides<Pose>(() => undefined),
+    composition: IDENTITY_POSE_COMPOSITION,
+    setPose,
+    batch: vi.fn((_label: string, fn: () => void) => fn()),
+    applyBatch: vi.fn((ops: { apply(a: unknown): void }[], _label: string, adapter: unknown) => {
+      for (const op of ops) op.apply(adapter);
+    }),
+    nodes: new Map(), roots: [], layers: [],
+    childrenOf: vi.fn().mockReturnValue([]), ancestorsOf: vi.fn().mockReturnValue([]),
+    renderOrder: vi.fn().mockReturnValue([]),
+    add: vi.fn(), remove: vi.fn(), update: vi.fn(), setLayer: vi.fn(),
+    move: vi.fn(), reorder: vi.fn(), setLayerVisible: vi.fn(), setLayerLocked: vi.fn(),
+    registerOp: vi.fn(), recordOp: vi.fn(),
+    undo: vi.fn(), redo: vi.fn(), canUndo: vi.fn(), canRedo: vi.fn(),
+    toJSON: vi.fn(), subscribe: vi.fn(), subscribeNode: vi.fn(),
+  };
+  return { scene, setPose, current };
+}
+
+function makeSelection(ids: string[]) {
+  return {
+    get: () => ids.map((id) => asNodeId(id)),
+    current: [] as readonly NodeId[],
+    set: vi.fn(), add: vi.fn(), remove: vi.fn(), toggle: vi.fn(), clear: vi.fn(),
+    contains: vi.fn().mockReturnValue(false),
+  };
+}
+
+function runDescriptor(
+  action: typeof distributeHorizontalAction,
+  deps: { operands: ReturnType<typeof makeSelection>; scene: ReturnType<typeof makeScene>['scene'] },
+  params?: Record<string, unknown>,
+) {
+  (action.invoker as ImmediateInvoker).run(stubDeps(deps), params);
+}
+
+// ---------------------------------------------------------------------------
+// Static descriptor tests
+// ---------------------------------------------------------------------------
+
+describe('distributeHorizontalAction descriptor', () => {
+  it('has id "distribute.horizontal"', () => {
+    expect(distributeHorizontalAction.id).toBe('distribute.horizontal');
+  });
+
+  it('has no defaultBinding', () => {
+    expect(distributeHorizontalAction.defaultBinding).toBeUndefined();
+  });
+
+  it('has an icon', () => {
+    expect(distributeHorizontalAction.icon).toBeDefined();
+  });
+
+  it('belongs to group "distribute"', () => {
+    expect(distributeHorizontalAction.group).toBe('distribute');
+  });
+
+  it('has timing "immediate"', () => {
+    expect(distributeHorizontalAction.invoker?.timing).toBe('immediate');
+  });
+
+  it('invoker.run distributes 3 items horizontally (centers mode) via scene.setPose', () => {
+    const poses = {
+      a: { x: 0, y: 0, width: 10, height: 10 },
+      b: { x: 30, y: 0, width: 10, height: 10 },
+      c: { x: 100, y: 0, width: 10, height: 10 },
+    };
+    const { scene, setPose } = makeScene(poses);
+    const selection = makeSelection(['a', 'b', 'c']);
+    runDescriptor(distributeHorizontalAction, { operands: selection, scene });
+    expect(scene.applyBatch).toHaveBeenCalledOnce();
+    // centers: a center=5, c center=105 → b center should land at 55, so x=50
+    // a and c are anchors; only b moves
+    expect(setPose).toHaveBeenCalledOnce();
+    expect(setPose.mock.calls[0][1]).toMatchObject({ x: 50, y: 0 });
+  });
+
+  it('invoker.run no-ops when <3 selected', () => {
+    const poses = {
+      a: { x: 0, y: 0, width: 10, height: 10 },
+      b: { x: 20, y: 0, width: 10, height: 10 },
+    };
+    const { scene, setPose } = makeScene(poses);
+    const selection = makeSelection(['a', 'b']);
+    runDescriptor(distributeHorizontalAction, { operands: selection, scene });
+    expect(setPose).not.toHaveBeenCalled();
+  });
+
+  it('invoker.run no-ops when selection or scene is missing', () => {
+    expect(() => {
+      (distributeHorizontalAction.invoker as ImmediateInvoker).run({});
+    }).not.toThrow();
+  });
+
+  it('enabled returns SelectionRequired without deps', () => {
+    expect(distributeHorizontalAction.enabled!()).toBe(ActionDisabledReason.SelectionRequired);
+  });
+
+  it('enabled is true exactly when three or more nodes would move', () => {
+    const { scene } = makeScene({
+      a: { x: 0, y: 0, width: 10, height: 10 },
+      b: { x: 15, y: 0, width: 10, height: 10 },
+      c: { x: 100, y: 0, width: 10, height: 10 },
+    });
+    const deps = (ids: string[]) => stubDeps({ operands: makeSelection(ids), scene });
+    expect(distributeHorizontalAction.enabled!(deps(['a', 'b']))).toBe(ActionDisabledReason.SelectionRequired);
+    expect(distributeHorizontalAction.enabled!(deps(['a', 'b', 'c']))).toBe(true);
+    expect(distributeVerticalAction.enabled!(deps(['a', 'b', 'c']))).toBe(ActionDisabledReason.NotApplicable);
+  });
+});
+
+describe('distributeVerticalAction descriptor', () => {
+  it('has id "distribute.vertical"', () => {
+    expect(distributeVerticalAction.id).toBe('distribute.vertical');
+  });
+
+  it('invoker.run distributes 3 items vertically (centers mode) via scene.setPose', () => {
+    const poses = {
+      a: { x: 0, y: 0, width: 10, height: 10 },
+      b: { x: 0, y: 30, width: 10, height: 10 },
+      c: { x: 0, y: 100, width: 10, height: 10 },
+    };
+    const { scene, setPose } = makeScene(poses);
+    const selection = makeSelection(['a', 'b', 'c']);
+    runDescriptor(distributeVerticalAction, { operands: selection, scene });
+    // centers: a center=5, c center=105 → b center at 55, y=50
+    expect(setPose).toHaveBeenCalledOnce();
+    expect(setPose.mock.calls[0][1]).toMatchObject({ x: 0, y: 50 });
+  });
+});
+
+
+// ---------------------------------------------------------------------------
+// Rotated members
+// ---------------------------------------------------------------------------
+
+describe('distribute with a rotated member', () => {
+  it('picks endpoints by visual extent, so the rotated ink anchors the span', () => {
+    const poses = {
+      a: { x: 0, y: 0, width: 10, height: 10 },
+      // ink x 55..65 (centre 60); stored box x 40..80.
+      r: { x: 40, y: 0, width: 40, height: 10, rotation: Math.PI / 2 },
+      c: { x: 50, y: 0, width: 10, height: 10 },
+    };
+    const { scene, setPose } = makeScene(poses);
+    const selection = makeSelection(['a', 'r', 'c']);
+    runDescriptor(distributeHorizontalAction, { operands: selection, scene });
+    // Visual order is a(0..10), c(50..60), r(55..65): a and r are the endpoints,
+    // so c is the middle item. Centres 5 → 60 put it at 32.5 → x = 27.5.
+    expect(setPose).toHaveBeenCalledOnce();
+    expect(setPose.mock.calls[0][0]).toBe('c');
+    expect(setPose.mock.calls[0][1]).toMatchObject({ x: 27.5, y: 0 });
+  });
+});
+
+describe('distribute mode param', () => {
+  it('params.mode "gaps" equalizes the empty runs, not the centres', () => {
+    const poses = {
+      a: { x: 0,  y: 0, width: 10, height: 10 },
+      b: { x: 30, y: 0, width: 40, height: 10 },
+      c: { x: 80, y: 0, width: 20, height: 10 },
+    };
+    const { scene, setPose } = makeScene(poses);
+    const selection = makeSelection(['a', 'b', 'c']);
+    runDescriptor(distributeHorizontalAction, { operands: selection, scene }, { mode: 'gaps' });
+    // span 100, sizes 70 → gap 15, so b starts at 25. Centres mode puts it at 27.5.
+    expect(setPose).toHaveBeenCalledOnce();
+    expect(setPose.mock.calls[0][0]).toBe('b');
+    expect(setPose.mock.calls[0][1]).toMatchObject({ x: 25, y: 0 });
+  });
+});

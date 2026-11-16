@@ -10,7 +10,6 @@ import { duplicateSelection } from './defaults/duplicate';
 import { clipboardCutAction } from './clipboard/action';
 import { pickContainer } from './move/layout/container';
 import { groupAction, ungroupAction } from './defaults/group';
-import { flipAction } from './flip/action';
 import { makeBooleanGroupAction } from './booleans/booleanGroupAction';
 import { scenePoseFrame } from './poseFrame';
 import type { RectPose } from 'core/scene/types';
@@ -18,6 +17,7 @@ import { areaSelectAction } from './defaults/areaSelect';
 import { hitTestArea } from 'canvas/deps/hitTestArea';
 import { pressTarget } from 'tools/builtin/pressTarget';
 import type { InvocationCtx } from '@weasel-js/routing';
+import { flipAction } from '@weasel-js/editing';
 
 /** A selection that holds whatever it was given, as a caller's own api may. */
 function heldSelection(ids: string[]) {

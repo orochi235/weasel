@@ -8,10 +8,8 @@ import { createScene } from 'core/scene/scene';
 import { asNodeId, type NodeId, type RectPose, type Scene } from 'core/scene/types';
 import { stubDeps } from './testUtils';
 import { inkBoxes } from 'canvas/inkBoxes';
-import { alignLeftAction } from './align/action';
-import { distributeHorizontalAction } from './distribute/action';
-import { flipAction } from './flip/action';
 import { captureTurn } from './rotate/session';
+import { alignLeftAction, distributeHorizontalAction, flipAction } from '@weasel-js/editing';
 
 const STROKE = { paint: { kind: 'solid', color: '#000' }, width: 20 } as const;
 

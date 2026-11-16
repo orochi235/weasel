@@ -130,6 +130,7 @@
   "dependencies": {
     "@weasel-js/clock": "1.19.1",
     "@weasel-js/devtools": "1.19.1",
+    "@weasel-js/editing": "1.19.1",
     "@weasel-js/geom": "1.19.1",
     "@weasel-js/gestures": "1.19.1",
     "@weasel-js/icons": "1.19.1",
@@ -137,9 +138,9 @@
     "@weasel-js/loupe": "1.19.1",
     "@weasel-js/menu": "1.19.1",
     "@weasel-js/minimap": "1.19.1",
-    "@weasel-js/prefs-schema": "1.19.1",
     "@weasel-js/path-tools": "1.19.1",
     "@weasel-js/prefs": "1.19.1",
+    "@weasel-js/prefs-schema": "1.19.1",
     "@weasel-js/quantity": "1.19.1",
     "@weasel-js/react": "1.19.1",
     "@weasel-js/registry": "1.19.1",

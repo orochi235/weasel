@@ -1,12 +1,9 @@
-import {
-  asNodeId,
-  ROTATED_POSE_DESCRIPTOR,
-  SceneCanvas, movePreset, pickPreset, transformPreset,
-} from '@weasel-js/core';
+import { asNodeId, ROTATED_POSE_DESCRIPTOR, SceneCanvas } from '@weasel-js/core';
 import { createGridLayer, gridSnapSource } from '@weasel-js/guides';
 import type { PoseDescriptor, RotatedPose, UnitSystem } from '@weasel-js/core';
 import sceneJson from './data/transform.scene.json';
 import { DemoStage } from './DemoStage';
+import { movePreset, pickPreset, transformPreset } from '@weasel-js/editing';
 
 const W = 400, H = 300;
 // Demo unit system: base is the pixel, but the demo speaks in "tiles" worth 20px.

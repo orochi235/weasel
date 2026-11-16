@@ -1,4 +1,4 @@
-import { type ActionTunings, asNodeId, createScene, type RectPose, solid, useLatest, drawPreset, pathNode } from '@weasel-js/core';
+import { type ActionTunings, asNodeId, createScene, type RectPose, solid, useLatest, pathNode } from '@weasel-js/core';
 import { usePathEditMode, tugPreset, useTugTool, pathsPreset } from '@weasel-js/path-tools';
 import {
   type ConfigOf, defineInstrument, f, Lab, type RenderContext, type SceneTrialState,
@@ -8,6 +8,7 @@ import { useMemo } from 'react';
 import '@weasel-js/labkit/styles.css';
 import 'windease/styles.css';
 import { icon } from '../icons.gen';
+import { drawPreset } from '@weasel-js/editing';
 
 const FEATURES = [drawPreset, pathsPreset, tugPreset] as const;
 

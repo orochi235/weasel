@@ -15,7 +15,7 @@ import { WeaselProvider } from '../WeaselProvider';
 import { ActionsProvider, useOptionalDepRegistry } from '@weasel-js/routing/react';
 import { createScene } from 'core/scene/scene';
 import type { View } from 'core/viewport/view';
-import { drawPreset } from 'canvas/SceneCanvas/presets';
+import { drawPreset } from '@weasel-js/editing';
 
 type D = { kind: 'rect' };
 type L = 'main';

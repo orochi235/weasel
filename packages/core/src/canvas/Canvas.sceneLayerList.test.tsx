@@ -8,7 +8,7 @@ import { createScene } from 'core/scene/scene';
 import { asNodeId, type Node, type Scene } from 'core/scene/types';
 import type { DrawCommand, GroupDrawCommand } from '@weasel-js/renderer';
 import { SceneCanvas } from './SceneCanvas';
-import { drawPreset } from 'canvas/SceneCanvas/presets';
+import { drawPreset } from '@weasel-js/editing';
 
 const painted = vi.hoisted(() => ({ commands: [] as readonly unknown[] }));
 

@@ -21,7 +21,8 @@ import { SceneCanvas } from '../../../canvas/SceneCanvas';
 import { useScene } from 'core/scene/useScene';
 import { createScene } from 'core/scene/scene';
 import type { View } from 'core/viewport/view';
-import { drawPreset, viewPreset } from 'canvas/SceneCanvas/presets';
+import { viewPreset } from 'canvas/SceneCanvas/presets';
+import { drawPreset } from '@weasel-js/editing';
 
 beforeAll(() => {
   const proto = HTMLCanvasElement.prototype as unknown as {

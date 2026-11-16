@@ -59,6 +59,7 @@
       "@weasel-js/export",
       "@weasel-js/symmetry",
       "@weasel-js/measure",
+      "@weasel-js/editing",
       "@weasel-js/path-tools",
       "@weasel-js/text-tools",
       "@weasel-js/rig",

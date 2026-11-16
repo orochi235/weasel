@@ -17,7 +17,7 @@ import type { CanvasViewCamera, SceneCanvasApi } from './canvasExtension';
 import type { AimHeldViewProps, CameraHeldViewProps } from './canvasViewProps';
 import { ViewMarker } from './ViewMarker';
 import { useOptionalViewRegistry, type ViewRegistry } from './viewRegistry';
-import { drawPreset } from 'canvas/SceneCanvas/presets';
+import { drawPreset } from '@weasel-js/editing';
 
 type D = { kind: 'rect' };
 type P = { x: number; y: number; width: number; height: number };

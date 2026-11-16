@@ -1,4 +1,4 @@
-import { ANCHORS_GROUP, PATH_GROUP, type ActionTunings, asNodeId, createScene, PathBuilder, type PolygonPath, type RectPose, solid, drawPreset, pathNode } from '@weasel-js/core';
+import { ANCHORS_GROUP, PATH_GROUP, type ActionTunings, asNodeId, createScene, PathBuilder, type PolygonPath, type RectPose, solid, pathNode } from '@weasel-js/core';
 import { bridgePreset, DEFAULT_BRIDGE_TENSION, pathsPreset, usePenTool } from '@weasel-js/path-tools';
 import {
   type ConfigOf,
@@ -16,6 +16,7 @@ import { PathLabStage } from './pathLab/pathLab';
 import '@weasel-js/labkit/styles.css';
 import 'windease/styles.css';
 import { icon } from '../icons.gen';
+import { drawPreset } from '@weasel-js/editing';
 
 const FEATURES = [drawPreset, pathsPreset, bridgePreset] as const;
 

@@ -1,7 +1,4 @@
-import {
-  boundsOfPath, createScene, type Path, PathBuilder, pathInWorld, type RectPose, type RenderLayer, type Scene,
-  solid, type Stroke, drawPreset,
-} from '@weasel-js/core';
+import { boundsOfPath, createScene, type Path, PathBuilder, pathInWorld, type RectPose, type RenderLayer, type Scene, solid, type Stroke } from '@weasel-js/core';
 import { useGirthTool, pathsPreset } from '@weasel-js/path-tools';
 import { strokeToPath } from '@weasel-js/stroke';
 import {
@@ -13,6 +10,7 @@ import '@weasel-js/labkit/styles.css';
 import 'windease/styles.css';
 import { icon } from '../icons.gen';
 import { DEG_TO_RAD } from '@weasel-js/geom';
+import { drawPreset } from '@weasel-js/editing';
 
 const config = f.schema({
   width: f.number(14).range(1, 40).step(1).suffix('px').label('Base width'),

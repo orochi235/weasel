@@ -13,7 +13,7 @@ import { SceneCanvas, BUILTIN_TOOL_IDS } from './SceneCanvas';
 import { createScene } from 'core/scene/scene';
 import type { Scene } from 'core/scene/types';
 import { ActiveToolContextProvider, useActiveToolContext } from '@weasel-js/routing/react';
-import { drawPreset } from 'canvas/SceneCanvas/presets';
+import { drawPreset } from '@weasel-js/editing';
 
 type D = { kind: 'rect' };
 type L = 'main';

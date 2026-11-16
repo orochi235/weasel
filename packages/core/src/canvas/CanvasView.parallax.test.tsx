@@ -12,7 +12,7 @@ import type { RenderLayer } from 'core/layers/render';
 import { useOptionalViewRegistry, type ViewRegistry } from './viewRegistry';
 import type { NodeId } from 'core/scene/types';
 import type { Bounds } from 'core/viewport/fitViewToBounds';
-import { drawPreset } from 'canvas/SceneCanvas/presets';
+import { drawPreset } from '@weasel-js/editing';
 
 type P = { x: number; y: number; width: number; height: number };
 

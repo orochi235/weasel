@@ -9,7 +9,7 @@ import { useDepRegistry } from '@weasel-js/routing/react';
 import type { SelectionApi } from 'core/selection/useSelection';
 import { modifierHeld } from 'domains/chrome-caps';
 import { createGLRecorder } from '@weasel-js/renderer/testing/glRecorder';
-import { pickPreset } from 'canvas/SceneCanvas/presets';
+import { pickPreset } from '@weasel-js/editing';
 
 type P = { x: number; y: number; width: number; height: number };
 

@@ -1,7 +1,4 @@
-import {
-  ANCHORS_GROUP, PATH_GROUP, always, asNodeId, createScene, never, type RectPose, solid, useSelection, movePreset,
-  pickPreset, pathNode,
-} from '@weasel-js/core';
+import { ANCHORS_GROUP, PATH_GROUP, always, asNodeId, createScene, never, type RectPose, solid, useSelection, pathNode } from '@weasel-js/core';
 import { pathsPreset } from '@weasel-js/path-tools';
 import {
   type ConfigOf,
@@ -20,6 +17,7 @@ import { useMemo } from 'react';
 import '@weasel-js/labkit/styles.css';
 import 'windease/styles.css';
 import { icon } from '../icons.gen';
+import { movePreset, pickPreset } from '@weasel-js/editing';
 
 const config = f.schema({
   arrows: f.boolean(true).label('Direction arrows'),

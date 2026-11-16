@@ -1,9 +1,10 @@
 import { useState, useSyncExternalStore, type ReactNode } from 'react';
-import { CanvasView, SceneCanvas, movePreset, pickPreset, useEditingSession, useScene, viewPreset } from '@weasel-js/core';
+import { CanvasView, SceneCanvas, useEditingSession, useScene, viewPreset } from '@weasel-js/core';
 import type { Scene } from '@weasel-js/core';
 import { DemoStage, DemoStageGroup } from './DemoStage';
 import { makeRandomScene, pipView, PIP } from './CanvasViewDemo';
 import styles from './EditingSessionsDemo.module.css';
+import { movePreset, pickPreset } from '@weasel-js/editing';
 
 type LayerId = 'default';
 type Item = ReturnType<typeof makeRandomScene>[number];

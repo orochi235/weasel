@@ -13,7 +13,7 @@ import { PointerContextProvider, createPointerStore } from '@weasel-js/routing/r
 import { createScene } from 'core/scene/scene';
 import { asNodeId } from 'core/scene/types';
 import { SceneCanvas } from './SceneCanvas';
-import { pickPreset } from 'canvas/SceneCanvas/presets';
+import { pickPreset } from '@weasel-js/editing';
 
 type P = { x: number; y: number; width: number; height: number };
 

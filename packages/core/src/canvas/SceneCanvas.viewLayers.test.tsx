@@ -19,7 +19,7 @@ import { useOptionalViewRegistry, type ViewRegistry } from './viewRegistry';
 import { SceneCanvas } from './SceneCanvas';
 import type { SceneCanvasApi } from './canvasExtension';
 import type { CanvasHelpers } from './useViewHelpers';
-import { drawPreset } from 'canvas/SceneCanvas/presets';
+import { drawPreset } from '@weasel-js/editing';
 
 const painted = vi.hoisted(() => new Map<unknown, readonly unknown[]>());
 

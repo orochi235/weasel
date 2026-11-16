@@ -1,11 +1,9 @@
 // #region gem-editor
-import {
-  IconRegistryProvider, SceneCanvas, drawPreset, useSelection,
-  type FeaturePreset, type RectPose, type Scene, type SceneCanvasHit, type ToolsApi,
-} from '@weasel-js/core';
+import { IconRegistryProvider, SceneCanvas, useSelection, type FeaturePreset, type RectPose, type Scene, type SceneCanvasHit, type ToolsApi } from '@weasel-js/core';
 import { SelectionPanel } from '@weasel-js/ui';
 import { kitIcons } from '@weasel-js/ui/kit-icons';
 import { gemFeature } from './index.js';
+import { drawPreset } from '@weasel-js/editing';
 
 const FEATURES: readonly FeaturePreset[] = [drawPreset, gemFeature];
 

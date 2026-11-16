@@ -1,4 +1,4 @@
-import { asNodeId, createScene, type RectPose, solid, useSelection, drawPreset } from '@weasel-js/core';
+import { asNodeId, createScene, type RectPose, solid, useSelection } from '@weasel-js/core';
 import { usePinWarpTool, warpPreset, withPathWarp, pathsPreset } from '@weasel-js/path-tools';
 import {
   type ConfigOf,
@@ -20,6 +20,7 @@ import { pathLeaf } from './warpLab';
 import '@weasel-js/labkit/styles.css';
 import 'windease/styles.css';
 import { icon } from '../icons.gen';
+import { drawPreset } from '@weasel-js/editing';
 
 const FEATURES = [drawPreset, pathsPreset, warpPreset] as const;
 

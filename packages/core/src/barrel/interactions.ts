@@ -120,13 +120,7 @@ export type {
   UseClipboardOpsOptions,
   UseClipboardOpsReturn,
 } from '../interactions/actions/clipboard';
-export {
-  useAlign,
-  alignDeltaFor,
-  alignTargetBounds,
-  translatePoseViaDescriptor,
-  visualBoundsViaDescriptor,
-} from '../interactions/actions/align';
+export { translatePoseViaDescriptor, visualBoundsViaDescriptor } from '../interactions/actions/resize/geometry';
 export { resolveSpatialReference } from '../interactions/actions/spatialReference';
 export { ANCHORS_GROUP, PATH_GROUP } from '../interactions/actions/pathActionGroups';
 export { sceneBoxFrames, scenePoseFrame, worldPoseOf, worldPoses } from '../interactions/actions/poseFrame';
@@ -134,26 +128,10 @@ export { undeclaredMagnifications, unitFrameAt, type UndeclaredMagnification } f
 export { moveNodes, moveNodesOps, MOVE_NODES_REQUIRES } from '../interactions/actions/moveNodes';
 export type { PoseFrame, PoseReading } from '../interactions/actions/poseFrame';
 export type { SpatialReference, SpatialReferenceSources } from '../interactions/actions/spatialReference';
-export type { FlipAxis, FlipPivot } from '../interactions/actions/flip/helpers';
 export { lastTransform, recordTransform, forgetTransform } from '../interactions/actions/transform-again/memory';
 export type { RepeatableTransform } from '../interactions/actions/transform-again/memory';
 export { transformSelection, type SelectionTransform } from '../interactions/actions/transform-again/transformSelection';
 export { requiresSelection } from '../interactions/actions/defaults/requiresSelection';
-export type {
-  AlignAdapter,
-  AlignEdge,
-  AlignReference,
-  UseAlignOptions,
-  UseAlignReturn,
-} from '../interactions/actions/align';
-export { useDistribute } from '../interactions/actions/distribute';
-export type {
-  DistributeAdapter,
-  DistributeAxis,
-  DistributeMode,
-  UseDistributeOptions,
-  UseDistributeReturn,
-} from '../interactions/actions/distribute';
 export type { CloneBehavior, CloneBehaviorResult, CloneEnd } from '../interactions/gestures/types';
 // snapToContainer / snapBackOrDelete are NOT re-exported at top level —
 // import them from '@weasel-js/core/move'.

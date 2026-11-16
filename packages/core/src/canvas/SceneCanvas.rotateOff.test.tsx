@@ -15,7 +15,7 @@ import { useActionsRegistry, useDepRegistry } from '@weasel-js/routing/react';
 import { isRotateHandle } from '@weasel-js/routing';
 import type { SelectionApi } from 'core/selection/useSelection';
 import { always } from 'domains/chrome-caps';
-import { pickPreset, transformPreset } from 'canvas/SceneCanvas/presets';
+import { pickPreset, transformPreset } from '@weasel-js/editing';
 
 type D = { kind: 'rect' };
 type L = 'main';

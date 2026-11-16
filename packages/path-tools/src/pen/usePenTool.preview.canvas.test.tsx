@@ -1,9 +1,10 @@
 import { describe, it, expect, vi, beforeAll } from 'vitest';
 import { createEvent, act } from '@testing-library/react';
 import { renderWithKeys as render } from '@weasel-js/react/testing/giveKeys';
-import { SceneCanvas, BUILTIN_TOOL_IDS, drawPreset, useScene, type ToolsApi } from '@weasel-js/core';
+import { SceneCanvas, BUILTIN_TOOL_IDS, useScene, type ToolsApi } from '@weasel-js/core';
 import { pathTools } from '../presets';
 import { usePathToolsTools } from '../toolSets';
+import { drawPreset } from '@weasel-js/editing';
 
 beforeAll(() => {
   const proto = HTMLCanvasElement.prototype as unknown as Record<string, unknown>;

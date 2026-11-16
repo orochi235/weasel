@@ -11,7 +11,7 @@ import {
 } from './SceneCanvas';
 import { defaultPaintBounds } from './defaultDrawOne';
 import { layersOverPresets } from './SceneCanvas/mergeLayers';
-import { pickPreset, resizePreset } from 'canvas/SceneCanvas/presets';
+import { pickPreset, resizePreset } from '@weasel-js/editing';
 
 // jsdom doesn't implement getContext or pointer capture; stub minimally.
 beforeAll(() => {

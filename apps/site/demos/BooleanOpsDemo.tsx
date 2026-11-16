@@ -1,26 +1,11 @@
 import { useCallback } from 'react';
-import {
-  circlePath,
-  pathDivide,
-  pathExclude,
-  pathIntersect,
-  pathSubtract,
-  pathUnion,
-  polygonFromPoints,
-  SceneCanvas,
-  solid,
-  useScene,
-  useSelection,
-  WeaselProvider,
-  pathfinderPreset,
-  pickPreset,
-  pathNode,
-} from '@weasel-js/core';
+import { circlePath, pathDivide, pathExclude, pathIntersect, pathSubtract, pathUnion, polygonFromPoints, SceneCanvas, solid, useScene, useSelection, WeaselProvider, pathNode } from '@weasel-js/core';
 import type { Fill, PolygonPath, RectPose } from '@weasel-js/core';
 import { ActionBar } from '@weasel-js/ui/components/ActionBar';
 import { Button } from '@weasel-js/ui/components/Button';
 import { Sequence, values } from '@weasel-js/ui/components/Sequence';
 import { DemoStage, DemoStageGroup } from './DemoStage';
+import { pathfinderPreset, pickPreset } from '@weasel-js/editing';
 
 const W = 240;
 const H = 200;

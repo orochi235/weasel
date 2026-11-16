@@ -1,5 +1,5 @@
 import { useCallback, useMemo, useRef, useSyncExternalStore } from 'react';
-import { asNodeId, SceneCanvas, useScene, solid, createModeDecorationLayer, createWorkspaceTintLayer, type DrawCommand, movePreset, pickPreset, transformPreset, WeaselProvider, textCommandFromRuns } from '@weasel-js/core';
+import { asNodeId, SceneCanvas, useScene, solid, createModeDecorationLayer, createWorkspaceTintLayer, type DrawCommand, WeaselProvider, textCommandFromRuns } from '@weasel-js/core';
 import {
   ALL_TAGS,
   IMPLICIT_TAGS,
@@ -17,6 +17,7 @@ import { SegmentedBar } from '@weasel-js/ui/components/Segmented';
 import { ToolPalette } from '@weasel-js/ui/components/ToolPalette';
 import styles from './ModesDemo.module.css';
 import { DemoStage } from './DemoStage';
+import { movePreset, pickPreset, transformPreset } from '@weasel-js/editing';
 
 const W = 620, H = 340;
 

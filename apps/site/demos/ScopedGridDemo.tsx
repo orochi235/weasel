@@ -1,7 +1,8 @@
 import { useMemo } from 'react';
-import { asNodeId, RIGID_POSE_COMPOSITION, SceneCanvas, solid, useScene, type Fill, type GroupBoxData, type RectPose, type Stroke, type UnitScope, movePreset, selectPreset, viewPreset } from '@weasel-js/core';
+import { asNodeId, RIGID_POSE_COMPOSITION, SceneCanvas, solid, useScene, type Fill, type GroupBoxData, type RectPose, type Stroke, type UnitScope, viewPreset } from '@weasel-js/core';
 import { createGridLayer, gridSnapSource, sceneGridRegions, type GridScopes } from '@weasel-js/guides';
 import { DemoStage } from './DemoStage';
+import { movePreset, selectPreset } from '@weasel-js/editing';
 
 interface Data extends GroupBoxData { fill?: Fill; stroke?: Stroke }
 

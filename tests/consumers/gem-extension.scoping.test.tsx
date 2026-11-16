@@ -5,13 +5,10 @@
  */
 import { describe, it, expect, vi, beforeAll, afterEach } from 'vitest';
 import { act, cleanup, render, screen } from '@testing-library/react';
-import {
-  SceneCanvas, asNodeId, buildSceneViewCommands, createScene, defaultDrawOne, getNodeShapes, findNodeShape,
-  nodeKindPreset, nodeShapesOf, selectPreset,
-  type FeaturePreset, type RectPose, type Scene, type SceneCanvasHit, type ToolsApi,
-} from '@weasel-js/core';
+import { SceneCanvas, asNodeId, buildSceneViewCommands, createScene, defaultDrawOne, getNodeShapes, findNodeShape, nodeKindPreset, nodeShapesOf, type FeaturePreset, type RectPose, type Scene, type SceneCanvasHit, type ToolsApi } from '@weasel-js/core';
 import { SelectionPanel } from '@weasel-js/ui';
 import { GEM_BLUE, gemFeature, gemInsert, gemTool, isGem } from './gem-extension/src/index.js';
+import { selectPreset } from '@weasel-js/editing';
 
 beforeAll(() => {
   const proto = HTMLCanvasElement.prototype as unknown as Record<string, unknown>;

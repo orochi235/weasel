@@ -37,5 +37,6 @@ export * from './barrel/interactions';
 export * from './barrel/icons';
 export * from './barrel/renderer';
 export * from './barrel/snap';
+export * from './barrel/editingSeams';
 export type { CoreKitTargetSettings, GestureKitSettings, ViewKitSettings } from './kitSettings';
 export { coreKitSettingsSchema } from './kitSettingsSchema';

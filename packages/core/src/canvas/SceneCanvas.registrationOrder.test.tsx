@@ -14,7 +14,7 @@ import { createScene } from 'core/scene/scene';
 import type { SurfaceContribution } from './surfaceContribution';
 import type { InsertDep, SnapDep } from 'interactions/actions/depSchema';
 import { poseBoxes, type DrawnBoxesSource } from 'interactions/actions/drawnBoxes';
-import { drawPreset } from 'canvas/SceneCanvas/presets';
+import { drawPreset } from '@weasel-js/editing';
 
 type D = { kind: 'rect' };
 type P = { x: number; y: number; width: number; height: number };

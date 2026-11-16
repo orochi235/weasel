@@ -4,15 +4,14 @@ import { renderHook, act } from '@testing-library/react';
 import { renderWithKeys as render } from '@weasel-js/react/testing/giveKeys';
 import { reportRouteConflicts, resolveParams, type ActionsRegistry } from '@weasel-js/routing';
 import { useActionsRegistry } from '@weasel-js/routing/react';
-import {
-  createScene, drawPreset, type NodeId, type Scene, SceneCanvas, useEyedropperTool, useHandTool, useSelection,
-} from '@weasel-js/core';
+import { createScene, type NodeId, type Scene, SceneCanvas, useEyedropperTool, useHandTool, useSelection } from '@weasel-js/core';
 import { useMeasureTool } from './useMeasureTool';
 import { createMeasurements, measureIds } from './measurements';
 import { measureEndsOf } from './measurement';
 import { measurementsContribution } from './measureContribution';
 import { measureEndSource } from './measureHit';
 import { MEASURE_ACTION_IDS } from './actionIds';
+import { drawPreset } from '@weasel-js/editing';
 
 const ms0 = () => createMeasurements({ layer: 'notes' });
 

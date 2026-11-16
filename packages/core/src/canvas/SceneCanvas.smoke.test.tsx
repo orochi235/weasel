@@ -16,7 +16,7 @@ import type { Scene, NodeId } from 'core/scene/types';
 import type { ActionDisabledReason } from '@weasel-js/routing';
 import { defaultNodeRouting } from './SceneCanvas/defaultNodeRouting';
 import type { NodeRoutingEntry } from '../core/scene/NodeRouting';
-import { drawPreset } from 'canvas/SceneCanvas/presets';
+import { drawPreset } from '@weasel-js/editing';
 
 type D = { kind: string; path?: unknown; fill?: string };
 type L = 'main';

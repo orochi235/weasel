@@ -4,13 +4,12 @@ import { render } from '@testing-library/react';
 import { ActionsProvider, useActionsRegistry } from '@weasel-js/routing/react';
 import type { Action, ActionsRegistry } from '@weasel-js/routing';
 import { DepRegistryProvider, useDepRegistry } from '@weasel-js/routing/react';
-import { useStandardActions, KIT_STANDARD_ACTION_IDS } from './useStandardActions';
 import { renderThenAbandon } from '@weasel-js/react/testing/abandonRender';
-import type { UseStandardActionsOptions } from './useStandardActions';
 
 // Import depSchema augmentation so DepSchema entries are typed
 import './depSchema';
 import { requiresSelection } from './defaults/requiresSelection';
+import { useStandardActions, KIT_STANDARD_ACTION_IDS, type UseStandardActionsOptions } from '@weasel-js/editing';
 
 // ---------------------------------------------------------------------------
 // Test wrappers

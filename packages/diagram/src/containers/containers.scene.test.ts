@@ -1,8 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import {
-  commitOps, createScene, nudgePreset, scenePoseFrame, moveAction, resizeAction, sceneFromJSON, type ActionDeps, type InvocationCtx, type NodeId, type OngoingHandle,
-  type OngoingInvoker, type RectPose,
-} from '@weasel-js/core';
+import { commitOps, createScene, scenePoseFrame, moveAction, resizeAction, sceneFromJSON, type ActionDeps, type InvocationCtx, type NodeId, type OngoingHandle, type OngoingInvoker, type RectPose } from '@weasel-js/core';
 import type { Vec2 } from '@weasel-js/core/math';
 import { EDGE_DERIVE_PATH, withDiagramRegistry } from '../edge';
 import type { DiagramEdge } from '../edgeTrait';
@@ -10,6 +7,7 @@ import { waypointFollower } from '../waypointFollower';
 import { diagramCanDropInto } from './canDropInto';
 import { CONTAINER_STENCILS, addLane, containerBuild, lanesOf, releaseMembers } from './containerStencils';
 import { titleIdOf } from './trait';
+import { nudgePreset } from '@weasel-js/editing';
 
 type Scene = ReturnType<typeof makeScene>;
 

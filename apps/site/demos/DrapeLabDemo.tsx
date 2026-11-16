@@ -1,4 +1,4 @@
-import { useLatest, movePreset, pickPreset } from '@weasel-js/core';
+import { useLatest } from '@weasel-js/core';
 import { pathsPreset } from '@weasel-js/path-tools';
 import { type ConfigOf, defineInstrument, f, Lab, type RenderContext, TrialSceneCanvas } from '@weasel-js/labkit';
 import { createDrapePreset } from '@weasel-js/path-tools';
@@ -7,6 +7,7 @@ import { icon } from '../icons.gen';
 import { type PathLabState, usePathEditTrial } from './pathEditLabScene';
 import '@weasel-js/labkit/styles.css';
 import 'windease/styles.css';
+import { movePreset, pickPreset } from '@weasel-js/editing';
 
 const config = f.schema({
   drape: f.boolean(true).label('Drape'),

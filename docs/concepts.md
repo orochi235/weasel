@@ -124,7 +124,7 @@ passed alone. A tool brings the kit actions it binds, so
 drags the view under any preset, and `actions` adds, overrides or removes on
 top of all of it.
 
-**Names are an optional entry.** `@weasel-js/core/named-features` maps core's
+**Names are an optional entry.** `@weasel-js/editing` maps core's
 preset names to the objects: `namedFeatures('pick', 'move')` is
 `[pickPreset, movePreset]` and means exactly that, with nothing implied.
 `FEATURE_NAMES` lists every name, `FEATURE_PRESETS` keys each object by it, and
@@ -943,8 +943,9 @@ and run on ambient bindings alone.
 ## Putting it together
 
 ```tsx
-import { drawPreset, SceneCanvas, useScene } from '@weasel-js/core';
+import { SceneCanvas, useScene } from '@weasel-js/core';
 import { createGridLayer } from '@weasel-js/guides';
+import { drawPreset } from '@weasel-js/editing';
 
 type Swatch = { color: string };
 

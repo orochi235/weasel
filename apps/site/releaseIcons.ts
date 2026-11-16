@@ -17,6 +17,7 @@ export const PACKAGE_ICONS: Readonly<Record<string, IconRef>> = {
   'diagram-elk': icon('diagramElk'),
   'diagram-formats': icon('diagramFormats'),
   dither: icon('dither'),
+  editing: icon('core:select'),
   editor: icon('editor'),
   font: icon('font'),
   forge: icon('forge'),

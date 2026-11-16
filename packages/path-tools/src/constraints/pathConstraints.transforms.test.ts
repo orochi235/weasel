@@ -7,18 +7,9 @@
 import { describe, expect, it } from 'vitest';
 import { polygonFromPoints, type PathConstraint, type PolygonPath } from '@weasel-js/geom';
 import type { ImmediateInvoker, InvocationCtx, OngoingInvoker } from '@weasel-js/routing';
-import {
-  IDENTITY_POSE_COMPOSITION,
-  asNodeId,
-  createScene,
-  flipAction,
-  type NodeId,
-  type RectPose,
-  resizeAction,
-  rotateAction,
-  type AnyScene,
-} from '@weasel-js/core';
+import { IDENTITY_POSE_COMPOSITION, asNodeId, createScene, type NodeId, type RectPose, resizeAction, rotateAction, type AnyScene } from '@weasel-js/core';
 import { constraintConflictsOf } from './pathConstraints';
+import { flipAction } from '@weasel-js/editing';
 
 const ID = asNodeId('box');
 

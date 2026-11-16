@@ -1,8 +1,9 @@
 import { afterEach, beforeAll, describe, expect, it } from 'vitest';
 import { act, cleanup } from '@testing-library/react';
 import { renderWithKeys as render } from '@weasel-js/react/testing/giveKeys';
-import { SceneCanvas, drawPreset, useScene, type ToolsApi } from '@weasel-js/core';
+import { SceneCanvas, useScene, type ToolsApi } from '@weasel-js/core';
 import { textToolsPreset } from './presets';
+import { drawPreset } from '@weasel-js/editing';
 
 type P = { x: number; y: number; width: number; height: number };
 

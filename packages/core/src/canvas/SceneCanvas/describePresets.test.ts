@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { describePresets, isAtom } from './describePresets';
 import { presetToolIds, type FeaturePreset } from './features';
-import { FEATURE_PRESETS } from './namedPresets';
+import { FEATURE_PRESETS } from '@weasel-js/editing';
 
 const core = describePresets({ '@weasel-js/core': Object.values(FEATURE_PRESETS) });
 const of = (id: string) => core.find((d) => d.id === id)!;

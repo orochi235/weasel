@@ -1,6 +1,5 @@
 import { describe, it, expect } from 'vitest';
 import type { Action } from '@weasel-js/routing';
-import { KIT_STANDARD_ACTION_IDS } from 'interactions/actions/useStandardActions';
 import {
   resolveFeatures,
   presetActions,
@@ -10,14 +9,8 @@ import {
   presetToolIds,
   type FeaturePreset,
 } from './features';
-import {
-  FEATURE_ACTION_IDS,
-  FEATURE_NAMES,
-  FEATURE_PRESETS,
-  namedFeatures,
-  BASELINE_ACTION_IDS, TOOL_DRIVEN_ACTION_IDS,
-  type FeatureName,
-} from './namedPresets';
+import { BASELINE_ACTION_IDS } from './presets/baseline';
+import { TOOL_DRIVEN_ACTION_IDS } from './presets/toolDriven';
 import { PRESET_OWNED_CHROME } from './presets/chrome';
 import { BUILTIN_TOOL_IDS } from './props';
 import { defaultVisibilityRules, never } from 'domains/chrome-caps';
@@ -27,6 +20,7 @@ import {
   SELECTION_ROTATE_ID,
 } from 'tools/builtin/select/selectionContributions';
 import { MIDDLE_DRAG_PAN_ID } from 'tools/builtin/hand/dragPanContribution';
+import { KIT_STANDARD_ACTION_IDS, FEATURE_ACTION_IDS, FEATURE_NAMES, FEATURE_PRESETS, namedFeatures, type FeatureName } from '@weasel-js/editing';
 
 // Names keep these tables readable; `namedFeatures` maps each to its object.
 type Entry = FeatureName | FeaturePreset;

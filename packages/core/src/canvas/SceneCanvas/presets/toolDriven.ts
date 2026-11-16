@@ -22,3 +22,10 @@ export const toolDrivenActions: readonly Action[] = [
 export const builtinToolActions: readonly Action[] = [
   ...toolDrivenActions, areaSelectAction, lassoSelectAction, clearSelectionAction, viewportDragPanAction,
 ];
+
+/**
+ * Kit-standard actions no preset registers: they belong to the tools that bind
+ * them. A canvas registers each one whenever a tool it carries names it in a
+ * binding — `insert` with any shape tool.
+ */
+export const TOOL_DRIVEN_ACTION_IDS: readonly string[] = toolDrivenActions.map((a) => a.id);

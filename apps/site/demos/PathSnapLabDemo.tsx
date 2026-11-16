@@ -1,4 +1,4 @@
-import { IDENTITY_POSE_COMPOSITION, asNodeId, createScene, ellipsePath, pathFromD, pathSnapSource, solid, drawPreset } from '@weasel-js/core';
+import { IDENTITY_POSE_COMPOSITION, asNodeId, createScene, ellipsePath, pathFromD, pathSnapSource, solid } from '@weasel-js/core';
 import { pathsPreset, usePenTool } from '@weasel-js/path-tools';
 import {
   type ConfigOf,
@@ -16,6 +16,7 @@ import { strokeNode } from './pathEditLabScene';
 import '@weasel-js/labkit/styles.css';
 import 'windease/styles.css';
 import { icon } from '../icons.gen';
+import { drawPreset } from '@weasel-js/editing';
 
 const config = f.schema({
   kinds: f.group({

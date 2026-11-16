@@ -1,8 +1,9 @@
 import { describe, it, expect, vi, beforeAll } from 'vitest';
 import { act } from '@testing-library/react';
 import { renderWithKeys as render } from '@weasel-js/react/testing/giveKeys';
-import { createScene, drawPreset, SceneCanvas } from '@weasel-js/core';
+import { createScene, SceneCanvas } from '@weasel-js/core';
 import { usePencilTool } from './usePencilTool';
+import { drawPreset } from '@weasel-js/editing';
 
 type D = { kind: string };
 type L = 'main';

@@ -1,14 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import {
-  asNodeId,
-  easeInOutSine,
-  momentum,
-  SceneCanvas,
-  WeaselProvider,
-  useAnimatedReflow,
-  useScene,
-  useSelection, movePreset, pickPreset,
-} from '@weasel-js/core';
+import { asNodeId, easeInOutSine, momentum, SceneCanvas, WeaselProvider, useAnimatedReflow, useScene, useSelection } from '@weasel-js/core';
 import { useAnimator } from '@weasel-js/animator/react';
 import type { Dims, PoseTransitionSeat } from '@weasel-js/core';
 import type { Animator } from '@weasel-js/animator';
@@ -20,6 +11,7 @@ import styles from './AnimationDemo.module.css';
 import { AnimatorWatch } from './animation/AnimatorWatch';
 import { FlickSnapPanel } from './animation/FlickSnapPanel';
 import { DemoStage } from './DemoStage';
+import { movePreset, pickPreset } from '@weasel-js/editing';
 
 interface Card { id: string; x: number; y: number; width: number; height: number; color: string }
 interface Pose { x: number; y: number; width: number; height: number }

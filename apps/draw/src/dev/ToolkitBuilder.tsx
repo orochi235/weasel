@@ -5,7 +5,7 @@
  * under `#/dev/toolkits` (sibling to `RegistryInspector` at `#/dev/registry`).
  */
 import { asNodeId, type FeaturePreset, type Fill, SceneCanvas, solid, useScene } from '@weasel-js/core';
-import { FEATURE_NAMES, type FeatureName, namedFeatures } from '@weasel-js/core/named-features';
+import { FEATURE_NAMES, type FeatureName, namedFeatures } from '@weasel-js/editing';
 import { pathTools, usePathToolsTools } from '@weasel-js/path-tools';
 import { textToolsPreset } from '@weasel-js/text-tools';
 import { Select } from '@weasel-js/ui/components/Select';

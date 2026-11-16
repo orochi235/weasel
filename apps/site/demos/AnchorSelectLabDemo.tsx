@@ -1,4 +1,4 @@
-import { type ActionTunings, PathBuilder, drawPreset } from '@weasel-js/core';
+import { type ActionTunings, PathBuilder } from '@weasel-js/core';
 import { ANCHOR_SELECTION_GROUP, anchorSelectionPreset, pathsPreset } from '@weasel-js/path-tools';
 import {
   type ConfigOf,
@@ -15,6 +15,7 @@ import { OpeningSteps, PathLabStage } from './pathLab/pathLab';
 import '@weasel-js/labkit/styles.css';
 import 'windease/styles.css';
 import { icon } from '../icons.gen';
+import { drawPreset } from '@weasel-js/editing';
 
 const config = f.schema({
   n: f.number(4).range(2, 8).step(1).label('Every Nth: N'),

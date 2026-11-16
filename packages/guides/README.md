@@ -26,8 +26,9 @@ npm install @weasel-js/guides
 A grid you can see and snap to:
 
 ```tsx
-import { drawPreset, SceneCanvas } from '@weasel-js/core';
+import { SceneCanvas } from '@weasel-js/core';
 import { createGridPreset } from '@weasel-js/guides';
+import { drawPreset } from '@weasel-js/editing';
 
 const grid = createGridPreset({ spacing: 20 });
 

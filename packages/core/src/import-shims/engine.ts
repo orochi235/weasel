@@ -15,6 +15,7 @@ export type { AreaSelectAdapter, ClipboardSnapshot, InsertAdapter, LassoHitMode,
 export { watchDevicePixelRatio } from '../core/device/watchDevicePixelRatio';
 export { AUTO_POSE_DESCRIPTOR, isPathLike, isRectPose } from '../core/geometry/autoPoseDescriptor';
 export type { BooleanShapeOp } from '../core/geometry/booleanOfPaths';
+export { isNoInkExtents } from '../core/geometry/inkExtents';
 export type { InkExtents } from '../core/geometry/inkExtents';
 export { pathPoseDescriptor } from '../core/geometry/pathPoseDescriptor';
 export { RECT_POSE_DESCRIPTOR, ROTATED_POSE_DESCRIPTOR, poseDescriptorForNode, translatePoseViaDescriptor, visualBoundsViaDescriptor } from '../core/geometry/poseDescriptor';
@@ -99,6 +100,7 @@ export type { PoseHold, PoseOverride, PoseOverrides, ShownOverride } from '../co
 export type { PoseRemoval, PoseWrite, PoseWriteOrigin, RemovedNode, ScenePoseReports } from '../core/scene/poseWrites';
 export type { SceneBatchOptions } from '../core/scene/recorder';
 export type { RegisteredOp } from '../core/scene/registeredOp';
+export { sameValue } from '../core/scene/sameValue';
 export { createScene, sceneFromJSON } from '../core/scene/scene';
 export type { SceneFromJSONOptions } from '../core/scene/scene';
 export type { SceneChanges } from '../core/scene/sceneChanges';
@@ -168,7 +170,7 @@ export type { DropRefusal, DropVerdict } from '../interactions/actions/dropVerdi
 export type { ClipboardDep, SliceDep } from '../interactions/actions/editDeps';
 export type { ResizePolicy, ViewApi } from '../interactions/actions/engineDeps';
 export { ENGINE_STANDARD_ACTIONS } from '../interactions/actions/engineStandardActions';
-export { PATH_GEOMETRY_PROJECTION } from '../interactions/actions/geometryProjection';
+export { PATH_GEOMETRY_PROJECTION, geometryDataOp } from '../interactions/actions/geometryProjection';
 export type { GeometryProjection, PoseChange } from '../interactions/actions/geometryProjection';
 export type { GestureLifecycleOptions } from '../interactions/actions/gestureLifecycle';
 export { insertAction } from '../interactions/actions/insert/action';
@@ -177,7 +179,8 @@ export type { CanDropIntoDep, LayoutDep } from '../interactions/actions/layoutDe
 export { moveAction } from '../interactions/actions/move/action';
 export { operandList } from '../interactions/actions/operands';
 export type { OperandsDep } from '../interactions/actions/operands';
-export { sceneBoxFrames, scenePoseFrame, worldPoseOf, worldPoses } from '../interactions/actions/poseFrame';
+export { poseDescriptorOf } from '../interactions/actions/poseDescriptorDep';
+export { poseFrame, sceneBoxFrames, scenePoseFrame, worldPoseOf, worldPoses } from '../interactions/actions/poseFrame';
 export type { PoseFrame, PoseReading } from '../interactions/actions/poseFrame';
 export type { AreaSelectDep, ColorAtDep, HitTestView, LassoSelectDep, NodeAtPointDep } from '../interactions/actions/regionSelectDeps';
 export { CORNER_ANCHORS, EDGE_HANDLE_MIN_RADII, RESIZE_HANDLE_ANCHORS, cornerResizeHandles, fixedCornerOf, handlePoint, hitCornerHandle, isCornerHandle, resizeHandlesFor } from '../interactions/actions/resize/cornerHandles';
@@ -185,6 +188,7 @@ export type { CornerAnchor, CornerEdge, CornerHandle, HandleEdge, ResizeHandleAn
 export { resolveOverlays } from '../interactions/actions/resolveOverlays';
 export type { OverlayVisibilityId, ResolvedOverlay } from '../interactions/actions/resolveOverlays';
 export type { SnapBegin, SnapConstrain, SnapDep, SnapGeometry, SnapMods, SnapOutcome, SnapResizeBox, SnapSession } from '../interactions/actions/snapDep';
+export { commitTransformOps, transformApplyOps } from '../interactions/actions/transformFinish';
 export type { TransformFollower, TransformPreviewNode } from '../interactions/actions/transformFinish';
 export { useActionSet, useStandardDeps } from '../interactions/actions/useActionSet';
 export type { StandardDeps } from '../interactions/actions/useActionSet';

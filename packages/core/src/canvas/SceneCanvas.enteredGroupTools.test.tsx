@@ -17,7 +17,7 @@ import { asNodeId, type NodeId } from 'core/scene/types';
 import { useSelection, type SelectionApi } from 'core/selection/useSelection';
 import { createEnteredGroup } from './deps/enteredGroup';
 import { SceneCanvas } from './SceneCanvas';
-import { drawPreset } from 'canvas/SceneCanvas/presets';
+import { drawPreset } from '@weasel-js/editing';
 
 beforeAll(() => {
   const proto = HTMLCanvasElement.prototype as unknown as Record<string, unknown>;

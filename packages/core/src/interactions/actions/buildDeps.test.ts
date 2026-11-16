@@ -15,19 +15,17 @@ import type { DepRegistry } from '@weasel-js/routing/react';
 import type { Action } from '@weasel-js/routing';
 import { moveAction } from './move/action';
 import { resizeAction } from './resize/action';
-import { flipAction } from './flip/action';
 import { rotateAction } from './rotate/action';
 import { groupAction } from './defaults/group';
 import { cloneAction } from './clone/action';
 import { duplicateAction } from './defaults/duplicate';
-import { alignLeftAction } from './align/action';
-import { distributeHorizontalAction } from './distribute/action';
 import {
   nudgeUpAction,
   nudgeDownAction,
   nudgeLeftAction,
   nudgeRightAction,
 } from './defaults/nudge';
+import { flipAction, alignLeftAction, distributeHorizontalAction } from '@weasel-js/editing';
 
 const PROJECTION = { token: 'geometry-projection-stub' };
 

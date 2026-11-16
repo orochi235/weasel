@@ -7,7 +7,7 @@ import { asNodeId } from 'core/scene/types';
 import { useTools } from '../tools/overlayBinding';
 import { defineTool } from '../tools/overlayBinding';
 import { WeaselProvider } from '../WeaselProvider';
-import { drawPreset } from 'canvas/SceneCanvas/presets';
+import { drawPreset } from '@weasel-js/editing';
 
 // jsdom doesn't implement getContext or pointer capture; stub minimally.
 beforeAll(() => {

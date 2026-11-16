@@ -1,0 +1,108 @@
+import { useCallback } from 'react';
+import { useLatest } from '@weasel-js/react';
+import { createTransformOp, dispatchApplyBatch, RECT_POSE_DESCRIPTOR, type PoseDescriptor, translatePoseViaDescriptor, poseFrame, type PoseFrame, uncarried, IDENTITY_POSE_COMPOSITION, type PoseComposition } from '@weasel-js/core';
+import type { Op, NodeId } from '@weasel-js/core';
+import { alignBoxReader, type UseAlignOptions } from '../align/align';
+import { planDistribute } from './plan';
+
+/** Axis along which selection is distributed. `'x'` spreads horizontally. */
+export type DistributeAxis = 'x' | 'y';
+
+/** `'centers'` spaces centers equally; `'gaps'` makes the gap between
+ *  consecutive items equal. Both measure a rotated item by its ink extent.
+ *  Endpoints stay put in both modes. */
+export type DistributeMode = 'centers' | 'gaps';
+
+/** Adapter for `useDistribute`. */
+export interface DistributeAdapter<TPose> {
+  getSelection(): NodeId[];
+  /** The pose as stored — local to the node's parent. */
+  getPose(id: NodeId): TPose;
+  /** The node's container, `null` for a root: the chain a pose is composed
+   *  through when container poses define a frame. */
+  getParent(id: NodeId): NodeId | null;
+  applyOps?(ops: Op[], label?: string): void;
+}
+
+/** Options for `useDistribute`. */
+export interface UseDistributeOptions<TPose> {
+  /** Projection between `TPose` and bounds. Defaults to `RECT_POSE_DESCRIPTOR`
+   *  for `{x,y,width,height}` poses. */
+  geometry?: PoseDescriptor<TPose>;
+  /** Default mode when `distribute(axis)` is called without one. Default 'centers'. */
+  defaultMode?: DistributeMode;
+  /** Label passed to applyOps. Default 'Distribute'. */
+  label?: string;
+  /** How local poses fold up to world. Default IDENTITY, which takes every
+   *  pose the adapter answers as world; over a scene's adapter, pass
+   *  `scene.composition`. */
+  composition?: PoseComposition<TPose>;
+  /** The nodes behind the adapter's ids, as `useAlign` takes them: with it, a
+   *  stroked node is spaced by the box it is drawn with. */
+  scene?: UseAlignOptions<TPose>['scene'];
+  /** View scale a screen-pixel stroke is resolved at. Default 1. */
+  viewScale?: UseAlignOptions<TPose>['viewScale'];
+}
+
+/** Return shape of `useDistribute`. */
+export interface UseDistributeReturn {
+  /** Imperative trigger. No-op when fewer than 3 items selected. */
+  distribute(axis: DistributeAxis, mode?: DistributeMode): void;
+}
+
+/** Distribute the current multi-selection along `axis`. Requires ≥3 items;
+ *  no-op otherwise. Endpoints (min and max along the axis) stay put; the
+ *  remaining items are repositioned. Single batch — one undo step.
+ *
+ *  The span being divided is a world span: bounds are measured and translated
+ *  in world, and each result is stored back in its own parent's frame. A node
+ *  in a singular frame stays where it is. */
+export function useDistribute<TPose>(
+  adapter: DistributeAdapter<TPose>,
+  options: UseDistributeOptions<TPose> = {},
+): UseDistributeReturn {
+  const adapterRef = useLatest(adapter);
+  const optsRef = useLatest(options);
+
+  const distribute = useCallback((axis: DistributeAxis, mode?: DistributeMode): void => {
+    const a = adapterRef.current;
+    const o = optsRef.current;
+    const geom =
+      o.geometry ??
+      (RECT_POSE_DESCRIPTOR as unknown as PoseDescriptor<TPose>);
+    const m = mode ?? o.defaultMode ?? 'centers';
+
+    const frame = poseFrame<TPose>(
+      {
+        getPose: (id) => a.getPose(id as NodeId),
+        getParent: (id) => a.getParent(id as NodeId) as string | null,
+      },
+      o.composition ?? (IDENTITY_POSE_COMPOSITION as PoseComposition<TPose>),
+    );
+    const sel = uncarried(frame as PoseFrame<unknown>, a.getSelection());
+    if (sel.length < 3) return;
+    const boxOf = alignBoxReader(o, geom, frame.world);
+    const items = sel.map((id) => {
+      const pose = frame.world(id);
+      return { id, pose, b: boxOf(id, pose) };
+    });
+    const targets = planDistribute(items.map((it) => it.b), axis, m);
+
+    const ops: Op[] = [];
+    for (let i = 0; i < items.length; i++) {
+      const it = items[i];
+      const delta = targets[i] - (axis === 'x' ? it.b.x : it.b.y);
+      if (delta === 0) continue;
+      const dx = axis === 'x' ? delta : 0;
+      const dy = axis === 'y' ? delta : 0;
+      const to = frame.local(it.id, translatePoseViaDescriptor(it.pose, dx, dy, geom));
+      // No stored pose in a singular frame reaches the spacing, so the node stays where it is.
+      if (to === null) continue;
+      ops.push(createTransformOp<TPose>({ id: it.id, from: a.getPose(it.id), to }));
+    }
+    if (ops.length === 0) return;
+    dispatchApplyBatch(a, ops, o.label ?? 'Distribute');
+  }, [adapterRef, optsRef]);
+
+  return { distribute };
+}

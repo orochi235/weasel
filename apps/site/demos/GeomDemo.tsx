@@ -1,5 +1,5 @@
 import { useMemo, useState, useSyncExternalStore } from 'react';
-import { SceneCanvas, useScene, circlePath, polylineFromPoints, rectPath, movePreset, pickPreset, worldPoses } from '@weasel-js/core';
+import { SceneCanvas, useScene, circlePath, polylineFromPoints, rectPath, worldPoses } from '@weasel-js/core';
 import type { NodeId, RenderLayer, Scene } from '@weasel-js/core';
 import type { DrawCommand } from '@weasel-js/core/renderer';
 import {
@@ -17,6 +17,7 @@ import { InlineRange } from '@weasel-js/ui/components/InlineRange';
 import s from './GeomDemo.module.css';
 import { DemoStage } from './DemoStage';
 import { decimal, qty } from '@weasel-js/quantity';
+import { movePreset, pickPreset } from '@weasel-js/editing';
 
 const W = 620, H = 360;
 const R = 7;

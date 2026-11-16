@@ -7,11 +7,10 @@ import { act, cleanup } from '@testing-library/react';
 import { renderWithKeys as render } from '@weasel-js/react/testing/giveKeys';
 import type { Skeleton } from '@weasel-js/animator';
 import { polygonFromPoints } from '@weasel-js/geom';
-import {
-  SceneCanvas, createScene, toolGaps, toolIdsOf, useActionsRegistry, type ActionsRegistry, type RectPose, type ToolsApi, drawPreset,
-} from '@weasel-js/core';
+import { SceneCanvas, createScene, toolGaps, toolIdsOf, useActionsRegistry, type ActionsRegistry, type RectPose, type ToolsApi } from '@weasel-js/core';
 import { RIG_TOOLS } from './toolSets';
 import { useRigTools } from './useRigTools';
+import { drawPreset } from '@weasel-js/editing';
 
 beforeAll(() => {
   (HTMLCanvasElement.prototype as unknown as { getContext: () => null }).getContext = () => null;

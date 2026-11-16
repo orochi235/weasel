@@ -1,15 +1,4 @@
-import {
-  asNodeId,
-  boundsOfPath,
-  createScene,
-  ellipsePath,
-  pathFromD,
-  solid,
-  type NodeId,
-  type RectPose,
-  drawPreset,
-  pathNode,
-} from '@weasel-js/core';
+import { asNodeId, boundsOfPath, createScene, ellipsePath, pathFromD, solid, type NodeId, type RectPose, pathNode } from '@weasel-js/core';
 import { pathsPreset, usePenTool, usePencilTool } from '@weasel-js/path-tools';
 import {
   type ConfigOf, defineInstrument, f, Lab, type RenderContext, type SceneTrialState, TrialSceneCanvas,
@@ -24,6 +13,7 @@ import { useLayoutEffect, useMemo, useRef } from 'react';
 import '@weasel-js/labkit/styles.css';
 import 'windease/styles.css';
 import { icon } from '../icons.gen';
+import { drawPreset } from '@weasel-js/editing';
 
 export const GROUP_ID = 'symmetry';
 /** A leaf symmetric about the kaleidoscope's first mirror, open in path edit. */

@@ -10,11 +10,11 @@ import type { ActionsRegistry } from '@weasel-js/routing';
 import { createScene } from 'core/scene/scene';
 import { asNodeId, type NodeId } from 'core/scene/types';
 import { SceneCanvas } from 'canvas/SceneCanvas';
-import { drawPreset } from 'canvas/SceneCanvas/presets';
 import { operandList, type OperandsDep } from './operands';
 import { deleteAction } from './defaults/delete';
 import { nudgeRightAction } from './defaults/nudge';
 import type { ImmediateInvoker } from '@weasel-js/routing';
+import { drawPreset } from '@weasel-js/editing';
 
 beforeAll(() => {
   const proto = HTMLCanvasElement.prototype as unknown as Record<string, unknown>;

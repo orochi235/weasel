@@ -1,21 +1,8 @@
-import {
-  ellipsePath,
-  rectPath,
-  SceneCanvas,
-  solid,
-  starPath,
-  useScene,
-  useSelection,
-  WeaselProvider,
-  type Path,
-  editPreset,
-  movePreset,
-  pickPreset,
-  pathNode,
-} from '@weasel-js/core';
+import { ellipsePath, rectPath, SceneCanvas, solid, starPath, useScene, useSelection, WeaselProvider, type Path, pathNode } from '@weasel-js/core';
 import { useSliceTool } from '@weasel-js/path-tools';
 import { ToolPalette } from '@weasel-js/ui/components/ToolPalette';
 import { DemoStage } from './DemoStage';
+import { editPreset, movePreset, pickPreset } from '@weasel-js/editing';
 
 const W = 480, H = 320;
 

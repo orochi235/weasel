@@ -16,7 +16,7 @@ import type { Scene, NodeId } from 'core/scene/types';
 import type { ActionDisabledReason } from '@weasel-js/routing';
 import type { Contribution } from '../tools/overlayBinding';
 import { areaSelectContribution } from '../tools/builtin/select/selectionContributions';
-import { drawPreset, pickPreset } from 'canvas/SceneCanvas/presets';
+import { drawPreset, pickPreset } from '@weasel-js/editing';
 
 type D = { kind: 'rect' };
 type L = 'main';

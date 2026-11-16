@@ -2,13 +2,11 @@ import { describe, it, expect, vi, beforeAll, afterEach } from 'vitest';
 import { useState } from 'react';
 import { act, cleanup, fireEvent, screen, within } from '@testing-library/react';
 import { giveKeys } from '@weasel-js/react/testing/giveKeys';
-import {
-  SELECT_TOOLS, SHAPE_TOOLS, SceneCanvas, WeaselProvider, createScene, key, toolIdsOf, useCommand,
-  type BindingOverrides, type ToolsApi, drawPreset,
-} from '@weasel-js/core';
+import { SELECT_TOOLS, SHAPE_TOOLS, SceneCanvas, WeaselProvider, createScene, key, toolIdsOf, useCommand, type BindingOverrides, type ToolsApi } from '@weasel-js/core';
 import { renderWithIcons } from '../../testing/withIcons';
 import { ShortcutSheet } from './ShortcutSheet';
 import { useShortcutSheetCommand } from './shortcutSheetCommand';
+import { drawPreset } from '@weasel-js/editing';
 
 beforeAll(() => {
   const proto = HTMLCanvasElement.prototype as unknown as Record<string, unknown>;

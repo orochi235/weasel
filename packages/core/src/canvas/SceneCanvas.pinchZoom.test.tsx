@@ -12,8 +12,9 @@ import { render, act } from '@testing-library/react';
 import { SceneCanvas } from './SceneCanvas';
 import { createScene } from 'core/scene/scene';
 import type { View } from 'core/viewport/view';
-import { drawPreset, viewPreset } from 'canvas/SceneCanvas/presets';
+import { viewPreset } from 'canvas/SceneCanvas/presets';
 import type { FeaturePreset } from './SceneCanvas/features';
+import { drawPreset } from '@weasel-js/editing';
 
 type D = { kind: 'rect' };
 type L = 'main';

@@ -1,8 +1,9 @@
 import { describe, it, expect, vi, beforeAll } from 'vitest';
 import { render } from '@testing-library/react';
-import { SceneCanvas, pickPreset, useScene, type SceneCanvasProps } from '@weasel-js/core';
+import { SceneCanvas, useScene, type SceneCanvasProps } from '@weasel-js/core';
 import { createTextToolsPreset } from '../../presets';
 import { STICKY_DEFAULTS } from './stickyNode';
+import { pickPreset } from '@weasel-js/editing';
 
 type D = Record<string, unknown>;
 type L = 'main';

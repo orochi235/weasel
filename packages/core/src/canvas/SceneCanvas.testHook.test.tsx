@@ -5,7 +5,7 @@ import { SceneCanvas } from './SceneCanvas';
 import { useScene } from 'core/scene/useScene';
 import { defineTool, type useTools } from '../tools/overlayBinding';
 import { createGLRecorder } from '@weasel-js/renderer/testing/glRecorder';
-import { drawPreset } from 'canvas/SceneCanvas/presets';
+import { drawPreset } from '@weasel-js/editing';
 
 type D = { color: string };
 type L = 'main';

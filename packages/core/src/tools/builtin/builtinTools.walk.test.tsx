@@ -20,7 +20,7 @@ import { asNodeId, type Scene } from 'core/scene/types';
 import type { ToolsApi } from '../overlayBinding';
 import { SceneCanvas } from '../../canvas/SceneCanvas';
 import { BUILTIN_TOOL_GROUPS, BUILTIN_TOOL_IDS, type BuiltinToolId } from '../../canvas/SceneCanvas/builtinToolSets';
-import { drawPreset } from 'canvas/SceneCanvas/presets';
+import { drawPreset } from '@weasel-js/editing';
 
 type D = Record<string, unknown>;
 type P = { x: number; y: number; width: number; height: number; rotation?: number };

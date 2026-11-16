@@ -1,4 +1,4 @@
-import { ANCHORS_GROUP, drawPreset } from '@weasel-js/core';
+import { ANCHORS_GROUP } from '@weasel-js/core';
 import { addExtremesPreset, anchorSelectionPreset, pathsPreset } from '@weasel-js/path-tools';
 import {
   type ConfigOf,
@@ -15,6 +15,7 @@ import { OpeningSteps, PathLabStage } from './pathLab/pathLab';
 import '@weasel-js/labkit/styles.css';
 import 'windease/styles.css';
 import { icon } from '../icons.gen';
+import { drawPreset } from '@weasel-js/editing';
 
 const config = f.schema({});
 type Config = ConfigOf<typeof config>;

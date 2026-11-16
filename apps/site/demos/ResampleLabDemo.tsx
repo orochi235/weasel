@@ -1,4 +1,4 @@
-import { useActionsRegistry, drawPreset } from '@weasel-js/core';
+import { useActionsRegistry } from '@weasel-js/core';
 import { resamplePreset, pathsPreset } from '@weasel-js/path-tools';
 import {
   type ConfigOf,
@@ -15,6 +15,7 @@ import { PathLabStage } from './pathLab/pathLab';
 import '@weasel-js/labkit/styles.css';
 import 'windease/styles.css';
 import { icon } from '../icons.gen';
+import { drawPreset } from '@weasel-js/editing';
 
 // Resample's params are in the last-operation panel, once it has run.
 const config = f.schema({});

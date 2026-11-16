@@ -1,10 +1,8 @@
 // #region gem-one-by-one
 import { useEffect } from 'react';
-import {
-  SceneCanvas, drawPreset, registerNodeShape,
-  type RectPose, type Scene, type ToolsApi,
-} from '@weasel-js/core';
+import { SceneCanvas, registerNodeShape, type RectPose, type Scene, type ToolsApi } from '@weasel-js/core';
 import { gemInsert, gemShape, gemTool } from './gem.js';
+import { drawPreset } from '@weasel-js/editing';
 
 const FEATURES = [drawPreset];
 const TOOLS = { gem: gemTool };

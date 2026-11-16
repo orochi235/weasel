@@ -20,7 +20,7 @@ import { useSelection } from 'core/selection/useSelection';
 import { useSceneAdapter } from './useSceneAdapter';
 import { useSelectTool } from '../tools/builtin/select/useSelectTool';
 import { useTools } from '../tools/overlayBinding';
-import { arrangePreset, drawPreset, editPreset, movePreset, pickPreset, transformPreset } from 'canvas/SceneCanvas/presets';
+import { arrangePreset, drawPreset, editPreset, movePreset, pickPreset, transformPreset } from '@weasel-js/editing';
 
 beforeAll(() => {
   const proto = HTMLCanvasElement.prototype as unknown as {

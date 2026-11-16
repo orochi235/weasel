@@ -12,7 +12,7 @@ import type { NodeId } from 'core/scene/types';
 import { useDepRegistry } from '@weasel-js/routing/react';
 import type { SelectionApi } from 'core/selection/useSelection';
 import { useOptionalViewRegistry, type ViewRegistry } from './viewRegistry';
-import { movePreset, pickPreset, resizePreset } from 'canvas/SceneCanvas/presets';
+import { movePreset, pickPreset, resizePreset } from '@weasel-js/editing';
 
 type D = { kind: 'rect' };
 type L = 'main';

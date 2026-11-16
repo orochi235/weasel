@@ -7,13 +7,11 @@
 import { afterEach, beforeAll, describe, expect, it } from 'vitest';
 import { act, cleanup } from '@testing-library/react';
 import { renderWithKeys as render } from '@weasel-js/react/testing/giveKeys';
-import {
-  IDENTITY_POSE_COMPOSITION, SceneCanvas, asNodeId, createScene, pathFromD, toolGaps, toolIdsOf, useActionsRegistry, type ActionsRegistry, type PolygonPath,
-  type ToolsApi, drawPreset,
-} from '@weasel-js/core';
+import { IDENTITY_POSE_COMPOSITION, SceneCanvas, asNodeId, createScene, pathFromD, toolGaps, toolIdsOf, useActionsRegistry, type ActionsRegistry, type PolygonPath, type ToolsApi } from '@weasel-js/core';
 import { pathTools } from './presets';
 import { PATH_EDIT_TOOLS, PATH_TOOLS_TOOLS, usePathToolsTools } from './toolSets';
 import { ANCHORS_TOOL_ID } from './pathEdit/anchorsTool';
+import { drawPreset } from '@weasel-js/editing';
 
 const OURS = toolIdsOf([PATH_TOOLS_TOOLS]);
 

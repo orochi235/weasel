@@ -11,7 +11,7 @@ import { createRoot, type Root } from 'react-dom/client';
 import { flushSync } from 'react-dom';
 import type { DrawCommand } from '@weasel-js/renderer';
 import { SceneCanvas, createScene, asNodeId, type SceneNode as Node, type RectPose, useSelection } from '@weasel-js/core';
-import { outlinePreset, resizePreset } from 'canvas/SceneCanvas/presets';
+import { outlinePreset, resizePreset } from '@weasel-js/editing';
 
 const W = 340;
 const H = 200;

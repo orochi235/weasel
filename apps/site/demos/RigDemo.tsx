@@ -1,16 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import {
-  asNodeId,
-  easeInOutSine,
-  effectivePose,
-  mat3,
-  RECT_POSE_DESCRIPTOR,
-  rigidRigApply,
-  SceneCanvas,
-  solid,
-  useRig,
-  useScene, movePreset, pickPreset,
-} from '@weasel-js/core';
+import { asNodeId, easeInOutSine, effectivePose, mat3, RECT_POSE_DESCRIPTOR, rigidRigApply, SceneCanvas, solid, useRig, useScene } from '@weasel-js/core';
 import {
   jointAxes,
   resolveSkeleton,
@@ -33,6 +22,7 @@ import { InlineRange } from '@weasel-js/ui/components/InlineRange';
 import { Button } from '@weasel-js/ui/components/Button';
 import { Checkbox } from '@weasel-js/ui/components/Checkbox';
 import { DemoStage } from './DemoStage';
+import { movePreset, pickPreset } from '@weasel-js/editing';
 
 const W = 600, H = 340;
 const TEXT = createTextPreset({ editor: false });

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { describePresets, type PresetDescription } from '@weasel-js/core';
-import { FEATURE_PRESETS } from '@weasel-js/core/named-features';
+import { FEATURE_PRESETS } from '@weasel-js/editing';
 import { aliasNodes, BUNDLE_LINKS, bundleLoads, bundleProblems, bundleTree, copyNodes } from '@weasel-js/prefs/edit';
 
 const d = (id: string, more: Partial<PresetDescription> = {}): PresetDescription =>

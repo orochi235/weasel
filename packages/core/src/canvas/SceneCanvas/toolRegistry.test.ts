@@ -1,13 +1,13 @@
 import { describe, it, expect, vi, afterEach } from 'vitest';
 import { KIT_SHAPE_KINDS } from 'core/shapeKinds';
 import { resolveFeatures } from './features';
-import { namedFeatures, type FeatureName } from './namedPresets';
-import { selectPreset, viewPreset } from './presets';
+import { viewPreset } from './presets';
 import { BUILTIN_TOOL_IDS, type BuiltinToolId } from './props';
 import { resolveToolRegistry, type BuiltinTools } from './toolRegistry';
 import type { Tool } from 'tools/overlayBinding';
 import { toolIdsOf, withoutTools } from '@weasel-js/routing';
 import { BUILTIN_TOOLS, SELECT_TOOLS, SHAPE_TOOLS } from './builtinToolSets';
+import { namedFeatures, type FeatureName, selectPreset } from '@weasel-js/editing';
 
 // A kind the resolver has never heard of, so the tests below can only pass by
 // reading the table.

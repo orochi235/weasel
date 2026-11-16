@@ -5,7 +5,7 @@
 import { describe, it, expect, vi, beforeAll, afterEach } from 'vitest';
 import { act, cleanup } from '@testing-library/react';
 import { renderWithKeys as render } from '@weasel-js/react/testing/giveKeys';
-import { ActionsProvider, DepRegistryProvider, SceneCanvas, asNodeId, createScene, pathFromD, useDepRegistry, type DepRegistry, type PolygonPath, drawPreset } from '@weasel-js/core';
+import { ActionsProvider, DepRegistryProvider, SceneCanvas, asNodeId, createScene, pathFromD, useDepRegistry, type DepRegistry, type PolygonPath } from '@weasel-js/core';
 import { pathsPreset, useSliceTool } from '@weasel-js/path-tools';
 import { reportRouteConflicts } from '@weasel-js/core/routing';
 import { useMemo } from 'react';
@@ -14,6 +14,7 @@ import { isApplePlatform } from '@weasel-js/gestures';
 import { createModeMachine } from './machine';
 import { modePathEdit } from './pathEditHost';
 import { modalityShortcuts } from './shortcuts';
+import { drawPreset } from '@weasel-js/editing';
 
 beforeAll(() => {
   const proto = HTMLCanvasElement.prototype as unknown as {

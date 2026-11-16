@@ -32,7 +32,7 @@ import {
   _resetSvgHandlerSeamsForTests,
 } from 'domains/ingestion/svgHandler';
 import { buildWeaselClipboardText } from 'interactions/actions/clipboard/wireFormat';
-import { drawPreset, editPreset, ingestPreset } from 'canvas/SceneCanvas/presets';
+import { drawPreset, editPreset, ingestPreset } from '@weasel-js/editing';
 
 type D = { image?: { src: string } };
 type L = 'main';

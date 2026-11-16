@@ -1,12 +1,8 @@
-import {
-  SceneCanvas,
-  useScene,
-  useSelection,
-  BUILTIN_TOOL_IDS, pickPreset, WeaselProvider,
-} from '@weasel-js/core';
+import { SceneCanvas, useScene, useSelection, BUILTIN_TOOL_IDS, WeaselProvider } from '@weasel-js/core';
 import { usePencilTool, usePenTool, useSliceTool } from '@weasel-js/path-tools';
 import { ToolPalette } from '@weasel-js/ui/components/ToolPalette';
 import { DemoStage } from './DemoStage';
+import { pickPreset } from '@weasel-js/editing';
 
 const W = 600, H = 400;
 

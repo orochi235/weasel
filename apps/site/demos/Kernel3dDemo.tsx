@@ -1,15 +1,5 @@
 import { useMemo, useRef, useState } from 'react';
-import { IDENTITY_POSE_COMPOSITION,
-  type CanvasSize,
-  type DrawCommand,
-  polygonFromPoints,
-  polylineFromPoints,
-  type RenderLayer,
-  SceneCanvas,
-  solid,
-  useLatest,
-  useScene, pickPreset, WeaselProvider,
-} from '@weasel-js/core';
+import { IDENTITY_POSE_COMPOSITION, type CanvasSize, type DrawCommand, polygonFromPoints, polylineFromPoints, type RenderLayer, SceneCanvas, solid, useLatest, useScene, WeaselProvider } from '@weasel-js/core';
 import { ToolPalette } from '@weasel-js/ui/components/ToolPalette';
 import { RAD_TO_DEG, wrapAngle } from '@weasel-js/geom';
 import { dot, multiply, quatFromAxisAngle, sub, transformPoint4, type Mat4, type Vec3 } from '@weasel-js/geom/3d';
@@ -21,6 +11,7 @@ import {
 import styles from './Kernel3dDemo.module.css';
 import { decimal, qty } from '@weasel-js/quantity';
 import { DemoStage } from './DemoStage';
+import { pickPreset } from '@weasel-js/editing';
 
 const W = 620, H = 400;
 const LIGHT: Vec3 = { x: 0.4, y: 0.8, z: 0.45 };

@@ -4,12 +4,11 @@ import { clipboardCopyAction, clipboardCutAction, clipboardPasteAction } from '.
 import { duplicateAction } from './duplicate';
 import { transformAgainAction } from '../transform-again/action';
 import { groupAction, ungroupAction } from './group';
-import { reorderForwardAction, reorderBackwardAction } from './reorder';
-import { flipAction } from '../flip/action';
 import { undoAction, redoAction } from './undoRedo';
 import { deleteAction } from './delete';
 import { icons } from '../../../icons.table';
 import { iconParts } from '@weasel-js/icons';
+import { reorderForwardAction, reorderBackwardAction, flipAction } from '@weasel-js/editing';
 
 describe('default edit-action icons', () => {
   const items = [

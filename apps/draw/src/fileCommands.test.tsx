@@ -2,18 +2,7 @@ import { useState } from 'react';
 import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
 import { act, cleanup, fireEvent, screen } from '@testing-library/react';
 import { renderWithKeys as render } from '@weasel-js/react/testing/giveKeys';
-import {
-  ActionDisabledReason,
-  ActionsProvider,
-  DepRegistryProvider,
-  SceneCanvas,
-  actionItems,
-  asNodeId,
-  pagesOf,
-  placedPagesOf,
-  useActionsRegistry,
-  type ActionsRegistry, drawPreset,
-} from '@weasel-js/core';
+import { ActionDisabledReason, ActionsProvider, DepRegistryProvider, SceneCanvas, actionItems, asNodeId, pagesOf, placedPagesOf, useActionsRegistry, type ActionsRegistry } from '@weasel-js/core';
 import { CommandPalette } from '@weasel-js/ui/components/CommandPalette';
 import type { DrawScene } from './drawDocument';
 import { FILE_ACTIONS, useFileCommands, type FileCommandsTarget } from './fileCommands';
@@ -26,6 +15,7 @@ import { registerSvgExport } from '@weasel-js/svg';
 import { backgroundOf, setBackground } from './docBackground';
 import { withIcons } from './testIcons';
 import { drawScene } from './testScenes';
+import { drawPreset } from '@weasel-js/editing';
 
 vi.mock('./saveSvg', () => ({ saveSvgFile: vi.fn(async () => {}) }));
 vi.mock('./exportPage', () => ({ exportPagesFile: vi.fn(async () => {}), exportSelectionFile: vi.fn(async () => {}) }));

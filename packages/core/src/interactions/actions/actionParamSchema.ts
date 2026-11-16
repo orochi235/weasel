@@ -10,32 +10,9 @@ import type { GestureLifecycleOptions } from './gestureLifecycle';
 import type { ReparentOnDrop } from './move/session';
 import type { DragPanParams } from './defaults/viewportDragPan';
 import type { Paint, VertexWidth } from '@weasel-js/paint';
-import type { AlignReference } from './align/align';
-import type { DistributeMode } from './distribute/distribute';
-import type { FlipAxis, FlipPivot } from './flip/helpers';
 import type { EditAnchorsParams } from './edit-anchors/params';
 import type { SetAnchorFieldParams } from 'domains/paths/useAnchorFields';
 
-/** `align.*`'s params. */
-export type AlignParams = {
-  /** The point a reference of `'pointer'` resolves to in place of the pointer dep. */
-  world?: WorldPoint;
-  /** Default the selection. */
-  to?: AlignReference;
-};
-/** `flip`'s params. */
-export type FlipParams = {
-  /** The point a pivot of `'pointer'` resolves to in place of the pointer dep. */
-  world?: WorldPoint;
-  /** Default `'x'`. */
-  axis?: FlipAxis;
-  /** Default `'each'`. */
-  pivot?: FlipPivot;
-};
-/** A `distribute.*` action's params: what it spaces evenly. */
-export type DistributeParams = { mode?: DistributeMode };
-/** A reorder action's params: one step, or all the way to the front or back. */
-export type ReorderParams = { distance?: 'adjacent' | 'extreme' };
 /** A nudge action's params: the small or the big step. */
 export type NudgeParams = { magnitude: 'small' | 'big' };
 /** `insert`'s and `place`'s params: the kind of node to make, `'rect'` by default, and whatever else the node
@@ -71,17 +48,6 @@ export type IngestParams = { items?: readonly IngestItem[]; world?: WorldPoint }
 
 declare module '@weasel-js/routing' {
   interface ActionParamSchema {
-    'align.left': AlignParams;
-    'align.centerX': AlignParams;
-    'align.right': AlignParams;
-    'align.top': AlignParams;
-    'align.centerY': AlignParams;
-    'align.bottom': AlignParams;
-    flip: FlipParams;
-    'distribute.horizontal': DistributeParams;
-    'distribute.vertical': DistributeParams;
-    'reorder.forward': ReorderParams;
-    'reorder.backward': ReorderParams;
     'nudge.up': NudgeParams;
     'nudge.down': NudgeParams;
     'nudge.left': NudgeParams;

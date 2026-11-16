@@ -8,7 +8,8 @@ import type { ReactNode } from 'react';
 import { reportRouteConflicts, type Action, type ActionDeps, type InvocationCtx } from '@weasel-js/routing';
 import type { RenderLayer } from '@weasel-js/core';
 import { createPointerStore, useDepSource } from '@weasel-js/routing/react';
-import { createScene, drawPreset, SceneCanvas } from '@weasel-js/core';
+import { createScene, SceneCanvas } from '@weasel-js/core';
+import { drawPreset } from '@weasel-js/editing';
 
 type Pt = { x: number; y: number };
 

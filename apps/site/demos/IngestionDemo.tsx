@@ -1,14 +1,8 @@
 import { useRef, useState } from 'react';
-import {
-  SceneCanvas,
-  useScene,
-  useSelection,
-  openFilePicker,
-  type SceneCanvasApi,
-  type ContentHandlerEntry, ingestPreset,
-} from '@weasel-js/core';
+import { SceneCanvas, useScene, useSelection, openFilePicker, type SceneCanvasApi, type ContentHandlerEntry } from '@weasel-js/core';
 import { Button } from '@weasel-js/ui/components/Button';
 import { DemoStage } from './DemoStage';
+import { ingestPreset } from '@weasel-js/editing';
 
 const W = 600, H = 400;
 

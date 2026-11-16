@@ -1,4 +1,4 @@
-import { type ActionTunings, asNodeId, createScene, type RectPose, solid, drawPreset, pathNode } from '@weasel-js/core';
+import { type ActionTunings, asNodeId, createScene, type RectPose, solid, pathNode } from '@weasel-js/core';
 import { SPIRO_KINDS, type SpiroContour, type SpiroKind } from '@weasel-js/geom';
 import { spiroNodeData, spiroPreset, useSpiroTool, pathsPreset } from '@weasel-js/path-tools';
 import {
@@ -17,6 +17,7 @@ import { useMemo } from 'react';
 import '@weasel-js/labkit/styles.css';
 import 'windease/styles.css';
 import { icon } from '../icons.gen';
+import { drawPreset } from '@weasel-js/editing';
 
 const config = f.schema({
   pointKind: f.enum<SpiroKind>('smooth', SPIRO_KINDS).toggle().label('New point kind'),

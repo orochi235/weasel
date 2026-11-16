@@ -66,5 +66,8 @@
   "publishConfig": {
     "access": "public",
     "provenance": true
+  },
+  "devDependencies": {
+    "@weasel-js/editing": "1.19.1"
   }
 }

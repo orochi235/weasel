@@ -5,7 +5,7 @@ import type { ActionTunings } from '@weasel-js/routing';
 import { SceneCanvas } from './SceneCanvas';
 import { createScene } from 'core/scene/scene';
 import { asNodeId } from 'core/scene/types';
-import { arrangePreset } from 'canvas/SceneCanvas/presets';
+import { arrangePreset } from '@weasel-js/editing';
 
 type P = { x: number; y: number; width: number; height: number };
 

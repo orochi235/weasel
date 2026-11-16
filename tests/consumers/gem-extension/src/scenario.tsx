@@ -4,13 +4,11 @@
  * does not hold; `log` hears one line per step as it passes.
  */
 import { act } from 'react';
-import {
-  buildSceneViewCommands, createScene, defaultDrawOne, drawPreset, findNodeShape, getNodeShapes, nodeShapesOf,
-  sceneFromJSON, type FeaturePreset, type RectPose,
-} from '@weasel-js/core';
+import { buildSceneViewCommands, createScene, defaultDrawOne, findNodeShape, getNodeShapes, nodeShapesOf, sceneFromJSON, type FeaturePreset, type RectPose } from '@weasel-js/core';
 import { GEM_BLUE, GEM_PALETTE, gemFeature, isGem, type GemData } from './index.js';
 import { GemHost, click, drag, fieldLabeled, mount, newProbe, settle, typeInto, type GemScene, type Probe } from './host.js';
 import { OneByOneGemCanvas } from './oneByOne.js';
+import { drawPreset } from '@weasel-js/editing';
 
 function check(holds: boolean, what: string): asserts holds {
   if (!holds) throw new Error(`gem scenario: expected ${what}`);

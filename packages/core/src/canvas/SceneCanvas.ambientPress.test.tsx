@@ -12,7 +12,7 @@ import { createScene } from 'core/scene/scene';
 import type { Scene, NodeId } from 'core/scene/types';
 import type { Contribution } from '../tools/overlayBinding';
 import { useSelection, type SelectionApi } from 'core/selection/useSelection';
-import { drawPreset } from 'canvas/SceneCanvas/presets';
+import { drawPreset } from '@weasel-js/editing';
 
 type D = { kind: 'rect' };
 type L = 'main';

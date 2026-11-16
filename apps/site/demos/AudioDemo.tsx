@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, useSyncExternalStore } from 'react';
-import { asNodeId, effectivePose, PATH_L, PATH_M, SceneCanvas, solid, useScene, useSelection, movePreset, pickPreset, textCommandFromRuns } from '@weasel-js/core';
+import { asNodeId, effectivePose, PATH_L, PATH_M, SceneCanvas, solid, useScene, useSelection, textCommandFromRuns } from '@weasel-js/core';
 import { useAnimator } from '@weasel-js/animator/react';
 import type { DrawCommand, Fill, RenderLayer } from '@weasel-js/core';
 import {
@@ -15,6 +15,7 @@ import { Button } from '@weasel-js/ui/components/Button';
 import { Checkbox } from '@weasel-js/ui/components/Checkbox';
 import { InlineRange } from '@weasel-js/ui/components/InlineRange';
 import { DemoStage } from './DemoStage';
+import { movePreset, pickPreset } from '@weasel-js/editing';
 
 interface Dot { id: string; x: number; y: number; width: number; height: number; fill: Fill }
 

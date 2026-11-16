@@ -2,8 +2,9 @@ import { describe, expect, it, vi, beforeAll } from 'vitest';
 import { act, renderHook } from '@testing-library/react';
 import { renderWithKeys as render } from '@weasel-js/react/testing/giveKeys';
 import { polygonFromPoints } from '@weasel-js/geom';
-import { asNodeId, createScene, SceneCanvas, type ToolsApi, drawPreset } from '@weasel-js/core';
+import { asNodeId, createScene, SceneCanvas, type ToolsApi } from '@weasel-js/core';
 import { usePlaneWarpTool } from './useWarpTool';
+import { drawPreset } from '@weasel-js/editing';
 
 type P = { x: number; y: number; width: number; height: number };
 

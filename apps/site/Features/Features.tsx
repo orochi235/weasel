@@ -3,7 +3,7 @@ import {
 } from '@weasel-js/core';
 import { formatShortcutParts } from '@weasel-js/gestures';
 import type { Action } from '@weasel-js/routing';
-import { FEATURE_PRESETS } from '@weasel-js/core/named-features';
+import { FEATURE_PRESETS } from '@weasel-js/editing';
 import { KeySequence } from '@weasel-js/ui/components/Keycaps';
 import s from './Features.module.css';
 
@@ -58,7 +58,7 @@ export function Features() {
         <p className="ckd-desc">
           What each of core's presets turns on. <code>{'<SceneCanvas features>'}</code> takes the preset objects
           (<code>pickPreset</code>, <code>drawPreset</code>, …), and <code>namedFeatures</code> from{' '}
-          <code>@weasel-js/core/named-features</code> maps the names below to them. A canvas registers the actions, tools,
+          <code>@weasel-js/editing</code> maps the names below to them. A canvas registers the actions, tools,
           and selection chrome of every preset it is given and every preset those include, and the actions its tools bind.
         </p>
       </header>

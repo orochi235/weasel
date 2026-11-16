@@ -18,8 +18,9 @@ Simplify, Offset, Create Outlines and Outline Stroke, the pen, the pencil and
 the knife, and the tools below.
 
 ```tsx
-import { drawPreset, SceneCanvas } from '@weasel-js/core';
+import { SceneCanvas } from '@weasel-js/core';
 import { pathTools, usePathToolsTools } from '@weasel-js/path-tools';
+import { drawPreset } from '@weasel-js/editing';
 
 const tools = usePathToolsTools();
 <SceneCanvas scene={scene} features={[drawPreset, pathTools]} tools={tools} />;

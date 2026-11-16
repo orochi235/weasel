@@ -1,4 +1,4 @@
-import { type ActionTunings, asNodeId, createScene, ellipsePath, polygonFromPoints, type PolygonPath, type RectPose, solid, useLatest, drawPreset, pathNode } from '@weasel-js/core';
+import { type ActionTunings, asNodeId, createScene, ellipsePath, polygonFromPoints, type PolygonPath, type RectPose, solid, useLatest, pathNode } from '@weasel-js/core';
 import { kneadPreset, useKneadTool, pathsPreset } from '@weasel-js/path-tools';
 import {
   type ConfigOf,
@@ -14,6 +14,7 @@ import { useMemo } from 'react';
 import '@weasel-js/labkit/styles.css';
 import 'windease/styles.css';
 import { icon } from '../icons.gen';
+import { drawPreset } from '@weasel-js/editing';
 
 const FEATURES = [drawPreset, pathsPreset, kneadPreset] as const;
 

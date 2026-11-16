@@ -1,4 +1,4 @@
-import { createScene, solid, movePreset, pickPreset, transformPreset } from '@weasel-js/core';
+import { createScene, solid } from '@weasel-js/core';
 import type { AddNodeSpec, Fill, RectPose, UnitSystem } from '@weasel-js/core';
 import { createGridLayer } from '@weasel-js/guides';
 import { useMemo } from 'react';
@@ -10,6 +10,7 @@ import {
   TrialSceneCanvas,
   useTrialScene,
 } from '@weasel-js/labkit';
+import { movePreset, pickPreset, transformPreset } from '@weasel-js/editing';
 
 interface NodeData {
   fill: Fill;

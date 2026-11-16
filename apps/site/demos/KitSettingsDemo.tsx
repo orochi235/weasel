@@ -1,4 +1,4 @@
-import { coreKitSettingsSchema, SceneCanvas, useScene, type Fill, movePreset, pickPreset, transformPreset } from '@weasel-js/core';
+import { coreKitSettingsSchema, SceneCanvas, useScene, type Fill } from '@weasel-js/core';
 import { alignmentSnapSource } from '@weasel-js/guides';
 import { kitSettingsCssOptions, mergePrefGroups, prefsCss } from '@weasel-js/prefs';
 import { KitSettingsFromPrefs, usePrefsStore, usePrefsValues } from '@weasel-js/prefs/react';
@@ -10,6 +10,7 @@ import { Tree, type TreeNode } from '@weasel-js/ui/components/Tree';
 import { uiKitSettingsSchema } from '@weasel-js/ui/kit-settings';
 import { useState } from 'react';
 import s from './KitSettingsDemo.module.css';
+import { movePreset, pickPreset, transformPreset } from '@weasel-js/editing';
 
 const SCHEMA = mergePrefGroups('Kit settings', uiKitSettingsSchema, coreKitSettingsSchema);
 

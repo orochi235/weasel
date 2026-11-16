@@ -12,7 +12,7 @@ import { createScene } from 'core/scene/scene';
 import { asNodeId } from 'core/scene/types';
 import { createEnteredGroup } from 'canvas/deps/enteredGroup';
 import { modeTriggers, type ModeTriggerHandlers } from './modeTriggers';
-import { drawPreset } from 'canvas/SceneCanvas/presets';
+import { drawPreset } from '@weasel-js/editing';
 
 beforeAll(() => {
   const proto = HTMLCanvasElement.prototype as unknown as {

@@ -12,9 +12,10 @@ import { renderWithKeys as render } from '@weasel-js/react/testing/giveKeys';
 import { polygonFromPoints, type Path } from '@weasel-js/geom';
 import { toolIdsOf } from '@weasel-js/routing';
 import { useActionsRegistry, useDepRegistry } from '@weasel-js/routing/react';
-import { asNodeId, createScene, drawPreset, SceneCanvas, solid, type ToolsApi } from '@weasel-js/core';
+import { asNodeId, createScene, SceneCanvas, solid, type ToolsApi } from '@weasel-js/core';
 import { pathTools } from './presets';
 import { DRAW_TOOLS, PATH_EDIT_TOOLS, SLICE_TOOLS, usePathToolsTools } from './toolSets';
+import { drawPreset } from '@weasel-js/editing';
 
 type D = Record<string, unknown>;
 type P = { x: number; y: number; width: number; height: number; rotation?: number };

@@ -16,11 +16,8 @@ import { useActionsRegistry, useDepRegistry } from '@weasel-js/routing/react';
 import type { Action } from '@weasel-js/routing';
 import type { ToolsApi } from '../tools/overlayBinding';
 import type { SelectionApi } from 'core/selection/useSelection';
-import { KIT_STANDARD_ACTION_IDS } from 'interactions/actions/useStandardActions';
-import {
-  drawPreset, editPreset, movePreset, outlinePreset, pickPreset, resizePreset, rotatePreset, selectPreset, transformPreset,
-  viewPreset,
-} from 'canvas/SceneCanvas/presets';
+import { viewPreset } from 'canvas/SceneCanvas/presets';
+import { KIT_STANDARD_ACTION_IDS, drawPreset, editPreset, movePreset, outlinePreset, pickPreset, resizePreset, rotatePreset, selectPreset, transformPreset } from '@weasel-js/editing';
 
 type D = { kind: 'rect' };
 type L = 'main';

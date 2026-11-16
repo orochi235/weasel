@@ -2,13 +2,14 @@ import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import type { Action } from '@weasel-js/routing';
-import { actionsTagged, PATH_GESTURE_TAGS, pathfinderPreset, type FeaturePreset } from '@weasel-js/core';
+import { actionsTagged, PATH_GESTURE_TAGS, type FeaturePreset } from '@weasel-js/core';
 import { sliceAction } from './slice/slice';
 import { pathTools } from './presets';
 import {
   createAddPinAction, createRemovePinAction, createWarpDragAction, createWarpGrabAction,
 } from './warp/warpActions';
 import type { WarpKind } from './warp/warpTargets';
+import { pathfinderPreset } from '@weasel-js/editing';
 
 const DOC = readFileSync(join(__dirname, '../../../docs/path-operations.md'), 'utf8');
 

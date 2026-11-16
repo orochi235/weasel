@@ -15,8 +15,9 @@ Core knows no text. A canvas whose scene holds text nodes (data with a string
 `text`) turns them on with `textPreset`:
 
 ```tsx
-import { drawPreset, SceneCanvas } from '@weasel-js/core';
+import { SceneCanvas } from '@weasel-js/core';
 import { textPreset, textToolsPreset } from '@weasel-js/text-tools';
+import { drawPreset } from '@weasel-js/editing';
 
 <SceneCanvas scene={scene} features={[drawPreset, textToolsPreset]} />;
 ```

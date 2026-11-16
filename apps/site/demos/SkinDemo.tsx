@@ -2,20 +2,13 @@ import { useEffect, useMemo, useState } from 'react';
 import { autoSkin } from '@weasel-js/animator';
 import { useAnimator } from '@weasel-js/animator/react';
 import type { Pose, SampledTrack, Skeleton } from '@weasel-js/animator';
-import {
-  asNodeId,
-  easeInOutSine,
-  polygonFromPoints,
-  SceneCanvas,
-  solid,
-  useRig,
-  useScene, pickPreset,
-} from '@weasel-js/core';
+import { asNodeId, easeInOutSine, polygonFromPoints, SceneCanvas, solid, useRig, useScene } from '@weasel-js/core';
 import type { NodeId, Path, RectPose, Stroke, Fill } from '@weasel-js/core';
 import { Field } from '@weasel-js/ui/components/Field';
 import { InlineRange } from '@weasel-js/ui/components/InlineRange';
 import { Button } from '@weasel-js/ui/components/Button';
 import { DemoStage } from './DemoStage';
+import { pickPreset } from '@weasel-js/editing';
 
 const W = 600, H = 300;
 const BONE = 110, HALF = 16, Y = 230;

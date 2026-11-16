@@ -1,13 +1,5 @@
 import { useState, useSyncExternalStore } from 'react';
-import {
-  SceneCanvas,
-  worldPoseOf,
-  asNodeId,
-  easeOutCubic,
-  sceneFromJSON,
-  useAnimatedReflow,
-  useDepSource, movePreset, pickPreset,
-} from '@weasel-js/core';
+import { SceneCanvas, worldPoseOf, asNodeId, easeOutCubic, sceneFromJSON, useAnimatedReflow, useDepSource } from '@weasel-js/core';
 import { useAnimator } from '@weasel-js/animator/react';
 import { freeform, snapPoint, tileGrid } from '@weasel-js/guides';
 import type { Fill, Scene, SerializedScene, Stroke } from '@weasel-js/core';
@@ -16,6 +8,7 @@ import { Checkbox } from '@weasel-js/ui/components/Checkbox';
 import sceneJson from './data/layout.scene.json';
 import { DemoStage } from './DemoStage';
 import s from './LayoutDemo.module.css';
+import { movePreset, pickPreset } from '@weasel-js/editing';
 
 type P = { x: number; y: number; width: number; height: number };
 type Data = { fill: Fill; stroke?: Stroke; isContainer: boolean };

@@ -14,13 +14,7 @@ import { createInsertOp } from 'core/ops/create';
 import { createReparentOp } from 'core/ops/reparent';
 import { createSetHiddenOp, createSetLockedOp } from 'core/ops/nodeFlags';
 import { defaultCommitAdapter } from './defaultCommitAdapter';
-import {
-  alignLeftAction, alignRightAction, alignTopAction, alignBottomAction, alignCenterXAction, alignCenterYAction,
-} from './align/action';
-import { distributeHorizontalAction, distributeVerticalAction } from './distribute/action';
 import { nudgeUpAction, nudgeDownAction, nudgeLeftAction, nudgeRightAction } from './defaults/nudge';
-import { reorderForwardAction, reorderBackwardAction } from './defaults/reorder';
-import { flipAction } from './flip/action';
 import { duplicateAction } from './defaults/duplicate';
 import { deleteAction } from './defaults/delete';
 import { groupAction, ungroupAction } from './defaults/group';
@@ -30,6 +24,7 @@ import { drawnBoxes } from './drawnBoxes';
 import { withoutPageStructure } from 'core/scene/nodeGates';
 import type { Bounds } from 'core/viewport/fitViewToBounds';
 import { depsOf, makeScene, rectPose, runs, tally, timeoutFor, type TestScene } from './pbt.fixture';
+import { alignLeftAction, alignRightAction, alignTopAction, alignBottomAction, alignCenterXAction, alignCenterYAction, distributeHorizontalAction, distributeVerticalAction, reorderForwardAction, reorderBackwardAction, flipAction } from '@weasel-js/editing';
 
 interface Real { scene: TestScene }
 interface Model { states: unknown[]; cursor: number }

@@ -1,9 +1,10 @@
 import { afterEach, describe, expect, it } from 'vitest';
 import { act, renderHook } from '@testing-library/react';
-import { drawPreset, type FeaturePreset } from '@weasel-js/core';
+import { type FeaturePreset } from '@weasel-js/core';
 import { textToolsPreset } from '@weasel-js/text-tools';
 import { chartPrefs } from './prefs';
 import { useChartSnap } from './useChartSnap';
+import { drawPreset } from '@weasel-js/editing';
 
 afterEach(() => {
   // The store caches what it read, so clearing storage alone would leak prefs into the next test.

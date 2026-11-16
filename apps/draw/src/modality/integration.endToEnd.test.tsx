@@ -17,9 +17,10 @@ import { ModeBreadcrumb } from './chrome/ModeBreadcrumb';
 import { modePathEdit } from './pathEditHost';
 import { useCanvasModes } from './useCanvasModes';
 import { DEFAULT_MODES } from '@weasel-js/modes';
-import { SceneCanvas, asNodeId, createScene, hasEditablePath, pathFromD, solid, useSelection, type PolygonPath, drawPreset } from '@weasel-js/core';
+import { SceneCanvas, asNodeId, createScene, hasEditablePath, pathFromD, solid, useSelection, type PolygonPath } from '@weasel-js/core';
 import { pathsPreset } from '@weasel-js/path-tools';
 import type { DrawScene } from '../drawDocument';
+import { drawPreset } from '@weasel-js/editing';
 
 beforeAll(() => {
   (HTMLCanvasElement.prototype as unknown as { getContext: () => null }).getContext = () => null;

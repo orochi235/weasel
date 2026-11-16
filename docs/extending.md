@@ -85,7 +85,7 @@ its includes, and whether it is an atom) for a tool that lists or rearranges
 them, such as the asset editor's Bundles asset. Core's own presets are exported the
 same way (`selectPreset`, `editPreset`, `pathfinderPreset`, …), and `<SceneCanvas>`
 resolves no names, so a bundle holds just the presets it was handed. Where
-presets are picked by name, `namedFeatures` in `@weasel-js/core/named-features`
+presets are picked by name, `namedFeatures` in `@weasel-js/editing`
 maps core's names to the objects, at the cost of loading every core preset.
 
 A `ToolSet` names a group of tool ids, and other sets, as one unit: `defaultTools`,
@@ -588,13 +588,11 @@ selection between them, and keep it in the scene so undo restores it:
 
 <!-- snippet: tests/consumers/gem-extension/src/editor.tsx#gem-editor -->
 ```tsx
-import {
-  IconRegistryProvider, SceneCanvas, drawPreset, useSelection,
-  type FeaturePreset, type RectPose, type Scene, type SceneCanvasHit, type ToolsApi,
-} from '@weasel-js/core';
+import { IconRegistryProvider, SceneCanvas, useSelection, type FeaturePreset, type RectPose, type Scene, type SceneCanvasHit, type ToolsApi } from '@weasel-js/core';
 import { SelectionPanel } from '@weasel-js/ui';
 import { kitIcons } from '@weasel-js/ui/kit-icons';
 import { gemFeature } from './index.js';
+import { drawPreset } from '@weasel-js/editing';
 
 const FEATURES: readonly FeaturePreset[] = [drawPreset, gemFeature];
 
@@ -633,11 +631,9 @@ registers a painter releases it:
 <!-- snippet: tests/consumers/gem-extension/src/oneByOne.tsx#gem-one-by-one -->
 ```tsx
 import { useEffect } from 'react';
-import {
-  SceneCanvas, drawPreset, registerNodeShape,
-  type RectPose, type Scene, type ToolsApi,
-} from '@weasel-js/core';
+import { SceneCanvas, registerNodeShape, type RectPose, type Scene, type ToolsApi } from '@weasel-js/core';
 import { gemInsert, gemShape, gemTool } from './gem.js';
+import { drawPreset } from '@weasel-js/editing';
 
 const FEATURES = [drawPreset];
 const TOOLS = { gem: gemTool };
@@ -1012,6 +1008,7 @@ mounts. Write that walk yourself:
 
 ```tsx
 import { useActionsRegistry } from '@weasel-js/core';
+import { drawPreset, drawPreset } from '@weasel-js/editing';
 
 const registry = useActionsRegistry();
 useEffect(() => {

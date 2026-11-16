@@ -1,8 +1,9 @@
 import { useRef, useState, useEffect } from 'react';
-import { SceneCanvas, useScene, pickPreset } from '@weasel-js/core';
+import { SceneCanvas, useScene } from '@weasel-js/core';
 import { useHud, useHudContribution } from '@weasel-js/hud/react';
 import type { ButtonWidget } from '@weasel-js/hud';
 import { DemoStage } from './DemoStage';
+import { pickPreset } from '@weasel-js/editing';
 
 const W = 600, H = 400;
 

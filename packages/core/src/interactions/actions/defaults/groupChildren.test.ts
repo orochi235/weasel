@@ -12,9 +12,7 @@ import { unionOfChildren } from 'core/scene/kitRegistry';
 import { moveSources, shapeSources } from '../selectionSubtree';
 import { resizeAction } from '../resize/action';
 import { rotateAction } from '../rotate/action';
-import { flipAction } from '../flip/action';
-import { alignRightAction } from '../align/action';
-import { distributeHorizontalAction } from '../distribute/action';
+import { flipAction, alignRightAction, distributeHorizontalAction } from '@weasel-js/editing';
 
 type Pose = RectPose & { rotation?: number };
 

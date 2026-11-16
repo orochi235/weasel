@@ -14,7 +14,7 @@ import { useActionsRegistry } from '@weasel-js/routing/react';
 import type { Action } from '@weasel-js/routing';
 import { useDepRegistry } from '@weasel-js/routing/react';
 import type { InsertDep } from 'interactions/actions/depSchema';
-import { drawPreset } from 'canvas/SceneCanvas/presets';
+import { drawPreset } from '@weasel-js/editing';
 
 type D = { kind: 'rect' };
 type L = 'main';

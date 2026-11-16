@@ -1,10 +1,11 @@
-import { drawPreset, type FeaturePreset, type RenderLayer, type SceneCanvasSnap, type SceneNode } from '@weasel-js/core';
+import { type FeaturePreset, type RenderLayer, type SceneCanvasSnap, type SceneNode } from '@weasel-js/core';
 import { diagramEdgeOf, diagramLabelOf } from '@weasel-js/diagram';
 import { createSpacingHintsPreset } from '@weasel-js/guides';
 import { textToolsPreset } from '@weasel-js/text-tools';
 import { usePageGrid, type PageSize } from '@weasel-js/editor';
 import { useMemo } from 'react';
 import { useChartPref } from './prefs';
+import { drawPreset } from '@weasel-js/editing';
 
 /** A heavier line every inch at the default 12 per line. */
 const ACCENT_EVERY = 8;

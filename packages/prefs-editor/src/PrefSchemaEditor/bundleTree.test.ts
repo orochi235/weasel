@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { describePresets, type PresetDescription } from '@weasel-js/core';
-import { FEATURE_PRESETS } from '@weasel-js/core/named-features';
+import { FEATURE_PRESETS } from '@weasel-js/editing';
 import {
   aliasNodes, BUNDLE_LINKS, type BundleMember, bundleParts, bundleTree, isBundleAt, membership, moveNodes, nodeAt,
   readBundles, removeNodes, renameKey,

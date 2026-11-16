@@ -42,3 +42,7 @@ export {
 } from 'canvas/deps/hitTestArea';
 export type { ScenePickSourceOptions, ViewPickGates } from 'canvas/pickWalk';
 export { useInsertDepSource as useInsertDepSourceForTests } from 'canvas/deps/insert';
+
+export { FRAME_FIXTURE_IDS as FRAME_FIXTURE_IDSForTests, FRAME_FIXTURE_LOCAL as FRAME_FIXTURE_LOCALForTests, expectSamePose as expectSamePoseForTests, makeFrameFixture as makeFrameFixtureForTests } from '../core/scene/frameFixture';
+
+export { runs as pbtRunsForTests, tally as pbtTallyForTests, timeoutFor as pbtTimeoutForTests } from 'interactions/actions/pbt.fixture';

@@ -17,7 +17,7 @@ import type { SurfaceContribution } from './surfaceContribution';
 import type { VisibilityRules } from 'domains/chrome-caps';
 import { never } from 'domains/chrome-caps';
 import { createGLRecorder } from '@weasel-js/renderer/testing/glRecorder';
-import { drawPreset } from 'canvas/SceneCanvas/presets';
+import { drawPreset } from '@weasel-js/editing';
 
 type D = { kind: 'rect' };
 type L = 'main';

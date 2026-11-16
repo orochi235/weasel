@@ -4,11 +4,12 @@ import { useState, type ReactNode } from 'react';
 import { render, act, cleanup } from '@testing-library/react';
 import type { DepName } from '@weasel-js/routing';
 import { useDepSource } from '@weasel-js/routing/react';
-import { AmbientContributionsProvider, DevtoolsLabel, SceneCanvas, drawPreset, useScene, type NodeId, type Scene } from '@weasel-js/core';
+import { AmbientContributionsProvider, DevtoolsLabel, SceneCanvas, useScene, type NodeId, type Scene } from '@weasel-js/core';
 import { createGLRecorder } from '@weasel-js/renderer/testing/glRecorder';
 import { DEVTOOLS_PROTOCOL, type PageMessage, type PanelMessage } from './protocol';
 import { createInPageTransports } from './transport';
 import { devtools } from './attach';
+import { drawPreset } from '@weasel-js/editing';
 
 type D = { color: string };
 type L = 'main';

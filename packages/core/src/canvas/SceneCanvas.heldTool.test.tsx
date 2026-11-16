@@ -12,7 +12,7 @@ import { defineTool, type useTools } from '../tools/overlayBinding';
 import type { Action } from '@weasel-js/routing';
 import type { View } from 'core/viewport/view';
 import { createGLRecorder } from '@weasel-js/renderer/testing/glRecorder';
-import { drawPreset } from 'canvas/SceneCanvas/presets';
+import { drawPreset } from '@weasel-js/editing';
 
 type D = { color: string };
 type L = 'main';

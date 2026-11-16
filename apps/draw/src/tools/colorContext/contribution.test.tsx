@@ -5,9 +5,10 @@
 import { describe, it, expect, vi, beforeAll, afterEach } from 'vitest';
 import { act, cleanup } from '@testing-library/react';
 import { renderWithKeys as render } from '@weasel-js/react/testing/giveKeys';
-import { SceneCanvas, createScene, drawPreset } from '@weasel-js/core';
+import { SceneCanvas, createScene } from '@weasel-js/core';
 import { colorContribution } from './contribution';
 import type { ColorContextValue } from './ColorContextProvider';
+import { drawPreset } from '@weasel-js/editing';
 
 beforeAll(() => {
   const proto = HTMLCanvasElement.prototype as unknown as { getContext: (...args: unknown[]) => unknown };

@@ -1,22 +1,4 @@
-import {
-  type ActionsRegistry,
-  canvasToClient,
-  commitDeleteToScene,
-  createDeleteAction,
-  editPreset,
-  effectivePose,
-  movePreset,
-  type NodeId,
-  pickPreset,
-  type RectPose,
-  SceneCanvas,
-  type SceneCanvasApi,
-  transformPreset,
-  useTransformFollower,
-  type View,
-  viewWorldToScreen,
-  WeaselProvider,
-} from '@weasel-js/core';
+import { type ActionsRegistry, canvasToClient, commitDeleteToScene, createDeleteAction, effectivePose, type NodeId, type RectPose, SceneCanvas, type SceneCanvasApi, useTransformFollower, type View, viewWorldToScreen, WeaselProvider } from '@weasel-js/core';
 import {
   type CSSProperties,
   type ReactNode,
@@ -43,6 +25,7 @@ import { ScopeOf } from './ScopeOf';
 import { useFocusReports } from './useFocusReports';
 import { useLensShapes } from './useLensShapes';
 import { useWheelPassThrough } from './useWheelPassThrough';
+import { editPreset, movePreset, pickPreset, transformPreset } from '@weasel-js/editing';
 
 /** The camera a lens scene is drawn and picked through, in the px of the
  *  layer the lens canvas covers. */

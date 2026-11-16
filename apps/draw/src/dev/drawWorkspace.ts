@@ -1,5 +1,5 @@
 import { defaultNodeProperties, describePresets } from '@weasel-js/core';
-import { FEATURE_PRESETS } from '@weasel-js/core/named-features';
+import { FEATURE_PRESETS } from '@weasel-js/editing';
 import { EDITOR_CONTEXT_MENUS } from '@weasel-js/editor';
 import { pathTools } from '@weasel-js/path-tools';
 import type { PrefGroup, PrefGroupAs } from '@weasel-js/prefs';

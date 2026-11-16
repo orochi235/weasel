@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { type ClockHandle, createClock, createClockRegistry } from '@weasel-js/clock';
 import { useClockLoop } from '@weasel-js/clock/react';
 import { clampMove } from '@weasel-js/core/move';
-import { SceneCanvas, asNodeId, defineAction, effectivePose, solid, useLatest, useScene, movePreset, pickPreset } from '@weasel-js/core';
+import { SceneCanvas, asNodeId, defineAction, effectivePose, solid, useLatest, useScene } from '@weasel-js/core';
 import type { Action, Dims, FeaturePreset, ImmediateParams, RectPose, RenderLayer, Scene } from '@weasel-js/core';
 import {
   registerTexture,
@@ -13,6 +13,7 @@ import weaselMarkUrl from '../assets/weasel-mark.png';
 import { PLASMA_PROGRAM, RIPPLE_PROGRAM, RIPPLE_SECONDS, SHADERS, VORONOI_PROGRAM } from './customShaderPrograms';
 import { DemoStage } from './DemoStage';
 import s from './CustomShaderDemo.module.css';
+import { movePreset, pickPreset } from '@weasel-js/editing';
 
 declare module '@weasel-js/routing' {
   interface ActionParamSchema {

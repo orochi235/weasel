@@ -6,15 +6,14 @@
 import { describe, it, expect, vi, beforeAll, afterEach } from 'vitest';
 import { act, cleanup } from '@testing-library/react';
 import { renderWithKeys as render } from '@weasel-js/react/testing/giveKeys';
-import {
-  SceneCanvas, createEnteredGroup, useSelection, type CanvasViewProps, type NodeId, type SelectionApi, movePreset, pickPreset, selectPreset,
-} from '@weasel-js/core';
+import { SceneCanvas, createEnteredGroup, useSelection, type CanvasViewProps, type NodeId, type SelectionApi } from '@weasel-js/core';
 import { createCamera, type Camera3d } from './camera';
 import { createNodeAtPoint, createPickEvery, createPoseDescriptor, worldPoseOf } from './deps';
 import { projectPoint, type Viewport3d } from './project';
 import { boundsOfTestNode, createNestedTestScene, createTestScene, type TestScene } from './testScene';
 import type { World3d } from './world';
 import type { TestData, TestLayer } from './testScene';
+import { movePreset, pickPreset, selectPreset } from '@weasel-js/editing';
 
 beforeAll(() => {
   const proto = HTMLCanvasElement.prototype as unknown as Record<string, unknown>;

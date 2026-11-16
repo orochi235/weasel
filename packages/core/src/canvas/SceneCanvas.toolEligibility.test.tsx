@@ -11,7 +11,7 @@ import { SceneCanvas } from './SceneCanvas';
 import { useScene } from 'core/scene/useScene';
 import { defineTool, useTools } from '../tools/overlayBinding';
 import { WeaselProvider } from '../WeaselProvider';
-import { drawPreset } from 'canvas/SceneCanvas/presets';
+import { drawPreset } from '@weasel-js/editing';
 
 beforeAll(() => {
   const proto = HTMLCanvasElement.prototype as unknown as Record<string, unknown>;

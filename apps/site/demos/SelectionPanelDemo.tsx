@@ -1,15 +1,8 @@
-import {
-  SceneCanvas,
-  useScene,
-  useSelection,
-  defaultNodeRouting,
-  defaultNodeProperties,
-  solid,
-  strokeOf, editPreset, pickPreset, asNodeId,
-} from '@weasel-js/core';
+import { SceneCanvas, useScene, useSelection, defaultNodeRouting, defaultNodeProperties, solid, strokeOf, asNodeId } from '@weasel-js/core';
 import type { Stroke, Fill, RectPose } from '@weasel-js/core';
 import { SelectionPanel } from '@weasel-js/ui/components/inspector/SelectionPanel';
 import { DemoStage } from './DemoStage';
+import { editPreset, pickPreset } from '@weasel-js/editing';
 
 /** `kind` routes the node to its properties; `shape` is what the kit's shape painter draws. */
 interface NodeData { kind: string; shape: string; fill: Fill; stroke?: Stroke }

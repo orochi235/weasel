@@ -3,7 +3,7 @@ import { describe, it, expect, vi, beforeAll, beforeEach } from 'vitest';
 import { act } from '@testing-library/react';
 import { createRef } from 'react';
 import { renderWithKeys as render } from '@weasel-js/react/testing/giveKeys';
-import { SceneCanvas, createScene, ingestPreset, type FeaturePreset, type Scene, type SceneCanvasApi } from '@weasel-js/core';
+import { SceneCanvas, createScene, type FeaturePreset, type Scene, type SceneCanvasApi } from '@weasel-js/core';
 import { _resetContentHandlersForTests } from 'domains/ingestion/contentHandlers';
 import {
   __setImageMeasureForTests, __setFileToDataUriForTests, _resetImageHandlerSeamsForTests,
@@ -11,6 +11,7 @@ import {
 import { __setSvgMeasureForTests, _resetSvgHandlerSeamsForTests } from 'domains/ingestion/svgHandler';
 import { buildWeaselClipboardText } from 'interactions/actions/clipboard/wireFormat';
 import { textPreset } from '../presets';
+import { ingestPreset } from '@weasel-js/editing';
 
 type D = { text?: string; image?: { src: string } };
 type L = 'main';

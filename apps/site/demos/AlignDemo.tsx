@@ -1,6 +1,7 @@
-import { asNodeId, SceneCanvas, arrangePreset, movePreset, pickPreset, transformPreset } from '@weasel-js/core';
+import { asNodeId, SceneCanvas } from '@weasel-js/core';
 import type { ActionParamSchema, ActionTunings, TunedBinding } from '@weasel-js/core';
 import { DemoStage } from './DemoStage';
+import { arrangePreset, movePreset, pickPreset, transformPreset } from '@weasel-js/editing';
 
 const W = 400, H = 300;
 

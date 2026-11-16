@@ -1,9 +1,10 @@
 import { useEffect, useRef, useState } from 'react';
-import { IDENTITY_POSE_COMPOSITION, DEFAULT_HANDLE_SIZE, SceneCanvas, asPolygonPath, composePath, pathPoseDescriptor, PathBuilder, polygonFromPoints, useScene, asNodeId, solid, translatePath, movePreset, pickPreset, transformPreset, textCommandFromRuns } from '@weasel-js/core';
+import { IDENTITY_POSE_COMPOSITION, DEFAULT_HANDLE_SIZE, SceneCanvas, asPolygonPath, composePath, pathPoseDescriptor, PathBuilder, polygonFromPoints, useScene, asNodeId, solid, translatePath, textCommandFromRuns } from '@weasel-js/core';
 import { joinPaths } from '@weasel-js/geom';
 import styles from './CompoundPathsDemo.module.css';
 import type { Fill, Path, Stroke } from '@weasel-js/core';
 import { DemoStage } from './DemoStage';
+import { movePreset, pickPreset, transformPreset } from '@weasel-js/editing';
 
 interface Shape { id: string; pose: Path; fill: string; stroke: string }
 interface ShapeData { fill: Fill; stroke: Stroke }

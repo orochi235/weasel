@@ -1,11 +1,12 @@
 /** `ShellDevtools` gives a shell's canvases devtools in development, and its switches withhold it. */
 import { cleanup, render, waitFor } from '@testing-library/react';
-import { AmbientContributionsProvider, drawPreset, SceneCanvas, useScene } from '@weasel-js/core';
+import { AmbientContributionsProvider, SceneCanvas, useScene } from '@weasel-js/core';
 import { createGLRecorder } from '@weasel-js/renderer/testing/glRecorder';
 import type { ReactNode } from 'react';
 import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
 import { devtools } from './hook';
 import { DEV_DEVTOOLS, devtoolsOff, lazyDevtools, ShellDevtools, shellDevtools } from './mount';
+import { drawPreset } from '@weasel-js/editing';
 
 beforeAll(() => {
   const recorder = createGLRecorder();

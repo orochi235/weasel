@@ -61,7 +61,7 @@ Path editing, the pen, pencil and knife, the path commands and Create Outlines a
 Interactions are **actions** — descriptors registered into an actions registry — reached by **gesture bindings**. A tool is a list of `{ spec, actionId }` pairs and nothing more; the kit's own select, shape and viewport tools are built that way.
 
 ```tsx
-import { SceneCanvas, BUILTIN_TOOL_IDS, drawPreset, useScene, useSelection } from '@weasel-js/core';
+import { SceneCanvas, BUILTIN_TOOL_IDS, useScene, useSelection } from '@weasel-js/core';
 import { createGridPreset } from '@weasel-js/guides';
 
 const grid = createGridPreset({ spacing: 20 });
@@ -98,7 +98,7 @@ Lower-level surfaces take a narrow **adapter** instead of a scene — a few meth
 
 An `Action` is a named operation — `delete`, `duplicate`, `group`, `insert`, `viewport.dragPan` — paired with the input that triggers it. `<ActionsProvider>` holds the registered descriptors, and the gesture dispatcher matches live input against each one's `defaultBinding` and the active tool's bindings. Keystrokes and pointer gestures take the same path, so a keyboard shortcut and a drag are two bindings on one action rather than two mechanisms.
 
-`<SceneCanvas>` mounts a provider when none is above it and registers undo and redo, and the kit-standard actions its `features` presets carry — under `drawPreset`, all of them: escape, select-all, delete, duplicate, group and ungroup, flip, nudge, reorder, align, distribute, the pathfinder booleans, fill and stroke, clipboard, and the pointer-driven move, resize, rotate, clone, area-select and lasso. `BASELINE_ACTION_IDS` lists the ones every canvas registers. A preset can include others: `editPreset` is `clipboardPreset`, `nudgePreset`, `groupPreset`, and the rest, each of which can be passed alone, and `pickPreset`, `transformPreset`, and `drawPreset` are presets of that kind. `insert` comes with the shape tools that bind it, which `shapeToolsPreset` mounts. `features` takes a package's preset object the same way. Where presets are picked by name, `namedFeatures('pick', 'move')` from `@weasel-js/core/named-features` returns the objects, `FEATURE_NAMES` lists the names, and `FEATURE_ACTION_IDS` says which preset registers which action; that entry loads every core preset.
+`<SceneCanvas>` mounts a provider when none is above it and registers undo and redo, and the kit-standard actions its `features` presets carry — under `drawPreset`, all of them: escape, select-all, delete, duplicate, group and ungroup, flip, nudge, reorder, align, distribute, the pathfinder booleans, fill and stroke, clipboard, and the pointer-driven move, resize, rotate, clone, area-select and lasso. `BASELINE_ACTION_IDS` lists the ones every canvas registers. A preset can include others: `editPreset` is `clipboardPreset`, `nudgePreset`, `groupPreset`, and the rest, each of which can be passed alone, and `pickPreset`, `transformPreset`, and `drawPreset` are presets of that kind. `insert` comes with the shape tools that bind it, which `shapeToolsPreset` mounts. `features` takes a package's preset object the same way. Where presets are picked by name, `namedFeatures('pick', 'move')` from `@weasel-js/editing` returns the objects, `FEATURE_NAMES` lists the names, and `FEATURE_ACTION_IDS` says which preset registers which action; that entry loads every core preset.
 
 ### Tuning an action
 
@@ -184,6 +184,7 @@ A render layer can draw with its own fragment shader. Register the program once,
 
 ```tsx
 import { registerProgram } from '@weasel-js/core/renderer';
+import { drawPreset } from '@weasel-js/editing';
 
 const stripes = registerProgram('stripes', { glsl: { frag: `#version 300 es
 precision highp float;
@@ -220,7 +221,6 @@ Core's main entry carries the everyday surface. A few narrower ones have their o
 | `@weasel-js/core/renderer` | the renderer, `registerProgram`, `registerTexture`, draw commands |
 | `@weasel-js/core/move`, `/resize`, `/clone`, `/clipboard` | helpers for building on those actions, e.g. `snapBackOrDelete`, `clampMinSize` |
 | `@weasel-js/core/patterns-builtin` | the built-in fill patterns |
-| `@weasel-js/core/named-features` | core's presets by name: `namedFeatures('pick', 'move')`, `FEATURE_NAMES`, `FEATURE_PRESETS`, `FEATURE_ACTION_IDS`; loads every core preset |
 | `@weasel-js/core/routing` | route grammar and introspection: parsing, the route registry, conflict checks |
 
 ## Packages

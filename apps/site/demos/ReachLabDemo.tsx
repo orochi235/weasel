@@ -1,4 +1,4 @@
-import { IDENTITY_POSE_COMPOSITION, type ActionTunings, createScene, ellipsePath, pathFromD, drawPreset } from '@weasel-js/core';
+import { IDENTITY_POSE_COMPOSITION, type ActionTunings, createScene, ellipsePath, pathFromD } from '@weasel-js/core';
 import { reachPreset, useReachTool, pathsPreset } from '@weasel-js/path-tools';
 import {
   type ConfigOf,
@@ -15,6 +15,7 @@ import { strokeNode } from './pathEditLabScene';
 import '@weasel-js/labkit/styles.css';
 import 'windease/styles.css';
 import { icon } from '../icons.gen';
+import { drawPreset } from '@weasel-js/editing';
 
 const FEATURES = [drawPreset, pathsPreset, reachPreset] as const;
 

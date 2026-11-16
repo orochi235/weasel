@@ -5,7 +5,7 @@ import { createScene } from 'core/scene/scene';
 import type { NodeId } from 'core/scene/types';
 import type { Scene } from 'core/scene/types';
 import { useSelection } from '../core/selection/useSelection';
-import { pickPreset } from 'canvas/SceneCanvas/presets';
+import { pickPreset } from '@weasel-js/editing';
 
 type D = { kind: string };
 type L = 'main';

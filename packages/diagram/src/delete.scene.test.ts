@@ -1,8 +1,9 @@
 import { describe, expect, it, vi } from 'vitest';
-import { createScene, deletePreset, type ActionDeps, type RectPose } from '@weasel-js/core';
+import { createScene, type ActionDeps, type RectPose } from '@weasel-js/core';
 import { reportDeleteAction } from './diagramEditing';
 import { withDiagramRegistry } from './edge';
 import { diagramScene, edgeIdOf, type DiagramData } from './fromData';
+import { deletePreset } from '@weasel-js/editing';
 
 const DATA: DiagramData = {
   nodes: [{ id: 'a', lines: ['a'] }, { id: 'b', lines: ['b'] }],

@@ -2,9 +2,10 @@
  *  builds each action's deps from its `requires` and throws on any other read. */
 import { act, cleanup, render } from '@testing-library/react';
 import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
-import { asNodeId, createScene, SceneCanvas, type RectPose, pickPreset } from '@weasel-js/core';
+import { asNodeId, createScene, SceneCanvas, type RectPose } from '@weasel-js/core';
 import { createSpacingHintsPreset } from './preset';
 import type { DistanceReadoutContribution } from './distanceReadout';
+import { pickPreset } from '@weasel-js/editing';
 
 beforeAll(() => {
   const proto = HTMLCanvasElement.prototype as unknown as {

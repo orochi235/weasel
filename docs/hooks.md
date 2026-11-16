@@ -19,7 +19,7 @@ option fields not covered here are in the source — every export carries JSDoc.
 `<SceneCanvas>` mounts an `<InputScope>`, an actions registry and a dep
 registry of its own under whichever are in scope, then registers the standard
 actions its `features` presets carry
-(`FEATURE_ACTION_IDS` in `@weasel-js/core/named-features` lists core's) and the
+(`FEATURE_ACTION_IDS` in `@weasel-js/editing` lists core's) and the
 kit actions its tools bind — only undo and redo on
 a bare canvas, all of core's under `features={[drawPreset]}`. `useStandardActions`
 does the same for a host of your own, taking any action list. A

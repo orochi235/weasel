@@ -41,7 +41,7 @@ export { tuneAction } from '@weasel-js/routing';
 export { roleReader, roleMods, keysHeld, modifierStateOf } from '@weasel-js/routing';
 export type { ModifierRole, ModifierRoles, RoleKeys, RoleRebinds } from '@weasel-js/routing';
 export type {
-  ActionParamSchema, ActionTunings, AlignParams, DistributeParams, FlipParams, NudgeParams, ReorderParams,
+  ActionParamSchema, ActionTunings, NudgeParams,
   FinishPathParams, IngestParams, InsertParams, MoveParams, PaintParams, RotateParams,
   PlaceParams, CountStepParams, OpacityParams, ViewportZoomParams, WheelScrollParams, PickParams,
 } from '../interactions/actions/actionParamSchema';
@@ -60,7 +60,6 @@ export type { ToolShortcuts } from '@weasel-js/routing';
 export { describeShortcuts } from '@weasel-js/routing';
 export type { DescribeShortcutsOptions, ShortcutGroup, ShortcutRow, ShortcutsDescription, ShortcutTool } from '@weasel-js/routing';
 export { moveAction } from '../interactions/actions/move/action';
-export { flipAction } from '../interactions/actions/flip/action';
 export { createResizeAction, resizeAction, type ResizeActionOptions } from '../interactions/actions/resize/action';
 export { rotateAction } from '../interactions/actions/rotate/action';
 export { areaSelectAction } from '../interactions/actions/defaults/areaSelect';
@@ -107,11 +106,9 @@ export {
 } from '../interactions/actions/clipboard/action';
 export type { SliceDep, ClipboardDep, OperandsDep } from '../interactions/actions/depSchema';
 export { operandList } from '../interactions/actions/operands';
-export { useStandardActions, KIT_STANDARD_ACTION_IDS } from '../interactions/actions/useStandardActions';
 export { useActionSet, useStandardDeps } from '../interactions/actions/useActionSet';
 export { ENGINE_STANDARD_ACTIONS } from '../interactions/actions/engineStandardActions';
 export type { StandardDeps } from '../interactions/actions/useActionSet';
-export type { UseStandardActionsOptions } from '../interactions/actions/useStandardActions';
 // Scene-backed op applier for the consumer `applyOps` commit hook — applies a
 // default action's committed ops directly to the scene in its native (local)
 // frame. Consumers route their own history integration through `applyOps` and

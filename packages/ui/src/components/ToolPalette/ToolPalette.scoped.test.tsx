@@ -1,8 +1,9 @@
 import { describe, it, expect, vi, beforeAll, afterEach } from 'vitest';
 import { act, cleanup, fireEvent, screen } from '@testing-library/react';
-import { SceneCanvas, WeaselProvider, createScene, drawPreset } from '@weasel-js/core';
+import { SceneCanvas, WeaselProvider, createScene } from '@weasel-js/core';
 import { renderWithIcons } from '../../testing/withIcons';
 import { ToolPalette } from './ToolPalette';
+import { drawPreset } from '@weasel-js/editing';
 
 beforeAll(() => {
   const proto = HTMLCanvasElement.prototype as unknown as Record<string, unknown>;

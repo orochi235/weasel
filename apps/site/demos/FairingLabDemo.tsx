@@ -1,4 +1,4 @@
-import { ANCHORS_GROUP, type ActionTunings, editingAnchors, never, movePreset, pickPreset } from '@weasel-js/core';
+import { ANCHORS_GROUP, type ActionTunings, editingAnchors, never } from '@weasel-js/core';
 import { pathsPreset } from '@weasel-js/path-tools';
 import { createCurvatureCombPreset, fairingPreset } from '@weasel-js/path-tools';
 import {
@@ -16,6 +16,7 @@ import s from './FairingLabDemo.module.css';
 import '@weasel-js/labkit/styles.css';
 import 'windease/styles.css';
 import { icon } from '../icons.gen';
+import { movePreset, pickPreset } from '@weasel-js/editing';
 
 const config = f.schema({
   comb: f.boolean(true).label('Show comb'),

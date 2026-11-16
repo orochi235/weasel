@@ -1,9 +1,10 @@
 import { useRef } from 'react';
-import { SceneCanvas, useScene, movePreset, pickPreset, transformPreset } from '@weasel-js/core';
+import { SceneCanvas, useScene } from '@weasel-js/core';
 import { createGridLayer } from '@weasel-js/guides';
 import type { CanvasHelpers, Dims, Fill, RenderLayer } from '@weasel-js/core';
 import type { DrawCommand } from '@weasel-js/core/renderer';
 import { DemoStage } from './DemoStage';
+import { movePreset, pickPreset, transformPreset } from '@weasel-js/editing';
 
 interface Rect { id: string; x: number; y: number; width: number; height: number; fill: Fill }
 

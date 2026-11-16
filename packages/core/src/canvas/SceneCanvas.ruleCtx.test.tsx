@@ -10,7 +10,7 @@ import type { RuleCtx } from '@weasel-js/routing';
 import { createScene } from 'core/scene/scene';
 import { asNodeId } from 'core/scene/types';
 import { SceneCanvas } from './SceneCanvas';
-import { drawPreset } from 'canvas/SceneCanvas/presets';
+import { drawPreset } from '@weasel-js/editing';
 
 type P = { x: number; y: number; width: number; height: number };
 

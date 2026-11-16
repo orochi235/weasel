@@ -1,12 +1,11 @@
 import { useCallback } from 'react';
 import type { MouseEvent } from 'react';
-import {
-  ActionsProvider, SceneCanvas, asNodeId, rectPath, solid, useMenus, useScene, useSelection, arrangePreset, editPreset, movePreset, pickPreset,
-} from '@weasel-js/core';
+import { ActionsProvider, SceneCanvas, asNodeId, rectPath, solid, useMenus, useScene, useSelection } from '@weasel-js/core';
 import type { Fill, MenuDef, NodeId, Path, RectPose } from '@weasel-js/core';
 import { pref } from '@weasel-js/prefs';
 import { ContextMenuHost, useContextMenu } from '@weasel-js/ui/components/Menu';
 import { DemoStage } from './DemoStage';
+import { arrangePreset, editPreset, movePreset, pickPreset } from '@weasel-js/editing';
 
 interface NodeData { path: Path; fill: Fill }
 

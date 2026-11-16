@@ -1,6 +1,7 @@
-import { SceneCanvas, useScene, movePreset, pickPreset, transformPreset } from '@weasel-js/core';
+import { SceneCanvas, useScene } from '@weasel-js/core';
 import type { Fill } from '@weasel-js/core';
 import { DemoStage } from './DemoStage';
+import { movePreset, pickPreset, transformPreset } from '@weasel-js/editing';
 
 interface Rect { id: string; x: number; y: number; width: number; height: number; fill: Fill }
 

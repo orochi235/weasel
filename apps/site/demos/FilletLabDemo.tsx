@@ -1,15 +1,4 @@
-import {
-  type ActionTunings,
-  asNodeId,
-  createScene,
-  pathFromD,
-  type PolygonPath,
-  type RectPose,
-  solid,
-  withCorner,
-  drawPreset,
-  pathNode,
-} from '@weasel-js/core';
+import { type ActionTunings, asNodeId, createScene, pathFromD, type PolygonPath, type RectPose, solid, withCorner, pathNode } from '@weasel-js/core';
 import {
   type ConfigOf,
   defineInstrument,
@@ -27,6 +16,7 @@ import s from './FilletLabDemo.module.css';
 import '@weasel-js/labkit/styles.css';
 import 'windease/styles.css';
 import { icon } from '../icons.gen';
+import { drawPreset } from '@weasel-js/editing';
 
 // The fillet controls read the selection, so they sit over the canvas
 // rather than in the trial's config.

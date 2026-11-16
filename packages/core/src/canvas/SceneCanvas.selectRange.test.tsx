@@ -10,7 +10,7 @@ import { createScene } from 'core/scene/scene';
 import { asNodeId, type NodeId } from 'core/scene/types';
 import { useSelection, type SelectionApi } from 'core/selection/useSelection';
 import type { SelectRangeDep } from 'tools/builtin/select/selectRange';
-import { pickPreset } from 'canvas/SceneCanvas/presets';
+import { pickPreset } from '@weasel-js/editing';
 
 type P = { x: number; y: number; width: number; height: number };
 

@@ -1,15 +1,8 @@
-import {
-  IDENTITY_POSE_COMPOSITION,
-  asNodeId,
-  polygonFromPoints,
-  SceneCanvas,
-  solid,
-  useScene,
-  useSelection, movePreset, pickPreset, transformPreset,
-} from '@weasel-js/core';
+import { IDENTITY_POSE_COMPOSITION, asNodeId, polygonFromPoints, SceneCanvas, solid, useScene, useSelection } from '@weasel-js/core';
 import { gridSnapSource } from '@weasel-js/guides';
 import type { Fill, Path, Stroke } from '@weasel-js/core';
 import { DemoStage } from './DemoStage';
+import { movePreset, pickPreset, transformPreset } from '@weasel-js/editing';
 
 const W = 400, H = 300;
 const SNAP = { sources: [gridSnapSource({ spacing: 20 })] };

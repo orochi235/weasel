@@ -1,6 +1,4 @@
-import {
-  SceneCanvas, WeaselProvider, useLatest, useScene, type NodeId, type Paint, type RectPose, editPreset, pickPreset,
-} from '@weasel-js/core';
+import { SceneCanvas, WeaselProvider, useLatest, useScene, type NodeId, type Paint, type RectPose } from '@weasel-js/core';
 import { useEffect, useMemo, useRef, useState, type ReactElement } from 'react';
 import { createTextPreset } from '@weasel-js/text-tools';
 import { plotEditing } from './editing/plotEditing';
@@ -9,6 +7,7 @@ import type { PlotMeasure } from './measure';
 import type { PlotData } from './plotData';
 import { plotRootOf, plotSpecs, replacePlotData, type PlotSceneData, type PlotSpec } from './plotScene';
 import { PLOT_THEME, type PlotTheme } from './theme';
+import { editPreset, pickPreset } from '@weasel-js/editing';
 
 /** Props for {@link PlotView}. */
 export interface PlotViewProps {

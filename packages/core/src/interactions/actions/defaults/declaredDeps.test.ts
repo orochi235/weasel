@@ -14,10 +14,8 @@ import type { Action } from '@weasel-js/routing';
 import type { ImmediateInvoker } from '@weasel-js/routing';
 import { asNodeId } from 'core/scene/types';
 import { createPoseOverrides } from 'core/scene/poseOverrides';
-import { reorderForwardAction, reorderBackwardAction } from './reorder';
-import { alignLeftAction, alignCenterYAction } from '../align/action';
-import { distributeHorizontalAction, distributeVerticalAction } from '../distribute/action';
 import { pathfinderUnionAction, pathfinderExcludeAction } from '../booleans/action';
+import { reorderForwardAction, reorderBackwardAction, alignLeftAction, alignCenterYAction, distributeHorizontalAction, distributeVerticalAction } from '@weasel-js/editing';
 
 const IDS = ['a', 'b', 'c'];
 

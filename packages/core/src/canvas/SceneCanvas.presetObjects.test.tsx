@@ -12,8 +12,8 @@ import { createScene } from 'core/scene/scene';
 import type { ToolsApi } from '../tools/overlayBinding';
 import { SceneCanvas } from './SceneCanvas';
 import type { FeaturePreset } from './SceneCanvas/features';
-import { KIT_STANDARD_ACTION_IDS } from 'interactions/actions/useStandardActions';
-import { BASELINE_ACTIONS, pickPreset, selectPreset } from 'canvas/SceneCanvas/presets';
+import { BASELINE_ACTIONS } from 'canvas/SceneCanvas/presets';
+import { KIT_STANDARD_ACTION_IDS, pickPreset, selectPreset } from '@weasel-js/editing';
 
 beforeAll(() => {
   const proto = HTMLCanvasElement.prototype as unknown as { getContext: (...args: unknown[]) => unknown };

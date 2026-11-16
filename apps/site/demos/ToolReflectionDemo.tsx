@@ -1,12 +1,5 @@
 import { useMemo } from 'react';
-import {
-  SceneCanvas,
-  WeaselProvider,
-  solid,
-  useScene,
-  useSelection,
-  type Fill, movePreset, pickPreset, useScopedTools,
-} from '@weasel-js/core';
+import { SceneCanvas, WeaselProvider, solid, useScene, useSelection, type Fill, useScopedTools } from '@weasel-js/core';
 import {
   buildRouteRegistry,
   canonicalModifiers,
@@ -16,6 +9,7 @@ import {
 } from '@weasel-js/routing';
 import styles from './ToolReflectionDemo.module.css';
 import { DemoStage } from './DemoStage';
+import { movePreset, pickPreset } from '@weasel-js/editing';
 
 interface Rect { id: string; x: number; y: number; width: number; height: number; fill: Fill }
 

@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useSyncExternalStore, type ReactElement } from 'react';
-import { asNodeId, SceneCanvas, useScene, type CanvasHelpers, type RenderLayer, movePreset, pickPreset } from '@weasel-js/core';
+import { asNodeId, SceneCanvas, useScene, type CanvasHelpers, type RenderLayer } from '@weasel-js/core';
 import type { ArcTrackSpec, Point } from '@weasel-js/geom';
 import { num, Readouts, type Readout } from './Readouts';
 import { Presets } from './Presets';
@@ -7,6 +7,7 @@ import { readSaved, writeSaved } from './saved';
 import { drawHandle, drawTrack } from './trackDraw';
 import { HANDLE, HANDLE_IDS, handleNode, handlesFor, measureTrack, readingWords, specFromHandles, type HandleId, type HandleNode, type HandlePoints } from './trackGeometry';
 import s from './lab.stories.module.css';
+import { movePreset, pickPreset } from '@weasel-js/editing';
 
 export const STAGE = { width: 560, height: 460 };
 const CENTER = { x: 280, y: 236 };

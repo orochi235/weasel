@@ -1,6 +1,6 @@
 import { cleanup, render, screen, within } from '@testing-library/react';
 import { afterEach, describe, expect, it } from 'vitest';
-import { FEATURE_PRESETS } from '@weasel-js/core/named-features';
+import { FEATURE_PRESETS } from '@weasel-js/editing';
 import { Features } from '../Features/Features';
 import { FEATURES_ID, routeOf } from '../routes';
 

@@ -1,14 +1,4 @@
-import {
-  asNodeId,
-  createScene,
-  hasEditablePath,
-  type NodeId,
-  type PathEditHost,
-  rectPath,
-  type RectPose,
-  type Scene,
-  solid, drawPreset, useActionsRegistry,
-} from '@weasel-js/core';
+import { asNodeId, createScene, hasEditablePath, type NodeId, type PathEditHost, rectPath, type RectPose, type Scene, solid, useActionsRegistry } from '@weasel-js/core';
 import {
   defineInstrument,
   f,
@@ -25,6 +15,7 @@ import s from './RectPathEditLabDemo.module.css';
 import '@weasel-js/labkit/styles.css';
 import 'windease/styles.css';
 import { icon } from '../icons.gen';
+import { drawPreset } from '@weasel-js/editing';
 
 type Data = { path?: { kind: string }; fill?: unknown };
 type State = SceneTrialState<Data, 'default', RectPose>;

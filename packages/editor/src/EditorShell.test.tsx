@@ -1,8 +1,5 @@
 import { act, cleanup, fireEvent, screen, within } from '@testing-library/react';
-import {
-  type ActionsRegistry, createScene, type MenuHost, SceneCanvas, SHAPE_TOOLS, type ToolsApi, useActionsRegistry, useCommand,
-  useMenuHost, drawPreset,
-} from '@weasel-js/core';
+import { type ActionsRegistry, createScene, type MenuHost, SceneCanvas, SHAPE_TOOLS, type ToolsApi, useActionsRegistry, useCommand, useMenuHost } from '@weasel-js/core';
 import { useState } from 'react';
 import { pref } from '@weasel-js/prefs';
 import { createMemoryAdapter } from '@weasel-js/storage';
@@ -12,6 +9,7 @@ import { EDITOR_ACTIONS } from './editorCommands';
 import { EditorShell } from './EditorShell';
 import { menuRun } from './menuBar';
 import { useEditorTools } from './shortcutSheet';
+import { drawPreset } from '@weasel-js/editing';
 
 beforeAll(() => {
   const proto = HTMLCanvasElement.prototype as unknown as { getContext: (...args: unknown[]) => unknown };

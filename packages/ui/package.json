@@ -66,6 +66,7 @@
   },
   "dependencies": {
     "@weasel-js/clock": "1.19.1",
+    "@weasel-js/editing": "1.19.1",
     "@weasel-js/font": "1.19.1",
     "@weasel-js/geom": "1.19.1",
     "@weasel-js/gestures": "1.19.1",

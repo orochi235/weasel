@@ -1,8 +1,5 @@
 import { useMemo, useState } from 'react';
-import {
-  SceneCanvas, WeaselProvider, asNodeId, useScene, ellipsePath, polygonFromPoints, rectPath, solid, editPreset,
-  movePreset, pickPreset, transformPreset, viewPreset,
-} from '@weasel-js/core';
+import { SceneCanvas, WeaselProvider, asNodeId, useScene, ellipsePath, polygonFromPoints, rectPath, solid, viewPreset } from '@weasel-js/core';
 import { pathsPreset } from '@weasel-js/path-tools';
 import { useAnimator } from '@weasel-js/animator/react';
 import { createParallaxLayer, createParallaxPlane, createTiledLayer } from '@weasel-js/parallax';
@@ -12,6 +9,7 @@ import { Button } from '@weasel-js/ui/components/Button';
 import { Checkbox } from '@weasel-js/ui/components/Checkbox';
 import { ZoomControl } from '@weasel-js/ui/components/ZoomControl';
 import { DemoStage } from './DemoStage';
+import { editPreset, movePreset, pickPreset, transformPreset } from '@weasel-js/editing';
 
 type NodeData = { path: Path; fill: Fill } | { fill: null };
 interface Pose { x: number; y: number; width: number; height: number }

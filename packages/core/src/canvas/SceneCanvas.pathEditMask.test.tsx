@@ -18,7 +18,7 @@ import { editingAnchors } from 'domains/chrome-caps';
 import { SceneCanvas } from './SceneCanvas';
 import { useOptionalViewInputs, type SurfaceViewInputs } from './viewInputs';
 import { useOptionalViewRegistry, type ViewRegistry } from './viewRegistry';
-import { drawPreset } from 'canvas/SceneCanvas/presets';
+import { drawPreset } from '@weasel-js/editing';
 
 type P = { x: number; y: number; width: number; height: number };
 type D = { path: Path; fill: string };

@@ -15,7 +15,7 @@ import { RECT_POSE_COMPOSITION, RIGID_POSE_COMPOSITION } from 'core/scene/compos
 import type { SliceDep } from 'interactions/actions/depSchema';
 import type { PoseDescriptor } from 'core/geometry/poseDescriptor';
 import { pathInWorld } from '@weasel-js/geom';
-import { drawPreset } from 'canvas/SceneCanvas/presets';
+import { drawPreset } from '@weasel-js/editing';
 
 afterEach(() => { cleanup(); });
 

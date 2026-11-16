@@ -3,8 +3,9 @@ import { afterEach, describe, expect, it } from 'vitest';
 import { act, cleanup } from '@testing-library/react';
 import { renderWithKeys as render } from '@weasel-js/react/testing/giveKeys';
 import { rectPath, type Path } from '@weasel-js/geom';
-import { asNodeId, createScene, drawPreset, SceneCanvas, type RectPose } from '@weasel-js/core';
+import { asNodeId, createScene, SceneCanvas, type RectPose } from '@weasel-js/core';
 import { useSliceTool } from './useSliceTool';
+import { drawPreset } from '@weasel-js/editing';
 
 afterEach(() => { cleanup(); });
 

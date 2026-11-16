@@ -1,4 +1,4 @@
-import { createScene, type RectPose, solid, drawPreset } from '@weasel-js/core';
+import { createScene, type RectPose, solid } from '@weasel-js/core';
 import { pathsPreset, usePenTool } from '@weasel-js/path-tools';
 import { createGridLayer, gridSnapSource } from '@weasel-js/guides';
 import {
@@ -15,6 +15,7 @@ import { useMemo } from 'react';
 import '@weasel-js/labkit/styles.css';
 import 'windease/styles.css';
 import { icon } from '../icons.gen';
+import { drawPreset } from '@weasel-js/editing';
 
 const config = f.schema({
   snap: f.boolean(true).label('Snap to grid'),

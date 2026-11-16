@@ -12,7 +12,7 @@ import type { NodeId } from 'core/scene/types';
 import { useSelection } from 'core/selection/useSelection';
 import type { SceneCanvasApi } from './canvasExtension';
 import type { SceneCanvasViewport } from './SceneCanvas/viewportProp';
-import { drawPreset } from 'canvas/SceneCanvas/presets';
+import { drawPreset } from '@weasel-js/editing';
 
 type D = { kind: 'rect' };
 type L = 'main';

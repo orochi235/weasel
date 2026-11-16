@@ -7,13 +7,14 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, act } from '@testing-library/react';
 import React from 'react';
-import { CanvasView, SceneCanvas, useScene, drawPreset } from '@weasel-js/core';
+import { CanvasView, SceneCanvas, useScene } from '@weasel-js/core';
 import type { NodeId, SceneCanvasApi } from '@weasel-js/core';
 import type { DrawCommand, GroupDrawCommand } from '@weasel-js/core/renderer';
 import { useHud, useHudContribution } from '../react';
 import type { Hud } from '../hud';
 import { createLoupe, type LoupeHandle } from './createLoupe';
 import { _resetFontRegistryForTests } from '@weasel-js/font/test-seams';
+import { drawPreset } from '@weasel-js/editing';
 
 type Pose = { x: number; y: number; width: number; height: number };
 type Data = { kind: 'rect' };

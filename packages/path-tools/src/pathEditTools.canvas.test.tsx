@@ -5,15 +5,13 @@
 import { afterEach, beforeAll, describe, expect, it } from 'vitest';
 import { act, cleanup } from '@testing-library/react';
 import { renderWithKeys as render } from '@weasel-js/react/testing/giveKeys';
-import {
-  SceneCanvas, asNodeId, createScene, createToolOptionValues, pathFromD, pathInWorld, type PolygonPath, type ToolsApi,
-  useActionsRegistry, type ActionsRegistry, drawPreset,
-} from '@weasel-js/core';
+import { SceneCanvas, asNodeId, createScene, createToolOptionValues, pathFromD, pathInWorld, type PolygonPath, type ToolsApi, useActionsRegistry, type ActionsRegistry } from '@weasel-js/core';
 import { pathsPreset } from '@weasel-js/path-tools';
 import { createModeRegistry, DEFAULT_MODES } from '@weasel-js/modes';
 import { pathToAnchors } from '@weasel-js/geom';
 import { anchorSelectionPreset, tugPreset, sandPreset } from './presets';
 import { usePathEditTools } from './toolSets';
+import { drawPreset } from '@weasel-js/editing';
 
 beforeAll(() => {
   (HTMLCanvasElement.prototype as unknown as { getContext: () => null }).getContext = () => null;

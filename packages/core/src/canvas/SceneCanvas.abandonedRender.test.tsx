@@ -11,7 +11,7 @@ import type { CanvasHelpers } from './useViewHelpers';
 import { createScene } from 'core/scene/scene';
 import type { Scene, NodeId } from 'core/scene/types';
 import { never } from 'domains/chrome-caps';
-import { drawPreset } from 'canvas/SceneCanvas/presets';
+import { drawPreset } from '@weasel-js/editing';
 
 type D = { kind: string };
 type L = 'main';

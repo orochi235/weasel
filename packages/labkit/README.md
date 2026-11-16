@@ -389,7 +389,7 @@ trial then runs no camera of its own, so every pointer, wheel and key gesture
 over the canvas is the scene's, its pan and zoom included.
 
 ```tsx
-import { createScene, drawPreset } from '@weasel-js/core';
+import { createScene } from '@weasel-js/core';
 import { gridSnapSource } from '@weasel-js/guides';
 import { icon } from './icons.gen'; // the app's icon(): see @weasel-js/icons
 import {
@@ -666,6 +666,7 @@ or raw WebGL you take rects and dirtiness from labkit and keep the GL yourself:
 
 ```tsx
 import { toDeviceRect, useSurfaceTile, useTiledSurface } from '@weasel-js/labkit/surface';
+import { drawPreset } from '@weasel-js/editing';
 ```
 
 A trial's `view` is persisted, restored on Reset and handed to the instrument;

@@ -1,13 +1,12 @@
 import { useState } from 'react';
-import {
-  SceneCanvas, asNodeId, solid, useScene, editPreset, movePreset, pickPreset, resizePreset, viewPreset,
-} from '@weasel-js/core';
+import { SceneCanvas, asNodeId, solid, useScene, viewPreset } from '@weasel-js/core';
 import { textPreset, useSceneTextEdit } from '@weasel-js/text-tools';
 import type { Fill, RectPose } from '@weasel-js/core';
 import { gridSnapSource } from '@weasel-js/guides';
 import type { StyledRun, TextStyle, TextVerticalAlign } from '@weasel-js/text';
 import { CharacterOptions, isCharacterChrome } from '@weasel-js/ui/components/inspector/CharacterOptions';
 import { DemoStage } from './DemoStage';
+import { editPreset, movePreset, pickPreset, resizePreset } from '@weasel-js/editing';
 
 const W = 600;
 const H = 400;
