@@ -205,6 +205,7 @@ export function Workspace({
     for (const id of nodeIds) {
       if (present.has(id)) continue;
       const kind = String(id).startsWith('lk-panel-') ? PANEL_KIND : KIND;
+      // eslint-disable-next-line weasel/effect-cleanup -- reconciles the store's tiles with nodeIds each run; the store owns them, not this component
       store.registerNode(createNode({ kind, id, parentId: ZONE_ID, focus: true }));
       store.showNode(id);
       const saved = layoutRef.current?.[id];

@@ -2,6 +2,7 @@ import { readFileSync } from 'node:fs';
 import tsParser from '@typescript-eslint/parser';
 import tsPlugin from '@typescript-eslint/eslint-plugin';
 import reactHooks from 'eslint-plugin-react-hooks';
+import effectCleanup from './scripts/eslint/effect-cleanup.mjs';
 import globLiteralArgs from './scripts/eslint/glob-literal-args.mjs';
 import noArrowStrictWrapper from './scripts/eslint/no-arrow-strict-wrapper.mjs';
 import noPackageStarExport from './scripts/eslint/no-package-star-export.mjs';
@@ -41,7 +42,7 @@ const plugins = {
   '@typescript-eslint': tsPlugin,
   'react-hooks': reactHooks,
   weasel: { rules: { 'no-render-ref-write': noRenderRefWrite, 'glob-literal-args': globLiteralArgs, 'no-package-star-export': noPackageStarExport,
-    'no-arrow-strict-wrapper': noArrowStrictWrapper } },
+    'no-arrow-strict-wrapper': noArrowStrictWrapper, 'effect-cleanup': effectCleanup } },
 };
 
 export default [
@@ -257,6 +258,7 @@ export default [
       'weasel/no-render-ref-write': 'error',
       'weasel/glob-literal-args': 'error',
       'weasel/no-arrow-strict-wrapper': 'error',
+      'weasel/effect-cleanup': 'error',
       'weasel/no-package-star-export': ['error', { internal: CORE_ALIASES.map((k) => k.slice(0, -1)) }],
       'react-hooks/static-components': 'error',
       'react-hooks/use-memo': 'error',
