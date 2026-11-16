@@ -1,5 +1,5 @@
 import type { Endless } from '@weasel-js/quantity';
-import { matchQuery, setOwn } from '@weasel-js/registry';
+import { getOwn, matchQuery, setOwn } from '@weasel-js/registry';
 import { prefAliasedLeaf, prefAliasTarget, type PrefAlias } from './alias';
 import type { PrefGroup, PrefSection } from './groups';
 import type { PrefLeaf, PrefNumber, PrefObject } from './schema';
@@ -181,7 +181,7 @@ export function assignPrefValueAtPath(root: Record<string, unknown>, path: strin
   let cursor = root;
   for (const part of parts.slice(0, -1)) {
     if (!Object.hasOwn(cursor, part) || cursor[part] == null) setOwnPrefValue(cursor, part, {});
-    cursor = cursor[part] as Record<string, unknown>;
+    cursor = getOwn(cursor, part) as Record<string, unknown>;
   }
   setOwnPrefValue(cursor, parts[parts.length - 1]!, value);
 }

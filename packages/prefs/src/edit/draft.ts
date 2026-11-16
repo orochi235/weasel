@@ -1,4 +1,4 @@
-import { isPlainObject } from '@weasel-js/registry';
+import { getOwn, isPlainObject, setOwn } from '@weasel-js/registry';
 import { type SerializedHistory, type SerializedHistoryEntry, type SerializedOp } from '@weasel-js/history';
 import { sameStored } from '@weasel-js/storage';
 import { carry } from './carry';
@@ -174,7 +174,7 @@ function unpack(value: unknown, source: SchemaRoot, types: PrefTypes): unknown {
   if (Object.hasOwn(value, FROM)) {
     const [path, ...keys] = value[FROM] as Origin;
     let held: unknown = nodeAt(source, path);
-    for (const key of keys) held = (held as Record<string, unknown> | undefined)?.[key];
+    for (const key of keys) held = held == null ? undefined : getOwn(held as Record<string, unknown>, key);
     return held;
   }
   const out: Record<string, unknown> = {};
@@ -182,7 +182,7 @@ function unpack(value: unknown, source: SchemaRoot, types: PrefTypes): unknown {
     if (k === TYPE || k === UNSET) continue;
     const next = unpack(v, source, types);
     // Code the source no longer holds is dropped with its attribute, as an attribute never set.
-    if (next !== undefined) out[k] = next;
+    if (next !== undefined) setOwn(out, k, next);
   }
   if (!Object.hasOwn(value, TYPE)) return out;
   const name = value[TYPE] as string;

@@ -63,6 +63,18 @@ export function describeAdapterContract(name: string, setup: () => AdapterHarnes
       expect(await adapter.get('lk:x:absent')).toBeUndefined();
     });
 
+    it('holds a record named for something an object inherits', async () => {
+      const { adapter } = setup();
+      expect(await adapter.get('constructor')).toBeUndefined();
+      await adapter.set('__proto__', 1);
+      await adapter.set('toString', 2);
+      expect(await adapter.get('__proto__')).toBe(1);
+      expect(await adapter.get('toString')).toBe(2);
+      await adapter.delete('__proto__');
+      expect(await adapter.get('__proto__')).toBeUndefined();
+      expect(await adapter.list('toS')).toEqual([['toString', 2]]);
+    });
+
     it('lists only the keys under a prefix', async () => {
       const { adapter } = setup();
       await adapter.set('lk:x:a', 1);

@@ -165,7 +165,8 @@ export function parseFaceMetrics(raw: unknown): FaceMetrics | undefined {
     out.ascent = r.ascent;
     out.descent = r.descent;
   }
-  const pair = (key: string, a: string, b: string, positive: string): void => {
+  type Field = 'offset' | 'thickness' | 'size' | 'shift';
+  const pair = (key: 'underline' | 'strikethrough' | 'superscript' | 'subscript', a: Field, b: Field, positive: Field): void => {
     const v = r[key];
     if (v === undefined) return;
     const e = v as Record<string, unknown> | null;

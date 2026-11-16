@@ -1,4 +1,4 @@
-import { createEmitter } from '@weasel-js/registry';
+import { createEmitter, getOwn } from '@weasel-js/registry';
 import type { OwnedRecordCache } from '@weasel-js/storage';
 import type { PrefBlend } from './blend';
 import { checkPrefConditions } from './conditionCheck';
@@ -99,7 +99,7 @@ function storedRecords(cache: OwnedRecordCache): Record<string, unknown> {
     const parts = name.split('.');
     let cursor = tree;
     for (const part of parts.slice(0, -1)) {
-      const next = cursor[part];
+      const next = getOwn(cursor, part);
       // A record's own value is never descended into: one named `a` and
       // another `a.b` cannot both show, and the branch wins.
       if (typeof next === 'object' && next !== null && branches.has(next)) {
@@ -112,7 +112,7 @@ function storedRecords(cache: OwnedRecordCache): Record<string, unknown> {
       }
     }
     const last = parts[parts.length - 1]!;
-    if (!branches.has(cursor[last] as object)) setOwnPrefValue(cursor, last, value);
+    if (!branches.has(getOwn(cursor, last) as object)) setOwnPrefValue(cursor, last, value);
   }
   return tree;
 }
@@ -188,7 +188,7 @@ export function createPrefsStore<S extends PrefGroup>(
       if (!read?.weights && !read?.at) return now.byPath.get(path) as never;
       const leaf = leaves.get(path);
       const selection = read.at ? selectionAt(source.selectors, now.selection, read.at, source.admitted) : now.selection;
-      if (read.at && source.selectors.has(path)) return selection[path] as never;
+      if (read.at && source.selectors.has(path)) return getOwn(selection, path) as never;
       const weights = weightsUnder(source.selectors, selection, read.weights ?? {}, source.admitted);
       return (leaf ? resolveHeld(source, leaf, now.held.get(path), weights) : undefined) as never;
     },
@@ -211,7 +211,7 @@ export function createPrefsStore<S extends PrefGroup>(
       const weights = selectionWeights(selection);
       const tree: Record<string, unknown> = {};
       for (const [path, leaf] of leaves) {
-        const set = source.selectors.has(path) ? selection[path] : resolveHeld(source, leaf, now.held.get(path), weights);
+        const set = source.selectors.has(path) ? getOwn(selection, path) : resolveHeld(source, leaf, now.held.get(path), weights);
         assignPrefValueAtPath(tree, path, set);
       }
       return tree;

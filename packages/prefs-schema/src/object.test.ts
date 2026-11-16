@@ -56,3 +56,13 @@ describe('a dotted field of an object leaf', () => {
   });
 });
 
+describe('a field named like an Object.prototype member', () => {
+  it('reads as absent from an object that does not hold it', () => {
+    expect(prefObjectField({ width: 2 }, 'constructor')).toBeUndefined();
+    expect(prefObjectField({ width: 2 }, 'toString.name')).toBeUndefined();
+  });
+
+  it('sets a field of a field without starting from the inherited member', () => {
+    expect(prefObjectWithField(stroke, { width: 2 }, 'constructor.x', 1)).toEqual({ width: 2, constructor: { x: 1 } });
+  });
+});

@@ -1,4 +1,4 @@
-import { setOwn } from '@weasel-js/registry';
+import { getOwn, setOwn } from '@weasel-js/registry';
 import { isPrefLeaf, type PrefAction, type PrefGroup } from '../index';
 import { minOf } from '@weasel-js/geom';
 import { actionLeaf, actionLeafKey, type SchemaAction } from './actionLeaves';
@@ -33,7 +33,7 @@ function fileUnder(group: PrefGroup, parts: readonly string[], action: SchemaAct
   // By name too: a group made beside a pref that had its key took another.
   const at = [key, ...Object.keys(kids)].find((k) => Object.hasOwn(kids, k) && !isPrefLeaf(kids[k]!) && (k === key || kids[k]!.name === title(head)))
     ?? uniqueKey(kids, key);
-  const under = (kids[at] as PrefGroup | undefined) ?? { name: title(head), description: '', children: {} };
+  const under = (getOwn(kids, at) as PrefGroup | undefined) ?? { name: title(head), description: '', children: {} };
   return { ...group, children: { ...group.children, [at]: fileUnder(under, rest, action) } };
 }
 

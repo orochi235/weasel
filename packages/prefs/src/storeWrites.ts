@@ -1,6 +1,7 @@
 // What a store writes: a value encoded for storage, into the value the
 // selectors name where the pref is scoped.
 
+import { setOwn } from '@weasel-js/registry';
 import type { OwnedRecordCache } from '@weasel-js/storage';
 import { prefSectionLeaves, type PrefList, isPrefScope, type PrefSelection, type PrefMap, type PrefLeaf, type PrefObject, prefScopedDefault, prefVariantOf, type PrefUnion } from '@weasel-js/prefs-schema';
 import { dropUnlisted, mapScopeValues, repairScope, writeDeclared, overridesOfPref, scopeSelectorsOf } from '@weasel-js/prefs-schema/internal';
@@ -26,7 +27,7 @@ const encodeInfinity = (leaf: PrefLeaf, value: unknown): unknown => {
   for (const [key, field] of prefSectionLeaves((fields as PrefObject).children)) {
     if (!Object.hasOwn(held, key)) continue;
     const encoded = encodeInfinity(field, held[key]);
-    if (encoded !== held[key]) (out ??= { ...held })[key] = encoded;
+    if (encoded !== held[key]) setOwn((out ??= { ...held }), key, encoded);
   }
   return out ?? value;
 };

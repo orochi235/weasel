@@ -1,4 +1,4 @@
-import { isPlainObject } from '@weasel-js/registry';
+import { getOwn, isPlainObject, setOwn } from '@weasel-js/registry';
 import { isPrefLeaf, isPrefSection, type PrefLeaf } from '../index';
 import { childrenOf, isUnder, isValidKey, joinPath, keyOf, keysOf, ownChildrenOf, ownSlotOf, type SchemaNode, type SchemaRoot } from './schemaEdit';
 import { findType, NO_TYPES, type PrefTypes } from './types';
@@ -65,7 +65,7 @@ export function overridesOf(leaf: PrefLeaf, type: PrefLeaf): Record<string, unkn
   const theirs = type as unknown as Record<string, unknown>;
   const out: Record<string, unknown> = {};
   for (const k of new Set([...Object.keys(mine), ...Object.keys(theirs)])) {
-    if (k !== 'type' && !same(mine[k], theirs[k])) out[k] = mine[k];
+    if (k !== 'type' && !same(getOwn(mine, k), getOwn(theirs, k))) setOwn(out, k, getOwn(mine, k));
   }
   return out;
 }
@@ -136,8 +136,8 @@ function attrChanges(path: string, a: SchemaNode, b: SchemaNode): SchemaChange[]
   for (const slot of [ownSlotOf(a), ownSlotOf(b)]) if (slot) keys.delete(slot);
   const out: SchemaChange[] = [];
   for (const k of keys) {
-    const from = (a as unknown as Record<string, unknown>)[k];
-    const to = (b as unknown as Record<string, unknown>)[k];
+    const from = getOwn(a as unknown as Record<string, unknown>, k);
+    const to = getOwn(b as unknown as Record<string, unknown>, k);
     if (same(from, to)) continue;
     // An entry on both sides is reported by its own attributes, each under `item.`.
     if (isEntry(a, k, from) && isEntry(b, k, to)) out.push(...attrChanges(path, from, to).map((c) => ({ ...c, key: `${k}.${(c as { key: string }).key}` }) as SchemaChange));

@@ -1,3 +1,4 @@
+import { getOwn } from '@weasel-js/registry';
 import type { ResetWrite } from '../autoReset';
 import { type PrefSection, prefLeafValue, type PrefLeaf } from '@weasel-js/prefs-schema';
 import { sourceResetPlan } from './policy';
@@ -37,14 +38,14 @@ export function createSelectionSource(input: SelectionSourceInput): SelectionSou
   const source: SelectionSource = {
     schema,
     valueAt: (path) => {
-      const leaf = leaves[path];
+      const leaf = getOwn(leaves, path);
       return sharedReading(read(path).map((held) => (leaf ? shown(leaf, held) : held)));
     },
     write: (path, value, options) => write(path, () => value, options),
     update: (path, fn, options) => write(path, (prev) => fn(prev), options),
     autoAt: () => undefined,
     stateAt,
-    reset: (paths) => source.resetAs(paths, paths.length === 1 ? (leaves[paths[0]!]?.name ?? '') : ''),
+    reset: (paths) => source.resetAs(paths, paths.length === 1 ? (getOwn(leaves, paths[0]!)?.name ?? '') : ''),
     resetAs: (paths, label) => {
       const plan = sourceResetPlan(source, paths);
       if (plan.length > 0) input.reset(plan, label);

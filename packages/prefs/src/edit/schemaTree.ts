@@ -1,3 +1,4 @@
+import { getOwn } from '@weasel-js/registry';
 import { isPrefLeaf, isPrefSection, type PrefGroup, type PrefLeaf, type PrefList, type PrefMap, type PrefSection } from '../index';
 import { maxOf } from '@weasel-js/geom';
 
@@ -162,7 +163,7 @@ export function editChildren<R extends SchemaRoot>(root: R, parent: string | nul
     if (!kids) throw new Error(`schemaEdit: ${here} cannot hold children`);
     if (depth === keys.length) return withChildren(node, edit(kids));
     const k = keys[depth]!;
-    const child = kids[k];
+    const child = getOwn(kids, k);
     if (!child) throw new Error(`schemaEdit: no node at ${pathOf(keys.slice(0, depth + 1))}`);
     return withChildren(node, { ...kids, [k]: go(child, depth + 1) });
   };

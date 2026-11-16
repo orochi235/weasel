@@ -1,3 +1,4 @@
+import { getOwn } from '@weasel-js/registry';
 import type { PrefObject } from './schema';
 
 const isObject = (v: unknown): v is Record<string, unknown> => typeof v === 'object' && v !== null;
@@ -17,7 +18,7 @@ export function prefObjectField(held: Record<string, unknown> | undefined, key: 
   let cursor: unknown = held;
   for (const step of key.split('.')) {
     if (!isObject(cursor)) return undefined;
-    cursor = cursor[step];
+    cursor = getOwn(cursor, step);
   }
   return cursor;
 }
@@ -30,7 +31,8 @@ export function prefObjectWithField(pref: PrefObject, held: unknown, key: string
 }
 
 function withField(base: Record<string, unknown>, [step, ...rest]: string[], value: unknown): Record<string, unknown> {
-  const next = rest.length === 0 ? value : withField(isObject(base[step]) ? base[step] : {}, rest, value);
+  const held = getOwn(base, step);
+  const next = rest.length === 0 ? value : withField(isObject(held) ? held : {}, rest, value);
   const drops = next === undefined || (rest.length > 0 && Object.keys(next as object).length === 0);
   if (!drops) return { ...base, [step]: next };
   const { [step]: _dropped, ...kept } = base;

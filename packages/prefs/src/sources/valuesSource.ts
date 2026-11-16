@@ -1,3 +1,4 @@
+import { getOwn } from '@weasel-js/registry';
 import { AUTO, prefCanAuto, type LeafReading } from '../autoReset';
 import { type PrefGroup, type PrefSection, prefLeafAt, prefValueAtPath, prefLeafValue, type PrefLeaf } from '@weasel-js/prefs-schema';
 import { sourceResetPlan, writePlan } from './policy';
@@ -95,11 +96,11 @@ export function createRecordSource(
     schema,
     valueAt: (path): LeafReading => {
       if (mixed?.has(path)) return { value: undefined, mixed: true, each: [] };
-      const value = values?.[path];
+      const value = values && getOwn(values, path);
       return { value, mixed: false, each: [value] };
     },
     write,
-    update: (path, fn) => write(path, fn(values?.[path])),
+    update: (path, fn) => write(path, fn(values && getOwn(values, path))),
     autoAt: () => undefined,
     stateAt,
     reset: (paths) => writePlan(sourceResetPlan(source, paths), write),

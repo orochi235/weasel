@@ -1,4 +1,4 @@
-import { setOwn } from '@weasel-js/registry';
+import { getOwn, setOwn } from '@weasel-js/registry';
 import { isPrefLeaf, type PrefAlias } from '../index';
 import { checkKey, keysTakenAt, takesDottedKey, uniqueKey } from './schemaKeys';
 import {
@@ -88,7 +88,7 @@ export function replaceNode<R extends SchemaRoot>(root: R, path: string | null, 
   if (path === null) return fn(root) as R;
   const key = keyOf(path);
   return editChildren(root, parentPath(path), (kids) => {
-    const node = kids[key];
+    const node = getOwn(kids, key);
     if (!node) throw new Error(`schemaEdit: no node at ${path}`);
     return { ...kids, [key]: fn(node) };
   });
@@ -102,7 +102,7 @@ export function setAttribute<R extends SchemaRoot>(root: R, path: string | null,
   return replaceNode(root, path, (node) => {
     const next: Record<string, unknown> = { ...node };
     if (value === undefined) delete next[key];
-    else next[key] = value;
+    else setOwn(next, key, value);
     if (next.kind === 'enum' && next.clearable === true) next.default = undefined;
     return next as unknown as SchemaNode;
   });

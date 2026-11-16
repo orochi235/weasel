@@ -1,4 +1,5 @@
 import { useMemo, useState, type ReactElement } from 'react';
+import { getOwn } from '@weasel-js/registry';
 import { imeKey } from '@weasel-js/ui-input';
 import {
   isPrefLeaf, type PrefCondition, type PrefGroup, type PrefLeaf, type PrefList, type PrefMap,
@@ -255,14 +256,14 @@ export function AttributesPane({ schema, onChange, paths, onRename, added = fals
         onChange={(p, value) => {
           if (item && p.startsWith(`${ENTRY}.`) && p !== ENTRY_IS) {
             const attr = p.slice(ENTRY.length + 1);
-            const next: Record<string, unknown> = { ...item, [attr]: normalizeAttr(attr, value, entry[attr]) };
-            if (next[attr] === undefined) delete next[attr];
+            const next: Record<string, unknown> = { ...item, [attr]: normalizeAttr(attr, value, getOwn(entry, attr)) };
+            if (getOwn(next, attr) === undefined) delete next[attr];
             setEntry(next as unknown as PrefLeaf);
             return;
           }
           if (p.startsWith(`${AUTO}.`)) { writeAuto(attrOf(p) as AutoRow, value); return; }
           const attr = attrOf(p);
-          if (isObjectField(agg.schema, attr)) onChange(setObjectField(schema, targets, attr, value)); else writeAll(attr, normalizeAttr(attr, value, own[attr]));
+          if (isObjectField(agg.schema, attr)) onChange(setObjectField(schema, targets, attr, value)); else writeAll(attr, normalizeAttr(attr, value, getOwn(own, attr)));
         }}
       />
       </Lockable>
