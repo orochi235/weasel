@@ -7,7 +7,7 @@
  */
 import type { History } from '@weasel-js/history';
 import { prefLeaves, type PrefGroup } from '@weasel-js/prefs';
-import { createEmitter } from '@weasel-js/registry';
+import { createEmitter, getOwn, setOwn } from '@weasel-js/registry';
 import type { Action } from './action';
 import { resolveParams, type ImmediateInvoker, type OngoingHandle, type OngoingInvoker } from './invoker';
 import { runsInvoker, type ActionTuning } from './tuning';
@@ -124,13 +124,16 @@ function soleEntry<T>(stack: EditStack, run: () => T): Watched & { out: T } {
 /** `params`, reduced to the leaves of `schema`, each filled from its default where `params` has none. */
 function formValues(schema: PrefGroup, params: Readonly<Record<string, unknown>>): Record<string, unknown> {
   const out: Record<string, unknown> = {};
-  for (const [path, leaf] of prefLeaves(schema)) out[path] = params[path] !== undefined ? params[path] : leaf.default;
+  for (const [path, leaf] of prefLeaves(schema)) {
+    const given = getOwn(params, path);
+    setOwn(out, path, given !== undefined ? given : leaf.default);
+  }
   return out;
 }
 
 function without(params: Record<string, unknown> | undefined, keys: Readonly<Record<string, unknown>>): Record<string, unknown> {
   const out: Record<string, unknown> = {};
-  for (const [k, v] of Object.entries(params ?? {})) if (!(k in keys)) out[k] = v;
+  for (const [k, v] of Object.entries(params ?? {})) if (!Object.hasOwn(keys, k)) setOwn(out, k, v);
   return out;
 }
 
