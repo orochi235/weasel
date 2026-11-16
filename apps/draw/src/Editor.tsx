@@ -1,6 +1,5 @@
 import {
   BUILTIN_TOOL_GROUPS,
-  createMeasurements,
   placedPagesOf,
   type SceneCanvasApi,
   type SelectionApi,
@@ -11,6 +10,7 @@ import {
   type View,
   withoutTools,
 } from '@weasel-js/core';
+import { createMeasurements } from '@weasel-js/measure';
 import type { ModeRegistry } from '@weasel-js/modes';
 import { PATH_EDIT_TOOLS, PATH_OVERLAYS_GROUP, PATH_TOOLS_TOOLS, RESHAPE_TOOLS, WARP_TOOLS } from '@weasel-js/path-tools';
 import { ActionBar } from '@weasel-js/ui/components/ActionBar';

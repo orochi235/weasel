@@ -4,19 +4,15 @@ import { renderHook, act } from '@testing-library/react';
 import { renderWithKeys as render } from '@weasel-js/react/testing/giveKeys';
 import { reportRouteConflicts, resolveParams, type ActionsRegistry } from '@weasel-js/routing';
 import { useActionsRegistry } from '@weasel-js/routing/react';
-import { SceneCanvas } from 'canvas/SceneCanvas';
-import { createScene } from 'core/scene/scene';
-import type { NodeId, Scene } from 'core/scene/types';
-import { useSelection } from 'core/selection/useSelection';
+import {
+  createScene, drawPreset, type NodeId, type Scene, SceneCanvas, useEyedropperTool, useHandTool, useSelection,
+} from '@weasel-js/core';
 import { useMeasureTool } from './useMeasureTool';
-import { useEyedropperTool } from '../eyedropper/useEyedropperTool';
-import { useHandTool } from '../hand/useHandTool';
-import { createMeasurements, measureIds } from 'domains/measure/measurements';
-import { measureEndsOf } from 'domains/measure/measurement';
-import { measurementsContribution } from 'domains/measure/measureContribution';
-import { measureEndSource } from 'domains/measure/measureHit';
-import { MEASURE_ACTION_IDS } from 'domains/measure/actionIds';
-import { drawPreset } from 'canvas/SceneCanvas/presets';
+import { createMeasurements, measureIds } from './measurements';
+import { measureEndsOf } from './measurement';
+import { measurementsContribution } from './measureContribution';
+import { measureEndSource } from './measureHit';
+import { MEASURE_ACTION_IDS } from './actionIds';
 
 const ms0 = () => createMeasurements({ layer: 'notes' });
 

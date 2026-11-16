@@ -145,6 +145,8 @@ export type { SpatialReference, SpatialReferenceSources } from '../interactions/
 export type { FlipAxis, FlipPivot } from '../interactions/actions/flip/helpers';
 export { lastTransform, recordTransform, forgetTransform } from '../interactions/actions/transform-again/memory';
 export type { RepeatableTransform } from '../interactions/actions/transform-again/memory';
+export { transformSelection, type SelectionTransform } from '../interactions/actions/transform-again/transformSelection';
+export { requiresSelection } from '../interactions/actions/defaults/requiresSelection';
 export type {
   AlignAdapter,
   AlignEdge,

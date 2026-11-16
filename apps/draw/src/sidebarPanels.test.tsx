@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { screen } from '@testing-library/react';
-import { asNodeId, createMeasurements, createScene, type PathEffect, useSelection } from '@weasel-js/core';
+import { asNodeId, createScene, type PathEffect, useSelection } from '@weasel-js/core';
+import { createMeasurements } from '@weasel-js/measure';
 import { useState } from 'react';
 import { ANNOTATION_LAYER, DRAW_LAYERS, type WeaselDrawData, type WeaselDrawLayer, type WeaselDrawPose } from './drawDocument';
 import { SelectionProperties } from './sidebarPanels';

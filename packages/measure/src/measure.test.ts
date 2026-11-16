@@ -1,24 +1,20 @@
 import { describe, it, expect } from 'vitest';
 import type { Action, ImmediateInvoker, InvocationCtx, OngoingInvoker } from '@weasel-js/routing';
 import { ActionDisabledReason, evaluateEnabled } from '@weasel-js/routing';
-import { createScene, sceneFromJSON } from 'core/scene/scene';
-import type { NodeId, RectPose } from 'core/scene/types';
-import type { SelectionApi } from 'core/selection/useSelection';
-import { isAnnotationLayer, isAnnotationNode } from 'core/scene/annotation';
-import { lastTransform } from 'interactions/actions/transform-again/memory';
+import {
+  type AnyScene, createScene, inkBoxes, isAnnotationLayer, isAnnotationNode, lastTransform, type NodeId,
+  type RectPose, sceneFromJSON, type SelectionApi, type SnapCollect,
+} from '@weasel-js/core';
 import { MEASURE_ACTION_IDS } from './actionIds';
 import { measureBetween, measurementOf, measureEndsOf } from './measurement';
 import { createMeasurements, currentMeasureId, measureIds } from './measurements';
 import { measureCommands } from './measureCommands';
 import { measureCreateAction, measureDragAction, measurePickAtAction } from './measureGestures';
 import { measureEndSource, type MeasureHit } from './measureHit';
-import type { SnapCollect } from 'domains/snap/types';
 import { MEASURE_AFFORDANCE_KIND } from './measureLayer';
-import { gridSource, sessionDep } from 'domains/snap/testing/sessionDep';
+import { gridSource, sessionDep } from './testing/snapDep';
 import { buildDepsFromRequires } from '@weasel-js/routing';
 import type { DepRegistry } from '@weasel-js/routing/react';
-import { inkBoxes } from 'canvas/inkBoxes';
-import type { AnyScene } from 'core/scene/anyScene';
 
 type Pt = { x: number; y: number };
 

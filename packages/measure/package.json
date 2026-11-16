@@ -1,0 +1,60 @@
+{
+  "name": "@weasel-js/measure",
+  "version": "1.19.1",
+  "description": "Measuring for a weasel canvas: a measure tool, measurements kept as scene nodes on an annotation layer, and the commands that move and rotate by them.",
+  "weasel": {
+    "tier": "plugin"
+  },
+  "license": "MIT",
+  "type": "module",
+  "sideEffects": false,
+  "main": "./dist/index.js",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./package.json": "./package.json"
+  },
+  "author": "orochi235",
+  "homepage": "https://orochi235.github.io/weasel/",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/orochi235/weasel.git",
+    "directory": "packages/measure"
+  },
+  "bugs": {
+    "url": "https://github.com/orochi235/weasel/issues"
+  },
+  "engines": {
+    "node": ">=24"
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
+  "scripts": {
+    "build": "tsup",
+    "test": "node ../../scripts/package-test.mjs"
+  },
+  "dependencies": {
+    "@weasel-js/gestures": "1.19.1",
+    "@weasel-js/icons": "1.19.1",
+    "@weasel-js/react": "1.19.1",
+    "@weasel-js/registry": "1.19.1",
+    "@weasel-js/renderer": "1.19.1",
+    "@weasel-js/routing": "1.19.1"
+  },
+  "peerDependencies": {
+    "@weasel-js/core": "1.19.1",
+    "@weasel-js/geom": "1.19.1",
+    "react": ">=18"
+  },
+  "publishConfig": {
+    "access": "public",
+    "provenance": true
+  }
+}

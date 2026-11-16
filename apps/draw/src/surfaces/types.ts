@@ -1,4 +1,5 @@
-import type { Measurements, SelectionApi } from '@weasel-js/core';
+import type { SelectionApi } from '@weasel-js/core';
+import type { Measurements } from '@weasel-js/measure';
 import type { FilletControlsSelection } from '@weasel-js/path-tools';
 import type { PrefGroup, PrefOrder } from '@weasel-js/prefs';
 import type { ReactNode } from 'react';

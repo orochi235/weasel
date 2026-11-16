@@ -1,14 +1,12 @@
 import { useMemo } from 'react';
 import { useLatest } from '@weasel-js/react';
-import { defineTool } from '../../overlayBinding';
-import type { Tool } from '../../overlayBinding';
+import { defineTool, SNAP_ROLE_MODS, type Tool } from '@weasel-js/core';
+import { icon } from './icons.gen';
 import type { ToolKeybinding } from '@weasel-js/routing';
-import type { Measurements } from 'domains/measure/measurements';
-import { measureCreateAction, measurePickAtAction } from 'domains/measure/measureGestures';
-import { MEASURE_ACTION_IDS } from 'domains/measure/actionIds';
-import { icon } from '../../../icons.gen';
-import { SNAP_ROLE_MODS } from 'domains/snap/roles';
-import type {} from '../../../interactions/actions/actionParamSchema';
+import type { Measurements } from './measurements';
+import { measureCreateAction, measurePickAtAction } from './measureGestures';
+import { MEASURE_ACTION_IDS } from './actionIds';
+import type {} from './actionParamSchema';
 
 /** Options for `useMeasureTool`. */
 export interface UseMeasureToolOptions {
@@ -42,7 +40,7 @@ export function useMeasureTool(options: UseMeasureToolOptions): Tool {
     capabilities: ['navigation'],
     hookName: 'useMeasureTool',
     cursor: 'crosshair',
-    presentation: { label: 'Measure', icon: icon('measure'), group: 'view' },
+    presentation: { label: 'Measure', icon: icon('core:measure'), group: 'view' },
     ...(keybinding === null ? {} : { keybinding: keybinding ?? { key: 'M' } }),
     actions,
     onActivate: () => ms.measuring.set(true),

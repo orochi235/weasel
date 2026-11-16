@@ -1,19 +1,10 @@
 import type { Action, ActionDeps } from '@weasel-js/routing';
 import { ActionDisabledReason } from '@weasel-js/routing';
-import type { NodeId } from 'core/scene/types';
-import { translateSelection } from 'interactions/actions/defaults/nudge';
-import { requiresSelection } from 'interactions/actions/defaults/requiresSelection';
-import { reachesLocked } from 'interactions/actions/defaults/lockedReach';
-import { commitOps } from 'interactions/actions/defaultCommitAdapter';
-import { commitTransformOps, transformApplyOps } from 'interactions/actions/transformFinish';
-import { poseDescriptorOf } from 'interactions/actions/poseDescriptorDep';
-import { rotateSelectionOps } from 'interactions/actions/rotate/replay';
-import { recordTransform } from 'interactions/actions/transform-again/memory';
+import { type AnyScene, commitOps, type NodeId, reachesLocked, requiresSelection, transformSelection } from '@weasel-js/core';
 import { measurementOf, type Measurement } from './measurement';
 import { currentMeasureId, measureIds, type Measurements } from './measurements';
 import { deleteMeasureOps, MEASURE_LABELS } from './measureEdits';
 import { MEASURE_ACTION_IDS } from './actionIds';
-import type { AnyScene } from 'core/scene/anyScene';
 
 const MOVE_LABEL = 'Move by Measurement';
 const ROTATE_LABEL = 'Rotate by Measurement';
@@ -51,14 +42,7 @@ function moveBy(ms: Measurements): Action {
       timing: 'immediate',
       run: (deps) => {
         const c = current(deps, ms);
-        const { selection, scene } = deps;
-        if (!c || !selection || !scene) return;
-        const { dx, dy } = c.m;
-        const moved = translateSelection(
-          selection, scene, dx, dy, transformApplyOps(deps), deps.geometryProjection,
-          poseDescriptorOf(deps.poseDescriptor), MOVE_LABEL,
-        );
-        if (moved) recordTransform(scene, { kind: 'translate', dx, dy }, selection.get());
+        if (c) transformSelection(deps, { kind: 'translate', dx: c.m.dx, dy: c.m.dy }, MOVE_LABEL);
       },
     },
   };
@@ -76,17 +60,8 @@ function rotateBy(ms: Measurements): Action {
       timing: 'immediate',
       run: (deps) => {
         const c = current(deps, ms);
-        const { selection } = deps;
-        const scene = deps.scene as AnyScene | undefined;
-        if (!c || !selection || !scene) return;
-        const selected = selection.get() as string[];
         // The measurement reads counterclockwise-positive; the canvas turns clockwise-positive.
-        const turn = -c.m.angle;
-        const ops = rotateSelectionOps(
-          scene, selected, deps, turn, 'union', ROTATE_LABEL,
-        );
-        if (!commitTransformOps(deps, ops, ROTATE_LABEL)) return;
-        recordTransform(scene, { kind: 'rotate', angle: turn, pivot: 'union' }, selected);
+        if (c) transformSelection(deps, { kind: 'rotate', angle: -c.m.angle, pivot: 'union' }, ROTATE_LABEL);
       },
     },
   };

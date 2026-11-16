@@ -1,16 +1,14 @@
 import { useSyncExternalStore, type ReactElement } from 'react';
 import {
   actionItems,
-  currentMeasureId,
-  MEASURE_ACTION_IDS,
-  measureMagnification,
-  measurementOf,
   useActionsRegistry,
   type Action,
   type ActionItem,
-  type Measurements,
   type Scene,
 } from '@weasel-js/core';
+import {
+  currentMeasureId, MEASURE_ACTION_IDS, measureMagnification, measurementOf, type Measurements,
+} from '@weasel-js/measure';
 import { decimal, qty } from '@weasel-js/quantity';
 import { useActionStates } from '../ActionBar/useActionStates';
 import { reasonLabel } from '../ActionBar/reasonLabels';

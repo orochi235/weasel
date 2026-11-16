@@ -56,6 +56,7 @@
       "@weasel-js/animator",
       "@weasel-js/minimap",
       "@weasel-js/symmetry",
+      "@weasel-js/measure",
       "@weasel-js/path-tools",
       "@weasel-js/rig",
       "@weasel-js/forge",

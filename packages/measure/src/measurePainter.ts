@@ -1,9 +1,7 @@
 import { polylineFromPoints } from '@weasel-js/geom';
 import type { DrawCommand } from '@weasel-js/renderer';
-import type { NodeShapeEntry } from 'canvas/NodeShape';
-import { OVERLAY_ROLE_STROKES } from 'canvas/overlayRoleStrokes';
-import { measureEndsOf, type MeasurePoint } from 'domains/measure/measurement';
-import { paintsPose } from './poseBox';
+import { isRectPose, type NodeShapeEntry, OVERLAY_ROLE_STROKES } from '@weasel-js/core';
+import { measureEndsOf, type MeasurePoint } from './measurement';
 
 /** Screen-px half-length of the tick across each end of a measurement. */
 export const MEASURE_TICK_PX = 5;
@@ -32,10 +30,11 @@ export function measureCommands(start: MeasurePoint, end: MeasurePoint, perPx: n
 
 /** Paints a measurement node — `data.measure`, in world units — in the
  *  canvas's measure color. It has no silhouette: a measurement is not content
- *  to pick. */
+ *  to pick. `measurementsContribution` registers it for its scene; a render
+ *  with no canvas registers it itself (`nodeShapesOf(scene).register`). */
 export const MEASURE_PAINTER: NodeShapeEntry = {
-  id: 'kit:measure',
-  matches: (node) => paintsPose(node.pose) && measureEndsOf(node) !== null,
+  id: 'measure:measurement',
+  matches: (node) => (node.pose === undefined || isRectPose(node.pose)) && measureEndsOf(node) !== null,
   paint: (node, _pose, ctx) => {
     const ends = measureEndsOf(node);
     if (!ends) return [];

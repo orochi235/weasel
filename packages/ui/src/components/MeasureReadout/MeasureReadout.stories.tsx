@@ -1,16 +1,14 @@
 import type { Meta, StoryObj } from '@weasel-js/forge';
 import { IDENTITY_POSE_COMPOSITION,
   ActionsProvider,
-  createMeasurements,
   createScene,
   DepRegistryProvider,
-  measureNode,
-  measurementsContribution,
   useDepSource,
   type DepName,
   type NodeId,
   type Scene,
 } from '@weasel-js/core';
+import { createMeasurements, measureNode, measurementsContribution } from '@weasel-js/measure';
 import { useState } from 'react';
 import { MeasureReadout } from '@weasel-js/ui/components/MeasureReadout';
 import s from './MeasureReadout.stories.module.css';

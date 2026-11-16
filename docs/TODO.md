@@ -202,7 +202,7 @@ Owner tags, after the priority (2026-10-26):
 - **(P2) [maintainer] Tune the Measure tool hands-on, with the maintainer driving.** First-draft behavior and
   keys: its tool key, M, which moved Cloth warp off it when the two met in draw; the Shift angle
   step; that Move by and Rotate by fall back to the newest measurement when none is picked; and the
-  readout's look (`packages/core/src/tools/builtin/measure/`, `<MeasureReadout>` in `@weasel-js/ui`).
+  readout's look (`packages/measure/`, `<MeasureReadout>` in `@weasel-js/ui`).
   Closes when the maintainer has driven the Measure tool hands-on and the defaults and keys he picks
   are committed.
 - **(P2) [maintainer] Tune path start and direction hands-on, with the maintainer driving.** First-draft

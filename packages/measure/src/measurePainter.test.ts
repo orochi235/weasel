@@ -1,11 +1,11 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { pathToD, type Path } from '@weasel-js/geom';
 import type { DrawCommand } from '@weasel-js/renderer';
-import type { Node, RectPose } from 'core/scene/types';
+import type { RectPose, SceneNode } from '@weasel-js/core';
 import { MEASURE_PAINTER, MEASURE_TICK_PX } from './measurePainter';
 
 const POSE: RectPose = { x: 0, y: 0, width: 100, height: 0 };
-const node = { id: 'm', kind: 'node', pose: POSE, data: { measure: { start: { x: 0, y: 0 }, end: { x: 100, y: 0 } } } } as unknown as Node<unknown, string, unknown>;
+const node = { id: 'm', kind: 'node', pose: POSE, data: { measure: { start: { x: 0, y: 0 }, end: { x: 100, y: 0 } } } } as unknown as SceneNode<unknown, string, unknown>;
 
 /** How far the tick at the start reaches either side of the line, which runs along y = 0, in world units. */
 const tickHalf = (cmds: readonly DrawCommand[]): number => {

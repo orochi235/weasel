@@ -1,8 +1,5 @@
 import {
   BUILTIN_TOOLS,
-  type Measurements,
-  measurementsContribution,
-  measureEndSource,
   SceneCanvas,
   type SceneCanvasApi,
   type SelectionApi,
@@ -11,11 +8,11 @@ import {
   PATH_GEOMETRY_PROJECTION,
   type UseSceneTextEditReturn,
   useEyedropperTool,
-  useMeasureTool,
   type RenderLayer,
   type View,
   createWorkspaceTintLayer
 } from '@weasel-js/core';
+import { type Measurements, measurementsContribution, measureEndSource, useMeasureTool } from '@weasel-js/measure';
 import { usePathToolsTools } from '@weasel-js/path-tools';
 import { unpackSvgFiles } from '@weasel-js/svg';
 import { SceneGradientHandles } from '@weasel-js/ui/components/GradientEditor';

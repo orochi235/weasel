@@ -71,4 +71,3 @@ export { usePolygonTool, POLYGON_TOOL_OPTIONS, type UsePolygonToolOptions } from
 export { useStarTool, STAR_TOOL_OPTIONS, type UseStarToolOptions } from './star';
 export { usePencilTool, PENCIL_TOOL_OPTIONS, type PencilPoint } from './pencil';
 export { useSliceTool, type UseSliceToolOptions, type SliceScratch } from './slice';
-export { useMeasureTool, type UseMeasureToolOptions } from './measure';

@@ -1,17 +1,13 @@
-import type { RenderLayer } from 'core/layers/render';
+import {
+  type AnyScene, type LayerHit, OVERLAY_ROLE_STROKES, type RenderLayer, shownLookup, viewToTransform, worldToScreen,
+} from '@weasel-js/core';
 import type { DrawCommand } from '@weasel-js/renderer';
-import type { LayerHit } from 'affordances/types';
-import { worldToScreen } from 'core/viewport/viewTransform';
-import { viewToTransform } from 'core/viewport/view';
 import { pxReach, rectPath } from '@weasel-js/geom';
-import { OVERLAY_ROLE_STROKES } from 'canvas/overlayRoleStrokes';
-import { measureCommands } from 'canvas/nodeShapes/measurePainter';
-import { shownLookup } from 'core/scene/nodeAsShown';
+import { measureCommands } from './measurePainter';
 import { measureEndsOf, type MeasurePoint } from './measurement';
 import type { Measurements } from './measurements';
 import { measureAt, type MeasureHit } from './measureHit';
 import { MEASURE_HIT_PX } from './measureGestures';
-import type { AnyScene } from 'core/scene/anyScene';
 
 /** The registered layer's id; a press it claims routes as `layer:<id>`. */
 export const MEASURE_LAYER_ID = 'weasel-measure';

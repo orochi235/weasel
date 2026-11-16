@@ -692,8 +692,8 @@ which do not exist yet. See `packages/core/src/interactions/gestures/types.ts` f
 path anchors, angle steps. A gesture's snap session asks every source each
 frame for the loci its probes may land on, and one resolver ranks them all,
 so no source wins by running first. Sources go in `<SceneCanvas snap={{ sources }}>`,
-a preset's `snapSources`, or `useSnapSource`; core ships `pathSnapSource`,
-`measureEndSource` and `rotationSnapSource`, `@weasel-js/guides` the grid,
+a preset's `snapSources`, or `useSnapSource`; core ships `pathSnapSource`
+and `rotationSnapSource`, `@weasel-js/measure` `measureEndSource`, `@weasel-js/guides` the grid,
 guide, alignment and spacing sources, kernel3d the 3D ones.
 `OriginProjection` (`packages/core/src/interactions/gestures/shared/originProjection.ts`)
 says where a non-rect pose's `origin` probe is. See [snapping.md](./snapping.md).

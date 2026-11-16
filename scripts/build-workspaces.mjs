@@ -55,6 +55,7 @@ export const BUILD_ORDER = [
   '@weasel-js/parallax',
   '@weasel-js/minimap',
   '@weasel-js/symmetry',
+  '@weasel-js/measure',
   '@weasel-js/path-tools',
   '@weasel-js/rig',
   '@weasel-js/ui',

@@ -1,10 +1,7 @@
 import { pointSegmentDist } from '@weasel-js/geom';
-import type { NodeId, Scene } from 'core/scene/types';
+import { nodeGates, type NodeId, nodesAsShown, type Scene, shownLookup, type SnapSource } from '@weasel-js/core';
 import { measureEndsOf, type MeasureEnd, type MeasurePoint } from './measurement';
 import { measureIds, type Measurements } from './measurements';
-import { nodesAsShown, shownLookup } from 'core/scene/nodeAsShown';
-import { nodeGates } from 'core/scene/nodeGates';
-import type { SnapSource } from 'domains/snap/types';
 
 /** Which part of which measurement lies under a point. */
 export interface MeasureHit {

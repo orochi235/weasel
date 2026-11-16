@@ -48,7 +48,7 @@ glyph is explicit, through the registry's `override(ref, glyph)`.
 | `chart` | `apps/chart` | `apps/chart/icons/` | WeaselChart's own actions |
 | `site` | `apps/site` | `apps/site/icons/` | The site's package marks and changelog change kinds |
 
-`labkit`, `forge`, `devtools`, `prefs-editor`, `theme-editor`, and `forge-app` draw nothing. Their `icons/index.mjs`
+`labkit`, `forge`, `devtools`, `measure`, `prefs-editor`, `theme-editor`, and `forge-app` draw nothing. Their `icons/index.mjs`
 declares a namespace and owner and no groups, so their `icon()` takes qualified names only.
 
 ## Adding a glyph

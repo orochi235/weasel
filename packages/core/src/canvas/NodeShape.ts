@@ -27,7 +27,6 @@ import { derivedPartsOf } from 'core/scene/derivedParts';
 import { DERIVED_PAINTER, partsCover } from './nodeShapes/derivedPainter';
 import { inkCovers, trimmedOutline, type TrimmedOutline } from './nodeShapes/pickOutline';
 import { IMAGE_PAINTER } from './nodeShapes/imagePainter';
-import { MEASURE_PAINTER } from './nodeShapes/measurePainter';
 import { derivesPath } from './nodeShapes/memo';
 import { PATH_PAINTER } from './nodeShapes/pathPainter';
 import { paintsPose } from './nodeShapes/poseBox';
@@ -277,7 +276,6 @@ export function _resetShapePaintersForTests(): void {
 
 setBuiltInShapes(() => {
   addBuiltInShape(TEXT_PAINTER as NodeShapeEntry, 'builtin');
-  addBuiltInShape(MEASURE_PAINTER as NodeShapeEntry, 'builtin');
   // Ahead of path/shape/image: a derived node whose `data` also carries a
   // `path`, `shape` or `image` means the derived path, and those three match
   // on the presence of the field alone.

@@ -1,17 +1,17 @@
 import { ANY_MODS, hitPredicate } from '@weasel-js/gestures';
-import type { Scene } from 'core/scene/types';
-import type { SurfaceContribution } from 'canvas/surfaceContribution';
+import { nodeShapesOf, type Scene, type SurfaceContribution } from '@weasel-js/core';
 import type { Measurements } from './measurements';
 import { measureCommands } from './measureCommands';
 import { measureDragAction, measurePickAction } from './measureGestures';
 import { MEASURE_AFFORDANCE_KIND, measurementsLayer } from './measureLayer';
 import { MEASURE_ACTION_IDS } from './actionIds';
+import { MEASURE_PAINTER } from './measurePainter';
 
 const onMeasurement = hitPredicate((hit) => (hit as { kind?: string } | null | undefined)?.kind === MEASURE_AFFORDANCE_KIND);
 
 /**
- * A scene's measurements on a canvas, whatever tool is active: the layer
- * that shows the picked one and claims presses on measurements, a click on
+ * A scene's measurements on a canvas, whatever tool is active: the painter
+ * that draws them, the layer that shows the picked one and claims presses on measurements, a click on
  * one to pick it and a drag to edit it, and the commands — Move by, Rotate
  * by, Delete, Clear — a readout binds buttons to. Install it with
  * `<SceneCanvas ambient={[…]}>`; `useMeasureTool` adds the measuring itself.
@@ -25,9 +25,13 @@ export function measurementsContribution(
     id: 'weasel-measure',
     eligibility: { claimed: true },
     attach: (api) => {
-      const off = api.registerLayer(layer);
+      const offShape = nodeShapesOf(scene).register(MEASURE_PAINTER);
+      const offLayer = api.registerLayer(layer);
       api.requestRedraw();
-      return off;
+      return () => {
+        offLayer();
+        offShape();
+      };
     },
     actions: [...measureCommands(ms), measurePickAction(ms), measureDragAction(ms)],
     bindings: [

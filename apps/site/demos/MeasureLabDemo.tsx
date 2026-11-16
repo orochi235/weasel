@@ -1,14 +1,13 @@
 import {
   asNodeId,
-  createMeasurements,
   createScene,
-  measureNode,
-  measureEndSource,
-  measurementsContribution,
   type RectPose,
   solid,
-  useMeasureTool, drawPreset,
+  drawPreset,
 } from '@weasel-js/core';
+import {
+  createMeasurements, measureNode, measureEndSource, measurementsContribution, useMeasureTool,
+} from '@weasel-js/measure';
 import { createGridLayer, gridSnapSource } from '@weasel-js/guides';
 import {
   type ConfigOf,

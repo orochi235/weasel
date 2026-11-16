@@ -2,41 +2,29 @@
 import { describe, expect, it } from 'vitest';
 import type { InvocationCtx, OngoingInvoker } from '@weasel-js/routing';
 import { pathFromD, type Point } from '@weasel-js/geom';
-import { createScene } from 'core/scene/scene';
-import { asNodeId, type RectPose } from 'core/scene/types';
-import type { SnapDep } from 'interactions/actions/snapDep';
-import { createSnapOutcomeStore } from 'domains/snap/outcomeStore';
-import { createSession2d } from 'domains/snap/session2d';
-import { lineSource } from 'domains/snap/testing/sessionDep';
-import type { SnapSource } from 'domains/snap/types';
-import { pathSnapSource } from 'domains/paths/pathSnap/pathSnapSource';
+import {
+  type AnyScene, createScene, IDENTITY_POSE_COMPOSITION, pathSnapSource, type RectPose, type SnapDep, type SnapSource,
+} from '@weasel-js/core';
+import { lineSource, sessionDep } from './testing/snapDep';
 import { MEASURE_ACTION_IDS } from './actionIds';
 import { measureEndsOf } from './measurement';
 import { createMeasurements, measureIds } from './measurements';
 import { measureCreateAction, measureDragAction } from './measureGestures';
 import { measureEndSource } from './measureHit';
 import { MEASURE_AFFORDANCE_KIND } from './measureLayer';
-import type { AnyScene } from 'core/scene/anyScene';
 
 const KEYS = { alt: false, ctrl: false, meta: false, shift: false };
 
 /** A scene of path nodes, as the path source reads one. */
 function pathScene(paths: Record<string, string>): AnyScene {
-  const nodes = new Map(Object.entries(paths).map(([id, d]) => [
-    asNodeId(id), { id: asNodeId(id), kind: 'mark' as const, layer: 'default', parent: null, pose: pathFromD(d), data: {} },
-  ]));
-  return { nodes, layers: [{ id: 'default' }], getVersion: () => 1 } as unknown as AnyScene;
+  const scene = createScene<object, 'main', unknown>({ composition: IDENTITY_POSE_COMPOSITION, systemLayers: [{ id: 'main' }] });
+  for (const [id, d] of Object.entries(paths)) scene.add({ id, kind: 'mark', layer: 'main', data: {}, pose: pathFromD(d) } as never);
+  return scene as unknown as AnyScene;
 }
 
 /** `point` sessions over `sources`, reading `targets`, at zoom 1. */
 function pointDep(targets: AnyScene, sources: readonly SnapSource[]): SnapDep {
-  const store = createSnapOutcomeStore();
-  return {
-    begin: (req) => createSession2d({
-      req, sources, probes: [{ id: 'pointer', at: req.press, role: 'pointer' }],
-      view: () => ({ x: 0, y: 0, scale: { x: 1, y: 1 } }), reachPx: 8, scene: targets, store,
-    }),
-  };
+  return sessionDep(targets, sources);
 }
 
 function rig(snap: (scene: AnyScene) => SnapDep) {
