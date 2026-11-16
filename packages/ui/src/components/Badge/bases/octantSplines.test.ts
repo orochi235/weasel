@@ -6,7 +6,8 @@ import {
 
 // Every expected value below was computed by the two bases as they stood at ebeb8f6ea (2026-11-13), before they
 // shared their anchor reading and outline sweep, by running that commit's compileSpline/evalCompiled,
-// compileNurbs/evalNurbsAtS and build() in a throwaway script.
+// compileNurbs/evalNurbsAtS and build() in a throwaway script; octant-spline's weighted values since, when its
+// weights stopped tilting its flat ends (2026-11-15).
 
 const SETS: Record<string, BadgeSplineAnchor[]> = {
   bent: [{ s: 0, r: 48, w: 1 }, { s: 0.5, r: 20, w: 1 }, { s: 1, r: 40, w: 1 }],
@@ -26,7 +27,7 @@ const BEFORE: Record<string, { spline: number[]; bspline: number[] }> = {
     bspline: [32, 39.25322112934018, 31.70991582588241, 32.66657511498006, 38.89770671343216, 32],
   },
   weighted: {
-    spline: [40, 54.0625, 78.00125679347826, 53.38994565217391, 37.88015625, 35],
+    spline: [40, 48.86548913043478, 78.00125679347826, 53.38994565217391, 30.991171875, 35],
     bspline: [25, 52.42408901642843, 51.58636579043697, 47.302536617509524, 40.56050893457738, 55],
   },
 };
@@ -35,8 +36,8 @@ const PARAMS = { count: 4, s1: 0.3, r1: 22, w1: 2, s2: 0.7, r2: 44, w2: 0, r3: 3
 const PICKED = [0, 5, 17, 30, 47];
 const OUTLINES = {
   spline: [
-    [95.84280851496214, 50], [66.48859654005402, 62.65214511907996], [37.347854880920075, 66.48859654005398],
-    [43.14466970303012, 43.14466970303012], [94.47546290918396, 44.14469422665034],
+    [97.27856525936087, 50], [66.48859654005402, 62.65214511907996], [37.347854880920075, 66.48859654005398],
+    [43.14466970303012, 43.14466970303012], [95.63025114724059, 43.992663470925635],
   ],
   bspline: [
     [72.83999884365414, 50], [72.3384478376906, 67.14089389542025], [32.85910610457975, 72.3384478376906],
@@ -77,5 +78,17 @@ describe('the spline outlines', () => {
       expect(verts[at]![0]).toBeCloseTo(OUTLINES.bspline[i]![0]!, 10);
       expect(verts[at]![1]).toBeCloseTo(OUTLINES.bspline[i]![1]!, 10);
     });
+  });
+});
+
+describe('the octant-spline curve', () => {
+  it('stays flat at both ends whatever the weights next to them', () => {
+    for (const w of [3, 0.2]) {
+      const anchors = OCTANT_SPLINE_DEFAULTS;
+      const radius = octantSplineRadius(extractAnchorPairs({ ...anchors, w0: w, w1: w, w3: w, w4: w }));
+      const e = 1e-8;
+      expect((radius(e) - radius(0)) / e).toBeCloseTo(0, 3);
+      expect((radius(1) - radius(1 - e)) / e).toBeCloseTo(0, 3);
+    }
   });
 });
