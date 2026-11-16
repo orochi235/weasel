@@ -52,6 +52,17 @@ describe('ListEditor', () => {
     expect(onChange).toHaveBeenLastCalledWith(['a', 'b']);
   });
 
+  it('adds and removes nothing from the keyboard while read-only or disabled with a reason', () => {
+    for (const hold of [{ readOnly: true }, { disabled: true, disabledReason: 'Locked' }]) {
+      const onChange = vi.fn();
+      const { unmount } = renderWithIcons(<ListEditor {...hold} aria-label="Glob" value={['a', '']} onChange={onChange} />);
+      fireEvent.keyDown(screen.getByLabelText('Glob 1'), { key: 'Enter' });
+      fireEvent.keyDown(screen.getByLabelText('Glob 2'), { key: 'Backspace' });
+      expect(onChange).not.toHaveBeenCalled();
+      unmount();
+    }
+  });
+
   it('leaves an input method\'s Enter to it', () => {
     const onChange = vi.fn();
     renderWithIcons(<Controlled initial={['a', 'b']} onChange={onChange} />);

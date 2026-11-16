@@ -101,12 +101,12 @@ export function ListEditor<T>({
   const list = entries.typed;
 
   const insert = (at: number, make: () => T): void => {
-    if (list.length >= maxItems) return;
+    if (disabled || list.length >= maxItems) return;
     entries.write([...list.slice(0, at), make(), ...list.slice(at)]);
     focus.request({ at, to: 'input' });
   };
   const remove = (at: number): void => {
-    if (list.length <= minItems) return;
+    if (disabled || list.length <= minItems) return;
     entries.write(list.filter((_, i) => i !== at));
     focus.request({ at: Math.max(0, at - 1), to: 'removed' });
   };
