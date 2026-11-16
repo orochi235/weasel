@@ -7,7 +7,7 @@
  * keys that start with `$` arrive with one more `$` in front ({@link escapeKey}), so the only unescaped `$` keys
  * are the serializer's own: `$type`, `$class` (an instance's class) and `$more` (how many keys were cut).
  */
-import { codePointFloor } from '@weasel-js/registry';
+import { codePointFloor, getOwn, setOwn } from '@weasel-js/registry';
 
 /** What {@link serialize} produces: JSON-safe apart from `undefined`, which structured clone carries. */
 export type SerializedValue =
@@ -72,7 +72,7 @@ class Threw {
 
 function read(obj: object, key: string): unknown {
   try {
-    return (obj as Record<string, unknown>)[key];
+    return getOwn(obj as Record<string, unknown>, key);
   } catch (error) {
     return new Threw(error);
   }
@@ -146,7 +146,7 @@ export function serialize(value: unknown, limits: SerializeLimits = {}): Seriali
         if (name && name !== 'Object') out.$class = name;
       }
       const keys = Object.keys(obj);
-      for (const key of keys.slice(0, items)) out[escapeKey(key)] = walk(read(obj, key), level + 1);
+      for (const key of keys.slice(0, items)) setOwn(out, escapeKey(key), walk(read(obj, key), level + 1));
       if (keys.length > items) out.$more = keys.length - items;
       return out;
     } finally {

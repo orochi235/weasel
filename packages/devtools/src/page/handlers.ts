@@ -1,5 +1,6 @@
 /** The answer to each devtools request, for one root. The session owns the override a steering request changes. */
 import type { AnyNode, AnyScene, DebugFlags, NodeId } from '@weasel-js/core';
+import { setOwn } from '@weasel-js/registry';
 import type { DevtoolsRoot } from './root';
 import type {
   DevtoolsNodeDetail, DevtoolsNodeSummary, DevtoolsOverlays, DevtoolsRequest, DevtoolsResult,
@@ -53,7 +54,7 @@ export function overlayFlags(config: DebugFlags | null): DevtoolsOverlays {
   const flags: DevtoolsOverlays = {};
   if (!config) return flags;
   for (const [key, value] of Object.entries(config)) {
-    if (typeof value === 'boolean') (flags as Record<string, boolean>)[key] = value;
+    if (typeof value === 'boolean') setOwn(flags, key, value);
   }
   return flags;
 }
@@ -63,9 +64,9 @@ export function rootState(root: DevtoolsRoot): DevtoolsRootState {
   const probes: DevtoolsRootState['probes'] = {};
   for (const [name, read] of root.probes) {
     try {
-      probes[name] = serialize(read());
+      setOwn(probes, name, serialize(read()));
     } catch (err) {
-      probes[name] = `[threw: ${(err as Error).message}]`;
+      setOwn(probes, name, `[threw: ${(err as Error).message}]`);
     }
   }
   return {

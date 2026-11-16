@@ -83,4 +83,11 @@ describe('serializedNumber', () => {
     expect(serializedNumber(serialize(NaN))).toBeNaN();
     expect(serializedNumber('7')).toBeNaN();
   });
+
+  it('keeps a key named __proto__ as data', () => {
+    const out = serialize(JSON.parse('{"__proto__": {"a": 1}, "b": 2}')) as Record<string, unknown>;
+    expect(Object.getPrototypeOf(out)).toBe(Object.prototype);
+    expect(Object.hasOwn(out, '__proto__')).toBe(true);
+    expect(out.b).toBe(2);
+  });
 });
