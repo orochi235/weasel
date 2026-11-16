@@ -2,7 +2,7 @@ import type { Action } from '@weasel-js/routing';
 import type { Fill } from '@weasel-js/paint';
 import { createPaintAction } from './createPaintAction';
 import type { OpacityParams } from '@weasel-js/core';
-import { paintWithAlpha, solid, DEFAULT_FILL_COLOR } from '@weasel-js/core';
+import { paintWithAlpha, solid, DEFAULT_FILL_COLOR } from '@weasel-js/paint';
 
 /**
  * Static descriptor for the `setFillOpacity` Action.

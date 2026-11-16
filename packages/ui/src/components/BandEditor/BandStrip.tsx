@@ -1,7 +1,7 @@
 import type { CSSProperties, MouseEvent as ReactMouseEvent, PointerEvent as ReactPointerEvent, ReactElement, ReactNode } from 'react';
 import { qty, type Display, type Quantity } from '@weasel-js/quantity';
 import { Slider, type BoundsCtx, type Thumb } from '../Slider';
-import type { ContinuousScaleFactory } from '@weasel-js/plot/scales';
+import type { ContinuousScaleFactory } from '@weasel-js/scales';
 import s from './BandEditor.module.css';
 import { bandBounds, type Band } from './bands';
 import { bandName } from './retag';

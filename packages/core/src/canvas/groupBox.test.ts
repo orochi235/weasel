@@ -8,7 +8,7 @@ import { createScene } from 'core/scene/scene';
 import { RIGID_POSE_COMPOSITION } from 'core/scene/composePose';
 import { asNodeId, type Node, type RectPose } from 'core/scene/types';
 import type { View } from 'core/viewport/view';
-import { solid } from '../util/paint';
+import { solid } from '@weasel-js/paint';
 import { buildSceneTree } from './buildSceneTree';
 import { defaultDrawOne, defaultPaintBounds } from './defaultDrawOne';
 import { drawnBoundsOf } from './drawnBounds';

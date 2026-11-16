@@ -1,9 +1,15 @@
 import { describe, expect, it } from 'vitest';
 import { screen, within } from '@testing-library/react';
+import { solid } from '@weasel-js/paint';
 import {
-  ActionsProvider, asNodeId, createScene, inferredNodeProperties, inferredNodeRouting, rectPath, solid,
+  ActionsProvider,
+  asNodeId,
+  createScene,
+  inferredNodeProperties,
+  inferredNodeRouting,
+  rectPath,
 } from '@weasel-js/core';
-import { SelectionPanel } from '@weasel-js/ui/components/inspector/SelectionPanel';
+import { SelectionPanel } from '@weasel-js/ui-canvas/components/inspector/SelectionPanel';
 import { WD_RENDERERS } from '../paintRenderers';
 import { renderWithIcons } from '../testIcons';
 

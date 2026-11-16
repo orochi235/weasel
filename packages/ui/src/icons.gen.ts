@@ -6,6 +6,7 @@ import { scopedIcon } from '@weasel-js/icons';
 export type UiIconName =
   | 'clone'
   | 'reset'
+  | 'unknown'
   | 'close'
   | 'export'
   | 'zoomIn'
@@ -307,6 +308,7 @@ export const ICON_GROUPS: readonly { label: string; names: readonly UiIconName[]
     "names": [
       "clone",
       "reset",
+      "unknown",
       "close",
       "export",
       "zoomIn",
@@ -718,6 +720,7 @@ declare module '@weasel-js/icons' {
   interface IconName {
     'ui:clone': true;
     'ui:reset': true;
+    'ui:unknown': true;
     'ui:close': true;
     'ui:export': true;
     'ui:zoomIn': true;

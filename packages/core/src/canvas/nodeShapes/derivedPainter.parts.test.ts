@@ -1,8 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import type { DrawCommand } from '@weasel-js/renderer';
-import { INHERIT, type Fill, type Stroke } from '@weasel-js/paint';
+import { INHERIT, type Fill, type Stroke, solid, strokeOf } from '@weasel-js/paint';
 import { pathFromParts, type DerivedPart } from 'core/scene/derivedParts';
-import { solid, strokeOf } from '../../util/paint';
 import { DERIVED_PAINTER } from './derivedPainter';
 
 const RECT = { kind: 'rect', x: 0, y: 0, width: 10, height: 10 } as const;

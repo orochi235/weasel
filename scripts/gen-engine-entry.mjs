@@ -25,7 +25,7 @@ export const HOST = [
   'createPoseFeed', 'FeedDelta', 'createEnteredGroupScope', 'useEnteredGroup',
   'documentOf', 'scenePoseFrame', 'GesturePreviewSource',
   'createEditingSession', 'isEditingSession', 'useEditingSession', 'EditingSession',
-  'WeaselProvider', 'IconRegistryProvider', 'CANVAS_CONTEXT_ATTRIBUTES', 'watchDevicePixelRatio',
+  'WeaselProvider', 'CANVAS_CONTEXT_ATTRIBUTES', 'watchDevicePixelRatio',
 ];
 
 const HEADER = `// \`@weasel-js/core/engine\` — the half of core a host of any dimension uses: the scene, selection,

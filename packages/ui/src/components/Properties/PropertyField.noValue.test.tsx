@@ -1,7 +1,7 @@
 import { render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import { PropertyField } from './PropertyField';
-import { trigger, pick } from './testing/selectRow';
+import { trigger, pick } from '../../testing/selectRow';
 
 describe('rows with no value', () => {
   const options = [

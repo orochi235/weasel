@@ -1,6 +1,7 @@
 import { clamp } from '@weasel-js/geom';
 import { useCallback, useEffect, useRef, type KeyboardEvent, type PointerEvent } from 'react';
-import { openPointerSession, useLatest, type PointerSession } from '@weasel-js/core';
+import { openPointerSession, type PointerSession } from '@weasel-js/routing';
+import { useLatest } from '@weasel-js/react';
 import { COARSE_STEPS } from '@weasel-js/ui-input';
 import { snapToStep } from '@weasel-js/quantity';
 import type { Orientation } from '../Run';
@@ -51,7 +52,6 @@ export interface ResizeHandleProps {
   'aria-label'?: string;
   className?: string;
 }
-
 
 /**
  * Snap to the step grid, then clamp. Bounds win over the grid: `min`/`max`

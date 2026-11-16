@@ -1,5 +1,6 @@
 import { useState } from 'react';
-import { asNodeId, createToolOptionValues, rectPath, SceneCanvas, useScene, solid, type ToolsApi } from '@weasel-js/core';
+import { solid } from '@weasel-js/paint';
+import { asNodeId, createToolOptionValues, rectPath, SceneCanvas, useScene, type ToolsApi } from '@weasel-js/core';
 import { ActiveToolOptionsBar } from '@weasel-js/ui/components/ToolOptionsBar';
 import { DemoStage } from './DemoStage';
 import s from './LassoDemo.module.css';

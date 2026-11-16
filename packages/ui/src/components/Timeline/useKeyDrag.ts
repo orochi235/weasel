@@ -1,10 +1,10 @@
 import { useEffect, useRef, useState, type PointerEvent as ReactPointerEvent, type RefObject } from 'react';
-import { openPointerSession, pastDragThreshold, type PointerSession } from '@weasel-js/core';
+import { openPointerSession, type PointerSession } from '@weasel-js/routing';
 import { useKitSetting } from '@weasel-js/react';
 import { sliderAt, spanMap } from '@weasel-js/ui-input';
 import { useSnapRadiusPx } from '../../snap';
 import type { TimeWindow } from './timeScale';
-import { isPrimaryPress } from '@weasel-js/gestures';
+import { isPrimaryPress, pastDragThreshold } from '@weasel-js/gestures';
 import { alongTrack } from '../../alongTrack';
 
 /** What a lane's pointer reads: its track, the window laid across it, and the keys on it. */

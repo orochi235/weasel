@@ -5,7 +5,7 @@ export {
   type LeafRenderer,
   type LeafContext,
 } from './PrefsForm';
-export { pathWithin, type PrefSelectHow } from './selection';
+export { pathWithin, useSelectedRow, type PrefSelectHow } from './selection';
 export type { PrefSplitProps, SplitCtx } from './splitRows';
 export type { MarkHiddenProps } from './hidden';
 export { prefFieldProps, type PrefFieldState } from './prefField';

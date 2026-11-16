@@ -18,7 +18,7 @@ import { useTestHook } from '../../test-hook/useTestHook';
 import type { CanvasExtensionApi } from '../canvasExtension';
 import type { ChromeRulesDep } from '../deps/chromeRules';
 import { useModeDefaultToolDepSource } from '../deps/modeDefaultTool';
-import { useCanvasToolOptionValues } from '../../tools/toolOptions';
+import { useCanvasToolOptionValues } from '@weasel-js/routing/react';
 import { useHitObserver } from '../useHitObserver';
 import type { CanvasViewState } from '../useCanvasView';
 import { GeometryProjectionRegistrar } from './poseRegistrars';

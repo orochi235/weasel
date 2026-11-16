@@ -31,7 +31,7 @@ const PROBES = ['asNodeId', 'unionBounds', 'screenToWorld', 'VERSION'];
 // leave it in a dynamic chunk, while importing from `@weasel-js/core/mesh` must
 // carry its registration, so an app using mesh code never draws a blank first
 // frame.
-const MESH_MODULE = /renderer\/(dist\/mesh\.|src\/meshPaint\/)|core\/paint\/meshKind/;
+const MESH_MODULE = /renderer\/(dist\/mesh\.|src\/meshPaint\/)|paint-kinds\/(src|dist)\/meshKind/;
 const MESH_REGISTRATION = /label:\s*(`Mesh`|"Mesh")/;
 
 // A canvas handed one preset object carries that preset's actions, the undo and redo every canvas has, and the
@@ -155,14 +155,13 @@ for (const bundler of Object.keys(BUNDLERS)) {
         `${bundler}: importing ${symbol} from @weasel-js/core ships ${bytes} B, over the ${BUDGET} B budget.\n` +
           'Check that packages/core/vite.config.ts still emits one file per module\n' +
           '(`preserveModules`), that nothing registers itself at module load where a\n' +
-          'one-symbol import can reach it, and that every lazily loaded paint kind is\n' +
-          'still rebuilt as a self-contained file (`LAZY_KINDS`).',
+          'one-symbol import can reach it.',
       );
     }
   }
 
   {
-    const { bytes, modules } = await measureOrExplain(bundler, 'getPaintKind', '@weasel-js/core');
+    const { bytes, modules } = await measureOrExplain(bundler, 'getPaintKind', '@weasel-js/paint-kinds');
     const eager = modules.some((m) => MESH_MODULE.test(m));
     line(bundler, 'getPaintKind', bytes, eager ? 'MESH STATIC' : 'ok, mesh lazy');
     if (eager) {

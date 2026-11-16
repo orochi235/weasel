@@ -2,7 +2,7 @@ import type { Action } from '@weasel-js/routing';
 import type { Stroke } from '@weasel-js/paint';
 import { createPaintAction } from './createPaintAction';
 import type { OpacityParams } from '@weasel-js/core';
-import { paintWithAlpha, solid, strokeOf, DEFAULT_STROKE_COLOR } from '@weasel-js/core';
+import { paintWithAlpha, solid, strokeOf, DEFAULT_STROKE_COLOR } from '@weasel-js/paint';
 
 /**
  * Static descriptor for the `setStrokeOpacity` Action.

@@ -16,7 +16,7 @@ import type { Node, Scene } from 'core/scene/types';
 import type { View } from 'core/viewport/view';
 import type { DrawCommand, GroupDrawCommand } from '@weasel-js/renderer';
 import { SceneViewCanvas } from './SceneViewCanvas';
-import { registerPaintKind, getPaintKind } from 'core/paint/paintKinds';
+import { registerPaintKind, getPaintKind } from '@weasel-js/paint-kinds';
 
 // ---------------------------------------------------------------------------
 // Mock WeaselRenderer

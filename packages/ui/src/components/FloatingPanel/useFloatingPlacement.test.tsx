@@ -1,5 +1,5 @@
 import { act, fireEvent, render, screen } from '@testing-library/react';
-import { DRAG_THRESHOLD_PX } from '@weasel-js/core';
+import { DRAG_THRESHOLD_PX } from '@weasel-js/gestures';
 import { type ReactNode, useRef, useState } from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { Corner, FloatingPlacement } from 'windease';

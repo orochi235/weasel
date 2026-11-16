@@ -4,7 +4,7 @@ import { ruleMark } from './marks/paths';
 import { textMark } from './marks/text';
 import type { PlotMark } from './marks/types';
 import type { PlotMeasure } from './measure';
-import type { Scale } from './scales/types';
+import type { Scale } from '@weasel-js/scales';
 import type { PlotTheme } from './theme';
 
 /** Which side of the plot an axis runs along. Its scale's range runs along x for top and bottom, along y otherwise. */

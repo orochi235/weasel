@@ -109,29 +109,8 @@ export type { FillPoseBox } from '@weasel-js/renderer';
 // A node's paint resolved into what a draw command takes.
 export { commandFill, commandPaint, commandStroke } from '@weasel-js/renderer';
 
-// ─── Utility: hex8 color helpers ────────────────────────────────────────────
-export { toHex8, getAlpha01, withAlpha01, mergeAlphaFromPrev } from '../util/color';
-
-// ─── Default paint constants (fill/stroke/palette/ghost) ────────────────────
-
-// ─── Paint kinds: the registry that makes Paint open ────────────────────
-export {
-  registerPaintKind,
-  registerPaintKindLoader,
-  getPaintKind,
-  listGradientKinds,
-  listPaintKinds,
-  paintKindOf,
-  patternFamily,
-  seedTile,
-  switchGradientKind,
-  paintKindRegistry,
-} from 'core/paint/paintKinds';
-export { asPaint } from 'core/paint/paintKindEntry';
+// ─── Paint kinds: the renderer's draw half (the registry is @weasel-js/paint-kinds) ──
 export { warmPaintKinds, isPaintKindKnown } from '@weasel-js/renderer';
-export { usePaintKinds, useGradientKinds, usePaintKind } from '../core/usePaintKinds';
-export type { PaintKindLoader } from 'core/paint/paintKinds';
-export type { PaintKind, PaintKindEntry, PaintKindEditorProps, PaintKindFamily } from 'core/paint/paintKindEntry';
 export type {
   PaintDrawKind,
   PaintBindContext,
@@ -152,19 +131,6 @@ export { BUILTIN_MARKERS } from '@weasel-js/stroke';
 export { trimPolyline } from '@weasel-js/geom/tessellate';
 export type { Polyline } from '@weasel-js/geom/tessellate';
 
-export {
-  DEFAULT_FILL_COLOR,
-  DEFAULT_STROKE_COLOR,
-  DEFAULT_PALETTE,
-  cycleFill,
-  GHOST_STROKE,
-  solid,
-  strokeOf,
-  strokeWith,
-  paintAlpha,
-  paintWithAlpha,
-  paintWithColor,
-} from '../util/paint';
 export type { Palette, PaletteEntry } from '@weasel-js/paint';
 export { pathPaintOf, strokeCovers } from '../canvas/nodeShapes/nodePaint';
 export type { PathPaint } from '../canvas/nodeShapes/nodePaint';

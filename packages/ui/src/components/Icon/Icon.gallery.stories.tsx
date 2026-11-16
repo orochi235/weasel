@@ -3,6 +3,7 @@ import { toIconRef, type IconRef, type IconTable } from '@weasel-js/icons';
 import { icons as coreIcons } from '@weasel-js/core/icons';
 import { icons as editingIcons } from '@weasel-js/editing/icons';
 import { icons as shapeIcons } from '@weasel-js/icons/shapes';
+import { icons as paintKindIcons } from '@weasel-js/paint-kinds/icons';
 import { Icon } from '@weasel-js/ui/components/Icon';
 import { icons as uiIcons } from '@weasel-js/ui/icons';
 import { ICON_GROUPS, icon } from '../../icons.gen';
@@ -88,6 +89,11 @@ export const EditingAtProofSize: StoryObj = { render: () => <Sheet table={editin
 export const ShapesAtChromeSize: StoryObj = { render: () => <Sheet table={shapeIcons} size={20} /> };
 
 export const ShapesAtProofSize: StoryObj = { render: () => <Sheet table={shapeIcons} size={160} proof /> };
+
+/** The paint kinds' swatches and the none and inherit states, as a paint field's kind bar draws them. */
+export const PaintKindsAtChromeSize: StoryObj = { render: () => <Sheet table={paintKindIcons} size={20} /> };
+
+export const PaintKindsAtProofSize: StoryObj = { render: () => <Sheet table={paintKindIcons} size={160} proof /> };
 
 /**
  * Both theme modes at once.

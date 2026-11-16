@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
-import { IDENTITY_POSE_COMPOSITION, DEFAULT_HANDLE_SIZE, SceneCanvas, asPolygonPath, composePath, pathPoseDescriptor, PathBuilder, polygonFromPoints, useScene, asNodeId, solid, translatePath, textCommandFromRuns } from '@weasel-js/core';
+import { solid } from '@weasel-js/paint';
+import { IDENTITY_POSE_COMPOSITION, DEFAULT_HANDLE_SIZE, SceneCanvas, asPolygonPath, composePath, pathPoseDescriptor, PathBuilder, polygonFromPoints, useScene, asNodeId, translatePath, textCommandFromRuns } from '@weasel-js/core';
 import { joinPaths } from '@weasel-js/geom';
 import styles from './CompoundPathsDemo.module.css';
 import type { Fill, Path, Stroke } from '@weasel-js/core';

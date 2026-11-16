@@ -1,6 +1,6 @@
 import { useState, type ReactNode } from 'react';
 import { createSnapSourceRegistry, SnapSourceRegistryContext } from 'domains/snap/registry';
-import { IconRegistryProviderIfRoot } from '../../iconRegistry';
+import { IconRegistryProviderIfRoot } from '@weasel-js/icons/react';
 import { ViewInputsProvider, type SurfaceViewInputs } from '../viewInputs';
 import { PointerProviderIfRoot } from './PointerProviderIfRoot';
 

@@ -1,6 +1,12 @@
 import { useEffect, useState } from 'react';
+import { strokeOf } from '@weasel-js/paint';
 import {
-  asNodeId, SceneCanvas, strokeOf, useScene, type Path, type Stroke, pathNode,
+  asNodeId,
+  SceneCanvas,
+  useScene,
+  type Path,
+  type Stroke,
+  pathNode,
 } from '@weasel-js/core';
 import {
   cycleVertexColors,

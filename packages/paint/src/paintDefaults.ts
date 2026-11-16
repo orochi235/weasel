@@ -1,0 +1,112 @@
+/** Kit-shipped default paint constants.
+ *
+ *  Single source of truth for the colors the built-in tools and the default
+ *  fill/stroke actions reach for. Consumers that want to match the kit's
+ *  out-of-the-box look (e.g. seed their own active-paint state) should import
+ *  these rather than re-declaring the literals.
+ *
+ *  All values are `#rrggbbaa` so they round-trip through the kit's hex8 alpha
+ *  helpers (`toHex8`, `getAlpha01`) without ambiguity.
+ */
+import { colorLiteralToHex, hexToColorLiteral, resolvePaletteColor, type ColorLiteral, type Palette } from './palette';
+import type { CommandStroke, SolidPaint } from './commandPaint';
+import type { Paint, Stroke } from './paint';
+import { getAlpha01, toHex8 } from './hexAlpha';
+
+/** Default fill paint for shapes and the fill action — opaque white. */
+export const DEFAULT_FILL_COLOR = '#ffffffff';
+
+/** Default stroke paint for shapes and the stroke action — opaque black. */
+export const DEFAULT_STROKE_COLOR = '#000000ff';
+
+const srgb = (hex: string): ColorLiteral => hexToColorLiteral(hex) as ColorLiteral;
+
+/** The kit's fill palette. The `insert` dep cycles it for an insert carrying no style; the built-in shape
+ *  tools draw with their shared `fill` option instead, which defaults to its first entry. */
+export const DEFAULT_PALETTE: Palette = {
+  entries: [
+    { name: 'sage', color: srgb('#7fb069') },
+    { name: 'tan', color: srgb('#d4a574') },
+    { name: 'lavender', color: srgb('#a48bd4') },
+    { name: 'sky', color: srgb('#7ab8d4') },
+    { name: 'rose', color: srgb('#d47a7a') },
+  ],
+};
+
+/** The `seq`th color of `palette`'s entries as hex, wrapping past the end.
+ *  An entry that resolves to nothing, or to a space with no hex form, gives
+ *  `fallback`. */
+export function cycleFill(seq: number, palette: Palette = DEFAULT_PALETTE, fallback = DEFAULT_FILL_COLOR): string {
+  const { entries } = palette;
+  const entry = entries[((seq % entries.length) + entries.length) % entries.length];
+  const color = entry && resolvePaletteColor(palette, { ref: entry.name });
+  return (color && colorLiteralToHex(color)) ?? fallback;
+}
+
+/** Preview / "ghost" stroke color used by drag-to-draw tool overlays and the
+ *  selected-anchor highlight. Derived from the first palette entry so the
+ *  preview chrome matches the default insert color. */
+export const GHOST_STROKE: string = cycleFill(0);
+
+/**
+ * A solid paint from a color string — the authoring shorthand for the one
+ * shape a `Fill.paint` or a `Stroke.paint` may take.
+ *
+ * An alpha channel in `color` moves to `opacity`, because that is where every
+ * paint kind carries its alpha; leaving it in the hex too would multiply the
+ * two in the renderer.
+ */
+export function solid(color: string): SolidPaint {
+  if (!hasHexAlpha(color)) return { color };
+  const hex8 = toHex8(color);
+  const a = getAlpha01(hex8);
+  const rgb = hex8.slice(0, 7);
+  return a === 1 ? { color: rgb } : { color: rgb, opacity: a };
+}
+
+/** Whether `color` is a hex color with an alpha channel: `#rgba` or `#rrggbbaa`. */
+function hasHexAlpha(color: string): boolean {
+  return color.startsWith('#') && (color.length === 5 || color.length === 9) && toHex8(color).length === 9;
+}
+
+/** A solid stroke of `color` at `width` world units. Authoring shorthand for
+ *  `{ paint: solid(color), width }`. */
+export function strokeOf(color: string, width = 1): CommandStroke & { paint: SolidPaint } {
+  return { paint: solid(color), width };
+}
+
+/** A stroke painted with `paint` at `width` world units — `strokeOf`'s sibling
+ *  for a gradient or pattern, which has no color to pass. */
+export function strokeWith(paint: Paint, width = 1): Stroke {
+  return { paint, width };
+}
+
+/**
+ * The 0..1 alpha a paint paints at.
+ *
+ * Every paint kind carries its alpha in `opacity` — that is the one slot a
+ * gradient or a pattern has, so it is the slot all of them use.
+ */
+export function paintAlpha(paint: Paint | undefined): number {
+  return paint?.opacity ?? 1;
+}
+
+/** `paint` painting at `alpha01` (clamped to 0..1). */
+export function paintWithAlpha(paint: Paint, alpha01: number): Paint {
+  return { ...paint, opacity: Math.max(0, Math.min(1, alpha01)) };
+}
+
+/**
+ * `paint` recolored to `color`, keeping everything else about it.
+ *
+ * A solid paint takes the new color; a gradient or a pattern has no single
+ * color to replace, so it is superseded by a solid one — picking a color off
+ * a swatch means "paint this color". An alpha channel in `color` wins;
+ * without one, the paint's existing opacity carries over.
+ */
+export function paintWithColor(paint: Paint | undefined, color: string): Paint {
+  const next = solid(color);
+  if (hasHexAlpha(color) || paint === undefined) return next;
+  const alpha = paintAlpha(paint);
+  return alpha === 1 ? next : { ...next, opacity: alpha };
+}

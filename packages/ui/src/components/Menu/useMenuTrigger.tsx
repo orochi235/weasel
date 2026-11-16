@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useId, useRef, useState, type MouseEvent, type PointerEvent, type ReactElement, type ReactNode, type RefObject } from 'react';
 import { createPortal } from 'react-dom';
-import { useLatest, type OpenMenu } from '@weasel-js/core';
+import { useLatest } from '@weasel-js/react';
+import type { OpenMenu } from '@weasel-js/routing';
 import type { MenuEntry, MenuSide } from '@weasel-js/menu';
 import { OpenPanels } from './ContextMenuHost';
 import { menuUnder } from './menuUnder';

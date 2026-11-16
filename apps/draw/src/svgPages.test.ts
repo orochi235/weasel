@@ -1,6 +1,15 @@
 import { describe, expect, it } from 'vitest';
+import { solid } from '@weasel-js/paint';
 import {
-  boundsOfPath, createPageRun, createScene, type NodeId, pageNodeOf, pageOfNode, pageRunOf, pagesOf, placedPagesOf, solid,
+  boundsOfPath,
+  createPageRun,
+  createScene,
+  type NodeId,
+  pageNodeOf,
+  pageOfNode,
+  pageRunOf,
+  pagesOf,
+  placedPagesOf,
 } from '@weasel-js/core';
 import { exportRegionSvg, parseSvg, type SvgGroupNode } from '@weasel-js/svg';
 import type { DrawScene, WeaselDrawData, WeaselDrawLayer, WeaselDrawPose } from './drawDocument';

@@ -5,7 +5,7 @@ import { BASELINE_ACTIONS } from './presets/baseline';
 import { builtinToolActions } from './presets/toolDriven';
 import type { SceneCanvasProps } from './props';
 import { useCanvasTools, useFeatureBindings } from './useCanvasTools';
-import { usePublishTools } from '../../tools/toolsScope';
+import { usePublishTools } from '@weasel-js/routing/react';
 
 type Props = SceneCanvasProps<unknown, string, unknown>;
 

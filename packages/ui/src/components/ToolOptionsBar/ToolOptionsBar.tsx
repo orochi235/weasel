@@ -1,6 +1,6 @@
 import { Children, type ReactNode } from 'react';
 import type { PrefGroup, PrefSection } from '@weasel-js/prefs';
-import type { LeafRenderer } from '../inspector/SelectionPanel/renderContext';
+import type { LeafRenderer } from '../PanelCells/renderContext';
 import { Bar } from '../Bar/Bar';
 import { PrefsBar } from '../PrefsBar/PrefsBar';
 import type { ControlSizeProps } from '../ControlSize';

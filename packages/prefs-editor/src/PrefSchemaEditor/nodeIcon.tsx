@@ -17,7 +17,7 @@ const KIND_ICON: Record<PrefKind, IconRef> = {
   string: icon('core:text'),
   enum: icon('ui:chevron'),
   color: icon('editing:eyedropper'),
-  paint: icon('core:paintSolid'),
+  paint: icon('paint-kinds:solid'),
   object: icon('ui:typeBraces'),
   list: icon('ui:layoutRows'),
   map: icon('ui:layoutGrid'),

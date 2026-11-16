@@ -18,8 +18,20 @@ import { fadeFill, fadeRun, fadeStroke } from './fadePaint';
 import { groupTakes, NO_TAKES, takesOf, type Takes } from './draftTakes';
 import { framedTextDraft, framedTextParts, type FramedTextParts } from './framedText';
 import { groupBoxParts } from './groupBox';
+import { solid } from '@weasel-js/paint';
 import {
-  boundsOfPath, fillToBoundsFrame, getMarker, INHERIT, registerMarker, solid, unionAABB, type BooleanShapeOp, type Paint, type ImageNodeData, type NodeClip, type Path, type Stroke,
+  boundsOfPath,
+  fillToBoundsFrame,
+  getMarker,
+  INHERIT,
+  registerMarker,
+  unionAABB,
+  type BooleanShapeOp,
+  type Paint,
+  type ImageNodeData,
+  type NodeClip,
+  type Path,
+  type Stroke,
 } from '@weasel-js/core';
 import { DEFAULT_TEXT_FILL, type StyledRun } from '@weasel-js/text';
 import type { SvgDraftBounds, SvgDraftPose } from './draftPose';
@@ -90,7 +102,6 @@ export function fillDataFromSvg(
   }
   return fillInBoxFrame(paint.paint, box);
 }
-
 
 /** Lower an `SvgStroke` onto the leaf's `data.stroke`, or `undefined` for an
  *  unpainted one. The paint is rebased onto the leaf's own box the same way

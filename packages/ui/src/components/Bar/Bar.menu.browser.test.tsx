@@ -2,7 +2,8 @@ import '@weasel-js/theme/tokens.css';
 import { cleanup, render, screen } from '@testing-library/react';
 import { afterEach, expect, it } from 'vitest';
 import { page, userEvent } from 'vitest/browser';
-import { ActionsProvider, useAction, type Action } from '@weasel-js/core';
+import { ActionsProvider, useAction } from '@weasel-js/routing/react';
+import type { Action } from '@weasel-js/routing';
 import { pref } from '@weasel-js/prefs';
 import { PrefsBar } from '@weasel-js/ui/components/PrefsBar';
 

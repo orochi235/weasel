@@ -16,6 +16,7 @@ export function cssInputs(packages, resolveWindease) {
     tokens: join(packages, 'theme/dist/tokens.css'),
     core: join(packages, 'core/dist/style.css'),
     ui: join(packages, 'ui/dist/style.css'),
+    uiCanvas: join(packages, 'ui-canvas/dist/style.css'),
     windease,
     labkit: join(packages, 'labkit/src/styles.less'),
   };

@@ -4,7 +4,9 @@
   "description": "A 2D scene-graph engine for React, rendered on WebGL2: the scene tree, viewport math, pointer and keyboard input, layered rendering, and op-based undo.",
   "weasel": {
     "tier": "core",
-    "needs": ["webgl2"]
+    "needs": [
+      "webgl2"
+    ]
   },
   "license": "MIT",
   "author": "orochi235",
@@ -21,9 +23,7 @@
   "sideEffects": [
     "*.css",
     "./src/import-shims/mesh.ts",
-    "./src/core/paint/registerMesh.ts",
-    "./dist/mesh.js",
-    "./dist/core/paint/registerMesh.js"
+    "./dist/mesh.js"
   ],
   "engines": {
     "node": ">=24"
@@ -106,6 +106,7 @@
     "@weasel-js/icons": "1.19.1",
     "@weasel-js/modes": "1.19.1",
     "@weasel-js/paint": "1.19.1",
+    "@weasel-js/paint-kinds": "1.19.1",
     "@weasel-js/prefs-schema": "1.19.1",
     "@weasel-js/quantity": "1.19.1",
     "@weasel-js/react": "1.19.1",

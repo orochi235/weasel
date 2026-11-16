@@ -3,7 +3,7 @@ import { renderHook } from '@testing-library/react';
 import { STICKY_DEFAULTS } from './stickyNode';
 import { useStickyTool } from './useStickyTool';
 import { toolOptionParams, toolOptionSlot } from '@weasel-js/routing';
-import { solid } from '@weasel-js/core';
+import { solid } from '@weasel-js/paint';
 import { INSERT_DRAG_MODS, INSERT_REPOSITION_BINDING } from '@weasel-js/editing';
 
 const bindingFor = (tool: ReturnType<typeof useStickyTool>, kind: string, target?: string) =>

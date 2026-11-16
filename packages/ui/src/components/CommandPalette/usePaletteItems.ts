@@ -1,7 +1,6 @@
 import { useMemo } from 'react';
+import { useActionsRegistry, useOptionalDepRegistry } from '@weasel-js/routing/react';
 import {
-  useActionsRegistry,
-  useOptionalDepRegistry,
   actionItems,
   buildDepsFromRequires,
   eligibleNow,
@@ -10,7 +9,7 @@ import {
   type ActionItem,
   type ActionEnabledResult,
   type ActionsRegistry,
-} from '@weasel-js/core';
+} from '@weasel-js/routing';
 
 export interface PaletteItems {
   registry: ActionsRegistry | null;

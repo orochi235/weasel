@@ -1,5 +1,5 @@
 import type { ReactElement } from 'react';
-import type { GradStop } from '@weasel-js/core';
+import type { GradStop } from '@weasel-js/paint';
 import { Button, CLOSE_BUTTON_PROPS } from '../Button';
 import { ColorField } from '../ColorField';
 import { NumberField } from '../NumberField';

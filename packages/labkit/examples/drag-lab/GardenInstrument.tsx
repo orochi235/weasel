@@ -1,4 +1,5 @@
-import { clientToCanvas, createScene, screenToWorld, solid, viewToTransform, viewPreset } from '@weasel-js/core';
+import { solid } from '@weasel-js/paint';
+import { clientToCanvas, createScene, screenToWorld, viewToTransform, viewPreset } from '@weasel-js/core';
 import type { AddNodeSpec, Fill, Paint, RectPose, UnitSystem, View } from '@weasel-js/core';
 import { createGridLayer } from '@weasel-js/guides';
 import { useMemo, useRef } from 'react';

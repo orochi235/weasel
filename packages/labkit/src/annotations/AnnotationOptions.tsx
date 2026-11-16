@@ -1,4 +1,4 @@
-import { useToolOptionParams } from '@weasel-js/core';
+import { useToolOptionParams } from '@weasel-js/routing/react';
 import { setToolOption } from '@weasel-js/routing';
 import { ToolOptionsBar } from '@weasel-js/ui/components/ToolOptionsBar';
 import { useDeferredValue, useRef } from 'react';

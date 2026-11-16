@@ -1,7 +1,16 @@
 import { describe, it, expect } from 'vitest';
+import { solid } from '@weasel-js/paint';
 import {
-  boundsOfPath as boundsOf, createScene, getMarker, pathFromD, registerMarker, shapePathOf, solid,
-  type Paint, type Path, type PolygonPath, type Stroke,
+  boundsOfPath as boundsOf,
+  createScene,
+  getMarker,
+  pathFromD,
+  registerMarker,
+  shapePathOf,
+  type Paint,
+  type Path,
+  type PolygonPath,
+  type Stroke,
 } from '@weasel-js/core';
 import {
   svgImageFromKit, svgLeafFromKit, svgNodesFromKit, svgPaintFromKit, svgStrokeFromKit, type SvgKitTree,

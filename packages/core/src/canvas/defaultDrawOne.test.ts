@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { defaultDrawOne } from './defaultDrawOne';
 import { registerNodeShape } from './NodeShape';
-import { solid, strokeOf } from '../util/paint';
+import { solid, strokeOf } from '@weasel-js/paint';
 import type { Node } from 'core/scene/types';
 import type { DrawCommand, PathDrawCommand, TextDrawCommand } from '@weasel-js/renderer';
 

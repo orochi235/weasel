@@ -1,9 +1,7 @@
 import { describe, it, expect, vi } from 'vitest';
 import { act, fireEvent, render, screen } from '@testing-library/react';
-import {
-  ActionsProvider, DepRegistryProvider, useDepRegistry, useDepSource,
-  type Action, type DepName, type DepRegistry,
-} from '@weasel-js/core';
+import { ActionsProvider, DepRegistryProvider, useDepRegistry, useDepSource } from '@weasel-js/routing/react';
+import type { Action, DepName, DepRegistry } from '@weasel-js/routing';
 import type { PrefAction } from '@weasel-js/prefs';
 import { ActionButton } from '../ActionButton/ActionButton';
 import { FormScope } from '../ActionButton/controlForm';

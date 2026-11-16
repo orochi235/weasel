@@ -1,4 +1,4 @@
-import type { Tool } from '@weasel-js/core';
+import type { Tool } from '@weasel-js/routing';
 
 /** One button's worth of a palette: a lone tool, or a stack of tools sharing a button. */
 export type PaletteSlot =

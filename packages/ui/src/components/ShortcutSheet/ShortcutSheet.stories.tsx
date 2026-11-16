@@ -1,6 +1,8 @@
 import type { Meta, StoryObj } from '@weasel-js/forge';
 import { useState } from 'react';
-import { ActionsProvider, toolSet, type Action, type Tool } from '@weasel-js/core';
+import { ActionsProvider } from '@weasel-js/routing/react';
+import { toolSet, type Action } from '@weasel-js/routing';
+import { type Tool } from '@weasel-js/core';
 import { Button } from '@weasel-js/ui/components/Button';
 import { ShortcutSheet, useShortcutSheetCommand } from '@weasel-js/ui/components/ShortcutSheet';
 import { RegisterActions } from '@weasel-js/routing/testing/registerAction';

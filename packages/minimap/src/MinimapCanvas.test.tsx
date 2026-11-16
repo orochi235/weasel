@@ -28,7 +28,7 @@ import { defaultDrawOne } from '@weasel-js/core';
 import { ColorOverrideRegistry } from '@weasel-js/animator';
 import type { Animator } from '@weasel-js/animator';
 import { pathFromD } from '@weasel-js/geom';
-import { strokeOf } from '@weasel-js/core';
+import { strokeOf } from '@weasel-js/paint';
 import { PointerContextProvider, usePointerContext, type PointerContextValue } from '@weasel-js/routing/react';
 
 const RAINBOW = [1, 0, 0, 1, 0, 1, 0, 1, 0, 0, 1, 1];

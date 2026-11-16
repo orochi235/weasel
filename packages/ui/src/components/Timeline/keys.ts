@@ -1,4 +1,4 @@
-import { type EasingSpec } from '@weasel-js/core';
+import type { EasingSpec } from '@weasel-js/geom';
 import { sampleTrack, type EventTrack, type Keyframe, type SampledTrack, type TimelineTrack, type Track } from '@weasel-js/animator';
 import { sameList } from '@weasel-js/registry';
 import { trackAtPath } from './lanes';

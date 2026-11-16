@@ -2,7 +2,7 @@ import { describe, it, expect, beforeAll, vi } from 'vitest';
 import { render, act } from '@testing-library/react';
 import { SceneCanvas } from './SceneCanvas';
 import { createScene } from 'core/scene/scene';
-import { registerPaintKind, getPaintKind } from 'core/paint/paintKinds';
+import { registerPaintKind, getPaintKind } from '@weasel-js/paint-kinds';
 import { refreshNodeShapes, registerNodeShape } from './NodeShape';
 import type { RenderLayer } from '../core/layers/render';
 import { createGLRecorder } from '@weasel-js/renderer/testing/glRecorder';

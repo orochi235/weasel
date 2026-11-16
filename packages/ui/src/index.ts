@@ -1,6 +1,7 @@
-// `@weasel-js/ui` ships generic UI primitives plus scene-aware panels
-// that stay generic over consumer data (SelectionPanel). App-specific
-// policy panels (document props) live in their consuming app.
+// `@weasel-js/ui` ships generic UI primitives, with no dependency on a weasel
+// canvas. The components bound to one (SelectionPanel, rulers, scene layer
+// lists) are `@weasel-js/ui-canvas`; app-specific policy panels (document
+// props) live in their consuming app.
 export * from './components/ActionBar';
 export * from './components/ActionButton';
 export * from './components/ActionEdit';
@@ -42,9 +43,7 @@ export * from './components/Icon';
 export * from './components/InlineMarkdown';
 export * from './components/InlineRange';
 export * from './components/Input';
-export * from './components/inspector/AnchorFields';
-export * from './components/inspector/CharacterOptions';
-export * from './components/inspector/SelectionPanel';
+export * from './components/PanelCells';
 export * from './components/ItemList';
 export * from './components/Jog';
 export * from './components/Keycaps';
@@ -87,7 +86,6 @@ export * from './components/PaintField';
 export * from './components/PaintInput';
 export * from './components/PatternPicker';
 export * from './components/Plot2D';
-export * from './components/PlotDataPanel';
 export * from './components/Popover';
 export * from './components/Powerline';
 export * from './components/Prefs';
@@ -100,7 +98,6 @@ export * from './components/RailList';
 export * from './components/RecentColors';
 export * from './components/ResizeHandle';
 export * from './components/Ruler';
-export * from './components/Rulers';
 export * from './components/Run';
 export * from './components/ScaleBar';
 export * from './components/Segmented';

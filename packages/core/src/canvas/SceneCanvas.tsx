@@ -36,7 +36,7 @@ import { useAddedViews, useSceneCanvasHandle } from './SceneCanvas/useSceneCanva
 import { useSceneCanvasLayers } from './SceneCanvas/useSceneCanvasLayers';
 import { useSceneCanvasPathEdit } from './SceneCanvas/useSceneCanvasPathEdit';
 import { useSceneCanvasTools, type SceneCanvasToolProps } from './SceneCanvas/useSceneCanvasTools';
-import { ToolsScope } from '../tools/toolsScope';
+import { ToolsScope } from '@weasel-js/routing/react';
 import { hiddenChromeOf, useSceneCanvasChrome } from './SceneCanvas/useSceneChrome';
 import { useDebugOverride } from '../debug/override';
 import { useSceneRedrawSources } from './SceneCanvas/useSceneRedrawSources';

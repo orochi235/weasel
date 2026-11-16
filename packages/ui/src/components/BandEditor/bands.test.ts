@@ -10,7 +10,7 @@ import {
   unitEdges,
   type Band,
 } from './bands';
-import { linearScale } from '@weasel-js/plot/scales';
+import { linearScale } from '@weasel-js/scales';
 
 const MIN = 0;
 const MAX = 100;

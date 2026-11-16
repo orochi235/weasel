@@ -1,4 +1,4 @@
-import { useMenuHost, useMenus } from '@weasel-js/core';
+import { pageName, useMenuHost, useMenus } from '@weasel-js/core';
 import { PageTabs } from '@weasel-js/ui/components/PageTabs';
 import type { DocPages } from '@weasel-js/editor';
 import type { ReactElement } from 'react';
@@ -15,6 +15,7 @@ export function DrawPageStrip({ pages, leaveMode }: { pages: DocPages; leaveMode
       className="wd-pages"
       aria-label="Pages"
       pages={pages.placed}
+      labelOf={pageName}
       current={pages.current}
       onSelect={pages.goTo}
       onRename={pages.rename}

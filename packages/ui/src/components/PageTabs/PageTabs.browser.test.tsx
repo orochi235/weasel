@@ -1,4 +1,5 @@
 import '@weasel-js/theme/tokens.css';
+import { pageName } from '@weasel-js/core';
 import { cleanup, render, screen } from '@testing-library/react';
 import { useState } from 'react';
 import { afterEach, expect, test, vi } from 'vitest';
@@ -14,6 +15,7 @@ function Strip({ onSelect }: { onSelect: (id: string) => void }) {
     <div style={{ width: 600 }}>
       <PageTabs
         pages={pages}
+        labelOf={pageName}
         current={current}
         onSelect={(id) => { onSelect(id); setCurrent(id); }}
         onRename={(id, name) => setPages((ps) => ps.map((p) => (p.id === id ? { ...p, name } : p)))}

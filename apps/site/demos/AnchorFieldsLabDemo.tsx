@@ -1,4 +1,5 @@
-import { asNodeId, createScene, type RectPose, solid, pathNode } from '@weasel-js/core';
+import { solid } from '@weasel-js/paint';
+import { asNodeId, createScene, type RectPose, pathNode } from '@weasel-js/core';
 import { pathsPreset } from '@weasel-js/path-tools';
 import {
   type ConfigOf,
@@ -11,7 +12,7 @@ import {
   useTrialScene,
 } from '@weasel-js/labkit';
 import { FloatingPanel } from '@weasel-js/ui/components/FloatingPanel';
-import { AnchorFields } from '@weasel-js/ui/components/inspector/AnchorFields';
+import { AnchorFields } from '@weasel-js/ui-canvas/components/inspector/AnchorFields';
 import '@weasel-js/labkit/styles.css';
 import 'windease/styles.css';
 import { icon } from '../icons.gen';

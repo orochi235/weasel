@@ -4,7 +4,7 @@ import { setFillAction } from './setFill';
 import type { InvocationCtx } from '@weasel-js/routing';
 import type { NodeId, Op } from '@weasel-js/core';
 import type { Fill } from '@weasel-js/paint';
-import { DEFAULT_FILL_COLOR, solid } from '@weasel-js/core';
+import { DEFAULT_FILL_COLOR, solid } from '@weasel-js/paint';
 import { makeScene, makeSelection, makeCtx, ongoingInvoker } from './paintActionTestUtils';
 
 const getInvoker = () => ongoingInvoker(setFillAction);

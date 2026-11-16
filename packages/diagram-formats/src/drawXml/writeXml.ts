@@ -1,6 +1,6 @@
 /** The XML elements draw-style cells are written as. */
 import type { Vec2 } from '@weasel-js/core/math';
-import { escapeAttr } from '@weasel-js/svg';
+import { escapeAttr } from '@weasel-js/registry';
 import type { Box } from './pageCells';
 
 /** A coordinate to four places, which is as fine as anything here is drawn. */

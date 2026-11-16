@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { describe, it, expect, vi } from 'vitest';
 import { screen, fireEvent } from '@testing-library/react';
-import type { GradientPaint, Paint } from '@weasel-js/core';
+import type { GradientPaint, Paint } from '@weasel-js/paint';
 import { stubRect } from '../Slider/testing/stubRect';
 import { GradientEditor, type GradientEditorProps } from './GradientEditor';
 import { renderWithIcons } from '../../testing/withIcons';

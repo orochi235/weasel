@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { asNodeId, easeInOutSine, effectivePose, mat3, RECT_POSE_DESCRIPTOR, rigidRigApply, SceneCanvas, solid, useRig, useScene } from '@weasel-js/core';
+import { solid } from '@weasel-js/paint';
+import { asNodeId, easeInOutSine, effectivePose, mat3, RECT_POSE_DESCRIPTOR, rigidRigApply, SceneCanvas, useRig, useScene } from '@weasel-js/core';
 import {
   jointAxes,
   resolveSkeleton,

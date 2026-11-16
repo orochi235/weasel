@@ -1,9 +1,13 @@
 import { useEffect, useRef, useState } from 'react';
+import { solid } from '@weasel-js/paint';
 import {
   asNodeId,
-  SceneCanvas, useScene, renderSceneToPixels, nodeShapesOf,
-  registerCanvasFont, warmRender,
-  solid,
+  SceneCanvas,
+  useScene,
+  renderSceneToPixels,
+  nodeShapesOf,
+  registerCanvasFont,
+  warmRender,
 } from '@weasel-js/core';
 import type { Fill } from '@weasel-js/core';
 import type { TextStyle, TextVerticalAlign } from '@weasel-js/text';

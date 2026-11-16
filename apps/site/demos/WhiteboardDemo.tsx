@@ -1,4 +1,5 @@
-import { SceneCanvas, asNodeId, solid, useScene, WeaselProvider } from '@weasel-js/core';
+import { solid } from '@weasel-js/paint';
+import { SceneCanvas, asNodeId, useScene, WeaselProvider } from '@weasel-js/core';
 import { usePencilTool } from '@weasel-js/path-tools';
 import { stickyData, whiteboardPreset } from '@weasel-js/text-tools';
 import { ToolPalette } from '@weasel-js/ui/components/ToolPalette';

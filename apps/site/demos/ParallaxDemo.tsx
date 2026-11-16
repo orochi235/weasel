@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react';
-import { SceneCanvas, WeaselProvider, asNodeId, useScene, ellipsePath, polygonFromPoints, rectPath, solid, viewPreset } from '@weasel-js/core';
+import { solid } from '@weasel-js/paint';
+import { SceneCanvas, WeaselProvider, asNodeId, useScene, ellipsePath, polygonFromPoints, rectPath, viewPreset } from '@weasel-js/core';
 import { pathsPreset } from '@weasel-js/path-tools';
 import { useAnimator } from '@weasel-js/animator/react';
 import { createParallaxLayer, createParallaxPlane, createTiledLayer } from '@weasel-js/parallax';

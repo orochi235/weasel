@@ -2,7 +2,7 @@ import type { ReactNode } from 'react';
 import type { TrackRun } from '@weasel-js/geom';
 import type { SliderStop as Stop } from '@weasel-js/ui-input';
 import type { Display, Endless, Quantity } from '@weasel-js/quantity';
-import type { ContinuousScaleFactory } from '@weasel-js/plot/scales';
+import type { ContinuousScaleFactory } from '@weasel-js/scales';
 import type { HoldProps } from '../Disabled';
 
 /**
@@ -141,7 +141,7 @@ export type SliderStop = Stop<ReactNode>;
  *
  * `scale` maps values onto the track some other way than linearly: it is
  * called with `{ domain: [min, max], range: [0, 1] }`, so `logScale` from
- * `@weasel-js/plot/scales` gives even ratios even steps. The arrow keys still
+ * `@weasel-js/scales` gives even ratios even steps. The arrow keys still
  * step by value; pass `keyStep` to step along the track instead.
  *
  * `disabled` and `readOnly`, from its own props or a `Disabled` or `ReadOnly` scope, refuse every drag, key step,

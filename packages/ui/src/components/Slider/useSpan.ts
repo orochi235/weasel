@@ -2,7 +2,7 @@ import { useCallback, useMemo } from 'react';
 import { clamp } from '@weasel-js/geom';
 import { useKitSetting } from '@weasel-js/react';
 import { evenMap, sliderAt, usableStops, type TrackMap } from '@weasel-js/ui-input';
-import { linearScale, type ContinuousScaleFactory } from '@weasel-js/plot/scales';
+import { linearScale, type ContinuousScaleFactory } from '@weasel-js/scales';
 import { STOP_SNAP_PX } from './stops';
 import type { SliderProps } from './types';
 import type {} from '../../kitSettings';

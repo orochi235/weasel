@@ -2,7 +2,7 @@ import { afterEach, describe, expect, expectTypeOf, it, vi } from 'vitest';
 import { act, cleanup, fireEvent, render, screen } from '@testing-library/react';
 import type { MenuEntry, MenuGrade } from '@weasel-js/menu';
 import type { Grade } from '@weasel-js/theme';
-import { ActionDisabledReason } from '@weasel-js/core';
+import { ActionDisabledReason } from '@weasel-js/routing';
 import { formatShortcut } from '@weasel-js/gestures';
 import { REST_MS } from '../Tree/useRowTip';
 import { OpenPanels } from './ContextMenuHost';

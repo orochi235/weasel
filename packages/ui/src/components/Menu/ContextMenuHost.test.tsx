@@ -2,9 +2,8 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { pref } from '@weasel-js/prefs';
 import { act, cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { StrictMode } from 'react';
-import {
-  ActionDisabledReason, ActionsProvider, useAction, useMenuHost, useMenus, type MenuDef, type MenuHost,
-} from '@weasel-js/core';
+import { ActionDisabledReason, type MenuDef, type MenuHost } from '@weasel-js/routing';
+import { ActionsProvider, useAction, useMenuHost, useMenus } from '@weasel-js/routing/react';
 import type { MenuEntry } from '@weasel-js/menu';
 import { ContextMenuHost, OpenPanels } from './ContextMenuHost';
 

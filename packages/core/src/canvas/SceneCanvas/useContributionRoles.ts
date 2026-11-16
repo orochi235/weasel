@@ -13,7 +13,7 @@ import { useEffect, useRef } from 'react';
 import { useActionsRegistry, useMenuHost, useOffhandAction, useOptionalDepRegistry } from '@weasel-js/routing/react';
 import type { DepRegistry } from '@weasel-js/routing/react';
 import type { DepName } from 'interactions/actions/depSchema';
-import { useToolOptionTunings } from 'tools/toolOptions';
+import { useToolOptionTunings } from '@weasel-js/routing/react';
 import type { ToolsApi } from '../../tools/overlayBinding';
 import type { CanvasExtensionApi } from '../canvasExtension';
 import type { SurfaceContribution } from '../surfaceContribution';

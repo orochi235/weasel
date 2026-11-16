@@ -5,16 +5,8 @@
  * it, so the drag is settled by the gesture system like any other: a segment
  * running a drag of its own, or a nested surface, takes the press instead.
  */
-import {
-  ActionsProvider,
-  ActiveToolContextProvider,
-  DepRegistryProvider,
-  sweepAction,
-  useAction,
-  useActionsRegistry,
-  useGestureDispatcher,
-  type ModifierState,
-} from '@weasel-js/core';
+import { ActionsProvider, ActiveToolContextProvider, DepRegistryProvider, useAction, useActionsRegistry, useGestureDispatcher } from '@weasel-js/routing/react';
+import { sweepAction, type ModifierState } from '@weasel-js/routing';
 import { useLatest } from '@weasel-js/react';
 import { useMemo, useRef, type ReactElement, type RefObject } from 'react';
 import { sweepFrom, type SelectionModel, type SelectState } from '@weasel-js/ui-input';

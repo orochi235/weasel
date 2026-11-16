@@ -1,5 +1,6 @@
 // apps/site/demos/platformer/sceneWorld.ts
-import { asNodeId, solid } from '@weasel-js/core';
+import { solid } from '@weasel-js/paint';
+import { asNodeId } from '@weasel-js/core';
 import type { NodeId, RectPose, Scene, Fill } from '@weasel-js/core';
 import type { TextStyle, TextVerticalAlign } from '@weasel-js/text';
 import type { Pose } from '@weasel-js/animator';

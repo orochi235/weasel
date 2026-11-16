@@ -4,7 +4,7 @@ import { useFieldControl, type OwnFieldSemantics } from '../Field/fieldSemantics
 import { PropertyField } from './PropertyField';
 import { PropertyRow } from './PropertyRow';
 import { RowScope } from './rowScope';
-import { trigger } from './testing/selectRow';
+import { trigger } from '../../testing/selectRow';
 
 const none = (): void => {};
 const options = [

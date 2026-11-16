@@ -1,9 +1,9 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { d3Bind } from '@weasel-js/d3';
+import { solid } from '@weasel-js/paint';
 import {
   SceneCanvas,
   WeaselProvider,
-  solid,
   useScene,
   easeInOutCubic,
 } from '@weasel-js/core';

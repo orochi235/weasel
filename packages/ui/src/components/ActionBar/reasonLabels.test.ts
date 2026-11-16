@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { ActionDisabledReason } from '@weasel-js/core';
+import { ActionDisabledReason } from '@weasel-js/routing';
 import { reasonLabel } from './reasonLabels';
 
 describe('reasonLabel', () => {

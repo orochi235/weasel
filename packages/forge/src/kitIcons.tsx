@@ -1,8 +1,8 @@
 import type { ReactNode } from 'react';
 import { createRoot, type Root } from 'react-dom/client';
-import { IconRegistryProvider } from '@weasel-js/core';
+import { IconRegistryProvider } from '@weasel-js/icons/react';
 import type { IconTable } from '@weasel-js/icons';
-import { kitIcons } from '@weasel-js/ui/kit-icons';
+import { kitIcons } from '@weasel-js/ui-canvas/kit-icons';
 
 /** A React root whose every render draws its icons from the kit's tables, plus `extra` (an app's own): the
  *  workshop's, and each story frame's. */

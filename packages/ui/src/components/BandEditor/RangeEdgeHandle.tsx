@@ -7,7 +7,7 @@ import type {
 import { qty, type Display, type Quantity } from '@weasel-js/quantity';
 import s from './BandEditor.module.css';
 import { edgeReach, scaleEdges, unitEdges, type Band, type RangeEdge } from './bands';
-import type { ContinuousScaleFactory } from '@weasel-js/plot/scales';
+import type { ContinuousScaleFactory } from '@weasel-js/scales';
 import { unitScale } from './scale';
 import { arrowStep, pct } from './track';
 import { isPrimaryPress } from '@weasel-js/gestures';

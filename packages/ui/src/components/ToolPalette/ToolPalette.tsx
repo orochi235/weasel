@@ -1,5 +1,6 @@
 import type { DragEvent, ReactNode } from 'react';
-import { toolIdsOf, toolSetHas, toolStacksOf, useScopedTools, type CarryPayload, type Tool, type ToolSet, type ToolsApi } from '@weasel-js/core';
+import { useScopedTools, type ToolsApi } from '@weasel-js/routing/react';
+import { toolIdsOf, toolSetHas, toolStacksOf, type CarryPayload, type ToolSet, type Tool } from '@weasel-js/routing';
 import { eligibleContribution, type ModeRegistry } from '@weasel-js/modes';
 import { getOwn } from '@weasel-js/registry';
 import type { Orientation } from '../Run';
@@ -10,7 +11,6 @@ import { icon } from '../../icons.gen';
 import { groupTools } from './order';
 import { slotsOf, stackIndex } from './stacks';
 import { useToolCarry } from './useToolCarry';
-import { BUILTIN_TOOL_IDS, TOOL_GROUP_ORDER } from '@weasel-js/editing';
 
 /** Props for {@link ToolPalette}. */
 export interface ToolPaletteProps extends DisableableProps {
@@ -33,13 +33,12 @@ export interface ToolPaletteProps extends DisableableProps {
   /**
    * Presentation-group display order. Groups not listed keep their registry
    * insertion order after the listed ones; `misc` always renders last.
-   * Defaults to core's `TOOL_GROUP_ORDER`: selection, navigation, then the
-   * tools that make things.
+   * Defaults to the order of the sets inside an `include` set, else none.
    */
   groupOrder?: readonly string[];
   /** Tool display order within each group, by id. Tools not listed keep their
-   *  registry insertion order after the listed ones. Defaults to core's
-   *  `BUILTIN_TOOL_IDS`. */
+   *  registry insertion order after the listed ones. Defaults to an `include`
+   *  set's order, else none. */
   toolOrder?: readonly string[];
   /** Which of the registered tools this palette shows: a tool set, or a test of
    *  each tool; all of them when omitted. Two palettes over one `tools` with
@@ -74,6 +73,14 @@ export interface ToolPaletteProps extends DisableableProps {
   carryGhost?: (tool: Tool) => ReactNode;
 }
 
+const NO_ORDER: readonly string[] = [];
+
+/** An `include` set's own order: the ids of the sets it holds, or of every tool in it. */
+function setOrder(include: ToolPaletteProps['include'], of: 'groups' | 'tools'): readonly string[] {
+  if (!include || typeof include === 'function') return NO_ORDER;
+  return of === 'tools' ? toolIdsOf([include]) : include.members.flatMap((m) => (typeof m === 'string' ? [] : [m.id]));
+}
+
 function paletteStacks(stacks: ToolPaletteProps['stacks'], include: ToolPaletteProps['include']): (readonly string[])[] {
   if (stacks) return stacks.map((stack) => ('members' in stack ? toolIdsOf([stack]) : stack));
   return include !== undefined && typeof include !== 'function' ? toolStacksOf([include]) : [];
@@ -99,7 +106,7 @@ export function ToolPalette(props: ToolPaletteProps) {
 function ToolPaletteRail(props: ToolPaletteProps & { tools: ToolsApi }) {
   const {
     tools, orientation = 'vertical', className, modeRegistry, ineligible = 'dim',
-    groupOrder = TOOL_GROUP_ORDER, toolOrder = BUILTIN_TOOL_IDS, include, 'aria-label': ariaLabel = 'Tools', stacks, stackCycle = 'alt',
+    include, groupOrder = setOrder(include, 'groups'), toolOrder = setOrder(include, 'tools'), 'aria-label': ariaLabel = 'Tools', stacks, stackCycle = 'alt',
     columns, onToolDragStart, carryTool, carryGhost, disabled, disabledReason: ownReason,
   } = props;
   const carry = useToolCarry(carryTool, carryGhost);
@@ -118,7 +125,7 @@ function ToolPaletteRail(props: ToolPaletteProps & { tools: ToolsApi }) {
     return {
       id: tool.id,
       group,
-      icon: tool.presentation?.icon ?? icon('core:unknown'),
+      icon: tool.presentation?.icon ?? icon('unknown'),
       label: tool.presentation?.label ?? tool.id,
       description: tool.presentation?.description,
       shortcut: getOwn(tools.shortcuts, tool.id)?.[0],

@@ -1,4 +1,4 @@
-import { actionItemShortcuts, type ActionItem } from '@weasel-js/core';
+import { actionItemShortcuts, type ActionItem } from '@weasel-js/routing';
 import { formatShortcut } from '@weasel-js/gestures';
 
 /** An entry's shortcut as one line of text: its declared text, else its first binding written out. */

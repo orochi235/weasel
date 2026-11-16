@@ -2,7 +2,7 @@ import type { Action } from '@weasel-js/routing';
 import type { Fill, Paint } from '@weasel-js/paint';
 import { createPaintAction } from './createPaintAction';
 import type { PaintParams } from '@weasel-js/core';
-import { paintWithColor, DEFAULT_FILL_COLOR } from '@weasel-js/core';
+import { paintWithColor, DEFAULT_FILL_COLOR } from '@weasel-js/paint';
 
 /** `setFill`'s gesture state. A `paint` shadows the color until a later color
  *  supersedes it. */

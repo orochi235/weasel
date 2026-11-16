@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { asNodeId, createScene, rectPath, solid, strokeOf, type NodeId } from '@weasel-js/core';
+import { solid, strokeOf } from '@weasel-js/paint';
+import { asNodeId, createScene, rectPath, type NodeId } from '@weasel-js/core';
 import { applyOutlineStroke } from '@weasel-js/path-tools';
 import type { WeaselDrawData, WeaselDrawLayer, WeaselDrawPose } from './drawDocument';
 import { drawOutlinesAdapter } from './outlinesAdapter';

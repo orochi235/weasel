@@ -1,12 +1,7 @@
 import { type ReactElement } from 'react';
-import { asPaint, type Paint } from '@weasel-js/core';
-import {
-  meshGuides,
-  meshHandles,
-  moveMeshHandle,
-  type MeshGradientPaint,
-  type MeshHandle,
-} from '@weasel-js/core/mesh';
+import type { Paint } from '@weasel-js/paint';
+import { meshGuides, meshHandles, moveMeshHandle, type MeshGradientPaint, type MeshHandle } from '@weasel-js/renderer/mesh';
+import { asPaint } from '@weasel-js/paint-kinds';
 import { useTints } from '@weasel-js/theme/react';
 import { handleHalf } from '../../handles';
 import { useEditDraft } from '../../useEditDraft';
@@ -18,6 +13,7 @@ import {
   type EditPhase,
   type OverlayPoint as Point,
 } from '../GradientEditor/handleOverlay';
+import '@weasel-js/paint-kinds/mesh';
 
 /** Props for {@link MeshHandles}. `onInput`, `onChange` and `onCancel` are the kit's edit protocol
  *  (`docs/conventions.md`, "Edit callbacks"): a drag or an arrow-key step is one edit, and Escape cancels a drag. */

@@ -1,7 +1,6 @@
 import { describe, it, expect, vi } from 'vitest';
 import { render, fireEvent, screen } from '@testing-library/react';
-import { composePatternTransform, decomposePatternTransform } from '@weasel-js/core';
-import type { PatternPaint as PatternFill } from '@weasel-js/core';
+import { composePatternTransform, decomposePatternTransform, type PatternPaint as PatternFill } from '@weasel-js/paint';
 import { PatternPicker, seedImagePattern, seedPattern } from './PatternPicker';
 
 function rotationInput(): HTMLInputElement {

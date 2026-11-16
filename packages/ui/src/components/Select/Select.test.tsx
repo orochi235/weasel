@@ -1,6 +1,6 @@
 import { describe, it, expect, vi } from 'vitest';
 import { render, fireEvent, createEvent, screen, act } from '@testing-library/react';
-import { DRAG_THRESHOLD_PX, LONG_PRESS_MS } from '@weasel-js/core';
+import { DRAG_THRESHOLD_PX, LONG_PRESS_MS } from '@weasel-js/gestures';
 import { KitSettingsProvider } from '@weasel-js/react';
 import { Select, SelectItem, SelectSection } from './Select';
 import s from './Select.module.css';

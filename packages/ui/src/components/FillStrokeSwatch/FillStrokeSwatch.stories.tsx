@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import type { Meta, StoryObj } from '@weasel-js/forge';
-import type { Paint } from '@weasel-js/core';
+import type { Paint } from '@weasel-js/paint';
 import type { PaintSlot } from '@weasel-js/paint';
 import { FillStrokeSwatch, type FillStrokeSwatchProps } from '@weasel-js/ui/components/FillStrokeSwatch';
 

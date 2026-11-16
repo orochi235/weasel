@@ -4,18 +4,17 @@ import {
   decomposePatternTransform,
   isImagePatternPaint,
   isTilePaint,
-  seedTile,
   TILE_KINDS,
   type ImagePatternPaint,
   type PatternPaint,
   type TileKind,
   type TilePaint,
   type TilePatternSpec,
-} from '@weasel-js/core';
+} from '@weasel-js/paint';
+import { seedTile, tilePreviewCssUrl } from '@weasel-js/paint-kinds';
 import { DEG_TO_RAD, RAD_TO_DEG, wrapAngle } from '@weasel-js/geom';
 import { useLatestOnly } from '@weasel-js/react';
 import { unit } from '@weasel-js/quantity';
-import { tilePreviewCssUrl } from '@weasel-js/svg';
 import { Icon } from '../Icon';
 import { icon } from '../../icons.gen';
 import { UnitField } from '../NumberField';

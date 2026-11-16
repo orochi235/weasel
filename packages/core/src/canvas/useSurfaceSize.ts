@@ -1,7 +1,7 @@
 import { useEffect, useRef, type RefObject } from 'react';
 import { useLatest } from '@weasel-js/react';
 import type { CanvasSize } from 'core/viewport/clampView';
-import { useElementSize } from 'core/viewport/useCanvasSize';
+import { useElementSize } from '@weasel-js/routing/react';
 
 /** The size props every canvas host takes. */
 export interface SurfaceSizeProps {

@@ -7,7 +7,7 @@ import { areaMark, ruleMark } from '../marks/paths';
 import { textMark } from '../marks/text';
 import type { PlotMark } from '../marks/types';
 import type { PlotMeasure } from '../measure';
-import { timeScale, type TimeScale } from '../scales/time';
+import { timeScale, type TimeScale } from '@weasel-js/scales';
 import { seriesColor, type PlotTheme } from '../theme';
 import { formatHasHours, strftime } from './dates';
 import { DAY, dateFormatOf, scheduleGantt, type GanttSchedule } from './schedule';

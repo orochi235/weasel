@@ -1,5 +1,5 @@
 import { useId, useMemo, type SVGProps } from 'react';
-import { useIconGlyph } from '@weasel-js/core';
+import { useIconGlyph } from '@weasel-js/icons/react';
 import { iconParts, type IconGlyph, type IconRef, type IconSpec } from '@weasel-js/icons';
 import { inset } from './layers';
 import { isDev } from '@weasel-js/react';
@@ -38,7 +38,7 @@ const SVG_BASE: SVGProps<SVGSVGElement> = {
 };
 
 /** Renders the glyph the icon registry in scope holds for `name`, with the mark a spec names unless `mark`
- *  replaces it. A name it lacks draws `core:unknown`'s placeholder in dev, warning once, and nothing in production. */
+ *  replaces it. A name it lacks draws `ui:unknown`'s placeholder in dev, warning once, and nothing in production. */
 export function Icon({
   name: spec,
   className,

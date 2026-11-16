@@ -19,7 +19,7 @@ import type { Node } from 'core/scene/types';
 import { asNodeId } from 'core/scene/types';
 import type { PathDrawCommand } from '@weasel-js/renderer';
 import { PATH_M, PATH_L, PATH_Z } from '@weasel-js/geom';
-import { solid } from '../util/paint';
+import { solid } from '@weasel-js/paint';
 
 interface RectPose { x: number; y: number; width: number; height: number }
 

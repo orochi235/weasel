@@ -12,7 +12,8 @@
 import { afterEach, describe, it, expect } from 'vitest';
 import type { SvgNode, SvgPathNode, SvgTextNode, SvgGroupNode } from '@weasel-js/svg';
 import { parseSvg, serializeSvg } from '@weasel-js/svg';
-import { getMarker, resolveStroke, solid, strokeOf } from '@weasel-js/core';
+import { solid, strokeOf } from '@weasel-js/paint';
+import { getMarker, resolveStroke } from '@weasel-js/core';
 import { _resetMarkersForTests } from '@weasel-js/core/test-seams';
 import type { Stroke, Fill } from '@weasel-js/core';
 import {

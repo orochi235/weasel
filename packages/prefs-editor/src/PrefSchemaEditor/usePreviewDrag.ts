@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState, type PointerEvent as ReactPointerEvent, type RefObject } from 'react';
-import { isInControlWithin, startThresholdDrag, type ThresholdDragHandle } from '@weasel-js/core';
+import { startThresholdDrag, type ThresholdDragHandle } from '@weasel-js/routing';
+import { isInControlWithin } from '@weasel-js/core';
 import { useKitSetting } from '@weasel-js/react';
 import { swallowNextClick } from '@weasel-js/ui';
 import { GHOST_WIDTH, ghostIsPage } from './NodeGhost';

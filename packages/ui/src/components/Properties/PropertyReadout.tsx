@@ -1,7 +1,7 @@
 import type { CSSProperties, ReactNode } from 'react';
-import { INHERIT, paintKindOf } from '@weasel-js/core';
+import { paintKindOf } from '@weasel-js/paint-kinds';
 import { qty, unitSymbol } from '@weasel-js/quantity';
-import { solidColorOf } from '@weasel-js/paint';
+import { solidColorOf, INHERIT } from '@weasel-js/paint';
 import { useFieldLocale } from '../../useFieldLocale';
 import { stepDisplay } from './NumberControls';
 import type { PropertyControlProps, PropertyNumberFieldProps } from './fieldTypes';

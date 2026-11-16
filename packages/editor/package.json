@@ -26,6 +26,7 @@
   },
   "peerDependencies": {
     "@weasel-js/core": "1.19.1",
+    "@weasel-js/editing": "1.19.1",
     "@weasel-js/geom": "1.19.1",
     "@weasel-js/guides": "1.19.1",
     "@weasel-js/prefs": "1.19.1",

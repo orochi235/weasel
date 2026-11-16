@@ -1,5 +1,6 @@
 import { useMemo } from 'react';
-import { asNodeId, RIGID_POSE_COMPOSITION, SceneCanvas, solid, useScene, type Fill, type GroupBoxData, type RectPose, type Stroke, type UnitScope, viewPreset } from '@weasel-js/core';
+import { solid } from '@weasel-js/paint';
+import { asNodeId, RIGID_POSE_COMPOSITION, SceneCanvas, useScene, type Fill, type GroupBoxData, type RectPose, type Stroke, type UnitScope, viewPreset } from '@weasel-js/core';
 import { createGridLayer, gridSnapSource, sceneGridRegions, type GridScopes } from '@weasel-js/guides';
 import { DemoStage } from './DemoStage';
 import { movePreset, selectPreset } from '@weasel-js/editing';

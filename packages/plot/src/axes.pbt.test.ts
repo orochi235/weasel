@@ -6,11 +6,11 @@ import { describe, expect, it } from 'vitest';
 import fc from 'fast-check';
 import { axisMarks, axisRoom, type AxisSide } from './axes';
 import { anyFinite, duplicateKeys, measure, nonFinite, runs, tally, timeoutFor } from './pbt.fixture';
-import { bandScale } from './scales/band';
-import { linearScale } from './scales/linear';
-import { logScale } from './scales/log';
-import { timeScale } from './scales/time';
-import type { Scale } from './scales/types';
+import { bandScale } from '@weasel-js/scales';
+import { linearScale } from '@weasel-js/scales';
+import { logScale } from '@weasel-js/scales';
+import { timeScale } from '@weasel-js/scales';
+import type { Scale } from '@weasel-js/scales';
 import { PLOT_THEME } from './theme';
 
 const RUNS = 300;

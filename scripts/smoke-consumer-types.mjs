@@ -21,12 +21,13 @@ import { packInto } from './lib/pack-tree.mjs';
 
 /**
  * Types that must reject an object they have no property for, one per declaration pipeline: ui,
- * hud, devtools, measure and prefs-editor emit with a declaration-only `tsc`, labkit with its own
+ * ui-canvas, hud, devtools, measure and prefs-editor emit with a declaration-only `tsc`, labkit with its own
  * rollup-plugin-dts build, the rest with tsup. Through a subpath where the package has one.
  */
 const REJECTS = [
   ['@weasel-js/ui/components/Button', 'ButtonProps'],
   ['@weasel-js/ui', 'ButtonProps'],
+  ['@weasel-js/ui-canvas/components/Rulers', 'RulersProps'],
   ['@weasel-js/hud', 'ButtonOptions'],
   ['@weasel-js/devtools', 'DevtoolsPanelProps'],
   ['@weasel-js/measure', 'MeasureReadoutProps'],

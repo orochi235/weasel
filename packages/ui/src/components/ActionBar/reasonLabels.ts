@@ -1,4 +1,4 @@
-import { ActionDisabledReason } from '@weasel-js/core';
+import { ActionDisabledReason } from '@weasel-js/routing';
 
 /** Display strings for the closed `ActionDisabledReason` enum: what a
  *  palette row or a disabled button says about why it cannot run. Kept in ui

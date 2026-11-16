@@ -1,6 +1,5 @@
-import { type Paint } from '@weasel-js/core';
 import { numericWeight } from '@weasel-js/text';
-import { isPaint } from '@weasel-js/paint';
+import { isPaint, type Paint } from '@weasel-js/paint';
 import { clampToBounds, endlessAllows, endless as withInfinity } from '@weasel-js/quantity';
 import { isBuiltinPref, prefDisplayBounds, prefUnitAccepts, resolvePrefUnit, type PrefEnumOption, type PrefField, type PrefLeaf, type PrefNumber, type PrefValueBase } from '@weasel-js/prefs';
 import { stepDisplay } from '../Properties/NumberControls';

@@ -1,7 +1,8 @@
 import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
 import { act, cleanup, fireEvent, screen } from '@testing-library/react';
 import { useState } from 'react';
-import { ActionDisabledReason, ActionsProvider, type Action } from '@weasel-js/core';
+import { ActionDisabledReason, type Action } from '@weasel-js/routing';
+import { ActionsProvider } from '@weasel-js/routing/react';
 import type { PrefGroup } from '@weasel-js/prefs';
 import { ActionBar } from '../ActionBar';
 import { CommandPalette } from '../CommandPalette';

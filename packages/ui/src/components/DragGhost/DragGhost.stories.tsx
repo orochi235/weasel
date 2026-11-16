@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from '@weasel-js/forge';
-import { startThresholdDrag } from '@weasel-js/core';
+import { startThresholdDrag } from '@weasel-js/routing';
 import { type PointerEvent as ReactPointerEvent, useState } from 'react';
 import { DragGhost } from '@weasel-js/ui/components/DragGhost';
 import s from './DragGhost.stories.module.css';

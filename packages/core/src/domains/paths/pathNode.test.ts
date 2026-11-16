@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { solid } from '../../util/paint';
+import { solid } from '@weasel-js/paint';
 import { pathFromD, rectPath } from '@weasel-js/geom';
 import { createScene } from 'core/scene/scene';
 import type { RectPose } from 'core/geometry/rectPose';

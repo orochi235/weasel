@@ -1,12 +1,13 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { act, cleanup, fireEvent, render, screen } from '@testing-library/react';
+import { ActionsProvider, DepRegistryProvider, useActionsRegistry, useDepRegistry } from '@weasel-js/routing/react';
+import { dynamicActionId, type ActionsRegistry, type DepRegistry, type LastOperation, type LastOperationStore } from '@weasel-js/routing';
+import type { Op } from '@weasel-js/history';
 import {
-  ActionsProvider, createHistory, DepRegistryProvider, useActionsRegistry, useDepRegistry,
-  type ActionsRegistry, type DepRegistry, type LastOperation, type LastOperationStore, type Op,
+  createHistory,
 } from '@weasel-js/core';
 import { pref } from '@weasel-js/prefs';
 import { LastOperationPanel } from './LastOperationPanel';
-import { dynamicActionId } from '@weasel-js/core';
 
 afterEach(cleanup);
 

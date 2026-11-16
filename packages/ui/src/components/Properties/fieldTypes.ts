@@ -1,8 +1,9 @@
 import type { ReactNode } from 'react';
-import type { Inherit, Paint, PaintKind } from '@weasel-js/core';
+import type { Inherit, Paint } from '@weasel-js/paint';
+import type { PaintKind } from '@weasel-js/paint-kinds';
 import type { PaintInherit } from '../PaintInput';
 import type { Display, Endless, UnitTable } from '@weasel-js/quantity';
-import type { ContinuousScaleFactory } from '@weasel-js/plot/scales';
+import type { ContinuousScaleFactory } from '@weasel-js/scales';
 import type { DisableableProps } from '../Disabled';
 
 /** One choice of an enum field. */
@@ -99,7 +100,7 @@ export interface PropertyNumberFieldProps extends PropertyFieldBase {
    *  is held, and an arrow key stepping across one stops there. */
   stops?: readonly number[];
   /** How a slider spaces values along its track, as `Slider`'s `scale` does — `logScale` from
-   *  `@weasel-js/plot/scales` for even ratios. Only the track moves: typed values, `step`, `stops` and the
+   *  `@weasel-js/scales` for even ratios. Only the track moves: typed values, `step`, `stops` and the
    *  arrow keys stay in value units. Default linear. */
   scale?: ContinuousScaleFactory;
   /**

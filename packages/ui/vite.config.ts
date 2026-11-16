@@ -28,15 +28,12 @@ assertPackageBuild(import.meta.dirname);
  * with no change here or in package.json.
  *
  * A directory with no `index.ts` (Foundations) is not a component entry point
- * and is skipped; it still reaches consumers through whatever imports it. A
- * lowercase one (`inspector`) groups components, each reached as
- * `./components/<group>/<Name>`.
+ * and is skipped; it still reaches consumers through whatever imports it.
  */
 const componentsDir = resolve(import.meta.dirname, 'src/components');
 const entries: Record<string, string> = {
   index: resolve(import.meta.dirname, 'src/index.ts'),
   'icons.table': resolve(import.meta.dirname, 'src/icons.table.ts'),
-  kitIcons: resolve(import.meta.dirname, 'src/kitIcons.ts'),
   'components/appearance': resolve(import.meta.dirname, 'src/components/appearance.ts'),
   'components/Badge/geometry': resolve(import.meta.dirname, 'src/components/Badge/geometry.ts'),
   'overlays/portalHost': resolve(import.meta.dirname, 'src/overlays/portalHost.tsx'),

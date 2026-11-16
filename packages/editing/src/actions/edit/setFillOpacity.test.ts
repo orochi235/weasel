@@ -2,7 +2,7 @@ import { describe, it, expect, vi } from 'vitest';
 import { setFillOpacityAction } from './setFillOpacity';
 import type { NodeId, Op } from '@weasel-js/core';
 import type { Fill } from '@weasel-js/paint';
-import { solid } from '@weasel-js/core';
+import { solid } from '@weasel-js/paint';
 import { makeScene, makeCtx, ongoingInvoker } from './paintActionTestUtils';
 
 const getInvoker = () => ongoingInvoker(setFillOpacityAction);

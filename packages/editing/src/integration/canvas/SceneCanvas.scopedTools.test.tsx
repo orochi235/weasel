@@ -1,7 +1,8 @@
 import { describe, it, expect, vi, beforeAll } from 'vitest';
 import { act, render, screen } from '@testing-library/react';
 import { useState } from 'react';
-import { SceneCanvas, useScene, useScopedTools } from '@weasel-js/core';
+import { useScopedTools } from '@weasel-js/routing/react';
+import { SceneCanvas, useScene } from '@weasel-js/core';
 import { WeaselProvider } from '@weasel-js/core/engine';
 import type { ToolsApi } from '@weasel-js/core';
 import { drawPreset } from '@weasel-js/editing';

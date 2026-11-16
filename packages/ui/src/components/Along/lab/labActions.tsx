@@ -1,5 +1,6 @@
 import { useMemo, type ReactElement, type ReactNode } from 'react';
-import { ActionsProvider, type Action } from '@weasel-js/core';
+import { ActionsProvider } from '@weasel-js/routing/react';
+import type { Action } from '@weasel-js/routing';
 import type { IconRef } from '@weasel-js/icons';
 import type { PrefGroup, PrefLeaf } from '@weasel-js/prefs';
 import { icon } from '../../../icons.gen';

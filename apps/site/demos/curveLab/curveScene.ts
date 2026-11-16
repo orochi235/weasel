@@ -1,4 +1,5 @@
-import { asNodeId, IDENTITY_POSE_COMPOSITION, type NodeId, type Scene, solid, type Stroke, type UseSceneOptions } from '@weasel-js/core';
+import { solid } from '@weasel-js/paint';
+import { asNodeId, IDENTITY_POSE_COMPOSITION, type NodeId, type Scene, type Stroke, type UseSceneOptions } from '@weasel-js/core';
 import {
   bezierCubic,
   bezierQuadratic,

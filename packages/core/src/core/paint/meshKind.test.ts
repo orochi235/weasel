@@ -1,11 +1,11 @@
 import { describe, it, expect } from 'vitest';
 import { createGLRecorder, recordedPaintTextures } from '@weasel-js/renderer/testing/glRecorder';
-import { getPaintKind, listGradientKinds, listPaintKinds, switchGradientKind } from 'core/paint/paintKinds';
+import { getPaintKind, listGradientKinds, listPaintKinds, switchGradientKind } from '@weasel-js/paint-kinds';
 import { fillInPoseFrame, fillToBoundsFrame } from '@weasel-js/renderer';
 import { seedMeshPatch, isMeshGradientPaint, meshGradientXml, MESH_GRADIENT_KIND } from '@weasel-js/renderer/mesh';
 import type { MeshGradientPaint } from '@weasel-js/renderer/mesh';
 import { MESH_BAKE_SIZE } from '@weasel-js/renderer/mesh';
-import 'core/paint/registerMesh';
+import '@weasel-js/paint-kinds/mesh';
 import type { Paint } from '@weasel-js/paint';
 import type { PaintBindContext } from '@weasel-js/renderer';
 

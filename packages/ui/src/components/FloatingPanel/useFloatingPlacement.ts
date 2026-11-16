@@ -1,4 +1,4 @@
-import { startThresholdDrag, type ThresholdDragHandle } from '@weasel-js/core';
+import { startThresholdDrag, type ThresholdDragHandle } from '@weasel-js/routing';
 import { useKitSetting, useLatest } from '@weasel-js/react';
 import {
   type CSSProperties,

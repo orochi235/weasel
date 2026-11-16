@@ -4,7 +4,7 @@
  */
 import { describe, expect, it } from 'vitest';
 import fc from 'fast-check';
-import { linearScale } from '@weasel-js/plot/scales';
+import { linearScale } from '@weasel-js/scales';
 import { runs, tally, timeoutFor, uniform } from '../../pbt.fixture';
 import { bandBounds, edgeReach, mergeBand, normalizeBands, scaleEdges, splitBands, toggleLock, unitEdges, type Band } from './bands';
 

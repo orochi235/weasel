@@ -11,4 +11,4 @@
  *
  * @packageDocumentation
  */
-export { dlog, isDebugEnabled } from '@weasel-js/core';
+export { dlog, isDebugEnabled } from '@weasel-js/routing';

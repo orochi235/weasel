@@ -1,4 +1,4 @@
-import { getAlpha01, toHex8, withAlpha01 } from '@weasel-js/core';
+import { getAlpha01, toHex8, withAlpha01 } from '@weasel-js/paint';
 import { isBuiltinPref, type PrefLeaf, type PrefNumber, prefLeafValue } from '@weasel-js/prefs';
 import { qty } from '@weasel-js/quantity';
 import { prefFieldProps } from '@weasel-js/ui/components/Prefs';

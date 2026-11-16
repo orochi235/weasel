@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { type ClockHandle, createClock, createClockRegistry } from '@weasel-js/clock';
 import { useClockLoop } from '@weasel-js/clock/react';
-import { SceneCanvas, asNodeId, defineAction, effectivePose, solid, useLatest, useScene } from '@weasel-js/core';
+import { solid } from '@weasel-js/paint';
+import { SceneCanvas, asNodeId, defineAction, effectivePose, useLatest, useScene } from '@weasel-js/core';
 import type { Action, Dims, FeaturePreset, ImmediateParams, RectPose, RenderLayer, Scene } from '@weasel-js/core';
 import {
   registerTexture,

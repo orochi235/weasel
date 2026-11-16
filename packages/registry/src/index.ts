@@ -25,3 +25,4 @@ export type { Mixed } from './mixed';
 export { codePointFloor, isOneChar } from './codePoint';
 export { matchQuery, hasTag, foldText } from './match';
 export type { Findable, QueryMatch } from './match';
+export { escapeAttr, escapeText, holdsNonXmlChar } from './xmlEscape';

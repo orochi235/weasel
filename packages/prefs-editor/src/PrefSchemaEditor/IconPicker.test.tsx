@@ -1,7 +1,7 @@
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it, vi } from 'vitest';
-import { IconRegistryProvider } from '@weasel-js/core';
+import { IconRegistryProvider } from '@weasel-js/icons/react';
 import type { IconTable } from '@weasel-js/icons';
 import { IconPicker } from './IconPicker';
 

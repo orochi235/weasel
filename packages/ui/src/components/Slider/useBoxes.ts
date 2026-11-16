@@ -1,5 +1,5 @@
 import { useLayoutEffect, useState } from 'react';
-import { useLatest } from '@weasel-js/core';
+import { useLatest } from '@weasel-js/react';
 
 /** An element's laid-out size in CSS px. */
 export interface BoxSize {

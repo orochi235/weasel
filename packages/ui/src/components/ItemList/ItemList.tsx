@@ -11,7 +11,7 @@ import {
   type ReactNode,
   type Ref,
 } from 'react';
-import { isInControlWithin } from '@weasel-js/core';
+import { isInControlWithin } from '@weasel-js/gestures';
 import { assignRef } from '@weasel-js/react';
 import { dropSide } from '@weasel-js/ui-input';
 import { LIST_ROLES, listMode } from '@weasel-js/ui-logic';

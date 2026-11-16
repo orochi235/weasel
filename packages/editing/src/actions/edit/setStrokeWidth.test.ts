@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { setStrokeWidthAction } from './setStrokeWidth';
 import type { NodeId } from '@weasel-js/core';
 import type { Stroke } from '@weasel-js/paint';
-import { strokeOf } from '@weasel-js/core';
+import { strokeOf } from '@weasel-js/paint';
 import { makeScene, makeCtx, ongoingInvoker } from './paintActionTestUtils';
 
 const getInvoker = () => ongoingInvoker(setStrokeWidthAction);

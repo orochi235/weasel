@@ -1,4 +1,4 @@
-import { getAlpha01, toHex8, withAlpha01 } from '@weasel-js/core';
+import { getAlpha01, toHex8, withAlpha01 } from '@weasel-js/paint';
 import {
   type PrefBoundReader,
   type PrefLeaf,

@@ -7,7 +7,7 @@ import { paintGradientTrack } from '@weasel-js/ui/paint-gradient-track';
 import { SceneCanvas, hexToRgba, polygonFromPoints, useScene } from '@weasel-js/core';
 import type { Dims, RenderLayer } from '@weasel-js/core';
 import type { DrawCommand } from '@weasel-js/core/renderer';
-import { linearScale } from '@weasel-js/plot/scales';
+import { linearScale } from '@weasel-js/scales';
 import s from './PerceptualColorSlidersDemo.module.css';
 import { DemoStage } from './DemoStage';
 

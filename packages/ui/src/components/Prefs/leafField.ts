@@ -1,4 +1,4 @@
-import { INHERIT, type Paint } from '@weasel-js/core';
+import { INHERIT, type Paint } from '@weasel-js/paint';
 import { withDrafts, type ParamsSurface } from './commitPolicy';
 import { prefFieldProps, type PrefFieldState } from './prefField';
 import type { PropertyControlProps } from '../Properties/PropertyField';

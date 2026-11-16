@@ -1,8 +1,7 @@
 /** Writing the attributes and elements a node keeps for declared namespaces. */
 
-import { getOwn } from '@weasel-js/registry';
+import { getOwn, escapeAttr, escapeText } from '@weasel-js/registry';
 
-import { escapeAttr, escapeText } from './xmlEscape';
 import type { NamespaceMeta, NamespacedElement } from './types';
 
 function namespacedElementXml(prefix: string, localName: string, el: NamespacedElement): string {

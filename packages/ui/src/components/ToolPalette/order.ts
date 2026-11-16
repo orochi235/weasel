@@ -1,4 +1,4 @@
-import type { Tool } from '@weasel-js/core';
+import type { Tool } from '@weasel-js/routing';
 import { byRank } from '../../byRank';
 
 const MISC = 'misc';

@@ -1,6 +1,7 @@
 # @weasel-js/ui
 
-UI chrome primitives for weasel apps (properties panel, etc.)
+UI chrome primitives for weasel apps (properties panel, etc.), with no dependency on a weasel canvas. The
+components bound to one, such as `SelectionPanel` and `Rulers`, are `@weasel-js/ui-canvas`.
 
 Part of [weasel](https://github.com/orochi235/weasel), a domain-agnostic
 scene-graph engine for React. See the
@@ -36,13 +37,13 @@ Both stylesheets are required: component styles ship as one bundled file, and re
 family shares one: `PrefsForm` and `PrefsDialog` come from `components/Prefs`, and `PropertyPanel`, `PropertyField`
 and `PropertyRow` from `components/Properties`.
 
-Components that draw glyphs (`Transport`'s play and pause buttons, `COLOR_MODE_OPTIONS`, the paint and stroke rows of
-`SelectionPanel`, tool palettes) look them up by name in the icon registry. Mount one at the app's root; `kitIcons`
-holds core's, the shapes' and ui's tables (`@weasel-js/ui/icons` has ui's alone):
+Components that draw glyphs (`Transport`'s play and pause buttons, `COLOR_MODE_OPTIONS`, a paint field's kind bar,
+tool palettes) look them up by name in the icon registry. Mount one at the app's root; `kitIcons`, from
+`@weasel-js/ui-canvas`, holds every kit table (`@weasel-js/ui/icons` has ui's alone):
 
 ```tsx
-import { IconRegistryProvider } from '@weasel-js/core';
-import { kitIcons } from '@weasel-js/ui/kit-icons';
+import { IconRegistryProvider } from '@weasel-js/icons/react';
+import { kitIcons } from '@weasel-js/ui-canvas/kit-icons';
 
 <IconRegistryProvider icons={kitIcons}><App /></IconRegistryProvider>
 ```
@@ -52,7 +53,7 @@ trims the tables to the glyphs an app uses is in
 [icons](https://github.com/orochi235/weasel/blob/main/docs/icons.md).
 
 A `Slider` or `BandEditor` that maps values onto its track non-linearly takes a
-scale from `@weasel-js/plot/scales`: `<Slider scale={logScale} … />`. `Plot2D`'s
+scale from `@weasel-js/scales`: `<Slider scale={logScale} … />`. `Plot2D`'s
 generated ticks and the `Timeline` ruler's come from the same scales, and a
 custom `TickSettings.format` receives their `TickFormatCtx`.
 

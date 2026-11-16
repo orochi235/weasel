@@ -1,4 +1,5 @@
-import { type ActionTunings, asNodeId, createScene, ellipsePath, polygonFromPoints, type PolygonPath, type RectPose, solid, useLatest, pathNode } from '@weasel-js/core';
+import { solid } from '@weasel-js/paint';
+import { type ActionTunings, asNodeId, createScene, ellipsePath, polygonFromPoints, type PolygonPath, type RectPose, useLatest, pathNode } from '@weasel-js/core';
 import { kneadPreset, useKneadTool, pathsPreset } from '@weasel-js/path-tools';
 import {
   type ConfigOf,

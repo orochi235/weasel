@@ -26,6 +26,7 @@ export function ChartPageStrip({ scene, pages, theme }: { scene: ChartScene; pag
         className="wc-pages"
         aria-label="Pages"
         pages={pages.placed}
+        labelOf={pageName}
         current={pages.current}
         onSelect={pages.goTo}
         onRename={pages.rename}

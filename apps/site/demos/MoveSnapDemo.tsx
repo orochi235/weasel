@@ -1,5 +1,6 @@
 import { useMemo } from 'react';
-import { asNodeId, SceneCanvas, solid, useDepSource, useScene, type Fill } from '@weasel-js/core';
+import { solid } from '@weasel-js/paint';
+import { asNodeId, SceneCanvas, useDepSource, useScene, type Fill } from '@weasel-js/core';
 import { DemoStage } from './DemoStage';
 import { movePreset, pickPreset, useSelection, snapToContainer, snapBackOrDelete } from '@weasel-js/editing';
 

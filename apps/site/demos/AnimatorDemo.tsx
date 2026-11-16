@@ -1,7 +1,8 @@
 import { useEffect, useReducer, useRef, useState } from 'react';
 import { createTarget, type AnimationKind, type HoldHandle } from '@weasel-js/animator';
 import { useAnimator } from '@weasel-js/animator/react';
-import { DrawCanvas, solid, type Dims } from '@weasel-js/core';
+import { solid } from '@weasel-js/paint';
+import { DrawCanvas, type Dims } from '@weasel-js/core';
 import { Button } from '@weasel-js/ui/components/Button';
 import { SegmentedBar } from '@weasel-js/ui/components/Segmented';
 import s from './AnimatorDemo.module.css';

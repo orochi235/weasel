@@ -3,7 +3,7 @@ import '@weasel-js/labkit/styles.css';
 
 import { createRoot, type Root } from 'react-dom/client';
 import { StrictMode } from 'react';
-import { IconRegistryProvider } from '@weasel-js/core';
+import { IconRegistryProvider } from '@weasel-js/icons/react';
 import icons from 'virtual:weasel-icons';
 import { App } from './App';
 

@@ -3,7 +3,7 @@
  * emitted as a `<path>`, even shapes that started as `<rect>` etc.
  */
 
-import { escapeAttr, escapeText, holdsNonXmlChar } from './xmlEscape';
+import { escapeAttr, escapeText, holdsNonXmlChar } from '@weasel-js/registry';
 import type { Path } from '@weasel-js/core';
 import { isSolidPaint } from '@weasel-js/core';
 import { metaAttrList, metaAttrsXml, metaElementsXml } from './metaXml';

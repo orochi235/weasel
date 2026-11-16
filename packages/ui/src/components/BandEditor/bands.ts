@@ -1,5 +1,5 @@
 import type { Quantity } from '@weasel-js/quantity';
-import type { ContinuousScaleFactory } from '@weasel-js/plot/scales';
+import type { ContinuousScaleFactory } from '@weasel-js/scales';
 import { clamp01 } from '@weasel-js/geom';
 import { unitScale } from './scale';
 

@@ -1,4 +1,5 @@
-import { asNodeId, createScene, ellipsePath, type Path, type RectPose, solid } from '@weasel-js/core';
+import { solid } from '@weasel-js/paint';
+import { asNodeId, createScene, ellipsePath, type Path, type RectPose } from '@weasel-js/core';
 import { useShapeBuilderTool, pathsPreset } from '@weasel-js/path-tools';
 import {
   type ConfigOf,

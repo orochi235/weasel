@@ -9,8 +9,9 @@
  * `texture` paint has no vector form and exports as nothing, with a warning.
  */
 
-import { escapeAttr } from './xmlEscape';
-import { tileGeometry, type TileShape } from '@weasel-js/core/patterns-builtin';
+import { escapeAttr } from '@weasel-js/registry';
+import { tileGeometry } from '@weasel-js/core/patterns-builtin';
+import { tileShapeXml } from '@weasel-js/paint-kinds';
 import {
   isImagePatternPaint, isTileKind, isTilePaint, tileSpecOf,
   type ImagePatternPaint, type Paint, type PatternPaint, type PatternPlacement,
@@ -20,7 +21,6 @@ import { collectElementsByTag } from './elements';
 import { imageHref } from './readImage';
 import { exportedHref } from './bitmapHref';
 import { applyMatrix, formatMatrix, isIdentity, parseTransform, trimNumber } from './transform';
-import { RAD_TO_DEG } from '@weasel-js/geom';
 
 /** Collected pattern definitions, keyed by element id. */
 export type PatternTable = Map<string, Paint>;
@@ -33,7 +33,7 @@ export function patternXml(id: string, paint: PatternPaint, onWarn?: (m: string)
   }
   const spec = tileSpecOf(paint);
   const geometry = tileGeometry(spec);
-  const body = geometry.shapes.map(shapeXml).join('');
+  const body = geometry.shapes.map(tileShapeXml).join('');
   const attrs = [
     ...patternBoxAttrs(id, geometry.size, geometry.size, paint),
     `data-weasel-tile="${escapeAttr(JSON.stringify(spec))}"`,
@@ -74,52 +74,6 @@ function patternBoxAttrs(id: string, width: number, height: number, paint: Patte
     attrs.push(`x="${trimNumber(origin.x)}"`, `y="${trimNumber(origin.y)}"`);
   }
   return attrs;
-}
-
-/**
- * A single tile as a standalone `<svg>` document, sized to its own extent,
- * for UI that shows a tile outside a document, such as a picker swatch.
- */
-export function tilePreviewSvg(spec: TilePatternSpec, background?: string): string {
-  const geometry = tileGeometry(spec);
-  const s = trimNumber(geometry.size);
-  const bg = background
-    ? `<rect width="${s}" height="${s}" fill="${escapeAttr(background)}"/>`
-    : '';
-  return `<svg xmlns="http://www.w3.org/2000/svg" width="${s}" height="${s}" `
-    + `viewBox="0 0 ${s} ${s}">${bg}${geometry.shapes.map(shapeXml).join('')}</svg>`;
-}
-
-/** `tilePreviewSvg` packed as a `url(...)` value for CSS `background-image`. */
-export function tilePreviewCssUrl(spec: TilePatternSpec, background?: string): string {
-  return `url("data:image/svg+xml,${encodeURIComponent(tilePreviewSvg(spec, background))}")`;
-}
-
-function shapeXml(shape: TileShape): string {
-  switch (shape.kind) {
-    case 'line':
-      return `<line x1="${trimNumber(shape.x1)}" y1="${trimNumber(shape.y1)}" `
-        + `x2="${trimNumber(shape.x2)}" y2="${trimNumber(shape.y2)}" `
-        + `stroke="${escapeAttr(shape.color)}" stroke-width="${trimNumber(shape.width)}"/>`;
-    case 'circle':
-      return `<circle cx="${trimNumber(shape.cx)}" cy="${trimNumber(shape.cy)}" `
-        + `r="${trimNumber(shape.r)}" fill="${escapeAttr(shape.color)}"/>`;
-    case 'ellipse': {
-      const deg = shape.rotation * RAD_TO_DEG;
-      const transform = deg === 0
-        ? ''
-        : ` transform="rotate(${trimNumber(deg)} ${trimNumber(shape.cx)} ${trimNumber(shape.cy)})"`;
-      return `<ellipse cx="${trimNumber(shape.cx)}" cy="${trimNumber(shape.cy)}" `
-        + `rx="${trimNumber(shape.rx)}" ry="${trimNumber(shape.ry)}" `
-        + `fill="${escapeAttr(shape.color)}"${transform}/>`;
-    }
-    case 'rect':
-      return `<rect x="${trimNumber(shape.x)}" y="${trimNumber(shape.y)}" `
-        + `width="${trimNumber(shape.width)}" height="${trimNumber(shape.height)}" `
-        + `fill="${escapeAttr(shape.color)}"/>`;
-    default:
-      return '';
-  }
 }
 
 /** Read every `<pattern>` in the document back into pattern paints. */

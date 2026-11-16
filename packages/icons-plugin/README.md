@@ -24,7 +24,7 @@ export default defineConfig({ plugins: [weaselIcons.vite({ mode: 'app' })] });
 
 ```tsx
 /// <reference types="@weasel-js/icons-plugin/virtual" />
-import { IconRegistryProvider } from '@weasel-js/core';
+import { IconRegistryProvider } from '@weasel-js/icons/react';
 import icons from 'virtual:weasel-icons';
 
 const VARIANTS = { all: () => import('virtual:weasel-icons/all') };

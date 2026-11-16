@@ -1,6 +1,6 @@
 import { describe, it, expect, vi } from 'vitest';
 import { screen, fireEvent, within } from '@testing-library/react';
-import type { Paint } from '@weasel-js/core';
+import type { Paint } from '@weasel-js/paint';
 import { FillStrokeSwatch, type FillStrokeSwatchProps } from './FillStrokeSwatch';
 import { createRecentColorsStore } from '../RecentColors/recentColors';
 import { RecentColorsProvider } from '../RecentColors/RecentColorsProvider';

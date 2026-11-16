@@ -1,5 +1,5 @@
 import { useRef } from 'react';
-import { getAlpha01, toHex8, withAlpha01 } from '@weasel-js/core';
+import { getAlpha01, toHex8, withAlpha01 } from '@weasel-js/paint';
 import { ColorField } from '../ColorField';
 import { PaintField } from '../PaintField';
 import { PaintInput } from '../PaintInput';

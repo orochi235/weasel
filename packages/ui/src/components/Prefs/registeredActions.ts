@@ -1,5 +1,6 @@
 import { useSyncExternalStore } from 'react';
-import { actionItems, useActionsRegistry, type Action, type ActionItem } from '@weasel-js/core';
+import { actionItems, type Action, type ActionItem } from '@weasel-js/routing';
+import { useActionsRegistry } from '@weasel-js/routing/react';
 import type { IconSpec } from '@weasel-js/icons';
 import { getOwn } from '@weasel-js/registry';
 import { resolveOrder, type PrefAction, type PrefActions, type PrefLeaf } from '@weasel-js/prefs';

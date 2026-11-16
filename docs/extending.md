@@ -486,7 +486,8 @@ here stops matching it.
 
 <!-- snippet: tests/consumers/gem-extension/src/gem.ts#gem-kind -->
 ```ts
-import { defineTool, solid, type InsertNodeFactory, type NodeShapeEntry, type RectPose } from '@weasel-js/core';
+import { solid } from '@weasel-js/paint';
+import { defineTool, type InsertNodeFactory, type NodeShapeEntry, type RectPose } from '@weasel-js/core';
 import { pathFromD } from '@weasel-js/geom';
 import { INSERT_DRAG_MODS, INSERT_REPOSITION_BINDING } from '@weasel-js/editing';
 
@@ -584,9 +585,10 @@ selection between them, and keep it in the scene so undo restores it:
 
 <!-- snippet: tests/consumers/gem-extension/src/editor.tsx#gem-editor -->
 ```tsx
-import { IconRegistryProvider, SceneCanvas, type FeaturePreset, type RectPose, type Scene, type SceneCanvasHit, type ToolsApi } from '@weasel-js/core';
-import { SelectionPanel } from '@weasel-js/ui';
-import { kitIcons } from '@weasel-js/ui/kit-icons';
+import { IconRegistryProvider } from '@weasel-js/icons/react';
+import { SceneCanvas, type FeaturePreset, type RectPose, type Scene, type SceneCanvasHit, type ToolsApi } from '@weasel-js/core';
+import { SelectionPanel } from '@weasel-js/ui-canvas';
+import { kitIcons } from '@weasel-js/ui-canvas/kit-icons';
 import { gemFeature } from './index.js';
 import { drawPreset, useSelection } from '@weasel-js/editing';
 
@@ -728,9 +730,10 @@ Declare the dependencies and the function that reads them:
 
 ```ts
 import {
-  createScene, linePath, strokeOf,
+  createScene, linePath,
   type DerivePathFn, type RectPose,
 } from '@weasel-js/core';
+import { strokeOf } from '@weasel-js/paint';
 
 const center = (p: RectPose) => ({ x: p.x + p.width / 2, y: p.y + p.height / 2 });
 

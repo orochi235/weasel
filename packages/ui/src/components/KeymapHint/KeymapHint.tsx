@@ -1,5 +1,5 @@
 import { useId } from 'react';
-import { useOpenKeymap } from '@weasel-js/core';
+import { useOpenKeymap } from '@weasel-js/routing/react';
 import { ShortcutKeys } from '../Keycaps/ShortcutKeys';
 import s from './KeymapHint.module.css';
 

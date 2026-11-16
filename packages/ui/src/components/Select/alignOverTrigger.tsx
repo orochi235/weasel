@@ -1,5 +1,5 @@
 import { useEffect, useLayoutEffect, useRef, type RefObject } from 'react';
-import { LONG_PRESS_MS, pastDragThreshold } from '@weasel-js/core';
+import { LONG_PRESS_MS, pastDragThreshold } from '@weasel-js/gestures';
 import { useKitSetting } from '@weasel-js/react';
 import s from './Select.module.css';
 

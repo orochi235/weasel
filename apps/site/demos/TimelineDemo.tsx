@@ -1,11 +1,11 @@
 import { useEffect, useMemo, useState } from 'react';
+import { solid } from '@weasel-js/paint';
 import {
   asNodeId,
   lerpOklab,
   oklabToSrgbU8,
   SceneCanvas,
   sceneClipTargets,
-  solid,
   srgbU8ToOklab,
   useScene,
 } from '@weasel-js/core';

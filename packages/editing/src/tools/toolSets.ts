@@ -13,7 +13,7 @@ export const SHAPE_TOOLS: ToolSet<KitToolId> = toolSet('shape', kitShapeKindsOf(
  *  named for the presentation group its tools sit in. */
 export const BUILTIN_TOOL_GROUPS: readonly ToolSet<KitToolId>[] = [SELECT_TOOLS, VIEW_TOOLS, SHAPE_TOOLS];
 
-/** The natural order of palette groups, which `ToolPalette` follows unless given its own. */
+/** The natural order of palette groups, as `ToolPalette`'s `groupOrder`. */
 export const TOOL_GROUP_ORDER: readonly string[] = BUILTIN_TOOL_GROUPS.map((set) => set.id);
 
 /** Every kit tool, in palette order: {@link BUILTIN_TOOL_GROUPS} one after another, then any shape kind in no

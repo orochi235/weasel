@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { Action } from '@weasel-js/routing';
-import { solid, strokeOf } from '@weasel-js/core';
+import { solid, strokeOf } from '@weasel-js/paint';
 import { makeCtx, makeScene, ongoingInvoker } from './paintActionTestUtils';
 import { setFillAction } from './setFill';
 import { setFillOpacityAction } from './setFillOpacity';

@@ -1,5 +1,5 @@
 import { createContext, useContext, useRef, type KeyboardEvent as ReactKeyboardEvent, type ReactElement, type ReactNode } from 'react';
-import { useHandleDrag } from '@weasel-js/core';
+import { useHandleDrag } from '@weasel-js/routing/react';
 import { arrowMove } from '@weasel-js/quantity';
 import s from './handleOverlay.module.css';
 

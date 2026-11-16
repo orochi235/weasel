@@ -1,4 +1,4 @@
-import { linearScale, type LinearScale } from '@weasel-js/plot/scales';
+import { linearScale, type LinearScale } from '@weasel-js/scales';
 import type { Span } from '@weasel-js/ui-input';
 import { spanPlace, spanShare } from '@weasel-js/ui-input';
 

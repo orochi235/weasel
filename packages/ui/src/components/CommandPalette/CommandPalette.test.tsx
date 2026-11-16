@@ -2,7 +2,8 @@ import { act, cleanup, fireEvent, screen, within } from '@testing-library/react'
 import { renderWithIcons } from '../../testing/withIcons';
 import { Profiler, useState } from 'react';
 import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
-import { ActionDisabledReason, ActionsProvider, useAction } from '@weasel-js/core';
+import { ActionDisabledReason } from '@weasel-js/routing';
+import { ActionsProvider, useAction } from '@weasel-js/routing/react';
 import { CommandPalette } from './CommandPalette';
 
 afterEach(cleanup);

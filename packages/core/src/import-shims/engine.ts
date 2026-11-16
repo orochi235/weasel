@@ -166,7 +166,6 @@ export { stepAngles } from '../domains/snap/stepAngles';
 export type { AngleCandidate, AngleCollect, Locus, SceneCanvasSnap, SnapAnchors, SnapCollect, SnapFrame, SnapGesture, SnapMark, SnapMarks, SnapProbeAt, SnapReadoutStyle, SnapSide, SnapSource, SourceCandidate } from '../domains/snap/types';
 export { aimRectOf, aimSpace2d, isRectAim, rectAim, viewForAim } from '../domains/viewports/aim';
 export type { AimOutline, AimPoint, AimRect, AimSpace, RectAim, ViewAim } from '../domains/viewports/aim';
-export { IconRegistryProvider } from '../iconRegistry/IconRegistryProvider';
 export type { CoreIconName } from '../icons.gen';
 export { commitOps, commitSelectionOps, defaultCommitAdapter, operandMethods, selectCommitted } from '../interactions/actions/defaultCommitAdapter';
 export type { CommitSelection, CommitSelectionMethods } from '../interactions/actions/defaultCommitAdapter';

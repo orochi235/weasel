@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from '@weasel-js/forge';
 import { useMemo, useRef, useState, type PointerEvent as ReactPointerEvent } from 'react';
-import { startThresholdDrag } from '@weasel-js/core';
+import { startThresholdDrag } from '@weasel-js/routing';
 import { Badge } from '@weasel-js/ui/components/Badge';
 import { Checkbox } from '@weasel-js/ui/components/Checkbox';
 import { Input } from '@weasel-js/ui/components/Input';

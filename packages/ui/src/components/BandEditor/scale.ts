@@ -1,5 +1,5 @@
 import { clamp01 } from '@weasel-js/geom';
-import type { ContinuousScale, ContinuousScaleFactory } from '@weasel-js/plot/scales';
+import type { ContinuousScale, ContinuousScaleFactory } from '@weasel-js/scales';
 
 /** `scale` from `[min, max]` onto the track, `[0, 1]`. */
 export function unitScale(scale: ContinuousScaleFactory, min: number, max: number): ContinuousScale {

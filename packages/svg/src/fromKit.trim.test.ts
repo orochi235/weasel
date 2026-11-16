@@ -1,6 +1,11 @@
 import { describe, expect, it } from 'vitest';
+import { solid } from '@weasel-js/paint';
 import {
-  boundsOfPath, pathFromD, solid, type Path, type PolygonPath, type Stroke,
+  boundsOfPath,
+  pathFromD,
+  type Path,
+  type PolygonPath,
+  type Stroke,
 } from '@weasel-js/core';
 import {
   transformPoint, lengthAtCurve, pathLengthTable, pointAtLength, polygonFromPoints, polylineFromPoints, poseFrameOf,

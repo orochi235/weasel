@@ -1,4 +1,5 @@
-import { type ActionTunings, asNodeId, createScene, pathFromD, type PolygonPath, type RectPose, solid, withCorner, pathNode } from '@weasel-js/core';
+import { solid } from '@weasel-js/paint';
+import { type ActionTunings, asNodeId, createScene, pathFromD, type PolygonPath, type RectPose, withCorner, pathNode } from '@weasel-js/core';
 import {
   type ConfigOf,
   defineInstrument,

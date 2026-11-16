@@ -1,21 +1,6 @@
 import { useCallback, useState, type ReactElement } from 'react';
-import {
-  getAlpha01,
-  isPatternPaint,
-  paintAlpha,
-  paintWithAlpha,
-  solid,
-  switchGradientKind,
-  toHex8,
-  usePaintKind,
-  usePaintKinds,
-  withAlpha01,
-  INHERIT,
-  type Inherit,
-  type Paint,
-  type PaintKind,
-  type PaintKindEntry,
-} from '@weasel-js/core';
+import { switchGradientKind, type PaintKind, type PaintKindEntry } from '@weasel-js/paint-kinds';
+import { usePaintKind, usePaintKinds } from '@weasel-js/paint-kinds/react';
 import { Icon } from '../Icon/Icon';
 import type { IconSpec } from '@weasel-js/icons';
 import { icon } from '../../icons.gen';
@@ -24,7 +9,7 @@ import { OpacityRange } from '../OpacityRange/OpacityRange';
 import { GradientEditor } from '../GradientEditor';
 import { paintKindEditor } from './paintKindEditor';
 import { PatternPicker } from '../PatternPicker';
-import { paintPreviewCss, solidColorOf } from '@weasel-js/paint';
+import { paintPreviewCss, solidColorOf, getAlpha01, paintAlpha, paintWithAlpha, solid, toHex8, withAlpha01, isPatternPaint, INHERIT, type Inherit, type Paint } from '@weasel-js/paint';
 import { SegmentedBar, type SegmentedBarItem } from '../Segmented';
 import s from './PaintInput.module.css';
 
@@ -88,8 +73,8 @@ function segmentItems(
   firstOf: ReadonlyMap<string, PaintKindEntry>, allowNone: boolean, allowInherit: boolean,
 ): readonly SegmentedBarItem<PaintKind>[] {
   return [
-    ...(allowNone ? [segment(NONE, 'None', icon('core:paintNone'))] : []),
-    ...(allowInherit ? [segment(INHERIT, 'Inherit', icon('core:paintInherit'))] : []),
+    ...(allowNone ? [segment(NONE, 'None', icon('paint-kinds:none'))] : []),
+    ...(allowInherit ? [segment(INHERIT, 'Inherit', icon('paint-kinds:inherit'))] : []),
     ...[...firstOf].map(([id, entry]) => segment(
       id, entry.family?.label ?? entry.label, entry.family ? entry.family.icon : entry.icon,
     )),

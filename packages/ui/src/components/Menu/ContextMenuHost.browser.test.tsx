@@ -5,7 +5,8 @@ import { act, cleanup, fireEvent, render, screen } from '@testing-library/react'
 import { useState } from 'react';
 import { afterEach, expect, it } from 'vitest';
 import { page } from 'vitest/browser';
-import { ActionDisabledReason, ActionsProvider, useAction, useMenuHost, useMenus, type MenuDef, type MenuHost } from '@weasel-js/core';
+import { ActionDisabledReason, type MenuDef, type MenuHost } from '@weasel-js/routing';
+import { ActionsProvider, useAction, useMenuHost, useMenus } from '@weasel-js/routing/react';
 import { OverlayPortalProvider } from '@weasel-js/ui/portal-host';
 import { ContextMenuHost } from '@weasel-js/ui/components/Menu';
 import { lineContrast } from '@weasel-js/ui/testing/paintedContrast';

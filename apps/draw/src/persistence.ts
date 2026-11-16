@@ -4,8 +4,8 @@ import { nodeSpecsFromSnapshot as sharedNodeSpecs } from '@weasel-js/editor';
 import type {
   AddNodeSpec, PagesDoc, SceneRegistry, SavedScene, SpecsFromSerializedOptions, SystemLayerSpec,
 } from '@weasel-js/core';
-import { decodeSnapshot, solid } from '@weasel-js/core';
-
+import { solid } from '@weasel-js/paint';
+import { decodeSnapshot } from '@weasel-js/core';
 
 /** The `Paint` discriminant values as they were written before 2026-10-12,
  *  when the tag sat under `fill` rather than `kind`. A string under `fill`

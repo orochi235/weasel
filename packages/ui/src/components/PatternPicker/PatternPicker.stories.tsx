@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from '@weasel-js/forge';
 import { useState } from 'react';
-import type { PatternPaint } from '@weasel-js/core';
+import type { PatternPaint } from '@weasel-js/paint';
 import { PatternPicker, seedPattern } from '@weasel-js/ui/components/PatternPicker';
 
 const meta: Meta<typeof PatternPicker> = {

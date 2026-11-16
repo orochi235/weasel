@@ -1,6 +1,6 @@
 /** Writing `<text>` and its `<tspan>` runs. */
 
-import { escapeAttr } from './xmlEscape';
+import { escapeAttr } from '@weasel-js/registry';
 import type { FontRequest } from '@weasel-js/core';
 import type { StyledRun, TextPoseLayout } from '@weasel-js/text';
 import { isSolidPaint, resolveScreenLength } from '@weasel-js/core';

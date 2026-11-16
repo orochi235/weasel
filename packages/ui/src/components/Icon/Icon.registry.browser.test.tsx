@@ -1,6 +1,6 @@
 import { cleanup, render } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { IconRegistryProvider } from '@weasel-js/core';
+import { IconRegistryProvider } from '@weasel-js/icons/react';
 import { icons as uiIcons } from '@weasel-js/ui/icons';
 import { Icon } from '@weasel-js/ui/components/Icon';
 import { icon } from '@weasel-js/ui/testing/icon';

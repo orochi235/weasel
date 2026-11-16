@@ -1,5 +1,5 @@
 import { useLayoutEffect, useRef, type ReactNode } from 'react';
-import { scrolledPlaceOf } from '@weasel-js/core';
+import { scrolledPlaceOf } from '@weasel-js/routing';
 import { ItemList, type ItemListRow } from '../ItemList';
 import s from './HistoryList.module.css';
 

@@ -1,5 +1,6 @@
 import { useState } from 'react';
-import { asNodeId, SceneCanvas, solid, useScene, viewPreset } from '@weasel-js/core';
+import { solid } from '@weasel-js/paint';
+import { asNodeId, SceneCanvas, useScene, viewPreset } from '@weasel-js/core';
 import type { Fill, Stroke, View } from '@weasel-js/core';
 import num from '@weasel-js/theme/numeric.module.css';
 import { Button } from '@weasel-js/ui/components/Button';

@@ -1,4 +1,4 @@
-import type { Op } from '@weasel-js/core';
+import type { Op } from '@weasel-js/history';
 import type { ControlPoint } from './CurveEditor';
 
 /** The adapter contract for {@link createSetCurveOp}. Consumers wire this

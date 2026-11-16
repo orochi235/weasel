@@ -1,4 +1,5 @@
-import { useLastOperation, useLastOperationStore, type LastOperationStore } from '@weasel-js/core';
+import { useLastOperation, useLastOperationStore } from '@weasel-js/routing/react';
+import type { LastOperationStore } from '@weasel-js/routing';
 import { Button, CLOSE_BUTTON_PROPS } from '../Button';
 import { PrefsForm } from '../Prefs/PrefsForm';
 import s from './LastOperationPanel.module.css';

@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from '@weasel-js/forge';
-import { createToolOptionValues, defineTool, shareToolOptions, type ToolOptions } from '@weasel-js/core';
+import { createToolOptionValues, defineTool, shareToolOptions, type ToolOptions } from '@weasel-js/routing';
 import { pref, PX_UNIT } from '@weasel-js/prefs';
 import { useState } from 'react';
 import { ActiveToolOptionsBar } from '@weasel-js/ui/components/ToolOptionsBar';

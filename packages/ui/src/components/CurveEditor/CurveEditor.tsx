@@ -25,7 +25,7 @@ import {
 } from './createFunctionLayer';
 import { LayeredCurveEditor } from './LayeredCurveEditor';
 import { FunctionLayer } from './FunctionLayer';
-import { useLatest } from '@weasel-js/core';
+import { useLatest } from '@weasel-js/react';
 import type { HoldProps } from '../Disabled';
 import { ownHold } from '../Disabled/controlHold';
 

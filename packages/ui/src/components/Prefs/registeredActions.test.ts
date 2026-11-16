@@ -1,4 +1,4 @@
-import { actionItems, type Action } from '@weasel-js/core';
+import { actionItems, type Action } from '@weasel-js/routing';
 import type { PrefActions } from '@weasel-js/prefs';
 import { describe, expect, it } from 'vitest';
 import { actionsLeafActions } from './registeredActions';

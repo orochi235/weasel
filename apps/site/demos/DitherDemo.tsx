@@ -1,7 +1,15 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
+import { solid } from '@weasel-js/paint';
 import {
-  OUTPUT_GRID_KEY, SceneCanvas, solid, useScene,
-  type DrawCommand, type LayerGroup, type RectPose, type RenderLayer, type View, viewPreset,
+  OUTPUT_GRID_KEY,
+  SceneCanvas,
+  useScene,
+  type DrawCommand,
+  type LayerGroup,
+  type RectPose,
+  type RenderLayer,
+  type View,
+  viewPreset,
 } from '@weasel-js/core';
 import {
   dither, gridOnScreen, protectTexture,

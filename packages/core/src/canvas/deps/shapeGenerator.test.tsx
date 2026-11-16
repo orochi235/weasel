@@ -11,7 +11,7 @@ import type { SelectionApi } from '@weasel-js/routing';
 import { useEditAnchorsDepSource } from './editAnchors';
 import { inferredNodeProperties, defaultNodeProperties } from '../SceneCanvas/defaultNodeProperties';
 import { shapeGeneratorOf } from 'domains/paths/shapeGenerator';
-import { solid } from '../../util/paint';
+import { solid } from '@weasel-js/paint';
 
 type Node = { id: string; pose: { x: number; y: number; width: number; height: number }; data: Record<string, unknown> };
 

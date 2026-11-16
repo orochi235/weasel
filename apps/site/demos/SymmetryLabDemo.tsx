@@ -1,4 +1,5 @@
-import { asNodeId, boundsOfPath, createScene, ellipsePath, pathFromD, solid, type NodeId, type RectPose, pathNode } from '@weasel-js/core';
+import { solid } from '@weasel-js/paint';
+import { asNodeId, boundsOfPath, createScene, ellipsePath, pathFromD, type NodeId, type RectPose, pathNode } from '@weasel-js/core';
 import { pathsPreset, usePenTool, usePencilTool } from '@weasel-js/path-tools';
 import {
   type ConfigOf, defineInstrument, f, Lab, type RenderContext, type SceneTrialState, TrialSceneCanvas,

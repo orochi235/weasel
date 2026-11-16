@@ -1,4 +1,5 @@
-import { ANCHORS_GROUP, PATH_GROUP, type ActionTunings, asNodeId, createScene, PathBuilder, type PolygonPath, type RectPose, solid, pathNode } from '@weasel-js/core';
+import { solid } from '@weasel-js/paint';
+import { ANCHORS_GROUP, PATH_GROUP, type ActionTunings, asNodeId, createScene, PathBuilder, type PolygonPath, type RectPose, pathNode } from '@weasel-js/core';
 import { bridgePreset, DEFAULT_BRIDGE_TENSION, pathsPreset, usePenTool } from '@weasel-js/path-tools';
 import {
   type ConfigOf,

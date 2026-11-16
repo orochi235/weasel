@@ -303,6 +303,9 @@ await writeFile(
     // its bundled stylesheet and hud its data-URI font atlas.
     `import * as ui from '@weasel-js/ui';\n` +
     `import '@weasel-js/ui/style.css';\n` +
+    // ui-canvas is ui's canvas-bound half, a Vite library build with its own stylesheet.
+    `import * as uiCanvas from '@weasel-js/ui-canvas';\n` +
+    `import '@weasel-js/ui-canvas/style.css';\n` +
     // Core's canvas size and debug HUDs are CSS modules too.
     `import '@weasel-js/core/style.css';\n` +
     // The `./components/*` wildcard subpath. check:manifests cannot cover this:
@@ -311,7 +314,7 @@ await writeFile(
     `import * as toolPalette from '@weasel-js/ui/components/ToolPalette';\n` +
     `import * as prefs from '@weasel-js/ui/components/Prefs';\n` +
     `import * as callout from '@weasel-js/ui/components/Callout';\n` +
-    `import * as selectionPanel from '@weasel-js/ui/components/inspector/SelectionPanel';\n` +
+    `import * as selectionPanel from '@weasel-js/ui-canvas/components/inspector/SelectionPanel';\n` +
     `import * as icon from '@weasel-js/ui/components/Icon';\n` +
     `import * as appearance from '@weasel-js/ui/appearance';\n` +
     `import * as portalHost from '@weasel-js/ui/portal-host';\n` +
@@ -340,7 +343,7 @@ await writeFile(
     `const mods = { weasel, geom, booleans, curves, tessellate, warp, history, menu, select, svg, theme, ui, hud,\n` +
     `  guides, devtools, measure, prefsEditor, prefsEdit, rig, editor,\n` +
     `  toolPalette, prefs, callout, icon, appearance, portalHost, paintGradientTrack, kitSettings, floating, roving,\n` +
-    `  toastSub, selectionPanel };\n` +
+    `  toastSub, selectionPanel, uiCanvas };\n` +
     `for (const [n, m] of Object.entries(mods)) {\n` +
     `  if (!m || typeof m !== 'object') throw new Error('empty namespace: ' + n);\n` +
     `  if (Object.keys(m).length === 0) throw new Error('no exports: ' + n);\n` +

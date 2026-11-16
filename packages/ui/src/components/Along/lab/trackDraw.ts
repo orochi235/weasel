@@ -1,4 +1,4 @@
-import type { DrawCommand } from '@weasel-js/core/renderer';
+import type { DrawCommand } from '@weasel-js/renderer';
 import { circlePath, polylineFromPoints, type Point } from '@weasel-js/geom';
 import { HANDLE, onCircle, type HandleId, type HandlePoints, type TrackMeasure } from './trackGeometry';
 

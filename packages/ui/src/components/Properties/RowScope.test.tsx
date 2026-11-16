@@ -1,7 +1,7 @@
 import { fireEvent, render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import { Disabled } from '../Disabled';
-import { LabeledRow } from '../inspector/SelectionPanel/LabeledRow';
+import { LabeledRow } from '../PanelCells/LabeledRow';
 import { PropertyRow } from './PropertyRow';
 import { RowScope, usePropertyRow } from './rowScope';
 

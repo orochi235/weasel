@@ -1,15 +1,15 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { startThresholdDrag } from '@weasel-js/routing';
+import { useHandleDrag } from '@weasel-js/routing/react';
 import {
   clientToCanvas,
   dragPointOf,
   useDragGesture,
   useDragRect,
   useDragRadial,
-  useHandleDrag,
   useDragHandle,
   useDropZone,
   useKeyModifiers,
-  startThresholdDrag,
 } from '@weasel-js/core';
 import type { ModifierState } from '@weasel-js/core';
 import num from '@weasel-js/theme/numeric.module.css';

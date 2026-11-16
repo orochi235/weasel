@@ -1,0 +1,81 @@
+{
+  "name": "@weasel-js/ui-canvas",
+  "version": "1.19.1",
+  "description": "The ui components bound to a weasel canvas: the selection inspector and its anchor and character fields, scene-bound layer lists and gradient handles, rulers, the plot data panel, and every kit icon table at once.",
+  "weasel": {
+    "tier": "plugin"
+  },
+  "license": "MIT",
+  "type": "module",
+  "sideEffects": [
+    "*.css"
+  ],
+  "main": "./dist/index.js",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./components/inspector/*": {
+      "types": "./dist/components/inspector/*/index.d.ts",
+      "import": "./dist/components/inspector/*/index.js"
+    },
+    "./components/*": {
+      "types": "./dist/components/*/index.d.ts",
+      "import": "./dist/components/*/index.js"
+    },
+    "./kit-icons": {
+      "types": "./dist/kitIcons.d.ts",
+      "import": "./dist/kitIcons.js"
+    },
+    "./style.css": "./dist/style.css",
+    "./package.json": "./package.json"
+  },
+  "dependencies": {
+    "@weasel-js/icons": "1.19.1",
+    "@weasel-js/paint": "1.19.1",
+    "@weasel-js/paint-kinds": "1.19.1",
+    "@weasel-js/plot": "1.19.1",
+    "@weasel-js/prefs": "1.19.1",
+    "@weasel-js/react": "1.19.1",
+    "@weasel-js/registry": "1.19.1",
+    "@weasel-js/renderer": "1.19.1",
+    "@weasel-js/routing": "1.19.1",
+    "@weasel-js/text": "1.19.1",
+    "@weasel-js/ui": "1.19.1"
+  },
+  "peerDependencies": {
+    "@weasel-js/core": "1.19.1",
+    "@weasel-js/editing": "1.19.1",
+    "react": ">=18",
+    "react-dom": ">=18"
+  },
+  "author": "orochi235",
+  "homepage": "https://orochi235.github.io/weasel/",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/orochi235/weasel.git",
+    "directory": "packages/ui-canvas"
+  },
+  "bugs": {
+    "url": "https://github.com/orochi235/weasel/issues"
+  },
+  "engines": {
+    "node": ">=24"
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
+  "scripts": {
+    "build": "vite build && tsc -p tsconfig.build.json && node ../../scripts/dts-extensions.mjs dist && node ../labkit/scripts/build-css.mjs --if-built",
+    "test": "node ../../scripts/package-test.mjs"
+  },
+  "publishConfig": {
+    "access": "public",
+    "provenance": true
+  }
+}

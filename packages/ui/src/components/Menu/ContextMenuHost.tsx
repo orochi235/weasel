@@ -1,7 +1,8 @@
 import { useCallback, useEffect, useId, useLayoutEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react';
 import { createPortal } from 'react-dom';
 import { createMenuController, withLinks, type MenuController, type Rect } from '@weasel-js/menu';
-import { useMenuHost, type MenuHost, type OpenMenu } from '@weasel-js/core';
+import { useMenuHost } from '@weasel-js/routing/react';
+import type { MenuHost, OpenMenu } from '@weasel-js/routing';
 import { MenuPanel } from './MenuPanel';
 import { useDismiss } from './useDismiss';
 import { useMenuPortal } from './useMenuPortal';

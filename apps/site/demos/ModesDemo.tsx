@@ -1,5 +1,6 @@
 import { useCallback, useMemo, useRef, useSyncExternalStore } from 'react';
-import { asNodeId, SceneCanvas, useScene, solid, createModeDecorationLayer, createWorkspaceTintLayer, type DrawCommand, WeaselProvider, textCommandFromRuns } from '@weasel-js/core';
+import { solid } from '@weasel-js/paint';
+import { asNodeId, SceneCanvas, useScene, createModeDecorationLayer, createWorkspaceTintLayer, type DrawCommand, WeaselProvider, textCommandFromRuns } from '@weasel-js/core';
 import {
   ALL_TAGS,
   IMPLICIT_TAGS,

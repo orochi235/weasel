@@ -1,6 +1,7 @@
 import { describe, it, expect, vi } from 'vitest';
 import { screen, fireEvent, act } from '@testing-library/react';
-import { ActionsProvider, DepRegistryProvider, useDepSource, useDepRegistry, type DepRegistry, type DepName, type Action } from '@weasel-js/core';
+import { ActionsProvider, DepRegistryProvider, useDepSource, useDepRegistry } from '@weasel-js/routing/react';
+import type { DepRegistry, DepName, Action } from '@weasel-js/routing';
 import type { IconRef } from '@weasel-js/icons';
 import { ActionBar } from './ActionBar';
 import { icon } from '../../icons.gen';

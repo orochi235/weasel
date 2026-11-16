@@ -1,12 +1,6 @@
 import { useLayoutEffect, useReducer, useSyncExternalStore } from 'react';
-import {
-  buildDepsFromRequires,
-  eligibleNow,
-  evaluateActive,
-  evaluateEnabled,
-  useOptionalDepRegistry,
-  type ActionItem,
-} from '@weasel-js/core';
+import { buildDepsFromRequires, eligibleNow, evaluateActive, evaluateEnabled, type ActionItem } from '@weasel-js/routing';
+import { useOptionalDepRegistry } from '@weasel-js/routing/react';
 
 /** What chrome shows of one action: whether it can run, and whether it is on. */
 export interface ActionState {

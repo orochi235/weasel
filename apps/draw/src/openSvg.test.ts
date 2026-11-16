@@ -1,5 +1,6 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { asNodeId, createScene, pagesOf, solid, type NodeId, layoutPages } from '@weasel-js/core';
+import { solid } from '@weasel-js/paint';
+import { asNodeId, createScene, pagesOf, type NodeId, layoutPages } from '@weasel-js/core';
 import type { WeaselDrawData, WeaselDrawLayer, WeaselDrawPose } from './drawDocument';
 import { importSvgFile, importSvgText, openSvgFile, openSvgText, UnreadableSvgError } from './openSvg';
 import { toast } from '@weasel-js/ui/components/Toast';

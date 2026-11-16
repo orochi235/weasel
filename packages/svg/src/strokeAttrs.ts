@@ -1,6 +1,6 @@
 /** The paint, opacity, and stroke attributes every drawn element shares. */
 
-import { escapeAttr } from './xmlEscape';
+import { escapeAttr } from '@weasel-js/registry';
 import { isSolidPaint, type Stroke, type StrokeAlign } from '@weasel-js/core';
 import type { ScreenLength, SvgPaint, SvgStroke } from './types';
 import { trimNumber } from './transform';

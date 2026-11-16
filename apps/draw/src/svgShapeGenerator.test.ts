@@ -1,10 +1,10 @@
 import { describe, expect, it } from 'vitest';
 import { parseSvg } from '@weasel-js/svg';
+import { solid } from '@weasel-js/paint';
 import {
   IDENTITY_POSE_COMPOSITION,
   regenerateShape,
   shapeGeneratorOf,
-  solid,
   starPath,
   type ShapeGenerator,
   layoutPages,

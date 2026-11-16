@@ -1,6 +1,6 @@
 import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 import { render } from '@testing-library/react';
-import { linearScale } from '@weasel-js/plot/scales';
+import { linearScale } from '@weasel-js/scales';
 import * as ui from '../../index';
 import { Ruler, RulerMark } from './Ruler';
 

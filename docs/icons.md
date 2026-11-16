@@ -23,7 +23,7 @@ A bare name means the calling package's own namespace and nothing else; there is
 qualified name is a key of the `IconName` interface in `@weasel-js/icons`, which each package's
 generated `icons.gen.ts` extends, so a package can write another namespace's names only when it
 depends on that package. Core cannot name a ui glyph, so every glyph core names is drawn in core,
-including the stroke, paint and text-styling glyphs its properties use.
+including the stroke and text-styling glyphs its properties use.
 
 A string that arrives at run time, such as a prefs schema loaded from JSON, becomes a ref through
 `toIconRef(value)`, which returns `undefined` for anything not qualified.
@@ -37,12 +37,13 @@ glyph is explicit, through the registry's `override(ref, glyph)`.
 
 | Namespace | Owner | Definitions | Holds |
 |---|---|---|---|
-| `core` | `@weasel-js/core` | `packages/core/icons/` | The hand and the viewer's own tools, history, clipboard, the booleans core's nodes name, path and anchor commands, text styling, stroke and paint |
+| `core` | `@weasel-js/core` | `packages/core/icons/` | The hand and the viewer's own tools, history, clipboard, the booleans core's nodes name, path and anchor commands, text styling, and stroke |
 | `editing` | `@weasel-js/editing` | `packages/editing/icons/` | The tools editing offers (select, lasso, the shapes, the eyedropper), its edit and arrange commands, align, and the rest of the Pathfinder |
 | `ui` | `@weasel-js/ui` | `packages/ui/icons/` | Chrome, state, playback, arrows, key legends, marks, shapes and the rest of the component set |
 | `path-tools` | `@weasel-js/path-tools` | `packages/path-tools/icons/` | The path tools and their commands |
 | `rig` | `@weasel-js/rig` | `packages/rig/icons/` | The bone and weight tools |
 | `kernel3d` | `@weasel-js/kernel3d` | `packages/kernel3d/icons/` | The 3D camera's moves: orbit, dolly, turn, pitch, rise and sink, and home |
+| `paint-kinds` | `@weasel-js/paint-kinds` | `packages/paint-kinds/icons/` | The paint kinds' swatches, and the none and inherit paint states |
 | `shape` | `@weasel-js/icons` | `packages/icons/icons/` | Plain geometry: polygons, round shapes, stars |
 | `diagram` | `@weasel-js/diagram` | `packages/diagram/icons/` | The container, org chart, network, BPMN, mind map, UML, and ERD stencils |
 | `draw` | `apps/draw` | `apps/draw/icons/` | WeaselDraw's own actions |
@@ -223,16 +224,16 @@ batch.
 
 `<Icon name={ref} />` from `@weasel-js/ui` draws the glyph the nearest registry holds, with
 `filled` and `mark` for the shaded and badged forms. `resolveIcon(source)` draws a ref or a string
-read from data, and `actionIcon(ref)` an action's icon. Outside ui, `useIconGlyph(ref)` from core
+read from data, and `actionIcon(ref)` an action's icon. Outside ui, `useIconGlyph(ref)` from `@weasel-js/icons/react`
 returns the glyph itself.
 
-A name the registry lacks draws `core:unknown`'s question mark and warns once in development, and
+A name the registry lacks draws `ui:unknown`'s question mark and warns once in development, and
 draws nothing in production. Development is `isDev()` from `@weasel-js/registry` (re-exported by
 `@weasel-js/react`), which reads `process.env.NODE_ENV` inside a `try`, so a production bundle
 folds it to `false`.
 
-A unit test that draws a glyph mounts a registry holding `kitIcons`, core's and ui's tables
-(`@weasel-js/ui/kit-icons`): `renderWithIcons` in `packages/ui/src/testing/withIcons.tsx` in
+A unit test that draws a glyph mounts a registry holding every kit table: `renderWithIcons` in
+`packages/ui/src/testing/withIcons.tsx`, or in ui-canvas's own `src/testing/withIcons.tsx`, in
 place of `render`, or its `withIcons` as the `wrapper` of `renderSettled`. A test drawing another
 table's glyphs too passes it as `icons`, or builds its wrapper with `iconsWrapper`: apps/draw's and
 the site's tests import theirs from each app's `testIcons.ts`. jsdom cannot show
@@ -245,7 +246,7 @@ that a glyph drew, so a check of the drawing is a `*.browser.test.tsx`.
 not a Reflectable: it keeps its own layer per table and per override for each name, so it does not
 appear on the `Reflection` surface other kit registries share.
 
-Core supplies the React side:
+`@weasel-js/icons/react` supplies the React side:
 
 | Mount | Registry |
 |---|---|
@@ -267,7 +268,7 @@ const ICON_VARIANTS = { all: () => import('virtual:weasel-icons/all') };
 ```
 
 Without the build plugin, an app passes the tables themselves, each imported as `icons` from
-`@weasel-js/core/icons`, `@weasel-js/ui/icons`, `@weasel-js/path-tools/icons`, `@weasel-js/rig/icons`, `@weasel-js/kernel3d/icons`, or `@weasel-js/diagram/icons`. The list is a
+`@weasel-js/core/icons`, `@weasel-js/ui/icons`, `@weasel-js/paint-kinds/icons`, `@weasel-js/path-tools/icons`, `@weasel-js/rig/icons`, `@weasel-js/kernel3d/icons`, or `@weasel-js/diagram/icons`. The list is a
 module constant: the provider releases and registers its tables again whenever the array is a new one.
 
 ```tsx
@@ -281,7 +282,7 @@ const ICONS = [coreIcons, uiIcons];
 </IconRegistryProvider>
 ```
 
-`kitIcons` from `@weasel-js/ui/kit-icons` is that list of core's and ui's tables, whole.
+`kitIcons` from `@weasel-js/ui-canvas/kit-icons` is that list of core's, editing's, the shapes', the paint kinds' and ui's tables, whole.
 
 A component that lists glyphs rather than naming them asks for a variant by name:
 `useIconVariant('all')` runs the app's loader once, adds its tables, and returns
@@ -372,7 +373,7 @@ Forge registers `kitIcons` whole, plus whatever `FrameSetup.icons` passes
 | Check | Fails when |
 |---|---|
 | `apps/draw/src/iconCoverage.test.tsx` | A tool or action on draw's canvas names a glyph `virtual:weasel-icons` does not serve |
-| `packages/core/src/icons.refs.test.ts` | An annotated literal in core's source names something outside core's table. `meshKind.ts` writes `/* @icon */ 'core:paintMesh'` by hand, because its self-contained bundle cannot import `icon()` |
+| `packages/paint-kinds/src/icons.refs.test.ts` | An annotated literal in paint-kinds' source names something outside its table. `meshKind.ts` writes `/* @icon */ 'paint-kinds:mesh'` by hand, because its lazily loaded chunk must not import `icon()` |
 | `packages/icons/scripts/gen-icons.test.ts` | A file outside `icons.gen` calls `scopedIcon`, or hands `toIconRef` a literal |
 | `scripts/smoke-consumer-icons.mjs` (part of `test:smoke:consumer`) | The packed `@weasel-js/icons-plugin` does not load with only its declared dependencies installed, or a consumer app built with it ships a glyph it does not name outside a variant chunk, or misses one it names through its own `icon()` or through a kit `dist` |
 | `scripts/smoke-consumer-bundle.mjs`, its typecheck phase | Against the packed `.d.ts`, a consumer's own `icon()` rejects `core:undo` or `ui:close`, or accepts `core:nope`: core's or ui's `IconName` augmentation did not ship |

@@ -44,10 +44,4 @@ export const TOOLS = {
     <g stroke-linecap="butt" stroke-linejoin="miter">
       <path d="M 4 5 L 16 5 M 10 5 L 10 16 M 7 16 L 13 16" stroke-linecap="round"/>
     </g>`,
-  unknown: `
-    <g stroke-linecap="butt" stroke-linejoin="miter">
-      <circle cx="10" cy="10" r="7.5"/>
-      <path d="M 7.5 8 Q 7.5 5.5 10 5.5 Q 12.5 5.5 12.5 8 Q 12.5 9.5 10 11 L 10 12.5" stroke-linecap="round"/>
-      <circle cx="10" cy="14.5" r="0.6" fill="currentColor" stroke="none"/>
-    </g>`,
 };

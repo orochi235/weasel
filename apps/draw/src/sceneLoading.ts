@@ -1,3 +1,4 @@
+import { solid, strokeOf } from '@weasel-js/paint';
 import {
   type AddNodeSpec,
   asNodeId,
@@ -8,8 +9,6 @@ import {
   rectPath,
   type SavedScene,
   type SerializedDoc,
-  solid,
-  strokeOf
 } from '@weasel-js/core';
 import { docFromSnapshot, readStored } from '@weasel-js/editor';
 import { BACKGROUND_KEY } from './docBackground';

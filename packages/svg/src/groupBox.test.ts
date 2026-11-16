@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { boundsOfPath, solid } from '@weasel-js/core';
+import { solid } from '@weasel-js/paint';
+import { boundsOfPath } from '@weasel-js/core';
 import { svgNodesFromKit, type SvgKitTree, type SvgKitTreeNode } from './fromKit';
 import { parseSvg } from './parse';
 import { serializeSvg } from './serialize';

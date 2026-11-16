@@ -14,7 +14,8 @@
 
 import type { BooleanShapeOp, Fill, NodeClip, Page, PlacedPage } from '@weasel-js/core';
 import type { TextStyle } from '@weasel-js/text';
-import { pagesBounds, resolveFill, resolveStroke, withAlpha01 } from '@weasel-js/core';
+import { withAlpha01 } from '@weasel-js/paint';
+import { pagesBounds, resolveFill, resolveStroke } from '@weasel-js/core';
 import {
   svgImageFromKit,
   svgLeafFromKit,

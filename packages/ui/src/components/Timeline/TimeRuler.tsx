@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useRef, type PointerEvent as ReactPointerEvent, type ReactElement } from 'react';
-import { openPointerSession, useLatest, type PointerSession } from '@weasel-js/core';
+import { openPointerSession, type PointerSession } from '@weasel-js/routing';
+import { useLatest } from '@weasel-js/react';
 import s from './Timeline.module.css';
-import { decimalsOf, linearScale, type TickSet } from '@weasel-js/plot/scales';
+import { decimalsOf, linearScale, type TickSet } from '@weasel-js/scales';
 import { sliderAt, spanMap, spanPan, spanZoom, wheelPixels } from '@weasel-js/ui-input';
 import { Ruler, RulerMark, type RulerSpacing } from '../Ruler';
 import { MIN_SPAN_MS, TICK_SPACING_PX, type TimeWindow } from './timeScale';

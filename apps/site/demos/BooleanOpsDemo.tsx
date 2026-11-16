@@ -1,5 +1,6 @@
 import { useCallback } from 'react';
-import { circlePath, pathDivide, pathExclude, pathIntersect, pathSubtract, pathUnion, polygonFromPoints, SceneCanvas, solid, useScene, WeaselProvider, pathNode } from '@weasel-js/core';
+import { solid } from '@weasel-js/paint';
+import { circlePath, pathDivide, pathExclude, pathIntersect, pathSubtract, pathUnion, polygonFromPoints, SceneCanvas, useScene, WeaselProvider, pathNode } from '@weasel-js/core';
 import type { Fill, PolygonPath, RectPose } from '@weasel-js/core';
 import { ActionBar } from '@weasel-js/ui/components/ActionBar';
 import { Button } from '@weasel-js/ui/components/Button';

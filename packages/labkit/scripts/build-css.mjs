@@ -7,8 +7,8 @@
 //      URLs rewritten to the dist/fonts/ copies.
 //   1. @weasel-js/theme tokens: the `--wzl-*` custom properties every weasel-ui
 //      rule reads. Omit them and those rules paint with nothing.
-//   2. @weasel-js/core and @weasel-js/ui: the CSS modules behind the canvas's
-//      debug HUDs and the components labkit passes through. Scoped class names
+//   2. @weasel-js/core, @weasel-js/ui and @weasel-js/ui-canvas: the CSS modules behind
+//      the canvas's debug HUDs and the components labkit passes through. Scoped class names
 //      are minted by each package's own build, so each comes from its `dist` —
 //      the build whose JS the consumer runs. Take it from anywhere else and the
 //      names stop matching.
@@ -33,7 +33,7 @@ const sheet = join(pkgRoot, 'dist/styles.css');
 const { resolve } = createRequire(import.meta.url);
 const inputs = cssInputs(packages, resolve);
 
-// core's and ui's builds end by calling this with --if-built, so a rebuild of
+// core's, ui's and ui-canvas's builds end by calling this with --if-built, so a rebuild of
 // either alone cannot leave the sheet behind the CSS it was copied from. In a
 // full build they run before labkit has a dist, or before each other's, and
 // the last of those builds makes the sheet.
@@ -62,6 +62,7 @@ const layers = [
   readFileSync(inputs.tokens, 'utf8'),
   readFileSync(inputs.core, 'utf8'),
   readFileSync(inputs.ui, 'utf8'),
+  readFileSync(inputs.uiCanvas, 'utf8'),
   readFileSync(inputs.windease ?? resolve('windease/styles.css'), 'utf8'),
   labkit.replace(facesImport, ''),
 ];

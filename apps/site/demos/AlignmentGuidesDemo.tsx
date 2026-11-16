@@ -1,4 +1,5 @@
-import { asNodeId, SceneCanvas, useScene, rectPath, solid, viewPreset, WeaselProvider } from '@weasel-js/core';
+import { solid } from '@weasel-js/paint';
+import { asNodeId, SceneCanvas, useScene, rectPath, viewPreset, WeaselProvider } from '@weasel-js/core';
 import { alignmentSnapSource, spacingSnapSource } from '@weasel-js/guides';
 import type { Fill, Path, RectPose } from '@weasel-js/core';
 import { ToolPalette } from '@weasel-js/ui/components/ToolPalette';

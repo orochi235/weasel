@@ -1,6 +1,7 @@
 /** `kit:text`'s answers to picking and culling: its ink, its bounds, and its blank-node silhouette. */
 import { beforeEach, describe, expect, it } from 'vitest';
-import { findShapeBounds, findShapeInk, shapeCoversPoint, strokeOf, type SceneNode as Node } from '@weasel-js/core';
+import { strokeOf } from '@weasel-js/paint';
+import { findShapeBounds, findShapeInk, shapeCoversPoint, type SceneNode as Node } from '@weasel-js/core';
 import { _resetShapePaintersForTests } from 'canvas/NodeShape';
 import { withTextPainter } from '../testing/textPainter';
 

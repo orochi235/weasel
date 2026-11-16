@@ -1,4 +1,4 @@
-import type { OpenMenu } from '@weasel-js/core';
+import type { OpenMenu } from '@weasel-js/routing';
 import type { MenuEntry, MenuSide } from '@weasel-js/menu';
 
 /** `entries` as a menu open from `el`: placed on `side` of it (default below), flipping and aligning as `placeMenuUnder` does. */

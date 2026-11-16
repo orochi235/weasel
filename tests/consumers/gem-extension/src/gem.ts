@@ -1,5 +1,6 @@
 // #region gem-kind
-import { defineTool, solid, type InsertNodeFactory, type NodeShapeEntry, type RectPose } from '@weasel-js/core';
+import { solid } from '@weasel-js/paint';
+import { defineTool, type InsertNodeFactory, type NodeShapeEntry, type RectPose } from '@weasel-js/core';
 import { pathFromD } from '@weasel-js/geom';
 import { INSERT_DRAG_MODS, INSERT_REPOSITION_BINDING } from '@weasel-js/editing';
 

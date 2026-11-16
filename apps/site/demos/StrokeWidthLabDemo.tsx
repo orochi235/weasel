@@ -1,4 +1,5 @@
-import { boundsOfPath, createScene, type Path, PathBuilder, pathInWorld, type RectPose, type RenderLayer, type Scene, solid, type Stroke } from '@weasel-js/core';
+import { solid } from '@weasel-js/paint';
+import { boundsOfPath, createScene, type Path, PathBuilder, pathInWorld, type RectPose, type RenderLayer, type Scene, type Stroke } from '@weasel-js/core';
 import { useGirthTool, pathsPreset } from '@weasel-js/path-tools';
 import { strokeToPath } from '@weasel-js/stroke';
 import {

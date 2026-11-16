@@ -1,8 +1,9 @@
 import { vi } from 'vitest';
 import { fireEvent, screen } from '@testing-library/react';
-import { seedMeshPatch, type MeshGradientPaint } from '@weasel-js/core/mesh';
+import { seedMeshPatch, type MeshGradientPaint } from '@weasel-js/renderer/mesh';
 import { describeHold, unlessDisabled } from '../Disabled/testing/holdCases.fixtures';
 import { MeshEditor } from './MeshEditor';
+import '@weasel-js/paint-kinds/mesh';
 
 const MESH = seedMeshPatch('#ff0000ff') as MeshGradientPaint;
 

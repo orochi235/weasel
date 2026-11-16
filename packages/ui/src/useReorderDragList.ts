@@ -1,9 +1,9 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import type { ReactNode, PointerEvent as ReactPointerEvent, RefCallback } from 'react';
-import { isInControlWithin, startThresholdDrag, useLatest, type ThresholdDragHandle } from '@weasel-js/core';
+import { startThresholdDrag, type ThresholdDragHandle } from '@weasel-js/routing';
 import { gapByMidpoint, isNoopDrop, nudgeGap } from '@weasel-js/ui-input';
-import { useKitSetting } from '@weasel-js/react';
-import { modKey } from '@weasel-js/gestures';
+import { useKitSetting, useLatest } from '@weasel-js/react';
+import { modKey, isInControlWithin } from '@weasel-js/gestures';
 import type { SelectModifiers, SelectPolicy } from '@weasel-js/select';
 
 /** One row in a reorderable list. */

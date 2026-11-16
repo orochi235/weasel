@@ -1,4 +1,5 @@
-import { ellipsePath, rectPath, SceneCanvas, solid, starPath, useScene, WeaselProvider, type Path, pathNode } from '@weasel-js/core';
+import { solid } from '@weasel-js/paint';
+import { ellipsePath, rectPath, SceneCanvas, starPath, useScene, WeaselProvider, type Path, pathNode } from '@weasel-js/core';
 import { useSliceTool } from '@weasel-js/path-tools';
 import { ToolPalette } from '@weasel-js/ui/components/ToolPalette';
 import { DemoStage } from './DemoStage';

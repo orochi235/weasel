@@ -8,11 +8,9 @@ export {
 export type {
   OptionedTool, ToolOptionPrefsStore, ToolOptions, ToolOptionsPrefsSpec, ToolOptionShare, ToolOptionStep, ToolOptionValues,
 } from '@weasel-js/routing';
-export { tuneToolOptions, useToolOptionParams, useToolOptionValues, useToolOptionTunings } from './toolOptions';
 export type { ToolSet, ToolSetOptions, ToolEntry } from '@weasel-js/routing';
 export type { ToolDef } from './overlayBinding';
 export { useTools } from './overlayBinding';
-export { useScopedTools } from './toolsScope';
 export type { UseToolsOptions, ToolsApi } from './overlayBinding';
 export { useKeybindings } from './useKeybindings';
 export type { UseKeybindingsOptions } from './useKeybindings';

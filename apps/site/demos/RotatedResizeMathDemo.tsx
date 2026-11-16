@@ -5,18 +5,18 @@
  * the right one.
  */
 import { useCallback, useMemo, useRef, useState } from 'react';
+import { useHandleDrag, type HandleDragEnd, type HandleDragPoint } from '@weasel-js/routing/react';
 import {
   clientToCanvas,
   layoutBoxOf,
   pointInRotatedRect,
   rotatePoint,
-  useHandleDrag,
   useScene,
   cornerResizeHandles,
   hitCornerHandle,
   asNodeId,
 } from '@weasel-js/core';
-import type { HandleDragEnd, HandleDragPoint, ResizeAnchor } from '@weasel-js/core';
+import type { ResizeAnchor } from '@weasel-js/core';
 import {
   fixedCornerWorld, HANDLE, INITIAL_GREEN, INITIAL_ORANGE, INITIAL_PURPLE, INITIAL_TEAL,
   PANEL_IDS, PROJECTIONS, runResize, type PanelId, type Rect,

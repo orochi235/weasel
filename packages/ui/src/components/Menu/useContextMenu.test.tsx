@@ -1,7 +1,7 @@
 import { afterEach, expect, it } from 'vitest';
 import { pref } from '@weasel-js/prefs';
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
-import { ActionsProvider, useAction, useMenus } from '@weasel-js/core';
+import { ActionsProvider, useAction, useMenus } from '@weasel-js/routing/react';
 import { ContextMenuHost } from './ContextMenuHost';
 import { useContextMenu } from './useContextMenu';
 

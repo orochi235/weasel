@@ -1,5 +1,6 @@
 import { useState } from 'react';
-import { SceneCanvas, asNodeId, createScene, RIGID_POSE_COMPOSITION, solid } from '@weasel-js/core';
+import { solid } from '@weasel-js/paint';
+import { SceneCanvas, asNodeId, createScene, RIGID_POSE_COMPOSITION } from '@weasel-js/core';
 import type { Fill, GroupBoxData, RectPose, Stroke } from '@weasel-js/core';
 import { tileGrid } from '@weasel-js/guides';
 import { DemoStage } from './DemoStage';

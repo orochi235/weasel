@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react';
-import { SceneCanvas, asNodeId, useScene, solid, viewPreset } from '@weasel-js/core';
+import { solid } from '@weasel-js/paint';
+import { SceneCanvas, asNodeId, useScene, viewPreset } from '@weasel-js/core';
 import type { RectPose } from '@weasel-js/core';
 import { createTextPreset, type TextNodeData } from '@weasel-js/text-tools';
 import { useColorHex } from '@weasel-js/theme/react';

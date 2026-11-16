@@ -1,4 +1,5 @@
-import { IDENTITY_POSE_COMPOSITION, asNodeId, polygonFromPoints, SceneCanvas, solid, useScene } from '@weasel-js/core';
+import { solid } from '@weasel-js/paint';
+import { IDENTITY_POSE_COMPOSITION, asNodeId, polygonFromPoints, SceneCanvas, useScene } from '@weasel-js/core';
 import { gridSnapSource } from '@weasel-js/guides';
 import type { Fill, Path, Stroke } from '@weasel-js/core';
 import { DemoStage } from './DemoStage';

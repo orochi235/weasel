@@ -1,9 +1,7 @@
 import { describe, it, expect, vi } from 'vitest';
 import { STICKY_DEFAULTS, stickyData, stickyNodeFactory } from './stickyNode';
-import { solid } from '@weasel-js/core';
+import { solid } from '@weasel-js/paint';
 import { textEditJoin } from '../../editor/sceneTextDrafts';
-
-
 
 describe('stickyData', () => {
   it('is an empty text node on the default paper', () => {

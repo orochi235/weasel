@@ -1,9 +1,7 @@
 import type { Meta, StoryObj } from '@weasel-js/forge';
 import type { IconRef } from '@weasel-js/icons';
-import {
-  ActionsProvider,
-  type Action,
-} from '@weasel-js/core';
+import { ActionsProvider } from '@weasel-js/routing/react';
+import type { Action } from '@weasel-js/routing';
 import { ActionBar, type ActionBarOptions } from '@weasel-js/ui/components/ActionBar';
 import { icon } from '../../icons.gen';
 import { RegisterActions } from '@weasel-js/routing/testing/registerAction';

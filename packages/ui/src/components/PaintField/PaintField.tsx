@@ -3,10 +3,11 @@ import {
   Button as RACButton,
   DialogTrigger,
 } from 'react-aria-components';
-import { INHERIT, usePaintKind, type Inherit, type Paint, type PaintKind } from '@weasel-js/core';
+import { usePaintKind } from '@weasel-js/paint-kinds/react';
+import type { PaintKind } from '@weasel-js/paint-kinds';
 import type { PaintInherit } from '../PaintInput';
 import { useOverlayPortal, type OverlayPortalProps } from '../../overlays/portalHost';
-import { paintPreviewCss } from '@weasel-js/paint';
+import { paintPreviewCss, INHERIT, type Inherit, type Paint } from '@weasel-js/paint';
 import { PaintEditorPopover } from './PaintEditorPopover';
 import { ownPaint } from '../PaintInput/PaintInput';
 import { MIXED_HINT } from '../Field/mixedHint';

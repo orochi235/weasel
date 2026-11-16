@@ -1,4 +1,5 @@
-import { type ActionTunings, asNodeId, createScene, type RectPose, solid, useLatest, pathNode } from '@weasel-js/core';
+import { solid } from '@weasel-js/paint';
+import { type ActionTunings, asNodeId, createScene, type RectPose, useLatest, pathNode } from '@weasel-js/core';
 import { usePathEditMode, sandPreset, useSandTool, pathsPreset } from '@weasel-js/path-tools';
 import {
   type ConfigOf, defineInstrument, f, Lab, type RenderContext, type SceneTrialState,

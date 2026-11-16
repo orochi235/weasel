@@ -4,7 +4,7 @@ import {
   findNodeShape, findShapeBounds, findShapeSilhouette, registerNodeShape, shapeCoversPoint,
   _resetShapePaintersForTests, type NodeShapeEntry,
 } from 'canvas/NodeShape';
-import { solid, strokeOf } from '../../util/paint';
+import { solid, strokeOf } from '@weasel-js/paint';
 import type { Node } from 'core/scene/types';
 
 const TRIANGLE: Path = polygonFromPoints([{ x: 0, y: 0 }, { x: 100, y: 0 }, { x: 50, y: 80 }]);

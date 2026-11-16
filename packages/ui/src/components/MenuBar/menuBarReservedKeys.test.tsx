@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it } from 'vitest';
 import { act, cleanup, createEvent, fireEvent, render, screen } from '@testing-library/react';
-import { ActionsProvider } from '@weasel-js/core';
+import { ActionsProvider } from '@weasel-js/routing/react';
 import { browserReservedChord } from '@weasel-js/routing';
 import type { KeySpec } from '@weasel-js/gestures';
 import { pref, type PrefGroup } from '@weasel-js/prefs';

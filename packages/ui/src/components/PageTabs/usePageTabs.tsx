@@ -1,4 +1,3 @@
-import { pageName } from '@weasel-js/core';
 import { movedIndex, nudgeOf } from '@weasel-js/ui-input';
 import { useCallback, useLayoutEffect, useRef, useState, type KeyboardEvent, type ReactElement } from 'react';
 import type { Key } from 'react-aria-components';
@@ -44,7 +43,7 @@ export function usePageTabs<P extends PageTabItem>(props: PageTabsProps<P>, line
   const hold = useControlHold(props, { readonlyRole: false });
   const onRename = hold.refuses ? undefined : props.onRename;
   const onMove = hold.refuses ? undefined : props.onMove;
-  const labelOf = props.labelOf ?? pageName;
+  const { labelOf } = props;
   const [editing, setEditing] = useState<string | null>(null);
   const lastPress = useRef<{ id: string; at: number } | null>(null);
   /** The tab React Aria selected during the press under way, which the press must not report again. */

@@ -1,5 +1,5 @@
 import { useEffect, useRef, type CSSProperties, type ReactElement, type ReactNode } from 'react';
-import { sampleGradientStops, type GradStop, type GradientPaint, type Paint } from '@weasel-js/core';
+import { sampleGradientStops, type GradStop, type GradientPaint, type Paint } from '@weasel-js/paint';
 import { Slider, type Thumb } from '../Slider';
 import { paintGradientTrack } from '../Slider/paintGradientTrack';
 import { POSITION_FORMAT, StopEditor } from './StopEditor';

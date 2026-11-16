@@ -223,7 +223,7 @@ Owner tags, after the priority (2026-10-26):
 - **(P2) [maintainer] Tune anchor fields hands-on, with the maintainer driving.** First-draft behavior: the
   panel shows X and Y for any selection and handles only for a lone anchor, a typed handle mirrors
   on a smooth anchor, `+=`/`-=` offsets each anchor by its own amount, and draw shows it at the
-  top of Properties in points (`packages/ui/src/components/inspector/AnchorFields/`,
+  top of Properties in points (`packages/ui-canvas/src/components/inspector/AnchorFields/`,
   `packages/geom/src/paths/anchorFields.ts`, `apps/draw/src/RightSidebar.tsx`).
   Closes when the maintainer has driven anchor fields hands-on and the defaults and keys he picks are
   committed.
