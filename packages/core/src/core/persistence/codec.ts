@@ -6,6 +6,7 @@
  * an encoded one loaded, by mistake.
  */
 import { isRawWrapper, typedArrayReplacerWrapping, untagTypedArray } from '@weasel-js/geom';
+import { SnapshotShapeError } from '../scene/snapshotShape';
 
 declare const encodedOf: unique symbol;
 
@@ -53,8 +54,17 @@ export function encodeSnapshot<T>(value: T): Encoded<T> {
 export function decodeSnapshot<T>(value: Encoded<T>): T;
 export function decodeSnapshot(value: unknown): unknown;
 export function decodeSnapshot(value: unknown): unknown {
-  if (isRawWrapper(value)) return decodeWithin(value.__raw);
-  return untagTypedArray(value) ?? decodeWithin(value);
+  return decode(value, 0);
+}
+
+/** How deep a decoded snapshot may nest: far past any document's data, and well short of the call stack that the
+ *  readers after the decoder, each recursive, need for it. */
+const MAX_DEPTH = 1000;
+
+function decode(value: unknown, depth: number): unknown {
+  if (depth > MAX_DEPTH) throw new SnapshotShapeError(`Scene: malformed snapshot: it nests more than ${MAX_DEPTH} levels deep`);
+  if (isRawWrapper(value)) return decodeWithin(value.__raw, depth + 1);
+  return untagTypedArray(value) ?? decodeWithin(value, depth);
 }
 
 /** The snapshot `text` encodes. */
@@ -66,15 +76,15 @@ export function parseSnapshot(text: string): unknown {
 
 /** A copy of an array or plain object with everything it holds decoded, a path's legacy arrays made typed; anything
  *  else as it is. */
-function decodeWithin(value: unknown): unknown {
-  if (Array.isArray(value)) return value.map((v) => decodeSnapshot(v));
+function decodeWithin(value: unknown, depth: number): unknown {
+  if (Array.isArray(value)) return value.map((v) => decode(v, depth + 1));
   if (value === null || typeof value !== 'object' || ArrayBuffer.isView(value)) return value;
   const src = value as Record<string, unknown>;
   const out: Record<string, unknown> = {};
   for (const key of Object.keys(src)) {
     const v = src[key];
     const legacy = isPathKey(key) && !ArrayBuffer.isView(v) ? legacyNumbers(v) : undefined;
-    const next = legacy ? (key === 'commands' ? Uint8Array.from(legacy) : Float32Array.from(legacy)) : decodeSnapshot(v);
+    const next = legacy ? (key === 'commands' ? Uint8Array.from(legacy) : Float32Array.from(legacy)) : decode(v, depth + 1);
     // Assigned, an own `__proto__` as `JSON.parse` makes would set the copy's prototype instead.
     Object.defineProperty(out, key, { value: next, enumerable: true, writable: true, configurable: true });
   }

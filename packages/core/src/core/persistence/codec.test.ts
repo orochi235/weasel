@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { asPolygonPath, rectPath } from '@weasel-js/geom';
-import { createScene, sceneFromJSON } from '../scene';
+import { createScene, sceneFromJSON, SnapshotShapeError } from '../scene';
 import { decodeSnapshot, encodeSnapshot, parseSnapshot, stringifySnapshot } from './codec';
 
 type Pose = { x: number; y: number; width: number; height: number };
@@ -55,5 +55,13 @@ describe('the snapshot codec', () => {
   it('leaves a commands or coords field that holds no numbers as it is', () => {
     const data = { commands: ['undo', 'redo'], coords: { lat: 51.5, lng: -0.1 }, nested: { coords: [[1, 2], [3, 4]] } };
     expect(parseSnapshot(stringifySnapshot(data))).toEqual(data);
+  });
+
+  it('refuses a snapshot nested deeper than any document, rather than overflowing the stack', () => {
+    const nested = (depth: number) => `${'{"a":'.repeat(depth)}1${'}'.repeat(depth)}`;
+    expect(() => parseSnapshot(nested(900))).not.toThrow();
+    for (const text of [nested(50_000), `${'['.repeat(50_000)}${']'.repeat(50_000)}`]) {
+      expect(() => parseSnapshot(text)).toThrow(SnapshotShapeError);
+    }
   });
 });
