@@ -1,4 +1,5 @@
 import type { PrefGroup, PrefSection } from '@weasel-js/prefs';
+import { getOwn } from '@weasel-js/registry';
 import type { AppearanceProps } from '@weasel-js/ui/appearance';
 import { type HoldProps, holdScope } from '@weasel-js/ui/components/Disabled';
 import type { Motif } from '@weasel-js/ui/components/MotifFrame';
@@ -230,7 +231,7 @@ function sectionFold(
     collapsible: folds,
     twisty,
     defaultCollapsed: declared ?? startsFolded,
-    collapsed: collapsed ? (collapsed[key] ?? declared ?? startsFolded) : undefined,
+    collapsed: collapsed ? (getOwn(collapsed, key) ?? declared ?? startsFolded) : undefined,
     onCollapsedChange: onCollapse ? (next: boolean) => onCollapse(key, next) : undefined,
   });
 }

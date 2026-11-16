@@ -68,7 +68,7 @@ function installDepthWatch(): void {
   if (depthInstalled) return;
   depthInstalled = true;
   const g = globalThis as Global;
-  for (const name of ['WebGL2RenderingContext', 'WebGLRenderingContext']) {
+  for (const name of ['WebGL2RenderingContext', 'WebGLRenderingContext'] as const) {
     const proto = (g[name] as { prototype?: { enable?: (cap: number) => void } } | undefined)
       ?.prototype;
     const enable = proto?.enable;
@@ -141,7 +141,7 @@ function installGpuDepthWatch(): void {
   }
   const devProto = (g.GPUDevice as { prototype?: Record<string, unknown> } | undefined)?.prototype;
   if (!devProto) return;
-  for (const name of ['createRenderPipeline', 'createRenderPipelineAsync']) {
+  for (const name of ['createRenderPipeline', 'createRenderPipelineAsync'] as const) {
     const create = devProto[name];
     if (typeof create !== 'function') continue;
     const wrapped: Pipeline = function (this, descriptor) {

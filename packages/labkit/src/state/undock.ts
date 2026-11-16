@@ -1,3 +1,4 @@
+import { setOwn } from '@weasel-js/registry';
 import type { StateCreator } from 'zustand/vanilla';
 
 /** A sidebar section torn out of its trial, and where it went. */
@@ -38,7 +39,7 @@ export function dockPanel(
     if (panel.trialId === trialId && (sectionId === undefined || panel.sectionId === sectionId)) {
       continue;
     }
-    out[key] = panel;
+    setOwn(out, key, panel);
   }
   return out;
 }

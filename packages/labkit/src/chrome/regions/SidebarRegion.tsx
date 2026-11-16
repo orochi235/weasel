@@ -1,3 +1,4 @@
+import { getOwn } from '@weasel-js/registry';
 import type { AppearanceProps } from '@weasel-js/ui/appearance';
 import { SidebarPanel } from '@weasel-js/ui/components/SidebarPanel';
 import type { ReactNode, Ref } from 'react';
@@ -123,7 +124,7 @@ export function SidebarRegion<TCtx extends SidebarSlotContext = TrialChromeConte
             tint={item.tint}
             actions={item.actions}
             fill={item.fill}
-            collapsed={ctx.collapsedSections[c.id] ?? item.defaultCollapsed ?? false}
+            collapsed={getOwn(ctx.collapsedSections, c.id) ?? item.defaultCollapsed ?? false}
             onCollapsedChange={(next) => ctx.setSectionCollapsed(c.id, next)}
             trailing={undockButton(ctx, c.id, item)}
           >

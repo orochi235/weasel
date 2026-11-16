@@ -1,4 +1,5 @@
 import { copyText } from '@weasel-js/react';
+import { getOwn, setOwn } from '@weasel-js/registry';
 import { FpsMeter } from '@weasel-js/ui/components/FpsMeter';
 import { ScaleBar } from '@weasel-js/ui/components/ScaleBar';
 import { ZoomControl } from '@weasel-js/ui/components/ZoomControl';
@@ -78,7 +79,7 @@ function groupFolds(
   const prefix = `${id}/`;
   const out: Record<string, boolean> = {};
   for (const [key, value] of Object.entries(collapsedSections)) {
-    if (key.startsWith(prefix)) out[key.slice(prefix.length)] = value;
+    if (key.startsWith(prefix)) setOwn(out, key.slice(prefix.length), value);
   }
   return out;
 }
@@ -173,7 +174,7 @@ function trialActions(ctx: TrialChromeContext): TrialContribution[] {
 
 /** The key a tool's rail button shows: the one its instrument reports it answers to now, else the one it declares. */
 function shownKey(t: TrialTool, ctx: TrialChromeContext): TrialTool['shortcut'] {
-  const live = ctx.toolShortcuts?.[t.id];
+  const live = ctx.toolShortcuts && getOwn(ctx.toolShortcuts, t.id);
   return live ? live[0] : t.shortcut;
 }
 

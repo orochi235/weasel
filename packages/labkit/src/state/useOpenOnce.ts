@@ -1,4 +1,5 @@
 import { isDev } from '@weasel-js/react';
+import { getOwn } from '@weasel-js/registry';
 import { useEffect, useRef, useState } from 'react';
 
 interface Closable {
@@ -74,7 +75,7 @@ export function useWarnIgnoredChange(component: string, props: Record<string, un
   useEffect(() => {
     if (!isDev() || warned.current) return;
     for (const key of Object.keys(props)) {
-      if (Object.is(first.current[key], props[key])) continue;
+      if (Object.is(getOwn(first.current, key), props[key])) continue;
       warned.current = true;
       console.warn(
         `[labkit] ${component} reads \`${key}\` once, at mount; a later change is ignored`,

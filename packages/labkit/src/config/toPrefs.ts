@@ -35,7 +35,7 @@ function sectionOf(spec: SectionSpec): PrefSection {
 /** `out` with `extra`'s defined entries set on it. */
 function withExtras<T extends object>(out: T, extra: Record<string, unknown>): T {
   for (const [k, v] of Object.entries(extra))
-    if (v !== undefined) (out as Record<string, unknown>)[k] = v;
+    if (v !== undefined) setOwn(out as Record<string, unknown>, k, v);
   return out;
 }
 

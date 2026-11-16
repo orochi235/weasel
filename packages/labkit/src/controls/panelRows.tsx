@@ -7,6 +7,7 @@ import {
   pairRuns,
   prefTabRuns,
 } from '@weasel-js/prefs';
+import { getOwn } from '@weasel-js/registry';
 import type { Motif } from '@weasel-js/ui/components/MotifFrame';
 import { GroupTabs } from '@weasel-js/ui/components/Prefs';
 import {
@@ -139,7 +140,7 @@ export function panelRows<TC extends Record<string, unknown>>(source: PanelRowsS
           shown={shown}
           setConfig={setConfig}
           draftConfig={draftConfig}
-          error={errors?.[path]}
+          error={errors && getOwn(errors, path)}
           renderers={renderers}
           pack={rows.pack}
           layout={rows.layout}
