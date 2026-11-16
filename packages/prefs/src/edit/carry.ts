@@ -1,14 +1,13 @@
 import { isPlainObject } from '@weasel-js/registry';
-
-// Not deepEqual: key order counts here, since a reader who only reordered keys has made an edit to carry.
-const same = (a: unknown, b: unknown): boolean => JSON.stringify(a) === JSON.stringify(b);
+import { sameStored } from '@weasel-js/storage';
 
 type Bag = Record<string, unknown>;
 
 /** The keys of `mine` carried from `from` to `to`, in the order the result holds them. */
 function carriedKeys(mine: Bag, from: Bag, to: Bag): string[] {
-  /** Not in the new source, and the reader's own: added, or changed before the source dropped it. */
-  const kept = (k: string): boolean => !(k in to) && (!(k in from) || !same(mine[k], from[k]));
+  /** Not in the new source, and the reader's own: added, or changed before the source dropped it. Key order counts:
+   *  a reader who only reordered keys has made an edit to carry. */
+  const kept = (k: string): boolean => !(k in to) && (!(k in from) || !sameStored(mine[k], from[k]));
   const shared = (bag: Bag): string => Object.keys(bag).filter((k) => k in mine && k in from).join('\0');
   const keys = Object.keys(mine);
   if (shared(mine) !== shared(from)) {
@@ -30,7 +29,7 @@ function carriedKeys(mine: Bag, from: Bag, to: Bag): string[] {
  * reader moved is their own from then on, and does not follow what the source did to it.
  */
 export function carry(mine: unknown, from: unknown, to: unknown): unknown {
-  if (same(mine, from)) return to;
+  if (sameStored(mine, from)) return to;
   if (!isPlainObject(mine) || !isPlainObject(from) || !isPlainObject(to)) return mine;
   const out: Bag = {};
   for (const k of carriedKeys(mine, from, to)) {
