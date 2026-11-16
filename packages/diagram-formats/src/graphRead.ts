@@ -3,7 +3,7 @@
  * clusters' membership, its edges' ids, and the one page it reads into.
  */
 import type { DataContainer, DataEdge, DataNode, LayoutDirection } from '@weasel-js/diagram';
-import { freshId } from '@weasel-js/registry';
+import { freshId, getOwn } from '@weasel-js/registry';
 import type { GraphPage } from './document';
 import { PAGE_MARGIN } from './pageLayout';
 
@@ -43,7 +43,7 @@ export function decodeEntities(text: string, hash = false): string {
     if (code !== undefined) return char(parseInt(code, 16), whole);
     const num = /^#?(\d+)$/.exec(ref)?.[1];
     if (num !== undefined) return char(parseInt(num, 10), whole);
-    return NAMED[ref.toLowerCase()] ?? whole;
+    return getOwn(NAMED, ref.toLowerCase()) ?? whole;
   });
 }
 

@@ -12,6 +12,7 @@ import { pageNameOf } from '../common/lines';
 import { mermaidColor } from '../common/styles';
 import { ELEMENT_WIDTH, elementRows, hasTechnology, kindOfMacro, outlineOf, roleOf } from './kinds';
 import { parseC4, type C4Args, type C4Header, type C4Stmt } from './parse';
+import { hasOwnKey } from '@weasel-js/registry';
 
 /** Each boundary macro, as the type its container's label names after its title. */
 export const BOUNDARY_TYPES: Readonly<Record<string, string | null>> = {
@@ -63,12 +64,12 @@ class C4Reader {
           outline: outlineOf(kind), style: roleOf(kind), width: ELEMENT_WIDTH,
         });
         members.push(alias);
-      } else if (s.macro in BOUNDARY_TYPES) this.boundary(s, members);
+      } else if (hasOwnKey(BOUNDARY_TYPES, s.macro)) this.boundary(s, members);
       else if (REL.test(s.macro)) this.rel(s);
       else if (s.macro === 'UpdateElementStyle') this.elementStyle(s);
       else if (s.macro === 'UpdateRelStyle') this.relStyle(s);
       else this.warnings.list('Mermaid C4 statements a diagram does not hold were dropped', s.macro);
-      if (s.body !== undefined && !(s.macro in BOUNDARY_TYPES)) throw lineError('Mermaid', s.line, `${s.macro} opens no boundary`);
+      if (s.body !== undefined && !hasOwnKey(BOUNDARY_TYPES, s.macro)) throw lineError('Mermaid', s.line, `${s.macro} opens no boundary`);
     }
   }
 

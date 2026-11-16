@@ -9,6 +9,7 @@ import { cellLines } from './cellText';
 import { BOX_NAMES, ORTHOGONAL_EDGE_STYLES, STADIUM_ARC, markerOf, shapeEntry } from './mapping';
 import { checkedColor } from '../colorCheck';
 import { hasStyleName, shapeOf, styleFlag, styleNumber, type CellStyle } from './style';
+import { getOwn } from '@weasel-js/registry';
 
 /** Records one sentence about what a file had that a diagram cannot hold; with `item`, adds it to the one sentence that
  *  starts `message` and names every item. */
@@ -75,7 +76,7 @@ export function verticalAlignOf(style: CellStyle): DataNode['verticalAlign'] {
   const raw = style.values.get('verticalAlign') ?? '';
   const own = shapeEntry(shapeOf(style), (key) => style.values.get(key))?.write;
   if (own?.some((part) => Array.isArray(part) && part[0] === 'verticalAlign' && part[1] === raw)) return undefined;
-  return VERTICAL[raw];
+  return getOwn(VERTICAL, raw);
 }
 
 /** The router an edge style draws with. */

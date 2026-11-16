@@ -1,5 +1,5 @@
 /** One page of a document as a Mermaid flowchart: regions as subgraphs, colors as classes and styles. */
-import { deepEqual } from '@weasel-js/registry';
+import { deepEqual, getOwn } from '@weasel-js/registry';
 import type { DataEdge, DataNode, LayoutDirection, Outline } from '@weasel-js/diagram';
 import type { DiagramDocument, ExportResult, WriteOptions } from '../../document';
 import { changed, edgeStyleIn, graphOut, hexColor, nodeLines, nodeStyleIn, type Cluster, type GraphOut } from '../../graphWrite';
@@ -56,11 +56,11 @@ class MermaidWriter {
 
   node(node: DataNode, indent: string): void {
     const outline: Outline = node.outline ?? 'rect';
-    const nearest = typeof outline === 'string' ? NEAREST[outline] : undefined;
+    const nearest = typeof outline === 'string' ? getOwn(NEAREST, outline) : undefined;
     if (nearest !== undefined) {
       this.out.warnings.add('Mermaid has no BPMN figures; events were written as circles, gateways as diamonds without their markers, and subprocesses as rounded rectangles.');
     }
-    const brackets = typeof outline === 'string' ? BRACKETS[nearest ?? outline] : undefined;
+    const brackets = typeof outline === 'string' ? getOwn(BRACKETS, nearest ?? outline) : undefined;
     if (brackets === undefined && typeof outline === 'string') {
       this.out.warnings.add('Mermaid has no bracket shape for some outlines; they were written as rectangles.');
     }

@@ -5,6 +5,7 @@ import { graphOut, nodeLines } from '../../graphWrite';
 import { readsAsStatement, titleLines } from '../common/lines';
 import { mermaidEscaped, mermaidIds } from '../common/text';
 import { mindmapIds } from './read';
+import { getOwn } from '@weasel-js/registry';
 
 const BRACKETS: Readonly<Record<string, readonly [string, string]>> = {
   rect: ['[', ']'], roundRect: ['(', ')'], ellipse: ['((', '))'], cloud: ['))', '(('], hexagon: ['{{', '}}'],
@@ -43,7 +44,7 @@ export function writeMindmap(doc: DiagramDocument, opts?: WriteOptions): ExportR
     // Trimmed as the reader trims them, before escaping, so a trim cannot make a markdown string of the text.
     const text = mermaidEscaped(nodeLines(node, warnings, 'Mermaid').map((l) => l.trim()), { also: /[()[\]{}]/g });
     const outline = typeof node.outline === 'string' ? node.outline : undefined;
-    const brackets = outline === undefined ? undefined : BRACKETS[outline];
+    const brackets = outline === undefined ? undefined : getOwn(BRACKETS, outline);
     if (node.outline !== undefined && brackets === undefined) warnings.add('Mermaid mind maps have five shapes; others were written plain.');
     const own = /^[\w-]+$/.test(node.id) ? node.id : ids.get(node.id)!;
     const id = own === generated[k] ? '' : own;

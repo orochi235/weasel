@@ -6,6 +6,7 @@
 import { lineError } from '../../lineError';
 import { frontTitle } from '../common/header';
 import { ARROWS, type Arrow } from './syntax';
+import { hasOwnKey } from '@weasel-js/registry';
 
 /** Fragment keywords and the section keyword each continues with. */
 export const FRAGMENTS = { loop: null, alt: 'else', opt: null, par: 'and', critical: 'option', break: null } as const;
@@ -70,7 +71,7 @@ function statementOf(text: string, line: number, dropped: string[]): SeqStmt | n
   const declare = DECLARE.exec(t);
   if (declare) return declaration(declare[3]!, declare[2]!, declare[1] !== undefined, line);
   if (word === 'end') return { kind: 'end', line };
-  if (word in FRAGMENTS) return { kind: 'fragment', word: word as FragmentWord, label: rest, line };
+  if (hasOwnKey(FRAGMENTS, word)) return { kind: 'fragment', word, label: rest, line };
   if (word === 'else' || word === 'and' || word === 'option') return { kind: 'section', word, label: rest, line };
   if (word === 'rect') return { kind: 'rect', color: rest, line };
   if (word === 'box') return { kind: 'box', rest, line };

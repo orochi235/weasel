@@ -1,6 +1,7 @@
 /** What a draw-style XML style name means in a diagram, read and written from the one table each. */
 import type { MarkerRef } from '@weasel-js/core';
 import type { Outline } from '@weasel-js/diagram';
+import { getOwn } from '@weasel-js/registry';
 
 /** The arc size, in percent, at and past which a rounded rect has round ends and reads as a stadium. */
 export const STADIUM_ARC = 50;
@@ -102,7 +103,7 @@ const MARKERS_READ: Readonly<Record<string, { filled: MarkerRef; hollow?: Marker
 /** The marker an arrowhead style name draws as, `null` for none, or `undefined` for a name it does not know. */
 export function markerOf(name: string, fill: string | undefined): MarkerRef | null | undefined {
   if (name === 'none' || name === '') return null;
-  const known = MARKERS_READ[name];
+  const known = getOwn(MARKERS_READ, name);
   if (known === undefined) return undefined;
   return fill === '0' && known.hollow !== undefined ? known.hollow : known.filled;
 }
@@ -117,5 +118,5 @@ const MARKERS_WRITE: Readonly<Record<string, readonly [string, 0 | 1]>> = {
 /** The arrowhead style name and fill a marker writes as; `undefined` for a marker the format has none like. */
 export function markerStyle(marker: MarkerRef | null | undefined): readonly [string, 0 | 1] | undefined {
   if (marker === null || marker === undefined) return ['none', 1];
-  return MARKERS_WRITE[typeof marker === 'string' ? marker : marker.key];
+  return getOwn(MARKERS_WRITE, typeof marker === 'string' ? marker : marker.key);
 }
