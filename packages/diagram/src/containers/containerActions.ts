@@ -168,6 +168,7 @@ export function createAddLaneAction(opts: LaneActionOptions): Action {
         const world = params?.world;
         if (pressed === null || pressed.laneId !== undefined || !world || addLaneLocked(opts.scene, { id: pressed.poolId })) return 'pass';
         commit(pressed.poolId, { world, modifiers: NO_MODIFIERS, deps } as InvocationCtx);
+        return undefined;
       },
     },
     enabled: () => true as const,

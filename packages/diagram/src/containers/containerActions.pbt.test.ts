@@ -95,7 +95,7 @@ describe('the container actions, among locks', () => {
           const regions = createLaneAffordance(h.scene as never).regions({} as never);
           if (regions.length === 0) continue;
           const region = regions[o.at % regions.length]!;
-          const payload = (region.bind!({} as never) as { initialScratch: LaneScratch }).initialScratch;
+          const payload = (region.bind!() as { initialScratch: LaneScratch }).initialScratch;
           const button = payload.laneId === undefined;
           const before = h.scene.historyIndex();
           const ran = (createAddLaneAction({ scene: h.scene as never }).invoker as ImmediateInvoker)
