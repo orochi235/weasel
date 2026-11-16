@@ -4,7 +4,7 @@
  * once the camera is known.
  */
 
-import { curveSpan, lengthTable, type CurveSpan } from '@weasel-js/geom';
+import { curveSpan, lengthTable, lerp, type CurveSpan } from '@weasel-js/geom';
 import { transformPoint, type Mat4, type Vec3 } from '@weasel-js/geom/3d';
 import type { StrokeTrim } from '@weasel-js/paint';
 import { resolveTrim } from '@weasel-js/stroke';
@@ -59,7 +59,7 @@ const HEAD_CORNERS = [[ROLE_HEAD_BASE, -1], [ROLE_HEAD_BASE, 1], [ROLE_TIP, 0]] 
 
 const flat = (points: readonly Vec3[]): number[] => points.flatMap((p) => [p.x, p.y, p.z]);
 const lerp3 = (a: Vec3, b: Vec3, t: number): Vec3 =>
-  ({ x: a.x + (b.x - a.x) * t, y: a.y + (b.y - a.y) * t, z: a.z + (b.z - a.z) * t });
+  ({ x: lerp(a.x, b.x, t), y: lerp(a.y, b.y, t), z: lerp(a.z, b.z, t) });
 const dist = (a: Vec3, b: Vec3): number => Math.hypot(b.x - a.x, b.y - a.y, b.z - a.z);
 
 /**
