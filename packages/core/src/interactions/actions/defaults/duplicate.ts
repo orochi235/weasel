@@ -1,7 +1,7 @@
 import type { Action, ActionDeps } from '@weasel-js/routing';
 import { commitOps } from '../defaultCommitAdapter';
 import { copySelection } from './copySubtree';
-import { requiresSelection } from './requiresSelection';
+import { requiresContent } from './requiresSelection';
 import { nodeDescriptors, poseDescriptorOf } from '../poseDescriptorDep';
 import { translatePoseViaDescriptor } from '../resize/geometry';
 import { scenePoseFrame } from '../poseFrame';
@@ -94,5 +94,5 @@ export const duplicateAction: Action & { requires: string[] } = {
       if (copies) recordTransform(scene, { kind: 'duplicate', dx, dy }, copies);
     },
   },
-  enabled: requiresSelection,
+  enabled: requiresContent(1),
 };

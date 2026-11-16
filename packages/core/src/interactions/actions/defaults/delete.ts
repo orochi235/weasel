@@ -3,7 +3,7 @@ import type { Op } from 'core/ops/types';
 import { createDeleteOp } from 'core/ops/delete';
 import { commitOps } from '../defaultCommitAdapter';
 import { ActionDisabledReason, type Action, type ActionDeps } from '@weasel-js/routing';
-import { requiresSelection } from './requiresSelection';
+import { requiresContent } from './requiresSelection';
 import { reachesLocked } from './lockedReach';
 import { icon } from '../../../icons.gen';
 import { hiddenSourcesTakenWith } from 'domains/pathEffects/hiddenSources';
@@ -93,9 +93,9 @@ function deleteReachesLocked(deps: ActionDeps, ids: readonly NodeId[]): boolean 
   return scene ? reachesLocked(scene, deleteTargets(scene, ids, { takeHiddenSources: true }) as readonly NodeId[]) : false;
 }
 
-/** Delete's `enabled`, and Cut's: a selection, none of whose removal would take a locked node. */
+/** Delete's `enabled`, and Cut's: a selection holding more than page structure, none of whose removal would take a locked node. */
 export function deleteEnabled(deps?: ActionDeps): true | ActionDisabledReason {
-  const needs = requiresSelection(deps);
+  const needs = requiresContent(1)(deps);
   if (needs !== true) return needs;
   return deleteReachesLocked(deps!, deps!.selection!.get() as readonly NodeId[]) ? ActionDisabledReason.Locked : true;
 }
