@@ -6,6 +6,7 @@ import type { Op } from 'core/ops/types';
 import { createSetDataOp } from 'core/ops/setData';
 import { commitOps } from '../defaultCommitAdapter';
 import { paintInheritors } from 'core/scene/inheritedPaint';
+import { deepEqual } from '@weasel-js/registry';
 
 /** The node data one paint action reads and writes: its own key, nothing else. */
 type PaintData<K extends string, TValue> = { [P in K]?: TValue | null };
@@ -32,13 +33,14 @@ export interface PaintActionSpec<TState, TValue, K extends string, P> {
   readParams(prev: TState, params: Readonly<Partial<P>> | undefined): TState | null;
   /** The value to write for one node, from that node's value at gesture start.
    *  `null` writes the absence of paint, which is a value like any other —
-   *  a node with `fill: null` paints no fill. Handing back `prev` itself leaves
-   *  the node out of the preview and the commit. */
+   *  a node with `fill: null` paints no fill. Handing back `prev`, or a value
+   *  equal to it, leaves the node out of the preview and the commit. */
   merge(prev: TValue | null | undefined, state: TState): TValue | null;
 }
 
-/** Whether `merge` handed back the value it was given: nothing to write. */
-const unchanged = (prev: unknown, next: unknown): boolean => next === prev || (next === null && prev === undefined);
+/** Whether `merge` handed back the value it was given, or one equal to it: nothing to write. */
+const unchanged = (prev: unknown, next: unknown): boolean =>
+  (next === null && prev === undefined) || deepEqual(prev, next, { undefinedAsAbsent: true });
 
 interface Scratch<TState, TValue, K extends string> {
   ids: NodeId[];
