@@ -7,7 +7,7 @@ import type { AnnotationsApi } from './types';
 export interface LabMarkStores {
   /** Each trial's store. The same array until one comes or goes. */
   list(): readonly AnnotationsApi[];
-  /** Add a trial's store; returns its removal. */
+  /** Add a trial's store; returns its removal. Stores registered under one trial id stack, newest live. */
   register(trialId: string, store: AnnotationsApi): () => void;
   /** Fires when a store comes or goes, and on every change any of them reports. */
   subscribe(fn: () => void): () => void;
@@ -17,7 +17,7 @@ export interface LabMarkStores {
 
 /** A registry of trials' mark stores. */
 export function createLabMarkStores(): LabMarkStores {
-  const stores = new Map<string, { store: AnnotationsApi; off: () => void }>();
+  const stacks = new Map<string, { store: AnnotationsApi; off: () => void }[]>();
   const changed = createEmitter();
   let listed: readonly AnnotationsApi[] = [];
   let version = 0;
@@ -26,20 +26,27 @@ export function createLabMarkStores(): LabMarkStores {
     changed.emit();
   };
   const relist = () => {
-    listed = [...stores.values()].map((s) => s.store);
+    listed = [...stacks.values()].map((stack) => stack.at(-1)!.store);
     notify();
   };
   return {
     list: () => listed,
     register(trialId, store) {
-      stores.get(trialId)?.off();
-      stores.set(trialId, { store, off: store.subscribe(notify) });
+      const entry = { store, off: store.subscribe(notify) };
+      const stack = stacks.get(trialId) ?? [];
+      stack.push(entry);
+      stacks.set(trialId, stack);
       relist();
+      let released = false;
       return () => {
-        const held = stores.get(trialId);
-        if (held?.store !== store) return;
-        held.off();
-        stores.delete(trialId);
+        if (released) return;
+        released = true;
+        entry.off();
+        const cur = stacks.get(trialId);
+        const i = cur?.lastIndexOf(entry) ?? -1;
+        if (!cur || i === -1) return;
+        cur.splice(i, 1);
+        if (cur.length === 0) stacks.delete(trialId);
         relist();
       };
     },
