@@ -32,13 +32,14 @@ const target = fc.constantFrom(...TARGETS);
 const caseArb: fc.Arbitrary<Case> = fc.record({
   customs: fc.uniqueArray(fc.record({
     key: fc.constantFrom(...CUSTOM_KEYS),
-    anchor: fc.constantFrom('none', 'after', 'before', 'both'),
+    // Anchors weighted above `none` so the tallies below are reached.
+    anchor: fc.constantFrom('none', 'after', 'before', 'after', 'before'),
     a: target,
     b: target,
-  }), { selector: (c) => c.key, maxLength: CUSTOM_KEYS.length }).map((cs) => cs.map(({ key, anchor, a, b }): Custom => ({
+  }), { selector: (c) => c.key, maxLength: CUSTOM_KEYS.length }).map((cs) => cs.map(({ key, anchor, a }): Custom => ({
     key,
-    ...(anchor === 'after' || anchor === 'both' ? { after: a } : {}),
-    ...(anchor === 'before' ? { before: a } : anchor === 'both' ? { before: b } : {}),
+    ...(anchor === 'after' ? { after: a } : {}),
+    ...(anchor === 'before' ? { before: a } : {}),
   }))),
   standard: fc.record(Object.fromEntries(STANDARD_SLOTS.map((s) => [s, fc.boolean()])) as Record<(typeof STANDARD_SLOTS)[number], fc.Arbitrary<boolean>>),
   sceneKeys: fc.option(fc.subarray([...SCENE_KEYS]), { nil: null }),

@@ -9,6 +9,17 @@ function L(id: string): RenderLayer<unknown> {
 }
 
 describe('composeOrderedLayers', () => {
+  it('throws on a custom with both after and before', () => {
+    expect(() => composeOrderedLayers({ hud: { layer: L('hud'), after: 'grid', before: 'scene' } }, {}))
+      .toThrow(/"hud" sets both after \("grid"\) and before \("scene"\)/);
+  });
+
+  it('throws on a value under a non-slot key that is no { layer } entry, and passes over null and undefined', () => {
+    expect(() => composeOrderedLayers({ selectionOverly: { handles: { size: 12 } } }, {}))
+      .toThrow(/"selectionOverly" is not a slot/);
+    expect(composeOrderedLayers({ a: null, b: undefined }, { scene: L('scene') }).map((l) => l.id)).toEqual(['scene']);
+  });
+
   it('emits standard slots in STANDARD_SLOTS order when no customs', () => {
     const out = composeOrderedLayers({}, { grid: L('grid'), scene: L('scene'), selectionOverlay: L('sel') });
     expect(out.map(l => l.id)).toEqual(['grid', 'scene', 'sel']);
@@ -223,7 +234,7 @@ describe('composeOrderedLayers', () => {
   it('names, for every layer on a dangling chain, the key the chain ends on', () => {
     const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
     composeOrderedLayers(
-      { k0: { layer: L('k0'), before: 'constructor' }, constructor: { layer: L('constructor'), after: 'scene:s1', before: 'grid' } },
+      { k0: { layer: L('k0'), before: 'constructor' }, constructor: { layer: L('constructor'), after: 'scene:s1' } },
       {},
     );
     expect(warn.mock.calls.map(([m]) => m)).toEqual([
