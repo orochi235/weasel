@@ -36,6 +36,19 @@ describe('Slider keyStep', () => {
   });
 });
 
+describe('Slider keyStep under endless', () => {
+  it('is handed the thumb as given, its infinity included', () => {
+    const keyStep = vi.fn((t: { value: number }, s: number) => (Number.isFinite(t.value) ? t.value + s * 10 : 100));
+    const onChange = vi.fn();
+    const { container } = render(
+      <Slider min={0} max={100} step={10} endless="max" thumbs={[{ value: Infinity }]} keyStep={keyStep} onChange={onChange} />,
+    );
+    fireEvent.keyDown(container.querySelector('[role="slider"]') as HTMLElement, { key: 'ArrowLeft' });
+    expect(keyStep.mock.calls[0]![0]).toEqual({ value: Infinity });
+    expect(onChange).toHaveBeenLastCalledWith([{ value: 100 }]);
+  });
+});
+
 describe('Slider drag callbacks', () => {
   it('calls the onInput of the latest render through a drag, not the one from pointerdown', () => {
     const seen: number[] = [];
