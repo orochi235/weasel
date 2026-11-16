@@ -24,6 +24,20 @@ import { BETWEEN_GESTURES } from '@weasel-js/routing';
 
 const CUT_LABEL = 'Cut at Crossings';
 
+type Cut = { node: PathNode; pieces: PolygonPath[]; at: number };
+
+/** Each selected path another selected path crosses, with its pieces, back to front; empty when none crosses. */
+function planCut(deps: ActionDeps | undefined): Cut[] {
+  const scene = deps?.scene;
+  const nodes = selectedPathNodes(deps);
+  if (!scene || nodes.length < 2) return [];
+  const pieces = snipPathsAtCrossings(nodes.map((n) => n.path));
+  return nodes
+    .map((node, i) => ({ node, pieces: pieces[i], at: slotOf(scene, node.id) }))
+    .filter((c): c is Cut => c.pieces !== null)
+    .sort((a, b) => b.at - a.at);
+}
+
 /**
  * Cut every selected path wherever another selected path
  * crosses it (`snipPathsAtCrossings`): each cut path is replaced, in its
@@ -41,14 +55,8 @@ export const snipAtCrossingsAction: Action & { requires: string[] } = {
     timing: 'immediate',
     run: (deps) => {
       const scene = deps.scene;
-      const nodes = selectedPathNodes(deps);
-      if (!scene || nodes.length < 2) return;
-      const pieces = snipPathsAtCrossings(nodes.map((n) => n.path));
-      const cut = nodes
-        .map((node, i) => ({ node, pieces: pieces[i], at: slotOf(scene, node.id) }))
-        .filter((c): c is { node: PathNode; pieces: PolygonPath[]; at: number } => c.pieces !== null)
-        .sort((a, b) => b.at - a.at);
-      if (cut.length === 0) return;
+      const cut = planCut(deps);
+      if (!scene || cut.length === 0) return;
       const ops: Op[] = [];
       const made = new Map<string, string[]>();
       for (const { node, pieces: runs, at } of cut) {
@@ -61,7 +69,10 @@ export const snipAtCrossingsAction: Action & { requires: string[] } = {
       commitOps(deps, ops, CUT_LABEL, { select: selected.flatMap((id) => made.get(id) ?? [id]) });
     },
   } satisfies ImmediateInvoker,
-  enabled: (deps) => (selectedPathNodes(deps).length >= 2 ? true : ActionDisabledReason.SelectionRequired),
+  enabled: (deps) => {
+    if (selectedPathNodes(deps).length < 2) return ActionDisabledReason.SelectionRequired;
+    return planCut(deps).length > 0 ? true : ActionDisabledReason.NotApplicable;
+  },
 };
 
 /** What a join would do to the selection, or null when it cannot. */
