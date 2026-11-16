@@ -97,6 +97,12 @@ describe('settleShapeGenerator', () => {
     expect(settleShapeGenerator(written, prev)).toBe(written);
   });
 
+  it('stores a write of the generator the node holds as made, whatever order its keys are in', () => {
+    const prev = star(5);
+    const written = { pose: prev.pose, data: { ...prev.data, generator: { rotation: 0, innerRadiusRatio: 0.5, points: 5, kind: 'star' as const } } };
+    expect(settleShapeGenerator(written, prev)).toBe(written);
+  });
+
   it('drops a generator written onto a node that held none', () => {
     const prev = { pose: { x: 0, y: 0, width: 10, height: 10 }, data: { path: shapeGeneratorPath({ kind: 'polygon', sides: 5, rotation: 0 }) } };
     const written = { pose: prev.pose, data: { ...prev.data, generator: { points: 7 } } };
