@@ -7,7 +7,7 @@ import {
 } from '@weasel-js/storage';
 import type { PrefBlend } from './blend';
 import { type PrefsMigration, runPrefsMigrations, watchPrefsVersion } from './migrate';
-import type { PrefValidator, PrefGroup } from '@weasel-js/pref-schema';
+import type { PrefValidator, PrefGroup } from '@weasel-js/prefs-schema';
 import { createPrefsStore, type PrefsStore } from './store';
 
 /** Options for `openPrefs` and `openPrefsSync`. */

@@ -1,6 +1,6 @@
 /** `<AmbientContributionsProvider>` installs its entries on every `<SceneCanvas>` below it. */
 import { describe, it, expect, vi, beforeAll } from 'vitest';
-import { pref } from '@weasel-js/pref-schema';
+import { pref } from '@weasel-js/prefs-schema';
 import { render } from '@testing-library/react';
 import { useEffect, type ReactNode } from 'react';
 import { ActionsProvider, useMenuHost } from '@weasel-js/routing/react';

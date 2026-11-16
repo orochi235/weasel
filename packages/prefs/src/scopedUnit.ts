@@ -1,5 +1,5 @@
 import { toRoot, type Unit, type UnitScope } from '@weasel-js/quantity';
-import { isPrefLeaf, type PrefSection, isBuiltinPref, type PrefLeaf, prefUnit, type PrefLinearUnit } from '@weasel-js/pref-schema';
+import { isPrefLeaf, type PrefSection, isBuiltinPref, type PrefLeaf, prefUnit, type PrefLinearUnit } from '@weasel-js/prefs-schema';
 
 /**
  * The display unit of a length stored in world units and shown where `scopes`

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { checkPrefCondition, checkPrefConditions } from './conditionCheck';
-import type { PrefGroup, PrefList, PrefMap, PrefLeaf } from '@weasel-js/pref-schema';
+import type { PrefGroup, PrefList, PrefMap, PrefLeaf } from '@weasel-js/prefs-schema';
 
 const num = (extra: Partial<PrefLeaf> = {}): PrefLeaf => ({ kind: 'number', name: 'N', description: '', default: 0, ...extra }) as PrefLeaf;
 const flag = (extra: Partial<PrefLeaf> = {}): PrefLeaf => ({ kind: 'boolean', name: 'F', description: '', default: false, ...extra }) as PrefLeaf;

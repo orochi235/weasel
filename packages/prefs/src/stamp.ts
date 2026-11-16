@@ -1,4 +1,4 @@
-import { upgradeScope } from '@weasel-js/pref-schema/internal';
+import { upgradeScope } from '@weasel-js/prefs-schema/internal';
 
 /**
  * How a pref is stored: its value, stamped with the schema version it was

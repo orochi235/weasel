@@ -1,8 +1,8 @@
 import fc from 'fast-check';
 import { createMemoryAdapter, createRecordCache } from '@weasel-js/storage';
 import { describe, expect, it, vi } from 'vitest';
-import { type PrefGroup, prefLeaves, PREF_ELSE, type PrefScope, type PrefLeaf, type PrefScopeSpec } from '@weasel-js/pref-schema';
-import { runs, tally, timeoutFor } from '@weasel-js/pref-schema/testing/pbt.fixture';
+import { type PrefGroup, prefLeaves, PREF_ELSE, type PrefScope, type PrefLeaf, type PrefScopeSpec } from '@weasel-js/prefs-schema';
+import { runs, tally, timeoutFor } from '@weasel-js/prefs-schema/testing/pbt.fixture';
 import { checkPrefSplits, prefSelectors, type PrefSplitProblem } from './splitCheck';
 import { createPrefsStore } from './store';
 

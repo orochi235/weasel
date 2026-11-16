@@ -1,7 +1,7 @@
 // How the alternatives of a split value fold into one, by kind.
 
 import { hexToRgba, mixRgbaWeighted, rgbaToHex } from '@weasel-js/paint';
-import type { PrefWeighted, PrefLeaf } from '@weasel-js/pref-schema';
+import type { PrefWeighted, PrefLeaf } from '@weasel-js/prefs-schema';
 
 /**
  * Folds a split value's alternatives into the one value read. `members` holds

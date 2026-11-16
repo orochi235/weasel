@@ -8,7 +8,7 @@ import { describe, expect, it } from 'vitest';
 import { readFileSync, readdirSync, statSync } from 'node:fs';
 import { join, relative } from 'node:path';
 import ts from 'typescript';
-import { prefLeaves, type PrefGroup, type PrefLeaf, type PrefNumber } from '@weasel-js/pref-schema';
+import { prefLeaves, type PrefGroup, type PrefLeaf, type PrefNumber } from '@weasel-js/prefs-schema';
 import type { Action } from '@weasel-js/routing';
 import { sweepKit } from './kitSweep.fixture';
 import { ACTION_LITERALS } from './kitActionParams.allow';

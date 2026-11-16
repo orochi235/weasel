@@ -2,7 +2,7 @@
  * Tool options kept in a prefs store: the schema a host's prefs hold them
  * under, and the `toolOptionValues` that reads and writes them there.
  */
-import type { PrefGroup, PrefLeaf } from '@weasel-js/pref-schema';
+import type { PrefGroup, PrefLeaf } from '@weasel-js/prefs-schema';
 import { deepEqual } from '@weasel-js/registry';
 import { SHARED_TOOL_OPTIONS, toolOptionSlot, type ToolOptions, type ToolOptionValues } from './toolOptions';
 

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { pref } from '@weasel-js/pref-schema';
+import { pref } from '@weasel-js/prefs-schema';
 import { kitSettingsCssOptions } from './kitCss';
 
 const leaf = pref.number('N', 1);

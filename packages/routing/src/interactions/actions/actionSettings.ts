@@ -2,7 +2,7 @@
  * A settings form an action carries: what a surface draws in place of a bare
  * trigger for an action whose job is to change settings on the selection.
  */
-import type { PrefGroup } from '@weasel-js/pref-schema';
+import type { PrefGroup } from '@weasel-js/prefs-schema';
 import type { Action } from './action';
 import type { ActionDeps } from './invoker';
 

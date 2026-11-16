@@ -1,6 +1,6 @@
 import { describe, expectTypeOf, it } from 'vitest';
 import type { PrefAtPath, PrefPath, PrefValueAt, PrefValueOf } from './paths';
-import type { PrefUnion, PrefGroup } from '@weasel-js/pref-schema';
+import type { PrefUnion, PrefGroup } from '@weasel-js/prefs-schema';
 
 const _schema = {
   name: 'Test',

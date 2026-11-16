@@ -3,7 +3,7 @@ import { createMemoryAdapter } from '@weasel-js/storage';
 import { describe, expect, it, vi } from 'vitest';
 import { usePref, usePrefsValues } from './react';
 import { openPrefsSync } from './open';
-import type { PrefGroup } from '@weasel-js/pref-schema';
+import type { PrefGroup } from '@weasel-js/prefs-schema';
 
 const SCHEMA = {
   name: 'Test',

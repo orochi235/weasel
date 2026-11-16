@@ -1,5 +1,5 @@
 /**
- * @weasel-js/pref-schema — the declaration half of `@weasel-js/prefs`: the `pref` builders, the leaf, group
+ * @weasel-js/prefs-schema — the declaration half of `@weasel-js/prefs`: the `pref` builders, the leaf, group
  * and section types, units, conditions and the status they give a leaf, and repairing a stored value
  * against a leaf. No store, no storage, no React. `@weasel-js/prefs` re-exports all of it.
  *

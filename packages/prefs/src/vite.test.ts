@@ -6,7 +6,7 @@ import { build, createServer, type Rolldown, type ViteDevServer } from 'vite';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { weaselPrefsCss } from './vite';
 
-const BUILD = join(import.meta.dirname, '../../pref-schema/src/build.ts');
+const BUILD = join(import.meta.dirname, '../../prefs-schema/src/build.ts');
 /** Under a loaded machine the watcher's first scan alone has taken seconds. */
 const FOLLOWS = { timeout: 15_000, interval: 250 };
 

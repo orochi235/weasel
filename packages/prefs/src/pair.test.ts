@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { pairRuns } from './pair';
-import type { PrefLeaf, PrefPair } from '@weasel-js/pref-schema';
+import type { PrefLeaf, PrefPair } from '@weasel-js/prefs-schema';
 
 const leaf = (name: string, pair?: PrefPair): PrefLeaf =>
   ({ kind: 'number', name, description: '', default: 0, ...(pair ? { pair } : {}) });

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { type PrefAction, type PrefGroup, type PrefLeaf, applyPrefConditions, applyPrefEntryConditions, prefJudge, prefReader } from '@weasel-js/pref-schema';
+import { type PrefAction, type PrefGroup, type PrefLeaf, applyPrefConditions, applyPrefEntryConditions, prefJudge, prefReader } from '@weasel-js/prefs-schema';
 import { checkPrefConditions } from './conditionCheck';
 
 const clear: PrefAction = {

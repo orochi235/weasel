@@ -43,7 +43,7 @@ It takes an adapter that reads synchronously, and components naming the same
 records.
 
 The declarations — `pref`, the leaf, group and section types, units,
-conditions and leaf status — live in `@weasel-js/pref-schema`, which this
+conditions and leaf status — live in `@weasel-js/prefs-schema`, which this
 package re-exports whole. A package that only declares settings, as core and
 routing do, depends on that one and never reaches the store or storage.
 

@@ -7,8 +7,8 @@
  * naming that key reads and writes one value. A tool whose options name a size
  * or a strength also gets step actions for them (`toolOptionSteps`).
  */
-import type { PrefGroup, PrefLeaf, PrefNumber } from '@weasel-js/pref-schema';
-import { prefValueAbsent, repairPrefValue } from '@weasel-js/pref-schema';
+import type { PrefGroup, PrefLeaf, PrefNumber } from '@weasel-js/prefs-schema';
+import { prefValueAbsent, repairPrefValue } from '@weasel-js/prefs-schema';
 import { endlessAllows } from '@weasel-js/quantity';
 import { createEmitter, deepEqual, setOwn } from '@weasel-js/registry';
 

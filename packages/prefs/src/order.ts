@@ -1,5 +1,5 @@
-import { type PrefActions, type PrefGroup, isPrefLeaf, type PrefLeaf } from '@weasel-js/pref-schema';
-import { setOwnPrefValue } from '@weasel-js/pref-schema/internal';
+import { type PrefActions, type PrefGroup, isPrefLeaf, type PrefLeaf } from '@weasel-js/prefs-schema';
+import { setOwnPrefValue } from '@weasel-js/prefs-schema/internal';
 
 /**
  * Stored orders by container path: `''` for a group's top level, a nested

@@ -6,7 +6,7 @@
 import { describe, expect, it } from 'vitest';
 import fc from 'fast-check';
 import type { PrefCondition, PrefTest } from '@weasel-js/prefs';
-import { runs, tally, timeoutFor } from '@weasel-js/pref-schema/testing/pbt.fixture';
+import { runs, tally, timeoutFor } from '@weasel-js/prefs-schema/testing/pbt.fixture';
 import { EMPTY_HOLDS, groupCondition, groupOf, rootCondition, rootGroup, rowCondition, testRowOf, type Quantifier } from './conditionGroups';
 
 const RUNS = 400;

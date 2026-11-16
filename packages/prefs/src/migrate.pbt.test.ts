@@ -1,9 +1,9 @@
 import fc from 'fast-check';
 import { createMemoryAdapter, createRecordCache } from '@weasel-js/storage';
 import { describe, expect, it, vi } from 'vitest';
-import { VERSION_RECORD } from '@weasel-js/pref-schema';
+import { VERSION_RECORD } from '@weasel-js/prefs-schema';
 import { runPrefsMigrations, type PrefsMigration } from './migrate';
-import { runs, tally, timeoutFor } from '@weasel-js/pref-schema/testing/pbt.fixture';
+import { runs, tally, timeoutFor } from '@weasel-js/prefs-schema/testing/pbt.fixture';
 
 /** One stored record: its value, and the version it is stamped with, or none. */
 interface Rec { name: string; value: string; at: number | undefined }

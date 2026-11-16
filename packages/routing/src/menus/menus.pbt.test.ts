@@ -5,7 +5,7 @@
 import { describe, expect, it } from 'vitest';
 import fc from 'fast-check';
 import type { MenuEntry } from '@weasel-js/menu';
-import type { PrefGroup } from '@weasel-js/pref-schema';
+import type { PrefGroup } from '@weasel-js/prefs-schema';
 import { runs, tally, timeoutFor } from '../pbt.fixture';
 import { mergeMenuDefs, pickMenu } from './pickMenu';
 import { tidy, withReason } from './separators';

@@ -1,6 +1,6 @@
 import { createMemoryAdapter, createRecordCache } from '@weasel-js/storage';
 import { describe, expect, it } from 'vitest';
-import type { PrefGroup } from '@weasel-js/pref-schema';
+import type { PrefGroup } from '@weasel-js/prefs-schema';
 import { createPrefsStore } from './store';
 import { prefWeightAxes } from './weightAxes';
 

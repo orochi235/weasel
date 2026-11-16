@@ -1,5 +1,5 @@
 import { hasTag } from '@weasel-js/registry';
-import { type PrefGroup, type PrefSection, isPrefLeaf, isPrefSection, type PrefLeaf } from '@weasel-js/pref-schema';
+import { type PrefGroup, type PrefSection, isPrefLeaf, isPrefSection, type PrefLeaf } from '@weasel-js/prefs-schema';
 
 /** Every leaf with the tags it carries: those of each group or section above
  *  it, outermost first, then its own. Keyed as `prefLeafAt` reads paths. */

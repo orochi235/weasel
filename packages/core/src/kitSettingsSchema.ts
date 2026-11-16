@@ -1,4 +1,4 @@
-import { pref, PX_UNIT } from '@weasel-js/pref-schema';
+import { pref, PX_UNIT } from '@weasel-js/prefs-schema';
 import {
   DOUBLE_CLICK_MAX_MS, DOUBLE_CLICK_MAX_PX, DRAG_THRESHOLD_PX, LONG_PRESS_MS, TAP_THRESHOLD_PX,
 } from '@weasel-js/gestures';

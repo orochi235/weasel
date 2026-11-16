@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 import type { MenuEntry } from '@weasel-js/menu';
-import { pref, type PrefGroup, type PrefLeaf } from '@weasel-js/pref-schema';
+import { pref, type PrefGroup, type PrefLeaf } from '@weasel-js/prefs-schema';
 import { resolveMenu, resolveSchemaMenu, type MenuSources } from './resolveMenu';
 import { toIconRef } from '@weasel-js/icons';
 import { ActionDisabledReason, type Action } from '../interactions/actions/action';

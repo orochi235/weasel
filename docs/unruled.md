@@ -2444,7 +2444,7 @@ Calls the lanes made without a ruling:
   insert, where the `insert` dep mints the node, still passes none behind the required type.
 - Ruled 2026-11-15: `MoveAdapter.findSnapTarget` is deleted; nothing called it.
 - Open: whether a reader may split or join a scoped pref. `packages/prefs/README.md` says never; the `scopes` JSDoc in
-  `packages/pref-schema/src/schema.ts` says an open entry may.
+  `packages/prefs-schema/src/schema.ts` says an open entry may.
 - Ruled 2026-11-15: a new scene starts at version 1, so `getPaintedVersion()`'s `0` means nothing painted yet.
 
 ## Audit round twenty-seven (2026-11-15): by failure class

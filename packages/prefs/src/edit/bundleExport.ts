@@ -1,4 +1,4 @@
-import type { PresetDescription } from '@weasel-js/pref-schema';
+import type { PresetDescription } from '@weasel-js/prefs-schema';
 import { memberKey, readBundles, type Bundle, type BundleMember } from './bundleTree';
 import type { SchemaRoot } from './schemaEdit';
 import { pairNodes, type OriginOf } from './schemaExport';

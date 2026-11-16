@@ -1,6 +1,6 @@
 import { createMemoryAdapter, createRecordCache } from '@weasel-js/storage';
 import { describe, expect, it, vi } from 'vitest';
-import { type PrefGroup, PREF_ELSE } from '@weasel-js/pref-schema';
+import { type PrefGroup, PREF_ELSE } from '@weasel-js/prefs-schema';
 import { checkPrefSplits } from './splitCheck';
 import { recordValue } from './stamp';
 import { createPrefsStore } from './store';

@@ -5,7 +5,7 @@
  */
 import { afterEach, beforeEach, expect, it, vi } from 'vitest';
 import fc from 'fast-check';
-import type { PrefNumber } from '@weasel-js/pref-schema';
+import type { PrefNumber } from '@weasel-js/prefs-schema';
 import type { ImmediateInvoker } from '../interactions/actions/invoker';
 import { runs, tally } from '../pbt.fixture';
 import { createToolOptionValues, type ToolOptions } from './toolOptions';

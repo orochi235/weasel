@@ -4,7 +4,7 @@
  * name, so every shape tool reads one fill until a tool or its user keeps one
  * of its own (`share: { fill: null }`).
  */
-import type { PrefGroup, PrefLeaf } from '@weasel-js/pref-schema';
+import type { PrefGroup, PrefLeaf } from '@weasel-js/prefs-schema';
 import { isSolidPaint, type Paint } from '@weasel-js/paint';
 import { DEFAULT_STROKE_WIDTH, type InsertStyle, type StyleOptionKey } from 'interactions/actions/insert/style';
 import type { ToolOptions } from '@weasel-js/routing';

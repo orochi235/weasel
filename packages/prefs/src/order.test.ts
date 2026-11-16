@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { type PrefActions, pref, type PrefGroup } from '@weasel-js/pref-schema';
+import { type PrefActions, pref, type PrefGroup } from '@weasel-js/prefs-schema';
 import { orderPrefGroup, resolveOrder } from './order';
 
 const run: PrefActions = { kind: 'actions', name: 'Run', description: '', default: undefined, group: 'run' };

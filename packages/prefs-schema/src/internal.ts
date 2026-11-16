@@ -1,5 +1,5 @@
 /**
- * @weasel-js/pref-schema/internal — the schema helpers `@weasel-js/prefs` builds its store and edit
+ * @weasel-js/prefs-schema/internal — the schema helpers `@weasel-js/prefs` builds its store and edit
  * model on, and no consumer should. Not public API: it changes without notice.
  *
  * @packageDocumentation

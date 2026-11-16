@@ -1,6 +1,6 @@
 /** Steps and option keys that `steppedOption`'s and the tool option values' property tests shrank to. */
 import { describe, expect, it } from 'vitest';
-import type { PrefNumber } from '@weasel-js/pref-schema';
+import type { PrefNumber } from '@weasel-js/prefs-schema';
 import { createToolOptionValues, heldToolOptions, steppedOption, toolOptionParams, type ToolOptions } from './toolOptions';
 
 const free: PrefNumber = { kind: 'number', name: 'S', description: '', default: 1 };

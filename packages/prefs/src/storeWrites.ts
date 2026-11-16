@@ -2,8 +2,8 @@
 // selectors name where the pref is scoped.
 
 import type { OwnedRecordCache } from '@weasel-js/storage';
-import { prefSectionLeaves, type PrefList, isPrefScope, type PrefSelection, type PrefMap, type PrefLeaf, type PrefObject, prefScopedDefault, prefVariantOf, type PrefUnion } from '@weasel-js/pref-schema';
-import { dropUnlisted, mapScopeValues, repairScope, writeDeclared, overridesOfPref, scopeSelectorsOf } from '@weasel-js/pref-schema/internal';
+import { prefSectionLeaves, type PrefList, isPrefScope, type PrefSelection, type PrefMap, type PrefLeaf, type PrefObject, prefScopedDefault, prefVariantOf, type PrefUnion } from '@weasel-js/prefs-schema';
+import { dropUnlisted, mapScopeValues, repairScope, writeDeclared, overridesOfPref, scopeSelectorsOf } from '@weasel-js/prefs-schema/internal';
 import { optionsOf, selectionAt } from './snapshot';
 import { isAutoRecord, recordValue, stampRecord } from './stamp';
 

@@ -1,5 +1,5 @@
 {
-  "name": "@weasel-js/pref-schema",
+  "name": "@weasel-js/prefs-schema",
   "version": "1.19.1",
   "description": "The declaration half of @weasel-js/prefs: pref builders, leaf, group and section types, units, conditions and leaf status, and repairing a value against a leaf. No store, no storage, no React.",
   "weasel": {
@@ -27,7 +27,7 @@
   "repository": {
     "type": "git",
     "url": "git+https://github.com/orochi235/weasel.git",
-    "directory": "packages/pref-schema"
+    "directory": "packages/prefs-schema"
   },
   "bugs": {
     "url": "https://github.com/orochi235/weasel/issues"

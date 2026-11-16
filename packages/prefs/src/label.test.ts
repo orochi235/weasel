@@ -1,6 +1,6 @@
 import { createMemoryAdapter, createRecordCache } from '@weasel-js/storage';
 import { describe, expect, expectTypeOf, it } from 'vitest';
-import { prefHoldsValue, type PrefLabel, type PrefSeparator, isBuiltinPref, type PrefBoolean } from '@weasel-js/pref-schema';
+import { prefHoldsValue, type PrefLabel, type PrefSeparator, isBuiltinPref, type PrefBoolean } from '@weasel-js/prefs-schema';
 import type { PrefPath } from './paths';
 import { createPrefsStore } from './store';
 

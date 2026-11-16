@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { pref } from '@weasel-js/pref-schema';
+import { pref } from '@weasel-js/prefs-schema';
 import { render } from '@testing-library/react';
 import { ActionsProvider, useAction } from '../interactions/actions/ActionsProvider';
 import { useMenuHost, useMenus } from './MenuHostContext';

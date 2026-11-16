@@ -2,7 +2,7 @@ import { createMemoryAdapter, createRecordCache } from '@weasel-js/storage';
 import { recordValue } from './stamp';
 import { describe, expect, it, vi } from 'vitest';
 import { type PrefsMigration, runPrefsMigrations, watchPrefsVersion } from './migrate';
-import { VERSION_RECORD } from '@weasel-js/pref-schema';
+import { VERSION_RECORD } from '@weasel-js/prefs-schema';
 
 const cacheWith = (initial: [string, unknown][]) =>
   createRecordCache({ storage: createMemoryAdapter(), prefix: 'p.', initial });

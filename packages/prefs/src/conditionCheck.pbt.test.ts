@@ -1,8 +1,8 @@
 import fc from 'fast-check';
 import { describe, expect, it } from 'vitest';
-import { isPrefCondition, prefConditionHolds, type PrefCondition, type PrefConditionValue, type PrefTest, type PrefGroup, prefValueAtPath, type PrefList, type PrefMap, type PrefLeaf, type PrefObject, type PrefUnion } from '@weasel-js/pref-schema';
+import { isPrefCondition, prefConditionHolds, type PrefCondition, type PrefConditionValue, type PrefTest, type PrefGroup, prefValueAtPath, type PrefList, type PrefMap, type PrefLeaf, type PrefObject, type PrefUnion } from '@weasel-js/prefs-schema';
 import { checkPrefCondition, checkPrefConditions } from './conditionCheck';
-import { leaf, runs, tally, timeoutFor, valueOf } from '@weasel-js/pref-schema/testing/pbt.fixture';
+import { leaf, runs, tally, timeoutFor, valueOf } from '@weasel-js/prefs-schema/testing/pbt.fixture';
 
 const KEYS = ['l0', 'l1', 'l2'] as const;
 const LABEL = { kind: 'label', name: 'Note', description: '', default: undefined } as const;

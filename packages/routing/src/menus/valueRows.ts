@@ -2,7 +2,7 @@ import type { MenuEntry } from '@weasel-js/menu';
 import {
   prefDisplayBounds, prefNumberAt, prefUnitAccepts, resolvePrefUnit,
   type PrefBoolean, type PrefColor, type PrefEnum, type PrefNumber, type PrefString,
-} from '@weasel-js/pref-schema';
+} from '@weasel-js/prefs-schema';
 import { endlessAllows } from '@weasel-js/quantity';
 import { sep } from './separators';
 

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { type PrefGroup, filterPrefSubtree, visiblePrefSubtree } from '@weasel-js/pref-schema';
+import { type PrefGroup, filterPrefSubtree, visiblePrefSubtree } from '@weasel-js/prefs-schema';
 import { orderPrefGroup } from './order';
 
 const leaf = (name: string) => ({ kind: 'string', name, description: '', default: '' }) as const;

@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import { pref } from '@weasel-js/pref-schema';
+import { pref } from '@weasel-js/prefs-schema';
 import { createMenuHost } from './menuHost';
 import type { Action } from '../interactions/actions/action';
 

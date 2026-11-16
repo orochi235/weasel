@@ -8,7 +8,7 @@ import { resolve } from 'node:path';
 import { runnerImport, type Plugin, type ResolvedConfig } from 'vite';
 import { prefsCss, type PrefsCssOptions } from './css';
 import { prefsDefaultsSource } from './defaultsSource';
-import type { PrefGroup } from '@weasel-js/pref-schema';
+import type { PrefGroup } from '@weasel-js/prefs-schema';
 
 const ID = 'virtual:weasel-prefs.css';
 const RESOLVED = `\0${ID}`;

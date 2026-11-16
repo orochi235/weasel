@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 import type { MenuColorEntry, MenuEntry, MenuNumberEntry, MenuTextEntry } from '@weasel-js/menu';
-import { pref, type PrefGroup, type PrefLeaf } from '@weasel-js/pref-schema';
+import { pref, type PrefGroup, type PrefLeaf } from '@weasel-js/prefs-schema';
 import { decimal, percent } from '@weasel-js/quantity';
 import { resolveSchemaMenu, type MenuSources } from './resolveMenu';
 

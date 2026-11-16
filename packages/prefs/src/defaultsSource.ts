@@ -1,6 +1,6 @@
 import type { PrefsCssSource } from './css';
-import { type PrefGroup, prefHoldsValue, prefLeaves, isPrefScope, type PrefSelection, prefScopedDefault } from '@weasel-js/pref-schema';
-import { assignPrefValueAtPath, selectionWeights } from '@weasel-js/pref-schema/internal';
+import { type PrefGroup, prefHoldsValue, prefLeaves, isPrefScope, type PrefSelection, prefScopedDefault } from '@weasel-js/prefs-schema';
+import { assignPrefValueAtPath, selectionWeights } from '@weasel-js/prefs-schema/internal';
 import { readStored, resolveHeld, selectionAt } from './snapshot';
 import { prefSelectors, admittedSelectors } from './splitCheck';
 

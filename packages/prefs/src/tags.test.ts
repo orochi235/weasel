@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import type { PrefGroup, PrefSection } from '@weasel-js/pref-schema';
+import type { PrefGroup, PrefSection } from '@weasel-js/prefs-schema';
 import { prefLeafTags, prefLeavesTagged } from './tags';
 
 const SCHEMA: PrefGroup = {

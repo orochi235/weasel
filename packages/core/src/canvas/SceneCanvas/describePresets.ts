@@ -1,4 +1,4 @@
-import type { PresetDescription } from '@weasel-js/pref-schema';
+import type { PresetDescription } from '@weasel-js/prefs-schema';
 import { namesBuiltins, presetToolIds, type FeaturePreset } from './features';
 
 export type { PresetDescription };

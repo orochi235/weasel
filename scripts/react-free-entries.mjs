@@ -62,7 +62,7 @@ export const REACT_FREE_ENTRIES = [
     dom: true,
   },
   {
-    spec: '@weasel-js/pref-schema',
+    spec: '@weasel-js/prefs-schema',
     why: 'the declaration half of prefs, read by core and routing for action params, tool options and node properties',
   },
   {

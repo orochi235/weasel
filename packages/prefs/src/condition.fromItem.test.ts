@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { isPrefCondition, mapPrefConditionPaths, prefConditionHolds, prefConditionPaths, prefConditionReadsItem, type PrefCondition, type PrefGroup, type PrefList, type PrefLeaf } from '@weasel-js/pref-schema';
+import { isPrefCondition, mapPrefConditionPaths, prefConditionHolds, prefConditionPaths, prefConditionReadsItem, type PrefCondition, type PrefGroup, type PrefList, type PrefLeaf } from '@weasel-js/prefs-schema';
 import { checkPrefCondition, checkPrefConditions } from './conditionCheck';
 
 const mode = { kind: 'enum', name: 'Mode', description: '', default: 'ease', options: [{ value: 'ease', label: 'Ease' }, { value: 'hold', label: 'Hold' }] } as PrefLeaf;

@@ -28,7 +28,7 @@ export const RULES = [
   ['packages/pdf/src', 'Rendering'],
   ['packages/dither/src', 'Rendering'],
   ['packages/core/src/canvas', 'Rendering'],
-  ['packages/pref-schema/src/presets', 'Rendering'],
+  ['packages/prefs-schema/src/presets', 'Rendering'],
 
   ['packages/core/src/tools', 'Tools & gestures'],
   ['packages/core/src/input', 'Tools & gestures'],

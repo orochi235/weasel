@@ -1,4 +1,4 @@
-import type { PrefGroup } from '@weasel-js/pref-schema';
+import type { PrefGroup } from '@weasel-js/prefs-schema';
 import type { Action } from './action';
 
 type Form = NonNullable<Action['params']>;

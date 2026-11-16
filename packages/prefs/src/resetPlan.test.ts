@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { AUTO, leafIsAtReset, prefNodeAt, resetPlan, resetPlanAt, type LeafReading } from './autoReset';
-import type { PrefGroup, PrefSection, PrefLeaf } from '@weasel-js/pref-schema';
+import type { PrefGroup, PrefSection, PrefLeaf } from '@weasel-js/prefs-schema';
 
 const size = { kind: 'number', name: 'Size', description: '', default: 10, auto: { value: 40 } } as PrefLeaf;
 const gap = { kind: 'number', name: 'Gap', description: '', default: 4, auto: { on: true } } as PrefLeaf;

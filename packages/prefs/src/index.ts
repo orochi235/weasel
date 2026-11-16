@@ -146,7 +146,7 @@ export {
   type PrefWeights,
   type PresetDescription,
   type ResolvedPrefUnit,
-} from '@weasel-js/pref-schema';
+} from '@weasel-js/prefs-schema';
 export { prefTabRuns, type PrefTabRun } from './tabRuns';
 export { prefLeavesTagged, prefLeafTags } from './tags';
 export {

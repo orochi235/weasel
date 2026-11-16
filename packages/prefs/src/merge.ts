@@ -1,5 +1,5 @@
-import { type PrefGroup, isPrefLeaf, type PrefLeaf } from '@weasel-js/pref-schema';
-import { setOwnPrefValue } from '@weasel-js/pref-schema/internal';
+import { type PrefGroup, isPrefLeaf, type PrefLeaf } from '@weasel-js/prefs-schema';
+import { setOwnPrefValue } from '@weasel-js/prefs-schema/internal';
 
 type Child = PrefLeaf | PrefGroup;
 

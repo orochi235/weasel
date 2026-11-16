@@ -2,7 +2,7 @@ import { createMemoryAdapter, createRecordCache } from '@weasel-js/storage';
 import fc from 'fast-check';
 import { describe, expect, it, vi } from 'vitest';
 import { prefAutoValue, prefCanAuto, prefIsReset, prefResetOf, prefResets } from './autoReset';
-import { prefLeafAt, type PrefGroup } from '@weasel-js/pref-schema';
+import { prefLeafAt, type PrefGroup } from '@weasel-js/prefs-schema';
 import { openPrefsSync } from './open';
 import { createPrefsStore } from './store';
 import { autoRecord } from './stamp';

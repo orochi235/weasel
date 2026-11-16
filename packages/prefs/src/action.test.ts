@@ -1,6 +1,6 @@
 import { createMemoryAdapter, createRecordCache } from '@weasel-js/storage';
 import { describe, expect, expectTypeOf, it } from 'vitest';
-import { type PrefAction, type PrefActions, pref, type PrefGroup, prefHoldsValue, isBuiltinPref } from '@weasel-js/pref-schema';
+import { type PrefAction, type PrefActions, pref, type PrefGroup, prefHoldsValue, isBuiltinPref } from '@weasel-js/prefs-schema';
 import { checkPrefCondition } from './conditionCheck';
 import { prefsCss } from './css';
 import { prefsDefaultsSource } from './defaultsSource';

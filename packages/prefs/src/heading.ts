@@ -1,4 +1,4 @@
-import { type PrefGroup, type PrefSection, isPrefLeaf, isBuiltinPref, type PrefLeaf } from '@weasel-js/pref-schema';
+import { type PrefGroup, type PrefSection, isPrefLeaf, isBuiltinPref, type PrefLeaf } from '@weasel-js/prefs-schema';
 
 /** Whether a leaf's control fits beside a heading's words: a built-in `boolean`'s or `enum`'s does. */
 export function prefFitsHeading(leaf: PrefLeaf): boolean {

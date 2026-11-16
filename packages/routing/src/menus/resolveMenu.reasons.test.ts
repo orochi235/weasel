@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { MenuEntry } from '@weasel-js/menu';
-import { pref, type PrefGroup, type PrefLeaf, type PrefObject } from '@weasel-js/pref-schema';
+import { pref, type PrefGroup, type PrefLeaf, type PrefObject } from '@weasel-js/prefs-schema';
 import { resolveSchemaMenu, type MenuSources } from './resolveMenu';
 import type { Action } from '../interactions/actions/action';
 

@@ -4,7 +4,7 @@
  */
 import type { GestureSpec } from '@weasel-js/gestures';
 import type { CursorSpec } from '@weasel-js/cursor';
-import type { PrefGroup } from '@weasel-js/pref-schema';
+import type { PrefGroup } from '@weasel-js/prefs-schema';
 import type { Action, ActionUnavailable, ActionVariant, Carried } from './action';
 import type { ActionSettings } from './actionSettings';
 import type { ActionParamsOf } from './actionIds';

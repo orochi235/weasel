@@ -1,6 +1,6 @@
 import { createMemoryAdapter } from '@weasel-js/storage';
 import { describe, expect, it } from 'vitest';
-import { pref } from '@weasel-js/pref-schema';
+import { pref } from '@weasel-js/prefs-schema';
 import { prefsCss } from './css';
 import { prefsDefaultsSource } from './defaultsSource';
 import { openPrefsSync } from './open';

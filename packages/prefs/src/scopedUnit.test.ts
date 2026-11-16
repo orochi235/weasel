@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { UnitScope } from '@weasel-js/quantity';
-import { type PrefLeaf, type PrefNumber, type PrefObject, prefUnitAccepts, resolvePrefUnit } from '@weasel-js/pref-schema';
+import { type PrefLeaf, type PrefNumber, type PrefObject, prefUnitAccepts, resolvePrefUnit } from '@weasel-js/prefs-schema';
 import { prefLeafInScopes, scopedPrefUnit } from './scopedUnit';
 
 const INCHES: UnitScope = { system: { base: 'in', units: { in: 1, ft: 12 } } };

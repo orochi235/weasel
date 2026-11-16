@@ -1,4 +1,4 @@
-import type { PresetDescription } from '@weasel-js/pref-schema';
+import type { PresetDescription } from '@weasel-js/prefs-schema';
 import { isPrefLeaf, isPrefSection } from '../index';
 import { bundleTree } from './bundleTree';
 import type { SchemaRoot } from './schemaEdit';

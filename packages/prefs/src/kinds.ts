@@ -1,4 +1,4 @@
-import type { PrefKind } from '@weasel-js/pref-schema';
+import type { PrefKind } from '@weasel-js/prefs-schema';
 
 /** What a surface has to know about a kind before it can lay its control out. */
 export interface PrefKindTraits {

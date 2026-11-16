@@ -1,7 +1,7 @@
 import { createMemoryAdapter, createRecordCache, localStorageAdapter } from '@weasel-js/storage';
 import { recordValue } from './stamp';
 import { describe, expect, it, vi } from 'vitest';
-import { type PrefGroup, VERSION_RECORD } from '@weasel-js/pref-schema';
+import { type PrefGroup, VERSION_RECORD } from '@weasel-js/prefs-schema';
 import { createPrefsStore, type PrefChange } from './store';
 
 const SCHEMA = {

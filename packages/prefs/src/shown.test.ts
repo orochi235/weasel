@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { checkPrefCondition } from './conditionCheck';
-import { type PrefGroup, type PrefSection, prefValueAtPath, type PrefLeaf, prefJudge, prefShownReader } from '@weasel-js/pref-schema';
+import { type PrefGroup, type PrefSection, prefValueAtPath, type PrefLeaf, prefJudge, prefShownReader } from '@weasel-js/prefs-schema';
 
 const italic = { read: (stored: unknown) => stored === 'italic', write: (on: boolean) => (on ? 'italic' : undefined) };
 /** A dash array read as a style: lengths equal to the stroke's width are dots. */

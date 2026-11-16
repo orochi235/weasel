@@ -1,6 +1,6 @@
 import { deepEqual } from '@weasel-js/registry';
 import type { LeafReading } from '../autoReset';
-import type { PrefGroup, PrefSection } from '@weasel-js/pref-schema';
+import type { PrefGroup, PrefSection } from '@weasel-js/prefs-schema';
 
 /** What the conditions over a path leave it: an `enableIf` that fails, a `showIf` that fails, an `activeIf` that holds. */
 export interface LeafState {

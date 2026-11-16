@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { type PrefAlias, type PrefGroup, prefJudge, prefReader, type PrefLeaf, type PrefObject } from '@weasel-js/pref-schema';
+import { type PrefAlias, type PrefGroup, prefJudge, prefReader, type PrefLeaf, type PrefObject } from '@weasel-js/prefs-schema';
 import { prefAliasTargets } from './aliasTargets';
 
 const flag = (name: string, extra: Record<string, unknown> = {}): PrefLeaf =>

@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import { pref } from '@weasel-js/pref-schema';
+import { pref } from '@weasel-js/prefs-schema';
 import type { CapabilityTag } from '@weasel-js/modes';
 import { buildRuleCtx, type RuleCtx } from '../../eligibility';
 import type { Action } from './action';
