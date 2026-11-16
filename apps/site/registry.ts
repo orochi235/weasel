@@ -553,9 +553,9 @@ const DEMO_META: DemoMeta[] = [
   {
     id: 'selection-panel',
     title: 'Selection properties panel',
-    package: 'ui',
+    package: 'ui-canvas',
     description:
-      'SelectionPanel from @weasel-js/ui wired to a scene with the kit\'s pre-baked property schemas (defaultNodeProperties). Click a shape to inspect and edit its kind-specific properties; Cmd-click several — including different kinds — to see the schema intersection and per-field Mixed state. Edits fan out to the whole selection as one undo step.',
+      'SelectionPanel from @weasel-js/ui-canvas wired to a scene with the kit\'s pre-baked property schemas (defaultNodeProperties). Click a shape to inspect and edit its kind-specific properties; Cmd-click several — including different kinds — to see the schema intersection and per-field Mixed state. Edits fan out to the whole selection as one undo step.',
     hint: 'Select shapes and edit X/Y/W/H, fill, stroke. <kbd>Mod</kbd>-click a rect and the ellipse for Mixed state.',
     load: () => import('./demos/SelectionPanelDemo').then((m) => m.SelectionPanelDemo),
     path: 'apps/site/demos/SelectionPanelDemo.tsx',
