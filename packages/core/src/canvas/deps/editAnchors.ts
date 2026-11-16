@@ -20,6 +20,7 @@ import type { Scene, NodeId } from 'core/scene/types';
 import type { SelectionApi } from '@weasel-js/routing';
 import type { PointOrigin, PolygonPath } from '@weasel-js/geom';
 import { anchorDataPatch } from 'domains/paths/anchorData';
+import { anchorIndexUnder } from 'domains/paths/anchorUnder';
 import { classifyPathStorage, pathEditPathOf, resolveEditablePathOf } from 'domains/paths/editablePath';
 import { nodeFrameOf, shownNodeOf, storesEdits } from 'domains/paths/nodeFrame';
 import { representationOf } from 'domains/paths/pathRepresentation';
@@ -83,6 +84,7 @@ export function useEditAnchorsDepSource(
     // hand them out alongside an empty id.
     const selectedAnchors = effectiveId ? state.getSelectedAnchors() : EMPTY_ANCHOR_SELECTION;
     const marquee = effectiveId ? state.getMarquee() : null;
+    const access = pathAccess(sc, ad, state.getExtensions());
     return {
       editingId: effectiveId,
       setEditingId(id: string | null) {
@@ -128,7 +130,12 @@ export function useEditAnchorsDepSource(
         state.setHandleLocks(next);
         registry.changed?.();
       },
-      ...pathAccess(sc, ad, state.getExtensions()),
+      anchorUnder(world) {
+        if (!effectiveId) return -1;
+        const reachPx = registry.get('kitSettings')?.get('targets.anchorClickPx');
+        return anchorIndexUnder(access.getEditablePath(effectiveId), world, reachPx, registry.get('view')?.get().scale);
+      },
+      ...access,
     };
   });
   useTransformFollower(() => pathEditFollower(sceneRef.current, stateRef.current.getExtensions()));

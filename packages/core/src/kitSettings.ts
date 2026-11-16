@@ -13,6 +13,8 @@ export interface CoreKitTargetSettings {
   rotationDistancePx: number;
   /** Reach of a path segment being edited. */
   segmentHitPx: number;
+  /** Radius around an anchor that a click selects it within. */
+  anchorClickPx: number;
   /** Grab slop around a shape's outline. */
   pickTolerancePx: number;
   /** How near a snap target pulls a point, for a snap source that sets no reach of its own. */

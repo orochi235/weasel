@@ -58,8 +58,8 @@ and an app that imports only some never loads the others:
 beside `DRAW_TOOLS` (the pen and pencil), `SLICE_TOOLS` (the knife), `RESHAPE_TOOLS` and `usePathToolsTools`.
 Each path-edit tool carries `edits-anchors`, so only path edit allows it; Sand's and Tug's bindings outrank anchor
 editing's, and path edit starts on the `anchors` tool, which binds nothing. The pen's, pencil's and knife's dot sizes
-and reaches are kit settings (`targets.pen*`, `targets.slice*`, `targets.anchorClickPx`), whose prefs schema is
-`pathToolsKitSettingsSchema`.
+and reaches are kit settings (`targets.pen*`, `targets.slice*`), whose prefs schema is `pathToolsKitSettingsSchema`.
+The reach of an anchor click is core's `targets.anchorClickPx`, which the `editAnchors` dep's `anchorUnder` reads.
 
 `createPathEditHost()` is a `<SceneCanvas pathEdit>` host that holds the open path and its selected anchors itself
 and says when either changes, so the one object is also a `redrawOn` source and what a panel over the open path

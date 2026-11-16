@@ -37,24 +37,12 @@ import {
   type AnchorSet,
 } from '@weasel-js/geom';
 import { pathToAnchors, type PolygonPath } from '@weasel-js/geom';
-import { pxReach, rectBetween } from '@weasel-js/geom';
+import { rectBetween } from '@weasel-js/geom';
 import { selectionAfterAnchorPress } from './editAnchors/editAnchors';
 import { canDeleteSelectedMark, deleteSelectedMark, markUnder } from './pathEditMarks';
 import { editingLayer, inPlane, pathOperationTags } from '@weasel-js/core';
 import { BETWEEN_GESTURES } from '@weasel-js/routing';
 import type {} from '../actionParamSchema';
-
-/** Screen-pixel radius for "this click landed on an anchor". */
-export const ANCHOR_CLICK_PX = 10;
-
-/** `targets.anchorClickPx`, else `ANCHOR_CLICK_PX`, in world units through the view; with no view, one
- *  pixel is one unit. */
-function anchorClickSlop(deps: ActionDeps | undefined): number {
-  const px = deps?.kitSettings?.get('targets.anchorClickPx') ?? ANCHOR_CLICK_PX;
-  const scale = deps?.view?.get().scale;
-  if (!scale) return px;
-  return pxReach(px, scale);
-}
 
 /** The `editAnchors` dep while a path is open, or null. */
 export function depOf(deps: ActionDeps | undefined): EditAnchorsDep | null {
@@ -135,7 +123,7 @@ export const selectAnchorAction: Action = inPlane(defineAction({
     { spec: { kind: 'click', mods: { shift: true } }, opts: { id: 'selectAnchor.add', params: { additive: true } } },
   ],
   eligible: { capability: 'edits-anchors' },
-  requires: ['editAnchors', 'view', 'kitSettings'],
+  requires: ['editAnchors', 'view'],
   invoker: {
     timing: 'immediate',
     run: (deps, params) => {
@@ -144,10 +132,9 @@ export const selectAnchorAction: Action = inPlane(defineAction({
       const world = params?.world;
       if (!world) return;
       const { x: wx, y: wy } = world;
-      const worldPath = worldPathOf(dep);
-      if (!worldPath) return;
+      if (!worldPathOf(dep)) return;
 
-      const hit = nearestAnchorIndex(worldPath, wx, wy, anchorClickSlop(deps));
+      const hit = dep.anchorUnder(world);
       const additive = params?.additive === true;
       if (hit === -1) {
         // Missed every anchor: an extension's mark is next. Otherwise a bare
@@ -228,7 +215,7 @@ export const cutPathAtAnchorAction: Action = inPlane(defineAction({
   tags: pathOperationTags('click'),
   defaultBinding: [{ spec: { kind: 'click', mods: { alt: true, shift: true } }, opts: { id: 'cutPathAtAnchor.click' } }],
   eligible: { capability: 'edits-anchors' },
-  requires: ['editAnchors', 'view', 'kitSettings'],
+  requires: ['editAnchors'],
   invoker: {
     timing: 'immediate',
     run: (deps, params) => {
@@ -236,13 +223,9 @@ export const cutPathAtAnchorAction: Action = inPlane(defineAction({
       if (!dep) return;
       const world = params?.world;
       if (!world) return;
-      const { x: wx, y: wy } = world;
-      const worldPath = worldPathOf(dep);
-      if (!worldPath) return;
-
       // Clicks carry no affordance (only pointerdown does), so this resolves
       // the hit itself.
-      const nearest = nearestAnchorIndex(worldPath, wx, wy, anchorClickSlop(deps));
+      const nearest = dep.anchorUnder(world);
       if (nearest === -1) return;
 
       const changed = commitAnchorEdit(dep, 'Cut path', (set) => openSubpathAt(set, nearest));
@@ -252,39 +235,6 @@ export const cutPathAtAnchorAction: Action = inPlane(defineAction({
   },
   enabled: (deps) => (depOf(deps) ? true : ActionDisabledReason.SelectionRequired),
 }), editingLayer);
-
-/** Flat index of the open path's anchor a click at `world` lands on, else -1. */
-export function anchorUnder(deps: ActionDeps | undefined, world: { x: number; y: number }): number {
-  const dep = depOf(deps);
-  const path = dep ? worldPathOf(dep) : null;
-  return path ? nearestAnchorIndex(path, world.x, world.y, anchorClickSlop(deps)) : -1;
-}
-
-/** Flat index of the anchor nearest `(wx, wy)` within `slop`, else -1. */
-function nearestAnchorIndex(
-  path: PolygonPath,
-  wx: number,
-  wy: number,
-  slop: number,
-): number {
-  let best = -1;
-  let bestD2 = slop * slop;
-  let flat = 0;
-  for (const sub of (pathToAnchors(path) as AnchorSet).anchors) {
-    for (const a of sub) {
-      const dx = a.x - wx;
-      const dy = a.y - wy;
-      const d2 = dx * dx + dy * dy;
-      // `<=` so an exact-slop hit counts; ties go to the earlier anchor.
-      if (d2 <= bestD2 && (best === -1 || d2 < bestD2)) {
-        bestD2 = d2;
-        best = flat;
-      }
-      flat++;
-    }
-  }
-  return best;
-}
 
 /** Shift on the press adds the marqueed anchors to the selection. */
 export const MARQUEE_ANCHORS_ROLES = {

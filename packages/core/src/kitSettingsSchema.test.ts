@@ -8,6 +8,7 @@ import { ANCHOR_HIT_BASE_PX, HANDLE_BASE_PX, ROTATION_HANDLE_BASE_PX } from 'cor
 import { DEFAULT_VIEW_ANIMATION_MS } from 'core/viewport/useViewAnimation';
 import { DEFAULT_PICK_TOLERANCE_PX } from 'canvas/SceneCanvas/useScenePickers';
 import { SEGMENT_HIT_PX } from 'interactions/actions/defaults/segmentUnder';
+import { ANCHOR_CLICK_PX } from 'domains/paths/anchorUnder';
 import { DEFAULT_SNAP_PX } from 'domains/snap/session2d';
 import { coreKitSettingsSchema } from './kitSettingsSchema';
 
@@ -25,6 +26,7 @@ const CONSTANTS: Pick<KitSettings, 'gestures' | 'view'> & { targets: Record<stri
     anchorHitPx: ANCHOR_HIT_BASE_PX,
     rotationDistancePx: ROTATION_HANDLE_BASE_PX,
     segmentHitPx: SEGMENT_HIT_PX,
+    anchorClickPx: ANCHOR_CLICK_PX,
     pickTolerancePx: DEFAULT_PICK_TOLERANCE_PX,
     snapPx: DEFAULT_SNAP_PX,
   },
