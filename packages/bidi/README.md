@@ -29,7 +29,7 @@ paragraph reads at, which under `'auto'` is what its first strong character deci
 
 ```ts
 import { bidi } from '@weasel-js/bidi';
-import { registerBidi } from '@weasel-js/core';
+import { registerBidi } from '@weasel-js/text';
 
 registerBidi(bidi);   // once, at startup
 ```

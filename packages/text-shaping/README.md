@@ -15,7 +15,7 @@ Latin, Greek, Cyrillic and CJK. Importing it costs nothing: HarfBuzz's WebAssemb
 ```ts
 import { loadShaper } from '@weasel-js/text-shaping';
 import { bidi } from '@weasel-js/bidi';
-import { registerBidi, registerShaper } from '@weasel-js/core';
+import { registerBidi, registerShaper } from '@weasel-js/text';
 
 registerBidi(bidi);
 registerShaper(await loadShaper());   // once, at startup, before text is laid out
