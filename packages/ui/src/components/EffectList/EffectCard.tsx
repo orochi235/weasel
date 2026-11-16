@@ -73,12 +73,12 @@ export function EffectCard({
         />
         {onDuplicate && (
           <button type="button" className={s.action} aria-label={`Duplicate ${item.name}`} onClick={onDuplicate}>
-            <Icon name={icon('editing:duplicate')} size={16} />
+            <Icon name={icon('clone')} size={16} />
           </button>
         )}
         {onRemove && (
           <button type="button" className={s.action} aria-label={`Remove ${item.name}`} data-effect-remove="" onClick={onRemove}>
-            <Icon name={icon('core:delete')} size={16} />
+            <Icon name={icon('close')} size={16} />
           </button>
         )}
       </div>
