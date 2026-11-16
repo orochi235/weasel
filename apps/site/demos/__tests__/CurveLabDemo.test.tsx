@@ -1,4 +1,4 @@
-import { act, cleanup, screen } from '@testing-library/react';
+import { act, cleanup, fireEvent, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { renderSettled } from '@weasel-js/react/testing/renderSettled';
 import type { SharedAnchor } from '@weasel-js/geom/curves';
@@ -58,5 +58,15 @@ describe('CurveLabDemo', () => {
     expect(anchors()[0]).toMatchObject(START);
     key(true);
     expect(anchors()[0]).toMatchObject({ x: 100, y: 260 });
+  });
+
+  it('shows one overlay alone on Alt-click, and every overlay on a second', async () => {
+    await renderSettled(<CurveLabDemo />, { wrapper: withIcons });
+    const box = (name: string) => screen.getByRole('checkbox', { name }) as HTMLInputElement;
+    const shown = () => ['anchors', 'curvature comb', 'inflections + extrema'].map((n) => box(n).checked);
+    fireEvent.click(box('curvature comb'), { altKey: true });
+    expect(shown()).toEqual([false, true, false]);
+    fireEvent.click(box('curvature comb'), { altKey: true });
+    expect(shown()).toEqual([true, true, true]);
   });
 });
