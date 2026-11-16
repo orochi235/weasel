@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { linePath, rectPath } from './builder';
 import { boundsOfPath } from './bounds';
 import { repeatAlongPath, stationsAlongPath, type RepeatAlongPathOptions } from './repeatAlongPath';
+import { pathFromD } from './pathFromD';
 
 const line = linePath({ x: 0, y: 0 }, { x: 100, y: 0 });
 const at = (opts: RepeatAlongPathOptions) => stationsAlongPath(line, opts).map((s) => s.distance);
@@ -65,5 +66,12 @@ describe('repeatAlongPath', () => {
     const b = boundsOfPath(copy!);
     expect(b.width).toBeCloseTo(2);
     expect(b.height).toBeCloseTo(4);
+  });
+
+  it('reads a count that is not a finite number as unset', () => {
+    const line = pathFromD('M0 0 L100 0');
+    expect(stationsAlongPath(line, { count: NaN })).toHaveLength(5);
+    expect(stationsAlongPath(line, { count: Infinity })).toHaveLength(5);
+    expect(stationsAlongPath(line, { count: NaN, spacing: 10 })).toHaveLength(stationsAlongPath(line, { spacing: 10 }).length);
   });
 });

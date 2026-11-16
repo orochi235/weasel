@@ -18,7 +18,8 @@ export interface RepeatAlongPathOptions {
    * How many copies. With no `spacing`, or 0, they spread evenly over the whole
    * path — the first starting at its start and the last ending at its end on
    * an open one, evenly round a closed one — and the default is 5. With a
-   * `spacing`, it caps the run; unset, as many as fit.
+   * `spacing`, it caps the run; unset, as many as fit. A count that is not a
+   * finite number counts as unset.
    */
   count?: number;
   /** Space along the path between one copy's end and the next one's start. */
@@ -65,15 +66,16 @@ export function stationsAlongPath(path: Path, opts: RepeatAlongPathOptions = {},
 /** How many copies `size` long go on a path `L` long, and the gap between each two. */
 function layout(L: number, closed: boolean, size: number, opts: RepeatAlongPathOptions): { n: number; gap: number } {
   const { spacing } = opts;
+  const count = Number.isFinite(opts.count) ? opts.count : undefined;
   if (spacing === undefined || !(spacing > 0)) {
-    const n = Math.max(Math.floor(opts.count ?? 5), 0);
+    const n = Math.max(Math.floor(count ?? 5), 0);
     if (closed) return { n, gap: n > 0 ? L / n - size : 0 };
     return { n, gap: n > 1 ? (L - n * size) / (n - 1) : 0 };
   }
   const step = size + spacing;
   const hair = 1e-9 * Math.max(1, L);
   const fit = Math.max(Math.floor((closed ? L + hair : L + spacing + hair) / step), 0);
-  return { n: Math.max(Math.min(opts.count === undefined ? fit : Math.floor(opts.count), fit), 0), gap: spacing };
+  return { n: Math.max(Math.min(count === undefined ? fit : Math.floor(count), fit), 0), gap: spacing };
 }
 
 /**
