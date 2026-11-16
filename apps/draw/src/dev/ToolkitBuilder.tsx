@@ -10,7 +10,7 @@ import { FEATURE_NAMES, type FeatureName, namedFeatures } from '@weasel-js/editi
 import { pathTools, usePathToolsTools } from '@weasel-js/path-tools';
 import { textToolsPreset } from '@weasel-js/text-tools';
 import { Select } from '@weasel-js/ui/components/Select';
-import { Switch } from '@weasel-js/ui/components/Switch';
+import { CheckboxGroup } from '@weasel-js/ui/components/CheckboxGroup';
 import { useRegisteredActions } from '@weasel-js/ui/components/Prefs';
 import { type ReactElement, useEffect, useState } from 'react';
 import { DevShell } from './DevShell';
@@ -26,6 +26,12 @@ import s from './ToolkitBuilder.module.css';
 const TOOL_PRESETS = FEATURE_NAMES.filter((f) => f.startsWith('tools:'));
 const BASES = FEATURE_NAMES.filter((f) => !f.startsWith('tools:'));
 const isFeature = (f: string): f is FeatureName => (FEATURE_NAMES as readonly string[]).includes(f);
+/** Every switch in the header: each tool preset, then path-tools' and text-tools' presets. */
+const SWITCHES = [...TOOL_PRESETS, 'path-tools', 'text-tools'] as const;
+type SwitchName = (typeof SWITCHES)[number];
+
+const switchesOn = ({ tools, paths, text }: Setup): SwitchName[] =>
+  SWITCHES.filter((id) => (id === 'path-tools' ? paths : id === 'text-tools' ? text : tools.includes(id)));
 
 interface Setup { base: FeatureName; tools: readonly FeatureName[]; paths: boolean; text: boolean }
 
@@ -144,20 +150,20 @@ export function ToolkitBuilder(): ReactElement {
             selectedKey={setup.base}
             onSelectionChange={(next) => setSetup((prev) => ({ ...prev, base: next }))}
           />
-          {TOOL_PRESETS.map((id) => (
-            <Switch key={id} isSelected={setup.tools.includes(id)}
-              onChange={(on) => setSetup((prev) => ({
-                ...prev, tools: TOOL_PRESETS.filter((t) => (t === id ? on : prev.tools.includes(t))),
-              }))}>
-              {id}
-            </Switch>
-          ))}
-          <Switch isSelected={setup.paths} onChange={(next) => setSetup((prev) => ({ ...prev, paths: next }))}>
-            path-tools
-          </Switch>
-          <Switch isSelected={setup.text} onChange={(next) => setSetup((prev) => ({ ...prev, text: next }))}>
-            text-tools
-          </Switch>
+          <CheckboxGroup<SwitchName>
+            aria-label="Presets"
+            control="switch"
+            orientation="horizontal"
+            sweep
+            items={SWITCHES.map((id) => ({ value: id, label: id }))}
+            value={switchesOn(setup)}
+            onChange={(on) => setSetup((prev) => ({
+              ...prev,
+              tools: TOOL_PRESETS.filter((t) => on.includes(t)),
+              paths: on.includes('path-tools'),
+              text: on.includes('text-tools'),
+            }))}
+          />
         </>
       }
     >
