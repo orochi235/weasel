@@ -1,5 +1,5 @@
 // @vitest-environment node
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { html } from './html';
 import { shellAllowOrigins, shellTitle } from './shellTitle';
 
@@ -31,6 +31,13 @@ describe('shellAllowOrigins', () => {
       shellAllowOrigins(`export default defineShellConfig({ capture: { allowOrigins: [host(), 'not a url', 'https://ok.example'] } });\n`, FILE),
     ).toEqual(['https://ok.example']);
     expect(shellAllowOrigins(`export default {`, FILE)).toEqual([]);
+  });
+
+  it('hands each entry it leaves out to `dropped`, as its source text', () => {
+    const dropped = vi.fn();
+    const code = `export default defineShellConfig({ capture: { allowOrigins: [host(), 'fonts.gstatic.com', 'https://ok.example'] } });\n`;
+    expect(shellAllowOrigins(code, FILE, dropped)).toEqual(['https://ok.example']);
+    expect(dropped.mock.calls).toEqual([['host()'], ["'fonts.gstatic.com'"]]);
   });
 });
 

@@ -216,7 +216,7 @@ export function forge(options: ForgeOptions): Plugin[] {
   }
 
   /** What the shell config's source names under `at`: its title, undefined and so the default when unread. */
-  const shellUnder = (at: string) => readShellFields(options.shellConfig ? resolve(at, options.shellConfig) : undefined);
+  const shellUnder = (at: string) => readShellFields(options.shellConfig ? resolve(at, options.shellConfig) : undefined, logger);
 
   const modules = virtualModules(options, { index, files, root: () => root, base: () => base });
   let capture: CaptureEndpoint | null = null;
