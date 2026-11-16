@@ -63,4 +63,12 @@ describe('the router commands', () => {
     run('orthogonal');
     expect(scene.historyEntries()).toHaveLength(0);
   });
+
+  it('are disabled, and change nothing, where they would change a locked connector', () => {
+    const { scene, opts, run, edge } = load('orthogonal');
+    scene.setLocked('ab' as never, true);
+    expect(createSetRouterAction('straight', opts).enabled!({ scene } as never)).toBe(ActionDisabledReason.Locked);
+    expect(() => run('straight')).not.toThrow();
+    expect(edge().router).toBe('orthogonal');
+  });
 });
