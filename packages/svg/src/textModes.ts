@@ -6,7 +6,7 @@
 import {
   fitTextToBox, resolveRunFace, resolveTextStyle, TextOutlinesError, toRuns, type FontStyle,
 } from '@weasel-js/core';
-import { cachedFontVariant, outlineMetrics, type FaceEmbedding } from '@weasel-js/font';
+import { cachedFontVariant, cssString, outlineMetrics, type FaceEmbedding } from '@weasel-js/font';
 import { svgTextOutlines } from './textOutlines';
 import type { SvgNode, SvgTextMode, SvgTextNode } from './types';
 import type { Warn } from './strokeAttrs';
@@ -118,15 +118,17 @@ export function fontFacesXml(faces: readonly EmbeddedFace[]): string {
   const rules = faces.map((f) => {
     const cff = f.embedding.outlines === 'cff';
     const src = `url(data:font/${cff ? 'otf' : 'ttf'};base64,${base64(f.embedding.sfnt)}) format("${cff ? 'opentype' : 'truetype'}")`;
-    return `@font-face{font-family:${cssString(f.family)};font-weight:${f.weight};font-style:${f.style};src:${src}}`;
+    return `@font-face{font-family:${cssStringInXml(f.family)};font-weight:${f.weight};font-style:${f.style};src:${src}}`;
   });
   return `<style>${rules.join('')}</style>`;
 }
 
-/** `s` as a double-quoted CSS string, safe inside XML character data. */
-function cssString(s: string): string {
-  const escaped = s.replace(/[\\"]/g, (c) => `\\${c}`).replace(/[<&>]/g, (c) => `\\${c.charCodeAt(0).toString(16)} `);
-  return `"${escaped}"`;
+/** What XML character data cannot hold as it stands: markup, and the characters XML 1.0 has no place for. */
+const NOT_XML_DATA = /[<&>\u0000-\u0008\u000B\u000E-\u001F\uFFFE\uFFFF]|[\uD800-\uDBFF](?![\uDC00-\uDFFF])|(?<![\uD800-\uDBFF])[\uDC00-\uDFFF]/g;
+
+/** `s` as a CSS string, safe inside XML character data: each character XML cannot hold written as a CSS escape. */
+function cssStringInXml(s: string): string {
+  return cssString(s).replace(NOT_XML_DATA, (c) => `\\${c.charCodeAt(0).toString(16)} `);
 }
 
 function base64(bytes: ArrayBuffer): string {
