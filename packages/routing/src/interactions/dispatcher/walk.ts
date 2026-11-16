@@ -175,7 +175,7 @@ export function walk(
     if (result === 'empty-handle') { push({ kind: 'empty-handle' }); continue; }
     push({ kind: result === 'fired' ? 'fired' : 'misbound' });
     stop = result;
-    winner = { match, action };
+    if (result === 'fired') winner = { match, action };
   }
   return { steps, stop, winner };
 }

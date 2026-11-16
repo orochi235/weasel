@@ -189,5 +189,6 @@ export interface Walked {
   /** Why the walk ended: a candidate fired (or would), one was misbound, or
    *  every candidate was exhausted. */
   stop: 'fired' | 'misbound' | 'exhausted';
+  /** The candidate that fired, or would; null when the walk stopped on a misbound one. */
   winner: { match: MatchResult; action: Action } | null;
 }
