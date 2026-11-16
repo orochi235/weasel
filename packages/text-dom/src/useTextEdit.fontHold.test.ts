@@ -40,4 +40,18 @@ describe('useTextEdit fontHold', () => {
     act(() => result.current.startEdit('a'));
     expect(getOverlay(h.container)!.style.opacity).toBe('');
   });
+
+  it('keeps the overlay hidden for the whole of a hold longer than one timer holds', () => {
+    vi.useFakeTimers();
+    try {
+      const h = makeHarness({ a: 'hi' });
+      h.opts.fontHold = 2 ** 31;
+      const { result } = renderHook(() => useTextEdit(h.opts));
+      act(() => result.current.startEdit('a'));
+      act(() => { vi.advanceTimersByTime(1); });
+      expect(getOverlay(h.container)!.style.opacity).toBe('0');
+    } finally {
+      vi.useRealTimers();
+    }
+  });
 });
