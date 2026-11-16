@@ -38,9 +38,13 @@ that JSON as text; neither can be handed to a loader by mistake, nor a snapshot 
 | `stringifySnapshot(value)` / `parseSnapshot(text)` | the same, through text | |
 | `snapshotReplacer` | | the `JSON.stringify` replacer, for a larger payload holding snapshots (a clipboard's) |
 
-Encoding tags each typed array (`{ "__ta": "f32", "data": [...] }`) and writes any value of yours that decoding
-would read as something else inside a `{ "__raw": … }` wrapper, so any JSON-safe data round-trips. Decoding also
-reads a path's `commands` and `coords` as saves from before tagging wrote them, as plain arrays of numbers. The codec
+Encoding tags each typed array (`{ "__ta": "f32", "data": [...] }`), writes each number JSON cannot (`NaN`,
+`Infinity`, `-Infinity` and `-0`, which plain `JSON.stringify` writes as `null` and `0`) by name, as
+`{ "__num": "Infinity" }` and, inside a typed array's `data`, as the bare name, and writes any value of yours that
+decoding would read as something else inside a `{ "__raw": … }` wrapper. So any JSON-safe data, and every number,
+round-trips. Decoding also reads a path's `commands` and `coords` as saves from before tagging wrote them, as plain
+arrays of numbers. A `null` a save from before numbers were named wrote for one reads as `null`: what that save
+lost stays lost. The codec
 is also published as `@weasel-js/core/json`, which loads without React, for a Node process; the document envelope
 below is in the main entry only, since it is typed against the scene.
 
@@ -244,7 +248,7 @@ that outlived the code that registered it; `onSkip` hears each key left out, as 
   not part of `Scene`.
 - **View / viewport.** Camera position and zoom are not captured.
 - **`TData` / `TPose` JSON-safety.** The kit serializes whatever is in `data`
-  and `pose` as-is. The codec carries typed arrays; JSON still drops or corrupts
+  and `pose` as-is. The codec carries typed arrays and every number; JSON still drops or corrupts
   what it cannot carry (functions, class instances, `undefined`).
 
 ## Error cases

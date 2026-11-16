@@ -1,7 +1,7 @@
 /**
- * Property tests of the snapshot codec: any data, typed arrays and lookalikes of what the writer tags anywhere in it,
- * reads back equal through `stringifySnapshot` and `parseSnapshot`, and a path an older save wrote untagged reads as
- * typed arrays.
+ * Property tests of the snapshot codec: any data, typed arrays, numbers JSON cannot write and lookalikes of what the
+ * writer tags anywhere in it, reads back equal through `stringifySnapshot` and `parseSnapshot`, every number by
+ * `Object.is`, and a path an older save wrote untagged reads as typed arrays.
  */
 import { describe, expect, it } from 'vitest';
 import fc from 'fast-check';
@@ -19,13 +19,15 @@ describe('the snapshot codec', () => {
     fc.assert(fc.property(dataValue, (v) => {
       const text = stringifySnapshot(v);
       if (/"__ta"|"commands"|"coords"|"__raw"/.test(text)) seen.count('lookalike or tagged');
+      if (text.includes('"__num"')) seen.count('number by name');
       expect(same(hop(v), v)).toEqual([]);
     }), runs(RUNS));
     seen.atLeast('lookalike or tagged', RUNS / 3);
+    seen.atLeast('number by name', RUNS / 6);
   }, timeoutFor(RUNS, 5));
 
   it('still read a path an older save wrote untagged', () => {
-    fc.assert(fc.property(fc.array(fc.integer({ min: 0, max: 255 }), { maxLength: 5 }), fc.array(fc.float({ noNaN: true, noDefaultInfinity: true }), { maxLength: 5 }), fc.boolean(),
+    fc.assert(fc.property(fc.array(fc.integer({ min: 0, max: 255 }), { maxLength: 5 }), fc.array(fc.float({ noNaN: true, noDefaultInfinity: true }).map((n) => n + 0), { maxLength: 5 }), fc.boolean(),
       (cmds, coords, asObject) => {
         const legacy = (a: number[]) => (asObject ? Object.fromEntries(a.map((n, i) => [String(i), n])) : a);
         const got = decodeSnapshot(JSON.parse(JSON.stringify({ path: { commands: legacy(cmds), coords: legacy(coords) } }))) as { path: { commands: Uint8Array; coords: Float32Array } };

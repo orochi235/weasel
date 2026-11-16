@@ -1,11 +1,14 @@
 /**
  * The canonical JSON codec for scene snapshots. A snapshot (`scene.toJSON()`, `serializeHistory()`) is in-memory
  * data: a structured clone carries it as it is, typed arrays included. Its encoded form is JSON: each typed array
- * tagged with `@weasel-js/geom`'s encoding, and any value of the consumer's that the decoder would misread written
- * inside a `{ "__raw": … }` wrapper. The two are distinct types, so a decoded snapshot cannot be stored as JSON, nor
+ * tagged with `@weasel-js/geom`'s encoding, each number JSON cannot write (`NaN`, `Infinity`, `-Infinity`, `-0`)
+ * written by name as `{ "__num": "Infinity" }`, and any value of the consumer's that the decoder would misread
+ * written inside a `{ "__raw": … }` wrapper. The two are distinct types, so a decoded snapshot cannot be stored as JSON, nor
  * an encoded one loaded, by mistake.
  */
-import { isRawWrapper, typedArrayReplacerWrapping, untagTypedArray } from '@weasel-js/geom';
+import {
+  isRawWrapper, namedNumber, numberName, typedArrayReplacerWrapping, untagTypedArray, type NumberName,
+} from '@weasel-js/geom';
 import { SnapshotShapeError } from '../scene/snapshotShapeError';
 
 declare const encodedOf: unique symbol;
@@ -32,11 +35,32 @@ function legacyNumbers(v: unknown): number[] | undefined {
   return keys.map((key) => Number(src[key] ?? 0));
 }
 
-/** The `JSON.stringify` replacer the codec writes with: typed arrays tagged, and any value the decoder would read as
- *  something else (a tagged array, a wrapper, or a path's untagged legacy arrays) wrapped. For a writer that
- *  stringifies a larger value of its own, such as a clipboard payload, with snapshots inside it. */
-export const snapshotReplacer: (this: unknown, key: string, value: unknown) => unknown =
-  typedArrayReplacerWrapping((key, value) => isPathKey(key) && legacyNumbers(value) !== undefined);
+const NUM = '__num';
+
+/** A number JSON cannot write, as the codec writes it: by the name a tagged typed array writes it under. */
+interface TaggedNumber {
+  __num: NumberName;
+}
+
+/** The number a {@link TaggedNumber} names: an object with that one own key, holding a name. Else `undefined`. */
+function untagNumber(value: unknown): number | undefined {
+  if (value === null || typeof value !== 'object' || Array.isArray(value)) return undefined;
+  const keys = Object.keys(value);
+  return keys.length === 1 && keys[0] === NUM ? namedNumber((value as Record<string, unknown>)[NUM]) : undefined;
+}
+
+const tagsAndWraps = typedArrayReplacerWrapping(
+  (key, value) => untagNumber(value) !== undefined || (isPathKey(key) && legacyNumbers(value) !== undefined),
+);
+
+/** The `JSON.stringify` replacer the codec writes with: typed arrays and numbers JSON cannot write tagged, and any
+ *  value the decoder would read as something else (a tag, a wrapper, or a path's untagged legacy arrays) wrapped. For
+ *  a writer that stringifies a larger value of its own, such as a clipboard payload, with snapshots inside it. */
+export const snapshotReplacer = function replace(this: unknown, key: string, value: unknown): unknown {
+  const name = typeof value === 'number' ? numberName(value) : undefined;
+  if (name) return { [NUM]: name } satisfies TaggedNumber;
+  return tagsAndWraps.call(this, key, value);
+};
 
 /** `value` encoded as JSON text. */
 export function stringifySnapshot<T>(value: T): SnapshotText<T> {
@@ -48,7 +72,7 @@ export function encodeSnapshot<T>(value: T): Encoded<T> {
   return JSON.parse(stringifySnapshot(value)) as Encoded<T>;
 }
 
-/** A copy of `value` decoded: every tagged typed array a typed array again, a path's `commands` and `coords` as an
+/** A copy of `value` decoded: every tagged number and typed array a number and a typed array again, a path's `commands` and `coords` as an
  *  older save wrote them untagged read as typed arrays, and every `{ "__raw": … }` wrapper taken off, what it holds
  *  not read as anything itself but its contents decoded. `value` is left as it is. */
 export function decodeSnapshot<T>(value: Encoded<T>): T;
@@ -64,7 +88,7 @@ const MAX_DEPTH = 1000;
 function decode(value: unknown, depth: number): unknown {
   if (depth > MAX_DEPTH) throw new SnapshotShapeError(`Scene: malformed snapshot: it nests more than ${MAX_DEPTH} levels deep`);
   if (isRawWrapper(value)) return decodeWithin(value.__raw, depth + 1);
-  return untagTypedArray(value) ?? decodeWithin(value, depth);
+  return untagNumber(value) ?? untagTypedArray(value) ?? decodeWithin(value, depth);
 }
 
 /** The snapshot `text` encodes. */

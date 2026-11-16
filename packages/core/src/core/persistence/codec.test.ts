@@ -31,6 +31,24 @@ describe('the snapshot codec', () => {
     expect(decodeSnapshot(viaText(encodeSnapshot(data)))).toEqual(data);
   });
 
+  it('keeps the numbers JSON cannot write, alone, in data and in typed arrays', () => {
+    const data = { max: Infinity, min: -Infinity, none: NaN, zero: -0, list: [-0, Infinity], f: new Float64Array([NaN, -0, -Infinity]) };
+    const back = parseSnapshot(stringifySnapshot(data));
+    expect(back).toEqual(data);
+    expect(Object.is(back.zero, -0) && Object.is(back.list[0], -0) && Object.is(back.f[1], -0)).toBe(true);
+    for (const n of [Infinity, -Infinity, NaN, -0]) expect(Object.is(parseSnapshot(stringifySnapshot(n)), n)).toBe(true);
+    expect(stringifySnapshot({ max: Infinity })).toBe('{"max":{"__num":"Infinity"}}');
+  });
+
+  it('keeps a value shaped like a named number as the value it was', () => {
+    const data = { a: { __num: 'Infinity' }, b: { __num: '-0' }, c: { __num: Infinity } };
+    expect(decodeSnapshot(viaText(encodeSnapshot(data)))).toEqual(data);
+  });
+
+  it('reads the null an older save wrote for a number JSON could not hold as null', () => {
+    expect(decodeSnapshot(JSON.parse('{"max":null}'))).toEqual({ max: null });
+  });
+
   it("reads a path's untagged arrays as an older save wrote them", () => {
     const old = { path: { commands: [0, 1, 4], coords: { 0: 1, 1: 2 } } };
     const read = decodeSnapshot(old) as { path: { commands: Uint8Array; coords: Float32Array } };
