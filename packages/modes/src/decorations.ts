@@ -19,9 +19,10 @@ export interface CreateModeDecorationsOptions {
  *  for as long as the mode is active and belong to the mode rather than to any
  *  tool — path-edit's anchor dots and handle lines are the motivating case. */
 export interface ModeDecorations {
-  /** Register (or replace) the painter for a mode id, which must be one of the
-   *  registry's modes. Returns a release that removes it, and does nothing once
-   *  another painter has replaced it. */
+  /** Register a painter for a mode id, which must be one of the registry's
+   *  modes. The newest registration for a mode paints. Returns a release that
+   *  removes this registration: releasing the live one brings back the one
+   *  beneath it, and releasing a buried one removes only it. */
   register(modeId: string, painter: ModeDecorationPainter): () => void;
   /** Paint the active mode's decorations. Returns an empty array if no
    *  painter is registered for the active mode. */
@@ -36,9 +37,9 @@ export interface ModeDecorations {
  *  switches which painter runs. */
 export function createModeDecorations(opts: CreateModeDecorationsOptions): ModeDecorations {
   const { registry } = opts;
-  // Each registration is its own entry, so a release can tell its painter from a later
-  // registration of the same function.
-  const painters = new Map<string, { painter: ModeDecorationPainter }>();
+  // Each registration is its own entry, so a release can tell its painter from another
+  // registration of the same function. Newest last.
+  const painters = new Map<string, { painter: ModeDecorationPainter }[]>();
   const listeners = createEmitter();
   // One relay of the registry's changes for every listener, so a listener this shares with the registry, or with
   // another of its readers, keeps its subscription there when it leaves here.
@@ -54,16 +55,20 @@ export function createModeDecorations(opts: CreateModeDecorationsOptions): ModeD
     register(modeId: string, painter: ModeDecorationPainter): () => void {
       registry.byId(modeId);
       const entry = { painter };
-      painters.set(modeId, entry);
+      const stack = painters.get(modeId) ?? [];
+      stack.push(entry);
+      painters.set(modeId, stack);
       changed();
       return () => {
-        if (painters.get(modeId) !== entry) return;
-        painters.delete(modeId);
+        const i = stack.indexOf(entry);
+        if (i === -1) return;
+        stack.splice(i, 1);
+        if (stack.length === 0 && painters.get(modeId) === stack) painters.delete(modeId);
         changed();
       };
     },
     paint(): ModeDrawCommand[] {
-      const entry = painters.get(registry.current().id);
+      const entry = painters.get(registry.current().id)?.at(-1);
       return entry ? entry.painter() : [];
     },
     getVersion: () => registry.getVersion() + registrations,
