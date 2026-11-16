@@ -80,6 +80,31 @@ describe('the diagram edit passes beside a locked connector', () => {
     expect(trait(scene).hops).toBeUndefined();
   });
 
+  it('hop a connector rerouted while locked once it is unlocked', () => {
+    const scene: TwoLayers = createScene<unknown, string, RectPose>({
+      systemLayers: [{ id: 'main' }, { id: 'wires' }],
+      registry: withDiagramRegistry(),
+      initial: [
+        box('a', 'main', 0, 0), box('b', 'main', 400, 600), box('c', 'main', 230, -300, 40, 24), box('d', 'main', 230, 300),
+        box('z', 'main', 2000, 2000), connector('ab', 'a', 'b', 'wires'),
+        connector('cd', 'c', 'd', 'main', { from: { port: 's' }, to: { port: 'n' } }),
+      ] as never,
+      doc: { [HOPS_DOC_KEY]: { size: 5 } },
+    });
+    installHops(scene);
+    const adapter = { setPose: (id: string, pose: RectPose) => scene.setPose(id as never, pose) };
+    const move = (id: string, x: number, y: number) => {
+      const from = scene.get(id as never)!.pose;
+      scene.applyBatch([createTransformOp({ id, from, to: { ...from, x, y } })], 'Move', adapter);
+    };
+    scene.setLayerLocked('wires', true);
+    move('b', 400, 0);
+    expect(trait(scene).hops ?? []).toEqual([]);
+    scene.setLayerLocked('wires', false);
+    move('z', 2100, 2000);
+    expect(trait(scene).hops?.length).toBe(1);
+  });
+
   it('leave a locked split connector and its tags as they are when a page is renamed', () => {
     const scene = pagedScene([
       box('a', 'main', 20, 20, 40, 30), box('b', 'main', 120, 20, 40, 30), connector('ab', 'a', 'b', 'main', { from: {}, to: {} }),
