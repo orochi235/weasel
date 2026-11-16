@@ -133,6 +133,15 @@ describe('SelectionPanel — boolean controls', () => {
     expect('overline' in data).toBe(false);
   });
 
+  it('solos a paired flag on Alt-click, and turns every one back on with a second', () => {
+    const scene = renderFlags({ underline: true, strikethrough: true });
+    const data = () => (scene.get(asNodeId('t1')) as { data: FlagData }).data;
+    fireEvent.click(screen.getByRole('button', { name: 'Decoration Overline' }), { altKey: true });
+    expect([data().underline, data().strikethrough, data().overline]).toEqual([false, false, true]);
+    fireEvent.click(screen.getByRole('button', { name: 'Decoration Overline' }), { altKey: true });
+    expect([data().underline, data().strikethrough, data().overline]).toEqual([true, true, true]);
+  });
+
   // Unselected *is* the honest rendering of "not set" on a toggle button, and
   // the `Switch` path's dimming reads as disabled on one.
   it('does not dim an unset toggle, and still dims an unset switch', () => {

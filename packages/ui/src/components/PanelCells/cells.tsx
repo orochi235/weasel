@@ -3,7 +3,8 @@
  * to is known: that is what turns a row of paired toggles into one segmented
  * bar.
  */
-import type { ReactNode } from 'react';
+import { useRef, type ReactNode } from 'react';
+import { useLatest } from '@weasel-js/react';
 import type { PrefBoolean, PrefLeaf } from '@weasel-js/prefs';
 import { prefDrawsNoControl } from '../Prefs/PrefWords';
 import { prefDrawsActionRow } from '../Prefs/registeredActions';
@@ -116,7 +117,8 @@ export function renderCells(
 
 /**
  * A run of paired boolean flags as one multi-select bar — U / S / O, the way
- * every text editor draws them.
+ * every text editor draws them. A drag across it sets each flag it reaches, and
+ * an Alt-click solos one.
  */
 function FlagBar({ run, ariaLabel }: { run: readonly LeafCell[]; ariaLabel: string }): ReactNode {
   // Each flag through the same field props a lone one gets, so an `encoding`
@@ -134,6 +136,10 @@ function FlagBar({ run, ariaLabel }: { run: readonly LeafCell[]; ariaLabel: stri
     return { cell: c, field };
   });
   const on = flags.filter((f) => !f.field.mixed && f.field.value === true).map((f) => f.cell.key);
+  // A sweep reports each step from its own copy, through the handler it pressed with, so until the bar renders
+  // again the flags last written are what the next step moves from, not what the pressed render showed.
+  const shown = useLatest(on);
+  const written = useRef<{ over: readonly string[]; to: readonly string[] } | null>(null);
   return (
     <SegmentedBar<string>
       mode="multiple"
@@ -141,6 +147,7 @@ function FlagBar({ run, ariaLabel }: { run: readonly LeafCell[]; ariaLabel: stri
       variant="flat"
       className={s.flagToggle}
       aria-label={ariaLabel}
+      sweep
       items={flags.map(({ cell, field }) => ({
         value: cell.key,
         label: field.glyph ?? <FitLabel forms={labelForms(cell.leaf.name, field.short)} />,
@@ -154,10 +161,12 @@ function FlagBar({ run, ariaLabel }: { run: readonly LeafCell[]; ariaLabel: stri
       // and inside an object leaf would fabricate values for the other two.
       mixedValues={flags.filter((f) => f.field.mixed).map((f) => f.cell.key)}
       onChange={(next) => {
+        const from = written.current?.over === shown.current ? written.current.to : shown.current;
         for (const { cell, field } of flags) {
           const now = next.includes(cell.key);
-          if (now !== on.includes(cell.key)) field.onChange(now);
+          if (now !== from.includes(cell.key)) field.onChange(now);
         }
+        written.current = { over: shown.current, to: next };
       }}
     />
   );
