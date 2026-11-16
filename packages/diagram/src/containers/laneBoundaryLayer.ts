@@ -80,6 +80,12 @@ export function laneResizeLocked(scene: AnyScene, pool: PoolLanes, index: number
   return writes.some((id) => scene.isLocked(id as NodeId));
 }
 
+/** Whether adding a lane at the end of `pool` would write a locked node: the pool's title, which grows with it. The
+ *  add-lane button is offered, and the add runs, only where this is false. */
+export function addLaneLocked(scene: AnyScene, pool: Pick<PoolLanes, 'id'>): boolean {
+  return [pool.id, titleIdOf(pool.id)].some((id) => scene.isLocked(id as NodeId));
+}
+
 /** Options for {@link laneLayer}. */
 export interface LaneLayerOptions {
   /** Screen-pixel reach of a boundary either side of it. Default 4. */
@@ -146,7 +152,7 @@ export function createLaneAffordance(scene: AnyScene, opts: LaneLayerOptions = {
             bind: () => ({ initialScratch: { targetId: pool.id, poolId: pool.id, laneId: lane.id } satisfies LaneScratch }),
           });
         }
-        if (addSizePx <= 0) continue;
+        if (addSizePx <= 0 || addLaneLocked(scene, pool)) continue;
         const p = pool.at;
         const end = pool.axis === 'y'
           ? { x: p.x + p.width / 2, y: p.y + p.height, normal: { x: 0, y: 1 } }

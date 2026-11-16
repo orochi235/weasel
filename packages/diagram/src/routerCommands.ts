@@ -4,7 +4,7 @@
  * joining it leaves the route to the edit pass `useAvoidRouting` installs,
  * which routes the connectors in the same history entry.
  */
-import { ActionDisabledReason, type Action, type InvocationCtx } from '@weasel-js/core';
+import { ActionDisabledReason, type Action, type ActionDeps, type InvocationCtx } from '@weasel-js/core';
 import { diagramEdgeOf, type DiagramEdge } from './edgeTrait';
 import { icon } from './icons.gen';
 import type { ParticipantSource } from './portAffordance';
@@ -74,10 +74,24 @@ function selectedEdges<TPose>(opts: SetRouterOptions<TPose>): { id: string; rout
   return out;
 }
 
+/** The selected connectors `router` would change, those on another router, or
+ *  `'locked'` where `scene` holds one of them locked. */
+function routerPlan<TPose>(opts: SetRouterOptions<TPose>, router: string, scene: ActionDeps['scene']): string[] | 'locked' {
+  const ids = selectedEdges(opts).filter((e) => e.router !== router).map((e) => e.id);
+  return scene !== undefined && ids.some((id) => scene.isLocked(id as never)) ? 'locked' : ids;
+}
+
+function routerEnabled(plan: string[] | 'locked'): true | ActionDisabledReason {
+  if (plan === 'locked') return ActionDisabledReason.Locked;
+  return plan.length > 0 ? true : ActionDisabledReason.NotApplicable;
+}
+
 const NO_MODIFIERS = { alt: false, shift: false, meta: false, ctrl: false };
 
 /** The command that puts the selected connectors on `router`, in one history
- *  entry. Active while every selected connector is on it already. */
+ *  entry. Active while every selected connector is on it already, and then
+ *  disabled, as it would change nothing; disabled too where it would change a
+ *  locked one. */
 export function createSetRouterAction<TPose>(router: keyof typeof SET_ROUTER_ACTION_IDS, opts: SetRouterOptions<TPose>): Action {
   const { commit = commitRouterToScene } = opts;
   return {
@@ -89,14 +103,15 @@ export function createSetRouterAction<TPose>(router: keyof typeof SET_ROUTER_ACT
     invoker: {
       timing: 'immediate',
       run(deps) {
-        const edges = selectedEdges(opts).filter((e) => e.router !== router);
+        const ids = routerPlan(opts, router, deps.scene);
+        if (ids === 'locked' || ids.length === 0) return;
         const ctx = { world: { x: 0, y: 0 }, modifiers: NO_MODIFIERS, deps } as InvocationCtx;
-        const all = () => { for (const e of edges) commit({ edgeId: e.id, router }, ctx); };
+        const all = () => { for (const edgeId of ids) commit({ edgeId, router }, ctx); };
         if (deps.scene === undefined) all();
         else deps.scene.batch(`Route ${ROUTER_LABELS[router].toLowerCase()}`, all);
       },
     },
-    enabled: () => (selectedEdges(opts).length > 0 ? true : ActionDisabledReason.NotApplicable),
+    enabled: (deps) => routerEnabled(routerPlan(opts, router, deps?.scene)),
     active: () => {
       const edges = selectedEdges(opts);
       return edges.length > 0 && edges.every((e) => e.router === router);

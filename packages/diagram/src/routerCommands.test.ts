@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { createScene, type ImmediateInvoker, type RectPose } from '@weasel-js/core';
+import { ActionDisabledReason, createScene, type ImmediateInvoker, type RectPose } from '@weasel-js/core';
 import { installAvoidRouting } from './avoid/install';
 import { EDGE_DERIVE_PATH, withDiagramRegistry } from './edge';
 import type { DiagramEdge } from './edgeTrait';
@@ -52,5 +52,23 @@ describe('the router commands', () => {
     expect(createSetRouterAction('orthogonal', opts).active!()).toBe(true);
     expect(createSetRouterAction('avoid', opts).active!()).toBe(false);
     expect(createSetRouterAction('avoid', { ...opts, selected: () => [] }).enabled!({} as never)).not.toBe(true);
+  });
+
+  it('are disabled, and still active, where every selected connector is on that router already', () => {
+    const { scene, opts, run } = load('orthogonal');
+    const on = createSetRouterAction('orthogonal', opts);
+    expect(on.enabled!({} as never)).toBe(ActionDisabledReason.NotApplicable);
+    expect(on.active!()).toBe(true);
+    expect(createSetRouterAction('straight', opts).enabled!({} as never)).toBe(true);
+    run('orthogonal');
+    expect(scene.historyEntries()).toHaveLength(0);
+  });
+
+  it('are disabled, and change nothing, where they would change a locked connector', () => {
+    const { scene, opts, run, edge } = load('orthogonal');
+    scene.setLocked('ab' as never, true);
+    expect(createSetRouterAction('straight', opts).enabled!({ scene } as never)).toBe(ActionDisabledReason.Locked);
+    expect(() => run('straight')).not.toThrow();
+    expect(edge().router).toBe('orthogonal');
   });
 });
