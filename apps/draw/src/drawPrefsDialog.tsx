@@ -14,7 +14,7 @@ import { SURFACE_ASSETS } from './surfaces/assets';
 import { ALL_CHROME, type ChromeItem } from './surfaces/chrome';
 import { surfaceOf } from './surfaces/surfaceState';
 import type { SurfaceAsset, SurfaceKind, SurfacesValue } from './surfaces/types';
-import { getOwn } from '@weasel-js/registry';
+import { getOwn, setOwn } from '@weasel-js/registry';
 import { soloChanges } from '@weasel-js/ui-input';
 
 /** Dev mode: the Vite dev server sets `import.meta.env.DEV`. In a
@@ -90,7 +90,7 @@ export function SurfacesEditor({ ctx }: { ctx: LeafContext }) {
     const rows = CHROME_ROWS.filter((row) => field === 'hidden' || row.asset);
     const changes = soloChanges(new Map(rows.map((row) => [row.id, !!getOwn(surfaces, row.id)?.[field]])), new Set([id]));
     const next = { ...surfaces };
-    for (const [row, on] of Object.entries(changes)) next[row] = { ...getOwn(surfaces, row), [field]: on };
+    for (const [row, on] of Object.entries(changes)) setOwn(next, row, { ...getOwn(surfaces, row), [field]: on });
     ctx.setValue(next);
   };
   const flag = (field: 'hidden' | 'collapsed', header: string, verb: string): DataGridColumn<ChromeRow> => ({
