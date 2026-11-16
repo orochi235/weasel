@@ -1,10 +1,9 @@
 import { describe, it, expect } from 'vitest';
 import { boundsOfPath, pathFromD, type Path } from '@weasel-js/geom';
 import type { Paint } from '@weasel-js/paint';
-import type { PathPaint } from 'canvas/nodeShapes/nodePaint';
-import type { NodeId } from 'core/scene/types';
+import type { PathPaint, NodeId } from '@weasel-js/core';
 import { applyBooleanOp, type BooleansAdapter } from './booleans';
-import { rootsTree } from 'core/adapters/testing/rootsTree';
+import { rootsTreeForTests as rootsTree } from '@weasel-js/core/test-seams';
 
 const RED: Paint = { color: '#f00' };
 const BLUE: Paint = { color: '#00f' };

@@ -1,9 +1,10 @@
 /** `planShapeBuilder`: the faces overlapping paths cut each other into, and committing a pick of them. */
 import { describe, it, expect, vi } from 'vitest';
 import { boundsOfPath, type Path } from '@weasel-js/geom';
-import type { BooleansAdapter, NodeId } from '@weasel-js/core';
+import type { NodeId } from '@weasel-js/core';
 import { rootsTreeForTests as rootsTree } from '@weasel-js/core/test-seams';
 import { facesAlong, planShapeBuilder, type ShapeBuilderPlan } from './shapeBuilder';
+import { type BooleansAdapter } from '@weasel-js/editing';
 
 const rect = (x: number, y: number, width: number, height: number): Path => ({ kind: 'rect', x, y, width, height });
 

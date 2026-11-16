@@ -1,4 +1,4 @@
-/** `<SceneCanvas>`'s own `booleansAdapter`: a Pathfinder action over a scene's path leaves, with nothing published by the consumer. */
+/** `booleansPreset`'s `booleansAdapter`: a Pathfinder action over a scene's path leaves, with nothing published by the consumer. */
 import { describe, it, expect, vi, beforeAll } from 'vitest';
 import { act } from '@testing-library/react';
 import { renderWithKeys as render } from '@weasel-js/react/testing/giveKeys';
@@ -7,7 +7,12 @@ import { SceneCanvas, defineTool } from '@weasel-js/core';
 import { createScene } from '@weasel-js/core/engine';
 import type { NodeId } from '@weasel-js/core';
 import type { SelectionApi } from '@weasel-js/routing';
-import { drawPreset, useSelection } from '@weasel-js/editing';
+import { useOptionalDepRegistry } from '@weasel-js/routing/react';
+import type { FeaturePreset } from '@weasel-js/core';
+import { drawPreset } from '../presets/composites';
+import { booleansPreset } from '../presets/booleans';
+import { selectionPreset } from '../presets/selection';
+import { useSelection } from '../selection/useSelection';
 
 type P = { x: number; y: number; width: number; height: number };
 type D = { path: Path; fill: { paint: { color: string } } };
@@ -57,7 +62,7 @@ function mount() {
   return { scene, ids, at, leaves };
 }
 
-describe('the canvas booleansAdapter', () => {
+describe('the booleansPreset booleansAdapter', () => {
   it('unites the selected path leaves into a leaf standing in for the topmost, as one undo step', () => {
     const s = mount();
     act(() => {
@@ -69,5 +74,24 @@ describe('the canvas booleansAdapter', () => {
     expect(after.some((l) => s.ids.includes(l.id))).toBe(false);
     act(() => { s.scene.undo(); });
     expect(s.leaves().map((l) => l.id)).toEqual(s.ids);
+  });
+});
+
+describe('who publishes the booleansAdapter', () => {
+  function published(features: readonly FeaturePreset[]) {
+    const scene = createScene<D, 'main', P>({ systemLayers: [{ id: 'main' }], initial: [box(0, 'red')] });
+    let registry: ReturnType<typeof useOptionalDepRegistry> = null;
+    function Probe() {
+      registry = useOptionalDepRegistry();
+      return null;
+    }
+    render(<SceneCanvas features={features} scene={scene} layers={{}} width={400} height={400}><Probe /></SceneCanvas>);
+    expect(registry).not.toBeNull();
+    return registry!.get('booleansAdapter');
+  }
+
+  it('is booleansPreset: a canvas without it has no booleansAdapter', () => {
+    expect(published([selectionPreset])).toBeUndefined();
+    expect(published([selectionPreset, booleansPreset])).toBeDefined();
   });
 });

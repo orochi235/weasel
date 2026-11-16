@@ -4,14 +4,20 @@
  * single batch of `Op`s (delete sources + insert results + set selection).
  */
 import type { Affine, Path } from '@weasel-js/geom';
-import type { Op } from 'core/ops/types';
-import type { NodeId } from 'core/scene/types';
+import type { Op, NodeId, PathPaint } from '@weasel-js/core';
 import { resolveFill } from '@weasel-js/paint';
-import { NodeOutlineError, type NodeOutline } from 'canvas/nodeOutline';
-import type { PathPaint } from 'canvas/nodeShapes/nodePaint';
+import { NodeOutlineError, type NodeOutline } from '@weasel-js/core';
 import { resolveOperand, type BooleanOpOptions, type BooleanOperand } from './operands';
 import { booleanPieces, type ResultPiece } from './pieces';
 import { commitPieces } from './commit';
+
+declare module '@weasel-js/routing' {
+  interface DepSchema {
+    /** What the Pathfinder actions and the shape builder read and mint paths through. `booleansPreset` publishes
+     *  one over the canvas's path leaves; a consumer replaces it with `useBooleansAdapter`. */
+    booleansAdapter?: BooleansAdapter;
+  }
+}
 
 /** Boolean op identifiers: the five Pathfinder primaries, and Crop, Trim, and Merge. */
 export type BooleanOp = 'union' | 'intersect' | 'subtract' | 'exclude' | 'divide' | 'crop' | 'trim' | 'merge';

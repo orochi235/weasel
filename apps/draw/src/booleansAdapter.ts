@@ -1,17 +1,6 @@
-import {
-  asNodeId,
-  type BooleansAdapter,
-  defaultCommitAdapter,
-  type Path,
-  pathInWorld,
-  pathNode,
-  type PathPaint,
-  pathPaintOf,
-  type NodeOutline,
-  sceneNodeOutline,
-  type SelectionApi,
-} from '@weasel-js/core';
+import { asNodeId, defaultCommitAdapter, type Path, pathInWorld, pathNode, type PathPaint, pathPaintOf, type NodeOutline, sceneNodeOutline, type SelectionApi } from '@weasel-js/core';
 import { carriedData, type DrawScene, type WeaselDrawData, type WeaselDrawLayer } from './drawDocument';
+import { type BooleansAdapter } from '@weasel-js/editing';
 
 /** The outline of a leaf that is not a path — a text node's glyphs — as its painter gives it. */
 export function outlineAt(scene: DrawScene, id: string): NodeOutline | undefined {

@@ -2,13 +2,11 @@
 import { describe, it, expect } from 'vitest';
 import { pathFromD, type Path } from '@weasel-js/geom';
 import type { Paint } from '@weasel-js/paint';
-import type { PathPaint } from 'canvas/nodeShapes/nodePaint';
-import { asNodeId, type NodeId } from 'core/scene/types';
-import { IDENTITY_POSE_COMPOSITION } from 'core/scene/composeFrame';
-import { createScene } from 'core/scene/scene';
-import { defaultCommitAdapter } from 'interactions/actions/defaultCommitAdapter';
+import type { PathPaint } from '@weasel-js/core';
+import { asNodeId, type NodeId } from '@weasel-js/core';
+import { IDENTITY_POSE_COMPOSITION, createScene, defaultCommitAdapter } from '@weasel-js/core/engine';
 import { applyBooleanOp, type BooleansAdapter } from './booleans';
-import { rootsTree } from 'core/adapters/testing/rootsTree';
+import { rootsTreeForTests as rootsTree } from '@weasel-js/core/test-seams';
 
 const RED: Paint = { color: '#f00' };
 const BLUE: Paint = { color: '#00f' };

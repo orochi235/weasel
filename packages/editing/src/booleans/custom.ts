@@ -4,8 +4,7 @@
  * caller cut from those operands, as one undo step.
  */
 import type { Path } from '@weasel-js/geom';
-import type { PathPaint } from 'canvas/nodeShapes/nodePaint';
-import type { NodeId } from 'core/scene/types';
+import type { PathPaint, NodeId } from '@weasel-js/core';
 import { resolveEntries, type BooleanEntry, type BooleanOpResult, type BooleansAdapter } from './booleans';
 import { commitPieces, type BooleanCommitPiece } from './commit';
 import type { BooleanOpOptions } from './operands';

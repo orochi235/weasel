@@ -1,4 +1,4 @@
-/** The shape builder over a scene's path leaves, through `<SceneCanvas>`'s own `booleansAdapter`, with nothing published by the consumer. */
+/** The shape builder over a scene's path leaves, through the `booleansAdapter` `drawPreset` brings, with nothing published by the consumer. */
 import { describe, it, expect, vi, beforeAll } from 'vitest';
 import { act } from '@testing-library/react';
 import { renderWithKeys as render } from '@weasel-js/react/testing/giveKeys';

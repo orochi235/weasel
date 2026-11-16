@@ -3,9 +3,10 @@ import { renderHook } from '@testing-library/react';
 import { boundsOfPath, type Path } from '@weasel-js/geom';
 import type { PathDrawCommand } from '@weasel-js/renderer';
 import { reportRouteConflicts, type Action, type ActionDeps, type InvocationCtx, type OngoingHandle } from '@weasel-js/routing';
-import type { BooleansAdapter, NodeId, RenderLayer } from '@weasel-js/core';
+import type { NodeId, RenderLayer } from '@weasel-js/core';
 import { rootsTreeForTests as rootsTree } from '@weasel-js/core/test-seams';
 import { useShapeBuilderTool } from './useShapeBuilderTool';
+import { type BooleansAdapter } from '@weasel-js/editing';
 
 const rect = (x: number, y: number, width: number, height: number): Path => ({ kind: 'rect', x, y, width, height });
 const VIEW = { x: 0, y: 0, scale: { x: 1, y: 1 } };

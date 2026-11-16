@@ -4,9 +4,8 @@ import { useBooleans } from './useBooleans';
 import { renderThenAbandon } from '@weasel-js/react/testing/abandonRender';
 import type { BooleansAdapter } from './booleans';
 import type { Path } from '@weasel-js/geom';
-import type { Op } from 'core/ops/types';
-import type { NodeId } from 'core/scene/types';
-import { rootsTree } from 'core/adapters/testing/rootsTree';
+import type { Op, NodeId } from '@weasel-js/core';
+import { rootsTreeForTests as rootsTree } from '@weasel-js/core/test-seams';
 
 function makeAdapter() {
   const nodes: { id: NodeId; path: Path }[] = [

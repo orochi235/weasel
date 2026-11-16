@@ -1,9 +1,10 @@
 import type { IconRef } from '@weasel-js/icons';
-import { applyBooleanOp, countOperands, previewBooleanOp, type BooleanOp, warnOutlines } from '@weasel-js/core';
-import type { BooleanOpOptions, BooleanStrokes, NodeId } from '@weasel-js/core';
+import { warnOutlines } from '@weasel-js/core';
+import type { NodeId } from '@weasel-js/core';
 import type { Action, ActionDeps, ImmediateInvoker } from '@weasel-js/routing';
 import { ActionDisabledReason } from '@weasel-js/routing';
 import { icon } from '../../icons.gen';
+import { applyBooleanOp, countOperands, previewBooleanOp, type BooleanOp, type BooleanOpOptions, type BooleanStrokes } from '../../booleans';
 
 const ID_FOR: Record<BooleanOp, string> = {
   union: 'pathfinder.union',

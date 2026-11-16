@@ -16,6 +16,6 @@ import { useActionSet } from '@weasel-js/core/engine';
 import { ENGINE_STANDARD_ACTIONS } from '@weasel-js/editing';
 ```
 
-Core keeps the Pathfinder engine (`applyBooleanOp`, `useBooleans` and the booleans adapter), `deleteAction`, and `DUPLICATE_OFFSET`, the offset a paste shares with a duplicate. Measure's Move by and Rotate by read `transformSelection` from editing.
+Core keeps `deleteAction` and `DUPLICATE_OFFSET`, the offset a paste shares with a duplicate. Measure's Move by and Rotate by read `transformSelection` from editing.
 
 <!-- entry: rank=10 breaking api -->

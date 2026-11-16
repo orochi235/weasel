@@ -14,6 +14,7 @@ export type { InsertPreviewExtent, InsertPreviewGeometry, InsertPreviewLike, Ins
 export type { AreaSelectAdapter, ClipboardSnapshot, InsertAdapter, LassoHitMode, LassoSelectAdapter, LayerEnumerableAdapter, MoveAdapter, OrderedAdapter, PasteCtx, PasteOmission, RegionPickView, SnapTarget } from '../core/adapters/types';
 export { watchDevicePixelRatio } from '../core/device/watchDevicePixelRatio';
 export { AUTO_POSE_DESCRIPTOR, isPathLike, isRectPose } from '../core/geometry/autoPoseDescriptor';
+export { booleanOfPaths } from '../core/geometry/booleanOfPaths';
 export type { BooleanShapeOp } from '../core/geometry/booleanOfPaths';
 export { NO_INK_EXTENTS, inkExtentsBetween, insetBox, isNoInkExtents, outsetBox } from '../core/geometry/inkExtents';
 export type { InkExtents } from '../core/geometry/inkExtents';

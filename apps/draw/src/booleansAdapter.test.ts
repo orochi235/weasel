@@ -1,7 +1,8 @@
 import { describe, it, expect } from 'vitest';
-import { applyBooleanOp, asNodeId, createScene, pathFromD, rectPath, type NodeId } from '@weasel-js/core';
+import { asNodeId, createScene, pathFromD, rectPath, type NodeId } from '@weasel-js/core';
 import type { WeaselDrawData, WeaselDrawLayer, WeaselDrawPose } from './drawDocument';
 import { drawBooleansAdapter } from './booleansAdapter';
+import { applyBooleanOp } from '@weasel-js/editing';
 
 function setup(generateId?: () => NodeId) {
   const scene = createScene<WeaselDrawData, WeaselDrawLayer, WeaselDrawPose>({

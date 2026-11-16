@@ -21,6 +21,7 @@ export {
 } from './presets/edit';
 export { alignPreset, arrangePreset, distributePreset, flipPreset, reorderPreset } from './presets/arrange';
 export { pathfinderPreset } from './presets/pathfinder';
+export { booleansPreset } from './presets/booleans';
 export { selectToolKitPreset, selectToolsPreset, shapeToolKitPreset, shapeToolsPreset } from './presets/tools';
 import type {} from './tools/toolOptions';
 export {
@@ -148,3 +149,10 @@ export {
 } from './actions/pathfinder/action';
 export { booleanGroupOps, makeBooleanGroup, makeBooleanGroupAction } from './actions/pathfinder/booleanGroupAction';
 export { PATHFINDER_KEYMAP, PATHFINDER_KEYMAP_ID, PATHFINDER_LEADER } from './actions/pathfinder/keymap';
+export {
+  useBooleans, useBooleansAdapter, applyBooleanOp, previewBooleanOp, resolveBooleanOperands, commitBooleanPieces,
+  type BooleanOp, type BooleansAdapter, type BooleanOpPreview, type BooleanOpResult, type BooleanPreviewPiece,
+  type BooleanOpOptions, type BooleanStrokes, type BooleanSource, type BooleanOperands, type BooleanCommitPiece,
+  type UseBooleansOptions, type UseBooleansReturn,
+} from './booleans';
+export { useBooleansAdapterSource } from './deps/booleans';

@@ -20,13 +20,6 @@ declare module '@weasel-js/routing' {
     /** Edit-anchors dep — narrow read/write of one polygon's path. If
      *  absent, `editAnchorsAction`'s `start` returns an empty handle (no-op). */
     editAnchors: EditAnchorsDep;
-    /**
-     * Booleans adapter — read selection ids, fetch world-space `Path`s,
-     * compare z-order, and mint result nodes for Pathfinder ops.
-     *
-     * Consumers wire via `useBooleansAdapter(adapter)`.
-     */
-    booleansAdapter?: import('./booleans/booleans').BooleansAdapter;
     /** Where an action tells the user something went wrong, such as text it
      *  could not outline. Optional: without it the message goes to the console. */
     notices?: import('./notices').NoticesDep;

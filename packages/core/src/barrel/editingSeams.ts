@@ -23,7 +23,6 @@ export { groupingSite } from '../core/pages/pagePlacement';
 export { paintInheritors } from '../core/scene/inheritedPaint';
 export { couldClaim, handlersFor, runIngest } from '../domains/ingestion/contentHandlers';
 export type { RunIngestOptions } from '../domains/ingestion/contentHandlers';
-export { countOperands } from '../interactions/actions/booleans/booleans';
 export { copySelection } from '../interactions/actions/defaults/copySubtree';
 export { requiresContent, selectedContent } from '../interactions/actions/defaults/requiresSelection';
 export { redoAction, undoAction } from '../interactions/actions/defaults/undoRedo';
@@ -92,3 +91,6 @@ export { effectivePoseFrom, previewPoseIn, previewSourcesFrom } from '../canvas/
 export { framedBounds } from '../core/geometry/poseDescriptor';
 export { angleOf, normalToWorld, targetCorners } from '../core/geometry/targetFrame';
 export { materializePaste } from '../interactions/actions/clipboard/materializePaste';
+export { drawnPose, leafPath, storePiece } from '../canvas/deps/pathLeaf';
+export { sceneInheritedPaintOf } from '../canvas/inheritedPaints';
+export { booleanOfPaths } from '../core/geometry/booleanOfPaths';

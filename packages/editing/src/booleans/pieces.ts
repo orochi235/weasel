@@ -7,7 +7,7 @@ import {
 } from '@weasel-js/geom/booleans';
 import type { Path, PolygonPath } from '@weasel-js/geom';
 import type { BooleanOp } from './booleans';
-import { booleanOfPaths } from 'core/geometry/booleanOfPaths';
+import { booleanOfPaths } from '@weasel-js/core';
 
 /** One result path, and the operand it stands in for: an index into the
  *  operands, back to front. */

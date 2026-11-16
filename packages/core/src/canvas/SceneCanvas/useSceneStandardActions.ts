@@ -1,8 +1,6 @@
-import type { Action } from '@weasel-js/routing';
-import type { Dispatcher, WorldPoint } from '@weasel-js/routing';
+import type { Action, Dispatcher, WorldPoint, SelectionApi } from '@weasel-js/routing';
 import { useActionsRegistry, useDepRegistry, useDepSource } from '@weasel-js/routing/react';
 import type { Scene } from 'core/scene/types';
-import type { SelectionApi } from '@weasel-js/routing';
 import { useDecayLoop } from 'core/viewport/useDecayLoop';
 import type { ViewAnimationApi } from 'core/viewport/useViewAnimation';
 import type { View } from 'core/viewport/view';
@@ -32,7 +30,7 @@ import {
   useLayoutDepSource,
   useNodeAtPointDepSource,
   usePoseDescriptorDepSource,
-  usePathLeafDepSources,
+  useSliceDepSource,
   useLiveOperands,
   useSnapDepSource,
   useSurfaceDepSources,
@@ -179,7 +177,7 @@ export function useSceneStandardActions(inputs: SceneStandardActionsInputs): voi
   useLayoutDepSource(scene, props.layoutDropTarget, reflowTransition);
   useEnteredGroupApiSource(enteredGroup);
   const operands = useLiveOperands();
-  usePathLeafDepSources(scene, operands, adapter, poseDescriptor);
+  useSliceDepSource(scene, operands, adapter, poseDescriptor);
   useSnapDepSource(
     currentViewRef,
     {

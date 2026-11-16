@@ -4,6 +4,7 @@
  * opens a path for editing; `pathTools` includes it.
  */
 import { never, type FeaturePreset } from '@weasel-js/core';
+import { booleansPreset } from '@weasel-js/editing';
 import { poiseHandlesAction, equalizeHandlesAction } from './poise/poiseHandles';
 import { createPoiseExtension, PATH_POISE_CHROME_ID, type PathEditPoiseStyle } from './poise/poiseMarks';
 import { bridgeAnchorsAction, bridgePathsAction } from './bridge/bridge';
@@ -238,13 +239,14 @@ export const warpPreset: FeaturePreset = {
 
 /** `pathsPreset`, every preset above, spiro curves, the comb, poise, constraints, path
  *  direction, and fillets with their defaults — except Drape and
- *  handle snapping, which change what every anchor or handle drag does. */
+ *  handle snapping, which change what every anchor or handle drag does — and editing's `booleansPreset`, the
+ *  `booleansAdapter` the shape builder works through. */
 export const pathTools: FeaturePreset = {
   id: 'pathTools',
   includes: [
     pathsPreset, sandPreset, handleLocksPreset, bridgePreset, spiroPreset, snipPreset, reachPreset, tugPreset,
     kneadPreset, fairingPreset, anchorSelectionPreset, resamplePreset, addExtremesPreset,
     curvatureCombPreset, poisePreset, constraintsPreset, pathStructurePreset, segmentTypePreset,
-    filletPreset, pathEffectsPreset, warpPreset,
+    filletPreset, pathEffectsPreset, warpPreset, booleansPreset,
   ],
 };

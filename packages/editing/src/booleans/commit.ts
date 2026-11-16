@@ -1,11 +1,7 @@
 import type { Path } from '@weasel-js/geom';
-import { createInsertOp } from 'core/ops/create';
-import { createDeleteOp } from 'core/ops/delete';
-import { createSetSelectionOp } from 'core/ops/select';
-import { locateChild } from 'core/ops/slot';
-import type { Op } from 'core/ops/types';
-import type { NodeId } from 'core/scene/types';
-import { dispatchApplyBatch } from 'core/applyOps';
+import { createInsertOp, createSetSelectionOp } from '@weasel-js/core/engine';
+import { createDeleteOp, locateChild, dispatchApplyBatch } from '@weasel-js/core';
+import type { Op, NodeId } from '@weasel-js/core';
 import type { BooleanEntry, BooleanOp, BooleansAdapter, BooleanZOrder } from './booleans';
 import { placementOps } from './placement';
 

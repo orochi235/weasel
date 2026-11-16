@@ -2,28 +2,20 @@
  * The kit `booleansAdapter` dep: what the Pathfinder actions, and any tool
  * reading the dep, work on over a canvas's own path leaves.
  *
- * `<SceneCanvas>` publishes it over its own scene. A consumer replaces it with
- * `useBooleansAdapter` from under the canvas — for text operands, say, which
- * this one does not read; the newest registration wins, and a canvas child
- * registers after the canvas's own.
+ * `booleansPreset` publishes it over the canvas's scene. A consumer replaces it
+ * with `useBooleansAdapter` from under the canvas — for text operands, say,
+ * which this one does not read; the newest registration wins, and a canvas
+ * child registers after the presets' components.
  */
-import { sceneInheritedPaintOf } from 'canvas/inheritedPaints';
+import { sceneInheritedPaintOf, storesEdits, pathPaintOf, type PathPaint, drawnPose, leafPath, storePiece } from '@weasel-js/core';
 import { useMemo } from 'react';
 import { useDepSource } from '@weasel-js/routing/react';
 import { useLatest } from '@weasel-js/react';
 import { pathInWorld } from '@weasel-js/geom';
-import { AUTO_POSE_DESCRIPTOR } from 'core/geometry/autoPoseDescriptor';
-import { poseDescriptorForNode, type PoseDescriptor } from 'core/geometry/poseDescriptor';
-import { sceneMutators } from 'core/scene/sceneMutators';
-import { asNodeId, type Scene } from 'core/scene/types';
-import type { OperandsDep } from 'interactions/actions/operands';
-import { withoutPageStructure } from 'core/scene/nodeGates';
-import { scenePoseFrame } from 'interactions/actions/poseFrame';
-import { storesEdits } from 'domains/paths/nodeFrame';
-import type { BooleansAdapter } from 'interactions/actions/booleans/booleans';
-import { pathPaintOf, type PathPaint } from '../nodeShapes/nodePaint';
-import { drawnPose, leafPath, storePiece } from './pathLeaf';
-import type { OpsApplier } from './slice';
+import { AUTO_POSE_DESCRIPTOR, poseDescriptorForNode, type PoseDescriptor, sceneMutators, asNodeId, type Scene, withoutPageStructure, scenePoseFrame } from '@weasel-js/core/engine';
+import type { OperandsDep } from '@weasel-js/core/engine';
+import type { BooleansAdapter } from '../booleans/booleans';
+import type { OpsApplier } from '@weasel-js/core';
 
 /**
  * Publish a `booleansAdapter` over `scene`'s path leaves (`data.path` drawn

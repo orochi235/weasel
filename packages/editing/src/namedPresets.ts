@@ -13,6 +13,7 @@ import {
   nudgePreset, selectAllPreset, stylePreset,
 } from './presets/edit';
 import { ingestPreset } from './presets/ingest';
+import { booleansPreset } from './presets/booleans';
 import { pathfinderPreset } from './presets/pathfinder';
 import { selectPreset } from './presets/select';
 import { selectionPreset } from './presets/selection';
@@ -55,6 +56,7 @@ export const FEATURE_PRESETS = {
   align: alignPreset,
   distribute: distributePreset,
   arrange: arrangePreset,
+  booleans: booleansPreset,
   pathfinder: pathfinderPreset,
   ingest: ingestPreset,
   draw: drawPreset,
