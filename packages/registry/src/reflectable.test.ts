@@ -1,7 +1,14 @@
-import { describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { createReflectable, valuesOf, type Reflection } from './reflectable';
 
+/** These stack registrants on purpose; the clash warning has its own tests below. */
+function muteClashWarnings(): void {
+  beforeEach(() => { vi.spyOn(console, 'warn').mockImplementation(() => {}); });
+  afterEach(() => { vi.restoreAllMocks(); });
+}
+
 describe('createReflectable', () => {
+  muteClashWarnings();
   it('answers get/has for what was set, and lists entries in first-registration order', () => {
     const r = createReflectable<number>();
     r.set('b', 2);
@@ -264,7 +271,80 @@ describe('createReflectable', () => {
   });
 });
 
+describe('createReflectable clash warning', () => {
+  afterEach(() => {
+    vi.restoreAllMocks();
+    vi.unstubAllEnvs();
+  });
+  const spyWarn = () => vi.spyOn(console, 'warn').mockImplementation(() => {});
+
+  it('warns once, naming the key and both sources, when a push meets a same-rank registrant', () => {
+    const warn = spyWarn();
+    const r = createReflectable<string>();
+    r.push('k', 'a', { source: 'one' });
+    r.push('k', 'b', { source: 'two' });
+    r.push('k', 'c', { source: 'two' });
+    expect(warn).toHaveBeenCalledTimes(2);
+    expect(warn.mock.calls[0]![0]).toMatch(/"two" registered "k" over "one"/);
+    r.push('k', 'd', { source: 'two' });
+    expect(warn).toHaveBeenCalledTimes(2);
+  });
+
+  it('is silent over a fallback, at a higher rank, and on set', () => {
+    const warn = spyWarn();
+    const r = createReflectable<string>();
+    r.push('k', 'kit', { source: 'kit', fallback: true });
+    r.push('k', 'app', { source: 'app' });
+    r.push('k', 'override', { source: 'app', rank: 1 });
+    r.set('k', 'newer');
+    r.set('k', 'newest');
+    expect(warn).not.toHaveBeenCalled();
+  });
+
+  it('warns of a clash under a higher-ranked registrant too', () => {
+    const warn = spyWarn();
+    const r = createReflectable<string>();
+    r.push('k', 'override', { rank: 1 });
+    r.push('k', 'a');
+    r.push('k', 'b');
+    expect(warn).toHaveBeenCalledTimes(1);
+  });
+
+  it('is silent outside development', () => {
+    vi.stubEnv('NODE_ENV', 'production');
+    const warn = spyWarn();
+    const r = createReflectable<string>();
+    r.push('k', 'a');
+    r.push('k', 'b');
+    expect(warn).not.toHaveBeenCalled();
+  });
+
+  it('is silent on register, release, register, and warns afresh once a released key clashes again', () => {
+    const warn = spyWarn();
+    const r = createReflectable<string>();
+    r.push('k', 'a')();
+    const off = r.push('k', 'a');
+    expect(warn).not.toHaveBeenCalled();
+    r.push('k', 'b')();
+    off();
+    r.push('k', 'a');
+    r.push('k', 'b');
+    expect(warn).toHaveBeenCalledTimes(2);
+  });
+
+  it('reports which registrants are fallbacks', () => {
+    const r = createReflectable<string>();
+    r.push('k', 'kit', { source: 'kit', fallback: true });
+    expect(r.entries()[0]).toMatchObject({ source: 'kit', fallback: true });
+    r.push('k', 'app', { source: 'app' });
+    const [entry] = r.entries();
+    expect(entry!.fallback).toBeUndefined();
+    expect(entry!.shadowed[0]!.fallback).toBe(true);
+  });
+});
+
 describe('valuesOf', () => {
+  muteClashWarnings();
   it('reads live values in key order, the same array until the entries change', () => {
     const r = createReflectable<number>();
     const values = valuesOf(r);
