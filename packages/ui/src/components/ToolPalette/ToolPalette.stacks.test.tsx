@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import { useState } from 'react';
 import { screen, fireEvent, act } from '@testing-library/react';
 import { renderWithIcons } from '../../testing/withIcons';
@@ -105,5 +105,23 @@ describe('ToolPalette stacks', () => {
     renderWithIcons(<ToolPalette tools={tools} stacks={[['rect', 'ellipse']]} />);
     press(screen.getByRole('button', { name: /rect/ }));
     expect(screen.getByRole('menuitem', { name: /rect/ })).toHaveAccessibleDescription(expect.stringContaining('Drag out a rectangle'));
+  });
+
+  it('throws for a tool named in two stacks', () => {
+    vi.spyOn(console, 'error').mockImplementation(() => {});
+    expect(() => renderWithIcons(<Palette stacks={[['rect', 'ellipse'], ['ellipse', 'star']]} />))
+      .toThrow('name the tool "ellipse" in two stacks');
+    vi.restoreAllMocks();
+  });
+
+  it('warns once of an id no registered tool has, but not of one include filters out', () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const stacks = [['rect', 'ellipse'], ['star', 'elipse']];
+    const { rerender } = renderWithIcons(<Palette stacks={stacks} include={(t) => t.id !== 'star'} />);
+    rerender(<Palette stacks={stacks} include={(t) => t.id !== 'star'} />);
+    expect(warn.mock.calls.map(([m]) => m as string)).toEqual([
+      expect.stringContaining('name "elipse", which no registered tool has'),
+    ]);
+    warn.mockRestore();
   });
 });
