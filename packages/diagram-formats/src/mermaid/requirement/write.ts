@@ -6,7 +6,7 @@ import { graphOut } from '../../graphWrite';
 import type { Warnings } from '../../graphRead';
 import { titleLines } from '../common/lines';
 import { styleProps } from '../common/styles';
-import { oneLine } from '../common/text';
+import { fieldName, oneLine } from '../common/text';
 import { BLOCK_KINDS, RELATIONS } from './parse';
 
 const HEADER: Readonly<Record<LayoutDirection, string>> = { down: 'TB', up: 'BT', right: 'LR', left: 'RL' };
@@ -25,7 +25,7 @@ function blockOf(node: DataNode, warnings: Warnings): { type: string; fields: [s
   let past = false;
   for (const r of rows) {
     if (r.kind === 'divider') past = true;
-    else if (r.kind === 'field') fields.push([r.label, oneLine(r.value, 'requirement', (m) => warnings.add(m))]);
+    else if (r.kind === 'field') fields.push([fieldName(r.label, /\W+/g, 'requirement', (m) => warnings.add(m)), oneLine(r.value, 'requirement', (m) => warnings.add(m))]);
     else if (r.kind === 'label' && past) {
       const kv = /^(\w+)\s*:\s*(.*)$/s.exec(oneLine(r.text, 'requirement', (m) => warnings.add(m)));
       if (kv !== null) fields.push([kv[1]!, kv[2]!]);

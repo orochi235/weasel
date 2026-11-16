@@ -92,4 +92,15 @@ describe('writing a Mermaid kanban board', () => {
     const text = `kanban\n${Array.from({ length: 1_000_000 }, (_, i) => `  c${i}[Column]`).join('\n')}`;
     expect(() => readKanban(text)).not.toThrow();
   });
+
+  it('writes a metadata key of several words as one, with a warning, and a value on one line, so the board reads back', () => {
+    const card = (label: string, value: string) => ({ pages: [{ kind: 'graph' as const, id: 'p', width: 100, height: 100, data: {
+      nodes: [{ id: 'c', rows: [{ kind: 'label' as const, text: 'Fix' }, { kind: 'field' as const, label, value }] }], edges: [],
+      containers: [{ id: 'b', role: 'pool' as const, axis: 'x' as const, lanes: [{ id: 'todo', label: 'Todo', members: ['c'] }] }],
+    } }] });
+    const one = writeKanban(card('assigned to', 'me'));
+    expect(page(one.text).data.nodes[0]!.rows).toContainEqual({ kind: 'field', label: 'assigned_to', value: 'me' });
+    expect(one.warnings).toContain('Mermaid kanban field names are one word; other characters in them were written as underscores.');
+    expect(page(writeKanban(card('note', 'a\nb')).text).data.nodes[0]!.rows).toContainEqual({ kind: 'field', label: 'note', value: 'a b' });
+  });
 });

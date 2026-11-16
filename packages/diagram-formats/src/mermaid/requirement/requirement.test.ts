@@ -62,4 +62,12 @@ describe('writing a Mermaid requirement diagram', () => {
     expect(text).toContain('  a - traces -> b');
     expect(warnings).toContain('Mermaid relationships are one of seven kinds, named in their label; others were written as traces.');
   });
+
+  it('writes a field name of several words as one, with a warning, so the text reads back', () => {
+    const { text, warnings } = writeRequirementDiagram({ pages: [{ kind: 'graph', id: 'p', width: 100, height: 100, data: {
+      nodes: [{ id: 'r', rows: [{ kind: 'label', text: 'R' }, { kind: 'divider' }, { kind: 'field', label: 'risk level', value: 'high' }] }], edges: [],
+    } }] });
+    expect(page(text).data.nodes[0]!.rows).toContainEqual({ kind: 'field', label: 'risk_level', value: 'high' });
+    expect(warnings).toContain('Mermaid requirement field names are one word; other characters in them were written as underscores.');
+  });
 });
