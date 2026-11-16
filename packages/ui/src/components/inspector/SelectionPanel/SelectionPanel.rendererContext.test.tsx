@@ -6,6 +6,7 @@ import {
   type NodePropertiesEntry,
   type NodeRoutingEntry,
 } from '@weasel-js/core';
+import { compositeKey } from '@weasel-js/registry';
 import { SelectionPanel } from './SelectionPanel';
 import {
   type Layer,
@@ -96,7 +97,7 @@ describe('SelectionPanel — source.valueAt', () => {
 });
 
 describe('SelectionPanel — selectionKey', () => {
-  it('hands a renderer the selected ids, joined, as the selection key', () => {
+  it('hands a renderer the selected ids, as one compositeKey, as the selection key', () => {
     const seen: (string | undefined)[] = [];
     render(
       <SelectionPanel
@@ -107,7 +108,7 @@ describe('SelectionPanel — selectionKey', () => {
         renderers={{ 'data.label': (ctx) => { seen.push(ctx.selectionKey); return <span>label</span>; } }}
       />,
     );
-    expect(seen[0]).toBe('a,b');
+    expect(seen[0]).toBe(compositeKey(['a', 'b']));
   });
 
   it('skips dead ids, so the key names only the nodes the values came from', () => {
@@ -121,6 +122,6 @@ describe('SelectionPanel — selectionKey', () => {
         renderers={{ 'data.label': (ctx) => { seen.push(ctx.selectionKey); return <span>label</span>; } }}
       />,
     );
-    expect(seen[0]).toBe('a');
+    expect(seen[0]).toBe(compositeKey(['a']));
   });
 });
