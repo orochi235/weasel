@@ -7,6 +7,7 @@ import { ANCHOR_HIT_BASE_PX, HANDLE_BASE_PX, ROTATION_HANDLE_BASE_PX } from 'cor
 import { DEFAULT_VIEW_ANIMATION_MS } from 'core/viewport/useViewAnimation';
 import { DEFAULT_PICK_TOLERANCE_PX } from 'canvas/SceneCanvas/useSceneSelectTool';
 import { SEGMENT_HIT_PX } from 'interactions/actions/defaults/segmentUnder';
+import { ANCHOR_CLICK_PX } from 'domains/paths/anchorUnder';
 import { DEFAULT_SNAP_PX } from 'domains/snap/session2d';
 
 const ms = { scale: 1, suffix: 'ms' };
@@ -36,6 +37,7 @@ export const coreKitSettingsSchema = pref.group('Canvas', {
     anchorHitPx: pxLeaf('Anchor reach', ANCHOR_HIT_BASE_PX),
     rotationDistancePx: pxLeaf('Rotation handle distance', ROTATION_HANDLE_BASE_PX, 96),
     segmentHitPx: pxLeaf('Segment reach', SEGMENT_HIT_PX),
+    anchorClickPx: pxLeaf('Anchor click reach', ANCHOR_CLICK_PX),
     pickTolerancePx: pref.number('Shape pick slop', DEFAULT_PICK_TOLERANCE_PX, { unit: PX_UNIT, min: 0, max: 24, step: 0.5 }),
     snapPx: pref.number('Snap reach', DEFAULT_SNAP_PX, { unit: PX_UNIT, min: 0, max: 48, step: 0.5 }),
   }),

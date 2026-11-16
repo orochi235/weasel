@@ -85,6 +85,10 @@ export interface EditAnchorsDep {
   selectedAnchors: ReadonlySet<number>;
   /** Replace the anchor selection. Pass an empty iterable to clear. */
   setSelectedAnchors(next: Iterable<number>): void;
+  /** Flat index of the edited path's anchor under world point `world`, within
+   *  the `targets.anchorClickPx` kit setting's reach on screen: what a click
+   *  there lands on. -1 off every anchor, or with no path in edit mode. */
+  anchorUnder(world: { x: number; y: number }): number;
 
   /** In-flight anchor-marquee rect in world coords, or null when no
    *  marquee drag is active. */

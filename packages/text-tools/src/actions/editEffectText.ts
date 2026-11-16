@@ -6,18 +6,18 @@ import type { ActionDeps } from '@weasel-js/routing';
 import { ActionDisabledReason, defineAction, isBody } from '@weasel-js/routing';
 import { isTextData } from '@weasel-js/text';
 import { effectSourceFor, type NodeId } from '@weasel-js/core';
-import { anchorUnder, depOf } from '@weasel-js/path-tools';
 import type {} from '../actionParamSchema';
 import type {} from '../editor/textEditDep';
 
 /** The text source a click at `world` opens, with its length, or null. */
 function textUnder(deps: ActionDeps | undefined, world: { x: number; y: number } | undefined): { id: string; length: number } | null {
   const scene = deps?.scene;
-  if (!world || !scene || !deps?.textEdit || !depOf(deps)) return null;
+  const open = deps?.editAnchors;
+  if (!world || !scene || !deps?.textEdit || !open?.editingId) return null;
   const under = deps.nodeAtPoint?.(world);
   if (!under) return null;
   const text = effectSourceFor(scene, under as NodeId, 'items');
-  if (text === null || scene.isLocked(text) || anchorUnder(deps, world) !== -1) return null;
+  if (text === null || scene.isLocked(text) || open.anchorUnder(world) !== -1) return null;
   const data = scene.get(text)?.data;
   return { id: String(text), length: isTextData(data) ? data.text.length : 0 };
 }
@@ -29,7 +29,7 @@ export const editEffectTextAction = defineAction({
   // On the effect's body, so it outranks the untargeted anchor click; an anchor under the pointer gives the click back.
   defaultBinding: [{ spec: { kind: 'click', target: { kindOf: isBody }, mods: {} }, opts: { id: 'editEffectText.click' } }],
   eligible: { capability: 'edits-anchors' },
-  requires: ['textEdit', 'nodeAtPoint', 'scene', 'editAnchors', 'view', 'kitSettings'],
+  requires: ['textEdit', 'nodeAtPoint', 'scene', 'editAnchors'],
   invoker: {
     timing: 'immediate',
     run(deps, params) {

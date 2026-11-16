@@ -2,6 +2,7 @@ import type { NodeId, PoseOverrides } from 'core/scene/types';
 import type { ActionDeps } from '@weasel-js/routing';
 import type { MoveEnd } from '../gestures/types';
 import type { EditAnchorsDep } from './depSchema';
+import { anchorIndexUnder } from 'domains/paths/anchorUnder';
 
 /**
  * Deps for an action unit test, stubbing only the slice the action reads.
@@ -54,6 +55,7 @@ export function makeEditAnchorsDep(over: Partial<EditAnchorsDep> = {}): EditAnch
     setSelectedAnchors(next: Iterable<number>) {
       selected = new Set(next);
     },
+    anchorUnder: (world) => (base.editingId ? anchorIndexUnder(base.getEditablePath(base.editingId), world) : -1),
     get marquee() {
       return marquee;
     },

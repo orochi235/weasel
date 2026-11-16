@@ -4,6 +4,7 @@ import { ActionDisabledReason, type ImmediateInvoker } from '@weasel-js/routing'
 import { pathFromD } from '@weasel-js/geom';
 import { editEffectTextAction } from './editEffectText';
 import { asNodeId, createScene, PATH_EFFECT_DERIVATIONS, pathEffectNode, withPathEffectsRegistry, type RectPose } from '@weasel-js/core';
+import { createEditAnchorsDepForTests } from '@weasel-js/core/test-seams';
 import { withTextPainter } from '../testing/textPainter';
 
 withTextPainter();
@@ -27,10 +28,10 @@ function depsFor(opts: { under: string | null; hideSources?: boolean; editing?: 
     scene,
     textEdit: { startEdit },
     nodeAtPoint: () => opts.under,
-    editAnchors: {
+    editAnchors: createEditAnchorsDepForTests({
       editingId: opts.editing ?? 'p',
       getEditablePath: (id: string) => (id === 'p' ? pathFromD('M0 50 L100 50') : null),
-    },
+    }),
   };
   return { deps, startEdit, scene };
 }

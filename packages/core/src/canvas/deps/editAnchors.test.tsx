@@ -1,6 +1,7 @@
 import { describe, it, expect, vi } from 'vitest';
 import { render, act } from '@testing-library/react';
-import { DepRegistryProvider, useDepRegistry, type DepRegistry } from '@weasel-js/routing/react';
+import { DepRegistryProvider, useDepRegistry, useDepSource, type DepRegistry } from '@weasel-js/routing/react';
+import { createKitSettingsStore, type KitSettingsStore } from '@weasel-js/react';
 import { useEditAnchorsDepSource } from './editAnchors';
 import type { Scene, NodeId } from 'core/scene/types';
 import type { SelectionApi } from 'core/selection/useSelection';
@@ -158,5 +159,63 @@ describe('useEditAnchorsDepSource', () => {
     // Drop selection — the dep should present an empty editingId on next read.
     (sel as unknown as { current: NodeId[] }).current = [] as NodeId[];
     expect((reg.get as any)('editAnchors').editingId).toBe('');
+  });
+
+  describe('anchorUnder', () => {
+    /** Triangle (0,0)-(10,0)-(10,10) open for edit, under a view of scale `at.scale` and kit settings `at.kit`. */
+    function openTriangle(at: { scale?: number; kit?: KitSettingsStore }) {
+      const path = {
+        kind: 'polygon',
+        commands: new Uint8Array([0, 1, 1]),
+        coords: new Float32Array([0, 0, 10, 0, 10, 10]),
+      };
+      const scene = {
+        layers: [{ id: 'default' }],
+        renderOrder: () => ['tri'] as NodeId[],
+        get: (id: NodeId) => (id === 'tri' ? { id: 'tri', kind: 'mark', pose: path, data: null } : undefined),
+        update: () => {},
+      } as unknown as Scene<unknown, string, unknown>;
+      const sel = { current: ['tri'] as NodeId[], set: () => {} } as unknown as SelectionApi;
+      let reg!: DepRegistry;
+      function Wire() {
+        useEditAnchorsDepSource(scene, sel, { applyOps: () => {} });
+        useDepSource('view', () => (at.scale === undefined ? undefined : {
+          get: () => ({ x: 0, y: 0, scale: { x: at.scale!, y: at.scale! } }),
+        }) as never);
+        useDepSource('kitSettings', () => at.kit as never);
+        return null;
+      }
+      render(
+        <DepRegistryProvider>
+          <Wire />
+          <Capture onR={(r) => { reg = r; }} />
+        </DepRegistryProvider>,
+      );
+      act(() => { (reg.get as any)('editAnchors').setEditingId('tri'); });
+      return { dep: () => (reg.get as any)('editAnchors') };
+    }
+
+    it('is the flat index of the anchor a click lands on, and -1 off every anchor', () => {
+      const { dep } = openTriangle({});
+      expect(dep().anchorUnder({ x: 10, y: 3 })).toBe(1);
+      expect(dep().anchorUnder({ x: 9, y: 9 })).toBe(2);
+      expect(dep().anchorUnder({ x: 50, y: 50 })).toBe(-1);
+    });
+
+    it('is -1 with no path open', () => {
+      const { dep } = openTriangle({});
+      act(() => { dep().setEditingId(null); });
+      expect(dep().anchorUnder({ x: 10, y: 0 })).toBe(-1);
+    });
+
+    it('measures its reach in screen pixels: zoomed in, 5 world units (40 px) misses; zoomed out, 50 (5 px) hits', () => {
+      expect(openTriangle({ scale: 8 }).dep().anchorUnder({ x: 15, y: 0 })).toBe(-1);
+      expect(openTriangle({ scale: 0.1 }).dep().anchorUnder({ x: 60, y: 0 })).toBe(1);
+    });
+
+    it('takes its reach from targets.anchorClickPx', () => {
+      const kit = createKitSettingsStore({ targets: { anchorClickPx: 45 } });
+      expect(openTriangle({ scale: 8, kit }).dep().anchorUnder({ x: 15, y: 0 })).toBe(1);
+    });
   });
 });
