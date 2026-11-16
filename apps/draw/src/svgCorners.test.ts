@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { parseSvg, serializeSvg } from '@weasel-js/svg';
-import { solid } from '@weasel-js/core';
+import { solid } from '@weasel-js/paint';
 import { polygonFromPoints, resolveCorners, withCorner, type PolygonPath } from '@weasel-js/geom';
 import { objToSvgNode, svgNodesToSceneDrafts, type SceneDraft } from './svgInterop';
 import type { PathObj } from './svgObj';

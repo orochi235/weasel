@@ -7,7 +7,8 @@ import { act, renderHook } from '@testing-library/react';
 import { openAt } from '../testing/openAt';
 import { useSceneTextEdit, type UseSceneTextEditOptions } from './useSceneTextEdit';
 import { DEFAULT_TEXT_STYLE } from '@weasel-js/text';
-import { asNodeId, solid, useScene } from '@weasel-js/core';
+import { solid } from '@weasel-js/paint';
+import { asNodeId, useScene } from '@weasel-js/core';
 import { withTextPainter } from '../testing/textPainter';
 
 withTextPainter();

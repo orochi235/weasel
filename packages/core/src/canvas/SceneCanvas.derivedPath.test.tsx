@@ -22,7 +22,7 @@ import { createPaintedCursorState } from '@weasel-js/cursor';
 import { ColorOverrideRegistry } from '@weasel-js/animator';
 import { useAnimator } from '@weasel-js/animator/react';
 import type { Animator } from '@weasel-js/animator';
-import { strokeOf } from '../util/paint';
+import { strokeOf } from '@weasel-js/paint';
 import { linear } from '@weasel-js/geom';
 import type { StrokeTrim } from '@weasel-js/paint';
 import type { TrimOverride } from '@weasel-js/animator';

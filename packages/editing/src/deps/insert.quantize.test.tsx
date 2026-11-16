@@ -9,7 +9,8 @@ import { DepRegistryProvider, useDepRegistry, type DepRegistry } from '@weasel-j
 import type { InvocationCtx, OngoingOverlay } from '@weasel-js/routing';
 import { snapToPitch, type OutputGrid } from '@weasel-js/geom';
 import { createScene, OUTPUT_GRID_KEY, quantizeSize, insertPreviewExtent } from '@weasel-js/core/engine';
-import { sceneMutators, cycleFill, solid } from '@weasel-js/core';
+import { cycleFill, solid } from '@weasel-js/paint';
+import { sceneMutators } from '@weasel-js/core';
 import type { RectPose, Scene, InsertDep } from '@weasel-js/core/engine';
 import type { Op } from '@weasel-js/core';
 import { insertAction } from '../actions/insert/action';

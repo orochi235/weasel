@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { solid, strokeOf } from '@weasel-js/core';
+import { solid, strokeOf } from '@weasel-js/paint';
 import type { Paint } from '@weasel-js/core';
 import { computeScrubbedPaints } from './computeScrubbedPaints';
 

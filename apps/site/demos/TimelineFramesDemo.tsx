@@ -1,7 +1,15 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
+import { solid } from '@weasel-js/paint';
 import {
-  SceneCanvas, asNodeId, easeInOutCubic, rasterToPng, renderTimelineFrames, scenePoseTarget, solid, useScene,
-  type Fill, type RectPose,
+  SceneCanvas,
+  asNodeId,
+  easeInOutCubic,
+  rasterToPng,
+  renderTimelineFrames,
+  scenePoseTarget,
+  useScene,
+  type Fill,
+  type RectPose,
 } from '@weasel-js/core';
 import { useAnimator } from '@weasel-js/animator/react';
 import type { TimelineHandle } from '@weasel-js/animator';

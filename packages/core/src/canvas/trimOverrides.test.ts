@@ -4,7 +4,7 @@ import { ColorOverrideRegistry, TrimOverrideRegistry } from '@weasel-js/animator
 import { useAnimator } from '@weasel-js/animator/react';
 import { act, renderHook } from '@testing-library/react';
 import { linear, pathFromD } from '@weasel-js/geom';
-import { INHERIT, type StrokeTrim } from '@weasel-js/paint';
+import { INHERIT, type StrokeTrim, strokeOf } from '@weasel-js/paint';
 import type { DrawCommand, PathDrawCommand } from '@weasel-js/renderer';
 import { pathFromParts } from 'core/scene/derivedParts';
 import { createPathLayer } from 'domains/paths/pathLayer';
@@ -12,7 +12,6 @@ import { defaultDrawOne } from './defaultDrawOne';
 import { wireSceneSlotToScene } from './sceneSlotWiring';
 import { buildSceneViewCommands } from './sceneViewRender';
 import { overrideTrim } from './trimOverrides';
-import { strokeOf } from '../util/paint';
 import type { NodePaintCtx, SceneViewDrawOne } from './NodeShape';
 import type { RectPose } from 'core/scene/types';
 

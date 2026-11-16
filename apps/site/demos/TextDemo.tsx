@@ -1,5 +1,6 @@
 import { useState } from 'react';
-import { SceneCanvas, asNodeId, solid, useScene, viewPreset } from '@weasel-js/core';
+import { solid } from '@weasel-js/paint';
+import { SceneCanvas, asNodeId, useScene, viewPreset } from '@weasel-js/core';
 import { textPreset, useSceneTextEdit } from '@weasel-js/text-tools';
 import type { Fill, RectPose } from '@weasel-js/core';
 import { gridSnapSource } from '@weasel-js/guides';

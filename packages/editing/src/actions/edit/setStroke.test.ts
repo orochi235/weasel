@@ -4,7 +4,7 @@ import { setStrokeAction } from './setStroke';
 import type { InvocationCtx } from '@weasel-js/routing';
 import type { NodeId, Op } from '@weasel-js/core';
 import type { Stroke } from '@weasel-js/paint';
-import { solid, strokeOf } from '@weasel-js/core';
+import { solid, strokeOf } from '@weasel-js/paint';
 import { makeScene, makeSelection, makeCtx, ongoingInvoker } from './paintActionTestUtils';
 
 const getInvoker = () => ongoingInvoker(setStrokeAction);

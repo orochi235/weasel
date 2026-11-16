@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { paintWithColor, solid } from './paint';
+import { paintWithColor, solid } from './paintDefaults';
 
 describe('solid', () => {
   it('moves a short hex alpha channel to opacity', () => {

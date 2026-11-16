@@ -1,5 +1,6 @@
 import { useMemo, useRef, useState } from 'react';
-import { ActionDisabledReason, asNodeId, defineAction, defineTool, paintAlpha, resolveFill, resolveStroke, useLatest } from '@weasel-js/core';
+import { paintAlpha } from '@weasel-js/paint';
+import { ActionDisabledReason, asNodeId, defineAction, defineTool, resolveFill, resolveStroke, useLatest } from '@weasel-js/core';
 import type { Stroke, Fill } from '@weasel-js/core';
 import {
   computeScrubbedPaints,

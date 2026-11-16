@@ -138,3 +138,17 @@ export {
   type Palette,
   type PaletteEntry,
 } from './palette';
+export { toHex8, getAlpha01, withAlpha01, mergeAlphaFromPrev } from './hexAlpha';
+export {
+  DEFAULT_FILL_COLOR,
+  DEFAULT_STROKE_COLOR,
+  DEFAULT_PALETTE,
+  cycleFill,
+  GHOST_STROKE,
+  solid,
+  strokeOf,
+  strokeWith,
+  paintAlpha,
+  paintWithAlpha,
+  paintWithColor,
+} from './paintDefaults';

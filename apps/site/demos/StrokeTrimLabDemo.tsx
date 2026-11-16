@@ -4,7 +4,6 @@ import {
   pathFromD,
   pathNode,
   rectPath,
-  solid,
   type Path,
   type RectPose,
   type Stroke,
@@ -24,7 +23,7 @@ import {
   useTrialConfigChange,
   useTrialScene,
 } from '@weasel-js/labkit';
-import { dashForStrokeStyle } from '@weasel-js/paint';
+import { dashForStrokeStyle, solid } from '@weasel-js/paint';
 import { exportRegionsPdf } from '@weasel-js/pdf/export';
 import { exportRegionSvg } from '@weasel-js/svg';
 import { Button } from '@weasel-js/ui/components/Button';

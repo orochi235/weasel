@@ -1,4 +1,5 @@
-import { createScene, type RectPose, solid } from '@weasel-js/core';
+import { solid } from '@weasel-js/paint';
+import { createScene, type RectPose } from '@weasel-js/core';
 import { pathsPreset, usePenTool } from '@weasel-js/path-tools';
 import { createGridLayer, gridSnapSource } from '@weasel-js/guides';
 import {

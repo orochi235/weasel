@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react';
-import { type Action, commitOps, createDeleteOp, createInsertOp, createToolOptionValues, defineAction, defineTool, ellipsePath, type InvocationCtx, type RectPose, resolveParams, SceneCanvas, shareToolOptions, solid, type Tool, type ToolOptions, type ToolOptionShare, useScene, WeaselProvider } from '@weasel-js/core';
+import { solid } from '@weasel-js/paint';
+import { type Action, commitOps, createDeleteOp, createInsertOp, createToolOptionValues, defineAction, defineTool, ellipsePath, type InvocationCtx, type RectPose, resolveParams, SceneCanvas, shareToolOptions, type Tool, type ToolOptions, type ToolOptionShare, useScene, WeaselProvider } from '@weasel-js/core';
 import { pxReach } from '@weasel-js/geom';
 import { pref, PX_UNIT } from '@weasel-js/prefs';
 import { brushRing } from '@weasel-js/cursor';

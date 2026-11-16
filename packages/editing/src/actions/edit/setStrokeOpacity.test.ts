@@ -2,7 +2,7 @@ import { describe, it, expect, vi } from 'vitest';
 import { setStrokeOpacityAction } from './setStrokeOpacity';
 import type { NodeId, Op } from '@weasel-js/core';
 import type { Stroke } from '@weasel-js/paint';
-import { solid, strokeOf } from '@weasel-js/core';
+import { solid, strokeOf } from '@weasel-js/paint';
 import { makeScene, makeCtx, ongoingInvoker } from './paintActionTestUtils';
 
 const getInvoker = () => ongoingInvoker(setStrokeOpacityAction);

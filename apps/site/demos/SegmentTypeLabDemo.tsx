@@ -1,4 +1,5 @@
-import { ANCHORS_GROUP, type ActionTunings, asNodeId, createScene, type RectPose, solid, pathNode } from '@weasel-js/core';
+import { solid } from '@weasel-js/paint';
+import { ANCHORS_GROUP, type ActionTunings, asNodeId, createScene, type RectPose, pathNode } from '@weasel-js/core';
 import { pathsPreset, segmentTypePreset } from '@weasel-js/path-tools';
 import {
   type ConfigOf,

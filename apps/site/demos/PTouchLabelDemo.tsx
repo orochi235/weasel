@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState, useSyncExternalStore } from 'react';
-import { asNodeId, nodeShapesOf, SceneCanvas, solid, useScene } from '@weasel-js/core';
+import { solid } from '@weasel-js/paint';
+import { asNodeId, nodeShapesOf, SceneCanvas, useScene } from '@weasel-js/core';
 import { ellipsePath, rectPath } from '@weasel-js/geom';
 import { createTextPreset, TEXT_PAINTER } from '@weasel-js/text-tools';
 import {

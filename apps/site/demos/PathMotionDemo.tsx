@@ -1,11 +1,11 @@
 import { useMemo, useState } from 'react';
+import { solid } from '@weasel-js/paint';
 import {
   SceneCanvas,
   asNodeId,
   easeInOutCubic,
   pathFromD,
   pathMotion,
-  solid,
   tweenPose,
   useScene,
   useSceneAdapter,

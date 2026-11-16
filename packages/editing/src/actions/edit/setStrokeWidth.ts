@@ -1,7 +1,7 @@
 import type { Action, ActionParamsOf } from '@weasel-js/routing';
 import type { Stroke, VertexWidth } from '@weasel-js/paint';
 import { createPaintAction } from './createPaintAction';
-import { strokeOf, DEFAULT_STROKE_COLOR } from '@weasel-js/core';
+import { strokeOf, DEFAULT_STROKE_COLOR } from '@weasel-js/paint';
 
 /** `setStrokeWidth`'s gesture state: what it writes, each part only when given. */
 interface SetStrokeWidthState {

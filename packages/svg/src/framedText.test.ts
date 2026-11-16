@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { solid } from '@weasel-js/core';
+import { solid } from '@weasel-js/paint';
 import { svgLeafFromKit, type SvgKitLeafData } from './fromKit';
 import { parseSvg } from './parse';
 import { serializeSvg } from './serialize';

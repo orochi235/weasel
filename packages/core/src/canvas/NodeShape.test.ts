@@ -8,7 +8,7 @@ import {
   _resetShapePaintersForTests,
   type NodeShapeEntry,
 } from './NodeShape';
-import { solid, strokeOf } from '../util/paint';
+import { solid, strokeOf } from '@weasel-js/paint';
 import { pathFromD, type PolygonPath } from '@weasel-js/geom';
 import type { Node } from 'core/scene/types';
 import type { DrawCommand } from '@weasel-js/renderer';

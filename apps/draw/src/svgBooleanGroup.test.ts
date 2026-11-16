@@ -1,6 +1,7 @@
 /** A boolean group saves as the path it draws and opens again as the boolean group. */
 import { describe, expect, it } from 'vitest';
-import { asNodeId, booleanGroupFields, pathContainsPoint, solid } from '@weasel-js/core';
+import { solid } from '@weasel-js/paint';
+import { asNodeId, booleanGroupFields, pathContainsPoint } from '@weasel-js/core';
 import { parseSvg } from '@weasel-js/svg';
 import type { WeaselDrawPose } from './drawDocument';
 import { openSvgText } from './openSvg';

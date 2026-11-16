@@ -6,20 +6,12 @@
  *  these rather than re-declaring the literals.
  *
  *  All values are `#rrggbbaa` so they round-trip through the kit's hex8 alpha
- *  helpers (`util/color`) without ambiguity.
+ *  helpers (`toHex8`, `getAlpha01`) without ambiguity.
  */
-import {
-  colorLiteralToHex,
-  hexToColorLiteral,
-  resolvePaletteColor,
-  type ColorLiteral,
-  type CommandStroke,
-  type Paint,
-  type Palette,
-  type SolidPaint,
-  type Stroke,
-} from '@weasel-js/paint';
-import { getAlpha01, toHex8 } from './color';
+import { colorLiteralToHex, hexToColorLiteral, resolvePaletteColor, type ColorLiteral, type Palette } from './palette';
+import type { CommandStroke, SolidPaint } from './commandPaint';
+import type { Paint, Stroke } from './paint';
+import { getAlpha01, toHex8 } from './hexAlpha';
 
 /** Default fill paint for shapes and the fill action — opaque white. */
 export const DEFAULT_FILL_COLOR = '#ffffffff';

@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react';
 import type { Meta, StoryObj } from '@weasel-js/forge';
+import { solid, strokeOf } from '@weasel-js/paint';
 import {
   asNodeId,
   createScene,
@@ -7,8 +8,6 @@ import {
   inferredNodeProperties,
   inferredNodeRouting,
   gradientForBounds,
-  solid,
-  strokeOf,
   type NodePropertiesEntry,
   type NodeRoutingEntry,
   type RectPose,

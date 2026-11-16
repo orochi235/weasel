@@ -3,7 +3,7 @@ import { findNodeShape, findShapeInk } from './NodeShape';
 import type { Node } from 'core/scene/types';
 import type { PathDrawCommand } from '@weasel-js/renderer';
 import type { Paint } from '@weasel-js/paint';
-import { solid, strokeOf } from '../util/paint';
+import { solid, strokeOf } from '@weasel-js/paint';
 
 const POSE = { x: 0, y: 0, width: 100, height: 50 };
 const RECT_PATH = { kind: 'rect' as const, x: 0, y: 0, width: 100, height: 50 };

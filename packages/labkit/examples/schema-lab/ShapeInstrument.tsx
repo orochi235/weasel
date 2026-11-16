@@ -1,4 +1,5 @@
-import { createScene, defaultNodeProperties, solid, strokeOf } from '@weasel-js/core';
+import { solid, strokeOf } from '@weasel-js/paint';
+import { createScene, defaultNodeProperties } from '@weasel-js/core';
 import type { RectPose, Scene, Stroke, Fill } from '@weasel-js/core';
 import { defineInstrument, f, hasConfigPath, type RenderContext, valueAtPath, withValueAtPath } from '@weasel-js/labkit';
 import { prefSectionLeaves, type PrefSection } from '@weasel-js/prefs';

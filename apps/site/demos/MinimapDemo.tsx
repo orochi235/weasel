@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react';
-import { asNodeId, PointerContextProvider, SceneCanvas, dragPanContribution, solid, useScene, viewPreset } from '@weasel-js/core';
+import { solid } from '@weasel-js/paint';
+import { asNodeId, PointerContextProvider, SceneCanvas, dragPanContribution, useScene, viewPreset } from '@weasel-js/core';
 import { MinimapCanvas, createMinimapContribution } from '@weasel-js/minimap';
 import type { CanvasSize, Fill, View } from '@weasel-js/core';
 import { Button } from '@weasel-js/ui/components/Button';

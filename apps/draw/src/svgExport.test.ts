@@ -15,7 +15,8 @@ import { type TextStyle } from '@weasel-js/text';
 import { parsedToDoc, svgNodesToSceneDrafts, SWILL_NAMESPACES } from './svgInterop';
 import { leafOfObj } from './svgImport';
 import { buildWeaselClipboardText, extractWeaselClipboardFromSvg } from '@weasel-js/core';
-import { asPaint, createScene, registerPaintKindLoader, resolveFill, solid, strokeOf } from '@weasel-js/core';
+import { solid, strokeOf } from '@weasel-js/paint';
+import { asPaint, createScene, registerPaintKindLoader, resolveFill } from '@weasel-js/core';
 import { ANNOTATION_LAYER, DRAW_LAYERS, type WeaselDrawData, type WeaselDrawLayer, type WeaselDrawPose } from './drawDocument';
 import type { Stroke, Fill } from '@weasel-js/core';
 import type { StyledRun } from '@weasel-js/text';
@@ -476,7 +477,6 @@ describe('clipboardSnapshotRootIds', () => {
     expect(clipboardSnapshotRootIds(items)).toEqual(['g1', 'g2']);
   });
 });
-
 
 describe('gradient fills', () => {
   const STOPS = [

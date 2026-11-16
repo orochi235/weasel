@@ -1,6 +1,7 @@
 import { useCallback } from 'react';
 import type { MouseEvent } from 'react';
-import { ActionsProvider, SceneCanvas, asNodeId, rectPath, solid, useMenus, useScene } from '@weasel-js/core';
+import { solid } from '@weasel-js/paint';
+import { ActionsProvider, SceneCanvas, asNodeId, rectPath, useMenus, useScene } from '@weasel-js/core';
 import type { Fill, MenuDef, NodeId, Path, RectPose } from '@weasel-js/core';
 import { pref } from '@weasel-js/prefs';
 import { ContextMenuHost, useContextMenu } from '@weasel-js/ui/components/Menu';

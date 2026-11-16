@@ -3,7 +3,8 @@ import { registerFont, FIXTURE_FONT } from '@weasel-js/font';
 import { _resetFontRegistryForTests } from '@weasel-js/font/test-seams';
 import { _resetLayoutCacheForTests } from '@weasel-js/text/test-seams';
 import type { DrawCommand } from '@weasel-js/renderer';
-import { findNodeShape, shapeCoversPoint, solid, type SceneNode as Node } from '@weasel-js/core';
+import { solid } from '@weasel-js/paint';
+import { findNodeShape, shapeCoversPoint, type SceneNode as Node } from '@weasel-js/core';
 import { _resetShapePaintersForTests } from 'canvas/NodeShape';
 import { withTextPainter } from '../testing/textPainter';
 

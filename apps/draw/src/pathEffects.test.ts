@@ -9,9 +9,19 @@ import { _resetFontOutlinesForTests, _resetFontRegistryForTests } from '@weasel-
 import { pathFromD } from '@weasel-js/geom';
 import { loadTextOutlines } from '@weasel-js/text';
 import { _resetLayoutCacheForTests } from '@weasel-js/text/test-seams';
+import { solid } from '@weasel-js/paint';
 import {
-  asNodeId, createScene, derivedDepOf, pageRunOf, PATH_EFFECT_DERIVATIONS, pathEffectNode, pathEffectParts, rectPath,
-  type AddNodeSpec, type NodeId, type SerializedScene, solid,
+  asNodeId,
+  createScene,
+  derivedDepOf,
+  pageRunOf,
+  PATH_EFFECT_DERIVATIONS,
+  pathEffectNode,
+  pathEffectParts,
+  rectPath,
+  type AddNodeSpec,
+  type NodeId,
+  type SerializedScene,
   layoutPages,
 } from '@weasel-js/core';
 import { DRAW_REGISTRY, type WeaselDrawData, type WeaselDrawLayer, type WeaselDrawPose } from './drawDocument';

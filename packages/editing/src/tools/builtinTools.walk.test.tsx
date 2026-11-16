@@ -15,7 +15,8 @@ import type { View, ToolsApi } from '@weasel-js/core';
 import { toolIdsOf } from '@weasel-js/routing';
 import { useActionsRegistry, useDepRegistry } from '@weasel-js/routing/react';
 import { createScene, asNodeId, type Scene } from '@weasel-js/core/engine';
-import { solid, SceneCanvas } from '@weasel-js/core';
+import { solid } from '@weasel-js/paint';
+import { SceneCanvas } from '@weasel-js/core';
 import { drawPreset } from '../presets/composites';
 import { BUILTIN_TOOL_GROUPS, BUILTIN_TOOL_IDS, type KitToolId } from './toolSets';
 
@@ -162,5 +163,4 @@ describe('every built-in tool', () => {
     });
   }
 });
-
 

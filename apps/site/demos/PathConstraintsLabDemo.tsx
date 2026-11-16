@@ -1,4 +1,5 @@
-import { type ActionTunings, asNodeId, boundsOfPath, createScene, type PathConstraint, type PathConstraintKind, type PolygonPath, polygonFromPoints, type RectPose, solid, worldEditToStorage } from '@weasel-js/core';
+import { solid } from '@weasel-js/paint';
+import { type ActionTunings, asNodeId, boundsOfPath, createScene, type PathConstraint, type PathConstraintKind, type PolygonPath, polygonFromPoints, type RectPose, worldEditToStorage } from '@weasel-js/core';
 import { CONSTRAINT_KIND_LABELS, constraintConflictsOf, constraintsOf, constraintsPreset, pathsPreset } from '@weasel-js/path-tools';
 import {
   type ConfigOf,

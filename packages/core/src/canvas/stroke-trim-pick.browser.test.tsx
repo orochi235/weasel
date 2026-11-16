@@ -10,7 +10,8 @@ import {
   transformPoint, asPolygonPath, pathLengthTable, pointAtLength, polylineFromPoints, poseFrameOf, resolveCorners, type PolygonPath,
 } from '@weasel-js/geom';
 import type { Stroke } from '@weasel-js/paint';
-import { SceneCanvas, createScene, solid } from '@weasel-js/core';
+import { solid } from '@weasel-js/paint';
+import { SceneCanvas, createScene } from '@weasel-js/core';
 
 type Pose = { x: number; y: number; width: number; height: number; transform?: [number, number, number, number] };
 

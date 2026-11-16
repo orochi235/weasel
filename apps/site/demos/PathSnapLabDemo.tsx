@@ -1,4 +1,5 @@
-import { IDENTITY_POSE_COMPOSITION, asNodeId, createScene, ellipsePath, pathFromD, pathSnapSource, solid } from '@weasel-js/core';
+import { solid } from '@weasel-js/paint';
+import { IDENTITY_POSE_COMPOSITION, asNodeId, createScene, ellipsePath, pathFromD, pathSnapSource } from '@weasel-js/core';
 import { pathsPreset, usePenTool } from '@weasel-js/path-tools';
 import {
   type ConfigOf,

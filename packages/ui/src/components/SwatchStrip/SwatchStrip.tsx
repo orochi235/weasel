@@ -1,5 +1,5 @@
 import { useId, useState, type ReactElement } from 'react';
-import { getAlpha01 } from '@weasel-js/core';
+import { getAlpha01 } from '@weasel-js/paint';
 import type { RunAlign } from '@weasel-js/geom';
 import { useRun } from '../Run';
 import { SwatchGrid, swatchId, type SwatchChange, type SwatchGridOption } from '../SwatchGrid';

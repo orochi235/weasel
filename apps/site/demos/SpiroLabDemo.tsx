@@ -1,4 +1,5 @@
-import { type ActionTunings, asNodeId, createScene, type RectPose, solid, pathNode } from '@weasel-js/core';
+import { solid } from '@weasel-js/paint';
+import { type ActionTunings, asNodeId, createScene, type RectPose, pathNode } from '@weasel-js/core';
 import { SPIRO_KINDS, type SpiroContour, type SpiroKind } from '@weasel-js/geom';
 import { spiroNodeData, spiroPreset, useSpiroTool, pathsPreset } from '@weasel-js/path-tools';
 import {

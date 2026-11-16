@@ -14,6 +14,8 @@
     "@weasel-js/core": "*",
     "@weasel-js/editing": "*",
     "@weasel-js/geom": "*",
+    "@weasel-js/icons": "*",
+    "@weasel-js/paint": "*",
     "@weasel-js/routing": "*",
     "@weasel-js/ui": "*",
     "react": "^19.2.4",

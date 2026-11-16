@@ -1,5 +1,6 @@
 import { useEffect, useLayoutEffect, useRef, useState, type RefObject } from 'react';
-import { PathBuilder, SceneCanvas, WeaselProvider, asNodeId, createScene, solid } from '@weasel-js/core';
+import { solid } from '@weasel-js/paint';
+import { PathBuilder, SceneCanvas, WeaselProvider, asNodeId, createScene } from '@weasel-js/core';
 import type { Path, RectPose, SceneCanvasApi, View, Fill } from '@weasel-js/core';
 import { createLoupe } from '@weasel-js/hud';
 import { useHud, useHudContribution } from '@weasel-js/hud/react';

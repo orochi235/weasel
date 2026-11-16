@@ -1,4 +1,5 @@
-import { solid, type ShapeGenerator } from '@weasel-js/core';
+import { solid } from '@weasel-js/paint';
+import { type ShapeGenerator } from '@weasel-js/core';
 import type { WeaselDrawData, WeaselDrawPose } from './drawDocument';
 import type { Obj, PathObj } from './svgObj';
 import { textFrameFields } from './svgNote';

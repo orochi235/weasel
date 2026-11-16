@@ -1,4 +1,5 @@
-import { paintAlpha, paintWithAlpha, resolveFill, resolveStroke } from '@weasel-js/core';
+import { paintAlpha, paintWithAlpha } from '@weasel-js/paint';
+import { resolveFill, resolveStroke } from '@weasel-js/core';
 import type { Stroke, Fill } from '@weasel-js/core';
 
 /** A node's paints as stored. */

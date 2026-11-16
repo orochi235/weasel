@@ -1,5 +1,5 @@
 import { createEmitter, sameList } from '@weasel-js/registry';
-import { toHex8 } from '@weasel-js/core';
+import { toHex8 } from '@weasel-js/paint';
 import { pageLocalStorage } from '@weasel-js/react';
 
 /** The slice of the Web Storage API the store reads and writes. */

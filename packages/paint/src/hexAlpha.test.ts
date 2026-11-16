@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { toHex8, getAlpha01, withAlpha01, mergeAlphaFromPrev } from './color';
+import { toHex8, getAlpha01, withAlpha01, mergeAlphaFromPrev } from './hexAlpha';
 
 describe('toHex8', () => {
   it('expands #rgb to #rrggbbff', () => {

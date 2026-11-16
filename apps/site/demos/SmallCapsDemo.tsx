@@ -1,5 +1,6 @@
 import { useSyncExternalStore } from 'react';
-import { SceneCanvas, asNodeId, solid, useScene } from '@weasel-js/core';
+import { solid } from '@weasel-js/paint';
+import { SceneCanvas, asNodeId, useScene } from '@weasel-js/core';
 import { textPreset } from '@weasel-js/text-tools';
 import type { Fill } from '@weasel-js/core';
 import { glyphGeneration, subscribeGlyphReady } from '@weasel-js/font';

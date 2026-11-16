@@ -4,12 +4,11 @@ import {
   polylineFromPoints, poseFrameOf, resolveCorners, transformPath, type PolygonPath,
 } from '@weasel-js/geom';
 import { trimSpan } from '@weasel-js/stroke';
-import { INHERIT, type PaintedStroke, type Stroke } from '@weasel-js/paint';
+import { INHERIT, type PaintedStroke, type Stroke, solid } from '@weasel-js/paint';
 import { pathFromParts, type DerivedPart } from 'core/scene/derivedParts';
 import { _framedPartOutlineForTests } from './nodeShapes/derivedPainter';
 import type { Node } from 'core/scene/types';
 import { findShapeInk, shapeCoversPoint } from './NodeShape';
-import { solid } from '../util/paint';
 
 type Pose = {
   x: number; y: number; width: number; height: number; rotation?: number; transform?: [number, number, number, number];

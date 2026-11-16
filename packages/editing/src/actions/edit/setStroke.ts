@@ -2,7 +2,7 @@ import type { Action } from '@weasel-js/routing';
 import type { Paint, Stroke } from '@weasel-js/paint';
 import { createPaintAction } from './createPaintAction';
 import type { PaintParams } from '@weasel-js/core';
-import { paintWithColor, DEFAULT_STROKE_COLOR } from '@weasel-js/core';
+import { paintWithColor, DEFAULT_STROKE_COLOR } from '@weasel-js/paint';
 
 /** `setStroke`'s gesture state — `setFill`'s, against a stroke. */
 interface SetStrokeState {

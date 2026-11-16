@@ -1,6 +1,7 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import type { DrawCommand } from '@weasel-js/renderer';
-import { findNodeShape, solid, strokeOf, type SceneNode as Node } from '@weasel-js/core';
+import { solid, strokeOf } from '@weasel-js/paint';
+import { findNodeShape, type SceneNode as Node } from '@weasel-js/core';
 import { _resetShapePaintersForTests } from 'canvas/NodeShape';
 import { withTextPainter } from '../testing/textPainter';
 

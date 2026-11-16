@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState, useSyncExternalStore } from 'react';
-import { asNodeId, effectivePose, PATH_L, PATH_M, SceneCanvas, solid, useScene, textCommandFromRuns } from '@weasel-js/core';
+import { solid } from '@weasel-js/paint';
+import { asNodeId, effectivePose, PATH_L, PATH_M, SceneCanvas, useScene, textCommandFromRuns } from '@weasel-js/core';
 import { useAnimator } from '@weasel-js/animator/react';
 import type { DrawCommand, Fill, RenderLayer } from '@weasel-js/core';
 import {

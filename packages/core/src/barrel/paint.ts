@@ -110,7 +110,6 @@ export type { FillPoseBox } from '@weasel-js/renderer';
 export { commandFill, commandPaint, commandStroke } from '@weasel-js/renderer';
 
 // ─── Utility: hex8 color helpers ────────────────────────────────────────────
-export { toHex8, getAlpha01, withAlpha01, mergeAlphaFromPrev } from '../util/color';
 
 // ─── Default paint constants (fill/stroke/palette/ghost) ────────────────────
 
@@ -152,19 +151,6 @@ export { BUILTIN_MARKERS } from '@weasel-js/stroke';
 export { trimPolyline } from '@weasel-js/geom/tessellate';
 export type { Polyline } from '@weasel-js/geom/tessellate';
 
-export {
-  DEFAULT_FILL_COLOR,
-  DEFAULT_STROKE_COLOR,
-  DEFAULT_PALETTE,
-  cycleFill,
-  GHOST_STROKE,
-  solid,
-  strokeOf,
-  strokeWith,
-  paintAlpha,
-  paintWithAlpha,
-  paintWithColor,
-} from '../util/paint';
 export type { Palette, PaletteEntry } from '@weasel-js/paint';
 export { pathPaintOf, strokeCovers } from '../canvas/nodeShapes/nodePaint';
 export type { PathPaint } from '../canvas/nodeShapes/nodePaint';

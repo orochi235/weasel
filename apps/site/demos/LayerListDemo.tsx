@@ -1,4 +1,5 @@
-import { SceneCanvas, solid, useScene, type SolidPaint } from '@weasel-js/core';
+import { solid } from '@weasel-js/paint';
+import { SceneCanvas, useScene, type SolidPaint } from '@weasel-js/core';
 import { LayerList, useSceneLayerList } from '@weasel-js/ui/components/LayerList';
 import type { CSSProperties } from 'react';
 import { DemoStage } from './DemoStage';

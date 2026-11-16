@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { cycleFill, DEFAULT_PALETTE, GHOST_STROKE } from './paint';
+import { cycleFill, DEFAULT_PALETTE, GHOST_STROKE } from './paintDefaults';
 
 describe('cycleFill', () => {
   it('walks the default palette in order and wraps', () => {

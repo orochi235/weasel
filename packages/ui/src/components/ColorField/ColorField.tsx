@@ -1,6 +1,5 @@
 import { useState } from 'react';
-import { getAlpha01, withAlpha01 } from '@weasel-js/core';
-import { normalizeHex, parseColor, rgbaToHex } from '@weasel-js/paint';
+import { normalizeHex, parseColor, rgbaToHex, getAlpha01, withAlpha01 } from '@weasel-js/paint';
 import { OpacityRange } from '../OpacityRange/OpacityRange';
 import { ColorChip, useRecordApplied, type AppliedColor } from './ColorChip';
 import s from './ColorField.module.css';

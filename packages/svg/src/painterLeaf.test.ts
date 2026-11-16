@@ -1,5 +1,6 @@
 import { afterEach, describe, expect, it } from 'vitest';
-import { mat3, poseFrameOf, registerNodeShape, solid, type DrawCommand } from '@weasel-js/core';
+import { solid } from '@weasel-js/paint';
+import { mat3, poseFrameOf, registerNodeShape, type DrawCommand } from '@weasel-js/core';
 import { svgNodesFromKit, type SvgKitPose, type SvgKitTree, type SvgKitTreeNode } from './fromKit';
 import { serializeSvg } from './serialize';
 import { applyMatrix } from './transform';

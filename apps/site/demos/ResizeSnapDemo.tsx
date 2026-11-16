@@ -1,4 +1,5 @@
-import { asNodeId, SceneCanvas, solid, useScene, ROTATED_POSE_DESCRIPTOR } from '@weasel-js/core';
+import { solid } from '@weasel-js/paint';
+import { asNodeId, SceneCanvas, useScene, ROTATED_POSE_DESCRIPTOR } from '@weasel-js/core';
 import { createGridLayer, gridSnapSource } from '@weasel-js/guides';
 import type { Fill, RotatedPose, PoseDescriptor } from '@weasel-js/core';
 import { DemoStage } from './DemoStage';

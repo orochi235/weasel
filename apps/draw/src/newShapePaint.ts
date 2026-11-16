@@ -1,4 +1,5 @@
-import { DEFAULT_FILL_COLOR, DEFAULT_STROKE_COLOR, type Paint } from '@weasel-js/core';
+import { DEFAULT_FILL_COLOR, DEFAULT_STROKE_COLOR } from '@weasel-js/paint';
+import { type Paint } from '@weasel-js/core';
 import { toolOptionPaint } from '@weasel-js/editing';
 
 /** The paint a new shape takes, as a node holds one: `null` is none. */

@@ -1,4 +1,5 @@
-import { createScene, solid } from '@weasel-js/core';
+import { solid } from '@weasel-js/paint';
+import { createScene } from '@weasel-js/core';
 import type { AddNodeSpec, Fill, RectPose, UnitSystem } from '@weasel-js/core';
 import { createGridLayer, gridSnapSource } from '@weasel-js/guides';
 import { useMemo } from 'react';

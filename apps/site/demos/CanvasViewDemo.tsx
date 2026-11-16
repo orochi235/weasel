@@ -1,5 +1,6 @@
 import { useState } from 'react';
-import { asNodeId, CanvasView, PointerContextProvider, SceneCanvas, solid, usePointerPosition, useScene, viewPreset } from '@weasel-js/core';
+import { solid } from '@weasel-js/paint';
+import { asNodeId, CanvasView, PointerContextProvider, SceneCanvas, usePointerPosition, useScene, viewPreset } from '@weasel-js/core';
 import type { Fill, RectPose, View } from '@weasel-js/core';
 import { Button } from '@weasel-js/ui/components/Button';
 import styles from './CanvasViewDemo.module.css';

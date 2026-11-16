@@ -1,4 +1,5 @@
-import { SceneCanvas, solid, useScene, pathNode } from '@weasel-js/core';
+import { solid } from '@weasel-js/paint';
+import { SceneCanvas, useScene, pathNode } from '@weasel-js/core';
 import { pathsPreset } from '@weasel-js/path-tools';
 import { DemoStage } from './DemoStage';
 import { movePreset, pickPreset, useSelection } from '@weasel-js/editing';

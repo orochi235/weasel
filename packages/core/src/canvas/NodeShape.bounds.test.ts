@@ -13,7 +13,7 @@ import { findShapeBounds, findNodeShape } from './NodeShape';
 import { defaultDrawOne, defaultPaintBounds } from './defaultDrawOne';
 import { cullDrawCommands } from '@weasel-js/renderer';
 import { mat3, PATH_C, PATH_L, PATH_M, PATH_Z, boundsOfPath } from '@weasel-js/geom';
-import { solid, strokeOf } from '../util/paint';
+import { solid, strokeOf } from '@weasel-js/paint';
 import type { DrawCommand } from '@weasel-js/renderer';
 import type { Node } from 'core/scene/types';
 import { asNodeId } from 'core/scene/types';

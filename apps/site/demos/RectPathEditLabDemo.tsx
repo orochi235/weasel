@@ -1,4 +1,5 @@
-import { asNodeId, createScene, hasEditablePath, type NodeId, type PathEditHost, rectPath, type RectPose, type Scene, solid, useActionsRegistry } from '@weasel-js/core';
+import { solid } from '@weasel-js/paint';
+import { asNodeId, createScene, hasEditablePath, type NodeId, type PathEditHost, rectPath, type RectPose, type Scene, useActionsRegistry } from '@weasel-js/core';
 import {
   defineInstrument,
   f,

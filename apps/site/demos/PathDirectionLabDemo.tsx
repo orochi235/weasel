@@ -1,4 +1,5 @@
-import { ANCHORS_GROUP, PATH_GROUP, always, asNodeId, createScene, never, type RectPose, solid, pathNode } from '@weasel-js/core';
+import { solid } from '@weasel-js/paint';
+import { ANCHORS_GROUP, PATH_GROUP, always, asNodeId, createScene, never, type RectPose, pathNode } from '@weasel-js/core';
 import { pathsPreset, PATH_DIRECTION_CHROME_ID, pathStructurePreset } from '@weasel-js/path-tools';
 import {
   type ConfigOf,

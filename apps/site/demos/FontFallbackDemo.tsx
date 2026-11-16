@@ -1,5 +1,6 @@
 import { useEffect, useState, useSyncExternalStore } from 'react';
-import { SceneCanvas, asNodeId, solid, useScene } from '@weasel-js/core';
+import { solid } from '@weasel-js/paint';
+import { SceneCanvas, asNodeId, useScene } from '@weasel-js/core';
 import type { Fill } from '@weasel-js/core';
 import type { TextStyle } from '@weasel-js/text';
 import { createTextPreset } from '@weasel-js/text-tools';

@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
-import { SceneCanvas, asNodeId, useScene, solid } from '@weasel-js/core';
+import { solid } from '@weasel-js/paint';
+import { SceneCanvas, asNodeId, useScene } from '@weasel-js/core';
 import {
   registerCanvasFont, registerFontOutlines, outlineStatus,
 } from '@weasel-js/font';

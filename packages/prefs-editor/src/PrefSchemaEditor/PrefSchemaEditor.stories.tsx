@@ -1,5 +1,6 @@
 import { useState } from 'react';
-import { ActionsProvider, defaultNodeProperties, solid, type Action } from '@weasel-js/core';
+import { solid } from '@weasel-js/paint';
+import { ActionsProvider, defaultNodeProperties, type Action } from '@weasel-js/core';
 import type { Meta, StoryObj } from '@weasel-js/forge';
 import { prefType, type PrefGroup, type PrefObject } from '@weasel-js/prefs';
 import { PrefSchemaEditor, type PrefSchemaEditorProps } from '@weasel-js/prefs-editor';

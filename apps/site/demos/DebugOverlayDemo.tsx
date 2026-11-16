@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
-import { DEFAULT_HANDLE_SIZE, rasterToPng, debugSnapshotArgs, renderDebugSnapshot, SceneCanvas, solid, useScene, warmRender, viewPreset } from '@weasel-js/core';
+import { solid } from '@weasel-js/paint';
+import { DEFAULT_HANDLE_SIZE, rasterToPng, debugSnapshotArgs, renderDebugSnapshot, SceneCanvas, useScene, warmRender, viewPreset } from '@weasel-js/core';
 import { gridSnapSource } from '@weasel-js/guides';
 import type {
   DebugFlags,

@@ -1,7 +1,17 @@
 import { useMemo, useState } from 'react';
+import { solid } from '@weasel-js/paint';
 import {
-  SceneCanvas, asNodeId, createPageRun, createPresentationContribution, createScene, fitViewToPage, createPagesLayer, placedPagesOf,
-  solid, type Path, type PlacedPage, type RectPose,
+  SceneCanvas,
+  asNodeId,
+  createPageRun,
+  createPresentationContribution,
+  createScene,
+  fitViewToPage,
+  createPagesLayer,
+  placedPagesOf,
+  type Path,
+  type PlacedPage,
+  type RectPose,
 } from '@weasel-js/core';
 import { createTextPreset } from '@weasel-js/text-tools';
 import { DemoStage } from './DemoStage';

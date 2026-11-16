@@ -1,4 +1,5 @@
-import { asNodeId, createScene, type RectPose, solid } from '@weasel-js/core';
+import { solid } from '@weasel-js/paint';
+import { asNodeId, createScene, type RectPose } from '@weasel-js/core';
 import { createSpacingHintsPreset } from '@weasel-js/guides';
 import {
   type ConfigOf,

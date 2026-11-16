@@ -3,7 +3,8 @@
  * selection's warp, the control panel's settings reaching a warp already
  * held, and the shapes they open on.
  */
-import { type PolygonPath, solid, useActionsRegistry, pathNode } from '@weasel-js/core';
+import { solid } from '@weasel-js/paint';
+import { type PolygonPath, useActionsRegistry, pathNode } from '@weasel-js/core';
 import { type WarpKind, type WarpSettings } from '@weasel-js/path-tools';
 import { type TrialContribution, useTrialConfigChange } from '@weasel-js/labkit';
 import { icon } from '../icons.gen';

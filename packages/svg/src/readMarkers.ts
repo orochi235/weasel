@@ -1,8 +1,16 @@
 /** Ingesting `<marker>` defs the kit has no entry for. */
 
+import { solid } from '@weasel-js/paint';
 import {
-  type Path, type PolygonPath, PATH_L, PATH_M, PATH_Z, getMarker, resolveMarkerSize, solid,
-  type MarkerEntry, type MarkerPaint,
+  type Path,
+  type PolygonPath,
+  PATH_L,
+  PATH_M,
+  PATH_Z,
+  getMarker,
+  resolveMarkerSize,
+  type MarkerEntry,
+  type MarkerPaint,
 } from '@weasel-js/core';
 import { DEG_TO_RAD, joinPaths, worldCoords } from '@weasel-js/geom';
 import { deepEqual } from '@weasel-js/registry';
@@ -130,7 +138,6 @@ function markerInsetAttr(el: Element): number {
   return Number.isFinite(n) && n > 0 ? n : 0;
 }
 
-
 /** SVG 2's keyword forms of `refX` / `refY`, else a number. */
 function markerRef(raw: string | null, lo: number, span: number): number {
   const v = raw?.trim();
@@ -185,7 +192,6 @@ function asPolygon(path: Path): PolygonPath {
     fillRule: 'nonzero',
   };
 }
-
 
 /**
  * One `<marker>` as a `MarkerEntry` for a reference in `role` from a stroke

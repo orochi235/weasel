@@ -11,7 +11,8 @@ import { useRef } from 'react';
 import { useDepRegistry, useDepSource } from '@weasel-js/routing/react';
 import { useLatest } from '@weasel-js/react';
 import type { InsertDep, InsertEnds, InsertExtras, InsertLive, ShapeGenerator } from '@weasel-js/core/engine';
-import { insertSite, cycleFill, solid, strokeOf, strokeWith, minSizeOf } from '@weasel-js/core';
+import { cycleFill, solid, strokeOf, strokeWith } from '@weasel-js/paint';
+import { insertSite, minSizeOf } from '@weasel-js/core';
 import { poseDescriptorOf, createInsertOp, commitSelectionOps, insertPreviewExtent } from '@weasel-js/core/engine';
 import type { Scene, NodeId, OpsApplier, Op, InsertNodeFactories, InsertedNode } from '@weasel-js/core';
 import {
@@ -63,7 +64,6 @@ function withFillRule(data: unknown, rule: PathFillRule | undefined): unknown {
 export const KIT_INSERT_KINDS: readonly string[] = Object.freeze([
   'rect', 'ellipse', 'line', 'polygon', 'star', 'path', 'pencil', 'image',
 ]);
-
 
 /** The kit's default data for a kind drawn as a box, or `null` for a kind it has none for. */
 function boxKindData(

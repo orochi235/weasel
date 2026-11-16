@@ -1,4 +1,5 @@
-import { asNodeId, createScene, PATH_EFFECT_DERIVATIONS, pathEffectNode, pathNode, type RectPose, solid, strokeOf, withPathEffectsRegistry } from '@weasel-js/core';
+import { solid, strokeOf } from '@weasel-js/paint';
+import { asNodeId, createScene, PATH_EFFECT_DERIVATIONS, pathEffectNode, pathNode, type RectPose, withPathEffectsRegistry } from '@weasel-js/core';
 import { pathEffectsPreset, pathsPreset, usePenTool } from '@weasel-js/path-tools';
 import {
   type ConfigOf,

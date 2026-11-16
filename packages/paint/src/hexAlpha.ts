@@ -1,4 +1,5 @@
-import { byteHex, tryNormalizeHex } from '@weasel-js/paint';
+import { tryNormalizeHex } from './color';
+import { byteHex } from './hex';
 
 /** Color hex8 helpers. All stored colors are `#rrggbbaa`. `<input type="color">`
  *  only round-trips the 6-char form, so call-sites pad the saved alpha back on

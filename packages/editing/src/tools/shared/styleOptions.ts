@@ -5,8 +5,7 @@
  * of its own (`share: { fill: null }`).
  */
 import type { PrefGroup, PrefLeaf } from '@weasel-js/prefs-schema';
-import { isSolidPaint, type Paint } from '@weasel-js/paint';
-import { cycleFill, solid, toHex8 } from '@weasel-js/core';
+import { isSolidPaint, type Paint, cycleFill, solid, toHex8 } from '@weasel-js/paint';
 import type { ToolOptions } from '@weasel-js/routing';
 import { DEFAULT_STROKE_WIDTH } from '../../actions/insert/style';
 import { type InsertStyle } from '../../actions/insert/style';
