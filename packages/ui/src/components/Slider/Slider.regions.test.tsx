@@ -61,6 +61,16 @@ describe('Slider regions', () => {
     expect(values(onChange)).toEqual([30, 70]);
   });
 
+  it('commits nothing for a region drag released where it began', () => {
+    const { region, onInput, onChange } = setup();
+    fireEvent.pointerDown(region(1), { clientX: 160, clientY: 12, button: 0 });
+    fireEvent.pointerMove(document, { clientX: 200, clientY: 12 });
+    fireEvent.pointerMove(document, { clientX: 160, clientY: 12 });
+    fireEvent.pointerUp(document, { clientX: 160, clientY: 12 });
+    expect(values(onInput)).toEqual([20, 60]);
+    expect(onChange).not.toHaveBeenCalled();
+  });
+
   it('stops a region where a thumb meets the track end or its bound', () => {
     const { region, onChange } = setup();
     fireEvent.pointerDown(region(1), { clientX: 160, clientY: 12, button: 0 });
