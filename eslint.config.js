@@ -4,6 +4,7 @@ import tsPlugin from '@typescript-eslint/eslint-plugin';
 import reactHooks from 'eslint-plugin-react-hooks';
 import globLiteralArgs from './scripts/eslint/glob-literal-args.mjs';
 import noArrowStrictWrapper from './scripts/eslint/no-arrow-strict-wrapper.mjs';
+import noDynamicIn from './scripts/eslint/no-dynamic-in.mjs';
 import noPackageStarExport from './scripts/eslint/no-package-star-export.mjs';
 import noRenderRefWrite from './scripts/eslint/no-render-ref-write.mjs';
 
@@ -41,7 +42,7 @@ const plugins = {
   '@typescript-eslint': tsPlugin,
   'react-hooks': reactHooks,
   weasel: { rules: { 'no-render-ref-write': noRenderRefWrite, 'glob-literal-args': globLiteralArgs, 'no-package-star-export': noPackageStarExport,
-    'no-arrow-strict-wrapper': noArrowStrictWrapper } },
+    'no-arrow-strict-wrapper': noArrowStrictWrapper, 'no-dynamic-in': noDynamicIn } },
 };
 
 export default [
@@ -257,6 +258,7 @@ export default [
       'weasel/no-render-ref-write': 'error',
       'weasel/glob-literal-args': 'error',
       'weasel/no-arrow-strict-wrapper': 'error',
+      'weasel/no-dynamic-in': 'error',
       'weasel/no-package-star-export': ['error', { internal: CORE_ALIASES.map((k) => k.slice(0, -1)) }],
       'react-hooks/static-components': 'error',
       'react-hooks/use-memo': 'error',
@@ -310,6 +312,8 @@ export default [
     rules: {
       '@typescript-eslint/no-explicit-any': 'off',
       'weasel/no-render-ref-write': 'off',
+      // A test builds keys named like Object.prototype members on purpose, and may probe one with `in`.
+      'weasel/no-dynamic-in': 'off',
       'react-hooks/globals': 'off',
       'react-hooks/immutability': 'off',
     },
