@@ -10,6 +10,7 @@ import { flatSubpaths } from './pathSubpaths';
 import { originOf } from './paths/pathOrigin';
 import { polylineAtCurve, type PolylinePlace } from './tessellate/atCurve';
 import { extractPolylines } from './tessellate/polyline';
+import { lerp } from './scalar';
 
 /** Visits one segment; answering true ends the walk. */
 export type SegmentVisit = (ax: number, ay: number, bx: number, by: number) => boolean;
@@ -86,7 +87,7 @@ function someRectEdge(rect: RectPath, span: CurveSpan | undefined, visit: Segmen
     const t0 = i === lo.segment ? lo.t : 0;
     const t1 = i === hi.segment ? hi.t : 1;
     if (!(t1 > t0) && lo.segment === hi.segment) return false;
-    const at = (f: number): [number, number] => [cx[i] + (cx[j] - cx[i]) * f, cy[i] + (cy[j] - cy[i]) * f];
+    const at = (f: number): [number, number] => [lerp(cx[i], cx[j], f), lerp(cy[i], cy[j], f)];
     if (visit(...at(t0), ...at(t1))) return true;
   }
   return false;

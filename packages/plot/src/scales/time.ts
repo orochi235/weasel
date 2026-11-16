@@ -1,6 +1,7 @@
 import { proportion, tickStep } from './linear';
 import { replacedFormat } from './replacedFormat';
 import type { ContinuousScale } from './types';
+import { lerp } from '@weasel-js/geom';
 
 /** Options for {@link timeScale}. */
 export interface TimeScaleOptions {
@@ -106,7 +107,7 @@ export function timeScale(opts: TimeScaleOptions): TimeScale {
   const [r0, r1] = opts.range;
   const span = d1 - d0;
   const { along, unmap } = proportion(d0, d1);
-  const map = (v: number) => (d1 === d0 ? (r0 + r1) / 2 : r0 + along(v) * (r1 - r0));
+  const map = (v: number) => (d1 === d0 ? (r0 + r1) / 2 : lerp(r0, r1, along(v)));
   const interval = (count = 5) => intervalFor(Math.abs(span), count);
   const format = (v: number): string => formatInstant(v, interval().unit);
   return {

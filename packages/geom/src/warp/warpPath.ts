@@ -3,6 +3,7 @@ import { anchorsToPath, pathToAnchors, type PenAnchor } from '../paths/anchors';
 import { cubicPointAt, type Point } from '../paths/cubicMath';
 import { fitPointRun, keepCorner } from '../paths/fitRun';
 import { nearestOnLine } from '../nearest';
+import { lerp } from '../scalar';
 
 /** Options for {@link warpPath}. */
 export interface WarpPathOptions {
@@ -70,7 +71,7 @@ function warpSubpath(sub: PenAnchor[], closed: boolean, map: (p: Point) => Point
 
 /** The segment from `a` to `b` as a function of its curve parameter. */
 function segmentAt(a: PenAnchor, b: PenAnchor): (t: number) => Point {
-  if (!a.outHandle && !b.inHandle) return (t) => ({ x: a.x + (b.x - a.x) * t, y: a.y + (b.y - a.y) * t });
+  if (!a.outHandle && !b.inHandle) return (t) => ({ x: lerp(a.x, b.x, t), y: lerp(a.y, b.y, t) });
   const c1 = a.outHandle ?? a;
   const c2 = b.inHandle ?? b;
   return (t) => cubicPointAt(a, c1, c2, b, t);

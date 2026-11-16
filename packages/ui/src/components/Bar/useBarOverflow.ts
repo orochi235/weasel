@@ -1,5 +1,7 @@
 import { useLayoutEffect, useRef, useState, type RefObject } from 'react';
+import { useLatest } from '@weasel-js/react';
 import { cssPx } from '../../cssPx';
+import { compositeKey } from '@weasel-js/registry';
 
 /** Marks a bar's child as one of its items, by key, for {@link useBarOverflow} to measure. */
 export const BAR_ITEM = 'data-bar-item';
@@ -38,7 +40,8 @@ export function useBarOverflow(
   const [kept, setKept] = useState(Number.POSITIVE_INFINITY);
   const [natural, setNatural] = useState<number | undefined>(undefined);
   const [least, setLeast] = useState<number | undefined>(undefined);
-  const signature = keys.join('\n');
+  const signature = compositeKey(keys);
+  const keysRef = useLatest(keys);
 
   useLayoutEffect(() => {
     const el = bar.current;
@@ -54,7 +57,7 @@ export function useBarOverflow(
       const room = roomOf(el, vertical);
       const lead = el.querySelector(`:scope > [${BAR_LEAD}]`);
       if (lead !== null) room.size -= along(lead) + room.gap;
-      const all = signature === '' ? [] : signature.split('\n');
+      const all = keysRef.current;
       setKept(fitting(all, sizes.current, more.current, room));
       const line = lineLength(all, sizes.current, room.gap);
       const lead0 = lead === null ? 0 : along(lead) + (all.length > 0 ? room.gap : 0);
@@ -71,7 +74,7 @@ export function useBarOverflow(
     observer.observe(el);
     for (const child of el.children) observer.observe(child);
     return () => observer.disconnect();
-  }, [on, signature, kept, vertical]);
+  }, [on, signature, kept, vertical, keysRef]);
 
   return { bar, kept: on ? Math.min(kept, keys.length) : keys.length, natural: on ? natural : undefined, least: on ? least : undefined };
 }

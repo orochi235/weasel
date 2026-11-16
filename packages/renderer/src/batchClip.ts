@@ -27,7 +27,7 @@
  */
 
 import type { Path, GlMat3 } from '@weasel-js/geom';
-import { ringSignedArea } from '@weasel-js/geom';
+import { ringSignedArea, lerp } from '@weasel-js/geom';
 import { cornersOf, dropCollinear, isConvex, reverse } from './batchHull';
 
 /** In the space batch vertices are staged in: after the model transform,
@@ -302,5 +302,5 @@ function canonical(src: Float32Array, i: number, j: number): [number, number] {
 }
 
 function lerpInto(src: Float32Array, a: number, b: number, t: number, stride: number, out: Float32Array, o: number): void {
-  for (let k = 0; k < stride; k++) out[o + k] = src[a + k] + t * (src[b + k] - src[a + k]);
+  for (let k = 0; k < stride; k++) out[o + k] = lerp(src[a + k], src[b + k], t);
 }

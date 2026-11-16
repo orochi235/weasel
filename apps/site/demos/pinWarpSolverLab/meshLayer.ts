@@ -9,7 +9,7 @@ import {
   type View,
 } from '@weasel-js/core';
 import type { DrawCommand } from '@weasel-js/core/renderer';
-import { ellipsePath, PATH_L, PATH_M, PATH_Z, type PolygonPath } from '@weasel-js/geom';
+import { ellipsePath, PATH_L, PATH_M, PATH_Z, lerp, type PolygonPath } from '@weasel-js/geom';
 import { meshModelOf, type MeshModel, type StepPick } from './meshModel';
 
 export type MeshShow = 'area' | 'wire' | 'off';
@@ -29,7 +29,7 @@ const STEPS = 4;
 /** Screen radius of the ring around a turned-over triangle, which can be too thin to see. */
 const RING_PX = 9;
 
-const mix = (a: number[], b: number[], t: number) => `rgb(${a.map((v, i) => Math.round(v + (b[i] - v) * t)).join(', ')})`;
+const mix = (a: number[], b: number[], t: number) => `rgb(${a.map((v, i) => Math.round(lerp(v, b[i], t))).join(', ')})`;
 
 /** The color a triangle takes for its area ratio, in bins from halved to doubled; turned over is magenta. */
 export function areaColor(ratio: number): string {

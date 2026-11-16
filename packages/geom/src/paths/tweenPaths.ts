@@ -12,6 +12,7 @@ import {
   cubicContoursToPath, pathToCubicContours, reverseContour, splitSegment,
   type CubicContour, type CubicSegment,
 } from './cubicContours';
+import { lerp } from '../scalar';
 
 /** How a tween matches the second shape's anchors to the first's. */
 export interface TweenPathsOptions {
@@ -192,7 +193,7 @@ function lerpContour(a: CubicContour, b: CubicContour, t: number): CubicContour 
     closed: a.closed,
     segs: a.segs.map((sa, i) => {
       const sb = b.segs[i]!;
-      const c = sa.c.map((v, j) => v + (sb.c[j]! - v) * t) as CubicSegment['c'];
+      const c = sa.c.map((v, j) => lerp(v, sb.c[j]!, t)) as CubicSegment['c'];
       return { c, line: sa.line && sb.line };
     }),
   };

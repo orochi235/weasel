@@ -1,5 +1,6 @@
 import { useLatest, type NodeId, type SelectionApi } from '@weasel-js/core';
 import { useCallback, useEffect, useRef } from 'react';
+import { compositeKey } from '@weasel-js/registry';
 
 /** Whether `selection` already shows `want`: a set, as the same ids in any order; one id, as its latest pick. */
 function agrees(selection: readonly string[], want: string | null | readonly string[]): boolean {
@@ -7,7 +8,7 @@ function agrees(selection: readonly string[], want: string | null | readonly str
   return selection.length === want.length && want.every((id) => selection.includes(id));
 }
 
-const idsKey = (ids: readonly string[]): string => ids.join('\u0000');
+const idsKey = (ids: readonly string[]): string => compositeKey(ids);
 
 /** Keeps a canvas selection and a controlled `selected` prop in step: a prop
  *  change is pushed in, and every click reports what the selection holds after
@@ -26,7 +27,7 @@ export function useMirroredSelection(
   subscribe?: (listener: () => void) => () => void,
 ): () => void {
   const want = selected ?? null;
-  const key = typeof want === 'string' || want === null ? want : `\u0000${want.join('\u0000')}`;
+  const key = want === null ? null : typeof want === 'string' ? compositeKey([true, want]) : compositeKey([false, ...want]);
   const pushed = useRef<string | null | undefined>(undefined);
   // The selection the host already knows of: the last one reported, or pushed in.
   const known = useRef<string | null>(null);

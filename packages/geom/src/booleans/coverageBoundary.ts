@@ -18,6 +18,7 @@ import type { Pair, Ring } from './adapter';
 import type { MeshEdge } from './meshOutline';
 import { crossingsOf } from './edgeCrossings';
 import { leftSector, sectorFacingLeft, sectorWindings, sortRays, type Ray } from './vertexFans';
+import { lerp } from '../scalar';
 
 /** Boundary points nearer than this fraction of the outline's size are one point. */
 const SAME_POINT = 2 ** -28;
@@ -61,7 +62,7 @@ export function coverageBoundary(edges: readonly MeshEdge[]): Ring[] | null {
   const point = (id: number): Pair => {
     if (id < vertices) return [xs[id]!, ys[id]!];
     const c = (id - vertices) * 2, e = edges[cross.edge[c]!]!, t = cross.t[c]!;
-    return [e.ax + (e.bx - e.ax) * t, e.ay + (e.by - e.ay) * t];
+    return [lerp(e.ax, e.bx, t), lerp(e.ay, e.by, t)];
   };
   let size = 0;
   for (const e of edges) size = Math.max(size, Math.abs(e.ax), Math.abs(e.ay), Math.abs(e.bx), Math.abs(e.by));
@@ -102,7 +103,7 @@ function windingLeftOf(
     if ((y0 > y) === (y1 > y)) continue;
     const x0 = ax[j]!;
     // Crossing the ray going down, toward −y, is crossing it from its right to its left.
-    if (x0 + ((y - y0) / (y1 - y0)) * (bx[j]! - x0) < x) w += y1 < y0 ? n[j]! : -n[j]!;
+    if (lerp(x0, bx[j]!, (y - y0) / (y1 - y0)) < x) w += y1 < y0 ? n[j]! : -n[j]!;
   }
   return w;
 }

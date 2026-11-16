@@ -2,7 +2,7 @@
 
 import type { Point } from '../paths/cubicMath';
 import { evalSeg, derivSeg, type Seg } from '../booleans/contourSegments';
-import { nearlyParallel } from '../scalar';
+import { nearlyParallel, lerp } from '../scalar';
 import { pointSegmentDist } from '../points2';
 
 /** One crossing of segments `a` and `b`: the parameter on each, and the point. */
@@ -158,7 +158,7 @@ export function intersectSegments(a: Point[], b: Point[], maxHits = MAX_HITS): S
     const fp = flatness(p.pts), fq = flatness(q.pts);
     if ((fp <= FLAT && fq <= FLAT) || depth >= MAX_DEPTH) {
       const uv = chordCross(p.pts[0], p.pts[p.pts.length - 1], q.pts[0], q.pts[q.pts.length - 1], 1e-6);
-      if (uv) push(p.t0 + uv[0] * (p.t1 - p.t0), q.t0 + uv[1] * (q.t1 - q.t0));
+      if (uv) push(lerp(p.t0, p.t1, uv[0]), lerp(q.t0, q.t1, uv[1]));
       continue;
     }
     if (fp >= fq) {

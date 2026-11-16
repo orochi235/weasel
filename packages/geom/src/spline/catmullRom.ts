@@ -11,6 +11,7 @@
  */
 
 import type { Point } from '../paths/cubicMath';
+import { lerp } from '../scalar';
 
 /** A requested samples-per-segment as the whole count the samplers lay: rounded down, and at least 1. */
 export function sampleSteps(n: number): number {
@@ -39,10 +40,10 @@ export function segmentSampleAt(
 
   // Degenerate: coincident p1/p2 → linear interpolation fallback.
   if (t2 - t1 === 0) {
-    return { x: p1.x + (p2.x - p1.x) * t, y: p1.y + (p2.y - p1.y) * t };
+    return { x: lerp(p1.x, p2.x, t), y: lerp(p1.y, p2.y, t) };
   }
 
-  const u = t1 + t * (t2 - t1);
+  const u = lerp(t1, t2, t);
 
   // A phantom or repeated neighbor at p1 (or p2) has a zero knot; the point it stands for is then p1 (p2) itself.
   const a1x = t1 === t0 ? p1.x : ((t1 - u) * p0.x + (u - t0) * p1.x) / (t1 - t0);

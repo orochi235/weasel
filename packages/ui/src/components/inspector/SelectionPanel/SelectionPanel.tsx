@@ -28,6 +28,7 @@ import { sectionsInScopes } from './scopes';
 import { PanelMarksContext, panelMarkedPaths, type PanelMarks } from './selection';
 import s from './SelectionPanel.module.css';
 import { holdScope, type HoldProps } from '../../Disabled';
+import { compositeKey } from '@weasel-js/registry';
 
 export type { LeafContext, LeafRenderer } from './renderContext';
 
@@ -135,7 +136,7 @@ export function SelectionPanel<TData, TLayer extends string, TPose>(
     .filter((n): n is NonNullable<typeof n> => n != null) as readonly AnyNode[];
 
   const kinds = nodes.map((n) => classifyKind(n, routing));
-  const selectionKey = nodes.map((n) => n.id).join(',');
+  const selectionKey = compositeKey(nodes.map((n) => n.id));
   const scope = conditionedSections(kinds, properties, nodes, renderers?.alias !== undefined, props.markHidden === true, props.over);
   const sections = sectionsInScopes(scope.sections, scene, nodes, props.units);
   const panelLeaves = sections.flatMap(panelRowsOf).flatMap((row) => row.leaves);

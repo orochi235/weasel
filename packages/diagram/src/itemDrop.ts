@@ -27,6 +27,7 @@ import { useMemo, type PointerEvent as ReactPointerEvent } from 'react';
 import type { DiagramSceneData } from './dataTypes';
 import { itemDropTargetAt, outlineOf, type ItemDropTarget } from './itemDropTarget';
 import type { ParticipantSource } from './portAffordance';
+import { compositeKey } from '@weasel-js/registry';
 
 export type { ItemDropTarget } from './itemDropTarget';
 
@@ -101,7 +102,7 @@ export function createItemDropAction(opts: ItemDropOptions): Action {
         const verdicts = new Map<string, DropVerdict>();
         const over = (c: InvocationCtx) => {
           const { gap, ...drop } = itemDropTargetAt(scene, participants, c.world);
-          const key = `${drop.target}|${drop.container}|${drop.index}`;
+          const key = compositeKey([drop.target, drop.container, drop.index]);
           if (!verdicts.has(key)) verdicts.set(key, canDrop(item, drop));
           return { drop, gap, verdict: verdicts.get(key)! };
         };

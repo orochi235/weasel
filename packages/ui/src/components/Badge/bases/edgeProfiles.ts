@@ -1,3 +1,5 @@
+import { lerp } from '@weasel-js/geom';
+
 /**
  * Shapes one vertical edge of a badge base. Given a position down the edge
  * (`t`, 0 at the top to 1 at the bottom) and the configured depth in CSS px,
@@ -98,7 +100,7 @@ export const puzzleEdge: EdgePath = (depth, height) => {
 
   const upper: EdgePoint[] = [{ x: 0, y: 0 }, { x: 0, y: yc - yf }];
   for (let i = 1; i <= PUZZLE_ARC_SAMPLES; i++) {
-    const a = Math.PI + (tangentFromFillet - Math.PI) * (i / PUZZLE_ARC_SAMPLES);
+    const a = lerp(Math.PI, tangentFromFillet, i / PUZZLE_ARC_SAMPLES);
     upper.push({ x: f + f * Math.cos(a), y: yc - yf + f * Math.sin(a) });
   }
   for (let i = 1; i <= PUZZLE_ARC_SAMPLES; i++) {

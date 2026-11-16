@@ -10,6 +10,7 @@
 import { fitCubicWithTangents } from './schneiderFit';
 import type { Point } from './cubicMath';
 import { nearestOnCubic } from '../nearest';
+import { lerp } from '../scalar';
 
 /** The six `corner-shape` keywords, from most convex to most concave. */
 export type CornerKeyword = 'square' | 'squircle' | 'round' | 'bevel' | 'scoop' | 'notch';
@@ -120,10 +121,10 @@ function fitError(n: number, a: number, b: number, p0: Point, [c1, c2, p3]: Unit
   };
   let worst = 0, at = 1;
   for (let i = 1; i < FIT_CHECKS; i++) {
-    const d = off(a + (b - a) * (i / FIT_CHECKS));
+    const d = off(lerp(a, b, i / FIT_CHECKS));
     if (d > worst) { worst = d; at = i; }
   }
-  let lo = a + (b - a) * ((at - 1) / FIT_CHECKS), hi = a + (b - a) * ((at + 1) / FIT_CHECKS);
+  let lo = lerp(a, b, (at - 1) / FIT_CHECKS), hi = lerp(a, b, (at + 1) / FIT_CHECKS);
   for (let i = 0; i < 24; i++) {
     const l = lo + (hi - lo) / 3, r = hi - (hi - lo) / 3;
     if (off(l) > off(r)) hi = r; else lo = l;
@@ -138,7 +139,7 @@ function fitUnit(n: number, a: number, b: number, tol: number, depth: number, ou
   const samples: Point[] = [];
   const params: number[] = [];
   for (let i = 0; i <= 12; i++) {
-    samples.push(curveAt(n, a + (b - a) * (i / 12)));
+    samples.push(curveAt(n, lerp(a, b, i / 12)));
     params.push(i / 12);
   }
   const tEnd = curveTangent(n, b);

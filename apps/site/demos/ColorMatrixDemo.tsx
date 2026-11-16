@@ -5,6 +5,7 @@ import { Field } from '@weasel-js/ui/components/Field';
 import { SegmentedBar } from '@weasel-js/ui/components/Segmented';
 import { DemoStage } from './DemoStage';
 import s from './ColorMatrixDemo.module.css';
+import { lerp } from '@weasel-js/geom';
 
 const W = 720;
 const H = 360;
@@ -16,9 +17,9 @@ function hueRotate(rad: number): number[] {
   const cos = Math.cos(rad), sin = Math.sin(rad);
   const lr = 0.213, lg = 0.715, lb = 0.072;
   return [
-    lr + cos * (1 - lr) - sin * lr,         lg - cos * lg - sin * lg,             lb - cos * lb + sin * (1 - lb),       0, 0,
-    lr - cos * lr + sin * 0.143,             lg + cos * (1 - lg) + sin * 0.140,    lb - cos * lb - sin * 0.283,          0, 0,
-    lr - cos * lr - sin * (1 - lr),          lg - cos * lg + sin * lg,             lb + cos * (1 - lb) + sin * lb,       0, 0,
+    lerp(lr, 1, cos) - sin * lr,         lg - cos * lg - sin * lg,             lb - cos * lb + sin * (1 - lb),       0, 0,
+    lr - cos * lr + sin * 0.143,             lerp(lg, 1, cos) + sin * 0.140,    lb - cos * lb - sin * 0.283,          0, 0,
+    lr - cos * lr - sin * (1 - lr),          lg - cos * lg + sin * lg,             lerp(lb, 1, cos) + sin * lb,       0, 0,
     0, 0, 0, 1, 0,
   ];
 }

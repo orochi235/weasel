@@ -5,6 +5,7 @@
  */
 import type { PolygonPath } from '../path';
 import type { CornerShape } from './cornerShape';
+import { lerp } from '../scalar';
 
 /** The corner at one anchor: its shape, and its setback, how far along each
  *  edge from the anchor the cut starts. A `round` corner between edges at a
@@ -94,7 +95,7 @@ export function lerpCorners(
     const either = ca ?? cb;
     if (!either) out[i] = null;
     else if (ca && cb && ca.shape !== cb.shape) out[i] = t < 0.5 ? ca : cb;
-    else out[i] = { shape: either.shape, radius: (ca?.radius ?? 0) + ((cb?.radius ?? 0) - (ca?.radius ?? 0)) * t };
+    else out[i] = { shape: either.shape, radius: lerp(ca?.radius ?? 0, cb?.radius ?? 0, t) };
   }
   return compactCorners(out);
 }

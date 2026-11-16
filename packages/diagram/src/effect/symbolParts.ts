@@ -6,6 +6,7 @@ import type { PortAnchor, PortSpec } from '../types';
 import { splitProblem } from './check';
 import { isControl, stageStyle } from './draw';
 import type { EffectPipeline, EffectPort, EffectStage } from './types';
+import { lerp } from '@weasel-js/geom';
 
 /** What a branch symbol draws: a data node without its id or style, which the look adds. */
 export type BranchNode = Pick<DataNode, 'outline' | 'lines' | 'rows' | 'ports' | 'marks' | 'width' | 'height' | 'padding'>;
@@ -53,7 +54,7 @@ export function alongLine(points: readonly (readonly [number, number])[], t: num
     if (left <= len || i === lengths.length - 1) {
       const k = len === 0 ? 0 : Math.min(left / len, 1);
       const [a, b] = [points[i]!, points[i + 1]!];
-      return { u: a[0] + (b[0] - a[0]) * k, v: a[1] + (b[1] - a[1]) * k };
+      return { u: lerp(a[0], b[0], k), v: lerp(a[1], b[1], k) };
     }
     left -= len;
   }

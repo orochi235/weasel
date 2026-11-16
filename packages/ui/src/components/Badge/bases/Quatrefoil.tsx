@@ -1,6 +1,6 @@
 import type { BaseModule } from './types';
 import { polygonSampler } from './polygonSampler';
-import { DEG_TO_RAD } from '@weasel-js/geom';
+import { DEG_TO_RAD, lerp } from '@weasel-js/geom';
 
 /**
  * 8-fold-symmetric polar shape. The whole silhouette is defined by a single curve r(s)
@@ -96,8 +96,8 @@ export function quatrefoilRadius(params: BadgeQuatrefoilBaseParams = {}): (s: nu
     const t1 = (vAt - s) / vAt;
     // t2: lobe-side parameter, 0 at valley (s=vAt), 1 at diagonal (s=1). Clamped to ≥ 0.
     const t2 = (s - vAt) / (1 - vAt);
-    const rSpike = valley + (spike - valley) * curveSegment(Math.max(0, t1), sCurv, sBend, sErode);
-    const rLobe  = valley + (lobe  - valley) * curveSegment(Math.max(0, t2), lCurv, lBend, lErode);
+    const rSpike = lerp(valley, spike, curveSegment(Math.max(0, t1), sCurv, sBend, sErode));
+    const rLobe  = lerp(valley, lobe, curveSegment(Math.max(0, t2), lCurv, lBend, lErode));
     // Smooth corner at the valley: outside the smoothing band both rSpike and rLobe equal
     // `valley` on the inactive side, so smoothMax just picks the active one. Near the join
     // both are close to valley and smoothMax lifts the corner.

@@ -10,6 +10,7 @@ import type { NodeId } from '../core/scene/types';
 import type { ReflowTransition } from '../layout/types';
 import { poseAxes } from './poseTarget';
 import type { AnimatedReflow, ReflowScene } from './reflow';
+import { lerp } from '@weasel-js/geom';
 
 /** A pose and how opaque it is shown. */
 export interface Faded<TPose> {
@@ -19,12 +20,12 @@ export interface Faded<TPose> {
 
 /** `base`'s poses with an opacity riding beside them, as one more axis. */
 export function fadedDescriptor<TPose>(base: PoseDescriptor<TPose>): PoseDescriptor<Faded<TPose>> {
-  const lerp = base.lerp;
+  const lerpPose = base.lerp;
   return {
     getBounds: (v) => base.getBounds(v.pose),
     remapBounds: (v, src, dst) => ({ ...v, pose: base.remapBounds(v.pose, src, dst) }),
     fromBounds: (bounds, t) => ({ ...t, pose: base.fromBounds(bounds, t.pose) }),
-    lerp: lerp && ((a, b, t) => ({ pose: lerp(a.pose, b.pose, t), alpha: a.alpha + (b.alpha - a.alpha) * t })),
+    lerp: lerpPose && ((a, b, t) => ({ pose: lerpPose(a.pose, b.pose, t), alpha: lerp(a.alpha, b.alpha, t) })),
     axes(like) {
       const axes = poseAxes(base, like.pose);
       if (!axes) return null;

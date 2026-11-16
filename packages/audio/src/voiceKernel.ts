@@ -6,6 +6,7 @@
  */
 import { biquadCoefficients } from './biquad';
 import { envelopeLevel, resolveEnvelope, type Envelope } from './envelope';
+import { lerp } from './lerp';
 import { sineShape, waveShape } from './oscillator';
 import { NOISE_SECONDS, isInharmonic, noiseSamples, resolveNote } from './synthVoice';
 import type { NoiseColor, NoiseOptions, NoteOptions, VoiceFilter } from './types';
@@ -124,7 +125,7 @@ export function createNoteKernel(note: KernelNote, sampleRate: number): VoiceKer
     let hz = from;
     if (glideTo !== undefined) {
       const k = glideMs > 0 ? Math.min(1, t / glideMs) : 1;
-      hz = linear ? from + (glideTo - from) * k : from * (glideTo / from) ** k;
+      hz = linear ? lerp(from, glideTo, k) : from * (glideTo / from) ** k;
     }
     const cycles = (hz * tune) / sampleRate;
     let sum = 0;
@@ -165,7 +166,7 @@ export function createNoiseKernel(
   return createKernel(noise, sampleRate, (_t, tune) => {
     const i = Math.floor(at);
     const a = loop[i];
-    const sample = a + (loop[(i + 1) % loop.length] - a) * (at - i);
+    const sample = lerp(a, loop[(i + 1) % loop.length], at - i);
     at = (at + tune) % loop.length;
     return sample;
   });

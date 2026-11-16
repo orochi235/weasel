@@ -6,7 +6,7 @@
  */
 import type { MarkerRef } from '@weasel-js/core';
 import type { DataContainer, DataEdge, DataNode, EdgeStyle, LayoutDirection, NodeStyle } from '@weasel-js/diagram';
-import { freshId } from '@weasel-js/registry';
+import { compositeKey, freshId } from '@weasel-js/registry';
 import { checkedColor } from '../colorCheck';
 import type { ImportResult } from '../document';
 import { Membership, Warnings, graphPage } from '../graphRead';
@@ -270,7 +270,7 @@ function clusterIds(clusters: Iterable<string>, nodes: ReadonlyMap<string, unkno
 function strictEdges(edges: readonly RawEdge[], directed: boolean): RawEdge[] {
   const kept = new Map<string, RawEdge>();
   for (const e of edges) {
-    const key = directed ? `${e.tail.id}\u0000${e.head.id}` : [e.tail.id, e.head.id].sort().join('\u0000');
+    const key = compositeKey(directed ? [e.tail.id, e.head.id] : [e.tail.id, e.head.id].sort());
     const first = kept.get(key);
     kept.set(key, first === undefined ? e : { ...first, attrs: new Map([...first.attrs, ...e.own]) });
   }

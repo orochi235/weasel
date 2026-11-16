@@ -5,6 +5,7 @@ import {
 import { Field } from '@weasel-js/ui/components/Field';
 import { InlineRange } from '@weasel-js/ui/components/InlineRange';
 import s from './LayeredCurveDemo.module.css';
+import { lerp } from '@weasel-js/geom';
 
 /**
  * The rim → contour curve of a beveled solid of revolution, as two function
@@ -74,7 +75,7 @@ function stretchPointsToRange(
   const from = points[0]?.x ?? lo;
   const span = (points.at(-1)?.x ?? hi) - from;
   return points.map((p, i, arr) => {
-    const x = i === 0 ? lo : i === arr.length - 1 ? hi : span > 0 ? lo + ((p.x - from) / span) * (hi - lo) : lo;
+    const x = i === 0 ? lo : i === arr.length - 1 ? hi : span > 0 ? lerp(lo, hi, (p.x - from) / span) : lo;
     return { ...p, x };
   });
 }

@@ -1,6 +1,7 @@
 import type { Path } from '@weasel-js/geom';
 import { anchorParamsBetween, extractPolylines, type Polyline } from '@weasel-js/geom/tessellate';
 import { dashPattern, dashPhase } from '@weasel-js/paint';
+import { lerp } from '@weasel-js/geom';
 
 /** A polyline whose points may also carry their arc length along a longer
  *  line it was cut from, which dashing carries to each dash. */
@@ -183,9 +184,9 @@ export function splitForDash(pl: MeasuredPolyline, pattern: readonly number[], p
         const frac = traveled / segFullLen;
         const [a, b, t] = anchorParamsBetween(start.a, start.b, start.t, end.a, end.b, end.t, frac);
         const mid: At = {
-          x: start.x + (end.x - start.x) * frac, y: start.y + (end.y - start.y) * frac,
-          a, b, t, w: start.w + (end.w - start.w) * frac, o: start.o + (end.o - start.o) * frac,
-          l: start.l + (end.l - start.l) * frac,
+          x: lerp(start.x, end.x, frac), y: lerp(start.y, end.y, frac),
+          a, b, t, w: lerp(start.w, end.w, frac), o: lerp(start.o, end.o, frac),
+          l: lerp(start.l, end.l, frac),
         };
         if (onPhase && cur) extend(cur, mid);
         prevX = mid.x; prevY = mid.y;

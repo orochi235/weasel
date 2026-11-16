@@ -15,6 +15,7 @@ import {
   type SimulationNode,
   type SimulationOptions,
 } from './types';
+import { lerp } from '@weasel-js/geom';
 
 /** `value`, or a `RangeError` naming `what` when it is not a finite number. */
 function finite(what: string, value: number): number {
@@ -56,8 +57,7 @@ export function createSimulation<TNode extends SimulationNode>(
   function step(): void {
     // Decay toward the target never overshoots it, and stays finite between finite ends.
     const decay = alphaDecay > 1 ? 1 : alphaDecay > 0 ? alphaDecay : 0;
-    let next = alpha + (alphaTarget - alpha) * decay;
-    if (!Number.isFinite(next)) next = alpha * (1 - decay) + alphaTarget * decay;
+    const next = lerp(alpha, alphaTarget, decay);
     alpha = Math.sign(next - alphaTarget) === -Math.sign(alpha - alphaTarget) ? alphaTarget : next;
     for (const f of forces) f(alpha);
 

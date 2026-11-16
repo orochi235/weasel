@@ -6,6 +6,7 @@
  */
 import { isStraightSegment, type PenAnchor } from './anchors';
 import { cubicPointAt, type Point } from './cubicMath';
+import { lerp } from '../scalar';
 
 const LENGTH_SAMPLES = 48;
 
@@ -115,7 +116,7 @@ export function arcRun(sub: readonly PenAnchor[], from: number, to: number): Arc
     pointAt(s) {
       if (segs.length === 0) return start;
       const { seg, t } = locate(s, false);
-      if (seg.straight) return { x: seg.a.x + (seg.b.x - seg.a.x) * t, y: seg.a.y + (seg.b.y - seg.a.y) * t };
+      if (seg.straight) return { x: lerp(seg.a.x, seg.b.x, t), y: lerp(seg.a.y, seg.b.y, t) };
       return cubicPointAt(seg.a, seg.c1, seg.c2, seg.b, t);
     },
     headingAt(s, arriving = false) {

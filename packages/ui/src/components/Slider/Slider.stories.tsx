@@ -9,6 +9,7 @@ import { Button } from '@weasel-js/ui/components/Button';
 import { paintGradientTrack } from '@weasel-js/ui/paint-gradient-track';
 import { oklchDegToHex } from '@weasel-js/paint';
 import st from './Slider.stories.module.css';
+import { lerp } from '@weasel-js/geom';
 
 const meta: Meta<typeof Slider> = {
   title: 'ui/Slider',
@@ -333,7 +334,7 @@ export const RightToLeft: Story = {
 
 function evenlySpacedThumbs(n: number, min: number, max: number): Thumb[] {
   if (n <= 1) return [{ value: (min + max) / 2 }];
-  return Array.from({ length: n }, (_, i) => ({ value: min + (i / (n - 1)) * (max - min) }));
+  return Array.from({ length: n }, (_, i) => ({ value: lerp(min, max, i / (n - 1)) }));
 }
 
 function PlaygroundView({
@@ -352,7 +353,7 @@ function PlaygroundView({
   if (thumbs.length < thumbCount) {
     const extra = Array.from({ length: thumbCount - thumbs.length }, (_, i) => {
       const t = (thumbs.length + i) / (thumbCount - 1 || 1);
-      return { value: sliderArgs.min + t * (sliderArgs.max - sliderArgs.min) };
+      return { value: lerp(sliderArgs.min, sliderArgs.max, t) };
     });
     setThumbs([...thumbs, ...extra]);
   } else if (thumbs.length > thumbCount) {

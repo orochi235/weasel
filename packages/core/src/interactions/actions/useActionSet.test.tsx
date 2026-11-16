@@ -1,11 +1,11 @@
 import { describe, expect, it } from 'vitest';
 import { act, render } from '@testing-library/react';
-import { DepRegistryProvider, useDepRegistry, type DepRegistry } from '@weasel-js/routing/react';
-import type { SelectionApi } from '@weasel-js/routing';
+import { ActionsProvider, DepRegistryProvider, useActionsRegistry, useDepRegistry, type ActionsRegistry, type DepRegistry } from '@weasel-js/routing/react';
+import type { Action, SelectionApi } from '@weasel-js/routing';
 import { createScene } from 'core/scene/scene';
 import type { NodeId, Scene } from 'core/scene/types';
 import type { Op } from 'core/ops/types';
-import { useStandardDeps } from './useActionSet';
+import { useActionSet, useStandardDeps } from './useActionSet';
 
 type S = Scene<object, 'main'>;
 const POSE = { x: 0, y: 0, width: 1, height: 1 };
@@ -63,5 +63,19 @@ describe('useStandardDeps change notices', () => {
     expect(heard).toEqual([]);
     rerender(['a']);
     expect(heard).toHaveLength(1);
+  });
+});
+
+describe('useActionSet', () => {
+  it('leaves out exactly the ids it is told to, whatever characters they hold', () => {
+    const actions = ['a', 'b', 'a\u0000b'].map((id) => ({ id, label: id, kind: 'instant', run: () => {} }) as unknown as Action);
+    let reg!: ActionsRegistry;
+    function Probe() {
+      reg = useActionsRegistry()!;
+      useActionSet(actions, ['a\u0000b']);
+      return null;
+    }
+    render(<DepRegistryProvider><ActionsProvider><Probe /></ActionsProvider></DepRegistryProvider>);
+    expect(reg.list().map((a) => a.id).sort()).toEqual(['a', 'b']);
   });
 });

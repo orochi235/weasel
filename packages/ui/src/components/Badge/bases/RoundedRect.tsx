@@ -1,4 +1,5 @@
 import type { BaseModule, BaseSampler, PerimeterPoint } from './types';
+import { lerp } from '@weasel-js/geom';
 
 /** What `baseParams` takes on a badge whose `base` is `rounded-rect`. */
 export interface BadgeRoundedRectBaseParams {
@@ -113,7 +114,7 @@ const RoundedRect: BaseModule<BadgeRoundedRectBaseParams> = {
     const pinchY = (x: number, y: number): number => {
       if (pinch === 0) return y;
       const d = Math.abs(x - 50) / 50;
-      return 50 + (y - 50) * (1 - d * pinch);
+      return lerp(50, y, 1 - d * pinch);
     };
 
     let bodyPath: string;

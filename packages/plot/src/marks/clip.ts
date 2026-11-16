@@ -1,5 +1,6 @@
 /** Data geometry cut to a convex plot area at compile time, so nothing past the area is drawn by any renderer or export. */
 import type { PlotPoint } from './types';
+import { lerp } from '@weasel-js/geom';
 
 /** A convex area as its corners, in order either way round. */
 export type ConvexArea = readonly PlotPoint[];
@@ -79,7 +80,7 @@ function into(sides: Sides, p: PlotPoint): PlotPoint {
   // A point a rounding outside scales by a share that rounds to 1, or lands a rounding outside again: each try pulls
   // it a little further in.
   for (let tries = 0; tries < 8; tries++, k *= 1 - 1e-12 * 16 ** tries) {
-    const q = { x: c.x + (p.x - c.x) * k, y: c.y + (p.y - c.y) * k };
+    const q = { x: lerp(c.x, p.x, k), y: lerp(c.y, p.y, k) };
     if (within(sides, q)) return q;
   }
   return c;
@@ -93,10 +94,10 @@ export const insideArea = (area: ConvexArea, p: PlotPoint): boolean => within(si
 function crossing(p: PlotPoint, q: PlotPoint, sp: number, sq: number): PlotPoint {
   if (Math.abs(sp) <= Math.abs(sq)) {
     const t = sp / (sp - sq);
-    return { x: p.x + (q.x - p.x) * t, y: p.y + (q.y - p.y) * t };
+    return { x: lerp(p.x, q.x, t), y: lerp(p.y, q.y, t) };
   }
   const u = sq / (sq - sp);
-  return { x: q.x + (p.x - q.x) * u, y: q.y + (p.y - q.y) * u };
+  return { x: lerp(q.x, p.x, u), y: lerp(q.y, p.y, u) };
 }
 
 /** How far along its line from the point nearest `area` a segment end may lie before it is moved in: four times the

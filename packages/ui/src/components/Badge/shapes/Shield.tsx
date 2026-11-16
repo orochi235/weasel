@@ -1,6 +1,7 @@
 import { useRef } from 'react';
 import type { ShapeModule } from '../types';
 import { useSvgBox } from '../useSvgBox';
+import { lerp } from '@weasel-js/geom';
 
 /** What `shapeParams` takes on a `shield` badge. */
 export interface BadgeShieldShapeParams {
@@ -29,7 +30,7 @@ function ShieldComponent({ variant, focused, params }: {
 
   const pd = Math.max(60, Math.min(cfg.pointDepth, 110));
   const sh = Math.max(20, Math.min(cfg.shoulderY, pd - 5));
-  const cpY = sh + (pd - sh) * Math.max(0.1, Math.min(cfg.curveTightness, 1));
+  const cpY = lerp(sh, pd, Math.max(0.1, Math.min(cfg.curveTightness, 1)));
   // Aspect-aware top corner radii (so the rounded corners stay circular in CSS).
   const cornerCss = Math.max(0, Math.min(cfg.erosion, 1)) * 12;
   const rxC = (cornerCss / box.w) * 100;

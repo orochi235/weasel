@@ -1,6 +1,7 @@
 import { renderHook, act } from '@testing-library/react';
 import { useAnimator } from '../../../useAnimator';
 import { createElementTarget } from '../../../elementTarget';
+import { lerp } from '@weasel-js/geom';
 
 type Frame = Record<string, string | number>;
 
@@ -58,7 +59,7 @@ export class FakeAnimation {
     const x = (k: Frame): number => Number(/translateX\((-?[\d.e+-]+)px\)/.exec(String(k.transform))![1]);
     const o0 = Number(ks[i]!.offset);
     const o1 = Number(ks[i + 1]!.offset);
-    return x(ks[i]!) + (x(ks[i + 1]!) - x(ks[i]!)) * ((t - o0) / (o1 - o0));
+    return lerp(x(ks[i]!), x(ks[i + 1]!), (t - o0) / (o1 - o0));
   }
 }
 

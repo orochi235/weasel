@@ -9,6 +9,7 @@
 
 import { anchorParamsBetween } from './anchorParams';
 import type { Polyline } from './polyline';
+import { lerp } from '../scalar';
 
 const EPS = 1e-9;
 
@@ -41,9 +42,9 @@ function sampleAt(
 
   const [a, b, t] = anchorParamsBetween(A[i - 1], B[i - 1], T[i - 1], A[i], B[i], T[i], f);
 
-  const w = W ? W[i - 1] + (W[i] - W[i - 1]) * f : 0;
-  const o = O ? O[i - 1] + (O[i] - O[i - 1]) * f : 0;
-  return { x: px + (qx - px) * f, y: py + (qy - py) * f, a, b, t, w, o, next: i };
+  const w = W ? lerp(W[i - 1], W[i], f) : 0;
+  const o = O ? lerp(O[i - 1], O[i], f) : 0;
+  return { x: lerp(px, qx, f), y: lerp(py, qy, f), a, b, t, w, o, next: i };
 }
 
 /** Float32 rounding at a coordinate's magnitude, with headroom: what points stored as

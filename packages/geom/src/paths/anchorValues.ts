@@ -6,6 +6,7 @@
 import { PATH_C, PATH_Q, PATH_Z, forEachSegment } from '../commands';
 import type { PolygonPath } from '../path';
 import type { PointOrigin } from './anchorOrigins';
+import { lerp } from '../scalar';
 
 /** For each point of `path`, the index of the anchor it ends, as `countPathAnchors` counts
  *  them (one per M, L, C and Q), or -1 for a control point. */
@@ -66,7 +67,7 @@ export function remapAnchorValues(
     for (let k = 0; k < stride; k++) {
       const va = o ? values[o.a * stride + k] ?? 0 : 0;
       const vb = o ? values[o.b * stride + k] ?? 0 : 0;
-      out.push(o && o.t !== 0 ? va + (vb - va) * o.t : va);
+      out.push(o && o.t !== 0 ? lerp(va, vb, o.t) : va);
     }
   }
   return out;

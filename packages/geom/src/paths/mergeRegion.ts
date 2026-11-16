@@ -10,6 +10,7 @@ import { PathBuilder } from './builder';
 import { lineSegment, pathToCubicContours, splitSegment, type CubicSegment } from './cubicContours';
 import { segmentCrossings } from './segmentCrossings';
 import { pathSignedArea } from './winding';
+import { lerp } from '../scalar';
 
 /** Options for {@link mergeRegion}. */
 export interface MergeRegionOptions {
@@ -283,7 +284,7 @@ function winding(rings: readonly number[][], x: number, y: number): number {
       if (ay > y === by > y) continue;
       const ax = r[i]!,
         bx = r[i + 2]!;
-      if (x >= ax + ((y - ay) / (by - ay)) * (bx - ax)) continue;
+      if (x >= lerp(ax, bx, (y - ay) / (by - ay))) continue;
       w += ay <= y ? 1 : -1;
     }
   }

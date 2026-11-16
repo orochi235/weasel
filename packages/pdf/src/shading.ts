@@ -1,4 +1,4 @@
-import { boundsOfPath, type GlMat3, mat3, type Path } from '@weasel-js/geom';
+import { boundsOfPath, lerp, type GlMat3, mat3, type Path } from '@weasel-js/geom';
 import {
   type CommandPaint,
   type CommandPaintUnits,
@@ -97,7 +97,7 @@ function stopsOf(paint: Gradient, state: DrawState): Stop[] {
   });
 }
 
-const lerp = (a: Rgba, b: Rgba, f: number): Rgba => a.map((v, i) => v + (b[i] - v) * f) as Rgba;
+const lerpRgba = (a: Rgba, b: Rgba, f: number): Rgba => a.map((v, i) => lerp(v, b[i], f)) as Rgba;
 
 /** The ramp over 0..1 as linear pieces, flat past either end stop, with no piece of zero width. */
 function rampSegments(stops: Stop[]): Segment[] {
@@ -117,7 +117,7 @@ function rampSegments(stops: Stop[]): Segment[] {
     const hi = Math.min(s.hi, 1);
     if (hi <= lo) continue;
     const span = s.hi - s.lo;
-    out.push({ lo, hi, c0: lerp(s.c0, s.c1, (lo - s.lo) / span), c1: lerp(s.c0, s.c1, (hi - s.lo) / span) });
+    out.push({ lo, hi, c0: lerpRgba(s.c0, s.c1, (lo - s.lo) / span), c1: lerpRgba(s.c0, s.c1, (hi - s.lo) / span) });
   }
   // Every stop sits outside 0..1 on one side, so one color covers the whole ramp.
   if (out.length === 0) {

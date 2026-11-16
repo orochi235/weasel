@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from 'react';
 import { knobPaths, knobsToParams, paramsToKnobs, paramsToPins, reservedParams, sameKnob, withoutPins } from '../route/url';
 import { routedTrial } from './routedTrial';
 import { readRouteParams, replaceRouteParams, takeRouteFromTrial, useRoute } from './useRoute';
+import { compositeKey } from '@weasel-js/registry';
 
 interface KnobSyncProps {
   schema: ConfigSchema<unknown>;
@@ -73,7 +74,7 @@ export function RouteKnobs({ instruments, isReady }: { instruments: InstrumentLi
   if (!trial || !schema) return null;
   return (
     <TrialIdContext.Provider value={trial.id}>
-      <KnobSync key={`${trial.id} ${route}`} schema={schema as ConfigSchema<unknown>} config={trial.config} />
+      <KnobSync key={compositeKey([trial.id, route])} schema={schema as ConfigSchema<unknown>} config={trial.config} />
     </TrialIdContext.Provider>
   );
 }

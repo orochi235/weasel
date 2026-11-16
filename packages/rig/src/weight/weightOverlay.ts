@@ -1,4 +1,4 @@
-import { ellipsePath, worldCoords } from '@weasel-js/geom';
+import { ellipsePath, worldCoords, lerp } from '@weasel-js/geom';
 import { jointShares } from '@weasel-js/animator';
 import type { DrawCommand } from '@weasel-js/renderer';
 import type { RenderLayer } from '@weasel-js/core';
@@ -15,7 +15,7 @@ const HOT = [0xff, 0x8a, 0x3d];
 const IDLE = '#8a94a3';
 
 const mix = (w: number): string => {
-  const c = COLD.map((v, k) => Math.round(v + (HOT[k] - v) * w));
+  const c = COLD.map((v, k) => Math.round(lerp(v, HOT[k], w)));
   return `rgb(${c[0]}, ${c[1]}, ${c[2]})`;
 };
 

@@ -9,6 +9,7 @@ import { specificity } from '@weasel-js/gestures';
 import { ALWAYS, ruleCanHoldIn, rulesExclusive, type Rule } from '../../../eligibility';
 import { buildRouteRegistry, type RegistryEntry, type GestureName } from './registry';
 import { argKeysOf, chordArgsOf, modifierTieKeys, objectId, phasesTie, PLATFORMS, sameOutcome, targetKey, viewsTie, type Platform } from './conflictKeys';
+import { compositeKey } from '@weasel-js/registry';
 
 /** Two or more bindings declare the same exact (phase, gesture, arg, target,
  *  modifiers) tuple, so slot order alone picks one. */
@@ -88,11 +89,10 @@ function findConflictsKeyed(
     // compared pair by pair (`phasesTie`), since whether two meet depends on whose channel each reads.
     const args = [...argKeysOf(entry).map((arg) => ({ arg, chord: false })), ...chordArgsOf(entry).map((arg) => ({ arg, chord: true }))];
     for (const { arg, chord } of args) {
-      const base = `${entry.gesture}|${arg}|${targetKey(entry)}`;
       for (const platform of PLATFORMS) {
         const rank = specificity(entry.spec, platform === 'mac').join();
         for (const state of modifierTieKeys(entry, platform, chord)) {
-          const key = `${platform}|${base}|${state}|${rank}`;
+          const key = compositeKey([platform, entry.gesture, arg, targetKey(entry), state, rank]);
           const bucket = groups.get(key);
           if (bucket) { if (!bucket.members.includes(entry)) bucket.members.push(entry); }
           else groups.set(key, { platform, members: [entry] });
@@ -117,7 +117,7 @@ function findConflictsKeyed(
     // both platforms: one conflict per set of specs, each named by identity so
     // the key is the same in every pass `findScopedConflicts` makes over them. A pair meeting on
     // several args (a key and a code, two keys of a list) is one conflict too.
-    const key = `${first.gesture}|${targetKey(first)}|${bucket.map((e) => `${objectId(e.spec)}:${canonicalModifiers(e.modifiers)}`).join(';')}`;
+    const key = compositeKey([first.gesture, targetKey(first), ...bucket.flatMap((e) => [objectId(e.spec), canonicalModifiers(e.modifiers)])]);
     const found = conflicts.get(key);
     if (found) { found.platforms.add(platform); continue; }
     conflicts.set(key, {
@@ -252,7 +252,7 @@ export function findScopedConflicts(scopes: ToolScopes): Conflict[] {
   const seen = new Set<string>();
   const add = (keyed: readonly { key: string; conflict: Conflict }[]): void => {
     for (const { key, conflict } of keyed) {
-      const dedupeKey = `${key}|${conflict.ownerIds.join(',')}`;
+      const dedupeKey = compositeKey([key, ...conflict.ownerIds]);
       if (seen.has(dedupeKey)) continue;
       seen.add(dedupeKey);
       out.push(conflict);

@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState, type FocusEvent as ReactFocusEvent, type PointerEvent as ReactPointerEvent, type RefObject } from 'react';
 import { DRAG_THRESHOLD_PX, openPointerSession, type PointerSession } from '@weasel-js/core';
 import { isPrimaryPress, modHeld } from '@weasel-js/gestures';
-import { clamp, type RunSpot, type TrackRun } from '@weasel-js/geom';
+import { clamp, lerp, type RunSpot, type TrackRun } from '@weasel-js/geom';
 import { useKitSetting, useLatest, usePrefersReducedMotion, useVisibleRaf } from '@weasel-js/react';
 import { boxPoint } from './boxPoint';
 import type { RunItemsOf, RunKeyOf } from './useItemLengths';
@@ -72,7 +72,7 @@ export function useRunScroll({ root, keyOf, itemsOf, frame, run, total, spots, l
     const target = clamp(moved.current, 0, latest.current.max);
     const dt = last.current === null ? 16 : time - last.current;
     last.current = time;
-    const next = drawn.current + (target - drawn.current) * (1 - Math.exp(-dt / GLIDE_MS));
+    const next = lerp(drawn.current, target, 1 - Math.exp(-dt / GLIDE_MS));
     if (Math.abs(target - next) <= LAND) {
       last.current = null;
       show(target);

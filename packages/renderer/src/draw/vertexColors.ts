@@ -8,6 +8,7 @@ import { canBatchMesh, solidColor, stagePlain } from './batch';
 import { flushForOwnDraw, retryUncut } from './clip';
 import type { DrawContext } from './drawContext';
 import { foldsColor } from './foldColor';
+import { lerp } from '@weasel-js/geom';
 
 type Anchors = Pick<Mesh, 'anchorA' | 'anchorB' | 'anchorT'>;
 
@@ -33,7 +34,7 @@ export function expandAnchorColors(perAnchor: ArrayLike<number>, mesh: Anchors, 
     const b4 = aB[i] * 4;
     const t = aT[i];
     for (let c = 0; c < 4; c++) {
-      colors[i * 4 + c] = perAnchor[a4 + c] + (perAnchor[b4 + c] - perAnchor[a4 + c]) * t;
+      colors[i * 4 + c] = lerp(perAnchor[a4 + c], perAnchor[b4 + c], t);
     }
   }
   return colors;

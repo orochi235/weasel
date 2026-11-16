@@ -1,3 +1,5 @@
+import { lerp } from './scalar';
+
 /**
  * The cubic control points that make a curve leave a port along its normal and
  * arrive at the next against that port's normal — what makes a routed edge read
@@ -61,7 +63,7 @@ function farChord(a: readonly number[], b: readonly number[]): number {
 
 /** `from` moved fraction `t` of the way to `to`, finite wherever both are. */
 function toward(from: number, to: number, t: number): number {
-  const v = from + (to - from) * t;
+  const v = lerp(from, to, t);
   return Number.isFinite(v) ? v : from * (1 - t) + to * t;
 }
 

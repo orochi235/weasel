@@ -18,6 +18,7 @@ import s from './CurveEditor.module.css';
 import type {
   CurveLayer, EmptyDownArgs, KeyDownArgs, LayerCtx, LayerGesture, LayerHit, LayerRenderCtx, PlotPoint,
 } from './layerTypes';
+import { lerp } from '@weasel-js/geom';
 
 type Bezier = readonly [number, number, number, number];
 
@@ -163,7 +164,7 @@ export function createKeyframeLayer(cfg: KeyframeLayerOptions = {}): CurveLayer<
       const pts: PlotPoint[] = [];
       for (let j = 0; j <= SAMPLES_PER_SEGMENT; j++) {
         const u = j / SAMPLES_PER_SEGMENT;
-        pts.push(ctx.toPlot({ x: a.t + (b.t - a.t) * u, y: a.value + (b.value - a.value) * ease(u) }));
+        pts.push(ctx.toPlot({ x: lerp(a.t, b.t, u), y: lerp(a.value, b.value, ease(u)) }));
       }
       out.push(pts);
     }
@@ -181,8 +182,7 @@ export function createKeyframeLayer(cfg: KeyframeLayerOptions = {}): CurveLayer<
   function handlePoints(state: KeyframeLayerState, bezier: Bezier, ctx: LayerCtx): [PlotPoint, PlotPoint] {
     const a = state.keys[state.selectedSegment! - 1];
     const b = state.keys[state.selectedSegment!];
-    const at = (xf: number, yf: number) =>
-      ctx.toPlot({ x: a.t + xf * (b.t - a.t), y: a.value + yf * (b.value - a.value) });
+    const at = (xf: number, yf: number) => ctx.toPlot({ x: lerp(a.t, b.t, xf), y: lerp(a.value, b.value, yf) });
     return [at(bezier[0], bezier[1]), at(bezier[2], bezier[3])];
   }
 

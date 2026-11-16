@@ -23,6 +23,7 @@ import {
   type Ray,
   type Vec3,
 } from '@weasel-js/geom/3d';
+import { lerp } from '@weasel-js/geom';
 
 /** A screen rectangle in CSS pixels, in the shape core's `Bounds` uses. Both
  *  a pane's own rect and a projected world box are this — one spelling, so the
@@ -122,10 +123,10 @@ const CLIP_SIDES: readonly ((p: Clip) => number)[] = [
 
 function lerpClip(a: Clip, b: Clip, t: number): Clip {
   return [
-    a[0] + (b[0] - a[0]) * t,
-    a[1] + (b[1] - a[1]) * t,
-    a[2] + (b[2] - a[2]) * t,
-    a[3] + (b[3] - a[3]) * t,
+    lerp(a[0], b[0], t),
+    lerp(a[1], b[1], t),
+    lerp(a[2], b[2], t),
+    lerp(a[3], b[3], t),
   ];
 }
 

@@ -1,6 +1,7 @@
 import type { Endless } from '@weasel-js/quantity';
 import type { AlongArc } from '@weasel-js/ui/components/Along';
 import type { SliderProps, SliderStop, Thumb } from '@weasel-js/ui/components/Slider';
+import { lerp } from '@weasel-js/geom';
 
 /** The knobs the Slider-on-an-arc lab reads: the arc, and every Slider prop that is not a callback. */
 export interface SliderArcConfig {
@@ -24,7 +25,7 @@ export const SLIDER_ARC_DEFAULTS: SliderArcConfig = {
 
 /** The stops `set` names, laid over `min..max`. */
 export function stopsOf(set: StopSet, min: number, max: number): (number | SliderStop)[] | undefined {
-  const at = (k: number) => min + k * (max - min);
+  const at = (k: number) => lerp(min, max, k);
   const round = (v: number) => Math.round(v * 100) / 100;
   if (set === 'none') return undefined;
   if (set === 'quarters') return [0, 0.25, 0.5, 0.75, 1].map((k) => round(at(k)));

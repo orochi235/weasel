@@ -26,6 +26,7 @@ import {
   easeLength, extensionPieces, pieceLengthAt, type EaseOptions, type TugMode, type PathEndFrame,
 } from './pathEndExtension';
 import { flatPoints, segmentLength, segmentTAtLength } from './segmentLength';
+import { lerp } from '../scalar';
 
 export type { EaseOptions, TugMode, PathEndFrame } from './pathEndExtension';
 
@@ -242,8 +243,8 @@ function cutTail(sub: PenAnchor[], keep: number, len: number): void {
   const [p0, p1, p2, p3] = tailCubic(sub);
   if (isStraightSegment(p0, p3)) {
     const f = len > 0 ? keep / len : 0;
-    p3.x = p0.x + (p3.x - p0.x) * f;
-    p3.y = p0.y + (p3.y - p0.y) * f;
+    p3.x = lerp(p0.x, p3.x, f);
+    p3.y = lerp(p0.y, p3.y, f);
     return;
   }
   const t = segmentTAtLength(flatPoints([p0, p1, p2, p3]), 2, keep);

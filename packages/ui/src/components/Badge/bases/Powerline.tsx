@@ -1,5 +1,6 @@
 import { resolveEdge, type EdgeCap, type EdgePoint } from './edgeProfiles';
 import type { BaseModule, BaseSampler, PerimeterPoint } from './types';
+import { lerp } from '@weasel-js/geom';
 
 /** What `baseParams` takes on a badge whose `base` is `powerline`. */
 export interface BadgePowerlineBaseParams {
@@ -74,8 +75,8 @@ const Powerline: BaseModule<BadgePowerlineBaseParams> = {
           const a = pts[i - 1];
           const b = pts[i];
           return {
-            x: a.x + (b.x - a.x) * t,
-            y: a.y + (b.y - a.y) * t,
+            x: lerp(a.x, b.x, t),
+            y: lerp(a.y, b.y, t),
             nx: b.nx,
             ny: b.ny,
           };
@@ -85,8 +86,8 @@ const Powerline: BaseModule<BadgePowerlineBaseParams> = {
       const segLen = closeLen;
       const t = segLen > 0 ? (sm - cum[lastIdx]) / segLen : 0;
       return {
-        x: pts[lastIdx].x + (first.x - pts[lastIdx].x) * t,
-        y: pts[lastIdx].y + (first.y - pts[lastIdx].y) * t,
+        x: lerp(pts[lastIdx].x, first.x, t),
+        y: lerp(pts[lastIdx].y, first.y, t),
         nx: 0,
         ny: 1,
       };

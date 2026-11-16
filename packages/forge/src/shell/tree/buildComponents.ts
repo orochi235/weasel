@@ -3,6 +3,7 @@ import { indexEntries } from '../../story/indexPages';
 import type { Libraries } from '../../story/library';
 import type { IndexEntry } from '../../story/types';
 import { foldGalleries, hoistLoneStories, type TreeNode } from './buildTree';
+import { compositeKey } from '@weasel-js/registry';
 
 type Folder = Extract<TreeNode, { kind: 'folder' }>;
 
@@ -61,7 +62,7 @@ function disambiguate(rows: readonly ComponentRow[]): void {
   // Rows in different libraries are already told apart by their tag.
   const byLabel = new Map<string, ComponentRow[]>();
   for (const row of rows) {
-    const key = `${row.library}\0${row.label}`;
+    const key = compositeKey([row.library, row.label]);
     const group = byLabel.get(key);
     if (group) group.push(row);
     else byLabel.set(key, [row]);
@@ -135,7 +136,7 @@ export function componentNodes(rows: readonly ComponentRow[]): TreeNode[] {
     for (let i = 0; i < labels.length - 1; i++) {
       const path = title.slice(0, title.length - labels.length + i + 1).join('/');
       // Per library: a folder another library's labels opened at the same path is not this one's.
-      const key = `${row.library}\0${path}`;
+      const key = compositeKey([row.library, path]);
       let folder = folders.get(key);
       if (!folder) {
         folder = { kind: 'folder', label: labels[i], path, tag, children: [] };

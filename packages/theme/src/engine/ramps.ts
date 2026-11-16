@@ -1,3 +1,4 @@
+import { lerp } from '@weasel-js/geom';
 import { lerpHueDeg } from '@weasel-js/paint';
 import { DEFAULT_CONSTRAINTS, generate, type Anchor, type Constraints } from './color/generate.ts';
 import { toHex, toLch } from './color/oklch.ts';
@@ -55,7 +56,7 @@ export function lightnessRamp(p: LightnessParams): Record<string, string> {
     const a = anchors[next - 1];
     const b = anchors[next];
     const f = (i - a.i) / (b.i - a.i);
-    return { hue: lerpHueDeg(a.hue, b.hue, f), peak: a.peak + (b.peak - a.peak) * f };
+    return { hue: lerpHueDeg(a.hue, b.hue, f), peak: lerp(a.peak, b.peak, f) };
   };
 
   const out: Record<string, string> = {};
@@ -66,7 +67,7 @@ export function lightnessRamp(p: LightnessParams): Record<string, string> {
       return;
     }
     const t = at(i);
-    const L = p.lightness[0] + (p.lightness[1] - p.lightness[0]) * (t + (smoothstep(t) - t) * p.curve);
+    const L = lerp(p.lightness[0], p.lightness[1], lerp(t, smoothstep(t), p.curve));
     const { hue, peak } = hueAndPeak(i);
     out[step] = toHex(L, Math.min((peak * envelope(t, lightBias, p.darkBias)) / max, MAX_CHROMA), hue);
   });

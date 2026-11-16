@@ -1,6 +1,7 @@
 // apps/site/demos/platformer/camera.ts
 import type { Dims, View } from '@weasel-js/core';
 import type { Level, Vec2 } from './level';
+import { lerp } from '@weasel-js/geom';
 
 /** World units are small (24px tiles), so the camera magnifies. */
 export const CAM_SCALE = 2;
@@ -19,7 +20,7 @@ export interface Camera {
 export const createCamera = (at: Vec2): Camera => ({ x: at.x, y: at.y });
 
 const approach = (from: number, to: number, dt: number): number =>
-  from + (to - from) * (1 - Math.exp(-CAM_LAMBDA * dt));
+  lerp(from, to, 1 - Math.exp(-CAM_LAMBDA * dt));
 
 /** Clamp a center so the visible span stays inside `[0, extent]`, or center it
  *  outright when the level is smaller than the span. */

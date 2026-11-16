@@ -9,6 +9,7 @@ export { sameList } from './sameList';
 export { setOwn } from './setOwn';
 export { getOwn, hasOwnKey } from './getOwn';
 export { freshId, type FreshIdOptions } from './freshId';
+export { compositeKey, type KeyPart } from './compositeKey';
 export type {
   Reflectable,
   Reflection,

@@ -3,7 +3,7 @@
  * the lower. Arithmetic on polylines: nothing here reads a scene.
  */
 import type { Vec2 } from '@weasel-js/core/math';
-import { rectBetween } from '@weasel-js/geom';
+import { rectBetween, lerp } from '@weasel-js/geom';
 import { SpatialHash } from '../avoid/hash';
 import type { EdgeHop } from './types';
 
@@ -54,7 +54,7 @@ function mergeAlong(seg: Segment, found: Crossing[], r: number): EdgeHop[] {
     if (run === null) return;
     const mid = (run.from + run.to) / 2 / len;
     out.push({
-      at: { x: round(seg.a.x + (seg.b.x - seg.a.x) * mid), y: round(seg.a.y + (seg.b.y - seg.a.y) * mid) },
+      at: { x: round(lerp(seg.a.x, seg.b.x, mid)), y: round(lerp(seg.a.y, seg.b.y, mid)) },
       over: run.over,
       r: round((run.to - run.from) / 2 + r),
     });
@@ -126,7 +126,7 @@ export function edgeHops(
         const f = properCrossing(seg, other);
         if (f === null) continue;
         const t = f * len;
-        const at = { x: seg.a.x + (seg.b.x - seg.a.x) * f, y: seg.a.y + (seg.b.y - seg.a.y) * f };
+        const at = { x: lerp(seg.a.x, seg.b.x, f), y: lerp(seg.a.y, seg.b.y, f) };
         if (t < r || len - t < r || !far(at, ends, 2 * r) || !far(at, endsOf(other.edge), 2 * r)) continue;
         found.push({ t, over: other.edge });
       }

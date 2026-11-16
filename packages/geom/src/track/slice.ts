@@ -1,5 +1,5 @@
 import { DEG_TO_RAD } from '../angle';
-import { clamp } from '../scalar';
+import { clamp, lerp } from '../scalar';
 import { arcShape, type ArcTrackShape } from './arc';
 import { ellipseShape, type EllipseTrackShape } from './ellipse';
 import { lineShape, type TrackShape } from './shape';
@@ -69,7 +69,7 @@ function nearestWithin(shape: TrackShape, lo: number, hi: number, p: { x: number
   const g = (Math.sqrt(5) - 1) / 2;
   for (let i = 0; i < 40; i++) {
     const c = b - g * (b - a);
-    const e = a + g * (b - a);
+    const e = lerp(a, b, g);
     if (distanceAt(shape, c, p) < distanceAt(shape, e, p)) b = e; else a = c;
   }
   const mid = (a + b) / 2;

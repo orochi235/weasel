@@ -97,6 +97,7 @@ describe('reading DOT', () => {
 
   it('keeps one edge per pair of ends in a strict graph', () => {
     expect(page('strict graph { a -- b; b -- a; a -- b }').data.edges).toHaveLength(1);
+    expect(page('strict digraph { "a\u0000b" -> c; a -> "b\u0000c" }').data.edges).toHaveLength(2);
     expect(page('graph { a -- b; a -- b }').data.edges).toHaveLength(2);
   });
 

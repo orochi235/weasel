@@ -83,6 +83,7 @@ const NO_FRAME: Affine = [1, 0, 0, 1, 0, 0];
 function turn(cx: number, cy: number, r: number, x: number, y: number): [number, number] {
   const c = Math.cos(r);
   const s = Math.sin(r);
+  // eslint-disable-next-line weasel/no-hand-lerp -- a turn about (cx, cy), not a lerp; callers skip r = 0
   return [cx + (x - cx) * c - (y - cy) * s, cy + (x - cx) * s + (y - cy) * c];
 }
 

@@ -1,4 +1,5 @@
 import type { View } from './view';
+import { lerp } from '@weasel-js/geom';
 
 /**
  * Per-axis camera curve. Two views that differ in scale agree at exactly one
@@ -12,7 +13,7 @@ import type { View } from './view';
  * geometric path across a sign change to be had anyway.
  */
 function axisCurve(x0: number, s0: number, x1: number, s1: number): (t: number) => { x: number; s: number } {
-  const linear = (t: number) => ({ x: x0 + (x1 - x0) * t, s: s0 + (s1 - s0) * t });
+  const linear = (t: number) => ({ x: lerp(x0, x1, t), s: lerp(s0, s1, t) });
   if (!(s0 > 0) || !(s1 > 0)) return linear;
   // Equal scales: no fixed point exists on this axis. That is a pure pan.
   if (Math.abs(s1 - s0) <= 1e-12 * Math.max(Math.abs(s0), Math.abs(s1), 1)) return linear;

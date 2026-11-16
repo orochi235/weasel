@@ -1,14 +1,5 @@
-import {
-  chromaCap,
-  contrast,
-  CHROMA_WEIGHT,
-  deltaE,
-  hueGap,
-  toHex,
-  toLab,
-  toLch,
-  type Lch,
-} from './oklch.ts';
+import { lerp } from '@weasel-js/geom';
+import { chromaCap, contrast, CHROMA_WEIGHT, deltaE, hueGap, toHex, toLab, toLch, type Lch } from './oklch.ts';
 
 /**
  * A hue pinned into the palette with its own lightness.
@@ -123,7 +114,7 @@ const peakAt = (H: number) => (PEAK[hueIndex(H)] ??= peakLightness(hueIndex(H)))
 
 /** The default law: sit near this hue's chroma peak, pulled toward the target. */
 function place(H: number, c: Constraints): string {
-  const L = peakAt(H) + (c.lightnessTarget - peakAt(H)) * c.lightnessPull;
+  const L = lerp(peakAt(H), c.lightnessTarget, c.lightnessPull);
   return toHex(L, chromaCap(L, H) * c.chromaFraction, H);
 }
 
@@ -164,7 +155,7 @@ function equalizeChroma(hexes: string[], k: number, anchored: boolean[]): string
   const target = lch.reduce((sum, x) => sum + x.C, 0) / lch.length;
 
   return lch.map((x, i) => {
-    const wanted = x.C + (target - x.C) * k;
+    const wanted = lerp(x.C, target, k);
     if (anchored[i]) return toHex(x.L, Math.min(wanted, chromaCap(x.L, x.H)), x.H);
     if (chromaCap(x.L, x.H) >= wanted) return toHex(x.L, wanted, x.H);
 

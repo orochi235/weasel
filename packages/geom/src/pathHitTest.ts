@@ -20,6 +20,7 @@ import { someSegment, type SegmentVisit } from './outlineSegments';
 import type { Affine } from './affine';
 import type { Point } from './paths/cubicMath';
 import { capsuleWithinPx, isSimilarity, stretchOf, type Linear2 } from './screenBand';
+import { lerp } from './scalar';
 
 
 /** Options for the path hit-tests. */
@@ -72,7 +73,7 @@ export function pointInPath(
       const ay = sub[i + 1], by = sub[j + 1];
       if ((ay > y) === (by > y)) continue;
       const ax = sub[i], bx = sub[j];
-      if (x >= ax + ((y - ay) / (by - ay)) * (bx - ax)) continue;
+      if (x >= lerp(ax, bx, (y - ay) / (by - ay))) continue;
       crossings++;
       winding += ay <= y ? 1 : -1;
     }
