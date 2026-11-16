@@ -6,6 +6,7 @@ import { usePref } from '../prefs';
 import { SURFACE_ASSETS } from './assets';
 import { surfaceOf, useSetSurface } from './surfaceState';
 import type { SurfaceAsset, SurfaceKind } from './types';
+import { getOwn } from '@weasel-js/registry';
 
 const SHOW_AS: Record<SurfaceKind, string> = {
   bar: 'Show as toolbar',
@@ -71,7 +72,7 @@ export function SwitchMenus() {
   const defs = useMemo(
     (): MenuDef[] => SWITCHABLE.map((asset) => ({
       id: switchMenuId(asset.id),
-      menu: switchSchema(asset, surfaceOf(asset, value[asset.id])),
+      menu: switchSchema(asset, surfaceOf(asset, getOwn(value, asset.id))),
     })),
     [value],
   );

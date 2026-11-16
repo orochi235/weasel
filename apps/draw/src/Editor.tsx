@@ -54,6 +54,7 @@ import { useRightSidebarWidth } from './useRightSidebarWidth';
 import { useHoldContentUnderChrome } from './useHoldContentUnderChrome';
 import { useTextEditSession } from './useTextEditSession';
 import { Workspace } from './Workspace';
+import { getOwn } from '@weasel-js/registry';
 
 /** Core's tool sets and path-tools' path-edit, drawing, and knife sets, in palette order. */
 const TOOL_SETS = [SELECT_TOOLS, PATH_EDIT_TOOLS, VIEW_TOOLS, SHAPE_TOOLS, DRAW_TOOLS, TEXT_TOOLS, SLICE_TOOLS];
@@ -120,7 +121,7 @@ export function Editor({ scene, selection, modality }: EditorProps): ReactElemen
   const inPathEdit = useModeId(modality.machine) === 'path-edit';
   // The character strip shows only during a text edit, and moves the workspace as it comes and goes.
   const optionsRef = useRef<HTMLDivElement | null>(null);
-  const activeTool = tools?.active ? tools.registry[tools.active] : undefined;
+  const activeTool = tools?.active ? getOwn(tools.registry, tools.active) : undefined;
   const toolOptions = useMemo(() => drawToolOptionValues(), []);
   const optionRows = `${textEdit.effectiveStyle != null ? 'character' : ''} ${activeTool?.options !== undefined ? tools?.active : ''}`;
   useHoldContentUnderChrome(optionsRef, setView, optionRows);

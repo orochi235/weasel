@@ -6,6 +6,7 @@ import { PropertyPanel } from '@weasel-js/ui/components/Properties';
 import type { ReactElement } from 'react';
 import s from '../ToolkitBuilder.module.css';
 import type { ToolSlots } from './useToolReflection';
+import { getOwn } from '@weasel-js/registry';
 
 export function ToolsWidget({
   defs,
@@ -22,7 +23,7 @@ export function ToolsWidget({
     id: d.id,
     hookName: d.hookName,
     slot: ambientSet.has(d.id) ? 'ambient' : 'registry',
-    shortcut: keys[d.id]?.[0],
+    shortcut: getOwn(keys, d.id)?.[0],
   }));
   return (
     <PropertyPanel stance="debug" className={s.widget} title={`Tools · ${defs.length}`}>

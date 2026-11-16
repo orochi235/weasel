@@ -10,6 +10,7 @@ import { DRAW_MENUS } from '../menus';
 import { PREFS } from '../prefs';
 import { SURFACE_ASSETS } from '../surfaces/assets';
 import type { SurfaceKind } from '../surfaces/types';
+import { getOwn } from '@weasel-js/registry';
 
 const PREFS_ID = 'prefs';
 
@@ -35,7 +36,7 @@ const menuBar: Asset = { id: 'menubar', label: 'Menu bar', kind: 'layout', over:
 const LIVE_MENUS = mergeMenuDefs([...EDITOR_CONTEXT_MENUS, ...DRAW_MENUS].map((def) => ({ def, owner: null })), null);
 
 const menus: Asset[] = LIVE_MENUS.map((m) => {
-  const label = MENU_LABELS[m.id] ?? m.id;
+  const label = getOwn(MENU_LABELS, m.id) ?? m.id;
   return { id: `menu:${m.id}`, label, kind: 'layout', over: PREFS_ID, root: drawnAs(m.menu, 'menu', label) };
 });
 

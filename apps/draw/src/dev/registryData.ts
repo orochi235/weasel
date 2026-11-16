@@ -28,13 +28,7 @@ import {
   type ToolEntry,
   type TreeEntry,
 } from './registryEntries';
-
-/** `GestureSpec.kind` -> `GestureChannels` key, for the two that differ
- *  (the channel names avoid the hyphen). */
-const GESTURE_KEY_FOR: Readonly<Record<string, string>> = {
-  'keyHeld': 'keyHeld',
-  multiTouch: 'multiTouch',
-};
+import { getOwn } from '@weasel-js/registry';
 
 export function collectMeta(): readonly MetaEntry[] {
   return [
@@ -89,7 +83,7 @@ export function collectBundles(): readonly BundleEntry[] {
 export function collectOpFactories(): readonly OpFactoryEntry[] {
   return Weasel.defaultOpRegistry.entries().map((e) => e.key)
     .map((name) => `create${name[0]!.toUpperCase()}${name.slice(1)}Op`)
-    .filter((name) => typeof (Weasel as unknown as Record<string, unknown>)[name] === 'function')
+    .filter((name) => typeof getOwn(Weasel as unknown as Record<string, unknown>, name) === 'function')
     .map((id) => ({ kind: 'opFactory', id, label: id }));
 }
 
@@ -114,7 +108,7 @@ export function countForEntry(
       // same gesture kinds now, so counting is one pass over each.
       const kind = entry.id;
       const toolCount = tools.filter(
-        (t) => (t.surface.gestures as unknown as Record<string, unknown>)[GESTURE_KEY_FOR[kind] ?? kind],
+        (t) => getOwn(t.surface.gestures as unknown as Record<string, unknown>, kind),
       ).length;
       let actionCount = 0;
       for (const a of actions) {

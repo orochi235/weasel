@@ -8,10 +8,11 @@ import type { OpFactoryEntry, OpKindEntry } from '../registryEntries';
 import { findSourceMatch } from '../sourceLookup';
 import { KindBadge, Jsdoc, type Props } from './shared';
 import { SourceLink } from './sourceLinks';
+import { getOwn } from '@weasel-js/registry';
 
 export function OpKindDetail({ entry }: { entry: OpKindEntry; onNavigate: Props['onNavigate'] }) {
   const factoryId = `create${entry.id.charAt(0).toUpperCase()}${entry.id.slice(1)}Op`;
-  const fn = (Weasel as Record<string, unknown>)[factoryId];
+  const fn = getOwn(Weasel as Record<string, unknown>, factoryId);
   const match = findSourceMatch(factoryId);
   const arity = typeof fn === 'function' ? fn.length : undefined;
   return (
@@ -65,7 +66,7 @@ export function collectOpFactoriesTargeting(_kindId: string): readonly string[] 
 }
 
 export function OpFactoryDetail({ entry }: { entry: OpFactoryEntry }) {
-  const fn = (Weasel as Record<string, unknown>)[entry.id];
+  const fn = getOwn(Weasel as Record<string, unknown>, entry.id);
   const match = findSourceMatch(entry.id);
   const arity = typeof fn === 'function' ? fn.length : undefined;
   return (
