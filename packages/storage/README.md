@@ -10,6 +10,11 @@ Adapters that can read synchronously (`localStorage`, `sessionStorage`,
 memory) also implement `listSync`, and `openRecordsSync` opens a cache from
 one with no `await`.
 
+For one value read during a first render, such as a remembered panel width,
+`readLocal(key)` reads it from `localStorage` now and `writeLocal(key, value)`
+writes it, encoded as `localStorageAdapter` encodes it. Neither throws: where
+the browser refuses storage, a read answers `undefined` and a write `false`.
+
 A cache whose first read fails opens empty with `writable` false, and reads
 again on a backoff (`retryMs`, doubling to `retryMaxMs`; `retryMs: false`
 turns that off). `cache.read()` tries at once, and `cache.whenRead()` resolves
