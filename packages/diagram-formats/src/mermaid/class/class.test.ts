@@ -111,4 +111,14 @@ describe('writing a Mermaid class diagram', () => {
     const text = writeClassDiagram({ pages: [{ kind: 'graph', id: 'p', width: 100, height: 100, data: { nodes: [{ id: 'n', outline: 'note', lines: ['C:\\new', 'two'] }], edges: [] } }] }).text;
     expect(page(text).data.nodes[0]!.lines).toEqual(['C:\\new', 'two']);
   });
+
+  it('drops a connector to a namespace, with a warning, rather than name a class for it', () => {
+    const { text, warnings } = writeClassDiagram({ pages: [{ kind: 'graph', id: 'p', width: 100, height: 100, data: {
+      nodes: [{ id: 'a' }, { id: 'b' }, { id: 'n', outline: 'note', lines: ['hi'] }], edges: [{ from: 'b', to: 'g' }, { from: 'n', to: 'g' }],
+      containers: [{ id: 'g', role: 'container', members: ['a'] }],
+    } }] });
+    expect(page(text).data.nodes.map((n) => n.id).sort()).toEqual(['a', 'b', 'note-1']);
+    expect(page(text).data.edges).toEqual([]);
+    expect(warnings).toContain('Mermaid class relations join classes; connectors to namespaces were dropped.');
+  });
 });
