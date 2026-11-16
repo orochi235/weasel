@@ -37,6 +37,12 @@ describe('segmentsCross degenerate configurations', () => {
     expect(segmentsCross(0, 0, 10, 0, 5, 0, 5, 10)).toBe(true);
     expect(segmentsCross(0, 0, 10, 0, 0, 0, 0, 10)).toBe(true);
   });
+  it('counts collinear segments meeting end to end at one point', () => {
+    expect(segmentsCross(0, 0, 1, 0, 1, 0, 2, 0)).toBe(true);
+    expect(segmentsCross(1, 0, 2, 0, 0, 0, 1, 0)).toBe(true);
+    expect(segmentsCross(0, 0, 1, 1, 2, 2, 1, 1)).toBe(true);
+    expect(segmentsCross(0, 0, 1, 0, 2, 0, 3, 0)).toBe(false);
+  });
   it('does not count collinear overlap or a degenerate segment', () => {
     expect(segmentsCross(0, 0, 10, 0, 5, 0, 15, 0)).toBe(false);
     expect(segmentsCross(0, 0, 10, 0, 5, 0, 5, 0)).toBe(false);
