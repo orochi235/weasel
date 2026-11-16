@@ -1919,6 +1919,7 @@
     "modifierHeld": "const",
     "modifierStateOf": "function",
     "momentum": "function",
+    "mountedCanvasRegistry": "const",
     "moveEachOps": "function",
     "moveNodes": "function",
     "moveNodesOps": "function",
