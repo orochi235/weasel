@@ -5,6 +5,7 @@ import { type Filter, matches, NO_FILTER, type Tag, TAGS } from '@shared/release
 import { describeFilter, ReleaseFilter } from './ReleaseFilter';
 import { ReleaseSection } from './ReleaseSection';
 import './Releases.css';
+import { hasOwnKey } from '@weasel-js/registry';
 
 /** The filter lives in the query string, not the hash: the hash is the app's
  *  router and it rewrites itself to the bare view id on every change. */
@@ -22,7 +23,7 @@ function readFilter(): Filter {
   const params = new URLSearchParams(window.location.search);
   return {
     packages: readList(params, PACKAGE_PARAM),
-    tags: readList(params, TAG_PARAM).filter((t): t is Tag => t in TAGS),
+    tags: readList(params, TAG_PARAM).filter((t): t is Tag => hasOwnKey(TAGS, t)),
   };
 }
 
