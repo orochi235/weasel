@@ -91,12 +91,20 @@ export interface BandEditorProps<T, F extends Quantity = number> extends HoldPro
   className?: string;
 }
 
-/** A drag under way: the bands and range as the pointer has them, and which edges it took from where. */
+/** A drag under way: the bands and range as the pointer has them, which edges it took from where, and the bands
+ *  it began from, which a commit is measured against however the caller previewed it. */
 type Draft<T> = {
   bands: Band<T>[];
   range?: [number, number];
   ghost: DraftGhostAt;
+  from?: Band<T>[];
 };
+
+/** `from` with its seams at `seams`, or null where that moves none of them. */
+function seamsMoved<T>(from: Band<T>[], seams: number[]): Band<T>[] | null {
+  const next = withSeams(from, seams);
+  return sameSeams(next, from) ? null : next;
+}
 
 const SEAM_DISPLAY = decimal();
 
@@ -219,13 +227,13 @@ export function BandEditor<T, F extends Quantity = number>(props: BandEditorProp
     if (sameSeams(next, current?.bands ?? committed)) return;
     const ghost = current?.ghost ?? seamGhost(committed, next, min, max);
     if (!ghost) return;
-    setDraft({ bands: next, ghost });
+    setDraft({ bands: next, ghost, from: current?.from ?? committed });
     onInput?.(next);
   };
   const seamCommit = (seams: number[]): void => {
+    const next = seamsMoved(draftRef.current?.from ?? committed, seams);
     setDraft(null);
-    const next = withSeams(committed, seams);
-    if (!sameSeams(next, committed)) onChange(next);
+    if (next) onChange(next);
   };
 
   const onBandPointerDown = (index: number) => (e: ReactPointerEvent<HTMLButtonElement>): void => {
