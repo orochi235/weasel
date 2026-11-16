@@ -1,6 +1,7 @@
 // Draws the @weasel-js package dependency graph as two views:
 //   base.svg  core and every package it depends on, directly or not
 //   top.svg   everything else, with core standing in for the base layer
+//   all.svg   every package in one graph, for comparing two commits
 // Colors are each package's `weasel.tier` (scripts/lib/package-tiers.mjs). A package whose code reaches
 // core only through @weasel-js/core/engine points at a node of that name instead of core. Edges are
 // transitively reduced, and each view also writes a PNG at 2x.
@@ -118,6 +119,7 @@ async function main() {
   const views = {
     base: names.filter((n) => n !== ENGINE && ['base', 'core'].includes(category(n))),
     top: names.filter((n) => category(n) !== 'base'),
+    all: names,
   };
   const browser = await chromium.launch({ headless: true });
   try {
@@ -134,7 +136,7 @@ async function main() {
   }
   for (const k of Object.keys(COLORS)) console.log(k.padEnd(14), names.filter((n) => category(n) === k).join(' '));
   console.log(`edges ${[...packages.values()].flatMap((p) => p.deps).length} → ${edges.length} after reduction`);
-  console.log(`wrote ${outDir}/{base,top}.{svg,png}`);
+  console.log(`wrote ${outDir}/{base,top,all}.{svg,png}`);
 }
 
 await main();
