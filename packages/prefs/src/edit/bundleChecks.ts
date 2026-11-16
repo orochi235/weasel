@@ -1,6 +1,8 @@
 import { atomsIn, memberKey, memberOf, readBundles, type BundleMember } from './bundleTree';
 import { childrenOf, joinPath, type SchemaNode, type SchemaRoot } from './schemaEdit';
 
+const ATOM_KEY = memberKey({ kind: 'atom', id: '' });
+
 /** What is wrong with a row of a bundle tree, shown on it and enforced nowhere. */
 export interface BundleProblem {
   /** It is a bundle that includes itself, or a link that closes such a loop. */
@@ -90,7 +92,10 @@ export function bundleProblems(root: SchemaRoot): Map<string, BundleProblem> {
   for (const bundle of readBundles(root)) {
     const loaded = reached.get(bundle.id)!;
     const owners = new Map<string, string[]>();
-    for (const h of loaded) for (const name of holders.get(h)!.names) owners.set(name, [...(owners.get(name) ?? []), h]);
+    // An atom, like a bundle, is loaded once however many bundles include it: only an action or a tool is named twice.
+    for (const h of loaded) {
+      for (const name of holders.get(h)!.names) if (!name.startsWith(ATOM_KEY)) owners.set(name, [...(owners.get(name) ?? []), h]);
+    }
     for (const [name, by] of owners) {
       const distinct = [...new Set(by)];
       if (distinct.length > 1 && !said.has(name)) said.set(name, `${distinct.join(' and ')} both name it, and ${bundle.id} loads them together`);

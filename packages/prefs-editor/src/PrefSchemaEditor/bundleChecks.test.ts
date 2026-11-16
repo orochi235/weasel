@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { describePresets, type PresetDescription } from '@weasel-js/core';
+import { describePresets, type PresetDescription, viewPreset, viewToolsPreset } from '@weasel-js/core';
 import { FEATURE_PRESETS } from '@weasel-js/editing';
 import { aliasNodes, BUNDLE_LINKS, bundleLoads, bundleProblems, bundleTree, copyNodes } from '@weasel-js/prefs/edit';
 
@@ -7,8 +7,17 @@ const d = (id: string, more: Partial<PresetDescription> = {}): PresetDescription
   ({ id, label: id, package: 'pkg', atom: false, actions: [], tools: [], includes: [], ...more });
 
 describe('bundleProblems', () => {
-  it("finds nothing wrong with core's presets as they stand", () => {
-    expect(bundleProblems(bundleTree(describePresets({ '@weasel-js/core': Object.values(FEATURE_PRESETS) })))).toEqual(new Map());
+  it("finds nothing wrong with the kit's presets as they stand", () => {
+    const kit = describePresets({ '@weasel-js/core': [viewPreset, viewToolsPreset], '@weasel-js/editing': Object.values(FEATURE_PRESETS) });
+    expect(bundleProblems(bundleTree(kit))).toEqual(new Map());
+  });
+
+  it('leaves an atom two bundles include, as it leaves a bundle two include', () => {
+    const tree = bundleTree([
+      d('base', { atom: true }), d('inner'), d('a', { includes: ['base', 'inner'] }), d('b', { includes: ['base', 'inner'] }),
+      d('top', { includes: ['a', 'b'] }),
+    ]);
+    expect(bundleProblems(tree)).toEqual(new Map());
   });
 
   it('marks a bundle that includes itself, and the link that closes the loop', () => {
