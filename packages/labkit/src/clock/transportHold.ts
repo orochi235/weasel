@@ -38,7 +38,8 @@ export function transportHoldOf(clock: TrialClock): TransportHoldStore {
   const store: TransportHoldStore = {
     get: () => hold,
     set: ({ speed, backward }) => {
-      if (speed !== hold.speed || backward !== hold.backward) replace({ ...hold, speed, backward });
+      if (!Object.is(speed, hold.speed) || backward !== hold.backward)
+        replace({ ...hold, speed, backward });
     },
     touch: () => {
       if (!hold.touched) replace({ ...hold, touched: true });
