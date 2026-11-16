@@ -26,7 +26,7 @@ import type { PathEditExtension } from 'domains/paths/pathEditExtension';
 import type { SnapSource } from 'domains/snap/types';
 import type { SurfaceContribution } from '../surfaceContribution';
 import type { CustomLayerEntry } from '../layerSlots';
-import { mergeByKey, refinesRelation, type RefinesRelation } from './presetMerge';
+import { mergeByKey, refinesRelation } from './presetMerge';
 import type { NodeRoutingEntry } from 'core/scene/NodeRouting';
 import type { NodePropertiesEntry } from 'core/scene/NodeProperties';
 import type { InsertNodeFactories } from '../deps/insertFactories';
@@ -197,7 +197,7 @@ export interface EnabledPresets {
   /** The id of the preset each of `builds` came from, by index. */
   readonly buildOwners: readonly string[];
   /** Whether preset `a` refines preset `b`, directly or through presets between them. */
-  readonly refines: RefinesRelation;
+  readonly refines: (a: string, b: string) => boolean;
   /** The one selection factory they give, if any. */
   readonly selection: SelectionFactory | undefined;
   /** The one selection chrome they give, if any. */

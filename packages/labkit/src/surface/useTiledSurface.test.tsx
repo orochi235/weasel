@@ -372,7 +372,9 @@ describe('useTiledSurface', () => {
     );
     const other = document.createElement('div');
     getByTestId('stage').append(other);
-    expect(() => handle!.registerTile('a', other)).toThrow(/surface tile "a" is already registered/);
+    expect(() => handle!.registerTile('a', other)).toThrow(
+      /surface tile "a" is already registered/,
+    );
     handle!.registerPainter('p', vi.fn());
     expect(() => handle!.registerPainter('p', vi.fn())).toThrow(/surface painter "p"/);
     handle!.registerClear('c', vi.fn());

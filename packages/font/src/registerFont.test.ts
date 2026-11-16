@@ -91,7 +91,7 @@ describe('registerFont', () => {
 
   it('keeps a superseded fetch from landing over its replacement', async () => {
     const stub = global.fetch as ReturnType<typeof vi.fn>;
-    const answer = stub.getMockImplementation()!;
+    const answer = stub.getMockImplementation() as (url: string) => Promise<Response>;
     let release!: () => void;
     const held = new Promise<void>((r) => { release = r; });
     stub.mockImplementationOnce((url: string) => held.then(() => answer(url)));

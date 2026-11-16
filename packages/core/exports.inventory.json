@@ -3438,6 +3438,7 @@
     "presetAmbientForTests": "function",
     "presetBuiltinToolsForTests": "function",
     "presetChromeRulesForTests": "function",
+    "presetOwnToolsForTests": "function",
     "presetToolIdsForTests": "const",
     "resolveFeaturesForTests": "function",
     "rootsTreeForTests": "function",

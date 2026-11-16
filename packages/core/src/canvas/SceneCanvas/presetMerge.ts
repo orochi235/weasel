@@ -1,4 +1,4 @@
-import { setOwn } from '@weasel-js/registry';
+import { getOwn, setOwn } from '@weasel-js/registry';
 
 /** Whether preset `a` refines preset `b`, directly or through presets between them. */
 export type RefinesRelation = (a: string, b: string) => boolean;
@@ -33,7 +33,7 @@ export function mergeByKey<V>(
   for (const { preset, values } of given) {
     for (const [key, value] of Object.entries(values ?? {})) {
       const held = owner.get(key);
-      if (held !== undefined && out[key] !== value) {
+      if (held !== undefined && getOwn(out, key) !== value) {
         if (refines(held, preset)) continue;
         if (!refines(preset, held)) {
           throw new Error(`[SceneCanvas] presets "${held}" and "${preset}" both give ${what} "${key}", and neither refines the other. Leave one out, or have one name the other in \`refines\`.`);

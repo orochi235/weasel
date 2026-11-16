@@ -361,7 +361,12 @@ export function useTiledSurface({ onFrame }: UseTiledSurfaceOptions): SurfaceHan
 }
 
 /** Put `value` in `held` under `id`, throwing if something already is there; returns its release. */
-function hold<T>(held: Map<string, T>, kind: 'painter' | 'clear', id: string, value: T): () => void {
+function hold<T>(
+  held: Map<string, T>,
+  kind: 'painter' | 'clear',
+  id: string,
+  value: T,
+): () => void {
   if (held.has(id)) throw takenError(kind, id);
   held.set(id, value);
   return () => {

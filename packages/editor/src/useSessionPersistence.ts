@@ -100,7 +100,7 @@ export function useSessionPersistence<D, L extends string, P>(
       dependents: [[historyKey, saved.history]],
     };
   }, {
-    ...(opts.onSaved ? { onSaved: (ok: boolean, error?: unknown) => optsRef.current.onSaved?.(ok, error) } : {}),
+    ...(opts.onSaved ? { onSaved: (...args: [ok: boolean, error?: unknown]) => optsRef.current.onSaved?.(...args) } : {}),
     ...(opts.records ? { records: opts.records } : {}),
     ...(opts.debounceMs !== undefined ? { debounceMs: opts.debounceMs } : {}),
   });

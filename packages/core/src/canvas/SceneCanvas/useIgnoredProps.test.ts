@@ -18,7 +18,7 @@ function warnings(run: () => void): string[] {
 describe('useIgnoredProps', () => {
   it('warns once per canvas about the props a ToolsApi takeover ignores', () => {
     const said = warnings(() => {
-      const { rerender } = renderHook((p: Parameters<typeof useIgnoredProps>[0]) => useIgnoredProps(p), {
+      const { rerender } = renderHook<void, Parameters<typeof useIgnoredProps>[0]>((p) => useIgnoredProps(p), {
         initialProps: { tools: takeover, defaultTools: ['rect'], defaultActiveTool: 'rect' },
       });
       rerender({ tools: takeover, defaultTools: ['rect'], defaultActiveTool: 'rect', ambient: [] });

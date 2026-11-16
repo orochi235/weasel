@@ -115,7 +115,9 @@ function checkedBounds<Min extends number | undefined, Max extends number | unde
 ): { min: Min; max: Max } {
   for (const bound of [min, max]) {
     if (bound !== undefined && !Number.isFinite(bound)) {
-      throw new Error(`labkit: f.number().${call}() was given ${String(bound)}; a bound must be a finite number.`);
+      throw new Error(
+        `labkit: f.number().${call}() was given ${String(bound)}; a bound must be a finite number.`,
+      );
     }
   }
   if (min !== undefined && max !== undefined && min > max) {

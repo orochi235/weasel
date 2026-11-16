@@ -26,7 +26,7 @@ export function createLabMarkStores(): LabMarkStores {
     changed.emit();
   };
   const relist = () => {
-    listed = [...stacks.values()].map((stack) => stack.at(-1)!.store);
+    listed = [...stacks.values()].flatMap((stack) => stack.at(-1)?.store ?? []);
     notify();
   };
   return {

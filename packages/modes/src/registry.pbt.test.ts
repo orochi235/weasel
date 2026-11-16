@@ -31,8 +31,8 @@ interface Model {
   subs: Map<string, number>;
   gen: number;
   targets: Set<string>;
-  /** Mode id to the registration number of its painter. */
-  painters: Map<string, number>;
+  /** Mode id to the registration numbers of its painters, newest last. */
+  painters: Map<string, number[]>;
   registered: number;
   releases: { mode: string; n: number }[];
   /** The alpha the scope dims at, as it resolves `dimAlpha`. */
@@ -115,7 +115,7 @@ function step(m: Model, r: Real, changed: readonly Surface[], act: () => void): 
     expect(r.scope.alphaFor(id)).toBe(lit ? 1 : m.dim);
     expect(r.scope.isPointerInteractive(id)).toBe(lit);
   }
-  const n = m.painters.get(m.active);
+  const n = m.painters.get(m.active)?.at(-1);
   expect(r.decor.paint()).toEqual(n === undefined ? [] : [n]);
 }
 
@@ -195,11 +195,19 @@ class Paint implements fc.Command<Model, Real> {
   check = (): boolean => true;
   run(m: Model, r: Real): void {
     this.mode = this.other ?? m.modes[this.pick % m.modes.length]!.id;
+    const mode = this.mode;
+    if (!m.modes.some((x) => x.id === mode)) {
+      t.count('register unknown');
+      step(m, r, [], () => {
+        expect(() => r.decor.register(mode, () => [])).toThrow(/Unknown mode id/);
+      });
+      return;
+    }
     step(m, r, ['decorations'], () => {
       const n = ++m.registered;
-      m.painters.set(this.mode, n);
-      m.releases.push({ mode: this.mode, n });
-      r.releases.push(r.decor.register(this.mode, () => [n]));
+      m.painters.set(mode, [...(m.painters.get(mode) ?? []), n]);
+      m.releases.push({ mode, n });
+      r.releases.push(r.decor.register(mode, () => [n]));
     });
   }
   toString = (): string => `register(${JSON.stringify(this.mode)})`;
@@ -211,10 +219,15 @@ class Release implements fc.Command<Model, Real> {
   run(m: Model, r: Real): void {
     const i = this.at % m.releases.length;
     const { mode, n } = m.releases[i]!;
-    const live = m.painters.get(mode) === n;
-    t.count(live ? 'release' : 'stale release');
-    step(m, r, live ? ['decorations'] : [], () => {
-      if (live) m.painters.delete(mode);
+    const stack = m.painters.get(mode) ?? [];
+    const held = stack.includes(n);
+    t.count(!held ? 'stale release' : stack.at(-1) === n ? 'release' : 'buried release');
+    step(m, r, held ? ['decorations'] : [], () => {
+      if (held) {
+        const rest = stack.filter((x) => x !== n);
+        if (rest.length > 0) m.painters.set(mode, rest);
+        else m.painters.delete(mode);
+      }
       r.releases[i]!();
     });
   }

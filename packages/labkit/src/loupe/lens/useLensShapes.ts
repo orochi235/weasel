@@ -20,7 +20,9 @@ export function useLensShapes<C>(
   const colors = useThemeColors(el, LENS_COLORS);
   useEffect(() => {
     if (!colors) return;
-    const off = lensShapes(colors, scene).map((s) => nodeShapesOf(scene).register(s, { priority: 'high' }));
+    const off = lensShapes(colors, scene).map((s) =>
+      nodeShapesOf(scene).register(s, { priority: 'high' }),
+    );
     redraw();
     return () => {
       for (const u of off) u();

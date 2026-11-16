@@ -1,6 +1,6 @@
 import { act, render } from '@testing-library/react';
-import { describe, expect, it } from 'vitest';
 import { nodeShapesOf } from '@weasel-js/core';
+import { describe, expect, it } from 'vitest';
 import { createLensScene } from './lensScene';
 import { useLensShapes } from './useLensShapes';
 
@@ -14,7 +14,9 @@ function Layer() {
 }
 
 function rimColor(): unknown {
-  const body = nodeShapesOf(scene).entries().find((e) => e.id === 'labkit:lens-body');
+  const body = nodeShapesOf(scene)
+    .entries()
+    .find((e) => e.id === 'labkit:lens-body');
   const cmds = body?.paint(
     { data: { role: 'lens-body', shape: 'circle' } } as never,
     { x: 0, y: 0, width: 10, height: 10 } as never,

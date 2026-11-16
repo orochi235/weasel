@@ -34,7 +34,7 @@ function setup(): { committed: () => ToolsApi; bump: () => void } {
 
 describe('useTools ids', () => {
   it('treats an id named like an Object.prototype member as no tool', () => {
-    let tools!: ToolsApi;
+    let tools!: ToolsApi<unknown>;
     function Host(): null {
       tools = useTools({ registry: { a } });
       return null;
@@ -47,8 +47,8 @@ describe('useTools ids', () => {
 });
 
 describe('useTools registry ids', () => {
-  function mount(opts: Parameters<typeof useTools>[0]): ToolsApi {
-    let tools!: ToolsApi;
+  function mount(opts: Parameters<typeof useTools>[0]): ToolsApi<unknown> {
+    let tools!: ToolsApi<unknown>;
     function Host(): null {
       tools = useTools(opts);
       return null;
@@ -85,7 +85,7 @@ describe('useTools after an abandoned render', () => {
 
 describe('useTools hotkey holds', () => {
   it('releases its own hold, not a tool held on a key above it', () => {
-    let tools!: ToolsApi;
+    let tools!: ToolsApi<unknown>;
     let ctx!: ActiveToolContextValue;
     function Host(): null {
       tools = useTools({ registry: { a, b } });
