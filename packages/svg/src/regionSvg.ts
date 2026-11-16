@@ -1,7 +1,8 @@
 /**
  * One region of a scene as an SVG document, and the `svg` export format.
  */
-import { layoutTextPose, type RenderDiagnosticSink } from '@weasel-js/core';
+import type { RenderDiagnosticSink } from '@weasel-js/core';
+import { layoutTextPose } from '@weasel-js/text';
 import {
   captureExport, exportReporter, regionsOfOne, registerExportFormat, type ExportFormat, type ExportOptions, type ExportRegion,
   type ExportRegionSource, type ExportScene,

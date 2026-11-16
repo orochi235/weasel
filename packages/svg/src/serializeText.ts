@@ -1,8 +1,10 @@
 /** Writing `<text>` and its `<tspan>` runs. */
 
 import { escapeAttr } from './xmlEscape';
-import type { FontRequest, StyledRun, TextPoseLayout } from '@weasel-js/core';
-import { halfLeadingFor, isSolidPaint, numericWeight, resolveRunFace, resolveScreenLength, resolveTextStyle, scriptMetricsFor } from '@weasel-js/core';
+import type { FontRequest } from '@weasel-js/core';
+import type { StyledRun, TextPoseLayout } from '@weasel-js/text';
+import { isSolidPaint, resolveScreenLength } from '@weasel-js/core';
+import { halfLeadingFor, numericWeight, resolveRunFace, resolveTextStyle, scriptMetricsFor } from '@weasel-js/text';
 import { metaAttrsXml, metaElementsXml } from './metaXml';
 import type { SvgTextNode } from './types';
 import { trimNumber } from './transform';

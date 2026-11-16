@@ -43,5 +43,3 @@ export { containerScrollAction, scrollRange, scrollableAt } from './containerScr
 export type { ScrollRange } from './containerScroll';
 export { viewportZoomAction, createViewportZoomAction, type ViewportZoomOptions } from './viewportZoom';
 export { viewportDragPanAction } from './viewportDragPan';
-export { enterTextEditAction } from './enterTextEdit';
-export { editTextAtAction } from './editTextAt';

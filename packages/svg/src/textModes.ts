@@ -3,9 +3,8 @@
  * as its glyph outlines, or as live text whose faces travel with the document
  * in `@font-face` rules.
  */
-import {
-  fitTextToBox, resolveRunFace, resolveTextStyle, TextOutlinesError, toRuns, type FontStyle,
-} from '@weasel-js/core';
+import { type FontStyle } from '@weasel-js/core';
+import { fitTextToBox, resolveRunFace, resolveTextStyle, TextOutlinesError, toRuns } from '@weasel-js/text';
 import { cachedFontVariant, cssString, outlineMetrics, type FaceEmbedding } from '@weasel-js/font';
 import { svgTextOutlines } from './textOutlines';
 import type { SvgNode, SvgTextMode, SvgTextNode } from './types';

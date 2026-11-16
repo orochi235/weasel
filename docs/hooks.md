@@ -121,7 +121,7 @@ macOS Option+bracket emits a curly quote, so both codepoints are listed.
 | `editTextAt` | double-click on a body: opens the text node under the pointer (the `textEdit` feature) |
 | `menu.context` | the `contextMenu` gesture |
 | `selectAnchor` (*path-tools*) | click |
-| `editEffectText` (*path-tools*) | click on a body: in path edit on a path an effect hides, a click on that effect opens its text, off the open path's anchors |
+| `editEffectText` (*text-tools*) | click on a body: in path edit on a path an effect hides, a click on that effect opens its text, off the open path's anchors |
 | `insertPathAnchor` (*path-tools*) | Alt+click |
 | `cutPathAtAnchor` (*path-tools*) | Alt+Shift+click |
 | `viewport.pinchZoom` | two-finger `multiTouch` |
@@ -211,7 +211,7 @@ the call that opens or closes the edit, `onEnd` after any commit is written,
 so the follower never renders out of step with it. `useSceneTextEdit` takes
 the same pair.
 
-`useSceneTextEdit(scene, container, options?)` wires those callbacks against a
+`useSceneTextEdit(scene, container, options?)`, from `@weasel-js/text-tools`, wires those callbacks against a
 scene. It projects through the view of the weasel canvas mounted inside
 `container` and clips the overlay to that canvas's box, so a canvas that pans
 or zooms needs no extra wiring; pass `options.view` only to use another camera.
@@ -221,12 +221,11 @@ at the glyph there. A node is text when `options.isText(data)` says so
 same question by id. The two answer `TextEditDep.textAt` and
 `TextEditDep.isTextNode`.
 
-`<SceneCanvas>` mounts one of these itself, so a canvas needs no wiring for the
-text and sticky tools to open an edit, nor, with the `textEdit` feature (part
-of `edit`), for a double-click to: `editTextAt` is bound to it, opens what
-`textAt` names, and declines where the double-click names a group, whose own
-double-click enters it. Its `textEditor` prop takes the same options, or `false`
-for none. It stands down for a host's own: a `useSceneTextEdit` whose container
+A canvas running `@weasel-js/text-tools`' `textPreset` mounts one of these itself, so it needs
+no wiring for the text and sticky tools to open an edit, nor for a double-click to: `editTextAt`
+is bound to it, opens what `textAt` names, and declines where the double-click names a group,
+whose own double-click enters it. `createTextPreset({ editor })` takes the same options, or
+`false` for none. It stands down for a host's own: a `useSceneTextEdit` whose container
 holds the canvas, whose editor the canvas's `textEdit` dep then answers with,
 so the host binds no handler of its own; or a `textEdit` dep registered by a
 child (`@weasel-js/editor`'s `TextEditDepPublisher`), for a host whose container is elsewhere. A host

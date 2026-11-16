@@ -12,7 +12,7 @@ import type { Action, ActionsRegistry } from '@weasel-js/routing';
 import { SceneCanvas } from './SceneCanvas';
 import { createScene } from 'core/scene/scene';
 import type { SurfaceContribution } from './surfaceContribution';
-import type { InsertDep, SnapDep, TextEditDep } from 'interactions/actions/depSchema';
+import type { InsertDep, SnapDep } from 'interactions/actions/depSchema';
 import { poseBoxes, type DrawnBoxesSource } from 'interactions/actions/drawnBoxes';
 import { drawPreset } from 'canvas/SceneCanvas/presets';
 
@@ -26,7 +26,6 @@ beforeAll(() => {
   proto.releasePointerCapture = vi.fn();
 });
 
-const textEdit = { startEdit: () => {}, isTextNode: () => true } as unknown as TextEditDep;
 const insert = { build: () => null } as unknown as InsertDep;
 const snap = { begin: () => ({}) } as unknown as SnapDep;
 const selectAll: Action = { id: 'selectAll', label: 'mine', invoker: { kind: 'immediate', run: () => {} } } as unknown as Action;
@@ -35,7 +34,6 @@ let deps: DepRegistry | null = null;
 let actions: ActionsRegistry | null = null;
 
 function ConsumerOverrides() {
-  useDepSource('textEdit', () => textEdit);
   useDepSource('insert', () => insert);
   useAction(selectAll);
   const d = useDepRegistry();
@@ -58,7 +56,6 @@ describe('SceneCanvas registration order', () => {
         <ConsumerOverrides />
       </SceneCanvas>,
     );
-    expect(deps!.get('textEdit')).toBe(textEdit);
     expect(deps!.get('insert')).toBe(insert);
     expect(actions!.list().find((x) => x.id === 'selectAll')?.label).toBe('mine');
   });

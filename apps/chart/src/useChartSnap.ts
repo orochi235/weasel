@@ -1,6 +1,7 @@
 import { drawPreset, type FeaturePreset, type RenderLayer, type SceneCanvasSnap, type SceneNode } from '@weasel-js/core';
 import { diagramEdgeOf, diagramLabelOf } from '@weasel-js/diagram';
 import { createSpacingHintsPreset } from '@weasel-js/guides';
+import { textToolsPreset } from '@weasel-js/text-tools';
 import { usePageGrid, type PageSize } from '@weasel-js/editor';
 import { useMemo } from 'react';
 import { useChartPref } from './prefs';
@@ -34,8 +35,8 @@ export function useChartSnap(page: PageSize & { x: number; y: number }, backgrou
   const snap = useMemo<SceneCanvasSnap>(() => ({ sources: source ? [source] : [] }), [source]);
 
   const features = useMemo<readonly FeaturePreset[]>(() => {
-    if (!align && !spacingSnap) return [drawPreset];
-    return [drawPreset, createSpacingHintsPreset({ spacing: spacingSnap, align, filter: isBody, ...(spacingSnap ? {} : { readout: false }) })];
+    if (!align && !spacingSnap) return [drawPreset, textToolsPreset];
+    return [drawPreset, textToolsPreset, createSpacingHintsPreset({ spacing: spacingSnap, align, filter: isBody, ...(spacingSnap ? {} : { readout: false }) })];
   }, [align, spacingSnap]);
 
   return { gridLayer: grid.layer, snap, features };

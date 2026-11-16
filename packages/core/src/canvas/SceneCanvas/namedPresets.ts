@@ -10,24 +10,22 @@ import { alignPreset, arrangePreset, distributePreset, flipPreset, reorderPreset
 import { drawPreset, pickPreset, transformPreset } from './presets/composites';
 import {
   clipboardPreset, contextMenuPreset, deletePreset, duplicatePreset, editPreset, escapePreset, groupPreset,
-  nudgePreset, selectAllPreset, stylePreset, textEditPreset,
+  nudgePreset, selectAllPreset, stylePreset,
 } from './presets/edit';
 import { ingestPreset } from './presets/ingest';
 import { pathfinderPreset } from './presets/paths';
 import { selectPreset } from './presets/select';
 import { toolDrivenActions } from './presets/toolDriven';
-import { selectToolsPreset, shapeToolsPreset, typeToolsPreset, viewToolsPreset } from './presets/tools';
+import { selectToolsPreset, shapeToolsPreset, viewToolsPreset } from './presets/tools';
 import { BASELINE_ACTIONS } from './presets/baseline';
 import { movePreset, outlinePreset, resizePreset, rotatePreset } from './presets/transform';
 import { viewPreset } from './presets/view';
-import { whiteboardPreset } from './presets/whiteboard';
 
 /** Each core preset by name, each after the presets it includes. */
 export const FEATURE_PRESETS = {
   'tools:select': selectToolsPreset,
   'tools:view': viewToolsPreset,
   'tools:shape': shapeToolsPreset,
-  'tools:type': typeToolsPreset,
   view: viewPreset,
   select: selectPreset,
   outline: outlinePreset,
@@ -45,7 +43,6 @@ export const FEATURE_PRESETS = {
   nudge: nudgePreset,
   style: stylePreset,
   clipboard: clipboardPreset,
-  textEdit: textEditPreset,
   edit: editPreset,
   flip: flipPreset,
   reorder: reorderPreset,
@@ -55,7 +52,6 @@ export const FEATURE_PRESETS = {
   pathfinder: pathfinderPreset,
   ingest: ingestPreset,
   draw: drawPreset,
-  whiteboard: whiteboardPreset,
 } as const satisfies Readonly<Record<string, FeaturePreset>>;
 
 /** A core preset's name, as `namedFeatures` takes it. */
@@ -87,7 +83,7 @@ export const FEATURE_ACTION_IDS = Object.fromEntries(
 /**
  * Kit-standard actions no preset registers: they belong to the tools that bind
  * them. A canvas registers each one whenever a tool it carries names it in a
- * binding — `insert` with any shape tool, `enterTextEdit` with the text tool.
+ * binding — `insert` with any shape tool.
  */
 export const TOOL_DRIVEN_ACTION_IDS: readonly string[] = toolDrivenActions.map((a) => a.id);
 

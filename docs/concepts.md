@@ -91,17 +91,21 @@ those on too; any of them can also be passed alone:
 | `resizePreset` | the resize handles, drawn and bound |
 | `rotatePreset` | the rotation handle, drawn and bound |
 | `transformPreset` | `resizePreset` and `rotatePreset` |
-| `editPreset` | `escapePreset` (Escape, cancel-gesture), `contextMenuPreset`, `selectAllPreset`, `duplicatePreset` (with transform-again), `deletePreset`, `groupPreset`, `nudgePreset`, `stylePreset` (fill and stroke), `clipboardPreset`, `textEditPreset` (a double-click on text opens it in place); Cmd/Ctrl+V pastes nodes a kit canvas copied, and nothing else |
+| `editPreset` | `escapePreset` (Escape, cancel-gesture), `contextMenuPreset`, `selectAllPreset`, `duplicatePreset` (with transform-again), `deletePreset`, `groupPreset`, `nudgePreset`, `stylePreset` (fill and stroke), `clipboardPreset`; Cmd/Ctrl+V pastes nodes a kit canvas copied, and nothing else |
 | `arrangePreset` | `flipPreset`, `reorderPreset`, `alignPreset`, `distributePreset` |
 | `pathfinderPreset` | the pathfinder booleans and the live boolean group |
 | `ingestPreset` | dropped and pasted content: images, SVG, files, and consumer content handlers, on Cmd/Ctrl+V or an OS drop |
 | `drawPreset` | every preset above but `pickPreset` and `transformPreset`, whose parts it includes itself |
-| `whiteboardPreset` | text and the sticky note (`WHITEBOARD_TOOLS`), with view, pick, move, resize, and edit |
-| `shapeToolsPreset`, `typeToolsPreset` | the tools that make things: shapes, text and the sticky note |
+| `shapeToolsPreset` | the tools that make things: the shapes |
 
 Path edit, the pen, the pencil, the knife, the path commands and Create Outlines are
 `@weasel-js/path-tools`': its `pathsPreset` (`anchorKeysPreset`, `outlinesPreset`, `pathEditPreset`,
 `pathCommandsPreset`), which `pathTools` includes, and the tools `usePathToolsTools` builds.
+
+Text is a package of its own, `@weasel-js/text-tools`: `textPreset` teaches a canvas the text node
+kind (its painter, routing, properties, inserts, in-place editor, a double-click opening it, and
+plain-text paste), `textToolsPreset` adds the text and sticky-note tools, and `whiteboardPreset` is
+text and the sticky note with view, pick, move, resize, and edit.
 
 A preset holding only actions, tools, and includes is a bundle; one with any
 other role (an ambient binding, chrome, an ordering rule) is an atom, whose
@@ -112,7 +116,7 @@ package's preset goes beside core's the same way; `docs/extending.md`
 beside it. Only the presets an app imports reach its bundle.
 
 **Navigation comes from `viewPreset` and nothing else.** Without it (or a
-preset including it: `drawPreset`, `whiteboardPreset`) the canvas does not
+preset including it: `drawPreset`, text-tools' `whiteboardPreset`) the canvas does not
 wheel, pinch, edge-pan, or answer the zoom keys. `viewport` configures what
 `viewPreset` turns on and implies nothing; a development build warns when it is
 passed alone. A tool brings the kit actions it binds, so

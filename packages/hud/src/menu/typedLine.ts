@@ -1,4 +1,4 @@
-import { registeredBidi } from '@weasel-js/core';
+import { registeredBidi } from '@weasel-js/text';
 
 /** One stretch of a typed line that reads one way: code points `[lo, hi)`, starting at `x`. */
 interface Run { lo: number; hi: number; rtl: boolean; x: number; w: number }

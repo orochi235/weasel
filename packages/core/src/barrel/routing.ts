@@ -105,9 +105,7 @@ export {
   clipboardPasteAction,
   clipboardPasteEventAction,
 } from '../interactions/actions/clipboard/action';
-export { enterTextEditAction } from '../interactions/actions/defaults/enterTextEdit';
-export { editTextAtAction } from '../interactions/actions/defaults/editTextAt';
-export type { SliceDep, ClipboardDep, TextEditDep } from '../interactions/actions/depSchema';
+export type { SliceDep, ClipboardDep } from '../interactions/actions/depSchema';
 export { useStandardActions, KIT_STANDARD_ACTION_IDS } from '../interactions/actions/useStandardActions';
 export { useActionSet, useStandardDeps } from '../interactions/actions/useActionSet';
 export { ENGINE_STANDARD_ACTIONS } from '../interactions/actions/engineStandardActions';

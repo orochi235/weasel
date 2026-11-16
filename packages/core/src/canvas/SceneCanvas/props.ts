@@ -198,10 +198,8 @@ export type SceneCanvasProps<TData, TLayer extends string, TPose> =
      * - `ingestPreset` — dropped and pasted content: images, SVG, files, and
      *   whatever `ingestion.handlers` accept, on Cmd/Ctrl+V or an OS drop.
      * - `drawPreset` — all of the above.
-     * - `whiteboardPreset` — view, pick, move, resize and edit, with the
-     *   text and sticky-note tools.
-     * - `selectToolsPreset`, `viewToolsPreset`, `shapeToolsPreset`,
-     *   `typeToolsPreset` — a built-in tool set and nothing else.
+     * - `selectToolsPreset`, `viewToolsPreset`, `shapeToolsPreset` — a
+     *   built-in tool set and nothing else.
      *
      * Path edit, the pen, pencil and knife, and the path commands are
      * `@weasel-js/path-tools`' `pathTools` and its tools.
@@ -396,4 +394,4 @@ export type SceneCanvasProps<TData, TLayer extends string, TPose> =
      * nor picked here. See `CanvasProps.layerOrder`.
      */
     layerOrder?: string[];
-  } & SceneCanvasPointerProps<TData> & SceneCanvasActionProps & SceneCanvasToolProps & SceneCanvasPaintedBy & SceneCanvasSampleProps;
+  } & SceneCanvasPointerProps & SceneCanvasActionProps & SceneCanvasToolProps & SceneCanvasPaintedBy & SceneCanvasSampleProps;

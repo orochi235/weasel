@@ -9,14 +9,16 @@ import { afterEach, beforeEach, describe, it, expect, vi } from 'vitest';
 import { registerFont, FIXTURE_FONT } from '@weasel-js/font';
 import { _resetFontRegistryForTests } from '@weasel-js/font/test-seams';
 import { parseSvg } from '@weasel-js/svg';
-import { boundsOfPath, IDENTITY_POSE_COMPOSITION, RIGID_POSE_COMPOSITION, type TextStyle, layoutPages } from '@weasel-js/core';
+import { boundsOfPath, IDENTITY_POSE_COMPOSITION, RIGID_POSE_COMPOSITION, layoutPages } from '@weasel-js/core';
 import { measureNode } from '@weasel-js/measure';
+import { type TextStyle } from '@weasel-js/text';
 import { parsedToDoc, svgNodesToSceneDrafts, SWILL_NAMESPACES } from './svgInterop';
 import { leafOfObj } from './svgImport';
 import { buildWeaselClipboardText, extractWeaselClipboardFromSvg } from '@weasel-js/core';
 import { asPaint, createScene, registerPaintKindLoader, resolveFill, solid, strokeOf } from '@weasel-js/core';
 import { ANNOTATION_LAYER, DRAW_LAYERS, type WeaselDrawData, type WeaselDrawLayer, type WeaselDrawPose } from './drawDocument';
-import type { Stroke, StyledRun, Fill } from '@weasel-js/core';
+import type { Stroke, Fill } from '@weasel-js/core';
+import type { StyledRun } from '@weasel-js/text';
 import {
   sceneToSvgString,
   selectionToSvgString,

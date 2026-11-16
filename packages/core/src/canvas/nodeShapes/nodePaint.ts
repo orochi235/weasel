@@ -128,9 +128,11 @@ export interface PathPaint {
   stroke?: Stroke;
 }
 
-/** A world-space path and the paint it is to wear. */
-export interface PaintedPath extends PathPaint {
-  path: Path;
+/** Whether `stroke` covers anything to outline: it has a paint and a width above zero. */
+export function strokeCovers(stroke: Stroke | null | undefined): boolean {
+  const painted = resolveStroke(stroke);
+  const width = typeof painted?.width === 'object' ? painted.width.px : painted?.width;
+  return width !== undefined && width > 0;
 }
 
 /** {@link PathPaint} of a node that keeps its paint in `data.fill` and

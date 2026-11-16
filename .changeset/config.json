@@ -60,6 +60,7 @@
       "@weasel-js/symmetry",
       "@weasel-js/measure",
       "@weasel-js/path-tools",
+      "@weasel-js/text-tools",
       "@weasel-js/rig",
       "@weasel-js/forge",
       "@weasel-js/routing",

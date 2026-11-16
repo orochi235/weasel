@@ -1,17 +1,17 @@
 /**
  * Character controls for a text edit in progress: the adapter between the
- * `useTextTool.options` schema and a range — a `RangeStyle` in, a
+ * `CHARACTER_OPTIONS` schema and a range — a `RangeStyle` in, a
  * `RunStylePatch` out. Whether the patch lands on the runs under a selection
  * or is armed for the next character typed at a collapsed caret is the caller's.
  *
  * `MIXED` becomes a path in the bar's `mixed` set, so each control shows its
  * own indeterminate presentation.
  */
-import {
-  isSolidPaint, MIXED, numericWeight, resolveFill, resolveScreenLength, SCRIPT_METRICS, scriptMetricsFor, useTextTool,
-} from '@weasel-js/core';
+import { isSolidPaint, MIXED, resolveFill, resolveScreenLength } from '@weasel-js/core';
+import { numericWeight, SCRIPT_METRICS, scriptMetricsFor } from '@weasel-js/text';
+import { CHARACTER_OPTIONS } from './characterSchema';
 import type { ScreenLength } from '@weasel-js/core';
-import type { RangeStyle, RunStylePatch, StyledRun } from '@weasel-js/core';
+import type { RangeStyle, RunStylePatch, StyledRun } from '@weasel-js/text';
 import { ToolOptionsBar } from '../../ToolOptionsBar';
 import type { ReactNode } from 'react';
 
@@ -40,7 +40,7 @@ export function isCharacterChrome(el: Element): boolean {
 }
 
 /** The keys the schema draws, in the order it declares them. */
-type StyleKey = keyof typeof useTextTool.options.children;
+type StyleKey = keyof typeof CHARACTER_OPTIONS.children;
 
 /**
  * The strip of character controls for a text edit in progress. Wire it to
@@ -54,7 +54,7 @@ export function CharacterOptions({ style, onPatch, children, className }: Charac
     <ToolOptionsBar
       className={className ? `${CHROME_CLASS} ${className}` : CHROME_CLASS}
       label={editing ? 'Text' : undefined}
-      schema={editing ? useTextTool.options : undefined}
+      schema={editing ? CHARACTER_OPTIONS : undefined}
       values={editing ? characterValues(style) : undefined}
       mixed={editing ? characterMixed(style) : undefined}
       onChange={(path, value) => onPatch(characterPatch(path, value))}
@@ -70,7 +70,7 @@ export function CharacterOptions({ style, onPatch, children, className }: Charac
 function characterPatch(path: string, value: unknown): RunStylePatch {
   if (path === 'fill') return { fill: { paint: { color: value as string } } satisfies StyledRun['fill'] };
   if (path === 'noFill') {
-    return { fill: value === true ? null : { paint: { color: useTextTool.options.children.fill.default } } };
+    return { fill: value === true ? null : { paint: { color: CHARACTER_OPTIONS.children.fill.default } } };
   }
   return { [path]: value } as RunStylePatch;
 }
@@ -112,7 +112,7 @@ function scriptPresets(style: RangeStyle): typeof SCRIPT_METRICS {
  *  single color to show. */
 function characterMixed(style: RangeStyle): Set<string> {
   const out = new Set<string>();
-  for (const key of Object.keys(useTextTool.options.children) as StyleKey[]) {
+  for (const key of Object.keys(CHARACTER_OPTIONS.children) as StyleKey[]) {
     if (style[key as keyof RangeStyle] === MIXED) out.add(key);
   }
   // A gradient or pattern fill gets the same indeterminate treatment as a
@@ -126,7 +126,7 @@ function characterMixed(style: RangeStyle): Set<string> {
 /** Every key the schema draws that the range carries as-is. */
 function pick(style: RangeStyle): Record<string, unknown> {
   const out: Record<string, unknown> = {};
-  for (const key of Object.keys(useTextTool.options.children) as StyleKey[]) {
+  for (const key of Object.keys(CHARACTER_OPTIONS.children) as StyleKey[]) {
     const v = style[key as keyof RangeStyle];
     if (v !== undefined && v !== MIXED) out[key] = v;
   }

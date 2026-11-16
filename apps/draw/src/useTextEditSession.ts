@@ -1,4 +1,5 @@
-import { asNodeId, textEditJoin, type UseSceneTextEditReturn, useLatest, useSceneTextEdit } from '@weasel-js/core';
+import { asNodeId, useLatest } from '@weasel-js/core';
+import { textEditJoin, type UseSceneTextEditReturn, useSceneTextEdit } from '@weasel-js/text-tools';
 import { isCharacterChrome } from '@weasel-js/ui/components/inspector/CharacterOptions';
 import { useEffect, useRef } from 'react';
 import type { DrawScene } from './drawDocument';

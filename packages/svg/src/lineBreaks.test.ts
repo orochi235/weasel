@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import type { StyledRun } from '@weasel-js/core';
+import type { StyledRun } from '@weasel-js/text';
 import { parseSvg } from './parse';
 import { serializeSvg } from './serialize';
 import type { SvgTextNode } from './types';

@@ -1,5 +1,4 @@
 import type { DrawCommand } from '@weasel-js/core/renderer';
-import { textCommandFromRuns } from '@weasel-js/core';
 import { roundRectPath } from '@weasel-js/geom';
 import {
   envPx, exactly, measureRowList, type HeadlessComponent, type ListMode, type RowFace, type RowListLayout,
@@ -7,6 +6,7 @@ import {
 import { resolveCurrentColor } from '@weasel-js/theme';
 import { hudMeasureEnv } from '../../measureEnv';
 import type { HudDrawCtx, WidgetBounds } from '../../widget';
+import { textCommandFromRuns } from '@weasel-js/core';
 
 /** One row of a HUD list. */
 export interface HudListRow extends RowFace {

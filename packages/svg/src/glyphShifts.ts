@@ -9,9 +9,8 @@
  * where the glyphs after one sit to its left, it narrows the gap before the
  * glyph instead of widening it.
  */
-import {
-  layoutRuns, resolveRuns, resolveScreenLength, resolveTextStyle, type StyledRun, type TextStyle,
-} from '@weasel-js/core';
+import { resolveScreenLength } from '@weasel-js/core';
+import { layoutRuns, resolveRuns, resolveTextStyle, type StyledRun, type TextStyle } from '@weasel-js/text';
 import { resolveLength } from './lengths';
 import { preservesSpace } from './textWhitespace';
 

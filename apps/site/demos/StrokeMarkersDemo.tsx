@@ -5,12 +5,14 @@ import {
   useScene,
 } from '@weasel-js/core';
 import type { MarkerKey, Path, Stroke } from '@weasel-js/core';
+import { createTextPreset } from '@weasel-js/text-tools';
 import { DemoStage } from './DemoStage';
 
 const ROW_W = 150, ROW_H = 22, LABEL_W = 130, GAP = 36;
 const COL_W = ROW_W + 20 + LABEL_W + 20;
 const W = 40 + COL_W * 2, H = 340;
 const INK = { kind: 'solid' as const, color: '#1a130d' };
+const TEXT = createTextPreset({ editor: false });
 
 /** A shallow chevron, so `markerMid` has an interior authored vertex to sit
  *  on and `orient` has a corner to bisect. */
@@ -84,6 +86,7 @@ export function StrokeMarkersDemo() {
         className="ckd-canvas"
         scene={scene}
         selectable={false}
+        features={[TEXT]}
       />
     </DemoStage>
   );

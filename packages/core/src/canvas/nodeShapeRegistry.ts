@@ -8,6 +8,7 @@
 import { createEmitter } from '@weasel-js/registry';
 import { bumpNodeMemoGeneration, nodeMemoGeneration } from 'core/scene/nodeMemo';
 import { documentScene } from 'core/scene/editingSession';
+import { addOutsideSource } from 'core/scene/outsideReads';
 import type { NodeShapeEntry } from './nodeShapeTypes';
 
 /** Options for `registerNodeShape` and {@link NodeShapes.register}. */
@@ -32,7 +33,7 @@ export interface NodeShapes {
 }
 
 /** One registration. A painter registered twice is two of these, so each disposer takes out its own. */
-interface Registration { readonly entry: NodeShapeEntry }
+interface Registration { readonly entry: NodeShapeEntry; readonly release: () => void }
 
 interface Tiers { high: Registration[]; normal: Registration[] }
 
@@ -45,6 +46,23 @@ const changes = createEmitter();
 let serials = 0;
 let builtInsRegistered = false;
 let registerBuiltIns: (() => void) | null = null;
+
+const generationHolds = new Map<NodeShapeEntry, { count: number; release: () => void }>();
+
+/** Count a registered painter's `geometryGeneration` among the scene's outside sources while any
+ *  registration of it stands, so a derivation that read its geometry re-derives when it moves. */
+function holdGeneration(entry: NodeShapeEntry): () => void {
+  if (!entry.geometryGeneration) return () => {};
+  let hold = generationHolds.get(entry);
+  if (!hold) generationHolds.set(entry, (hold = { count: 0, release: addOutsideSource(() => entry.geometryGeneration!()) }));
+  hold.count++;
+  let held = true;
+  return () => {
+    if (!held) return;
+    held = false;
+    if (--hold.count === 0) { hold.release(); generationHolds.delete(entry); }
+  };
+}
 
 /** The painter set is state lookups read, and a memo keyed on the node alone cannot see it
  *  change; neither can a canvas that already painted. See `nodeMemo`. */
@@ -73,12 +91,13 @@ export function ensureBuiltInShapes(): void {
 
 /** Add a built-in: `tier` `'builtin'` claims a node by its data, `'fallback'` takes what nothing else did. */
 export function addBuiltInShape(entry: NodeShapeEntry, tier: 'builtin' | 'fallback'): void {
-  (tier === 'builtin' ? builtins : fallback).push({ entry });
+  (tier === 'builtin' ? builtins : fallback).push({ entry, release: holdGeneration(entry) });
 }
 
 /** Test-only: forget every painter, the built-ins included; the next lookup registers them again. */
 export function resetNodeShapesForTests(): void {
   const root = tiersOf.get(defaultNodeShapes)!;
+  for (const r of [...root.high, ...root.normal, ...builtins, ...fallback]) r.release();
   root.high.length = 0;
   root.normal.length = 0;
   builtins.length = 0;
@@ -96,7 +115,7 @@ export function createNodeShapes(opts: { parent?: NodeShapes | null } = {}): Nod
     register(painter, o = {}) {
       ensureBuiltInShapes();
       const list = o.priority === 'high' ? tiers.high : tiers.normal;
-      const registration: Registration = { entry: painter as NodeShapeEntry };
+      const registration: Registration = { entry: painter as NodeShapeEntry, release: holdGeneration(painter as NodeShapeEntry) };
       list.push(registration);
       if (parent) scoped.add(registry);
       nodeShapesChanged();
@@ -104,6 +123,7 @@ export function createNodeShapes(opts: { parent?: NodeShapes | null } = {}): Nod
         const i = list.indexOf(registration);
         if (i < 0) return;
         list.splice(i, 1);
+        registration.release();
         if (!hasOwnShapes(registry)) scoped.delete(registry);
         nodeShapesChanged();
       };

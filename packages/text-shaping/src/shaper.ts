@@ -217,7 +217,7 @@ let loading: Promise<TextShaper> | null = null;
  *
  * ```ts
  * import { loadShaper } from '@weasel-js/text-shaping';
- * import { registerShaper } from '@weasel-js/core';
+ * import { registerShaper } from '@weasel-js/text';
  *
  * registerShaper(await loadShaper());
  * ```

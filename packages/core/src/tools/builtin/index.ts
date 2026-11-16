@@ -32,11 +32,6 @@ export { pressTarget, type PressTargetTree } from './pressTarget';
 // point snap, group expansion); pose geometry comes from `poseDescriptor`.
 export { pickTopMostHit, type PickTopMostHitAdapter } from './pickTopMostHit';
 export { useHandTool, dragPanContribution, DRAG_PAN_ID, middleDragPanContribution, MIDDLE_DRAG_PAN_ID } from './hand';
-export { useTextTool, TEXT_TOOL_OPTIONS } from './text';
-export {
-  useStickyTool, stickyData, stickyNodeFactory, STICKY_DEFAULTS, STICKY_TOOL_OPTIONS,
-  type UseStickyToolOptions, type StickyLook, type StickyStyle,
-} from './sticky';
 // useWheelZoomTool, useWheelPanTool, useKeyboardZoomTool are dissolved.
 // Viewport zoom and pan are now handled by the viewport.zoom and viewport.pan
 // action descriptors registered via useStandardActions + useGestureDispatcher.

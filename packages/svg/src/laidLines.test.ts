@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { registerFont, FIXTURE_FONT } from '@weasel-js/font';
 import { _resetFontRegistryForTests } from '@weasel-js/font/test-seams';
-import { layoutTextPose, type TextPoseLayout } from '@weasel-js/core';
+import { layoutTextPose, type TextPoseLayout } from '@weasel-js/text';
 import { parseSvg } from './parse';
 import { serializeSvg } from './serialize';
 import { svgNeeds } from './warm';

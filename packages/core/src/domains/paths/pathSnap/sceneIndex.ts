@@ -8,8 +8,7 @@ import { nodeGates } from 'core/scene/nodeGates';
 import { nodeFrameOf, shownIn } from '../nodeFrame';
 import type { SnapGeometry } from 'interactions/actions/snapDep';
 import { nodeSnapGeometry } from './snapGeometry';
-import { glyphGeneration } from '@weasel-js/font';
-import { textEngineGeneration } from '@weasel-js/text';
+import { geometryGenerationOf } from 'canvas/nodeOutline';
 import { nodeMemoGeneration } from 'core/scene/nodeMemo';
 
 type SnapScene = Pick<Scene<unknown, string, unknown>, 'nodes' | 'layers' | 'getVersion'>;
@@ -28,20 +27,20 @@ export interface SceneSnapIndex {
  *  without geometry does not evict a gesture's. */
 export function createSceneSnapIndexer(scene: SnapScene): (also?: SnapGeometry) => SceneSnapIndex {
   type Slot = {
-    version: number; shapes: number; glyphs: number; engines: number; layers: unknown;
+    version: number; shapes: number; geometry: number; layers: unknown;
     also: SnapGeometry | undefined; built: SceneSnapIndex;
   };
   const slots: { bare: Slot | null; also: Slot | null } = { bare: null, also: null };
   return (also) => {
     const version = scene.getVersion();
-    // An outline is a painter's silhouette, which the painter set and, for text, the faces and
-    // layout engines decide with no change to the scene.
-    const shapes = nodeMemoGeneration(), glyphs = glyphGeneration(), engines = textEngineGeneration();
+    // An outline is a painter's silhouette, which the painter set and each painter's geometry
+    // generation decide with no change to the scene.
+    const shapes = nodeMemoGeneration(), geometry = geometryGenerationOf(nodeShapesOf(scene));
     const layers = scene.layers;
     const key = also ? 'also' : 'bare';
     const cached = slots[key];
     if (
-      cached?.version === version && cached.shapes === shapes && cached.glyphs === glyphs && cached.engines === engines
+      cached?.version === version && cached.shapes === shapes && cached.geometry === geometry
       && cached.layers === layers && cached.also === also
     ) return cached.built;
     const notes = new Set(layers.filter(isAnnotationLayer).map((l) => l.id));
@@ -64,7 +63,7 @@ export function createSceneSnapIndexer(scene: SnapScene): (also?: SnapGeometry) 
       paths.push({ kind: 'polygon', commands: new Uint8Array(), coords: new Float32Array(), fillRule: 'nonzero' });
     }
     const built = { ids, index: createPathSnapIndex(paths, extra) };
-    slots[key] = { version, shapes, glyphs, engines, layers, also, built };
+    slots[key] = { version, shapes, geometry, layers, also, built };
     return built;
   };
 }

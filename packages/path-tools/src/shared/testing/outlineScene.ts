@@ -9,7 +9,8 @@ import { resolve } from 'node:path';
 import { loadFontOutlines, registerFontOutlines } from '@weasel-js/font';
 import { _resetFontOutlinesForTests, _resetFontRegistryForTests } from '@weasel-js/font/test-seams';
 import { boundsOfPath, type Path, type Rect } from '@weasel-js/geom';
-import { asNodeId, createScene, defaultCommitAdapter, type NodeId, type TextOutlineSource } from '@weasel-js/core';
+import { asNodeId, createScene, defaultCommitAdapter, type NodeId, sceneNodeOutline } from '@weasel-js/core';
+import { type TextOutlineSource } from '@weasel-js/text';
 import { type CreateOutlinesAdapter } from '../../outlines/createOutlines';
 
 const INTER_TTF = resolve(import.meta.dirname, '../../../../../assets/fonts/inter/inter.ttf');
@@ -39,11 +40,7 @@ export function outlineScene({ outlines = true } = {}) {
     ...defaultCommitAdapter(scene),
     getSelection: () => [...scene.getSelection()],
     setSelection: (ids) => { scene.setSelection(ids.map(asNodeId)); },
-    getTextSource: (id) => {
-      const n = scene.get(asNodeId(id));
-      if (!n || n.kind !== 'mark' || n.data.text == null) return undefined;
-      return { data: n.data as TextOutlineSource, pose: n.pose };
-    },
+    getOutline: (id) => (scene.get(asNodeId(id))?.data.text == null ? undefined : sceneNodeOutline(scene, id)),
     createPathNode: (path, _source, { fill, parent }) => {
       const b = boundsOfPath(path);
       return { id: `p-${nextId++}`, kind: 'mark', layer: 'default', parent, pose: { x: b.x, y: b.y, width: b.width, height: b.height }, data: { path, fill } } as { id: string };

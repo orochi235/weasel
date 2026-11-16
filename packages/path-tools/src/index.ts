@@ -55,7 +55,8 @@ export {
 export { editedPathSymmetries } from './pathEdit/editAnchors/symmetry';
 export { HANDLE_LOCK_ROLES, locksInForce } from './pathEdit/editAnchors/handleDrag';
 export {
-  anchorEditWouldChange, commitAnchorEdit, deleteAnchorsAction, depOf, requiresAnchorSelection, selectAnchorAction,
+  anchorEditWouldChange, anchorUnder, commitAnchorEdit, deleteAnchorsAction, depOf, requiresAnchorSelection,
+  selectAnchorAction,
 } from './pathEdit/anchorEditing';
 export {
   nudgeAnchorsDownAction, nudgeAnchorsLeftAction, nudgeAnchorsRightAction, nudgeAnchorsUpAction,
@@ -73,6 +74,8 @@ export {
 } from './outlines/createOutlines';
 export { applyOutlineStroke, type OutlineStrokeResult } from './outlines/outlineStroke';
 export { useCreateOutlinesAdapter } from './outlines/useCreateOutlinesAdapter';
+export { createOutlinesAction, runCreateOutlines } from './outlines/createOutlinesAction';
+export { outlineStrokeAction } from './outlines/outlineStrokeAction';
 
 // ─── The pen, the pencil, and the knife ────────────────────────────────────
 export {

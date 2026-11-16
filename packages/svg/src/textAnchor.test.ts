@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { registerFont, FIXTURE_FONT } from '@weasel-js/font';
 import { _resetFontRegistryForTests } from '@weasel-js/font/test-seams';
-import { measureTextBounds, textLineBoxes, type TextStyle } from '@weasel-js/core';
+import { measureTextBounds, textLineBoxes, type TextStyle } from '@weasel-js/text';
 import { parseSvg, serializeSvg } from './index';
 import type { SvgTextNode } from './types';
 

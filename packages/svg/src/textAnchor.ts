@@ -1,4 +1,4 @@
-import { paragraphDirection, resolveAlign, type TextDirection, type TextStyle } from '@weasel-js/core';
+import { paragraphDirection, resolveAlign, type TextDirection, type TextStyle } from '@weasel-js/text';
 
 /**
  * The direction a text node reads in for SVG, which has no `auto`: the style's

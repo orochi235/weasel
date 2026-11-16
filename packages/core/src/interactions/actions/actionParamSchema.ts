@@ -107,7 +107,6 @@ declare module '@weasel-js/routing' {
     'select.collapseDeferred': Pick<ImmediateParams, 'mods'>;
     'group.enter': Pick<ImmediateParams, 'world' | 'viewId'>;
     'group.leave': Pick<ImmediateParams, 'world'>;
-    editTextAt: Pick<ImmediateParams, 'world'>;
     'eyedropper.pick': Pick<ImmediateParams, 'press'>;
     'present.step': { by?: number; to?: 'first' | 'last' };
     'present.go': { to?: string | number };

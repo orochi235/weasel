@@ -1,13 +1,16 @@
 import { useEffect, useRef, useState } from 'react';
 import {
   asNodeId,
-  SceneCanvas, useScene, renderSceneToPixels,
+  SceneCanvas, useScene, renderSceneToPixels, nodeShapesOf,
   registerCanvasFont, warmRender,
   solid,
 } from '@weasel-js/core';
-import type { TextStyle, TextVerticalAlign, Fill } from '@weasel-js/core';
+import type { Fill } from '@weasel-js/core';
+import type { TextStyle, TextVerticalAlign } from '@weasel-js/text';
+import { createTextPreset, TEXT_PAINTER } from '@weasel-js/text-tools';
 
 const W = 480, H = 340;
+const TEXT = createTextPreset({ editor: false });
 
 // Arial has no baked atlas, so its text draws through the dynamic canvas-SDF tier.
 registerCanvasFont('Arial');
@@ -60,6 +63,8 @@ export function RenderToPixelsDemo() {
       alphaFor: ALPHA_FOR,
     } as const;
     let live = true;
+    // The headless render paints through the scene's own registry, not the canvas's presets.
+    const unregister = nodeShapesOf(scene).register(TEXT_PAINTER);
     // The render is synchronous, so a font or paint kind still loading would draw nothing.
     void warmRender({ render: opts }).catch(() => {}).then(() => {
       if (!live) return;
@@ -78,13 +83,13 @@ export function RenderToPixelsDemo() {
       }
       setReadout(`headless ${first.width}×${first.height} px · identical: ${identical ? 'yes' : 'no'}`);
     });
-    return () => { live = false; };
+    return () => { live = false; unregister(); };
   }, [scene]);
 
   return (
     <div>
       <SceneCanvas
-        width={W} height={H} className="ckd-canvas" scene={scene}
+        width={W} height={H} className="ckd-canvas" scene={scene} features={[TEXT]}
         alphaFor={ALPHA_FOR}
       />
       <p data-testid="rtp-readout">{readout}</p>

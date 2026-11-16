@@ -1,6 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { bidi } from '@weasel-js/bidi';
-import { registerBidi, type OpenMenu } from '@weasel-js/core';
+import { type OpenMenu } from '@weasel-js/core';
+import { registerBidi } from '@weasel-js/text';
 import type { MenuTextEntry } from '@weasel-js/menu';
 import type { HudKeyEvent } from '../widget';
 import { THEME_METRICS as m } from './menu.fixture';

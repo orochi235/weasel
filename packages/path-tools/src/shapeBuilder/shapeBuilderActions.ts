@@ -20,7 +20,7 @@ function createPlanCache(opts: () => BooleanOpOptions) {
       const o = { ...opts(), ...(scale ? { scale } : {}) };
       const sel = [...adapter.getSelection()] as NodeId[];
       const next = JSON.stringify([o, sel.map((id) => [
-        id, adapter.getWorldPath(id) ?? adapter.getTextSource?.(id) ?? null, adapter.getPaint?.(id) ?? null,
+        id, adapter.getWorldPath(id) ?? (adapter.getOutline?.(id) ? adapter.getNode(id) : null) ?? null, adapter.getPaint?.(id) ?? null,
       ])]);
       if (next !== key) {
         key = next;

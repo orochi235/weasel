@@ -521,32 +521,6 @@ describe('SceneCanvas paste and drop events, by preset', () => {
     await vi.waitFor(() => expect(scene.roots).toHaveLength(4));
   });
 
-  it('ingest turns pasted plain text into a text node, and leaves node payloads and SVG alone', async () => {
-    const { scene } = mount([ingestPreset]);
-    const textNodes = () => scene.roots.map((id) => scene.get(id)!)
-      .filter((n) => typeof (n.data as { text?: string }).text === 'string');
-
-    paste({ text: 'hello\nworld' });
-    await vi.waitFor(() => expect(textNodes()).toHaveLength(1));
-    expect((textNodes()[0].data as { text: string }).text).toBe('hello\nworld');
-
-    paste({ text: NODE_TEXT });
-    paste({ text: SVG_TEXT });
-    await vi.waitFor(() => expect(scene.roots).toHaveLength(3));
-    await settle();
-    expect(textNodes()).toHaveLength(1);
-    expect(scene.roots).toHaveLength(3);
-  });
-
-  it('a pasted file inserts once, without a text node for the name riding beside it', async () => {
-    const { scene } = mount([ingestPreset]);
-    paste({ files: [pngFile()], text: 'a.png' });
-    await vi.waitFor(() => expect(scene.roots).toHaveLength(1));
-    await settle();
-    expect(scene.roots).toHaveLength(1);
-    expect((scene.get(scene.roots[0])!.data as { text?: string }).text).toBeUndefined();
-  });
-
   it('ingest alone runs a registered consumer handler on a paste', async () => {
     const handle = vi.fn();
     const off = registerContentHandler({ id: 'app:text', match: 'text/plain', handle });
@@ -556,30 +530,25 @@ describe('SceneCanvas paste and drop events, by preset', () => {
     off();
   });
 
-  const NO_TEXT = { kitHandlers: { omit: ['kit:text'] } };
+  const NO_IMAGE = { kitHandlers: { omit: ['kit:image'] } };
   const NO_KIT = { kitHandlers: false };
-  const textNodesOf = (scene: Scene<D, L, P>) => scene.roots.map((id) => scene.get(id)!)
-    .filter((n) => typeof (n.data as { text?: string }).text === 'string');
 
-  it('a canvas that omits kit:text takes no plain text, while another canvas still does', async () => {
+  it('a canvas that omits kit:image takes no image, while another canvas still does', async () => {
     const quiet = makeScene();
     const ref = createRef<SceneCanvasApi>();
     render(
       <SceneCanvas features={[ingestPreset]} scene={quiet} layers={{}} width={64} height={64} ref={ref}
-        ingestion={NO_TEXT} />,
+        ingestion={NO_IMAGE} />,
     );
     const otherRef = createRef<SceneCanvasApi>();
     const other = makeScene();
     render(<SceneCanvas features={[ingestPreset]} scene={other} layers={{}} width={64} height={64} ref={otherRef} />);
 
-    act(() => { ref.current!.ingest([{ kind: 'string', mime: 'text/plain', text: 'words' }]); });
-    act(() => { otherRef.current!.ingest([{ kind: 'string', mime: 'text/plain', text: 'words' }]); });
-    await vi.waitFor(() => expect(textNodesOf(other)).toHaveLength(1));
+    act(() => { ref.current!.ingest([pngFile()]); });
+    act(() => { otherRef.current!.ingest([pngFile()]); });
+    await vi.waitFor(() => expect(imageNodes(other)).toHaveLength(1));
     await settle();
     expect(quiet.roots).toHaveLength(0);
-    // It keeps the kit handlers it did not omit.
-    act(() => { ref.current!.ingest([pngFile()]); });
-    await vi.waitFor(() => expect(imageNodes(quiet)).toHaveLength(1));
   });
 
   it('kitHandlers false refuses a drag only a kit handler would take', () => {

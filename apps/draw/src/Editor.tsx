@@ -1,11 +1,9 @@
 import {
-  BUILTIN_TOOL_GROUPS,
   placedPagesOf,
   type SceneCanvasApi,
   type SelectionApi,
   SELECT_TOOLS,
   SHAPE_TOOLS,
-  TYPE_TOOLS,
   VIEW_TOOLS,
   type ToolsApi,
   useCanvasSize,
@@ -17,6 +15,7 @@ import type { ModeRegistry } from '@weasel-js/modes';
 import {
   DRAW_TOOLS, PATH_EDIT_TOOLS, PATH_OVERLAYS_GROUP, PATH_TOOLS_TOOLS, RESHAPE_TOOLS, SLICE_TOOLS, WARP_TOOLS,
 } from '@weasel-js/path-tools';
+import { TEXT_TOOLS } from '@weasel-js/text-tools';
 import { ActionBar } from '@weasel-js/ui/components/ActionBar';
 import { CharacterOptions } from '@weasel-js/ui/components/inspector/CharacterOptions';
 import { ActiveToolOptionsBar } from '@weasel-js/ui/components/ToolOptionsBar';
@@ -57,7 +56,7 @@ import { useTextEditSession } from './useTextEditSession';
 import { Workspace } from './Workspace';
 
 /** Core's tool sets and path-tools' path-edit, drawing, and knife sets, in palette order. */
-const TOOL_SETS = [SELECT_TOOLS, PATH_EDIT_TOOLS, VIEW_TOOLS, SHAPE_TOOLS, DRAW_TOOLS, TYPE_TOOLS, SLICE_TOOLS];
+const TOOL_SETS = [SELECT_TOOLS, PATH_EDIT_TOOLS, VIEW_TOOLS, SHAPE_TOOLS, DRAW_TOOLS, TEXT_TOOLS, SLICE_TOOLS];
 /** The palette's groups: those sets', then path-tools' reshaping tools and its warps. */
 const TOOL_GROUPS = [...TOOL_SETS.map((set) => set.id), 'path', 'warp'];
 const TOOL_STACKS = [withoutTools(SHAPE_TOOLS, 'line'), ['pen', 'spiro', 'pencil'], ['snip', 'reach'], WARP_TOOLS];

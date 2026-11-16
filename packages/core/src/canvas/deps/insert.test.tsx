@@ -47,11 +47,19 @@ describe('useInsertDepSource', () => {
     expect(ops).toHaveLength(1);
   });
 
-  it('commits an empty text node for kind=text (the built-in text tool drag)', () => {
+  it("commits a factory's node in the batch it asks for, then hands its id to `inserted`", () => {
     const applyOps = vi.fn();
+    const scene = makeScene();
+    const batch = vi.spyOn(scene as unknown as { batch: (l: string, fn: () => unknown, o?: unknown) => unknown }, 'batch');
+    const inserted = vi.fn();
+    const note = vi.fn((_bounds: unknown, extras: { text?: string }) => ({
+      data: { note: extras.text ?? '' },
+      batch: (id: string) => ({ join: `note:${id}` }) as never,
+      inserted,
+    }));
     let reg!: DepRegistry;
     function Wire() {
-      useInsertDepSource(makeScene(), { applyOps });
+      useInsertDepSource(scene, { applyOps }, { note } as never);
       return null;
     }
     render(
@@ -61,22 +69,26 @@ describe('useInsertDepSource', () => {
       </DepRegistryProvider>,
     );
     const dep = (reg.get as any)('insert');
-    const id = dep.commit({ x: 2, y: 3, width: 40, height: 20 }, { kind: 'text' });
+    const id = dep.commit({ x: 2, y: 3, width: 40, height: 20 }, { kind: 'note', text: 'hello' });
     expect(id).toBe('srv-0');
+    // The extras reach the factory, as a text/plain ingest's string does.
+    expect(note).toHaveBeenCalledWith({ x: 2, y: 3, width: 40, height: 20 }, expect.objectContaining({ text: 'hello' }));
     expect(applyOps).toHaveBeenCalledTimes(1);
     const [ops, label] = applyOps.mock.calls[0];
-    expect(label).toBe('Insert text');
-    // The kit:text painter matches on `data.text != null`; an empty string is
-    // a valid, selectable, editable text node (you type into it after).
-    expect(ops[0].args.node.data).toEqual({ text: '', fill: { paint: { kind: 'solid', color: '#000' } } });
+    expect(label).toBe('Insert note');
+    expect(ops[0].args.node.data).toEqual({ note: 'hello' });
     expect(ops[0].args.node.pose).toEqual({ x: 2, y: 3, width: 40, height: 20 });
+    expect(batch).toHaveBeenCalledWith('Insert note', expect.any(Function), { join: 'note:srv-0' });
+    expect(inserted).toHaveBeenCalledWith('srv-0', reg);
   });
 
-  it('sets new text in the fill its style names, none included', () => {
+  it('applies a factory node with no `batch` hook outside any batch', () => {
     const applyOps = vi.fn();
+    const scene = makeScene();
+    const batch = vi.spyOn(scene as unknown as { batch: (l: string, fn: () => unknown) => unknown }, 'batch');
     let reg!: DepRegistry;
     function Wire() {
-      useInsertDepSource(makeScene(), { applyOps });
+      useInsertDepSource(scene, { applyOps }, { note: () => ({ data: { note: '' } }) } as never);
       return null;
     }
     render(
@@ -85,12 +97,9 @@ describe('useInsertDepSource', () => {
         <Capture onR={(r) => { reg = r; }} />
       </DepRegistryProvider>,
     );
-    const dep = (reg.get as any)('insert');
-    dep.commit({ x: 0, y: 0, width: 40, height: 20 }, { kind: 'text', style: { fill: { color: '#f00' } } });
-    dep.commit({ x: 0, y: 0, width: 40, height: 20 }, { kind: 'text', style: { fill: null } });
-    const data = (call: number) => applyOps.mock.calls[call][0][0].args.node.data;
-    expect(data(0)).toEqual({ text: '', fill: { paint: { color: '#f00' } } });
-    expect(data(1)).toEqual({ text: '', fill: null });
+    (reg.get as any)('insert').commit({ x: 0, y: 0, width: 10, height: 10 }, { kind: 'note' });
+    expect(applyOps).toHaveBeenCalledTimes(1);
+    expect(batch).not.toHaveBeenCalled();
   });
 
   it('keeps the minimum an insert was drawn to on a kit-built node', () => {
@@ -109,24 +118,6 @@ describe('useInsertDepSource', () => {
     const minSize = { width: 30, height: 30 };
     (reg.get as any)('insert').commit({ x: 0, y: 0, width: 40, height: 40 }, { kind: 'rect', minSize });
     expect(applyOps.mock.calls[0][0][0].args.node.data.minSize).toEqual(minSize);
-  });
-
-  it('threads text content through from extras.text (e.g. a text/plain ingest)', () => {
-    const applyOps = vi.fn();
-    let reg!: DepRegistry;
-    function Wire() {
-      useInsertDepSource(makeScene(), { applyOps });
-      return null;
-    }
-    render(
-      <DepRegistryProvider>
-        <Wire />
-        <Capture onR={(r) => { reg = r; }} />
-      </DepRegistryProvider>,
-    );
-    const dep = (reg.get as any)('insert');
-    dep.commit({ x: 0, y: 0, width: 10, height: 10 }, { kind: 'text', text: 'hello' });
-    expect(applyOps.mock.calls[0][0][0].args.node.data).toEqual({ text: 'hello', fill: { paint: { kind: 'solid', color: '#000' } } });
   });
 
   it('paints a kit shape from the style its extras carry, keeping the kit geometry', () => {

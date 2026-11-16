@@ -78,10 +78,6 @@ describe('painter bounds', () => {
     expect(cmd).toEqual(findNodeShape(tagged)!.paint(tagged, POSE)[0]);
     expect(findShapeBounds(plain, POSE, { scale: 1 })).toEqual(findShapeBounds(tagged, POSE, { scale: 1 }));
   });
-
-  it('has none for text, which only layout can bound', () => {
-    expect(findShapeBounds(node({ text: 'hi' }), POSE)).toBeNull();
-  });
 });
 
 describe('defaultPaintBounds', () => {

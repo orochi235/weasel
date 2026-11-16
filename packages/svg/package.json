@@ -48,10 +48,12 @@
     "@weasel-js/font": "1.19.1",
     "@weasel-js/geom": "1.19.1",
     "@weasel-js/registry": "1.19.1",
-    "@weasel-js/stroke": "1.19.1"
+    "@weasel-js/stroke": "1.19.1",
+    "@weasel-js/text": "1.19.1"
   },
   "peerDependencies": {
     "@weasel-js/core": "1.19.1",
-    "@weasel-js/export": "1.19.1"
+    "@weasel-js/export": "1.19.1",
+    "@weasel-js/text-tools": "1.19.1"
   }
 }

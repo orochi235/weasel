@@ -15,7 +15,7 @@ npm install @weasel-js/text-dom
 face, size, and alignment the canvas draws the text in, and hands back the
 edited text as `StyledRun`s from `@weasel-js/text` when the edit commits. It
 takes a screen pose and a `TextStyle`; it does not know about a scene graph or
-a renderer. `useSceneTextEdit` in `@weasel-js/core` is this hook wired to a
+a renderer. `useSceneTextEdit` in `@weasel-js/text-tools` is this hook wired to a
 scene node.
 
 While an edit is open the hook reports the selection's shared style

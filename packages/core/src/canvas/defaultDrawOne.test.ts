@@ -97,40 +97,6 @@ describe('defaultDrawOne', () => {
     expect(cmds[1].kind).toBe('text');
   });
 
-  it('text branch: forwards the pose box, and wraps nothing the style does not declare', () => {
-    // `height` with the default verticalAlign ('top') resolves to a zero offset.
-    const cmds = defaultDrawOne(
-      node({ text: 'Hello', style: { fontFamily: 'sans-serif', fontSize: 20 } }),
-      POSE,
-    );
-    expect(cmds).toHaveLength(1);
-    const cmd = cmds[0] as TextDrawCommand;
-    expect(cmd).toMatchObject({
-      kind: 'text',
-      x: 10,
-      y: 20,
-      align: 'left',
-      maxWidth: Infinity,
-      width: POSE.width,
-      height: POSE.height,
-      verticalAlign: undefined,
-    });
-  });
-
-  it('text branch: the anchor does not move with fontSize', () => {
-    // The painter once shifted `y` down by the font size, defaulting to 16
-    // when the node carried no style. Anchoring on the box top makes the
-    // command's origin a property of the *pose*, so a styled and an unstyled
-    // node at the same pose start their first line box in the same place —
-    // which is what `verticalAlign`'s `[y, y + height]` box assumes.
-    const styled = defaultDrawOne(
-      node({ text: 'Hello', style: { fontSize: 64 } }), POSE,
-    )[0] as TextDrawCommand;
-    const unstyled = defaultDrawOne(node({ text: 'Hello' }), POSE)[0] as TextDrawCommand;
-    expect(unstyled.y).toBe(POSE.y);
-    expect(styled.y).toBe(unstyled.y);
-  });
-
   it('text branch: does not paint a label overlay (text content is its own label)', () => {
     const cmds = defaultDrawOne(
       node({ text: 'Hi', label: 'IGNORED' }),

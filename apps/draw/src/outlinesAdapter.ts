@@ -1,6 +1,6 @@
 import { defaultCommitAdapter, pathNode, type SelectionApi, UNION_OF_CHILDREN, unionOfChildren } from '@weasel-js/core';
 import { type CreateOutlinesAdapter } from '@weasel-js/path-tools';
-import { pathPaintAt, textSourceOf, worldPathOf } from './booleansAdapter';
+import { outlineAt, pathPaintAt, worldPathOf } from './booleansAdapter';
 import { carriedData, type DrawScene } from './drawDocument';
 
 /** The adapter the kit's `createOutlines` and `outlineStroke` actions convert
@@ -12,7 +12,7 @@ export function drawOutlinesAdapter(
 ): CreateOutlinesAdapter {
   const a: CreateOutlinesAdapter = {
     ...defaultCommitAdapter(scene, selection),
-    getTextSource: (id) => textSourceOf(scene, id),
+    getOutline: (id) => outlineAt(scene, id),
     getWorldPath: (id) => worldPathOf(scene, id),
     getPaint: (id) => pathPaintAt(scene, id),
     createPathNode: (path, sourceId, { fill, stroke, parent }) => {

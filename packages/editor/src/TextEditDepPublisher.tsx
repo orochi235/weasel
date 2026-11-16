@@ -1,4 +1,5 @@
-import { useDepSource, useLatest, type UseSceneTextEditReturn } from '@weasel-js/core';
+import { useDepSource, useLatest } from '@weasel-js/core';
+import { type UseSceneTextEditReturn } from '@weasel-js/text-tools';
 
 /**
  * Publishes the app's live text-edit session as the `textEdit` dep, for a host

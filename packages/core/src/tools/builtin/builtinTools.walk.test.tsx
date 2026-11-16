@@ -131,8 +131,6 @@ const WALKS: Record<BuiltinToolId, (w: Walk) => void> = {
   line: insertsOnDrag,
   polygon: insertsOnDrag,
   star: insertsOnDrag,
-  text: insertsOnDrag,
-  sticky: insertsOnDrag,
   lasso: (w) => {
     const depth = w.scene.history.undoDepth();
     w.drag([80, 80], [170, 80], [170, 170], [80, 170], [80, 90]);

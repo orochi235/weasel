@@ -27,12 +27,12 @@ the same `IngestItem`. Handlers never branch on where content came from.
 | `kitWeaselJsonHandler` | The kit's own clipboard format — full-fidelity node round-trip. |
 | `kitSvgHandler` | SVG files and SVG text (`sniffSvgText` catches markup pasted as a string). |
 | `kitImageHandler` | Raster images. |
-| `kitTextHandler` | Plain text, as a text node sized to the string. Passes over strings that arrive beside a file, which describe it. |
 
 Priority decides who is asked first, not registration order: the kit's JSON
 handler (-50) is what makes an internal copy/paste preserve everything rather
-than degrading to an image, so it sits above the SVG (-90), image (-100) and
-text (-110) handlers, and every consumer handler (default 0) sits above them all.
+than degrading to an image, so it sits above the SVG (-90) and image (-100)
+handlers, and every consumer handler (default 0) sits above them all. Plain text
+is `@weasel-js/text-tools`' handler, which its `textPreset` brings.
 
 A drag still in flight shows its MIMEs and no contents, so the canvas cannot put
 it to a predicate `match`. It asks `couldClaim` instead, which reads globs and a
@@ -49,7 +49,7 @@ for the strings, placed as `placement.ts` would place them, drawn through the
 
 A canvas routes an arrival through its own handlers (`<SceneCanvas
 ingestion={{ handlers }}>`), the kit handlers it keeps (`ingestion.kitHandlers`:
-`false`, or `{ omit: ['kit:text'] }`), and the page-wide registry
+`false`, or `{ omit: ['kit:image'] }`), and the page-wide registry
 (`registerContentHandler`), all ordered by priority. The first two belong to that
 canvas alone, so turning a kit handler off on one canvas leaves the rest alone.
 The `ingestion` dep carries the canvas's list (`IngestionDep.handlers`);

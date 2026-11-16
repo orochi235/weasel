@@ -12,7 +12,8 @@
  * exports as, and `role="page"` with `page-id` on the clipped group a page's content saves in.
  */
 
-import type { BooleanShapeOp, Fill, NodeClip, Page, PlacedPage, TextStyle } from '@weasel-js/core';
+import type { BooleanShapeOp, Fill, NodeClip, Page, PlacedPage } from '@weasel-js/core';
+import type { TextStyle } from '@weasel-js/text';
 import { pagesBounds, resolveFill, resolveStroke, withAlpha01 } from '@weasel-js/core';
 import {
   svgImageFromKit,

@@ -43,7 +43,7 @@ function mount(tool: string, values?: ToolOptionValues) {
   const scene = createScene<D, L, P>({ systemLayers: [{ id: 'main' }] });
   const store: { current: LastOperationStore | null } = { current: null };
   const { container } = render(
-    <SceneCanvas scene={scene} width={200} height={200} defaultTools={['rect', 'polygon', 'line', 'sticky']} defaultActiveTool={tool}
+    <SceneCanvas scene={scene} width={200} height={200} defaultTools={['rect', 'polygon', 'line']} defaultActiveTool={tool}
       toolOptionValues={values}>
       <GrabLastOperation into={store} />
     </SceneCanvas>,
@@ -55,11 +55,7 @@ function mount(tool: string, values?: ToolOptionValues) {
     canvas.dispatchEvent(new PointerEvent('pointermove', at(120, 100)));
     canvas.dispatchEvent(new PointerEvent('pointerup', at(120, 100)));
   });
-  const click = () => act(() => {
-    canvas.dispatchEvent(new PointerEvent('pointerdown', at(60, 60)));
-    canvas.dispatchEvent(new PointerEvent('pointerup', at(60, 60)));
-  });
-  return { scene, drag, click, lastOperation: () => store.current?.get() ?? null, store };
+  return { scene, drag, lastOperation: () => store.current?.get() ?? null, store };
 }
 
 function drawWith(tool: string, values?: ToolOptionValues): Scene<D, L, P> {
@@ -115,13 +111,6 @@ describe('a shape tool’s style', () => {
     const sides = scene.renderOrderNodes().map((n) => (n.data as { generator?: { sides: number } }).generator?.sides);
     expect(sides).toEqual([5, 8]);
   });
-
-  it('gives a sticky note the paper its own option holds, not the shapes’ fill', () => {
-    const values = createToolOptionValues();
-    values.set(SHARED_TOOL_OPTIONS, 'fill', { color: '#112233' });
-    values.set('sticky', 'paper', { color: '#abcdef' });
-    expect(only(drawWith('sticky', values)).background).toEqual({ paint: { color: '#abcdef' } });
-  });
 });
 
 describe('a shape tool’s style after the shape is drawn', () => {
@@ -142,17 +131,6 @@ describe('a shape tool’s style after the shape is drawn', () => {
     const { drag, lastOperation } = mount('polygon');
     drag();
     expect(Object.keys(lastOperation()!.schema.children)).toEqual(['fill', 'stroke', 'strokeWidth', 'fillRule', 'sides']);
-  });
-
-  it('shows a placed sticky note’s paper and ink', () => {
-    const values = createToolOptionValues();
-    const { scene, click, lastOperation, store } = mount('sticky', values);
-    click();
-    expect(lastOperation()?.id).toBe('place');
-    expect(Object.keys(lastOperation()!.schema.children)).toEqual(['paper', 'ink']);
-    act(() => { store.current!.adjust({ paper: { color: '#abcdef' } }); });
-    expect(only(scene).background).toEqual({ paint: { color: '#abcdef' } });
-    expect(values.get('sticky')).toMatchObject({ paper: { color: '#abcdef' } });
   });
 });
 

@@ -90,9 +90,10 @@ maps core's names to the objects, at the cost of loading every core preset.
 
 A `ToolSet` names a group of tool ids, and other sets, as one unit: `defaultTools`,
 a preset's `tools`, and `ToolPalette`'s `include` each take one. Core ships one per
-family (`SELECT_TOOLS`, `VIEW_TOOLS`, `SHAPE_TOOLS`, `TYPE_TOOLS`) and `BUILTIN_TOOLS` over them
-all, and `@weasel-js/path-tools` ships its own (`PATH_EDIT_TOOLS`, `DRAW_TOOLS`, `SLICE_TOOLS`,
-`RESHAPE_TOOLS`, …); `withoutTools(set, ...omit)` leaves some out, so an app takes "everything but the text tools" without
+family (`SELECT_TOOLS`, `VIEW_TOOLS`, `SHAPE_TOOLS`) and `BUILTIN_TOOLS` over them all, and a
+package ships its own (`@weasel-js/path-tools`' `PATH_EDIT_TOOLS`, `DRAW_TOOLS`, `SLICE_TOOLS`,
+`RESHAPE_TOOLS`, …; `@weasel-js/text-tools`' `TEXT_TOOLS`); `withoutTools(set, ...omit)` leaves some
+out, so an app takes "everything but the warps" without
 listing ids that a new built-in would then miss. A set made with
 `toolSet(id, members, { stack: true })` is a stack: a palette gives its tools one
 button that opens a menu of them, as `WARP_TOOLS` is. `ToolPalette` stacks the

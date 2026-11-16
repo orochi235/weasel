@@ -1,8 +1,8 @@
 import { useState } from 'react';
 import {
-  SceneCanvas, asNodeId, solid, useScene, useSceneTextEdit,
-  editPreset, movePreset, pickPreset, resizePreset, viewPreset,
+  SceneCanvas, asNodeId, solid, useScene, editPreset, movePreset, pickPreset, resizePreset, viewPreset,
 } from '@weasel-js/core';
+import { textPreset, useSceneTextEdit } from '@weasel-js/text-tools';
 import type { Fill, RectPose } from '@weasel-js/core';
 import { gridSnapSource } from '@weasel-js/guides';
 import type { StyledRun, TextStyle, TextVerticalAlign } from '@weasel-js/text';
@@ -128,7 +128,7 @@ export function TextDemo() {
             backgroundFill={{ color: '#ffffff' }}
             scene={scene}
             snap={SNAP}
-            features={[viewPreset, pickPreset, movePreset, resizePreset, editPreset]}
+            features={[viewPreset, pickPreset, movePreset, resizePreset, editPreset, textPreset]}
           />
         </DemoStage>
       </div>

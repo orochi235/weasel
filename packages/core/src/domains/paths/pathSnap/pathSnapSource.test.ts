@@ -157,11 +157,23 @@ describe('what a node offers to snap to', () => {
     getVersion: () => 1,
   }) as unknown as Scene<unknown, string, unknown>;
 
-  it("gives a text node's box: its corners and its center", () => {
-    const text = sceneWith({ x: 0, y: 0, width: 100, height: 40 }, { text: 'hi' });
-    const only = { kinds: { nearest: false, midpoint: false } };
-    expect(run(text, only, {}, { x: 51, y: 21 }).marks).toEqual([{ kind: 'point', at: { x: 50, y: 20 }, glyph: 'center', label: 'center' }]);
-    expect(run(text, only, {}, { x: 98, y: 2 }).marks).toEqual([{ kind: 'point', at: { x: 100, y: 0 }, glyph: 'anchor', label: 'anchor' }]);
+  it('gives a node whose painter snaps to its box that box: its corners and its center', () => {
+    // A silhouette that is no drawn outline, as text's line boxes are not.
+    const drop = registerNodeShape({
+      id: 'test:boxed',
+      matches: (n) => (n.data as { boxed?: boolean } | null)?.boxed === true,
+      paint: () => [],
+      silhouette: () => rectPath(30, 15, 5, 5),
+      snapsToBox: true,
+    }, { priority: 'high' });
+    try {
+      const boxed = sceneWith({ x: 0, y: 0, width: 100, height: 40 }, { boxed: true });
+      const only = { kinds: { nearest: false, midpoint: false } };
+      expect(run(boxed, only, {}, { x: 51, y: 21 }).marks).toEqual([{ kind: 'point', at: { x: 50, y: 20 }, glyph: 'center', label: 'center' }]);
+      expect(run(boxed, only, {}, { x: 98, y: 2 }).marks).toEqual([{ kind: 'point', at: { x: 100, y: 0 }, glyph: 'anchor', label: 'anchor' }]);
+    } finally {
+      drop();
+    }
   });
 
   it('gives a filled rectangle its drawn outline', () => {

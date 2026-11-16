@@ -1,13 +1,14 @@
 import type { BuiltinToolId } from '@weasel-js/core';
+import type { TextToolId } from '@weasel-js/text-tools';
 import { icon } from '../icons.gen';
 import type { InstrumentList } from '../instrument/types';
 import type { TrialTool } from '../tools/types';
 import { MARK_LINE_OPTIONS, MARK_TEXT_OPTIONS } from './options';
 import type { AnnotationKind } from './types';
 
-/** A weasel tool an annotation tool drives: one `<SceneCanvas>` builds in, or the pencil,
- *  which is `@weasel-js/path-tools`'. */
-export type AnnotationWeaselTool = BuiltinToolId | 'pencil';
+/** A weasel tool an annotation tool drives: one `<SceneCanvas>` builds in, the pencil, which is
+ *  `@weasel-js/path-tools`', or `@weasel-js/text-tools`' text. */
+export type AnnotationWeaselTool = BuiltinToolId | 'pencil' | TextToolId;
 
 /** Which weasel tool an annotation tool drives, and what kind of mark that
  *  makes. `select` makes none. */
@@ -101,7 +102,8 @@ export function annotationToolInfo(id: string | null): AnnotationToolInfo | unde
   return id === null ? undefined : TOOLS[id];
 }
 
-/** Every weasel tool the overlay has to mount for this palette to work. */
+/** Every weasel tool the overlay has to mount for this palette to work: core's built-ins, path-tools' pencil,
+ *  and text-tools' `text`. */
 export const ANNOTATION_WEASEL_TOOLS: readonly AnnotationWeaselTool[] = [
   ...new Set(Object.values(TOOLS).map((t) => t.weaselTool)),
 ];

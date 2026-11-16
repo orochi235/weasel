@@ -48,7 +48,6 @@ declare module '@weasel-js/routing' {
     cutPathAtAnchor: Pick<ImmediateParams, 'world'>;
     insertPathAnchor: Pick<ImmediateParams, 'world'>;
     enterPathEdit: Pick<ImmediateParams, 'world'>;
-    editEffectText: Pick<ImmediateParams, 'world'>;
     simplifyPath: { tolerance?: number };
     offsetPath: OffsetPathParams;
     tween: TweenParams;

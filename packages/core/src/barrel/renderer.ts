@@ -147,7 +147,7 @@ export type {
 } from '../canvas/layerSlots';
 export type { SceneSlotConfig } from '../canvas/buildSceneLayer';
 export type { BuiltinToolId } from '../canvas/SceneCanvas';
-export type { FeatureBindingOptions, FeaturePreset, PresetNodeShape } from '../canvas/SceneCanvas/features';
+export type { FeatureBindingOptions, FeaturePreset, PresetComponentProps, PresetNodeShape } from '../canvas/SceneCanvas/features';
 export {
   nodeKindPreset, nodeTraitsOf, type NodeKindPresetSpec, type NodeTraitBase, type NodeTraits,
 } from '../canvas/SceneCanvas/nodeTraits';
@@ -155,7 +155,7 @@ export { describePresets, isAtom, type PresetDescription } from '../canvas/Scene
 export { BUILTIN_TOOL_IDS, rotateAroundAABBCenter } from '../canvas/SceneCanvas';
 export {
   BUILTIN_TOOLS, BUILTIN_TOOL_GROUPS, TOOL_GROUP_ORDER,
-  SELECT_TOOLS, VIEW_TOOLS, SHAPE_TOOLS, TYPE_TOOLS,
+  SELECT_TOOLS, VIEW_TOOLS, SHAPE_TOOLS,
 } from '../canvas/SceneCanvas';
 export { BASELINE_ACTION_IDS, TOOL_DRIVEN_ACTION_IDS } from '../canvas/SceneCanvas/namedPresets';
 export * from '../canvas/SceneCanvas/presets';
@@ -164,7 +164,7 @@ export type {
   BuiltinShapeToolId, KitInsertShape, ShapeKind, ShapeKindDescriptor, ShapeKindsWhere,
 } from '../core/shapeKinds';
 export type { BuiltinToolOptions } from '../canvas/SceneCanvas/useBuiltinShapeTools';
-export type { InsertNodeFactory, InsertNodeFactories, KitInsertKind, PreviewPathsDep } from '../canvas/deps';
+export type { InsertNodeFactory, InsertNodeFactories, InsertedNode, KitInsertKind, PreviewPathsDep } from '../canvas/deps';
 export { useTransformFollower } from '../canvas/deps';
 export type {
   SceneToAdapterOptions,
@@ -201,16 +201,9 @@ export type { PolygonPoint } from '../tools/builtin/polygon/usePolygonTool';
 export type { StarPoint } from '../tools/builtin/star/useStarTool';
 export type { UseSceneTrivialOptions } from '../core/scene/useScene';
 export type { DefaultLayer } from '../core/scene/trivialScene';
-export type {
-  DefaultTextData,
-  UseSceneTextEditReturn,
-} from '../domains/text/useSceneTextEdit';
-export type { EditingDrawOne } from '../domains/text/editingDrawOne';
-export { textBoxOf, type TextNodeData, type TextOverflow } from '../canvas/nodeShapes/textPainter';
 export { shapePathOf } from '../canvas/nodeShapes/shapePainter';
+export { textCommand, textCommandFromRuns, textCommandFromRunsInto, textCommandFromPose } from '@weasel-js/renderer';
 export type { GroupBoxData } from '../canvas/nodeShapes/groupBoxPainter';
-export { edgeColor, textFrameOf, type TextEdge, type TextFrame, type TextShadow } from '../canvas/nodeShapes/textFrame';
-export type { StyleToggle } from '@weasel-js/text-dom';
 export type { Vec2 } from '../core/geometry/vec2';
 export type { Rect } from '@weasel-js/geom';
 

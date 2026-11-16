@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { SCRIPT_METRICS } from '@weasel-js/core';
+import { SCRIPT_METRICS } from '@weasel-js/text';
 import { parseSvg } from './parse';
 import { serializeSvg } from './serialize';
 import type { SvgTextNode } from './types';

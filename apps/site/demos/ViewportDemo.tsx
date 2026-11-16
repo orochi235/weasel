@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react';
 import { SceneCanvas, asNodeId, useScene, solid, viewPreset } from '@weasel-js/core';
-import type { RectPose, TextNodeData } from '@weasel-js/core';
+import type { RectPose } from '@weasel-js/core';
+import { createTextPreset, type TextNodeData } from '@weasel-js/text-tools';
 import { useColorHex } from '@weasel-js/theme/react';
 import { Checkbox } from '@weasel-js/ui/components/Checkbox';
 import { Field } from '@weasel-js/ui/components/Field';
@@ -32,6 +33,7 @@ const boxData = ({ color, label }: { color: string; label: string }): TextNodeDa
 type Boundary = 'none' | 'stop' | 'bounce';
 const BOUNDARY_ITEMS = (['none', 'stop', 'bounce'] as const).map((b) => ({ value: b, label: b }));
 const BOUNDS = { minX: -20, maxX: 300, minY: -20, maxY: 200 };
+const TEXT = createTextPreset({ editor: false });
 
 export function ViewportDemo() {
   const [boundary, setBoundary] = useState<Boundary>('none');
@@ -76,7 +78,7 @@ export function ViewportDemo() {
         <SceneCanvas
           scene={scene}
           backgroundFill={backgroundFill}
-          features={[viewPreset]}
+          features={[viewPreset, TEXT]}
           viewport={{
             inertia: inertiaConfig,
             pinchZoom: true,

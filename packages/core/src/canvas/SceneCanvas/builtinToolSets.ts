@@ -11,13 +11,11 @@ export const SELECT_TOOLS: ToolSet<BuiltinToolId> = toolSet('select', ['select',
 export const VIEW_TOOLS: ToolSet<BuiltinToolId> = toolSet('view', ['hand'], { label: 'View' });
 /** The tools that drag out a closed or open primitive. */
 export const SHAPE_TOOLS: ToolSet<BuiltinToolId> = toolSet('shape', kitShapeKindsOf('shape'), { label: 'Shapes' });
-/** The text tools: text and the sticky note. */
-export const TYPE_TOOLS: ToolSet<BuiltinToolId> = toolSet('type', kitShapeKindsOf('type'), { label: 'Type' });
 
 /** The built-in tool sets in palette order: selection, then navigation, then the tools that make
  *  things. Each set is named for the presentation group its tools sit in. */
 export const BUILTIN_TOOL_GROUPS: readonly ToolSet<BuiltinToolId>[] = [
-  SELECT_TOOLS, VIEW_TOOLS, SHAPE_TOOLS, TYPE_TOOLS,
+  SELECT_TOOLS, VIEW_TOOLS, SHAPE_TOOLS,
 ];
 
 /** The natural order of palette groups, which `ToolPalette` follows unless given its own. */

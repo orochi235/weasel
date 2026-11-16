@@ -122,6 +122,7 @@
   "peerDependencies": {
     "@weasel-js/animator": "1.19.1",
     "@weasel-js/core": "1.19.1",
+    "@weasel-js/text-tools": "1.19.1",
     "@weasel-js/theme": "1.19.1",
     "react": "^19.0.0",
     "react-dom": "^19.0.0"

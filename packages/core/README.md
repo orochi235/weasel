@@ -6,7 +6,7 @@ Built for diagram editors, sketch tools, schematic editors, scene composers — 
 
 ## Features
 
-- Pointer interactions: move, resize, rotate, insert, clone, area-select, lasso, path-anchor editing, text edit
+- Pointer interactions: move, resize, rotate, insert, clone, area-select, lasso, path-anchor editing
 - Op-based scene mutation with undo/redo and coalescing
 - A registry of actions with default key and gesture bindings, each one overridable by id
 - Layered canvas rendering with debug overlays
@@ -48,7 +48,7 @@ A bare `<SceneCanvas>` only renders. It keeps a selection that nothing sets from
 | `resizePreset` | resize handles |
 | `rotatePreset` | the rotation handle |
 | `transformPreset` | `resizePreset` and `rotatePreset` |
-| `editPreset` | delete, duplicate, group/ungroup, nudge, select-all, Escape, the context menu, cut/copy/paste, fill and stroke, double-click to edit text in place, and their keys; Cmd/Ctrl+V pastes nodes a kit canvas copied, and nothing else |
+| `editPreset` | delete, duplicate, group/ungroup, nudge, select-all, Escape, the context menu, cut/copy/paste, fill and stroke, and their keys; Cmd/Ctrl+V pastes nodes a kit canvas copied, and nothing else |
 | `arrangePreset` | align, distribute, reorder, flip |
 | `pathfinderPreset` | the pathfinder booleans and the live boolean group |
 | `ingestPreset` | dropped and pasted content: images, SVG, files, and consumer content handlers, on Cmd/Ctrl+V or an OS drop |
@@ -70,8 +70,8 @@ export function Editor() {
   const scene = useScene({ systemLayers: [{ id: 'default' }], initial: [] });
   const selection = useSelection({ mode: 'multi' });
 
-  // Click to select, drag to move, handles to resize and rotate, the shape and
-  // text tools, sticky notes, and the
+  // Click to select, drag to move, handles to resize and rotate, the shape
+  // tools, and the
   // standard keyboard actions (Cmd+A, Cmd+Z, Delete, …), all snapping to the grid:
   return (
     <SceneCanvas
@@ -98,7 +98,7 @@ Lower-level surfaces take a narrow **adapter** instead of a scene — a few meth
 
 An `Action` is a named operation — `delete`, `duplicate`, `group`, `insert`, `viewport.dragPan` — paired with the input that triggers it. `<ActionsProvider>` holds the registered descriptors, and the gesture dispatcher matches live input against each one's `defaultBinding` and the active tool's bindings. Keystrokes and pointer gestures take the same path, so a keyboard shortcut and a drag are two bindings on one action rather than two mechanisms.
 
-`<SceneCanvas>` mounts a provider when none is above it and registers undo and redo, and the kit-standard actions its `features` presets carry — under `drawPreset`, all of them: escape, select-all, delete, duplicate, group and ungroup, flip, nudge, reorder, align, distribute, the pathfinder booleans, fill and stroke, clipboard, and the pointer-driven move, resize, rotate, clone, area-select and lasso. `BASELINE_ACTION_IDS` lists the ones every canvas registers. A preset can include others: `editPreset` is `clipboardPreset`, `nudgePreset`, `groupPreset`, and the rest, each of which can be passed alone, and `pickPreset`, `transformPreset`, and `drawPreset` are presets of that kind. `insert` comes with the shape tools that bind it, which `shapeToolsPreset` and `typeToolsPreset` mount. `features` takes a package's preset object the same way. Where presets are picked by name, `namedFeatures('pick', 'move')` from `@weasel-js/core/named-features` returns the objects, `FEATURE_NAMES` lists the names, and `FEATURE_ACTION_IDS` says which preset registers which action; that entry loads every core preset.
+`<SceneCanvas>` mounts a provider when none is above it and registers undo and redo, and the kit-standard actions its `features` presets carry — under `drawPreset`, all of them: escape, select-all, delete, duplicate, group and ungroup, flip, nudge, reorder, align, distribute, the pathfinder booleans, fill and stroke, clipboard, and the pointer-driven move, resize, rotate, clone, area-select and lasso. `BASELINE_ACTION_IDS` lists the ones every canvas registers. A preset can include others: `editPreset` is `clipboardPreset`, `nudgePreset`, `groupPreset`, and the rest, each of which can be passed alone, and `pickPreset`, `transformPreset`, and `drawPreset` are presets of that kind. `insert` comes with the shape tools that bind it, which `shapeToolsPreset` mounts. `features` takes a package's preset object the same way. Where presets are picked by name, `namedFeatures('pick', 'move')` from `@weasel-js/core/named-features` returns the objects, `FEATURE_NAMES` lists the names, and `FEATURE_ACTION_IDS` says which preset registers which action; that entry loads every core preset.
 
 ### Tuning an action
 

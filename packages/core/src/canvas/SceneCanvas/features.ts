@@ -31,6 +31,19 @@ import type { NodeRoutingEntry } from 'core/scene/NodeRouting';
 import type { NodePropertiesEntry } from 'core/scene/NodeProperties';
 import type { InsertNodeFactories } from '../deps/insert';
 import type { NodeShapeEntry, RegisterNodeShapeOptions } from '../NodeShape';
+import type { ContentHandlerEntry } from 'domains/ingestion/contentHandlers';
+import type { ComponentType, MutableRefObject } from 'react';
+import type { Scene } from 'core/scene/types';
+
+/** What a canvas hands each of its presets' {@link FeaturePreset.components}. */
+export interface PresetComponentProps {
+  /** The scene the canvas draws. */
+  readonly scene: Scene<unknown, string, unknown>;
+  /** The canvas element, filled once it mounts. */
+  readonly canvasRef: MutableRefObject<HTMLElement | null>;
+  /** Whether the canvas paints into an element the host owns (`paintInto`) rather than its own. */
+  readonly paintsInto: boolean;
+}
 
 /** A shape painter a preset installs, with the tier it registers in. */
 export interface PresetNodeShape {
@@ -107,6 +120,12 @@ export interface FeaturePreset {
    *  declare: deps, overlays, `attach`, views, frame hooks. A `tools` takeover
    *  brings its own ambient and leaves them out. */
   readonly contributions?: readonly SurfaceContribution[];
+  /** Components the canvas renders inside itself while the preset is on, after its own deps and before its
+   *  children: for a part that needs React and the mounted canvas, such as an editing overlay. A dep one
+   *  publishes sits over the canvas's own and under any its children publish. */
+  readonly components?: readonly ComponentType<PresetComponentProps>[];
+  /** Content handlers ingestion tries after the canvas's own `ingestion.handlers` and the kit's. */
+  readonly contentHandlers?: readonly ContentHandlerEntry[];
   /** Ids of presets whose actions, and those of every preset they include,
    *  this one's register ahead of, so that where both bind one gesture, this
    *  one's is tried first: anchor nudging ahead of node nudging. A preset named
@@ -125,6 +144,10 @@ export interface EnabledPresets {
   readonly snapSources: readonly SnapSource[];
   /** Their layers by slot; a later preset's wins a slot both name. */
   readonly layers: Readonly<Record<string, CustomLayerEntry>>;
+  /** Their components, each once, in order. */
+  readonly components: readonly ComponentType<PresetComponentProps>[];
+  /** Their content handlers, in order. */
+  readonly contentHandlers: readonly ContentHandlerEntry[];
   /** Whether a preset with this id is on. */
   has(id: string): boolean;
 }
@@ -185,6 +208,8 @@ export function resolveFeatures(
     pathEdit: presets.flatMap((p) => p.pathEdit ?? []),
     snapSources: presets.flatMap((p) => p.snapSources ?? []),
     layers: Object.assign({}, ...presets.map((p) => p.layers ?? {})) as Record<string, CustomLayerEntry>,
+    components: [...new Set(presets.flatMap((p) => p.components ?? []))],
+    contentHandlers: presets.flatMap((p) => p.contentHandlers ?? []),
     has: (id) => byId.has(id),
   };
 }

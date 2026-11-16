@@ -1,6 +1,6 @@
 /** SVG's whitespace handling for `<text>` content. */
 
-import type { StyledRun } from '@weasel-js/core';
+import type { StyledRun } from '@weasel-js/text';
 
 const XML_NS = 'http://www.w3.org/XML/1998/namespace';
 

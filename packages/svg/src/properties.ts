@@ -11,7 +11,7 @@
  */
 
 import { clamp01 } from '@weasel-js/geom';
-import type { FontVariantCaps, TextTransform } from '@weasel-js/core';
+import type { FontVariantCaps, TextTransform } from '@weasel-js/text';
 import { ABSOLUTE_PX } from './absoluteUnits';
 import { parsePaintAttr, parseUrlRef, type ParsedColor } from './color';
 import { DEFAULT_FONT_SIZE, emsPer, fontSizeKeyword } from './fontSize';

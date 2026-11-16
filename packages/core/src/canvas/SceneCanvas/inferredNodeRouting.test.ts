@@ -9,16 +9,13 @@ describe('inferredNodeRouting', () => {
     return r.classify(data);
   }
 
-  it('infers "text" from data.text string', () => {
-    expect(classify({ text: 'hello' })).toBe('text');
-  });
-
   it('infers "path" from data.path presence', () => {
     expect(classify({ path: { kind: 'polygon' } })).toBe('path');
   });
 
-  it('text wins over path when both present (SVG import with text fallback)', () => {
-    expect(classify({ text: 'hi', path: { kind: 'polygon' } })).toBe('text');
+  it('knows no text kind: a node with text and a fallback path routes as its path', () => {
+    expect(classify({ text: 'hello' })).toBe('unknown');
+    expect(classify({ text: 'hi', path: { kind: 'polygon' } })).toBe('path');
   });
 
   it('infers "image" from data.image presence', () => {
@@ -39,7 +36,7 @@ describe('inferredNodeRouting', () => {
       const r = createNodeRouting();
       for (const k of table) r.register(k);
       expect(r.classify({}, { kind: 'group' })).toBe('group');
-      expect(r.classify({ text: 'hi' }, { kind: 'group' })).toBe('group');
+      expect(r.classify({ path: { kind: 'polygon' } }, { kind: 'group' })).toBe('group');
       expect(r.classify({}, { kind: 'mark' })).toBe('unknown');
       expect(r.classify({})).toBe('unknown');
     }
@@ -58,7 +55,7 @@ describe('inferredNodeRouting — a mark that has children', () => {
     const r = createNodeRouting();
     for (const k of inferredNodeRouting) r.register(k);
     const mark = { kind: 'mark', children: ['c'] } as never;
-    expect(r.classify({ text: 'hi' }, mark)).toBe('text');
+    expect(r.classify({ path: { kind: 'polygon' } }, mark)).toBe('path');
     expect(r.classify({ color: '#fff' }, mark)).toBe('unknown');
     expect(r.classify({}, { kind: 'group' } as never)).toBe('group');
   });

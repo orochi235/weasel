@@ -7,8 +7,7 @@ import { asNodeId } from 'core/scene/types';
 import { useTools } from '../tools/overlayBinding';
 import { defineTool } from '../tools/overlayBinding';
 import { WeaselProvider } from '../WeaselProvider';
-import { STICKY_DEFAULTS } from '../tools/builtin/sticky/stickyNode';
-import { drawPreset, pickPreset } from 'canvas/SceneCanvas/presets';
+import { drawPreset } from 'canvas/SceneCanvas/presets';
 
 // jsdom doesn't implement getContext or pointer capture; stub minimally.
 beforeAll(() => {
@@ -257,25 +256,6 @@ describe('SceneCanvas tools prop patch form', () => {
     const get = emptyHarness({ star: true });
     expect(get()!.registry).toHaveProperty('star');
     expect(get()!.registry).toHaveProperty('select');
-  });
-
-  it('defaultTools mounts sticky by id, in the look toolOptions gives it', () => {
-    let captured: ReturnType<typeof useTools> | null = null;
-    const size = { width: 80, height: 50 };
-    function Harness() {
-      const scene = useScene<D, L, P>({ systemLayers: [{ id: 'main' }], initial: [] });
-      return (
-        <SceneCanvas features={[pickPreset]} scene={scene} width={100} height={100} layers={{}}
-          defaultTools={['sticky']}
-          toolOptions={{ sticky: { padding: 4, size } }}
-          onToolsCreated={(t) => { captured = t; }}
-        />
-      );
-    }
-    render(<Harness />);
-    expect(Object.keys(captured!.registry)).toEqual(['select', 'lasso', 'sticky']);
-    const click = captured!.registry.sticky.bindings!.find((b) => b.actionId === 'place');
-    expect(click?.opts?.params).toEqual({ kind: 'sticky', minSize: STICKY_DEFAULTS.minSize, padding: 4, size });
   });
 
   it('{ star: false } omits a bundled tool', () => {

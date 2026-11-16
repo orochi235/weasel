@@ -134,8 +134,6 @@
     "@weasel-js/routing": "1.19.1",
     "@weasel-js/select": "1.19.1",
     "@weasel-js/stroke": "1.19.1",
-    "@weasel-js/text": "1.19.1",
-    "@weasel-js/text-dom": "1.19.1",
     "earcut": "3.2.4",
     "polygon-clipping": "^0.15.7"
   },
@@ -156,6 +154,8 @@
     "@msb235/blits": "1.2.0",
     "@weasel-js/icons-plugin": "1.19.1",
     "@weasel-js/modes": "1.19.1",
+    "@weasel-js/text": "1.19.1",
+    "@weasel-js/text-dom": "1.19.1",
     "@weasel-js/theme": "1.19.1"
   }
 }

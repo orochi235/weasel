@@ -1,7 +1,8 @@
 import {
-  BUILTIN_TOOL_GROUPS, SceneCanvas, createToolOptionValues, isToolSet, isTextData, useCanvasSize, useLatest, useScene, useSceneTextEdit, useSelection,
-  type Tool, type ToolsApi,
+  BUILTIN_TOOL_GROUPS, SceneCanvas, createToolOptionValues, isToolSet, useCanvasSize, useLatest, useScene, useSelection, type Tool, type ToolsApi,
 } from '@weasel-js/core';
+import { isTextData } from '@weasel-js/text';
+import { TEXT_TOOLS, useSceneTextEdit } from '@weasel-js/text-tools';
 import {
   commitSequence, createSequenceDeleteAction, diagramResizable, diagramTypeOf, dropEmptyEdgeLabel, foldSequenceText, isSequenceText,
   offPageTagOf, rendererMeasure, SEQUENCE_TOOLS, sequencePartOf, STENCIL_TOOLS,
@@ -61,7 +62,7 @@ function endTextEdit(scene: ChartScene, id: string): void {
 const isPaletteTool = (tool: Tool): boolean => !isStencilTool(tool) && !isSequenceTool(tool);
 
 /** What the shortcut sheet groups the tools by: core's sets, the sequence tools, then each stencil group. */
-const SHEET_TOOL_SETS = [...BUILTIN_TOOL_GROUPS, SEQUENCE_TOOLS, ...STENCIL_TOOLS.members.filter(isToolSet)];
+const SHEET_TOOL_SETS = [...BUILTIN_TOOL_GROUPS, TEXT_TOOLS, SEQUENCE_TOOLS, ...STENCIL_TOOLS.members.filter(isToolSet)];
 
 /** Chart mode: the scene is the document — stencil bodies joined by edges, on a page. */
 export function ChartWorkspace(): ReactElement {

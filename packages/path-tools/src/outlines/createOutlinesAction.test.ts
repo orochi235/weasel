@@ -1,24 +1,39 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+/**
+ * The Create Outlines action and its retry over outlines still loading, through a stub outline. A
+ * text face loading for real is text-tools' `textOutline.createOutlinesAction.test.ts`.
+ */
+import { describe, it, expect, vi } from 'vitest';
+import { rectPath } from '@weasel-js/geom';
 import { rootsTreeForTests as rootsTree, stubDepsForTests as stubDeps } from '@weasel-js/core/test-seams';
-import { readFileSync } from 'node:fs';
-import { resolve } from 'node:path';
 import { buildDepsFromRequires, ActionDisabledReason, BETWEEN_GESTURES, type ImmediateInvoker } from '@weasel-js/routing';
 import type { DepRegistry } from '@weasel-js/routing/react';
-import { registerFontOutlines } from '@weasel-js/font';
-import { _resetFontRegistryForTests, _resetFontOutlinesForTests } from '@weasel-js/font/test-seams';
-import { asNodeId } from '@weasel-js/core';
-import type { TextNodeSource } from '@weasel-js/text';
+import { asNodeId, NodeOutlineError, type NodeOutline } from '@weasel-js/core';
 import type { CreateOutlinesAdapter } from './createOutlines';
 import { createOutlinesAction, runCreateOutlines } from './createOutlinesAction';
 
-const INTER_TTF = resolve(import.meta.dirname, '../../../../assets/fonts/inter/inter.ttf');
+/** An outline that throws `pending` until `load()` settles, or for good when `never` lands. */
+function lateOutline({ never = false }: { never?: boolean } = {}): NodeOutline {
+  let landed = false;
+  const parts = () => {
+    if (!landed || never) {
+      throw new NodeOutlineError('not yet', { summary: 'The gem "nowhere" is uncut', pending: !landed });
+    }
+    return [{ path: rectPath(0, 0, 10, 10), fill: { paint: { kind: 'solid', color: '#000' } } }] as const;
+  };
+  return {
+    stroked: false,
+    path: () => parts()[0].path,
+    parts,
+    load: () => { landed = true; return Promise.resolve(); },
+  };
+}
 
-function makeAdapter(texts: Record<string, TextNodeSource>, ids = Object.keys(texts)) {
+function makeAdapter(outlines: Record<string, NodeOutline>, ids = Object.keys(outlines)) {
   const applyOps = vi.fn();
   const adapter: CreateOutlinesAdapter = {
     ...rootsTree(),
     getSelection: () => ids.map(asNodeId),
-    getTextSource: (id) => texts[id],
+    getOutline: (id) => outlines[id],
     createPathNode: () => ({ id: 'outlined' }),
     applyOps,
   };
@@ -26,11 +41,6 @@ function makeAdapter(texts: Record<string, TextNodeSource>, ids = Object.keys(te
 }
 
 const selectionOf = (ids: string[]) => ({ get: () => ids.map(asNodeId) });
-
-beforeEach(() => {
-  _resetFontRegistryForTests();
-  _resetFontOutlinesForTests();
-});
 
 describe('createOutlinesAction', () => {
   it('declares every dep it reads', () => {
@@ -42,10 +52,9 @@ describe('createOutlinesAction', () => {
     expect(() => (createOutlinesAction.invoker as ImmediateInvoker).run(deps, {})).not.toThrow();
   });
 
-  it('is enabled only while the selection holds text', () => {
-    const text = { data: { text: 'a' }, pose: { x: 0, y: 0, width: 10, height: 10 } };
-    const { adapter } = makeAdapter({ t: text });
-    expect(createOutlinesAction.enabled?.(stubDeps({ selection: selectionOf(['t']), createOutlinesAdapter: adapter })))
+  it('is enabled only while the selection holds a node with an outline', () => {
+    const { adapter } = makeAdapter({ g: lateOutline() });
+    expect(createOutlinesAction.enabled?.(stubDeps({ selection: selectionOf(['g']), createOutlinesAdapter: adapter })))
       .toBe(true);
     expect(createOutlinesAction.enabled?.(stubDeps({ selection: selectionOf(['shape']), createOutlinesAdapter: adapter })))
       .toBe(ActionDisabledReason.NotApplicable);
@@ -59,23 +68,17 @@ describe('createOutlinesAction', () => {
 });
 
 describe('runCreateOutlines', () => {
-  it('waits for faces that are still loading, then converts', async () => {
-    registerFontOutlines('late-inter', {}, new Uint8Array(readFileSync(INTER_TTF)).buffer);
-    const { adapter, applyOps } = makeAdapter({
-      t: { data: { text: 'H', style: { fontFamily: 'late-inter', fontSize: 40 } }, pose: { x: 0, y: 0, width: 100, height: 60 } },
-    });
+  it('waits for outlines that are still loading, then converts', async () => {
+    const { adapter, applyOps } = makeAdapter({ g: lateOutline() });
     const result = await runCreateOutlines(adapter);
     expect(result.kind).toBe('applied');
     expect(applyOps).toHaveBeenCalledTimes(1);
   });
 
-  it('converts what was selected when it was asked, once the face loads', async () => {
-    registerFontOutlines('late-inter-2', {}, new Uint8Array(readFileSync(INTER_TTF)).buffer);
-    const style = { fontFamily: 'late-inter-2', fontSize: 40 };
-    const pose = { x: 0, y: 0, width: 100, height: 60 };
+  it('converts what was selected when it was asked, once the outline loads', async () => {
     let selected = ['a'];
     const converted: string[] = [];
-    const { adapter } = makeAdapter({ a: { data: { text: 'H', style }, pose }, b: { data: { text: 'I', style }, pose } });
+    const { adapter } = makeAdapter({ a: lateOutline(), b: lateOutline() });
     adapter.getSelection = () => selected.map(asNodeId);
     adapter.createPathNode = (_path, source) => { converted.push(source); return { id: `outlined-${source}` }; };
     const pending = runCreateOutlines(adapter);
@@ -84,11 +87,9 @@ describe('runCreateOutlines', () => {
     expect(converted).toEqual(['a']);
   });
 
-  it('warns and changes nothing when a face has no outlines at all', async () => {
+  it('warns and changes nothing when an outline cannot be built at all', async () => {
     const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
-    const { adapter, applyOps } = makeAdapter({
-      t: { data: { text: 'H', style: { fontFamily: 'nowhere', fontSize: 40 } }, pose: { x: 0, y: 0, width: 100, height: 60 } },
-    });
+    const { adapter, applyOps } = makeAdapter({ g: lateOutline({ never: true }) });
     const result = await runCreateOutlines(adapter);
     expect(result.kind).toBe('failed');
     expect(applyOps).not.toHaveBeenCalled();
@@ -99,11 +100,9 @@ describe('runCreateOutlines', () => {
   it("tells the user through the host's notices when it has them", async () => {
     const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
     const notices = { warn: vi.fn() };
-    const { adapter } = makeAdapter({
-      t: { data: { text: 'H', style: { fontFamily: 'nowhere', fontSize: 40 } }, pose: { x: 0, y: 0, width: 100, height: 60 } },
-    });
+    const { adapter } = makeAdapter({ g: lateOutline({ never: true }) });
     await runCreateOutlines(adapter, notices);
-    expect(notices.warn).toHaveBeenCalledWith(expect.stringContaining('nowhere'), expect.objectContaining({ id: 'text-outlines' }));
+    expect(notices.warn).toHaveBeenCalledWith(expect.stringContaining('nowhere'), expect.objectContaining({ id: 'outlines' }));
     expect(warn).not.toHaveBeenCalled();
     warn.mockRestore();
   });

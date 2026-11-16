@@ -9,6 +9,7 @@ import { actionBindings, type Action, type Contribution, type GestureBinding } f
 import * as routing from '@weasel-js/routing';
 import * as core from '@weasel-js/core';
 import * as pathTools from '@weasel-js/path-tools';
+import * as textTools from '@weasel-js/text-tools';
 import * as diagram from '@weasel-js/diagram';
 import * as diagramEffect from '@weasel-js/diagram/effect';
 import * as kernel3d from '@weasel-js/kernel3d';
@@ -130,8 +131,6 @@ function builtinTools(s: Sweep): void {
     line: builtins.useLineTool(),
     star: builtins.useStarTool({} as never),
     polygon: builtins.usePolygonTool({} as never),
-    text: builtins.useTextTool(),
-    sticky: builtins.useStickyTool(),
     eyedropper: builtins.useEyedropperTool({} as never),
   }), 'core builtin tools');
 }
@@ -171,6 +170,7 @@ function coreFactories(s: Sweep): void {
 /** Other packages' hooks and factories. */
 function packageFactories(s: Sweep, scene: never): void {
   s.hook(() => pathTools.usePathToolsTools(), 'path-tools tools');
+  s.hook(() => textTools.useTextToolsTools(), 'text-tools tools');
   s.hook(() => ({ bone: rig.useBoneTool({} as never), weight: rig.useWeightTool({} as never) }), 'rig tools');
   s.hook(() => ({ orbit: kernel3d.useOrbitTool() }), 'kernel3d tools');
   s.value(guides.createSpacingHintsPreset(), 'guides.createSpacingHintsPreset');
@@ -204,6 +204,7 @@ export function sweepKit(): Sweep {
     [routing as unknown as Record<string, unknown>, 'routing'],
     [core as unknown as Record<string, unknown>, 'core'],
     [pathTools as unknown as Record<string, unknown>, 'path-tools'],
+    [textTools as unknown as Record<string, unknown>, 'text-tools'],
     [diagram as unknown as Record<string, unknown>, 'diagram'],
     [diagramEffect as unknown as Record<string, unknown>, 'diagram/effect'],
     [kernel3d as unknown as Record<string, unknown>, 'kernel3d'],

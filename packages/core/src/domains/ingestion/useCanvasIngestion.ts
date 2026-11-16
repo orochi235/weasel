@@ -9,6 +9,8 @@ import { kitHandlersFor, type KitHandlersOption } from './kitHandlers';
 import type { ImmediateParams } from '@weasel-js/routing';
 import type {} from '../../interactions/actions/actionParamSchema';
 
+const NONE: readonly ContentHandlerEntry[] = [];
+
 /** What `useCanvasIngestion` reads of `<SceneCanvas ingestion>`. */
 export interface CanvasIngestionOptions {
   handlers?: ContentHandlerEntry[];
@@ -42,14 +44,16 @@ export function useCanvasIngestion(
   adapter: InsertAdapter<{ id: string }>,
   getRegistry: () => ActionsRegistry | null,
   options: CanvasIngestionOptions | undefined,
+  /** Handlers the canvas's presets bring, tried after the kit's. */
+  presetHandlers: readonly ContentHandlerEntry[] = NONE,
 ): CanvasIngestion {
   const own = options?.handlers;
   const kit = options?.kitHandlers;
   // Keyed by value, so an inline `{ omit: [...] }` does not rebuild the list every render.
   const omitted = kit === false ? null : typeof kit === 'object' ? kit.omit.join('\n') : '';
   const handlers = useMemo(
-    () => [...(own ?? []), ...kitHandlersFor(omitted === null ? false : { omit: omitted.split('\n') })],
-    [own, omitted],
+    () => [...(own ?? []), ...kitHandlersFor(omitted === null ? false : { omit: omitted.split('\n') }), ...presetHandlers],
+    [own, omitted, presetHandlers],
   );
   useEffect(() => admitHandlerMimes(handlers), [handlers]);
 

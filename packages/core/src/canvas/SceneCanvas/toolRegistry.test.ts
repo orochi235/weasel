@@ -7,7 +7,7 @@ import { BUILTIN_TOOL_IDS, type BuiltinToolId } from './props';
 import { resolveToolRegistry, type BuiltinTools } from './toolRegistry';
 import type { Tool } from 'tools/overlayBinding';
 import { toolIdsOf, withoutTools } from '@weasel-js/routing';
-import { BUILTIN_TOOLS, SHAPE_TOOLS, TYPE_TOOLS } from './builtinToolSets';
+import { BUILTIN_TOOLS, SELECT_TOOLS, SHAPE_TOOLS } from './builtinToolSets';
 
 // A kind the resolver has never heard of, so the tests below can only pass by
 // reading the table.
@@ -51,9 +51,9 @@ describe('resolveToolRegistry', () => {
   it('mounts the tools a set names, and a set less some of them', () => {
     const shapes = resolveToolRegistry({ builtins, defaultTools: [SHAPE_TOOLS, 'hand'], enabled: NONE, patch: null });
     expect(Object.keys(shapes)).toEqual(['hand', 'rect', 'ellipse', 'line', 'polygon', 'star']);
-    const cut = resolveToolRegistry({ builtins, defaultTools: [withoutTools(BUILTIN_TOOLS, TYPE_TOOLS)], enabled: NONE, patch: null });
-    expect(Object.keys(cut)).not.toContain('text');
-    expect(Object.keys(cut)).not.toContain('sticky');
+    const cut = resolveToolRegistry({ builtins, defaultTools: [withoutTools(BUILTIN_TOOLS, SELECT_TOOLS)], enabled: NONE, patch: null });
+    expect(Object.keys(cut)).not.toContain('select');
+    expect(Object.keys(cut)).not.toContain('lasso');
     expect(Object.keys(cut)).toContain('star');
   });
 
@@ -62,8 +62,8 @@ describe('resolveToolRegistry', () => {
   });
 
   it("mounts the tools a preset names by set", () => {
-    const enabled = resolveFeatures([{ id: 'mine', tools: [TYPE_TOOLS] }]);
-    expect(Object.keys(resolveToolRegistry({ builtins, enabled, patch: null }))).toEqual(['text', 'sticky']);
+    const enabled = resolveFeatures([{ id: 'mine', tools: [SHAPE_TOOLS] }]);
+    expect(Object.keys(resolveToolRegistry({ builtins, enabled, patch: null }))).toEqual(['rect', 'ellipse', 'line', 'polygon', 'star']);
   });
 
   it('mounts nothing when nothing is asked for', () => {

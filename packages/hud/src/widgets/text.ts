@@ -1,10 +1,9 @@
 import { createRevision } from '../widget';
 import type { Widget, WidgetBounds, HudDrawCtx, HudPointerEvent } from '../widget';
 import type { DrawCommand, TextDrawCommand } from '@weasel-js/core/renderer';
-import {
-  clearRuns, dropRuns, textCommandFromRuns, textCommandFromRunsInto, type StyledRun, type TextStyle,
-} from '@weasel-js/core';
+import { clearRuns, dropRuns, type StyledRun, type TextStyle } from '@weasel-js/text';
 import type { Fill } from '@weasel-js/paint';
+import { textCommandFromRuns, textCommandFromRunsInto } from '@weasel-js/core';
 
 /** The one run every text widget hands `textCommandFromRuns`, which keeps
  *  nothing of it: it resolves a run of its own from it. */

@@ -46,7 +46,8 @@ import { useGroupEntryContribution } from 'tools/builtin/select/groupEntry';
 import { useNodeKinds } from './SceneCanvas/useNodeKinds';
 import { usePresetTraits } from './SceneCanvas/usePresetTraits';
 import { useMagnificationCheck } from './SceneCanvas/useMagnificationCheck';
-import { DefaultTextEditDep, useCanvasTextEditor } from './SceneCanvas/defaultTextEditor';
+import { useStandInLayers } from './paintStandIns';
+import { PresetComponents } from './SceneCanvas/PresetComponents';
 import { useSurfaceViewInputs } from './SceneCanvas/useSurfaceViewInputs';
 import type { CanvasExtensionApi, SceneCanvasApi } from './canvasExtension';
 import { ViewRegistryProvider } from './viewRegistry';
@@ -102,7 +103,7 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
   useMagnificationCheck(scene as Scene<unknown, string, unknown>);
 
   const frameColor = useChromeColor(internalCanvasRef, ENTERED_FRAME_TOKEN, ENTERED_FRAME_COLOR);
-  const { editor: textEditor, layers } = useCanvasTextEditor(scene as Scene<TData, string, unknown>, internalCanvasRef, props);
+  const layers = useStandInLayers(scene, internalCanvasRef, props.layers);
   const layered = useSceneCanvasLayers({
     layers, presetLayers: enabled.layers, targetScale: deviceProfile.targetScale, scene, adapter, poseDescriptor: descriptor,
     enteredGroup: picking.enteredGroup, frameColor, alphaFor: props.alphaFor, paintOverrides: props.animator, boundsOf, planeOfNode,
@@ -125,7 +126,7 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
     selection: selection.current as readonly NodeId[], viewRef, dispatcher,
   });
 
-  const { ingest, clipboard: ingestionClipboard, handlers: ingestionHandlers } = useCanvasIngestion(adapter, () => actionsRegistry, props.ingestion);
+  const { ingest, clipboard: ingestionClipboard, handlers: ingestionHandlers } = useCanvasIngestion(adapter, () => actionsRegistry, props.ingestion, enabled.contentHandlers);
   const { views: addedViews, addView, viewAt, aimOf, setAim } = useAddedViews();
   // The consumer's handle extends the primitive's with `ingest`, which needs the action stack.
   const { handleRef, ready: canvasReady } = useSceneCanvasHandle({
@@ -171,7 +172,7 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
         canvas={{ elementRef: internalCanvasRef, apiRef: canvasApiRef, ready: canvasReady }} snapSources={enabled.snapSources} snapStore={layered.snapStore}
       />
       <SurfaceDeclarations views={props.views} entries={contributionEntries(tools.tools)} added={addedViews} />
-      <DefaultTextEditDep editor={textEditor} />
+      <PresetComponents parts={enabled.components} scene={scene as Scene<unknown, string, unknown>} canvasRef={internalCanvasRef} paintsInto={!!props.paintInto} />
       {props.children}
     </CanvasKitProviders>
   );
@@ -223,7 +224,7 @@ export const SceneCanvas = /* @__PURE__ */ forwardRef(SceneCanvasWrapper) as <
 export { DEFAULT_HANDLE_SIZE, BUILTIN_TOOL_IDS } from './SceneCanvas/props';
 export {
   BUILTIN_TOOLS, BUILTIN_TOOL_GROUPS, TOOL_GROUP_ORDER,
-  SELECT_TOOLS, VIEW_TOOLS, SHAPE_TOOLS, TYPE_TOOLS,
+  SELECT_TOOLS, VIEW_TOOLS, SHAPE_TOOLS,
 } from './SceneCanvas/builtinToolSets';
 export { mergeLayersWithDefaults } from './SceneCanvas/mergeLayers';
 export type {

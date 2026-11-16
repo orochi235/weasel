@@ -1,5 +1,7 @@
 /** Editing a sequence's text in place, through a canvas's own text editor. */
-import { isTextData, useLatest, type SceneCanvasTextEditor, type AnyScene } from '@weasel-js/core';
+import { useLatest, type AnyScene } from '@weasel-js/core';
+import { isTextData } from '@weasel-js/text';
+import { type CanvasTextEditorOptions } from '@weasel-js/text-tools';
 import type { DiagramSceneData } from '../dataTypes';
 import { useMemo } from 'react';
 import { foldSequenceText, type SequenceEdit } from './commit';
@@ -15,7 +17,7 @@ export const isSequenceText = (data: unknown): boolean => isTextData(data) && se
  */
 export function useSequenceTextEdit(
   scene: AnyScene, report: ((edit: SequenceEdit) => void) | undefined,
-): Exclude<SceneCanvasTextEditor<DiagramSceneData>, false> | undefined {
+): Exclude<CanvasTextEditorOptions<DiagramSceneData>, false> | undefined {
   const latest = useLatest(report);
   const on = report !== undefined;
   return useMemo(() => (on

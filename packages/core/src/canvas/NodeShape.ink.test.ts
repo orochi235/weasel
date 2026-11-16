@@ -153,15 +153,24 @@ describe('shapeCoversPoint — open paths', () => {
 
 describe('shapeCoversPoint — painters with no opinion', () => {
   it('answers true for a node whose painter has no silhouette', () => {
-    // `kit:text` returns null for a node with no non-blank lines, which is
-    // the "no opinion" case: the caller's AABB pre-filter stays the answer,
-    // so a silhouette-less painter can never make a node unpickable.
+    // A silhouette of null is the "no opinion" case: the caller's AABB
+    // pre-filter stays the answer, so a silhouette-less painter can never
+    // make a node unpickable.
+    const release = registerNodeShape({
+      id: 'test:blank', matches: (n) => (n.data as { blank?: boolean }).blank === true,
+      paint: () => [], silhouette: () => null,
+    }, { priority: 'high' });
     const blank = {
       id: asNodeId('t'), kind: 'mark', layer: 'main', pose: POSE,
-      data: { text: '   ' },
+      data: { blank: true },
     } as unknown as Node<unknown, string, RectPose>;
-    expect(shapeCoversPoint(blank, POSE, 50, 50)).toBe(true);
-    expect(shapeCoversPoint(blank, POSE, 9999, 9999)).toBe(true);
+    try {
+      expect(findNodeShape(blank)?.id).toBe('test:blank');
+      expect(shapeCoversPoint(blank, POSE, 50, 50)).toBe(true);
+      expect(shapeCoversPoint(blank, POSE, 9999, 9999)).toBe(true);
+    } finally {
+      release();
+    }
   });
 
   it('keeps a rect-fallback node grabbable across its whole box', () => {
@@ -311,38 +320,6 @@ describe('findShapeInk — the stroke drawn along the silhouette', () => {
     const stroke = strokeOf('#000', 4);
     expect(findShapeInk(pathNode({ stroke }), POSE)?.stroke).toMatchObject({ width: 4 });
     expect(findShapeInk(pathNode({}), POSE)).not.toHaveProperty('stroke');
-  });
-});
-
-describe('findShapeInk — text', () => {
-  const textNode = (data: Record<string, unknown>): Node<unknown, string, RectPose> => ({
-    id: asNodeId('t'),
-    kind: 'mark',
-    layer: 'main',
-    pose: { x: 0, y: 0, width: 100, height: 100 },
-    data: { text: 'Away', ...data },
-  } as unknown as Node<unknown, string, RectPose>);
-
-  it('reports no stroke for text, whose stroke follows its glyphs', () => {
-    expect(findShapeInk(textNode({ stroke: strokeOf('#000', 4) }), POSE)).not.toHaveProperty('stroke');
-  });
-
-  it('gives a stroked text node the same reach as any other kind', () => {
-    expect(reachOf(textNode({ stroke: strokeOf('#000', 4) }), POSE))
-      .toEqual({ filled: true, outset: 2, inset: 2 });
-  });
-
-  it('stays filled when no fill is declared — undeclared text is black text', () => {
-    expect(reachOf(textNode({}), POSE))
-      .toEqual({ filled: true, outset: 0, inset: 0 });
-  });
-
-  it('keeps outline-only text filled, unlike every other kind', () => {
-    // `fill: null` paints no glyph fill, but the silhouette is line boxes
-    // rather than glyph ink: reporting it unfilled would leave a word
-    // grabbable at its line-box edge and nowhere near the letters.
-    expect(reachOf(textNode({ fill: null, stroke: strokeOf('#000', 4) }), POSE))
-      .toEqual({ filled: true, outset: 2, inset: 2 });
   });
 });
 

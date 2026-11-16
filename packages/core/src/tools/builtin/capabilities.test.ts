@@ -21,8 +21,6 @@ describe('built-in tool capabilities', () => {
     ['line', () => builtins.useLineTool(), ['creates-shapes']],
     ['star', () => builtins.useStarTool({} as never), ['creates-shapes']],
     ['polygon', () => builtins.usePolygonTool({} as never), ['creates-shapes']],
-    ['text', () => builtins.useTextTool(), ['creates-text']],
-    ['sticky', () => builtins.useStickyTool(), ['creates-text']],
     ['eyedropper', () => builtins.useEyedropperTool({} as never), ['samples-color']],
   ];
 

@@ -3,7 +3,7 @@
   "version": "1.19.1",
   "description": "In-place text editing over a canvas: a contenteditable overlay that reads and writes styled runs, with range styling, caret mapping and font-load handling. A React hook; no scene graph.",
   "weasel": {
-    "tier": "base"
+    "tier": "other"
   },
   "license": "MIT",
   "type": "module",

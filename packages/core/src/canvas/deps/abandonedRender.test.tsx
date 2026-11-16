@@ -25,7 +25,6 @@ import { useNodeAtPointDepSource } from './nodeAtPoint';
 import { usePoseDescriptorDepSource } from './poseDescriptor';
 import { useResizePolicy } from './resizePolicy';
 import { useSnapDepSource } from './snap';
-import { useTextEditDepSource } from './textEdit';
 import { createSnapOutcomeStore } from 'domains/snap/outcomeStore';
 import type { SnapSource } from 'domains/snap/types';
 import { createScene } from 'core/scene/scene';
@@ -201,13 +200,6 @@ describe('dep sources after an abandoned render', () => {
     });
     const session = dep(reg, 'snap').begin({ gesture: 'point', press: { x: 0, y: 0 } });
     expect(session.at({ x: 0, y: 0 }, { suspend: false, constrain: false }).point).toEqual({ x: 1, y: 1 });
-  });
-
-  it('textEdit reads the committed scene', () => {
-    const a = sceneWith(() => ({ data: { text: 'hi' } }));
-    const b = sceneWith(() => ({ data: {} }));
-    const reg = registryAfterAbandon(a, b, (s) => { useTextEditDepSource(s); });
-    expect(dep(reg, 'textEdit').isTextNode('n')).toBe(true);
   });
 });
 

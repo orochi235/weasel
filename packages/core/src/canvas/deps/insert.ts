@@ -7,7 +7,7 @@
  * live preview and the reported gesture bounds use.
  */
 import { useRef } from 'react';
-import { useDepRegistry, useDepSource } from '@weasel-js/routing/react';
+import { useDepRegistry, useDepSource, type DepRegistry } from '@weasel-js/routing/react';
 import { useLatest } from '@weasel-js/react';
 import type { InsertDep, InsertEnds, InsertExtras, InsertLive } from 'interactions/actions/depSchema';
 import { insertSite } from './insertSite';
@@ -29,14 +29,14 @@ import {
 import { insertPreviewExtent } from '../insertPreviewExtent';
 import type { ShapeGenerator } from 'domains/paths/shapeGenerator';
 import type { Stroke, Fill } from '@weasel-js/paint';
-import { DEFAULT_TEXT_FILL } from '@weasel-js/text';
 import { cycleFill, solid, strokeOf, strokeWith } from '../../util/paint';
 import { DEFAULT_STROKE_WIDTH, type InsertStyle } from 'interactions/actions/insert/style';
-import { stickyData, type StickyLook } from '../../tools/builtin/sticky/stickyNode';
 import { minSizeOf } from 'core/scene/minSize';
-import { shapeKindInfo } from 'core/shapeKinds';
-import { textEditJoin } from 'domains/text/sceneTextDrafts';
+import type { SceneBatchOptions } from 'core/scene/recorder';
 import type { OpsApplier } from './slice';
+import type { Op } from 'core/ops/types';
+
+type Hooks = Pick<InsertedNode, 'batch' | 'inserted'>;
 
 /**
  * Consumer-supplied node factory for one insert `kind`. Given the drag AABB
@@ -46,7 +46,7 @@ import type { OpsApplier } from './slice';
  *
  * A factory registered for a kit kind (`rect`, `line`, …) fully replaces the
  * kit's default `{ path, fill }` factory for that kind; a factory for a novel
- * kind adds support the kit doesn't ship (e.g. `text`). The paint of a kit
+ * kind adds support the kit doesn't ship (`@weasel-js/text-tools`' `text`). The paint of a kit
  * shape comes from the insert's `extras.style`: its tool's style options. See
  * `SceneCanvas`'s `insertNodeFactories` prop. It is also asked on every frame
  * of an insert's drag, inserting nothing, so a preview can show where the
@@ -57,8 +57,20 @@ export type InsertNodeFactory<E extends InsertExtras = InsertExtras> = {
   factory(
     bounds: { x: number; y: number; width: number; height: number },
     extras: E,
-  ): { data: unknown; pose?: unknown } | null;
+  ): InsertedNode | null;
 }['factory'];
+
+/** What an {@link InsertNodeFactory} builds: the node's `data`, an optional `pose`, and what its commit does
+ *  beyond inserting it. */
+export interface InsertedNode {
+  data: unknown;
+  pose?: unknown;
+  /** Options for the batch the commit applies, given the minted id: a node made to be filled in right away, an
+   *  empty text box, opens a run its first edit joins, so one undo takes both. */
+  batch?: (id: string) => SceneBatchOptions;
+  /** Runs once the commit has applied, with the canvas's deps: to open the new node for editing, say. */
+  inserted?: (id: string, deps: Pick<DepRegistry, 'get'>) => void;
+}
 
 /** The kinds the kit's tools insert with extras of their own shape. */
 export type KitInsertKind = InsertExtras extends infer E
@@ -102,7 +114,7 @@ function withFillRule(data: unknown, rule: PathFillRule | undefined): unknown {
 
 /** The kinds {@link kitData} builds a node for with no factory. */
 const KIT_INSERT_KINDS: ReadonlySet<string> = new Set([
-  'rect', 'ellipse', 'line', 'polygon', 'star', 'path', 'pencil', 'text', 'sticky', 'image',
+  'rect', 'ellipse', 'line', 'polygon', 'star', 'path', 'pencil', 'image',
 ]);
 
 /** Whether the kit's `insert` dep builds a node of `kind` with no factory for it. */
@@ -129,16 +141,6 @@ function boxKindData(
       const e = extras as { path: PolygonPath; closed: boolean; data?: Readonly<Record<string, unknown>> };
       return { ...e.data, path: e.path, ...painted(), ...(e.closed ? {} : { fill: null }) };
     }
-    case 'text': {
-      // The built-in text tool drags an empty text box you then type into, so
-      // `extras` carries no content. The kit:text painter matches on
-      // `data.text != null` and applies style defaults at render time.
-      const e = extras as Partial<{ text: string; style: InsertStyle }>;
-      const fill = e.style?.fill;
-      return { text: e.text ?? '', fill: fill === undefined ? DEFAULT_TEXT_FILL : fill && { paint: fill } };
-    }
-    case 'sticky':
-      return stickyData(extras as StickyLook & { text?: string });
     case 'image': {
       // The bitmap is loaded + cached by `imageCache` keyed on `src`;
       // only the (serializable) `src` lives on the node.
@@ -221,7 +223,7 @@ export function useInsertDepSource(
       ends: InsertEnds | undefined,
       seq: number,
       quiet = false,
-    ): { parent: NodeId | null; layer: string; pose: unknown; data: unknown } | null => {
+    ): ({ parent: NodeId | null; layer: string; pose: unknown; data: unknown } & Hooks) | null => {
         const kind = extras.kind;
         const { parent, layer, local } = site(ends?.start ?? { x: bounds.x, y: bounds.y });
         const style = (extras as { style?: InsertStyle }).style;
@@ -237,7 +239,8 @@ export function useInsertDepSource(
         const factory = factoriesRef.current?.[kind];
         if (factory) {
           const built = factory(bounds, extras);
-          return built === null ? null : { parent, layer, pose: local(built.pose ?? pose), data: built.data };
+          if (built === null) return null;
+          return { parent, layer, pose: local(built.pose ?? pose), data: built.data, batch: built.batch, inserted: built.inserted };
         }
 
         let data = kitData(kind, extent, extras, painted);
@@ -255,11 +258,20 @@ export function useInsertDepSource(
         if (min) data = { ...(data as object), minSize: min };
         return { parent, layer, pose: local(pose), data };
     };
-    const build: NonNullable<InsertDep['build']> = (bounds, extras, ends) => {
-      const node = nodeFor(bounds, extras, ends, ++insertSeqRef.current);
-      if (node === null) return null;
+    const make = (...args: Parameters<NonNullable<InsertDep['build']>>): ({ id: NodeId; ops: Op[] } & Hooks) | null => {
+      const [bounds, extras, ends] = args;
+      const made = nodeFor(bounds, extras, ends, ++insertSeqRef.current);
+      if (made === null) return null;
+      const { batch, inserted, ...node } = made;
       const id = sc.mintId();
-      return { id, ops: [createInsertOp({ node: { id, kind: 'mark', ...node } as unknown as { id: string }, label: `Insert ${extras.kind}` })] };
+      return {
+        id, batch, inserted,
+        ops: [createInsertOp({ node: { id, kind: 'mark', ...node } as unknown as { id: string }, label: `Insert ${extras.kind}` })],
+      };
+    };
+    const build: NonNullable<InsertDep['build']> = (...args) => {
+      const made = make(...args);
+      return made && { id: made.id, ops: made.ops };
     };
     return {
       layer: () => site().layer,
@@ -269,17 +281,14 @@ export function useInsertDepSource(
         return node && { data: node.data, pose: node.pose };
       },
       commit(bounds, extras, ends, select): NodeId | null {
-        const built = build(bounds, extras, ends);
+        const built = make(bounds, extras, ends);
         if (built === null) return null;
         const label = `Insert ${extras.kind}`;
         const apply = () => ad.applyOps([...built.ops, ...commitSelectionOps(select, built.id, label)], label);
-        // An empty text node is made to be typed into: it opens the run its first edit's commit joins, so one
-        // undo takes the node and its text together. One arriving with text, as a paste does, stays its own entry.
         // An adapter whose `applyOps` keeps its own history records nothing in the batch.
-        if (shapeKindInfo(extras.kind)?.text && !(extras as { text?: string }).text) {
-          sc.batch(label, apply, textEditJoin(String(built.id)));
-        }
+        if (built.batch) sc.batch(label, apply, built.batch(String(built.id)));
         else apply();
+        built.inserted?.(String(built.id), registry);
         return built.id;
       },
     };

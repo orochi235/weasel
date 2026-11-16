@@ -6,7 +6,8 @@
 import { afterEach, describe, expect, it } from 'vitest';
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
-import { boundsOfPath, pathFromD, registerFontOutlines, textFitScale, textToPathsByPaint } from '@weasel-js/core';
+import { boundsOfPath, pathFromD, registerFontOutlines } from '@weasel-js/core';
+import { textFitScale, textToPathsByPaint } from '@weasel-js/text';
 import { _resetFontOutlinesForTests, _resetFontRegistryForTests } from '@weasel-js/font/test-seams';
 import { _resetLayoutCacheForTests } from '@weasel-js/text/test-seams';
 import type { OutlineFace } from '@weasel-js/font';

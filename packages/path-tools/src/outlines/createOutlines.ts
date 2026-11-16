@@ -1,13 +1,12 @@
 /**
- * Create Outlines: replace each selected text node with path nodes carrying
- * its glyph outlines, giving up editability for geometry — the destructive
- * conversion every vector editor has. One path per paint the text wears; one
- * undoable batch; the replacement takes the text node's slot, so stacking
- * order is unchanged.
+ * Create Outlines: replace each selected node that has an outline (its
+ * painter's `outline`: a text node's glyphs) with path nodes carrying it,
+ * giving up editability for geometry — the destructive conversion every vector
+ * editor has. One path per paint the node wears; one undoable batch; the
+ * replacement takes the node's slot, so stacking order is unchanged.
  */
 import type { Affine, Path, Rect } from '@weasel-js/geom';
-import type { NodeId, Op, PaintedPath, PathPaint } from '@weasel-js/core';
-import { textToPathsByPaint, TextOutlinesError, type TextNodeSource } from '@weasel-js/text';
+import { NodeOutlineError, type NodeId, type NodeOutline, type Op, type PaintedPath, type PathPaint } from '@weasel-js/core';
 import { replaceWithPaths } from './replaceWithPaths';
 
 /** What a path minted by an outline action must carry — see
@@ -21,8 +20,9 @@ export interface OutlinePathSpec extends PathPaint {
 /** What `applyCreateOutlines` and `applyOutlineStroke` read and write through. */
 export interface CreateOutlinesAdapter {
   getSelection(): readonly NodeId[] | readonly string[];
-  /** The text node behind `id`, or `undefined` for anything else. */
-  getTextSource(id: NodeId): TextNodeSource | undefined;
+  /** The outline of the node behind `id` — `sceneNodeOutline`, which asks
+   *  the node's painter — or `undefined` for a node with none. */
+  getOutline(id: NodeId): NodeOutline | undefined;
   /**
    * Optional: the world-space path of the path node behind `id`, and the
    * paint it wears. Outline Stroke reads both, and passes over a node that
@@ -55,7 +55,7 @@ export interface CreateOutlinesAdapter {
    * the paths are laid flat in that slot instead.
    */
   createContainerNode?(sourceId: NodeId, spec: { parent: string | null; bounds: Rect }): { id: string };
-  /** Full node for `id`, so undo restores the text node whole. */
+  /** Full node for `id`, so undo restores the source node whole. */
   getNode(id: string): { id: string } | undefined | null;
   /** The tree: each path is inserted at its source node's index among its
    *  parent's children. */
@@ -81,38 +81,38 @@ declare module '@weasel-js/routing' {
 
 /** Outcome of {@link applyCreateOutlines}. */
 export type CreateOutlinesResult =
-  /** `resultIds` are what replaced the text nodes at their level — a path,
-   *  a container, or a run of flat paths each — which is also what is now
-   *  selected in the text nodes' place. */
+  /** `resultIds` are what replaced the converted nodes at their level — a
+   *  path, a container, or a run of flat paths each — which is also what is
+   *  now selected in their place. */
   | { kind: 'applied'; resultIds: string[] }
-  /** Nothing selected is text with ink. */
-  | { kind: 'noop'; reason: 'no-text' }
-  /** Some selected text has no outline geometry; nothing was changed. */
-  | { kind: 'failed'; reason: 'text-outlines'; error: TextOutlinesError };
+  /** Nothing selected has an outline that inks. */
+  | { kind: 'noop'; reason: 'no-outlines' }
+  /** Some selected node's outline could not be built; nothing was changed. */
+  | { kind: 'failed'; reason: 'outlines'; error: NodeOutlineError };
 
 /**
- * Convert every text node among `ids` — the selection, when not given — to
- * outlines, as one batch labeled "Create Outlines". Other nodes are left
- * alone, and the selection keeps them; a selected text node's replacement
- * takes its place there. All or nothing: if any text node's face cannot
- * supply outlines the scene is untouched and the error comes back in the
- * result.
+ * Convert every node among `ids` — the selection, when not given — that has
+ * an outline to paths, as one batch labeled "Create Outlines". Other nodes are
+ * left alone, and the selection keeps them; a selected node's replacement
+ * takes its place there. All or nothing: if any outline cannot be built (a
+ * text face with no outlines) the scene is untouched and the error comes back
+ * in the result.
  */
 export function applyCreateOutlines(adapter: CreateOutlinesAdapter, ids?: readonly NodeId[]): CreateOutlinesResult {
   const sel = [...adapter.getSelection()] as NodeId[];
   const converted: { id: NodeId; paths: PaintedPath[] }[] = [];
   try {
     for (const id of ids ?? sel) {
-      const text = adapter.getTextSource(id);
-      if (!text) continue;
-      const paths = textToPathsByPaint(text.data, text.pose);
-      if (paths.length > 0) converted.push({ id, paths });
+      const outline = adapter.getOutline(id);
+      if (!outline) continue;
+      const paths = outline.parts();
+      if (paths.length > 0) converted.push({ id, paths: [...paths] });
     }
   } catch (err) {
-    if (err instanceof TextOutlinesError) return { kind: 'failed', reason: 'text-outlines', error: err };
+    if (err instanceof NodeOutlineError) return { kind: 'failed', reason: 'outlines', error: err };
     throw err;
   }
-  if (converted.length === 0) return { kind: 'noop', reason: 'no-text' };
+  if (converted.length === 0) return { kind: 'noop', reason: 'no-outlines' };
 
   const replaced = replaceWithPaths(adapter, sel, converted, 'Create Outlines');
   return { kind: 'applied', resultIds: converted.flatMap((c) => replaced.get(c.id)!) };

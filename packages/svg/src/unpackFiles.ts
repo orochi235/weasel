@@ -6,16 +6,9 @@ import { parseSvg } from './parse';
 import { scaleRuns, scaleStroke, scaleTextStyle } from './metricScale';
 import { svgNodesToKitDrafts } from './unpack';
 import {
-  createInsertOp,
-  dwarn,
-  unionAABB,
-  type IngestCtx,
-  type Op,
-  type PoseComposition,
-  type Stroke,
-  type StyledRun,
-  type TextStyle,
+  createInsertOp, dwarn, unionAABB, type IngestCtx, type Op, type PoseComposition, type Stroke,
 } from '@weasel-js/core';
+import { type StyledRun, type TextStyle } from '@weasel-js/text';
 import type { SvgDraftPose } from './draftPose';
 import { svgDraftSpecs } from './draftSpecs';
 

@@ -1,7 +1,6 @@
 import { cancelGestureAction } from 'interactions/actions/defaults/cancelGesture';
 import { deleteAction } from 'interactions/actions/defaults/delete';
 import { duplicateAction } from 'interactions/actions/defaults/duplicate';
-import { editTextAtAction } from 'interactions/actions/defaults/editTextAt';
 import { escapeAction } from 'interactions/actions/defaults/escape';
 import { contextMenuAction } from 'interactions/actions/defaults/contextMenu';
 import { groupAction, ungroupAction } from 'interactions/actions/defaults/group';
@@ -60,15 +59,12 @@ export const clipboardPreset: FeaturePreset = {
   actions: [clipboardCutAction, clipboardCopyAction, clipboardPasteAction, clipboardPasteEventAction],
 };
 
-/** A double-click on text opens it in place, in the canvas's own editor or a host's. */
-export const textEditPreset: FeaturePreset = { id: 'textEdit', label: 'Edit text', actions: [editTextAtAction] };
-
 /** Every edit preset above, and their keys. */
 export const editPreset: FeaturePreset = {
   id: 'edit',
   label: 'Edit',
   includes: [
     escapePreset, contextMenuPreset, selectAllPreset, duplicatePreset, deletePreset, groupPreset, nudgePreset,
-    stylePreset, clipboardPreset, textEditPreset,
+    stylePreset, clipboardPreset,
   ],
 };

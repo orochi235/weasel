@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { parseSvg, serializeSvg, type SvgNode } from './index';
-import { registerBidi, resolveAlign } from '@weasel-js/core';
+import { registerBidi, resolveAlign } from '@weasel-js/text';
 
 describe('text direction', () => {
   const VIEW = { viewBox: { x: 0, y: 0, width: 200, height: 100 } };

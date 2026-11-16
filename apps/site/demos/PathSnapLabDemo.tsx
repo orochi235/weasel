@@ -11,6 +11,7 @@ import {
   useTrialScene,
 } from '@weasel-js/labkit';
 import { useMemo } from 'react';
+import { textPreset } from '@weasel-js/text-tools';
 import { strokeNode } from './pathEditLabScene';
 import '@weasel-js/labkit/styles.css';
 import 'windease/styles.css';
@@ -60,7 +61,7 @@ function PathSnapTrial({ ctx }: { ctx: RenderContext<State, Config> }) {
   );
   return (
     <TrialSceneCanvas
-      features={[drawPreset, pathsPreset]}
+      features={[drawPreset, pathsPreset, textPreset]}
       defaultTools={['line']}
       tools={{ pen }}
       scene={scene}

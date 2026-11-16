@@ -24,12 +24,13 @@
     "@weasel-js/storage": "1.19.1"
   },
   "peerDependencies": {
-    "react": ">=18",
     "@weasel-js/core": "1.19.1",
     "@weasel-js/geom": "1.19.1",
     "@weasel-js/guides": "1.19.1",
     "@weasel-js/prefs": "1.19.1",
-    "@weasel-js/ui": "1.19.1"
+    "@weasel-js/text-tools": "1.19.1",
+    "@weasel-js/ui": "1.19.1",
+    "react": ">=18"
   },
   "author": "orochi235",
   "homepage": "https://orochi235.github.io/weasel/",

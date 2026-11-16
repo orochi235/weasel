@@ -14,6 +14,7 @@ import {
   type RectPose,
 } from '@weasel-js/core';
 import type { PrefLeaf, PrefSection } from '@weasel-js/prefs';
+import { textPreset } from '@weasel-js/text-tools';
 import { SelectionPanel, type SelectionPanelProps } from '@weasel-js/ui/components/inspector/SelectionPanel';
 import s from './SelectionPanel.stories.module.css';
 
@@ -37,6 +38,8 @@ const selection = { current: [asNodeId('n')] };
 
 type Marks = Pick<SelectionPanelProps<Data, 'default', RectPose>, 'selected' | 'onSelect'>;
 
+const TEXT = [textPreset];
+
 function Panel({ data, selected, onSelect }: { data: Data } & Marks) {
   // One scene per story, so an edit outlasts the render a pressed row causes.
   const scene = useMemo(() => sceneWith(data), [data]);
@@ -45,6 +48,7 @@ function Panel({ data, selected, onSelect }: { data: Data } & Marks) {
       <SelectionPanel
         scene={scene}
         selection={selection}
+        features={TEXT}
         properties={[...defaultNodeProperties, ...inferredNodeProperties]}
         routing={inferredNodeRouting}
         selected={selected}

@@ -1,11 +1,7 @@
-import { describe, it, expect, beforeEach } from 'vitest';
-import { readFileSync } from 'node:fs';
-import { resolve } from 'node:path';
+import { describe, it, expect } from 'vitest';
 import { applyBooleanOp, type BooleansAdapter } from './booleans';
 import { boundsOfPath, pointInPath, type Path } from '@weasel-js/geom';
-import { registerFontOutlines, loadFontOutlines } from '@weasel-js/font';
-import { _resetFontRegistryForTests, _resetFontOutlinesForTests } from '@weasel-js/font/test-seams';
-import { TextOutlinesError, type TextNodeSource } from '@weasel-js/text';
+import { NodeOutlineError, type NodeOutline } from 'canvas/nodeOutline';
 import type { Op } from 'core/ops/types';
 import { asNodeId, type NodeId } from 'core/scene/types';
 import { IDENTITY_POSE_COMPOSITION } from 'core/scene/composeFrame';
@@ -381,47 +377,39 @@ describe('applyBooleanOp — z-position from getParent / getChildren', () => {
   });
 });
 
-describe('applyBooleanOp with a text operand', () => {
-  const INTER_TTF = resolve(import.meta.dirname, '../../../../../../assets/fonts/inter/inter.ttf');
-  const TEXT: TextNodeSource = {
-    data: { text: 'I', style: { fontFamily: 'bool-inter', fontSize: 100 } },
-    pose: { x: 0, y: 0, width: 200, height: 150 },
-  };
-
-  beforeEach(async () => {
-    _resetFontRegistryForTests();
-    _resetFontOutlinesForTests();
-    registerFontOutlines('bool-inter', {}, new Uint8Array(readFileSync(INTER_TTF)).buffer);
-    await loadFontOutlines('bool-inter');
+describe('applyBooleanOp with an outline operand', () => {
+  // A node with no path of its own whose painter outlines it: an 'I' stem.
+  const STEM: Path = { kind: 'rect', x: 90, y: 20, width: 12, height: 110 };
+  const outline = (path: () => Path): NodeOutline => ({
+    stroked: false, path, parts: () => [{ path: path(), fill: null }], load: () => Promise.resolve(),
   });
 
-  function withText(text: TextNodeSource) {
+  function withOutline(o: NodeOutline) {
     const h = makeAdapter([
       { id: 'bar' as NodeId, path: { kind: 'rect', x: -50, y: 40, width: 300, height: 10 } },
       { id: 'label' as NodeId, path: undefined as unknown as Path },
     ]);
-    h.adapter.getTextSource = (id) => (id === 'label' ? text : undefined);
+    h.adapter.getOutline = (id) => (id === 'label' ? o : undefined);
     return h;
   }
 
-  it('reads a text node\'s glyph outlines as its operand geometry', () => {
-    const h = withText(TEXT);
+  it('reads a node\'s outline as its operand geometry', () => {
+    const h = withOutline(outline(() => STEM));
     const result = applyBooleanOp(h.adapter, 'intersect');
     expect(result.kind).toBe('applied');
-    // The bar crossed with the 'I' stem: a slice no wider than the stem, far
-    // narrower than the bar or the text box.
     const b = boundsOfPath(h.state.inserted[0].path);
-    expect(b.width).toBeGreaterThan(5);
-    expect(b.width).toBeLessThan(20);
+    expect(b.width).toBeCloseTo(12, 3);
     expect(b.height).toBeCloseTo(10, 3);
   });
 
-  it('fails without mutating anything when a text operand has no outlines', () => {
-    const h = withText({ ...TEXT, data: { ...TEXT.data, style: { fontFamily: 'nowhere', fontSize: 40 } } });
+  it('fails without mutating anything when an outline cannot be built', () => {
+    const h = withOutline(outline(() => {
+      throw new NodeOutlineError('no face', { summary: 'cannot', pending: false });
+    }));
     const result = applyBooleanOp(h.adapter, 'union');
     expect(result.kind).toBe('failed');
     if (result.kind !== 'failed') return;
-    expect(result.error).toBeInstanceOf(TextOutlinesError);
+    expect(result.error).toBeInstanceOf(NodeOutlineError);
     expect(h.state.batches).toHaveLength(0);
   });
 });

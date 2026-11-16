@@ -3,18 +3,9 @@
  * adds or edits an edge's label on a double-click.
  */
 import {
-  ActionDisabledReason,
-  defineAction,
-  bodyPredicate,
-  followerHome,
-  type Action,
-  type ActionDeps,
-  type AddNodeSpec,
-  type GestureBinding,
-  type InvocationCtx,
-  type RectPose,
-  textEditJoin,
+  ActionDisabledReason, defineAction, bodyPredicate, followerHome, type Action, type ActionDeps, type AddNodeSpec, type GestureBinding, type InvocationCtx, type RectPose,
 } from '@weasel-js/core';
+import { textEditJoin } from '@weasel-js/text-tools';
 import type { MeasureRowText, RowTextStyle } from './body';
 import { diagramEdgeOf } from './edgeTrait';
 import { LABEL_DERIVE_POSE } from './label';

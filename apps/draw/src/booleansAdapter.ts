@@ -7,21 +7,15 @@ import {
   pathNode,
   type PathPaint,
   pathPaintOf,
+  type NodeOutline,
+  sceneNodeOutline,
   type SelectionApi,
-  type TextNodeSource,
-  inheritedPaintIn,
-  textBoxOf,
-  withInheritedPaint,
 } from '@weasel-js/core';
 import { carriedData, type DrawScene, type WeaselDrawData, type WeaselDrawLayer } from './drawDocument';
 
-/** A text leaf as the kit's outline extraction reads it, in the box its padding insets, where it is painted. */
-export function textSourceOf(scene: DrawScene, id: string): TextNodeSource | undefined {
-  const node = scene.get(asNodeId(id));
-  if (!node || node.kind !== 'mark') return undefined;
-  const { text, runs, style, verticalAlign, fit, path, fill, stroke } = withInheritedPaint(node.data, inheritedPaintIn(scene, node));
-  if (text === undefined || path) return undefined;
-  return { data: { text, runs, style, verticalAlign, fit, fill, stroke }, pose: { ...node.pose, ...textBoxOf(node.data, node.pose) } };
+/** The outline of a leaf that is not a path — a text node's glyphs — as its painter gives it. */
+export function outlineAt(scene: DrawScene, id: string): NodeOutline | undefined {
+  return scene.get(asNodeId(id))?.data.path ? undefined : sceneNodeOutline(scene, id);
 }
 
 /** A path leaf's geometry in world space. */
@@ -49,7 +43,7 @@ export function drawBooleansAdapter(
     ...defaultCommitAdapter(scene, selection),
     getWorldPath: (id) => worldPathOf(scene, id),
     getPaint: (id) => pathPaintAt(scene, id),
-    getTextSource: (id) => textSourceOf(scene, id),
+    getOutline: (id) => outlineAt(scene, id),
     compareZ: (x, y) => {
       const order = [...scene.renderOrder()];
       return order.indexOf(asNodeId(x)) - order.indexOf(asNodeId(y));

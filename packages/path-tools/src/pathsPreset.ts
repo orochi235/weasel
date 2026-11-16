@@ -13,7 +13,6 @@ import { setAnchorFieldAction } from './pathEdit/anchorFields';
 import { averageAnchorsAction, joinAnchorsAction } from './pathEdit/anchorJoin';
 import { bendSegmentAction } from './pathEdit/bendSegment';
 import { enterPathEditAction } from './pathEdit/enterPathEdit';
-import { editEffectTextAction } from './pathEdit/editEffectText';
 import { exitPathEditAction } from './pathEdit/exitPathEdit';
 import { editAnchorsAction } from './pathEdit/editAnchors/editAnchors';
 import { insertPathAnchorAction } from './pathEdit/insertPathAnchor';
@@ -51,7 +50,7 @@ export const pathEditPreset: FeaturePreset = {
   actions: [
     editAnchorsAction, enterPathEditAction, insertPathAnchorAction, bendSegmentAction, cutPathAtAnchorAction,
     retractHandlesAction, makeHandlesSymmetricAction, averageAnchorsAction, joinAnchorsAction, setAnchorFieldAction,
-    marqueeAnchorsAction, selectAnchorAction, editEffectTextAction,
+    marqueeAnchorsAction, selectAnchorAction,
   ],
 };
 

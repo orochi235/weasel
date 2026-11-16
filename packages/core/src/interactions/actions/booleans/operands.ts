@@ -1,13 +1,13 @@
 /**
- * What each selected node gives a Boolean operation: its path, its glyph
- * outlines, or the region its ink covers once a stroke is counted.
+ * What each selected node gives a Boolean operation: its path, its outline
+ * (a text node's glyphs), or the region its ink covers once a stroke is counted.
  */
 import type { Affine, Path, Scale2 } from '@weasel-js/geom';
 import { pathUnion } from '@weasel-js/geom/booleans';
-import { textToPath, textToPathsByPaint } from '@weasel-js/text';
 import { resolveFill, resolveStroke } from '@weasel-js/paint';
-import type { PaintedPath, PathPaint } from 'canvas/nodeShapes/nodePaint';
+import type { PathPaint } from 'canvas/nodeShapes/nodePaint';
 import type { NodeId } from 'core/scene/types';
+import type { PaintedPath } from 'canvas/nodeOutline';
 import { strokeRegion } from 'domains/paths/strokeRegion';
 import type { BooleansAdapter } from './booleans';
 
@@ -59,8 +59,8 @@ function inkOf(
 
 /**
  * The operand behind `id`, or `undefined` for a node that is not one: a group,
- * blank text, anything the adapter has neither a path nor text for. Throws
- * `TextOutlinesError` for text whose face has no outlines.
+ * an outline that inks nothing, anything the adapter has neither a path nor an
+ * outline for. Throws `NodeOutlineError` for an outline that cannot be built.
  */
 export function resolveOperand(
   adapter: BooleansAdapter,
@@ -72,13 +72,13 @@ export function resolveOperand(
     const paint = strokes === 'ignore' ? undefined : adapter.getPaint?.(id);
     return paint ? inkOf({ path, ...paint }, strokes, adapter.getStrokeFrame?.(id), scale) : { path };
   }
-  const text = adapter.getTextSource?.(id);
-  if (!text) return undefined;
+  const outline = adapter.getOutline?.(id);
+  if (!outline) return undefined;
   if (strokes === 'ignore') {
-    const glyphs = textToPath(text.data, text.pose);
-    return glyphs.commands.length > 0 ? { path: glyphs } : undefined;
+    const whole = outline.path();
+    return whole.kind === 'rect' || whole.commands.length > 0 ? { path: whole } : undefined;
   }
-  const inks = textToPathsByPaint(text.data, text.pose).map((p) => inkOf(p, strokes, adapter.getStrokeFrame?.(id), scale));
+  const inks = outline.parts().map((p) => inkOf(p, strokes, adapter.getStrokeFrame?.(id), scale));
   if (inks.length === 0) return undefined;
   const paint = inks.find((ink) => ink.paint)?.paint;
   const whole = inks.length === 1 ? inks[0]!.path : pathUnion(...inks.map((ink) => ink.path));

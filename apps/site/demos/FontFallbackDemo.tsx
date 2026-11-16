@@ -2,6 +2,7 @@ import { useEffect, useState, useSyncExternalStore } from 'react';
 import { SceneCanvas, asNodeId, solid, useScene } from '@weasel-js/core';
 import type { Fill } from '@weasel-js/core';
 import type { TextStyle } from '@weasel-js/text';
+import { createTextPreset } from '@weasel-js/text-tools';
 import {
   getFontFallbackPolicy, setFontFallbackPolicy,
   registerCanvasFont, unregisterCanvasFont, isCanvasFont,
@@ -17,6 +18,7 @@ const W = 520;
 const ROW = 60;
 const H = ROW * 3 + 12;
 const SAMPLE = 'Hamburgefonstiv 0123';
+const TEXT = createTextPreset({ editor: false });
 const INK = solid('#1c1c1c');
 
 /** A family the browser has but no atlas was baked for. */
@@ -86,7 +88,7 @@ export function FontFallbackDemo() {
         />
       </Field>
       <DemoStage width={W} height={H}>
-        <SceneCanvas className="ckd-canvas" scene={scene} />
+        <SceneCanvas className="ckd-canvas" scene={scene} features={[TEXT]} />
       </DemoStage>
       <table className={s.readout}>
         <thead>

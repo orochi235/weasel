@@ -5,7 +5,7 @@
  * draws the lines where weasel does. A line the layout justified also gives
  * every word its own `x`, since `text-anchor` has no justify.
  */
-import type { LaidOutCell, LaidOutLineBox, TextPoseLayout } from '@weasel-js/core';
+import type { LaidOutCell, LaidOutLineBox, TextPoseLayout } from '@weasel-js/text';
 import { maxOf, minOf } from '@weasel-js/geom';
 import { LINES_ATTR, type LinePiece } from './tspanLines';
 import { trimNumber } from './transform';

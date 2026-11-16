@@ -1,6 +1,8 @@
 import {
+  BUILTIN_TOOL_IDS,
   type BuiltinToolId,
   editPreset,
+  type FeaturePreset,
   type InsertNodeFactory,
   movePreset,
   pickPreset,
@@ -15,6 +17,7 @@ import {
 } from '@weasel-js/core';
 import { usePencilTool } from '@weasel-js/path-tools';
 import type { ToolOptionValues } from '@weasel-js/routing';
+import { createTextTool, textPreset } from '@weasel-js/text-tools';
 import {
   type CSSProperties,
   useCallback,
@@ -50,9 +53,6 @@ import type {
 import { useLabToolOptionValues } from './useLabToolOptions';
 import { fitView, toWeaselView } from './view';
 import { useWheelHandOff } from './wheelScroll';
-
-/** The annotation tools' weasel tools `<SceneCanvas>` builds in; the pencil is mounted from path-tools. */
-const BUILTIN_TOOLS = ANNOTATION_WEASEL_TOOLS.filter((t): t is BuiltinToolId => t !== 'pencil');
 
 /** Props for `<AnnotationOverlay>`. */
 export interface AnnotationOverlayProps {
@@ -117,6 +117,11 @@ export function insertedGeometry(
   };
 }
 
+/** The text tool, from text-tools; the pencil is mounted from path-tools, and core's built-ins by id. */
+const ANNOTATION_TEXT: FeaturePreset = { id: 'annotations:text', tools: [createTextTool()], includes: [textPreset] };
+const FEATURES = [pickPreset, movePreset, transformPreset, editPreset, ANNOTATION_TEXT];
+const BUILTIN_ANNOTATION_TOOLS = ANNOTATION_WEASEL_TOOLS.filter((t): t is BuiltinToolId => (BUILTIN_TOOL_IDS as readonly string[]).includes(t));
+
 /** One factory per weasel tool, each making the mark the rail's tool means. */
 function insertFactories(
   target: AnnotationTarget,
@@ -155,7 +160,7 @@ function useMarkTools(target: AnnotationTarget, activeToolId: string | null, con
   const optionValues = useLabToolOptionValues();
   const pencil = usePencilTool();
   return {
-    defaultTools: BUILTIN_TOOLS,
+    defaultTools: BUILTIN_ANNOTATION_TOOLS,
     tools: { pencil },
     insertNodeFactories: insertFactories(target, toolRef, configRef, optionValues),
   };
@@ -309,7 +314,7 @@ export function AnnotationOverlay({
         <WeaselProvider isolate>
           <ToolBridge toolId={annotationToolInfo(activeToolId)?.weaselTool ?? 'select'} />
           <SceneCanvas<AnnotationData, 'marks', WorldRect>
-            features={[pickPreset, movePreset, transformPreset, editPreset]}
+            features={FEATURES}
             ref={attachSceneCanvas}
             scene={scene}
             width={visible.w}

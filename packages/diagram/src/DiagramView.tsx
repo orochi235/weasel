@@ -40,6 +40,7 @@ import { viewResizable } from './resizable';
 import { useSceneSync } from './sceneSync';
 import { registerDiagramShape } from './shape';
 import { useSequenceTextEdit } from './sequence/textEdit';
+import { createTextPreset } from '@weasel-js/text-tools';
 
 const SHAPE_OUTLINE = { outline: { follow: 'shape' as const } };
 
@@ -165,11 +166,12 @@ function Inner({
   const resizes = onResize !== undefined || onEditContainer !== undefined;
   const sequences = onEditSequence !== undefined;
   const edits = moves || resizes || sequences || edgeEdits || onDelete !== undefined || onConnect !== undefined || onReorder !== undefined;
-  const features = useMemo((): FeaturePreset[] => [
-    viewPreset, pickPreset, ...(moves ? [movePreset] : []), ...(resizes ? [resizePreset] : []), ...(sequences ? [editPreset] : []),
-    ...editing.presets,
-  ], [moves, resizes, sequences, editing.presets]);
   const textEditor = useSequenceTextEdit(scene, onEditSequence);
+  const text = useMemo(() => createTextPreset(textEditor ? { editor: textEditor } : {}), [textEditor]);
+  const features = useMemo((): FeaturePreset[] => [
+    viewPreset, pickPreset, text, ...(moves ? [movePreset] : []), ...(resizes ? [resizePreset] : []), ...(sequences ? [editPreset] : []),
+    ...editing.presets,
+  ], [text, moves, resizes, sequences, editing.presets]);
   const selectTool = useSelectTool(scene, onResize !== undefined, onEditContainer !== undefined);
 
   const fillsOn = [width === undefined ? 'fill-x' : '', height === undefined ? 'fill-y' : ''].join(' ').trim();
@@ -187,7 +189,7 @@ function Inner({
         width={width}
         height={height}
         {...setOnly({
-          selectTool: resizes ? selectTool : undefined, textEditor, tools, onToolsCreated, onHover,
+          selectTool: resizes ? selectTool : undefined, tools, onToolsCreated, onHover,
           onResize: fills ? setMeasured : undefined, defaultView, view, onViewChange, viewBounds,
           backgroundFill: background, animator, layers, toolOptionValues,
         })}

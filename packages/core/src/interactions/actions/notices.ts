@@ -3,7 +3,7 @@
  * publishes, shown however it shows such things (draw raises a toast). Without
  * one the message goes to the console.
  */
-import type { TextOutlinesError } from '@weasel-js/text';
+import type { NodeOutlineError } from 'canvas/nodeOutline';
 
 /** What a notice says beyond its title. */
 export interface NoticeOptions {
@@ -23,9 +23,7 @@ export function warnUser(notices: NoticesDep | undefined, tag: string, title: st
   else console.warn(`[${tag}] ${title}${opts.description ? ` — ${opts.description}` : ''}`);
 }
 
-/** Warn that text in `error`'s face could not be turned into outlines. */
-export function warnTextOutlines(notices: NoticesDep | undefined, tag: string, error: TextOutlinesError): void {
-  warnUser(notices, tag, `Text in "${error.family}" can't be converted to outlines`, {
-    id: 'text-outlines', description: error.message,
-  });
+/** Warn that a node's outline could not be built, in `error`'s own words. */
+export function warnOutlines(notices: NoticesDep | undefined, tag: string, error: NodeOutlineError): void {
+  warnUser(notices, tag, error.summary, { id: 'outlines', description: error.message });
 }

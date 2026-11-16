@@ -1,0 +1,173 @@
+/**
+ * One string, one style, three consumers — the paint, the silhouette and the
+ * caret — asked to agree.
+ *
+ * The `inter` fixture is baked at size 32 with two glyphs — `A` (advance 23),
+ * `B` (advance 22) — and one kerning pair, `A→B` at -1. At `fontSize: 32`
+ * those are world units, so the pen puts `B` at x = 22 and an unkerned walk
+ * puts it at 23. Every assertion here is written to fail on that one unit.
+ */
+import { describe, expect, it, beforeEach, vi } from 'vitest';
+import { registerFont, FIXTURE_FONT } from '@weasel-js/font';
+import { _resetFontRegistryForTests } from '@weasel-js/font/test-seams';
+import { _resetLayoutCacheForTests } from '@weasel-js/text/test-seams';
+import {
+  cachedLayoutRuns, paintRuns, resolveTextStyle, textLineBoxes, type TextPose, caretIndexAt,
+} from '@weasel-js/text';
+import type { DrawCommand, TextDrawCommand } from '@weasel-js/renderer';
+import { createTextLayer } from './textLayer';
+import { textCommandFromRuns } from '@weasel-js/renderer';
+import { findNodeShape, type SceneNode as Node } from '@weasel-js/core';
+import { withTextPainter } from '../testing/textPainter';
+
+withTextPainter();
+
+const SIZE = 32;
+const STYLE = { fontFamily: 'inter', fontSize: SIZE };
+/** Mixed sizes, so a site that ignores `runs` answers differently. */
+const RUNS = [{ text: 'A' }, { text: 'B', fontSize: 64 }];
+const POSE: TextPose = {
+  x: 100, y: 50, width: 400, height: 200, text: 'AB', runs: RUNS, style: STYLE,
+  fill: { paint: { kind: 'solid', color: '#000' } },
+};
+
+beforeEach(async () => {
+  _resetFontRegistryForTests();
+  _resetLayoutCacheForTests();
+  const encoder = new TextEncoder();
+  global.fetch = vi.fn().mockImplementation((url: string) => {
+    if (url.endsWith('.json')) {
+      return Promise.resolve({ ok: true, json: () => Promise.resolve(FIXTURE_FONT) });
+    }
+    return Promise.resolve({
+      ok: true,
+      blob: () => Promise.resolve(new Blob([encoder.encode('PNG')], { type: 'image/png' })),
+    });
+  }) as typeof fetch;
+  global.createImageBitmap = vi.fn().mockResolvedValue({
+    width: 512, height: 512, close: vi.fn(),
+  } as unknown as ImageBitmap);
+  await registerFont('inter', {}, '/fonts/inter.json', '/fonts/inter.png');
+  _resetLayoutCacheForTests();
+});
+
+/** What the renderer would lay out for `POSE`, through the command builder
+ *  every text painter uses. */
+function command(): TextDrawCommand {
+  return textCommandFromRuns(
+    POSE.x, POSE.y, RUNS, STYLE, POSE.width, POSE.height, undefined, { fill: POSE.fill },
+  ) as TextDrawCommand;
+}
+
+function painted() {
+  const cmd = command();
+  return cachedLayoutRuns(cmd.runs, {
+    maxWidth: cmd.maxWidth ?? Infinity,
+    lineHeight: 1.2,
+    align: cmd.align ?? 'left',
+  });
+}
+
+describe('the paint, the silhouette and the caret', () => {
+  it('answer from the same memoized layout', () => {
+    // Each site resolves its own `ResolvedRun[]`, so this holds only because
+    // the cache keys on structure as well as array identity.
+    const first = painted();
+    _resetLayoutCacheForTests();
+    const cold = painted();
+    expect(cold).not.toBe(first);
+    expect(painted()).toBe(cold);
+    // `textLineBoxes` allocates its runs from the pose rather than the
+    // command, and still lands on the same entry.
+    textLineBoxes(POSE);
+    expect(painted()).toBe(cold);
+  });
+
+  it('put the line where the glyphs are', () => {
+    const laid = painted();
+    const [box] = textLineBoxes(POSE);
+    expect(box.x).toBeCloseTo(POSE.x + laid.lines[0].x0, 10);
+    expect(box.x + box.width).toBeCloseTo(POSE.x + laid.lines[0].x1, 10);
+  });
+
+  it('put the caret boundary on the pen position the paint used', () => {
+    const laid = painted();
+    const quads = paintRuns(laid, command().runs).groups.flatMap((g) => g.quads);
+    expect(quads).toHaveLength(2);
+    // A quad's left edge is the pen plus the glyph's `xoffset`, scaled; both
+    // fixture glyphs sit at the size their run asked for.
+    const penOfB = quads[1].x0 - 2 * (64 / SIZE);
+    expect(penOfB).toBeCloseTo(22, 10);
+    expect(laid.lines[0].cells[1].x).toBeCloseTo(penOfB, 10);
+
+    // And the caret flips at that cell's midpoint, in world space.
+    // The stop closing the line is its right edge, not a third cell.
+    const mid = POSE.x + (laid.lines[0].cells[1].x + laid.lines[0].x1) / 2;
+    expect(caretIndexAt(mid - 1, POSE.y + 5, POSE)).toBe(1);
+    expect(caretIndexAt(mid + 1, POSE.y + 5, POSE)).toBe(2);
+  });
+
+  it('agree on where the text ends', () => {
+    const laid = painted();
+    const [box] = textLineBoxes(POSE);
+    const end = laid.lines[0].x1;
+    expect(POSE.x + end).toBeCloseTo(box.x + box.width, 10);
+    expect(caretIndexAt(POSE.x + end + 10, POSE.y + 5, POSE)).toBe(POSE.text.length);
+  });
+});
+
+/**
+ * A line longer than its box, painted by `kit:text` and by `createTextLayer`,
+ * picked through its silhouette and clicked through the caret. `'AB AB AB'`
+ * is 148 units at this size, so a 50-unit box holds one `AB` per line — if
+ * anything wraps it.
+ */
+describe('a line longer than its box', () => {
+  const LINE = SIZE * 1.2;
+  const LONG: TextPose = {
+    x: 0, y: 0, width: 50, height: 200, text: 'AB AB AB', style: STYLE,
+  };
+
+  /** Lines the renderer lays a text command out into — `drawText`'s own
+   *  options, read off the command. */
+  function drawnLines(cmd: DrawCommand): number {
+    const text = cmd as TextDrawCommand;
+    return cachedLayoutRuns(text.runs, {
+      maxWidth: text.maxWidth ?? Infinity,
+      alignWidth: text.width,
+      lineHeight: resolveTextStyle(text.style).lineHeight,
+      align: text.align ?? 'left',
+    }).lines.length;
+  }
+
+  function painterLines(pose: TextPose): number {
+    const data = { text: pose.text, style: pose.style };
+    const box = { x: pose.x, y: pose.y, width: pose.width, height: pose.height };
+    const n = { id: 'n', kind: 'mark', layer: 'default', pose: box, data, parent: null } as unknown as Node<unknown, 'default', typeof box>;
+    const [cmd] = findNodeShape(n)!.paint(n, box);
+    return drawnLines(cmd);
+  }
+
+  function layerLines(pose: TextPose): number {
+    const layer = createTextLayer<TextPose>({ getTexts: () => [pose], getPose: (p) => p });
+    const [cmd] = layer.draw(undefined, { x: 0, y: 0, scale: { x: 1, y: 1 } }, { width: 800, height: 600, dpr: 1 });
+    return drawnLines(cmd);
+  }
+
+  it('stays on one line everywhere when the style declares no wrap', () => {
+    expect(painterLines(LONG)).toBe(1);
+    expect(layerLines(LONG)).toBe(1);
+    expect(textLineBoxes(LONG)).toHaveLength(1);
+    // Below the only line drawn, so the caret clamps to the end rather than
+    // landing on a second line.
+    expect(caretIndexAt(0, LINE + 5, LONG)).toBe(LONG.text.length);
+  });
+
+  it('wraps at the box everywhere when the style declares it', () => {
+    const wrapped: TextPose = { ...LONG, style: { ...STYLE, wrap: true } };
+    expect(painterLines(wrapped)).toBe(3);
+    expect(layerLines(wrapped)).toBe(3);
+    expect(textLineBoxes(wrapped)).toHaveLength(3);
+    expect(caretIndexAt(0, LINE + 5, wrapped)).toBe(3);
+  });
+});
