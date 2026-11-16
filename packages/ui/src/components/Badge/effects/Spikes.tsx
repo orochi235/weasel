@@ -1,4 +1,5 @@
 import type { EffectModule } from '../bases/types';
+import { bumpWobble, nearestBump } from './bumps';
 import { rangeMask, type BadgeRangeMaskParams } from './rangeMask';
 
 /** What an effect of type `spikes` takes as `params`. */
@@ -37,15 +38,7 @@ const Spikes: EffectModule<BadgeSpikesEffectParams> = {
     const N = Math.max(3, Math.floor(cfg.count));
     const step = totalCss / N;
     const halfBase = Math.max(0.1, Math.min(step / 2 - 0.05, cfg.baseWidth / 2));
-    const phaseOffset = phase * step;
-    // Find the nearest spike center on the unwrapped axis, then wrap.
-    const sm = ((s % totalCss) + totalCss) % totalCss;
-    const i = Math.round((sm - phaseOffset) / step);
-    const sc = ((i * step + phaseOffset) % totalCss + totalCss) % totalCss;
-    // Use shortest-distance metric on a closed perimeter.
-    let ds = sm - sc;
-    if (ds > totalCss / 2) ds -= totalCss;
-    if (ds < -totalCss / 2) ds += totalCss;
+    const { index, center: sc, offset: ds } = nearestBump(s, totalCss, N, phase);
     if (Math.abs(ds) > halfBase) return { dx: 0, dy: 0 };
     // Triangular: peak at ds=0, zero at the base edges.
     const t = 1 - Math.abs(ds) / halfBase;
@@ -61,7 +54,7 @@ const Spikes: EffectModule<BadgeSpikesEffectParams> = {
     const d = Math.min(1, 2 * nxAbs * nyAbs);
     const axisScale = nyAbs > nxAbs ? cfg.vertScale : cfg.horzScale;
     const scale = axisScale * (1 - d) + cfg.diagonalScale * d;
-    const irrMult = 1 + cfg.irregularity * 0.5 * Math.sin(i * 1.73 + 0.7);
+    const irrMult = 1 + cfg.irregularity * 0.5 * bumpWobble(index);
     // Numerical curvature κ ≈ |dn/ds| in CSS units. We average over a window roughly the
     // size of a spike footprint so the corner's influence smoothly bleeds onto adjacent
     // flat-edge samples instead of switching off at the arc boundary.
