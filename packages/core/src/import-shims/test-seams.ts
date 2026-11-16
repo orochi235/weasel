@@ -52,3 +52,8 @@ export type { CirclePose as CirclePoseForTests } from '../core/geometry/circlePo
 export { FRAME_FIXTURE_WORLD as FRAME_FIXTURE_WORLDForTests } from '../core/scene/frameFixture';
 export { _resetContentHandlersForTests } from 'domains/ingestion/contentHandlers';
 export type { FrameFixtureData as FrameFixtureDataForTests, FrameFixtureLayer as FrameFixtureLayerForTests } from '../core/scene/frameFixture';
+
+export { assertFinite as assertFiniteForTests, drive as driveForTests } from '../interactions/actions/drag.pbt.fixture';
+export type { Pt as PtForTests } from '../interactions/actions/drag.pbt.fixture';
+export { depsOf as depsOfForTests, makeScene as makeSceneForTests, rectPose as rectPoseForTests, runs as runsForTests, tally as tallyForTests, timeoutFor as timeoutForForTests } from '../interactions/actions/pbt.fixture';
+export type { TestScene as TestSceneForTests } from '../interactions/actions/pbt.fixture';

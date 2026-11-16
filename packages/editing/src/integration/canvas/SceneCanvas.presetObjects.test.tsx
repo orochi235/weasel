@@ -1,0 +1,81 @@
+/**
+ * A preset object turns on everything it carries, a canvas registers nothing
+ * it was not handed beyond undo and redo, and it resolves no names.
+ */
+import { describe, it, expect, vi, beforeAll } from 'vitest';
+import { useEffect } from 'react';
+import { renderWithKeys as render } from '@weasel-js/react/testing/giveKeys';
+import type { Action } from '@weasel-js/routing';
+import { useActionsRegistry, useDepRegistry } from '@weasel-js/routing/react';
+import { IDENTITY_POSE_COMPOSITION, createScene } from '@weasel-js/core/engine';
+import type { ToolsApi, FeaturePreset } from '@weasel-js/core';
+import { SceneCanvas, BASELINE_ACTIONS } from '@weasel-js/core';
+import { KIT_STANDARD_ACTION_IDS, pickPreset, selectPreset } from '@weasel-js/editing';
+
+beforeAll(() => {
+  const proto = HTMLCanvasElement.prototype as unknown as { getContext: (...args: unknown[]) => unknown };
+  proto.getContext = vi.fn(() => null);
+});
+
+const go: Action = { id: 'mine.go', label: 'Go', invoker: { timing: 'immediate', run: () => {} } } as Action;
+const own = { id: 'mine.tool', eligibility: { focus: true }, bindings: [] } as never;
+const mine: FeaturePreset = {
+  id: 'mine',
+  actions: [go],
+  tools: [own],
+  contributions: [{ id: 'mine.deps', eligibility: { always: true }, deps: { mineValue: () => 42 } as never }],
+  pathEdit: [{ id: 'mine.marks', marks: () => [] }],
+};
+
+interface Seen { actionIds: string[]; dep: unknown; extensions?: readonly { id: string }[] }
+
+function Probe({ into }: { into: Seen }) {
+  const reg = useActionsRegistry();
+  const deps = useDepRegistry();
+  useEffect(() => {
+    into.actionIds = reg ? reg.list().map((a) => a.id) : [];
+    into.dep = deps.get('mineValue' as never);
+    into.extensions = (deps.get('editAnchors' as never) as { extensions?: readonly { id: string }[] } | undefined)?.extensions;
+  });
+  return null;
+}
+
+const scene = () => createScene<unknown, 'main', unknown>({ composition: IDENTITY_POSE_COMPOSITION, systemLayers: [{ id: 'main' }] });
+
+describe('a preset object', () => {
+  it("registers its actions and tools, installs its contributions' deps, and hands path edit its extensions", () => {
+    const seen: Seen = { actionIds: [], dep: undefined };
+    let tools: ToolsApi | null = null;
+    render(
+      <SceneCanvas scene={scene()} width={100} height={100} features={[pickPreset, mine]} onToolsCreated={(t) => { tools = t; }}>
+        <Probe into={seen} />
+      </SceneCanvas>,
+    );
+    expect(seen.actionIds).toContain('mine.go');
+    expect(seen.actionIds).toContain('areaSelect');
+    expect(Object.keys(tools!.registry)).toEqual(['select', 'lasso', 'mine.tool']);
+    expect(seen.dep).toBe(42);
+    expect(seen.extensions?.map((e) => e.id)).toEqual(['mine.marks']);
+  });
+});
+
+describe('<SceneCanvas features>', () => {
+  it('registers undo, redo, and what its presets carry, and no other kit action', () => {
+    const seen: Seen = { actionIds: [], dep: undefined };
+    render(
+      <SceneCanvas scene={scene()} width={100} height={100} features={[selectPreset, mine]}>
+        <Probe into={seen} />
+      </SceneCanvas>,
+    );
+    const expected = [...BASELINE_ACTIONS, ...(selectPreset.actions ?? []), go].map((a) => a.id).sort();
+    const kitOrMine = (id: string) => KIT_STANDARD_ACTION_IDS.includes(id) || id === 'mine.go';
+    expect(seen.actionIds.filter(kitOrMine).sort()).toEqual(expected);
+  });
+
+  it('throws on a name', () => {
+    vi.spyOn(console, 'error').mockImplementation(() => {});
+    expect(() => render(
+      <SceneCanvas scene={scene()} width={100} height={100} features={['draw' as never]} />,
+    )).toThrow(/takes preset objects, not names/);
+  });
+});

@@ -1,0 +1,81 @@
+/**
+ * Every dispatched action gets its deps from `buildDepsFromRequires`, whose
+ * dev-mode Proxy throws on a read the descriptor didn't declare in `requires`.
+ * These descriptors are reachable only through consumer-wired bindings, so a
+ * missing name shows up as a dead keystroke rather than a failing test —
+ * exercise them through the real bag instead.
+ */
+
+import { IDENTITY_POSE_COMPOSITION, asNodeId, createPoseOverrides } from '@weasel-js/core/engine';
+import { describe, it, expect, vi } from 'vitest';
+import { buildDepsFromRequires } from '@weasel-js/routing';
+import type { DepRegistry } from '@weasel-js/routing/react';
+import type { Action, ImmediateInvoker } from '@weasel-js/routing';
+import { reorderForwardAction, reorderBackwardAction, alignLeftAction, alignCenterYAction, distributeHorizontalAction, distributeVerticalAction, pathfinderUnionAction, pathfinderExcludeAction } from '@weasel-js/editing';
+
+const IDS = ['a', 'b', 'c'];
+
+function makeDeps() {
+  const applyOps = vi.fn();
+  const selection = {
+    get: () => IDS.map(asNodeId),
+    current: [] as readonly string[],
+    set: vi.fn(), add: vi.fn(), remove: vi.fn(), toggle: vi.fn(),
+    clear: vi.fn(), contains: () => false,
+  };
+  const scene = {
+    get: (id: string) => ({ id: asNodeId(id), pose: { x: 0, y: 0, width: 10, height: 10 }, parent: null }),
+    overrides: createPoseOverrides<unknown>(() => undefined),
+    composition: IDENTITY_POSE_COMPOSITION,
+    // Unselected ends, so a reorder of the selection either way moves something.
+    roots: ['below', ...IDS, 'above'].map(asNodeId),
+    childrenOf: () => [],
+    isLocked: () => false,
+    setPose: vi.fn(),
+    batch: (_label: string, fn: () => unknown) => fn(),
+    applyBatch: vi.fn(),
+    reorder: vi.fn(),
+  };
+  const booleansAdapter = {
+    getSelection: () => IDS.map(asNodeId),
+    getWorldPath: () => undefined,
+    compareZ: () => 0,
+    createPathNode: () => ({ id: 'merged' }),
+    applyBatch: vi.fn(),
+  };
+  const bag: Record<string, unknown> = { operands: selection, scene, applyOps, booleansAdapter };
+  const registry = { get: (name: string) => bag[name] } as unknown as DepRegistry;
+  return { registry, applyOps };
+}
+
+const DESCRIPTORS: Action[] = [
+  reorderForwardAction,
+  reorderBackwardAction,
+  alignLeftAction,
+  alignCenterYAction,
+  distributeHorizontalAction,
+  distributeVerticalAction,
+  pathfinderUnionAction,
+  pathfinderExcludeAction,
+];
+
+describe('kit descriptors declare every dep they read', () => {
+  for (const action of DESCRIPTORS) {
+    it(`${action.id} runs on a bag built from its own \`requires\``, () => {
+      const { registry } = makeDeps();
+      const deps = buildDepsFromRequires(action, registry);
+      expect(() => action.enabled?.(deps)).not.toThrow();
+      expect(() => (action.invoker as ImmediateInvoker).run(deps, {})).not.toThrow();
+    });
+  }
+
+  it('reorder routes its ops through the consumer commit hook', () => {
+    const { registry, applyOps } = makeDeps();
+    for (const action of [reorderForwardAction, reorderBackwardAction]) {
+      applyOps.mockClear();
+      const deps = buildDepsFromRequires(action, registry);
+      (action.invoker as ImmediateInvoker).run(deps, { distance: 'adjacent' });
+      expect(applyOps, action.id).toHaveBeenCalled();
+    }
+  });
+});

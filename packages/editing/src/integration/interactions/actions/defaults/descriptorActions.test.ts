@@ -1,0 +1,82 @@
+import { describe, it, expect } from 'vitest';
+import { IDENTITY_POSE_COMPOSITION, createScene } from '@weasel-js/core/engine';
+import type { NodeId, Scene } from '@weasel-js/core';
+import type { ImmediateInvoker, InvocationCtx } from '@weasel-js/routing';
+import { cloneAction, rotateAction } from '@weasel-js/core';
+import { circleForTests as circle, CIRCLE_POSE_DESCRIPTORForTests as CIRCLE_POSE_DESCRIPTOR, type CirclePoseForTests as CirclePose } from '@weasel-js/core/test-seams';
+import { flipAction, alignLeftAction, distributeHorizontalAction, nudgeRightAction, duplicateAction } from '@weasel-js/editing';
+
+type S = Scene<object, 'main', CirclePose>;
+const scene = (): S => createScene<object, 'main', CirclePose>({ composition: IDENTITY_POSE_COMPOSITION, systemLayers: [{ id: 'main' }] });
+const leaf = (s: S, p: CirclePose) => s.add({ kind: 'mark', layer: 'main', pose: p, data: {} });
+const deps = (s: S, ids: NodeId[]) => ({
+  operands: { get: () => ids, set: () => {} },
+  scene: s,
+  poseDescriptor: CIRCLE_POSE_DESCRIPTOR,
+});
+const run = (action: { invoker?: unknown }, d: object, params?: object) =>
+  (action.invoker as ImmediateInvoker).run(d as never, params as never);
+
+describe('built-in actions read the poseDescriptor dep', () => {
+  it('flip leaves a symmetric circle where it is', () => {
+    const s = scene(); const a = leaf(s, circle(10, 10, 5));
+    run(flipAction, deps(s, [a]), { axis: 'x' });
+    expect(s.get(a)!.pose).toEqual(circle(10, 10, 5));
+  });
+
+  it('nudge moves a circle', () => {
+    const s = scene(); const a = leaf(s, circle(10, 10, 5));
+    run(nudgeRightAction, deps(s, [a]));
+    expect(s.get(a)!.pose.cy).toBe(10);
+    expect(s.get(a)!.pose.cx).toBeGreaterThan(10);
+    expect(Object.keys(s.get(a)!.pose).sort()).toEqual(['cx', 'cy', 'r']);
+  });
+
+  it('align-left lines circles up on their left edges', () => {
+    const s = scene(); const a = leaf(s, circle(10, 0, 5)); const b = leaf(s, circle(50, 40, 10));
+    run(alignLeftAction, deps(s, [a, b]));
+    expect(s.get(b)!.pose).toEqual(circle(15, 40, 10));
+  });
+
+  it('distribute spaces three circles evenly', () => {
+    const s = scene();
+    const a = leaf(s, circle(0, 0, 5)); const b = leaf(s, circle(20, 0, 5)); const c = leaf(s, circle(100, 0, 5));
+    run(distributeHorizontalAction, deps(s, [a, b, c]));
+    expect(s.get(b)!.pose).toEqual(circle(50, 0, 5));
+  });
+
+  it('duplicate offsets a circle through its descriptor', () => {
+    const s = scene(); const a = leaf(s, circle(10, 10, 5));
+    const d = deps(s, [a]);
+    run(duplicateAction, d);
+    const copy = [...s.nodes.values()].find((n) => n.id !== a)!;
+    expect(copy.pose).toEqual(circle(22, 22, 5));
+  });
+
+  it('rotate leaves a pose that cannot rotate untouched', () => {
+    const s = scene(); const a = leaf(s, circle(10, 10, 5));
+    const invoker = rotateAction.invoker;
+    if (!invoker || invoker.timing !== 'ongoing') throw new Error('expected ongoing');
+    const base = { world: { x: 30, y: 10 }, screen: { x: 0, y: 0 },
+      modifiers: { alt: false, ctrl: false, meta: false, shift: false }, deps: deps(s, [a]) };
+    const h = invoker.start(base as unknown as InvocationCtx, undefined);
+    // After the fix a non-rotatable selection gets an empty handle.
+    h.onMove?.({ ...base, world: { x: 10, y: 30 } } as unknown as InvocationCtx);
+    h.onEnd?.({ ...base, world: { x: 10, y: 30 } } as unknown as InvocationCtx, 'commit');
+    expect(s.get(a)!.pose).toEqual(circle(10, 10, 5));
+  });
+
+  it('clone translates a circle', () => {
+    const s = scene(); const a = leaf(s, circle(10, 10, 5));
+    const invoker = cloneAction.invoker;
+    if (!invoker || invoker.timing !== 'ongoing') throw new Error('expected ongoing');
+    const base = { world: { x: 0, y: 0 }, screen: { x: 0, y: 0 },
+      modifiers: { alt: true, ctrl: false, meta: false, shift: false }, deps: deps(s, [a]) };
+    const dragCtx = { start: { x: 0, y: 0 }, current: { x: 20, y: 0 }, delta: { x: 20, y: 0 } };
+    const h = invoker.start(base as unknown as InvocationCtx, undefined);
+    h.onMove!({ ...base, drag: dragCtx } as unknown as InvocationCtx);
+    h.onEnd!({ ...base, drag: dragCtx } as unknown as InvocationCtx, 'commit');
+    const copy = [...s.nodes.values()].find((n) => n.id !== a)!;
+    expect(copy.pose).toEqual(circle(30, 10, 5));
+  });
+});

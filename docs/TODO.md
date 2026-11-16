@@ -250,22 +250,32 @@ Owner tags, after the priority (2026-10-26):
 
 ### Core layering
 
-- **(P2) Split core into a viewer core and an editing layer** (queued 2026-11-15; the operands contract and the first
-  half of the move landed 2026-11-16 on `editing-layer`). Editing actions act on core's `operands` dep
-  (`interactions/actions/operands.ts`), and `@weasel-js/editing` holds the presets, the preset names,
-  `useStandardActions`, `ENGINE_STANDARD_ACTIONS`, and the arrange, edit, clipboard, Transform Again and Pathfinder
-  actions. Still in core, because `<SceneCanvas>` builds them in rather than taking them from a feature: the
-  selection store and `<SceneCanvas selection>` (`core/selection`, `useCanvasSelection`), the select tool and press-to-
-  select (`tools/builtin/select`, `useSceneSelectTool`), marquee and lasso (`areaSelect`, `lasso-select`, their deps),
-  the selection overlay, handles and chrome (`domains/selection`, `affordances/`, `useSelectionOverlayLayer`,
-  `useSceneChrome`), move, resize, rotate and clone with the selection contributions, insert and the shape tools
-  (`useBuiltinShapeTools`, `SELECT_TOOLS`/`SHAPE_TOOLS`), paste and drop (`domains/ingestion`, clipboard ops), and the
-  helpers `barrel/editingSeams.ts` exports for the moved code. The next step is an extension point through which a
-  feature hands `<SceneCanvas>` its select tool, shape tools and selection chrome, so those can leave. Also open: an
-  `./engine` entry for editing, since `ENGINE_STANDARD_ACTIONS` now loads editing's main entry; the editing glyphs are
-  still drawn in core (`core:` names); the moved core tests that mount editing presets still live in core and import
-  `@weasel-js/editing`. Closes when core's shipped source names no selection implementation and a canvas with no
-  editing layer mounted draws and pans.
+- **(P2) Finish splitting core into a viewer and an editing layer** (queued 2026-11-15; core is a viewer for
+  tools and selection since 2026-11-16). A preset hands `<SceneCanvas>` what it builds from the canvas through
+  `FeaturePreset.build` (tools offered by id, contributions) and `FeaturePreset.selection` (a `SelectionFactory`),
+  and `@weasel-js/editing` uses both for the select, lasso and shape tools, the group entry and `useSelection`;
+  with no editing preset a canvas draws, pans and zooms and keeps `viewerSelection`. Still in core, each needing
+  more of the extension point than this pass built:
+  - the selection chrome (`domains/selection`, `affordances/`, `domains/chrome-caps`, `useSelectionOverlayLayer`,
+    `useSceneChrome`): `<Canvas>` hit-tests the handles through `affordanceAt`, and `<SceneCanvas layers>` takes
+    the overlay as its `selectionOverlay` slot, so a preset would first need to hand the canvas layers that take
+    presses and its chrome-caps rules;
+  - move, resize, rotate, clone, insert (with place and reposition), marquee, lasso and clear-selection
+    (`interactions/actions/{move,resize,rotate,clone,insert,lasso-select}`, `defaults/areaSelect`,
+    `defaults/clearSelection`): `useSceneStandardActions` registers their deps (`areaSelect`, `lassoSelect`,
+    `insert`, `resizePolicy`) from canvas internals, and viewer code reads their types (`resize/geometry`'s
+    `PoseDescriptor`, `MoveBehavior`, `InsertNodeFactories`), so those types move to core's geometry and a
+    preset's build publishes the deps. Until they do, editing's shape, lasso and select tools sit apart from the
+    `insert`, `lassoSelect`, `areaSelect` and `clearSelection` actions they bind, against CLAUDE.md's rule that a
+    tool leaves core only with its whole action family;
+  - paste and drop (`domains/ingestion`, `useCanvasIngestion`, the clipboard ops), which the canvas attaches to
+    its element;
+  - 30 core tests that import `@weasel-js/editing`: 26 read core internals editing cannot reach without making
+    them public (`viewRegistry`, `viewInputs`, `buildSceneLayer`, `resolveFeatures`, `useInsertDepSource`, the
+    barrel) or `vi.mock` a core module, and 4 are smoke or browser tests.
+  Snapping and paths stay in core whole: the canvas builds the snap readout and the `snap` dep itself, and its path
+  edit state and anchor overlay, and every module under `domains/snap` and `domains/paths` is reached from those. Closes when no test in core imports `@weasel-js/editing`
+  and `packages/core/src` holds no action or chrome that writes or draws the selection.
 
 ### Extension authoring and published consumers
 

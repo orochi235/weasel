@@ -29,7 +29,17 @@ duplicate, group, nudge, style and the clipboard, each also a preset of its
 own), `arrangePreset` (flip, reorder, align, distribute), `pathfinderPreset`,
 `ingestPreset`, and the tool presets `selectToolsPreset` and
 `shapeToolsPreset`. Core's `viewPreset` pans and zooms; a canvas given only it
-is a viewer.
+is a viewer, whose selection nothing it runs writes.
+
+The tools are editing's, offered to a canvas by id: `selectToolKitPreset`
+offers the select tool and the lasso, `shapeToolKitPreset` the rect, ellipse,
+line, polygon and star, and `defaultTools={['rect']}` mounts one wherever a
+preset offers it (`drawPreset` offers them all). `selectionPreset`, which every
+editing preset includes, builds the canvas's selection; `useSelection` is the
+same selection as a hook, for a panel or a host that keeps its own. A host of
+another dimension takes `useSelectToolWith`, `selectionMoveContribution`,
+`useGroupEntryContribution` and `ENGINE_STANDARD_ACTIONS` from
+`@weasel-js/editing/engine`, which loads none of the presets.
 
 Where presets are picked by name, `namedFeatures('pick', 'move')` returns the
 objects, `FEATURE_NAMES` lists the names, and `FEATURE_ACTION_IDS` says which
