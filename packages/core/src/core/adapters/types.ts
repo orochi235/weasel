@@ -63,7 +63,7 @@ export interface SnapTarget<TPose = unknown> {
  * bottom first.
  */
 
-/** Narrow adapter for move. Apps without container-snapping leave out `findSnapTarget`. */
+/** Narrow adapter for move. */
 export interface MoveAdapter<TNode extends { id: string }, TPose> {
   getNode(id: string): TNode | undefined;
   getNodes(): TNode[];
@@ -93,11 +93,6 @@ export interface MoveAdapter<TNode extends { id: string }, TPose> {
    *  it where it is there, and write `setPose` each frame where it is not or
    *  it answers `undefined`. */
   poseTarget?(id: string, descriptor?: PoseDescriptor<TPose>): Target<TPose> | undefined;
-  findSnapTarget?(
-    draggedId: string,
-    worldX: number,
-    worldY: number,
-  ): SnapTarget<TPose> | null;
   /** Ordered children of `parentId`, `null` for the root siblings, in
    *  z-order: index 0 is the bottom. One contract with
    *  {@link OrderedAdapter.getChildren} — the two land on the same adapter
