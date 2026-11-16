@@ -148,3 +148,16 @@ describe('resolveSchemaMenu: color and string leaves', () => {
     expect(es.find((x) => x.key === 'glow.size')).toMatchObject({ disabled: true });
   });
 });
+
+describe('resolveSchemaMenu: a compound leaf with nothing reading values', () => {
+  it('is left out, as a color or string is', () => {
+    const src: MenuSources = { actions: () => [], depsFor: () => undefined, trigger: () => true };
+    const leaves: Record<string, PrefLeaf> = {
+      fill: { kind: 'paint', name: 'Fill', description: '', default: null } as never,
+      obj: { kind: 'object', name: 'Obj', description: '', default: {}, children: { a: pref.number('A', 1) } } as never,
+      list: { kind: 'list', name: 'List', description: '', default: [], item: pref.number('N', 1) } as never,
+      union: { kind: 'union', name: 'U', description: '', default: null, variants: { a: { name: 'A', children: {} } } } as never,
+    };
+    for (const [k, leaf] of Object.entries(leaves)) expect(resolveSchemaMenu(menu({ [k]: leaf }), src)).toEqual([]);
+  });
+});

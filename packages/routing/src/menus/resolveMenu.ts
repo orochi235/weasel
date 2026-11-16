@@ -31,8 +31,9 @@ export interface MenuSources {
   eligible?(action: Action): boolean;
   trigger(id: string, params?: Record<string, unknown>): boolean;
   /** The value at a leaf's dotted path. Booleans, enums, and numbers are left
-   *  out of a menu without both this and `onChange`, colors and strings without
-   *  this, and `showIf`/`enableIf` are checked only with it. */
+   *  out of a menu without both this and `onChange`; colors, strings, objects,
+   *  lists, maps, unions, fields and paints without this; and `showIf`/`enableIf`
+   *  are checked only with it. */
   values?(path: string): unknown;
   onChange?(path: string, value: unknown): void;
   /** The schema an `alias` leaf's `of` is read in. Default: the menu's own. */
@@ -175,12 +176,12 @@ function rowsOf(ctx: Ctx, leaf: PrefLeaf, key: string, path: string, off: boolea
     case 'number': return numberRows(ctx.src, leaf as PrefNumber, key, path, off);
     case 'color': return colorRows(ctx.src, leaf as PrefColor, key, path, off);
     case 'string': return stringRows(ctx.src, leaf as PrefString, key, path, off);
-    case 'object': return objectRows(drawIn(ctx), leaf as PrefObject, key, path, off);
-    case 'list': return listRows(drawIn(ctx), leaf as PrefList, key, path, off);
-    case 'map': return mapRows(drawIn(ctx), leaf as PrefMap, key, path, off);
-    case 'union': return unionRows(drawIn(ctx), leaf as PrefUnion, key, path, off);
-    case 'field': return fieldRows(drawIn(ctx), leaf as PrefField, key, path, off);
-    case 'paint': return paintRows(drawIn(ctx), leaf as PrefPaint, key, path, off);
+    case 'object': return compound(ctx, (draw) => objectRows(draw, leaf as PrefObject, key, path, off));
+    case 'list': return compound(ctx, (draw) => listRows(draw, leaf as PrefList, key, path, off));
+    case 'map': return compound(ctx, (draw) => mapRows(draw, leaf as PrefMap, key, path, off));
+    case 'union': return compound(ctx, (draw) => unionRows(draw, leaf as PrefUnion, key, path, off));
+    case 'field': return compound(ctx, (draw) => fieldRows(draw, leaf as PrefField, key, path, off));
+    case 'paint': return compound(ctx, (draw) => paintRows(draw, leaf as PrefPaint, key, path, off));
     case 'separator': return [sep(key)];
     case 'label':
       return [{ kind: 'item', key, label: leaf.name, ...withAccess(leaf.access), disabled: true, run: noop }];
@@ -209,12 +210,17 @@ function through(ctx: Ctx, access: MenuAccess, entry = ctx.entry): Ctx {
   };
 }
 
+/** A compound leaf's rows, drawn in `ctx`; none where nothing reads its value. */
+function compound(ctx: Ctx, rows: (draw: MenuDraw) => MenuEntry[]): MenuEntry[] {
+  return ctx.src.values ? rows(drawIn(ctx, ctx.src.values)) : [];
+}
+
 /** What a compound leaf drawn in `ctx` draws its parts with. */
-function drawIn(ctx: Ctx): MenuDraw {
-  const { values, onChange } = ctx.src;
+function drawIn(ctx: Ctx, values: (path: string) => unknown): MenuDraw {
+  const { onChange } = ctx.src;
   return {
     root: ctx.src.over ?? ctx.root,
-    access: { values: values!, ...(onChange ? { onChange } : {}) },
+    access: { values, ...(onChange ? { onChange } : {}) },
     leaf: (leaf, key, access, off, entry) => leafRows(through(ctx, access, entry), leaf, key, key, off),
     fields: (fields, prefix, access, off) => {
       const status = { ...PREF_STATUS, enabled: !off };
