@@ -28,7 +28,7 @@ function toBase64(bytes: Uint8Array): string {
  */
 export function serveHeadlessPage(options: HeadlessPageOptions = {}): void {
   const root = globalThis as Record<string, unknown>;
-  if (PAGE_GLOBAL in root) throw new Error('serveHeadlessPage: this page already serves renders');
+  if (Object.hasOwn(root, PAGE_GLOBAL)) throw new Error('serveHeadlessPage: this page already serves renders');
   const session = createRasterSession();
   const sceneOptions = options.scene ?? {};
 

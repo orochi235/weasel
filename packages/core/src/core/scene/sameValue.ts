@@ -8,7 +8,7 @@ export function sameValue(a: unknown, b: unknown): boolean {
   }
   if (isPlainObject(a) && isPlainObject(b)) {
     const ka = Object.keys(a);
-    return ka.length === Object.keys(b).length && ka.every((k) => k in b && sameValue(a[k], b[k]));
+    return ka.length === Object.keys(b).length && ka.every((k) => Object.hasOwn(b, k) && sameValue(a[k], b[k]));
   }
   return false;
 }

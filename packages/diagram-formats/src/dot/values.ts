@@ -4,6 +4,7 @@ import type { Outline } from '@weasel-js/diagram';
 import { rgbaToHex } from '@weasel-js/paint';
 import { markupLines } from '../graphRead';
 import type { DotValue } from './parse';
+import { getOwn } from '@weasel-js/registry';
 
 /** What an edge label's `\E`, `\T` and `\H` name: the edge, its tail, and its head. */
 export interface EdgeNames {
@@ -87,7 +88,7 @@ const SAME_NAMES: ReadonlySet<string> = new Set([
 
 /** The outline a shape and style draw as, or `null` for a shape the diagram has none for. */
 export function outlineOf(shape: string, styles: readonly string[]): Outline | null {
-  const outline = OUTLINES[shape.toLowerCase()];
+  const outline = getOwn(OUTLINES, shape.toLowerCase());
   if (outline === undefined) return null;
   return outline === 'rect' && styles.includes('rounded') ? 'roundRect' : outline;
 }
@@ -96,7 +97,7 @@ export function outlineOf(shape: string, styles: readonly string[]): Outline | n
  *  shape for as a box marked `missing`. `marked` asks for {@link OUTLINE_ATTR}. */
 export function shapeOf(outline: Outline | undefined): { shape: string; rounded?: boolean; missing?: true; marked?: true } {
   if (outline === undefined || typeof outline !== 'string' || outline === 'rect') return { shape: 'box' };
-  return SHAPE_NAMES[outline] ?? (SAME_NAMES.has(outline) ? { shape: outline } : { shape: 'box', missing: true, marked: true });
+  return getOwn(SHAPE_NAMES, outline) ?? (SAME_NAMES.has(outline) ? { shape: outline } : { shape: 'box', missing: true, marked: true });
 }
 
 const ARROWS: Readonly<Record<string, MarkerRef | null>> = {
@@ -112,11 +113,11 @@ const ARROW_NAMES: Readonly<Record<string, string>> = {
 };
 
 /** The marker an arrowhead name draws: `undefined` for a name the diagram has none for. */
-export const markerOf = (name: string): MarkerRef | null | undefined => ARROWS[name.toLowerCase()];
+export const markerOf = (name: string): MarkerRef | null | undefined => getOwn(ARROWS, name.toLowerCase());
 
 /** The arrowhead name a marker writes as: `undefined` for a marker DOT has none for. */
 export function arrowName(marker: MarkerRef): string | undefined {
-  return ARROW_NAMES[typeof marker === 'string' ? marker : marker.key];
+  return getOwn(ARROW_NAMES, typeof marker === 'string' ? marker : marker.key);
 }
 
 /** A DOT style list's words. */

@@ -49,3 +49,13 @@ describe('parseTransform', () => {
     expect(read('matrix(1 0 0 1 5)').warnings[0]).not.toMatch(/unsupported/);
   });
 });
+
+describe('parseTransform: a function named like an Object.prototype member', () => {
+  it('is unsupported', () => {
+    for (const name of ['constructor', 'valueOf', 'hasOwnProperty']) {
+      const r = read(`${name}(1) translate(5 0)`);
+      expect(r.m).toEqual(IDENTITY_MATRIX);
+      expect(r.warnings[0]).toMatch(/unsupported transform function/);
+    }
+  });
+});

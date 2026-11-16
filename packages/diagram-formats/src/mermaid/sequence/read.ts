@@ -11,6 +11,7 @@ import { mermaidColor } from '../common/styles';
 import { PAGE_MARGIN } from '../../pageLayout';
 import { FRAGMENTS, parseSequence, type SeqStmt } from './parse';
 import { TYPE_OUTLINES, plainText } from './syntax';
+import { getOwn } from '@weasel-js/registry';
 
 type Draft = Omit<SeqFragment, 'sections'> & { sections: { label?: string; steps: SeqStep[] }[] };
 type Open = { kind: 'fragment'; frag: Draft; line: number } | { kind: 'box'; box: SeqBox & { members: string[] }; line: number };
@@ -55,8 +56,8 @@ class SequenceReader {
   }
 
   declare(s: Extract<SeqStmt, { kind: 'participant' }>): void {
-    if (!(s.type in TYPE_OUTLINES)) this.warnings.list('Participant types Mermaid has but this reader draws as a box:', s.type);
-    const outline = TYPE_OUTLINES[s.type];
+    if (!Object.hasOwn(TYPE_OUTLINES, s.type)) this.warnings.list('Participant types Mermaid has but this reader draws as a box:', s.type);
+    const outline = getOwn(TYPE_OUTLINES, s.type);
     const label = s.label === undefined ? undefined : plainText(s.label);
     const had = this.participants.get(s.id);
     this.participants.set(s.id, {

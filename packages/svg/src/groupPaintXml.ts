@@ -60,7 +60,7 @@ export function fitLeafXml(xml: string, inherits: SvgInherits | undefined, paint
     if (first) attrs = attrs.replace(ATTR, (whole, n: string) => (dropped.has(n) ? '' : whole));
     first = false;
     const has = new Set([...attrs.matchAll(ATTR)].map((m) => m[1]));
-    const resets = [...painted].filter((n) => !has.has(n) && !dropped.has(n) && n in INITIAL);
+    const resets = [...painted].filter((n) => !has.has(n) && !dropped.has(n) && Object.hasOwn(INITIAL, n));
     return `<${name}${attrs}${resets.map((n) => ` ${n}="${INITIAL[n]}"`).join('')}${close}>`;
   });
 }

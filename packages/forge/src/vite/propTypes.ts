@@ -175,7 +175,7 @@ function controlFor(reading: Reading, type: ts.Type, written: () => string[] | n
     return { options: same ? order : options };
   }
   const shape = shapeOf(reading, type, 0);
-  return shape && shape.name !== 'enum' && !(shape.name in SCALARS) ? { control: 'object', type: shape } : null;
+  return shape && shape.name !== 'enum' && !Object.hasOwn(SCALARS, shape.name) ? { control: 'object', type: shape } : null;
 }
 
 const SCALARS = { boolean: true, string: true, number: true };

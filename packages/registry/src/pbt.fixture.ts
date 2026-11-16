@@ -74,7 +74,7 @@ export const value: fc.Arbitrary<unknown> = fc.letrec((tie) => ({
 export function rebuild(v: unknown, pick: () => Realm): unknown {
   if (Array.isArray(v)) {
     const r = pick();
-    return arrayOf(Array.from(v, (x) => rebuild(x, pick)), r === 'null' ? 'here' : r, Array.from(v, (_, i) => !(i in v)));
+    return arrayOf(Array.from(v, (x) => rebuild(x, pick)), r === 'null' ? 'here' : r, Array.from(v, (_, i) => !Object.hasOwn(v, i)));
   }
   if (typeof v === 'object' && v !== null) return objectOf(Object.keys(v).map((k) => [k, rebuild((v as Record<string, unknown>)[k], pick)]), pick());
   return v;

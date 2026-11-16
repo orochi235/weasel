@@ -18,6 +18,7 @@ describe('readMarker', () => {
     ['No marker.', /no <!-- entry/],
     ['x <!-- entry: rank=2 -->', /names no tag/],
     ['x <!-- entry: fix shiny -->', /unknown word "shiny"/],
+    ['x <!-- entry: fix constructor -->', /unknown word "constructor"/],
     ['x <!-- entry: internal fix -->', /`internal` cannot/],
     ['x <!-- entry: fix --> <!-- entry: new -->', /more than one/],
   ])('refuses %j', (body, error) => {

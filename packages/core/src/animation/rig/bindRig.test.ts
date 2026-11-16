@@ -147,4 +147,10 @@ describe('bindRig', () => {
     const [x, y] = mat3.apply(rig.world().get('lower')!, 0, 0);
     expect([x, y]).toEqual([155, 100]);
   });
+
+  it('binds a node whose id names an Object.prototype member beside skins that do not hold it', () => {
+    const scene = createScene<object, 'main', RectPose>({ systemLayers: LAYERS });
+    const node = scene.add({ id: 'toString' as NodeId, kind: 'mark', layer: 'main', pose: { x: 100, y: 95, width: 50, height: 10 }, data: {} });
+    expect(() => bindRig({ scene, skeleton: ARM, bindings: { upper: node }, skins: {} })).not.toThrow();
+  });
 });

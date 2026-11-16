@@ -11,6 +11,7 @@ import { checkProps, dashOf, mermaidColor, nodeColors, px } from '../common/styl
 import { textLines } from '../common/text';
 import type { LinkHead, MermaidShape } from './lex';
 import { parseFlowchart, type MermaidLink, type MermaidNodeRef, type MermaidStmt, type StyleProps } from './parse';
+import { getOwn } from '@weasel-js/registry';
 
 const DIRECTIONS: Readonly<Record<string, LayoutDirection>> = {
   TB: 'down', TD: 'down', BT: 'up', LR: 'right', RL: 'left', 'v': 'down', '^': 'up', '>': 'right', '<': 'left',
@@ -73,7 +74,7 @@ class MermaidReader {
       draft.lines = textLines(ref.text ?? '');
       draft.outline = this.outline(SHAPE_OUTLINES[ref.shape], ref.shape);
     }
-    if (ref.meta?.shape !== undefined) draft.outline = this.outline(META_OUTLINES[ref.meta.shape], ref.meta.shape);
+    if (ref.meta?.shape !== undefined) draft.outline = this.outline(getOwn(META_OUTLINES, ref.meta.shape), ref.meta.shape);
     if (ref.meta?.label !== undefined) draft.lines = textLines(ref.meta.label);
     for (const c of ref.classes) this.addClass(ref.id, c);
   }

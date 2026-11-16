@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { writeFileSync } from 'node:fs';
-import { CRAYONS, crayonHex } from './crayons';
+import { CRAYONS, crayonAnchor, crayonHex } from './crayons';
 import { toLch } from '@weasel-js/theme/engine';
 
 describe('crayons', () => {
@@ -67,5 +67,14 @@ describe('crayons', () => {
       <div class="g">${cells}</div></div>
       </body></html>`,
     );
+  });
+});
+
+describe('a crayon named like an Object.prototype member', () => {
+  it('is unknown', () => {
+    for (const name of ['constructor', 'toString', '__proto__']) {
+      expect(crayonHex(name)).toBe('#000000');
+      expect(crayonAnchor(name)).toEqual({ name, hue: 0, lightness: 0.6 });
+    }
   });
 });

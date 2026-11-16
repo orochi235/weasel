@@ -11,6 +11,7 @@ import { sankeySchema } from '../sankey/schema';
 import { timelineSchema } from '../timeline/schema';
 import { xySchema } from '../xychart/schema';
 import type { PlotSchema, PlotScope, PlotTable } from './schemaTypes';
+import { getOwn } from '@weasel-js/registry';
 
 const SCHEMAS: { readonly [K in PlotKind]: PlotSchema<Extract<PlotData, { kind: K }>> } = {
   xychart: xySchema,
@@ -27,7 +28,7 @@ const SCHEMAS: { readonly [K in PlotKind]: PlotSchema<Extract<PlotData, { kind: 
 
 /** `data`'s kind as fields and tables. Throws on a kind with none. */
 export function plotSchemaOf(data: PlotData): PlotSchema {
-  const schema = SCHEMAS[data.kind] as PlotSchema | undefined;
+  const schema = getOwn(SCHEMAS, data.kind) as PlotSchema | undefined;
   if (schema === undefined) throw new Error(`plotSchemaOf: no schema for a chart of kind "${(data as { kind: string }).kind}"`);
   return schema;
 }

@@ -60,7 +60,7 @@ export function samePoseValue(snapshot: unknown, value: unknown, depth = DEPTH):
       const left = a[key];
       const right = b[key];
       if (left === right) {
-        if (right === undefined && !(key in b)) return false;
+        if (right === undefined && !Object.hasOwn(b, key)) return false;
         continue;
       }
       if (!samePoseValue(left, right, depth - 1)) return false;

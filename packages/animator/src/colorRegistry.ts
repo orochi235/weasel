@@ -64,7 +64,7 @@ export class ColorOverrideRegistry {
     this.release(id, channel);
     const entry = this.map.get(id);
     if (!entry) return;
-    if (!(channel in entry)) return;
+    if (!Object.hasOwn(entry, channel)) return;
     delete entry[channel];
     if (!entry.fill && !entry.stroke) this.map.delete(id);
     this.changed();

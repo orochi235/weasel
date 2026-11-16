@@ -48,12 +48,12 @@ function survived(value: unknown, round: unknown): boolean {
   if (Array.isArray(value)) {
     if (!Array.isArray(round) || value.length !== round.length) return false;
     // `every` skips a hole, which JSON writes as null.
-    for (let i = 0; i < value.length; i += 1) if (!(i in value) || !survived(value[i], round[i])) return false;
+    for (let i = 0; i < value.length; i += 1) if (!Object.hasOwn(value, i) || !survived(value[i], round[i])) return false;
     return true;
   }
   if (!isPlainObject(value) || !isPlainObject(round)) return false;
   const keys = Object.keys(value);
-  return keys.length === Object.keys(round).length && keys.every((key) => key in round && survived(value[key], round[key]));
+  return keys.length === Object.keys(round).length && keys.every((key) => Object.hasOwn(round, key) && survived(value[key], round[key]));
 }
 
 function sendable(state: unknown): boolean {

@@ -40,7 +40,7 @@ const isOwner = (v: unknown): v is Owner =>
 const isPreset = (v: unknown): v is core.FeaturePreset =>
   isObject(v) && typeof v.id === 'string' && !('invoker' in v)
   && ['ambient', 'tools', 'includes', 'contributions', 'moveBehaviors', 'chrome', 'pathEdit', 'snapSources']
-    .some((k) => k in v);
+    .some((k) => Object.hasOwn(v, k));
 
 function firstPerId(found: readonly FoundEntry[]): Contribution<unknown>[] {
   const byId = new Map<string, Contribution<unknown>>();
@@ -64,7 +64,7 @@ export class Sweep {
     else if (isObject(v)) {
       // A factory's bundle: `{ layer, contribution }` and the like.
       for (const key of ['contribution', 'contributions', 'ambient', 'tool', 'tools']) {
-        if (key in v) this.value(v[key], `${where}.${key}`);
+        if (Object.hasOwn(v, key)) this.value(v[key], `${where}.${key}`);
       }
     }
   }

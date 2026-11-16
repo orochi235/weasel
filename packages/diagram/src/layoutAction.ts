@@ -27,6 +27,7 @@ import { tree } from './tree';
 import { planOf, type LayoutFn, type LayoutOptions, type LayoutResult } from './layout';
 import { routeWrites, routesOf, type LayoutRoutes } from './routeWrites';
 import type { DiagramNodeReader } from './trait';
+import { getOwn } from '@weasel-js/registry';
 
 /** The layouts this package ships. A consumer's own go in the same shape. */
 export const LAYOUTS: Readonly<Record<string, LayoutFn>> = Object.freeze({
@@ -165,7 +166,7 @@ export function layoutDiagram<TPose>(
   algorithm: string | LayoutFn,
   opts: LayoutDiagramOptions<TPose> = {},
 ): number {
-  const fn = typeof algorithm === 'function' ? algorithm : LAYOUTS[algorithm] ?? layered;
+  const fn = typeof algorithm === 'function' ? algorithm : getOwn(LAYOUTS, algorithm) ?? layered;
   const graph = buildGraph(source, {
     ...(opts.read ? { read: opts.read } : {}),
     ...(opts.geometry ? { geometry: opts.geometry } : {}),

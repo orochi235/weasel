@@ -6,6 +6,8 @@
  * `states` holds the switches the click may change and their current values; a switch left out of it (a fixed
  * row, a layer inside the one clicked) is left alone.
  */
+
+import { setOwn } from '@weasel-js/registry';
 export function soloChanges(
   states: ReadonlyMap<string, boolean>,
   keep: ReadonlySet<string>,
@@ -14,7 +16,7 @@ export function soloChanges(
   const out: Record<string, boolean> = {};
   for (const [id, on] of states) {
     const next = soloed || keep.has(id);
-    if (next !== on) out[id] = next;
+    if (next !== on) setOwn(out, id, next);
   }
   return out;
 }

@@ -231,9 +231,9 @@ export function AttributesPane({ schema, onChange, paths, onRename, added = fals
   // An attribute's row sits at its own name, or under the panel that holds it.
   const marked = new Set([
     ...[...changed].flatMap((attr) => [
-      ...(attr in shared || attr === KEY ? [attr] : []),
+      ...(Object.hasOwn(shared, attr) || attr === KEY ? [attr] : []),
       ...(attr === 'kind' ? [KIND] : []),
-      ...(attr in own ? [`${OWN}.${attr}`] : []),
+      ...(Object.hasOwn(own, attr) ? [`${OWN}.${attr}`] : []),
       // The panel's rows all live in `auto`, so a change to it marks each.
       ...(attr === 'auto' ? Object.keys(auto).map((row) => `${AUTO}.${row}`) : []),
       // What an entry is shows on its picker; any other attribute of it, on that attribute's row.

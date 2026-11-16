@@ -168,9 +168,9 @@ export function packSteps(stacks: SerializedHistory, current: SchemaRoot, source
 function unpack(value: unknown, source: SchemaRoot, types: PrefTypes): unknown {
   if (Array.isArray(value)) return value.map((v) => unpack(v, source, types));
   if (!isPlainObject(value)) return value;
-  if (NUM in value) return Number(value[NUM]);
-  if (NEW in value) return STUB;
-  if (FROM in value) {
+  if (Object.hasOwn(value, NUM)) return Number(value[NUM]);
+  if (Object.hasOwn(value, NEW)) return STUB;
+  if (Object.hasOwn(value, FROM)) {
     const [path, ...keys] = value[FROM] as Origin;
     let held: unknown = nodeAt(source, path);
     for (const key of keys) held = (held as Record<string, unknown> | undefined)?.[key];
@@ -183,7 +183,7 @@ function unpack(value: unknown, source: SchemaRoot, types: PrefTypes): unknown {
     // Code the source no longer holds is dropped with its attribute, as an attribute never set.
     if (next !== undefined) out[k] = next;
   }
-  if (!(TYPE in value)) return out;
+  if (!Object.hasOwn(value, TYPE)) return out;
   const name = value[TYPE] as string;
   // A type the host no longer registers leaves a leaf of that name, holding only what the draft set on it.
   const leaf: Record<string, unknown> = { name, description: '', default: undefined, ...findType(types, name), ...out, type: name };

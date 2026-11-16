@@ -55,7 +55,7 @@ function storedDocWith(change: (stored: DocEntry) => DocEntry): DocEntry | null 
  *  ({@link retireLegacyDoc}): the scene's load reads them. */
 export function docEntry(doc: PersistedDoc): DocEntry {
   const legacy = (stored: DocEntry) =>
-    Object.fromEntries(LEGACY_FIELDS.flatMap((k) => (k in stored ? [[k, stored[k]]] : [])));
+    Object.fromEntries(LEGACY_FIELDS.flatMap((k) => (Object.hasOwn(stored, k) ? [[k, stored[k]]] : [])));
   return storedDocWith((stored) => ({ ...legacy(stored), ...doc })) ?? { ...doc };
 }
 

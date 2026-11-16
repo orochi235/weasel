@@ -50,7 +50,7 @@ function Editable(args: Partial<TokenPanelProps>) {
     setValues(({ [name]: _dropped, ...rest }) => (value === null ? rest : { ...rest, [name]: value }));
   }, []);
   const tokens = TOKENS.map((t) =>
-    t.name in values ? { ...t, value: values[t.name] as string, overridden: true } : t,
+    Object.hasOwn(values, t.name) ? { ...t, value: values[t.name] as string, overridden: true } : t,
   );
   return (
     <div className={st.column}>

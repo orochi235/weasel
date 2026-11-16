@@ -47,7 +47,7 @@ function copyOpts(o: ParallaxOptions): ParallaxOptions {
 
 function sameOpts(a: ParallaxOptions, b: ParallaxOptions): boolean {
   const keys = new Set([...Object.keys(a), ...Object.keys(b)]) as Set<keyof ParallaxOptions>;
-  return [...keys].every((k) => k in a === k in b && sameXY(a[k], b[k]));
+  return [...keys].every((k) => Object.hasOwn(a, k) === Object.hasOwn(b, k) && sameXY(a[k], b[k]));
 }
 
 /** Whether `p` is a live source rather than a fixed set of opts. */

@@ -38,7 +38,7 @@ function KnobSync({ schema, config }: KnobSyncProps) {
       const knobs = paramsToKnobs(schema, params);
       let wrote = false;
       for (const { path, leaf } of knobPaths(schema)) {
-        const target = path in knobs ? knobs[path] : leaf.default;
+        const target = Object.hasOwn(knobs, path) ? knobs[path] : leaf.default;
         const current = valueAtPath(config, path);
         if (sameKnob(current === undefined ? leaf.default : current, target)) continue;
         setConfig(path as never, target as never);

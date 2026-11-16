@@ -1,4 +1,5 @@
 import type { EffectEvalContext, EffectEvalResult, EffectEvaluators } from '../runner/types';
+import { getOwn } from '@weasel-js/registry';
 
 const BLEND: Readonly<Record<string, GlobalCompositeOperation>> = { normal: 'source-over', screen: 'screen', multiply: 'multiply' };
 
@@ -51,7 +52,7 @@ export const imageEvaluators: EffectEvaluators = {
       outputs: {
         out: draw(base.width, base.height, (g) => {
           g.drawImage(base, 0, 0);
-          g.globalCompositeOperation = BLEND[String(ctx.params.blend)] ?? 'source-over';
+          g.globalCompositeOperation = getOwn(BLEND, String(ctx.params.blend)) ?? 'source-over';
           g.drawImage(top, 0, 0, base.width, base.height);
         }),
       },

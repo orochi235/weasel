@@ -42,7 +42,7 @@ function checkTheme(t: Raw, errors: string[]): void {
   if (!isObject(t.roles) || Object.keys(t.roles).length === 0) errors.push('roles: missing');
   else for (const [id, style] of Object.entries(t.roles)) box(`roles.${id}`, style);
   if (typeof t.defaultRole !== 'string') errors.push('defaultRole: missing');
-  else if (isObject(t.roles) && !(t.defaultRole in t.roles)) errors.push(`defaultRole: no role ${JSON.stringify(t.defaultRole)}`);
+  else if (isObject(t.roles) && !Object.hasOwn(t.roles, t.defaultRole)) errors.push(`defaultRole: no role ${JSON.stringify(t.defaultRole)}`);
   if (t.roleLabels !== undefined) {
     if (!isObject(t.roleLabels)) errors.push('roleLabels: not an object');
     else for (const [id, label] of Object.entries(t.roleLabels)) text(`roleLabels.${id}`, label);

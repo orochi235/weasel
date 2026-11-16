@@ -6,7 +6,7 @@ export type BuildNode = (id: string, node: PlanNode) => GraphNodeDef;
 
 function sameSettings(a: PlanNode['settings'], b: PlanNode['settings']): boolean {
   const keys = Object.keys(a);
-  return keys.length === Object.keys(b).length && keys.every((k) => k in b && Object.is(a[k], b[k]));
+  return keys.length === Object.keys(b).length && keys.every((k) => Object.hasOwn(b, k) && Object.is(a[k], b[k]));
 }
 
 const touches = (e: PlanEdge, ids: ReadonlySet<string>): boolean =>

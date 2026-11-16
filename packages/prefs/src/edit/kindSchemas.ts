@@ -198,7 +198,7 @@ export function attributeSchema(
   const undrawn = node.kind === 'separator' ? SEPARATOR_UNDRAWN : NO_ATTRS;
   // Every leaf carries a `default`, which says nothing of one that holds no value.
   const listed = (k: string): boolean => k !== 'kind' && !SLOTS.has(k) && !undrawn.has(k) && !(k === 'default' && !prefHoldsValue(node));
-  const readOnly = typed ? [] : Object.entries(fields).filter(([k]) => listed(k) && !(k in shared) && !(k in own) && !(k === 'auto' && Object.keys(auto).length > 0));
+  const readOnly = typed ? [] : Object.entries(fields).filter(([k]) => listed(k) && !Object.hasOwn(shared, k) && !Object.hasOwn(own, k) && !(k === 'auto' && Object.keys(auto).length > 0));
   if (node.kind === 'action') readOnly.push(...registeredFacts(actions?.find((a) => a.key === (node as { action?: string }).action)));
   return { shared, own, auto, entry, readOnly };
 }
@@ -302,7 +302,7 @@ export function convertLeaf(leaf: PrefLeaf, choice: string, custom: CustomKinds 
     }
     if (SLOTS.has(k)) {
       // What is inside a leaf goes with it to any kind that keeps it the same way.
-      if (!typed && k in blank) next[k] = v;
+      if (!typed && Object.hasOwn(blank, k)) next[k] = v;
       else dropped.push(k);
       continue;
     }

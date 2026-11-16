@@ -119,7 +119,7 @@ export function validateResult(r: any): string[] {
   if (!m || typeof m !== 'object') problems.push('machine missing');
   else {
     for (const k of ['glRenderer', 'softwareGl', 'browser', 'cpu', 'cores', 'os', 'node', 'loadavg']) {
-      if (!(k in m)) problems.push(`machine.${k} missing`);
+      if (!Object.hasOwn(m, k)) problems.push(`machine.${k} missing`);
     }
   }
   if (!r.params || typeof r.params !== 'object') problems.push('params missing');

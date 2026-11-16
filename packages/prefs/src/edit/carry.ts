@@ -1,21 +1,23 @@
-import { isPlainObject } from '@weasel-js/registry';
+import { isPlainObject, setOwn } from '@weasel-js/registry';
 
 // Not deepEqual: key order counts here, since a reader who only reordered keys has made an edit to carry.
 const same = (a: unknown, b: unknown): boolean => JSON.stringify(a) === JSON.stringify(b);
 
 type Bag = Record<string, unknown>;
 
+const has = (bag: Bag, k: string): boolean => Object.hasOwn(bag, k);
+
 /** The keys of `mine` carried from `from` to `to`, in the order the result holds them. */
 function carriedKeys(mine: Bag, from: Bag, to: Bag): string[] {
   /** Not in the new source, and the reader's own: added, or changed before the source dropped it. */
-  const kept = (k: string): boolean => !(k in to) && (!(k in from) || !same(mine[k], from[k]));
-  const shared = (bag: Bag): string => Object.keys(bag).filter((k) => k in mine && k in from).join('\0');
+  const kept = (k: string): boolean => !has(to, k) && (!has(from, k) || !same(mine[k], from[k]));
+  const shared = (bag: Bag): string => Object.keys(bag).filter((k) => has(mine, k) && has(from, k)).join('\0');
   const keys = Object.keys(mine);
   if (shared(mine) !== shared(from)) {
     // The reader reordered: their order stands, and what the source added goes after it.
-    return [...keys.filter((k) => k in to || kept(k)), ...Object.keys(to).filter((k) => !(k in from) && !(k in mine))];
+    return [...keys.filter((k) => has(to, k) || kept(k)), ...Object.keys(to).filter((k) => !has(from, k) && !has(mine, k))];
   }
-  const order = Object.keys(to).filter((k) => k in mine || !(k in from));
+  const order = Object.keys(to).filter((k) => has(mine, k) || !has(from, k));
   keys.forEach((k, i) => {
     if (!kept(k)) return;
     const before = keys.slice(0, i).reverse().find((p) => order.includes(p));
@@ -34,7 +36,7 @@ export function carry(mine: unknown, from: unknown, to: unknown): unknown {
   if (!isPlainObject(mine) || !isPlainObject(from) || !isPlainObject(to)) return mine;
   const out: Bag = {};
   for (const k of carriedKeys(mine, from, to)) {
-    out[k] = !(k in mine) ? to[k] : k in from && k in to ? carry(mine[k], from[k], to[k]) : mine[k];
+    setOwn(out, k, !has(mine, k) ? to[k] : has(from, k) && has(to, k) ? carry(mine[k], from[k], to[k]) : mine[k]);
   }
   return out;
 }

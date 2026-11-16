@@ -10,5 +10,5 @@ export function sameFields(a: unknown, b: unknown): boolean {
   if (ka.length !== Object.keys(b).length) return false;
   const ra = a as Record<string, unknown>;
   const rb = b as Record<string, unknown>;
-  return ka.every((k) => k in rb && Object.is(ra[k], rb[k]));
+  return ka.every((k) => Object.hasOwn(rb, k) && Object.is(ra[k], rb[k]));
 }

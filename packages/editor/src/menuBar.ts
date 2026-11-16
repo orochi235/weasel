@@ -1,4 +1,5 @@
 import { pref, type PrefGroup } from '@weasel-js/prefs';
+import { getOwn, setOwn } from '@weasel-js/registry';
 
 /** A menu's runs: each is a group of items, set off from the next by a separator. */
 export type MenuRuns = Record<string, PrefGroup>;
@@ -45,8 +46,8 @@ export function editorMenuBar(
 ): PrefGroup {
   const menus: Record<string, PrefGroup> = {};
   for (const { key, title, access, always } of titles) {
-    const runs = contributions[key];
-    if (runs !== undefined || always) menus[key] = menu(title, runs ?? {}, access);
+    const runs = getOwn(contributions, key);
+    if (runs !== undefined || always) setOwn(menus, key, menu(title, runs ?? {}, access));
   }
   return pref.group('Menu bar', menus, { as: 'bar' });
 }

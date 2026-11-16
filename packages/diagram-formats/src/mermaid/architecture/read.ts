@@ -11,6 +11,7 @@ import { lineError } from '../../lineError';
 import { pageNameOf } from '../common/lines';
 import { textLines } from '../common/text';
 import { parseArchitecture, type ArchEnd, type ArchSide, type ArchStmt } from './parse';
+import { getOwn } from '@weasel-js/registry';
 
 /** Mermaid's built-in icons, as the outline each is drawn with. */
 export const ICON_OUTLINES: Readonly<Record<string, Outline>> = {
@@ -38,7 +39,7 @@ class ArchReader {
 
   outline(icon: string | undefined): Outline {
     if (icon === undefined) return SERVICE_OUTLINE;
-    const known = ICON_OUTLINES[icon];
+    const known = getOwn(ICON_OUTLINES, icon);
     if (known === undefined) this.warnings.list('Mermaid icons not built in were drawn as rounded boxes', icon);
     return known ?? SERVICE_OUTLINE;
   }

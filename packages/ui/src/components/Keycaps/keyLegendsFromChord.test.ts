@@ -14,4 +14,8 @@ describe('keyLegendsFromChord', () => {
     expect(labels('Alt', 'windows')).toEqual(['Alt']);
     expect(labels('Mod++', 'windows')).toEqual(['Ctrl', '+']);
   });
+
+  it('reads a part named like an Object.prototype member as the key, not a modifier', () => {
+    expect(labels('Shift+constructor', 'windows')).toEqual(labels('Shift+x', 'windows').slice(0, -1).concat(['constructor']));
+  });
 });

@@ -142,7 +142,7 @@ export function workspaceCodec(types: PrefTypes): DocumentCodec<Workspace> {
       const was = isPlainObject(sent) ? sent : {};
       return workspaces(base)(base.assets.map((asset) => {
         const root = assetOf(value, asset.id)?.root ?? asset.root;
-        return asset.id in was ? afterTaken(root, was[asset.id], asset.root, types) : root;
+        return Object.hasOwn(was, asset.id) ? afterTaken(root, was[asset.id], asset.root, types) : root;
       }));
     },
     saveSent,

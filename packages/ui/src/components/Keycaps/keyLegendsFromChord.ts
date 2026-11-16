@@ -1,5 +1,6 @@
 import type { KeyLegend } from './Keycaps';
 import { keyLegendsFromMods, keyLegendsFromShortcut, type KeyLegendOptions, type LogicalMod } from '@weasel-js/gestures';
+import { getOwn } from '@weasel-js/registry';
 
 const MODS: Readonly<Record<string, LogicalMod>> = { mod: 'mod', shift: 'shift', alt: 'alt' };
 
@@ -11,8 +12,8 @@ const MODS: Readonly<Record<string, LogicalMod>> = { mod: 'mod', shift: 'shift',
 export function keyLegendsFromChord(chord: string, opts: KeyLegendOptions = {}): readonly KeyLegend[] {
   // A trailing `+` is the plus key itself: `Mod++`.
   const parts = chord.trim().split(/\+(?=.)/).map((part) => part.trim());
-  const mods = parts.flatMap((part) => MODS[part.toLowerCase()] ?? []);
-  const key = parts.find((part) => !(part.toLowerCase() in MODS));
+  const mods = parts.flatMap((part) => getOwn(MODS, part.toLowerCase()) ?? []);
+  const key = parts.find((part) => !Object.hasOwn(MODS, part.toLowerCase()));
   if (key === undefined) return keyLegendsFromMods(mods.map((name) => ({ name })), opts);
   return keyLegendsFromShortcut({ key, mod: mods.includes('mod'), shift: mods.includes('shift'), alt: mods.includes('alt') }, opts) ?? [];
 }

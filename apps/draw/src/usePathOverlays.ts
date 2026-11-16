@@ -6,6 +6,7 @@ import {
 } from '@weasel-js/path-tools';
 import { useMemo } from 'react';
 import { drawPrefs, usePref } from './prefs';
+import { hasOwnKey } from '@weasel-js/registry';
 
 /** Each path-edit overlay's chrome id, and the View preference that shows it. */
 const OVERLAY_PREFS = {
@@ -16,7 +17,7 @@ const OVERLAY_PREFS = {
 } as const;
 
 type OverlayId = keyof typeof OVERLAY_PREFS;
-const isOverlay = (id: string): id is OverlayId => id in OVERLAY_PREFS;
+const isOverlay = (id: string): id is OverlayId => hasOwnKey(OVERLAY_PREFS, id);
 
 /** The `chromeRules` dep over the View preferences: an overlay's rule is its preference, and setting one writes
  *  it. Every other id is the canvas's own. */

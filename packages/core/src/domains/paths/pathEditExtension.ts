@@ -212,7 +212,7 @@ export const GEOMETRY_BOUND_DATA: readonly string[] = ['skin', 'constraints', 'w
 /** `data` without the fields in {@link GEOMETRY_BOUND_DATA}, other than `keep`. */
 export function withoutGeometryBoundData<T>(data: T, keep: readonly string[] = []): T {
   if (data === null || typeof data !== 'object') return data;
-  const drop = GEOMETRY_BOUND_DATA.filter((k) => k in (data as object) && !keep.includes(k));
+  const drop = GEOMETRY_BOUND_DATA.filter((k) => Object.hasOwn(data, k) && !keep.includes(k));
   if (drop.length === 0) return data;
   const out = { ...(data as Record<string, unknown>) };
   for (const k of drop) delete out[k];

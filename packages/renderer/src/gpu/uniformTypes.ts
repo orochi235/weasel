@@ -1,4 +1,5 @@
 import type { GpuUniformType } from './types';
+import { hasOwnKey } from '@weasel-js/registry';
 
 /** Components per element of each uniform type. */
 export const UNIFORM_COMPONENTS: Readonly<Record<GpuUniformType, number>> = {
@@ -10,5 +11,5 @@ export const UNIFORM_COMPONENTS: Readonly<Record<GpuUniformType, number>> = {
 
 /** Whether `type`, as a shader declares it, is one a uniform array is written as. */
 export function isUniformType(type: string): type is GpuUniformType {
-  return type in UNIFORM_COMPONENTS;
+  return hasOwnKey(UNIFORM_COMPONENTS, type);
 }

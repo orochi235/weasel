@@ -33,6 +33,12 @@ describe('KeyCap', () => {
     }
   });
 
+  it('writes a legend named like an Object.prototype member as text', () => {
+    const kbd = renderWithIcons(<KeyCap label="constructor" />).container.querySelector('kbd')!;
+    expect(kbd.querySelector('svg')).toBeNull();
+    expect(kbd.textContent).toBe('constructor');
+  });
+
   it('draws a symbol legend as an icon, keeping its character as hidden text', () => {
     const kbd = renderWithIcons(<KeyCap label="⌘" />).container.querySelector('kbd')!;
     expect(kbd.querySelector('svg')).not.toBeNull();

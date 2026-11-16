@@ -71,7 +71,7 @@ export function useSceneToolSlot(
 }
 
 function pushTool(asked: { current: string | null }, target: ToolsApi, id: string | null): void {
-  if (id === null || id === target.active || !(id in target.registry)) return;
+  if (id === null || id === target.active || !Object.hasOwn(target.registry, id)) return;
   asked.current = id;
   target.setActive(id);
 }
