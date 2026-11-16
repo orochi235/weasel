@@ -16,7 +16,7 @@ import {
   clampCamera,
   type OrbitLimits,
 } from '@weasel-js/kernel3d';
-import { useKitSettings } from '@weasel-js/react';
+import { useKitSettings, watchResize } from '@weasel-js/react';
 import {
   type ReactNode,
   type RefObject,
@@ -124,10 +124,7 @@ export function Orbit({
       surface?.invalidateRects();
     };
     measure();
-    if (typeof ResizeObserver === 'undefined') return;
-    const ro = new ResizeObserver(measure);
-    ro.observe(el);
-    return () => ro.disconnect();
+    return watchResize(el, measure);
   }, [areaEl, onResizeRef, surface]);
 
   // The scene sits outside the camera's input scope: a canvas drawn in it — a

@@ -1,3 +1,4 @@
+import { watchResize } from '@weasel-js/react';
 import { useCallback, useLayoutEffect, useState } from 'react';
 
 /** The least each pane may be laid out at. */
@@ -48,13 +49,11 @@ export function useZoneWidth(
     if (now > 0) setMeasured(now);
   }, []);
   useLayoutEffect(() => {
-    if (fixed !== undefined || !strip || typeof ResizeObserver === 'undefined') return;
-    const observer = new ResizeObserver((entries) => {
+    if (fixed !== undefined || !strip) return;
+    return watchResize(strip, (entries) => {
       const width = entries[0]?.contentRect.width;
       if (width !== undefined) setMeasured(width);
     });
-    observer.observe(strip);
-    return () => observer.disconnect();
   }, [strip, fixed]);
   return [fixed ?? measured, frameRef];
 }

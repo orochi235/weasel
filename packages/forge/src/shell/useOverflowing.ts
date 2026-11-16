@@ -1,4 +1,5 @@
 import { useLayoutEffect, useState } from 'react';
+import { watchResize } from '@weasel-js/react';
 
 const overflows = (el: HTMLElement) => el.scrollHeight > el.clientHeight || el.scrollWidth > el.clientWidth;
 
@@ -6,24 +7,21 @@ const overflows = (el: HTMLElement) => el.scrollHeight > el.clientHeight || el.s
 export function useOverflowing(el: HTMLElement | null): boolean {
   const [overflowing, setOverflowing] = useState(false);
   useLayoutEffect(() => {
-    if (!el || typeof ResizeObserver === 'undefined') return;
+    if (!el) return;
     const check = () => setOverflowing(overflows(el));
-    const sizes = new ResizeObserver(check);
-    const watch = () => {
-      sizes.disconnect();
-      sizes.observe(el);
-      for (const child of el.children) sizes.observe(child, { box: 'border-box' });
-    };
+    const unwatchOwn = watchResize(el, check);
+    let unwatchChildren = watchResize(el.children, check, { box: 'border-box' });
     const children = new MutationObserver(() => {
-      watch();
+      unwatchChildren();
+      unwatchChildren = watchResize(el.children, check, { box: 'border-box' });
       check();
     });
     children.observe(el, { childList: true });
-    watch();
     check();
     return () => {
       children.disconnect();
-      sizes.disconnect();
+      unwatchOwn();
+      unwatchChildren();
     };
   }, [el]);
   return overflowing;

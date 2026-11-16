@@ -1,4 +1,4 @@
-import { isDev } from '@weasel-js/react';
+import { isDev, watchResize } from '@weasel-js/react';
 import { useEffect } from 'react';
 
 /** An element's edges, in the same coordinate space as the bound it is tested against. */
@@ -100,7 +100,7 @@ const SETTLE_MS = 300;
 export function useLabFitWarning(labBody: Element | null): void {
   useEffect(() => {
     if (!isDev()) return;
-    if (!labBody || typeof ResizeObserver === 'undefined') return;
+    if (!labBody) return;
     const lab = labBody.closest('.lk-lab');
     const shellBody = labBody.closest('.lk-shell-body');
     if (!lab || !shellBody) return;
@@ -108,19 +108,18 @@ export function useLabFitWarning(labBody: Element | null): void {
     // A shrinking window overflows for a frame or two before the workspace
     // re-lays out, so only overflow that outlasts the resize is reported.
     let timer: ReturnType<typeof setTimeout> | undefined;
-    const observer = new ResizeObserver(() => {
+    const stop = watchResize([document.documentElement, lab, shellBody, labBody], () => {
       clearTimeout(timer);
       timer = setTimeout(() => {
         const why = explainLabScroll(lab, shellBody);
         if (!why) return;
-        observer.disconnect();
+        stop();
         console.warn(`[labkit] <Lab> should fit its container without scrolling, but ${why}.`);
       }, SETTLE_MS);
     });
-    for (const el of [document.documentElement, lab, shellBody, labBody]) observer.observe(el);
     return () => {
       clearTimeout(timer);
-      observer.disconnect();
+      stop();
     };
   }, [labBody]);
 }

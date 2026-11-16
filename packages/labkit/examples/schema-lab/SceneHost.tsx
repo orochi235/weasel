@@ -1,6 +1,7 @@
 import { SceneCanvas, WeaselProvider } from '@weasel-js/core';
 import type { RectPose, Scene } from '@weasel-js/core';
 import { useEffect, useRef, useState, useSyncExternalStore } from 'react';
+import { watchResize } from '@weasel-js/react';
 
 /** Mounts a scene in a trial. The absolute child is load-bearing: SceneCanvas
  *  sizes its own `<canvas>`, and on a flow-layout parent that feeds the resize
@@ -14,15 +15,13 @@ export function SceneHost<TData>({ scene }: { scene: Scene<TData, 'default', Rec
   useEffect(() => {
     const el = hostRef.current;
     if (!el) return;
-    const ro = new ResizeObserver(([entry]) => {
+    return watchResize(el, ([entry]) => {
       if (!entry) return;
       const w = Math.round(entry.contentRect.width);
       const h = Math.round(entry.contentRect.height);
       if (w <= 0 || h <= 0) return;
       setSize((prev) => (prev.w === w && prev.h === h ? prev : { w, h }));
     });
-    ro.observe(el);
-    return () => ro.disconnect();
   }, []);
 
   return (

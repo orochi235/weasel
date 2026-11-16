@@ -13,7 +13,7 @@ import { formatRoute } from '../../route/url';
 import { indexId } from '../../story/indexPages';
 import type { IndexContext, IndexStoryProps, LoadedStory, StoryContext } from '../../story/types';
 import { StoryHost } from '../StoryHost';
-import { useNearViewport } from '@weasel-js/react';
+import { useNearViewport, watchResize } from '@weasel-js/react';
 import { mergeConfig, variantRows, withValueAt } from './variants';
 import './index.css';
 import { Description } from './Description';
@@ -46,10 +46,8 @@ export function IndexStory({ story, config: over, label }: IndexStoryProps) {
   const [height, setHeight] = useState<number | null>(null);
   useEffect(() => {
     const el = cell.current;
-    if (!near || !el || typeof ResizeObserver === 'undefined') return;
-    const observer = new ResizeObserver(() => setHeight(el.getBoundingClientRect().height));
-    observer.observe(el);
-    return () => observer.disconnect();
+    if (!near || !el) return;
+    return watchResize(el, () => setHeight(el.getBoundingClientRect().height));
   }, [near]);
   useFullscreenFit(stage, near && story.layout === 'fullscreen');
   const ctx: StoryContext = {

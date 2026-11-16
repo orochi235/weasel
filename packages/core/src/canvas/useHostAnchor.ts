@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
-import { useLatest, useVisibleRaf, watchElementMove } from '@weasel-js/react';
+import { useLatest, useVisibleRaf, watchElementMove, watchResize } from '@weasel-js/react';
 import {
   hostAnchorCss, hostAnchorRect,
   type HostAnchorAlign, type HostAnchorOffset,
@@ -74,18 +74,15 @@ export function useHostAnchor(
     const schedule = () => raf.request();
     window.addEventListener('scroll', schedule, true);
     window.addEventListener('resize', schedule);
-    const observer =
-      typeof ResizeObserver !== 'undefined' ? new ResizeObserver(schedule) : null;
-    if (panel) observer?.observe(panel);
     const hostEl = resolve.current();
-    if (hostEl) observer?.observe(hostEl);
+    const unwatchResize = watchResize([panel, hostEl], schedule);
     const unwatchMove = hostEl ? watchElementMove(hostEl, schedule) : undefined;
 
     return () => {
       window.removeEventListener('scroll', schedule, true);
       window.removeEventListener('resize', schedule);
       raf.cancel();
-      observer?.disconnect();
+      unwatchResize();
       unwatchMove?.();
     };
   }, [recompute, raf, panel, resolve]);
