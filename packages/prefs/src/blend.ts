@@ -2,6 +2,7 @@
 
 import { hexToRgba, mixRgbaWeighted, rgbaToHex } from '@weasel-js/paint';
 import type { PrefWeighted, PrefLeaf } from '@weasel-js/prefs-schema';
+import { getOwn } from '@weasel-js/registry';
 
 /**
  * Folds a split value's alternatives into the one value read. `members` holds
@@ -65,8 +66,8 @@ export function blendPref(leaf: PrefLeaf, members: readonly PrefWeighted[], blen
   if (members.length === 1) return members[0]!.value;
   const folded = foldWeights(members);
   if (folded.length === 1) return folded[0]!.value;
-  const blend = (blends && Object.hasOwn(blends, leaf.kind) ? blends[leaf.kind] : undefined)
-    ?? (Object.hasOwn(PREF_BLENDS, leaf.kind) ? PREF_BLENDS[leaf.kind] : undefined)
+  const blend = getOwn(blends, leaf.kind)
+    ?? getOwn(PREF_BLENDS, leaf.kind)
     ?? heaviest;
   return blend(folded, leaf);
 }

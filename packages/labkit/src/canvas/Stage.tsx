@@ -1,5 +1,6 @@
 import type { Yoke } from '@weasel-js/core';
 import { useLatest } from '@weasel-js/core';
+import { watchResize } from '@weasel-js/react';
 import { type CSSProperties, type ReactNode, useEffect, useMemo, useRef } from 'react';
 import type { ViewTransform } from '../instrument/types';
 import { normalize2DView } from '../state/view';
@@ -108,10 +109,7 @@ export function Stage({
       surface?.invalidateRects();
     };
     measure();
-    if (typeof ResizeObserver === 'undefined') return;
-    const ro = new ResizeObserver(measure);
-    ro.observe(el);
-    return () => ro.disconnect();
+    return watchResize(el, measure);
   }, [onResizeRef, surface]);
 
   // A transform moves every tile inside the content without resizing anything,

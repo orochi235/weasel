@@ -1,3 +1,4 @@
+import { trimNumber } from '@weasel-js/geom';
 import { type ConfigSchema, defineInstrument, f, type RenderContext } from '@weasel-js/labkit';
 import type { BadgeQuatrefoilBaseParams } from '@weasel-js/ui/components/Badge';
 import { quatrefoilRadius } from '@weasel-js/ui/components/Badge/geometry';
@@ -43,12 +44,12 @@ function OctantPlot({ params }: { params: BadgeQuatrefoilBaseParams }) {
   const points = Array.from({ length: STEPS + 1 }, (_, i) => {
     const theta = (i / STEPS) * OCTANT;
     const r = radiusAt(Math.sin(2 * theta));
-    return `${(r * Math.cos(theta)).toFixed(2)},${(-r * Math.sin(theta)).toFixed(2)}`;
+    return `${trimNumber(r * Math.cos(theta), 2)},${trimNumber(-r * Math.sin(theta), 2)}`;
   });
   return (
     <svg viewBox="-5 -80 90 85" width={100} height={100} className={s.plot}>
       <line x1="0" y1="0" x2="75" y2="0" className={s.axis} strokeWidth="0.5" strokeDasharray="2 2" />
-      <line x1="0" y1="0" x2={(AXIS * Math.cos(OCTANT)).toFixed(2)} y2={(-AXIS * Math.sin(OCTANT)).toFixed(2)} className={s.axis} strokeWidth="0.5" strokeDasharray="2 2" />
+      <line x1="0" y1="0" x2={trimNumber(AXIS * Math.cos(OCTANT), 2)} y2={trimNumber(-AXIS * Math.sin(OCTANT), 2)} className={s.axis} strokeWidth="0.5" strokeDasharray="2 2" />
       <polyline points={points.join(' ')} className={s.curve} strokeWidth="1.2" vectorEffect="non-scaling-stroke" />
       <circle cx="0" cy="0" r="1.2" className={s.origin} />
     </svg>

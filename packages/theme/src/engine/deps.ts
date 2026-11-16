@@ -137,7 +137,7 @@ export function axisDependencies(definition: ThemeDefinition, lookup?: Lookup): 
     const add = (from: string) => {
       for (const r of rampsOf(from, seen)) out.add(r);
     };
-    const rule = def.semantics && Object.hasOwn(def.semantics, name) ? def.semantics[name] : undefined;
+    const rule = getOwn(def.semantics, name);
     for (const l of rule === undefined ? [] : readableRules(rule)) {
       if ('ramp' in l) out.add(l.ramp);
       else if ('from' in l) add(l.from);

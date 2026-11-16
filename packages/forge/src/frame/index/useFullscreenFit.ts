@@ -1,4 +1,5 @@
 import { type RefObject, useEffect } from 'react';
+import { watchResize } from '@weasel-js/react';
 
 const VAR = '--fg-cell-fit';
 
@@ -12,7 +13,7 @@ const VAR = '--fg-cell-fit';
 export function useFullscreenFit(stage: RefObject<HTMLElement | null>, active: boolean) {
   useEffect(() => {
     const el = stage.current;
-    if (!active || !el || typeof ResizeObserver === 'undefined') return;
+    if (!active || !el) return;
     const fit = () => {
       el.style.removeProperty(VAR);
       // The border box that shows the content whole: its scroll height plus any horizontal scrollbar.
@@ -21,23 +22,22 @@ export function useFullscreenFit(stage: RefObject<HTMLElement | null>, active: b
     };
     // Fitted after the observer's callbacks, not in one: a resize there leaves the cell's own observer undelivered.
     let pending: ReturnType<typeof setTimeout> | undefined;
-    const resize = new ResizeObserver(() => {
+    const schedule = () => {
       clearTimeout(pending);
       pending = setTimeout(fit, 0);
-    });
+    };
     // The story's boxes, not the stage: a story that fills it resizes with it, and `max()` in the CSS follows the
     // trial's height for one that does not.
-    const watch = () => {
-      resize.disconnect();
-      for (const child of el.children) resize.observe(child);
-    };
-    const children = new MutationObserver(watch);
+    let unwatch = watchResize(el.children, schedule);
+    const children = new MutationObserver(() => {
+      unwatch();
+      unwatch = watchResize(el.children, schedule);
+    });
     children.observe(el, { childList: true });
-    watch();
     return () => {
       clearTimeout(pending);
       children.disconnect();
-      resize.disconnect();
+      unwatch();
       el.style.removeProperty(VAR);
     };
   }, [stage, active]);

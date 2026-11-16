@@ -1,4 +1,5 @@
-import { keyLegendFromKey, keyLegendsFromMods, ownValue, type KeyLegend, type KeyLegendOptions, type LogicalMod } from './keyLegendsFromMods';
+import { keyLegendFromKey, keyLegendsFromMods, type KeyLegend, type KeyLegendOptions, type LogicalMod } from './keyLegendsFromMods';
+import { getOwn } from '@weasel-js/registry';
 
 const MOD_CODES: Readonly<Record<string, LogicalMod>> = {
   ShiftLeft: 'shift', ShiftRight: 'shift',
@@ -21,13 +22,13 @@ const PRINTED: Readonly<Record<string, string>> = {
  * first, then as it does for {@link keyLegendFromKey} and {@link keyLegendsFromMods}.
  */
 export function keyLegendFromCode(code: string, opts: KeyLegendOptions = {}): KeyLegend {
-  const own = ownValue(opts.labels, code);
+  const own = getOwn(opts.labels, code);
   if (own !== undefined) return { label: own };
-  const mod = ownValue(MOD_CODES, code);
+  const mod = getOwn(MOD_CODES, code);
   if (mod) return keyLegendsFromMods([{ name: mod }], opts)[0]!;
   const char = /^Key([A-Z])$/.exec(code) ?? /^Digit(\d)$/.exec(code);
   if (char) return keyLegendFromKey(char[1]!, opts);
   if (code === 'NumpadEnter') return keyLegendFromKey('Enter', opts);
-  const printed = ownValue(PRINTED, code);
+  const printed = getOwn(PRINTED, code);
   return printed !== undefined ? { label: printed } : keyLegendFromKey(code, opts);
 }

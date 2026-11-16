@@ -2,6 +2,7 @@ import { type CSSProperties, type ReactNode, useLayoutEffect, useRef } from 'rea
 import { maxOf } from '@weasel-js/geom';
 import s from './Slider.module.css';
 import { GAP, staggerRows } from './staggerRows';
+import { watchResize } from '@weasel-js/react';
 
 export interface Readout {
   /** Where along the track its thumb sits, 0–1. */
@@ -38,10 +39,8 @@ export function ReadoutsBelow({ readouts, place }: { readouts: readonly Readout[
 
   useLayoutEffect(() => {
     const row = ref.current;
-    if (!row || typeof ResizeObserver === 'undefined') return;
-    const observer = new ResizeObserver(() => stagger(row));
-    observer.observe(row);
-    return () => observer.disconnect();
+    if (!row) return;
+    return watchResize(row, () => stagger(row));
   }, []);
 
   return (

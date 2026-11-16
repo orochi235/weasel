@@ -1,4 +1,5 @@
 import { useLayoutEffect, useState, type RefObject } from 'react';
+import { watchResize } from '@weasel-js/react';
 
 /**
  * Live CSS-pixel size of the SVG `ref`'s element belongs to; an outermost `<svg>` is its own.
@@ -16,14 +17,11 @@ export function useSvgBox(ref: RefObject<SVGElement | null>, when: unknown = tru
     };
     const r = svg.getBoundingClientRect();
     set(r.width, r.height);
-    if (typeof ResizeObserver === 'undefined') return;
     // The observer's size is the layout's own, where a bounding rect is scaled by any transform.
-    const ro = new ResizeObserver(([entry]) => {
+    return watchResize(svg, ([entry]) => {
       const size = entry?.borderBoxSize?.[0];
       if (size) set(size.inlineSize, size.blockSize);
     });
-    ro.observe(svg);
-    return () => ro.disconnect();
   }, [ref, when]);
 
   return box;

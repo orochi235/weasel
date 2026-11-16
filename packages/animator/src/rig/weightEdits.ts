@@ -66,7 +66,7 @@ export function brushWeights(
  * not sum to 1.
  */
 export function jointShares(skin: Skin, joint: string, count: number): number[] {
-  const own = Object.hasOwn(skin, joint) ? skin[joint] : undefined;
+  const own = getOwn(skin, joint);
   return Array.from({ length: count }, (_, i) => {
     let total = 0;
     for (const name in skin) total += skin[name][i] ?? 0;

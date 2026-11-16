@@ -8,6 +8,7 @@ import { resolveTheme, themeAxes, type ResolvedTheme } from './resolveTheme';
 import { weaselTheme, type Theme } from './theme';
 import { useResolvedColorMode } from './useColorMode';
 import { warnThemeOnce } from './warnOnce';
+import { getOwn } from '@weasel-js/registry';
 
 export {
   useColorModePreference,
@@ -106,7 +107,7 @@ export function ThemeProvider({
 function warnUnknownAxisValues(theme: Theme, axes: ReturnType<typeof themeAxes>, selection: Selection | undefined): void {
   if (!selection) return;
   for (const [axis, value] of Object.entries(selection)) {
-    const def = Object.hasOwn(axes, axis) ? axes[axis] : undefined;
+    const def = getOwn(axes, axis);
     if (!def || Object.hasOwn(def.values, value)) continue;
     warnThemeOnce(
       `axis\0${theme.name}\0${axis}\0${value}`,

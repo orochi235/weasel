@@ -1,6 +1,7 @@
 import { UNSTABLE_ToastQueue } from 'react-aria-components';
 import { flushSync } from 'react-dom';
 import { prefersReducedMotion } from '@weasel-js/react';
+import { LONGEST_TIMER_MS } from '@weasel-js/registry';
 import type { Grade } from '../appearance';
 
 /** Kit-owned payload rendered inside each toast. */
@@ -25,8 +26,6 @@ export interface ToastOptions {
 }
 
 export const DEFAULT_TTL_MS = 8000;
-
-const MAX_TIMER_MS = 2 ** 31 - 1;
 
 // Tracks overlapping toast-triggered view transitions so the `:root`
 // marker class survives until the *last* one settles.
@@ -115,7 +114,7 @@ export class ToastQueue {
     }
     let key: string;
     const racOptions: { timeout?: number; onClose?: () => void } =
-      ttlMs === null || !(ttlMs <= MAX_TIMER_MS) ? {} : { timeout: ttlMs };
+      ttlMs === null || !(ttlMs <= LONGEST_TIMER_MS) ? {} : { timeout: ttlMs };
     if (id !== undefined) {
       racOptions.onClose = () => {
         if (this.keysById.get(id) === key) this.keysById.delete(id);

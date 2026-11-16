@@ -1,5 +1,6 @@
 import type { Yoke } from '@weasel-js/core';
 import { useLatest, watchDevicePixelRatio } from '@weasel-js/core';
+import { watchResize } from '@weasel-js/react';
 import {
   type CSSProperties,
   type ReactNode,
@@ -105,12 +106,11 @@ function useMeasuredBox(ref: RefObject<HTMLElement | null>): {
     // Nor does a page changing the transform it shows this frame at; it says so with a resize.
     const remeasure = () => update();
     win?.addEventListener('resize', remeasure);
-    const ro = typeof ResizeObserver === 'undefined' ? null : new ResizeObserver(update);
-    ro?.observe(el);
+    const unwatchResize = watchResize(el, update);
     return () => {
       unwatchDensity();
       win?.removeEventListener('resize', remeasure);
-      ro?.disconnect();
+      unwatchResize();
     };
   }, [ref]);
   return size;

@@ -19,7 +19,7 @@ export type {
   RegisterOptions,
   PushOptions,
 } from './reflectable';
-export { after } from './after';
+export { after, LONGEST_TIMER_MS } from './after';
 export { createLatest, type Latest } from './latest';
 export { MIXED } from './mixed';
 export type { Mixed } from './mixed';

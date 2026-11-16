@@ -1,3 +1,4 @@
+import { trimNumber } from '@weasel-js/geom';
 import { useId } from 'react';
 import type { EffectModule } from '../bases/types';
 import type { BadgeCorner } from '../types';
@@ -79,9 +80,9 @@ const Bevel: EffectModule<BadgeBevelEffectParams> = {
       const innerPts = run.idxs.map((i) => inner[i]).reverse();
       const pts = [...outerPts, ...innerPts];
       if (pts.length === 0) return '';
-      let d = `M ${pts[0].x.toFixed(3)} ${pts[0].y.toFixed(3)}`;
+      let d = `M ${trimNumber(pts[0].x, 3)} ${trimNumber(pts[0].y, 3)}`;
       for (let i = 1; i < pts.length; i++) {
-        d += ` L ${pts[i].x.toFixed(3)} ${pts[i].y.toFixed(3)}`;
+        d += ` L ${trimNumber(pts[i].x, 3)} ${trimNumber(pts[i].y, 3)}`;
       }
       return d + ' Z';
     };

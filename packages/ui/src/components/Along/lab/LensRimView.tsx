@@ -7,7 +7,7 @@ import { Slider, type Thumb } from '@weasel-js/ui/components/Slider';
 import { actionsSchema, LabActions } from './labActions';
 import { LENS_IMAGE } from './lensImage';
 import { num, Readouts } from './Readouts';
-import { readSaved, writeSaved } from './saved';
+import { readLocal, writeLocal } from '@weasel-js/storage';
 import lab from './lab.stories.module.css';
 import s from './LensRim.stories.module.css';
 
@@ -51,9 +51,9 @@ export function pictureAt(client: Point, lens: DOMRect, size: number, turn: numb
 export function LensRimView({ config }: { config: LensRimConfig }): ReactElement {
   const { size, turn } = config;
   const [zoom, setZoom] = useState<Thumb[]>([{ value: 1 }]);
-  const [marks, setMarks] = useState<Point[]>(() => readSaved<Point[]>(SAVED) ?? []);
+  const [marks, setMarks] = useState<Point[]>(() => (readLocal(SAVED) as Point[] | undefined) ?? []);
   const [pressed, setPressed] = useState('—');
-  useEffect(() => writeSaved(SAVED, marks), [marks]);
+  useEffect(() => void writeLocal(SAVED, marks), [marks]);
   const onPress = useCallback((key: string) => setPressed(key), []);
   const z = zoom[0]!.value;
   const { top, bottom } = rimArcs(turn);

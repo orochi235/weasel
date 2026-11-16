@@ -1,5 +1,5 @@
 import { startThresholdDrag, type ThresholdDragHandle } from '@weasel-js/routing';
-import { useKitSetting, useLatest } from '@weasel-js/react';
+import { useKitSetting, useLatest, watchResize } from '@weasel-js/react';
 import {
   type CSSProperties,
   type PointerEvent as ReactPointerEvent,
@@ -113,7 +113,7 @@ export function useFloatingPlacement({
       setSize(panel);
       setContainer(room);
     }
-    const observer = new ResizeObserver((entries) => {
+    return watchResize([parent, el], (entries) => {
       for (const entry of entries) {
         if (entry.target === parent) {
           setContainer({ w: entry.contentRect.width, h: entry.contentRect.height });
@@ -122,9 +122,6 @@ export function useFloatingPlacement({
         }
       }
     });
-    observer.observe(parent);
-    observer.observe(el);
-    return () => observer.disconnect();
   }, [panelRef, containerRef]);
 
   const rect = STRATEGY

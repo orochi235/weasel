@@ -2,6 +2,7 @@
 import type { Vec2 } from '@weasel-js/core/math';
 import { ObstacleIndex } from './obstacles';
 import { AVOID_DEFAULTS, inflate, type AvoidEdge, type AvoidObstacle, type AvoidPort, type Box } from './types';
+import { clamp } from '@weasel-js/geom';
 
 export const rectShape = (id: string, x: number, y: number, width = 100, height = 60): AvoidObstacle =>
   ({ id, kind: 'shape', box: { x, y, width, height } });
@@ -68,12 +69,11 @@ export function randomEdges(rand: () => number, shapes: readonly AvoidObstacle[]
 export function nearEdges(rand: () => number, shapes: readonly AvoidObstacle[], count: number): AvoidEdge[] {
   const cols = Math.ceil(Math.sqrt(shapes.length));
   const rows = Math.ceil(shapes.length / cols);
-  const clamp = (v: number, hi: number) => Math.max(0, Math.min(hi, v));
   const out: AvoidEdge[] = [];
   for (let k = 0; k < count; k++) {
     const i = Math.floor(rand() * shapes.length);
-    const col = clamp((i % cols) + Math.floor(rand() * 5) - 2, cols - 1);
-    const row = clamp(Math.floor(i / cols) + Math.floor(rand() * 5) - 2, rows - 1);
+    const col = clamp((i % cols) + Math.floor(rand() * 5) - 2, 0, cols - 1);
+    const row = clamp(Math.floor(i / cols) + Math.floor(rand() * 5) - 2, 0, rows - 1);
     let j = row * cols + col;
     if (j === i || j >= shapes.length) j = i % cols === 0 ? i + 1 : i - 1;
     out.push(edgeBetween(`e${k}`, shapes[i]!, shapes[j]!));

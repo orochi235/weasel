@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { solid } from '@weasel-js/paint';
+import { byteHex, solid } from '@weasel-js/paint';
 import {
   asNodeId,
   lerpOklab,
@@ -28,7 +28,7 @@ const HOT = srgbU8ToOklab(0xd4, 0x62, 0x4f);
 
 const tintFill = (lab: Lab): Paint => {
   const rgb = oklabToSrgbU8(lab[0], lab[1], lab[2]);
-  return solid(`#${rgb.map((c) => c.toString(16).padStart(2, '0')).join('')}`);
+  return solid(`#${rgb.map(byteHex).join('')}`);
 };
 
 /** The whole animation as data. `pose:<id>` names a node's pose, and `tint` a target the demo makes. */

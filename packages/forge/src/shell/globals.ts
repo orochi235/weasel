@@ -104,7 +104,7 @@ export function labGlobals(declarations: GlobalDeclarations, stored: unknown): G
   const from = isRecord(stored) ? stored : {};
   const offered: Globals = Object.fromEntries(
     Object.entries(declarations).map(([key, declaration]) => {
-      const value = Object.hasOwn(from, key) ? from[key] : undefined;
+      const value = getOwn(from, key);
       const known =
         declaration.options.some((option) => option.value === value) || (declaration.follows && value === FOLLOW_APP);
       return [key, known ? value : declaration.default];

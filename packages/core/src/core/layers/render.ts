@@ -5,6 +5,7 @@ import { groupMembership, wrapGroup, type LayerGroup } from './layerGroup';
 import { DEFAULT_LAYER_RETAIN, retainedId, type LayerRetainPolicy } from './retain';
 import type { RedrawSource } from './redrawSource';
 import type { Dims, LayerDims } from './dims';
+import { sameList } from '@weasel-js/registry';
 
 export type { Dims, LayerDims, LayerGroup, LayerRetainPolicy };
 export { DEFAULT_LAYER_RETAIN };
@@ -383,9 +384,5 @@ function layerCommands<TData>(
 /** Whether `b` matches `a` entry for entry under `Object.is` — how
  *  `RenderLayer.deps` is compared, and any cache keyed the same way. */
 export function depsUnchanged(a: readonly unknown[], b: readonly unknown[]): boolean {
-  if (a.length !== b.length) return false;
-  for (let i = 0; i < a.length; i++) {
-    if (!Object.is(a[i], b[i])) return false;
-  }
-  return true;
+  return sameList(a, b, Object.is);
 }

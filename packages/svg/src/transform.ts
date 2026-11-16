@@ -7,6 +7,7 @@
 import { DEG_TO_RAD, transformPoint, invert, multiply, trimNumber } from '@weasel-js/geom';
 import type { Matrix } from './types';
 import { IDENTITY_MATRIX } from './types';
+import { getOwn } from '@weasel-js/registry';
 
 /** Compose two 2x3 affines, `a` then `b` applied to a column vector. The
  *  kernel's own composition — `Matrix` is `Affine`, so nothing converts. */
@@ -95,7 +96,7 @@ export function parseTransform(
       return IDENTITY_MATRIX;
     }
     const name = match[1].toLowerCase();
-    const arity = Object.hasOwn(ARITY, name) ? ARITY[name] : undefined;
+    const arity = getOwn(ARITY, name);
     if (arity === undefined) {
       onWarn?.(`unsupported transform function: ${match[1]}; transform "${attr}" is ignored`);
       return IDENTITY_MATRIX;

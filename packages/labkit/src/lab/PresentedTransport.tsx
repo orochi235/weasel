@@ -1,3 +1,4 @@
+import { watchResize } from '@weasel-js/react';
 import { useEffect, useRef, useState } from 'react';
 import { TrialTransport } from '../clock/TrialTransport';
 import { usePresentedTransport } from './presentation';
@@ -19,10 +20,7 @@ export function PresentedTransport({ trialId }: { trialId: string }) {
     if (!box) return;
     const update = (): void => setNarrow(box.getBoundingClientRect().width < minWidth);
     update();
-    if (typeof ResizeObserver === 'undefined') return;
-    const ro = new ResizeObserver(update);
-    ro.observe(box);
-    return () => ro.disconnect();
+    return watchResize(box, update);
   }, [shown, minWidth]);
   if (!options) return null;
   return (

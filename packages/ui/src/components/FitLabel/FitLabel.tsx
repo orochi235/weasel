@@ -12,6 +12,7 @@ import {
 import { flushSync } from 'react-dom';
 import { useScaleStage, type FitScale, type FitScaleOptions } from './fitScale';
 import { prepareRoom, settleSpent, type FitRoom } from './fitRoom';
+import { watchResize } from '@weasel-js/react';
 
 /**
  * A label's forms, longest first: the canonical name, then each shorter form a
@@ -70,9 +71,9 @@ function useRoomObserver(
 ): void {
   useLayoutEffect(() => {
     const el = ref.current;
-    if (!el || depth < 1 || typeof ResizeObserver === 'undefined') return;
+    if (!el || depth < 1) return;
     const room = roomRef.current;
-    const observer = new ResizeObserver(() => {
+    return watchResize(el, () => {
       const at = room.steppedAt;
       if (depth >= 2 && at !== null && el.clientWidth > at + 0.5) {
         room.steppedAt = null;
@@ -82,8 +83,6 @@ function useRoomObserver(
       }
       if (room.spentAt !== null || overflows(el)) recheck();
     });
-    observer.observe(el);
-    return () => observer.disconnect();
   }, [ref, depth, roomRef, shouldStep, recheck, setOwn]);
 }
 

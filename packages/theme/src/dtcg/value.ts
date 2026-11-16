@@ -1,5 +1,6 @@
 import { cssColorNotation, rgbaToHex } from '@weasel-js/paint';
 import type { TokenValue } from './types.ts';
+import { isPlainObject } from '@weasel-js/registry';
 
 /**
  * Quote family names containing whitespace; leave everything else bare.
@@ -48,8 +49,6 @@ export function parseTokenValue(type: string, text: string): TokenValue {
   return raw;
 }
 
-const isRecord = (v: unknown): v is Record<string, unknown> => typeof v === 'object' && v !== null && !Array.isArray(v);
-
 /** A DTCG color object in CSS's own notation for its space: hex for an in-gamut sRGB color, nothing converted. */
 function colorObject(v: Record<string, unknown>): string | undefined {
   const { colorSpace: space, components, alpha = 1 } = v;
@@ -73,7 +72,7 @@ function colorObject(v: Record<string, unknown>): string | undefined {
 export function readDtcgValue(name: string, type: string, raw: unknown): TokenValue {
   if (typeof raw === 'string' || typeof raw === 'number') return raw;
   if (Array.isArray(raw) && raw.every((x) => typeof x === 'string' || typeof x === 'number')) return raw as TokenValue;
-  if (isRecord(raw)) {
+  if (isPlainObject(raw)) {
     if ((type === 'dimension' || type === 'duration') && typeof raw.value === 'number' && typeof raw.unit === 'string') {
       return `${raw.value}${raw.unit}`;
     }

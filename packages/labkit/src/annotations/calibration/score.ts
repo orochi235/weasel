@@ -1,6 +1,7 @@
 import { MARK_COLOR, MARK_WIDTH } from '../paint';
 import type { Annotation } from '../types';
 import type { Box, Exercise, Guide, Pt } from './exercises';
+import { distance, pointSegmentDist } from '@weasel-js/geom';
 
 /** Pass at ≤ 2 screen px per geometric error; a freehand stroke passes at a mean ≤ 2 px and a max ≤ 6 px. */
 export const PASS_PX = 2;
@@ -33,8 +34,6 @@ export function toScreenPx(error: number, pxPerUnit: number): number {
   return error * pxPerUnit;
 }
 
-const dist = (a: Pt, b: Pt): number => Math.hypot(a.x - b.x, a.y - b.y);
-
 function markBox(m: Annotation, content: Size): Box {
   return {
     x: m.frac.x * content.w,
@@ -66,23 +65,17 @@ export function boxError(mark: Box, guide: Box): number {
 
 /** The further endpoint's distance, with the ends paired as given. */
 export function segmentError(a: Pt, b: Pt, ga: Pt, gb: Pt): number {
-  return Math.max(dist(a, ga), dist(b, gb));
-}
-
-function toSegment(p: Pt, a: Pt, b: Pt): number {
-  const dx = b.x - a.x;
-  const dy = b.y - a.y;
-  const len2 = dx * dx + dy * dy;
-  const t = len2 === 0 ? 0 : Math.max(0, Math.min(1, ((p.x - a.x) * dx + (p.y - a.y) * dy) / len2));
-  return Math.hypot(p.x - (a.x + t * dx), p.y - (a.y + t * dy));
+  return Math.max(distance(a, ga), distance(b, gb));
 }
 
 /** The distance from `p` to the nearest part of the polyline through `curve`. */
 export function distanceToCurve(p: Pt, curve: readonly Pt[]): number {
-  if (curve.length === 1) return dist(p, curve[0] as Pt);
+  if (curve.length === 1) return distance(p, curve[0] as Pt);
   let best = Number.POSITIVE_INFINITY;
   for (let i = 1; i < curve.length; i++) {
-    best = Math.min(best, toSegment(p, curve[i - 1] as Pt, curve[i] as Pt));
+    const a = curve[i - 1] as Pt;
+    const b = curve[i] as Pt;
+    best = Math.min(best, pointSegmentDist(p.x, p.y, a.x, a.y, b.x, b.y));
   }
   return best;
 }
@@ -143,7 +136,7 @@ function geometry(ex: Exercise, m: Annotation, content: Size): Geometry | null {
   const box = markBox(m, content);
   if (ex.expect === 'text') {
     const origin = { x: box.x, y: box.y };
-    return { error: dist(origin, g.box), inside: inBox(origin, g.box, 1e-6) };
+    return { error: distance(origin, g.box), inside: inBox(origin, g.box, 1e-6) };
   }
   return { error: boxError(box, g.box) };
 }

@@ -15,6 +15,7 @@ import type { FontVariantCaps, TextTransform } from '@weasel-js/text';
 import { absolutePx } from './absoluteUnits';
 import { parsePaintAttr, parseUrlRef, type ParsedColor } from './color';
 import { DEFAULT_FONT_SIZE, emsPer, fontSizeKeyword } from './fontSize';
+import { hasOwnKey } from '@weasel-js/registry';
 
 export type Warn = (message: string) => void;
 
@@ -323,15 +324,11 @@ export const CSS_WIDE_KEYWORDS: ReadonlySet<string> = new Set(['inherit', 'initi
  * fails to understand, and for any property it does not read.
  */
 export function isDeclarationInvalid(prop: string, value: string): boolean {
-  if (!isPropertyName(prop)) return false;
+  if (!hasOwnKey(PROPERTIES, prop)) return false;
   const v = value.trim();
   if (CSS_WIDE_KEYWORDS.has(v.toLowerCase())) return false;
   const invalid = (PROPERTIES[prop] as PropertyDef<unknown>).invalid;
   return invalid ? invalid(v) : false;
-}
-
-function isPropertyName(prop: string): prop is PropertyName {
-  return Object.prototype.hasOwnProperty.call(PROPERTIES, prop);
 }
 
 /**
@@ -341,7 +338,7 @@ function isPropertyName(prop: string): prop is PropertyName {
  */
 export function isDeclarationHonored(prop: string, value: string): boolean {
   const name = prop.toLowerCase();
-  if (!isPropertyName(name)) return false;
+  if (!hasOwnKey(PROPERTIES, name)) return false;
   const v = value.trim();
   if (v === 'inherit') return PROPERTIES[name].inherits;
   let warned = false;

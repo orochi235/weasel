@@ -3,7 +3,7 @@ import { asNodeId, SceneCanvas, useScene, type CanvasHelpers, type RenderLayer }
 import type { ArcTrackSpec, Point } from '@weasel-js/geom';
 import { num, Readouts, type Readout } from './Readouts';
 import { Presets } from './Presets';
-import { readSaved, writeSaved } from './saved';
+import { readLocal, writeLocal } from '@weasel-js/storage';
 import { drawHandle, drawTrack } from './trackDraw';
 import { HANDLE, HANDLE_IDS, handleNode, handlesFor, measureTrack, readingWords, specFromHandles, type HandleId, type HandleNode, type HandlePoints } from './trackGeometry';
 import s from './lab.stories.module.css';
@@ -43,7 +43,7 @@ const presetSpec = (p: ArcPreset): ArcTrackSpec => ({ center: CENTER, radius: 15
 
 /** The handle nodes the lab opens with: what was saved, else the top half. */
 function initialHandles(): HandleNode[] {
-  const saved = readSaved<HandlePoints>(SAVED);
+  const saved = readLocal(SAVED) as HandlePoints | undefined;
   const points = saved && HANDLE_IDS.every((id) => saved[id] && Number.isFinite(saved[id].x)) ? saved : handlesFor(presetSpec(ARCS[0]!), PROBE);
   return HANDLE_IDS.map((id) => handleNode(id, points[id]));
 }
@@ -78,7 +78,7 @@ export function TrackGeometryView({ config, onConfig }: { config: TrackGeometryC
 
   const version = scene.getVersion();
   useEffect(() => {
-    writeSaved(SAVED, readHandles(null, pose));
+    writeLocal(SAVED, readHandles(null, pose));
   }, [version, pose]);
 
   const layer = useMemo<RenderLayer<unknown>>(() => ({

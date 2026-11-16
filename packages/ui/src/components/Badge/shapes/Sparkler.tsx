@@ -1,5 +1,5 @@
 import type { ShapeModule } from '../types';
-import { DEG_TO_RAD } from '@weasel-js/geom';
+import { DEG_TO_RAD, trimNumber } from '@weasel-js/geom';
 
 /** What `shapeParams` takes on a `sparkler` badge. */
 export interface BadgeSparklerShapeParams {
@@ -27,7 +27,7 @@ function sparklerPath(points: number, outerR: number, innerR: number, rotation: 
     const a = start + i * step;
     const x = cx + Math.cos(a) * r;
     const y = cy + Math.sin(a) * r;
-    d += (i === 0 ? 'M ' : ' L ') + x.toFixed(2) + ' ' + y.toFixed(2);
+    d += (i === 0 ? 'M ' : ' L ') + trimNumber(x, 2) + ' ' + trimNumber(y, 2);
   }
   return d + ' Z';
 }

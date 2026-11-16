@@ -1,5 +1,5 @@
 import { useLayoutEffect, useState } from 'react';
-import { useLatest } from '@weasel-js/react';
+import { useLatest, watchResize } from '@weasel-js/react';
 
 /** An element's laid-out size in CSS px. */
 export interface BoxSize {
@@ -39,10 +39,7 @@ export function useBoxes(
       setBoxes((prev) => (same(prev, next) ? prev : next));
     };
     measure();
-    if (typeof ResizeObserver === 'undefined') return;
-    const ro = new ResizeObserver(measure);
-    for (const el of read.current()) if (el) ro.observe(el);
-    return () => ro.disconnect();
+    return watchResize(read.current(), measure);
   }, [count, read, untransformed]);
   return boxes;
 }

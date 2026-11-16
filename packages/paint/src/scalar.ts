@@ -5,3 +5,8 @@ export function lerp(a: number, b: number, t: number): number {
   const d = b - a;
   return Number.isFinite(d) ? a + d * t : a * (1 - t) + b * t;
 }
+
+/** geom's `clamp01`, which this package cannot import: `v` held to `0`..`1`, `NaN` passing through. */
+export function clamp01(v: number): number {
+  return v < 0 ? 0 : v > 1 ? 1 : v;
+}

@@ -7,10 +7,10 @@
 import type { ReactNode } from 'react';
 import { CurveFill } from './CurveFill';
 import { Diamond } from './Diamond';
-import { sampleByInterpolation, type InterpolationMode } from '@weasel-js/geom';
+import { type InterpolationMode, sampleByInterpolation, trimNumber } from '@weasel-js/geom';
 import { hitTestAnchor, hitTestCurve } from './hitTest';
 import { isHiddenAnchor, isPinnedEndpointAt } from './anchorRules';
-import { arrowMove } from '@weasel-js/quantity';
+import { arrowMove, decimal, present } from '@weasel-js/quantity';
 import { dlog } from '../../dlog';
 import s from './CurveEditor.module.css';
 import type {
@@ -34,7 +34,7 @@ export const CURVE_HIT_PX = 8;
 /** An arrow-key nudge, as a fraction of the range; shift takes ten. */
 const KEY_STEP_FRACTION = 0.01;
 
-const formatCoord = (n: number): string => String(Number(n.toFixed(3)));
+const formatCoord = (n: number): string => present(n, decimal({ maxPlaces: 3 })).spoken;
 
 // ── Helpers ───────────────────────────────────────────────────────────
 
@@ -109,9 +109,9 @@ export function createFunctionLayer(cfg: FunctionLayerOptions = {}): CurveLayer<
     if (points.length >= 2) {
       const samples = sampleByInterpolation(points, SAMPLES_PER_SEGMENT, interpolation)
         .map((p) => ctx.toPlot(p));
-      const parts: string[] = [`M${samples[0].x.toFixed(2)},${samples[0].y.toFixed(2)}`];
+      const parts: string[] = [`M${trimNumber(samples[0].x, 2)},${trimNumber(samples[0].y, 2)}`];
       for (let i = 1; i < samples.length; i++) {
-        parts.push(`L${samples[i].x.toFixed(2)},${samples[i].y.toFixed(2)}`);
+        parts.push(`L${trimNumber(samples[i].x, 2)},${trimNumber(samples[i].y, 2)}`);
       }
       pathD = parts.join('');
 
@@ -120,8 +120,8 @@ export function createFunctionLayer(cfg: FunctionLayerOptions = {}): CurveLayer<
         const first = samples[0];
         const last = samples[samples.length - 1];
         const fillParts = [...parts];
-        fillParts.push(`L${last.x.toFixed(2)},${closingY.toFixed(2)}`);
-        fillParts.push(`L${first.x.toFixed(2)},${closingY.toFixed(2)}`);
+        fillParts.push(`L${trimNumber(last.x, 2)},${trimNumber(closingY, 2)}`);
+        fillParts.push(`L${trimNumber(first.x, 2)},${trimNumber(closingY, 2)}`);
         fillParts.push('Z');
         fillD = fillParts.join('');
       }

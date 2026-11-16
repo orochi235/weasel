@@ -32,7 +32,7 @@ export function resolveOrder(
 
 const join = (path: string, key: string): string => (path ? `${path}.${key}` : key);
 
-const storedAt = (order: PrefOrder, path: string): readonly string[] | undefined => (Object.hasOwn(order, path) ? order[path] : undefined);
+const storedAt = (order: PrefOrder, path: string): readonly string[] | undefined => getOwn(order, path);
 
 /**
  * `group` with its children, and each nested group's, reordered by `order`,

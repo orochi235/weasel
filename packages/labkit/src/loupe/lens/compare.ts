@@ -9,6 +9,7 @@ import { createEmitter } from '@weasel-js/registry';
 import type { LensActionApi } from './lensActionDefs';
 import { lensesOf, setLensOps, settingsOf } from './lensScene';
 import type { LensScene, LensSettings } from './lensTypes';
+import { clamp } from '@weasel-js/geom';
 
 /** How far either side of the seam a press takes it, in screen px. */
 export const SEAM_GRAB = 4;
@@ -19,7 +20,7 @@ export const SEAM_MAX = 0.95;
 /** The lens canvas layer that claims a press on a seam; the drag routes as `affordance:layer:<id>`. */
 export const SEAM_LAYER_ID = 'labkit-lens-seam';
 
-const clampSeam = (seam: number) => Math.min(SEAM_MAX, Math.max(SEAM_MIN, seam));
+const clampSeam = (seam: number) => clamp(seam, SEAM_MIN, SEAM_MAX);
 
 /** The interior's two halves, either side of `seam` (0 to 1 across it), and where the seam lands. */
 export function splitRects(

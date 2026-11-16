@@ -1,5 +1,6 @@
 import { useLayoutEffect, useState, type RefCallback, type RefObject } from 'react';
 import { useReportDockLeast } from '../ToolbarDock/dockContext';
+import { watchResize } from '@weasel-js/react';
 
 /**
  * Tells the dock drawing a bar's menu button that the bar cannot be shorter than its lead and the whole button,
@@ -18,11 +19,7 @@ export function useMenuLeast(button: RefObject<HTMLButtonElement | null>): RefCa
       setLeast(Math.ceil(el.getBoundingClientRect().right - start + Math.max(0, squeezed)));
     };
     measure();
-    if (typeof ResizeObserver === 'undefined') return;
-    const observer = new ResizeObserver(measure);
-    observer.observe(el);
-    if (lead) observer.observe(lead);
-    return () => observer.disconnect();
+    return watchResize([el, lead], measure);
   }, [button, lead]);
   useReportDockLeast(least);
   return setLead;

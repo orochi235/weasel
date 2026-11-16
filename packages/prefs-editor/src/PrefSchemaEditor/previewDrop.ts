@@ -4,6 +4,7 @@ import {
   childrenOf, fitsUnder, holdsPages, isLoose, isUnder, keyOf, keysOf, nodeAt, parentPath, pathOf, type SchemaNode,
   type SchemaRoot, type SchemaTarget, withinDepth,
 } from '@weasel-js/prefs/edit';
+import { sameList } from '@weasel-js/registry';
 
 /**
  * Where a drop on the live preview lands in the schema: `mark` is what the form says is under the pointer, `nodes`
@@ -75,7 +76,7 @@ export function drawsNode(drop: PrefDrop | null | undefined): boolean {
 export function sameDrop(a: PrefDrop | null, b: PrefDrop | null): boolean {
   if (a === null || b === null) return a === b;
   return a.path === b.path && a.where === b.where && a.rail === b.rail
-    && a.nodes.length === b.nodes.length && a.nodes.every((n, i) => n === b.nodes[i])
+    && sameList(a.nodes, b.nodes)
     && (a.from ?? []).join() === (b.from ?? []).join();
 }
 

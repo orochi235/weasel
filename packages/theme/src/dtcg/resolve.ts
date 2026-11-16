@@ -1,4 +1,4 @@
-import { setOwn } from '@weasel-js/registry';
+import { setOwn, getOwn } from '@weasel-js/registry';
 import { withAlpha } from './color.ts';
 import type { FlatTokens, ResolvedTokenMap, TokenValue } from './types.ts';
 import { serializeTokenValue } from './value.ts';
@@ -28,7 +28,7 @@ export function resolveTokens(tokens: FlatTokens): ResolvedTokenMap {
   const resolveOne = (name: string): string => {
     if (Object.hasOwn(out, name)) return out[name]!;
 
-    const token = Object.hasOwn(tokens, name) ? tokens[name] : undefined;
+    const token = getOwn(tokens, name);
     if (!token) throw new Error(`Unknown token "${name}"`);
 
     if (inProgress.has(name)) {

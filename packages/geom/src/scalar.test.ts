@@ -110,6 +110,10 @@ describe('trimNumber', () => {
     expect(trimNumber(1e303)).toBe('1e+303');
     expect(trimNumber(-Number.MAX_VALUE)).toBe(String(-Number.MAX_VALUE));
   });
+  it('leaves a number with no more decimals than asked as it is, however large', () => {
+    expect(trimNumber(1844896716479.0278, 4)).toBe('1844896716479.0278');
+    expect(trimNumber(123456789012.5, 6)).toBe('123456789012.5');
+  });
 });
 
 describe('minOf and maxOf', () => {

@@ -9,12 +9,15 @@ export const WATCH_RECOVERY = 'weasel-watch-recovery';
 export interface WatchRecoveryOptions {
   /**
    * How long the watcher must have reported nothing before the served files are checked for changes it missed,
-   * and how often they are checked while it stays quiet, in milliseconds. Default 2000.
+   * and how often they are checked while it stays quiet, in milliseconds. Default 2000. Past what one timer holds,
+   * `Infinity` among them, the files are checked only as they are served.
    */
   quietMs?: number;
 }
 
 const QUIET_MS = 2000;
+// `@weasel-js/registry`'s LONGEST_TIMER_MS: vitest's config loads this file before any package is built.
+const LONGEST_TIMER_MS = 2 ** 31 - 1;
 
 const mtimeOf = (file: string): number | undefined => {
   try {
@@ -113,8 +116,10 @@ export function watchRecovery({ quietMs = QUIET_MS }: WatchRecoveryOptions = {})
         if (file && missed(file)) recover(file, 'serving the new text');
         next();
       });
-      timer = setInterval(sweep, quietMs);
-      timer.unref();
+      if (quietMs <= LONGEST_TIMER_MS) {
+        timer = setInterval(sweep, quietMs);
+        timer.unref();
+      }
     },
     load: {
       order: 'pre',

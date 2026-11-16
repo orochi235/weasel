@@ -17,6 +17,11 @@ describe('getOwn', () => {
     expect(getOwn(table, 'toString')).toBe(3);
     expect(getOwn(Object.create(null) as Record<string, number>, 'toString')).toBeUndefined();
   });
+
+  it('reads nothing from no record', () => {
+    expect(getOwn(undefined, 'a')).toBeUndefined();
+    expect(getOwn(null, 'a')).toBeUndefined();
+  });
 });
 
 describe('hasOwnKey', () => {

@@ -14,6 +14,7 @@ import {
 } from './conditions';
 import { scrollOf } from './frameScroll';
 import type { TrialHit } from './trialAt';
+import { clamp } from '@weasel-js/geom';
 
 export const STATE_UNSENDABLE = "this story's state cannot be sent to a capture";
 export const CONFIG_UNSENDABLE = "this story's config cannot be sent to a capture";
@@ -73,7 +74,7 @@ function withoutUndefined(value: unknown): unknown {
   );
 }
 
-const clampDpr =(dpr: number) => Math.min(Math.max(dpr, MIN_DPR), MAX_DPR);
+const clampDpr = (dpr: number) => clamp(dpr, MIN_DPR, MAX_DPR);
 
 /**
  * The payload a capture of the trial takes, or why it cannot be sent: a capture renders the story in another

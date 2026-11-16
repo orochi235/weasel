@@ -4,8 +4,8 @@
  * once the camera is known.
  */
 
-import { curveSpan, lengthTable, lerp, type CurveSpan } from '@weasel-js/geom';
-import { transformPoint, type Mat4, type Vec3 } from '@weasel-js/geom/3d';
+import { curveSpan, lengthTable, type CurveSpan } from '@weasel-js/geom';
+import { lerpPoint, transformPoint, type Mat4, type Vec3 } from '@weasel-js/geom/3d';
 import type { StrokeTrim } from '@weasel-js/paint';
 import { resolveTrim } from '@weasel-js/stroke';
 import { HEAD, type HeadShape } from './head';
@@ -58,8 +58,6 @@ const SHAFT_CORNERS = [
 const HEAD_CORNERS = [[ROLE_HEAD_BASE, -1], [ROLE_HEAD_BASE, 1], [ROLE_TIP, 0]] as const;
 
 const flat = (points: readonly Vec3[]): number[] => points.flatMap((p) => [p.x, p.y, p.z]);
-const lerp3 = (a: Vec3, b: Vec3, t: number): Vec3 =>
-  ({ x: lerp(a.x, b.x, t), y: lerp(a.y, b.y, t), z: lerp(a.z, b.z, t) });
 const dist = (a: Vec3, b: Vec3): number => Math.hypot(b.x - a.x, b.y - a.y, b.z - a.z);
 
 /**
@@ -92,9 +90,9 @@ function windowRun(run: LineRun3, r: number, cut: CurveSpan): { points: Vec3[]; 
   if (run.closed && from.segment === 0 && from.t === 0 && to.segment === segments - 1 && to.t === 1) {
     return { points: [...pts], closed: true };
   }
-  const out: Vec3[] = [lerp3(at(from.segment), at(from.segment + 1), from.t)];
+  const out: Vec3[] = [lerpPoint(at(from.segment), at(from.segment + 1), from.t)];
   for (let k = from.segment + 1; k <= to.segment; k++) out.push(at(k));
-  out.push(lerp3(at(to.segment), at(to.segment + 1), to.t));
+  out.push(lerpPoint(at(to.segment), at(to.segment + 1), to.t));
   const kept = out.filter((p, i) => i === 0 || dist(out[i - 1], p) > 0);
   return kept.length >= 2 ? { points: kept, closed: false } : null;
 }

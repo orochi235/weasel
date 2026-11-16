@@ -1,3 +1,4 @@
+import { trimNumber } from '@weasel-js/geom';
 import type { ShapeModule } from '../types';
 
 /** What `shapeParams` takes on a `receipt` badge. */
@@ -17,13 +18,13 @@ function receiptPath(teeth: number, depth: number) {
   for (let i = 0; i < N; i++) {
     const yMid = ((i + 0.5) / N) * 100;
     const yEnd = ((i + 1) / N) * 100;
-    d += ` L ${(100 - depthAt(i)).toFixed(3)} ${yMid.toFixed(3)} L 100 ${yEnd.toFixed(3)}`;
+    d += ` L ${trimNumber(100 - depthAt(i), 3)} ${trimNumber(yMid, 3)} L 100 ${trimNumber(yEnd, 3)}`;
   }
   d += ` L 0 100`;
   for (let i = N - 1; i >= 0; i--) {
     const yMid = ((i + 0.5) / N) * 100;
     const yStart = (i / N) * 100;
-    d += ` L ${depthAt(i + N).toFixed(3)} ${yMid.toFixed(3)} L 0 ${yStart.toFixed(3)}`;
+    d += ` L ${trimNumber(depthAt(i + N), 3)} ${trimNumber(yMid, 3)} L 0 ${trimNumber(yStart, 3)}`;
   }
   return d + ' Z';
 }

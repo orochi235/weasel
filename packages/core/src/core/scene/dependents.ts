@@ -3,6 +3,7 @@
  * index, plus {@link dependencyIdsOf}, the forward read it is built from.
  */
 import type { NodeId, Scene } from './types';
+import { sameList } from '@weasel-js/registry';
 
 const NONE: readonly NodeId[] = Object.freeze([]);
 
@@ -132,7 +133,5 @@ export function sameDependsOn(
   if (a === b) return true;
   if (a === undefined || b === undefined) return false;
   if (a === 'children' || b === 'children') return false;
-  if (a.length !== b.length) return false;
-  for (let i = 0; i < a.length; i++) if (a[i] !== b[i]) return false;
-  return true;
+  return sameList(a, b);
 }

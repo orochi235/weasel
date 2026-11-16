@@ -2,6 +2,7 @@
 // of the selectors shares, and one for each choice a split value tells apart.
 
 import { catalogUnit } from '@weasel-js/quantity';
+import { trimNumber } from '@weasel-js/geom';
 import { type PrefGroup, prefHoldsValue, prefLeaves, prefValueAtPath, isPrefScope, type PrefScope, type PrefOverridesLookup, type PrefSelection, type PrefEnum, type PrefLeaf, type PrefNumber, resolvePrefUnit } from '@weasel-js/prefs-schema';
 import { scopeOptionValue, overridesOfPref } from '@weasel-js/prefs-schema/internal';
 import { prefSelectors } from './splitCheck';
@@ -46,7 +47,7 @@ function cssValue(leaf: PrefLeaf, value: unknown): string | null {
       const resolved = unit ? resolvePrefUnit(unit) : undefined;
       const shown = resolved ? resolved.toDisplay(value) : value;
       const suffix = (resolved?.suffix === undefined ? undefined : catalogUnit(resolved.suffix)?.css) ?? '';
-      return `${Number(shown.toFixed(6))}${suffix}`;
+      return `${trimNumber(shown)}${suffix}`;
     }
     case 'boolean':
       return typeof value === 'boolean' ? (value ? '1' : '0') : null;

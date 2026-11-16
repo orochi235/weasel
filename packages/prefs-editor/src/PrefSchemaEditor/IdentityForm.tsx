@@ -2,6 +2,7 @@ import { useLayoutEffect, useRef, useState, type ReactNode } from 'react';
 import { clientScaleOf } from '@weasel-js/core';
 import { PrefsForm, type PrefsFormProps } from '@weasel-js/ui';
 import s from './PrefSchemaEditor.module.css';
+import { watchResize } from '@weasel-js/react';
 
 /** The rows the glyph stands beside, by the path a form marks each with. */
 const BESIDE = ['name', 'description'];
@@ -28,10 +29,7 @@ export function IdentityForm({ icon, ...form }: PrefsFormProps & { icon: ReactNo
       setBox({ tall: (bottom - at.top) / scale.y, end: (at.right - right) / scale.x });
     };
     measure();
-    if (typeof ResizeObserver === 'undefined') return;
-    const observer = new ResizeObserver(measure);
-    for (const row of rows) observer.observe(row);
-    return () => observer.disconnect();
+    return watchResize(rows, measure);
   }, [icon, form.schema]);
   if (icon == null) return <PrefsForm {...form} />;
   return (

@@ -4,7 +4,7 @@ import type { Outline } from '@weasel-js/diagram';
 import { rgbaToHex } from '@weasel-js/paint';
 import { markupLines } from '../graphRead';
 import type { DotValue } from './parse';
-import { getOwn } from '@weasel-js/registry';
+import { getOwn, sameList } from '@weasel-js/registry';
 
 /** What an edge label's `\E`, `\T` and `\H` name: the edge, its tail, and its head. */
 export interface EdgeNames {
@@ -135,7 +135,7 @@ export function dashOf(styles: readonly string[]): number[] | undefined {
 
 /** The style word a dash writes as: `dotted` for the dash {@link dashOf} reads it as, else `dashed`. */
 export const dashStyle = (dash: readonly number[]): string =>
-  dash.length === DOTTED.length && dash.every((d, i) => d === DOTTED[i]) ? 'dotted' : 'dashed';
+  sameList(dash, DOTTED) ? 'dotted' : 'dashed';
 
 /** `n` as a DOT numeral, which has no exponent: to four places, in plain digits however large. */
 export function dotNumber(n: number): string {

@@ -1,6 +1,6 @@
 import { useId } from 'react';
 import type { EffectModule } from '../bases/types';
-import { DEG_TO_RAD } from '@weasel-js/geom';
+import { DEG_TO_RAD, trimNumber } from '@weasel-js/geom';
 
 /** What an effect of type `bevel2` takes as `params`. */
 export interface BadgeBevel2EffectParams {
@@ -87,9 +87,9 @@ const Bevel2: EffectModule<BadgeBevel2EffectParams> = {
       const outerPts = expandedIdxs.map((i) => outer[i]);
       const innerPts = expandedIdxs.map((i) => inner[i]).reverse();
       const pts = [...outerPts, ...innerPts];
-      let d = `M ${pts[0].x.toFixed(3)} ${pts[0].y.toFixed(3)}`;
+      let d = `M ${trimNumber(pts[0].x, 3)} ${trimNumber(pts[0].y, 3)}`;
       for (let i = 1; i < pts.length; i++) {
-        d += ` L ${pts[i].x.toFixed(3)} ${pts[i].y.toFixed(3)}`;
+        d += ` L ${trimNumber(pts[i].x, 3)} ${trimNumber(pts[i].y, 3)}`;
       }
       return d + ' Z';
     };

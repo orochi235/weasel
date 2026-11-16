@@ -1,5 +1,5 @@
 import { Suspense, lazy, useEffect, useLayoutEffect, useRef, useState } from 'react';
-import { useNearViewport } from '@weasel-js/react';
+import { useNearViewport, useWindowEvent } from '@weasel-js/react';
 import { Tab, TabList, TabPanel, Tabs } from '@weasel-js/ui/components/Tabs';
 import { DEMOS, DEMOS_BY_ID, placeOf, type DemoEntry, type DemoSourceTab } from './registry';
 import { sessionStore } from './chunkReload';
@@ -62,11 +62,7 @@ export function WeaselDemos() {
     setActiveId(id);
   };
 
-  useEffect(() => {
-    const onHash = () => setActiveId(readHash());
-    window.addEventListener('hashchange', onHash);
-    return () => window.removeEventListener('hashchange', onHash);
-  }, []);
+  useWindowEvent('hashchange', () => setActiveId(readHash()));
 
   useEffect(() => {
     // A hash that named nothing: hand the page back to the front page.

@@ -1,8 +1,8 @@
 /** Marks drawn as a path: lines, areas, rules, arcs and ribbons. */
-import { boundsOfPath, pathFromD, type Path } from '@weasel-js/geom';
+import { boundsOfPath, pathFromD, trimNumber, type Path } from '@weasel-js/geom';
 import type { PlotDatum, PlotMark, PlotMarkData, PlotPoint, SolidStroke } from './types';
 
-const n = (v: number) => Number(v.toFixed(3));
+const n = (v: number) => trimNumber(v, 3);
 const at = (p: PlotPoint) => `${n(p.x)} ${n(p.y)}`;
 
 /** A mark whose pose is its path's box, so the painter draws the path where it was built. */

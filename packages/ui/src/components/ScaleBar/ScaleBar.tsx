@@ -1,5 +1,5 @@
 import type { CSSProperties, ReactElement } from 'react';
-import { PIXELS, scaleBar, type UnitScope, type UnitValue } from '@weasel-js/quantity';
+import { multiplier, PIXELS, present, scaleBar, type UnitScope, type UnitValue } from '@weasel-js/quantity';
 import s from './ScaleBar.module.css';
 
 /** Props for {@link ScaleBar}. */
@@ -21,7 +21,7 @@ export interface ScaleBarProps {
 
 const PIXEL_BOARD: readonly UnitScope[] = [{ system: PIXELS }];
 
-const times = (n: number): string => `${Number(n.toPrecision(3))}×`;
+const times = (n: number): string => present(n, multiplier({ figures: 3 })).text;
 
 /**
  * A scale bar: a rule as long on screen as a round length of the frame it

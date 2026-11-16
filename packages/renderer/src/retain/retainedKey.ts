@@ -1,5 +1,5 @@
 import type { GlMat3, Path } from '@weasel-js/geom';
-import { getOwn } from '@weasel-js/registry';
+import { getOwn, sameList } from '@weasel-js/registry';
 import type { DrawCommand } from '../DrawCommand';
 import type { Effect } from '../effects/types';
 import type { ShaderUniform } from '../shaders/registerProgram';
@@ -122,11 +122,7 @@ function sameRect(a: DeviceRect | undefined, b: DeviceRect | undefined): boolean
 }
 
 function sameClips(a: readonly RetainedClip[], b: readonly RetainedClip[]): boolean {
-  if (a.length !== b.length) return false;
-  for (let i = 0; i < a.length; i++) {
-    if (a[i].path !== b[i].path || !sameFloats(a[i].transform, b[i].transform)) return false;
-  }
-  return true;
+  return sameList(a, b, (x, y) => x.path === y.path && sameFloats(x.transform, y.transform));
 }
 
 function sameFloats(a: ArrayLike<number>, b: ArrayLike<number>): boolean {
@@ -137,7 +133,5 @@ function sameFloats(a: ArrayLike<number>, b: ArrayLike<number>): boolean {
 
 /** Stamps compared entry by entry. */
 export function sameStamp(a: readonly unknown[], b: readonly unknown[]): boolean {
-  if (a.length !== b.length) return false;
-  for (let i = 0; i < a.length; i++) if (!Object.is(a[i], b[i])) return false;
-  return true;
+  return sameList(a, b, Object.is);
 }

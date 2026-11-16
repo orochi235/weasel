@@ -70,6 +70,15 @@ const edit = (file: string, text: string) => {
 };
 
 describe('watchRecovery', () => {
+  it('with a quietMs no timer holds, checks files only as they are served', async () => {
+    const interval = vi.spyOn(globalThis, 'setInterval');
+    const { root, get } = await start([watchRecovery({ quietMs: Infinity })], { 'part.ts': 'export const part = 0;\n' });
+    expect(interval).not.toHaveBeenCalledWith(expect.anything(), Infinity);
+    expect(await get('/part.ts')).toContain('part = 0');
+    edit(join(root, 'part.ts'), 'export const part = 1;\n');
+    expect(await get('/part.ts')).toContain('part = 1');
+  });
+
   it('serves an edit the watcher never reported on the next request, and says which file it was', async () => {
     const { root, get, warnings } = await start([watchRecovery({ quietMs: 60_000 })], { 'part.ts': 'export const part = 0;\n' });
     expect(await get('/part.ts')).toContain('part = 0');

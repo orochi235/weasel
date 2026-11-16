@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react';
 import { FLOATING_CORNERS, type Corner } from 'windease';
-import { setOwn } from '@weasel-js/registry';
+import { setOwn, getOwn } from '@weasel-js/registry';
 import type { BarOrientation } from '../Bar';
 
 /** Which edge of a ToolbarDock's container a dock runs along; a left or right dock lays its bars vertically. */
@@ -58,11 +58,11 @@ export type BarTarget = { dock: string; row: number; index: number; newRow?: boo
 
 /** The rows `layout` holds for dock `id`, read as an own key so an id like `constructor` finds none. */
 export const dockRows = (layout: ToolbarLayout, id: string): string[][] | undefined =>
-  Object.hasOwn(layout.docks, id) ? layout.docks[id] : undefined;
+  getOwn(layout.docks, id);
 
 /** Where `layout` floats bar `id`, read as an own key. */
 export const floatOf = (layout: ToolbarLayout, id: string): FloatPlace | undefined =>
-  Object.hasOwn(layout.floating, id) ? layout.floating[id] : undefined;
+  getOwn(layout.floating, id);
 
 /** Whether `layout` sits bar `id` at the far end of its row. */
 export const isAtEnd = (layout: ToolbarLayout, id: string): boolean => layout.atEnd?.includes(id) ?? false;

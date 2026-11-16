@@ -8,7 +8,7 @@
  * or a strength also gets step actions for them (`toolOptionSteps`).
  */
 import type { PrefGroup, PrefLeaf, PrefNumber } from '@weasel-js/prefs-schema';
-import { prefValueAbsent, repairPrefValue } from '@weasel-js/prefs-schema';
+import { prefClampNumber, prefValueAbsent, repairPrefValue } from '@weasel-js/prefs-schema';
 import { endlessAllows } from '@weasel-js/quantity';
 import { createEmitter, deepEqual, getOwn, setOwn } from '@weasel-js/registry';
 
@@ -105,7 +105,7 @@ export function toolOptionSlot(toolId: string, options: ToolOptions, option: str
 /** `option`'s leaf in `options`, if it has one. */
 export function toolOptionLeaf(options: ToolOptions, option: string): PrefLeaf | undefined {
   const children = options.prefs.children;
-  const leaf = (Object.hasOwn(children, option) ? children[option] : undefined) as { kind?: string } | undefined;
+  const leaf = getOwn(children, option) as { kind?: string } | undefined;
   return leaf && typeof leaf.kind === 'string' ? (leaf as PrefLeaf) : undefined;
 }
 
@@ -189,9 +189,8 @@ export function steppedOption(leaf: PrefNumber, value: number, step: ToolOptionS
   const stepped = leaf.step && Math.abs(snapped - value) < leaf.step * 1e-6 ? value + dir * leaf.step : snapped;
   // Past the double range a finite option has nowhere further to go than the largest double.
   const next = Number.isFinite(stepped) ? stepped : dir * Number.MAX_VALUE;
-  const clamp = (n: number): number => Math.min(leaf.max ?? Infinity, Math.max(leaf.min ?? -Infinity, n));
-  const clamped = clamp(next);
+  const clamped = prefClampNumber(leaf, next);
   // Sheds a sum's float noise (`0.6 + 0.1`), at any magnitude, unless shedding it would undo the step.
   const tidy = Number(clamped.toPrecision(12));
-  return clamped !== value && (tidy - value) * dir > 0 && clamp(tidy) === tidy ? tidy : clamped;
+  return clamped !== value && (tidy - value) * dir > 0 && prefClampNumber(leaf, tidy) === tidy ? tidy : clamped;
 }

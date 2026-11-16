@@ -5,6 +5,7 @@
  */
 import { pathEffectOf } from './derive';
 import type { PathEffect } from './effects';
+import { sameList } from '@weasel-js/registry';
 
 /**
  * `data` with its path effect's `foundHidden` moved from the positions the
@@ -18,7 +19,7 @@ export function foundHiddenRetargeted(data: unknown, from: unknown, to: unknown)
   const was = Array.isArray(from) ? from : [];
   const ids = new Set(found.map((at) => was[at]));
   const next = (Array.isArray(to) ? to : []).flatMap((id, at) => (ids.has(id) ? [at] : []));
-  if (next.length === found.length && next.every((at, k) => at === found[k])) return null;
+  if (sameList(next, found)) return null;
   const moved: PathEffect = { ...effect, foundHidden: next };
   if (next.length === 0) delete moved.foundHidden;
   return { ...(data as object), pathEffect: moved };

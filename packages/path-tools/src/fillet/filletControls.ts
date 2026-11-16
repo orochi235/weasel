@@ -11,7 +11,7 @@ import {
   cornerSpecAt,
   type CornerKeyword,
   type CornerShape,
-  type PolygonPath,
+  type PolygonPath, clamp,
 } from '@weasel-js/geom';
 import type { PrefGroup } from '@weasel-js/prefs';
 import { FILLET_SHAPE_OPTIONS } from './editFillet';
@@ -99,7 +99,7 @@ function keywordOf(shape: CornerShape): CornerKeyword | null {
   return typeof shape === 'number' ? cornerKeywordOf(shape) : shape;
 }
 
-const clampK = (k: number): number => Math.max(-FILLET_K_SLIDER_RANGE, Math.min(FILLET_K_SLIDER_RANGE, k));
+const clampK = (k: number): number => clamp(k, -FILLET_K_SLIDER_RANGE, FILLET_K_SLIDER_RANGE);
 
 /** The `setFillets` params a change of `field` to `value` makes, or null for
  *  a field that sets nothing. */

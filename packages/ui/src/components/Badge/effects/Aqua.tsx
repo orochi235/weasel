@@ -1,3 +1,4 @@
+import { trimNumber } from '@weasel-js/geom';
 import type { ColorSource } from '@weasel-js/paint';
 import { useColorCss } from '@weasel-js/theme/react';
 import { useId } from 'react';
@@ -102,9 +103,9 @@ const Aqua: EffectModule<BadgeAquaEffectParams> = {
     const bezelPaths: string[] = [];
     for (const run of runs) {
       if (run.length < 2) continue;
-      let d = `M ${run[0].x.toFixed(3)} ${run[0].y.toFixed(3)}`;
+      let d = `M ${trimNumber(run[0].x, 3)} ${trimNumber(run[0].y, 3)}`;
       for (let i = 1; i < run.length; i++) {
-        d += ` L ${run[i].x.toFixed(3)} ${run[i].y.toFixed(3)}`;
+        d += ` L ${trimNumber(run[i].x, 3)} ${trimNumber(run[i].y, 3)}`;
       }
       bezelPaths.push(d);
     }

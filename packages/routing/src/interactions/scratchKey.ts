@@ -11,7 +11,7 @@
  * const vertices = getScratch(ctx.scratch, LASSO_VERTICES) ?? [];
  * ```
  */
-import { setOwn } from '@weasel-js/registry';
+import { setOwn, getOwn } from '@weasel-js/registry';
 
 /** Phantom-typed key for a scratch slot. The `__scratchKeyPayload` phantom
  *  field carries the value type without occupying any runtime memory. */
@@ -41,7 +41,7 @@ export function getScratch<T>(
   store: ScratchStore,
   key: ScratchKey<T>,
 ): T | undefined {
-  return (Object.hasOwn(store, key.name) ? store[key.name] : undefined) as T | undefined;
+  return getOwn(store, key.name) as T | undefined;
 }
 
 /** Write a value to a typed slot. Overwrites whatever was there. */

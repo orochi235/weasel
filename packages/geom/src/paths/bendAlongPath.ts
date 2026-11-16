@@ -14,6 +14,7 @@ import type { Point } from './cubicMath';
 import { measurePath, type PathMeasure } from './pathMeasure';
 import { worldCoords } from './pathOrigin';
 import { schneiderFit } from './schneiderFit';
+import { clamp } from '../scalar';
 
 /** How a shape is laid along its spine. */
 export interface BendAlongPathOptions {
@@ -75,7 +76,7 @@ function stationOff(measure: PathMeasure, s: number, v: number): Point {
   const L = measure.length;
   let at = s;
   if (measure.closed) at = ((s % L) + L) % L;
-  const clamped = Math.min(Math.max(at, 0), L);
+  const clamped = clamp(at, 0, L);
   const { point, tangent } = measure.at(clamped, true);
   const run = at - clamped;
   return {

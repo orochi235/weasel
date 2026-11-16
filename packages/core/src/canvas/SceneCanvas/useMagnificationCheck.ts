@@ -1,10 +1,11 @@
 import { useEffect } from 'react';
+import { multiplier, present } from '@weasel-js/quantity';
 import { isDev } from '@weasel-js/registry';
 import type { Scene } from 'core/scene/types';
 import { undeclaredMagnifications } from 'interactions/actions/magnification';
 
 const SETTLE_MS = 250;
-const times = (n: number): string => `${Number(n.toFixed(3))}×`;
+const times = (n: number): string => present(n, multiplier({ places: 3 })).text;
 
 /**
  * In development, warns once per container and size when `scene` draws a

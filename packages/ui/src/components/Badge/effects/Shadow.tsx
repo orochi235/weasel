@@ -1,3 +1,4 @@
+import { trimNumber } from '@weasel-js/geom';
 import type { EffectModule } from '../bases/types';
 
 /** What an effect of type `shadow` takes as `params`. */
@@ -20,7 +21,7 @@ const Shadow: EffectModule<BadgeShadowEffectParams> = {
     return (
       <path
         d={sampler.bodyPath}
-        transform={`translate(${dxVb.toFixed(3)} ${dyVb.toFixed(3)})`}
+        transform={`translate(${trimNumber(dxVb, 3)} ${trimNumber(dyVb, 3)})`}
         fill={`rgba(0, 0, 0, ${Math.max(0, Math.min(cfg.opacity, 1))})`}
         stroke="none"
         style={{ pointerEvents: 'none' }}

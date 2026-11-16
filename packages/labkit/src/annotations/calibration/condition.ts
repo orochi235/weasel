@@ -1,5 +1,6 @@
 import type { ViewTransform } from '../../instrument/types';
 import { type Box, CONTENT, EXERCISES } from './exercises';
+import { clamp } from '@weasel-js/geom';
 
 export const SCALES = ['0.5', '1', '2'] as const;
 export const ZOOMS = ['1', '1.5', '3'] as const;
@@ -45,8 +46,7 @@ export function zoomWindow(c: CalibrationConfig): Box {
   const area = EXERCISES.find((e) => e.id === c.focus)?.area ?? { x: 0, y: 0, ...CONTENT };
   const cx = area.x + area.w / 2;
   const cy = area.y + area.h / 2;
-  const clamp = (v: number, hi: number) => Math.max(0, Math.min(hi, v));
-  return { x: clamp(cx - w / 2, CONTENT.w - w), y: clamp(cy - h / 2, CONTENT.h - h), w, h };
+  return { x: clamp(cx - w / 2, 0, CONTENT.w - w), y: clamp(cy - h / 2, 0, CONTENT.h - h), w, h };
 }
 
 /** The target's camera under a zoom, against its element's box; none at zoom 1, where labkit fits the content. */

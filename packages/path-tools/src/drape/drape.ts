@@ -5,7 +5,7 @@
  */
 import type { OngoingOverlay } from '@weasel-js/routing';
 import {
-  measureAnchorPath, drapeBand, drapeWeights, type AnchorSet, type DrapeFalloff,
+  measureAnchorPath, drapeBand, drapeWeights, type AnchorSet, type DrapeFalloff, clamp,
 } from '@weasel-js/geom';
 import type { PathEditDrag, PathEditDragStart, PathEditExtension } from '@weasel-js/core';
 
@@ -59,5 +59,5 @@ function drapeDrag(start: PathEditDragStart, opts: DrapeOptions): PathEditDrag {
 }
 
 function clampRadius(px: number): number {
-  return Math.min(MAX_RADIUS_PX, Math.max(MIN_RADIUS_PX, Number.isFinite(px) ? px : MIN_RADIUS_PX));
+  return clamp(Number.isFinite(px) ? px : MIN_RADIUS_PX, MIN_RADIUS_PX, MAX_RADIUS_PX);
 }

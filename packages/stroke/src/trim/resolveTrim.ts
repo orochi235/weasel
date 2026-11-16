@@ -1,5 +1,5 @@
 import {
-  lengthAtAnchor, lengthAtSegmentFraction, lengthAtSubpath, type LengthSpan, type LengthTable,
+  lengthAtAnchor, lengthAtSegmentFraction, lengthAtSubpath, type LengthSpan, type LengthTable, clamp,
 } from '@weasel-js/geom';
 import type { StrokeTrim, TrimAt, TrimPace } from '@weasel-js/paint';
 
@@ -25,4 +25,4 @@ function lengthOf(t: LengthTable, at: TrimAt, pace: TrimPace): number {
   return lengthAtSubpath(t, at.subpath);
 }
 
-const clampLength = (t: LengthTable, s: number): number => (Number.isNaN(s) ? NaN : Math.min(Math.max(s, 0), t.total));
+const clampLength = (t: LengthTable, s: number): number => clamp(s, 0, t.total);

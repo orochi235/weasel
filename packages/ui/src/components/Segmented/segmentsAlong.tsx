@@ -9,6 +9,7 @@ import type { SegmentedRowProps, SegmentPlace, SegmentState } from './segmentedR
 import seg from './segmentedControl.module.css';
 import s from './segmentsAlong.module.css';
 import { cssPx } from '../../cssPx';
+import { watchResize } from '@weasel-js/react';
 
 const SEGMENT = 'data-segment';
 const segmentKeyOf = (child: Element): string | null => child.getAttribute(SEGMENT);
@@ -125,11 +126,7 @@ function useWellEnds(root: RefObject<HTMLElement | null>): { pad: number; cap: n
       setCap(segment?.offsetHeight ?? 0);
     };
     measure();
-    if (typeof ResizeObserver === 'undefined') return;
-    const observer = new ResizeObserver(measure);
-    observer.observe(el);
-    if (segment) observer.observe(segment);
-    return () => observer.disconnect();
+    return watchResize([el, segment], measure);
   }, [root]);
   return { pad, cap };
 }

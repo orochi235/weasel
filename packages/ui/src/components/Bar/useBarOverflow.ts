@@ -1,5 +1,5 @@
 import { useLayoutEffect, useRef, useState, type RefObject } from 'react';
-import { useLatest } from '@weasel-js/react';
+import { useLatest, watchResize } from '@weasel-js/react';
 import { cssPx } from '../../cssPx';
 import { compositeKey } from '@weasel-js/registry';
 
@@ -69,11 +69,7 @@ export function useBarOverflow(
       setLeast(end === undefined ? undefined : Math.ceil(end + lead0 + frame));
     };
     measure();
-    if (typeof ResizeObserver === 'undefined') return;
-    const observer = new ResizeObserver(measure);
-    observer.observe(el);
-    for (const child of el.children) observer.observe(child);
-    return () => observer.disconnect();
+    return watchResize([el, ...el.children], measure);
   }, [on, signature, kept, vertical, keysRef]);
 
   return { bar, kept: on ? Math.min(kept, keys.length) : keys.length, natural: on ? natural : undefined, least: on ? least : undefined };

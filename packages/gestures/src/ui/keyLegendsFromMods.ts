@@ -1,4 +1,5 @@
 import { isApplePlatform } from './platform';
+import { getOwn } from '@weasel-js/registry';
 
 /** One key of a shortcut as a keyboard prints it. */
 export interface KeyLegend {
@@ -130,11 +131,6 @@ export function keyLegendsFromMods(
   });
 }
 
-/** `record[key]` where `record` has it as its own: a key's name may be any string, `constructor` too. */
-export function ownValue<V>(record: Readonly<Record<string, V>> | undefined, key: string): V | undefined {
-  return record && Object.hasOwn(record, key) ? record[key] : undefined;
-}
-
 /** Per-platform × per-legend table for named, non-modifier keys. `auto`
  *  is whatever's printed on the physical key for that platform. Arrows
  *  are universal symbols on every platform. */
@@ -187,8 +183,8 @@ export function keyLegendFromKey(
 ): KeyLegend {
   const platform = opts.platform ?? detectPlatform();
   const legend = opts.legend ?? 'auto';
-  const entry = ownValue(NAMED_KEY, raw);
-  const override = ownValue(opts.labels, raw) ?? (raw.length === 1 ? ownValue(opts.labels, raw.toUpperCase()) : undefined);
+  const entry = getOwn(NAMED_KEY, raw);
+  const override = getOwn(opts.labels, raw) ?? (raw.length === 1 ? getOwn(opts.labels, raw.toUpperCase()) : undefined);
   const label = override ?? (entry ? entry[platform][legend] : raw.length === 1 ? raw.toUpperCase() : raw);
   return opts.optional ? { label, optional: true } : { label };
 }

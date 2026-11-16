@@ -31,6 +31,7 @@
  */
 import { getGestureDescriptor, isKnownGestureName, type GestureName } from './gestures';
 import type { RoutePhase } from '../ui/phase';
+import { sameList } from '@weasel-js/registry';
 
 /** Channel reference for a phase atom. `'&'` = the binding's own tool;
  *  `'*'` = any tool; otherwise a registered tool id. */
@@ -329,11 +330,7 @@ function samePhases(
   a: readonly PhaseAtom[],
   b: readonly PhaseAtom[],
 ): boolean {
-  if (a.length !== b.length) return false;
-  for (let i = 0; i < a.length; i++) {
-    if (a[i]!.channel !== b[i]!.channel || a[i]!.phase !== b[i]!.phase) return false;
-  }
-  return true;
+  return sameList(a, b, (x, y) => x.channel === y.channel && x.phase === y.phase);
 }
 
 function withoutShift(m: ParsedModifiers): ParsedModifiers {

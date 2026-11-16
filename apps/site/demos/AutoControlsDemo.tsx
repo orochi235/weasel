@@ -1,8 +1,7 @@
+import { clamp } from '@weasel-js/geom';
 import { auto, defineInstrument, f, Lab } from '@weasel-js/labkit';
 import '@weasel-js/labkit/styles.css';
 import 'windease/styles.css';
-
-const clamp = (n: number, lo: number, hi: number) => Math.min(hi, Math.max(lo, Math.round(n)));
 
 const WORDS = [
   'no',
@@ -37,14 +36,14 @@ const grid = defineInstrument({
     cols: f
       .number(6)
       .range(1, 16)
-      .auto((c) => clamp((c.width as number) / 110, 1, 16))
+      .auto((c) => clamp(Math.round((c.width as number) / 110), 1, 16))
       .initial(auto)
       .label('Columns'),
     gap: f
       .number(12)
       .range(0, 48)
       .suffix('px')
-      .auto((c) => clamp((c.width as number) / 60, 0, 48))
+      .auto((c) => clamp(Math.round((c.width as number) / 60), 0, 48))
       .initial(auto)
       .label('Gap'),
 

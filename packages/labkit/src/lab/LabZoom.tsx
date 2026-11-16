@@ -10,6 +10,7 @@ import {
   type ViewApi,
 } from '@weasel-js/core';
 import { formatShortcut } from '@weasel-js/gestures';
+import { percent, present } from '@weasel-js/quantity';
 import { ActionButton } from '@weasel-js/ui/components/ActionButton';
 import { Bar } from '@weasel-js/ui/components/Bar';
 import { Icon } from '@weasel-js/ui/components/Icon';
@@ -57,8 +58,6 @@ function forZoom(camera: CameraView): ViewApi {
     recenter: () => atScale(camera.get(), 1, viewMiddle(camera)),
   };
 }
-
-const percent = new Intl.NumberFormat(undefined, { style: 'percent', maximumFractionDigits: 0 });
 
 /**
  * Zoom out, the zoom as a percentage, and zoom in, for whichever trial has the
@@ -132,7 +131,7 @@ function LabZoomControls() {
     const keys = zoomAction && formatShortcut(actionShortcuts(zoomAction, { kind })[0]);
     return keys ? `${label} (${keys})` : label;
   };
-  const shown = live && zoom !== null ? percent.format(zoom) : null;
+  const shown = live && zoom !== null ? present(zoom, percent()).text : null;
 
   return (
     <Bar label="Zoom" roving>

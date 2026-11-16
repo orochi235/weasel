@@ -1,3 +1,4 @@
+import { useWindowEvent } from '@weasel-js/react';
 import { useEffect, useState } from 'react';
 import { formatRoute, parseRoute } from '../route/url';
 
@@ -77,11 +78,10 @@ export function takeRouteFromTrial(): boolean {
 /** The story the URL names, and `setRoute` to name another. */
 export function useRoute(): [string | null, typeof setRoute] {
   const [route, setCurrent] = useState(readRoute);
-  useEffect(() => {
-    const sync = (): void => setCurrent(readRoute());
-    window.addEventListener('hashchange', sync);
-    sync();
-    return () => window.removeEventListener('hashchange', sync);
-  }, []);
+  const sync = (): void => setCurrent(readRoute());
+  useWindowEvent('hashchange', sync);
+  // The hash may have changed between the first render and the listener arriving.
+  // eslint-disable-next-line react-hooks/set-state-in-effect -- re-reads the hash once, on mount
+  useEffect(sync, []);
   return [route, setRoute];
 }

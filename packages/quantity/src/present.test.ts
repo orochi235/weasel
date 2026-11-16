@@ -115,6 +115,8 @@ const CASES: [Display, number, string, string][] = [
   [ratio(), 1 / 12, '1:12', '1 to 12'],
   [ratio(), 749.81, '750:1', '750 to 1'],
   [multiplier(), 2.5, '2.5×', '2.5 times'],
+  [multiplier({ figures: 3 }), 0.0254, '0.0254×', '0.0254 times'],
+  [multiplier({ figures: 3 }), 1234.5, '1,230×', '1,230 times'],
   [zoom(), 2.5, '2.5x', '2.5 times'],
   [zoom(), 1.5, '150%', '150 percent'],
   [unit('mm'), 12, '12mm', '12 millimeters'],

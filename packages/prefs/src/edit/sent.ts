@@ -1,4 +1,4 @@
-import { sameStored } from '@weasel-js/storage';
+import { readLocal, sameStored, writeLocal } from '@weasel-js/storage';
 import { carry } from './carry';
 import { packDraft, unpackDraft, type DraftStorage } from './draft';
 import type { SchemaRoot } from './schemaEdit';
@@ -14,29 +14,17 @@ export function packSent(schema: SchemaRoot, source: SchemaRoot, types?: PrefTyp
 
 /** Keep what was submitted beside the draft under `draftKey`, to tell it later from edits made since. */
 export function saveSent(draftKey: string, sent: unknown, storage?: DraftStorage): void {
-  try {
-    (storage ?? localStorage).setItem(sentKey(draftKey), JSON.stringify(sent));
-  } catch {
-    // Without storage the editor that sent it still holds it, until a reload.
-  }
+  // Without storage the editor that sent it still holds it, until a reload.
+  writeLocal(sentKey(draftKey), sent, storage);
 }
 
 /** What was last submitted beside the draft under `draftKey`; `null` with none. */
 export function openSent(draftKey: string, storage?: DraftStorage): unknown {
-  try {
-    const raw = (storage ?? localStorage).getItem(sentKey(draftKey));
-    return raw === null ? null : (JSON.parse(raw) as unknown);
-  } catch {
-    return null;
-  }
+  return readLocal(sentKey(draftKey), storage) ?? null;
 }
 
 export function dropSent(draftKey: string, storage?: DraftStorage): void {
-  try {
-    (storage ?? localStorage).removeItem(sentKey(draftKey));
-  } catch {
-    // Storage that cannot be reached holds nothing to remove.
-  }
+  writeLocal(sentKey(draftKey), undefined, storage);
 }
 
 /**

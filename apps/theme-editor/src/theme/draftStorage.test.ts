@@ -30,6 +30,7 @@ describe('draftNames', () => {
         return items.size;
       },
       key: (i: number) => [...items.keys()][i] ?? null,
+      getItem: (key: string) => items.get(key) ?? null,
     });
     items.set('weasel.theme-editor.draft.harbor', '{}');
     expect(draftNames()).toEqual(['harbor']);

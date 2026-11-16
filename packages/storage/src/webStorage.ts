@@ -1,7 +1,13 @@
 import { jsonLossWarner, parse, toJson } from './json';
 import type { SyncStorageAdapter } from './types';
 
-function webStorageAdapter(area: () => Storage, name: string, crossTab: boolean): SyncStorageAdapter {
+interface WebStorage {
+  adapter: SyncStorageAdapter;
+  readNow(key: string): unknown;
+  writeNow(key: string, value: unknown): void;
+}
+
+function webStorage(area: () => Storage, name: string, crossTab: boolean): WebStorage {
   const warnLoss = jsonLossWarner(name);
   const keysNow = (prefix: string): string[] => {
     const store = area();
@@ -31,23 +37,26 @@ function webStorageAdapter(area: () => Storage, name: string, crossTab: boolean)
       else sub.keys.delete(key);
     }
   };
-  const adapter: SyncStorageAdapter = {
-    get: async (key) => {
-      const raw = area().getItem(key);
-      return raw === null ? undefined : parse(raw);
-    },
-    list: async (prefix) => listNow(prefix),
-    listSync: listNow,
-    set: async (key, value) => {
-      if (value === undefined) return adapter.delete(key);
-      warnLoss(key, value);
-      area().setItem(key, toJson(value));
-      note(key, true);
-    },
-    delete: async (key) => {
+  const readNow = (key: string): unknown => {
+    const raw = area().getItem(key);
+    return raw === null ? undefined : parse(raw);
+  };
+  const writeNow = (key: string, value: unknown): void => {
+    if (value === undefined) {
       area().removeItem(key);
       note(key, false);
-    },
+      return;
+    }
+    warnLoss(key, value);
+    area().setItem(key, toJson(value));
+    note(key, true);
+  };
+  const adapter: SyncStorageAdapter = {
+    get: async (key) => readNow(key),
+    list: async (prefix) => listNow(prefix),
+    listSync: listNow,
+    set: async (key, value) => writeNow(key, value),
+    delete: async (key) => writeNow(key, undefined),
   };
   if (crossTab) {
     adapter.subscribe = (prefix, on) => {
@@ -75,20 +84,52 @@ function webStorageAdapter(area: () => Storage, name: string, crossTab: boolean)
       };
     };
   }
-  return adapter;
+  return { adapter, readNow, writeNow };
 }
+
+const local = webStorage(() => localStorage, 'localStorage', true);
 
 /** Persist to `localStorage`, one JSON value per record. Survives a reload and
  *  reaches other tabs through the `storage` event. */
-export const localStorageAdapter: SyncStorageAdapter = webStorageAdapter(
-  () => localStorage,
-  'localStorage',
-  true,
-);
+export const localStorageAdapter: SyncStorageAdapter = local.adapter;
 
 /** Persist to `sessionStorage` — survives a reload but not a new tab. */
-export const sessionStorageAdapter: SyncStorageAdapter = webStorageAdapter(
+export const sessionStorageAdapter: SyncStorageAdapter = webStorage(
   () => sessionStorage,
   'sessionStorage',
   false,
-);
+).adapter;
+
+type StorageArea = Pick<Storage, 'getItem' | 'setItem' | 'removeItem'>;
+
+const warnAreaLoss = jsonLossWarner('Web Storage');
+
+/** The value `localStorageAdapter` holds under `key`, read now, for a setting a first render needs: `undefined` when
+ *  there is none, or where the browser refuses storage. Text stored as plain text, not JSON, reads back as itself.
+ *  `area` reads another store shaped like `localStorage` the same way. */
+export function readLocal(key: string, area?: StorageArea): unknown {
+  try {
+    if (!area) return local.readNow(key);
+    const raw = area.getItem(key);
+    return raw === null ? undefined : parse(raw);
+  } catch {
+    return undefined;
+  }
+}
+
+/** Write `value` under `key` as `localStorageAdapter` would, now, `undefined` removing it. False where the browser
+ *  refuses it: a private window, a full quota, or site data blocked. `area` writes another store shaped like
+ *  `localStorage` the same way. */
+export function writeLocal(key: string, value: unknown, area?: StorageArea): boolean {
+  try {
+    if (!area) local.writeNow(key, value);
+    else if (value === undefined) area.removeItem(key);
+    else {
+      warnAreaLoss(key, value);
+      area.setItem(key, toJson(value));
+    }
+    return true;
+  } catch {
+    return false;
+  }
+}

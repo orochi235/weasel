@@ -1,3 +1,5 @@
+import { clamp } from '@weasel-js/geom';
+
 /** Other spellings a legend may take when it overflows its key, keyed by the
  *  legend, in order of preference. A spelling with a `\n` prints on two lines. */
 export type KeySpellings = Readonly<Record<string, readonly string[]>>;
@@ -27,7 +29,7 @@ export function spellingsOf(label: string, spellings: KeySpellings): string[] {
 
 /** The scale a legend prints at: never past full size, never below `minScale`. */
 export function clampScale(scale: number, minScale: number): number {
-  return Math.max(minScale, Math.min(1, scale));
+  return clamp(scale, minScale, 1);
 }
 
 /**

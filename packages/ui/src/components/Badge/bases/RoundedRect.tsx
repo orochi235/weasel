@@ -1,5 +1,5 @@
 import type { BaseModule, BaseSampler, PerimeterPoint } from './types';
-import { lerp } from '@weasel-js/geom';
+import { lerp, trimNumber } from '@weasel-js/geom';
 
 /** What `baseParams` takes on a badge whose `base` is `rounded-rect`. */
 export interface BadgeRoundedRectBaseParams {
@@ -153,7 +153,7 @@ const RoundedRect: BaseModule<BadgeRoundedRectBaseParams> = {
         samplePts.push({ x: pt.x, y: pinchY(pt.x, pt.y) });
       }
       bodyPath = samplePts.reduce((acc, p, i) =>
-        acc + (i === 0 ? `M ${p.x.toFixed(3)} ${p.y.toFixed(3)}` : ` L ${p.x.toFixed(3)} ${p.y.toFixed(3)}`),
+        acc + (i === 0 ? `M ${trimNumber(p.x, 3)} ${trimNumber(p.y, 3)}` : ` L ${trimNumber(p.x, 3)} ${trimNumber(p.y, 3)}`),
         '') + ' Z';
 
       // Warped perimeterAt: pinched point + normal recomputed from local warped tangent.

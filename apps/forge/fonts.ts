@@ -1,6 +1,7 @@
 import type { GlobalDeclarations, StoryContext } from '@weasel-js/forge';
 import { defineTheme, type Theme, weaselTheme } from '@weasel-js/theme';
 import { icon } from './icons.gen';
+import { getOwn } from '@weasel-js/registry';
 
 /** Loads the webfonts the font table names that no system ships. */
 const GOOGLE_FONTS_HREF =
@@ -113,7 +114,7 @@ export function loadWebFonts(doc: Document): void {
 
 /** The default face: the family the Font global names. */
 /** The family the table lists under `key`; none for a key it lacks, a member every object answers to included. */
-const fontNamed = (key: string): FontInfo | undefined => (Object.hasOwn(FONTS, key) ? FONTS[key] : undefined);
+const fontNamed = (key: string): FontInfo | undefined => getOwn(FONTS, key);
 
 const fontOf = (globals: StoryContext['globals']): [string, FontInfo] => {
   const key = String(globals.fontFamily ?? 'oswald');

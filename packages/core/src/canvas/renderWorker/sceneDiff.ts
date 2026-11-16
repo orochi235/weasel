@@ -6,6 +6,7 @@ import type { Scene, SerializedNode } from '../../core/scene/types';
 import { sharedJSON } from '../../core/scene/owned';
 import { scenePickIds } from '../scenePickIds';
 import type { SceneDelta, WireNode } from './protocol';
+import { sameList } from '@weasel-js/registry';
 
 /** Reports a scene's changes, one delta per call, against what it reported last. */
 export interface SceneDiff {
@@ -33,7 +34,7 @@ const sameNode = (a: WireNode, b: WireNode): boolean => {
 };
 
 const sameOrder = (a: readonly string[], b: readonly string[]): boolean =>
-  a.length === b.length && a.every((id, i) => id === b[i]);
+  sameList(a, b);
 
 export function createSceneDiff(): SceneDiff {
   let sent: Sent | null = null;

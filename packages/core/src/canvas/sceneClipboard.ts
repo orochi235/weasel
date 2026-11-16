@@ -27,6 +27,7 @@ import type { InsertSite } from './deps/insertSite';
 import { isFollower } from 'core/pages/pagePlacement';
 import type { CanDropIntoDep } from 'interactions/actions/layoutDeps';
 import { pasteOnPages, type PageLanding } from './pasteOnPages';
+import { getOwn } from '@weasel-js/registry';
 
 /** What the seam needs from the adapter it serves. */
 export interface SceneClipboardEnv<TData, TLayer extends string, TPose> {
@@ -143,7 +144,7 @@ function restoredFnFields<TData, TLayer extends string, TPose>(
   for (const spec of NODE_FN_FIELDS) {
     const key = item[spec.jsonKey];
     const table = registry[spec.field];
-    const registered = typeof key === 'string' && table && Object.hasOwn(table, key) ? table[key] : undefined;
+    const registered = typeof key === 'string' ? getOwn(table, key) : undefined;
     const fn = registered ?? (isLive(item[spec.field]) ? item[spec.field] : undefined);
     if (fn !== undefined) out[spec.field] = fn;
   }

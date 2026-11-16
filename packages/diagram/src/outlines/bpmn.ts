@@ -3,6 +3,7 @@
  * underneath, as BPMN draws them; a subprocess is a task with a boxed plus
  * at its foot.
  */
+import { trimNumber } from '@weasel-js/geom';
 import { PathBuilder } from '@weasel-js/core/math';
 import { FIGURE_OUTLINES, figureOver } from './figures';
 import { FLOWCHART_OUTLINES } from './flowchart';
@@ -33,7 +34,7 @@ const PENTAGON = (() => {
   const r = 0.13;
   const pts = [0, 1, 2, 3, 4].map((k) => {
     const t = -Math.PI / 2 + (k * 2 * Math.PI) / 5;
-    return `${(0.5 + r * Math.cos(t)).toFixed(4)} ${(0.5 + r * Math.sin(t)).toFixed(4)}`;
+    return `${trimNumber(0.5 + r * Math.cos(t), 4)} ${trimNumber(0.5 + r * Math.sin(t), 4)}`;
   });
   return `M${pts.join('L')}Z`;
 })();

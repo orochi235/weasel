@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useWindowEvent } from '@weasel-js/react';
 import { useIconVariant } from '@weasel-js/icons/react';
 import { RegistryBrowser, type RegistryBrowserPick, type RegistryCategory } from '@weasel-js/devtools';
 import { matchQuery } from '@weasel-js/registry';
@@ -120,20 +121,16 @@ export function RegistryInspector() {
   }, [selected]);
 
   // Respond to external hash changes (browser back/forward, manual URL edits).
-  useEffect(() => {
-    const onHash = () => {
-      const parsed = parseSelectionFromHash(window.location.hash);
-      if (!parsed) { setSelected(null); return; }
-      // Resolve immediately if the entry already exists; otherwise queue.
-      for (const node of nodes) {
-        const hit = node.entries.find((e) => e.kind === parsed.kind && e.id === parsed.id);
-        if (hit) { setSelected(hit); return; }
-      }
-      setPendingDeepLink(parsed);
-    };
-    window.addEventListener('hashchange', onHash);
-    return () => window.removeEventListener('hashchange', onHash);
-  }, [nodes]);
+  useWindowEvent('hashchange', () => {
+    const parsed = parseSelectionFromHash(window.location.hash);
+    if (!parsed) { setSelected(null); return; }
+    // Resolve immediately if the entry already exists; otherwise queue.
+    for (const node of nodes) {
+      const hit = node.entries.find((e) => e.kind === parsed.kind && e.id === parsed.id);
+      if (hit) { setSelected(hit); return; }
+    }
+    setPendingDeepLink(parsed);
+  });
 
   const categories: readonly RegistryCategory[] = useMemo(() => nodes.map((n) => ({
     id: n.id,

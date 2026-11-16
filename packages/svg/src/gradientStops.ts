@@ -4,6 +4,7 @@ import { ownProp, ownValue } from './cascade';
 import { readProperty } from './properties';
 import { trimNumber } from './transform';
 import { escapeAttr } from '@weasel-js/registry';
+import { byteHex } from '@weasel-js/paint';
 
 /** Parse a `stop-opacity` / offset value that may carry a `%` suffix. */
 export function parseRatio(raw: string): number {
@@ -40,8 +41,7 @@ function applyAlpha(hex: string, alpha: number): string {
   // Pack alpha into an 8-digit hex so it round-trips through weasel's
   // string-color storage. This is non-standard CSS hex but parses cleanly
   // back via our color.ts parser.
-  const a = Math.max(0, Math.min(255, Math.round(alpha * 255)));
-  return `${hex}${a.toString(16).padStart(2, '0')}`;
+  return `${hex}${byteHex(alpha * 255)}`;
 }
 
 /**

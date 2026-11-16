@@ -1,6 +1,6 @@
 import { useEffect, useLayoutEffect, useRef, type CSSProperties, type RefObject } from 'react';
 import { scrolledPlaceOf } from '@weasel-js/core';
-import { useLatest } from '@weasel-js/react';
+import { useLatest, watchResize } from '@weasel-js/react';
 
 /**
  * Holds what a centering `stage` shows where it last stood while `holding`. A drop drawn into a centered form
@@ -19,11 +19,8 @@ export function useHeldPlace(stage: RefObject<HTMLElement | null>, holding: bool
   useLayoutEffect(() => { if (!holding) read(); });
   useEffect(() => {
     const box = stage.current;
-    if (!box || typeof ResizeObserver === 'undefined') return;
-    const seen = new ResizeObserver(() => { if (!held.current) read(); });
-    seen.observe(box);
-    if (box.firstElementChild) seen.observe(box.firstElementChild);
-    return () => seen.disconnect();
+    if (!box) return;
+    return watchResize([box, box.firstElementChild], () => { if (!held.current) read(); });
   });
   const at = holding ? place.current : null;
   return at ? { 'data-held': '', style: { '--held-x': `${at.x}px`, '--held-y': `${at.y}px` } as CSSProperties } : {};

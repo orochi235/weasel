@@ -1,4 +1,5 @@
 import { readStored } from '@weasel-js/editor';
+import { readLocal, sameStored, writeLocal } from '@weasel-js/storage';
 import { DEFAULT_PAPER_SIZE, isPaperSize, PAPER_PRESETS, type PaperSizeKey } from './paperSizes';
 import { sessionRecords } from './sessionRecords';
 
@@ -68,10 +69,7 @@ export function retireLegacyDoc(): void {
   });
   if (next === null) return;
   const records = sessionRecords();
-  try {
-    const text = JSON.stringify(next);
-    if (records) {
-      if (text !== JSON.stringify(records.get(DOC_KEY))) records.set(DOC_KEY, next);
-    } else if (text !== localStorage.getItem(DOC_KEY)) localStorage.setItem(DOC_KEY, text);
-  } catch { /* the next save tries again */ }
+  if (records) {
+    if (!sameStored(next, records.get(DOC_KEY))) records.set(DOC_KEY, next);
+  } else if (!sameStored(next, readLocal(DOC_KEY))) writeLocal(DOC_KEY, next);
 }

@@ -15,7 +15,7 @@ import {
   type SceneCanvasApi,
   viewRectToScreen,
 } from '@weasel-js/core';
-import { useLatest } from '@weasel-js/react';
+import { useLatest, watchResize } from '@weasel-js/react';
 import { clampRectWithin, placeRect, type Placement } from '@weasel-js/geom';
 import { useCallback, useLayoutEffect, useRef, type ReactNode, type RefObject } from 'react';
 import { diagramEdgeOf } from './edgeTrait';
@@ -101,11 +101,10 @@ export function useOverlayPlacement(
     const canvas = canvasRef.current;
     if (canvas == null) return;
     const stop = canvas.subscribeFrame(placeAll);
-    const observer = typeof ResizeObserver === 'undefined' ? null : new ResizeObserver(placeAll);
-    for (const el of elements.current.values()) observer?.observe(el);
+    const unwatch = watchResize(elements.current.values(), placeAll);
     return () => {
       stop();
-      observer?.disconnect();
+      unwatch();
     };
   }, [canvasRef, placeAll, overlays]);
 

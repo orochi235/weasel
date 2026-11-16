@@ -10,6 +10,7 @@
  * prereleases, so `^1.4` does not admit `2.0.0-rc.1`.
  */
 import { VERSION } from '../version';
+import { getOwn } from '@weasel-js/registry';
 
 /**
  * The versions a contribution can require, keyed by package without its
@@ -160,7 +161,7 @@ export function checkRequirements(
   const out: RequirementMismatch[] = [];
   for (const [pkg, range] of Object.entries(requires)) {
     if (range === undefined) continue;
-    const have = Object.hasOwn(running, pkg) ? running[pkg] : undefined;
+    const have = getOwn(running, pkg);
     if (have === undefined) {
       out.push({ package: pkg, range, running: undefined, reason: 'unknown-package' });
       continue;

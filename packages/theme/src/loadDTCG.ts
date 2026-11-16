@@ -1,4 +1,4 @@
-import { isPlainObject, setOwn } from '@weasel-js/registry';
+import { isPlainObject, setOwn, getOwn } from '@weasel-js/registry';
 import { mergeAxes, type AxisDef, type AxisDefs, type Selection, type Varying } from './axes';
 import type { SerializableColorList } from './colorListItems';
 import { AXES_EXT, overrideKey, RAMPS_EXT, TINTS_EXT, type DtcgAxesExtension } from './dtcg/axesExtension';
@@ -23,10 +23,6 @@ interface Layer {
 }
 
 const isRecord = isPlainObject;
-
-/** `record`'s own `key`, never one it inherits: a token may be named `constructor`. */
-const own = <T>(record: Readonly<Record<string, T>> | undefined, key: string): T | undefined =>
-  (record !== undefined && Object.hasOwn(record, key) ? record[key] : undefined);
 
 function readLayer(src: { primitives?: unknown; modes?: unknown }): Layer {
   const modes = isRecord(src.modes) ? src.modes : {};
@@ -93,10 +89,10 @@ export function loadDTCG(doc: DtcgDocument): Theme {
 
   /** A token's value within one layer: varying by mode if any mode names it. */
   const tokenIn = (layer: Layer, name: string): Varying<RawToken> | undefined => {
-    if (!modeNames.some((m) => own(own(layer.modes, m), name))) return own(layer.primitives, name);
+    if (!modeNames.some((m) => getOwn(getOwn(layer.modes, m), name))) return getOwn(layer.primitives, name);
     const branch: Record<string, unknown> = { by: 'mode' };
     for (const m of modeNames) {
-      const t = own(own(layer.modes, m), name) ?? own(layer.primitives, name);
+      const t = getOwn(getOwn(layer.modes, m), name) ?? getOwn(layer.primitives, name);
       if (t) setOwn(branch, m, t);
     }
     return branch as Varying<RawToken>;
@@ -106,7 +102,7 @@ export function loadDTCG(doc: DtcgDocument): Theme {
   const defaultMode = typeof doc.defaultMode === 'string' ? doc.defaultMode : (ext?.axes.mode?.default ?? inherited ?? 'dark');
   const modeAxis: AxisDef = {
     default: defaultMode,
-    values: Object.fromEntries(modeNames.map((m) => [m, own(ext?.axes.mode?.values, m) ?? {}])),
+    values: Object.fromEntries(modeNames.map((m) => [m, getOwn(ext?.axes.mode?.values, m) ?? {}])),
   };
   const axes: Record<string, AxisDef> = {};
   for (const [name, def] of Object.entries(ext?.axes ?? { mode: modeAxis })) {
@@ -120,13 +116,13 @@ export function loadDTCG(doc: DtcgDocument): Theme {
   const nest = (name: string, vary: readonly string[], combo: Selection): Varying<RawToken> | undefined => {
     if (vary.length === 0) {
       const key = overrideKey(all, combo);
-      const layer = key === '' ? plain : own(overrides, key);
+      const layer = key === '' ? plain : getOwn(overrides, key);
       return layer && tokenIn(layer, name);
     }
     const [axis, ...rest] = vary;
     const out: Record<string, unknown> = { by: axis };
     let any = false;
-    for (const value of Object.keys(own(all, axis)?.values ?? {})) {
+    for (const value of Object.keys(getOwn(all, axis)?.values ?? {})) {
       const v = nest(name, rest, { ...combo, [axis]: value });
       if (v !== undefined) {
         setOwn(out, value, v);
@@ -137,10 +133,10 @@ export function loadDTCG(doc: DtcgDocument): Theme {
   };
 
   const tokens: Record<string, Varying<RawToken>> = {};
-  const names = new Set([...Object.keys(plain.primitives), ...modeNames.flatMap((m) => Object.keys(own(plain.modes, m) ?? {}))]);
+  const names = new Set([...Object.keys(plain.primitives), ...modeNames.flatMap((m) => Object.keys(getOwn(plain.modes, m) ?? {}))]);
   for (const name of Object.keys(ext?.varies ?? {})) names.add(name);
   for (const name of names) {
-    const vary = (own(ext?.varies, name) ?? []).filter((a) => Object.hasOwn(all, a));
+    const vary = (getOwn(ext?.varies, name) ?? []).filter((a) => Object.hasOwn(all, a));
     const v = vary.length > 0 ? nest(name, vary, {}) : tokenIn(plain, name);
     if (v !== undefined) setOwn(tokens, name, v);
   }

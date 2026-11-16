@@ -7,8 +7,8 @@
 import { formatPhaseAtom, parseRoute, type PhaseAtom } from '../grammar/routeGrammar';
 import { routeToSpec } from '../grammar/routeToSpec';
 import { eventKeyName } from '../grammar/keyRouteGrammar';
-import { ownValue } from './keyLegendsFromMods';
 import type { GestureSpec, KeyHeldSpec, KeySpec, ModSpec, PhaseSpec } from './spec';
+import { getOwn } from '@weasel-js/registry';
 
 const MODIFIERS: Record<string, keyof ModSpec> = {
   meta: 'meta', cmd: 'meta', command: 'meta',
@@ -26,7 +26,7 @@ function parse(shortcut: string): { key: string; mods: ModSpec } {
   if (!raw) throw new Error(`shortcut "${shortcut}" names no key`);
   const mods: ModSpec = {};
   for (const part of parts) {
-    const mod = ownValue(MODIFIERS, part.toLowerCase());
+    const mod = getOwn(MODIFIERS, part.toLowerCase());
     if (!mod) throw new Error(`shortcut "${shortcut}": unknown modifier "${part}"`);
     mods[mod] = true;
   }

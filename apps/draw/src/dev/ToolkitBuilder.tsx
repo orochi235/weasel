@@ -13,6 +13,7 @@ import { Select } from '@weasel-js/ui/components/Select';
 import { Switch } from '@weasel-js/ui/components/Switch';
 import { useRegisteredActions } from '@weasel-js/ui/components/Prefs';
 import { type ReactElement, useEffect, useState } from 'react';
+import { useWindowEvent } from '@weasel-js/react';
 import { DevShell } from './DevShell';
 import { ActionsWidget } from './toolkit/ActionsWidget';
 import { ConflictsWidget } from './toolkit/ConflictsWidget';
@@ -122,14 +123,10 @@ export function ToolkitBuilder(): ReactElement {
 
   // Sync hash on a change + react to back/forward.
   useEffect(() => { writeSetup(setup); }, [setup]);
-  useEffect(() => {
-    const onHash = () => {
-      const next = parseSetup(window.location.hash);
-      setSetup((prev) => (setupKey(prev) === setupKey(next) ? prev : next));
-    };
-    window.addEventListener('hashchange', onHash);
-    return () => window.removeEventListener('hashchange', onHash);
-  }, []);
+  useWindowEvent('hashchange', () => {
+    const next = parseSetup(window.location.hash);
+    setSetup((prev) => (setupKey(prev) === setupKey(next) ? prev : next));
+  });
 
   return (
     <DevShell

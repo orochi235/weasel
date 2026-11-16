@@ -1,7 +1,7 @@
 import { useRef } from 'react';
 import type { ShapeModule } from '../types';
 import { useSvgBox } from '../useSvgBox';
-import { lerp } from '@weasel-js/geom';
+import { lerp, trimNumber } from '@weasel-js/geom';
 
 /** What `shapeParams` takes on a `shield` badge. */
 export interface BadgeShieldShapeParams {
@@ -36,14 +36,14 @@ function ShieldComponent({ variant, focused, params }: {
   const rxC = (cornerCss / box.w) * 100;
   const ryC = (cornerCss / box.h) * 100;
   const d = [
-    `M ${rxC.toFixed(3)} 0`,
-    `L ${(100 - rxC).toFixed(3)} 0`,
-    `A ${rxC.toFixed(3)} ${ryC.toFixed(3)} 0 0 1 100 ${ryC.toFixed(3)}`,
+    `M ${trimNumber(rxC, 3)} 0`,
+    `L ${trimNumber(100 - rxC, 3)} 0`,
+    `A ${trimNumber(rxC, 3)} ${trimNumber(ryC, 3)} 0 0 1 100 ${trimNumber(ryC, 3)}`,
     `L 100 ${sh}`,
     `Q 100 ${cpY} 50 ${pd}`,
     `Q 0 ${cpY} 0 ${sh}`,
-    `L 0 ${ryC.toFixed(3)}`,
-    `A ${rxC.toFixed(3)} ${ryC.toFixed(3)} 0 0 1 ${rxC.toFixed(3)} 0`,
+    `L 0 ${trimNumber(ryC, 3)}`,
+    `A ${trimNumber(rxC, 3)} ${trimNumber(ryC, 3)} 0 0 1 ${trimNumber(rxC, 3)} 0`,
     'Z',
   ].join(' ');
   return (

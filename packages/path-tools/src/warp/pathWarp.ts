@@ -26,6 +26,7 @@ import {
 } from '@weasel-js/geom';
 import { applyPathWarp, type PathWarp } from '@weasel-js/geom/warp';
 import { classifyPathStorage, type EditableShape } from '@weasel-js/core';
+import { getOwn } from '@weasel-js/registry';
 
 /** What `data.warp` holds. */
 export interface HeldPathWarp {
@@ -94,7 +95,7 @@ export function heldPathWarpOf(data: unknown): HeldPathWarp | null {
   const w = (data as { warp?: unknown } | null | undefined)?.warp;
   if (!isHeldWarp(w)) return null;
   const kind: string = w.warp.kind;
-  const now = Object.hasOwn(RENAMED_KINDS, kind) ? RENAMED_KINDS[kind] : undefined;
+  const now = getOwn(RENAMED_KINDS, kind);
   if (now === undefined) return w;
   let out = renamed.get(w);
   if (!out) {

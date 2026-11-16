@@ -8,7 +8,7 @@ import { parseColor, rgbaToHex } from './color';
 import { isSolidPaint } from './commandPaint';
 import { mixOklab } from './mix';
 import { isGradientPaint } from './gradient';
-import { lerp } from './lerp';
+import { lerp } from './scalar';
 import type { Fill, GradStop, GradientPaint, Paint, ScreenLength, Stroke } from './paint';
 
 type Rgba = [number, number, number, number];

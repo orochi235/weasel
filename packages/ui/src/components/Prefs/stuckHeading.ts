@@ -1,3 +1,5 @@
+import { watchResize } from '@weasel-js/react';
+
 /** The section's custom property holding its sticky heading's height, which rows under it read as their `scroll-margin-top`. */
 const HEIGHT = '--pref-stuck-height';
 
@@ -7,14 +9,13 @@ const HEIGHT = '--pref-stuck-height';
  */
 export function trackStuckHeading(heading: HTMLElement): (() => void) | undefined {
   const section = heading.parentElement;
-  if (!section || typeof ResizeObserver === 'undefined') return undefined;
-  const ro = new ResizeObserver(([entry]) => {
+  if (!section) return undefined;
+  const stop = watchResize(heading, ([entry]) => {
     const height = entry?.borderBoxSize?.[0]?.blockSize ?? heading.offsetHeight;
     section.style.setProperty(HEIGHT, `${height}px`);
   });
-  ro.observe(heading);
   return () => {
-    ro.disconnect();
+    stop();
     section.style.removeProperty(HEIGHT);
   };
 }

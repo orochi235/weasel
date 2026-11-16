@@ -1,12 +1,13 @@
 import { type PrefGroup, isPrefLeaf, type PrefLeaf } from '@weasel-js/prefs-schema';
 import { setOwnPrefValue } from '@weasel-js/prefs-schema/internal';
+import { getOwn } from '@weasel-js/registry';
 
 type Child = PrefLeaf | PrefGroup;
 
 function mergeChildren(into: Record<string, Child>, from: Record<string, Child>, at: string): void {
   for (const [key, child] of Object.entries(from)) {
     const path = at === '' ? key : `${at}.${key}`;
-    const held = Object.hasOwn(into, key) ? into[key] : undefined;
+    const held = getOwn(into, key);
     if (held === undefined) {
       setOwnPrefValue(into, key, child);
     } else if (!isPrefLeaf(held) && !isPrefLeaf(child)) {

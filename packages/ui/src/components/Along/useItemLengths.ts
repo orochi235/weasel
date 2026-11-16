@@ -1,6 +1,7 @@
 import { useLayoutEffect, useRef, useState, type RefObject } from 'react';
 import { cssPx } from '../../cssPx';
 import { compositeKey } from '@weasel-js/registry';
+import { watchResize } from '@weasel-js/react';
 
 const same = (a: ReadonlyMap<string, number>, b: ReadonlyMap<string, number>): boolean =>
   a.size === b.size && [...a].every(([key, length]) => b.get(key) === length);
@@ -70,10 +71,7 @@ export function useRunGap(root: RefObject<HTMLElement | null>): number {
     if (el === null) return;
     const measure = (): void => setGap(cssPx(getComputedStyle(el).columnGap));
     measure();
-    if (typeof ResizeObserver === 'undefined') return;
-    const observer = new ResizeObserver(measure);
-    observer.observe(el);
-    return () => observer.disconnect();
+    return watchResize(el, measure);
   }, [root]);
   return gap;
 }
