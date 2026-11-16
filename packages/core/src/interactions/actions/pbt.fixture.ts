@@ -18,8 +18,10 @@ export function timeoutFor(n: number, msPerRun: number): number {
   return Math.max(5_000, runs(n).numRuns * msPerRun);
 }
 
+/** The scene the drag properties run on: no data, and the layers `main` and `top`. */
 export type TestScene = Scene<Record<string, never>, 'main' | 'top', RectPose>;
 
+/** An empty {@link TestScene}. */
 export function makeScene(): TestScene {
   return createScene<Record<string, never>, 'main' | 'top'>({ systemLayers: [{ id: 'main' }, { id: 'top' }] }) as TestScene;
 }

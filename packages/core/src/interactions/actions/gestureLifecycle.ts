@@ -54,6 +54,9 @@ export interface GestureLifecycle {
   end(committed: boolean): void;
 }
 
+/** The lifecycle a gesture runs under, read from its binding params: its history label, whether it commits
+ *  transient, and its start and end callbacks. `defaultLabel` names it when the params do not, and any behavior
+ *  defaulting to transient makes it transient. */
 export function readGestureLifecycle(
   source: GestureLifecycleOptions | Record<string, unknown> | undefined,
   defaultLabel: string,

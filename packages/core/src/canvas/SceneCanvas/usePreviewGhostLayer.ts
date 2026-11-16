@@ -34,6 +34,7 @@ import { pixelScaleCtx } from '../pixelScale';
 
 const GHOST_ALPHA = 0.85;
 
+/** The layer painting an ongoing action's preview ghosts, repainted on every dispatcher pump. */
 export function usePreviewGhostLayer<TData, TLayer extends string, TPose>(args: {
   scene: Scene<TData, TLayer, TPose>;
   sceneSlot: LayersMap<Node<TData, TLayer, TPose>, TPose>['scene'];

@@ -6,6 +6,7 @@ import type { Action, ActionDeps, BindingOptions, InvocationCtx, OngoingHandle }
 import { RESIZE_HANDLE_ANCHORS } from '../gestures/resizeHandles';
 import type { TestScene } from './pbt.fixture';
 
+/** A point, as the drag properties generate it. */
 export interface Pt { x: number; y: number }
 
 const NO_MODS = { alt: false, ctrl: false, meta: false, shift: false };

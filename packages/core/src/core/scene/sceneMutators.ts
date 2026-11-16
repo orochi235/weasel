@@ -39,6 +39,7 @@ export interface SceneMutators<TData, TLayer extends string, TPose> {
   insertNode(node: Node<TData, TLayer, TPose>, index?: number): void;
 }
 
+/** The write-through calls ops commit by, each answered by `scene`. */
 export function sceneMutators<TData, TLayer extends string, TPose>(
   scene: Scene<TData, TLayer, TPose>,
 ): SceneMutators<TData, TLayer, TPose> {

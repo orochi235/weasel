@@ -10,6 +10,7 @@ import type { PoseDescriptor } from 'core/geometry/poseDescriptor';
 import type { DrawnBoundsScene } from '../drawnBounds';
 import { isCustomEntry, type CustomLayerEntry, type SelectionOverlaySlotConfig } from '../layerSlots';
 
+/** The layer painting the `selectionOverlay` slot's chrome: the selection's outline and handles. */
 export function useSelectionOverlayLayer<TPose>(
   /** The slot after `mergeLayersWithDefaults`. */
   slot: SelectionOverlaySlotConfig<TPose> | CustomLayerEntry | null | undefined,

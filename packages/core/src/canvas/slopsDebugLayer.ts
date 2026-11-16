@@ -25,6 +25,7 @@ export interface CreateSlopsDebugLayerOptions {
 const SLOP_FILL = 'rgba(255, 80, 140, 0.18)';
 const SLOP_STROKE = 'rgba(255, 80, 140, 0.55)';
 
+/** The debug layer drawing each point affordance's hit region, as the hit-test reads it. */
 export function createSlopsDebugLayer(
   opts: CreateSlopsDebugLayerOptions,
 ): RenderLayer<unknown> {

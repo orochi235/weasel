@@ -57,6 +57,7 @@ function onScreen(
   });
 }
 
+/** The layer painting the drawing view's gesture overlays, such as a marquee or lasso, repainted on every pump. */
 export function useDispatcherOverlayLayer(args: {
   /** The surface's dispatcher, subscribed to only so a pump repaints. What
    *  gets painted is the drawing view's own `getGestureOverlays()`. */

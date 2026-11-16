@@ -38,6 +38,7 @@ export interface GestureReaders {
   kitSettings: KitSettingsStore | null;
 }
 
+/** The {@link GestureReaders} a gesture reads `deps` through. */
 export function gestureReaders(deps: Pick<ActionDeps, 'view' | 'kitSettings'>): GestureReaders {
   return { view: gestureViewReader(deps), plane: gesturePlaneReader(deps), kitSettings: deps.kitSettings ?? null };
 }

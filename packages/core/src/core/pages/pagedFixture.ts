@@ -4,10 +4,14 @@ import { createScene } from '../scene/scene';
 import { asNodeId, type RectPose } from '../scene/types';
 import { createPageRun } from './pageNodes';
 
+/** The left page. */
 export const PAGE_A = asNodeId('a');
+/** The right page. */
 export const PAGE_B = asNodeId('b');
+/** The rect on page `a`, overhanging its right edge. */
 export const ON_PAGE = asNodeId('r');
 
+/** The paged scene and its page run; `pasteboard` is handed to the run. */
 export function pagedScene(options: { pasteboard?: boolean } = {}) {
   const scene = createScene<object, 'paper' | 'ink', RectPose>({ systemLayers: [{ id: 'paper' }, { id: 'ink' }] });
   const run = createPageRun(scene, [{ id: PAGE_A, width: 100, height: 50 }, { id: PAGE_B, width: 100, height: 50 }], {

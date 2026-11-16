@@ -10,6 +10,7 @@ export interface InkExtents {
   readonly bottom: number;
 }
 
+/** Ink that reaches nowhere past the pose box: what a node with no stroke or effect has. */
 export const NO_INK_EXTENTS: InkExtents = Object.freeze({ left: 0, top: 0, right: 0, bottom: 0 });
 
 /** Whether `e` reaches no further than the box on any side: {@link NO_INK_EXTENTS}'s value. */

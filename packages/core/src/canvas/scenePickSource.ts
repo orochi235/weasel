@@ -40,6 +40,7 @@ export interface ScenePickSourceOptions<TPose> extends ViewPickGates {
   index?: { descriptor: PoseDescriptor<unknown> };
 }
 
+/** The pick source walking `scene` as the asking view shows it: its layers, overrides, alpha and camera. */
 export function scenePickSource<TData, TLayer extends string, TPose>(
   scene: Scene<TData, TLayer, TPose>,
   opts: ScenePickSourceOptions<TPose> = {},

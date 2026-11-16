@@ -134,6 +134,7 @@ export interface ViewPoseAdapter<TPose> {
   getNode?(id: string): { layer?: string } | undefined;
 }
 
+/** What `useViewHelpers` reads poses, nodes and the selection through. */
 export interface UseViewHelpersOptions<TPose> {
   adapter: ViewPoseAdapter<TPose> | undefined;
   geometry: PoseDescriptor<TPose>;
