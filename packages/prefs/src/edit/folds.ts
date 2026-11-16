@@ -1,3 +1,4 @@
+import { readLocal, writeLocal } from '@weasel-js/storage';
 import { isPrefLeaf } from '../index';
 import { scopedKey } from './assetScope';
 import { childrenOf, joinPath, type SchemaNode, type SchemaRoot } from './schemaEdit';
@@ -51,20 +52,11 @@ export function foldsUnder(draftKey: string | undefined): Folds {
   const key = (assetId: string): string => scopedKey(`${draftKey}:folds`, assetId);
   return {
     open(assetId) {
-      try {
-        const folded: unknown = JSON.parse(localStorage.getItem(key(assetId)) ?? '[]');
-        return Array.isArray(folded) ? folded.filter((id): id is string => typeof id === 'string') : [];
-      } catch {
-        return [];
-      }
+      const folded = readLocal(key(assetId));
+      return Array.isArray(folded) ? folded.filter((id): id is string => typeof id === 'string') : [];
     },
     save(assetId, folded) {
-      try {
-        if (folded.length === 0) localStorage.removeItem(key(assetId));
-        else localStorage.setItem(key(assetId), JSON.stringify(folded));
-      } catch {
-        // A browser that refuses storage opens every row next time.
-      }
+      writeLocal(key(assetId), folded.length === 0 ? undefined : folded);
     },
   };
 }
