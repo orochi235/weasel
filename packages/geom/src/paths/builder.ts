@@ -1,8 +1,6 @@
 /**
  * Fluent builder for `PolygonPath`. Hides the `Uint8Array` / `Float32Array`
- * encoding behind move/line/curve/close calls and a final `build()`. Use
- * this to construct paths in tests and demos; production callers that need
- * to mutate large paths in place should reach for the raw arrays directly.
+ * encoding behind move/line/curve/close calls and a final `build()`.
  *
  * Numeric capacity grows by doubling — typical for amortized O(1) push.
  *

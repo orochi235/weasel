@@ -21,7 +21,8 @@ export type PathOpenFill = 'close' | 'none';
  * Polygon path with arbitrary contours and optional bezier segments.
  * Multi-contour: each `M` opens a new subpath; `Z` closes the current one.
  * An open subpath (no `Z`) strokes as a polyline; `openFill` says whether it
- * fills.
+ * fills. A built path is never written in place: hit tests, length tables and
+ * meshes are cached by the path object, so a changed shape is a new path.
  */
 export interface PolygonPath {
   kind: 'polygon';
