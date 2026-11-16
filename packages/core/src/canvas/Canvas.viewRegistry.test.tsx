@@ -5,7 +5,7 @@
 import { describe, it, expect, vi, beforeAll } from 'vitest';
 import { render } from '@testing-library/react';
 import { Canvas } from '@weasel-js/core/testing/BareCanvas';
-import { ViewRegistryProvider, useOptionalViewRegistry, type SurfaceHandle, type ViewRegistry } from './viewRegistry';
+import { ViewRegistryProvider, useOptionalViewRegistry, type SurfaceHandle, type ViewRegistration, type ViewRegistry } from './viewRegistry';
 
 beforeAll(() => {
   const proto = HTMLCanvasElement.prototype as unknown as { getContext: (...args: unknown[]) => unknown };
@@ -58,5 +58,30 @@ describe('<Canvas> surface attachment', () => {
     registry.attachSurface(second);
     detachFirst();
     expect(registry.surface()).toBe(second);
+  });
+});
+
+describe('view registration', () => {
+  it('skips a second view with an id already registered, with an error', () => {
+    let registry!: ViewRegistry;
+    render(
+      <ViewRegistryProvider>
+        <Probe onRegistry={(r) => { registry = r; }} />
+      </ViewRegistryProvider>,
+    );
+    const error = vi.spyOn(console, 'error').mockImplementation(() => {});
+    try {
+      const first = { id: 'detail', order: 0 } as unknown as ViewRegistration;
+      const second = { id: 'detail', order: 0 } as unknown as ViewRegistration;
+      const release = registry.register(first);
+      registry.register(second);
+      expect(registry.list()).toEqual([first]);
+      expect(error).toHaveBeenCalledTimes(1);
+      expect(String(error.mock.calls[0]![0])).toContain('"detail"');
+      release();
+      expect(registry.list()).toEqual([]);
+    } finally {
+      error.mockRestore();
+    }
   });
 });

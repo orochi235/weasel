@@ -143,9 +143,9 @@ describe('builtinContributions', () => {
       config: { bins: 40 },
     };
     const copy = builtinContributions(bare, withSchema).find((c) => c.id === 'copy-settings');
-    expect(copy?.region).toBe('titlebar');
-    const item = copy?.item as { onActivate: (c: TrialChromeContext) => void } | undefined;
-    item?.onActivate(withSchema);
+    if (!copy) throw new Error('no copy-settings contribution');
+    expect(copy.region).toBe('titlebar');
+    (copy.item as { onActivate: (c: TrialChromeContext) => void }).onActivate(withSchema);
     expect(writeText).toHaveBeenCalledWith('{\n  "bins": 40\n}');
     vi.unstubAllGlobals();
   });

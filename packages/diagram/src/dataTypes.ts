@@ -152,7 +152,8 @@ export interface DataContainer {
   label?: string;
   /** A container's direct members: node ids and container ids. A member
    *  already claimed by an earlier container, a pool, an unknown id, and one
-   *  that would put a container inside itself are ignored. */
+   *  that would put a container inside itself are ignored; an unknown id
+   *  warns in development. */
   members?: readonly string[];
   /** A pool's lanes, in the order they stack. */
   lanes?: readonly DataLane[];

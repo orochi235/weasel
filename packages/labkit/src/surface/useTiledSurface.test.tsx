@@ -360,6 +360,49 @@ describe('useTiledSurface', () => {
     expect(frames[0]?.rects.has('b')).toBe(false);
   });
 
+  it('throws when a second live element, painter or clear takes an id already held', () => {
+    let handle: SurfaceHandle | null = null;
+    const { getByTestId } = render(
+      <Harness
+        frames={[]}
+        onHandle={(h) => {
+          handle = h;
+        }}
+      />,
+    );
+    const other = document.createElement('div');
+    getByTestId('stage').append(other);
+    expect(() => handle!.registerTile('a', other)).toThrow(
+      /surface tile "a" is already registered/,
+    );
+    handle!.registerPainter('p', vi.fn());
+    expect(() => handle!.registerPainter('p', vi.fn())).toThrow(/surface painter "p"/);
+    handle!.registerClear('c', vi.fn());
+    expect(() => handle!.registerClear('c', vi.fn())).toThrow(/surface clear "c"/);
+    flushFrames();
+  });
+
+  it('lets an id be taken again once its holder is released or has left the document', () => {
+    let handle: SurfaceHandle | null = null;
+    const { getByTestId } = render(
+      <Harness
+        frames={[]}
+        onHandle={(h) => {
+          handle = h;
+        }}
+      />,
+    );
+    const first = document.createElement('div');
+    getByTestId('stage').append(first);
+    act(() => handle!.registerTile('t', first));
+    first.remove();
+    expect(() => act(() => handle!.registerTile('t', document.createElement('div')))).not.toThrow();
+    const off = handle!.registerPainter('p', vi.fn());
+    off();
+    expect(() => handle!.registerPainter('p', vi.fn())).not.toThrow();
+    flushFrames();
+  });
+
   it('retiles when a tile unregisters and no other tile moved, so its pixels are cleared', () => {
     const frames: SurfaceFrame[] = [];
     let handle: SurfaceHandle | null = null;

@@ -50,7 +50,7 @@ describe('createModeDecorations', () => {
     expect(d.getVersion()).toBeGreaterThan(before);
   });
 
-  it('a release leaves the painter that replaced its own alone', () => {
+  it('releasing a buried painter removes only it, leaving the newest painting', () => {
     const registry = createModeRegistry({ modes: DEFAULT_MODES, initial: 'path-edit' });
     const d = createModeDecorations({ registry });
     const release = d.register('path-edit', () => []);
@@ -58,6 +58,25 @@ describe('createModeDecorations', () => {
 
     release();
     expect(d.paint()).toHaveLength(1);
+  });
+
+  it('releasing the live painter brings back the one beneath it', () => {
+    const registry = createModeRegistry({ modes: DEFAULT_MODES, initial: 'path-edit' });
+    const d = createModeDecorations({ registry });
+    d.register('path-edit', () => [{ kind: 'older' } as never]);
+    const newer = d.register('path-edit', () => [{ kind: 'newer' } as never]);
+    expect(d.paint()).toEqual([{ kind: 'newer' }]);
+
+    newer();
+    expect(d.paint()).toEqual([{ kind: 'older' }]);
+    newer();
+    expect(d.paint()).toEqual([{ kind: 'older' }]);
+  });
+
+  it('throws for a mode id the registry does not have', () => {
+    const registry = createModeRegistry({ modes: DEFAULT_MODES, initial: 'normal' });
+    const d = createModeDecorations({ registry });
+    expect(() => d.register('path-edti', () => [])).toThrow(/Unknown mode id: path-edti/);
   });
 
   it('switching modes swaps which painter is invoked', () => {

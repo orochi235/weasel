@@ -69,6 +69,22 @@ describe('registerContentHandler', () => {
   });
 });
 
+describe('registerContentHandler under a taken id', () => {
+  it('throws for a different entry, and takes the place of the old one with replace', () => {
+    const stale = { id: 'app:csv', match: 'text/csv', handle: () => {} };
+    const fresh = { id: 'app:csv', match: 'text/csv', handle: () => {} };
+    const offStale = registerContentHandler(stale);
+    registerContentHandler(stale)();
+    expect(() => registerContentHandler(fresh)).toThrow(/content handler "app:csv" is already registered with a different value/);
+    const offFresh = registerContentHandler(fresh, { replace: true });
+    expect(getContentHandlers()).toEqual([fresh]);
+    offStale();
+    expect(getContentHandlers()).toEqual([fresh]);
+    offFresh();
+    expect(getContentHandlers()).toEqual([]);
+  });
+});
+
 describe('runIngest', () => {
   it('partitions items across handlers by priority; first match takes its items', async () => {
     const img = vi.fn();

@@ -212,12 +212,12 @@ describe('custom op seam', () => {
     expect(() => s.recordOp({ kind: 'unknown', payload: {} })).toThrow(/no registered op/);
   });
 
-  it('reflects the kinds it knows, the kit\'s among them, a kind registered again replacing the handler', () => {
+  it('reflects the kinds it knows, the kit\'s among them, a kind replaced taking the handler\'s place', () => {
     const s = makeScene();
     const first = { apply: () => {}, revert: () => {} };
     const second = { apply: () => {}, revert: () => {} };
     s.registerOp('app:tint', first);
-    s.registerOp('app:tint', second);
+    s.registerOp('app:tint', second, { replace: true });
     expect(s.registeredOps.has('kit:setPose')).toBe(true);
     const entry = s.registeredOps.entries().find((e) => e.key === 'app:tint');
     expect(entry?.value).toBe(second);
@@ -238,6 +238,20 @@ describe('custom op seam', () => {
         ops: { 'kit:setPose': { apply: () => {}, revert: () => {} } },
       }),
     ).toThrow(/reserved/);
+  });
+
+  it('throws when a different handler takes a registered kind, unless it replaces', () => {
+    let v = 0;
+    const a = { apply: () => { v += 1; }, revert: () => { v -= 1; } };
+    const b = { apply: () => { v += 10; }, revert: () => { v -= 10; } };
+    const s = createScene<Data, Layer>({ systemLayers: [{ id: 'structures' }], ops: { 'app:bump': a } });
+    expect(() => s.registerOp('app:bump', a)).not.toThrow();
+    expect(() => s.registerOp('app:bump', b)).toThrow(/"app:bump" is already registered with a different value/);
+    s.recordOp({ kind: 'app:bump', payload: null });
+    expect(v).toBe(1);
+    s.registerOp('app:bump', b, { replace: true });
+    s.undo();
+    expect(v).toBe(-9);
   });
 
   it('options.ops pre-registers ops at construction', () => {

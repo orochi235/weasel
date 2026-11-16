@@ -15,7 +15,8 @@ const STANDARD_SLOT_SET = new Set<string>(STANDARD_SLOTS);
  * - Customs with neither `after` nor `before` are emitted after all standard
  *   slots.
  * - Dangling references and cycles go to the tail with a `console.warn`.
- * - An entry with both `after` and `before` is placed by `after`.
+ * - An entry with both `after` and `before` throws, as does a value under a
+ *   non-standard key that is neither a `{ layer }` entry nor `null`/`undefined`.
  */
 export function composeOrderedLayers(
   layersMap: Record<string, unknown>,
@@ -37,7 +38,13 @@ export function composeOrderedLayers(
 
   for (const [key, value] of Object.entries(layersMap)) {
     if (STANDARD_SLOT_SET.has(key)) continue;
-    if (!isCustomEntry(value)) continue;
+    if (value === null || value === undefined) continue;
+    if (!isCustomEntry(value)) {
+      throw new Error(`layers: "${key}" is not a slot, and its value is not a custom layer entry ({ layer }). Check the key against the slot names, or pass { layer }.`);
+    }
+    if (value.after !== undefined && value.before !== undefined) {
+      throw new Error(`layers: custom layer "${key}" sets both after ("${value.after}") and before ("${value.before}"). Anchor it to one.`);
+    }
     allCustomKeys.add(key);
     if (value.after) {
       const arr = afterByParent.get(value.after) ?? [];

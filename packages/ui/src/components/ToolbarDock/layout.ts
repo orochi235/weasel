@@ -96,8 +96,9 @@ export function canEnter(bar: DockBar, dock: { id: string; edge: DockEdge }): bo
 
 /**
  * Reconciles a stored layout with the docks and bars the app has now. Every bar ends up
- * placed once; unknown ids are dropped, empty rows removed, and a bar that has nowhere
- * valid to sit goes to the end of the last row of its home dock (see {@link homeDock}), among its start bars.
+ * placed at most once; unknown ids are dropped, empty rows removed, and a bar that has nowhere
+ * valid to sit goes to the end of the last row of its home dock (see {@link homeDock}), among its start bars,
+ * or floats at the origin where it has no home dock and may float. A bar with neither is left out.
  * A bar stays at the far end of its row only where the stored layout docked it there.
  * A stored floating place is coerced: a non-finite `x` or `y` becomes 0, an anchor that is
  * not a corner becomes null, and a bar without `vertical` floats horizontal.

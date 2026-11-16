@@ -56,5 +56,11 @@ export interface ExportFormat<TOptions extends ExportOptions = ExportOptions> {
   readonly extension: string;
   /** Whether one file holds several regions, as a PDF's pages do. A single-region format takes exactly one. */
   readonly multiRegion: boolean;
+  /**
+   * The option keys it reads beyond {@link ExportOptions}. `exportRegions` warns in development about a
+   * key passed to this format that neither lists, and {@link pickExportOptions} picks these. Left out,
+   * nothing is checked.
+   */
+  readonly options?: readonly Exclude<keyof TOptions, keyof ExportOptions>[];
   export(scene: ExportScene, regions: ExportRegions, opts: TOptions): Promise<Blob>;
 }

@@ -4,8 +4,8 @@
 import type { RenderDiagnosticSink } from '@weasel-js/core';
 import { layoutTextPose } from '@weasel-js/text';
 import {
-  captureExport, exportReporter, regionsOfOne, registerExportFormat, type ExportFormat, type ExportOptions, type ExportRegion,
-  type ExportRegionSource, type ExportScene,
+  captureExport, exportReporter, pickExportOptions, regionsOfOne, registerExportFormat, type ExportFormat,
+  type ExportOptions, type ExportRegion, type ExportRegionSource, type ExportScene,
 } from '@weasel-js/export';
 import { regionSvgNodes, type RegionSvgNodesOptions } from './regionSvgNodes';
 import { serializeSvg } from './serialize';
@@ -82,9 +82,9 @@ export const SVG_EXPORT: ExportFormat<SvgExportOptions> = {
   mimeType: 'image/svg+xml',
   extension: 'svg',
   multiRegion: false,
-  async export(scene, regions, { background, onDiagnostic, strict, title, pretty, text, painters }) {
-    const picked = { background, onDiagnostic, strict, title, pretty, text, painters };
-    const given = Object.fromEntries(Object.entries(picked).filter(([, v]) => v !== undefined)) as ExportRegionSvgOptions;
+  options: ['title', 'pretty', 'text', 'painters'],
+  async export(scene, regions, opts) {
+    const given: ExportRegionSvgOptions = pickExportOptions(SVG_EXPORT, opts);
     const svg = await exportRegionSvg(scene, typeof regions === 'function' ? (doc) => regions(doc)[0]! : regions[0]!, given);
     return new Blob([svg], { type: 'image/svg+xml' });
   },

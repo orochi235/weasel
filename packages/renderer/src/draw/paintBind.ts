@@ -1,5 +1,5 @@
 import type { Paint, TexturePaint } from '@weasel-js/paint';
-import { getPaintDrawKind, type PaintBindContext, type PaintResources } from '../paintKinds';
+import { getPaintDrawKind, isPaintKindKnown, type PaintBindContext, type PaintDrawKind, type PaintResources } from '../paintKinds';
 import type { GpuDevice } from '../gpu/types';
 import { setUniforms } from './customShader';
 import { createPaintResources } from '../paintResources';
@@ -12,6 +12,7 @@ import { drawModel, setAlphaUniform, setColorMatrixUniforms, setProjAndModel, se
 import { gradientSpaceInverse, spaceInverseAbout, spaceToDevice } from './gradient';
 import { tileExtent } from './patternBatch';
 import { isDev } from '@weasel-js/registry';
+import { warnOnce } from '../warnOnce';
 
 /** The narrow renderer surface a registered paint kind binds against, built
  *  once per frame context. `DrawContext` is not consumer surface. */
@@ -67,7 +68,7 @@ function unownedPaintResources(gpu: GpuDevice): PaintResources {
 export function bindPaintKind(
   ctx: DrawContext, fill: Paint, model?: GlMat3, proj?: GlMat3,
 ): ShaderProgram | null {
-  const bind = getPaintDrawKind(fill.kind)?.bind;
+  const bind = paintDrawKind(fill.kind)?.bind;
   const binding = bind ? bind(paintBindContext(ctx), fill) : null;
   if (!binding) return null;
   const prog = ctx.ensureProgram?.(binding.program) ?? ctx.programRegistry.get(binding.program) ?? null;
@@ -75,6 +76,17 @@ export function bindPaintKind(
   setProjAndModel(ctx, prog, model, proj);
   if (binding.uniforms) setUniforms(ctx, prog, binding.program, binding.uniforms, false);
   return prog;
+}
+
+/** The draw half for `kind`, warning once in development for a kind nothing
+ *  registers or declares a loader for. A kind still loading stays quiet. */
+export function paintDrawKind(kind: string | undefined): PaintDrawKind | undefined {
+  const entry = getPaintDrawKind(kind);
+  if (!entry && kind !== undefined && !isPaintKindKnown(kind)) {
+    warnOnce(`paint-kind:${kind}`, `weasel: paint kind "${kind}" is not registered, so a paint of it draws nothing; `
+      + 'check the spelling, or register the kind (registerPaintKind or registerPaintDrawKind) before drawing with it.');
+  }
+  return entry;
 }
 
 /** Bind `prog` — the path program or the glyph one, which share every paint

@@ -85,13 +85,13 @@ describe('goto', () => {
     expect(history.getVersion()).toBe(version);
   });
 
-  it('ignores a depth that is not a whole number', () => {
+  it('throws a RangeError for a depth that is not a whole number, and moves nothing', () => {
     const { cell, history } = stamped();
     const steps = vi.fn();
     history.observe(steps);
     const version = history.getVersion();
-    history.goto(1.5);
-    history.goto(Number.NaN);
+    expect(() => history.goto(1.5)).toThrow(RangeError);
+    expect(() => history.goto(Number.NaN)).toThrow(RangeError);
     expect(cell.x).toBe(30);
     expect(history.undoDepth()).toBe(3);
     expect(steps).not.toHaveBeenCalled();

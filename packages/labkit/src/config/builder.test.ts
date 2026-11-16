@@ -5,6 +5,15 @@ import { type EnumNode, f } from './builder';
 import type { ConfigOf, ConfigPath, ValueAtPath } from './types';
 
 describe('builder', () => {
+  it('throws on a number bound that is not finite, or a min above max', () => {
+    expect(() => f.number(5).range(10, 0)).toThrow(/range\(\) leaves min 10 above max 0/);
+    expect(() => f.number(5).range(Number.NaN, 10)).toThrow(/range\(\) was given NaN/);
+    expect(() => f.number(5).max(Infinity)).toThrow(/max\(\) was given Infinity/);
+    expect(() => f.number(5).max(3).min(4)).toThrow(/min\(\) leaves min 4 above max 3/);
+    expect(() => f.number(5).min(4).max(3)).toThrow(/max\(\) leaves min 4 above max 3/);
+    expect(f.number(5).min(0).max(0).annotations).toMatchObject({ min: 0, max: 0 });
+  });
+
   it('carries kind and default', () => {
     const n = f.number(20);
     expect(n.kind).toBe('number');

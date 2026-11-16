@@ -88,6 +88,8 @@ abstract class Edit implements fc.Command<Model, Real> {
 
 const POSE = fc.record({ x: fc.integer({ min: -500, max: 500 }), y: fc.integer({ min: -500, max: 500 }), width: fc.integer({ min: 0, max: 99 }), height: fc.integer({ min: 0, max: 99 }) });
 const INDEX = fc.oneof(fc.integer({ min: -2, max: 8 }), fc.constantFrom(NaN, Infinity, -Infinity, 1.5, -0));
+/** A layer or page index: NaN is a caller's error there, and throws. */
+const STACK_INDEX = fc.oneof(fc.integer({ min: -2, max: 8 }), fc.constantFrom(Infinity, -Infinity, 1.5, -0));
 
 class Add extends Edit {
   constructor(readonly group: boolean, readonly parent: number | null, readonly layer: number, readonly name: number | null, readonly pose: Pose, readonly index: number | undefined) { super(); }
@@ -256,9 +258,9 @@ const commands = fc.commands([
   fc.tuple(fc.nat(), POSE).map(([k, p]) => new SetPose(k, p)),
   fc.tuple(fc.nat(), fc.constantFrom<'hidden' | 'locked'>('hidden', 'locked'), fc.boolean()).map(([k, w, on]) => new Flag(k, w, on)),
   fc.tuple(fc.nat(), fc.nat()).map(([k, l]) => new SetLayer(k, l)),
-  fc.tuple(fc.constantFrom<'add' | 'move' | 'rename' | 'remove'>('add', 'move', 'rename', 'remove'), fc.nat(), INDEX).map(([w, n, i]) => new LayerEdit(w, n, i)),
+  fc.tuple(fc.constantFrom<'add' | 'move' | 'rename' | 'remove'>('add', 'move', 'rename', 'remove'), fc.nat(), STACK_INDEX).map(([w, n, i]) => new LayerEdit(w, n, i)),
   fc.tuple(fc.nat(), fc.option(fc.integer(), { nil: null })).map(([k, v]) => new DocSet(k, v)),
-  fc.tuple(fc.constantFrom<'add' | 'remove' | 'move'>('add', 'remove', 'move'), fc.nat(), fc.boolean(), INDEX).map(([w, k, n, i]) => new PageEdit(w, k, n, i)),
+  fc.tuple(fc.constantFrom<'add' | 'remove' | 'move'>('add', 'remove', 'move'), fc.nat(), fc.boolean(), STACK_INDEX).map(([w, k, n, i]) => new PageEdit(w, k, n, i)),
   fc.constant(new Undo()),
   fc.constant(new Redo()),
   fc.integer({ min: -2, max: 40 }).map((to) => new Jump(to)),

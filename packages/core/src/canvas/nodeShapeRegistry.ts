@@ -5,7 +5,7 @@
  * ahead of the default's, which is where a canvas installs the painters its presets bring: a
  * painter given to one scene paints nothing in another.
  */
-import { createEmitter } from '@weasel-js/registry';
+import { createEmitter, ExtensionConflictError } from '@weasel-js/registry';
 import { bumpNodeMemoGeneration, nodeMemoGeneration } from 'core/scene/nodeMemo';
 import { documentScene } from 'core/scene/editingSession';
 import { addOutsideSource } from 'core/scene/outsideReads';
@@ -17,6 +17,9 @@ export interface RegisterNodeShapeOptions {
    *  it can win over a kit built-in). `'normal'`, the default, appends after
    *  the built-ins that claim a node by its data, ahead of the rect fallback. */
   priority?: 'high' | 'normal';
+  /** Take the place of a different painter this registry holds under the same `id`, instead of
+   *  throwing, as on hot reload. The displaced painter's disposer then does nothing. */
+  replace?: boolean;
 }
 
 /** A table of shape painters, falling back to a parent's. */
@@ -24,7 +27,8 @@ export interface NodeShapes {
   /** The registry consulted after this one's own painters, or null for the default. */
   readonly parent: NodeShapes | null;
   /** Register a painter here. Returns a disposer that removes this registration, and only it:
-   *  a painter registered twice stays until both are disposed. */
+   *  a painter registered twice stays until both are disposed. A different painter under an `id`
+   *  this registry already holds throws, unless `opts.replace` is set. */
   register<TData, TPose>(painter: NodeShapeEntry<TData, TPose>, opts?: RegisterNodeShapeOptions): () => void;
   /** Every painter this registry resolves, its parent's included, in evaluation order. */
   entries(): readonly NodeShapeEntry[];
@@ -114,8 +118,17 @@ export function createNodeShapes(opts: { parent?: NodeShapes | null } = {}): Nod
     serial: serials++,
     register(painter, o = {}) {
       ensureBuiltInShapes();
+      const entry = painter as NodeShapeEntry;
+      const held = [...tiers.high, ...tiers.normal].filter((r) => r.entry.id === entry.id && r.entry !== entry);
+      if (held.length > 0) {
+        if (!o.replace) throw new ExtensionConflictError('node shape', entry.id);
+        for (const r of held) {
+          for (const list of [tiers.high, tiers.normal]) if (list.includes(r)) list.splice(list.indexOf(r), 1);
+          r.release();
+        }
+      }
       const list = o.priority === 'high' ? tiers.high : tiers.normal;
-      const registration: Registration = { entry: painter as NodeShapeEntry, release: holdGeneration(painter as NodeShapeEntry) };
+      const registration: Registration = { entry, release: holdGeneration(entry) };
       list.push(registration);
       if (parent) scoped.add(registry);
       nodeShapesChanged();

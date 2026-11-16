@@ -97,11 +97,19 @@ describe('drawLayers', () => {
     expect(bDraw).not.toHaveBeenCalled();
   });
 
-  it('unknown ids in order are silently dropped', () => {
-    const draw = vi.fn(() => [] as DrawCommand[]);
-    const a: RenderLayer<unknown> = { id: 'a', label: 'A', draw };
-    drawLayers([a], null, {}, ['ghost', 'a'], undefined, { width: 10, height: 10, dpr: 1 });
-    expect(draw).toHaveBeenCalledTimes(1);
+  it('unknown ids in order are dropped, with one warning per id', () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    try {
+      const draw = vi.fn(() => [] as DrawCommand[]);
+      const a: RenderLayer<unknown> = { id: 'a', label: 'A', draw };
+      drawLayers([a], null, {}, ['ghost', 'a'], undefined, { width: 10, height: 10, dpr: 1 });
+      drawLayers([a], null, {}, ['ghost', 'a'], undefined, { width: 10, height: 10, dpr: 1 });
+      expect(draw).toHaveBeenCalledTimes(2);
+      expect(warn).toHaveBeenCalledTimes(1);
+      expect(String(warn.mock.calls[0]![0])).toContain('"ghost"');
+    } finally {
+      warn.mockRestore();
+    }
   });
 
   it('passes view and dims through to draw', () => {

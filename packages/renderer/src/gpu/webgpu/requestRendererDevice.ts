@@ -2,11 +2,16 @@ let shared: Promise<GPUDevice | null> | null = null;
 
 /**
  * The page's one `GPUDevice` for renderers, requested on the first call and
- * shared by every later one; `null` where WebGPU is unavailable. A device
- * that is lost is forgotten, so the next call requests another.
+ * shared by every later one; `null` where WebGPU is unavailable, or where
+ * asking for it failed, which is warned about. A device that is lost, or a
+ * request that failed, is forgotten, so the next call asks again.
  */
 export function requestRendererDevice(): Promise<GPUDevice | null> {
-  shared ??= open().catch(() => null);
+  shared ??= open().catch((err: unknown) => {
+    console.warn('weasel: requesting a WebGPU device failed; drawing falls back as if WebGPU were unavailable:', err);
+    shared = null;
+    return null;
+  });
   return shared;
 }
 

@@ -149,9 +149,9 @@ export function createSceneRecording(env: SceneRecordingEnv): SceneRecording {
     recorder,
     clearHistory: () => engine.clear(),
     methods: {
-      registerOp(kind, handler) {
+      registerOp(kind, handler, options) {
         if (kind.startsWith('kit:')) throw new Error(`Scene: op kind "${kind}" is reserved (kit:* prefix)`);
-        ops.register(kind, handler as RegisteredOp<unknown>);
+        ops.register(kind, handler as RegisteredOp<unknown>, options);
       },
       recordOp(op) {
         record(op.kind, op.payload, op.kind);

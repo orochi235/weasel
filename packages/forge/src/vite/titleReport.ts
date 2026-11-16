@@ -1,20 +1,37 @@
+import { relative } from 'node:path';
+import type { Logger } from 'vite';
 import type { IndexEntry } from '../story/types';
+import { warnOnce } from './warnOnce.ts';
+
+/** Each story id two or more entries share, with the files declaring it. Files that share a title share its ids too,
+ *  so two of them exporting one name collide. */
+export function sharedIds(entries: readonly IndexEntry[], under = (file: string) => file): [string, string[]][] {
+  const files = new Map<string, string[]>();
+  for (const entry of entries) files.set(entry.id, [...(files.get(entry.id) ?? []), under(entry.file)]);
+  return [...files].filter(([, of]) => of.length > 1);
+}
+
+/** `entries`, after warning once through `logger` of each story id two of them share. */
+export function warnShared(entries: IndexEntry[], root: string, logger: Logger | undefined): IndexEntry[] {
+  for (const [id, of] of sharedIds(entries, (file) => relative(root, file))) {
+    const files = of.join(', ');
+    warnOnce(logger, `[forge] story id ${id} is declared by ${files}; the workshop shows only the first. Rename one of the exports, or retitle one file.`);
+  }
+  return entries;
+}
 
 /**
  * What `check:forge-titles` prints: each story file whose title's last segment holds whitespace, then each story
  * id two stories share. That segment names the component in the Components view, so a phrase there is a story
- * filed as a component of its own; it belongs under the component it shows, named for what it adds. Files that
- * share a title share its ids too, so two of them exporting one name collide.
+ * filed as a component of its own; it belongs under the component it shows, named for what it adds.
  */
 export function titleReport(entries: readonly IndexEntry[], root = ''): { lines: string[]; ok: boolean } {
   const under = (file: string) => (file.startsWith(root) ? file.slice(root.length).replace(/^\//, '') : file);
   const spaced = new Map<string, string>();
-  const files = new Map<string, string[]>();
   for (const entry of entries) {
     if (/\s/.test(entry.title.split('/').pop() ?? '')) spaced.set(under(entry.file), entry.title);
-    files.set(entry.id, [...(files.get(entry.id) ?? []), under(entry.file)]);
   }
-  const shared = [...files].filter(([, of]) => of.length > 1);
+  const shared = sharedIds(entries, under);
   const width = [...spaced.keys()].reduce((most, file) => Math.max(most, file.length), 0);
   const lines = [
     ...[...spaced].map(([file, title]) => `${file.padEnd(width)}  '${title}'`),

@@ -22,11 +22,13 @@ export interface UseToolsOptions<TOverlay = KernelOverlay> {
    *  pass `null`, for no active tool: only hotkey and ambient bindings run. */
   active?: string | null;
   /** Tools eligible for the active slot or hotkey slot. The keys are the
-   *  tool ids; the values are the tool records. A tool with `hotkey` set
+   *  tool ids, and a key that differs from its tool's `id` throws; the values
+   *  are the tool records. A tool with `hotkey` set
    *  is wired into the hotkey slot whenever the engagement state matches. */
   registry: Record<string, Tool<TOverlay>>;
   /** Always-on entries — tools or other contributions, live regardless of
-   *  the active slot. */
+   *  the active slot. A tool may appear here and in `registry` as the same
+   *  object; two different objects with one id throw. */
   ambient?: readonly Contribution<TOverlay>[];
   /** The modes the canvas can be in. A mode's `defaultTool` becomes active
    *  as the mode is entered, and the tool it replaced comes back as the mode
@@ -110,6 +112,46 @@ function sameEligibility(a: Eligibility | undefined, b: Eligibility): boolean {
   return true;
 }
 
+/** `sources` with each tool's slot declared, and the one contribution per id the registry routes by.
+ *  Throws on a registry key that is not its tool's id, and on two different tools with one id. */
+function slotSources<TOverlay>(sources: { registry: Record<string, Tool<TOverlay>>; ambient: readonly Contribution<TOverlay>[] }): {
+  registry: Record<string, Tool<TOverlay>>;
+  ambient: Contribution<TOverlay>[];
+  entries: Contribution<TOverlay>[];
+} {
+  const declared = new Map<string, Contribution<TOverlay>>();
+  const claim = (tool: Contribution<TOverlay>): void => {
+    const other = declared.get(tool.id);
+    if (other !== undefined && other !== tool) {
+      throw new Error(
+        `useTools: two different tools share the id "${tool.id}". `
+        + `Give each tool its own id, or pass the same tool object in both registry and ambient.`,
+      );
+    }
+    declared.set(tool.id, tool);
+  };
+  const registry: Record<string, Tool<TOverlay>> = {};
+  for (const [id, tool] of Object.entries(sources.registry)) {
+    if (id !== tool.id) {
+      throw new Error(
+        `useTools: registry key "${id}" holds the tool "${tool.id}". `
+        + `Key each tool by its own id: { ${JSON.stringify(tool.id)}: tool }.`,
+      );
+    }
+    claim(tool);
+    setOwn(registry, id, declareSlot(tool, 'focus'));
+  }
+  for (const tool of sources.ambient) claim(tool);
+  const ambient = sources.ambient.map((t) => declareSlot(t, 'always'));
+  const byId = new Map<string, Contribution<TOverlay>>();
+  for (const tool of [...Object.values(registry), ...ambient]) {
+    const prior = byId.get(tool.id);
+    if (prior) byId.set(tool.id, { ...tool, eligibility: { ...prior.eligibility, ...tool.eligibility } });
+    else byId.set(tool.id, tool);
+  }
+  return { registry, ambient, entries: [...byId.values()] };
+}
+
 /**
  * Manages the active tool and hotkey slot; a thin shim over
  * {@link useContributions}.
@@ -136,20 +178,7 @@ export function useTools<TOverlay = KernelOverlay>(
   // callers commonly pass `opts.registry` / `opts.ambient` as literals made
   // every render, while a tool redefined under an existing id must replace it.
   const sources = useStableSources(opts.registry, opts.ambient);
-  const slotted = useMemo(() => {
-    const registry: Record<string, Tool<TOverlay>> = {};
-    for (const [id, tool] of Object.entries(sources.registry)) {
-      setOwn(registry, id, declareSlot(tool, 'focus'));
-    }
-    const ambient = sources.ambient.map((t) => declareSlot(t, 'always'));
-    const byId = new Map<string, Contribution<TOverlay>>();
-    for (const tool of [...Object.values(registry), ...ambient]) {
-      const prior = byId.get(tool.id);
-      if (prior) byId.set(tool.id, { ...tool, eligibility: { ...prior.eligibility, ...tool.eligibility } });
-      else byId.set(tool.id, tool);
-    }
-    return { registry, ambient, entries: [...byId.values()] };
-  }, [sources]);
+  const slotted = useMemo(() => slotSources(sources), [sources]);
 
   const contributions = useContributions<TOverlay>({
     entries: slotted.entries,

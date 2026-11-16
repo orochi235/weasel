@@ -38,7 +38,7 @@
     "longestFunction": 329
   },
   "packages/font/src/registerFont.ts": {
-    "lines": 708
+    "lines": 681
   },
   "packages/forge/src/frame/FrameController.tsx": {
     "longestFunction": 135
@@ -65,7 +65,7 @@
     "longestFunction": 281
   },
   "packages/history/src/history.ts": {
-    "longestFunction": 348
+    "longestFunction": 347
   },
   "packages/hud/src/attach.ts": {
     "longestFunction": 135
@@ -120,7 +120,7 @@
     "longestFunction": 161
   },
   "packages/labkit/src/surface/useTiledSurface.ts": {
-    "longestFunction": 240
+    "longestFunction": 237
   },
   "packages/labkit/src/trial/Trial.tsx": {
     "longestFunction": 297

@@ -1,4 +1,4 @@
-import type { DragEvent, ReactNode } from 'react';
+import { useEffect, type DragEvent, type ReactNode } from 'react';
 import { useScopedTools, type ToolsApi } from '@weasel-js/routing/react';
 import { toolIdsOf, toolSetHas, toolStacksOf, type CarryPayload, type ToolSet, type Tool } from '@weasel-js/routing';
 import { eligibleContribution, type ModeRegistry } from '@weasel-js/modes';
@@ -9,7 +9,7 @@ import s from './ToolPalette.module.css';
 import type { DisableableProps } from '../Disabled';
 import { icon } from '../../icons.gen';
 import { groupTools } from './order';
-import { slotsOf, stackIndex } from './stacks';
+import { slotsOf, stackIndex, warnStacks } from './stacks';
 import { useToolCarry } from './useToolCarry';
 
 /** Props for {@link ToolPalette}. */
@@ -51,6 +51,8 @@ export interface ToolPaletteProps extends DisableableProps {
    * the stack's tool in use, or the one last used from it; a click opens a menu of the stack, and
    * a click with `stackCycle` held makes the next one active instead. The stack sits where the
    * first of its tools the palette shows would. Tools named in no stack get buttons of their own.
+   * A tool named in two stacks throws; an id no registered tool has is left out, with a warning in
+   * development.
    * A set given here is one stack of every id it names. Defaults to the sets marked `stack` inside
    * an `include` set (`toolStacksOf`); given, it replaces them.
    */
@@ -116,7 +118,9 @@ function ToolPaletteRail(props: ToolPaletteProps & { tools: ToolsApi }) {
   const list = Object.values(tools.registry)
     .filter((t) => !t.presentation?.hide && shows(t) && (ineligible === 'dim' || allowed(t)));
   const shown = new Map(list.map((t) => [t.id, t]));
-  const stackOf = stackIndex(paletteStacks(stacks, include));
+  const stacked = paletteStacks(stacks, include);
+  const stackOf = stackIndex(stacked);
+  useEffect(() => warnStacks(stacked, tools.registry));
   const placed = new Set<readonly string[]>();
   const disabledReason = modeRegistry ? `disabled in ${modeRegistry.current().id} mode` : undefined;
 

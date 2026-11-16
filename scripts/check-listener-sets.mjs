@@ -20,6 +20,7 @@ import { judgeUses, matchLines, sourceFiles } from './lib/allowlisted-uses.mjs';
 
 /** Paths that may build a `Set` of functions, and why. `[why, uses]` covers more than one use. */
 const ALLOWED = new Map([
+  ['packages/ui/src/components/Toast/queue.ts', 'not subscribers: the default-ttl readers of the mounted regions, of which only the latest is read'],
   ['packages/animator/src/engine/offsets.ts', 'not subscribers: the publishes one frame queued, deduplicated, run once and cleared'],
   ['packages/forge/src/shell/framePool.ts', 'not subscribers: the stop for each frame still loading, whose count sizes the pool'],
   ['packages/core/src/core/scene/notifier.ts', 'not subscribers: the notices one hold queued, deduplicated, run once when it settles and cleared'],

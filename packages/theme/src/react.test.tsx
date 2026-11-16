@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import React from 'react';
 import { colorAt } from './colorList';
@@ -18,6 +18,22 @@ describe('ThemeProvider', () => {
       </ThemeProvider>,
     );
     expect(screen.getByTestId('p').textContent).toBe('weasel/light/#f5f5f6');
+  });
+
+  it('warns through applyTheme of a selection value or axis the theme lacks, unless told to ignore axes', () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const theme = defineTheme({ name: 'provider-warns' });
+    const { unmount } = render(<ThemeProvider theme={theme} selection={{ mode: 'drak', mdoe: 'dark' }}><span /></ThemeProvider>);
+    unmount();
+    const shared = defineTheme({ name: 'provider-shares' });
+    render(<ThemeProvider theme={shared} selection={{ flavor: 'x' }} ignoreUnknownAxes><span /></ThemeProvider>);
+    const messages = warn.mock.calls.map(([m]) => String(m));
+    expect(messages.filter((m) => m.includes('"provider-warns"'))).toEqual([
+      expect.stringMatching(/applyTheme: theme "provider-warns" has no mode "drak"/),
+      expect.stringMatching(/applyTheme: theme "provider-warns" declares no axis "mdoe"/),
+    ]);
+    expect(messages.filter((m) => m.includes('"provider-shares"'))).toEqual([]);
+    warn.mockRestore();
   });
 
   it('applies to its own wrapper element', () => {

@@ -77,6 +77,9 @@ const entry: fc.Arbitrary<Entry> = fc.oneof(
   fc.record({ name: fc.constantFrom(...NAMES.slice(0, 4)), colors: fc.array(src, { maxLength: 3 }) }),
 );
 
+/** A palette's entries: names are unique, as the resolver requires. */
+const paletteEntries = fc.uniqueArray(entry, { selector: (e) => e.name, maxLength: 4 });
+
 const lits: ColorLiteral[] = Array.from({ length: 10 }, (_, i) => ({ space: 'srgb', coords: [i / 10, 0, 0] }));
 const externalLit: ColorLiteral = { space: 'srgb', coords: [0, 0, 1] };
 
@@ -113,7 +116,7 @@ describe('resolvePaletteColor, property', () => {
 
   it('resolves refs, sequences, functions, and cycles as the plain model does, and always ends', () => {
     const t = tally();
-    fc.assert(fc.property(fc.array(entry, { maxLength: 6 }), src, (entries, s) => {
+    fc.assert(fc.property(paletteEntries, src, (entries, s) => {
       const want = model(entries, s, new Set());
       t.count(want === null ? 'null' : 'color');
       expect(resolvePaletteColor(toPalette(entries), toSource(s), external)).toBe(want);
@@ -123,7 +126,7 @@ describe('resolvePaletteColor, property', () => {
   }, timeoutFor(300, 0.3));
 
   it('lists an entry\'s colors as resolving each ref to it would', () => {
-    fc.assert(fc.property(fc.array(entry, { maxLength: 6 }), fc.constantFrom(...NAMES), (entries, name) => {
+    fc.assert(fc.property(paletteEntries, fc.constantFrom(...NAMES), (entries, name) => {
       const palette = toPalette(entries);
       const listed = [...resolvePaletteColors(palette, name, external)];
       listed.forEach((c, index) => expect(c).toBe(resolvePaletteColor(palette, { ref: name, index }, external)));

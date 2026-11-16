@@ -23,7 +23,7 @@ type Props = SceneCanvasProps<unknown, string, unknown>;
 
 /** Discriminate the polymorphic `tools` prop: `ToolsApi` has `setActive`
  *  / `active` / `registry`; the patch record shape has none of those. */
-function isToolsApi(tools: ToolsApi | ToolsPatch): tools is ToolsApi {
+export function isToolsApi(tools: ToolsApi | ToolsPatch): tools is ToolsApi {
   return typeof (tools as ToolsApi).setActive === 'function';
 }
 

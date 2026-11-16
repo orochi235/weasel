@@ -76,8 +76,9 @@ export type SceneViewDrawOne<TData, TLayer extends string, TPose> = (
  *  commands it emits for them. Registering one is how a consumer teaches the
  *  default renderer to draw its own node kinds. */
 export interface NodeShapeEntry<TData = unknown, TPose = unknown> {
-  /** Stable identifier — used for unregistration and debugging. Pick
-   *  something descriptive: `'kit:image'`, `'app:gem'`, etc. */
+  /** Names the painter in errors and debugging, and is unique within a registry: a different painter
+   *  under an id it holds throws unless registered with `replace`. Unregistering goes by the disposer
+   *  `register` returns. Pick something descriptive: `'kit:image'`, `'app:gem'`, etc. */
   id: string;
   /** Returns true when this painter renders the node. The first matching
    *  painter (`'high'` tier first, then `'normal'`) wins. The kit's own

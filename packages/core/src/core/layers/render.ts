@@ -2,6 +2,7 @@ import { viewToMat3, type DrawCommand } from '@weasel-js/renderer';
 import type { Effect } from '@weasel-js/renderer';
 import type { View } from 'core/viewport/view';
 import { groupMembership, wrapGroup, type LayerGroup } from './layerGroup';
+import { warnUnknownOrderIds } from './unknownOrderIds';
 import { DEFAULT_LAYER_RETAIN, retainedId, type LayerRetainPolicy } from './retain';
 import type { RedrawSource } from './redrawSource';
 import type { Dims, LayerDims } from './dims';
@@ -205,6 +206,7 @@ export function drawLayers<TData>(
     }
   }
 
+  if (order) warnUnknownOrderIds(order, layerById);
   const groupOf = groupMembership(groups, layerById.keys());
   const bracketed = new Set<LayerGroup>();
   let run: { group: LayerGroup; children: DrawCommand[]; buildMs: number } | null = null;

@@ -68,6 +68,7 @@ export const PNG_EXPORT: ExportFormat<PngExportOptions> = {
   mimeType: 'image/png',
   extension: 'png',
   multiRegion: false,
+  options: ['scale'],
   export: (scene, regions, opts) => exportRegionPng(scene, typeof regions === 'function' ? (doc) => regions(doc)[0]! : regions[0]!, {
     scale: opts.scale ?? 1,
     ...(opts.background !== undefined ? { background: opts.background } : {}),

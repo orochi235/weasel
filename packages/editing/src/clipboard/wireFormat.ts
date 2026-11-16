@@ -79,15 +79,26 @@ export function extractWeaselClipboardFromSvg(svgText: string): string | null {
 }
 
 /** Parse wire text to snapshot items, or null when malformed/mismatched
- *  (callers decline to the next content handler). Decoded with the snapshot codec unless `reviver` says otherwise. */
+ *  (callers decline to the next content handler). Decoded with the snapshot codec unless `reviver` says otherwise;
+ *  a `reviver` that throws declines too, logged with `console.error`. */
 export function parseWeaselClipboardText(text: string, reviver?: (key: string, value: unknown) => unknown): unknown[] | null {
+  let reviverThrew = false;
+  const revive = reviver && ((key: string, value: unknown): unknown => {
+    try {
+      return reviver(key, value);
+    } catch (err) {
+      reviverThrew = true;
+      throw err;
+    }
+  });
   try {
-    const parsed = JSON.parse(text, reviver as Parameters<typeof JSON.parse>[1]) as
+    const parsed = JSON.parse(text, revive as Parameters<typeof JSON.parse>[1]) as
       Partial<WeaselClipboardPayload> | null;
     if (!isPayload(parsed)) return null;
     return reviver ? parsed.nodes : (decodeSnapshot(parsed.nodes) as unknown[]);
   } catch (err) {
-    dwarn('clipboard', `weasel payload failed to parse: ${String(err)}`);
+    if (reviverThrew) console.error('weasel clipboard: the paste reviver threw, so the paste was declined.', err);
+    else dwarn('clipboard', `weasel payload failed to parse: ${String(err)}`);
     return null;
   }
 }

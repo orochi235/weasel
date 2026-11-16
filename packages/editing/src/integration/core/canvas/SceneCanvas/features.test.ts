@@ -7,6 +7,7 @@ import {
   presetAmbientForTests as presetAmbient,
   presetBuiltinToolsForTests as presetBuiltinTools,
   presetChromeRulesForTests as presetChromeRules,
+  presetOwnToolsForTests as presetOwnTools,
   presetToolIdsForTests as presetToolIds,
 } from '@weasel-js/core/test-seams';
 import { BASELINE_ACTION_IDS } from '@weasel-js/core';
@@ -230,13 +231,45 @@ describe('FEATURE_PRESETS', () => {
 describe('EnabledPresets.layers', () => {
   const entry = (id: string) => ({ layer: { id, label: id, draw: () => [] } });
 
-  it('collects each preset\'s layers by slot, a later preset winning a slot both name', () => {
-    const a: FeaturePreset = { id: 'a', layers: { grid: entry('a-grid'), ruler: entry('a-ruler') } };
-    const b: FeaturePreset = { id: 'b', layers: { grid: entry('b-grid') } };
+  it('collects each preset\'s layers by slot, and a slot two presets give the same layer once', () => {
+    const grid = entry('grid');
+    const a: FeaturePreset = { id: 'a', layers: { grid, ruler: entry('a-ruler') } };
+    const b: FeaturePreset = { id: 'b', layers: { grid } };
     const { layers } = resolve([a, b]);
-    expect(layers.grid!.layer.id).toBe('b-grid');
+    expect(layers.grid).toBe(grid);
     expect(layers.ruler!.layer.id).toBe('a-ruler');
     expect(resolve(['draw']).layers).toEqual({});
+  });
+
+  it('gives a slot to the preset refining the other, in either order and through a preset between', () => {
+    const base: FeaturePreset = { id: 'base', layers: { grid: entry('base-grid') } };
+    const refined: FeaturePreset = { id: 'refined', refines: ['base'], layers: { grid: entry('refined-grid') } };
+    expect(resolve([base, refined]).layers.grid!.layer.id).toBe('refined-grid');
+    expect(resolve([refined, base]).layers.grid!.layer.id).toBe('refined-grid');
+    const middle: FeaturePreset = { id: 'middle', refines: ['base'] };
+    const top: FeaturePreset = { id: 'top', refines: ['middle'], layers: { grid: entry('top-grid') } };
+    expect(resolve([base, middle, top]).layers.grid!.layer.id).toBe('top-grid');
+  });
+
+  it('throws when two presets, neither refining the other, give one slot different layers', () => {
+    const a: FeaturePreset = { id: 'a', layers: { grid: entry('a-grid') } };
+    const b: FeaturePreset = { id: 'b', layers: { grid: entry('b-grid') } };
+    expect(() => resolve([a, b])).toThrow(/presets "a" and "b" both give layer slot "grid", and neither refines the other/);
+  });
+});
+
+describe('presetOwnTools', () => {
+  const tool = (id: string) => ({ id, label: id, bindings: [] }) as never;
+
+  it('gives a tool id to the preset refining the other, and throws for two unrelated presets', () => {
+    const base: FeaturePreset = { id: 'base', tools: [tool('pen')] };
+    const refined: FeaturePreset = { id: 'refined', refines: ['base'], tools: [tool('pen')] };
+    expect(presetOwnTools(resolve([refined, base])).pen).toBe(refined.tools![0]);
+    expect(presetOwnTools(resolve([base, refined])).pen).toBe(refined.tools![0]);
+    const other: FeaturePreset = { id: 'other', tools: [tool('pen')] };
+    expect(() => presetOwnTools(resolve([base, other]))).toThrow(/presets "base" and "other" both give tool "pen"/);
+    const shared: FeaturePreset = { id: 'shared', tools: [base.tools![0]!] };
+    expect(presetOwnTools(resolve([base, shared])).pen).toBe(base.tools![0]);
   });
 });
 

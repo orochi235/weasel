@@ -1,5 +1,6 @@
 import { ShellDevtools } from '@weasel-js/devtools/mount';
 import { isDev } from '@weasel-js/react';
+import { declaredSelection, type Theme } from '@weasel-js/theme';
 import { ThemeProvider, useResolvedColorMode } from '@weasel-js/theme/react';
 import { useEffect, useLayoutEffect, useState } from 'react';
 import { useStore } from 'zustand/react';
@@ -13,7 +14,7 @@ import { LabFooterRegion } from '../chrome/LabChrome';
 import { ClockRegistryContext } from '../clock/contexts';
 import { useLabClocks } from '../clock/useLabClocks';
 import { PersistenceContext } from '../state/Persistence';
-import type { LabMode } from '../state/types';
+import type { LabDensity, LabMode } from '../state/types';
 import { useOpenOnce, useWarnIgnoredChange } from '../state/useOpenOnce';
 import { interstellarTheme } from '../theme/interstellar';
 import { useLabFitWarning } from './fitCheck';
@@ -45,6 +46,11 @@ import { useTriallessHistory, withInstruments } from './trialless';
 import { UnreadableRecords } from './UnreadableRecords';
 import { useFocusPick } from './useFocusPick';
 
+/** The selection a lab themes itself at, less any axis its theme does not declare. */
+function labSelection(theme: Theme, mode: string, density: LabDensity | undefined) {
+  return declaredSelection(theme, { mode, density: density ?? 'comfortable' });
+}
+
 function LabFallback({
   title,
   mode,
@@ -61,7 +67,7 @@ function LabFallback({
   return (
     <ThemeProvider
       theme={theme}
-      selection={{ mode: resolvedMode, density: density ?? 'comfortable' }}
+      selection={labSelection(theme, resolvedMode, density)}
       className="lk-lab"
     >
       <LabShell
@@ -248,7 +254,7 @@ function LabRuntime({
                 <ClockRegistryContext.Provider value={clocks}>
                   <ThemeProvider
                     theme={theme}
-                    selection={{ mode: resolvedMode, density: density ?? 'comfortable' }}
+                    selection={labSelection(theme, resolvedMode, density)}
                     className={labClassName(presentation)}
                     style={backdropStyle}
                   >

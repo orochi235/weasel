@@ -6,6 +6,7 @@ import { name, PdfObjects } from '../objects';
 import { latin1 } from '../latin1';
 import { DocumentFonts } from './embedFont';
 import { type PdfFontSource, registryFontSource } from './fontSource';
+import type { PdfSkip } from '../writePdf';
 
 const INTER_TTF = resolve(import.meta.dirname, '../../../../assets/fonts/inter/inter.ttf');
 
@@ -156,6 +157,20 @@ describe('DocumentFonts', () => {
     expect(await run(withEmbedding({ outlines: 'cff' }), 'pdf-inter-null')).toBeNull();
     expect(await run(withEmbedding({ embeddable: false }), 'pdf-inter-null')).toBeNull();
     expect(await run(registryFontSource, 'pdf-nobody')).toBeNull();
+  });
+
+  it('records a skip naming the face when its source throws or its bytes are malformed', async () => {
+    registerInter('pdf-inter-broken');
+    const throwing: PdfFontSource = { ...registryFontSource, embedding: async () => { throw new Error('network down'); } };
+    const skipped: PdfSkip[] = [];
+    expect(await new DocumentFonts(new PdfObjects(), throwing, true, skipped).face('pdf-inter-broken', 400, 'normal')).toBeNull();
+    const malformed = withEmbedding({ sfnt: new ArrayBuffer(12) });
+    expect(await new DocumentFonts(new PdfObjects(), malformed, true, skipped).face('pdf-inter-broken', 400, 'normal')).toBeNull();
+    expect(skipped).toHaveLength(2);
+    expect(skipped[0]).toMatchObject({ kind: 'font' });
+    expect(skipped[0]!.detail).toContain('pdf-inter-broken 400 normal');
+    expect(skipped[0]!.detail).toContain('network down');
+    expect(skipped[1]!.detail).toContain('TrueType');
   });
 
   it('embeds a face once however many runs use it', async () => {

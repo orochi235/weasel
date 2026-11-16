@@ -199,6 +199,11 @@ export function ViewRegistryProvider({ children }: { children: ReactNode }) {
     const registry: ViewRegistry = {
       resolver,
       register: (reg) => {
+        const holder = get(reg.id);
+        if (holder && holder !== reg) {
+          console.error(`[weasel] <CanvasView id="${reg.id}">: another view on this canvas already has that id, so this one is skipped. View ids are unique per canvas; rename one.`);
+          return () => {};
+        }
         entriesRef.current.set(reg, seqRef.current++);
         changed();
         return () => { entriesRef.current.delete(reg); changed(); };

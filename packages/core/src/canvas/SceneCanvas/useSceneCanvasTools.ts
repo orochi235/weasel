@@ -29,7 +29,7 @@ export function useSceneCanvasTools(args: {
   build: Omit<PresetBuildSource, 'toolOptions'>;
 }) {
   const { props, enabled } = args;
-  const built = usePresetBuilds(enabled.builds, { ...args.build, toolOptions: props.toolOptions });
+  const built = usePresetBuilds(enabled, { ...args.build, toolOptions: props.toolOptions });
   const { tools, internal, takeover, surface } = useCanvasTools({
     enabled,
     tools: props.tools,

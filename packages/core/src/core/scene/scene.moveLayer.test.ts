@@ -50,3 +50,17 @@ describe('Scene — moveLayer under undo and redo', () => {
     }
   });
 });
+
+describe('Scene — a layer index that is NaN', () => {
+  it('throws from moveLayer and addLayer, recording nothing, while ±Infinity is held to either end', () => {
+    const { scene, order } = makeScene(0);
+    expect(() => scene.moveLayer('a', NaN)).toThrow(RangeError);
+    expect(() => scene.addLayer({ id: 'e' as Layer, name: 'E', index: NaN })).toThrow(/index is NaN/);
+    expect(order()).toBe('abcd');
+    expect(scene.history.undoDepth()).toBe(0);
+    scene.moveLayer('a', Infinity);
+    expect(order()).toBe('bcda');
+    scene.moveLayer('a', -Infinity);
+    expect(order()).toBe('abcd');
+  });
+});

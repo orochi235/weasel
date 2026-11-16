@@ -15,7 +15,7 @@ export type { ViewRect } from 'domains/viewports/viewResolver';
  *  must select or preview apart is a canvas of its own over its own session (`docs/editing-sessions.md`). */
 export interface CanvasViewCommonProps {
   /** Identifies the view to the surface and to input routing. Must be unique
-   *  among the views on one canvas. */
+   *  among the views on one canvas: a view reusing one is skipped, with an error. */
   id: string;
   /**
    * The id of a view to nest this one in. `bounds` is then measured from that

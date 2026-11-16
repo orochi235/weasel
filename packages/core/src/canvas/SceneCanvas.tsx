@@ -30,6 +30,7 @@ import { useCanvasDispatcher } from './SceneCanvas/useCanvasDispatcher';
 import { useCanvasSelection } from './SceneCanvas/useCanvasSelection';
 import { useEnabledFeatures } from './SceneCanvas/useCanvasTools';
 import { useViewportWithoutView } from './SceneCanvas/useViewportWithoutView';
+import { useIgnoredProps } from './SceneCanvas/useIgnoredProps';
 import { contributionEntries } from './SceneCanvas/useContributionRoles';
 import { SurfaceDeclarations } from './SceneCanvas/SurfaceDeclarations';
 import { useAddedViews, useSceneCanvasHandle } from './SceneCanvas/useSceneCanvasHandle';
@@ -82,6 +83,7 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
   const kinds = useNodeKinds(scene, traits.routing);
   const selection = useCanvasSelection({ scene, props, selectable, kindOf: kinds.kindOf, factory: enabled.selection });
   useViewportWithoutView(viewport, enabled);
+  useIgnoredProps(props);
   const { pathEditState, selectToolWithDefaults } = useSceneCanvasPathEdit({
     host: props.pathEdit, opening: props.defaultPathEdit, getActiveMode, scene, selection,
     extensions: enabled.pathEdit, selectTool: selectToolOpts,

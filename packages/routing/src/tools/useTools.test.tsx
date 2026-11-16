@@ -34,7 +34,7 @@ function setup(): { committed: () => ToolsApi; bump: () => void } {
 
 describe('useTools ids', () => {
   it('treats an id named like an Object.prototype member as no tool', () => {
-    let tools!: ToolsApi;
+    let tools!: ToolsApi<unknown>;
     function Host(): null {
       tools = useTools({ registry: { a } });
       return null;
@@ -43,6 +43,30 @@ describe('useTools ids', () => {
     expect(tools.has('toString')).toBe(false);
     expect(() => tools.setActive('constructor')).toThrow(/not in registry/);
     expect(() => tools.engageHotkey('toString')).toThrow(/not in registry/);
+  });
+});
+
+describe('useTools registry ids', () => {
+  function mount(opts: Parameters<typeof useTools>[0]): ToolsApi<unknown> {
+    let tools!: ToolsApi<unknown>;
+    function Host(): null {
+      tools = useTools(opts);
+      return null;
+    }
+    render(<ActiveToolContextProvider><Host /></ActiveToolContextProvider>);
+    return tools;
+  }
+
+  it('throws when a registry key differs from its tool id', () => {
+    expect(() => mount({ registry: { pen: a } })).toThrow(/registry key "pen" holds the tool "a"/);
+  });
+
+  it('throws when two different tools share an id', () => {
+    expect(() => mount({ registry: { a }, ambient: [tool('a')] })).toThrow(/two different tools share the id "a"/);
+  });
+
+  it('merges one tool object passed in both registry and ambient', () => {
+    expect(mount({ registry: { a }, ambient: [a] }).has('a')).toBe(true);
   });
 });
 
@@ -61,7 +85,7 @@ describe('useTools after an abandoned render', () => {
 
 describe('useTools hotkey holds', () => {
   it('releases its own hold, not a tool held on a key above it', () => {
-    let tools!: ToolsApi;
+    let tools!: ToolsApi<unknown>;
     let ctx!: ActiveToolContextValue;
     function Host(): null {
       tools = useTools({ registry: { a, b } });

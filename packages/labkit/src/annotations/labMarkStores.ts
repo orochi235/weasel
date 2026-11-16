@@ -1,4 +1,4 @@
-import { createReflectable, type Reflection } from '@weasel-js/registry';
+import { createReflectable, type Reflection, valuesOf } from '@weasel-js/registry';
 import { createContext, useContext, useEffect, useSyncExternalStore } from 'react';
 import type { AnnotationsApi } from './types';
 
@@ -7,7 +7,7 @@ import type { AnnotationsApi } from './types';
 export interface LabMarkStores {
   /** Each trial's store. The same array until one comes or goes. */
   list(): readonly AnnotationsApi[];
-  /** Add a trial's store; returns its removal. */
+  /** Add a trial's store; returns its removal. Stores registered under one trial id stack, newest live. */
   register(trialId: string, store: AnnotationsApi): () => void;
   /** Fires when a store comes or goes, and on every change any of them reports. */
   subscribe(fn: () => void): () => void;
@@ -20,29 +20,18 @@ export interface LabMarkStores {
 /** A registry of trials' mark stores. */
 export function createLabMarkStores(): LabMarkStores {
   const stores = createReflectable<AnnotationsApi>({ name: 'mark stores' });
-  /** The live store's subscription, per trial. */
-  const listening = new Map<string, () => void>();
-  let listed: readonly AnnotationsApi[] = [];
-  const relist = () => {
-    listed = stores.entries().map((e) => e.value);
-  };
+  const values = valuesOf(stores.reflection);
   return {
-    list: () => listed,
+    list: values,
     register(trialId, store) {
-      listening.get(trialId)?.();
-      listening.set(trialId, store.subscribe(stores.bump));
-      stores.batch(() => {
-        stores.set(trialId, store);
-        relist();
-      });
+      const off = store.subscribe(stores.bump);
+      const release = stores.push(trialId, store);
+      let released = false;
       return () => {
-        if (stores.get(trialId) !== store) return;
-        listening.get(trialId)?.();
-        listening.delete(trialId);
-        stores.batch(() => {
-          stores.delete(trialId);
-          relist();
-        });
+        if (released) return;
+        released = true;
+        off();
+        release();
       };
     },
     subscribe: stores.subscribe,

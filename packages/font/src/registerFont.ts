@@ -5,6 +5,7 @@
 
 import { textureCacheKey } from './textureCacheKey';
 import { variantKey } from './variantKey';
+import { _clearHeldFontUrls, claimFontUrls, holdsFontUrls, releaseFontUrls } from './heldFontUrls';
 import { createReflectable, type Reflection } from '@weasel-js/registry';
 import { normalizeVariant, type FontStyle, type FontVariant } from './fontStyle';
 import { notifyGlyphReady } from './glyphReady';
@@ -12,18 +13,14 @@ import { parseBmFont, type BmFont } from './FontAtlas';
 import type { GlyphTextureSink } from './textureSink';
 import {
   isCanvasFont, isExplicitCanvasFont, autoEnrollCanvasFont, getDynamicFace,
-  type DynamicFace,
 } from './dynamic/dynamicAtlas';
-import {
-  getFontFallbackPolicy, getDefaultFontFamily,
-  _clearFallbackWarnings,
-} from './fallback';
+import { getFontFallbackPolicy, getDefaultFontFamily, _clearFallbackWarnings } from './fallback';
 import {
   hasFontOutlines, listFontOutlines, loadFontOutlines, outlineMetrics, outlineStatus,
 } from './outline/outlineRegistry';
-import type { OutlineFace } from './outline/OutlineFace';
 import type { FaceMetrics } from './faceMetrics';
 import { atlasResult, sharedExactResult } from './atlasResult';
+import type { ResolveResult } from './resolveResult';
 import {
   warnMissingFamilyOnce, warnSelfUnusableDefaultOnce, warnUnregisteredDefaultOnce, warnUnusableDefaultOnce,
 } from './registerFontWarnings';
@@ -44,7 +41,6 @@ const registry = createReflectable<FontFamilyFaces>({ name: 'fonts' });
 /** Every registered family and its faces, in registration order. `listFonts`
  *  is the same set shaped for a font picker. */
 export const fontRegistry: Reflection<FontFamilyFaces> = registry.reflection;
-
 
 /** Atlas registrations still fetching, per family. One token per call, so a
  *  reset that clears the map cannot be undone by a late `finally`. */
@@ -78,6 +74,7 @@ export function _resetFontRegistryForTests(): void {
   declared.clear();
   registeredFamilies.clear();
   _clearFallbackWarnings();
+  _clearHeldFontUrls();
 }
 
 /** Exact lookup — does NOT walk the fallback chain. Use `resolveFontVariant` for that. */
@@ -161,12 +158,14 @@ export interface RegisterFontOptions {
    * face no text uses.
    */
   lazy?: boolean;
+  /** Take the place of other URLs this variant was registered with, which otherwise throws. */
+  replace?: boolean;
 }
 
 /**
  * Register a baked MSDF atlas and its metrics as one variant of `family`.
- * Resolves once the face is usable; re-registering a variant that is already
- * present is a no-op.
+ * Resolves once the face is usable. Re-registering a variant with the URLs it
+ * holds is a no-op; other URLs throw unless `replace` is set, which fetches them.
  *
  * Eager by default: both files are fetched now. With `{ lazy: true }` they are
  * fetched the first time text asks for the family.
@@ -181,7 +180,8 @@ export function registerFont(
   const { weight, style } = normalizeVariant(variant);
   const key = variantKey(weight, style);
   registeredFamilies.add(family);
-
+  const replacing = claimFontUrls(family, key, metricsUrl, atlasUrl, opts.replace);
+  if (replacing) return replaceVariant(family, key, metricsUrl, atlasUrl);
   if (registry.get(family)?.has(key)) return Promise.resolve();
   if (!opts.lazy) return loadVariant(family, key, metricsUrl, atlasUrl);
 
@@ -200,6 +200,14 @@ export function registerFont(
   // generation moves; this is what makes it ask again, and so start the load.
   notifyGlyphReady();
   return promise;
+}
+
+/** Point a variant at new URLs: a lazy declaration takes them, anything else fetches them now. */
+function replaceVariant(family: string, key: string, metricsUrl: string, atlasUrl: string): Promise<void> {
+  const lazy = declared.get(family)?.get(key);
+  if (lazy) return Object.assign(lazy, { metricsUrl, atlasUrl }).promise;
+  loads.get(family)?.delete(key);
+  return loadVariant(family, key, metricsUrl, atlasUrl);
 }
 
 /** Start (or join) the fetch for one variant, consuming any lazy declaration. */
@@ -257,13 +265,16 @@ async function fetchVariant(
 
     // Copy the family as it is now, not as it was before the await: another
     // variant of it may have landed meanwhile, and a stale copy would drop it.
-    registry.set(family, new Map(registry.get(family)).set(key, { font, bitmap }));
+    if (holdsFontUrls(family, key, metricsUrl, atlasUrl)) {
+      registry.set(family, new Map(registry.get(family)).set(key, { font, bitmap }));
+    }
     settle(family, token);
     // Same meaning the lazy tiers give it: text that was painting from a
     // fallback face — or painting nothing — can now paint from this one.
     notifyGlyphReady();
   } catch (err) {
     settle(family, token);
+    releaseFontUrls(family, key, metricsUrl, atlasUrl);
     // Layout held back its no-metrics warning while this was in flight; the
     // relayout this triggers is where that warning finally gets to fire.
     notifyGlyphReady();
@@ -400,45 +411,7 @@ export function ensureFontTexture(
 }
 
 export { textureCacheKey } from './textureCacheKey';
-
-/** What `resolveFontVariant` found: the atlas to draw with, the face it
- *  actually landed on after walking the fallback chain, and what has to be
- *  synthesized to cover the difference. */
-export interface ResolveResult {
-  entry: FontEntry | null;
-  /**
-   * The (family, weight, style) triple that was actually matched. May differ
-   * from the requested values when the resolver walked the fallback chain —
-   * including `family`, when the cross-family policy substituted a default.
-   *
-   * This is the atlas identity: pass all three to `getFont` /
-   * `textureCacheKey` and the lookup hits. Keying a draw on the *requested*
-   * family resolves to no atlas at all and paints nothing.
-   *
-   * The synthetic flags describe the gap between requested and resolved for
-   * shader-side compensation. When `entry` is null, these mirror the
-   * requested values.
-   */
-  resolved: { family: string; weight: number; style: FontStyle };
-  synthetic: { bold: boolean; italic: boolean };
-  /** Which tier resolved: a baked MSDF atlas, the runtime canvas-SDF dynamic
-   *  atlas, or a parsed font face serving both geometry and metrics. Misses
-   *  report 'atlas' (the default tier). */
-  source: 'atlas' | 'canvas' | 'outline';
-  /** Set only when source === 'canvas': the dynamic face whose BmFont-shaped
-   *  `font` layoutRuns consumes in place of `entry.font`. */
-  dynamicFace?: DynamicFace;
-  /** Set only when source === 'outline': the parsed face supplying advances,
-   *  kerning and the baseline. There is no atlas behind this tier, so it is
-   *  the only metrics source the run has. */
-  outlineFace?: OutlineFace;
-  /**
-   * Set when the requested family was not registered and the fallback policy
-   * substituted a different one, so a UI can say "Inter — not loaded, showing
-   * Roboto".
-   */
-  substituted?: { requested: string; resolved: string };
-}
+export type { ResolveResult } from './resolveResult';
 
 function missResolveResult(
   family: string, weight: number, style: FontStyle, suppressWarn = false,

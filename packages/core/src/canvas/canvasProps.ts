@@ -273,7 +273,8 @@ export interface CanvasProps<TPose = unknown> extends SurfaceSizeProps {
    * arrive in.
    *
    * **A listed order is the whole list:** any layer whose id is missing from
-   * it is not drawn. Reordering two layers means naming all of them.
+   * it is not drawn. Reordering two layers means naming all of them. An id
+   * naming no layer is warned about.
    */
   layerOrder?: string[];
 

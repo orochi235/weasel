@@ -199,9 +199,9 @@ export function createPrefsStore<S extends PrefGroup>(
     scopes: () => current().scopes,
     reset: (path) => {
       warnIfClosed(path);
-      for (const p of leaves.keys()) {
-        if (path === undefined || p === path || p.startsWith(`${path}.`)) cache.delete(p);
-      }
+      const under = leavesUnder(leaves.keys(), path);
+      if (path !== undefined && under.length === 0) console.warn(`[prefs] no leaf at or under "${path}"; ignoring the reset`);
+      for (const p of under) cache.delete(p);
     },
     isSet: (path) => (leaves.has(path) ? !current().unset.has(path) : cache.has(path)),
     values: (read) => {
@@ -236,4 +236,9 @@ export function createPrefsStore<S extends PrefGroup>(
       return cache.close();
     },
   };
+}
+
+/** The leaf paths at or under `path`; every one with no path. */
+function leavesUnder(paths: Iterable<string>, path: string | undefined): string[] {
+  return [...paths].filter((p) => path === undefined || p === path || p.startsWith(`${path}.`));
 }

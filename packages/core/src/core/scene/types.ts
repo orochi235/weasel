@@ -233,10 +233,13 @@ export interface Scene<TData, TLayer extends string, TPose = RectPose>
 
   // Custom op seam
   /** Teach the scene an op kind of its own: how to apply a payload and how to
-   *  revert it. `kit:` kinds are reserved and throw. */
-  registerOp<P>(kind: string, handler: RegisteredOp<P>): void;
+   *  revert it. `kit:` kinds are reserved and throw. Registering the same
+   *  handler again is no change; a different handler for a kind already taught
+   *  throws unless `options.replace` is set, as for hot reload, and history
+   *  already recorded under the kind then replays through the new one. */
+  registerOp<P>(kind: string, handler: RegisteredOp<P>, options?: { replace?: boolean }): void;
   /** Every op kind the scene knows, the kit's own `kit:` kinds included, by kind. A kind
-   *  registered again replaces the handler before, so nothing is shadowed. */
+   *  registered again with `replace` replaces the handler before, so nothing is shadowed. */
   readonly registeredOps: Reflection<RegisteredOp<unknown>>;
   /** Apply a payload of a kind {@link Scene.registerOp} taught, recorded as
    *  any other edit is: one undoable step, or part of the open `batch`. */

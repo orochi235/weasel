@@ -4,6 +4,7 @@ import { CUSTOM_ATTRIBUTES, CUSTOM_KIT_UNIFORMS, CUSTOM_VERT_SRC } from './custo
 import { extractUniformArrays, extractUniformNames } from './extractUniformNames';
 import { getProgramSource, sameProgramSource, type ProgramSource } from './registerProgram';
 import { wgslModuleOf } from '../gpu/webgpu/wgsl/customPrelude';
+import { warnMissingProgram } from '../warnOnce';
 
 /** Every uniform a custom program may be written through. Both stages, not
  *  just the fragment one: a name never looked up is written through `null`,
@@ -106,7 +107,12 @@ export class CustomPrograms {
     const existing = this.registry.get(id);
     if (existing) return existing;
     const src = getProgramSource(id);
-    if (!src || this.declined.get(id) === src) return null;
+    if (!src) {
+      warnMissingProgram(id, `weasel: no program "${id}" is registered, so what draws with it draws nothing; `
+        + 'register its source with registerProgram() first.');
+      return null;
+    }
+    if (this.declined.get(id) === src) return null;
     try {
       this.register(id);
     } catch (e) {

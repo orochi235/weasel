@@ -31,8 +31,8 @@ import { sequencePartOf } from './sequence/trait';
 
 /** Options for {@link diagramShape} and {@link registerDiagramShape}. */
 export interface DiagramShapeOptions<TPose> {
-  /** Distinguishes one registration from another, and is what the disposer
-   *  removes. Default `'diagram:outline'`. */
+  /** Names the painter. The registry holds one painter per id, so painters built
+   *  with different options register under different ids. Default `'diagram:outline'`. */
   id?: string;
   /** How the trait is read. Default: the node's own `data.diagram`. */
   read?: DiagramNodeReader;
@@ -107,13 +107,16 @@ function dividerPath(box: Box, header: Box): Path {
     : polylineFromPoints([{ x: box.x, y: header.y + header.height }, { x: box.x + box.width, y: header.y + header.height }]);
 }
 
+let defaultDiagramShape: NodeShapeEntry<unknown, unknown> | undefined;
+
 /**
  * Register {@link diagramShape}. Returns the disposer, and takes `'high'`
  * priority so a body outline wins over a `data.shape` or `data.path` the same
  * node may also carry.
  */
 export function registerDiagramShape<TPose>(opts: DiagramShapeOptions<TPose> = {}): () => void {
-  const unregister = registerNodeShape(diagramShape(opts), { priority: 'high' });
+  const entry = Object.keys(opts).length === 0 ? (defaultDiagramShape ??= diagramShape()) : diagramShape(opts);
+  const unregister = registerNodeShape(entry, { priority: 'high' });
   // A node already drawn by an outline's name was painted and picked by what the name resolved to then.
   const unwatch = onOutlinesChange(refreshNodeShapes);
   return () => {

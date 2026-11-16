@@ -154,8 +154,9 @@ export function registerPaintKind(entry: PaintKindEntry, options?: Pick<PushOpti
  * `paintKindRegistry`'s subscribers. Call `warmPaintKinds` to load ahead of
  * the first frame instead.
  *
- * A kind that is already registered never calls its loader. Returns a
- * disposer that removes the loader.
+ * A kind that is already registered never calls its loader. Declaring a
+ * second loader for an id overrides the first; the returned disposer removes
+ * this one, uncovering whatever it displaced.
  */
 export function registerPaintKindLoader(id: string, load: PaintKindLoader, options?: Pick<PushOptions, 'fallback'>): () => void {
   return registerPaintDrawKindLoader(id, async () => {

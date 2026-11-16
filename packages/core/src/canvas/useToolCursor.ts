@@ -11,10 +11,16 @@ function resolveToolsCursor(tools: ToolsApi): ResolvedCursor | undefined {
   if (typeof tool.cursor !== 'function') return resolveCursorTier(tool.cursor);
   try {
     return resolveCursorTier(tool.cursor());
-  } catch {
+  } catch (err) {
+    if (!reported.has(tool)) {
+      reported.add(tool);
+      console.error(`[weasel] tool "${id}" threw from its cursor(); it shows no cursor of its own until that is fixed.`, err);
+    }
     return undefined;
   }
 }
+
+const reported = new WeakSet<object>();
 
 /**
  * Writes the active tool's cursor to `sink` as its base, and `rest` (the

@@ -1,12 +1,12 @@
 import { memo, useCallback, useMemo, useRef, useState, type CSSProperties, type ReactNode } from 'react';
 import { createPortal } from 'react-dom';
-import { getOwn } from '@weasel-js/registry';
+import { getOwn, isDev } from '@weasel-js/registry';
 import type { BarOrientation } from '../Bar';
 import { useBarHosts } from './barHosts';
 import { DockBarContext } from './dockContext';
 import { DOCK_BAR, DOCK_END } from './dockDrop';
 import { FloatingLayer, floatPlaces } from './floatingLayer';
-import { canEnter, dockRows, isAtEnd, isVerticalEdge, resolveLayout, type DockBar, type DockEdge, type DockSpec, type ToolbarLayout } from './layout';
+import { canEnter, dockRows, homeDock, isAtEnd, isVerticalEdge, resolveLayout, type DockBar, type DockEdge, type DockSpec, type ToolbarLayout } from './layout';
 import { useDockDrag, type DockDrag, type DockDragView } from './useDockDrag';
 import s from './ToolbarDock.module.css';
 
@@ -32,6 +32,21 @@ export interface ToolbarDockProps {
 
 const EDGES: readonly DockEdge[] = ['top', 'left', 'right', 'bottom'];
 
+const warnedNowhere = new Set<string>();
+
+/** Warn once per bar and docks list, in dev, of a bar that can enter none of `docks` and may not float. */
+function warnNowhere(docks: readonly DockSpec[], bars: readonly DockBar[]): void {
+  if (!isDev()) return;
+  for (const bar of bars) {
+    if (bar.float || homeDock(docks, bar)) continue;
+    const key = `${bar.id}\0${bar.docks.join('\0')}`;
+    if (warnedNowhere.has(key)) continue;
+    warnedNowhere.add(key);
+    const offered = docks.map((d) => `"${d.id}" (${d.edge})`).join(', ') || 'none';
+    console.warn(`weasel: ToolbarDock bar "${bar.id}" lists docks ${JSON.stringify(bar.docks)}, but none of them is a dock it may enter, and it may not float, so it is never drawn. The docks on offer are ${offered}; a left or right dock takes only a bar with \`vertical\`. Fix its \`docks\`, or give it \`vertical\` or \`float\`.`);
+  }
+}
+
 /**
  * Toolbars laid out in docks round a workspace, which fills the middle. The host decides where bars may go: it
  * declares the docks, and each bar lists the docks it may sit in, so a user can only put a bar somewhere the app
@@ -54,7 +69,10 @@ const EDGES: readonly DockEdge[] = ['top', 'left', 'right', 'bottom'];
  * dropped near.
  */
 export function ToolbarDock({ docks, bars, layout, onLayoutChange, movable = false, className, children }: ToolbarDockProps) {
-  const resolved = useMemo(() => resolveLayout(docks, bars, layout), [docks, bars, layout]);
+  const resolved = useMemo(() => {
+    warnNowhere(docks, bars);
+    return resolveLayout(docks, bars, layout);
+  }, [docks, bars, layout]);
   const byId = useMemo(() => new Map(bars.map((b) => [b.id, b])), [bars]);
   const root = useRef<HTMLDivElement>(null);
   const layer = useRef<HTMLDivElement>(null);

@@ -4,6 +4,7 @@
  * its parent's, and the edits a caller makes to the stack.
  */
 import { sameValue } from './sameValue';
+import { heldIndex } from './stackIndex';
 import type { LayerRecord, Node, NodeId, Scene, UseSceneOptions, UserLayerRecord } from './types';
 import type { MutableLayerRecord } from './layerTypes';
 
@@ -168,7 +169,7 @@ export function createLayerEdits<TData, TLayer extends string, TPose>(
 
     addLayer(spec) {
       if (env.layerIndex.has(spec.id)) throw new Error(`Scene: duplicate layer id "${spec.id}"`);
-      const index = Math.max(0, Math.min(spec.index ?? layers.length, layers.length));
+      const index = heldIndex(spec.index ?? layers.length, layers.length, 'Scene.addLayer');
       const layer: UserLayerRecord<TLayer> = {
         kind: 'user',
         id: spec.id,
@@ -203,7 +204,7 @@ export function createLayerEdits<TData, TLayer extends string, TPose>(
 
     moveLayer(layer, index) {
       const from = requireLayerIndex(layer);
-      const to = Math.max(0, Math.min(index, layers.length - 1));
+      const to = heldIndex(index, layers.length - 1, 'Scene.moveLayer');
       if (from === to) return;
       const proposed = [...layers];
       const [rec] = proposed.splice(from, 1);

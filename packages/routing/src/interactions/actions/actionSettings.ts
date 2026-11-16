@@ -5,6 +5,7 @@
 import type { PrefGroup } from '@weasel-js/prefs-schema';
 import type { Action } from './action';
 import type { ActionDeps } from './invoker';
+import { warnThrew } from './actionEnabled';
 
 /** What a settings form shows for the selection right now. */
 export interface ActionSettingsState {
@@ -34,13 +35,14 @@ const EMPTY: ActionSettingsState = { values: {} };
 
 /** `action`'s settings as they stand under `deps`, or `null` for an action
  *  with no settings. A `read` that throws shows nothing rather than breaking
- *  the surface. */
+ *  the surface, with a dev warning once per action. */
 export function readActionSettings(action: Action, deps: ActionDeps | undefined): ActionSettingsState | null {
   const settings = action.settings;
   if (!settings) return null;
   try {
     return settings.read(deps ?? {});
-  } catch {
+  } catch (e) {
+    warnThrew('settings', action, e, 'no values');
     return EMPTY;
   }
 }

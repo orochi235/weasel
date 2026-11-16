@@ -98,7 +98,12 @@ class Remove implements fc.Command<Model, Real> {
     const next = clone(was);
     next.pages = next.pages.filter((p) => p.id !== id);
     next.content = next.content.filter((c) => c.page !== id);
-    settle(m, r, next.pages.length === was.pages.length ? null : next, 'Remove', () => removePage(r.scene, id));
+    if (next.pages.length === was.pages.length) {
+      // An id that names no page throws, and records nothing.
+      settle(m, r, null, 'Remove', () => expect(() => removePage(r.scene, id)).toThrow(/unknown page id "nowhere"/));
+      return;
+    }
+    settle(m, r, next, 'Remove', () => removePage(r.scene, id));
   }
   toString(): string { return `Remove(${this.k}${this.absent ? ', absent' : ''})`; }
 }

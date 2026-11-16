@@ -4,7 +4,7 @@
  * from one.
  */
 import type { Op } from 'core/ops/types';
-import { createReflectable, type Reflection } from '@weasel-js/registry';
+import { createReflectable, ExtensionConflictError, type Reflection } from '@weasel-js/registry';
 import type { RegisteredOp } from './types';
 
 /** What the table asks of the scene when one of its ops runs. */
@@ -26,15 +26,17 @@ export interface OpTableEnv {
 export interface OpTable {
   /** Every kind registered, by name; a kind registered again replaces the handler before. */
   handlers: Reflection<RegisteredOp<unknown>>;
-  register(kind: string, handler: RegisteredOp<unknown>): void;
+  /** Register `handler` for `kind`. The handler already registered again is no change; a different one throws
+   *  {@link ExtensionConflictError} unless `replace` is passed, as for hot reload. */
+  register(kind: string, handler: RegisteredOp<unknown>, options?: { replace?: boolean }): void;
   /** Apply a kind's forward half. Throws when nothing is registered for it. */
   run(kind: string, payload: unknown): void;
   /** A registered op as an engine `Op`. `invert()` flips the direction with
    *  the same payload, so undo replays `revert` and redo replays `apply`; the
    *  inverse is named {@link revertName} of the kind, so its `name` and `args`
    *  rebuild it and not the edit it undoes. The handler is looked up at apply
-   *  time, so a re-registered kind takes effect on replay; that one exists is
-   *  checked here, to fail at the call site. */
+   *  time, so a kind replaced with `replace: true` takes effect on replay; that
+   *  one exists is checked here, to fail at the call site. */
   op(kind: string, payload: unknown): Op;
   /** The op a `name` and `args` describe: a registered kind's forward op, or
    *  its revert under {@link revertName}. `null` for a name nothing here owns. */
@@ -99,7 +101,12 @@ export function createOpTable(env: OpTableEnv): OpTable {
 
   return {
     handlers: handlers.reflection,
-    register: (kind, handler) => { handlers.set(kind, handler); },
+    register: (kind, handler, options) => {
+      const held = handlers.get(kind);
+      if (held === handler) return;
+      if (held && !options?.replace) throw new ExtensionConflictError('Scene op', kind);
+      handlers.set(kind, handler);
+    },
     run: (kind, payload) => handlerFor(kind).apply(payload),
     op: (kind, payload) => op(kind, payload),
     rebuild(name, args) {

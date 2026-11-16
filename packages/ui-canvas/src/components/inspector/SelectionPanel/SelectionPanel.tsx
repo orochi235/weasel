@@ -11,7 +11,7 @@ import {
   type NodeRoutingEntry,
   type Scene,
 } from '@weasel-js/core';
-import { leafWrites, nodeRecord } from './commitLeaf';
+import { leafWrites, nodeRecord, warnUnwritable } from './commitLeaf';
 import { panelSource } from '@weasel-js/ui/components/PanelCells';
 import { PrefsSource } from '@weasel-js/ui/components/PrefsSource';
 import type { LeafRenderer } from '@weasel-js/ui/components/PanelCells';
@@ -142,6 +142,7 @@ export function SelectionPanel<TData, TLayer extends string, TPose>(
   const scope = conditionedSections(kinds, properties, records, renderers?.alias !== undefined, props.markHidden === true, props.over);
   const sections = sectionsInScopes(scope.sections, scene, nodes, props.units);
   const panelLeaves = sections.flatMap(panelRowsOf).flatMap((row) => row.leaves);
+  warnUnwritable(kinds, panelLeaves);
   const leaves = new Map(panelLeaves.map(({ path, leaf }) => [path, leaf] as const));
   const fields = prefFieldChoices({ name: '', members: Object.fromEntries(leaves) });
   const shown = panelMarkedPaths(sections, props.selected ?? NO_MARKS, renderers);

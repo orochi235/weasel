@@ -25,4 +25,20 @@ describe('useToolCursor', () => {
     renderHook(() => useToolCursor(sink, tools, null, 'default'));
     expect(setBase).toHaveBeenLastCalledWith(null, 'default');
   });
+
+  it('logs a throwing cursor() once per tool and writes no tool cursor', () => {
+    const error = vi.spyOn(console, 'error').mockImplementation(() => {});
+    try {
+      const setBase = vi.fn();
+      const sink: CursorSink = { setBase, setOverride: vi.fn() };
+      const tools = toolsWith((() => { throw new Error('no mode'); }) as unknown as CursorSpec);
+      const { rerender } = renderHook(({ rest }) => useToolCursor(sink, tools, null, rest), { initialProps: { rest: 'default' } });
+      rerender({ rest: 'auto' });
+      expect(setBase).toHaveBeenLastCalledWith(null, 'auto');
+      expect(error).toHaveBeenCalledTimes(1);
+      expect(String(error.mock.calls[0]![0])).toContain('"brush"');
+    } finally {
+      error.mockRestore();
+    }
+  });
 });

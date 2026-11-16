@@ -38,6 +38,14 @@ describe('ToastQueue', () => {
     expect(longest.timeout).toBe(2 ** 31 - 1);
   });
 
+  it('throws a RangeError for a ttlMs that is NaN, 0 or negative', () => {
+    const q = createToastQueue();
+    for (const ttlMs of [NaN, 0, -1]) {
+      expect(() => q.add('info', 'bad', { ttlMs })).toThrow(RangeError);
+    }
+    expect(racQueueOf(q).visibleToasts).toHaveLength(0);
+  });
+
   it('replaces an earlier toast with the same id', () => {
     const q = createToastQueue();
     q.add('info', 'first', { id: 'save-status' });

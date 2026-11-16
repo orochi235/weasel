@@ -106,8 +106,11 @@ export function markShape<TPose>(
 
 /** Register {@link markShape}; returns the disposer. */
 export function registerMarkShape<TPose>(opts: { geometry?: PoseDescriptor<TPose> } = {}): () => void {
-  return registerNodeShape(markShape(opts), { priority: 'high' });
+  const entry = opts.geometry === undefined ? (defaultMarkShape ??= markShape()) : markShape(opts);
+  return registerNodeShape(entry, { priority: 'high' });
 }
+
+let defaultMarkShape: NodeShapeEntry<unknown, unknown> | undefined;
 
 /** The specs for one node's marks. `box` is where the node stands. */
 export function markSpecs(

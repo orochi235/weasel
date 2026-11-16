@@ -3,31 +3,26 @@
  * `bidiSeam.ts`), and most callers of `layoutRuns` are kit code a consumer
  * never touches, so the consumer registers it once and every layout finds it.
  */
-import { bumpTextEngineGeneration } from './engineGeneration';
+import { engineSlot, type RegisterEngineOptions } from './engineSlot';
 import type { BidiEngine } from './bidiSeam';
 import { isParagraphSeparator } from './bidiLines';
 import type { TextDirection } from '../textStyle';
 
-let registered: BidiEngine | null = null;
+const slot = engineSlot<BidiEngine>('registerBidi', 'bidi engine');
 
 /**
  * Give every text layout a bidi engine: `registerBidi(bidi)`, with `bidi`
  * from `@weasel-js/bidi`. `layoutRuns` uses it whenever its options carry
  * none. Pass `null`, or call the function returned, to take it out again.
+ * A different engine already registered throws unless `opts.replace` is set.
  */
-export function registerBidi(engine: BidiEngine | null): () => void {
-  if (registered !== engine) bumpTextEngineGeneration();
-  registered = engine;
-  return () => {
-    if (registered !== engine) return;
-    registered = null;
-    bumpTextEngineGeneration();
-  };
+export function registerBidi(engine: BidiEngine | null, opts?: RegisterEngineOptions): () => void {
+  return slot.register(engine, opts);
 }
 
 /** The engine {@link registerBidi} was last given, or null. */
 export function registeredBidi(): BidiEngine | null {
-  return registered;
+  return slot.get();
 }
 
 /** Which way a paragraph reads, from an engine's base level for it. */
@@ -43,7 +38,7 @@ export function directionOfLevel(level: number): TextDirection {
 export function paragraphDirection(
   text: string,
   direction: TextDirection | 'auto' = 'auto',
-  engine: BidiEngine | null = registered,
+  engine: BidiEngine | null = slot.get(),
 ): TextDirection {
   if (direction !== 'auto') return direction;
   if (engine === null) return 'ltr';

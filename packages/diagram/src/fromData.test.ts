@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { createScene, type RectPose } from '@weasel-js/core';
 import { DIAGRAM_THEMES } from './theme/themes';
 import { DEFAULT_NODE_STYLE, diagramScene, edgeIdOf, type DataNode, type DiagramData, type DiagramSceneOptions } from './fromData';
@@ -44,9 +44,28 @@ describe('diagramScene', () => {
     expect(specs.some((s) => s.data?.text === 'weight' && s.dependsOn?.[0] === edge?.id)).toBe(true);
   });
 
-  it('drops an edge whose end is not a node', () => {
-    const specs = diagramScene({ nodes: DATA.nodes, edges: [{ from: 'a', to: 'nowhere' }] });
+  it('drops an edge whose end is not a node, warning once per unknown id', () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const specs = diagramScene({ nodes: DATA.nodes, edges: [{ from: 'a', to: 'nowhere' }, { from: 'b', to: 'nowhere' }] });
     expect(specs.some((s) => s.dependsOn !== undefined)).toBe(false);
+    expect(warn).toHaveBeenCalledTimes(1);
+    expect(warn.mock.calls[0]![0]).toContain('names "nowhere"');
+    warn.mockRestore();
+  });
+
+  it('passes over group and container members naming unknown ids, warning once per id', () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const specs = diagramScene({
+      nodes: DATA.nodes, edges: [],
+      groups: [{ id: 'g', members: ['a', 'ghost-g'] }],
+      containers: [{ id: 'box', role: 'container', members: ['b', 'ghost-c'] }],
+    });
+    expect(specs.some((s) => s.id === 'ghost-g' || s.id === 'ghost-c')).toBe(false);
+    expect(warn.mock.calls.map((c) => c[0])).toEqual([
+      expect.stringContaining('group "g" names "ghost-g"'),
+      expect.stringContaining('container "box" names "ghost-c"'),
+    ]);
+    warn.mockRestore();
   });
 
   it('applies nodeStyle and edgeStyle', () => {

@@ -543,6 +543,7 @@ describe('useClipboardOps — OS clipboard flavor seam', () => {
   });
 
   it('(h) a throwing produceFlavors does not throw from copy(); write never called; in-memory paste still works', async () => {
+    const error = vi.spyOn(console, 'error').mockImplementation(() => {});
     const write = vi.fn().mockResolvedValue(undefined);
     Object.assign(navigator, { clipboard: { write } });
     const helpers = makeAdapter();
@@ -557,6 +558,8 @@ describe('useClipboardOps — OS clipboard flavor seam', () => {
     // Give the microtask/macrotask queue a chance to run; write must never fire.
     await new Promise((r) => setTimeout(r, 0));
     expect(write).not.toHaveBeenCalled();
+    expect(error).toHaveBeenCalledWith(expect.stringContaining('produceFlavors threw'), expect.any(Error));
+    error.mockRestore();
     act(() => { result.current.paste(); });
     expect(helpers.batches).toHaveLength(1);
   });
