@@ -20,6 +20,7 @@ import { ObjectLeaf } from './ObjectLeaf';
 import { controlIsGroup, PropertyControl } from '../Properties/PropertyField';
 import { PropertyRow } from '../Properties/PropertyRow';
 import { RowScope } from '../Properties/rowScope';
+import { rendererOf } from '../PrefsSource/rendererOf';
 import type { LiveControl } from './commitPolicy';
 import { leafField } from './leafField';
 import { renderLeaf, renderLeafControl, type LeafParts } from './renderLeaf';
@@ -183,7 +184,7 @@ function LeafRow({ ctx, path: own, pref, at }: { ctx: WalkCtx; path: string; pre
   const { path, auto: inherited, setAuto } = renderCtx;
 
   const marked = marksHidden(ctx.hidden, own);
-  const custom = ctx.renderers?.[pref.kind];
+  const custom = rendererOf(ctx.renderers, pref.kind);
   if (prefDrawsNoControl(pref) && !custom) {
     return (
       <div className={s.rowSlot} data-wide="" {...selectionAttrs(own, ctx, true)}>
@@ -290,7 +291,7 @@ function rowIsGroup(
   siblings?: Record<string, unknown>,
 ): boolean {
   if (prefDrawsSeveral(ctx.pref)) return true;
-  const custom = renderers?.[ctx.pref.kind];
+  const custom = rendererOf(renderers, ctx.pref.kind);
   if (custom) return typeof custom.group === 'function' ? custom.group(ctx) : custom.group === true;
   const field = leafField(within(ctx, siblings), 'form');
   return field !== null && controlIsGroup(field);

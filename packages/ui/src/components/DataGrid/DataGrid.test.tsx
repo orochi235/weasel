@@ -277,3 +277,12 @@ describe('DataGrid detail rows', () => {
     expect(onReorder).toHaveBeenCalledWith(['c'], 1);
   });
 });
+
+describe('DataGrid column ids', () => {
+  it('reads a column named for an Object.prototype key as the row lacking it', () => {
+    const { container } = render(<DataGrid rows={ROWS} columns={[{ id: 'constructor', header: 'Ctor' }]} />);
+    const cells = [...container.querySelectorAll('tbody td')];
+    expect(cells.length).toBe(ROWS.length);
+    expect(cells.every((c) => c.textContent === '')).toBe(true);
+  });
+});

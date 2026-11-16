@@ -1,5 +1,6 @@
 import type { CSSProperties } from 'react';
 import { DEG_TO_RAD } from '@weasel-js/geom';
+import { getOwn } from '@weasel-js/registry';
 
 /** The knobs the button lab reads. */
 export interface ButtonLabConfig {
@@ -74,7 +75,7 @@ export function buttonVarsOf(c: ButtonLabConfig): Record<string, string> {
 export function exportDeltas(c: ButtonLabConfig): string {
   const now = buttonVarsOf(c);
   const was = buttonVarsOf(BUTTON_LAB_DEFAULTS);
-  const lines = Object.keys(now).sort().filter((k) => now[k] !== was[k]).map((k) => `  ${k}: ${now[k]};`);
+  const lines = Object.keys(now).sort().filter((k) => now[k] !== getOwn(was, k)).map((k) => `  ${k}: ${now[k]};`);
   return lines.length === 0 ? '/* No deltas: every knob is at its default. */' : `.button {\n${lines.join('\n')}\n}`;
 }
 

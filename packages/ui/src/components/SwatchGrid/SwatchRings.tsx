@@ -1,5 +1,6 @@
 import { useLayoutEffect, useMemo, useRef, useState, type KeyboardEvent, type ReactElement, type ReactNode, type RefObject } from 'react';
 import { trackRun, type RunAlign, type TrackShape } from '@weasel-js/geom';
+import { getOwn } from '@weasel-js/registry';
 import { RunScope } from '../Run';
 import { useItemLengths, useRunGap } from '../Along/useItemLengths';
 import { useInlineDirection } from '../Along/useRowRun';
@@ -219,7 +220,7 @@ export function ringStep(arrow: { x: number; y: number }, i: number, columns: nu
 /** The key handler of swatch `i` on rings: arrows move by {@link ringStep}, every other key as `fallback` takes it. */
 function ringKeyDown(i: number, columns: number, swatches: () => HTMLElement[], fallback: (e: KeyboardEvent<HTMLButtonElement>) => void) {
   return (e: KeyboardEvent<HTMLButtonElement>): void => {
-    const arrow = ARROWS[e.key];
+    const arrow = getOwn(ARROWS, e.key);
     if (arrow === undefined) return fallback(e);
     e.preventDefault();
     const all = swatches();

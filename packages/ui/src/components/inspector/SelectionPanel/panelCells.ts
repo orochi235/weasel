@@ -6,6 +6,8 @@ import { withBarLabel } from '../../Bar/renderBarLeaf';
 import { drawsBarForm, type ControlForm } from '../../ActionButton/controlForm';
 import { sourceResetPlan, type PrefAliasTargets, type SelectionSource } from '@weasel-js/prefs';
 import { sourceLeafContext } from '../../PrefsSource/leafContext';
+import { getOwn } from '@weasel-js/registry';
+import { rendererOf } from '../../PrefsSource/rendererOf';
 import type { LiveControl } from '../../Prefs/commitPolicy';
 import type { EntryAt } from '../../Prefs/entry';
 import type { PrefFieldChoice } from '../../Prefs/schema';
@@ -46,7 +48,7 @@ export interface PanelCellScope {
 const INHERITS: Readonly<Record<string, keyof InheritedPaint>> = { 'data.fill': 'fill', 'data.stroke': 'stroke' };
 
 function inheritOf(panelLeaf: PanelLeaf, scope: PanelCellScope): PanelInherit | undefined {
-  const field = INHERITS[panelLeaf.path];
+  const field = getOwn(INHERITS, panelLeaf.path);
   const { nodes, paintAbove } = scope;
   if (field === undefined || paintAbove === undefined || nodes.some((n) => n.parent == null)) return undefined;
   const shared = sharedValue(nodes.map((n) => paintAbove(n)[field]?.paint ?? null));
@@ -98,7 +100,7 @@ function leafCell(panelLeaf: PanelLeaf, ariaLabel: string, scope: PanelCellScope
     ctx,
     ariaLabel,
     render: () => {
-      const custom = renderers?.[path] ?? renderers?.[leaf.kind];
+      const custom = rendererOf(renderers, path, leaf.kind);
       if (custom) return drawsBarForm(surface) ? withBarLabel(leaf, custom(ctx)) : custom(ctx);
       return renderBuiltin(ctx, ariaLabel, renderers, { selectionKey, surface });
     },
