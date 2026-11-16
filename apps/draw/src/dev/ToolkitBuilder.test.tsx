@@ -1,5 +1,6 @@
 import { fireEvent, screen, waitFor } from '@testing-library/react';
-import { ActionsProvider, DepRegistryProvider, SelectionContextProvider } from '@weasel-js/core';
+import { ActionsProvider, AmbientContributionsProvider, DepRegistryProvider, SelectionContextProvider } from '@weasel-js/core';
+import { devtools } from '@weasel-js/devtools/hook';
 import { beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import { ToolkitBuilder } from './ToolkitBuilder';
 import { renderWithIcons } from '../testIcons';
@@ -19,7 +20,9 @@ function mount(): void {
     <DepRegistryProvider>
       <ActionsProvider>
         <SelectionContextProvider>
-          <ToolkitBuilder />
+          <AmbientContributionsProvider contributions={[devtools]}>
+            <ToolkitBuilder />
+          </AmbientContributionsProvider>
         </SelectionContextProvider>
       </ActionsProvider>
     </DepRegistryProvider>,
