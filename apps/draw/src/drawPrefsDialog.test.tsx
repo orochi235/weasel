@@ -33,6 +33,20 @@ describe('SurfacesEditor', () => {
     expect(setValue).toHaveBeenCalledWith({ statusBar: { hidden: true }, tools: { hidden: true } });
   });
 
+  it('hides one piece of chrome alone on Alt-click, and shows every piece on a second', () => {
+    let value: unknown = { layers: { collapsed: true } };
+    const setValue = vi.fn((next: unknown) => { value = next; });
+    const { rerender } = render(<SurfacesEditor ctx={ctxFor(value, setValue)} />);
+    fireEvent.click(screen.getByLabelText('Hide Layers'), { altKey: true });
+    rerender(<SurfacesEditor ctx={ctxFor(value, setValue)} />);
+    const hidden = () => screen.getAllByLabelText(/^Hide /).filter((b) => (b as HTMLInputElement).checked).map((b) => b.getAttribute('aria-label'));
+    expect(hidden()).toEqual(['Hide Layers']);
+    expect((value as Record<string, { collapsed?: boolean }>).layers?.collapsed).toBe(true);
+    fireEvent.click(screen.getByLabelText('Hide Layers'), { altKey: true });
+    rerender(<SurfacesEditor ctx={ctxFor(value, setValue)} />);
+    expect(hidden()).toHaveLength(screen.getAllByLabelText(/^Hide /).length);
+  });
+
   it('offers a surface choice only for an asset that allows more than one', () => {
     render(<SurfacesEditor ctx={ctxFor({ path: { surface: 'menu' } })} />);
     expect(screen.getByRole('button', { name: /Show Path as/ }).textContent).toMatch(/Menu/);

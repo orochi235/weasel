@@ -3,7 +3,7 @@ import type { ReactElement } from 'react';
 import { DEBUG_FEATURES } from '@weasel-js/core';
 import { Code } from '@weasel-js/ui/components/Code';
 import { Select } from '@weasel-js/ui/components/Select';
-import { Switch } from '@weasel-js/ui/components/Switch';
+import { CheckboxGroup } from '@weasel-js/ui/components/CheckboxGroup';
 import { useRootQuery } from '../hooks';
 import type { DevtoolsViewProps } from '../tabs';
 import { ValueView } from './ValueView';
@@ -45,17 +45,18 @@ export function StateView({ client, rootId }: DevtoolsViewProps): ReactElement {
 
       <section className={s.section} aria-label="Overlays">
         <h3 className={s.heading}>Overlays</h3>
-        <div className={s.flags}>
-          {DEBUG_FEATURES.map((flag) => (
-            <Switch
-              key={flag}
-              isSelected={st.overlays[flag] === true}
-              onChange={(on) => steer(client.request(rootId, { type: 'set-overlays', overlays: { [flag]: on } }))}
-            >
-              {flag}
-            </Switch>
-          ))}
-        </div>
+        <CheckboxGroup
+          aria-label="Overlays"
+          control="switch"
+          orientation="horizontal"
+          sweep
+          items={DEBUG_FEATURES.map((flag) => ({ value: flag, label: flag }))}
+          value={DEBUG_FEATURES.filter((flag) => st.overlays[flag] === true)}
+          onChange={(on) => {
+            const overlays = Object.fromEntries(DEBUG_FEATURES.filter((flag) => on.includes(flag) !== (st.overlays[flag] === true)).map((flag) => [flag, on.includes(flag)]));
+            steer(client.request(rootId, { type: 'set-overlays', overlays }));
+          }}
+        />
       </section>
 
       <section className={s.section} aria-label="View">

@@ -10,7 +10,14 @@ describe('Switch', () => {
     const sw = screen.getByRole('switch') as HTMLInputElement;
     expect(sw.checked).toBe(false);
     fireEvent.click(sw);
-    expect(onChange).toHaveBeenCalledWith(true);
+    expect(onChange).toHaveBeenCalledWith(true, { alt: false });
+  });
+
+  it('says whether Alt was held as it changed', () => {
+    const onChange = vi.fn();
+    render(<Switch onChange={onChange}>x</Switch>);
+    fireEvent.click(screen.getByRole('switch'), { altKey: true });
+    expect(onChange).toHaveBeenCalledWith(true, { alt: true });
   });
 
   it('supports controlled value', () => {

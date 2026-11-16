@@ -10,7 +10,8 @@ import { ActionsProvider, ActiveToolContextProvider, DepRegistryProvider, useAct
 import { sweepAction, type ModifierState } from '@weasel-js/routing';
 import { useLatest } from '@weasel-js/react';
 import { useMemo, useRef, type ReactElement, type RefObject } from 'react';
-import { soloSweepFrom, sweepFrom, type SelectionModel, type SelectState } from '@weasel-js/ui-input';
+import { flushSync } from 'react-dom';
+import { liveSelection, soloSweepFrom, sweepFrom, type SelectionModel, type SelectState } from '@weasel-js/ui-input';
 
 /** The attribute naming a segment's index, which is what a sweep reaches. */
 export const SWEEP_INDEX_ATTR = 'data-sweep-index';
@@ -68,9 +69,14 @@ function Dispatch<V>(props: SegmentSweeperProps<V>): null {
       const p = latest.current;
       const state = p.model.stateOf(key);
       if (typeof p.sweep === 'function' && !p.sweep({ value: p.values[key]!, state, modifiers: ctx.modifiers })) return null;
-      const run = ctx.modifiers.alt ? soloSweepFrom(p.model, key, p.values.length, p.sweepable) : sweepFrom(p.model, key);
+      // Each step reports through the bar's latest model, and renders before the next, so its handler sees the
+      // value it now holds even when one move reaches several segments.
+      const model = liveSelection(() => latest.current.model, () => latest.current.values.length);
+      const run = ctx.modifiers.alt
+        ? soloSweepFrom(model, key, p.values.length, p.sweepable)
+        : sweepFrom(model, key);
       return {
-        enter: ({ key: index }) => run.reach(index),
+        enter: ({ key: index }) => flushSync(() => run.reach(index)),
         end: (how) => {
           latest.current.swept();
           if (how === 'cancel') run.revert();

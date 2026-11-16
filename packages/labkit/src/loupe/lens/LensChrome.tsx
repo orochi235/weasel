@@ -94,13 +94,12 @@ export function LensChrome<C>({
                 : t.label,
           }))}
           value={settings.readouts}
-          onChange={(next) =>
-            fire(
-              READOUT_TOGGLES.find(
-                (t) => next.includes(t.readout) !== settings.readouts.includes(t.readout),
-              )?.id,
-            )
-          }
+          sweep
+          // Each readout is its own toggle action, fired once for each one a press, a solo or a sweep step moves.
+          onChange={(next) => {
+            for (const t of READOUT_TOGGLES)
+              if (next.includes(t.readout) !== settings.readouts.includes(t.readout)) fire(t.id);
+          }}
         />
         {settings.compare !== null ? (
           <SegmentedBar

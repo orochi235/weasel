@@ -239,6 +239,43 @@ describe('LensSlot and LensChrome', () => {
     expect(ran).toHaveBeenCalledTimes(1);
   });
 
+  it('solos a readout on Alt-click by firing the toggle of every readout it moves, once each', () => {
+    const live = fakeSource('live');
+    const ran: string[] = [];
+    function Spy() {
+      const registry = useActionsRegistry();
+      useEffect(() => {
+        const offs = ['token', 'contrast', 'grid'].map((r) =>
+          registry?.register({
+            id: `loupe.readout.${r}`,
+            label: `Readout: ${r}`,
+            invoker: {
+              timing: 'immediate',
+              run: () => {
+                ran.push(r);
+              },
+            },
+          } satisfies Action),
+        );
+        return () => {
+          for (const off of offs) off?.();
+        };
+      }, [registry]);
+      return null;
+    }
+    render(
+      <ActionsProvider>
+        <Spy />
+        <Both
+          settings={settings({ readouts: ['token', 'contrast'] })}
+          sources={{ live: live.source }}
+        />
+      </ActionsProvider>,
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'Token' }), { altKey: true });
+    expect(ran).toEqual(['contrast']);
+  });
+
   it('presses the toggle of the source that renders, not the one wanted', () => {
     const live = fakeSource('live');
     const pixels = fakeSource('pixels', { status: 'install playwright' });

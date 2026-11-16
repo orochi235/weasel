@@ -1,4 +1,4 @@
-import { fireEvent, screen, waitFor } from '@testing-library/react';
+import { fireEvent, screen, waitFor, within } from '@testing-library/react';
 import { ActionsProvider, AmbientContributionsProvider, DepRegistryProvider, SelectionContextProvider } from '@weasel-js/core';
 import { devtools } from '@weasel-js/devtools/hook';
 import { beforeAll, beforeEach, describe, expect, it } from 'vitest';
@@ -66,5 +66,17 @@ describe('ToolkitBuilder', () => {
     fireEvent.click(screen.getByRole('switch', { name: 'tools:shape' }));
     await waitFor(() => expect(screen.queryByText('useRectTool')).toBeNull());
     expect(window.location.hash).toBe('#/dev/toolkits?base=draw&tools=');
+  });
+
+  it('mounts one preset alone on Alt-click, and every preset on a second', async () => {
+    mount();
+    expect(await screen.findByText('useGirthTool')).toBeTruthy();
+    fireEvent.click(screen.getByRole('switch', { name: 'tools:view' }), { altKey: true });
+    await waitFor(() => expect(screen.queryByText('useGirthTool')).toBeNull());
+    expect(window.location.hash).toBe('#/dev/toolkits?base=draw&tools=tools:view&paths=0&text=0');
+    fireEvent.click(screen.getByRole('switch', { name: 'tools:view' }), { altKey: true });
+    await waitFor(() => expect(window.location.hash).not.toContain('paths=0'));
+    expect(window.location.hash).not.toContain('text=0');
+    expect(within(screen.getByRole('group', { name: 'Presets' })).getAllByRole('switch').every((s) => (s as HTMLInputElement).checked)).toBe(true);
   });
 });

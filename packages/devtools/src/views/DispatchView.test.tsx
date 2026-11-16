@@ -37,4 +37,18 @@ describe('<DispatchView>', () => {
     expect(page.subscribes()).toBe(1);
     expect(page.listeners.size).toBe(1);
   });
+
+  it('shows one outcome alone on Alt-click, and both on a second', async () => {
+    const page = fakePage(async () => ({ entries: [], cursor: 0, live: null }));
+    renderWithIcons(<DispatchView client={page.client} rootId="r" />);
+    const filter = async (name: string) => screen.findByRole('button', { name });
+    fireEvent.click(await filter('unhandled'));
+    expect((await filter('handled')).getAttribute('aria-pressed')).toBe('true');
+    expect((await filter('unhandled')).getAttribute('aria-pressed')).toBe('true');
+    fireEvent.click(await filter('unhandled'), { altKey: true });
+    expect((await filter('handled')).getAttribute('aria-pressed')).toBe('false');
+    fireEvent.click(await filter('unhandled'), { altKey: true });
+    expect((await filter('handled')).getAttribute('aria-pressed')).toBe('true');
+    expect((await filter('unhandled')).getAttribute('aria-pressed')).toBe('true');
+  });
 });

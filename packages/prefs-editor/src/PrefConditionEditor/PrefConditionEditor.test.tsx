@@ -97,6 +97,14 @@ describe('PrefConditionEditor', () => {
     expect(seen.value).toEqual({ path: 'view.units', in: ['in'] });
   });
 
+  it('picks one option alone on Alt-click, and every option on a second', () => {
+    const seen = open({ path: 'view.units', in: ['px', 'mm'] });
+    fireEvent.click(within(row(1)).getByRole('checkbox', { name: 'Inches' }), { altKey: true });
+    expect(seen.value).toEqual({ path: 'view.units', in: ['in'] });
+    fireEvent.click(within(row(1)).getByRole('checkbox', { name: 'Inches' }), { altKey: true });
+    expect([...(seen.value as unknown as { in: string[] }).in].sort()).toEqual(['in', 'mm', 'px']);
+  });
+
   it('offers a number the ordering comparisons, with a number to compare against', () => {
     const seen = open({ path: 'view.step', above: 4 });
     expect(offered(row(1), /comparison/)).toEqual(['is above', 'is at least', 'is below', 'is at most', 'is', 'is not']);

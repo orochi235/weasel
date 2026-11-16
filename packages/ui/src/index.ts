@@ -14,6 +14,7 @@ export * from './components/Bar';
 export * from './components/Button';
 export * from './components/Callout';
 export * from './components/Checkbox';
+export * from './components/CheckboxGroup';
 export * from './components/Code';
 export * from './components/CodeBlock';
 export * from './components/ColorField';

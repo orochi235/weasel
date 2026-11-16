@@ -94,6 +94,7 @@ export function DebugOverlayDemo() {
           onChange={(on) => setEnabled({ ...NONE, ...Object.fromEntries(on.map((k) => [k, true])) })}
           aria-label="Debug overlays"
           size="sm"
+          sweep
         />
         <Button onClick={allOn}>all on</Button>
         <Button onClick={allOff}>all off</Button>

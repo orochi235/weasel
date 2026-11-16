@@ -74,6 +74,7 @@ export function DispatchView({ client, rootId }: DevtoolsViewProps): ReactElemen
           variant="minimal"
           size="sm"
           aria-label="Outcome filters"
+          sweep
           items={[
             { value: 'handled', label: 'handled', tooltip: 'Show handled inputs and mode switches' },
             { value: 'unhandled', label: 'unhandled', tooltip: 'Show inputs nothing handled' },

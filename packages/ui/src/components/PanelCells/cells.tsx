@@ -116,7 +116,8 @@ export function renderCells(
 
 /**
  * A run of paired boolean flags as one multi-select bar — U / S / O, the way
- * every text editor draws them.
+ * every text editor draws them. A drag across it sets each flag it reaches, and
+ * an Alt-click solos one.
  */
 function FlagBar({ run, ariaLabel }: { run: readonly LeafCell[]; ariaLabel: string }): ReactNode {
   // Each flag through the same field props a lone one gets, so an `encoding`
@@ -141,6 +142,7 @@ function FlagBar({ run, ariaLabel }: { run: readonly LeafCell[]; ariaLabel: stri
       variant="flat"
       className={s.flagToggle}
       aria-label={ariaLabel}
+      sweep
       items={flags.map(({ cell, field }) => ({
         value: cell.key,
         label: field.glyph ?? <FitLabel forms={labelForms(cell.leaf.name, field.short)} />,

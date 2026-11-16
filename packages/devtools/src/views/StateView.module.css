@@ -35,12 +35,6 @@
   gap: var(--wzl-space-2);
 }
 
-.flags {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(12ch, 1fr));
-  gap: var(--wzl-space-3) var(--wzl-space-6);
-}
-
 .probe {
   display: grid;
   grid-template-columns: auto minmax(0, 1fr);

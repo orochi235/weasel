@@ -1,12 +1,18 @@
 import { useEffect, useState } from 'react';
 import { useScene } from '@weasel-js/core';
 import { Button } from '@weasel-js/ui/components/Button';
-import { Checkbox } from '@weasel-js/ui/components/Checkbox';
+import { CheckboxGroup } from '@weasel-js/ui/components/CheckboxGroup';
 import { Select } from '@weasel-js/ui/components/Select';
 import { CURVE_PRESETS } from './curveLab/presets';
 import { anchorsOf, applyPreset, curveSceneOptions, presetIdOf, REPS } from './curveLab/curveScene';
 import { RepresentationPanel, type OverlayFlags } from './curveLab/RepresentationPanel';
 import { DemoStageGroup } from './DemoStage';
+
+const OVERLAYS: readonly { value: keyof OverlayFlags; label: string }[] = [
+  { value: 'anchors', label: 'anchors' },
+  { value: 'comb', label: 'curvature comb' },
+  { value: 'inflections', label: 'inflections + extrema' },
+];
 
 const PANEL_W = 360;
 const PANEL_H = 360;
@@ -45,15 +51,14 @@ export function CurveLabDemo() {
         />
         <Button size="sm" disabled={!scene.canUndo()} onClick={() => scene.undo()}>Undo</Button>
         <Button size="sm" disabled={!scene.canRedo()} onClick={() => scene.redo()}>Redo</Button>
-        <Checkbox isSelected={overlays.anchors} onChange={(v) => setOverlays((o) => ({ ...o, anchors: v }))}>
-          anchors
-        </Checkbox>
-        <Checkbox isSelected={overlays.comb} onChange={(v) => setOverlays((o) => ({ ...o, comb: v }))}>
-          curvature comb
-        </Checkbox>
-        <Checkbox isSelected={overlays.inflections} onChange={(v) => setOverlays((o) => ({ ...o, inflections: v }))}>
-          inflections + extrema
-        </Checkbox>
+        <CheckboxGroup<keyof OverlayFlags>
+          aria-label="Overlays"
+          orientation="horizontal"
+          sweep
+          items={OVERLAYS}
+          value={OVERLAYS.filter((o) => overlays[o.value]).map((o) => o.value)}
+          onChange={(on) => setOverlays({ anchors: on.includes('anchors'), comb: on.includes('comb'), inflections: on.includes('inflections') })}
+        />
         <span className="curve-lab-preset-desc">{preset.description}</span>
       </div>
       <DemoStageGroup>
