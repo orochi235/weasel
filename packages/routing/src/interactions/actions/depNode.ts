@@ -3,6 +3,7 @@
  * `requires: ['selection']`; the dispatcher calls `registry.get('selection')`
  * at invocation time to build a typed Deps bag.
  */
+import { createReflectable, type Reflection, type Registrant } from '@weasel-js/registry';
 import type { DepSchema, DepName } from '../../index';
 import { ScopeNode } from './scopeNode';
 
@@ -27,6 +28,9 @@ export interface DepRegistry {
   /** Every name a `get` here would answer, sorted, with where its live
    *  source sits. For inspection; a hand-built registry may leave it out. */
   list?(): readonly DepListing[];
+  /** The sources registered at this registry itself, none from the scopes above it. A hand-built
+   *  registry may leave it out. */
+  readonly reflection?: Reflection<DepSource<DepName>>;
 }
 
 /** A live source for dep `K`: a thunk read at invocation time. `below` reads
@@ -46,34 +50,13 @@ export interface DepListing {
  *  Each name holds a stack of sources, newest live, so a displaced source is
  *  restored when the one above it leaves. */
 export class DepNode extends ScopeNode<DepNode> {
-  private readonly sources = new Map<string, Source[]>();
+  private readonly sources = createReflectable<DepSource<DepName>>({ name: 'dep sources', layered: true });
 
   readonly registry: DepRegistry = {
-    register: <K extends DepName>(name: K, source: DepSource<K>) => {
-      const key = name as string;
-      // A wrapper per registration, so one source registered twice is two entries each release can tell apart.
-      const entry: Source = (below) => (source as Source)(below);
-      const stack = this.sources.get(key);
-      if (stack) stack.push(entry);
-      else this.sources.set(key, [entry]);
-      this.changed();
-      let released = false;
-      return () => {
-        if (released) return;
-        released = true;
-        const cur = this.sources.get(key);
-        if (!cur) return;
-        // Our own entry, wherever it now sits: a source already displaced must
-        // take itself out without disturbing the one above it.
-        const i = cur.lastIndexOf(entry);
-        if (i === -1) return;
-        cur.splice(i, 1);
-        if (cur.length === 0) this.sources.delete(key);
-        this.changed();
-      };
-    },
+    register: <K extends DepName>(name: K, source: DepSource<K>) =>
+      this.sources.push(name as string, source as unknown as DepSource<DepName>),
     get: <K extends DepName>(name: K) => {
-      const stacks = [...this.start().chain()].map((n) => n.sources.get(name as string) ?? []);
+      const stacks = [...this.start().chain()].map((n) => n.sources.stack(name as string));
       return readFrom(stacks, 0, (stacks[0]?.length ?? 0) - 1) as DepSchema[K] | undefined;
     },
     subscribe: (listener: () => void) => this.tree.listeners.subscribe(listener),
@@ -81,18 +64,20 @@ export class DepNode extends ScopeNode<DepNode> {
       const found = new Map<string, DepListing>();
       let depth = 0;
       for (const n of this.start().chain()) {
-        for (const [name, stack] of n.sources) {
-          if (!found.has(name)) found.set(name, { name, depth, stacked: stack.length });
+        for (const { key: name, shadowed } of n.sources.entries()) {
+          if (!found.has(name)) found.set(name, { name, depth, stacked: shadowed.length + 1 });
         }
         depth++;
       }
       return [...found.values()].sort((a, b) => (a.name < b.name ? -1 : a.name > b.name ? 1 : 0));
     },
     changed: () => this.changed(),
+    reflection: this.sources.reflection,
   };
 
   constructor(parent: DepNode | null, descends: boolean) {
     super(parent, descends);
+    this.sources.subscribe(() => this.changed());
     NODES.set(this.registry, this);
   }
 }
@@ -101,10 +86,10 @@ type Source = (below: () => unknown) => unknown;
 
 /** The source at `stacks[scope][index]`, or the first one under it, read with
  *  its own `below`. `stacks` runs from the asking scope outward. */
-function readFrom(stacks: readonly (readonly Source[])[], scope: number, index: number): unknown {
+function readFrom(stacks: readonly (readonly Registrant<DepSource<DepName>>[])[], scope: number, index: number): unknown {
   if (scope >= stacks.length) return undefined;
   if (index < 0) return readFrom(stacks, scope + 1, (stacks[scope + 1]?.length ?? 0) - 1);
-  return stacks[scope]![index]!(() => readFrom(stacks, scope, index - 1));
+  return (stacks[scope]![index]!.value as Source)(() => readFrom(stacks, scope, index - 1));
 }
 
 const NODES = new WeakMap<DepRegistry, DepNode>();

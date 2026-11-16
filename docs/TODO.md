@@ -274,14 +274,6 @@ Owner tags, after the priority (2026-10-26):
 
 ## Selection, actions & UI panels
 
-- **(P2) [agent] The action and dep registries still keep hand-rolled stacks.** Every kit registry keeps its
-  entries in `createReflectable` (ruled 2026-11-16), but `ActionsNode.actions` (`routing/.../ActionsProvider.tsx`)
-  and `DepNode.sources` (`routing/.../depNode.ts`) still hold their own `Map<string, …[]>` per scope node. The shape
-  lacks two things they need: reading one key's whole registrant stack without scanning `entries()` (a dep source
-  composes over the ones below it on every `get`), and keeping an emptied key's place in registration order until
-  the tick ends (what `useAction` relies on when its action object changes). Closes when both nodes store their
-  stacks in `createReflectable` and each node's reflection is reachable from its registry.
-
 - **(P3) [maintainer] An unsized `<Bar>` draws its buttons at one height and its fields at another.** With no
   `size`, a bar's buttons resolve to `md` (28px at `comfortable`), while its CSS pins fields and segmented bars to
   `control-h-sm` (24px), so a mixed toolbar row is uneven (`packages/ui/src/components/Bar`). This predates the

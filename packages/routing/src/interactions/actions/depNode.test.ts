@@ -102,3 +102,24 @@ describe('dep registry listing', () => {
     ]);
   });
 });
+
+describe('dep registry reflection', () => {
+  it('reflects the sources registered at its own node, stacked newest live, without warning of a clash', () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const root = new DepNode(null, true);
+    const scope = new DepNode(root, false);
+    const base = (() => 0) as never;
+    const over = (() => 1) as never;
+    root.registry.register('selection' as DepName, (() => 'root') as never);
+    scope.registry.register('gate' as DepName, base);
+    const release = scope.registry.register('gate' as DepName, over);
+    const reflection = scope.registry.reflection!;
+    expect(reflection.entries().map((e) => e.key)).toEqual(['gate']);
+    expect(reflection.get('gate')).toBe(over);
+    expect(reflection.entries()[0]!.shadowed.map((s) => s.value)).toEqual([base]);
+    release();
+    expect(reflection.get('gate')).toBe(base);
+    expect(warn).not.toHaveBeenCalled();
+    warn.mockRestore();
+  });
+});

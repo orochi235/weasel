@@ -14,6 +14,7 @@ import {
 import type { Action } from './action';
 import { evaluateEnabled } from './actionEnabled';
 import { isDev, useLatest } from '@weasel-js/react';
+import { createReflectable } from '@weasel-js/registry';
 import {
   useOptionalDepRegistry,
   type DepRegistry,
@@ -62,8 +63,9 @@ function depsFor(a: Action, r: DepRegistry | null): ActionDeps {
  * answers — `list`, `trigger`, `begin` — starts at the node's leaf.
  */
 export class ActionsNode extends ScopeNode<ActionsNode> {
-  /** A record per registration: a release takes out its own, displaced or live, of an action registered twice. */
-  private readonly actions = new Map<string, { action: Action }[]>();
+  /** An id releasing its last registrant keeps its place in registration order until the tick ends, so a
+   *  release followed at once by a register — what `useAction` does when its action object changes — keeps its slot. */
+  private readonly actions = createReflectable<Action>({ name: 'actions', layered: true, holdPlace: true });
   private readonly muted = new Map<string, number>();
   private readonly tunings = new Map<string, ActionTuning[]>();
   private readonly overrides: BindingOverrides[] = [];
@@ -84,13 +86,14 @@ export class ActionsNode extends ScopeNode<ActionsNode> {
   ) {
     super(parent, descends);
     this.lastOperation = parent ? parent.lastOperation : new LastOperationKeeper(() => this.changed());
+    this.actions.subscribe(() => this.changed());
     NODES.set(this.registry, this);
   }
 
   private resolve(id: string): Action | undefined {
     for (const n of this.chain()) {
       if (n.muted.has(id)) return undefined;
-      const a = n.actions.get(id)?.at(-1)?.action;
+      const a = n.actions.get(id);
       if (a) return this.tuned(a);
     }
     return undefined;
@@ -149,7 +152,7 @@ export class ActionsNode extends ScopeNode<ActionsNode> {
     const cached = this.cache;
     if (cached && cached.version === this.tree.version && cached.leaf === leaf) return cached.list;
     const ids = new Set<string>();
-    for (const n of leaf.chain()) for (const id of n.actions.keys()) ids.add(id);
+    for (const n of leaf.chain()) for (const { key } of n.actions.entries()) ids.add(key);
     const out: Action[] = [];
     for (const id of ids) {
       const a = leaf.resolve(id);
@@ -172,8 +175,8 @@ export class ActionsNode extends ScopeNode<ActionsNode> {
    *  none from the scopes below it. */
   ownActions(): readonly Action[] {
     const out: Action[] = [];
-    for (const [id, stack] of this.actions) {
-      if (stack.length > 0 && !this.muted.has(id)) out.push(this.tuned(stack.at(-1)!.action));
+    for (const { key, value } of this.actions.entries()) {
+      if (!this.muted.has(key)) out.push(this.tuned(value));
     }
     return out;
   }
@@ -222,33 +225,10 @@ export class ActionsNode extends ScopeNode<ActionsNode> {
     register: (action: Action) => {
       validateActionId(action.id);
       validateActionDefaultBinding(action);
-      const mine = { action };
-      const stack = this.actions.get(action.id);
-      if (stack) stack.push(mine);
-      else this.actions.set(action.id, [mine]);
-      this.changed();
-      let released = false;
-      return () => {
-        if (released) return;
-        released = true;
-        const cur = this.actions.get(action.id);
-        if (!cur) return;
-        const i = cur.indexOf(mine);
-        if (i === -1) return;
-        cur.splice(i, 1);
-        // An emptied stack holds the id's place in registration order until
-        // the tick ends, so a release followed at once by a register — what
-        // `useAction` does when its action object changes — keeps its slot.
-        if (cur.length === 0) {
-          queueMicrotask(() => {
-            if (cur.length === 0 && this.actions.get(action.id) === cur) this.actions.delete(action.id);
-          });
-        }
-        this.changed();
-      };
+      return this.actions.push(action.id, action);
     },
     unregister: (id: string) => {
-      if (this.actions.delete(id)) this.changed();
+      this.actions.delete(id);
     },
     mute: (id: string) => {
       this.muted.set(id, (this.muted.get(id) ?? 0) + 1);
@@ -326,6 +306,7 @@ export class ActionsNode extends ScopeNode<ActionsNode> {
     isActive: () => this.isActive(),
     holdsKeys: () => holdsKeysNow(this),
     dropKeys: () => dropKeysOf(this),
+    reflection: this.actions.reflection,
   };
 }
 

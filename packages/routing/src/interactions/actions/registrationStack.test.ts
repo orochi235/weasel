@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import type { Action } from './action';
 import { ActionsNode } from './ActionsProvider';
 import { createDepRegistry } from './depNode';
@@ -25,5 +25,42 @@ describe('a release takes out its own registration of an object registered twice
     deps.register('selection' as never, shared);
     first();
     expect(deps.get('selection' as never)).toBe('shared');
+  });
+});
+
+describe('the actions registry reflection', () => {
+  const action = (label: string): Action => ({ id: 'test.reflected', label, invoker: { timing: 'immediate', run: () => {} } });
+
+  it('reflects the actions registered at its own node, stacked newest live, without warning of a clash', () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const root = new ActionsNode(null, true, () => null);
+    const scope = new ActionsNode(root, false, () => null);
+    const base = action('Base');
+    const over = action('Over');
+    root.registry.register(action('Root'));
+    scope.registry.register(base);
+    const release = scope.registry.register(over);
+    const reflection = scope.registry.reflection!;
+    expect(reflection.get('test.reflected')).toBe(over);
+    expect(reflection.entries()[0]!.shadowed.map((s) => s.value)).toEqual([base]);
+    release();
+    expect(reflection.get('test.reflected')).toBe(base);
+    expect(root.registry.reflection!.entries().map((e) => e.value.label)).toEqual(['Root']);
+    expect(warn).not.toHaveBeenCalled();
+    warn.mockRestore();
+  });
+
+  it('keeps an id\'s place in the list when it is released and registered again in one tick', async () => {
+    const { registry } = new ActionsNode(null, true, () => null);
+    const first = { ...action('First'), id: 'test.first' };
+    const off = registry.register(first);
+    registry.register({ ...action('Second'), id: 'test.second' });
+    off();
+    registry.register({ ...first, label: 'First again' });
+    expect(registry.list().map((a) => a.id)).toEqual(['test.first', 'test.second']);
+    registry.unregister('test.first');
+    await Promise.resolve();
+    registry.register(first);
+    expect(registry.list().map((a) => a.id)).toEqual(['test.second', 'test.first']);
   });
 });

@@ -4,6 +4,7 @@
  * touches React.
  */
 import type { GestureSpec, PhaseSpec } from '@weasel-js/gestures';
+import type { Reflection } from '@weasel-js/registry';
 import type { BoundGesture } from './binding';
 import type { Action } from './action';
 import type { ActionTuning } from './tuning';
@@ -131,6 +132,10 @@ export interface ActionsRegistry {
   /** Leave the key order, as the last canvas on this registry unmounts. If this
    *  scope held the keys, they go back to the one activated before it. */
   dropKeys(): void;
+
+  /** The actions registered at this registry's own node, every registrant of an id stacked newest live, none
+   *  from the scopes above or below it. A hand-built registry may leave it out. */
+  readonly reflection?: Reflection<Action>;
 }
 
 // ─── Registration-time validation ─────────────────────────────────────────
