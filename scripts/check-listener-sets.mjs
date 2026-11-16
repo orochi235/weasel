@@ -4,8 +4,9 @@
  * listener set of its own. The emitter snapshots its listeners, skips one
  * unsubscribed mid-pass, and logs a throw instead of letting it stop the rest;
  * a hand-rolled `new Set<() => void>()` does none of that unless someone
- * remembers to. This fails the build on a `new Set` of functions in kit and app
- * source.
+ * remembers to. This fails the build on a `Set` of functions in kit and app
+ * source, built or declared, and on a `Map` keeping an array of them per key;
+ * listeners filed by key go in `createKeyedEmitter`.
  *
  * To add a site to the allowlist, say in the entry why the set is not a
  * listener set. An entry covers one use: a second in the same file fails until
@@ -23,10 +24,17 @@ const ALLOWED = new Map([
   ['packages/forge/src/shell/framePool.ts', 'not subscribers: the stop for each frame still loading, whose count sizes the pool'],
   ['packages/core/src/core/scene/notifier.ts', 'not subscribers: the notices one hold queued, deduplicated, run once when it settles and cleared'],
   ['packages/core/src/core/scene/outsideReads.ts', 'not subscribers: generation getters, read and summed, never notified'],
-  ['packages/d3/src/transition.ts', 'not subscribers: the cancels pending on one node, run when something else claims it'],
+  ['packages/d3/src/transition.ts', ['not subscribers: the cancels pending on one node, run when something else claims it, and the continuations a chain queues on its own items, taken and run once', 2]],
+  ['packages/d3/src/pendingRemovals.ts', ['not subscribers: the cancels pending on each node, run when something else claims it', 2]],
+  ['packages/animator/src/target.ts', 'not subscribers: the stops of animations over many targets, run once when this one is stopped'],
+  ['packages/core/src/domains/ingestion/contentHandlers.ts', 'not subscribers: the admit releases of each registration of a handler, one popped per unregister'],
+  ['packages/storage/src/memory.ts', 'each subscriber is told in a microtask of its own, after checking it is still subscribed'],
   ['packages/audio/src/graph/fader.ts', 'not subscribers: the done callbacks of one fade, each called once when it ends; audio depends on no kit package'],
-  ['packages/audio/src/testing/fakeAudioContext.ts', "a fake of a platform object, reproducing the platform's semantics rather than the kit's"],
-  ['packages/react/src/testing/stubMatchMedia.ts', "a stub of matchMedia, reproducing the platform's semantics rather than the kit's"],
+  ['packages/audio/src/testing/fakeAudioContext.ts', ["a fake of a platform object, reproducing the platform's semantics rather than the kit's", 2]],
+  ['packages/audio/src/testing/fakeWorker.ts', "a fake of a Worker, reproducing the platform's semantics rather than the kit's"],
+  ['packages/core/src/canvas/renderWorker/testing/fakeWorker.ts', "a fake of a Worker, reproducing the platform's semantics rather than the kit's"],
+  ['packages/core/src/testing/matchMedia.ts', "a double of matchMedia, reproducing the platform's semantics rather than the kit's"],
+  ['packages/react/src/testing/stubMatchMedia.ts', ["a stub of matchMedia, reproducing the platform's semantics rather than the kit's", 2]],
   ['apps/devtools-extension/src/testing/fakePorts.ts', "a fake of the browser's port events, reproducing the platform's semantics rather than the kit's"],
 ]);
 
@@ -37,13 +45,26 @@ const isSource = (name) =>
   !name.endsWith('.d.ts') &&
   name !== 'test-setup.ts';
 
+/** A function type (`() => void`, `(m: M) => void`) or a type named for one (`Listener`, `ChangeSubscriber`). */
+const FN = String.raw`(?:\([^<>]*?\)\s*=>|(?:[A-Z]\w*)?(?:Listener|Subscriber)\s*>)`;
+
+const LISTENER_COLLECTION = new RegExp(
+  [
+    String.raw`\b(?:Readonly)?Set\s*<\s*${FN}`,
+    String.raw`\b(?:Weak)?Map\s*<[^;=]*?,\s*(?:\(\s*\([^()]*\)\s*=>[^()]*\)\[\]|(?:Readonly)?Array\s*<\s*${FN})`,
+    String.raw`\b(?:[A-Z]\w*)?(?:Listener|Subscriber)\[\]`,
+    String.raw`\b(?:Readonly)?Array\s*<\s*(?:[A-Z]\w*)?(?:Listener|Subscriber)\s*>`,
+  ].join('|'),
+  'g',
+);
+
 /**
- * The 1-based lines of `source` that build a `Set` of functions outside a comment: a function type
- * (`new Set<() => void>()`, `new Set<(m: M) => void>`) or a type named for one (`new Set<Listener>()`,
- * `new Set<ChangeSubscriber>`).
+ * The 1-based lines of `source` outside a comment that name a collection of listeners, one per
+ * naming: a `Set` of functions, built or declared (`new Set<() => void>()`,
+ * `listeners: Set<Listener>`, `Map<string, Set<(e: E) => void>>`); a `Map` keeping an array of
+ * functions per key; or an array of a type named for a listener (`Listener[]`).
  */
-export const listenerSetLines = (source) =>
-  matchLines(source, /\bnew\s+Set\s*<\s*(?:\([^<>]*?\)\s*=>|(?:[A-Z]\w*)?(?:Listener|Subscriber)\s*>)/g);
+export const listenerSetLines = (source) => matchLines(source, LISTENER_COLLECTION);
 
 /** Each kit package's `src` and each app, under `root`. */
 function sourceRoots(root) {
@@ -77,8 +98,9 @@ if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) 
     console.error(
       `check:listener-sets — ${offenders.length} hand-rolled listener set(s):\n` +
         offenders.map((o) => `  ${o}`).join('\n') +
-        '\n\nNotify through `createEmitter` from @weasel-js/registry, which snapshots its\n' +
-        'listeners and keeps one that throws from stopping the rest.\n' +
+        '\n\nNotify through `createEmitter` from @weasel-js/registry, or `createKeyedEmitter` for\n' +
+        'listeners filed by key, which snapshot their listeners and keep one that throws from\n' +
+        'stopping the rest.\n' +
         'A set of functions that are not subscribers goes on the allowlist in\n' +
         'scripts/check-listener-sets.mjs, saying why. A file listed there is on it\n' +
         'for fewer uses than it has.',

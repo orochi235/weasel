@@ -209,9 +209,12 @@ name core already gives a constant, so the two can be imported side by side.
 A store keeps its subscribers in `createEmitter()` from `@weasel-js/registry`,
 not a `Set` of its own. The emitter calls the listeners held when the notify
 began, skips one unsubscribed before its turn, and logs a listener that throws
-instead of letting it stop the rest. `npm run check:listener-sets` fails on a
-`new Set` of functions; a set of callbacks that are not subscribers goes on its
-allowlist with the reason.
+instead of letting it stop the rest. Listeners filed by key (per trial, per id)
+go in `createKeyedEmitter()`, whose unsubscribe never removes a later
+subscription to the same key. `npm run check:listener-sets` fails on a `Set` of
+functions, built or declared, and on a `Map` keeping an array of them per key;
+a collection of callbacks that are not subscribers goes on its allowlist with
+the reason.
 
 Equality goes through registry too: `deepEqual` for plain data, never
 `JSON.stringify` (which is key-order sensitive and drops `undefined` keys), and

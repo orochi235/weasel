@@ -21,9 +21,25 @@ describe('listenerSetLines', () => {
       'const seen = new Set<NodeId>();',
       'const states = new Set<TargetState>();',
       'const listenerIds = new Set<ListenerId>();',
-      'const fns: Set<() => void> = createEmitter();',
+      'const stops = new Map<string, () => void>();',
+      'const offs: Array<() => void> = [];',
     ].join('\n');
     expect(listenerSetLines(source)).toEqual([]);
+  });
+
+  it('catches a set of functions declared rather than built', () => {
+    expect(listenerSetLines('interface H {\n  listeners: Set<(id: string) => void>;\n}\n')).toEqual([2]);
+    expect(listenerSetLines('const subs = useRef<ReadonlySet<Listener>>(new Set());\n')).toEqual([1]);
+  });
+
+  it('catches listeners filed by key, in a set or an array per key', () => {
+    expect(listenerSetLines('const a = new Map<string, Set<() => void>>();\n')).toEqual([1]);
+    expect(listenerSetLines('const b = new Map<number, (() => void)[]>();\n')).toEqual([1]);
+    expect(listenerSetLines('const c = new WeakMap<object, Array<(e: E) => void>>();\n')).toEqual([1]);
+  });
+
+  it('catches an array of a type named for a listener', () => {
+    expect(listenerSetLines('const a: Listener[] = [];\nconst b: Array<ChangeSubscriber> = [];\n')).toEqual([1, 2]);
   });
 
   it('ignores one in a comment', () => {
