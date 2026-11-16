@@ -17,18 +17,26 @@ export interface ActionEnabledResult {
 }
 
 const enabledSlowWarned = new Set<string>();
-/** The action ids warned of, by the predicate that threw. */
-const threwWarned = { enabled: new Set<string>(), active: new Set<string>() };
+/** The action ids warned of, by the read that threw. */
+const threwWarned = { enabled: new Set<string>(), active: new Set<string>(), settings: new Set<string>() };
 const ENABLED_BUDGET_MS = 4;
 
-/** In dev, warns once per action that its `enabled` or `active` predicate threw, and what it then reads as. */
-function warnThrew(which: 'enabled' | 'active', action: Action, e: unknown, readsAs: string): void {
+const THREW_READ = {
+  enabled: { call: 'enabled()', doc: 'Action.enabled' },
+  active: { call: 'active()', doc: 'Action.active' },
+  settings: { call: 'settings.read()', doc: 'ActionSettings.read' },
+} as const;
+
+/** In dev, warns once per action that its `enabled` or `active` predicate, or its settings' `read`, threw,
+ *  and what it then reads as. */
+export function warnThrew(which: keyof typeof threwWarned, action: Action, e: unknown, readsAs: string): void {
   const warned = threwWarned[which];
   if (!isDev() || warned.has(action.id)) return;
   warned.add(action.id);
+  const { call, doc } = THREW_READ[which];
   console.warn(
-    `weasel actions: ${which}() for action "${action.id}" threw; treating as ${readsAs}. ` +
-    `The predicate must not throw — see Action.${which} JSDoc.`,
+    `weasel actions: ${call} for action "${action.id}" threw; treating as ${readsAs}. ` +
+    `It must not throw — see ${doc} JSDoc.`,
     e,
   );
 }
