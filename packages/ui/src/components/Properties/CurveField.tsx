@@ -1,5 +1,6 @@
 import { useElementSize } from '@weasel-js/core';
 import { useCallback, useMemo, useRef } from 'react';
+import { snapToStep } from '@weasel-js/quantity';
 import { dlog } from '../../dlog';
 import { type ControlPoint, CurveEditor } from '../CurveEditor';
 import { CurveMarks, type CurveMark } from './CurveMarks';
@@ -68,8 +69,7 @@ export function CurveField({
     (next: readonly ControlPoint[]): number[] => {
       const flat: number[] = new Array(next.length * 2);
       for (let i = 0; i < next.length; i++) {
-        const ySnap = Math.round(next[i].y / step) * step;
-        const y = Math.max(min, Math.min(max, ySnap));
+        const y = Math.max(min, Math.min(max, snapToStep(next[i].y, step, min)));
         flat[i * 2] = next[i].x;
         flat[i * 2 + 1] = y;
       }
