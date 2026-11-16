@@ -1,13 +1,13 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import {
-  commitOps, createScene, scenePoseFrame, type ActionDeps, type ImmediateInvoker, type InvocationCtx, type NodeId, type OngoingHandle,
+  commitOps, createDispatcher, createScene, type Action, type ActionsRegistry, type DispatcherContext, type InputEvent, scenePoseFrame, type ActionDeps, type ImmediateInvoker, type InvocationCtx, type NodeId, type OngoingHandle,
   type OngoingInvoker, type RectPose,
 } from '@weasel-js/core';
 import type { Vec2 } from '@weasel-js/core/math';
 import { withDiagramRegistry } from '../edge';
 import { CONTAINER_STENCILS, containerBuild, lanesOf } from './containerStencils';
-import { createAddLaneAction, createLaneResizeAction, createReleaseMembersAction } from './containerActions';
-import { createLaneAffordance, type LaneScratch } from './laneBoundaryLayer';
+import { createAddLaneAction, createLaneResizeAction, createReleaseMembersAction, diagramContainers } from './containerActions';
+import { createLaneAffordance, LANE_AFFORDANCE_KIND, LANE_LAYER_ID, type LaneScratch } from './laneBoundaryLayer';
 
 function pool() {
   const scene = createScene<Record<string, unknown>, 'main', RectPose>({ systemLayers: [{ id: 'main' }], registry: withDiagramRegistry() });
@@ -120,5 +120,62 @@ describe('the add-lane action', () => {
     (action.invoker as ImmediateInvoker).run({ scene: h.scene } as never, { world: { x: 0, y: 0 }, affordance } as never);
     expect(lanesOf(h.scene as never, h.poolId)).toHaveLength(3);
     expect(pose(h.scene, h.poolId)).toMatchObject({ height: 360 });
+  });
+});
+
+describe('a press on a lane affordance, through the dispatcher', () => {
+  /** The containers, and after them a click on a lane affordance that `next` hears. */
+  function surface(h: ReturnType<typeof pool>) {
+    const contribution = diagramContainers({ scene: h.scene as never });
+    const next = vi.fn();
+    const after = {
+      id: 'after', eligibility: { claimed: [LANE_LAYER_ID] },
+      bindings: [{ spec: { kind: 'click', target: `affordance:${LANE_AFFORDANCE_KIND}` }, actionId: 'after.click' }],
+    };
+    const actions = [...contribution.actions as Action[], { id: 'after.click', label: 'After', invoker: { timing: 'immediate', run: next } } as Action];
+    const registry = { list: () => actions, paramsOf: (_id: string, given?: object) => ({ ...given }) } as unknown as ActionsRegistry;
+    const ctx: DispatcherContext = {
+      actions: registry,
+      depRegistry: { register: vi.fn(), get: (name: string) => (name === 'scene' ? h.scene : undefined) } as never,
+      activeToolId: null,
+      hotkeyStack: [],
+      entriesById: new Map([[contribution.id, contribution as never], [after.id, after as never]]),
+      apple: false,
+    };
+    return { dispatcher: createDispatcher(), ctx, next };
+  }
+  const mods = { altKey: false, ctrlKey: false, metaKey: false, shiftKey: false };
+  const on = (payload: LaneScratch) => ({ affordance: { kind: LANE_AFFORDANCE_KIND, owner: LANE_LAYER_ID, strength: 'exclusive', payload } });
+  const at = (kind: string, y: number, payload: LaneScratch, extra: object = {}) =>
+    ({ kind, x: 200, y, clientX: 200, clientY: y, ...mods, ...on(payload), ...extra }) as unknown as InputEvent;
+
+  it('adds no lane for a click on a boundary, and passes the click on', () => {
+    const h = pool();
+    const { dispatcher, ctx, next } = surface(h);
+    const boundary: LaneScratch = { targetId: h.poolId, poolId: h.poolId, laneId: h.first };
+    const entries = h.scene.historyIndex();
+    dispatcher.handleInput(at('click', 120, boundary, { pressX: 200, pressY: 120 }), ctx);
+    expect(next).toHaveBeenCalledOnce();
+    expect(lanesOf(h.scene as never, h.poolId)).toHaveLength(2);
+    expect(h.scene.historyIndex()).toBe(entries);
+  });
+
+  it('adds a lane for a click on the button', () => {
+    const h = pool();
+    const { dispatcher, ctx, next } = surface(h);
+    const button: LaneScratch = { targetId: h.poolId, poolId: h.poolId };
+    dispatcher.handleInput(at('click', 260, button, { pressX: 200, pressY: 260 }), ctx);
+    expect(lanesOf(h.scene as never, h.poolId)).toHaveLength(3);
+    expect(next).not.toHaveBeenCalled();
+  });
+
+  it('resizes the lane for a drag on its boundary', () => {
+    const h = pool();
+    const { dispatcher, ctx } = surface(h);
+    const boundary: LaneScratch = { targetId: h.poolId, poolId: h.poolId, laneId: h.first };
+    dispatcher.handleInput(at('pointerdown', 120, boundary), ctx);
+    dispatcher.handleInput(at('pointermove', 150, boundary), ctx);
+    dispatcher.handleInput(at('pointerup', 150, boundary), ctx);
+    expect(pose(h.scene, h.first)).toMatchObject({ height: 150 });
   });
 });
