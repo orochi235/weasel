@@ -4,6 +4,7 @@ import {
   useSelection,
   BUILTIN_TOOL_IDS, pickPreset, WeaselProvider,
 } from '@weasel-js/core';
+import { usePencilTool, usePenTool, useSliceTool } from '@weasel-js/path-tools';
 import { ToolPalette } from '@weasel-js/ui/components/ToolPalette';
 import { DemoStage } from './DemoStage';
 
@@ -13,6 +14,9 @@ const W = 600, H = 400;
 const TOOLS = BUILTIN_TOOL_IDS.filter((id) => id !== 'sticky' && id !== 'text');
 
 export function ShapeToolsDemo() {
+  const pen = usePenTool();
+  const pencil = usePencilTool();
+  const slice = useSliceTool();
   const scene = useScene({
     systemLayers: [{ id: 'default' }],
     initial: [],
@@ -30,6 +34,7 @@ export function ShapeToolsDemo() {
             selection={selection}
             features={[pickPreset]}
             defaultTools={TOOLS}
+            tools={{ pen, pencil, slice }}
           />
         </DemoStage>
       </div>
