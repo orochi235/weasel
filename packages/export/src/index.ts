@@ -1,4 +1,4 @@
-export { exportFormatRegistry, exportFormats, exportRegions, registerExportFormat } from './exportFormats';
+export { exportFormatRegistry, exportFormats, exportRegions, pickExportOptions, registerExportFormat } from './exportFormats';
 export { exportPages, pageRegion, pageRegionOf, pageRegionsOf } from './exportPages';
 export { exportRegionPng, type ExportRegionPngOptions, type PngExportOptions } from './regionPng';
 export { selectionRegion } from './selectionRegion';

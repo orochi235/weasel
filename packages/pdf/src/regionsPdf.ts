@@ -5,8 +5,8 @@ import {
   commandRasterizer, createRasterSession, holdImageBitmaps, planPixelRender, viewToMat3, warmRender, type RenderDiagnosticSink,
 } from '@weasel-js/core';
 import {
-  captureExport, exportReporter, regionRenderArgs, registerExportFormat, type ExportDiagnostic, type ExportFormat,
-  type ExportOptions, type ExportRegion, type ExportRegions, type ExportScene,
+  captureExport, exportReporter, pickExportOptions, regionRenderArgs, registerExportFormat, type ExportDiagnostic,
+  type ExportFormat, type ExportOptions, type ExportRegion, type ExportRegions, type ExportScene,
 } from '@weasel-js/export';
 import { registryFontSource } from './fonts/fontSource';
 import { writePdf, type PdfPage, type PdfSkip } from './writePdf';
@@ -127,9 +127,9 @@ export const PDF_EXPORT: ExportFormat<PdfExportOptions> = {
   mimeType: 'application/pdf',
   extension: 'pdf',
   multiRegion: true,
-  export(scene, regions, { background, title, lang, compress, onDiagnostic, strict }) {
-    const picked = { background, title, lang, compress, onDiagnostic, strict };
-    return exportRegionsPdf(scene, regions, Object.fromEntries(Object.entries(picked).filter(([, v]) => v !== undefined)));
+  options: ['title', 'lang', 'compress'],
+  export(scene, regions, opts) {
+    return exportRegionsPdf(scene, regions, pickExportOptions(PDF_EXPORT, opts));
   },
 };
 

@@ -29,8 +29,10 @@ async function writeExport(
 ): Promise<void> {
   const warnings: string[] = [];
   try {
+    const reads: readonly string[] | undefined = format.options;
+    const own = Object.entries({ scale: PNG_SCALE, title: name }).filter(([key]) => !reads || reads.includes(key));
     const blob = await write({
-      background: doc.backgroundColor, scale: PNG_SCALE, title: name, onDiagnostic: (d) => warnings.push(d.message),
+      background: doc.backgroundColor, onDiagnostic: (d) => warnings.push(d.message), ...Object.fromEntries(own),
     });
     downloadBlob(blob, `${name}.${format.extension}`);
   } catch (err) {
