@@ -18,8 +18,9 @@ export interface AutosaveOptions {
   /** When given, a save is scheduled on mount and then only when it changes. Without it, every
    *  render schedules one. */
   revision?: unknown;
-  /** Called after every save attempt with whether the primary entry was written. */
-  onSaved?: (ok: boolean) => void;
+  /** Called after every save attempt with whether the primary entry was written, and the error when `write` threw.
+   *  Without it, a throwing `write` is logged with `console.error`. */
+  onSaved?: (ok: boolean, error?: unknown) => void;
   /** Where the entries are kept, their keys the records' names. Defaults to `localStorage`, under the keys
    *  themselves. */
   records?: RecordCache;
@@ -57,9 +58,9 @@ export function useAutosave(write: () => SessionWrite | null, opts: AutosaveOpti
       let entries: SessionWrite | null;
       try {
         entries = writeRef.current();
-      } catch {
-        // A document that will not serialize.
-        onSaved?.(false);
+      } catch (error) {
+        if (onSaved) onSaved(false, error);
+        else console.error('weasel useAutosave: write threw, so nothing was saved.', error);
         return;
       }
       if (entries === null) return;

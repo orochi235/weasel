@@ -21,8 +21,8 @@ export interface SessionPersistenceOptions {
   loadHistory?: () => unknown;
   /** How long after a change the save runs, as `useAutosave` takes it. Defaults to 300 ms. */
   debounceMs?: number;
-  /** Called after every save attempt with whether the scene was written. */
-  onSaved?: (ok: boolean) => void;
+  /** Called after every save attempt with whether the scene was written, and the error when encoding it threw. */
+  onSaved?: (ok: boolean, error?: unknown) => void;
   /** How the saved undo stack is restored (`Scene.restoreHistory`'s `recovery`). Defaults to `'strict'`, under which
    *  a stack naming an op this build cannot replay is dropped whole. */
   historyRecovery?: HistoryRecovery;
@@ -100,7 +100,7 @@ export function useSessionPersistence<D, L extends string, P>(
       dependents: [[historyKey, saved.history]],
     };
   }, {
-    onSaved: (ok) => optsRef.current.onSaved?.(ok),
+    ...(opts.onSaved ? { onSaved: (ok: boolean, error?: unknown) => optsRef.current.onSaved?.(ok, error) } : {}),
     ...(opts.records ? { records: opts.records } : {}),
     ...(opts.debounceMs !== undefined ? { debounceMs: opts.debounceMs } : {}),
   });
