@@ -10,7 +10,7 @@ import {
   type ReactNode,
 } from 'react';
 import { useElementSize } from '@weasel-js/routing/react';
-import { formatNumber, linearScale, type ContinuousScale, type TickSet } from '@weasel-js/scales';
+import { formatNumber, linearScale, type ContinuousScale, type TickSet } from '@weasel-js/scale';
 import s from './Ruler.module.css';
 import { roundness, thinLabels, type LabelBox } from './thinLabels';
 

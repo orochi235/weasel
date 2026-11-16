@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, afterEach } from 'vitest';
-import { linearScale, logScale, type ContinuousScaleFactory } from '@weasel-js/scales';
+import { linearScale, logScale, type ContinuousScaleFactory } from '@weasel-js/scale';
 import { prefNumberScale } from '../Prefs/prefNumberScale';
 import { unitScale, withinAxis } from './scale';
 

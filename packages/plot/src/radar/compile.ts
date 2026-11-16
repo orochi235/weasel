@@ -7,7 +7,7 @@ import { areaMark, lineMark, ruleMark } from '../marks/paths';
 import { textMark } from '../marks/text';
 import type { PlotMark, PlotPoint } from '../marks/types';
 import type { PlotMeasure } from '../measure';
-import { polarScale, type PolarScale } from '@weasel-js/scales';
+import { polarScale, type PolarScale } from '@weasel-js/scale';
 import { seriesColor, type PlotTheme } from '../theme';
 import type { RadarData } from './types';
 

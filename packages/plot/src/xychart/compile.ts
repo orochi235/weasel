@@ -7,9 +7,9 @@ import { CHART_PAD as PAD, chartTitle } from '../chartTitle';
 import { clipPolyline, rectArea } from '../marks/clip';
 import type { PlotMark } from '../marks/types';
 import type { PlotMeasure } from '../measure';
-import { bandScale } from '@weasel-js/scales';
-import { linearScale, niceDomain, type LinearScale } from '@weasel-js/scales';
-import type { Scale } from '@weasel-js/scales';
+import { bandScale } from '@weasel-js/scale';
+import { linearScale, niceDomain, type LinearScale } from '@weasel-js/scale';
+import type { Scale } from '@weasel-js/scale';
 import { seriesColor, type PlotTheme } from '../theme';
 import type { XyChartData } from './types';
 

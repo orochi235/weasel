@@ -5,7 +5,7 @@ import { spanMark } from '../marks/boxes';
 import { textMark } from '../marks/text';
 import type { PlotMark } from '../marks/types';
 import type { PlotMeasure } from '../measure';
-import { bandScale, type BandScale } from '@weasel-js/scales';
+import { bandScale, type BandScale } from '@weasel-js/scale';
 import { seriesColor, type PlotTheme } from '../theme';
 import type { PacketData, PacketField } from './types';
 

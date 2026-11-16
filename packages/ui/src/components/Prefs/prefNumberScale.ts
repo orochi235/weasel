@@ -1,6 +1,6 @@
 import type { PrefNumberScale } from '@weasel-js/prefs';
 import { isDev } from '@weasel-js/registry';
-import { linearScale, logScale, powScale, warpScale, type ContinuousScaleFactory } from '@weasel-js/scales';
+import { linearScale, logScale, powScale, warpScale, type ContinuousScaleFactory } from '@weasel-js/scale';
 
 /** A log factory per caller, each warning once, under its caller's name, when its track does not lie above zero. */
 const logs = new Map<string, ContinuousScaleFactory>();

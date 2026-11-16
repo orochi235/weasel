@@ -4,7 +4,7 @@
  */
 import { describe, expect, it } from 'vitest';
 import fc from 'fast-check';
-import { linearScale, logScale, powScale, type ContinuousScaleFactory } from '@weasel-js/scales';
+import { linearScale, logScale, powScale, type ContinuousScaleFactory } from '@weasel-js/scale';
 import { catchStop } from './components/Properties/sliderStops';
 import { trackPlace } from './components/Properties/sliderScale';
 import { finite, runs, tally, timeoutFor } from './pbt.fixture';

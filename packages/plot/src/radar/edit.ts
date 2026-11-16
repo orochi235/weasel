@@ -1,5 +1,5 @@
 /** Edits to a radar, as plain data in and out. */
-import { decimalsOf } from '@weasel-js/scales';
+import { decimalsOf } from '@weasel-js/scale';
 import type { PlotPoint } from '../marks/types';
 import type { RadarLayout } from './compile';
 import type { RadarData } from './types';

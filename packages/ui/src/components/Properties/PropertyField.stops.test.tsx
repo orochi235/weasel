@@ -5,7 +5,7 @@ import { stubRect } from '../Slider/testing/stubRect';
 import { PropertyField } from './PropertyField';
 import { catchStop } from './sliderStops';
 import { trackPlace } from './sliderScale';
-import { logScale } from '@weasel-js/scales';
+import { logScale } from '@weasel-js/scale';
 
 /** A slider over 0..100 holding its own value, reporting moves and the release apart. */
 function Detents({ start = 40, step = 1, onInput = () => {}, onChange = () => {} }: {

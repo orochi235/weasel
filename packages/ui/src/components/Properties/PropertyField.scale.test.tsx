@@ -1,7 +1,7 @@
 import { fireEvent, render, screen } from '@testing-library/react';
 import { useState } from 'react';
 import { describe, expect, it, vi } from 'vitest';
-import { logScale, type ContinuousScaleFactory } from '@weasel-js/scales';
+import { logScale, type ContinuousScaleFactory } from '@weasel-js/scale';
 import { stubRect } from '../Slider/testing/stubRect';
 import { PropertyField } from './PropertyField';
 import { trackPlace } from './sliderScale';

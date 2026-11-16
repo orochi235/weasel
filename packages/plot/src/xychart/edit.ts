@@ -1,5 +1,5 @@
 /** Edits to an xychart, as plain data in and out. */
-import { decimalsOf } from '@weasel-js/scales';
+import { decimalsOf } from '@weasel-js/scale';
 import { xyLength, type XyLayout } from './compile';
 import type { XyChartData } from './types';
 

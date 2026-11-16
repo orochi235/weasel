@@ -1,5 +1,5 @@
 {
-  "name": "@weasel-js/scales",
+  "name": "@weasel-js/scale",
   "version": "1.19.1",
   "description": "Scales: values onto a range and back, linear, log, power, warped, time, band, ordinal and polar; the ticks an axis marks; and how they read. No React, no DOM and no scene.",
   "weasel": {
@@ -23,7 +23,7 @@
   "repository": {
     "type": "git",
     "url": "git+https://github.com/orochi235/weasel.git",
-    "directory": "packages/scales"
+    "directory": "packages/scale"
   },
   "bugs": {
     "url": "https://github.com/orochi235/weasel/issues"

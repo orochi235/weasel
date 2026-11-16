@@ -3,7 +3,7 @@ import type { Meta, StoryObj } from '@weasel-js/forge';
 import { useArgs } from '@weasel-js/forge/preview-api';
 import { endless, unit } from '@weasel-js/quantity';
 import { Along } from '@weasel-js/ui/components/Along';
-import { logScale } from '@weasel-js/scales';
+import { logScale } from '@weasel-js/scale';
 import { Slider, type Thumb } from '@weasel-js/ui/components/Slider';
 import { Button } from '@weasel-js/ui/components/Button';
 import { paintGradientTrack } from '@weasel-js/ui/paint-gradient-track';

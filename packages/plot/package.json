@@ -1,7 +1,7 @@
 {
   "name": "@weasel-js/plot",
   "version": "1.19.1",
-  "description": "Charts on weasel's scene graph: axes and marks over @weasel-js/scales that keep their data, and chart specs compiled to them, edited by dragging the marks.",
+  "description": "Charts on weasel's scene graph: axes and marks over @weasel-js/scale that keep their data, and chart specs compiled to them, edited by dragging the marks.",
   "weasel": {
     "tier": "plugin"
   },
@@ -44,7 +44,7 @@
     "@weasel-js/editing": "1.19.1",
     "@weasel-js/geom": "1.19.1",
     "@weasel-js/registry": "1.19.1",
-    "@weasel-js/scales": "1.19.1",
+    "@weasel-js/scale": "1.19.1",
     "@weasel-js/text": "1.19.1",
     "@weasel-js/theme": "1.19.1"
   },

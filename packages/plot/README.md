@@ -14,7 +14,7 @@ npm install @weasel-js/plot
 
 ## Two layers
 
-**Scales, axes and marks.** A scale, from `@weasel-js/scales`, maps values onto a range and says which
+**Scales, axes and marks.** A scale, from `@weasel-js/scale`, maps values onto a range and says which
 values an axis marks and how they read: `linearScale`, `logScale`,
 `bandScale`, `timeScale` (ticks on calendar units, in UTC), `ordinalScale`, and
 `polarScale` (a value along each of several spokes from a center).

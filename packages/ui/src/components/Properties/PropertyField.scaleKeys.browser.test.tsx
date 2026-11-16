@@ -3,7 +3,7 @@ import { cleanup, render, screen } from '@testing-library/react';
 import { useState } from 'react';
 import { afterEach, describe, expect, test, vi } from 'vitest';
 import { userEvent } from 'vitest/browser';
-import { logScale, type ContinuousScaleFactory } from '@weasel-js/scales';
+import { logScale, type ContinuousScaleFactory } from '@weasel-js/scale';
 import { PropertyField } from '@weasel-js/ui/components/Properties';
 
 afterEach(cleanup);

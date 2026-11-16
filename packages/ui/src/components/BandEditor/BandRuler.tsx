@@ -1,6 +1,6 @@
 import { forwardRef, type PointerEvent as ReactPointerEvent, type ReactNode } from 'react';
 import type { Display } from '@weasel-js/quantity';
-import type { ContinuousScale } from '@weasel-js/scales';
+import type { ContinuousScale } from '@weasel-js/scale';
 import { QuantityText } from '../QuantityText';
 import { Ruler, RulerMark, type RulerTick } from '../Ruler';
 import s from './BandEditor.module.css';

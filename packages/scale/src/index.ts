@@ -1,5 +1,5 @@
 /**
- * @weasel-js/scales — values onto a range and back, the ticks an axis marks, and how they read. No React,
+ * @weasel-js/scale — values onto a range and back, the ticks an axis marks, and how they read. No React,
  * no DOM and no scene, so a control that places values along a track, a chart, or a server that lays out an
  * axis takes them alike.
  *

@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from '@weasel-js/forge';
-import { linearScale, logScale } from '@weasel-js/scales';
+import { linearScale, logScale } from '@weasel-js/scale';
 import { Ruler, RulerMark, type RulerTick } from '@weasel-js/ui/components/Ruler';
 import s from './Ruler.stories.module.css';
 
