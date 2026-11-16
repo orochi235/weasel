@@ -538,11 +538,10 @@ only story runner in the repo.
 
 ## Release-gate & build hygiene
 
-- **(P2) `weasel/no-proto-index` has 773 sites pending in 308 files** (2026-11-15): reads and writes of a
+- **(P2) `npm run check:proto-index` has 773 sites pending in 308 files** (2026-11-15): reads and writes of a
   `string`-indexed object with a `string` key, which go through `Object.prototype` for a name like `toString`. The
-  files are listed in `scripts/eslint/no-proto-index.pending.json`,
-  skipped by lint, and `npm run check:proto-pending` fails when a listed file is clean, so the list only shrinks;
-  `-- --scan` lists every site. Most sit in theme (125), prefs (85), forge (80), diagram (60), ui (53), core (51).
+  files are listed in `scripts/check-proto-index.pending.json`, which the check skips, and it fails when a listed
+  file is clean, so the list only shrinks; `-- --scan` lists every site. Most sit in theme (125), prefs (85), forge (80), diagram (60), ui (53), core (51).
   Closes when the pending list is empty.
 
 - **(P2) `packages/svg/src/textModes.test.ts` fails 2 outline-mode tests in a worktree linked by

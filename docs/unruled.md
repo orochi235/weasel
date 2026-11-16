@@ -2462,7 +2462,7 @@ Calls the lanes made without a ruling:
 - 2026-11-15 (the lane's call): a d3 transition handler passed to `on('end')` twice runs once, as every `createEmitter`
   listener does.
 - Ruled 2026-11-15: d3 cancel keys are built by `transitionCancelKey`, on `compositeKey`; the format is no longer documented.
-- Ruled 2026-11-15: eslint takes typed parsing for one rule, `weasel/no-proto-index`; its unfixed files sit on a pending list that `check:proto-pending` lets only shrink (TODO).
+- Ruled 2026-11-15: `record[key]` reaching `Object.prototype` is checked with type information, first as an eslint rule; the same day lint ran out of heap on it, so it runs as `check:proto-index`, one program over shipped source, and its unfixed files sit on a pending list that only shrinks (TODO).
 - Ruled 2026-11-15: snapshots keep `Infinity`, `-Infinity`, `NaN` and `-0` as `{ "__num": … }` tags, and the kit's default clipboard writes through the codec.
 - Ruled 2026-11-15: a router command is disabled when every selected connector already uses it.
 - Ruled 2026-11-15: `diagram.layout` is disabled when the layout would move nothing; `enabled` and `run` share one memoized plan.

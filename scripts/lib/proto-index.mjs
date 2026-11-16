@@ -1,13 +1,12 @@
 /**
- * Reports `record[key]` and `record[key] = value` where `record`'s type has a `string` index signature and
+ * Finds `record[key]` and `record[key] = value` where `record`'s type has a `string` index signature and
  * `key` is typed `string`. Such a read goes through `Object.prototype`, so a key from a user, a file or a
  * schema that names `toString` or `constructor` finds a built-in function, and a write to `__proto__` changes
  * the prototype instead. A key typed as a union of literals, a `Map`, an array and a numeric index are not
  * reported, and neither is an access guarded by an own-key test (a write, by `key !== '__proto__'`) or keyed by
  * the record's own keys.
  *
- * Type-aware: the decision is `protoIndexAccess`, on TypeScript's own nodes, so a script can run it outside
- * ESLint over a whole program.
+ * `npm run check:proto-index` runs it over one program of every shipped source file.
  */
 import ts from 'typescript';
 
@@ -188,32 +187,13 @@ export function protoIndexAccess(checker, node) {
   return write ? 'write' : 'read';
 }
 
-export default {
-  meta: {
-    type: 'problem',
-    docs: { description: 'Disallow indexing a string-keyed record with a `string` key, which reaches Object.prototype.' },
-    schema: [],
-    messages: {
-      read:
-        '`record[key]` finds `toString`, `constructor` and every other Object.prototype member when the key names one. ' +
-        "Read it with getOwn, or test it with hasOwnKey, from '@weasel-js/registry' (Object.hasOwn where registry is out of reach), " +
-        'or type the key as the union of names it can be.',
-      write:
-        "`record[key] = value` with a key of `__proto__` changes the record's prototype. Write it with setOwn from " +
-        "'@weasel-js/registry', keep the record in a Map, or type the key as the union of names it can be.",
-    },
-  },
-  create(context) {
-    const services = context.sourceCode.parserServices;
-    if (!services?.program) throw new Error('weasel/no-proto-index needs typed parsing (parserOptions.projectService).');
-    const checker = services.program.getTypeChecker();
-    return {
-      'MemberExpression[computed=true]'(node) {
-        const tsNode = services.esTreeNodeToTSNodeMap.get(node);
-        if (!tsNode || !ts.isElementAccessExpression(tsNode)) return;
-        const access = protoIndexAccess(checker, tsNode);
-        if (access) context.report({ node, messageId: access });
-      },
-    };
-  },
+/** What a site is told, by what `protoIndexAccess` answered. */
+export const PROTO_INDEX_MESSAGES = {
+  read:
+    '`record[key]` finds `toString`, `constructor` and every other Object.prototype member when the key names one. ' +
+    "Read it with getOwn, or test it with hasOwnKey, from '@weasel-js/registry' (Object.hasOwn where registry is out of reach), " +
+    'or type the key as the union of names it can be.',
+  write:
+    "`record[key] = value` with a key of `__proto__` changes the record's prototype. Write it with setOwn from " +
+    "'@weasel-js/registry', keep the record in a Map, or type the key as the union of names it can be.",
 };

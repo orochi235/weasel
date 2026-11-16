@@ -8,7 +8,6 @@ import noArrowStrictWrapper from './scripts/eslint/no-arrow-strict-wrapper.mjs';
 import noDynamicIn from './scripts/eslint/no-dynamic-in.mjs';
 import noHandLerp from './scripts/eslint/no-hand-lerp.mjs';
 import noPackageStarExport from './scripts/eslint/no-package-star-export.mjs';
-import noProtoIndex from './scripts/eslint/no-proto-index.mjs';
 import noRenderRefWrite from './scripts/eslint/no-render-ref-write.mjs';
 
 /**
@@ -26,20 +25,14 @@ const CORE_ALIASES = (() => {
 /**
  * ESLint flat config: architectural boundaries, then a correctness baseline.
  *
- * No formatting rules: nothing here should have an opinion about layout. One type-aware rule,
- * `weasel/no-proto-index`, ruled in on 2026-11-15: whether `record[key]` can reach Object.prototype
- * turns on the key's type (`string` against a union of names), which no syntactic rule can see.
- * Typed parsing builds a TypeScript program per tsconfig and is the slowest thing lint does, so
- * it is configured only in that rule's own block, over shipped source, and no other rule may use it.
+ * No formatting rules and no type-aware rules — `tsc --noEmit` covers types, and nothing here
+ * should have an opinion about layout. The one check that needs types runs as `check:proto-index`,
+ * because type information over the whole repo does not fit in lint's heap.
  *
  * Deliberately off — eslint-plugin-react-hooks v7's `refs` rule: reading a ref during render is
  * how a canvas library gets at mutable frame state. It cannot be narrowed to writes, so
  * render-time ref writes are the local `weasel/no-render-ref-write` instead.
  */
-
-const PROTO_INDEX_PENDING = JSON.parse(
-  readFileSync(new URL('./scripts/eslint/no-proto-index.pending.json', import.meta.url), 'utf8'),
-);
 
 const languageOptions = {
   parser: tsParser,
@@ -53,7 +46,7 @@ const plugins = {
   'react-hooks': reactHooks,
   weasel: { rules: { 'no-render-ref-write': noRenderRefWrite, 'glob-literal-args': globLiteralArgs, 'no-package-star-export': noPackageStarExport,
     'no-arrow-strict-wrapper': noArrowStrictWrapper, 'no-dynamic-in': noDynamicIn, 'no-hand-lerp': noHandLerp,
-    'effect-cleanup': effectCleanup, 'no-proto-index': noProtoIndex } },
+    'effect-cleanup': effectCleanup } },
 };
 
 /**
@@ -369,22 +362,6 @@ export default [
   {
     files: ['**/*.{ts,tsx}'],
     rules: { 'no-restricted-syntax': ['error', ...RESTRICTED_EVERYWHERE] },
-  },
-  {
-    /**
-     * The one type-aware rule (see the header). Files in `no-proto-index.pending.json` held a flagged
-     * access when the rule landed; `check:proto-pending` fails on an entry whose file is fixed, and none goes on.
-     */
-    files: ['packages/*/src/**/*.{ts,tsx}', 'apps/*/src/**/*.{ts,tsx}'],
-    ignores: [
-      '**/*.{test,spec,bench}.{ts,tsx}', '**/*.stories.{ts,tsx}', '**/*.fixture.{ts,tsx}', '**/*.fixtures.{ts,tsx}',
-      '**/__tests__/**', '**/testing/**', ...PROTO_INDEX_PENDING,
-    ],
-    languageOptions: {
-      ...languageOptions,
-      parserOptions: { ...languageOptions.parserOptions, projectService: true, tsconfigRootDir: import.meta.dirname },
-    },
-    rules: { 'weasel/no-proto-index': 'error' },
   },
   {
     /** Shipped and demo source, where each of these decisions has one helper every caller uses. */

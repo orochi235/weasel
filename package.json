@@ -76,7 +76,7 @@
     "check:timers": "tsx scripts/check-timers.ts",
     "check:audio-worklet": "node packages/audio/scripts/gen-worklet.mjs --check",
     "check:size": "node scripts/check-size.mjs",
-    "check:proto-pending": "node scripts/check-proto-pending.mjs",
+    "check:proto-index": "node scripts/check-proto-index.mjs",
     "inventory:core": "node scripts/core-inventory.mjs",
     "check:engine-boundary": "node scripts/gen-engine-entry.mjs --check && node scripts/check-engine-boundary.mjs",
     "gen:engine-entry": "node scripts/gen-engine-entry.mjs",
