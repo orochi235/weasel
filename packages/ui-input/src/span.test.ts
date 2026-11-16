@@ -10,6 +10,11 @@ describe('a place along a span', () => {
     expect(spanMap(span).toValue(spanMap(span).toFraction(450))).toBeCloseTo(450, 9);
   });
 
+  it("gives the span's end itself at 1, where a hand lerp misses it by an ulp", () => {
+    expect(0.7 + 1 * (0.1 - 0.7)).not.toBe(0.1);
+    expect(spanValue({ from: 0.7, to: 0.1 }, 1)).toBe(0.1);
+  });
+
   it('runs negative before the span and past 1 after it', () => {
     expect(spanPlace(span, 100)).toBeCloseTo(-0.1, 12);
     expect(spanPlace(span, 1700)).toBeCloseTo(1.5, 12);

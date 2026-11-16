@@ -1,4 +1,5 @@
 import type { TrackMap } from './slider';
+import { lerp } from '@weasel-js/geom';
 
 /** A stretch of values: a track's whole range, or the part of it a track shows. */
 export interface Span {
@@ -15,7 +16,7 @@ export function spanPlace(span: Span, v: number): number {
 
 /** The value at fraction `f` of `span`. */
 export function spanValue(span: Span, f: number): number {
-  return span.from + f * (span.to - span.from);
+  return lerp(span.from, span.to, f);
 }
 
 /** A length as a fraction of `span`'s. Unlike {@link spanPlace} it measures no position, so `span.from` has no say. */
