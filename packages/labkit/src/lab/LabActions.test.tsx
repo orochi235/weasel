@@ -102,7 +102,7 @@ describe('a lab’s actions registry', () => {
     await press(container.querySelector('.lk-stage'));
     await press(screen.getByTestId('elsewhere'));
     await act(async () => {
-      fireEvent.keyDown(window, { key: 'x' });
+      fireEvent.keyDown(document.body, { key: 'x' });
     });
     expect(run).not.toHaveBeenCalled();
   });
@@ -118,7 +118,7 @@ describe('a lab’s actions registry', () => {
       { wrapper: withIcons },
     );
     await act(async () => {
-      fireEvent.keyDown(window, { key: 'x' });
+      fireEvent.keyDown(document.body, { key: 'x' });
     });
     expect(run).not.toHaveBeenCalled();
   });
@@ -141,7 +141,7 @@ describe('a lab’s actions registry', () => {
       { wrapper: withIcons },
     );
     await act(async () => {
-      fireEvent.keyDown(window, { key: 'k', ...MOD });
+      fireEvent.keyDown(document.body, { key: 'k', ...MOD });
     });
     expect(run).toHaveBeenCalledTimes(1);
   });
@@ -180,7 +180,7 @@ describe('a lab’s actions registry', () => {
       { wrapper: withIcons },
     );
     await act(async () => {
-      fireEvent.keyDown(window, { key: '=', ...MOD });
+      fireEvent.keyDown(document.body, { key: '=', ...MOD });
     });
     expect(set).toHaveBeenCalled();
     expect(current.scale.x).toBeGreaterThan(1);

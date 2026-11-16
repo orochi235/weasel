@@ -1,6 +1,7 @@
 import {
   fitViewToPage, pageHolding, pageInView, useLatest, viewportWorldRect, type PlacedPage, type View,
 } from '@weasel-js/core';
+import { heldPointers } from '@weasel-js/gestures';
 import { useEffect, useRef, useState } from 'react';
 
 /** How the view moves through a document's pages: freely (`'continuous'`, the default), or coming to rest
@@ -29,25 +30,15 @@ function near(a: View, b: View): boolean {
     && Math.abs(a.scale.x / b.scale.x - 1) < 1e-3 && Math.abs(a.scale.y / b.scale.y - 1) < 1e-3;
 }
 
-/** Whether any pointer is down in the window, counted by `pointerId` so a pinch stays down while one
- *  finger is. A window blur clears them, since their releases may never arrive. */
+/** Whether any pointer is down on the page, by `heldPointers`, so a pinch stays down while one finger is. */
 function usePointerDown(on: boolean): boolean {
   const [down, setDown] = useState(false);
   useEffect(() => {
     if (!on) return;
-    const held = new Set<number>();
-    const press = (e: PointerEvent) => { held.add(e.pointerId); setDown(true); };
-    const release = (e: PointerEvent) => { held.delete(e.pointerId); setDown(held.size > 0); };
-    const clear = () => { held.clear(); setDown(false); };
-    window.addEventListener('pointerdown', press, true);
-    window.addEventListener('pointerup', release, true);
-    window.addEventListener('pointercancel', release, true);
-    window.addEventListener('blur', clear);
+    const held = heldPointers(document.documentElement);
+    held.subscribe(() => setDown(held.count() > 0));
     return () => {
-      window.removeEventListener('pointerdown', press, true);
-      window.removeEventListener('pointerup', release, true);
-      window.removeEventListener('pointercancel', release, true);
-      window.removeEventListener('blur', clear);
+      held.release();
       setDown(false);
     };
   }, [on]);

@@ -95,7 +95,7 @@
     "longestFunction": 206
   },
   "packages/labkit/src/lab/Lab.tsx": {
-    "longestFunction": 171
+    "longestFunction": 169
   },
   "packages/labkit/src/lab/Workspace.tsx": {
     "longestFunction": 159
@@ -126,7 +126,7 @@
     "longestFunction": 297
   },
   "packages/labkit/src/trial/TrialChrome.tsx": {
-    "longestFunction": 195
+    "longestFunction": 178
   },
   "packages/path-tools/src/pen/penPreviewLayer.ts": {
     "longestFunction": 138

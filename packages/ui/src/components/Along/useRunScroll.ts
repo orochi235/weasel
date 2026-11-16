@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, type FocusEvent as ReactFocusEvent, type PointerEvent as ReactPointerEvent, type RefObject } from 'react';
-import { openPointerSession, type PointerSession } from '@weasel-js/routing';
+import { openPointerSession, type PointerSession, swallowNextClick } from '@weasel-js/routing';
 import { isPrimaryPress, modHeld, DRAG_THRESHOLD_PX } from '@weasel-js/gestures';
 import { clamp, lerp, type RunSpot, type TrackRun } from '@weasel-js/geom';
 import { wheelPixels } from '@weasel-js/ui-input';
@@ -133,7 +133,7 @@ export function useRunScroll({ root, keyOf, itemsOf, frame, run, total, spots, l
     };
     const onEnd = (): void => {
       session.current = null;
-      if (scrolling) swallowClick(el.ownerDocument);
+      if (scrolling) swallowNextClick(el.ownerDocument);
     };
     const onCancel = (): void => {
       session.current = null;
@@ -180,14 +180,4 @@ export function positionAt(frame: Element, run: TrackRun, e: { clientX: number; 
 function runIndex(root: HTMLElement, keyOf: RunKeyOf, target: Node, itemsOf?: RunItemsOf): number {
   const items = Array.from(itemsOf ? itemsOf(root) : root.children).filter((child) => keyOf(child) !== null);
   return items.findIndex((item) => item.contains(target));
-}
-
-/** Swallow the click a drag's release is about to raise; a release that raises none lets go before the next task. */
-function swallowClick(doc: Document): void {
-  const swallow = (e: Event): void => {
-    e.stopPropagation();
-    e.preventDefault();
-  };
-  doc.addEventListener('click', swallow, { capture: true, once: true });
-  setTimeout(() => doc.removeEventListener('click', swallow, { capture: true }), 0);
 }

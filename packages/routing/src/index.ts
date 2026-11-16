@@ -196,7 +196,7 @@ export {
   ANY_MODS, DRAG_THRESHOLD_PX, pastDragThreshold, CONTROL_SELECTOR, isInControlWithin, isPrimaryPress,
 } from '@weasel-js/gestures';
 export { DEFAULT_KEYMAP_UNBOUND, type GestureKitSettings } from './kitSettings';
-export { openPointerSession } from './interactions/pointerSession';
+export { openPointerSession, swallowClick, swallowNextClick } from './interactions/pointerSession';
 export { startThresholdDrag } from './interactions/thresholdDrag';
 export { tuneToolOptions } from './tools/tuneToolOptions';
 export type { ThresholdDragOptions, ThresholdDragHandle } from './interactions/thresholdDrag';
@@ -205,7 +205,7 @@ export type { Carry, CarryCallbacks, CarryPayload, CarryPointer, CarryStage } fr
 export { sweepAction, SWEEP_BINDING } from './interactions/sweep';
 export type { SweepItem, SweepOptions, SweepPress, SweepRun } from './interactions/sweep';
 export type {
-  PointerSession, PointerSessionOptions, PointerSessionCallbacks, PointerSessionCancelReason,
+  PointerSession, PointerSessionOptions, PointerSessionCallbacks, PointerSessionCancelReason, SwallowClickOptions,
 } from './interactions/pointerSession';
 
 // ─── eligibility rule algebra ─────────────────────────────────────────────

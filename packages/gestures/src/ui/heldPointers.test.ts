@@ -98,3 +98,38 @@ describe('heldPointers', () => {
     expect(b.count()).toBe(0);
   });
 });
+
+describe('heldPointers subscribe', () => {
+  it('reports each change of count, and stops once unsubscribed or released', () => {
+    const el = mount();
+    const held = read(el);
+    const seen: number[] = [];
+    const off = held.subscribe(() => seen.push(held.count()));
+    send(el, 'pointerdown');
+    send(el, 'pointerdown', { pointerId: 2 });
+    send(document.body, 'pointerup');
+    expect(seen).toEqual([1, 2, 1]);
+    off();
+    send(document.body, 'pointerup', { pointerId: 2 });
+    expect(seen).toEqual([1, 2, 1]);
+
+    const other = read(el);
+    const later: number[] = [];
+    other.subscribe(() => later.push(other.count()));
+    other.release();
+    send(el, 'pointerdown');
+    expect(later).toEqual([]);
+  });
+
+  it('reports a release read from a move with nothing held, and a window blur', () => {
+    const el = mount();
+    const held = read(el);
+    const seen: number[] = [];
+    held.subscribe(() => seen.push(held.count()));
+    send(el, 'pointerdown', { buttons: 1 });
+    send(document, 'pointermove', { buttons: 0 });
+    send(el, 'pointerdown', { buttons: 1 });
+    window.dispatchEvent(new Event('blur'));
+    expect(seen).toEqual([1, 0, 1, 0]);
+  });
+});

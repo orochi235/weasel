@@ -7,7 +7,8 @@ import {
   type TrialHistorySource,
   useMountedHistory,
 } from '../trial/trialHistory';
-import { REDO_SHORTCUT, UNDO_SHORTCUT, useUndoKeys } from '../undo/useUndoKeys';
+import { REDO_SHORTCUT, UNDO_SHORTCUT } from '../undo/useUndoKeys';
+import type { ChordTarget } from './labChords';
 import type { LabProps } from './labProps';
 
 const NO_INSTRUMENTS: InstrumentList = [];
@@ -58,6 +59,17 @@ function historyItems(
   ];
 }
 
+/** The lab's Undo and Redo chords, stepping `history`. */
+function historyChords(history: TrialHistorySource): ChordTarget {
+  return {
+    can: (chord) => (chord === 'undo' ? history.canUndo() : chord === 'redo' && history.canRedo()),
+    run: (chord) => {
+      if (chord === 'undo') history.undo();
+      else if (chord === 'redo') history.redo();
+    },
+  };
+}
+
 /**
  * A lab with no trials stands in for the trial as the slot `useTrialHistory` hands a history to: the history mounted
  * last gets Undo and Redo at the start of the lab's header, and Mod+Z and Shift+Mod+Z. `mount` is null in a lab that
@@ -66,15 +78,19 @@ function historyItems(
 export function useTriallessHistory(
   trialless: boolean,
   labChrome: readonly LabContribution[] | undefined,
-): { mount: MountTrialHistory | null; labChrome: readonly LabContribution[] | undefined } {
+): {
+  mount: MountTrialHistory | null;
+  labChrome: readonly LabContribution[] | undefined;
+  chords: ChordTarget | null;
+} {
   const { mount, history } = useMountedHistory();
   const held = trialless ? history : null;
-  useUndoKeys(held);
   const canUndo = held?.canUndo() ?? false;
   const canRedo = held?.canRedo() ?? false;
   const merged = useMemo(
     () => (held ? [...historyItems(held, canUndo, canRedo), ...(labChrome ?? [])] : labChrome),
     [held, canUndo, canRedo, labChrome],
   );
-  return { mount: trialless ? mount : null, labChrome: merged };
+  const chords = useMemo(() => (held ? historyChords(held) : null), [held]);
+  return { mount: trialless ? mount : null, labChrome: merged, chords };
 }

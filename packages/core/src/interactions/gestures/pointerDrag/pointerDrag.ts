@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef } from 'react';
 import { useKitSettings, useLatest } from '@weasel-js/react';
 import { fixedSeat, type FixedSeat, isPrimaryPress } from '@weasel-js/gestures';
-import { openPointerSession, pastDragThreshold, type PointerSession } from '@weasel-js/routing';
+import { openPointerSession, pastDragThreshold, type PointerSession, swallowClick } from '@weasel-js/routing';
 
 /** Payload carried by an in-flight pointer drag — `kind` routes to drop zones, `ids` lists the dragged items. */
 export interface DragPayload {
@@ -200,9 +200,7 @@ export function useDragHandle(
         past = true;
         const payload = getPayload();
         if (!payload) return;
-        const swallowClick = (ce: MouseEvent) => { ce.stopPropagation(); ce.preventDefault(); };
-        target.addEventListener('click', swallowClick, { capture: true, once: true });
-        dropClickGuard = () => target.removeEventListener('click', swallowClick, { capture: true });
+        dropClickGuard = swallowClick(target);
         ghost = beginPointerDrag(
           payload, target, ev.clientX, ev.clientY,
           optsRef.current?.createGhost ?? defaultGhost,

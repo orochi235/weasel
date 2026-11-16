@@ -157,7 +157,7 @@ describe('a lab’s header commands', () => {
       { wrapper: withIcons },
     );
     await act(async () => {
-      fireEvent.keyDown(window, { key: 'j', ...MOD });
+      fireEvent.keyDown(document.body, { key: 'j', ...MOD });
     });
     expect(onActivate).toHaveBeenCalledTimes(1);
     const field = container.querySelector('input');
@@ -313,7 +313,7 @@ describe('a lab’s header commands', () => {
       wrapper: withIcons,
     });
     await act(async () => {
-      fireEvent.keyDown(window, { key: 'i', ...MOD });
+      fireEvent.keyDown(document.body, { key: 'i', ...MOD });
     });
     expect(onActivate).toHaveBeenCalledTimes(1);
   });

@@ -13,7 +13,7 @@ const pages = { placed: [A, B] };
 const fit = (page: PlacedPage, from: View) => fitViewToPage(page, DIMS, from, { padding: 24 })!;
 
 const pointer = (type: string, pointerId: number) => {
-  act(() => { window.dispatchEvent(Object.assign(new Event(type), { pointerId })); });
+  act(() => { document.body.dispatchEvent(Object.assign(new Event(type, { bubbles: true }), { pointerId })); });
 };
 
 afterEach(() => { vi.useRealTimers(); });

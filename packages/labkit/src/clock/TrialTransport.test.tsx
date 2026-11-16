@@ -43,8 +43,12 @@ const it = liveTest.extend<{ mount: typeof mountTimed }>({
 
 const c = () => clock as TrialClock;
 const press = (name: string) => act(() => fireEvent.click(screen.getByRole('button', { name })));
+// A key lands where focus is, so the target takes the focus first.
 const key = (k: string, target: Element = document.body) =>
-  act(() => fireEvent.keyDown(target, { key: k }));
+  act(() => {
+    (target as HTMLElement).focus();
+    fireEvent.keyDown(target, { key: k });
+  });
 
 afterEach(() => {
   clock = null;
