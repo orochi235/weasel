@@ -213,6 +213,9 @@ A stored config missing something its schema has since gained — a whole nested
 group included — is filled from the instrument's defaults as it loads, so
 growing a schema never strands a saved trial or a snapshot.
 
+A trial with settings has a Copy settings as JSON button in its title bar, which copies its current
+config, the way `setConfig` paths address it, to the clipboard.
+
 ### Auto
 
 A field can be **auto**: nobody is pinning it, and the instrument decides what

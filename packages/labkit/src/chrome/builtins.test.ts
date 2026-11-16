@@ -133,6 +133,22 @@ describe('builtinContributions', () => {
     expect(ids(withCanvas, ctxWithZoom(null))).not.toContain('zoom-in');
   });
 
+  it('copies the settings as JSON from the title bar, when there are settings', () => {
+    expect(ids(bare)).not.toContain('copy-settings');
+    const writeText = vi.fn(() => Promise.resolve());
+    vi.stubGlobal('navigator', { clipboard: { writeText } });
+    const withSchema = {
+      ...ctx,
+      configSchema: resolveConfigSchema(f.schema({ bins: f.number(20) }), []),
+      config: { bins: 40 },
+    };
+    const copy = builtinContributions(bare, withSchema).find((c) => c.id === 'copy-settings');
+    expect(copy?.region).toBe('titlebar');
+    (copy?.item as { onActivate: () => void }).onActivate();
+    expect(writeText).toHaveBeenCalledWith('{\n  "bins": 40\n}');
+    vi.unstubAllGlobals();
+  });
+
   it('contributes a settings section only when the schema has fields', () => {
     expect(ids(bare)).not.toContain('settings');
     const withSchema = {

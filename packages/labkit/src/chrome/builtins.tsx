@@ -145,6 +145,18 @@ function trialActions(ctx: TrialChromeContext): TrialContribution[] {
     end: true,
     item: { icon: icon('ui:reset'), label: 'Reset trial', onActivate: ctx.reset },
   });
+  if (Object.keys(ctx.configSchema.group.children).length > 0) {
+    out.push({
+      id: 'copy-settings',
+      region: 'titlebar',
+      end: true,
+      item: {
+        icon: icon('core:copy'),
+        label: 'Copy settings as JSON',
+        onActivate: () => void copyText(JSON.stringify(settingsConfig(ctx), null, 2)),
+      },
+    });
+  }
   out.push({
     id: 'snapshot',
     region: 'titlebar',
