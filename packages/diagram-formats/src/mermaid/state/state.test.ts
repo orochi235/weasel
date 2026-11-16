@@ -105,4 +105,12 @@ describe('writing a Mermaid state diagram', () => {
     }] });
     expect(warnings).toContain('Mermaid draws every transition alike; their dashes and ends were dropped.');
   });
+
+  it('keeps a state\'s line and a composite state\'s label when their ids are written cleaned', () => {
+    const text = writeStateDiagram({ pages: [{ kind: 'graph', id: 'p', width: 100, height: 100, data: {
+      nodes: [{ id: 'my state', lines: ['my state'] }], edges: [], containers: [{ id: 'my box', role: 'container', label: 'my box', members: ['my state'] }],
+    } }] }).text;
+    expect(page(text).data.nodes[0]!.lines).toEqual(['my state']);
+    expect(page(text).data.containers?.[0]?.label).toBe('my box');
+  });
 });

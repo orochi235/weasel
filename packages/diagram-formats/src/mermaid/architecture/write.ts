@@ -59,7 +59,7 @@ class ArchWriter {
       this.out.warnings.add('Mermaid architecture services wear only its built-in icons; other outlines were dropped.');
     }
     const one = oneTitle(text, (m) => this.out.warnings.add(m));
-    const named = text.length === 0 || one === n.id ? '' : `[${title(one)}]`;
+    const named = text.length === 0 || one === this.id(n.id) ? '' : `[${title(one)}]`;
     this.lines.push(`  service ${this.id(n.id)}${icon !== undefined ? `(${icon})` : ''}${named}${this.in(n.id)}`);
   }
 

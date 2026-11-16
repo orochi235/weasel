@@ -101,4 +101,9 @@ describe('writing a Mermaid architecture diagram', () => {
       'Mermaid architecture diagrams have no styles; colors were dropped.',
     ]);
   });
+
+  it('keeps a service\'s title when its id is written cleaned', () => {
+    const text = writeArchitecture({ pages: [{ kind: 'graph', id: 'p', width: 100, height: 100, data: { nodes: [{ id: 'my svc', lines: ['my svc'] }], edges: [] } }] }).text;
+    expect(page(text).data.nodes[0]!.lines).toEqual(['my svc']);
+  });
 });

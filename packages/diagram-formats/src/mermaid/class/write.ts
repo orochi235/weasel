@@ -59,8 +59,8 @@ class ClassWriter {
     const { annotations, name, attributes, methods } = classParts(node);
     const id = this.id(node.id);
     const generic = /^(.*)<([^<>]*)>$/.exec(name);
-    const head = name === node.id ? id
-      : generic !== null && generic[1] === node.id ? `${id}~${generic[2]}~`
+    const head = name === id ? id
+      : generic !== null && generic[1] === id ? `${id}~${generic[2]}~`
         : `${id}["${spelled(name)}"]`;
     const members = [...attributes, ...methods].map((m) => oneLine(m, 'class diagram member', (w) => this.out.warnings.add(w)).trim());
     const kept = members.filter((m) => m !== '}' && readsAsStatement(m));
@@ -79,7 +79,7 @@ class ClassWriter {
     for (const id of c.nodes) this.node(this.out.byId.get(id)!, `${indent}  `);
     for (const child of c.clusters) this.cluster(child, `${indent}  `);
     this.lines.push(`${indent}}`);
-    if (c.label !== undefined && c.label !== c.id) this.out.warnings.add('Mermaid names a namespace by its id; container titles were dropped.');
+    if (c.label !== undefined && c.label !== this.id(c.id)) this.out.warnings.add('Mermaid names a namespace by its id; container titles were dropped.');
   }
 
   head(marker: MarkerRef | null | undefined, side: 0 | 1): string {
