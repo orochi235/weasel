@@ -103,6 +103,7 @@ function drawnRange(root: Element | null, anchor: string | undefined, path: stri
   return [...new Set([anchor, ...between, path])];
 }
 
+/** The ref and handlers `useSelectedRow` gives a form's root element. */
 export interface SelectionRoot {
   ref: RefObject<HTMLDivElement | null>;
   onPointerDownCapture?: (e: PointerEvent) => void;
