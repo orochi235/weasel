@@ -7,6 +7,9 @@
  * says what the keyboard does with it.
  */
 
+import { getOwn } from '@weasel-js/registry';
+import { soloChanges } from './solo';
+
 /** An item's state: on, off, or mixed, where the sources it aggregates disagree. */
 export type SelectState = 'off' | 'on' | 'mixed';
 
@@ -49,6 +52,8 @@ export interface OwnSelection {
 export interface SelectionEdit {
   /** Set item `index` on or off. */
   set(index: number, on: boolean): void;
+  /** Set several items on or off, reported as one change where the spec holds a list or a single value. */
+  apply(changes: ReadonlyMap<number, boolean>): void;
   /** Put back what the edit started from. */
   revert(): void;
 }
@@ -92,6 +97,13 @@ export function selection<V>(spec: SelectionSpec<V>, values: readonly V[]): Sele
             working = next;
             spec.onChange(next);
           },
+          apply: (changes) => {
+            let next = working;
+            for (const [i, to] of changes) if (next.includes(values[i]!) !== to) next = flip(next, values[i]!, to);
+            if (next === working) return;
+            working = next;
+            spec.onChange([...next]);
+          },
           revert: () => { if (working !== initial) spec.onChange([...initial]); },
         };
       },
@@ -116,6 +128,16 @@ export function selection<V>(spec: SelectionSpec<V>, values: readonly V[]): Sele
           working = next;
           choose(next);
         },
+        apply: (changes) => {
+          let next = working;
+          for (const [i, to] of changes) {
+            if (to) next = values[i]!;
+            else if (same(next, values[i]) && spec.allowDeselect) next = null;
+          }
+          if (same(next, working)) return;
+          working = next;
+          choose(next);
+        },
         revert: () => { if (!same(working, initial)) choose(initial); },
       };
     },
@@ -132,12 +154,14 @@ export function selectionOfEach(items: readonly OwnSelection[]): SelectionModel 
     edit: () => {
       const initial = items.map((it) => it.selected);
       const working = [...initial];
+      const set = (i: number, to: boolean): void => {
+        if (working[i] === to) return;
+        working[i] = to;
+        items[i]!.onChange(to);
+      };
       return {
-        set: (i, to) => {
-          if (working[i] === to) return;
-          working[i] = to;
-          items[i]!.onChange(to);
-        },
+        set,
+        apply: (changes) => { for (const [i, to] of changes) set(i, to); },
         revert: () => {
           working.forEach((to, i) => {
             if (to === initial[i]) return;
@@ -159,18 +183,79 @@ export function sweepFrom(model: SelectionModel, from: number): { reach(index: n
   return { reach: (i) => edit.set(i, to), revert: () => edit.revert() };
 }
 
+/** The press-time states of the items `enabled` lets a solo change, keyed for `soloChanges`; a mixed item is off. */
+function soloStates(model: SelectionModel, count: number, enabled: (index: number) => boolean): Map<string, boolean> {
+  const states = new Map<string, boolean>();
+  for (let i = 0; i < count; i++) if (enabled(i)) states.set(String(i), model.stateOf(i) === 'on');
+  return states;
+}
+
+/** `soloChanges(states, keep)` as every item of `states` set to what it ends at, for a `SelectionEdit`. */
+function soloTargets(states: ReadonlyMap<string, boolean>, keep: ReadonlySet<string>): Map<number, boolean> {
+  const changes = soloChanges(states, keep);
+  return new Map([...states].map(([i, on]) => [Number(i), getOwn(changes, i) ?? on]));
+}
+
+/** What an Alt-press on item `index` does, by ui-input's `soloChanges`: in a multiple selection, that item on and
+ *  every other one off, or, when that already holds, every one on; a mixed item counts as off, and an item
+ *  `enabled` refuses is left alone. In a single selection it is a press. */
+export function soloFrom(
+  model: SelectionModel,
+  index: number,
+  count: number,
+  enabled: (index: number) => boolean = () => true,
+): void {
+  if (model.mode !== 'multiple') return model.press(index);
+  if (!enabled(index)) return;
+  model.edit().apply(soloTargets(soloStates(model, count, enabled), new Set([String(index)])));
+}
+
+/**
+ * An Alt-sweep over `model` from a press on item `from`: the items reached so far on and every other one off,
+ * worked out each time from the states at the press, never from the last step. Until a second item is reached it
+ * is {@link soloFrom}'s solo of `from`, so a sweep that never leaves it can turn every item back on. An item
+ * `enabled` refuses is neither reached nor changed; `revert` puts back the press-time states. A single selection
+ * sweeps as {@link sweepFrom} does.
+ */
+export function soloSweepFrom(
+  model: SelectionModel,
+  from: number,
+  count: number,
+  enabled: (index: number) => boolean = () => true,
+): { reach(index: number): void; revert(): void } {
+  if (model.mode !== 'multiple') return sweepFrom(model, from);
+  const states = soloStates(model, count, enabled);
+  const keep = new Set<string>();
+  const edit = model.edit();
+  return {
+    reach: (i) => {
+      const key = String(i);
+      if (!states.has(key) || keep.has(key)) return;
+      keep.add(key);
+      edit.apply(keep.size === 1 ? soloTargets(states, keep) : new Map([...states.keys()].map((k) => [Number(k), keep.has(k)])));
+    },
+    revert: () => edit.revert(),
+  };
+}
+
 /** What the keyboard does with `model`'s items. Where a single selection follows focus, the tab stop sits on the
  *  chosen item and an arrow landing on one chooses it; otherwise the arrows only move focus, and Space or Enter
- *  presses. `enabled(i)` is false for an item nothing may choose. */
+ *  presses, or with Alt held solos ({@link soloFrom}). `enabled(i)` is false for an item nothing may choose. */
 export function selectionKeys(
   model: SelectionModel,
   count: number,
   enabled: (index: number) => boolean = () => true,
-): { tabStop?: number; landed?: (index: number) => void; activate?: (index: number) => void } {
+): { tabStop?: number; landed?: (index: number) => void; activate?: (index: number, held?: { alt?: boolean }) => void } {
   if (model.mode === 'single' && model.followsFocus) {
     let chosen = -1;
     for (let i = 0; i < count && chosen < 0; i++) if (model.stateOf(i) === 'on') chosen = i;
     return { tabStop: chosen >= 0 ? chosen : undefined, landed: (i) => { if (enabled(i)) model.edit().set(i, true); } };
   }
-  return { activate: (i) => { if (enabled(i)) model.press(i); } };
+  return {
+    activate: (i, held) => {
+      if (!enabled(i)) return;
+      if (held?.alt) soloFrom(model, i, count, enabled);
+      else model.press(i);
+    },
+  };
 }
