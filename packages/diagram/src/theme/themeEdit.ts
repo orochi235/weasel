@@ -20,7 +20,7 @@ export type ThemePath =
   | readonly ['series', number];
 
 /** Whether `theme` is one of {@link DIAGRAM_THEMES} itself, which no edit may change. */
-export const isShippedTheme = (theme: DiagramTheme): boolean => DIAGRAM_THEMES[theme.id] === theme;
+export const isShippedTheme = (theme: DiagramTheme): boolean => getOwn(DIAGRAM_THEMES, theme.id) === theme;
 
 /** A custom copy of `theme`, named "<name> (edited)", for a document to keep and change. */
 export function forkTheme(theme: DiagramTheme): DiagramTheme {

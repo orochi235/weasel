@@ -5,7 +5,7 @@
  */
 import { withColors } from './dataColors';
 import { DEFAULT_NODE_STYLE, type DataContainer, type DataEdge, type DataNode, type EdgeStyle, type NodeStyle } from './dataTypes';
-import { roleEdgeStyle, roleStyle } from './theme/resolve';
+import { roleEdgeStyle, roleStyle, themeRoleStyle } from './theme/resolve';
 import type { DiagramTheme } from './theme/types';
 
 /** What an edge is drawn with when there is no theme and nothing says otherwise. */
@@ -39,7 +39,7 @@ export function dataRegionStyle(region: StyledRegion, theme?: DiagramTheme, lane
 
 function themeRegionStyle(r: StyledRegion, theme: DiagramTheme | undefined, laneIndex: number): NodeStyle {
   if (theme === undefined) return DEFAULT_NODE_STYLE;
-  const own = r.style !== undefined ? theme.roles[r.style] : undefined;
+  const own = themeRoleStyle(theme, r.style);
   if (own !== undefined) return own;
   if (r.role === 'pool') return theme.lane.header;
   if (r.role === 'lane') return theme.lane.bodies[laneIndex % Math.max(1, theme.lane.bodies.length)] ?? theme.container;
