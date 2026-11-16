@@ -11,6 +11,7 @@ import {
 } from '@weasel-js/core';
 import { ContextMenuHost } from '@weasel-js/ui/components/Menu';
 import { createContext, type ReactNode, useContext } from 'react';
+import { TransportKeysProvider, useLabTransportKeys } from '../clock/useTransportKeys';
 import { useLabCommandsOptional } from './LabContext';
 import { LabAmbientContext, LabEntriesContext, useLabAmbientHost } from './labAmbient';
 import { LabChordsProvider, useLabChordActions } from './labChords';
@@ -55,11 +56,13 @@ export function LabActions({
   );
 }
 
-/** The lab's key dispatcher, over what `useLabAmbient` installs below it and the chords its trials claim. */
+/** The lab's key dispatcher, over what `useLabAmbient` installs below it, the chords its trials claim and the
+ *  keys its transports answer. */
 function LabKeys({ children }: { children: ReactNode }) {
   const actions = useActionsRegistry() as ActionsRegistry;
   const { entriesById, host } = useLabAmbientHost();
   const chords = useLabChordActions(actions, useLabCommandsOptional()?.focusedTrialId ?? null);
+  const transports = useLabTransportKeys(actions);
   useGestureDispatcher({
     canvasRef: NO_ELEMENT,
     actions,
@@ -73,7 +76,9 @@ function LabKeys({ children }: { children: ReactNode }) {
   return (
     <LabAmbientContext.Provider value={host}>
       <LabEntriesContext.Provider value={entriesById}>
-        <LabChordsProvider value={chords}>{children}</LabChordsProvider>
+        <LabChordsProvider value={chords}>
+          <TransportKeysProvider value={transports}>{children}</TransportKeysProvider>
+        </LabChordsProvider>
       </LabEntriesContext.Provider>
     </LabAmbientContext.Provider>
   );

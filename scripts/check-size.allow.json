@@ -126,7 +126,7 @@
     "longestFunction": 297
   },
   "packages/labkit/src/trial/TrialChrome.tsx": {
-    "longestFunction": 190
+    "longestFunction": 178
   },
   "packages/path-tools/src/pen/penPreviewLayer.ts": {
     "longestFunction": 138

@@ -13,6 +13,7 @@ import {
 import { createContext, useContext, useEffect, useState } from 'react';
 import { SNAPSHOT_SHORTCUT } from '../chrome/builtins';
 import { REDO_SHORTCUT, UNDO_SHORTCUT } from '../undo/useUndoKeys';
+import { createKeyClaims, type KeyClaims, useClaimed } from './keyClaims';
 
 /** A chord a trial answers. */
 export type LabChord = 'undo' | 'redo' | 'snapshot';
@@ -26,27 +27,17 @@ export interface ChordTarget {
 /** Who a claim is for: a trial's id, or `null` for a lab with no trials. */
 type Owner = string | null;
 
-interface LabChords {
-  claim: (owner: Owner, target: ChordTarget) => () => void;
+interface ChordClaim {
+  owner: Owner;
+  target: ChordTarget;
 }
+
+type LabChords = KeyClaims<ChordClaim>;
 
 const LabChordsContext = createContext<LabChords | null>(null);
 export const LabChordsProvider = LabChordsContext.Provider;
 
 const TRIAL_ATTR = 'data-trial-id';
-
-function createClaims(): { claims: ReadonlyMap<Owner, ChordTarget>; chords: LabChords } {
-  const claims = new Map<Owner, ChordTarget>();
-  const chords: LabChords = {
-    claim: (owner, target) => {
-      claims.set(owner, target);
-      return () => {
-        if (claims.get(owner) === target) claims.delete(owner);
-      };
-    },
-  };
-  return { claims, chords };
-}
 
 const keySpec = (shortcut: { key: string; shift?: boolean }) => ({
   kind: 'key' as const,
@@ -70,10 +61,17 @@ export function useLabChordActions(
   focusedTrialId: string | null,
 ): LabChords {
   const focused = useLatest(focusedTrialId);
-  const [{ claims, chords }] = useState(createClaims);
+  const [chords] = useState(() => createKeyClaims<ChordClaim>());
+  const claimed = useClaimed(chords);
   useEffect(() => {
+    if (!claimed) return;
+    const byOwner = (owner: Owner): ChordTarget | undefined => {
+      let found: ChordTarget | undefined;
+      for (const c of chords.all) if (c.owner === owner) found = c.target;
+      return found;
+    };
     const target = (): ChordTarget | undefined =>
-      claims.get(ownerNow(focused.current)) ?? claims.get(null);
+      byOwner(ownerNow(focused.current)) ?? byOwner(null);
     const enabled = (chord: LabChord) => () =>
       target()?.can(chord) ? true : ActionDisabledReason.NotApplicable;
     const immediate = (
@@ -113,7 +111,7 @@ export function useLabChordActions(
     return () => {
       for (const off of offs) off();
     };
-  }, [registry, claims, focused]);
+  }, [registry, chords, focused, claimed]);
   return chords;
 }
 
@@ -125,9 +123,12 @@ export function useLabChords(owner: Owner, target: ChordTarget | null): void {
   const claimed = target !== null;
   useEffect(() => {
     if (!chords || !claimed) return;
-    return chords.claim(owner, {
-      can: (chord) => latest.current?.can(chord) ?? false,
-      run: (chord) => latest.current?.run(chord),
+    return chords.claim({
+      owner,
+      target: {
+        can: (chord) => latest.current?.can(chord) ?? false,
+        run: (chord) => latest.current?.run(chord),
+      },
     });
   }, [chords, owner, claimed, latest]);
 }

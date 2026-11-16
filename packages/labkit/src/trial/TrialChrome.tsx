@@ -24,7 +24,7 @@ import { useResolvedConfig } from '../config/useResolvedConfig';
 import type { Instrument } from '../instrument/types';
 import type { JobHandle } from '../job/types';
 import { type LabCommands, useLabCommands } from '../lab/LabContext';
-import { type LabChord, useLabChords } from '../lab/labChords';
+import { type ChordTarget, useLabChords } from '../lab/labChords';
 import { usePresentedTrial } from '../lab/presentation';
 import { useLightboxControl } from '../lightbox/LightboxContext';
 import { JobProgress } from '../primitives/JobProgress';
@@ -159,6 +159,26 @@ const labOpsOn = (lab: LabCommands, trialId: string) =>
 /** The trial's writes, for chrome mounted without a `setConfig`: its marks end a gesture, as in the trial. */
 function useChromeWrites(opts: Omit<TrialWritesOptions, 'marks' | 'mounted'>) {
   return useTrialWrites({ ...opts, marks: useContext(AnnotationsContext) });
+}
+
+/** A trial's Undo, Redo and snapshot keys. A chord is its button's: suppress the button and the chord goes with
+ *  it; hide it and the chord stays. A presented trial has no chrome, so nothing the chrome's keys act on. */
+function trialChords(
+  presented: boolean,
+  offered: readonly TrialContribution[],
+  ctx: Pick<TrialChromeContext, 'canUndo' | 'canRedo' | 'undo' | 'redo' | 'saveSnapshot'>,
+): ChordTarget {
+  return {
+    can: (chord) =>
+      !presented &&
+      offered.some((c) => c.id === chord) &&
+      (chord === 'snapshot' || (chord === 'undo' ? ctx.canUndo : ctx.canRedo)),
+    run: (chord) => {
+      if (chord === 'snapshot') ctx.saveSnapshot();
+      else if (chord === 'redo') ctx.redo();
+      else ctx.undo();
+    },
+  };
 }
 
 /** The frame around a running instrument. Builds one chrome context, assembles
@@ -299,21 +319,7 @@ export function TrialChrome({
   const docked = <SidebarRegion key="docked" contributions={sections} ctx={ctx} />;
   const undocked = <Undocked key="undocked" sections={sections} ctx={ctx} />;
 
-  // A chord is its button's: suppress the button and the chord goes with it; hide it and the chord stays.
-  const offers = (id: string) => offered.some((c) => c.id === id);
-  // A presented trial has no chrome, so nothing the chrome's keys act on.
-  const answers = (chord: LabChord): boolean =>
-    !presented &&
-    offers(chord) &&
-    (chord === 'snapshot' || (chord === 'undo' ? ctx.canUndo : ctx.canRedo));
-  useLabChords(trialId, {
-    can: answers,
-    run: (chord) => {
-      if (chord === 'snapshot') ctx.saveSnapshot();
-      else if (chord === 'redo') ctx.redo();
-      else ctx.undo();
-    },
-  });
+  useLabChords(trialId, trialChords(presented, offered, ctx));
 
   return (
     <section
