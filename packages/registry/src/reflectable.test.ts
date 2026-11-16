@@ -271,6 +271,82 @@ describe('createReflectable', () => {
   });
 });
 
+describe('createReflectable stack', () => {
+  muteClashWarnings();
+  it('hands back a key\'s registrants live last, the same frozen array until that key changes', () => {
+    const r = createReflectable<string>();
+    expect(r.stack('k')).toEqual([]);
+    r.push('k', 'top', { rank: 1 });
+    r.push('k', 'a');
+    r.push('k', 'b');
+    const stack = r.stack('k');
+    expect(stack.map((s) => s.value)).toEqual(['a', 'b', 'top']);
+    expect(Object.isFrozen(stack)).toBe(true);
+    const { live, shadowed } = r.entries()[0]!;
+    expect(stack).toEqual([...shadowed, live]);
+    r.push('other', 'x');
+    expect(r.stack('k')).toBe(stack);
+    r.release('k', stack[0]!);
+    expect(r.stack('k').map((s) => s.value)).toEqual(['b', 'top']);
+    expect(stack.map((s) => s.value)).toEqual(['a', 'b', 'top']);
+  });
+
+  it('follows set and delete', () => {
+    const r = createReflectable<string>();
+    r.push('k', 'a');
+    r.set('k', 'b');
+    expect(r.stack('k').map((s) => s.value)).toEqual(['b']);
+    r.delete('k');
+    expect(r.stack('k')).toEqual([]);
+  });
+});
+
+describe('createReflectable holdPlace', () => {
+  it('without it, a key released and pushed again moves to the end', () => {
+    const r = createReflectable<string>();
+    const off = r.push('a', '1');
+    r.push('b', '2');
+    off();
+    r.push('a', '3');
+    expect(r.entries().map((e) => e.key)).toEqual(['b', 'a']);
+  });
+
+  it('keeps an emptied key\'s place for a push in the same tick, reading it as absent meanwhile', () => {
+    const r = createReflectable<string>({ holdPlace: true });
+    const off = r.push('a', '1');
+    r.push('b', '2');
+    off();
+    expect(r.has('a')).toBe(false);
+    expect(r.get('a')).toBeUndefined();
+    expect(r.stack('a')).toEqual([]);
+    expect(r.entries().map((e) => e.key)).toEqual(['b']);
+    r.push('a', '3');
+    expect(r.entries().map((e) => [e.key, e.value])).toEqual([['a', '3'], ['b', '2']]);
+  });
+
+  it('gives the place up once the tick ends', async () => {
+    const r = createReflectable<string>({ holdPlace: true });
+    const off = r.push('a', '1');
+    r.push('b', '2');
+    off();
+    await Promise.resolve();
+    r.push('a', '3');
+    expect(r.entries().map((e) => e.key)).toEqual(['b', 'a']);
+  });
+
+  it('does not count a held place as a change for delete or clear', () => {
+    const r = createReflectable<string>({ holdPlace: true });
+    r.push('a', '1')();
+    const listener = vi.fn();
+    r.subscribe(listener);
+    expect(r.delete('a')).toBe(false);
+    r.push('b', '2')();
+    listener.mockClear();
+    r.clear();
+    expect(listener).not.toHaveBeenCalled();
+  });
+});
+
 describe('createReflectable clash warning', () => {
   afterEach(() => {
     vi.restoreAllMocks();
@@ -308,6 +384,15 @@ describe('createReflectable clash warning', () => {
     r.push('k', value, { source: 'a' });
     r.push('k', value, { source: 'b' });
     expect(warn).not.toHaveBeenCalled();
+  });
+
+  it('is silent in a layered registry, where stacking is how a registrant overrides', () => {
+    const warn = spyWarn();
+    const r = createReflectable<string>({ layered: true });
+    r.push('k', 'a', { source: 'one' });
+    r.push('k', 'b', { source: 'two' });
+    expect(warn).not.toHaveBeenCalled();
+    expect(r.stack('k').map((s) => s.value)).toEqual(['a', 'b']);
   });
 
   it('warns of a clash under a higher-ranked registrant too', () => {

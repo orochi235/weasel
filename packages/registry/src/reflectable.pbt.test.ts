@@ -3,7 +3,7 @@
  * registrant a reflection reported, against its own key and another, live, shadowed, and already gone), deletes,
  * clears, and bumps, over keys named like `Object.prototype` members, with listeners that write back into the store
  * mid-notify. Every step checks lookups, the entries a reflection lists (order, values, sources, what each shadows,
- * which registrant object is live), that a snapshot is the same frozen array until the next change, the version,
+ * which registrant object is live), each key's stack, that a snapshot is the same frozen array until the next change, the version,
  * and how many times listeners heard.
  */
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
@@ -198,6 +198,7 @@ function check(m: Model, real: Real, before: { entries: readonly unknown[]; vers
     const stack = m.stacks.get(k);
     expect(r.has(k)).toBe(stack !== undefined);
     expect(r.get(k)).toBe(stack?.at(-1)?.value);
+    expect(r.stack(k).map((s) => [s.value, s.source])).toEqual((stack ?? []).map((s) => [s.value, s.source]));
   }
   const entries = r.entries();
   if (m.version === before.version) expect(entries).toBe(before.entries);
@@ -212,6 +213,7 @@ function check(m: Model, real: Real, before: { entries: readonly unknown[]; vers
     expect([e.value, e.source]).toEqual([live.value, live.source]);
     expect([e.live.value, e.live.source]).toEqual([live.value, live.source]);
     expect(e.shadowed.map((s) => [s.value, s.source])).toEqual(stack.slice(0, -1).map((s) => [s.value, s.source]));
+    expect(r.stack(e.key)).toEqual([...e.shadowed, e.live]);
     [...e.shadowed, e.live].forEach((obj, i) => {
       const known = real.objects[stack[i]!.id];
       if (known !== undefined) expect(obj).toBe(known);

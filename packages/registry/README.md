@@ -33,9 +33,12 @@ cursors.get('pen'); // 'crosshair'
 
 - `createReflectable<V, K>()` — a keyed store a registry embeds. It returns a
   `Reflectable`: the write side (`push`, `set`, `release`, `delete`, `clear`,
-  `bump`) plus `reflection`, the read-only `Reflection` (`get`, `has`,
-  `entries`, `subscribe`, `getVersion`) a registry hands out. `subscribe`,
-  `getVersion`, and `entries` are shaped for `useSyncExternalStore`.
+  `bump`), `stack(key)` for one key's registrants live last, and `reflection`,
+  the read-only `Reflection` (`get`, `has`, `entries`, `subscribe`,
+  `getVersion`) a registry hands out. `subscribe`, `getVersion`, and `entries`
+  are shaped for `useSyncExternalStore`. `layered: true` makes stacking the
+  registry's contract, with no clash warning; `holdPlace: true` keeps a key
+  released and pushed again in one tick where it was.
 - `ReflectedEntry` — one key as `entries()` reports it: `key`, `value`,
   `source`, `live` (the registrant holding the key), and `shadowed` (the
   registrants it displaced, oldest first).

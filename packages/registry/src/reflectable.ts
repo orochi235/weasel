@@ -50,6 +50,13 @@ export interface ReflectableOptions {
   /** What the registry holds, in a few plain words: `'paint kinds'`, `'cameras'`. Its reflection reports it,
    *  and its development warnings lead with it. */
   name?: string;
+  /** Registrants of one key are layers by design, each free to override or compose over the ones beneath it:
+   *  a push over a live registrant is never a clash, and draws no development warning. */
+  layered?: boolean;
+  /** A key whose last registrant is released keeps its place in registration order until the current
+   *  microtasks have run, so releasing one and pushing its replacement in the same tick, as a React effect
+   *  re-running does, leaves the key where it was. Until then the key reads as absent. */
+  holdPlace?: boolean;
 }
 
 /** Options for {@link Reflectable.push} and {@link Reflectable.set}. */
@@ -100,9 +107,15 @@ export interface Reflectable<V, K = string> extends Reflection<V, K> {
    *  one version step and one notification, or none if it changed nothing.
    *  Nests; the outermost call announces. */
   batch<T>(fn: () => T): T;
+  /** Every registrant of `key`, the live one last, as `entries()` would order its `shadowed` then `live`:
+   *  empty when the key holds none. A frozen array, the same one until `key` changes, read without
+   *  building the store's entries. */
+  stack(key: K): readonly Registrant<V>[];
   /** This store as a {@link Reflection}, with no write methods on it. */
   readonly reflection: Reflection<V, K>;
 }
+
+const NONE: readonly never[] = Object.freeze([]);
 
 function registrantOf<V>(value: V, options: PushOptions | undefined): Registrant<V> {
   const registrant: { value: V; source: string | undefined; rank?: number; fallback?: true } = { value, source: options?.source };
@@ -133,6 +146,21 @@ function createClashWarnings<K, V>(name: string | undefined) {
   };
 }
 
+/** Every key's live registrant and what it shadows, skipping keys only holding their place. */
+function entriesOf<V, K>(stacks: ReadonlyMap<K, readonly Registrant<V>[]>): readonly ReflectedEntry<V, K>[] {
+  const entries: ReflectedEntry<V, K>[] = [];
+  for (const [key, stack] of stacks) {
+    const live = stack.at(-1);
+    if (!live) continue;
+    entries.push(Object.freeze({
+      key, live, value: live.value, source: live.source, shadowed: Object.freeze(stack.slice(0, -1)),
+      ...(live.rank === undefined ? {} : { rank: live.rank }),
+      ...(live.fallback ? { fallback: true as const } : {}),
+    }));
+  }
+  return Object.freeze(entries);
+}
+
 /**
  * Create a keyed store with a uniform reflection surface.
  *
@@ -141,7 +169,11 @@ function createClashWarnings<K, V>(name: string | undefined) {
  */
 export function createReflectable<V, K = string>(options?: ReflectableOptions): Reflectable<V, K> {
   const name = options?.name;
-  const stacks = new Map<K, Registrant<V>[]>();
+  const layered = options?.layered ?? false;
+  const holdPlace = options?.holdPlace ?? false;
+  /** Each key's registrants, live last, replaced whole on every write so `stack` can hand one out. An empty
+   *  array is a key holding its place under `holdPlace`. */
+  const stacks = new Map<K, readonly Registrant<V>[]>();
   const listeners = createEmitter();
   let version = 0;
   /** Advances on every change, announced or still held by a `batch`, so `entries` inside one sees it. */
@@ -165,19 +197,9 @@ export function createReflectable<V, K = string>(options?: ReflectableOptions): 
   const reflection: Reflection<V, K> = {
     ...(name === undefined ? {} : { name }),
     get: (key) => stacks.get(key)?.at(-1)?.value,
-    has: (key) => stacks.has(key),
+    has: (key) => (stacks.get(key)?.length ?? 0) > 0,
     entries() {
-      if (snapshot?.revision === revision) return snapshot.entries;
-      const entries: ReflectedEntry<V, K>[] = [];
-      for (const [key, stack] of stacks) {
-        const live = stack.at(-1)!;
-        entries.push(Object.freeze({
-          key, live, value: live.value, source: live.source, shadowed: Object.freeze(stack.slice(0, -1)),
-          ...(live.rank === undefined ? {} : { rank: live.rank }),
-          ...(live.fallback ? { fallback: true as const } : {}),
-        }));
-      }
-      snapshot = { revision, entries: Object.freeze(entries) };
+      if (snapshot?.revision !== revision) snapshot = { revision, entries: entriesOf(stacks) };
       return snapshot.entries;
     },
     subscribe: listeners.subscribe,
@@ -188,10 +210,16 @@ export function createReflectable<V, K = string>(options?: ReflectableOptions): 
     const stack = stacks.get(key);
     const i = stack ? stack.lastIndexOf(registrant) : -1;
     if (i === -1) return false;
-    stack!.splice(i, 1);
-    if (stack!.length === 0) {
-      stacks.delete(key);
+    if (stack!.length > 1) stacks.set(key, Object.freeze([...stack!.slice(0, i), ...stack!.slice(i + 1)]));
+    else {
       clashes.forget(key);
+      if (holdPlace) {
+        const held: readonly Registrant<V>[] = Object.freeze([]);
+        stacks.set(key, held);
+        queueMicrotask(() => {
+          if (stacks.get(key) === held) stacks.delete(key);
+        });
+      } else stacks.delete(key);
     }
     changed();
     return true;
@@ -201,18 +229,16 @@ export function createReflectable<V, K = string>(options?: ReflectableOptions): 
     ...reflection,
     reflection,
     release,
+    stack: (key) => stacks.get(key) ?? NONE,
     push(key, value, options) {
       const registrant = registrantOf(value, options);
       const rank = registrant.rank ?? 0;
-      const stack = stacks.get(key);
-      if (!stack) stacks.set(key, [registrant]);
-      else {
-        let at = stack.length;
-        while (at > 0 && (stack[at - 1]!.rank ?? 0) > rank) at--;
-        const under = stack[at - 1];
-        if (under && !under.fallback && under.value !== value && (under.rank ?? 0) === rank && isDev()) clashes.warn(key, under, registrant);
-        stack.splice(at, 0, registrant);
-      }
+      const stack = stacks.get(key) ?? NONE;
+      let at = stack.length;
+      while (at > 0 && (stack[at - 1]!.rank ?? 0) > rank) at--;
+      const under = stack[at - 1];
+      if (under && !layered && !under.fallback && under.value !== value && (under.rank ?? 0) === rank && isDev()) clashes.warn(key, under, registrant);
+      stacks.set(key, Object.freeze([...stack.slice(0, at), registrant, ...stack.slice(at)]));
       changed();
       return () => {
         release(key, registrant);
@@ -220,9 +246,8 @@ export function createReflectable<V, K = string>(options?: ReflectableOptions): 
     },
     set(key, value, options) {
       const registrant = registrantOf(value, { source: options?.source });
-      const stack = stacks.get(key);
-      if (stack) stack[stack.length - 1] = registrant;
-      else stacks.set(key, [registrant]);
+      const stack = stacks.get(key) ?? NONE;
+      stacks.set(key, Object.freeze([...stack.slice(0, -1), registrant]));
       changed();
       return () => {
         release(key, registrant);
@@ -230,15 +255,16 @@ export function createReflectable<V, K = string>(options?: ReflectableOptions): 
     },
     delete(key) {
       clashes.forget(key);
-      if (!stacks.delete(key)) return false;
-      changed();
-      return true;
+      const had = (stacks.get(key)?.length ?? 0) > 0;
+      stacks.delete(key);
+      if (had) changed();
+      return had;
     },
     clear() {
       clashes.clear();
-      if (stacks.size === 0) return;
+      const had = [...stacks.values()].some((stack) => stack.length > 0);
       stacks.clear();
-      changed();
+      if (had) changed();
     },
     bump: changed,
     batch(fn) {
