@@ -272,14 +272,14 @@ describe('useRovingTabIndex — item selector', () => {
 });
 
 describe('useRovingTabIndex — activation', () => {
-  it('Space and Enter call onActivate and suppress the native click', () => {
+  it('Space and Enter call onActivate with the keypress and suppress the native click', () => {
     const onActivate = vi.fn();
     const segs = renderBar({ onActivate });
     const space = press(segs[1], ' ');
-    expect(onActivate).toHaveBeenCalledWith(1);
+    expect(onActivate).toHaveBeenCalledWith(1, expect.objectContaining({ key: ' ' }));
     expect(space.defaultPrevented).toBe(true);
     fireEvent.keyDown(segs[2], { key: 'Enter' });
-    expect(onActivate).toHaveBeenLastCalledWith(2);
+    expect(onActivate).toHaveBeenLastCalledWith(2, expect.objectContaining({ key: 'Enter' }));
   });
 
   it('leaves Space and Enter alone without onActivate, so a button clicks normally', () => {
