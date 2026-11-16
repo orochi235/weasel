@@ -2,6 +2,7 @@ import { describe, expect, it, vi } from 'vitest';
 import { useState, type ReactElement } from 'react';
 import { fireEvent, render, screen } from '@testing-library/react';
 import {
+  applyKeyframeDrag,
   keyframeLayerState,
   type KeyframeLayerOptions,
   type KeyframeLayerState,
@@ -234,6 +235,28 @@ describe('createKeyframeLayer — segments', () => {
     const next = onCommit.mock.calls[0][0] as KeyframeLayerState;
     expect(next.keys[1].easing).toEqual({ bezier: [0.5, 0.5, 0.2, 1] });
     expect(next.drag).toBeNull();
+  });
+
+  it('commits nothing for a handle pressed and released without moving', () => {
+    const onCommit = vi.fn();
+    render(<Harness initial={{ selectedSegment: 1 }} onCommit={onCommit} />);
+    down(40, 100);
+    up(40, 100);
+    expect(onCommit).not.toHaveBeenCalled();
+  });
+
+  it('returns the same keys for a handle dropped where it started', () => {
+    const state = { ...keyframeLayerState(KEYS), selectedSegment: 1 };
+    const drag = { kind: 'handle' as const, segment: 1, bezier: [0.4, 0, 0.2, 1] as const };
+    expect(applyKeyframeDrag({ ...state, drag }).keys).toBe(state.keys);
+  });
+
+  it('commits nothing for an arrow key the clamp leaves a handle in place for', () => {
+    const onCommit = vi.fn();
+    const keys = [KEYS[0], { ...KEYS[1], easing: { bezier: [1, 0.1, 0.2, 1] as const } }, KEYS[2]];
+    render(<Harness initial={{ keys, selectedSegment: 1 }} onCommit={onCommit} />);
+    fireEvent.keyDown(document.querySelector('[data-handle-index="0"]')!, { key: 'ArrowRight' });
+    expect(onCommit).not.toHaveBeenCalled();
   });
 
   it('previews a handle drag without resolving a fresh spec on every move', async () => {

@@ -118,8 +118,8 @@ export interface KeyframeDragResult {
  * The keys a state's drag would leave behind: a dragged key re-sorted into
  * place, or a dragged handle's control points written onto the key its
  * segment runs into. `selectedKey` follows a moved key to its new index, and
- * `selectedSegment` follows the key it runs into; a key dropped where it
- * started returns the same `keys` array.
+ * `selectedSegment` follows the key it runs into; a key or handle dropped
+ * where it started returns the same `keys` array.
  */
 export function applyKeyframeDrag(state: KeyframeLayerState): KeyframeDragResult {
   const { drag, keys, selectedSegment } = state;
@@ -129,6 +129,8 @@ export function applyKeyframeDrag(state: KeyframeLayerState): KeyframeDragResult
     if (k && k.t === drag.t && k.value === drag.value) return { keys, selectedKey: drag.index, selectedSegment };
     return moveKeyTo(state, drag.index, drag.t, drag.value);
   }
+  const held = bezierOf(keys[drag.segment]);
+  if (held && held.every((v, i) => v === drag.bezier[i])) return { keys, selectedKey: state.selectedKey, selectedSegment };
   const next = keys.slice();
   next[drag.segment] = { ...keys[drag.segment], easing: { bezier: drag.bezier } };
   return { keys: next, selectedKey: state.selectedKey, selectedSegment };
@@ -424,7 +426,8 @@ export function createKeyframeLayer(cfg: KeyframeLayerOptions = {}): CurveLayer<
       next[h * 2] = Math.min(1, Math.max(0, next[h * 2] + dx * HANDLE_STEP));
       next[h * 2 + 1] += dy * HANDLE_STEP;
       const drag: KeyframeDrag = { kind: 'handle', segment: state.selectedSegment, bezier: next };
-      extra.commit({ ...state, ...applyKeyframeDrag({ ...state, drag }), drag: null });
+      const moved = applyKeyframeDrag({ ...state, drag });
+      if (moved.keys !== state.keys) extra.commit({ ...state, ...moved, drag: null });
     }
   }
 
