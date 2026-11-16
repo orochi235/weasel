@@ -2,6 +2,13 @@ import { visitorKeys, type Program, type VisitorObject } from 'oxc-parser';
 
 type Enter = (node: unknown) => void;
 
+/** The keys of a node of `type` that hold its children, read as `visitorKeys`' own entry. */
+export const childKeys = (type: string): readonly string[] => (Object.hasOwn(visitorKeys, type) ? visitorKeys[type] : []);
+
+/** `node[key]` where `node` holds `key` itself. */
+export const child = (node: object, key: string): unknown =>
+  Object.hasOwn(node, key) ? (node as Record<string, unknown>)[key] : undefined;
+
 /**
  * Calls each of `visitor`'s handlers on every node of its type, parents before children.
  * oxc-parser's own `Visitor` loads its walker through `require()` of an ES module, which
@@ -17,8 +24,8 @@ export function walk(program: Program, visitor: VisitorObject): void {
     if (value === null || typeof value !== 'object') return;
     const type = (value as { type?: unknown }).type;
     if (typeof type !== 'string') return;
-    handlers[type]?.(value);
-    for (const key of visitorKeys[type] ?? []) visit((value as Record<string, unknown>)[key]);
+    if (Object.hasOwn(handlers, type)) handlers[type]?.(value);
+    for (const key of childKeys(type)) visit(child(value, key));
   };
   visit(program);
 }

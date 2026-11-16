@@ -1,4 +1,5 @@
-import { visitorKeys, type Program } from 'oxc-parser';
+import type { Program } from 'oxc-parser';
+import { child, childKeys } from './walk.ts';
 
 interface Node {
   readonly type: string;
@@ -61,7 +62,7 @@ function varNames(node: unknown, out: string[] = []): string[] {
   }
   if (!isNode(node) || VAR_BARRIERS.has(node.type)) return out;
   if (node.type === 'VariableDeclaration' && node.kind === 'var') out.push(...declaratorNames(node));
-  for (const key of visitorKeys[node.type] ?? []) varNames(node[key], out);
+  for (const key of childKeys(node.type)) varNames(child(node, key), out);
   return out;
 }
 
@@ -75,7 +76,7 @@ export function unshadowedCalls(program: Program, names: ReadonlySet<string>, on
     return hidden.length === 0 ? outer : new Set([...outer, ...hidden]);
   };
   const children = (node: Node, hidden: Scope, skip?: ReadonlySet<string>) => {
-    for (const key of visitorKeys[node.type] ?? []) if (!skip?.has(key)) visit(node[key], hidden);
+    for (const key of childKeys(node.type)) if (!skip?.has(key)) visit(child(node, key), hidden);
   };
   const visit = (value: unknown, hidden: Scope): void => {
     if (Array.isArray(value)) {
