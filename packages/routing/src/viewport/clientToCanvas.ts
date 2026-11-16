@@ -70,6 +70,25 @@ export function canvasToClient(
   return [left + x * scale.x, top + y * scale.y];
 }
 
+/** What {@link scrolledPlaceOf} reads off a scroller: its box, its border, and how far it is scrolled. */
+export interface ShownScroller extends ShownElement {
+  scrollLeft: number;
+  scrollTop: number;
+  clientLeft?: number;
+  clientTop?: number;
+}
+
+/**
+ * Where `el` sits in `scroller`'s scrolled content, in the scroller's own CSS px: the `scrollLeft` and `scrollTop`
+ * that would put `el`'s top-left corner at the scroller's top-left, inside its border. An ancestor transform drawing
+ * both at another size is divided out, as {@link clientToCanvas} divides it.
+ */
+export function scrolledPlaceOf(el: Pick<ShownElement, 'getBoundingClientRect'>, scroller: ShownScroller): { x: number; y: number } {
+  const r = el.getBoundingClientRect();
+  const [x, y] = clientToCanvas(scroller, r.left, r.top);
+  return { x: x - (scroller.clientLeft ?? 0) + scroller.scrollLeft, y: y - (scroller.clientTop ?? 0) + scroller.scrollTop };
+}
+
 /**
  * Rect-taking variant of `clientToCanvas` for call sites that already hold a
  * `DOMRect` (or any `{ left, top }` object) and don't have a canvas element
