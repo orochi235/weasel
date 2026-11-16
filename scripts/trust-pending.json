@@ -2,7 +2,9 @@
   "@weasel-js/editing",
   "@weasel-js/export",
   "@weasel-js/measure",
+  "@weasel-js/paint-kinds",
   "@weasel-js/prefs-editor",
   "@weasel-js/prefs-schema",
+  "@weasel-js/scale",
   "@weasel-js/text-tools"
 ]
