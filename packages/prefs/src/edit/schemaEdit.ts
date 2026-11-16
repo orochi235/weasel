@@ -127,7 +127,7 @@ export function moveNodes<R extends SchemaRoot>(
 export function shiftNodes<R extends SchemaRoot>(
   root: R, paths: readonly string[], target: SchemaTarget,
 ): { root: R; from: string[]; paths: string[] } {
-  const tops = outermost([...new Set(paths)]);
+  const tops = outermost(paths);
   const dest = target.parentPath;
   if (dest !== null && tops.some((p) => dest === p || isUnder(dest, p))) {
     throw new Error('schemaEdit: cannot move a node into itself');

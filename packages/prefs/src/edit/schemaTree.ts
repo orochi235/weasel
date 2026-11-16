@@ -128,9 +128,9 @@ export function isUnder(path: string, ancestor: string): boolean {
   return path.startsWith(`${ancestor}${SEP}`);
 }
 
-/** `paths` less any that lies beneath another of them. */
+/** `paths` less any that lies beneath another of them, each named once, in the order first given. */
 export function outermost(paths: readonly string[]): string[] {
-  return paths.filter((p) => !paths.some((q) => isUnder(p, q)));
+  return [...new Set(paths)].filter((p) => !paths.some((q) => isUnder(p, q)));
 }
 
 function ownChild(kids: ChildMap | undefined, key: string): SchemaNode | undefined {

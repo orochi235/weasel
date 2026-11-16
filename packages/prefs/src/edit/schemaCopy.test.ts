@@ -40,6 +40,12 @@ describe('a copy under a section root, where a leaf\'s key is the path its value
     expect(nodeAt(root, 'look/note2')).toBe(nodeAt(NODE, 'layout/note'));
   });
 
+  it('copies a path given twice once', () => {
+    const { root, paths } = copyNodes(NODE, ['layout/note', 'layout/note'], { parentPath: 'look', index: 0 });
+    expect(paths).toEqual(['look/note2']);
+    expect(members(root, 'look')).toEqual(['note2', 'opacity']);
+  });
+
   it('copies a section as one holding an alias of each value leaf inside it', () => {
     const { root, paths } = copyNodes(NODE, ['layout'], { parentPath: null, index: 2 });
     expect(paths).toEqual(['layout2']);
