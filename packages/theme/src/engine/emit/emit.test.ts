@@ -124,6 +124,12 @@ describe('emitCss', () => {
     expect(css).toContain('  --wzl-line: color-mix(in srgb, var(--wzl-surface) 20%, transparent);\n');
   });
 
+  it('keeps a description holding a comment end inside its comment', () => {
+    const def = { ...E, pins: { ...E.pins, ink: { value: '#111111', type: 'color', description: 'Ends */ a { b: c } /* here.' } } };
+    const sheet = emitCss([input(def)]);
+    expect(sheet.replace(/\/\*[^]*?\*\//g, '')).not.toContain('a { b: c }');
+  });
+
   it('writes a block per axis value: own values first, then what depends through a reference', () => {
     expect(css).toContain(
       "[data-wzl-theme='e'][data-wzl-mode='light'],\n[data-wzl-mode='light'] {\n  color-scheme: light;\n  --wzl-surface: var(--wzl-paper);\n  --wzl-line: color-mix(in srgb, var(--wzl-surface) 20%, transparent);\n}\n",
