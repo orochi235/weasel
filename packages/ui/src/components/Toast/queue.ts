@@ -1,6 +1,7 @@
 import { UNSTABLE_ToastQueue } from 'react-aria-components';
 import { flushSync } from 'react-dom';
 import { prefersReducedMotion } from '@weasel-js/react';
+import { isDev } from '@weasel-js/registry';
 import type { Grade } from '../appearance';
 
 /** Kit-owned payload rendered inside each toast. */
@@ -16,8 +17,8 @@ export interface ToastOptions {
   description?: string;
   /**
    * Auto-dismiss delay in ms. Default: the `toast.ttlMs` kit setting a mounted `ToastRegion` sees, else 8000. `null` — sticky until dismissed.
-   * Must be > 0; RAC treats 0 as no timer (sticky). `Infinity`, or a delay past the
-   * longest a browser timer holds (2^31 − 1 ms, about 24.8 days), is sticky too.
+   * Must be > 0: NaN, 0 or a negative delay throws a `RangeError`. `Infinity`, or a delay past the
+   * longest a browser timer holds (2^31 − 1 ms, about 24.8 days), is sticky.
    */
   ttlMs?: number | null;
   /** Stable identity: re-adding with the same id replaces the earlier toast. */
@@ -70,17 +71,40 @@ function viewTransitionWrapUpdate(fn: () => void): void {
 // containment rule. `racQueueOf` below is the folder-internal accessor.
 const RAC_QUEUES = new WeakMap<ToastQueue, UNSTABLE_ToastQueue<ToastContent>>();
 
-const DEFAULT_TTLS = new WeakMap<ToastQueue, () => number | undefined>();
+// By queue: the default-ttl reader of each mounted `ToastRegion`, the latest last.
+const REGIONS = new WeakMap<ToastQueue, Array<() => number | undefined>>();
+const warnedTwice = new WeakSet<ToastQueue>();
+const warnedTtls = new Set<string>();
+
+/** What the latest region on `queue` reads for `toast.ttlMs`, or the constant where it reads nothing usable. */
+function defaultTtl(queue: ToastQueue): number {
+  const read = REGIONS.get(queue)?.at(-1)?.();
+  if (read === undefined) return DEFAULT_TTL_MS;
+  if (read > 0) return read;
+  if (isDev() && !warnedTtls.has(String(read))) {
+    warnedTtls.add(String(read));
+    console.warn(`weasel: the toast.ttlMs kit setting is ${read}, but a toast's delay must be above 0; timing toasts by ${DEFAULT_TTL_MS} ms instead.`);
+  }
+  return DEFAULT_TTL_MS;
+}
 
 /**
- * Has `queue` time a toast that sets no `ttlMs` by `read`, falling back to
- * the constant where it answers `undefined`, until the returned release.
+ * Counts a mounted `ToastRegion` on `queue`, and has `queue` time a toast that
+ * sets no `ttlMs` by `read` while it is the latest region mounted, falling back
+ * to the constant where it answers `undefined`, until the returned release.
  * Folder-internal: `ToastRegion` feeds it the kit settings.
  */
-export function readDefaultTtl(queue: ToastQueue, read: () => number | undefined): () => void {
-  DEFAULT_TTLS.set(queue, read);
+export function holdRegion(queue: ToastQueue, read: () => number | undefined): () => void {
+  const readers = REGIONS.get(queue) ?? [];
+  REGIONS.set(queue, readers);
+  readers.push(read);
+  if (readers.length > 1 && isDev() && !warnedTwice.has(queue)) {
+    warnedTwice.add(queue);
+    console.warn('weasel: a second <ToastRegion> is mounted on one toast queue, so every toast draws twice. Mount one region per queue, or give the other its own `createToastQueue()`.');
+  }
   return () => {
-    if (DEFAULT_TTLS.get(queue) === read) DEFAULT_TTLS.delete(queue);
+    const at = readers.indexOf(read);
+    if (at >= 0) readers.splice(at, 1);
   };
 }
 
@@ -107,7 +131,11 @@ export class ToastQueue {
   }
 
   add(grade: Grade, title: string, options: ToastOptions = {}): void {
-    const { description, ttlMs = DEFAULT_TTLS.get(this)?.() ?? DEFAULT_TTL_MS, id } = options;
+    const { description, id } = options;
+    if (options.ttlMs != null && !(options.ttlMs > 0)) {
+      throw new RangeError(`weasel: toast "${title}" has ttlMs ${options.ttlMs}, but it must be above 0. Pass null or Infinity for a toast that stays until dismissed.`);
+    }
+    const ttlMs = options.ttlMs === undefined ? defaultTtl(this) : options.ttlMs;
     const rac = RAC_QUEUES.get(this)!;
     if (id !== undefined) {
       const existing = this.keysById.get(id);

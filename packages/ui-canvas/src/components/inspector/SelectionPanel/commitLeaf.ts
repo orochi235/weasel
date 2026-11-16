@@ -1,6 +1,7 @@
 import type { NodeId, SelectionApi } from '@weasel-js/routing';
 import { asNodeId, type NodePropertiesEntry, type Scene } from '@weasel-js/core';
-import { prefStoredReset } from '@weasel-js/prefs';
+import { prefHoldsValue, prefStoredReset } from '@weasel-js/prefs';
+import { isDev } from '@weasel-js/registry';
 import { boundAt } from '@weasel-js/ui/components/PanelCells';
 import { declaredField, nodeRoot } from './declaredFields';
 import { nodeLeafValue, setAtPath, type PanelLeaf, type PanelPaintAbove, type PanelRecord } from '@weasel-js/ui/components/PanelCells';
@@ -62,6 +63,22 @@ function writeLeaf<TData, TLayer extends string, TPose>(
 
 const writable = (leaf: PanelLeaf): boolean =>
   /^(pose|data)\../.test(leaf.path) || declaredField(leaf.path.split('.')[0]) !== undefined;
+
+const warnedUnwritable = new Set<string>();
+
+/** Warn once per kind and path, in dev, of a value leaf that `kinds`' schemas key where no edit can land. */
+export function warnUnwritable(kinds: readonly string[], leaves: readonly PanelLeaf[]): void {
+  if (!isDev()) return;
+  for (const leaf of leaves) {
+    if (writable(leaf) || !prefHoldsValue(leaf.leaf)) continue;
+    for (const kind of new Set(kinds)) {
+      const key = `${kind}\0${leaf.path}`;
+      if (warnedUnwritable.has(key)) continue;
+      warnedUnwritable.add(key);
+      console.warn(`weasel: the properties schema of kind "${kind}" keys a field at "${leaf.path}", which SelectionPanel draws but cannot save. Key it under "pose." or "data." (such as "data.${leaf.path}"), or as a field a node declares ("clip", "units").`);
+    }
+  }
+}
 
 /**
  * Writes, into every selected node, what `next` derives from the value that

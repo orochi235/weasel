@@ -1,4 +1,4 @@
-import { useMemo, useState, type ReactNode } from 'react';
+import { useEffect, useMemo, useState, type ReactNode } from 'react';
 import { applyPrefConditions, prefAliasTargets, prefJudge, prefReader, visiblePrefSubtree, type PrefEntry, type PrefGroup, type PrefSection } from '@weasel-js/prefs';
 import { Input } from '../Input';
 import { MotifFrame } from '../MotifFrame';
@@ -21,6 +21,7 @@ import { RailLayout } from './RailLayout';
 import { selectionAttrs, shownPath, useSelectedRow, type PrefSelectHow, type SelectionRoot } from './selection';
 import { useSplitRows, type PrefSplitProps } from './splitRows';
 import { useParamsPolicy } from './useParamsPolicy';
+import { warnUnmatchedRenderers } from './unmatchedRenderers';
 import s from './Prefs.module.css';
 import { holdScope, type HoldProps } from '../Disabled';
 
@@ -42,7 +43,8 @@ export interface PrefsFormProps extends MarkHiddenProps, PrefSplitProps, HoldPro
   onChange: (path: string, value: unknown) => void;
   /**
    * Per-kind renderers for app-defined kinds. Entries also override the
-   * built-in kinds when keys collide. A renderer owns the control cell
+   * built-in kinds when keys collide, and a key that is a leaf's path overrides that leaf alone.
+   * A key matching no path or kind in the schema warns in development. A renderer owns the control cell
    * (the label/tooltip row chrome stays with the form, unless the leaf
    * sets `block`); returning `null` collapses the row entirely. Unknown
    * kinds with no renderer show a labeled placeholder instead of
@@ -189,6 +191,7 @@ function PrefsFormBody(props: PrefsFormProps) {
   const [query, setQuery] = useState('');
   // The whole schema, as for `fields`: an alias may show a leaf the filter or `showHidden` left out.
   const over = props.over ?? schema;
+  useEffect(() => warnUnmatchedRenderers(renderers, schema, props.over), [renderers, schema, props.over]);
   const targets = useMemo(
     () => prefAliasTargets(over, (entry) => prefJudge(over, prefReader(over, values), entry), { showHidden, markHidden }),
     [over, values, showHidden, markHidden],

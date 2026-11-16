@@ -10,7 +10,7 @@ import {
 import { useAssignedPortalContainer, useOverlayPortal, type OverlayPortalProps } from '../../overlays/portalHost';
 import { useAppearance } from '../appearance';
 import { Button, CLOSE_BUTTON_PROPS } from '../Button';
-import { defaultToastQueue, racQueueOf, readDefaultTtl, type ToastContent, type ToastQueue } from './queue';
+import { defaultToastQueue, racQueueOf, holdRegion, type ToastContent, type ToastQueue } from './queue';
 import s from './Toast.module.css';
 import './toastViewTransitions.css';
 import type {} from '../../kitSettings';
@@ -76,7 +76,7 @@ export function ToastRegion(props: ToastRegionProps) {
   const assigned = useAssignedPortalContainer(portalContainer);
   const { anchor, provide, ready } = useOverlayPortal(portalContainer);
   const settings = useKitSettings();
-  useLayoutEffect(() => readDefaultTtl(queue, () => settings.get('toast.ttlMs')), [queue, settings]);
+  useLayoutEffect(() => holdRegion(queue, () => settings.get('toast.ttlMs')), [queue, settings]);
   const classes = [s.region, placementClass[placement], className];
 
   const renderToast = (t: QueuedToast<ToastContent>) => <ToastItem toast={t} queue={queue} />;
