@@ -2,6 +2,8 @@
 '@weasel-js/core': patch
 ---
 
-A `<SceneCanvas modes>` switch now tells the dep registry, so an `ActionBar` or command palette greys out an action the new mode bars, and lights one it allows, without waiting for some other change to re-render it.
+A `<SceneCanvas modes>` switch tells the dep registry, so action bars and the palette reread which actions it allows.
+
+Before, an `ActionBar` showed the previous mode's state until some other change re-rendered it.
 
 <!-- entry: fix -->
