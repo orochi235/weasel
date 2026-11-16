@@ -1,14 +1,9 @@
 import { useMemo, useState } from 'react';
 import {
-  SceneCanvas,
-  WeaselProvider,
-  asNodeId,
-  useScene,
-  ellipsePath,
-  polygonFromPoints,
-  rectPath,
-  solid, editPreset, movePreset, pathsPreset, pickPreset, transformPreset, viewPreset,
+  SceneCanvas, WeaselProvider, asNodeId, useScene, ellipsePath, polygonFromPoints, rectPath, solid, editPreset,
+  movePreset, pickPreset, transformPreset, viewPreset,
 } from '@weasel-js/core';
+import { pathsPreset } from '@weasel-js/path-tools';
 import { useAnimator } from '@weasel-js/animator/react';
 import { createParallaxLayer, createParallaxPlane, createTiledLayer } from '@weasel-js/parallax';
 import type { DrawCommand } from '@weasel-js/core/renderer';

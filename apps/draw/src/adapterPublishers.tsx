@@ -1,6 +1,5 @@
-import {
-  type NoticesDep, type SelectionApi, useBooleansAdapter, useCreateOutlinesAdapter, useNotices,
-} from '@weasel-js/core';
+import { type NoticesDep, type SelectionApi, useBooleansAdapter, useNotices } from '@weasel-js/core';
+import { useCreateOutlinesAdapter } from '@weasel-js/path-tools';
 import { toast } from '@weasel-js/ui/components/Toast';
 import { useMemo } from 'react';
 import { drawBooleansAdapter } from './booleansAdapter';

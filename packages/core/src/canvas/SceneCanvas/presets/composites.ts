@@ -2,7 +2,7 @@ import type { FeaturePreset } from '../features';
 import { arrangePreset } from './arrange';
 import { editPreset } from './edit';
 import { ingestPreset } from './ingest';
-import { pathsPreset } from './paths';
+import { pathfinderPreset } from './paths';
 import { selectPreset } from './select';
 import { movePreset, outlinePreset, resizePreset, rotatePreset } from './transform';
 import { viewPreset } from './view';
@@ -13,13 +13,14 @@ export const pickPreset: FeaturePreset = { id: 'pick', label: 'Pick', includes: 
 /** Resize and rotate handles. */
 export const transformPreset: FeaturePreset = { id: 'transform', label: 'Transform', includes: [resizePreset, rotatePreset] };
 
-/** Every core behavior: view, pick, transform, move, edit, arrange, paths, and ingest. Tools that make things are
- *  left to the canvas, through the `tools:` presets or `defaultTools`. */
+/** Every core behavior: view, pick, transform, move, edit, arrange, the pathfinder, and ingest. Tools that make
+ *  things are left to the canvas, through the `tools:` presets or `defaultTools`; path editing is
+ *  `@weasel-js/path-tools`'. */
 export const drawPreset: FeaturePreset = {
   id: 'draw',
   label: 'Draw',
   includes: [
     viewPreset, selectPreset, outlinePreset, resizePreset, rotatePreset, movePreset, editPreset, arrangePreset,
-    pathsPreset, ingestPreset,
+    pathfinderPreset, ingestPreset,
   ],
 };

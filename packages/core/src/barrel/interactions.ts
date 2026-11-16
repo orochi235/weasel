@@ -96,18 +96,10 @@ export type {
   ThresholdDragOptions,
   ThresholdDragHandle,
 } from '../interactions/gestures/thresholdDrag';
+export { enumerateAnchors, withCoord, type PathAnchor } from '../interactions/actions/edit-anchors/geometry';
 export {
-  hitAnchor,
-  enumerateAnchors,
-  withCoord,
-} from '../interactions/actions/edit-anchors';
-export type {
-  AnchorHit,
-  EditAnchorsParams,
-  HandleLock,
-  HandleLocks,
-  PathAnchor,
-} from '../interactions/actions/edit-anchors';
+  locksOf, type EditAnchorsParams, type HandleLock, type HandleLocks,
+} from '../interactions/actions/edit-anchors/params';
 
 // ─── Action hooks: selection-driven keyboard / button actions ───────────────
 export {

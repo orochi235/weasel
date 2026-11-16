@@ -1,18 +1,21 @@
 import {
-  BUILTIN_TOOL_GROUPS,
   createMeasurements,
   placedPagesOf,
   type SceneCanvasApi,
   type SelectionApi,
+  SELECT_TOOLS,
   SHAPE_TOOLS,
-  TOOL_GROUP_ORDER,
+  TYPE_TOOLS,
+  VIEW_TOOLS,
   type ToolsApi,
   useCanvasSize,
   type View,
   withoutTools,
 } from '@weasel-js/core';
 import type { ModeRegistry } from '@weasel-js/modes';
-import { PATH_EDIT_TOOLS, PATH_OVERLAYS_GROUP, PATH_TOOLS_TOOLS, RESHAPE_TOOLS, WARP_TOOLS } from '@weasel-js/path-tools';
+import {
+  DRAW_TOOLS, PATH_EDIT_TOOLS, PATH_OVERLAYS_GROUP, PATH_TOOLS_TOOLS, RESHAPE_TOOLS, SLICE_TOOLS, WARP_TOOLS,
+} from '@weasel-js/path-tools';
 import { ActionBar } from '@weasel-js/ui/components/ActionBar';
 import { CharacterOptions } from '@weasel-js/ui/components/inspector/CharacterOptions';
 import { ActiveToolOptionsBar } from '@weasel-js/ui/components/ToolOptionsBar';
@@ -52,11 +55,13 @@ import { useHoldContentUnderChrome } from './useHoldContentUnderChrome';
 import { useTextEditSession } from './useTextEditSession';
 import { Workspace } from './Workspace';
 
-/** The palette's groups: core's, then path-tools' reshaping tools and its warps. */
-const TOOL_GROUPS = [...TOOL_GROUP_ORDER, 'path', 'warp'];
+/** Core's tool sets and path-tools' path-edit, drawing, and knife sets, in palette order. */
+const TOOL_SETS = [SELECT_TOOLS, PATH_EDIT_TOOLS, VIEW_TOOLS, SHAPE_TOOLS, DRAW_TOOLS, TYPE_TOOLS, SLICE_TOOLS];
+/** The palette's groups: those sets', then path-tools' reshaping tools and its warps. */
+const TOOL_GROUPS = [...TOOL_SETS.map((set) => set.id), 'path', 'warp'];
 const TOOL_STACKS = [withoutTools(SHAPE_TOOLS, 'line'), ['pen', 'spiro', 'pencil'], ['snip', 'reach'], WARP_TOOLS];
-/** What the shortcut sheet groups the tools by: core's sets, then path-tools' path-edit, reshaping, and the rest. */
-const SHEET_TOOL_SETS = [...BUILTIN_TOOL_GROUPS, PATH_EDIT_TOOLS, RESHAPE_TOOLS, PATH_TOOLS_TOOLS];
+/** What the shortcut sheet groups the tools by: those sets, then path-tools' reshaping tools and the rest. */
+const SHEET_TOOL_SETS = [...TOOL_SETS, RESHAPE_TOOLS, PATH_TOOLS_TOOLS];
 /** What the view fits before the scene has a page to fit. */
 const FALLBACK_PAGE = { x: 0, y: 0, ...PAPER_PRESETS[DEFAULT_PAPER_SIZE] };
 

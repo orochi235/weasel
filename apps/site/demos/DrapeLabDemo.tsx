@@ -1,4 +1,5 @@
-import { useLatest, movePreset, pathsPreset, pickPreset } from '@weasel-js/core';
+import { useLatest, movePreset, pickPreset } from '@weasel-js/core';
+import { pathsPreset } from '@weasel-js/path-tools';
 import { type ConfigOf, defineInstrument, f, Lab, type RenderContext, TrialSceneCanvas } from '@weasel-js/labkit';
 import { createDrapePreset } from '@weasel-js/path-tools';
 import { useMemo } from 'react';

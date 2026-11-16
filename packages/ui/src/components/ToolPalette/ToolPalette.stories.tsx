@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from '@weasel-js/forge';
 import { useState } from 'react';
-import { declaredToolShortcuts, DRAW_TOOLS, SHAPE_TOOLS, withoutTools, type Tool, type ToolsApi } from '@weasel-js/core';
+import { declaredToolShortcuts, SHAPE_TOOLS, toolSet, withoutTools, type Tool, type ToolsApi } from '@weasel-js/core';
 import { createModeRegistry, DEFAULT_MODES } from '@weasel-js/modes';
 import { ToolPalette, type ToolPaletteProps } from '@weasel-js/ui/components/ToolPalette';
 import { icon } from '../../icons.gen';
@@ -140,6 +140,9 @@ function stackedList(): Tool[] {
     { id: 'pencil', keybinding: { key: 'n' }, presentation: { label: 'Pencil', icon: icon('core:pencil'), group: 'draw' } } as Tool,
   ];
 }
+
+/** The draw tools' set, as `@weasel-js/path-tools` names it. */
+const DRAW_TOOLS = toolSet('draw', ['pen', 'pencil'], { label: 'Draw' });
 
 function StackedDemo(props: Partial<ToolPaletteProps>) {
   const [active, setActive] = useState<string>('select');

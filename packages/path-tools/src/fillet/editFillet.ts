@@ -20,9 +20,8 @@ import {
   type CornerShape,
   type PolygonPath,
 } from '@weasel-js/geom';
-import {
-  editingLayer, inPlane, pathEditPreview, pathOperationTags, type EditAnchorsDep,
-} from '@weasel-js/core';
+import { editingLayer, inPlane, pathOperationTags, type EditAnchorsDep } from '@weasel-js/core';
+import { pathEditPreview } from '../pathEdit/editAnchors/preview';
 import { icon } from '../icons.gen';
 import type {} from '../actionParamSchema';
 

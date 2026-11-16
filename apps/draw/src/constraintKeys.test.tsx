@@ -11,7 +11,7 @@ import {
 } from '@weasel-js/core';
 import { browserReservedChord } from '@weasel-js/routing';
 import type { KeySpec } from '@weasel-js/gestures';
-import { constrainAnchorsAction, constraintsPreset, unconstrainAnchorsAction } from '@weasel-js/path-tools';
+import { constrainAnchorsAction, constraintsPreset, unconstrainAnchorsAction, pathsPreset } from '@weasel-js/path-tools';
 import { useMemo } from 'react';
 import { DEFAULT_MODES } from '@weasel-js/modes';
 import { createModeMachine } from './modality/machine';
@@ -24,7 +24,7 @@ beforeAll(() => {
 afterEach(() => cleanup());
 
 const A = asNodeId('a');
-const FEATURES = [drawPreset, constraintsPreset] as const;
+const FEATURES = [drawPreset, pathsPreset, constraintsPreset] as const;
 type Pose = { x: number; y: number; width: number; height: number };
 type Data = { path: PolygonPath; constraints?: PathConstraint[] };
 

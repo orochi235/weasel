@@ -119,15 +119,6 @@ const WALKS: Record<BuiltinToolId, (w: Walk) => void> = {
     w.undo();
     expect(xOf(w.scene)).toBe(100);
   },
-  anchors: (w) => {
-    expect(w.editing()).toBe(SQUARE);
-    const coords = () => Array.from((w.scene.get(SQUARE)!.data.path as { coords: ArrayLike<number> }).coords);
-    const before = coords();
-    w.drag([140, 100], [145, 95], [150, 90]);
-    expect(coords()).not.toEqual(before);
-    w.undo();
-    expect(coords()).toEqual(before);
-  },
   hand: (w) => {
     const depth = w.scene.history.undoDepth();
     w.drag([240, 240], [260, 250], [280, 260]);
@@ -140,30 +131,14 @@ const WALKS: Record<BuiltinToolId, (w: Walk) => void> = {
   line: insertsOnDrag,
   polygon: insertsOnDrag,
   star: insertsOnDrag,
-  pencil: insertsOnDrag,
   text: insertsOnDrag,
   sticky: insertsOnDrag,
-  pen: (w) => {
-    w.click(240, 240);
-    w.click(320, 240);
-    w.click(320, 320);
-    w.key('Enter');
-    expect(w.count()).toBe(2);
-    w.undo();
-    expect(w.count()).toBe(1);
-  },
   lasso: (w) => {
     const depth = w.scene.history.undoDepth();
     w.drag([80, 80], [170, 80], [170, 170], [80, 170], [80, 90]);
     expect(w.scene.getSelection()).toEqual([SQUARE]);
     // A selection is not an edit: the lasso commits none to the history.
     expect(w.scene.history.undoDepth()).toBe(depth);
-  },
-  slice: (w) => {
-    w.drag([80, 120], [120, 120], [180, 120]);
-    expect(w.count()).toBe(2);
-    w.undo();
-    expect(w.count()).toBe(1);
   },
 };
 
@@ -186,11 +161,6 @@ describe('every built-in tool', () => {
   for (const id of BUILTIN_TOOL_IDS) {
     it(`${id}: activates by its key, commits through its action, and undoes`, () => {
       const w = mount();
-      if (id === 'anchors') {
-        // Anchor editing works on the path path edit was entered on.
-        act(() => { w.scene.setSelection([SQUARE]); });
-        w.trigger('enterPathEdit');
-      }
       w.activate(id);
       expect(w.tools().active).toBe(id);
       WALKS[id](w);

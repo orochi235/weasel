@@ -2,16 +2,10 @@ import { useEffect, useMemo, useState } from 'react';
 import { autoSkin } from '@weasel-js/animator';
 import type { Skeleton, Skin } from '@weasel-js/animator';
 import {
-  asNodeId,
-  dataRestPath,
-  placeSkeleton,
-  polygonFromPoints,
-  SceneCanvas,
-  solid,
-  useRigNode,
-  WeaselProvider,
-  useScene, pathsPreset, pickPreset,
+  asNodeId, dataRestPath, placeSkeleton, polygonFromPoints, SceneCanvas, solid, useRigNode, WeaselProvider, useScene,
+  pickPreset,
 } from '@weasel-js/core';
+import { pathsPreset } from '@weasel-js/path-tools';
 import type { NodeId, Path, RectPose, Stroke, Fill } from '@weasel-js/core';
 import { createRigEditState, useRigTools } from '@weasel-js/rig';
 import { ActionBar } from '@weasel-js/ui/components/ActionBar';

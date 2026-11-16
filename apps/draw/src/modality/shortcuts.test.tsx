@@ -5,7 +5,8 @@
 import { describe, it, expect, vi, beforeAll, afterEach } from 'vitest';
 import { act, cleanup } from '@testing-library/react';
 import { renderWithKeys as render } from '@weasel-js/react/testing/giveKeys';
-import { ActionsProvider, DepRegistryProvider, SceneCanvas, type BuiltinToolId, asNodeId, createScene, pathFromD, useDepRegistry, type DepRegistry, type PolygonPath, drawPreset } from '@weasel-js/core';
+import { ActionsProvider, DepRegistryProvider, SceneCanvas, asNodeId, createScene, pathFromD, useDepRegistry, type DepRegistry, type PolygonPath, drawPreset } from '@weasel-js/core';
+import { pathsPreset, useSliceTool } from '@weasel-js/path-tools';
 import { reportRouteConflicts } from '@weasel-js/core/routing';
 import { useMemo } from 'react';
 import { DEFAULT_MODES, activeModeOf } from '@weasel-js/modes';
@@ -111,8 +112,9 @@ describe('entering path-edit from the keyboard', () => {
     machine: ReturnType<typeof createModeMachine>;
     scene: ReturnType<typeof createScene<{ path: PolygonPath }, 'main', { x: number; y: number; width: number; height: number }>>;
     pathToEdit: () => string | null;
-    tool?: BuiltinToolId;
+    tool?: 'slice';
   }) {
+    const slice = useSliceTool();
     const deps = useDepRegistry();
     depsRef.current = deps;
     const keys = useMemo(() => modalityShortcuts(machine, {
@@ -121,14 +123,14 @@ describe('entering path-edit from the keyboard', () => {
     }), [machine, pathToEdit, scene]);
     const pathEdit = useMemo(() => modePathEdit(machine, () => true), [machine]);
     return (
-      <SceneCanvas features={[drawPreset]} scene={scene} layers={{}} width={64} height={64}
+      <SceneCanvas features={[drawPreset, pathsPreset]} scene={scene} layers={{}} width={64} height={64}
         ambient={[keys]} modes={machine.registry} pathEdit={pathEdit}
-        {...(tool ? { defaultTools: ['select', tool] as const, defaultActiveTool: tool } : {})} />
+        {...(tool ? { defaultTools: ['select'] as const, tools: { slice }, defaultActiveTool: tool } : {})} />
     );
   }
   const depsRef: { current: DepRegistry | null } = { current: null };
 
-  function setupPath(pathToEdit: () => string | null, tool?: BuiltinToolId) {
+  function setupPath(pathToEdit: () => string | null, tool?: 'slice') {
     const machine = createModeMachine({ modes: DEFAULT_MODES, history: fakeHistory() as never });
     const scene = createScene<{ path: PolygonPath }, 'main', { x: number; y: number; width: number; height: number }>(
       { systemLayers: [{ id: 'main' }] },

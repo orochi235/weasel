@@ -10,6 +10,7 @@ import {
   drawPreset,
   pathNode,
 } from '@weasel-js/core';
+import { pathsPreset, usePenTool, usePencilTool } from '@weasel-js/path-tools';
 import {
   type ConfigOf, defineInstrument, f, Lab, type RenderContext, type SceneTrialState, TrialSceneCanvas,
   useTrialConfigChange, useTrialScene,
@@ -129,6 +130,8 @@ const near = (a: unknown, b: unknown) =>
   typeof a === 'number' && typeof b === 'number' ? Math.abs(a - b) < 0.5 : a === b;
 
 function SymmetryTrial({ ctx }: { ctx: RenderContext<State, Config> }) {
+  const pen = usePenTool();
+  const pencil = usePencilTool();
   const scene = useTrialScene(ctx, createLabScene);
   const sym = useMemo(() => createSymmetry(scene), [scene]);
   const ambient = useMemo(() => [sym.contribution], [sym]);
@@ -183,8 +186,9 @@ function SymmetryTrial({ ctx }: { ctx: RenderContext<State, Config> }) {
 
   return (
     <TrialSceneCanvas
-      features={[drawPreset]}
-      defaultTools={['rect', 'ellipse', 'pen', 'pencil']}
+      features={[drawPreset, pathsPreset]}
+      defaultTools={['rect', 'ellipse']}
+      tools={{ pen, pencil }}
       scene={scene}
       trial={ctx.trial}
       ambient={ambient}

@@ -9,6 +9,7 @@ import {
   SceneCanvas, asNodeId, createScene, createToolOptionValues, pathFromD, pathInWorld, type PolygonPath, type ToolsApi,
   useActionsRegistry, type ActionsRegistry, drawPreset,
 } from '@weasel-js/core';
+import { pathsPreset } from '@weasel-js/path-tools';
 import { createModeRegistry, DEFAULT_MODES } from '@weasel-js/modes';
 import { pathToAnchors } from '@weasel-js/geom';
 import { anchorSelectionPreset, tugPreset, sandPreset } from './presets';
@@ -20,7 +21,7 @@ beforeAll(() => {
 afterEach(() => cleanup());
 
 const A = asNodeId('a');
-const FEATURES = [drawPreset, tugPreset, sandPreset, anchorSelectionPreset] as const;
+const FEATURES = [drawPreset, pathsPreset, tugPreset, sandPreset, anchorSelectionPreset] as const;
 type Pose = { x: number; y: number; width: number; height: number };
 
 function setup(d: string, width: number, height: number) {

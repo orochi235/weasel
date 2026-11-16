@@ -586,40 +586,6 @@ describe('insert geometry uses tool params, not AABB', () => {
     // 8 sides is 9 commands: one M/L per vertex plus a trailing Z.
     expect(node.data.path.commands.length).toBe(9);
   });
-
-  it('pencil tool: inserted node has a smooth path derived from the sample trail (not a stub rect)', () => {
-    const scene = emptyScene();
-    const { container } = render(
-      <SceneCanvas
-        scene={scene}
-        layers={{}}
-        width={400}
-        height={400}
-        features={[drawPreset]}
-        defaultTools={['select', 'pencil']}
-      />,
-    );
-    const canvas = getCanvas(container);
-    act(() => {
-      document.dispatchEvent(new KeyboardEvent('keydown', { bubbles: true, key: 'n', code: 'KeyN' }));
-    });
-    act(() => {
-      pd(canvas, 50, 50);
-      pm(canvas, 80, 60);
-      pm(canvas, 120, 80);
-      pm(canvas, 150, 100);
-      pu(canvas, 150, 100);
-    });
-
-    expect(nodeCount(scene)).toBe(1);
-    const id = firstId(scene);
-    const node = scene.get(id) as { data: { path: { kind: string; commands?: Uint8Array } } };
-    // Stub rect would be { kind: 'rect', x, y, ... } (no commands array). The
-    // real path is a PolygonPath with command stream.
-    expect(node.data.path.kind).toBe('polygon');
-    expect(node.data.path.commands).toBeDefined();
-    expect(node.data.path.commands!.length).toBeGreaterThan(1);
-  });
 });
 
 describe('useLassoTool smoke', () => {

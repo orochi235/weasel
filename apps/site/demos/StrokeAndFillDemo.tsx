@@ -1,36 +1,11 @@
 import { useMemo, useRef, useState } from 'react';
 import {
-  SceneCanvas,
-  WeaselProvider,
-  asNodeId,
-  boundsOfPath,
-  hexToRgba,
-  pathFromD,
-  polygonFromPoints,
-  polylineFromPoints,
-  pressureToWidth,
-  regularPolygonPath,
-  rgbaToHex,
-  solid,
-  strokeOf,
-  useActionsRegistry,
-  vertexHalfWidths,
-  useScene,
-  useSelection,
-  type InsertNodeFactories,
-  type InvokeParams,
-  type Paint,
-  type GradientPaint,
-  type Path,
-  type Scene,
-  type Stroke,
-  type View,
-  type Fill,
-  editPreset,
-  pathsPreset,
-  pickPreset,
-  pathNode,
+  SceneCanvas, WeaselProvider, asNodeId, boundsOfPath, hexToRgba, pathFromD, polygonFromPoints, polylineFromPoints,
+  pressureToWidth, regularPolygonPath, rgbaToHex, solid, strokeOf, useActionsRegistry, vertexHalfWidths, useScene,
+  useSelection, type InsertNodeFactories, type InvokeParams, type Paint, type GradientPaint, type Path, type Scene,
+  type Stroke, type View, type Fill, editPreset, pickPreset, pathNode,
 } from '@weasel-js/core';
+import { pathsPreset, usePencilTool } from '@weasel-js/path-tools';
 import { ColorField } from '@weasel-js/ui/components/ColorField';
 import { FillStrokeSwatch } from '@weasel-js/ui/components/FillStrokeSwatch';
 import type { PaintSlot } from '@weasel-js/paint';
@@ -109,6 +84,7 @@ export function StrokeAndFillDemo() {
 }
 
 function StrokeAndFill() {
+  const pencil = usePencilTool();
   const scene = useScene<PaintedData, LayerId>({
     systemLayers: [{ id: 'default' }],
     initial: [
@@ -178,7 +154,7 @@ function StrokeAndFill() {
               selection={selection}
               view={view}
               onViewChange={setView}
-              defaultTools={['pencil']}
+              tools={{ pencil }}
               insertNodeFactories={insertNodeFactories}
             />
           </DemoStage>

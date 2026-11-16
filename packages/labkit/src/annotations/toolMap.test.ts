@@ -19,7 +19,8 @@ describe('the annotation tool table', () => {
   it('only names weasel tools SceneCanvas will mount', () => {
     // Against the kit's own list, not a retyped copy: a tool id that stops
     // being built in should fail here rather than in a silent no-op palette.
-    const mountable = new Set<string>([...KIT_SHAPE_KINDS, 'select']);
+    // The pencil is path-tools', which the overlay mounts beside the built-ins.
+    const mountable = new Set<string>([...KIT_SHAPE_KINDS, 'select', 'pencil']);
     for (const t of ANNOTATION_TOOLS) {
       const info = annotationToolInfo(t.id);
       if (!info) continue;

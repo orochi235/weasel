@@ -42,7 +42,7 @@ export { roleReader, roleMods, keysHeld, modifierStateOf } from '@weasel-js/rout
 export type { ModifierRole, ModifierRoles, RoleKeys, RoleRebinds } from '@weasel-js/routing';
 export type {
   ActionParamSchema, ActionTunings, AlignParams, DistributeParams, FlipParams, NudgeParams, ReorderParams,
-  FinishPathParams, IngestParams, InsertParams, MoveParams, OffsetPathParams, PaintParams, RotateParams,
+  FinishPathParams, IngestParams, InsertParams, MoveParams, PaintParams, RotateParams,
   PlaceParams, CountStepParams, OpacityParams, ViewportZoomParams, WheelScrollParams, PickParams,
 } from '../interactions/actions/actionParamSchema';
 export type { ReparentOnDrop } from '../interactions/actions/move/session';
@@ -88,16 +88,8 @@ export {
 export {
   containerScrollAction, scrollRange, scrollableAt, type ScrollRange, type ScrollableContainer,
 } from '../interactions/actions/defaults/containerScroll';
-export { editAnchorsAction } from '../interactions/actions/edit-anchors/action';
-export { deleteAnchorsAction, selectAnchorAction } from '../interactions/actions/defaults/anchorEditing';
-export {
-  nudgeAnchorsDownAction,
-  nudgeAnchorsLeftAction,
-  nudgeAnchorsRightAction,
-  nudgeAnchorsUpAction,
-} from '../interactions/actions/defaults/anchorNudge';
+export { NUDGE_LABEL, nudgeDelta, nudgeSpec, type NudgeDirection } from '../interactions/actions/defaults/nudgeSteps';
 export { lassoSelectAction } from '../interactions/actions/lasso-select/action';
-export { sliceAction } from '../interactions/actions/defaults/slice';
 export {
   commitDeleteToScene, createDeleteAction, deleteAction, hiddenSourceDeleteOps, type DeleteActionOptions,
 } from '../interactions/actions/defaults/delete';

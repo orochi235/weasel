@@ -9,7 +9,8 @@ import {
   cubicPointAt, flatAnchorIndex, nearestSegmentT, pathToAnchors, spiroControlPath, withinPxRadius,
   type PolygonPath, type SpiroContour,
 } from '@weasel-js/geom';
-import { pathEditPreview, type EditAnchorsDep } from '@weasel-js/core';
+import { type EditAnchorsDep } from '@weasel-js/core';
+import { pathEditPreview } from '../pathEdit/editAnchors/preview';
 import { spiroContours, spiroOf } from './spiroShape';
 
 /** Screen-px reach of the curve, as the segment affordance's. */

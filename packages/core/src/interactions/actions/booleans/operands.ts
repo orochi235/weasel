@@ -6,9 +6,8 @@ import type { Affine, Path, Scale2 } from '@weasel-js/geom';
 import { pathUnion } from '@weasel-js/geom/booleans';
 import { textToPath, textToPathsByPaint } from '@weasel-js/text';
 import { resolveFill, resolveStroke } from '@weasel-js/paint';
-import type { PathPaint } from 'canvas/nodeShapes/nodePaint';
+import type { PaintedPath, PathPaint } from 'canvas/nodeShapes/nodePaint';
 import type { NodeId } from 'core/scene/types';
-import type { PaintedPath } from '../outlines/replaceWithPaths';
 import { strokeRegion } from 'domains/paths/strokeRegion';
 import type { BooleansAdapter } from './booleans';
 

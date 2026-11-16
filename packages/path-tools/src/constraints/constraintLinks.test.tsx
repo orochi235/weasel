@@ -5,24 +5,13 @@ import { pathAnchorPoints, polygonFromPoints, type PathConstraint, type PolygonP
 import type { ActionDeps, ImmediateInvoker, InvocationCtx, OngoingInvoker } from '@weasel-js/routing';
 import { DepRegistryProvider, useDepRegistry } from '@weasel-js/routing/react';
 import {
-  IDENTITY_POSE_COMPOSITION,
-  createScene,
-  createTransformOp,
-  defaultCommitAdapter,
-  effectivePose,
-  moveAction,
-  pathEditPreset,
-  deleteAnchorsAction,
-  editAnchorsAction,
-  findNodeShape,
-  type EditAnchorsDep,
-  type NodeId,
-  type Op,
-  type PathEditMark,
-  type SelectionApi,
-  type TransformFollower,
-  type AnyScene,
+  IDENTITY_POSE_COMPOSITION, createScene, createTransformOp, defaultCommitAdapter, effectivePose, moveAction,
+  findNodeShape, type EditAnchorsDep, type NodeId, type Op, type PathEditMark, type SelectionApi,
+  type TransformFollower, type AnyScene,
 } from '@weasel-js/core';
+import { pathEditPreset } from '../pathsPreset';
+import { deleteAnchorsAction } from '../pathEdit/anchorEditing';
+import { editAnchorsAction } from '../pathEdit/editAnchors/editAnchors';
 import {
   useEditAnchorsDepSourceForTests as useEditAnchorsDepSource, type EditAnchorsStateRef,
 } from '@weasel-js/core/test-seams';

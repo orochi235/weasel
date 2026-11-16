@@ -5,10 +5,14 @@ import type { TrialTool } from '../tools/types';
 import { MARK_LINE_OPTIONS, MARK_TEXT_OPTIONS } from './options';
 import type { AnnotationKind } from './types';
 
+/** A weasel tool an annotation tool drives: one `<SceneCanvas>` builds in, or the pencil,
+ *  which is `@weasel-js/path-tools`'. */
+export type AnnotationWeaselTool = BuiltinToolId | 'pencil';
+
 /** Which weasel tool an annotation tool drives, and what kind of mark that
  *  makes. `select` makes none. */
 export interface AnnotationToolInfo {
-  weaselTool: BuiltinToolId;
+  weaselTool: AnnotationWeaselTool;
   kind?: AnnotationKind;
 }
 
@@ -98,6 +102,6 @@ export function annotationToolInfo(id: string | null): AnnotationToolInfo | unde
 }
 
 /** Every weasel tool the overlay has to mount for this palette to work. */
-export const ANNOTATION_WEASEL_TOOLS: readonly BuiltinToolId[] = [
+export const ANNOTATION_WEASEL_TOOLS: readonly AnnotationWeaselTool[] = [
   ...new Set(Object.values(TOOLS).map((t) => t.weaselTool)),
 ];

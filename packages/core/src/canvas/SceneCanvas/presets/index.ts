@@ -7,12 +7,8 @@ export {
   nudgePreset, selectAllPreset, stylePreset, textEditPreset,
 } from './edit';
 export { alignPreset, arrangePreset, distributePreset, flipPreset, reorderPreset } from './arrange';
-export {
-  anchorKeysPreset, outlinesPreset, pathCommandsPreset, pathEditPreset, pathfinderPreset, pathsPreset,
-} from './paths';
-export {
-  drawToolsPreset, pageToolsPreset, selectToolsPreset, shapeToolsPreset, typeToolsPreset, viewToolsPreset,
-} from './tools';
+export { pathfinderPreset } from './paths';
+export { selectToolsPreset, shapeToolsPreset, typeToolsPreset, viewToolsPreset } from './tools';
 export { drawPreset, pickPreset, transformPreset } from './composites';
 export { ingestPreset } from './ingest';
 export { WHITEBOARD_TOOLS, whiteboardPreset } from './whiteboard';

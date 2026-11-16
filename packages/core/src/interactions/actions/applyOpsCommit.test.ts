@@ -1,20 +1,17 @@
 /**
- * Make Boolean Group, Ungroup and Offset Path commit through a consumer's
+ * Make Boolean Group and Ungroup commit through a consumer's
  * `applyOps` as one entry, selection included, so that history's undo puts
  * back the tree and the selection the action started from.
  */
 import { describe, expect, it } from 'vitest';
-import { PathBuilder } from '@weasel-js/geom';
-import type { ActionDeps, ImmediateInvoker, InvocationCtx, OngoingInvoker } from '@weasel-js/routing';
+import type { ActionDeps, ImmediateInvoker } from '@weasel-js/routing';
 import { createHistory } from '@weasel-js/history';
 import type { Op } from 'core/ops/types';
 import { createScene } from 'core/scene/scene';
-import { IDENTITY_POSE_COMPOSITION } from 'core/scene/composeFrame';
 import type { NodeId, RectPose } from 'core/scene/types';
 import { defaultCommitAdapter } from './defaultCommitAdapter';
 import { makeBooleanGroupAction } from './booleans/booleanGroupAction';
 import { groupAction, ungroupAction } from './defaults/group';
-import { offsetPathAction } from './pathCommands/simplifyOffset';
 
 function rig<TPose>(scene: ReturnType<typeof createScene<object, 'main', TPose>>, ids: readonly string[]) {
   let held = [...ids] as NodeId[];
@@ -93,24 +90,5 @@ describe('commits through applyOps, undone by its history', () => {
     r.history.undo();
     expect(JSON.stringify(scene.toJSON().nodes)).toBe(before);
     expect(r.selected()).toEqual([inner, outer]);
-  });
-
-  it('Offset Path', () => {
-    const scene = createScene<object, 'main', unknown>({ composition: IDENTITY_POSE_COMPOSITION, systemLayers: [{ id: 'main' }] });
-    const square = new PathBuilder().moveTo(0, 0).lineTo(100, 0).lineTo(100, 100).lineTo(0, 100).close().build();
-    const p = scene.add({ kind: 'mark', layer: 'main', data: {}, pose: square });
-    const r = rig(scene, [p]);
-    const ctx = (params?: Record<string, unknown>) => ({
-      world: { x: 0, y: 0 }, screen: { x: 0, y: 0 },
-      modifiers: { alt: false, ctrl: false, meta: false, shift: false }, deps: r.deps,
-      ...(params ? { params } : {}),
-    }) as unknown as InvocationCtx;
-    const handle = (offsetPathAction.invoker as OngoingInvoker).start(ctx({ distance: 10 }), {});
-    handle.onEnd!(ctx(), 'commit');
-    expect(r.batches()).toBe(1);
-    expect(r.selected()).toHaveLength(1);
-    expect(r.selected()[0]).not.toBe(p);
-    r.history.undo();
-    expect(r.selected()).toEqual([p]);
   });
 });

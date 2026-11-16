@@ -18,7 +18,7 @@ import {
   TrialSceneCanvas,
   useTrialScene,
 } from '@weasel-js/labkit';
-import { createPathEditHost } from '@weasel-js/path-tools';
+import { createPathEditHost, pathsPreset, usePenTool } from '@weasel-js/path-tools';
 import { Button } from '@weasel-js/ui/components/Button';
 import { useEffect, useReducer, useState } from 'react';
 import s from './RectPathEditLabDemo.module.css';
@@ -91,6 +91,7 @@ function Panel({ scene, host }: { scene: LabScene; host: PathEditHost }) {
 }
 
 function RectPathEditTrial({ ctx }: { ctx: RenderContext<State, unknown> }) {
+  const pen = usePenTool();
   const scene = useTrialScene(ctx, createLabScene);
   // Held beside the trial so the panel can read which path is open.
   const [host] = useState(() => createPathEditHost({ id: FIRST }));
@@ -98,8 +99,9 @@ function RectPathEditTrial({ ctx }: { ctx: RenderContext<State, unknown> }) {
   return (
     <div className={s.trial}>
       <TrialSceneCanvas
-        features={[drawPreset]}
-        defaultTools={['rect', 'pen']}
+        features={[drawPreset, pathsPreset]}
+        defaultTools={['rect']}
+        tools={{ pen }}
         scene={scene}
         trial={ctx.trial}
         pathEdit={host}

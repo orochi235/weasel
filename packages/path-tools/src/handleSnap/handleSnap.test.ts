@@ -2,7 +2,8 @@ import { describe, expect, it } from 'vitest';
 import type { AffordanceHit, InvocationCtx, OngoingHandle, OngoingInvoker } from '@weasel-js/routing';
 import { overlaysOf } from '@weasel-js/routing';
 import { anchorsToPath, DEG_TO_RAD, PATH_C, PATH_M, PATH_Z, pathToAnchors, type PolygonPath } from '@weasel-js/geom';
-import { IDENTITY_POSE_COMPOSITION, createScene, createSnapOutcomeStore, editAnchorsAction, type SnapDep } from '@weasel-js/core';
+import { IDENTITY_POSE_COMPOSITION, createScene, createSnapOutcomeStore, type SnapDep } from '@weasel-js/core';
+import { editAnchorsAction } from '../pathEdit/editAnchors/editAnchors';
 import {
   createSnapSession2dForTests as createSnapSession2d,
   createEditAnchorsDepForTests as makeEditAnchorsDep,

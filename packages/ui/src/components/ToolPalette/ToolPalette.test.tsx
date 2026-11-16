@@ -94,13 +94,12 @@ describe('ToolPalette', () => {
 });
 
 describe('ToolPalette — grouping', () => {
-  it('renders groups in the natural order (select, view, shape, draw, type)', () => {
+  it('renders groups in the natural order (select, view, shape, type)', () => {
     const tools = fakeTools([
       fakeTool('text', 'type'),
       fakeTool('select', 'select'),
       fakeTool('hand', 'view'),
       fakeTool('rect', 'shape'),
-      fakeTool('pen', 'draw'),
       fakeTool('lasso', 'select'),
     ]);
     renderWithIcons(<ToolPalette tools={tools} />);
@@ -109,7 +108,6 @@ describe('ToolPalette — grouping', () => {
       expect.stringContaining('lasso'),
       expect.stringContaining('hand'),
       expect.stringContaining('rect'),
-      expect.stringContaining('pen'),
       expect.stringContaining('text'),
     ]);
   });

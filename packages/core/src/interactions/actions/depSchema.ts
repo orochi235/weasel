@@ -27,13 +27,6 @@ declare module '@weasel-js/routing' {
      * Consumers wire via `useBooleansAdapter(adapter)`.
      */
     booleansAdapter?: import('./booleans/booleans').BooleansAdapter;
-    /**
-     * Create Outlines adapter — read selection ids, resolve text nodes, and
-     * mint the path nodes that replace them. Consumers wire it with
-     * `useCreateOutlinesAdapter(adapter)`; the `createOutlines` action reads it
-     * in both its `enabled` predicate and its invoker.
-     */
-    createOutlinesAdapter?: import('./outlines/createOutlines').CreateOutlinesAdapter;
     /** Where an action tells the user something went wrong, such as text it
      *  could not outline. Optional: without it the message goes to the console. */
     notices?: import('./notices').NoticesDep;

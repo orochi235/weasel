@@ -19,7 +19,8 @@ package's tools edit it, one scene op per edit, so undo, save and paste treat a
 rig like any other node data.
 
 ```tsx
-import { pathsPreset, pickPreset, SceneCanvas, useRigNode } from '@weasel-js/core';
+import { pickPreset, SceneCanvas, useRigNode } from '@weasel-js/core';
+import { pathsPreset } from '@weasel-js/path-tools';
 import { createRigEditState, useRigTools } from '@weasel-js/rig';
 
 const state = useMemo(() => createRigEditState(), []);

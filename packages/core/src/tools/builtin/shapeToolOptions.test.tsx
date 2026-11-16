@@ -5,11 +5,9 @@ import { useStarTool } from './star';
 import { useRectTool } from './rect';
 import { useLineTool } from './line';
 import { useEllipseTool } from './ellipse';
-import { usePenTool } from './pen';
 import { useTextTool } from './text';
 import { DEFAULT_SHAPE_PAINT, toolOptionPaint } from './shared/styleOptions';
 import { useStickyTool } from './sticky';
-import { usePencilTool } from './pencil';
 import { createToolOptionValues, setToolOption, toolOptionParams, toolOptionSlot } from '@weasel-js/routing';
 
 describe('polygon and star tool options', () => {
@@ -37,7 +35,7 @@ describe('polygon and star tool options', () => {
 
 describe('shape tools’ style options', () => {
   const tools = () => renderHook(() => ({
-    rect: useRectTool(), line: useLineTool(), polygon: usePolygonTool(), pen: usePenTool(), text: useTextTool(),
+    rect: useRectTool(), line: useLineTool(), polygon: usePolygonTool(), star: useStarTool(), text: useTextTool(),
     own: useEllipseTool({ share: { fill: null } }),
   })).result.current;
 
@@ -48,12 +46,12 @@ describe('shape tools’ style options', () => {
     expect(toolOptionParams('rect', t.rect.options!, values).stroke).toBeNull();
     setToolOption('rect', t.rect.options!, values, 'fill', { color: '#123456' });
     setToolOption('line', t.line.options!, values, 'strokeWidth', 5);
-    for (const id of ['polygon', 'pen'] as const) {
+    for (const id of ['polygon', 'star'] as const) {
       expect(toolOptionParams(id, t[id].options!, values).fill).toEqual({ color: '#123456' });
     }
     // Text keeps a fill of its own kind, so a white shape fill never sets white text.
     expect(toolOptionSlot('text', t.text.options!, 'fill')).toEqual({ owner: 'shared', key: 'textFill' });
-    expect(toolOptionParams('pen', t.pen.options!, values).strokeWidth).toBe(5);
+    expect(toolOptionParams('star', t.star.options!, values).strokeWidth).toBe(5);
     expect(toolOptionParams('ellipse', t.own.options!, values).fill).toEqual(DEFAULT_SHAPE_PAINT);
   });
 
@@ -67,8 +65,8 @@ describe('shape tools’ style options', () => {
 describe('tool option colors', () => {
   it('default in one spelling, so the same color reads as one value across tools', () => {
     const t = renderHook(() => ({
-      rect: useRectTool(), line: useLineTool(), polygon: usePolygonTool(), star: useStarTool(), pen: usePenTool(),
-      pencil: usePencilTool(), text: useTextTool(), sticky: useStickyTool(), ellipse: useEllipseTool(),
+      rect: useRectTool(), line: useLineTool(), polygon: usePolygonTool(), star: useStarTool(),
+      text: useTextTool(), sticky: useStickyTool(), ellipse: useEllipseTool(),
     })).result.current;
     for (const [id, tool] of Object.entries(t)) {
       for (const [key, leaf] of Object.entries(tool.options!.prefs.children)) {

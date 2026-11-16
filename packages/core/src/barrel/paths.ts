@@ -83,8 +83,6 @@ export {
   type CornerShapeFrame,
   pathPoseDescriptor,
   pathOriginProjection,
-  createPenPreviewLayer,
-  PEN_CLOSE_HIT_PX,
   createPathEditingOverlayLayer,
   GEOMETRY_BOUND_DATA,
   withoutGeometryBoundData,
@@ -147,8 +145,6 @@ export type {
   PenAnchor,
   PointInPathOptions,
   CreatePathLayerOptions,
-  CreatePenPreviewLayerOptions,
-  PenPreviewStyle,
   CreatePathEditingOverlayLayerOptions,
   PathEditingOverlayStyle,
   FinishedPathEdit,
@@ -217,8 +213,9 @@ export {
   type ShapeGenerator,
   type StarGenerator,
 } from '../domains/paths/shapeGenerator';
-export { useAnchorFields, type AnchorFieldsApi } from '../domains/paths/useAnchorFields';
-export type { SetAnchorFieldParams } from '../interactions/actions/defaults/anchorFields';
+export {
+  anchorFieldsOf, useAnchorFields, type AnchorFieldsApi, type SetAnchorFieldParams,
+} from '../domains/paths/useAnchorFields';
 export type { AnchorField, AnchorFieldValues, NumberEntry } from '@weasel-js/geom';
 
 // ─── Building path commands and path-edit features on core ─────────────────
@@ -237,21 +234,9 @@ export {
   type PathNode,
 } from '../interactions/actions/pathCommands/pathNodes';
 export { nodeFrameOf, shownIn, shownNodeOf, storesEdits, type NodeFrame } from '../domains/paths/nodeFrame';
-export { joinPathsCommand, planJoin, type JoinPlan } from '../interactions/actions/pathCommands/cutJoin';
-export { DEFAULT_SIMPLIFY_TOLERANCE, OFFSET_PATH_PARAMS, SIMPLIFY_PATH_PARAMS } from '../interactions/actions/pathCommands/simplifyOffset';
-export { livePathEdit, type LivePathEditSpec } from '../interactions/actions/pathCommands/livePathEdit';
-export {
-  anchorEditWouldChange, commitAnchorEdit, depOf, requiresAnchorSelection,
-} from '../interactions/actions/defaults/anchorEditing';
-export { createHandleCommand, type HandleEdit, type HandleScope } from '../interactions/actions/defaults/anchorHandles';
-export { joinSelectedAnchors, type AnchorEdit } from '../interactions/actions/defaults/anchorJoin';
-export { deleteSelectedMark, editTargetOf, markUnder } from '../interactions/actions/defaults/pathEditMarks';
+export { anchorDataPatch } from '../domains/paths/anchorData';
+export { representationOf } from '../domains/paths/pathRepresentation';
 export { segmentUnder } from '../interactions/actions/defaults/segmentUnder';
-export {
-  finishPathEditFrame, pathEditPreview, type PathEditFrame, type PathEditPreview, type PathStorageKind,
-} from '../interactions/actions/edit-anchors/preview';
-export { editedPathSymmetries } from '../interactions/actions/edit-anchors/symmetry';
-export { HANDLE_LOCK_ROLES, locksInForce } from '../interactions/actions/edit-anchors/handleDrag';
 export {
   classifyPathStorage, pathEditPathOf, resolveEditablePathOf, storeEditablePath, type EditableShape,
 } from '../domains/paths/editablePath';

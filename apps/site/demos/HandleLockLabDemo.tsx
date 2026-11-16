@@ -7,7 +7,8 @@ import { BLOB, type PathLabState, usePathEditTrial } from './pathEditLabScene';
 import '@weasel-js/labkit/styles.css';
 import 'windease/styles.css';
 import { icon } from '../icons.gen';
-import { movePreset, pathsPreset, pickPreset } from '@weasel-js/core';
+import { movePreset, pickPreset } from '@weasel-js/core';
+import { pathsPreset } from '@weasel-js/path-tools';
 
 const FEATURES = [pickPreset, movePreset, pathsPreset, handleLocksPreset] as const;
 

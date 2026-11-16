@@ -252,28 +252,11 @@ describe('SceneCanvas tools prop patch form', () => {
     return () => captured;
   }
 
-  it('{ pen: true } pulls in the built-in pen even when not in the default tier', () => {
+  it('{ star: true } pulls in the built-in star even when not in the default tier', () => {
     // Default tier (no defaultTools / toolBundle prop, no viewport): ['select'].
-    // 'pen' is in 'exhaustive' only.
-    const get = emptyHarness({ pen: true });
-    expect(get()!.registry).toHaveProperty('pen');
+    const get = emptyHarness({ star: true });
+    expect(get()!.registry).toHaveProperty('star');
     expect(get()!.registry).toHaveProperty('select');
-  });
-
-  it('defaultTools mounts slice by id', () => {
-    let captured: ReturnType<typeof useTools> | null = null;
-    function Harness() {
-      const scene = useScene<D, L, P>({ systemLayers: [{ id: 'main' }], initial: [] });
-      return (
-        <SceneCanvas features={[pickPreset]} scene={scene} width={100} height={100} layers={{}}
-          defaultTools={['slice']}
-          onToolsCreated={(t) => { captured = t; }}
-        />
-      );
-    }
-    render(<Harness />);
-    expect(Object.keys(captured!.registry)).toEqual(['select', 'lasso', 'slice']);
-    expect(captured!.registry.slice.id).toBe('slice');
   });
 
   it('defaultTools mounts sticky by id, in the look toolOptions gives it', () => {
@@ -295,8 +278,8 @@ describe('SceneCanvas tools prop patch form', () => {
     expect(click?.opts?.params).toEqual({ kind: 'sticky', minSize: STICKY_DEFAULTS.minSize, padding: 4, size });
   });
 
-  it('{ pen: false } omits a bundled tool', () => {
-    // 'pen' would be in registry under toolBundle='exhaustive'; turn it off.
+  it('{ star: false } omits a bundled tool', () => {
+    // 'star' is in the registry under every built-in; turn it off.
     let captured: ReturnType<typeof useTools> | null = null;
     function Harness() {
       const scene = useScene<D, L, P>({ systemLayers: [{ id: 'main' }], initial: [] });
@@ -306,13 +289,13 @@ describe('SceneCanvas tools prop patch form', () => {
           width={100} height={100}
           layers={{}}
           defaultTools={BUILTIN_TOOL_IDS}
-          tools={{ pen: false } as never}
+          tools={{ star: false } as never}
           onToolsCreated={(t) => { captured = t; }}
         />
       );
     }
     render(<Harness />);
-    expect(captured!.registry).not.toHaveProperty('pen');
+    expect(captured!.registry).not.toHaveProperty('star');
     expect(captured!.registry).toHaveProperty('rect');
   });
 
@@ -324,8 +307,8 @@ describe('SceneCanvas tools prop patch form', () => {
     warn.mockRestore();
   });
 
-  it('{ pen: customTool } replaces a bundled tool and warns in dev', () => {
-    const customPen = defineTool({ id: 'pen' });
+  it('{ star: customTool } replaces a bundled tool and warns in dev', () => {
+    const customStar = defineTool({ id: 'star' });
     const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
     let captured: ReturnType<typeof useTools> | null = null;
     function Harness() {
@@ -336,14 +319,14 @@ describe('SceneCanvas tools prop patch form', () => {
           width={100} height={100}
           layers={{}}
           defaultTools={BUILTIN_TOOL_IDS}
-          tools={{ pen: customPen } as never}
+          tools={{ star: customStar } as never}
           onToolsCreated={(t) => { captured = t; }}
         />
       );
     }
     render(<Harness />);
-    expect(captured!.registry.pen).toBe(customPen);
-    expect(warn).toHaveBeenCalledWith(expect.stringContaining('"pen"'));
+    expect(captured!.registry.star).toBe(customStar);
+    expect(warn).toHaveBeenCalledWith(expect.stringContaining('"star"'));
     warn.mockRestore();
   });
 });

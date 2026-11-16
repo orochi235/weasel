@@ -194,17 +194,19 @@ export type SceneCanvasProps<TData, TLayer extends string, TPose> =
      * - `editPreset` — delete, duplicate, group/ungroup, nudge, select-all,
      *   Escape, cut/copy/paste of kit nodes, fill and stroke, and their keys.
      * - `arrangePreset` — align, distribute, reorder, flip.
-     * - `pathsPreset` — pathfinder operations, path-edit entry and anchor editing.
+     * - `pathfinderPreset` — the pathfinder booleans and the live boolean group.
      * - `ingestPreset` — dropped and pasted content: images, SVG, files, and
      *   whatever `ingestion.handlers` accept, on Cmd/Ctrl+V or an OS drop.
      * - `drawPreset` — all of the above.
      * - `whiteboardPreset` — view, pick, move, resize and edit, with the
-     *   pencil, text and sticky-note tools.
+     *   text and sticky-note tools.
      * - `selectToolsPreset`, `viewToolsPreset`, `shapeToolsPreset`,
-     *   `drawToolsPreset`, `typeToolsPreset`, `pageToolsPreset` — a built-in
-     *   tool set and nothing else.
+     *   `typeToolsPreset` — a built-in tool set and nothing else.
      *
-     * The parts of `editPreset`, `arrangePreset` and `pathsPreset` are presets
+     * Path edit, the pen, pencil and knife, and the path commands are
+     * `@weasel-js/path-tools`' `pathTools` and its tools.
+     *
+     * The parts of `editPreset` and `arrangePreset` are presets
      * of their own (`nudgePreset`, `alignPreset`, …), and a package's preset
      * goes beside them. Undo and redo are always on. Tools add the actions
      * they bind (a shape tool `insert`, the hand tool drag-pan), and `actions`

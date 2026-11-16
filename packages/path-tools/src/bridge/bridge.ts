@@ -4,10 +4,10 @@
  * selected in path edit.
  */
 import { type Action, ActionDisabledReason, BETWEEN_GESTURES, defineAction } from '@weasel-js/routing';
-import {
-  ANCHORS_GROUP,
-  anchorEditWouldChange, commitAnchorEdit, depOf, joinPathsCommand, joinSelectedAnchors, pathOperationTags,
-} from '@weasel-js/core';
+import { ANCHORS_GROUP, pathOperationTags } from '@weasel-js/core';
+import { anchorEditWouldChange, commitAnchorEdit, depOf } from '../pathEdit/anchorEditing';
+import { joinPathsCommand } from '../pathCommands/cutJoin';
+import { joinSelectedAnchors } from '../pathEdit/anchorJoin';
 import { pref } from '@weasel-js/prefs';
 import { icon } from '../icons.gen';
 import type {} from '../actionParamSchema';

@@ -1,5 +1,5 @@
 import { type ActionTunings, asNodeId, createScene, type RectPose, solid, useLatest, drawPreset, pathNode } from '@weasel-js/core';
-import { usePathEditMode, sandPreset, useSandTool } from '@weasel-js/path-tools';
+import { usePathEditMode, sandPreset, useSandTool, pathsPreset } from '@weasel-js/path-tools';
 import {
   type ConfigOf, defineInstrument, f, Lab, type RenderContext, type SceneTrialState,
   TrialSceneCanvas, useTrialScene,
@@ -9,7 +9,7 @@ import '@weasel-js/labkit/styles.css';
 import 'windease/styles.css';
 import { icon } from '../icons.gen';
 
-const FEATURES = [drawPreset, sandPreset] as const;
+const FEATURES = [drawPreset, pathsPreset, sandPreset] as const;
 
 const config = f.schema({
   radiusPx: f.number(16).range(4, 60).step(1).suffix('px').label('Brush radius'),

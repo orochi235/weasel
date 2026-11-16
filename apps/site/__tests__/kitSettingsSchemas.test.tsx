@@ -2,6 +2,7 @@ import { act, cleanup, render, screen, within } from '@testing-library/react';
 import { coreKitSettingsSchema } from '@weasel-js/core';
 import { kernel3dKitSettingsSchema } from '@weasel-js/kernel3d';
 import { labkitKitSettingsSchema } from '@weasel-js/labkit';
+import { pathToolsKitSettingsSchema } from '@weasel-js/path-tools';
 import { mergePrefGroups, openPrefsSync, prefCanAuto, prefLeaves, type PrefPath } from '@weasel-js/prefs';
 import { KitSettingsFromPrefs, usePrefsValues } from '@weasel-js/prefs/react';
 import { useKitSettings, type KitSettingPath } from '@weasel-js/react';
@@ -15,7 +16,10 @@ import { renderWithIcons } from '../testIcons';
 
 afterEach(cleanup);
 
-const SCHEMAS = [uiKitSettingsSchema, coreKitSettingsSchema, rigKitSettingsSchema, kernel3dKitSettingsSchema, labkitKitSettingsSchema] as const;
+const SCHEMAS = [
+  uiKitSettingsSchema, coreKitSettingsSchema, pathToolsKitSettingsSchema, rigKitSettingsSchema, kernel3dKitSettingsSchema,
+  labkitKitSettingsSchema,
+] as const;
 type Declared = { [I in keyof typeof SCHEMAS]: PrefPath<(typeof SCHEMAS)[I]> }[number];
 
 const ALL = mergePrefGroups('Kit settings', ...SCHEMAS);

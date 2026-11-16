@@ -6,7 +6,7 @@ import { describe, it, expect } from 'vitest';
 import fc from 'fast-check';
 import { anchorsToPath, pathToAnchors, type PenAnchor } from '@weasel-js/geom';
 import type { ImmediateInvoker, InvocationCtx, OngoingInvoker } from '@weasel-js/routing';
-import { editAnchorsAction } from '@weasel-js/core';
+import { editAnchorsAction } from '../pathEdit/editAnchors/editAnchors';
 import { handleLockAngleAction, handleLockLengthAction } from './handleLocks';
 import { editHarness, type EditHarness } from '../shared/testing/editHarness';
 

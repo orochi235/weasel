@@ -20,7 +20,7 @@ import {
   TrialSceneCanvas,
   useTrialScene,
 } from '@weasel-js/labkit';
-import { createPathEditHost, FILLET_CONTROLS, filletPreset } from '@weasel-js/path-tools';
+import { createPathEditHost, FILLET_CONTROLS, filletPreset, pathsPreset, usePenTool } from '@weasel-js/path-tools';
 import { useMemo, useState } from 'react';
 import { FilletPanel } from './FilletPanel';
 import s from './FilletLabDemo.module.css';
@@ -67,10 +67,11 @@ const createLabScene = () =>
     ],
   });
 
-const FEATURES = [drawPreset, filletPreset] as const;
+const FEATURES = [drawPreset, pathsPreset, filletPreset] as const;
 const TUNE: ActionTunings = { cycleFillet: { bindings: [{ kind: 'key', key: 'k' }] } };
 
 function FilletsTrial({ ctx }: { ctx: RenderContext<State, Config> }) {
+  const pen = usePenTool();
   const scene = useTrialScene(ctx, createLabScene);
   // Held beside the trial so the lab opens on one corner and its panel can read it.
   const [host] = useState(() => createPathEditHost({ id: FIRST, anchors: FIRST_ANCHORS }));
@@ -79,7 +80,7 @@ function FilletsTrial({ ctx }: { ctx: RenderContext<State, Config> }) {
     <div className={s.frame}>
       <TrialSceneCanvas
         features={FEATURES}
-        defaultTools={['pen']}
+        tools={{ pen }}
         scene={scene}
         trial={ctx.trial}
         pathEdit={host}

@@ -4,9 +4,8 @@
  * reads and writes that pref (`useSimplifyTolerance`), and the brush's options row moves with it.
  */
 import { useState, type ReactElement } from 'react';
-import {
-  DEFAULT_SIMPLIFY_TOLERANCE, OFFSET_PATH_PARAMS, setToolOption, SIMPLIFY_PATH_PARAMS, useToolOptionParams,
-} from '@weasel-js/core';
+import { setToolOption, useToolOptionParams } from '@weasel-js/core';
+import { DEFAULT_SIMPLIFY_TOLERANCE, OFFSET_PATH_PARAMS, SIMPLIFY_PATH_PARAMS } from '@weasel-js/path-tools';
 import { SAND_TOOL_OPTIONS } from '@weasel-js/path-tools';
 import { decimal } from '@weasel-js/quantity';
 import { drawToolOptionValues } from '../../toolOptions';

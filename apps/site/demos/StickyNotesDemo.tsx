@@ -1,4 +1,5 @@
 import { SceneCanvas, asNodeId, solid, stickyData, useScene, useSelection, editPreset, movePreset, pickPreset, resizePreset, WeaselProvider } from '@weasel-js/core';
+import { usePencilTool } from '@weasel-js/path-tools';
 import { ToolPalette } from '@weasel-js/ui/components/ToolPalette';
 import { DemoStage } from './DemoStage';
 
@@ -21,6 +22,7 @@ const INITIAL = [
 ];
 
 export function StickyNotesDemo() {
+  const pencil = usePencilTool();
   const scene = useScene({ systemLayers: [{ id: 'default' }], initial: INITIAL });
   const selection = useSelection({ scene, mode: 'multi' });
   return (
@@ -34,7 +36,8 @@ export function StickyNotesDemo() {
             scene={scene}
             selection={selection}
             features={[pickPreset, movePreset, resizePreset, editPreset]}
-            defaultTools={['sticky', 'pencil', 'text']}
+            defaultTools={['sticky', 'text']}
+            tools={{ pencil }}
           />
         </DemoStage>
       </div>

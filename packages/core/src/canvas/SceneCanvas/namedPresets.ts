@@ -6,23 +6,17 @@
  */
 import type { Action } from '@weasel-js/routing';
 import type { FeaturePreset } from './features';
-import {
-  alignPreset, arrangePreset, distributePreset, flipPreset, reorderPreset,
-} from './presets/arrange';
+import { alignPreset, arrangePreset, distributePreset, flipPreset, reorderPreset } from './presets/arrange';
 import { drawPreset, pickPreset, transformPreset } from './presets/composites';
 import {
   clipboardPreset, contextMenuPreset, deletePreset, duplicatePreset, editPreset, escapePreset, groupPreset,
   nudgePreset, selectAllPreset, stylePreset, textEditPreset,
 } from './presets/edit';
 import { ingestPreset } from './presets/ingest';
-import {
-  anchorKeysPreset, outlinesPreset, pathCommandsPreset, pathEditPreset, pathfinderPreset, pathsPreset,
-} from './presets/paths';
+import { pathfinderPreset } from './presets/paths';
 import { selectPreset } from './presets/select';
 import { toolDrivenActions } from './presets/toolDriven';
-import {
-  drawToolsPreset, pageToolsPreset, selectToolsPreset, shapeToolsPreset, typeToolsPreset, viewToolsPreset,
-} from './presets/tools';
+import { selectToolsPreset, shapeToolsPreset, typeToolsPreset, viewToolsPreset } from './presets/tools';
 import { BASELINE_ACTIONS } from './presets/baseline';
 import { movePreset, outlinePreset, resizePreset, rotatePreset } from './presets/transform';
 import { viewPreset } from './presets/view';
@@ -33,9 +27,7 @@ export const FEATURE_PRESETS = {
   'tools:select': selectToolsPreset,
   'tools:view': viewToolsPreset,
   'tools:shape': shapeToolsPreset,
-  'tools:draw': drawToolsPreset,
   'tools:type': typeToolsPreset,
-  'tools:page': pageToolsPreset,
   view: viewPreset,
   select: selectPreset,
   outline: outlinePreset,
@@ -60,12 +52,7 @@ export const FEATURE_PRESETS = {
   align: alignPreset,
   distribute: distributePreset,
   arrange: arrangePreset,
-  anchorKeys: anchorKeysPreset,
   pathfinder: pathfinderPreset,
-  outlines: outlinesPreset,
-  pathEdit: pathEditPreset,
-  pathCommands: pathCommandsPreset,
-  paths: pathsPreset,
   ingest: ingestPreset,
   draw: drawPreset,
   whiteboard: whiteboardPreset,

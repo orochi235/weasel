@@ -131,14 +131,10 @@ function builtinTools(s: Sweep): void {
     line: builtins.useLineTool(),
     star: builtins.useStarTool({} as never),
     polygon: builtins.usePolygonTool({} as never),
-    pen: builtins.usePenTool(),
-    pencil: builtins.usePencilTool(),
-    slice: builtins.useSliceTool(),
     measure: builtins.useMeasureTool({ measurements: createMeasurements({ layer: 'notes' }) }),
     text: builtins.useTextTool(),
     sticky: builtins.useStickyTool(),
     eyedropper: builtins.useEyedropperTool({} as never),
-    anchors: builtins.anchorsTool,
   }), 'core builtin tools');
 }
 

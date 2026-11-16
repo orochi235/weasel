@@ -7,15 +7,9 @@
  */
 import type { ActionDeps } from '@weasel-js/routing';
 import {
-  applyCreateOutlines,
-  type Journal,
-  loadTextOutlines,
-  type NodeId,
-  type PathNode,
-  pathNodesOf,
-  warnTextOutlines,
-  type AnyScene,
+  type Journal, loadTextOutlines, type NodeId, type PathNode, pathNodesOf, warnTextOutlines, type AnyScene,
 } from '@weasel-js/core';
+import { applyCreateOutlines } from '../outlines/createOutlines';
 import { leavesOf } from './scenePaths';
 
 /** One gesture's conversions of the text it may reach. */

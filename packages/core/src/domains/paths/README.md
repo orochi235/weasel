@@ -74,8 +74,7 @@ anchor walker.
 
 **Rendering** — `pathLayer.ts`, `markerCommands.ts` (marker heads as draw
 commands; the ribbon, the marker registry and `strokeToPath` are in
-`@weasel-js/stroke`), plus `penPreviewLayer.ts` (the pen's
-in-progress path) and `pathEditingOverlayLayer.ts` (anchor-edit chrome, which
+`@weasel-js/stroke`), plus `pathEditingOverlayLayer.ts` (anchor-edit chrome, which
 `@weasel-js/path-tools` extends with its curvature comb, poise lines, and other
 marks)
 

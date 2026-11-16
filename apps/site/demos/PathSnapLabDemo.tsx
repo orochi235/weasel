@@ -1,4 +1,5 @@
 import { IDENTITY_POSE_COMPOSITION, asNodeId, createScene, ellipsePath, pathFromD, pathSnapSource, solid, drawPreset } from '@weasel-js/core';
+import { pathsPreset, usePenTool } from '@weasel-js/path-tools';
 import {
   type ConfigOf,
   defineInstrument,
@@ -50,6 +51,7 @@ const createLabScene = () =>
   });
 
 function PathSnapTrial({ ctx }: { ctx: RenderContext<State, Config> }) {
+  const pen = usePenTool();
   const scene = useTrialScene(ctx, createLabScene);
   const { kinds, radius, marker } = ctx.config;
   const snap = useMemo(
@@ -58,8 +60,9 @@ function PathSnapTrial({ ctx }: { ctx: RenderContext<State, Config> }) {
   );
   return (
     <TrialSceneCanvas
-      features={[drawPreset]}
-      defaultTools={['line', 'pen']}
+      features={[drawPreset, pathsPreset]}
+      defaultTools={['line']}
+      tools={{ pen }}
       scene={scene}
       trial={ctx.trial}
       snap={snap}

@@ -1,7 +1,7 @@
 import {
   asNodeId, createScene, ellipsePath, type Path, type RectPose, solid, useSelection, drawPreset,
 } from '@weasel-js/core';
-import { useShapeBuilderTool } from '@weasel-js/path-tools';
+import { useShapeBuilderTool, pathsPreset } from '@weasel-js/path-tools';
 import {
   type ConfigOf,
   defineInstrument,
@@ -59,7 +59,7 @@ function ShapeBuilderTrial({ ctx }: { ctx: RenderContext<State, Config> }) {
 
   return (
     <TrialSceneCanvas
-      features={[drawPreset]}
+      features={[drawPreset, pathsPreset]}
       defaultTools={[]}
       tools={tools}
       scene={scene}

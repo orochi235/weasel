@@ -7,19 +7,12 @@ import {
 import type { ActionDeps, ImmediateInvoker, InvocationCtx, OngoingInvoker } from '@weasel-js/routing';
 import { DepRegistryProvider, useDepRegistry } from '@weasel-js/routing/react';
 import {
-  IDENTITY_POSE_COMPOSITION,
-  createScene,
-  defaultCommitAdapter,
-  deleteAnchorsAction,
-  editAnchorsAction,
-  nudgeAnchorsUpAction,
-  selectAnchorAction,
-  type EditAnchorsDep,
-  type NodeId,
-  type PathEditMark,
-  type SelectionApi,
-  type AnyScene,
+  IDENTITY_POSE_COMPOSITION, createScene, defaultCommitAdapter, type EditAnchorsDep, type NodeId, type PathEditMark,
+  type SelectionApi, type AnyScene,
 } from '@weasel-js/core';
+import { deleteAnchorsAction, selectAnchorAction } from '../pathEdit/anchorEditing';
+import { editAnchorsAction } from '../pathEdit/editAnchors/editAnchors';
+import { nudgeAnchorsUpAction } from '../pathEdit/anchorNudge';
 import {
   useEditAnchorsDepSourceForTests as useEditAnchorsDepSource, type EditAnchorsStateRef,
 } from '@weasel-js/core/test-seams';

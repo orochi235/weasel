@@ -1,50 +1,9 @@
 import {
-  cutPathAtAnchorAction,
-  deleteAnchorsAction,
-  marqueeAnchorsAction,
-  selectAnchorAction,
-} from 'interactions/actions/defaults/anchorEditing';
-import {
-  nudgeAnchorsDownAction,
-  nudgeAnchorsLeftAction,
-  nudgeAnchorsRightAction,
-  nudgeAnchorsUpAction,
-} from 'interactions/actions/defaults/anchorNudge';
-import { makeHandlesSymmetricAction, retractHandlesAction } from 'interactions/actions/defaults/anchorHandles';
-import { setAnchorFieldAction } from 'interactions/actions/defaults/anchorFields';
-import { averageAnchorsAction, joinAnchorsAction } from 'interactions/actions/defaults/anchorJoin';
-import { bendSegmentAction } from 'interactions/actions/defaults/bendSegment';
-import { enterPathEditAction } from 'interactions/actions/defaults/enterPathEdit';
-import { editEffectTextAction } from 'interactions/actions/defaults/editEffectText';
-import { exitPathEditAction } from 'interactions/actions/defaults/exitPathEdit';
-import { editAnchorsAction } from 'interactions/actions/edit-anchors/action';
-import { insertPathAnchorAction } from 'interactions/actions/defaults/insertPathAnchor';
-import {
   pathfinderCropAction, pathfinderDivideAction, pathfinderExcludeAction, pathfinderIntersectAction,
   pathfinderMergeAction, pathfinderSubtractAction, pathfinderTrimAction, pathfinderUnionAction,
 } from 'interactions/actions/booleans/action';
 import { makeBooleanGroupAction } from 'interactions/actions/booleans/booleanGroupAction';
-import { createOutlinesAction } from 'interactions/actions/outlines/createOutlinesAction';
-import { outlineStrokeAction } from 'interactions/actions/outlines/outlineStrokeAction';
-import {
-  joinPathsAction, offsetPathAction, simplifyPathAction, snipAtCrossingsAction,
-} from 'interactions/actions/pathCommands';
 import type { FeaturePreset } from '../features';
-
-/**
- * The path-edit keys that share a key with a node-level action: anchor nudging
- * and deleting, and Escape out of path edit. Each is tried ahead of its twin,
- * which is enabled whenever anything is selected.
- */
-export const anchorKeysPreset: FeaturePreset = {
-  id: 'anchorKeys',
-  label: 'Anchor keys',
-  refines: ['nudge', 'delete', 'escape'],
-  actions: [
-    nudgeAnchorsUpAction, nudgeAnchorsDownAction, nudgeAnchorsLeftAction, nudgeAnchorsRightAction,
-    deleteAnchorsAction, exitPathEditAction,
-  ],
-};
 
 /** The pathfinder booleans, and the live boolean group. */
 export const pathfinderPreset: FeaturePreset = {
@@ -55,36 +14,4 @@ export const pathfinderPreset: FeaturePreset = {
     pathfinderDivideAction, pathfinderCropAction, pathfinderTrimAction, pathfinderMergeAction,
     makeBooleanGroupAction,
   ],
-};
-
-/** Text and strokes to paths. */
-export const outlinesPreset: FeaturePreset = {
-  id: 'outlines', label: 'Outlines', actions: [createOutlinesAction, outlineStrokeAction],
-};
-
-/** Entering path edit, and editing anchors, handles, and segments in it, with
- *  the `anchors` tool path edit starts on. */
-export const pathEditPreset: FeaturePreset = {
-  id: 'pathEdit',
-  label: 'Path edit',
-  tools: ['anchors'],
-  actions: [
-    editAnchorsAction, enterPathEditAction, insertPathAnchorAction, bendSegmentAction, cutPathAtAnchorAction,
-    retractHandlesAction, makeHandlesSymmetricAction, averageAnchorsAction, joinAnchorsAction, setAnchorFieldAction,
-    marqueeAnchorsAction, selectAnchorAction, editEffectTextAction,
-  ],
-};
-
-/** Simplify, offset, snip at crossings, and join paths. */
-export const pathCommandsPreset: FeaturePreset = {
-  id: 'pathCommands',
-  label: 'Path commands',
-  actions: [simplifyPathAction, offsetPathAction, snipAtCrossingsAction, joinPathsAction],
-};
-
-/** Pathfinder operations, path-edit entry, and anchor editing. */
-export const pathsPreset: FeaturePreset = {
-  id: 'paths',
-  label: 'Paths',
-  includes: [anchorKeysPreset, pathfinderPreset, outlinesPreset, pathEditPreset, pathCommandsPreset],
 };

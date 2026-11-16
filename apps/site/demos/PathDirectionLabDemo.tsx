@@ -1,18 +1,8 @@
 import {
-  ANCHORS_GROUP,
-  PATH_GROUP,
-  always,
-  asNodeId,
-  createScene,
-  never,
-  type RectPose,
-  solid,
-  useSelection,
-  movePreset,
-  pathsPreset,
-  pickPreset,
-  pathNode,
+  ANCHORS_GROUP, PATH_GROUP, always, asNodeId, createScene, never, type RectPose, solid, useSelection, movePreset,
+  pickPreset, pathNode,
 } from '@weasel-js/core';
+import { pathsPreset } from '@weasel-js/path-tools';
 import {
   type ConfigOf,
   defineInstrument,

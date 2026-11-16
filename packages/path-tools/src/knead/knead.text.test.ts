@@ -5,7 +5,8 @@
  */
 import { beforeEach, describe, expect, it } from 'vitest';
 import type { InvocationCtx, OngoingInvoker } from '@weasel-js/routing';
-import { applyCreateOutlines, asNodeId } from '@weasel-js/core';
+import { asNodeId } from '@weasel-js/core';
+import { applyCreateOutlines } from '../outlines/createOutlines';
 import { loadTestFont, outlineScene as setup, TEXT, type Data } from '../shared/testing/outlineScene';
 import { kneadAction } from './knead';
 

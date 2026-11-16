@@ -13,7 +13,6 @@ import { createScene } from 'core/scene/scene';
 import { IDENTITY_POSE_COMPOSITION } from 'core/scene/composeFrame';
 import type { NodeId } from 'core/scene/types';
 import { defaultCommitAdapter } from './defaultCommitAdapter';
-import { joinPathsAction, snipAtCrossingsAction } from './pathCommands/cutJoin';
 import { duplicateSelection } from './defaults/duplicate';
 import { deleteAction } from './defaults/delete';
 import { groupAction } from './defaults/group';
@@ -52,13 +51,6 @@ function consumerDeps(scene: AnyScene, selection: ReturnType<typeof heldSelectio
   return { deps: { scene, selection, applyOps } as unknown as ActionDeps, history };
 }
 
-function crossing() {
-  const scene = createScene<object, 'main', unknown>({ composition: IDENTITY_POSE_COMPOSITION, systemLayers: [{ id: 'main' }] });
-  const a = scene.add({ kind: 'mark', layer: 'main', data: {}, pose: line(0, 50, 100, 50) });
-  const b = scene.add({ kind: 'mark', layer: 'main', data: {}, pose: line(50, 0, 50, 100) });
-  return { scene, a, b };
-}
-
 function ends() {
   const scene = createScene<object, 'main', unknown>({ composition: IDENTITY_POSE_COMPOSITION, systemLayers: [{ id: 'main' }] });
   const a = scene.add({ kind: 'mark', layer: 'main', data: {}, pose: line(0, 0, 10, 0) });
@@ -88,25 +80,6 @@ const dragCtx = (x: number, y: number, deps: ActionDeps) => ({
 const run = (action: { invoker?: unknown }, deps: ActionDeps) => (action.invoker as ImmediateInvoker).run(deps);
 
 describe('undo restores the selection an action started from', () => {
-  it('Cut at Crossings', () => {
-    const { scene, a, b } = crossing();
-    const selection = heldSelection([a, b]);
-    const { deps, history } = consumerDeps(scene, selection);
-    run(snipAtCrossingsAction, deps);
-    expect(selection.get()).toHaveLength(4);
-    history.undo();
-    expect(selection.get()).toEqual([a, b]);
-  });
-
-  it('Join', () => {
-    const { scene, a, b } = ends();
-    const selection = heldSelection([a, b]);
-    const { deps, history } = consumerDeps(scene, selection);
-    run(joinPathsAction, deps);
-    expect(selection.get()).toEqual([a]);
-    history.undo();
-    expect(selection.get()).toEqual([a, b]);
-  });
 
   it('Duplicate', () => {
     const { scene, a } = ends();

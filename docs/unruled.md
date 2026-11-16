@@ -2105,9 +2105,9 @@ Calls the lanes made without a ruling:
   sequence tools, and path-tools' Sand and Tug. No two bundled tools share a key now. Of plain
   letters, C, Q and Z are free across the kit; D, X and `/` are WeaselDraw's color keys and O its opacity scrub's
   held key. With Shift, every letter is free but U, W, M, P, F and X.
-- Open: core's `anchors` tool has no bindings and no cursor (`toolGaps` names both), since path edit's drags are
-  ambient. Whether a tool that binds nothing should exist as one, or path edit's entry is a mode with no tool, is
-  core's lane.
+- Open: the `anchors` tool (path-tools' since 2026-11-15) has no bindings and no cursor (`toolGaps` names both),
+  since path edit's drags are ambient. Whether a tool that binds nothing should exist as one, or path edit's entry
+  is a mode with no tool, is path-tools' lane.
 
 ## Audit round twenty-two (2026-11-13): bundled default bindings
 

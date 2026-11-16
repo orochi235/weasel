@@ -7,7 +7,7 @@ import { BUILTIN_TOOL_IDS, type BuiltinToolId } from './props';
 import { resolveToolRegistry, type BuiltinTools } from './toolRegistry';
 import type { Tool } from 'tools/overlayBinding';
 import { toolIdsOf, withoutTools } from '@weasel-js/routing';
-import { BUILTIN_TOOLS, PAGE_TOOLS, SHAPE_TOOLS, TYPE_TOOLS } from './builtinToolSets';
+import { BUILTIN_TOOLS, SHAPE_TOOLS, TYPE_TOOLS } from './builtinToolSets';
 
 // A kind the resolver has never heard of, so the tests below can only pass by
 // reading the table.
@@ -51,10 +51,10 @@ describe('resolveToolRegistry', () => {
   it('mounts the tools a set names, and a set less some of them', () => {
     const shapes = resolveToolRegistry({ builtins, defaultTools: [SHAPE_TOOLS, 'hand'], enabled: NONE, patch: null });
     expect(Object.keys(shapes)).toEqual(['hand', 'rect', 'ellipse', 'line', 'polygon', 'star']);
-    const cut = resolveToolRegistry({ builtins, defaultTools: [withoutTools(BUILTIN_TOOLS, PAGE_TOOLS, TYPE_TOOLS)], enabled: NONE, patch: null });
-    expect(Object.keys(cut)).not.toContain('slice');
+    const cut = resolveToolRegistry({ builtins, defaultTools: [withoutTools(BUILTIN_TOOLS, TYPE_TOOLS)], enabled: NONE, patch: null });
+    expect(Object.keys(cut)).not.toContain('text');
     expect(Object.keys(cut)).not.toContain('sticky');
-    expect(Object.keys(cut)).toContain('pen');
+    expect(Object.keys(cut)).toContain('star');
   });
 
   it('derives the built-in ids from the built-in set', () => {
@@ -90,20 +90,20 @@ describe('resolveToolRegistry', () => {
 
   it('drops a requested built-in the patch sets to false', () => {
     const registry = resolveToolRegistry({
-      builtins, defaultTools: BUILTIN_TOOL_IDS, enabled: NONE, patch: { pen: false, notMounted: false },
+      builtins, defaultTools: BUILTIN_TOOL_IDS, enabled: NONE, patch: { star: false, notMounted: false },
     });
-    expect(Object.keys(registry)).toEqual(BUILTIN_TOOL_IDS.filter((id) => id !== 'pen'));
+    expect(Object.keys(registry)).toEqual(BUILTIN_TOOL_IDS.filter((id) => id !== 'star'));
   });
 
   it('replaces a mounted built-in where it stands, and says so', () => {
     const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
-    const mine = tool('pen');
+    const mine = tool('star');
     const registry = resolveToolRegistry({
-      builtins, defaultTools: BUILTIN_TOOL_IDS, enabled: NONE, patch: { pen: mine }, dev: true,
+      builtins, defaultTools: BUILTIN_TOOL_IDS, enabled: NONE, patch: { star: mine }, dev: true,
     });
     expect(Object.keys(registry)).toEqual([...BUILTIN_TOOL_IDS]);
-    expect(registry.pen).toBe(mine);
-    expect(warn).toHaveBeenCalledWith(expect.stringContaining('overrides bundled "pen"'));
+    expect(registry.star).toBe(mine);
+    expect(warn).toHaveBeenCalledWith(expect.stringContaining('overrides bundled "star"'));
   });
 
   it('replaces a tool a preset implies where it stands, silently', () => {
@@ -154,7 +154,7 @@ describe('resolveToolRegistry', () => {
   it('stays quiet outside dev', () => {
     const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
     resolveToolRegistry({
-      builtins, defaultTools: BUILTIN_TOOL_IDS, enabled: NONE, patch: { nope: true, pen: tool('pen') }, dev: false,
+      builtins, defaultTools: BUILTIN_TOOL_IDS, enabled: NONE, patch: { nope: true, star: tool('star') }, dev: false,
     });
     expect(warn).not.toHaveBeenCalled();
   });

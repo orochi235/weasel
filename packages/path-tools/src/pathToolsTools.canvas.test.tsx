@@ -13,6 +13,7 @@ import {
 } from '@weasel-js/core';
 import { pathTools } from './presets';
 import { PATH_EDIT_TOOLS, PATH_TOOLS_TOOLS, usePathToolsTools } from './toolSets';
+import { ANCHORS_TOOL_ID } from './pathEdit/anchorsTool';
 
 const OURS = toolIdsOf([PATH_TOOLS_TOOLS]);
 
@@ -70,10 +71,13 @@ describe('path-tools tools on a canvas', () => {
   it('each declare a complete tool whose bindings name registered actions', () => {
     const { api } = mount({});
     const ids = new Set(api.actions!.list().map((a) => a.id));
-    // A path-edit tool's cursor is its action's, over the anchor or the stroke it would edit, as core's anchors tool's is.
+    // A path-edit tool's cursor is its action's, over the anchor or the stroke it would edit, and the anchors tool
+    // binds nothing: path edit's bindings are ambient, and it holds the active slot for them.
     const edit = new Set<string>(toolIdsOf([PATH_EDIT_TOOLS]));
+    const unbound = (id: string, g: string) => id === ANCHORS_TOOL_ID && g === 'no bindings';
     for (const id of OURS) {
-      const gaps = toolGaps(api.tools!.registry[id]!, (a) => ids.has(a)).filter((g) => !(edit.has(id) && g === 'no cursor'));
+      const gaps = toolGaps(api.tools!.registry[id]!, (a) => ids.has(a))
+        .filter((g) => !(edit.has(id) && g === 'no cursor') && !unbound(id, g));
       expect(gaps, id).toEqual([]);
     }
   });

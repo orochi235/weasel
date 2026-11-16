@@ -1,5 +1,5 @@
 import { fairAnchors } from '@weasel-js/geom';
-import { createHandleCommand } from '@weasel-js/core';
+import { createHandleCommand } from '../pathEdit/anchorHandles';
 import { icon } from '../icons.gen';
 
 /**

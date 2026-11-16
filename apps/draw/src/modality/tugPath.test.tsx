@@ -10,7 +10,7 @@ import {
   ActionsProvider, DepRegistryProvider, SceneCanvas, asNodeId, createScene, pathFromD, pathInWorld,
   useActionsRegistry, type PolygonPath, type ToolsApi, drawPreset,
 } from '@weasel-js/core';
-import { tugPreset, usePathEditTools } from '@weasel-js/path-tools';
+import { tugPreset, usePathEditTools, pathsPreset } from '@weasel-js/path-tools';
 import { useMemo } from 'react';
 import { DEFAULT_MODES } from '@weasel-js/modes';
 import { createModeMachine } from './machine';
@@ -22,7 +22,7 @@ beforeAll(() => {
 afterEach(() => cleanup());
 
 const A = asNodeId('a');
-const FEATURES = [drawPreset, tugPreset] as const;
+const FEATURES = [drawPreset, pathsPreset, tugPreset] as const;
 type Pose = { x: number; y: number; width: number; height: number };
 
 function setup() {

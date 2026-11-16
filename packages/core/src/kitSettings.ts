@@ -13,20 +13,10 @@ export interface CoreKitTargetSettings {
   rotationDistancePx: number;
   /** Reach of a path segment being edited. */
   segmentHitPx: number;
-  /** Radius around an anchor that a click selects it within. */
-  anchorClickPx: number;
   /** Grab slop around a shape's outline. */
   pickTolerancePx: number;
   /** How near a snap target pulls a point, for a snap source that sets no reach of its own. */
   snapPx: number;
-  penAnchorRadiusPx: number;
-  penHandleDotRadiusPx: number;
-  penCloseHintRadiusPx: number;
-  /** How near the pen's first anchor a click closes the subpath. */
-  penCloseHitPx: number;
-  sliceVertexRadiusPx: number;
-  /** How near the knife's first point a click closes the cut. */
-  sliceCloseHitPx: number;
 }
 
 /** Core's `view` area. */

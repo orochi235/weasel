@@ -2,7 +2,7 @@ import { describe, expect, it, vi } from 'vitest';
 import type { AffordanceHit, InvocationCtx, OngoingHandle, OngoingInvoker } from '@weasel-js/routing';
 import { overlaysOf } from '@weasel-js/routing';
 import { PATH_L, PATH_M, pathToAnchors, type PolygonPath } from '@weasel-js/geom';
-import { editAnchorsAction } from '@weasel-js/core';
+import { editAnchorsAction } from '../pathEdit/editAnchors/editAnchors';
 import { createEditAnchorsDepForTests as makeEditAnchorsDep } from '@weasel-js/core/test-seams';
 import { createDrapeExtension, type DrapeOptions } from './drape';
 

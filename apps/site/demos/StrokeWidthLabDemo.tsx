@@ -2,7 +2,7 @@ import {
   boundsOfPath, createScene, type Path, PathBuilder, pathInWorld, type RectPose, type RenderLayer, type Scene,
   solid, type Stroke, drawPreset,
 } from '@weasel-js/core';
-import { useGirthTool } from '@weasel-js/path-tools';
+import { useGirthTool, pathsPreset } from '@weasel-js/path-tools';
 import { strokeToPath } from '@weasel-js/stroke';
 import {
   type ConfigOf, defineInstrument, f, Lab, type RenderContext, type SceneTrialState, TrialSceneCanvas,
@@ -130,7 +130,7 @@ function WidthTrial({ ctx }: { ctx: RenderContext<State, Config> }) {
     [ctx.config.outline, scene],
   );
   return (
-    <TrialSceneCanvas features={[drawPreset]} scene={scene} trial={ctx.trial} tools={tools} layers={layers} />
+    <TrialSceneCanvas features={[drawPreset, pathsPreset]} scene={scene} trial={ctx.trial} tools={tools} layers={layers} />
   );
 }
 

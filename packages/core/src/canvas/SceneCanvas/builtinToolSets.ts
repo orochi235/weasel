@@ -3,27 +3,21 @@ import { toolIdsOf, toolSet, type ToolSet } from '@weasel-js/routing';
 import type {} from '../../interactions/actions/actionParamSchema';
 
 /** Built-in tool ids SceneCanvas knows how to mount, through `defaultTools` or a preset. */
-export type BuiltinToolId = 'select' | 'anchors' | 'hand' | BuiltinShapeToolId | 'slice';
+export type BuiltinToolId = 'select' | 'hand' | BuiltinShapeToolId;
 
 /** The selection tools: click and marquee, and the lasso. */
 export const SELECT_TOOLS: ToolSet<BuiltinToolId> = toolSet('select', ['select', ...kitShapeKindsOf('select')], { label: 'Select' });
-/** Path edit's anchor editing. Path-edit tools of other packages join this group. */
-export const ANCHOR_TOOLS: ToolSet<BuiltinToolId> = toolSet('path-edit', ['anchors'], { label: 'Path edit' });
 /** The view tools. */
 export const VIEW_TOOLS: ToolSet<BuiltinToolId> = toolSet('view', ['hand'], { label: 'View' });
 /** The tools that drag out a closed or open primitive. */
 export const SHAPE_TOOLS: ToolSet<BuiltinToolId> = toolSet('shape', kitShapeKindsOf('shape'), { label: 'Shapes' });
-/** The freehand and bezier path tools. */
-export const DRAW_TOOLS: ToolSet<BuiltinToolId> = toolSet('draw', kitShapeKindsOf('draw'), { label: 'Draw' });
 /** The text tools: text and the sticky note. */
 export const TYPE_TOOLS: ToolSet<BuiltinToolId> = toolSet('type', kitShapeKindsOf('type'), { label: 'Type' });
-/** The tools that cut the page itself. */
-export const PAGE_TOOLS: ToolSet<BuiltinToolId> = toolSet('page', ['slice'], { label: 'Page' });
 
-/** The built-in tool sets in palette order: selection and anchor editing, then navigation, then
- *  the tools that make things. Each set is named for the presentation group its tools sit in. */
+/** The built-in tool sets in palette order: selection, then navigation, then the tools that make
+ *  things. Each set is named for the presentation group its tools sit in. */
 export const BUILTIN_TOOL_GROUPS: readonly ToolSet<BuiltinToolId>[] = [
-  SELECT_TOOLS, ANCHOR_TOOLS, VIEW_TOOLS, SHAPE_TOOLS, DRAW_TOOLS, TYPE_TOOLS, PAGE_TOOLS,
+  SELECT_TOOLS, VIEW_TOOLS, SHAPE_TOOLS, TYPE_TOOLS,
 ];
 
 /** The natural order of palette groups, which `ToolPalette` follows unless given its own. */

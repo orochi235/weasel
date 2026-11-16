@@ -13,6 +13,7 @@ import {
   pickPreset,
   pathNode,
 } from '@weasel-js/core';
+import { useSliceTool } from '@weasel-js/path-tools';
 import { ToolPalette } from '@weasel-js/ui/components/ToolPalette';
 import { DemoStage } from './DemoStage';
 
@@ -30,6 +31,7 @@ const INITIAL = [
 ];
 
 export function SliceDemo() {
+  const slice = useSliceTool();
   // `<SceneCanvas>` publishes the `slice` dep over its own scene, so mounting
   // the tool is all this needs: every cut swaps the paths it crosses for their pieces.
   const scene = useScene({ systemLayers: [{ id: 'default' }], initial: INITIAL });
@@ -44,7 +46,7 @@ export function SliceDemo() {
             scene={scene}
             selection={selection}
             features={[pickPreset, movePreset, editPreset]}
-            defaultTools={['slice']}
+            tools={{ slice }}
             defaultActiveTool="slice"
           />
         </DemoStage>

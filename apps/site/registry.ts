@@ -109,7 +109,7 @@ const DEMO_META: DemoMeta[] = [
     id: 'whiteboard',
     title: 'Whiteboard',
     category: 'Tools',
-    description: 'One preset, `features={[whiteboardPreset]}`: the pencil, the text tool, and the sticky note (`WHITEBOARD_TOOLS`) on an open canvas, with the view, pick, move, resize, and edit presets it includes. Nothing else is wired in the demo: the palette lists the tools the preset mounted.',
+    description: 'One preset, `features={[whiteboardPreset]}`: the text tool and the sticky note (`WHITEBOARD_TOOLS`) on an open canvas, with the view, pick, move, resize, and edit presets it includes, and path-tools\' pencil passed in `tools`. The palette lists the tools the canvas mounted.',
     hint: '<kbd>S</kbd> sticky note · <kbd>N</kbd> pencil · <kbd>T</kbd> text · <kbd>V</kbd> select · hold <kbd>Space</kbd> and drag, or the wheel, to pan.',
     load: () => import('./demos/WhiteboardDemo').then((m) => m.WhiteboardDemo),
     path: 'apps/site/demos/WhiteboardDemo.tsx',

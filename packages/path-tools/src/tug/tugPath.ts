@@ -7,9 +7,9 @@ import {
   editAnchorSetTracked, tugPathEnd, lengthToward, nearestPathAnchor, openEndAt, pathEndAnchorIndex,
   pathEndFrame, pathToAnchors, type AnchorSet, type TugMode, type PointOrigin, type PolygonPath,
 } from '@weasel-js/geom';
-import {
-  depOf, type EditAnchorsDep, editingLayer, inPlane, pathEditPreview, pathOperationTags,
-} from '@weasel-js/core';
+import { type EditAnchorsDep, editingLayer, inPlane, pathOperationTags } from '@weasel-js/core';
+import { depOf } from '../pathEdit/anchorEditing';
+import { pathEditPreview } from '../pathEdit/editAnchors/preview';
 import type {} from '../actionParamSchema';
 
 /** Params `tugPath` reads on every move. */

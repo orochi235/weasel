@@ -5,7 +5,8 @@
 import { describe, expect, it } from 'vitest';
 import { anchorsToPath, polygonFromPoints, type PolygonPath } from '@weasel-js/geom';
 import { ActionDisabledReason, type Action, type ImmediateInvoker } from '@weasel-js/routing';
-import { deleteAnchorsAction, nudgeAnchorsLeftAction } from '@weasel-js/core';
+import { deleteAnchorsAction } from './pathEdit/anchorEditing';
+import { nudgeAnchorsLeftAction } from './pathEdit/anchorNudge';
 import {
   constrainAnchorsAction, resamplePathAction, reversePathAction, selectSmoothAnchorsAction, setFilletsAction,
   unconstrainAnchorsAction,

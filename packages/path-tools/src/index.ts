@@ -40,13 +40,54 @@ export {
   warpPreset,
 } from './presets';
 export type {
-  ActionParamSchema, EditPathEffectParams, PathEffectParams, SetFilletsParams, TweenParams,
+  ActionParamSchema, EditPathEffectParams, OffsetPathParams, PathEffectParams, SetFilletsParams, TweenParams,
 } from './actionParamSchema';
+export { anchorKeysPreset, outlinesPreset, pathCommandsPreset, pathEditPreset, pathsPreset } from './pathsPreset';
+export { pathToolsKitSettingsSchema, type PathToolsKitTargetSettings } from './kitSettings';
+
+// ─── Path edit ─────────────────────────────────────────────────────────────
+export { ANCHORS_TOOL_ID, anchorsTool } from './pathEdit/anchorsTool';
+export { editAnchorsAction } from './pathEdit/editAnchors/editAnchors';
+export { hitAnchor, type AnchorHit } from './pathEdit/editAnchors/handles';
+export {
+  finishPathEditFrame, pathEditPreview, type PathEditFrame, type PathEditPreview, type PathStorageKind,
+} from './pathEdit/editAnchors/preview';
+export { editedPathSymmetries } from './pathEdit/editAnchors/symmetry';
+export { HANDLE_LOCK_ROLES, locksInForce } from './pathEdit/editAnchors/handleDrag';
+export {
+  anchorEditWouldChange, commitAnchorEdit, deleteAnchorsAction, depOf, requiresAnchorSelection, selectAnchorAction,
+} from './pathEdit/anchorEditing';
+export {
+  nudgeAnchorsDownAction, nudgeAnchorsLeftAction, nudgeAnchorsRightAction, nudgeAnchorsUpAction,
+} from './pathEdit/anchorNudge';
+export { createHandleCommand, type HandleEdit, type HandleScope } from './pathEdit/anchorHandles';
+export { joinSelectedAnchors, type AnchorEdit } from './pathEdit/anchorJoin';
+export { deleteSelectedMark, editTargetOf, markUnder } from './pathEdit/pathEditMarks';
+
+// ─── Path commands and outlines ────────────────────────────────────────────
+export { joinPathsCommand, planJoin, type JoinPlan } from './pathCommands/cutJoin';
+export { DEFAULT_SIMPLIFY_TOLERANCE, OFFSET_PATH_PARAMS, SIMPLIFY_PATH_PARAMS } from './pathCommands/simplifyOffset';
+export { livePathEdit, type LivePathEditSpec } from './pathCommands/livePathEdit';
+export {
+  applyCreateOutlines, type CreateOutlinesAdapter, type CreateOutlinesResult, type OutlinePathSpec,
+} from './outlines/createOutlines';
+export { applyOutlineStroke, type OutlineStrokeResult } from './outlines/outlineStroke';
+export { useCreateOutlinesAdapter } from './outlines/useCreateOutlinesAdapter';
+
+// ─── The pen, the pencil, and the knife ────────────────────────────────────
+export {
+  usePenTool, type PenContinuation, type PenDraftAnchor, type PenScratch, type PenSubpath, type UsePenToolOptions,
+} from './pen/usePenTool';
+export { PEN_TOOL_OPTIONS } from './pen/penOptions';
+export {
+  createPenPreviewLayer, PEN_CLOSE_HIT_PX, type CreatePenPreviewLayerOptions, type PenPreviewStyle,
+} from './pen/penPreviewLayer';
+export { PENCIL_TOOL_OPTIONS, usePencilTool, type PencilPoint } from './pencil/usePencilTool';
+export { sliceAction } from './slice/slice';
+export { useSliceTool, type SliceScratch, type UseSliceToolOptions } from './slice/useSliceTool';
 
 // ─── Actions ───────────────────────────────────────────────────────────────
-export {
-  SAND_PARAMS, SAND_RADIUS_PX, sandAction, type SandParams,
-} from './sand/sand';
+export { SAND_PARAMS, SAND_RADIUS_PX, sandAction, type SandParams } from './sand/sand';
 export { SAND_TOOL_OPTIONS, useSandTool, type UseSandToolOptions } from './sand/useSandTool';
 export { handleLockAngleAction, handleLockLengthAction } from './handleLocks/handleLocks';
 export {
@@ -84,9 +125,7 @@ export {
 } from './pathEffects/actions';
 export { releasePathEffectAction, setEffectPathAction } from './pathEffects/retarget';
 export { releaseTweenSpineAction, setTweenSpineAction } from './pathEffects/spine';
-export {
-  configureWarpAction, expandWarpAction, warpHandleScratchOf, type WarpHandleScratch,
-} from './warp/warpActions';
+export { configureWarpAction, expandWarpAction, warpHandleScratchOf, type WarpHandleScratch } from './warp/warpActions';
 export { WARP_SETTINGS_SCHEMA, warpSettingsForm } from './warp/warpSettingsForm';
 export { configureWarpParams, settingsOfWarp, WARP_SETTING_FIELDS, warpDragParams } from './warp/warpParams';
 export { PATH_EFFECT_SETTINGS_SCHEMA, pathEffectSettingsForm } from './pathEffects/settingsForm';
@@ -122,9 +161,7 @@ export * from './spiro';
 
 // ─── Path-edit chrome ──────────────────────────────────────────────────────
 export { combCommands, createCombExtension, PATH_COMB_CHROME_ID, type PathEditCombOptions } from './comb/comb';
-export {
-  poiseCommands, createPoiseExtension, PATH_POISE_CHROME_ID, type PathEditPoiseStyle,
-} from './poise/poiseMarks';
+export { poiseCommands, createPoiseExtension, PATH_POISE_CHROME_ID, type PathEditPoiseStyle } from './poise/poiseMarks';
 export {
   CONSTRAINTS_EXTENSION_ID, createConstraintsExtension, DEFAULT_CONSTRAINT_STYLE, selectedConstraintOf, setConstraints,
 } from './constraints/constraintsExtension';
@@ -155,7 +192,8 @@ export { createDrapeExtension, type DrapeOptions } from './drape/drape';
 
 // ─── Panels ────────────────────────────────────────────────────────────────
 export {
-  FILLET_CONTROLS, FILLET_CONTROLS_PROMPT, FILLET_K_SLIDER_RANGE, filletControlsParams, filletControlsState, type FilletControlsState,
+  FILLET_CONTROLS, FILLET_CONTROLS_PROMPT, FILLET_K_SLIDER_RANGE, filletControlsParams, filletControlsState,
+  type FilletControlsState,
 } from './fillet/filletControls';
 export {
   useFilletControls, type FilletControlsScene, type FilletControlsSelection, type UseFilletControlsReturn,
@@ -175,7 +213,7 @@ export type { StrokePressParams } from './shared/scenePaths';
 export type { PathToolsIconName } from './icons.gen';
 
 export {
-  WARP_TOOLS, RESHAPE_TOOLS, PATH_EDIT_TOOLS, PATH_TOOLS_TOOLS, usePathEditTools, usePathToolsTools,
+  WARP_TOOLS, RESHAPE_TOOLS, PATH_EDIT_TOOLS, DRAW_TOOLS, SLICE_TOOLS, PATH_TOOLS_TOOLS, usePathEditTools, usePathToolsTools,
   type PathEditToolId, type PathToolId,
 } from './toolSets';
 export {

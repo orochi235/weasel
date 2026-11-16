@@ -1,7 +1,7 @@
 /**
  * The package's behavior as `<SceneCanvas features>` presets: one per tool
- * family, and `pathTools` for all of them. Each assumes core's `paths`
- * preset, which opens a path for editing.
+ * family, and `pathTools` for all of them. Each assumes `pathsPreset`, which
+ * opens a path for editing; `pathTools` includes it.
  */
 import { never, type FeaturePreset } from '@weasel-js/core';
 import { poiseHandlesAction, equalizeHandlesAction } from './poise/poiseHandles';
@@ -43,6 +43,7 @@ import { spiroPreset } from './spiro/spiroPreset';
 import { snipPathAction } from './snip/snip';
 import { showPoiseAction, showCombAction, showFilletsAction, showDirectionAction } from './overlays/showOverlay';
 import { configureWarpAction, expandWarpAction } from './warp/warpActions';
+import { pathsPreset } from './pathsPreset';
 
 /** `sand`, which `useSandTool`, a path-edit tool, binds. */
 export const sandPreset: FeaturePreset = {
@@ -235,13 +236,13 @@ export const warpPreset: FeaturePreset = {
   actions: [expandWarpAction, configureWarpAction],
 };
 
-/** Every preset above, spiro curves, the comb, poise, constraints, path
+/** `pathsPreset`, every preset above, spiro curves, the comb, poise, constraints, path
  *  direction, and fillets with their defaults — except Drape and
  *  handle snapping, which change what every anchor or handle drag does. */
 export const pathTools: FeaturePreset = {
   id: 'pathTools',
   includes: [
-    sandPreset, handleLocksPreset, bridgePreset, spiroPreset, snipPreset, reachPreset, tugPreset,
+    pathsPreset, sandPreset, handleLocksPreset, bridgePreset, spiroPreset, snipPreset, reachPreset, tugPreset,
     kneadPreset, fairingPreset, anchorSelectionPreset, resamplePreset, addExtremesPreset,
     curvatureCombPreset, poisePreset, constraintsPreset, pathStructurePreset, segmentTypePreset,
     filletPreset, pathEffectsPreset, warpPreset,

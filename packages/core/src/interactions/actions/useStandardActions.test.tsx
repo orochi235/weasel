@@ -65,14 +65,8 @@ const KIT_IDS = [
   'pathfinder.union', 'pathfinder.subtract', 'pathfinder.intersect',
   'pathfinder.exclude', 'pathfinder.divide', 'pathfinder.crop',
   'pathfinder.trim', 'pathfinder.merge', 'pathfinder.booleanGroup',
-  'createOutlines', 'outlineStroke',
   'move',
   'resize', 'rotate', 'areaSelect', 'insert', 'place', 'insert.adjustRotation', 'insert.reposition', 'clone',
-  'editAnchors', 'enterPathEdit', 'exitPathEdit', 'insertPathAnchor', 'bendSegment',
-  'nudgeAnchors.up', 'nudgeAnchors.down', 'nudgeAnchors.left', 'nudgeAnchors.right',
-  'deleteAnchors', 'cutPathAtAnchor', 'retractHandles', 'makeHandlesSymmetric',
-  'averageAnchors', 'joinAnchors', 'setAnchorField', 'simplifyPath', 'offsetPath', 'snipAtCrossings', 'joinPaths',
-  'marqueeAnchors', 'selectAnchor', 'editEffectText',
   'lassoSelect', 'viewport.pinchZoom',
   // viewport.pan / viewport.zoom are registered conditionally by SceneCanvas's
   // useViewportActions, not by useStandardActions — see useViewportActions.ts.
