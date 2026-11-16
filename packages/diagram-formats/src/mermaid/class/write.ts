@@ -100,7 +100,7 @@ class ClassWriter {
 
   noteLines(): void {
     for (const [id, target] of this.notes) {
-      const text = spelled((this.out.byId.get(id)!.lines ?? []).join('\\n'));
+      const text = (this.out.byId.get(id)!.lines ?? []).map((l) => spelled(l).replace(/\\/g, '#92;')).join('\\n');
       this.lines.push(target === null ? `  note "${text}"` : `  note for ${this.id(target.to)} "${text}"`);
     }
   }

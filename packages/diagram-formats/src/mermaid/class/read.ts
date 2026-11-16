@@ -93,7 +93,7 @@ class ClassReader {
 
   note(text: string, target: string | undefined): void {
     const id = this.mint.next('note');
-    this.notes.push({ id, outline: 'note', lines: decodeEntities(text, true).split('\\n') });
+    this.notes.push({ id, outline: 'note', lines: text.split('\\n').map((l) => decodeEntities(l, true)) });
     if (target === undefined) return;
     this.draft(target);
     this.noteEdges.push({ from: id, to: target, colors: { dash: [4, 4], markerEnd: null } });
