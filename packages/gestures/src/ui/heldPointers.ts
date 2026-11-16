@@ -1,3 +1,5 @@
+import { createEmitter, type Emitter } from '@weasel-js/registry';
+
 /**
  * Which pointers are down on an element: pressed on it or inside it, with any
  * button, and not yet released. The one answer to "is this move a hover" for
@@ -15,7 +17,7 @@ interface Tracker {
   readers: number;
   /** Pointer id to whether its press reported button state at all. */
   held: Map<number, boolean>;
-  listeners: Set<() => void>;
+  changes: Emitter;
   detach(): void;
 }
 
@@ -25,9 +27,9 @@ function attach(element: Element): Tracker {
   const doc = element.ownerDocument;
   const win = doc.defaultView;
   const held = new Map<number, boolean>();
-  const listeners = new Set<() => void>();
+  const changes = createEmitter();
   const changed = (was: number): void => {
-    if (held.size !== was) for (const l of [...listeners]) l();
+    if (held.size !== was) changes.emit();
   };
   const down = (e: Event): void => {
     const p = e as PointerEvent;
@@ -63,7 +65,7 @@ function attach(element: Element): Tracker {
   return {
     readers: 0,
     held,
-    listeners,
+    changes,
     detach() {
       element.removeEventListener('pointerdown', down, true);
       doc.removeEventListener('pointerup', up, true);
@@ -87,23 +89,24 @@ export function heldPointers(element: Element): HeldPointers {
   const shared = tracker;
   shared.readers += 1;
   let released = false;
-  const mine = new Set<() => void>();
+  /** This reader's subscriptions, each by the unsubscribe that ends it. */
+  const mine = new Map<object, () => void>();
   return {
     count: () => shared.held.size,
     subscribe(listener) {
       if (released) return () => {};
-      const own = (): void => listener();
-      mine.add(own);
-      shared.listeners.add(own);
+      const token = {};
+      // A wrapper, so one listener subscribed twice is two subscriptions, each ended by its own call.
+      mine.set(token, shared.changes.subscribe(() => listener()));
       return () => {
-        mine.delete(own);
-        shared.listeners.delete(own);
+        mine.get(token)?.();
+        mine.delete(token);
       };
     },
     release() {
       if (released) return;
       released = true;
-      for (const l of mine) shared.listeners.delete(l);
+      for (const unsubscribe of mine.values()) unsubscribe();
       mine.clear();
       shared.readers -= 1;
       if (shared.readers > 0) return;

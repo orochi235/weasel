@@ -1,3 +1,4 @@
+import { createEmitter } from '@weasel-js/registry';
 import { useSyncExternalStore } from 'react';
 
 /** What the parts of a lab claim a set of its key actions with, and the claims standing now. */
@@ -10,10 +11,8 @@ export interface KeyClaims<T> {
 
 export function createKeyClaims<T>(): KeyClaims<T> {
   const all = new Set<T>();
-  const listeners = new Set<() => void>();
-  const changed = () => {
-    for (const l of [...listeners]) l();
-  };
+  const changes = createEmitter();
+  const changed = () => changes.emit();
   return {
     all,
     claim: (claim) => {
@@ -23,12 +22,7 @@ export function createKeyClaims<T>(): KeyClaims<T> {
         if (all.delete(claim)) changed();
       };
     },
-    subscribe: (listener) => {
-      listeners.add(listener);
-      return () => {
-        listeners.delete(listener);
-      };
-    },
+    subscribe: (listener) => changes.subscribe(listener),
   };
 }
 
