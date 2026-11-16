@@ -73,7 +73,8 @@ export function shownLookup<TNode extends { id: NodeId; data?: unknown }>(
   };
 }
 
-type CountedSource = ShownDataSource & { ids(): readonly NodeId[]; getGeneration(): number };
+/** An overrides table {@link nodesAsShown} reads: what it shows, the ids it overrides, and a generation that moves when it changes. */
+export type ShownOverridesSource = ShownDataSource & { ids(): readonly NodeId[]; getGeneration(): number };
 
 /** Per overrides table, whether any entry shows data, as of a generation. */
 const anyData = new WeakMap<object, { at: number; any: boolean }>();
@@ -82,7 +83,7 @@ const anyData = new WeakMap<object, { at: number; any: boolean }>();
  *  data. Answers that from the table's generation, so a pick with nothing
  *  overridden allocates nothing. */
 export function nodesAsShown<TNode extends { id: NodeId; data?: unknown }>(
-  overrides: CountedSource,
+  overrides: ShownOverridesSource,
   nodes: readonly TNode[],
 ): readonly TNode[] {
   const at = overrides.getGeneration();

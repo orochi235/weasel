@@ -70,7 +70,7 @@ export type { PathDerivingNode } from './derivedPath';
 export type { PoseSource, PosedNode } from './effectivePose';
 export { nodeAsShown, nodesAsShown, shownLookup } from './nodeAsShown';
 export { documentOf } from './documentOf';
-export type { ShownDataSource } from './nodeAsShown';
+export type { ShownDataSource, ShownOverridesSource } from './nodeAsShown';
 export { UNION_OF_CHILDREN, unionOfChildren } from './kitRegistry';
 export { BOOLEAN_OF_CHILDREN, booleanOfChildren, booleanOpOf } from './booleanOfChildren';
 export { booleanGroupFields } from './booleanGroup';

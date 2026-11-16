@@ -26,19 +26,20 @@ export interface PrefHeld {
   variants?: readonly PrefHeldVariant[];
 }
 
-type Found = PrefHeld[] | typeof UNSEEN | undefined;
+/** What a path resolves to among a schema's leaves: the leaves holding it, `UNSEEN` when no leaf's key reaches it, or undefined. */
+export type PrefLeavesFound = PrefHeld[] | typeof UNSEEN | undefined;
 
 const under = (at: string, key: string): string => (at === '' ? key : `${at}.${key}`);
 
 /** `at` is the path of the leaf the fields belong to, `undefined` for a section schema's own leaves. */
-function amongFields(fields: [key: string, leaf: PrefLeaf][], path: string, at: string | undefined): Found {
+function amongFields(fields: [key: string, leaf: PrefLeaf][], path: string, at: string | undefined): PrefLeavesFound {
   const exact = fields.find(([key]) => key === path);
   if (exact) return [{ leaf: exact[1], ...(at === undefined ? {} : { within: at }) }];
   const outer = fields.find(([key]) => path.startsWith(`${key}.`));
   return outer && insideLeaf(outer[1], path.slice(outer[0].length + 1), under(at ?? '', outer[0]));
 }
 
-function insideLeaf(leaf: PrefLeaf, rest: string, at: string): Found {
+function insideLeaf(leaf: PrefLeaf, rest: string, at: string): PrefLeavesFound {
   if (leaf.kind === 'object') return amongFields(prefSectionLeaves((leaf as PrefObject).children), rest, at);
   if (leaf.kind === 'union') {
     const { tag, variants } = leaf as PrefUnion;
@@ -63,7 +64,7 @@ function insideLeaf(leaf: PrefLeaf, rest: string, at: string): Found {
  * `union` leaves: one, or one per variant holding the field where it sits in
  * a union.
  */
-export function prefLeavesHolding(schema: PrefGroup | PrefSection, path: string): Found {
+export function prefLeavesHolding(schema: PrefGroup | PrefSection, path: string): PrefLeavesFound {
   if (isPrefSection(schema)) return amongFields(prefSectionLeaves(schema.members), path, undefined);
   const steps = path.split('.');
   let node: PrefLeaf | PrefGroup = schema;
@@ -76,7 +77,7 @@ export function prefLeavesHolding(schema: PrefGroup | PrefSection, path: string)
 }
 
 /** {@link prefLeavesHolding} inside one entry of a list or a map whose `item` this is; the empty path is the entry itself. */
-export function prefLeavesHoldingIn(item: PrefLeaf, path: string): Found {
+export function prefLeavesHoldingIn(item: PrefLeaf, path: string): PrefLeavesFound {
   return path === '' ? [{ leaf: item }] : insideLeaf(item, path, '');
 }
 

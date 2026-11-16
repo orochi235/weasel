@@ -76,7 +76,7 @@ export { UNION_OF_CHILDREN, unionOfChildren } from '../core/scene/kitRegistry';
 export type { AddLayerSpec, LayerRecord, LayerRecordBase, SceneLayerMembers, SystemLayerRecord, SystemLayerSpec, UserLayerRecord } from '../core/scene/layerTypes';
 export type { LayoutFrame, LayoutMove } from '../core/scene/layoutTypes';
 export { nodeAsShown, nodesAsShown, shownLookup } from '../core/scene/nodeAsShown';
-export type { ShownDataSource } from '../core/scene/nodeAsShown';
+export type { ShownDataSource, ShownOverridesSource } from '../core/scene/nodeAsShown';
 export type { Bivariant, ClipFromPoseFn, CopiesFromPoseFn, DerivePathFn, DerivePoseFn, DerivedDep } from '../core/scene/nodeFnTypes';
 export { contentRoots, hidesSubtree, isNodeHidden, isNodeLocked, isPageStructure, nodeGates, withoutPageStructure } from '../core/scene/nodeGates';
 export type { GateSource, GatedLayer, GatedNode, NodeGates } from '../core/scene/nodeGates';

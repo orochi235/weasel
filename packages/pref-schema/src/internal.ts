@@ -4,9 +4,9 @@
  *
  * @packageDocumentation
  */
-export { formOf, ORDERINGS, partsOf } from './condition';
+export { formOf, ORDERINGS, partsOf, type Form } from './condition';
 export { assignPrefValueAtPath, setOwnPrefValue } from './helpers';
-export { prefLeavesHolding, prefLeavesHoldingIn, UNSEEN } from './holding';
+export { prefLeavesHolding, prefLeavesHoldingIn, UNSEEN, type PrefLeavesFound } from './holding';
 export {
   dropUnlisted,
   mapScopeValues,
