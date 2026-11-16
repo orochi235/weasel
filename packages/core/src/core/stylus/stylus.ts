@@ -1,4 +1,5 @@
 import { clientToWorld } from 'core/viewport/clientToWorld';
+import { lerp } from '@weasel-js/geom';
 /**
  * Stylus / Pencil pointer-event helpers.
  *
@@ -68,7 +69,7 @@ export function pressureToWidth(
   const gamma = options.gamma ?? 1.6;
   const p = Math.max(0, Math.min(1, pressure));
   const shaped = p ** gamma;
-  return minWidth + (maxWidth - minWidth) * shaped;
+  return lerp(minWidth, maxWidth, shaped);
 }
 
 /** Extract a normalized stylus snapshot from any PointerEvent. Pure. */

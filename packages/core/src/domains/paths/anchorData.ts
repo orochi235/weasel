@@ -6,6 +6,7 @@
  */
 import {
   anchorOriginsOf, remapAnchorValues, type PointOrigin, type PolygonPath,
+  lerp,
 } from '@weasel-js/geom';
 import { vertexHalfWidths, vertexWidthFromSides, type VertexWidth } from '@weasel-js/paint';
 import type { Skin } from '@weasel-js/animator';
@@ -38,7 +39,7 @@ function carryWidths(widths: readonly VertexWidth[], width: unknown, { before, a
     if (o.t !== 0 && o.b !== o.a) {
       const a = vertexHalfWidths(widths[o.a], fallback);
       const b = vertexHalfWidths(widths[o.b], fallback);
-      entry = vertexWidthFromSides(a.left + (b.left - a.left) * o.t, a.right + (b.right - a.right) * o.t);
+      entry = vertexWidthFromSides(lerp(a.left, b.left, o.t), lerp(a.right, b.right, o.t));
     }
     return o.reversed ? swapped(entry) : entry;
   });

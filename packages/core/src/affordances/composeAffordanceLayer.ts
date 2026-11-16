@@ -7,7 +7,7 @@ import { worldToScreen } from 'core/viewport/viewTransform';
 import { isRigid, pxExtentIn, targetCorners } from 'core/geometry/targetFrame';
 import type { DebugSink } from '../debug/types';
 import type { CommandFill, CommandStroke } from '@weasel-js/paint';
-import { boundsOfPath, PATH_M, PATH_L, PATH_Z } from '@weasel-js/geom';
+import { boundsOfPath, PATH_M, PATH_L, PATH_Z, lerp } from '@weasel-js/geom';
 import {
   angleOf,
   annulusSemiAxes,
@@ -280,7 +280,7 @@ function annulusCommand(
     cmds.push(PATH_M);
     localPts.push({ x: cx + rx * Math.cos(t0), y: cy + ry * Math.sin(t0) });
     for (let i = 1; i <= SAMPLES; i++) {
-      const t = t0 + (t1 - t0) * (i / SAMPLES);
+      const t = lerp(t0, t1, i / SAMPLES);
       cmds.push(PATH_L);
       localPts.push({ x: cx + rx * Math.cos(t), y: cy + ry * Math.sin(t) });
     }

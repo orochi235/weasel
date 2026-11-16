@@ -4,6 +4,7 @@
  */
 import {
   boundsOfPath, measurePath, multiply, prepareTween, rotate, rotatePathAround, transformPath, translate, wrapAngle,
+  lerp,
   type TweenPathsOptions, type Path, type PathMeasure,
 } from '@weasel-js/geom';
 import { lerpFill, lerpStroke } from '@weasel-js/paint';
@@ -86,15 +87,15 @@ export function tweenParts(effect: TweenEffect, a: EffectSource, b: EffectSource
   return stations.map((t) => {
     let path: Path = tween.at(t);
     if (turned) {
-      const cx = turned.a.cx + (turned.b.cx - turned.a.cx) * t;
-      const cy = turned.a.cy + (turned.b.cy - turned.a.cy) * t;
+      const cx = lerp(turned.a.cx, turned.b.cx, t);
+      const cy = lerp(turned.a.cy, turned.b.cy, t);
       const rotation = turned.a.rotation + turn * t;
       if (rotation !== 0) path = rotatePathAround(path, cx, cy, rotation);
     }
     if (along) {
       const { point, tangent } = along.at(t * along.length);
       const angle = effect.orient ? Math.atan2(tangent.y, tangent.x) - chord : 0;
-      const middle = { x: from.x + (to.x - from.x) * t, y: from.y + (to.y - from.y) * t };
+      const middle = { x: lerp(from.x, to.x, t), y: lerp(from.y, to.y, t) };
       path = transformPath(path, multiply(translate(point.x, point.y), multiply(rotate(angle), translate(-middle.x, -middle.y))));
     }
     return { path, fill: lerpFill(a.fill, b.fill, t) ?? null, stroke: lerpStroke(a.stroke, b.stroke, t) ?? null };
