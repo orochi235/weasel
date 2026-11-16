@@ -144,6 +144,14 @@ describe('createLongPressFeedbackContribution', () => {
       expect(requestRedraw).toHaveBeenCalledTimes(1);
     });
 
+    it('repaints for the indicator only once a delay longer than one timer holds has passed', () => {
+      const { store, requestRedraw } = setup({ delay: 2 ** 31, reducedMotion: true });
+      store.set(pending());
+      requestRedraw.mockClear();
+      advance(1);
+      expect(requestRedraw).not.toHaveBeenCalled();
+    });
+
     it('follows prefers-reduced-motion when left on auto', () => {
       const matchMedia = vi.fn((q: string) => ({ matches: q.includes('reduce') }));
       vi.stubGlobal('matchMedia', matchMedia);
