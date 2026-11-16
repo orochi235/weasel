@@ -30,9 +30,9 @@ Every package is published under `@weasel-js` and released together at one versi
 | `history` |  | undo/redo with scoped sub-histories |
 | `routing` | <img src="docs/badges/react.svg" width="20" height="20" alt="Needs React" title="Needs React"><img src="docs/badges/dom.svg" width="20" height="20" alt="Needs a browser: document, window or navigator" title="Needs a browser: document, window or navigator"> | binding-to-action routing: the gesture dispatcher, the action registry, tool and contribution declaration |
 | `select` |  | selection as a value: which ids a press selects, with toggle, range and anchor rules |
-| `ui-input` |  | what a key or a pointer does to a control, as pure functions: steps, sliders, list roving and typeahead, selection, reorder |
+| `ui-input` | <img src="docs/badges/dom.svg" width="20" height="20" alt="Needs a browser: document, window or navigator" title="Needs a browser: document, window or navigator"> | what a key or a pointer does to a control, as pure functions: steps, sliders, list roving and typeahead, selection, reorder |
 | `ui-logic` |  | what a DOM component and a canvas-drawn widget share past their drawing: the measure/draw contract and a focus scope |
-| `menu` |  | the headless model behind context menus: entries, a controller for highlight, submenus, keyboard and typeahead, and placement |
+| `menu` | <img src="docs/badges/dom.svg" width="20" height="20" alt="Needs a browser: document, window or navigator" title="Needs a browser: document, window or navigator"> | the headless model behind context menus: entries, a controller for highlight, submenus, keyboard and typeahead, and placement |
 | `registry` | <img src="docs/badges/standalone.svg" width="20" height="20" alt="Depends on no other weasel package" title="Depends on no other weasel package"> | keyed registries you can enumerate and subscribe to |
 | `icons` |  | namespaced icon names, the icon registry, and the plain shape glyphs; no React, no DOM |
 | `icons-plugin` |  | the build plugin that ships only the glyphs a build names, for vite, rollup, rolldown and esbuild |
