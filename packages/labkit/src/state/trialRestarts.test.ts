@@ -50,4 +50,28 @@ describe("the store's restart of a trial's undo", () => {
     store.getState().loadSnapshot(id, 't');
     expect(heard).toHaveBeenCalledOnce();
   });
+
+  it('keeps a stop called twice from dropping a later listener', () => {
+    const store = storeWithTrial();
+    const stop = onTrialRestart(store, 't', () => {});
+    stop();
+    const later = vi.fn();
+    onTrialRestart(store, 't', later);
+    stop();
+    store.getState().resetTrial('t', [counter]);
+    expect(later).toHaveBeenCalledOnce();
+  });
+
+  it('keeps a listener that throws from stopping the rest', () => {
+    const store = storeWithTrial();
+    const error = vi.spyOn(console, 'error').mockImplementation(() => {});
+    const after = vi.fn();
+    onTrialRestart(store, 't', () => {
+      throw new Error('boom');
+    });
+    onTrialRestart(store, 't', after);
+    store.getState().resetTrial('t', [counter]);
+    expect(after).toHaveBeenCalledOnce();
+    error.mockRestore();
+  });
 });
