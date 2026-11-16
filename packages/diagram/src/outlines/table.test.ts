@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { boundsOfPath, rectPath } from '@weasel-js/core';
 import { boxForContent, contentBox, outlineDetail, outlinePath, type Bounds } from '../outline';
-import { outlineFromD, registerOutline } from './table';
+import { outlineFromD, outlineRegistry, registerOutline } from './table';
 
 const BOX: Bounds = { x: 10, y: 20, width: 100, height: 40 };
 
@@ -9,6 +9,18 @@ afterEach(() => vi.restoreAllMocks());
 
 describe('registerOutline', () => {
   const def = (w: number) => ({ path: (b: Bounds) => rectPath(b.x, b.y, w, b.height) });
+
+  it('reflects every name, reporting the built-in a registration shadows', () => {
+    expect(outlineRegistry.entries().find((e) => e.key === 'rect')?.source).toBe('kit');
+    const off = registerOutline('rect', def(5));
+    try {
+      const entry = outlineRegistry.entries().find((e) => e.key === 'rect')!;
+      expect(entry.source).toBeUndefined();
+      expect(entry.shadowed.map((s) => s.source)).toEqual(['kit']);
+    } finally {
+      off();
+    }
+  });
 
   it('a disposer run twice leaves a later registration of the same name alone', () => {
     const first = registerOutline('test:twice', def(1));

@@ -10,7 +10,7 @@ import { MODELING_OUTLINES } from './modeling';
 import { STATE_OUTLINES } from './states';
 import { PARTICIPANT_OUTLINES } from './participants';
 import { STORAGE_OUTLINES } from './storage';
-import { createEmitter } from '@weasel-js/registry';
+import { createReflectable, type Reflection } from '@weasel-js/registry';
 import type { OutlineDef } from './types';
 
 export { outlineFromD } from './fromD';
@@ -23,42 +23,29 @@ const BUILTINS = {
 /** A name the kit itself registers. */
 export type BuiltinOutline = keyof typeof BUILTINS;
 
-// A stack per name, so a disposer can restore whatever its registration shadowed. A record per registration, so
-// one def registered twice is two entries and each disposer takes out its own.
-const table = new Map<string, { def: OutlineDef }[]>(
-  Object.entries(BUILTINS).map(([name, def]) => [name, [{ def: def as OutlineDef }]]),
-);
+const table = createReflectable<OutlineDef>();
+for (const [name, def] of Object.entries(BUILTINS)) table.push(name, def as OutlineDef, { source: 'kit' });
 const warned = new Set<string>();
-const changes = createEmitter();
-const changed = (): void => changes.emit();
+
+/** Every outline name and the definition it resolves to: the built-ins (source `'kit'`) and what
+ *  {@link registerOutline} added, a later registration shadowing an earlier one. */
+export const outlineRegistry: Reflection<OutlineDef> = table.reflection;
 
 /** Call `fn` whenever a registration or its disposer changes what a name resolves to. Returns the unsubscriber. */
 export function onOutlinesChange(fn: () => void): () => void {
-  return changes.subscribe(fn);
+  return table.subscribe(fn);
 }
 
 /** Register `def` under `name`, shadowing any definition already there.
  *  Returns the disposer. */
 export function registerOutline(name: string, def: OutlineDef): () => void {
-  const stack = table.get(name) ?? [];
-  const mine = { def };
-  stack.push(mine);
-  table.set(name, stack);
-  changed();
-  let released = false;
-  return () => {
-    if (released) return;
-    released = true;
-    stack.splice(stack.indexOf(mine), 1);
-    if (stack.length === 0 && table.get(name) === stack) table.delete(name);
-    changed();
-  };
+  return table.push(name, def);
 }
 
 /** The definition `name` resolves to. An unregistered name resolves to
  *  `rect`, with one warning per name. */
 export function resolveOutline(name: string): OutlineDef {
-  const def = table.get(name)?.at(-1)?.def;
+  const def = table.get(name);
   if (def) return def;
   if (!warned.has(name)) {
     warned.add(name);

@@ -313,7 +313,7 @@ export type {
 } from './portAffordance';
 export { portLayer, sceneParticipants } from './portLayer';
 export type { ParticipantScene } from './portLayer';
-export { boxForContent, contentBox, outlineDetail, outlineFromD, outlinePath, outlineSolid, registerOutline } from './outline';
+export { boxForContent, contentBox, outlineDetail, outlineFromD, outlinePath, outlineRegistry, outlineSolid, registerOutline } from './outline';
 export { diagramShape, registerDiagramShape } from './shape';
 export type { DiagramShapeOptions } from './shape';
 export type { Bounds, BuiltinOutline, Outline, OutlineDef } from './outline';
