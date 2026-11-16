@@ -3,6 +3,7 @@ import type { Animator, AnimationHandle, EasingFn } from '@weasel-js/animator';
 import { after } from '@weasel-js/registry';
 import { pendingFor, unregisterRemoval } from './pendingRemovals';
 import type { D3Transition } from './types';
+import { lerp } from '@weasel-js/geom';
 
 interface TransitionCtx<TData, TPose> {
   scene: Scene<unknown, string, TPose>;
@@ -188,7 +189,7 @@ function makeStage<TData, TPose>(
 
     const jobs: Array<(done: () => void) => void> = [];
     const ns = nsOf(i);
-    const lerp = ctx.geometry.lerp!;
+    const lerpPose = ctx.geometry.lerp!;
     if (to !== undefined) {
       const poseFrom = from;
       const poseTo = to;
@@ -202,7 +203,7 @@ function makeStage<TData, TPose>(
             ms: duration,
             easing,
             cancelKey: ns,
-            interpolate: (a, b, t) => (t === 1 ? b : t === 0 ? a : lerp(a, b, t)),
+            interpolate: (a, b, t) => (t === 1 ? b : t === 0 ? a : lerpPose(a, b, t)),
             onTick: (pose) => {
               if (!lost(i)) scene.setPose(id, pose);
             },
@@ -230,9 +231,7 @@ function makeStage<TData, TPose>(
               ? undefined
               : ((a, b, t) => {
                   // Fallback per-tick interpolator for numeric values when no factory is given.
-                  if (typeof a === 'number' && typeof b === 'number') {
-                    return t === 1 ? b : t === 0 ? a : a + (b - a) * t;
-                  }
+                  if (typeof a === 'number' && typeof b === 'number') return lerp(a, b, t);
                   throw new Error(
                     `d3Bind.transition.tween("${ct.name}"): non-numeric value without an interpolate factory`,
                   );
