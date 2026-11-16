@@ -29,6 +29,12 @@ describe('edgePush', () => {
     expect(edgePush(TRACK, 0, 0)).toBe(0);
     expect(edgePush(TRACK, 0, -5)).toBe(0);
   });
+  it('does not push for a pointer at no number, and pushes fully past an end under an infinite margin', () => {
+    expect(edgePush(TRACK, NaN, 50)).toBe(0);
+    expect(edgePush(TRACK, Infinity, Infinity)).toBe(1);
+    expect(edgePush(TRACK, -Infinity, Infinity)).toBe(-1);
+    expect(edgePush(TRACK, 200, Infinity)).toBe(-1);
+  });
   it('has a default margin', () => {
     expect(edgePush(TRACK, EDGE_SCROLL_MARGIN)).toBe(0);
     expect(edgePush(TRACK, 2)).toBeLessThan(0);

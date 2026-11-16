@@ -10,13 +10,13 @@ export const EDGE_SCROLL_MARGIN = 48;
  * overshooting does not reverse the scroll. A span narrower than two margins scrolls toward the nearer end.
  */
 export function edgePush(span: Span, p: number, margin: number = EDGE_SCROLL_MARGIN): number {
-  if (!(margin > 0)) return 0;
+  if (!(margin > 0) || Number.isNaN(p)) return 0;
   const fromStart = p - span.from;
   const fromEnd = span.to - p;
   const towardStart = fromStart <= fromEnd;
   const distance = towardStart ? fromStart : fromEnd;
   if (distance >= margin) return 0;
-  const strength = Math.min(1, 1 - distance / margin);
+  const strength = distance <= 0 ? 1 : Math.min(1, 1 - distance / margin);
   return towardStart ? -strength : strength;
 }
 
