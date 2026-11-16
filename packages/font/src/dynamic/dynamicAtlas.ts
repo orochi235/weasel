@@ -83,6 +83,8 @@ const canvasFamilies = new Set<string>();
 // Enrollment provenance; see `isCanvasFont`. Tracked here rather than in
 // fallback.ts so the two sets can only ever be mutated together.
 const autoEnrolledFamilies = new Set<string>();
+/** The calls holding each explicitly registered family, one token per call. */
+const canvasHolds = new Map<string, Set<object>>();
 let faces = new Map<string, Face>();
 let rasterizer: GlyphRasterizer | null = null;
 let stopWatchingLoads: (() => void) | null = null;
@@ -105,15 +107,23 @@ function getRasterizer(): GlyphRasterizer {
 
 /** Mark `family` as canvas-sourced: when no baked atlas covers it,
  *  resolveFontVariant serves it from this dynamic atlas. Returns a function
- *  that takes it out again, as {@link unregisterCanvasFont} does; a call for
- *  a family already registered returns one that does nothing. */
+ *  that releases this call's hold; the family is taken out, as
+ *  {@link unregisterCanvasFont} does, when the last holder releases. */
 export function registerCanvasFont(family: string): () => void {
-  if (isExplicitCanvasFont(family)) return () => {};
-  canvasFamilies.add(family);
-  // An explicit call promotes a previously auto-enrolled family for good.
-  autoEnrolledFamilies.delete(family);
-  notifyGlyphReady();
-  return () => unregisterCanvasFont(family);
+  const hold = {};
+  const holders = canvasHolds.get(family) ?? new Set<object>();
+  canvasHolds.set(family, holders.add(hold));
+  if (!isExplicitCanvasFont(family)) {
+    canvasFamilies.add(family);
+    // An explicit call promotes a previously auto-enrolled family for good.
+    autoEnrolledFamilies.delete(family);
+    notifyGlyphReady();
+  }
+  return () => {
+    const now = canvasHolds.get(family);
+    if (!now?.delete(hold) || now.size > 0) return;
+    unregisterCanvasFont(family);
+  };
 }
 
 /**
@@ -175,9 +185,10 @@ export function isExplicitCanvasFont(family: string): boolean {
   return canvasFamilies.has(family) && !autoEnrolledFamilies.has(family);
 }
 
-/** Remove a canvas family. Its faces are dropped; the room its glyphs took
+/** Remove a canvas family, whoever holds it. Its faces are dropped; the room its glyphs took
  *  comes back when the pages next fill and are emptied. */
 export function unregisterCanvasFont(family: string): void {
+  canvasHolds.delete(family);
   if (!canvasFamilies.has(family)) return;
   canvasFamilies.delete(family);
   autoEnrolledFamilies.delete(family);
@@ -322,6 +333,7 @@ export function __setGlyphRasterizerForTests(r: GlyphRasterizer | null): void {
 /** @internal test seam — clear all dynamic-font state. */
 export function _resetDynamicFontsForTests(): void {
   canvasFamilies.clear();
+  canvasHolds.clear();
   autoEnrolledFamilies.clear();
   faces = new Map();
   _resetPagesForTests();
