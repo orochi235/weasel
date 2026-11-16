@@ -3,8 +3,8 @@ export { TOKEN_MANIFEST, type TokenManifestEntry } from './generated/manifest';
 export { tokenPx } from './tokenPx';
 
 export { defineTheme, weaselTheme, type Theme, type ThemeInput } from './theme';
-export { resolveTheme, themeAxes, type ResolvedTheme } from './resolveTheme';
-export { applyTheme } from './applyTheme';
+export { declaredSelection, resolveTheme, themeAxes, type ResolvedTheme } from './resolveTheme';
+export { applyTheme, type ApplyThemeOptions } from './applyTheme';
 export { blendTheme, type AxisWeights } from './blendTheme';
 export { resolveCurrentColor } from './currentColor';
 export { expandVars, parseBoxShadow, type BoxShadow } from './boxShadow';

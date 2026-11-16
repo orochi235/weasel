@@ -20,6 +20,13 @@ export function themeAxes(theme: Theme): AxisDefs {
   return themeChain(theme).reduce<AxisDefs>((axes, t) => mergeAxes(axes, t.axes), {});
 }
 
+/** `selection` less any axis `theme` does not declare: what a caller holding one selection for whichever theme it is
+ *  given passes to `applyTheme` or `<ThemeProvider>`. */
+export function declaredSelection(theme: Theme, selection: Selection): Selection {
+  const axes = themeAxes(theme);
+  return Object.fromEntries(Object.entries(selection).filter(([axis]) => Object.hasOwn(axes, axis)));
+}
+
 /**
  * Merge the extends chain at a selection, resolve every alias, and key the
  * result by CSS custom-property name. A missing or unknown axis value takes the

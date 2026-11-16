@@ -1,4 +1,4 @@
-import { axisScheme, fullSelection, wzlAttr, wzlValue, type Selection } from './axes';
+import { axisScheme, fullSelection, wzlAttr, wzlValue, type AxisDefs, type Selection } from './axes';
 import { blendTheme, type AxisWeights } from './blendTheme';
 import { resolveTheme, themeAxes } from './resolveTheme';
 import type { Theme } from './theme';
@@ -44,8 +44,35 @@ function declarations(theme: Theme, tokens: Readonly<Record<string, string>>): s
   });
 }
 
+/** Warns, once each, of a selection axis `theme` does not declare (unless `ignoreUnknownAxes`) and of a value its axis lacks. */
+function warnUnknownSelection(theme: Theme, axes: AxisDefs, selection: Selection, ignoreUnknownAxes: boolean): void {
+  for (const [axis, value] of Object.entries(selection)) {
+    const def = Object.hasOwn(axes, axis) ? axes[axis] : undefined;
+    if (!def) {
+      if (ignoreUnknownAxes) continue;
+      warnThemeOnce(
+        `axis-name\0${theme.name}\0${axis}`,
+        `applyTheme: theme "${theme.name}" declares no axis "${axis}", so it is ignored. Its axes: ${Object.keys(axes).join(', ') || 'none'}. Pass \`ignoreUnknownAxes\` where one selection is shared across themes on purpose.`,
+      );
+    } else if (!Object.hasOwn(def.values, value)) {
+      warnThemeOnce(
+        `axis\0${theme.name}\0${axis}\0${value}`,
+        `applyTheme: theme "${theme.name}" has no ${axis} "${value}"; using "${def.default}". Its ${axis} values: ${Object.keys(def.values).join(', ')}.`,
+      );
+    }
+  }
+}
+
 /** What an element holds from its last `applyTheme`, so the next one, or its release, can let go of it. */
 const holds = new WeakMap<HTMLElement, { readonly letGo: () => void; readonly axes: readonly string[] }>();
+
+/** Options for `applyTheme`. */
+export interface ApplyThemeOptions {
+  /** Blend the theme along the axes these name; see `blendTheme`. */
+  weights?: AxisWeights;
+  /** Leave unwarned a selection axis the theme does not declare: for one selection shared across themes on purpose. */
+  ignoreUnknownAxes?: boolean;
+}
 
 /**
  * Apply `theme` at `selection` to `el`'s subtree, and return the release.
@@ -69,11 +96,15 @@ const holds = new WeakMap<HTMLElement, { readonly letGo: () => void; readonly ax
  * Two different themes may share a name. The second held at once has its rule
  * kept to its own elements by a `data-wzl-variant` attribute, matched inside
  * `:where()` so the rule's specificity is the first's.
+ *
+ * In development it warns, once each, of a selection axis the theme does not
+ * declare and of an axis value the theme lacks, which takes the axis default.
  */
-export function applyTheme(el: HTMLElement, theme: Theme, selection: Selection = {}, options: { weights?: AxisWeights } = {}): () => void {
+export function applyTheme(el: HTMLElement, theme: Theme, selection: Selection = {}, options: ApplyThemeOptions = {}): () => void {
   if (typeof document === 'undefined') return () => {};
 
   const axes = themeAxes(theme);
+  warnUnknownSelection(theme, axes, selection, options.ignoreUnknownAxes ?? false);
   const sel = fullSelection(axes, selection);
   const picked = Object.entries(sel);
   const names = picked.map(([a]) => a);
