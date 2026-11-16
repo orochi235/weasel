@@ -250,32 +250,24 @@ Owner tags, after the priority (2026-10-26):
 
 ### Core layering
 
-- **(P2) Finish splitting core into a viewer and an editing layer** (queued 2026-11-15; core is a viewer for
-  tools and selection since 2026-11-16). A preset hands `<SceneCanvas>` what it builds from the canvas through
-  `FeaturePreset.build` (tools offered by id, contributions) and `FeaturePreset.selection` (a `SelectionFactory`),
-  and `@weasel-js/editing` uses both for the select, lasso and shape tools, the group entry and `useSelection`;
-  with no editing preset a canvas draws, pans and zooms and keeps `viewerSelection`. Still in core, each needing
-  more of the extension point than this pass built:
-  - the selection chrome (`domains/selection`, `affordances/`, `domains/chrome-caps`, `useSelectionOverlayLayer`,
-    `useSceneChrome`): `<Canvas>` hit-tests the handles through `affordanceAt`, and `<SceneCanvas layers>` takes
-    the overlay as its `selectionOverlay` slot, so a preset would first need to hand the canvas layers that take
-    presses and its chrome-caps rules;
-  - move, resize, rotate, clone, insert (with place and reposition), marquee, lasso and clear-selection
-    (`interactions/actions/{move,resize,rotate,clone,insert,lasso-select}`, `defaults/areaSelect`,
-    `defaults/clearSelection`): `useSceneStandardActions` registers their deps (`areaSelect`, `lassoSelect`,
-    `insert`, `resizePolicy`) from canvas internals, and viewer code reads their types (`resize/geometry`'s
-    `PoseDescriptor`, `MoveBehavior`, `InsertNodeFactories`), so those types move to core's geometry and a
-    preset's build publishes the deps. Until they do, editing's shape, lasso and select tools sit apart from the
-    `insert`, `lassoSelect`, `areaSelect` and `clearSelection` actions they bind, against CLAUDE.md's rule that a
-    tool leaves core only with its whole action family;
-  - paste and drop (`domains/ingestion`, `useCanvasIngestion`, the clipboard ops), which the canvas attaches to
-    its element;
-  - 30 core tests that import `@weasel-js/editing`: 26 read core internals editing cannot reach without making
-    them public (`viewRegistry`, `viewInputs`, `buildSceneLayer`, `resolveFeatures`, `useInsertDepSource`, the
-    barrel) or `vi.mock` a core module, and 4 are smoke or browser tests.
-  Snapping and paths stay in core whole: the canvas builds the snap readout and the `snap` dep itself, and its path
-  edit state and anchor overlay, and every module under `domains/snap` and `domains/paths` is reached from those. Closes when no test in core imports `@weasel-js/editing`
-  and `packages/core/src` holds no action or chrome that writes or draws the selection.
+- **(P2) Finish splitting core into a viewer and an editing layer** (queued 2026-11-15; core is a viewer since
+  2026-11-16). Every tool, the selection implementation, the selection chrome, the transform, insert, marquee,
+  lasso, delete and group-entry actions, and the kit's paste and drop handlers live in `@weasel-js/editing`, which
+  hands them to `<SceneCanvas>` through preset roles (`build`, `selection`, `selectionChrome`, `toolActions`,
+  `insertKinds`, `contentHandlers`); a canvas with none of its presets draws, pans and zooms over
+  `viewerSelection`, and no test under `packages/core/src` imports editing. Two editing behaviors are still in core:
+  - the clipboard ops (`interactions/actions/clipboard`: `useClipboard`, `useClipboardOps`, `materializePaste`,
+    the wire format), which editing's copy, cut and paste actions and the `kit:weasel-json` handler build on and
+    `apps/draw` calls directly; moving them retires core's `./clipboard` entry;
+  - the boolean ops (`interactions/actions/booleans`: `useBooleans`, `useBooleansAdapter`, the commit helpers),
+    exported through core's paths barrel and read by editing's pathfinder actions; the canvas registers their
+    adapter dep itself (`canvas/deps/pathLeafDeps.ts`), so a preset component has to publish it first, as
+    `InsertDeps` does for `insert`.
+  These stay in core by design, so they are not part of this entry: `viewerSelection` (a viewer's read-only
+  selection), `contextMenuAction` (labkit's scene-free surfaces mount it; it selects the pressed node only where a
+  `selection` dep can), the selection contract types, and snapping and paths, which the canvas builds itself (the
+  snap readout and `snap` dep, the path edit state and anchor overlay). Closes when
+  `packages/core/src/interactions/actions/` holds neither `clipboard/` nor `booleans/`.
 
 ### Extension authoring and published consumers
 
@@ -566,13 +558,6 @@ only story runner in the repo.
 ---
 
 ## Release-gate & build hygiene
-
-- **(P2) `npm run check:proto-index` has 44 sites pending in 35 files, all in core and editing** (2026-11-16; 773
-  in 308 files on 2026-11-15): reads and writes of a `string`-indexed object with a `string` key, which go through
-  `Object.prototype` for a name like `toString`. Every other package was cleared on 2026-11-16; core's and editing's
-  wait for the viewer/editing split, which is moving those files. The list is
-  `scripts/check-proto-index.pending.json`; the check fails when a listed file is clean, so it only shrinks, and
-  `-- --scan` lists every site. Closes when the pending list is empty.
 
 - **(P2) `packages/svg/src/textModes.test.ts` fails 2 outline-mode tests in a worktree linked by
   `scripts/link-workspaces.mjs`** and passes 11 of 11 in the main checkout and on the fleet (2026-11-15): text
