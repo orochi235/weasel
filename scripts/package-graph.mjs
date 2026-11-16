@@ -2,7 +2,8 @@
 //   base.svg  core and every package it depends on, directly or not
 //   top.svg   everything else, with core standing in for the base layer
 //   all.svg   every package in one graph, for comparing two commits
-// Colors are each package's `weasel.tier` (scripts/lib/package-tiers.mjs). A package whose code reaches
+// A box's fill says what the package needs: core itself, a plugin or other package that reaches core, or nothing of
+// core ("core-free"); a core-free package that core depends on is outlined. Tiers: scripts/lib/package-tiers.mjs. A package whose code reaches
 // core only through @weasel-js/core/engine points at a node of that name instead of core. Edges are
 // transitively reduced, and each view also writes a PNG at 2x.
 //
@@ -20,7 +21,11 @@ const require = createRequire(join(repoRoot, 'package.json'));
 const ELK = require('elkjs/lib/elk.bundled.js');
 const { chromium } = require('playwright-core');
 
-const COLORS = { base: '#4c78a8', core: '#222', plugin: '#e45756', other: '#b279a2', standalone: '#72b7b2' };
+const COLORS = { core: '#222', plugin: '#e45756', other: '#b279a2', 'core-free': '#72b7b2' };
+const fillOf = (category) => COLORS[['base', 'standalone'].includes(category) ? 'core-free' : category];
+const OUTLINE = '#1f3b57';
+const LEGEND = [...Object.entries(COLORS), ['core depends on it', COLORS['core-free'], OUTLINE]];
+const NOTE = 'arrows point at dependencies; transitively reduced';
 const PARTITION = { plugin: 0, other: 0, core: 1, base: 2, standalone: 2 };
 const ENGINE = 'core/engine';
 
@@ -75,7 +80,8 @@ async function layout(nodes, edges, category) {
 
 function toSvg(out, category) {
   const pad = 20, legendH = 34;
-  const width = Math.ceil(out.width + pad * 2), height = Math.ceil(out.height + pad * 2 + legendH);
+  const legendW = LEGEND.reduce((w, [k]) => w + 34 + k.length * 7.4, pad) + 20 + NOTE.length * 7.4 + pad;
+  const width = Math.ceil(Math.max(out.width + pad * 2, legendW)), height = Math.ceil(out.height + pad * 2 + legendH);
   const parts = [`<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}" font-family="Menlo, monospace" font-size="12">`,
     '<defs><marker id="a" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,2L8,4L0,6z" fill="#888"/></marker></defs>',
     `<rect width="100%" height="100%" fill="#fff"/><g transform="translate(${pad},${pad + legendH})">`];
@@ -84,19 +90,20 @@ function toSvg(out, category) {
     const d = pts.length === 4
       ? `M${pts[0].x},${pts[0].y} C${pts.slice(1).map((p) => `${p.x},${p.y}`).join(' ')}`
       : `M${pts.map((p) => `${p.x},${p.y}`).join(' L')}`;
-    parts.push(`<path d="${d}" fill="none" stroke="${COLORS[category(e.sources[0])]}" stroke-opacity="0.55" stroke-width="1.3" marker-end="url(#a)"/>`);
+    parts.push(`<path d="${d}" fill="none" stroke="${fillOf(category(e.sources[0]))}" stroke-opacity="0.55" stroke-width="1.3" marker-end="url(#a)"/>`);
   }
   for (const n of out.children) {
-    parts.push(`<rect x="${n.x}" y="${n.y}" width="${n.width}" height="${n.height}" rx="5" fill="${COLORS[category(n.id)]}"/>`,
+    parts.push(`<rect x="${n.x}" y="${n.y}" width="${n.width}" height="${n.height}" rx="5" fill="${fillOf(category(n.id))}"${category(n.id) === 'base' ? ` stroke="${OUTLINE}" stroke-width="2.5"` : ''}/>`,
       `<text x="${n.x + n.width / 2}" y="${n.y + 16}" text-anchor="middle" fill="#fff">${n.id}</text>`);
   }
   parts.push('</g>');
   let x = pad;
-  for (const [k, c] of Object.entries(COLORS)) {
-    parts.push(`<rect x="${x}" y="${pad - 6}" width="14" height="14" rx="3" fill="${c}"/><text x="${x + 20}" y="${pad + 5}">${k}</text>`);
+  for (const [k, c, outline] of LEGEND) {
+    const ring = outline ? ` stroke="${outline}" stroke-width="2.5"` : '';
+    parts.push(`<rect x="${x}" y="${pad - 6}" width="14" height="14" rx="3" fill="${c}"${ring}/><text x="${x + 20}" y="${pad + 5}">${k}</text>`);
     x += 34 + k.length * 7.4;
   }
-  parts.push(`<text x="${x + 20}" y="${pad + 5}" fill="#666">arrows point at dependencies; transitively reduced</text></svg>`);
+  parts.push(`<text x="${x + 20}" y="${pad + 5}" fill="#666">${NOTE}</text></svg>`);
   return { svg: parts.join(''), width, height };
 }
 
@@ -134,7 +141,7 @@ async function main() {
   } finally {
     await browser.close();
   }
-  for (const k of Object.keys(COLORS)) console.log(k.padEnd(14), names.filter((n) => category(n) === k).join(' '));
+  for (const k of ['core', 'base', 'plugin', 'other', 'standalone']) console.log(k.padEnd(14), names.filter((n) => category(n) === k).join(' '));
   console.log(`edges ${[...packages.values()].flatMap((p) => p.deps).length} → ${edges.length} after reduction`);
   console.log(`wrote ${outDir}/{base,top,all}.{svg,png}`);
 }
