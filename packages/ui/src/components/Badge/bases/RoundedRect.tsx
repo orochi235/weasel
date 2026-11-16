@@ -15,6 +15,31 @@ export interface BadgeRoundedRectBaseParams {
 
 const DEFAULTS: Required<BadgeRoundedRectBaseParams> = { erosion: 0.16, eccentricity: 1, pinch: 0 };
 
+const ARC_STEPS = 64;
+
+/**
+ * A quarter of an ellipse with CSS semi-axes `a` (across) and `b` (down), run from the end of its
+ * `a` axis to the end of its `b` axis: its length, and the parameter angle a length along it reaches.
+ */
+function quarterEllipse(a: number, b: number): { length: number; angleAt: (len: number) => number } {
+  const du = Math.PI / 2 / ARC_STEPS;
+  const cum = [0];
+  for (let i = 0; i < ARC_STEPS; i++) {
+    const u = (i + 0.5) * du;
+    cum.push(cum[i] + Math.hypot(a * Math.sin(u), b * Math.cos(u)) * du);
+  }
+  const length = cum[ARC_STEPS];
+  const angleAt = (len: number): number => {
+    if (length <= 0) return (Math.max(0, Math.min(len, 1)) * Math.PI) / 2;
+    const l = Math.max(0, Math.min(len, length));
+    let i = 0;
+    while (i < ARC_STEPS - 1 && cum[i + 1] < l) i++;
+    const span = cum[i + 1] - cum[i];
+    return (i + (span > 0 ? (l - cum[i]) / span : 0)) * du;
+  };
+  return { length, angleAt };
+}
+
 const RoundedRect: BaseModule<BadgeRoundedRectBaseParams> = {
   build: (params, boxW, boxH) => {
     const cfg = { ...DEFAULTS, ...params };
@@ -31,9 +56,8 @@ const RoundedRect: BaseModule<BadgeRoundedRectBaseParams> = {
 
     const topCss = (100 - 2 * rx) / sx;
     const sideCss = (100 - 2 * ry) / sy;
-    const denom = cornerCss + cornerCss || 1;
-    const hh = 0;
-    const arcCss = (Math.PI * denom * (1 + 3 * hh / (10 + Math.sqrt(4 - 3 * hh)))) / 4;
+    const arc = quarterEllipse(rx / sx, ry / sy);
+    const arcCss = arc.length;
 
     const segments = [
       { kind: 'h-edge',   cssLen: topCss },
@@ -56,51 +80,38 @@ const RoundedRect: BaseModule<BadgeRoundedRectBaseParams> = {
       const local = sm - cum[segIdx];
       const seg = segments[segIdx];
       const t = seg.cssLen > 0 ? local / seg.cssLen : 0;
+      const corner = (start: number, cxv: number, cyv: number, mirrored: boolean): PerimeterPoint => {
+        const u = mirrored ? Math.PI / 2 - arc.angleAt(seg.cssLen - local) : arc.angleAt(local);
+        const ang = start + u;
+        const c = Math.cos(ang);
+        const sn = Math.sin(ang);
+        const nx = (ry / sy) * c;
+        const ny = (rx / sx) * sn;
+        const nl = Math.hypot(nx, ny);
+        return {
+          x: cxv + rx * c,
+          y: cyv + ry * sn,
+          nx: nl > 0 ? nx / nl : c,
+          ny: nl > 0 ? ny / nl : sn,
+        };
+      };
       switch (seg.kind) {
         case 'h-edge':
           return { x: rx + (100 - 2 * rx) * t, y: 0, nx: 0, ny: -1 };
-        case 'tr-arc': {
-          const ang = -Math.PI / 2 + t * (Math.PI / 2);
-          return {
-            x: (100 - rx) + rx * Math.cos(ang),
-            y: ry + ry * Math.sin(ang),
-            nx: Math.cos(ang),
-            ny: Math.sin(ang),
-          };
-        }
+        case 'tr-arc':
+          return corner(-Math.PI / 2, 100 - rx, ry, true);
         case 'v-edge':
           return { x: 100, y: ry + (100 - 2 * ry) * t, nx: 1, ny: 0 };
-        case 'br-arc': {
-          const ang = t * (Math.PI / 2);
-          return {
-            x: (100 - rx) + rx * Math.cos(ang),
-            y: (100 - ry) + ry * Math.sin(ang),
-            nx: Math.cos(ang),
-            ny: Math.sin(ang),
-          };
-        }
+        case 'br-arc':
+          return corner(0, 100 - rx, 100 - ry, false);
         case 'h-edge-b':
           return { x: (100 - rx) - (100 - 2 * rx) * t, y: 100, nx: 0, ny: 1 };
-        case 'bl-arc': {
-          const ang = Math.PI / 2 + t * (Math.PI / 2);
-          return {
-            x: rx + rx * Math.cos(ang),
-            y: (100 - ry) + ry * Math.sin(ang),
-            nx: Math.cos(ang),
-            ny: Math.sin(ang),
-          };
-        }
+        case 'bl-arc':
+          return corner(Math.PI / 2, rx, 100 - ry, true);
         case 'v-edge-l':
           return { x: 0, y: (100 - ry) - (100 - 2 * ry) * t, nx: -1, ny: 0 };
-        case 'tl-arc': {
-          const ang = Math.PI + t * (Math.PI / 2);
-          return {
-            x: rx + rx * Math.cos(ang),
-            y: ry + ry * Math.sin(ang),
-            nx: Math.cos(ang),
-            ny: Math.sin(ang),
-          };
-        }
+        case 'tl-arc':
+          return corner(Math.PI, rx, ry, false);
       }
       return { x: 0, y: 0, nx: 0, ny: -1 };
     };
