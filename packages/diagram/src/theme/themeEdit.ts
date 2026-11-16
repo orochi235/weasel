@@ -4,6 +4,7 @@
  */
 import { DIAGRAM_THEMES } from './themes';
 import { DIAGRAM_ROLES, type DiagramTheme } from './types';
+import { getOwn } from '@weasel-js/registry';
 
 /** Where one value sits in a {@link DiagramTheme}. */
 export type ThemePath =
@@ -57,9 +58,9 @@ export const setThemeValue = (theme: DiagramTheme, path: ThemePath, value: strin
  *  then the theme's own. */
 export function themeRoles(theme: DiagramTheme): { id: string; label: string }[] {
   const shipped = new Map<string, string>(DIAGRAM_ROLES.map((r) => [r.id, r.label]));
-  const ids = [...DIAGRAM_ROLES.map((r) => r.id as string).filter((id) => id in theme.roles),
+  const ids = [...DIAGRAM_ROLES.map((r) => r.id as string).filter((id) => Object.hasOwn(theme.roles, id)),
     ...Object.keys(theme.roles).filter((id) => !shipped.has(id))];
-  return ids.map((id) => ({ id, label: theme.roleLabels?.[id] ?? shipped.get(id) ?? id }));
+  return ids.map((id) => ({ id, label: (theme.roleLabels && getOwn(theme.roleLabels, id)) ?? shipped.get(id) ?? id }));
 }
 
 const slug = (label: string): string => label.trim().toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'role';
@@ -68,7 +69,7 @@ const slug = (label: string): string => label.trim().toLowerCase().replace(/[^a-
 export function addThemeRole(theme: DiagramTheme, label: string): { theme: DiagramTheme; id: string } {
   const base = slug(label);
   let id = base;
-  for (let n = 2; id in theme.roles; n++) id = `${base}-${n}`;
+  for (let n = 2; Object.hasOwn(theme.roles, id); n++) id = `${base}-${n}`;
   return {
     theme: { ...theme, roles: { ...theme.roles, [id]: { ...theme.roles[theme.defaultRole]! } }, roleLabels: { ...theme.roleLabels, [id]: label } },
     id,
@@ -77,12 +78,12 @@ export function addThemeRole(theme: DiagramTheme, label: string): { theme: Diagr
 
 /** `theme` with role `id` shown as `label`. The id, which shapes name the role by, stays. */
 export const renameThemeRole = (theme: DiagramTheme, id: string, label: string): DiagramTheme =>
-  (id in theme.roles ? { ...theme, roleLabels: { ...theme.roleLabels, [id]: label } } : theme);
+  (Object.hasOwn(theme.roles, id) ? { ...theme, roleLabels: { ...theme.roleLabels, [id]: label } } : theme);
 
 /** `theme` without role `id`; its shapes fall to the default role when the theme is next applied.
  *  The default role stays: `theme` comes back unchanged. */
 export function removeThemeRole(theme: DiagramTheme, id: string): DiagramTheme {
-  if (id === theme.defaultRole || !(id in theme.roles)) return theme;
+  if (id === theme.defaultRole || !Object.hasOwn(theme.roles, id)) return theme;
   const { [id]: _, ...roles } = theme.roles;
   const { [id]: __, ...labels } = theme.roleLabels ?? {};
   return { ...theme, roles, ...(theme.roleLabels ? { roleLabels: labels } : {}) };

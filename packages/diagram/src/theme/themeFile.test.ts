@@ -46,4 +46,8 @@ describe('theme files', () => {
     expect(errorsOf(edited((t) => { delete t.name; }))).toEqual(['name: missing']);
     expect(errorsOf(edited((t) => { t.font.size = -1; }))).toEqual(['font.size: -1 is not a size']);
   });
+
+  it('refuses a default role named like an Object.prototype member that the roles do not hold', () => {
+    expect(errorsOf(edited((raw) => { raw.defaultRole = 'toString'; }))).toEqual(['defaultRole: no role "toString"']);
+  });
 });

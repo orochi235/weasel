@@ -85,3 +85,15 @@ describe('roles', () => {
     expect(removeThemeRole(theme, id).roleLabels?.[id]).toBeUndefined();
   });
 });
+
+describe('roles named like Object.prototype members', () => {
+  it('are roles only when the theme holds them', () => {
+    const fork = forkTheme(paper);
+    expect(addThemeRole(fork, 'Constructor').id).toBe('constructor');
+    expect(renameThemeRole(fork, 'toString', 'X')).toBe(fork);
+    expect(removeThemeRole(fork, 'valueOf')).toBe(fork);
+    const own = { ...fork, roles: { ...fork.roles, toString: { ...fork.roles.default! } } };
+    delete (own as { roleLabels?: unknown }).roleLabels;
+    expect(themeRoles(own).find((r) => r.id === 'toString')?.label).toBe('toString');
+  });
+});
