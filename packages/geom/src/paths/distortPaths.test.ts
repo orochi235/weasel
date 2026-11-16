@@ -48,6 +48,17 @@ describe('zigzagPath', () => {
     expect(out).toHaveLength(8);
   });
 
+  it('alternates sides across a closed contour\'s seam when its sample count would be odd', () => {
+    const tri = polygonFromPoints([{ x: 0, y: 0 }, { x: 100, y: 0 }, { x: 50, y: 80 }]);
+    const out = points(zigzagPath(tri, { size: 5 }));
+    expect(out).toHaveLength(16);
+    type P = { x: number; y: number };
+    const side = (p: P, a: P, b: P) => Math.sign((b.x - a.x) * (p.y - a.y) - (b.y - a.y) * (p.x - a.x));
+    const inward = (p: P, a: P, b: P) => side(p, a, b) === side({ x: 50, y: 80 / 3 }, a, b);
+    // The first point is pushed off the first edge, the last off the closing one.
+    expect(inward(out[0]!, { x: 0, y: 0 }, { x: 100, y: 0 })).not.toBe(inward(out.at(-1)!, { x: 50, y: 80 }, { x: 0, y: 0 }));
+  });
+
   it('runs a curve through the points when smooth', () => {
     const [anchors] = anchorsOf(zigzagPath(square(), { size: 5, ridges: 2, smooth: true }));
     expect(anchors).toHaveLength(12);
