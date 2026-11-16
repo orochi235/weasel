@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { cleanup, fireEvent, screen, within } from '@testing-library/react';
+import { act, cleanup, fireEvent, renderHook, screen, within } from '@testing-library/react';
 import type { PrefGroup } from '@weasel-js/prefs';
-import type { PrefSchemaEditorPrefs } from './editorPrefs';
+import { useEditorSize, type PrefSchemaEditorPrefs } from './editorPrefs';
 import { PrefSchemaEditor } from './PrefSchemaEditor';
 import { renderWithIcons } from '@weasel-js/ui/testing/withIcons';
 
@@ -55,5 +55,26 @@ describe('PrefSchemaEditor preferences', () => {
     open();
     expect(dialog().queryByText('Layout')).toBeNull();
     expect(dialog().queryByText('structureWidth')).toBeNull();
+  });
+});
+
+describe('useEditorSize', () => {
+  it('shows the size the settings hold once a drag is written to them, so a later reset shows too', () => {
+    let values: Record<string, unknown> = { layout: { structureWidth: 300 } };
+    const prefs = { values, set: (_path: string, v: unknown) => { values = { layout: { structureWidth: v } }; }, selectDropped: true };
+    const { result, rerender } = renderHook(() => useEditorSize('structureWidth', { ...prefs, values }));
+    act(() => result.current.onInput(360));
+    expect(result.current.value).toBe(360);
+    act(() => result.current.onChange(360));
+    values = { layout: { structureWidth: 250 } };
+    rerender();
+    expect(result.current.value).toBe(250);
+  });
+
+  it('keeps a drag for as long as it is mounted with no settings to write it to', () => {
+    const { result } = renderHook(() => useEditorSize('structureWidth'));
+    act(() => result.current.onInput(360));
+    act(() => result.current.onChange(360));
+    expect(result.current.value).toBe(360);
   });
 });

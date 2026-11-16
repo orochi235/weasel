@@ -84,10 +84,16 @@ export function useEditorSize(key: EditorSize, given?: EditorPrefs): { value: nu
   const path = `layout.${key}`;
   const kept = prefValueAtPath(prefs?.values, path);
   const [live, setLive] = useState<number | null>(null);
+  // A new size in the settings, the drag's own landing or a reset, replaces whatever the last drag left showing.
+  const [seen, setSeen] = useState(kept);
+  if (!Object.is(seen, kept)) {
+    setSeen(kept);
+    setLive(null);
+  }
   return {
     value: live ?? (typeof kept === 'number' ? kept : PREF_SCHEMA_EDITOR_PREFS.children.layout.children[key].default),
     onInput: setLive,
-    onChange: (next) => prefs?.set(path, next),
+    onChange: (next) => (prefs ? prefs.set(path, next) : setLive(next)),
   };
 }
 
