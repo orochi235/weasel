@@ -2,7 +2,7 @@
  * `textEffectItems`: a text node's grapheme clusters as the items a path
  * effect lays, against a face whose glyphs are plain bars.
  */
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { registerFontOutlines, loadFontOutlines, faceGeneration, type OutlineFace } from '@weasel-js/font';
 import { _resetFontRegistryForTests, _resetFontOutlinesForTests } from '@weasel-js/font/test-seams';
 import { _resetLayoutCacheForTests } from '@weasel-js/text/test-seams';
@@ -10,6 +10,11 @@ import { boundsOfPath, type PathInWorldPose } from '@weasel-js/geom';
 import { loadTextOutlines, type TextOutlineSource } from '@weasel-js/text';
 import { textEffectItems } from './textItems';
 import { withOutsideReads } from 'core/scene/outsideReads';
+
+vi.mock('@weasel-js/text', async (importOriginal) => {
+  const real = await importOriginal<typeof import('@weasel-js/text')>();
+  return { ...real, loadTextOutlines: vi.fn(real.loadTextOutlines) };
+});
 
 /** Every code point a 0.6 em bar, half an em tall. */
 const BARS: OutlineFace = {
@@ -88,6 +93,25 @@ describe('textEffectItems', () => {
     await loadTextOutlines(src);
     expect(faceGeneration()).not.toBe(before);
     expect(textEffectItems(src, POSE)).toHaveLength(2);
+  });
+
+  it('warns once per family when the text can have no outlines, and lays nothing', () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    expect(textEffectItems(text('Hi', 'unregistered'), POSE)).toEqual([]);
+    expect(textEffectItems(text('Ho', 'unregistered'), POSE)).toEqual([]);
+    expect(warn).toHaveBeenCalledTimes(1);
+    expect(warn.mock.calls[0]![0]).toMatch(/"unregistered".*no outlines registered/);
+    warn.mockRestore();
+  });
+
+  it('logs a rejected outline load instead of discarding it', async () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const boom = new Error('boom');
+    vi.mocked(loadTextOutlines).mockRejectedValueOnce(boom);
+    registerFontOutlines('doomed', {}, new ArrayBuffer(4), { parser: () => BARS });
+    expect(textEffectItems(text('Hi', 'doomed'), POSE)).toEqual([]);
+    await vi.waitFor(() => expect(warn).toHaveBeenCalledWith(expect.stringMatching(/"doomed" failed/), boom));
+    warn.mockRestore();
   });
 
   it('notes a font read when the outlines are there too', () => {
