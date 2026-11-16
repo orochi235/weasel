@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 import type { Browser } from 'playwright-core';
-import { planPixelRender, regionRenderArgs, sceneFromJSON, type SavedScene } from '@weasel-js/core';
+import { planPixelRender, sceneFromJSON, type SavedScene } from '@weasel-js/core';
+import { regionRenderArgs } from '@weasel-js/export';
 import { createNodeRasterHost, type NodeRenderArgs } from './host';
 import { sceneFromWire, sceneToWire } from './protocol';
 import { FIXTURE_RENDER, fixtureScene } from './testing/fixtureScene';

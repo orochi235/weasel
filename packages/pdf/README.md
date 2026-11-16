@@ -43,11 +43,11 @@ goes to `onDiagnostic`, and `strict: true` writes nothing then, rejecting with
 `ExportIncompleteError`. `compress: false` leaves its streams readable.
 It draws the document through core's renderer, so the painters and fonts are
 the caller's to register, and needs WebGL2 and `OffscreenCanvas`; annotation
-layers are left out. That entry is the only one that reads core, which is an
-optional peer: `writePdf` and the main entry need neither core nor React. `background` is painted under each page (default none),
+layers are left out. That entry is the only one that reads core and `@weasel-js/export`, both
+optional peers: `writePdf` and the main entry need neither, nor React. `background` is painted under each page (default none),
 and `title` and `lang` are passed to `writePdf`.
 
-`registerPdfExport()` registers this as core's `pdf` export format, which
+`registerPdfExport()` registers this as `@weasel-js/export`'s `pdf` format, which
 takes several regions: `exportPages(scene, placedPagesOf(scene), 'pdf', opts)`
 answers the `Blob`. It returns the disposer.
 

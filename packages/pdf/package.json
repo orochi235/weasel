@@ -38,10 +38,14 @@
     "@weasel-js/text-shaping": "1.19.1"
   },
   "peerDependencies": {
-    "@weasel-js/core": "1.19.1"
+    "@weasel-js/core": "1.19.1",
+    "@weasel-js/export": "1.19.1"
   },
   "peerDependenciesMeta": {
     "@weasel-js/core": {
+      "optional": true
+    },
+    "@weasel-js/export": {
       "optional": true
     }
   },

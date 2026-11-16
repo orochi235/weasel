@@ -1,10 +1,11 @@
 /**
  * One region of a scene as an SVG document, and the `svg` export format.
  */
+import { layoutTextPose, type RenderDiagnosticSink } from '@weasel-js/core';
 import {
-  captureExport, exportReporter, layoutTextPose, regionsOfOne, registerExportFormat,
-  type ExportFormat, type ExportOptions, type ExportRegion, type ExportRegionSource, type ExportScene, type RenderDiagnosticSink,
-} from '@weasel-js/core';
+  captureExport, exportReporter, regionsOfOne, registerExportFormat, type ExportFormat, type ExportOptions, type ExportRegion,
+  type ExportRegionSource, type ExportScene,
+} from '@weasel-js/export';
 import { regionSvgNodes, type RegionSvgNodesOptions } from './regionSvgNodes';
 import { serializeSvg } from './serialize';
 import type { SerializeOptions, SvgNode } from './types';
@@ -88,7 +89,7 @@ export const SVG_EXPORT: ExportFormat<SvgExportOptions> = {
   },
 };
 
-/** Register the `svg` export format with core's export registry. Returns the disposer. */
+/** Register the `svg` export format with `@weasel-js/export`'s registry. Returns the disposer. */
 export function registerSvgExport(): () => void {
   return registerExportFormat(SVG_EXPORT);
 }

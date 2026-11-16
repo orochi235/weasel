@@ -172,12 +172,12 @@ left out, and it draws the document, not what an open gesture is showing.
 `background` is painted under the region; by default nothing is. `title`
 defaults to the region's `name`. It waits for the paint kinds and faces the
 document uses, and writes one revision of the document, as every export does.
-A load that fails, and what SVG cannot hold, goes to `onDiagnostic` as core's
+A load that fails, and what SVG cannot hold, goes to `onDiagnostic` as `@weasel-js/export`'s
 `ExportDiagnostic`s, and `strict: true` writes nothing then, rejecting with
 `ExportIncompleteError`. `text` and `pretty` are passed on to `serializeSvg`. `regionSvgNodes(scene, region, { painters })`
 is the walk alone, for a caller assembling its own document.
 
-`registerSvgExport()` registers this as core's `svg` export format, so
+`registerSvgExport()` registers this as `@weasel-js/export`'s `svg` format, so
 `exportRegions(scene, [region], 'svg', opts)` answers it as a `Blob`. It
 returns the disposer.
 

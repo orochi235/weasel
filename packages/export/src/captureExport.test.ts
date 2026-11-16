@@ -6,10 +6,9 @@
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import type { DrawCommand } from '@weasel-js/renderer';
 import { __setImageLoaderForTests, _resetImageCacheForTests } from '@weasel-js/renderer/test-seams';
-import { createScene, type RectPose } from '@weasel-js/core';
+import { asNodeId, createScene, type DerivedDep, type RectPose } from '@weasel-js/core';
 import type { Path } from '@weasel-js/geom';
-import { asNodeId, type DerivedDep } from 'core/scene/types';
-import { plainScene, RED, GREEN } from '../../testing/plainScene';
+import { plainScene, RED, GREEN } from './testing/plainScene';
 import { captureExport, EXPORT_CAPTURE_ATTEMPTS, ExportRevisionError } from './captureExport';
 import { capturePngRegion } from './regionPng';
 import { pageRegion } from './exportPages';

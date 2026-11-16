@@ -1,7 +1,7 @@
-/** What a PDF export reports drawing without, through core's common `onDiagnostic`, and its strict refusal. */
+/** What a PDF export reports drawing without, through `@weasel-js/export`'s common `onDiagnostic`, and its strict refusal. */
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
-import { ExportIncompleteError, exportRegions, type ExportDiagnostic } from '@weasel-js/core';
-import { plainScene } from '@weasel-js/core/testing/plainScene';
+import { ExportIncompleteError, exportRegions, type ExportDiagnostic } from '@weasel-js/export';
+import { plainScene } from '@weasel-js/export/testing/plainScene';
 import { __setImageLoaderForTests, _resetImageCacheForTests } from '@weasel-js/renderer/test-seams';
 import { exportRegionsPdf, registerPdfExport } from './regionsPdf';
 

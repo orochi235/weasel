@@ -1,7 +1,7 @@
 /** An SVG export writes one revision of the document: an edit made while a paint kind loads is written whole. */
 import { afterEach, describe, expect, it } from 'vitest';
 import { registerPaintKindLoader, type Paint } from '@weasel-js/core';
-import { GREEN, plainScene, RED } from '@weasel-js/core/testing/plainScene';
+import { GREEN, plainScene, RED } from '@weasel-js/export/testing/plainScene';
 import { exportRegionSvg } from './regionSvg';
 
 const drops: (() => void)[] = [];

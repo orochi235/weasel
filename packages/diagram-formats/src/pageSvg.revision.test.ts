@@ -1,7 +1,8 @@
 /** A page export placed by `pageRegionOf` reads the page's bounds from the revision it draws. */
 import { afterEach, describe, expect, it } from 'vitest';
-import { addOnPages, movePage, pageRegionOf, pageRegionsOf, registerPaintKindLoader, removePage, type Paint } from '@weasel-js/core';
-import { plainScene } from '@weasel-js/core/testing/plainScene';
+import { addOnPages, movePage, registerPaintKindLoader, removePage, type Paint } from '@weasel-js/core';
+import { pageRegionOf, pageRegionsOf } from '@weasel-js/export';
+import { plainScene } from '@weasel-js/export/testing/plainScene';
 import { exportPageSvg, exportPagesPdf } from './pageSvg';
 
 const drops: (() => void)[] = [];

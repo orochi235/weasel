@@ -5,12 +5,13 @@ import {
   pathNode,
   rectPath,
   solid,
-  type ExportScene,
   type Path,
   type RectPose,
   type Stroke,
-  type StrokeAlign, viewPreset,
+  type StrokeAlign,
+  viewPreset,
 } from '@weasel-js/core';
+import type { ExportScene } from '@weasel-js/export';
 import { asPolygonPath } from '@weasel-js/geom';
 import {
   type ConfigOf,

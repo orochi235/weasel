@@ -4,12 +4,8 @@
  * where that camera shows it, and its scale changes only the resolution.
  */
 import { describe, expect, it } from 'vitest';
-import { parallaxScene, type ParallaxScene } from '../../testing/parallaxScene';
-import type { View } from 'core/viewport/view';
-import type { ParallaxOptions } from 'core/viewport/parallax';
-import { planPixelRender } from '../renderSceneToPixels';
-import { buildSceneViewCommands } from '../sceneViewRender';
-import { defaultDrawOne } from '../defaultDrawOne';
+import { parallaxScene, type ParallaxScene } from './testing/parallaxScene';
+import { buildSceneViewCommands, defaultDrawOne, planPixelRender, type ParallaxOptions, type View } from '@weasel-js/core';
 import { regionRenderArgs } from './regionRenderArgs';
 import { selectionRegion } from './selectionRegion';
 import { placedRects, type PlacedBox } from './placedRects.fixture';

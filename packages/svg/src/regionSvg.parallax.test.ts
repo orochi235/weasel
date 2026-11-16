@@ -1,6 +1,6 @@
 /** An SVG region export writes a parallax plane's nodes at their document poses, as PNG and PDF draw them. */
 import { describe, expect, it } from 'vitest';
-import { parallaxScene, PARALLAX_POSE } from '@weasel-js/core/testing/parallaxScene';
+import { parallaxScene, PARALLAX_POSE } from '@weasel-js/export/testing/parallaxScene';
 import { exportRegionSvg } from './regionSvg';
 
 describe('exportRegionSvg of a scene with a parallax plane', () => {

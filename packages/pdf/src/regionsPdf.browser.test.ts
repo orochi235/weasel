@@ -5,8 +5,8 @@ import { describe, expect, it } from 'vitest';
 import { getDocument, GlobalWorkerOptions, type PDFDocumentProxy } from 'pdfjs-dist';
 import * as pdfWorker from 'pdfjs-dist/build/pdf.worker.min.mjs';
 import workerUrl from 'pdfjs-dist/build/pdf.worker.min.mjs?url';
-import { plainScene } from '@weasel-js/core/testing/plainScene';
-import { parallaxScene } from '@weasel-js/core/testing/parallaxScene';
+import { plainScene } from '@weasel-js/export/testing/plainScene';
+import { parallaxScene } from '@weasel-js/export/testing/parallaxScene';
 import { __setImageLoaderForTests, _resetImageCacheForTests } from '@weasel-js/renderer/test-seams';
 import { exportRegionsPdf } from './regionsPdf';
 

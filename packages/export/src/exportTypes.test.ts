@@ -1,8 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import type { Path } from '@weasel-js/geom';
 import type { Stroke } from '@weasel-js/paint';
-import { createScene } from 'core/scene/scene';
-import type { RectPose } from 'core/geometry/rectPose';
+import { createScene, type RectPose } from '@weasel-js/core';
 import type { ExportScene } from './exportTypes';
 
 // Enforced by `npm run typecheck`; the runtime body keeps vitest from reporting an empty file.

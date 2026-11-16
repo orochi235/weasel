@@ -1,6 +1,5 @@
-import {
-  exportPages, exportRegions, pageName, selectionRegion, type ExportFormat, type ExportOptions, type ExportScene, type PlacedPage,
-} from '@weasel-js/core';
+import { pageName, type PlacedPage } from '@weasel-js/core';
+import { exportPages, exportRegions, selectionRegion, type ExportFormat, type ExportOptions, type ExportScene } from '@weasel-js/export';
 import { downloadBlob, reportFileWarnings } from '@weasel-js/editor';
 import { registerPdfExport } from '@weasel-js/pdf/export';
 import { registerSvgExport } from '@weasel-js/svg';

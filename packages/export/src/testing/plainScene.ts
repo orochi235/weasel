@@ -1,6 +1,4 @@
-import {
-  addOnPages, createPageRun, createScene, placedPagesOf, type PlacedPage, type RectPose, type Scene,
-} from '@weasel-js/core';
+import { addOnPages, createPageRun, createScene, placedPagesOf, type PlacedPage, type RectPose, type Scene } from '@weasel-js/core';
 
 /** The scene the export tests draw: two 200 by 100 pages, 40 apart, with no diagram in it. */
 export type PlainScene = Scene<unknown, 'main' | 'notes', RectPose>;

@@ -2,8 +2,8 @@
  * A region of a plain scene exported as PNG against real WebGL2, decoded back to pixels.
  */
 import { describe, expect, it } from 'vitest';
-import { plainScene } from '../../testing/plainScene';
-import { PARALLAX_POSE, parallaxScene } from '../../testing/parallaxScene';
+import { plainScene } from './testing/plainScene';
+import { PARALLAX_POSE, parallaxScene } from './testing/parallaxScene';
 import { exportRegionPng } from './regionPng';
 
 async function pixels(blob: Blob): Promise<ImageData> {

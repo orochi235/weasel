@@ -453,9 +453,9 @@ only story runner in the repo.
 
 ## Demos & visual regression
 
-- **(P3) [maintainer] `prefs-editor` has no badge on the site's Releases chips.** `PACKAGE_ICONS`
-  (`apps/site/releaseIcons.ts`) has no entry for it, so its chip draws no glyph; the badges are drawn in
-  `apps/site/icons/packages.mjs` and need the maintainer's sketch first. Closes when `prefs-editor` has one.
+- **(P3) [maintainer] `prefs-editor` and `export` have no badge on the site's Releases chips.** `PACKAGE_ICONS`
+  (`apps/site/releaseIcons.ts`) has no entry for either, so their chips draw no glyph; the badges are drawn in
+  `apps/site/icons/packages.mjs` and need the maintainer's sketch first. Closes when both have one.
 
 - **(P3) [waiting] `SegmentsArcView`'s arc test missed by 3.5 px in one full fleet run.** "segments sit on the
   arc, edge to edge, and the well runs one rim past the first and last"

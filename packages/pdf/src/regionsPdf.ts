@@ -2,10 +2,12 @@
  * Regions of a scene as one PDF, a page each, and the `pdf` export format.
  */
 import {
-  captureExport, commandRasterizer, createRasterSession, exportReporter, holdImageBitmaps, planPixelRender, regionRenderArgs,
-  registerExportFormat, viewToMat3, warmRender, type ExportDiagnostic, type ExportFormat, type ExportOptions, type ExportRegion,
-  type ExportRegions, type ExportScene, type RenderDiagnosticSink,
+  commandRasterizer, createRasterSession, holdImageBitmaps, planPixelRender, viewToMat3, warmRender, type RenderDiagnosticSink,
 } from '@weasel-js/core';
+import {
+  captureExport, exportReporter, regionRenderArgs, registerExportFormat, type ExportDiagnostic, type ExportFormat,
+  type ExportOptions, type ExportRegion, type ExportRegions, type ExportScene,
+} from '@weasel-js/export';
 import { registryFontSource } from './fonts/fontSource';
 import { writePdf, type PdfPage, type PdfSkip } from './writePdf';
 
@@ -131,7 +133,7 @@ export const PDF_EXPORT: ExportFormat<PdfExportOptions> = {
   },
 };
 
-/** Register the `pdf` export format with core's export registry. Returns the disposer. */
+/** Register the `pdf` export format with `@weasel-js/export`'s registry. Returns the disposer. */
 export function registerPdfExport(): () => void {
   return registerExportFormat(PDF_EXPORT);
 }
