@@ -29,6 +29,12 @@ describe('resolvePaletteColor', () => {
     expect(resolvePaletteColor(palette, red)).toBe(red);
   });
 
+  it('throws for a palette with two entries of one name', () => {
+    const twice: Palette = { entries: [{ name: 'red', color: red }, { name: 'red', color: { ref: 'x' } }] };
+    expect(() => resolvePaletteColor(twice, { ref: 'red' })).toThrow(/two entries are named "red"/);
+    expect(() => [...resolvePaletteColors(twice, 'red')]).toThrow(/two entries are named "red"/);
+  });
+
   it('follows a chain of refs within the palette', () => {
     expect(resolvePaletteColor(palette, { ref: 'alert' })).toBe(red);
   });
