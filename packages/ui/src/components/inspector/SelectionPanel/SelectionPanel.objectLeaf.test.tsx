@@ -11,6 +11,7 @@ import {
 import { SelectionPanel } from './SelectionPanel';
 import { type Layer, type Pose, selectionOf } from './testing/rectScene';
 import { renderWithIcons } from '../../../testing/withIcons';
+import { compositeKey } from '@weasel-js/registry';
 
 /**
  * An object leaf holds one value with its fields hanging off it. Sibling
@@ -89,7 +90,7 @@ describe('SelectionPanel — object leaf', () => {
         renderers={{ 'data.stroke.width': (ctx) => { seen.push(ctx.selectionKey); return <span>w</span>; } }}
       />,
     );
-    expect(seen[0]).toBe('p');
+    expect(seen[0]).toBe(compositeKey(['p']));
   });
 
   it('renders a row per field, labeled by the child leaves', () => {

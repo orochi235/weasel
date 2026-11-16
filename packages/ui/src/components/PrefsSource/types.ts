@@ -71,8 +71,8 @@ export interface LeafContext<T = unknown> extends LeafReading<T> {
   changed?: boolean;
   /** What is wrong with the value: a renderer drawing its own `<PropertyRow>` hands it to the row's `error`. */
   error?: ReactNode;
-  /** The ids of the nodes the values were read from, joined: a control holding scratch for one selection keys on
-   *  it. Absent where the values come from no selection. */
+  /** The ids of the nodes the values were read from, as one `compositeKey`: a control holding scratch for one
+   *  selection keys on it. Absent where the values come from no selection. */
   selectionKey?: string;
   /** For a node's fill or stroke, and the paint inside it, which can take its container's instead. */
   inherit?: PanelInherit;
