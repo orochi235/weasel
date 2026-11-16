@@ -46,6 +46,20 @@ describe('TrimOverrideRegistry', () => {
     expect(r.has('b')).toBe(false);
   });
 
+  it('notifies nobody for a write of the override a node holds', () => {
+    const r = new TrimOverrideRegistry();
+    r.set('a', { start: Number.NaN, end: 0.5 });
+    let calls = 0;
+    r.subscribe(() => { calls++; });
+    const version = r.version();
+    r.set('a', { start: Number.NaN, end: 0.5 });
+    r.set('a', { start: Number.NaN, end: 0.5, ...{ unset: undefined } } as never);
+    expect(calls).toBe(0);
+    expect(r.version()).toBe(version);
+    r.set('a', { start: Number.NaN });
+    expect(calls).toBe(1);
+  });
+
   it('clear drops the override', () => {
     const r = new TrimOverrideRegistry();
     r.set('a', { start: 0.1, end: 0.5 });

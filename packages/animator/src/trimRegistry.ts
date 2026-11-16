@@ -1,4 +1,4 @@
-import { createEmitter } from '@weasel-js/registry';
+import { createEmitter, deepEqual } from '@weasel-js/registry';
 import { createTarget, type Target } from './target';
 
 /** A stroke trim's window edges as fractions of the path, as `Stroke.trim`'s bare numbers are:
@@ -35,6 +35,8 @@ export class TrimOverrideRegistry {
   private _version = 0;
 
   set(id: string, override: TrimOverride): void {
+    const held = this.map.get(id);
+    if (held && deepEqual(held, override, { undefinedAsAbsent: true })) return;
     this.map.set(id, { ...override });
     this.changed();
   }
