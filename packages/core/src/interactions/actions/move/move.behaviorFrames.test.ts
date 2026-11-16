@@ -38,7 +38,7 @@ function fixture(view?: unknown) {
       });
     },
   };
-  const base = { world: { x: 0, y: 0 }, modifiers: MODS, deps: { selection: { get: () => [s] as NodeId[] }, scene, view } };
+  const base = { world: { x: 0, y: 0 }, modifiers: MODS, deps: { operands: { get: () => [s] as NodeId[] }, scene, view } };
   const at = (x: number): InvocationCtx => ({
     ...base, world: { x, y: 0 }, drag: { start: { x: 0, y: 0 }, current: { x, y: 0 }, delta: { x, y: 0 } },
   }) as unknown as InvocationCtx;

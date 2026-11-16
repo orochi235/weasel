@@ -36,6 +36,7 @@ import {
   useNodeAtPointDepSource,
   usePoseDescriptorDepSource,
   usePathLeafDepSources,
+  useLiveOperands,
   useSnapDepSource,
   useSurfaceDepSources,
   useViewDepSource,
@@ -195,7 +196,8 @@ export function useSceneStandardActions(inputs: SceneStandardActionsInputs): voi
   useLayoutDepSource(scene, props.layoutDropTarget, reflowTransition);
   useEnteredGroupApiSource(enteredGroup);
   useInsertDepSource(scene, adapter, props.insertNodeFactories);
-  usePathLeafDepSources(scene, selection, adapter, poseDescriptor);
+  const operands = useLiveOperands();
+  usePathLeafDepSources(scene, operands, adapter, poseDescriptor);
   useSnapDepSource(
     currentViewRef,
     {

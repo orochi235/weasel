@@ -5,10 +5,10 @@
  * an `applyOps` of its own).
  */
 import type { Op } from 'core/ops/types';
+import type { CommitSelectionMethods } from 'interactions/actions/defaultCommitAdapter';
 import type { Node, PoseOverride, Scene } from 'core/scene/types';
 import { asNodeId } from 'core/scene/types';
 import type { MoveAdapter } from 'core/adapters/types';
-import type { SelectionApi } from 'core/selection/useSelection';
 import { scenePoseTarget } from '../../../animation/poseTarget';
 import { defaultCommitAdapter } from '../defaultCommitAdapter';
 
@@ -22,7 +22,7 @@ export type MoveGestureAdapter<TPose> = MoveAdapter<Node<unknown, string, TPose>
 export function moveGestureAdapter<TPose>(
   scene: Scene<unknown, string, TPose>,
   commit?: (ops: Op[], label: string, adapter: MoveGestureAdapter<TPose>) => void,
-  selection?: SelectionApi['adapterMethods'],
+  selection?: CommitSelectionMethods,
 ): MoveGestureAdapter<TPose> {
   const previews = new Map<string, PoseOverride<TPose>>();
   const adapter: MoveGestureAdapter<TPose> = {

@@ -40,7 +40,7 @@ describe('moveAction — a layout pass that throws', () => {
       screen: { x: 0, y: 0 },
       modifiers: { alt: false, ctrl: false, meta: false, shift: false },
       deps: {
-        selection: { get: () => [leaf] as NodeId[] },
+        operands: { get: () => [leaf] as NodeId[] },
         scene,
         layout: { getLayout: (cid: string) => (cid === box ? layout : null) },
       },

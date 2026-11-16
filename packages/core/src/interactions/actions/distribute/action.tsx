@@ -1,4 +1,5 @@
 import type { IconRef } from '@weasel-js/icons';
+import type { OperandsDep } from 'interactions/actions/operands';
 import type { Scene } from 'core/scene/types';
 import { drawnBoxes } from '../drawnBoxes';
 import type { DistributeAxis, DistributeMode } from './distribute';
@@ -12,7 +13,6 @@ import { commitTransformOps } from '../transformFinish';
 import type { Action, ActionDeps } from '@weasel-js/routing';
 import { ActionDisabledReason, defineAction } from '@weasel-js/routing';
 import type { DistributeParams } from '../actionParamSchema';
-import type { SelectionApi } from 'core/selection/useSelection';
 import { icon } from '../../../icons.gen';
 
 const ID_FOR = { x: 'distribute.horizontal', y: 'distribute.vertical' } as const satisfies Record<DistributeAxis, string>;
@@ -37,7 +37,7 @@ const ICON_FOR: Record<DistributeAxis, IconRef> = {
  */
 function distributeOps(
   deps: ActionDeps,
-  selection: Pick<SelectionApi, 'get'>,
+  selection: Pick<OperandsDep, 'get'>,
   scene: Scene<unknown, string, unknown>,
   axis: DistributeAxis,
   mode: DistributeMode,
@@ -73,19 +73,19 @@ function makeDistributeAction(axis: DistributeAxis): Action {
     icon: ICON_FOR[axis],
     group: 'distribute',
     eligible: { capability: 'transforms-selection' },
-    requires: ['selection', 'scene', 'applyOps', 'geometryProjection', 'poseDescriptor', 'view', 'boundsIncludeStroke', 'drawnBoxes', 'transformFollowers'],
+    requires: ['operands', 'scene', 'applyOps', 'geometryProjection', 'poseDescriptor', 'view', 'boundsIncludeStroke', 'drawnBoxes', 'transformFollowers'],
     // No default keybindings. Wire bindings explicitly via the actions registry.
     invoker: {
       timing: 'immediate',
       run: (deps, params) => {
-        const selection = deps.selection;
+        const selection = deps.operands;
         const scene = deps.scene;
         if (!selection || !scene) return;
         commitTransformOps(deps, distributeOps(deps, selection, scene, axis, modeOf(params)), 'Distribute');
       },
     },
     enabled: (deps, _at, _carried, params) => {
-      const selection = deps?.selection;
+      const selection = deps?.operands;
       const scene = deps?.scene;
       if (!selection || !scene || selection.get().length < 3) return ActionDisabledReason.SelectionRequired;
       return distributeOps(deps, selection, scene, axis, modeOf(params)).length > 0 ? true : ActionDisabledReason.NotApplicable;

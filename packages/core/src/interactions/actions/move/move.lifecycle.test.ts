@@ -38,7 +38,7 @@ function setup(selected: 'a' | 'ab' = 'a') {
     screen: { x: 0, y: 0 },
     modifiers: { alt: false, ctrl: false, meta: false, shift: false },
     deps: {
-      selection: { get: () => ids as NodeId[] },
+      operands: { get: () => ids as NodeId[] },
       scene: scene,
     } as Record<string, unknown>,
   };

@@ -16,7 +16,7 @@ import { AUTO_POSE_DESCRIPTOR } from 'core/geometry/autoPoseDescriptor';
 import { poseDescriptorForNode, type PoseDescriptor } from 'core/geometry/poseDescriptor';
 import { sceneMutators } from 'core/scene/sceneMutators';
 import { asNodeId, type Scene } from 'core/scene/types';
-import type { SelectionApi } from 'core/selection/useSelection';
+import type { OperandsDep } from 'interactions/actions/operands';
 import { withoutPageStructure } from 'core/scene/nodeGates';
 import { scenePoseFrame } from 'interactions/actions/poseFrame';
 import { storesEdits } from 'domains/paths/nodeFrame';
@@ -27,18 +27,18 @@ import type { OpsApplier } from './slice';
 
 /**
  * Publish a `booleansAdapter` over `scene`'s path leaves (`data.path` drawn
- * through the pose's box). A result is minted from the source it stands in
+ * through the pose's box), acting on `operands`. A result is minted from the source it stands in
  * for: its layer, parent, frame, and data, with the result's path, and the
  * result's paint in place of the source's when the operation gives one.
  */
 export function useBooleansAdapterSource(
   scene: Scene<unknown, string, unknown>,
-  selection: SelectionApi,
+  operands: OperandsDep,
   adapter: OpsApplier,
   poseDescriptor?: PoseDescriptor<unknown>,
 ): void {
   const sceneRef = useLatest(scene);
-  const selectionRef = useLatest(selection);
+  const operandsRef = useLatest(operands);
   const adapterRef = useLatest(adapter);
   const descriptorRef = useLatest(poseDescriptor);
 
@@ -60,7 +60,7 @@ export function useBooleansAdapterSource(
       getParent: (id) => tree().getParent(id),
       getChildren: (parentId) => tree().getChildren(parentId),
       setChildOrder: (parentId, ids) => tree().setChildOrder(parentId, ids),
-      getSelection: () => withoutPageStructure(sceneRef.current, selectionRef.current.get()),
+      getSelection: () => withoutPageStructure(sceneRef.current, operandsRef.current.get()),
       getWorldPath: (id) => {
         const leaf = leafOf(id);
         return leaf ? pathInWorld(leaf.path, leaf.drawn.box) : undefined;
@@ -92,7 +92,7 @@ export function useBooleansAdapterSource(
       },
       applyOps: (ops, label) => adapterRef.current.applyOps(ops, label),
     };
-  }, [sceneRef, selectionRef, adapterRef, descriptorRef]);
+  }, [sceneRef, operandsRef, adapterRef, descriptorRef]);
 
   useDepSource('booleansAdapter', () => booleans);
 }

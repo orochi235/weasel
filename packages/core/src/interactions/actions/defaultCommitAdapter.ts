@@ -15,19 +15,26 @@ import { createSetSelectionOp } from 'core/ops/select';
 import { documentReads, sceneMutators } from 'core/scene/sceneMutators';
 import type { Scene } from 'core/scene/types';
 import { asNodeId } from 'core/scene/types';
-import type { SelectionApi } from 'core/selection/useSelection';
+import type { OperandsDep } from './operands';
+
+/** The selection reads and writes a commit adapter takes. */
+export interface CommitSelectionMethods {
+  getSelection: () => NodeId[];
+  setSelection: (ids: NodeId[]) => void;
+}
 
 /** Build the adapter the default actions commit through when the consumer
  *  supplies no `applyOps` hook of its own — it applies ops straight to the
  *  scene. Path and text ops are not covered; those surfaces belong to their
  *  own owners.
  *
- *  Pass `selection` (a `SelectionApi`'s `adapterMethods`) and selection reads
- *  and writes go through it rather than the scene, so a canvas that gates its
+ *  Pass `selection` (the edit's operands, through {@link operandMethods}) and
+ *  selection reads and writes go through it rather than the scene, so a batch's
+ *  selection op lands on what the edit acted on, and a canvas that gates its
  *  selection — `selectable={false}` — gates what these batches select too. */
 export function defaultCommitAdapter<TPose>(
   scene: Scene<unknown, string, TPose>,
-  selection?: SelectionApi['adapterMethods'],
+  selection?: CommitSelectionMethods,
 ) {
   return {
     ...sceneMutators(scene),
@@ -40,30 +47,31 @@ export function defaultCommitAdapter<TPose>(
   };
 }
 
-/** `selection`'s reads and writes as {@link defaultCommitAdapter} takes them: a
- *  batch's selection op lands on the selection the action read. */
-export function selectionMethods(selection: Pick<SelectionApi, 'get' | 'set'> | undefined): SelectionApi['adapterMethods'] | undefined {
-  return selection && {
-    getSelection: () => [...selection.get()],
-    setSelection: (ids) => selection.set(ids),
+/** `operands`' reads and writes as {@link defaultCommitAdapter} takes them: a
+ *  batch's selection op lands on the operands the action read. */
+export function operandMethods(operands: OperandsDep | undefined): CommitSelectionMethods | undefined {
+  return operands && {
+    getSelection: () => [...operands.get()],
+    setSelection: (ids) => operands.set(ids),
   };
 }
 
 /** Commit `ops` as one undo entry, through the consumer's `applyOps` when
  *  there is one, else straight to the `scene` dep. With `select`, the entry
- *  also replaces the selection with it, so undo restores the selection the
- *  action started from; with nothing to commit, the selection is still set.
+ *  also hands it to the `operands` dep, so undo restores the operands the
+ *  action started from; with nothing to commit, the operands are still set.
  *  Returns whether an entry was committed: false with no ops, no place to
  *  commit them, or a scene that refused them. A consumer's `applyOps` is
  *  taken at its word. */
 export function commitOps(deps: ActionDeps, ops: Op[], label: string, opts: { select?: readonly string[] } = {}): boolean {
   const { select } = opts;
-  if (select !== undefined && deps.selection) {
+  const operands = deps.operands;
+  if (select !== undefined && operands) {
     if (ops.length === 0) {
-      deps.selection.set(select.map(asNodeId));
+      operands.set(select.map(asNodeId));
       return false;
     }
-    ops = [...ops, createSetSelectionOp({ from: deps.selection.get(), to: select.map(asNodeId), label })];
+    ops = [...ops, createSetSelectionOp({ from: operands.get(), to: select.map(asNodeId), label })];
   }
   if (ops.length === 0) return false;
   if (deps.applyOps) {
@@ -72,7 +80,7 @@ export function commitOps(deps: ActionDeps, ops: Op[], label: string, opts: { se
   }
   const scene = deps.scene as Scene<unknown, string, unknown> | undefined;
   if (!scene) return false;
-  return scene.applyBatch(ops, label, defaultCommitAdapter(scene, selectionMethods(deps.selection)));
+  return scene.applyBatch(ops, label, defaultCommitAdapter(scene, operandMethods(operands)));
 }
 
 /** The selection change a commit that makes or edits one node puts in its own
@@ -93,7 +101,7 @@ export function commitSelectionOps(select: CommitSelection | undefined, id: stri
 }
 
 /** The {@link CommitSelection} that leaves the committed node selected, from
- *  `selection` as it stands; none without a selection. */
-export function selectCommitted(selection: Pick<SelectionApi, 'get'> | undefined): CommitSelection | undefined {
-  return selection ? { from: [...selection.get()], selectNode: true } : undefined;
+ *  `operands` as they stand; none without operands. */
+export function selectCommitted(operands: Pick<OperandsDep, 'get'> | undefined): CommitSelection | undefined {
+  return operands ? { from: [...operands.get()], selectNode: true } : undefined;
 }

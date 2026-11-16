@@ -35,7 +35,7 @@ function ctxAt(scene: Scene<unknown, string, unknown>, to: { x: number; y: numbe
     world: to,
     screen: to,
     modifiers: { alt: false, ctrl: false, meta: false, shift: false },
-    deps: { selection: { get: () => [BOX] as NodeId[] }, scene },
+    deps: { operands: { get: () => [BOX] as NodeId[] }, scene },
     drag: {
       start: { x: 100, y: 100 }, current: to, delta: { x: to.x - 100, y: to.y - 100 },
       affordance: { kind: 'handle:top-left', targetIds: [BOX as string], anchor: { x: 'max', y: 'max' } },

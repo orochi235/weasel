@@ -15,7 +15,7 @@ function setup(constraints: unknown[] = []) {
     screen: { x: 0, y: 0 },
     modifiers: { alt: false, ctrl: false, meta: false, shift: false },
     deps: {
-      selection: { get: () => [a] as NodeId[] },
+      operands: { get: () => [a] as NodeId[] },
       scene,
       resizePolicy: { constraints, expandIds: (ids: string[]) => ids, onGestureEnd },
     },

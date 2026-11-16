@@ -23,7 +23,7 @@ function nested() {
 function group(scene: ReturnType<typeof nested>['scene'], ids: NodeId[]): NodeId {
   let current = [...ids];
   const selection = { get: () => [...current], set: (next: NodeId[]) => { current = [...next]; } };
-  (groupAction.invoker as ImmediateInvoker).run({ scene, selection } as never, undefined as never);
+  (groupAction.invoker as ImmediateInvoker).run({ scene, operands: selection } as never, undefined as never);
   return current[0]!;
 }
 

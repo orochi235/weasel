@@ -14,7 +14,7 @@ describe('clampMove on a node inside an offset group', () => {
     const scene = createScene<object, 'main', RectPose>({ systemLayers: [{ id: 'main' }], composition: RIGID_POSE_COMPOSITION });
     const g = scene.add({ kind: 'group', layer: 'main', data: {}, pose: { x: 100, y: 100, width: 10, height: 10 } });
     const c = scene.add({ kind: 'mark', parent: g, layer: 'main', data: {}, pose: { x: 0, y: 0, width: 10, height: 10 } });
-    const base = { world: { x: 105, y: 105 }, modifiers: MODS, deps: { selection: { get: () => [c] as NodeId[] }, scene } };
+    const base = { world: { x: 105, y: 105 }, modifiers: MODS, deps: { operands: { get: () => [c] as NodeId[] }, scene } };
     const at = (x: number): InvocationCtx => ({
       ...base, world: { x, y: 105 }, drag: { start: { x: 105, y: 105 }, current: { x, y: 105 }, delta: { x: x - 105, y: 0 } },
     }) as unknown as InvocationCtx;

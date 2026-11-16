@@ -41,7 +41,7 @@ function setup(deps: Record<string, unknown> = {}) {
     world: { x, y: 0 },
     screen: { x, y: 0 },
     modifiers: { alt: false, ctrl: false, meta: false, shift: false },
-    deps: { selection: { get: () => [a] as NodeId[] }, scene, ...deps },
+    deps: { operands: { get: () => [a] as NodeId[] }, scene, ...deps },
     drag: { start: { x: 0, y: 0 }, current: { x, y: 0 }, delta: { x, y: 0 }, screenDelta: { x, y: 0 } },
   }) as unknown as InvocationCtx;
   const inv = moveAction.invoker;

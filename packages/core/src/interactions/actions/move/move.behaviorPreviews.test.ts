@@ -25,7 +25,7 @@ function fixture(deps: Record<string, unknown> = {}) {
     world: { x: dx ?? 0, y: 0 },
     screen: { x: 0, y: 0 },
     modifiers: { alt: false, ctrl: false, meta: false, shift: false },
-    deps: { selection: { get: () => [dragged] } as unknown as SelectionApi, scene, ...deps },
+    deps: { operands: { get: () => [dragged] } as unknown as SelectionApi, scene, ...deps },
     drag: dx === undefined ? undefined : { start: { x: 0, y: 0 }, current: { x: dx, y: 0 }, delta: { x: dx, y: 0 } },
   }) as unknown as InvocationCtx;
   const start = (...behaviors: MoveBehavior<unknown>[]): OngoingHandle =>
@@ -130,7 +130,7 @@ describe('BehaviorResult.opaque', () => {
       screen: { x: 0, y: 0 },
       modifiers: { alt: false, ctrl: false, meta: false, shift: false },
       deps: {
-        selection: { get: () => [dragged] as NodeId[] },
+        operands: { get: () => [dragged] as NodeId[] },
         scene,
         layout: { getLayout: (id: string) => (id === target ? layout : null) },
       },

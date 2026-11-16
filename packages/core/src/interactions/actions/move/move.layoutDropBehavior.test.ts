@@ -42,7 +42,7 @@ function fixture(hooks: Partial<Hooks>, more: { behaviors?: MoveBehavior<unknown
     world: { x: 115, y: 115 },
     modifiers: MODS,
     deps: {
-      selection: { get: () => [KID] },
+      operands: { get: () => [KID] },
       scene,
       layout: { getLayout: (id: string) => (id === T ? layout : null), reflow: more.reflow },
       ...more.deps,

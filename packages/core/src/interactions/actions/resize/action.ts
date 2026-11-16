@@ -41,7 +41,7 @@ export function createResizeAction(opts: ResizeActionOptions = {}): Action & { r
     eligible: { capability: 'transforms-selection' },
     modifierRoles: SNAP_ROLES,
     requires: [
-      'selection', 'scene', 'resizePolicy', 'poseDescriptor', 'applyOps', 'geometryProjection', 'view',
+      'operands', 'scene', 'resizePolicy', 'poseDescriptor', 'applyOps', 'geometryProjection', 'view',
       'boundsIncludeStroke', 'drawnBoxes', 'kitSettings', 'snap', 'transformFollowers',
     ],
     invoker: {
@@ -50,7 +50,7 @@ export function createResizeAction(opts: ResizeActionOptions = {}): Action & { r
         const begun = beginResize(ctx);
         if (!begun) return {};
         const { session, readers } = begun;
-        const subject = [...(ctx.deps.selection?.get() ?? [])] as string[];
+        const subject = [...(ctx.deps.operands?.get() ?? [])] as string[];
         const hold = session.scene.overrides.hold();
         const preview = transformPreview(ctx.deps, session.scene, () => frame.previews);
         let frame: ResizeFrame = { previews: new Map() };

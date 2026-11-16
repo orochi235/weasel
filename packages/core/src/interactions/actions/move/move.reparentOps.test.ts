@@ -45,7 +45,7 @@ function drop(
     {
       world: { x: 5, y: 5 },
       modifiers: MODS,
-      deps: { selection: { get: () => ids }, scene, nodeAtPoint: () => T, ...deps },
+      deps: { operands: { get: () => ids }, scene, nodeAtPoint: () => T, ...deps },
     } as unknown as InvocationCtx,
     { params: { reparentOnDrop: 'top', ...params } },
   );

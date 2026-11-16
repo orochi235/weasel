@@ -47,7 +47,7 @@ describe('duplicateAction', () => {
   it('is Cmd/Ctrl+Shift+D and declares the `selection` its gate reads', () => {
     expect(duplicateAction.id).toBe('duplicate');
     expect(duplicateAction.defaultBinding).toEqual([{ spec: { kind: 'key', key: 'd', mods: { mod: true, shift: true }, phase: BETWEEN_GESTURES }, opts: { id: 'duplicate.key' } }]);
-    expect(duplicateAction.requires).toContain('selection');
+    expect(duplicateAction.requires).toContain('operands');
   });
 
   it('copies a leaf offset by 12, keeps its data and parent, and selects the copy', () => {
@@ -56,7 +56,7 @@ describe('duplicateAction', () => {
     let committed: Op[] = [];
     const applyOps = vi.fn((ops: Op[]) => { committed = ops; });
 
-    (duplicateAction.invoker as ImmediateInvoker).run({ scene, selection, applyOps } as never);
+    (duplicateAction.invoker as ImmediateInvoker).run({ scene, operands: selection, applyOps } as never);
 
     const copies = inserted(committed);
     expect(copies).toHaveLength(1);
@@ -76,7 +76,7 @@ describe('duplicateAction', () => {
     ]);
     let committed: Op[] = [];
     (duplicateAction.invoker as ImmediateInvoker).run({
-      scene, selection: makeSelection(['g']), applyOps: (ops: Op[]) => { committed = ops; },
+      scene, operands: makeSelection(['g']), applyOps: (ops: Op[]) => { committed = ops; },
     } as never);
 
     const copies = inserted(committed);
@@ -96,7 +96,7 @@ describe('duplicateAction', () => {
     ]);
     let committed: Op[] = [];
     (duplicateAction.invoker as ImmediateInvoker).run({
-      scene, selection: makeSelection(['g', 'a']), applyOps: (ops: Op[]) => { committed = ops; },
+      scene, operands: makeSelection(['g', 'a']), applyOps: (ops: Op[]) => { committed = ops; },
     } as never);
 
     expect(inserted(committed)).toHaveLength(2);
@@ -104,14 +104,14 @@ describe('duplicateAction', () => {
 
   it('falls back to scene.applyBatch without an applyOps hook', () => {
     const scene = makeScene([['a', {}]]);
-    (duplicateAction.invoker as ImmediateInvoker).run({ scene, selection: makeSelection(['a']) } as never);
+    (duplicateAction.invoker as ImmediateInvoker).run({ scene, operands: makeSelection(['a']) } as never);
     expect(scene.applyBatch).toHaveBeenCalledWith(expect.any(Array), 'Duplicate', expect.anything());
   });
 
   it('records nothing for Transform Again when the scene refuses the copies', () => {
     const scene = makeScene([['a', {}]]);
     scene.applyBatch.mockReturnValue(false);
-    (duplicateAction.invoker as ImmediateInvoker).run({ scene, selection: makeSelection(['a']) } as never);
+    (duplicateAction.invoker as ImmediateInvoker).run({ scene, operands: makeSelection(['a']) } as never);
     expect(lastTransform(scene)).toBeUndefined();
   });
 
@@ -119,7 +119,7 @@ describe('duplicateAction', () => {
     const scene = makeScene([['a', { x: 5, y: 5 }]]);
     let committed: Op[] = [];
     (duplicateAction.invoker as ImmediateInvoker).run({
-      scene, selection: makeSelection(['a']), applyOps: (ops: Op[]) => { committed = ops; },
+      scene, operands: makeSelection(['a']), applyOps: (ops: Op[]) => { committed = ops; },
     } as never, { dx: 40, dy: -10 });
     expect(inserted(committed)[0]!.pose).toEqual({ x: 45, y: -5 });
     expect(lastTransform(scene)).toMatchObject({ kind: 'duplicate', dx: 40, dy: -10 });
@@ -129,7 +129,7 @@ describe('duplicateAction', () => {
   it('no-ops on an empty selection', () => {
     const scene = makeScene([['a', {}]]);
     const applyOps = vi.fn();
-    (duplicateAction.invoker as ImmediateInvoker).run({ scene, selection: makeSelection([]), applyOps } as never);
+    (duplicateAction.invoker as ImmediateInvoker).run({ scene, operands: makeSelection([]), applyOps } as never);
     expect(applyOps).not.toHaveBeenCalled();
   });
 });

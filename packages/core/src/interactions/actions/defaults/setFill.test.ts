@@ -22,7 +22,7 @@ describe('setFillAction', () => {
     const ctx: InvocationCtx = {
       world: { x: 0, y: 0 }, screen: { x: 0, y: 0 },
       modifiers: { alt: false, ctrl: false, meta: false, shift: false },
-      deps: stubDeps({ selection: makeSelection(['a']) }),
+      deps: stubDeps({ operands: makeSelection(['a']) }),
       params: { color: '#ff0000' },
     };
     const h = getInvoker().start(ctx, undefined);

@@ -34,7 +34,7 @@ function setup() {
 }
 
 function deps(scene: Scene<unknown, string, unknown>, ids: NodeId[]) {
-  return { scene, selection: { get: () => ids, set: vi.fn() } } as never;
+  return { scene, operands: { get: () => ids, set: vi.fn() } } as never;
 }
 
 const snapshot = (scene: Scene<unknown, string, unknown>) =>

@@ -1,4 +1,5 @@
 import { poseLinearOf } from '@weasel-js/geom';
+import { operandMethods } from 'interactions/actions/defaultCommitAdapter';
 import type { InvocationCtx } from '@weasel-js/routing';
 import { localToWorld } from 'core/geometry/targetFrame';
 import { pointerStateOf } from '../pointerState';
@@ -181,7 +182,7 @@ export function buildGestureContext(
     plane: readers.plane(),
     kitSettings: readers.kitSettings,
     frames: sceneGestureFrames(scene, ctx.deps) as GestureContext<Bounds>['frames'],
-    adapter: moveGestureAdapter(scene, undefined, ctx.deps.selection?.adapterMethods) as unknown as GestureContext<Bounds>['adapter'],
+    adapter: moveGestureAdapter(scene, undefined, operandMethods(ctx.deps.operands)) as unknown as GestureContext<Bounds>['adapter'],
     scratch: {},
   };
 }

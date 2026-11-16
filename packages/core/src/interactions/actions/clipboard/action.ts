@@ -22,9 +22,9 @@ export const clipboardCopyAction: Action & { requires: string[] } = {
   // selection has nothing to copy. Notably excludes `text-edit`, where Cmd+C
   // must stay the browser's own copy of the caret range.
   eligible: { capability: ['edits-page', 'creates-selection'] },
-  // `selection` is read by the `enabled` gate, not the invoker — the
+  // `operands` is read by the `enabled` gate, not the invoker — the
   // dispatcher builds deps for both, and an undeclared read is undefined.
-  requires: ['clipboard', 'selection'],
+  requires: ['clipboard', 'operands'],
   invoker: {
     timing: 'immediate',
     run: (deps) => {
@@ -49,12 +49,12 @@ export const clipboardCutAction: Action & { requires: string[] } = {
     opts: { id: 'clipboard.cut.key' },
   }],
   eligible: { capability: 'edits-page' },
-  requires: ['clipboard', 'scene', 'selection', 'applyOps'],
+  requires: ['clipboard', 'scene', 'operands', 'applyOps'],
   invoker: {
     timing: 'immediate',
     run: (deps) => {
-      if (!deps.clipboard || !deps.selection || !deps.scene) return;
-      const ids = deps.selection.get() as readonly NodeId[];
+      if (!deps.clipboard || !deps.operands || !deps.scene) return;
+      const ids = deps.operands.get() as readonly NodeId[];
       if (ids.length === 0 || deleteEnabled(deps) !== true) return;
       // Snapshot before removal — `snapshotSelection` reads live nodes.
       deps.clipboard.copy();

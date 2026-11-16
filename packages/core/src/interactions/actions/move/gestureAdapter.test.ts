@@ -73,7 +73,7 @@ describe('moveGestureAdapter', () => {
       screen: { x: 0, y: 0 },
       modifiers: { alt: false, ctrl: false, meta: false, shift: false },
       deps: {
-        selection: { get: () => [leaf as NodeId] },
+        operands: { get: () => [leaf as NodeId] },
         scene,
         geometryProjection: {
           transform: (n: { data: unknown }, m: Affine) => ({
@@ -111,7 +111,7 @@ describe('moveAction — a behavior that deletes the dragged node', () => {
     const base = {
       world: { x: 0, y: 0 },
       modifiers: { alt: false, ctrl: false, meta: false, shift: false },
-      deps: { selection: { get: () => [leaf as NodeId] }, scene },
+      deps: { operands: { get: () => [leaf as NodeId] }, scene },
     };
     const inv = moveAction.invoker;
     if (!inv || inv.timing !== 'ongoing') throw new Error('expected ongoing invoker');

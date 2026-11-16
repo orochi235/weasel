@@ -35,7 +35,7 @@ describe('Make Boolean Group', () => {
   it('puts the selection under a union in the frontmost one\'s place, wearing its paint, nothing moving', () => {
     const { scene, under, back, front, over } = makeScene();
     const selection = selectionOf([front, back]);
-    (makeBooleanGroupAction.invoker as ImmediateInvoker).run({ scene, selection } as never, undefined as never);
+    (makeBooleanGroupAction.invoker as ImmediateInvoker).run({ scene, operands: selection } as never, undefined as never);
     const [group] = selection.get() as NodeId[];
     expect(scene.roots).toEqual([under, group, over]);
     expect(scene.childrenOf(group!)).toEqual([back, front]);
@@ -48,7 +48,7 @@ describe('Make Boolean Group', () => {
   it('is one undo entry, and needs two nodes', () => {
     const { scene, back, front } = makeScene();
     expect(makeBooleanGroup(scene as never, [back])).toBeNull();
-    expect(makeBooleanGroupAction.enabled!({ selection: selectionOf([back]) } as never)).not.toBe(true);
+    expect(makeBooleanGroupAction.enabled!({ operands: selectionOf([back]) } as never)).not.toBe(true);
     const before = scene.roots.length;
     makeBooleanGroup(scene as never, [back, front], 'subtract');
     expect(scene.roots).toHaveLength(before - 1);
@@ -68,8 +68,8 @@ describe('Make Boolean Group', () => {
     const { scene, under, back, front, over } = makeScene();
     const group = makeBooleanGroup(scene as never, [back, front])!;
     const selection = selectionOf([group]);
-    expect(ungroupAction.enabled!({ scene, selection } as never)).toBe(true);
-    (ungroupAction.invoker as ImmediateInvoker).run({ scene, selection } as never, undefined as never);
+    expect(ungroupAction.enabled!({ scene, operands: selection } as never)).toBe(true);
+    (ungroupAction.invoker as ImmediateInvoker).run({ scene, operands: selection } as never, undefined as never);
     expect(scene.get(group)).toBeUndefined();
     expect(scene.roots).toEqual([under, back, front, over]);
     expect(selection.get()).toEqual([back, front]);

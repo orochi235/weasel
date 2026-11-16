@@ -39,7 +39,7 @@ export const moveAction: Action = inPlane(defineAction({
   defaultBinding: [{ spec: { kind: 'drag', target: 'selected-body' }, opts: { id: 'move.drag' } }],
   eligible: { capability: 'transforms-selection' },
   modifierRoles: SNAP_ROLES,
-  requires: ['selection', 'scene', 'poseDescriptor', 'layout', 'applyOps', 'geometryProjection', 'nodeAtPoint', 'canDropInto', 'view', 'boundsIncludeStroke', 'drawnBoxes', 'kitSettings', 'snap', 'transformFollowers'],
+  requires: ['operands', 'scene', 'poseDescriptor', 'layout', 'applyOps', 'geometryProjection', 'nodeAtPoint', 'canDropInto', 'view', 'boundsIncludeStroke', 'drawnBoxes', 'kitSettings', 'snap', 'transformFollowers'],
   invoker: {
     timing: 'ongoing',
     start(ctx, opts) {
@@ -47,7 +47,7 @@ export const moveAction: Action = inPlane(defineAction({
       const begun = beginMove(ctx, opts, () => frame);
       if (!begun) return {};
       const { session, readers } = begun;
-      const subject = [...(ctx.deps.selection?.get() ?? [])] as string[];
+      const subject = [...(ctx.deps.operands?.get() ?? [])] as string[];
       const hold = session.scene.overrides.hold();
       const preview = transformPreview(ctx.deps, session.scene, () => frame.previews);
       // Where the last move put the pointer; null until the first.

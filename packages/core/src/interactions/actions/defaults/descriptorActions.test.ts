@@ -16,7 +16,7 @@ type S = Scene<object, 'main', CirclePose>;
 const scene = (): S => createScene<object, 'main', CirclePose>({ composition: IDENTITY_POSE_COMPOSITION, systemLayers: [{ id: 'main' }] });
 const leaf = (s: S, p: CirclePose) => s.add({ kind: 'mark', layer: 'main', pose: p, data: {} });
 const deps = (s: S, ids: NodeId[]) => ({
-  selection: { get: () => ids, set: () => {} },
+  operands: { get: () => ids, set: () => {} },
   scene: s,
   poseDescriptor: CIRCLE_POSE_DESCRIPTOR,
 });

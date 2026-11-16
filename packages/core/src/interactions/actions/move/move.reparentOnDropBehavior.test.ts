@@ -26,7 +26,7 @@ function drop(dx: number, more: { behaviors?: MoveBehavior<unknown>[]; deps?: ob
   const base = {
     world: { x: 5, y: 5 },
     modifiers: MODS,
-    deps: { selection: { get: () => [A] }, scene, nodeAtPoint, ...more.deps },
+    deps: { operands: { get: () => [A] }, scene, nodeAtPoint, ...more.deps },
   };
   const invoker = moveAction.invoker!;
   if (invoker.timing !== 'ongoing') throw new Error('expected ongoing');

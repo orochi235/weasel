@@ -60,7 +60,7 @@ function makeCtx(opts: {
     screen: { x: 0, y: 0 },
     modifiers: { alt: false, ctrl: false, meta: false, shift: false },
     deps: stubDeps({
-      selection: { get: () => opts.selectionIds as NodeId[] },
+      operands: { get: () => opts.selectionIds as NodeId[] },
       scene,
       ...opts.deps,
     }),

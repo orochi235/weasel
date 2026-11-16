@@ -1,4 +1,5 @@
 import type { BindingOptions, InvocationCtx, OngoingOverlay } from '@weasel-js/routing';
+import { operandMethods } from 'interactions/actions/defaultCommitAdapter';
 import { isPathEditPart, resolveParams } from '@weasel-js/routing';
 import type { MoveParams } from '../actionParamSchema';
 import type { Op } from 'core/ops/types';
@@ -114,7 +115,7 @@ export function beginMove(
   opts: BindingOptions<Partial<MoveParams>> | undefined,
   frame: () => MoveFrame,
 ): { session: MoveSession; readers: GestureReaders } | null {
-  const selection = ctx.deps.selection;
+  const selection = ctx.deps.operands;
   const scene = ctx.deps.scene;
   const projection = poseDescriptorOf(ctx.deps.poseDescriptor);
   const layout = ctx.deps.layout;
@@ -154,7 +155,7 @@ export function beginMove(
   // A behavior that commits after the gesture has ended, a coast coming to
   // rest, lands its batch the way the gesture's own commit does.
   const adapter = moveGestureAdapter<unknown>(scene, (ops, _label, through) =>
-    commitGestureOps({ scene, applyOps, adapter: through, finish }, lifecycle, ops), selection.adapterMethods);
+    commitGestureOps({ scene, applyOps, adapter: through, finish }, lifecycle, ops), operandMethods(selection));
   const readers = gestureReaders(ctx.deps);
   const gestureCtx = buildGestureContext(ctx, scene, ids, startPoses, adapter, readers);
   for (const b of behaviors) b.onStart?.(gestureCtx);

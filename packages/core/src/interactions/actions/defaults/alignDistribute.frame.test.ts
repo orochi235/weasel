@@ -46,7 +46,7 @@ function selectionOf(ids: NodeId[]) {
 
 function run(action: typeof alignLeftAction, scene: Scene<unknown, string, unknown>, ids: NodeId[]) {
   (action.invoker as ImmediateInvoker).run(
-    { selection: selectionOf(ids), scene } as never,
+    { operands: selectionOf(ids), scene } as never,
   );
 }
 

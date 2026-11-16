@@ -30,7 +30,7 @@ function ctxAt(
     screen: { x: 0, y: 0 },
     modifiers: { alt: false, ctrl: false, meta: false, shift: false },
     deps: {
-      selection: { get: () => [upright] as NodeId[] },
+      operands: { get: () => [upright] as NodeId[] },
       scene,
     },
     drag: {

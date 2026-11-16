@@ -32,7 +32,7 @@ function rects(cmds: readonly DrawCommand[]): Array<{ x: number; clipped: boolea
 describe('a page\'s child mid-drag', () => {
   it('is hidden from the scene and drawn as a ghost at its dragged place, unclipped by its page', () => {
     const { scene } = pagedScene();
-    const base = { world: { x: 95, y: 15 }, modifiers: MODS, deps: { selection: { get: () => [ON_PAGE] }, scene } };
+    const base = { world: { x: 95, y: 15 }, modifiers: MODS, deps: { operands: { get: () => [ON_PAGE] }, scene } };
     const invoker = moveAction.invoker!;
     if (invoker.timing !== 'ongoing') throw new Error('expected ongoing');
     const handle: OngoingHandle = invoker.start(base as unknown as InvocationCtx, {} as BindingOptions);

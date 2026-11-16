@@ -1,4 +1,5 @@
 import type { NodeId, Scene } from 'core/scene/types';
+import type { OperandsDep } from 'interactions/actions/operands';
 import type { Bounds } from 'core/viewport/fitViewToBounds';
 import { shapeSources, uncarried } from '../selectionSubtree';
 import { withoutPageStructure } from 'core/scene/nodeGates';
@@ -25,10 +26,9 @@ import { ActionDisabledReason, defineAction } from '@weasel-js/routing';
 import type { FlipParams } from '../actionParamSchema';
 import { sameValue } from 'core/scene/sameValue';
 import { finiteThroughout } from '../finiteFrame';
-import { defaultCommitAdapter } from '../defaultCommitAdapter';
+import { defaultCommitAdapter, operandMethods } from '../defaultCommitAdapter';
 import { transformApplyOps } from '../transformFinish';
 import { requiresSelection } from '../defaults/requiresSelection';
-import type { SelectionApi } from 'core/selection/useSelection';
 import { geometryDataOp, type GeometryProjection } from '../geometryProjection';
 import { icon } from '../../../icons.gen';
 import { BETWEEN_GESTURES } from '@weasel-js/routing';
@@ -76,7 +76,7 @@ function localMirror(
  * keeps the stored box's center, so mirroring either box lands the same place.
  */
 function flipOps(
-  selection: Pick<SelectionApi, 'get'>,
+  selection: Pick<OperandsDep, 'get'>,
   scene: Scene<unknown, string, unknown>,
   axis: FlipAxis,
   pivot: FlipPivot,
@@ -162,7 +162,7 @@ function flipOps(
   return ops;
 }
 
-function flipOpsFor(deps: ActionDeps, selection: Pick<SelectionApi, 'get'>, scene: Scene<unknown, string, unknown>, params: Readonly<Partial<FlipParams>> | undefined): Op[] {
+function flipOpsFor(deps: ActionDeps, selection: Pick<OperandsDep, 'get'>, scene: Scene<unknown, string, unknown>, params: Readonly<Partial<FlipParams>> | undefined): Op[] {
   return flipOps(
     selection, scene, params?.axis ?? 'x', params?.pivot ?? 'each', deps.geometryProjection,
     poseDescriptorOf(deps.poseDescriptor), params, deps.pointer, (frame) => drawnBoxes(deps, frame),
@@ -189,25 +189,25 @@ export const flipAction = defineAction({
   ],
   eligible: { capability: 'transforms-selection' },
   requires: [
-    'selection', 'scene', 'applyOps', 'geometryProjection', 'poseDescriptor', 'pointer', 'view', 'boundsIncludeStroke', 'drawnBoxes',
+    'operands', 'scene', 'applyOps', 'geometryProjection', 'poseDescriptor', 'pointer', 'view', 'boundsIncludeStroke', 'drawnBoxes',
     'transformFollowers',
   ],
   invoker: {
     timing: 'immediate',
     run: (deps, params) => {
-      const selection = deps.selection;
+      const selection = deps.operands;
       const scene = deps.scene;
       if (!selection || !scene) return;
       const ops = flipOpsFor(deps, selection, scene, params);
       if (ops.length === 0) return;
       const applyOps = transformApplyOps(deps);
       if (applyOps) applyOps(ops, 'Flip');
-      else scene.applyBatch(ops, 'Flip', defaultCommitAdapter(scene, selection.adapterMethods));
+      else scene.applyBatch(ops, 'Flip', defaultCommitAdapter(scene, operandMethods(selection)));
     },
   },
   enabled: (deps, _at, _carried, params) => {
     const needs = requiresSelection(deps);
     if (needs !== true) return needs;
-    return flipOpsFor(deps!, deps!.selection!, deps!.scene!, params).length > 0 ? true : ActionDisabledReason.NotApplicable;
+    return flipOpsFor(deps!, deps!.operands!, deps!.scene!, params).length > 0 ? true : ActionDisabledReason.NotApplicable;
   },
 });

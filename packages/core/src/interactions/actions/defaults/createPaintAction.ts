@@ -79,11 +79,11 @@ export function createPaintAction<TState, TValue, K extends string, P>(
     id: spec.id,
     label: spec.label,
     eligible: { capability: 'applies-fill' },
-    requires: ['selection', 'scene', 'applyOps'],
+    requires: ['operands', 'scene', 'applyOps'],
     invoker: {
       timing: 'ongoing',
       start(ctx, opts) {
-        const selection = ctx.deps.selection;
+        const selection = ctx.deps.operands;
         const scene = ctx.deps.scene as Scene<Data, string, unknown> | undefined;
 
         if (!selection || !scene) return {};
@@ -146,7 +146,7 @@ export function createPaintAction<TState, TValue, K extends string, P>(
       },
     },
     enabled: (deps) => {
-      const sel = deps?.selection;
+      const sel = deps?.operands;
       if (!sel || (sel.get() as unknown[]).length === 0) {
         return ActionDisabledReason.SelectionRequired;
       }

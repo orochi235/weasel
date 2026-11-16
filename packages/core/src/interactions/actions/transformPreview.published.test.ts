@@ -37,7 +37,7 @@ function fixture() {
     },
   };
   const deps = {
-    selection: { get: () => [a], adapterMethods: undefined } as unknown as SelectionApi,
+    operands: { get: () => [a], adapterMethods: undefined } as unknown as SelectionApi,
     scene,
     transformFollowers: [follower],
   } as unknown as ActionDeps;

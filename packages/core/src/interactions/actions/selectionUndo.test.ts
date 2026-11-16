@@ -48,7 +48,7 @@ function heldSelection(ids: readonly string[]) {
 function consumerDeps(scene: AnyScene, selection: ReturnType<typeof heldSelection>) {
   const history = createHistory(defaultCommitAdapter(scene as never, selection.adapterMethods));
   const applyOps = (ops: Op[], label: string) => history.applyOps(ops, label);
-  return { deps: { scene, selection, applyOps } as unknown as ActionDeps, history };
+  return { deps: { scene, operands: selection, applyOps } as unknown as ActionDeps, history };
 }
 
 function ends() {

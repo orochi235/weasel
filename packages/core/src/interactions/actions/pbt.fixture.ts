@@ -24,11 +24,11 @@ export function makeScene(): TestScene {
   return createScene<Record<string, never>, 'main' | 'top'>({ systemLayers: [{ id: 'main' }, { id: 'top' }] }) as TestScene;
 }
 
-/** The deps an immediate action reads, over a real scene and its own selection. */
+/** The deps an immediate action reads, over a real scene, acting on its own selection. */
 export function depsOf(scene: TestScene): ActionDeps {
   return {
     scene,
-    selection: {
+    operands: {
       get: () => [...scene.getSelection()],
       set: (next: readonly NodeId[]) => scene.setSelection([...next]),
     },

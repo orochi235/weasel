@@ -72,7 +72,7 @@ function rig(sources: readonly SnapSource[], poses: readonly Pose[], extra: Reco
   const snap: SnapDep = {
     begin: (req) => sceneSession2d({ req, scene, boxes: drawnBoxes({ scene }), sources, view: () => VIEW, reachPx: 8, store }),
   };
-  const deps = { scene, selection: { get: () => [ids[0]], set: () => {} } as unknown as SelectionApi, snap, ...extra };
+  const deps = { scene, operands: { get: () => [ids[0]], set: () => {} } as unknown as SelectionApi, snap, ...extra };
   let from: Point = { x: 0, y: 0 };
   let anchor: ResizeAnchor = SE;
   const at = (p: Point, mods: Partial<typeof KEYS> = {}) => ({

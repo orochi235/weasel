@@ -31,7 +31,7 @@ function ctxAt(
     screen: { x: 0, y: 0 },
     modifiers: { alt: true, ctrl: false, meta: false, shift: false },
     deps: {
-      selection: { get: () => selected, set: () => {} },
+      operands: { get: () => selected, set: () => {} },
       scene,
     },
     drag: { start: { x: 0, y: 0 }, current: { x: dx, y: dy }, delta: { x: dx, y: dy } },

@@ -119,7 +119,7 @@ describe('createDeleteAction', () => {
     const applyOps = vi.fn();
     const commit = vi.fn();
     const action = createDeleteAction({ commit });
-    const deps = { selection, scene, applyOps };
+    const deps = { operands: selection, scene, applyOps };
 
     (action.invoker as ImmediateInvoker).run(deps as unknown as Parameters<ImmediateInvoker['run']>[0]);
 
@@ -146,7 +146,7 @@ describe('deleteAction commit routing', () => {
     const selection = makeSelection(['a', 'b']);
     const applyOps = vi.fn<(ops: Op[], label: string) => void>();
 
-    runDelete({ selection, scene, applyOps });
+    runDelete({ operands: selection, scene, applyOps });
 
     expect(applyOps).toHaveBeenCalledOnce();
     const [ops, label] = applyOps.mock.calls[0];
@@ -169,7 +169,7 @@ describe('deleteAction commit routing', () => {
     const selection = makeSelection(['c', 'a']);
     const applyOps = vi.fn<(ops: Op[], label: string) => void>();
 
-    runDelete({ selection, scene, applyOps });
+    runDelete({ operands: selection, scene, applyOps });
 
     const [ops] = applyOps.mock.calls[0];
     // c is index 0 among b's children; a is index 0 among roots.
@@ -185,7 +185,7 @@ describe('deleteAction commit routing', () => {
     const { scene, nodes, applyBatchLog } = makeStubScene({ a: {}, b: {} });
     const selection = makeSelection(['a', 'b']);
 
-    runDelete({ selection, scene });
+    runDelete({ operands: selection, scene });
 
     // Exactly one applyBatch call (single undo entry), label "Delete".
     expect(scene.applyBatch).toHaveBeenCalledOnce();
@@ -202,7 +202,7 @@ describe('deleteAction commit routing', () => {
     const selection = makeSelection([]);
     const applyOps = vi.fn<(ops: Op[], label: string) => void>();
 
-    runDelete({ selection, scene, applyOps });
+    runDelete({ operands: selection, scene, applyOps });
 
     expect(applyOps).not.toHaveBeenCalled();
     expect(scene.applyBatch).not.toHaveBeenCalled();
@@ -231,7 +231,7 @@ describe('deleteAction.run — undo against a real Scene', () => {
     const { scene, group, c1, c2 } = sceneFixture();
     const selection = makeSelection([group as string]);
 
-    runDelete({ selection, scene });
+    runDelete({ operands: selection, scene });
 
     expect(scene.get(group)).toBeUndefined();
     expect(scene.get(c1)).toBeUndefined();
@@ -255,7 +255,7 @@ describe('deleteAction.run — undo against a real Scene', () => {
     });
     const selection = makeSelection([outer as string]);
 
-    runDelete({ selection, scene });
+    runDelete({ operands: selection, scene });
     scene.undo();
 
     expect(scene.childrenOf(outer)).toEqual([inner]);
@@ -268,7 +268,7 @@ describe('deleteAction.run — undo against a real Scene', () => {
     const { scene, group, c1 } = sceneFixture();
     const selection = makeSelection([group as string]);
 
-    runDelete({ selection, scene });
+    runDelete({ operands: selection, scene });
     scene.undo();
     scene.redo();
 
@@ -296,7 +296,7 @@ describe('deleteAction.run — undo restores document order for a multi-node bat
 
   it('restores a contiguous run', () => {
     const { scene, a, b, c, d, e } = fiveRoots();
-    runDelete({ selection: makeSelection([b, c, d]), scene });
+    runDelete({ operands: makeSelection([b, c, d]), scene });
     expect([...scene.roots]).toEqual([a, e]);
 
     scene.undo();
@@ -306,7 +306,7 @@ describe('deleteAction.run — undo restores document order for a multi-node bat
 
   it('restores a scattered set', () => {
     const { scene, a, b, c, d, e } = fiveRoots();
-    runDelete({ selection: makeSelection([b, d]), scene });
+    runDelete({ operands: makeSelection([b, d]), scene });
     expect([...scene.roots]).toEqual([a, c, e]);
 
     scene.undo();
@@ -316,7 +316,7 @@ describe('deleteAction.run — undo restores document order for a multi-node bat
 
   it('restores a run given in reverse selection order (each anchor also deleted)', () => {
     const { scene, a, b, c, d, e } = fiveRoots();
-    runDelete({ selection: makeSelection([d, c, b]), scene });
+    runDelete({ operands: makeSelection([d, c, b]), scene });
 
     scene.undo();
 
@@ -325,7 +325,7 @@ describe('deleteAction.run — undo restores document order for a multi-node bat
 
   it('restores a run that includes the last sibling', () => {
     const { scene, a, b, c, d, e } = fiveRoots();
-    runDelete({ selection: makeSelection([c, d, e]), scene });
+    runDelete({ operands: makeSelection([c, d, e]), scene });
     expect([...scene.roots]).toEqual([a, b]);
 
     scene.undo();
@@ -335,7 +335,7 @@ describe('deleteAction.run — undo restores document order for a multi-node bat
 
   it('redo re-removes the batch, and a second undo restores order again', () => {
     const { scene, a, b, c, d, e } = fiveRoots();
-    runDelete({ selection: makeSelection([b, c, d]), scene });
+    runDelete({ operands: makeSelection([b, c, d]), scene });
     scene.undo();
     scene.redo();
     expect([...scene.roots]).toEqual([a, e]);
@@ -352,7 +352,7 @@ describe('deleteAction.run — undo restores document order for a multi-node bat
     const mk = () => scene.add({ kind: 'mark', layer: 'main', pose, data: {}, parent: box });
     const [a, b, c, d, e] = [mk(), mk(), mk(), mk(), mk()];
 
-    runDelete({ selection: makeSelection([b!, c!, d!]), scene });
+    runDelete({ operands: makeSelection([b!, c!, d!]), scene });
     expect([...scene.childrenOf(box)]).toEqual([a, e]);
 
     scene.undo();
@@ -464,7 +464,7 @@ describe('buildDeleteOps over a real scene', () => {
 describe('deleteAction over a real scene', () => {
   it('deletes a node and its edge selected together without throwing', () => {
     const { scene, a, b, edge } = makeEdgeScene();
-    runDelete({ selection: makeSelection([a, edge]), scene });
+    runDelete({ operands: makeSelection([a, edge]), scene });
     expect(scene.get(a)).toBeUndefined();
     expect(scene.get(edge)).toBeUndefined();
     expect(scene.get(b)).toBeDefined();
@@ -472,14 +472,14 @@ describe('deleteAction over a real scene', () => {
 
   it('actually deletes both members of a cycle rather than silently no-opping', () => {
     const { scene, a, edge } = makeCycleScene();
-    runDelete({ selection: makeSelection([a, edge]), scene });
+    runDelete({ operands: makeSelection([a, edge]), scene });
     expect(scene.get(a)).toBeUndefined();
     expect(scene.get(edge)).toBeUndefined();
   });
 
   it('undo restores the edge the delete cascaded, not just the endpoint', () => {
     const { scene, a, edge } = makeEdgeScene();
-    runDelete({ selection: makeSelection([a]), scene });
+    runDelete({ operands: makeSelection([a]), scene });
     expect(scene.get(edge)).toBeUndefined();
     scene.undo();
     expect(scene.get(a)).toBeDefined();
@@ -512,7 +512,7 @@ describe('deleteAction over a real scene', () => {
       ],
     });
 
-    runDelete({ selection: makeSelection([a]), scene });
+    runDelete({ operands: makeSelection([a]), scene });
     scene.undo();
 
     // A restored edge that lost `derivePath` reads as a static path forever;
@@ -539,7 +539,7 @@ describe('deleteAction over a real scene', () => {
       ],
     });
 
-    runDelete({ selection: makeSelection([box]), scene });
+    runDelete({ operands: makeSelection([box]), scene });
     scene.undo();
 
     const restored = scene.get(box) as GroupNode<object, 'main', RectPose>;
@@ -555,7 +555,7 @@ describe('deleteAction over a real scene', () => {
       scene.add({ ...leaf, parent: edge }),
     ];
 
-    runDelete({ selection: makeSelection([a]), scene });
+    runDelete({ operands: makeSelection([a]), scene });
     expect(scene.get(c1)).toBeUndefined();
 
     scene.undo();
@@ -572,7 +572,7 @@ describe('deleteAction over a real scene', () => {
       scene.add({ ...leaf, parent: box }),
     ];
 
-    runDelete({ selection: makeSelection([a]), scene });
+    runDelete({ operands: makeSelection([a]), scene });
     expect([...scene.childrenOf(box)]).toEqual([x, y]);
 
     scene.undo();
@@ -581,7 +581,7 @@ describe('deleteAction over a real scene', () => {
 
   it('redo takes the whole cascade away again', () => {
     const { scene, a, edge } = makeEdgeScene();
-    runDelete({ selection: makeSelection([a]), scene });
+    runDelete({ operands: makeSelection([a]), scene });
     scene.undo();
     scene.redo();
     expect(scene.get(a)).toBeUndefined();

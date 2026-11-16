@@ -24,7 +24,7 @@ describe('GestureContext.kitSettings', () => {
     const kitSettings = createKitSettingsStore({ view: { animationMs: 1 } });
     let seen: KitSettingsStore | null | undefined;
     const spy: MoveBehavior<RectPose> = { onMove: (ctx) => { seen = ctx.kitSettings; } };
-    const base = { world: { x: 0, y: 0 }, modifiers: MODS, deps: { selection: { get: () => [s] as NodeId[] }, scene, kitSettings } };
+    const base = { world: { x: 0, y: 0 }, modifiers: MODS, deps: { operands: { get: () => [s] as NodeId[] }, scene, kitSettings } };
     const handle = (moveAction.invoker as OngoingInvoker)
       .start(base as unknown as InvocationCtx, { behaviors: [spy] } as BindingOptions) as OngoingHandle;
     handle.onMove!({ ...base, world: { x: 5, y: 0 }, drag: { start: { x: 0, y: 0 }, current: { x: 5, y: 0 }, delta: { x: 5, y: 0 } } } as unknown as InvocationCtx);

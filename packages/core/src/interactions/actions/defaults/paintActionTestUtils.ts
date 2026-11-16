@@ -86,7 +86,7 @@ export function makeCtx(opts: {
     screen: { x: 0, y: 0 },
     modifiers: { alt: false, ctrl: false, meta: false, shift: false },
     deps: stubDeps({
-      selection: makeSelection(opts.selectionIds),
+      operands: makeSelection(opts.selectionIds),
       scene: opts.scene,
       ...(opts.applyOps ? { applyOps: opts.applyOps } : {}),
     }),

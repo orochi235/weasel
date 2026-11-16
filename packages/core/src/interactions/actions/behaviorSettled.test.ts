@@ -56,7 +56,7 @@ describe('moveAction — onSettled', () => {
       world: { x: 0, y: 0 },
       screen: { x: 0, y: 0 },
       modifiers: MODS,
-      deps: { selection: { get: () => [a] as NodeId[] }, scene, ...extraDeps },
+      deps: { operands: { get: () => [a] as NodeId[] }, scene, ...extraDeps },
     };
     const at = (dx: number): InvocationCtx => ({
       ...base,
@@ -158,7 +158,7 @@ describe('resizeAction — onSettled', () => {
         screen: { x: 0, y: 0 },
         modifiers: MODS,
         deps: {
-          selection: { get: () => [a] as NodeId[] },
+          operands: { get: () => [a] as NodeId[] },
           scene,
           resizePolicy: { constraints: [constraint], expandIds: (ids: string[]) => ids, ...more.policy },
           ...more.deps,
@@ -210,7 +210,7 @@ describe('rotateAction — onSettled', () => {
     const { scene, a } = sceneWithLeaf();
     const turn = (opts: BindingOptions, reason: Reason = 'commit', deps: object = {}): void => {
       // The pointer starts due east of the leaf's center and goes a quarter turn round.
-      const base = { world: { x: 60, y: 50 }, screen: { x: 0, y: 0 }, modifiers: MODS, deps: { selection: { get: () => [a] as NodeId[] }, scene, ...deps } };
+      const base = { world: { x: 60, y: 50 }, screen: { x: 0, y: 0 }, modifiers: MODS, deps: { operands: { get: () => [a] as NodeId[] }, scene, ...deps } };
       const quarter = { ...base, world: { x: 50, y: 60 } } as unknown as InvocationCtx;
       const handle = start(rotateAction, base as unknown as InvocationCtx, opts);
       handle.onMove?.(quarter);

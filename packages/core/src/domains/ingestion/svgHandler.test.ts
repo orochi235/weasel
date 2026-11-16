@@ -37,7 +37,7 @@ function ctx(overrides: Partial<IngestCtx> = {}): IngestCtx & { insert: { commit
     insert: { commit: vi.fn() },
     applyOps: vi.fn(),
     scene: {} as never,
-    selection: {} as never,
+    operands: {} as never,
     deps: {},
     ...overrides,
   } as never;
@@ -133,7 +133,7 @@ function pasteCtx(withClipboard: boolean) {
       cb.items.map((n, i) => ({ ...(n as object), id: `paste-${i}` }))),
   };
   const c = ctx({
-    selection: { get: vi.fn(() => []), set: vi.fn() } as never,
+    operands: { get: vi.fn(() => []), set: vi.fn() } as never,
     ...(withClipboard ? { clipboard: { adapter } } : {}),
   });
   return { c, adapter };

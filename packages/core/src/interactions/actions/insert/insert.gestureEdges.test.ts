@@ -43,7 +43,7 @@ function ongoing() {
 describe('insertAction — selection across a canceled draw', () => {
   it('clears the selection while drawing and puts it back on cancel', () => {
     const selection = makeSelection(['a', 'b', 'c']);
-    const deps = { insert: makeInsertDep().dep, selection };
+    const deps = { insert: makeInsertDep().dep, operands: selection };
     const handle = ongoing().start(makeCtx({ x: 0, y: 0 }, deps), { params: { kind: 'rect' } });
     expect(selection.get()).toEqual([]);
     handle.onMove!(makeCtx({ x: 40, y: 40 }, deps));
@@ -53,7 +53,7 @@ describe('insertAction — selection across a canceled draw', () => {
 
   it('puts it back on a release a behavior aborts', () => {
     const selection = makeSelection(['a']);
-    const deps = { insert: makeInsertDep().dep, selection };
+    const deps = { insert: makeInsertDep().dep, operands: selection };
     const abort: InsertBehavior<unknown> = { onEnd: () => null };
     const handle = ongoing().start(makeCtx({ x: 0, y: 0 }, deps), { params: { kind: 'rect' }, behaviors: [abort] });
     handle.onMove!(makeCtx({ x: 40, y: 40 }, deps));
@@ -64,7 +64,7 @@ describe('insertAction — selection across a canceled draw', () => {
   it('puts it back on a release that draws nothing', () => {
     const selection = makeSelection(['a']);
     const { dep, calls } = makeInsertDep();
-    const deps = { insert: dep, selection };
+    const deps = { insert: dep, operands: selection };
     const handle = ongoing().start(makeCtx({ x: 0, y: 0 }, deps), { params: { kind: 'rect' } });
     handle.onMove!(makeCtx({ x: 40, y: 40 }, deps));
     handle.onMove!(makeCtx({ x: 0, y: 0 }, deps));
@@ -76,7 +76,7 @@ describe('insertAction — selection across a canceled draw', () => {
   it('puts it back when the commit throws, and lets the error out', () => {
     const selection = makeSelection(['a']);
     const dep: InsertDep = { commit() { throw new Error('refused'); } };
-    const deps = { insert: dep, selection };
+    const deps = { insert: dep, operands: selection };
     const handle = ongoing().start(makeCtx({ x: 0, y: 0 }, deps), { params: { kind: 'rect' } });
     handle.onMove!(makeCtx({ x: 40, y: 40 }, deps));
     expect(() => handle.onEnd!(makeCtx({ x: 40, y: 40 }, deps), 'commit')).toThrow('refused');

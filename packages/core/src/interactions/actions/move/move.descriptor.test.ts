@@ -27,7 +27,7 @@ function drag(
     screen: { x: 0, y: 0 },
     modifiers: { alt: false, ctrl: false, meta: false, shift: false },
     deps: {
-      selection: { get: () => ids as NodeId[] },
+      operands: { get: () => ids as NodeId[] },
       scene: scene,
       poseDescriptor: CIRCLE_POSE_DESCRIPTOR,
       ...deps,
@@ -76,7 +76,7 @@ describe('moveAction — non-rect poses through the descriptor', () => {
       screen: { x: 0, y: 0 },
       modifiers: { alt: false, ctrl: false, meta: false, shift: false },
       deps: {
-        selection: { get: () => [id] as NodeId[] },
+        operands: { get: () => [id] as NodeId[] },
         scene: scene,
         poseDescriptor: CIRCLE_POSE_DESCRIPTOR,
         layout: { getLayout: (cid: string) => (cid === box ? layout : null) },

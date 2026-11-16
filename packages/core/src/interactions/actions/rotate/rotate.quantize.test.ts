@@ -30,7 +30,7 @@ describe('a rotate under a quantize rule', () => {
       world: { x: pivot.x + 10 * Math.cos(angle), y: pivot.y + 10 * Math.sin(angle) },
       screen: { x: 0, y: 0 },
       modifiers: { alt: false, ctrl: false, meta: false, shift: false },
-      deps: { selection: { get: () => [ID, other] as NodeId[] }, scene: scene as unknown as Scene<unknown, string, unknown> },
+      deps: { operands: { get: () => [ID, other] as NodeId[] }, scene: scene as unknown as Scene<unknown, string, unknown> },
     }) as unknown as InvocationCtx;
     const invoker = rotateAction.invoker!;
     if (invoker.timing !== 'ongoing') throw new Error('expected ongoing');

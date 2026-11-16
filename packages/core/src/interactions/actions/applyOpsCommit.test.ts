@@ -21,7 +21,7 @@ function rig<TPose>(scene: ReturnType<typeof createScene<object, 'main', TPose>>
   }));
   let batches = 0;
   const applyOps = (ops: Op[], label: string) => { batches++; history.applyOps(ops, label); };
-  const deps = { scene, selection, applyOps } as unknown as ActionDeps;
+  const deps = { scene, operands: selection, applyOps } as unknown as ActionDeps;
   return { deps, history, selected: () => held, select: (next: string[]) => { held = next as NodeId[]; }, batches: () => batches };
 }
 

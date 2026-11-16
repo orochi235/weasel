@@ -105,7 +105,8 @@ export {
   clipboardPasteAction,
   clipboardPasteEventAction,
 } from '../interactions/actions/clipboard/action';
-export type { SliceDep, ClipboardDep } from '../interactions/actions/depSchema';
+export type { SliceDep, ClipboardDep, OperandsDep } from '../interactions/actions/depSchema';
+export { operandList } from '../interactions/actions/operands';
 export { useStandardActions, KIT_STANDARD_ACTION_IDS } from '../interactions/actions/useStandardActions';
 export { useActionSet, useStandardDeps } from '../interactions/actions/useActionSet';
 export { ENGINE_STANDARD_ACTIONS } from '../interactions/actions/engineStandardActions';
@@ -115,7 +116,7 @@ export type { UseStandardActionsOptions } from '../interactions/actions/useStand
 // default action's committed ops directly to the scene in its native (local)
 // frame. Consumers route their own history integration through `applyOps` and
 // use this to perform the actual mutation (see DepSchema['applyOps']).
-export { defaultCommitAdapter } from '../interactions/actions/defaultCommitAdapter';
+export { defaultCommitAdapter, operandMethods, type CommitSelectionMethods } from '../interactions/actions/defaultCommitAdapter';
 
 // ─── Invoker / GestureBinding / ActiveToolContext ───
 export { overlaysOf, resolveParams } from '@weasel-js/routing';
@@ -177,6 +178,7 @@ export type {
   CornerAnchor, CornerEdge, HandleEdge, ResizeHandleAnchor, ResizeHandleLayout,
 } from '../interactions/actions/resize/cornerHandles';
 export { useSliceDepSource, type OpsApplier } from '../canvas/deps/slice';
+export { useLiveOperands } from '../canvas/deps/operands';
 export { useBooleansAdapterSource } from '../canvas/deps/booleans';
 export {
   computeSliceOps,

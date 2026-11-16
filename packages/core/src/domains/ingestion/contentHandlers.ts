@@ -14,7 +14,7 @@
 import { mimeMatchesGlob, UNKNOWN_MIME } from '@weasel-js/gestures';
 import { dwarn } from '../../debug';
 import type { Scene } from 'core/scene/types';
-import type { SelectionApi } from 'core/selection/useSelection';
+import type { OperandsDep } from 'interactions/actions/operands';
 import type { Op } from 'core/ops/types';
 import type { ClipboardIngestCtx, InsertDep, SnapDep, SvgIngestOptions } from 'interactions/actions/depSchema';
 import { admitIngestMime, type ActionDeps, type IngestItem } from '@weasel-js/routing';
@@ -41,7 +41,8 @@ export interface IngestCtx {
   /** Raw op commit for handlers that build their own ops. */
   applyOps(ops: Op[], label?: string): void;
   scene: Scene<unknown, string, unknown>;
-  selection: SelectionApi;
+  /** What the ingest acts on; it hands what it places back here. */
+  operands: OperandsDep;
   /** Consumer file→src resolver (SceneCanvas `ingestion.resolveSrc`).
    *  When absent, the kit image handler embeds as a `data:` URI. */
   resolveSrc?: (file: File) => Promise<string>;

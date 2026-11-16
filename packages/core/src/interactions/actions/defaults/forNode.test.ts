@@ -38,7 +38,7 @@ function setup() {
     set: (ids: NodeId[]) => { selected = ids; },
     adapterMethods: { getSelection: () => selected, setSelection: (ids: NodeId[]) => { selected = ids; } },
   } as unknown as SelectionApi;
-  const deps = { scene, selection, poseDescriptor: DESCRIPTOR };
+  const deps = { scene, operands: selection, poseDescriptor: DESCRIPTOR };
   const ctx = (world: { x: number; y: number }, drag?: InvocationCtx['drag']): InvocationCtx => ({
     world,
     screen: world,

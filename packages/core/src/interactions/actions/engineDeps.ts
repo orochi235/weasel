@@ -30,6 +30,7 @@ import type { InsertDep, InsertEnds, InsertExtras, PathSymmetryDep, InsertIntoDe
 import type { CommitSelection } from './defaultCommitAdapter';
 import type { LayoutDep, CanDropIntoDep } from './layoutDeps';
 import type { ClipboardDep, SliceDep } from './editDeps';
+import type { OperandsDep } from './operands';
 
 export type { EnteredGroupApi, TransformFollower, TransformPreviewNode };
 export type { SnapDep, SnapGeometry } from './snapDep';
@@ -37,6 +38,7 @@ export type { ColorAtDep, HitTestView, NodeAtPointDep, AreaSelectDep, LassoSelec
 export type { InsertDep, InsertEnds, InsertExtras, CommitSelection, PathSymmetryDep, InsertIntoDep, InsertLive };
 export type { LayoutDep, CanDropIntoDep };
 export type { ClipboardDep, SliceDep };
+export type { OperandsDep };
 
 /** Minimal view API the action layer consumes. */
 export interface ViewApi {
@@ -114,6 +116,10 @@ declare module '@weasel-js/routing' {
   interface DepSchema {
     /** Kit selection state — ids of currently selected nodes. */
     selection: SelectionApi;
+    /** The ids an edit acts on, and where it hands back what it leaves: every editing action reads this,
+     *  not `selection`. `useStandardDeps` answers it with the `selection` dep unless a host sources its own
+     *  (`operandList`, or anything else holding ids). */
+    operands: OperandsDep;
     /** The group the user has entered, or null — session state beside the
      *  selection, not scene data and not undoable. Optional: absent means
      *  inside no group. */

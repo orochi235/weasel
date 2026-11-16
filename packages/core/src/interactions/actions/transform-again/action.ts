@@ -23,7 +23,7 @@ function canRepeat(deps: ActionDeps, scene: AnyScene, t: RepeatableTransform): t
     if (!eligibleNow(duplicateAction, deps.ruleCtx)) return ActionDisabledReason.NotApplicable;
     return requiresContent(1)(deps);
   }
-  const ops = selectionTransformOps(deps, scene, deps.selection!.get() as string[], t, LABEL);
+  const ops = selectionTransformOps(deps, scene, [...deps.operands!.get()] as string[], t, LABEL);
   const all = ops.length > 0 ? finishTransformOps(deps, ops, LABEL) : null;
   return all && all.length > 0 ? true : ActionDisabledReason.NotApplicable;
 }
@@ -32,7 +32,7 @@ function canRepeat(deps: ActionDeps, scene: AnyScene, t: RepeatableTransform): t
  *  afterwards, or null when nothing changed. */
 function replay(deps: ActionDeps, scene: AnyScene, t: RepeatableTransform): readonly string[] | null {
   if (t.kind === 'duplicate') return duplicateSelection(deps, t.dx, t.dy, LABEL);
-  const selected = deps.selection!.get() as string[];
+  const selected = [...deps.operands!.get()] as string[];
   return commitTransformOps(deps, selectionTransformOps(deps, scene, selected, t, LABEL), LABEL) ? selected : null;
 }
 
@@ -51,14 +51,14 @@ export const transformAgainAction: Action & { requires: string[] } = {
   defaultBinding: [{ spec: { kind: 'key', key: 'd', mods: { mod: true }, phase: BETWEEN_GESTURES }, opts: { id: 'transformAgain.key' } }],
   eligible: { capability: 'transforms-selection' },
   requires: [
-    'scene', 'selection', 'applyOps', 'poseDescriptor', 'geometryProjection', 'resizePolicy', 'view',
+    'scene', 'operands', 'applyOps', 'poseDescriptor', 'geometryProjection', 'resizePolicy', 'view',
     'boundsIncludeStroke', 'drawnBoxes', 'transformFollowers', 'ruleCtx',
   ],
   invoker: {
     timing: 'immediate',
     run: (deps) => {
       const scene = deps.scene;
-      if (!scene || !deps.selection || deps.selection.get().length === 0) return;
+      if (!scene || !deps.operands || deps.operands.get().length === 0) return;
       const t = lastTransform(scene) ?? FIRST;
       if (canRepeat(deps, scene, t) !== true) return;
       const subject = replay(deps, scene, t);

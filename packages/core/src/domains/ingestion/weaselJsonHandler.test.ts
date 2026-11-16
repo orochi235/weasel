@@ -48,7 +48,7 @@ function stubAdapter() {
 
 type TestCtx = IngestCtx & {
   applyOps: Mock;
-  selection: { get: Mock; set: Mock };
+  operands: { get: Mock; set: Mock };
 };
 
 function ctx(overrides: Partial<IngestCtx> = {}): TestCtx {
@@ -58,7 +58,7 @@ function ctx(overrides: Partial<IngestCtx> = {}): TestCtx {
     insert: { commit: vi.fn() },
     applyOps: vi.fn(),
     scene: {} as never,
-    selection: { get: vi.fn(() => ['old']), set: vi.fn() },
+    operands: { get: vi.fn(() => ['old']), set: vi.fn() },
     deps: {},
     ...overrides,
   } as never;
@@ -137,7 +137,7 @@ describe('kitWeaselJsonHandler.handle — paste', () => {
     expect(ops[2].name).toBe('setSelection');
     expect(ops[2].args).toMatchObject({ from: ['old'], to: ['paste-0', 'paste-1'] });
 
-    expect(c.selection.set).toHaveBeenCalledWith(['paste-0', 'paste-1']);
+    expect(c.operands.set).toHaveBeenCalledWith(['paste-0', 'paste-1']);
   });
 
   it('falls back to a zero offset when the adapter has no getPasteOffset', async () => {
@@ -166,7 +166,7 @@ describe('kitWeaselJsonHandler.handle — paste', () => {
     const c = ctx({ clipboard: { adapter } });
     await kitWeaselJsonHandler.handle([stringItem(buildWeaselClipboardText(NODES))], c);
     expect(c.applyOps).not.toHaveBeenCalled();
-    expect(c.selection.set).not.toHaveBeenCalled();
+    expect(c.operands.set).not.toHaveBeenCalled();
   });
 });
 
@@ -177,14 +177,14 @@ describe('kitWeaselJsonHandler — declines', () => {
     await kitWeaselJsonHandler.handle([stringItem('{"weaselClipboard":1}')], c);
     expect(adapter.commitPaste).not.toHaveBeenCalled();
     expect(c.applyOps).not.toHaveBeenCalled();
-    expect(c.selection.set).not.toHaveBeenCalled();
+    expect(c.operands.set).not.toHaveBeenCalled();
   });
 
   it('declines when ctx.clipboard is absent', async () => {
     const c = ctx();
     await kitWeaselJsonHandler.handle([stringItem(buildWeaselClipboardText(NODES))], c);
     expect(c.applyOps).not.toHaveBeenCalled();
-    expect(c.selection.set).not.toHaveBeenCalled();
+    expect(c.operands.set).not.toHaveBeenCalled();
   });
 });
 

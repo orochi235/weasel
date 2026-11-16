@@ -21,7 +21,7 @@ function startAt(world: { x: number; y: number }, scale = { x: 1, y: 1 }) {
     world: at,
     screen: at,
     modifiers: { alt: false, ctrl: false, meta: false, shift: false },
-    deps: stubDeps({ selection: { get: () => ['a'] }, scene, view }),
+    deps: stubDeps({ operands: { get: () => ['a'] }, scene, view }),
   });
   if (rotateAction.invoker?.timing !== 'ongoing') throw new Error('expected an ongoing invoker');
   const handle = rotateAction.invoker.start(ctx(world), undefined);

@@ -53,7 +53,7 @@ function ctxOf(
     world: current,
     modifiers: { alt: false, ctrl: false, meta: false, shift: false },
     deps: {
-      selection: { get: () => ['sun'], clear: () => {}, set: () => {} } as unknown as SelectionApi,
+      operands: { get: () => ['sun'], clear: () => {}, set: () => {} } as unknown as SelectionApi,
       scene,
       view: viewDep(),
       ...extra.deps,
@@ -121,7 +121,7 @@ describe('editing a node on a parallax plane', () => {
     const scene = makeScene();
     const run = nudgeRightAction.invoker;
     if (run?.timing !== 'immediate') throw new Error('expected immediate');
-    run.run({ selection: { get: () => ['sun'] }, scene, view: viewDep() } as never);
+    run.run({ operands: { get: () => ['sun'] }, scene, view: viewDep() } as never);
     expect(poseOf(scene, 'sun')).toMatchObject({ x: 101, y: 100 });
   });
 
@@ -170,7 +170,7 @@ describe('editing a node on a parallax plane', () => {
     const scene = makeScene();
     const registry = {
       get: (name: string) => ({
-        scene, view: viewDep(), selection: { get: () => ['sun'] },
+        scene, view: viewDep(), operands: { get: () => ['sun'] },
       } as Record<string, unknown>)[name],
     } as unknown as DepRegistry;
     const at = (p: { x: number; y: number }) => ({
@@ -208,7 +208,7 @@ function twoPlaneScene(): S {
 }
 
 const selecting = (ids: string[]) => ({
-  selection: { get: () => ids, clear: () => {}, set: () => {} } as unknown as SelectionApi,
+  operands: { get: () => ids, clear: () => {}, set: () => {} } as unknown as SelectionApi,
 });
 
 const centerOf = (p: RectPose) => ({ x: p.x + p.width / 2, y: p.y + p.height / 2 });

@@ -17,7 +17,7 @@ import type { AnyScene } from 'core/scene/anyScene';
 
 /** The deps {@link moveNodes} reads; an action calling it declares these. */
 export const MOVE_NODES_REQUIRES = [
-  'scene', 'selection', 'applyOps', 'poseDescriptor', 'geometryProjection', 'transformFollowers',
+  'scene', 'operands', 'applyOps', 'poseDescriptor', 'geometryProjection', 'transformFollowers',
 ] as const;
 
 /**

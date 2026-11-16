@@ -155,7 +155,7 @@ function immediate(action: Action): ImmediateInvoker {
 
 function baseDeps(scene: StubScene, id: string) {
   return stubDeps({
-    selection: { get: () => [id as NodeId] },
+    operands: { get: () => [id as NodeId] },
     scene,
     applyOps: applyOpsTo(scene),
     // Rewrites `data.path` via the affine the pose underwent: the only way an

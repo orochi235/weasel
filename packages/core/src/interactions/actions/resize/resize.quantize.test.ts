@@ -36,7 +36,7 @@ describe('a resize under a quantize rule', () => {
       world: at,
       screen: { x: 0, y: 0 },
       modifiers: { alt: false, ctrl: false, meta: false, shift: false },
-      deps: { selection: { get: () => [BOX] }, scene },
+      deps: { operands: { get: () => [BOX] }, scene },
       drag: {
         start: from, current: at, delta: { x: at.x - from.x, y: at.y - from.y },
         affordance: { kind: 'handle:corner', targetIds: [BOX], anchor },

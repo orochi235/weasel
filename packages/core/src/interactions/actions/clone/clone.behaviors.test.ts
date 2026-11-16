@@ -13,7 +13,7 @@ function fixture(behavior: CloneBehavior<RectPose>) {
   const a = scene.add({ kind: 'mark', layer: 'main', data: {}, pose: { x: 0, y: 0, width: 10, height: 10 } });
   let selected: NodeId[] = [a];
   const selection = { get: () => selected, set: (ids: NodeId[]) => { selected = ids; } };
-  const base = { world: { x: 0, y: 0 }, modifiers: MODS, deps: { selection, scene } };
+  const base = { world: { x: 0, y: 0 }, modifiers: MODS, deps: { operands: selection, scene } };
   const at = (x: number): InvocationCtx => ({
     ...base,
     world: { x, y: 0 },

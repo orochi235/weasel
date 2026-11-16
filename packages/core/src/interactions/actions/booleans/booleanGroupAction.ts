@@ -91,19 +91,19 @@ export const makeBooleanGroupAction: Action & { requires: string[] } = {
   icon: icon('booleanGroup'),
   group: 'pathfinder',
   eligible: { capability: 'creates-shapes' },
-  requires: ['scene', 'selection', 'applyOps'],
+  requires: ['scene', 'operands', 'applyOps'],
   invoker: {
     timing: 'immediate',
     run: (deps) => {
-      const { scene, selection } = deps;
-      if (!scene || !selection) return;
-      const made = booleanGroupOps(scene as AnyScene, selection.get());
+      const { scene, operands } = deps;
+      if (!scene || !operands) return;
+      const made = booleanGroupOps(scene as AnyScene, operands.get());
       if (made) commitOps(deps, made.ops, 'Make Boolean Group', { select: [made.group] });
     },
   },
   enabled: (deps) => {
     const given = requiresContent(2)(deps);
     if (given !== true) return given;
-    return selectedRoots(deps!.scene as AnyScene, deps!.selection!.get()).length >= 2 ? true : ActionDisabledReason.SelectionRequired;
+    return selectedRoots(deps!.scene as AnyScene, deps!.operands!.get()).length >= 2 ? true : ActionDisabledReason.SelectionRequired;
   },
 };

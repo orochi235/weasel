@@ -65,7 +65,7 @@ describe('scene.mintId', () => {
     const { scene, a, b } = numbered();
     const set = vi.fn<(ids: NodeId[]) => void>();
     (groupAction.invoker as ImmediateInvoker).run({
-      selection: { get: () => [a, b], set },
+      operands: { get: () => [a, b], set },
       scene: anyScene(scene),
     } as never);
     expect(set).toHaveBeenCalledTimes(1);

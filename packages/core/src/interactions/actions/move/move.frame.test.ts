@@ -31,7 +31,7 @@ function ctx(scene: S, ids: string[], drag?: typeof DRAG): InvocationCtx {
     screen: { x: 0, y: 0 },
     modifiers: { alt: false, ctrl: false, meta: false, shift: false },
     deps: {
-      selection: { get: () => ids } as unknown as SelectionApi,
+      operands: { get: () => ids } as unknown as SelectionApi,
       scene,
     },
     drag,

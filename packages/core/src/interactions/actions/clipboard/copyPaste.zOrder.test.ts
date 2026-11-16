@@ -26,7 +26,7 @@ describe('stacking of a copy', () => {
     const { scene, bottom, top } = stacked();
     let held: readonly string[] = [top, bottom];
     const selection = { get: () => held, set: (next: readonly string[]) => { held = next; }, adapterMethods: undefined };
-    duplicateSelection({ scene, selection: selection as unknown as SelectionApi } as never, 12, 12);
+    duplicateSelection({ scene, operands: selection as unknown as SelectionApi } as never, 12, 12);
     expect(labels(scene)).toEqual(['bottom', 'top', 'bottom', 'top']);
   });
 

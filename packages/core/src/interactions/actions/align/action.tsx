@@ -1,4 +1,5 @@
 import type { IconRef } from '@weasel-js/icons';
+import type { OperandsDep } from 'interactions/actions/operands';
 import type { Scene } from 'core/scene/types';
 import {
   alignDeltaFor,
@@ -16,7 +17,6 @@ import { commitTransformOps } from '../transformFinish';
 import type { Action, ActionDeps } from '@weasel-js/routing';
 import { ActionDisabledReason, defineAction } from '@weasel-js/routing';
 import type { AlignParams } from '../actionParamSchema';
-import type { SelectionApi } from 'core/selection/useSelection';
 import { icon } from '../../../icons.gen';
 const ID_FOR = {
   'left': 'align.left',
@@ -58,7 +58,7 @@ const ICON_FOR: Record<AlignEdge, IconRef> = {
  */
 function alignOps(
   deps: ActionDeps,
-  selection: Pick<SelectionApi, 'get'>,
+  selection: Pick<OperandsDep, 'get'>,
   scene: Scene<unknown, string, unknown>,
   edge: AlignEdge,
   params: Readonly<Partial<AlignParams>> | undefined,
@@ -89,20 +89,20 @@ function makeAlignAction(edge: AlignEdge): Action {
     icon: ICON_FOR[edge],
     group: 'align',
     eligible: { capability: 'transforms-selection' },
-    requires: ['selection', 'scene', 'applyOps', 'geometryProjection', 'poseDescriptor', 'pointer', 'view', 'boundsIncludeStroke', 'drawnBoxes', 'transformFollowers'],
+    requires: ['operands', 'scene', 'applyOps', 'geometryProjection', 'poseDescriptor', 'pointer', 'view', 'boundsIncludeStroke', 'drawnBoxes', 'transformFollowers'],
     // No default keybindings — six edges/centers don't fit a clean default
     // chord set. Wire bindings explicitly via the actions registry override map.
     invoker: {
       timing: 'immediate',
       run: (deps, params) => {
-        const selection = deps.selection;
+        const selection = deps.operands;
         const scene = deps.scene;
         if (!selection || !scene) return;
         commitTransformOps(deps, alignOps(deps, selection, scene, edge, params), 'Align');
       },
     },
     enabled: (deps, _at, _carried, params) => {
-      const selection = deps?.selection;
+      const selection = deps?.operands;
       const scene = deps?.scene;
       if (!selection || !scene || selection.get().length === 0) return ActionDisabledReason.SelectionRequired;
       return alignOps(deps, selection, scene, edge, params).length > 0 ? true : ActionDisabledReason.NotApplicable;

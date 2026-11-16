@@ -50,7 +50,7 @@ function ctx(
     world: drag ? { x: drag.current.x, y: drag.current.y } : { x: 0, y: 0 },
     screen: { x: 0, y: 0 },
     modifiers: { alt: false, ctrl: false, meta: false, shift: false },
-    deps: { selection: { get: () => ids } as unknown as SelectionApi, scene },
+    deps: { operands: { get: () => ids } as unknown as SelectionApi, scene },
     drag,
   } as unknown as InvocationCtx;
 }
@@ -103,7 +103,7 @@ describe('moving a node whose pose is derived from others', () => {
   it('nudges what it derives from', () => {
     const { scene, a, b, inner } = fixture();
     (nudgeRightAction.invoker as ImmediateInvoker).run(
-      { selection: { get: () => [inner] } as unknown as SelectionApi, scene } as never,
+      { operands: { get: () => [inner] } as unknown as SelectionApi, scene } as never,
       { magnitude: 'small' } as never,
     );
     expect(scene.get(a)!.pose.x).toBeGreaterThan(0);

@@ -76,7 +76,7 @@ describe('groupAction.run', () => {
     const b = scene.add({ kind: 'mark', layer: 'main', pose: { x: 20, y: 30, width: 10, height: 10 }, data: {} });
     const selection = makeSelection([a, b]);
 
-    (groupAction.invoker as ImmediateInvoker).run({ scene, selection } as never, undefined as never);
+    (groupAction.invoker as ImmediateInvoker).run({ scene, operands: selection } as never, undefined as never);
 
     const sel = selection.get();
     expect(sel).toHaveLength(1);
@@ -93,7 +93,7 @@ describe('groupAction.run', () => {
     const b = scene.add({ kind: 'mark', layer: 'main', pose: { x: 20, y: 30, width: 10, height: 10 }, data: {} });
     const selection = makeSelection([a, b]);
 
-    (groupAction.invoker as ImmediateInvoker).run({ scene, selection } as never, undefined as never);
+    (groupAction.invoker as ImmediateInvoker).run({ scene, operands: selection } as never, undefined as never);
 
     expect(scene.get(a)!.pose).toEqual({ x: 0, y: 0, width: 10, height: 10 });
     expect(scene.get(b)!.pose).toEqual({ x: 20, y: 30, width: 10, height: 10 });
@@ -105,7 +105,7 @@ describe('groupAction.run', () => {
     const before = scene.nodes.size;
     const selection = makeSelection([]);
 
-    (groupAction.invoker as ImmediateInvoker).run({ scene, selection } as never, undefined as never);
+    (groupAction.invoker as ImmediateInvoker).run({ scene, operands: selection } as never, undefined as never);
 
     expect(scene.nodes.size).toBe(before);
     expect(selection.get()).toEqual([]);
@@ -117,7 +117,7 @@ describe('groupAction.run', () => {
     const b = scene.add({ kind: 'mark', layer: 'main', pose: { x: 20, y: 30, width: 10, height: 10 }, data: {} });
     const selection = makeSelection([a, b]);
 
-    (groupAction.invoker as ImmediateInvoker).run({ scene, selection } as never, undefined as never);
+    (groupAction.invoker as ImmediateInvoker).run({ scene, operands: selection } as never, undefined as never);
 
     const containerId = selection.get()[0]!;
     expect(scene.get(containerId)!.kind).toBe('group');
@@ -139,7 +139,7 @@ describe('groupAction.run — applyOps routing', () => {
     const selection = makeSelection([a, b]);
     const applyOps = vi.fn<(ops: Op[], label: string) => void>();
 
-    (groupAction.invoker as ImmediateInvoker).run({ scene, selection, applyOps } as never, undefined as never);
+    (groupAction.invoker as ImmediateInvoker).run({ scene, operands: selection, applyOps } as never, undefined as never);
 
     // applyOps owns the commit — exactly one call with the right label.
     expect(applyOps).toHaveBeenCalledOnce();
@@ -183,7 +183,7 @@ describe('groupAction.run — applyOps routing', () => {
     const selection = makeSelection([]);
     const applyOps = vi.fn<(ops: Op[], label: string) => void>();
 
-    (groupAction.invoker as ImmediateInvoker).run({ scene, selection, applyOps } as never, undefined as never);
+    (groupAction.invoker as ImmediateInvoker).run({ scene, operands: selection, applyOps } as never, undefined as never);
 
     expect(applyOps).not.toHaveBeenCalled();
   });
@@ -197,11 +197,11 @@ describe('ungroupAction.run', () => {
     const selection = makeSelection([a, b]);
 
     // First group the two nodes, then ungroup the resulting container.
-    (groupAction.invoker as ImmediateInvoker).run({ scene, selection } as never, undefined as never);
+    (groupAction.invoker as ImmediateInvoker).run({ scene, operands: selection } as never, undefined as never);
     const containerId = selection.get()[0]!;
     selection.set([containerId]);
 
-    (ungroupAction.invoker as ImmediateInvoker).run({ scene, selection } as never, undefined as never);
+    (ungroupAction.invoker as ImmediateInvoker).run({ scene, operands: selection } as never, undefined as never);
 
     expect(scene.get(containerId)).toBeUndefined();
     expect(scene.get(a)!.parent).toBe(null);
@@ -214,7 +214,7 @@ describe('ungroupAction.run', () => {
     const a = scene.add({ kind: 'mark', layer: 'main', pose: { x: 0, y: 0, width: 10, height: 10 }, data: {} });
     const selection = makeSelection([a]);
 
-    (ungroupAction.invoker as ImmediateInvoker).run({ scene, selection } as never, undefined as never);
+    (ungroupAction.invoker as ImmediateInvoker).run({ scene, operands: selection } as never, undefined as never);
 
     expect(scene.get(a)).toBeDefined();
     expect(scene.get(a)!.kind).toBe('mark');
@@ -228,15 +228,15 @@ describe('ungroupAction.run', () => {
 
     // Group b into container B, then group a + B into container A.
     let selection = makeSelection([b]);
-    (groupAction.invoker as ImmediateInvoker).run({ scene, selection } as never, undefined as never);
+    (groupAction.invoker as ImmediateInvoker).run({ scene, operands: selection } as never, undefined as never);
     const containerB = selection.get()[0]!;
 
     selection = makeSelection([a, containerB]);
-    (groupAction.invoker as ImmediateInvoker).run({ scene, selection } as never, undefined as never);
+    (groupAction.invoker as ImmediateInvoker).run({ scene, operands: selection } as never, undefined as never);
     const containerA = selection.get()[0]!;
 
     selection.set([containerA]);
-    (ungroupAction.invoker as ImmediateInvoker).run({ scene, selection } as never, undefined as never);
+    (ungroupAction.invoker as ImmediateInvoker).run({ scene, operands: selection } as never, undefined as never);
 
     expect(scene.get(containerA)).toBeUndefined();
     // a and B both float up to A's parent (root).
@@ -258,7 +258,7 @@ describe('groupAction.run — undo restores paint order', () => {
     const c = scene.add({ kind: 'mark', layer: 'main', pose, data: {} });
     const selection = makeSelection([b]);
 
-    (groupAction.invoker as ImmediateInvoker).run({ scene, selection } as never, undefined as never);
+    (groupAction.invoker as ImmediateInvoker).run({ scene, operands: selection } as never, undefined as never);
     scene.undo();
 
     expect([...scene.roots]).toEqual([a, b, c]);
@@ -273,7 +273,7 @@ describe('groupAction.run — undo restores paint order', () => {
     const c = scene.add({ kind: 'mark', layer: 'main', pose, data: {}, parent: box });
     const selection = makeSelection([b]);
 
-    (groupAction.invoker as ImmediateInvoker).run({ scene, selection } as never, undefined as never);
+    (groupAction.invoker as ImmediateInvoker).run({ scene, operands: selection } as never, undefined as never);
     scene.undo();
 
     expect([...scene.childrenOf(box)]).toEqual([a, b, c]);
@@ -293,7 +293,7 @@ describe('groupAction.run — undo restores document order for a multi-node grou
     const { scene, a, b, c, d, e } = fiveRoots();
     const selection = makeSelection([b, c, d]);
 
-    (groupAction.invoker as ImmediateInvoker).run({ scene, selection } as never, undefined as never);
+    (groupAction.invoker as ImmediateInvoker).run({ scene, operands: selection } as never, undefined as never);
     scene.undo();
 
     expect([...scene.roots]).toEqual([a, b, c, d, e]);
@@ -303,7 +303,7 @@ describe('groupAction.run — undo restores document order for a multi-node grou
     const { scene, a, b, c, d, e } = fiveRoots();
     const selection = makeSelection([b, d]);
 
-    (groupAction.invoker as ImmediateInvoker).run({ scene, selection } as never, undefined as never);
+    (groupAction.invoker as ImmediateInvoker).run({ scene, operands: selection } as never, undefined as never);
     scene.undo();
 
     expect([...scene.roots]).toEqual([a, b, c, d, e]);
@@ -313,7 +313,7 @@ describe('groupAction.run — undo restores document order for a multi-node grou
     const { scene, a, b, c, d, e } = fiveRoots();
     const selection = makeSelection([b, d]);
 
-    (groupAction.invoker as ImmediateInvoker).run({ scene, selection } as never, undefined as never);
+    (groupAction.invoker as ImmediateInvoker).run({ scene, operands: selection } as never, undefined as never);
     const containerId = selection.get()[0]!;
 
     expect([...scene.roots]).toEqual([a, c, containerId, e]);
@@ -323,7 +323,7 @@ describe('groupAction.run — undo restores document order for a multi-node grou
     const { scene, b, c, d } = fiveRoots();
     const selection = makeSelection([d, b, c]);
 
-    (groupAction.invoker as ImmediateInvoker).run({ scene, selection } as never, undefined as never);
+    (groupAction.invoker as ImmediateInvoker).run({ scene, operands: selection } as never, undefined as never);
 
     expect([...scene.childrenOf(selection.get()[0]!)]).toEqual([b, c, d]);
   });
@@ -332,7 +332,7 @@ describe('groupAction.run — undo restores document order for a multi-node grou
     const { scene, a, b, c, d, e } = fiveRoots();
     const selection = makeSelection([b, c, d]);
 
-    (groupAction.invoker as ImmediateInvoker).run({ scene, selection } as never, undefined as never);
+    (groupAction.invoker as ImmediateInvoker).run({ scene, operands: selection } as never, undefined as never);
     const containerId = selection.get()[0]!;
     scene.undo();
     scene.redo();
@@ -357,7 +357,7 @@ describe('groupAction — non-rect poses', () => {
     const b = scene.add({ kind: 'mark', layer: 'main', pose: circle(40, 0, 10), data: {} });
     const selection = makeSelection([a, b]);
     (groupAction.invoker as ImmediateInvoker).run(
-      { scene, selection, poseDescriptor: CIRCLE_POSE_DESCRIPTOR } as never,
+      { scene, operands: selection, poseDescriptor: CIRCLE_POSE_DESCRIPTOR } as never,
       undefined as never,
     );
     const g = selection.get()[0]!;
@@ -371,7 +371,7 @@ describe('ungroupAction enabled', () => {
     const scene = makeScene();
     const leaf = scene.add({ kind: 'mark', layer: 'main', pose: { x: 0, y: 0, width: 1, height: 1 }, data: {} });
     const box = scene.add({ kind: 'group', layer: 'main', pose: { x: 0, y: 0, width: 1, height: 1 }, data: {} });
-    expect(ungroupAction.enabled?.(stubDeps({ scene, selection: makeSelection([leaf]) }))).toBe('not-applicable');
-    expect(ungroupAction.enabled?.(stubDeps({ scene, selection: makeSelection([leaf, box]) }))).toBe(true);
+    expect(ungroupAction.enabled?.(stubDeps({ scene, operands: makeSelection([leaf]) }))).toBe('not-applicable');
+    expect(ungroupAction.enabled?.(stubDeps({ scene, operands: makeSelection([leaf, box]) }))).toBe(true);
   });
 });

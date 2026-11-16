@@ -27,7 +27,7 @@ import {
 } from 'domains/ingestion/contentHandlers';
 import type { IngestItem } from '@weasel-js/routing';
 import { previewIngest } from 'domains/ingestion/ghost';
-import { defaultCommitAdapter } from '../defaultCommitAdapter';
+import { defaultCommitAdapter, operandMethods } from '../defaultCommitAdapter';
 import { MOVE_NODES_REQUIRES } from '../moveNodes';
 import type { IngestParams } from '../actionParamSchema';
 
@@ -57,8 +57,8 @@ export function ingestFromEvent(
   const ingestion = deps.ingestion;
   const insert = deps.insert;
   const scene = deps.scene;
-  const selection = deps.selection;
-  if (!ingestion || !insert || !scene || !selection) return;
+  const operands = deps.operands;
+  if (!ingestion || !insert || !scene || !operands) return;
   const applyOps = deps.applyOps;
 
   const point = params?.world ?? null;
@@ -70,10 +70,10 @@ export function ingestFromEvent(
     insert,
     applyOps: (ops, label) => {
       if (applyOps) applyOps(ops, label ?? 'Ingest');
-      else scene.applyBatch(ops, label ?? 'Ingest', defaultCommitAdapter(scene, selection.adapterMethods));
+      else scene.applyBatch(ops, label ?? 'Ingest', defaultCommitAdapter(scene, operandMethods(operands)));
     },
     scene,
-    selection,
+    operands,
     // Snapshot per ingest event — intentional. The dep's live getters are
     // fresh at dispatch time, and one consistent resolver per drop/paste
     // beats half a multi-file drop resolving through a swapped-in one.

@@ -28,8 +28,8 @@ import type { AnyScene } from 'core/scene/anyScene';
  *  or whose own frame is singular, so a member could not keep its place. `enabled` and `run` both read this. */
 function groupPlan(deps: ActionDeps) {
   const scene = deps.scene;
-  if (!deps.selection || !scene) return null;
-  const ids = selectedRoots(scene, deps.selection.get() as readonly string[]);
+  if (!deps.operands || !scene) return null;
+  const ids = selectedRoots(scene, deps.operands.get() as readonly string[]);
   const nodes = inPaintOrder(scene, ids
     .map((id) => scene.get(id as NodeId))
     .filter((n): n is NonNullable<typeof n> => n !== undefined));
@@ -86,7 +86,7 @@ export const groupAction: Action & { requires: string[] } = {
   group: 'structure',
   defaultBinding: [{ spec: { kind: 'key', key: 'g', mods: { mod: true }, phase: BETWEEN_GESTURES }, opts: { id: 'group.key' } }],
   eligible: { capability: 'edits-page' },
-  requires: ['scene', 'selection', 'applyOps', 'poseDescriptor'],
+  requires: ['scene', 'operands', 'applyOps', 'poseDescriptor'],
   invoker: {
     timing: 'immediate',
     run: (deps) => {
@@ -240,12 +240,12 @@ export const ungroupAction: Action & { requires: string[] } = {
   group: 'structure',
   defaultBinding: [{ spec: { kind: 'key', key: 'g', mods: { mod: true, shift: true }, phase: BETWEEN_GESTURES }, opts: { id: 'ungroup.key' } }],
   eligible: { capability: 'edits-page' },
-  requires: ['scene', 'selection', 'applyOps'],
+  requires: ['scene', 'operands', 'applyOps'],
   invoker: {
     timing: 'immediate',
     run: (deps) => {
       const scene = deps.scene;
-      if (!deps.selection || !scene) return;
+      if (!deps.operands || !scene) return;
       const plan = ungroupPlan(scene, selectedContent(deps));
       if (!plan || plan.locked) return;
       const ops = ungroupOps(scene, plan);

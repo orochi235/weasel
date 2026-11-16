@@ -42,7 +42,7 @@ function rig(sources: readonly SnapSource[]) {
   };
   let selected: string[] = [id];
   const selection = { get: () => selected, set: (ids: string[]) => { selected = ids; } } as unknown as SelectionApi;
-  const deps = { scene, selection, snap };
+  const deps = { scene, operands: selection, snap };
   let from: Point = { x: 0, y: 0 };
   const at = (p: Point, mods: Partial<typeof KEYS> = {}) => ({
     world: p, screen: p, modifiers: { ...KEYS, ...mods }, deps,

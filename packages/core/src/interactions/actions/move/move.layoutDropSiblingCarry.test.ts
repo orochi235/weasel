@@ -41,7 +41,7 @@ describe('moveAction — layout drop shifting a sibling container', () => {
       screen: { x: 0, y: 0 },
       modifiers: { alt: false, ctrl: false, meta: false, shift: false },
       deps: {
-        selection: { get: () => [dragged] as NodeId[] },
+        operands: { get: () => [dragged] as NodeId[] },
         scene,
         layout: { getLayout: (cid: string) => (cid === box ? layout : null) },
       },

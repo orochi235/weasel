@@ -1,10 +1,10 @@
 import type { Scene } from 'core/scene/types';
-import type { SelectionApi } from 'core/selection/useSelection';
+import type { OperandsDep } from 'interactions/actions/operands';
 import type { Op } from 'core/ops/types';
 import type { PoseDescriptor } from '../resize/geometry';
 import { poseDescriptorOf } from '../poseDescriptorDep';
 import { ActionDisabledReason, type Action } from '@weasel-js/routing';
-import { defaultCommitAdapter } from '../defaultCommitAdapter';
+import { defaultCommitAdapter, operandMethods } from '../defaultCommitAdapter';
 import { transformApplyOps } from '../transformFinish';
 import { requiresSelection } from './requiresSelection';
 import type { GeometryProjection } from '../geometryProjection';
@@ -20,7 +20,7 @@ import { recordTransform } from '../transform-again/memory';
  * moves. Returns whether anything moved.
  */
 export function translateSelection(
-  selection: Pick<SelectionApi, 'get' | 'adapterMethods'>,
+  selection: Pick<OperandsDep, 'get' | 'set'>,
   scene: Scene<unknown, string, unknown>,
   dx: number,
   dy: number,
@@ -32,7 +32,7 @@ export function translateSelection(
   const ops = moveNodesOps(scene, selection.get() as readonly string[], { dx, dy }, { poseDescriptor: d, geometryProjection }, label);
   if (ops.length === 0) return false;
 
-  if (!applyOps) return scene.applyBatch(ops, label, defaultCommitAdapter(scene, selection.adapterMethods));
+  if (!applyOps) return scene.applyBatch(ops, label, defaultCommitAdapter(scene, operandMethods(selection)));
   return applyOps(ops, label) !== false;
 }
 
@@ -50,12 +50,12 @@ function makeNudgeAction(dir: NudgeDirection): Action & { requires: string[] } {
       { spec: nudgeSpec(dir, true), opts: { id: `nudge.${dir}.big`, params: { magnitude: 'big' } } },
     ],
     eligible: { capability: 'transforms-selection' },
-    requires: ['selection', 'scene', 'applyOps', 'geometryProjection', 'poseDescriptor', 'transformFollowers'],
+    requires: ['operands', 'scene', 'applyOps', 'geometryProjection', 'poseDescriptor', 'transformFollowers'],
     invoker: {
       timing: 'immediate',
       run: (deps, params) => {
         const { dx, dy } = nudgeDelta(dir, params?.magnitude);
-        const selection = deps.selection;
+        const selection = deps.operands;
         const scene = deps.scene;
         const applyOps = transformApplyOps(deps);
         const geometryProjection = deps.geometryProjection;
@@ -70,7 +70,7 @@ function makeNudgeAction(dir: NudgeDirection): Action & { requires: string[] } {
       const given = requiresSelection(deps);
       if (given !== true || !deps?.scene) return given;
       const { dx, dy } = nudgeDelta(dir, params?.magnitude);
-      const ops = moveNodesOps(deps.scene, deps.selection!.get() as readonly string[], { dx, dy }, deps, 'Nudge');
+      const ops = moveNodesOps(deps.scene, deps.operands!.get() as readonly string[], { dx, dy }, deps, 'Nudge');
       return ops.length > 0 ? true : ActionDisabledReason.NotApplicable;
     },
   };

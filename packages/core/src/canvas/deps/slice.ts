@@ -10,7 +10,7 @@ import { useDepSource } from '@weasel-js/routing/react';
 import { useLatest } from '@weasel-js/react';
 import type { SliceDep } from 'interactions/actions/depSchema';
 import type { Scene, NodeId, Node } from 'core/scene/types';
-import type { SelectionApi } from 'core/selection/useSelection';
+import type { OperandsDep } from 'interactions/actions/operands';
 import type { Op } from 'core/ops/types';
 import { AUTO_POSE_DESCRIPTOR } from 'core/geometry/autoPoseDescriptor';
 import { poseDescriptorForNode, type PoseDescriptor } from 'core/geometry/poseDescriptor';
@@ -37,16 +37,16 @@ export interface OpsApplier {
  * no piece could be stored, is passed over. A piece keeps the
  * source's rotation in its pose when the descriptor can write one
  * (`withRotation`), and has the rotation baked into its path otherwise. The
- * pieces of a selected leaf take its place in the selection.
+ * pieces of a leaf among `operands` take its place there.
  */
 export function useSliceDepSource(
   scene: Scene<unknown, string, unknown>,
-  selection: SelectionApi,
+  operands: OperandsDep,
   adapter: OpsApplier,
   poseDescriptor?: PoseDescriptor<unknown>,
 ): void {
   const sceneRef = useLatest(scene);
-  const selectionRef = useLatest(selection);
+  const operandsRef = useLatest(operands);
   const adapterRef = useLatest(adapter);
   const descriptorRef = useLatest(poseDescriptor);
 
@@ -69,7 +69,7 @@ export function useSliceDepSource(
         leaves.push({ node, index: siblingIndex(sc, node), worldPath: pathInWorld(path, drawn.box) });
       }
 
-      const sel = selectionRef.current;
+      const sel = operandsRef.current;
       const { ops, nextSelection } = computeSliceOps({
         leaves,
         cut,

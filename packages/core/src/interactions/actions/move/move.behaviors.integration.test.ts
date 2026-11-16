@@ -37,7 +37,7 @@ function ctx(
     world: drag ? { x: drag.current.x, y: drag.current.y } : { x: 0, y: 0 },
     screen: { x: 0, y: 0 },
     modifiers: { alt: false, ctrl: false, meta: false, shift: false },
-    deps: { selection: stubSelection(ids), scene },
+    deps: { operands: stubSelection(ids), scene },
     drag,
   } as unknown as InvocationCtx;
 }

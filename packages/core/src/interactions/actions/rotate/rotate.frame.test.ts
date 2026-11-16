@@ -27,7 +27,7 @@ function ctxAt(scene: Scene<unknown, string, unknown>, x: number, y: number): In
     screen: { x: 0, y: 0 },
     modifiers: { alt: false, ctrl: false, meta: false, shift: false },
     deps: {
-      selection: { get: () => IDS },
+      operands: { get: () => IDS },
       scene,
     },
   } as unknown as InvocationCtx;

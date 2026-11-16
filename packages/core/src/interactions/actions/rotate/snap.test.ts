@@ -42,7 +42,7 @@ function rig(opts: { rotation?: number; others?: readonly number[]; selected?: r
     }),
   };
   const deps = {
-    scene, selection: { get: () => ids, set: () => {} } as unknown as SelectionApi,
+    scene, operands: { get: () => ids, set: () => {} } as unknown as SelectionApi,
     ...(opts.snap === false ? {} : { snap }),
   };
   const at = (p: Point, mods: Partial<typeof KEYS> = {}) => ({

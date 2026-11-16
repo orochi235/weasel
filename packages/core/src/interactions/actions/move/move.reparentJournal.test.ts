@@ -35,7 +35,7 @@ describe('moveAction — a refused reparent under an active journal', () => {
 
     const invoker = moveAction.invoker!;
     if (invoker.timing !== 'ongoing') throw new Error('expected ongoing');
-    const deps = { selection: { get: () => [A] }, scene, nodeAtPoint: () => T };
+    const deps = { operands: { get: () => [A] }, scene, nodeAtPoint: () => T };
     const handle = invoker.start(
       { world: { x: 5, y: 5 }, modifiers: MODS, deps } as unknown as InvocationCtx,
       { params: { reparentOnDrop: 'top', onGestureEnd } },

@@ -31,14 +31,14 @@ export const rotateAction: Action = inPlane(defineAction({
   // (`selectionRotateBindings`).
   eligible: { capability: 'transforms-selection' },
   modifierRoles: SNAP_ROLES,
-  requires: ['selection', 'scene', 'applyOps', 'poseDescriptor', 'view', 'boundsIncludeStroke', 'drawnBoxes', 'kitSettings', 'snap', 'transformFollowers'],
+  requires: ['operands', 'scene', 'applyOps', 'poseDescriptor', 'view', 'boundsIncludeStroke', 'drawnBoxes', 'kitSettings', 'snap', 'transformFollowers'],
   invoker: {
     timing: 'ongoing',
     start(ctx, opts) {
       const begun = beginRotate(ctx, opts);
       if (!begun) return {};
       const { session, readers } = begun;
-      const subject = [...(ctx.deps.selection?.get() ?? [])] as string[];
+      const subject = [...(ctx.deps.operands?.get() ?? [])] as string[];
       const hold = session.scene.overrides.hold();
       const preview = transformPreview(ctx.deps, session.scene, () => frame.previews);
       let frame: RotateFrame = { swept: 0, delta: 0, previews: new Map() };

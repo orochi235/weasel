@@ -19,7 +19,7 @@ function setup(policy: Partial<ResizePolicy<unknown>>) {
     screen: { x: 0, y: 0 },
     modifiers: { alt: false, ctrl: false, meta: false, shift: false },
     deps: {
-      selection: { get: () => [a] as NodeId[] },
+      operands: { get: () => [a] as NodeId[] },
       scene: scene,
       resizePolicy: { constraints: [], expandIds: (ids: string[]) => ids, ...policy },
     },
@@ -121,7 +121,7 @@ describe('resizeAction — the box a constraint reads', () => {
       screen: { x: 0, y: 0 },
       modifiers: { alt: false, ctrl: false, meta: false, shift: false },
       deps: {
-        selection: { get: () => [a, b] as NodeId[] },
+        operands: { get: () => [a, b] as NodeId[] },
         scene,
         resizePolicy: { constraints: [constraint], expandIds: (ids: string[]) => ids },
       },

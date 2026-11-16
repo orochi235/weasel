@@ -70,7 +70,7 @@ function makeCtx(
     screen: { x: 0, y: 0 },
     modifiers: { alt: false, ctrl: false, meta: false, shift: false },
     deps: stubDeps({
-      selection: { get: () => selectionIds as NodeId[] },
+      operands: { get: () => selectionIds as NodeId[] },
       scene: makeStubScene(sceneNodes),
     }),
     drag: {
@@ -111,7 +111,7 @@ describe('resizeAction descriptor', () => {
   });
 
   it('requires selection and scene deps', () => {
-    expect(resizeAction.requires).toContain('selection');
+    expect(resizeAction.requires).toContain('operands');
     expect(resizeAction.requires).toContain('scene');
   });
 
@@ -185,7 +185,7 @@ describe('resizeAction descriptor', () => {
       screen: { x: 100, y: 100 },
       modifiers: { alt: false, ctrl: false, meta: false, shift: false },
       deps: stubDeps({
-        selection: { get: () => ['a' as NodeId] },
+        operands: { get: () => ['a' as NodeId] },
         scene,
       }),
       drag: {
@@ -226,7 +226,7 @@ describe('resizeAction descriptor', () => {
       screen: { x: 0, y: 0 },
       modifiers: { alt: false, ctrl: false, meta: false, shift: false },
       deps: stubDeps({
-        selection: { get: () => ['a' as NodeId] },
+        operands: { get: () => ['a' as NodeId] },
         scene,
       }),
       drag: {
@@ -263,7 +263,7 @@ describe('resizeAction descriptor', () => {
       screen: { x: 100, y: 100 },
       modifiers: { alt: false, ctrl: false, meta: false, shift: false },
       deps: stubDeps({
-        selection: { get: () => ['a' as NodeId] },
+        operands: { get: () => ['a' as NodeId] },
         scene,
       }),
       drag: {
@@ -299,7 +299,7 @@ describe('resizeAction descriptor', () => {
       screen: { x: 100, y: 100 },
       modifiers: { alt: false, ctrl: false, meta: false, shift: false },
       deps: stubDeps({
-        selection: { get: () => ['a' as NodeId] },
+        operands: { get: () => ['a' as NodeId] },
         scene,
       }),
       drag: {
@@ -335,7 +335,7 @@ describe('resizeAction descriptor', () => {
       screen: { x: 100, y: 100 },
       modifiers: { alt: false, ctrl: false, meta: false, shift: false },
       deps: stubDeps({
-        selection: { get: () => ['a' as NodeId] },
+        operands: { get: () => ['a' as NodeId] },
         scene,
         applyOps,
       }),
@@ -418,7 +418,7 @@ describe('resizeAction — the scene sees the in-flight pose', () => {
       world: { x: 100, y: 100 },
       screen: { x: 100, y: 100 },
       modifiers: { alt: false, ctrl: false, meta: false, shift: false },
-      deps: stubDeps({ selection: { get: () => ['a' as NodeId] }, scene }),
+      deps: stubDeps({ operands: { get: () => ['a' as NodeId] }, scene }),
       drag: {
         start: { x: 100, y: 100 },
         current: { x: 100, y: 100 },

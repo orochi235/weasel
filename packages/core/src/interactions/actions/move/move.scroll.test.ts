@@ -24,7 +24,7 @@ function ctx(scene: S, ids: string[], drag?: { start: { x: number; y: number }; 
     world: drag ? drag.current : { x: 0, y: 0 },
     screen: { x: 0, y: 0 },
     modifiers: { alt: false, ctrl: false, meta: false, shift: false },
-    deps: { selection: { get: () => ids } as unknown as SelectionApi, scene },
+    deps: { operands: { get: () => ids } as unknown as SelectionApi, scene },
     drag,
   } as unknown as InvocationCtx;
 }

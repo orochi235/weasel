@@ -32,7 +32,7 @@ function drag(
   params: Record<string, unknown> = {},
   to = 200,
 ) {
-  const base = { world: { x: 5, y: 5 }, modifiers: MODS, deps: { selection: { get: () => [A] }, scene, ...deps } };
+  const base = { world: { x: 5, y: 5 }, modifiers: MODS, deps: { operands: { get: () => [A] }, scene, ...deps } };
   const invoker = moveAction.invoker!;
   if (invoker.timing !== 'ongoing') throw new Error('expected ongoing');
   const handle = invoker.start(base as unknown as InvocationCtx, { params } as BindingOptions);

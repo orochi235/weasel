@@ -61,7 +61,7 @@ function rig(sources: readonly SnapSource[], build: (scene: AnyScene) => string[
       });
     },
   };
-  const deps = { scene, selection: { get: () => [ids[0]], set: () => {} } as unknown as SelectionApi, snap };
+  const deps = { scene, operands: { get: () => [ids[0]], set: () => {} } as unknown as SelectionApi, snap };
   let from: Point = { x: 0, y: 0 };
   const at = (p: Point, mods: Partial<typeof KEYS> = {}) => ({
     world: p, screen: p, modifiers: { ...KEYS, ...mods }, deps,

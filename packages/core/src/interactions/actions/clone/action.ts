@@ -7,15 +7,15 @@
  */
 
 import type { Action } from '@weasel-js/routing';
+import type { OperandsDep } from 'interactions/actions/operands';
 import type { BindingOptions, InvocationCtx, OngoingHandle } from '@weasel-js/routing';
 import type { Scene, NodeId } from 'core/scene/types';
 import type { Op } from 'core/ops/types';
-import { defaultCommitAdapter, selectionMethods } from '../defaultCommitAdapter';
+import { defaultCommitAdapter, operandMethods } from '../defaultCommitAdapter';
 import { createSetSelectionOp } from 'core/ops/select';
 import { runBehaviorCancel, runBehaviorSettled } from '../gestureLifecycle';
 import { startCloneBehaviors, type CloneBehaviors } from './behaviors';
 import type { CloneEnd } from '../../gestures/types';
-import type { SelectionApi } from 'core/selection/useSelection';
 import { copySelection } from '../defaults/copySubtree';
 import { selectedRoots, translateTargets } from '../selectionSubtree';
 import { nodeDescriptors, poseDescriptorOf } from '../poseDescriptorDep';
@@ -74,7 +74,7 @@ function landed(scratch: CloneScratch, id: NodeId, dx: number, dy: number): unkn
  *  with a `placement`, each copied root goes under its parent instead, at its
  *  pose there when it has one. `null` when a copy would land in a singular
  *  frame, so the clone refuses whole. */
-function copyOps(scratch: CloneScratch, selection: SelectionApi, placement?: Parameters<CloneEnd['copyOps']>[0]): Op[] | null {
+function copyOps(scratch: CloneScratch, selection: OperandsDep, placement?: Parameters<CloneEnd['copyOps']>[0]): Op[] | null {
   const { dx, dy } = scratch.currentDelta;
   const parent = placement?.parentId as NodeId | null | undefined;
   let refused = false;
@@ -103,10 +103,10 @@ function copyOps(scratch: CloneScratch, selection: SelectionApi, placement?: Par
 
 /** Commit the drag: a behavior's ops when one claims it, else the copies,
  *  which become the selection. Returns whether anything was committed. */
-function commitClone(scratch: CloneScratch, behaviors: CloneBehaviors, selection: SelectionApi): boolean {
+function commitClone(scratch: CloneScratch, behaviors: CloneBehaviors, selection: OperandsDep): boolean {
   // False when a container refused the copies: the scene reverted them.
   const apply = (ops: Op[]): boolean => {
-    if (!scratch.applyOps) return scratch.scene.applyBatch(ops, 'Clone', defaultCommitAdapter(scratch.scene, selectionMethods(selection)));
+    if (!scratch.applyOps) return scratch.scene.applyBatch(ops, 'Clone', defaultCommitAdapter(scratch.scene, operandMethods(selection)));
     scratch.applyOps(ops, 'Clone');
     return true;
   };
@@ -133,11 +133,11 @@ export const cloneAction: Action & { requires: string[] } = inPlane({
   activeCursor: 'copy',
   eligible: { capability: ['edits-page', 'creates-selection'] },
   modifierRoles: SNAP_ROLES,
-  requires: ['selection', 'scene', 'applyOps', 'poseDescriptor', 'boundsIncludeStroke', 'drawnBoxes', 'kitSettings', 'snap'],
+  requires: ['operands', 'scene', 'applyOps', 'poseDescriptor', 'boundsIncludeStroke', 'drawnBoxes', 'kitSettings', 'snap'],
   invoker: {
     timing: 'ongoing',
     start(ctx: InvocationCtx, opts?: BindingOptions): OngoingHandle {
-      const selection = ctx.deps.selection;
+      const selection = ctx.deps.operands;
       const scene = ctx.deps.scene;
       const applyOps = ctx.deps.applyOps;
 

@@ -74,7 +74,7 @@ describe('clipboardCutAction (descriptor)', () => {
     clipboard.copy.mockImplementation(() => { order.push('copy'); });
     const applyOps = vi.fn((ops: Op[], label: string) => { order.push(`apply:${label}:${ops.length}`); });
 
-    (clipboardCutAction.invoker as ImmediateInvoker).run({ clipboard, scene, selection, applyOps } as never);
+    (clipboardCutAction.invoker as ImmediateInvoker).run({ clipboard, scene, operands: selection, applyOps } as never);
 
     expect(order).toEqual(['copy', 'apply:Cut:3']);
     expect(applyBatchLog).toHaveLength(0);
@@ -85,7 +85,7 @@ describe('clipboardCutAction (descriptor)', () => {
   it('falls back to scene.applyBatch without an applyOps hook', () => {
     const { scene, applyBatchLog } = makeStubScene(['a']);
     (clipboardCutAction.invoker as ImmediateInvoker).run({
-      clipboard: makeClipboard(), scene, selection: makeSelection(['a']),
+      clipboard: makeClipboard(), scene, operands: makeSelection(['a']),
     } as never);
     expect(applyBatchLog.map((e) => e.label)).toEqual(['Cut']);
   });
@@ -94,7 +94,7 @@ describe('clipboardCutAction (descriptor)', () => {
     const { scene } = makeStubScene([]);
     const clipboard = makeClipboard();
     (clipboardCutAction.invoker as ImmediateInvoker).run({
-      clipboard, scene, selection: makeSelection([]),
+      clipboard, scene, operands: makeSelection([]),
     } as never);
     expect(clipboard.copy).not.toHaveBeenCalled();
   });

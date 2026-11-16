@@ -37,7 +37,7 @@ function dropInto(params: Record<string, unknown>) {
   const base = {
     world: { x: 5, y: 5 },
     modifiers: MODS,
-    deps: { selection: { get: () => [A] }, scene, layout: { getLayout: (id: string) => (id === T ? refusing : null) } },
+    deps: { operands: { get: () => [A] }, scene, layout: { getLayout: (id: string) => (id === T ? refusing : null) } },
   };
   const handle = invoker.start(base as unknown as InvocationCtx, { params: { onGestureEnd, ...params } });
   const drag = { start: { x: 5, y: 5 }, current: { x: 200, y: 200 }, delta: { x: 195, y: 195 } };

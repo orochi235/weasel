@@ -31,7 +31,7 @@ function ctx(
     world: at,
     screen: { x: 0, y: 0 },
     modifiers: { alt: false, ctrl: false, meta: false, shift: false },
-    deps: { selection: { get: () => [ID] as NodeId[] }, scene, drawnBoxes: inkBoxes, ...extra },
+    deps: { operands: { get: () => [ID] as NodeId[] }, scene, drawnBoxes: inkBoxes, ...extra },
     drag: {
       start, current: at, delta: { x: at.x - start.x, y: at.y - start.y },
       affordance: { kind: 'handle:bottom-right', targetIds: [ID as string], anchor: { x: 'min', y: 'min' } },

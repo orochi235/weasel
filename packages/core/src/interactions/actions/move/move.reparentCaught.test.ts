@@ -40,7 +40,7 @@ function fixture(gliding: NodeId, selected: NodeId[]) {
       world: { x: 5, y: 5 },
       modifiers: MODS,
       deps: {
-        selection: { get: () => selected },
+        operands: { get: () => selected },
         scene: scene as unknown as Scene<unknown, string, unknown>,
         nodeAtPoint: () => T,
         layout: { getLayout: () => null, reflow },

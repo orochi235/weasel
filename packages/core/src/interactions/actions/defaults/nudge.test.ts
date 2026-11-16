@@ -98,7 +98,7 @@ describe('nudgeUpAction (magnitude param)', () => {
     const scene = makeStubScene({ a: { x: 10, y: 10, width: 1, height: 1 } });
     const selection = { get: () => [asNodeId('a')] };
 
-    runNudge(nudgeUpAction, { selection, scene }, { magnitude: 'small' });
+    runNudge(nudgeUpAction, { operands: selection, scene }, { magnitude: 'small' });
 
     expect(scene.poses.get('a')).toMatchObject({ x: 10, y: 9 });
   });
@@ -107,7 +107,7 @@ describe('nudgeUpAction (magnitude param)', () => {
     const scene = makeStubScene({ a: { x: 10, y: 10, width: 1, height: 1 } });
     const selection = { get: () => [asNodeId('a')] };
 
-    runNudge(nudgeUpAction, { selection, scene }, { magnitude: 'big' });
+    runNudge(nudgeUpAction, { operands: selection, scene }, { magnitude: 'big' });
 
     expect(scene.poses.get('a')).toMatchObject({ x: 10, y: 0 });
   });
@@ -116,7 +116,7 @@ describe('nudgeUpAction (magnitude param)', () => {
     const scene = makeStubScene({ a: { x: 10, y: 10, width: 1, height: 1 } });
     const selection = { get: () => [asNodeId('a')] };
 
-    runNudge(nudgeUpAction, { selection, scene }, undefined);
+    runNudge(nudgeUpAction, { operands: selection, scene }, undefined);
 
     expect(scene.poses.get('a')).toMatchObject({ x: 10, y: 9 });
   });
@@ -125,7 +125,7 @@ describe('nudgeUpAction (magnitude param)', () => {
     const scene = makeStubScene({ a: { x: 10, y: 10, width: 1, height: 1 } });
     const selection = { get: () => [asNodeId('a')] };
 
-    runNudge(nudgeUpAction, { selection, scene }, { magnitude: 'small' });
+    runNudge(nudgeUpAction, { operands: selection, scene }, { magnitude: 'small' });
 
     expect(scene.batchLog).toHaveLength(1);
     expect(scene.batchLog[0].label).toBe('Nudge');
@@ -138,7 +138,7 @@ describe('nudgeUpAction (magnitude param)', () => {
     const selection = { get: () => [asNodeId('a')] };
     const applyOps = vi.fn();
 
-    runNudge(nudgeUpAction, { selection, scene, applyOps }, { magnitude: 'small' });
+    runNudge(nudgeUpAction, { operands: selection, scene, applyOps }, { magnitude: 'small' });
 
     // Consumer hook owns the commit — scene.applyBatch is not used.
     expect(applyOps).toHaveBeenCalledOnce();
@@ -161,7 +161,7 @@ describe('nudgeUpAction (magnitude param)', () => {
     const selection = { get: () => [asNodeId('a'), asNodeId('b')] };
     const applyOps = vi.fn();
 
-    runNudge(nudgeRightAction, { selection, scene, applyOps }, { magnitude: 'big' });
+    runNudge(nudgeRightAction, { operands: selection, scene, applyOps }, { magnitude: 'big' });
 
     const [ops] = applyOps.mock.calls[0] as [Array<{ args: { id: string; from: Pose; to: Pose } }>];
     expect(ops).toHaveLength(2);
@@ -174,7 +174,7 @@ describe('nudgeUpAction (magnitude param)', () => {
     const applyOps = vi.fn();
     const selection = { get: () => [] };
 
-    runNudge(nudgeUpAction, { selection, scene, applyOps }, { magnitude: 'small' });
+    runNudge(nudgeUpAction, { operands: selection, scene, applyOps }, { magnitude: 'small' });
 
     expect(applyOps).not.toHaveBeenCalled();
     expect(scene.batchLog).toHaveLength(0);
@@ -182,7 +182,7 @@ describe('nudgeUpAction (magnitude param)', () => {
 
   it('enabled returns SelectionRequired until something is selected', () => {
     expect(nudgeUpAction.enabled!()).toBe(ActionDisabledReason.SelectionRequired);
-    expect(nudgeUpAction.enabled!({ selection: { get: () => ['a'] } } as never)).toBe(true);
+    expect(nudgeUpAction.enabled!({ operands: { get: () => ['a'] } } as never)).toBe(true);
   });
 });
 
@@ -197,7 +197,7 @@ describe('nudgeDownAction descriptor', () => {
     const scene = makeStubScene({ a: { x: 10, y: 10, width: 1, height: 1 } });
     const selection = { get: () => [asNodeId('a')] };
 
-    runNudge(nudgeDownAction, { selection, scene }, { magnitude: 'small' });
+    runNudge(nudgeDownAction, { operands: selection, scene }, { magnitude: 'small' });
 
     expect(scene.poses.get('a')).toMatchObject({ x: 10, y: 11 });
   });
@@ -222,7 +222,7 @@ describe('nudgeRightAction descriptor', () => {
     const scene = makeStubScene({ a: { x: 10, y: 10, width: 1, height: 1 } });
     const selection = { get: () => [asNodeId('a')] };
 
-    runNudge(nudgeRightAction, { selection, scene }, { magnitude: 'big' });
+    runNudge(nudgeRightAction, { operands: selection, scene }, { magnitude: 'big' });
 
     expect(scene.poses.get('a')).toMatchObject({ x: 20, y: 10 });
   });

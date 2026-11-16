@@ -149,7 +149,7 @@ describe('dragging a member of a group', () => {
     const base = {
       world: { x: 5, y: 5 },
       modifiers: NO_MODS,
-      deps: { selection: h.sel(), scene: h.scene() },
+      deps: { operands: h.sel(), scene: h.scene() },
     };
     const inv = moveAction.invoker;
     if (!inv || inv.timing !== 'ongoing') throw new Error('expected ongoing invoker');

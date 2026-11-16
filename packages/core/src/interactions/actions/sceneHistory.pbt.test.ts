@@ -196,7 +196,7 @@ class Ungroup implements fc.Command<Model, Real> {
     if (id) r.scene.setSelection([id]);
     const before = [...r.scene.getSelection()];
     const present = ids(r.scene);
-    const deps = { scene: r.scene, selection: selectionOf(r.scene) };
+    const deps = { scene: r.scene, operands: selectionOf(r.scene) };
     const enabled = id ? ungroupAction.enabled?.(deps as never) : undefined;
     const at = r.scene.historyIndex();
     // Never throws: an ungroup the scene would refuse is disabled, and `run` agrees with `enabled`.
@@ -300,7 +300,7 @@ class OpThenInverse implements fc.Command<Model, Real> {
 
 /** Run a default action, which must not throw. */
 function invoke(action: typeof groupAction, r: Real): void {
-  (action.invoker as ImmediateInvoker).run({ scene: r.scene, selection: selectionOf(r.scene) } as never, undefined as never);
+  (action.invoker as ImmediateInvoker).run({ scene: r.scene, operands: selectionOf(r.scene) } as never, undefined as never);
 }
 
 /** Save the scene and its history as a page reload would, through JSON, and carry on in the scene rebuilt from

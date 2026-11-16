@@ -37,7 +37,7 @@ function drag(behaviors: MoveBehavior<unknown>[] = []) {
   const id = scene.add({ kind: 'mark', layer: 'main', data: {}, pose: { x: 0, y: 0, width: 10, height: 10 } }) as string;
   const deps = {
     scene, snap, poseDescriptor: landingDescriptor,
-    selection: { get: () => [id], set: () => {} } as unknown as SelectionApi,
+    operands: { get: () => [id], set: () => {} } as unknown as SelectionApi,
   };
   const start = { x: 5, y: 5 };
   const ctx = (p: { x: number; y: number }) => ({

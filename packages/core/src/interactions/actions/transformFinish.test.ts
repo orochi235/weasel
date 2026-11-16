@@ -22,7 +22,7 @@ function fixture(answer: 'follow' | 'refuse') {
     ...ops, createSetDataOp({ id: b, from: {}, to: { followed: label }, label }),
   ]));
   const deps = {
-    selection: { get: () => [a], adapterMethods: undefined } as unknown as SelectionApi,
+    operands: { get: () => [a], adapterMethods: undefined } as unknown as SelectionApi,
     scene,
     transformFollowers: [{
       finish: transformOps,
@@ -80,7 +80,7 @@ describe('whole-node transforms finish through the transformFollowers dep', () =
 
   it('finishes an align, in the align\'s one undo step', () => {
     const { scene, a, b, deps } = fixture('follow');
-    const both = { ...deps, selection: { get: () => [a, b], adapterMethods: undefined } } as unknown as ActionDeps;
+    const both = { ...deps, operands: { get: () => [a, b], adapterMethods: undefined } } as unknown as ActionDeps;
     (alignRightAction.invoker as ImmediateInvoker).run(both, undefined);
     expect(scene.get(a)!.pose).toEqual(box(50, 0));
     expect(scene.get(b)!.data).toEqual({ followed: 'Align' });

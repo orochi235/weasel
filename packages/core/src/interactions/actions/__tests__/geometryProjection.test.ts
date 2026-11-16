@@ -46,7 +46,7 @@ describe('geometryProjection seam', () => {
       transform: (node: { data: { path: Path } }, m: Affine) => ({ ...node.data, path: transformPath(node.data.path, m) }),
     };
     (nudgeRightAction.invoker as ImmediateInvoker).run(
-      { selection: { get: () => ['n'] }, scene, applyOps, geometryProjection } as never,
+      { operands: { get: () => ['n'] }, scene, applyOps, geometryProjection } as never,
       { magnitude: 'small' },
     );
     expect(boundsOfPath(datas.get('n')!.path).x).toBeCloseTo(1, 6);
@@ -59,7 +59,7 @@ describe('geometryProjection seam', () => {
       transform: (_node: unknown, _m: Affine, change: unknown) => { changes.push(change); return null; },
     };
     (nudgeRightAction.invoker as ImmediateInvoker).run(
-      { selection: { get: () => ['n'] }, scene, applyOps, geometryProjection } as never,
+      { operands: { get: () => ['n'] }, scene, applyOps, geometryProjection } as never,
       { magnitude: 'small' },
     );
     expect(changes).toEqual([{
@@ -72,7 +72,7 @@ describe('geometryProjection seam', () => {
     const path = rectPath(0, 0, 10, 10);
     const { scene, datas, applyOps } = setup(path);
     (nudgeRightAction.invoker as ImmediateInvoker).run(
-      { selection: { get: () => ['n'] }, scene, applyOps } as never,
+      { operands: { get: () => ['n'] }, scene, applyOps } as never,
       { magnitude: 'small' },
     );
     expect(datas.get('n')!.path).toBe(path);

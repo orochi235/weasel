@@ -56,7 +56,7 @@ describe('kit actions on a locked layer', () => {
   it.each(cases)('%s edits the scene while the layer is unlocked', (_name, action, pick, params) => {
     const f = fixture();
     const before = snapshot(f.scene);
-    run(action, { scene: f.scene, selection: heldSelection(pick(f)) }, params);
+    run(action, { scene: f.scene, operands: heldSelection(pick(f)) }, params);
     expect(snapshot(f.scene)).not.toEqual(before);
   });
 
@@ -66,7 +66,7 @@ describe('kit actions on a locked layer', () => {
     f.scene.setLayerLocked('art', true);
     const before = snapshot(f.scene);
     const depth = f.scene.historyIndex();
-    expect(() => run(action, { scene: f.scene, selection: heldSelection(ids) }, params)).toThrow(/locked/);
+    expect(() => run(action, { scene: f.scene, operands: heldSelection(ids) }, params)).toThrow(/locked/);
     expect(snapshot(f.scene)).toEqual(before);
     expect(f.scene.historyIndex()).toBe(depth);
   });
@@ -77,7 +77,7 @@ describe('kit actions on a locked layer', () => {
     f.scene.setLayerLocked('art', true);
     const before = snapshot(f.scene);
     const depth = f.scene.historyIndex();
-    const deps = { scene: f.scene, selection: heldSelection(ids) };
+    const deps = { scene: f.scene, operands: heldSelection(ids) };
     expect(action.enabled?.(deps as never)).toBe(ActionDisabledReason.Locked);
     run(action, deps, params);
     expect(snapshot(f.scene)).toEqual(before);

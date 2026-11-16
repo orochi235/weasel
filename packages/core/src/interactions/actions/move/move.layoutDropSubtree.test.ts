@@ -36,7 +36,7 @@ describe('moveAction — layout drop of a container', () => {
       screen: { x: 0, y: 0 },
       modifiers: { alt: false, ctrl: false, meta: false, shift: false },
       deps: {
-        selection: { get: () => [group] as NodeId[] },
+        operands: { get: () => [group] as NodeId[] },
         scene,
         layout: { getLayout: (cid: string) => (cid === box ? layout : null) },
       },

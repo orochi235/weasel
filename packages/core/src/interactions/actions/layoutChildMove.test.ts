@@ -49,7 +49,7 @@ const run = (action: { invoker?: unknown }, deps: object, params?: object) =>
 describe('a layout container whose child moves without resizing', () => {
   it('puts back a child nudged out of place, in one undo entry', () => {
     const scene = load();
-    run(nudgeRightAction, { scene, selection: { get: () => [id('a')] } }, { magnitude: 'small' });
+    run(nudgeRightAction, { scene, operands: { get: () => [id('a')] } }, { magnitude: 'small' });
     expect(scene.get(id('a'))!.pose).toEqual(at(0, 0));
     expect(scene.undo()).toBe(true);
     expect(scene.get(id('a'))!.pose).toEqual(at(0, 0));
@@ -59,7 +59,7 @@ describe('a layout container whose child moves without resizing', () => {
   it('puts back a child an align moved, and leaves a node outside any layout aligned', () => {
     const scene = load();
     scene.setPose(id('free'), at(300, 100));
-    run(alignRightAction, { scene, selection: { get: () => [id('b'), id('free')] } });
+    run(alignRightAction, { scene, operands: { get: () => [id('b'), id('free')] } });
     expect(scene.get(id('b'))!.pose).toEqual(at(0, 20));
     expect(scene.get(id('free'))!.pose).toEqual(at(300, 100));
   });

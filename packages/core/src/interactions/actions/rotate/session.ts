@@ -1,4 +1,6 @@
 import type { ActionDeps, BindingOptions, InvocationCtx } from '@weasel-js/routing';
+import { operandMethods } from 'interactions/actions/defaultCommitAdapter';
+import type { CommitSelectionMethods } from 'interactions/actions/defaultCommitAdapter';
 import { pointerStateOf } from '../pointerState';
 import { transformFinisher, type TransformFinisher } from '../transformFinish';
 import { sceneGestureFrames } from '../gestureFrames';
@@ -7,7 +9,6 @@ import type { RotateParams } from '../actionParamSchema';
 import { unionAABB } from 'core/geometry/unionBounds';
 import type { Op } from 'core/ops/types';
 import type { NodeId, Scene } from 'core/scene/types';
-import type { SelectionApi } from 'core/selection/useSelection';
 import type { Bounds } from 'core/viewport/fitViewToBounds';
 import { gestureReaders, type GestureReaders } from '../../gestures/shared/screenTolerance';
 import type { GestureContext, RotateBehavior } from '../../gestures/types';
@@ -66,7 +67,7 @@ export interface RotateSession {
   readonly applyOps?: (ops: Op[], label: string) => void;
   /** Finishes the committed batch with the other nodes that change with it. */
   readonly finish?: TransformFinisher;
-  readonly selectionMethods: SelectionApi['adapterMethods'] | undefined;
+  readonly selectionMethods: CommitSelectionMethods | undefined;
   readonly lifecycle: GestureLifecycle;
 }
 
@@ -118,7 +119,7 @@ function buildGestureContext(
   scene: Scene<unknown, string, unknown>,
   origins: ReadonlyMap<NodeId, TurnOrigin>,
   readers: GestureReaders,
-  selectionMethods: SelectionApi['adapterMethods'],
+  selectionMethods: CommitSelectionMethods | undefined,
 ): GestureContext<unknown> {
   return {
     draggedIds: [...origins.keys()] as string[],
@@ -182,7 +183,7 @@ export function beginRotate(
   ctx: InvocationCtx<RotateParams>,
   opts: BindingOptions<Partial<RotateParams>> | undefined,
 ): { session: RotateSession; readers: GestureReaders } | null {
-  const selection = ctx.deps.selection;
+  const selection = ctx.deps.operands;
   const scene = ctx.deps.scene;
   const params = resolveParams(opts?.params);
   const behaviors = (opts?.behaviors ?? []) as readonly RotateBehavior<unknown>[];
@@ -198,7 +199,7 @@ export function beginRotate(
   const { turn, originPoses, poseFrame } = captured;
   const { origins, pivot } = turn;
   const readers = gestureReaders(ctx.deps);
-  const gestureCtx = buildGestureContext(ctx, scene, origins, readers, selection.adapterMethods);
+  const gestureCtx = buildGestureContext(ctx, scene, origins, readers, operandMethods(selection));
   for (const b of behaviors) b.onStart?.(gestureCtx);
   const theta0 = origins.values().next().value?.rotation ?? 0;
 
@@ -216,7 +217,7 @@ export function beginRotate(
     gestureCtx,
     applyOps: ctx.deps.applyOps,
     finish: transformFinisher(ctx.deps),
-    selectionMethods: selection.adapterMethods,
+    selectionMethods: operandMethods(selection),
     lifecycle: readGestureLifecycle(params, 'Rotate', behaviors),
   };
   return { session, readers };

@@ -41,7 +41,7 @@ function drag(canDropInto: (parent: string) => DropVerdict, deps: object = {}, p
   const base = {
     world: { x: 5, y: 5 },
     modifiers: MODS,
-    deps: { selection: { get: () => [A] }, scene, layout: { getLayout: () => free }, canDropInto, ...deps },
+    deps: { operands: { get: () => [A] }, scene, layout: { getLayout: () => free }, canDropInto, ...deps },
   };
   const invoker = moveAction.invoker!;
   if (invoker.timing !== 'ongoing') throw new Error('expected ongoing');

@@ -31,7 +31,7 @@ function run(
   const set = vi.fn();
   (action.invoker as ImmediateInvoker).run(
     {
-      selection: { get: () => ids, set },
+      operands: { get: () => ids, set },
       scene,
     } as never,
   );

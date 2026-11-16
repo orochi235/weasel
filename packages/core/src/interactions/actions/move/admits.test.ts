@@ -23,7 +23,7 @@ function makeScene() {
 
 function dropOnto(target: string, deps: object = {}) {
   const scene = makeScene();
-  const base = { world: { x: 5, y: 5 }, modifiers: MODS, deps: { selection: { get: () => [A] }, scene, nodeAtPoint: () => target, ...deps } };
+  const base = { world: { x: 5, y: 5 }, modifiers: MODS, deps: { operands: { get: () => [A] }, scene, nodeAtPoint: () => target, ...deps } };
   const invoker = moveAction.invoker!;
   if (invoker.timing !== 'ongoing') throw new Error('expected ongoing');
   const handle = invoker.start(base as unknown as InvocationCtx, { params: { reparentOnDrop: 'top' } } as BindingOptions);

@@ -32,7 +32,7 @@ function startAndMove(
     {
       world: { x: 5, y: 5 },
       modifiers: MODS,
-      deps: { selection: { get: () => [A] as NodeId[] }, scene, nodeAtPoint },
+      deps: { operands: { get: () => [A] as NodeId[] }, scene, nodeAtPoint },
     } as unknown as InvocationCtx,
     { params },
   );

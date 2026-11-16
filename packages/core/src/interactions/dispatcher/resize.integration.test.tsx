@@ -78,6 +78,7 @@ function RegisterDeps({ scene, selection }: { scene: Scene<D, L, P>; selection: 
   const registry = useDepRegistry();
   registry.register('scene', () => scene);
   registry.register('selection', () => selection);
+  registry.register('operands', () => selection);
   return null;
 }
 

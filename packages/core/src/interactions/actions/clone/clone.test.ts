@@ -107,7 +107,7 @@ function makeCtx(
 ): InvocationCtx & { scene: StubScene } {
   const scene = makeStubScene(overrides.sceneNodes ?? {});
   const selection = makeStubSelection(overrides.selectionIds ?? []);
-  const deps: Record<string, unknown> = { selection, scene };
+  const deps: Record<string, unknown> = { operands: selection, scene };
   if (overrides.applyOps) deps.applyOps = overrides.applyOps;
   return {
     world: overrides.world ?? { x: 0, y: 0 },
@@ -139,7 +139,7 @@ describe('cloneAction descriptor', () => {
   });
 
   it('requires selection and scene deps', () => {
-    expect(cloneAction.requires).toContain('selection');
+    expect(cloneAction.requires).toContain('operands');
     expect(cloneAction.requires).toContain('scene');
   });
 
@@ -247,7 +247,7 @@ describe('cloneAction descriptor', () => {
 
     const copies = [...scene.nodes.keys()].filter((id) => id !== 'a' && id !== 'b');
     expect(copies).toHaveLength(2);
-    expect((ctx.deps.selection as { get(): string[] }).get()).toEqual(copies);
+    expect((ctx.deps.operands as { get(): string[] }).get()).toEqual(copies);
   });
 
   it('a canceled or zero-delta clone leaves the selection alone', () => {
@@ -262,7 +262,7 @@ describe('cloneAction descriptor', () => {
     canceled.onEnd!({ ...(ctx as InvocationCtx), drag }, 'cancel');
     const still = invoker.start(ctx as InvocationCtx, undefined);
     still.onEnd!(ctx as InvocationCtx, 'commit');
-    expect((ctx.deps.selection as { get(): string[] }).get()).toEqual(['a']);
+    expect((ctx.deps.operands as { get(): string[] }).get()).toEqual(['a']);
   });
 
   it('routes commit through the consumer applyOps hook once with insert ops + "Clone" label', () => {

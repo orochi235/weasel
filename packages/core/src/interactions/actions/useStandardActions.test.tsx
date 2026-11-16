@@ -182,7 +182,7 @@ describe('useStandardActions', () => {
     expect(seen.at(-1)!).toContain('align.left');
   });
 
-  it('every descriptor gated on `requiresSelection` declares the `selection` dep', () => {
+  it('every descriptor gated on `requiresSelection` declares the `operands` dep', () => {
     // The gate reads `deps.selection`, and the dev-build deps Proxy throws on
     // an undeclared read — before the gate can answer, so the action silently
     // never fires. `duplicate` shipped that way (Cmd+D did nothing) until
@@ -196,7 +196,7 @@ describe('useStandardActions', () => {
     render(<Providers><Host /><ProbeAll /></Providers>);
     const offenders = list
       .filter((a) => a.enabled === requiresSelection)
-      .filter((a) => !(a.requires ?? []).includes('selection'))
+      .filter((a) => !(a.requires ?? []).includes('operands'))
       .map((a) => a.id);
     expect(offenders).toEqual([]);
   });

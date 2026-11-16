@@ -98,14 +98,14 @@ describe('placeAction', () => {
   it('clears the selection, as starting a drawn insert does', () => {
     const insert = makeInsertDep();
     const selection = makeSelection(['a']);
-    click({ kind: 'rect', size: { width: 10, height: 10 } }, { insert, selection } as never);
+    click({ kind: 'rect', size: { width: 10, height: 10 } }, { insert, operands: selection } as never);
     expect(selection.get()).toEqual([]);
   });
 
   it('puts the selection back when the insert dep places nothing', () => {
     const insert: InsertDep = { commit: () => null };
     const selection = makeSelection(['a']);
-    click({ kind: 'rect', size: { width: 10, height: 10 } }, { insert, selection } as never);
+    click({ kind: 'rect', size: { width: 10, height: 10 } }, { insert, operands: selection } as never);
     expect(selection.get()).toEqual(['a']);
   });
 });

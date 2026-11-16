@@ -28,7 +28,7 @@ describe('a clone under a quantize rule', () => {
       world: { x: dx, y: dy },
       screen: { x: 0, y: 0 },
       modifiers: { alt: true, ctrl: false, meta: false, shift: false },
-      deps: { selection: { get: () => selected, set: (ids: string[]) => { selected = ids; } }, scene },
+      deps: { operands: { get: () => selected, set: (ids: string[]) => { selected = ids; } }, scene },
       drag: { start: { x: 0, y: 0 }, current: { x: dx, y: dy }, delta: { x: dx, y: dy } },
     }) as unknown as InvocationCtx;
     const invoker = cloneAction.invoker!;

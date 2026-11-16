@@ -22,7 +22,7 @@ function makeScene(): Scene<unknown, string, unknown> {
 
 function nudgeRight(scene: Scene<unknown, string, unknown>, selected: NodeId[], extra: Record<string, unknown> = {}) {
   (nudgeRightAction.invoker as ImmediateInvoker).run(
-    { scene, selection: { get: () => selected }, ...extra } as never,
+    { scene, operands: { get: () => selected }, ...extra } as never,
     { magnitude: 'small' },
   );
 }

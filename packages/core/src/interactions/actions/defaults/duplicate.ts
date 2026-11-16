@@ -39,7 +39,7 @@ export function duplicateSelection(
   dy: number,
   label = 'Duplicate',
 ): string[] | null {
-  const selection = deps.selection;
+  const selection = deps.operands;
   const scene = deps.scene;
   if (!selection || !scene) return null;
   const ids = selection.get();
@@ -77,16 +77,16 @@ export const duplicateAction: Action & { requires: string[] } = {
   // there to repeat.
   defaultBinding: [{ spec: { kind: 'key', key: 'd', mods: { mod: true, shift: true }, phase: BETWEEN_GESTURES }, opts: { id: 'duplicate.key' } }],
   eligible: { capability: ['edits-page', 'creates-selection'] },
-  // `selection` is read by the `enabled` gate as well as the invoker. An
+  // `operands` is read by the `enabled` gate as well as the invoker. An
   // undeclared read throws inside the dev-build deps Proxy before the gate can
   // answer, which is how this action spent a while doing nothing at all.
-  requires: ['scene', 'selection', 'applyOps', 'poseDescriptor'],
+  requires: ['scene', 'operands', 'applyOps', 'poseDescriptor'],
   params: DUPLICATE_PARAMS,
   invoker: {
     timing: 'immediate',
     run: (deps, params) => {
       const scene = deps.scene;
-      const selection = deps.selection;
+      const selection = deps.operands;
       if (!scene || !selection) return;
       const dx = offsetOf(params?.dx);
       const dy = offsetOf(params?.dy);

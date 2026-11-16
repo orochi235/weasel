@@ -120,7 +120,7 @@ describe('reorderForwardAction (descriptor)', () => {
     const selection = makeSelection(['b']);
 
     (reorderForwardAction.invoker as ImmediateInvoker).run(
-      stubDeps({ selection, scene }),
+      stubDeps({ operands: selection, scene }),
       { distance: 'adjacent' },
     );
 
@@ -138,7 +138,7 @@ describe('reorderForwardAction (descriptor)', () => {
     const selection = makeSelection(['a']);
 
     (reorderForwardAction.invoker as ImmediateInvoker).run(
-      stubDeps({ selection, scene }),
+      stubDeps({ operands: selection, scene }),
       { distance: 'extreme' },
     );
 
@@ -151,7 +151,7 @@ describe('reorderForwardAction (descriptor)', () => {
     const selection = makeSelection(['a']);
 
     (reorderForwardAction.invoker as ImmediateInvoker).run(
-      stubDeps({ selection, scene }),
+      stubDeps({ operands: selection, scene }),
       undefined,
     );
 
@@ -164,7 +164,7 @@ describe('reorderForwardAction (descriptor)', () => {
     const selection = makeSelection([]);
 
     (reorderForwardAction.invoker as ImmediateInvoker).run(
-      stubDeps({ selection, scene }),
+      stubDeps({ operands: selection, scene }),
       { distance: 'adjacent' },
     );
 
@@ -180,13 +180,13 @@ describe('reorderForwardAction (descriptor)', () => {
 
   it('enabled returns SelectionRequired with no deps / empty selection', () => {
     expect(reorderForwardAction.enabled!()).toBe('selection-required');
-    expect(reorderForwardAction.enabled!({ selection: makeSelection([]) } as never)).toBe(
+    expect(reorderForwardAction.enabled!({ operands: makeSelection([]) } as never)).toBe(
       'selection-required',
     );
   });
 
   it('enabled returns true when the selection is non-empty', () => {
-    expect(reorderForwardAction.enabled!({ selection: makeSelection(['b']) } as never)).toBe(true);
+    expect(reorderForwardAction.enabled!({ operands: makeSelection(['b']) } as never)).toBe(true);
   });
 });
 
@@ -237,7 +237,7 @@ describe('reorderBackwardAction (descriptor)', () => {
     const selection = makeSelection(['b']);
 
     (reorderBackwardAction.invoker as ImmediateInvoker).run(
-      stubDeps({ selection, scene }),
+      stubDeps({ operands: selection, scene }),
       { distance: 'adjacent' },
     );
 
@@ -253,7 +253,7 @@ describe('reorderBackwardAction (descriptor)', () => {
     const selection = makeSelection(['c']);
 
     (reorderBackwardAction.invoker as ImmediateInvoker).run(
-      stubDeps({ selection, scene }),
+      stubDeps({ operands: selection, scene }),
       { distance: 'extreme' },
     );
 
@@ -266,7 +266,7 @@ describe('reorderBackwardAction (descriptor)', () => {
     const selection = makeSelection(['c']);
 
     (reorderBackwardAction.invoker as ImmediateInvoker).run(
-      stubDeps({ selection, scene }),
+      stubDeps({ operands: selection, scene }),
       undefined,
     );
 
@@ -279,7 +279,7 @@ describe('reorderBackwardAction (descriptor)', () => {
     const selection = makeSelection([]);
 
     (reorderBackwardAction.invoker as ImmediateInvoker).run(
-      stubDeps({ selection, scene }),
+      stubDeps({ operands: selection, scene }),
       { distance: 'adjacent' },
     );
 
@@ -295,13 +295,13 @@ describe('reorderBackwardAction (descriptor)', () => {
 
   it('enabled returns SelectionRequired with no deps / empty selection', () => {
     expect(reorderBackwardAction.enabled!()).toBe('selection-required');
-    expect(reorderBackwardAction.enabled!({ selection: makeSelection([]) } as never)).toBe(
+    expect(reorderBackwardAction.enabled!({ operands: makeSelection([]) } as never)).toBe(
       'selection-required',
     );
   });
 
   it('enabled returns true when the selection is non-empty', () => {
-    expect(reorderBackwardAction.enabled!({ selection: makeSelection(['b']) } as never)).toBe(true);
+    expect(reorderBackwardAction.enabled!({ operands: makeSelection(['b']) } as never)).toBe(true);
   });
 });
 
@@ -316,7 +316,7 @@ describe('reorder commit routing', () => {
     const applyOps = vi.fn<(ops: Op[], label: string) => void>();
 
     (reorderForwardAction.invoker as ImmediateInvoker).run(
-      stubDeps({ selection, scene, applyOps }),
+      stubDeps({ operands: selection, scene, applyOps }),
       { distance: 'adjacent' },
     );
 
@@ -336,7 +336,7 @@ describe('reorder commit routing', () => {
     const applyOps = vi.fn<(ops: Op[], label: string) => void>();
 
     (reorderBackwardAction.invoker as ImmediateInvoker).run(
-      stubDeps({ selection, scene, applyOps }),
+      stubDeps({ operands: selection, scene, applyOps }),
       { distance: 'adjacent' },
     );
 
@@ -350,7 +350,7 @@ describe('reorder commit routing', () => {
     const selection = makeSelection(['b']);
 
     (reorderForwardAction.invoker as ImmediateInvoker).run(
-      stubDeps({ selection, scene }),
+      stubDeps({ operands: selection, scene }),
       { distance: 'adjacent' },
     );
 
@@ -370,7 +370,7 @@ describe('reorder commit routing', () => {
     const applyOps = vi.fn<(ops: Op[], label: string) => void>();
 
     (reorderForwardAction.invoker as ImmediateInvoker).run(
-      stubDeps({ selection, scene, applyOps }),
+      stubDeps({ operands: selection, scene, applyOps }),
       { distance: 'adjacent' },
     );
 

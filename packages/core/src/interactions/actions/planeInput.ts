@@ -48,8 +48,7 @@ const layerOfNode = (deps: ActionDeps, id: string | null | undefined): string | 
  *  when the drag grabbed one, the first selected node otherwise. A selection
  *  spanning planes is edited in that one node's plane. */
 export const selectionLayer: EditedLayerOf = (deps, affordance) => {
-  const selection = deps.selection;
-  for (const id of [...(affordance?.targetIds ?? []), ...(selection?.get() ?? [])]) {
+  for (const id of [...(affordance?.targetIds ?? []), ...(deps.operands?.get() ?? [])]) {
     const layer = layerOfNode(deps, id);
     if (layer !== undefined) return layer;
   }
@@ -93,7 +92,7 @@ export function inPlane<A extends Action>(action: A, layerOf: EditedLayerOf): A 
   const inner = action.invoker;
   if (!inner) return action;
   const declared = action.requires ?? [];
-  const requires = [...new Set([...declared, 'scene', 'selection', 'view'])];
+  const requires = [...new Set([...declared, 'scene', 'operands', 'view'])];
   if (inner.timing === 'immediate') {
     return {
       ...action,

@@ -74,7 +74,7 @@ function makeCtx(
     world: overrides.world ?? { x: 0, y: 0 },
     screen: { x: 0, y: 0 },
     modifiers: { alt: false, ctrl: false, meta: false, shift: false },
-    deps: stubDeps({ selection, scene, ...(overrides.applyOps ? { applyOps: overrides.applyOps } : {}) }),
+    deps: stubDeps({ operands: selection, scene, ...(overrides.applyOps ? { applyOps: overrides.applyOps } : {}) }),
     scene,
   } as InvocationCtx & { scene: StubScene };
 }
@@ -99,7 +99,7 @@ describe('rotateAction descriptor', () => {
   });
 
   it('requires selection and scene deps', () => {
-    expect(rotateAction.requires).toContain('selection');
+    expect(rotateAction.requires).toContain('operands');
     expect(rotateAction.requires).toContain('scene');
   });
 

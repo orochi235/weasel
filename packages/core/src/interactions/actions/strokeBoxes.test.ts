@@ -28,7 +28,7 @@ function makeScene(nodes: Record<string, { pose: RectPose; stroke?: boolean }>) 
 
 function run(action: { invoker?: unknown }, scene: Scene<unknown, string, unknown>, ids: string[], params?: Record<string, unknown>, extra: Record<string, unknown> = {}) {
   (action.invoker as ImmediateInvoker).run(stubDeps({
-    scene, selection: { get: () => ids.map(asNodeId), adapterMethods: undefined }, drawnBoxes: inkBoxes, ...extra,
+    scene, operands: { get: () => ids.map(asNodeId), adapterMethods: undefined }, drawnBoxes: inkBoxes, ...extra,
   }), params);
 }
 

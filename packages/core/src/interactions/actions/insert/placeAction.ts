@@ -34,7 +34,7 @@ export const placeAction: Action = inPlane(defineAction({
   group: 'insert',
   eligible: { capability: 'creates-shapes' },
   modifierRoles: SNAP_ROLES,
-  requires: ['insert', 'insertInto', 'canDropInto', 'selection', 'snap', 'scene'],
+  requires: ['insert', 'insertInto', 'canDropInto', 'operands', 'snap', 'scene'],
   invoker: {
     timing: 'immediate',
     run(deps, params) {
@@ -49,8 +49,8 @@ export const placeAction: Action = inPlane(defineAction({
       const { x, y } = world;
       if (!(size.width > 0 && size.height > 0)) return;
 
-      const prior = deps.selection ? [...deps.selection.get()] : [];
-      deps.selection?.clear();
+      const prior = deps.operands ? [...deps.operands.get()] : [];
+      deps.operands?.set([]);
       const parent = insertParent(deps.scene, deps.insertInto?.get(), deps.canDropInto, { x, y });
       const snap = deps.snap?.begin({ gesture: 'point', press: { x, y }, ...(parent === null ? {} : { parent }) });
       const mods = snapMods({ modifiers: params?.mods ?? NO_KEYS });
@@ -68,7 +68,7 @@ export const placeAction: Action = inPlane(defineAction({
       };
       const id = dep.commit(bounds, extras, ends, clearedSelection(prior));
       if (id === null) {
-        restoreSelection({ priorSelection: prior, selection: deps.selection });
+        restoreSelection({ priorSelection: prior, selection: deps.operands });
       }
     },
   },

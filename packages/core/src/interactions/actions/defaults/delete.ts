@@ -97,7 +97,7 @@ function deleteReachesLocked(deps: ActionDeps, ids: readonly NodeId[]): boolean 
 export function deleteEnabled(deps?: ActionDeps): true | ActionDisabledReason {
   const needs = requiresContent(1)(deps);
   if (needs !== true) return needs;
-  return deleteReachesLocked(deps!, deps!.selection!.get() as readonly NodeId[]) ? ActionDisabledReason.Locked : true;
+  return deleteReachesLocked(deps!, deps!.operands!.get()) ? ActionDisabledReason.Locked : true;
 }
 
 /** Options for {@link createDeleteAction}. */
@@ -107,14 +107,14 @@ export interface DeleteActionOptions {
 }
 
 /** The default commit: removes `ids`, their dependents, and the sources a
- *  path effect among them hid, as one undo entry, then empties the selection. */
+ *  path effect among them hid, as one undo entry, then empties the operands. */
 export function commitDeleteToScene(ids: readonly NodeId[], deps: ActionDeps, label = 'Delete'): void {
-  const { selection, scene } = deps;
-  if (!selection || !scene) return;
+  const { operands, scene } = deps;
+  if (!operands || !scene) return;
   commitOps(deps, buildDeleteOps(scene, ids, label, { takeHiddenSources: true }), label, { select: [] });
 }
 
-/** Delete on Delete and Backspace: hands the selected ids to `commit`. */
+/** Delete on Delete and Backspace: hands the operands to `commit`. */
 export function createDeleteAction(opts: DeleteActionOptions = {}): Action & { requires: string[] } {
   const commit = opts.commit ?? commitDeleteToScene;
   return {
@@ -134,12 +134,12 @@ export function createDeleteAction(opts: DeleteActionOptions = {}): Action & { r
       opts: { id: 'delete.key' },
     }],
     eligible: { capability: 'edits-page' },
-    requires: ['scene', 'selection', 'applyOps'],
+    requires: ['scene', 'operands', 'applyOps'],
     invoker: {
       timing: 'immediate',
       run: (deps) => {
-        if (!deps.selection || !deps.scene) return;
-        const ids = deps.selection.get() as readonly NodeId[];
+        if (!deps.operands || !deps.scene) return;
+        const ids = deps.operands.get();
         if (ids.length === 0 || deleteEnabled(deps) !== true) return;
         commit(ids, deps);
       },

@@ -1,4 +1,6 @@
 import type { BindingOptions, DragSample, InvocationCtx } from '@weasel-js/routing';
+import { operandMethods } from 'interactions/actions/defaultCommitAdapter';
+import type { OperandsDep } from 'interactions/actions/operands';
 import { resolveParams } from '@weasel-js/routing';
 import type { InsertParams } from '../actionParamSchema';
 import { SNAP_ANGLE_STEP, snapMods } from 'domains/snap/roles';
@@ -6,7 +8,6 @@ import { spanSnap, type SpanSnap } from 'domains/snap/spanSnap';
 import { pointerStateOf } from '../pointerState';
 import type { Op } from 'core/ops/types';
 import type { NodeId, Scene } from 'core/scene/types';
-import type { SelectionApi } from 'core/selection/useSelection';
 import { gestureReaders, type GestureReaders } from '../../gestures/shared/screenTolerance';
 import type { GestureContext, InsertBehavior, InsertPoint } from '../../gestures/types';
 import type { InsertDep, CommitSelection } from '../depSchema';
@@ -43,7 +44,7 @@ export interface InsertSession {
   /** The container the node lands in; null for the top of the tree. */
   readonly parent: NodeId | null;
   readonly applyOps: ((ops: Op[], label: string) => void) | undefined;
-  readonly selection: SelectionApi | undefined;
+  readonly selection: OperandsDep | undefined;
 }
 
 /** The selection change an insert's commit carries: from what the press
@@ -83,10 +84,10 @@ export function beginInsert(
   // continues over the selected node would otherwise drive the move
   // action via fall-through. The clear is unconditional: the user has
   // committed to "I'm making a new thing" by engaging a creation tool.
-  const selection = ctx.deps.selection;
+  const selection = ctx.deps.operands;
   const priorSelection = selection ? [...selection.get()] : [];
   if (selection && priorSelection.length > 0) {
-    selection.clear();
+    selection.set([]);
   }
 
   const parent = insertParent(ctx.deps.scene, ctx.deps.insertInto?.get(), ctx.deps.canDropInto, ctx.world);
@@ -107,7 +108,7 @@ export function beginInsert(
     kitSettings: readers.kitSettings,
     // With no scene the `insert` dep mints the node itself, and no adapter exists to hand over.
     adapter: (scene
-      ? moveGestureAdapter(scene, undefined, selection?.adapterMethods)
+      ? moveGestureAdapter(scene, undefined, operandMethods(selection))
       : undefined) as unknown as GestureContext<unknown>['adapter'],
     scratch: {},
   };

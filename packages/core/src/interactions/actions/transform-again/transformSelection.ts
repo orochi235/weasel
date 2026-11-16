@@ -34,9 +34,9 @@ export function selectionTransformOps(
  * whether anything changed.
  */
 export function transformSelection(deps: ActionDeps, t: SelectionTransform, label: string): boolean {
-  const { scene, selection } = deps;
-  if (!scene || !selection) return false;
-  const selected = selection.get() as string[];
+  const { scene, operands } = deps;
+  if (!scene || !operands) return false;
+  const selected = [...operands.get()] as string[];
   if (!commitTransformOps(deps, selectionTransformOps(deps, scene, selected, t, label), label)) return false;
   recordTransform(scene, t, selected);
   return true;

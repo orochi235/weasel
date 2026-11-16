@@ -13,7 +13,7 @@ function selectAll() {
   const r = scene.add({ kind: 'mark', layer: 'main', pose: box(40), data: {} });
   let current: NodeId[] = [g, c, r];
   const selection = { get: () => [...current], set: (next: NodeId[]) => { current = [...next]; } };
-  return { scene, g, c, r, deps: { scene, selection } as never, made: () => current[0]! };
+  return { scene, g, c, r, deps: { scene, operands: selection } as never, made: () => current[0]! };
 }
 
 describe('grouping a selection that holds a node and its descendant', () => {
@@ -28,7 +28,7 @@ describe('grouping a selection that holds a node and its descendant', () => {
 
   it('leaves Make Boolean Group disabled when the outermost are fewer than two', () => {
     const rig = selectAll();
-    (rig.deps as { selection: { set(ids: NodeId[]): void } }).selection.set([rig.g, rig.c]);
+    (rig.deps as { operands: { set(ids: NodeId[]): void } }).operands.set([rig.g, rig.c]);
     expect(makeBooleanGroupAction.enabled!(rig.deps)).toBe(ActionDisabledReason.SelectionRequired);
   });
 });

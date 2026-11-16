@@ -18,7 +18,7 @@ function fixture() {
   const token = scene.add({ kind: 'mark', layer: 'main', data: { color: 'green' }, pose: { x: 0, y: 0, width: 10, height: 10 } });
   let selected: NodeId[] = [token];
   const selection = { get: () => selected, set: (ids: NodeId[]) => { selected = ids; } };
-  const base = { world: { x: 5, y: 5 }, modifiers: MODS, deps: { selection, scene } };
+  const base = { world: { x: 5, y: 5 }, modifiers: MODS, deps: { operands: selection, scene } };
   const at = (x: number, y: number): InvocationCtx => ({
     ...base,
     world: { x, y },

@@ -88,9 +88,9 @@ describe('pathfinder enabled', () => {
       applyOps: () => {},
     } as BooleansAdapter;
     const selection = { get: () => ['box', 'group'] };
-    expect(pathfinderUnionAction.enabled!({ selection, booleansAdapter: adapter } as never)).toBe(ActionDisabledReason.NotApplicable);
+    expect(pathfinderUnionAction.enabled!({ operands: selection, booleansAdapter: adapter } as never)).toBe(ActionDisabledReason.NotApplicable);
     expect(pathfinderUnionAction.enabled!({
-      selection, booleansAdapter: { ...adapter, getWorldPath: () => ({ kind: 'rect', x: 0, y: 0, width: 10, height: 10 }) },
+      operands: selection, booleansAdapter: { ...adapter, getWorldPath: () => ({ kind: 'rect', x: 0, y: 0, width: 10, height: 10 }) },
     } as never)).toBe(true);
   });
 });

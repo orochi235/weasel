@@ -14,7 +14,7 @@ const MODS = { alt: false, ctrl: false, meta: false, shift: false };
 function fixture() {
   const scene = createScene<object, 'main', RectPose>({ systemLayers: [{ id: 'main' }] });
   const a = scene.add({ kind: 'mark', layer: 'main', data: {}, pose: { x: 0, y: 0, width: 10, height: 10 } });
-  const base = { world: { x: 0, y: 0 }, screen: { x: 0, y: 0 }, modifiers: MODS, deps: { selection: { get: () => [a] as NodeId[] }, scene } };
+  const base = { world: { x: 0, y: 0 }, screen: { x: 0, y: 0 }, modifiers: MODS, deps: { operands: { get: () => [a] as NodeId[] }, scene } };
   const seen: MoveEnd['pointer'][] = [];
   const spy: MoveBehavior<unknown> = { onEnd: (_ctx, end) => { seen.push(end.pointer); } };
   const opts = { behaviors: [spy] } as BindingOptions;

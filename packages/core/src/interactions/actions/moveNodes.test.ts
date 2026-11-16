@@ -33,7 +33,7 @@ function drag(scene: AnyScene, ids: readonly string[], dx: number, dy: number): 
     world: current ?? { x: 0, y: 0 },
     screen: { x: 0, y: 0 },
     modifiers: { alt: false, ctrl: false, meta: false, shift: false },
-    deps: { selection: selectionOf(ids), scene },
+    deps: { operands: selectionOf(ids), scene },
     drag: current ? { start: { x: 0, y: 0 }, current, delta: current } : undefined,
   } as unknown as InvocationCtx);
   const handle = (moveAction.invoker as OngoingInvoker).start(ctx(), undefined) as OngoingHandle;
@@ -118,7 +118,7 @@ describe('moveNodes', () => {
 
   it('names every dep it reads, and is exported by name from the barrel', () => {
     expect([...MOVE_NODES_REQUIRES].sort()).toEqual(
-      ['applyOps', 'geometryProjection', 'poseDescriptor', 'scene', 'selection', 'transformFollowers'],
+      ['applyOps', 'geometryProjection', 'operands', 'poseDescriptor', 'scene', 'transformFollowers'],
     );
     expect(Barrel.moveNodes).toBe(moveNodes);
     expect(Barrel.moveNodesOps).toBe(moveNodesOps);

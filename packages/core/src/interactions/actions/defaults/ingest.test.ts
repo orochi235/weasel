@@ -9,7 +9,7 @@ const png: IngestItem = { kind: 'file', mime: 'image/png', file: new File(['x'],
 function deps() {
   return {
     scene: {} as never,
-    selection: {} as never,
+    operands: {} as never,
     insert: { commit: vi.fn() },
     applyOps: vi.fn(),
     ingestion: { viewportWorldRect: () => ({ x: 0, y: 0, width: 800, height: 600 }) },

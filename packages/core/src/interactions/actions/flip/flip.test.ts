@@ -133,7 +133,7 @@ describe('flipAction (axis param)', () => {
     const scene = makeStubScene({ a: { x: 10, y: 20, width: 30, height: 40, rotation: 0.5 } });
     const selection = makeSelection(['a']);
 
-    runFlip({ selection, scene }, { axis: 'x' });
+    runFlip({ operands: selection, scene }, { axis: 'x' });
 
     expect(scene.batchLog).toHaveLength(1);
     expect(scene.batchLog[0].label).toBe('Flip');
@@ -145,7 +145,7 @@ describe('flipAction (axis param)', () => {
   it('commits nothing for a flip in place of an upright rect, which is its own mirror', () => {
     const scene = makeStubScene({ a: { x: 10, y: 20, width: 30, height: 40 } });
     const applyOps = vi.fn();
-    runFlip({ selection: makeSelection(['a']), scene, applyOps }, { axis: 'x' });
+    runFlip({ operands: makeSelection(['a']), scene, applyOps }, { axis: 'x' });
     expect(applyOps).not.toHaveBeenCalled();
     expect(scene.batchLog).toHaveLength(0);
   });
@@ -155,7 +155,7 @@ describe('flipAction (axis param)', () => {
     const selection = makeSelection(['a']);
     const applyOps = vi.fn();
 
-    runFlip({ selection, scene, applyOps }, { axis: 'x' });
+    runFlip({ operands: selection, scene, applyOps }, { axis: 'x' });
 
     // Consumer hook owns the commit — scene.applyBatch is not used.
     expect(applyOps).toHaveBeenCalledOnce();
@@ -179,7 +179,7 @@ describe('flipAction (axis param)', () => {
     const selection = makeSelection(['a', 'b']);
     const applyOps = vi.fn();
 
-    runFlip({ selection, scene, applyOps }, { axis: 'y' });
+    runFlip({ operands: selection, scene, applyOps }, { axis: 'y' });
 
     const [ops] = applyOps.mock.calls[0] as [Array<{ args: { id: string } }>];
     expect(ops).toHaveLength(2);
@@ -194,7 +194,7 @@ describe('flipAction (axis param)', () => {
     });
     const selection = makeSelection(['a', 'b']);
 
-    runFlip({ selection, scene }, { axis: 'x', pivot: 'union' });
+    runFlip({ operands: selection, scene }, { axis: 'x', pivot: 'union' });
 
     // Union spans x 0..100, centerline at 50: the two swap places.
     expect(scene.poses.get('a')).toEqual({ x: 90, y: 0, width: 10, height: 10 });
@@ -208,7 +208,7 @@ describe('flipAction (axis param)', () => {
     });
     const selection = makeSelection(['a', 'b']);
 
-    runFlip({ selection, scene }, { axis: 'x' });
+    runFlip({ operands: selection, scene }, { axis: 'x' });
 
     expect(scene.poses.get('a')).toEqual({ x: 0, y: 0, width: 10, height: 10 });
     expect(scene.poses.get('b')).toEqual({ x: 90, y: 0, width: 10, height: 10 });
@@ -221,7 +221,7 @@ describe('flipAction (axis param)', () => {
     });
     const selection = makeSelection(['a', 'b']);
 
-    runFlip({ selection, scene }, { pivot: 'union' });
+    runFlip({ operands: selection, scene }, { pivot: 'union' });
 
     expect(scene.poses.get('a')).toEqual({ x: 90, y: 0, width: 10, height: 10 });
     expect(scene.poses.get('b')).toEqual({ x: 0, y: 40, width: 10, height: 10 });
@@ -232,7 +232,7 @@ describe('flipAction (axis param)', () => {
     const selection = makeSelection([]);
     const applyOps = vi.fn();
 
-    runFlip({ selection, scene, applyOps }, { axis: 'x' });
+    runFlip({ operands: selection, scene, applyOps }, { axis: 'x' });
 
     expect(applyOps).not.toHaveBeenCalled();
     expect(scene.batchLog).toHaveLength(0);
@@ -254,7 +254,7 @@ describe('flipAction with a rotated member', () => {
     });
     const selection = makeSelection(['a', 'r']);
 
-    runFlip({ selection, scene }, { axis: 'x', pivot: 'union' });
+    runFlip({ operands: selection, scene }, { axis: 'x', pivot: 'union' });
 
     // Visual union spans x 0..65, centreline 32.5: the two ink boxes swap.
     expect(scene.poses.get('a')).toMatchObject({ x: 55, y: 0 });
@@ -264,7 +264,7 @@ describe('flipAction with a rotated member', () => {
   it('negates a 30 degree rotation, leaving the stored box alone', () => {
     const scene = makeStubScene({ r: { x: 40, y: 0, width: 40, height: 10, rotation: Math.PI / 6 } });
 
-    runFlip({ selection: makeSelection(['r']), scene }, { axis: 'x' });
+    runFlip({ operands: makeSelection(['r']), scene }, { axis: 'x' });
 
     expect(scene.poses.get('r')).toEqual({ x: 40, y: 0, width: 40, height: 10, rotation: -Math.PI / 6 });
   });
@@ -275,7 +275,7 @@ describe('flipAction with a rotated member', () => {
     const before: Required<Pose> = { x: 40, y: 0, width: 40, height: 10, rotation: Math.PI / 6 };
     const scene = makeStubScene({ r: { ...before } });
 
-    runFlip({ selection: makeSelection(['r']), scene }, { axis: 'x' });
+    runFlip({ operands: makeSelection(['r']), scene }, { axis: 'x' });
 
     const cx = before.x + before.width / 2;
     const mirrored = sortCorners(
@@ -293,8 +293,8 @@ describe('flipAction with a rotated member', () => {
     const scene = makeStubScene({ r: { ...before } });
     const selection = makeSelection(['r']);
 
-    runFlip({ selection, scene }, { axis: 'y' });
-    runFlip({ selection, scene }, { axis: 'y' });
+    runFlip({ operands: selection, scene }, { axis: 'y' });
+    runFlip({ operands: selection, scene }, { axis: 'y' });
 
     expect(scene.poses.get('r')).toEqual(before);
   });
@@ -312,7 +312,7 @@ describe('flip about a reference', () => {
 
   it("pivot 'pointer' mirrors about the line through the click", () => {
     const scene = makeStubScene(initial);
-    runFlip({ selection: makeSelection(['a', 'b']), scene }, { axis: 'x', pivot: 'pointer', world: { x: 50, y: 0 } });
+    runFlip({ operands: makeSelection(['a', 'b']), scene }, { axis: 'x', pivot: 'pointer', world: { x: 50, y: 0 } });
     expect(scene.poses.get('a')).toEqual({ x: 90, y: 0, width: 10, height: 10 });
     expect(scene.poses.get('b')).toEqual({ x: 60, y: 0, width: 10, height: 10 });
   });
@@ -320,20 +320,20 @@ describe('flip about a reference', () => {
   it("pivot 'pointer' reads the pointer dep when no click carried a point", () => {
     const scene = makeStubScene(initial);
     const pointer = { get: () => ({ world: { x: 0, y: 20 }, viewId: null }) };
-    runFlip({ selection: makeSelection(['a']), scene, pointer }, { axis: 'y', pivot: 'pointer' });
+    runFlip({ operands: makeSelection(['a']), scene, pointer }, { axis: 'y', pivot: 'pointer' });
     expect(scene.poses.get('a')).toEqual({ x: 0, y: 30, width: 10, height: 10 });
   });
 
   it('pivot on a key node mirrors about its center', () => {
     const scene = makeStubScene(initial);
-    runFlip({ selection: makeSelection(['a', 'b']), scene }, { axis: 'x', pivot: { node: 'b' } });
+    runFlip({ operands: makeSelection(['a', 'b']), scene }, { axis: 'x', pivot: { node: 'b' } });
     expect(scene.poses.get('a')).toEqual({ x: 60, y: 0, width: 10, height: 10 });
     expect(scene.poses.get('b')).toEqual({ x: 30, y: 0, width: 10, height: 10 });
   });
 
   it("pivot 'pointer' with no pointer flips nothing", () => {
     const scene = makeStubScene(initial);
-    runFlip({ selection: makeSelection(['a']), scene, pointer: { get: () => null } }, { axis: 'x', pivot: 'pointer' });
+    runFlip({ operands: makeSelection(['a']), scene, pointer: { get: () => null } }, { axis: 'x', pivot: 'pointer' });
     expect(scene.batchLog).toHaveLength(0);
   });
 });

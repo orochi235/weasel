@@ -350,7 +350,7 @@ describe('usePreviewGhostLayer — inherited paint', () => {
     const c = scene.add({ kind: 'mark', layer: 'main', parent: g, pose: COMMITTED_POSE, data: { fill: INHERIT } });
     const own = scene.add({ kind: 'mark', layer: 'main', parent: g, pose: COMMITTED_POSE, data: { fill: RED } });
     const handle = (setFillAction.invoker as OngoingInvoker).start(
-      { deps: { scene, selection: { get: () => [g] } }, params: { color: '#00ff00' } } as unknown as InvocationCtx,
+      { deps: { scene, operands: { get: () => [g] } }, params: { color: '#00ff00' } } as unknown as InvocationCtx,
     );
     expect([...(handle.previewIds?.() ?? [])]).toEqual([g, c]);
     expect((ghostFills(scene, handle).get(c) as { paint?: { color?: string } }).paint?.color).toBe('#00ff00');

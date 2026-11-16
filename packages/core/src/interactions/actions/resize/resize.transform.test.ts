@@ -45,7 +45,7 @@ function dragBottomRight(
     screen: { x: 0, y: 0 },
     modifiers: { alt: false, ctrl: false, meta: false, shift: false },
     deps: {
-      selection: { get: () => [ID] as NodeId[] },
+      operands: { get: () => [ID] as NodeId[] },
       scene,
       resizePolicy: { constraints: [], expandIds: (ids: string[]) => ids },
       ...(snap ? { snap } : {}),

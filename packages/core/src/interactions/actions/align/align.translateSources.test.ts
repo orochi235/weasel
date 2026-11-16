@@ -41,7 +41,7 @@ function scene() {
 
 function run(action: typeof alignLeftAction, s: ReturnType<typeof scene>, ids: NodeId[], extra = {}) {
   const selection = { get: () => ids } as unknown as SelectionApi;
-  (action.invoker as ImmediateInvoker).run(stubDeps({ scene: s, selection, ...extra }));
+  (action.invoker as ImmediateInvoker).run(stubDeps({ scene: s, operands: selection, ...extra }));
 }
 
 describe('align and distribute over derived and data-held geometry', () => {

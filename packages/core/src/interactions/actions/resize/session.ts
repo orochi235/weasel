@@ -1,9 +1,10 @@
 import type { PoseLinear } from '@weasel-js/geom';
+import { operandMethods } from 'interactions/actions/defaultCommitAdapter';
+import type { CommitSelectionMethods } from 'interactions/actions/defaultCommitAdapter';
 import type { ActionDeps, InvocationCtx } from '@weasel-js/routing';
 import { transformFinisher, type TransformFinisher } from '../transformFinish';
 import type { Op } from 'core/ops/types';
 import type { NodeId, Scene } from 'core/scene/types';
-import type { SelectionApi } from 'core/selection/useSelection';
 import type { Bounds } from 'core/viewport/fitViewToBounds';
 import { gestureReaders, type GestureReaders } from '../../gestures/shared/screenTolerance';
 import type { BoundsConstraint, GestureContext, ResizeAnchor } from '../../gestures/types';
@@ -76,7 +77,7 @@ export interface ResizeSession {
   /** When present, the commit maps each leaf's data-held geometry by the
    *  affine its pose underwent. */
   readonly geometryProjection?: GeometryProjection;
-  readonly selectionMethods: SelectionApi['adapterMethods'] | undefined;
+  readonly selectionMethods: CommitSelectionMethods | undefined;
   /** Label, history, and callbacks from the `resizePolicy` dep. */
   readonly lifecycle: GestureLifecycle;
   /** The drag's snapping: the `snap` dep's session, else one that only holds
@@ -177,7 +178,7 @@ function beginSnap(ctx: InvocationCtx, ids: readonly NodeId[], press: { x: numbe
 export function beginResize(
   ctx: InvocationCtx,
 ): { session: ResizeSession; readers: GestureReaders } | null {
-  const selection = ctx.deps.selection;
+  const selection = ctx.deps.operands;
   const scene = ctx.deps.scene;
   if (!selection || !scene) return null;
 
@@ -203,7 +204,7 @@ export function beginResize(
     applyOps: ctx.deps.applyOps,
     finish: transformFinisher(ctx.deps),
     geometryProjection: ctx.deps.geometryProjection,
-    selectionMethods: selection.adapterMethods,
+    selectionMethods: operandMethods(selection),
     lifecycle: readGestureLifecycle(policy, 'Resize', constraints),
     snap: beginSnap(ctx, ids, startWorld, place.box),
   };

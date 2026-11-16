@@ -119,7 +119,7 @@ describe('bindPoseTransition', () => {
       world: { x, y: 5 },
       screen: { x, y: 5 },
       modifiers: { alt: false, ctrl: false, meta: false, shift: false },
-      deps: { selection: { get: () => [A] }, scene },
+      deps: { operands: { get: () => [A] }, scene },
       drag: { start: { x: 5, y: 5 }, current: { x, y: 5 }, delta: { x: x - 5, y: 0 } },
     }) as unknown as InvocationCtx;
     const h = (moveAction.invoker as OngoingInvoker).start(ctx(5), {}) as OngoingHandle;

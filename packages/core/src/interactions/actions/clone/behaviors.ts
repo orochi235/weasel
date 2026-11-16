@@ -3,7 +3,7 @@ import type { Op } from 'core/ops/types';
 import type { NodeId, Scene } from 'core/scene/types';
 import { gestureReaders, type GestureReaders } from '../../gestures/shared/screenTolerance';
 import type { CloneBehavior, CloneBehaviorResult, CloneEnd, GestureContext, GroupTransform } from '../../gestures/types';
-import { defaultCommitAdapter } from '../defaultCommitAdapter';
+import { defaultCommitAdapter, operandMethods } from '../defaultCommitAdapter';
 import { sceneGestureFrames } from '../gestureFrames';
 import { reduceBehaviorEnd } from '../gestureLifecycle';
 import { pointerStateOf } from '../pointerState';
@@ -49,7 +49,7 @@ export function startCloneBehaviors(
     kitSettings: readers.kitSettings,
     frames: sceneGestureFrames(scene, ctx.deps),
     offset: boundsOffset(poseDescriptorOf(ctx.deps.poseDescriptor)),
-    adapter: defaultCommitAdapter(scene, ctx.deps.selection?.adapterMethods) as unknown as GestureContext<unknown>['adapter'],
+    adapter: defaultCommitAdapter(scene, operandMethods(ctx.deps.operands)) as unknown as GestureContext<unknown>['adapter'],
     scratch: {},
   };
   const place = ({ dx, dy }: Delta): void => {

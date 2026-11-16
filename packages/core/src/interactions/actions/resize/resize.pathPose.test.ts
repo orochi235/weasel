@@ -39,7 +39,7 @@ function ctxAt(
     world: at,
     screen: { x: 0, y: 0 },
     modifiers: { alt: false, ctrl: false, meta: false, shift: extra.shift ?? false },
-    deps: { selection: { get: () => [ID] as NodeId[] }, scene, ...extra.deps },
+    deps: { operands: { get: () => [ID] as NodeId[] }, scene, ...extra.deps },
     drag: {
       start: { x: 50, y: 40 },
       current: at,

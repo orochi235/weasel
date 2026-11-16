@@ -49,7 +49,7 @@ function makeDeps() {
     createPathNode: () => ({ id: 'merged' }),
     applyBatch: vi.fn(),
   };
-  const bag: Record<string, unknown> = { selection, scene, applyOps, booleansAdapter };
+  const bag: Record<string, unknown> = { operands: selection, scene, applyOps, booleansAdapter };
   const registry = { get: (name: string) => bag[name] } as unknown as DepRegistry;
   return { registry, applyOps };
 }

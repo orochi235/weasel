@@ -27,7 +27,7 @@ function makeScene(composition?: PoseComposition<RectPose>): AnyScene {
 }
 
 function run(action: { invoker?: unknown }, scene: AnyScene, ids: NodeId[], params?: Record<string, unknown>) {
-  (action.invoker as ImmediateInvoker).run({ selection: { get: () => ids }, scene } as never, params as never);
+  (action.invoker as ImmediateInvoker).run({ operands: { get: () => ids }, scene } as never, params as never);
 }
 
 const localOf = (scene: AnyScene, id: NodeId) => scene.get(id)!.pose as RectPose;

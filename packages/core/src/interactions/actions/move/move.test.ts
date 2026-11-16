@@ -35,7 +35,7 @@ function makeCtx(
     world: { x: 0, y: 0 },
     screen: { x: 0, y: 0 },
     modifiers: { alt: false, ctrl: false, meta: false, shift: false },
-    deps: stubDeps({ selection, scene }),
+    deps: stubDeps({ operands: selection, scene }),
     drag: overrides.drag,
     scene,
   } as InvocationCtx & { scene: StubScene };
@@ -346,7 +346,7 @@ describe('moveAction descriptor', () => {
       world: { x: 0, y: 0 },
       screen: { x: 0, y: 0 },
       modifiers: { alt: false, ctrl: false, meta: false, shift: false },
-      deps: stubDeps({ selection: makeStubSelection(['parent']), scene }),
+      deps: stubDeps({ operands: makeStubSelection(['parent']), scene }),
     };
     const handle = invoker.start(ctx, undefined);
     handle.onMove!({
@@ -433,7 +433,7 @@ describe('moveAction — reparentOnDrop', () => {
       screen: { x: 0, y: 0 },
       modifiers: { alt: false, ctrl: false, meta: false, shift: false },
       deps: {
-        selection,
+        operands: selection,
         scene: scene,
         ...(nodeAtPoint ? { nodeAtPoint } : {}),
       },
@@ -590,7 +590,7 @@ describe('moveAction — reparentOnDrop', () => {
 
     // Stub registry mirroring the dispatcher's DepRegistry.get contract.
     const sources: Record<string, () => unknown> = {
-      selection: () => selection,
+      operands: () => selection,
       scene: () => scene,
       nodeAtPoint: () => nodeAtPoint,
     };

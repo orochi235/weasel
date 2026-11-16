@@ -1,8 +1,8 @@
 import { createReorderOp } from 'core/ops/reorder';
+import type { OperandsDep } from 'interactions/actions/operands';
 import type { NodeId, Scene } from 'core/scene/types';
 import type { Op } from 'core/ops/types';
-import type { SelectionApi } from 'core/selection/useSelection';
-import { defaultCommitAdapter } from '../defaultCommitAdapter';
+import { defaultCommitAdapter, operandMethods } from '../defaultCommitAdapter';
 import type { ActionDeps } from '@weasel-js/routing';
 import { ActionDisabledReason, defineAction } from '@weasel-js/routing';
 import type { ReorderParams } from '../actionParamSchema';
@@ -27,13 +27,13 @@ type ReorderDistance = NonNullable<ReorderParams['distance']>;
  * whole reorder lands as one undo entry labelled `'Reorder'`.
  */
 function reorderSelection(
-  selection: SelectionApi,
+  selection: OperandsDep,
   scene: Scene<unknown, string, unknown>,
   direction: 'forward' | 'backward',
   distance: ReorderDistance,
   applyOps: ((ops: Op[], label: string) => void) | undefined,
 ): void {
-  const ids = selection.get() as string[];
+  const ids = [...selection.get()] as string[];
   if (ids.length === 0) return;
 
   const reorderDir = reorderDirection(direction, distance);
@@ -45,7 +45,7 @@ function reorderSelection(
   const op = createReorderOp({ ids, direction: reorderDir, label: 'Reorder' });
 
   if (applyOps) applyOps([op], 'Reorder');
-  else scene.applyBatch([op], 'Reorder', defaultCommitAdapter(scene, selection.adapterMethods));
+  else scene.applyBatch([op], 'Reorder', defaultCommitAdapter(scene, operandMethods(selection)));
 }
 
 const ORDER_FNS = { forward: bringForward, backward: sendBackward, front: bringToFront, back: sendToBack } as const;
@@ -86,7 +86,7 @@ function reorderEnabled(direction: 'forward' | 'backward') {
     const scene = deps!.scene as Scene<unknown, string, unknown> | undefined;
     if (!scene) return true;
     const distance = params?.distance ?? 'adjacent';
-    const plan = reorderPlan(scene, deps!.selection!.get() as string[], reorderDirection(direction, distance));
+    const plan = reorderPlan(scene, [...deps!.operands!.get()] as string[], reorderDirection(direction, distance));
     return plan === 'moves' ? true : plan === 'locked' ? ActionDisabledReason.Locked : ActionDisabledReason.NotApplicable;
   };
 }
@@ -138,12 +138,12 @@ export const reorderForwardAction = defineAction({
     },
   ],
   eligible: { capability: 'edits-page' },
-  requires: ['selection', 'scene', 'applyOps'],
+  requires: ['operands', 'scene', 'applyOps'],
   invoker: {
     timing: 'immediate',
     run: (deps, params) => {
       const distance = params?.distance ?? 'adjacent';
-      const selection = deps.selection;
+      const selection = deps.operands;
       const scene = deps.scene;
       const applyOps = deps.applyOps;
       if (!selection || !scene) return;
@@ -185,12 +185,12 @@ export const reorderBackwardAction = defineAction({
     },
   ],
   eligible: { capability: 'edits-page' },
-  requires: ['selection', 'scene', 'applyOps'],
+  requires: ['operands', 'scene', 'applyOps'],
   invoker: {
     timing: 'immediate',
     run: (deps, params) => {
       const distance = params?.distance ?? 'adjacent';
-      const selection = deps.selection;
+      const selection = deps.operands;
       const scene = deps.scene;
       const applyOps = deps.applyOps;
       if (!selection || !scene) return;

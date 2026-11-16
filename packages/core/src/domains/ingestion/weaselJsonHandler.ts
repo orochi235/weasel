@@ -82,12 +82,12 @@ export const kitWeaselJsonHandler: ContentHandlerEntry = {
     // cascade offset is the placement.
     const snapshot: ClipboardSnapshot = { items: nodes };
     const result = materializePaste(clipboard.adapter, snapshot, {
-      currentSelection: ctx.selection.get(),
+      currentSelection: [...ctx.operands.get()],
       onOmitted: clipboard.onOmitted,
     });
     if (!result) return;
     ctx.applyOps(result.ops, 'Paste');
-    ctx.selection.set(result.newIds as NodeId[]);
+    ctx.operands.set(result.newIds as NodeId[]);
     // So kit:svg's text/plain fallback declines the SVG flavor of this copy.
     // WARNING: do not add an `await` earlier in this handle — the flag must
     // be written before lower-priority handlers' microtasks run.

@@ -18,6 +18,8 @@ import { compositeKey } from '@weasel-js/registry';
 export interface StandardDeps {
   /** Kit selection state — ids of currently selected nodes. */
   selection?: DepSchema['selection'];
+  /** What edits act on. Absent: the `selection` dep the registry answers. */
+  operands?: DepSchema['operands'];
   /** Current viewport — camera position + scale. */
   view?: DepSchema['view'];
   /** Scene tree — structural reads + undoable mutations. */
@@ -31,7 +33,8 @@ export interface StandardDeps {
 /**
  * Publish each of `deps` as a live source in the nearest dep registry under
  * its canonical name; the source reads the latest value at invocation time.
- * `activeTool` falls back to the active-tool context. Whenever the scene or
+ * `activeTool` falls back to the active-tool context, and `operands` to the
+ * registry's `selection`, whoever sources it. Whenever the scene or
  * the history changes, or the selection does, it tells the registry, so chrome
  * showing an action's `enabled` or `active` state reads it again. A no-op with
  * no registry in scope.
@@ -51,6 +54,10 @@ export function useStandardDeps(deps: StandardDeps): void {
         depReg.register(key as DepName, () => depsRef.current[key] as DepSchema[DepName]),
       );
     }
+    unregisters.push(
+      depReg.register('operands', () =>
+        (depsRef.current.operands ?? depReg.get('selection')) as DepSchema['operands']),
+    );
     unregisters.push(
       depReg.register('activeTool' as DepName, () =>
         (depsRef.current.activeTool ?? activeToolCtxRef.current) as DepSchema[DepName],

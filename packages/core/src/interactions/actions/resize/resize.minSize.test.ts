@@ -36,7 +36,7 @@ function drag(
     world: at,
     screen: { x: 0, y: 0 },
     modifiers: { alt: false, ctrl: false, meta: false, shift: false },
-    deps: { selection: { get: () => ids }, scene, ...(resizePolicy ? { resizePolicy } : {}) },
+    deps: { operands: { get: () => ids }, scene, ...(resizePolicy ? { resizePolicy } : {}) },
     drag: {
       start: from,
       current: at,

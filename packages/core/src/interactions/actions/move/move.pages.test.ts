@@ -35,7 +35,7 @@ function drag(dx: number, options: {
   const ids = options.ids ?? [ON_PAGE];
   const from = options.from ?? { x: 95, y: 15 };
   const entries = scene.historyEntries().length;
-  const deps = { selection: { get: () => ids }, scene, nodeAtPoint: options.nodeAtPoint ?? (() => null) };
+  const deps = { operands: { get: () => ids }, scene, nodeAtPoint: options.nodeAtPoint ?? (() => null) };
   const base = { world: from, modifiers: MODS, deps };
   const invoker = moveAction.invoker!;
   if (invoker.timing !== 'ongoing') throw new Error('expected ongoing');
@@ -291,7 +291,7 @@ describe('a node following others, when a drop into a container moves what it fo
     const target: SnapTarget<RectPose> = { parentId: G2, slotPose: { x: 130, y: 10, width: 20, height: 10 } };
     const invoker = moveAction.invoker!;
     if (invoker.timing !== 'ongoing') throw new Error('expected ongoing');
-    const base = { world: { x: 10, y: 15 }, modifiers: MODS, deps: { selection: { get: () => [N] }, scene } };
+    const base = { world: { x: 10, y: 15 }, modifiers: MODS, deps: { operands: { get: () => [N] }, scene } };
     const to = { x: 140, y: 15 };
     const at = { ...base, world: to, drag: { start: base.world, current: to, delta: { x: 130, y: 0 } } } as unknown as InvocationCtx;
     const entries = scene.historyEntries().length;
@@ -325,7 +325,7 @@ describe('a node following others, when a drop into a container moves what it fo
     if (invoker.timing !== 'ongoing') throw new Error('expected ongoing');
     const base = {
       world: { x: 10, y: 15 }, modifiers: MODS,
-      deps: { selection: { get: () => [N] }, scene, layout: { getLayout: (id: string) => (id === G2 ? layout : null) } },
+      deps: { operands: { get: () => [N] }, scene, layout: { getLayout: (id: string) => (id === G2 ? layout : null) } },
     };
     const to = { x: 140, y: 15 };
     const drag = { start: base.world, current: to, delta: { x: 130, y: 0 } };

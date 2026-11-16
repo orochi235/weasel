@@ -39,7 +39,7 @@ describe('scene actions in a paged scene', () => {
   it('delete and cut with a page forced into the selection delete nothing', () => {
     for (const action of [deleteAction, clipboardCutAction]) {
       const { scene, run: runId } = pagedScene();
-      run(action, { scene, selection: heldSelection([A, runId]), clipboard: { copy: () => {} } });
+      run(action, { scene, operands: heldSelection([A, runId]), clipboard: { copy: () => {} } });
       expect([runId, A, B, R].map((id) => scene.get(id) !== undefined)).toEqual([true, true, true, true]);
     }
   });
@@ -47,7 +47,7 @@ describe('scene actions in a paged scene', () => {
   it('a page or run never enters a clipboard or a duplicate', () => {
     const { scene, run: runId } = pagedScene();
     const before = scene.nodes.size;
-    expect(duplicateSelection({ scene, selection: heldSelection([A, runId]) } as never, 12, 12)).toBeNull();
+    expect(duplicateSelection({ scene, operands: heldSelection([A, runId]) } as never, 12, 12)).toBeNull();
     expect(scene.nodes.size).toBe(before);
     expect(sceneToAdapter(scene).snapshotSelection([A, runId]).items).toEqual([]);
   });
@@ -65,7 +65,7 @@ describe('scene actions in a paged scene', () => {
     for (const action of [groupAction, ungroupAction]) {
       const { scene, run: runId } = pagedScene();
       const before = JSON.stringify(scene.toJSON().nodes);
-      run(action, { scene, selection: heldSelection([A, B, runId]) });
+      run(action, { scene, operands: heldSelection([A, B, runId]) });
       expect(JSON.stringify(scene.toJSON().nodes)).toBe(before);
     }
   });
@@ -74,14 +74,14 @@ describe('scene actions in a paged scene', () => {
     const { scene, run: runId } = pagedScene();
     const pages = JSON.stringify([runId, A, B].map((id) => scene.get(id)!.pose));
     (flipAction.invoker as { run(deps: never, params: never): void })
-      .run({ scene, selection: heldSelection([B, runId, R]) } as never, { axis: 'x', pivot: 'union' } as never);
+      .run({ scene, operands: heldSelection([B, runId, R]) } as never, { axis: 'x', pivot: 'union' } as never);
     expect(JSON.stringify([runId, A, B].map((id) => scene.get(id)!.pose))).toBe(pages);
     expect(scene.get(R)!.pose).toMatchObject({ x: 90, y: 10, width: 20, height: 10 });
   });
 
   it('group, ungroup and the boolean group count no page or run toward being enabled', () => {
     const { scene, run: runId } = pagedScene();
-    const deps = (ids: string[]) => ({ scene, selection: heldSelection(ids) }) as never;
+    const deps = (ids: string[]) => ({ scene, operands: heldSelection(ids) }) as never;
     expect(groupAction.enabled!(deps([A, runId]))).not.toBe(true);
     expect(ungroupAction.enabled!(deps([A]))).not.toBe(true);
     expect(makeBooleanGroupAction.enabled!(deps([R, A]))).not.toBe(true);
@@ -122,7 +122,7 @@ describe('grouping across pages', () => {
     it(`${name} puts the new group on the page the members overlap most, the others reparenting into it`, () => {
       const { scene, onB, before, worlds } = twoPages();
       const selection = heldSelection([R, onB]);
-      run(action, { scene, selection });
+      run(action, { scene, operands: selection });
       const [group] = selection.get();
       expect(group).not.toBe(R);
       expect(scene.get(asNodeId(group!))!.parent).toBe(A);
@@ -136,7 +136,7 @@ describe('grouping across pages', () => {
         kind: 'mark', layer: 'ink', parent: B, pose: { x: 0, y: 0, width: 0, height: 0 }, data: {},
         dependsOn: [onB], derivePose: (_n, deps) => deps[0]?.pose ?? null,
       });
-      run(action, { scene, selection: heldSelection([R, onB]) });
+      run(action, { scene, operands: heldSelection([R, onB]) });
       expect(scene.get(link)!.parent).toBe(A);
     });
   }

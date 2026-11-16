@@ -33,7 +33,7 @@ function setup() {
     set: (ids: NodeId[]) => { selected = ids; },
     adapterMethods: { getSelection: () => selected, setSelection: (ids: NodeId[]) => { selected = ids; } },
   } as unknown as SelectionApi;
-  const deps = { scene, selection };
+  const deps = { scene, operands: selection };
   const ctx = (world: { x: number; y: number }, drag: object): InvocationCtx => ({
     world, screen: world, modifiers: { alt: false, ctrl: false, meta: false, shift: false }, deps, drag,
   } as unknown as InvocationCtx);

@@ -27,7 +27,7 @@ function run(
 ) {
   (flipAction.invoker as ImmediateInvoker).run(
     {
-      selection: { get: () => ids },
+      operands: { get: () => ids },
       scene,
       ...extraDeps,
     } as never,

@@ -29,7 +29,7 @@ function ctxAt(scene: Scene<unknown, string, unknown>, at: { x: number; y: numbe
     world: at,
     screen: { x: 0, y: 0 },
     modifiers: { alt: false, ctrl: false, meta: false, shift: false },
-    deps: { selection: { get: () => [U, T] as NodeId[] }, scene },
+    deps: { operands: { get: () => [U, T] as NodeId[] }, scene },
     drag: {
       start: START,
       current: at,

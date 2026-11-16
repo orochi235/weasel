@@ -52,7 +52,7 @@ function makeSelection(ids: string[]) {
 
 function runDescriptor(
   action: typeof alignLeftAction,
-  deps: { selection: ReturnType<typeof makeSelection>; scene: ReturnType<typeof makeScene>['scene'] },
+  deps: { operands: ReturnType<typeof makeSelection>; scene: ReturnType<typeof makeScene>['scene'] },
 ) {
   (action.invoker as ImmediateInvoker).run(stubDeps(deps));
 }
@@ -89,7 +89,7 @@ describe('alignLeftAction descriptor', () => {
     };
     const { scene, setPose } = makeScene(poses);
     const selection = makeSelection(['a', 'b']);
-    runDescriptor(alignLeftAction, { selection, scene });
+    runDescriptor(alignLeftAction, { operands: selection, scene });
     expect(scene.applyBatch).toHaveBeenCalledOnce();
     // only b moves (a is already at union.left=5)
     expect(setPose).toHaveBeenCalledOnce();
@@ -100,7 +100,7 @@ describe('alignLeftAction descriptor', () => {
     const poses = { a: { x: 0, y: 0, width: 10, height: 10 } };
     const { scene, setPose } = makeScene(poses);
     const selection = makeSelection(['a']);
-    runDescriptor(alignLeftAction, { selection, scene });
+    runDescriptor(alignLeftAction, { operands: selection, scene });
     expect(setPose).not.toHaveBeenCalled();
   });
 
@@ -116,7 +116,7 @@ describe('alignLeftAction descriptor', () => {
 
   it('enabled is true exactly when the align would move something', () => {
     const { scene } = makeScene({ a: { x: 0, y: 0, width: 10, height: 10 }, b: { x: 5, y: 0, width: 10, height: 10 } });
-    const deps = (ids: string[]) => stubDeps({ selection: makeSelection(ids), scene });
+    const deps = (ids: string[]) => stubDeps({ operands: makeSelection(ids), scene });
     expect(alignLeftAction.enabled!(deps([]))).toBe(ActionDisabledReason.SelectionRequired);
     expect(alignLeftAction.enabled!(deps(['a']))).toBe(ActionDisabledReason.NotApplicable);
     expect(alignLeftAction.enabled!(deps(['a', 'b']))).toBe(true);
@@ -136,7 +136,7 @@ describe('alignRightAction descriptor', () => {
     };
     const { scene, setPose } = makeScene(poses);
     const selection = makeSelection(['a', 'b']);
-    runDescriptor(alignRightAction, { selection, scene });
+    runDescriptor(alignRightAction, { operands: selection, scene });
     // a moves right so its right edge = 30 → x = 20
     expect(setPose).toHaveBeenCalledOnce();
     expect(setPose.mock.calls[0][1]).toMatchObject({ x: 20 });
@@ -155,7 +155,7 @@ describe('alignTopAction descriptor', () => {
     };
     const { scene, setPose } = makeScene(poses);
     const selection = makeSelection(['a', 'b']);
-    runDescriptor(alignTopAction, { selection, scene });
+    runDescriptor(alignTopAction, { operands: selection, scene });
     expect(setPose).toHaveBeenCalledOnce();
     expect(setPose.mock.calls[0][1]).toMatchObject({ y: 5 });
   });
@@ -173,7 +173,7 @@ describe('alignBottomAction descriptor', () => {
     };
     const { scene, setPose } = makeScene(poses);
     const selection = makeSelection(['a', 'b']);
-    runDescriptor(alignBottomAction, { selection, scene });
+    runDescriptor(alignBottomAction, { operands: selection, scene });
     // a moves so bottom = 30 → y = 20
     expect(setPose).toHaveBeenCalledOnce();
     expect(setPose.mock.calls[0][1]).toMatchObject({ y: 20 });
@@ -192,7 +192,7 @@ describe('alignCenterXAction descriptor', () => {
     };
     const { scene, setPose } = makeScene(poses);
     const selection = makeSelection(['a', 'b']);
-    runDescriptor(alignCenterXAction, { selection, scene });
+    runDescriptor(alignCenterXAction, { operands: selection, scene });
     // union center-x = (0+40)/2 = 20; a → x=15, b → x=15
     expect(setPose).toHaveBeenCalledTimes(2);
     for (const call of setPose.mock.calls) {
@@ -213,7 +213,7 @@ describe('alignCenterYAction descriptor', () => {
     };
     const { scene, setPose } = makeScene(poses);
     const selection = makeSelection(['a', 'b']);
-    runDescriptor(alignCenterYAction, { selection, scene });
+    runDescriptor(alignCenterYAction, { operands: selection, scene });
     // union center-y = (0+40)/2 = 20; both → y=15
     expect(setPose).toHaveBeenCalledTimes(2);
     for (const call of setPose.mock.calls) {
@@ -235,7 +235,7 @@ describe('align with a rotated member', () => {
   it('align-left lines up the rotated ink, not the stored pose box', () => {
     const { scene, setPose } = makeScene({ a: { x: 0, y: 0, width: 10, height: 10 }, r: rotated });
     const selection = makeSelection(['a', 'r']);
-    runDescriptor(alignLeftAction, { selection, scene });
+    runDescriptor(alignLeftAction, { operands: selection, scene });
     // Visual union left = 0; the rotated ink starts at 55 → shift by -55.
     expect(setPose).toHaveBeenCalledOnce();
     expect(setPose.mock.calls[0][0]).toBe('r');
@@ -245,7 +245,7 @@ describe('align with a rotated member', () => {
   it('align-top takes the union top edge from the rotated ink', () => {
     const { scene, setPose } = makeScene({ a: { x: 0, y: 0, width: 10, height: 10 }, r: rotated });
     const selection = makeSelection(['a', 'r']);
-    runDescriptor(alignTopAction, { selection, scene });
+    runDescriptor(alignTopAction, { operands: selection, scene });
     // Visual union top = -15 (the rotated ink), so the unrotated square moves up.
     expect(setPose).toHaveBeenCalledOnce();
     expect(setPose.mock.calls[0][0]).toBe('a');
@@ -274,7 +274,7 @@ describe('align reference', () => {
   it("'pointer' aligns to the click's world point when a click invoked it", () => {
     const { scene, current } = makeScene(poses);
     const selection = makeSelection(['a', 'b']);
-    runWith(alignLeftAction, { selection, scene }, { to: 'pointer', world: { x: 100, y: 5 } });
+    runWith(alignLeftAction, { operands: selection, scene }, { to: 'pointer', world: { x: 100, y: 5 } });
     expect(current.a).toMatchObject({ x: 100, y: 0 });
     expect(current.b).toMatchObject({ x: 100, y: 20 });
   });
@@ -283,7 +283,7 @@ describe('align reference', () => {
     const { scene, current } = makeScene(poses);
     const selection = makeSelection(['a', 'b']);
     const pointer = { get: () => ({ world: { x: 70, y: 50 }, viewId: null }) };
-    runWith(alignCenterYAction, { selection, scene, pointer }, { to: 'pointer' });
+    runWith(alignCenterYAction, { operands: selection, scene, pointer }, { to: 'pointer' });
     expect(current.a).toMatchObject({ y: 45 });
     expect(current.b).toMatchObject({ y: 40 });
   });
@@ -292,21 +292,21 @@ describe('align reference', () => {
     const { scene, setPose } = makeScene(poses);
     const selection = makeSelection(['a', 'b']);
     const pointer = { get: () => null };
-    runWith(alignLeftAction, { selection, scene, pointer }, { to: 'pointer' });
+    runWith(alignLeftAction, { operands: selection, scene, pointer }, { to: 'pointer' });
     expect(setPose).not.toHaveBeenCalled();
   });
 
   it('aligns a single selected item to a point', () => {
     const { scene, current } = makeScene(poses);
     const selection = makeSelection(['b']);
-    runWith(alignRightAction, { selection, scene }, { to: { x: 200, y: 0 } });
+    runWith(alignRightAction, { operands: selection, scene }, { to: { x: 200, y: 0 } });
     expect(current.b).toMatchObject({ x: 180, y: 20 });
   });
 
   it('aligns to a world rect', () => {
     const { scene, current } = makeScene(poses);
     const selection = makeSelection(['a', 'b']);
-    runWith(alignBottomAction, { selection, scene }, { to: { x: 0, y: 0, width: 300, height: 100 } });
+    runWith(alignBottomAction, { operands: selection, scene }, { to: { x: 0, y: 0, width: 300, height: 100 } });
     expect(current.a).toMatchObject({ y: 90 });
     expect(current.b).toMatchObject({ y: 80 });
   });
@@ -314,14 +314,14 @@ describe('align reference', () => {
   it('aligns to a key node, which stays put', () => {
     const { scene, setPose, current } = makeScene(poses);
     const selection = makeSelection(['a', 'b']);
-    runWith(alignTopAction, { selection, scene }, { to: { node: 'b' } });
+    runWith(alignTopAction, { operands: selection, scene }, { to: { node: 'b' } });
     expect(setPose).toHaveBeenCalledOnce();
     expect(current.a).toMatchObject({ y: 20 });
   });
 
   it("'union' is the default, and needs two items", () => {
     const { scene, setPose } = makeScene(poses);
-    runWith(alignLeftAction, { selection: makeSelection(['b']), scene }, { to: 'union' });
+    runWith(alignLeftAction, { operands: makeSelection(['b']), scene }, { to: 'union' });
     expect(setPose).not.toHaveBeenCalled();
   });
 

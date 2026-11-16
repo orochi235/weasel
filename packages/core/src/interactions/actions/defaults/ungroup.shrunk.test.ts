@@ -16,7 +16,7 @@ const POSE = { x: 0, y: 0, width: 5, height: 5 };
 function setup() {
   const scene = createScene<Record<string, never>, 'main'>({ systemLayers: [{ id: 'main' }] });
   const selection = { get: () => [...scene.getSelection()], set: (ids: NodeId[]) => scene.setSelection(ids) };
-  const deps = { scene, selection } as never;
+  const deps = { scene, operands: selection } as never;
   const run = (action: typeof ungroupAction): void => { (action.invoker as ImmediateInvoker).run(deps, undefined as never); };
   const enabled = (action: typeof ungroupAction) => action.enabled?.(deps);
   /** A mark wrapped in a group by the group action, as the model test builds one. */

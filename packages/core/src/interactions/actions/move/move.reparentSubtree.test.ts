@@ -30,7 +30,7 @@ function dragOntoTarget(scene: Scene<unknown, string, unknown>, dx: number, sele
     world: { x: 0, y: 0 },
     screen: { x: 0, y: 0 },
     modifiers: { alt: false, ctrl: false, meta: false, shift: false },
-    deps: { selection: { get: () => selected }, scene, nodeAtPoint },
+    deps: { operands: { get: () => selected }, scene, nodeAtPoint },
   };
   const drag = { start: { x: 0, y: 0 }, current: { x: dx, y: 0 }, delta: { x: dx, y: 0 } };
   const handle = invoker.start(base as unknown as InvocationCtx, { params: { reparentOnDrop: 'top' } });

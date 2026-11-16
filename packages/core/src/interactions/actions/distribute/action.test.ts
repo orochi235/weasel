@@ -48,7 +48,7 @@ function makeSelection(ids: string[]) {
 
 function runDescriptor(
   action: typeof distributeHorizontalAction,
-  deps: { selection: ReturnType<typeof makeSelection>; scene: ReturnType<typeof makeScene>['scene'] },
+  deps: { operands: ReturnType<typeof makeSelection>; scene: ReturnType<typeof makeScene>['scene'] },
   params?: Record<string, unknown>,
 ) {
   (action.invoker as ImmediateInvoker).run(stubDeps(deps), params);
@@ -87,7 +87,7 @@ describe('distributeHorizontalAction descriptor', () => {
     };
     const { scene, setPose } = makeScene(poses);
     const selection = makeSelection(['a', 'b', 'c']);
-    runDescriptor(distributeHorizontalAction, { selection, scene });
+    runDescriptor(distributeHorizontalAction, { operands: selection, scene });
     expect(scene.applyBatch).toHaveBeenCalledOnce();
     // centers: a center=5, c center=105 → b center should land at 55, so x=50
     // a and c are anchors; only b moves
@@ -102,7 +102,7 @@ describe('distributeHorizontalAction descriptor', () => {
     };
     const { scene, setPose } = makeScene(poses);
     const selection = makeSelection(['a', 'b']);
-    runDescriptor(distributeHorizontalAction, { selection, scene });
+    runDescriptor(distributeHorizontalAction, { operands: selection, scene });
     expect(setPose).not.toHaveBeenCalled();
   });
 
@@ -122,7 +122,7 @@ describe('distributeHorizontalAction descriptor', () => {
       b: { x: 15, y: 0, width: 10, height: 10 },
       c: { x: 100, y: 0, width: 10, height: 10 },
     });
-    const deps = (ids: string[]) => stubDeps({ selection: makeSelection(ids), scene });
+    const deps = (ids: string[]) => stubDeps({ operands: makeSelection(ids), scene });
     expect(distributeHorizontalAction.enabled!(deps(['a', 'b']))).toBe(ActionDisabledReason.SelectionRequired);
     expect(distributeHorizontalAction.enabled!(deps(['a', 'b', 'c']))).toBe(true);
     expect(distributeVerticalAction.enabled!(deps(['a', 'b', 'c']))).toBe(ActionDisabledReason.NotApplicable);
@@ -142,7 +142,7 @@ describe('distributeVerticalAction descriptor', () => {
     };
     const { scene, setPose } = makeScene(poses);
     const selection = makeSelection(['a', 'b', 'c']);
-    runDescriptor(distributeVerticalAction, { selection, scene });
+    runDescriptor(distributeVerticalAction, { operands: selection, scene });
     // centers: a center=5, c center=105 → b center at 55, y=50
     expect(setPose).toHaveBeenCalledOnce();
     expect(setPose.mock.calls[0][1]).toMatchObject({ x: 0, y: 50 });
@@ -164,7 +164,7 @@ describe('distribute with a rotated member', () => {
     };
     const { scene, setPose } = makeScene(poses);
     const selection = makeSelection(['a', 'r', 'c']);
-    runDescriptor(distributeHorizontalAction, { selection, scene });
+    runDescriptor(distributeHorizontalAction, { operands: selection, scene });
     // Visual order is a(0..10), c(50..60), r(55..65): a and r are the endpoints,
     // so c is the middle item. Centres 5 → 60 put it at 32.5 → x = 27.5.
     expect(setPose).toHaveBeenCalledOnce();
@@ -182,7 +182,7 @@ describe('distribute mode param', () => {
     };
     const { scene, setPose } = makeScene(poses);
     const selection = makeSelection(['a', 'b', 'c']);
-    runDescriptor(distributeHorizontalAction, { selection, scene }, { mode: 'gaps' });
+    runDescriptor(distributeHorizontalAction, { operands: selection, scene }, { mode: 'gaps' });
     // span 100, sizes 70 → gap 15, so b starts at 25. Centres mode puts it at 27.5.
     expect(setPose).toHaveBeenCalledOnce();
     expect(setPose.mock.calls[0][0]).toBe('b');
