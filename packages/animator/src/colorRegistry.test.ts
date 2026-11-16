@@ -15,6 +15,22 @@ describe('ColorOverrideRegistry', () => {
     expect(r.get('a', 'stroke')).toBe(fn);
   });
 
+  it('notifies nobody for a write of the override a channel holds', () => {
+    const r = new ColorOverrideRegistry();
+    const fn = (base: readonly number[]) => base.slice();
+    r.set('a', 'fill', [1, Number.NaN, 3, 4]);
+    r.set('a', 'stroke', fn);
+    let calls = 0;
+    r.subscribe(() => { calls++; });
+    const version = r.version();
+    r.set('a', 'fill', [1, Number.NaN, 3, 4]);
+    r.set('a', 'stroke', fn);
+    expect(calls).toBe(0);
+    expect(r.version()).toBe(version);
+    r.set('a', 'fill', [1, 2, 3, 4]);
+    expect(calls).toBe(1);
+  });
+
   it('clear removes one channel without affecting the other', () => {
     const r = new ColorOverrideRegistry();
     r.set('a', 'fill', [1, 2, 3, 4]);

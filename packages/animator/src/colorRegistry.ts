@@ -1,4 +1,4 @@
-import { createEmitter } from '@weasel-js/registry';
+import { createEmitter, sameList } from '@weasel-js/registry';
 import type { Target } from './target';
 import { createTargetTable, type TargetTable } from './targetTable';
 
@@ -54,6 +54,8 @@ export class ColorOverrideRegistry {
       entry = {};
       this.map.set(id, entry);
     }
+    const held = entry[channel];
+    if (held !== undefined && sameOverride(held, override)) return;
     entry[channel] = override;
     this.changed();
   }
@@ -224,4 +226,10 @@ function shownOf(slot: ColorSlot): number[] {
   const out = new Array<number>(slot.length);
   for (let i = 0; i < out.length; i++) out[i] = shown[at + i]!;
   return out;
+}
+
+/** Whether two overrides paint alike: one function, or arrays of the same numbers. */
+function sameOverride(a: ColorOverride, b: ColorOverride): boolean {
+  if (typeof a === 'function' || typeof b === 'function') return a === b;
+  return sameList(a, b, Object.is);
 }
