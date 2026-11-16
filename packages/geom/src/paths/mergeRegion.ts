@@ -73,7 +73,7 @@ export function mergeRegion(path: Path, opts: MergeRegionOptions = {}): PolygonP
       }
     }
   });
-  const b = new PathBuilder();
+  const b = new PathBuilder().autoOrigin();
   if (!changed) {
     for (const c of contours) emit(b, closeContour(c.segs, snap));
     return b.build();

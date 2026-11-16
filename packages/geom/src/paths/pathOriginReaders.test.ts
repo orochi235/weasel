@@ -10,6 +10,14 @@ import { pathDistanceToPoint } from './pathDistance';
 import { measurePath } from './pathMeasure';
 import { pointAlongPath } from './pathAt';
 import { pathLengthTable } from '../along/pathTable';
+import { bendAlongPath } from './bendAlongPath';
+import { growRegion } from './growRegion';
+import { mergeRegion } from './mergeRegion';
+import { puckerBloatPath } from './puckerBloatPath';
+import { roughenPath } from './roughenPath';
+import { tweenPaths } from './tweenPaths';
+import { zigzagPath } from './zigzagPath';
+import type { Path } from '../path';
 import { pointAtLength } from '../along/positions';
 import { pathFromD } from './pathFromD';
 import { ORIGIN_THRESHOLD, joinPaths, originFor, worldCoords } from './pathOrigin';
@@ -166,5 +174,25 @@ describe('producers that pick an origin', () => {
     const table = pathLengthTable(p);
     expect(table.origin).toEqual(p.origin);
     expect(pointAtLength(table, 0).point[0] + table.origin!.x).toBeCloseTo(X, 6);
+  });
+
+  it('write an effect\'s far-out result from an origin, and keep the source\'s open-fill rule', () => {
+    const left = (p: Path | null) => boundsOfPath(p!).x;
+    const p = square();
+    expect(left(puckerBloatPath(p, { amount: 1e-12 }))).toBeCloseTo(X, 6);
+    expect(left(roughenPath(p, { size: 1e-9 }))).toBeCloseTo(X, 6);
+    expect(left(zigzagPath(p, { size: 1e-9 }))).toBeCloseTo(X, 6);
+    expect(left(tweenPaths(p, p, 0))).toBeCloseTo(X, 6);
+    expect(left(mergeRegion(p))).toBeCloseTo(X, 6);
+    expect(left(growRegion(p, 0.01))).toBeCloseTo(X - 0.01, 6);
+    expect(left(bendAlongPath({ kind: 'rect', x: 0, y: 0, width: 10, height: 2 }, pathFromD('M262144.3 0 L262154.3 0')))).toBeCloseTo(X, 6);
+
+    const open: PolygonPath = { ...pathFromD('M0 0 L10 0 L10 10'), openFill: 'none' };
+    const fill = (q: Path | null) => (q as PolygonPath).openFill;
+    expect(fill(puckerBloatPath(open, { amount: 0.1 }))).toBe('none');
+    expect(fill(roughenPath(open, { size: 1 }))).toBe('none');
+    expect(fill(zigzagPath(open, { size: 1 }))).toBe('none');
+    expect(fill(tweenPaths(open, open, 0.5))).toBe('none');
+    expect(fill(bendAlongPath(open, pathFromD('M0 0 L100 0')))).toBe('none');
   });
 });

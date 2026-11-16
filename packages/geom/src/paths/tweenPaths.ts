@@ -7,7 +7,7 @@
  * Where one contour has fewer segments, its longest ones are split in half
  * until the counts agree, which adds anchors without moving the outline.
  */
-import type { Path, PathFillRule, PolygonPath } from '../path';
+import type { Path, PolygonPath } from '../path';
 import {
   cubicContoursToPath, pathToCubicContours, reverseContour, splitSegment,
   type CubicContour, type CubicSegment,
@@ -60,19 +60,13 @@ export function prepareTween(a: Path, b: Path, opts: TweenPathsOptions = {}): Pa
     const y = cb[i] ?? collapsed(ca[i]!);
     pairs.push(matchContours(x, y, opts));
   }
-  const ruleA = fillRuleOf(a);
-  const ruleB = fillRuleOf(b);
   return {
     segmentCounts: pairs.map(([x]) => x.segs.length),
     at(t) {
       const out = pairs.map(([x, y]) => lerpContour(x, y, t));
-      return cubicContoursToPath(out, t < 0.5 ? ruleA : ruleB);
+      return cubicContoursToPath(out, t < 0.5 ? a : b);
     },
   };
-}
-
-function fillRuleOf(path: Path): PathFillRule {
-  return path.kind === 'polygon' ? path.fillRule : 'nonzero';
 }
 
 /** A contour with nothing to tween against grows from, or shrinks to, a

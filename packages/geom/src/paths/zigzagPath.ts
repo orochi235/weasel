@@ -37,7 +37,7 @@ export function zigzagPath(path: Path, opts: ZigzagPathOptions): Path {
     });
     return smooth ? smoothThrough(points, contour.closed) : polylineContour(points, contour.closed);
   });
-  return cubicContoursToPath(contours, path.kind === 'polygon' ? path.fillRule : 'nonzero');
+  return cubicContoursToPath(contours, path);
 }
 
 /** A Catmull-Rom curve through `points`: each one's handles parallel to the

@@ -6,7 +6,7 @@
  */
 import { elevateQuadraticToCubic, splitCubicAt } from '../curve';
 import { forEachSegment, PATH_C, PATH_L, PATH_M, PATH_Q, PATH_Z } from '../commands';
-import type { Path, PathFillRule, PolygonPath } from '../path';
+import type { Path, PolygonPath } from '../path';
 import { PathBuilder } from './builder';
 import { resolveCorners } from './corners';
 import { worldCoords } from './pathOrigin';
@@ -112,9 +112,10 @@ export function pathToCubicContours(path: Path): CubicContour[] {
   return out;
 }
 
-/** The path drawing `contours`: a straight segment as `L`, the rest as `C`. */
-export function cubicContoursToPath(contours: readonly CubicContour[], fillRule: PathFillRule = 'nonzero'): PolygonPath {
-  const b = new PathBuilder().setFillRule(fillRule);
+/** The path drawing `contours`: a straight segment as `L`, the rest as `C`. It takes `like`'s fill settings, as
+ *  {@link PathBuilder.like} does, and is measured from an origin picked for its points. */
+export function cubicContoursToPath(contours: readonly CubicContour[], like?: Path): PolygonPath {
+  const b = like ? PathBuilder.like(like) : new PathBuilder().autoOrigin();
   for (const { segs, closed } of contours) {
     if (segs.length === 0) continue;
     b.moveTo(segs[0]!.c[0], segs[0]!.c[1]);

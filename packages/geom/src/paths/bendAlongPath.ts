@@ -57,7 +57,7 @@ export function bendAlongPath(shape: Path, spine: Path, opts: BendAlongPathOptio
   // A sample every few tolerances along the bent outline keeps the warp's own
   // curvature inside what the fit can see.
   const step = Math.max(tolerance * 4, 0.5);
-  const b = new PathBuilder().setFillRule(shape.kind === 'polygon' ? shape.fillRule : 'nonzero');
+  const b = PathBuilder.like(shape);
   for (const { segs, closed } of contours) {
     const start = warp(segs[0]!.c[0], segs[0]!.c[1]);
     b.moveTo(start.x, start.y);

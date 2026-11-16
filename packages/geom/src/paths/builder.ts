@@ -57,6 +57,14 @@ export class PathBuilder {
     return b;
   }
 
+  /** A builder for a new path made from `like`'s geometry, as an effect writes one: `like`'s fill rule and
+   *  open-fill rule (a rect's are the defaults), measured from an origin of its own ({@link autoOrigin}). */
+  static like(like: Path): PathBuilder {
+    const b = new PathBuilder().autoOrigin();
+    if (like.kind === 'polygon') b.setFillRule(like.fillRule).setOpenFill(like.openFill);
+    return b;
+  }
+
   /**
    * Measure the coords from `(x, y)`, which the built path carries as its
    * `origin`: every point given before or after this call is still in the
