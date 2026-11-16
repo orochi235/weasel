@@ -5,7 +5,7 @@
  * undoable batch; the replacement takes the node's slot.
  */
 import { textToPathsByPaint, TextOutlinesError, type TextNodeSource } from '@weasel-js/text';
-import { resolveFill, resolveStroke } from '@weasel-js/paint';
+import { resolveFill, resolveStroke, type Stroke } from '@weasel-js/paint';
 import type { NodeId } from 'core/scene/types';
 import type { CreateOutlinesAdapter } from './createOutlines';
 import { replaceWithPaths, type PaintedPath } from './replaceWithPaths';
@@ -22,9 +22,16 @@ export type OutlineStrokeResult =
   /** Some selected stroked text has no outline geometry; nothing was changed. */
   | { kind: 'failed'; reason: 'text-outlines'; error: TextOutlinesError };
 
-/** Whether a text node wears a stroke anywhere: its own, or a run's. */
+/** Whether `stroke` covers anything to outline: it has a paint and a width above zero. */
+export function strokeCovers(stroke: Stroke | null | undefined): boolean {
+  const painted = resolveStroke(stroke);
+  const width = typeof painted?.width === 'object' ? painted.width.px : painted?.width;
+  return width !== undefined && width > 0;
+}
+
+/** Whether a text node wears a stroke that covers anything, anywhere: its own, or a run's. */
 export function textIsStroked(text: TextNodeSource | undefined): boolean {
-  return text != null && (text.data.stroke != null || !!text.data.runs?.some((r) => r.stroke != null));
+  return text != null && (strokeCovers(text.data.stroke) || !!text.data.runs?.some((r) => strokeCovers(r.stroke)));
 }
 
 /** What the adapter knows of `id` as painted world paths: a path node's one,

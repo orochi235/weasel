@@ -1,6 +1,6 @@
 import type { Action, ImmediateInvoker } from '@weasel-js/routing';
 import { ActionDisabledReason } from '@weasel-js/routing';
-import { applyOutlineStroke, textIsStroked } from './outlineStroke';
+import { applyOutlineStroke, strokeCovers, textIsStroked } from './outlineStroke';
 import { withTextOutlines } from './createOutlinesAction';
 import { icon } from '../../../icons.gen';
 
@@ -30,7 +30,7 @@ export const outlineStrokeAction: Action = {
     const ids = deps?.selection?.get() ?? [];
     if (ids.length === 0) return ActionDisabledReason.SelectionRequired;
     const adapter = deps?.createOutlinesAdapter;
-    return adapter && ids.some((id) => adapter.getPaint?.(id)?.stroke !== undefined || textIsStroked(adapter.getTextSource(id)))
+    return adapter && ids.some((id) => strokeCovers(adapter.getPaint?.(id)?.stroke) || textIsStroked(adapter.getTextSource(id)))
       ? true
       : ActionDisabledReason.NotApplicable;
   },
