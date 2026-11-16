@@ -19,6 +19,7 @@ export {
   qty,
   QuantityView,
   registerDisplayKind,
+  displayKindRegistry,
   type Presentation,
   type PresentOptions,
 } from './present';

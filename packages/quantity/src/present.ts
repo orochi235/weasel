@@ -1,3 +1,4 @@
+import { createReflectable, type Reflection } from '@weasel-js/registry';
 import { escapeMarkup as escape, textOf, type DisplayKind, type FormatContext, type Part } from './kind';
 import { compactKind, decimalKind, integerKind } from './kinds/plain';
 import { fractionKind, multiplierKind, percentKind, ratioKind, zoomKind } from './kinds/proportion';
@@ -9,19 +10,19 @@ import { parseNumber } from './number';
 import { amount, displayOf, retag, tag, unitOf, type Display, type Quantity, type Tagged } from './quantity';
 import { unitScale, type Unit, type UnitSystem } from './units';
 
-// A static table rather than registration at import, so the package stays
+// Seeded from a static table rather than by each kind registering itself at import, so the package stays
 // free of side effects and a bundler can drop what nobody imports.
-const BUILTIN: Record<string, DisplayKind<never>> = Object.fromEntries(
-  [
-    decimalKind, integerKind, compactKind, scientificKind,
-    percentKind, fractionKind, ratioKind, multiplierKind, zoomKind,
-    unitKind, currencyKind, durationKind, bytesKind,
-    romanKind, ordinalKind,
-  ].map((k) => [k.kind, k as DisplayKind<never>]),
-);
+const KINDS = createReflectable<DisplayKind<never>>();
+for (const k of [
+  decimalKind, integerKind, compactKind, scientificKind,
+  percentKind, fractionKind, ratioKind, multiplierKind, zoomKind,
+  unitKind, currencyKind, durationKind, bytesKind,
+  romanKind, ordinalKind,
+]) KINDS.push(k.kind, k as DisplayKind<never>, { source: 'kit' });
 
-/** Each kind's registrations, oldest first; the last one is live. */
-const registered = new Map<string, { kind: DisplayKind<never> }[]>();
+/** Every display kind by its `kind` tag: the built-ins (source `'kit'`) and what {@link registerDisplayKind}
+ *  added, a later registration shadowing an earlier one. */
+export const displayKindRegistry: Reflection<DisplayKind<never>> = KINDS.reflection;
 
 /**
  * Adds a display kind, or replaces a built-in one — the way to swap in a words
@@ -29,17 +30,7 @@ const registered = new Map<string, { kind: DisplayKind<never> }[]>();
  * a function that removes it again, restoring whatever it shadowed.
  */
 export function registerDisplayKind<D extends Display>(kind: DisplayKind<D>): () => void {
-  const id = kind.kind;
-  const stack = registered.get(id) ?? [];
-  const mine = { kind: kind as unknown as DisplayKind<never> };
-  stack.push(mine);
-  registered.set(id, stack);
-  return () => {
-    const at = stack.indexOf(mine);
-    if (at < 0) return;
-    stack.splice(at, 1);
-    if (stack.length === 0 && registered.get(id) === stack) registered.delete(id);
-  };
+  return KINDS.push(kind.kind, kind as unknown as DisplayKind<never>);
 }
 
 /**
@@ -48,7 +39,7 @@ export function registerDisplayKind<D extends Display>(kind: DisplayKind<D>): ()
  * without it, and its tag survives untouched.
  */
 export function displayKindOf(display: Display | undefined): DisplayKind<Display> {
-  const kind = display === undefined ? undefined : (registered.get(display.kind)?.at(-1)?.kind ?? (Object.hasOwn(BUILTIN, display.kind) ? BUILTIN[display.kind] : undefined));
+  const kind = display === undefined ? undefined : KINDS.get(display.kind);
   return (kind ?? decimalKind) as unknown as DisplayKind<Display>;
 }
 
