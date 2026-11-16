@@ -1,5 +1,5 @@
 import { readStored, useAutosave } from '@weasel-js/editor';
-import type { EffectDoc } from '@weasel-js/diagram/effect';
+import { readEffectDoc, type EffectDoc } from '@weasel-js/diagram/effect';
 import { createHistory, swapOp } from '@weasel-js/history';
 import { useCallback, useEffect, useMemo, useReducer, useRef, useState } from 'react';
 import { reportPipelineSave } from '../reportFailure';
@@ -12,19 +12,13 @@ const COALESCE_MS = 500;
 
 const EMPTY: EffectDoc = { pipeline: { stages: [], wires: [], types: { number: { control: true } } }, places: {} };
 
-const isDoc = (v: unknown): v is EffectDoc => {
-  const d = v as Partial<EffectDoc> | null;
-  return typeof d === 'object' && d !== null && Array.isArray(d.pipeline?.stages)
-    && Array.isArray(d.pipeline.wires) && typeof d.places === 'object' && d.places !== null;
-};
-
 /** An empty pipeline, as New makes. */
 export const emptyPipeline = (): EffectDoc => EMPTY;
 
 /** The pipeline a saved one holds, as `JSON.parse` reads its text. Throws on a value that is not one. */
 export function pipelineFromSaved(parsed: unknown): EffectDoc {
-  if (!isDoc(parsed)) throw new Error('Not a saved pipeline');
-  return parsed.pipeline.types ? parsed : { ...parsed, pipeline: { ...parsed.pipeline, types: EMPTY.pipeline.types } };
+  const doc = readEffectDoc(parsed);
+  return doc.pipeline.types ? doc : { ...doc, pipeline: { ...doc.pipeline, types: EMPTY.pipeline.types } };
 }
 
 /** The pipeline a `.weaselpipeline.json` file holds. Throws on text that is not one. */

@@ -4,7 +4,7 @@
  * connect first, and either may go at any time.
  */
 import {
-  DEVTOOLS_PROTOCOL, type DevtoolsRootInfo, type PageMessage, type PanelMessage,
+  DEVTOOLS_PROTOCOL, isPageMessage, isPanelMessage, type DevtoolsRootInfo, type PageMessage, type PanelMessage,
 } from '@weasel-js/core/devtools-protocol';
 import type { PortLike } from '../browserApi';
 import { PORT_PAGE, PORT_PANEL, isPanelHello } from '../envelope';
@@ -128,7 +128,7 @@ export function createRelay({ wake }: RelayOptions): Relay {
     }
     const frame: Frame = { port, roots: new Map(), asked: new Set() };
     t.frames.set(frameId, frame);
-    port.onMessage.addListener((m) => fromPage(t, frameId, frame, m as PageMessage));
+    port.onMessage.addListener((m) => { if (isPageMessage(m)) fromPage(t, frameId, frame, m); });
     port.onDisconnect.addListener(() => {
       if (t.frames.get(frameId) !== frame) return;
       t.frames.delete(frameId);
@@ -142,7 +142,7 @@ export function createRelay({ wake }: RelayOptions): Relay {
     let t: Tab | null = null;
     let tabId = -1;
     port.onMessage.addListener((m) => {
-      if (t) return fromPanel(t, tabId, m as PanelMessage);
+      if (t) return isPanelMessage(m) ? fromPanel(t, tabId, m) : undefined;
       if (!isPanelHello(m)) return port.disconnect();
       tabId = m.inspect;
       t = tab(tabId);

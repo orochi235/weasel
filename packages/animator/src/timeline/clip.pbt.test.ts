@@ -82,4 +82,26 @@ describe('clips, property', () => {
       expect(viaJson(toClip(bindClip(viaJson(c), binder())))).toEqual(viaJson(toClip(bindClip(c, binder()))));
     }), RUNS);
   });
+
+  it('refuse a clip with any one field swapped for anything with their own error, never a TypeError', () => {
+    const poke = (value: unknown, path: readonly number[], swap: unknown): unknown => {
+      if (path.length === 0 || typeof value !== 'object' || value === null) return swap;
+      const keys = Object.keys(value);
+      if (keys.length === 0) return swap;
+      const key = keys[path[0]! % keys.length]!;
+      const copy = (Array.isArray(value) ? [...value] : { ...value }) as Record<string, unknown>;
+      copy[key] = poke((value as Record<string, unknown>)[key], path.slice(1), swap);
+      return copy;
+    };
+    fc.assert(fc.property(clip, fc.array(fc.nat(), { maxLength: 7 }), fc.anything({ maxDepth: 2 }), (c, path, swap) => {
+      try {
+        bindClip(poke(viaJson(c), path, swap) as Clip, binder());
+      } catch (err) {
+        expect(err).not.toBeInstanceOf(TypeError);
+        expect(err).not.toBeInstanceOf(RangeError);
+        expect((err as Error).message).toMatch(/^bindClip: /);
+      }
+    }), RUNS);
+  });
 });
+

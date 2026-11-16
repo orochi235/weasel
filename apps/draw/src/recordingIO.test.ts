@@ -77,4 +77,14 @@ describe('recordingIO', () => {
     const jsonSize = JSON.stringify(big).length;
     expect(blob.size).toBeLessThan(jsonSize / 3);
   });
+
+  it.each([
+    ['null', null],
+    ['a number', 3],
+    ['an unknown type', { type: 'click', t: 0, target: 'canvas' }],
+    ['no type', { t: 0, target: 'canvas' }],
+  ])('deserializeRecording refuses an event that is %s, naming which', async (_, event) => {
+    const plain = new Blob([JSON.stringify({ ...sample, events: [sample.events[0], event] })]);
+    await expect(deserializeRecording(plain)).rejects.toThrow('This file is not a WeaselDraw recording: its event 2 is not');
+  });
 });

@@ -124,6 +124,12 @@ describe('emitCss', () => {
     expect(css).toContain('  --wzl-line: color-mix(in srgb, var(--wzl-surface) 20%, transparent);\n');
   });
 
+  it('keeps a description holding a comment end inside its comment', () => {
+    const def = { ...E, pins: { ...E.pins, ink: { value: '#111111', type: 'color', description: 'Ends */ a { b: c } /* here.' } } };
+    const sheet = emitCss([input(def)]);
+    expect(sheet.replace(/\/\*[^]*?\*\//g, '')).not.toContain('a { b: c }');
+  });
+
   it('writes a block per axis value: own values first, then what depends through a reference', () => {
     expect(css).toContain(
       "[data-wzl-theme='e'][data-wzl-mode='light'],\n[data-wzl-mode='light'] {\n  color-scheme: light;\n  --wzl-surface: var(--wzl-paper);\n  --wzl-line: color-mix(in srgb, var(--wzl-surface) 20%, transparent);\n}\n",
@@ -285,6 +291,14 @@ describe('emitThemes', () => {
     expect(text).toContain('export const THEME_SOURCES');
     expect(text).toContain('export const BAKED_THEMES');
     expect(text).toMatch(/export type TokenName =\n {2}\| '--wzl-gap'/);
+  });
+
+  it('writes a selection key holding a quote, a backslash or a line break as the key it is', () => {
+    const value = "it's\\a\nb";
+    const def: ThemeDefinition = { name: 'q', axes: { mode: { default: value, values: { [value]: {} } } }, pins: { ink: { value: '#111111', type: 'color' } } };
+    const text = emitThemes([{ definition: def, baked: bake(def) }]);
+    const line = text.split('\n').find((l) => l.endsWith(': {') && l.startsWith('      '))!;
+    expect(new Function(`return ${line.trim().slice(0, -3)};`)()).toBe(`mode=${value}`);
   });
 
   it('takes a selection a child’s by leaves out from the parent, as resolveTheme does', () => {

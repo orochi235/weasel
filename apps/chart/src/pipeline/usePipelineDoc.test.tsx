@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { act, cleanup, renderHook } from '@testing-library/react';
 import { IMAGE_STAGE_TYPES, addStage, stageFromType, type EffectDoc } from '@weasel-js/diagram/effect';
-import { PIPELINE_STORAGE_KEY, usePipelineDoc } from './usePipelineDoc';
+import { PIPELINE_STORAGE_KEY, pipelineFromJson, usePipelineDoc } from './usePipelineDoc';
 
 const blur = IMAGE_STAGE_TYPES.find((t) => t.type === 'blur')!;
 const source = IMAGE_STAGE_TYPES.find((t) => t.type === 'source')!;
@@ -72,6 +72,17 @@ describe('usePipelineDoc', () => {
     localStorage.setItem(PIPELINE_STORAGE_KEY, '{"nope":1}');
     const { result } = renderHook(() => usePipelineDoc());
     expect(result.current.doc.pipeline.stages).toEqual([]);
+  });
+
+  it('starts empty over a stored doc holding a stage that is not one', () => {
+    localStorage.setItem(PIPELINE_STORAGE_KEY, '{"pipeline":{"stages":[null],"wires":[]},"places":{}}');
+    const { result } = renderHook(() => usePipelineDoc());
+    expect(result.current.doc.pipeline.stages).toEqual([]);
+  });
+
+  it('refuses a pipeline file naming the field that is wrong', () => {
+    expect(() => pipelineFromJson('{"pipeline":{"stages":[],"wires":[{"from":1}]},"places":{}}'))
+      .toThrow('Not an effect document: doc.pipeline.wires[0].from is not an object');
   });
 
   it('yields the empty doc, and still edits, when storage throws on access', () => {

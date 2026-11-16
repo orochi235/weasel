@@ -7,6 +7,7 @@
 export { canMoveInChain, chainLinks, moveInChain } from './effect/chainEdit';
 export type { ChainLinks } from './effect/chainEdit';
 export { checkPipeline } from './effect/check';
+export { EffectDocShapeError, readEffectDoc } from './effect/docShape';
 export { COMPACT_PADDING, compact } from './effect/compact';
 export type { CompactOptions } from './effect/compact';
 export type { EffectProblem } from './effect/check';

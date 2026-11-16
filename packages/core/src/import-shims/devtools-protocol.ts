@@ -4,6 +4,7 @@
 export { installDevtoolsHook, createDevtoolsHook } from '../devtools/hook';
 export type { WeaselDevtoolsHook } from '../devtools/hook';
 export { DEVTOOLS_PROTOCOL } from '../devtools/protocol';
+export { isPageMessage, isPanelMessage } from '../devtools/messageShape';
 export type {
   DevtoolsActionEntry, DevtoolsArea, DevtoolsBinding, DevtoolsDepEntry, DevtoolsHistoryOp, DevtoolsHistoryRecord,
   DevtoolsHistorySlice, DevtoolsNodeDetail, DevtoolsNodeSummary, DevtoolsOverlays, DevtoolsRegistry, DevtoolsRequest,

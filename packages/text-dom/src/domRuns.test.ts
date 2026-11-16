@@ -90,6 +90,20 @@ describe('runsToDom', () => {
     expect(domToRuns(parent)).toEqual([{ text: 'a' }]);
   });
 
+  it.each([
+    ['5', '[1]'],
+    ['"red"', 'true'],
+    ['{"paint":5}', '{"paint":null}'],
+    ['[]', '{"paint":"red"}'],
+  ])('ignores a fill of %s and a stroke of %s, JSON that is neither', (fill, stroke) => {
+    const span = document.createElement('span');
+    span.setAttribute('data-fill', fill);
+    span.setAttribute('data-stroke', stroke);
+    span.textContent = 'a';
+    parent.replaceChildren(span);
+    expect(domToRuns(parent)).toEqual([{ text: 'a' }]);
+  });
+
   it('carries an unfilled run through the overlay and back', () => {
     const runs = [{ text: 'a', fill: null }, { text: 'b' }, { text: 'c', fill: { paint: { kind: 'solid' as const, color: '#ff0000' } } }];
     runsToDom(runs, parent);

@@ -2961,6 +2961,8 @@
     "escapeKey": "const",
     "installDevtoolsHook": "function",
     "isDevtoolsEnvelope": "function",
+    "isPageMessage": "function",
+    "isPanelMessage": "function",
     "serialize": "function",
     "serializedNumber": "function",
     "unescapeKey": "function"
@@ -3007,6 +3009,8 @@
     "escapeKey": "const",
     "installDevtoolsHook": "function",
     "isDevtoolsEnvelope": "function",
+    "isPageMessage": "function",
+    "isPanelMessage": "function",
     "serialize": "function",
     "serializedNumber": "function",
     "unescapeKey": "function"

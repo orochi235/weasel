@@ -201,3 +201,19 @@ describe('followTrace', () => {
     expect([...a.entries, ...b.entries]).toHaveLength(1);
   });
 });
+
+describe('a malformed page message', () => {
+  it.each([
+    null,
+    'sup',
+    { type: 'sup', protocol: DEVTOOLS_PROTOCOL, kitVersion: '1' },
+    { type: 'sup', protocol: DEVTOOLS_PROTOCOL, kitVersion: '1', roots: [null] },
+    { type: 'root-added', protocol: DEVTOOLS_PROTOCOL },
+    { type: 'changed', protocol: DEVTOOLS_PROTOCOL, rootId: 'r', areas: null },
+  ])('%j is ignored, leaving the connection as it was', (m) => {
+    const listeners: ((m: PageMessage) => void)[] = [];
+    const client = connectDevtools({ send: () => {}, onMessage: (l) => { listeners.push(l); return () => {}; } });
+    expect(() => { for (const l of listeners) l(m as PageMessage); }).not.toThrow();
+    expect(client.state()).toMatchObject({ status: 'connecting', roots: [] });
+  });
+});

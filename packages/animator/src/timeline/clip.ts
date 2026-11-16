@@ -2,6 +2,7 @@ import {
   EASINGS, reviveTypedArrays, tagTypedArrays, type BezierEasing, type EasingName, type EasingSpec,
 } from '@weasel-js/geom';
 import { axisIndexes } from '../axisNames';
+import { checkClip } from './clipShape';
 import type { Target } from '../target';
 import type { Interpolate } from '../types';
 import type { EventTrack, NestedTimeline, SampledTrack, TimelineEvent, TimelineTrack, Track } from './types';
@@ -149,10 +150,10 @@ function bindTimeline(timeline: ClipTimeline, binder: ClipBinder): NestedTimelin
  * The live timeline a clip describes, for `animator.timeline`: each sampled track given the
  * target and interpolation it names, each event what the binder says it does. The tracks
  * keep those names, so `toClip` can write them back after an editor has changed them.
- * Throws on a name the binder does not resolve.
+ * Throws on a name the binder does not resolve, and on a clip with a field of the wrong type, naming it.
  */
 export function bindClip(clip: Clip, binder: ClipBinder): NestedTimeline {
-  if (clip.version !== 1) throw new Error(`bindClip: this clip is version ${String(clip.version)}, and version 1 is the one understood.`);
+  checkClip(clip);
   return bindTimeline(clip, binder);
 }
 

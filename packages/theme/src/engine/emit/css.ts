@@ -187,7 +187,7 @@ export function emitCss(themes: readonly EmitInput[]): string {
     if (scheme) lines.push(`  color-scheme: ${scheme};`);
   }
   for (const [name, token] of Object.entries(rootValues)) {
-    if (token.description) lines.push(`  /* ${token.description} */`);
+    if (token.description) lines.push(`  /* ${token.description.replaceAll('*/', '* /')} */`);
     lines.push(`  --wzl-${name}: ${cssValue(name, token)};`);
   }
   lines.push('}', '');
