@@ -1,5 +1,5 @@
 import type { IconRef } from '@weasel-js/icons';
-import { applyBooleanOp, previewBooleanOp, type BooleanOp } from './booleans';
+import { applyBooleanOp, countOperands, previewBooleanOp, type BooleanOp } from './booleans';
 import type { BooleanOpOptions } from './operands';
 import type { BooleanStrokes } from './operands';
 import type { Action } from '@weasel-js/routing';
@@ -85,9 +85,10 @@ function makePathfinderAction(op: BooleanOp): Action {
       }));
     },
     enabled: (deps) => {
-      const selection = deps?.selection;
-      const count = selection?.get().length ?? 0;
-      return count >= 2 ? true : ActionDisabledReason.SelectionRequired;
+      const ids = deps?.selection?.get() ?? [];
+      if (ids.length < 2) return ActionDisabledReason.SelectionRequired;
+      const adapter = deps?.booleansAdapter;
+      return adapter && countOperands(adapter, adapter.getSelection()) >= 2 ? true : ActionDisabledReason.NotApplicable;
     },
   };
 }

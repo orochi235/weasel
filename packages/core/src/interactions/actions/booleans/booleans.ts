@@ -152,6 +152,21 @@ export function resolveEntries(
   return entries;
 }
 
+/** @internal How many of `sel` give an operand, read without outlining a stroke: what the Pathfinder actions'
+ *  `enabled` counts. A text whose face has not loaded counts, so a run can say why it stopped. */
+export function countOperands(adapter: BooleansAdapter, sel: readonly NodeId[]): number {
+  let n = 0;
+  for (const id of sel) {
+    try {
+      if (resolveOperand(adapter, id, { strokes: 'ignore' })) n++;
+    } catch (err) {
+      if (!(err instanceof TextOutlinesError)) throw err;
+      n++;
+    }
+  }
+  return n;
+}
+
 /** The operands back to front and the pieces `op` makes of them, or the
  *  result that says why it makes none. Reads the adapter and changes nothing. */
 function planBooleanOp(

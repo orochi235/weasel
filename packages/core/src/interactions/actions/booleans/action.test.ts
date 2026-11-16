@@ -77,6 +77,24 @@ describe('pathfinder descriptors (all of them)', () => {
 });
 
 
+describe('pathfinder enabled', () => {
+  it('is off while fewer than two of the selected give an operand', () => {
+    const adapter = {
+      ...rootsTree(),
+      getSelection: () => [asNodeId('box'), asNodeId('group')],
+      getWorldPath: (id: string) => (id === 'box' ? { kind: 'rect', x: 0, y: 0, width: 10, height: 10 } as Path : undefined),
+      compareZ: () => 0,
+      createPathNode: () => ({ id: 'new' }),
+      applyOps: () => {},
+    } as BooleansAdapter;
+    const selection = { get: () => ['box', 'group'] };
+    expect(pathfinderUnionAction.enabled!({ selection, booleansAdapter: adapter } as never)).toBe(ActionDisabledReason.NotApplicable);
+    expect(pathfinderUnionAction.enabled!({
+      selection, booleansAdapter: { ...adapter, getWorldPath: () => ({ kind: 'rect', x: 0, y: 0, width: 10, height: 10 }) },
+    } as never)).toBe(true);
+  });
+});
+
 describe('Pathfinder actions and strokes', () => {
   it('reads an unfilled stroked line as its stroke, so Minus Front cuts a slot', () => {
     const paths: Record<string, Path> = {
