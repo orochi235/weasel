@@ -102,6 +102,16 @@ describe('ColorField', () => {
     expect(onChange).not.toHaveBeenCalled();
   });
 
+  it('reports a canceled opacity drag: the starting color to onInput, then onCancel, and no commit', () => {
+    const calls: string[] = [];
+    render(<ColorField value="#11223380" alpha onInput={(hex) => calls.push(hex)} onChange={() => { calls.push('change'); }} onCancel={() => calls.push('cancel')} aria-label="Fill" />);
+    const slider = screen.getByLabelText('Fill opacity');
+    fireEvent.pointerDown(slider);
+    fireEvent.input(slider, { target: { value: '100' } });
+    fireEvent.keyDown(slider, { key: 'Escape' });
+    expect(calls).toEqual(['#112233ff', '#11223380', 'cancel']);
+  });
+
   it('does not double-commit when blur follows pointer-up', () => {
     const onChange = vi.fn();
     render(<ColorField value="#11223380" alpha onChange={onChange} aria-label="Fill" />);

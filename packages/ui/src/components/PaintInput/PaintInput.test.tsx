@@ -370,6 +370,21 @@ describe('PaintInput — opacity of a paint with no single color', () => {
     });
   }
 
+  it('reports a canceled opacity drag on a solid, and on a gradient body, through onCancel', () => {
+    for (const value of [SOLID, LINEAR]) {
+      const onCancel = vi.fn();
+      const onChange = vi.fn();
+      const { unmount } = renderWithIcons(<PaintInput value={value} onInput={() => {}} onChange={onChange} onCancel={onCancel} />);
+      const slider = screen.getByRole('slider', { name: /^opacity$/i });
+      fireEvent.pointerDown(slider);
+      fireEvent.input(slider, { target: { value: '40' } });
+      fireEvent.keyDown(slider, { key: 'Escape' });
+      expect(onCancel).toHaveBeenCalledTimes(1);
+      expect(onChange).not.toHaveBeenCalled();
+      unmount();
+    }
+  });
+
   it('shows one opacity control for a solid, not a second beside the swatch', () => {
     renderWithIcons(<PaintInput value={SOLID} onChange={() => {}} />);
     expect(screen.getAllByRole('slider', { name: /opacity/i })).toHaveLength(1);

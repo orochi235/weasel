@@ -180,10 +180,11 @@ export interface PropertyColorFieldProps extends PropertyFieldBase {
   value: string | undefined;
   /**
    * The kit's edit protocol (`docs/conventions.md`, "Edit callbacks"): an edit ends as the picker closes or the
-   * opacity track is let go.
+   * opacity track is let go, and a drag of that track abandoned by Escape cancels it.
    */
   onChange: (next: string) => void;
   onInput?: (next: string) => void;
+  onCancel?: () => void;
   /**
    * Offer an opacity track. `true` keeps the alpha in `value` as `#rrggbbaa`;
    * a number is the 0..1 alpha held apart from it, reported through
@@ -206,8 +207,10 @@ export interface PropertyPaintFieldProps extends PropertyFieldBase {
   /** `null` is an explicit "no paint"; `undefined` is nothing to show;
    *  `'inherit'` takes the enclosing container's. */
   value: Paint | Inherit | null | undefined;
+  /** The kit's edit protocol (`docs/conventions.md`, "Edit callbacks"). */
   onChange: (next: Paint | null) => void;
   onInput?: (next: Paint | null) => void;
+  onCancel?: () => void;
   /** Offer "None". Default `true`. */
   allowNone?: boolean;
   /** Present, "Inherit" is offered beside "None". */

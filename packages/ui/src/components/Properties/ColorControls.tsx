@@ -63,6 +63,7 @@ export function ColorControl(p: PropertyColorFieldProps) {
       disabledReason={p.disabledReason}
       onInput={live}
       onChange={settled}
+      onCancel={p.onCancel}
       aria-label={text}
     />
   );
@@ -90,6 +91,7 @@ export function PaintControl(p: PropertyPaintFieldProps) {
       inherit={p.inherit}
       onChange={p.onChange}
       onInput={p.onInput}
+      onCancel={p.onCancel}
       aria-label={text}
     />
   );

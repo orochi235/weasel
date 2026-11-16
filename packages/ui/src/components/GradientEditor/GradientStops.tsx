@@ -147,6 +147,7 @@ export function GradientStops(props: GradientStopsProps): ReactElement {
         removable={removable}
         onColorInput={(color) => onInput?.(edited({ color }))}
         onColorChange={(color) => onChange(edited({ color }))}
+        onColorCancel={onCancel}
         onOffsetChange={(offset) => onChange(edited({ offset }))}
         // The button goes inert at the last two stops and would drop focus on the page.
         onRemove={() => remove(selected, stops.length - 1 <= MIN_STOPS)}

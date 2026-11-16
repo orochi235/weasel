@@ -23,6 +23,8 @@ export interface MeshEditorProps extends HoldProps {
    *  members, so a registered kind's own shape only travels through it. */
   onInput?: (next: Paint) => void;
   onChange: (next: Paint) => void;
+  /** A corner's opacity drag was abandoned, after `onInput` got its starting paint back. */
+  onCancel?: () => void;
   /** Show the sRGB / OKLab / OKLCh switch. Default true. */
   spaceSwitch?: boolean;
   className?: string;
@@ -40,7 +42,7 @@ export interface MeshEditorProps extends HoldProps {
  * paint stores them in, so a corner's number is stable while it is dragged.
  */
 export function MeshEditor(props: MeshEditorProps): ReactElement {
-  const { value, onInput, onChange, spaceSwitch = true, className } = props;
+  const { value, onInput, onChange, onCancel, spaceSwitch = true, className } = props;
   const space = value.interpolate ?? 'rgb';
   const access = useControlAccess(props);
 
@@ -79,6 +81,7 @@ export function MeshEditor(props: MeshEditorProps): ReactElement {
                     className={s.corner}
                     onInput={(next) => onInput?.(withCorner(patchIndex, corner, next))}
                     onChange={(next) => onChange(withCorner(patchIndex, corner, next))}
+                    onCancel={onCancel}
                   />
                 ))}
               </div>

@@ -23,6 +23,7 @@ export function StopEditor(props: {
   removable: boolean;
   onColorInput: (color: string) => void;
   onColorChange: (color: string) => void;
+  onColorCancel?: () => void;
   onOffsetChange: (offset: number) => void;
   onRemove: () => void;
 }): ReactElement {
@@ -50,6 +51,7 @@ export function StopEditor(props: {
         className={s.color}
         onInput={props.onColorInput}
         onChange={props.onColorChange}
+        onCancel={props.onColorCancel}
       />
       <Button {...CLOSE_BUTTON_PROPS}
         aria-label={`Remove stop ${place}`}

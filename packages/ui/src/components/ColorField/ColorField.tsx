@@ -34,6 +34,8 @@ export interface ColorFieldProps extends HoldProps {
    *  per user gesture; pair with an undoable write. Return the color actually
    *  applied when it differs, and the recent colors record that instead. */
   onChange: (hex: string) => AppliedColor;
+  /** An opacity drag was abandoned, by Escape or an unmount, after `onInput` got its starting color back. */
+  onCancel?: () => void;
   /** Id for the color input, for a `<label htmlFor>` outside it. */
   id?: string;
   'aria-label'?: string;
@@ -59,7 +61,7 @@ function hex8Of(value: string): string {
  * commit-on-change would emit one undo entry per tick.
  */
 export function ColorField(props: ColorFieldProps) {
-  const { value, mixed = false, unset = false, alpha = false, alphaDisabled = false, onInput, onChange, id, className } = props;
+  const { value, mixed = false, unset = false, alpha = false, alphaDisabled = false, onInput, onChange, onCancel, id, className } = props;
   const hex8 = hex8Of(value ?? '#000000');
   const rgb6 = hex8.slice(0, 7);
   const alpha01 = getAlpha01(hex8);
@@ -126,7 +128,10 @@ export function ColorField(props: ColorFieldProps) {
             const next = compose(visibleRgb, a01);
             recordApplied(apply(next), next);
           }}
-          onCancel={() => setAlphaDraft(null)}
+          onCancel={() => {
+            setAlphaDraft(null);
+            onCancel?.();
+          }}
         />
       ))}
     </span>
