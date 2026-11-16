@@ -67,6 +67,20 @@ describe('captureGesture', () => {
     vi.runOnlyPendingTimers();
   });
 
+  it('holds a click back for the whole of a double-click gap longer than one timer holds', async () => {
+    vi.useFakeTimers();
+    const single = captureGesture(window, { kinds: ['click', 'doubleClick'], doubleClickMs: 2 ** 31 });
+    let settled = false;
+    void single.then(() => { settled = true; });
+    clickAt(10, 10);
+    vi.advanceTimersByTime(1);
+    await Promise.resolve();
+    expect(settled).toBe(false);
+    vi.advanceTimersByTime(2 ** 31);
+    expect(await single).toEqual({ kind: 'click' });
+    vi.runOnlyPendingTimers();
+  });
+
   it('captures a right click as a context menu, and keeps the native menu shut', async () => {
     const got = captureGesture(window, { kinds: ['click', 'contextMenu'] });
     fire('pointerdown', { button: 2, clientX: 0, clientY: 0 });
