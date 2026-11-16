@@ -16,6 +16,7 @@ export function createPanelHostRegistry(): PanelHostRegistry {
   const changed = createEmitter();
   return {
     set: (key, el) => {
+      if ((hosts.get(key) ?? null) === el) return;
       if (el) hosts.set(key, el);
       else hosts.delete(key);
       changed.emit();
