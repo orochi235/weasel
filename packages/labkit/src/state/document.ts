@@ -1,5 +1,5 @@
 import { isPlainObject } from '@weasel-js/registry';
-import { sameStored, type StorageAdapter } from '@weasel-js/storage';
+import { type StorageAdapter, sameStored } from '@weasel-js/storage';
 import { labStorageKey } from './helpers';
 import type { LabDocument, LabMode, Migration, SavedSnapshot, SerializedTrial } from './types';
 import type { UndockedPanels } from './undock';

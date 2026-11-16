@@ -2,8 +2,8 @@ import {
   type OwnedRecordCache,
   openRecords,
   type RecordCache,
-  sameStored,
   type StorageAdapter,
+  sameStored,
 } from '@weasel-js/storage';
 import { type BindOptions, bindLabStore } from './bindLabStore';
 import {
