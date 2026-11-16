@@ -8,30 +8,26 @@ import { describe, it, expect, vi, beforeAll, beforeEach } from 'vitest';
 import { act } from '@testing-library/react';
 import { renderWithKeys as render } from '@weasel-js/react/testing/giveKeys';
 import { createRef } from 'react';
-import { SceneCanvas } from './SceneCanvas';
-import type { SceneCanvasApi } from './canvasExtension';
-import type { FeaturePreset } from './SceneCanvas/features';
+import { SceneCanvas } from '@weasel-js/core';
+import type { SceneCanvasApi } from '@weasel-js/core';
+import type { FeaturePreset } from '@weasel-js/core';
 import { ActionsProvider } from '@weasel-js/routing/react';
 // The real unpacker, to keep this an end-to-end check of the injected seam.
 import { unpackSvgFiles } from '@weasel-js/svg';
-import { createScene } from 'core/scene/scene';
-import type { Scene } from 'core/scene/types';
-import {
-  getContentHandlers,
-  registerContentHandler,
-  _resetContentHandlersForTests,
-  type ContentHandlerEntry,
-} from 'domains/ingestion/contentHandlers';
+import { createScene } from '@weasel-js/core/engine';
+import type { Scene } from '@weasel-js/core/engine';
+import { registerContentHandler, type ContentHandlerEntry } from '@weasel-js/core';
+import { getContentHandlersForTests as getContentHandlers, _resetContentHandlersForTests } from '@weasel-js/core/test-seams';
 import {
   __setImageMeasureForTests,
   __setFileToDataUriForTests,
   _resetImageHandlerSeamsForTests,
-} from 'domains/ingestion/imageHandler';
+} from '../../ingest/imageHandler';
 import {
   __setSvgMeasureForTests,
   _resetSvgHandlerSeamsForTests,
-} from 'domains/ingestion/svgHandler';
-import { buildWeaselClipboardText } from 'interactions/actions/clipboard/wireFormat';
+} from '../../ingest/svgHandler';
+import { buildWeaselClipboardText } from '@weasel-js/core';
 import { drawPreset, editPreset, ingestPreset } from '@weasel-js/editing';
 
 type D = { image?: { src: string } };

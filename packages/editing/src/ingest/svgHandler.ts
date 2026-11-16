@@ -16,7 +16,7 @@
  * never hit the raster measure path, still behind any consumer handler
  * (default 0).
  */
-import type { ContentHandlerEntry, IngestCtx } from './contentHandlers';
+import type { ContentHandlerEntry, IngestCtx } from '@weasel-js/core';
 import type { IngestItem } from '@weasel-js/routing';
 import { embedFilesAsImageNodes, type Measure } from './imageHandler';
 

@@ -4,12 +4,12 @@ import { act } from '@testing-library/react';
 import { createRef } from 'react';
 import { renderWithKeys as render } from '@weasel-js/react/testing/giveKeys';
 import { SceneCanvas, createScene, type FeaturePreset, type Scene, type SceneCanvasApi } from '@weasel-js/core';
-import { _resetContentHandlersForTests } from 'domains/ingestion/contentHandlers';
+import { _resetContentHandlersForTests } from '@weasel-js/core/test-seams';
 import {
   __setImageMeasureForTests, __setFileToDataUriForTests, _resetImageHandlerSeamsForTests,
-} from 'domains/ingestion/imageHandler';
-import { __setSvgMeasureForTests, _resetSvgHandlerSeamsForTests } from 'domains/ingestion/svgHandler';
-import { buildWeaselClipboardText } from 'interactions/actions/clipboard/wireFormat';
+} from '@weasel-js/editing/test-seams';
+import { __setSvgMeasureForTests, _resetSvgHandlerSeamsForTests } from '@weasel-js/editing/test-seams';
+import { buildWeaselClipboardText } from '@weasel-js/core';
 import { textPreset } from '../presets';
 import { ingestPreset } from '@weasel-js/editing';
 

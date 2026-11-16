@@ -22,6 +22,9 @@ the same `IngestItem`. Handlers never branch on where content came from.
 
 ## Handlers
 
+The kit's handlers live in `@weasel-js/editing` (`packages/editing/src/ingest/`), and its `ingestPreset` brings
+them to a canvas; this directory holds the mechanism that routes an item to one.
+
 | Handler | Claims |
 | --- | --- |
 | `kitWeaselJsonHandler` | The kit's own clipboard format — full-fidelity node round-trip. |

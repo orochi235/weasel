@@ -59,6 +59,7 @@ export {
 } from './tools/select/groupEntry';
 export { drawPreset, pickPreset, transformPreset } from './presets/composites';
 export { ingestPreset } from './presets/ingest';
+export { KIT_CONTENT_HANDLERS } from './ingest/kitHandlers';
 export { insertPreset } from './presets/insert';
 export { selectionChromePreset } from './presets/selectionChrome';
 export { SELECTION_CHROME } from './chrome/selectionChrome';

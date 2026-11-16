@@ -5,9 +5,9 @@
  * Registered at priority -100 so any consumer handler (default 0) can take
  * image files first.
  */
-import type { ContentHandlerEntry, IngestCtx } from './contentHandlers';
+import type { ContentHandlerEntry, IngestCtx } from '@weasel-js/core';
 import type { IngestItem } from '@weasel-js/routing';
-import { arrivalBounds } from './placement';
+import { arrivalBounds } from '@weasel-js/core';
 
 const VIEWPORT_FIT = 0.9;
 

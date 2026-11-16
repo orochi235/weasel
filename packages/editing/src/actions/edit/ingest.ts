@@ -26,7 +26,8 @@ import {
   couldClaim, handlersFor, runIngest, type ContentHandlerEntry, type IngestCtx, type RunIngestOptions,
 } from '@weasel-js/core';
 import type { IngestItem } from '@weasel-js/routing';
-import { previewIngest, MOVE_NODES_REQUIRES } from '@weasel-js/core';
+import { MOVE_NODES_REQUIRES } from '@weasel-js/core';
+import { previewIngest } from '../../ingest/ghost';
 import { defaultCommitAdapter, operandMethods } from '@weasel-js/core/engine';
 import type { IngestParams } from '@weasel-js/core';
 

@@ -5,11 +5,22 @@ import type { ClipboardIngestCtx } from 'interactions/actions/depSchema';
 import { useCallback, useEffect, useMemo } from 'react';
 import { dwarn } from '../../debug';
 import { admitHandlerMimes, type ContentHandlerEntry } from './contentHandlers';
-import { kitHandlersFor, type KitHandlersOption } from './kitHandlers';
 import type { ImmediateParams } from '@weasel-js/routing';
 import type {} from '../../interactions/actions/actionParamSchema';
 
 const NONE: readonly ContentHandlerEntry[] = [];
+
+/** `<SceneCanvas ingestion={{ kitHandlers }}>`: which of the kit's content handlers (those with a `kit:` id, which
+ *  `@weasel-js/editing`'s `ingestPreset` brings) the canvas keeps. `true` (the default) keeps every one, `false`
+ *  none, and `{ omit }` all but the ids named (`'kit:image'`, `'kit:svg'`, `'kit:weasel-json'`). */
+export type KitHandlersOption = boolean | { omit: readonly string[] };
+
+/** `presetHandlers` less the kit handlers `option` turns off. */
+function keptHandlers(presetHandlers: readonly ContentHandlerEntry[], option: KitHandlersOption): readonly ContentHandlerEntry[] {
+  if (option === true) return presetHandlers;
+  const off = (id: string) => id.startsWith('kit:') && (option === false || option.omit.includes(id));
+  return presetHandlers.filter((h) => !off(h.id));
+}
 
 /** What `useCanvasIngestion` reads of `<SceneCanvas ingestion>`. */
 export interface CanvasIngestionOptions {
@@ -44,7 +55,7 @@ export function useCanvasIngestion(
   adapter: InsertAdapter<{ id: string }>,
   getRegistry: () => ActionsRegistry | null,
   options: CanvasIngestionOptions | undefined,
-  /** Handlers the canvas's presets bring, tried after the kit's. */
+  /** Handlers the canvas's presets bring, the kit's among them, tried after its own. */
   presetHandlers: readonly ContentHandlerEntry[] = NONE,
 ): CanvasIngestion {
   const own = options?.handlers;
@@ -52,7 +63,7 @@ export function useCanvasIngestion(
   // Keyed by value, so an inline `{ omit: [...] }` does not rebuild the list every render.
   const omitted = kit === false ? null : typeof kit === 'object' ? kit.omit.join('\n') : '';
   const handlers = useMemo(
-    () => [...(own ?? []), ...kitHandlersFor(omitted === null ? false : { omit: omitted.split('\n') }), ...presetHandlers],
+    () => [...(own ?? []), ...keptHandlers(presetHandlers, omitted === null ? false : { omit: omitted.split('\n') })],
     [own, omitted, presetHandlers],
   );
   useEffect(() => admitHandlerMimes(handlers), [handlers]);

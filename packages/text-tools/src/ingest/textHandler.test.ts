@@ -2,8 +2,9 @@ import { describe, it, expect, vi } from 'vitest';
 import { createTextHandler, textContentHandler } from './textHandler';
 import type { IngestItem } from '@weasel-js/routing';
 import { type IngestCtx } from '@weasel-js/core';
-import { kitSvgHandler } from 'domains/ingestion/svgHandler';
-import { kitWeaselJsonHandler } from 'domains/ingestion/weaselJsonHandler';
+import { KIT_CONTENT_HANDLERS } from '@weasel-js/editing';
+
+const kit = (id: string) => KIT_CONTENT_HANDLERS.find((h) => h.id === id)!;
 
 const text = (t: string, mime = 'text/plain'): IngestItem => ({ kind: 'string', mime, text: t });
 
@@ -37,8 +38,8 @@ describe('textContentHandler', () => {
   });
 
   it('runs after the handlers that read markup and node payloads out of plain text', () => {
-    expect(textContentHandler.priority!).toBeLessThan(kitSvgHandler.priority!);
-    expect(textContentHandler.priority!).toBeLessThan(kitWeaselJsonHandler.priority!);
+    expect(textContentHandler.priority!).toBeLessThan(kit('kit:svg').priority!);
+    expect(textContentHandler.priority!).toBeLessThan(kit('kit:weasel-json').priority!);
   });
 
   it('inserts a text node sized to the string, centered on the point', async () => {

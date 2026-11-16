@@ -59,6 +59,7 @@
       "@weasel-js/dither/testing/*": ["../dither/src/testing/*"],
       "@weasel-js/editing": ["../editing/src/index.ts"],
       "@weasel-js/editing/engine": ["../editing/src/engine.ts"],
+      "@weasel-js/editing/test-seams": ["../editing/src/test-seams.ts"],
       "@weasel-js/editing/icons": ["../editing/src/icons.table.ts"],
       "@weasel-js/editor": ["../editor/src/index.ts"],
       "@weasel-js/export": ["../export/src/index.ts"],

@@ -6,9 +6,9 @@
  */
 import { rectPath, type Rect } from '@weasel-js/geom';
 import { pendingKindOf, type ActionDeps, type IngestItem } from '@weasel-js/routing';
-import { couldClaim, type ContentHandlerEntry, type IngestCtx } from './contentHandlers';
-import { arrivalBounds } from './placement';
-import type { IngestParams } from 'interactions/actions/actionParamSchema';
+import { couldClaim, type ContentHandlerEntry, type IngestCtx } from '@weasel-js/core';
+import { arrivalBounds } from '@weasel-js/core';
+import type { IngestParams } from '@weasel-js/core';
 
 /** A file's ghost is a square this fraction of the viewport's shorter side;
  *  a string's is twice as wide and a quarter as tall, the shape of a line. */

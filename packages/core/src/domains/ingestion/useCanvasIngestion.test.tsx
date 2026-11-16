@@ -2,7 +2,7 @@ import { describe, expect, it, vi } from 'vitest';
 import { renderHook } from '@testing-library/react';
 import { itemTypesFromDataTransfer, type ActionsRegistry } from '@weasel-js/routing';
 import type { InsertAdapter } from 'core/adapters/types';
-import { getContentHandlers } from './contentHandlers';
+import { getContentHandlers, type ContentHandlerEntry } from './contentHandlers';
 import { useCanvasIngestion, type CanvasIngestionOptions } from './useCanvasIngestion';
 import { rootsTree } from 'core/adapters/testing/rootsTree';
 
@@ -23,11 +23,12 @@ function mount(opts: {
   adapter?: Adapter;
   registry?: ActionsRegistry | null;
   options?: CanvasIngestionOptions;
+  presetHandlers?: readonly ContentHandlerEntry[];
 } = {}) {
-  const { adapter = pasting, registry = null } = opts;
+  const { adapter = pasting, registry = null, presetHandlers } = opts;
   return renderHook(
     ({ options }: { options?: CanvasIngestionOptions }) =>
-      useCanvasIngestion(adapter, () => registry, options),
+      useCanvasIngestion(adapter, () => registry, options, presetHandlers),
     { initialProps: { options: opts.options } },
   );
 }
@@ -102,21 +103,26 @@ describe('useCanvasIngestion: handlers', () => {
   const entry = { id: 'app:x', match: 'application/x', handle: () => {} };
   const ids = (handlers: readonly { id: string }[]) => handlers.map((h) => h.id);
 
-  it('are the canvas’s own and every kit handler, and none goes in the page-wide registry', () => {
+  // What presets bring, as `ingestPreset` brings the kit's and a text preset its own.
+  const handler = (id: string): ContentHandlerEntry => ({ id, match: 'application/x', handle: () => {} });
+  const PRESETS = [handler('kit:image'), handler('kit:svg'), handler('kit:weasel-json'), handler('text:x')];
+
+  it('are the canvas’s own, then its presets’, and none goes in the page-wide registry', () => {
     const before = ids(getContentHandlers());
-    const { result } = mount({ options: { handlers: [entry] } });
-    expect(ids(result.current.handlers)).toEqual(['app:x', 'kit:image', 'kit:svg', 'kit:weasel-json']);
+    const { result } = mount({ options: { handlers: [entry] }, presetHandlers: PRESETS });
+    expect(ids(result.current.handlers)).toEqual(['app:x', 'kit:image', 'kit:svg', 'kit:weasel-json', 'text:x']);
     expect(ids(getContentHandlers())).toEqual(before);
   });
 
-  it('kitHandlers false keeps only the canvas’s own; omit drops the ids named', () => {
-    expect(ids(mount({ options: { handlers: [entry], kitHandlers: false } }).result.current.handlers)).toEqual(['app:x']);
-    expect(ids(mount({ options: { kitHandlers: { omit: ['kit:svg'] } } }).result.current.handlers))
-      .toEqual(['kit:image', 'kit:weasel-json']);
+  it('kitHandlers false drops every kit handler a preset brings; omit drops the ids named', () => {
+    expect(ids(mount({ options: { handlers: [entry], kitHandlers: false }, presetHandlers: PRESETS }).result.current.handlers))
+      .toEqual(['app:x', 'text:x']);
+    expect(ids(mount({ options: { kitHandlers: { omit: ['kit:svg'] } }, presetHandlers: PRESETS }).result.current.handlers))
+      .toEqual(['kit:image', 'kit:weasel-json', 'text:x']);
   });
 
   it('keeps one list across renders while the omit list is the same', () => {
-    const { result, rerender } = mount({ options: { kitHandlers: { omit: ['kit:svg'] } } });
+    const { result, rerender } = mount({ options: { kitHandlers: { omit: ['kit:svg'] } }, presetHandlers: PRESETS });
     const first = result.current.handlers;
     rerender({ options: { kitHandlers: { omit: ['kit:svg'] } } });
     expect(result.current.handlers).toBe(first);

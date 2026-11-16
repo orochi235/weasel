@@ -29,6 +29,7 @@ export default defineConfig({
       entry: {
         index: resolve(import.meta.dirname, 'src/index.ts'),
         engine: resolve(import.meta.dirname, 'src/engine.ts'),
+        'test-seams': resolve(import.meta.dirname, 'src/test-seams.ts'),
         'icons.table': resolve(import.meta.dirname, 'src/icons.table.ts'),
       },
       formats: ['es'],

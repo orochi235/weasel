@@ -14,18 +14,18 @@
  * `runIngest` consumes items at *match* time, so "leave it for other
  * handlers" is the sniff's job: non-weasel `text/plain` never matches.
  */
-import type { NodeId } from 'core/scene/types';
-import type { ClipboardSnapshot } from 'core/adapters/types';
-import { materializePaste } from 'interactions/actions/clipboard/materializePaste';
+import type { NodeId } from '@weasel-js/core';
+import type { ClipboardSnapshot } from '@weasel-js/core/engine';
+import { materializePaste } from '@weasel-js/core';
 import {
   WEASEL_CLIPBOARD_MIME,
   WEASEL_CLIPBOARD_MIME_WEB,
   sniffWeaselClipboardText,
   parseWeaselClipboardText,
   extractWeaselClipboardFromSvg,
-} from 'interactions/actions/clipboard/wireFormat';
-import { dwarn } from '../../debug';
-import type { ContentHandlerEntry, IngestCtx } from './contentHandlers';
+} from '@weasel-js/core';
+import { dwarn } from '@weasel-js/core';
+import type { ContentHandlerEntry, IngestCtx } from '@weasel-js/core';
 // Direct module import (not the ./index barrel) to avoid a cycle — the
 // barrel re-exports this handler.
 import { sniffSvgText } from './svgHandler';

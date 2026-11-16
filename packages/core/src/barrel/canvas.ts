@@ -146,9 +146,9 @@ export type {
 
 // ─── External-content ingestion ──────────────────────────────────────────────
 // OS file drop / clipboard paste / file picker → content-handler registry.
-// `runIngest`, `getContentHandlers` and `kitImageHandler` are deliberately NOT
-// exported — consumers reach the pipeline via `<SceneCanvas ingestion={…}>` and
-// `SceneCanvasApi.ingest`.
+// `getContentHandlers` is deliberately NOT exported — consumers reach the
+// pipeline via `<SceneCanvas ingestion={…}>` and `SceneCanvasApi.ingest`; the
+// kit's handlers come with `@weasel-js/editing`'s `ingestPreset`.
 export {
   registerContentHandler,
   openFilePicker,

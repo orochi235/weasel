@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 import type { IngestItem } from '@weasel-js/routing';
 import { UNKNOWN_MIME } from '@weasel-js/gestures';
-import type { ContentHandlerEntry } from './contentHandlers';
+import type { ContentHandlerEntry } from '@weasel-js/core';
 import { ghostBounds, previewIngest } from './ghost';
 
 const pending = (kind: 'file' | 'string', mime: string): IngestItem =>

@@ -12,18 +12,14 @@ import {
   _resetImageHandlerSeamsForTests,
 } from './imageHandler';
 import { kitWeaselJsonHandler } from './weaselJsonHandler';
-import {
-  registerContentHandler,
-  runIngest,
-  _resetContentHandlersForTests,
-  type IngestCtx,
-} from './contentHandlers';
+import { registerContentHandler, runIngest, type IngestCtx } from '@weasel-js/core';
+import { _resetContentHandlersForTests } from '@weasel-js/core/test-seams';
 import type { IngestItem } from '@weasel-js/routing';
 import {
   WEASEL_CLIPBOARD_MIME,
   buildWeaselClipboardText,
-} from 'interactions/actions/clipboard/wireFormat';
-import { rootsTree } from 'core/adapters/testing/rootsTree';
+} from '@weasel-js/core';
+import { rootsTreeForTests as rootsTree } from '@weasel-js/core/test-seams';
 
 const svgFile = (name = 'pic.svg', type = 'image/svg+xml') =>
   new File(['<svg xmlns="http://www.w3.org/2000/svg"/>'], name, { type });

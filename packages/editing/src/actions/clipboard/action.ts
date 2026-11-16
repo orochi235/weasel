@@ -1,5 +1,6 @@
 import { ActionDisabledReason, defineAction, type Action, BETWEEN_GESTURES } from '@weasel-js/routing';
-import { commitDeleteToScene, deleteEnabled, requiresSelection, kitWeaselJsonHandler } from '@weasel-js/core';
+import { commitDeleteToScene, deleteEnabled, requiresSelection } from '@weasel-js/core';
+import { kitWeaselJsonHandler } from '../../ingest/weaselJsonHandler';
 import type { NodeId } from '@weasel-js/core';
 import { claimable, INGEST_REQUIRES, ingestFromEvent } from '../edit/ingest';
 import { ANY_MODS } from '@weasel-js/gestures';

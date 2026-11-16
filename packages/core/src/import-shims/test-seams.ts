@@ -77,3 +77,5 @@ export { ViewInputsProvider as ViewInputsProviderForTests } from '../canvas/view
 export { ViewRegistryProvider as ViewRegistryProviderForTests, useOptionalViewRegistry as useOptionalViewRegistryForTests } from '../canvas/viewRegistry';
 export type { ViewRegistry as ViewRegistryForTests } from '../canvas/viewRegistry';
 export { targetSizesPx as targetSizesPxForTests } from '../core/device/targets';
+
+export { getContentHandlers as getContentHandlersForTests } from '../domains/ingestion/contentHandlers';

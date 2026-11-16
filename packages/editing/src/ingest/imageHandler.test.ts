@@ -5,7 +5,7 @@ import {
   __setFileToDataUriForTests,
   _resetImageHandlerSeamsForTests,
 } from './imageHandler';
-import type { IngestCtx } from './contentHandlers';
+import type { IngestCtx } from '@weasel-js/core';
 import type { IngestItem } from '@weasel-js/routing';
 
 const file = (name: string) => new File(['x'], name, { type: 'image/png' });
