@@ -8,6 +8,7 @@ export { deepEqual, type DeepEqualOptions } from './deepEqual';
 export { sameList } from './sameList';
 export { setOwn } from './setOwn';
 export { freshId, type FreshIdOptions } from './freshId';
+export { compositeKey, type KeyPart } from './compositeKey';
 export type {
   Reflectable,
   Reflection,
