@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useLatest } from '@weasel-js/core';
+import { useLatestOnly } from '@weasel-js/react';
 import type { ListOption } from './components/listOption';
 import type { OptionKey } from './optionKey';
 
@@ -51,19 +52,16 @@ export function useAsyncOptions<T extends OptionKey = string>({
   // every render, and depending on it directly would refire the request.
   const loadRef = useLatest(load);
 
-  // A monotonic id per request, and the highest one whose result has been
-  // applied. A liveness flag cannot do this job: two requests from adjacent
-  // keystrokes are both live, so the slower one overwrites the newer result
-  // if it lands second.
-  const issued = useRef(0);
-  const applied = useRef(0);
+  // A liveness flag cannot do this job: two requests from adjacent keystrokes
+  // are both live, so the slower one overwrites the newer result if it lands second.
+  const requests = useLatestOnly();
   const inFlight = useRef<AbortController | null>(null);
 
   useEffect(() => {
     if (inputValue.length < minLength) {
       inFlight.current?.abort();
       inFlight.current = null;
-      applied.current = issued.current;
+      requests.drop();
       // eslint-disable-next-line react-hooks/set-state-in-effect -- cancels the in-flight request and resets its results
       setOptions([]);
       setLoading(false);
@@ -72,7 +70,7 @@ export function useAsyncOptions<T extends OptionKey = string>({
     }
 
     const timer = setTimeout(() => {
-      const mine = ++issued.current;
+      const mine = requests.take();
       const controller = new AbortController();
       inFlight.current?.abort();
       inFlight.current = controller;
@@ -81,15 +79,13 @@ export function useAsyncOptions<T extends OptionKey = string>({
       // A `load` that throws before it returns a promise fails like one that rejects.
       new Promise<ReadonlyArray<AsyncOption<T>>>((resolve) => resolve(loadRef.current(inputValue, controller.signal))).then(
         (next) => {
-          if (controller.signal.aborted || mine <= applied.current) return;
-          applied.current = mine;
+          if (controller.signal.aborted || !mine()) return;
           setOptions(next);
           setLoadError(null);
           setLoading(false);
         },
         (error: unknown) => {
-          if (controller.signal.aborted || mine <= applied.current) return;
-          applied.current = mine;
+          if (controller.signal.aborted || !mine()) return;
           setLoadError(error);
           setLoading(false);
         },
@@ -97,7 +93,7 @@ export function useAsyncOptions<T extends OptionKey = string>({
     }, debounceMs);
 
     return () => clearTimeout(timer);
-  }, [inputValue, debounceMs, minLength, loadRef]);
+  }, [inputValue, debounceMs, minLength, loadRef, requests]);
 
   useEffect(() => () => inFlight.current?.abort(), []);
 
