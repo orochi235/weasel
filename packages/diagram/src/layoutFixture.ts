@@ -2,6 +2,7 @@
 import { buildGraph, type Graph, type GraphNodeLike } from './graph';
 import type { LayoutResult } from './layout';
 import type { Rect } from '@weasel-js/geom';
+import { getOwn, setOwn } from '@weasel-js/registry';
 
 export type Box = readonly [x: number, y: number, width?: number, height?: number];
 
@@ -40,7 +41,7 @@ export function graphOf(
 export function at(boxes: Readonly<Record<string, Box>>, result: LayoutResult, id: string): { x: number; y: number } {
   const moveTo = result.get(id);
   if (moveTo !== undefined) return moveTo;
-  const [x, y] = boxes[id]!;
+  const [x, y] = getOwn(boxes, id)!;
   return { x, y };
 }
 
@@ -49,7 +50,7 @@ export function moved(boxes: Readonly<Record<string, Box>>, result: LayoutResult
   const next: Record<string, Box> = {};
   for (const [id, [x, y, w = 100, h = 40]] of Object.entries(boxes)) {
     const at = result.get(id);
-    next[id] = at === undefined ? [x, y, w, h] : [at.x, at.y, w, h];
+    setOwn(next, id, at === undefined ? [x, y, w, h] : [at.x, at.y, w, h]);
   }
   return next;
 }

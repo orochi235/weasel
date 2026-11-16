@@ -1,5 +1,6 @@
 /** Test fixture: a grouped graph, and where a layout leaves its boxes. */
 import { rectsOverlap } from '@weasel-js/geom';
+import { getOwn } from '@weasel-js/registry';
 import { buildGraph, type Graph, type GraphNodeLike } from './graph';
 import type { LayoutOptions, LayoutResult } from './layout';
 
@@ -66,7 +67,7 @@ export function nestedBoxOf(
   id: string,
   inset: number,
 ): Rect {
-  const rs = groups[id]!.map((m) => (Object.hasOwn(groups, m) ? nestedBoxOf(at, groups, m, inset) : at.get(m)!));
+  const rs = getOwn(groups, id)!.map((m) => (Object.hasOwn(groups, m) ? nestedBoxOf(at, groups, m, inset) : at.get(m)!));
   const x = Math.min(...rs.map((r) => r.x)) - inset;
   const y = Math.min(...rs.map((r) => r.y)) - inset;
   return {

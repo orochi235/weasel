@@ -1,4 +1,5 @@
 import type { GraphNodeDef, GraphPatch } from '@weasel-js/audio';
+import { getOwn } from '@weasel-js/registry';
 import { edgeKey, type LivePlan, type PlanEdge, type PlanNode } from './plan';
 
 /** Makes the def for a node that is added or replaced. */
@@ -28,7 +29,7 @@ export function diffPlans(prev: LivePlan, next: LivePlan, build: BuildNode): Gra
   };
 
   for (const id of prevIds) {
-    const now = next.nodes[id];
+    const now = getOwn(next.nodes, id);
     if (now === undefined || now.type !== prev.nodes[id]!.type) {
       gone.add(id);
       fresh.add(id);
@@ -37,7 +38,7 @@ export function diffPlans(prev: LivePlan, next: LivePlan, build: BuildNode): Gra
   }
   for (const id of nextIds) {
     const now = next.nodes[id]!;
-    const was = prev.nodes[id];
+    const was = getOwn(prev.nodes, id);
     if (was === undefined || gone.has(id)) {
       fresh.add(id);
       groups.add.push({ kind: 'add', id, def: build(id, now) });
@@ -46,7 +47,7 @@ export function diffPlans(prev: LivePlan, next: LivePlan, build: BuildNode): Gra
     } else {
       for (const param of Object.keys(now.levels).sort()) {
         const value = now.levels[param]!;
-        if (!Object.is(was.levels[param], value)) groups.set.push({ kind: 'set', id, param, value });
+        if (!Object.is(getOwn(was.levels, param), value)) groups.set.push({ kind: 'set', id, param, value });
       }
     }
   }

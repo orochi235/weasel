@@ -2,6 +2,7 @@
  * An `EffectDoc` read from a file or storage, checked on the way in: every field the editor and the looks read is
  * the type `types.ts` gives it, or the read refuses, naming the first one that is not.
  */
+import { getOwn } from '@weasel-js/registry';
 import type { EffectDoc } from './types';
 
 type Raw = Record<string, unknown>;
@@ -36,7 +37,7 @@ const recordOf = (check: Check): Check => (v, path) => {
 };
 const fields = (shape: Readonly<Record<string, Check>>): Check => (v, path) => {
   const raw = object(v, path);
-  for (const [key, check] of Object.entries(shape)) check(raw[key], `${path}.${key}`);
+  for (const [key, check] of Object.entries(shape)) check(getOwn(raw, key), `${path}.${key}`);
 };
 
 const vec2 = fields({ x: number, y: number });

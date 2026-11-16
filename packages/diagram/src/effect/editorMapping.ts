@@ -1,3 +1,4 @@
+import { getOwn } from '@weasel-js/registry';
 import type { DataContainer } from '../dataTypes';
 import { edgeIdOf } from '../fromData';
 import { type DataEdge } from '../dataTypes';
@@ -66,8 +67,8 @@ export function editorScene<L extends EditorLook = 'nodeGraph'>(
   const { labels } = doc;
   const edges = routes === undefined && labels === undefined ? drawn.data.edges : drawn.data.edges.map((e) => {
     const id = wires.get(edgeIdOf(e));
-    const route = id === undefined ? undefined : routes?.[id];
-    const label = id === undefined ? undefined : labels?.[id];
+    const route = id === undefined || routes === undefined ? undefined : getOwn(routes, id);
+    const label = id === undefined || labels === undefined ? undefined : getOwn(labels, id);
     return {
       ...e,
       ...(route !== undefined ? { waypoints: route } : {}),
@@ -92,12 +93,12 @@ function drawLook(doc: EffectDoc, look: EditorLook, options: EditorLookOptions[E
   }
   const drawn = nodeGraph(doc.pipeline, options as NodeGraphOptions | undefined);
   const nodes = drawn.data.nodes.map((n) => {
-    const at = doc.places[n.id];
+    const at = getOwn(doc.places, n.id);
     return at === undefined ? n : { ...n, at: { x: at.x, y: at.y }, pinned: true };
   });
   const { groups = [], ...rest } = drawn.data;
   const containers = groups.map((g): DataContainer => {
-    const box = doc.groupBoxes?.[g.id];
+    const box = doc.groupBoxes && getOwn(doc.groupBoxes, g.id);
     return {
       id: g.id, role: 'container', label: g.label ?? '', members: g.members,
       ...(box !== undefined ? { box: { ...box }, pinned: true } : {}),

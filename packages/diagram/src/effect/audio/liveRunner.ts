@@ -1,5 +1,5 @@
 import type { AudioEngine, AudioGraph, GraphPatch } from '@weasel-js/audio';
-import { createEmitter } from '@weasel-js/registry';
+import { createEmitter, getOwn, setOwn } from '@weasel-js/registry';
 import type { EffectPipeline, EffectRun } from '../types';
 import { audioStageNodes, type AudioSources, type AudioStageNodes } from './nodes';
 import { createLivePreviews, errorsRun } from './livePreviews';
@@ -54,7 +54,7 @@ const failingStage = (patches: readonly GraphPatch[], message: string): string |
 
 const sameErrors = (a: Readonly<Record<string, string>>, b: Readonly<Record<string, string>>): boolean => {
   const keys = Object.keys(a);
-  return keys.length === Object.keys(b).length && keys.every((k) => a[k] === b[k]);
+  return keys.length === Object.keys(b).length && keys.every((k) => Object.hasOwn(b, k) && a[k] === b[k]);
 };
 
 /** Applies the param writes together; when that throws, one by one, to name the stage that failed. */
@@ -68,7 +68,7 @@ function applySets(graph: AudioGraph, sets: readonly GraphPatch[], failures: Rec
       try {
         graph.apply([p]);
       } catch (one) {
-        if (p.kind === 'set') failures[p.id] = messageOf(one);
+        if (p.kind === 'set') setOwn(failures, p.id, messageOf(one));
         break;
       }
     }
@@ -112,7 +112,7 @@ export function createLiveAudioRunner(opts: LiveAudioRunnerOptions): LiveAudioRu
     let removed: string[] = [];
     let sets: GraphPatch[] = [];
     try {
-      const patches = diffPlans(from, next, (_id, n) => nodes[n.type]!.build(engine.context, n.settings, n.levels));
+      const patches = diffPlans(from, next, (_id, n) => getOwn(nodes, n.type)!.build(engine.context, n.settings, n.levels));
       structural = patches.filter((p) => p.kind !== 'set');
       sets = patches.filter((p) => p.kind === 'set');
       if (structural.length > 0) graph.apply(structural);
@@ -120,7 +120,7 @@ export function createLiveAudioRunner(opts: LiveAudioRunnerOptions): LiveAudioRu
     } catch (err) {
       const message = messageOf(err);
       const id = failingStage(structural, message);
-      if (id !== undefined) merged[id] = message;
+      if (id !== undefined) setOwn(merged, id, message);
       console.warn(`@weasel-js/diagram: audio graph edit failed: ${message}`);
       adopted = from;
       sets = [];
