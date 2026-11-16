@@ -37,7 +37,7 @@
     "LICENSE"
   ],
   "scripts": {
-    "build": "tsup",
+    "build": "vite build && tsup",
     "test": "node ../../scripts/package-test.mjs"
   },
   "dependencies": {
