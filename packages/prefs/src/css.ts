@@ -9,6 +9,7 @@ import { overridesOfPref } from './scopeSpec';
 import type { PrefEnum, PrefLeaf, PrefNumber } from './schema';
 import { prefSelectors } from './splitCheck';
 import { resolvePrefUnit } from './unit';
+import { compositeKey } from '@weasel-js/registry';
 
 /** How {@link prefsCss} names and writes things. */
 export interface PrefsCssOptions {
@@ -125,7 +126,7 @@ export function prefsCss(store: PrefsCssSource, options: PrefsCssOptions = {}): 
     const given = options.value?.(value, leaf, path);
     const text = given === undefined ? cssValue(leaf, value) : given;
     if (text === null) return;
-    const key = under.map(([selector, option]) => `${selector}=${option}`).join('&');
+    const key = compositeKey(under.flat());
     if (!blocks.has(key)) blocks.set(key, { under, lines: [] });
     blocks.get(key)!.lines.push(`  ${name}: ${text};`);
   };

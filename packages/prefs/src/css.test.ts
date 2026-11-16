@@ -94,6 +94,22 @@ describe('prefsCss', () => {
     expect(blocks[":where(:root[data-look-mode='dark'][data-look-density='roomy'])"]).toEqual(['--gap: 8px;']);
   });
 
+  it('keeps a block for two selectors apart from one option whose name reads like both', () => {
+    const odd = 'dark&look.density=compact';
+    const schema = pref.group('Prefs', {
+      look: pref.group('Look', {
+        mode: pref.enum('Mode', 'dark', ['dark', odd]),
+        density: pref.enum('Density', 'compact', ['compact', 'roomy']),
+      }),
+      gap: pref.number('Gap', 4, { unit: { scale: 1, suffix: 'px' }, scopes: [{ selector: MODE }, { selector: DENSITY }] }),
+    });
+    const initial: [string, unknown][] = [['gap', { $by: MODE, $in: { dark: byDensity(9, 8), [odd]: 6 } }]];
+    const store = createPrefsStore(schema, createRecordCache({ storage: createMemoryAdapter(), prefix: 'p.', initial }));
+    const blocks = blocksOf(prefsCss(store));
+    expect(blocks[":where(:root[data-look-mode='dark'][data-look-density='compact'])"]).toEqual(['--gap: 9px;']);
+    expect(blocks[`:where(:root[data-look-mode='${odd}'])`]).toEqual([`--look-mode: '${odd}';`, '--gap: 6px;']);
+  });
+
   it('puts a block naming more selectors after every block naming fewer, wherever its leaf sits in the schema', () => {
     const schema = pref.group('Prefs', {
       gap: pref.number('Gap', 4, { scopes: [{ selector: 'mode' }, { selector: 'density' }] }),
