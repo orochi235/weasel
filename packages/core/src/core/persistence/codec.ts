@@ -6,7 +6,7 @@
  * an encoded one loaded, by mistake.
  */
 import { isRawWrapper, typedArrayReplacerWrapping, untagTypedArray } from '@weasel-js/geom';
-import { SnapshotShapeError } from '../scene/snapshotShape';
+import { SnapshotShapeError } from '../scene/snapshotShapeError';
 
 declare const encodedOf: unique symbol;
 

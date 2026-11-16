@@ -4,11 +4,9 @@
  * field turns out not to be there.
  */
 import { NODE_FN_FIELDS } from './nodeFnFields';
+import { SnapshotShapeError } from './snapshotShapeError';
 
-/** A snapshot that is not shaped as `toJSON()` writes one: what is wrong, and where. */
-export class SnapshotShapeError extends Error {
-  override name = 'SnapshotShapeError';
-}
+export { SnapshotShapeError };
 
 /** A snapshot naming a registry key the loading scene has no function under, read without `unknownKeys: 'skip'`. */
 export class SnapshotKeyError extends Error {

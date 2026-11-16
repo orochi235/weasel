@@ -59,7 +59,7 @@ function useTargetChanges(refs: readonly RefObject<HTMLElement | null>[]): void 
     for (const el of live) {
       if (sizes.current.has(el)) continue;
       sizes.current.set(el, '');
-      ro.observe(el);
+      ro.observe(el); // eslint-disable-line weasel/effect-cleanup -- reconciled each commit; the loop above unobserves what left
       // `scroll` does not bubble; capturing on the target hears a scroller anywhere inside it.
       el.addEventListener('scroll', bump, { capture: true, passive: true });
     }

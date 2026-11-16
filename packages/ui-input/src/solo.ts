@@ -1,3 +1,5 @@
+import { setOwn } from '@weasel-js/registry';
+
 /**
  * What an Alt-click on a switch in a list of switches changes — a layer's visibility, an effect's on: the
  * switches in `keep` on and every other one in `states` off. When that already holds, the same click switches
@@ -6,8 +8,6 @@
  * `states` holds the switches the click may change and their current values; a switch left out of it (a fixed
  * row, a layer inside the one clicked) is left alone.
  */
-
-import { setOwn } from '@weasel-js/registry';
 export function soloChanges(
   states: ReadonlyMap<string, boolean>,
   keep: ReadonlySet<string>,

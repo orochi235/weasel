@@ -13,7 +13,7 @@ export function useOverlayTile(
     const el = ref.current ?? null;
     if (el === lastTile.current) return;
     lastTile.current = el;
-    surface?.registerTile(tileId, el);
+    surface?.registerTile(tileId, el); // eslint-disable-line weasel/effect-cleanup -- the effect below unregisters on unmount
   });
   useEffect(
     () => () => {
