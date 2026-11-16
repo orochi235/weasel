@@ -1,5 +1,5 @@
 import { useMemo, useRef, useState } from 'react';
-import { solid } from '@weasel-js/paint';
+import { byteHex, solid } from '@weasel-js/paint';
 import { IDENTITY_POSE_COMPOSITION, type CanvasSize, type DrawCommand, polygonFromPoints, polylineFromPoints, type RenderLayer, SceneCanvas, useLatest, useScene, WeaselProvider } from '@weasel-js/core';
 import { ToolPalette } from '@weasel-js/ui/components/ToolPalette';
 import { RAD_TO_DEG, wrapAngle } from '@weasel-js/geom';
@@ -45,7 +45,7 @@ const polygon = (pts: readonly { x: number; y: number }[], close: boolean) =>
   (close ? polygonFromPoints(pts) : polylineFromPoints(pts));
 
 const hex = (rgb: Solid['rgb'], k: number) =>
-  `#${rgb.map((c) => Math.round(Math.min(255, c * k)).toString(16).padStart(2, '0')).join('')}`;
+  `#${rgb.map((c) => byteHex(c * k)).join('')}`;
 
 function groundGrid(vp: Mat4, size: CanvasSize): DrawCommand[] {
   const out: DrawCommand[] = [];
