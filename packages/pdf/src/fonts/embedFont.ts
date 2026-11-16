@@ -3,6 +3,7 @@ import { name, type PdfName, type PdfObjects, type PdfRef, text } from '../objec
 import type { PdfFontSource } from './fontSource';
 import { checkTrueType, glyphCount, subsetTrueType } from './subset';
 import { toUnicodeCMap } from './toUnicode';
+import type { PdfSkip } from '../writePdf';
 
 export interface EmbeddedFont {
   /** The font object; throws until `use` has returned a glyph, so a page names only faces it draws with. */
@@ -186,6 +187,8 @@ export class DocumentFonts {
     private readonly source: PdfFontSource,
     /** False embeds each face whole. */
     private readonly subset = true,
+    /** Hears each face that failed to embed and is drawn as outlines instead. */
+    private readonly skipped: PdfSkip[] = [],
   ) {}
 
   /** The embedded font for a face, or null to draw its glyphs as outlines. */
@@ -201,16 +204,21 @@ export class DocumentFonts {
 
   private async load(family: string, weight: number, style: FontStyle): Promise<Face | null> {
     let emb: FaceEmbedding | null;
+    const skip = (why: string, err: unknown) => {
+      const message = err instanceof Error ? err.message : String(err);
+      this.skipped.push({ kind: 'font', detail: `${family} ${weight} ${style} ${why} (${message}); its text is drawn as outlines` });
+      return null;
+    };
     try {
       emb = await this.source.embedding(family, weight, style);
-    } catch {
-      return null;
+    } catch (err) {
+      return skip('could not be read for embedding', err);
     }
     if (!emb || emb.outlines !== 'truetype' || !emb.embeddable) return null;
     try {
       checkTrueType(emb.sfnt);
-    } catch {
-      return null;
+    } catch (err) {
+      return skip('is not a well-formed TrueType font', err);
     }
     return new Face(this.objects, emb, baseFontName(emb, family, weight, style), this.subset);
   }

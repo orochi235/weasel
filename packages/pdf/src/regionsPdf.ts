@@ -62,7 +62,7 @@ export async function exportRegionsPdf(
 
 /** What the writer left out, as the diagnostic an export reports. */
 function skipDiagnostic(skip: PdfSkip): ExportDiagnostic {
-  return skip.kind === 'glyph'
+  return skip.kind === 'glyph' || skip.kind === 'font'
     ? { kind: 'font', subject: 'pdf', message: skip.detail }
     : { kind: 'unsupported', subject: 'pdf', message: skip.detail };
 }
