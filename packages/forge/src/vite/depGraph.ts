@@ -1,7 +1,7 @@
 import { type ParserPlugin, parse } from '@babel/parser';
 import type * as t from '@babel/types';
 import { dirname, relative, sep } from 'node:path';
-import { getOwn, setOwn } from './ownKeys';
+import { getOwn, setOwn } from './ownKeys.ts';
 import { isGallery } from '../story/tags.ts';
 import type { ComponentDeps, DepGraph, IndexEntry } from '../story/types.ts';
 import { titleStandIn } from './componentOf.ts';

@@ -1,7 +1,7 @@
 import { createRequire } from 'node:module';
 import { dirname } from 'node:path';
 import type ts from 'typescript';
-import { setOwn } from './ownKeys';
+import { setOwn } from './ownKeys.ts';
 import type { ArgShape, ArgType } from '../csf/argsToSchema.ts';
 import { apiTable, type ReadApi } from './apiTable.ts';
 import { componentOf } from './componentOf.ts';

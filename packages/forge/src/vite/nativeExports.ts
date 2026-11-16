@@ -1,5 +1,5 @@
 import type * as t from '@babel/types';
-import { getOwn } from './ownKeys';
+import { getOwn } from './ownKeys.ts';
 import { type Bindings, isLiteralValue } from './ast.ts';
 
 type Fn = t.ArrowFunctionExpression | t.FunctionExpression | t.FunctionDeclaration;
