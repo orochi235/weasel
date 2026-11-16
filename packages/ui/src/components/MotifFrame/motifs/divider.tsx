@@ -1,4 +1,4 @@
-import { headingTag } from '../root';
+import { headingTag, twistySides } from '../root';
 import type { Motif } from '../types';
 import s from './divider.module.css';
 
@@ -10,13 +10,14 @@ export function divider(): Motif<Record<string, never>> {
   return {
     id: 'divider',
     params: {},
-    render({ heading: { title, titleId, inline, note, level, twisty, leading, actions }, body, root }) {
+    render({ heading: { title, titleId, inline, note, level, twisty, twistyAt, leading, actions }, body, root }) {
+      const fold = twistySides({ twisty, twistyAt });
       const Heading = headingTag(level, 4);
       return (
         <div {...root}>
           {/* The twisty is a sibling of the heading, so it stays out of its accessible name. */}
           <div className={s.title}>
-            {twisty}
+            {fold.start}
             {leading}
             <Heading className={s.heading} aria-labelledby={inline === undefined ? undefined : titleId}>
               <span id={titleId}>{title}</span>
@@ -24,6 +25,7 @@ export function divider(): Motif<Record<string, never>> {
             </Heading>
             <hr />
             {actions === undefined ? null : <span className={s.actions}>{actions}</span>}
+            {fold.end}
           </div>
           {note}
           {body}

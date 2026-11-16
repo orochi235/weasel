@@ -1,4 +1,4 @@
-import { withMotifClass } from '../root';
+import { withMotifClass, twistySides } from '../root';
 import type { Motif } from '../types';
 import s from './tab.module.css';
 
@@ -14,18 +14,20 @@ export function tab(params: TabParams = {}): Motif<TabParams> {
   return {
     id: 'tab',
     params,
-    render({ heading: { title, titleId, inline, note, twisty, leading, actions }, body, root }) {
+    render({ heading: { title, titleId, inline, note, twisty, twistyAt, leading, actions }, body, root }) {
+      const fold = twistySides({ twisty, twistyAt });
       return (
         <div {...withMotifClass(root, s.tab)}>
           <div className={s.tabRow} data-align={align}>
             <div className={s.label}>
-              {twisty}
+              {fold.start}
               {leading}
               <span id={titleId} className={s.text}>
                 {title}
               </span>
               {inline}
               {actions}
+              {fold.end}
             </div>
           </div>
           <div className={s.box}>

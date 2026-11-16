@@ -2,7 +2,7 @@ import { cssColorLiteral } from '@weasel-js/paint';
 import { render, screen } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
 import { DefaultMotif, MotifFrame } from './MotifFrame';
-import { divider, notch, plaque, rule, stereo, tab, titlebar } from './motifs';
+import { divider, notch, plaque, rule, sheet, stereo, tab, titlebar, well } from './motifs';
 import type { Motif } from './types';
 
 const MOTIFS: readonly [string, () => Motif][] = [
@@ -27,6 +27,23 @@ describe('MotifFrame', () => {
     expect(group).toContainElement(screen.getByText('body'));
     expect(group).toContainElement(screen.getByText('handle'));
     expect(group).toContainElement(screen.getByRole('button', { name: 'Remove' }));
+  });
+
+  it.each([...MOTIFS, ['sheet', sheet], ['well', () => well()]] as [string, () => Motif][])('%s: a twisty at the end follows the title, and one at the start leads it', (_, make) => {
+    const order = (twistyAt: 'start' | 'end') => {
+      const { unmount } = render(
+        <MotifFrame title="Audio" motif={make()} twisty={<button type="button">Fold</button>} twistyAt={twistyAt} actions={<span>act</span>}>
+          <p>body</p>
+        </MotifFrame>,
+      );
+      const twisty = screen.getByRole('button', { name: 'Fold' });
+      const follows = (el: Element) => Boolean(el.compareDocumentPosition(twisty) & Node.DOCUMENT_POSITION_FOLLOWING);
+      const out = [follows(screen.getByText('Audio')), follows(screen.getByText('act'))];
+      unmount();
+      return out;
+    };
+    expect(order('start')).toEqual([false, false]);
+    expect(order('end')[0]).toBe(true);
   });
 
   it('draws the rule motif when given none', () => {

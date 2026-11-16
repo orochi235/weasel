@@ -1,4 +1,4 @@
-import { withMotifClass } from '../root';
+import { withMotifClass, twistySides } from '../root';
 import type { Motif } from '../types';
 import s from './titlebar.module.css';
 
@@ -13,11 +13,12 @@ export function titlebar(): Motif<Record<string, never>> {
   return {
     id: 'titlebar',
     params: {},
-    render({ heading: { title, titleId, inline, note, twisty, leading, actions }, body, root }) {
+    render({ heading: { title, titleId, inline, note, twisty, twistyAt, leading, actions }, body, root }) {
+      const fold = twistySides({ twisty, twistyAt });
       return (
         <div {...withMotifClass(root, s.titlebar)}>
           <div className={s.strip}>
-            {twisty}
+            {fold.start}
             {leading}
             <span className={s.mid}>
               <span id={titleId} className={s.label}>
@@ -26,6 +27,7 @@ export function titlebar(): Motif<Record<string, never>> {
               {inline}
             </span>
             {actions}
+            {fold.end}
           </div>
           <div className={s.body}>
             {note}

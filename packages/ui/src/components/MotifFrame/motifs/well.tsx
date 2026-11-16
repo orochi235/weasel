@@ -1,4 +1,4 @@
-import { headingTag, withMotifClass } from '../root';
+import { headingTag, withMotifClass, twistySides } from '../root';
 import type { Motif } from '../types';
 import s from './well.module.css';
 
@@ -22,7 +22,8 @@ export function well(params: WellParams = {}): Motif<WellParams> {
   return {
     id: 'well',
     params,
-    render({ heading: { title, titleId, inline, note, level, twisty, leading, actions }, body, root }) {
+    render({ heading: { title, titleId, inline, note, level, twisty, twistyAt, leading, actions }, body, root }) {
+      const fold = twistySides({ twisty, twistyAt });
       const Heading = headingTag(level, 3);
       const row = title != null || twisty != null || leading != null || actions != null;
       return (
@@ -31,7 +32,7 @@ export function well(params: WellParams = {}): Motif<WellParams> {
             <div className={s.head} data-ruled={ruled ? '' : undefined}>
               {row && (
                 <div className={s.row}>
-                  {twisty}
+                  {fold.start}
                   {leading}
                   {title != null && (
                     <Heading className={s.title} aria-labelledby={inline === undefined ? undefined : titleId}>
@@ -40,6 +41,7 @@ export function well(params: WellParams = {}): Motif<WellParams> {
                     </Heading>
                   )}
                   {actions != null && <span className={s.actions}>{actions}</span>}
+                  {fold.end}
                 </div>
               )}
               {note != null && <div className={s.note}>{note}</div>}
