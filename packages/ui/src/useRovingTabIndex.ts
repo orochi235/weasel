@@ -45,9 +45,9 @@ export type UseRovingTabIndexOptions = {
    *  before focus does. This is where a selection-follows-focus bar commits
    *  the value. */
   onNavigate?: (index: number) => void;
-  /** Space/Enter on the item at `index`. When omitted the keypress is left
+  /** Space/Enter on the item at `index`, with the keypress for its modifiers. When omitted the keypress is left
    *  alone, which on a native `<button>` produces an ordinary click. */
-  onActivate?: (index: number) => void;
+  onActivate?: (index: number, event: ReactKeyboardEvent) => void;
 };
 
 /** What {@link useRovingTabIndex} returns. Attach both to the container. */
@@ -235,7 +235,7 @@ export function useRovingTabIndex<T extends HTMLElement = HTMLDivElement>(
       if (e.key === ' ' || e.key === 'Enter') {
         if (!onActivate) return;
         e.preventDefault();
-        onActivate(current);
+        onActivate(current, e);
         return;
       }
       const enabled = found.map(isEnabled);

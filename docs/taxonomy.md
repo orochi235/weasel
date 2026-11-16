@@ -656,9 +656,12 @@ A **sweep** (`sweepAction`) is that rule set put to use: an action on a
 rank a drag binding holds, that sets each item of its surface the pointer
 crosses. Any drag naming a target or a modifier outranks it, an item's own
 drag takes the press first, and its `begin` returning `null` hands the drag
-on. The `sweep` prop of a `multiple` or `each` `SegmentedBar` mounts one on the bar's
-row, setting segments through the bar's selection model (ui-input's
-`selection`).
+on. The `sweep` prop of a `multiple` or `each` `SegmentedBar`, and of a
+`ToggleChips`, mounts one on the row, setting items through its selection model
+(ui-input's `selection`). Alt, read once at the press from the sweep's
+`ctx.modifiers`, makes it a solo: the items reached so far on and every other
+off, worked out from the states at the press (`soloSweepFrom`, by
+`soloChanges`).
 
 **A focused HUD widget hears a key before the canvas's key bindings do.** The
 dispatcher listens for keys on `window`; `@weasel-js/hud` listens on the canvas

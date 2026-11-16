@@ -116,14 +116,30 @@ describe('SegmentedBar sweep', () => {
   });
 
   it('asks a sweep function per press, with the modifiers held', () => {
-    const { fire, pressed } = setup({ sweep: (p) => p.modifiers.alt });
+    const { fire, pressed } = setup({ sweep: (p) => p.modifiers.shift });
     fire('pointerdown', 5);
     fire('pointermove', 25);
     fire('pointerup', 25);
     expect(pressed()).toEqual(['false', 'false', 'false', 'false', 'false']);
-    fire('pointerdown', 5, { altKey: true });
-    fire('pointermove', 25, { altKey: true });
-    fire('pointerup', 25, { altKey: true });
+    fire('pointerdown', 5, { shiftKey: true });
+    fire('pointermove', 25, { shiftKey: true });
+    fire('pointerup', 25, { shiftKey: true });
     expect(pressed()).toEqual(['true', 'true', 'false', 'false', 'false']);
+  });
+
+  it('solos the segments an Alt-drag reaches', () => {
+    const { fire, pressed } = setup({ initial: ['d', 'e'] });
+    fire('pointerdown', 5, { altKey: true });
+    fire('pointermove', 15, { altKey: true });
+    fire('pointerup', 15, { altKey: true });
+    expect(pressed()).toEqual(['true', 'true', 'false', 'false', 'false']);
+  });
+
+  it('solos a segment on an Alt-click, and turns every one back on with a second', () => {
+    const { pressed, buttons } = setup({ initial: ['d', 'e'] });
+    fireEvent.click(buttons[4]!, { altKey: true });
+    expect(pressed()).toEqual(['false', 'false', 'false', 'false', 'true']);
+    fireEvent.click(buttons[4]!, { altKey: true });
+    expect(pressed()).toEqual(['true', 'true', 'false', 'true', 'true']);
   });
 });
