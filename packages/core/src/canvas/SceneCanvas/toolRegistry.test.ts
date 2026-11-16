@@ -25,6 +25,12 @@ const NONE = presets();
 afterEach(() => { vi.restoreAllMocks(); });
 
 describe('resolveToolRegistry', () => {
+  it('mounts a patch tool whose id names an Object.prototype member as its own entry', () => {
+    const registry = resolveToolRegistry({ builtins, enabled: NONE, patch: Object.fromEntries([['__proto__', tool('__proto__')], ['toString', tool('toString')]]) });
+    expect(Object.getPrototypeOf(registry)).toBe(Object.prototype);
+    expect(Object.keys(registry)).toEqual(['__proto__', 'toString']);
+  });
+
   const inPaletteOrder = BUILTIN_TOOL_IDS.filter((id) => (KIT_SHAPE_KINDS as readonly string[]).includes(id));
 
   it('mounts every shape kind the table lists, in palette order', () => {

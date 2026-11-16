@@ -3,6 +3,7 @@ import { presetBuiltinTools, presetOwnTools, type EnabledPresets } from './featu
 import { isDev } from '@weasel-js/react';
 import { toolIdsOf, type GestureBinding, type ToolEntry } from '@weasel-js/routing';
 import { BUILTIN_TOOL_IDS, type BuiltinToolId } from './props';
+import { setOwn } from '@weasel-js/registry';
 
 const warnedUnbuildable = new WeakSet<Tool>();
 
@@ -47,7 +48,7 @@ export function resolveToolRegistry(args: ResolveToolRegistryArgs): Record<strin
     const patched = patch?.[id];
     if (patched === false) continue;
     const asked = patched === true || defaultTools.includes(id) || preset.has(id);
-    if (asked) registry[id] = builtins[id];
+    if (asked) setOwn(registry, id, builtins[id]);
   }
   for (const [id, tool] of Object.entries(presetOwnTools(enabled))) {
     if (patch?.[id] === false) continue;
@@ -58,7 +59,7 @@ export function resolveToolRegistry(args: ResolveToolRegistryArgs): Record<strin
       }
       continue;
     }
-    registry[id] = tool;
+    setOwn(registry, id, tool);
   }
   for (const [id, value] of Object.entries(patch ?? {})) {
     if (value === false) continue;
@@ -68,10 +69,10 @@ export function resolveToolRegistry(args: ResolveToolRegistryArgs): Record<strin
       }
       continue;
     }
-    if (dev && id in registry && (defaultTools as string[]).includes(id)) {
+    if (dev && Object.hasOwn(registry, id) && (defaultTools as string[]).includes(id)) {
       console.warn(`[SceneCanvas] tools prop overrides bundled "${id}" tool`);
     }
-    registry[id] = value;
+    setOwn(registry, id, value);
   }
   return registry;
 }
