@@ -27,6 +27,7 @@ import { beginDragSnap, snappedDelta } from '../move/dragSnap';
 import { finiteFrame } from '../finiteFrame';
 import { SNAP_ROLES } from 'domains/snap/roles';
 import { quantizedPreview } from 'core/scene/outputGrid';
+import { createEmitter } from '@weasel-js/registry';
 
 interface CloneScratch {
   /** The selected ids a copy starts from; each brings its subtree. */
@@ -173,6 +174,28 @@ export const cloneAction: Action & { requires: string[] } = inPlane({
       // The source stays put, so it is something the copy can line up with.
       const snap = beginDragSnap(ctx, scratch.ids, []);
 
+      const show = (moveCtx: InvocationCtx): void => {
+        const next = finiteFrame({ delta: scratch.currentDelta, previews: scratch.previews }, moveCtx, () => {
+          const delta = behaviors.shape(moveCtx, snappedDelta(snap, moveCtx));
+          const previews = new Map<NodeId, unknown>();
+          if (delta.dx === 0 && delta.dy === 0) return { delta, previews };
+          // As the scene's quantize rule will store the copy, which shares its source's data.
+          for (const id of scratch.originPoses.keys()) {
+            previews.set(id, quantizedPreview(scene, id, landed(scratch, id, delta.dx, delta.dy)!));
+          }
+          return { delta, previews };
+        }, (f) => f.previews);
+        scratch.currentDelta = next.delta;
+        scratch.previews = next.previews;
+      };
+      let lastMove: InvocationCtx | null = null;
+      const shown = createEmitter();
+      behaviors.gctx.refresh = () => {
+        if (!lastMove) return;
+        show(lastMove);
+        shown.emit();
+      };
+
       return {
         kind: 'clone',
         autoPan: true,
@@ -181,19 +204,10 @@ export const cloneAction: Action & { requires: string[] } = inPlane({
         previewHidesSource: false,
         onMove(moveCtx: InvocationCtx): void {
           if (!moveCtx.drag) return;
-          const next = finiteFrame({ delta: scratch.currentDelta, previews: scratch.previews }, moveCtx, () => {
-            const delta = behaviors.shape(moveCtx, snappedDelta(snap, moveCtx));
-            const previews = new Map<NodeId, unknown>();
-            if (delta.dx === 0 && delta.dy === 0) return { delta, previews };
-            // As the scene's quantize rule will store the copy, which shares its source's data.
-            for (const id of scratch.originPoses.keys()) {
-              previews.set(id, quantizedPreview(scene, id, landed(scratch, id, delta.dx, delta.dy)!));
-            }
-            return { delta, previews };
-          }, (f) => f.previews);
-          scratch.currentDelta = next.delta;
-          scratch.previews = next.previews;
+          lastMove = moveCtx;
+          show(moveCtx);
         },
+        subscribe: (changed) => shown.subscribe(changed),
         onEnd(_endCtx: InvocationCtx, reason: 'commit' | 'cancel'): void {
           let committed = false;
           try {

@@ -281,6 +281,14 @@ export interface OngoingHandle<P = Record<string, unknown>> {
   previewPose?(id: string): unknown | null;
 
   /**
+   * Hear that what the handle shows changed with no input to carry it, as a
+   * behavior's dwell elapsing with the pointer held still does. The
+   * dispatcher listens while the handle is in flight and notifies its own
+   * subscribers, so the host redraws. Returns the unsubscribe.
+   */
+  subscribe?(changed: () => void): () => void;
+
+  /**
    * Subset of `previewIds()` the ghost layer paints at full opacity. The
    * ghost alpha says "this is in flight under the pointer"; a node the
    * gesture merely displaces — a layout sibling reflowing into its

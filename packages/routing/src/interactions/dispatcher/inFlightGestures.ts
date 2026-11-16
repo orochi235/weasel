@@ -38,23 +38,30 @@ export interface InFlightGestures {
   latest(): { kind: string | null; id: string | null };
 }
 
-export function createInFlightGestures(): InFlightGestures {
+/** In-flight handles, `changed` called when one of them says what it shows changed (`OngoingHandle.subscribe`). */
+export function createInFlightGestures(changed: () => void = () => {}): InFlightGestures {
   const handles = new Map<string, OngoingHandle>();
   const owners = new Map<string, string | null>();
   const actions = new Map<string, Action>();
   const over = new Set<string>();
+  const heard = new Map<string, () => void>();
 
   const forget = (gestureId: string): void => {
     handles.delete(gestureId);
     owners.delete(gestureId);
     actions.delete(gestureId);
     over.delete(gestureId);
+    heard.get(gestureId)?.();
+    heard.delete(gestureId);
   };
 
   return {
     handles,
     open(gestureId, handle, ownerId, action, opensOver) {
+      heard.get(gestureId)?.();
+      heard.delete(gestureId);
       handles.set(gestureId, handle);
+      if (handle.subscribe) heard.set(gestureId, handle.subscribe(changed));
       owners.set(gestureId, ownerId);
       if (action) actions.set(gestureId, action);
       if (opensOver) over.add(gestureId);
@@ -67,10 +74,7 @@ export function createInFlightGestures(): InFlightGestures {
     },
     takeAll() {
       const all = [...handles];
-      handles.clear();
-      owners.clear();
-      actions.clear();
-      over.clear();
+      for (const [gestureId] of all) forget(gestureId);
       return all;
     },
     engagedOwners() {

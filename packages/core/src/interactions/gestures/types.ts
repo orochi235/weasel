@@ -72,6 +72,13 @@ export interface GestureContext<TPose, TNode extends { id: string } = { id: stri
   followerOps?: (landed: ReadonlyMap<string, string | null>, label?: string) => Op[] | null;
   adapter: MoveAdapter<TNode, TPose>;
   /**
+   * Run the gesture's frame again at the pointer's last place and show it, for
+   * a behavior whose answer changed with no input to carry it: a dwell timer
+   * elapsing while the pointer is held still. Set by move and clone; a no-op
+   * before the first move.
+   */
+  refresh?: () => void;
+  /**
    * Per-gesture mutable store. Keys should be namespaced by behavior name to avoid
    * collisions: `'behaviorName'` for a single value, `'behaviorName.field'` for
    * sub-keys. Two behaviors sharing a key will silently clobber each other.

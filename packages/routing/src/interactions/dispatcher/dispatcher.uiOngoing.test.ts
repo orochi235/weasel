@@ -245,3 +245,25 @@ describe('a UI handle ending', () => {
     expect(d.inFlight().size).toBe(1);
   });
 });
+
+describe('a handle that says what it shows changed', () => {
+  it('is heard while in flight, and not once it ends', () => {
+    let changed: (() => void) | null = null;
+    const unsubscribe = vi.fn();
+    const action: Action = {
+      id: 'test', label: 'test',
+      invoker: {
+        timing: 'ongoing',
+        start: () => ({ onEnd: vi.fn(), subscribe: (fn: () => void) => { changed = fn; return unsubscribe; } }),
+      },
+    };
+    const d = createDispatcher({ getAction: () => action });
+    const ctrl = d.beginUiOngoing('test', {}, {})!;
+    const sub = vi.fn();
+    d.subscribe(sub);
+    changed!();
+    expect(sub).toHaveBeenCalledTimes(1);
+    ctrl.end('commit');
+    expect(unsubscribe).toHaveBeenCalledTimes(1);
+  });
+});

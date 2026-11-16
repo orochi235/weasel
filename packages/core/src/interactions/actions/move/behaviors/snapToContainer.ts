@@ -127,6 +127,7 @@ export function snapToContainer<TPose>(args: {
     s.cancelPending = after(dwellMs, () => {
       s.committedSnap = target;
       s.cancelPending = null;
+      ctx.refresh?.();
     });
     return left;
   };
