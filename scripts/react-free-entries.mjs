@@ -31,7 +31,7 @@ export const REACT_FREE_ENTRIES = [
     why: 'measurement, ranking, force and ports, for a server-side layout',
   },
   {
-    spec: '@weasel-js/plot/scales',
+    spec: '@weasel-js/scales',
     why: "scales and their ticks, which ui's sliders, plots and timeline place values with",
   },
   {
