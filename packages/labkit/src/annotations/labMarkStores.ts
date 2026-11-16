@@ -1,4 +1,4 @@
-import { createReflectable, type Reflection, valuesOf } from '@weasel-js/registry';
+import { createReflectable, type Reflection } from '@weasel-js/registry';
 import { createContext, useContext, useEffect, useSyncExternalStore } from 'react';
 import type { AnnotationsApi } from './types';
 
@@ -20,18 +20,28 @@ export interface LabMarkStores {
 /** A registry of trials' mark stores. */
 export function createLabMarkStores(): LabMarkStores {
   const stores = createReflectable<AnnotationsApi>({ name: 'mark stores' });
-  const values = valuesOf(stores.reflection);
+  /** Relisted when a store comes or goes, not when one reports a change, so the list keeps its identity. */
+  let listed: readonly AnnotationsApi[] = [];
+  const change = (write: () => void): void => {
+    stores.batch(() => {
+      write();
+      listed = stores.entries().map((e) => e.value);
+    });
+  };
   return {
-    list: values,
+    list: () => listed,
     register(trialId, store) {
       const off = store.subscribe(stores.bump);
-      const release = stores.push(trialId, store);
+      let release = (): void => {};
+      change(() => {
+        release = stores.push(trialId, store);
+      });
       let released = false;
       return () => {
         if (released) return;
         released = true;
         off();
-        release();
+        change(release);
       };
     },
     subscribe: stores.subscribe,
