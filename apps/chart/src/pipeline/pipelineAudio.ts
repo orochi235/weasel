@@ -5,7 +5,7 @@ import {
   type AudioPreview, type AudioSources, type LiveAudioRunner,
 } from '@weasel-js/diagram/effect-audio';
 import { pickFile } from '@weasel-js/editor';
-import { useLatest } from '@weasel-js/react';
+import { useLatest, useLatestOnly } from '@weasel-js/react';
 import { useCallback, useEffect, useRef, useState } from 'react';
 
 const AUDIO_TYPES = new Set(AUDIO_STAGE_TYPES.map((t) => t.type));
@@ -76,19 +76,18 @@ export function usePipelineAudio(pipeline: EffectPipeline, previews: AudioPrevie
   const runner = live?.runner ?? null;
   const { run } = useFollowAudioRunner(runner, { pipeline, sources, previews });
 
-  // Each pick's number: a long file still decoding when a later one is picked must not replace it.
-  const picks = useRef(0);
+  // A long file still decoding when a later one is picked must not replace it.
+  const picks = useLatestOnly();
   const chooseSource = useCallback(async () => {
     const file = await pickFile('audio/*');
     if (file === null || !mounted.current) return;
-    const mine = ++picks.current;
-    const current = (): boolean => mounted.current && picks.current === mine;
+    const current = picks.take();
     const { engine } = awake();
     const bytes = await file.arrayBuffer();
     if (!current()) return;
     const audio = await engine.context.decodeAudioData(bytes);
     if (current()) setSources({ audio });
-  }, [awake]);
+  }, [awake, picks]);
   const wake = useCallback(() => awake().runner, [awake]);
 
   return { run, runner, wake, chooseSource };

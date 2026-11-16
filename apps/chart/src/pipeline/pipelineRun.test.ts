@@ -1,5 +1,6 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { pickFile } from '@weasel-js/editor';
+import { createLatest } from '@weasel-js/registry';
 import { chooseImage } from './pipelineRun';
 
 vi.mock('@weasel-js/editor', async (original) => ({ ...(await original<object>()), pickFile: vi.fn() }));
@@ -14,7 +15,7 @@ describe('chooseImage', () => {
     const decodes: { resolve: (b: ImageBitmap) => void }[] = [];
     vi.stubGlobal('createImageBitmap', () => new Promise<ImageBitmap>((resolve) => { decodes.push({ resolve }); }));
     vi.mocked(pickFile).mockResolvedValue(new File([new Uint8Array(4)], 'a.png'));
-    const picks = { current: 0 };
+    const picks = createLatest();
     const slow = chooseImage(picks);
     const fast = chooseImage(picks);
     await vi.waitFor(() => expect(decodes).toHaveLength(2), { timeout: 10_000 });
@@ -31,7 +32,7 @@ describe('chooseImage', () => {
     let decoded!: (b: ImageBitmap) => void;
     vi.stubGlobal('createImageBitmap', () => new Promise<ImageBitmap>((resolve) => { decoded = resolve; }));
     vi.mocked(pickFile).mockResolvedValueOnce(new File([new Uint8Array(4)], 'a.png')).mockResolvedValueOnce(null);
-    const picks = { current: 0 };
+    const picks = createLatest();
     const first = chooseImage(picks);
     expect(await chooseImage(picks)).toBeNull();
     const image = { close: vi.fn() } as unknown as ImageBitmap;

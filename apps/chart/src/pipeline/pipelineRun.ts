@@ -3,8 +3,10 @@ import {
   imageEvaluators, imageValueKinds, testCard, useEffectRunner, type EffectPipeline, type EffectRun, type RunRowOptions,
 } from '@weasel-js/diagram/effect';
 import { pickFile, menuRun, type MenuRuns } from '@weasel-js/editor';
+import { useLatestOnly } from '@weasel-js/react';
+import type { Latest } from '@weasel-js/registry';
 import { pref } from '@weasel-js/prefs';
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useMemo, useState } from 'react';
 import { can } from '../menuBar';
 import { useChartPref } from '../prefs';
 import { mergeRuns, splitDomains, usePipelineAudio } from './pipelineAudio';
@@ -48,8 +50,7 @@ export function usePipelineRun(pipeline: EffectPipeline): PipelineRun {
   const [showValues, setShowValues] = useChartPref('pipeline.showValues');
   const [showPreviews, setShowPreviews] = useChartPref('pipeline.showPreviews');
   const [showSpectrum, setShowSpectrum] = useChartPref('pipeline.showSpectrum');
-  const picks = useRef(0);
-  useEffect(() => () => { picks.current += 1; }, []);
+  const picks = useLatestOnly();
   const split = useMemo(() => splitDomains(pipeline), [pipeline]);
   const runner = useEffectRunner({
     pipeline: split.image, evaluators: imageEvaluators, kinds: imageValueKinds, previews: showPreviews,
@@ -94,14 +95,13 @@ export function usePipelineRun(pipeline: EffectPipeline): PipelineRun {
   return { run: merged, rows };
 }
 
-/** The image picked, or null for none or for one a later pick has overtaken while it decoded. `picks` counts the
- *  picks made, and is pushed past every count once the caller is gone. */
-export async function chooseImage(picks: { current: number }): Promise<ImageBitmap | null> {
+/** The image picked, or null for none or for one a later pick of `picks` has overtaken while it decoded. */
+export async function chooseImage(picks: Latest): Promise<ImageBitmap | null> {
   const file = await pickFile('image/*');
   if (file === null) return null;
-  const mine = ++picks.current;
+  const mine = picks.take();
   const image = await createImageBitmap(file);
-  if (picks.current === mine) return image;
+  if (mine()) return image;
   image.close();
   return null;
 }

@@ -1,3 +1,4 @@
+import { createLatest } from '@weasel-js/registry';
 import type { LoupePoint } from './geometry';
 import type { LoupeModel } from './model';
 import type { MaybePromise } from './sampler';
@@ -48,7 +49,7 @@ function isPromise<T>(v: MaybePromise<T>): v is Promise<T> {
  */
 export function createEyedropperModel(opts: EyedropperModelOptions): EyedropperModel {
   let color: string | null = null;
-  let seq = 0;
+  const hovers = createLatest();
   let disposed = false;
 
   const settle = (hex: string | null) => {
@@ -63,17 +64,17 @@ export function createEyedropperModel(opts: EyedropperModelOptions): EyedropperM
     hover(p) {
       if (disposed) return;
       opts.loupe?.aimAt(p);
-      const mine = ++seq;
+      const mine = hovers.take();
       const got = opts.sample(p);
       if (!isPromise(got)) { settle(got); return; }
       void got.then((hex) => {
-        if (!disposed && mine === seq) settle(hex);
+        if (!disposed && mine()) settle(hex);
       }, () => undefined);
     },
 
     leave() {
       if (disposed) return;
-      ++seq;
+      hovers.drop();
       settle(null);
     },
 
@@ -89,7 +90,7 @@ export function createEyedropperModel(opts: EyedropperModelOptions): EyedropperM
 
     dispose() {
       disposed = true;
-      ++seq;
+      hovers.drop();
     },
   };
 }

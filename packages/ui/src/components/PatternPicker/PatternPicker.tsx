@@ -13,6 +13,7 @@ import {
   type TilePatternSpec,
 } from '@weasel-js/core';
 import { DEG_TO_RAD, RAD_TO_DEG, wrapAngle } from '@weasel-js/geom';
+import { useLatestOnly } from '@weasel-js/react';
 import { unit } from '@weasel-js/quantity';
 import { tilePreviewCssUrl } from '@weasel-js/svg';
 import { Icon } from '../Icon';
@@ -131,16 +132,15 @@ export function PatternPicker(props: PatternPickerProps): ReactElement {
   const rotationId = useId();
   const fileInput = useRef<HTMLInputElement>(null);
   // Which file read may still commit: a later pick, of a file or a tile, or unmounting retires it.
-  const reading = useRef(0);
+  const reading = useLatestOnly();
   const latest = useRef(value);
   useEffect(() => { latest.current = value; });
-  useEffect(() => () => { reading.current++; }, []);
 
   const withTransform = (next: PatternPaint, of: PatternPaint = value): PatternPaint =>
     (of.transform ? { ...next, transform: of.transform } : next);
 
   const pick = (kind: TileKind): void => {
-    reading.current++;
+    reading.drop();
     onChange(withTransform(seedPattern(kind, color, size)));
   };
 
@@ -149,9 +149,9 @@ export function PatternPicker(props: PatternPickerProps): ReactElement {
     // Cleared so picking the same file again still fires a change.
     e.target.value = '';
     if (!file) return;
-    const ticket = ++reading.current;
+    const mine = reading.take();
     readImage(file).then(
-      (read) => { if (ticket === reading.current) onChange(withTransform(seedImagePattern(read), latest.current)); },
+      (read) => { if (mine()) onChange(withTransform(seedImagePattern(read), latest.current)); },
       (err: unknown) => console.warn(`weasel PatternPicker: "${file.name}" could not be read as an image`, err),
     );
   };
