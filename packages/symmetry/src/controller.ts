@@ -1,4 +1,4 @@
-import { createEmitter } from '@weasel-js/registry';
+import { createEmitter, deepEqual } from '@weasel-js/registry';
 import { ANY_MODS, hitPredicate, type Action, type NodeId, type Scene, type SurfaceContribution } from '@weasel-js/core';
 import { bakeSymmetry, type BakeResult } from './bake';
 import {
@@ -73,21 +73,32 @@ export function createSymmetry(scene: Scene<unknown, string, unknown>, opts: Cre
   const listeners = createEmitter();
   const notify = () => listeners.emit();
 
-  const write = (id: NodeId, change: SymmetryChange): void => {
+  /** Apply `change` to group `id`, answering whether it wrote anything. */
+  const write = (id: NodeId, change: SymmetryChange): boolean => {
     const node = scene.get(id);
-    if (!node || !isSymmetryGroup(scene, id)) return;
-    if (change.spec) scene.update(id, { data: { ...(node.data as object), symmetry: { ...specOfData(node.data), ...change.spec } } });
-    const center = change.center;
-    if (!center) return;
-    const at = centerUnder(scene, center, node.parent);
-    if (at === null) return;
-    keepContentsPut(scene, id, () => scene.setPose(id, { ...(node.pose as object), ...poseAtCenter(at) }));
+    if (!node || !isSymmetryGroup(scene, id)) return false;
+    let wrote = false;
+    if (change.spec) {
+      const now = specOfData(node.data);
+      const spec = { ...now, ...change.spec };
+      if (!deepEqual(spec, now)) {
+        scene.update(id, { data: { ...(node.data as object), symmetry: spec } });
+        wrote = true;
+      }
+    }
+    const at = change.center && centerUnder(scene, change.center, node.parent);
+    if (!at) return wrote;
+    const pose = { ...(node.pose as object), ...poseAtCenter(at) };
+    if (deepEqual(pose, node.pose)) return wrote;
+    keepContentsPut(scene, id, () => scene.setPose(id, pose));
+    return true;
   };
 
   const ctrl: SymmetryController = {
     scene,
     active: () => (isSymmetryGroup(scene, activeId) ? activeId : null),
     setActive(id) {
+      if (id === activeId) return;
       activeId = id;
       notify();
     },
@@ -103,16 +114,14 @@ export function createSymmetry(scene: Scene<unknown, string, unknown>, opts: Cre
     },
     read: (id) => readGroup(scene, id),
     update(id, change, label = 'Change symmetry') {
-      scene.batch(label, () => write(id, change));
-      notify();
+      if (scene.batch(label, () => write(id, change))) notify();
     },
     preview(id, change) {
-      scene.untracked(() => write(id, change));
-      notify();
+      if (scene.untracked(() => write(id, change))) notify();
     },
     bake(id) {
       const out = bakeSymmetry(scene, id);
-      notify();
+      if (out) notify();
       return out;
     },
     contribution: undefined as unknown as SurfaceContribution,
