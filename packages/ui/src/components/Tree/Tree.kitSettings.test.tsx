@@ -69,6 +69,10 @@ describe('Tree kit settings', () => {
       cleanup();
       expect(tipAfter({ tree: { tipRestMs: 1000 } }, REST_MS)).toBeNull();
     });
+
+    it('waits out a time longer than one timer holds', () => {
+      expect(tipAfter({ tree: { tipRestMs: 2 ** 31 } }, 1)).toBeNull();
+    });
   });
 
   describe('tree.hoverExpandMs', () => {
@@ -102,6 +106,10 @@ describe('Tree kit settings', () => {
       expect(expandedAfter({ tree: { hoverExpandMs: 50 } }, 50)).toBe(true);
       cleanup();
       expect(expandedAfter({ tree: { hoverExpandMs: 2000 } }, HOVER_EXPAND_MS)).toBe(false);
+    });
+
+    it('waits out a time longer than one timer holds', () => {
+      expect(expandedAfter({ tree: { hoverExpandMs: 2 ** 31 } }, 1)).toBe(false);
     });
   });
 });
