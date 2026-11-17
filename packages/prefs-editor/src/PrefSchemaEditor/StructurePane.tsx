@@ -15,7 +15,7 @@ import {
   parentPath, pathOf, type PrefTypes, type SchemaNode, type SchemaRoot, schemaTarget, type SchemaTarget,
   stillUnplaced, topLevelAllows, uniqueKey, VALUE_LINKS, withinDepth,
 } from '@weasel-js/prefs/edit';
-import { DraggedNodes, GHOST_WIDTH, ghostIsPage } from './NodeGhost';
+import { DraggedNodes, GHOST_WIDTH, nodeIsPage } from './NodeGhost';
 import { GROUP_ICON, Palette, type PaletteDrag, type PaletteItem } from './Palette';
 import type { PartsCatalog } from './PartsList';
 import { treeTakesNew } from './previewDrop';
@@ -252,7 +252,7 @@ export function StructurePane({ schema, onChange, selected, lead, onPick, onSele
           const topLevel = parentPath(ids[0]!) === null;
           return {
             content: <DraggedNodes node={node} topLevel={topLevel} count={ids.length} renderers={renderers} over={over} />,
-            width: GHOST_WIDTH[ghostIsPage(node, topLevel) ? 'page' : 'node'],
+            width: GHOST_WIDTH[nodeIsPage(node, topLevel) ? 'page' : 'node'],
           };
         }}
         foldBy="leading" pressFolds={false}
