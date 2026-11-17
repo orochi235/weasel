@@ -57,6 +57,12 @@ function startVoices(
   return { voices, behind };
 }
 
+/** A call whose interrupt ran already, by `id`, and the velocity it read ahead of it. */
+export interface Interrupted {
+  id: number;
+  velocity: number[] | null;
+}
+
 /**
  * A spring or a coast on a target. A spring commits its destination as it starts and its voices
  * are what is left to travel. A coast has no destination: its voice is how far it has gone, which
@@ -66,6 +72,7 @@ export function startOffsetPhysics<T>(
   ctx: AnimationContext,
   o: TargetPhysicsOptions<T>,
   kind: AnimationKind,
+  interrupted?: Interrupted,
 ): PhysicsHandle<T> {
   const s = stateOf(o.target);
   const ax = s.axes;
@@ -76,13 +83,14 @@ export function startOffsetPhysics<T>(
   const restThreshold = o.restThreshold ?? 0.01;
   const zeros = (): number[] => new Array<number>(ax.count).fill(0);
 
-  const id = ctx.nextId();
+  const id = interrupted?.id ?? ctx.nextId();
   const waits = restWaits(ctx, id, !o.onTick, constants, restThreshold);
   const interrupts = o.interrupt !== false;
   const seed = {
     id, kind, cancelKey: o.cancelKey, label: o.label, target: s, keepExisting: !interrupts,
   } as AnimationSeed;
-  if (o.cancelKey != null && interrupts) {
+  if (interrupted) velocity ??= interrupted.velocity;
+  else if (o.cancelKey != null && interrupts) {
     // Read ahead of the interrupt, which stops the voices whose velocity this is.
     velocity ??= ctx.velocityUnder(o.cancelKey, s as never);
     ctx.interrupt(o.cancelKey, seed);

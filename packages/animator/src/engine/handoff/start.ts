@@ -6,7 +6,8 @@ import type {
 } from '../../types';
 import type { AnimationSeed } from '../context';
 import { axesFor, plus, travel } from '../offsets';
-import { constantsFor } from '../offsetPhysics';
+import { constantsFor, startOffsetPhysics } from '../offsetPhysics';
+import { startOffsetTween } from '../offsetTween';
 import { eligible, free, refuse } from './eligible';
 import type { Handoffs } from './handoffs';
 import { physicsMotion, tweenMotion, type Motion } from './motion';
@@ -20,43 +21,54 @@ interface Begun {
 }
 
 /** Interrupts what holds the call's key and makes its seed, where the call can be handed off;
- *  null where it must run on the main thread. */
+ *  null where it must run on the main thread. `ahead` reads and checks the call's own input
+ *  first, so a call refused for it leaves what holds its key running. A number is the id the
+ *  interrupt named, where the call must then run on the main thread under it. */
 function begin(
   hs: Handoffs,
   o: TargetTweenOptions<unknown> | TargetPhysicsOptions<unknown>,
   kind: AnimationKind,
-  ahead?: (s: TargetState) => void,
-): Begun | null {
+  ahead: (s: TargetState) => void,
+): Begun | number | null {
   const { ctx } = hs.host;
   const s = stateOf(o.target) as TargetState;
   const binding = eligible(hs.host, s, o);
   if (!binding) return null;
+  ahead(s);
   const interrupts = o.interrupt !== false;
   const seed = {
     id: ctx.nextId(), kind, cancelKey: o.cancelKey, label: o.label, target: s, keepExisting: !interrupts,
   } as AnimationSeed;
-  ahead?.(s);
   if (o.cancelKey != null && interrupts) ctx.interrupt(o.cancelKey, seed);
-  if (!free(hs.host, s)) return refuse(o, 'something started on its target as the interrupted animation stopped');
+  if (!free(hs.host, s)) {
+    refuse(o, 'something started on its target as the interrupted animation stopped');
+    return seed.id;
+  }
   return { s, binding, seed };
 }
 
 /** A tween on an element target, handed to the compositor; null where it cannot be. */
 export function handOffTween<T>(hs: Handoffs, o: TargetTweenOptions<T>): AnimationHandle | null {
   if (!(o.ms > 0)) return (o.compositor ?? 'off') === 'off' ? null : refuse(o, 'it has no duration');
-  const begun = begin(hs, o as TargetTweenOptions<unknown>, 'tween');
-  if (!begun) return null;
+  let to: number[] = [];
+  let easing: (u: number) => number = easeOutQuad;
+  const begun = begin(hs, o as TargetTweenOptions<unknown>, 'tween', (s) => {
+    to = axesFor(s.axes, o.to, 'to');
+    if (o.from !== undefined) axesFor(s.axes, o.from, 'from');
+    easing = resolveEasing(o.easing ?? easeOutQuad);
+  });
+  if (begun === null) return null;
   const { ctx } = hs.host;
+  if (typeof begun === 'number') return startOffsetTween(ctx, o, begun);
   const { s, binding, seed } = begun;
   const ax = s.axes as TargetState<T>['axes'];
   const fromValue = o.from ?? (s.get() as T);
   const from = axesFor(ax, fromValue, 'from');
-  const to = axesFor(ax, o.to, 'to');
   const blend = o.interpolator ? o.interpolator(fromValue, o.to)
     : o.interpolate ? (u: number) => o.interpolate!(fromValue, o.to, u) : null;
   const motion = tweenMotion({
     ms: o.ms,
-    easing: resolveEasing(o.easing ?? easeOutQuad),
+    easing,
     from,
     delta: travel(ax, to, from),
     path: blend && ((e) => ax.to(blend(e))),
@@ -81,18 +93,23 @@ export function handOffTween<T>(hs: Handoffs, o: TargetTweenOptions<T>): Animati
 export function handOffPhysics<T>(hs: Handoffs, o: TargetPhysicsOptions<T>, kind: AnimationKind): PhysicsHandle<T> | null {
   const { ctx } = hs.host;
   let velocity: number[] | null = null;
+  let dest: number[] | null = null;
+  let given: number[] | null = null;
+  let constants = {} as ReturnType<typeof constantsFor>;
   const begun = begin(hs, o as TargetPhysicsOptions<unknown>, kind, (s) => {
+    dest = o.to == null ? null : axesFor(s.axes, o.to, 'to');
+    constants = constantsFor(o, kind, dest != null);
+    given = o.from === undefined ? null : axesFor(s.axes, o.from, 'from');
     // Read ahead of the interrupt, which stops the animation whose velocity this is.
     if (o.velocity !== undefined) velocity = axesFor(s.axes, o.velocity, 'velocity');
     else if (o.cancelKey != null && o.interrupt !== false) velocity = ctx.velocityUnder(o.cancelKey, s);
   });
-  if (!begun) return null;
+  if (begun === null) return null;
+  if (typeof begun === 'number') return startOffsetPhysics(ctx, o, kind, { id: begun, velocity });
   const { s, binding, seed } = begun;
   const ax = s.axes as TargetState<T>['axes'];
-  let dest = o.to == null ? null : axesFor(ax, o.to, 'to');
-  const constants = constantsFor(o, kind, dest != null);
   const restThreshold = o.restThreshold ?? 0.01;
-  const start = o.from === undefined ? ax.to(s.get() as T) : axesFor(ax, o.from, 'from');
+  const start = given ?? ax.to(s.get() as T);
   // From the destination's side of each angle axis, so the spring turns the short way round.
   const motionFrom = (at: readonly number[], v: readonly number[]): Motion => physicsMotion({
     start: dest ? plus(dest, travel(ax, at, dest)) : at, velocity: v, to: dest, ...constants, threshold: restThreshold,
@@ -100,7 +117,8 @@ export function handOffPhysics<T>(hs: Handoffs, o: TargetPhysicsOptions<T>, kind
   const motion = motionFrom(start, velocity ?? start.map(() => 0));
   if (motion.ms <= 0) {
     if (o.compositor === 'require') refuse(o, 'it starts at rest');
-    return null;
+    // Its interrupt has run, naming this id: the main thread takes both, and the velocity read.
+    return startOffsetPhysics(ctx, o, kind, { id: seed.id, velocity });
   }
   if (o.to != null) s.set(o.to);
   ctx.seedClock();
