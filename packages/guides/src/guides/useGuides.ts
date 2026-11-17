@@ -37,8 +37,8 @@ export interface UseGuidesReturn {
  * lines that callers can pass to `guideSnapSource` (snap source) and
  * `createGuidesLayer` (render layer).
  *
- * It keeps no history of its own and persists nothing: `addGuideOp`,
- * `replaceGuideOp`, and `removeGuideOp` make a change an undo step on a canvas's history.
+ * It keeps no history of its own and persists nothing: `createAddGuideOp`,
+ * `createReplaceGuideOp`, and `createRemoveGuideOp` make a change an undo step on a canvas's history.
  */
 export function useGuides(initial: Guide[] = []): UseGuidesReturn {
   const [guides, setGuides] = useState<Guide[]>(initial);
