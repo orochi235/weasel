@@ -23,7 +23,7 @@ export { groupingSite } from '../core/pages/pagePlacement';
 export { paintInheritors } from '../core/scene/inheritedPaint';
 export { couldClaim, handlersFor, runIngest } from '../domains/ingestion/contentHandlers';
 export type { RunIngestOptions } from '../domains/ingestion/contentHandlers';
-export { copySelection } from '../interactions/actions/defaults/copySubtree';
+export { copyOps } from '../interactions/actions/defaults/copySubtree';
 export { requiresContent, operandContent } from '../interactions/actions/defaults/requiresOperands';
 export { redoAction, undoAction } from '../interactions/actions/defaults/undoRedo';
 export { DUPLICATE_OFFSET } from '../interactions/actions/duplicateOffset';

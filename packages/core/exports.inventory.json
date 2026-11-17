@@ -1510,7 +1510,7 @@
     "contrastLineColor": "function",
     "contrastRatio": "function",
     "copiesWithin": "function",
-    "copySelection": "function",
+    "copyOps": "function",
     "coreKitSettingsSchema": "const",
     "cornerAt": "function",
     "cornerFrameAt": "function",

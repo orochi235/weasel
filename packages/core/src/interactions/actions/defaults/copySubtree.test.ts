@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { copySelection } from './copySubtree';
+import { copyOps } from './copySubtree';
 import { createScene } from 'core/scene/scene';
 import type { Node, RectPose } from 'core/scene/types';
 
@@ -17,12 +17,12 @@ function makeScene() {
 }
 
 function copy(scene: ReturnType<typeof makeScene>['scene'], ids: string[]) {
-  const { ops } = copySelection(scene as never, ids, (_id, node) => node.pose, 'Copy');
+  const { ops } = copyOps(scene as never, ids, (_id, node) => node.pose, 'Copy');
   const nodes = ops.map((o) => (o.args as { node: N }).node);
   return new Map(nodes.map((n) => [n.data.label, n]));
 }
 
-describe('copySelection and a derived node', () => {
+describe('copyOps and a derived node', () => {
   it('points a copied edge at the copies of what it depends on', () => {
     const { scene, a, b, edge } = makeScene();
     const copies = copy(scene, [edge, a, b]);
