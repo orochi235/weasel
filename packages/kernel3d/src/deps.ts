@@ -88,7 +88,7 @@ const OFF_SCREEN = Object.freeze({ x: NaN, y: NaN, width: NaN, height: NaN });
  * that did, rather than snapping the node back. Mid-gesture means a preview is in flight; a call with none, as a
  * gesture's first frame and a nudge are, starts afresh, so no gesture moves through an earlier one's camera.
  */
-function castableViewportOf<TData, TLayer extends string>(
+function createCastableViewportReader<TData, TLayer extends string>(
   world: World3d<TData, TLayer>, viewId: string | null | undefined,
 ): () => Viewport3d | null {
   let lastCastable: Viewport3d | null = null;
@@ -256,7 +256,7 @@ export function createPoseDescriptor<TData, TLayer extends string>(
   const upAxis = groundAxes(up).up;
   const specialized = new WeakMap<object, PoseDescriptor<Pose3, Node3d<TData, TLayer>>>();
 
-  const castableViewport = castableViewportOf(world, viewId);
+  const castableViewport = createCastableViewportReader(world, viewId);
 
   function build(worldBox: (pose: Pose3) => Aabb): PoseDescriptor<Pose3, Node3d<TData, TLayer>> {
     const boundsIn = (vp: Viewport3d, pose: Pose3) =>
