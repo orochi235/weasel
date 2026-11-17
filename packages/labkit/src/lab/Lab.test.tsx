@@ -4,7 +4,7 @@ import { createMemoryAdapter } from '@weasel-js/storage';
 import { renderWithIcons, withIcons } from '@weasel-js/ui/testing/withIcons';
 import { type ReactNode, useContext, useEffect } from 'react';
 import { describe, expect, it } from 'vitest';
-import { auto } from '../config/auto';
+import { AUTO } from '../config/auto';
 import type { Instrument } from '../instrument/types';
 import { LabStoreContext } from '../state/context';
 import type { LabStore } from '../state/store';
@@ -136,7 +136,7 @@ describe('<Lab>', () => {
       </Lab>,
       { wrapper: withIcons },
     );
-    await act(async () => labRef?.addTrial('Stub', { config: { count: auto } }));
+    await act(async () => labRef?.addTrial('Stub', { config: { count: AUTO } }));
     const id = labRef?.trials[1]?.id ?? '';
     await act(async () => store?.getState().updateTrialConfig(id, 'count', 5));
     expect(labRef?.trials[1]?.auto).toBeUndefined();

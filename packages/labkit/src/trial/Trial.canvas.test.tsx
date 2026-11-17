@@ -4,7 +4,7 @@ import { renderSettled } from '@weasel-js/react/testing/renderSettled';
 import { withIcons } from '@weasel-js/ui/testing/withIcons';
 import { useContext } from 'react';
 import { beforeAll, describe, expect, it, vi } from 'vitest';
-import { auto } from '../config/auto';
+import { AUTO } from '../config/auto';
 import { f } from '../config/builder';
 import { defineInstrument } from '../instrument/defineInstrument';
 import type { Instrument } from '../instrument/types';
@@ -133,7 +133,7 @@ describe('an auto config path', () => {
           .number(12)
           .auto(() => 18)
           .range(0, 48)
-          .initial(auto),
+          .initial(AUTO),
       }),
       initialState: () => ({ n: 0 }),
       render: () => null,

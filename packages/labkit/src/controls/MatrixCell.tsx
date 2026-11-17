@@ -5,7 +5,7 @@ import { prefFieldProps } from '@weasel-js/ui/components/Prefs';
 import { type PropertyControlProps, stepDisplay } from '@weasel-js/ui/components/Properties';
 import { Focusable, Tooltip, TooltipTrigger } from '@weasel-js/ui/components/Tooltip';
 import type { CSSProperties, DOMAttributes, MouseEvent, ReactElement, ReactNode } from 'react';
-import { auto as autoValue } from '../config/auto';
+import { AUTO } from '../config/auto';
 import { useFieldChoices } from './fieldChoices';
 import { numberText, summarizeLeaf } from './inDialog';
 
@@ -68,7 +68,7 @@ export function MatrixCell({
   const unpinned = (e: MouseEvent): boolean => {
     if (!e.altKey) return false;
     e.preventDefault();
-    if (canUnpin) setConfig(path, autoValue);
+    if (canUnpin) setConfig(path, AUTO);
     return true;
   };
 

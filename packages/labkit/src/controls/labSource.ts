@@ -38,7 +38,7 @@ export interface LabConfigInput {
   config: Record<string, unknown>;
   /** `config` with every auto path resolved: what an unpinned leaf shows. */
   shown: Record<string, unknown>;
-  /** Writes one value, the `auto` sentinel included. */
+  /** Writes one value, the `AUTO` sentinel included. */
   setConfig: (path: string, value: unknown) => void;
   /** Where the values an edit passes through go. Absent, a draft is written as `setConfig` writes. */
   draftConfig?: (path: string, value: unknown) => void;

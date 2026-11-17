@@ -1,4 +1,4 @@
-export { type Auto, auto, isAuto } from './auto';
+export { type Auto, AUTO, isAuto } from './auto';
 export { applyConfigWrite, autoPathsOf, resolveAutoConfig } from './autoConfig';
 export type { AutoReports } from './autoReports';
 export {

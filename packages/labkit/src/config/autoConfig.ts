@@ -24,7 +24,7 @@ export function autoQuotes(leaf: PrefLeaf): boolean {
 }
 
 /** The dotted paths a schema declares as starting auto — every leaf that said
- *  `.initial(auto)`. This is what seeds a new trial's unpinned set. */
+ *  `.initial(AUTO)`. This is what seeds a new trial's unpinned set. */
 export function autoPathsOf(resolved: ResolvedConfig): string[] {
   const out: string[] = [];
   for (const [path, leaf] of configLeaves(resolved.group)) {
@@ -144,7 +144,7 @@ function dropAtPath(config: Record<string, unknown>, path: string): Record<strin
 /**
  * What writing `value` at `path` makes of a trial's raw config and its set of
  * unpinned paths. A write pins every leaf at or under `path`, except where it
- * holds the `auto` sentinel: that leaf joins the set and keeps what it last
+ * holds the `AUTO` sentinel: that leaf joins the set and keeps what it last
  * held, so a group's value can unpin some leaves and pin the rest in one write
  * (a reset). Both the store and the chrome go through this, so they cannot
  * disagree about what a write meant.
@@ -167,7 +167,7 @@ export function applyConfigWrite<TC>(
   };
 }
 
-/** `value` with each `auto` sentinel in it replaced by what `held` has there, its path added to `unpin`. */
+/** `value` with each `AUTO` sentinel in it replaced by what `held` has there, its path added to `unpin`. */
 function withoutAuto(value: unknown, at: string, held: unknown, unpin: string[]): unknown {
   if (isAuto(value)) {
     unpin.push(at);

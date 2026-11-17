@@ -6,7 +6,7 @@
 import fc from 'fast-check';
 import { describe, expect, it } from 'vitest';
 import { own, runs, tally, timeoutFor } from '../pbt.fixture';
-import { auto } from './auto';
+import { AUTO } from './auto';
 import { applyConfigWrite, resolveAutoConfig } from './autoConfig';
 import { f } from './builder';
 import { configValueAt } from './path';
@@ -127,7 +127,7 @@ describe('applyConfigWrite', () => {
       const writes = fc.array(
         fc.tuple(
           fc.constantFrom('a', 'b', 'g.c'),
-          fc.oneof(fc.integer({ min: 0, max: 3 }), fc.constant(auto)),
+          fc.oneof(fc.integer({ min: 0, max: 3 }), fc.constant(AUTO)),
         ),
         { maxLength: 12 },
       );
@@ -143,7 +143,7 @@ describe('applyConfigWrite', () => {
           const unpinned = new Set<string>();
           for (const [path, value] of list) {
             ({ config, autoPaths } = applyConfigWrite(config, autoPaths, path, value));
-            if (value === auto) unpinned.add(path);
+            if (value === AUTO) unpinned.add(path);
             else {
               unpinned.delete(path);
               model.set(path, value);

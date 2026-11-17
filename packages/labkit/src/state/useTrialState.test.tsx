@@ -1,7 +1,7 @@
 import { act, renderHook } from '@testing-library/react';
 import type { ReactNode } from 'react';
 import { describe, expect, it } from 'vitest';
-import { auto } from '../config/auto';
+import { AUTO } from '../config/auto';
 import { f } from '../config/builder';
 import { defaultConfigOf, defineInstrument } from '../instrument/defineInstrument';
 import type { Instrument } from '../instrument/types';
@@ -140,7 +140,7 @@ describe('auto paths', () => {
       () => useTrialState<{ count: number }, { width: number; gap: number }>(),
       { wrapper },
     );
-    act(() => store.getState().updateTrialConfig('w1', 'gap', auto));
+    act(() => store.getState().updateTrialConfig('w1', 'gap', AUTO));
     expect(result.current.config.gap).toBe(18);
     expect(result.current.raw.gap).toBe(12);
     expect([...result.current.auto]).toEqual(['gap']);
@@ -160,7 +160,7 @@ describe('auto paths', () => {
   it('records a path written as auto instead of storing the sentinel', () => {
     const { store } = makeAutoWrapper('w1');
     store.getState().updateTrialConfig('w1', 'gap', 24);
-    store.getState().updateTrialConfig('w1', 'gap', auto);
+    store.getState().updateTrialConfig('w1', 'gap', AUTO);
     const rec = store.getState().trials[0];
     expect(rec?.auto).toEqual(['gap']);
     // The last pinned value survives, so un-pinning is lossless.
@@ -169,7 +169,7 @@ describe('auto paths', () => {
 
   it('pins again when a real value is written to an auto path', () => {
     const { store } = makeAutoWrapper('w1');
-    store.getState().updateTrialConfig('w1', 'gap', auto);
+    store.getState().updateTrialConfig('w1', 'gap', AUTO);
     store.getState().updateTrialConfig('w1', 'gap', 30);
     const rec = store.getState().trials[0];
     expect(rec?.auto).toBeUndefined();
@@ -178,9 +178,9 @@ describe('auto paths', () => {
 
   it('does not allocate a new record when the path is already auto', () => {
     const { store } = makeAutoWrapper('w1');
-    store.getState().updateTrialConfig('w1', 'gap', auto);
+    store.getState().updateTrialConfig('w1', 'gap', AUTO);
     const first = store.getState().trials[0];
-    store.getState().updateTrialConfig('w1', 'gap', auto);
+    store.getState().updateTrialConfig('w1', 'gap', AUTO);
     expect(store.getState().trials[0]).toBe(first);
   });
 });

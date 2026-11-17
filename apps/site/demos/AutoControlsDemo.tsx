@@ -1,5 +1,5 @@
 import { clamp } from '@weasel-js/geom';
-import { auto, defineInstrument, f, Lab } from '@weasel-js/labkit';
+import { AUTO, defineInstrument, f, Lab } from '@weasel-js/labkit';
 import '@weasel-js/labkit/styles.css';
 import 'windease/styles.css';
 
@@ -37,14 +37,14 @@ const grid = defineInstrument({
       .number(6)
       .range(1, 16)
       .auto((c) => clamp(Math.round((c.width as number) / 110), 1, 16))
-      .initial(auto)
+      .initial(AUTO)
       .label('Columns'),
     gap: f
       .number(12)
       .range(0, 48)
       .suffix('px')
       .auto((c) => clamp(Math.round((c.width as number) / 60), 0, 48))
-      .initial(auto)
+      .initial(AUTO)
       .label('Gap'),
 
     // Reads `cols`, which is usually auto itself — resolution is demand-driven,
@@ -53,7 +53,7 @@ const grid = defineInstrument({
     caption: f
       .string('six across')
       .auto((c) => `${WORDS[c.cols as number] ?? String(c.cols)} across`)
-      .initial(auto)
+      .initial(AUTO)
       .placeholder('caption…')
       .label('Caption'),
 

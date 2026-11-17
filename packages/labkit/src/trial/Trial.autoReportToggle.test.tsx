@@ -3,7 +3,7 @@ import { renderSettled } from '@weasel-js/react/testing/renderSettled';
 import { withIcons } from '@weasel-js/ui/testing/withIcons';
 import { useEffect } from 'react';
 import { describe, expect, it } from 'vitest';
-import { auto } from '../config/auto';
+import { AUTO } from '../config/auto';
 import { f } from '../config/builder';
 import { defineInstrument } from '../instrument/defineInstrument';
 import type { RenderContext } from '../instrument/types';
@@ -25,7 +25,7 @@ function Counter({ ctx, suggested }: { ctx: RenderContext<unknown, Config>; sugg
 const counted = (suggested: unknown) =>
   defineInstrument({
     name: 'Counted',
-    config: f.schema({ count: f.number(16).range(1, 64).initial(auto).quote() }),
+    config: f.schema({ count: f.number(16).range(1, 64).initial(AUTO).quote() }),
     initialState: () => ({}),
     render: (ctx) => <Counter ctx={ctx as RenderContext<unknown, Config>} suggested={suggested} />,
   });

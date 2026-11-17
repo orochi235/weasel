@@ -36,7 +36,7 @@ export interface RowAutoSource {
   shown: Record<string, unknown>;
   auto: ReadonlySet<string> | undefined;
   setRowAuto: ((path: string, next: boolean, value: unknown) => void) | undefined;
-  /** Writes one value, the `auto` sentinel included: what a reset goes through. */
+  /** Writes one value, the `AUTO` sentinel included: what a reset goes through. */
   setConfig: (path: string, value: unknown) => void;
 }
 
