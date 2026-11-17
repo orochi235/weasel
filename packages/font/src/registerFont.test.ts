@@ -89,6 +89,16 @@ describe('registerFont', () => {
     await registerFont('inter', {}, '/b.json', '/b.png');
   });
 
+  it('holds the URLs of the atlas still drawn when a replacement fails to fetch', async () => {
+    await registerFont('inter', {}, '/a.json', '/a.png');
+    const first = getFont('inter', 400, 'normal');
+    (global.fetch as ReturnType<typeof vi.fn>).mockRejectedValueOnce(new Error('404'));
+    await expect(registerFont('inter', {}, '/b.json', '/b.png', { replace: true })).rejects.toThrow(/404/);
+    expect(getFont('inter', 400, 'normal')).toBe(first);
+    expect(() => registerFont('inter', {}, '/c.json', '/c.png')).toThrow(/\/a\.json and \/a\.png, not \/c\.json/);
+    await registerFont('inter', {}, '/a.json', '/a.png');
+  });
+
   it('keeps a superseded fetch from landing over its replacement', async () => {
     const stub = global.fetch as ReturnType<typeof vi.fn>;
     const answer = stub.getMockImplementation() as (url: string) => Promise<Response>;
