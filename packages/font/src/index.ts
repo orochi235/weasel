@@ -75,7 +75,7 @@ export {
 } from './outline/outlineRegistry';
 export type {
   OutlineSource,
-  OutlineFontOptions,
+  RegisterFontOutlinesOptions,
   OutlineStatus,
   OutlineFaceInfo,
 } from './outline/outlineRegistry';

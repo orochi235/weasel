@@ -48,7 +48,7 @@ export type OutlineSource =
   | (() => ArrayBuffer | Blob | Promise<ArrayBuffer | Blob>);
 
 /** Options for registering an outline font. */
-export interface OutlineFontOptions {
+export interface RegisterFontOutlinesOptions {
   /** Override the default opentype.js parser. Mostly a test seam; also the
    *  hook for a consumer who already has a font parser in their bundle. */
   parser?: OutlineParser;
@@ -116,7 +116,7 @@ export function registerFontOutlines(
   family: string,
   variant: FontVariant,
   source: OutlineSource,
-  opts: OutlineFontOptions = {},
+  opts: RegisterFontOutlinesOptions = {},
 ): () => void {
   const { weight, style } = normalizeVariant(variant);
   const key = slotKey(family, weight, style);
