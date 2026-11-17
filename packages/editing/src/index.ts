@@ -25,7 +25,7 @@ export { booleansPreset } from './presets/booleans';
 export { selectToolKitPreset, selectToolsPreset, shapeToolKitPreset, shapeToolsPreset } from './presets/tools';
 import type {} from './tools/toolOptions';
 export {
-  BUILTIN_TOOL_GROUPS, BUILTIN_TOOL_IDS, BUILTIN_TOOLS, SELECT_TOOLS, SHAPE_TOOLS, TOOL_GROUP_ORDER, type KitToolId,
+  KIT_TOOL_GROUPS, KIT_TOOL_IDS, KIT_TOOLS, SELECT_TOOLS, SHAPE_TOOLS, TOOL_GROUP_ORDER, type KitToolId,
 } from './tools/toolSets';
 export {
   DEFAULT_SHAPE_PAINT, shapeToolOptions, styleOptionLeaves, toolOptionPaint, type ShapeToolOptionsSpec,

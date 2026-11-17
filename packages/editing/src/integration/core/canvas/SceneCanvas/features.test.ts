@@ -14,7 +14,7 @@ import { BASELINE_ACTION_IDS } from '@weasel-js/core';
 import { PRESET_OWNED_CHROME } from '@weasel-js/core';
 import { defaultVisibilityRules, never } from '@weasel-js/core';
 import { MIDDLE_DRAG_PAN_ID } from '@weasel-js/core';
-import { BUILTIN_TOOL_IDS, KIT_STANDARD_ACTION_IDS, FEATURE_ACTION_IDS, FEATURE_NAMES, FEATURE_PRESETS, namedFeatures, type FeatureName, SELECTION_MOVE_ID, SELECTION_RESIZE_ID, SELECTION_ROTATE_ID } from '@weasel-js/editing';
+import { KIT_TOOL_IDS, KIT_STANDARD_ACTION_IDS, FEATURE_ACTION_IDS, FEATURE_NAMES, FEATURE_PRESETS, namedFeatures, type FeatureName, SELECTION_MOVE_ID, SELECTION_RESIZE_ID, SELECTION_ROTATE_ID } from '@weasel-js/editing';
 
 // Names keep these tables readable; `namedFeatures` maps each to its object.
 type Entry = FeatureName | FeaturePreset;
@@ -160,7 +160,7 @@ describe('FEATURE_PRESETS', () => {
 
   it('names only built-in tools, and only chrome the kit has a rule for', () => {
     for (const [id, row] of rows) {
-      for (const tool of presetToolIds(row)) expect(BUILTIN_TOOL_IDS, id).toContain(tool);
+      for (const tool of presetToolIds(row)) expect(KIT_TOOL_IDS, id).toContain(tool);
       for (const chrome of row.chrome ?? []) expect(Object.keys(defaultVisibilityRules), id).toContain(chrome);
     }
   });

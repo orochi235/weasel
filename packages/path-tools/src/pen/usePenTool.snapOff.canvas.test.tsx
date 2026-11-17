@@ -10,7 +10,7 @@ import { SceneCanvas, createScene } from '@weasel-js/core';
 import { gridSnapSourceForTests as gridSource } from '@weasel-js/core/test-seams';
 import { pathTools } from '../presets';
 import { usePathToolsTools } from '../toolSets';
-import { drawPreset, BUILTIN_TOOL_IDS } from '@weasel-js/editing';
+import { drawPreset, KIT_TOOL_IDS } from '@weasel-js/editing';
 
 beforeAll(() => {
   const proto = HTMLCanvasElement.prototype as unknown as Record<string, unknown>;
@@ -39,7 +39,7 @@ function penAnchors(enabled: boolean, points: readonly { x: number; y: number }[
     return (
       <SceneCanvas
         features={[drawPreset, pathTools]} tools={usePathToolsTools()} scene={scene} width={200} height={200} layers={{}}
-        defaultTools={BUILTIN_TOOL_IDS} defaultActiveTool="pen"
+        defaultTools={KIT_TOOL_IDS} defaultActiveTool="pen"
         snap={{ sources: [gridSource(10)], enabled }}
       />
     );

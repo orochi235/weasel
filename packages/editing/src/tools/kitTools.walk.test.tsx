@@ -1,7 +1,7 @@
 /**
  * Every built-in tool `<SceneCanvas>` mounts, walked the way a person uses it:
  * its key makes it the active tool, a gesture runs its action, the action
- * commits, and Ctrl+Z takes the commit back. A tool added to `BUILTIN_TOOL_IDS`
+ * commits, and Ctrl+Z takes the commit back. A tool added to `KIT_TOOL_IDS`
  * with no walk here fails the first test.
  *
  * jsdom's canvas rect is all zeros and the view is identity, so client coords
@@ -18,7 +18,7 @@ import { createScene, asNodeId, type Scene } from '@weasel-js/core/engine';
 import { solid } from '@weasel-js/paint';
 import { SceneCanvas } from '@weasel-js/core';
 import { drawPreset } from '../presets/composites';
-import { BUILTIN_TOOL_GROUPS, BUILTIN_TOOL_IDS, type KitToolId } from './toolSets';
+import { KIT_TOOL_GROUPS, KIT_TOOL_IDS, type KitToolId } from './toolSets';
 
 type D = Record<string, unknown>;
 type P = { x: number; y: number; width: number; height: number; rotation?: number };
@@ -55,7 +55,7 @@ function mount() {
   const { container } = render(
     <SceneCanvas
       features={[drawPreset]} scene={scene} width={400} height={400}
-      defaultTools={BUILTIN_TOOL_IDS} defaultActiveTool="select"
+      defaultTools={KIT_TOOL_IDS} defaultActiveTool="select"
       onToolsCreated={(t) => { tools.current = t; }}
       onViewChange={(v) => { view = v; }}
     >
@@ -141,9 +141,9 @@ const WALKS: Record<KitToolId, (w: Walk) => void> = {
 describe('every built-in tool', () => {
   it('has a walk here, a key or a recorded reason for none, and a place on the palette', () => {
     const w = mount();
-    expect(Object.keys(WALKS).sort()).toEqual([...BUILTIN_TOOL_IDS].sort());
-    const groupOf = new Map(BUILTIN_TOOL_GROUPS.flatMap((set) => toolIdsOf([set]).map((id) => [id as string, set.id])));
-    for (const id of BUILTIN_TOOL_IDS) {
+    expect(Object.keys(WALKS).sort()).toEqual([...KIT_TOOL_IDS].sort());
+    const groupOf = new Map(KIT_TOOL_GROUPS.flatMap((set) => toolIdsOf([set]).map((id) => [id as string, set.id])));
+    for (const id of KIT_TOOL_IDS) {
       const tool = w.tools().registry[id]!;
       expect(tool, id).toBeDefined();
       expect(Boolean(tool.keybinding), `${id} key`).toBe(!KEYLESS.has(id));
@@ -154,7 +154,7 @@ describe('every built-in tool', () => {
     }
   });
 
-  for (const id of BUILTIN_TOOL_IDS) {
+  for (const id of KIT_TOOL_IDS) {
     it(`${id}: activates by its key, commits through its action, and undoes`, () => {
       const w = mount();
       w.activate(id);

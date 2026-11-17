@@ -12,7 +12,7 @@ import { useDebugCommands } from './devRoutes';
 import { DRAW_NODE_PROPERTIES } from './registryData';
 import { GESTURE_CATALOG_KEYS, type DeclaredRoute, type ToolSurface, type ToolEntry, type ActionEntry, type CallbackRef, type CallbackSource } from './registryEntries';
 import s from './RegistryInspector.module.css';
-import { BUILTIN_TOOL_IDS } from '@weasel-js/editing';
+import { KIT_TOOL_IDS } from '@weasel-js/editing';
 import { getOwn, hasOwnKey } from '@weasel-js/registry';
 
 export interface RegistrySnapshot {
@@ -164,7 +164,7 @@ export function RegistryProbe({ onSnapshot }: ProbeProps) {
         scene={scene}
         width={200}
         height={200}
-        features={DRAW_FEATURES} defaultTools={BUILTIN_TOOL_IDS}
+        features={DRAW_FEATURES} defaultTools={KIT_TOOL_IDS}
         ambient={AMBIENT}
         routing={defaultNodeRouting}
         onToolsCreated={handleToolsCreated}

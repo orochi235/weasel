@@ -10,7 +10,7 @@ import {
   WeaselProvider,
 } from '@weasel-js/core';
 import {
-  BUILTIN_TOOL_IDS,
+  KIT_TOOL_IDS,
   editPreset,
   type KitToolId,
   movePreset,
@@ -135,7 +135,7 @@ const FEATURES = [
   ANNOTATION_TEXT,
 ];
 const BUILTIN_ANNOTATION_TOOLS = ANNOTATION_WEASEL_TOOLS.filter((t): t is KitToolId =>
-  (BUILTIN_TOOL_IDS as readonly string[]).includes(t),
+  (KIT_TOOL_IDS as readonly string[]).includes(t),
 );
 
 /** One factory per weasel tool, each making the mark the rail's tool means. */

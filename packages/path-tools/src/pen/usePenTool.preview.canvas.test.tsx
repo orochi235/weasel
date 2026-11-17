@@ -4,7 +4,7 @@ import { renderWithKeys as render } from '@weasel-js/react/testing/giveKeys';
 import { SceneCanvas, useScene, type ToolsApi } from '@weasel-js/core';
 import { pathTools } from '../presets';
 import { usePathToolsTools } from '../toolSets';
-import { drawPreset, BUILTIN_TOOL_IDS } from '@weasel-js/editing';
+import { drawPreset, KIT_TOOL_IDS } from '@weasel-js/editing';
 
 beforeAll(() => {
   const proto = HTMLCanvasElement.prototype as unknown as Record<string, unknown>;
@@ -43,7 +43,7 @@ function mount() {
         scene={scene}
         width={200} height={200}
         layers={{}}
-        defaultTools={BUILTIN_TOOL_IDS}
+        defaultTools={KIT_TOOL_IDS}
         defaultActiveTool="pen"
         onToolsCreated={(t) => { captured.tools = t; }}
       />

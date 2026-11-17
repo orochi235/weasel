@@ -34,7 +34,7 @@ import {
 } from './useChartDiagram';
 import { useChartSnap } from './useChartSnap';
 import './workspace.css';
-import { BUILTIN_TOOL_GROUPS, useSelection } from '@weasel-js/editing';
+import { KIT_TOOL_GROUPS, useSelection } from '@weasel-js/editing';
 
 // Module consts: SceneCanvas keys its wiring off these props' identity.
 const FALLBACK_PAGE = { x: 0, y: 0, ...CHART_PAGE };
@@ -61,7 +61,7 @@ function endTextEdit(scene: ChartScene, id: string): void {
 const isPaletteTool = (tool: Tool): boolean => !isStencilTool(tool) && !isSequenceTool(tool);
 
 /** What the shortcut sheet groups the tools by: core's sets, the sequence tools, then each stencil group. */
-const SHEET_TOOL_SETS = [...BUILTIN_TOOL_GROUPS, TEXT_TOOLS, SEQUENCE_TOOLS, ...STENCIL_TOOLS.members.filter(isToolSet)];
+const SHEET_TOOL_SETS = [...KIT_TOOL_GROUPS, TEXT_TOOLS, SEQUENCE_TOOLS, ...STENCIL_TOOLS.members.filter(isToolSet)];
 
 /** Chart mode: the scene is the document — stencil bodies joined by edges, on a page. */
 export function ChartWorkspace(): ReactElement {

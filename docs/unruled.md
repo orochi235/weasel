@@ -43,7 +43,7 @@ Either/ors an agent settled on 2026-10-11, one commit each: `9dfd8a5aa`, `d3635e
   handle a consumer re-shows with `chromeVisibility` does nothing when dragged and warns nothing.
 - 2026-10-19: A tool lives in the package that owns the action it binds, written into CLAUDE.md's
   "What gets its own package". `ToolSet` is the composition unit (`defaultTools`, preset `tools`,
-  and `ToolPalette`'s `include` take one); `BUILTIN_TOOL_IDS` is now derived from `BUILTIN_TOOLS`,
+  and `ToolPalette`'s `include` take one); `KIT_TOOL_IDS` is now derived from `KIT_TOOLS`,
   and a shape kind's `family` decides which set names it. draw's `usePathToolsTools` moved into
   path-tools and now also builds spiro and the shape builder.
 
@@ -1978,7 +1978,7 @@ Calls the lanes made without a ruling:
   follow `Array.find`).
 - Sticky keeps S, Knead moves to U, and Reach moves from U to Shift+U, on the maintainer's call
   (2026-11-12). The star tool has no default key at all.
-- Open: two tool sets are not named for their tools' palette group, which `BUILTIN_TOOL_GROUPS` says each set is:
+- Open: two tool sets are not named for their tools' palette group, which `KIT_TOOL_GROUPS` says each set is:
   `RESHAPE_TOOLS` (`reshape`) holds tools in the `path` group, and `RIG_TOOLS` (`rig`) tools in `shape`. Renaming
   the groups moves where the tools sit on a palette; renaming the sets does not.
 - Open: most tool hooks outside the drag-to-insert tools take a `keybinding` option (`null` to drop the key):
@@ -2107,7 +2107,7 @@ Calls the lanes made without a ruling:
 - 2026-11-13 (the lane's call): the hand tool and the lasso commit nothing to the history (a pan edits the view, a
   lasso the selection), so the walk over every built-in tool checks that they leave the history alone instead of
   undoing them. `image`, `eyedropper` and `measure` need arguments, so they are in no built-in tool set and no
-  `BUILTIN_TOOL_GROUPS` entry; they sit in the `shape` and `view` palette groups when a host mounts them.
+  `KIT_TOOL_GROUPS` entry; they sit in the `shape` and `view` palette groups when a host mounts them.
 - No two tool keys collide, in core or across path-tools and rig, and no action binds a bare letter. The star and
   image tools have no key; the bare letters no tool takes are C, D, O, Q, X and Z (B is pin warp, F plane warp, J bone,
   U knead, W weight and Y snip).

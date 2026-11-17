@@ -62,7 +62,7 @@ Interactions are **actions** — descriptors registered into an actions registry
 
 ```tsx
 import { SceneCanvas, useScene } from '@weasel-js/core';
-import { BUILTIN_TOOL_IDS, drawPreset, useSelection } from '@weasel-js/editing';
+import { KIT_TOOL_IDS, drawPreset, useSelection } from '@weasel-js/editing';
 import { createGridPreset } from '@weasel-js/guides';
 
 const grid = createGridPreset({ spacing: 20 });
@@ -81,7 +81,7 @@ export function Editor() {
       scene={scene}
       selection={selection}
       features={[drawPreset, grid]}
-      defaultTools={BUILTIN_TOOL_IDS}
+      defaultTools={KIT_TOOL_IDS}
     />
   );
 }
