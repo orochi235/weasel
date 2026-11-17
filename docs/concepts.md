@@ -133,8 +133,8 @@ itself. For a page that picks presets by name (a URL, a settings file); importin
 it puts every core preset in the bundle.
 
 `move`, `resize` and `rotate` belong to the selection, not to the select tool:
-they are always-live entries (editing's `selectionMoveContribution`,
-`selectionResizeContribution`, `selectionRotateContribution`), so a drag on the selection moves it under
+they are always-live entries (editing's `createSelectionMoveContribution`,
+`createSelectionResizeContribution`, `createSelectionRotateContribution`), so a drag on the selection moves it under
 any tool that leaves the drag unclaimed. The select tool itself only chooses:
 it picks on press, marquees on an empty drag, and clears on an empty click.
 

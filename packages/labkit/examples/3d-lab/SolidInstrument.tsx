@@ -50,7 +50,7 @@ import { useBoxTool } from './tools3d';
 import { useGroupEntry3d, type GroupEntry3d } from './groupEntry3d';
 import { useBoxInsert } from './insert3d';
 import { useSolidSelection } from './selection3d';
-import { useSelectToolWith, selectionMoveContribution, ENGINE_STANDARD_ACTIONS } from '@weasel-js/editing/engine';
+import { useSelectToolWith, createSelectionMoveContribution, ENGINE_STANDARD_ACTIONS } from '@weasel-js/editing/engine';
 
 interface SolidState {
   /** Kept only so labkit has something to persist; the scene itself is a ref. */
@@ -320,7 +320,7 @@ function Viewport({ config }: { config: SolidConfig }): ReactNode {
   const box = useBoxTool();
   // The select tool only picks; dragging a solid to move it is the
   // selection's own ambient binding, live under every tool here.
-  const selectionMove = useMemo(() => selectionMoveContribution() as Tool, []);
+  const selectionMove = useMemo(() => createSelectionMoveContribution() as Tool, []);
   const entriesById = useMemo(
     () =>
       new Map<string, Tool>([

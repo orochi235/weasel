@@ -49,9 +49,9 @@ export {
   createSelectTool, createSelectToolWith, useSelectTool, useSelectToolWith, type SelectAdapter, type UseSelectToolOptions,
 } from './tools/select/useSelectTool';
 export {
-  selectionMoveContribution, selectionMoveBindings, selectionTransformContribution, selectionTransformBindings,
-  selectionResizeContribution, selectionResizeBindings, selectionRotateContribution, selectionRotateBindings,
-  areaSelectContribution, isBodyOffChrome, isEmptyOffChrome, AREA_SELECT_ID, SELECTION_MOVE_ID, SELECTION_TRANSFORM_ID,
+  createSelectionMoveContribution, selectionMoveBindings, createSelectionTransformContribution, selectionTransformBindings,
+  createSelectionResizeContribution, selectionResizeBindings, createSelectionRotateContribution, selectionRotateBindings,
+  createAreaSelectContribution, isBodyOffChrome, isEmptyOffChrome, AREA_SELECT_ID, SELECTION_MOVE_ID, SELECTION_TRANSFORM_ID,
   SELECTION_RESIZE_ID, SELECTION_ROTATE_ID, type SelectionMoveOptions, type SelectionTransformOptions,
   type SelectionRotateOptions,
 } from './tools/select/selectionContributions';

@@ -14,7 +14,7 @@ import { SceneCanvas } from '@weasel-js/core';
 import { createScene } from '@weasel-js/core/engine';
 import type { Scene, NodeId, Contribution } from '@weasel-js/core';
 import type { ActionDisabledReason } from '@weasel-js/routing';
-import { drawPreset, pickPreset, areaSelectContribution } from '@weasel-js/editing';
+import { drawPreset, pickPreset, createAreaSelectContribution } from '@weasel-js/editing';
 
 type D = { kind: 'rect' };
 type L = 'main';
@@ -196,8 +196,8 @@ describe('integration: SceneCanvas + useSelectTool drag routes', () => {
       expect(dragEmpty([])).not.toHaveBeenCalled();
     });
 
-    it('marquees when the canvas opts in with areaSelectContribution', () => {
-      expect(dragEmpty([areaSelectContribution()])).toHaveBeenCalledTimes(1);
+    it('marquees when the canvas opts in with createAreaSelectContribution', () => {
+      expect(dragEmpty([createAreaSelectContribution()])).toHaveBeenCalledTimes(1);
     });
   });
 

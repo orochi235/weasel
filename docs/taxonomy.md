@@ -165,8 +165,8 @@ The **select tool** is a Tool in this sense and only chooses: `select.pick` on
 press, the deferred multi-click collapse on release, `areaSelect` on an empty
 drag, `clearSelection` on an empty click. Acting on the selection is not the
 select tool's. Moving, cloning, resizing and rotating it are `always` entries
-owned by the selection (`selectionMoveContribution`,
-`selectionResizeContribution`, `selectionRotateContribution` in
+owned by the selection (`createSelectionMoveContribution`,
+`createSelectionResizeContribution`, `createSelectionRotateContribution` in
 `tools/builtin/select`), so they are live
 under any tool that leaves the gesture unclaimed.
 
@@ -625,7 +625,7 @@ in path edit, Escape exits the edit instead of resetting the tool. A plain drag
 carries no intent of its own, so no kit action binds one by default: the select
 tool marquees, the shape tools insert and the hand tool pans through their own
 bindings, and a canvas that wants a marquee or a pan under every tool adds
-`areaSelectContribution()` or `dragPanContribution()`. Path edit's anchor
+`createAreaSelectContribution()` or `dragPanContribution()`. Path edit's anchor
 editing binds ambient drags on its own affordances, and a path-edit tool such
 as Sand binds its drag at the active tier, which outranks them;
 the `anchors` tool path edit starts on binds nothing, so they take the drag.

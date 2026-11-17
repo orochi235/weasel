@@ -10,5 +10,5 @@ export { insertAction } from './actions/insert/action';
 export { areaSelectAction } from './actions/select/areaSelect';
 export { createSelection, useSelection, type UseSelectionOptions } from './selection/useSelection';
 export { createSelectToolWith, useSelectToolWith, type SelectAdapter, type UseSelectToolOptions } from './tools/select/useSelectToolWith';
-export { selectionMoveContribution, type SelectionMoveOptions } from './tools/select/selectionContributions';
+export { createSelectionMoveContribution, type SelectionMoveOptions } from './tools/select/selectionContributions';
 export { createGroupEntryContribution, useGroupEntryContribution, GROUP_ENTRY_ID } from './tools/select/groupEntry';

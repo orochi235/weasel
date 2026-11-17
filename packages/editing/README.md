@@ -37,7 +37,7 @@ line, polygon and star, and `defaultTools={['rect']}` mounts one wherever a
 preset offers it (`drawPreset` offers them all). `selectionPreset`, which every
 editing preset includes, builds the canvas's selection; `useSelection` is the
 same selection as a hook, for a panel or a host that keeps its own. A host of
-another dimension takes `useSelectToolWith`, `selectionMoveContribution`,
+another dimension takes `useSelectToolWith`, `createSelectionMoveContribution`,
 `useGroupEntryContribution` and `ENGINE_STANDARD_ACTIONS` from
 `@weasel-js/editing/engine`, which loads none of the presets.
 

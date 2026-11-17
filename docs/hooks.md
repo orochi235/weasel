@@ -132,7 +132,7 @@ macOS Option+bracket emits a curly quote, so both codepoints are listed.
 
 A plain drag carries no intent, so no action answers one by default. The tools
 and contributions that want one bind it: `areaSelect` from the select tool (or,
-under every tool, `areaSelectContribution()`), `insert` and
+under every tool, `createAreaSelectContribution()`), `insert` and
 `insert.rotate` from the shape tools, `lassoSelect` from the lasso tool,
 `slice` from path-tools' slice tool, `viewport.dragPan` from the hand tool (or, on any
 unclaimed drag, `dragPanContribution()`), and `resize`, `rotate` and `clone`
