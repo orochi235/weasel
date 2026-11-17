@@ -7,6 +7,7 @@ export {
   isPanelSection,
   kindBreakdown,
   nodeLeafValue,
+  panelEntryOf,
   panelLeafKey,
   panelRowsOf,
   setAtPath,

@@ -191,6 +191,13 @@ export interface PanelSchemaEntry {
   readonly schema: PrefSection;
 }
 
+/** The entry a kind is drawn and written under: the last of `entries` named `kind`, so an entry appended after a
+ *  library's (`[...defaultNodeProperties, mine]`) replaces it. */
+export function panelEntryOf<E extends { readonly name: string }>(entries: readonly E[], kind: string): E | undefined {
+  for (let i = entries.length - 1; i >= 0; i--) if (entries[i]!.name === kind) return entries[i];
+  return undefined;
+}
+
 /** One kind's schema as a panel draws it now. */
 export interface PanelShown {
   /** The schema narrowed to what is drawn. Null is nothing. */
@@ -216,8 +223,7 @@ export function effectiveSections(
 ): PanelSection[] {
   const uniq = [...new Set(kinds)];
   if (uniq.length === 0) return [];
-  const byName = new Map(entries.map((e) => [e.name, e]));
-  const schemas = uniq.map((k) => byName.get(k)?.schema);
+  const schemas = uniq.map((k) => panelEntryOf(entries, k)?.schema);
   if (schemas.some((s) => s === undefined)) return [];
   const [flatFirst, ...rest] = (schemas as PrefSection[]).map((schema) => {
     const shown: PanelShown = shownOf ? shownOf(schema) : { schema };
