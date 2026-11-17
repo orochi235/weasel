@@ -199,10 +199,10 @@ describe('GradientEditor stops', () => {
     });
 
     it('reports a pick and waits to be told', () => {
-      const onSelectedStopChange = vi.fn();
-      renderWithIcons(<GradientEditor value={THREE} selectedStop={0} onSelectedStopChange={onSelectedStopChange} onChange={() => {}} />);
+      const onSelectionChange = vi.fn();
+      renderWithIcons(<GradientEditor value={THREE} selectedStop={0} onSelectionChange={onSelectionChange} onChange={() => {}} />);
       fireEvent.focus(handle(2));
-      expect(onSelectedStopChange).toHaveBeenCalledWith(1);
+      expect(onSelectionChange).toHaveBeenCalledWith(1);
       expect(screen.getByLabelText('Stop 1')).toBeInTheDocument();
     });
   });

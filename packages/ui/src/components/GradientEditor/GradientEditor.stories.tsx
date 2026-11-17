@@ -15,7 +15,7 @@ const meta: Meta<typeof GradientEditor> = {
     spaceSwitch: { control: 'boolean' },
     disabled: { control: 'boolean' },
     selectedStop: { table: { disable: true } },
-    onSelectedStopChange: { table: { disable: true } },
+    onSelectionChange: { table: { disable: true } },
     value: { table: { disable: true } },
     onInput: { table: { disable: true } },
     onChange: { table: { disable: true } },
@@ -26,7 +26,7 @@ export default meta;
 
 type Story = StoryObj<typeof GradientEditor>;
 
-type LiveArgs = Omit<Parameters<typeof GradientEditor>[0], 'value' | 'onChange' | 'onInput' | 'selectedStop' | 'onSelectedStopChange'>;
+type LiveArgs = Omit<Parameters<typeof GradientEditor>[0], 'value' | 'onChange' | 'onInput' | 'selectedStop' | 'onSelectionChange'>;
 
 /** Holds the value, and the selection too, so a story can open on a stop other than the first. */
 function Live({ initial, startOn, ...args }: LiveArgs & { initial: Paint; startOn?: number }) {
@@ -37,7 +37,7 @@ function Live({ initial, startOn, ...args }: LiveArgs & { initial: Paint; startO
       {...args}
       value={value}
       selectedStop={selected}
-      onSelectedStopChange={setSelected}
+      onSelectionChange={setSelected}
       onInput={setValue}
       onChange={setValue}
     />
