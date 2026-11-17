@@ -1,7 +1,7 @@
 import { createMenuController, withLinks, type MenuController, type Rect } from '@weasel-js/menu';
 import { faceGeneration } from '@weasel-js/font';
 import type { ClaimableGesture, OpenMenu } from '@weasel-js/core';
-import { createEmitter } from '@weasel-js/registry';
+import { createEmitter, createPart } from '@weasel-js/registry';
 import { maxOf, minOf } from '@weasel-js/geom';
 import { createRevision, type HudAccessibleTree, type HudTextInput, type HudKeyEvent, type HudPointerEvent, type Widget, type WidgetBounds } from '../widget';
 import { accessibleMenu } from './accessibleMenu';
@@ -100,14 +100,9 @@ function menuKey(c: MenuController, typing: ReturnType<typeof createTextEditor>,
   return true;
 }
 
-const metricsByTheme = new WeakMap<ResolvedTheme, MenuPanelMetrics>();
-
 /** A menu's metrics in `tokens`, read once per theme. */
-function metricsIn(tokens: ResolvedTheme): MenuPanelMetrics {
-  let m = metricsByTheme.get(tokens);
-  if (!m) metricsByTheme.set(tokens, (m = menuPanelMetrics(menuMeasureEnv(tokens, '', () => 0))));
-  return m;
-}
+const metricsIn = createPart((tokens: ResolvedTheme): MenuPanelMetrics =>
+  menuPanelMetrics(menuMeasureEnv(tokens, '', () => 0)));
 
 /** A widget that draws `open` as one panel per open level, driven by a menu controller it owns. Its panels are
  *  sized by `measureMenuPanel` in the hud's theme, as the DOM menu's stylesheet sizes it. */

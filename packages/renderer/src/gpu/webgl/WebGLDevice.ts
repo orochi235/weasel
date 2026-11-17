@@ -1,5 +1,6 @@
 /** The GPU layer over a WebGL2 context. */
 import { PREMULTIPLIED } from '../blend';
+import { createPart } from '@weasel-js/registry';
 import type {
   GpuBuffer, GpuBufferUsage, GpuDevice, GpuDrawState, GpuGeometry, GpuGeometryDesc, GpuLimits, GpuPassDesc,
   GpuProgram, GpuProgramOptions, GpuProgramSource, GpuRect, GpuSampling, GpuTarget, GpuTargetDesc, GpuTexture,
@@ -217,15 +218,6 @@ export class WebGLDevice implements GpuDevice, GlProgramHost {
   };
 }
 
-const DEVICES = new WeakMap<WebGL2RenderingContext, WebGLDevice>();
-
 /** The one device over `gl`: renderers sharing a context share what it
  *  believes the context holds. */
-export function webglDevice(gl: WebGL2RenderingContext): WebGLDevice {
-  let device = DEVICES.get(gl);
-  if (!device) {
-    device = new WebGLDevice(gl);
-    DEVICES.set(gl, device);
-  }
-  return device;
-}
+export const webglDevice = createPart((gl: WebGL2RenderingContext): WebGLDevice => new WebGLDevice(gl));

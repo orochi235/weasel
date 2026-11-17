@@ -13,6 +13,7 @@ import { pathSegments, type PathSegment } from '../intersect/pathSegments';
 import { perpendicularTsFrom, segmentExtremaT, segmentMidT, tangentTsFrom } from './segmentFeatures';
 import { createBvh, type Bvh } from '../bvh/bvh';
 import { maxOf, minOf } from '../scalar';
+import { createPart } from '@weasel-js/registry';
 
 /**
  * What a snap target is.
@@ -176,13 +177,7 @@ interface Spatial {
   segments?: { list: PathSnapIndex['segments']; tree: Bvh<number>; at: (readonly [number, number])[] };
 }
 
-const SPATIAL = new WeakMap<PathSnapIndex, Spatial>();
-
-function spatialOf(index: PathSnapIndex): Spatial {
-  let sp = SPATIAL.get(index);
-  if (!sp) SPATIAL.set(index, (sp = { targets: new Map() }));
-  return sp;
-}
+const spatialOf = createPart<PathSnapIndex, Spatial>(() => ({ targets: new Map() }));
 
 /** The indices of `kind`'s targets inside `box`, ascending, so a tie keeps the order a scan gives. */
 function targetsIn(index: PathSnapIndex, kind: StaticPathSnapKind, box: readonly number[]): number[] {

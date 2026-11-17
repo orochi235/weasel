@@ -21,6 +21,7 @@ import type { ResolvedTextStyle } from '../textStyle';
 import { transformRunTexts, type RunSourceMap } from './textTransform';
 import { ownSmallCaps, smallCapsScaleFor, smallCapsText } from './smallCaps';
 import { rejoinSplitPairs } from './codePointCuts';
+import { createPart } from '@weasel-js/registry';
 
 /** A run with every style resolved against the node's text style — no
  *  optional inheritance left. This is what layout and painting consume. */
@@ -98,21 +99,16 @@ export const SCRIPT_METRICS: Readonly<Record<'super' | 'sub', ScriptPreset>> = O
   sub: Object.freeze({ size: 0.583, shift: -0.333 }),
 });
 
-const resolvedScripts = new WeakMap<FaceMetrics, Readonly<Record<'super' | 'sub', ScriptPreset>>>();
+const resolvedScripts = createPart((face: FaceMetrics): Readonly<Record<'super' | 'sub', ScriptPreset>> => Object.freeze({
+  super: face.superscript ?? SCRIPT_METRICS.super,
+  sub: face.subscript ?? SCRIPT_METRICS.sub,
+}));
 
 /** The script presets for a face: its own `OS/2` values where it states
  *  them, {@link SCRIPT_METRICS} per half where it does not. */
 export function scriptMetrics(face?: FaceMetrics): Readonly<Record<'super' | 'sub', ScriptPreset>> {
   if (!face || (!face.superscript && !face.subscript)) return SCRIPT_METRICS;
-  let out = resolvedScripts.get(face);
-  if (!out) {
-    out = Object.freeze({
-      super: face.superscript ?? SCRIPT_METRICS.super,
-      sub: face.subscript ?? SCRIPT_METRICS.sub,
-    });
-    resolvedScripts.set(face, out);
-  }
-  return out;
+  return resolvedScripts(face);
 }
 
 /**

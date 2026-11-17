@@ -1,3 +1,4 @@
+import { createPart } from '@weasel-js/registry';
 import { blockFrame, clientToBlock, containingBlock, holdsPositioned, isScaled, realRect } from './blockFrame';
 import s from './overlayFrame.module.css';
 
@@ -16,7 +17,7 @@ import s from './overlayFrame.module.css';
  * ancestor clipping it hides, which keeps it inside every scrollport above it: a fixed frame acts as an absolute one
  * under a `transform`, `filter` or `contain` ancestor, and a viewport-sized one there would add to the scroll range.
  */
-const FRAMES = new WeakMap<Element, HTMLElement>();
+const FRAMES = createPart((container: Element) => createFrame(container.ownerDocument));
 const SIZES = new WeakMap<HTMLElement, { width: number; height: number }>();
 const BOUNDARIES = new WeakMap<HTMLElement, HTMLElement>();
 
@@ -129,11 +130,7 @@ export function overlayFrameFor(container: Element | null | undefined): HTMLElem
   if (container === doc.documentElement || container === doc.body) return null;
   const block = blockForChildOf(container);
   if (block === doc.documentElement || block === doc.body) return null;
-  let frame = FRAMES.get(container);
-  if (!frame) {
-    frame = createFrame(doc);
-    FRAMES.set(container, frame);
-  }
+  const frame = FRAMES(container);
   if (frame.parentElement !== container) container.appendChild(frame);
   return frame;
 }

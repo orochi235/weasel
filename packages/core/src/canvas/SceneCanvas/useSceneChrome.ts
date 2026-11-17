@@ -1,4 +1,4 @@
-import { getOwn } from '@weasel-js/registry';
+import { createPart, getOwn } from '@weasel-js/registry';
 import { useCallback, useMemo, type RefObject } from 'react';
 import { useLatest } from '@weasel-js/react';
 import type { Dispatcher, RuleCtx } from '@weasel-js/routing';
@@ -81,15 +81,12 @@ export function useChromeRules(args: {
   }, [chromeVisibility, selectable, enabled]);
 }
 
-const hiddenSets = new WeakMap<readonly string[], ReadonlySet<string>>();
+const hiddenSets = createPart((hides: readonly string[]): ReadonlySet<string> => new Set(hides));
 
 /** The chrome the active tool hides (`ToolDef.hides`), or undefined. */
 export function hiddenChromeOf(tools: { active: string | null; registry: Readonly<Record<string, { hides?: readonly string[] }>> }): ReadonlySet<string> | undefined {
   const hides = tools.active ? getOwn(tools.registry, tools.active)?.hides : undefined;
-  if (!hides) return undefined;
-  let set = hiddenSets.get(hides);
-  if (!set) hiddenSets.set(hides, (set = new Set(hides)));
-  return set;
+  return hides ? hiddenSets(hides) : undefined;
 }
 
 /** The chrome-caps answers for the surface's own view. */

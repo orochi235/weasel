@@ -2,6 +2,7 @@
  * The `pickId` each scene node's paint carries, so a pixel of an id frame
  * (`WeaselRenderer.renderIds`) names the node that painted it.
  */
+import { createPart } from '@weasel-js/registry';
 import { MAX_PICK_ID } from '@weasel-js/renderer';
 import { asNodeId, type NodeId } from 'core/scene/types';
 import { documentScene } from 'core/scene/editingSession';
@@ -75,7 +76,7 @@ export function createScenePickIds(live: (id: string) => boolean, max = MAX_PICK
   };
 }
 
-const BY_SCENE = new WeakMap<object, OwnPickIds>();
+const BY_SCENE = createPart((scene: object): OwnPickIds => createScenePickIds(liveIn(scene)));
 
 function liveIn(scene: object): (id: string) => boolean {
   const get = (scene as { get?: (id: NodeId) => unknown }).get;
@@ -83,10 +84,7 @@ function liveIn(scene: object): (id: string) => boolean {
 }
 
 function pickIdsOf(scene: object): OwnPickIds {
-  const key = documentScene(scene);
-  let ids = BY_SCENE.get(key);
-  if (!ids) BY_SCENE.set(key, (ids = createScenePickIds(liveIn(key))));
-  return ids;
+  return BY_SCENE(documentScene(scene));
 }
 
 /**

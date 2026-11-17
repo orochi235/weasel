@@ -18,6 +18,7 @@ import {
   type AnyScene,
 } from '@weasel-js/core';
 import type { Path, Vec2 } from '@weasel-js/core/math';
+import { createPart } from '@weasel-js/registry';
 import { boxIndex, boxesMeeting, keyedIndex, type BoxIndex } from './keyedIndex';
 import { diagramLabelOf, type DiagramLabel } from './labelTrait';
 import type { Bounds } from './outline';
@@ -92,28 +93,20 @@ export function* draggableLabels(scene: AnyScene): Iterable<DraggableLabel> {
 const holds = (b: Bounds, at: Vec2) => at.x >= b.x && at.x <= b.x + b.width && at.y >= b.y && at.y <= b.y + b.height;
 
 /** Each scene's draggable labels, boxed. Read at document poses, so the scene's version is the whole key. */
-const INDEXES = new WeakMap<AnyScene, () => { labels: DraggableLabel[]; boxes: BoxIndex } | null>();
-
-function labelIndexOf(scene: AnyScene) {
-  let index = INDEXES.get(scene);
-  if (index === undefined) {
-    index = keyedIndex(
-      () => (typeof scene.getVersion === 'function' ? [scene.getVersion()] : undefined),
-      () => {
-        const labels = [...draggableLabels(scene)];
-        return {
-          labels,
-          boxes: boxIndex(labels.map(({ box: b }) => [
-            Math.min(b.x, b.x + b.width), Math.min(b.y, b.y + b.height),
-            Math.max(b.x, b.x + b.width), Math.max(b.y, b.y + b.height),
-          ] as const)),
-        };
-      },
-    );
-    INDEXES.set(scene, index);
-  }
-  return index;
-}
+const labelIndexOf = createPart((scene: AnyScene): () => { labels: DraggableLabel[]; boxes: BoxIndex } | null =>
+  keyedIndex(
+    () => (typeof scene.getVersion === 'function' ? [scene.getVersion()] : undefined),
+    () => {
+      const labels = [...draggableLabels(scene)];
+      return {
+        labels,
+        boxes: boxIndex(labels.map(({ box: b }) => [
+          Math.min(b.x, b.x + b.width), Math.min(b.y, b.y + b.height),
+          Math.max(b.x, b.x + b.width), Math.max(b.y, b.y + b.height),
+        ] as const)),
+      };
+    },
+  ));
 
 /** The draggable labels whose box can hold `at`, in render order: every one, without an index. */
 function labelsAt(scene: AnyScene, at: Vec2): Iterable<DraggableLabel> {

@@ -1,5 +1,5 @@
 import type { PrefLeaf } from '@weasel-js/prefs';
-import { createEmitter, getOwn } from '@weasel-js/registry';
+import { createEmitter, createPart, getOwn } from '@weasel-js/registry';
 import { type ToolOptions, type ToolOptionValues, toolOptionParams } from '@weasel-js/routing';
 import type { RecordCache } from '@weasel-js/storage';
 import { valueRecord } from '../state/labRecords';
@@ -76,13 +76,9 @@ export function markStyleFrom(
 const TOOL_OPTIONS_RECORD = 'toolOptions';
 type Held = Readonly<Record<string, Readonly<Record<string, unknown>>>>;
 const NONE: Readonly<Record<string, unknown>> = Object.freeze({});
-const byRecords = new WeakMap<RecordCache, ToolOptionValues>();
-
 /** The lab's tool option values, kept in its records so they survive a reload and every trial reads the same ones.
  *  One per record cache. */
-export function labToolOptionValues(records: RecordCache): ToolOptionValues {
-  const known = byRecords.get(records);
-  if (known) return known;
+export const labToolOptionValues = createPart((records: RecordCache): ToolOptionValues => {
   const name = valueRecord(null, TOOL_OPTIONS_RECORD);
   const held = (): Held => (records.has(name) ? (records.get(name) as Held) : {});
   const changed = createEmitter();
@@ -97,6 +93,5 @@ export function labToolOptionValues(records: RecordCache): ToolOptionValues {
     },
     subscribe: changed.subscribe,
   };
-  byRecords.set(records, values);
   return values;
-}
+});

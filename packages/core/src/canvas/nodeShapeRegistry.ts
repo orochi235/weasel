@@ -5,7 +5,7 @@
  * ahead of the default's, which is where a canvas installs the painters its presets bring: a
  * painter given to one scene paints nothing in another.
  */
-import { createEmitter, ExtensionConflictError } from '@weasel-js/registry';
+import { createEmitter, createPart, ExtensionConflictError } from '@weasel-js/registry';
 import { bumpNodeMemoGeneration, nodeMemoGeneration } from 'core/scene/nodeMemo';
 import { documentScene } from 'core/scene/editingSession';
 import { addOutsideSource } from 'core/scene/outsideReads';
@@ -198,7 +198,7 @@ export function scopedShapeClaims(node: Parameters<NodeShapeEntry['matches']>[0]
   return false;
 }
 
-const ofScene = new WeakMap<object, NodeShapes>();
+const ofScene = createPart((_scene: object): NodeShapes => createNodeShapes());
 
 /**
  * The painters `scene` paints with: its own, made on first ask, ahead of
@@ -208,8 +208,5 @@ const ofScene = new WeakMap<object, NodeShapes>();
  * their scene's registry.
  */
 export function nodeShapesOf(scene: object): NodeShapes {
-  const key = documentScene(scene);
-  let shapes = ofScene.get(key);
-  if (!shapes) ofScene.set(key, (shapes = createNodeShapes()));
-  return shapes;
+  return ofScene(documentScene(scene));
 }

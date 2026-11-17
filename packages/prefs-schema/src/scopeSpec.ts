@@ -1,6 +1,7 @@
 // A pref's `scopes`: the selectors its value is kept separately for, read
 // into what the scope functions take.
 
+import { createPart } from '@weasel-js/registry';
 import { PREF_ELSE, type PrefOverridesLookup, type PrefOverrides, type PrefScope } from './scope';
 import type { PrefLeaf } from './schema';
 
@@ -34,15 +35,10 @@ export function scopeSelectorsOf(pref: PrefLeaf): readonly string[] | undefined 
   return pref.scopes?.length ? pref.scopes.map((scope) => scope.selector) : undefined;
 }
 
-const lookups = new WeakMap<PrefLeaf, PrefOverridesLookup | undefined>();
-
 /** {@link prefOverridesOf} for one pref, as the scope functions take it: none where no selector is closed. */
-export function overridesOfPref(pref: PrefLeaf): PrefOverridesLookup | undefined {
-  if (!lookups.has(pref)) {
-    lookups.set(pref, pref.scopes?.some((scope) => scope.overrides !== undefined) ? (selector) => prefOverridesOf(pref, selector) : undefined);
-  }
-  return lookups.get(pref);
-}
+export const overridesOfPref = createPart((pref: PrefLeaf): PrefOverridesLookup | undefined =>
+  pref.scopes?.some((scope) => scope.overrides !== undefined) ? (selector) => prefOverridesOf(pref, selector) : undefined,
+);
 
 const withElse = (by: string, shared: PrefScope): PrefScope => ({ $by: by, $in: {}, [PREF_ELSE]: shared });
 

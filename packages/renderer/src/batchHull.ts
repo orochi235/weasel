@@ -24,6 +24,7 @@
 import type { GlMat3, Path, PolygonPath } from '@weasel-js/geom';
 import { PATH_L, PATH_M, PATH_Z, polygonFromPoints, ringSignedArea } from '@weasel-js/geom';
 import type { ClipRect } from './batchClip';
+import { createPart } from '@weasel-js/registry';
 
 /** Half-planes one set of clips can hold, nested clips' together once
  *  planes facing the same way are merged (`meetHulls`). */
@@ -114,7 +115,7 @@ export interface SnappedRect {
   readonly hull: Hull;
 }
 
-const snappedRects = new WeakMap<Hull, SnappedRect>();
+const snappedRectAround = createPart((hull: Hull): SnappedRect => ({ rect: boundsOf(hull.path), hull }));
 
 /**
  * An axis-aligned rect clip snapped to the grid `hullOf` uses, or `null` where
@@ -126,12 +127,7 @@ export function snappedRectOf(path: Path, m: GlMat3, map: WindowMap): SnappedRec
   if (map.bx !== 0 || map.ay !== 0) return null;
   const hull = hullOf(path, m, map);
   if (hull === null) return null;
-  let snapped = snappedRects.get(hull);
-  if (snapped === undefined) {
-    snapped = { rect: boundsOf(hull.path), hull };
-    snappedRects.set(hull, snapped);
-  }
-  return snapped;
+  return snappedRectAround(hull);
 }
 
 function boundsOf(path: PolygonPath): ClipRect {

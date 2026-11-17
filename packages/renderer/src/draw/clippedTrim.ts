@@ -33,6 +33,7 @@ import { bindPathFillByKind } from './paintBind';
 import { clipTest, endParityMask, parityPaint, trimMark } from './stencil';
 import { atMeshOrigin, setColorMatrixUniforms, setProjAndModel, setSolidPaintUniforms } from './uniforms';
 import { releaseVertexColors, vertexColorBase, withVertexColors } from './vertexColors';
+import { createPart } from '@weasel-js/registry';
 
 /**
  * Draw `cmd`'s stroke clipped from its cached ribbon to its trim, or whole
@@ -127,14 +128,8 @@ function markAndCover(
 
 const WHOLE: StrokeTrim = {};
 
-const COVERS = new WeakMap<ClipRibbon, Mesh>();
-
 /** The ribbon's mesh as an object of its own, uploaded without the trim's attribute. */
-function coverMesh(ribbon: ClipRibbon): Mesh {
-  let mesh = COVERS.get(ribbon);
-  if (mesh === undefined) COVERS.set(ribbon, (mesh = { ...ribbon.mesh }));
-  return mesh;
-}
+const coverMesh = createPart((ribbon: ClipRibbon): Mesh => ({ ...ribbon.mesh }));
 
 /** Whether `paint` reaches the target with alpha 1 under the group drawing now. */
 function opaque(ctx: DrawContext, paint: { color: string; opacity?: number }): boolean {

@@ -3,6 +3,7 @@
  * draws a node in, from the pose shape by default. Caller-supplied `pickEvery` / `boundsOf` overrides via the
  * `geometry` arg take precedence. A select tool reads them through a preset's `build` context.
  */
+import { createPart } from '@weasel-js/registry';
 import { drawnBoundsScene } from '../derivedPath';
 import { useCallback, useMemo } from 'react';
 import { useKitSetting, useLatest } from '@weasel-js/react';
@@ -349,17 +350,14 @@ function askedOwnView(view: PickView | null | undefined, own: Pick<PickView, 'sc
     && (view.x === undefined || view.x === own.x) && (view.y === undefined || view.y === own.y);
 }
 
-const ORDER = new WeakMap<readonly unknown[], Map<string, number>>();
+const ORDER = createPart((nodes: readonly { id: string }[]) => {
+  const index = new Map<string, number>();
+  for (let i = 0; i < nodes.length; i++) index.set(nodes[i].id, i);
+  return index;
+});
 
 /** Each node's place in `scene`'s paint order, cached until a structural edit. */
 function paintOrderOf(scene: { renderOrderNodes(): readonly { id: string }[] }): (id: string) => number {
-  const nodes = scene.renderOrderNodes();
-  let index = ORDER.get(nodes);
-  if (!index) {
-    index = new Map();
-    for (let i = 0; i < nodes.length; i++) index.set(nodes[i].id, i);
-    ORDER.set(nodes, index);
-  }
-  const at = index;
+  const at = ORDER(scene.renderOrderNodes());
   return (id) => at.get(id) ?? -1;
 }

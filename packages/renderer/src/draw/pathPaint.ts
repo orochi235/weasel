@@ -1,5 +1,6 @@
 import { scaleVertexWidth, type CommandPaint, type Stroke, type Paint, type VertexWidth } from '@weasel-js/paint';
 import type { PathDrawCommand } from '../DrawCommand';
+import { createPart } from '@weasel-js/registry';
 import type { GLMeshHandle } from '../cache/GLMeshCache';
 import type { Mesh } from '@weasel-js/geom/tessellate';
 import type { ShaderProgram } from '../shaders/ShaderProgram';
@@ -218,16 +219,9 @@ function drawOwnRibbon(ctx: DrawContext, stroke: StrokedPathCommand['stroke'], m
 
 /** The ribbon cache compares `vertexWidths` by reference, so the doubled copy
  *  has to be the same array on every frame the source array is. */
-const DOUBLED_VERTEX_WIDTHS = new WeakMap<VertexWidth[], VertexWidth[]>();
-
-function doubledVertexWidths(widths: VertexWidth[]): VertexWidth[] {
-  let doubled = DOUBLED_VERTEX_WIDTHS.get(widths);
-  if (doubled === undefined) {
-    doubled = widths.map((w) => scaleVertexWidth(w, 2));
-    DOUBLED_VERTEX_WIDTHS.set(widths, doubled);
-  }
-  return doubled;
-}
+const doubledVertexWidths = createPart(
+  (widths: VertexWidth[]): VertexWidth[] => widths.map((w) => scaleVertexWidth(w, 2)),
+);
 
 /** The centered stroke twice as wide that an aligned one is cut from. */
 function doubledStroke(stroke: Stroke): Stroke {

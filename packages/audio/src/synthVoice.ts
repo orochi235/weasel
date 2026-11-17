@@ -1,3 +1,4 @@
+import { createPart } from '@weasel-js/registry';
 import { envelopeLevel, envelopePoints, resolveEnvelope, type ResolvedEnvelope } from './envelope';
 import { toFrequency } from './pitch';
 import type { Inharmonic, NoiseColor, NoteOptions, SynthPartial, VoiceFilter, Waveform } from './types';
@@ -8,7 +9,7 @@ export const NOISE_SECONDS = 2;
 /** Every color is scaled to this RMS, so changing color does not change level. */
 const NOISE_RMS = 0.25;
 
-const noiseCache = new WeakMap<BaseAudioContext, Map<NoiseColor, AudioBuffer>>();
+const noiseIn = createPart((_ctx: BaseAudioContext) => new Map<NoiseColor, AudioBuffer>());
 
 /** Samples of `color` noise, seeded so every context gets the same loop. The
  *  end is pulled onto the start, so the loop point does not click. */
@@ -62,11 +63,7 @@ export function noiseSamples(color: NoiseColor, length: number): Float32Array {
 
 /** One looping noise buffer per color per context, made on first use. */
 export function noiseBuffer(ctx: BaseAudioContext, color: NoiseColor): AudioBuffer {
-  let byColor = noiseCache.get(ctx);
-  if (!byColor) {
-    byColor = new Map();
-    noiseCache.set(ctx, byColor);
-  }
+  const byColor = noiseIn(ctx);
   let buffer = byColor.get(color);
   if (!buffer) {
     const length = Math.round(ctx.sampleRate * NOISE_SECONDS);

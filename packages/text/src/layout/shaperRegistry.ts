@@ -7,6 +7,7 @@ import {
   cachedFontVariant, outlineMetrics, type FaceEmbedding, type FontStyle, type OutlineFace, type ResolveResult,
 } from '@weasel-js/font';
 import type { TextShaper } from './shaperSeam';
+import { createPart } from '@weasel-js/registry';
 
 const slot = engineSlot<TextShaper>('registerShaper', 'shaper');
 
@@ -36,7 +37,7 @@ export function registeredShaper(): TextShaper | null {
   return slot.get();
 }
 
-const embeddingOf = new WeakMap<OutlineFace, FaceEmbedding | null>();
+const embeddingOf = createPart((face: OutlineFace): FaceEmbedding | null => face.embedding?.() ?? null);
 
 /**
  * The face a shaper reads for text that resolved to `resolved`: its own on the
@@ -50,12 +51,7 @@ export function shapingFace(resolved: ResolveResult): FaceEmbedding | null {
     ? undefined
     : outlineMetrics(family, weight, style));
   if (!face) return null;
-  let embedding = embeddingOf.get(face);
-  if (embedding === undefined) {
-    embedding = face.embedding?.() ?? null;
-    embeddingOf.set(face, embedding);
-  }
-  return embedding;
+  return embeddingOf(face);
 }
 
 /** The font file a shaper reads for text that resolved to `resolved` ({@link shapingFace}). */

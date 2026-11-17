@@ -3,6 +3,7 @@ import type { ShaderProgram } from '../shaders/ShaderProgram';
 import type { DrawContext } from './drawContext';
 import { colorFolding } from './foldColor';
 import { sameValues } from './uniforms';
+import { createPart } from '@weasel-js/registry';
 
 /**
  * One color matrix and group alpha a run draws under. A vertex names its own
@@ -39,7 +40,7 @@ const ALPHAS = new Float32Array(BATCH_MATRIX_SLOTS);
 
 /** What each batch program holds this frame. Keyed on the `DrawContext`, which
  *  is built per frame, so it cannot go stale against what the program holds. */
-const UPLOADED = new WeakMap<DrawContext, WeakMap<ShaderProgram, readonly BatchMatrix[]>>();
+const uploadedOf = createPart<DrawContext, WeakMap<ShaderProgram, readonly BatchMatrix[]>>(() => new WeakMap());
 
 /** Whether `held` already starts with `matrices`. Entries past a run's own are
  *  ones no vertex of it names. */
@@ -62,11 +63,7 @@ function holds(held: readonly BatchMatrix[], matrices: readonly BatchMatrix[]): 
 export function uploadBatchMatrices(
   ctx: DrawContext, prog: ShaderProgram, matrices: readonly BatchMatrix[],
 ): void {
-  let byProgram = UPLOADED.get(ctx);
-  if (!byProgram) {
-    byProgram = new WeakMap();
-    UPLOADED.set(ctx, byProgram);
-  }
+  const byProgram = uploadedOf(ctx);
   const held = byProgram.get(prog);
   if (held !== undefined && holds(held, matrices)) return;
   const n = matrices.length;

@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useLatest, type Paint } from '@weasel-js/core';
+import { createPart } from '@weasel-js/registry';
 import { DiagramView } from '../DiagramView';
 import { diagramScene } from '../fromData';
 import { checkPipeline, type EffectProblem } from './check';
@@ -57,18 +58,10 @@ export interface EffectChartProps<TOptions = never> {
 /** `EffectChart`'s default `minScale`: the shipped looks' 12px titles at 6px, the smallest still legible. */
 export const EFFECT_MIN_SCALE = 0.5;
 
-const keys = new WeakMap<object, number>();
 let nextKey = 0;
 /** A React key that changes when the built scene does, so a new pipeline or
  *  look opens fitted and laid out afresh. */
-function keyOf(built: object): number {
-  let key = keys.get(built);
-  if (key === undefined) {
-    key = nextKey++;
-    keys.set(built, key);
-  }
-  return key;
-}
+const keyOf = createPart((_built: object): number => nextKey++);
 
 function contentOf(value: unknown): string | null {
   try {

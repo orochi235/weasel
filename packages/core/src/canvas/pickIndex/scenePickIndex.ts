@@ -6,6 +6,7 @@
  * builds, so a scene edited before every pick never pays for a build. Nodes it
  * cannot box conservatively are on `always` and are tested by every walk.
  */
+import { createPart } from '@weasel-js/registry';
 import { nodeShapesOf } from 'canvas/nodeShapeRegistry';
 import { createBvh, createSettledCache, type Bvh, type SettledCache } from '@weasel-js/geom/nd';
 import { markerGeneration } from '@weasel-js/stroke';
@@ -36,7 +37,7 @@ export function pickIndexBuildCount(): number {
   return builds;
 }
 
-const CACHE = new WeakMap<object, WeakMap<PoseDescriptor<unknown>, SettledCache<BuiltIndex>>>();
+const CACHE = createPart((_scene: object) => new WeakMap<PoseDescriptor<unknown>, SettledCache<BuiltIndex>>());
 
 /** Past this share of the scene the index costs more than the walk it narrows. */
 const MAX_SHARE = 0.5;
@@ -199,8 +200,7 @@ function current(scene: AnyScene, descriptor: PoseDescriptor<unknown>): BuiltInd
   const markers = markerGeneration();
   // A derived path that read glyph outlines reshapes when a face lands, with nothing in the scene changed.
   const outside = outsideGeneration();
-  let perScene = CACHE.get(scene);
-  if (perScene === undefined) CACHE.set(scene, (perScene = new WeakMap()));
+  const perScene = CACHE(scene);
   let cache = perScene.get(descriptor);
   if (cache === undefined) perScene.set(descriptor, (cache = createSettledCache()));
   // Boxed as shown, so a data override that grows a node's ink is met where it is painted.

@@ -16,7 +16,7 @@ import { samePoseValue, snapshotPose } from '../poseSnapshot';
 import type { DerivedDep, NodeId } from '../types';
 import { effectParts, type PathEffect } from './effects';
 import type { EffectSourceReader } from './source';
-import { getOwn } from '@weasel-js/registry';
+import { createPart, getOwn } from '@weasel-js/registry';
 
 /** The registry key both derivations go by, for `derivePath` and `derivePose`. */
 export const PATH_EFFECT = 'kit:pathEffect';
@@ -26,21 +26,14 @@ const RENAMED_KINDS: Readonly<Record<string, PathEffect['kind']>> = { blend: 'tw
 
 /** Each effect saved under an old kind, as read under its new one: one copy per record, so readers keyed on the
  *  effect's identity see the same object every frame. */
-const renamed = new WeakMap<object, PathEffect>();
+const renamed = createPart((effect: PathEffect): PathEffect => ({ ...effect, kind: getOwn(RENAMED_KINDS, effect.kind)! }) as PathEffect);
 
 /** A node's path effect, or `null` when its data holds none. An effect saved under a kind's earlier name reads as
  *  that kind, and the next edit writes it under the new one. */
 export function pathEffectOf(node: { data?: unknown } | undefined): PathEffect | null {
   const effect = (node?.data as { pathEffect?: PathEffect } | null | undefined)?.pathEffect;
   if (!effect || typeof effect !== 'object' || typeof effect.kind !== 'string') return null;
-  const now = getOwn(RENAMED_KINDS, effect.kind);
-  if (now === undefined) return effect;
-  let out = renamed.get(effect);
-  if (!out) {
-    out = { ...effect, kind: now } as PathEffect;
-    renamed.set(effect, out);
-  }
-  return out;
+  return getOwn(RENAMED_KINDS, effect.kind) === undefined ? effect : renamed(effect);
 }
 
 /** A path-effect node's two derivations. */

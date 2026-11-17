@@ -1,20 +1,13 @@
+import { createPart } from '@weasel-js/registry';
 import type { SelectionApi } from '@weasel-js/routing';
 
 type AdapterMethods = SelectionApi['adapterMethods'];
 
-const methodViews = new WeakMap<AdapterMethods, AdapterMethods>();
-const apiViews = new WeakMap<SelectionApi, SelectionApi>();
-
 const ignore = (): void => {};
 
-function readOnlyAdapterMethods(methods: AdapterMethods): AdapterMethods {
-  let view = methodViews.get(methods);
-  if (!view) {
-    view = { getSelection: () => methods.getSelection(), setSelection: ignore };
-    methodViews.set(methods, view);
-  }
-  return view;
-}
+const readOnlyAdapterMethods = createPart((methods: AdapterMethods): AdapterMethods =>
+  ({ getSelection: () => methods.getSelection(), setSelection: ignore }));
+const apiViews = new WeakMap<SelectionApi, SelectionApi>();
 
 /**
  * A view of `api` that reads the live selection and ignores every write.

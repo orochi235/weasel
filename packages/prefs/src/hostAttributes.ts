@@ -1,8 +1,10 @@
+import { createPart } from '@weasel-js/registry';
+
 /**
  * Attributes several owners set on one element, as two `css` bridges on one root do. Each name shows the value of
  * whichever owner wrote it last and is still there, and goes once the last owner of it lets go.
  */
-const CLAIMS = new WeakMap<Element, Map<string, Map<object, string>>>();
+const CLAIMS = createPart((_host: Element) => new Map<string, Map<object, string>>());
 
 function show(host: Element, name: string, owners: Map<object, string>, byName: Map<string, Map<object, string>>): void {
   const last = [...owners.values()].at(-1);
@@ -14,8 +16,7 @@ function show(host: Element, name: string, owners: Map<object, string>, byName: 
 
 /** Sets `attributes` on `host` for `owner`, and drops any name `owner` set before that `attributes` leaves out. */
 export function claimAttributes(host: Element, owner: object, attributes: Record<string, string>): void {
-  let byName = CLAIMS.get(host);
-  if (byName === undefined) CLAIMS.set(host, (byName = new Map()));
+  const byName = CLAIMS(host);
   for (const [name, owners] of byName) {
     if (owners.has(owner) && !Object.hasOwn(attributes, name)) {
       owners.delete(owner);

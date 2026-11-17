@@ -1,3 +1,4 @@
+import { createPart } from '@weasel-js/registry';
 import { useMemo, type RefObject } from 'react';
 import { useLatest } from '@weasel-js/react';
 import type { SelectionApi, WorldPoint } from '@weasel-js/routing';
@@ -121,14 +122,12 @@ export function usePresetBuilds(
   }, [builds, buildOwners, refines, ctx]);
 }
 
-const serials = new WeakMap<object, number>();
 let nextSerial = 0;
+const serials = createPart((_v: object) => nextSerial++);
 /** A key naming `v`: its value when primitive, a serial per identity otherwise. */
 function keyOf(v: unknown): string {
   if ((typeof v !== 'object' && typeof v !== 'function') || v === null) return `${typeof v}:${String(v)}`;
-  let n = serials.get(v);
-  if (n === undefined) serials.set(v, (n = nextSerial++));
-  return `#${n}`;
+  return `#${serials(v)}`;
 }
 
 /** `options`, kept while every entry's fields are the same values: an inline `toolOptions={{ lasso: { mode } }}`

@@ -8,6 +8,7 @@ import { fillsOpenSubpaths } from './openFill';
 import type { PolygonPath } from './path';
 import { resolveCorners } from './paths/corners';
 import { worldCoords } from './paths/pathOrigin';
+import { createPart } from '@weasel-js/registry';
 
 /**
  * `path` flattened to interleaved `[x, y, …]` runs, sorted by whether each
@@ -16,8 +17,7 @@ import { worldCoords } from './paths/pathOrigin';
  * back to its first vertex is implicit. Corner shapes are walked expanded.
  */
 export function flatSubpaths(path: PolygonPath, tolerance: number): FlatSubpaths {
-  let byTolerance = flattened.get(path);
-  if (!byTolerance) flattened.set(path, (byTolerance = new Map()));
+  const byTolerance = flattened(path);
   let flat = byTolerance.get(tolerance);
   if (!flat) byTolerance.set(tolerance, (flat = flatten(path, tolerance)));
   return flat;
@@ -29,7 +29,7 @@ export interface FlatSubpaths {
   open: readonly (readonly number[])[];
 }
 
-const flattened = new WeakMap<PolygonPath, Map<number, FlatSubpaths>>();
+const flattened = createPart<PolygonPath, Map<number, FlatSubpaths>>(() => new Map());
 
 function flatten(path: PolygonPath, tolerance: number): FlatSubpaths {
   const drawn = resolveCorners(path);

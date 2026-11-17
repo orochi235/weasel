@@ -6,8 +6,7 @@
 import { forEachSegment, pathCommandCoordCount, PATH_C, PATH_M, PATH_Q, PATH_Z } from '../commands';
 import type { PolygonPath } from '../path';
 import { compactCorners, withoutCorners, type CornerSpec } from './cornerSpec';
-
-const flatCache = new WeakMap<PolygonPath, Int32Array>();
+import { createPart } from '@weasel-js/registry';
 
 /**
  * For each anchor command of `path` (each M, L, C, or Q, as `countPathAnchors`
@@ -15,9 +14,7 @@ const flatCache = new WeakMap<PolygonPath, Int32Array>();
  * uses: a closing curve that ends on its subpath's first point folds onto
  * that anchor, as `pathToAnchors` folds it.
  */
-export function flatAnchorIndices(path: PolygonPath): Int32Array {
-  const hit = flatCache.get(path);
-  if (hit) return hit;
+export const flatAnchorIndices: (path: PolygonPath) => Int32Array = createPart((path: PolygonPath): Int32Array => {
   const { commands, coords } = path;
   const out: number[] = [];
   let flat = 0, first = 0, count = 0;
@@ -35,10 +32,8 @@ export function flatAnchorIndices(path: PolygonPath): Int32Array {
     count++;
     out.push(flat++);
   });
-  const result = Int32Array.from(out);
-  flatCache.set(path, result);
-  return result;
-}
+  return Int32Array.from(out);
+});
 
 /**
  * `to` with `from`'s corner specs carried across, where `sources[k]` is the

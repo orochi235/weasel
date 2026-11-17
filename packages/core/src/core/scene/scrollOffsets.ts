@@ -8,7 +8,7 @@
  * the layout pass and every writer that stores a pose fold through the
  * unscrolled frame.
  */
-import { createEmitter } from '@weasel-js/registry';
+import { createEmitter, createPart } from '@weasel-js/registry';
 import type { PoseAdapter, PoseComposition, ScrollOffset } from './composeFrame';
 import { isDocument } from './documentOf';
 import type { NodeId } from './types';
@@ -72,7 +72,7 @@ export function createScrollOffsets(): ScrollOffsets {
 }
 
 type Scroll = (frame: never, offset: ScrollOffset) => unknown;
-const memos = new WeakMap<Scroll, WeakMap<object, { offset: ScrollOffset; out: unknown }>>();
+const memos = createPart((_scroll: Scroll) => new WeakMap<object, { offset: ScrollOffset; out: unknown }>());
 
 /** `scroll(frame, offset)`, answering the same object while the frame and the
  *  offset objects are the same: a paint memo keys on the pose a child is
@@ -80,8 +80,7 @@ const memos = new WeakMap<Scroll, WeakMap<object, { offset: ScrollOffset; out: u
  *  keep its key from one walk to the next. */
 function memoScroll<TPose>(scroll: (frame: TPose, offset: ScrollOffset) => TPose, frame: TPose, offset: ScrollOffset): TPose {
   if (typeof frame !== 'object' || frame === null) return scroll(frame, offset);
-  let byFrame = memos.get(scroll as Scroll);
-  if (byFrame === undefined) memos.set(scroll as Scroll, byFrame = new WeakMap());
+  const byFrame = memos(scroll as Scroll);
   const held = byFrame.get(frame);
   if (held !== undefined && held.offset === offset) return held.out as TPose;
   const out = scroll(frame, offset);

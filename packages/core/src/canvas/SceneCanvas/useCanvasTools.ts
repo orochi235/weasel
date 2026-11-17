@@ -1,3 +1,4 @@
+import { createPart } from '@weasel-js/registry';
 import { useEffect, useMemo } from 'react';
 import { useLatest } from '@weasel-js/react';
 import type { Action } from '@weasel-js/routing';
@@ -28,14 +29,12 @@ export function isToolsApi(tools: ToolsApi | ToolsPatch): tools is ToolsApi {
   return typeof (tools as ToolsApi).setActive === 'function';
 }
 
-const presetSerials = new WeakMap<object, number>();
 let nextSerial = 0;
+const presetSerials = createPart((_e: object) => nextSerial++);
 const entryKey = (e: FeaturePreset): string => {
   // A name from untyped code reaches `resolveFeatures`, which says what to pass instead.
   if (typeof e !== 'object') return String(e);
-  let n = presetSerials.get(e);
-  if (n === undefined) presetSerials.set(e, (n = nextSerial++));
-  return `#${n}`;
+  return `#${presetSerials(e)}`;
 };
 
 /** The presets a canvas runs with. Keyed on the entries, not the array, so
