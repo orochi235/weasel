@@ -83,7 +83,7 @@ function brushes(shared: boolean): Record<string, Tool> {
 
 export function SharedBrushSizeDemo() {
   const scene = useScene({ systemLayers: [{ id: 'default' }] });
-  const selection = useSelection({ scene, mode: 'multi' });
+  const selection = useSelection({ scene, mode: 'multiple' });
   const [values] = useState(createToolOptionValues);
   const [shared, setShared] = useState(false);
   const registry = useMemo(() => brushes(shared), [shared]);

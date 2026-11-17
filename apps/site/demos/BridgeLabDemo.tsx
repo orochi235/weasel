@@ -52,7 +52,7 @@ function BridgeTrial({ ctx }: { ctx: RenderContext<State, Config> }) {
     bridgePaths: { params: { tension } },
     bridgeAnchors: { params: { tension } },
   }), [tension]);
-  const selectionOptions = useMemo(() => ({ mode: 'multi' as const, initial: BRIDGE_SEED.map((id) => asNodeId(id)) }), []);
+  const selectionOptions = useMemo(() => ({ mode: 'multiple' as const, initial: BRIDGE_SEED.map((id) => asNodeId(id)) }), []);
 
   return (
     <PathLabStage bar={<><ActionBar group={PATH_GROUP} /><ActionBar group={ANCHORS_GROUP} /></>}>

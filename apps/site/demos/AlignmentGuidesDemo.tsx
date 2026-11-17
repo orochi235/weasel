@@ -38,7 +38,7 @@ export function AlignmentGuidesDemo() {
   });
   // Multi-select so Cmd-clicking several rects and dragging snaps the
   // selection's union box, not just one rect.
-  const selection = useSelection({ scene, mode: 'multi' });
+  const selection = useSelection({ scene, mode: 'multiple' });
 
   return (
     <WeaselProvider>

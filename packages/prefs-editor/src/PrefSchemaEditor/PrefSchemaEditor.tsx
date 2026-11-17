@@ -2,8 +2,8 @@ import { useMemo, useState, type ReactNode } from 'react';
 import type { PrefGroup, PrefSection } from '@weasel-js/prefs';
 import type { LeafRenderer } from '@weasel-js/ui';
 import {
-  asWorkspace, catalogIn, type CustomKinds, type DraftStorage, NO_CATALOG, NO_TYPES, ONE, oneAssetCodec,
-  type PrefTypes, printSchema, sameSchema, schemaOf, type Workspace,
+  asAssetSet, catalogIn, type CustomKinds, type DraftStorage, NO_CATALOG, NO_TYPES, ONE, oneAssetCodec,
+  type PrefTypes, printSchema, sameSchema, schemaOf, type AssetSet,
 } from '@weasel-js/prefs/edit';
 import { AssetEditor } from './AssetEditor';
 import { useEditorActions, type EditorAction } from './editorActions';
@@ -91,9 +91,9 @@ export function PrefSchemaEditor<S extends PrefGroup | PrefSection = PrefGroup>(
   const [ownCatalog, setOwnCatalog] = useState(actionCatalog ?? NO_CATALOG);
   const catalog = listed ? actionCatalog ?? ownCatalog : undefined;
   const [firstCatalog] = useState(catalog);
-  const workspace = useMemo(() => asWorkspace(schema, catalog), [schema, catalog]);
-  const base = useMemo(() => original && asWorkspace(original, firstCatalog), [original, firstCatalog]);
-  const change = (next: Workspace) => {
+  const assetSet = useMemo(() => asAssetSet(schema, catalog), [schema, catalog]);
+  const base = useMemo(() => original && asAssetSet(original, firstCatalog), [original, firstCatalog]);
+  const change = (next: AssetSet) => {
     const sorted = catalogIn(next);
     if (sorted && sorted !== catalog) {
       setOwnCatalog(sorted);
@@ -106,5 +106,5 @@ export function PrefSchemaEditor<S extends PrefGroup | PrefSection = PrefGroup>(
     const mine = sent.find((a) => a.id === ONE);
     return onSubmit(mine?.changes ?? [], mine?.literal ?? printSchema(schema, types));
   });
-  return <AssetEditor {...rest} types={types} codec={codec} same={sameSchema} workspace={workspace} onChange={change} original={base} onSubmit={submit} />;
+  return <AssetEditor {...rest} types={types} codec={codec} same={sameSchema} assetSet={assetSet} onChange={change} original={base} onSubmit={submit} />;
 }

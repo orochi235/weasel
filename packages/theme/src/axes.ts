@@ -11,11 +11,11 @@ export interface AxisDef {
   readonly values: Readonly<Record<string, AxisValue>>;
 }
 
-/** Key order is declaration order, which selectors and selection keys follow. */
+/** Key order is declaration order, which selectors and axis-choice keys follow. */
 export type AxisDefs = Readonly<Record<string, AxisDef>>;
 
 /** A partial choice of axis values, e.g. `{ mode: 'light' }`. */
-export type Selection = Readonly<Record<string, string>>;
+export type AxisChoice = Readonly<Record<string, string>>;
 
 /** `{ by: 'mode', dark: …, light: … }`: a value that differs per axis value. */
 export interface ByAxis<T> {
@@ -44,7 +44,7 @@ export function isByAxis(v: unknown): v is ByAxis<unknown> {
 }
 
 /** Every axis given a known value; anything missing or unknown takes its default. An axis loaded with a default that is not a string is left out. */
-export function fullSelection(axes: AxisDefs, selection: Selection = {}): Selection {
+export function fullAxisChoice(axes: AxisDefs, selection: AxisChoice = {}): AxisChoice {
   const out: Record<string, string> = {};
   for (const [name, def] of Object.entries(axes)) {
     const v = getOwn(selection, name);
@@ -64,7 +64,7 @@ export function mergeAxes(parent: AxisDefs, child: AxisDefs): AxisDefs {
 }
 
 /** Every full combination of axis values, the first axis varying slowest. An axis loaded with no values has none. */
-export function enumerateSelections(axes: AxisDefs): Selection[] {
+export function enumerateAxisChoices(axes: AxisDefs): AxisChoice[] {
   let out: Record<string, string>[] = [{}];
   for (const [name, def] of Object.entries(axes)) {
     out = out.flatMap((s) => Object.keys(def.values ?? {}).map((v) => ({ ...s, [name]: v })));
@@ -93,12 +93,12 @@ export function wzlAttr(attr: string, value: string): string {
 }
 
 /** `mode=dark,density=compact`, axes in declaration order. */
-export function selectionKey(axes: AxisDefs, selection: Selection): string {
-  const full = fullSelection(axes, selection);
+export function axisChoiceKey(axes: AxisDefs, selection: AxisChoice): string {
+  const full = fullAxisChoice(axes, selection);
   return Object.keys(axes).map((a) => `${a}=${getOwn(full, a)}`).join(',');
 }
 
-export function pick<T>(v: Varying<T>, selection: Selection): Picked<T> {
+export function pick<T>(v: Varying<T>, selection: AxisChoice): Picked<T> {
   let cur: unknown = v;
   while (isByAxis(cur)) {
     const axis = cur.by;
@@ -110,7 +110,7 @@ export function pick<T>(v: Varying<T>, selection: Selection): Picked<T> {
 }
 
 /** Every entry of a varying record that has a value for this selection, in record order. */
-export function pickAll<T>(record: Readonly<Record<string, Varying<T>>>, selection: Selection): Record<string, T> {
+export function pickAll<T>(record: Readonly<Record<string, Varying<T>>>, selection: AxisChoice): Record<string, T> {
   const out: Record<string, T> = {};
   for (const [name, v] of Object.entries(record)) {
     const picked = pick(v, selection);

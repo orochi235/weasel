@@ -1,7 +1,7 @@
 import { getOwn } from '@weasel-js/registry';
 import { describe, expect, it } from 'vitest';
 import { loadDTCG } from '../../loadDTCG';
-import { enumerateSelections } from '../../axes';
+import { enumerateAxisChoices } from '../../axes';
 import { AXES_EXT } from '../../dtcg/axesExtension';
 import { resolveTheme, themeAxes } from '../../resolveTheme';
 import { defineTheme, weaselTheme } from '../../theme';
@@ -119,7 +119,7 @@ describe('toDTCG', () => {
     it(`round-trips every axis losslessly, over ${label}`, () => {
       const t = defineTheme({ name: 'three', extends: base, axes, pins });
       const back = loadDTCG({ ...JSON.parse(JSON.stringify(toDTCG(t))), extends: base });
-      const selections = enumerateSelections(themeAxes(t));
+      const selections = enumerateAxisChoices(themeAxes(t));
       expect(selections).toHaveLength(12);
       for (const sel of selections) expect(resolveTheme(back, sel), JSON.stringify(sel)).toEqual(resolveTheme(t, sel));
       expect(themeAxes(back)).toEqual(themeAxes(t));
@@ -128,7 +128,7 @@ describe('toDTCG', () => {
 
   it('round-trips the built-in theme at every selection', () => {
     const back = loadDTCG({ ...toDTCG(weaselTheme), extends: null });
-    for (const sel of enumerateSelections(themeAxes(weaselTheme))) expect(resolveTheme(back, sel)).toEqual(resolveTheme(weaselTheme, sel));
+    for (const sel of enumerateAxisChoices(themeAxes(weaselTheme))) expect(resolveTheme(back, sel)).toEqual(resolveTheme(weaselTheme, sel));
   });
 
   it('keeps the plain groups at every non-mode axis’s default, so a tool ignoring the extension reads them', () => {

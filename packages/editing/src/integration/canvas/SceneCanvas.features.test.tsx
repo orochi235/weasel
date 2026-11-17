@@ -297,7 +297,7 @@ describe('<SceneCanvas features>', () => {
     const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
     const { tools, seen } = mount({ viewport: { pan: true } });
     expect(Object.keys(tools().registry)).toEqual([]);
-    for (const id of ['viewport.wheelPan', 'viewport.zoom', 'viewport.pinchZoom', 'viewport.dragPan']) expect(seen.actionIds).not.toContain(id);
+    for (const id of ['viewport.wheelPan', 'viewport.zoom', 'viewport.touchZoom', 'viewport.dragPan']) expect(seen.actionIds).not.toContain(id);
     expect(warn).toHaveBeenCalledWith(expect.stringMatching(/`viewport` configures viewPreset/));
     warn.mockRestore();
   });

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { expandGroupEdges, insetOf } from '../cluster';
-import type { Graph, GraphEdge, GraphGroup, GraphNode } from '../graph';
+import { expandClusterEdges, insetOf } from '../cluster';
+import type { Graph, GraphEdge, GraphCluster, GraphNode } from '../graph';
 import { axesFor } from '../layout';
 import type { Outline } from '../outline';
 import type { PortSpec } from '../types';
@@ -10,7 +10,7 @@ import { isPlaceholder } from './types';
 
 const AXES = axesFor('down');
 
-function graphOf(ids: string[], pairs: [string, string][], groups: GraphGroup[] = []): Graph {
+function graphOf(ids: string[], pairs: [string, string][], groups: GraphCluster[] = []): Graph {
   const nodes: GraphNode[] = ids.map((id, i) => ({ id, bounds: { x: i * 100, y: 0, width: 40, height: 20 }, pinned: false }));
   for (const g of groups) {
     for (const m of g.members) {
@@ -18,7 +18,7 @@ function graphOf(ids: string[], pairs: [string, string][], groups: GraphGroup[] 
       if (n !== undefined && n.group === undefined) n.group = g.id;
     }
   }
-  const edges = expandGroupEdges(pairs.map(([from, to], i) => ({ id: `e${i}`, from, to })), groups);
+  const edges = expandClusterEdges(pairs.map(([from, to], i) => ({ id: `e${i}`, from, to })), groups);
   const byId = new Map(nodes.map((n) => [n.id, n]));
   const out = (id: string) => edges.filter((e: GraphEdge) => e.from === id);
   const inc = (id: string) => edges.filter((e: GraphEdge) => e.to === id);
@@ -89,7 +89,7 @@ describe('expand', () => {
   });
 
   it('puts an edge to a group between the group\'s span and the other end', () => {
-    const G: GraphGroup = { id: 'G', members: ['m1', 'm2'], inset: insetOf(12) };
+    const G: GraphCluster = { id: 'G', members: ['m1', 'm2'], inset: insetOf(12) };
     const g = graphOf(['a', 'm1', 'm2', 'z'], [['m1', 'm2'], ['G', 'z'], ['a', 'm1']], [G]);
     const { chains, hops } = expand(g, ranks({ a: 0, m1: 1, m2: 2, z: 4 }), new Set(), { axes: AXES, nodeGap: 40 });
     expect(chains.get('e1')!.ids).toHaveLength(1);
@@ -97,7 +97,7 @@ describe('expand', () => {
   });
 
   it('puts a placeholder in a group only when both ends are inside it', () => {
-    const G: GraphGroup = { id: 'G', members: ['p', 'q', 'r'], inset: insetOf(12) };
+    const G: GraphCluster = { id: 'G', members: ['p', 'q', 'r'], inset: insetOf(12) };
     const g = graphOf(['p', 'q', 'r', 'o'], [['p', 'q'], ['q', 'r'], ['p', 'r'], ['p', 'o']], [G]);
     const { rows } = expand(g, ranks({ p: 0, q: 1, r: 2, o: 2 }), new Set(), { axes: AXES, nodeGap: 40 });
     const placeholders = rows.flat().filter((n) => isPlaceholder(n.id));

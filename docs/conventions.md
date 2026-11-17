@@ -100,9 +100,7 @@ questions. Miter apex vs capsule, and butt cap vs half-disc, are a defensible hi
 model over shared base geometry. `unionBounds` stays rotation-free beside
 `unionAABB` for commit-time actions that write poses back in the unrotated frame.
 SVG's `#000000` initial fill is a spec default, not drift.
-`useBuiltinShapeTools`' run of hook calls are not a list, and are already
-compiler-linked through the return type. `sceneToAdapter`'s area walk
-returns containers where the live marquee dep does not — one flag on the shared
+`sceneToAdapter`'s area walk returns containers where the live marquee dep does not — one flag on the shared
 walk, because a bare-adapter consumer has no selection parent-folding to fold
 them back in.
 

@@ -1,5 +1,5 @@
 import type { Op } from '@weasel-js/core';
-import { commitGestureOps, reduceBehaviorEnd } from '@weasel-js/core';
+import { commitRunOps, reduceBehaviorEnd } from '@weasel-js/core';
 import { draggedStoredPose } from '../delta';
 import { landedDescendantOps } from '../landedDescendants';
 import type { MoveSession } from '../session';
@@ -46,7 +46,7 @@ export function commitMove(input: CommitInput): boolean {
       },
       ops,
     );
-    return commitGestureOps(session, session.lifecycle, [...ops, ...followers]);
+    return commitRunOps(session, session.lifecycle, [...ops, ...followers]);
   };
 
   // Behavior pipeline owns the commit if any behavior returns non-undefined.

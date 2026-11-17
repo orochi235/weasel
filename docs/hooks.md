@@ -84,8 +84,8 @@ actions with no default binding fire only via a tool's `bindings` or a `trigger`
 
 | Action id | Default binding |
 |---|---|
-| `escape` | Escape (channel `*`, phase `initial`) |
-| `cancelGesture` | Escape (channel `*`, phase `engaged`) — aborts an in-flight gesture |
+| `deselect` | Escape (channel `*`, phase `initial`) |
+| `dispatch.cancelAll` | Escape (channel `*`, phase `engaged`) — aborts an in-flight gesture |
 | `selectAll` | Mod+A |
 | `delete` | Delete, Backspace (phase `initial`, so a mid-drag press is ignored) |
 | `transformAgain` | Mod+D — repeats the last move, rotate, resize, or duplicate; duplicates when there is none |
@@ -124,7 +124,7 @@ macOS Option+bracket emits a curly quote, so both codepoints are listed.
 | `editEffectText` (*text-tools*) | click on a body: in path edit on a path an effect hides, a click on that effect opens its text, off the open path's anchors |
 | `insertPathAnchor` (*path-tools*) | Alt+click |
 | `cutPathAtAnchor` (*path-tools*) | Alt+Shift+click |
-| `viewport.pinchZoom` | two-finger `multiTouch` |
+| `viewport.touchZoom` | two-finger `multiTouch` |
 | `ingest` | `drop` or `paste`, any modifiers |
 | `clipboard.pasteEvent` | `paste` carrying `text/plain`, any modifiers — registered only where `ingest` is not |
 
@@ -135,7 +135,7 @@ and contributions that want one bind it: `areaSelect` from the select tool (or,
 under every tool, `areaSelectContribution()`), `insert` and
 `insert.adjustRotation` from the shape tools, `lassoSelect` from the lasso tool,
 `slice` from path-tools' slice tool, `viewport.dragPan` from the hand tool (or, on any
-unclaimed drag, `dragPanContribution()`), and `resize`, `rotate` and `clone`
+unclaimed drag, `createDragPanContribution()`), and `resize`, `rotate` and `clone`
 from the `resize`, `rotate` and `move` presets' selection contributions.
 
 `clearSelection` (fires from `useSelectTool`'s empty-click binding),
@@ -278,8 +278,8 @@ not routed by the dispatcher — you own the pointer events.
 `<SceneCanvas>` doesn't own these; wire them in your component.
 
 - `useCanvasSize(ref)` — observed CSS-pixel size.
-- `useAutoCenter(...)` — viewport helpers.
-- `computeWheelAction(view, input)` — the kit's wheel convention as a pure
+- `useFitOnce(...)` — viewport helpers.
+- `viewAfterWheel(view, input)` — the kit's wheel convention as a pure
   reducer over `View`: bare wheel pans, shift+wheel pans horizontally,
   Cmd/Ctrl+wheel zooms under the pointer. `wheelPan` / `wheelZoom` are its
   halves, and `viewport.wheelPan` / `viewport.zoom` are the wired form.

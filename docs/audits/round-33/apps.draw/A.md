@@ -38,7 +38,7 @@
 
 ## Action extractor drops every action declared through defineAction or a factory, leaving only undo/redo
 - where: apps/draw/vite-plugin-trait-schemas/extract-actions.ts:34-43,71-93 (extractActions, unwrapObjectLiteral)
-- scenario: of the barrel's exports, viewportWheelPanAction, containerScrollAction and viewportDragPanAction are `defineAction({ … })` calls (a CallExpression, which unwrapObjectLiteral returns null for), and pinchZoomAction and viewportZoomAction are `createXAction()` calls; all are skipped silently. The catalog shows two actions. The move/resize/rotate/clone/insert/marquee/lasso/clear-selection actions moved to `@weasel-js/editing` (9566a40f92) and the extractor reads only core's barrel, so they are missing as well. Should unwrap `defineAction(arg)` to its argument and read editing's actions barrel too.
+- scenario: of the barrel's exports, viewportWheelPanAction, containerScrollAction and viewportDragPanAction are `defineAction({ … })` calls (a CallExpression, which unwrapObjectLiteral returns null for), and touchZoomAction and viewportZoomAction are `createXAction()` calls; all are skipped silently. The catalog shows two actions. The move/resize/rotate/clone/insert/marquee/lasso/clear-selection actions moved to `@weasel-js/editing` (9566a40f92) and the extractor reads only core's barrel, so they are missing as well. Should unwrap `defineAction(arg)` to its argument and read editing's actions barrel too.
 - evidence: read
 - severity: medium
 

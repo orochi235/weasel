@@ -3,7 +3,7 @@ import {
   DiagramView,
   diagramScene,
   type DataEdge,
-  type DataGroup,
+  type DataCluster,
   type DataNode,
   type DiagramLayout,
   type DiagramViewApi,
@@ -47,7 +47,7 @@ const EDGES: DataEdge[] = [
 ].map((e) => ({ ...e, router: 'orthogonal' }));
 
 /** `middle` sits inside `compiler`. */
-const GROUPS: DataGroup[] = [
+const GROUPS: DataCluster[] = [
   { id: 'compiler', members: ['parse', 'middle', 'emit'], label: 'compiler' },
   { id: 'middle', members: ['check', 'fold'], label: 'middle' },
 ];

@@ -14,7 +14,7 @@ import type { DecayLoopOptions } from 'core/viewport/useDecayLoop';
 import type { ViewAnimationOptions } from 'core/viewport/useViewAnimation';
 import type { Scene } from 'core/scene/types';
 import type { Op } from 'core/ops/types';
-import type { GestureLifecycleOptions } from './gestureLifecycle';
+import type { RunLifecycleOptions } from './runLifecycle';
 import type { History } from '@weasel-js/history';
 import type { ActionsRegistry } from '@weasel-js/routing';
 import type { BoundsConstraint } from '../gestures/types';
@@ -25,7 +25,8 @@ import type { DebugSink, LongPressState } from '@weasel-js/routing';
 import type { SnapDep } from './snapDep';
 import type { EnteredGroupApi } from 'canvas/deps/enteredGroup';
 import type { TransformFollower, TransformPreviewNode } from './transformFinish';
-import type { ColorAtDep, HitTestView, NodeAtPointDep, AreaSelectDep, LassoSelectDep } from './regionSelectDeps';
+import type { ColorAtDep, NodeAtPointDep, AreaSelectDep, LassoSelectDep } from './regionSelectDeps';
+import type { PickingView } from 'core/adapters/types';
 import type { InsertDep, InsertEnds, InsertExtras, PathSymmetryDep, InsertIntoDep, InsertLive } from './insertDeps';
 import type { CommitSelection } from './defaultCommitAdapter';
 import type { LayoutDep, CanDropIntoDep } from './layoutDeps';
@@ -34,7 +35,7 @@ import type { OperandsDep } from './operands';
 
 export type { EnteredGroupApi, TransformFollower, TransformPreviewNode };
 export type { SnapDep, SnapGeometry } from './snapDep';
-export type { ColorAtDep, HitTestView, NodeAtPointDep, AreaSelectDep, LassoSelectDep };
+export type { ColorAtDep, PickingView, NodeAtPointDep, AreaSelectDep, LassoSelectDep };
 export type { InsertDep, InsertEnds, InsertExtras, CommitSelection, PathSymmetryDep, InsertIntoDep, InsertLive };
 export type { LayoutDep, CanDropIntoDep };
 export type { ClipboardDep, SliceDep };
@@ -93,7 +94,7 @@ export interface ViewApi {
  * The generic is erased to `unknown` at the schema entry; consumers cast at
  * the call site.
  */
-export interface ResizePolicy<TPose> extends GestureLifecycleOptions {
+export interface ResizePolicy<TPose> extends RunLifecycleOptions {
   /** Bounds-frame constraints. Constrained to `TPose extends Bounds` since
    *  constraints read/write `{x,y,width,height}`. For non-rect TPose pass `[]`. */
   constraints: TPose extends Bounds ? BoundsConstraint<TPose>[] : never[];

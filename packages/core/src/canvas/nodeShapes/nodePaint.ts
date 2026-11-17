@@ -129,7 +129,7 @@ export interface PathPaint {
 }
 
 /** Whether `stroke` covers anything to outline: it has a paint and a width above zero. */
-export function strokeCovers(stroke: Stroke | null | undefined): boolean {
+export function hasStroke(stroke: Stroke | null | undefined): boolean {
   const painted = resolveStroke(stroke);
   const width = typeof painted?.width === 'object' ? painted.width.px : painted?.width;
   return width !== undefined && width > 0;

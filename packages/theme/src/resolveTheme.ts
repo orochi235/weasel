@@ -1,4 +1,4 @@
-import { fullSelection, mergeAxes, type AxisDefs, type Selection } from './axes.ts';
+import { fullAxisChoice, mergeAxes, type AxisDefs, type AxisChoice } from './axes.ts';
 import { tokensAt } from './chainTokens.ts';
 import { resolveTokens } from './dtcg/resolve.ts';
 import type { TokenName } from './generated/themes.ts';
@@ -22,7 +22,7 @@ export function themeAxes(theme: Theme): AxisDefs {
 
 /** `selection` less any axis `theme` does not declare: what a caller holding one selection for whichever theme it is
  *  given passes to `applyTheme` or `<ThemeProvider>`. */
-export function declaredSelection(theme: Theme, selection: Selection): Selection {
+export function declaredAxisChoice(theme: Theme, selection: AxisChoice): AxisChoice {
   const axes = themeAxes(theme);
   return Object.fromEntries(Object.entries(selection).filter(([axis]) => Object.hasOwn(axes, axis)));
 }
@@ -35,8 +35,8 @@ export function declaredSelection(theme: Theme, selection: Selection): Selection
  *
  * Pure — no DOM. An unresolvable reference throws rather than falling back.
  */
-export function resolveTheme(theme: Theme, selection: Selection = {}): ResolvedTheme {
-  const sel = fullSelection(themeAxes(theme), selection);
+export function resolveTheme(theme: Theme, selection: AxisChoice = {}): ResolvedTheme {
+  const sel = fullAxisChoice(themeAxes(theme), selection);
   const out: Record<string, string> = {};
   for (const [name, value] of Object.entries(resolveTokens(tokensAt(themeChain(theme), sel)))) out[`--wzl-${name}`] = value;
   return out as ResolvedTheme;

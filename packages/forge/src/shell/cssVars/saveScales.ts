@@ -1,5 +1,5 @@
 import type { TokenScaleRule } from '@weasel-js/labkit';
-import { isByAxis, type AxisDefs, type Selection, type ThemeDefinition } from '@weasel-js/theme';
+import { isByAxis, type AxisDefs, type AxisChoice, type ThemeDefinition } from '@weasel-js/theme';
 import { getOwn, setOwn } from '@weasel-js/registry';
 import type { Globals } from '../../protocol/messages';
 
@@ -30,7 +30,7 @@ const RULE_KEYS = { factors: 'factors', ratio: 'ratio', step: 'step' } as const;
  * axis no global names renders at its default. A global holding something the axis does not offer (`mode: 'auto'`)
  * leaves that axis out, because which value it resolved to is not known here.
  */
-export function selectionFor(axes: AxisDefs, globals: Globals): Selection {
+export function selectionFor(axes: AxisDefs, globals: Globals): AxisChoice {
   const out: Record<string, string> = {};
   for (const [axis, def] of Object.entries(axes)) {
     const value = getOwn(globals, axis);
@@ -46,7 +46,7 @@ export class EditError extends Error {}
 export const ownAt = (holder: Holder, key: string | number): unknown => (Object.hasOwn(holder, key) ? holder[key] : undefined);
 
 /** `holder[key]` followed through its per-axis branches to the one `selection` reads. */
-export function branchOf(holder: Holder, key: string | number, where: string, selection: Selection): Slot {
+export function branchOf(holder: Holder, key: string | number, where: string, selection: AxisChoice): Slot {
   let slot: Slot = { holder, key, where };
   for (let value = ownAt(holder, key); isByAxis(value); value = ownAt(slot.holder, slot.key)) {
     const axis = value.by;
@@ -60,7 +60,7 @@ export function branchOf(holder: Holder, key: string | number, where: string, se
 }
 
 /** Follows a param through its per-axis branches and `{seeds.name}` references to the number that defines it. */
-function slotOf(root: ThemeDefinition, holder: Holder, key: string | number, where: string, selection: Selection, depth = 0): Slot {
+function slotOf(root: ThemeDefinition, holder: Holder, key: string | number, where: string, selection: AxisChoice, depth = 0): Slot {
   if (depth > 16) throw new EditError(`${where} references itself`);
   const slot = branchOf(holder, key, where, selection);
   const { holder: h, key: k, where: w } = slot;
@@ -78,7 +78,7 @@ function slotOf(root: ThemeDefinition, holder: Holder, key: string | number, whe
 }
 
 /** The factor list the selection reads, through any per-axis branches. */
-function factorsOf(holder: Holder, where: string, selection: Selection): { list: Holder; where: string } {
+function factorsOf(holder: Holder, where: string, selection: AxisChoice): { list: Holder; where: string } {
   const slot = branchOf(holder, 'factors', `${where}.factors`, selection);
   const value = ownAt(slot.holder, slot.key);
   if (!Array.isArray(value)) throw new EditError(`${slot.where} is not a list`);
@@ -108,7 +108,7 @@ function swapRule(scale: Holder, from: string | null, to: string, value: unknown
 export function applyScaleEdits(
   definition: ThemeDefinition,
   edits: Readonly<Record<string, ScaleEdit>>,
-  selection: Selection,
+  selection: AxisChoice,
 ): ScaleEditResult {
   const root = structuredClone(definition) as ThemeDefinition & { scales?: Record<string, Holder> };
   const writes = new Map<Holder, Map<string | number, number>>();

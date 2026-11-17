@@ -1,11 +1,11 @@
 /** A diagram scene as a {@link DiagramDocument}: what every format writes from. */
 import {
-  isPageStructure, pageOfNode, placedPagesOf, worldPoses,
+  isPageStructure, pageIdOf, placedPagesOf, worldPoses,
   type NodeId, type PlacedPage, type RectPose, type Scene,
 } from '@weasel-js/core';
 import {
   DIAGRAM_THEME_KEY, FLOWCHART_NOTATION, diagramLabelOf, diagramNotationOf, endLabelIdOf, diagramThemeFrom, sequenceRootOf, type DataContainer,
-  type DataEdge, type DataGroup, type DataNode, type DiagramTheme, type SequenceData,
+  type DataEdge, type DataCluster, type DataNode, type DiagramTheme, type SequenceData,
 } from '@weasel-js/diagram';
 import type { DiagramDocument, DocumentPage, GraphPage, PlotPage } from './document';
 import { graphPageSettingsOf } from './graphPageMeta';
@@ -26,7 +26,7 @@ type AnyScene = ReadScene & {
 };
 
 interface PageBucket {
-  nodes: DataNode[]; edges: DataEdge[]; groups: DataGroup[]; containers: DataContainer[];
+  nodes: DataNode[]; edges: DataEdge[]; groups: DataCluster[]; containers: DataContainer[];
   /** The first sequence on the page, which makes it a sequence page. */
   sequence?: SequenceData;
 }
@@ -48,7 +48,7 @@ function contentPage(scene: AnyScene): PlacedPage {
  * containers and pools, and groups on it, in coordinates from the page's
  * corner; a page holding a plot root is a plot page of its spec, and whatever
  * else is on it is left out. A shape belongs to the page it is under
- * (`pageOfNode`); one on the pasteboard, to the page its outermost container
+ * (`pageIdOf`); one on the pasteboard, to the page its outermost container
  * overlaps most, or the nearest one when it overlaps none. A connector whose
  * ends are on different pages goes in `crossPageEdges`, without waypoints; one
  * whose ends export to different pages with an end on the pasteboard goes
@@ -69,7 +69,7 @@ export function documentFromScene<TData, TLayer extends string, TPose>(
   const pages = placed.length > 0 ? placed : [contentPage(s)];
   const buckets = new Map(pages.map((p) => [p.id, { nodes: [], edges: [], groups: [], containers: [] } as PageBucket]));
   const byId = new Map(pages.map((p) => [p.id, p]));
-  const onPage = (id: string): string | null => pageOfNode(scene as never, id as NodeId);
+  const onPage = (id: string): string | null => pageIdOf(scene as never, id as NodeId);
   const pageCache = new Map<string, PlacedPage>();
   const pageOf = (node: ReadNode): PlacedPage => {
     if (!pageCache.has(node.id)) pageCache.set(node.id, byId.get(exportPageOf(scene, pages, node.id as NodeId)!)!);

@@ -29,7 +29,7 @@ function mount() {
   const ids = [...scene.renderOrder()];
   let selection: SelectionApi | null = null;
   function Harness() {
-    const sel = useSelection({ scene, mode: 'multi' });
+    const sel = useSelection({ scene, mode: 'multiple' });
     selection = sel;
     const shapeBuilder = useShapeBuilderTool();
     return <SceneCanvas features={[drawPreset]} scene={scene} selection={sel} layers={{}} width={400} height={400} tools={{ shapeBuilder }} />;

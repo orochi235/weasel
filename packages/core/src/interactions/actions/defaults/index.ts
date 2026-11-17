@@ -7,7 +7,7 @@ export {
   type ToolActivateKeyOptions,
   type ToolActivateBindingSpec,
 } from './toolActivate';
-export { pinchZoomAction } from './pinchZoom';
+export { touchZoomAction } from './touchZoom';
 export { viewportWheelPanAction } from './viewportWheelPan';
 export { containerScrollAction, scrollRange, scrollableAt } from './containerScroll';
 export type { ScrollRange } from './containerScroll';

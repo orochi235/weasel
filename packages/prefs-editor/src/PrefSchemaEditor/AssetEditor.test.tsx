@@ -2,19 +2,19 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, screen, within } from '@testing-library/react';
 import { useState } from 'react';
 import { AssetEditor } from './AssetEditor';
-import { type Workspace, workspaceCodec } from '@weasel-js/prefs/edit';
-import { SETTINGS } from '@weasel-js/prefs/testing/editWorkspace';
+import { type AssetSet, assetSetCodec } from '@weasel-js/prefs/edit';
+import { SETTINGS } from '@weasel-js/prefs/testing/editAssetSet';
 import { renderWithIcons } from '@weasel-js/ui/testing/withIcons';
 
 afterEach(cleanup);
 
-const codec = workspaceCodec([]);
+const codec = assetSetCodec([]);
 const structure = () => screen.getByRole('tree', { name: 'Schema structure' });
 const row = (key: string) => within(structure()).getByText(key).closest('[role="treeitem"]')!;
 
-function Live({ start, onChange }: { start: Workspace; onChange(next: Workspace): void }) {
-  const [workspace, setWorkspace] = useState(start);
-  return <AssetEditor workspace={workspace} codec={codec} onChange={(next) => { onChange(next); setWorkspace(next); }} />;
+function Live({ start, onChange }: { start: AssetSet; onChange(next: AssetSet): void }) {
+  const [assetSet, setAssetSet] = useState(start);
+  return <AssetEditor assetSet={assetSet} codec={codec} onChange={(next) => { onChange(next); setAssetSet(next); }} />;
 }
 
 describe('AssetEditor', () => {

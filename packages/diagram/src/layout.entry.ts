@@ -41,7 +41,7 @@ export type { PerimeterPortLabelBox } from './portLabels';
 export { footprintNode } from './footprint';
 export type { ForceBody, ForceOptions, ForceRelaxation } from './force';
 export { force, forceRelaxation } from './force';
-export type { EdgeLabelRoom, Graph, GraphEdge, GraphGroup, GraphNode } from './graph';
+export type { EdgeLabelRoom, Graph, GraphEdge, GraphCluster, GraphNode } from './graph';
 export { chain } from './chain';
 export { AVOID_DEFAULTS, createAvoidRouter, routeHolds } from './avoid';
 export type {

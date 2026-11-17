@@ -5,7 +5,7 @@ import type { RectPose, Scene, SelectionApi, Tool } from '@weasel-js/core';
 import { DepRegistryProvider, useDepRegistry, useDepSource, type DepRegistry } from '@weasel-js/routing/react';
 import { buildDepsFromRequires } from '@weasel-js/routing';
 import {
-  hitTestAreaForTests as hitTestArea, useEditAnchorsDepSourceForTests as useEditAnchorsDepSource,
+  hitTestRectForTests as hitTestRect, useEditAnchorsDepSourceForTests as useEditAnchorsDepSource,
 } from '@weasel-js/core/test-seams';
 import { useInsertDepSource } from '@weasel-js/editing';
 import { createScene, defaultCommitAdapter } from '@weasel-js/core';
@@ -70,7 +70,7 @@ describe('usePenTool — through the kit insert dep', () => {
       useEditAnchorsDepSource(scene, selection, adapter);
       useDepSource('selection', () => selection);
       useDepSource('operands', () => selection);
-      useDepSource('areaSelect', () => ({ hitTestArea: (b: Parameters<typeof hitTestArea>[1]) => hitTestArea(scene, b) }) as never);
+      useDepSource('areaSelect', () => ({ hitTestArea: (b: Parameters<typeof hitTestRect>[1]) => hitTestRect(scene, b) }) as never);
       reg = useDepRegistry();
       tool = usePenTool();
       return null;

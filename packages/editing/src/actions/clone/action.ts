@@ -10,7 +10,7 @@ import type { Action, BindingOptions, InvocationCtx, OngoingHandle } from '@weas
 import type { OperandsDep, CloneEnd } from '@weasel-js/core/engine';
 import type { Scene, NodeId, Op } from '@weasel-js/core';
 import { defaultCommitAdapter, operandMethods, createSetSelectionOp, nodeDescriptors, poseDescriptorOf, translatePoseViaDescriptor, type PoseDescriptor, scenePoseFrame, type PoseFrame, SNAP_ROLES } from '@weasel-js/core/engine';
-import { runBehaviorCancel, runBehaviorSettled, copySelection, selectedRoots, translateTargets, carryPose, invertPlane, inPlane, planeOf, selectionLayer, recordTransform, finiteFrame, quantizedPreview } from '@weasel-js/core';
+import { runBehaviorCancel, runBehaviorSettled, copyOps, rootsAmong, translateTargets, carryPose, invertPlane, inPlane, planeOf, selectionLayer, recordTransform, finiteFrame, quantizedPreview } from '@weasel-js/core';
 import { startCloneBehaviors, type CloneBehaviors } from './behaviors';
 import { beginDragSnap, snappedDelta } from '../move/dragSnap';
 import { createEmitter } from '@weasel-js/registry';
@@ -60,7 +60,7 @@ function landed(scratch: CloneScratch, id: NodeId, dx: number, dy: number): unkn
  *  with a `placement`, each copied root goes under its parent instead, at its
  *  pose there when it has one. `null` when a copy would land in a singular
  *  frame, so the clone refuses whole. */
-function copyOps(scratch: CloneScratch, selection: OperandsDep, placement?: Parameters<CloneEnd['copyOps']>[0]): Op[] | null {
+function placedCopyOps(scratch: CloneScratch, selection: OperandsDep, placement?: Parameters<CloneEnd['copyOps']>[0]): Op[] | null {
   const { dx, dy } = scratch.currentDelta;
   const parent = placement?.parentId as NodeId | null | undefined;
   let refused = false;
@@ -69,7 +69,7 @@ function copyOps(scratch: CloneScratch, selection: OperandsDep, placement?: Para
     refused = true;
     return fallback;
   };
-  const { ops, copies } = copySelection(
+  const { ops, copies } = copyOps(
     scratch.scene,
     scratch.ids,
     (id, node, isRoot) => {
@@ -96,10 +96,10 @@ function commitClone(scratch: CloneScratch, behaviors: CloneBehaviors, selection
     scratch.applyOps(ops, 'Clone');
     return true;
   };
-  const answer = behaviors.end(scratch.currentDelta, (placement) => copyOps(scratch, selection, placement));
+  const answer = behaviors.end(scratch.currentDelta, (placement) => placedCopyOps(scratch, selection, placement));
   if (answer === null) return false;
   if (answer !== undefined) return answer.length === 0 || apply(answer);
-  const ops = copyOps(scratch, selection);
+  const ops = placedCopyOps(scratch, selection);
   return ops !== null && ops.length > 0 && apply(ops);
 }
 
@@ -146,7 +146,7 @@ export const cloneAction: Action & { requires: string[] } = inPlane({
       if (originPoses.size === 0) return {};
 
       const scratch: CloneScratch = {
-        ids: selectedRoots(scene, ids),
+        ids: rootsAmong(scene, ids),
         scene,
         descriptorOf,
         frame,

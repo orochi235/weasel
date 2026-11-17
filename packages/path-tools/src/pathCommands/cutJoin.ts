@@ -4,8 +4,8 @@
  * spans it some other way.
  */
 import {
-  commitOps, deleteNode, insertAt, PATH_GROUP, pathCopy, type PathNode, pathOperationTags, reshapeOps,
-  selectedPathNodes, slotOf,
+  commitOps, createDeleteNodeOp, createInsertNodeOp, PATH_GROUP, pathCopy, type PathNode, pathOperationTags, reshapeOps,
+  operandPathNodes, slotOf,
 } from '@weasel-js/core';
 import type { Action, ActionDeps, ImmediateInvoker } from '@weasel-js/routing';
 import { ActionDisabledReason } from '@weasel-js/routing';
@@ -27,7 +27,7 @@ type Cut = { node: PathNode; pieces: PolygonPath[]; at: number };
 /** Each selected path another selected path crosses, with its pieces, back to front; empty when none crosses. */
 function planCut(deps: ActionDeps | undefined): Cut[] {
   const scene = deps?.scene;
-  const nodes = selectedPathNodes(deps);
+  const nodes = operandPathNodes(deps);
   if (!scene || nodes.length < 2) return [];
   const pieces = snipPathsAtCrossings(nodes.map((n) => n.path));
   return nodes
@@ -58,9 +58,9 @@ export const snipAtCrossingsAction: Action & { requires: string[] } = {
       const ops: Op[] = [];
       const made = new Map<string, string[]>();
       for (const { node, pieces: runs, at } of cut) {
-        ops.push(deleteNode(scene, node.node, CUT_LABEL));
+        ops.push(createDeleteNodeOp(scene, node.node, CUT_LABEL));
         const copies = runs.flatMap((p) => pathCopy(scene, node, p, pieceOrigins(node.path, p)) ?? []);
-        copies.forEach((copy, k) => ops.push(insertAt(copy, at < 0 ? at : at + k, CUT_LABEL)));
+        copies.forEach((copy, k) => ops.push(createInsertNodeOp(copy, at < 0 ? at : at + k, CUT_LABEL)));
         made.set(node.id, copies.map((c) => c.id));
       }
       const selected = deps.operands?.get() ?? [];
@@ -68,7 +68,7 @@ export const snipAtCrossingsAction: Action & { requires: string[] } = {
     },
   } satisfies ImmediateInvoker,
   enabled: (deps) => {
-    if (selectedPathNodes(deps).length < 2) return ActionDisabledReason.SelectionRequired;
+    if (operandPathNodes(deps).length < 2) return ActionDisabledReason.SelectionRequired;
     return planCut(deps).length > 0 ? true : ActionDisabledReason.NotApplicable;
   },
 };
@@ -148,7 +148,7 @@ export function joinPathsCommand(
   base: Pick<Action, 'id' | 'label' | 'icon' | 'defaultBinding'>,
   options: (params: Record<string, unknown> | undefined) => JoinOptions,
 ): Action & { requires: string[] } {
-  const plan = (deps: ActionDeps | undefined, params?: Record<string, unknown>) => planJoin(selectedPathNodes(deps), options(params));
+  const plan = (deps: ActionDeps | undefined, params?: Record<string, unknown>) => planJoin(operandPathNodes(deps), options(params));
   return {
     ...base,
     group: PATH_GROUP,
@@ -163,14 +163,14 @@ export function joinPathsCommand(
         const made = plan(deps, params);
         if (!scene || !made) return;
         const ops = reshapeOps(made.keep, made.path, base.label, made.anchorData);
-        if (made.drop) ops.push(deleteNode(scene, made.drop.node, base.label));
+        if (made.drop) ops.push(createDeleteNodeOp(scene, made.drop.node, base.label));
         commitOps(deps, ops, base.label, { select: [made.keep.id] });
       },
     } satisfies ImmediateInvoker,
     enabled: (deps?: ActionDeps) => {
       // In path edit these are the selected anchors' commands.
       if (deps?.editAnchors?.editingId) return ActionDisabledReason.NotApplicable;
-      if (selectedPathNodes(deps).length === 0) return ActionDisabledReason.SelectionRequired;
+      if (operandPathNodes(deps).length === 0) return ActionDisabledReason.SelectionRequired;
       return plan(deps) ? true : ActionDisabledReason.NotApplicable;
     },
   };

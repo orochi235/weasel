@@ -7,7 +7,7 @@ import {
   type Action,
   type ActionsRegistry,
   contextMenuAction,
-  createPinchZoomAction,
+  createTouchZoomAction,
   createViewportZoomAction,
   defineAction,
   InputScope,
@@ -301,7 +301,7 @@ function CameraDispatch({
       ...(zoomBindings.length > 0
         ? [{ ...zoom, defaultBinding: zoomBindings as Action['defaultBinding'] }]
         : []),
-      ...(touchPinch ? [createPinchZoomAction(unclamped)] : []),
+      ...(touchPinch ? [createTouchZoomAction(unclamped)] : []),
       ...(taps ? [tap] : []),
       ...(homes ? [goHome] : []),
     ];

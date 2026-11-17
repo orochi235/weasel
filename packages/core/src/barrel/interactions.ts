@@ -16,9 +16,9 @@ export {
 export type { OriginProjection } from '../interactions/gestures/shared';
 
 // ─── Drag-action hooks: move / resize / rotate / insert / area-select / etc. ─
-export type { UseMoveOptions } from '../interactions/gestures/moveOptions';
-export type { UseResizeOptions } from '../interactions/gestures/resizeOptions';
-export type { UseRotateOptions } from '../interactions/gestures/rotateOptions';
+export type { MoveOptions } from '../interactions/actions/moveOptions';
+export type { ResizeOptions } from '../interactions/actions/resizeOptions';
+export type { RotateOptions } from '../interactions/actions/rotateOptions';
 export { AUTO_POSE_DESCRIPTOR, isPathLike, isRectPose } from '../core/geometry/autoPoseDescriptor';
 export { RECT_POSE_DESCRIPTOR, ROTATED_POSE_DESCRIPTOR, poseDescriptorForNode } from '../core/geometry/poseDescriptor';
 export type { PoseDescriptor, TranslateLead } from '../core/geometry/poseDescriptor';
@@ -58,7 +58,7 @@ export {
 export type { PointerSession, PointerSessionCallbacks, PointerSessionCancelReason, PointerSessionOptions } from '@weasel-js/routing';
 export { startCarry } from '@weasel-js/routing';
 export type { Carry, CarryCallbacks, CarryPayload, CarryPointer, CarryStage } from '@weasel-js/routing';
-export { sweepAction, SWEEP_BINDING } from '@weasel-js/routing';
+export { sweepAction, SWEEP_SPEC } from '@weasel-js/routing';
 export { BETWEEN_GESTURES } from '@weasel-js/routing';
 export type { SweepItem, SweepOptions, SweepPress, SweepRun } from '@weasel-js/routing';
 export { enumerateAnchors, withCoord, type PathAnchor } from '../interactions/actions/edit-anchors/geometry';
@@ -70,13 +70,13 @@ export { translatePoseViaDescriptor, visualBoundsViaDescriptor } from '../core/g
 export { resolveSpatialReference } from '../interactions/actions/spatialReference';
 export { ANCHORS_GROUP, PATH_GROUP } from '../interactions/actions/pathActionGroups';
 export { sceneBoxFrames, scenePoseFrame, worldPoseOf, worldPoses } from '../interactions/actions/poseFrame';
-export { undeclaredMagnifications, unitFrameAt, type UndeclaredMagnification } from '../interactions/actions/magnification';
+export { undeclaredMagnifications, createUnitFrameLookup, type UndeclaredMagnification } from '../interactions/actions/magnification';
 export { moveNodes, moveNodesOps, MOVE_NODES_REQUIRES } from '../interactions/actions/moveNodes';
 export type { PoseFrame, PoseReading } from '../interactions/actions/poseFrame';
 export type { SpatialReference, SpatialReferenceSources } from '../interactions/actions/spatialReference';
 export { lastTransform, recordTransform, forgetTransform } from '../interactions/actions/transform-again/memory';
 export type { RepeatableTransform } from '../interactions/actions/transform-again/memory';
-export { requiresSelection } from '../interactions/actions/defaults/requiresSelection';
+export { requiresOperands } from '../interactions/actions/defaults/requiresOperands';
 export type { CloneBehavior, CloneBehaviorResult, CloneEnd } from '../interactions/gestures/types';
 
 // ─── Animation primitives (tween, spring, easings) ──────────────────────────

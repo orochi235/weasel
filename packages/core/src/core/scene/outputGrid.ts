@@ -7,7 +7,7 @@ import type { OutputGrid } from '@weasel-js/geom';
 import type { ResizeAnchor } from '@weasel-js/routing';
 import { deepEqual, isDev } from '@weasel-js/registry';
 import { createSetDataOp } from 'core/ops/setData';
-import { createTransformOp } from 'core/ops/transform';
+import { createSetPoseOp } from 'core/ops/setPose';
 import type { Op } from 'core/ops/types';
 import type { SceneEditPass } from './editPass';
 import type { AddNodeSpec, NodeId, RectPose, Scene } from './types';
@@ -75,7 +75,7 @@ export function quantizePass<TData, TPose>(
       if (!node) continue;
       const next = storedOf(rule, node, grid);
       if (!next) continue;
-      if (next.pose !== node.pose) ops.push(createTransformOp({ id, from: node.pose, to: next.pose, coalesceKey: `quantize:${id}` }));
+      if (next.pose !== node.pose) ops.push(createSetPoseOp({ id, from: node.pose, to: next.pose, coalesceKey: `quantize:${id}` }));
       if (next.data !== node.data) ops.push(createSetDataOp({ id, from: node.data, to: next.data }));
     }
     return ops.length > 0 ? ops : null;

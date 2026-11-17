@@ -1,10 +1,10 @@
 import { getOwn, setOwn } from '@weasel-js/registry';
-import { enumerateSelections, type AxisDefs, type Selection, type ThemeDefinition } from '@weasel-js/theme';
+import { enumerateAxisChoices, type AxisDefs, type AxisChoice, type ThemeDefinition } from '@weasel-js/theme';
 import { axisDependencies, declaredSteps, derive, mergeChain, type Lookup } from '@weasel-js/theme/engine';
 
 export interface ScaleColumn {
   readonly label: string;
-  readonly selection: Selection;
+  readonly selection: AxisChoice;
   /** Step → value, e.g. `8px`. */
   readonly values: Readonly<Record<string, string>>;
 }
@@ -22,7 +22,7 @@ export function scaleTable(def: ThemeDefinition, lookup: Lookup, scale: string):
   const deps = axisDependencies(def, lookup);
   const varying = new Set(steps.flatMap((step) => deps[`${scale}-${step}`]?.all ?? []));
   const axes: AxisDefs = Object.fromEntries(Object.entries(merged.axes ?? {}).filter(([axis]) => varying.has(axis)));
-  const columns = enumerateSelections(axes).map((selection) => {
+  const columns = enumerateAxisChoices(axes).map((selection) => {
     const tokens = derive(def, selection, lookup).tokens;
     const values: Record<string, string> = {};
     for (const step of steps) {

@@ -10,7 +10,7 @@ import {
   type Action,
   ActionDisabledReason,
   createDeleteOp,
-  createTransformOp,
+  createSetPoseOp,
   held,
   type KeySpec,
   key,
@@ -319,7 +319,7 @@ function lensLifeActions<C>(api: LensActionApi<C>): Action[] {
     };
     const label = 'open quick lens';
     api.apply([
-      createTransformOp({ id: body.id, from: body.pose, to: patchAt(body.pose, 1, at), label }),
+      createSetPoseOp({ id: body.id, from: body.pose, to: patchAt(body.pose, 1, at), label }),
       ...setAimOps(scene, lensId, 'glass'),
     ]);
     return lensId;

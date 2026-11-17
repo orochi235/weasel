@@ -9,7 +9,7 @@ describe('built-in shape painters', () => {
     const shapes = await import('./NodeShape');
     const mine = { id: 'mine', matches: () => false, paint: () => [] } as never;
     const dispose = shapes.registerNodeShape(mine);
-    const order = shapes.getNodeShapes();
+    const order = shapes.nodeShapeEntries();
     expect(order.length).toBeGreaterThan(1);
     expect(order[order.length - 3]).toBe(mine);
     expect(order.slice(-2).map((e) => e.id)).toEqual(['kit:path-pose', 'kit:rect-fallback']);
@@ -21,7 +21,7 @@ describe('built-in shape painters', () => {
     const shapes = await import('./NodeShape');
     const mine = { id: 'mine', matches: () => true, paint: () => [] } as never;
     const dispose = shapes.registerNodeShape(mine, { priority: 'high' });
-    expect(shapes.getNodeShapes()[0]).toBe(mine);
+    expect(shapes.nodeShapeEntries()[0]).toBe(mine);
     expect(shapes.findNodeShape({ id: 'n', kind: 'mark', layer: 'l', pose: {}, data: {} } as never)).toBe(mine);
     dispose();
   }, COLD_IMPORT_MS);

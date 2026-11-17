@@ -43,7 +43,7 @@ const OPENING = { id: 'leaf', anchors: [0, 1] };
 
 function FieldsTrial({ ctx }: { ctx: RenderContext<State, Config> }) {
   const scene = useTrialScene(ctx, createLabScene);
-  const selection = useSelection({ mode: 'multi', scene, initial: [asNodeId('leaf')] });
+  const selection = useSelection({ mode: 'multiple', scene, initial: [asNodeId('leaf')] });
   return (
     <>
       <TrialSceneCanvas

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { jointAxes, skeletonAxes } from './rig/skeletonAxes';
-import { IDENTITY_JOINT, type Pose, type Skeleton } from './rig/types';
+import { IDENTITY_JOINT, type SkeletonPose, type Skeleton } from './rig/types';
 import { createTarget } from './target';
 
 const skeleton: Skeleton = {
@@ -21,7 +21,7 @@ describe('target.axisIndexes', () => {
   });
 
   it('answers every axis under a path, and one axis by its full name', () => {
-    const target = createTarget<Pose>({ get: () => ({}), set: () => {}, axes: skeletonAxes(skeleton) });
+    const target = createTarget<SkeletonPose>({ get: () => ({}), set: () => {}, axes: skeletonAxes(skeleton) });
     expect(target.axisIndexes(['knee'])).toEqual([5, 6, 7, 8, 9]);
     expect(target.axisIndexes(['knee.rotation', 'hip.x'])).toEqual([7, 0]);
   });
@@ -43,7 +43,7 @@ describe('target.axisIndexes: names holding a dot', () => {
   };
 
   it("answers a joint's own axes, not those of a joint whose name extends it by a dot", () => {
-    const target = createTarget<Pose>({ get: () => ({}), set: () => {}, axes: skeletonAxes(dotted) });
+    const target = createTarget<SkeletonPose>({ get: () => ({}), set: () => {}, axes: skeletonAxes(dotted) });
     expect(target.axisIndexes(['spine'])).toEqual([0, 1, 2, 3, 4]);
     expect(target.axisIndexes(['spine.001'])).toEqual([5, 6, 7, 8, 9]);
     expect(target.axisIndexes(['spine.001.rotation'])).toEqual([7]);
@@ -51,7 +51,7 @@ describe('target.axisIndexes: names holding a dot', () => {
   });
 
   it('refuses a name that is both one axis and the start of others', () => {
-    const target = createTarget<Pose>({ get: () => ({}), set: () => {}, axes: skeletonAxes(dotted) });
+    const target = createTarget<SkeletonPose>({ get: () => ({}), set: () => {}, axes: skeletonAxes(dotted) });
     expect(() => target.axisIndexes(['arm.x'])).toThrow(/both an axis/);
     expect(() => jointAxes(dotted, ['arm.x'])).toThrow(/both an axis/);
   });

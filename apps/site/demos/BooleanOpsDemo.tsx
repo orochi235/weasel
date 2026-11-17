@@ -49,7 +49,7 @@ function Panel({ paths }: { paths: PanelItem[] }) {
         <SceneCanvas
           className="ckd-canvas"
           scene={scene}
-          selectionOptions={{ mode: 'multi' }}
+          selectionOptions={{ mode: 'multiple' }}
           layers={{ selectionOverlay: { outline: { follow: 'shape' } } }}
         />
       </DemoStage>
@@ -62,7 +62,7 @@ function InteractivePanel() {
     systemLayers: [{ id: 'default' }],
     initial: INITIAL_NODES,
   });
-  const selection = useSelection({ scene, mode: 'multi', initial: INPUT_IDS });
+  const selection = useSelection({ scene, mode: 'multiple', initial: INPUT_IDS });
 
   const reset = useCallback(() => {
     scene.batch('Reset', () => {

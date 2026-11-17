@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import type { Graph, GraphEdge, GraphGroup, GraphNode } from '@weasel-js/diagram/layout';
+import type { Graph, GraphEdge, GraphCluster, GraphNode } from '@weasel-js/diagram/layout';
 import { elkLayout, elkPlan, elkPlanner } from './elkPlan';
 
 const INSET = { top: 30, right: 12, bottom: 12, left: 12 };
@@ -8,7 +8,7 @@ function node(id: string, extra: Partial<GraphNode> = {}): GraphNode {
   return { id, bounds: { x: 0, y: 0, width: 80, height: 40 }, pinned: false, ...extra };
 }
 
-function graphOf(nodes: GraphNode[], edges: GraphEdge[], groups: GraphGroup[] = []): Graph {
+function graphOf(nodes: GraphNode[], edges: GraphEdge[], groups: GraphCluster[] = []): Graph {
   const byId = new Map(nodes.map((n) => [n.id, n]));
   return {
     nodes,

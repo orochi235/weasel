@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { chain } from './chain';
 import { buildGraph, type GraphNodeLike } from './graph';
-import { graphOf, type Rect } from './groupFixture';
+import { graphOf, type Rect } from './clusterFixture';
 import type { LayoutResult } from './layout';
 
 // `graphOf` seeds node i at (i, i), 100 by 40.

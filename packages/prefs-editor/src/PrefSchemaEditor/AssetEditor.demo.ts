@@ -1,6 +1,6 @@
 import type { PrefAlias, PrefGroup } from '@weasel-js/prefs';
 import { type EditorAction } from '@weasel-js/prefs-editor';
-import { actionCatalog, type Workspace } from '@weasel-js/prefs/edit';
+import { actionCatalog, type AssetSet } from '@weasel-js/prefs/edit';
 
 const pointer = (of: string): PrefAlias => ({ kind: 'alias', name: '', description: '', default: undefined, of });
 
@@ -40,7 +40,7 @@ export const DEMO_ACTIONS: readonly EditorAction[] = [
 ];
 
 /** A dialog, a panel that takes edits, one that takes none, and the catalog of {@link DEMO_ACTIONS}: what the story and the layout tests draw. */
-export const DEMO_WORKSPACE: Workspace = {
+export const DEMO_ASSET_SET: AssetSet = {
   assets: [
     { id: 'settings', label: 'Settings', kind: 'schema', root: SETTINGS },
     {

@@ -1,15 +1,15 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, screen, within } from '@testing-library/react';
-import { asset, assets, hasRow, Live, WORKSPACE } from './AssetEditor.fixture';
-import type { Workspace } from '@weasel-js/prefs/edit';
-import { pointer } from '@weasel-js/prefs/testing/editWorkspace';
+import { asset, assets, hasRow, Live, ASSET_SET } from './AssetEditor.fixture';
+import type { AssetSet } from '@weasel-js/prefs/edit';
+import { pointer } from '@weasel-js/prefs/testing/editAssetSet';
 import { renderWithIcons } from '@weasel-js/ui/testing/withIcons';
 
 afterEach(cleanup);
 
 const preview = () => screen.getByRole('region', { name: 'Live preview' });
-const WITH_BAR: Workspace = {
-  assets: [...WORKSPACE.assets, { id: 'tools', label: 'Tools', kind: 'layout', over: 'settings', root: { name: 'Tools', as: 'bar', children: { snap: pointer('view.snap') } } }],
+const WITH_BAR: AssetSet = {
+  assets: [...ASSET_SET.assets, { id: 'tools', label: 'Tools', kind: 'layout', over: 'settings', root: { name: 'Tools', as: 'bar', children: { snap: pointer('view.snap') } } }],
 };
 
 /** A row's label, which is its name: the row also holds a glyph and a badge. */

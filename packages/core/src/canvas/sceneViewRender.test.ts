@@ -18,7 +18,7 @@ import {
 } from './sceneViewRender';
 import { rotateAroundAABBCenter } from './poseRotation';
 import { defaultDrawOne } from './defaultDrawOne';
-import { getNodeShapes } from './NodeShape';
+import { nodeShapeEntries } from './NodeShape';
 
 // ---------------------------------------------------------------------------
 // Mock WeaselRenderer
@@ -397,7 +397,7 @@ describe('renderSceneToCanvas', () => {
   it('culls to its own size, bounding defaultDrawOne without being told how', () => {
     const scene = makeScene();
     const canvas = makeCanvas();
-    const painter = getNodeShapes().find((e) => e.id === 'kit:rect-fallback')!;
+    const painter = nodeShapeEntries().find((e) => e.id === 'kit:rect-fallback')!;
     const paint = vi.spyOn(painter, 'paint');
     // The second node starts at x 50, past this 40-wide view.
     renderSceneToCanvas({

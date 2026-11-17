@@ -21,7 +21,7 @@ import { wrapWithPoseRotation } from '../poseRotation';
 import type { Dispatcher } from '@weasel-js/routing';
 import { previewSourcesFrom } from '../drawEnvelope';
 import { flattenPreviews, resolvePreviews, type PreviewNode } from 'interactions/actions/resolvePreviews';
-import { scenePlaneOf } from '../pickWalk';
+import { createLayerPlaneLookup } from '../pickWalk';
 import { planeTransform } from '../planeClips';
 import { deriveParallaxView } from 'core/viewport/parallax';
 import type { PlaneMap } from 'core/viewport/parallax';
@@ -78,7 +78,7 @@ export function usePreviewGhostLayer<TData, TLayer extends string, TPose>(args: 
 
       // A node on a parallax layer ghosts where its plane draws it: through
       // the plane's view, inside a group carrying it into its parent's world.
-      const planeOf = scenePlaneOf(sc.layers, view);
+      const planeOf = createLayerPlaneLookup(sc.layers, view);
       const mapOf = (layer: string): PlaneMap | null => planeOf?.(layer) ?? null;
       const viewOf = (layer: string) => {
         const parallax = planeOf ? sc.layers.find((l) => l.id === layer)?.parallax : undefined;

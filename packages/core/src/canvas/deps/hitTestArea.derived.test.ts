@@ -4,7 +4,7 @@
  */
 import { describe, it, expect } from 'vitest';
 import { linePath, type Path } from '@weasel-js/geom';
-import { hitTestArea, hitTestLassoPolygon } from './hitTestArea';
+import { hitTestRect, hitTestLassoPolygon } from './hitTestArea';
 import { createScene } from 'core/scene/scene';
 import type { Scene, NodeId } from 'core/scene/types';
 
@@ -41,11 +41,11 @@ const around = (x: number, y: number) => [
   { x, y }, { x: x + 10, y }, { x: x + 10, y: y + 10 }, { x, y: y + 10 },
 ];
 
-describe('hitTestArea — a derived node', () => {
+describe('hitTestRect — a derived node', () => {
   it('marquee takes a derived node where its path is painted, not at its placeholder pose', () => {
     const scene = edgeScene();
-    expect(hitTestArea(scene, { x: 95, y: 495, width: 10, height: 10 })).toContain('edge');
-    expect(hitTestArea(scene, { x: -5, y: -5, width: 10, height: 10 })).not.toContain('edge');
+    expect(hitTestRect(scene, { x: 95, y: 495, width: 10, height: 10 })).toContain('edge');
+    expect(hitTestRect(scene, { x: -5, y: -5, width: 10, height: 10 })).not.toContain('edge');
   });
 
   it('lasso takes a derived node by its path too', () => {
@@ -56,13 +56,13 @@ describe('hitTestArea — a derived node', () => {
 
   it('reads a non-polygon derived path as the node\'s outline, leaving the placeholder pose to the painter', () => {
     const scene = edgeScene((from, to) => ({ kind: 'rect', x: from.x, y: from.y, width: to.x - from.x, height: 20 }));
-    expect(hitTestArea(scene, { x: 95, y: 495, width: 10, height: 10 })).toContain('edge');
-    expect(hitTestArea(scene, { x: -5, y: -5, width: 10, height: 10 })).not.toContain('edge');
+    expect(hitTestRect(scene, { x: 95, y: 495, width: 10, height: 10 })).toContain('edge');
+    expect(hitTestRect(scene, { x: -5, y: -5, width: 10, height: 10 })).not.toContain('edge');
   });
 
   it('gates a derived node by its container\'s clip at the path, not the placeholder', () => {
     const scene = edgeScene(undefined, 'box' as NodeId);
-    expect(hitTestArea(scene, { x: 95, y: 495, width: 10, height: 10 })).toContain('edge');
-    expect(hitTestArea(scene, { x: 195, y: 495, width: 10, height: 10 })).not.toContain('edge');
+    expect(hitTestRect(scene, { x: 95, y: 495, width: 10, height: 10 })).toContain('edge');
+    expect(hitTestRect(scene, { x: 195, y: 495, width: 10, height: 10 })).not.toContain('edge');
   });
 });

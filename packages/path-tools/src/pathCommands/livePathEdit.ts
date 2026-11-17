@@ -3,7 +3,7 @@ import { ActionDisabledReason, defineAction, resolveParams } from '@weasel-js/ro
 import type { PolygonPath } from '@weasel-js/geom';
 import type { PrefGroup, PrefNumber } from '@weasel-js/prefs';
 import type { Op } from '@weasel-js/core';
-import { commitOps, type PathNode, pathOperationTags, selectedPathNodes, withPath } from '@weasel-js/core';
+import { commitOps, type PathNode, pathOperationTags, operandPathNodes, withPath } from '@weasel-js/core';
 import { getOwn } from '@weasel-js/registry';
 
 /** What one live path command does with its parameter, reading params `P`. */
@@ -57,7 +57,7 @@ export function livePathEdit<P = Record<string, unknown>>(spec: LivePathEditSpec
     invoker: {
       timing: 'ongoing',
       start(ctx, opts) {
-        const nodes = selectedPathNodes(ctx.deps);
+        const nodes = operandPathNodes(ctx.deps);
         if (nodes.length === 0) return {};
         const read = (params: Readonly<Partial<P>> | undefined): number | null => {
           const v = params?.[spec.param];
@@ -118,6 +118,6 @@ export function livePathEdit<P = Record<string, unknown>>(spec: LivePathEditSpec
         };
       },
     },
-    enabled: (deps) => (selectedPathNodes(deps).length > 0 ? true : ActionDisabledReason.SelectionRequired),
+    enabled: (deps) => (operandPathNodes(deps).length > 0 ? true : ActionDisabledReason.SelectionRequired),
   });
 }

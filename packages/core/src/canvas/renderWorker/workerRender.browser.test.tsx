@@ -186,8 +186,8 @@ describe('a scene painted by a worker a host drives itself', () => {
     });
     // The page numbers c and b before the worker paints anything, as a pick of them would.
     const ids = scenePickIds(scene);
-    ids.idOf('c');
-    ids.idOf('b');
+    ids.pickIdOf('c');
+    ids.pickIdOf('b');
     const canvas = document.createElement('canvas');
     document.body.appendChild(canvas);
     const worker = new Worker(new URL('./testing/sceneRender.worker.ts', import.meta.url), { type: 'module' });
@@ -197,7 +197,7 @@ describe('a scene painted by a worker a host drives itself', () => {
       for (let i = 0; i < 300; i++) {
         client.sync();
         const read = await client.readIds({ x, y, width: 0, height: 0 });
-        last = read ? ids.nodeOf(read.data[0] ?? 0) : null;
+        last = read ? ids.idOfPickId(read.data[0] ?? 0) : null;
         if (last === want) return last;
         await frame();
       }

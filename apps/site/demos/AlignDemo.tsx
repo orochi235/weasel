@@ -49,7 +49,7 @@ export function AlignDemo() {
         features={[pickPreset, movePreset, transformPreset, arrangePreset]}
         tune={TUNE}
         claimKeys
-        selectionOptions={{ mode: 'multi', initial: RECTS.map((r) => asNodeId(r.id)) }}
+        selectionOptions={{ mode: 'multiple', initial: RECTS.map((r) => asNodeId(r.id)) }}
       />
     </DemoStage>
   );

@@ -1,6 +1,6 @@
 import { diagramContainerOf } from './containers/trait';
 import { diagramEdgeOf } from './edgeTrait';
-import { diagramGroupOf } from './group';
+import { diagramClusterOf } from './clusterBox';
 import { diagramLabelOf } from './labelTrait';
 import { sequencePartOf } from './sequence/trait';
 
@@ -17,7 +17,7 @@ export function diagramResizable(scene: { get(id: never): { data: unknown } | un
   return (id) => {
     const node = scene.get(id as never);
     return node === undefined
-      || (diagramEdgeOf(node) === null && diagramLabelOf(node) === null && diagramGroupOf(node) === null
+      || (diagramEdgeOf(node) === null && diagramLabelOf(node) === null && diagramClusterOf(node) === null
         && diagramContainerOf(node)?.role !== 'lane' && sequencePartOf(node) === null);
   };
 }

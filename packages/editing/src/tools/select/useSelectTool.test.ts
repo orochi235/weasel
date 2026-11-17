@@ -11,7 +11,7 @@ type Mods = { alt: boolean; ctrl: boolean; meta: boolean; shift: boolean };
 const NO_MODS: Mods = { alt: false, ctrl: false, meta: false, shift: false };
 
 /** A `SelectionApi` stub exposing only what the two select actions touch. */
-function selectionStub(current: string[], policy: SelectPolicy = { mode: 'multi', toggle: 'shift' }) {
+function selectionStub(current: string[], policy: SelectPolicy = { mode: 'multiple', toggle: 'shift' }) {
   const applyClick = vi.fn();
   const set = vi.fn();
   const clear = vi.fn();
@@ -251,7 +251,7 @@ describe('useSelectTool', () => {
   });
 
   describe("under the selection's own keys: Cmd toggles, Shift ranges", () => {
-    const keys: SelectPolicy = { mode: 'multi', toggle: 'meta', range: 'shift' };
+    const keys: SelectPolicy = { mode: 'multiple', toggle: 'meta', range: 'shift' };
     const run = (tool: { actions?: readonly Action[] }, id: string, selection: unknown, mods: Partial<Mods>) => {
       const action = actionOf(tool, id);
       if (action.invoker?.timing !== 'immediate') throw new Error('expected immediate');
@@ -277,7 +277,7 @@ describe('useSelectTool', () => {
 
     it('a Shift-press that only replaces defers on a member of a multi-selection, as a plain press does', () => {
       const tool = mount({ pickEvery: () => ['a'] });
-      const sel = selectionStub(['a', 'b'], { mode: 'multi', toggle: 'meta' });
+      const sel = selectionStub(['a', 'b'], { mode: 'multiple', toggle: 'meta' });
       press(tool, sel.api, { mods: { shift: true } });
       expect(sel.applyClick).not.toHaveBeenCalled();
     });
@@ -288,10 +288,10 @@ describe('useSelectTool', () => {
       run(tool, 'select.deep', ranging.api, { meta: true, alt: true, shift: true });
       expect(ranging.applyClick).not.toHaveBeenCalled();
       // Shift is the anchor edit's own key, so the lock holds it even where the selection reads it as a replace.
-      const replacing = selectionStub(['a'], { mode: 'multi', toggle: 'meta' });
+      const replacing = selectionStub(['a'], { mode: 'multiple', toggle: 'meta' });
       run(tool, 'select.deep', replacing.api, { meta: true, alt: true, shift: true });
       expect(replacing.applyClick).not.toHaveBeenCalled();
-      const plain = selectionStub(['a'], { mode: 'multi', toggle: 'meta' });
+      const plain = selectionStub(['a'], { mode: 'multiple', toggle: 'meta' });
       run(tool, 'select.deep', plain.api, { meta: true, alt: true });
       expect(plain.applyClick).toHaveBeenCalledWith('a', { ctrl: false, meta: false, shift: false });
     });
@@ -382,7 +382,7 @@ describe('useSelectTool — press and drag bindings do not collide', () => {
 
   it('a Shift-press routed as a range hands applyClick what the tool counts as one', () => {
     const tool = mount({ pickEvery: () => ['a'], between: () => ['x', 'a'] });
-    const sel = selectionStub(['x'], { mode: 'multi', toggle: 'meta', range: 'shift' });
+    const sel = selectionStub(['x'], { mode: 'multiple', toggle: 'meta', range: 'shift' });
     press(tool, sel.api, { mods: { shift: true } });
     const between = sel.applyClick.mock.calls[0]?.[2] as (from: string, to: string) => readonly string[];
     expect(between('x', 'a')).toEqual(['x', 'a']);

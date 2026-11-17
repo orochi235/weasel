@@ -16,14 +16,14 @@ deliberately, but the pen and hit-test changes are close enough to matter.
 
 **A UI-driven ongoing action could commit twice.** `Dispatcher.beginUiOngoing`
 returns a control whose `end()` was guarded only by its own flag, while
-`cancelAll` — tool switch, Escape via `cancelGesture`, dispatcher teardown —
+`cancelAll` — tool switch, Escape via `dispatch.cancelAll`, dispatcher teardown —
 ends the handle behind the control's back. A color or opacity picker releasing
 afterwards ran `onEnd` again, committing over an already-cancelled gesture.
 `update()` had the mirror hole: it re-opened a preview nothing could then end.
 
 **`align.*` and `distribute.*` were permanently disabled.** Both declared
 `enabled: () => ActionDisabledReason.SelectionRequired`, a constant stub of
-exactly the kind `requiresSelection`'s docstring warns against, so
+exactly the kind `requiresOperands`'s docstring warns against, so
 `evaluateEnabled` greyed out all eight `<ActionBar>` entries no matter what was
 selected. Each predicate now reads the selection and matches its invoker's own
 guard (two nodes for align, three for distribute).

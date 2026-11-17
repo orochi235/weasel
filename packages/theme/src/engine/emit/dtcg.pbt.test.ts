@@ -4,7 +4,7 @@
  */
 import fc from 'fast-check';
 import { describe, expect, it } from 'vitest';
-import { enumerateSelections } from '../../axes';
+import { enumerateAxisChoices } from '../../axes';
 import { loadDTCG, type DtcgDocument } from '../../loadDTCG';
 import { chainTheme, outcome, runs, tally, timeoutFor } from '../../pbt.fixture';
 import { resolveTheme, themeAxes } from '../../resolveTheme';
@@ -20,7 +20,7 @@ describe('toDTCG and loadDTCG', () => {
         const doc = JSON.parse(JSON.stringify(toDTCG(theme))) as DtcgDocument;
         const back = loadDTCG({ ...doc, extends: theme.extends });
         expect(back.name).toBe(theme.name);
-        for (const sel of enumerateSelections(themeAxes(theme))) {
+        for (const sel of enumerateAxisChoices(themeAxes(theme))) {
           const want = outcome(() => resolveTheme(theme, sel));
           const got = outcome(() => resolveTheme(back, sel));
           t.count(typeof want === 'string' ? 'fails' : 'resolves');

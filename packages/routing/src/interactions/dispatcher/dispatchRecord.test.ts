@@ -90,7 +90,7 @@ function escapeScenario() {
   const run = { cancel: vi.fn(), escape: vi.fn(), reset: vi.fn(), exit: vi.fn() };
   const actions: Action[] = [
     {
-      id: 'cancelGesture', label: 'cancel',
+      id: 'dispatch.cancelAll', label: 'cancel',
       defaultBinding: { kind: 'key', key: 'Escape', phase: [{ channel: '*', phase: 'engaged' }] },
       invoker: { timing: 'immediate', run: run.cancel },
     },
@@ -155,7 +155,7 @@ describe('the dispatch record', () => {
       modifiers: { alt: false, ctrl: false, meta: false, shift: false },
       viewId: null, mode: 'path-edit',
     });
-    // cancelGesture's engaged phase does not match with nothing in flight.
+    // dispatch.cancelAll's engaged phase does not match with nothing in flight.
     expect(r.matched.map((c) => c.actionId)).toEqual(['escape', 'exitPathEdit', 'tool.resetToDefault']);
     expect(r.dropped).toEqual([]);
     expect(rows(r)).toEqual([

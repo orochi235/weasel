@@ -4,7 +4,7 @@ import type { BindingOptions, InvocationCtx } from '@weasel-js/routing';
 import { asNodeId, type AddNodeSpec, type NodeId, type RectPose } from '@weasel-js/core';
 import { PAGE_AForTests as PAGE_A, PAGE_BForTests as PAGE_B, ON_PAGEForTests as ON_PAGE, pagedSceneForTests as pagedScene } from '@weasel-js/core/test-seams';
 import { moveAction } from './action';
-import { unionOfChildren, createTransformOp } from '@weasel-js/core/engine';
+import { unionOfChildren, createSetPoseOp } from '@weasel-js/core/engine';
 import { resolveDrop } from './commit/reparent';
 import type { LayoutStrategy, SnapTarget } from '@weasel-js/core/engine';
 import { snapToContainer } from './behaviors/snapToContainer';
@@ -317,7 +317,7 @@ describe('a node following others, when a drop into a container moves what it fo
       getDropTargets: () => [{ pose: slot, origin: { x: slot.x, y: slot.y } }],
       reflowPoses: () => new Map(),
       commitDrop: (_c: unknown, _k: unknown, dragged: { id: string; originPose: RectPose }, target: { pose: RectPose }) =>
-        [createTransformOp<RectPose>({ id: dragged.id, from: dragged.originPose, to: target.pose, label: 'Drop' })],
+        [createSetPoseOp<RectPose>({ id: dragged.id, from: dragged.originPose, to: target.pose, label: 'Drop' })],
     } as unknown as LayoutStrategy<unknown>;
     const invoker = moveAction.invoker!;
     if (invoker.timing !== 'ongoing') throw new Error('expected ongoing');

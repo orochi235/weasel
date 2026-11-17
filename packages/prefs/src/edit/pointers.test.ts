@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import type { PrefGroup } from '@weasel-js/prefs';
 import { deadPointers, drawnLeaf, pointerTarget } from './pointers';
-import { CODE, pointer, SETTINGS } from '../testing/editWorkspace';
+import { CODE, pointer, SETTINGS } from '../testing/editAssetSet';
 
 describe('pointers', () => {
   it('names the setting at its path in the dialog', () => {

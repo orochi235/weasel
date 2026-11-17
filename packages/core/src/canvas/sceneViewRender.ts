@@ -118,7 +118,7 @@ function sceneAsHierarchy<TData, TLayer extends string, TPose>(
     getPose,
     ...(composePose ? { composePose } : {}),
     ...(childFrame ? { childFrame } : {}),
-    pickIdOf: (id) => pickIds.idOf(id),
+    pickIdOf: (id) => pickIds.pickIdOf(id),
   };
 }
 

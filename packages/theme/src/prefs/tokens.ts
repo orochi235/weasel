@@ -1,7 +1,7 @@
 // Every token of a theme as the prefs bridge reads it: what it is, and the CSS it resolves to at each selection.
 
 import { getOwn, setOwn } from '@weasel-js/registry';
-import { enumerateSelections, isByAxis, selectionKey, type AxisDefs, type Selection } from '../axes.ts';
+import { enumerateAxisChoices, isByAxis, axisChoiceKey, type AxisDefs, type AxisChoice } from '../axes.ts';
 import { TOKEN_MANIFEST, type TokenManifestEntry } from '../generated/manifest.ts';
 import { resolveTheme, themeAxes, themeChain } from '../resolveTheme.ts';
 import type { Theme } from '../theme.ts';
@@ -15,7 +15,7 @@ export interface TokenRow {
   readonly type: string;
   readonly group: string;
   readonly description: string;
-  /** The CSS it resolves to, by `selectionKey`. */
+  /** The CSS it resolves to, by `axisChoiceKey`. */
   readonly css: Readonly<Record<string, string>>;
   /** Axes its pref is scoped by even where its CSS does not differ along them: every `scope` its definitions give. */
   readonly scope?: readonly string[];
@@ -63,8 +63,8 @@ function declared(theme: Theme): Map<string, { type: string | undefined; descrip
  */
 export function tokenTable(theme: Theme): TokenTable {
   const axes = themeAxes(theme);
-  const resolved = enumerateSelections(axes).map(
-    (selection): [string, Record<string, string>] => [selectionKey(axes, selection), resolveTheme(theme, selection)],
+  const resolved = enumerateAxisChoices(axes).map(
+    (selection): [string, Record<string, string>] => [axisChoiceKey(axes, selection), resolveTheme(theme, selection)],
   );
   const own = declared(theme);
   const names = new Set<string>();
@@ -103,11 +103,11 @@ export function tokenTable(theme: Theme): TokenTable {
  */
 export function foldAxes(
   axes: AxisDefs,
-  at: (selection: Selection) => unknown,
+  at: (selection: AxisChoice) => unknown,
   split: (axis: string, members: Record<string, unknown>) => unknown,
 ): unknown {
   const entries = Object.entries(axes);
-  const walk = (i: number, selection: Selection): unknown => {
+  const walk = (i: number, selection: AxisChoice): unknown => {
     if (i === entries.length) return at(selection);
     const [axis, def] = entries[i]!;
     const members = Object.keys(def.values).map((value): [string, unknown] => [value, walk(i + 1, { ...selection, [axis]: value })]);

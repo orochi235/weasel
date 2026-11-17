@@ -1,5 +1,5 @@
 import type { SnapBegin, SnapConstrain, SnapDep, SnapMods, SnapOutcome, SnapSession } from 'interactions/actions/snapDep';
-import { inputSession } from './session2d';
+import { createBareSnapSession } from './session2d';
 import type { Point } from '@weasel-js/geom';
 
 /** A two-point gesture's snapping: a drawn line, a measurement, a box. */
@@ -36,7 +36,7 @@ export function spanSnap(
   constrain: () => SnapConstrain | undefined = () => undefined,
   common: Pick<SnapBegin, 'parent'> = {},
 ): SpanSnap {
-  const begin = (req: SnapBegin): SnapSession => dep?.begin(req) ?? inputSession(req);
+  const begin = (req: SnapBegin): SnapSession => dep?.begin(req) ?? createBareSnapSession(req);
   let raw: Point = { x: 0, y: 0 };
   let start: Point = raw;
   let held = false;

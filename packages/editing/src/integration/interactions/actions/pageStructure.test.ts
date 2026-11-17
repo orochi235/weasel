@@ -2,7 +2,7 @@
 import { describe, expect, it } from 'vitest';
 import { asNodeId, RECT_POSE_DESCRIPTOR, scenePoseFrame, pressTarget } from '@weasel-js/core/engine';
 import { ON_PAGEForTests as R, PAGE_AForTests as A, PAGE_BForTests as B, pagedSceneForTests as pagedScene } from '@weasel-js/core/test-seams';
-import { sceneToAdapter, hitTestArea } from '@weasel-js/core';
+import { sceneToAdapter, hitTestRect } from '@weasel-js/core';
 import { duplicateSelection, flipAction, selectAllAction, clipboardCutAction, groupAction, ungroupAction, makeBooleanGroupAction, deleteAction } from '@weasel-js/editing';
 import { pickContainer } from '../../../actions/move/layout/container';
 import type { RectPose } from '@weasel-js/core/engine';
@@ -83,7 +83,7 @@ describe('scene actions in a paged scene', () => {
     const selection = heldSelection([]);
     const tree = { getParent: (id: string) => scene.get(asNodeId(id))?.parent ?? null, getNode: (id: string) => scene.get(asNodeId(id)) };
     const dep = {
-      hitTestArea: (bounds: never) => hitTestArea(scene, bounds),
+      hitTestArea: (bounds: never) => hitTestRect(scene, bounds),
       targetOf: (id: string) => pressTarget(tree, id, null),
       getSelection: selection.get,
       setSelection: selection.set,

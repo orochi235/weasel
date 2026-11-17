@@ -1,0 +1,141 @@
+import type { PresetDescription } from '@weasel-js/prefs-schema';
+import { isPrefLeaf, isPrefSection } from '../index';
+import { bundleTree } from './bundleTree';
+import type { SchemaRoot } from './schemaEdit';
+import { sameList } from '@weasel-js/registry';
+
+/** The fields every asset in the editor's asset set carries. */
+export interface AssetBase {
+  id: string;
+  label: string;
+  root: SchemaRoot;
+  /** Shown and previewed, and refusing every edit. */
+  readOnly?: boolean;
+}
+
+/** A dialog's schema. */
+export interface SchemaAsset extends AssetBase {
+  kind: 'schema';
+  /** The scene node kind whose properties it holds. The list files it under Node properties, not Dialogs. */
+  nodeKind?: string;
+}
+
+/** A layout of pointers into a dialog. */
+export interface LayoutAsset extends AssetBase {
+  kind: 'layout';
+  /** The id of the `schema` asset its pointers name settings in. */
+  over: string;
+}
+
+/**
+ * The host's actions as the Actions pane lists them: a group of `action` prefs, each firing one by key, in the
+ * groups and the order the reader sorts them into. It is no dialog and no layout, so the asset list leaves it out,
+ * and an asset set's first is the one its editor uses.
+ */
+export interface ActionsAsset extends AssetBase {
+  kind: 'actions';
+}
+
+/**
+ * How the host's feature presets group their actions, tools, and atoms: a section per package, a group per bundle.
+ * Its export is a `weasel-bundles/1` document, not code.
+ */
+export interface BundlesAsset extends AssetBase {
+  kind: 'bundles';
+  /** The descriptions the tree was made from, which its export names as its base and its parts list offers. */
+  presets: readonly PresetDescription[];
+}
+
+/** A Bundles asset over `presets`, its tree made from them. */
+export function bundlesAsset(id: string, label: string, presets: readonly PresetDescription[]): BundlesAsset {
+  return { id, label, kind: 'bundles', presets, root: bundleTree(presets) };
+}
+
+/** An asset the editor shows in its structure tree, picked from the asset list. */
+export type ShownAsset = SchemaAsset | LayoutAsset | BundlesAsset;
+
+/** One thing the editor edits: a dialog, a layout over one, the host's feature bundles, or the catalog of its actions. */
+export type Asset = ShownAsset | ActionsAsset;
+
+/** What the asset list files an asset under. */
+export type AssetHeading = 'Dialogs' | 'Node properties' | 'Panels' | 'Toolbars' | 'Menus' | 'Bundles';
+
+/**
+ * Where the list files `asset`: the bundles; a dialog, or one holding a node kind's properties; a layout drawn as a menu, or as a bar of nothing but menus, which is a
+ * menu bar; a layout drawn as any other bar; or any other layout.
+ */
+export function headingOf(asset: ShownAsset): AssetHeading {
+  if (asset.kind === 'bundles') return 'Bundles';
+  if (asset.kind === 'schema') return asset.nodeKind === undefined ? 'Dialogs' : 'Node properties';
+  const root = asset.root;
+  if (!('as' in root)) return 'Panels';
+  if (root.as === 'menu') return 'Menus';
+  if (root.as !== 'bar') return 'Panels';
+  if (isPrefSection(root)) return 'Toolbars';
+  const kids = Object.values(root.children);
+  const menus = kids.length > 0 && kids.every((kid) => !isPrefLeaf(kid) && !isPrefSection(kid) && kid.as === 'menu');
+  return menus ? 'Menus' : 'Toolbars';
+}
+
+/** An asset some other editor holds, listed beside this one's to be picked. The host shows it, in whatever holds it. */
+export interface ListedAsset {
+  id: string;
+  label: string;
+  under: AssetHeading;
+  readOnly?: boolean;
+  /** It differs from its baseline, which only whatever holds it can say: listed as a changed asset of this editor's is. */
+  changed?: boolean;
+}
+
+/** Everything one editor holds: its dialogs, and the layouts that point into them. The set is the host's, and fixed. */
+export interface AssetSet {
+  readonly assets: readonly Asset[];
+}
+
+const NO_DIALOG: SchemaRoot = { name: '', children: {} };
+
+/**
+ * The root a layout's pointers name settings in, which holds none where the asset set has no such dialog.
+ * `undefined` for a dialog, whose aliases are of its own settings.
+ */
+export function overOf(assetSet: AssetSet, asset: Asset): SchemaRoot | undefined {
+  return asset.kind === 'layout' ? assetOf(assetSet, asset.over)?.root ?? NO_DIALOG : undefined;
+}
+
+/** The asset `id` names, or `undefined`. */
+export function assetOf(assetSet: AssetSet, id: string): Asset | undefined {
+  return assetSet.assets.find((a) => a.id === id);
+}
+
+/** Whether an asset is one the structure tree shows: all but the action catalog. */
+export const isShown = (asset: Asset): asset is ShownAsset => asset.kind !== 'actions';
+
+/** The assets the asset list offers, in the asset set's order. */
+export function shownAssets(assetSet: AssetSet): ShownAsset[] {
+  return assetSet.assets.filter(isShown);
+}
+
+/** The catalog of the host's actions, where the asset set holds one. */
+export function catalogOf(assetSet: AssetSet): ActionsAsset | undefined {
+  return assetSet.assets.find((a): a is ActionsAsset => a.kind === 'actions');
+}
+
+/**
+ * `current` with the roots `stepped` holds, by id: an undo step keeps the asset set as it was when the step was made,
+ * and what a host has said of an asset since (its label, its lock) is not the step's to take back. An asset
+ * `stepped` lacks keeps its root. `stepped` itself where it already says of every asset what `current` does.
+ */
+export function withRoots(current: AssetSet, stepped: AssetSet): AssetSet {
+  const said = (a: Asset, b: Asset): boolean => a.label === b.label && a.kind === b.kind && a.readOnly === b.readOnly && (a as LayoutAsset).over === (b as LayoutAsset).over;
+  const assets = current.assets.map((asset) => {
+    const was = assetOf(stepped, asset.id);
+    if (!was || was.root === asset.root) return asset;
+    return said(was, asset) ? was : { ...asset, root: was.root };
+  });
+  return sameList(assets, stepped.assets) ? stepped : { assets };
+}
+
+/** Whether two asset sets hold the same roots under the same ids, which is all a draft keeps of one. */
+export function sameRoots(a: AssetSet, b: AssetSet): boolean {
+  return a === b || (a.assets.length === b.assets.length && a.assets.every((asset, i) => asset.id === b.assets[i]!.id && asset.root === b.assets[i]!.root));
+}

@@ -1,5 +1,5 @@
 import type { WorldPoint } from '@weasel-js/routing';
-import { pickWalk, adapterPickSource, scenePlaneOf, centersBetween } from '@weasel-js/core';
+import { pickWalk, adapterPickSource, createLayerPlaneLookup, centersBetween } from '@weasel-js/core';
 import { AUTO_POSE_DESCRIPTOR } from '@weasel-js/core/engine';
 import type { PoseDescriptor } from '@weasel-js/core/engine';
 import type { Tool } from '@weasel-js/core';
@@ -23,7 +23,7 @@ function adapterPickEvery<TNode extends { id: string }, TPose>(
   const tolerance = options.pickTolerance ?? 0;
   return (world) => {
     const camera = options.getView?.() ?? null;
-    const planeOf = camera ? scenePlaneOf(adapter.getLayers?.(), camera) : null;
+    const planeOf = camera ? createLayerPlaneLookup(adapter.getLayers?.(), camera) : null;
     return pickWalk<TPose>(adapterPickSource(adapter, {
       ...(options.alphaOf ? { alphaOf: options.alphaOf } : {}),
       ...(options.layerIsPainted ? { layerIsPainted: options.layerIsPainted } : {}),

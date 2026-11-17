@@ -6,7 +6,7 @@
 import type { Bounds } from '@weasel-js/core';
 import { diagramContainerOf, titleIdOf } from './containers/trait';
 import { diagramEdgeOf } from './edgeTrait';
-import { diagramAnchorOf, diagramGroupOf } from './group';
+import { diagramAnchorOf, diagramClusterOf } from './clusterBox';
 import { diagramLabelOf } from './labelTrait';
 
 /** The scene reads a reorder makes. */
@@ -34,7 +34,7 @@ const depsOf = (node: { dependsOn?: unknown } | undefined): string[] =>
 function holders(scene: ReorderScene): Map<string, string> {
   const out = new Map<string, string>();
   for (const node of scene.renderOrderNodes()) {
-    if (diagramGroupOf(node) === null) continue;
+    if (diagramClusterOf(node) === null) continue;
     for (const dep of depsOf(node)) {
       const member = scene.get(dep);
       if (member !== undefined && diagramLabelOf(member) === null) out.set(dep, node.id);
@@ -46,7 +46,7 @@ function holders(scene: ReorderScene): Map<string, string> {
 /** The members of `holder`, the way {@link holderOf} counts them: a group's, or a container's children but its title. */
 export function membersOf(scene: ReorderScene, holder: string): string[] {
   const node = scene.get(holder);
-  const ids = node !== undefined && diagramGroupOf(node) !== null
+  const ids = node !== undefined && diagramClusterOf(node) !== null
     ? depsOf(node)
     : (scene.childrenOf?.(holder) ?? []).filter((id) => id !== titleIdOf(holder));
   return ids.filter((id) => {
@@ -65,7 +65,7 @@ function holderOf(scene: ReorderScene, held: ReadonlyMap<string, string>, id: st
 }
 
 const axisOf = (node: { data: unknown }): 'x' | 'y' | undefined =>
-  diagramGroupOf(node)?.reorder ?? diagramContainerOf(node)?.reorder;
+  diagramClusterOf(node)?.reorder ?? diagramContainerOf(node)?.reorder;
 
 /**
  * The reorderable group or container a press on `id` carries a member of: the
@@ -101,7 +101,7 @@ export function carriedWith(scene: ReorderScene, member: string): Set<string> {
     if (out.has(id)) return;
     out.add(id);
     const node = scene.get(id);
-    if (node !== undefined && diagramGroupOf(node) !== null) depsOf(node).forEach(visit);
+    if (node !== undefined && diagramClusterOf(node) !== null) depsOf(node).forEach(visit);
     scene.childrenOf?.(id).forEach(visit);
   };
   visit(member);

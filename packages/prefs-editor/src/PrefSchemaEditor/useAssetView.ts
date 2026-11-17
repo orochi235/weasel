@@ -1,13 +1,13 @@
 import { useEffect, useMemo, useRef, useState, type Dispatch, type SetStateAction } from 'react';
 import {
   assetOf, changedAsset, foldablePaths, foldsUnder, isShown, openAfterStep, pathsIn, type SchemaRoot, scopedPath,
-  type ShownAsset, shownAssets, type Workspace,
+  type ShownAsset, shownAssets, type AssetSet,
 } from '@weasel-js/prefs/edit';
 import { useEditorSelection, type EditorSelection } from './useEditorSelection';
 
 const NONE: readonly string[] = [];
 
-/** Which of a workspace's assets the editor shows, and the reader's view of it: the rows selected and the rows open. */
+/** Which of an asset set's assets the editor shows, and the reader's view of it: the rows selected and the rows open. */
 export interface AssetView {
   asset: ShownAsset;
   expanded: ReadonlySet<string>;
@@ -21,20 +21,20 @@ export interface AssetView {
   /** Take the selection a step of the history restores, for {@link AssetView.stepped} to apply. */
   restore(recorded: readonly string[]): void;
   /** After a step of the history from `before` to `after`: show the asset it changed, with the rows it restored. */
-  stepped(before: Workspace, after: Workspace): void;
+  stepped(before: AssetSet, after: AssetSet): void;
 }
 
 /**
- * The view of `workspace`, starting on the asset `startOn` names, or on its first. `opened` is the draft the editor mounts on, when it found
+ * The view of `assetSet`, starting on the asset `startOn` names, or on its first. `opened` is the draft the editor mounts on, when it found
  * one, and `draftKey` the name each asset's folded rows are kept beside; with none they are kept while the editor is up.
  */
-export function useAssetView(workspace: Workspace, opened: Workspace | undefined, draftKey: string | undefined, startOn?: string): AssetView {
+export function useAssetView(assetSet: AssetSet, opened: AssetSet | undefined, draftKey: string | undefined, startOn?: string): AssetView {
   const shown = (id: string): ShownAsset | undefined => {
-    const found = assetOf(workspace, id);
+    const found = assetOf(assetSet, id);
     return found && isShown(found) ? found : undefined;
   };
-  const [assetId, setAssetId] = useState((startOn !== undefined && shown(startOn)?.id) || shownAssets(workspace)[0]!.id);
-  const asset = shown(assetId) ?? shownAssets(workspace)[0]!;
+  const [assetId, setAssetId] = useState((startOn !== undefined && shown(startOn)?.id) || shownAssets(assetSet)[0]!.id);
+  const asset = shown(assetId) ?? shownAssets(assetSet)[0]!;
   const schema = asset.root;
   // Every row starts open but the ones the reader folded last time.
   const folds = useMemo(() => foldsUnder(draftKey), [draftKey]);

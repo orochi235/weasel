@@ -19,8 +19,8 @@ import { toolIdsOf, type Action, type ToolEntry } from '@weasel-js/routing';
 import { never } from 'domains/chrome-caps/conditions';
 import type { ChromeId, VisibilityRules } from 'domains/chrome-caps/types';
 import type { MoveBehavior } from 'interactions/gestures/types';
-import type { UseMoveOptions } from 'interactions/gestures/moveOptions';
-import type { UseRotateOptions } from 'interactions/gestures/rotateOptions';
+import type { MoveOptions } from 'interactions/actions/moveOptions';
+import type { RotateOptions } from 'interactions/actions/rotateOptions';
 import type { Contribution, Tool } from 'tools/overlayBinding';
 import type { PathEditExtension } from 'domains/paths/pathEditExtension';
 import type { SnapSource } from 'domains/snap/types';
@@ -72,8 +72,8 @@ export interface PresetBuild {
 /** What a preset's ambient bindings are built from: the `selectTool` options
  *  that configure them. */
 export interface FeatureBindingOptions {
-  move?: UseMoveOptions<unknown>;
-  rotate?: UseRotateOptions<unknown>;
+  move?: MoveOptions<unknown>;
+  rotate?: RotateOptions<unknown>;
 }
 
 /**

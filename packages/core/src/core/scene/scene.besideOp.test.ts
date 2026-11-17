@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { createTransformOp } from 'core/ops/transform';
+import { createSetPoseOp } from 'core/ops/setPose';
 import { createScene } from './scene';
 import { asNodeId } from './types';
 
@@ -22,7 +22,7 @@ function fixture() {
       if (id === A) scene.setPose(B, at(scene.get(B)!.pose.x + dx));
     },
   };
-  const move = (from: number, to: number) => createTransformOp<Pose>({ id: A, from: at(from), to: at(to) });
+  const move = (from: number, to: number) => createSetPoseOp<Pose>({ id: A, from: at(from), to: at(to) });
   const xs = (): number[] => [scene.get(A)!.pose.x, scene.get(B)!.pose.x];
   return { scene, adapter, move, xs };
 }
@@ -40,7 +40,7 @@ describe('Scene — a pose an adapter writes beside the one an op asked for', ()
 
   it('goes back where the op found it, whatever moved it since', () => {
     const { scene, adapter, move, xs } = fixture();
-    scene.applyBatch([move(0, 5), createTransformOp<Pose>({ id: B, from: at(100), to: at(150) })], 'Move', adapter);
+    scene.applyBatch([move(0, 5), createSetPoseOp<Pose>({ id: B, from: at(100), to: at(150) })], 'Move', adapter);
     expect(xs()).toEqual([5, 150]);
     scene.undo();
     expect(xs()).toEqual([0, 100]);

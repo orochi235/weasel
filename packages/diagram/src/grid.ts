@@ -16,7 +16,7 @@
 import type { Vec2 } from '@weasel-js/core/math';
 import { maxOf, minOf } from '@weasel-js/geom';
 import { getOwn } from '@weasel-js/registry';
-import type { Graph, GraphGroup } from './graph';
+import type { Graph, GraphCluster } from './graph';
 import { DEFAULT_NODE_GAP, graphOrder, pinnedSet, translated, type LayoutFn } from './layout';
 
 /** How `grid` fills its cells. Ids are node and group ids. */
@@ -103,7 +103,7 @@ export const grid: LayoutFn = (graph, opts = {}) => {
   const rowGap = opts.rankGap ?? gap;
   const spec = opts.grid ?? {};
   const byLevel = levels(graph);
-  const groups = new Map<string, GraphGroup>((graph.groups ?? []).map((g) => [g.id, g]));
+  const groups = new Map<string, GraphCluster>((graph.groups ?? []).map((g) => [g.id, g]));
   // Each group's inner grid, laid out innermost first, relative to its box's corner.
   const inner = new Map<string, { at: Map<string, Vec2>; size: Size }>();
   const sizeOf = (id: string): Size => {

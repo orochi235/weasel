@@ -13,7 +13,7 @@ import { PrefConditionEditor, prefConditionFlow } from '@weasel-js/ui/components
 // after
 import { AssetEditor, PrefConditionEditor } from '@weasel-js/prefs-editor';
 import '@weasel-js/prefs-editor/style.css';
-import { prefConditionFlow, workspaceCodec, type Workspace } from '@weasel-js/prefs/edit';
+import { prefConditionFlow, assetSetCodec, type AssetSet } from '@weasel-js/prefs/edit';
 ```
 
 <!-- entry: rank=5 breaking api -->

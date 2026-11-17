@@ -7,7 +7,7 @@ import { renderThenAbandon } from '@weasel-js/react/testing/abandonRender';
 
 // Import depSchema augmentation so DepSchema entries are typed
 import '@weasel-js/core';
-import { requiresSelection } from '@weasel-js/core';
+import { requiresOperands } from '@weasel-js/core';
 import { useStandardActions, KIT_STANDARD_ACTION_IDS, type UseStandardActionsOptions } from '@weasel-js/editing';
 
 // ---------------------------------------------------------------------------
@@ -52,7 +52,7 @@ function ProbeDepSelection({ onValue }: { onValue: (v: unknown) => void }) {
 // Kit-standard descriptor IDs
 // ---------------------------------------------------------------------------
 const KIT_IDS = [
-  'escape', 'menu.context', 'cancelGesture', 'selectAll', 'delete', 'duplicate', 'transformAgain',
+  'deselect', 'menu.context', 'dispatch.cancelAll', 'selectAll', 'delete', 'duplicate', 'transformAgain',
   'group', 'ungroup',
   'undo', 'redo',
   'flip',
@@ -65,7 +65,7 @@ const KIT_IDS = [
   'pathfinder.trim', 'pathfinder.merge', 'pathfinder.booleanGroup',
   'move',
   'resize', 'rotate', 'areaSelect', 'insert', 'place', 'insert.adjustRotation', 'insert.reposition', 'clone',
-  'lassoSelect', 'viewport.pinchZoom',
+  'lassoSelect', 'viewport.touchZoom',
   // viewport.pan / viewport.zoom are registered conditionally by SceneCanvas's
   // useViewportActions, not by useStandardActions — see useViewportActions.ts.
   'viewport.dragPan',
@@ -180,7 +180,7 @@ describe('useStandardActions', () => {
     expect(seen.at(-1)!).toContain('align.left');
   });
 
-  it('every descriptor gated on `requiresSelection` declares the `operands` dep', () => {
+  it('every descriptor gated on `requiresOperands` declares the `operands` dep', () => {
     // The gate reads `deps.selection`, and the dev-build deps Proxy throws on
     // an undeclared read — before the gate can answer, so the action silently
     // never fires. `duplicate` shipped that way (Cmd+D did nothing) until
@@ -193,7 +193,7 @@ describe('useStandardActions', () => {
     }
     render(<Providers><Host /><ProbeAll /></Providers>);
     const offenders = list
-      .filter((a) => a.enabled === requiresSelection)
+      .filter((a) => a.enabled === requiresOperands)
       .filter((a) => !(a.requires ?? []).includes('operands'))
       .map((a) => a.id);
     expect(offenders).toEqual([]);
@@ -238,7 +238,7 @@ describe('useStandardActions', () => {
       </Providers>,
     );
     expect(reg).not.toBeNull();
-    reg!.trigger('escape');
+    reg!.trigger('deselect');
     expect(mockSet).toHaveBeenCalledWith([]);
   });
 
@@ -256,7 +256,7 @@ describe('useStandardActions', () => {
         <CaptureReg />
       </Providers>,
     );
-    reg!.trigger('escape');
+    reg!.trigger('deselect');
     expect(mockSet).not.toHaveBeenCalled();
   });
 
@@ -273,9 +273,9 @@ describe('useStandardActions', () => {
         <Probe />
       </Providers>,
     );
-    expect(seen).toContain('escape');
+    expect(seen).toContain('deselect');
     rerender(<Providers><Probe /></Providers>);
-    expect(seen).not.toContain('escape');
+    expect(seen).not.toContain('deselect');
     expect(seen).toEqual([]);
   });
 

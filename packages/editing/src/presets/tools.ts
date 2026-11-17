@@ -27,7 +27,7 @@ export const selectToolKitPreset: FeaturePreset = {
       select: createSelectToolWith(() => ctx.adapter() as unknown as SelectAdapter<{ id: string }, unknown>, () => {
         const { pickBest, extendClickLocked } = ctx.selectTool();
         return {
-          pickEvery: ctx.pick.pressEvery, between: ctx.pick.between,
+          pickEvery: ctx.pick.everyIn, between: ctx.pick.between,
           ...(pickBest ? { pickBest } : {}), ...(extendClickLocked ? { extendClickLocked } : {}),
         };
       }),

@@ -22,7 +22,7 @@ It is the worked example of a `SurfaceContribution` that uses every role:
 | Role | What it holds |
 |---|---|
 | `views` | The minimap: a `<CanvasView>` at `rect`, its camera a fit over the scene |
-| `actions` | `minimap.center` (press) and `minimap.pan` (drag), which move `rootView`; and, unless `zoom: false`, `minimap.zoom` (wheel and trackpad pinch), which zooms it about the point under the cursor, and `minimap.pinch` (two-finger touch pinch), which zooms it about the point between the fingers |
+| `actions` | `minimap.center` (press) and `minimap.pan` (drag), which move `rootView`; and, unless `zoom: false`, `minimap.zoom` (wheel and trackpad pinch), which zooms it about the point under the cursor, and `minimap.touchZoom` (two-finger touch pinch), which zooms it about the point between the fingers |
 | `bindings` | `pointerDown`, `drag`, `wheel`, `pinch` and `multiTouch`, scoped with `views: [id]` so they outrank the active tool inside the minimap and never fire outside it |
 | `overlay` | The visible-rect indicator, painted only in the minimap; the linked crosshair, painted in whichever view the pointer is not over |
 | `attach` | Reads the `scene` and `pointer` deps, and repaints while the crosshair shows |
@@ -46,7 +46,7 @@ around it and the main canvas, and give the main canvas
 Inside the minimap's view, the `view` dep answers the minimap's camera — that
 is what lets every other action work in a view. An action there that must move
 the main camera reads `rootView`, never `view`; `viewport.dragPan` reads `view`
-and so pans whichever view the drag lands in. `minimap.pinch` reads both: `view`
+and so pans whichever view the drag lands in. `minimap.touchZoom` reads both: `view`
 to find the world point between the fingers, `rootView` to zoom about it.
 
 A secondary view with a dispatcher of its own answers the same pair: its own

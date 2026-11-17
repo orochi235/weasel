@@ -2,7 +2,7 @@ import { rectBetween } from '@weasel-js/geom';
 import type { Action, InvocationCtx, OngoingHandle, OngoingOverlay } from '@weasel-js/routing';
 import type { NodeId } from '@weasel-js/core';
 import type { AreaSelectDep, ViewApi } from '@weasel-js/core/engine';
-import { hitTargets, selectionFromHits, finiteThroughout } from '@weasel-js/core';
+import { targetsOf, selectionFromHits, finiteThroughout } from '@weasel-js/core';
 
 interface AreaSelectScratch {
   dep: AreaSelectDep;
@@ -98,7 +98,7 @@ export const areaSelectAction: Action & { requires: string[] } = {
             return;
           }
 
-          const hits = hitTargets(d.hitTestArea(area, view), d.targetOf) as NodeId[];
+          const hits = targetsOf(d.hitTestArea(area, view), d.targetOf) as NodeId[];
 
           d.setSelection(selectionFromHits(d.getSelection(), hits, shiftHeld));
         },

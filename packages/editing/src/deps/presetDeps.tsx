@@ -1,4 +1,4 @@
-import type { PresetComponentProps, UseResizeOptions } from '@weasel-js/core';
+import type { PresetComponentProps, ResizeOptions } from '@weasel-js/core';
 import { useLiveOperands } from '@weasel-js/core';
 import { useAreaSelectDepSource } from './areaSelect';
 import { useBooleansAdapterSource } from './booleans';
@@ -24,10 +24,10 @@ export function InsertDeps({ canvas }: PresetComponentProps) {
 /** Publishes the `resizePolicy` dep from `<SceneCanvas selectTool.resize>`, when it is given. */
 export function ResizePolicyDeps({ canvas }: PresetComponentProps) {
   const resize = canvas.selectTool().resize;
-  return resize ? <ResizePolicy options={resize as UseResizeOptions<unknown>} /> : null;
+  return resize ? <ResizePolicy options={resize as ResizeOptions<unknown>} /> : null;
 }
 
-function ResizePolicy({ options }: { options: UseResizeOptions<unknown> }) {
+function ResizePolicy({ options }: { options: ResizeOptions<unknown> }) {
   useResizePolicy<unknown>(resizePolicyOptions(options));
   return null;
 }

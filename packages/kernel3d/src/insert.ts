@@ -1,7 +1,7 @@
 /** The `insert` dep over a 3D world: a drag becomes a footprint on the ground. */
 
 import type { InsertDep, InsertEnds, InsertExtras, CommitSelection } from '@weasel-js/core/engine';
-import { commitSelectionOps, createInsertOp, defaultCommitAdapter } from '@weasel-js/core/engine';
+import { createCommitSelectionOps, createInsertOp, defaultCommitAdapter } from '@weasel-js/core/engine';
 import type { NodeId } from '@weasel-js/routing';
 import { scale as scaleBy, sub, type Vec3 } from '@weasel-js/geom/3d';
 import { groundAxes, groundHit } from './ground';
@@ -86,7 +86,7 @@ export type InsertOptions<TData = unknown, TLayer extends string = string> = {
   }
   | {
     /** Makes the node and commits it. Given `select`, it commits that selection change with the node, in the
-     *  same batch when it applies ops (`commitSelectionOps`). `node` does all of this for you. */
+     *  same batch when it applies ops (`createCommitSelectionOps`). `node` does all of this for you. */
     mint: (footprint: Footprint, extras: InsertExtras, select?: CommitSelection) => NodeId | null;
     node?: never;
     selection?: never;
@@ -125,7 +125,7 @@ function nodeMinter<TData, TLayer extends string>(
       const built = build(footprint, extras);
       if (!built) return null;
       const label = `Insert ${extras.kind}`;
-      const ops = [...built.ops, ...commitSelectionOps(select, built.id, label)];
+      const ops = [...built.ops, ...createCommitSelectionOps(select, built.id, label)];
       const adapter = defaultCommitAdapter(scene as never, selection && {
         getSelection: () => [...selection.get()],
         setSelection: (ids) => selection.set(ids),

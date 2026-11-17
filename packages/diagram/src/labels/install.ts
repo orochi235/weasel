@@ -19,7 +19,7 @@ import { PATH_M, type Path, type Vec2 } from '@weasel-js/core/math';
 import type { MeasureRowText } from '../body';
 import { diagramContainerOf } from '../containers/trait';
 import { diagramEdgeOf } from '../edgeTrait';
-import { diagramGroupOf } from '../group';
+import { diagramClusterOf } from '../clusterBox';
 import { diagramLabelOf, type DiagramLabel, type LabelSpot } from '../labelTrait';
 import type { Bounds } from '../outline';
 import { DIAGRAM_PASS_ORDER } from '../passOrder';
@@ -84,7 +84,7 @@ function read(
       if (ends[0] !== undefined) out.labels.push({ id: node.id, edge: ends[0], placement, size: { width, height }, node });
       continue;
     }
-    if (diagramContainerOf(node) !== null || diagramGroupOf(node) !== null || diagramNodeOf(node as never, reader) === null) continue;
+    if (diagramContainerOf(node) !== null || diagramClusterOf(node) !== null || diagramNodeOf(node as never, reader) === null) continue;
     out.shapes.push({ id: node.id, box: geometry.getBounds(documentPose(sc, node as never)) });
   }
   return out;

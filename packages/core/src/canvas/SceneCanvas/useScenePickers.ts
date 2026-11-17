@@ -9,7 +9,7 @@ import { useCallback, useMemo } from 'react';
 import { useKitSetting, useLatest } from '@weasel-js/react';
 import type { SceneCanvasAdapter } from '../sceneAdapter';
 import {
-  passesPickGates, pickWalk, scenePickSource, scenePlaneOf, type PickCandidate, type ViewPickGates,
+  passesPickGates, pickWalk, scenePickSource, createLayerPlaneLookup, type PickCandidate, type ViewPickGates,
 } from 'canvas/pickWalk';
 import { rectFromPlane, type PlaneMap } from 'core/viewport/parallax';
 import type { View } from 'core/viewport/view';
@@ -19,7 +19,7 @@ import { rangeAmong, type SelectRangeDep } from 'canvas/selectRange';
 import { topmostOf, type TopmostTree } from 'canvas/topmostOf';
 import type { Scene } from 'core/scene/types';
 import { asNodeId } from 'core/scene/types';
-import type { UseMoveOptions } from 'interactions/gestures/moveOptions';
+import type { MoveOptions } from 'interactions/actions/moveOptions';
 import type { PoseDescriptor } from 'core/geometry/poseDescriptor';
 import { drawnBoundsOf } from 'canvas/drawnBounds';
 import { AUTO_POSE_DESCRIPTOR } from 'core/geometry/autoPoseDescriptor';
@@ -93,7 +93,7 @@ export interface UseScenePickersArgs<TData, TLayer extends string, TPose> {
    *  they cannot be read at once (WebGPU), the pick walks the shapes instead. */
   readIds?: () => CanvasExtensionApi['readIdsSync'] | null;
   /** `<SceneCanvas selectTool>`, whose `move` the `move` preset's bindings carry. */
-  selectTool?: { move?: UseMoveOptions<TPose> };
+  selectTool?: { move?: MoveOptions<TPose> };
 }
 
 /** `id` drawn at `pose`, in world, as the chrome boxes it. */
@@ -144,11 +144,11 @@ export interface ScenePickers<TPose> {
   /** What a range click covers, as the select tool ranges: the `selectRange` dep. */
   selectRange: SelectRangeDep;
   /** Every id a press routed to `viewId`'s view lands on, back to front: what the select tool picks from. */
-  pressEvery: (world: WorldPoint, viewId?: string | null) => string[];
+  pickEveryIn: (world: WorldPoint, viewId?: string | null) => string[];
   /** The nodes a range press from `from` to `to` covers. */
   between: (from: string, to: string) => readonly string[];
   /** `selectTool.move` — what the `move` preset's bindings carry. */
-  moveOptions: UseMoveOptions<TPose>;
+  moveOptions: MoveOptions<TPose>;
 }
 
 export function useScenePickers<TData, TLayer extends string, TPose>(
@@ -168,7 +168,7 @@ export function useScenePickers<TData, TLayer extends string, TPose>(
   const pickTolerancePx = geometry?.pickTolerancePx ?? kitPickTolerancePx ?? DEFAULT_PICK_TOLERANCE_PX;
   const includeStroke = geometry?.boundsIncludeStroke ?? true;
   const moveOptions = opts?.move;
-  const wiredMoveOptions = useMemo<UseMoveOptions<TPose>>(() => moveOptions ?? {}, [moveOptions]);
+  const wiredMoveOptions = useMemo<MoveOptions<TPose>>(() => moveOptions ?? {}, [moveOptions]);
 
   const wiredHitBody = usePointPick({
     scene, d, pickEveryProp, shapePicking, pickTolerancePx, getView,
@@ -185,7 +185,7 @@ export function useScenePickers<TData, TLayer extends string, TPose>(
       const n = scene.get(asNodeId(id));
       const camera = cameraOf(view ?? getViewRef.current?.() ?? null);
       if (!n || !camera) return null;
-      return scenePlaneOf(scene.layers, camera)?.(n.layer) ?? null;
+      return createLayerPlaneLookup(scene.layers, camera)?.(n.layer) ?? null;
     };
   }, [scene, getViewRef]);
 
@@ -254,7 +254,7 @@ export function useScenePickers<TData, TLayer extends string, TPose>(
     planeOfNode: wiredPlaneOfNode,
     moveOptions: wiredMoveOptions,
     selectRange,
-    pressEvery: pressPick,
+    pickEveryIn: pressPick,
     between,
   };
 }

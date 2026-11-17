@@ -4,12 +4,12 @@
  * builds their specs.
  */
 import type { Vec2 } from '@weasel-js/core/math';
-import type { GroupInset } from './cluster';
+import type { ClusterInset } from './cluster';
 import { CONTAINER_HEADER } from './containers/layouts';
 import { MIN_LANE_SIZE } from './containers/laneStack';
 import type { ContainerRole } from './containers/trait';
 import { DEFAULT_LANE_SIZE, DEFAULT_POOL_ACROSS, type DataContainer, type NodeStyle } from './dataTypes';
-import type { GraphGroup, GraphNode } from './graph';
+import type { GraphCluster, GraphNode } from './graph';
 import type { Rect } from '@weasel-js/geom';
 
 /** A container's size when it gives no box and holds nothing to fit. */
@@ -118,7 +118,7 @@ export interface ContainerLayout {
   /** Each outermost boxed region, as one node at its box. */
   nodes: GraphNode[];
   /** Each fitted container outside every boxed region, kept together as a group. */
-  groups: GraphGroup[];
+  groups: GraphCluster[];
   /** The fitted container each node layout sees is directly inside. */
   groupOf: ReadonlyMap<string, string>;
   /** Every node and region inside a boxed region, which layout does not see. */
@@ -128,7 +128,7 @@ export interface ContainerLayout {
 }
 
 /** The inset a fitted container keeps around what it holds: its header, and `pad` all round. */
-export const fittedInset = (pad: number): GroupInset => ({ top: CONTAINER_HEADER.size + pad, right: pad, bottom: pad, left: pad });
+export const fittedInset = (pad: number): ClusterInset => ({ top: CONTAINER_HEADER.size + pad, right: pad, bottom: pad, left: pad });
 
 /** A pool's lane sizes along its stack, the lanes giving none sharing what the box leaves. */
 export function laneSizes(lanes: readonly DataRegion[], along: number | undefined): number[] {
@@ -183,7 +183,7 @@ export function containerLayoutNodes(
   const seen = (id: string) => !hidden.has(id) && !(byId.get(id)?.fitted ?? false);
   const below = (r: DataRegion): string[] =>
     r.direct.flatMap((id) => (seen(id) ? [id] : byId.get(id)?.fitted === true && !hidden.has(id) ? below(byId.get(id)!) : []));
-  const groups: GraphGroup[] = [];
+  const groups: GraphCluster[] = [];
   const groupOf = new Map<string, string>();
   for (const r of regions) {
     if (!r.fitted || hidden.has(r.id) || rootOf.has(r.id)) continue;

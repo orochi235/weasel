@@ -17,7 +17,7 @@ import { paintMissesView } from './paintCull';
 import { findNodeShape, findShapeSilhouette, shapeCoversPoint } from './NodeShape';
 import { wrapNodeOutput } from './wrapNodeOutput';
 import { poseContains, poseContainsRotated } from './SceneCanvas/poseGeometry';
-import { hitTestArea } from './deps/hitTestArea';
+import { hitTestRect } from './deps/hitTestArea';
 
 // A 40 x 12 box centered at (20, 6), drawn four times as wide: x from -60 to 100.
 const STRETCHED: RectPose = { x: 0, y: 0, width: 40, height: 12, transform: [4, 0, 0, 1] };
@@ -148,6 +148,6 @@ describe('picking', () => {
     const scene = createScene<{ kind: string }, 'main', RectPose>({ systemLayers: [{ id: 'main' }] });
     scene.add({ kind: 'mark', layer: 'main', id: asNodeId('plain'), pose: PLAIN, data: { kind: 'rect' } });
     scene.add({ kind: 'mark', layer: 'main', id: asNodeId('wide'), pose: STRETCHED, data: { kind: 'rect' } });
-    expect(hitTestArea(scene as never, { x: 80, y: 2, width: 10, height: 4 })).toEqual(['wide']);
+    expect(hitTestRect(scene as never, { x: 80, y: 2, width: 10, height: 4 })).toEqual(['wide']);
   });
 });

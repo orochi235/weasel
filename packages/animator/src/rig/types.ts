@@ -26,7 +26,7 @@ export interface Skeleton {
 
 /** Local deltas from the bind pose, keyed by joint name. Absent joints and
  *  absent fields mean "no change from bind". */
-export type Pose = Record<string, Partial<JointTransform>>;
+export type SkeletonPose = Record<string, Partial<JointTransform>>;
 
 /** The transform that changes nothing: origin, no rotation, unit scale. */
 export const IDENTITY_JOINT: JointTransform = {

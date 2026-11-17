@@ -1,7 +1,7 @@
 import { getOwn, setOwn } from '@weasel-js/registry';
 import { axisIndexes } from '../axisNames';
 import type { TargetAxes } from '../target';
-import { IDENTITY_JOINT, type JointTransform, type Pose, type Skeleton } from './types';
+import { IDENTITY_JOINT, type JointTransform, type SkeletonPose, type Skeleton } from './types';
 
 const FIELDS = ['x', 'y', 'rotation', 'scaleX', 'scaleY'] as const satisfies readonly (keyof JointTransform)[];
 const ROTATION = FIELDS.indexOf('rotation');
@@ -25,14 +25,14 @@ export function jointAxes(skeleton: Skeleton, joints: readonly string[]): number
 }
 
 /**
- * How a {@link Pose} of `skeleton` maps to the numbers an animation moves: five per joint in
+ * How a {@link SkeletonPose} of `skeleton` maps to the numbers an animation moves: five per joint in
  * skeleton order (`x`, `y`, `rotation`, `scaleX`, `scaleY`), every rotation an angle, so a pose
  * blends the short way round. Each axis is named `<joint>.<field>`, so `axes: ['knee']` on a hold
  * reaches a joint's five and `['knee.rotation']` one of them. A joint or field the pose leaves out reads as its identity, and a
  * pose read back names every joint in full. Pass it as `axes` to `createTarget` for a pose target
  * of your own; a bound rig's is `Rig.target`.
  */
-export function skeletonAxes(skeleton: Skeleton): TargetAxes<Pose> {
+export function skeletonAxes(skeleton: Skeleton): TargetAxes<SkeletonPose> {
   const names = skeleton.joints.map((j) => j.name);
   const n = FIELDS.length;
   const paths = axisPaths(skeleton);
@@ -50,7 +50,7 @@ export function skeletonAxes(skeleton: Skeleton): TargetAxes<Pose> {
       return out;
     },
     add(pose, delta) {
-      const out: Pose = {};
+      const out: SkeletonPose = {};
       for (let j = 0; j < names.length; j++) {
         const joint = getOwn(pose, names[j]!);
         const at = j * n;
@@ -71,7 +71,7 @@ export function skeletonAxes(skeleton: Skeleton): TargetAxes<Pose> {
       }
     },
     from(axes) {
-      const pose: Pose = {};
+      const pose: SkeletonPose = {};
       for (let j = 0; j < names.length; j++) {
         const at = j * n;
         setOwn(pose, names[j]!, { x: axes[at]!, y: axes[at + 1]!, rotation: axes[at + 2]!, scaleX: axes[at + 3]!, scaleY: axes[at + 4]! });

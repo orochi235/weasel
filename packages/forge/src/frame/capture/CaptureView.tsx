@@ -1,7 +1,7 @@
 import './capture.css';
 import { useLatest, useVisibleRaf } from '@weasel-js/core';
 import { interstellarTheme, LabRoot } from '@weasel-js/labkit';
-import { declaredSelection, type Theme } from '@weasel-js/theme';
+import { declaredAxisChoice, type Theme } from '@weasel-js/theme';
 import { ThemeProvider } from '@weasel-js/theme/react';
 import { OverlayPortalProvider } from '@weasel-js/ui/portal-host';
 import { type CSSProperties, type ReactNode, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
@@ -152,7 +152,7 @@ export function CaptureView({ subject, graph = null, payload, setup, labTheme, o
   if (payload.isolate) return box;
   const theme = labTheme?.(payload.lab.globals) ?? interstellarTheme;
   return (
-    <ThemeProvider theme={theme} selection={declaredSelection(theme, { mode: payload.lab.mode, density: LAB_DENSITY })}>
+    <ThemeProvider theme={theme} selection={declaredAxisChoice(theme, { mode: payload.lab.mode, density: LAB_DENSITY })}>
       <LabRoot>{box}</LabRoot>
     </ThemeProvider>
   );

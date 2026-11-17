@@ -80,13 +80,20 @@ export function collectBundles(): readonly BundleEntry[] {
   });
 }
 
-/** The `createXOp` barrel export behind each registered op kind. The kit
- *  names every factory after its op kind, so the registry drives this list;
- *  the `typeof` guard turns a break in that convention into a missing row
- *  rather than a crash, and `registryData.test.ts` fails when it breaks. */
+/** Op kinds whose factory is not named after them: `transform` keeps its recorded name, so saved histories replay. */
+const FACTORY_NAMES: Readonly<Record<string, string>> = { transform: 'createSetPoseOp' };
+
+/** The barrel export that builds op kind `kind`: `create<Kind>Op`, but for {@link FACTORY_NAMES}. */
+export function opFactoryNameFor(kind: string): string {
+  return getOwn(FACTORY_NAMES, kind) ?? `create${kind[0]!.toUpperCase()}${kind.slice(1)}Op`;
+}
+
+/** The `createXOp` barrel export behind each registered op kind, so the registry drives this list;
+ *  the `typeof` guard turns a missing factory into a missing row rather than a crash, and
+ *  `registryData.test.ts` fails when one goes missing. */
 export function collectOpFactories(): readonly OpFactoryEntry[] {
   return Weasel.defaultOpRegistry.entries().map((e) => e.key)
-    .map((name) => `create${name[0]!.toUpperCase()}${name.slice(1)}Op`)
+    .map(opFactoryNameFor)
     .filter((name) => typeof getOwn(Weasel as unknown as Record<string, unknown>, name) === 'function')
     .map((id) => ({ kind: 'opFactory', id, label: id }));
 }

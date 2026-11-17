@@ -124,7 +124,7 @@ export function scenePickSource<TData, TLayer extends string, TPose>(
         ((node as { dependsOn?: unknown }).dependsOn === undefined ? null : shownPathOf(node))
       : shownPathOf;
 
-  const planeOf = opts.camera ? scenePlaneOf(scene.layers, opts.camera) : null;
+  const planeOf = opts.camera ? createLayerPlaneLookup(scene.layers, opts.camera) : null;
 
   // The index boxes nodes at the scene's painted poses; a custom `getPose` must be shown to agree first.
   // A partial stand-in has no versions for it to key on.
@@ -157,7 +157,7 @@ export function scenePickSource<TData, TLayer extends string, TPose>(
 
 /** Each parallax layer's plane map under `camera`, or null when no layer is a
  *  plane — which keeps the per-layer lookup off the walk entirely. */
-export function scenePlaneOf(
+export function createLayerPlaneLookup(
   layers: readonly { id: string; parallax?: ParallaxOptions }[] | undefined,
   camera: View,
 ): ((layer: string) => PlaneMap | null) | null {

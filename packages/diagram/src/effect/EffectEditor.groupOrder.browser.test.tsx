@@ -4,7 +4,7 @@ import { createRoot, type Root } from 'react-dom/client';
 import { afterEach, describe, expect, it } from 'vitest';
 import { viewToTransform, type RectPose } from '@weasel-js/core';
 import { registerCanvasFont } from '@weasel-js/font';
-import { groupLabelIdOf } from '@weasel-js/diagram/testing/dataGroups';
+import { clusterLabelIdOf } from '@weasel-js/diagram/testing/dataClusters';
 import { fitDiagram } from '@weasel-js/diagram';
 import { diagramScene } from '@weasel-js/diagram';
 import { EFFECT_MIN_SCALE, EffectEditor, editorScene, mainChain } from '@weasel-js/diagram/effect';
@@ -116,7 +116,7 @@ describe('<EffectEditor> group reorder', () => {
   it.each(['rack', 'lanes'] as const)('drags a group by its title past the next stage under %s', async (look) => {
     const { changes, drag } = await mount(look);
     const { box, screen, center } = drawn(look);
-    const from = center(groupLabelIdOf('g'));
+    const from = center(clusterLabelIdOf('g'));
     const [g, c] = [box('g'), box('c')];
     // Far enough that the group's middle, not the press, passes c's far edge.
     const by = screen({ x: c.x + c.width + 4, y: 0 }).x - screen({ x: g.x + g.width / 2, y: 0 }).x;
@@ -144,7 +144,7 @@ describe('<EffectEditor> group reorder', () => {
 describe('<EffectEditor> group rename under rack and lanes', () => {
   it.each(['rack', 'lanes'] as const)('renames a group from a field opened by double-clicking its title under %s', async (look) => {
     const { changes, doubleClick, field, type } = await mount(look);
-    await doubleClick(drawn(look).center(groupLabelIdOf('g')));
+    await doubleClick(drawn(look).center(clusterLabelIdOf('g')));
     await expect.poll(field).not.toBeNull();
     expect(document.activeElement).toBe(field());
     await type('Duo');

@@ -31,7 +31,7 @@ export const Selectable: Story = {
     return (
       <div className={s.list}>
         <ItemList {...args}
-          selection="single"
+          selectionMode="single"
           containerProps={{ 'aria-label': 'History' }}
           onActivate={setCurrent}
           rows={['Initial', 'Draw rect', 'Fill', 'Move'].map((label, i) => ({
@@ -82,7 +82,7 @@ export const Reorder: Story = {
       <div className={s.list}>
         <ItemList {...args}
           ref={drag.containerProps.ref}
-          selection="multi"
+          selectionMode="multiple"
           containerProps={{ 'aria-label': 'Layers' }}
           onActivate={(id, _i, mods) => press(id, mods)}
           onSelectRange={setSelected}
@@ -114,7 +114,7 @@ export const WithControls: Story = {
     return (
       <div className={s.wide}>
         <ItemList {...args}
-          selection="single"
+          selectionMode="single"
           containerProps={{ 'aria-label': 'Layers' }}
           onActivate={setSelected}
           rows={['Background', 'Sketch', 'Ink'].map((label, i) => {

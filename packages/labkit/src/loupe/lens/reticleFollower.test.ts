@@ -1,4 +1,4 @@
-import { createTransformOp, effectivePose, type Op, sceneToAdapter } from '@weasel-js/core';
+import { createSetPoseOp, effectivePose, type Op, sceneToAdapter } from '@weasel-js/core';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { addLensOps, createLensScene, setAimOps } from './lensScene';
 import type { LensScene } from './lensTypes';
@@ -28,7 +28,7 @@ describe('reticleFollower', () => {
   });
 
   it('finishes a resize with the reticle, so one undo puts both back', () => {
-    const resize = createTransformOp({
+    const resize = createSetPoseOp({
       id: 'a:body',
       from: poseOf('a:body'),
       to: wider,

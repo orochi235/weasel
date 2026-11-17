@@ -1,10 +1,10 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, screen, within } from '@testing-library/react';
 import {
-  asset, attributes, Live, pickRow, row, SETTINGS, structure, tool, WITH_LOCKED, WORKSPACE,
+  asset, attributes, Live, pickRow, row, SETTINGS, structure, tool, WITH_LOCKED, ASSET_SET,
 } from './AssetEditor.fixture';
-import { addNode, removeNode, type Workspace } from '@weasel-js/prefs/edit';
-import { pointer } from '@weasel-js/prefs/testing/editWorkspace';
+import { addNode, removeNode, type AssetSet } from '@weasel-js/prefs/edit';
+import { pointer } from '@weasel-js/prefs/testing/editAssetSet';
 import { renderWithIcons } from '@weasel-js/ui/testing/withIcons';
 
 afterEach(cleanup);
@@ -54,7 +54,7 @@ describe('AssetEditor on a layout', () => {
   });
 
   it('goes on offering an alias in a dialog its name and its key', () => {
-    const start: Workspace = { assets: [{ ...WORKSPACE.assets[0]!, root: addNode(SETTINGS, 'view', 'again', pointer('view.grid')) }] };
+    const start: AssetSet = { assets: [{ ...ASSET_SET.assets[0]!, root: addNode(SETTINGS, 'view', 'again', pointer('view.grid')) }] };
     renderWithIcons(<Live start={start} />);
     pickRow('again');
     expect(within(attributes()).getByRole('textbox', { name: 'Name' })).toBeInTheDocument();
@@ -63,7 +63,7 @@ describe('AssetEditor on a layout', () => {
 
   it('asks the host for a pointer\'s mark by the setting it names, and for no other row of a layout', () => {
     const asked: string[] = [];
-    const start: Workspace = { assets: [WORKSPACE.assets[0]!, { ...WORKSPACE.assets[1]!, root: { name: 'Code', children: { shown: pointer('view.grid'), rows: { name: 'Rows', as: 'section', children: { snap: pointer('view.snap') } } } } }] };
+    const start: AssetSet = { assets: [ASSET_SET.assets[0]!, { ...ASSET_SET.assets[1]!, root: { name: 'Code', children: { shown: pointer('view.grid'), rows: { name: 'Rows', as: 'section', children: { snap: pointer('view.snap') } } } } }] };
     renderWithIcons(<Live start={start} rowMark={(path) => { asked.push(path); return <span>mark of {path}</span>; }} />);
     asked.length = 0;
     fireEvent.click(asset('Code'));
@@ -90,7 +90,7 @@ describe('AssetEditor on a layout', () => {
     fireEvent.keyDown(structure(), { key: 'Delete' });
     first.unmount();
     // The source's dialog no longer holds the setting the draft's remaining pointer names.
-    const source: Workspace = { assets: [{ ...WORKSPACE.assets[0]!, root: removeNode(WORKSPACE.assets[0]!.root, 'view/grid') }, WORKSPACE.assets[1]!] };
+    const source: AssetSet = { assets: [{ ...ASSET_SET.assets[0]!, root: removeNode(ASSET_SET.assets[0]!.root, 'view/grid') }, ASSET_SET.assets[1]!] };
     renderWithIcons(<Live start={source} draftKey="ws" draftStorage={storage} />);
     fireEvent.click(asset('Code'));
     expect(within(row('grid')).getByText('no setting')).toBeInTheDocument();

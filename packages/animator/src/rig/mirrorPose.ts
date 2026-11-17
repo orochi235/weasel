@@ -1,5 +1,5 @@
 import { getOwn, setOwn } from '@weasel-js/registry';
-import type { JointTransform, Pose, Skeleton } from './types';
+import type { JointTransform, SkeletonPose, Skeleton } from './types';
 
 /**
  * `pose` reflected across the rig's y axis, as deltas against the same
@@ -10,8 +10,8 @@ import type { JointTransform, Pose, Skeleton } from './types';
  * for a joint the pose leaves at its bind is nonzero whenever the bind is.
  * Applying it twice gives the original pose back.
  */
-export function mirrorPose(skeleton: Skeleton, pose: Pose): Pose {
-  const out: Pose = {};
+export function mirrorPose(skeleton: Skeleton, pose: SkeletonPose): SkeletonPose {
+  const out: SkeletonPose = {};
   const binds = new Map<string, JointTransform>();
   for (const joint of skeleton.joints) binds.set(joint.name, joint.bind);
   const names = new Set([...binds.keys(), ...Object.keys(pose)]);

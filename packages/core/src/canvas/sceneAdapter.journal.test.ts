@@ -8,7 +8,7 @@ import { createHistory } from '@weasel-js/history';
 import type { Journal } from '@weasel-js/history';
 import { useScene } from 'core/scene/useScene';
 import { sceneToAdapter } from 'canvas/sceneAdapter';
-import { createTransformOp } from 'core/ops/transform';
+import { createSetPoseOp } from 'core/ops/setPose';
 import { asNodeId } from 'core/scene/types';
 
 // ── shared test fixture ───────────────────────────────────────────────────────
@@ -49,7 +49,7 @@ describe('useScene journal routing via scene.applyBatch', () => {
 
     act(() => {
       adapter.applyOps(
-        [createTransformOp({ id: 'node-a', from: INITIAL_POSE, to: UPDATED_POSE })],
+        [createSetPoseOp({ id: 'node-a', from: INITIAL_POSE, to: UPDATED_POSE })],
         'move',
       );
     });
@@ -67,7 +67,7 @@ describe('useScene journal routing via scene.applyBatch', () => {
 
     act(() => {
       adapter.applyOps(
-        [createTransformOp({ id: 'node-a', from: INITIAL_POSE, to: UPDATED_POSE })],
+        [createSetPoseOp({ id: 'node-a', from: INITIAL_POSE, to: UPDATED_POSE })],
         'move',
       );
     });
@@ -100,7 +100,7 @@ describe('useScene journal routing via scene.applyBatch', () => {
 
     act(() => {
       adapter.applyOps(
-        [createTransformOp({ id: 'node-a', from: INITIAL_POSE, to: UPDATED_POSE })],
+        [createSetPoseOp({ id: 'node-a', from: INITIAL_POSE, to: UPDATED_POSE })],
         'post-journal move',
       );
     });
@@ -127,7 +127,7 @@ describe('useScene journal routing via scene.applyBatch', () => {
     const undoBefore = scene.historyEntries().length;
     act(() => {
       adapter.applyOps(
-        [createTransformOp({ id: 'node-a', from: INITIAL_POSE, to: UPDATED_POSE })],
+        [createSetPoseOp({ id: 'node-a', from: INITIAL_POSE, to: UPDATED_POSE })],
         'pre-wire',
       );
     });
@@ -141,7 +141,7 @@ describe('useScene journal routing via scene.applyBatch', () => {
     const undoAfterWire = scene.historyEntries().length;
     act(() => {
       adapter.applyOps(
-        [createTransformOp({ id: 'node-a', from: UPDATED_POSE, to: INITIAL_POSE })],
+        [createSetPoseOp({ id: 'node-a', from: UPDATED_POSE, to: INITIAL_POSE })],
         'in-journal',
       );
     });
@@ -154,7 +154,7 @@ describe('useScene journal routing via scene.applyBatch', () => {
     const undoAfterDetach = scene.historyEntries().length;
     act(() => {
       adapter.applyOps(
-        [createTransformOp({ id: 'node-a', from: INITIAL_POSE, to: UPDATED_POSE })],
+        [createSetPoseOp({ id: 'node-a', from: INITIAL_POSE, to: UPDATED_POSE })],
         'post-detach',
       );
     });

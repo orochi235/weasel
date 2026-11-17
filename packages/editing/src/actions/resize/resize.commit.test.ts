@@ -9,7 +9,7 @@ type Pose = { x: number; y: number; width: number; height: number };
 function setup(constraints: unknown[] = []) {
   const scene = createScene<{ kind: string }, 'main', Pose>({ systemLayers: [{ id: 'main', visible: true, locked: false }] });
   const a = scene.add({ kind: 'mark', layer: 'main', pose: { x: 0, y: 0, width: 100, height: 100 }, data: { kind: 'rect' } });
-  const onGestureEnd = vi.fn();
+  const onRunEnd = vi.fn();
   const base = {
     world: { x: 100, y: 100 },
     screen: { x: 0, y: 0 },
@@ -17,7 +17,7 @@ function setup(constraints: unknown[] = []) {
     deps: {
       operands: { get: () => [a] as NodeId[] },
       scene,
-      resizePolicy: { constraints, expandIds: (ids: string[]) => ids, onGestureEnd },
+      resizePolicy: { constraints, expandIds: (ids: string[]) => ids, onRunEnd },
     },
     drag: {
       start: { x: 100, y: 100 }, current: { x: 100, y: 100 }, delta: { x: 0, y: 0 },
@@ -25,7 +25,7 @@ function setup(constraints: unknown[] = []) {
     },
   } as unknown as InvocationCtx;
   const grown = { ...base, drag: { ...base.drag!, current: { x: 150, y: 130 }, delta: { x: 50, y: 30 } } } as InvocationCtx;
-  return { scene, a, base, grown, onGestureEnd };
+  return { scene, a, base, grown, onRunEnd };
 }
 
 function drag(action: ReturnType<typeof createResizeAction>, s: ReturnType<typeof setup>, reason: 'commit' | 'cancel') {
@@ -48,7 +48,7 @@ describe('createResizeAction({ commit })', () => {
     expect(deps.scene).toBe(s.scene);
     expect(s.scene.get(s.a)!.pose).toEqual({ x: 0, y: 0, width: 100, height: 100 });
     expect(s.scene.historyEntries()).toHaveLength(entries);
-    expect(s.onGestureEnd).toHaveBeenCalledWith(true);
+    expect(s.onRunEnd).toHaveBeenCalledWith(true);
   });
 
   it('is not called on cancel', () => {

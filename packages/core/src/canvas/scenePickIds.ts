@@ -11,10 +11,10 @@ import { documentScene } from 'core/scene/editingSession';
 export interface ScenePickIds {
   /** The number `id`'s paint carries, given on first ask and kept while the node is in the
    *  scene. Once every number has been given, a node removed since gives its number back. */
-  idOf(id: string): number;
+  pickIdOf(id: string): number;
   /** The node whose paint carries `pickId`; `null` for 0, a number this scene never gave,
    *  or one whose node has left the scene. */
-  nodeOf(pickId: number): NodeId | null;
+  idOfPickId(pickId: number): NodeId | null;
 }
 
 interface OwnPickIds extends ScenePickIds {
@@ -50,7 +50,7 @@ export function createScenePickIds(live: (id: string) => boolean, max = MAX_PICK
       byNode.set(id, n);
       byPick[n] = id;
     },
-    idOf(id) {
+    pickIdOf(id) {
       let n = byNode.get(id);
       if (n !== undefined) return n;
       if (byPick.length <= max) {
@@ -69,7 +69,7 @@ export function createScenePickIds(live: (id: string) => boolean, max = MAX_PICK
       byNode.set(id, n);
       return n;
     },
-    nodeOf(pickId) {
+    idOfPickId(pickId) {
       const id = pickId > 0 ? byPick[pickId] : undefined;
       return id && live(id) ? asNodeId(id) : null;
     },

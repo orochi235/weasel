@@ -105,8 +105,8 @@ export interface MoveAdapter<TNode extends { id: string }, TPose> {
   getLayout?(containerId: string): import('../../layout/types').LayoutStrategy<TPose> | null;
 }
 
-/** The view a region pick answers for. */
-export interface RegionPickView {
+/** What any pick consults of the view it is asked for: its camera and which layers it paints. Point picks take it too. */
+export interface PickingView {
   /** The camera the region was drawn under. With it, a node on a parallax
    *  layer is tested where that camera's plane paints it. */
   get?(): View;
@@ -130,7 +130,7 @@ export interface AreaSelectAdapter {
    *  rect was drawn in paints them. */
   hitTestArea?(
     rect: { x: number; y: number; width: number; height: number },
-    view?: RegionPickView,
+    view?: PickingView,
   ): string[];
   /** Current selection — read by behaviors to compute additive merges. */
   getSelection?(): string[];
@@ -162,7 +162,7 @@ export interface LassoSelectAdapter extends AreaSelectAdapter {
   hitTestLasso?(
     polygon: ReadonlyArray<{ x: number; y: number }>,
     mode: LassoHitMode,
-    view?: RegionPickView,
+    view?: PickingView,
   ): string[];
 }
 

@@ -1,7 +1,7 @@
 import type { DragSample } from '@weasel-js/routing';
 import { resolveParams } from '@weasel-js/routing';
 import { defaultCommitAdapter, operandMethods, createSetSelectionOp } from '@weasel-js/core/engine';
-import { commitGestureOps, readGestureLifecycle, reduceBehaviorEnd, runBehaviorCancel } from '@weasel-js/core';
+import { commitRunOps, readRunLifecycle, reduceBehaviorEnd, runBehaviorCancel } from '@weasel-js/core';
 import { clearedSelection, type InsertFrame, type InsertSession } from './session';
 import { insertShape, isCommittableExtent } from './shape';
 
@@ -38,13 +38,13 @@ export function commitInsert(
     if (r === null) return false;
     if (r !== undefined) {
       if (!session.scene) return false;
-      return commitGestureOps(
+      return commitRunOps(
         {
           scene: session.scene,
           applyOps: session.applyOps,
           adapter: defaultCommitAdapter(session.scene, operandMethods(session.selection)),
         },
-        readGestureLifecycle(resolved, 'Insert', session.behaviors),
+        readRunLifecycle(resolved, 'Insert', session.behaviors),
         r.length > 0 ? [...r, ...selectionOps(session)] : r,
       );
     }

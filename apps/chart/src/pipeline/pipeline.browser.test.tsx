@@ -6,7 +6,7 @@ import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { page, userEvent } from 'vitest/browser';
 import { IDENTITY_POSE_COMPOSITION, fitViewToBounds as fitOrNull, viewToTransform, type RectPose } from '@weasel-js/core';
 
-import { diagramGroupOf, diagramScene, isBodyOrRegion } from '@weasel-js/diagram';
+import { diagramClusterOf, diagramScene, isBodyOrRegion } from '@weasel-js/diagram';
 import {
   AT_COLOR, EFFECT_MIN_SCALE, IMAGE_STAGE_TYPES, editorScene, mainChain, previewRowId, setLookRoute, stageFromType, wireEnds,
   type EffectDoc,
@@ -200,7 +200,7 @@ describe('WeaselChart pipeline mode', () => {
       const canvas = document.querySelector<HTMLCanvasElement>('.wc-host canvas')!;
       const r = canvas.getBoundingClientRect();
       const opened = editorScene(RUN_DOC);
-      const boxes = diagramScene(opened.data, { ...opened.scene, composition: IDENTITY_POSE_COMPOSITION }).filter((s) => isBodyOrRegion(s) || diagramGroupOf(s) !== null).map((s) => s.pose as RectPose);
+      const boxes = diagramScene(opened.data, { ...opened.scene, composition: IDENTITY_POSE_COMPOSITION }).filter((s) => isBodyOrRegion(s) || diagramClusterOf(s) !== null).map((s) => s.pose as RectPose);
       const left = Math.min(...boxes.map((b) => b.x));
       const top = Math.min(...boxes.map((b) => b.y));
       const bounds = {

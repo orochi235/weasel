@@ -156,7 +156,7 @@ function currentSpecs<TData, TLayer extends string, TPose>(
 ): AddNodeSpec<TData, TLayer, TPose>[] {
   const entries = json.nodes.map((n) => ({
     n: n as Omit<SerializedNode<TData, TLayer, TPose>, 'kind'>,
-    kind: json.version === 1 ? nodeKindOf(1, n, opts.classifyV1) : nodeKindOf(2, n),
+    kind: json.version === 1 ? savedNodeKind(1, n, opts.classifyV1) : savedNodeKind(2, n),
   }));
   return entries.map(({ n, kind }) => {
     const spec: AddNodeSpec<TData, TLayer, TPose> = {
@@ -201,7 +201,7 @@ function clipsAsV1(version: 1 | 2 | 3, spec: { kind: string; clipFromPose?: unkn
 
 /** The kind a saved node loads as: its own from version 2; on version 1 a `leaf` is a
  *  mark and a `container` goes to `classify`, or is a group without one. */
-export function nodeKindOf<TData, TLayer extends string, TPose>(
+export function savedNodeKind<TData, TLayer extends string, TPose>(
   version: 1 | 2,
   n: SerializedNode<TData, TLayer, TPose> | SerializedNodeV1<TData, TLayer, TPose>,
   classify?: V1Classifier<TData, TLayer, TPose>,

@@ -1,7 +1,7 @@
 import type { InertiaOptions } from 'core/viewport/useDecayLoop';
 import type { View } from 'core/viewport/view';
 import type { EdgePanOptions } from './useEdgePan';
-import type { PinchZoomOptions } from 'interactions/actions/defaults/pinchZoom';
+import type { TouchZoomOptions } from 'interactions/actions/defaults/touchZoom';
 import type { ViewportWheelPanOptions } from 'interactions/actions/defaults/viewportWheelPan';
 import type { ViewportZoomAnimateOptions, ViewportZoomOptions } from 'interactions/actions/defaults/viewportZoom';
 
@@ -12,7 +12,7 @@ import type { ViewportZoomAnimateOptions, ViewportZoomOptions } from 'interactio
  *
  *  - `inertia` and `animatedZoom` are opt-in: pass `true` for defaults or
  *    an object to tune. Omitted means off.
- *  - `pan` (wheel pan), `zoom` (Cmd+wheel + Cmd+=/-/0), and `pinchZoom`
+ *  - `pan` (wheel pan), `zoom` (Cmd+wheel + Cmd+=/-/0), and `touchZoom`
  *    (two-finger pinch) are on under `viewPreset`; pass `false` to disable one.
  *    Disabling via the `actions` prop
  *    (`actions: { 'viewport.wheelPan': null }`) also works and runs after
@@ -22,7 +22,7 @@ export interface SceneCanvasViewport {
   /** Two-finger pinch zoom. `true`/omitted = on with the kit's 0.1–8
    *  clamp; `false` disables. An object sets the scale clamp and holds the
    *  zoom to one axis (`axis`). */
-  pinchZoom?: boolean | PinchZoomOptions;
+  touchZoom?: boolean | TouchZoomOptions;
   /** Glide Cmd+=/-/0 instead of jumping. `true` uses the kit defaults
    *  (250 ms, ease-out-cubic); a {@link ViewportZoomAnimateOptions} tunes
    *  duration, easing, interpolator and the reset-branch duration. Wheel

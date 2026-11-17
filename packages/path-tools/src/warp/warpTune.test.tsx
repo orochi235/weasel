@@ -38,7 +38,7 @@ function controlsDrawn(options: UseClothWarpToolOptions, tune: ActionTunings = {
   render(
     <SceneCanvas
       features={[pathsPreset]} scene={scene} layers={{}} width={64} height={64}
-      selectionOptions={{ mode: 'multi', initial: [asNodeId('a')] }}
+      selectionOptions={{ mode: 'multiple', initial: [asNodeId('a')] }}
       tools={{ cloth: watched }}
       tune={tune}
     />,

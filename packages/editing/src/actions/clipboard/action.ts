@@ -1,5 +1,5 @@
 import { ActionDisabledReason, defineAction, type Action, BETWEEN_GESTURES } from '@weasel-js/routing';
-import { requiresSelection } from '@weasel-js/core';
+import { requiresOperands } from '@weasel-js/core';
 import { kitWeaselJsonHandler } from '../../ingest/weaselJsonHandler';
 import type { NodeId } from '@weasel-js/core';
 import { claimable, INGEST_REQUIRES, ingestFromEvent } from '../edit/ingest';
@@ -30,7 +30,7 @@ export const clipboardCopyAction: Action & { requires: string[] } = {
       deps.clipboard?.copy();
     },
   },
-  enabled: requiresSelection,
+  enabled: requiresOperands,
 };
 
 /**

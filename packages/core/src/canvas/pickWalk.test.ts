@@ -11,7 +11,7 @@ import { createScene, sceneFromJSON } from 'core/scene/scene';
 import { asNodeId } from 'core/scene/types';
 import { documentOf } from 'core/scene/documentOf';
 import { pickWalk, scenePickSource, type ScenePickSourceOptions } from './pickWalk';
-import { hitTestArea } from './deps/hitTestArea';
+import { hitTestRect } from './deps/hitTestArea';
 import { sceneToAdapter } from './sceneAdapter';
 import type { RectPose } from 'core/scene/composePose';
 import type { Path } from '@weasel-js/geom';
@@ -163,9 +163,9 @@ describe('pickWalk — layers', () => {
   it('a marquee does not take a node on a locked layer', () => {
     const scene = rectScene();
     const all = { x: -10, y: -10, width: 100, height: 100 };
-    expect(hitTestArea(scene as never, all)).toEqual(['a', 'b']);
+    expect(hitTestRect(scene as never, all)).toEqual(['a', 'b']);
     scene.setLayerLocked('main', true);
-    expect(hitTestArea(scene as never, all)).toEqual([]);
+    expect(hitTestRect(scene as never, all)).toEqual([]);
     expect(sceneToAdapter(scene).hitTestArea!(all)).toEqual([]);
   });
 
@@ -183,7 +183,7 @@ describe('pickWalk — layers', () => {
     scene.setHidden(box, true);
     expect(pickAt(scene, 5, 5)).toEqual([]);
     expect(pickAt(scene, 105, 105)).toEqual([]);
-    expect(hitTestArea(scene as never, { x: -10, y: -10, width: 200, height: 200 })).toEqual(['b']);
+    expect(hitTestRect(scene as never, { x: -10, y: -10, width: 200, height: 200 })).toEqual(['b']);
   });
 
   it('does not pick a locked node, or anything under a locked container', () => {
@@ -209,7 +209,7 @@ describe('pickWalk — layers', () => {
     scene.add({ kind: 'mark', layer: 'main', id: asNodeId('a'), pose: { x: 0, y: 0, width: 40, height: 40 }, data: { kind: 'rect' } });
     scene.add({ kind: 'mark', layer: 'notes', id: asNodeId('n'), pose: { x: 0, y: 0, width: 40, height: 40 }, data: { kind: 'rect' } });
     expect(pickAt(scene as never, 5, 5)).toEqual(['a']);
-    expect(hitTestArea(scene as never, { x: -10, y: -10, width: 100, height: 100 })).toEqual(['a']);
+    expect(hitTestRect(scene as never, { x: -10, y: -10, width: 100, height: 100 })).toEqual(['a']);
   });
 });
 
@@ -272,13 +272,13 @@ describe('the four walks agree', () => {
 
       // Before: every walk sees both nodes.
       expect(pickAt(scene, 25, 25)).toEqual(['a', 'b']);
-      expect([...hitTestArea(scene as never, wholeScene)].sort()).toEqual(['a', 'b']);
+      expect([...hitTestRect(scene as never, wholeScene)].sort()).toEqual(['a', 'b']);
       expect([...adapter.hitTestArea!(wholeScene)].sort()).toEqual(['a', 'b']);
 
       gate.apply(scene);
 
       expect(pickAt(scene, 25, 25)).toEqual([]);
-      expect(hitTestArea(scene as never, wholeScene)).toEqual([]);
+      expect(hitTestRect(scene as never, wholeScene)).toEqual([]);
       expect(adapter.hitTestArea!(wholeScene)).toEqual([]);
     });
   }
@@ -295,7 +295,7 @@ describe('the four walks agree', () => {
     expect(pickAt(scene, 515, 515)).toEqual(['a']);
     expect(pickAt(scene, 5, 5)).toEqual([]);
     // Both area walks agree.
-    expect(hitTestArea(scene as never, far)).toEqual(['a']);
+    expect(hitTestRect(scene as never, far)).toEqual(['a']);
     expect(adapter.hitTestArea!(far)).toEqual(['a']);
   });
 
@@ -305,7 +305,7 @@ describe('the four walks agree', () => {
     scene.overrides.commit();
 
     const doc = documentOf(scene);
-    expect(hitTestArea(doc as never, { x: 500, y: 500, width: 50, height: 50 })).toEqual([]);
-    expect(hitTestArea(doc as never, { x: 0, y: 0, width: 10, height: 10 })).toEqual(['a']);
+    expect(hitTestRect(doc as never, { x: 500, y: 500, width: 50, height: 50 })).toEqual([]);
+    expect(hitTestRect(doc as never, { x: 0, y: 0, width: 10, height: 10 })).toEqual(['a']);
   });
 });

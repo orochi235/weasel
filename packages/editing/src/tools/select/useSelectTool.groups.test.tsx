@@ -33,7 +33,7 @@ function harness(
 ) {
   const { result } = renderHook(() => {
     const scene = useScene<unknown, 'default', Pose>({ systemLayers: [{ id: 'default' }], initial });
-    const sel = useSelection({ mode: 'multi' });
+    const sel = useSelection({ mode: 'multiple' });
     const adapter = sceneToAdapter(scene, { selection: sel });
     return { tool: useSelectTool(adapter as never, {} as never), sel, scene };
   });

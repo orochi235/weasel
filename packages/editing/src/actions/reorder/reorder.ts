@@ -1,4 +1,4 @@
-import { createReorderOp, defaultCommitAdapter, operandMethods, bringForward, bringToFront, sendBackward, sendToBack, requiresSelection } from '@weasel-js/core';
+import { createReorderOp, defaultCommitAdapter, operandMethods, bringForward, bringToFront, sendBackward, sendToBack, requiresOperands } from '@weasel-js/core';
 import type { OperandsDep, NodeId, Scene, Op } from '@weasel-js/core';
 import type { ActionDeps } from '@weasel-js/routing';
 import { ActionDisabledReason, defineAction, BETWEEN_GESTURES } from '@weasel-js/routing';
@@ -75,7 +75,7 @@ function reorderDirection(direction: 'forward' | 'backward', distance: ReorderDi
 /** `enabled` for a reorder: a selection, and one the reorder would move. */
 function reorderEnabled(direction: 'forward' | 'backward') {
   return (deps?: ActionDeps, _at?: unknown, _carried?: unknown, params?: Readonly<Partial<ReorderParams>>): true | ActionDisabledReason => {
-    const needs = requiresSelection(deps);
+    const needs = requiresOperands(deps);
     if (needs !== true) return needs;
     const scene = deps!.scene as Scene<unknown, string, unknown> | undefined;
     if (!scene) return true;

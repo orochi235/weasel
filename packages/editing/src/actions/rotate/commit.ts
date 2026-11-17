@@ -1,6 +1,6 @@
 import type { Op, NodeId } from '@weasel-js/core';
-import { createTransformOp, defaultCommitAdapter } from '@weasel-js/core/engine';
-import { commitGestureOps, reduceBehaviorEnd } from '@weasel-js/core';
+import { createSetPoseOp, defaultCommitAdapter } from '@weasel-js/core/engine';
+import { commitRunOps, reduceBehaviorEnd } from '@weasel-js/core';
 import { syncGestureCurrent } from './frame';
 import type { RotateFrame, RotateSession } from './session';
 
@@ -18,7 +18,7 @@ export function rotateOps(
     if (next === undefined) continue;
     const from = originPoses.get(id);
     if (from === undefined) continue;
-    ops.push(createTransformOp<unknown>({ id: id as string, from, to: next, label }));
+    ops.push(createSetPoseOp<unknown>({ id: id as string, from, to: next, label }));
   }
   return ops;
 }
@@ -37,12 +37,12 @@ export function commitRotate(session: RotateSession, frame: RotateFrame): boolea
     syncGestureCurrent(session.gestureCtx, session.turn, frame.delta);
     const r = reduceBehaviorEnd(session.behaviors, session.gestureCtx);
     if (r === null) return false;
-    if (r !== undefined) return commitGestureOps(target, lifecycle, r);
+    if (r !== undefined) return commitRunOps(target, lifecycle, r);
   }
   if (frame.delta === 0) return false;
   // A node removed mid-drag is skipped, as the move's commit skips it.
   const ids = session.ids.filter((id) => session.scene.get(id) !== undefined);
   const ops = rotateOps(ids, session.originPoses, frame.previews, lifecycle.label);
   if (ops.length === 0) return false;
-  return commitGestureOps(target, lifecycle, ops);
+  return commitRunOps(target, lifecycle, ops);
 }

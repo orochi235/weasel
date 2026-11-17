@@ -28,7 +28,7 @@ describe('list widget', () => {
   });
 
   it('draws each label, the selected row filled, and a swatch in its leading slot', () => {
-    const l = createList({ id: 'l', x: 0, y: 0, w: 200, rows, selection: 'single', onActivate: () => {} });
+    const l = createList({ id: 'l', x: 0, y: 0, w: 200, rows, selectionMode: 'single', onActivate: () => {} });
     const cmds = l.draw(ctx);
     expect(texts(cmds)).toEqual(['Apple', 'Banana', 'Cherry']);
     const fills = cmds.flatMap((c) => (c.kind === 'path' && c.fill && 'paint' in c.fill ? [(c.fill.paint as { color: string }).color] : []));
@@ -58,7 +58,7 @@ describe('list widget', () => {
 
   it('moves with the arrows from the selected row, types ahead, and activates on Enter', () => {
     const onActivate = vi.fn();
-    const l = createList({ id: 'l', x: 0, y: 0, w: 200, rows, selection: 'single', onActivate });
+    const l = createList({ id: 'l', x: 0, y: 0, w: 200, rows, selectionMode: 'single', onActivate });
     l.onFocusChange!(true);
     expect(l.active).toBe(1);
     expect(l.onKey!(key('ArrowDown'))).toBe(true);
@@ -71,7 +71,7 @@ describe('list widget', () => {
   });
 
   it('rings the keyboard row only once a key has moved it', () => {
-    const l = createList({ id: 'l', x: 0, y: 0, w: 200, rows, selection: 'single', onActivate: () => {} });
+    const l = createList({ id: 'l', x: 0, y: 0, w: 200, rows, selectionMode: 'single', onActivate: () => {} });
     const ring = () => l.draw(ctx).some((c) => c.kind === 'path' && !!c.stroke && c.stroke.width === 2);
     l.onFocusChange!(true);
     expect(ring()).toBe(false);
@@ -80,7 +80,7 @@ describe('list widget', () => {
   });
 
   it('is a listbox of options to assistive tech, the keyboard row active', () => {
-    const l = createList({ id: 'l', x: 0, y: 0, w: 200, rows, selection: 'multi', accessibleName: 'Fruit' });
+    const l = createList({ id: 'l', x: 0, y: 0, w: 200, rows, selectionMode: 'multiple', accessibleName: 'Fruit' });
     l.onFocusChange!(true);
     const tree = l.accessibleTree!.read();
     expect(tree).toMatchObject({ role: 'listbox', label: 'Fruit', multiselectable: true });

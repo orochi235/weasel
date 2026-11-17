@@ -1,0 +1,97 @@
+import type { Action } from '@weasel-js/routing';
+import type { InvocationCtx, OngoingHandle } from '@weasel-js/routing';
+import type { ViewApi } from '../depSchema';
+import { axisZoomFactor, zoomAt, type ZoomAxis } from 'core/viewport/zoomAt';
+import { viewToTransform } from 'core/viewport/view';
+import { screenToWorld } from 'core/viewport/viewTransform';
+import { DEFAULT_MIN_ZOOM, DEFAULT_MAX_ZOOM } from 'core/viewport/zoomBounds';
+
+interface PinchScratch {
+  view: ViewApi;
+  startSpread: number;
+  centroid: { x: number; y: number };
+}
+
+/**
+ * Tuning for {@link createTouchZoomAction}.
+ */
+export interface TouchZoomOptions {
+  /** Lower clamp on the resulting view scale, forwarded to `zoomAt`. Default 0.1. */
+  min?: number;
+  /** Upper clamp on the resulting view scale, forwarded to `zoomAt`. Default 8. */
+  max?: number;
+  /** Hold the zoom to one axis. Default `'both'`. The two fingers still pan
+   *  on both. */
+  axis?: ZoomAxis;
+}
+
+/**
+ * Build a `viewport.touchZoom` Action descriptor with a configurable scale
+ * clamp. The same two-finger gesture zooms and pans, applied each frame.
+ */
+// No `eligible` field → pinch zoom is always eligible across all modes.
+export function createTouchZoomAction(
+  opts: TouchZoomOptions = {},
+): Action & { requires: string[] } {
+  const clamp = { min: opts.min ?? DEFAULT_MIN_ZOOM, max: opts.max ?? DEFAULT_MAX_ZOOM };
+  const axis = opts.axis ?? 'both';
+  return {
+    id: 'viewport.touchZoom',
+    label: 'Touch Zoom',
+    group: 'viewport',
+    defaultBinding: [{ spec: { kind: 'multiTouch', fingers: 2 }, opts: { id: 'viewport.touchZoom.multiTouch' } }],
+    requires: ['view', 'debug'],
+    invoker: {
+      timing: 'ongoing',
+      start(ctx: InvocationCtx, _opts): OngoingHandle {
+        const view = ctx.deps.view;
+        if (!view) return {};
+
+        const multiTouch = ctx.multiTouch;
+        if (!multiTouch) return {};
+
+        const startSpread = multiTouch.spread > 0 ? multiTouch.spread : 1;
+
+        const scratch: PinchScratch = { view, startSpread, centroid: multiTouch.centroid };
+        const debug = ctx.deps.debug;
+        const startView = view.get();
+        const [ax, ay] = screenToWorld(multiTouch.centroid.x, multiTouch.centroid.y, viewToTransform(startView));
+
+        return {
+          kind: 'pinch',
+          onMove(moveCtx: InvocationCtx): void {
+            const mt = moveCtx.multiTouch;
+            if (!mt?.pinch) return;
+            const { currentSpread, centroid } = mt.pinch;
+            if (currentSpread <= 0 || scratch.startSpread <= 0) return;
+            const factor = currentSpread / scratch.startSpread;
+            // Rebase each frame so the factor is incremental.
+            scratch.startSpread = currentSpread;
+            const prev = scratch.centroid;
+            scratch.centroid = centroid;
+            const current = scratch.view.get();
+            // Anchor the zoom on where the fingers *were*, then translate by how
+            // far they travelled — together those pin the world point under the
+            // centroid as it moves. Anchoring on the new centroid instead drops
+            // the translation half, so a two-finger drag zooms without panning.
+            const zoomed = zoomAt(current, prev, axisZoomFactor(factor, axis), clamp);
+            const next = {
+              scale: zoomed.scale,
+              x: zoomed.x - (centroid.x - prev.x) / zoomed.scale.x,
+              y: zoomed.y - (centroid.y - prev.y) / zoomed.scale.y,
+            };
+            scratch.view.set(next);
+            debug?.recordViewport('zoom', startView, next, { x: ax, y: ay });
+          },
+        };
+      },
+    },
+    enabled: () => true,
+  };
+}
+
+/**
+ * Default `viewport.touchZoom` descriptor: two-finger pinch with the kit's
+ * default 0.1–8 scale clamp. Equivalent to `createTouchZoomAction()`.
+ */
+export const touchZoomAction: Action & { requires: string[] } = createTouchZoomAction();

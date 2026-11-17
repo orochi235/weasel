@@ -1,4 +1,4 @@
-import { createTransformOp } from 'core/ops/transform';
+import { createSetPoseOp } from 'core/ops/setPose';
 import { RECT_POSE_DESCRIPTOR, type PoseDescriptor } from 'core/geometry/poseDescriptor';
 import type { Op } from 'core/ops/types';
 import type {
@@ -75,7 +75,7 @@ function recordTransformOp<TPose>(
   label: string,
 ): void {
   if (!adapter.applyOps) return;
-  const op = createTransformOp<TPose>({ id, from, to, label });
+  const op = createSetPoseOp<TPose>({ id, from, to, label });
   adapter.applyOps([op], label);
 }
 

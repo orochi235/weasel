@@ -1,4 +1,4 @@
-import { createTransformOp } from 'core/ops/transform';
+import { createSetPoseOp } from 'core/ops/setPose';
 import type { Op } from 'core/ops/types';
 import { translatePoseViaDescriptor, type PoseDescriptor } from 'core/geometry/poseDescriptor';
 import type { Target, TargetAxes } from '@weasel-js/animator';
@@ -148,7 +148,7 @@ export function coastOnTargets<TPose>(a: CoastArgs<TPose>, targets: ReadonlyMap<
       const to = r.target.committed();
       // A scene records the write it sees, not an op's `from`, so the document goes back first.
       r.target.commit(from);
-      ops.push(createTransformOp<TPose>({ id: r.id, from, to, label: 'flick' }));
+      ops.push(createSetPoseOp<TPose>({ id: r.id, from, to, label: 'flick' }));
     }
     if (ops.length > 0) adapter.applyOps(ops, 'flick');
   }

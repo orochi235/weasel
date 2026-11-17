@@ -5,7 +5,7 @@ import type { Scene } from 'core/scene/types';
 import type { Bounds } from 'core/viewport/fitViewToBounds';
 import type { PlaneMap } from 'core/viewport/parallax';
 import type { SnapBegin, SnapOutcome, SnapSession } from 'interactions/actions/snapDep';
-import { angleAt } from './angle2d';
+import { snapAngle } from './angle2d';
 import { inputFlat } from './inputSubspace';
 import { gatherSnapCandidates, resolveHolding, resolvedSnapMarks, snapSourcesFor, type GatheredCandidate } from './gather';
 import { recordSnapCandidates } from './debugCandidates';
@@ -78,7 +78,7 @@ export function createSession2d(given: Session2dInputs): SnapSession {
       store.set(plane ? marks.map((m) => markFromPlane(m, plane)) : marks);
       return outcome(req.press, res.delta, res.members.length > 0, marks);
     },
-    angle: (theta, mods) => angleAt(inputs, sources, theta, mods),
+    angle: (theta, mods) => snapAngle(inputs, sources, theta, mods),
     end() {
       store.set([]);
       inputs.debug?.clearSnap();
@@ -146,7 +146,7 @@ function subjectAt(
 
 /** A session no source answers: it only holds the point to the gesture's
  *  input subspace, as when a host provides no `snap` dep. */
-export function inputSession(req: SnapBegin): SnapSession {
+export function createBareSnapSession(req: SnapBegin): SnapSession {
   return createSession2d({
     req,
     sources: [],

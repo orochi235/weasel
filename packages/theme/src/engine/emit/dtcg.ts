@@ -1,5 +1,5 @@
 import { getOwn, setOwn } from '@weasel-js/registry';
-import { enumerateSelections, fullSelection, isByAxis, pick } from '../../axes.ts';
+import { enumerateAxisChoices, fullAxisChoice, isByAxis, pick } from '../../axes.ts';
 import type { SerializableColorList } from '../../colorListItems.ts';
 import { AXES_EXT, overrideKey, RAMPS_EXT, TINTS_EXT, type DtcgAxesExtension } from '../../dtcg/axesExtension.ts';
 import { refTarget } from '../../dtcg/resolve.ts';
@@ -50,7 +50,7 @@ export interface DtcgExport {
  */
 export function toDTCG(theme: Theme): DtcgExport {
   const axes = themeAxes(theme);
-  const defaults = fullSelection(axes);
+  const defaults = fullAxisChoice(axes);
   const nonMode = Object.keys(axes).filter((a) => a !== 'mode');
   const declaredModes = Object.keys(axes.mode?.values ?? {});
 
@@ -108,7 +108,7 @@ export function toDTCG(theme: Theme): DtcgExport {
     if (varying.length > 0) setOwn(varies, name, varying);
     const modes = used.has('mode') ? [...new Set([...declaredModes, ...modeKeys])] : [];
 
-    for (const combo of enumerateSelections(Object.fromEntries(varying.map((a) => [a, getOwn(axes, a)!])))) {
+    for (const combo of enumerateAxisChoices(Object.fromEntries(varying.map((a) => [a, getOwn(axes, a)!])))) {
       const key = overrideKey(axes, combo);
       const layer = key === '' ? base : ownEntry(overrides, key, (): Layer => ({ primitives: {}, modes: {} }));
       const sel = { ...defaults, ...combo };

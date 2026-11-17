@@ -9,16 +9,16 @@ import type { AnyScene } from 'core/scene/anyScene';
 
 /** The ids in `ids` that are in the scene and that no other id in `ids` holds, pages and the page run left out
  *  first, since no action copies or moves them: a page selected with its content does not swallow that content. */
-export function selectedRoots(scene: AnyScene, ids: readonly string[]): NodeId[] {
+export function rootsAmong(scene: AnyScene, ids: readonly string[]): NodeId[] {
   const parentOf = (id: string) => scene.get(asNodeId(id))?.parent ?? null;
   return outermost(withoutPageStructure(scene, ids.map((id) => asNodeId(id))), parentOf)
     .filter((id) => scene.get(id) !== undefined);
 }
 
-/** {@link selectedRoots} back to front: what a copy inserts, in this order, so the copies stack as
+/** {@link rootsAmong} back to front: what a copy inserts, in this order, so the copies stack as
  *  the originals do whatever order the selection was made in. */
 export function copiedRoots(scene: AnyScene, ids: readonly string[]): NodeId[] {
-  const roots = selectedRoots(scene, ids);
+  const roots = rootsAmong(scene, ids);
   if (roots.length < 2) return roots;
   const order = new Map<string, number>();
   let i = 0;
@@ -122,7 +122,7 @@ export function translateTargets(
   ids: readonly string[],
 ): NodeId[] {
   const moving = new Set<NodeId>();
-  for (const root of selectedRoots(scene, ids)) {
+  for (const root of rootsAmong(scene, ids)) {
     for (const id of subtreeIds(scene, root)) moving.add(id);
   }
   return [...moving].filter((id) => {

@@ -5,7 +5,7 @@ import type { AddNodeSpec, MarkerRef, Page, PageLayoutOptions, PoseComposition, 
 import type { Vec2 } from '@weasel-js/core/math';
 import type { BodySpec, MeasureRowText, Row } from './body';
 import type { DiagramEdge } from './edgeTrait';
-import type { DiagramAnchor } from './group';
+import type { DiagramAnchor } from './clusterBox';
 import type { DiagramLabel } from './labelTrait';
 import type { LayoutFn, LayoutOptions, LayoutPorts } from './layout';
 import type { DataMark, DiagramMark } from './marks';
@@ -96,7 +96,7 @@ export interface DataEdge {
 }
 
 /** A box drawn around some nodes, which layout keeps together. */
-export interface DataGroup {
+export interface DataCluster {
   /** Shares one namespace with node ids. */
   id: string;
   /** Node ids, and the ids of groups nested in this one. A node or group a
@@ -121,7 +121,7 @@ export interface DiagramData {
   /** A group may be a member of another. `layered`, `tree`, `force`, and `chain`
    *  keep each group's members together; `'none'` ignores groups but still
    *  draws them. */
-  groups?: readonly DataGroup[];
+  groups?: readonly DataCluster[];
   /** Containers and pools: regions drawn as scene containers that hold their
    *  members, which a `DiagramView` drags shapes into and out of. */
   containers?: readonly DataContainer[];
@@ -292,8 +292,8 @@ export interface DiagramSceneOptions<TLayer extends string = 'main'> {
   /** Default 12. */
   groupPadding?: number;
   /** A group's box and label. `text` colors the label. `undefined` keeps the theme's
-   *  container, else `DEFAULT_GROUP_STYLE`. */
-  groupStyle?: (group: DataGroup) => NodeStyle | undefined;
+   *  container, else `DEFAULT_CLUSTER_STYLE`. */
+  groupStyle?: (group: DataCluster) => NodeStyle | undefined;
   /** An edge's look; `undefined` keeps the theme's, else `DEFAULT_EDGE_STYLE`. */
   edgeStyle?: (edge: DataEdge) => EdgeStyle | undefined;
   /** Styles nodes by their `style` role, and edges, groups and text by the theme, where the

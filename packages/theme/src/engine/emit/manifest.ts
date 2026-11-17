@@ -1,5 +1,5 @@
 import { getOwn } from '@weasel-js/registry';
-import { fullSelection, pickAll } from '../../axes.ts';
+import { fullAxisChoice, pickAll } from '../../axes.ts';
 import { resolveTokens } from '../../dtcg/resolve.ts';
 import { TOKEN_HOOKS } from '../../hooks.ts';
 import { tokenGroupOf } from '../../tokenGroup.ts';
@@ -16,7 +16,7 @@ const row = (
 
 /** The `manifest.ts` source: `TOKEN_MANIFEST` for this theme at its default selection, then every override hook. */
 export function emitManifest({ baked }: EmitInput): string {
-  const all = pickAll(baked.tokens, fullSelection(baked.axes, {}));
+  const all = pickAll(baked.tokens, fullAxisChoice(baked.axes, {}));
   const resolved = resolveTokens(all);
   const rows = Object.entries(all).map(([name, token]) =>
     row(name, token.type, getOwn(resolved, name)!, token.description ?? '', false),

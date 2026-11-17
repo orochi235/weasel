@@ -14,7 +14,7 @@ import { DEFAULT_MAX_ZOOM, DEFAULT_MIN_ZOOM } from './zoomBounds';
 import { clampView } from './clampView';
 import { fitViewToBounds } from './fitViewToBounds';
 import { interpolateView } from './interpolateView';
-import { computeWheelAction, wheelPan, wheelZoom } from './wheelHandler';
+import { viewAfterWheel, wheelPan, wheelZoom } from './wheelHandler';
 import { viewportWorldRect } from './viewportWorldRect';
 
 const N = 200;
@@ -116,7 +116,7 @@ describe('wheel', () => {
     const t = tally();
     fc.assert(fc.property(view(), fc.record({ deltaX: edgy(500), deltaY: edgy(500), x: edgy(2000), y: edgy(2000), shiftKey: fc.boolean(), ctrlKey: fc.boolean() }),
       fc.constantFrom('both', 'x', 'y'), (v, input, axis) => {
-        const next = computeWheelAction(v, input, undefined, { axis: axis as 'both' | 'x' | 'y' });
+        const next = viewAfterWheel(v, input, undefined, { axis: axis as 'both' | 'x' | 'y' });
         expect(finite(next), JSON.stringify({ v, input, next })).toBe(true);
         expect(normalizeView(next)).toBe(next);
         if (![input.deltaX, input.deltaY].every(Number.isFinite)) t.count(input.ctrlKey ? 'wild zoom' : 'wild pan');

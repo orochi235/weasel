@@ -138,7 +138,7 @@ describe('<CanvasView>', () => {
         layers={{}}
         width={300}
         height={200}
-        viewport={{ pinchZoom: true }}
+        viewport={{ touchZoom: true }}
         onViewChange={outer}
         views={[{ id: 'panel', bounds: PANEL, onViewChange: panel }]}
       />,

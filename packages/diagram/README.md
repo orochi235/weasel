@@ -311,7 +311,7 @@ different pages draws nothing across the gap. Each end draws a stub
 `OFF_PAGE_STUB` (24) world units out of its shape, ending at a tag that reads
 the other page's name and a reference letter, such as "Page 2 · A". The start
 stub ends in the connector's end marker, so it reads as leaving the page. A
-shape's page is its page ancestor (`pageOfNode`), not where it overlaps; a
+shape's page is its page ancestor (`pageIdOf`), not where it overlaps; a
 shape on the pasteboard is on none, and its connectors stay whole. A connector
 between pages is a child of the page run, and one whose ends share a page is
 that page's child (core's `followerHome`).
@@ -846,7 +846,7 @@ keep a group's members together; `radial` ignores groups but still draws them. U
 else enters, in every rank from its first member's to its last, and rank gaps
 widen where a box needs the room; `force` pulls a group's members toward each
 other and pushes groups apart. The box is an ordinary scene node that depends
-on its members and derives its pose from theirs (`groupDerivePose`), so
+on its members and derives its pose from theirs (`clusterDerivePose`), so
 dragging a member carries the box along. It also depends on the labels of the
 wires with both ends inside it, so a long label stays inside the box. It is
 never narrower than its label,

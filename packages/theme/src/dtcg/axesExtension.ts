@@ -1,5 +1,5 @@
 import { getOwn } from '@weasel-js/registry';
-import type { AxisDefs, Selection } from '../axes.ts';
+import type { AxisDefs, AxisChoice } from '../axes.ts';
 
 /** The `$extensions` key on a DTCG export's root that carries every axis besides mode. */
 export const AXES_EXT = 'com.weasel.axes';
@@ -22,7 +22,7 @@ export interface DtcgLayer {
  * - `axes`: every axis the theme resolves with, mode included.
  * - `varies`: token name → the non-mode axes its value depends on.
  * - `overrides`: a layer per combination of non-default values, keyed like
- *   `selectionKey` but naming only the axes off their default
+ *   `axisChoiceKey` but naming only the axes off their default
  *   (`density=compact`, `contrast=high,density=roomy` in axis order).
  */
 export interface DtcgAxesExtension {
@@ -32,7 +32,7 @@ export interface DtcgAxesExtension {
 }
 
 /** The override key for a selection: its non-default values, axes in declaration order. `''` is the plain groups. */
-export function overrideKey(axes: AxisDefs, selection: Selection): string {
+export function overrideKey(axes: AxisDefs, selection: AxisChoice): string {
   return Object.entries(axes).flatMap(([a, def]) => {
     const value = getOwn(selection, a);
     return value === undefined || value === def.default ? [] : [`${a}=${value}`];

@@ -7,7 +7,7 @@ import { definesFrame } from 'core/scene/effectivePose';
 import { AUTO_POSE_DESCRIPTOR } from 'core/geometry/autoPoseDescriptor';
 import { translatePoseViaDescriptor, type PoseDescriptor } from 'core/geometry/poseDescriptor';
 import { keepOnPage, pasteboardOn, placedPage } from 'core/pages/pagePlacement';
-import { pageOfNode } from 'core/pages/pageNodes';
+import { pageIdOf } from 'core/pages/pageNodes';
 import type { PlacedPage } from 'core/pages/pages';
 import type { AnyScene } from 'core/scene/anyScene';
 
@@ -72,7 +72,7 @@ export function insertSite(
   { at, into, canDropInto, descriptor = AUTO_POSE_DESCRIPTOR }: InsertSiteOptions = {},
 ): InsertSite {
   const site = siteIn(sc, insertParent(sc, into, canDropInto, at));
-  const pageId = site.parent === null || pasteboardOn(sc) || sc.get(site.parent)?.page === undefined ? null : pageOfNode(sc, site.parent);
+  const pageId = site.parent === null || pasteboardOn(sc) || sc.get(site.parent)?.page === undefined ? null : pageIdOf(sc, site.parent);
   const page = pageId === null ? null : placedPage(sc, pageId);
   return page === null ? site : { ...site, local: (p) => site.local(ontoPage(page, p, descriptor)) };
 }

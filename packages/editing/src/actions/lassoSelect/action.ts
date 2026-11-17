@@ -17,7 +17,7 @@
  * transiently too.
  */
 
-import { gestureViewReader, pointerStateOf, applyOpsTo, reduceBehaviorEnd, runBehaviorCancel, runBehaviorSettled, hitTargets, selectionFromHits, finiteThroughout } from '@weasel-js/core';
+import { gestureViewReader, pointerStateOf, applyOpsTo, reduceBehaviorEnd, runBehaviorCancel, runBehaviorSettled, targetsOf, selectionFromHits, finiteThroughout } from '@weasel-js/core';
 import { defineAction, resolveParams, setScratch } from '@weasel-js/routing';
 import type { InvocationCtx, OngoingHandle, OngoingOverlay, Point2 } from '@weasel-js/routing';
 import type { LassoSelectDep, ViewApi, LassoHitMode, LassoSelectAdapter, GestureContext, LassoSelectBehavior, LassoSelectPose } from '@weasel-js/core/engine';
@@ -49,9 +49,9 @@ function hitTestPolygon(
   mode: LassoHitMode,
   view: ViewApi | undefined,
 ): string[] {
-  if (dep.hitTestLasso) return hitTargets(dep.hitTestLasso(vertices, mode, view), dep.targetOf);
+  if (dep.hitTestLasso) return targetsOf(dep.hitTestLasso(vertices, mode, view), dep.targetOf);
   const aabb = polygonAABB(vertices as Point2[]);
-  return aabb ? hitTargets(dep.hitTestArea(aabb, view), dep.targetOf) : [];
+  return aabb ? targetsOf(dep.hitTestArea(aabb, view), dep.targetOf) : [];
 }
 
 /** The adapter a behavior sees: selection and hit-testing from the dep,
@@ -60,7 +60,7 @@ function behaviorAdapter(dep: LassoSelectDep, view: ViewApi | undefined): LassoS
   const adapter: LassoSelectAdapter = {
     getSelection: () => dep.getSelection(),
     setSelection: (ids) => dep.setSelection(ids),
-    hitTestArea: (rect) => hitTargets(dep.hitTestArea(rect, view), dep.targetOf),
+    hitTestArea: (rect) => targetsOf(dep.hitTestArea(rect, view), dep.targetOf),
     hitTestLasso: (polygon, mode) => hitTestPolygon(dep, polygon, mode, view),
     applyOps: (ops: Op[]) => applyOpsTo(adapter, ops),
   };

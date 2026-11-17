@@ -85,7 +85,7 @@ describe('specificity (tuple shape)', () => {
     });
 
     it("the kit's own ambient actions keep the score they had", () => {
-      // escape / delete / anchorEditing / cancelGesture — the compat claim in
+      // escape / delete / anchorEditing / dispatch.cancelAll — the compat claim in
       // `phaseRank`'s doc comment. Scoring them 2 would have let a spec that
       // narrows almost nothing tie a precise `&:engaged`.
       expect(phaseRank([{ channel: '*', phase: 'initial' }])).toBe(1);

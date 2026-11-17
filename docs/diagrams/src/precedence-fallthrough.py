@@ -42,9 +42,9 @@ items = [
         '• required modifiers: how many',
         '• phase: 2 when channel and phase are both named, 1 when one is a wildcard, 0 for none',
         '• drop, carry or paste with a MIME filter: 2, anything else 1',
-        '▸ target: `[*:*] drag => unselected-body` (`move`) beats `[*:*] drag` (`viewport.dragPan`, from `dragPanContribution`).',
+        '▸ target: `[*:*] drag => unselected-body` (`move`) beats `[*:*] drag` (`viewport.dragPan`, from `createDragPanContribution`).',
         '▸ modifiers: `[*:*] drag +shift` beats `[*:*] drag ?shift` (`lassoSelect`); an optional modifier counts for nothing.',
-        '▸ phase: `[*:engaged] keyDown(Escape)` (`cancelGesture`) beats `[*:*] keyDown(Escape)` (`tool.resetToDefault`).',
+        '▸ phase: `[*:engaged] keyDown(Escape)` (`dispatch.cancelAll`) beats `[*:*] keyDown(Escape)` (`tool.resetToDefault`).',
         '▸ MIME: `[*:*] drop(text/csv)` beats `[*:*] drop ?shift ?alt ?ctrl ?meta` (`ingest`).',
     ], LW - 40, 'amber'), '3'),
     ('r4', Card('Context-gated before ungated', [
@@ -64,7 +64,7 @@ items = [
     ], LW - 40, 'red'), 'filter'),
     ('walk', Card('Walk the list; the first action that runs wins', [
         'Each action is tried once. `enabled()` returning anything but `true`, or an ongoing `start()` returning an empty handle, passes the turn to the next candidate. Nothing left: unhandled.',
-        '▸ With nothing selected, `escape` on `[*:initial] keyDown(Escape)` declines and '
+        '▸ With nothing selected, `deselect` on `[*:initial] keyDown(Escape)` declines and '
         '`tool.resetToDefault` on `[*:*] keyDown(Escape)` fires.',
     ], LW, 'purple'), None),
 ]
@@ -140,20 +140,20 @@ ey = 128
 ey = example(ey, 'Escape while editing a path',
              'Mode `path-edit`, a path is being edited, nothing in flight. All four actions are ambient and bound to Escape.',
              [
-                 ('—', '`cancelGesture` `[*:engaged] keyDown(Escape)`', 'ambient', '', 'the match, phase', '', 'not a candidate', 'gray'),
-                 ('1', '`escape` `[*:initial] keyDown(Escape)`', 'ambient', '0 0 1 1', 'step 3, phase part', 'none', '`enabled()` declines while a path is edited', 'white'),
+                 ('—', '`dispatch.cancelAll` `[*:engaged] keyDown(Escape)`', 'ambient', '', 'the match, phase', '', 'not a candidate', 'gray'),
+                 ('1', '`deselect` `[*:initial] keyDown(Escape)`', 'ambient', '0 0 1 1', 'step 3, phase part', 'none', '`enabled()` declines while a path is edited', 'white'),
                  ('2', '`exitPathEdit` `[*:*] keyDown(Escape)`', 'ambient', '0 0 0 1', 'step 4', '`mode: path-edit` holds', 'fires', 'green'),
                  ('3', '`tool.resetToDefault` `[*:*] keyDown(Escape)`', 'ambient', '0 0 0 1', 'step 4', 'none', 'not asked', 'white'),
              ],
              [
-                 '`escape` leads on specificity (step 3, its phase part) and declines. `exitPathEdit` and `tool.resetToDefault` tie through step 3; step 4 puts the one whose rule holds first. Outside path edit, `exitPathEdit` is dropped as ineligible instead.',
+                 '`deselect` leads on specificity (step 3, its phase part) and declines. `exitPathEdit` and `tool.resetToDefault` tie through step 3; step 4 puts the one whose rule holds first. Outside path edit, `exitPathEdit` is dropped as ineligible instead.',
              ])
 
 ey = example(ey + 16, 'Bare drag on empty canvas, select tool active',
-             'Default mode, which allows `creates-selection`, on a canvas that opted into `dragPanContribution`.',
+             'Default mode, which allows `creates-selection`, on a canvas that opted into `createDragPanContribution`.',
              [
                  ('1', '`areaSelect` from the select tool, `[*:*] drag => predicate` (empty canvas)', 'active', '1 0 0 1', 'step 2, tier', '`creates-selection` holds', 'fires', 'green'),
-                 ('2', '`viewport.dragPan` from `dragPanContribution`, `[*:*] drag`', 'ambient', '0 0 0 1', 'step 2, tier', 'none', 'not asked', 'white'),
+                 ('2', '`viewport.dragPan` from `createDragPanContribution`, `[*:*] drag`', 'ambient', '0 0 0 1', 'step 2, tier', 'none', 'not asked', 'white'),
              ],
              [
                  'The tier settles this one: the select tool\'s binding sits in the active tier, above the ambient pan.',

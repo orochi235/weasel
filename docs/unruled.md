@@ -1477,7 +1477,7 @@ Calls the round made:
   full-precision `interpolateSrgb`, with its own gray-hue rule. Left as is, as the comment there asks.
 - `contrastLineColor` reads only hex (a test pins `papayawhip` to black); `contrastRatio` beside it
   reads any CSS color. Left as is.
-- Rotate and resize fire `onGestureStart` at press; move fires it on the first movement. Left as is.
+- Rotate and resize fire `onRunStart` at press; move fires it on the first movement. Left as is.
 - core's `unionBounds` drops a NaN coordinate; geom's `unionRects` passes it through. Not folded.
 - forge's `ForgeLoupe` clamp, audio's `scoreMood` clamp, plot's `freshName` and editor's page-run id
   keep their own copies: folding each adds a dependency on geom or registry.
@@ -1495,7 +1495,7 @@ Calls the round made:
 
 ## Audit round seven (2026-11-08)
 
-- `fitViewToBounds`, `fitViewToPage`, `fitZoom`, `fitToBounds` and `computeFitViewport` return `null` for empty
+- `fitViewToBounds`, `fitViewToPage`, `fitZoom` and `fitSize` return `null` for empty
   content, and the viewport's owner resolves it to the reset view (Mike ruled that an empty fit goes to Cmd-0's view;
   the `null` return type, a breaking change, is the agent's way of getting there). Fit Content on a lone point now
   goes to the reset view rather than centering the point.
@@ -2058,7 +2058,7 @@ Calls the lanes made without a ruling:
   animations. Its `NoisePatch.noise` stays beside the graph's `NoiseNodeOptions.color`, since patterns are saved as
   data (2026-11-12).
 - Contribution factories keep their packages' names (`diagramPorts`, `plotEditing`, `createMinimapContribution`): core
-  itself mixes `dragPanContribution` and `createPresentationContribution`, and no convention picks one. Presets do
+  itself mixes `createDragPanContribution` and `createPresentationContribution`, and no convention picks one. Presets do
   have one, now in `docs/conventions.md` (2026-11-12).
 - A `createSpacingHintsPreset` given an `id` names its sources `<id>.spacing` and `<id>.alignment`; with none they
   keep `spacing` and `alignment`, so a canvas with one preset reads as before (2026-11-12).
@@ -2139,7 +2139,7 @@ Calls the lanes made without a ruling:
   tools, tunings and commands on one canvas. Neither found a collision once `reportRouteConflicts` stopped counting
   `hover` bindings, which all run (2026-11-13).
 - An action's own key binding carries `BETWEEN_GESTURES`, or a phase of its own, unless it only moves the view
-  (`viewport.zoom.*`), is an Escape that `cancelGesture` takes mid-drag (`exitPathEdit`, `tool.resetToDefault`), or
+  (`viewport.zoom.*`), is an Escape that `dispatch.cancelAll` takes mid-drag (`exitPathEdit`, `tool.resetToDefault`), or
   opens a keymap. `kitBindingPhases.test.tsx` holds the kit to it, and the tool keys now carry it as the offhand keys
   did. draw's color keys and view toggles do not: they change the next shape's style or the view, not the document,
   and a change mid-draw reaching the shape is how the tool options work (2026-11-13).
@@ -2179,9 +2179,9 @@ Calls the lanes made without a ruling:
   WebKit's gesture events when wheel zoom is on. A WebKit pinch carries the world point under its focal point, as a
   wheel does, so an action can zoom about it without its own client-to-world map.
 - 2026-11-13 (maintainer-approved; the lane's calls on the shape): the minimap takes a two-finger touch pinch,
-  `minimap.pinch` bound as `<id>.multiTouch`. It zooms the main camera about the world point between the fingers,
+  `minimap.touchZoom` bound as `<id>.multiTouch`. It zooms the main camera about the world point between the fingers,
   read through the minimap's own camera, and that point keeps its place in the main view as the fingers move, so the
-  main view follows them the way a one-finger pan does (the opposite sign to `viewport.pinchZoom`, whose content
+  main view follows them the way a one-finger pan does (the opposite sign to `viewport.touchZoom`, whose content
   follows the fingers). It clamps as the wheel does. The minimap's camera reaches the action as the `view` dep, which
   `<MinimapCanvas>` now publishes beside `rootView`: the pair a `<CanvasView>` answers on a surface, so one action
   runs in both hosts, and any secondary view with a dispatcher of its own answers the same pair. Its `set` drops the

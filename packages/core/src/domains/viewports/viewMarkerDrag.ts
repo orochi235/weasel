@@ -4,7 +4,7 @@ import type { SurfaceContribution } from 'canvas/surfaceContribution';
 import type { ViewMarkerGrab } from './viewMarker';
 
 /** The action id a drag on a view marker routes to. */
-export const VIEW_MARKER_DRAG = 'view.marker.drag';
+export const VIEW_MARKER_DRAG = 'view-marker.drag';
 
 /** The id of the entry {@link createViewMarkerContribution} builds. */
 export const VIEW_MARKER_ENTRY_ID = 'view-marker';
@@ -16,7 +16,7 @@ function grabIn(affordance: unknown): ViewMarkerGrab | null {
 }
 
 /** Drags the grabbed marker. There is nothing to commit, so a cancel ends where a release does. */
-export function viewMarkerDragAction(): Action {
+export function createViewMarkerDragAction(): Action {
   return {
     id: VIEW_MARKER_DRAG,
     label: 'View marker — drag',
@@ -43,7 +43,7 @@ export function createViewMarkerContribution(): SurfaceContribution {
   return {
     id: VIEW_MARKER_ENTRY_ID,
     eligibility: { always: true },
-    actions: [viewMarkerDragAction()],
+    actions: [createViewMarkerDragAction()],
     bindings: [{
       spec: {
         kind: 'drag',

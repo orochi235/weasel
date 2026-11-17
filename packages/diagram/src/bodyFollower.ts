@@ -5,7 +5,7 @@
  */
 import {
   AUTO_POSE_DESCRIPTOR,
-  createTransformOp,
+  createSetPoseOp,
   type PoseDescriptor,
   type Scene,
   type TransformFollower,
@@ -58,7 +58,7 @@ export function bodyFollower<TPose>(
     finish(ops, label) {
       const moved = posesMovedBy(sc, ops);
       if (moved === null || moved.size === 0) return [...ops];
-      const rows = restacked(sc, geo, moved).map((r) => createTransformOp({ id: r.id, from: sc.get(r.id as never)!.pose, to: r.pose, label }));
+      const rows = restacked(sc, geo, moved).map((r) => createSetPoseOp({ id: r.id, from: sc.get(r.id as never)!.pose, to: r.pose, label }));
       return [...ops, ...rows];
     },
   };

@@ -1,16 +1,16 @@
 // apps/site/demos/__tests__/platformerClips.test.ts
 import { describe, it, expect } from 'vitest';
 import { bindClip, createTarget, skeletonAxes, resolveSkeleton, sampleTrack, toClip } from '@weasel-js/animator';
-import type { Clip, Pose, SampledTrack } from '@weasel-js/animator';
+import type { Clip, SkeletonPose, SampledTrack } from '@weasel-js/animator';
 import { BONE_LENGTH, JOINT_ORDER, PLAYER_SKELETON } from '../platformer/skeleton';
 import { CLIPS, FADE, PLAYER } from '../platformer/clips';
 
-const target = createTarget<Pose>({ get: () => ({}), set: () => {}, axes: skeletonAxes(PLAYER_SKELETON) });
+const target = createTarget<SkeletonPose>({ get: () => ({}), set: () => {}, axes: skeletonAxes(PLAYER_SKELETON) });
 const bound = (clip: Clip) => bindClip(clip, {
   target: (name) => (name === PLAYER ? target : undefined),
   weight: (name) => (name === FADE ? () => 1 : undefined),
 });
-const samplePose = (clip: Clip, t: number): Pose => sampleTrack(bound(clip).tracks[0] as SampledTrack<Pose>, t)!;
+const samplePose = (clip: Clip, t: number): SkeletonPose => sampleTrack(bound(clip).tracks[0] as SampledTrack<SkeletonPose>, t)!;
 
 describe('PLAYER_SKELETON', () => {
   it('has eleven joints in topological order', () => {

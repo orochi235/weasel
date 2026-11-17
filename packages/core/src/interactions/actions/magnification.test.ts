@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import type { UnitScope } from '@weasel-js/quantity';
 import { createScene } from 'core/scene/scene';
 import { asNodeId, type AddNodeSpec, type RectPose } from 'core/scene/types';
-import { undeclaredMagnifications, unitFrameAt } from './magnification';
+import { undeclaredMagnifications, createUnitFrameLookup } from './magnification';
 
 type Spec = AddNodeSpec<object, 'main', RectPose>;
 const IN = { system: { base: 'in', units: { in: 1 } } } satisfies UnitScope;
@@ -58,9 +58,9 @@ describe('undeclaredMagnifications', () => {
   });
 });
 
-describe('unitFrameAt', () => {
+describe('createUnitFrameLookup', () => {
   // The inset's transform draws its 48-unit box at 0.4× about its center: 14.4 to 33.6.
-  const at = unitFrameAt(board(0.4, { ...IN, drawnAt: 0.4 }));
+  const at = createUnitFrameLookup(board(0.4, { ...IN, drawnAt: 0.4 }));
 
   it('finds the innermost scope-declaring box a point lands in, as drawn', () => {
     expect(at({ x: 20, y: 30 })).toBe('inset');
@@ -75,6 +75,6 @@ describe('unitFrameAt', () => {
 
   it('passes over a container that declares no scope', () => {
     const scene = sceneOf([spec('g', { kind: 'group' }), spec('leaf', { parent: asNodeId('g') })]);
-    expect(unitFrameAt(scene)({ x: 5, y: 5 })).toBeNull();
+    expect(createUnitFrameLookup(scene)({ x: 5, y: 5 })).toBeNull();
   });
 });

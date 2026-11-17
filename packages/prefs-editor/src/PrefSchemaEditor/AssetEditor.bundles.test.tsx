@@ -2,7 +2,7 @@ import { afterEach, describe, expect, it } from 'vitest';
 import { cleanup, fireEvent, screen, within } from '@testing-library/react';
 import type { PresetDescription } from '@weasel-js/core';
 import { assets, attributes, Live, pickRow, row, structure } from './AssetEditor.fixture';
-import { bundlesAsset, type Workspace } from '@weasel-js/prefs/edit';
+import { bundlesAsset, type AssetSet } from '@weasel-js/prefs/edit';
 import { renderWithIcons } from '@weasel-js/ui/testing/withIcons';
 
 afterEach(() => {
@@ -14,7 +14,7 @@ const d = (id: string, more: Partial<PresetDescription> = {}): PresetDescription
   ({ id, label: id, package: 'pkg', atom: false, actions: [], tools: [], includes: [], ...more });
 
 const PRESETS = [d('lock', { atom: true, actions: ['z'] }), d('inner', { actions: ['x'] }), d('outer', { includes: ['inner', 'lock'], tools: ['rect'] })];
-const START: Workspace = { assets: [bundlesAsset('bundles', 'Feature bundles', PRESETS)] };
+const START: AssetSet = { assets: [bundlesAsset('bundles', 'Feature bundles', PRESETS)] };
 
 const exported = () => JSON.parse(screen.getByTestId('schema-literal').textContent!) as { format: string; changes: unknown[] };
 

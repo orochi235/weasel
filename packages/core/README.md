@@ -69,7 +69,7 @@ const grid = createGridPreset({ spacing: 20 });
 
 export function Editor() {
   const scene = useScene({ systemLayers: [{ id: 'default' }], initial: [] });
-  const selection = useSelection({ mode: 'multi' });
+  const selection = useSelection({ mode: 'multiple' });
 
   // Click to select, drag to move, handles to resize and rotate, the shape
   // tools, and the

@@ -24,7 +24,7 @@ const INITIAL: Rect[] = [
 
 function ToolReflectionDemoInner() {
   const scene = useScene<Rect>({ items: INITIAL });
-  const selection = useSelection({ scene, mode: 'multi' });
+  const selection = useSelection({ scene, mode: 'multiple' });
   const tools = useScopedTools();
 
   const toolList = useMemo(() => (tools ? Object.values(tools.registry) : []), [tools]);

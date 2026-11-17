@@ -163,7 +163,7 @@ export function derivedDepOf<TPose>(
   reader?: PosedNode<TPose>,
 ): DerivedDep<TPose> | undefined {
   const reading = readingOf(source);
-  return reader === undefined ? depIn(source, id, reading) : depsAsRead(source, reader, reading)(id);
+  return reader === undefined ? createSceneDep(source, id, reading) : depsAsRead(source, reader, reading)(id);
 }
 
 /** `id` as {@link derivedDepOf} answers it, but at the pose, path and data the
@@ -175,7 +175,7 @@ export function documentDepOf<TPose>(
   id: NodeId,
   reader?: PosedNode<TPose>,
 ): DerivedDep<TPose> | undefined {
-  return reader === undefined ? depIn(source, id, 'document') : depsAsRead(source, reader, 'document')(id);
+  return reader === undefined ? createSceneDep(source, id, 'document') : depsAsRead(source, reader, 'document')(id);
 }
 
 /** `(id) => that dependency as `reader`'s derivation is handed it`: its pose
@@ -186,7 +186,7 @@ function depsAsRead<TPose>(
   reader: PosedNode<TPose>,
   reading: Reading,
 ): (id: NodeId) => DerivedDep<TPose> | undefined {
-  const plain = (id: NodeId) => depIn(source, id, reading);
+  const plain = (id: NodeId) => createSceneDep(source, id, reading);
   if (reader.dependsOn === 'children') return plain;
   const rebase = depFrameRebase(
     source.composition,
@@ -230,7 +230,7 @@ class RebasedDep<TPose> implements DerivedDep<TPose> {
   }
 }
 
-function depIn<TPose>(
+function createSceneDep<TPose>(
   source: PoseSource<TPose>,
   id: NodeId,
   reading: Reading,
@@ -290,7 +290,7 @@ class SceneDep<TPose> implements DerivedDep<TPose> {
     const pc = source.composition;
     const compose = pc && composesFrames(pc) && definesFrame(this.posed) ? pc.compose : null;
     return source.childrenOf(this.posed.id).map((id) => {
-      const dep = depIn(source, id, reading);
+      const dep = createSceneDep(source, id, reading);
       return dep === undefined || compose === null ? dep : new RebasedDep(dep, compose(this.pose, dep.pose));
     });
   }

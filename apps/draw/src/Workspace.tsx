@@ -210,7 +210,7 @@ export function Workspace(props: WorkspaceProps): ReactElement {
             // Pick on the drawn shape, not the bounding box: clicking the blank right half of a
             // text box, or the notch of a star, should reach whatever is behind it.
             geometry={{ picking: 'shape' }}
-            viewport={{ pinchZoom: true, recenter }}
+            viewport={{ touchZoom: true, recenter }}
             cursorCoordsHud
             pickHud
             modalityHud

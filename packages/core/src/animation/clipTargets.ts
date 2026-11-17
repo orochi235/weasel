@@ -1,12 +1,12 @@
 import { getOwn } from '@weasel-js/registry';
-import type { ClipBinder, Pose, Target } from '@weasel-js/animator';
+import type { ClipBinder, SkeletonPose, Target } from '@weasel-js/animator';
 import type { PoseDescriptor } from '../core/geometry/poseDescriptor';
 import { scenePoseTarget, type PoseTargetScene } from './poseTarget';
 
 /** Options for `sceneClipTargets`. */
 export interface SceneClipTargetsOptions<TPose> {
   /** Rigs by the name a clip calls them: a track naming `rig:<name>` moves that rig's pose. */
-  rigs?: Readonly<Record<string, { readonly target: Target<Pose> }>>;
+  rigs?: Readonly<Record<string, { readonly target: Target<SkeletonPose> }>>;
   /** As `scenePoseTarget` takes them. */
   descriptor?: PoseDescriptor<TPose>;
 }

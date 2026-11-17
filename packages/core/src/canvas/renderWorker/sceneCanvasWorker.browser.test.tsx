@@ -49,7 +49,7 @@ async function until(api: SceneCanvasApi, x: number, y: number, rgb: number[]): 
 async function pickedUntil(api: SceneCanvasApi, scene: object, x: number, y: number, want: string | null) {
   let last: string | null = null;
   for (let i = 0; i < 300; i++) {
-    last = scenePickIds(scene).nodeOf((await api.pickAt(x, y)) ?? 0);
+    last = scenePickIds(scene).idOfPickId((await api.pickAt(x, y)) ?? 0);
     if (last === want) return last;
     await frame();
   }
@@ -113,7 +113,7 @@ describe('a scene canvas painted partly by a worker', () => {
   it('picks in the page\'s numbering across workers, and after an insert and a remove', async () => {
     const { ref, scene } = mount({
       mid: { layer: rectLayer('mid', '#00ff00', { x: 0, y: 45, width: 100, height: 5 }), after: 'scene:a' },
-    }, ['a', 'b'], (s) => { scenePickIds(s).idOf('n1'); });
+    }, ['a', 'b'], (s) => { scenePickIds(s).pickIdOf('n1'); });
     const api = ref.current!;
     expect(await pickedUntil(api, scene, 20, 20, 'n0')).toBe('n0');
     expect(await pickedUntil(api, scene, 60, 20, 'n1')).toBe('n1');
@@ -121,8 +121,8 @@ describe('a scene canvas painted partly by a worker', () => {
     expect(await pickedUntil(api, scene, 90, 20, 'n2')).toBe('n2');
     scene.remove(asNodeId('n0'));
     expect(await pickedUntil(api, scene, 20, 20, null)).toBeNull();
-    expect(scenePickIds(scene).nodeOf((await api.pickAt(60, 20))!)).toBe('n1');
-    expect(scenePickIds(scene).nodeOf((await api.pickAt(90, 20))!)).toBe('n2');
+    expect(scenePickIds(scene).idOfPickId((await api.pickAt(60, 20))!)).toBe('n1');
+    expect(scenePickIds(scene).idOfPickId((await api.pickAt(90, 20))!)).toBe('n2');
   });
 
   it('gives each part of a scene cut by a page layer a worker of its own', async () => {

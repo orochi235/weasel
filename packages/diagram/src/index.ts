@@ -40,8 +40,8 @@ export {
   connectBinding,
   createConnectAction,
   defaultCanConnect,
-  grabPortAction,
-  grabPortBindings,
+  createClaimPressAction,
+  claimPressBindings,
 } from './connect';
 export type { CanConnect, ConnectActionOptions, MovingEnd, PendingEdge } from './connect';
 export type { DropRefusal, DropVerdict } from '@weasel-js/core';
@@ -161,7 +161,7 @@ export type {
   EdgeLabelRoom,
   Graph,
   GraphEdge,
-  GraphGroup,
+  GraphCluster,
   GraphNode,
   GraphNodeLike,
   GraphSource,
@@ -207,29 +207,29 @@ export {
 export type { FollowOffPageOptions, OffPageTarget } from './offPage/follow';
 export { subpathOf } from './subpaths';
 export { diagramResizable } from './resizable';
-export { DEFAULT_GROUP_INSET, expandGroupEdges, insetOf, packClusters, rankGaps } from './cluster';
-export type { GroupInset } from './cluster';
+export { DEFAULT_CLUSTER_INSET, expandClusterEdges, insetOf, packClusters, rankGaps } from './cluster';
+export type { ClusterInset } from './cluster';
 export {
   ANCHOR_DERIVE_POSE,
   DIAGRAM_ANCHOR,
-  DIAGRAM_GROUP,
-  GROUP_DERIVE_POSE,
+  DIAGRAM_CLUSTER,
+  CLUSTER_DERIVE_POSE,
   anchorDerivePose,
   boxAround,
   diagramAnchorOf,
-  diagramGroupOf,
-  groupDerivePose,
-} from './group';
-export { groupLabelIdOf } from './dataGroups';
-export type { DiagramAnchor, DiagramDerivePose, GroupPoseOptions } from './group';
-export { DEFAULT_GROUP_STYLE, DEFAULT_NODE_STYLE, diagramScene, edgeIdOf } from './fromData';
+  diagramClusterOf,
+  clusterDerivePose,
+} from './clusterBox';
+export { clusterLabelIdOf } from './dataClusters';
+export type { DiagramAnchor, DiagramDerivePose, ClusterPoseOptions } from './clusterBox';
+export { DEFAULT_CLUSTER_STYLE, DEFAULT_NODE_STYLE, diagramScene, edgeIdOf } from './fromData';
 export { DEFAULT_LANE_SIZE, DEFAULT_POOL_ACROSS, EDGE_STROKE_WIDTH, LANE_STROKE_WIDTH, NODE_STROKE_WIDTH } from './dataTypes';
 export { DEFAULT_EDGE_STYLE, dataEdgeStyle, dataNodeStyle, dataRegionStyle, type StyledRegion } from './dataStyles';
 export type { DataContainer, DataLane } from './dataTypes';
 export { rowTextStyle } from './rowStyle';
 export type {
   DataEdge,
-  DataGroup,
+  DataCluster,
   DataNode,
   DiagramData,
   DiagramRouter,
@@ -328,7 +328,7 @@ export {
 } from './trait';
 export type { DiagramNodeEntry, DiagramNodeLike, DiagramNodeReader } from './trait';
 export { isBodyOrRegion, isDiagramBody } from './bodyNode';
-export type { DiagramGroup, DiagramNode, Port, PortAnchor, PortSite, PortSpec } from './types';
+export type { DiagramCluster, DiagramNode, Port, PortAnchor, PortSite, PortSpec } from './types';
 export { DiagramView, fitDiagram } from './DiagramView';
 export type {
   ContainerEdit, DeleteReport, DiagramEdit, DiagramFit, DiagramLayout, DiagramOverlay, DiagramViewApi, DiagramViewProps, EdgeRoute, LabelMove, NodeMove, NodeResize,

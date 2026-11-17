@@ -47,7 +47,7 @@ export function KeymapDemo() {
         features={[pickPreset, movePreset, transformPreset, arrangePreset]}
         ambient={ARRANGE}
         claimKeys
-        selectionOptions={{ mode: 'multi', initial: RECTS.map((r) => asNodeId(r.id)) }}
+        selectionOptions={{ mode: 'multiple', initial: RECTS.map((r) => asNodeId(r.id)) }}
       >
         <KeymapHint className={s.hint} />
       </SceneCanvas>

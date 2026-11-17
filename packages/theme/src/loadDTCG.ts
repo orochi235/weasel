@@ -1,5 +1,5 @@
 import { isPlainObject, setOwn, getOwn } from '@weasel-js/registry';
-import { mergeAxes, type AxisDef, type AxisDefs, type Selection, type Varying } from './axes';
+import { mergeAxes, type AxisDef, type AxisDefs, type AxisChoice, type Varying } from './axes';
 import type { SerializableColorList } from './colorListItems';
 import { AXES_EXT, overrideKey, RAMPS_EXT, TINTS_EXT, type DtcgAxesExtension } from './dtcg/axesExtension';
 import { flattenTokens } from './dtcg/flatten';
@@ -113,7 +113,7 @@ export function loadDTCG(doc: DtcgDocument): Theme {
   const all = mergeAxes(base ? themeAxes(base) : {}, axes);
 
   /** Rebuild a token's tree over the axes it varies by, one override layer per leaf. */
-  const nest = (name: string, vary: readonly string[], combo: Selection): Varying<RawToken> | undefined => {
+  const nest = (name: string, vary: readonly string[], combo: AxisChoice): Varying<RawToken> | undefined => {
     if (vary.length === 0) {
       const key = overrideKey(all, combo);
       const layer = key === '' ? plain : getOwn(overrides, key);

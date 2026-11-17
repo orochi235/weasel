@@ -5,7 +5,7 @@ import { adoptLegacyPages } from './legacyPages';
 import { addPage } from './pageEdits';
 import { placeOnPages } from './placeOnPages';
 import { PAGES_DOC_KEY, type PagesDoc } from './pageEdits';
-import { createPageRun, pageNodeOf, pageOfNode, pageRunOf } from './pageNodes';
+import { createPageRun, pageNodeOf, pageIdOf, pageRunOf } from './pageNodes';
 
 type Pose = { x: number; y: number; width: number; height: number };
 
@@ -32,7 +32,7 @@ describe('adoptLegacyPages', () => {
     expect(back).not.toBe('b');
     expect(scene.get(back)!.page).toEqual({ id: 'b', name: 'Back' });
     expect(scene.get('b' as NodeId)!.parent).toBe(back);
-    expect(pageOfNode(scene, 'b' as NodeId)).toBe('b');
+    expect(pageIdOf(scene, 'b' as NodeId)).toBe('b');
     expect(scene.get('onA' as NodeId)!.parent).toBe('a');
   });
 

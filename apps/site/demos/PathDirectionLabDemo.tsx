@@ -56,7 +56,7 @@ const OPENING = { id: 'ring', anchors: [2] };
 
 function DirectionTrial({ ctx }: { ctx: RenderContext<State, Config> }) {
   const scene = useTrialScene(ctx, createLabScene);
-  const selection = useSelection({ mode: 'multi', scene, initial: [asNodeId('ring')] });
+  const selection = useSelection({ mode: 'multiple', scene, initial: [asNodeId('ring')] });
   const { arrows } = ctx.config;
   const chromeVisibility = useMemo(() => ({ [PATH_DIRECTION_CHROME_ID]: arrows ? always : never }), [arrows]);
   return (

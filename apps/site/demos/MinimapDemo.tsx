@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
 import { solid } from '@weasel-js/paint';
-import { asNodeId, PointerContextProvider, SceneCanvas, dragPanContribution, useScene, viewPreset } from '@weasel-js/core';
+import { asNodeId, PointerContextProvider, SceneCanvas, createDragPanContribution, useScene, viewPreset } from '@weasel-js/core';
 import { MinimapCanvas, createMinimapContribution } from '@weasel-js/minimap';
 import type { CanvasSize, Fill, View } from '@weasel-js/core';
 import { Button } from '@weasel-js/ui/components/Button';
@@ -49,7 +49,7 @@ export function MinimapDemo() {
   const [mainSize, setMainSize] = useState<CanvasSize>({ width: MAIN_W, height: MAIN_H });
   // Built once: the entry holds the state its layers read.
   const inset = useMemo(() => createMinimapContribution({ rect: INSET }), []);
-  const ambient = useMemo(() => [inset, dragPanContribution()], [inset]);
+  const ambient = useMemo(() => [inset, createDragPanContribution()], [inset]);
 
   return (
     <PointerContextProvider>

@@ -62,8 +62,8 @@ describe('measureRowList', () => {
   }, timeoutFor(RUNS, 3));
 
   it('listMode is a grid for controls or activation alone, a listbox for selection, else a list', () => {
-    fc.assert(fc.property(fc.record({ selection: fc.option(fc.constantFrom('single', 'multi' as const), { nil: undefined }), activatable: fc.boolean(), controls: fc.boolean() }), (o) => {
-      expect(listMode(o)).toBe(o.controls || (o.activatable && !o.selection) ? 'grid' : o.selection ? 'listbox' : 'list');
+    fc.assert(fc.property(fc.record({ selectionMode: fc.option(fc.constantFrom('single', 'multiple' as const), { nil: undefined }), activatable: fc.boolean(), controls: fc.boolean() }), (o) => {
+      expect(listMode(o)).toBe(o.controls || (o.activatable && !o.selectionMode) ? 'grid' : o.selectionMode ? 'listbox' : 'list');
     }), runs(RUNS));
   }, timeoutFor(RUNS, 3));
 });

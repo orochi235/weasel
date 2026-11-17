@@ -52,7 +52,7 @@ function mount(initial: (ids: NodeId[]) => NodeId[] = () => []) {
   }];
   let api: SelectionApi | null = null;
   function Mount(): ReactNode {
-    const selection = useSelection({ mode: 'multi', initial: initial(ids) });
+    const selection = useSelection({ mode: 'multiple', initial: initial(ids) });
     api = selection;
     return (
       <SceneCanvas features={[drawPreset]} scene={scene} layers={{}} width={200} height={200}

@@ -50,10 +50,10 @@ function mountTwo(left: Scene<D, L, P>, right: Scene<D, L, P>) {
   const r: { deps?: () => Deps } = {};
   render(
     <>
-      <SceneCanvas<D, L, P> features={[selectionPreset]} scene={left} width={200} height={200} selectionOptions={{ mode: 'multi' }}>
+      <SceneCanvas<D, L, P> features={[selectionPreset]} scene={left} width={200} height={200} selectionOptions={{ mode: 'multiple' }}>
         <Probe into={l} />
       </SceneCanvas>
-      <SceneCanvas<D, L, P> features={[selectionPreset]} scene={right} width={200} height={200} selectionOptions={{ mode: 'multi' }}>
+      <SceneCanvas<D, L, P> features={[selectionPreset]} scene={right} width={200} height={200} selectionOptions={{ mode: 'multiple' }}>
         <Probe into={r} />
       </SceneCanvas>
     </>,

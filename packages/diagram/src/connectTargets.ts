@@ -15,7 +15,7 @@ import {
 import { pathContainsPoint, rectContainsPoint } from '@weasel-js/geom';
 import { boxCenter, endAims, resolveEnd, type Router } from './edge';
 import { diagramEdgeOf } from './edgeTrait';
-import { diagramGroupOf } from './group';
+import { diagramClusterOf } from './clusterBox';
 import { diagramLabelOf } from './labelTrait';
 import { outlinePath } from './outline';
 import { offersPorts, type ParticipantPose, type ParticipantSource } from './portAffordance';
@@ -67,7 +67,7 @@ export function bodyAt<TPose>(
   for (const participant of participants()) {
     const { node } = participant;
     if (!offersPorts(participant, opts.view)) continue;
-    if (diagramEdgeOf(node) !== null || diagramLabelOf(node) !== null || diagramGroupOf(node) !== null) continue;
+    if (diagramEdgeOf(node) !== null || diagramLabelOf(node) !== null || diagramClusterOf(node) !== null) continue;
     const trait = diagramNodeOf(node, opts.read);
     if (trait === null || trait.group !== undefined) continue;
     const bounds = geometry.getBounds(participant.pose);

@@ -6,17 +6,17 @@
  * `resize` and `rotate` presets.
  */
 import type { BindingOptions, GestureBinding } from '@weasel-js/routing';
-import type { MoveParams, RotateParams, Contribution, UseMoveOptions, UseRotateOptions } from '@weasel-js/core';
+import type { MoveParams, RotateParams, Contribution, MoveOptions, RotateOptions } from '@weasel-js/core';
 import { isResizeHandle, isRotateHandle, isPathEditPart } from '@weasel-js/routing';
 import { hitPredicate } from '@weasel-js/gestures';
 import { SNAP_ROLE_MODS } from '@weasel-js/core/engine';
-import { gestureLifecycleParams } from '@weasel-js/core';
+import { runLifecycleParams } from '@weasel-js/core';
 
 /** Options for {@link selectionMoveContribution}. */
 export interface SelectionMoveOptions<TPose = unknown> {
   /** Move-action options: `behaviors` become the move bindings'
    *  `opts.behaviors`, everything else their `opts.params`. */
-  move?: UseMoveOptions<TPose>;
+  move?: MoveOptions<TPose>;
   /** Reparent-on-drop behavior for drag-to-move. `'off'` (default) keeps
    *  translate-only commits. `'top'` lands the moved nodes at the top of the
    *  container under the drop point; `'above'` lands them immediately above the
@@ -42,7 +42,7 @@ export function selectionMoveBindings<TPose>(
   // first-touch drag and a re-drag commit identically.
   const moveOpts: BindingOptions<MoveParams> = (() => {
     const move = options.move ?? {};
-    const params: MoveParams = gestureLifecycleParams({ ...move, label: move.moveLabel });
+    const params: MoveParams = runLifecycleParams(move);
     if (options.reparentOnDrop && options.reparentOnDrop !== 'off') params.reparentOnDrop = options.reparentOnDrop;
     if (move.expandIds) params.expandIds = move.expandIds;
     return {
@@ -108,7 +108,7 @@ export function selectionMoveBindings<TPose>(
 export interface SelectionRotateOptions<TPose = unknown> {
   /** Rotate-action options: `behaviors` become the rotate binding's
    *  `opts.behaviors`, everything else its `opts.params`. */
-  rotate?: UseRotateOptions<TPose>;
+  rotate?: RotateOptions<TPose>;
 }
 
 /** Options for {@link selectionTransformContribution}. Resize takes its
@@ -126,7 +126,7 @@ export function selectionRotateBindings<TPose>(
   options: SelectionRotateOptions<TPose> = {},
 ): GestureBinding[] {
   const rotate = options.rotate ?? {};
-  const params: RotateParams = gestureLifecycleParams({ ...rotate, label: rotate.rotateLabel });
+  const params: RotateParams = runLifecycleParams({ ...rotate, label: rotate.rotateLabel });
   if (rotate.pivot) params.pivot = rotate.pivot;
   const opts: BindingOptions<RotateParams> = {
     id: 'selection.rotate.handle',

@@ -4,7 +4,7 @@
  * the edited value there, leaves the token as it was at every selection that differs on an axis it varies on, and
  * leaves every other token alone everywhere. Token and axis value names include `Object.prototype` members.
  */
-import type { AxisDefs, Selection, ThemeDefinition } from '@weasel-js/theme';
+import type { AxisDefs, AxisChoice, ThemeDefinition } from '@weasel-js/theme';
 import { axisDependencies, derive } from '@weasel-js/theme/engine';
 import fc from 'fast-check';
 import { describe, expect, it } from 'vitest';
@@ -64,14 +64,14 @@ const theme: fc.Arbitrary<ThemeDefinition> = axisDefs.chain((axes) =>
 );
 
 /** Every full selection of `axes`. */
-function selections(axes: AxisDefs): Selection[] {
-  return Object.entries(axes).reduce<Selection[]>(
+function selections(axes: AxisDefs): AxisChoice[] {
+  return Object.entries(axes).reduce<AxisChoice[]>(
     (acc, [axis, def]) => acc.flatMap((s) => Object.keys(def.values).map((v) => ({ ...s, [axis]: v }))),
     [{}],
   );
 }
 
-const valueOf = (def: ThemeDefinition, s: Selection, token: string): unknown =>
+const valueOf = (def: ThemeDefinition, s: AxisChoice, token: string): unknown =>
   Object.hasOwn(derive(def, s).tokens, token) ? derive(def, s).tokens[token]!.value : undefined;
 
 describe('selectionFor', () => {

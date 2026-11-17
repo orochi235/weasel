@@ -69,7 +69,7 @@ export function ChartWorkspace(): ReactElement {
   const scene = useScene<ChartData, ChartLayer, ChartPose>({
     systemLayers: CHART_LAYERS, registry: CHART_REGISTRY, initial: initial.specs, doc: initial.doc,
   });
-  const selection = useSelection({ mode: 'multi', scene });
+  const selection = useSelection({ mode: 'multiple', scene });
   useSessionPersistence(scene, { ...CHART_SESSION, onSaved: reportChartSave });
   const theme = chartThemeOf(scene);
   const [toolOptionValues] = useState(createToolOptionValues);

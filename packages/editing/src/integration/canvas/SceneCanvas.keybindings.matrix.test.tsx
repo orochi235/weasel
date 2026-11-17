@@ -125,7 +125,7 @@ const ACTION_KEY_MATRIX: readonly ActionKeyCase[] = [
   { actionId: 'duplicate', key: 'd', mods: { ctrlKey: true, shiftKey: true },  label: 'Cmd/Ctrl+Shift+D → duplicate' },
   { actionId: 'group',     key: 'g', mods: { ctrlKey: true },                  label: 'Cmd/Ctrl+G → group' },
   { actionId: 'ungroup',   key: 'g', mods: { ctrlKey: true, shiftKey: true },  label: 'Cmd/Ctrl+Shift+G → ungroup' },
-  { actionId: 'escape',    key: 'Escape',                                      label: 'Escape → escape' },
+  { actionId: 'deselect',  key: 'Escape',                                      label: 'Escape → deselect' },
 ];
 
 describe('default keybindings: action shortcuts', () => {

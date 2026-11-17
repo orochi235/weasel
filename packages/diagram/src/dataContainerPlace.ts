@@ -4,7 +4,7 @@
  */
 import type { Vec2 } from '@weasel-js/core/math';
 import { maxOf, minOf, type Rect } from '@weasel-js/geom';
-import type { GroupInset } from './cluster';
+import type { ClusterInset } from './cluster';
 import { containerShape } from './containers/layouts';
 import { stackedLanes } from './containers/laneStack';
 import { regionSpecs } from './containers/regionSpecs';
@@ -21,7 +21,7 @@ export interface PlacedNodeSize {
   at?: Vec2;
   width: number;
   height: number;
-  margin?: GroupInset;
+  margin?: ClusterInset;
 }
 
 /** Fill `out` with where the nodes no `at` places sit: in rows across `seat`'s body, in order. */

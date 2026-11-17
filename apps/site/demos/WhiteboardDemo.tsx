@@ -25,7 +25,7 @@ const INITIAL = [
 export function WhiteboardDemo() {
   const pencil = usePencilTool();
   const scene = useScene({ systemLayers: [{ id: 'default' }], initial: INITIAL });
-  const selection = useSelection({ scene, mode: 'multi' });
+  const selection = useSelection({ scene, mode: 'multiple' });
   return (
     <WeaselProvider>
       <div className="ckd-demo">

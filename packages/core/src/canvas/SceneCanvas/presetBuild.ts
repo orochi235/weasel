@@ -19,7 +19,7 @@ import type { SceneCanvasToolOptions } from './toolProps';
 /** The canvas's pickers, as a press reads them. */
 export interface CanvasPickers {
   /** Every id under `world` a press routed to `viewId`'s view (the surface's, absent) lands on, back to front. */
-  pressEvery(world: WorldPoint, viewId?: string | null): string[];
+  everyIn(world: WorldPoint, viewId?: string | null): string[];
   /** The one id a bare press there settles on, or null. */
   bestIn(world: WorldPoint, viewId?: string | null): string | null;
   /** The nodes a range press from `from` to `to` covers, walking the scene as this canvas paints it. */
@@ -61,7 +61,7 @@ export interface PresetBuildSource {
   adapter: unknown;
   poseDescriptor: unknown;
   picking: {
-    pressEvery: CanvasPickers['pressEvery'];
+    pickEveryIn: CanvasPickers['everyIn'];
     pickBestIn: CanvasPickers['bestIn'];
     between: CanvasPickers['between'];
     boundsOf: (id: string) => Bounds | null;
@@ -95,7 +95,7 @@ export function usePresetBuilds(
     requestRedraw: () => { live.current.canvasApiRef.current?.requestRedraw(); },
     insertNodeFactories: () => live.current.insertNodeFactories,
     pick: {
-      pressEvery: (world, viewId) => live.current.picking.pressEvery(world, viewId),
+      everyIn: (world, viewId) => live.current.picking.pickEveryIn(world, viewId),
       bestIn: (world, viewId) => live.current.picking.pickBestIn(world, viewId),
       between: (from, to) => live.current.picking.between(from, to),
       boundsOf: (id) => live.current.picking.boundsOf(id),

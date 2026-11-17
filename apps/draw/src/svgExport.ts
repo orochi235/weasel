@@ -5,7 +5,7 @@
  * rides on the node so the serializer emits a `rotate` transform.
  */
 import { textFrameFields } from './svgNote';
-import { type Fill, type Path, type PlacedPage, type Scene, type Stroke, boundsOfPath, composesFrames, definesFrame, derivedDepOf, documentOf, inheritedPaintIn, withInheritedPaint, fillInPoseFrame, isAnnotationNode, pageOfNode, pathEffectOf, pathEffectParts, resolveFill, resolvePartPaint, resolveStroke, pathInPoseFrame, shapeGeneratorOf, type ShapeGenerator, worldPoses } from '@weasel-js/core';
+import { type Fill, type Path, type PlacedPage, type Scene, type Stroke, boundsOfPath, composesFrames, definesFrame, derivedDepOf, documentOf, inheritedPaintIn, withInheritedPaint, fillInPoseFrame, isAnnotationNode, pageIdOf, pathEffectOf, pathEffectParts, resolveFill, resolvePartPaint, resolveStroke, pathInPoseFrame, shapeGeneratorOf, type ShapeGenerator, worldPoses } from '@weasel-js/core';
 import { layoutTextPose } from '@weasel-js/text';
 import {
   computeBounds,
@@ -187,7 +187,7 @@ function sceneSourceOf<TLayer extends string>(
     roots: scene.roots.flatMap((id) => (scene.get(id)?.pageRun === undefined ? [id] : scene.childrenOf(id))).map(String),
     childrenOf: (id) => scene.childrenOf(id as never).map(String),
     get: (id) => scene.get(id as never),
-    pageIdOf: (id) => (scene.get(id as never)?.page === undefined ? undefined : pageOfNode(scene, id as never) ?? undefined),
+    pageIdOf: (id) => (scene.get(id as never)?.page === undefined ? undefined : pageIdOf(scene, id as never) ?? undefined),
     nodeOf: (id) => {
       const node = scene.get(id as never);
       return node && { label: node.data?.label, locked: node.locked };

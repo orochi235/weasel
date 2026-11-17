@@ -37,7 +37,7 @@ function makeScene() {
 }
 
 function Host({ scene }: { scene: ReturnType<typeof makeScene> }) {
-  const selection = useSelection({ mode: 'multi', scene });
+  const selection = useSelection({ mode: 'multiple', scene });
   const measurements = useState(() => createMeasurements({ layer: ANNOTATION_LAYER }))[0];
   return (
     <LayersContent

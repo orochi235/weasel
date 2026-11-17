@@ -97,7 +97,7 @@ export type HitShape =
   | { kind: 'path'; d: Path2D };
 
 /** What a recorded viewport change was: a translation or a scale change. */
-export type ViewportGestureKind = 'pan' | 'zoom';
+export type ViewportMoveKind = 'pan' | 'zoom';
 
 /**
  * Where an action reports its hit math so the debug overlay can draw it. An
@@ -116,7 +116,7 @@ export interface DebugSink {
    * focal point — when it had one. Survives `beginFrame`; the next record
    * replaces it.
    */
-  recordViewport(kind: ViewportGestureKind, from: View, to: View, anchor?: { x: number; y: number }): void;
+  recordViewport(kind: ViewportMoveKind, from: View, to: View, anchor?: { x: number; y: number }): void;
   /** Clears every non-snap array. Called at the start of each Canvas render. */
   beginFrame(): void;
   /** Clears the snap array. Called at gesture end. */

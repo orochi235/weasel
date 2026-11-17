@@ -1,4 +1,4 @@
-import type { Selection } from './axes.ts';
+import type { AxisChoice } from './axes.ts';
 import type { ThemeDefinition } from './definition.ts';
 import type { Issue } from './engine/types.ts';
 
@@ -14,7 +14,7 @@ export interface StoredTheme {
 
 /** A derive issue and the selection it occurred at. */
 export interface IssueReport {
-  readonly selection: Selection;
+  readonly selection: AxisChoice;
   readonly issue: Issue;
 }
 

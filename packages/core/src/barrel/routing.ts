@@ -79,10 +79,10 @@ export {
 export { NUDGE_LABEL, nudgeDelta, nudgeSpec, type NudgeDirection } from '../interactions/actions/defaults/nudgeSteps';
 export { reachesLocked } from '../interactions/actions/defaults/lockedReach';
 export {
-  pinchZoomAction,
-  createPinchZoomAction,
-  type PinchZoomOptions,
-} from '../interactions/actions/defaults/pinchZoom';
+  touchZoomAction,
+  createTouchZoomAction,
+  type TouchZoomOptions,
+} from '../interactions/actions/defaults/touchZoom';
 export type { SliceDep, ClipboardDep, OperandsDep } from '../interactions/actions/depSchema';
 export { operandList } from '../interactions/actions/operands';
 export { useActionSet, useStandardDeps } from '../interactions/actions/useActionSet';
@@ -112,7 +112,7 @@ export { topmostOf, type TopmostTree } from '../canvas/topmostOf';
 export { pressTarget, type PressTargetTree } from '../canvas/pressTarget';
 export type {
   AreaSelectDep,
-  HitTestView,
+  PickingView,
   ClipboardIngestCtx,
   EditAnchorsDep,
   FinishedEditFrame,
@@ -138,7 +138,7 @@ export type {
   SvgUnpacker,
   ViewApi,
 } from '../interactions/actions/depSchema';
-export type { GestureLifecycleOptions } from '../interactions/actions/gestureLifecycle';
+export type { RunLifecycleOptions } from '../interactions/actions/runLifecycle';
 export { insertSite, type InsertSite, type InsertSiteOptions } from '../canvas/deps/insertSite';
 export type { GeometryProjection, PoseChange } from '../interactions/actions/geometryProjection';
 export { PATH_GEOMETRY_PROJECTION } from '../interactions/actions/geometryProjection';

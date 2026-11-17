@@ -9,7 +9,7 @@ import { unionRects } from '@weasel-js/geom';
 import { useEffect, useMemo, useRef, useState, type RefObject } from 'react';
 import { isBodyOrRegion } from './bodyNode';
 import { diagramEdgeOf } from './edgeTrait';
-import { diagramGroupOf } from './group';
+import { diagramClusterOf } from './clusterBox';
 
 /** How `fitDiagram` frames a diagram in its box. */
 export interface DiagramFit {
@@ -31,7 +31,7 @@ export const DEFAULT_FIT_PADDING = 16;
 /** The world rect every node box, group box and route point takes, and `extra`, or `null` for none. */
 function diagramBounds(specs: readonly { id?: string; kind: string; pose: unknown; data: unknown; parent?: string | null }[], extra?: Bounds): Bounds | null {
   const world = worldPosesOf(specs as never, RIGID_POSE_COMPOSITION);
-  const boxes: Bounds[] = specs.filter((s) => isBodyOrRegion(s) || diagramGroupOf(s) !== null)
+  const boxes: Bounds[] = specs.filter((s) => isBodyOrRegion(s) || diagramClusterOf(s) !== null)
     .map((s) => (world.get((s as { id?: string }).id ?? '') ?? s.pose) as RectPose);
   for (const s of specs) {
     const edge = diagramEdgeOf(s);

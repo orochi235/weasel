@@ -1,4 +1,4 @@
-import { createTransformOp, type LayoutSnap, type LayoutStrategy } from '@weasel-js/core';
+import { createSetPoseOp, type LayoutSnap, type LayoutStrategy } from '@weasel-js/core';
 import { none } from '../snaps';
 
 /** Options for `freeform`. */
@@ -34,7 +34,7 @@ export function freeform<TPose>(opts: FreeformOptions<TPose> = {}): LayoutStrate
 
     commitDrop(_container, _children, dragged, target) {
       return [
-        createTransformOp<TPose>({
+        createSetPoseOp<TPose>({
           id: dragged.id,
           from: dragged.originPose,
           to: target?.pose ?? dragged.pose,

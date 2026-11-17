@@ -21,7 +21,7 @@ export function TransformDemo() {
         features={[pickPreset, movePreset, transformPreset]}
         poseDescriptor={ROTATED_POSE_DESCRIPTOR as PoseDescriptor<RotatedPose>}
         snap={SNAP}
-        selectionOptions={{ mode: 'multi', initial: [asNodeId('b')] }}
+        selectionOptions={{ mode: 'multiple', initial: [asNodeId('b')] }}
         layers={{
           grid: { layer: GRID },
           selectionOverlay: { rotationHandle: true },

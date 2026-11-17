@@ -196,7 +196,7 @@ role:
 | Role | What it holds |
 |---|---|
 | `views` | The minimap: a view at `rect`, its camera a fit over the scene |
-| `actions` | `minimap.center`, `minimap.pan`, `minimap.zoom` and `minimap.pinch`, which move the main camera (the last two unless `zoom: false`) |
+| `actions` | `minimap.center`, `minimap.pan`, `minimap.zoom` and `minimap.touchZoom`, which move the main camera (the last two unless `zoom: false`) |
 | `bindings` | `pointerDown` → center, `drag` → pan, wheel, trackpad pinch and Safari's pinch → zoom, and a two-finger touch → pinch, all with `views: ['minimap']` |
 | `overlay` | The visible-rect indicator, and a crosshair where the pointer is in the other view |
 | `attach` | Subscribes to the pointer store and repaints while the crosshair shows |
@@ -399,7 +399,7 @@ Each action pins the proposed/result shape; pick the matching alias
   paints at full opacity rather than as a ghost.
 - `onEnd` decides commit ops. First non-`undefined` return wins: `Op[]`
   commits, `null` aborts, `undefined` falls through to the next behavior
-  or the action's default ops (move emits one `createTransformOp` per id).
+  or the action's default ops (move emits one `createSetPoseOp` per id).
   Every behavior's `onEnd` runs, with `end.answered` true once an earlier one
   has answered or thrown; after a throw nothing commits, and the first error
   is rethrown once all have run.
@@ -415,7 +415,7 @@ Each action pins the proposed/result shape; pick the matching alias
   was canceled, aborted by a behavior, released with nothing to commit, or
   refused by a container its ops dropped something into, and true otherwise: the action or a behavior made the commit, a behavior
   claiming it with no ops included. For move, resize, and rotate it is the
-  value `onGestureEnd` receives. Move, resize, rotate, insert, and
+  value `onRunEnd` receives. Move, resize, rotate, insert, and
   lasso-select call it, and every behavior's runs even if another's throws.
 - `ctx.scratch` is a per-gesture mutable map, wiped on every `start`.
   Namespace by behavior id to avoid collisions:
@@ -542,19 +542,19 @@ center and Space to reposition. A painter runs after the built-ins that claim a
 node by its data (`text`, `path`, `shape`, `image`), so keep its `matches` off
 those fields, or register it with `{ priority: 'high' }`.
 
-`nodeKindPreset` packages them as one preset, each trait handed to its owner
+`createNodeKindPreset` packages them as one preset, each trait handed to its owner
 while the preset is on and released when it goes:
 
 <!-- snippet: tests/consumers/gem-extension/src/index.ts#gem-feature -->
 ```ts
-import { nodeKindPreset } from '@weasel-js/core';
+import { createNodeKindPreset } from '@weasel-js/core';
 import { insertPreset } from '@weasel-js/editing';
 import { GEM_BLUE, gemInsert, gemShape, gemTool, isGem } from './gem.js';
 import { tintTool } from './tint.js';
 
 /** The whole feature as one preset: the kind's routing, painter, insert factory, and properties, and its tools,
  *  with editing's `insertPreset`, whose `insert` action and dep the gem tool inserts through. */
-export const gemFeature = nodeKindPreset({
+export const gemFeature = createNodeKindPreset({
   id: 'app:gem',
   label: 'Gems',
   kind: 'gem',                      // routing kind, properties name, insert kind

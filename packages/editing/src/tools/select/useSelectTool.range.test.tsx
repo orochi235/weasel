@@ -38,7 +38,7 @@ function sceneOf(nodes: { id: string; kind?: 'mark' | 'group'; pose: RectPose; p
 
 function harness(scene: AnyScene, entered: string | null = null) {
   const { result } = renderHook(() => {
-    const sel = useSelection({ mode: 'multi' });
+    const sel = useSelection({ mode: 'multiple' });
     const adapter = sceneToAdapter(scene, { selection: sel });
     return { tool: useSelectTool(adapter as never, {}), sel };
   });

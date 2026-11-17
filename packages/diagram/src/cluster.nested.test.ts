@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { force } from './force';
 import { layered } from './layered';
 import { tree } from './tree';
-import { contains, graphOf, nestedBoxOf, overlaps, placed } from './groupFixture';
+import { contains, graphOf, nestedBoxOf, overlaps, placed } from './clusterFixture';
 
 // A system holding two subsystems and a node of its own, beside an outsider
 // every part of it talks to. Ungrouped, the outsider's edges pull it into the

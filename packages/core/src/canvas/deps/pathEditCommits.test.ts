@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { polygonFromPoints, type PolygonPath } from '@weasel-js/geom';
 import { IDENTITY_POSE_COMPOSITION } from 'core/scene/composeFrame';
 import { createScene } from 'core/scene/scene';
-import { createTransformOp } from 'core/ops/transform';
+import { createSetPoseOp } from 'core/ops/setPose';
 import { defaultCommitAdapter } from 'interactions/actions/defaultCommitAdapter';
 import type { Scene } from 'core/scene/types';
 import type { PathEditExtension, PathTransformFinishCtx } from 'domains/paths/pathEditExtension';
@@ -29,7 +29,7 @@ describe('transformOps', () => {
       },
     };
     const moved = poly([5, 5], [15, 5], [15, 15]);
-    const op = createTransformOp({ id: a, from: scene.get(a)!.pose, to: moved, label: 'Move' });
+    const op = createSetPoseOp({ id: a, from: scene.get(a)!.pose, to: moved, label: 'Move' });
     const ops = transformOps(scene, [ext], [op], 'Move')!;
     expect(seen).toHaveLength(1);
     expect(seen[0].ids).toEqual([a]);
@@ -46,7 +46,7 @@ describe('transformOps', () => {
 
   it('answers null when an extension refuses, and the batch as it is with no extension finishing transforms', () => {
     const { scene, a } = setup();
-    const op = createTransformOp({ id: a, from: scene.get(a)!.pose, to: poly([1, 1], [2, 1], [2, 2]), label: 'Move' });
+    const op = createSetPoseOp({ id: a, from: scene.get(a)!.pose, to: poly([1, 1], [2, 1], [2, 2]), label: 'Move' });
     expect(transformOps(scene, [{ id: 'no', finishTransform: () => null }], [op], 'Move')).toBeNull();
     expect(transformOps(scene, [{ id: 'none' }], [op], 'Move')).toEqual([op]);
   });

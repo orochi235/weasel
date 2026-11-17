@@ -11,11 +11,11 @@ function Capture({ onR }: { onR: (r: DepRegistry) => void }) {
 
 describe('useResizePolicy', () => {
   it('publishes the lifecycle options beside the constraints', () => {
-    const onGestureStart = () => {};
-    const onGestureEnd = () => {};
+    const onRunStart = () => {};
+    const onRunEnd = () => {};
     let reg!: DepRegistry;
     function Wire() {
-      useResizePolicy({ label: 'Stretch', transient: true, onGestureStart, onGestureEnd });
+      useResizePolicy({ label: 'Stretch', transient: true, onRunStart, onRunEnd });
       return null;
     }
     render(
@@ -27,31 +27,31 @@ describe('useResizePolicy', () => {
     const policy = reg.get('resizePolicy') as ResizePolicy<unknown>;
     expect(policy.label).toBe('Stretch');
     expect(policy.transient).toBe(true);
-    expect(policy.onGestureStart).toBe(onGestureStart);
-    expect(policy.onGestureEnd).toBe(onGestureEnd);
+    expect(policy.onRunStart).toBe(onRunStart);
+    expect(policy.onRunEnd).toBe(onRunEnd);
   });
 });
 
 describe('resizePolicyOptions', () => {
-  it('maps every read UseResizeOptions field onto the policy options', () => {
+  it('maps every read ResizeOptions field onto the policy options', () => {
     const behaviors = [{}];
     const expandIds = (ids: string[]) => ids;
-    const onGestureStart = () => {};
-    const onGestureEnd = () => {};
+    const onRunStart = () => {};
+    const onRunEnd = () => {};
     expect(resizePolicyOptions({
       behaviors: behaviors as never,
       expandIds,
       resizeLabel: 'Stretch',
       transient: true,
-      onGestureStart,
-      onGestureEnd,
+      onRunStart,
+      onRunEnd,
     })).toEqual({
       constraints: behaviors,
       expandIds,
       label: 'Stretch',
       transient: true,
-      onGestureStart,
-      onGestureEnd,
+      onRunStart,
+      onRunEnd,
     });
   });
 });

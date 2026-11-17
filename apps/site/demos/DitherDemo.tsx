@@ -34,7 +34,7 @@ const STAGE = { width: W, height: H };
 const dpr = () => (typeof window !== 'undefined' && window.devicePixelRatio) || 1;
 
 /** The kit's default zoom stops at 8, and 300 dpi opens at 12.5 on a 1× screen. */
-const ZOOM_RANGE = { zoom: { min: 0.5, max: 48 }, pinchZoom: { min: 0.5, max: 48 } };
+const ZOOM_RANGE = { zoom: { min: 0.5, max: 48 }, touchZoom: { min: 0.5, max: 48 } };
 
 type GridChoice = 'screen' | 180 | 300;
 /** Where a grid opens: on whole dots for a printer's, the whole page for the screen's. */

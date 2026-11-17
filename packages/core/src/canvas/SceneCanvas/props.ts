@@ -170,7 +170,7 @@ export type SceneCanvasProps<TData, TLayer extends string, TPose> =
      * recorded. Default `true`.
      *
      * Click policy (whether Cmd-click toggles and Shift-click ranges) is the selection's `mode`:
-     * editing's `useSelection({ mode: 'multi' })`, or `selectionOptions={{ mode: 'multi' }}`
+     * editing's `useSelection({ mode: 'multiple' })`, or `selectionOptions={{ mode: 'multiple' }}`
      * for the selection the canvas's presets build.
      */
     selectable?: boolean;

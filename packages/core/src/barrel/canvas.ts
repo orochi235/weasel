@@ -50,7 +50,7 @@ export {
   findShapeBounds,
   DEFAULT_INK,
   shapeCoversPoint,
-  getNodeShapes,
+  nodeShapeEntries,
   createNodeShapes,
   defaultNodeShapes,
   nodeShapesOf,

@@ -23,7 +23,7 @@ import {
 } from 'canvas/pickWalk';
 import { rectToPlane, toPlane, type PlaneMap } from 'core/viewport/parallax';
 
-import type { HitTestView } from 'interactions/actions/depSchema';
+import type { PickingView } from 'interactions/actions/depSchema';
 import { findShapeInk, findShapeSilhouette } from 'canvas/NodeShape';
 import {
   polygonRegion,
@@ -51,7 +51,7 @@ export interface RegionQueryOptions {
    *  to fold members back into their group, asks for them. */
   includeGroups?: boolean;
   /** The asking view's scale, for a node that sizes itself in screen pixels
-   *  (`{ px }` text). `hitTestArea` and its siblings read it off the camera. */
+   *  (`{ px }` text). `hitTestRect` and its siblings read it off the camera. */
   scale?: number;
 }
 
@@ -59,7 +59,7 @@ export interface RegionQueryOptions {
 /** The pick options a region dep hands the shared walk: the asking view's
  *  layer gate and camera, and the surface's alpha. */
 export function regionPickOptions(
-  view: HitTestView | undefined,
+  view: PickingView | undefined,
   alphaOf: ((id: string) => number) | undefined,
 ): ScenePickSourceOptions<unknown> {
   const camera = view?.get?.();
@@ -71,7 +71,7 @@ export function regionPickOptions(
 }
 
 /** Marquee entry point: every node the rect `bounds` meets. */
-export function hitTestArea(
+export function hitTestRect(
   scene: Scene<unknown, string, unknown>,
   bounds: AABBBounds,
   opts?: ScenePickSourceOptions<unknown>,

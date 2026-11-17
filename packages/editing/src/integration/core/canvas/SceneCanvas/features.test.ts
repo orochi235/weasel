@@ -120,7 +120,7 @@ describe('resolveFeatures', () => {
     const before = (a: string, b: string) => expect(order.indexOf(a), `${a} before ${b}`).toBeLessThan(order.indexOf(b));
     before('nudgeAnchors.up', 'nudge.up');
     before('deleteAnchors', 'delete');
-    for (const twin of ['escape', 'cancelGesture']) before('exitPathEdit', twin);
+    for (const twin of ['deselect', 'dispatch.cancelAll']) before('exitPathEdit', twin);
   });
 
   it('takes no names, and says what to pass instead', () => {

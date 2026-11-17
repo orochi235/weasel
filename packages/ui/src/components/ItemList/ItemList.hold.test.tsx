@@ -14,7 +14,7 @@ function renderList(wrap: (node: ReactNode) => ReactNode, props: Partial<ItemLis
     <>
       {wrap(
         <ItemList
-          rows={rows} selection="multi" containerProps={{ 'aria-label': 'Items' }}
+          rows={rows} selectionMode="multiple" containerProps={{ 'aria-label': 'Items' }}
           onActivate={calls.onActivate} onNudge={calls.onNudge} onSelectRange={calls.onSelectRange}
           {...props}
         />,

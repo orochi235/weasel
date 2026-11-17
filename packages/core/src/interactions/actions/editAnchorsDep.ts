@@ -58,7 +58,7 @@ export interface EditAnchorsDep {
    *  `editAnchorSetTracked`), its per-anchor data (skin, vertex colors) is
    *  renumbered in that entry. The edit is finished first (see `finishEdit`); one an extension cannot
    *  finish commits nothing. Given `select`, the entry also carries that
-   *  selection change (`commitSelectionOps(select, id, label)`); an edit that
+   *  selection change (`createCommitSelectionOps(select, id, label)`); an edit that
    *  commits nothing changes no selection. */
   applyEdit(
     id: string, worldPath: unknown, label: string, origins?: readonly (PointOrigin | null)[], select?: CommitSelection,

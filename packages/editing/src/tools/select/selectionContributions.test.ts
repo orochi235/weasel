@@ -24,16 +24,16 @@ describe('selectionMoveBindings — binding opts', () => {
   });
 
   it('threads the move lifecycle options and expandIds into the move binding params', () => {
-    const onGestureStart = () => {};
-    const onGestureEnd = () => {};
+    const onRunStart = () => {};
+    const onRunEnd = () => {};
     const expandIds = (ids: string[]) => ids;
     const bindings = selectionMoveBindings({
-      move: { moveLabel: 'Drag', transient: true, onGestureStart, onGestureEnd, expandIds },
+      move: { label: 'Drag', transient: true, onRunStart, onRunEnd, expandIds },
     }).filter((b) => b.actionId === 'move');
     expect(bindings.length).toBeGreaterThan(0);
     for (const b of bindings) {
       expect(b.opts?.params).toEqual({
-        label: 'Drag', transient: true, onGestureStart, onGestureEnd, expandIds,
+        label: 'Drag', transient: true, onRunStart, onRunEnd, expandIds,
       });
     }
   });
@@ -142,17 +142,17 @@ describe('selectionTransformBindings', () => {
 
   it('threads the rotate options into the rotate binding', () => {
     const behavior = { onMove: () => undefined };
-    const onGestureStart = () => {};
-    const onGestureEnd = () => {};
+    const onRunStart = () => {};
+    const onRunEnd = () => {};
     const rotate = selectionTransformBindings({
       rotate: {
         behaviors: [behavior] as never,
-        rotateLabel: 'Turn', transient: true, onGestureStart, onGestureEnd, pivot: 'each',
+        rotateLabel: 'Turn', transient: true, onRunStart, onRunEnd, pivot: 'each',
       },
     }).find((b) => b.actionId === 'rotate');
     expect(rotate?.opts?.behaviors).toEqual([behavior]);
     expect(rotate?.opts?.params).toEqual({
-      label: 'Turn', transient: true, onGestureStart, onGestureEnd, pivot: 'each',
+      label: 'Turn', transient: true, onRunStart, onRunEnd, pivot: 'each',
     });
   });
 

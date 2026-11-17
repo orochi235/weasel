@@ -51,7 +51,7 @@ export const revertName = (kind: string): string => `${REVERT}${kind}`;
 export function createOpTable(env: OpTableEnv): OpTable {
   const handlers = createReflectable<RegisteredOp<unknown>>({ name: 'op handlers' });
 
-  function handlerFor(kind: string): RegisteredOp<unknown> {
+  function requireHandler(kind: string): RegisteredOp<unknown> {
     const handler = handlers.get(kind);
     if (!handler) throw new Error(`Scene: no registered op for kind "${kind}"`);
     return handler;
@@ -76,7 +76,7 @@ export function createOpTable(env: OpTableEnv): OpTable {
   }
 
   function run(kind: string, payload: unknown, forward: boolean): 'noop' | undefined {
-    const handler = handlerFor(kind);
+    const handler = requireHandler(kind);
     if (env.skips(kind, payload, forward)) return 'noop';
     (forward ? handler.apply : handler.revert)(payload);
     env.applied(kind, payload, !forward);
@@ -84,7 +84,7 @@ export function createOpTable(env: OpTableEnv): OpTable {
   }
 
   function op(kind: string, payload: unknown, forward = true): Op {
-    handlerFor(kind);
+    requireHandler(kind);
     return {
       name: forward ? kind : revertName(kind),
       args: payload,
@@ -108,7 +108,7 @@ export function createOpTable(env: OpTableEnv): OpTable {
       if (held && !options?.replace) throw new ExtensionConflictError('Scene op', kind);
       handlers.set(kind, handler);
     },
-    run: (kind, payload) => handlerFor(kind).apply(payload),
+    run: (kind, payload) => requireHandler(kind).apply(payload),
     op: (kind, payload) => op(kind, payload),
     rebuild(name, args) {
       if (handlers.has(name)) return op(name, args);

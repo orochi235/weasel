@@ -34,7 +34,7 @@ const INITIAL = (() => {
 
 export function LassoDemo() {
   const scene = useScene({ systemLayers: [{ id: 'default' }], initial: INITIAL });
-  const selection = useSelection({ scene, mode: 'multi' });
+  const selection = useSelection({ scene, mode: 'multiple' });
   const [tools, setTools] = useState<ToolsApi | null>(null);
   const [values] = useState(createToolOptionValues);
 

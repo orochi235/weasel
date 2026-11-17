@@ -1,7 +1,7 @@
 import { bundlesDocument } from './bundleExport';
 import { printSchema, type OriginOf } from './schemaExport';
 import type { PrefTypes } from './types';
-import { assetOf, type Asset, type Workspace } from './workspace';
+import { assetOf, type Asset, type AssetSet } from './assetSet';
 
 /** What an asset exports: a TypeScript literal of its root, or for a Bundles asset its `weasel-bundles/1` JSON. */
 export interface AssetExport {
@@ -10,7 +10,7 @@ export interface AssetExport {
 }
 
 /** What `asset` exports, measured from its baseline in `base`, whose nodes `originOf` follows. */
-export function exportOf(asset: Asset, base: Workspace, originOf?: OriginOf, types?: PrefTypes): AssetExport {
+export function exportOf(asset: Asset, base: AssetSet, originOf?: OriginOf, types?: PrefTypes): AssetExport {
   if (asset.kind !== 'bundles') return { text: printSchema(asset.root, types), language: 'tsx' };
   const was = assetOf(base, asset.id);
   const from = was?.kind === 'bundles' ? was : asset;

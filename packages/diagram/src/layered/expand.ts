@@ -229,7 +229,7 @@ export function expand(graph: Graph, nodeRanks: ReadonlyMap<string, number>, bac
   return { rows, hops: dedupe(hops), chains, labelRows: new Set(labeled.labelRow.values()), labels, wires };
 }
 
-/** Each drawn edge once: the stand-ins `expandGroupEdges` made for one edge to
+/** Each drawn edge once: the stand-ins `expandClusterEdges` made for one edge to
  *  or from a group fold back into it. Self-loops draw no hops. */
 function drawnEdges(edges: readonly GraphEdge[], back: ReadonlySet<string>): Drawn[] {
   const seen = new Map<string, Drawn>();
