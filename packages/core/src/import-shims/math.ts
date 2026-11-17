@@ -38,13 +38,6 @@ export {
 export type { Vec2 } from 'core/geometry/vec2';
 export type { PoseDescriptor } from 'core/geometry/poseDescriptor';
 export { translatePoseViaDescriptor } from 'core/geometry/poseDescriptor';
-export type {
-  Simulation,
-  SimulationCore,
-  SimulationForce,
-  SimulationNode,
-  SimulationOptions,
-} from '@weasel-js/simulation';
 export { AUTO_POSE_DESCRIPTOR } from 'core/geometry/autoPoseDescriptor';
 export { rotatePoint } from 'core/geometry/rotatedRect';
 export { CLIP_NOTHING, clipNothing } from 'core/scene/clipNothing';
