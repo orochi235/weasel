@@ -45,9 +45,9 @@ export interface ExportPagesPdfOptions extends Omit<ExportRegionsPdfOptions, 'ba
   background?: string | null;
 }
 
-/** The page color a page export paints when told none: the scene theme's. */
-const pageBackground = (scene: PageExportScene, background: string | null | undefined): string | null =>
-  background === undefined ? diagramThemeOf(scene).page : background;
+/** The page color a page export paints when told none: the theme's of the revision it draws. */
+const pageBackground = (background: string | null | undefined) =>
+  background === undefined ? (doc: PageExportScene) => diagramThemeOf(doc).page : background;
 
 const painters = () => [diagramShape<RectPose>(), markShape<RectPose>()];
 
@@ -72,7 +72,7 @@ export function pageSvgNodes(scene: PageExportScene, page: PageRect): SvgNode[] 
  * painters, on the diagram theme's page color unless told otherwise.
  */
 export function exportPageSvg(scene: PageExportScene, page: PageSource, opts: ExportPageSvgOptions = {}): Promise<string> {
-  return exportRegionSvg(scene, sourceOf(page), { ...opts, painters: painters(), background: pageBackground(scene, opts.background) });
+  return exportRegionSvg(scene, sourceOf(page), { ...opts, painters: painters(), background: pageBackground(opts.background) });
 }
 
 /**
@@ -82,7 +82,7 @@ export function exportPageSvg(scene: PageExportScene, page: PageSource, opts: Ex
  * `registerMarkShape`) and the fonts the scene uses. Needs WebGL2.
  */
 export function exportPagePng(scene: PageExportScene, page: PageSource, opts: ExportPagePngOptions): Promise<Blob> {
-  return exportRegionPng(scene, sourceOf(page), { ...opts, background: pageBackground(scene, opts.background) });
+  return exportRegionPng(scene, sourceOf(page), { ...opts, background: pageBackground(opts.background) });
 }
 
 /**
@@ -95,5 +95,5 @@ export function exportPagesPdf(
   scene: PageExportScene, pages: PagesSource, opts: ExportPagesPdfOptions = {},
 ): Promise<Blob> {
   const regions = typeof pages === 'function' ? (doc: PageExportScene) => pages(doc).map(rectOf) : pages.map(rectOf);
-  return exportRegionsPdf(scene, regions, { ...opts, background: pageBackground(scene, opts.background) });
+  return exportRegionsPdf(scene, regions, { ...opts, background: pageBackground(opts.background) });
 }

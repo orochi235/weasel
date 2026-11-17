@@ -28,6 +28,14 @@ export type ExportRegionSource = ExportRegion | ((doc: ExportScene) => ExportReg
 /** A scene as the exports read it: world-space `RectPose`s. */
 export type ExportScene = Scene<unknown, string, RectPose>;
 
+/** The color painted under a region: a color, `null` for none, or a function reading it from the
+ *  document the export draws, so a color that comes from it belongs to the revision drawn. */
+export type ExportBackground = string | null | ((doc: ExportScene) => string | null);
+
+/** `background` as of `doc`. */
+export const exportBackgroundOf = (background: ExportBackground | undefined, doc: ExportScene): string | null =>
+  typeof background === 'function' ? background(doc) : background ?? null;
+
 /** What every format takes. */
 export interface ExportOptions {
   /** The color painted under each region. Default none: core holds no page color. */
