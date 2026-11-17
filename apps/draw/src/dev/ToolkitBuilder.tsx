@@ -104,7 +104,7 @@ function ToolkitForSetup({ base, tools, paths, text }: Setup): ReactElement {
         <ResolutionWidget
           tools={reflection.tools}
           actions={actions}
-          activeToolId={reflection.slots.registry[0] ?? ''}
+          activeToolId={reflection.activeToolId}
         />
       </section>
 
