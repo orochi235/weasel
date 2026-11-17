@@ -102,11 +102,11 @@ export { renderLabel, defaultLabelTextRenderer } from './renderLabel';
 export type { LabelOptions } from './renderLabel';
 export { isTextData } from './isTextData';
 
-export { layoutMarkdown } from './markdownText';
+export { layoutCanvasRuns } from './markdownText';
 export { createMarkdownRenderer } from './markdownRenderer';
 export type {
   MarkdownFontOptions,
-  LayoutMarkdownOptions,
+  LayoutCanvasRunsOptions,
   MarkdownFont,
   MeasureFn,
   FaceMetricsFn,

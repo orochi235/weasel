@@ -1,5 +1,5 @@
 /**
- * The 2D-canvas painter over `layoutMarkdown`: measures with the context it
+ * The 2D-canvas painter over `layoutCanvasRuns`: measures with the context it
  * is given and paints each positioned run, tracking and decoration rules
  * included, where the layout put it.
  */
@@ -9,7 +9,7 @@ import { fontString } from './textStyle';
 import { graphemeEnds } from './measure/graphemes';
 import { DECORATION_KINDS, decorationRule, type DecorationKind } from './layout/decorationMetrics';
 import {
-  layoutMarkdown, type FaceMetricsFn, type MarkdownFontOptions, type MeasureFn, type PositionedRun,
+  layoutCanvasRuns, type FaceMetricsFn, type MarkdownFontOptions, type MeasureFn, type PositionedRun,
 } from './markdownText';
 
 /** Pluggable text-painting strategy. The default fills white at `(x, y)`; markdown renderers replace this. */
@@ -102,7 +102,7 @@ export function createMarkdownRenderer(
 ): { renderer: TextRenderer; strokeRenderer: TextRenderer; width: number; height: number } {
   const parsed = typeof text === 'string' ? markdownToRuns(text) : text;
   const faceOf: FaceMetricsFn = (f) => faceMetricsFor(f.fontFamily, f.fontWeight, f.fontStyle);
-  const layout = layoutMarkdown(parsed, maxWidth, fontSize, canvasMeasure(ctx), { ...fontOpts, faceOf });
+  const layout = layoutCanvasRuns(parsed, maxWidth, fontSize, canvasMeasure(ctx), { ...fontOpts, faceOf });
 
   /** Walk the layout, setting each run's font and handing over its
    *  left-aligned paint position and the index of its line. */

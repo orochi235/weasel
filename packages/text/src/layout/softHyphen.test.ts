@@ -11,7 +11,7 @@ import { registerShaper } from './shaperRegistry';
 import type { ShapedGlyph, TextShaper } from './shaperSeam';
 import type { ResolvedRun } from '../runs/resolveRuns';
 import { measureText } from '../measure/measureText';
-import { layoutMarkdown, type MeasureFn } from '../markdownText';
+import { layoutCanvasRuns, type MeasureFn } from '../markdownText';
 import { DEFAULT_TEXT_STYLE } from '../textStyle';
 
 const SHY = '\u00ad';
@@ -193,7 +193,7 @@ describe('a soft hyphen in the 2D wraps', () => {
 
   it('ends a markdown line wrapped at one in U+2010', () => {
     const measure: MeasureFn = (text) => widthOf(text);
-    const out = layoutMarkdown([{ text: `aa${SHY}b${SHY}cc` }], 34, 10, measure);
+    const out = layoutCanvasRuns([{ text: `aa${SHY}b${SHY}cc` }], 34, 10, measure);
     expect(out.lines.map((l) => l.runs.map((r) => r.text).join(''))).toEqual(['aa‐', `b${SHY}cc`]);
     expect(out.lines[0].width).toBe(25);
   });

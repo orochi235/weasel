@@ -20,11 +20,11 @@ export interface MarkdownFont {
   fontSize: number;
 }
 
-/** Width of `text` set in `font`, glyphs only: `layoutMarkdown` adds a run's
+/** Width of `text` set in `font`, glyphs only: `layoutCanvasRuns` adds a run's
  *  letter spacing itself. `createMarkdownRenderer` measures with its canvas. */
 export type MeasureFn = (text: string, font: MarkdownFont) => number;
 
-/** The face a run's rules and script presets come from, for `layoutMarkdown`.
+/** The face a run's rules and script presets come from, for `layoutCanvasRuns`.
  *  `createMarkdownRenderer` supplies one that looks the family up in the font
  *  registry, so a registered face places them as it does on the GL tier. */
 export type FaceMetricsFn = (font: Omit<MarkdownFont, 'fontSize'>) => FaceMetrics | undefined;
@@ -73,7 +73,7 @@ function runMetrics(run: StyledRun, fontSize: number, face: FaceMetrics | undefi
   };
 }
 
-/** A run as `layoutMarkdown` walks it: small caps has split it where its
+/** A run as `layoutCanvasRuns` walks it: small caps has split it where its
  *  size changes, and marked the pieces drawn at the small size. */
 type Segment = StyledRun & { smallCaps?: true; source?: StyledRun };
 
@@ -84,7 +84,7 @@ export interface LayoutLine {
   height: number;
 }
 
-/** Output of `layoutMarkdown`: per-line breakdown plus overall block dimensions. */
+/** Output of `layoutCanvasRuns`: per-line breakdown plus overall block dimensions. */
 export interface LayoutResult {
   lines: LayoutLine[];
   width: number;
@@ -122,12 +122,12 @@ function segmentsOf(runs: readonly StyledRun[]): Segment[] {
  * single-line layout. A tab is a run of its own, as wide as it takes to reach
  * its next stop, `tabSize` spaces apart.
  */
-export function layoutMarkdown(
+export function layoutCanvasRuns(
   runs: StyledRun[],
   maxWidth: number,
   fontSize: number,
   measure: MeasureFn,
-  opts: LayoutMarkdownOptions = {},
+  opts: LayoutCanvasRunsOptions = {},
 ): LayoutResult {
   const lineHeightFactor = opts.lineHeight ?? 1.3;
   const tabSize = opts.tabSize ?? DEFAULT_TAB_SIZE;
@@ -268,7 +268,7 @@ export interface MarkdownFontOptions {
   tabSize?: number;
 }
 
-/** What `layoutMarkdown` takes beyond its runs, width, size and measure. */
-export interface LayoutMarkdownOptions extends Omit<MarkdownFontOptions, 'color'> {
+/** What `layoutCanvasRuns` takes beyond its runs, width, size and measure. */
+export interface LayoutCanvasRunsOptions extends Omit<MarkdownFontOptions, 'color'> {
   faceOf?: FaceMetricsFn;
 }

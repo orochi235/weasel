@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { layoutMarkdown, type MarkdownFont } from './markdownText';
+import { layoutCanvasRuns, type MarkdownFont } from './markdownText';
 import { createMarkdownRenderer } from './markdownRenderer';
 import { markdownToRuns, type StyledRun } from './runs';
 import { resolveRuns } from './runs/resolveRuns';
@@ -33,10 +33,10 @@ function makeMockCtx() {
 // Mock measure: each character = 10px wide, regardless of style or fontSize
 const mockMeasure = (text: string) => text.length * 10;
 
-describe('layoutMarkdown', () => {
+describe('layoutCanvasRuns', () => {
   it('lays out plain text on one line', () => {
     const runs = markdownToRuns('hello');
-    const result = layoutMarkdown(runs, Infinity, 13, mockMeasure);
+    const result = layoutCanvasRuns(runs, Infinity, 13, mockMeasure);
     expect(result.lines).toHaveLength(1);
     expect(result.lines[0].runs).toHaveLength(1);
     expect(result.lines[0].runs[0].x).toBe(0);
@@ -45,14 +45,14 @@ describe('layoutMarkdown', () => {
   });
 
   it('lays out and measures a transformed run as it is drawn', () => {
-    const result = layoutMarkdown([{ text: 'straße', textTransform: 'uppercase' }], Infinity, 13, mockMeasure);
+    const result = layoutCanvasRuns([{ text: 'straße', textTransform: 'uppercase' }], Infinity, 13, mockMeasure);
     expect(result.lines[0].runs[0].text).toBe('STRASSE');
     expect(result.width).toBe(70);
   });
 
   it('sets small caps as runs of capitals, the lowercase ones at the small size', () => {
     const sized = (t: string, font: MarkdownFont) => t.length * font.fontSize;
-    const result = layoutMarkdown([{ text: 'Hello', fontVariantCaps: 'small-caps' }], Infinity, 20, sized);
+    const result = layoutCanvasRuns([{ text: 'Hello', fontVariantCaps: 'small-caps' }], Infinity, 20, sized);
     const [h, ello] = result.lines[0].runs;
     expect([h.text, ello.text]).toEqual(['H', 'ELLO']);
     expect(h.font.fontSize).toBe(20);
@@ -63,7 +63,7 @@ describe('layoutMarkdown', () => {
   });
 
   it('runs a tab to the next stop and places what follows there', () => {
-    const [line] = layoutMarkdown([{ text: 'ab\tcd' }, { text: 'e\tf', bold: true }], Infinity, 13, mockMeasure).lines;
+    const [line] = layoutCanvasRuns([{ text: 'ab\tcd' }, { text: 'e\tf', bold: true }], Infinity, 13, mockMeasure).lines;
     expect(line.runs.map((r) => [r.text, r.x, r.width])).toEqual([
       ['ab', 0, 20], ['\t', 20, 60], ['cd', 80, 20], ['e', 100, 10], ['\t', 110, 50], ['f', 160, 10],
     ]);
@@ -71,22 +71,22 @@ describe('layoutMarkdown', () => {
   });
 
   it('takes its stops from the tab size, and wraps by the width a tab takes', () => {
-    const four = layoutMarkdown([{ text: 'ab\tcd' }], Infinity, 13, mockMeasure, { tabSize: 4 });
+    const four = layoutCanvasRuns([{ text: 'ab\tcd' }], Infinity, 13, mockMeasure, { tabSize: 4 });
     expect(four.lines[0].runs[2].x).toBe(40);
     // Read as one space the line is 90 wide and fits; set to its stop, `gh` ends at 100.
-    const wrapped = layoutMarkdown([{ text: 'abcdef\tgh' }], 95, 13, mockMeasure);
+    const wrapped = layoutCanvasRuns([{ text: 'abcdef\tgh' }], 95, 13, mockMeasure);
     expect(wrapped.lines.map((l) => l.runs.map((r) => r.text).join(''))).toEqual(['abcdef', 'gh']);
   });
 
   it('hangs trailing white space on every line, as layoutRuns does, not only on wrapped ones', () => {
-    const result = layoutMarkdown([{ text: 'ab  \ncd \t' }], Infinity, 13, mockMeasure);
+    const result = layoutCanvasRuns([{ text: 'ab  \ncd \t' }], Infinity, 13, mockMeasure);
     expect(result.lines.map((l) => l.width)).toEqual([20, 20]);
     expect(result.width).toBe(20);
   });
 
   it('breaks on newline', () => {
     const runs = markdownToRuns('a\nb');
-    const result = layoutMarkdown(runs, Infinity, 13, mockMeasure);
+    const result = layoutCanvasRuns(runs, Infinity, 13, mockMeasure);
     expect(result.lines).toHaveLength(2);
     expect(result.lines[0].runs[0].text).toBe('a');
     expect(result.lines[1].runs[0].text).toBe('b');
@@ -96,7 +96,7 @@ describe('layoutMarkdown', () => {
   it('wraps at maxWidth on space boundary', () => {
     const runs = markdownToRuns('aaa bbb ccc');
     // maxWidth=75 fits "aaa bbb" (70px) but not "aaa bbb ccc" (110px)
-    const result = layoutMarkdown(runs, 75, 13, mockMeasure);
+    const result = layoutCanvasRuns(runs, 75, 13, mockMeasure);
     expect(result.lines).toHaveLength(2);
     expect(result.lines[0].runs[0].text).toBe('aaa bbb');
     expect(result.lines[1].runs[0].text).toBe('ccc');
@@ -105,7 +105,7 @@ describe('layoutMarkdown', () => {
   it('puts oversized word on its own line', () => {
     const runs = markdownToRuns('hi superlongword');
     // maxWidth=80 fits "hi" but "superlongword" (130px) exceeds it
-    const result = layoutMarkdown(runs, 80, 13, mockMeasure);
+    const result = layoutCanvasRuns(runs, 80, 13, mockMeasure);
     expect(result.lines).toHaveLength(2);
     expect(result.lines[0].runs[0].text).toBe('hi');
     expect(result.lines[1].runs[0].text).toBe('superlongword');
@@ -113,7 +113,7 @@ describe('layoutMarkdown', () => {
 
   it('positions multiple styled runs on same line', () => {
     const runs = markdownToRuns('a **b** c');
-    const result = layoutMarkdown(runs, Infinity, 13, mockMeasure);
+    const result = layoutCanvasRuns(runs, Infinity, 13, mockMeasure);
     expect(result.lines).toHaveLength(1);
     const line = result.lines[0].runs;
     expect(line[0]).toMatchObject({ text: 'a ', x: 0 });
@@ -123,7 +123,7 @@ describe('layoutMarkdown', () => {
 
   it('computes height from line heights (no rounding)', () => {
     const runs = markdownToRuns('a\nb');
-    const result = layoutMarkdown(runs, Infinity, 10, mockMeasure);
+    const result = layoutCanvasRuns(runs, Infinity, 10, mockMeasure);
     // lineHeight = 10 * 1.3 = 13 (unrounded), two lines = 26
     expect(result.height).toBeCloseTo(26, 10);
   });
@@ -136,7 +136,7 @@ describe('layoutMarkdown', () => {
       { text: '\n' },
       { text: 'small', fontSize: 8.696 },
     ];
-    const result = layoutMarkdown(runs, Infinity, 10, mockMeasure);
+    const result = layoutCanvasRuns(runs, Infinity, 10, mockMeasure);
     expect(result.lines[0].height).toBeCloseTo(11.5 * 1.3, 10);
     expect(result.lines[1].height).toBeCloseTo(8.696 * 1.3, 10);
     expect(result.height).toBeCloseTo(11.5 * 1.3 + 8.696 * 1.3, 5);
@@ -147,32 +147,32 @@ describe('layoutMarkdown', () => {
     // At fontSize 0.11 (e.g. 0.11 ft) with default lineHeightFactor 1.3,
     // expect ~0.143, not 0.
     const runs = markdownToRuns('hi');
-    const result = layoutMarkdown(runs, Infinity, 0.11, mockMeasure);
+    const result = layoutCanvasRuns(runs, Infinity, 0.11, mockMeasure);
     expect(result.lines).toHaveLength(1);
     expect(result.lines[0].height).toBeCloseTo(0.143, 4);
     expect(result.height).toBeCloseTo(0.143, 4);
   });
 
   it('returns zero dimensions for empty input', () => {
-    const result = layoutMarkdown([], Infinity, 13, mockMeasure);
+    const result = layoutCanvasRuns([], Infinity, 13, mockMeasure);
     expect(result.lines).toHaveLength(0);
     expect(result.width).toBe(0);
     expect(result.height).toBe(0);
   });
 });
 
-describe('layoutMarkdown on a long text', () => {
+describe('layoutCanvasRuns on a long text', () => {
   it('measures more lines than a call can take arguments', () => {
     const lines = 1_000_000;
-    const laid = layoutMarkdown([{ text: 'ab\n'.repeat(lines - 1) + 'abc' }], Infinity, 10, (t) => t.length);
+    const laid = layoutCanvasRuns([{ text: 'ab\n'.repeat(lines - 1) + 'abc' }], Infinity, 10, (t) => t.length);
     expect(laid.lines.length).toBe(lines);
     expect(laid.width).toBe(3);
   });
 });
 
-describe('layoutMarkdown with no characters', () => {
+describe('layoutCanvasRuns with no characters', () => {
   it('reports a zero-size layout for runs whose text is empty', () => {
-    const result = layoutMarkdown([{ text: '' }, { text: '', bold: true }], Infinity, 13, mockMeasure);
+    const result = layoutCanvasRuns([{ text: '' }, { text: '', bold: true }], Infinity, 13, mockMeasure);
     expect(result).toEqual({ lines: [], width: 0, height: 0 });
   });
 });
@@ -215,7 +215,7 @@ describe('createMarkdownRenderer', () => {
 
   describe('script, fontScale and baselineShift', () => {
     it('gives a superscript run a negative baseline offset and a smaller size', () => {
-      const layout = layoutMarkdown(
+      const layout = layoutCanvasRuns(
         [{ text: 'E=mc' }, { text: '2', script: 'super' }],
         Infinity,
         20,
@@ -230,7 +230,7 @@ describe('createMarkdownRenderer', () => {
     });
 
     it('lowers a subscript instead of raising it', () => {
-      const layout = layoutMarkdown(
+      const layout = layoutCanvasRuns(
         [{ text: 'H' }, { text: '2', script: 'sub' }],
         Infinity,
         20,
@@ -240,7 +240,7 @@ describe('createMarkdownRenderer', () => {
     });
 
     it('lets an explicit baselineShift or fontScale override half of a script', () => {
-      const layout = layoutMarkdown(
+      const layout = layoutCanvasRuns(
         [{ text: 'x', script: 'super', fontScale: 0.5 }],
         Infinity,
         20,
@@ -255,13 +255,13 @@ describe('createMarkdownRenderer', () => {
     it('holds a line of only a superscript at the inherited size, as the GL tier does', () => {
       const runs: StyledRun[] = [{ text: 'a' }, { text: '\n' }, { text: '2', script: 'super' }, { text: '\n' },
         { text: 'b', fontScale: 0.5 }];
-      const layout = layoutMarkdown(runs, Infinity, 20, () => 10);
+      const layout = layoutCanvasRuns(runs, Infinity, 20, () => 10);
       expect(layout.lines.map((l) => l.height)).toEqual([26, 26, 26]);
     });
 
     it('measures a superscript at its scaled size, not the inherited one', () => {
       const sizes: number[] = [];
-      layoutMarkdown(
+      layoutCanvasRuns(
         [{ text: '2', script: 'super' }],
         Infinity,
         20,
@@ -323,9 +323,9 @@ describe('createMarkdownRenderer tabs', () => {
   });
 });
 
-describe('layoutMarkdown run widths', () => {
+describe('layoutCanvasRuns run widths', () => {
   it('records each positioned run\'s measured width', () => {
-    const layout = layoutMarkdown(markdownToRuns('ab **cde**'), Infinity, 13, mockMeasure);
+    const layout = layoutCanvasRuns(markdownToRuns('ab **cde**'), Infinity, 13, mockMeasure);
     expect(layout.lines[0].runs.map((r) => r.width)).toEqual([30, 30]);
   });
 });
@@ -452,7 +452,7 @@ describe('a run\'s own font and letter spacing', () => {
       { text: 'a', fontFamily: 'Mono', fontWeight: 300 }, { text: 'b', bold: true }, { text: 'c', italic: true },
     ];
     const seen: MarkdownFont[] = [];
-    layoutMarkdown(runs, Infinity, 20, (t, font) => { seen.push(font); return t.length * 10; }, {
+    layoutCanvasRuns(runs, Infinity, 20, (t, font) => { seen.push(font); return t.length * 10; }, {
       family: 'Serif', weight: 500,
     });
     const gl = resolveRuns(runs, resolveTextStyle({ fontFamily: 'Serif', fontWeight: 500, fontSize: 20 }));
@@ -462,7 +462,7 @@ describe('a run\'s own font and letter spacing', () => {
   });
 
   it('tracks after every grapheme cluster, the last included, and sets tab stops on tracked spaces', () => {
-    const [line] = layoutMarkdown(
+    const [line] = layoutCanvasRuns(
       [{ text: 'aé', letterSpacing: 3 }, { text: '\tx' }], Infinity, 13, mockMeasure, { letterSpacing: 1 },
     ).lines;
     // Two clusters tracked 3: 30 + 6. The second run inherits 1, so its stops are 8 * (10 + 1) apart.
