@@ -7,7 +7,7 @@ import {
 } from '@weasel-js/diagram';
 import { foldPlotText, isPlotText, plotEditing, plotMarkOf, replacePlotData } from '@weasel-js/plot';
 import { Sidebar } from '@weasel-js/ui/components/Sidebar';
-import { useEditorTools, usePaperLayer, useSessionPersistence } from '@weasel-js/editor';
+import { usePublishEditorTools, usePaperLayer, useSessionPersistence } from '@weasel-js/editor';
 import { useCallback, useMemo, useRef, useState, type ReactElement } from 'react';
 import { useChartCommands } from './chartCommands';
 import { useExportCommands } from './exportCommands';
@@ -97,7 +97,7 @@ export function ChartWorkspace(): ReactElement {
     ...(gridLayer ? { grid: { layer: gridLayer } } : {}),
   }), [paperLayer, gridLayer]);
   const [tools, setTools] = useState<ToolsApi | null>(null);
-  useEditorTools(tools, SHEET_TOOL_SETS);
+  usePublishEditorTools(tools, SHEET_TOOL_SETS);
   const [themeOpen, setThemeOpen] = useState(false);
 
   const textEdit = useSceneTextEdit(scene, host, { escape: 'commit', isText: isEditableText, onEnd: (id) => endTextEdit(scene, id) });

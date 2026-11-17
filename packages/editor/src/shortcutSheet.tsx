@@ -15,7 +15,7 @@ const PublishTools = createContext<((tools: ShellTools | null) => void) | null>(
  * Tells the `<EditorShell>` above which tools its canvas holds, grouped by `toolSets`, so its shortcut sheet lists
  * them by name and glyph. Does nothing outside a shell. The newest caller wins; unmounting withdraws them.
  */
-export function useEditorTools(tools: ToolsApi | null, toolSets?: readonly ToolSet[]): void {
+export function usePublishEditorTools(tools: ToolsApi | null, toolSets?: readonly ToolSet[]): void {
   const publish = useContext(PublishTools);
   const registry = tools?.registry;
   useEffect(() => {
@@ -25,9 +25,9 @@ export function useEditorTools(tools: ToolsApi | null, toolSets?: readonly ToolS
   }, [publish, registry, toolSets]);
 }
 
-/** {@link useEditorTools} as an element, for a host that holds its `ToolsApi` above the shell. */
-export function EditorTools({ tools, toolSets }: { tools: ToolsApi | null; toolSets?: readonly ToolSet[] }): null {
-  useEditorTools(tools, toolSets);
+/** {@link usePublishEditorTools} as an element, for a host that holds its `ToolsApi` above the shell. */
+export function PublishEditorTools({ tools, toolSets }: { tools: ToolsApi | null; toolSets?: readonly ToolSet[] }): null {
+  usePublishEditorTools(tools, toolSets);
   return null;
 }
 
@@ -36,7 +36,7 @@ function SheetCommand({ options, open }: { options: EditorCommandOptions; open: 
   return null;
 }
 
-/** The shell's `shortcuts.show` and the sheet it opens, listing the tools `useEditorTools` publishes. */
+/** The shell's `shortcuts.show` and the sheet it opens, listing the tools `usePublishEditorTools` publishes. */
 export function ShortcutSheetHost({ options, children }: { options: EditorCommandOptions | null; children: ReactNode }) {
   const [shown, setShown] = useState<ShellTools | null>(null);
   const [sheetOpen, setOpen] = useState(false);

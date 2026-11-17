@@ -8,7 +8,7 @@ import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
 import { EDITOR_ACTIONS } from './editorCommands';
 import { EditorShell } from './EditorShell';
 import { menuRun } from './menuBar';
-import { useEditorTools } from './shortcutSheet';
+import { usePublishEditorTools } from './shortcutSheet';
 import { drawPreset, SHAPE_TOOLS } from '@weasel-js/editing';
 
 beforeAll(() => {
@@ -70,7 +70,7 @@ describe('EditorShell', () => {
   it('opens the shortcut sheet on Shift+/, listing the tools a canvas publishes', () => {
     function Workspace() {
       const [tools, setTools] = useState<ToolsApi | null>(null);
-      useEditorTools(tools, [SHAPE_TOOLS]);
+      usePublishEditorTools(tools, [SHAPE_TOOLS]);
       return <SceneCanvas features={[drawPreset]} scene={scene()} layers={{}} width={64} height={64} defaultTools={[SHAPE_TOOLS]} onToolsCreated={setTools} />;
     }
     render(<EditorShell><Probe /><Workspace /></EditorShell>);

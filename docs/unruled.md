@@ -2290,7 +2290,7 @@ Calls the lanes made without a ruling:
   entry's, not an action's, and say which action the gesture runs, not what the modifier does to it; what a modifier
   does mid-gesture is a modifier role, declared per action, so the sheet would repeat "Shift: Constrain" under each
   action that snaps. A keymap's own keys stay `<KeymapHint>`'s; its leader is listed as a command (2026-11-13).
-- `<EditorShell>` mounts the sheet; a workspace names its tools with `useEditorTools(tools, toolSets)`, since the shell
+- `<EditorShell>` mounts the sheet; a workspace names its tools with `usePublishEditorTools(tools, toolSets)`, since the shell
   sits above the canvas that holds them. `<Lab>` mounts one too, naming the lab's `TrialTool`s, with a row in its Lab
   menu (2026-11-13).
 

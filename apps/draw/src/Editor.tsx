@@ -15,7 +15,7 @@ import { Sidebar } from '@weasel-js/ui/components/Sidebar';
 import { ToolPalette } from '@weasel-js/ui/components/ToolPalette';
 import { type CSSProperties, type ReactElement, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { ActiveSwatches } from './ActiveSwatches';
-import { EditorShell, EditorTools, usePageFit, usePages } from '@weasel-js/editor';
+import { EditorShell, PublishEditorTools, usePageFit, usePages } from '@weasel-js/editor';
 import { DRAW_PREFERENCES_COMMAND } from './appCommands/actions';
 import { DEFAULT_PAPER_SIZE, PAPER_PRESETS } from './paperSizes';
 import { ANNOTATION_LAYER, type DrawScene } from './drawDocument';
@@ -144,7 +144,7 @@ export function Editor({ scene, selection, modality }: EditorProps): ReactElemen
           >
             <LoupeProvider canvasRef={canvasRef} ready={canvasReady} source={loupeSource}>
               <CommandPalette open={paletteOpen} onOpenChange={setPaletteOpen} />
-              <EditorTools tools={tools} toolSets={SHEET_TOOL_SETS} />
+              <PublishEditorTools tools={tools} toolSets={SHEET_TOOL_SETS} />
               <StripDock className="wd-dock">
                 <div className="wd-dock-main">
                   <div ref={optionsRef}>

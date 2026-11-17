@@ -22,7 +22,7 @@ export interface EditorShellProps<S extends PrefGroup = PrefGroup> {
   preferences?: EditorCommandOptions | null;
   /**
    * How `shortcuts.show` registers, which opens the keyboard shortcut sheet: bound to Shift+/ unless `keys` says
-   * otherwise. `null` registers none and draws no sheet. The sheet lists the tools `useEditorTools` publishes.
+   * otherwise. `null` registers none and draws no sheet. The sheet lists the tools `usePublishEditorTools` publishes.
    */
   shortcuts?: EditorCommandOptions | null;
   /** What each menu holds, by title key. Without it there is no menu bar. Pass a new value to change the menus. */
