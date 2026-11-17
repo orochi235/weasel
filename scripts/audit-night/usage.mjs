@@ -38,8 +38,8 @@ export const totals = (records) => ({
 });
 
 /**
- * Whether a night that has spent `used` tokens, with `inFlight` areas still running, may start another
- * area, expecting each to cost the mean of `finished` (token totals of its finished areas) or `guess`.
+ * Whether a night that has spent `used` dollars, with `inFlight` areas still running, may start another
+ * area, expecting each to cost the mean of `finished` (dollar costs of its finished areas) or `guess`.
  */
 export const mayStartArea = ({ used, finished, inFlight, cap, guess }) => {
   const expected = finished.length > 0 ? finished.reduce((s, n) => s + n, 0) / finished.length : guess;

@@ -27,14 +27,14 @@ const list = (v) => (Array.isArray(v) ? v.join(',') : String(v));
 
 /** `night.mjs`'s arguments for a `start` request's fields. Throws on a field it does not know. */
 export const startArgs = (req) => {
-  const known = new Set(['id', 'start', 'areas', 'only', 'nodes', 'capTokens', 'budget', 'merge']);
+  const known = new Set(['id', 'start', 'areas', 'only', 'nodes', 'capUsd', 'budget', 'merge']);
   const unknown = Object.keys(req).filter((k) => !known.has(k));
   if (unknown.length > 0) throw new Error(`start does not take ${unknown.join(', ')}`);
   const args = [];
   if (req.areas !== undefined) args.push('--areas', String(req.areas));
   if (req.only !== undefined) args.push('--only', list(req.only));
   if (req.nodes !== undefined) args.push('--nodes', list(req.nodes));
-  if (req.capTokens !== undefined) args.push('--cap-tokens', String(req.capTokens));
+  if (req.capUsd !== undefined) args.push('--cap-usd', String(req.capUsd));
   for (const [role, usd] of Object.entries(req.budget ?? {})) {
     if (!['review', 'match', 'fix'].includes(role)) throw new Error(`budget has no role ${role}`);
     args.push(`--budget-${role}`, String(usd));

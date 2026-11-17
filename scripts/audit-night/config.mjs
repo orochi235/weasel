@@ -44,10 +44,10 @@ export const MATCH_MODEL = 'haiku';
 export const JOB_TIMEOUT_MIN = 45;
 /** A hard stop per `claude -p` job, in list-price dollars (`--max-budget-usd`). */
 export const JOB_BUDGET_USD = { review: 8, match: 1, fix: 15 };
-/** Tokens a night may spend in all (input, output, cache creation and cache reads). */
-export const NIGHT_TOKEN_CAP = 15_000_000;
-/** What an area is expected to cost before any area of the night has finished. */
-export const AREA_TOKENS_GUESS = 1_500_000;
+/** List-price dollars a night may spend in all, summed from each job's `costUsd`. */
+export const NIGHT_USD_CAP = 80;
+/** What an area is expected to cost, in list-price dollars, before any area of the night has finished. */
+export const AREA_USD_GUESS = 10;
 
 /** Local clock times, `HH:MM`. A night stops dispatching new work at the first STOP_AT after it starts. */
 export const START_AT = '23:00';

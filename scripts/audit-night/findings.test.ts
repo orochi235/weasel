@@ -62,12 +62,13 @@ describe('usage', () => {
     expect(parseEnvelope('').record).toMatchObject({ totalTokens: 0, terminalReason: 'no envelope' });
   });
 
-  it('starts another area only while the running areas and it fit under the cap', () => {
-    const cap = 10;
-    expect(mayStartArea({ used: 0, finished: [], inFlight: 0, cap, guess: 4 })).toBe(true);
-    expect(mayStartArea({ used: 0, finished: [], inFlight: 2, cap, guess: 4 })).toBe(false);
-    expect(mayStartArea({ used: 6, finished: [2, 4], inFlight: 0, cap, guess: 100 })).toBe(true);
-    expect(mayStartArea({ used: 8, finished: [2, 4], inFlight: 0, cap, guess: 0 })).toBe(false);
+  it('starts another area only while the running areas and it fit under the dollar cap', () => {
+    const cap = 80;
+    expect(mayStartArea({ used: 0, finished: [], inFlight: 0, cap, guess: 10 })).toBe(true);
+    expect(mayStartArea({ used: 0, finished: [], inFlight: 7, cap, guess: 10 })).toBe(true);
+    expect(mayStartArea({ used: 0, finished: [], inFlight: 8, cap, guess: 10 })).toBe(false);
+    expect(mayStartArea({ used: 60, finished: [8.8, 11.2], inFlight: 1, cap, guess: 100 })).toBe(true);
+    expect(mayStartArea({ used: 71, finished: [8.8, 11.2], inFlight: 0, cap, guess: 0 })).toBe(false);
   });
 });
 

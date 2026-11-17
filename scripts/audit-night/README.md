@@ -38,7 +38,7 @@ Flags:
 | `--nodes a,b` | | only these nodes (onto's own quiet hours still apply) |
 | `--dry` | | print the plan (round, nodes, areas and their files, jobs) and stop |
 | `--no-merge` | | leave `main` alone even when the batch is green; the batch and branches are kept |
-| `--cap-tokens N` | 15,000,000 | tokens the night may spend |
+| `--cap-usd N` | 80 | list-price dollars the night may spend, summed from each job's cost |
 | `--budget-review USD`, `--budget-match USD`, `--budget-fix USD` | 8, 1, 15 | each job's `--max-budget-usd` |
 
 ## Which areas, and when
@@ -67,7 +67,9 @@ All are named constants in `config.mjs`.
   starts no new area after 07:00.
 - **Money.** Each job runs with `--max-budget-usd` (list price), and one that hits it is recorded as such,
   not retried. A night starts no new area when the areas running plus one more, each expected to cost the
-  mean of tonight's finished areas (1.5M tokens before any has finished), would pass the token cap. An area
+  mean of tonight's finished areas ($10 before any has finished), would pass the night's dollar cap. Tokens
+  are still recorded per job and per area, but the cap is in dollars: most of an area's tokens are cache
+  reads, which cost a tenth of input, so a token count says little about spend. An area
   whose reviewers ran always gets its matcher and fixer.
 
 ## The service
@@ -89,9 +91,9 @@ line, each echoing its `id`:
 | Request | Reply |
 |---|---|
 | `{"ping":true}` | `pong` and the main checkout's commit |
-| `{"status":true}` | whether a night runs, its round, step, areas, and tokens used against the cap; the last night's summary |
+| `{"status":true}` | whether a night runs, its round, step, areas, and tokens and list-price dollars used against the dollar cap; the last night's summary |
 | `{"plan":true}` | what a night started now would pick |
-| `{"start":true}` | starts a night now; takes `areas`, `only`, `nodes`, `capTokens`, `budget` (`{review, match, fix}`) and `merge: false`, as the flags above |
+| `{"start":true}` | starts a night now; takes `areas`, `only`, `nodes`, `capUsd`, `budget` (`{review, match, fix}`) and `merge: false`, as the flags above |
 | `{"stop":true}` | no new jobs start; running ones finish, then the night patches, batches and records what completed |
 
     onto call audit-night '{"id":1,"status":true}'

@@ -3,7 +3,7 @@
  * One night of blind-pair audit rounds. README.md beside this file is its documentation.
  *
  *   node scripts/audit-night/night.mjs [--areas K] [--only <id>,…] [--nodes <a>,…] [--dry] [--no-merge]
- *     [--cap-tokens N] [--budget-review USD] [--budget-match USD] [--budget-fix USD]
+ *     [--cap-usd N] [--budget-review USD] [--budget-match USD] [--budget-fix USD]
  */
 import { appendFileSync, existsSync, mkdirSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
@@ -11,7 +11,7 @@ import { fileURLToPath } from 'node:url';
 import { runArea } from './area.mjs';
 import { addWorktree, applyFix, commitRecord, fastForwardMain, gitIn, makeBatch, removeWorktree, runFleetScript } from './batch.mjs';
 import {
-  AREAS_PER_NIGHT, AREA_TOKENS_GUESS, JOB_BUDGET_USD, JOB_IN, KEEP_NIGHTS, NIGHT_TOKEN_CAP, REVIEW_SLOTS_PER_NODE, STATE_DIR, STOP_AT, nodesAt,
+  AREAS_PER_NIGHT, AREA_USD_GUESS, JOB_BUDGET_USD, JOB_IN, KEEP_NIGHTS, NIGHT_USD_CAP, REVIEW_SLOTS_PER_NODE, STATE_DIR, STOP_AT, nodesAt,
 } from './config.mjs';
 import { createSlots, unavailableNodes } from './jobs.mjs';
 import { partitionAt } from './partition.mjs';
@@ -26,6 +26,7 @@ export const STOP_FILE = join(STATE_DIR, 'stop');
 export const CURRENT_FILE = join(STATE_DIR, 'current.json');
 export const LAST_FILE = join(STATE_DIR, 'last.json');
 
+const usd = (n) => `$${n.toFixed(2)}`;
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 const localDate = (d = new Date()) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 
@@ -56,7 +57,7 @@ export const parseArgs = (argv) => {
     nodes: value('--nodes')?.split(',').filter(Boolean),
     dry: argv.includes('--dry'),
     merge: !argv.includes('--no-merge'),
-    capTokens: number('--cap-tokens', NIGHT_TOKEN_CAP),
+    capUsd: number('--cap-usd', NIGHT_USD_CAP),
     budget: {
       review: number('--budget-review', JOB_BUDGET_USD.review),
       match: number('--budget-match', JOB_BUDGET_USD.match),
@@ -111,7 +112,7 @@ const plan = (root, args) => {
 
 const printPlan = (p, args, say) => {
   say(`round ${p.round} at ${p.commit.slice(0, 10)}; nodes: ${(args.nodes ?? nodesAt(new Date())).join(', ')}${args.nodes ? ' (pinned)' : ''}; stops dispatching at ${STOP_AT}`);
-  say(`budget: ${(args.capTokens / 1e6).toFixed(1)}M tokens tonight; per job $${args.budget.review} review, $${args.budget.match} match, $${args.budget.fix} fix`);
+  say(`budget: ${usd(args.capUsd)} tonight; per job $${args.budget.review} review, $${args.budget.match} match, $${args.budget.fix} fix`);
   for (const area of p.picked) {
     const last = p.passes.get(area.id)?.at(-1);
     say(`  ${area.id}: ${area.files.length} files${last ? `, last pass round ${last.round} (${last.distinct} distinct, ~${last.unfound} left)` : ', never audited'}`);
@@ -126,10 +127,10 @@ const reviewAreas = async ({ ctx, git, picked, passes, args, status, deadline, r
   const maxAreas = Math.max(1, Math.floor(((args.nodes ?? nodesAt(new Date())).length * REVIEW_SLOTS_PER_NODE) / 2));
   for (const area of picked) {
     while (inFlight.size >= maxAreas) await Promise.race(inFlight);
-    const affordable = mayStartArea({ used: status.tokens, finished: results.map((r) => r.jobs.tokens), inFlight: inFlight.size, cap: args.capTokens, guess: AREA_TOKENS_GUESS });
+    const affordable = mayStartArea({ used: status.costUsd, finished: results.map((r) => r.jobs.costUsd), inFlight: inFlight.size, cap: args.capUsd, guess: AREA_USD_GUESS });
     const why = ctx.stopped() ? 'stop requested'
       : new Date() >= deadline ? `past ${STOP_AT}`
-        : !affordable ? `the next area would cross the ${(args.capTokens / 1e6).toFixed(1)}M-token cap (${(status.tokens / 1e6).toFixed(2)}M used)` : '';
+        : !affordable ? `the next area would cross the ${usd(args.capUsd)} cap (${usd(status.costUsd)} used)` : '';
     if (why) {
       ctx.say(`not starting ${area.id}: ${why}`);
       continue;
@@ -214,7 +215,7 @@ export const runNight = async (argv = process.argv.slice(2), say = (line) => con
     echo(line);
     appendFileSync(join(nightDir, 'night.log'), `${line}\n`);
   };
-  const status = { round: p.round, started: started.toISOString(), step: 'freeze', areas: p.picked.map((a) => a.id), nightDir, tokens: 0, capTokens: args.capTokens };
+  const status = { round: p.round, started: started.toISOString(), step: 'freeze', areas: p.picked.map((a) => a.id), nightDir, tokens: 0, costUsd: 0, capUsd: args.capUsd };
   const setStep = (step) => {
     status.step = step;
     writeFileSync(CURRENT_FILE, JSON.stringify({ ...status, pid: process.pid }));
@@ -242,6 +243,7 @@ export const runNight = async (argv = process.argv.slice(2), say = (line) => con
     usage: (record) => {
       appendFileSync(join(nightDir, 'usage.jsonl'), `${JSON.stringify({ round: p.round, ...record })}\n`);
       status.tokens += record.totalTokens;
+      status.costUsd += record.costUsd;
       setStep(status.step);
     },
     acquire: async (role) => {
@@ -272,7 +274,7 @@ export const runNight = async (argv = process.argv.slice(2), say = (line) => con
     removeWorktree(root, frozen);
     const summary = {
       round: p.round, commit: p.commit, started: started.toISOString(), ended: new Date().toISOString(), report,
-      tokens: status.tokens, capTokens: args.capTokens,
+      tokens: status.tokens, costUsd: status.costUsd, capUsd: args.capUsd,
       areas: results.map((s) => ({ id: s.id, a: s.a, b: s.b, m: s.m, distinct: s.distinct, chapman: s.chapman, patches: s.patches, outcome: outcomes[s.id], minutes: s.jobs.minutes, tokens: s.jobs.tokens, costUsd: s.jobs.costUsd, budgetHit: s.budgetHit })),
     };
     writeFileSync(join(nightDir, 'summary.json'), `${JSON.stringify(summary, null, 1)}\n`);
