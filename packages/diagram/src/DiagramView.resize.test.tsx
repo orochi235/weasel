@@ -107,4 +107,14 @@ describe('DiagramView resizing', () => {
     expect(onMove).toHaveBeenCalled();
     expect(sizeOf(api.current!, 'a')).toEqual({ width: 100, height: 40 });
   });
+
+  it('reports a shape inside a container at the world box it is drawn at', () => {
+    const inside: DiagramData = { ...DATA, containers: [{ id: 'k', role: 'container', members: ['a'] }] };
+    const onResize = vi.fn();
+    const { api, canvas } = mount({ onResize, specs: specsOf(inside) });
+    const at = api.current!.rectOf('a')!;
+    drag(canvas, { x: at.x + 50, y: at.y + 20 }, { x: at.x + 50, y: at.y + 20 });
+    drag(canvas, { x: at.x + 100, y: at.y + 40 }, { x: at.x + 160, y: at.y + 90 });
+    expect(onResize).toHaveBeenCalledWith([{ id: 'a', x: at.x, y: at.y, width: 160, height: 90 }]);
+  });
 });
