@@ -13,7 +13,7 @@ export interface PresenceOptions {
   /** Hear each navigation of the inspected page. Returns the unsubscribe. */
   onNavigated(listener: () => void): () => void;
   /** Delays between checks after a navigation, in ms. Once they run out the page reads as absent, and
-   *  the check repeats at the last delay until a hook appears. */
+   *  the check repeats at the last delay until a hook appears. An empty list throws. */
   delays?: readonly number[];
 }
 
@@ -22,6 +22,7 @@ const DEFAULT_DELAYS = [0, 250, 500, 1000, 2000, 4000];
 /** Report `present` on every change of answer, starting with the first. Returns the stop. */
 export function watchHookPresence(opts: PresenceOptions, report: (present: boolean) => void): () => void {
   const delays = opts.delays ?? DEFAULT_DELAYS;
+  if (delays.length === 0) throw new RangeError('weasel devtools: watchHookPresence needs at least one delay');
   let generation = 0;
   let last: boolean | null = null;
   let cancelPoll = (): void => {};

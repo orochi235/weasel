@@ -2572,3 +2572,8 @@ Calls the lanes made without a ruling:
 - 2026-11-16 (the fixer's call): an `axes` name that is both one axis's name and the start of other axes' paths, as
   `arm.x` is on a skeleton with joints `arm` and `arm.x`, throws rather than answering both. A name on axes without
   `paths` keeps reading every dot as a step.
+
+## Audit round thirty-three (2026-11-17): the devtools extension
+
+- 2026-11-17 (the fixer's call): `watchHookPresence` throws a `RangeError` on an empty `delays`, which used to probe
+  in a tight loop forever. Falling back to the default delays was the alternative.
