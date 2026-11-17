@@ -24,6 +24,8 @@ export interface ReplayOptions {
   beforeFirstEvent?: () => Promise<void> | void;
   /** Per-event progress callback — fired just before dispatch. */
   onEvent?: (e: RecordedEvent, i: number) => void;
+  /** Ends the replay: no event is dispatched once it aborts, and a wait in progress is cut short. */
+  signal?: AbortSignal;
 }
 
 function rafTick(): Promise<void> {
@@ -36,9 +38,14 @@ function rafTick(): Promise<void> {
   });
 }
 
-function sleep(ms: number): Promise<void> {
-  if (ms <= 0) return Promise.resolve();
-  return new Promise((resolve) => { after(ms, resolve); });
+/** Wait `ms`, or until `signal` aborts. */
+function sleep(ms: number, signal: AbortSignal | undefined): Promise<void> {
+  if (ms <= 0 || signal?.aborted) return Promise.resolve();
+  return new Promise((resolve) => {
+    const done = () => { cancel(); signal?.removeEventListener('abort', done); resolve(); };
+    const cancel = after(ms, done);
+    signal?.addEventListener('abort', done);
+  });
 }
 
 function pickTarget(rec: RecordedEvent, canvas: HTMLCanvasElement): EventTarget {
@@ -141,6 +148,8 @@ function buildEvent(rec: RecordedEvent, held: HeldPresses): Event {
 
 export async function replayRecording(rec: Recording, opts: ReplayOptions): Promise<void> {
   const mode = opts.mode ?? 'realtime';
+  const { signal } = opts;
+  if (signal?.aborted) return;
   if (opts.beforeFirstEvent) {
     await opts.beforeFirstEvent();
   }
@@ -151,11 +160,12 @@ export async function replayRecording(rec: Recording, opts: ReplayOptions): Prom
     const ev = rec.events[i];
     if (i > 0) {
       if (mode === 'realtime') {
-        await sleep(ev.t - prevT);
+        await sleep(ev.t - prevT, signal);
       } else {
         await rafTick();
       }
     }
+    if (signal?.aborted) return;
     opts.onEvent?.(ev, i);
     const target = pickTarget(ev, opts.canvas);
     const native = buildEvent(ev, held);
