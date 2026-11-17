@@ -27,7 +27,7 @@ function summaryOf(node: AnyNode): DevtoolsNodeSummary {
   };
 }
 
-function nodeOf(scene: AnyScene, id: string): AnyNode {
+function requireNode(scene: AnyScene, id: string): AnyNode {
   const node = scene.get(id as NodeId);
   if (!node) throw new Error(`no node "${id}"`);
   return node;
@@ -35,12 +35,12 @@ function nodeOf(scene: AnyScene, id: string): AnyNode {
 
 export function childrenOf(root: DevtoolsRoot, nodeId: string | undefined): DevtoolsNodeSummary[] {
   const scene = requireScene(root);
-  const ids = nodeId === undefined ? scene.roots : (nodeOf(scene, nodeId), scene.childrenOf(nodeId as NodeId));
-  return ids.map((id) => summaryOf(nodeOf(scene, id)));
+  const ids = nodeId === undefined ? scene.roots : (requireNode(scene, nodeId), scene.childrenOf(nodeId as NodeId));
+  return ids.map((id) => summaryOf(requireNode(scene, id)));
 }
 
 export function nodeDetail(root: DevtoolsRoot, nodeId: string): DevtoolsNodeDetail {
-  const node = nodeOf(requireScene(root), nodeId);
+  const node = requireNode(requireScene(root), nodeId);
   return {
     ...summaryOf(node),
     parent: node.parent ?? null,
