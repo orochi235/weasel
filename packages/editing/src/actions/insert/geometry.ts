@@ -20,7 +20,7 @@ export function effectiveOriginMode(
  *  - `'center'`: bounds = symmetric AABB anchored on the start point.
  *    Used when the tool's Alt-modifier binding passes
  *    `originMode: 'center'` (Illustrator/Figma convention). */
-export function computeBounds(
+export function insertRectFor(
   startX: number, startY: number,
   currentX: number, currentY: number,
   originMode: 'corner' | 'center',
