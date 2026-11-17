@@ -5,7 +5,7 @@ import { ownClipOf, type ClipBearing } from './ownClip';
 import { mat3, meanScale, type Affine, type Path } from '@weasel-js/geom';
 import { definesFrame } from 'core/scene/effectivePose';
 import { deriveParallaxView, type ParallaxOptions, type PlaneMap } from 'core/viewport/parallax';
-import { scenePlaneOf } from './pickWalk';
+import { createLayerPlaneLookup } from './pickWalk';
 import { clipCarrier, planeTransform } from './planeClips';
 import { splitOverChildren } from './overChildren';
 import { hidesSubtree } from 'core/scene/nodeGates';
@@ -113,7 +113,7 @@ export function buildSceneTree<
   // A hidden layer gets no bucket, and a node with no bucket is not painted.
   const buckets = new Map<string, DrawCommand[]>();
   for (const l of layers) if (l.visible) buckets.set(l.id, []);
-  const planes = camera === null ? null : scenePlaneOf(layers, camera);
+  const planes = camera === null ? null : createLayerPlaneLookup(layers, camera);
   let planeViews: Map<string, View> | null = null;
   for (const l of layers) {
     if (planes && l.parallax) {

@@ -37,7 +37,7 @@ export type { FollowerMove } from '../interactions/actions/followerMoves';
 export type { GroupingSite } from '../core/pages/pagePlacement';
 export { THROUGH_CHROME } from '../tools/builtin/throughChrome';
 export { ownClipOf } from '../canvas/ownClip';
-export { adapterPickSource, pickWalk, scenePlaneOf } from '../canvas/pickWalk';
+export { adapterPickSource, pickWalk, createLayerPlaneLookup } from '../canvas/pickWalk';
 export type { AdapterPickGates, PickQuery, PickSource } from '../canvas/pickWalk';
 export type { PickAdapter } from '../canvas/adapterPickSource';
 export { scenePickSource } from '../canvas/scenePickSource';

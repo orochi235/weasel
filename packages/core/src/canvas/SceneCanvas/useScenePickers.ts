@@ -8,7 +8,7 @@ import { useCallback, useMemo } from 'react';
 import { useKitSetting, useLatest } from '@weasel-js/react';
 import type { SceneCanvasAdapter } from '../sceneAdapter';
 import {
-  passesPickGates, pickWalk, scenePickSource, scenePlaneOf, type PickCandidate, type ViewPickGates,
+  passesPickGates, pickWalk, scenePickSource, createLayerPlaneLookup, type PickCandidate, type ViewPickGates,
 } from 'canvas/pickWalk';
 import { rectFromPlane, type PlaneMap } from 'core/viewport/parallax';
 import type { View } from 'core/viewport/view';
@@ -184,7 +184,7 @@ export function useScenePickers<TData, TLayer extends string, TPose>(
       const n = scene.get(asNodeId(id));
       const camera = cameraOf(view ?? getViewRef.current?.() ?? null);
       if (!n || !camera) return null;
-      return scenePlaneOf(scene.layers, camera)?.(n.layer) ?? null;
+      return createLayerPlaneLookup(scene.layers, camera)?.(n.layer) ?? null;
     };
   }, [scene, getViewRef]);
 

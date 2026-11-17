@@ -287,10 +287,10 @@ export interface ViewPickGates {
 }
 
 /** The gates a bare adapter takes from its view, plus how that view's camera
- *  maps into each parallax layer — see `scenePlaneOf`. */
+ *  maps into each parallax layer — see `createLayerPlaneLookup`. */
 export interface AdapterPickGates extends ViewPickGates {
   planeOf?: (layer: string) => PlaneMap | null;
 }
 
-export { scenePickSource, scenePlaneOf, type ScenePickSourceOptions } from './scenePickSource';
+export { scenePickSource, createLayerPlaneLookup, type ScenePickSourceOptions } from './scenePickSource';
 export { adapterPickSource } from './adapterPickSource';

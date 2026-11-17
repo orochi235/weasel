@@ -17,7 +17,7 @@ import type { View } from 'core/viewport/view';
 import type { Departures } from '../../animation/departures';
 import { isCustomEntry, type LayersMap } from '../layerSlots';
 import { wrapWithPoseRotation } from '../poseRotation';
-import { scenePlaneOf } from '../pickWalk';
+import { createLayerPlaneLookup } from '../pickWalk';
 import { planeTransform } from '../planeClips';
 import { pixelScaleCtx } from '../pixelScale';
 
@@ -49,7 +49,7 @@ export function useDepartureGhostLayer<TData, TLayer extends string, TPose>(args
       // As the scene paints it: a node on a hidden layer is not drawn, and one
       // on a parallax layer is drawn through its plane's view and carried
       // into its parent's world.
-      const planeOf = scenePlaneOf(sc.layers, view);
+      const planeOf = createLayerPlaneLookup(sc.layers, view);
       const shown = new Set(sc.layers.filter((l) => l.visible).map((l) => l.id as string));
       const viewOf = (layer: string): View => {
         const parallax = planeOf ? sc.layers.find((l) => l.id === layer)?.parallax : undefined;
