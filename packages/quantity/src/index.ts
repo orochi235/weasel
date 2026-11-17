@@ -1,7 +1,7 @@
 export {
   amount,
   displayOf,
-  endless,
+  withInfinity,
   retag,
   tag,
   unitOf,

@@ -1,12 +1,12 @@
 import { describe, it, expect, vi } from 'vitest';
 import { render, fireEvent } from '@testing-library/react';
 import { Slider } from './Slider';
-import { endless, unit } from '@weasel-js/quantity';
+import { withInfinity, unit } from '@weasel-js/quantity';
 
 describe('Slider endless', () => {
   it('sits a thumb given Infinity at a stop one step past the range, and reads the display’s word', () => {
     const { getByRole, container } = render(
-      <Slider min={0} max={5000} step={50} endless="max" display={endless(unit('ms'), 'never')} readoutPlacement="inline-after" thumbs={[{ value: Infinity }]} onInput={() => {}} />,
+      <Slider min={0} max={5000} step={50} endless="max" display={withInfinity(unit('ms'), 'never')} readoutPlacement="inline-after" thumbs={[{ value: Infinity }]} onInput={() => {}} />,
     );
     const thumb = getByRole('slider');
     expect(thumb).toHaveAttribute('aria-valuenow', '5050');
@@ -38,7 +38,7 @@ describe('Slider endless', () => {
   it('adds a stop for infinity after the last of evenly spaced stops, labeled with its word', () => {
     const onChange = vi.fn();
     const { getByRole, container } = render(
-      <Slider min={0} max={60} stops={[1, 5, 60]} spacing="even" snap="strict" endless="max" display={endless(unit('s'), 'never')} thumbs={[{ value: 60 }]} onInput={() => {}} onChange={onChange} />,
+      <Slider min={0} max={60} stops={[1, 5, 60]} spacing="even" snap="strict" endless="max" display={withInfinity(unit('s'), 'never')} thumbs={[{ value: 60 }]} onInput={() => {}} onChange={onChange} />,
     );
     const labels = [...container.querySelectorAll('[data-slider-stop-label]')].map(el => el.textContent);
     expect(labels).toContain('never');
