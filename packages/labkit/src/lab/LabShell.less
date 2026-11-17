@@ -28,7 +28,10 @@
   // A last resort: actions too wide for the row take one of their own, since clipping them would
   // leave controls out of reach. The title never causes it (see below).
   flex-wrap: wrap;
+  align-content: center;
   gap: var(--wzl-space-md);
+  box-sizing: border-box;
+  min-height: calc(var(--wzl-tb-height) + 2 * var(--wzl-space-sm) + 1px);
   padding: var(--wzl-space-sm) var(--wzl-space-md);
   overflow-x: clip;
   background: var(--wzl-surface-raised);
@@ -51,6 +54,13 @@
   // `clip`, not `hidden`: a scroll container hands the row a synthesized baseline.
   overflow-x: clip;
   text-overflow: ellipsis;
+}
+
+// The title's box is the same in every face; a control set on its baseline hangs below it by
+// however much its face puts under the baseline. That lands in the padding rather than growing the
+// row, so the header is one strip tall before its face loads and after, and nothing under it moves.
+.lk-shell-header > :not(.lk-shell-title) {
+  margin-block-end: calc(-1 * var(--wzl-space-sm));
 }
 
 .lk-shell-menubar {
