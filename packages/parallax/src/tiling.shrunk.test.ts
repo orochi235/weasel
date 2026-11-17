@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 import { drawOneLayer } from '@weasel-js/core';
-import { tiledProject } from './tiledProject';
+import { tileRange } from './tileRange';
 import { createTiledLayer } from './createTiledLayer';
 import { createParallaxLayer } from './createParallaxLayer';
 import { createParallaxPlane } from './createParallaxPlane';
@@ -9,7 +9,7 @@ import { nonFinite, recordingSource } from './pbt.fixture';
 describe('shrunk from the tiling properties', () => {
   it('names the cell a range starts in when the quotient rounds to the next one', () => {
     // -5e-324 / 2 rounds to -0, which floored left cell -1 out.
-    expect(tiledProject(0, 0, 2, 5e-324)).toEqual({ from: -1, to: 0 });
+    expect(tileRange(0, 0, 2, 5e-324)).toEqual({ from: -1, to: 0 });
   });
 
   it('draws nothing of a world source through a plane too deep for a finite view', () => {

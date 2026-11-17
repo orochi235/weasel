@@ -15,7 +15,7 @@ The math is pure and is exported by `@weasel-js/core` (`deriveParallaxView`,
 `planeMap`, and the rest), since a scene layer's own `parallax` uses it. This
 package holds the layer wrapper (`createParallaxLayer`), the live plane
 (`createParallaxPlane`), and a layer that repeats its sources across a period
-(`createTiledLayer`, `tiledProject`).
+(`createTiledLayer`, `tileRange`).
 
 ## `deriveParallaxView(outer, opts)`
 
