@@ -2,7 +2,7 @@ import { useCallback, useRef } from 'react';
 import { useLatest } from '@weasel-js/react';
 import type { GestureSource } from './gestureBounds';
 import type { Bounds } from 'core/viewport/fitViewToBounds';
-import { unionAABB } from 'core/geometry/unionBounds';
+import { unionAabb } from 'core/geometry/unionBounds';
 
 /**
  * Everything `source`'s in-flight gestures propose, boxed: each node they
@@ -17,7 +17,7 @@ export function gestureBoundsOf(
   const parts: (Bounds | null)[] = [];
   for (const id of new Set(source.ids() ?? [])) parts.push(previewBoundsOf(id));
   for (const b of source.bounds() ?? []) parts.push(b);
-  return unionAABB(parts);
+  return unionAabb(parts);
 }
 
 /**

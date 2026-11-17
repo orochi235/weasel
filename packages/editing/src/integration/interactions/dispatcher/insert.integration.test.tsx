@@ -20,7 +20,7 @@ import { useGestureDispatcher } from '@weasel-js/routing/react';
 import { insertAction } from '../../../actions/insert/action';
 import { createDispatcher, type Dispatcher } from '@weasel-js/routing';
 import { createGestureSourceForTests as createGestureSource } from '@weasel-js/core/test-seams';
-import { unionAABB } from '@weasel-js/core/engine';
+import { unionAabb } from '@weasel-js/core/engine';
 import type { InsertDep } from '@weasel-js/core/engine';
 import type { Contribution } from '@weasel-js/core';
 import type { NodeId } from '@weasel-js/core';
@@ -231,22 +231,22 @@ describe('insertAction integration via gesture dispatcher', () => {
     const { getByTestId } = render(<Harness />);
     const canvas = getByTestId('canvas');
 
-    expect(unionAABB(source.bounds() ?? [])).toBeNull();
+    expect(unionAabb(source.bounds() ?? [])).toBeNull();
 
     act(() => { fire(canvas, 'pointerdown', 10, 10); });
     act(() => { fire(canvas, 'pointermove', 60, 35); });
-    expect(unionAABB(source.bounds() ?? []))
+    expect(unionAabb(source.bounds() ?? []))
       .toEqual({ x: 10, y: 10, width: 50, height: 25 });
 
     act(() => { fire(canvas, 'pointermove', 110, 60); });
-    expect(unionAABB(source.bounds() ?? []))
+    expect(unionAabb(source.bounds() ?? []))
       .toEqual({ x: 10, y: 10, width: 100, height: 50 });
 
     // On release the node commits and the gesture is over — bounds go back to
     // null, and the committed geometry is the consumer's own business.
     act(() => { fire(canvas, 'pointerup', 110, 60); });
     expect(calls).toHaveLength(1);
-    expect(unionAABB(source.bounds() ?? [])).toBeNull();
+    expect(unionAabb(source.bounds() ?? [])).toBeNull();
   });
 
   it('bumps the gesture version on each pump of an insert drag', () => {

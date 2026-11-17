@@ -9,7 +9,7 @@ import {
   derivedDepOf,
   derivedPartsOf,
   documentOf,
-  drawnAABBOf,
+  drawnAabbOf,
   drawnBoundsScene,
   effectivePose,
   findNodeShape,
@@ -140,7 +140,7 @@ export function regionSvgNodes(live: ExportScene, region: ExportRegion, opts: Re
     include(id) {
       const node = scene.get(id as never);
       if (!node || !shown.has(node.layer)) return false;
-      return meets(drawnAABBOf(drawn, id as NodeId, pose(node), { worldPoseOf }), region);
+      return meets(drawnAabbOf(drawn, id as NodeId, pose(node), { worldPoseOf }), region);
     },
     leaf(id, kit, inherited) {
       const node = scene.get(id as never)!;

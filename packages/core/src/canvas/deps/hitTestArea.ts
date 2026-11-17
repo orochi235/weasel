@@ -37,7 +37,7 @@ import {
 } from 'core/geometry/regionHit';
 
 /** An axis-aligned world rect: what a marquee region query covers. */
-export interface AABBBounds {
+export interface AabbBounds {
   x: number;
   y: number;
   width: number;
@@ -73,7 +73,7 @@ export function regionPickOptions(
 /** Marquee entry point: every node the rect `bounds` meets. */
 export function hitTestArea(
   scene: Scene<unknown, string, unknown>,
-  bounds: AABBBounds,
+  bounds: AabbBounds,
   opts?: ScenePickSourceOptions<unknown>,
   descriptor: PoseDescriptor<unknown> = AUTO_POSE_DESCRIPTOR,
   query: RegionQueryOptions = {},
@@ -88,7 +88,7 @@ export function hitTestArea(
 export function hitTestAreaPolygon(
   scene: Scene<unknown, string, unknown>,
   area: ArrayLike<number>,
-  areaBounds?: AABBBounds,
+  areaBounds?: AabbBounds,
   /** True when `area` IS its own bounding rect, so `areaBounds` containment
    *  implies containment in the area proper. Never pass this for a lasso
    *  polygon — a node inside the hull's box can miss the hull. */

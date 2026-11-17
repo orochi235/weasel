@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { axisAlignedBounds, unionAABB, unionBounds } from './unionBounds';
+import { axisAlignedBounds, unionAabb, unionBounds } from './unionBounds';
 
 describe('unionBounds', () => {
   it('returns null for empty input', () => {
@@ -45,7 +45,7 @@ describe('axisAlignedBounds', () => {
 
   it('normalizes a box a resize turned inside out, as it does a rotated one', () => {
     expect(axisAlignedBounds({ x: 100, y: 60, width: -50, height: -40 })).toEqual({ x: 50, y: 20, width: 50, height: 40 });
-    expect(unionAABB([{ x: 100, y: 0, width: -50, height: 10 }, { x: 0, y: 0, width: 10, height: 10 }]))
+    expect(unionAabb([{ x: 100, y: 0, width: -50, height: 10 }, { x: 0, y: 0, width: 10, height: 10 }]))
       .toEqual({ x: 0, y: 0, width: 100, height: 10 });
   });
 
@@ -74,22 +74,22 @@ describe('axisAlignedBounds', () => {
   });
 });
 
-describe('unionAABB', () => {
+describe('unionAabb', () => {
   it('returns null for an empty iterable', () => {
-    expect(unionAABB([])).toBeNull();
+    expect(unionAabb([])).toBeNull();
   });
 
   it('returns null when every part is null/undefined', () => {
-    expect(unionAABB([null, undefined, null])).toBeNull();
+    expect(unionAabb([null, undefined, null])).toBeNull();
   });
 
   it('returns a single part as its own AABB', () => {
-    expect(unionAABB([{ x: 1, y: 2, width: 3, height: 4 }]))
+    expect(unionAabb([{ x: 1, y: 2, width: 3, height: 4 }]))
       .toEqual({ x: 1, y: 2, width: 3, height: 4 });
   });
 
   it('unions disjoint parts into their envelope', () => {
-    const u = unionAABB([
+    const u = unionAabb([
       { x: 0, y: 0, width: 10, height: 10 },
       { x: 50, y: 20, width: 10, height: 10 },
     ]);
@@ -97,7 +97,7 @@ describe('unionAABB', () => {
   });
 
   it('skips nulls interleaved with real parts', () => {
-    const u = unionAABB([
+    const u = unionAabb([
       null,
       { x: 0, y: 0, width: 10, height: 10 },
       undefined,
@@ -107,7 +107,7 @@ describe('unionAABB', () => {
   });
 
   it('folds rotated parts by their rotated extent, not their local box', () => {
-    const u = unionAABB([
+    const u = unionAabb([
       { x: 0, y: 0, width: 10, height: 10, rotation: Math.PI / 4 },
     ])!;
     const half = (10 * Math.SQRT2) / 2;
@@ -115,7 +115,7 @@ describe('unionAABB', () => {
   });
 
   it('never reports a rotation on the union', () => {
-    const u = unionAABB([
+    const u = unionAabb([
       { x: 0, y: 0, width: 10, height: 10, rotation: Math.PI / 4 },
       { x: 100, y: 0, width: 10, height: 10, rotation: Math.PI / 4 },
     ])!;
@@ -123,13 +123,13 @@ describe('unionAABB', () => {
   });
 });
 
-describe('unionAABB vs unionBounds', () => {
+describe('unionAabb vs unionBounds', () => {
   it('agree when nothing is rotated', () => {
     const poses = [
       { x: 0, y: 0, width: 10, height: 10 },
       { x: 50, y: 60, width: 20, height: 30 },
     ];
-    expect(unionAABB(poses)).toEqual(unionBounds(poses));
+    expect(unionAabb(poses)).toEqual(unionBounds(poses));
   });
 
   it('diverge once a member is rotated past its own box', () => {
@@ -138,7 +138,7 @@ describe('unionAABB vs unionBounds', () => {
       { x: 40, y: 0, width: 40, height: 10, rotation: Math.PI / 2 },
       { x: 0, y: 0, width: 10, height: 10 },
     ];
-    expect(unionAABB(poses)!.y).toBeCloseTo(-15);
+    expect(unionAabb(poses)!.y).toBeCloseTo(-15);
     expect(unionBounds(poses)!.y).toBe(0);
   });
 });

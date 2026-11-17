@@ -412,8 +412,8 @@ The snap pipeline ([snapping.md](./snapping.md)) landed on 2026-10-18 with these
   to the top of the tree. A transform (move, nudge, rotate, resize, flip, align, distribute) leaves a node stored
   in one where it is and moves the rest. This replaces the 2026-11-11 call that read such an axis as collapsed.
 
-- 2026-11-11 (my call, core second property pass): `unionBounds` and `unionAABB` skip a box with a corner that is
-  not finite (a `NaN` or infinite field, or an edge past the double range), as `unionAABB` skips a hole, and a union of
+- 2026-11-11 (my call, core second property pass): `unionBounds` and `unionAabb` skip a box with a corner that is
+  not finite (a `NaN` or infinite field, or an edge past the double range), as `unionAabb` skips a hole, and a union of
   only such boxes is `null`. Before, a `NaN` width counted the box's `x` and not its far edge, and a union of such
   boxes alone came back with a width of `-Infinity`.
 - 2026-11-11 (my call, core second property pass): `createMoveToIndexOp` holds its index as the finite integer that

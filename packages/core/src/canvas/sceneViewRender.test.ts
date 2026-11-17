@@ -16,7 +16,7 @@ import {
   renderSceneToCanvas,
   __getCachedRendererForTest,
 } from './sceneViewRender';
-import { rotateAroundAABBCenter } from './poseRotation';
+import { rotateAroundAabbCenter } from './poseRotation';
 import { defaultDrawOne } from './defaultDrawOne';
 import { getNodeShapes } from './NodeShape';
 
@@ -321,7 +321,7 @@ describe('buildSceneViewCommands — rotation and per-node alpha', () => {
     const child = soleNodeOutput(commands) as GroupDrawCommand;
     expect(child.kind).toBe('group');
     expect(Array.from(child.transform!)).toEqual(
-      Array.from(rotateAroundAABBCenter(10, 20, 30, 40, Math.PI / 4)),
+      Array.from(rotateAroundAabbCenter(10, 20, 30, 40, Math.PI / 4)),
     );
     expect(child.children).toHaveLength(1);
     expect(child.children[0].kind).toBe('path');
@@ -359,7 +359,7 @@ describe('buildSceneViewCommands — rotation and per-node alpha', () => {
     expect(outer.alpha).toBe(0.5);
     const inner = outer.children[0] as GroupDrawCommand;
     expect(Array.from(inner.transform!)).toEqual(
-      Array.from(rotateAroundAABBCenter(10, 20, 30, 40, Math.PI / 4)),
+      Array.from(rotateAroundAabbCenter(10, 20, 30, 40, Math.PI / 4)),
     );
   });
 

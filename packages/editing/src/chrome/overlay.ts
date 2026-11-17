@@ -3,7 +3,7 @@
  * outlines and resize handles.
  *
  * **Pose shape:** TPose is generic; callers pass `poseDescriptor` for poses
- * `AUTO_POSE_DESCRIPTOR` can't read. Container ids reduce via `unionAABB`
+ * `AUTO_POSE_DESCRIPTOR` can't read. Container ids reduce via `unionAabb`
  * over the projected AABBs.
  */
 

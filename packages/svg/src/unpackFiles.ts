@@ -6,7 +6,7 @@ import { parseSvg } from './parse';
 import { scaleRuns, scaleStroke, scaleTextStyle } from './metricScale';
 import { svgNodesToKitDrafts } from './unpack';
 import {
-  createInsertOp, dwarn, unionAABB, type IngestCtx, type Op, type PoseComposition, type Stroke,
+  createInsertOp, dwarn, unionAabb, type IngestCtx, type Op, type PoseComposition, type Stroke,
 } from '@weasel-js/core';
 import { type StyledRun, type TextStyle } from '@weasel-js/text';
 import type { SvgDraftPose } from './draftPose';
@@ -76,7 +76,7 @@ export async function unpackSvgFiles(files: File[], ctx: IngestCtx): Promise<voi
       const roots = drafts.filter((d) => d.parentId === null);
       if (roots.length > 1) {
         const wrapperId = ctx.scene.mintId();
-        const union = unionAABB(roots.map((d) => d.pose))!;
+        const union = unionAabb(roots.map((d) => d.pose))!;
         drafts = [
           { kind: 'group' as const, id: wrapperId, parentId: null, pose: union, data: {} },
           ...drafts.map((d) => (d.parentId === null ? { ...d, parentId: wrapperId } : d)),
@@ -86,7 +86,7 @@ export async function unpackSvgFiles(files: File[], ctx: IngestCtx): Promise<voi
       // Fit-clamp and center. Pose-only: the painter rebases stored geometry
       // into the pose box.
 
-      const union = unionAABB(drafts.filter((d) => d.parentId === null).map((d) => d.pose))!;
+      const union = unionAabb(drafts.filter((d) => d.parentId === null).map((d) => d.pose))!;
       const view = ctx.viewportWorldRect();
       const scale = Math.min(
         1,

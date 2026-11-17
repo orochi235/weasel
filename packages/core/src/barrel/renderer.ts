@@ -154,7 +154,7 @@ export {
   nodeKindPreset, nodeTraitsOf, type NodeKindPresetSpec, type NodeTraitBase, type NodeTraits,
 } from '../canvas/SceneCanvas/nodeTraits';
 export { describePresets, isAtom, type PresetDescription } from '../canvas/SceneCanvas/describePresets';
-export { rotateAroundAABBCenter, VIEW_TOOLS } from '../canvas/SceneCanvas';
+export { rotateAroundAabbCenter, VIEW_TOOLS } from '../canvas/SceneCanvas';
 export * from '../canvas/SceneCanvas/presets';
 export { KIT_SHAPE_KINDS, kitShapeKindsOf, SHAPE_KINDS } from '../core/shapeKinds';
 export type {

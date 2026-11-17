@@ -6,7 +6,7 @@
 import type { ActionDeps } from '@weasel-js/routing';
 import { unionRects } from '@weasel-js/geom';
 import type { WarpBox } from '@weasel-js/geom/warp';
-import { drawnAABBOf, type NodeId, type PathNode, pathNodesOf, shownNodeOf, type AnyScene } from '@weasel-js/core';
+import { drawnAabbOf, type NodeId, type PathNode, pathNodesOf, shownNodeOf, type AnyScene } from '@weasel-js/core';
 import { type CreateOutlinesAdapter } from '../outlines/createOutlines';
 import { leavesOf } from '../shared/scenePaths';
 
@@ -58,7 +58,7 @@ export function textsBox(scene: WarpScene, texts: readonly NodeId[]): WarpBox | 
   let box: WarpBox | null = null;
   for (const id of texts) {
     const node = shownNodeOf(scene, id);
-    if (node) box = unionBox(box, drawnAABBOf(scene, id, node.pose));
+    if (node) box = unionBox(box, drawnAabbOf(scene, id, node.pose));
   }
   return box;
 }

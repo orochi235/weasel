@@ -1,5 +1,5 @@
 import type { NodeId, Scene, OperandsDep, Bounds, Op, PoseDescriptor, RectPose } from '@weasel-js/core';
-import { shapeSources, uncarried, withoutPageStructure, createTransformOp, poseDescriptorOf, unionAABB, drawnBoxes, type DrawnBoxes, isNoInkExtents, scenePoseFrame, type PoseFrame, actionReferenceSources, resolveSpatialReference, sameValue, finiteThroughout, defaultCommitAdapter, operandMethods, transformApplyOps, requiresSelection, createGeometryDataOp, type GeometryProjection } from '@weasel-js/core';
+import { shapeSources, uncarried, withoutPageStructure, createTransformOp, poseDescriptorOf, unionAabb, drawnBoxes, type DrawnBoxes, isNoInkExtents, scenePoseFrame, type PoseFrame, actionReferenceSources, resolveSpatialReference, sameValue, finiteThroughout, defaultCommitAdapter, operandMethods, transformApplyOps, requiresSelection, createGeometryDataOp, type GeometryProjection } from '@weasel-js/core';
 import { multiply, rotate, translate, type Affine } from '@weasel-js/geom';
 import {
   flipPoseAboutBounds,
@@ -98,9 +98,9 @@ function flipOps(
       ownPivot.set(id as string, boxes.aabb(id, world));
     }
   }
-  let sharedPivot: ReturnType<typeof unionAABB> = null;
+  let sharedPivot: ReturnType<typeof unionAabb> = null;
   if (pivot === 'union') {
-    sharedPivot = unionAABB([...worlds].map(([id, p]) => boxes.aabb(id, p)));
+    sharedPivot = unionAabb([...worlds].map(([id, p]) => boxes.aabb(id, p)));
   } else if (pivot !== 'each') {
     sharedPivot = resolveSpatialReference(pivot, actionReferenceSources(params, pointer, scene, frame, boxes));
     if (sharedPivot === null) return [];

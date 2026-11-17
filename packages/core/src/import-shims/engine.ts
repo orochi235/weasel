@@ -28,7 +28,7 @@ export type { PoseDescriptor, RotatedPose, TranslateLead } from '../core/geometr
 export type { RectPose } from '../core/geometry/rectPose';
 export { angleOf, localToWorld, normalToWorld, targetCorners, targetTransformOf, worldDeltaToLocal, worldToLocal } from '../core/geometry/targetFrame';
 export type { TargetTransform } from '../core/geometry/targetFrame';
-export { axisAlignedBounds, positiveBox, unionAABB, unionBounds } from '../core/geometry/unionBounds';
+export { axisAlignedBounds, positiveBox, unionAabb, unionBounds } from '../core/geometry/unionBounds';
 export type { Dims, LayerDims } from '../core/layers/dims';
 export { createArrangeOp } from '../core/ops/arrange';
 export type { ArrangeArgs, ArrangedPose } from '../core/ops/arrange';

@@ -1,6 +1,6 @@
 import { useCallback } from 'react';
 import { useLatest } from '@weasel-js/react';
-import { createTransformOp, dispatchApplyBatch, RECT_POSE_DESCRIPTOR, type PoseDescriptor, unionAABB, poseFrame, type PoseFrame, uncarried, IDENTITY_POSE_COMPOSITION, type PoseComposition, drawnAABBOf, type DrawnBoundsOptions, type DrawnBoundsScene, settleWithinRounding, resolveSpatialReference, type SpatialReference, type SpatialReferenceSources, visualBoundsViaDescriptor, translatePoseViaDescriptor } from '@weasel-js/core';
+import { createTransformOp, dispatchApplyBatch, RECT_POSE_DESCRIPTOR, type PoseDescriptor, unionAabb, poseFrame, type PoseFrame, uncarried, IDENTITY_POSE_COMPOSITION, type PoseComposition, drawnAabbOf, type DrawnBoundsOptions, type DrawnBoundsScene, settleWithinRounding, resolveSpatialReference, type SpatialReference, type SpatialReferenceSources, visualBoundsViaDescriptor, translatePoseViaDescriptor } from '@weasel-js/core';
 import type { Op, NodeId, Bounds } from '@weasel-js/core';
 import { usePointerContext } from '@weasel-js/routing/react';
 import type { Scale2 } from '@weasel-js/geom';
@@ -22,7 +22,7 @@ export function alignTargetBounds(
   to: AlignReference | undefined,
   src: SpatialReferenceSources,
 ): Bounds | null {
-  if (to === undefined || to === 'union') return bounds.length < 2 ? null : unionAABB([...bounds]);
+  if (to === undefined || to === 'union') return bounds.length < 2 ? null : unionAabb([...bounds]);
   if (bounds.length === 0) return null;
   return resolveSpatialReference(to, src);
 }
@@ -98,7 +98,7 @@ export function alignBoxReader<TPose>(
     worldPoseOf: (id) => worldPoseOf(id),
     ...(scale !== undefined ? { scale } : {}),
   };
-  return (id, pose) => drawnAABBOf(scene, id as NodeId, pose, opts);
+  return (id, pose) => drawnAabbOf(scene, id as NodeId, pose, opts);
 }
 
 /** Align the current selection to a shared edge or center of the selection's

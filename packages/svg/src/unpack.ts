@@ -25,7 +25,7 @@ import {
   getMarker,
   INHERIT,
   registerMarker,
-  unionAABB,
+  unionAabb,
   type BooleanShapeOp,
   type Paint,
   type ImageNodeData,
@@ -229,7 +229,7 @@ export function svgNodesToKitDrafts<TData = Record<string, unknown>>(
       };
       drafts.push(draft);
       const at = drafts.length - 1;
-      const acc = unionAABB(n.children.map((c) => visit(c, draft.id, k, groupTakes(n, takes, k))));
+      const acc = unionAabb(n.children.map((c) => visit(c, draft.id, k, groupTakes(n, takes, k))));
       const box = boxed && boxOfPath(boxed.box.path);
       const pose = box ?? (n.clip && acc ? boxOfPath(n.clip) : acc);
       if (!pose) {
@@ -241,7 +241,7 @@ export function svgNodesToKitDrafts<TData = Record<string, unknown>>(
       }
       draft.pose = pose;
       Object.assign(draft.data, containerPaint(n, takes, draft.pose, k), boxed ? boxPaint(boxed.box, draft.pose, k) : {});
-      return box && !n.clip ? unionAABB([box, acc]) : draft.pose;
+      return box && !n.clip ? unionAabb([box, acc]) : draft.pose;
     }
 
     const { pose, data } = leafDraft(n, takes, k);
@@ -278,9 +278,9 @@ export function svgNodesToKitDrafts<TData = Record<string, unknown>>(
       if (kids.hidden && !kids.boolean) for (const d of drafts.slice(at)) if (d.parentId === under) d.hidden = true;
     }
     for (const c of more) poses.push(visit(c, under, k, inner));
-    if (!empty) return unionAABB(poses);
+    if (!empty) return unionAabb(poses);
     // An empty result has no box of its own, so the mark takes its operands'.
-    const box = unionAABB(poses.slice(1));
+    const box = unionAabb(poses.slice(1));
     if (mark && box) mark.pose = box;
     return box;
   };

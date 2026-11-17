@@ -1,7 +1,7 @@
 import { describe, it, expect, vi } from 'vitest';
 import { planPixelRender, renderSceneToPixels } from './renderSceneToPixels';
 import { createGLRecorder } from '@weasel-js/renderer/testing/glRecorder';
-import { rotateAroundAABBCenter } from './poseRotation';
+import { rotateAroundAabbCenter } from './poseRotation';
 import type { DrawCommand } from '@weasel-js/renderer';
 import type { Node, Scene } from 'core/scene/types';
 import { createPoseOverrides } from 'core/scene/poseOverrides';
@@ -137,7 +137,7 @@ describe('planPixelRender', () => {
     expect(childOf(spun)).not.toEqual(childOf(upright));
     const wrap = childOf(spun) as unknown as { kind: string; transform: Float32Array };
     expect(wrap.kind).toBe('group');
-    expect(Array.from(wrap.transform)).toEqual(Array.from(rotateAroundAABBCenter(10, 20, 40, 20, Math.PI / 3)));
+    expect(Array.from(wrap.transform)).toEqual(Array.from(rotateAroundAabbCenter(10, 20, 40, 20, Math.PI / 3)));
   });
 
   it('honors alphaFor — a dimmed node plans differently from an opaque one', () => {

@@ -7,7 +7,7 @@ import { describe, expect, it } from 'vitest';
 import fc from 'fast-check';
 import { transformPoint, poseFrameOf } from '@weasel-js/geom';
 import { close, coord, positive, runs, tally, timeoutFor } from '../pbt.fixture';
-import { axisAlignedBounds, positiveBox, unionAABB, unionBounds } from './unionBounds';
+import { axisAlignedBounds, positiveBox, unionAabb, unionBounds } from './unionBounds';
 import { RECT_POSE_DESCRIPTOR, remapRotatedLeaf, translatePoseViaDescriptor, type RotatedPose } from './poseDescriptor';
 import type { Bounds } from 'core/viewport/fitViewToBounds';
 
@@ -63,10 +63,10 @@ describe('unions', () => {
     }), runs(N));
   }, T);
 
-  it('unionAABB holds every drawn corner of every part, tightly, skipping holes, and never reports a rotation', () => {
+  it('unionAabb holds every drawn corner of every part, tightly, skipping holes, and never reports a rotation', () => {
     const t = tally();
     fc.assert(fc.property(fc.array(fc.option(framed, { nil: undefined, freq: 5 }), { maxLength: 6 }), (parts) => {
-      const u = unionAABB(parts);
+      const u = unionAabb(parts);
       const real = parts.filter((p): p is Bounds => p !== undefined);
       if (real.length === 0) return void expect(u).toBeNull();
       expect(u).not.toBeNull();
