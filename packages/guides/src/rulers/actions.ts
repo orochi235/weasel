@@ -16,7 +16,7 @@ import {
 import { createAddGuideOp, createRemoveGuideOp, createReplaceGuideOp, type GuideStore } from '../guides/ops';
 import type { Guide } from '../guides/types';
 import { guideAxisOf, rulerPartAt, type RulerHit, type RulerPart } from './hit';
-import { documentRulerFrame, rulerFrameAt, type RulerFrame } from './reading';
+import { documentRulerFrame, createRulerFrameLookup, type RulerFrame } from './reading';
 import type { RulersState } from './layout';
 import type { Point } from '@weasel-js/geom';
 
@@ -38,7 +38,7 @@ function frameReader(ctx: RulersActionCtx): (scene: AnyScene | undefined, p: Poi
   return (scene, p) => {
     if (scene === undefined) return documentRulerFrame(ctx.root, ctx.origin);
     const version = scene.getVersion();
-    if (built?.scene !== scene || built.version !== version) built = { scene, version, at: rulerFrameAt(scene, ctx.root, ctx.origin) };
+    if (built?.scene !== scene || built.version !== version) built = { scene, version, at: createRulerFrameLookup(scene, ctx.root, ctx.origin) };
     return built.at(p);
   };
 }

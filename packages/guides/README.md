@@ -62,7 +62,7 @@ points sits on its crossings.
 | Area | Exports |
 |---|---|
 | Grid | `createGridPreset`, `createGridLayer`, `createCellHighlightLayer`, `useGridCellHover`, `pointToGridCell`, `roundToCell`, `sceneGridRegions`, `gridLines`, `gridFit` |
-| Rulers | `createRulers` (below), `rulerTicks`, `rulerFrameAt`, `rulersLayout`; `<Rulers>` in `@weasel-js/ui` draws them |
+| Rulers | `createRulers` (below), `rulerTicks`, `createRulerFrameLookup`, `rulersLayout`; `<Rulers>` in `@weasel-js/ui` draws them |
 | Guides | `useGuides`, `createGuidesLayer`, `createAddGuideOp`, `createRemoveGuideOp`, `createReplaceGuideOp`, `deriveAlignmentGuides`, `matchSpacing`, `measureGaps`, `siblingBounds`, `worldBoundsOf`, `worldUnionOf` |
 | Snap sources | `gridSnapSource`, `guideSnapSource`, `alignmentSnapSource`, `spacingSnapSource`, for `<SceneCanvas snap={{ sources }}>` or a preset's `snapSources` |
 | Spacing hints | `createSpacingHintsPreset` (below), `distanceReadout`, `measureDistances` |

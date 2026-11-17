@@ -24,7 +24,7 @@ export function documentRulerFrame(root: UnitScope, origin: Point = { x: 0, y: 0
  * view's axes, so a frame turned in the world is read along those axes from
  * its turned origin.
  */
-export function rulerFrameAt(scene: AnyScene, root: UnitScope, origin?: Point): (p: Point) => RulerFrame {
+export function createRulerFrameLookup(scene: AnyScene, root: UnitScope, origin?: Point): (p: Point) => RulerFrame {
   const frameAt = unitFrameAt(scene);
   const boxes = sceneBoxFrames(scene);
   const doc = documentRulerFrame(root, origin);
