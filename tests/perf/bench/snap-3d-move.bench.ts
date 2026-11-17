@@ -13,7 +13,7 @@
  */
 import { IDENTITY_POSE_COMPOSITION, createScene, type NodeId } from '@weasel-js/core';
 import {
-  alignPlaneSource, boxSnapSource, createCamera, createSnap, groundGridSource, pose3, screenBoxOf,
+  alignPlaneSource, boxSnapSource, createCamera, createSnap3dDep, groundGridSource, pose3, screenBoxOf,
   type Pose3, type Viewport3d,
 } from '@weasel-js/kernel3d';
 import { group } from './group';
@@ -41,7 +41,7 @@ function frames(n: number, spacing: number): () => void {
   };
   const world = { scene, viewport: () => vp };
   const id = [...scene.renderOrder()][Math.floor(n / 2)] as NodeId;
-  const snap = createSnap(world, {
+  const snap = createSnap3dDep(world, {
     sources: [boxSnapSource(world), alignPlaneSource(world), groundGridSource({ world, step: 1 })],
   });
   const box = screenBoxOf(world, id, vp)!;

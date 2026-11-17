@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { analyze, mirror, reorder, type BidiDirection } from '@weasel-js/bidi';
+import { analyze, mirrorOf, reorder, type BidiDirection } from '@weasel-js/bidi';
 import { Input } from '@weasel-js/ui/components/Input';
 import { SegmentedBar } from '@weasel-js/ui/components/Segmented';
 import { Button } from '@weasel-js/ui/components/Button';
@@ -28,7 +28,7 @@ export function BidiDemo() {
   const analysis = analyze(cps, direction);
   const line = reorder(analysis, 0, cps.length);
   const painted = line.order.map((i) => {
-    const m = line.levels[i] % 2 === 1 ? mirror(cps[i]) : null;
+    const m = line.levels[i] % 2 === 1 ? mirrorOf(cps[i]) : null;
     return { i, cp: m ?? cps[i], mirrored: m !== null };
   });
 

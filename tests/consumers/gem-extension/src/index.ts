@@ -1,12 +1,12 @@
 // #region gem-feature
-import { nodeKindPreset } from '@weasel-js/core';
+import { createNodeKindPreset } from '@weasel-js/core';
 import { insertPreset } from '@weasel-js/editing';
 import { GEM_BLUE, gemInsert, gemShape, gemTool, isGem } from './gem.js';
 import { tintTool } from './tint.js';
 
 /** The whole feature as one preset: the kind's routing, painter, insert factory, and properties, and its tools,
  *  with editing's `insertPreset`, whose `insert` action and dep the gem tool inserts through. */
-export const gemFeature = nodeKindPreset({
+export const gemFeature = createNodeKindPreset({
   id: 'app:gem',
   label: 'Gems',
   kind: 'gem',                      // routing kind, properties name, insert kind
