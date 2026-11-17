@@ -33,7 +33,7 @@ interface Rig {
 
 const rigs = new WeakMap<PolygonPath, Rig>();
 
-function rigFor(source: PolygonPath, pins: readonly WarpPin[]): Rig {
+function ensureRig(source: PolygonPath, pins: readonly WarpPin[]): Rig {
   const key = pins.map((p) => `${p.from.x},${p.from.y}`).join(';');
   const held = rigs.get(source);
   if (held?.key === key) return held;
@@ -53,7 +53,7 @@ function rigFor(source: PolygonPath, pins: readonly WarpPin[]): Rig {
  */
 export function pinWarpMap(source: PolygonPath, pins: readonly WarpPin[]): (p: Point) => Point {
   if (pins.every((p) => p.to.x === p.from.x && p.to.y === p.from.y)) return (p) => ({ x: p.x, y: p.y });
-  const rig = rigFor(source, pins);
+  const rig = ensureRig(source, pins);
   const at = solveRig(rig, pins);
   if (!at) {
     const dx = pins[0].to.x - pins[0].from.x, dy = pins[0].to.y - pins[0].from.y;
@@ -93,7 +93,7 @@ export function pinWarpSolve(
   opts?: ArapSolveOptions,
 ): { mesh: PinWarpMesh; vertices: Float64Array } | null {
   if (pins.length === 0) return null;
-  const rig = rigFor(source, pins);
+  const rig = ensureRig(source, pins);
   const vertices = solveRig(rig, pins, opts);
   return vertices ? { mesh: rig.mesh, vertices } : null;
 }
