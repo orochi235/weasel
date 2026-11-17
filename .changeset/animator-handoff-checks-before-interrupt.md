@@ -2,6 +2,6 @@
 '@weasel-js/animator': patch
 ---
 
-A target tween or spring with `compositor` set checks its `to`, `from`, `velocity` and spring constants before it interrupts what holds its `cancelKey`, as one on the main thread does.
+A compositor tween or spring checks its input before it interrupts its `cancelKey`, as one on the main thread does. That is its `to`, `from`, `velocity` and spring constants.
 
 <!-- entry: fix -->
