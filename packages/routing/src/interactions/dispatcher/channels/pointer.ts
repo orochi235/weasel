@@ -150,7 +150,7 @@ function heldMoves(
 }
 
 /** The recognizer a pointer channel feeds: dispatching through `core`, timed by `clock`, its thresholds read from the kit settings at each use. */
-function recognizerOf(core: PointerDispatchCore, opts: PointerInputOptions, clock: RecognizerClock) {
+function createRecognizer(core: PointerDispatchCore, opts: PointerInputOptions, clock: RecognizerClock) {
   return createPointerRecognizer({
     sink: {
       dispatch: (ev) => core.dispatch(ev),
@@ -258,7 +258,7 @@ export function pointerInput(core: PointerDispatchCore, opts: PointerInputOption
   const hold = holdClock(core);
   const menus = nativeMenus();
 
-  const recognizer = recognizerOf(core, opts, hold.clock);
+  const recognizer = createRecognizer(core, opts, hold.clock);
 
   const onMove = (e: PointerEvent): void => {
     const session = sessions.get(e.pointerId);
