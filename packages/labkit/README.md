@@ -214,7 +214,9 @@ group included — is filled from the instrument's defaults as it loads, so
 growing a schema never strands a saved trial or a snapshot.
 
 A trial with settings has a Copy settings as JSON button in its title bar, which copies its current
-config, the way `setConfig` paths address it, to the clipboard.
+config, the way `setConfig` paths address it, to the clipboard. It copies the values the trial runs
+with: an auto field at the value its resolver gives, an endless number as `"Infinity"` or
+`"-Infinity"` (which a config reads back as the number), and a cleared one as `null`.
 
 ### Auto
 

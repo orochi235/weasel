@@ -1,4 +1,5 @@
 import { copyText } from '@weasel-js/react';
+import { resolveAutoConfig } from '../config/autoConfig';
 import { withOverValues } from '../config/over';
 import { icon } from '../icons.gen';
 import type { TrialChromeContext, TrialContribution } from './types';
@@ -10,6 +11,18 @@ export const SNAPSHOT_SHORTCUT = { key: 's', mod: true } as const;
 export function settingsConfig(ctx: TrialChromeContext): Record<string, unknown> {
   const own = ctx.config as Record<string, unknown>;
   return ctx.configSchema.over && ctx.overValues ? withOverValues(own, ctx.overValues) : own;
+}
+
+/** A number JSON cannot write, by the name a config reads back (`"Infinity"`), and a cleared value as `null`. */
+const settingsReplacer = (_key: string, value: unknown): unknown => {
+  if (value === undefined) return null;
+  return typeof value === 'number' && !Number.isFinite(value) ? String(value) : value;
+};
+
+/** The trial's settings as JSON, at the values it runs with: each auto path at its resolved value. */
+export function settingsJson(ctx: TrialChromeContext): string {
+  const config = resolveAutoConfig(ctx.configSchema, ctx.config, ctx.auto);
+  return JSON.stringify(settingsConfig({ ...ctx, config }), settingsReplacer, 2);
 }
 
 /** The snapshot loader, once there is a snapshot to load, and the title bar's actions on the trial itself. */
@@ -67,7 +80,7 @@ export function trialActions(ctx: TrialChromeContext): TrialContribution[] {
       item: {
         icon: icon('core:copy'),
         label: 'Copy settings as JSON',
-        onActivate: () => void copyText(JSON.stringify(settingsConfig(ctx), null, 2)),
+        onActivate: () => void copyText(settingsJson(ctx)),
       },
     });
   }

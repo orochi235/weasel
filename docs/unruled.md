@@ -2496,3 +2496,11 @@ Calls the lanes made without a ruling:
 - Open: whether an interior octant-spline weight other than 1 may kink the curve, against the doc's "C² across the whole octant".
 - Ruled 2026-11-15: `checkPipeline` reports a `group-loop` problem once per loop.
 - Open: whether `createDeleteAction({ commit })` keeps its old gate for a page-only selection, now that it is disabled there.
+
+
+## Audit round twenty-nine (2026-11-16): labs
+
+- 2026-11-16 (the lane's call): a trial's Copy settings as JSON copies an auto field at its resolver's value, not the
+  value the instrument last reported, and marks nothing as auto, so pasting the copy back pins it
+  (`chrome/trialActions.tsx`, `settingsJson`). An endless number is written `"Infinity"`, which config repair reads
+  back; a cleared value is written `null`, which a config seed reads as the field's default, not as cleared.
