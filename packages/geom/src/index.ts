@@ -134,7 +134,7 @@ export {
   shrinkAnchorSelection, smoothAnchors,
 } from './paths/anchorSelection';
 export {
-  averageAnchorsAt, closestOpenEnds, joinAnchorsAt, joinSubpathEnds, subpathEndAt,
+  averageAnchorsAt, nearestOpenEnds, joinAnchorsAt, joinSubpathEnds, subpathEndAt,
   type AverageAxis, type JoinOptions, type SubpathEnd,
 } from './paths/joinAnchors';
 export {

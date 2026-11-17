@@ -1,4 +1,4 @@
-import { closestOnFlat, resolveSnap } from '@weasel-js/geom/nd';
+import { nearestOnFlat, resolveSnap } from '@weasel-js/geom/nd';
 import type { View, Point } from '@weasel-js/geom';
 import type { DebugSink } from '@weasel-js/routing';
 import type { Scene } from 'core/scene/types';
@@ -62,7 +62,7 @@ export function createSession2d(given: Session2dInputs): SnapSession {
       if (mods.suspend) {
         store.set([]);
         inputs.debug?.clearSnap();
-        return outcome(req.press, closestOnFlat(input, [delta0.x, delta0.y]), false, []);
+        return outcome(req.press, nearestOnFlat(input, [delta0.x, delta0.y]), false, []);
       }
       const view = inputs.view();
       const plane = req.plane?.() ?? null;

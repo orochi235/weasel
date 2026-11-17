@@ -2,9 +2,9 @@ import { describe, it, expect } from 'vitest';
 import {
   aabbOfPoints,
   add,
-  closestPointOnLine,
-  closestPointOnSegment,
-  closestPointsRayLine,
+  nearestPointOnLine,
+  nearestPointOnSegment,
+  nearestPointsRayLine,
   compose,
   cross,
   distance,
@@ -307,7 +307,7 @@ describe('transformAabb', () => {
 describe('closest points', () => {
   it('pairs a skew ray and line along their common perpendicular', () => {
     const ray = { origin: { x: 0, y: 0, z: 0 }, direction: { x: 2, y: 0, z: 0 } };
-    const r = closestPointsRayLine(ray, { x: 3, y: 5, z: 3 }, { x: 0, y: 1, z: 1 });
+    const r = nearestPointsRayLine(ray, { x: 3, y: 5, z: 3 }, { x: 0, y: 1, z: 1 });
     expectVecClose(r.onRay, { x: 3, y: 0, z: 0 });
     expectVecClose(r.onLine, { x: 3, y: 1, z: -1 });
     expect(r.t).toBeCloseTo(1.5, 9);
@@ -316,14 +316,14 @@ describe('closest points', () => {
 
   it('clamps the ray at its origin when the line lies behind it', () => {
     const ray = { origin: { x: 0, y: 0, z: 0 }, direction: { x: 1, y: 0, z: 0 } };
-    const r = closestPointsRayLine(ray, { x: -5, y: 0, z: 2 }, { x: 0, y: 1, z: 0 });
+    const r = nearestPointsRayLine(ray, { x: -5, y: 0, z: 2 }, { x: 0, y: 1, z: 0 });
     expect(r.t).toBe(0);
     expectVecClose(r.onLine, { x: -5, y: 0, z: 2 });
   });
 
   it('pairs a parallel line with the ray origin', () => {
     const ray = { origin: { x: 1, y: 0, z: 0 }, direction: { x: 0, y: 0, z: 1 } };
-    const r = closestPointsRayLine(ray, { x: 4, y: 0, z: 9 }, { x: 0, y: 0, z: -3 });
+    const r = nearestPointsRayLine(ray, { x: 4, y: 0, z: 9 }, { x: 0, y: 0, z: -3 });
     expect(r.t).toBe(0);
     expectVecClose(r.onRay, { x: 1, y: 0, z: 0 });
     expectVecClose(r.onLine, { x: 4, y: 0, z: 0 });
@@ -333,15 +333,15 @@ describe('closest points', () => {
   it('clamps a segment at both ends', () => {
     const a = { x: 0, y: 0, z: 0 };
     const b = { x: 10, y: 0, z: 0 };
-    expectVecClose(closestPointOnSegment({ x: -3, y: 4, z: 0 }, a, b), a);
-    expectVecClose(closestPointOnSegment({ x: 13, y: 4, z: 0 }, a, b), b);
-    expectVecClose(closestPointOnSegment({ x: 6, y: 4, z: 1 }, a, b), { x: 6, y: 0, z: 0 });
-    expectVecClose(closestPointOnSegment({ x: 6, y: 4, z: 1 }, a, a), a);
+    expectVecClose(nearestPointOnSegment({ x: -3, y: 4, z: 0 }, a, b), a);
+    expectVecClose(nearestPointOnSegment({ x: 13, y: 4, z: 0 }, a, b), b);
+    expectVecClose(nearestPointOnSegment({ x: 6, y: 4, z: 1 }, a, b), { x: 6, y: 0, z: 0 });
+    expectVecClose(nearestPointOnSegment({ x: 6, y: 4, z: 1 }, a, a), a);
   });
 
   it('projects onto an infinite line, unclamped', () => {
     expectVecClose(
-      closestPointOnLine({ x: -3, y: 4, z: 0 }, { x: 0, y: 0, z: 0 }, { x: 2, y: 0, z: 0 }),
+      nearestPointOnLine({ x: -3, y: 4, z: 0 }, { x: 0, y: 0, z: 0 }, { x: 2, y: 0, z: 0 }),
       { x: -3, y: 0, z: 0 },
     );
   });

@@ -4,7 +4,7 @@ import {
   boundsOfCoords, boxContainsBox, boxContainsPoint, boxesIntersect, rectBetween, rectContainsPoint,
   rectsIntersect, rectsOverlap, unionBox, unionRects, type Rect,
 } from './box';
-import { closestPointOnSegment, distance, pointSegmentDist } from './points';
+import { nearestPointOnSegment, distance, pointSegmentDist } from './points';
 import { distance as distance2d, pointSegmentDist as segDist2d } from './points2';
 import { box, coord, runs } from './pbt.fixture';
 
@@ -94,7 +94,7 @@ describe('distances, property', () => {
     fc.assert(fc.property(point, point, point, (p, a, b) => {
       const d = pointSegmentDist(p, a, b);
       expect(d).toBeLessThanOrEqual(Math.min(distance(p, a), distance(p, b)) + slack(p, a, b));
-      expect(Math.abs(distance(p, closestPointOnSegment(p, a, b)) - d)).toBeLessThanOrEqual(slack(p, a, b));
+      expect(Math.abs(distance(p, nearestPointOnSegment(p, a, b)) - d)).toBeLessThanOrEqual(slack(p, a, b));
       expect(Math.abs(segDist2d(p[0], p[1], a[0], a[1], b[0], b[1]) - d)).toBeLessThanOrEqual(slack(p, a, b));
       expect(Math.abs(pointSegmentDist(p, b, a) - d)).toBeLessThanOrEqual(slack(p, a, b) * 1e3);
     }), RUNS);

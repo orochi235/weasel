@@ -11,10 +11,10 @@
  */
 export { PORT_REACH, cubicPointAt, portControls, portCurvePoints } from '../portCurve';
 export {
-  closestPointOnSegment, distance, distance2, lerpPoint, pointSegmentDist, pointSegmentDist2, segmentT,
+  nearestPointOnSegment, distance, distance2, lerpPoint, pointSegmentDist, pointSegmentDist2, segmentT,
 } from '../points';
 export {
-  closestBetweenFlats, closestOnFlat, flatDim, intersectFlats,
+  nearestBetweenFlats, nearestOnFlat, flatDim, intersectFlats,
   type Flat, type Vec,
 } from '../snap/flat';
 export {
