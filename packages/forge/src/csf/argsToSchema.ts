@@ -170,6 +170,16 @@ function structured(argType: ArgType, value: unknown): Leaf | null {
 const hasRange = (control: Control): control is Control & { min: number; max: number } =>
   Number.isFinite(control.min) && Number.isFinite(control.max) && (control.min as number) <= (control.max as number);
 
+/** Warns when `control` names bounds that {@link hasRange} drops, so a story's author learns why its control is
+ *  unbounded. */
+function warnUnusableBounds(key: string, control: Control): void {
+  if ((control.min === undefined && control.max === undefined) || hasRange(control)) return;
+  console.warn(
+    `forge: the "${key}" control's bounds (min ${String(control.min)}, max ${String(control.max)}) are not both ` +
+      'finite and in order, so it is drawn unbounded',
+  );
+}
+
 function bounded(node: ReturnType<typeof f.number>, control: Control) {
   let out = node;
   if (hasRange(control)) out = out.range(control.min, control.max);
@@ -261,6 +271,7 @@ export function argsToSchema(
     const value = part?.value;
     const argType = getOwn(argTypes, key);
     const control = argType ? controlOf(argType) : false;
+    if (control) warnUnusableBounds(key, control);
 
     let node: Leaf | null =
       (has ? matched(key, value, argType, matchers) : null) ??
