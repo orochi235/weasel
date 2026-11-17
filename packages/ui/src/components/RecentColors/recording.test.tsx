@@ -86,7 +86,7 @@ describe('recent-color recording', () => {
 
   it('records a FillStrokeSwatch pick', () => {
     const store = setup(
-      <FillStrokeSwatch fill={{ color: '#ffffffff' }} stroke={{ color: '#000000ff' }} focused="fill" onFocusChange={() => {}} onChange={() => {}} />,
+      <FillStrokeSwatch fill={{ color: '#ffffffff' }} stroke={{ color: '#000000ff' }} target="fill" onTargetChange={() => {}} onChange={() => {}} />,
     );
     pickInSwatch('Stroke', '#123456');
     expect(store.get()).toEqual(['#123456ff']);
@@ -97,8 +97,8 @@ describe('recent-color recording', () => {
       <FillStrokeSwatch
         fill={{ color: '#ffffffff' }}
         stroke={{ color: '#00000080' }}
-        focused="fill"
-        onFocusChange={() => {}}
+        target="fill"
+        onTargetChange={() => {}}
         onChange={(_slot, paint) => (paint && 'color' in paint ? { color: `${paint.color.slice(0, 7)}80` } : paint)}
       />,
     );

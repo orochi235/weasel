@@ -233,8 +233,8 @@ function PaintPanel({
               <FillStrokeSwatch
                 fill={data.fill?.paint ?? null}
                 stroke={data.stroke?.paint ?? null}
-                focused={slot}
-                onFocusChange={onFocusSlot}
+                target={slot}
+                onTargetChange={onFocusSlot}
                 onChange={paint}
               />
             </div>

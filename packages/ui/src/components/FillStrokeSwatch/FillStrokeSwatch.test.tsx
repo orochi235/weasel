@@ -17,8 +17,8 @@ function mount(over: Partial<FillStrokeSwatchProps> = {}) {
   const props: FillStrokeSwatchProps = {
     fill: RED,
     stroke: BLUE,
-    focused: 'fill',
-    onFocusChange: vi.fn(),
+    target: 'fill',
+    onTargetChange: vi.fn(),
     onChange: vi.fn(),
     ...over,
   };
@@ -47,8 +47,8 @@ describe('FillStrokeSwatch', () => {
     expect(chip('Stroke')).toHaveAttribute('aria-haspopup', 'dialog');
   });
 
-  it('marks the focused slot current', () => {
-    mount({ focused: 'stroke' });
+  it('marks the target slot current', () => {
+    mount({ target: 'stroke' });
     expect(chip('Stroke')).toHaveAttribute('aria-current', 'true');
     expect(chip('Fill')).not.toHaveAttribute('aria-current');
   });
@@ -56,9 +56,9 @@ describe('FillStrokeSwatch', () => {
   it('focuses a slot on click or keyboard focus', () => {
     const p = mount();
     fireEvent.focus(chip('Fill'));
-    expect(p.onFocusChange).toHaveBeenCalledWith('fill');
+    expect(p.onTargetChange).toHaveBeenCalledWith('fill');
     fireEvent.click(chip('Stroke'));
-    expect(p.onFocusChange).toHaveBeenCalledWith('stroke');
+    expect(p.onTargetChange).toHaveBeenCalledWith('stroke');
   });
 
   it("opens the slot's whole paint editor, not a color input", () => {
@@ -115,8 +115,8 @@ describe('FillStrokeSwatch', () => {
         <FillStrokeSwatch
           fill={RED}
           stroke={BLUE}
-          focused="fill"
-          onFocusChange={() => {}}
+          target="fill"
+          onTargetChange={() => {}}
           onChange={() => ({ kind: 'solid', color: '#12345680' })}
         />
       </RecentColorsProvider>,
@@ -131,7 +131,7 @@ describe('FillStrokeSwatch', () => {
     const p = mount({ onToggleNone: vi.fn() });
     fireEvent.click(chip('Stroke'), { shiftKey: true });
     expect(p.onToggleNone).toHaveBeenCalledWith('stroke');
-    expect(p.onFocusChange).toHaveBeenCalledWith('stroke');
+    expect(p.onTargetChange).toHaveBeenCalledWith('stroke');
     expect(screen.queryByRole('dialog')).toBeNull();
   });
 
@@ -141,9 +141,9 @@ describe('FillStrokeSwatch', () => {
     expect(screen.getByRole('dialog', { name: 'Stroke editor' })).toBeInTheDocument();
   });
 
-  it('None acts on the focused slot and reads pressed when it holds none', () => {
+  it('None acts on the target slot and reads pressed when it holds none', () => {
     const onToggleNone = vi.fn();
-    mount({ fill: null, focused: 'fill', onToggleNone });
+    mount({ fill: null, target: 'fill', onToggleNone });
     const none = screen.getByRole('button', { name: 'None' });
     expect(none).toHaveAttribute('aria-pressed', 'true');
     fireEvent.click(none);
