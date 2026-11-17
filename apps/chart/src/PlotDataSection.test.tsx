@@ -29,4 +29,16 @@ describe('PlotDataSection', () => {
     const { container } = render(<PlotDataSection scene={chartWithPie()} selected={[]} />);
     expect(container.textContent).toBe('');
   });
+
+  it('starts fresh on another chart: no row of the last one held open', () => {
+    const scene = createScene<ChartData, ChartLayer, ChartPose>({ systemLayers: CHART_LAYERS, registry: CHART_REGISTRY });
+    const timeline = { kind: 'timeline' as const, sections: [{ name: 'Early', periods: [] }] };
+    for (const id of ['a', 'b']) {
+      for (const spec of plotSpecs(timeline, { id, layer: 'shapes', box: { x: 0, y: 0, width: 400, height: 300 } })) scene.add(spec as never);
+    }
+    const { rerender } = render(<PlotDataSection scene={scene} selected={['a']} />);
+    fireEvent.click(screen.getByRole('button', { name: 'Show details' }));
+    rerender(<PlotDataSection scene={scene} selected={['b']} />);
+    expect(screen.getByRole('button', { name: 'Show details' })).toBeTruthy();
+  });
 });
