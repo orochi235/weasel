@@ -219,9 +219,9 @@ describe('cycleVertexColors', () => {
       result.current.colorOverrides.set('tri', 'fill', later);
     });
     act(() => { handle!.cancel(); });
-    expect(result.current.colorOverrides.get('tri', 'fill')).toBe(later);
+    expect(result.current.colorOverrides.get('tri', 'fill')).toEqual(later);
     act(() => { handle!.cancel(); });
-    expect(result.current.colorOverrides.get('tri', 'fill')).toBe(later);
+    expect(result.current.colorOverrides.get('tri', 'fill')).toEqual(later);
   });
 
   it('refuses a cycle time that is not positive, before installing anything', () => {

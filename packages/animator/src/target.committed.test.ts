@@ -18,3 +18,18 @@ describe('a target’s committed value', () => {
     expect(createTarget({ get: () => 4, set: () => {} }).axes.to(7)).toEqual([7]);
   });
 });
+
+describe('a target committed at rest', () => {
+  it('is shown and published at once', () => {
+    let value = 1;
+    const shown: number[] = [];
+    let published = 0;
+    const target = createTarget({
+      get: () => value, set: (v) => { value = v; },
+      show: (v) => shown.push(v), publish: () => { published += 1; },
+    });
+    target.commit(4);
+    expect(shown).toEqual([4]);
+    expect(published).toBe(1);
+  });
+});

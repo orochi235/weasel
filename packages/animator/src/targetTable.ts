@@ -39,14 +39,16 @@ export interface TargetTable<S extends ShownArray = Float64Array> {
    *  animator moving the rows, and whenever it is read between frames. A new array once the
    *  table grows. A `Float32Array` where the table was made with `shown: Float32Array`. */
   readonly shown: S;
-  /** Adds a row at `value` and answers its index, which a removed row's index is reused for. */
+  /** Adds a row at `value` and answers its index, which a removed row's index is reused for.
+   *  Throws, taking no row, for a value that is not `axes` numbers. */
   add(value: ArrayLike<number>): number;
   /** Stops whatever is moving `row` and frees it. Its target is dead from here: a row added
-   *  later may take the index, and gets a target of its own. */
+   *  later may take the index, and gets a target of its own. Throws for a row not in use. */
   remove(row: number): void;
-  /** Commits `value` to `row`. A row that is moving keeps what its animations have left on top. */
+  /** Commits `value` to `row`. A row that is moving keeps what its animations have left on top.
+   *  Throws for a row not in use. */
   set(row: number, value: ArrayLike<number>): void;
-  /** Row `row` as a target, the same one on every call. */
+  /** Row `row` as a target, the same one on every call. Throws for a row not in use. */
   target(row: number): Target<number[]>;
 }
 
@@ -114,10 +116,33 @@ function pass(
   moves.add(shown, committed, delta, h ? h.cover : null, moved, stamp, at);
 }
 
-/** The rows below `high` that are not `free`. */
-function inUse(high: number, free: readonly number[]): number[] {
-  const gone = new Set(free);
-  return Array.from({ length: high }, (_, r) => r).filter((r) => !gone.has(r));
+/** Which of a table's row indexes are in use, and which a new row takes: a removed one first. */
+function createRowIndex() {
+  /** One past the highest row ever used. */
+  let high = 0;
+  let size = 0;
+  const free: number[] = [];
+  /** Whether each row below `high` is in use: added and not removed since. */
+  const taken: boolean[] = [];
+  return {
+    get size() { return size; },
+    take(): number {
+      const row = free.pop() ?? high++;
+      taken[row] = true;
+      size += 1;
+      return row;
+    },
+    give(row: number): void {
+      taken[row] = false;
+      free.push(row);
+      size -= 1;
+    },
+    /** Throws for a row not in use; `what` names the call. */
+    check(row: number, what: string): void {
+      if (taken[row] !== true) throw new Error(`target table: ${what} row ${row}, which is not in use`);
+    },
+    rows: (): number[] => taken.flatMap((t, r) => (t ? [r] : [])),
+  };
 }
 
 const tables = new WeakMap<TargetTable<ShownArray>, RowTable>();
@@ -136,10 +161,7 @@ export function createTargetTable<S extends ShownArray = Float64Array>(opts: Tar
   if (!Number.isInteger(n) || n < 1) throw new Error('createTargetTable: `axes` is a whole number of at least 1');
   let committed = new Float64Array(Math.max(opts.capacity ?? 64, 1) * n);
   let shown = new Shown(committed.length);
-  /** One past the highest row ever used. */
-  let high = 0;
-  let size = 0;
-  const free: number[] = [];
+  const index = createRowIndex();
   const targets: (Target<number[]> | undefined)[] = [];
   const states: (TargetState<number[]> | undefined)[] = [];
   /** How many times each row has been removed: what tells a row's target from its last one's. */
@@ -190,7 +212,7 @@ export function createTargetTable<S extends ShownArray = Float64Array>(opts: Tar
       opts.show = undefined;
       try { rows.fill(last); } finally { opts.show = show; }
     },
-    rows: () => inUse(high, free),
+    rows: index.rows,
     holds: () => (holds ??= createHoldStore(n, committed.length / n, (row, out, at) => {
       for (let k = 0; k < n; k++) out[at + k] = committed[row * n + k]!;
     })),
@@ -198,14 +220,15 @@ export function createTargetTable<S extends ShownArray = Float64Array>(opts: Tar
 
   const table: TargetTable<S> = {
     axes: n,
-    get size() { return size; },
+    get size() { return index.size; },
     get committed() { return committed; },
     get shown() {
       flush();
       return shown;
     },
     add(value) {
-      const row = free.pop() ?? high++;
+      if (value.length !== n) throw new Error(`target table: a row is ${n} numbers, and this value is ${value.length}`);
+      const row = index.take();
       if ((row + 1) * n > committed.length) {
         const grown = new Float64Array(Math.max(committed.length * 2, (row + 1) * n));
         grown.set(committed);
@@ -218,20 +241,23 @@ export function createTargetTable<S extends ShownArray = Float64Array>(opts: Tar
       }
       put(committed, n, row, value);
       put(shown, n, row, value);
-      size += 1;
       return row;
     },
     remove(row) {
+      index.check(row, 'remove of');
       targets[row]?.stop();
       targets[row] = undefined;
       removals[row] = (removals[row] ?? 0) + 1;
       states[row] = undefined;
       marks.delete(row);
-      free.push(row);
-      size -= 1;
+      index.give(row);
     },
-    set: commit,
+    set(row, value) {
+      index.check(row, 'set of');
+      commit(row, value);
+    },
     target(row) {
+      index.check(row, 'target for');
       const held = targets[row];
       if (held) return held;
       const made = (removals[row] ??= 0);
