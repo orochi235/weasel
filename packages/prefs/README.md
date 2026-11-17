@@ -31,9 +31,9 @@ repair stored values that no longer fit the schema without writing them back.
 `openPrefsSync` opens from an adapter that reads synchronously, such as
 `localStorageAdapter`, with no `await`.
 
-`usePref(store, path)` and `usePrefsValues(store)` bind it to React. They
+`usePref(store, path)` and `usePrefsState(store)` bind it to React. They
 live in `@weasel-js/prefs/react`, so the main entry never loads React.
-`usePrefsValues` returns the pieces `@weasel-js/ui`'s `PrefsForm` takes.
+`usePrefsState` returns the pieces `@weasel-js/ui`'s `PrefsForm` takes.
 
 `usePrefsStore(schema, { storage, prefix })` gives a component a store of its
 own: open from its first render, closed with its writes sent when it unmounts.
@@ -168,10 +168,10 @@ says otherwise for a kind. `store.values({ at: { 'look.mode': 'light' } })` is
 the whole tree as it would read with the selectors set as given.
 
 `store.scopes()` is what every scoped pref holds, by path: one map until
-something changes. `usePrefsValues` returns it shaped for `PrefsForm`:
+something changes. `usePrefsState` returns it shaped for `PrefsForm`:
 
 ```tsx
-const { values, set, scopes, setAt } = usePrefsValues(store);
+const { values, set, scopes, setAt } = usePrefsState(store);
 <PrefsForm schema={schema} values={values} onChange={set}
   scopes={scopes} onChangeAt={setAt} othersLabel="Other modes" />
 ```

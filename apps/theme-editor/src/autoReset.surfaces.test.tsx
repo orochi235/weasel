@@ -17,7 +17,7 @@ import {
   type PrefLeaf,
   type PrefsStore,
 } from '@weasel-js/prefs';
-import { usePrefsValues } from '@weasel-js/prefs/react';
+import { usePrefsState } from '@weasel-js/prefs/react';
 import { createMemoryAdapter } from '@weasel-js/storage';
 import { themeAxisPath, themePrefsSchema } from '@weasel-js/theme/prefs';
 import { PrefsForm } from '@weasel-js/ui/components/Prefs';
@@ -120,7 +120,7 @@ function prefsSurface(autoSpec: PrefAuto | undefined, seeded = new Map<string, u
   const schema = prefsSchema(autoSpec);
   const store = openPrefsSync(schema, { storage: createMemoryAdapter(seeded), prefix: 't.' });
   function Host() {
-    return <PrefsForm {...usePrefsValues(store).form} layout="list" />;
+    return <PrefsForm {...usePrefsState(store).form} layout="list" />;
   }
   return {
     store,

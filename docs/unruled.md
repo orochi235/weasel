@@ -1881,7 +1881,7 @@ Calls the lanes made without a ruling:
 - 2026-11-12 (the lane's call): `PrefsForm` takes `errors`, a `ReadonlyMap` from leaf path to message, shown under the
   leaf's row as its `error` (set through `<RowScope>` since 2026-11-14). A map, as `auto` and `mixed` are sets,
   rather than a `validate` field on the leaf: what counts as wrong is the caller's to say. `SelectionPanel` has no such prop yet.
-- 2026-11-12 (the lane's call): `usePrefsValues` returns `setAuto(path, next)` for `PrefsForm`'s `onAutoChange`, where
+- 2026-11-12 (the lane's call): `usePrefsState` returns `setAuto(path, next)` for `PrefsForm`'s `onAutoChange`, where
   its JSDoc had offered `reset`. It pins at `store.get(path)`; theme-editor keeps its own, which pins at the value the
   pinned theme shows.
 - Open: `Slider` now follows the number fields' locale, but number text that only displays does not:
@@ -2080,7 +2080,7 @@ Calls the lanes made without a ruling:
 
 ## Audit round twenty-two (2026-11-13): the prefs schema
 
-- A store-bound form binds through `usePrefsValues(store).form`, spread on `PrefsForm` or `PrefsDialog`, so every
+- A store-bound form binds through `usePrefsState(store).form`, spread on `PrefsForm` or `PrefsDialog`, so every
   bundled one offers Auto and splits scoped leaves the same way. Theme-editor's form keeps its own binding: its
   writes go through its undo history and only its token rows inherit. `Prefs.split.stories.tsx` keeps its explicit
   props, since spreading `form` would add Auto toggles to a story about split rows (2026-11-13).
@@ -2216,7 +2216,7 @@ Calls the lanes made without a ruling:
 ## Auto and reset (2026-11-13)
 
 - Auto is opt-in and is a distinct concept from default (maintainer's ruling, 2026-11-13). A leaf can be auto only
-  where its schema declares `auto`; prefs, `PrefsForm`/`PrefsDialog`, `usePrefsValues(store).form`, `SelectionPanel`,
+  where its schema declares `auto`; prefs, `PrefsForm`/`PrefsDialog`, `usePrefsState(store).form`, `SelectionPanel`,
   labkit and the theme editor all read `prefCanAuto`. `auto: false` meant the same as no `auto` and is gone. While
   auto a leaf reads its owner's computed value, else `auto.value`, never `default`; this corrects the first pass
   of this section, which made the default the last case of auto and let a leaf with `auto` unset be auto

@@ -1,7 +1,7 @@
 import { act, renderHook } from '@testing-library/react';
 import { createMemoryAdapter } from '@weasel-js/storage';
 import { describe, expect, it, vi } from 'vitest';
-import { usePref, usePrefsValues } from './react';
+import { usePref, usePrefsState } from './react';
 import { openPrefsSync } from './open';
 import type { PrefGroup } from '@weasel-js/prefs-schema';
 
@@ -51,10 +51,10 @@ describe('usePref', () => {
   });
 });
 
-describe('usePrefsValues', () => {
+describe('usePrefsState', () => {
   it('returns the tree, the unset paths, a setter and a reset, for PrefsForm', () => {
     const store = open();
-    const { result } = renderHook(() => usePrefsValues(store));
+    const { result } = renderHook(() => usePrefsState(store));
     expect(result.current.values).toEqual({ grid: true, density: 72 });
     expect(result.current.unset).toEqual(new Set(['grid', 'density']));
     act(() => result.current.set('grid', false));
@@ -66,7 +66,7 @@ describe('usePrefsValues', () => {
 
   it("returns setAuto for PrefsForm's onAutoChange: true unpins a leaf, false pins it at its value", () => {
     const store = open();
-    const { result } = renderHook(() => usePrefsValues(store));
+    const { result } = renderHook(() => usePrefsState(store));
     expect(result.current.auto.has('density')).toBe(false);
     act(() => result.current.setAuto('density', true));
     expect(result.current.auto.has('density')).toBe(true);
@@ -82,7 +82,7 @@ describe('usePrefsValues', () => {
 
   it('hears a leaf binding', () => {
     const store = open();
-    const tree = renderHook(() => usePrefsValues(store));
+    const tree = renderHook(() => usePrefsState(store));
     const leaf = renderHook(() => usePref(store, 'density'));
     act(() => leaf.result.current[1](10));
     expect(tree.result.current.values.density).toBe(10);
@@ -91,7 +91,7 @@ describe('usePrefsValues', () => {
   it('returns the raw stored records, and hears an orphan record change', async () => {
     const backing = new Map<string, unknown>([['p.stray', 'x']]);
     const store = openPrefsSync(SCHEMA, { storage: createMemoryAdapter(backing), prefix: 'p.' });
-    const { result } = renderHook(() => usePrefsValues(store));
+    const { result } = renderHook(() => usePrefsState(store));
     expect(result.current.stored).toEqual({ stray: 'x' });
     await act(async () => {
       await createMemoryAdapter(backing).set('p.other', 2);
@@ -112,7 +112,7 @@ describe('usePrefsValues', () => {
       },
     } satisfies PrefGroup;
     const store = openPrefsSync(schema, { storage: createMemoryAdapter(), prefix: 'p.' });
-    const { result } = renderHook(() => usePrefsValues(store));
+    const { result } = renderHook(() => usePrefsState(store));
     expect(result.current.scopes.get('gap')).toEqual({ $by: 'mode', $in: {} });
     act(() => result.current.setAt('gap', 9, { mode: 'light' }));
     expect(result.current.scopes.get('gap')).toEqual({ $by: 'mode', $in: { light: 9 } });
@@ -125,7 +125,7 @@ describe('usePrefsValues', () => {
 
   it('binds a form through `form`, under the props\' own names', () => {
     const store = open();
-    const { result, rerender } = renderHook(() => usePrefsValues(store));
+    const { result, rerender } = renderHook(() => usePrefsState(store));
     const { form } = result.current;
     expect(form.schema).toBe(store.schema);
     expect(form.values).toBe(result.current.values);

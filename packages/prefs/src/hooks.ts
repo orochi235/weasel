@@ -44,7 +44,7 @@ export interface PrefsFormBinding<S extends PrefGroup = PrefGroup> {
  *  `reset`, which puts a leaf or a group back as its schema says, and `unset` (the leaves nothing is stored
  *  for); for its scoped values, `scopes` and `setAt`. `stored` is `store.stored()`. `form` is all of it under
  *  `PrefsForm`'s prop names, to spread on: `<PrefsForm {...form} />`. */
-export function usePrefsValues<S extends PrefGroup>(store: PrefsStore<S>): {
+export function usePrefsState<S extends PrefGroup>(store: PrefsStore<S>): {
   values: Record<string, unknown>;
   set: (path: string, value: unknown) => void;
   unset: ReadonlySet<string>;
