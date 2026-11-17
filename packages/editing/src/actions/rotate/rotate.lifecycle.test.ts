@@ -71,30 +71,30 @@ describe('rotateAction — label and transient', () => {
   });
 });
 
-describe('rotateAction — onGestureStart / onGestureEnd', () => {
+describe('rotateAction — onRunStart / onRunEnd', () => {
   it('fires start with the rotated ids and end(true) on commit', () => {
     const s = setup('ab');
-    const onGestureStart = vi.fn();
-    const onGestureEnd = vi.fn();
-    turn(s, { params: { onGestureStart, onGestureEnd } });
-    expect(onGestureStart).toHaveBeenCalledWith([s.a, s.b]);
-    expect(onGestureEnd).toHaveBeenCalledTimes(1);
-    expect(onGestureEnd).toHaveBeenCalledWith(true);
+    const onRunStart = vi.fn();
+    const onRunEnd = vi.fn();
+    turn(s, { params: { onRunStart, onRunEnd } });
+    expect(onRunStart).toHaveBeenCalledWith([s.a, s.b]);
+    expect(onRunEnd).toHaveBeenCalledTimes(1);
+    expect(onRunEnd).toHaveBeenCalledWith(true);
   });
 
   it('fires end(false) on cancel', () => {
     const s = setup();
-    const onGestureEnd = vi.fn();
-    turn(s, { params: { onGestureEnd } }, 'cancel');
-    expect(onGestureEnd).toHaveBeenCalledWith(false);
+    const onRunEnd = vi.fn();
+    turn(s, { params: { onRunEnd } }, 'cancel');
+    expect(onRunEnd).toHaveBeenCalledWith(false);
   });
 
   it('fires end(false) on a release that never turned', () => {
     const s = setup();
-    const onGestureEnd = vi.fn();
-    const handle = invoker().start(s.base as InvocationCtx, { params: { onGestureEnd } });
+    const onRunEnd = vi.fn();
+    const handle = invoker().start(s.base as InvocationCtx, { params: { onRunEnd } });
     handle.onEnd!(s.base as InvocationCtx, 'commit');
-    expect(onGestureEnd).toHaveBeenCalledWith(false);
+    expect(onRunEnd).toHaveBeenCalledWith(false);
   });
 });
 
@@ -146,21 +146,21 @@ describe('rotateAction — behaviors', () => {
 
   it('onEnd returning null aborts the commit', () => {
     const s = setup();
-    const onGestureEnd = vi.fn();
-    turn(s, { behaviors: [{ onEnd: () => null }], params: { onGestureEnd } });
+    const onRunEnd = vi.fn();
+    turn(s, { behaviors: [{ onEnd: () => null }], params: { onRunEnd } });
     expect(s.scene.get(s.a)!.pose.rotation).toBeUndefined();
     expect(s.recorded()).toBe(0);
     expect(s.scene.overrides.has(s.a)).toBe(false);
-    expect(onGestureEnd).toHaveBeenCalledWith(false);
+    expect(onRunEnd).toHaveBeenCalledWith(false);
   });
 
   it('onEnd returning ops commits those in place of the rotation', () => {
     const s = setup();
     const marker: Pose = { x: 7, y: 7, width: 11, height: 11 };
     const onEnd = () => [createSetPoseOp<Pose>({ id: s.a, from: s.scene.get(s.a)!.pose, to: marker, label: 'Marker' })];
-    const onGestureEnd = vi.fn();
-    turn(s, { behaviors: [{ onEnd }], params: { onGestureEnd } });
+    const onRunEnd = vi.fn();
+    turn(s, { behaviors: [{ onEnd }], params: { onRunEnd } });
     expect(s.scene.get(s.a)!.pose).toEqual(marker);
-    expect(onGestureEnd).toHaveBeenCalledWith(true);
+    expect(onRunEnd).toHaveBeenCalledWith(true);
   });
 });

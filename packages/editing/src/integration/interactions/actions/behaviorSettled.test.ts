@@ -69,13 +69,13 @@ describe('moveAction — onSettled', () => {
     return { scene, a, drag };
   }
 
-  it('runs once on commit, after the ops land and the preview overrides drop, before onGestureEnd', () => {
+  it('runs once on commit, after the ops land and the preview overrides drop, before onRunEnd', () => {
     const { scene, a, drag } = setup();
     const log: string[] = [];
     const onSettled = vi.fn((_ctx: unknown, committed: boolean) => {
       log.push(`settled:${committed}:${scene.get(a)!.pose.x}:${scene.overrides.get(a) === undefined}`);
     });
-    drag({ behaviors: [{ onSettled }] as never, params: { onGestureEnd: () => log.push('gestureEnd') } }, 5);
+    drag({ behaviors: [{ onSettled }] as never, params: { onRunEnd: () => log.push('gestureEnd') } }, 5);
     expect(onSettled).toHaveBeenCalledTimes(1);
     expect(log).toEqual(['settled:true:5:true', 'gestureEnd']);
   });
@@ -176,13 +176,13 @@ describe('resizeAction — onSettled', () => {
     return { scene, a, resize };
   }
 
-  it('runs once on commit, after the ops land and the preview overrides drop, before onGestureEnd', () => {
+  it('runs once on commit, after the ops land and the preview overrides drop, before onRunEnd', () => {
     const { scene, a, resize } = setup();
     const log: string[] = [];
     const onSettled = vi.fn((_ctx: unknown, committed: boolean) => {
       log.push(`settled:${committed}:${scene.get(a)!.pose.width}:${scene.overrides.get(a) === undefined}`);
     });
-    resize({ onSettled }, 'commit', { policy: { onGestureEnd: () => log.push('gestureEnd') } });
+    resize({ onSettled }, 'commit', { policy: { onRunEnd: () => log.push('gestureEnd') } });
     expect(onSettled).toHaveBeenCalledTimes(1);
     expect(log).toEqual(['settled:true:150:true', 'gestureEnd']);
   });
@@ -217,14 +217,14 @@ describe('rotateAction — onSettled', () => {
     return { scene, a, turn };
   }
 
-  it('runs once on commit, after the ops land and the preview overrides drop, before onGestureEnd', () => {
+  it('runs once on commit, after the ops land and the preview overrides drop, before onRunEnd', () => {
     const { scene, a, turn } = setup();
     const log: string[] = [];
     const onSettled = vi.fn((_ctx: unknown, committed: boolean) => {
       const turned = Math.abs((scene.get(a)!.pose.rotation ?? 0) - Math.PI / 2) < 1e-9;
       log.push(`settled:${committed}:${turned}:${scene.overrides.get(a) === undefined}`);
     });
-    turn({ behaviors: [{ onSettled }], params: { onGestureEnd: () => log.push('gestureEnd') } });
+    turn({ behaviors: [{ onSettled }], params: { onRunEnd: () => log.push('gestureEnd') } });
     expect(onSettled).toHaveBeenCalledTimes(1);
     expect(log).toEqual(['settled:true:true:true', 'gestureEnd']);
   });

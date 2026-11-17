@@ -1477,7 +1477,7 @@ Calls the round made:
   full-precision `interpolateSrgb`, with its own gray-hue rule. Left as is, as the comment there asks.
 - `contrastLineColor` reads only hex (a test pins `papayawhip` to black); `contrastRatio` beside it
   reads any CSS color. Left as is.
-- Rotate and resize fire `onGestureStart` at press; move fires it on the first movement. Left as is.
+- Rotate and resize fire `onRunStart` at press; move fires it on the first movement. Left as is.
 - core's `unionBounds` drops a NaN coordinate; geom's `unionRects` passes it through. Not folded.
 - forge's `ForgeLoupe` clamp, audio's `scoreMood` clamp, plot's `freshName` and editor's page-run id
   keep their own copies: folding each adds a dependency on geom or registry.

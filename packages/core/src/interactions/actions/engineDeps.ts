@@ -14,7 +14,7 @@ import type { DecayLoopOptions } from 'core/viewport/useDecayLoop';
 import type { ViewAnimationOptions } from 'core/viewport/useViewAnimation';
 import type { Scene } from 'core/scene/types';
 import type { Op } from 'core/ops/types';
-import type { GestureLifecycleOptions } from './gestureLifecycle';
+import type { RunLifecycleOptions } from './runLifecycle';
 import type { History } from '@weasel-js/history';
 import type { ActionsRegistry } from '@weasel-js/routing';
 import type { BoundsConstraint } from '../gestures/types';
@@ -93,7 +93,7 @@ export interface ViewApi {
  * The generic is erased to `unknown` at the schema entry; consumers cast at
  * the call site.
  */
-export interface ResizePolicy<TPose> extends GestureLifecycleOptions {
+export interface ResizePolicy<TPose> extends RunLifecycleOptions {
   /** Bounds-frame constraints. Constrained to `TPose extends Bounds` since
    *  constraints read/write `{x,y,width,height}`. For non-rect TPose pass `[]`. */
   constraints: TPose extends Bounds ? BoundsConstraint<TPose>[] : never[];

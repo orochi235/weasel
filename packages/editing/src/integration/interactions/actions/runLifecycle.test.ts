@@ -4,9 +4,9 @@ import { createReparentOp } from '@weasel-js/core';
 import type { Op } from '@weasel-js/core';
 import { moveGestureAdapter } from '../../../actions/move/gestureAdapter';
 import {
-  closeGesture,
-  commitGestureOps,
-  readGestureLifecycle,
+  closeRun,
+  commitRunOps,
+  readRunLifecycle,
   reduceBehaviorEnd,
   runBehaviorCancel,
   runBehaviorSettled,
@@ -39,7 +39,7 @@ describe('reduceBehaviorEnd', () => {
   });
 });
 
-describe('commitGestureOps — whether the commit landed', () => {
+describe('commitRunOps — whether the commit landed', () => {
   type Pose = { x: number; y: number; width: number; height: number };
   const POSE: Pose = { x: 0, y: 0, width: 10, height: 10 };
 
@@ -52,36 +52,36 @@ describe('commitGestureOps — whether the commit landed', () => {
     return { scene, at: { scene: scene as never, applyOps, adapter: moveGestureAdapter(scene) } };
   }
   const into = (): Op[] => [createReparentOp({ id: 'loose', fromParentId: null, toParentId: 'box' })];
-  const recorded = () => readGestureLifecycle({}, 'Test');
-  const transient = () => readGestureLifecycle({ transient: true }, 'Test');
+  const recorded = () => readRunLifecycle({}, 'Test');
+  const transient = () => readRunLifecycle({ transient: true }, 'Test');
 
   it('is true for a batch that lands, recorded or transient, and for an empty one', () => {
-    expect(commitGestureOps(target('takes').at, recorded(), into())).toBe(true);
-    expect(commitGestureOps(target('takes').at, transient(), into())).toBe(true);
-    expect(commitGestureOps(target('takes').at, recorded(), [])).toBe(true);
+    expect(commitRunOps(target('takes').at, recorded(), into())).toBe(true);
+    expect(commitRunOps(target('takes').at, transient(), into())).toBe(true);
+    expect(commitRunOps(target('takes').at, recorded(), [])).toBe(true);
   });
 
   it('is false for a refused arrival the scene reverted and swallowed', () => {
     const { scene, at } = target('refuses');
-    expect(commitGestureOps(at, recorded(), into())).toBe(false);
+    expect(commitRunOps(at, recorded(), into())).toBe(false);
     expect(scene.get(asNodeId('loose'))!.parent).toBeNull();
   });
 
   it('is false, and does not throw, for a refused arrival on the transient route', () => {
     const { scene, at } = target('refuses');
-    expect(commitGestureOps(at, transient(), into())).toBe(false);
+    expect(commitRunOps(at, transient(), into())).toBe(false);
     expect(scene.get(asNodeId('loose'))!.parent).toBeNull();
   });
 
   it('lets any other error out of the transient route', () => {
     const { at } = target('takes');
     const boom = [{ ...into()[0], apply: refuse }] as Op[];
-    expect(() => commitGestureOps(at, transient(), boom)).toThrow('refused');
+    expect(() => commitRunOps(at, transient(), boom)).toThrow('refused');
   });
 
   it('takes a consumer applyOps at its word', () => {
     const applyOps = vi.fn();
-    expect(commitGestureOps(target('refuses', applyOps).at, recorded(), into())).toBe(true);
+    expect(commitRunOps(target('refuses', applyOps).at, recorded(), into())).toBe(true);
     expect(applyOps).toHaveBeenCalledTimes(1);
   });
 });
@@ -112,10 +112,10 @@ describe('runBehaviorCancel', () => {
   });
 });
 
-describe('closeGesture', () => {
-  function closing(onSettled: (ctx: string, committed: boolean) => void, onGestureEnd: (committed: boolean) => void) {
+describe('closeRun', () => {
+  function closing(onSettled: (ctx: string, committed: boolean) => void, onRunEnd: (committed: boolean) => void) {
     const scene = createScene<object, 'main', unknown>({ composition: IDENTITY_POSE_COMPOSITION, systemLayers: [{ id: 'main' }] });
-    const lifecycle = readGestureLifecycle({ onGestureEnd }, 'Test');
+    const lifecycle = readRunLifecycle({ onRunEnd }, 'Test');
     lifecycle.start([]);
     return {
       hold: scene.overrides.hold(),
@@ -126,9 +126,9 @@ describe('closeGesture', () => {
     };
   }
 
-  it('still fires onGestureEnd when a behavior\'s onSettled throws', () => {
-    const onGestureEnd = vi.fn();
-    expect(() => closeGesture(closing(refuse, onGestureEnd), false)).toThrow('refused');
-    expect(onGestureEnd).toHaveBeenCalledWith(false);
+  it('still fires onRunEnd when a behavior\'s onSettled throws', () => {
+    const onRunEnd = vi.fn();
+    expect(() => closeRun(closing(refuse, onRunEnd), false)).toThrow('refused');
+    expect(onRunEnd).toHaveBeenCalledWith(false);
   });
 });

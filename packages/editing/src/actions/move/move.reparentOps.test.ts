@@ -75,27 +75,27 @@ describe('moveAction — reparentOnDrop commits as ops', () => {
 
   it('lands nothing and reports no commit when the container refuses', () => {
     const scene = makeScene(refusing);
-    const onGestureEnd = vi.fn();
-    drop(scene, { onGestureEnd });
+    const onRunEnd = vi.fn();
+    drop(scene, { onRunEnd });
     expect(scene.get(A)!.parent).toBe(null);
     expect(scene.get(A)!.pose).toEqual({ x: 0, y: 0, width: 10, height: 10 });
-    expect(onGestureEnd).toHaveBeenCalledWith(false);
+    expect(onRunEnd).toHaveBeenCalledWith(false);
   });
 
   it('does the same when the move is transient', () => {
     const scene = makeScene(refusing);
-    const onGestureEnd = vi.fn();
-    drop(scene, { onGestureEnd, transient: true });
+    const onRunEnd = vi.fn();
+    drop(scene, { onRunEnd, transient: true });
     expect(scene.get(A)!.parent).toBe(null);
-    expect(onGestureEnd).toHaveBeenCalledWith(false);
+    expect(onRunEnd).toHaveBeenCalledWith(false);
   });
 
   it('reports no commit for a refused transient move though a consumer applyOps is wired', () => {
     const scene = makeScene(refusing);
-    const onGestureEnd = vi.fn();
-    drop(scene, { onGestureEnd, transient: true }, { applyOps: vi.fn() });
+    const onRunEnd = vi.fn();
+    drop(scene, { onRunEnd, transient: true }, { applyOps: vi.fn() });
     expect(scene.get(A)!.parent).toBe(null);
-    expect(onGestureEnd).toHaveBeenCalledWith(false);
+    expect(onRunEnd).toHaveBeenCalledWith(false);
   });
 
   it('reports no commit when a refusal reverts a root that was already in the container', () => {
@@ -108,10 +108,10 @@ describe('moveAction — reparentOnDrop commits as ops', () => {
     scene.move(A, T);
     scene.add({ id: B, kind: 'mark', layer: 'main', data: {}, pose: { x: 0, y: 20, width: 10, height: 10 } });
     const before = scene.get(A)!.pose;
-    const onGestureEnd = vi.fn();
-    drop(scene, { onGestureEnd }, {}, [A, B]);
+    const onRunEnd = vi.fn();
+    drop(scene, { onRunEnd }, {}, [A, B]);
     expect(scene.get(B)!.parent).toBe(null);
     expect(scene.get(A)!.pose).toEqual(before);
-    expect(onGestureEnd).toHaveBeenCalledWith(false);
+    expect(onRunEnd).toHaveBeenCalledWith(false);
   });
 });

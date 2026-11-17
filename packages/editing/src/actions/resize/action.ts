@@ -1,6 +1,6 @@
 import type { Action, ActionDeps, InvocationCtx, OngoingHandle } from '@weasel-js/routing';
 import type { NodeId } from '@weasel-js/core';
-import { transformPreview, finiteFrame, closeGesture, runBehaviorCancel, inPlane, selectionLayer, recordTransform } from '@weasel-js/core';
+import { transformPreview, finiteFrame, closeRun, runBehaviorCancel, inPlane, selectionLayer, recordTransform } from '@weasel-js/core';
 import { commitResize } from './commit';
 import { nextFrame } from './frame';
 import { beginResize, type ResizeFrame } from './session';
@@ -73,7 +73,7 @@ export function createResizeAction(opts: ResizeActionOptions = {}): Action & { r
               } else runBehaviorCancel(session.constraints, session.gestureCtx);
             } finally {
               session.snap.end();
-              closeGesture({ hold, previews: frame.previews, behaviors: session.constraints, ctx: session.gestureCtx, lifecycle: session.lifecycle }, committed);
+              closeRun({ hold, previews: frame.previews, behaviors: session.constraints, ctx: session.gestureCtx, lifecycle: session.lifecycle }, committed);
             }
           },
           previewIds: preview.previewIds,

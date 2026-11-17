@@ -19,10 +19,10 @@ export interface MoveOptions<TPose> {
    *  consumer `applyOps` hook. Unset, a behavior's `defaultTransient` decides. */
   transient?: boolean;
   /** Fired once the drag passes its threshold, with the ids it moves. */
-  onGestureStart?(ids: string[]): void;
-  /** Fired once per `onGestureStart`: `true` when the move wrote to the
+  onRunStart?(ids: string[]): void;
+  /** Fired once per `onRunStart`: `true` when the move wrote to the
    *  document, `false` on cancel, a behavior abort, or no net movement. */
-  onGestureEnd?(committed: boolean): void;
+  onRunEnd?(committed: boolean): void;
   /** Replace the selection with the ids the drag moves — to carry linked
    *  nodes along, say. Called once at drag start; the result is what
    *  behaviors see as `draggedIds` and what the commit writes (each id's

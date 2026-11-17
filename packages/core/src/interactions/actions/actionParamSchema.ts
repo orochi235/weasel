@@ -6,7 +6,7 @@
 import type { DragSample, ImmediateParams, WorldPoint } from '@weasel-js/routing';
 import type { IngestItem } from '@weasel-js/gestures';
 import type { LassoHitMode } from 'core/adapters/types';
-import type { GestureLifecycleOptions } from './gestureLifecycle';
+import type { RunLifecycleOptions } from './runLifecycle';
 import type { DragPanParams } from './defaults/viewportDragPan';
 import type { Paint, VertexWidth } from '@weasel-js/paint';
 import type { EditAnchorsParams } from './edit-anchors/params';
@@ -35,12 +35,12 @@ export type PickParams = Pick<ImmediateParams, 'world' | 'mods' | 'viewId'>;
  *  in z-order (falling back to `'top'` when the hit is itself a container or shares no parent with the moved node). */
 export type ReparentOnDrop = 'off' | 'top' | 'above';
 /** `move`'s params: its history and lifecycle, where a drop lands the moved nodes, and the ids a drag carries. */
-export type MoveParams = GestureLifecycleOptions & {
+export type MoveParams = RunLifecycleOptions & {
   reparentOnDrop?: ReparentOnDrop;
   expandIds?: (ids: string[]) => string[];
 };
 /** `rotate`'s params: its history and lifecycle, and the pivot a multi-selection turns about. */
-export type RotateParams = GestureLifecycleOptions & { pivot?: 'each' | 'union' };
+export type RotateParams = RunLifecycleOptions & { pivot?: 'each' | 'union' };
 /** The params of an action finishing a path being drawn: `viaDoubleClick` when a double-click finished it, whose
  *  first click placed a point to take back. */
 export type FinishPathParams = { viaDoubleClick?: boolean };

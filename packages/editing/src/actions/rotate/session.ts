@@ -1,7 +1,7 @@
 import type { ActionDeps, BindingOptions, InvocationCtx } from '@weasel-js/routing';
 import { operandMethods, unionAABB, nodeDescriptors, poseDescriptorOf, scenePoseFrame, type PoseFrame, drawnBoxes, type DrawnBoxes, inputSession, SNAP_ANGLE_STEP } from '@weasel-js/core/engine';
 import type { CommitSelectionMethods, GestureContext, RotateBehavior, PoseDescriptor, SnapBegin, SnapSession } from '@weasel-js/core/engine';
-import { pointerStateOf, transformFinisher, type TransformFinisher, sceneGestureFrames, gestureReaders, type GestureReaders, readGestureLifecycle, type GestureLifecycle, carryPose, invertPlane, planeOf, shapeSources } from '@weasel-js/core';
+import { pointerStateOf, transformFinisher, type TransformFinisher, sceneGestureFrames, gestureReaders, type GestureReaders, readRunLifecycle, type RunLifecycle, carryPose, invertPlane, planeOf, shapeSources } from '@weasel-js/core';
 import { resolveParams } from '@weasel-js/routing';
 import type { RotateParams, Op, NodeId, Scene, Bounds } from '@weasel-js/core';
 import { moveGestureAdapter } from '../move/gestureAdapter';
@@ -50,7 +50,7 @@ export interface RotateSession {
   /** Finishes the committed batch with the other nodes that change with it. */
   readonly finish?: TransformFinisher;
   readonly selectionMethods: CommitSelectionMethods | undefined;
-  readonly lifecycle: GestureLifecycle;
+  readonly lifecycle: RunLifecycle;
 }
 
 /** What one `onMove` produced. Replaced, not mutated, by the next. */
@@ -200,7 +200,7 @@ export function beginRotate(
     applyOps: ctx.deps.applyOps,
     finish: transformFinisher(ctx.deps),
     selectionMethods: operandMethods(selection),
-    lifecycle: readGestureLifecycle(params, 'Rotate', behaviors),
+    lifecycle: readRunLifecycle(params, 'Rotate', behaviors),
   };
   return { session, readers };
 }

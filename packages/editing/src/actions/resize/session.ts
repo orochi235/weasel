@@ -2,7 +2,7 @@ import type { PoseLinear } from '@weasel-js/geom';
 import { operandMethods, nodeDescriptors, poseDescriptorOf, scenePoseFrame, type PoseFrame, drawnBoxes, inputSession } from '@weasel-js/core/engine';
 import type { CommitSelectionMethods, GeometryProjection, PoseDescriptor, InkExtents, SnapBegin, SnapSession } from '@weasel-js/core/engine';
 import type { ActionDeps, InvocationCtx } from '@weasel-js/routing';
-import { transformFinisher, type TransformFinisher, gestureReaders, type GestureReaders, readGestureLifecycle, type GestureLifecycle, localToWorld, outsetBox } from '@weasel-js/core';
+import { transformFinisher, type TransformFinisher, gestureReaders, type GestureReaders, readRunLifecycle, type RunLifecycle, localToWorld, outsetBox } from '@weasel-js/core';
 import type { Op, NodeId, Scene, Bounds, BoundsConstraint, GestureContext, ResizeAnchor, MinSize } from '@weasel-js/core';
 import { buildGestureContext, captureBox, captureStarts, captureTargets, resolvePolicy } from './capture';
 import { boxMinimum } from './minimum';
@@ -63,7 +63,7 @@ export interface ResizeSession {
   readonly geometryProjection?: GeometryProjection;
   readonly selectionMethods: CommitSelectionMethods | undefined;
   /** Label, history, and callbacks from the `resizePolicy` dep. */
-  readonly lifecycle: GestureLifecycle;
+  readonly lifecycle: RunLifecycle;
   /** The drag's snapping: the `snap` dep's session, else one that only holds
    *  the handle to its axis and Shift to the aspect. */
   readonly snap: SnapSession;
@@ -189,7 +189,7 @@ export function beginResize(
     finish: transformFinisher(ctx.deps),
     geometryProjection: ctx.deps.geometryProjection,
     selectionMethods: operandMethods(selection),
-    lifecycle: readGestureLifecycle(policy, 'Resize', constraints),
+    lifecycle: readRunLifecycle(policy, 'Resize', constraints),
     snap: beginSnap(ctx, ids, startWorld, place.box),
   };
   return { session, readers };

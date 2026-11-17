@@ -1887,7 +1887,7 @@
    "packages/core/src/interactions/actions/followerMoves.ts",
    "packages/core/src/interactions/actions/geometryProjection.ts",
    "packages/core/src/interactions/actions/gestureFrames.ts",
-   "packages/core/src/interactions/actions/gestureLifecycle.ts",
+   "packages/core/src/interactions/actions/runLifecycle.ts",
    "packages/core/src/interactions/actions/groupSlot.ts",
    "packages/core/src/interactions/actions/hitSelection.ts",
    "packages/core/src/interactions/actions/ingestionDeps.ts",

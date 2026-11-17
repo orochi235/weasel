@@ -34,7 +34,7 @@ function makeScene() {
 
 function drag(canDropInto: (parent: string) => DropVerdict, deps: object = {}, params: Record<string, unknown> = {}) {
   const scene = makeScene();
-  const onGestureEnd = vi.fn();
+  const onRunEnd = vi.fn();
   const base = {
     world: { x: 5, y: 5 },
     modifiers: MODS,
@@ -42,14 +42,14 @@ function drag(canDropInto: (parent: string) => DropVerdict, deps: object = {}, p
   };
   const invoker = moveAction.invoker!;
   if (invoker.timing !== 'ongoing') throw new Error('expected ongoing');
-  const handle = invoker.start(base as unknown as InvocationCtx, { params: { onGestureEnd, ...params } } as BindingOptions);
+  const handle = invoker.start(base as unknown as InvocationCtx, { params: { onRunEnd, ...params } } as BindingOptions);
   const d = { start: { x: 5, y: 5 }, current: { x: 200, y: 200 }, delta: { x: 195, y: 195 } };
   const at = { ...base, world: d.current, drag: d } as unknown as InvocationCtx;
   handle.onMove!(at);
   const raw = handle.overlay?.() ?? [];
   const overlays = (Array.isArray(raw) ? raw : [raw]) as OngoingOverlay[];
   handle.onEnd!(at, 'commit');
-  return { scene, overlays, onGestureEnd };
+  return { scene, overlays, onRunEnd };
 }
 
 const refuseInner = (parent: string): DropVerdict => (parent === INNER ? { refuse: 'Inner is full' } : true);
@@ -65,10 +65,10 @@ describe('moveAction — a canDropInto refusal with a reason', () => {
   });
 
   it('moves nothing on a release over it, and reports no commit', () => {
-    const { scene, onGestureEnd } = drag(refuseInner);
+    const { scene, onRunEnd } = drag(refuseInner);
     expect(scene.get(A)!.parent).toBe(null);
     expect(scene.get(A)!.pose).toEqual(HOME);
-    expect(onGestureEnd).toHaveBeenCalledWith(false);
+    expect(onRunEnd).toHaveBeenCalledWith(false);
   });
 
   it('a silent false still passes the container over, and draws nothing', () => {

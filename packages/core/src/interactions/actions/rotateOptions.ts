@@ -16,10 +16,10 @@ export interface RotateOptions<TPose> {
    *  consumer `applyOps` hook. Unset, a behavior's `defaultTransient` decides. */
   transient?: boolean;
   /** Fired when the rotation starts, with the ids it turns. */
-  onGestureStart?: (ids: string[]) => void;
-  /** Fired once per `onGestureStart`: `true` when the rotation wrote to the
+  onRunStart?: (ids: string[]) => void;
+  /** Fired once per `onRunStart`: `true` when the rotation wrote to the
    *  document, `false` on cancel, a behavior abort, or no net turn. */
-  onGestureEnd?: (committed: boolean) => void;
+  onRunEnd?: (committed: boolean) => void;
   /** Multi-selection pivot mode. Default `'union'`.
    *  - `'each'`: each item rotates around its own center.
    *  - `'union'`: each item rotates around the selection's union center;

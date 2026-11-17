@@ -18,10 +18,10 @@ export interface ResizeOptions<TPose> {
    *  consumer `applyOps` hook. Unset, a behavior's `defaultTransient` decides. */
   transient?: boolean;
   /** Fired when the resize starts, with the ids it writes. */
-  onGestureStart?: (ids: string[]) => void;
-  /** Fired once per `onGestureStart`: `true` when the resize wrote to the
+  onRunStart?: (ids: string[]) => void;
+  /** Fired once per `onRunStart`: `true` when the resize wrote to the
    *  document, `false` on cancel, a behavior abort, or no change. */
-  onGestureEnd?: (committed: boolean) => void;
+  onRunEnd?: (committed: boolean) => void;
   /** Expand the incoming id into leaf ids, for resizing a group: the kit
    *  resizes the union AABB of the leaves' bounds and remaps each leaf into
    *  the result. Called once at `start()`. Returning `[]` aborts the gesture

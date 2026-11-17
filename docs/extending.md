@@ -415,7 +415,7 @@ Each action pins the proposed/result shape; pick the matching alias
   was canceled, aborted by a behavior, released with nothing to commit, or
   refused by a container its ops dropped something into, and true otherwise: the action or a behavior made the commit, a behavior
   claiming it with no ops included. For move, resize, and rotate it is the
-  value `onGestureEnd` receives. Move, resize, rotate, insert, and
+  value `onRunEnd` receives. Move, resize, rotate, insert, and
   lasso-select call it, and every behavior's runs even if another's throws.
 - `ctx.scratch` is a per-gesture mutable map, wiped on every `start`.
   Namespace by behavior id to avoid collisions:

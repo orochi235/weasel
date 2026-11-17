@@ -80,21 +80,21 @@ describe('resizeAction — lifecycle via the resizePolicy dep', () => {
     expect(s.recorded()).toBe(0);
   });
 
-  it('fires onGestureStart with the resized ids and onGestureEnd(true) on commit', () => {
-    const onGestureStart = vi.fn();
-    const onGestureEnd = vi.fn();
-    const s = setup({ onGestureStart, onGestureEnd });
+  it('fires onRunStart with the resized ids and onRunEnd(true) on commit', () => {
+    const onRunStart = vi.fn();
+    const onRunEnd = vi.fn();
+    const s = setup({ onRunStart, onRunEnd });
     resize(s);
-    expect(onGestureStart).toHaveBeenCalledWith([s.a]);
-    expect(onGestureEnd).toHaveBeenCalledTimes(1);
-    expect(onGestureEnd).toHaveBeenCalledWith(true);
+    expect(onRunStart).toHaveBeenCalledWith([s.a]);
+    expect(onRunEnd).toHaveBeenCalledTimes(1);
+    expect(onRunEnd).toHaveBeenCalledWith(true);
   });
 
-  it('fires onGestureEnd(false) on cancel', () => {
-    const onGestureEnd = vi.fn();
-    const s = setup({ onGestureEnd });
+  it('fires onRunEnd(false) on cancel', () => {
+    const onRunEnd = vi.fn();
+    const s = setup({ onRunEnd });
     resize(s, 'cancel');
-    expect(onGestureEnd).toHaveBeenCalledWith(false);
+    expect(onRunEnd).toHaveBeenCalledWith(false);
   });
 
   it('a behavior onEnd returning ops commits those in place of the resize', () => {

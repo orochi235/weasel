@@ -1,7 +1,7 @@
 import { boxToBox, type Affine } from '@weasel-js/geom';
 import type { Op, NodeId } from '@weasel-js/core';
 import { createSetPoseOp, defaultCommitAdapter, geometryDataOp, type GeometryProjection } from '@weasel-js/core/engine';
-import { commitGestureOps, reduceBehaviorEnd } from '@weasel-js/core';
+import { commitRunOps, reduceBehaviorEnd } from '@weasel-js/core';
 import type { PoseDescriptor } from '@weasel-js/core/engine';
 import type { ResizeFrame, ResizeSession } from './session';
 
@@ -88,10 +88,10 @@ export function commitResize(session: ResizeSession, frame: ResizeFrame): boolea
   };
   const r = reduceBehaviorEnd(session.constraints, session.gestureCtx);
   if (r === null) return false;
-  if (r !== undefined) return commitGestureOps(target, lifecycle, r);
+  if (r !== undefined) return commitRunOps(target, lifecycle, r);
 
   if (frame.previews.size === 0) return false;
   const ops = resizeOps(session, frame.previews, lifecycle.label);
   if (ops.length === 0) return false;
-  return commitGestureOps(target, lifecycle, ops);
+  return commitRunOps(target, lifecycle, ops);
 }

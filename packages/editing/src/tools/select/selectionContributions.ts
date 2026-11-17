@@ -10,7 +10,7 @@ import type { MoveParams, RotateParams, Contribution, MoveOptions, RotateOptions
 import { isResizeHandle, isRotateHandle, isPathEditPart } from '@weasel-js/routing';
 import { hitPredicate } from '@weasel-js/gestures';
 import { SNAP_ROLE_MODS } from '@weasel-js/core/engine';
-import { gestureLifecycleParams } from '@weasel-js/core';
+import { runLifecycleParams } from '@weasel-js/core';
 
 /** Options for {@link selectionMoveContribution}. */
 export interface SelectionMoveOptions<TPose = unknown> {
@@ -42,7 +42,7 @@ export function selectionMoveBindings<TPose>(
   // first-touch drag and a re-drag commit identically.
   const moveOpts: BindingOptions<MoveParams> = (() => {
     const move = options.move ?? {};
-    const params: MoveParams = gestureLifecycleParams({ ...move, label: move.moveLabel });
+    const params: MoveParams = runLifecycleParams({ ...move, label: move.moveLabel });
     if (options.reparentOnDrop && options.reparentOnDrop !== 'off') params.reparentOnDrop = options.reparentOnDrop;
     if (move.expandIds) params.expandIds = move.expandIds;
     return {
@@ -126,7 +126,7 @@ export function selectionRotateBindings<TPose>(
   options: SelectionRotateOptions<TPose> = {},
 ): GestureBinding[] {
   const rotate = options.rotate ?? {};
-  const params: RotateParams = gestureLifecycleParams({ ...rotate, label: rotate.rotateLabel });
+  const params: RotateParams = runLifecycleParams({ ...rotate, label: rotate.rotateLabel });
   if (rotate.pivot) params.pivot = rotate.pivot;
   const opts: BindingOptions<RotateParams> = {
     id: 'selection.rotate.handle',

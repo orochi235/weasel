@@ -127,44 +127,44 @@ describe('moveAction — transient', () => {
   });
 });
 
-describe('moveAction — onGestureStart / onGestureEnd', () => {
+describe('moveAction — onRunStart / onRunEnd', () => {
   it('fires start with the moved ids once the drag engages, and end(true) on commit', () => {
     const { a, b, base } = setup('ab');
-    const onGestureStart = vi.fn();
-    const onGestureEnd = vi.fn();
-    const handle = invoker().start(base as InvocationCtx, { params: { onGestureStart, onGestureEnd } });
-    expect(onGestureStart).not.toHaveBeenCalled();
+    const onRunStart = vi.fn();
+    const onRunEnd = vi.fn();
+    const handle = invoker().start(base as InvocationCtx, { params: { onRunStart, onRunEnd } });
+    expect(onRunStart).not.toHaveBeenCalled();
     handle.onMove!(frame(base, 5));
     handle.onMove!(frame(base, 6));
-    expect(onGestureStart).toHaveBeenCalledTimes(1);
-    expect(onGestureStart).toHaveBeenCalledWith([a, b]);
+    expect(onRunStart).toHaveBeenCalledTimes(1);
+    expect(onRunStart).toHaveBeenCalledWith([a, b]);
     handle.onEnd!(frame(base, 6), 'commit');
-    expect(onGestureEnd).toHaveBeenCalledTimes(1);
-    expect(onGestureEnd).toHaveBeenCalledWith(true);
+    expect(onRunEnd).toHaveBeenCalledTimes(1);
+    expect(onRunEnd).toHaveBeenCalledWith(true);
   });
 
   it('fires end(false) on cancel', () => {
     const { base } = setup();
-    const onGestureEnd = vi.fn();
-    drag(base, { params: { onGestureEnd } }, 5, 'cancel');
-    expect(onGestureEnd).toHaveBeenCalledWith(false);
+    const onRunEnd = vi.fn();
+    drag(base, { params: { onRunEnd } }, 5, 'cancel');
+    expect(onRunEnd).toHaveBeenCalledWith(false);
   });
 
   it('fires end(false) when a behavior aborts the commit', () => {
     const { base } = setup();
-    const onGestureEnd = vi.fn();
-    drag(base, { behaviors: [{ onEnd: () => null }], params: { onGestureEnd } }, 5);
-    expect(onGestureEnd).toHaveBeenCalledWith(false);
+    const onRunEnd = vi.fn();
+    drag(base, { behaviors: [{ onEnd: () => null }], params: { onRunEnd } }, 5);
+    expect(onRunEnd).toHaveBeenCalledWith(false);
   });
 
   it('fires neither when the gesture ends before it moves', () => {
     const { base } = setup();
-    const onGestureStart = vi.fn();
-    const onGestureEnd = vi.fn();
-    const handle = invoker().start(base as InvocationCtx, { params: { onGestureStart, onGestureEnd } });
+    const onRunStart = vi.fn();
+    const onRunEnd = vi.fn();
+    const handle = invoker().start(base as InvocationCtx, { params: { onRunStart, onRunEnd } });
     handle.onEnd!(frame(base, 0), 'commit');
-    expect(onGestureStart).not.toHaveBeenCalled();
-    expect(onGestureEnd).not.toHaveBeenCalled();
+    expect(onRunStart).not.toHaveBeenCalled();
+    expect(onRunEnd).not.toHaveBeenCalled();
   });
 });
 

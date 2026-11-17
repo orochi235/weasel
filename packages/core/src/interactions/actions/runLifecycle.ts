@@ -15,7 +15,7 @@ import type { TransformFinisher } from './transformFinish';
 
 /** The lifecycle options, as a binding's params or the resize policy carry
  *  them. */
-export interface GestureLifecycleOptions {
+export interface RunLifecycleOptions {
   /** History label for the committed batch. Unset, the batch takes its first
    *  op's label (a layout drop or a behavior names its own), else the
    *  action's. */
@@ -25,26 +25,26 @@ export interface GestureLifecycleOptions {
    *  behavior's `defaultTransient: true` turns it on. */
   transient?: boolean;
   /** Fired once the gesture starts changing poses, with the ids it moves. */
-  onGestureStart?(ids: string[]): void;
-  /** Fired once per `onGestureStart`: `true` when the gesture wrote to the
+  onRunStart?(ids: string[]): void;
+  /** Fired once per `onRunStart`: `true` when the gesture wrote to the
    *  document, `false` on cancel, abort, or a release with nothing to write. */
-  onGestureEnd?(committed: boolean): void;
+  onRunEnd?(committed: boolean): void;
 }
 
-/** The params entries for {@link GestureLifecycleOptions}, with the unset
+/** The params entries for {@link RunLifecycleOptions}, with the unset
  *  keys left out. */
-export function gestureLifecycleParams(o: GestureLifecycleOptions): GestureLifecycleOptions {
-  const out: GestureLifecycleOptions = {};
+export function runLifecycleParams(o: RunLifecycleOptions): RunLifecycleOptions {
+  const out: RunLifecycleOptions = {};
   if (o.label !== undefined) out.label = o.label;
   if (o.transient !== undefined) out.transient = o.transient;
-  if (o.onGestureStart) out.onGestureStart = o.onGestureStart;
-  if (o.onGestureEnd) out.onGestureEnd = o.onGestureEnd;
+  if (o.onRunStart) out.onRunStart = o.onRunStart;
+  if (o.onRunEnd) out.onRunEnd = o.onRunEnd;
   return out;
 }
 
 /** A gesture's resolved lifecycle. `start` and `end` fire their callbacks at
  *  most once each, and `end` only after `start`. */
-export interface GestureLifecycle {
+export interface RunLifecycle {
   /** The label ops built by the action itself carry. */
   readonly label: string;
   /** The history label for committing `ops`. */
@@ -57,12 +57,12 @@ export interface GestureLifecycle {
 /** The lifecycle a gesture runs under, read from its binding params: its history label, whether it commits
  *  transient, and its start and end callbacks. `defaultLabel` names it when the params do not, and any behavior
  *  defaulting to transient makes it transient. */
-export function readGestureLifecycle(
-  source: GestureLifecycleOptions | Record<string, unknown> | undefined,
+export function readRunLifecycle(
+  source: RunLifecycleOptions | Record<string, unknown> | undefined,
   defaultLabel: string,
   behaviors: readonly { defaultTransient?: boolean }[] = [],
-): GestureLifecycle {
-  const o = (source ?? {}) as GestureLifecycleOptions;
+): RunLifecycle {
+  const o = (source ?? {}) as RunLifecycleOptions;
   let started = false;
   let ended = false;
   return {
@@ -72,12 +72,12 @@ export function readGestureLifecycle(
     start(ids) {
       if (started) return;
       started = true;
-      o.onGestureStart?.([...ids]);
+      o.onRunStart?.([...ids]);
     },
     end(committed) {
       if (!started || ended) return;
       ended = true;
-      o.onGestureEnd?.(committed);
+      o.onRunEnd?.(committed);
     },
   };
 }
@@ -88,14 +88,14 @@ export function readGestureLifecycle(
  *  Returns whether the commit landed: false when a container refused what
  *  the ops brought it, which the scene reverts. A consumer's `applyOps` may
  *  keep the document elsewhere, so it is taken at its word. */
-export function commitGestureOps(
+export function commitRunOps(
   target: {
     scene: Scene<unknown, string, unknown>;
     applyOps?: (ops: Op[], label: string) => void;
     adapter: unknown;
     finish?: TransformFinisher;
   },
-  lifecycle: GestureLifecycle,
+  lifecycle: RunLifecycle,
   given: Op[],
 ): boolean {
   const ops = target.finish ? target.finish(given, lifecycle.labelFor(given)) : given;
@@ -184,23 +184,23 @@ export function runBehaviorSettled<TCtx>(
   runEvery(behaviors, (b) => b.onSettled?.(ctx, committed));
 }
 
-/** What {@link closeGesture} closes. */
-export interface ClosingGesture<TCtx> {
+/** What {@link closeRun} closes. */
+export interface ClosingRun<TCtx> {
   hold: PoseHold<unknown>;
   /** The action's own buffer of this frame's poses, emptied at the close. */
   previews: Map<NodeId, unknown>;
   behaviors: readonly { onSettled?(ctx: TCtx, committed: boolean): void }[];
   ctx: TCtx;
-  lifecycle: GestureLifecycle;
+  lifecycle: RunLifecycle;
 }
 
 /**
  * The close a transform action runs from its `finally`, commit or cancel:
- * drop the preview overrides, tell the behaviors, then fire `onGestureEnd`,
+ * drop the preview overrides, tell the behaviors, then fire `onRunEnd`,
  * which fires even when a behavior's `onSettled` throws; the first error is
  * rethrown.
  */
-export function closeGesture<TCtx>(gesture: ClosingGesture<TCtx>, committed: boolean): void {
+export function closeRun<TCtx>(gesture: ClosingRun<TCtx>, committed: boolean): void {
   gesture.hold.drop();
   gesture.previews.clear();
   runEvery([

@@ -1,6 +1,6 @@
 import { defineAction, type Action } from '@weasel-js/routing';
 import type { InvocationCtx } from '@weasel-js/routing';
-import { transformPreview, finiteFrame, closeGesture, runBehaviorCancel, inPlane, selectionLayer, recordTransform } from '@weasel-js/core';
+import { transformPreview, finiteFrame, closeRun, runBehaviorCancel, inPlane, selectionLayer, recordTransform } from '@weasel-js/core';
 import { commitRotate } from './commit';
 import { nextFrame } from './frame';
 import { beginRotate, type RotateFrame } from './session';
@@ -62,7 +62,7 @@ export const rotateAction: Action = inPlane(defineAction({
             } else runBehaviorCancel(session.behaviors, session.gestureCtx);
           } finally {
             session.snap.end();
-            closeGesture({ hold, previews: frame.previews, behaviors: session.behaviors, ctx: session.gestureCtx, lifecycle: session.lifecycle }, committed);
+            closeRun({ hold, previews: frame.previews, behaviors: session.behaviors, ctx: session.gestureCtx, lifecycle: session.lifecycle }, committed);
           }
         },
         previewIds: preview.previewIds,

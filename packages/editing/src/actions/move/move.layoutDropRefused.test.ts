@@ -29,7 +29,7 @@ function dropInto(params: Record<string, unknown>) {
   const scene = createScene<unknown, 'main', RectPose>({ systemLayers: [{ id: 'main' }] });
   scene.add({ id: A, kind: 'mark', layer: 'main', data: {}, pose: HOME });
   scene.add({ id: T, kind: 'group', layer: 'main', data: {}, pose: { x: 100, y: 100, width: 200, height: 200 }, layout: refusing });
-  const onGestureEnd = vi.fn();
+  const onRunEnd = vi.fn();
   const invoker = moveAction.invoker!;
   if (invoker.timing !== 'ongoing') throw new Error('expected ongoing');
   const base = {
@@ -37,26 +37,26 @@ function dropInto(params: Record<string, unknown>) {
     modifiers: MODS,
     deps: { operands: { get: () => [A] }, scene, layout: { getLayout: (id: string) => (id === T ? refusing : null) } },
   };
-  const handle = invoker.start(base as unknown as InvocationCtx, { params: { onGestureEnd, ...params } });
+  const handle = invoker.start(base as unknown as InvocationCtx, { params: { onRunEnd, ...params } });
   const drag = { start: { x: 5, y: 5 }, current: { x: 200, y: 200 }, delta: { x: 195, y: 195 } };
   const at = { ...base, world: drag.current, drag } as unknown as InvocationCtx;
   handle.onMove!(at);
   handle.onEnd!(at, 'commit');
-  return { scene, onGestureEnd };
+  return { scene, onRunEnd };
 }
 
 describe('moveAction — a layout drop the destination refuses', () => {
   it('lands nothing and reports no commit', () => {
-    const { scene, onGestureEnd } = dropInto({});
+    const { scene, onRunEnd } = dropInto({});
     expect(scene.get(A)!.parent).toBe(null);
     expect(scene.get(A)!.pose).toEqual(HOME);
-    expect(onGestureEnd).toHaveBeenCalledWith(false);
+    expect(onRunEnd).toHaveBeenCalledWith(false);
   });
 
   it('does the same when the move is transient', () => {
-    const { scene, onGestureEnd } = dropInto({ transient: true });
+    const { scene, onRunEnd } = dropInto({ transient: true });
     expect(scene.get(A)!.parent).toBe(null);
     expect(scene.get(A)!.pose).toEqual(HOME);
-    expect(onGestureEnd).toHaveBeenCalledWith(false);
+    expect(onRunEnd).toHaveBeenCalledWith(false);
   });
 });
