@@ -16,9 +16,9 @@ export {
 export type { OriginProjection } from '../interactions/gestures/shared';
 
 // ─── Drag-action hooks: move / resize / rotate / insert / area-select / etc. ─
-export type { UseMoveOptions } from '../interactions/gestures/moveOptions';
-export type { UseResizeOptions } from '../interactions/gestures/resizeOptions';
-export type { UseRotateOptions } from '../interactions/gestures/rotateOptions';
+export type { MoveOptions } from '../interactions/actions/moveOptions';
+export type { ResizeOptions } from '../interactions/actions/resizeOptions';
+export type { RotateOptions } from '../interactions/actions/rotateOptions';
 export { AUTO_POSE_DESCRIPTOR, isPathLike, isRectPose } from '../core/geometry/autoPoseDescriptor';
 export { RECT_POSE_DESCRIPTOR, ROTATED_POSE_DESCRIPTOR, poseDescriptorForNode } from '../core/geometry/poseDescriptor';
 export type { PoseDescriptor, TranslateLead } from '../core/geometry/poseDescriptor';

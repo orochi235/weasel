@@ -1,13 +1,13 @@
 /** Option surface for the `resize` action. */
 
-import type { BoundsConstraint } from './types';
+import type { BoundsConstraint } from 'interactions/gestures/types';
 import type { Bounds } from 'core/viewport/fitViewToBounds';
 
 /** Options for the `resize` action: the constraints applied to the dragged
  *  bounding box, how a gesture expands a group into its leaves, and its
  *  history and lifecycle. `<SceneCanvas>` publishes them as the
  *  `resizePolicy` dep (`resizePolicyOptions`). */
-export interface UseResizeOptions<TPose> {
+export interface ResizeOptions<TPose> {
   /** Behaviors are rect-typed: they read/write `{x,y,width,height}`. For a
    *  non-rect `TPose`, constraints are typed `never`; the pose descriptor
    *  comes from `<SceneCanvas poseDescriptor>`. */

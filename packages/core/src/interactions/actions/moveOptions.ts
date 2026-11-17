@@ -1,11 +1,11 @@
 /** Option surface for the `move` action. */
 
-import type { MoveBehavior } from './types';
+import type { MoveBehavior } from 'interactions/gestures/types';
 
 /** Options for the `move` action: the behaviors (snapping, momentum) layered
  *  over the raw drag, the ids a drag carries, and its history and lifecycle.
  *  `selectionMoveBindings` threads them into the move bindings. */
-export interface UseMoveOptions<TPose> {
+export interface MoveOptions<TPose> {
   behaviors?: MoveBehavior<TPose>[];
   /** Screen travel, in CSS pixels, before the drag moves anything: the move bindings'
    *  `dragThresholdPx`. Default the `gestures.dragPx` kit setting, where every drag opens, so a

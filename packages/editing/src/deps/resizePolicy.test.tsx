@@ -33,7 +33,7 @@ describe('useResizePolicy', () => {
 });
 
 describe('resizePolicyOptions', () => {
-  it('maps every read UseResizeOptions field onto the policy options', () => {
+  it('maps every read ResizeOptions field onto the policy options', () => {
     const behaviors = [{}];
     const expandIds = (ids: string[]) => ids;
     const onGestureStart = () => {};

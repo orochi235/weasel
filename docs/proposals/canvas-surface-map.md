@@ -257,9 +257,9 @@ export interface CanvasProps<TNode extends { id: string } = { id: string }, TPos
      *    - `{ options }` (configure the default hook)
      *    - `{ controller }` (replace the hook entirely)
      *    - `{ controller, options }` (replace + configure) */
-    move?: GestureSlot<MoveController<TNode, TPose>, UseMoveOptions<TPose>>;
-    resize?: GestureSlot<ResizeController<TNode, TPose>, UseResizeOptions<TPose>>;
-    rotate?: GestureSlot<RotateController<TNode, TPose>, UseRotateOptions<TPose>>;
+    move?: GestureSlot<MoveController<TNode, TPose>, MoveOptions<TPose>>;
+    resize?: GestureSlot<ResizeController<TNode, TPose>, ResizeOptions<TPose>>;
+    rotate?: GestureSlot<RotateController<TNode, TPose>, RotateOptions<TPose>>;
     insert?: GestureSlot<InsertController<TNode, TPose>, UseInsertOptions<TPose>>;
     areaSelect?: GestureSlot<AreaSelectController, UseAreaSelectOptions>;
     editAnchors?: GestureSlot<EditAnchorsController<TNode>, UseEditAnchorsOptions>

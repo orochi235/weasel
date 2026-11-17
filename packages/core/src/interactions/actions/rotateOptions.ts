@@ -1,10 +1,10 @@
 /** Option surface for the `rotate` action. */
 
-import type { RotateBehavior, RotatedPose } from './types';
+import type { RotateBehavior, RotatedPose } from 'interactions/gestures/types';
 
 /** Options for the `rotate` action. `selectionRotateBindings` threads
  *  them into the rotation handle's binding. */
-export interface UseRotateOptions<TPose> {
+export interface RotateOptions<TPose> {
   /** Behaviors are typed against the pose shape; typed `never` for a pose
    *  without a numeric `rotation`. `onMove` sees the first rotated node's
    *  turned pose, after the snap session has snapped it, and a pose or a
