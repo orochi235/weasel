@@ -165,7 +165,7 @@ export { createSnapOutcomeStore } from '../domains/snap/outcomeStore';
 export type { SnapOutcomeStore } from '../domains/snap/outcomeStore';
 export type { SnapReadoutDep } from '../domains/snap/readoutDep';
 export { SNAP_ANGLE_STEP, SNAP_AXIS_STEP, SNAP_ROLES, SNAP_ROLE_MODS, snapMods } from '../domains/snap/roles';
-export { DEFAULT_SNAP_PX, inputSession } from '../domains/snap/session2d';
+export { DEFAULT_SNAP_PX, createBareSnapSession } from '../domains/snap/session2d';
 export { stepAngles } from '../domains/snap/stepAngles';
 export type { AngleCandidate, AngleCollect, Locus, SceneCanvasSnap, SnapAnchors, SnapCollect, SnapFrame, SnapGesture, SnapMark, SnapMarks, SnapProbeAt, SnapReadoutStyle, SnapSide, SnapSource, SourceCandidate } from '../domains/snap/types';
 export { aimRectOf, aimSpace2d, isRectAim, rectAim, viewForAim } from '../domains/viewports/aim';

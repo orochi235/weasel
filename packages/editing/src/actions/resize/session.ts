@@ -1,5 +1,5 @@
 import type { PoseLinear } from '@weasel-js/geom';
-import { operandMethods, nodeDescriptors, poseDescriptorOf, scenePoseFrame, type PoseFrame, drawnBoxes, inputSession } from '@weasel-js/core/engine';
+import { operandMethods, nodeDescriptors, poseDescriptorOf, scenePoseFrame, type PoseFrame, drawnBoxes, createBareSnapSession } from '@weasel-js/core/engine';
 import type { CommitSelectionMethods, GeometryProjection, PoseDescriptor, InkExtents, SnapBegin, SnapSession } from '@weasel-js/core/engine';
 import type { ActionDeps, InvocationCtx } from '@weasel-js/routing';
 import { transformFinisher, type TransformFinisher, gestureReaders, type GestureReaders, readRunLifecycle, type RunLifecycle, localToWorld, outsetBox } from '@weasel-js/core';
@@ -153,7 +153,7 @@ function beginSnap(ctx: InvocationCtx, ids: readonly NodeId[], press: { x: numbe
     constrain: 'aspect',
     box: { bounds: outsetBox(box.bounds, box.extents), toWorld: (p) => localToWorld(frame, p.x, p.y) },
   };
-  return ctx.deps.snap?.begin(req) ?? inputSession(req);
+  return ctx.deps.snap?.begin(req) ?? createBareSnapSession(req);
 }
 
 /** Capture a resize at press. Null when nothing is selected, the press is not

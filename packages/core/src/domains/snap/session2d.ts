@@ -146,7 +146,7 @@ function subjectAt(
 
 /** A session no source answers: it only holds the point to the gesture's
  *  input subspace, as when a host provides no `snap` dep. */
-export function inputSession(req: SnapBegin): SnapSession {
+export function createBareSnapSession(req: SnapBegin): SnapSession {
   return createSession2d({
     req,
     sources: [],

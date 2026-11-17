@@ -1,5 +1,5 @@
 import type { ActionDeps, BindingOptions, InvocationCtx } from '@weasel-js/routing';
-import { operandMethods, unionAABB, nodeDescriptors, poseDescriptorOf, scenePoseFrame, type PoseFrame, drawnBoxes, type DrawnBoxes, inputSession, SNAP_ANGLE_STEP } from '@weasel-js/core/engine';
+import { operandMethods, unionAABB, nodeDescriptors, poseDescriptorOf, scenePoseFrame, type PoseFrame, drawnBoxes, type DrawnBoxes, createBareSnapSession, SNAP_ANGLE_STEP } from '@weasel-js/core/engine';
 import type { CommitSelectionMethods, GestureContext, RotateBehavior, PoseDescriptor, SnapBegin, SnapSession } from '@weasel-js/core/engine';
 import { pointerStateOf, transformFinisher, type TransformFinisher, sceneGestureFrames, gestureReaders, type GestureReaders, readRunLifecycle, type RunLifecycle, carryPose, invertPlane, planeOf, shapeSources } from '@weasel-js/core';
 import { resolveParams } from '@weasel-js/routing';
@@ -156,7 +156,7 @@ function beginSnap(ctx: InvocationCtx, ids: readonly string[], pivot: { x: numbe
   const req: SnapBegin = {
     gesture: 'rotate', ids, press: ctx.world, pivot, theta0, constrain: { step: SNAP_ANGLE_STEP },
   };
-  return ctx.deps.snap?.begin(req) ?? inputSession(req);
+  return ctx.deps.snap?.begin(req) ?? createBareSnapSession(req);
 }
 
 /** Capture a rotate at press. Null when nothing selected can turn. Runs each
