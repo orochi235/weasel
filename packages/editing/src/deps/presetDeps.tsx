@@ -4,7 +4,7 @@ import { useAreaSelectDepSource } from './areaSelect';
 import { useBooleansAdapterSource } from './booleans';
 import { useInsertDepSource } from './insert';
 import { useLassoSelectDepSource } from './lassoSelect';
-import { resizePolicyOptions, useResizePolicy } from './resizePolicy';
+import { resizePolicyOptions, useResizePolicyDepSource } from './resizePolicy';
 
 /** Publishes the `areaSelect` and `lassoSelect` deps over the canvas's scene, selection and pickers. */
 export function RegionSelectDeps({ canvas }: PresetComponentProps) {
@@ -28,7 +28,7 @@ export function ResizePolicyDeps({ canvas }: PresetComponentProps) {
 }
 
 function ResizePolicy({ options }: { options: UseResizeOptions<unknown> }) {
-  useResizePolicy<unknown>(resizePolicyOptions(options));
+  useResizePolicyDepSource<unknown>(resizePolicyOptions(options));
   return null;
 }
 

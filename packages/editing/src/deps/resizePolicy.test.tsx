@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { render } from '@testing-library/react';
 import { DepRegistryProvider, useDepRegistry, type DepRegistry } from '@weasel-js/routing/react';
-import { resizePolicyOptions, useResizePolicy } from './resizePolicy';
+import { resizePolicyOptions, useResizePolicyDepSource } from './resizePolicy';
 import type { ResizePolicy } from '@weasel-js/core/engine';
 
 function Capture({ onR }: { onR: (r: DepRegistry) => void }) {
@@ -9,13 +9,13 @@ function Capture({ onR }: { onR: (r: DepRegistry) => void }) {
   return null;
 }
 
-describe('useResizePolicy', () => {
+describe('useResizePolicyDepSource', () => {
   it('publishes the lifecycle options beside the constraints', () => {
     const onGestureStart = () => {};
     const onGestureEnd = () => {};
     let reg!: DepRegistry;
     function Wire() {
-      useResizePolicy({ label: 'Stretch', transient: true, onGestureStart, onGestureEnd });
+      useResizePolicyDepSource({ label: 'Stretch', transient: true, onGestureStart, onGestureEnd });
       return null;
     }
     render(

@@ -11,7 +11,7 @@ import { IDENTITY_POSE_COMPOSITION, type Scene } from '@weasel-js/core';
 import { useAreaSelectDepSource } from './areaSelect';
 import { useLassoSelectDepSource } from './lassoSelect';
 import { useInsertDepSource } from './insert';
-import { useResizePolicy } from './resizePolicy';
+import { useResizePolicyDepSource } from './resizePolicy';
 
 afterEach(() => { cleanup(); });
 
@@ -82,7 +82,7 @@ describe('editing dep sources after an abandoned render', () => {
   });
 
   it('resizePolicy reads the committed options', () => {
-    const reg = registryAfterAbandon({ label: 'a' }, { label: 'b' }, (o) => { useResizePolicy(o); });
+    const reg = registryAfterAbandon({ label: 'a' }, { label: 'b' }, (o) => { useResizePolicyDepSource(o); });
     expect(dep(reg, 'resizePolicy').label).toBe('a');
   });
 });

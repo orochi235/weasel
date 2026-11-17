@@ -193,7 +193,7 @@ declare module '@weasel-js/routing' {
      * Resize-policy dep — bounds constraints, point-snap behaviors and
      * group expansion for `resizeAction`. Optional: when omitted,
      * `resizeAction` falls back to identity defaults. Consumers wire via
-     * `useDepSource('resizePolicy', ...)` or the `useResizePolicy` helper.
+     * `useDepSource('resizePolicy', ...)` or the `useResizePolicyDepSource` helper.
      */
     resizePolicy?: ResizePolicy<unknown>;
     /**

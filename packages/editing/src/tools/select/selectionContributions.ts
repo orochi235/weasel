@@ -112,11 +112,11 @@ export interface SelectionRotateOptions<TPose = unknown> {
 }
 
 /** Options for {@link selectionTransformContribution}. Resize takes its
- *  options through the `resizePolicy` dep (`useResizePolicy`), not here. */
+ *  options through the `resizePolicy` dep (`useResizePolicyDepSource`), not here. */
 export type SelectionTransformOptions<TPose = unknown> = SelectionRotateOptions<TPose>;
 
 /** Drag a resize handle to resize the selection. Options come through the
- *  `resizePolicy` dep (`useResizePolicy`). */
+ *  `resizePolicy` dep (`useResizePolicyDepSource`). */
 export function selectionResizeBindings(): GestureBinding[] {
   return [{ spec: { kind: 'drag' as const, target: { kindOf: isResizeHandle }, mods: SNAP_ROLE_MODS }, actionId: 'resize', opts: { id: 'selection.resize.handle' } }];
 }

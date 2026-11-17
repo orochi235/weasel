@@ -95,7 +95,7 @@ export { snapToContainer, snapBackOrDelete, clampMove, type ClampMoveOptions } f
 export { cloneAction } from './actions/clone/action';
 export { createResizeAction, resizeAction, type ResizeActionOptions } from './actions/resize/action';
 export { clampMinSize } from './actions/resize/behaviors';
-export { useResizePolicy, resizePolicyOptions, type UseResizePolicyOptions } from './deps/resizePolicy';
+export { useResizePolicyDepSource, resizePolicyOptions, type UseResizePolicyDepSourceOptions } from './deps/resizePolicy';
 export { rotateAction } from './actions/rotate/action';
 export { areaSelectAction } from './actions/select/areaSelect';
 export { clearSelectionAction } from './actions/select/clearSelection';
