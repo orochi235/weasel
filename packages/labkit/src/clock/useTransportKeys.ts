@@ -7,6 +7,7 @@ import {
 import { createContext, type RefObject, useContext, useEffect, useState } from 'react';
 import { createKeyClaims, type KeyClaims, useClaimed } from '../lab/keyClaims';
 import { useLabCommandsOptional } from '../lab/LabContext';
+import { owningTrial, useOwnsTrial } from '../lab/owningTrial';
 import type { TransportControl } from './transportControl';
 
 /** A press on one of these is its own: Space clicks a button, the arrows move
@@ -50,6 +51,7 @@ export function useTransportKeyActions(
   focusedTrialId: string | null,
 ): TransportKeys {
   const focused = useLatest(focusedTrialId);
+  const owns = useLatest(useOwnsTrial());
   const [keys] = useState(() => createKeyClaims<KeyedTransport>());
   const keyed = useClaimed(keys);
   useEffect(() => {
@@ -60,7 +62,7 @@ export function useTransportKeyActions(
       if (at?.closest(OWNS_KEYS)) return null;
       for (const t of keys.all) {
         const c = t.control();
-        if (!c || !answersFor(t.anchor(), at, focused.current)) continue;
+        if (!c || !answersFor(t.anchor(), at, focused.current, owns.current)) continue;
         const run = keyAction(key, c);
         if (run) return run;
       }
@@ -77,7 +79,7 @@ export function useTransportKeyActions(
     return () => {
       for (const off of offs) off();
     };
-  }, [registry, keys, focused, keyed]);
+  }, [registry, keys, focused, owns, keyed]);
   return keys;
 }
 
@@ -107,20 +109,16 @@ export function useLabTransportKeys(registry: ActionsRegistry): TransportKeys {
   return useTransportKeyActions(registry, useLabCommandsOptional()?.focusedTrialId ?? null);
 }
 
-const trialOf = (el: unknown): string | null =>
-  el instanceof Element
-    ? (el.closest('[data-trial-id]')?.getAttribute('data-trial-id') ?? null)
-    : null;
-
 /** Whether a transport at `anchor` answers a key at `target`: one outside every trial answers all. */
 function answersFor(
   anchor: Element | null,
   target: Element | null,
   focused: string | null,
+  owns: (id: string) => boolean,
 ): boolean {
-  const own = trialOf(anchor);
+  const own = owningTrial(anchor, owns);
   if (own === null) return true;
-  const from = trialOf(target);
+  const from = owningTrial(target, owns);
   return from === null ? focused === null || focused === own : from === own;
 }
 

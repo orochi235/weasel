@@ -123,7 +123,10 @@ function extentOf(store: Store, id: NodeId): TrialLayout[string] | null {
 function PanelFrame({ panel, floating = false }: { panel: PanelDescriptor; floating?: boolean }) {
   const hosts = usePanelHosts();
   return (
-    <div className={floating ? 'lk-panel-tile lk-panel-tile--floating' : 'lk-panel-tile'}>
+    <div
+      className={floating ? 'lk-panel-tile lk-panel-tile--floating' : 'lk-panel-tile'}
+      data-trial-id={panel.trialId}
+    >
       <div className="lk-panel-tile__body" ref={(el) => hosts?.set(panel.key, el)} />
     </div>
   );
@@ -135,6 +138,8 @@ export interface PanelDescriptor {
   key: string;
   title: string;
   as: 'tile' | 'floating';
+  /** The trial the panel was torn out of, which keys pressed and presses in the panel go to. */
+  trialId?: string;
 }
 
 /**
