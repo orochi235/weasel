@@ -26,8 +26,8 @@ import {
   CONNECT_ACTION_ID,
   connectBinding,
   createConnectAction,
-  grabPortAction,
-  grabPortBindings,
+  createClaimPressAction,
+  claimPressBindings,
   type ConnectActionOptions,
 } from './connect';
 import { EDIT_EDGE_LABEL_ACTION_ID } from './edgeLabel';
@@ -66,8 +66,8 @@ export function diagramPorts<TPose>(opts: DiagramContributionOptions<TPose>): Su
     eligibility: { claimed: [PORT_LAYER_ID] },
     // `opts.id` names the connect action; the layer keeps its own id.
     layers: [portLayer(opts.participants, { ...opts, id: PORT_LAYER_ID })],
-    actions: [createConnectAction({ ...opts, id: actionId }), grabPortAction()],
-    bindings: [connectBinding(actionId), ...grabPortBindings()],
+    actions: [createConnectAction({ ...opts, id: actionId }), createClaimPressAction()],
+    bindings: [connectBinding(actionId), ...claimPressBindings()],
   };
 }
 
@@ -98,12 +98,12 @@ export function diagramWaypoints<TPose>(
       createResetRouteAction(opts),
       ...routerActions({ participants: opts.participants, selected: opts.selected }),
       createSetHopsAction(),
-      grabPortAction(GRAB_WAYPOINT_ACTION_ID),
+      createClaimPressAction(GRAB_WAYPOINT_ACTION_ID),
     ],
     bindings: [
       { spec: { kind: 'drag', target, mods: roleMods(SNAP_ROLES) }, actionId, opts: { id: 'weasel-diagram-waypoints.drag' } },
       { spec: { kind: 'doubleClick', target }, actionId: REMOVE_WAYPOINT_ACTION_ID, opts: { id: 'weasel-diagram-waypoints.doubleClick' } },
-      ...grabPortBindings(GRAB_WAYPOINT_ACTION_ID, WAYPOINT_AFFORDANCE_KIND),
+      ...claimPressBindings(GRAB_WAYPOINT_ACTION_ID, WAYPOINT_AFFORDANCE_KIND),
     ],
   };
 }
@@ -157,7 +157,7 @@ export function diagramLabelDrag(
     actions: [
       createLabelDragAction({ ...opts, id: actionId }),
       createResetLabelAction({ selected: opts.selected, ...(opts.commit ? { commit: opts.commit } : {}) }),
-      grabPortAction(GRAB_LABEL_ACTION_ID),
+      createClaimPressAction(GRAB_LABEL_ACTION_ID),
       selectLabelEdgeAction(),
     ],
     bindings: [

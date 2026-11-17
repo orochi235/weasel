@@ -154,7 +154,7 @@ export function connectBinding(actionId: string = CONNECT_ACTION_ID): GestureBin
 export const GRAB_PORT_ACTION_ID = 'diagram.grabPort';
 
 /**
- * Absorbs a press on a port, and does nothing else.
+ * Absorbs a press on an affordance (a port by default), and does nothing else.
  *
  * A port claims the press **protocol**, not one gesture in it: `pointerDown`,
  * `click` and `drag` are a single claimable `'pointer'` token, and an exclusive
@@ -163,7 +163,7 @@ export const GRAB_PORT_ACTION_ID = 'diagram.grabPort';
  * the dispatcher drops the press — the drag it would have grown into never
  * happens.
  */
-export function grabPortAction(id: string = GRAB_PORT_ACTION_ID): Action {
+export function createClaimPressAction(id: string = GRAB_PORT_ACTION_ID): Action {
   return {
     id,
     label: 'Grab port',
@@ -175,7 +175,7 @@ export function grabPortAction(id: string = GRAB_PORT_ACTION_ID): Action {
 
 /** The two bindings that keep a port's claim from dropping the press. `kind`
  *  names another affordance that claims the press protocol the same way. */
-export function grabPortBindings(
+export function claimPressBindings(
   actionId: string = GRAB_PORT_ACTION_ID,
   kind: string = PORT_AFFORDANCE_KIND,
 ): GestureBinding[] {

@@ -40,8 +40,8 @@ export {
   connectBinding,
   createConnectAction,
   defaultCanConnect,
-  grabPortAction,
-  grabPortBindings,
+  createClaimPressAction,
+  claimPressBindings,
 } from './connect';
 export type { CanConnect, ConnectActionOptions, MovingEnd, PendingEdge } from './connect';
 export type { DropRefusal, DropVerdict } from '@weasel-js/core';

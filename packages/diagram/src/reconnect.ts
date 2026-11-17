@@ -24,8 +24,8 @@ import {
 import {
   defaultCanConnect,
   edgeEndOf,
-  grabPortAction,
-  grabPortBindings,
+  createClaimPressAction,
+  claimPressBindings,
   type ConnectActionOptions,
   type MovingEnd,
 } from './connect';
@@ -227,10 +227,10 @@ export function diagramEdgeEnds<TPose>(
     eligibility: { claimed: [EDGE_END_LAYER_ID] },
     // `opts.id` names the action; the layer keeps its own id.
     layers: [edgeEndLayer(opts.participants, opts.selected, { ...opts, id: EDGE_END_LAYER_ID })],
-    actions: [createReconnectAction({ ...opts, id: actionId }), grabPortAction(GRAB_EDGE_END_ACTION_ID)],
+    actions: [createReconnectAction({ ...opts, id: actionId }), createClaimPressAction(GRAB_EDGE_END_ACTION_ID)],
     bindings: [
       reconnectBinding(actionId),
-      ...grabPortBindings(GRAB_EDGE_END_ACTION_ID, EDGE_END_AFFORDANCE_KIND),
+      ...claimPressBindings(GRAB_EDGE_END_ACTION_ID, EDGE_END_AFFORDANCE_KIND),
     ],
   };
 }

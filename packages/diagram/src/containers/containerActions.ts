@@ -17,7 +17,7 @@ import {
   type RectPose,
 } from '@weasel-js/core';
 import type { Vec2 } from '@weasel-js/core/math';
-import { grabPortAction, grabPortBindings } from '../connect';
+import { createClaimPressAction, claimPressBindings } from '../connect';
 import { addLane, canReleaseMembers, releaseMembers } from './containerStencils';
 import {
   addLaneLocked, LANE_AFFORDANCE_KIND, LANE_LAYER_ID, laneLayer, laneResizeLocked, laneScratchOf, poolsOf, type LaneLayerOptions,
@@ -218,12 +218,12 @@ export function diagramContainers(opts: LaneActionOptions): SurfaceContribution 
     eligibility: { claimed: [LANE_LAYER_ID] },
     layers: [laneLayer(opts.scene, opts)],
     actions: [
-      createLaneResizeAction(opts), createAddLaneAction(opts), createReleaseMembersAction(opts), grabPortAction(GRAB_LANE_ACTION_ID),
+      createLaneResizeAction(opts), createAddLaneAction(opts), createReleaseMembersAction(opts), createClaimPressAction(GRAB_LANE_ACTION_ID),
     ],
     bindings: [
       { spec: { kind: 'drag', target }, actionId: LANE_RESIZE_ACTION_ID, opts: { id: 'weasel-diagram-containers.drag' } },
       { spec: { kind: 'click', target }, actionId: ADD_LANE_ACTION_ID, opts: { id: 'weasel-diagram-containers.click' } },
-      ...grabPortBindings(GRAB_LANE_ACTION_ID, LANE_AFFORDANCE_KIND).filter((b) => b.spec.kind !== 'click'),
+      ...claimPressBindings(GRAB_LANE_ACTION_ID, LANE_AFFORDANCE_KIND).filter((b) => b.spec.kind !== 'click'),
     ],
   };
 }
