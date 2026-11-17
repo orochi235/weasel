@@ -203,6 +203,23 @@ describe('a frame and the animations it ticks', () => {
     expect(events.filter((t) => t === 'cancel')).toEqual([]);
   });
 
+  it('takes every animation off the table when an `onCancel` throws, then throws', () => {
+    const r = rig();
+    const bad = () => { throw new Error('setter'); };
+    r.start('a', 1000, { onCancel: bad });
+    r.start('b', 1000, { onCancel: bad });
+    let cleared = 0;
+    expect(() => r.table.cancelAll(() => { cleared += 1; })).toThrow('setter');
+    expect(cleared).toBe(1);
+    expect(r.table.animations.size).toBe(0);
+    const c = r.start('c', 1000, { onCancel: bad });
+    let done = false;
+    r.table.watchCompletion(c.id, () => { done = true; });
+    expect(() => c.cancel()).toThrow('setter');
+    expect(r.table.animations.size).toBe(0);
+    expect(done).toBe(true);
+  });
+
   it('never ticks one whose `due` is Infinity, and says the frame loop may sleep when it is idle', () => {
     const r = rig();
     r.start('held', 0, { due: Infinity, idle: true });

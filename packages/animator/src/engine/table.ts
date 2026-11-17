@@ -76,6 +76,19 @@ export function timeScaleOf(scale: number): number {
   return scale;
 }
 
+/** Runs `each` over `all`, every one of them though one throws; then throws the first throw. */
+function each<A>(all: Iterable<A>, run: (a: A) => void): void {
+  let threw = false;
+  let first: unknown;
+  for (const a of all) {
+    try { run(a); } catch (error) {
+      if (!threw) first = error;
+      threw = true;
+    }
+  }
+  if (threw) throw first;
+}
+
 function infoOf(a: ActiveAnimation): AnimationInfo {
   if (!a.info) {
     const info: { -readonly [K in keyof AnimationInfo]: AnimationInfo[K] } = { id: a.id, kind: a.kind };
@@ -102,22 +115,30 @@ export function createTable(host: TableHost): Table {
   const retire = (id: number, by?: ActiveAnimation, error?: true): void => {
     const a = animations.get(id);
     if (!a) return;
-    a.onCancel?.();
+    // A throw from it, a target's setter as the animation commits, still takes it off the table;
+    // the throw goes on after, but one retired for a throw of its own has had its throw reported.
+    let threw = false;
+    let thrown: unknown;
+    try { a.onCancel?.(); } catch (e) { threw = true; thrown = e; }
     codec.stop(id);
     remove(a);
     // A target that came to rest is owed one more show, and no frame may be coming. A frame in
     // progress shows it itself, and asks for the next after its ticks, as `register` says.
     if (host.resting() && !host.framing()) host.requestFrame();
     fireCompletion(id);
-    if (!hub.watched || a.ended || error) return;
-    hub.emit(by
-      ? { type: 'interrupt', animation: infoOf(a), by: infoOf(by) }
-      : { type: 'cancel', animation: infoOf(a) });
+    if (hub.watched && !a.ended && !error) {
+      hub.emit(by
+        ? { type: 'interrupt', animation: infoOf(a), by: infoOf(by) }
+        : { type: 'cancel', animation: infoOf(a) });
+    }
+    if (!threw) return;
+    if (error) console.error('useAnimator: canceling an animation that threw threw again', thrown);
+    else throw thrown;
   };
 
   const cancelByKey = (key: string, by?: ActiveAnimation): void => {
     // A copy: each one leaves the set as it is retired, and its `onCancel` may retire others.
-    for (const a of [...roster.under(key)]) retire(a.id, by);
+    each([...roster.under(key)], (a) => retire(a.id, by));
   };
 
   /** Hands `a`'s voices the rate its schedule now gives it. */
@@ -192,9 +213,12 @@ export function createTable(host: TableHost): Table {
     },
     cancelAll(cleared) {
       const retired: ActiveAnimation[] = [];
-      // Over the table as it stands: one an earlier `onCancel` retired is not canceled twice.
+      // Over the table as it stands: one an earlier `onCancel` retired is not canceled twice. A
+      // throw from one, a target's setter, cancels the rest all the same and goes on after.
+      let threw = false;
+      let thrown: unknown;
       for (const a of animations.values()) {
-        a.onCancel?.();
+        try { a.onCancel?.(); } catch (e) { if (!threw) thrown = e; threw = true; }
         codec.stop(a.id);
         retired.push(a);
       }
@@ -203,6 +227,7 @@ export function createTable(host: TableHost): Table {
       for (const a of retired) fireCompletion(a.id);
       // One reported ended already, from an `onDone` that called this, was not canceled.
       if (hub.watched) for (const a of retired) if (!a.ended) hub.emit({ type: 'cancel', animation: infoOf(a) });
+      if (threw) throw thrown;
     },
     watchCompletion,
   };

@@ -2580,3 +2580,6 @@ Calls the lanes made without a ruling:
   at the next frame, logged and with an `error` event, as a throwing `onTick` is; the hold weighs nothing from its
   first throw. A `touch` between frames no longer throws the error to its caller. A throw only at the call that
   starts it still goes to that caller.
+- 2026-11-17 (the fixer's call): an animation whose cancel throws (its target's setter, as it commits what it showed)
+  still leaves the table, with its completion and its `cancel` event, and `cancelAll` and a `cancelKey` interrupt go on
+  to the rest; the first throw then goes on to whoever canceled. Retiring one whose own tick threw logs a second throw.
