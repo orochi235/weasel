@@ -89,7 +89,7 @@ A map of the library so agents can find what they need quickly.
 | Concept | Source |
 |---|---|
 | Capability, target, store and API types | `src/annotations/types.ts` |
-| `createAnnotationStore` (scene-backed, one scene per target) | `src/annotations/store.ts` |
+| `createMarkStore` (scene-backed, one scene per target) | `src/annotations/store.ts` |
 | `useAnnotations` / `useAnnotationsOptional` | `src/annotations/AnnotationsContext.ts` |
 | `<AnnotationOverlay>` (weasel tools + selection over a target) | `src/annotations/AnnotationOverlay.tsx` |
 | `<AnnotationTargets>` (mounts one overlay per declared target) | `src/annotations/AnnotationTargets.tsx` |

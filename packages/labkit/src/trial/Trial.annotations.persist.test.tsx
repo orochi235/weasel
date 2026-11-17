@@ -10,7 +10,7 @@ import { createMemoryAdapter } from '@weasel-js/storage';
 import { withIcons } from '@weasel-js/ui/testing/withIcons';
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { useAnnotations } from '../annotations/AnnotationsContext';
-import type { AnnotationsApi, SerializedAnnotations } from '../annotations/types';
+import type { AnnotationsApi, SerializedMarkStore } from '../annotations/types';
 import { defineInstrument } from '../instrument/defineInstrument';
 import type { InstrumentList } from '../instrument/types';
 import { Lab } from '../lab/Lab';
@@ -60,7 +60,7 @@ const inspector = defineInstrument<Record<string, never>, { angle: number }>({
 });
 
 /** The instrument keeps its own marks, so labkit must not keep them too. */
-let owned: SerializedAnnotations | null = null;
+let owned: SerializedMarkStore | null = null;
 let loads = 0;
 let gate: Promise<void> = Promise.resolve();
 const selfStoring = defineInstrument<Record<string, never>, Record<string, never>>({

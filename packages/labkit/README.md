@@ -383,7 +383,7 @@ Export button in the toolbar; `onCapture` fires after every export, labkit's own
 chrome included.
 
 The pieces are exported for a host that wants to assemble them itself:
-`createAnnotationStore`, `<AnnotationOverlay>`, `<AnnotationTargets>`,
+`createMarkStore`, `<AnnotationOverlay>`, `<AnnotationTargets>`,
 `<MarkList>`, `<ExportMenu>`, `ANNOTATION_TOOLS` and `capturePlan`.
 
 ## A weasel scene in a trial

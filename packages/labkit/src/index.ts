@@ -111,14 +111,14 @@ export type {
   MarkPose,
   MarkScene,
   PaintedMark,
-  SerializedAnnotations,
+  SerializedMarkStore,
   SerializedMarkHistory,
   WorldRect,
 } from './annotations';
 export {
   annotationsFromJSON,
   createAnnotationScene,
-  createAnnotationStore,
+  createMarkStore,
   fracContains,
   fracEncloses,
   fracToWorld,

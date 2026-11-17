@@ -4,7 +4,7 @@
  * ordering question labkit has to answer, not something a single scene knows.
  */
 import { describe, expect, it } from 'vitest';
-import { createAnnotationStore } from './store';
+import { createMarkStore } from './store';
 import type { AnnotationInit, AnnotationTargetInfo } from './types';
 
 const TARGETS: AnnotationTargetInfo[] = [
@@ -17,7 +17,7 @@ const MARK: Omit<AnnotationInit, 'target'> = {
   frac: { x: 0.1, y: 0.1, w: 0.2, h: 0.2 },
 };
 
-const store = () => createAnnotationStore({ targets: () => TARGETS });
+const store = () => createMarkStore({ targets: () => TARGETS });
 
 describe('undo across targets', () => {
   it('takes back the last change wherever it was made', () => {

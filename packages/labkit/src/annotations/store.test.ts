@@ -1,7 +1,7 @@
 import { asNodeId } from '@weasel-js/core';
 import { describe, expect, it, vi } from 'vitest';
 import { markCommands } from './paint';
-import { annotationsFromJSON, createAnnotationStore } from './store';
+import { annotationsFromJSON, createMarkStore } from './store';
 import type { AnnotationInit, AnnotationsApi, AnnotationTargetInfo, FracPoint } from './types';
 
 const TARGETS: AnnotationTargetInfo[] = [
@@ -10,7 +10,7 @@ const TARGETS: AnnotationTargetInfo[] = [
 ];
 
 function makeStore() {
-  return createAnnotationStore({ targets: () => TARGETS });
+  return createMarkStore({ targets: () => TARGETS });
 }
 
 const RING: AnnotationInit = {
@@ -175,7 +175,7 @@ describe('the annotation store', () => {
   // because jsdom has no WebGL2 and the overlay's canvas never paints or
   // hit-tests. That the canvas is bound to this scene is core's claim.
   it('merges the selection across targets, and maps it back to annotation ids', () => {
-    const store = createAnnotationStore({ targets: () => TARGETS, selection: 'per-target' });
+    const store = createMarkStore({ targets: () => TARGETS, selection: 'per-target' });
     const onNaive = store.add(RING);
     const onOcct = store.add({ ...RING, target: 'occt' });
 
@@ -295,7 +295,7 @@ describe('the annotation store', () => {
     });
 
     it("keeps each target's own selection under `selection: 'per-target'`", () => {
-      const store = createAnnotationStore({ targets: () => TARGETS, selection: 'per-target' });
+      const store = createMarkStore({ targets: () => TARGETS, selection: 'per-target' });
       const onNaive = store.add(RING);
       const onOcct = store.add({ ...RING, target: 'occt' });
 
@@ -309,7 +309,7 @@ describe('the annotation store', () => {
 
     it('reads the mode at each change, for a capability swapped under a live store', () => {
       let mode: 'exclusive' | 'per-target' = 'per-target';
-      const store = createAnnotationStore({ targets: () => TARGETS, selection: () => mode });
+      const store = createMarkStore({ targets: () => TARGETS, selection: () => mode });
       const onNaive = store.add(RING);
       const onOcct = store.add({ ...RING, target: 'occt' });
 
@@ -544,7 +544,7 @@ describe('a moved mark', () => {
 describe('paintedMarks', () => {
   it("hands over a target's marks in world units with their resolved style", () => {
     let config: Record<string, string> = { angle: 'iso', shading: 'outline' };
-    const store = createAnnotationStore({
+    const store = createMarkStore({
       targets: () => TARGETS,
       meaning: { statuses: [{ id: 'open', label: 'Open', color: '#123456' }] },
       config: () => config,

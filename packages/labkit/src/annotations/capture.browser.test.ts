@@ -6,7 +6,7 @@
 
 import { registerFont } from '@weasel-js/font';
 import { _resetFontRegistryForTests } from '@weasel-js/font/test-seams';
-import { createAnnotationStore } from '@weasel-js/labkit';
+import { createMarkStore } from '@weasel-js/labkit';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import metricsUrl from '../../../../assets/fonts/inter/inter.json?url';
 import atlasUrl from '../../../../assets/fonts/inter/inter.png?url';
@@ -31,7 +31,7 @@ afterEach(() => _resetFontRegistryForTests());
 describe('a raster capture of a text mark', () => {
   it('draws its glyphs when the font was registered lazily and never fetched', async () => {
     void registerFont('sans-serif', {}, metricsUrl, atlasUrl, { lazy: true });
-    const store = createAnnotationStore({
+    const store = createMarkStore({
       targets: () => [{ id: 'bare', content: { w: 120, h: 40 } }],
     });
     store.add({

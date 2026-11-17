@@ -9,7 +9,7 @@ import { renderWithIcons } from '@weasel-js/ui/testing/withIcons';
 import { describe, expect, it } from 'vitest';
 import { AnnotationsContext } from './AnnotationsContext';
 import { MarkList } from './MarkList';
-import { createAnnotationStore } from './store';
+import { createMarkStore } from './store';
 import type { AnnotationMeaning, AnnotationsApi, AnnotationTargetInfo } from './types';
 
 const TARGETS: AnnotationTargetInfo[] = [
@@ -33,7 +33,7 @@ function mount(store: AnnotationsApi, meaning?: AnnotationMeaning, config: unkno
 }
 
 function seeded() {
-  const store = createAnnotationStore({ targets: () => TARGETS });
+  const store = createMarkStore({ targets: () => TARGETS });
   store.add(
     {
       target: 'flat',
@@ -105,7 +105,7 @@ describe('<MarkList>', () => {
   });
 
   it('says so when there are none', () => {
-    mount(createAnnotationStore({ targets: () => TARGETS }), MEANING);
+    mount(createMarkStore({ targets: () => TARGETS }), MEANING);
     expect(screen.queryAllByRole('listitem')).toHaveLength(0);
     expect(screen.getByText(/no marks/i)).toBeTruthy();
   });

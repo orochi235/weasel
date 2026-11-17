@@ -8,7 +8,7 @@ import fc from 'fast-check';
 import { describe, expect, it } from 'vitest';
 import { own, runs, tally, timeoutFor } from '../pbt.fixture';
 import { fracToWorld, roundFrac } from './frac';
-import { annotationsFromJSON, createAnnotationStore } from './store';
+import { annotationsFromJSON, createMarkStore } from './store';
 import type {
   AnnotationKind,
   AnnotationsApi,
@@ -247,7 +247,7 @@ describe('the annotation store against a model', () => {
       fc.assert(
         fc.property(fc.commands(makeCommands(t), { maxCommands: 40, size: '+1' }), (cmds) => {
           const model: Model = { now: new Map(), past: [], future: [] };
-          const real: Real = { store: createAnnotationStore({ targets }) };
+          const real: Real = { store: createMarkStore({ targets }) };
           fc.modelRun(() => ({ model, real }), cmds);
         }),
         runs(RUNS),
