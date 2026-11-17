@@ -17,8 +17,8 @@ export interface ApplyEditOptions {
  *  pinned, moved into the region its move names as `parent` (`null` for the
  *  top level), each rerouted edge's `routed` and `routedPorts`, each region
  *  `box` pinned where it was left, each pool's `lanes` in their new order and
- *  sizes, and a released container gone with its members handed to the region
- *  that held it. A `title` edit changes nothing: the host edits the label.
+ *  sizes, and a released container, pool or lane gone with its members handed
+ *  to the region that held it (a lane's, to the region holding its pool). A `title` edit changes nothing: the host edits the label.
  *  What the edit does not name is returned as it was.
  *
  *  `pin: false` leaves moved nodes and boxes unpinned, for data `diagramScene`
@@ -90,15 +90,23 @@ function relaned(was: readonly DataLane[], order: readonly { id: string; size: n
   return order.map(({ id, size }) => ({ ...(by.get(id) ?? { id }), size }));
 }
 
-/** The container gone, its members in its place in whichever region held it. */
+/** The container, pool or lane gone, its members in its place in whichever region held it: a pool's are its
+ *  lanes', and a lane's go just before its pool, as the scene's release puts them. */
 function release(containers: readonly DataContainer[], id: string): DataContainer[] {
   const gone = containers.find((c) => c.id === id);
-  const freed = gone?.members ?? [];
-  const lift = (ids: readonly string[] | undefined) =>
-    ids?.includes(id) ? ids.flatMap((m) => (m === id ? freed : [m])) : ids;
+  const pool = gone === undefined ? containers.find((c) => c.lanes?.some((l) => l.id === id)) : undefined;
+  const lane = pool?.lanes?.find((l) => l.id === id);
+  if (gone === undefined && lane === undefined) return [...containers];
+  const freed = lane !== undefined
+    ? lane.members ?? []
+    : gone!.role === 'pool' ? (gone!.lanes ?? []).flatMap((l) => l.members ?? []) : gone!.members ?? [];
+  const lift = (ids: readonly string[] | undefined) => {
+    if (lane !== undefined) return ids?.includes(pool!.id) ? ids.flatMap((m) => (m === pool!.id ? [...freed, m] : [m])) : ids;
+    return ids?.includes(id) ? ids.flatMap((m) => (m === id ? freed : [m])) : ids;
+  };
   return containers.filter((c) => c.id !== id).map((c) => {
     const members = lift(c.members);
-    const lanes = c.lanes?.map((l): DataLane => {
+    const lanes = c.lanes?.filter((l) => l.id !== id).map((l): DataLane => {
       const m = lift(l.members);
       return m === undefined ? l : { ...l, members: m };
     });

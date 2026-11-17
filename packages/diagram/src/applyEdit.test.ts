@@ -53,6 +53,20 @@ describe('applyDiagramEdit', () => {
     expect(out.containers![0]!.members).toEqual(['a', 'b']);
   });
 
+  it('releases a lane: gone from its pool, its members before the pool in the region holding the pool', () => {
+    const held: DiagramData = { ...DATA, containers: [...DATA.containers!, { id: 'outer', role: 'container', members: ['pool'] }] };
+    const out = applyDiagramEdit(held, { ...none, containers: [{ kind: 'release', id: 'l1' }] });
+    expect(out.containers!.find((c) => c.id === 'pool')!.lanes).toEqual([{ id: 'l2' }]);
+    expect(out.containers!.find((c) => c.id === 'outer')!.members).toEqual(['c', 'pool']);
+  });
+
+  it('releases a pool: its lanes\' members take its place', () => {
+    const held: DiagramData = { ...DATA, containers: [...DATA.containers!, { id: 'outer', role: 'container', members: ['pool'] }] };
+    const out = applyDiagramEdit(held, { ...none, containers: [{ kind: 'release', id: 'pool' }] });
+    expect(out.containers!.map((c) => c.id)).toEqual(['box', 'inner', 'outer']);
+    expect(out.containers!.find((c) => c.id === 'outer')!.members).toEqual(['c']);
+  });
+
   it('leaves the data alone for a title edit', () => {
     const out = applyDiagramEdit(DATA, { ...none, containers: [{ kind: 'title', id: 'box' }] });
     expect(out).toEqual(DATA);
