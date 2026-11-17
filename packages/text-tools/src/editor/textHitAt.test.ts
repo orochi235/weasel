@@ -87,3 +87,18 @@ describe('textHitAt over a text-along node', () => {
     expect(textHitAt(scene, READ, 10, 280)).toBeNull();
   });
 });
+
+describe('textHitAt on text sized in screen pixels', () => {
+  it('places the caret on the glyphs laid out at the view scale', async () => {
+    registerFontOutlines('bars', {}, new ArrayBuffer(4), { parser: () => BARS });
+    const px: TextOutlineSource = { ...TEXT, style: { fontFamily: 'bars', fontSize: { px: 50 } } };
+    await loadTextOutlines(px);
+    const scene = createScene<unknown, 'main', RectPose>({
+      systemLayers: [{ id: 'main' }],
+      initial: [{ id: T, kind: 'mark', layer: 'main', pose: { x: 0, y: 0, width: 400, height: 120 }, data: px }],
+    });
+    // At scale 2 each glyph is 15 wide, so x = 40 is past the end; at scale 1 it is in the i's left half.
+    expect(textHitAt(scene, READ, 40, 10, { scale: 2 })).toEqual({ id: 't', caret: 2 });
+    expect(textHitAt(scene, READ, 40, 10)).toEqual({ id: 't', caret: 1 });
+  });
+});

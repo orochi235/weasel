@@ -18,6 +18,7 @@ import { registerHostTextEditor, type HostTextEditorHandle } from './hostTextEdi
 import { editedData, sceneTextDrafts } from './sceneTextDrafts';
 import type { Stroke, Fill, Inherit } from '@weasel-js/paint';
 import { layoutBoxOf, type Point2 } from '@weasel-js/routing';
+import { meanScale } from '@weasel-js/geom';
 import { isTextData, type StyledRun, type TextFit, type TextPaint, type TextStyle, type TextVerticalAlign } from '@weasel-js/text';
 import type { TextOverflow } from '../node/textPainter';
 import { screenPoseOf } from './textEditScreenPose';
@@ -215,7 +216,7 @@ export function useSceneTextEditor<
 
   // The canvas's box in container pixels is both the origin its view projects
   // from and the region its glyphs are clipped to.
-  const surface = (): { canvas: MountedCanvas; box: TextEditClipRect } | null => {
+  const surface = useCallback((): { canvas: MountedCanvas; box: TextEditClipRect } | null => {
     const root = containerRef.current;
     const canvas = root ? findMountedCanvas(root, canvasRef.current()) : null;
     if (!root || !canvas) return null;
@@ -231,7 +232,7 @@ export function useSceneTextEditor<
         height: a.height,
       },
     };
-  };
+  }, [containerRef, canvasRef]);
 
   const read = useMemo(() => projectionsOf(optsRef), [optsRef]);
 
@@ -284,8 +285,11 @@ export function useSceneTextEditor<
   });
 
   const textAt = useCallback(
-    (at: Point2) => textHitAt(sceneRef.current, read, at.x, at.y),
-    [read, sceneRef],
+    (at: Point2) => {
+      const view = resolveView(optsRef.current.view) ?? surface()?.canvas.getView();
+      return textHitAt(sceneRef.current, read, at.x, at.y, { scale: view ? meanScale(view.scale) : undefined });
+    },
+    [read, sceneRef, optsRef, surface],
   );
 
   const isTextNode = useCallback((id: string): boolean => {
