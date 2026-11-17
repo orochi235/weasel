@@ -194,7 +194,7 @@ export function resolveRuns(
  * run already at an index is rewritten when it has the same optional fields as
  * its replacement. For a caller that owns `out` and hands nothing it held
  * to anyone who keeps it; one whose runs the text caches have seen calls
- * `clearRuns` on them first.
+ * `evictRunsForRefill` on them first.
  */
 export function resolveRunsInto(
   out: ResolvedRun[],

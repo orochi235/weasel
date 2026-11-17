@@ -282,7 +282,7 @@ function structuralLayout(
  * list compares later runs with these, and a painting may still have to build
  * its key from them.
  */
-export function clearRuns(runs: readonly ResolvedRun[]): void {
+export function evictRunsForRefill(runs: readonly ResolvedRun[]): void {
   const entry = entryOf(runs);
   if (entry === undefined) return;
   const s = entry.listed;

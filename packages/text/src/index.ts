@@ -47,7 +47,7 @@ export {
 export {
   cachedLayoutRuns,
   evictRuns,
-  clearRuns,
+  evictRunsForRefill,
   LAYOUT_CACHE_VARIANT_LIMIT,
   LAYOUT_CACHE_STRUCTURAL_LIMIT,
 } from './layout/layoutCache';
