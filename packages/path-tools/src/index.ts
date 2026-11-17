@@ -68,7 +68,7 @@ export { deleteSelectedMark, editTargetOf, markUnder } from './pathEdit/pathEdit
 // ─── Path commands and outlines ────────────────────────────────────────────
 export { createJoinPathsAction, planJoin, type JoinPlan } from './pathCommands/cutJoin';
 export { DEFAULT_SIMPLIFY_TOLERANCE, OFFSET_PATH_PARAMS, SIMPLIFY_PATH_PARAMS } from './pathCommands/simplifyOffset';
-export { livePathEdit, type LivePathEditSpec } from './pathCommands/livePathEdit';
+export { createLivePathEditAction, type LivePathEditSpec } from './pathCommands/livePathEdit';
 export {
   applyCreateOutlines, type CreateOutlinesAdapter, type CreateOutlinesResult, type OutlinePathSpec,
 } from './outlines/createOutlines';

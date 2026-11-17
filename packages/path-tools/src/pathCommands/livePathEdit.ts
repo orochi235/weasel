@@ -40,10 +40,10 @@ function sameParams(a: object, b: object): boolean {
  * entry, and canceling leaves the scene untouched. A commit is the last
  * operation, which its handle replays from the paths as they were at the start.
  */
-export function livePathEdit<P = Record<string, unknown>>(spec: LivePathEditSpec<P>): Action {
+export function createLivePathEditAction<P = Record<string, unknown>>(spec: LivePathEditSpec<P>): Action {
   const leaf = getOwn(spec.params.children, spec.param) as PrefNumber | undefined;
   if (leaf?.kind !== 'number' || typeof leaf.default !== 'number') {
-    throw new Error(`livePathEdit: "${spec.id}" has no number leaf "${spec.param}" with a default in its params`);
+    throw new Error(`createLivePathEditAction: "${spec.id}" has no number leaf "${spec.param}" with a default in its params`);
   }
   const initial = leaf.default;
   return defineAction<string, P>({
