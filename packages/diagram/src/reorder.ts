@@ -95,7 +95,7 @@ const END_GAP = 24;
  * each pair, its bar spanning both across the axis, and one beyond each end,
  * as far out as the nearest interior gap's half, or `END_GAP / 2` with none.
  */
-export function sequenceSlots(axis: 'x' | 'y', items: readonly ReorderItem[]): ReorderSlots {
+export function slotsAlong(axis: 'x' | 'y', items: readonly ReorderItem[]): ReorderSlots {
   const [along, across, size, depth] = axis === 'x' ? ['x', 'y', 'width', 'height'] as const : ['y', 'x', 'height', 'width'] as const;
   const lo = (b: Rect) => b[along];
   const hi = (b: Rect) => b[along] + b[size];

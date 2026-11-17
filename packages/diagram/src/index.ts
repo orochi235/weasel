@@ -131,7 +131,7 @@ export {
   reconnectBinding,
 } from './reconnect';
 export type { EndChange, ReconnectOptions } from './reconnect';
-export { REORDER_ACTION_ID, createReorderAction, reorderBinding, reorderContribution, createReorderPreset, sequenceSlots } from './reorder';
+export { REORDER_ACTION_ID, createReorderAction, reorderBinding, reorderContribution, createReorderPreset, slotsAlong } from './reorder';
 export type { ReorderGap, ReorderItem, ReorderMove, ReorderOptions, ReorderSlots } from './reorder';
 export {
   STEP_REORDER_ACTION_ID, createStepReorderAction, groupReorderContribution, createGroupReorderPreset, groupReorderSlots,

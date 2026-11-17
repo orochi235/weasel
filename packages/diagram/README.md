@@ -1429,7 +1429,7 @@ given chain could disagree with the wiring.
 The drag itself is general: `createReorderAction` (in `@weasel-js/diagram`)
 carries one item of any drawn sequence along its axis, and the item lands in
 the gap nearest its middle. Give it `slots`, the items and gaps that
-`sequenceSlots(axis, items)` builds from their boxes, and a `commit` that hears
+`slotsAlong(axis, items)` builds from their boxes, and a `commit` that hears
 `{ id, from, to, order }`. `show: 'bar'` (the default) draws the insertion bar;
 `show: 'slide'` slides the other items into the places they would take instead,
 moving each item's `carries` as pose overrides, which is how `onReorder` shows a
