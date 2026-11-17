@@ -3,7 +3,7 @@ import {
   type CommandPaint, type CommandStroke, dashPattern, dashPhase, isSolidPaint, type Stroke,
 } from '@weasel-js/paint';
 import { markerDrawCommands, resolveStrokeLengths } from '@weasel-js/renderer';
-import { dashLength, insetPath, strokeInsets, strokeToPath, trimmedPath, trimmedRuns } from '@weasel-js/stroke';
+import { dashRunLength, insetPath, strokeInsets, strokeToPath, trimmedPath, trimmedRuns } from '@weasel-js/stroke';
 import { solidColor } from './color';
 import { type DrawState, type PageCtx, skip, writeCommands } from './drawCommands';
 import { num } from './num';
@@ -20,7 +20,7 @@ export function isNative(stroke: CommandStroke): boolean {
 
 /**
  * The line style operators for a native stroke; the caller sets its color.
- * `length` is the stroked path's, from `dashLength`, so a dash too fine for
+ * `length` is the stroked path's, from `dashRunLength`, so a dash too fine for
  * it goes solid here as it does in the renderer.
  */
 export function strokeStyleOps(ctx: PageCtx, stroke: CommandStroke, width: number, length?: number, phase = 0): void {
@@ -63,7 +63,7 @@ function writeNative(ctx: PageCtx, path: Path, stroke: CommandStroke, state: Dra
   out.op('gs', `/${ctx.resources.extGState(alpha, alpha)}`);
   out.op('RG', ...rgb);
   // The untrimmed length decides a dash too fine to draw, as it does in the renderer.
-  const length = stroke.dash ? dashLength(path) : undefined;
+  const length = stroke.dash ? dashRunLength(path) : undefined;
   const insets = strokeInsets(stroke as Stroke, width);
   for (const run of trimmedRuns(cut, { dashed: stroke.dash !== undefined, byClosed: true })) {
     const shaft = run.fromClosed ? run.path : shaftOf(run.path, insets.start, insets.end);
