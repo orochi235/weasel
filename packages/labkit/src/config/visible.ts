@@ -184,7 +184,7 @@ export function conditionedLeaf(
  * walk that skips what is under a node not shown counts the nesting. `schema`
  * is that schema resolved, which a condition reads each leaf's `encoding` from.
  */
-export function isEntryShown(
+export function isConfigNodeShown(
   entry: ConfigEntry,
   config: Record<string, unknown>,
   schema: PrefGroup | PrefSection,

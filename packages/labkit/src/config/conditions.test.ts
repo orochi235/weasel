@@ -2,7 +2,7 @@ import type { PrefGroup, PrefLeaf } from '@weasel-js/prefs';
 import { describe, expect, it, vi } from 'vitest';
 import { f } from './builder';
 import { resolveConfigSchema } from './resolve';
-import { isEntryShown, isLeafEnabled, isLeafVisible } from './visible';
+import { isConfigNodeShown, isLeafEnabled, isLeafVisible } from './visible';
 
 const schema = () =>
   f.schema({
@@ -141,16 +141,16 @@ describe('isLeafVisible and isLeafEnabled', () => {
   });
 });
 
-describe('isEntryShown', () => {
+describe('isConfigNodeShown', () => {
   it("answers a node of a schema's own shape by its own showIf, in either form", () => {
     const { cellSize, seed, grid, showGrid } = schema().nodes;
     const { group } = resolveConfigSchema(schema(), []);
-    expect(isEntryShown(cellSize, { showGrid: true }, group)).toBe(true);
-    expect(isEntryShown(cellSize, { showGrid: false }, group)).toBe(false);
-    expect(isEntryShown(seed, { mode: 'row' }, group)).toBe(true);
-    expect(isEntryShown(seed, { mode: 'column' }, group)).toBe(false);
-    expect(isEntryShown(grid, { mode: 'column' }, group)).toBe(false);
-    expect(isEntryShown(showGrid, {}, group)).toBe(true);
+    expect(isConfigNodeShown(cellSize, { showGrid: true }, group)).toBe(true);
+    expect(isConfigNodeShown(cellSize, { showGrid: false }, group)).toBe(false);
+    expect(isConfigNodeShown(seed, { mode: 'row' }, group)).toBe(true);
+    expect(isConfigNodeShown(seed, { mode: 'column' }, group)).toBe(false);
+    expect(isConfigNodeShown(grid, { mode: 'column' }, group)).toBe(false);
+    expect(isConfigNodeShown(showGrid, {}, group)).toBe(true);
   });
 });
 

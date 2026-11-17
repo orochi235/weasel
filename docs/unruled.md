@@ -1141,7 +1141,7 @@ The snap pipeline ([snapping.md](./snapping.md)) landed on 2026-10-18 with these
   see the test page's default 414×896.
 - 2026-10-11: Diagram groups nest and their boxes take presses; the `orthogonal` router turns at
   once after a waypoint where it would double back. Audio has `onDrop`.
-- 2026-10-12: labkit's `isEntryShown` takes the resolved schema; `DragState` carries `from`; a
+- 2026-10-12: labkit's `isConfigNodeShown` takes the resolved schema; `DragState` carries `from`; a
   remote mark write rebuilds the store. `createScore` is new in audio.
 - 2026-10-13: The platformer's bed is engine voices, and `voiceLimit` went from 24 to 48.
 - 2026-10-13 (pass 6): labkit's `dist` inlines no `@weasel-js` package. `LabSwitcher` is a bare
