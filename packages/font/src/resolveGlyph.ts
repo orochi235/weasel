@@ -9,7 +9,7 @@ import { hasEmojiPresentation } from './emojiCluster';
 import type { FontStyle } from './fontStyle';
 import { glyphMetricsOf, usableGlyph, type GlyphMetrics } from './glyphMetrics';
 import { warnMissingGlyph } from './glyphWarnings';
-import { resolveGlyphFallback, type ResolveResult } from './registerFont';
+import { resolveCanvasFallback, type ResolveResult } from './registerFont';
 
 /** A code point's glyph, and the tier that ended up serving it. */
 export interface ResolvedGlyph {
@@ -70,7 +70,7 @@ export function resolveGlyph(
 ): ResolvedGlyph | null {
   const own = glyphIn(resolved, cp, into);
   if (own) return own;
-  const fallback = resolveGlyphFallback(family, weight, style);
+  const fallback = resolveCanvasFallback(family, weight, style);
   const escalated = fallback && glyphIn(fallback, cp, into);
   if (escalated) return escalated;
   if (warn) warnMissingGlyph(resolved.resolved.family, cp);
@@ -93,7 +93,7 @@ export function resolveColorCluster(
   cluster: string,
 ): ResolvedGlyph | null {
   if (!hasEmojiPresentation(cluster)) return null;
-  const tier = resolved.dynamicFace ? resolved : resolveGlyphFallback(family, weight, style);
+  const tier = resolved.dynamicFace ? resolved : resolveCanvasFallback(family, weight, style);
   const face = tier?.dynamicFace;
   const metrics = tier && glyphMetricsOf(tier);
   const glyph = face?.requestCluster(cluster);

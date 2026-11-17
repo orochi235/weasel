@@ -569,7 +569,7 @@ export function cachedFontVariant(family: string, weight: number, style: FontSty
  * policy `'none'`, which documents a miss as a *hard* miss, or with no canvas
  * to rasterize into (SSR, a jsdom test without one).
  */
-export function resolveGlyphFallback(
+export function resolveCanvasFallback(
   family: string,
   weight: number,
   style: FontStyle,

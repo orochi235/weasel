@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import {
-  registerFont, getAtlasFont, resolveFontVariant, resolveGlyphFallback, listAtlasFonts, listFontWeights,
+  registerFont, getAtlasFont, resolveFontVariant, resolveCanvasFallback, listAtlasFonts, listFontWeights,
   fontRegistry, isFontPending, warmFonts,
   _resetFontRegistryForTests,
 } from './registerFont';
@@ -419,7 +419,7 @@ describe('listAtlasFonts', () => {
   });
 });
 
-describe('resolveGlyphFallback', () => {
+describe('resolveCanvasFallback', () => {
   beforeEach(() => {
     _resetFontRegistryForTests();
     _resetDynamicFontsForTests();
@@ -438,7 +438,7 @@ describe('resolveGlyphFallback', () => {
 
   it('serves the codepoint from the dynamic tier', () => {
     stubRasterizer();
-    const out = resolveGlyphFallback('Inter', 400, 'normal');
+    const out = resolveCanvasFallback('Inter', 400, 'normal');
     expect(out).not.toBeNull();
     expect(out!.source).toBe('canvas');
     expect(out!.dynamicFace).toBeDefined();
@@ -448,7 +448,7 @@ describe('resolveGlyphFallback', () => {
 
   it('reports the real weight and style, so nothing is synthesized', () => {
     stubRasterizer();
-    const out = resolveGlyphFallback('Inter', 700, 'italic');
+    const out = resolveCanvasFallback('Inter', 700, 'italic');
     expect(out!.resolved).toEqual({ family: 'Inter', weight: 700, style: 'italic' });
     expect(out!.synthetic).toEqual({ bold: false, italic: false });
   });
@@ -456,7 +456,7 @@ describe('resolveGlyphFallback', () => {
   it('declines under the "none" policy, which documents a hard miss', () => {
     stubRasterizer();
     setFontFallbackPolicy('none');
-    expect(resolveGlyphFallback('Inter', 400, 'normal')).toBeNull();
+    expect(resolveCanvasFallback('Inter', 400, 'normal')).toBeNull();
   });
 
   it('declines rather than throwing when the rasterizer cannot serve', () => {
@@ -469,14 +469,14 @@ describe('resolveGlyphFallback', () => {
       rasterize: () => { throw new Error('no canvas'); },
     });
     // Escalation is a nicety; it must not take the layout pass down with it.
-    expect(() => resolveGlyphFallback('Inter', 400, 'normal')).not.toThrow();
-    expect(resolveGlyphFallback('Inter', 400, 'normal')).toBeNull();
+    expect(() => resolveCanvasFallback('Inter', 400, 'normal')).not.toThrow();
+    expect(resolveCanvasFallback('Inter', 400, 'normal')).toBeNull();
   });
 
   it('caches the face across calls', () => {
     stubRasterizer();
-    const a = resolveGlyphFallback('Inter', 400, 'normal');
-    const b = resolveGlyphFallback('Inter', 400, 'normal');
+    const a = resolveCanvasFallback('Inter', 400, 'normal');
+    const b = resolveCanvasFallback('Inter', 400, 'normal');
     expect(a!.dynamicFace).toBe(b!.dynamicFace);
   });
 });

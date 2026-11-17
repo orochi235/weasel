@@ -17,7 +17,7 @@ export {
   textureCacheKey,
   resolveFontVariant,
   cachedFontVariant,
-  resolveGlyphFallback,
+  resolveCanvasFallback,
   listAtlasFonts,
   listFontWeights,
   fontRegistry,
