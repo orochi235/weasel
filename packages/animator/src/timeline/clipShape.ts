@@ -40,6 +40,7 @@ function sampled(track: Raw, where: string): void {
     const at = `${where}'s key ${i}`;
     need(isRaw(key), at, 'is not an object');
     need(typeof (key as Raw).t === 'number', `${at}'s t`, 'is not a number');
+    need((key as Raw).value !== undefined, at, 'has no value');
     easing((key as Raw).easing, `${at}'s easing`);
   });
 }
