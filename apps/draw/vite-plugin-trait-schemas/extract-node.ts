@@ -6,7 +6,6 @@ import {
   Node,
   type Project,
   type InterfaceDeclaration,
-  type PropertySignature,
   type SourceFile,
   SyntaxKind,
 } from 'ts-morph';
@@ -16,7 +15,7 @@ import type {
   SceneNodeVariant,
   PropertyDescriptor,
 } from '../src/dev/traitSchemas.types.ts';
-import { srcRef, sourceFileOrThrow, readJsDoc } from './extract.ts';
+import { srcRef, sourceFileOrThrow, propertiesOfTypeNode } from './extract.ts';
 
 const VARIANT_NAMES: readonly string[] = ['MarkNode', 'GroupNode'];
 const BASE_NAME = 'NodeBase';
@@ -30,7 +29,7 @@ export function extractNode(project: Project, repoRoot: string): SceneNodeSchema
   );
 
   const base = exportedInterface(sf, BASE_NAME);
-  const baseProps = base ? propertiesOfInterface(base) : [];
+  const baseProps = base ? propertiesOfTypeNode(base) : [];
 
   const variants: SceneNodeVariant[] = [];
   const kinds: string[] = [];
@@ -38,7 +37,7 @@ export function extractNode(project: Project, repoRoot: string): SceneNodeSchema
     const iface = exportedInterface(sf, name);
     if (!iface) continue;
 
-    const ownProps = propertiesOfInterface(iface);
+    const ownProps = propertiesOfTypeNode(iface);
     // Base properties first, then variant-specific. Drop any duplicate
     // by name (variant override wins).
     const ownNames = new Set(ownProps.map((p) => p.name));
@@ -61,22 +60,6 @@ export function extractNode(project: Project, repoRoot: string): SceneNodeSchema
 /** The interface `sf` exports as `name`, followed through re-exports to the file that declares it. */
 function exportedInterface(sf: SourceFile, name: string): InterfaceDeclaration | undefined {
   return sf.getExportedDeclarations().get(name)?.find(Node.isInterfaceDeclaration);
-}
-
-function propertiesOfInterface(iface: InterfaceDeclaration): readonly PropertyDescriptor[] {
-  const out: PropertyDescriptor[] = [];
-  for (const member of iface.getMembers()) {
-    if (member.getKind() !== SyntaxKind.PropertySignature) continue;
-    const ps = member as PropertySignature;
-    const typeNode = ps.getTypeNode();
-    out.push({
-      name: ps.getName(),
-      type: typeNode ? typeNode.getText() : 'unknown',
-      optional: ps.hasQuestionToken(),
-      doc: readJsDoc(ps),
-    });
-  }
-  return out;
 }
 
 /** The `kind` property's string-literal value (e.g. `'mark'`), or undefined

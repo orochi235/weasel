@@ -1,8 +1,10 @@
 // @vitest-environment node
 import { beforeAll, describe, expect, it } from 'vitest';
 import { resolve } from 'node:path';
+import { Project } from 'ts-morph';
 import type { TraitSchemaIndex } from '../src/dev/traitSchemas.types.ts';
 import { extractTraitSchemas } from './extract.ts';
+import { extractOps } from './extract-ops.ts';
 
 const repoRoot = resolve(import.meta.dirname, '../../..');
 let index: TraitSchemaIndex;
@@ -32,4 +34,17 @@ describe('extractOps', () => {
     expect(index.ops.createSetHiddenOp?.params.map((p) => p.name)).toContain('id');
   });
 
+  it('reads the params of an args type written as a type alias', () => {
+    const project = new Project({ useInMemoryFileSystem: true });
+    project.createSourceFile('/repo/packages/core/src/core/ops/index.ts', "export { createFooOp } from './foo';\n");
+    project.createSourceFile('/repo/packages/core/src/core/ops/foo.ts', [
+      'export type FooArgs = { id: string; label?: string };',
+      'export function createFooOp(args: FooArgs): unknown { return args; }',
+    ].join('\n'));
+    const ops = extractOps(project, '/repo');
+    expect(ops.createFooOp?.params).toEqual([
+      expect.objectContaining({ name: 'id', type: 'string', optional: false }),
+      expect.objectContaining({ name: 'label', type: 'string', optional: true }),
+    ]);
+  });
 });

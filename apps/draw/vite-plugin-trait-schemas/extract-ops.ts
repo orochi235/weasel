@@ -7,7 +7,6 @@
  */
 import {
   Node,
-  SyntaxKind,
   type Project,
   type FunctionDeclaration,
 } from 'ts-morph';
@@ -56,8 +55,7 @@ function paramsOf(fn: FunctionDeclaration): readonly PropertyDescriptor[] {
     if (Node.isInterfaceDeclaration(decl)) return propertiesOfTypeNode(decl);
     if (Node.isTypeAliasDeclaration(decl)) {
       const aliased = decl.getTypeNode();
-      if (!aliased || !Node.isTypeLiteral(aliased)) return [];
-      return aliased.getChildrenOfKind(SyntaxKind.PropertySignature).map((m) => propertiesOfTypeNode(m)[0]!);
+      return aliased && Node.isTypeLiteral(aliased) ? propertiesOfTypeNode(aliased) : [];
     }
   }
   return [];
