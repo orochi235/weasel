@@ -109,7 +109,7 @@ export function writtenPage(doc: DiagramDocument, opts: WriteOptions = {}): Docu
 }
 
 /** `page` as a graph, for a format that writes graphs only. Throws on a page of any other kind. */
-export function graphPageOf(page: DocumentPage, format: string): GraphPage {
+export function requireGraphPage(page: DocumentPage, format: string): GraphPage {
   if (page.kind !== 'graph') throw new Error(`${format} writes graph pages only; this page holds a ${(page as DocumentPage).kind}`);
   return page;
 }
