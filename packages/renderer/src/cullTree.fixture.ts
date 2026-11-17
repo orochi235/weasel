@@ -4,10 +4,9 @@
  */
 import fc from 'fast-check';
 import { expect } from 'vitest';
-import { mat3, type GlMat3 } from '@weasel-js/geom';
+import { mat3, type GlMat3, type Rect } from '@weasel-js/geom';
 import { getMesh } from './cache/cache';
 import { strokeMesh } from './cache/strokeMeshCache';
-import type { CullRect } from './cullDrawCommands';
 import type { DrawCommand, GroupDrawCommand } from './DrawCommand';
 import { pathBox, type ScreenBox } from './paintedBounds';
 import { resolveStrokeLengths, type StrokedPathCommand } from './strokeLengths';
@@ -76,7 +75,7 @@ export const tree = rawTree.map((cmds) => {
   return tag(cmds);
 });
 
-export const view: fc.Arbitrary<CullRect> = fc.record({
+export const view: fc.Arbitrary<Rect> = fc.record({
   x: spread(-400, 200), y: spread(-400, 200),
   width: fc.oneof({ weight: 1, arbitrary: fc.constant(0) }, { weight: 4, arbitrary: spread(0, 600) }),
   height: fc.oneof({ weight: 1, arbitrary: fc.constant(0) }, { weight: 4, arbitrary: spread(0, 600) }),
@@ -84,7 +83,7 @@ export const view: fc.Arbitrary<CullRect> = fc.record({
 
 /** Screen points `cmd` paints under `m`: the fill's or ribbon's vertices, an image's corners, and for a shader, which
  *  may paint anywhere, the view's center. */
-function painted(cmd: DrawCommand, m: GlMat3, rect: CullRect): Pt[] {
+function painted(cmd: DrawCommand, m: GlMat3, rect: Rect): Pt[] {
   if (cmd.kind === 'shader') return [{ x: rect.x + rect.width / 2, y: rect.y + rect.height / 2 }];
   let pts: Pt[] = [];
   if (cmd.kind === 'path') {
@@ -111,7 +110,7 @@ const inBox = (p: Pt, b: ScreenBox, grow = 0): boolean =>
  * than the truth, never more.
  */
 function paintsInside(
-  cmd: DrawCommand, m: GlMat3, rect: CullRect, dpr: number, clips: ScreenBox[] = [], grow = 0, outer: ScreenBox[] = [],
+  cmd: DrawCommand, m: GlMat3, rect: Rect, dpr: number, clips: ScreenBox[] = [], grow = 0, outer: ScreenBox[] = [],
 ): boolean {
   if (cmd.kind === 'group') {
     const inner = cmd.transform ? mat3.multiply(m, cmd.transform) : m;
@@ -134,7 +133,7 @@ function paintsInside(
 
 /** Check `out` is `cmds` with commands dropped and none reordered or changed, and that every command painting into
  *  `rect` stayed. */
-export function checkCull(cmds: readonly DrawCommand[], out: readonly DrawCommand[], m: GlMat3, rect: CullRect, dpr: number,
+export function checkCull(cmds: readonly DrawCommand[], out: readonly DrawCommand[], m: GlMat3, rect: Rect, dpr: number,
   t: ReturnType<typeof tally>): void {
   let j = 0;
   for (const cmd of cmds) {

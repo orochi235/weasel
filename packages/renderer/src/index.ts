@@ -9,7 +9,6 @@
  */
 
 export { WeaselRenderer } from './WeaselRenderer';
-export type { PixelRect } from './readPixels';
 export {
   type WeaselRendererOptions, type RenderTarget,
   type RenderOptions, type RenderSpan, type RenderSpanStats, type RenderStats, type RetainedStats,
@@ -38,7 +37,7 @@ export type { CommandFill, CommandPaint, CommandStroke, CommandPaintUnits, Posed
 export { SPRITE_STRIDE } from './DrawCommand';
 export { frameRect, type SpriteSheet } from './spriteSheet';
 export { mat3, viewToMat3, type GlMat3, type View } from '@weasel-js/geom';
-export { cullDrawCommands, type CullRect } from './cullDrawCommands';
+export { cullDrawCommands } from './cullDrawCommands';
 export { commandsBounds } from './retain/contentBounds';
 export { tessellate, type TessellateOptions } from '@weasel-js/geom/tessellate';
 export { tessellateStroke, type StrokeOptions } from '@weasel-js/stroke';
