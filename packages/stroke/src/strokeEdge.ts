@@ -14,7 +14,7 @@ import { populateWidths } from './tessellate/vertexWidths';
 /** One side of a stroke's ribbon, as `VertexWidth` names them. */
 export type StrokeSide = 'left' | 'right';
 
-/** A stroke's edge nearest a point, as {@link strokeEdgeNear} finds it. */
+/** A stroke's edge nearest a point, as {@link nearestStrokeEdge} finds it. */
 export interface StrokeEdgeHit {
   /** The point on the path's flattening the edge is measured from. */
   x: number;
@@ -36,7 +36,7 @@ export interface StrokeEdgeHit {
   factor: number;
 }
 
-/** Options for {@link strokeEdgeNear}. */
+/** Options for {@link nearestStrokeEdge}. */
 export interface StrokeEdgeOptions {
   /** Screen pixels per world unit, for a `{ px }` width. Default 1. */
   scale?: number;
@@ -53,7 +53,7 @@ export interface StrokeEdgeOptions {
  * markers are not considered. `null` when the path has no segment of any length,
  * or the stroke has no width, which draws nothing whatever its per-vertex widths.
  */
-export function strokeEdgeNear(
+export function nearestStrokeEdge(
   path: Path, stroke: Stroke, x: number, y: number, opts: StrokeEdgeOptions = {},
 ): StrokeEdgeHit | null {
   const width = resolveScreenLength(stroke.width ?? 1, opts.scale ?? 1);
@@ -61,7 +61,7 @@ export function strokeEdgeNear(
   // The flattening is in the path's offsets from its origin; the point and the hit are not.
   if (path.kind === 'polygon' && path.origin) {
     const { origin: { x: ox, y: oy }, ...offsets } = path;
-    const hit = strokeEdgeNear(offsets, stroke, x - ox, y - oy, opts);
+    const hit = nearestStrokeEdge(offsets, stroke, x - ox, y - oy, opts);
     return hit && { ...hit, x: hit.x + ox, y: hit.y + oy };
   }
   const vw = stroke.vertexWidths && stroke.vertexWidths.length > 0 ? stroke.vertexWidths : null;
