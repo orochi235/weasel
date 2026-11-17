@@ -28,7 +28,7 @@ import { holdPins } from './pins';
 import { turnOutward } from './inward';
 import { boxReach } from './reach';
 import { placeAcross } from './place';
-import { ranksByLength } from './rank';
+import { simplexRanks } from './rank';
 import { settlePlaces } from './places';
 import { layeredPorts } from '../route';
 
@@ -94,7 +94,7 @@ function planOnce(graph: Graph, opts: LayoutOptions = {}): LayeredPlan {
   const finding = opts.order === 'barycenter';
 
   const back = backEdges(graph);
-  const ranks = ranksByLength(graph, back);
+  const ranks = simplexRanks(graph, back);
   const expanded = expand(graph, ranks, back, { axes, nodeGap });
   let rows = finding ? orderRows(expanded.rows, expanded.hops, { groups: graph.groups ?? [] }) : expanded.rows;
 

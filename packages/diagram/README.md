@@ -660,7 +660,7 @@ it; `layeredPlan` names it in `unheld`.
 relaxation seeded from the current positions, so re-running it keeps relaxing.
 
 `layered` turns around any edge that closes a cycle, then gives each node a
-rank that keeps the total edge length as short as it can (`ranksByLength`,
+rank that keeps the total edge length as short as it can (`simplexRanks`,
 network simplex), so a node with no inputs sits beside what it feeds rather
 than in the first rank. A group's members share one rank wherever the edges
 between them allow it, and a group's box closes any stretch none of its members
@@ -678,7 +678,7 @@ with several places is read at the one nearest where the wire's other end
 falls among the node's wires on that side. `layeredPlan(graph, opts)`, also reachable as `layered.plan`,
 answers with the moves plus each node's rank, each spanning edge's waypoints
 and where among them each label's room is, for drawing those edges where their
-room was left. `ranksOf` is the plain longest-path ranking, which `chain` uses.
+room was left. `longestPathRanks` is the plain longest-path ranking, which `chain` uses.
 
 On a live scene the layout action and a live `layered` run write those routes
 too, in the same undo entry as the moves: each long edge gets its waypoints,

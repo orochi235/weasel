@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { backEdges, ranksOf } from './layered';
+import { backEdges, longestPathRanks } from './layered';
 import { graphOf, type Box } from './layoutFixture';
 import { radial } from './radial';
 import { tree } from './tree';
@@ -25,7 +25,7 @@ describe('a chain deeper than the call stack', () => {
     const { ids, graph } = chainOf(200_000);
     const back = backEdges(graph);
     expect(back.size).toBe(0);
-    expect(ranksOf(graph, back).get(ids.at(-1)!)).toBe(ids.length - 1);
+    expect(longestPathRanks(graph, back).get(ids.at(-1)!)).toBe(ids.length - 1);
   });
 
   it('breaks the one cycle a closing edge makes', () => {

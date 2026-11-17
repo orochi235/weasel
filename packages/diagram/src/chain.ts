@@ -11,7 +11,7 @@ import { maxOf } from '@weasel-js/geom';
 import { groupHanging, levelGaps, lineGaps } from './chainGroups';
 import { inPortOrder, SIDE_TRACK_GAP, sideRoutes, tracksNeeded, type Hanging } from './chainRoutes';
 import type { Graph, GraphNode } from './graph';
-import { backEdges, ranksOf } from './layered';
+import { backEdges, longestPathRanks } from './layered';
 import {
   DEFAULT_NODE_GAP,
   DEFAULT_RANK_GAP,
@@ -37,7 +37,7 @@ function lineOf(graph: Graph, ids: readonly string[] | undefined): GraphNode[] {
   });
   if (given.length > 0) return given;
   const back = backEdges(graph);
-  const ranks = ranksOf(graph, back);
+  const ranks = longestPathRanks(graph, back);
   let end: GraphNode | undefined;
   for (const node of graph.nodes) {
     if (end === undefined || ranks.get(node.id)! > ranks.get(end.id)!) end = node;

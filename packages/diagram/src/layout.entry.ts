@@ -55,7 +55,7 @@ export { placeLabels } from './labels/place';
 export type { LabelPlacements, PlaceLabel, PlaceLabelsInput, PlaceLabelsOptions, PlaceRoute } from './labels/place';
 export { labelCenter } from './labels/station';
 export type { DiagramLabel, LabelSpot } from './labelTrait';
-export { backEdges, layered, layeredPlan, ranksByLength, ranksOf, type LayeredPlan } from './layered';
+export { backEdges, layered, layeredPlan, simplexRanks, longestPathRanks, type LayeredPlan } from './layered';
 export type {
   LayoutAxes,
   LayoutDirection,
