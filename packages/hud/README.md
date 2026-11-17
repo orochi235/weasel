@@ -28,7 +28,7 @@ function Editor({ scene }) {
 
   useEffect(() => {
     const save = hud.button({ id: 'save', x: 12, y: 12, w: 96, h: 32, label: 'Save' });
-    save.on('press', () => console.log('saved'));
+    save.subscribe('press', () => console.log('saved'));
     return () => save.dispose();
   }, [hud]);
 

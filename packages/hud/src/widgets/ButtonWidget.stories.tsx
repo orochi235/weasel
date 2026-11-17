@@ -30,7 +30,7 @@ function ButtonWidget({ label, size, width }: ButtonWidgetArgs) {
     const { height } = hudButton.measure({ label, size, press: IDLE_PRESS }, fixedWidth(width), env);
     const b = hud.button({ id: 'b', x: 16, y: 16, w: width, h: height, label, size });
     const onPress = () => setPresses((n) => n + 1);
-    b.on('press', onPress);
+    b.subscribe('press', onPress);
     return () => b.dispose();
   }, [hud, label, size, width, tokens]);
 

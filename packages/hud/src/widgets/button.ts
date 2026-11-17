@@ -50,8 +50,8 @@ export interface ButtonWidget extends Widget {
   setLabel(label: string): void;
   setBounds(b: WidgetBounds): void;
   setHidden(hidden: boolean): void;
-  on(event: ButtonEvent, handler: ButtonHandler): void;
-  off(event: ButtonEvent, handler: ButtonHandler): void;
+  /** Report `event` to `handler`. Returns the unsubscribe. */
+  subscribe(event: ButtonEvent, handler: ButtonHandler): () => void;
   dispose(): void;
 }
 
@@ -132,7 +132,7 @@ export function createButton(opts: ButtonOptions): ButtonWidget {
 
   // Each report goes to the listeners held as it starts, and one that throws leaves the rest heard.
   const reports: Record<ButtonEvent, Emitter> = { press: createEmitter(), hover: createEmitter(), leave: createEmitter() };
-  const offs: Record<ButtonEvent, Map<ButtonHandler, () => void>> = { press: new Map(), hover: new Map(), leave: new Map() };
+  const offs = new Set<() => void>();
   const emit = (e: ButtonEvent) => { reports[e].emit(); };
 
   const isInside = (x: number, y: number) =>
@@ -159,8 +159,13 @@ export function createButton(opts: ButtonOptions): ButtonWidget {
     setBounds(b) { assertNotDisposed(); bounds = { ...b }; rev.changed(); },
     setHidden(h) { assertNotDisposed(); hidden = h; rev.changed(); },
     setLabel(l) { assertNotDisposed(); label = l; rev.changed(); },
-    on(event, handler) { assertNotDisposed(); offs[event].set(handler, reports[event].subscribe(handler)); },
-    off(event, handler) { assertNotDisposed(); offs[event].get(handler)?.(); offs[event].delete(handler); },
+    subscribe(event, handler) {
+      assertNotDisposed();
+      const unsubscribe = reports[event].subscribe(handler);
+      const off = () => { unsubscribe(); offs.delete(off); };
+      offs.add(off);
+      return off;
+    },
     draw(ctx: HudDrawCtx): DrawCommand[] {
       return hudButton.draw({ label, size: opts.size, press }, {
         bounds, ctx, fill: opts.fill, hoverFill: opts.hoverFill, pressedFill: opts.pressedFill,
@@ -191,7 +196,7 @@ export function createButton(opts: ButtonOptions): ButtonWidget {
       if (disposed) return;
       disposed = true;
       opts.removeFromHud?.();
-      for (const held of Object.values(offs)) { for (const off of held.values()) off(); held.clear(); }
+      for (const off of [...offs]) off();
     },
   };
 }

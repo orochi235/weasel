@@ -9,8 +9,8 @@ describe('createButton, shrunk', () => {
     const errors = vi.spyOn(console, 'error').mockImplementation(() => {});
     const b = createButton({ id: 'b', x: 0, y: 0, w: 80, h: 24, label: 'Go' });
     const after = vi.fn();
-    b.on('press', () => { throw new Error('listener'); });
-    b.on('press', after);
+    b.subscribe('press', () => { throw new Error('listener'); });
+    b.subscribe('press', after);
     expect(b.onKey!(key)).toBe(true);
     expect(after).toHaveBeenCalledTimes(1);
     errors.mockRestore();
@@ -19,7 +19,7 @@ describe('createButton, shrunk', () => {
   it('marks its frame stale on a release when a press listener throws', () => {
     const errors = vi.spyOn(console, 'error').mockImplementation(() => {});
     const b = createButton({ id: 'b', x: 0, y: 0, w: 80, h: 24, label: 'Go' });
-    b.on('press', () => { throw new Error('listener'); });
+    b.subscribe('press', () => { throw new Error('listener'); });
     b.onPointer({ type: 'down', x: 5, y: 5, native: null });
     const deps = b.deps!({} as never);
     b.onPointer({ type: 'up', x: 5, y: 5, native: null });
@@ -30,8 +30,9 @@ describe('createButton, shrunk', () => {
   it('reports once to a listener that takes itself off and puts itself back while it is heard', () => {
     const b = createButton({ id: 'b', x: 0, y: 0, w: 80, h: 24, label: 'Go' });
     let heard = 0;
-    const h = () => { heard++; if (heard > 10) return; b.off('press', h); b.on('press', h); };
-    b.on('press', h);
+    let off = (): void => {};
+    const h = () => { heard++; if (heard > 10) return; off(); off = b.subscribe('press', h); };
+    off = b.subscribe('press', h);
     b.onKey!(key);
     expect(heard).toBe(1);
   });
@@ -39,7 +40,7 @@ describe('createButton, shrunk', () => {
   it('does not report to a listener added while a report is under way', () => {
     const b = createButton({ id: 'b', x: 0, y: 0, w: 80, h: 24, label: 'Go' });
     const late = vi.fn();
-    b.on('press', () => { b.on('press', late); });
+    b.subscribe('press', () => { b.subscribe('press', late); });
     b.onKey!(key);
     expect(late).not.toHaveBeenCalled();
     b.onKey!(key);
