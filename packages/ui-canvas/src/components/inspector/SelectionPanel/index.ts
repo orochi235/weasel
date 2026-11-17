@@ -1,2 +1,2 @@
 export { SelectionPanel, type SelectionPanelProps } from './SelectionPanel';
-export { aggregateValue, nodeValueAt, type AnyNode } from './nodeModel';
+export { sharedNodeValue, nodeValueAt, type AnyNode } from './nodeModel';

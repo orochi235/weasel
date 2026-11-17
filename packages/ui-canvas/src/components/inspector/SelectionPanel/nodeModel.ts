@@ -24,9 +24,9 @@ export function nodeValueAt(node: AnyNode, path: string): unknown {
   return cursor;
 }
 
-/** Aggregate a path across nodes: the shared value, or `MIXED`. A node
+/** A path's value shared across nodes, or `MIXED`. A node
  *  holding nothing there reads as `absent`. */
-export function aggregateValue(
+export function sharedNodeValue(
   nodes: readonly AnyNode[],
   path: string,
   absent?: unknown,

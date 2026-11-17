@@ -3,7 +3,7 @@ import { groupNodeRouting, routeKind, type NodePropertiesEntry, type NodeRouting
 import { styleAtRange } from '@weasel-js/text';
 import type { PrefPair } from '@weasel-js/prefs';
 import { MIXED, effectiveSections, isPanelSection, kindBreakdown, panelRowsOf, setAtPath } from '@weasel-js/ui/components/PanelCells';
-import { aggregateValue, nodeValueAt, type AnyNode } from './nodeModel';
+import { sharedNodeValue, nodeValueAt, type AnyNode } from './nodeModel';
 
 const routing: NodeRoutingEntry[] = [
   { name: 'rect', matches: (d) => (d as { kind?: string })?.kind === 'rect' },
@@ -110,38 +110,38 @@ describe('effectiveSections', () => {
   });
 });
 
-describe('aggregateValue', () => {
+describe('sharedNodeValue', () => {
   it('returns the shared value, MIXED on divergence, and reads pose/data roots', () => {
     const a = leaf('a', { kind: 'rect', fill: '#f00' }, { x: 5, y: 1 });
     const b = leaf('b', { kind: 'rect', fill: '#f00' }, { x: 9, y: 1 });
-    expect(aggregateValue([a, b], 'data.fill')).toBe('#f00');
-    expect(aggregateValue([a, b], 'pose.x')).toBe(MIXED);
-    expect(aggregateValue([a, b], 'pose.y')).toBe(1);
+    expect(sharedNodeValue([a, b], 'data.fill')).toBe('#f00');
+    expect(sharedNodeValue([a, b], 'pose.x')).toBe(MIXED);
+    expect(sharedNodeValue([a, b], 'pose.y')).toBe(1);
   });
 
   it('treats missing values as a divergence when only some nodes have them', () => {
     const a = leaf('a', { kind: 'rect', fill: '#f00' });
     const b = leaf('b', { kind: 'rect' });
-    expect(aggregateValue([a, b], 'data.fill')).toBe(MIXED);
-    expect(aggregateValue([b], 'data.fill')).toBeUndefined();
+    expect(sharedNodeValue([a, b], 'data.fill')).toBe(MIXED);
+    expect(sharedNodeValue([b], 'data.fill')).toBeUndefined();
   });
 
   it('reads equal objects and arrays held separately as one value', () => {
     const a = leaf('a', { kind: 'rect', fill: { kind: 'solid', color: '#f00' }, dash: [4, 2] });
     const b = leaf('b', { kind: 'rect', fill: { kind: 'solid', color: '#f00' }, dash: [4, 2] });
-    expect(aggregateValue([a, b], 'data.fill')).toEqual({ kind: 'solid', color: '#f00' });
-    expect(aggregateValue([a, b], 'data.dash')).toEqual([4, 2]);
+    expect(sharedNodeValue([a, b], 'data.fill')).toEqual({ kind: 'solid', color: '#f00' });
+    expect(sharedNodeValue([a, b], 'data.dash')).toEqual([4, 2]);
   });
 
   it('still reports objects and arrays that differ anywhere as MIXED', () => {
     const a = leaf('a', { kind: 'rect', fill: { kind: 'solid', color: '#f00' }, dash: [4, 2], stops: [{ at: 0 }] });
     const b = leaf('b', { kind: 'rect', fill: { kind: 'solid', color: '#0f0' }, dash: [4, 2, 1], stops: [{ at: 1 }] });
-    expect(aggregateValue([a, b], 'data.fill')).toBe(MIXED);
-    expect(aggregateValue([a, b], 'data.dash')).toBe(MIXED);
-    expect(aggregateValue([a, b], 'data.stops')).toBe(MIXED);
+    expect(sharedNodeValue([a, b], 'data.fill')).toBe(MIXED);
+    expect(sharedNodeValue([a, b], 'data.dash')).toBe(MIXED);
+    expect(sharedNodeValue([a, b], 'data.stops')).toBe(MIXED);
     const list = leaf('c', { kind: 'rect', fill: ['solid'] });
     const record = leaf('d', { kind: 'rect', fill: { 0: 'solid' } });
-    expect(aggregateValue([list, record], 'data.fill')).toBe(MIXED);
+    expect(sharedNodeValue([list, record], 'data.fill')).toBe(MIXED);
   });
 
   it('is the same sentinel a core RangeStyle reports for a mixed range — one MIXED, not two', () => {
@@ -183,7 +183,7 @@ describe('nested node paths', () => {
   it('aggregates a nested path to MIXED when nodes disagree', () => {
     const a = leaf('a', { style: { fontSize: 12 } });
     const b = leaf('b', { style: { fontSize: 18 } });
-    expect(aggregateValue([a, b], 'data.style.fontSize')).toBe(MIXED);
+    expect(sharedNodeValue([a, b], 'data.style.fontSize')).toBe(MIXED);
   });
 });
 
