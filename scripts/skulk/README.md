@@ -85,7 +85,7 @@ branches and worktrees there. Once, sync the tree it runs in, then bring it up:
 After changing `service.mjs`, sync the tree again; onto restarts the service. A night always runs the main
 checkout's `night.mjs`.
 
-It starts a night by itself at 23:00 if none started today and none is running. Requests, one JSON object a
+It starts a night by itself at 23:00 unless one is running or one has started since 23:00 that day (a night started by hand after midnight does not count as that evening's). Requests, one JSON object a
 line, each echoing its `id`:
 
 | Request | Reply |

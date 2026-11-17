@@ -56,11 +56,13 @@ describe('the automatic start', () => {
     expect(msUntil(at('23:00'), '23:00')).toBe(24 * 3_600_000);
   });
 
-  it('starts after the start time when nothing ran today and nothing is running', () => {
+  it('starts after the start time when no night started since it and nothing is running', () => {
     expect(shouldAutoStart({ now: at('23:05'), running: false, lastStarted: undefined, startAt: '23:00' })).toBe(true);
     expect(shouldAutoStart({ now: at('22:59'), running: false, lastStarted: undefined, startAt: '23:00' })).toBe(false);
     expect(shouldAutoStart({ now: at('23:05'), running: true, lastStarted: undefined, startAt: '23:00' })).toBe(false);
-    expect(shouldAutoStart({ now: at('23:05'), running: false, lastStarted: at('14:00'), startAt: '23:00' })).toBe(false);
+    expect(shouldAutoStart({ now: at('23:05'), running: false, lastStarted: at('00:30'), startAt: '23:00' })).toBe(true);
+    expect(shouldAutoStart({ now: at('23:05'), running: false, lastStarted: at('14:00'), startAt: '23:00' })).toBe(true);
+    expect(shouldAutoStart({ now: at('23:05'), running: false, lastStarted: at('23:01'), startAt: '23:00' })).toBe(false);
     expect(shouldAutoStart({ now: at('23:05'), running: false, lastStarted: at('23:30', 15), startAt: '23:00' })).toBe(true);
   });
 });
