@@ -68,8 +68,13 @@ export function brushWeights(
 export function jointShares(skin: Skin, joint: string, count: number): number[] {
   const own = getOwn(skin, joint);
   return Array.from({ length: count }, (_, i) => {
+    // Only a weight above 0 moves a point, as `skinPath` applies them: a negative or NaN one counts for nothing.
     let total = 0;
-    for (const name in skin) total += skin[name][i] ?? 0;
-    return total > 0 ? (own?.[i] ?? 0) / total : 0;
+    for (const name in skin) {
+      const w = skin[name][i]!;
+      if (w > 0) total += w;
+    }
+    const mine = own?.[i]!;
+    return total > 0 && mine > 0 ? mine / total : 0;
   });
 }
