@@ -168,7 +168,8 @@ async function writeOne(ctx: PageCtx, cmd: DrawCommand, state: DrawState): Promi
     if (!(err instanceof NonFiniteNumber)) throw err;
     ctx.out.rollback(line);
     ctx.objects.nullUnset(object);
-    ctx.skipped.length = skips;
+    // A face that failed to embed is the document's skip, not this command's: the face is never loaded again.
+    ctx.skipped.splice(skips, Infinity, ...ctx.skipped.slice(skips).filter((s) => s.kind === 'font'));
     skip(ctx, `${cmd.kind} has a non-finite coordinate`);
   }
 }
