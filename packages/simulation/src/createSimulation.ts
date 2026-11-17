@@ -10,7 +10,7 @@ import {
   DEFAULT_ALPHA_DECAY,
   DEFAULT_ALPHA_MIN,
   DEFAULT_VELOCITY_DECAY,
-  type SimulationCore,
+  type Simulation,
   type SimulationForce,
   type SimulationNode,
   type SimulationOptions,
@@ -30,7 +30,7 @@ function finite(what: string, value: number): number {
  */
 export function createSimulation<TNode extends SimulationNode>(
   opts: SimulationOptions<TNode>,
-): SimulationCore<TNode> {
+): Simulation<TNode> {
   let nodes = opts.nodes;
   let forces = opts.forces ?? [];
   let alpha = finite('alpha', opts.alpha ?? 1);
@@ -142,5 +142,5 @@ export function createSimulation<TNode extends SimulationNode>(
     },
   };
   /* eslint-enable @typescript-eslint/no-explicit-any */
-  return core as SimulationCore<TNode>;
+  return core as Simulation<TNode>;
 }

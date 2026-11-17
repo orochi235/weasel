@@ -9,7 +9,7 @@ import type {
   RenderLayer,
   View,
 } from '@weasel-js/core';
-import type { Simulation } from '@weasel-js/simulation';
+import type { RunningSimulation } from '@weasel-js/simulation';
 import { useSimulation } from '@weasel-js/simulation/react';
 import type { DrawCommand } from '@weasel-js/renderer';
 import {
@@ -71,7 +71,7 @@ function paintEdges(
  *  the sim owns positions, and its tick syncs them into the scene. */
 function usePinTool(
   nodesRef: { current: GraphNode[] },
-  sim: Simulation<GraphNode>,
+  sim: RunningSimulation<GraphNode>,
   onPin: () => void,
 ): Tool {
   const pinAction = useMemo<Action>(() => ({

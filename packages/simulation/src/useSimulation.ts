@@ -3,8 +3,8 @@ import { useLatest } from '@weasel-js/react';
 import { createSimulation } from './createSimulation';
 import { useSteps } from './useSteps';
 import {
+  type RunningSimulation,
   type Simulation,
-  type SimulationCore,
   type SimulationForce,
   type SimulationNode,
   type UseSimulationOptions,
@@ -25,10 +25,10 @@ import {
  */
 export function useSimulation<TNode extends SimulationNode>(
   opts: UseSimulationOptions<TNode>,
-): Simulation<TNode> {
+): RunningSimulation<TNode> {
   const optsRef = useLatest(opts);
 
-  const coreRef = useRef<SimulationCore<TNode> | null>(null);
+  const coreRef = useRef<Simulation<TNode> | null>(null);
   coreRef.current ??= createSimulation(opts);
   const core = coreRef.current;
 
@@ -80,7 +80,7 @@ export function useSimulation<TNode extends SimulationNode>(
   }, [steps]);
 
   // Stable handle. All methods read through the core, so a fixed identity is safe.
-  const handle = useMemo<Simulation<TNode>>(() => simulationHandle(core, {
+  const handle = useMemo<RunningSimulation<TNode>>(() => simulationHandle(core, {
     rearm: () => { endedRef.current = false; },
     start: startRaf,
     stop: () => {
@@ -101,8 +101,8 @@ interface HandleLoop {
   stop(): void;
 }
 
-/** The {@link Simulation} handle over `core`, its loop run by `loop`. */
-function simulationHandle<TNode extends SimulationNode>(core: SimulationCore<TNode>, loop: HandleLoop): Simulation<TNode> {
+/** The {@link RunningSimulation} handle over `core`, its loop run by `loop`. */
+function simulationHandle<TNode extends SimulationNode>(core: Simulation<TNode>, loop: HandleLoop): RunningSimulation<TNode> {
   /* eslint-disable @typescript-eslint/no-explicit-any */
   const h: any = {
     get nodes() {
@@ -162,5 +162,5 @@ function simulationHandle<TNode extends SimulationNode>(core: SimulationCore<TNo
     },
   };
   /* eslint-enable @typescript-eslint/no-explicit-any */
-  return h as Simulation<TNode>;
+  return h as RunningSimulation<TNode>;
 }
