@@ -89,6 +89,32 @@ function each<A>(all: Iterable<A>, run: (a: A) => void): void {
   if (threw) throw first;
 }
 
+/** Runs `run`, answering whether it threw and what. */
+function attempt(run: () => void): [boolean, unknown] {
+  try {
+    run();
+    return [false, undefined];
+  } catch (error) {
+    return [true, error];
+  }
+}
+
+/** The handle on animation `id`, which `live` answers while it is on the table. */
+function handleOf(
+  id: number, live: () => ActiveAnimation | undefined, retire: (id: number) => void,
+  pace: (a: ActiveAnimation, paused: boolean, timeScale: number) => void,
+): AnimationHandle {
+  return {
+    id,
+    cancel: () => retire(id),
+    pause: () => { const a = live(); if (a) pace(a, true, a.timeScale); },
+    resume: () => { const a = live(); if (a) pace(a, false, a.timeScale); },
+    setTimeScale: (s) => { const a = live(); if (a) pace(a, a.paused, timeScaleOf(s)); },
+    timeScale: () => live()?.timeScale ?? 1,
+    isPaused: () => live()?.paused ?? false,
+  };
+}
+
 function infoOf(a: ActiveAnimation): AnimationInfo {
   if (!a.info) {
     const info: { -readonly [K in keyof AnimationInfo]: AnimationInfo[K] } = { id: a.id, kind: a.kind };
@@ -117,9 +143,7 @@ export function createTable(host: TableHost): Table {
     if (!a) return;
     // A throw from it, a target's setter as the animation commits, still takes it off the table;
     // the throw goes on after, but one retired for a throw of its own has had its throw reported.
-    let threw = false;
-    let thrown: unknown;
-    try { a.onCancel?.(); } catch (e) { threw = true; thrown = e; }
+    const [threw, thrown] = attempt(() => a.onCancel?.());
     codec.stop(id);
     remove(a);
     // A target that came to rest is owed one more show, and no frame may be coming. A frame in
@@ -168,16 +192,7 @@ export function createTable(host: TableHost): Table {
     // A frame in progress asks for the next one itself, after `onTick`: asked for from a tick,
     // it would run ahead of a paint `onTick` requests, and the tick after would paint nothing.
     if (animations.size > 0 && !host.framing()) host.requestFrame();
-    const live = (): ActiveAnimation | undefined => animations.get(anim.id);
-    return {
-      id: anim.id,
-      cancel: () => retire(anim.id),
-      pause: () => { const a = live(); if (a) pace(a, true, a.timeScale); },
-      resume: () => { const a = live(); if (a) pace(a, false, a.timeScale); },
-      setTimeScale: (s) => { const a = live(); if (a) pace(a, a.paused, timeScaleOf(s)); },
-      timeScale: () => live()?.timeScale ?? 1,
-      isPaused: () => live()?.paused ?? false,
-    };
+    return handleOf(anim.id, () => animations.get(anim.id), retire, pace);
   };
 
   return {
@@ -215,13 +230,10 @@ export function createTable(host: TableHost): Table {
       const retired: ActiveAnimation[] = [];
       // Over the table as it stands: one an earlier `onCancel` retired is not canceled twice. A
       // throw from one, a target's setter, cancels the rest all the same and goes on after.
-      let threw = false;
-      let thrown: unknown;
-      for (const a of animations.values()) {
-        try { a.onCancel?.(); } catch (e) { if (!threw) thrown = e; threw = true; }
-        codec.stop(a.id);
+      const [threw, thrown] = attempt(() => each(animations.values(), (a) => {
         retired.push(a);
-      }
+        try { a.onCancel?.(); } finally { codec.stop(a.id); }
+      }));
       roster.clear();
       cleared();
       for (const a of retired) fireCompletion(a.id);

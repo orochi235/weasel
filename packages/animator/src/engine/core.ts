@@ -4,7 +4,7 @@ import { AnimatorEventHub } from '../observe';
 import type { Behind, TargetState } from '../target';
 import type { Animator } from '../types';
 import { createAnimatorApi } from './animatorApi';
-import { createCodec } from './codec';
+import { createCodec, type Codec } from './codec';
 import type { ActiveAnimation, AnimationContext } from './context';
 import { createFrame, type AnimatorClock } from './frame';
 import { createHandoffs } from './handoff/handoffs';
@@ -48,10 +48,7 @@ export function createAnimatorCore(host: CoreHost): AnimatorCore {
   const hub = new AnimatorEventHub();
   /** Animations that threw outside their own ticks, retired by the frame reading them. */
   const faults: [number, unknown][] = [];
-  const fail = (id: number, error: unknown): void => {
-    faults.push([id, error]);
-    if (!frame.framing()) host.requestFrame();
-  };
+  const fail = (id: number, error: unknown): void => { faults.push([id, error]); if (!frame.framing()) host.requestFrame(); };
   const codec = createCodec((on) => {
     // A move behind a row's holds runs in its table's lane for moves; the rest of a row's voices
     // run in its table's lane.
@@ -126,15 +123,7 @@ export function createAnimatorCore(host: CoreHost): AnimatorCore {
     tripwire: host.tripwire,
     fail,
     interrupt: (key, by) => table.cancelByKey(key, by as ActiveAnimation),
-    velocityUnder: (key, target) => {
-      let sum: number[] | null = null;
-      for (const a of table.under(key)) {
-        if (a.target !== target) continue;
-        const v = a.velocity?.() ?? codec.own(a.id)?.velocity;
-        if (v) sum = sum ? sum.map((x, i) => x + v[i]!) : v.slice();
-      }
-      return sum;
-    },
+    velocityUnder: (key, target) => velocityUnder(table.under(key), codec, target),
   };
 
   const handoffs = createHandoffs({ ctx, table, ...pacing.host });
@@ -169,6 +158,17 @@ export function createAnimatorCore(host: CoreHost): AnimatorCore {
       if (handoffs.any()) host.requestFrame();
     },
   };
+}
+
+/** The summed velocity of `under` on `target`; null where none of them moves it. */
+function velocityUnder(under: Iterable<ActiveAnimation>, codec: Pick<Codec, 'own'>, target: TargetState): number[] | null {
+  let sum: number[] | null = null;
+  for (const a of under) {
+    if (a.target !== target) continue;
+    const v = a.velocity?.() ?? codec.own(a.id)?.velocity;
+    if (v) sum = sum ? sum.map((x, i) => x + v[i]!) : v.slice();
+  }
+  return sum;
 }
 
 /** Refused before the frame starts: a NaN time is kept as the last frame's, and every frame

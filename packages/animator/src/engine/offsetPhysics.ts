@@ -71,15 +71,14 @@ export interface Interrupted {
 export function startOffsetPhysics<T>(
   ctx: AnimationContext,
   o: TargetPhysicsOptions<T>,
-  kind: AnimationKind,
-  interrupted?: Interrupted,
+  kind: AnimationKind, interrupted?: Interrupted,
 ): PhysicsHandle<T> {
   const s = stateOf(o.target);
   const ax = s.axes;
   let dest = o.to == null ? null : axesFor(ax, o.to, 'to');
   const constants = constantsFor(o, kind, dest != null);
   const given = o.from === undefined ? null : axesFor(ax, o.from, 'from');
-  let velocity = o.velocity === undefined ? null : axesFor(ax, o.velocity, 'velocity');
+  let velocity = o.velocity === undefined ? interrupted?.velocity ?? null : axesFor(ax, o.velocity, 'velocity');
   const restThreshold = o.restThreshold ?? 0.01;
   const zeros = (): number[] => new Array<number>(ax.count).fill(0);
 
@@ -89,8 +88,7 @@ export function startOffsetPhysics<T>(
   const seed = {
     id, kind, cancelKey: o.cancelKey, label: o.label, target: s, keepExisting: !interrupts,
   } as AnimationSeed;
-  if (interrupted) velocity ??= interrupted.velocity;
-  else if (o.cancelKey != null && interrupts) {
+  if (!interrupted && o.cancelKey != null && interrupts) {
     // Read ahead of the interrupt, which stops the voices whose velocity this is.
     velocity ??= ctx.velocityUnder(o.cancelKey, s as never);
     ctx.interrupt(o.cancelKey, seed);

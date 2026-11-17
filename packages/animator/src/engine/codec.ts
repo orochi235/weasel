@@ -105,6 +105,22 @@ function pathVelocity(v: Voice): number[] {
   }
 }
 
+/** Cues the tween `v` waits to start, its `ease` throwing to `fault` rather than out of the frame. */
+function cueQueued(v: Voice, fault: (id: number, error: unknown) => void): void {
+  const q = v.queued;
+  if (!q) return;
+  v.queued = undefined;
+  const key = v.slot.key;
+  const { id, ease } = q;
+  const guarded = (u: number): number => {
+    try { return ease(u); } catch (error) { fault(id, error); return u; }
+  };
+  const patch = tweenPatch<unknown, Out, number[]>('v', { from: q.from.slice(), to: q.from.slice(), ms: q.ms, ease: guarded });
+  v.handle = v.slot.lane.mix.cue({ patch, subjects: [key], seek: q.atEnd ? q.ms : 0 });
+  v.handle.to(key, q.to.slice(), 0);
+  if (v.queuedRate !== undefined) v.handle.rate = v.queuedRate;
+}
+
 // A voice cued now reads voice time 0 at codec time `time`. Each patch holds its subject at rest
 // at `from`, and the codec releases it with a `to` or `push` timed at 0.
 function springVoice(slot: Slot, sp: SpringStart): Handle<unknown> {
@@ -173,20 +189,7 @@ export function createCodec(
 
   return {
     frame(dtMs) {
-      for (const v of queue) {
-        const q = v.queued;
-        if (!q) continue;
-        v.queued = undefined;
-        const key = v.slot.key;
-        const { id, ease } = q;
-        const guarded = (u: number): number => {
-          try { return ease(u); } catch (error) { fault(id, error); return u; }
-        };
-        const patch = tweenPatch<unknown, Out, number[]>('v', { from: q.from.slice(), to: q.from.slice(), ms: q.ms, ease: guarded });
-        v.handle = v.slot.lane.mix.cue({ patch, subjects: [key], seek: q.atEnd ? q.ms : 0 });
-        v.handle.to(key, q.to.slice(), 0);
-        if (v.queuedRate !== undefined) v.handle.rate = v.queuedRate;
-      }
+      for (const v of queue) cueQueued(v, fault);
       queue.length = 0;
       time = Math.min(Number.MAX_VALUE, time + dtMs);
       lanes.frame(time);

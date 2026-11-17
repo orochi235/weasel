@@ -28,30 +28,45 @@ export interface Schedule {
   clear(): void;
 }
 
+/** The animations ticked every frame, kept in the order they registered: one that waited, or
+ *  turned backward, joins behind later ones, and is put back in its place before they are read. */
+function createEvery() {
+  const set = new Set<ActiveAnimation>();
+  /** The highest `seq` that has joined, and whether one joined behind it since. */
+  let lastSeq = -1;
+  let shuffled = false;
+  const every = {
+    has: (a: ActiveAnimation) => set.has(a),
+    delete: (a: ActiveAnimation) => set.delete(a),
+    clear() {
+      set.clear();
+      lastSeq = -1;
+      shuffled = false;
+    },
+  };
+  return {
+    every,
+    join(a: ActiveAnimation): void {
+      set.add(a);
+      if (a.seq < lastSeq) shuffled = true;
+      else lastSeq = a.seq;
+    },
+    inOrder(): ActiveAnimation[] {
+      const all = [...set];
+      if (!shuffled) return all;
+      all.sort((p, q) => p.seq - q.seq);
+      set.clear();
+      for (const a of all) set.add(a);
+      shuffled = false;
+      return all;
+    },
+  };
+}
+
 /** `elapsed` answers the animator's clock, which only goes forward: its time scale and pauses
  *  are already in it. `direction` is -1 while the animator plays backward. */
 export function createSchedule(elapsed: () => number, direction: () => number = () => 1): Schedule {
-  /** Ticked every frame, in the order they registered once {@link inOrder} has run. */
-  const every = new Set<ActiveAnimation>();
-  /** The highest `seq` that has joined `every`, and whether one joined behind it since. */
-  let lastSeq = -1;
-  let shuffled = false;
-  /** Has `a` ticked every frame. One that waited, or turned backward, joins behind later ones. */
-  const join = (a: ActiveAnimation): void => {
-    every.add(a);
-    if (a.seq < lastSeq) shuffled = true;
-    else lastSeq = a.seq;
-  };
-  /** `every`, in the order its animations registered. */
-  const inOrder = (): ActiveAnimation[] => {
-    const all = [...every];
-    if (!shuffled) return all;
-    all.sort((p, q) => p.seq - q.seq);
-    every.clear();
-    for (const a of all) every.add(a);
-    shuffled = false;
-    return all;
-  };
+  const { every, join, inOrder } = createEvery();
   /** Waiting for the animator's clock to reach the time their own reaches `due`. */
   const wakes = createWakes<ActiveAnimation>();
   let seq = 0;
@@ -152,8 +167,6 @@ export function createSchedule(elapsed: () => number, direction: () => number = 
     get waiting() { return waiting; },
     clear() {
       every.clear();
-      lastSeq = -1;
-      shuffled = false;
       wakes.clear();
       awake = 0;
       waiting = 0;
