@@ -81,7 +81,7 @@ export function rulerTicks(opts: RulerTicksOptions): RulerTicks {
       ticks.push({ at, major: false });
       continue;
     }
-    const label = formatUnit((j / subdivisions) * bar.length, bar.unit, system, { precision: 3, suffix: false });
+    const label = formatUnit((j / subdivisions) * bar.length, bar.unit, system, { places: 3, suffix: false });
     ticks.push({ at, major: true, label });
   }
   if (pxPerUnit < 0) ticks.reverse();

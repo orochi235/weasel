@@ -112,7 +112,7 @@ export function resolvePrefUnit(unit: PrefNumberUnit): ResolvedPrefUnit {
     toDisplayExact,
     fromDisplay: (shown) => storedOf(shown, scale, offset),
     format: (stored) =>
-      `${formatUnit(stored, SHOWN, system, { precision: precision ?? 2, suffix: false, pad: precision !== undefined })}${suffix ?? ''}`,
+      `${formatUnit(stored, SHOWN, system, { places: precision ?? 2, suffix: false, pad: precision !== undefined })}${suffix ?? ''}`,
     ...(precision === undefined ? {} : { precision, display: decimal({ places: precision, grouping: false }) }),
     ...(suffix === undefined ? {} : { suffix }),
     ...(accepts === undefined ? {} : { accepts }),
