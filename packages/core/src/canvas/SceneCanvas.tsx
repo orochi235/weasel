@@ -6,7 +6,7 @@
  * A consumer needing custom tools can pass `tools={useTools(...)}` and SceneCanvas forwards it
  * as-is — the internal tool registry is ignored in that case.
  */
-import { getActiveModeFor } from '@weasel-js/modes';
+import { createActiveModeReader } from '@weasel-js/modes';
 import { useLatest } from '@weasel-js/react';
 import { InputScope, useActionsRegistry } from '@weasel-js/routing/react';
 import type { NodeId, Scene } from 'core/scene/types';
@@ -65,7 +65,7 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
   const descriptor = (props.poseDescriptor ?? AUTO_POSE_DESCRIPTOR) as PoseDescriptor<TPose>;
   const deviceProfile = useDeviceProfile();
   const scene = useBakedScene(props.scene, props.composition);
-  const getActiveMode = useMemo(() => (modes ? getActiveModeFor(modes) : undefined), [modes]);
+  const getActiveMode = useMemo(() => (modes ? createActiveModeReader(modes) : undefined), [modes]);
   const heldModifiers = useHeldModifiers();
 
   // Our own refs, so input listeners attach even when the consumer forwards its own ref.
