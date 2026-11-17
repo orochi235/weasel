@@ -1,7 +1,7 @@
 /**
  * Area hit-testing against node count and query-rect size.
  *
- * `hitTestArea` asks the scene's BVH pick index for the nodes the query's box
+ * `hitTestRect` asks the scene's BVH pick index for the nodes the query's box
  * can reach, then runs the per-node kernel (O(silhouette verts x area verts)
  * for path-shaped poses) on those alone. The "full walk" groups run the same
  * query through `pickWalk` with no index, which visits every node. The index
@@ -9,7 +9,7 @@
  * every bench below walks; vitest's warmup absorbs it.
  */
 import { group } from './group';
-import { hitTestArea } from 'canvas/deps/hitTestArea';
+import { hitTestRect } from 'canvas/deps/hitTestArea';
 import { AUTO_POSE_DESCRIPTOR } from 'core/geometry/autoPoseDescriptor';
 import { rectRegion } from 'core/geometry/regionHit';
 import { regionPickQuery } from 'canvas/deps/hitTestArea';
@@ -45,46 +45,46 @@ const polyScenes = new Map(
 
 const asAny = (s: unknown) => s as Scene<unknown, string, unknown>;
 
-group('hitTestArea — rect poses, node count (25% query rect)', (bench) => {
+group('hitTestRect — rect poses, node count (25% query rect)', (bench) => {
   const bounds = rectFor(0.5);
   for (const n of NODE_COUNTS) {
     const scene = asAny(rectScenes.get(n));
     bench(`${n} nodes`, () => {
-      hitTestArea(scene, bounds);
+      hitTestRect(scene, bounds);
     });
   }
 });
 
-group('hitTestArea — rect poses, query-rect size (1000 nodes)', (bench) => {
+group('hitTestRect — rect poses, query-rect size (1000 nodes)', (bench) => {
   const scene = asAny(rectScenes.get(1000));
   for (const { label, f } of RECTS) {
     const bounds = rectFor(f);
     // Hit count in the label so a flat curve across this axis reads as "the
     // scan does the same work regardless", not as "the fixture never varied".
-    const hits = hitTestArea(scene, bounds).length;
+    const hits = hitTestRect(scene, bounds).length;
     bench(`${label} (${hits} hits)`, () => {
-      hitTestArea(scene, bounds);
+      hitTestRect(scene, bounds);
     });
   }
 });
 
-group('hitTestArea — 24-gon silhouettes, node count (25% query rect)', (bench) => {
+group('hitTestRect — 24-gon silhouettes, node count (25% query rect)', (bench) => {
   const bounds = rectFor(0.5);
   for (const n of NODE_COUNTS) {
     const scene = asAny(polyScenes.get(n));
     bench(`${n} nodes`, () => {
-      hitTestArea(scene, bounds);
+      hitTestRect(scene, bounds);
     });
   }
 });
 
-group('hitTestArea — 24-gon silhouettes, query-rect size (1000 nodes)', (bench) => {
+group('hitTestRect — 24-gon silhouettes, query-rect size (1000 nodes)', (bench) => {
   const scene = asAny(polyScenes.get(1000));
   for (const { label, f } of RECTS) {
     const bounds = rectFor(f);
-    const hits = hitTestArea(scene, bounds).length;
+    const hits = hitTestRect(scene, bounds).length;
     bench(`${label} (${hits} hits)`, () => {
-      hitTestArea(scene, bounds);
+      hitTestRect(scene, bounds);
     });
   }
 });

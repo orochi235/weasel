@@ -1,10 +1,10 @@
 import {
-  sourceLeafIsAtReset,
   type PrefLeaf,
   type PrefNumber,
   prefAutoValue,
   prefCanAuto,
   prefValueOrDefault,
+  sourceLeafIsAtReset,
 } from '@weasel-js/prefs';
 import { PropertyAutoReadout } from '@weasel-js/ui/components/Properties';
 import { createElement, type ReactNode, useMemo } from 'react';

@@ -23,7 +23,7 @@ import {
 } from '../pbt.fixture';
 import { f } from './builder';
 import { configFromPrefs } from './fromPrefs';
-import { hasConfigPath, schemaNodeAt, configValueAt } from './path';
+import { configValueAt, hasConfigPath, schemaNodeAt } from './path';
 import { resolveConfigSchema } from './resolve';
 import { prefsFromConfig } from './toPrefs';
 import type { ResolvedConfig } from './types';

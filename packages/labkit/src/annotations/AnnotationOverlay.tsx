@@ -10,8 +10,8 @@ import {
   WeaselProvider,
 } from '@weasel-js/core';
 import {
-  KIT_TOOL_IDS,
   editPreset,
+  KIT_TOOL_IDS,
   type KitToolId,
   movePreset,
   pickPreset,

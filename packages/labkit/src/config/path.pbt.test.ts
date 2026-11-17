@@ -6,7 +6,13 @@
 import fc from 'fast-check';
 import { describe, expect, it } from 'vitest';
 import { configTree, key, leafValue, path, runs, tally, timeoutFor } from '../pbt.fixture';
-import { copyTree, fillConfigDefaults, hasConfigPath, configValueAt, withConfigValueAt } from './path';
+import {
+  configValueAt,
+  copyTree,
+  fillConfigDefaults,
+  hasConfigPath,
+  withConfigValueAt,
+} from './path';
 
 const RUNS = 300;
 
@@ -143,7 +149,8 @@ describe('fillConfigDefaults', () => {
           expect(fillConfigDefaults(out, defaults)).toEqual(out);
           for (const p of leafPaths(stored)) {
             // A branch the defaults hold where the stored leaf stands is filled in its place.
-            if (isPlain(configValueAt(defaults, p)) || configValueAt(stored, p) === undefined) continue;
+            if (isPlain(configValueAt(defaults, p)) || configValueAt(stored, p) === undefined)
+              continue;
             t.count('kept');
             expect(configValueAt(out, p)).toEqual(configValueAt(stored, p));
           }

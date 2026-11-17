@@ -12,8 +12,8 @@ import type { Vec3 } from '@weasel-js/geom/3d';
 import {
   type Camera3d,
   type Camera3dDep,
-  createCameraRigActions,
   clampCamera,
+  createCameraRigActions,
   type OrbitLimits,
 } from '@weasel-js/kernel3d';
 import { useKitSettings, watchResize } from '@weasel-js/react';

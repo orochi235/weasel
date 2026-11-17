@@ -1,24 +1,24 @@
 import {
   AUTO,
   type LeafReading,
-  type PrefLeafStatus,
   type PrefGroup,
   type PrefLeaf,
+  type PrefLeafStatus,
   type PrefSection,
   type PrefsSource,
   prefAutoValue,
   prefCanAuto,
+  prefDecodedValue,
   prefLeafAt,
-  prefValueOrDefault,
   prefNodeAt,
   prefResets,
-  prefDecodedValue,
+  prefValueOrDefault,
   sourceResetPlan,
 } from '@weasel-js/prefs';
 import { type LeafContext, sourceLeafContext } from '@weasel-js/ui/components/PrefsSource';
 import type { ReactNode } from 'react';
 import { useMemo } from 'react';
-import { isRecord, configValueAt, withConfigValueAt } from '../config/path';
+import { configValueAt, isRecord, withConfigValueAt } from '../config/path';
 import { isEncodedLeaf } from '../config/storedDefault';
 import type { ResolvedConfig } from '../config/types';
 import { isRowActive, isRowEnabled, isRowVisible } from '../config/visible';

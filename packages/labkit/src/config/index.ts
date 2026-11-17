@@ -1,5 +1,5 @@
-export { type Auto, AUTO, isAuto } from './auto';
-export { applyConfigWrite, startAutoPathsOf, resolveAutoConfig } from './autoConfig';
+export { AUTO, type Auto, isAuto } from './auto';
+export { applyConfigWrite, resolveAutoConfig, startAutoPathsOf } from './autoConfig';
 export type { AutoReports } from './autoReports';
 export {
   ActionNode,
@@ -7,11 +7,11 @@ export {
   BaseNode,
   BooleanNode,
   ColorNode,
+  ConfigGroup,
   CurveNode,
   CustomNode,
   EnumNode,
   f,
-  ConfigGroup,
   isConfigBranch,
   LabelNode,
   ListNode,
@@ -27,10 +27,10 @@ export type { Fields, FieldValues, Variants, VariantValues } from './compound';
 export { configFromPrefs } from './fromPrefs';
 export type { LabOver, OverAccess } from './over';
 export {
+  configValueAt,
   fillConfigDefaults,
   hasConfigPath,
   schemaNodeAt,
-  configValueAt,
   withConfigValueAt,
 } from './path';
 export { resolveConfigSchema } from './resolve';

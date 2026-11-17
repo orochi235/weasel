@@ -3,8 +3,8 @@ import {
   type PrefBoundReader,
   type PrefLeaf,
   type PrefNumber,
-  prefValueOrDefault,
   prefBoundedNumber,
+  prefValueOrDefault,
 } from '@weasel-js/prefs';
 import {
   type LiveControl,
@@ -73,7 +73,8 @@ export function labField(
 ): PropertyControlProps | null {
   // `prefFieldProps` answers for the kinds ui draws that are no built-in of the schema's, the font pickers.
   if (given.kind === 'paint' || given.kind === 'object') return null;
-  const leaf = given.kind === 'number' && read ? prefBoundedNumber(given as PrefNumber, read) : given;
+  const leaf =
+    given.kind === 'number' && read ? prefBoundedNumber(given as PrefNumber, read) : given;
   const state = { value, setValue: write, fields, disabled };
   const settled = prefFieldProps(
     leaf,

@@ -7,7 +7,7 @@ import { deepEqual } from '@weasel-js/registry';
 import fc from 'fast-check';
 import { describe, expect, it } from 'vitest';
 import { worldToScreen } from '../canvas/canvasCoords';
-import { hasConfigPath, configValueAt, withConfigValueAt } from '../config/path';
+import { configValueAt, hasConfigPath, withConfigValueAt } from '../config/path';
 import { configTree, leafValue, path, runs, tally, timeoutFor } from '../pbt.fixture';
 import {
   boundsOf,

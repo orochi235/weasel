@@ -13,7 +13,7 @@ import {
   prefJudge,
   prefLeafAt,
 } from '@weasel-js/prefs';
-import { setOwn, configValueAt } from './path';
+import { configValueAt, setOwn } from './path';
 import type { ResolvedConfig } from './types';
 
 const ALWAYS: PrefCondition = { all: [] };

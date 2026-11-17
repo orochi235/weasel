@@ -10,11 +10,11 @@ import {
   type Action,
   ActionDisabledReason,
   createDeleteOp,
+  createKeymapContribution,
   createSetPoseOp,
   held,
   type KeySpec,
   key,
-  createKeymapContribution,
   type NodeId,
   type Op,
 } from '@weasel-js/core';

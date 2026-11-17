@@ -1,5 +1,10 @@
 import { hexAlpha, toHex8, withAlpha01 } from '@weasel-js/paint';
-import { isBuiltinPref, type PrefLeaf, type PrefNumber, prefValueOrDefault } from '@weasel-js/prefs';
+import {
+  isBuiltinPref,
+  type PrefLeaf,
+  type PrefNumber,
+  prefValueOrDefault,
+} from '@weasel-js/prefs';
 import { qty } from '@weasel-js/quantity';
 import { prefFieldProps } from '@weasel-js/ui/components/Prefs';
 import { type PropertyControlProps, stepDisplay } from '@weasel-js/ui/components/Properties';

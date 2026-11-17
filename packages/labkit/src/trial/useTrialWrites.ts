@@ -7,7 +7,7 @@ import type { AnnotationsApi } from '../annotations/types';
 import { isAuto } from '../config/auto';
 import { resolveAutoConfig } from '../config/autoConfig';
 import { LabOverContext, writesOver } from '../config/over';
-import { hasConfigPath, schemaNodeAt, configValueAt } from '../config/path';
+import { configValueAt, hasConfigPath, schemaNodeAt } from '../config/path';
 import type { ResolvedConfig } from '../config/types';
 import type { Instrument } from '../instrument/types';
 import type { LabStore } from '../state/store';
@@ -63,7 +63,9 @@ export interface TrialWrites {
  *  as an edit that would change nothing does nothing. */
 function changesNothing(record: TrialRecord, path: string, value: unknown): boolean {
   const unpinned = record.auto?.includes(path) ?? false;
-  return isAuto(value) ? unpinned : !unpinned && deepEqual(configValueAt(record.config, path), value);
+  return isAuto(value)
+    ? unpinned
+    : !unpinned && deepEqual(configValueAt(record.config, path), value);
 }
 
 function warnUnknownPath(record: TrialRecord, schema: ResolvedConfig, path: string): void {

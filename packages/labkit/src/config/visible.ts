@@ -1,7 +1,7 @@
 import {
   applyPrefConditions,
   applyPrefEntryConditions,
-  ROOT_PREF_STATUS,
+  createAliasTargets,
   type PrefAction,
   type PrefAlias,
   type PrefAliasTargets,
@@ -10,15 +10,15 @@ import {
   type PrefLeaf,
   type PrefSection,
   type PrefStatus,
-  createAliasTargets,
   prefJudge,
   prefLeafAt,
   prefReader,
   prefSchemaHolding,
   prefStatusAt,
   prefStatusUnder,
+  ROOT_PREF_STATUS,
 } from '@weasel-js/prefs';
-import { schemaNodeAt, configValueAt } from './path';
+import { configValueAt, schemaNodeAt } from './path';
 import type { ConfigEntry, ResolvedConfig } from './types';
 
 /**

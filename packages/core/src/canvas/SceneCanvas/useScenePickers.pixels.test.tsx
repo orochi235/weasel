@@ -36,7 +36,7 @@ function fakeFrame(scene: Scene<object, 'default' | 'notes', Pose>, paint: [stri
     const height = Math.max(1, Math.ceil(rect.y + rect.height) - y0);
     const data = new Uint32Array(width * height);
     for (const [id, r] of paint) {
-      const pick = ids.idOf(id);
+      const pick = ids.pickIdOf(id);
       if (options?.exclude?.has(pick)) continue;
       for (let y = 0; y < height; y++) {
         for (let x = 0; x < width; x++) {

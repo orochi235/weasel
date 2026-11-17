@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { f, ConfigGroup, NumberNode } from './index';
+import { ConfigGroup, f, NumberNode } from './index';
 
 describe('config node classes', () => {
   it('are exported as values', () => {

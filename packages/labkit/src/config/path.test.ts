@@ -1,9 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import {
+  configValueAt,
   fillConfigDefaults,
   hasConfigPath,
   schemaNodeAt,
-  configValueAt,
   withConfigValueAt,
 } from './path';
 

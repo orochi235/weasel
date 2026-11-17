@@ -15,7 +15,7 @@ import {
 } from '@weasel-js/ui/components/Properties';
 import { type ReactNode, useMemo, useState } from 'react';
 import { AUTO, isAuto } from '../config/auto';
-import { applyConfigWrite, startAutoPathsOf, resolveAutoConfig } from '../config/autoConfig';
+import { applyConfigWrite, resolveAutoConfig, startAutoPathsOf } from '../config/autoConfig';
 import { type AutoReports, withAutoReports } from '../config/autoReports';
 import { configValueAt } from '../config/path';
 import type { LeafRenderer, ResolvedConfig } from '../config/types';
@@ -143,7 +143,9 @@ function usePanelAuto(
   writes: { setConfig: Write; draftConfig?: Write },
 ) {
   // A panel keeping its own set opens with the leaves its schema starts auto, as a trial does.
-  const [ownAuto, setOwnAuto] = useState<ReadonlySet<string>>(() => new Set(startAutoPathsOf(resolved)));
+  const [ownAuto, setOwnAuto] = useState<ReadonlySet<string>>(
+    () => new Set(startAutoPathsOf(resolved)),
+  );
   const mark = (path: string, next: boolean): void =>
     setOwnAuto((prev) => {
       if (prev.has(path) === next) return prev;

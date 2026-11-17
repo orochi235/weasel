@@ -5,7 +5,7 @@
  */
 
 import { deepEqual } from '@weasel-js/registry';
-import { hasConfigPath, setOwn, configValueAt } from '../config/path';
+import { configValueAt, hasConfigPath, setOwn } from '../config/path';
 
 /** The values of `keys` in `config`, each a dotted path, for storing beside a new mark. Keys the
  *  config does not carry are omitted rather than stored as undefined, so the

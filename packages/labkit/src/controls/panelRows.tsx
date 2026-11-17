@@ -22,7 +22,7 @@ import {
 } from '@weasel-js/ui/components/Properties';
 import { Fragment, type ReactNode } from 'react';
 import { drawsOwn } from '../config/drawsOwn';
-import { schemaNodeAt, configValueAt } from '../config/path';
+import { configValueAt, schemaNodeAt } from '../config/path';
 import type { LeafRenderer, ResolvedConfig } from '../config/types';
 import { isRowActive, isRowEnabled, isRowVisible } from '../config/visible';
 import { boundAction } from './boundAction';

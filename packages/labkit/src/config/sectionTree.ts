@@ -1,6 +1,6 @@
 import { isPrefLeaf, type PrefGroup } from '@weasel-js/prefs';
 import { headingLeaf } from './headingLeaf';
-import { ownAt, setOwn, configValueAt } from './path';
+import { configValueAt, ownAt, setOwn } from './path';
 import { bareGroup, type ConfigVerdict, configVerdict } from './railConditions';
 import type { ResolvedConfig } from './types';
 import { isRowVisible } from './visible';

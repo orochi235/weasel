@@ -67,7 +67,10 @@ export function TrialTransport({
         start={control.start}
         playhead={control.playhead}
         duration={control.length}
-        onPlayingChange={(next: boolean) => { if (next) control.play(); else control.pause(); }}
+        onPlayingChange={(next: boolean) => {
+          if (next) control.play();
+          else control.pause();
+        }}
         onLoopChange={(loop: boolean | number) => {
           control.touch();
           // eslint-disable-next-line react-hooks/immutability -- the clock's loop is set by assignment

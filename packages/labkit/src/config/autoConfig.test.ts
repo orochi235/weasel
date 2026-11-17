@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { AUTO } from './auto';
-import { startAutoPathsOf, resolveAutoConfig } from './autoConfig';
+import { resolveAutoConfig, startAutoPathsOf } from './autoConfig';
 import { f } from './builder';
 import { resolveConfigSchema } from './resolve';
 

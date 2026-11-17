@@ -1,7 +1,7 @@
 import { type PrefLeaf, prefAutoValue, prefStartsAuto } from '@weasel-js/prefs';
 import { isAuto } from './auto';
 import { configLeaves } from './leaves';
-import { isRecord, ownAt, setOwn, configValueAt, withConfigValueAt } from './path';
+import { configValueAt, isRecord, ownAt, setOwn, withConfigValueAt } from './path';
 import type { ResolvedConfig } from './types';
 
 type Resolver = (config: Record<string, unknown>) => unknown;

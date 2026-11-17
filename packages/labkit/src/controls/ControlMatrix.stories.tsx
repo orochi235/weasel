@@ -1,9 +1,9 @@
 import type { Meta, StoryObj } from '@weasel-js/forge';
 import {
+  configValueAt,
   f,
   isAuto,
   resolveConfigSchema,
-  configValueAt,
   withConfigValueAt,
 } from '@weasel-js/labkit/config';
 import { ControlMatrix, type ControlMatrixColumn, ControlPanel } from '@weasel-js/labkit/controls';

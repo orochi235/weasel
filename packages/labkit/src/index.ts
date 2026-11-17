@@ -111,8 +111,8 @@ export type {
   MarkPose,
   MarkScene,
   PaintedMark,
-  SerializedMarkStore,
   SerializedMarkHistory,
+  SerializedMarkStore,
   WorldRect,
 } from './annotations';
 export {
@@ -205,8 +205,8 @@ export {
 } from './canvas';
 export * from './chrome';
 export * from './clock';
-export { type Auto, AUTO, isAuto } from './config/auto';
-export { startAutoPathsOf, resolveAutoConfig } from './config/autoConfig';
+export { AUTO, type Auto, isAuto } from './config/auto';
+export { resolveAutoConfig, startAutoPathsOf } from './config/autoConfig';
 export type { AutoReports } from './config/autoReports';
 export {
   ActionNode,
@@ -214,11 +214,11 @@ export {
   BaseNode,
   BooleanNode,
   ColorNode,
+  ConfigGroup,
   CurveNode,
   CustomNode,
   EnumNode,
   f,
-  ConfigGroup,
   isConfigBranch,
   LabelNode,
   ListNode,
@@ -233,10 +233,10 @@ export {
 export { type FieldSweepOptions, fieldSweep } from './config/fieldSweep';
 export type { LabOver, OverAccess } from './config/over';
 export {
+  configValueAt,
   fillConfigDefaults,
   hasConfigPath,
   schemaNodeAt,
-  configValueAt,
   withConfigValueAt,
 } from './config/path';
 export { resolveConfigSchema } from './config/resolve';

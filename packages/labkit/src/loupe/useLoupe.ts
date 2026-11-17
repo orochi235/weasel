@@ -2,11 +2,11 @@ import { clientToCanvas, useLatest } from '@weasel-js/core';
 import {
   createEyedropperModel,
   createLoupeModel,
+  LOUPE_WHEEL_RATE,
   type LoupeInputApi,
   type LoupeMode,
   type LoupeModel,
   type LoupePoint,
-  LOUPE_WHEEL_RATE,
 } from '@weasel-js/loupe';
 import { useKitSetting } from '@weasel-js/react';
 import { type RefObject, useCallback, useEffect, useReducer, useRef } from 'react';
