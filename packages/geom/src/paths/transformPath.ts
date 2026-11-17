@@ -59,7 +59,7 @@ function transformPolygon(path: PolygonPath, m: Affine, opts: TransformPathOptio
   const scaled = scaleCorners(path, Math.sqrt(Math.abs(m[0] * m[3] - m[1] * m[2])));
   const o = path.origin;
   if (o === undefined) {
-    const mapped = transformCoords(path.coords, m);
+    const mapped = transformCoords(m, path.coords);
     const picked = opts.autoOrigin !== false ? originFor(mapped) : undefined;
     return picked
       ? { ...scaled, coords: coordsFrom(picked, mapped), origin: picked }
@@ -70,7 +70,7 @@ function transformPolygon(path: PolygonPath, m: Affine, opts: TransformPathOptio
   const [a, b, c, d, e, f] = m;
   return {
     ...scaled,
-    coords: Float32Array.from(transformCoords(path.coords, [a, b, c, d, 0, 0])),
+    coords: Float32Array.from(transformCoords([a, b, c, d, 0, 0], path.coords)),
     origin: { x: a * o.x + c * o.y + e, y: b * o.x + d * o.y + f },
   };
 }

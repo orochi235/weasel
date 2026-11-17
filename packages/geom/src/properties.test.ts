@@ -146,7 +146,7 @@ describe('affine', () => {
       const c = () => (r() - 0.5) * 20;
       const m: Affine = [c(), c(), c(), c(), c(), c()];
       const coords = Array.from({ length: 10 }, () => (r() - 0.5) * 2000);
-      const out = transformCoords(coords, m);
+      const out = transformCoords(m, coords);
       for (let k = 0; k < coords.length; k += 2) {
         const [x, y] = transformPoint(m, coords[k], coords[k + 1]);
         expect(out[k]).toBe(x);

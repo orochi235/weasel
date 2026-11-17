@@ -98,7 +98,7 @@ export function rotateAboutPoint(cx: number, cy: number, rad: number): Affine {
  * points define the transformed curve exactly (affine invariance), so callers
  * pass `path.coords` straight through and keep `path.commands` as-is.
  */
-export function transformCoords(coords: ArrayLike<number>, m: Affine): Float64Array {
+export function transformCoords(m: Affine, coords: ArrayLike<number>): Float64Array {
   const out = new Float64Array(coords.length);
   const a = m[0], b = m[1], c = m[2], d = m[3], e = m[4], f = m[5];
   for (let i = 0; i + 1 < coords.length; i += 2) {
