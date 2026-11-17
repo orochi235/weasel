@@ -5,7 +5,7 @@
  * rides on the node so the serializer emits a `rotate` transform.
  */
 import { textFrameFields } from './svgNote';
-import { type Fill, type Path, type PlacedPage, type Scene, type Stroke, boundsOfPath, composesFrames, definesFrame, derivedDepOf, documentOf, inheritedPaintIn, withInheritedPaint, fillInPoseFrame, isAnnotationNode, pageOfNode, pathEffectOf, pathEffectParts, resolveFill, resolvePartPaint, resolveStroke, pathInPoseBox, shapeGeneratorOf, type ShapeGenerator, worldPoses } from '@weasel-js/core';
+import { type Fill, type Path, type PlacedPage, type Scene, type Stroke, boundsOfPath, composesFrames, definesFrame, derivedDepOf, documentOf, inheritedPaintIn, withInheritedPaint, paintToLocalUnits, isAnnotationNode, pageOfNode, pathEffectOf, pathEffectParts, resolveFill, resolvePartPaint, resolveStroke, pathInPoseBox, shapeGeneratorOf, type ShapeGenerator, worldPoses } from '@weasel-js/core';
 import { layoutTextPose } from '@weasel-js/text';
 import {
   computeBounds,
@@ -91,8 +91,8 @@ function pathObj(
     // The path above is baked into page coordinates, and the serializer
     // emits gradients as `userSpaceOnUse` — so a box-relative gradient has
     // to be resolved against the same pose.
-    fill: painted.fill && { ...painted.fill, paint: fillInPoseFrame(painted.fill.paint, pose) },
-    stroke: painted.stroke && { ...painted.stroke, paint: fillInPoseFrame(painted.stroke.paint, pose) },
+    fill: painted.fill && { ...painted.fill, paint: paintToLocalUnits(painted.fill.paint, pose) },
+    stroke: painted.stroke && { ...painted.stroke, paint: paintToLocalUnits(painted.stroke.paint, pose) },
   };
   if (pose.rotation) o.rotation = pose.rotation;
   return o;

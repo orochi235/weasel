@@ -13,7 +13,7 @@ import type { PaintBindContext, PaintBinding, PaintDrawKind, PaintResources, Pai
 import { parseColor, rgbaToHex } from '@weasel-js/paint';
 import { oklabToOklch, oklabToSrgbU8, oklchToOklab, srgbFloatToOklab } from '@weasel-js/paint';
 import type { ColorSpace, Paint, PaintUnits } from '@weasel-js/paint';
-import type { FillPoseBox } from '../fillInPoseFrame';
+import type { FillPoseBox } from '../paintToLocalUnits';
 import { bakeMesh, meshBounds, type MeshBox } from './bake';
 import { MeshBakeCache, meshBakeSize } from './bakeCache';
 import { isValidPatch, type MeshPatch, type MeshPoint } from './surface';
@@ -264,7 +264,7 @@ export const meshDrawKind: PaintDrawKind = {
   id: MESH_GRADIENT_KIND,
   programs: { [MESH_PROGRAM_ID]: { glsl: { vert: MESH_VERT_SRC, frag: MESH_FRAG_SRC }, wgsl: { frag: MESH_WGSL } } },
   bind: bindMesh,
-  inPoseFrame: (fill, box: FillPoseBox) => {
+  toLocalUnits: (fill, box: FillPoseBox) => {
     const mesh = asMesh(fill);
     if (mesh.units !== 'bounds') return fill;
     const posed = asFill({
@@ -278,7 +278,7 @@ export const meshDrawKind: PaintDrawKind = {
     BAKE_SOURCE.set(posed, fill);
     return posed;
   },
-  toBoundsFrame: (fill, box: FillPoseBox) => {
+  toBoundsUnits: (fill, box: FillPoseBox) => {
     const mesh = asMesh(fill);
     if (mesh.units === 'bounds' || box.width === 0 || box.height === 0) return fill;
     return asFill({

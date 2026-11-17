@@ -109,7 +109,7 @@ export {
   type PaintTexture,
   type PaintUniform,
 } from './paintKinds';
-export { fillInPoseFrame, fillToBoundsFrame, type FillPoseBox } from './fillInPoseFrame';
+export { paintToLocalUnits, paintToBoundsUnits, type FillPoseBox } from './paintToLocalUnits';
 export { commandFill, commandPaint, commandStroke } from './patterns/commandPaint';
 export { dropShadowCommand, dropShadowLayers, spreadRadius, type DropShadow } from './dropShadow';
 export { createTilePattern, type TilePatternOptions } from './patterns';

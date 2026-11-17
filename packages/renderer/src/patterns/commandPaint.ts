@@ -4,7 +4,7 @@
  */
 
 import type { CommandFill, CommandPaint, CommandStroke, Fill, Paint, Stroke } from '@weasel-js/paint';
-import { fillInPoseFrame, type FillPoseBox } from '../fillInPoseFrame';
+import { paintToLocalUnits, type FillPoseBox } from '../paintToLocalUnits';
 import { resolveFillPattern } from './resolveSpec';
 
 /**
@@ -12,7 +12,7 @@ import { resolveFillPattern } from './resolveSpec';
  * a tile kind swapped for its texture. `null` when a tile cannot rasterize.
  */
 export function commandPaint(paint: Paint, box: FillPoseBox): CommandPaint | null {
-  return resolveFillPattern(fillInPoseFrame(paint, box));
+  return resolveFillPattern(paintToLocalUnits(paint, box));
 }
 
 /**

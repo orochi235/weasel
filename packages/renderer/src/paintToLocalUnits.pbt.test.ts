@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import fc from 'fast-check';
 import type { Paint } from '@weasel-js/paint';
-import { fillInPoseFrame, fillToBoundsFrame, type FillPoseBox } from './fillInPoseFrame';
+import { paintToLocalUnits, paintToBoundsUnits, type FillPoseBox } from './paintToLocalUnits';
 import { nonFinite, runs, spread, tally } from './pbt.fixture';
 
 const STOPS = [{ offset: 0, color: '#000000' }, { offset: 1, color: '#ffffff' }];
@@ -46,15 +46,15 @@ const points = (f: Paint): { x: number; y: number }[] => {
 /** A pattern with no origin comes back from a round trip with an explicit zero one. */
 const withOrigin = (f: Paint): Paint => (f.kind === 'hatch' && !('origin' in f) ? { ...f, origin: { x: 0, y: 0 } } as Paint : f);
 
-describe('fillInPoseFrame, property', () => {
+describe('paintToLocalUnits, property', () => {
   it('round-trips a bounds fill through the box\'s frame and back', () => {
     const t = tally();
     fc.assert(fc.property(fill('bounds'), box, (f, b) => {
-      const posed = fillInPoseFrame(f, b);
+      const posed = paintToLocalUnits(f, b);
       t.count(f.kind!);
       expect((posed as { units?: string }).units).toBe('local');
       expect(nonFinite(posed)).toEqual([]);
-      const back = fillToBoundsFrame(posed as Paint, b);
+      const back = paintToBoundsUnits(posed as Paint, b);
       near(back, withOrigin(f), 1e-12);
     }), runs(300));
     for (const k of ['linear-gradient', 'radial-gradient', 'conic-gradient', 'hatch']) t.atLeast(k, 30);
@@ -64,14 +64,14 @@ describe('fillInPoseFrame, property', () => {
     fc.assert(fc.property(fill('local'), box, (f, b) => {
       const scaled = structuredClone(f);
       for (const q of points(scaled)) Object.assign(q, { x: b.x + q.x * 100, y: b.y + q.y * 100 });
-      const back = fillInPoseFrame(fillToBoundsFrame(scaled, b), b);
+      const back = paintToLocalUnits(paintToBoundsUnits(scaled, b), b);
       near(back, withOrigin(scaled), 1e-12);
     }), runs(300));
   });
 
   it('moves every point with the box, and keeps a radius, however the box moves', () => {
     fc.assert(fc.property(fill('bounds'), box, spread(-1000, 1000), spread(-1000, 1000), (f, b, dx, dy) => {
-      const at = fillInPoseFrame(f, b), moved = fillInPoseFrame(f, { ...b, x: b.x + dx, y: b.y + dy });
+      const at = paintToLocalUnits(f, b), moved = paintToLocalUnits(f, { ...b, x: b.x + dx, y: b.y + dy });
       const pa = points(at as Paint), pb = points(moved as Paint);
       pa.forEach((q, i) => {
         expect(Math.abs(pb[i]!.x - q.x - dx)).toBeLessThanOrEqual(1e-9 * (1 + Math.abs(q.x) + Math.abs(dx)));
@@ -83,7 +83,7 @@ describe('fillInPoseFrame, property', () => {
 
   it('hands back any fill in another space untouched, by identity', () => {
     fc.assert(fc.property(fc.oneof(fill('local'), fill('world'), fill('screen'), fill(undefined)), box, (f, b) => {
-      expect(fillInPoseFrame(f, b)).toBe(f);
+      expect(paintToLocalUnits(f, b)).toBe(f);
     }), runs(300));
   });
 });

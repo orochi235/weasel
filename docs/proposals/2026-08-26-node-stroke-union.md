@@ -29,7 +29,7 @@ cost.
 
 Two things fall out that are easy to miss:
 
-- **A stroke paint needs `fillInPoseFrame` too.** `kit:path` bakes the pose
+- **A stroke paint needs `paintToLocalUnits` too.** `kit:path` bakes the pose
   into the projected path rather than emitting a transform, so a bounds-relative
   gradient handed to the renderer unbaked refers to a frame that never exists.
   The stroke's paint takes the same route the fill does.

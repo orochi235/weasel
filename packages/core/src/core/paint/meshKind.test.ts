@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { createGLRecorder, recordedPaintTextures } from '@weasel-js/renderer/testing/glRecorder';
 import { getPaintKind, listGradientKinds, listPaintKinds, switchGradientKind } from '@weasel-js/paint-kinds';
-import { fillInPoseFrame, fillToBoundsFrame } from '@weasel-js/renderer';
+import { paintToLocalUnits, paintToBoundsUnits } from '@weasel-js/renderer';
 import { seedMeshPatch, isMeshGradientPaint, meshGradientXml, MESH_GRADIENT_KIND } from '@weasel-js/renderer/mesh';
 import type { MeshGradientPaint } from '@weasel-js/renderer/mesh';
 import { MESH_BAKE_SIZE } from '@weasel-js/renderer/mesh';
@@ -67,11 +67,11 @@ describe('the mesh-gradient kind', () => {
 
   it('round-trips through the pose frame and back', () => {
     const mesh = seedMeshPatch('#ff0000ff') as unknown as Paint;
-    const posed = fillInPoseFrame(mesh, BOX) as unknown as MeshGradientPaint;
+    const posed = paintToLocalUnits(mesh, BOX) as unknown as MeshGradientPaint;
     expect(posed.units).toBe('local');
     expect(posed.patches[0].points[0]).toEqual({ x: 10, y: 20 });
 
-    const back = fillToBoundsFrame(posed as unknown as Paint, BOX) as unknown as MeshGradientPaint;
+    const back = paintToBoundsUnits(posed as unknown as Paint, BOX) as unknown as MeshGradientPaint;
     expect(back.units).toBe('bounds');
     const before = (mesh as unknown as MeshGradientPaint).patches[0].points;
     back.patches[0].points.forEach((p, i) => {
@@ -127,7 +127,7 @@ describe('binding a mesh paint', () => {
     expect(calls().filter((n) => n === 'texImage2D').length).toBe(1);
   });
 
-  const posedMesh = () => fillInPoseFrame(seedMeshPatch('#ff0000ff') as unknown as Paint, BOX);
+  const posedMesh = () => paintToLocalUnits(seedMeshPatch('#ff0000ff') as unknown as Paint, BOX);
   const uploadedSides = (argsOf: (name: string) => readonly unknown[][]) =>
     argsOf('texImage2D').map((args) => args[3]);
 
@@ -148,9 +148,9 @@ describe('binding a mesh paint', () => {
     const ctx: PaintBindContext = { ...base.ctx, spaceInverse: (_units, at) => ((about = at && { x: at.x, y: at.y }), scaling(1)) };
     const source = seedMeshPatch('#ff0000ff') as unknown as Paint;
 
-    entry().bind!(ctx, fillInPoseFrame(source, BOX));
+    entry().bind!(ctx, paintToLocalUnits(source, BOX));
     const first = about!;
-    entry().bind!(ctx, fillInPoseFrame(source, { ...BOX, x: BOX.x + 50, y: BOX.y + 30 }));
+    entry().bind!(ctx, paintToLocalUnits(source, { ...BOX, x: BOX.x + 50, y: BOX.y + 30 }));
 
     expect(base.argsOf('texImage2D')).toHaveLength(1);
     // The shared bake is measured from where this frame's mesh is, not the first one's.

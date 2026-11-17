@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { fillInPoseFrame, fillToBoundsFrame } from './fillInPoseFrame';
+import { paintToLocalUnits, paintToBoundsUnits } from './paintToLocalUnits';
 import type { Paint, GradientPaint, PatternPaint, TilePaint, TilePatternSpec } from '@weasel-js/paint';
 
 const STOPS = [
@@ -16,9 +16,9 @@ const LINEAR: GradientPaint = {
   units: 'bounds',
 };
 
-describe('fillInPoseFrame', () => {
+describe('paintToLocalUnits', () => {
   it('maps 0..1 geometry onto the box', () => {
-    const out = fillInPoseFrame(LINEAR, { x: 100, y: 200, width: 300, height: 40 });
+    const out = paintToLocalUnits(LINEAR, { x: 100, y: 200, width: 300, height: 40 });
     expect(out).toMatchObject({
       kind: 'linear-gradient',
       from: { x: 100, y: 220 },
@@ -27,20 +27,20 @@ describe('fillInPoseFrame', () => {
   });
 
   it('hands the renderer a frame it can resolve, not the bounds marker', () => {
-    const out = fillInPoseFrame(LINEAR, { x: 0, y: 0, width: 10, height: 10 });
+    const out = paintToLocalUnits(LINEAR, { x: 0, y: 0, width: 10, height: 10 });
     expect(out).toMatchObject({ units: 'local' });
   });
 
   it('follows a move: the same fill lands wherever the box is', () => {
-    const a = fillInPoseFrame(LINEAR, { x: 0, y: 0, width: 100, height: 100 });
-    const b = fillInPoseFrame(LINEAR, { x: 500, y: 300, width: 100, height: 100 });
+    const a = paintToLocalUnits(LINEAR, { x: 0, y: 0, width: 100, height: 100 });
+    const b = paintToLocalUnits(LINEAR, { x: 500, y: 300, width: 100, height: 100 });
     if (a.kind !== 'linear-gradient' || b.kind !== 'linear-gradient') throw new Error('unreachable');
     expect(b.from.x - a.from.x).toBe(500);
     expect(b.from.y - a.from.y).toBe(300);
   });
 
   it('follows a resize: the span always matches the box width', () => {
-    const wide = fillInPoseFrame(LINEAR, { x: 0, y: 0, width: 800, height: 100 });
+    const wide = paintToLocalUnits(LINEAR, { x: 0, y: 0, width: 800, height: 100 });
     if (wide.kind !== 'linear-gradient') throw new Error('unreachable');
     expect(wide.to.x - wide.from.x).toBe(800);
   });
@@ -49,7 +49,7 @@ describe('fillInPoseFrame', () => {
     const radial: GradientPaint = {
       kind: 'radial-gradient', center: { x: 0.5, y: 0.5 }, radius: 0.5, stops: STOPS, units: 'bounds',
     };
-    const out = fillInPoseFrame(radial, { x: 0, y: 0, width: 200, height: 200 });
+    const out = paintToLocalUnits(radial, { x: 0, y: 0, width: 200, height: 200 });
     expect(out).toMatchObject({ center: { x: 100, y: 100 }, radius: 100 });
   });
 
@@ -57,7 +57,7 @@ describe('fillInPoseFrame', () => {
     const conic: GradientPaint = {
       kind: 'conic-gradient', center: { x: 0.5, y: 0.5 }, angle: 1.2, stops: STOPS, units: 'bounds',
     };
-    const out = fillInPoseFrame(conic, { x: 10, y: 20, width: 100, height: 60 });
+    const out = paintToLocalUnits(conic, { x: 10, y: 20, width: 100, height: 60 });
     expect(out).toMatchObject({ center: { x: 60, y: 50 }, angle: 1.2 });
   });
 
@@ -66,17 +66,17 @@ describe('fillInPoseFrame', () => {
     const solid: Paint = { color: '#ff0000' };
     const screenGradient: Paint = { ...LINEAR, units: 'screen' as const };
     const unitless: Paint = { ...LINEAR, units: undefined };
-    expect(fillInPoseFrame(solid, box)).toBe(solid);
-    expect(fillInPoseFrame(screenGradient, box)).toBe(screenGradient);
-    expect(fillInPoseFrame(unitless, box)).toBe(unitless);
+    expect(paintToLocalUnits(solid, box)).toBe(solid);
+    expect(paintToLocalUnits(screenGradient, box)).toBe(screenGradient);
+    expect(paintToLocalUnits(unitless, box)).toBe(unitless);
   });
 });
 
-describe('fillToBoundsFrame', () => {
-  it('inverts fillInPoseFrame', () => {
+describe('paintToBoundsUnits', () => {
+  it('inverts paintToLocalUnits', () => {
     const box = { x: 40, y: 90, width: 250, height: 120 };
-    const placed = fillInPoseFrame(LINEAR, box);
-    const back = fillToBoundsFrame(placed, box);
+    const placed = paintToLocalUnits(LINEAR, box);
+    const back = paintToBoundsUnits(placed, box);
     expect(back).toMatchObject({
       kind: 'linear-gradient',
       from: { x: 0, y: 0.5 },
@@ -90,7 +90,7 @@ describe('fillToBoundsFrame', () => {
       kind: 'radial-gradient', center: { x: 0.25, y: 0.75 }, radius: 0.4, stops: STOPS, units: 'bounds',
     };
     const box = { x: 5, y: 5, width: 300, height: 160 };
-    const back = fillToBoundsFrame(fillInPoseFrame(radial, box), box);
+    const back = paintToBoundsUnits(paintToLocalUnits(radial, box), box);
     if (back.kind !== 'radial-gradient') throw new Error('unreachable');
     expect(back.center.x).toBeCloseTo(0.25);
     expect(back.center.y).toBeCloseTo(0.75);
@@ -101,19 +101,19 @@ describe('fillToBoundsFrame', () => {
     const userSpace: GradientPaint = {
       kind: 'linear-gradient', from: { x: 100, y: 100 }, to: { x: 300, y: 100 }, stops: STOPS,
     };
-    const back = fillToBoundsFrame(userSpace, { x: 100, y: 50, width: 200, height: 100 });
+    const back = paintToBoundsUnits(userSpace, { x: 100, y: 50, width: 200, height: 100 });
     expect(back).toMatchObject({ from: { x: 0, y: 0.5 }, to: { x: 1, y: 0.5 }, units: 'bounds' });
   });
 
   it('leaves a degenerate box alone rather than dividing by zero', () => {
     const flat = { x: 0, y: 0, width: 0, height: 100 };
-    const placed = fillInPoseFrame(LINEAR, { x: 0, y: 0, width: 10, height: 10 });
-    expect(fillToBoundsFrame(placed, flat)).toBe(placed);
+    const placed = paintToLocalUnits(LINEAR, { x: 0, y: 0, width: 10, height: 10 });
+    expect(paintToBoundsUnits(placed, flat)).toBe(placed);
   });
 
   it('leaves a solid fill alone', () => {
     const solid: Paint = { color: '#ff0000' };
-    expect(fillToBoundsFrame(solid, { x: 0, y: 0, width: 10, height: 10 })).toBe(solid);
+    expect(paintToBoundsUnits(solid, { x: 0, y: 0, width: 10, height: 10 })).toBe(solid);
   });
 });
 
@@ -123,7 +123,7 @@ describe('patterns', () => {
 
   it('rebases a bounds pattern by translation, leaving the tile unscaled', () => {
     const paint: TilePaint = { ...SPEC, units: 'bounds' };
-    const out = fillInPoseFrame(paint, BOX) as PatternPaint;
+    const out = paintToLocalUnits(paint, BOX) as PatternPaint;
     expect(out.units).toBe('local');
     expect(out.origin).toEqual({ x: 100, y: 50 });
     // A resize must reveal more tiles, not stretch them — so nothing about
@@ -133,18 +133,18 @@ describe('patterns', () => {
 
   it('carries an existing origin as an offset from the box', () => {
     const paint: TilePaint = { ...SPEC, units: 'bounds', origin: { x: 4, y: -6 } };
-    const out = fillInPoseFrame(paint, BOX) as PatternPaint;
+    const out = paintToLocalUnits(paint, BOX) as PatternPaint;
     expect(out.origin).toEqual({ x: 104, y: 44 });
   });
 
   it('leaves a pattern in any other space untouched', () => {
     const world: TilePaint = { ...SPEC, units: 'world' };
-    expect(fillInPoseFrame(world, BOX)).toBe(world);
+    expect(paintToLocalUnits(world, BOX)).toBe(world);
   });
 
-  it('round-trips through fillToBoundsFrame', () => {
+  it('round-trips through paintToBoundsUnits', () => {
     const original: TilePaint = { ...SPEC, units: 'bounds', origin: { x: 4, y: -6 } };
-    const resolved = fillInPoseFrame(original, BOX);
-    expect(fillToBoundsFrame(resolved, BOX)).toEqual(original);
+    const resolved = paintToLocalUnits(original, BOX);
+    expect(paintToBoundsUnits(resolved, BOX)).toEqual(original);
   });
 });

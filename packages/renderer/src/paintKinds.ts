@@ -9,7 +9,7 @@
 
 import type { ColorSpace, Paint, PaintUnits, GradStop } from '@weasel-js/paint';
 import { createReflectable, type PushOptions, type Reflection } from '@weasel-js/registry';
-import type { FillPoseBox } from './fillInPoseFrame';
+import type { FillPoseBox } from './paintToLocalUnits';
 import type { GlMat3 } from '@weasel-js/geom';
 import type { GpuTexture } from './gpu/types';
 import {
@@ -104,7 +104,7 @@ export interface PaintBindContext {
 
 /**
  * What the renderer needs of one paint kind. Every slot is optional, but
- * `inPoseFrame` and `toBoundsFrame` come as a pair or not at all: a kind that
+ * `toLocalUnits` and `toBoundsUnits` come as a pair or not at all: a kind that
  * converts one direction and not the other paints correctly once and then
  * drifts on the next resize.
  */
@@ -123,9 +123,9 @@ export interface PaintDrawKind {
    */
   bind?(ctx: PaintBindContext, fill: Paint): PaintBinding | null;
   /** Bounds frame → the frame the node is painted in. */
-  inPoseFrame?(fill: Paint, box: FillPoseBox): Paint;
-  /** The inverse. Required whenever `inPoseFrame` is supplied. */
-  toBoundsFrame?(fill: Paint, box: FillPoseBox): Paint;
+  toLocalUnits?(fill: Paint, box: FillPoseBox): Paint;
+  /** The inverse. Required whenever `toLocalUnits` is supplied. */
+  toBoundsUnits?(fill: Paint, box: FillPoseBox): Paint;
   /**
    * Shader programs `bind` names, keyed by program id; registering the kind
    * registers them. Declaring them here rather than
@@ -176,8 +176,8 @@ function releasePrograms(entry: PaintDrawKind): void {
  *  `fallback` marks an engine default, which a later registration replaces
  *  without the development clash warning. */
 export function registerPaintDrawKind(entry: PaintDrawKind, options?: Pick<PushOptions, 'fallback'>): () => void {
-  if ((entry.inPoseFrame === undefined) !== (entry.toBoundsFrame === undefined)) {
-    const missing = entry.inPoseFrame === undefined ? 'inPoseFrame' : 'toBoundsFrame';
+  if ((entry.toLocalUnits === undefined) !== (entry.toBoundsUnits === undefined)) {
+    const missing = entry.toLocalUnits === undefined ? 'toLocalUnits' : 'toBoundsUnits';
     throw new Error(
       `weasel registerPaintKind: kind "${entry.id}" is missing ${missing}. A ` +
       'kind that converts one frame direction and not the other drifts on the next ' +

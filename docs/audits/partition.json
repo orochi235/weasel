@@ -5200,7 +5200,7 @@
    "packages/renderer/src/effects/compositeOp.ts",
    "packages/renderer/src/effects/effectPrelude.ts",
    "packages/renderer/src/effects/types.ts",
-   "packages/renderer/src/fillInPoseFrame.ts",
+   "packages/renderer/src/paintToLocalUnits.ts",
    "packages/renderer/src/glyphCorners.ts",
    "packages/renderer/src/glyphOutlineMesh.ts",
    "packages/renderer/src/images/bitmapHolds.ts",

@@ -106,7 +106,7 @@ ownTextureIds(ID_PREFIX, { revive, touched: markUsed });
 /**
  * Swap a tile or image paint for the `texture` paint that draws it, placement
  * and extent kept, leaving every other fill untouched. The built-in painters
- * run this alongside `fillInPoseFrame`; a consumer emitting its own draw
+ * run this alongside `paintToLocalUnits`; a consumer emitting its own draw
  * commands runs it at the same place it runs that one.
  *
  * A tile that can't rasterize drops the fill rather than painting garbage. An

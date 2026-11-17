@@ -1,5 +1,5 @@
 import { useLayoutEffect, useRef, type ReactElement, type RefObject } from 'react';
-import { fillInPoseFrame, fillToBoundsFrame } from '@weasel-js/renderer';
+import { paintToLocalUnits, paintToBoundsUnits } from '@weasel-js/renderer';
 import { isGradientPaint, resolveFill, resolveStroke, type Paint, type GradientPaint, type Stroke, type Fill, type Inherit } from '@weasel-js/paint';
 import { useOngoingAction } from '@weasel-js/routing/react';
 import type { View } from '@weasel-js/geom';
@@ -78,7 +78,7 @@ export function SceneGradientHandles<
 
   const dispatch = (next: Paint, phase: 'input' | 'commit'): void => {
     if (gone.current) return;
-    const normalized = fillToBoundsFrame(next, frame.box);
+    const normalized = paintToBoundsUnits(next, frame.box);
     if (phase === 'commit') edit.commit({ paint: normalized });
     else edit.input({ paint: normalized });
   };
@@ -94,10 +94,10 @@ export function SceneGradientHandles<
   };
 
   if (isGradientPaint(paint)) {
-    return <GradientHandles value={fillInPoseFrame(paint, frame.box) as GradientPaint} {...common} />;
+    return <GradientHandles value={paintToLocalUnits(paint, frame.box) as GradientPaint} {...common} />;
   }
   if (isMeshGradientPaint(paint)) {
-    const resolved = fillInPoseFrame(paint, frame.box) as unknown as MeshGradientPaint;
+    const resolved = paintToLocalUnits(paint, frame.box) as unknown as MeshGradientPaint;
     // Still in the bounds frame means the mesh kind has not loaded, and
     // handles drawn now would sit in fractions of the box.
     if (resolved.units === 'bounds') return null;

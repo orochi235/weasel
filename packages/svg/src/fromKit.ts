@@ -6,7 +6,7 @@
  * the canvas shows.
  */
 import {
-  asPolygonPath, fillInPoseFrame, clipOutline, definesFrame, pathInPoseBox, pathThroughPoseFrame, poseFrameOf, poseLinearOf, resolveFill, resolveStroke, shapePathOf, type ImageNodeData, type NodeClip, type Path, type Stroke, type Fill, type Inherit, INHERIT, nodeShapesOf, type NodeShapes,
+  asPolygonPath, paintToLocalUnits, clipOutline, definesFrame, pathInPoseBox, pathThroughPoseFrame, poseFrameOf, poseLinearOf, resolveFill, resolveStroke, shapePathOf, type ImageNodeData, type NodeClip, type Path, type Stroke, type Fill, type Inherit, INHERIT, nodeShapesOf, type NodeShapes,
 } from '@weasel-js/core';
 import { type StyledRun, type TextStyle, type TextVerticalAlign, type TextFit } from '@weasel-js/text';
 import { textFrameOf, type TextEdge, type TextShadow } from '@weasel-js/text-tools';
@@ -77,14 +77,14 @@ export function svgImageFromKit(image: ImageNodeData['image'], pose: SvgKitPose)
 /** A kit `Stroke` kept as one, with its paint resolved into `box` — text
  *  carries the kit's own stroke shape rather than an `SvgStroke`. */
 function strokeInPoseFrame(stroke: Stroke, box: SvgKitPose): Stroke {
-  return stroke.paint ? { ...stroke, paint: fillInPoseFrame(stroke.paint, box) } : stroke;
+  return stroke.paint ? { ...stroke, paint: paintToLocalUnits(stroke.paint, box) } : stroke;
 }
 
 function runInPoseFrame(run: StyledRun, box: SvgKitPose): StyledRun {
   if (!run.fill && !run.stroke) return run;
   return {
     ...run,
-    ...(run.fill ? { fill: mapFillPaint(run.fill, (p) => fillInPoseFrame(p, box)) } : {}),
+    ...(run.fill ? { fill: mapFillPaint(run.fill, (p) => paintToLocalUnits(p, box)) } : {}),
     ...(run.stroke ? { stroke: strokeInPoseFrame(run.stroke, box) } : {}),
   };
 }
@@ -167,7 +167,7 @@ function svgTextFromKit(data: SvgKitLeafData & { text: string }, pose: SvgKitPos
   if (data.verticalAlign) node.verticalAlign = data.verticalAlign;
   if (data.fit === 'shrink') node.fit = 'shrink';
   const fill = resolveFill(data.fill);
-  node.fill = fill && mapFillPaint(fill, (p) => fillInPoseFrame(p, pose));
+  node.fill = fill && mapFillPaint(fill, (p) => paintToLocalUnits(p, pose));
   const stroke = resolveStroke(data.stroke);
   if (stroke) node.stroke = strokeInPoseFrame(stroke, pose);
   if (pose.rotation) node.rotation = pose.rotation;

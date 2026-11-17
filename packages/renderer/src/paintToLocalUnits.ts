@@ -1,5 +1,5 @@
 /**
- * Resolve a `units: 'bounds'` gradient into the frame its node is painted in.
+ * Convert a paint between `units: 'bounds'` and `units: 'local'` against the box its node is painted in.
  * Node painters bake the pose into their geometry (`pathInPoseBox`) rather
  * than emitting a per-node transform, so by the time the renderer sees a
  * scene node there is no node-local space left for a gradient to refer to.
@@ -28,9 +28,9 @@ export interface FillPoseBox {
  * so a non-square box cannot make it the ellipse SVG would — this keeps the
  * radius proportionate instead.
  */
-export function fillInPoseFrame(fill: Paint, box: FillPoseBox): PosedPaint {
+export function paintToLocalUnits(fill: Paint, box: FillPoseBox): PosedPaint {
   if (!isBuiltinKind(fill)) {
-    return (getPaintDrawKind(fill.kind)?.inPoseFrame?.(fill, box) ?? fill) as PosedPaint;
+    return (getPaintDrawKind(fill.kind)?.toLocalUnits?.(fill, box) ?? fill) as PosedPaint;
   }
   if (isBoundsPattern(fill)) {
     const o = fill.origin ?? { x: 0, y: 0 };
@@ -54,16 +54,16 @@ export function fillInPoseFrame(fill: Paint, box: FillPoseBox): PosedPaint {
 }
 
 /**
- * Inverse of {@link fillInPoseFrame}: express a gradient already positioned
+ * Inverse of {@link paintToLocalUnits}: express a gradient already positioned
  * in `box`'s frame as `0..1` fractions of that box (`units: 'bounds'`), so
  * it follows the node when moved or resized.
  *
  * A zero-width or zero-height box has no frame to normalize against; the
  * fill is returned untouched rather than divided by zero.
  */
-export function fillToBoundsFrame(fill: Paint, box: FillPoseBox): Paint {
+export function paintToBoundsUnits(fill: Paint, box: FillPoseBox): Paint {
   if (!isBuiltinKind(fill)) {
-    return getPaintDrawKind(fill.kind)?.toBoundsFrame?.(fill, box) ?? fill;
+    return getPaintDrawKind(fill.kind)?.toBoundsUnits?.(fill, box) ?? fill;
   }
   if (isPatternPaint(fill)) {
     const o = fill.origin ?? { x: 0, y: 0 };

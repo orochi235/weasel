@@ -22,7 +22,7 @@ import { resolveRuns, resolveRunsInto } from '@weasel-js/text';
 import type { StyledRun } from '@weasel-js/text';
 import type { TextVerticalAlign, ResolvedRun, ResolvedTextStyle } from '@weasel-js/text';
 import { isSolidPaint, type Paint } from '@weasel-js/paint';
-import type { FillPoseBox } from './fillInPoseFrame';
+import type { FillPoseBox } from './paintToLocalUnits';
 import { commandFill, commandPaint } from './patterns/commandPaint';
 
 /** The style each command resolves into: read while its runs resolve, and

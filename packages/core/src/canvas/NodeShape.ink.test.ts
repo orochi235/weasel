@@ -293,7 +293,7 @@ describe('shapeCoversPoint — align decides which side is grabbable', () => {
  * The type requires it, so nothing should ever build one — but a document is
  * data, and a stroke assembled field-by-field (a width written onto a node
  * that had no stroke) arrives here with no paint. It used to throw out of
- * `fillInPoseFrame`, and because the throw escapes the painter it takes the
+ * `paintToLocalUnits`, and because the throw escapes the painter it takes the
  * whole frame with it: every other node and the document page vanish, and the
  * canvas stays stale until something unrelated asks for a redraw. One
  * malformed node must not be able to blank the document.
