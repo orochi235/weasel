@@ -97,16 +97,36 @@ function pathObj(
   return o;
 }
 
+/** A path derived in `node`'s own frame, and the box it lands in once composed through the
+ *  nearest frame above `node`, as the canvas places it. */
+function placedFromFrameOf<TLayer extends string>(
+  scene: DrawScene<TLayer>,
+  node: { parent?: unknown },
+  path: Path,
+  poseOf: (id: string) => WeaselDrawPose | undefined,
+): { path: Path; pose: WeaselDrawPose } {
+  const { x, y, width, height } = boundsOfPath(path);
+  let frame = node.parent as string | null | undefined;
+  while (frame != null && !definesFrame(scene.get(frame as never)!)) frame = scene.get(frame as never)!.parent;
+  const above = frame != null && composesFrames(scene.composition) ? poseOf(frame) : undefined;
+  const pose = above ? scene.composition.compose(above, { x, y, width, height }) : { x, y, width, height };
+  return { path: pathInPoseFrame(path, pose), pose };
+}
+
 /** A live path effect as the paths it shows — what Expand to Paths would
  *  make of it, each part in its own paint — with what keeps it live. */
-function effectToObj<TLayer extends string>(scene: DrawScene<TLayer>, id: string): EffectObj {
+function effectToObj<TLayer extends string>(
+  scene: DrawScene<TLayer>,
+  id: string,
+  poseOf: (id: string) => WeaselDrawPose | undefined,
+): EffectObj {
   const node = scene.get(id as never)!;
   const dependsOn = (Array.isArray(node.dependsOn) ? node.dependsOn : []).map(String);
   const deps = dependsOn.map((d) => derivedDepOf(documentOf(scene), d as never, node));
   const parts = (pathEffectParts(node, deps) ?? []).map((part, k) => {
-    const { x, y, width, height } = boundsOfPath(part.path);
+    const placed = placedFromFrameOf(scene, node, part.path, poseOf);
     const { fill, stroke } = resolvePartPaint(part, node.data as WeaselDrawData, inheritedPaintIn(scene, node));
-    return pathObj(`${id}-${k}`, part.path, { x, y, width, height }, fill, stroke);
+    return pathObj(`${id}-${k}`, placed.path, placed.pose, fill, stroke);
   });
   return { id, effect: pathEffectOf(node)!, dependsOn, parts };
 }
@@ -121,13 +141,9 @@ function booleanToObj<TLayer extends string>(
   const node = scene.get(id as never)!;
   const path = derivedDepOf(documentOf(scene), id as never)?.path;
   if (!path) return undefined;
-  const { x, y, width, height } = boundsOfPath(path);
-  let frame = node.parent;
-  while (frame != null && !definesFrame(scene.get(frame)!)) frame = scene.get(frame)!.parent;
-  const above = frame != null && composesFrames(scene.composition) ? poseOf(frame) : undefined;
-  const pose = above ? scene.composition.compose(above, { x, y, width, height }) : { x, y, width, height };
+  const placed = placedFromFrameOf(scene, node, path, poseOf);
   const data = withInheritedPaint(node.data, inheritedPaintIn(scene, node));
-  return pathObj(id, pathInPoseFrame(path, pose), pose, resolveFill(data.fill), resolveStroke(data.stroke));
+  return pathObj(id, placed.path, placed.pose, resolveFill(data.fill), resolveStroke(data.stroke));
 }
 
 export interface SceneToSvgOptions {
@@ -183,7 +199,7 @@ function sceneSourceOf<TLayer extends string>(
     objOf: (id) => {
       const node = scene.get(id as never);
       if (!node || node.kind !== 'mark') return undefined;
-      if (pathEffectOf(node) !== null) return effectToObj(scene, id);
+      if (pathEffectOf(node) !== null) return effectToObj(scene, id, poseOf);
       if (node.consumesChildren === true) return booleanToObj(scene, id, poseOf);
       return leafToObj(id, withInheritedPaint(node.data, inheritedPaintIn(scene, node)), poseOf(id)!) ?? undefined;
     },
