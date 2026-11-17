@@ -99,6 +99,32 @@ describe('exportRegionSvg on a region that is not a page', () => {
   });
 });
 
+describe('exportRegionSvg on a region a node meets only as drawn', () => {
+  // r's pose box ends at x = 80; this strip starts past it.
+  const strip = { x: 82, y: 0, width: 10, height: 100 };
+  const write = async (scene: ReturnType<typeof plainScene>['scene']) =>
+    fills(new DOMParser().parseFromString(await exportRegionSvg(scene, strip), 'image/svg+xml'));
+
+  it('draws a turned node whose corner crosses into the region', async () => {
+    const { scene } = plainScene();
+    const pose = scene.get('r' as never)!.pose as RectPose;
+    scene.setPose('r' as never, { ...pose, rotation: Math.PI / 4 });
+    expect(await write(scene)).toContain(RED);
+  });
+
+  it('draws a node whose stroke reaches into the region', async () => {
+    const { scene } = plainScene();
+    const data = scene.get('r' as never)!.data as object;
+    scene.update('r' as never, { data: { ...data, stroke: { paint: { kind: 'solid', color: RED }, width: 10 } } });
+    expect(await write(scene)).toContain(RED);
+  });
+
+  it('leaves out a node that does not reach it', async () => {
+    const { scene } = plainScene();
+    expect(await write(scene)).not.toContain(RED);
+  });
+});
+
 describe('registerSvgExport', () => {
   it('registers the svg format, which writes one region as an SVG blob', async () => {
     dispose = registerSvgExport();
