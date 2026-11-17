@@ -78,4 +78,10 @@ describe('refreshBadge', () => {
     expect(await refreshBadge(api, 4, () => false)).toMatchObject({ roots: 2 });
     expect(setBadgeText).not.toHaveBeenCalled();
   });
+
+  it('settles when the tab closed while it was probed', async () => {
+    const { api, setBadgeText } = fakeApi(async () => [{ result: { kitVersion: '1.0.0', roots: 2 } }]);
+    setBadgeText.mockRejectedValue(new Error('No tab with id: 4'));
+    await expect(refreshBadge(api, 4)).resolves.toMatchObject({ roots: 2 });
+  });
 });

@@ -50,7 +50,12 @@ export function badgeText(tab: TabWeasel | null): string {
  *  overtaken it while the probe ran. */
 export async function refreshBadge(api: ExtensionApi, tabId: number, current: () => boolean = () => true): Promise<TabWeasel | null> {
   const tab = await probeTab(api, tabId);
-  if (current()) await api.action?.setBadgeText({ tabId, text: badgeText(tab) });
+  if (!current()) return tab;
+  try {
+    await api.action?.setBadgeText({ tabId, text: badgeText(tab) });
+  } catch {
+    // The tab closed while it was probed.
+  }
   return tab;
 }
 
