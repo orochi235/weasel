@@ -3,7 +3,7 @@ import { nodeShapesOf, type Scene, type SurfaceContribution } from '@weasel-js/c
 import type { Measurements } from './measurements';
 import { measureCommands } from './measureCommands';
 import { measureDragAction, measurePickAction } from './measureGestures';
-import { MEASURE_AFFORDANCE_KIND, measurementsLayer } from './measureLayer';
+import { MEASURE_AFFORDANCE_KIND, createMeasureLayer } from './measureLayer';
 import { MEASURE_ACTION_IDS } from './actionIds';
 import { MEASURE_PAINTER } from './measurePainter';
 
@@ -20,7 +20,7 @@ export function measurementsContribution(
   scene: Scene<unknown, string, unknown>,
   ms: Measurements,
 ): SurfaceContribution {
-  const layer = measurementsLayer(scene, ms);
+  const layer = createMeasureLayer(scene, ms);
   return {
     id: 'weasel-measure',
     eligibility: { claimed: true },

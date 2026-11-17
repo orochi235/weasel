@@ -23,7 +23,7 @@ const HANDLE_PX = 3.5;
  * edits it rather than reaching the tool. Under the measure tool it claims
  * only the picked measurement's ends, so a drag from anywhere else measures.
  */
-export function measurementsLayer(scene: AnyScene, ms: Measurements): RenderLayer<unknown> {
+export function createMeasureLayer(scene: AnyScene, ms: Measurements): RenderLayer<unknown> {
   return {
     id: MEASURE_LAYER_ID,
     label: 'Measurements',
