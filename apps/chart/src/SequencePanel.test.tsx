@@ -133,6 +133,27 @@ describe('SequencePanel', () => {
     expect(findStep(dataOf(scene).steps, 'm1')).toMatchObject({ line: 'solid', head: 'arrow' });
   });
 
+  it('shows a mixed selection as no one value, so choosing the first one\'s value sets them all', () => {
+    const scene = sceneOf();
+    panel(scene, ['seq/msg:m1', 'seq/msg:m2']);
+    pick(/Arrow/, 'Call');
+    expect(findStep(dataOf(scene).steps, 'm2')).toMatchObject({ line: 'solid', head: 'arrow' });
+    act(() => { scene.setSelection(['seq/head:a', 'seq/head:b'] as never); });
+    pick(/Adds/, 'Actor');
+    act(() => { scene.setSelection(['seq/head:a', 'seq/head:c'] as never); });
+    pick(/Adds/, 'Actor');
+    expect(dataOf(scene).participants.map((p) => p.outline)).toEqual(['actor', 'actor', 'actor']);
+  });
+
+  it('sets a mixed selection\'s activations to the first message\'s', () => {
+    const scene = sceneOf();
+    panel(scene, ['seq/msg:m3']);
+    pick(/Activates/, 'Receiver');
+    act(() => { scene.setSelection(['seq/msg:m3', 'seq/msg:m1'] as never); });
+    pick(/Activates/, 'Receiver');
+    expect(findStep(dataOf(scene).steps, 'm1')).toMatchObject({ activate: 'to' });
+  });
+
   it('draws a selected created head at the top again', () => {
     const scene = createScene<ChartData, ChartLayer, ChartPose>({
       systemLayers: CHART_LAYERS, registry: CHART_REGISTRY,

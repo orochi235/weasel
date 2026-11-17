@@ -27,6 +27,13 @@ export function arrowNameOf(data: SequenceData, id: string): SeqArrowName | null
   return (hit?.[0] as SeqArrowName | undefined) ?? null;
 }
 
+/** What a picker over several selected items shows: the value they share, or Mixed when they differ. A shared `null` is
+ *  a value the picker doesn't name, and shows nothing. Either way, choosing any value applies it to every item. */
+export function shownOf<T>(values: readonly (T | null)[]): { selectedKey: T | null; mixed: boolean } {
+  const first = values[0] ?? null;
+  return values.every((v) => v === first) ? { selectedKey: first, mixed: false } : { selectedKey: null, mixed: true };
+}
+
 type End = 'none' | 'from' | 'to';
 const ENDS: readonly { value: End; label: string }[] = [
   { value: 'none', label: 'Neither' }, { value: 'from', label: 'Sender' }, { value: 'to', label: 'Receiver' },
@@ -42,6 +49,7 @@ export function SequenceEdits({ scene, sel }: { scene: ChartScene; sel: Sequence
   const fragment = sel.fragments[0] === undefined ? null : findStep(data.steps, sel.fragments[0]);
   const uncreated = foldEach(data, sel.participants, (d, id) => removeMarksOf(d, 'create', id));
   const boxed = (data.boxes ?? []).filter((b) => sel.boxes.includes(b.id) || b.members.some((m) => sel.participants.includes(m)));
+  const messages = sel.messages.map((id) => findStep(data.steps, id)).filter((m) => m?.kind === 'message');
   const activation = (key: 'activate' | 'deactivate', end: End) => commit(
     foldEach(data, sel.messages, (d, id) => setMessageActivation(d, id, { [key]: end === 'none' ? undefined : end })),
     key === 'activate' ? 'Start activation' : 'End activation',
@@ -55,11 +63,11 @@ export function SequenceEdits({ scene, sel }: { scene: ChartScene; sel: Sequence
         <>
           <Select
             label="Activates" orientation="row" width="fit" options={ENDS}
-            selectedKey={message.activate ?? 'none'} onSelectionChange={(end) => activation('activate', end)}
+            {...shownOf(messages.map((m) => m.activate ?? 'none'))} onSelectionChange={(end) => activation('activate', end)}
           />
           <Select
             label="Deactivates" orientation="row" width="fit" options={ENDS}
-            selectedKey={message.deactivate ?? 'none'} onSelectionChange={(end) => activation('deactivate', end)}
+            {...shownOf(messages.map((m) => m.deactivate ?? 'none'))} onSelectionChange={(end) => activation('deactivate', end)}
           />
         </>
       )}

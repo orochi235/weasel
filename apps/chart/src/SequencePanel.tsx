@@ -11,7 +11,7 @@ import { SidebarPanel } from '@weasel-js/ui/components/SidebarPanel';
 import { ToolPalette } from '@weasel-js/ui/components/ToolPalette';
 import { useState, type ReactElement } from 'react';
 import type { ChartScene } from './chartDocument';
-import { arrowNameOf, commitSelected, foldEach, SequenceEdits } from './SequenceEdits';
+import { arrowNameOf, commitSelected, foldEach, SequenceEdits, shownOf } from './SequenceEdits';
 import { getOwn } from '@weasel-js/registry';
 
 /** A sequence tool, which the Sequence panel holds rather than the main palette. */
@@ -64,25 +64,32 @@ export function SequencePanel({ tools, scene, selected, values }: {
   const apply = (fn: (data: NonNullable<typeof sel>['data']) => NonNullable<typeof sel>['data'], label: string) => {
     if (sel !== null) commitSelected(scene, sel, fn(sel.data), label);
   };
-  const head = sel?.participants[0] === undefined ? undefined : sel.data.participants.find((p) => p.id === sel.participants[0]);
-  const frag = sel?.fragments[0] === undefined ? null : findStep(sel.data.steps, sel.fragments[0]);
-  // A selected head or message drawn with a figure or arrow the picker doesn't name shows no value, so any choice applies.
-  const headKind: SeqParticipantKind | null = head === undefined ? participant
-    : head.outline === 'actor' ? 'actor' : head.outline === undefined || head.outline === 'rect' ? 'participant' : null;
-  const arrow = sel?.messages[0] === undefined ? arrowChoice : arrowNameOf(sel.data, sel.messages[0]);
+  // Each picker shows what the selected items of its kind share, nothing for a figure or arrow it doesn't name, and Mixed
+  // when they differ, so any choice applies to all of them; with none selected, what its tool adds.
+  const shown = <T,>(ids: readonly string[] | undefined, own: T, of: (id: string) => T | null) =>
+    ids === undefined || ids.length === 0 ? { selectedKey: own, mixed: false } : shownOf(ids.map(of));
+  const headKind = (id: string): SeqParticipantKind | null => {
+    const outline = sel!.data.participants.find((p) => p.id === id)?.outline;
+    return outline === 'actor' ? 'actor' : outline === undefined || outline === 'rect' ? 'participant' : null;
+  };
+  const fragType = (id: string): SeqFragment['type'] | null => {
+    const f = findStep(sel!.data.steps, id);
+    return f?.kind === 'fragment' ? f.type : null;
+  };
   return (
     <SidebarPanel title="Sequence" collapsed={collapsed} onCollapsedChange={setCollapsed}>
       <ToolPalette tools={tools} include={isSequenceTool} columns={5} aria-label="Sequence tools" />
       <Select
         label="Adds" orientation="row" width="fit" options={choicesOf<SeqParticipantKind>(PARTICIPANT)}
-        selectedKey={headKind}
+        {...shown(sel?.participants, participant, headKind)}
         onSelectionChange={(kind) => {
           setParticipant(kind);
           apply((d) => foldEach(d, sel!.participants, (e, id) => setParticipantOutline(e, id, kind === 'actor' ? 'actor' : undefined)), 'Change participant');
         }}
       />
       <Select
-        label="Arrow" orientation="row" width="fit" options={choicesOf<SeqArrowName>(MESSAGE)} selectedKey={arrow}
+        label="Arrow" orientation="row" width="fit" options={choicesOf<SeqArrowName>(MESSAGE)}
+        {...shown(sel?.messages, arrowChoice, (id) => arrowNameOf(sel!.data, id))}
         onSelectionChange={(name) => {
           setArrow(name);
           apply((d) => foldEach(d, sel!.messages, (e, id) => setMessageArrow(e, id, name)), 'Change arrow');
@@ -90,7 +97,7 @@ export function SequencePanel({ tools, scene, selected, values }: {
       />
       <Select
         label="Fragment" orientation="row" width="fit" options={choicesOf<SeqFragment['type']>(FRAGMENT)}
-        selectedKey={frag?.kind === 'fragment' ? frag.type : fragment}
+        {...shown(sel?.fragments, fragment, fragType)}
         onSelectionChange={(type) => {
           setFragment(type);
           apply((d) => foldEach(d, sel!.fragments, (e, id) => setFragmentType(e, id, type)), 'Change fragment type');
