@@ -3,12 +3,13 @@
  * named JSON values beside the tree, saved in its snapshot and undone with it.
  */
 import { deepEqual } from '@weasel-js/registry';
+import { detach, own } from './owned';
 import type { RegisteredOp } from './types';
 
 /**
  * A scene's document values. Keys are namespaced by their owner
- * (`diagram:theme`); values are JSON, and are not to be mutated
- * once set. A `set` is a scene edit: undoable, part of an enclosing `batch`,
+ * (`diagram:theme`); values are JSON, and are the scene's once set: frozen in
+ * development, as a node's pose is. A `set` is a scene edit: undoable, part of an enclosing `batch`,
  * skipped when the value is deep-equal to the current one, and heard by
  * `subscribe`. Setting `undefined` removes the key.
  */
@@ -33,20 +34,20 @@ const SET_DOC = 'kit:setDoc';
 
 function write(values: Map<string, unknown>, key: string, to: unknown): void {
   if (to === undefined) values.delete(key);
-  else values.set(key, to);
+  else values.set(key, own(to));
 }
 
 /** The snapshot side of a scene's document values, kept in `values`. */
 export function createDocStore(values: Map<string, unknown>) {
   return {
-    /** The values as a snapshot holds them, or `undefined` when there are none. */
-    toJSON(): SerializedDoc | undefined {
-      return values.size === 0 ? undefined : Object.fromEntries(values);
+    /** The values as a snapshot holds them, each one `copy` of the scene's, or `undefined` when there are none. */
+    toJSON(copy: <T>(value: T) => T = detach): SerializedDoc | undefined {
+      return values.size === 0 ? undefined : Object.fromEntries([...values].map(([k, v]) => [k, copy(v)]));
     },
-    /** Replace every value, outside history. */
+    /** Replace every value, outside history, with a copy of `next`'s. */
     reset(next: SerializedDoc | undefined): void {
       values.clear();
-      for (const [key, value] of Object.entries(next ?? {})) write(values, key, value);
+      for (const [key, value] of Object.entries(next ?? {})) write(values, key, detach(value));
     },
   };
 }

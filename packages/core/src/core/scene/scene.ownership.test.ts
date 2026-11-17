@@ -79,3 +79,51 @@ describe('Scene ownership of poses and data', () => {
     expect(scene.get(A)).toBe(held);
   });
 });
+
+describe('Scene ownership of document values, declared fields and layer settings', () => {
+  const paged = () => {
+    const scene = setup();
+    scene.add({
+      id: asNodeId('p'), kind: 'group', layer: 'l', pose: at(0), data: { label: 'p', tags: [] },
+      page: { name: 'One', meta: { k: { v: 1 } } }, units: { length: 'mm' } as never,
+      dependsOn: [A],
+    });
+    scene.doc.set('t:theme', { accent: 'blue' });
+    return scene;
+  };
+
+  it('hands a toJSON snapshot copies the scene does not hold', () => {
+    const scene = paged();
+    const snap = scene.toJSON();
+    (snap.doc!['t:theme'] as { accent: string }).accent = 'red';
+    const node = snap.nodes.find((n) => n.id === 'p')!;
+    (node.page!.meta as { k: { v: number } }).k.v = 2;
+    (node.dependsOn as string[]).push('x');
+    expect(scene.doc.get('t:theme')).toEqual({ accent: 'blue' });
+    expect(scene.get(asNodeId('p'))!.page!.meta).toEqual({ k: { v: 1 } });
+    expect(scene.get(asNodeId('p'))!.dependsOn).toEqual([A]);
+  });
+
+  it('refuses a write into a document value or a page after handing it over', () => {
+    const scene = paged();
+    const theme = { accent: 'green' };
+    scene.doc.set('t:theme', theme);
+    expect(() => { theme.accent = 'red'; }).toThrow(TypeError);
+    const info = { name: 'Two', meta: { k: 1 } };
+    scene.setPage(asNodeId('p'), info);
+    expect(() => { info.meta.k = 2; }).toThrow(TypeError);
+  });
+
+  it('loads a save without sharing or freezing its document values, declared fields or layer settings', () => {
+    const json = paged().toJSON();
+    const withParallax = { ...json, systemLayers: [{ id: 'l' as const, parallax: { pan: { x: 0.5, y: 0.5 } } }] };
+    const scene = setup();
+    scene.loadState(withParallax);
+    (json.doc!['t:theme'] as { accent: string }).accent = 'red';
+    (json.nodes.find((n) => n.id === 'p')!.page!.meta as { k: { v: number } }).k.v = 2;
+    (withParallax.systemLayers[0]!.parallax.pan as { x: number }).x = 2;
+    expect(scene.doc.get('t:theme')).toEqual({ accent: 'blue' });
+    expect(scene.get(asNodeId('p'))!.page!.meta).toEqual({ k: { v: 1 } });
+    expect(scene.toJSON().systemLayers[0]!.parallax).toEqual({ pan: { x: 0.5, y: 0.5 } });
+  });
+});
