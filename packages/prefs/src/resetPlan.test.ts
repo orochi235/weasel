@@ -43,7 +43,7 @@ describe('resetPlan', () => {
   };
 
   it('unpins a leaf that starts auto, pins the rest at what they store at their default, and skips readouts', () => {
-    expect(resetPlan(GROUP, 'view', (p) => values[p]).map(({ path, write }) => [path, write])).toEqual([
+    expect(resetPlan(GROUP, 'view', (p) => values[p]).map(({ path, value }) => [path, value])).toEqual([
       ['view.size', 10],
       ['view.gap', AUTO],
       ['view.grid', true],
@@ -68,6 +68,6 @@ describe('resetPlan', () => {
   });
 
   it('pins a leaf that starts auto at its default where the surface keeps no auto state', () => {
-    expect(resetPlan(gap, 'gap', () => one(7))).toEqual([{ path: 'gap', leaf: gap, write: 4 }]);
+    expect(resetPlan(gap, 'gap', () => one(7))).toEqual([{ path: 'gap', leaf: gap, value: 4 }]);
   });
 });

@@ -110,7 +110,7 @@ export function readingIsAtReset(leaf: PrefLeaf, reading: LeafReading): boolean 
 export interface ResetWrite {
   path: string;
   leaf: PrefLeaf;
-  write: unknown;
+  value: unknown;
 }
 
 /**
@@ -127,7 +127,7 @@ export function resetPlan(
   return prefResets(node, path).flatMap((r) => {
     const reading = read(r.path);
     if (reading === undefined || readingIsAtReset(r.leaf, reading)) return [];
-    return [{ path: r.path, leaf: r.leaf, write: r.auto && reading.auto !== undefined ? AUTO : prefStoredReset(r.leaf) }];
+    return [{ path: r.path, leaf: r.leaf, value: r.auto && reading.auto !== undefined ? AUTO : prefStoredReset(r.leaf) }];
   });
 }
 

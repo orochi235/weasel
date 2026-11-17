@@ -97,7 +97,7 @@ export function createLabConfigSource(input: LabConfigInput): PrefsSource {
       const plan = sourceResetPlan(source, paths);
       for (const path of paths) {
         if (path === '') {
-          for (const w of plan) setConfig(w.path, w.write);
+          for (const w of plan) setConfig(w.path, w.value);
           continue;
         }
         const under = plan.filter((w) => w.path === path || w.path.startsWith(`${path}.`));
@@ -109,8 +109,8 @@ export function createLabConfigSource(input: LabConfigInput): PrefsSource {
         const kept = (node ? prefResets(node, path) : []).filter(
           (r) => !planned.has(r.path) && autoAt(r.path) === true,
         );
-        const next = [...under, ...kept.map((r) => ({ path: r.path, write: AUTO }))].reduce(
-          (at, w) => withValueAtPath(at, w.path, w.write),
+        const next = [...under, ...kept.map((r) => ({ path: r.path, value: AUTO }))].reduce(
+          (at, w) => withValueAtPath(at, w.path, w.value),
           config,
         );
         setConfig(path, valueAtPath(next, path));
