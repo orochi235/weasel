@@ -1,6 +1,6 @@
 import { parseHexBytes } from './hex';
 
-const COLOR_FUNCTION = /^(?:rgba?|hsla?|hwb|lab|lch|oklab|oklch|color|color-mix)\(.+\)$/i;
+const COLOR_FUNCTION = /^(?:rgba?|hsla?|hwb|lab|lch|oklab|oklch|color|color-mix)\([^{};]+\)$/i;
 const KEYWORDS = new Set([
   'transparent',
   'currentcolor',

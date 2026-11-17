@@ -16,7 +16,7 @@ describe('parsesAsColor', () => {
     for (const value of ['#fff', '#11223344', 'rgb(1 2 3)', 'hsl(10deg 50% 50% / 0.5)', 'oklch(0.5 0.1 200)', 'transparent', 'Red']) {
       expect(parsesAsColor(value, null), value).toBe(true);
     }
-    for (const value of ['', '4px', '#ggg', 'var(--x)', 'bold', '1px solid red']) {
+    for (const value of ['', '4px', '#ggg', 'var(--x)', 'bold', '1px solid red', 'rgb(0 0 0) } body { background: url(x)', 'rgb(0 0 0); color: hsl(0 0% 0%)']) {
       expect(parsesAsColor(value, null), value).toBe(false);
     }
   });
