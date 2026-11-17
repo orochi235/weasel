@@ -1,5 +1,5 @@
 import type { ActionDeps, BindingOptions, InvocationCtx } from '@weasel-js/routing';
-import { operandMethods, unionAABB, nodeDescriptors, poseDescriptorOf, scenePoseFrame, type PoseFrame, drawnBoxes, type DrawnBoxes, createBareSnapSession, SNAP_ANGLE_STEP } from '@weasel-js/core/engine';
+import { operandMethods, unionAabb, nodeDescriptors, poseDescriptorOf, scenePoseFrame, type PoseFrame, drawnBoxes, type DrawnBoxes, createBareSnapSession, SNAP_ANGLE_STEP } from '@weasel-js/core/engine';
 import type { CommitSelectionMethods, GestureContext, RotateBehavior, PoseDescriptor, SnapBegin, SnapSession } from '@weasel-js/core/engine';
 import { pointerStateOf, transformFinisher, type TransformFinisher, sceneGestureFrames, gestureReaders, type GestureReaders, readRunLifecycle, type RunLifecycle, carryPose, invertPlane, planeOf, shapeSources } from '@weasel-js/core';
 import { resolveParams } from '@weasel-js/routing';
@@ -137,7 +137,7 @@ export function captureTurn(
   const boxes = drawnBoxes({ ...deps, scene }, poseFrame);
   const { originPoses, origins, visual } = captureOrigins(view, scene, ids, descriptorOf, poseFrame, boxes);
   if (originPoses.size === 0) return null;
-  const union = unionAABB(visual)!;
+  const union = unionAabb(visual)!;
   return {
     turn: {
       origins,

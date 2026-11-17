@@ -22,7 +22,7 @@ export interface JogProps extends HoldProps {
   /** Move one step, back or forward. */
   onStep: (by: -1 | 1) => void;
   /** Jump to a step. Left out, no scrubber is drawn. */
-  onScrub?: (index: number) => void;
+  onSeek?: (index: number) => void;
   /** What one step is called, for the spoken labels. Defaults to `Step`. */
   unit?: string;
   /** Drawn after the readout — a beat's caption, a snapshot's date. */
@@ -74,7 +74,7 @@ export function Jog(props: JogProps) {
 }
 
 function jogParts(props: JogProps, access: ControlAccess): JogParts {
-  const { index, count, playing, onPlayingChange, onStep, onScrub, unit = 'Step', caption } = props;
+  const { index, count, playing, onPlayingChange, onStep, onSeek, unit = 'Step', caption } = props;
   // Its buttons are actions, which a read-only scope passes over, so the Jog holds them itself, for its reason.
   const held = access.state !== 'enabled';
   const reason = access.reason;
@@ -125,7 +125,7 @@ function jogParts(props: JogProps, access: ControlAccess): JogParts {
       </Button>
     ),
     scrub:
-      onScrub && count > 0
+      onSeek && count > 0
         ? (shape) => (
             // Only the shape it is handed: on a straight row an enclosing `Along` must not bend it.
             <RunScope fresh shape={shape} align={shape ? 'center' : undefined}>
@@ -139,7 +139,7 @@ function jogParts(props: JogProps, access: ControlAccess): JogParts {
                 aria-label={unit}
                 {...ownHold(props)}
                 thumbs={[{ value: at, valueText: spoken }]}
-                onInput={(next) => onScrub(Math.round(next[0]?.value ?? 0))}
+                onInput={(next) => onSeek(Math.round(next[0]?.value ?? 0))}
               />
             </RunScope>
           )

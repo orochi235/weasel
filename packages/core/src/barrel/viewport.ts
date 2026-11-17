@@ -138,4 +138,4 @@ export { accentColorOf, chromeColorOf, FALLBACK_ACCENT, watchThemeOf } from '../
 export { gateLayer } from '../core/layers/gateLayer';
 export type { GateLayerOptions } from '../core/layers/gateLayer';
 export { useCanvasFocus } from '@weasel-js/react';
-export type { UseCanvasFocusOptions, CanvasFocusReturn } from '@weasel-js/react';
+export type { UseCanvasFocusOptions, UseCanvasFocusReturn } from '@weasel-js/react';

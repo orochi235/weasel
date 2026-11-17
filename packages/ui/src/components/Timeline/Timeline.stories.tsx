@@ -25,7 +25,7 @@ function Harness({ args, initial }: { args: TimelineProps; initial: Track[] }): 
         tracks={tracks}
         playhead={playhead}
         onChange={setTracks}
-        onScrub={setPlayhead}
+        onSeek={setPlayhead}
         renderKeyEditor={({ key }) => <span>value: {String(key.value)}</span>}
       />
     </div>

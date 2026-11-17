@@ -42,7 +42,7 @@ export {
   type AxisHandle, type AxisHandleOptions, type WorldAxis,
 } from './axisMove/handles';
 export {
-  AXIS_HANDLE_KIND, AXIS_MOVE_ACTION_ID, AXIS_MOVE_CONTRIBUTION_ID, axisOfHit, createAxisMove,
+  AXIS_HANDLE_KIND, MOVE_AXIS_ACTION_ID, AXIS_MOVE_CONTRIBUTION_ID, axisOfHit, createAxisMove,
   type AxisMove, type AxisMoveOptions,
 } from './axisMove/action';
 export { collectOverlayBoxes } from './overlays';

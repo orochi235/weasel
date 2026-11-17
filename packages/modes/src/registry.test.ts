@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from 'vitest';
-import { createModeRegistry, getActiveModeFor } from './registry';
+import { createModeRegistry, createActiveModeReader } from './registry';
 import { IMPLICIT_TAGS } from './capabilities';
 import { DEFAULT_MODES, NORMAL, PATH_EDIT } from './presets/default';
 
@@ -69,24 +69,24 @@ describe('createModeRegistry', () => {
   });
 });
 
-describe('getActiveModeFor', () => {
+describe('createActiveModeReader', () => {
   it("reads the active mode's id and its allowed tags plus the implicit ones", () => {
     const r = createModeRegistry({ modes: DEFAULT_MODES, initial: 'path-edit' });
-    const active = getActiveModeFor(r)();
+    const active = createActiveModeReader(r)();
     expect(active.id).toBe('path-edit');
     expect([...active.allowedCapabilities].sort()).toEqual([...PATH_EDIT.allows, ...IMPLICIT_TAGS].sort());
   });
 
   it('follows a mode switch', () => {
     const r = createModeRegistry({ modes: DEFAULT_MODES, initial: 'normal' });
-    const get = getActiveModeFor(r);
+    const get = createActiveModeReader(r);
     r.setMode('path-edit');
     expect(get().id).toBe('path-edit');
   });
 
   it('returns the same object until the mode changes', () => {
     const r = createModeRegistry({ modes: DEFAULT_MODES, initial: 'normal' });
-    const get = getActiveModeFor(r);
+    const get = createActiveModeReader(r);
     const a = get();
     expect(get()).toBe(a);
     r.setMode('path-edit');

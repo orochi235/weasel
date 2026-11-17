@@ -61,13 +61,13 @@ export function snipPathAt(
   opts: SnipPathOptions = {},
 ): SnipResult | null {
   const subs = parseSubpaths(path, false);
-  let hit: { sub: number; at: number; dist: number } | null = null;
+  let hit: { sub: number; at: number; distance: number } | null = null;
   subs.forEach(({ segs }, sub) => segs.forEach((s, k) => {
     const n = nearestOnSeg(s, probe);
-    if (!hit || n.dist < hit.dist) hit = { sub, at: k + n.t, dist: n.dist };
+    if (!hit || n.distance < hit.distance) hit = { sub, at: k + n.t, distance: n.distance };
   }));
-  const found = hit as { sub: number; at: number; dist: number } | null;
-  if (!found || found.dist > (opts.radius ?? Infinity)) return null;
+  const found = hit as { sub: number; at: number; distance: number } | null;
+  if (!found || found.distance > (opts.radius ?? Infinity)) return null;
 
   const { segs, closed } = subs[found.sub];
   const n = segs.length;

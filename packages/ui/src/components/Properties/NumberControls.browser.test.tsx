@@ -1,6 +1,6 @@
 import '@weasel-js/theme/tokens.css';
 import { cleanup, render, screen } from '@testing-library/react';
-import { endless, unit } from '@weasel-js/quantity';
+import { withInfinity, unit } from '@weasel-js/quantity';
 import { afterEach, expect, test } from 'vitest';
 import { PropertyField, PropertyList } from '@weasel-js/ui/components/Properties';
 
@@ -9,8 +9,8 @@ import { PropertyField, PropertyList } from '@weasel-js/ui/components/Properties
 afterEach(cleanup);
 
 test.each([
-  ['never', 5000, endless(unit('ms'), 'never')],
-  ['uncapped', 64, endless(unit('ms'), 'uncapped')],
+  ['never', 5000, withInfinity(unit('ms'), 'never')],
+  ['uncapped', 64, withInfinity(unit('ms'), 'uncapped')],
 ])('a readout at an endless end is wide enough for %s', (word, max, display) => {
   render(
     <PropertyList>

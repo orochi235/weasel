@@ -8,7 +8,7 @@ import {
   type MeasureEnd, type MeasureFrameAt, type MeasurePoint,
 } from './measurement';
 import type { Measurements } from './measurements';
-import { measureAt, type MeasureHit } from './measureHit';
+import { measureHitAt, type MeasureHit } from './measureHit';
 import { addMeasureOp, moveEndOps, moveMeasureOps, translatedMeasure } from './measureEdits';
 import { MEASURE_ACTION_IDS } from './actionIds';
 import type {} from './actionParamSchema';
@@ -90,7 +90,7 @@ export function measurePickAtAction(ms: Measurements): Action {
         const press = params?.press;
         const scene = deps.scene as AnyScene | undefined;
         if (!scene || !press) return;
-        const hit = measureAt(scene, ms, press, pxReach(MEASURE_HIT_PX, deps.view?.get().scale ?? { x: 1, y: 1 }));
+        const hit = measureHitAt(scene, ms, press, pxReach(MEASURE_HIT_PX, deps.view?.get().scale ?? { x: 1, y: 1 }));
         ms.picked.set(hit?.id ?? null);
       },
     },

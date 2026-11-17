@@ -3,7 +3,7 @@ import {
 } from 'react';
 import { IDENTITY_POSE_COMPOSITION, asNodeId, createScene, type NodeRoutingEntry, type Scene } from '@weasel-js/core';
 import {
-  isPrefSection, prefAliasTarget, prefLeafAt, prefSectionLeaves, prefValueAtPath, type PrefAlias, type PrefGroup,
+  isPrefSection, prefAliasTarget, prefLeafAt, prefSectionLeaves, prefValueAt, type PrefAlias, type PrefGroup,
   type PrefSection,
 } from '@weasel-js/prefs';
 import { SelectionPanel } from '@weasel-js/ui-canvas';
@@ -229,12 +229,12 @@ function SectionPreview({ schema, renderers, selected, onSelect, onDefaults, ove
   const [scene, seeded] = useMemo(() => {
     const made = createPreviewScene(schema, over);
     const node = made.get(NODE);
-    return [made, new Map(prefSectionLeaves(schema.members).map(([key]) => [key, JSON.stringify(prefValueAtPath(node, key))]))] as const;
+    return [made, new Map(prefSectionLeaves(schema.members).map(([key]) => [key, JSON.stringify(prefValueAt(node, key))]))] as const;
   }, [schema, over]);
   useEffect(() => scene.subscribe(() => {
     const node = scene.get(NODE);
     const edits = [...seeded].flatMap(([key, was]): DefaultEdit[] => {
-      const value = prefValueAtPath(node, key);
+      const value = prefValueAt(node, key);
       return JSON.stringify(value) === was ? [] : [[key.split('.'), value]];
     });
     if (edits.length > 0) onDefaults(edits);

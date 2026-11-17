@@ -43,7 +43,7 @@ describe('arcShape', () => {
   test('nearest inside the sweep projects by angle', () => {
     const n = bottom.nearest({ x: 0, y: 150 });
     expect(n.f).toBeCloseTo(0.5);
-    expect(n.dist).toBeCloseTo(50);
+    expect(n.distance).toBeCloseTo(50);
   });
   test('nearest past either end answers the nearer end, never the far one', () => {
     const at = (deg: number) => ({

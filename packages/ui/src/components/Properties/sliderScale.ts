@@ -43,7 +43,7 @@ export function trackPlace(
   }
   const unit = scale({ domain: [min, max], range: [0, 1] });
   const at = usableStops(stops, min, max).map((s) => s.value);
-  const toInput = (v: number) => clamp01(unit.map(v));
+  const toInput = (v: number) => clamp01(unit.position(v));
   const fromInput = (raw: number): number => {
     if (raw <= 0) return min;
     if (raw >= 1) return max;

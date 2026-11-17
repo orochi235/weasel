@@ -7,7 +7,7 @@ import { ordinal, roman } from './kinds/numeral';
 import { scientific } from './kinds/scientific';
 import { roundWhole } from './number';
 import { parseAs, present } from './present';
-import { endless, type Display } from './quantity';
+import { withInfinity, type Display } from './quantity';
 import { finite, locale, LOCALES, numberish, runs, timeoutFor, typed } from './pbt.fixture';
 
 const RUNS = runs(150);
@@ -153,7 +153,7 @@ describe('present then parseAs, property', () => {
     const word = fc.option(fc.constantFrom('never', 'unlimited', 'Forever', { text: 'no limit', spoken: 'without limit', negative: 'none' }), { nil: undefined });
     const kind = fc.constantFrom<Display>(decimal(), integer(), percent(), unit('ms'), duration(), fraction(), scientific(), compact(), zoom(), currency('USD'));
     fc.assert(fc.property(kind, word, fc.constantFrom(Infinity, -Infinity), locale, (d, w, inf, loc) => {
-      const shown = w === undefined ? d : endless(d, w);
+      const shown = w === undefined ? d : withInfinity(d, w);
       const p = present(inf, shown, { locale: loc });
       expect(parseAs(p.text, shown, { locale: loc }), p.text).toBe(inf);
       expect(parseAs(p.spoken, shown, { locale: loc }), p.spoken).toBe(inf);

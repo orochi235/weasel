@@ -10,12 +10,12 @@ const MAX = Number.MAX_VALUE;
 describe('scales, shrunk', () => {
   it('places a value whose distance from the domain\'s start is past the double range', () => {
     const s = linearScale({ domain: [-MAX, 0], range: [100, 10] });
-    expect(s.map(9.9792015476736e291)).toBeCloseTo(10, 9);
+    expect(s.position(9.9792015476736e291)).toBeCloseTo(10, 9);
     const wide = linearScale({ domain: [-MAX, MAX], range: [0, 100] });
-    expect(wide.map(0)).toBe(50);
+    expect(wide.position(0)).toBe(50);
     expect(wide.invert(50)).toBe(0);
-    expect(powScale({ domain: [-MAX, MAX], range: [0, 100], exponent: 1 }).map(0)).toBe(50);
-    expect(timeScale({ domain: [-MAX, MAX], range: [0, 100] }).map(0)).toBe(50);
+    expect(powScale({ domain: [-MAX, MAX], range: [0, 100], exponent: 1 }).position(0)).toBe(50);
+    expect(timeScale({ domain: [-MAX, MAX], range: [0, 100] }).position(0)).toBe(50);
   });
 
   it('inverts the range\'s ends to the domain\'s exactly, near the double range\'s end', () => {
@@ -47,8 +47,8 @@ describe('scales, shrunk', () => {
 
   it('sends a log domain\'s ends to the range\'s ends when their logarithms round together', () => {
     const s = logScale({ domain: [1e-12, 1.0000000000000002e-12], range: [0, 1], base: 2 });
-    expect(s.map(1e-12)).toBe(0);
-    expect(s.map(1.0000000000000002e-12)).toBe(1);
+    expect(s.position(1e-12)).toBe(0);
+    expect(s.position(1.0000000000000002e-12)).toBe(1);
     const tiny = logScale({ domain: [1.0000000000000002e-300, 1.0000000000000004e-300], range: [0, 1] });
     expect(tiny.ticks()).toEqual([]);
   });

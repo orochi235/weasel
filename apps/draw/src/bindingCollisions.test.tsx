@@ -8,11 +8,11 @@ import { describe, it, expect, vi, beforeAll, afterEach } from 'vitest';
 import { cleanup } from '@testing-library/react';
 import { renderWithKeys as render } from '@weasel-js/react/testing/giveKeys';
 import { type Contribution, SceneCanvas, createScene, modeTriggers, useCommand } from '@weasel-js/core';
-import { createMeasurements, measurementsContribution, useMeasureTool } from '@weasel-js/measure';
+import { createMeasurements, createMeasurementsContribution, useMeasureTool } from '@weasel-js/measure';
 import { DEFAULT_MODES } from '@weasel-js/modes';
 import { useHudContribution } from '@weasel-js/hud/react';
 import { usePathToolsTools } from '@weasel-js/path-tools';
-import { EDITOR_ACTIONS, EDITOR_PREFERENCES_KEY, useNewCommand, useOpenCommand, useSaveCommand } from '@weasel-js/editor';
+import { EDITOR_ACTIONS, EDITOR_PREFS_KEY, useNewCommand, useOpenCommand, useSaveCommand } from '@weasel-js/editor';
 import { createSpacingHintsPreset } from '@weasel-js/guides';
 import type { DocPages } from '@weasel-js/editor';
 import { useShortcutSheetCommand } from '@weasel-js/ui/components/ShortcutSheet';
@@ -60,7 +60,7 @@ function Commands() {
   const pages = useMemo(() => ({ step: noop, add: noop, remove: noop, removable: () => true, shown: null }) as unknown as DocPages, []);
   usePageCommands(pages, noop);
   // `<EditorShell>`'s Preferences, which it registers with this key.
-  useCommand(EDITOR_ACTIONS.preferences, 'Preferences', noop, { keys: EDITOR_PREFERENCES_KEY });
+  useCommand(EDITOR_ACTIONS.preferences, 'Preferences', noop, { keys: EDITOR_PREFS_KEY });
   // `<EditorShell>`'s shortcut sheet, with its default key.
   useShortcutSheetCommand(noop);
   return null;
@@ -83,7 +83,7 @@ function Draw({ planted = [] }: { planted?: readonly Contribution[] }) {
     appCommandsContribution(() => ({}) as AppCommands),
     ...PATHFINDER_KEYMAP,
     recordingContribution({ attach: () => noop } as unknown as RecordingSession),
-    measurementsContribution(scene as never, measurements),
+    createMeasurementsContribution(scene as never, measurements),
     ...planted,
   ], [hud, machine, scene, measurements, planted]);
   const pathEdit = useMemo(() => modePathEdit(machine, () => true), [machine]);

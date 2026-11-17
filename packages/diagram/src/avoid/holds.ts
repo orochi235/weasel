@@ -26,7 +26,7 @@ function runsAlong(d: Vec2, normal: Vec2, sign: 1 | -1): boolean {
 /** How far along the segment from `a` to `b` point `p` lies, 0 to 1, or
  *  null when it is not on it. */
 function onSegment(p: Vec2, a: Vec2, b: Vec2): number | null {
-  const { t, dist } = nearestOnSegment(p.x, p.y, a.x, a.y, b.x, b.y);
+  const { t, distance: dist } = nearestOnSegment(p.x, p.y, a.x, a.y, b.x, b.y);
   return dist <= EPS * Math.max(1, Math.hypot(b.x - a.x, b.y - a.y)) ? t : null;
 }
 

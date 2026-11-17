@@ -1,4 +1,4 @@
-import { holdElapsed } from '@weasel-js/clock';
+import { holdPosition } from '@weasel-js/clock';
 import { useLatest } from '@weasel-js/core';
 import { createEmitter } from '@weasel-js/registry';
 import {
@@ -149,7 +149,7 @@ export function useTrialClockSetup({ instrument, config, record, store, target }
 
   useEffect(() => {
     if (!held || held.reopenAt === null) return;
-    return holdElapsed(held.handle, held.reopenAt).release;
+    return holdPosition(held.handle, held.reopenAt).release;
   }, [held]);
 
   const pending = !onLab && spec !== null && held === null;

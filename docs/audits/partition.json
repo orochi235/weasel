@@ -1067,7 +1067,7 @@
    "packages/clock/src/pbt.fixture.ts",
    "packages/clock/src/place.ts",
    "packages/clock/src/ramp.ts",
-   "packages/clock/src/rates.ts",
+   "packages/clock/src/speeds.ts",
    "packages/clock/src/react.ts",
    "packages/clock/src/registry.ts",
    "packages/clock/src/types.ts",
@@ -3725,8 +3725,8 @@
    "packages/hud/src/menu/attachMenuHost.ts",
    "packages/hud/src/menu/chipRepeat.ts",
    "packages/hud/src/menu/colorPicker.ts",
-   "packages/hud/src/menu/drawPanel.ts",
-   "packages/hud/src/menu/measureLabel.ts",
+   "packages/hud/src/menu/panelCommands.ts",
+   "packages/hud/src/menu/textWidth.ts",
    "packages/hud/src/menu/menu.fixture.ts",
    "packages/hud/src/menu/menuEnv.ts",
    "packages/hud/src/menu/menuWidget.ts",
@@ -4357,7 +4357,7 @@
    "packages/measure/src/measureCommands.ts",
    "packages/measure/src/measureContribution.ts",
    "packages/measure/src/measureEdits.ts",
-   "packages/measure/src/measureGestures.ts",
+   "packages/measure/src/measureActions.ts",
    "packages/measure/src/measureHit.ts",
    "packages/measure/src/measureLayer.ts",
    "packages/measure/src/measurePainter.ts",
@@ -4495,7 +4495,7 @@
    "packages/parallax/src/createTiledLayer.ts",
    "packages/parallax/src/index.ts",
    "packages/parallax/src/pbt.fixture.ts",
-   "packages/parallax/src/tiledProject.ts"
+   "packages/parallax/src/tileRange.ts"
   ]
  },
  {
@@ -5469,7 +5469,7 @@
    "packages/routing/src/keymaps/captureSpec.ts",
    "packages/routing/src/keymaps/describeKeymap.ts",
    "packages/routing/src/keymaps/index.ts",
-   "packages/routing/src/keymaps/keymapContribution.ts",
+   "packages/routing/src/keymaps/createKeymapContribution.ts",
    "packages/routing/src/keymaps/keymapStack.ts",
    "packages/routing/src/keymaps/useInnermostKeymap.ts",
    "packages/routing/src/keymaps/useOpenKeymap.ts"

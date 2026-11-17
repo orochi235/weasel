@@ -2,7 +2,7 @@ import { ActionDisabledReason, type Action, type ActionDeps, type MenuHit } from
 import { scenePoseFrame } from '../poseFrame';
 import { nodeDescriptors, poseDescriptorOf } from '../poseDescriptorDep';
 import { visualBoundsViaDescriptor } from '../../../core/geometry/poseDescriptor';
-import { unionAABB } from 'core/geometry/unionBounds';
+import { unionAabb } from 'core/geometry/unionBounds';
 import { screenToWorld } from 'core/viewport/viewTransform';
 import { viewToTransform } from 'core/viewport/view';
 import { asNodeId } from 'core/scene/types';
@@ -17,7 +17,7 @@ export function keyboardAnchor(deps: ActionDeps): Point | null {
   if (ids.length && deps.scene) {
     const frame = scenePoseFrame(deps.scene);
     const descriptorOf = nodeDescriptors(deps.scene, poseDescriptorOf(deps.poseDescriptor));
-    const box = unionAABB(ids.map((id) => visualBoundsViaDescriptor(frame.world(id), descriptorOf(id))));
+    const box = unionAabb(ids.map((id) => visualBoundsViaDescriptor(frame.world(id), descriptorOf(id))));
     if (box) return { x: box.x + box.width / 2, y: box.y + box.height / 2 };
   }
   const view = deps.view?.get();

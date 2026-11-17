@@ -123,7 +123,7 @@ function fixedEndOf<TPose>(ends: EdgeEnds<TPose>, moving: 'from' | 'to', opts: R
   const { node, pose } = ends[side];
   const named = ends.trait[side].port;
   const port = named === undefined ? undefined : portOf(node, pose, named, {
-    ...(opts.geometry ? { geometry: opts.geometry } : {}),
+    ...(opts.poseDescriptor ? { poseDescriptor: opts.poseDescriptor } : {}),
     ...(opts.read ? { read: opts.read } : {}),
   });
   return port ?? { kind: 'body', nodeId: node.id, point: ends.points[side] };
@@ -215,10 +215,10 @@ export function reconnectBinding(actionId: string = RECONNECT_ACTION_ID): Gestur
 
 /**
  * Reconnecting an edge end, as one entry to pass as `ambient` — after
- * `diagramPorts` and `diagramWaypoints`, since an edge's end sits on a port and
+ * `createDiagramPortsContribution` and `createDiagramWaypointsContribution`, since an edge's end sits on a port and
  * beside a route handle. It carries the handle layer and the drag.
  */
-export function diagramEdgeEnds<TPose>(
+export function createDiagramEdgeEndsContribution<TPose>(
   opts: ReconnectOptions<TPose> & Omit<EdgeEndAffordanceOptions<TPose>, 'id'>,
 ): SurfaceContribution {
   const actionId = opts.id ?? RECONNECT_ACTION_ID;

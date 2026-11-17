@@ -57,8 +57,8 @@ export function avoidSceneInput<TPose>(
   poseOf?: (id: string) => TPose | undefined,
 ): AvoidInput {
   const sc = scene as unknown as AnyScene;
-  const geometry = opts.geometry ?? (AUTO_POSE_DESCRIPTOR as PoseDescriptor<TPose>);
-  const portOpts: PortsOptions<TPose> = { geometry, ...(opts.read ? { read: opts.read } : {}) };
+  const poseDescriptor = opts.poseDescriptor ?? (AUTO_POSE_DESCRIPTOR as PoseDescriptor<TPose>);
+  const portOpts: PortsOptions<TPose> = { poseDescriptor, ...(opts.read ? { read: opts.read } : {}) };
   const key = opts.routerKey ?? 'avoid';
   const poses = new Map<string, TPose>();
   const stored = worldPoses(sc, 'document');
@@ -86,7 +86,7 @@ export function avoidSceneInput<TPose>(
     const label = diagramLabelOf(node);
     if (label !== null) {
       const owner = Array.isArray(node.dependsOn) ? node.dependsOn[0] : undefined;
-      const { width, height } = geometry.getBounds(node.pose as TPose);
+      const { width, height } = poseDescriptor.getBounds(node.pose as TPose);
       if (owner !== undefined && !labels.has(owner)) {
         labels.set(owner, { id: node.id, placement: label, size: { width, height } });
         labelNodes.set(owner, node);
@@ -96,7 +96,7 @@ export function avoidSceneInput<TPose>(
     const container = diagramContainerOf(node);
     const isParticipant = diagramNodeOf(node as never, opts.read) !== null;
     if (!isParticipant && container?.role !== 'lane') continue;
-    const box = geometry.getBounds(pose(node));
+    const box = poseDescriptor.getBounds(pose(node));
     const header = container === null ? null : headerBox(box, container.header);
     if (header !== null) obstacles.push({ id: headerIdOf(node.id), kind: 'shape', box: header });
     if (container?.role === 'lane') continue;
@@ -108,7 +108,7 @@ export function avoidSceneInput<TPose>(
 
   for (const id of split) {
     const node = labelNodes.get(id);
-    if (node !== undefined) obstacles.push({ id: node.id, kind: 'label', edge: id, box: geometry.getBounds(pose(node)) });
+    if (node !== undefined) obstacles.push({ id: node.id, kind: 'label', edge: id, box: poseDescriptor.getBounds(pose(node)) });
   }
 
   const edges: AvoidEdge[] = [];

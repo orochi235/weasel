@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { chromeLineWidthScale, cursorPaintMatrix, cursorPaintOps, cursorWorldSize } from './paint';
+import { chromeLineWidthScale, cursorPaintMatrix, cursorPaintOps, worldCursorPx } from './paint';
 import { bakeCursor } from './bake';
 import { CURSOR_HALO, CURSOR_INK } from './types';
 import type { CursorGlyph } from './types';
@@ -121,7 +121,7 @@ describe('cursorPaintMatrix', () => {
   });
 });
 
-describe('cursorWorldSize', () => {
+describe('worldCursorPx', () => {
   const RING: CursorGlyph = {
     box: 24,
     hotspot: [12, 12],
@@ -132,7 +132,7 @@ describe('cursorWorldSize', () => {
   it('draws the named circle at the world radius it was asked for', () => {
     // The whole contract of a brush cursor: the ring measures the brush.
     for (const [worldRadius, scale] of [[40, 1], [40, 2], [7.5, 0.5]] as const) {
-      const size = cursorWorldSize(RING, worldRadius, scale);
+      const size = worldCursorPx(RING, worldRadius, scale);
       const renderedRingRadius = (RING.radius as number) * (size / RING.box);
       expect(renderedRingRadius).toBeCloseTo(worldRadius * scale);
     }
@@ -140,14 +140,14 @@ describe('cursorWorldSize', () => {
 
   it('falls back to the inscribed circle when a glyph names no radius', () => {
     const { radius: _unused, ...noRadius } = RING;
-    expect(cursorWorldSize(noRadius, 12, 1)).toBeCloseTo(24);
+    expect(worldCursorPx(noRadius, 12, 1)).toBeCloseTo(24);
   });
 
   it('holds line weight constant as the ring grows', () => {
     // A ring at a 400px radius drawn with a scaled weight carries a 40px
     // stroke and a halo to match — a filled blob, not a cursor.
     for (const worldRadius of [8, 200]) {
-      const size = cursorWorldSize(RING, worldRadius, 1);
+      const size = worldCursorPx(RING, worldRadius, 1);
       const ops = cursorPaintOps(RING, { lineWidthScale: chromeLineWidthScale(RING, size) });
       const renderedWidth = (ops[1].stroke as { width: number }).width * (size / RING.box);
       expect(renderedWidth).toBeCloseTo(1.6);

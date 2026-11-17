@@ -97,7 +97,7 @@ describe('warpPath', () => {
       expect(Array.from(out.commands)).toContain(PATH_C);
       for (let k = 0; k <= 50; k++) {
         const target = bend({ x: 2 * k, y: 0 });
-        expect(nearestOnPath(out.commands, out.coords, target.x, target.y)!.dist).toBeLessThanOrEqual(tolerance + 1e-6);
+        expect(nearestOnPath(out.commands, out.coords, target.x, target.y)!.distance).toBeLessThanOrEqual(tolerance + 1e-6);
       }
     }
   });

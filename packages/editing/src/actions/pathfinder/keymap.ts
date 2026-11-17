@@ -1,5 +1,5 @@
 import type { KeyHeldSpec, KeySpec } from '@weasel-js/gestures';
-import { holdPreview, holdPreviewId, keymapContribution, type Action, type Contribution } from '@weasel-js/routing';
+import { holdPreview, holdPreviewId, createKeymapContribution, type Action, type Contribution } from '@weasel-js/routing';
 import {
   pathfinderCropAction, pathfinderDivideAction, pathfinderExcludeAction, pathfinderIntersectAction,
   pathfinderMergeAction, pathfinderSubtractAction, pathfinderTrimAction, pathfinderUnionAction,
@@ -34,7 +34,7 @@ const KEYS: readonly (readonly [Action, string])[] = [
  * operations themselves come from the `paths` preset; this carries only their
  * holds. Install it with `<SceneCanvas ambient>`.
  */
-export const PATHFINDER_KEYMAP: readonly Contribution<never>[] = keymapContribution({
+export const PATHFINDER_KEYMAP: readonly Contribution<never>[] = createKeymapContribution({
   id: PATHFINDER_KEYMAP_ID,
   label: 'Pathfinder',
   leader: PATHFINDER_LEADER,

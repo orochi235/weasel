@@ -31,7 +31,7 @@ import { pathPoint } from '@weasel-js/geom';
 
 /** Options for {@link installLabelPlacement} and `useLabelPlacement`. */
 export interface LabelPlacementOptions<TPose> extends PlaceLabelsOptions {
-  geometry?: PoseDescriptor<TPose>;
+  poseDescriptor?: PoseDescriptor<TPose>;
   /** How a node's diagram trait is read. Default its own `data.diagram`. */
   read?: DiagramNodeReader;
   /** Sizes a label to the text an edit gives it. Default a per-character estimate. */
@@ -67,7 +67,7 @@ function runsOf(path: Path | null): Vec2[][] {
 }
 
 function read(
-  sc: AnyScene, geometry: PoseDescriptor<unknown>, reader: DiagramNodeReader | undefined, sizes?: ReadonlyMap<string, Size>,
+  sc: AnyScene, poseDescriptor: PoseDescriptor<unknown>, reader: DiagramNodeReader | undefined, sizes?: ReadonlyMap<string, Size>,
 ): Reading {
   const out: Reading = { shapes: [], routes: new Map(), labels: [] };
   for (const node of sc.renderOrderNodes()) {
@@ -80,12 +80,12 @@ function read(
     }
     const placement = diagramLabelOf(node);
     if (placement !== null) {
-      const { width, height } = sizes?.get(node.id) ?? geometry.getBounds(node.pose);
+      const { width, height } = sizes?.get(node.id) ?? poseDescriptor.getBounds(node.pose);
       if (ends[0] !== undefined) out.labels.push({ id: node.id, edge: ends[0], placement, size: { width, height }, node });
       continue;
     }
     if (diagramContainerOf(node) !== null || diagramClusterOf(node) !== null || diagramNodeOf(node as never, reader) === null) continue;
-    out.shapes.push({ id: node.id, box: geometry.getBounds(documentPose(sc, node as never)) });
+    out.shapes.push({ id: node.id, box: poseDescriptor.getBounds(documentPose(sc, node as never)) });
   }
   return out;
 }
@@ -194,9 +194,9 @@ function placementOps<TPose>(
   seen: Seen,
 ): Op[] {
   const sc = scene as unknown as AnyScene;
-  const geometry = (opts.geometry ?? AUTO_POSE_DESCRIPTOR) as PoseDescriptor<unknown>;
+  const poseDescriptor = (opts.poseDescriptor ?? AUTO_POSE_DESCRIPTOR) as PoseDescriptor<unknown>;
   const fit = labelFitOps(sc, summary, opts.measure);
-  const reading = read(sc, geometry, opts.read, fit.sizes);
+  const reading = read(sc, poseDescriptor, opts.read, fit.sizes);
   const moving = movingOf(reading, summary, seen, opts.gap ?? 2);
   seen.shapes = new Map(reading.shapes.map((s) => [s.id, s.box]));
   seen.routes = new Map([...reading.routes.values()].map((r) => [r.id, runsIn(r)]));
@@ -228,7 +228,7 @@ export function installLabelPlacement<TPose>(
   opts: LabelPlacementOptions<TPose> = {},
 ): LabelPlacement {
   const sc = scene as unknown as AnyScene;
-  const first = read(sc, (opts.geometry ?? AUTO_POSE_DESCRIPTOR) as PoseDescriptor<unknown>, opts.read);
+  const first = read(sc, (opts.poseDescriptor ?? AUTO_POSE_DESCRIPTOR) as PoseDescriptor<unknown>, opts.read);
   const seen: Seen = {
     shapes: new Map(first.shapes.map((s) => [s.id, s.box])),
     routes: new Map([...first.routes.values()].map((r) => [r.id, runsIn(r)])),

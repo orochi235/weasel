@@ -64,8 +64,8 @@ export function resolveEnd<TPose>(
 }
 
 /** The point an end aims at when it names none: the center of its bounds. */
-export function boxCenter<TPose>(geometry: PoseDescriptor<TPose>, pose: TPose): Vec2 {
-  const b = geometry.getBounds(pose);
+export function boxCenter<TPose>(poseDescriptor: PoseDescriptor<TPose>, pose: TPose): Vec2 {
+  const b = poseDescriptor.getBounds(pose);
   return { x: b.x + b.width / 2, y: b.y + b.height / 2 };
 }
 
@@ -189,12 +189,12 @@ function stubsPath(stubs: readonly (readonly Vec2[])[]): Path {
 export function edgeRouter<TPose>(
   opts: EdgeRouteOptions<TPose> = {},
 ): (node: { data: unknown }, deps: readonly (DerivedDep<TPose> | undefined)[]) => ResolvedRoute | null {
-  const geometry = opts.geometry ?? (AUTO_POSE_DESCRIPTOR as PoseDescriptor<TPose>);
-  const portOpts: PortsOptions<TPose> = { geometry, ...(opts.read ? { read: opts.read } : {}) };
+  const poseDescriptor = opts.poseDescriptor ?? (AUTO_POSE_DESCRIPTOR as PoseDescriptor<TPose>);
+  const portOpts: PortsOptions<TPose> = { poseDescriptor, ...(opts.read ? { read: opts.read } : {}) };
   const allPorts = (d: DerivedDep<TPose>): Port[] =>
     portsOf(d.node as never, d.pose, portOpts);
   const standoffOf = (d: DerivedDep<TPose>): number => {
-    const b = geometry.getBounds(d.pose);
+    const b = poseDescriptor.getBounds(d.pose);
     return Math.min(b.width, b.height) / 2;
   };
 
@@ -205,7 +205,7 @@ export function edgeRouter<TPose>(
     if (fromDep === undefined || toDep === undefined) return null;
 
     const authored = edge.waypoints ?? [];
-    const aims = endAims(boxCenter(geometry, fromDep.pose), boxCenter(geometry, toDep.pose), authored, edge.route);
+    const aims = endAims(boxCenter(poseDescriptor, fromDep.pose), boxCenter(poseDescriptor, toDep.pose), authored, edge.route);
     const named = edge.from.port !== undefined ? 'from' : edge.to.port !== undefined ? 'to' : null;
     const loop = fromDep.node.id === toDep.node.id && (edge.from.port === undefined || edge.to.port === undefined)
       ? selfLoop(allPorts(fromDep), opts.selfLoopStandoff ?? standoffOf(fromDep), named === null ? {} : {

@@ -110,7 +110,7 @@ function sampleWarped(curve: (t: number) => Point, count: number, tol: number): 
 
 /** How far `p` lies from the segment `a`–`b`. */
 function fromChord(p: Point, a: Point, b: Point): number {
-  return nearestOnSegment(p.x, p.y, a.x, a.y, b.x, b.y).dist;
+  return nearestOnSegment(p.x, p.y, a.x, a.y, b.x, b.y).distance;
 }
 
 function dedupe(pts: Point[]): Point[] {

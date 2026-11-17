@@ -26,7 +26,7 @@ import { LASSO_VERTICES } from './behaviors/selectFromLasso';
 import type {} from '@weasel-js/core';
 
 /** Compute AABB of a polygon (for fallback hit-test when hitTestLasso is absent). */
-function polygonAABB(
+function polygonAabb(
   pts: Point2[],
 ): { x: number; y: number; width: number; height: number } | null {
   if (pts.length === 0) return null;
@@ -50,7 +50,7 @@ function hitTestPolygon(
   view: ViewApi | undefined,
 ): string[] {
   if (dep.hitTestLasso) return targetsOf(dep.hitTestLasso(vertices, mode, view), dep.targetOf);
-  const aabb = polygonAABB(vertices as Point2[]);
+  const aabb = polygonAabb(vertices as Point2[]);
   return aabb ? targetsOf(dep.hitTestArea(aabb, view), dep.targetOf) : [];
 }
 

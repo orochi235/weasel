@@ -4,7 +4,7 @@
 
 `@weasel-js/core` and `@weasel-js/core/math` no longer re-export the simulation; import it from `@weasel-js/simulation`.
 
-`createSimulation`, `DEFAULT_ALPHA_DECAY`, `DEFAULT_ALPHA_MIN`, `DEFAULT_VELOCITY_DECAY` and the types `Simulation`, `SimulationCore`, `SimulationForce`, `SimulationNode`, `SimulationOptions` and `UseSimulationOptions` come from `@weasel-js/simulation`; `useSimulation` comes from `@weasel-js/simulation/react`. Core no longer depends on the package, so add it to your own dependencies.
+`createSimulation`, `DEFAULT_ALPHA_DECAY`, `DEFAULT_ALPHA_MIN`, `DEFAULT_VELOCITY_DECAY` and the types `RunningSimulation`, `Simulation`, `SimulationForce`, `SimulationNode`, `SimulationOptions` and `UseSimulationOptions` come from `@weasel-js/simulation`; `useSimulation` comes from `@weasel-js/simulation/react`. Core no longer depends on the package, so add it to your own dependencies.
 
 ```ts
 // before

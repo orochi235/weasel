@@ -47,7 +47,7 @@ export interface TimelineProps extends HoldProps {
   onInput?: (next: Track[]) => void;
   onChange: (next: Track[]) => void;
   onCancel?: () => void;
-  onScrub: (t: number) => void;
+  onSeek: (t: number) => void;
 
   /** The playback controls. Omitted, the row holds the time readout and the
    *  Graph switch alone; `false` hides the row. */
@@ -69,7 +69,7 @@ export interface TimelineProps extends HoldProps {
 export function Timeline(props: TimelineProps): ReactElement {
   const {
     tracks, duration, playhead,
-    onInput, onChange, onScrub,
+    onInput, onChange, onSeek,
     renderKeyEditor, label, className,
   } = props;
 
@@ -165,7 +165,7 @@ export function Timeline(props: TimelineProps): ReactElement {
             window={win}
             bounds={bounds}
             playhead={playhead}
-            onScrub={edits ? onScrub : ignore}
+            onSeek={edits ? onSeek : ignore}
             onWindowChange={hold.disabled ? ignore : setWindow}
           />
         </div>

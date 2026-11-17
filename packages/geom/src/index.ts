@@ -41,7 +41,7 @@ export {
   DEFAULT_FLATTEN_TOLERANCE, flattenCubic, flattenQuadratic,
   flattenCubicWithArcLen, flattenQuadraticWithArcLen,
 } from './flatten';
-export { pointInPolygon, ringSignedArea, segmentsCross } from './polyline';
+export { polygonContainsPoint, ringSignedArea, segmentsCross } from './polyline';
 export { flatSubpaths, type FlatSubpaths } from './pathSubpaths';
 export { distance, distance2, lerpPoint, pointSegmentDistance, pointSegmentDistance2, segmentT } from './points2';
 export {
@@ -134,7 +134,7 @@ export {
   shrinkAnchorSelection, smoothAnchors,
 } from './paths/anchorSelection';
 export {
-  averageAnchorsAt, closestOpenEnds, joinAnchorsAt, joinSubpathEnds, subpathEndAt,
+  averageAnchorsAt, nearestOpenEnds, joinAnchorsAt, joinSubpathEnds, subpathEndAt,
   type AverageAxis, type JoinOptions, type SubpathEnd,
 } from './paths/joinAnchors';
 export {
@@ -190,7 +190,7 @@ export { meanScale } from './meanScale';
 export { pxExtent, pxExtentInFrame, pxReach, scaleDelta, screenAngleOf, standoff, withinPxBox, withinPxRadius, type Scale2 } from './pxExtent';
 export { poseRotationOf, rotatePathAbout, type PoseRotation } from './poseRotation';
 export {
-  boxFrameOf, poseFrameOf, poseFrameInverseOf, poseLinearOf, pathThroughPoseFrame, type FramedBox, type PoseLinear,
+  boxFrameOf, poseFrameOf, poseFrameInverseOf, poseLinearOf, pathThroughPoseFrame, type FramedRect, type PoseLinear,
 } from './poseFrame';
 export {
   anchorAt, anchorCount, anchorsInRect, deleteAnchorsAt, editAnchorSet, flatAnchorIndex, insertAnchorOnSegment,

@@ -81,8 +81,8 @@ function mount() {
 
     const classifyTarget = useCallback((point: { x: number; y: number }) => {
       const id = entry.pick(point);
-      if (!id) return { body: 'empty' as const };
-      return { body: (selectionRef.current.includes(id) ? 'selected-body' : 'unselected-body') as 'selected-body' | 'unselected-body' };
+      if (!id) return { bodyTarget: 'empty' as const };
+      return { bodyTarget: (selectionRef.current.includes(id) ? 'selected-body' : 'unselected-body') as 'selected-body' | 'unselected-body' };
     }, [entry]);
 
     useGestureDispatcher({

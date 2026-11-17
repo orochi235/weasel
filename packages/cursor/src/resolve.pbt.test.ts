@@ -1,5 +1,5 @@
 /**
- * Property tests of cursor resolution: `resolveCursorTier` against a model of its documented order (a bare string
+ * Property tests of cursor resolution: `resolveCursor` against a model of its documented order (a bare string
  * passes through, a world radius paints, a size past the cap paints, anything else bakes), every baked cursor ending
  * in its fallback keyword, and the memoized `cursorFor` agreeing with a fresh bake.
  */
@@ -7,7 +7,7 @@ import { describe, expect, it } from 'vitest';
 import fc from 'fast-check';
 import { bakeCursor, quantizeCursorAngle } from './bake';
 import { cursorFor, cursorGlyph, cursorVariants } from './registry';
-import { resolveCursor, resolveCursorTier, type CursorGlyphSpec, type ResolvedCursor } from './resolve';
+import { cursorCss, resolveCursor, type CursorGlyphSpec, type ResolvedCursor } from './resolve';
 import { CURSOR_MAX_CSS_PX } from './types';
 import { anyNumber, angle, bakedSize, runs, tally, timeoutFor, variant } from './pbt.fixture';
 
@@ -35,13 +35,13 @@ function model(spec: CursorGlyphSpec): ResolvedCursor {
   return { kind: 'css', css: bakeCursor(cursorGlyph(spec.glyph, { mark: spec.mark }), { size: size ?? 24, angle, fallback: spec.fallback ?? 'default' }) };
 }
 
-describe('resolveCursorTier', () => {
+describe('resolveCursor', () => {
   it('resolves in the documented order, and every baked cursor ends in its fallback keyword', () => {
     const t = tally();
     fc.assert(fc.property(glyphSpec, (spec) => {
-      const got = resolveCursorTier(spec);
+      const got = resolveCursor(spec);
       expect(got).toEqual(model(spec));
-      expect(resolveCursor(spec)).toBe(got.kind === 'css' ? got.css : 'none');
+      expect(cursorCss(spec)).toBe(got.kind === 'css' ? got.css : 'none');
       if (got.kind === 'css') {
         expect(got.css.endsWith(`, ${spec.fallback ?? 'default'}`)).toBe(true);
         expect(got.css).not.toMatch(/NaN|Infinity|undefined/);
@@ -53,10 +53,10 @@ describe('resolveCursorTier', () => {
 
   it('passes a bare string through, and answers nothing for nothing', () => {
     fc.assert(fc.property(fc.string(), (css) => {
-      expect(resolveCursorTier(css)).toEqual({ kind: 'css', css });
-      expect(resolveCursor(css)).toBe(css);
+      expect(resolveCursor(css)).toEqual({ kind: 'css', css });
+      expect(cursorCss(css)).toBe(css);
     }), runs(RUNS));
-    expect(resolveCursor(undefined)).toBeUndefined();
+    expect(cursorCss(undefined)).toBeUndefined();
   });
 });
 

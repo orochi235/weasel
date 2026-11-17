@@ -62,14 +62,14 @@ the scene's paint order. P-touch sets text again in its own copy of the face, so
 where the canvas did not.
 
 A node whose object its paint cannot say, such as a barcode drawn as bars, is written as that
-object by the `drawOne` passed to `sceneToLbx` returning `lbxObjects([...])`: a command that draws
+object by the `drawOne` passed to `sceneToLbx` returning `lbxObjectsCommand([...])`: a command that draws
 nothing and puts bil-lbx `LabelObject`s in the file where it stands. Their positions are in the
 frame the command is drawn in and go through the transforms above it; under a rotation they are
 skipped. The canvas keeps its own `drawOne`, which draws the bars.
 
 ```ts
 const exportDrawOne = (node, pose, view, ctx) => node.data.kind === 'barcode'
-  ? [lbxObjects([{ type: 'barcode', protocol: 'CODE128', data: node.data.value, position: pose }])]
+  ? [lbxObjectsCommand([{ type: 'barcode', protocol: 'CODE128', data: node.data.value, position: pose }])]
   : drawOne(node, pose, view, ctx);
 ```
 

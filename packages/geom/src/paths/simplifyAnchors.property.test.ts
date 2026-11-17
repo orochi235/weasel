@@ -78,7 +78,7 @@ function farthestFrom(pts: readonly Point[], line: readonly Point[], reach: numb
       for (let dy = -1; dy <= 1; dy++) {
         for (const i of grid.get(key(cx + dx, cy + dy)) ?? []) {
           const a = line[i], b = line[i + 1];
-          best = Math.min(best, nearestOnSegment(p.x, p.y, a.x, a.y, b.x, b.y).dist);
+          best = Math.min(best, nearestOnSegment(p.x, p.y, a.x, a.y, b.x, b.y).distance);
         }
       }
     }

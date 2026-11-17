@@ -18,7 +18,7 @@ import {
   prefStatusAt,
   prefStatusUnder,
 } from '@weasel-js/prefs';
-import { schemaNodeAtPath, valueAtPath } from './path';
+import { schemaNodeAt, configValueAt } from './path';
 import type { ConfigEntry, ResolvedConfig } from './types';
 
 /**
@@ -32,7 +32,7 @@ export function aliasTargetsOf(
   over?: PrefGroup | PrefSection,
 ): PrefAliasTargets {
   const of = over ?? resolved.group;
-  const read = over ? prefReader(over, config) : (at: string): unknown => valueAtPath(config, at);
+  const read = over ? prefReader(over, config) : (at: string): unknown => configValueAt(config, at);
   return createAliasTargets(of, (entry) => prefJudge(of, read, entry), { showHidden: true });
 }
 
@@ -50,7 +50,7 @@ function conditionReader(
   return (at) =>
     beyond && prefSchemaHolding(resolved.group, at, over) === over
       ? beyond(at)
-      : valueAtPath(config, at);
+      : configValueAt(config, at);
 }
 
 /**
@@ -101,7 +101,7 @@ export function isRowVisible(
   showHidden = false,
   over?: PrefGroup | PrefSection,
 ): boolean {
-  const node = schemaNodeAtPath(resolved.group, path);
+  const node = schemaNodeAt(resolved.group, path);
   if (node && 'hidden' in node && node.hidden === true && !showHidden) return false;
   return statusAt(resolved, path, config, over).shown;
 }
@@ -189,7 +189,7 @@ export function isConfigNodeShown(
   config: Record<string, unknown>,
   schema: PrefGroup | PrefSection,
 ): boolean {
-  const judge = prefJudge(schema, (at) => valueAtPath(config, at));
+  const judge = prefJudge(schema, (at) => configValueAt(config, at));
   if (!prefStatusUnder(ROOT_PREF_STATUS, entry.annotations, judge).shown) return false;
   return entry.options.showIf?.(config) ?? true;
 }

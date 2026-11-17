@@ -103,7 +103,7 @@ export function followOffPageBinding(actionId: string = FOLLOW_OFF_PAGE_ACTION_I
 }
 
 /** Following off-page tags, as a contribution to pass as `ambient`. */
-export function diagramOffPage(opts: FollowOffPageOptions = {}): Contribution {
+export function createDiagramOffPageContribution(opts: FollowOffPageOptions = {}): Contribution {
   return {
     id: 'weasel-diagram-off-page',
     eligibility: { always: true },

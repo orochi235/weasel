@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react';
 import { getOwn, setOwn } from '@weasel-js/registry';
-import { applyPrefConditions, orderPrefGroup, createAliasTargets, prefJudge, prefValueOrDefault, prefReader, prefValueAtPath, createRecordSource, createValuesSource, type PrefAlias, type PrefAliasTargets, type PrefEntry, type PrefGroup, type PrefSection } from '@weasel-js/prefs';
+import { applyPrefConditions, orderPrefGroup, createAliasTargets, prefJudge, prefValueOrDefault, prefReader, prefValueAt, createRecordSource, createValuesSource, type PrefAlias, type PrefAliasTargets, type PrefEntry, type PrefGroup, type PrefSection } from '@weasel-js/prefs';
 import type { LiveControl } from '../Prefs/commitPolicy';
 import { entryApplier, type EntryAt } from '../Prefs/entry';
 import { useParamsPolicy } from '../Prefs/useParamsPolicy';
@@ -115,7 +115,7 @@ export function valueAt(values: Readonly<Record<string, unknown>> | undefined, p
   if (Object.hasOwn(values, path)) return values[path];
   for (let dot = path.lastIndexOf('.'); dot > 0; dot = path.lastIndexOf('.', dot - 1)) {
     const head = path.slice(0, dot);
-    if (Object.hasOwn(values, head)) return prefValueAtPath(values[head], path.slice(dot + 1));
+    if (Object.hasOwn(values, head)) return prefValueAt(values[head], path.slice(dot + 1));
   }
   return undefined;
 }

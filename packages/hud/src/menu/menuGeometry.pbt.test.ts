@@ -8,7 +8,7 @@ import { createMenuController, type MenuNumberEntry, type MenuRect } from '@weas
 import { draftText, grapheme, menuLevel, openPath, runs, tally } from '../pbt.fixture';
 import { chipUnder, levelAt } from './chipRepeat';
 import { menuRowSpans } from '@weasel-js/ui-logic';
-import { panelSize, rowAt } from './drawPanel';
+import { panelSize, rowAt } from './panelCommands';
 import { envOf, menuTheme } from './menu.fixture';
 import { clusterStops, startEdit, type HudTextEdit } from './textEdit';
 import { caretAt, caretX, chipAt, numberChips, typingCommands } from './valueRows';

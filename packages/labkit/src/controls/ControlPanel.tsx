@@ -14,10 +14,10 @@ import {
   type PropertySpacing,
 } from '@weasel-js/ui/components/Properties';
 import { type ReactNode, useMemo, useState } from 'react';
-import { auto as autoValue, isAuto } from '../config/auto';
+import { AUTO, isAuto } from '../config/auto';
 import { applyConfigWrite, startAutoPathsOf, resolveAutoConfig } from '../config/autoConfig';
 import { type AutoReports, withAutoReports } from '../config/autoReports';
-import { valueAtPath } from '../config/path';
+import { configValueAt } from '../config/path';
 import type { LeafRenderer, ResolvedConfig } from '../config/types';
 import { type ControlPack, gridOf } from './controlPack';
 import { FieldChoicesContext, useFieldChoicesOf } from './fieldChoices';
@@ -100,7 +100,7 @@ export interface ControlPanelProps<TC extends Record<string, unknown>>
   /** Dotted paths currently unpinned. A row in this set reads out `auto` beside its live, ghosted control,
    *  an edit to which writes the new value and so pins it, and clicking its label writes the sentinel back
    *  through `setConfig`. Omitted, the panel keeps the set itself, starting from the leaves that say
-   *  `.initial(auto)`: the labels still toggle and the sentinel never reaches `setConfig`, which would
+   *  `.initial(AUTO)`: the labels still toggle and the sentinel never reaches `setConfig`, which would
    *  otherwise store it as the row's value. */
   auto?: ReadonlySet<string>;
   /** Values the instrument says it used for auto paths, by dotted path: what `RenderContext.reportAuto`
@@ -164,11 +164,11 @@ function usePanelAuto(
               ? ownAuto
               : new Set(next.autoPaths),
           );
-          if (!isAuto(value)) write(path, valueAtPath(next.config, path));
+          if (!isAuto(value)) write(path, configValueAt(next.config, path));
         };
   const setRowAuto = (path: string, next: boolean, value: unknown): void => {
     if (given) {
-      writes.setConfig(path, next ? autoValue : value);
+      writes.setConfig(path, next ? AUTO : value);
       return;
     }
     mark(path, next);

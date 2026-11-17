@@ -157,7 +157,7 @@ export {
   type SegmentHit,
 } from '@weasel-js/geom';
 export {
-  averageAnchorsAt, closestOpenEnds, joinAnchorsAt, joinSubpathEnds, simplifyAnchorsAt, simplifyPath,
+  averageAnchorsAt, nearestOpenEnds, joinAnchorsAt, joinSubpathEnds, simplifyAnchorsAt, simplifyPath,
   simplifySpan, simplifySubpath, subpathEndAt,
   type AverageAxis, type JoinOptions, type SimplifyPathOptions, type SubpathEnd,
 } from '@weasel-js/geom';

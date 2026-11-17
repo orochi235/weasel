@@ -20,8 +20,8 @@ export type InfinityText =
   | string
   | { readonly text: string; readonly spoken?: string; readonly negative?: string | { readonly text: string; readonly spoken?: string } };
 
-/** `display` with `text` as its word for infinity: `endless(unit('ms'), 'never')`. */
-export function endless<D extends Display>(display: D, text: InfinityText): D {
+/** `display` with `text` as its word for infinity: `withInfinity(unit('ms'), 'never')`. */
+export function withInfinity<D extends Display>(display: D, text: InfinityText): D {
   return { ...display, infinity: text };
 }
 

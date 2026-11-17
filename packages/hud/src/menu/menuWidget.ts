@@ -7,9 +7,9 @@ import { createRevision, type HudAccessibleTree, type HudTextInput, type HudKeyE
 import { accessibleMenu } from './accessibleMenu';
 import { menuPanelMetrics, menuRowSpans, type MenuPanelMetrics } from '@weasel-js/ui-logic';
 import { resolveTheme, weaselTheme, type ResolvedTheme } from '@weasel-js/theme';
-import { drawPanel, rowAt, type MenuIcons } from './drawPanel';
+import { panelCommands, rowAt, type MenuIcons } from './panelCommands';
 import { menuMeasureEnv } from './menuEnv';
-import { measureLabel } from './measureLabel';
+import { textWidth } from './textWidth';
 import { createPlacer } from './placePanels';
 import { caretAt, caretX } from './valueRows';
 import { createTextEditor, editMods } from './textEdit';
@@ -107,7 +107,7 @@ const metricsIn = createPart((tokens: ResolvedTheme): MenuPanelMetrics =>
 /** A widget that draws `open` as one panel per open level, driven by a menu controller it owns. Its panels are
  *  sized by `measureMenuPanel` in the hud's theme, as the DOM menu's stylesheet sizes it. */
 export function createMenuWidget(opts: MenuWidgetOptions): Widget {
-  const measure = opts.measure ?? measureLabel;
+  const measure = opts.measure ?? textWidth;
   const locale = opts.locale ?? globalThis.navigator?.language;
   const edits = createEmitter();
   const rev = createRevision(() => { opts.onChange(); edits.emit(); });
@@ -201,7 +201,7 @@ export function createMenuWidget(opts: MenuWidgetOptions): Widget {
         measure, locale,
       };
       return placed.flatMap(({ rect, layout }, level) =>
-        drawPanel(ctx, rect, c.entriesAt(level), c.stack()[level] ?? null, opts.icons, values, layout));
+        panelCommands(ctx, rect, c.entriesAt(level), c.stack()[level] ?? null, opts.icons, values, layout));
     },
     hitTest: (x, y) => levelAt(panels, x, y) >= 0,
     cursorAt: () => 'default',

@@ -1,4 +1,4 @@
-import { pointInPolygon, pointSegmentDistance2, polygonFromPoints } from '@weasel-js/geom';
+import { polygonContainsPoint, pointSegmentDistance2, polygonFromPoints } from '@weasel-js/geom';
 import type { DrawCommand } from '@weasel-js/renderer';
 import type { RenderLayer } from 'core/layers/render';
 import { aimSpace2d, type AimOutline, type AimSpace, type ViewAim } from './aim';
@@ -139,7 +139,7 @@ function polygonArea(outline: AimOutline): number {
 }
 
 function outlineHolds(outline: AimOutline, p: { x: number; y: number }, slop: number, interior: boolean): boolean {
-  if (interior && pointInPolygon(outline.flatMap((q) => [q.x, q.y]), p.x, p.y)) return true;
+  if (interior && polygonContainsPoint(outline.flatMap((q) => [q.x, q.y]), p.x, p.y)) return true;
   for (let i = 0; i < outline.length; i++) {
     const a = outline[i]!;
     const b = outline[(i + 1) % outline.length]!;

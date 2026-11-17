@@ -3,7 +3,7 @@ import { renderWithIcons } from '@weasel-js/ui/testing/withIcons';
 import { useState } from 'react';
 import { describe, expect, it, vi } from 'vitest';
 import { f } from '../config/builder';
-import { withValueAtPath } from '../config/path';
+import { withConfigValueAt } from '../config/path';
 import { resolveConfigSchema } from '../config/resolve';
 import { ControlPanel } from './ControlPanel';
 
@@ -17,7 +17,7 @@ function Panel({ schema }: { schema: Parameters<typeof resolveConfigSchema>[0] }
       <ControlPanel
         schema={resolved}
         config={config}
-        setConfig={(path, value) => setConfig((prev) => withValueAtPath(prev, path, value))}
+        setConfig={(path, value) => setConfig((prev) => withConfigValueAt(prev, path, value))}
       />
       <output data-testid="config">{JSON.stringify(config)}</output>
     </>

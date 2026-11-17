@@ -1,6 +1,6 @@
 import { isPrefLeaf, type PrefGroup } from '@weasel-js/prefs';
 import { headingLeaf } from './headingLeaf';
-import { ownAt, setOwn, valueAtPath } from './path';
+import { ownAt, setOwn, configValueAt } from './path';
 import { bareGroup, type ConfigVerdict, configVerdict } from './railConditions';
 import type { ResolvedConfig } from './types';
 import { isRowVisible } from './visible';
@@ -86,7 +86,7 @@ function prune(
     if (!isRowVisible(resolved, path, config, showHidden)) continue;
     if (isPrefLeaf(child)) {
       setOwn(children, key, verdict.rowAt(path, child));
-      setOwn(values, key, valueAtPath(config, path));
+      setOwn(values, key, configValueAt(config, path));
       continue;
     }
     const kept = prune(resolved, child, path, config, showHidden, nested, verdict);
@@ -178,7 +178,7 @@ export function sectionTree(
       if (!child || !isRowVisible(resolved, path, config, showHidden)) continue;
       if (isPrefLeaf(child)) {
         setOwn(kept, path, verdict.rowAt(path, child));
-        setOwn(held, path, valueAtPath(config, path));
+        setOwn(held, path, configValueAt(config, path));
       } else {
         const subtree = prune(resolved, child, path, config, showHidden, nested, verdict);
         if (!subtree) continue;
@@ -200,7 +200,7 @@ export function sectionTree(
     if (claimed.has(key) || !isRowVisible(resolved, key, config, showHidden)) continue;
     if (isPrefLeaf(child)) {
       setOwn(children, key, verdict.rowAt(key, child));
-      setOwn(values, key, valueAtPath(config, key));
+      setOwn(values, key, configValueAt(config, key));
     } else {
       const subtree = prune(resolved, child, key, config, showHidden, nested, verdict);
       if (!subtree) continue;

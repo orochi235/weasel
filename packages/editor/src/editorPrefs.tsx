@@ -40,7 +40,7 @@ export function useEditorPrefs<S extends PrefGroup = PrefGroup>(): PrefsStore<S>
 const NOTHING = (): void => {};
 
 /** Opens the `<EditorShell>`'s preferences dialog. Does nothing outside one, or when it was given no prefs. */
-export function useOpenPreferences(): () => void {
+export function useOpenPrefs(): () => void {
   return useContext(EditorPrefsContext)?.open ?? NOTHING;
 }
 

@@ -15,7 +15,7 @@ export function rotationMatrixAbout(cx: number, cy: number, rotation: number): G
 
 /** Rotation matrix about the AABB center of `(x, y, width, height)`. The pivot
  *  matches `poseRotationOf` (the shared rotation convention). */
-export function rotateAroundAABBCenter(
+export function rotateAboutAabbCenter(
   x: number, y: number, width: number, height: number, rotation: number,
 ): GlMat3 {
   return rotationMatrixAbout(x + width / 2, y + height / 2, rotation);

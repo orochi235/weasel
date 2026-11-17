@@ -1,23 +1,23 @@
 import { describe, expect, it } from 'vitest';
 import {
-  closestPointOnSegment, distance, distance2, lerpPoint as lerpN, pointSegmentDistance, pointSegmentDistance2, segmentT,
+  nearestPointOnSegment, distance, distance2, lerpPoint as lerpN, pointSegmentDistance, pointSegmentDistance2, segmentT,
 } from './points';
 import {
   distance as distance2D, distance2 as distance2D2, lerpPoint, pointSegmentDistance as pointSegmentDist2D,
   pointSegmentDistance2 as pointSegmentDist2D2, segmentT as segmentT2D,
 } from './points2';
 import { nearestOnSegment } from './nearest';
-import { closestPointOnSegment as closestPointOnSegment3, distance as distance3, lerpPoint as lerp3 } from './3d';
+import { nearestPointOnSegment as nearestPointOnSegment3, distance as distance3, lerpPoint as lerp3 } from './3d';
 
 describe('the nearest point of a segment', () => {
   it('projects onto the segment and clamps to its ends', () => {
     const a = [0, 0, 0], b = [10, 0, 0];
     expect(segmentT([4, 3, 1], a, b)).toBe(0.4);
-    expect(closestPointOnSegment([4, 3, 1], a, b)).toEqual([4, 0, 0]);
+    expect(nearestPointOnSegment([4, 3, 1], a, b)).toEqual([4, 0, 0]);
     expect(segmentT([-5, 1, 0], a, b)).toBe(0);
-    expect(closestPointOnSegment([-5, 1, 0], a, b)).toEqual(a);
+    expect(nearestPointOnSegment([-5, 1, 0], a, b)).toEqual(a);
     expect(segmentT([15, 1, 0], a, b)).toBe(1);
-    expect(closestPointOnSegment([15, 1, 0], a, b)).toEqual(b);
+    expect(nearestPointOnSegment([15, 1, 0], a, b)).toEqual(b);
     expect(pointSegmentDistance([4, 3, 4], a, b)).toBe(5);
     expect(pointSegmentDistance2([13, 4, 0], a, b)).toBe(25);
   });
@@ -25,17 +25,17 @@ describe('the nearest point of a segment', () => {
   it('answers the start, t = 0, for a zero-length segment', () => {
     const a = [2, 3];
     expect(segmentT([5, 7], a, a)).toBe(0);
-    expect(closestPointOnSegment([5, 7], a, a)).toEqual(a);
+    expect(nearestPointOnSegment([5, 7], a, a)).toEqual(a);
     expect(pointSegmentDistance([5, 7], a, a)).toBe(5);
     expect(segmentT2D(5, 7, 2, 3, 2, 3)).toBe(0);
     expect(pointSegmentDist2D(5, 7, 2, 3, 2, 3)).toBe(5);
-    expect(closestPointOnSegment3({ x: 5, y: 7, z: 1 }, { x: 2, y: 3, z: 0 }, { x: 2, y: 3, z: 0 }))
+    expect(nearestPointOnSegment3({ x: 5, y: 7, z: 1 }, { x: 2, y: 3, z: 0 }, { x: 2, y: 3, z: 0 }))
       .toEqual({ x: 2, y: 3, z: 0 });
   });
 
   it('lands on the far end exactly, not one rounding off it', () => {
     const a = [0.1, 0.2], b = [0.7, 0.30000000000000004];
-    expect(closestPointOnSegment([5, 5], a, b)).toEqual(b);
+    expect(nearestPointOnSegment([5, 5], a, b)).toEqual(b);
     const hit = nearestOnSegment(5, 5, 0.1, 0.2, 0.7, 0.30000000000000004);
     expect([hit.x, hit.y]).toEqual(b);
   });
@@ -54,11 +54,11 @@ describe('the nearest point of a segment', () => {
       expect(pointSegmentDist2D(px, py, ax, ay, bx, by)).toBe(pointSegmentDistance(p, a, b));
 
       const near = nearestOnSegment(px, py, ax, ay, bx, by);
-      const c = closestPointOnSegment(p, a, b);
-      expect([near.x, near.y, near.t, near.dist]).toEqual([c[0], c[1], t, pointSegmentDistance(p, a, b)]);
+      const c = nearestPointOnSegment(p, a, b);
+      expect([near.x, near.y, near.t, near.distance]).toEqual([c[0], c[1], t, pointSegmentDistance(p, a, b)]);
 
       // On the plane z = 0 the 3D wrapper answers the same as the planar rule.
-      const c3 = closestPointOnSegment3({ x: px, y: py, z: 0 }, { x: ax, y: ay, z: 0 }, { x: bx, y: by, z: 0 });
+      const c3 = nearestPointOnSegment3({ x: px, y: py, z: 0 }, { x: ax, y: ay, z: 0 }, { x: bx, y: by, z: 0 });
       expect(c3).toEqual({ x: c[0], y: c[1], z: 0 });
     }
   });

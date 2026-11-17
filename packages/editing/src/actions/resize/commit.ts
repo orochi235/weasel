@@ -1,6 +1,6 @@
 import { rectToRect, type Affine } from '@weasel-js/geom';
 import type { Op, NodeId } from '@weasel-js/core';
-import { createSetPoseOp, defaultCommitAdapter, geometryDataOp, type GeometryProjection } from '@weasel-js/core/engine';
+import { createSetPoseOp, defaultCommitAdapter, createGeometryDataOp, type GeometryProjection } from '@weasel-js/core/engine';
 import { commitRunOps, reduceBehaviorEnd } from '@weasel-js/core';
 import type { PoseDescriptor } from '@weasel-js/core/engine';
 import type { ResizeFrame, ResizeSession } from './session';
@@ -22,7 +22,7 @@ function projectedGeometry(
     sb.x, sb.y, sb.width, sb.height,
     db.x, db.y, db.width, db.height,
   );
-  const dataOp = geometryDataOp(projection, { id: node.id, data: node.data, pose: from }, m, next, label);
+  const dataOp = createGeometryDataOp(projection, { id: node.id, data: node.data, pose: from }, m, next, label);
   if (!dataOp) return null;
   // The data absorbed the affine — including any mirror from a
   // drag past the opposite edge — so the pose must commit as a

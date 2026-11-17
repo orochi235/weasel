@@ -69,11 +69,11 @@ describe('marks', () => {
 });
 
 describe('registerMarkShape', () => {
-  const geometry = { ...RECT_POSE_DESCRIPTOR };
+  const poseDescriptor = { ...RECT_POSE_DESCRIPTOR };
 
   it('registers one painter for two calls with the same geometry, each disposed on its own', () => {
-    const a = registerMarkShape({ geometry });
-    const b = registerMarkShape({ geometry });
+    const a = registerMarkShape({ poseDescriptor });
+    const b = registerMarkShape({ poseDescriptor });
     a();
     expect(findNodeShape(drawn as never)?.id).toBe('diagram:mark');
     b();
@@ -81,7 +81,7 @@ describe('registerMarkShape', () => {
 
   it('registers a painter of its own geometry beside the default one under its own id', () => {
     const base = registerMarkShape();
-    const own = registerMarkShape({ id: 'test:mark', geometry });
+    const own = registerMarkShape({ id: 'test:mark', poseDescriptor });
     own();
     base();
   });

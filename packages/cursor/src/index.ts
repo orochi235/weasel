@@ -3,7 +3,7 @@ export type { BakeOptions } from './bake';
 export { cursorFor, cursorGlyph, cursorVariants } from './registry';
 export type { CursorForOptions, CursorGlyphOptions, CursorVariant } from './registry';
 export { markedGlyph, placeCursorPath } from './mark';
-export { resolveCursor, resolveCursorTier } from './resolve';
+export { cursorCss, resolveCursor } from './resolve';
 export { brushRing } from './brushRing';
 export type { BrushRingUnit } from './brushRing';
 export type { CursorSpec, CursorGlyphSpec, ResolvedCursor } from './resolve';
@@ -11,7 +11,7 @@ export {
   chromeLineWidthScale,
   cursorPaintMatrix,
   cursorPaintOps,
-  cursorWorldSize,
+  worldCursorPx,
 } from './paint';
 export type { CursorMatrix, CursorPaintOp, PaintOptions, PaintPlacement } from './paint';
 export { GLYPHS, MARKS } from './glyphs';

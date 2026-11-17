@@ -91,7 +91,7 @@ describe('ellipseShape', () => {
       const p = { x: point.x + 25 * normal.x, y: point.y + 25 * normal.y };
       const n = bottom.nearest(p);
       expect(n.f).toBeCloseTo(f, 6);
-      expect(n.dist).toBeCloseTo(25, 6);
+      expect(n.distance).toBeCloseTo(25, 6);
     }
   });
 
@@ -107,14 +107,14 @@ describe('ellipseShape', () => {
     expect(inside.f).toBeCloseTo(0.5, 6);
     const past = bottom.nearest(seen(100, 120, 80), { open: true });
     expect(past.f).toBeGreaterThan(1);
-    expect(past.dist).toBeCloseTo(bottom.nearest(seen(100, 120, 80)).dist, 9);
+    expect(past.distance).toBeCloseTo(bottom.nearest(seen(100, 120, 80)).distance, 9);
     expect(bottom.nearest(seen(260, 120, 80), { open: true }).f).toBeLessThan(0);
   });
 
   test("the center answers finitely, never NaN", () => {
     const n = bottom.nearest(C, { open: true });
     expect(Number.isFinite(n.f)).toBe(true);
-    expect(Number.isFinite(n.dist)).toBe(true);
+    expect(Number.isFinite(n.distance)).toBe(true);
   });
 
   test('a zero-size ellipse answers its center, never NaN', () => {
@@ -162,12 +162,12 @@ describe('ellipseShape with equal radii', () => {
       const ne = e.nearest(p);
       const na = a.nearest(p);
       expect(ne.f).toBeCloseTo(na.f, 9);
-      expect(ne.dist).toBeCloseTo(na.dist, 9);
+      expect(ne.distance).toBeCloseTo(na.distance, 9);
       for (const about of [0.5, 0.1]) {
         const oe = e.nearest(p, { open: true, about });
         const oa = a.nearest(p, { open: true, about });
         expect(oe.f).toBeCloseTo(oa.f, 9);
-        expect(oe.dist).toBeCloseTo(oa.dist, 9);
+        expect(oe.distance).toBeCloseTo(oa.distance, 9);
       }
     }
     expect(trackShapeD(e)).toBe(trackShapeD(a));

@@ -178,11 +178,11 @@ export function buildClassifyTarget(
 ): (worldPoint: WorldPoint) => BodyClassification {
   return function classifyTarget(world) {
     const hitId = pickBest(world);
-    if (!hitId) return { body: 'empty' };
+    if (!hitId) return { bodyTarget: 'empty' };
     const sel = getSelection();
     const classify = (id: string) => ({
-      body: sel.includes(id) ? 'selected-body' as const : 'unselected-body' as const,
-      kind: kindOfNode?.(id),
+      bodyTarget: sel.includes(id) ? 'selected-body' as const : 'unselected-body' as const,
+      bodyKind: kindOfNode?.(id),
       id,
     });
     const named = doubleClickNames?.(hitId);

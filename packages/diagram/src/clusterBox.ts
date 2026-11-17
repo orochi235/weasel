@@ -52,9 +52,9 @@ export function diagramAnchorOf(node: { data: unknown }): DiagramAnchor | null {
 }
 
 /** Options for {@link clusterDerivePose} and {@link anchorDerivePose}.
- *  `geometry` defaults to the kit's `AUTO_POSE_DESCRIPTOR`. */
+ *  `poseDescriptor` defaults to the kit's `AUTO_POSE_DESCRIPTOR`. */
 export interface ClusterPoseOptions<TPose> {
-  geometry?: PoseDescriptor<TPose>;
+  poseDescriptor?: PoseDescriptor<TPose>;
 }
 
 /** A `derivePose` function as the scene calls it: the node, then what it depends on, in `dependsOn` order. */
@@ -69,7 +69,7 @@ export type DiagramDerivePose<TPose> = (
  * carries no group trait or every member is gone.
  */
 export function clusterDerivePose<TPose>(opts: ClusterPoseOptions<TPose> = {}): DiagramDerivePose<TPose> {
-  const geometry = opts.geometry ?? (AUTO_POSE_DESCRIPTOR as PoseDescriptor<TPose>);
+  const poseDescriptor = opts.poseDescriptor ?? (AUTO_POSE_DESCRIPTOR as PoseDescriptor<TPose>);
   return (node, deps) => {
     const group = diagramClusterOf(node);
     if (group === null) return null;
@@ -79,14 +79,14 @@ export function clusterDerivePose<TPose>(opts: ClusterPoseOptions<TPose> = {}): 
     let y1 = -Infinity;
     for (const dep of deps) {
       if (dep === undefined) continue;
-      const b = grownBy(geometry.getBounds(dep.pose), traitOf(dep.node)?.margin as ClusterInset | undefined);
+      const b = grownBy(poseDescriptor.getBounds(dep.pose), traitOf(dep.node)?.margin as ClusterInset | undefined);
       x0 = Math.min(x0, b.x);
       y0 = Math.min(y0, b.y);
       x1 = Math.max(x1, b.x + b.width);
       y1 = Math.max(y1, b.y + b.height);
     }
     if (!Number.isFinite(x0)) return null;
-    return geometry.fromBounds(boxAround({ x: x0, y: y0, width: x1 - x0, height: y1 - y0 }, group), node.pose);
+    return poseDescriptor.fromBounds(boxAround({ x: x0, y: y0, width: x1 - x0, height: y1 - y0 }, group), node.pose);
   };
 }
 
@@ -112,17 +112,17 @@ export function boxAround(
  * `null` when the node carries no anchor trait or the dependency is gone.
  */
 export function anchorDerivePose<TPose>(opts: ClusterPoseOptions<TPose> = {}): DiagramDerivePose<TPose> {
-  const geometry = opts.geometry ?? (AUTO_POSE_DESCRIPTOR as PoseDescriptor<TPose>);
+  const poseDescriptor = opts.poseDescriptor ?? (AUTO_POSE_DESCRIPTOR as PoseDescriptor<TPose>);
   return (node, deps) => {
     const anchor = diagramAnchorOf(node);
     const dep = deps[0];
     if (anchor === null || dep === undefined) return null;
-    const target = geometry.getBounds(dep.pose);
-    const own = geometry.getBounds(node.pose);
+    const target = poseDescriptor.getBounds(dep.pose);
+    const own = poseDescriptor.getBounds(node.pose);
     const self = anchor.self ?? anchor.at;
     const x = target.x + anchor.at.u * target.width + (anchor.offset?.x ?? 0) - self.u * own.width;
     const y = target.y + anchor.at.v * target.height + (anchor.offset?.y ?? 0) - self.v * own.height;
-    return translatePoseViaDescriptor(node.pose, x - own.x, y - own.y, geometry);
+    return translatePoseViaDescriptor(node.pose, x - own.x, y - own.y, poseDescriptor);
   };
 }
 

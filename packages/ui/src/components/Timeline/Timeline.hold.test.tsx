@@ -18,7 +18,7 @@ const TRACKS = [
 
 function renderTimeline(wrap: (node: ReactNode) => ReactNode, props: Partial<TimelineProps> = {}) {
   const calls = {
-    onChange: vi.fn(), onInput: vi.fn(), onScrub: vi.fn(), onSelectionChange: vi.fn(), onWindowChange: vi.fn(), onModeChange: vi.fn(),
+    onChange: vi.fn(), onInput: vi.fn(), onSeek: vi.fn(), onSelectionChange: vi.fn(), onWindowChange: vi.fn(), onModeChange: vi.fn(),
   };
   renderWithIcons(<>{wrap(<Timeline tracks={TRACKS} duration={1000} playhead={0} {...calls} {...props} />)}</>);
   return calls;
@@ -41,7 +41,7 @@ function tryEverything() {
   fireEvent.click(screen.getByRole('switch', { name: 'Graph mode' }));
 }
 
-const EDITS = ['onChange', 'onInput', 'onScrub'] as const;
+const EDITS = ['onChange', 'onInput', 'onSeek'] as const;
 const LOOKS = ['onSelectionChange', 'onWindowChange', 'onModeChange'] as const;
 
 describe('Timeline held', () => {
@@ -84,10 +84,10 @@ describe('Timeline held', () => {
     const onChange = vi.fn();
     renderWithIcons(
       <Timeline
-        readOnly tracks={TRACKS} duration={1000} playhead={0} onChange={onChange} onScrub={() => {}}
+        readOnly tracks={TRACKS} duration={1000} playhead={0} onChange={onChange} onSeek={() => {}}
         selection={{ trackPath: [0], keyIndex: 1 }}
         renderKeyEditor={({ commit, key: k }) => <button type="button" onClick={() => commit({ ...k, value: 3 })}>Set</button>}
-        transport={{ paused: true, loop: false, rate: 1, onPlay, onPause: () => {}, onLoopChange, onRateChange: () => {} }}
+        transport={{ playing: false, loop: false, rate: 1, onPlayingChange: onPlay, onLoopChange, onRateChange: () => {} }}
       />,
     );
     fireEvent.click(screen.getByRole('button', { name: 'Set' }));

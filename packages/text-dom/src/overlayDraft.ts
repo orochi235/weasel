@@ -3,7 +3,7 @@
  * each keystroke or restyle reports as a draft — and handing it to the host:
  * a draft when it changed, a commit through the host's options.
  */
-import { runsCarryStyling, runsToPlainText, type StyledRun, type TextStyle } from '@weasel-js/text';
+import { hasStyledRun, runsToPlainText, type StyledRun, type TextStyle } from '@weasel-js/text';
 import type { CaretHolder } from './overlaySeed';
 import type { TextEditCommit, TextEditDraft, UseTextEditOptions } from './textEditTypes';
 
@@ -20,7 +20,7 @@ export function overlayDraft(
   style: TextStyle | null = null,
 ): TextEditCommit {
   const runs = holder?.trim(read) ?? read;
-  const inPlay = (priorRuns != null && priorRuns.length > 0) || runsCarryStyling(runs);
+  const inPlay = (priorRuns != null && priorRuns.length > 0) || hasStyledRun(runs);
   // Read from the DOM, not `innerText`: a browser applies `text-transform`
   // to what that reports, and a break stand-in reads back as its `\n`.
   const text = runsToPlainText(runs);

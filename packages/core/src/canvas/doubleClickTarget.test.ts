@@ -56,12 +56,12 @@ describe('buildClassifyTarget — what a double-click names', () => {
 
   it('keeps the hit as the body and carries the group a double-click names beside it', () => {
     expect(classify({ x: 10, y: 0 })).toEqual({
-      body: 'unselected-body', kind: 'path', id: 'leaf',
-      doubleClick: { body: 'selected-body', kind: 'group', id: 'outer' },
+      bodyTarget: 'unselected-body', bodyKind: 'path', id: 'leaf',
+      doubleClick: { bodyTarget: 'selected-body', bodyKind: 'group', id: 'outer' },
     });
   });
 
   it('carries nothing extra where a double-click names the hit itself', () => {
-    expect(classify({ x: 60, y: 0 })).toEqual({ body: 'unselected-body', kind: 'path', id: 'bare' });
+    expect(classify({ x: 60, y: 0 })).toEqual({ bodyTarget: 'unselected-body', bodyKind: 'path', id: 'bare' });
   });
 });

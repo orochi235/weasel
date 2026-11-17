@@ -48,7 +48,7 @@ export type RulersPointerParams = Pick<ImmediateParams, 'world'> & { over?: bool
 
 /** The pointer's hover: moves each ruler's marker, and reads the labels in
  *  the frame under it; off the canvas, in the document's. */
-export function rulersPointerAction(ctx: RulersActionCtx): Action {
+export function createRulersPointerAction(ctx: RulersActionCtx): Action {
   const frameAt = frameReader(ctx);
   return defineAction<string, RulersPointerParams>({
     id: `${ctx.id}.pointer`,
@@ -93,7 +93,7 @@ function guideEdit(store: GuideStore, moving: Guide | null, to: Guide | null): O
  * as one undo step. A new guide released back over its own ruler places
  * nothing.
  */
-export function rulersGuideAction(ctx: RulersActionCtx): Action {
+export function createRulersGuideAction(ctx: RulersActionCtx): Action {
   return {
     id: `${ctx.id}.guide`,
     label: 'Place Guide',

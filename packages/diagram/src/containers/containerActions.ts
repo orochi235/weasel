@@ -211,7 +211,7 @@ export function createReleaseMembersAction(opts: LaneActionOptions): Action {
  * lane boundary drag, the add-lane click, and the `diagram.releaseMembers`
  * command.
  */
-export function diagramContainers(opts: LaneActionOptions): SurfaceContribution {
+export function createDiagramContainersContribution(opts: LaneActionOptions): SurfaceContribution {
   const target = `affordance:${LANE_AFFORDANCE_KIND}` as const;
   return {
     id: 'weasel-diagram-containers',

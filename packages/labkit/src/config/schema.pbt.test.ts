@@ -23,7 +23,7 @@ import {
 } from '../pbt.fixture';
 import { f } from './builder';
 import { configFromPrefs } from './fromPrefs';
-import { hasConfigPath, schemaNodeAtPath, valueAtPath } from './path';
+import { hasConfigPath, schemaNodeAt, configValueAt } from './path';
 import { resolveConfigSchema } from './resolve';
 import { prefsFromConfig } from './toPrefs';
 import type { ResolvedConfig } from './types';
@@ -54,15 +54,15 @@ describe('a schema built with f', () => {
           for (const { path, leaf } of leavesOf(spec)) {
             if (path.split('.').includes('__proto__')) t.count('under __proto__');
             expect(hasConfigPath(defaults, path)).toBe(true);
-            expect(valueAtPath(defaults, path)).toEqual(leaf.default);
-            const node = schemaNodeAtPath(resolved.group, path) as PrefLeaf | undefined;
+            expect(configValueAt(defaults, path)).toEqual(leaf.default);
+            const node = schemaNodeAt(resolved.group, path) as PrefLeaf | undefined;
             expect(node?.kind).toBe(leaf.kind === 'list' ? 'list' : leaf.kind);
             expect(node?.default).toEqual(leaf.default);
             expect(node?.hidden ?? false).toBe(leaf.hidden ?? false);
             if (leaf.label !== undefined) expect(node?.name).toBe(leaf.label);
           }
           for (const { path, group } of groupsOf(spec)) {
-            const node = schemaNodeAtPath(resolved.group, path) as PrefGroup | undefined;
+            const node = schemaNodeAt(resolved.group, path) as PrefGroup | undefined;
             expect(node && 'children' in node).toBe(true);
             expect(Object.keys(node?.children ?? {}).sort()).toEqual(
               group.children.map(([k]) => k).sort(),

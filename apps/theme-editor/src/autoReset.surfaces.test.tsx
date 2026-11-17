@@ -4,7 +4,7 @@
 // computes while it is (`prefAutoValue`), and a reset puts it back as `prefResetOf` says.
 import './labTestSetup';
 import { cleanup, fireEvent, render, screen, within } from '@testing-library/react';
-import { auto, ControlPanel, f, isAuto, resolveAutoConfig, resolveConfigSchema } from '@weasel-js/labkit';
+import { AUTO, ControlPanel, f, isAuto, resolveAutoConfig, resolveConfigSchema } from '@weasel-js/labkit';
 import {
   openPrefsSync,
   prefAutoValue,
@@ -140,7 +140,7 @@ type LabSpec = 'none' | 'resolver' | 'starts' | { value: boolean };
  *  or an `auto.value`. */
 function labSurface(spec: LabSpec): Surface {
   const plain = f.boolean(true).switch();
-  const node = spec === 'resolver' ? plain.auto(() => false) : spec === 'starts' ? plain.initial(auto) : plain;
+  const node = spec === 'resolver' ? plain.auto(() => false) : spec === 'starts' ? plain.initial(AUTO) : plain;
   const resolved = resolveConfigSchema(f.schema({ view: f.group({ grid: node }).resettable() }));
   const view = resolved.group.children.view as PrefGroup;
   if (typeof spec === 'object') view.children.grid = { ...(view.children.grid as PrefLeaf), auto: { value: spec.value } };

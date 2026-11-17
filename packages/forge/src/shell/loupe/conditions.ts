@@ -1,5 +1,5 @@
 import type { LabMode } from '@weasel-js/labkit';
-import { withValueAtPath } from '@weasel-js/labkit/config';
+import { withConfigValueAt } from '@weasel-js/labkit/config';
 import { systemColorScheme } from '@weasel-js/react';
 import type { StoryGlobals } from '../../protocol/messages';
 import { effectiveGlobals, FOLLOW_APP, GLOBALS_KEY, type GlobalDeclarations } from '../globals';
@@ -114,7 +114,7 @@ export function describeLens(c: ForgeComparison, lab: LabConditions, trialConfig
 
 /** `config` with each of `args` written at its path. */
 export const withArgs = (config: unknown, args: Readonly<Record<string, unknown>>): unknown =>
-  Object.entries(args).reduce((c, [path, value]) => withValueAtPath(c, path, value), config);
+  Object.entries(args).reduce((c, [path, value]) => withConfigValueAt(c, path, value), config);
 
 /** The lab as a lens reads it when it renders: its globals, its mode, and the declarations behind them. */
 export interface LabConditions {

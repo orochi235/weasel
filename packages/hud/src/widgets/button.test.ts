@@ -43,7 +43,7 @@ describe('button widget', () => {
   it('press event fires on down then up inside bounds', () => {
     const b = createButton({ id: 'b', x: 0, y: 0, w: 80, h: 24, label: 'x' });
     const press = vi.fn();
-    b.on('press', press);
+    b.subscribe('press', press);
 
     b.onPointer({ type: 'down', x: 5, y: 5, native: null });
     b.onPointer({ type: 'up', x: 5, y: 5, native: null });
@@ -61,7 +61,7 @@ describe('button widget', () => {
   it('press event does NOT fire on down then up-outside', () => {
     const b = createButton({ id: 'b', x: 0, y: 0, w: 80, h: 24, label: 'x' });
     const press = vi.fn();
-    b.on('press', press);
+    b.subscribe('press', press);
 
     b.onPointer({ type: 'down', x: 5, y: 5, native: null });
     b.onPointer({ type: 'up', x: 200, y: 200, native: null });
@@ -71,7 +71,7 @@ describe('button widget', () => {
   it('cancel rolls back press state without firing press', () => {
     const b = createButton({ id: 'b', x: 0, y: 0, w: 80, h: 24, label: 'x' });
     const press = vi.fn();
-    b.on('press', press);
+    b.subscribe('press', press);
 
     b.onPointer({ type: 'down', x: 5, y: 5, native: null });
     b.onPointer({ type: 'cancel', native: null });
@@ -87,11 +87,11 @@ describe('button widget', () => {
     expect(txt.runs[0].text).toBe('b');
   });
 
-  it('off() removes a handler', () => {
+  it('the unsubscribe subscribe returns removes a handler', () => {
     const b = createButton({ id: 'b', x: 0, y: 0, w: 80, h: 24, label: 'x' });
     const press = vi.fn();
-    b.on('press', press);
-    b.off('press', press);
+    const off = b.subscribe('press', press);
+    off();
     b.onPointer({ type: 'down', x: 5, y: 5, native: null });
     b.onPointer({ type: 'up', x: 5, y: 5, native: null });
     expect(press).not.toHaveBeenCalled();
@@ -103,8 +103,7 @@ describe('button widget', () => {
     expect(() => b.setLabel('y')).toThrow();
     expect(() => b.setBounds({ x: 0, y: 0, w: 10, h: 10 })).toThrow();
     expect(() => b.setHidden(true)).toThrow();
-    expect(() => b.on('press', () => {})).toThrow();
-    expect(() => b.off('press', () => {})).toThrow();
+    expect(() => b.subscribe('press', () => {})).toThrow();
   });
 
   it('dispose() calls removeFromHud', () => {
@@ -121,8 +120,8 @@ describe('button widget', () => {
     const b = createButton({ id: 'b', x: 0, y: 0, w: 80, h: 24, label: 'x' });
     const hover = vi.fn();
     const leave = vi.fn();
-    b.on('hover', hover);
-    b.on('leave', leave);
+    b.subscribe('hover', hover);
+    b.subscribe('leave', leave);
 
     b.onPointer({ type: 'hovermove', x: 5, y: 5, native: null });
     expect(hover).toHaveBeenCalledTimes(1);
@@ -238,7 +237,7 @@ describe('button keyboard', () => {
   it('Enter and Space press it, and say so', () => {
     const b = createButton({ id: 'b', x: 0, y: 0, w: 80, h: 24, label: 'x' });
     const press = vi.fn();
-    b.on('press', press);
+    b.subscribe('press', press);
     expect(b.onKey!(k('Enter'))).toBe(true);
     expect(b.onKey!(k(' '))).toBe(true);
     expect(press).toHaveBeenCalledTimes(2);
@@ -247,7 +246,7 @@ describe('button keyboard', () => {
   it('leaves every other key for the canvas', () => {
     const b = createButton({ id: 'b', x: 0, y: 0, w: 80, h: 24, label: 'x' });
     const press = vi.fn();
-    b.on('press', press);
+    b.subscribe('press', press);
     expect(b.onKey!(k('Delete'))).toBe(false);
     expect(b.onKey!(k('Enter', 'keyup'))).toBe(false);
     expect(press).not.toHaveBeenCalled();

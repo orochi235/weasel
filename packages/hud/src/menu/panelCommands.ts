@@ -14,7 +14,7 @@ import { boxShadowCommands } from '../boxShadow';
 import { iconCommands } from '../glyph';
 import type { HudDrawCtx, WidgetBounds } from '../widget';
 import { colorCommands, numberCommands, swatchCommand, textCommands, typingCommands, valueRowWidth } from './valueRows';
-import { measureLabel } from './measureLabel';
+import { textWidth } from './textWidth';
 import { menuMeasureEnv } from './menuEnv';
 import type { HudTextEdit } from './textEdit';
 import { getOwn } from '@weasel-js/registry';
@@ -90,7 +90,7 @@ export interface MenuDrawValues {
   editing?: HudTextEdit | null;
   /** The color a row draws as a swatch in its icon column, in place of its icon or check. */
   swatch?(e: MenuEntry): string | undefined;
-  /** Width of a label, which places the caret in typed text. Defaults to {@link measureLabel}. */
+  /** Width of a label, which places the caret in typed text. Defaults to {@link textWidth}. */
   measure?(text: string, fontSize: number, fontFamily: string): number;
   /** The locale a number row's value is written in. Defaults to the browser's, else `en-US`. */
   locale?: string;
@@ -103,7 +103,7 @@ export const OPENED_VALUES: MenuDrawValues = { number: (e) => e.value, text: (e)
  *  `highlight`, and every row, with the glyph `icons` holds for each row's icon. Rows sit where `layout` puts
  *  them, by default where {@link measurePanel} does in `b`. A value row shows what `values` says it holds, by
  *  default what it opened with. */
-export function drawPanel(
+export function panelCommands(
   ctx: HudDrawCtx, b: WidgetBounds, entries: readonly MenuEntry[], highlight: number | null,
   icons?: MenuIcons, values: MenuDrawValues = OPENED_VALUES, layout?: MenuPanelLayout,
 ): DrawCommand[] {
@@ -111,7 +111,7 @@ export function drawPanel(
   const fg = t['--wzl-fg'];
   const muted = resolveCurrentColor(t['--wzl-fg-muted'], fg);
   const radius = tokenPx('--wzl-radius-md', t);
-  const measure = values.measure ?? measureLabel;
+  const measure = values.measure ?? textWidth;
   const { rows, metrics: m } = layout ?? measurePanel(
     entries, menuMeasureEnv(t, ctx.defaultFont, (s, size) => measure(s, size, ctx.defaultFont)), exactly(b.w, b.h),
   ).layout;

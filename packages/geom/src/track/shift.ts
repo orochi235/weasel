@@ -84,7 +84,7 @@ export function shiftTrack(shape: TrackShape, shift: number): TrackShape | null 
       const base = shape.nearest(p, options?.open ? { open: true, about: toBase(options.about ?? 0.5) } : undefined);
       const f = fromBase(base.f);
       const q = at(f, options).point;
-      return { f, dist: Math.hypot(p.x - q.x, p.y - q.y) };
+      return { f, distance: Math.hypot(p.x - q.x, p.y - q.y) };
     },
   };
 }

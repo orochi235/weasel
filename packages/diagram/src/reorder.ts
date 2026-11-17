@@ -246,7 +246,7 @@ export function reorderBinding(actionId: string = REORDER_ACTION_ID, on: TargetP
 }
 
 /** The reorder action and its binding, to pass as `ambient`. */
-export function reorderContribution(opts: ReorderOptions & { on?: TargetPredicate }): Contribution {
+export function createReorderContribution(opts: ReorderOptions & { on?: TargetPredicate }): Contribution {
   const actionId = opts.id ?? REORDER_ACTION_ID;
   return {
     id: `weasel-diagram-reorder:${actionId}`,
@@ -263,7 +263,7 @@ export function reorderContribution(opts: ReorderOptions & { on?: TargetPredicat
  * to the move. Passed as `ambient` instead, the move takes every press first.
  */
 export function createReorderPreset(opts: ReorderOptions & { on?: TargetPredicate }): FeaturePreset {
-  const { actions = [], ...entry } = reorderContribution(opts);
+  const { actions = [], ...entry } = createReorderContribution(opts);
   return {
     id: entry.id,
     label: opts.label ?? 'Reorder',

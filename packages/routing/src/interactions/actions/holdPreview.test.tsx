@@ -11,7 +11,7 @@ import { DepRegistryProvider, useDepRegistry } from './depRegistry';
 import { ActionDisabledReason, type Action } from './action';
 import { createDispatcher } from '../dispatcher/dispatcher';
 import { useGestureDispatcher } from '../dispatcher/useGestureDispatcher';
-import { keymapContribution } from '../../keymaps/keymapContribution';
+import { createKeymapContribution } from '../../keymaps/createKeymapContribution';
 import type { KeymapStack } from '../../keymaps/keymapStack';
 import { holdPreview, holdPreviewId } from './holdPreview';
 
@@ -39,7 +39,7 @@ function rig(opts: { enabled?: Action['enabled']; throws?: boolean } = {}) {
     defaultBinding: [{ spec: { kind: 'key', key: 'Escape', phase: [{ channel: '*', phase: 'engaged' }] }, opts: { id: 'dispatch.cancelAll.key' } }],
     invoker: { timing: 'immediate', run: () => dispatcher.cancelAll('cancel') },
   };
-  const entries = keymapContribution({
+  const entries = createKeymapContribution({
     id: 'paths',
     label: 'Paths',
     leader: key('p'),

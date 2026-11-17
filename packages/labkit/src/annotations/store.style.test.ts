@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { annotationsFromJSON, createAnnotationStore } from './store';
+import { annotationsFromJSON, createMarkStore } from './store';
 import type { AnnotationTargetInfo } from './types';
 
 const TARGETS: AnnotationTargetInfo[] = [{ id: 't', content: { w: 200, h: 100 } }];
@@ -7,7 +7,7 @@ const BOX = { x: 0.1, y: 0.1, w: 0.5, h: 0.5 };
 
 describe("a mark's style in the store", () => {
   it('keeps width, color and size through add, update and a save', () => {
-    const store = createAnnotationStore({ targets: () => TARGETS });
+    const store = createMarkStore({ targets: () => TARGETS });
     const id = store.add({ target: 't', kind: 'rect', frac: BOX, width: 6, color: '#0090ff' });
     expect(store.get(id)).toMatchObject({ width: 6, color: '#0090ff' });
     store.update(id, { width: 10, fontSize: 20 });
@@ -17,7 +17,7 @@ describe("a mark's style in the store", () => {
   });
 
   it('takes back a burst of updates sharing a coalesce key in one undo', () => {
-    const store = createAnnotationStore({ targets: () => TARGETS });
+    const store = createMarkStore({ targets: () => TARGETS });
     const a = store.add({ target: 't', kind: 'rect', frac: BOX, width: 2 });
     const b = store.add({ target: 't', kind: 'ellipse', frac: BOX, width: 3 });
     for (const w of [4, 6, 8]) {
@@ -29,7 +29,7 @@ describe("a mark's style in the store", () => {
   });
 
   it('paints a restyled mark at its new width', () => {
-    const store = createAnnotationStore({ targets: () => TARGETS });
+    const store = createMarkStore({ targets: () => TARGETS });
     const id = store.add({
       target: 't',
       kind: 'line',

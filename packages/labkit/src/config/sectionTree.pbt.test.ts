@@ -19,7 +19,7 @@ import {
   timeoutFor,
 } from '../pbt.fixture';
 import { f } from './builder';
-import { valueAtPath } from './path';
+import { configValueAt } from './path';
 import { resolveConfigSchema } from './resolve';
 import { sectionTree } from './sectionTree';
 import { isRowVisible } from './visible';
@@ -63,7 +63,7 @@ describe('sectionTree', () => {
           });
           expect(home.map(([, p]) => p).sort()).toEqual([...shown].sort());
           for (const [r, p] of home)
-            expect(valueAtPath(tree.values, r)).toEqual(valueAtPath(config, p));
+            expect(configValueAt(tree.values, r)).toEqual(configValueAt(config, p));
           if (resolved.sections.some((s) => s.at === '')) t.count('root sections');
           if (resolved.sections.some((s) => s.at !== '')) t.count('nested sections');
           if (shown.length < all.length) t.count('some hidden');

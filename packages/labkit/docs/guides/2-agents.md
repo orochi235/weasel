@@ -89,7 +89,7 @@ A map of the library so agents can find what they need quickly.
 | Concept | Source |
 |---|---|
 | Capability, target, store and API types | `src/annotations/types.ts` |
-| `createAnnotationStore` (scene-backed, one scene per target) | `src/annotations/store.ts` |
+| `createMarkStore` (scene-backed, one scene per target) | `src/annotations/store.ts` |
 | `useAnnotations` / `useAnnotationsOptional` | `src/annotations/AnnotationsContext.ts` |
 | `<AnnotationOverlay>` (weasel tools + selection over a target) | `src/annotations/AnnotationOverlay.tsx` |
 | `<AnnotationTargets>` (mounts one overlay per declared target) | `src/annotations/AnnotationTargets.tsx` |
@@ -130,7 +130,7 @@ plays once (`loop: false`) unless declared otherwise; `start` opens it elsewhere
 - **`duration` is writable**, for a run whose length follows its content: a
   write keeps `pass` and `phase`, so the playhead holds its place in the
   content and the pace is whatever the app makes it.
-- **`rates`** are the speeds a transport offers for that clock; the default is
+- **`speeds`** are the speeds a transport offers for that clock; the default is
   weasel-ui's `TRANSPORT_RATES`.
 - **The lab's clock**: `<Lab clock={…}>` gives the lab one clock of its own, and
   an instrument declaring `clock: 'lab'` plays on it, so every such trial shares

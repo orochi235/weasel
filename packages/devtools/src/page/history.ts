@@ -36,7 +36,7 @@ export function recordHistory(history: History, ring: TraceRing<DevtoolsHistoryR
   });
 }
 
-export function historySlice(root: DevtoolsRoot, cursor: number, checkpoints: boolean | undefined): DevtoolsHistorySlice {
+export function historySlice(root: DevtoolsRoot, cursor: number, historyEntries: boolean | undefined): DevtoolsHistorySlice {
   const ring = root.source.history;
   const scene = root.source.scene();
   if (!ring || !scene) throw new Error('no history to read');
@@ -47,6 +47,6 @@ export function historySlice(root: DevtoolsRoot, cursor: number, checkpoints: bo
     cursor: slice.cursor,
     position: { index, total: index + scene.history.redoDepth(), canUndo: scene.canUndo(), canRedo: scene.canRedo() },
   };
-  if (checkpoints) out.checkpoints = scene.historyEntries().map((e) => ({ id: e.id, label: e.label }));
+  if (historyEntries) out.historyEntries = scene.historyEntries().map((e) => ({ id: e.id, label: e.label }));
   return out;
 }

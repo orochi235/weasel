@@ -1,4 +1,4 @@
-import { withValueAtPath } from '@weasel-js/labkit/config';
+import { withConfigValueAt } from '@weasel-js/labkit/config';
 import { type RefObject, useEffect, useState } from 'react';
 import { createRoot, type Root } from 'react-dom/client';
 import type { FrameSetup } from '../frame/FrameController';
@@ -37,7 +37,7 @@ function TestTrial({ story, setup, hostRef, onConfig, onRendered, onError }: Tes
   const ctx = {
     config,
     state,
-    setConfig: (path: string, value: unknown) => setConfigState((prev: unknown) => withValueAtPath(prev, path, value)),
+    setConfig: (path: string, value: unknown) => setConfigState((prev: unknown) => withConfigValueAt(prev, path, value)),
     setState,
   };
   return <StoryTrial story={story} setup={setup} ctx={ctx} hostRef={hostRef} onRendered={onRendered} onError={onError} />;

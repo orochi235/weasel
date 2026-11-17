@@ -284,7 +284,7 @@ export function createReflectable<V, K = string>(options?: ReflectableOptions): 
 
 /** A reader of `reflection`'s live values in the order their keys were first registered: the same frozen
  *  array until the reflection's entries change. */
-export function valuesOf<V, K>(reflection: Reflection<V, K>): () => readonly V[] {
+export function createValuesReader<V, K>(reflection: Reflection<V, K>): () => readonly V[] {
   let held: { from: readonly ReflectedEntry<V, K>[]; values: readonly V[] } | null = null;
   return () => {
     const from = reflection.entries();

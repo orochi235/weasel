@@ -56,9 +56,9 @@ export interface UseSimulationOptions<TNode extends SimulationNode>
  * settles. Raise `alphaTarget` to reheat it.
  *
  * Nodes are mutated in place; the simulation holds the array, not a copy.
- * {@link Simulation} adds the frame loop.
+ * {@link RunningSimulation} adds the frame loop.
  */
-export interface SimulationCore<TNode extends SimulationNode> {
+export interface Simulation<TNode extends SimulationNode> {
   readonly nodes: TNode[];
 
   setNodes(nodes: TNode[]): this;
@@ -83,15 +83,15 @@ export interface SimulationCore<TNode extends SimulationNode> {
   isSettled(): boolean;
 }
 
-/** A {@link SimulationCore} running on a frame loop. */
-export interface Simulation<TNode extends SimulationNode> extends SimulationCore<TNode> {
+/** A {@link Simulation} running on a frame loop. */
+export interface RunningSimulation<TNode extends SimulationNode> extends Simulation<TNode> {
   /** Resume the RAF loop, or stepping on the clock. If alpha < alphaMin, reset alpha to 1. */
   restart(): this;
   /** Cancel the RAF loop, or stop stepping on the clock. Does not change alpha. */
   stop(): this;
 }
 
-/** What {@link SimulationCore} needs: the nodes, the forces acting on them,
+/** What {@link Simulation} needs: the nodes, the forces acting on them,
  *  and the cooling schedule. {@link UseSimulationOptions} adds the loop's. */
 export interface SimulationOptions<TNode extends SimulationNode> {
   /** Mutable array of nodes. Kit + forces mutate vx/vy/x/y in place. */

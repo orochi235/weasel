@@ -47,7 +47,7 @@ export type UseRovingTabIndexOptions = {
   onNavigate?: (index: number) => void;
   /** Space/Enter on the item at `index`, with the keypress for its modifiers. When omitted the keypress is left
    *  alone, which on a native `<button>` produces an ordinary click. */
-  onActivate?: (index: number, event: ReactKeyboardEvent) => void;
+  onAction?: (index: number, event: ReactKeyboardEvent) => void;
 };
 
 /** What {@link useRovingTabIndex} returns. Attach both to the container. */
@@ -231,11 +231,11 @@ export function useRovingTabIndex<T extends HTMLElement = HTMLDivElement>(
       const found = items();
       const current = found.indexOf(e.target as HTMLElement);
       if (current < 0) return;
-      const { onActivate, onNavigate } = latest.current;
+      const { onAction, onNavigate } = latest.current;
       if (e.key === ' ' || e.key === 'Enter') {
-        if (!onActivate) return;
+        if (!onAction) return;
         e.preventDefault();
-        onActivate(current, e);
+        onAction(current, e);
         return;
       }
       const enabled = found.map(isEnabled);

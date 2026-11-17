@@ -6,7 +6,7 @@ import {
   type LoupeMode,
   type LoupeModel,
   type LoupePoint,
-  WHEEL_RATE,
+  LOUPE_WHEEL_RATE,
 } from '@weasel-js/loupe';
 import { useKitSetting } from '@weasel-js/react';
 import { type RefObject, useCallback, useEffect, useReducer, useRef } from 'react';
@@ -250,7 +250,7 @@ export function useLoupe<TData = unknown, TLayer extends string = string, TPose 
     return subscribeResample(() => model.resample());
   }, [visible, subscribeResample, model]);
 
-  const wheelRateRef = useLatest(useKitSetting('loupe.wheelRate') ?? WHEEL_RATE);
+  const wheelRateRef = useLatest(useKitSetting('loupe.wheelRate') ?? LOUPE_WHEEL_RATE);
   const inputRef = useRef<LoupeInputApi | null>(null);
   if (inputRef.current === null) {
     inputRef.current = {

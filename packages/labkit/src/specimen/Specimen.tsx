@@ -719,7 +719,7 @@ function EditorsAndPlots() {
             duration={2000}
             playhead={playhead}
             onChange={setTracks}
-            onScrub={setPlayhead}
+            onSeek={setPlayhead}
           />
         </div>
       </Cell>

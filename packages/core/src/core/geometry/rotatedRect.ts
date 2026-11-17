@@ -41,7 +41,7 @@ export function rotatedRectCorners(pose: RotatedPose): { x: number; y: number }[
 /** Hit-test a world point against a rotated rect (rotation around AABB
  *  center). Standard pattern: invert the rotation and AABB-test in the
  *  rect's local frame. */
-export function pointInRotatedRect(
+export function rotatedRectContainsPoint(
   pose: RotatedPose,
   worldX: number,
   worldY: number,

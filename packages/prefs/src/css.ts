@@ -3,7 +3,7 @@
 
 import { catalogUnit } from '@weasel-js/quantity';
 import { trimNumber } from '@weasel-js/geom';
-import { type PrefGroup, prefHoldsValue, prefLeaves, prefValueAtPath, isPrefScope, type PrefScope, type PrefOverridesLookup, type PrefSelection, type PrefEnum, type PrefLeaf, type PrefNumber, resolvePrefUnit } from '@weasel-js/prefs-schema';
+import { type PrefGroup, prefHoldsValue, prefLeaves, prefValueAt, isPrefScope, type PrefScope, type PrefOverridesLookup, type PrefSelection, type PrefEnum, type PrefLeaf, type PrefNumber, resolvePrefUnit } from '@weasel-js/prefs-schema';
 import { prefScopeOptionValue, prefOverridesLookup } from '@weasel-js/prefs-schema/internal';
 import { prefSelectors } from './splitCheck';
 import { compositeKey } from '@weasel-js/registry';
@@ -129,7 +129,7 @@ export function prefsCss(store: PrefsCssSource, options: PrefsCssOptions = {}): 
   };
 
   for (const [path, leaf] of leaves) {
-    declare([], path, leaf, prefValueAtPath(base, path));
+    declare([], path, leaf, prefValueAt(base, path));
     const own = selectors.get(path);
     if (own) for (const option of own) declare([[path, option]], path, leaf, option);
     const held = store.scope(path);

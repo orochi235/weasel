@@ -13,7 +13,7 @@ import {
   prefJudge,
   prefLeafAt,
 } from '@weasel-js/prefs';
-import { setOwn, valueAtPath } from './path';
+import { setOwn, configValueAt } from './path';
 import type { ResolvedConfig } from './types';
 
 const ALWAYS: PrefCondition = { all: [] };
@@ -134,7 +134,7 @@ export function configVerdict(
   resolved: ResolvedConfig,
   config: Record<string, unknown>,
 ): ConfigVerdict {
-  const holds = prefJudge(resolved.group, (at) => valueAtPath(config, at));
+  const holds = prefJudge(resolved.group, (at) => configValueAt(config, at));
   const { shown, disabled } = applyPrefConditions(withFunctions(resolved, config), holds, {
     keepEmpty: true,
   });

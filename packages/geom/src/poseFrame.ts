@@ -27,7 +27,7 @@ export type PoseLinear = readonly [a: number, b: number, c: number, d: number];
  * let chrome carry the frame a box is drawn in without a parallel type;
  * `poseFrameOf` composes the two. routing and core call it `Bounds`.
  */
-export interface FramedBox {
+export interface FramedRect {
   x: number;
   y: number;
   width: number;
@@ -51,7 +51,7 @@ export function poseLinearOf(pose: unknown): PoseLinear | null {
  * the step.
  */
 export function poseFrameOf(pose: unknown): Affine | null {
-  const p = pose as Partial<FramedBox> | null | undefined;
+  const p = pose as Partial<FramedRect> | null | undefined;
   if (!p || p.x == null || p.y == null || p.width == null || p.height == null) return null;
   const linear = poseLinearOf(p);
   if (!p.rotation && !linear) return null;
@@ -70,7 +70,7 @@ export function poseFrameOf(pose: unknown): Affine | null {
  * `null` when the pose is not a box.
  */
 export function boxFrameOf(pose: unknown): Affine | null {
-  const p = pose as Partial<FramedBox> | null | undefined;
+  const p = pose as Partial<FramedRect> | null | undefined;
   if (!p || p.x == null || p.y == null || p.width == null || p.height == null) return null;
   const at = translate(p.x, p.y);
   const frame = poseFrameOf(p);

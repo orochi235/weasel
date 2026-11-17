@@ -57,9 +57,9 @@ export function polarScale(opts: PolarScaleOptions): PolarScale {
     domain,
     axes,
     angle,
-    radiusAt: linear.map,
+    radiusAt: linear.position,
     point(i, value) {
-      const r = linear.map(value);
+      const r = linear.position(value);
       const a = angle(i);
       return { x: center.x + r * Math.sin(a), y: center.y - r * Math.cos(a) };
     },

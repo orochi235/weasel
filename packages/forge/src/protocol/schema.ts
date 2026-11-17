@@ -3,7 +3,7 @@ import {
   isConfigBranch,
   isConfigNodeShown,
   resolveConfigSchema,
-  schemaNodeAtPath,
+  schemaNodeAt,
   type Annotations,
   type BranchAnnotations,
   type ConfigBranch,
@@ -141,7 +141,7 @@ export function answerSchema(
       }
       const { validate } = entry.options;
       if (!validate) continue;
-      const leaf = schemaNodeAtPath(group, path);
+      const leaf = schemaNodeAt(group, path);
       if (!leaf || 'children' in leaf) continue;
       const found = validate(leaf, record);
       if (found.length > 0) setOwn(errors, path, found);

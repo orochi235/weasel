@@ -1,4 +1,4 @@
-export { createReflectable, valuesOf } from './reflectable';
+export { createReflectable, createValuesReader } from './reflectable';
 export { createExtensionRegistry, ExtensionConflictError } from './extensionRegistry';
 export type { ExtensionRegistry, ExtensionRegistryOptions, ExtensionRegisterOptions } from './extensionRegistry';
 export { createEmitter, createKeyedEmitter, type Emitter, type KeyedEmitter } from './emitter';

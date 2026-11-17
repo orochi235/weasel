@@ -25,8 +25,8 @@ import {
 } from '@weasel-js/core';
 import {
   crosshairRects,
-  MINIMAP_CENTER,
-  MINIMAP_PAN,
+  MINIMAP_CENTER_ACTION_ID,
+  MINIMAP_PAN_ACTION_ID,
   minimapCenterAction,
   minimapPanAction,
 } from '@weasel-js/minimap';
@@ -105,10 +105,10 @@ const OVERVIEW_INPUT: Tool = {
   bindings: [
     {
       spec: { kind: 'pointerDown' },
-      actionId: MINIMAP_CENTER,
+      actionId: MINIMAP_CENTER_ACTION_ID,
       opts: { id: 'overview.pointerDown' },
     },
-    { spec: { kind: 'drag' }, actionId: MINIMAP_PAN, opts: { id: 'overview.drag' } },
+    { spec: { kind: 'drag' }, actionId: MINIMAP_PAN_ACTION_ID, opts: { id: 'overview.drag' } },
   ],
 };
 const TOOLS_BY_ID: ReadonlyMap<string, Tool> = new Map([[OVERVIEW_INPUT.id, OVERVIEW_INPUT]]);

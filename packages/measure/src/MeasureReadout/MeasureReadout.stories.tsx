@@ -10,7 +10,7 @@ import { IDENTITY_POSE_COMPOSITION,
 } from '@weasel-js/core';
 import { measureNode } from '../measurement';
 import { createMeasurements } from '../measurements';
-import { measurementsContribution } from '../measureContribution';
+import { createMeasurementsContribution } from '../measureContribution';
 import { useState } from 'react';
 import { MeasureReadout } from './MeasureReadout';
 import s from './MeasureReadout.stories.module.css';
@@ -35,7 +35,7 @@ function Held({ from, to, selected }: { from: Pt; to: Pt; selected: readonly str
     }) as unknown as AnyScene;
     sc.add(measureNode('m' as NodeId, 'notes', from, to));
     const m = createMeasurements({ layer: 'notes' });
-    return { scene: sc, ms: m, actions: measurementsContribution(sc, m).actions ?? [] };
+    return { scene: sc, ms: m, actions: createMeasurementsContribution(sc, m).actions ?? [] };
   });
   return (
     <DepRegistryProvider>

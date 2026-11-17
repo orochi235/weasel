@@ -102,10 +102,10 @@ export function pickContainer(
     if (!node || isPageStructure(node)) return;
     const worldPose = composeWorldPose(poseAdapter, id as string, pc.compose);
     const g = poseDescriptorForNode(d, node);
-    const worldAABB = g.getBounds(worldPose);
+    const worldAabb = g.getBounds(worldPose);
     const plane = planeOf(session.view, node.layer);
     const at = plane ? toPlane(plane, center) : center;
-    if (!testInside(id, worldPose, worldAABB, layout, at)) return;
+    if (!testInside(id, worldPose, worldAabb, layout, at)) return;
     const verdict = session.verdict(id);
     if (verdict === false) return;
     const refused = refusalOf(verdict);
@@ -119,7 +119,7 @@ export function pickContainer(
     }
     candidates.push({
       id,
-      bounds: worldAABB,
+      bounds: worldAabb,
       content,
       view,
       layout,

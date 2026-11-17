@@ -60,9 +60,9 @@ function commitSkeleton(
   commitOps({ ...deps, scene }, ops, label);
 }
 
-function dragAction(env: BoneEnv, editing: () => true | ActionDisabledReason): Action {
+function shapeAction(env: BoneEnv, editing: () => true | ActionDisabledReason): Action {
   return {
-    id: 'bone.drag',
+    id: 'bone.shape',
     label: 'Bone — move a joint or draw a bone',
     eligible,
     requires: ['view', 'operands', 'applyOps'],
@@ -106,7 +106,7 @@ function dragAction(env: BoneEnv, editing: () => true | ActionDisabledReason): A
   };
 }
 
-/** The bone tool's actions: `bone.drag`, `bone.pick`, `bone.remove`, and `bone.clear`. */
+/** The bone tool's actions: `bone.shape`, `bone.pick`, `bone.remove`, and `bone.deselect`. */
 export function createBoneActions(env: BoneEnv): Action[] {
   const editing = () => (env.placed() ? true : ActionDisabledReason.NotApplicable);
   const hasActive = () => {
@@ -114,7 +114,7 @@ export function createBoneActions(env: BoneEnv): Action[] {
     return at && activeIn(env, at.skeleton) !== null ? true : ActionDisabledReason.NotApplicable;
   };
   return [
-    dragAction(env, editing),
+    shapeAction(env, editing),
     defineAction({
       id: 'bone.pick',
       label: 'Bone — pick the active joint',
@@ -152,7 +152,7 @@ export function createBoneActions(env: BoneEnv): Action[] {
       },
     },
     {
-      id: 'bone.clear',
+      id: 'bone.deselect',
       label: 'Bone — clear the active joint',
       eligible,
       enabled: hasActive,

@@ -11,6 +11,6 @@ declare module '@weasel-js/routing' {
   interface ActionParamSchema {
     'bone.pick': Pick<ImmediateParams, 'press'>;
     'weight.paint': WeightBrushParams;
-    'weight.click': WeightBrushParams & Pick<ImmediateParams, 'press' | 'mods'>;
+    'weight.dab': WeightBrushParams & Pick<ImmediateParams, 'press' | 'mods'>;
   }
 }

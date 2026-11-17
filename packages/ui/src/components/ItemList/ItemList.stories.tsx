@@ -1,6 +1,7 @@
 import type { Meta, StoryObj } from '@weasel-js/forge';
+import type { EventModifiers } from '@weasel-js/gestures';
 import { useState } from 'react';
-import { useReorderDragList, type PressModifiers, type ReorderItem } from '@weasel-js/ui';
+import { useReorderDragList, type ReorderItem } from '@weasel-js/ui';
 import { Button } from '@weasel-js/ui/components/Button';
 import { ItemList } from '@weasel-js/ui/components/ItemList';
 import s from './ItemList.stories.module.css';
@@ -61,7 +62,7 @@ export const Reorder: Story = {
       { id: 'd', label: 'Highlights' },
     ]);
     const [selected, setSelected] = useState<string[]>(['b']);
-    const press = (id: string, mods: PressModifiers) => setSelected((cur) => {
+    const press = (id: string, mods: EventModifiers) => setSelected((cur) => {
       if (!mods.shiftKey) return [id];
       return cur.includes(id) ? cur.filter((x) => x !== id) : [...cur, id];
     });

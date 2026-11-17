@@ -176,10 +176,10 @@ Those declare a different condition:
 - `always` — live whatever is focused.
 - `claimed` — live only for input that hit one of this entry's own
   affordances: a hit whose `owner` is the entry's id, or one of the ids a
-  `claimed: [ids]` list names (`diagramPorts` lists its port layer's). No
+  `claimed: [ids]` list names (`createDiagramPortsContribution` lists its port layer's). No
   keystroke reaches it.
 - `keymap` — live only while it is the innermost open keymap, at the hotkey
-  tier (open one with a leader, `keymapContribution`).
+  tier (open one with a leader, `createKeymapContribution`).
 - `capabilities` — a modality filter over whichever of the above holds.
 
 The conditions are a set, not a choice: the hand tool is palette-selectable

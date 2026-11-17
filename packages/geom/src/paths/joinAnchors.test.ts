@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import type { AnchorSet } from './anchorEdits';
 import {
-  averageAnchorsAt, closestOpenEnds, joinAnchorsAt, joinSubpathEnds, subpathEndAt,
+  averageAnchorsAt, nearestOpenEnds, joinAnchorsAt, joinSubpathEnds, subpathEndAt,
 } from './joinAnchors';
 
 const pt = (x: number, y: number) => ({ x, y });
@@ -117,15 +117,15 @@ describe('joinAnchorsAt', () => {
   });
 });
 
-describe('closestOpenEnds', () => {
+describe('nearestOpenEnds', () => {
   it('finds the nearest pair of ends on different subpaths', () => {
-    expect(closestOpenEnds(twoLines())).toEqual([{ sub: 0, end: 'last' }, { sub: 1, end: 'first' }]);
+    expect(nearestOpenEnds(twoLines())).toEqual([{ sub: 0, end: 'last' }, { sub: 1, end: 'first' }]);
   });
 
   it('honors the filter and answers null with one open subpath', () => {
-    const near = closestOpenEnds(twoLines(), (a, b) => a.end === 'first' && b.end === 'first');
+    const near = nearestOpenEnds(twoLines(), (a, b) => a.end === 'first' && b.end === 'first');
     expect(near).toEqual([{ sub: 0, end: 'first' }, { sub: 1, end: 'first' }]);
-    expect(closestOpenEnds({ anchors: [[pt(0, 0), pt(1, 0)]], closed: [false] })).toBeNull();
+    expect(nearestOpenEnds({ anchors: [[pt(0, 0), pt(1, 0)]], closed: [false] })).toBeNull();
   });
 });
 

@@ -43,7 +43,7 @@ function mount(fired: string[]): HTMLCanvasElement {
     const canvasRef = useRef<HTMLCanvasElement | null>(null);
     const registry = useActionsRegistry()!;
     for (const a of actions) registry.register(a);
-    useGestureDispatcher({ canvasRef, actions: registry, entriesById: new Map(), claimKeys: true, classifyTarget: () => ({ body: 'empty' }) });
+    useGestureDispatcher({ canvasRef, actions: registry, entriesById: new Map(), claimKeys: true, classifyTarget: () => ({ bodyTarget: 'empty' }) });
     return <canvas ref={canvasRef} data-testid="devices" />;
   }
   render(

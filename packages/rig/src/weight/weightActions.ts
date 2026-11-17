@@ -74,7 +74,7 @@ export const WEIGHT_BRUSH_PARAMS = pref.group('Weight brush', {
 /** The weight tool's options: its brush size, stepped by `[` `]` and Shift+wheel, which a drag and a click's dab
  *  both read. */
 export const WEIGHT_TOOL_OPTIONS = {
-  actionId: ['weight.paint', 'weight.click'],
+  actionId: ['weight.paint', 'weight.dab'],
   prefs: WEIGHT_BRUSH_PARAMS,
   size: { option: 'radiusPx', times: 1.25 },
 } as const;
@@ -117,7 +117,7 @@ function commitPainted(env: WeightEnv, deps: ActionDeps): void {
   env.paint(null);
 }
 
-/** The weight tool's actions: `weight.paint` and `weight.click`. */
+/** The weight tool's actions: `weight.paint` and `weight.dab`. */
 export function createWeightActions(env: WeightEnv): Action[] {
   const editing = () => (env.placed() ? true : ActionDisabledReason.NotApplicable);
   return [
@@ -157,7 +157,7 @@ export function createWeightActions(env: WeightEnv): Action[] {
       },
     }),
     defineAction({
-      id: 'weight.click',
+      id: 'weight.dab',
       label: 'Weight — pick a joint, or dab its weight',
       eligible,
       requires: ['view', 'operands', 'applyOps'],

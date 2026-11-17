@@ -35,8 +35,8 @@ const ctx = (x: number, y: number, from = { x, y }): InvocationCtx => ({
 });
 /** Draw a bone with the bone tool from `from` to `to`, committing it. */
 function drawBone(bone: Tool, from: [number, number], to: [number, number]): void {
-  const invoker = actionOf(bone, 'bone.drag').invoker;
-  if (invoker?.timing !== 'ongoing') throw new Error('bone.drag is not ongoing');
+  const invoker = actionOf(bone, 'bone.shape').invoker;
+  if (invoker?.timing !== 'ongoing') throw new Error('bone.shape is not ongoing');
   const handle = invoker.start(ctx(from[0], from[1]), undefined);
   handle.onMove?.(ctx(to[0], to[1], { x: from[0], y: from[1] }));
   handle.onEnd?.({ ...ctx(to[0], to[1]), deps: {} as ActionDeps }, 'commit');

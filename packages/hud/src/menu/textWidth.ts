@@ -8,7 +8,7 @@ export function estimateWidth(text: string, fontSize: number): number {
 /** Width of `text` at `fontSize` in `fontFamily`, from the advances and
  *  kerning of the face the text command lays it out with. A face not loaded
  *  yet gives an estimate; `faceGeneration` moves when it lands. */
-export function measureLabel(text: string, fontSize: number, fontFamily: string): number {
+export function textWidth(text: string, fontSize: number, fontFamily: string): number {
   const metrics = metricsOf(cachedFontVariant(fontFamily, 400, 'normal'));
   if (!metrics) return estimateWidth(text, fontSize);
   let units = 0;

@@ -43,10 +43,10 @@ describe('clock origin, speed and declare', () => {
     h.declare({ duration: 2000 });
     expect(h.clock.elapsed).toBe(2000);
   });
-  it('declare leaves rates and seekable alone', () => {
-    const h = createClock({ rates: [1, 3], seekable: false });
+  it('declare leaves speeds and seekable alone', () => {
+    const h = createClock({ speeds: [1, 3], seekable: false });
     h.declare({ duration: 100 });
-    expect(h.clock.rates).toEqual([1, 3]);
+    expect(h.clock.speeds).toEqual([1, 3]);
     expect(h.clock.seekable).toBe(false);
   });
   it('rejects a bad speed or duration', () => {

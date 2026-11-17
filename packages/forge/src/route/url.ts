@@ -1,4 +1,4 @@
-import { type ConfigSchema, type ConfigShape, isConfigBranch, valueAtPath } from '@weasel-js/labkit/config';
+import { type ConfigSchema, type ConfigShape, isConfigBranch, configValueAt } from '@weasel-js/labkit/config';
 import { isPlainObject } from '@weasel-js/core';
 import { type StoryGlobals, stableStringify } from '../protocol/messages';
 import { setOwn, getOwn } from '@weasel-js/registry';
@@ -195,7 +195,7 @@ export function sameKnob(a: unknown, b: unknown): boolean {
 export function knobsToParams(schema: Pick<ConfigSchema<unknown>, 'nodes'>, config: unknown): Record<string, string> {
   const params: Record<string, string> = {};
   for (const { path, leaf } of knobPaths(schema)) {
-    const value = valueAtPath(config, path);
+    const value = configValueAt(config, path);
     if (value === undefined || sameKnob(value, leaf.default)) continue;
     const encoded = encodeKnob(value);
     if (encoded !== undefined) setOwn(params, path, encoded);

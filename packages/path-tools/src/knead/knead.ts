@@ -8,7 +8,7 @@ import {
 import { pref, PX_UNIT } from '@weasel-js/prefs';
 import { pxReach, kneadPath, type PolygonPath, type Point } from '@weasel-js/geom';
 import { brushRing } from '@weasel-js/cursor';
-import { PATH_GROUP, commitOps, drawnAABBOf, reshapeOps, shownNodeOf, withPath, type PathNode, pathOperationTags } from '@weasel-js/core';
+import { PATH_GROUP, commitOps, drawnAabbOf, reshapeOps, shownNodeOf, withPath, type PathNode, pathOperationTags } from '@weasel-js/core';
 import { icon } from '../icons.gen';
 import { kneadTargets } from './kneadTargets';
 import { outlineSession } from '../shared/outlineSession';
@@ -84,7 +84,7 @@ function strokeFrom(deps: ActionDeps, start: Point) {
     dab({ to, scale }: Dab, params: KneadParams | undefined): void {
       const radius = worldRadius(scale, radiusOf(params));
       nodes.push(...text.convert((id, scene) =>
-        discMeetsBox(at, radius, drawnAABBOf(scene, id, shownNodeOf(scene, id)!.pose, scale ? { scale } : {}))));
+        discMeetsBox(at, radius, drawnAabbOf(scene, id, shownNodeOf(scene, id)!.pose, scale ? { scale } : {}))));
       for (const node of nodes) {
         const from = shapes.get(node.id)?.path ?? node.path;
         const next = kneadPath(from, {

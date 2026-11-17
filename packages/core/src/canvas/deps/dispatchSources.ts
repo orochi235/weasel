@@ -28,8 +28,8 @@ export interface HitAt { bodyTarget: BodyTarget; bodyKind?: string; id?: string 
 
 type Classify = (world: { x: number; y: number }) => BodyClassification;
 
-const hitOf = (c: { body: BodyTarget; kind?: string; id?: string }): HitAt =>
-  ({ bodyTarget: c.body, bodyKind: c.kind, ...(c.id !== undefined ? { id: c.id } : {}) });
+const hitOf = (c: { bodyTarget: BodyTarget; bodyKind?: string; id?: string }): HitAt =>
+  ({ bodyTarget: c.bodyTarget, bodyKind: c.bodyKind, ...(c.id !== undefined ? { id: c.id } : {}) });
 
 /** The `hitAt` answer for one view: its own classifier's verdict on a point. */
 export function hitAtOf(classifyTarget: Classify): NonNullable<DepSchema['hitAt']> {

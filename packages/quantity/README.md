@@ -63,16 +63,16 @@ app with a custom kind still opens in one without it.
 ## Infinity
 
 Every display shows ±Infinity, as `∞` (spoken `infinity`) unless it names its
-own word. `endless` gives it one:
+own word. `withInfinity` gives it one:
 
 ```ts
-import { decimal, endless, parseAs, qty, unit } from '@weasel-js/quantity';
+import { decimal, withInfinity, parseAs, qty, unit } from '@weasel-js/quantity';
 
-const timeout = endless(unit('ms'), 'never');
+const timeout = withInfinity(unit('ms'), 'never');
 qty(Infinity, timeout).text   // 'never'
 qty(250, timeout).text        // '250ms'
 parseAs('never', timeout)     // Infinity
-endless(decimal(), { text: 'no cap', spoken: 'uncapped', negative: 'none' })
+withInfinity(decimal(), { text: 'no cap', spoken: 'uncapped', negative: 'none' })
 ```
 
 The word is one `infinity` part with no unit beside it. `parseAs` reads the

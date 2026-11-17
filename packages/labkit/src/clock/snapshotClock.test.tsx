@@ -13,8 +13,8 @@ vi.mock('@weasel-js/clock', async (original) => {
   const clock = await original<typeof import('@weasel-js/clock')>();
   return {
     ...clock,
-    holdElapsed: (...args: Parameters<typeof clock.holdElapsed>) => {
-      const hold = clock.holdElapsed(...args);
+    holdPosition: (...args: Parameters<typeof clock.holdPosition>) => {
+      const hold = clock.holdPosition(...args);
       return {
         ...hold,
         release: () => {

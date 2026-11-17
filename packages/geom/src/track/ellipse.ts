@@ -176,10 +176,10 @@ export function ellipseShape(spec: EllipseTrackSpec): EllipseTrackShape {
       const u = footBetween(e, p, 0, sweep, PIECES, true);
       const f = length === 0 ? 0 : clamp(lengthTo(u) / length, 0, 1);
       const dist = Math.sqrt(dist2(e, p, u));
-      if (!options?.open || length === 0) return { f, dist };
+      if (!options?.open || length === 0) return { f, distance: dist };
       // Searched only within half a turn either side of `about`, so the answer is already unwrapped about it.
       const mid = offsetAt(options.about ?? 0.5);
-      return { f: lengthTo(footBetween(e, p, mid - 180, mid + 180, RING, false)) / length, dist };
+      return { f: lengthTo(footBetween(e, p, mid - 180, mid + 180, RING, false)) / length, distance: dist };
     },
   };
   Object.defineProperty(shape, 'ellipse', { value: spec, enumerable: false });

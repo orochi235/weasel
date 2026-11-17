@@ -16,10 +16,10 @@ describe('lineShape', () => {
     expect(lineShape({ x: 5, y: 5 }, { x: 5, y: 5 }).closed).toBe(false);
   });
   test('nearest projects onto the segment and measures the distance', () => {
-    expect(line.nearest({ x: 110, y: 50 })).toEqual({ f: 0.5, dist: 30 });
+    expect(line.nearest({ x: 110, y: 50 })).toEqual({ f: 0.5, distance: 30 });
   });
   test('nearest past an end answers that end', () => {
-    expect(line.nearest({ x: -40, y: 20 })).toEqual({ f: 0, dist: 50 });
+    expect(line.nearest({ x: -40, y: 20 })).toEqual({ f: 0, distance: 50 });
   });
   test('a line drawn right to left has its normal pointing down', () => {
     expect(lineShape({ x: 210, y: 20 }, { x: 10, y: 20 }).at(0).normal).toEqual({ x: 0, y: 1 });
@@ -31,6 +31,6 @@ describe('lineShape', () => {
       tangent: { x: 1, y: 0 },
       normal: { x: 0, y: -1 },
     });
-    expect(dot.nearest({ x: 9, y: 8 })).toEqual({ f: 0, dist: 5 });
+    expect(dot.nearest({ x: 9, y: 8 })).toEqual({ f: 0, distance: 5 });
   });
 });

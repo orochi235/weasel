@@ -94,7 +94,7 @@ export function prefLeafAt(schema: PrefGroup | PrefSection, path: string): PrefL
 
 /** Get the value at a dotted path inside a nested value tree. Returns
  *  `undefined` when a segment is missing or hits a non-object. */
-export function prefValueAtPath(values: unknown, path: string): unknown {
+export function prefValueAt(values: unknown, path: string): unknown {
   let cur: unknown = values;
   for (const seg of path.split('.')) {
     if (cur == null || typeof cur !== 'object' || !Object.hasOwn(cur, seg)) return undefined;
@@ -176,7 +176,7 @@ export function setOwnPrefValue(tree: Record<string, unknown>, key: string, valu
 }
 
 /** Set `value` at the dotted `path` in `root` itself, creating missing branches. */
-export function assignPrefValueAtPath(root: Record<string, unknown>, path: string, value: unknown): void {
+export function assignPrefValueAt(root: Record<string, unknown>, path: string, value: unknown): void {
   const parts = path.split('.');
   let cursor = root;
   for (const part of parts.slice(0, -1)) {
@@ -190,7 +190,7 @@ export function assignPrefValueAtPath(root: Record<string, unknown>, path: strin
  *  nested tree `PrefsForm` reads: the inverse of {@link flattenPrefValues}. */
 export function nestPrefValues(values: Readonly<Record<string, unknown>> | undefined): Record<string, unknown> {
   const tree: Record<string, unknown> = {};
-  for (const [path, value] of Object.entries(values ?? {})) assignPrefValueAtPath(tree, path, value);
+  for (const [path, value] of Object.entries(values ?? {})) assignPrefValueAt(tree, path, value);
   return tree;
 }
 
@@ -199,7 +199,7 @@ export function nestPrefValues(values: Readonly<Record<string, unknown>> | undef
 export function flattenPrefValues(schema: PrefGroup, tree: unknown): [string, unknown][] {
   const out: [string, unknown][] = [];
   for (const path of prefLeaves(schema).keys()) {
-    const value = prefValueAtPath(tree, path);
+    const value = prefValueAt(tree, path);
     if (value !== undefined) out.push([path, value]);
   }
   return out;

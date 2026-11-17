@@ -1,6 +1,6 @@
 import { fireEvent, render, screen, within } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
-import { auto } from '../config/auto';
+import { AUTO } from '../config/auto';
 import { f } from '../config/builder';
 import { resolveConfigSchema } from '../config/resolve';
 import { ControlMatrix, type ControlMatrixColumn } from './ControlMatrix';
@@ -221,7 +221,7 @@ describe('<ControlMatrix>', () => {
     const inherit = screen.getByRole('button', { name: 'Inherit' });
     expect(inherit).not.toBeDisabled();
     fireEvent.click(inherit);
-    expect(setConfig).toHaveBeenCalledWith('looks.window.glow', auto);
+    expect(setConfig).toHaveBeenCalledWith('looks.window.glow', AUTO);
     unmount();
 
     setup();
@@ -239,7 +239,7 @@ describe('<ControlMatrix>', () => {
   it('unpins a pinned cell on Alt-click, without flipping or opening it', () => {
     const { setConfig } = setup();
     fireEvent.click(cell('Window Glow'), { altKey: true });
-    expect(setConfig).toHaveBeenCalledWith('looks.window.glow', auto);
+    expect(setConfig).toHaveBeenCalledWith('looks.window.glow', AUTO);
     expect(screen.queryByRole('dialog')).toBeNull();
 
     setConfig.mockClear();

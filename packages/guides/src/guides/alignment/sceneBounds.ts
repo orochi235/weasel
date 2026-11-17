@@ -5,7 +5,7 @@ import {
   nodeGates,
   type PoseDescriptor,
   scenePoseFrame,
-  unionAABB,
+  unionAabb,
   visualBoundsViaDescriptor,
   type AnyScene,
 } from '@weasel-js/core';
@@ -42,7 +42,7 @@ export function worldUnionOf(
   opts: SceneBoundsOptions = {},
 ): Bounds | null {
   const boxes = worldBoundsOf(scene, ids, opts);
-  return boxes.length === 0 ? null : unionAABB(boxes);
+  return boxes.length === 0 ? null : unionAabb(boxes);
 }
 
 /** Every node sharing a parent with one of `ids`, outside the set, and not

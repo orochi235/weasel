@@ -1,5 +1,5 @@
 /** Pure math helpers for `<MinimapCanvas>`: no GL, DOM, or renderer. */
-import { fitViewToBounds, sceneContentBounds, unionAABB, viewportWorldRect, worldPoses } from '@weasel-js/core';
+import { fitViewToBounds, sceneContentBounds, unionAabb, viewportWorldRect, worldPoses } from '@weasel-js/core';
 import type { NodeId, PoseReading, Scene } from '@weasel-js/core';
 import type { View } from '@weasel-js/core';
 import type { Bounds, ViewportDims } from '@weasel-js/core';
@@ -82,7 +82,7 @@ function sceneLeafBounds<TData, TLayer extends string, TPose>(
       const b = poseDescriptorForNode(descriptor, node).getBounds(worldPose(id));
       if ([b.x, b.y, b.width, b.height].every(Number.isFinite)) parts.push(b);
     }
-    return unionAABB(parts);
+    return unionAabb(parts);
   };
   return sceneContentBounds(scene, boxOf, (node) => worldPose(node.id));
 }

@@ -1,9 +1,10 @@
 import { describe, expect, it, vi } from 'vitest';
+import type { EventModifiers } from '@weasel-js/gestures';
 import { render, fireEvent } from '@testing-library/react';
 import type { RefCallback } from 'react';
 import { renderThenAbandon } from '@weasel-js/react/testing/abandonRender';
 import { KitSettingsProvider } from '@weasel-js/react';
-import { useReorderDragList, type ReorderItem, type PressModifiers, type ReorderDragState } from './useReorderDragList';
+import { useReorderDragList, type ReorderItem, type ReorderDragState } from './useReorderDragList';
 
 const ITEMS: ReorderItem[] = [
   { id: 'a', label: 'A' },
@@ -21,7 +22,7 @@ function Harness(props: {
   items: ReorderItem[];
   selectedIds: string[];
   onReorder: (ids: string[], targetIndex: number) => void;
-  onPress?: (id: string, mods: PressModifiers) => void;
+  onPress?: (id: string, mods: EventModifiers) => void;
   onRowClick?: (id: string) => void;
   axis?: 'x' | 'y';
 }) {

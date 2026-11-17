@@ -74,7 +74,7 @@ export function createExtensionRegistry<V>(options: ExtensionRegistryOptions<V>)
   const get = (id: string): V | undefined => (store.has(id) ? store.get(id) : parent?.get(id));
   const getVersion = (): number => store.getVersion() + (parent?.getVersion() ?? 0);
 
-  function releaseOf(id: string, holding: Holding): () => void {
+  function createRelease(id: string, holding: Holding): () => void {
     let done = false;
     return () => {
       if (done) return;
@@ -111,13 +111,13 @@ export function createExtensionRegistry<V>(options: ExtensionRegistryOptions<V>)
       const holding = held.get(id);
       if (have !== undefined && same(have, value) && holding) {
         holding.count++;
-        return releaseOf(id, holding);
+        return createRelease(id, holding);
       }
       if (have !== undefined && !same(have, value) && !opts.replace) throw new ExtensionConflictError(kind, id);
       const next: Holding = { token: {}, count: 1 };
       held.set(id, next);
       store.set(id, value, opts.source !== undefined ? { source: opts.source } : undefined);
-      return releaseOf(id, next);
+      return createRelease(id, next);
     },
     clear() {
       held.clear();

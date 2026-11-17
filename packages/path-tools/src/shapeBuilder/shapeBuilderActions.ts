@@ -66,7 +66,7 @@ export function createShapeBuilderActions(overlay: PathOverlay, settings: () => 
   const requires = ['booleansAdapter', 'operands', 'view'] as const;
 
   const hover = defineAction({
-    id: 'shapeBuilder.hover',
+    id: 'shapeBuilder.showFace',
     label: 'Shape Builder — show the face under the pointer',
     eligible,
     requires,
@@ -89,7 +89,7 @@ export function createShapeBuilderActions(overlay: PathOverlay, settings: () => 
   };
 
   const click = defineAction({
-    id: 'shapeBuilder.click',
+    id: 'shapeBuilder.takeFace',
     label: 'Shape Builder — take the face clicked',
     eligible,
     requires,

@@ -84,7 +84,7 @@ export function segmentT(p: readonly number[], a: readonly number[], b: readonly
 
 /** The point of segment `a`–`b` nearest `p`. At `t = 1` it is `b` exactly,
  *  not `a + (b - a)`, which can miss it by rounding. */
-export function closestPointOnSegment(
+export function nearestPointOnSegment(
   p: readonly number[],
   a: readonly number[],
   b: readonly number[],
@@ -95,10 +95,10 @@ export function closestPointOnSegment(
 
 /** Squared distance from `p` to segment `a`–`b`. */
 export function pointSegmentDistance2(p: readonly number[], a: readonly number[], b: readonly number[]): number {
-  return distance2(p, closestPointOnSegment(p, a, b));
+  return distance2(p, nearestPointOnSegment(p, a, b));
 }
 
 /** Distance from `p` to segment `a`–`b`. */
 export function pointSegmentDistance(p: readonly number[], a: readonly number[], b: readonly number[]): number {
-  return distance(p, closestPointOnSegment(p, a, b));
+  return distance(p, nearestPointOnSegment(p, a, b));
 }

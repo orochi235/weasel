@@ -94,7 +94,7 @@ export { verticalAlignOffset } from './measure/verticalAlign';
 export type { TextVerticalAlign } from './measure/verticalAlign';
 
 export type { TextPose } from './pose';
-export { pointInTextPose, caretIndexAt } from './hitTest';
+export { textPoseContainsPoint, caretIndexAt } from './hitTest';
 export type { CaretIndexAtOptions, PointInTextPoseOptions } from './hitTest';
 export { fitTextPose } from './fitTextPose';
 export type { FitTextPoseOptions } from './fitTextPose';
@@ -116,7 +116,7 @@ export type {
 } from './markdownText';
 export type { TextRenderer } from './markdownRenderer';
 
-export { MIXED, styleAtRange, applyStyleToRange, patchRangeStyle, runsCarryStyling, supersededKey } from './runs/rangeStyle';
+export { MIXED, styleAtRange, applyStyleToRange, patchRangeStyle, hasStyledRun, supersededKey } from './runs/rangeStyle';
 export type { Mixed, RangeStyle, RunStylePatch, StyleKey } from './runs/rangeStyle';
 export { effectiveRangeStyle, rangeWeight } from './runs/effectiveRangeStyle';
 export { setFlagOverRange, nodeHasFlag, unboldPatch } from './runs/flagRange';

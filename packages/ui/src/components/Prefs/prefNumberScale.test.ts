@@ -16,7 +16,7 @@ describe('prefNumberScale', () => {
     expect(log.kind).toBe('log');
     expect(log.invert(0.5)).toBeCloseTo(Math.sqrt(1000), 9);
     const sqrt = prefNumberScale('sqrt')!({ domain: [0, 100], ...track });
-    expect(sqrt.map(25)).toBeCloseTo(0.5, 12);
+    expect(sqrt.position(25)).toBeCloseTo(0.5, 12);
   });
 
   it('runs a custom pair as a warp, and hands back one factory per pair', () => {
@@ -32,7 +32,7 @@ describe('prefNumberScale', () => {
     const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
     const log = fresh.prefNumberScale('log')!;
     expect(log({ domain: [0, 100], ...track }).kind).toBe('linear');
-    expect(log({ domain: [-5, 5], ...track }).map(0)).toBe(0.5);
+    expect(log({ domain: [-5, 5], ...track }).position(0)).toBe(0.5);
     expect(warn).toHaveBeenCalledTimes(1);
     expect(warn.mock.calls[0][0]).toMatch(/log/);
   });

@@ -13,7 +13,7 @@ export interface TileRange {
 /** The copies of a lattice with cell size `period` that `[visStart, visEnd]`
  *  touches, widened by `bleed`. A non-positive or non-finite `period` answers
  *  copy 0 alone. */
-export function tiledProject(
+export function tileRange(
   visStart: number,
   visEnd: number,
   period: number,

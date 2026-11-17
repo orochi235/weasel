@@ -11,7 +11,7 @@ import { bilinearQuad, projectiveQuad, type Quad, type UvMap } from './quad';
 import { warpPath } from './warpPath';
 
 /** An axis-aligned box: the area a plane warp or a cloth warp was laid over. */
-export interface WarpBox {
+export interface WarpRect {
   x: number;
   y: number;
   width: number;
@@ -29,7 +29,7 @@ export type ClothMapping = 'bicubic' | 'coons';
 export interface PlaneWarp {
   kind: 'plane';
   mode: PlaneMode;
-  box: WarpBox;
+  box: WarpRect;
   /** Where the box's top-left, top-right, bottom-right and bottom-left went. */
   corners: Quad;
 }
@@ -38,7 +38,7 @@ export interface PlaneWarp {
 export interface ClothWarp {
   kind: 'cloth';
   mapping: ClothMapping;
-  box: WarpBox;
+  box: WarpRect;
   mesh: MeshGrid;
 }
 
@@ -52,7 +52,7 @@ export interface PinWarp {
 export type PathWarp = PlaneWarp | ClothWarp | PinWarp;
 
 /** A plane warp over `box` that leaves it where it is. */
-export function planeOver(box: WarpBox, mode: PlaneMode = 'free'): PlaneWarp {
+export function planeOver(box: WarpRect, mode: PlaneMode = 'free'): PlaneWarp {
   const { x, y, width: w, height: h } = box;
   return {
     kind: 'plane',
@@ -64,7 +64,7 @@ export function planeOver(box: WarpBox, mode: PlaneMode = 'free'): PlaneWarp {
 
 /** A cloth warp of `rows` × `cols` patches over `box` that leaves it where it is. */
 export function clothOver(
-  box: WarpBox,
+  box: WarpRect,
   rows: number,
   cols: number,
   mapping: ClothMapping = 'bicubic',
@@ -84,7 +84,7 @@ function clothUvMap(warp: ClothWarp): UvMap {
   return warp.mapping === 'coons' ? coonsMesh(warp.mesh) : bicubicMesh(warp.mesh);
 }
 
-function boxUv(box: WarpBox, uv: UvMap): (p: Point) => Point {
+function boxUv(box: WarpRect, uv: UvMap): (p: Point) => Point {
   const sx = box.width === 0 ? 0 : 1 / box.width;
   const sy = box.height === 0 ? 0 : 1 / box.height;
   return (p) => uv((p.x - box.x) * sx, (p.y - box.y) * sy);

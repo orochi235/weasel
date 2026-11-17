@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import type { Meta, StoryObj } from '@weasel-js/forge';
 import { useArgs } from '@weasel-js/forge/preview-api';
-import { endless, unit } from '@weasel-js/quantity';
+import { withInfinity, unit } from '@weasel-js/quantity';
 import { Along } from '@weasel-js/ui/components/Along';
 import { logScale } from '@weasel-js/scale';
 import { Slider, type Thumb } from '@weasel-js/ui/components/Slider';
@@ -110,7 +110,7 @@ export const DotWithReadoutsBelow: Story = {
 /** The top stop stands for infinity: a thumb there reports `Infinity`, and
  *  the readout shows the display's word for it. */
 export const EndlessEnd: Story = {
-  args: { min: 0, max: 5000, step: 50, endless: 'max', display: endless(unit('ms'), 'never') },
+  args: { min: 0, max: 5000, step: 50, endless: 'max', display: withInfinity(unit('ms'), 'never') },
   render: (args) => <Wrapper {...args} initial={[{ value: Infinity }]} />,
 };
 

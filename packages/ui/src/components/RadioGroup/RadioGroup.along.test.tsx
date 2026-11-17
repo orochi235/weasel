@@ -53,7 +53,7 @@ describe('RadioGroup along a curve', () => {
     const parts = [screen.getByText('Color'), labelOf('Red'), labelOf('Green'), labelOf('Blue')];
     const ds = parts.map((el) => run.nearest(at(el)).f * run.length);
     for (let i = 1; i < ds.length; i++) expect(ds[i]! - ds[i - 1]!).toBeCloseTo(40, 0);
-    for (const el of parts) expect(run.nearest(at(el)).dist).toBeCloseTo(0, 3);
+    for (const el of parts) expect(run.nearest(at(el)).distance).toBeCloseTo(0, 3);
   });
 
   test('the description sits one row in from the run, on the inside of the bend, on a top arc and a bottom arc', () => {

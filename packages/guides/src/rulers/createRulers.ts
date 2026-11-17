@@ -4,7 +4,7 @@ import { createEmitter } from '@weasel-js/registry';
 import { createGuidesLayer } from '../guides/layer';
 import type { GuideStore } from '../guides/ops';
 import type { Guide } from '../guides/types';
-import { rulersGuideAction, rulersPointerAction } from './actions';
+import { createRulersGuideAction, createRulersPointerAction } from './actions';
 import { rulersHitLayer } from './hit';
 import { rulersLayout, type RulersLayout, type RulersState } from './layout';
 import { documentRulerFrame } from './reading';
@@ -94,8 +94,8 @@ export function createRulers(opts: RulersOptions): Rulers {
     newGuideId: opts.newGuideId ?? (() => `${id}-${Date.now().toString(36)}-${minted++}`),
     get: () => state, set,
   };
-  const pointer = rulersPointerAction(actx);
-  const guide = rulersGuideAction(actx);
+  const pointer = createRulersPointerAction(actx);
+  const guide = createRulersGuideAction(actx);
   const hitLayerId = `${id}-hit`;
   const onRuler = hitPredicate((hit) => (hit as { kind?: string } | null | undefined)?.kind === `layer:${hitLayerId}`);
   const bindings: GestureBinding[] = [

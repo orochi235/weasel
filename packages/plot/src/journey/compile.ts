@@ -85,7 +85,7 @@ function stepMarks(data: JourneyData, layout: JourneyLayout, actors: OrdinalScal
     const datum = { section, task };
     // A step without a score keeps its name and actors but draws no face.
     if (!Number.isNaN(step.score)) {
-      const y = layout.score.map(Math.min(5, Math.max(1, step.score)));
+      const y = layout.score.position(Math.min(5, Math.max(1, step.score)));
       marks.push(ruleMark({ key: `task:rule:${id}`, from: { x, y: y + RADIUS }, to: { x, y: baseline }, color: theme.axis, datum }));
       marks.push(pointMark({ key: `task:${id}`, x, y, radius: RADIUS, color: seriesColor(theme, section), datum }));
     }

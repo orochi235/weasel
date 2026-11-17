@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { PrefGroup, PrefSection } from './groups';
-import { prefValueAtPath } from './helpers';
+import { prefValueAt } from './helpers';
 import type { PrefLeaf } from './schema';
 import { applyPrefConditions, prefJudge, prefReader, prefStatusAt } from './status';
 
@@ -31,7 +31,7 @@ const schema: PrefGroup = {
 };
 const ALL = { pageOn: true, pageOpen: true, gridOn: true, gridOpen: true, quickOn: true, quickOpen: true };
 const over = (off: keyof typeof ALL | null, root: PrefGroup | PrefSection = schema) =>
-  prefJudge(root, (path) => prefValueAtPath(off === null ? ALL : { ...ALL, [off]: false }, path));
+  prefJudge(root, (path) => prefValueAt(off === null ? ALL : { ...ALL, [off]: false }, path));
 
 describe('an alias row', () => {
   it('is shown and enabled while its own conditions, its target\'s, and those of every group above the target hold', () => {

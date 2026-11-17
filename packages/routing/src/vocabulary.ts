@@ -8,7 +8,7 @@
  * these shapes is a change to core's contract that happens to be spelled here.
  */
 
-import type { FramedBox, View } from '@weasel-js/geom';
+import type { FramedRect, View } from '@weasel-js/geom';
 import type { SelectIntent, SelectionExtendKey, SelectionMode } from '@weasel-js/select';
 export type { SelectIntent, SelectionExtendKey, SelectionMode };
 
@@ -18,8 +18,8 @@ export type NodeId = string & { readonly __brand: 'NodeId' };
 export type { View };
 
 /** Axis-aligned rectangle in world space, with the frame it is drawn in;
- *  geom's `FramedBox`. */
-export type Bounds = FramedBox;
+ *  geom's `FramedRect`. */
+export type Bounds = FramedRect;
 
 
 /** The selection as routing reads and writes it. */

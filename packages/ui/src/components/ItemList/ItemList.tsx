@@ -1,3 +1,4 @@
+import type { EventModifiers } from '@weasel-js/gestures';
 import {
   forwardRef,
   useCallback,
@@ -15,7 +16,7 @@ import { isInControlWithin } from '@weasel-js/gestures';
 import { assignRef } from '@weasel-js/react';
 import { dropSide } from '@weasel-js/ui-input';
 import { LIST_ROLES, listMode } from '@weasel-js/ui-logic';
-import { modsOf, REORDER_SKIP, type PressModifiers, type ReorderGhost } from '../../useReorderDragList';
+import { modsOf, REORDER_SKIP, type ReorderGhost } from '../../useReorderDragList';
 import { useRowNavigation } from '../../useRowNavigation';
 import { untabControls, walkControls } from '../../rowControls';
 import { DragGhost } from '../DragGhost';
@@ -70,7 +71,7 @@ export interface ItemListProps extends HoldProps {
    * A row was clicked, or Enter/Space was pressed on it, with the modifiers
    * held. Clicks and keys on a row's `trailing` controls do not reach this.
    */
-  onAction?(id: string, index: number, mods: PressModifiers): void;
+  onAction?(id: string, index: number, mods: EventModifiers): void;
   /**
    * Alt+Up (`-1`) or Alt+Down (`1`) on a row: move it. Focus stays on the
    * row wherever it lands. `useReorderDragList`'s `nudge` fits as-is.
@@ -166,7 +167,7 @@ export const ItemList = forwardRef(function ItemList(
       },
     } : {}),
     ...(onNudge && !hold.refuses ? { onNudge: (id: string, delta: -1 | 1) => onNudge(id, rows.findIndex((r) => r.id === id), delta) } : {}),
-    onActivate: (id, mods) => {
+    onAction: (id, mods) => {
       nav.anchor.current = id;
       if (looks) onAction?.(id, rows.findIndex((r) => r.id === id), mods);
     },

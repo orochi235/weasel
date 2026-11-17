@@ -10,7 +10,7 @@ import {
 import type { Action, ActionDeps, ImmediateInvoker } from '@weasel-js/routing';
 import { ActionDisabledReason } from '@weasel-js/routing';
 import {
-  anchorsToPath, closestOpenEnds, editAnchorSetTracked, forEachSegment, joinSubpathEnds, PATH_C, PATH_M, PATH_Q, PATH_Z,
+  anchorsToPath, nearestOpenEnds, editAnchorSetTracked, forEachSegment, joinSubpathEnds, PATH_C, PATH_M, PATH_Q, PATH_Z,
   pathToAnchors, type AnchorSet, type JoinOptions, type PointOrigin, type PolygonPath,
 } from '@weasel-js/geom';
 import { snipPathsAtCrossings } from '@weasel-js/geom/booleans';
@@ -108,7 +108,7 @@ export function planJoin(nodes: readonly PathNode[], options: JoinOptions = {}):
     if (!drop && open.length === 1) {
       return joinSubpathEnds(set, { sub: open[0], end: 'first' }, { sub: open[0], end: 'last' }, options);
     }
-    const ends = closestOpenEnds(set, (p, q) => !drop || (p.sub < fromKeep) !== (q.sub < fromKeep));
+    const ends = nearestOpenEnds(set, (p, q) => !drop || (p.sub < fromKeep) !== (q.sub < fromKeep));
     if (ends === null) return false;
     if (ends[0].end === 'first') turned.add(ends[0].sub);
     if (ends[1].end === 'last') turned.add(ends[1].sub);

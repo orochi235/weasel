@@ -235,8 +235,8 @@ export function withPaintKind(paint: Paint, kind: PaintKind): Paint | undefined 
 }
 
 /** The registry entry for a paint, or `undefined` when its kind is unknown. */
-export function paintKindOf(fill: Paint): PaintKindEntry | undefined {
-  return getPaintKind(fill.kind ?? 'solid');
+export function paintKindOf(paint: Paint): PaintKindEntry | undefined {
+  return getPaintKind(paint.kind ?? 'solid');
 }
 
 /** @internal Back to the built-ins alone, once the renderer's half is reset too; tests reach it

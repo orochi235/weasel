@@ -33,7 +33,7 @@ import type {
   CaptureResult,
   FracPoint,
   FracRect,
-  SerializedAnnotations,
+  SerializedMarkStore,
 } from './types';
 
 /** A mark's box in its target's world. Matches weasel's default `RectPose`. */
@@ -47,7 +47,7 @@ export function createMarkScene(): MarkScene {
   return createScene<AnnotationData, 'marks', MarkPose>({ systemLayers: [{ id: 'marks' }] });
 }
 
-/** Inputs to `createAnnotationStore`. */
+/** Inputs to `createMarkStore`. */
 export interface AnnotationStoreOptions {
   /** Re-read on every call, so a target resizing or gaining a dependency takes
    *  effect without rebuilding the store. */
@@ -92,7 +92,7 @@ const NO_CONTENT = { w: 0, h: 0 };
  * take no filter — one shared scene puts every other pane's marks under the
  * pointer.
  */
-export function createAnnotationStore(opts: AnnotationStoreOptions): AnnotationsApi {
+export function createMarkStore(opts: AnnotationStoreOptions): AnnotationsApi {
   const { targets, restore } = opts;
   const scenes = new Map<string, MarkScene>();
   const subs = createEmitter();
@@ -378,7 +378,7 @@ export function createAnnotationStore(opts: AnnotationStoreOptions): Annotations
       return result;
     },
 
-    toJSON(): SerializedAnnotations {
+    toJSON(): SerializedMarkStore {
       const out: Record<string, unknown> = {};
       for (const [target, scene] of scenes) setOwn(out, target, scene.toJSON());
       return { version: 1, scenes: out, history: markHistoryOf(history, scenes) };
@@ -394,7 +394,7 @@ export function annotationsFromJSON(
   targets: () => readonly AnnotationTargetInfo[],
   rest: Omit<AnnotationStoreOptions, 'targets' | 'restore' | 'history'> = {},
 ): AnnotationsApi {
-  const doc = raw as Partial<SerializedAnnotations> | null;
-  if (doc?.version !== 1 || !doc.scenes) return createAnnotationStore({ targets, ...rest });
-  return createAnnotationStore({ targets, restore: doc.scenes, history: doc.history, ...rest });
+  const doc = raw as Partial<SerializedMarkStore> | null;
+  if (doc?.version !== 1 || !doc.scenes) return createMarkStore({ targets, ...rest });
+  return createMarkStore({ targets, restore: doc.scenes, history: doc.history, ...rest });
 }

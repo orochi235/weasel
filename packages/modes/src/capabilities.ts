@@ -1,7 +1,7 @@
 /** The full vocabulary of capability tags shipped in the default preset.
  *  Apps and other consumers can add their own tags; this list is what
  *  `weasel-modes` itself uses. */
-export const ALL_TAGS = [
+export const SHIPPED_TAGS = [
   'navigation',
   'creates-selection',
   'creates-paths',
@@ -16,9 +16,9 @@ export const ALL_TAGS = [
 ] as const;
 
 /** One capability a tool or contribution declares, and a mode allows. Any
- *  string is accepted so apps can add tags of their own; `ALL_TAGS` is the
+ *  string is accepted so apps can add tags of their own; `SHIPPED_TAGS` is the
  *  set this package ships. */
-export type CapabilityTag = (typeof ALL_TAGS)[number] | (string & {});
+export type CapabilityTag = (typeof SHIPPED_TAGS)[number] | (string & {});
 
 /** Tags that are implicitly allowed in every mode — never listed per-mode.
  *  A tool carrying only these is eligible everywhere. */
@@ -34,8 +34,8 @@ export function capabilitiesAllowed(allowed: ReadonlySet<string>, tags: readonly
   return tags === undefined || tags.every((tag) => allowed.has(tag));
 }
 
-/** Whether a string is one of the shipped `ALL_TAGS`. An app-defined tag is
+/** Whether a string is one of the shipped `SHIPPED_TAGS`. An app-defined tag is
  *  still a valid `CapabilityTag` and will answer `false` here. */
-export function isCapabilityTag(value: string): value is CapabilityTag {
-  return (ALL_TAGS as readonly string[]).includes(value);
+export function isShippedTag(value: string): value is CapabilityTag {
+  return (SHIPPED_TAGS as readonly string[]).includes(value);
 }

@@ -55,7 +55,7 @@ export function RegistryView({ client, rootId }: DevtoolsViewProps): ReactElemen
       categories={categories}
       defaultOpen={CATEGORIES}
       selected={picked}
-      onSelect={setPicked}
+      onSelectionChange={setPicked}
       detail={
         <>
           {picked

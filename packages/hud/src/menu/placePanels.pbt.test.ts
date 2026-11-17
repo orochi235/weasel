@@ -8,10 +8,10 @@ import fc from 'fast-check';
 import { createMenuController, type MenuRect } from '@weasel-js/menu';
 import { menuLevel, openPath, runs, tally, timeoutFor } from '../pbt.fixture';
 import { menuRowSpans } from '@weasel-js/ui-logic';
-import { panelSize } from './drawPanel';
+import { panelSize } from './panelCommands';
 import { menuTheme } from './menu.fixture';
 import { menuMeasureEnv } from './menuEnv';
-import { estimateWidth } from './measureLabel';
+import { estimateWidth } from './textWidth';
 import { createPlacer } from './placePanels';
 
 const RUNS = 200;

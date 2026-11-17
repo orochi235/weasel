@@ -1,9 +1,10 @@
 import { useCallback, useEffect, useRef, useState, type PointerEvent as ReactPointerEvent, type Ref } from 'react';
+import type { EventModifiers } from '@weasel-js/gestures';
 import { useKitSetting, useLatest } from '@weasel-js/react';
 import { after } from '@weasel-js/registry';
 import { startThresholdDrag, swallowNextClick, type ThresholdDragHandle } from '@weasel-js/routing';
 import { resolveDrop, type DropIndent, type DropMark, type DropRow, type ResolvedDrop, type TreeDropTarget } from '../../dropTarget';
-import type { PressModifiers, ReorderGhost } from '../../useReorderDragList';
+import type { ReorderGhost } from '../../useReorderDragList';
 import { inlineDirection } from '../../useRovingTabIndex';
 import { draggedIdsFor, isNoopMove, landsInside } from './treeMoves';
 import type { TreeNode } from './Tree';
@@ -53,7 +54,7 @@ export interface UseTreeDragOptions {
   externalDrag?: { x: number; y: number } | null;
   dropRef?: Ref<TreeDropHandle>;
   /** A press released without dragging — the row's activation. */
-  onPress(id: string, mods: PressModifiers): void;
+  onPress(id: string, mods: EventModifiers): void;
   expand(id: string): void;
 }
 
@@ -191,7 +192,7 @@ export function useTreeDrag(opts: UseTreeDragOptions) {
 
     drag.current = startThresholdDrag(e, {
       origin: box, threshold: o.current.dragPx,
-      onActivate: (ev) => {
+      onStart: (ev) => {
         ids = draggedIdsFor(o.current.nodes, o.current.selected, id);
         update(ev);
         // The event carries the modifiers as they stand once this key has changed.
@@ -206,7 +207,7 @@ export function useTreeDrag(opts: UseTreeDragOptions) {
         };
       },
       onMove: update,
-      onCommit: (ev) => {
+      onEnd: (ev) => {
         const how = effectOf(ev);
         if (outside.current) {
           o.current.onDropOutside?.(ids, { x: ev.clientX, y: ev.clientY }, how);

@@ -11,13 +11,12 @@ import { renderWithIcons } from '@weasel-js/ui/testing/withIcons';
 afterEach(cleanup);
 
 const base: TransportProps = {
-  paused: true,
+  playing: false,
   loop: false,
   rate: 1,
   playhead: 9990,
   duration: 12000,
-  onPlay: () => {},
-  onPause: () => {},
+  onPlayingChange: () => {},
   onLoopChange: () => {},
   onRateChange: () => {},
 };

@@ -18,7 +18,7 @@ import {
 import { type LeafContext, sourceLeafContext } from '@weasel-js/ui/components/PrefsSource';
 import type { ReactNode } from 'react';
 import { useMemo } from 'react';
-import { isRecord, valueAtPath, withValueAtPath } from '../config/path';
+import { isRecord, configValueAt, withConfigValueAt } from '../config/path';
 import { isEncodedLeaf } from '../config/storedDefault';
 import type { ResolvedConfig } from '../config/types';
 import { isRowActive, isRowEnabled, isRowVisible } from '../config/visible';
@@ -28,8 +28,8 @@ import { leafValueAt } from './fields';
 export function shownAt(config: Record<string, unknown>, path: string, leaf: PrefLeaf): unknown {
   if (!isEncodedLeaf(leaf)) return leafValueAt(config, path, leaf);
   const dot = path.lastIndexOf('.');
-  const within = dot === -1 ? config : valueAtPath(config, path.slice(0, dot));
-  return prefDecodedValue(leaf, valueAtPath(config, path), isRecord(within) ? within : undefined);
+  const within = dot === -1 ? config : configValueAt(config, path.slice(0, dot));
+  return prefDecodedValue(leaf, configValueAt(config, path), isRecord(within) ? within : undefined);
 }
 
 /** What a lab's config source reads and writes. */
@@ -38,7 +38,7 @@ export interface LabConfigInput {
   config: Record<string, unknown>;
   /** `config` with every auto path resolved: what an unpinned leaf shows. */
   shown: Record<string, unknown>;
-  /** Writes one value, the `auto` sentinel included. */
+  /** Writes one value, the `AUTO` sentinel included. */
   setConfig: (path: string, value: unknown) => void;
   /** Where the values an edit passes through go. Absent, a draft is written as `setConfig` writes. */
   draftConfig?: (path: string, value: unknown) => void;
@@ -65,11 +65,11 @@ export function createLabConfigSource(input: LabConfigInput): PrefsSource {
     const unpinned = autoAt(path);
     const at = unpinned === undefined ? {} : { auto: unpinned };
     if (!leaf) {
-      const value = valueAtPath(config, path);
+      const value = configValueAt(config, path);
       return { value, mixed: false, each: [value], ...at };
     }
     const value = unpinned
-      ? prefValueOrDefault(leaf, prefAutoValue(leaf, valueAtPath(shown, path)))
+      ? prefValueOrDefault(leaf, prefAutoValue(leaf, configValueAt(shown, path)))
       : shownAt(config, path, leaf);
     return { value, mixed: false, each: [value], ...at };
   };
@@ -81,8 +81,8 @@ export function createLabConfigSource(input: LabConfigInput): PrefsSource {
     write,
     update: (path, fn, options) => {
       const dot = path.lastIndexOf('.');
-      const within = dot === -1 ? config : valueAtPath(config, path.slice(0, dot));
-      write(path, fn(valueAtPath(config, path), isRecord(within) ? within : undefined), options);
+      const within = dot === -1 ? config : configValueAt(config, path.slice(0, dot));
+      write(path, fn(configValueAt(config, path), isRecord(within) ? within : undefined), options);
     },
     autoAt,
     setAuto: (path, next) => {
@@ -110,10 +110,10 @@ export function createLabConfigSource(input: LabConfigInput): PrefsSource {
           (r) => !planned.has(r.path) && autoAt(r.path) === true,
         );
         const next = [...under, ...kept.map((r) => ({ path: r.path, value: AUTO }))].reduce(
-          (at, w) => withValueAtPath(at, w.path, w.value),
+          (at, w) => withConfigValueAt(at, w.path, w.value),
           config,
         );
-        setConfig(path, valueAtPath(next, path));
+        setConfig(path, configValueAt(next, path));
       }
     },
   };

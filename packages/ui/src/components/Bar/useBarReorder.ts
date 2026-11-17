@@ -81,7 +81,7 @@ export function useBarReorder({ root, order, onReorder, measure, keysOf }: BarRe
       origin: el,
       captureAt: 'threshold',
       threshold: latest.current.dragPx,
-      onActivate: () => {
+      onStart: () => {
         units = containerUnits(el, container, along);
         from = units.findIndex((unit) => unit.key === key);
         to = from;
@@ -92,7 +92,7 @@ export function useBarReorder({ root, order, onReorder, measure, keysOf }: BarRe
         to = gapByMidpoint(units.map((unit) => unit.at), along(ev));
         markDrop(el, units, from, to);
       },
-      onCommit: () => {
+      onEnd: () => {
         end();
         swallowNextClick(el);
         const { order: was = {}, onReorder: done, keysOf: listOf } = latest.current;

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { PrefGroup, PrefSection } from './groups';
-import { prefValueAtPath } from './helpers';
+import { prefValueAt } from './helpers';
 import type { PrefList } from './list';
 import type { PrefMap } from './map';
 import type { PrefLeaf, PrefObject } from './schema';
@@ -25,7 +25,7 @@ const schema: PrefGroup = {
     runs: { kind: 'list', name: 'Runs', description: '', default: [], item: { kind: 'list', name: 'Run', description: '', default: [], item: num('Step', { enableIf: { path: 'open' } }) } } as PrefLeaf,
   },
 };
-const over = (values: unknown) => prefJudge(schema, (path) => prefValueAtPath(values, path));
+const over = (values: unknown) => prefJudge(schema, (path) => prefValueAt(values, path));
 const fieldsOf = (shown: PrefGroup | null): string[] =>
   Object.keys(((shown!.children.phases as PrefList).item as PrefObject).children);
 

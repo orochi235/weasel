@@ -36,7 +36,7 @@ export function sceneEdges(scene: AnyScene): SceneEdge[] {
  *  and for a connector split across pages: its stubs are shorter than a hop's
  *  clearance from their ends, and the run between them is not drawn. */
 export function edgePolylines<TPose>(scene: AnyScene, opts: EdgeRouteOptions<TPose> = {}): (edge: SceneEdge) => Vec2[] | null {
-  const route = edgeRouter<unknown>({ geometry: AUTO_POSE_DESCRIPTOR, ...(opts as EdgeRouteOptions<unknown>) });
+  const route = edgeRouter<unknown>({ poseDescriptor: AUTO_POSE_DESCRIPTOR, ...(opts as EdgeRouteOptions<unknown>) });
   const dep = (id: string): DerivedDep<unknown> | undefined => {
     const node = scene.get(id as never);
     return node === undefined ? undefined : ({ node, pose: documentPose(scene, node as never), path: null } as DerivedDep<unknown>);

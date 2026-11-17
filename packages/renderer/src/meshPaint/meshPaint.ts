@@ -13,7 +13,7 @@ import type { PaintBindContext, PaintBinding, PaintDrawKind, PaintResources, Pai
 import { parseColor, rgbaToHex } from '@weasel-js/paint';
 import { oklabToOklch, oklabToSrgbU8, oklchToOklab, srgbFloatToOklab } from '@weasel-js/paint';
 import type { ColorSpace, Paint, PaintUnits } from '@weasel-js/paint';
-import { bakeMesh, meshBounds, type MeshBox } from './bake';
+import { bakeMesh, meshBounds, type MeshRect } from './bake';
 import { MeshBakeCache, meshBakeSize } from './bakeCache';
 import { isValidPatch, type MeshPatch, type MeshPoint } from './surface';
 import { MESH_FRAG_SRC, MESH_PROGRAM_ID, MESH_VERT_SRC } from './meshShader';
@@ -185,7 +185,7 @@ interface CachedBake {
   texture: PaintTexture;
   /** Where the mesh being bound sits in paint space. The texels are shared by
    *  every pose-frame copy of one paint; the box is each copy's own. */
-  box: MeshBox;
+  box: MeshRect;
 }
 
 /** The paint a pose-frame copy was made from. A copy is rebuilt whenever its
@@ -209,7 +209,7 @@ function cacheFor(ctx: PaintBindContext): MeshBakeCache<PaintTexture> {
 }
 
 /** Device pixels the larger side of `box` covers when drawn in `units`. */
-function devicePixelsOf(ctx: PaintBindContext, mesh: MeshGradientPaint, box: MeshBox): number {
+function devicePixelsOf(ctx: PaintBindContext, mesh: MeshGradientPaint, box: MeshRect): number {
   const m = ctx.spaceToDevice(mesh.units);
   if (!m) return Number.NaN;
   return Math.max(box.width * Math.hypot(m[0], m[1]), box.height * Math.hypot(m[3], m[4]));

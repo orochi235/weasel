@@ -45,7 +45,7 @@ export const DEFAULT_PORTS: readonly PortSpec[] = Object.freeze([
 export interface PortsOptions<TPose> {
   /** Reads the AABB a port is placed in, and the node's rotation. Defaults to
    *  the kit's `AUTO_POSE_DESCRIPTOR`, which handles rect and path poses. */
-  geometry?: PoseDescriptor<TPose>;
+  poseDescriptor?: PoseDescriptor<TPose>;
   /** How the `DiagramNode` trait is read off a node. */
   read?: DiagramNodeReader;
 }
@@ -115,9 +115,9 @@ function placerOf<TPose>(
 ): { specs: readonly PortSpec[]; place: (spec: PortSpec, at: PortAnchor, normal: Vec2 | null | undefined) => Port } | null {
   const trait = diagramNodeOf(node, opts.read);
   if (trait === null) return null;
-  const geometry = opts.geometry ?? (AUTO_POSE_DESCRIPTOR as PoseDescriptor<TPose>);
-  const bounds = geometry.getBounds(pose);
-  const rotation = geometry.getRotation?.(pose) ?? 0;
+  const poseDescriptor = opts.poseDescriptor ?? (AUTO_POSE_DESCRIPTOR as PoseDescriptor<TPose>);
+  const bounds = poseDescriptor.getBounds(pose);
+  const rotation = poseDescriptor.getRotation?.(pose) ?? 0;
   const cx = bounds.x + bounds.width / 2;
   const cy = bounds.y + bounds.height / 2;
   // A port is anchored in the bounds so it survives a resize, but it has to

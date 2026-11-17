@@ -100,7 +100,7 @@ describe('weasel-hud integration', () => {
     expect(api.hudRef.current).not.toBeNull();
     let btn!: ReturnType<NonNullable<typeof api.hudRef.current>['button']>;
     act(() => { btn = api.hudRef.current!.button({ id: 'save', x: 10, y: 10, w: 60, h: 24, label: 'Save' }); });
-    btn.on('press', api.press);
+    btn.subscribe('press', api.press);
 
     const canvas = container.querySelector('canvas')!;
     act(() => {
@@ -117,7 +117,7 @@ describe('weasel-hud integration', () => {
 
     let btn!: ReturnType<NonNullable<typeof api.hudRef.current>['button']>;
     act(() => { btn = api.hudRef.current!.button({ id: 'save', x: 10, y: 10, w: 60, h: 24, label: 'Save' }); });
-    btn.on('press', api.press);
+    btn.subscribe('press', api.press);
 
     const canvas = container.querySelector('canvas')!;
     act(() => {
@@ -134,7 +134,7 @@ describe('weasel-hud integration', () => {
 
     let btn!: ReturnType<NonNullable<typeof api.hudRef.current>['button']>;
     act(() => { btn = api.hudRef.current!.button({ id: 'save', x: 10, y: 10, w: 60, h: 24, label: 'Save' }); });
-    btn.on('press', api.press);
+    btn.subscribe('press', api.press);
     act(() => { btn.setHidden(true); });
 
     const canvas = container.querySelector('canvas')!;
@@ -270,7 +270,7 @@ describe('decorative widgets stay transparent to input', () => {
 
     await act(async () => {
       const btn = apiOut.hudRef.current!.button({ id: 'save', x: 10, y: 10, w: 60, h: 24, label: 'Save' });
-      btn.on('press', apiOut.press);
+      btn.subscribe('press', apiOut.press);
       // Added after the button, so it sits above it in the hit-test walk.
       apiOut.hudRef.current!.rect({ id: 'dim', x: 0, y: 0, w: 200, h: 200, fill: '#0008' });
     });

@@ -1,7 +1,7 @@
 import { type PrefLeaf, prefAutoValue, prefStartsAuto } from '@weasel-js/prefs';
 import { isAuto } from './auto';
 import { configLeaves } from './leaves';
-import { isRecord, ownAt, setOwn, valueAtPath, withValueAtPath } from './path';
+import { isRecord, ownAt, setOwn, configValueAt, withConfigValueAt } from './path';
 import type { ResolvedConfig } from './types';
 
 type Resolver = (config: Record<string, unknown>) => unknown;
@@ -24,7 +24,7 @@ export function autoQuotes(leaf: PrefLeaf): boolean {
 }
 
 /** The dotted paths a schema declares as starting auto — every leaf that said
- *  `.initial(auto)`. This is what seeds a new trial's unpinned set. */
+ *  `.initial(AUTO)`. This is what seeds a new trial's unpinned set. */
 export function startAutoPathsOf(resolved: ResolvedConfig): string[] {
   const out: string[] = [];
   for (const [path, leaf] of configLeaves(resolved.group)) {
@@ -85,7 +85,7 @@ export function resolveAutoConfig<TC>(
       // dependencies, and each of those replaced `out`.
       const computed = resolve?.(demand(() => out, resolvers, need));
       const value = prefAutoValue(leaf, computed);
-      if (value !== undefined) out = withValueAtPath(out, path, value);
+      if (value !== undefined) out = withConfigValueAt(out, path, value);
     } finally {
       inFlight.delete(path);
     }
@@ -144,7 +144,7 @@ function dropAtPath(config: Record<string, unknown>, path: string): Record<strin
 /**
  * What writing `value` at `path` makes of a trial's raw config and its set of
  * unpinned paths. A write pins every leaf at or under `path`, except where it
- * holds the `auto` sentinel: that leaf joins the set and keeps what it last
+ * holds the `AUTO` sentinel: that leaf joins the set and keeps what it last
  * held, so a group's value can unpin some leaves and pin the rest in one write
  * (a reset). Both the store and the chrome go through this, so they cannot
  * disagree about what a write meant.
@@ -156,18 +156,18 @@ export function applyConfigWrite<TC>(
   value: unknown,
 ): { config: TC; autoPaths: readonly string[] } {
   const unpin: string[] = [];
-  const held = valueAtPath(config as Record<string, unknown>, path);
+  const held = configValueAt(config as Record<string, unknown>, path);
   const stored = withoutAuto(value, path, held, unpin);
   const under = (p: string): boolean => p === path || p.startsWith(`${path}.`);
   const next = [...autoPaths.filter((p) => !under(p)), ...unpin];
   const same = next.length === autoPaths.length && next.every((p) => autoPaths.includes(p));
   return {
-    config: isAuto(value) ? config : withValueAtPath(config, path, stored),
+    config: isAuto(value) ? config : withConfigValueAt(config, path, stored),
     autoPaths: same ? autoPaths : next,
   };
 }
 
-/** `value` with each `auto` sentinel in it replaced by what `held` has there, its path added to `unpin`. */
+/** `value` with each `AUTO` sentinel in it replaced by what `held` has there, its path added to `unpin`. */
 function withoutAuto(value: unknown, at: string, held: unknown, unpin: string[]): unknown {
   if (isAuto(value)) {
     unpin.push(at);

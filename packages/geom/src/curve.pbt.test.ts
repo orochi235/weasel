@@ -60,9 +60,9 @@ describe('nearestOnCubic, property', () => {
       expect(hit.t).toBeLessThanOrEqual(1);
       const [x, y] = at(c, hit.t);
       expect(Math.hypot(x - hit.x, y - hit.y)).toBeLessThan(size(c) * 1e-12);
-      expect(Math.abs(hit.dist - Math.hypot(px - hit.x, py - hit.y))).toBeLessThan(size(c) * 1e-12);
+      expect(Math.abs(hit.distance - Math.hypot(px - hit.x, py - hit.y))).toBeLessThan(size(c) * 1e-12);
       const brute = Math.min(...samples(c, 3000).map(([sx, sy]) => Math.hypot(px - sx, py - sy)));
-      expect(hit.dist).toBeLessThanOrEqual(brute + size(c) * 1e-9);
+      expect(hit.distance).toBeLessThanOrEqual(brute + size(c) * 1e-9);
     }), RUNS);
   }, TIMEOUT);
 });
@@ -70,13 +70,13 @@ describe('nearestOnCubic, property', () => {
 describe('nearestOnCubic, two minima in one sampled basin (shrunk counterexamples)', () => {
   it('finds a point the curve passes through beside an anchor its handle sits on', () => {
     // The end's handle is on its anchor, so the refinement saw g = 0 at t = 1 and stopped there.
-    expect(nearestOnCubic(-1.0816205645975648e-9, 0, 0, 1.03139006961934e-9, -0.00013378324753995485, 0, 0, 0, 0, 0).dist).toBeLessThan(1e-11);
+    expect(nearestOnCubic(-1.0816205645975648e-9, 0, 0, 1.03139006961934e-9, -0.00013378324753995485, 0, 0, 0, 0, 0).distance).toBeLessThan(1e-11);
   });
 
   it('finds a point of the curve beside a fold, not the other side of it', () => {
     // The flattening's vertex at the fold: the far side, 5e-7 away, shared its sampled basin.
     const c = [0, 0, -4.6003908937305855, 0, 0, 0, 19.13117663435128, 0.006594193164349875] as const;
-    expect(nearestOnCubic(-1.649786044968359, 0.00008489762088653881, ...c).dist).toBeLessThan(1e-9);
+    expect(nearestOnCubic(-1.649786044968359, 0.00008489762088653881, ...c).distance).toBeLessThan(1e-9);
   });
 });
 
@@ -121,7 +121,7 @@ describe('flattenCubic, property', () => {
       // Each vertex is a point of the curve, at a dyadic parameter.
       for (let k = 2; k < line.length; k += 2) {
         const near = nearestOnCubic(line[k]!, line[k + 1]!, ...c);
-        expect(near.dist).toBeLessThan(size(c) * 1e-9);
+        expect(near.distance).toBeLessThan(size(c) * 1e-9);
       }
       for (const [x, y] of samples(c, 1000)) {
         let best = Infinity;

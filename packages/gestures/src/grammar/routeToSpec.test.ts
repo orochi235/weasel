@@ -11,7 +11,7 @@ describe('routeToSpec', () => {
   it('maps each pointer gesture to its spec kind', () => {
     expect(spec('[*:*] click').kind).toBe('click');
     expect(spec('[*:*] pointerDown').kind).toBe('pointerDown');
-    expect(spec('[*:*] dblTap').kind).toBe('doubleClick');
+    expect(spec('[*:*] doubleClick').kind).toBe('doubleClick');
     expect(spec('[*:*] drag').kind).toBe('drag');
     expect(spec('[*:*] contextMenu').kind).toBe('contextMenu');
     expect(spec('[*:*] longPress').kind).toBe('longPress');

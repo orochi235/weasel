@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from '@weasel-js/forge';
-import { f, resolveConfigSchema, withValueAtPath } from '@weasel-js/labkit/config';
+import { f, resolveConfigSchema, withConfigValueAt } from '@weasel-js/labkit/config';
 import { ControlPanel } from '@weasel-js/labkit/controls';
 import { stereo } from '@weasel-js/ui/components/MotifFrame';
 import { useState } from 'react';
@@ -48,7 +48,7 @@ export const Motifs: Story = {
         {...args}
         schema={schema}
         config={config}
-        setConfig={(path, value) => setConfig((prev) => withValueAtPath(prev, path, value))}
+        setConfig={(path, value) => setConfig((prev) => withConfigValueAt(prev, path, value))}
       />
     );
   },

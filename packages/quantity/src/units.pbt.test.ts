@@ -62,17 +62,17 @@ describe('unit conversion, property', () => {
   });
 
   it('formats a base value that reads back to within half its last place', () => {
-    fc.assert(fc.property(system.chain((s) => fc.tuple(fc.constant(s), unitIn(s))), finite(1e6), fc.integer({ min: 0, max: 6 }), fc.boolean(), ([s, u], base, precision, pad) => {
+    fc.assert(fc.property(system.chain((s) => fc.tuple(fc.constant(s), unitIn(s))), finite(1e6), fc.integer({ min: 0, max: 6 }), fc.boolean(), ([s, u], base, places, pad) => {
       const { factor: f, offset } = unitScale(s, u);
       const shown = (base - offset) / f;
       if (Math.abs(shown) > 1e15) return;
-      const text = formatUnit(base, u, s, { precision, pad });
+      const text = formatUnit(base, u, s, { places, pad });
       expect(text.endsWith(u)).toBe(true);
       const n = Number(text.slice(0, -u.length));
       expect(Number.isNaN(n), text).toBe(false);
-      expect(Math.abs(n - shown), text).toBeLessThanOrEqual(0.5 * 10 ** -precision + Math.abs(shown) * 1e-15);
+      expect(Math.abs(n - shown), text).toBeLessThanOrEqual(0.5 * 10 ** -places + Math.abs(shown) * 1e-15);
       expect(Object.is(n, -0), text).toBe(false);
-      if (pad && precision > 0) expect(text.slice(0, -u.length)).toMatch(new RegExp(`\\.\\d{${precision}}$`));
+      if (pad && places > 0) expect(text.slice(0, -u.length)).toMatch(new RegExp(`\\.\\d{${places}}$`));
     }), RUNS);
   });
 
@@ -115,7 +115,7 @@ describe('unit scopes, property', () => {
     fc.assert(fc.property(scopes.chain((c) => fc.tuple(fc.constant(c), unitIn(c[c.length - 1]!.system))), typed, ([chain, u], { value }) => {
       const inner = chain[chain.length - 1]!.system;
       const root = resolveScoped({ value, unit: u }, chain);
-      const text = formatScoped(root, u, chain, { precision: 12 });
+      const text = formatScoped(root, u, chain, { places: 12 });
       const n = Number(text.slice(0, -u.length));
       const { factor: f, offset } = unitScale(inner, u);
       let size = Math.abs(value) + Math.abs(offset / f);

@@ -9,7 +9,7 @@ import type {
 import { serialize } from './serialize';
 import { historySlice } from './history';
 
-function sceneOf(root: DevtoolsRoot): AnyScene {
+function requireScene(root: DevtoolsRoot): AnyScene {
   const scene = root.source.scene();
   if (!scene) throw new Error('scene not mounted yet');
   return scene;
@@ -27,20 +27,20 @@ function summaryOf(node: AnyNode): DevtoolsNodeSummary {
   };
 }
 
-function nodeOf(scene: AnyScene, id: string): AnyNode {
+function requireNode(scene: AnyScene, id: string): AnyNode {
   const node = scene.get(id as NodeId);
   if (!node) throw new Error(`no node "${id}"`);
   return node;
 }
 
 export function childrenOf(root: DevtoolsRoot, nodeId: string | undefined): DevtoolsNodeSummary[] {
-  const scene = sceneOf(root);
-  const ids = nodeId === undefined ? scene.roots : (nodeOf(scene, nodeId), scene.childrenOf(nodeId as NodeId));
-  return ids.map((id) => summaryOf(nodeOf(scene, id)));
+  const scene = requireScene(root);
+  const ids = nodeId === undefined ? scene.roots : (requireNode(scene, nodeId), scene.childrenOf(nodeId as NodeId));
+  return ids.map((id) => summaryOf(requireNode(scene, id)));
 }
 
 export function nodeDetail(root: DevtoolsRoot, nodeId: string): DevtoolsNodeDetail {
-  const node = nodeOf(sceneOf(root), nodeId);
+  const node = requireNode(requireScene(root), nodeId);
   return {
     ...summaryOf(node),
     parent: node.parent ?? null,
@@ -112,7 +112,7 @@ export function answer(
     case 'get-registry':
       if (!root.source.registry) throw new Error('this root serves no registry');
       return root.source.registry();
-    case 'get-history': return historySlice(root, req.cursor, req.checkpoints);
+    case 'get-history': return historySlice(root, req.cursor, req.historyEntries);
     case 'select':
       root.source.select(req.ids);
       return null;

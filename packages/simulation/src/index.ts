@@ -7,8 +7,8 @@
  */
 export { createSimulation } from './createSimulation';
 export type {
+  RunningSimulation,
   Simulation,
-  SimulationCore,
   SimulationForce,
   SimulationNode,
   SimulationOptions,

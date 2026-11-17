@@ -26,7 +26,7 @@ const queryItem = (name: string | RegExp) => screen.queryByRole('treeitem', { na
 const filter = (value: string) => fireEvent.change(screen.getByRole('textbox', { name: 'Filter registry' }), { target: { value } });
 
 function browser(over: Partial<RegistryBrowserProps> = {}) {
-  return <RegistryBrowser categories={CATEGORIES} selected={null} onSelect={() => {}} detail={null} {...over} />;
+  return <RegistryBrowser categories={CATEGORIES} selected={null} onSelectionChange={() => {}} detail={null} {...over} />;
 }
 
 describe('RegistryBrowser', () => {
@@ -91,14 +91,14 @@ describe('RegistryBrowser', () => {
     expect(item(/^Ops/)).toHaveAttribute('aria-expanded', 'false');
   });
 
-  it('calls onSelect when an entry is clicked, and marks the selected entry', () => {
-    const onSelect = vi.fn();
-    const { rerender } = renderWithIcons(browser({ onSelect }));
+  it('calls onSelectionChange when an entry is clicked, and marks the selected entry', () => {
+    const onSelectionChange = vi.fn();
+    const { rerender } = renderWithIcons(browser({ onSelectionChange }));
     fireEvent.click(screen.getByText('Ops'));
     fireEvent.click(screen.getByText('useRectTool'));
-    expect(onSelect).toHaveBeenCalledTimes(1);
-    expect(onSelect).toHaveBeenCalledWith(RECT);
-    rerender(browser({ onSelect, selected: RECT }));
+    expect(onSelectionChange).toHaveBeenCalledTimes(1);
+    expect(onSelectionChange).toHaveBeenCalledWith(RECT);
+    rerender(browser({ onSelectionChange, selected: RECT }));
     expect(item('useRectTool')).toHaveAttribute('aria-selected', 'true');
     expect(item('useEllipseTool')).toHaveAttribute('aria-selected', 'false');
   });

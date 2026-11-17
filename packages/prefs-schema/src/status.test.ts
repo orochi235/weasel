@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import type { PrefCondition } from './condition';
 import type { PrefGroup, PrefSection } from './groups';
-import { prefValueAtPath } from './helpers';
+import { prefValueAt } from './helpers';
 import type { PrefLeaf, PrefObject } from './schema';
 import { applyPrefConditions, ROOT_PREF_STATUS, prefJudge, prefReader, prefStatusAt, prefStatusUnder } from './status';
 import type { PrefUnion } from './union';
@@ -11,7 +11,7 @@ const bool = (name: string, extra: Partial<PrefLeaf> = {}): PrefLeaf =>
 const num = (name: string, extra: Partial<PrefLeaf> = {}): PrefLeaf =>
   ({ kind: 'number', name, description: '', default: 0, ...extra }) as PrefLeaf;
 
-const over = (values: unknown) => prefJudge({ name: '', children: {} }, (path) => prefValueAtPath(values, path));
+const over = (values: unknown) => prefJudge({ name: '', children: {} }, (path) => prefValueAt(values, path));
 
 const on: PrefCondition = { path: 'snap.on' };
 

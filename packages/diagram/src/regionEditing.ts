@@ -5,7 +5,7 @@
 import { isDiagramBody } from './bodyNode';
 import type { Contribution, NodeId, RectPose, SurfaceContribution, AnyScene } from '@weasel-js/core';
 import { worldWith } from './worldWith';
-import { diagramContainers, laneResizeFrame, type LaneResize } from './containers/containerActions';
+import { createDiagramContainersContribution, laneResizeFrame, type LaneResize } from './containers/containerActions';
 import { createEditContainerTitleAction, editContainerTitleBinding } from './containers/containerTitle';
 import { poolsOf } from './containers/laneBoundaryLayer';
 import { diagramContainerOf } from './containers/trait';
@@ -56,7 +56,7 @@ export function regionEditing(
   reports: { readonly current: RegionReports },
 ): SurfaceContribution[] {
   const edit = (e: ContainerEdit) => reports.current.onEditContainer?.(e);
-  const containers = diagramContainers({
+  const containers = createDiagramContainersContribution({
     scene,
     selected,
     commitResize: (resize) => {

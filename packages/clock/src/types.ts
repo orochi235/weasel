@@ -19,8 +19,8 @@ export interface ClockSpec {
   /** The unsigned speed a transport plays a paused clock at. Default `|rate|`,
    *  or `1` for a clock that opens paused. */
   speed?: number;
-  /** The speeds a transport offers, unsigned. Default `CLOCK_RATES`. */
-  rates?: readonly number[];
+  /** The speeds a transport offers, unsigned. Default `CLOCK_SPEEDS`. */
+  speeds?: readonly number[];
   /** `false` for a clock whose state is built up by running, so time can
    *  only move by running: no seek and no negative rate. Default `true`. */
   seekable?: boolean;
@@ -63,7 +63,7 @@ export interface Clock {
   /** The unsigned speed a transport plays a paused clock at. */
   readonly speed: number;
   /** The speeds a transport offers, unsigned and ascending. */
-  readonly rates: readonly number[];
+  readonly speeds: readonly number[];
   /** Whether `seek` and a negative `rate` are allowed. */
   readonly seekable: boolean;
   /** A finite run has played to its end. */

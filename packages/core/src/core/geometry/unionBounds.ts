@@ -3,7 +3,7 @@
  *
  * Two answers, deliberately distinct. `unionBounds` folds the *unrotated*
  * boxes and is what commit-time actions want, because they go on to write
- * poses back in that same frame. `unionAABB` expands each rotated member to
+ * poses back in that same frame. `unionAabb` expands each rotated member to
  * the extent of its ink first, and is what anything a user looks at or clicks
  * wants — selection chrome, gesture bounds, an export viewBox. Folding the
  * unrotated box there under-reports the extent of a rotated member exactly
@@ -23,7 +23,7 @@ function finiteCorners(x: number, y: number, x2: number, y2: number): boolean {
 
 /** Compute the AABB envelope of a set of rect-shaped poses, ignoring any
  *  rotation they carry, and skipping one with a corner that is not finite. See the module docstring before reaching for this
- *  over {@link unionAABB}. */
+ *  over {@link unionAabb}. */
 export function unionBounds<TPose extends RectPose>(poses: Iterable<TPose>): RectPose | null {
   let minX = Infinity;
   let minY = Infinity;
@@ -105,7 +105,7 @@ export function axisAlignedBounds<TPose extends RectPose>(b: TPose): RectPose {
  *
  * Returns `null` when nothing was contributed.
  */
-export function unionAABB<TPose extends RectPose>(
+export function unionAabb<TPose extends RectPose>(
   parts: Iterable<TPose | null | undefined>,
 ): RectPose | null {
   let minX = Infinity;

@@ -4,7 +4,7 @@ import type { DrawCommand, GroupDrawCommand, TextDrawCommand } from '@weasel-js/
 import type { ResolvedRun } from '@weasel-js/text';
 import { parseLbx, type BarcodeObject, type ImageObject, type LineObject, type RectObject, type TextObject } from 'bil-lbx';
 import { tapeForWidthMm } from '../tape';
-import { lbxObjects } from './carried';
+import { lbxObjectsCommand } from './carried';
 import { lbxConfig, writeLbx } from './writeLbx';
 
 const tape = tapeForWidthMm(12)!;
@@ -120,13 +120,13 @@ describe('lbxConfig', () => {
   });
 });
 
-describe('lbxObjects', () => {
+describe('lbxObjectsCommand', () => {
   const barcode: BarcodeObject = { type: 'barcode', protocol: 'CODE128', data: 'A-123', position: { x: 2, y: 3, width: 40, height: 10 } };
 
   it('puts carried objects in the file through the transforms above them, in paint order', async () => {
     const { config, skipped } = await lbxConfig(page([
       rect(0, 0, 5, 5, { fill: { paint: { color: '#000' } } }),
-      { kind: 'group', transform: mat3.translated(mat3.identity(), 10, 1), children: [lbxObjects([barcode])] },
+      { kind: 'group', transform: mat3.translated(mat3.identity(), 10, 1), children: [lbxObjectsCommand([barcode])] },
       rect(80, 0, 5, 5, { fill: { paint: { color: '#000' } } }),
     ]));
     expect(skipped).toEqual([]);
@@ -136,9 +136,9 @@ describe('lbxObjects', () => {
 
   it('skips carried objects under a rotation, which a position cannot say', async () => {
     const turned = mat3.fromAffine([0, 1, -1, 0, 0, 0]);
-    const { config, skipped } = await lbxConfig(page([{ kind: 'group', transform: turned, children: [lbxObjects([barcode])] }]));
+    const { config, skipped } = await lbxConfig(page([{ kind: 'group', transform: turned, children: [lbxObjectsCommand([barcode])] }]));
     expect(config.objects).toEqual([]);
-    expect(skipped).toEqual([{ kind: 'group', detail: 'lbxObjects under a rotation, skew or mirror' }]);
+    expect(skipped).toEqual([{ kind: 'group', detail: 'lbxObjectsCommand under a rotation, skew or mirror' }]);
   });
 
   const frame = (clip: GroupDrawCommand['clip'], children: DrawCommand[]): DrawCommand =>
@@ -151,7 +151,7 @@ describe('lbxObjects', () => {
     });
     const fill = { fill: { paint: { color: '#000' } } };
     const { config, skipped } = await lbxConfig(page([
-      frame({ kind: 'rect', x: 0, y: 0, width: 60, height: 20 }, [rect(0, 0, 5, 5, fill), lbxObjects([barcode]), rect(50, 0, 5, 5, fill)]),
+      frame({ kind: 'rect', x: 0, y: 0, width: 60, height: 20 }, [rect(0, 0, 5, 5, fill), lbxObjectsCommand([barcode]), rect(50, 0, 5, 5, fill)]),
     ]), { rasterize, rasterDpi: 72 });
     expect(skipped).toEqual([]);
     expect(config.objects.map((o) => o.type)).toEqual(['image', 'barcode', 'image']);
@@ -162,30 +162,30 @@ describe('lbxObjects', () => {
 
   it('places carried objects inside a rect clip drawn from its far corner', async () => {
     const { config, skipped } = await lbxConfig(page([
-      frame({ kind: 'rect', x: 60, y: 20, width: -60, height: -20 }, [lbxObjects([barcode])]),
+      frame({ kind: 'rect', x: 60, y: 20, width: -60, height: -20 }, [lbxObjectsCommand([barcode])]),
     ]));
     expect(skipped).toEqual([]);
     expect(config.objects).toEqual([{ ...barcode, position: { x: 12, y: 4, width: 40, height: 10 } }]);
   });
 
   it('skips carried objects a clip would cut, or under a group the writer must rasterize', async () => {
-    const narrow = await lbxConfig(page([frame({ kind: 'rect', x: 0, y: 0, width: 20, height: 20 }, [lbxObjects([barcode])])]));
+    const narrow = await lbxConfig(page([frame({ kind: 'rect', x: 0, y: 0, width: 20, height: 20 }, [lbxObjectsCommand([barcode])])]));
     expect(narrow.config.objects).toEqual([]);
-    expect(narrow.skipped).toEqual([{ kind: 'group', detail: 'lbxObjects not wholly inside an axis-aligned rect clip' }]);
+    expect(narrow.skipped).toEqual([{ kind: 'group', detail: 'lbxObjectsCommand not wholly inside an axis-aligned rect clip' }]);
 
-    const blended = await lbxConfig(page([{ kind: 'group', composite: 'lighter', children: [{ kind: 'group', children: [lbxObjects([barcode])] }] }]));
+    const blended = await lbxConfig(page([{ kind: 'group', composite: 'lighter', children: [{ kind: 'group', children: [lbxObjectsCommand([barcode])] }] }]));
     expect(blended.config.objects).toEqual([]);
-    expect(blended.skipped).toContainEqual({ kind: 'group', detail: 'lbxObjects under a group effect, isolate, color matrix or blend' });
+    expect(blended.skipped).toContainEqual({ kind: 'group', detail: 'lbxObjectsCommand under a group effect, isolate, color matrix or blend' });
   });
 
   it('drops carried objects at alpha 0 and skips them under partial alpha', async () => {
-    const gone = await lbxConfig(page([{ kind: 'group', alpha: 0, children: [lbxObjects([barcode])] }]));
+    const gone = await lbxConfig(page([{ kind: 'group', alpha: 0, children: [lbxObjectsCommand([barcode])] }]));
     expect(gone.config.objects).toEqual([]);
     expect(gone.skipped).toEqual([]);
 
-    const faded = await lbxConfig(page([{ kind: 'group', alpha: 0.5, children: [lbxObjects([barcode])] }]));
+    const faded = await lbxConfig(page([{ kind: 'group', alpha: 0.5, children: [lbxObjectsCommand([barcode])] }]));
     expect(faded.config.objects).toEqual([]);
-    expect(faded.skipped).toEqual([{ kind: 'group', detail: 'lbxObjects under partial opacity' }]);
+    expect(faded.skipped).toEqual([{ kind: 'group', detail: 'lbxObjectsCommand under partial opacity' }]);
   });
 });
 

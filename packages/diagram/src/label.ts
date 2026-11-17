@@ -18,10 +18,10 @@ import { labelCenter } from './labels/station';
 
 export { labelCenter };
 
-/** Options for {@link labelDerivePose}. `geometry` defaults to the kit's
+/** Options for {@link labelDerivePose}. `poseDescriptor` defaults to the kit's
  *  `AUTO_POSE_DESCRIPTOR`. */
 export interface LabelPoseOptions<TPose> {
-  geometry?: PoseDescriptor<TPose>;
+  poseDescriptor?: PoseDescriptor<TPose>;
 }
 
 /**
@@ -35,7 +35,7 @@ export interface LabelPoseOptions<TPose> {
 export function labelDerivePose<TPose>(
   opts: LabelPoseOptions<TPose> = {},
 ): (node: { pose: TPose; data: unknown }, deps: readonly (DerivedDep<TPose> | undefined)[]) => TPose | null {
-  const geometry = opts.geometry ?? (AUTO_POSE_DESCRIPTOR as PoseDescriptor<TPose>);
+  const poseDescriptor = opts.poseDescriptor ?? (AUTO_POSE_DESCRIPTOR as PoseDescriptor<TPose>);
 
   return (node, deps) => {
     const label = diagramLabelOf(node);
@@ -43,7 +43,7 @@ export function labelDerivePose<TPose>(
     const path = deps[0]?.path ?? null;
     if (path === null) return null;
 
-    const bounds = geometry.getBounds(node.pose);
+    const bounds = poseDescriptor.getBounds(node.pose);
     const center = labelCenter(path, label, bounds);
     if (center === null) return null;
 
@@ -51,7 +51,7 @@ export function labelDerivePose<TPose>(
       node.pose,
       center.x - (bounds.x + bounds.width / 2),
       center.y - (bounds.y + bounds.height / 2),
-      geometry,
+      poseDescriptor,
     );
   };
 }

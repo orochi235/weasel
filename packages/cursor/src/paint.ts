@@ -110,7 +110,7 @@ export function cursorPaintMatrix(glyph: CursorGlyph, placement: PaintPlacement)
  * names measures `worldRadius` world units on screen. A glyph with no `radius`
  * is measured by its inscribed circle.
  */
-export function cursorWorldSize(
+export function worldCursorPx(
   glyph: CursorGlyph,
   worldRadius: number,
   scale: number,

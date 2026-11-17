@@ -74,7 +74,7 @@ describe('addExtremaAnchors', () => {
     expect(top.x).toBeCloseTo(50, 6);
     expect(top.y).toBeCloseTo(-75, 6);
     const near = nearestOnCubic(50, -75, 0, 0, 0, -100, 100, -100, 100, 0);
-    expect(near.dist).toBeLessThan(1e-6);
+    expect(near.distance).toBeLessThan(1e-6);
   });
 
   it('splits at the turns along one axis alone', () => {

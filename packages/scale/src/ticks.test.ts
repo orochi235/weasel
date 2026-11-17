@@ -37,7 +37,7 @@ describe('spacedTicks', () => {
     for (const px of [40, 72, 150, 400]) {
       const s = linearScale({ domain, range: [0, px] });
       const t = s.spacedTicks({ minSpacing: 24 });
-      for (let i = 1; i < t.values.length; i++) expect(s.map(t.values[i]) - s.map(t.values[i - 1])).toBeGreaterThanOrEqual(24 - 1e-9);
+      for (let i = 1; i < t.values.length; i++) expect(s.position(t.values[i]) - s.position(t.values[i - 1])).toBeGreaterThanOrEqual(24 - 1e-9);
     }
   });
 
@@ -119,13 +119,13 @@ describe('a scale onto a unit track', () => {
     const unit = make({ domain: [MIN, MAX], range: [0, 1] });
 
     it(`${name} round-trips a value and pins both ends`, () => {
-      for (const v of samples) expect(unit.invert(unit.map(v))).toBeCloseTo(v, 10);
-      expect(unit.map(MIN)).toBeCloseTo(0, 12);
-      expect(unit.map(MAX)).toBeCloseTo(1, 12);
+      for (const v of samples) expect(unit.invert(unit.position(v))).toBeCloseTo(v, 10);
+      expect(unit.position(MIN)).toBeCloseTo(0, 12);
+      expect(unit.position(MAX)).toBeCloseTo(1, 12);
     });
 
     it(`${name} is monotonic increasing`, () => {
-      const at = samples.map((v) => unit.map(v));
+      const at = samples.map((v) => unit.position(v));
       for (let i = 1; i < at.length; i++) expect(at[i]).toBeGreaterThan(at[i - 1]!);
     });
   }

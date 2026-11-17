@@ -3,7 +3,7 @@ import { FIXTURE_FONT, registerFont } from '@weasel-js/font';
 import { _resetFontRegistryForTests } from '@weasel-js/font/test-seams';
 import type { OpenMenu } from '@weasel-js/core';
 import type { HudDrawCtx } from '../widget';
-import { measureLabel } from './measureLabel';
+import { textWidth } from './textWidth';
 import { createMenuWidget } from './menuWidget';
 import { menuTokens, THEME_METRICS as m } from './menu.fixture';
 
@@ -30,11 +30,11 @@ afterEach(() => {
   global.createImageBitmap = realBitmap;
 });
 
-describe('measureLabel', () => {
+describe('textWidth', () => {
   // Kerning is part of the sum because layout applies it: A→B is the fixture's one pair.
   it('sums the atlas advances, and kerning, scaled from the atlas size', () => {
-    expect(measureLabel('AAB', 13, FAMILY)).toBeCloseTo((A + A + B + AB_KERN) * 13 / SIZE, 6);
-    expect(measureLabel('BA', 20, FAMILY)).toBeCloseTo((B + A) * 20 / SIZE, 6);
+    expect(textWidth('AAB', 13, FAMILY)).toBeCloseTo((A + A + B + AB_KERN) * 13 / SIZE, 6);
+    expect(textWidth('BA', 20, FAMILY)).toBeCloseTo((B + A) * 20 / SIZE, 6);
   });
 });
 

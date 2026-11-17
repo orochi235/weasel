@@ -28,7 +28,7 @@ export type { PoseDescriptor, RotatedPose, TranslateLead } from '../core/geometr
 export type { RectPose } from '../core/geometry/rectPose';
 export { angleOf, localToWorld, normalToWorld, targetCorners, targetTransformOf, worldDeltaToLocal, worldToLocal } from '../core/geometry/targetFrame';
 export type { TargetTransform } from '../core/geometry/targetFrame';
-export { axisAlignedBounds, positiveBox, unionAABB, unionBounds } from '../core/geometry/unionBounds';
+export { axisAlignedBounds, positiveBox, unionAabb, unionBounds } from '../core/geometry/unionBounds';
 export type { Dims, LayerDims } from '../core/layers/dims';
 export { createArrangeOp } from '../core/ops/arrange';
 export type { ArrangeArgs, ArrangedPose } from '../core/ops/arrange';
@@ -179,7 +179,7 @@ export { refusalOf } from '../interactions/actions/dropVerdict';
 export type { DropRefusal, DropVerdict } from '../interactions/actions/dropVerdict';
 export type { ClipboardDep, SliceDep } from '../interactions/actions/editDeps';
 export type { ResizePolicy, ViewApi } from '../interactions/actions/engineDeps';
-export { PATH_GEOMETRY_PROJECTION, geometryDataOp } from '../interactions/actions/geometryProjection';
+export { PATH_GEOMETRY_PROJECTION, createGeometryDataOp } from '../interactions/actions/geometryProjection';
 export type { GeometryProjection, PoseChange } from '../interactions/actions/geometryProjection';
 export type { InsertDep, InsertEnds, InsertExtras, InsertIntoDep, InsertLive, PathSymmetryDep } from '../interactions/actions/insertDeps';
 export type { CanDropIntoDep, LayoutDep } from '../interactions/actions/layoutDeps';

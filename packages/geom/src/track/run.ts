@@ -93,8 +93,8 @@ export function trackRun(shape: TrackShape, from = 0, to = 1, options: TrackRunO
     const f = clamp(shape.nearest(p).f, lo, hi);
     const q = shape.at(f).point;
     const dist = Math.hypot(p.x - q.x, p.y - q.y);
-    if (!options?.open) return { f: toG(f), dist };
-    return { f: toG(shape.nearest(p, { open: true, about: toShape(options.about ?? 0.5) }).f), dist };
+    if (!options?.open) return { f: toG(f), distance: dist };
+    return { f: toG(shape.nearest(p, { open: true, about: toShape(options.about ?? 0.5) }).f), distance: dist };
   };
 
   return {

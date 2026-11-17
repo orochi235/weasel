@@ -24,7 +24,7 @@ export { RECT_POSE_DESCRIPTOR, ROTATED_POSE_DESCRIPTOR, poseDescriptorForNode } 
 export type { PoseDescriptor, TranslateLead } from '../core/geometry/poseDescriptor';
 export { cornerResizeHandles, fixedCornerOf, hitCornerHandle } from '../interactions/gestures/resizeHandles';
 export type { CornerHandle } from '../interactions/gestures/resizeHandles';
-export { pointInRotatedRect, rotatedRectCorners, rectCorners, rotatePoint, aabbCenter } from '../core/geometry/rotatedRect';
+export { rotatedRectContainsPoint, rotatedRectCorners, rectCorners, rotatePoint, aabbCenter } from '../core/geometry/rotatedRect';
 export { useDragRect } from '../interactions/gestures/dragRect';
 export type {
   DragRectController,

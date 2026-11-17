@@ -1,4 +1,4 @@
-export { type Auto, auto, isAuto } from './auto';
+export { type Auto, AUTO, isAuto } from './auto';
 export { applyConfigWrite, startAutoPathsOf, resolveAutoConfig } from './autoConfig';
 export type { AutoReports } from './autoReports';
 export {
@@ -29,9 +29,9 @@ export type { LabOver, OverAccess } from './over';
 export {
   fillConfigDefaults,
   hasConfigPath,
-  schemaNodeAtPath,
-  valueAtPath,
-  withValueAtPath,
+  schemaNodeAt,
+  configValueAt,
+  withConfigValueAt,
 } from './path';
 export { resolveConfigSchema } from './resolve';
 export { applyRules, builtinRules, titleCase } from './rules';

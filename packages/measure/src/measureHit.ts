@@ -15,7 +15,7 @@ export interface MeasureHit {
  * units of it, else a line within the same distance. A hidden or locked
  * measurement (`nodeGates`) is passed over.
  */
-export function measureAt(
+export function measureHitAt(
   scene: Pick<Scene<unknown, string, unknown>, 'nodesOnLayer' | 'get' | 'layers' | 'overrides'>,
   ms: Pick<Measurements, 'layer'>,
   p: MeasurePoint,

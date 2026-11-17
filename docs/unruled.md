@@ -412,8 +412,8 @@ The snap pipeline ([snapping.md](./snapping.md)) landed on 2026-10-18 with these
   to the top of the tree. A transform (move, nudge, rotate, resize, flip, align, distribute) leaves a node stored
   in one where it is and moves the rest. This replaces the 2026-11-11 call that read such an axis as collapsed.
 
-- 2026-11-11 (my call, core second property pass): `unionBounds` and `unionAABB` skip a box with a corner that is
-  not finite (a `NaN` or infinite field, or an edge past the double range), as `unionAABB` skips a hole, and a union of
+- 2026-11-11 (my call, core second property pass): `unionBounds` and `unionAabb` skip a box with a corner that is
+  not finite (a `NaN` or infinite field, or an edge past the double range), as `unionAabb` skips a hole, and a union of
   only such boxes is `null`. Before, a `NaN` width counted the box's `x` and not its far edge, and a union of such
   boxes alone came back with a width of `-Infinity`.
 - 2026-11-11 (my call, core second property pass): `createMoveToIndexOp` holds its index as the finite integer that
@@ -611,7 +611,7 @@ The snap pipeline ([snapping.md](./snapping.md)) landed on 2026-10-18 with these
   request no longer starts Chromium to fail there.
 - 2026-11-11 (my call, icons second property pass): the `.lbx` writer rasterizes a command whose object would hold a
   number that is not finite (a group transform with `NaN` or `Infinity`, an infinite stroke width, a scale past the
-  double range) and skips such `lbxObjects` with a reason, and `writeLbx` throws a `RangeError` for a `length` that
+  double range) and skips such `lbxObjectsCommand` with a reason, and `writeLbx` throws a `RangeError` for a `length` that
   is not a positive finite number. A `-0` position is written and reads back as `0`.
 - 2026-11-11 (my call, core canvas second pass): a marquee rect with a negative width or height (`rectRegion`,
   `hitTestArea`) is the same rect named from its other corner, as the marquee drag's `rectBetween` already makes it,
@@ -1269,7 +1269,7 @@ The snap pipeline ([snapping.md](./snapping.md)) landed on 2026-10-18 with these
   step, and row still follow the pointer's own direction and distance once it moves, so a knob pressed off its line
   turns the axis onto the pointer at the first move.
 - Ruled 2026-11-10 (my call, overnight sweep): `bakeCursor` and `cursorFor` bake a size that is not a finite positive
-  number at the default 24, as `resolveCursorTier` already reads a spec's size, one rule for both; a size past the
+  number at the default 24, as `resolveCursor` already reads a spec's size, one rule for both; a size past the
   cap, `Infinity` included, still throws. `brushRing` gives a radius of 0 or more a size of at least one pixel, so a
   brush too small to round to one draws a one-pixel ring rather than the default 24; a negative or `NaN` radius still
   falls to the default.
@@ -2049,7 +2049,7 @@ Calls the lanes made without a ruling:
   layers in `layers`, registered in entry order and all again when any entry's list changes, so a rebuilt entry keeps
   its place in hit order. `attach` → `registerLayer` would have moved a rebuilt entry's layer to the top. Every diagram
   editing helper and `plot`'s `plotEditing` return one entry; `createDiagramContribution`, the connect half without
-  its layer, is gone rather than kept beside `diagramPorts` (2026-11-12).
+  its layer, is gone rather than kept beside `createDiagramPortsContribution` (2026-11-12).
 - `d3` and `diagram-elk` are `weasel.tier: "other"`, not `plugin`: neither hands a canvas a layer, tool, action, dep or
   draw command. d3 joins data into a scene and diagram-elk is a layout planner for diagram. `kernel3d` stays `other`
   as a host for 3D scenes, though it ships a tool and deps (2026-11-12).
@@ -2060,6 +2060,8 @@ Calls the lanes made without a ruling:
   data (2026-11-12).
 - Contribution factories keep their packages' names (`diagramPorts`, `plotEditing`, `createMinimapContribution`): core
   itself mixes `createDragPanContribution` and `createPresentationContribution`, and no convention picks one. Presets do
+- Contribution factories keep their packages' names (`createDiagramPortsContribution`, `plotEditing`, `createMinimapContribution`): core
+  itself mixes `dragPanContribution` and `createPresentationContribution`, and no convention picks one. Presets do
   have one, now in `docs/conventions.md` (2026-11-12).
 - A `createSpacingHintsPreset` given an `id` names its sources `<id>.spacing` and `<id>.alignment`; with none they
   keep `spacing` and `alignment`, so a canvas with one preset reads as before (2026-11-12).
@@ -2291,7 +2293,7 @@ Calls the lanes made without a ruling:
   entry's, not an action's, and say which action the gesture runs, not what the modifier does to it; what a modifier
   does mid-gesture is a modifier role, declared per action, so the sheet would repeat "Shift: Constrain" under each
   action that snaps. A keymap's own keys stay `<KeymapHint>`'s; its leader is listed as a command (2026-11-13).
-- `<EditorShell>` mounts the sheet; a workspace names its tools with `useEditorTools(tools, toolSets)`, since the shell
+- `<EditorShell>` mounts the sheet; a workspace names its tools with `usePublishEditorTools(tools, toolSets)`, since the shell
   sits above the canvas that holds them. `<Lab>` mounts one too, naming the lab's `TrialTool`s, with a row in its Lab
   menu (2026-11-13).
 

@@ -111,14 +111,14 @@ export type {
   MarkPose,
   MarkScene,
   PaintedMark,
-  SerializedAnnotations,
+  SerializedMarkStore,
   SerializedMarkHistory,
   WorldRect,
 } from './annotations';
 export {
   annotationsFromJSON,
   createMarkScene,
-  createAnnotationStore,
+  createMarkStore,
   fracContains,
   fracEncloses,
   fracToWorld,
@@ -205,7 +205,7 @@ export {
 } from './canvas';
 export * from './chrome';
 export * from './clock';
-export { type Auto, auto, isAuto } from './config/auto';
+export { type Auto, AUTO, isAuto } from './config/auto';
 export { startAutoPathsOf, resolveAutoConfig } from './config/autoConfig';
 export type { AutoReports } from './config/autoReports';
 export {
@@ -235,9 +235,9 @@ export type { LabOver, OverAccess } from './config/over';
 export {
   fillConfigDefaults,
   hasConfigPath,
-  schemaNodeAtPath,
-  valueAtPath,
-  withValueAtPath,
+  schemaNodeAt,
+  configValueAt,
+  withConfigValueAt,
 } from './config/path';
 export { resolveConfigSchema } from './config/resolve';
 export { applyRules, builtinRules, titleCase } from './config/rules';

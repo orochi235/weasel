@@ -1,7 +1,8 @@
-import { keyLegendFromKey, keyLegendsFromMods, type KeyLegend, type KeyLegendOptions, type LogicalMod } from './keyLegendsFromMods';
+import { keyLegendFromKey, keyLegendsFromMods, type KeyLegend, type KeyLegendOptions } from './keyLegendsFromMods';
+import type { ModifierKey } from '../grammar/routeGrammar';
 import { getOwn } from '@weasel-js/registry';
 
-const MOD_CODES: Readonly<Record<string, LogicalMod>> = {
+const MOD_CODES: Readonly<Record<string, ModifierKey>> = {
   ShiftLeft: 'shift', ShiftRight: 'shift',
   ControlLeft: 'ctrl', ControlRight: 'ctrl',
   AltLeft: 'alt', AltRight: 'alt',

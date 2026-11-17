@@ -24,7 +24,7 @@ describe('pathShape', () => {
     close(st.normal, { x: 0, y: -1 });
     const n = s.nearest({ x: 30, y: 40 });
     expect(n.f).toBeCloseTo(0.3);
-    expect(n.dist).toBeCloseTo(40);
+    expect(n.distance).toBeCloseTo(40);
   });
   test("a closed contour knows it is closed and unwraps nearest about 'about'", () => {
     const s = pathShape(pathFromD('M0 0 H100 V100 H0 Z'))!;

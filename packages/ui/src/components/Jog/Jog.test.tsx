@@ -31,7 +31,7 @@ describe('Jog', () => {
   });
 
   it('names the steps after the unit it was given', () => {
-    renderWithIcons(<Jog {...props} unit="Beat" onScrub={() => {}} />);
+    renderWithIcons(<Jog {...props} unit="Beat" onSeek={() => {}} />);
     expect(screen.getByRole('button', { name: 'Previous beat' })).toBeInTheDocument();
     expect(screen.getByRole('slider')).toHaveAttribute('aria-valuetext', 'Beat 3 of 24');
   });
@@ -51,7 +51,7 @@ describe('Jog', () => {
   it('draws a scrubber only when something can take the scrub', () => {
     const { rerender } = renderWithIcons(<Jog {...props} />);
     expect(screen.queryByRole('slider')).not.toBeInTheDocument();
-    rerender(<Jog {...props} onScrub={() => {}} />);
+    rerender(<Jog {...props} onSeek={() => {}} />);
     expect(screen.getByRole('slider')).toBeInTheDocument();
   });
 
@@ -64,13 +64,13 @@ describe('Jog', () => {
   });
 
   it('reads 0/0 for an empty sequence, and draws no scrubber for it', () => {
-    renderWithIcons(<Jog {...props} index={0} count={0} onScrub={() => {}} />);
+    renderWithIcons(<Jog {...props} index={0} count={0} onSeek={() => {}} />);
     expect(screen.getByTestId('jog-readout').textContent).toBe('0/0');
     expect(screen.queryByRole('slider')).not.toBeInTheDocument();
   });
 
   it('holds an out-of-range index at the end rather than reporting past it', () => {
-    renderWithIcons(<Jog {...props} index={99} count={24} onScrub={() => {}} />);
+    renderWithIcons(<Jog {...props} index={99} count={24} onSeek={() => {}} />);
     expect(screen.getByRole('slider')).toHaveAttribute('aria-valuetext', 'Step 24 of 24');
   });
 
@@ -122,7 +122,7 @@ describe('Jog along a curve', () => {
   it('bends its scrubber along the stretch of the run between the buttons and the readout', () => {
     renderWithIcons(
       <Along arc={{ start: 270, end: 90 }}>
-        <Jog {...props} onScrub={() => {}} />
+        <Jog {...props} onSeek={() => {}} />
       </Along>,
     );
     const curved = screen.getByRole('slider').closest('[data-shape]')!;
@@ -139,7 +139,7 @@ describe('Jog along a curve', () => {
   });
 
   it('stays a straight row on a line', () => {
-    renderWithIcons(<Along shape={lineShape({ x: 0, y: 0 }, { x: 200, y: 0 })}><Jog {...props} onScrub={() => {}} /></Along>);
+    renderWithIcons(<Along shape={lineShape({ x: 0, y: 0 }, { x: 200, y: 0 })}><Jog {...props} onSeek={() => {}} /></Along>);
     expect(screen.getByRole('slider').closest('[data-shape]')).toBeNull();
     expect(screen.getByTestId('jog-readout').closest('[data-jog-part]')).toBeNull();
   });

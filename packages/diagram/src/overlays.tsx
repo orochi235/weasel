@@ -4,7 +4,7 @@
  * paint, so it follows a pan, a zoom, a resize and a layout run's every frame.
  */
 import {
-  drawnAABBOf,
+  drawnAabbOf,
   drawnBoundsScene,
   pointAlongPath,
   worldPoseOf,
@@ -49,7 +49,7 @@ export function worldRectOf(scene: DiagramScene, id: string): Bounds | null {
   const route = diagramEdgeOf(node) === null ? null : drawn.derivedPathOf?.(id as NodeId) ?? null;
   const mid = route === null ? null : pointAlongPath(route, 0.5);
   if (mid != null) return { x: mid.point.x, y: mid.point.y, width: 0, height: 0 };
-  return drawnAABBOf(drawn, id as NodeId, worldPoseOf(scene, id as NodeId)!, { includeStroke: false });
+  return drawnAabbOf(drawn, id as NodeId, worldPoseOf(scene, id as NodeId)!, { includeStroke: false });
 }
 
 const CENTER = 'center';

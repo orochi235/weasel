@@ -16,7 +16,7 @@ export {
   prefLeafAt,
   prefLeaves,
   prefSectionLeaves,
-  prefValueAtPath,
+  prefValueAt,
   VERSION_RECORD,
   visiblePrefSubtree,
 } from './helpers';

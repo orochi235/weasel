@@ -98,7 +98,7 @@ A duplication audit flags these again each time. Each stays two, for the reason 
 Local- vs world-space bounds, and `nodeAtPoint` vs `pickBest`, are different
 questions. Miter apex vs capsule, and butt cap vs half-disc, are a defensible hit
 model over shared base geometry. `unionBounds` stays rotation-free beside
-`unionAABB` for commit-time actions that write poses back in the unrotated frame.
+`unionAabb` for commit-time actions that write poses back in the unrotated frame.
 SVG's `#000000` initial fill is a spec default, not drift.
 `sceneToAdapter`'s area walk returns containers where the live marquee dep does not — one flag on the shared
 walk, because a bare-adapter consumer has no selection parent-folding to fold

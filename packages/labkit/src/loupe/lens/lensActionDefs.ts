@@ -14,7 +14,7 @@ import {
   held,
   type KeySpec,
   key,
-  keymapContribution,
+  createKeymapContribution,
   type NodeId,
   type Op,
 } from '@weasel-js/core';
@@ -375,7 +375,7 @@ export function createLoupeKeymap(actions: readonly Action[]): Contribution<neve
     const k = LENS_KEYS[a.id as LensActionId];
     if (k !== undefined) bindings.push({ spec: key(k), actionId: a.id, opts: { id: a.id } });
   }
-  return keymapContribution({
+  return createKeymapContribution({
     id: 'loupe',
     label: 'Loupe',
     leader: LOUPE_LEADER,

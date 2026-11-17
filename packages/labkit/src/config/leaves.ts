@@ -5,7 +5,7 @@ import {
   prefHoldsValue,
   repairPrefValue,
 } from '@weasel-js/prefs';
-import { valueAtPath, withValueAtPath } from './path';
+import { configValueAt, withConfigValueAt } from './path';
 
 /** Every leaf in a resolved schema, in schema order, with its dotted path.
  *  Not `prefLeaves`, which rejects the `$version` key a prefs store reserves. */
@@ -27,10 +27,10 @@ export function repairedConfig<T>(group: PrefGroup, config: T): T {
   let out = config;
   for (const [path, leaf] of configLeaves(group)) {
     if (!prefHoldsValue(leaf)) continue;
-    const held = valueAtPath(out, path);
+    const held = configValueAt(out, path);
     if (held === undefined) continue;
     const read = repairPrefValue(leaf, held);
-    if (read !== held) out = withValueAtPath(out, path, read);
+    if (read !== held) out = withConfigValueAt(out, path, read);
   }
   return out;
 }

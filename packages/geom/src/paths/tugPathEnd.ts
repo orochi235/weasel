@@ -165,14 +165,14 @@ function arcCenter({ point, tangent, curvature }: PathEndFrame): Point {
 function lengthAlongEased(frame: PathEndFrame, point: Point, opts: EaseOptions): number {
   const far = Math.hypot(point.x - frame.point.x, point.y - frame.point.y);
   const reach = Math.min(easeLength(frame, opts), far * 2) + far;
-  let best = { dist: Infinity, length: 0 };
+  let best = { distance: Infinity, length: 0 };
   let walked = 0;
   for (const piece of extensionPieces(frame, reach, 'eased', opts)) {
     const [q0, q1, q2, q3] = piece.pts;
     const hit = piece.pts.length === 2
       ? nearestOnSegment(point.x, point.y, q0.x, q0.y, q1.x, q1.y)
       : nearestOnCubic(point.x, point.y, q0.x, q0.y, q1.x, q1.y, q2.x, q2.y, q3.x, q3.y);
-    if (hit.dist < best.dist) best = { dist: hit.dist, length: walked + pieceLengthAt(piece, hit.t) };
+    if (hit.distance < best.distance) best = { distance: hit.distance, length: walked + pieceLengthAt(piece, hit.t) };
     walked += piece.length;
   }
   return best.length;

@@ -7,7 +7,7 @@ import {
 } from '@weasel-js/prefs';
 import { enumControlAt, prefFieldProps } from '@weasel-js/ui/components/Prefs';
 import { PropertyField } from '@weasel-js/ui/components/Properties';
-import { valueAtPath } from '../config/path';
+import { configValueAt } from '../config/path';
 import type { ResolvedConfig } from '../config/types';
 import { isRowEnabled } from '../config/visible';
 import type { ControlMatrixColumn } from './ControlMatrix';
@@ -54,7 +54,7 @@ export function MatrixEditor({
     ? prefFieldProps(
         leaf,
         {
-          value: prefValueOrDefault(leaf, valueAtPath(config, path)),
+          value: prefValueOrDefault(leaf, configValueAt(config, path)),
           setValue: (next) => setConfig(path, next),
           fields: choices,
           disabled,

@@ -126,7 +126,7 @@ export interface Graph {
  *  yields bounds. Both default to the kit's own. */
 export interface BuildGraphOptions<TPose> {
   read?: DiagramNodeReader;
-  geometry?: PoseDescriptor<TPose>;
+  poseDescriptor?: PoseDescriptor<TPose>;
 }
 
 /**
@@ -143,7 +143,7 @@ export function buildGraph<TPose>(
   source: GraphSource<TPose>,
   opts: BuildGraphOptions<TPose> = {},
 ): Graph {
-  const geometry = opts.geometry ?? (AUTO_POSE_DESCRIPTOR as PoseDescriptor<TPose>);
+  const poseDescriptor = opts.poseDescriptor ?? (AUTO_POSE_DESCRIPTOR as PoseDescriptor<TPose>);
   const nodes: GraphNode[] = [];
   const byId = new Map<string, GraphNode>();
   const candidates: GraphEdge[] = [];
@@ -178,7 +178,7 @@ export function buildGraph<TPose>(
     if (label !== null) {
       const deps = node.dependsOn;
       if (Array.isArray(deps) && deps.length === 1 && labelFollowsLayout(label.at) && !rooms.has(deps[0]!)) {
-        const { width, height } = geometry.getBounds(pose);
+        const { width, height } = poseDescriptor.getBounds(pose);
         rooms.set(deps[0]!, { width, height, ...(label.offset ? { offset: label.offset } : {}) });
       }
       continue;
@@ -198,7 +198,7 @@ export function buildGraph<TPose>(
     }
     const entry: GraphNode = {
       id: node.id,
-      bounds: geometry.getBounds(pose),
+      bounds: poseDescriptor.getBounds(pose),
       pinned: trait.pinned === true,
       ...(trait.ports !== undefined ? { ports: trait.ports } : {}),
       ...(trait.outline !== undefined ? { outline: trait.outline } : {}),

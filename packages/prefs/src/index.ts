@@ -64,7 +64,7 @@ export {
   prefUnit,
   prefUnitAccepts,
   prefValueAbsent,
-  prefValueAtPath,
+  prefValueAt,
   prefVariantDefault,
   prefVariantOf,
   PX_UNIT,

@@ -5,7 +5,7 @@ import { withIcons } from '@weasel-js/ui/testing/withIcons';
 import { useState } from 'react';
 import { describe, expect, it, vi } from 'vitest';
 import { f } from '../config/builder';
-import { withValueAtPath } from '../config/path';
+import { withConfigValueAt } from '../config/path';
 import { defineInstrument } from '../instrument/defineInstrument';
 import { Lab } from '../lab/Lab';
 
@@ -69,11 +69,11 @@ describe("an instrument's config drawn over another schema", () => {
     let flip = (): void => {};
     function App() {
       const [values, setValues] = useState<Record<string, unknown>>({});
-      flip = () => setValues((v) => withValueAtPath(v, 'on', false));
+      flip = () => setValues((v) => withConfigValueAt(v, 'on', false));
       return (
         <Lab
           instruments={[gated]}
-          over={{ values, set: (p, v) => setValues((prev) => withValueAtPath(prev, p, v)) }}
+          over={{ values, set: (p, v) => setValues((prev) => withConfigValueAt(prev, p, v)) }}
         />
       );
     }

@@ -9,7 +9,7 @@
  */
 import {
   boxContainsBox,
-  pointInPolygon,
+  polygonContainsPoint,
   polygonContainsPath,
   rectBetween,
   polygonIntersectsPath,
@@ -126,7 +126,7 @@ export function regionTakesByBounds(region: SelectRegion, mode: LassoHitMode, b:
     return false;
   }
   if (mode === 'centers') {
-    return pointInPolygon(region.coords, b.x + b.width / 2, b.y + b.height / 2);
+    return polygonContainsPoint(region.coords, b.x + b.width / 2, b.y + b.height / 2);
   }
   // Swallowed whole by a marquee: no outline can change the answer.
   if (mode === 'intersect' && region.isRect && boxContainsBox(

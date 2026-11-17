@@ -9,7 +9,7 @@ import { MEASURE_ACTION_IDS } from './actionIds';
 import { measureBetween, measurementOf, measureEndsOf } from './measurement';
 import { createMeasurements, currentMeasureId, measureIds } from './measurements';
 import { measureCommands } from './measureCommands';
-import { measureCreateAction, measureDragAction, measurePickAtAction } from './measureGestures';
+import { measureCreateAction, measureDragAction, measurePickAtAction } from './measureActions';
 import { measureEndSource, type MeasureHit } from './measureHit';
 import { MEASURE_AFFORDANCE_KIND } from './measureLayer';
 import { gridSource, sessionDep } from './testing/snapDep';

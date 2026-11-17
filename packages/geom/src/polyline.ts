@@ -7,7 +7,7 @@ import { sign } from './scalar';
  * `start`/`end` are vertex indices, not float offsets, and bound one contour
  * inside a buffer holding several.
  */
-export function pointInPolygon(
+export function polygonContainsPoint(
   coords: ArrayLike<number>,
   px: number,
   py: number,
@@ -29,7 +29,7 @@ export function pointInPolygon(
 
 /**
  * Signed shoelace area of an interleaved, unclosed ring, its closing edge
- * implicit as in {@link pointInPolygon}: positive when the ring runs
+ * implicit as in {@link polygonContainsPoint}: positive when the ring runs
  * counterclockwise with y up, so clockwise on a y-down screen. `start`/`end`
  * are vertex indices bounding one ring in a buffer holding several.
  */

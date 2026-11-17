@@ -5,7 +5,7 @@ import { checkPrefConditions } from './conditionCheck';
 import { autoRecord, recordValue } from './stamp';
 import { prefCanAuto, prefStartsAuto } from './autoReset';
 import { prefHoldsValue, prefLeaves, VERSION_RECORD, isPrefScope, type PrefScope, type PrefSelection, type PrefWeights, type PrefValidator, type PrefGroup } from '@weasel-js/prefs-schema';
-import { assignPrefValueAtPath, setOwnPrefValue, selectionWeights } from '@weasel-js/prefs-schema/internal';
+import { assignPrefValueAt, setOwnPrefValue, selectionWeights } from '@weasel-js/prefs-schema/internal';
 import { createSnapshots, resolveHeld, selectionAt, weightsUnder, type SnapshotSource } from './snapshot';
 import { checkPrefScopes, prefSelectors, admittedSelectors } from './splitCheck';
 import type { PrefPath, PrefValueAt } from './paths';
@@ -212,7 +212,7 @@ export function createPrefsStore<S extends PrefGroup>(
       const tree: Record<string, unknown> = {};
       for (const [path, leaf] of leaves) {
         const set = source.selectors.has(path) ? getOwn(selection, path) : resolveHeld(source, leaf, now.held.get(path), weights);
-        assignPrefValueAtPath(tree, path, set);
+        assignPrefValueAt(tree, path, set);
       }
       return tree;
     },

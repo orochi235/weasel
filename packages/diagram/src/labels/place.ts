@@ -115,7 +115,7 @@ function arcNearest(points: readonly Vec2[], p: Vec2): number {
     const a = points[i]!;
     const b = points[i + 1]!;
     const len = Math.hypot(b.x - a.x, b.y - a.y);
-    const { t, dist: d } = nearestOnSegment(p.x, p.y, a.x, a.y, b.x, b.y);
+    const { t, distance: d } = nearestOnSegment(p.x, p.y, a.x, a.y, b.x, b.y);
     if (d < best) {
       best = d;
       at = walked + t * len;

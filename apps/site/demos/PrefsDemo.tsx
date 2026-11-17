@@ -1,4 +1,4 @@
-import { prefLeaves, prefValueAtPath, type PrefGroup } from '@weasel-js/prefs';
+import { prefLeaves, prefValueAt, type PrefGroup } from '@weasel-js/prefs';
 import { usePref, usePrefsStore, usePrefsState } from '@weasel-js/prefs/react';
 import { localStorageAdapter } from '@weasel-js/storage';
 import { Button } from '@weasel-js/ui/components/Button';
@@ -68,9 +68,9 @@ export function PrefsDemo() {
             {PATHS.map((path) => (
               <tr key={path}>
                 <td className={s.path}>{path}</td>
-                <td>{show(prefValueAtPath(values, path))}</td>
+                <td>{show(prefValueAt(values, path))}</td>
                 <td className={unset.has(path) ? s.unset : undefined}>
-                  {unset.has(path) ? 'unset' : show(prefValueAtPath(stored, path))}
+                  {unset.has(path) ? 'unset' : show(prefValueAt(stored, path))}
                 </td>
               </tr>
             ))}

@@ -44,7 +44,6 @@ export type {
   LayerRenderCtx,
   LayerHit,
   LayerGesture,
-  LayerModifiers,
   EmptyDownArgs,
   KeyDownArgs,
   ModelPoint,

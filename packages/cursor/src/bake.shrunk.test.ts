@@ -2,9 +2,9 @@ import { describe, expect, it } from 'vitest';
 import { bakeCursor, quantizeCursorAngle } from './bake';
 import { brushRing } from './brushRing';
 import { GLYPHS } from './glyphs';
-import { cursorWorldSize } from './paint';
+import { worldCursorPx } from './paint';
 import { cursorFor, cursorGlyph } from './registry';
-import { resolveCursorTier } from './resolve';
+import { resolveCursor } from './resolve';
 
 describe('cursor baking, shrunk', () => {
   it('steps an angle near the double range, which overflowed on the way to its step and baked NaN', () => {
@@ -22,11 +22,11 @@ describe('cursor baking, shrunk', () => {
   });
 
   it('draws a brush ring too small to round to a pixel at one, not at the default 24', () => {
-    const r = resolveCursorTier(brushRing(0));
+    const r = resolveCursor(brushRing(0));
     expect(r.kind === 'css' && r.css).toMatch(/width%3D%221%22/);
   });
 
   it('sizes a world ring finite where the radius on screen is near the double range', () => {
-    expect(Number.isFinite(cursorWorldSize(GLYPHS.brush, 1e307, 1))).toBe(true);
+    expect(Number.isFinite(worldCursorPx(GLYPHS.brush, 1e307, 1))).toBe(true);
   });
 });

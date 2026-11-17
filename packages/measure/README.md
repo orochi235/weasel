@@ -19,7 +19,7 @@ npm install @weasel-js/measure
 ```tsx
 const [measurements] = useState(() => createMeasurements({ layer: 'notes' }));
 const tools = useMeasureTools({ measurements });
-const ambient = useMemo(() => [measurementsContribution(scene, measurements)], [scene, measurements]);
+const ambient = useMemo(() => [createMeasurementsContribution(scene, measurements)], [scene, measurements]);
 
 <SceneCanvas scene={scene} tools={[tools.measure]} ambient={ambient} snap={{ sources: [measureEndSource()] }} />
 ```

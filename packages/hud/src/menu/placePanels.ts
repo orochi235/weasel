@@ -2,8 +2,8 @@ import { placeMenu, placeMenuUnder, placeSubmenu, type MenuController, type Menu
 import { faceGeneration } from '@weasel-js/font';
 import { menuPanelMetrics, menuRowSpans, type MenuPanelLayout } from '@weasel-js/ui-logic';
 import type { ResolvedTheme } from '@weasel-js/theme';
-import { measurePanel } from './drawPanel';
-import { estimateWidth } from './measureLabel';
+import { measurePanel } from './panelCommands';
+import { estimateWidth } from './textWidth';
 import { menuMeasureEnv } from './menuEnv';
 
 type XY = { x: number; y: number };

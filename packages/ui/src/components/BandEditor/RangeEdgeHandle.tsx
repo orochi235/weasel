@@ -55,7 +55,7 @@ export function RangeEdgeHandle<T>(props: RangeEdgeHandleProps<T>): ReactElement
   const unit = unitScale(scale, min, max);
   const toBase = (v: number): number => {
     if (!Number.isFinite(v)) return v;
-    const u = unit.map(v);
+    const u = unit.position(v);
     return Number.isNaN(u) ? -Infinity : u;
   };
   const unitLimits: [number, number] | undefined = limits && [toBase(limits[0]), toBase(limits[1])];

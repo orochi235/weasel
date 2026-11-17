@@ -66,7 +66,6 @@ export function logScale(opts: LogScaleOptions): LogScale {
     base,
     domain: [d0, d1],
     range: [r0, r1],
-    map,
     position: map,
     invert(at) {
       const t = r1 === r0 ? 0 : (at - r0) / (r1 - r0);

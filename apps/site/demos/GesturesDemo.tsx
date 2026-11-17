@@ -303,13 +303,13 @@ export function GesturesDemo() {
       const sx = e.clientX, sy = e.clientY;
       startThresholdDrag(e, {
         threshold: TH,
-        onActivate: () => { if (thO.current) thO.current.engaged = true; },
+        onStart: () => { if (thO.current) thO.current.engaged = true; },
         onMove: (ev) => {
           if (thO.current) thO.current.cur = local(ev.clientX, ev.clientY);
           setReadout(`threshold ${TH}px · engaged ✓ · moved ${fmt(Math.hypot(ev.clientX - sx, ev.clientY - sy))}px`);
           draw();
         },
-        onCommit: () => {},
+        onEnd: () => {},
         onClick: () => setReadout(`threshold ${TH}px · released inside the dead-zone — that was a click, not a drag`),
       });
     }

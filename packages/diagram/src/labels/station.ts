@@ -18,11 +18,11 @@ const NAMED: Readonly<Record<string, number>> = { start: 0, mid: 0.5, end: 1 };
 export const namedStation = (at: number | string): number => typeof at === 'number' ? at : getOwn(NAMED, at) ?? 0.5;
 
 /** The point on each segment of `path` nearest `near`, how far it is, and the heading of the path there. */
-function segmentStations(path: Path, near: Vec2): { point: Vec2; tangent: Vec2; dist: number }[] {
+function segmentStations(path: Path, near: Vec2): { point: Vec2; tangent: Vec2; distance: number }[] {
   if (path.kind !== 'polygon') return [];
   const { commands } = path;
   const coords = worldCoords(path);
-  const out: { point: Vec2; tangent: Vec2; dist: number }[] = [];
+  const out: { point: Vec2; tangent: Vec2; distance: number }[] = [];
   forEachSegment(commands, coords, (cmd, ci, x0, y0) => {
     let hit: CurveNearest;
     let d: Vec2;
@@ -50,7 +50,7 @@ function segmentStations(path: Path, near: Vec2): { point: Vec2; tangent: Vec2; 
     } else return;
     const len = Math.hypot(d.x, d.y);
     if (len === 0) return;
-    out.push({ point: { x: hit.x, y: hit.y }, tangent: { x: d.x / len, y: d.y / len }, dist: hit.dist });
+    out.push({ point: { x: hit.x, y: hit.y }, tangent: { x: d.x / len, y: d.y / len }, distance: hit.distance });
   });
   return out;
 }
@@ -58,8 +58,8 @@ function segmentStations(path: Path, near: Vec2): { point: Vec2; tangent: Vec2; 
 /** The point on `path` nearest `near`, and the heading of the path there;
  *  `null` for a path with no segment to stand on. */
 function nearestStation(path: Path, near: Vec2): { point: Vec2; tangent: Vec2 } | null {
-  let best: { point: Vec2; tangent: Vec2; dist: number } | null = null;
-  for (const s of segmentStations(path, near)) if (best === null || s.dist < best.dist) best = s;
+  let best: { point: Vec2; tangent: Vec2; distance: number } | null = null;
+  for (const s of segmentStations(path, near)) if (best === null || s.distance < best.distance) best = s;
   return best === null ? null : { point: best.point, tangent: best.tangent };
 }
 
@@ -124,7 +124,7 @@ export function labelSpotAt(whole: Path, center: Vec2, size: { width: number; he
   let bestMiss = miss(first);
   if (bestMiss <= tie) return first;
   for (const other of segmentStations(path, center)) {
-    if (other.dist > station.dist + tie) continue;
+    if (other.distance > station.distance + tie) continue;
     const spot = spotFrom(measure, measure.nearest(other.point), center, size);
     const m = miss(spot);
     if (m < bestMiss - tie) [best, bestMiss] = [spot, m];

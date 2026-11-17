@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { EDITOR_ACTIONS, EDITOR_PREFERENCES_KEY } from '@weasel-js/editor';
+import { EDITOR_ACTIONS, EDITOR_PREFS_KEY } from '@weasel-js/editor';
 import { actionBindings, actionItems, keySpecShortcut, SceneCanvas, defaultNodeRouting, useActionsRegistry, useCommand, useScene, type NodePropertiesEntry, type ToolDef, type ToolsApi } from '@weasel-js/core';
 import { routesForSpec } from '@weasel-js/core/routing';
 import { actionIcon } from '@weasel-js/ui/components/Icon';
@@ -46,7 +46,7 @@ export function RegistryProbe({ onSnapshot }: ProbeProps) {
   });
   useDebugCommands();
   const { label: prefsLabel, ...prefsOptions } = DRAW_PREFERENCES_COMMAND;
-  useCommand(EDITOR_ACTIONS.preferences, prefsLabel, noop, { ...prefsOptions, keys: EDITOR_PREFERENCES_KEY });
+  useCommand(EDITOR_ACTIONS.preferences, prefsLabel, noop, { ...prefsOptions, keys: EDITOR_PREFS_KEY });
   useFileCommands({
     scene, filename: 'probe', paperSize: 'letter',
     setFilename: noop, showFirstPage: noop, leaveMode: noop, page: null,

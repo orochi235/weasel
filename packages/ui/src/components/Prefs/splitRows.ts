@@ -3,7 +3,7 @@ import {
   prefLeafAt,
   prefScopeValue,
   prefStoredSelectors,
-  prefValueAtPath,
+  prefValueAt,
   prefOverrideOptions,
   prefOverridesOf,
   prefScopesOf,
@@ -118,7 +118,7 @@ export function splitShape(
     if (leaf?.kind !== 'enum') continue;
     const selector = leaf as PrefEnum;
     if (!by.has(path)) continue;
-    const set = prefValueAtPath(values, path);
+    const set = prefValueAt(values, path);
     const value = typeof set === 'string' ? set : selector.default;
     const all = selector.options.map((option) => ({ value: option.value, label: option.label }));
     const overrides = prefOverridesOf(pref, path);

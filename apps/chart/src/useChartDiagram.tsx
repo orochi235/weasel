@@ -2,8 +2,8 @@ import {
   useDepSource, useTransformFollower, type Contribution, type SelectionApi, type SurfaceContribution, type Tool,
 } from '@weasel-js/core';
 import {
-  STENCIL_GROUPS, bodyFollower, diagramSequence, diagramCanDropInto, diagramTypeEdgeStroke, isContainerStencil, diagramContainers, diagramEdgeEnds,
-  diagramLabels, diagramOffPage, diagramPorts, diagramWaypoints, createEditEdgeLabelAction, editEdgeLabelBinding,
+  STENCIL_GROUPS, bodyFollower, createDiagramSequenceContribution, diagramCanDropInto, diagramTypeEdgeStroke, isContainerStencil, createDiagramContainersContribution, createDiagramEdgeEndsContribution,
+  diagramLabels, createDiagramOffPageContribution, createDiagramPortsContribution, createDiagramWaypointsContribution, createEditEdgeLabelAction, editEdgeLabelBinding,
   registerDiagramShape, roleStyle, sceneParticipants, themeFont,
   themeLabelStyle, useAvoidRouting, useFaceRemeasure, useHops, useLabelPlacement, rendererMeasure, useDiagramTools, useOffPageMarkers,
   useStencilInsert, waypointFollower, type DiagramStencil, type DiagramTheme, type DiagramType,
@@ -27,7 +27,7 @@ const edgeLabel = (theme: DiagramTheme): Contribution => ({
 });
 
 /** Double-click an off-page tag to go to the other page. */
-const OFF_PAGE = diagramOffPage({ padding: PAGE_FIT_PADDING });
+const OFF_PAGE = createDiagramOffPageContribution({ padding: PAGE_FIT_PADDING });
 
 /** Labels sized by the renderer's own text metrics, as stencil rows are, and everything measured again when a face lands. */
 const LABEL_PLACEMENT = { measure: rendererMeasure };
@@ -64,19 +64,19 @@ export function useChartDiagram(
   useAutoLayoutCommand(scene, type, participants);
   const ports = useMemo(
     // Chart has always drawn no port marks: its ports are hit targets only.
-    () => diagramPorts<ChartPose>({ participants, bodies: true, router, edgeStroke, sizePx: 0 }),
+    () => createDiagramPortsContribution<ChartPose>({ participants, bodies: true, router, edgeStroke, sizePx: 0 }),
     [participants, router, edgeStroke],
   );
   const ends = useMemo(
-    () => diagramEdgeEnds<ChartPose>({ selected, participants, bodies: true }),
+    () => createDiagramEdgeEndsContribution<ChartPose>({ selected, participants, bodies: true }),
     [selected, participants],
   );
-  const route = useMemo(() => diagramWaypoints<ChartPose>({ selected, participants }), [selected, participants]);
-  const containers = useMemo(() => diagramContainers({ scene: scene as never, selected }), [scene, selected]);
+  const route = useMemo(() => createDiagramWaypointsContribution<ChartPose>({ selected, participants }), [selected, participants]);
+  const containers = useMemo(() => createDiagramContainersContribution({ scene: scene as never, selected }), [scene, selected]);
   const labelDrag = useMemo(() => diagramLabels({ scene: scene as never, selected }), [scene, selected]);
   const label = useMemo(() => edgeLabel(theme), [theme]);
   const drop = useMemo(() => stencilDrop(participants), [participants]);
-  const sequenceEdit = useMemo(() => diagramSequence({ scene: scene as never, measure: rendererMeasure }), [scene]);
+  const sequenceEdit = useMemo(() => createDiagramSequenceContribution({ scene: scene as never, measure: rendererMeasure }), [scene]);
   const connector = useMemo(() => ({ participants, router, edgeStroke }), [participants, router, edgeStroke]);
   const tools = useDiagramTools<ChartPose>({ connector, stencils: ALL_STENCILS, sequence: SEQUENCE });
   useOffPageMarkers<ChartPose>(scene as never, { theme: CHART_DEFAULT_THEME });

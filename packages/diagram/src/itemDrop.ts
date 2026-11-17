@@ -135,7 +135,7 @@ export function createItemDropAction(opts: ItemDropOptions): Action {
 }
 
 /** The item drop as a contribution, to pass as `ambient`. */
-export function itemDropContribution(opts: ItemDropOptions): Contribution {
+export function createItemDropContribution(opts: ItemDropOptions): Contribution {
   return {
     id: 'weasel-diagram-item-drop',
     eligibility: { always: true },
@@ -151,7 +151,7 @@ export function useItemDrop(
   const latest = useLatest(props);
   const on = props.onDropItem !== undefined;
   return useMemo(() => (on
-    ? itemDropContribution({
+    ? createItemDropContribution({
         participants,
         canDrop: (item, target) => latest.current.canDropItem?.(item, target) ?? true,
         report: (drop) => latest.current.onDropItem?.(drop),

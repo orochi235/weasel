@@ -15,7 +15,7 @@ import {
   withDrafts,
 } from '@weasel-js/ui/components/Prefs';
 import { PropertyControl, type PropertyControlProps } from '@weasel-js/ui/components/Properties';
-import { valueAtPath } from '../config/path';
+import { configValueAt } from '../config/path';
 import { useFieldChoices } from './fieldChoices';
 
 const unwritten = (): void => {};
@@ -48,7 +48,7 @@ export function extra<T>(leaf: PrefLeaf, key: LeafExtra): T | undefined {
 
 /** What the row of `leaf` at `path` shows of `config` ({@link prefValueOrDefault}). */
 export function leafValueAt(config: unknown, path: string, leaf: PrefLeaf): unknown {
-  return prefValueOrDefault(leaf, valueAtPath(config, path));
+  return prefValueOrDefault(leaf, configValueAt(config, path));
 }
 
 /**

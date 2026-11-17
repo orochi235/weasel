@@ -23,7 +23,7 @@ export type { LabelOptions, LabelWidget } from './widgets/label';
 export type { ButtonOptions, ButtonWidget, ButtonEvent, ButtonHandler, HudButtonState, HudButtonTarget } from './widgets/button';
 export { hudButton } from './widgets/button';
 export type { ListOptions, ListWidget } from './widgets/list/list';
-export { hudList, type HudListRow, type HudListState, type HudListTarget } from './widgets/list/drawList';
+export { hudItemList, type HudListRow, type HudListState, type HudListTarget } from './widgets/list/drawList';
 export { hudMeasureEnv } from './measureEnv';
 export type { WindowOptions, WindowWidget } from './widgets/window/window';
 export {
@@ -32,9 +32,9 @@ export {
 } from './widgets/window/zones';
 export type { HudContentCtx } from './widget';
 export { attachMenuHost, type AttachMenuHostOptions } from './menu/attachMenuHost';
-export { measureLabel } from './menu/measureLabel';
+export { textWidth } from './menu/textWidth';
 export { createMenuWidget, type MenuWidgetOptions } from './menu/menuWidget';
-export type { MenuIcons } from './menu/drawPanel';
+export type { MenuIcons } from './menu/panelCommands';
 export { DEFAULT_MENU_PALETTE } from './menu/colorPicker';
 export { glyphCommands, iconCommands, type GlyphPlacement, type GlyphSource } from './glyph';
 export { boxShadowCommands } from './boxShadow';

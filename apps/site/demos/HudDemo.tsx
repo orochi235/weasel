@@ -26,11 +26,11 @@ export function HudDemo() {
   useEffect(() => {
     if (btnRef.current) return;
     const btn = hud.button({ id: 'inc', x: 12, y: 12, w: 140, h: 34, label: 'Click me' });
-    btn.on('press', () => setCount(c => c + 1));
+    btn.subscribe('press', () => setCount(c => c + 1));
     btnRef.current = btn;
     // Buttons take keyboard focus: Tab reaches them, Enter or Space presses.
     const reset = hud.button({ id: 'reset', x: 164, y: 12, w: 80, h: 34, label: 'Reset' });
-    reset.on('press', () => setCount(0));
+    reset.subscribe('press', () => setCount(0));
     return () => {
       reset.dispose();
       btn.dispose();

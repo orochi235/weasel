@@ -1,7 +1,7 @@
 export { createKeymapStack, KEYMAP_HOLD } from './keymapStack';
 export type { KeymapStack, KeymapUnbound, KeymapVerdict, OpenKeymap } from './keymapStack';
-export { keymapContribution, keymapLeaderBindingId, keymapLeaderId } from './keymapContribution';
-export type { KeymapDef } from './keymapContribution';
+export { createKeymapContribution, keymapLeaderBindingId, keymapLeaderId } from './createKeymapContribution';
+export type { KeymapDef } from './createKeymapContribution';
 export { describeKeymap, keymapShortcuts } from './describeKeymap';
 export type { DescribeKeymapOptions, KeymapDescription, KeymapRow } from './describeKeymap';
 export { captureKey } from './captureKey';
