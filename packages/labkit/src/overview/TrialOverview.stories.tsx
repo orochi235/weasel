@@ -2,7 +2,7 @@ import type { Meta, StoryObj } from '@weasel-js/forge';
 import { Stage } from '@weasel-js/labkit/canvas';
 import { TrialOverview, type TrialOverviewProps } from '@weasel-js/labkit/overview';
 import { useState } from 'react';
-import type { ViewTransform } from '../instrument/types';
+import type { ViewTransform2D } from '../instrument/types';
 import '../frames.stories.less';
 
 const meta: Meta<typeof TrialOverview> = {
@@ -31,7 +31,7 @@ function Picture() {
 }
 
 function Harness(args: Partial<TrialOverviewProps>) {
-  const [view, setView] = useState<ViewTransform>({ zoom: 2, pan: { x: -200, y: -120 } });
+  const [view, setView] = useState<ViewTransform2D>({ zoom: 2, pan: { x: -200, y: -120 } });
   return (
     <div className="lk-story-fill">
       <Stage

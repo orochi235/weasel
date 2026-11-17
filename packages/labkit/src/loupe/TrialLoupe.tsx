@@ -10,7 +10,7 @@ import {
 } from '../canvas/CanvasStackContext';
 import { fromCameraView } from '../canvas/cameraView';
 import type { ViewportSize } from '../canvas/worldSpec';
-import type { ViewTransform } from '../instrument/types';
+import type { ViewTransform2D } from '../instrument/types';
 import { LoupeSwitchContext } from '../trial/loupeSwitch';
 import { CanvasLoupe } from './CanvasLoupe';
 import { stackSources } from './canvasLens';
@@ -32,7 +32,7 @@ interface LoupePainterProps<TData, TLayer extends string, TPose> {
   box: { width: number; height: number };
   mode: LoupeMode;
   size: ViewportSize;
-  view: ViewTransform | undefined;
+  view: ViewTransform2D | undefined;
   stack: CanvasStackContextValue | null;
   camera: CameraContextValue | null;
   host: RefObject<HTMLElement | null>;
@@ -126,7 +126,7 @@ export interface TrialLoupeProps<TData = unknown, TLayer extends string = string
   enabled?: boolean;
   /** The camera a `render` lens composes its magnification onto. Defaults to
    *  the camera around it, and to the identity outside one. */
-  view?: ViewTransform;
+  view?: ViewTransform2D;
   /** The element the lens tracks. Defaults to the canvas stack or stage around
    *  it, and outside both to a box wrapped around `children`. */
   hostRef?: RefObject<HTMLElement | null>;
@@ -135,7 +135,7 @@ export interface TrialLoupeProps<TData = unknown, TLayer extends string = string
   children?: ReactNode;
 }
 
-const IDENTITY: ViewTransform = { zoom: 1, pan: { x: 0, y: 0 } };
+const IDENTITY: ViewTransform2D = { zoom: 1, pan: { x: 0, y: 0 } };
 
 /** What a lens reads its color from — the source it was handed, or the stack it sits over — and how it hears that a
  *  captured source has a new frame. */

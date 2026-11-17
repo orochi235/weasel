@@ -5,7 +5,7 @@ import { clientSize, layoutSize } from '../canvas/hostBox';
 import { Orbit } from '../canvas/Orbit';
 import { orbitZoomView } from '../canvas/orbitZoom';
 import { Stage } from '../canvas/Stage';
-import type { Instrument, RenderContext, ViewTransform } from '../instrument/types';
+import type { Instrument, RenderContext, ViewTransform2D } from '../instrument/types';
 import { useIsPresented } from '../lab/presentation';
 import { as2DView, as3DView, DEFAULT_VIEW, withZoom } from '../state/view';
 import { cameraOf, type InstrumentCamera } from './homeView';
@@ -25,7 +25,7 @@ interface TrialCameraOptions {
 export interface TrialCamera {
   camera: InstrumentCamera;
   /** The view as a 2D camera reads it, or `null` when it holds another shape. */
-  view2d: ViewTransform | null;
+  view2d: ViewTransform2D | null;
   /** The instrument's gestures under the lab's. */
   gestures: CameraGestures;
   placement: ViewPlacement;

@@ -2,7 +2,7 @@ import type { Yoke } from '@weasel-js/core';
 import { useLatest } from '@weasel-js/core';
 import { watchResize } from '@weasel-js/react';
 import { type CSSProperties, type ReactNode, useEffect, useMemo, useRef } from 'react';
-import type { ViewTransform } from '../instrument/types';
+import type { ViewTransform2D } from '../instrument/types';
 import { normalize2DView } from '../state/view';
 import { useSurfaceOptional } from '../surface/useSurfaceTile';
 import { CameraContext, CameraInput, CameraScope, useCameraView } from './CameraInput';
@@ -15,8 +15,8 @@ import { DEFAULT_FRAME, type ViewportSize } from './worldSpec';
 export interface StageProps {
   /** The content's own size in CSS pixels, at zoom 1. */
   size: ViewportSize;
-  view: ViewTransform;
-  onViewChange: (v: ViewTransform) => void;
+  view: ViewTransform2D;
+  onViewChange: (v: ViewTransform2D) => void;
   minZoom?: number;
   maxZoom?: number;
   /** Fired whenever the stage's viewport is measured at a non-zero size, in
@@ -42,7 +42,7 @@ export interface StageProps {
  * The camera a stage opens at: the content centered in its viewport, shrunk to
  * fit if it has to be and never enlarged past its own size.
  */
-export function fitStage(size: ViewportSize, viewport: ViewportSize): ViewTransform {
+export function fitStage(size: ViewportSize, viewport: ViewportSize): ViewTransform2D {
   if (!(size.width > 0 && size.height > 0 && viewport.width > 0 && viewport.height > 0)) {
     return { zoom: 1, pan: { x: 0, y: 0 } };
   }

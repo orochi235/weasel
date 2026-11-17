@@ -1,5 +1,5 @@
 import type { RefObject } from 'react';
-import type { ViewTransform } from '../instrument/types';
+import type { ViewTransform2D } from '../instrument/types';
 import type { TrialInfo } from '../state/types';
 import type { SerializedMarkHistory } from './history';
 import type { MarkStyle, PaintableMark } from './paint';
@@ -169,7 +169,7 @@ export interface AnnotationTarget extends AnnotationTargetInfo {
   /** The element the overlay tracks and takes input from. */
   ref: RefObject<HTMLElement | null>;
   /** The pane's camera, mirrored so marks pan and zoom with what they mark. */
-  view?: ViewTransform;
+  view?: ViewTransform2D;
   /** For an element that scrolls its content, the part of the content box its
    *  own box shows, in content units: its scroll offset and its layout size.
    *  Ignored when `view` is given. Default: the whole content box. The overlay

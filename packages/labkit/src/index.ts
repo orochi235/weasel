@@ -307,7 +307,7 @@ export type {
   StageCapability,
   SystemEvent,
   UndoCapability,
-  ViewTransform,
+  ViewTransform2D,
 } from './instrument/types';
 export * from './job';
 export { type LoupeKitSettings, labkitKitSettingsSchema } from './kitSettings';
@@ -349,7 +349,7 @@ export type { UndockedPanel, UndockedPanels } from './state/undock';
 export { dockPanel, panelKey, undockPanel } from './state/undock';
 export { type PersistedStateOptions, usePersistedState } from './state/usePersistedState';
 export { useTrialState } from './state/useTrialState';
-export type { ViewTransform2D, ViewTransform3D } from './state/view';
+export type { ViewTransform3D } from './state/view';
 export { as2DView, as3DView, DEFAULT_VIEW } from './state/view';
 export * from './surface';
 export { interstellarTheme } from './theme/interstellar';

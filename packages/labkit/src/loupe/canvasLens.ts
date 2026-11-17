@@ -9,14 +9,14 @@ import { centerOn } from '../canvas/camera';
 import { screenToWorld } from '../canvas/canvasCoords';
 import type { CanvasLayerDescriptor } from '../canvas/useLayerScheduler';
 import { DEFAULT_FRAME, resolveFrame, type WorldFrame, type WorldSpec } from '../canvas/worldSpec';
-import type { ViewTransform } from '../instrument/types';
+import type { ViewTransform2D } from '../instrument/types';
 import { resolveLoupeSource } from './sourceLens';
 
 /** The camera a lens of `size` shows a magnified region through, and
  *  the coordinate system it is read in — the instrument's own `WorldSpec`,
  *  resolved against the lens rather than the stack. */
 export interface LensCamera {
-  view: ViewTransform;
+  view: ViewTransform2D;
   frame: WorldFrame;
 }
 
@@ -28,7 +28,7 @@ export interface LensCamera {
  */
 export function lensCamera(
   aim: LoupePoint,
-  outer: ViewTransform,
+  outer: ViewTransform2D,
   outerFrame: WorldFrame,
   factor: number,
   size: LoupeSize,
@@ -101,7 +101,7 @@ export function drawCanvasLens(
     diameter: LoupeSize;
     dpr: number;
     mode: 'vector' | 'pixel';
-    outer: ViewTransform;
+    outer: ViewTransform2D;
     outerFrame?: WorldFrame;
     worldSpec?: WorldSpec;
     layers: readonly CanvasLayerDescriptor[];

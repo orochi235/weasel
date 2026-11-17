@@ -30,8 +30,8 @@ schedules its own layers; a foreign renderer wants rects and dirtiness only.
 ```ts
 interface CanvasStackProps {
   layers: CanvasLayerDescriptor[];      // { id, visible, render(ctx, view) }
-  view: ViewTransform;                  // { zoom, pan: { x, y } }
-  onViewChange: (v: ViewTransform) => void;
+  view: ViewTransform2D;                // { zoom, pan: { x, y } }
+  onViewChange: (v: ViewTransform2D) => void;
   worldSpec?: WorldSpec;                // origin + y direction; default top-left, y down
   onResize?: (size: ViewportSize) => void;
   minZoom?: number;                     // default 0.1; the opening zoom stays reachable

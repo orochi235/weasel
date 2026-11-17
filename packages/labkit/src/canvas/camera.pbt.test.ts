@@ -6,7 +6,7 @@
 import type { View } from '@weasel-js/core';
 import fc from 'fast-check';
 import { describe, expect, it } from 'vitest';
-import type { Point, ViewTransform } from '../instrument/types';
+import type { Point, ViewTransform2D } from '../instrument/types';
 import { runs, tally, timeoutFor } from '../pbt.fixture';
 import { centerOn, zoomAt } from './camera';
 import { clampZoomAbout, frameLocalToWorld, fromCameraView, toCameraView } from './cameraView';
@@ -20,7 +20,7 @@ const coord = fc.double({ min: -1e4, max: 1e4, noNaN: true, noDefaultInfinity: t
 /** A zoom spread evenly over six orders of magnitude. */
 const zoom = fc.double({ min: -3, max: 3, noNaN: true }).map((e) => 10 ** e);
 const pt: fc.Arbitrary<Point> = fc.record({ x: coord, y: coord });
-const view: fc.Arbitrary<ViewTransform> = fc.record({ zoom, pan: pt });
+const view: fc.Arbitrary<ViewTransform2D> = fc.record({ zoom, pan: pt });
 const frame: fc.Arbitrary<WorldFrame> = fc.record({
   originPx: fc.record({
     x: fc.double({ min: 0, max: 2000, noNaN: true }),
