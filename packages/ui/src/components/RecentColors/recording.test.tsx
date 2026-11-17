@@ -74,8 +74,8 @@ describe('recent-color recording', () => {
     const store = setup(
       <SwatchGrid
         options={[{ value: null, label: 'None' }, { value: '#ff0000ff', label: 'Red' }, { value: '#00ff00ff', label: 'Green' }]}
-        onChange={() => {}}
-        onAltChange={() => {}}
+        onSelect={() => {}}
+        onAltSelect={() => {}}
       />,
     );
     fireEvent.click(screen.getByRole('button', { name: 'Red' }));

@@ -2,7 +2,7 @@ import { useId, useState, type ReactElement } from 'react';
 import { getAlpha01 } from '@weasel-js/paint';
 import type { RunAlign } from '@weasel-js/geom';
 import { useRun } from '../Run';
-import { SwatchGrid, swatchId, type SwatchChange, type SwatchGridOption } from '../SwatchGrid';
+import { SwatchGrid, swatchId, type SwatchSelect, type SwatchGridOption } from '../SwatchGrid';
 import { SwatchRings, type SwatchRingGroup } from '../SwatchGrid/SwatchRings';
 import { Select } from '../Select';
 import { holdScope, useControlAccess, type HoldProps } from '../Disabled';
@@ -18,7 +18,7 @@ import { BUILTIN_PALETTES, type SwatchPalette } from './palettes';
 import s from './SwatchStrip.module.css';
 
 /** What {@link SwatchStrip} is told when a swatch applies: its color, whatever its id, and the swatch. */
-export type SwatchColorChange = (color: string | null, option: SwatchGridOption) => void;
+export type SwatchColorSelect = (color: string | null, option: SwatchGridOption) => void;
 
 /** Props for {@link SwatchStrip}. Disabled or read-only, its swatches and palette picker are held as a
  *  {@link SwatchGrid}'s are. */
@@ -26,10 +26,10 @@ export interface SwatchStripProps extends HoldProps {
   /** The color to mark current, in either row. `null` marks "no paint". */
   value?: string | null;
   /** A swatch applied: click, Enter or Space, with its color and the swatch. */
-  onChange: SwatchColorChange;
+  onSelect: SwatchColorSelect;
   /** The alternate target, as on {@link SwatchGrid}: shift-click,
    *  right-click, Shift+Enter. */
-  onAltChange?: SwatchColorChange;
+  onAltSelect?: SwatchColorSelect;
   /** The preset palettes on offer. Default {@link BUILTIN_PALETTES}. More
    *  than one adds a picker. */
   palettes?: readonly SwatchPalette[];
@@ -71,8 +71,8 @@ function same(a: string | null, b: string | null): boolean {
  * it moves to the head of the recent row — as does a color committed
  * through any other picker under the same {@link RecentColorsProvider}.
  *
- * Like {@link SwatchGrid} it applies nothing itself; `onChange` and
- * `onAltChange` hand the color to the app.
+ * Like {@link SwatchGrid} it applies nothing itself; `onSelect` and
+ * `onAltSelect` hand the color to the app.
  *
  * Inside a curved `Along` its rows lie on rings as a {@link SwatchGrid}'s do: the recent rows on the outermost, the
  * palette's further in, each section's heading or palette picker first on its first ring.
@@ -80,9 +80,9 @@ function same(a: string | null, b: string | null): boolean {
 export function SwatchStrip(props: SwatchStripProps): ReactElement {
   const { value, className } = props;
   const access = useControlAccess(props);
-  const onChange: SwatchChange = (_, o) => props.onChange(o.value, o);
-  const alt = props.onAltChange;
-  const onAltChange: SwatchChange | undefined = alt && ((_, o) => alt(o.value, o));
+  const onSelect: SwatchSelect = (_, o) => props.onSelect(o.value, o);
+  const alt = props.onAltSelect;
+  const onAltSelect: SwatchSelect | undefined = alt && ((_, o) => alt(o.value, o));
   const palettes = props.palettes ?? BUILTIN_PALETTES;
   const columns = props.columns ?? 10;
   const ctxStore = useRecentColorsStore();
@@ -131,7 +131,7 @@ export function SwatchStrip(props: SwatchStripProps): ReactElement {
   if (shown) rings.push({ key: `palette:${shown.id}`, label: shown.name, options: shown.colors, value: currentIn(shown.colors), columns: shown.columns ?? columns, lead: paletteLead });
 
   const grids = curved ? (
-    <SwatchRings shape={curved} align={run.align ?? 'center'} groups={rings} onChange={onChange} onAltChange={onAltChange} />
+    <SwatchRings shape={curved} align={run.align ?? 'center'} groups={rings} onSelect={onSelect} onAltSelect={onAltSelect} />
   ) : (
     <>
       {store && (
@@ -144,8 +144,8 @@ export function SwatchStrip(props: SwatchStripProps): ReactElement {
               value={currentIn(recentOptions)}
               columns={columns}
               align={props.align}
-              onChange={onChange}
-              onAltChange={onAltChange}
+              onSelect={onSelect}
+              onAltSelect={onAltSelect}
             />
           ) : (
             <p className={s.empty}>No recent colors</p>
@@ -162,8 +162,8 @@ export function SwatchStrip(props: SwatchStripProps): ReactElement {
             value={currentIn(shown.colors)}
             columns={shown.columns ?? columns}
             align={props.align}
-            onChange={onChange}
-            onAltChange={onAltChange}
+            onSelect={onSelect}
+            onAltSelect={onAltSelect}
           />
         </section>
       )}

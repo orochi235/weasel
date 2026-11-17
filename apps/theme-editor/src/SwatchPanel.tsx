@@ -180,7 +180,7 @@ export function SwatchPanel({ anchors, onChange, count }: SwatchPanelProps) {
           options={crayons}
           value={swatches.filter((s) => pinnedNames.has(s.name)).map((s) => s.key)}
           columns={CRAYON_COLUMNS}
-          onChange={(key) => {
+          onSelect={(key) => {
             const s = key === null ? undefined : byKey.get(key);
             if (!s) return;
             if (pinnedNames.has(s.name)) unpin(s.name);
