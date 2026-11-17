@@ -14,6 +14,16 @@ describe('parsePackageRoute', () => {
     });
   });
 
+  it('reads a trailing slash as the address without it', () => {
+    expect(parsePackageRoute('pkg/geom/')).toEqual({ package: 'geom', tab: 'overview', rest: '' });
+    expect(parsePackageRoute('pkg/geom/reference/')).toEqual({ package: 'geom', tab: 'reference', rest: '' });
+    expect(parsePackageRoute('pkg/geom/guides/paths/')).toEqual({ package: 'geom', tab: 'guides', rest: 'paths' });
+  });
+
+  it('answers null for a path under the overview, which has none', () => {
+    expect(parsePackageRoute('pkg/geom/overview/x')).toBeNull();
+  });
+
   it('answers null for a demo id, the index, and a tab that does not exist', () => {
     expect(parsePackageRoute('gestures')).toBeNull();
     expect(parsePackageRoute('pkg')).toBeNull();
