@@ -52,7 +52,7 @@ export function createSceneDiff(): SceneDiff {
       const was = sent;
       sent = { nodes, order, frame };
       const pickIds = scenePickIds(scene);
-      const numbered = (ids: Iterable<string>): [string, number][] => [...ids].map((id) => [id, pickIds.idOf(id)]);
+      const numbered = (ids: Iterable<string>): [string, number][] => [...ids].map((id) => [id, pickIds.pickIdOf(id)]);
       if (!was || was.frame !== frame) return { reset: json, pickIds: numbered(order) };
 
       const changed: WireNode[] = [];

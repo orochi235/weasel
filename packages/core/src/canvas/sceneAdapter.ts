@@ -216,7 +216,7 @@ export function sceneToAdapter<TData, TLayer extends string, TPose>(
     ...scenePoseReads(scene),
     poseTarget: (id, descriptor) => scenePoseTarget(scene, id, descriptor ?? d),
     getLayers: () => scene.layers.map((l) => ({ id: l.id, visible: l.visible, parallax: l.parallax })),
-    pickIdOf: (id) => scenePickIds(scene).idOf(id),
+    pickIdOf: (id) => scenePickIds(scene).pickIdOf(id),
     subscribeLayers: (listener) => scene.subscribe(listener),
     getLayout: (id) => scene.layoutOf(asNodeId(id)),
     // With a label the ops are one batch checkpoint; without one they are
