@@ -1,7 +1,7 @@
 import { useMemo } from 'react';
 import type { PrefGroup } from '@weasel-js/prefs';
 import {
-  addNode, catalogOf, childrenOf, dissolve, editAsset, filed, joinPath, keyOf, moveNodes, NO_CATALOG, NO_MOVES,
+  addNode, catalogOf, childrenOf, dissolve, editAsset, fileActions, joinPath, keyOf, moveNodes, NO_CATALOG, NO_MOVES,
   nodeAt, parentPath, pathsIn, type SchemaRoot, type SchemaTarget, scopedPath, uniqueKey, type Workspace,
 } from '@weasel-js/prefs/edit';
 import type { EditorAction } from './editorActions';
@@ -48,7 +48,7 @@ export function useActionCatalog({ workspace, current, actions, write, onPick }:
 }): ActionCatalog | null {
   const asset = catalogOf(workspace);
   const held = (asset?.root as PrefGroup | undefined) ?? NO_CATALOG;
-  const root = useMemo(() => filed(held, actions ?? []), [held, actions]);
+  const root = useMemo(() => fileActions(held, actions ?? []), [held, actions]);
   const selection = useEditorSelection(root, unfolded);
   if (actions === null) return null;
   const editable = asset !== undefined && asset.readOnly !== true;

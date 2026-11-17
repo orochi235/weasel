@@ -6,7 +6,7 @@
  *
  * @packageDocumentation
  */
-export { actionCatalog, dissolve, filed, firedBy, keyTails, NO_CATALOG } from './edit/actionCatalog';
+export { actionCatalog, dissolve, fileActions, firedBy, keyTails, NO_CATALOG } from './edit/actionCatalog';
 export { actionLeaf, actionLeafKey, deadActionPaths, type SchemaAction } from './edit/actionLeaves';
 export { exportOf, type AssetExport } from './edit/assetExport';
 export { pathsIn, scopedPath } from './edit/assetScope';
