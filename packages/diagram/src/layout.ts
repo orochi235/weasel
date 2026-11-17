@@ -189,7 +189,7 @@ export function placeSlots(
     placed.set(node.id, worldOf(slot, extent(node.bounds, axes.rank), axes));
   }
 
-  return translated(graph, placed, pinned, tolerance);
+  return movesFrom(graph, placed, pinned, tolerance);
 }
 
 /** A slot's top-left in world coordinates, before {@link placeSlots}'s
@@ -241,7 +241,7 @@ export function untilSettled(
  * {@link placeSlots}'s second half, for a layout that already works in world
  * coordinates.
  */
-export function translated(
+export function movesFrom(
   graph: Graph,
   placed: ReadonlyMap<string, Vec2>,
   pinned: ReadonlySet<string>,
@@ -262,7 +262,7 @@ export function translated(
   return out;
 }
 
-/** How far {@link translated} moves a placement: onto the first pinned node,
+/** How far {@link movesFrom} moves a placement: onto the first pinned node,
  *  or else so its low corner lands on the graph's current one. */
 export function anchorOffset(
   graph: Graph,

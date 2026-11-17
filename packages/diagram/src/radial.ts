@@ -19,7 +19,7 @@
 import type { Vec2 } from '@weasel-js/core/math';
 import { maxOf } from '@weasel-js/geom';
 import type { GraphNode } from './graph';
-import { DEFAULT_NODE_GAP, DEFAULT_RANK_GAP, graphOrder, pinnedSet, translated, untilSettled, type LayoutFn } from './layout';
+import { DEFAULT_NODE_GAP, DEFAULT_RANK_GAP, graphOrder, pinnedSet, movesFrom, untilSettled, type LayoutFn } from './layout';
 import { forestOf, subtreeBlocks } from './tree';
 
 type Children = ReadonlyMap<string, readonly GraphNode[]>;
@@ -42,7 +42,7 @@ const radialOnce: LayoutFn = (graph, opts = {}) => {
     for (const [id, p] of tree.at) placed.set(id, { x: p.x, y: p.y - tree.top + top });
     top += tree.bottom - tree.top + nodeGap;
   }
-  return translated(graph, placed, pinnedSet(graph, opts), opts.tolerance);
+  return movesFrom(graph, placed, pinnedSet(graph, opts), opts.tolerance);
 };
 
 type Blocks = ReturnType<typeof subtreeBlocks>;

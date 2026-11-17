@@ -13,7 +13,7 @@ import {
   DEFAULT_NODE_GAP,
   DEFAULT_RANK_GAP,
   pinnedSet,
-  translated,
+  movesFrom,
   type Bounds,
   type Graph,
   type LayoutDirection,
@@ -149,7 +149,7 @@ function planFrom(graph: Graph, placed: ElkPlacement, opts: ElkLayoutOptions): E
   }
 
   return {
-    moves: translated(graph, placed.nodes, pinned, tolerance),
+    moves: movesFrom(graph, placed.nodes, pinned, tolerance),
     waypoints,
     labels,
     ports,

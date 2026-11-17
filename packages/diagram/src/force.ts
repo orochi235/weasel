@@ -20,7 +20,7 @@ import { groupCohesion, separateGroups } from './forceGroups';
 import {
   center,
   pinnedSet,
-  translated,
+  movesFrom,
   type LayoutFn,
   type LayoutOptions,
   type LayoutResult,
@@ -256,7 +256,7 @@ export const force = (graph: Graph, opts: ForceOptions = {}): LayoutResult => {
   if (graph.nodes.length === 0) return new Map();
   const relaxation = forceRelaxation(graph, opts);
   relaxation.sim.tick(opts.iterations ?? DEFAULTS.iterations);
-  return translated(graph, relaxation.placed(), relaxation.pinned, opts.tolerance);
+  return movesFrom(graph, relaxation.placed(), relaxation.pinned, opts.tolerance);
 };
 
 /** `ForceOptions` only widens `LayoutOptions`, so this is a `LayoutFn` — but

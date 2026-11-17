@@ -80,7 +80,7 @@ export {
   plannerPlan,
   seededOrder,
   placeSlots,
-  translated,
+  movesFrom,
   untilSettled,
 } from './layout';
 export { outlinePolyline, portsOnOutline, rayHit } from './onOutline';

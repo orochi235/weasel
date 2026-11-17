@@ -13,7 +13,7 @@ import {
   axesFor,
   extent,
   pinnedSet,
-  translated,
+  movesFrom,
   untilSettled,
   worldOf,
   type LayoutOptions,
@@ -141,7 +141,7 @@ function planOnce(graph: Graph, opts: LayoutOptions = {}): LayeredPlan {
     const slot = slots.get(node.id);
     if (slot !== undefined) placed.set(node.id, worldOf(slot, extent(node.bounds, axes.rank), axes));
   }
-  const moves = translated(graph, placed, pinned, opts.tolerance);
+  const moves = movesFrom(graph, placed, pinned, opts.tolerance);
   const offset = anchorOffset(graph, placed, pinned);
 
   // A pinned node stays where it is, not where its rank would put it, so
