@@ -11,6 +11,7 @@ export const resolveMode = (picked: unknown, system: Mode): Mode =>
 /**
  * An `applyGlobals` that hands `apply` the resolved mode, and applies each target's last globals again when the OS
  * scheme changes. One target per root: the workshop applies to every open story's host through this one function.
+ * A root that has left the document is forgotten at the next apply or scheme change.
  */
 export function followScheme(
   apply: (globals: Globals, target: GlobalsTarget, mode: Mode) => void,
@@ -25,6 +26,7 @@ export function followScheme(
     }
   });
   return (globals, target) => {
+    for (const root of last.keys()) if (root !== target.root && !root.isConnected) last.delete(root);
     const entry = { globals, target };
     last.set(target.root, entry);
     run(entry);
