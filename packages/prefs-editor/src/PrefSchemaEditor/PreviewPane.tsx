@@ -246,8 +246,8 @@ function SectionPreview({ schema, renderers, selected, onSelect, onDefaults, ove
       <div className={s.previewStage}>
         <SidebarPanel className={s.previewPanel}>
         <SelectionPanel scene={scene} selection={SELECTION} properties={[{ name: KIND, schema }]} routing={ROUTING}
-          renderers={renderers} kindLabel={() => schema.name} selected={marked} markHidden over={over}
-          onSelect={onSelect && ((path, how) => {
+          renderers={renderers} kindLabel={() => schema.name} marked={marked} markHidden over={over}
+          onMark={onSelect && ((path, how) => {
             const at = treePathOfPanel(schema, path);
             if (at !== null) onSelect(at, rangeIn(how, (row) => treePathOfPanel(schema, row)));
           })} />

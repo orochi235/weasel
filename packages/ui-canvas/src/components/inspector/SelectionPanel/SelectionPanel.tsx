@@ -89,12 +89,12 @@ export interface SelectionPanelProps<TData, TLayer extends string, TPose> extend
    * the tab that holds it. A path the panel draws no row for marks the row
    * it lies inside, or nothing.
    */
-  selected?: readonly string[];
-  /** The reader pressed or focused into a row, reported as `selected` names
+  marked?: readonly string[];
+  /** The reader pressed or focused into a row, reported as `marked` names
    *  it: a paired row as its first leaf, and a section's heading, tab, or
    *  panel as the section's key. `how.toggle` is true when Cmd or Ctrl was
    *  held. A press on one of several marked rows is reported on its click. */
-  onSelect?: (path: string, how: PrefSelectHow) => void;
+  onMark?: (path: string, how: PrefSelectHow) => void;
   className?: string;
 }
 
@@ -146,9 +146,9 @@ export function SelectionPanel<TData, TLayer extends string, TPose>(
   warnUnwritable(kinds, panelLeaves);
   const leaves = new Map(panelLeaves.map(({ path, leaf }) => [path, leaf] as const));
   const fields = prefFieldChoices({ name: '', members: Object.fromEntries(leaves) });
-  const shown = panelMarkedPaths(sections, props.selected ?? NO_MARKS, renderers);
+  const shown = panelMarkedPaths(sections, props.marked ?? NO_MARKS, renderers);
   const marks: PanelMarks = { selected: shown, lead: shown.at(-1) ?? null, ...(props.markHidden ? { hidden: scope.hidden } : {}) };
-  const rowSelection = useSelectedRow(props.selected ?? NO_MARKS, marks.lead ?? null, props.onSelect);
+  const rowSelection = useSelectedRow(props.marked ?? NO_MARKS, marks.lead ?? null, props.onMark);
   const { settles, textWaitMs } = useParamsPolicy('panel');
 
   if (nodes.length === 0) {

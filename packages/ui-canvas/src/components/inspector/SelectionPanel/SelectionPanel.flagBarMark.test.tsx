@@ -30,7 +30,7 @@ function marked(selected: readonly string[], renderers?: Record<string, LeafRend
   scene.add({ id: asNodeId('n'), kind: 'mark', layer: 'default', pose: {}, data: {} });
   const { container } = render(
     <SelectionPanel scene={scene} selection={{ current: [asNodeId('n')] }} properties={properties} routing={routing}
-      selected={selected} renderers={renderers} />,
+      marked={selected} renderers={renderers} />,
   );
   return [...container.querySelectorAll(MARKED)].map((el) => el.getAttribute('data-pref-path'));
 }
