@@ -707,7 +707,7 @@ The snap pipeline ([snapping.md](./snapping.md)) landed on 2026-10-18 with these
   as the end of its paragraph: X8 closes every embedding and isolate there, BD9 pairs no `PDI` past it, and `'auto'`
   takes its direction from before it, so `'\nא'` reads left to right where it read right to left. text's layout cuts
   paragraphs before calling it, so only a separator text does not cut at (U+001C–U+001E) meets this (f533898fb).
-- 2026-11-16 (audit 29, the lane's call): the edit overlay writes a `selectionBackground` or `selectionColor`,
+- Ruled 2026-11-16 (audit 29): the edit overlay writes a `selectionBackground` or `selectionColor`,
   default included, into its `::selection` rule only when `parsesAsColor` (`@weasel-js/paint`) reads it as a CSS
   color; any other value is left out with a warning, and the rule is not written when neither is one. There is no
   override: the value is stored document data going into a page-wide stylesheet.
@@ -2513,9 +2513,9 @@ Calls the lanes made without a ruling:
 
 ## Audit round twenty-nine (2026-11-16): core and its state
 
-- 2026-11-16 (the lane's call): `addPage` throws on a page id the scene already has, and `setPages` and `createPageRun`
+- Ruled 2026-11-16: `addPage` throws on a page id the scene already has, and `setPages` and `createPageRun`
   on a page id given twice, rather than minting a fresh id with `nextPageId`.
-- 2026-11-16 (the lane's call): `registerOp` refuses a kind starting `revert:`, as it refuses `kit:`, rather than
+- Ruled 2026-11-16: `registerOp` refuses a kind starting `revert:`, as it refuses `kit:`, rather than
   renaming the inverse ops a saved history holds.
 
 ## Audit round twenty-nine (2026-11-16): labs
@@ -2542,8 +2542,10 @@ Calls the lanes made without a ruling:
   layout and the route writers already do. A locked shape keeps its old theme colors and size; a sequence with
   any locked part is not drawn again. The alternative, writing through `scene.unlocked`, would treat a theme
   as part of the document rather than an edit of the node.
-- 2026-11-16 (my call): a Mermaid flowchart node's `@{ … }` metadata that is not `key: value` pairs throws, naming
+- Ruled 2026-11-16: a Mermaid flowchart node's `@{ … }` metadata that is not `key: value` pairs throws, naming
   the line, as a kanban card's does; the flowchart had read `shape` alone as a key with an empty value.
+- Ruled 2026-11-16: the Diagram JSON reader refuses a file whose theme object does not check (`diagramThemeErrors`),
+  rather than taking it as is and failing later in `diagramThemeFrom`.
 
 ## Audit round thirty (2026-11-16): the component kit
 
