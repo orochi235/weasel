@@ -231,6 +231,14 @@ describe('custom op seam', () => {
     ).toThrow(/reserved/);
   });
 
+  it('rejects a revert:* kind, which names another kind\'s inverse in a saved history', () => {
+    const s = makeScene();
+    expect(() => s.registerOp('revert:commit', { apply: () => {}, revert: () => {} })).toThrow(/reserved/);
+    expect(() =>
+      createScene<Data, Layer>({ systemLayers: [{ id: 'structures' }], ops: { 'revert:x': { apply: () => {}, revert: () => {} } } }),
+    ).toThrow(/reserved/);
+  });
+
   it('rejects a kit:* kind passed in options.ops, which would replace the kit op', () => {
     expect(() =>
       createScene<Data, Layer>({

@@ -102,6 +102,7 @@ export function createOpTable(env: OpTableEnv): OpTable {
   return {
     handlers: handlers.reflection,
     register: (kind, handler, options) => {
+      if (kind.startsWith(REVERT)) throw new Error(`Scene: op kind "${kind}" is reserved (${REVERT}* names a kind's revert)`);
       const held = handlers.get(kind);
       if (held === handler) return;
       if (held && !options?.replace) throw new ExtensionConflictError('Scene op', kind);

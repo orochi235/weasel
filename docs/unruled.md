@@ -2502,3 +2502,5 @@ Calls the lanes made without a ruling:
 
 - 2026-11-16 (the lane's call): `addPage` throws on a page id the scene already has, and `setPages` and `createPageRun`
   on a page id given twice, rather than minting a fresh id with `nextPageId`.
+- 2026-11-16 (the lane's call): `registerOp` refuses a kind starting `revert:`, as it refuses `kit:`, rather than
+  renaming the inverse ops a saved history holds.
