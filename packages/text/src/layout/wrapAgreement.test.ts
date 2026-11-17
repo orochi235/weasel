@@ -7,7 +7,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { registerFont, FIXTURE_FONT } from '@weasel-js/font';
 import { _resetFontRegistryForTests } from '@weasel-js/font/test-seams';
 import { layoutRuns } from './layoutRuns';
-import { layoutCanvasRuns, type MeasureFn } from '../markdownText';
+import { layoutCanvasRuns, type CanvasMeasureFn } from '../markdownText';
 import type { ResolvedRun } from '../runs/resolveRuns';
 
 const PARAGRAPHS: Record<string, string> = {
@@ -29,7 +29,7 @@ const FONT = {
 };
 
 /** The atlas's advances, which is what `layoutRuns` sums at scale 1. */
-const measure: MeasureFn = (text) => [...text].reduce((w, c) => w + advanceOf(c.codePointAt(0)!), 0);
+const measure: CanvasMeasureFn = (text) => [...text].reduce((w, c) => w + advanceOf(c.codePointAt(0)!), 0);
 
 beforeEach(async () => {
   _resetFontRegistryForTests();

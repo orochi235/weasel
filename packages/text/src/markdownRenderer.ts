@@ -9,7 +9,7 @@ import { fontString } from './textStyle';
 import { graphemeEnds } from './measure/graphemes';
 import { DECORATION_KINDS, decorationRule, type DecorationKind } from './layout/decorationMetrics';
 import {
-  layoutCanvasRuns, type FaceMetricsFn, type MarkdownFontOptions, type MeasureFn, type PositionedRun,
+  layoutCanvasRuns, type FaceMetricsFn, type MarkdownFontOptions, type CanvasMeasureFn, type CanvasPositionedRun,
 } from './markdownText';
 
 /** Pluggable text-painting strategy. The default fills white at `(x, y)`; markdown renderers replace this. */
@@ -23,7 +23,7 @@ export type TextRenderer = (
 /** Whether `ctx` tracks text itself (`CanvasRenderingContext2D.letterSpacing`). */
 const tracksItself = (ctx: CanvasRenderingContext2D): boolean => typeof ctx.letterSpacing === 'string';
 
-function canvasMeasure(ctx: CanvasRenderingContext2D): MeasureFn {
+function canvasMeasure(ctx: CanvasRenderingContext2D): CanvasMeasureFn {
   return (text, font) => {
     ctx.font = fontString(font);
     if (!tracksItself(ctx) || ctx.letterSpacing === '0px') return ctx.measureText(text).width;
@@ -110,7 +110,7 @@ export function createMarkdownRenderer(
     c: CanvasRenderingContext2D,
     x: number,
     y: number,
-    drawRun: (run: PositionedRun, rx: number, ry: number, lineIndex: number) => void,
+    drawRun: (run: CanvasPositionedRun, rx: number, ry: number, lineIndex: number) => void,
   ): void {
     const align = c.textAlign;
     const spacing = tracksItself(c) ? c.letterSpacing : null;

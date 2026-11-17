@@ -127,8 +127,8 @@ a zoom other than 1.
 ## Odds and ends
 
 - `markdownText.ts` and `markdownRenderer.ts` (in `@weasel-js/text`) — `layoutCanvasRuns` and the
-  2D-canvas `createMarkdownRenderer` over it, the richer layout path (`PositionedRun`, `LayoutLine`,
-  `LayoutResult`).
+  2D-canvas `createMarkdownRenderer` over it, the richer layout path (`CanvasPositionedRun`, `CanvasRunsLine`,
+  `CanvasRunsLayout`).
 - `renderLabel.ts` (in `@weasel-js/text`) — the small pill-with-text used for chrome labels, with a
   pluggable `TextRenderer`. Unrelated to scene text nodes.
 - `textCommand.ts` (in `@weasel-js/renderer`) — the draw-command builders. `textCommandFromPose` is the

@@ -1521,7 +1521,7 @@ Calls the round made:
 - `CommandPalette`'s action-settings dialog stays editable when its action turns disabled; the popover disables. Left as is.
 - `CommandPalette`'s `reasonLabels` replaces the default wording rather than merging with it. Left as is.
 - `createMarkdownRenderer` ignores a run's own `fill`, and under a `textBaseline` other than alphabetic places each
-  run by its own font's metrics. Left as is. `PositionedRun.lineSize` is new, after `size` was removed.
+  run by its own font's metrics. Left as is. `CanvasPositionedRun.lineSize` is new, after `size` was removed.
 - `onClick`, hover, `getNodeAtPoint` and press classification take the topmost hit, not `selectTool.pickBest`, whose
   docs say they name the node a click selects; `pickBest` cannot see the asking view's camera or the live Alt key.
   Left as is.

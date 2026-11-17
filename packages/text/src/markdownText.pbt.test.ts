@@ -5,7 +5,7 @@
  */
 import { describe, expect, it } from 'vitest';
 import fc from 'fast-check';
-import { layoutCanvasRuns, type MarkdownFont, type PositionedRun } from './markdownText';
+import { layoutCanvasRuns, type MarkdownFont, type CanvasPositionedRun } from './markdownText';
 import type { StyledRun } from './runs';
 import { graphemeCount } from './measure/graphemes';
 import { isHardLineBreak, lineBreakOpportunities, NO_BREAK } from './layout/lineBreak/lineBreaks';
@@ -54,7 +54,7 @@ const opts = fc.record({ letterSpacing: fc.constantFrom(0, 1), tabSize: fc.const
 const BETWEEN = /^[ \t\n\r\u000b\u000c\u0085\u2028\u2029]*$/u;
 
 const close = (a: number, b: number) => Math.abs(a - b) <= 1e-9 * Math.max(1, Math.abs(a), Math.abs(b));
-const lineText = (rs: readonly PositionedRun[]) => rs.map((r) => r.text).join('');
+const lineText = (rs: readonly CanvasPositionedRun[]) => rs.map((r) => r.text).join('');
 
 describe('layoutCanvasRuns, property', () => {
   it('lays every run out finite, each line tiled from 0 by its runs', () => {

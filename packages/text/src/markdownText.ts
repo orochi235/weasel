@@ -22,7 +22,7 @@ export interface MarkdownFont {
 
 /** Width of `text` set in `font`, glyphs only: `layoutCanvasRuns` adds a run's
  *  letter spacing itself. `createMarkdownRenderer` measures with its canvas. */
-export type MeasureFn = (text: string, font: MarkdownFont) => number;
+export type CanvasMeasureFn = (text: string, font: MarkdownFont) => number;
 
 /** The face a run's rules and script presets come from, for `layoutCanvasRuns`.
  *  `createMarkdownRenderer` supplies one that looks the family up in the font
@@ -31,9 +31,9 @@ export type FaceMetricsFn = (font: Omit<MarkdownFont, 'fontSize'>) => FaceMetric
 
 /** A `StyledRun` with its resolved size and its position relative to the
  *  start of its line: `x` along the line, `y` off its baseline. */
-export interface PositionedRun extends StyledRun {
+export interface CanvasPositionedRun extends StyledRun {
   x: number;
-  /** Advance width: what the layout's `MeasureFn` measured, plus `tracking`
+  /** Advance width: what the layout's `CanvasMeasureFn` measured, plus `tracking`
    *  after every grapheme cluster, the last included. */
   width: number;
   /** Baseline offset, positive down — a superscript's is negative. Add it to
@@ -78,15 +78,15 @@ function runMetrics(run: StyledRun, fontSize: number, face: FaceMetrics | undefi
 type Segment = StyledRun & { smallCaps?: true; source?: StyledRun };
 
 /** A single laid-out line of text: its positioned runs, total width, and computed line height. */
-export interface LayoutLine {
-  runs: PositionedRun[];
+export interface CanvasRunsLine {
+  runs: CanvasPositionedRun[];
   width: number;
   height: number;
 }
 
 /** Output of `layoutCanvasRuns`: per-line breakdown plus overall block dimensions. */
-export interface LayoutResult {
-  lines: LayoutLine[];
+export interface CanvasRunsLayout {
+  lines: CanvasRunsLine[];
   width: number;
   height: number;
 }
@@ -126,9 +126,9 @@ export function layoutCanvasRuns(
   runs: StyledRun[],
   maxWidth: number,
   fontSize: number,
-  measure: MeasureFn,
+  measure: CanvasMeasureFn,
   opts: LayoutCanvasRunsOptions = {},
-): LayoutResult {
+): CanvasRunsLayout {
   const lineHeightFactor = opts.lineHeight ?? 1.3;
   const tabSize = opts.tabSize ?? DEFAULT_TAB_SIZE;
   const node = {
@@ -182,12 +182,12 @@ export function layoutCanvasRuns(
     return out;
   }
 
-  const lines: LayoutLine[] = [];
+  const lines: CanvasRunsLine[] = [];
 
   function commitLine(line: Piece[]) {
     let x = 0;
     let maxSize = 0;
-    const positioned: PositionedRun[] = [];
+    const positioned: CanvasPositionedRun[] = [];
     for (const p of line) {
       const { run, face, font, tracking, y, runSize, holds } = placed[p.run];
       const tab = run.text[p.start] === '\t' ? stopOf(p.run) : null;

@@ -108,11 +108,11 @@ export type {
   MarkdownFontOptions,
   LayoutCanvasRunsOptions,
   MarkdownFont,
-  MeasureFn,
+  CanvasMeasureFn,
   FaceMetricsFn,
-  PositionedRun,
-  LayoutLine,
-  LayoutResult,
+  CanvasPositionedRun,
+  CanvasRunsLine,
+  CanvasRunsLayout,
 } from './markdownText';
 export type { TextRenderer } from './markdownRenderer';
 
