@@ -19,7 +19,7 @@ import {
   toShape,
   worldToFrac,
 } from './frac';
-import { isStale, seenFrom } from './staleness';
+import { isStale, seenValues } from './staleness';
 import type { FracPoint, FracRect } from './types';
 import { fitView } from './view';
 
@@ -286,7 +286,7 @@ describe('staleness', () => {
         fc.property(
           configTree.chain((tree) => fc.tuple(fc.constant(tree), depsAndEdits(tree))),
           ([before, [deps, edits]]) => {
-            const seen = seenFrom(before, deps);
+            const seen = seenValues(before, deps);
             expect(isStale(seen, before, deps)).toBe(false);
             for (const k of Object.keys(seen)) expect(deps).toContain(k);
             let after: unknown = before;
@@ -314,7 +314,7 @@ describe('staleness', () => {
     () => {
       fc.assert(
         fc.property(configTree, keys, path, leafValue, (config, deps, added, value) => {
-          const seen = seenFrom(
+          const seen = seenValues(
             config,
             deps.filter((k) => k !== added),
           );

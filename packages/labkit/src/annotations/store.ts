@@ -19,7 +19,7 @@ import { markDataFrom } from './markData';
 import { markIdOf, splitMarkId } from './markId';
 import { migrateLegacyPoints, type SerializedMarks, shapeFor } from './markShape';
 import { matchesQuery } from './query';
-import { isStale as isStaleAgainst, seenFrom } from './staleness';
+import { isStale as isStaleAgainst, seenValues } from './staleness';
 import type {
   Annotation,
   AnnotationData,
@@ -303,7 +303,7 @@ export function createAnnotationStore(opts: AnnotationStoreOptions): Annotations
       const target = targetOf(init.target);
       const frac = roundFrac(init.frac);
       const shape = shapeFor(init.kind, init.points, frac);
-      const data = markDataFrom(init, shape, seenFrom(config, target?.positionDependsOn ?? []));
+      const data = markDataFrom(init, shape, seenValues(config, target?.positionDependsOn ?? []));
       const node = sceneFor(init.target).add({
         kind: 'mark',
         layer: 'marks',

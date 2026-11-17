@@ -15,7 +15,7 @@ import { beforeAll, describe, expect, it, vi } from 'vitest';
 import { SurfaceCanvasContext, SurfaceContext } from '../surface/SurfaceContext';
 import type { SurfaceClear, SurfaceHandle, TilePainter } from '../surface/useTiledSurface';
 import { AnnotationOverlay } from './AnnotationOverlay';
-import { seenFrom } from './staleness';
+import { seenValues } from './staleness';
 import { createMarkScene } from './store';
 import type { AnnotationTarget } from './types';
 
@@ -130,7 +130,7 @@ describe('<AnnotationOverlay> across an abandoned render', () => {
     // `line` and `arrow` drive the same weasel tool; only the tool id the
     // factory reads tells them apart.
     const made = factories.line?.({ x: 0, y: 0, width: 1, height: 1 }, {} as never);
-    expect(made?.data).toMatchObject({ kind: 'line', seen: seenFrom({ k: 1 }, ['k']) });
+    expect(made?.data).toMatchObject({ kind: 'line', seen: seenValues({ k: 1 }, ['k']) });
   });
 
   it('clears the committed buffer', () => {

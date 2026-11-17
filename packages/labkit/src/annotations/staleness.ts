@@ -10,7 +10,7 @@ import { hasConfigPath, setOwn, valueAtPath } from '../config/path';
 /** The values of `keys` in `config`, each a dotted path, for storing beside a new mark. Keys the
  *  config does not carry are omitted rather than stored as undefined, so the
  *  snapshot says what was known rather than what was asked. */
-export function seenFrom(config: unknown, keys: readonly string[]): Record<string, unknown> {
+export function seenValues(config: unknown, keys: readonly string[]): Record<string, unknown> {
   const out: Record<string, unknown> = {};
   for (const k of keys) {
     if (hasConfigPath(config, k)) setOwn(out, k, valueAtPath(config, k));

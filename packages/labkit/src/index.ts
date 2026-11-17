@@ -124,7 +124,7 @@ export {
   fracToWorld,
   isStale,
   roundFrac,
-  seenFrom,
+  seenValues,
   worldToFrac,
 } from './annotations';
 export type { AnnotationOverlayProps } from './annotations/AnnotationOverlay';
