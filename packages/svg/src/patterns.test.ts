@@ -112,6 +112,18 @@ describe('pattern serialization', () => {
     expect(warnings.join(' ')).toContain('TextureHandle');
   });
 
+  it('says the TextureHandle warning once however many textures the document fills with', () => {
+    const warnings: string[] = [];
+    serializeSvg(
+      [
+        ...patternedRect({ kind: 'texture', texture: { id: 'tex_1' } }),
+        ...patternedRect({ kind: 'texture', texture: { id: 'tex_2' } }),
+      ],
+      { onWarn: (m) => warnings.push(m) },
+    );
+    expect(warnings.filter((m) => m.includes('TextureHandle'))).toHaveLength(1);
+  });
+
   describe('an image pattern', () => {
     const IMAGE: Paint = {
       kind: 'image', src: 'data:image/png;base64,iVBORw0KGgo=', width: 24, height: 12,
