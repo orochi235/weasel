@@ -39,7 +39,7 @@ export function TemplateDialog({ title, action, initial, onChoose, onClose }: {
         {GROUPS.map((g) => (
           <section key={g.id} className="wc-templates-group">
             <h3 className="wc-templates-heading">{g.label}</h3>
-            <ItemList rows={rows(g.id)} selection="single" onActivate={setChosen} containerProps={{ 'aria-label': g.label }} />
+            <ItemList rows={rows(g.id)} selection="single" onAction={setChosen} containerProps={{ 'aria-label': g.label }} />
           </section>
         ))}
       </div>

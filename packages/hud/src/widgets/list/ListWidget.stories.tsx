@@ -45,7 +45,7 @@ function ListWidget({ selection, rowCount, width }: ListWidgetArgs) {
         <ItemList
           rows={rows.map(({ swatch, ...r }) => (swatch ? { ...r, leading: <span className={s.swatch} /> } : r))}
           selection={select}
-          onActivate={setCurrent}
+          onAction={setCurrent}
           containerProps={{ 'aria-label': 'Layers (DOM)' }}
         />
       </div>

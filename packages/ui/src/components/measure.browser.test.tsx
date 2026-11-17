@@ -99,7 +99,7 @@ describe('a DOM item list is the box measureRowList gives', () => {
 });
 
 function ItemListHost({ rows }: { rows: Parameters<typeof domItemList.draw>[0]['props']['rows'] }) {
-  return domItemList.draw({ props: { rows, onActivate: () => {} } }, {});
+  return domItemList.draw({ props: { rows, onAction: () => {} } }, {});
 }
 
 describe('a DOM menu panel is the box measureMenuPanel gives, as the HUD menu draws it', () => {

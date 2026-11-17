@@ -63,14 +63,14 @@ export interface ItemListProps extends HoldProps {
   /**
    * Whether rows are selectable, and how many at once. The list reports
    * `selected` to assistive tech; choosing what is selected stays with
-   * `onActivate`.
+   * `onAction`.
    */
   selection?: 'single' | 'multi';
   /**
    * A row was clicked, or Enter/Space was pressed on it, with the modifiers
    * held. Clicks and keys on a row's `trailing` controls do not reach this.
    */
-  onActivate?(id: string, index: number, mods: PressModifiers): void;
+  onAction?(id: string, index: number, mods: PressModifiers): void;
   /**
    * Alt+Up (`-1`) or Alt+Down (`1`) on a row: move it. Focus stays on the
    * row wherever it lands. `useReorderDragList`'s `nudge` fits as-is.
@@ -81,7 +81,7 @@ export interface ItemListProps extends HoldProps {
    * and `ids` is every row from the anchor to the newly focused one, in list
    * order. The anchor is the row last focused or activated other than by a
    * range move, so a click or a plain arrow move re-anchors. What the range does to
-   * the selection stays with the consumer, as with `onActivate`. Without it,
+   * the selection stays with the consumer, as with `onAction`. Without it,
    * Shift+Arrow only moves focus.
    */
   onSelectRange?(ids: string[]): void;
@@ -111,7 +111,7 @@ export interface ItemListProps extends HoldProps {
  * **Semantics.** The role follows what the list can do:
  * - nothing to select or activate → `list` / `listitem`, and no row is focusable;
  * - `selection` with no row controls → `listbox` / `option`, `aria-selected`;
- * - any row with `trailing` controls, or `onActivate` without `selection` →
+ * - any row with `trailing` controls, or `onAction` without `selection` →
  *   `grid` / `row`, with the leading content and label in one `gridcell` and
  *   the controls in a second. An option may not contain interactive content,
  *   so a list whose rows host toggles cannot be a listbox.
@@ -126,13 +126,13 @@ export interface ItemListProps extends HoldProps {
  */
 export const ItemList = forwardRef(function ItemList(
   {
-    rows, empty, className, selection, onActivate, onNudge, onSelectRange, dropIndex, overlay,
+    rows, empty, className, selection, onAction, onNudge, onSelectRange, dropIndex, overlay,
     containerProps, ghost, ...own
   }: ItemListProps,
   ref: Ref<HTMLDivElement>,
 ) {
   const hasTrailing = rows.some((r) => r.trailing != null);
-  const mode = listMode({ selection, activatable: onActivate !== undefined, controls: hasTrailing });
+  const mode = listMode({ selection, activatable: onAction !== undefined, controls: hasTrailing });
   const interactive = mode !== 'list';
   const hold = useControlHold(own, { readonlyRole: mode === 'grid' });
   const looks = !hold.disabled;
@@ -168,7 +168,7 @@ export const ItemList = forwardRef(function ItemList(
     ...(onNudge && !hold.refuses ? { onNudge: (id: string, delta: -1 | 1) => onNudge(id, rows.findIndex((r) => r.id === id), delta) } : {}),
     onActivate: (id, mods) => {
       nav.anchor.current = id;
-      if (looks) onActivate?.(id, rows.findIndex((r) => r.id === id), mods);
+      if (looks) onAction?.(id, rows.findIndex((r) => r.id === id), mods);
     },
   });
 
@@ -215,7 +215,7 @@ export const ItemList = forwardRef(function ItemList(
     row.rowProps?.onClick?.(e);
     if (e.defaultPrevented || isInControlWithin(e.target, e.currentTarget)) return;
     nav.anchor.current = row.id;
-    if (looks) onActivate?.(row.id, i, modsOf(e));
+    if (looks) onAction?.(row.id, i, modsOf(e));
   };
 
   const onFocus = (row: ItemListRow) => (e: FocusEvent<HTMLDivElement>) => {

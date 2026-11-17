@@ -6,7 +6,7 @@ import { Disabled, ReadOnly } from '../Disabled';
 import { ItemList, type ItemListProps } from './ItemList';
 
 function renderList(wrap: (node: ReactNode) => ReactNode, props: Partial<ItemListProps> = {}) {
-  const calls = { onActivate: vi.fn(), onNudge: vi.fn(), onSelectRange: vi.fn(), onPointerDown: vi.fn() };
+  const calls = { onAction: vi.fn(), onNudge: vi.fn(), onSelectRange: vi.fn(), onPointerDown: vi.fn() };
   const rows = ['Alpha', 'Beta', 'Gamma'].map((label) => ({
     id: label.toLowerCase(), label, rowProps: { onPointerDown: calls.onPointerDown },
   }));
@@ -15,7 +15,7 @@ function renderList(wrap: (node: ReactNode) => ReactNode, props: Partial<ItemLis
       {wrap(
         <ItemList
           rows={rows} selection="multi" containerProps={{ 'aria-label': 'Items' }}
-          onActivate={calls.onActivate} onNudge={calls.onNudge} onSelectRange={calls.onSelectRange}
+          onAction={calls.onAction} onNudge={calls.onNudge} onSelectRange={calls.onSelectRange}
           {...props}
         />,
       )}
@@ -64,7 +64,7 @@ describe('ItemList held', () => {
   it('read-only still activates and extends, and nudges and drags nothing', () => {
     const calls = renderList((n) => <ReadOnly reason="Shared">{n}</ReadOnly>);
     tryEverything();
-    expect(calls.onActivate).toHaveBeenCalled();
+    expect(calls.onAction).toHaveBeenCalled();
     expect(calls.onSelectRange).toHaveBeenCalled();
     expect(calls.onNudge).not.toHaveBeenCalled();
     expect(calls.onPointerDown).not.toHaveBeenCalled();
@@ -91,7 +91,7 @@ describe('ItemList held', () => {
       { disabled: false },
     );
     tryEverything();
-    expect(calls.onActivate).not.toHaveBeenCalled();
+    expect(calls.onAction).not.toHaveBeenCalled();
     expect(option('Alpha')).toHaveAccessibleDescription('Busy');
   });
 });
