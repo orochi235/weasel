@@ -52,7 +52,7 @@ function ProbeDepSelection({ onValue }: { onValue: (v: unknown) => void }) {
 // Kit-standard descriptor IDs
 // ---------------------------------------------------------------------------
 const KIT_IDS = [
-  'escape', 'menu.context', 'cancelGesture', 'selectAll', 'delete', 'duplicate', 'transformAgain',
+  'deselect', 'menu.context', 'cancelGesture', 'selectAll', 'delete', 'duplicate', 'transformAgain',
   'group', 'ungroup',
   'undo', 'redo',
   'flip',
@@ -238,7 +238,7 @@ describe('useStandardActions', () => {
       </Providers>,
     );
     expect(reg).not.toBeNull();
-    reg!.trigger('escape');
+    reg!.trigger('deselect');
     expect(mockSet).toHaveBeenCalledWith([]);
   });
 
@@ -256,7 +256,7 @@ describe('useStandardActions', () => {
         <CaptureReg />
       </Providers>,
     );
-    reg!.trigger('escape');
+    reg!.trigger('deselect');
     expect(mockSet).not.toHaveBeenCalled();
   });
 
@@ -273,9 +273,9 @@ describe('useStandardActions', () => {
         <Probe />
       </Providers>,
     );
-    expect(seen).toContain('escape');
+    expect(seen).toContain('deselect');
     rerender(<Providers><Probe /></Providers>);
-    expect(seen).not.toContain('escape');
+    expect(seen).not.toContain('deselect');
     expect(seen).toEqual([]);
   });
 

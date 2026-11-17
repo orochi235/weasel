@@ -84,7 +84,7 @@ actions with no default binding fire only via a tool's `bindings` or a `trigger`
 
 | Action id | Default binding |
 |---|---|
-| `escape` | Escape (channel `*`, phase `initial`) |
+| `deselect` | Escape (channel `*`, phase `initial`) |
 | `cancelGesture` | Escape (channel `*`, phase `engaged`) — aborts an in-flight gesture |
 | `selectAll` | Mod+A |
 | `delete` | Delete, Backspace (phase `initial`, so a mid-drag press is ignored) |

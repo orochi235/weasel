@@ -64,7 +64,7 @@ items = [
     ], LW - 40, 'red'), 'filter'),
     ('walk', Card('Walk the list; the first action that runs wins', [
         'Each action is tried once. `enabled()` returning anything but `true`, or an ongoing `start()` returning an empty handle, passes the turn to the next candidate. Nothing left: unhandled.',
-        '▸ With nothing selected, `escape` on `[*:initial] keyDown(Escape)` declines and '
+        '▸ With nothing selected, `deselect` on `[*:initial] keyDown(Escape)` declines and '
         '`tool.resetToDefault` on `[*:*] keyDown(Escape)` fires.',
     ], LW, 'purple'), None),
 ]
@@ -141,12 +141,12 @@ ey = example(ey, 'Escape while editing a path',
              'Mode `path-edit`, a path is being edited, nothing in flight. All four actions are ambient and bound to Escape.',
              [
                  ('—', '`cancelGesture` `[*:engaged] keyDown(Escape)`', 'ambient', '', 'the match, phase', '', 'not a candidate', 'gray'),
-                 ('1', '`escape` `[*:initial] keyDown(Escape)`', 'ambient', '0 0 1 1', 'step 3, phase part', 'none', '`enabled()` declines while a path is edited', 'white'),
+                 ('1', '`deselect` `[*:initial] keyDown(Escape)`', 'ambient', '0 0 1 1', 'step 3, phase part', 'none', '`enabled()` declines while a path is edited', 'white'),
                  ('2', '`exitPathEdit` `[*:*] keyDown(Escape)`', 'ambient', '0 0 0 1', 'step 4', '`mode: path-edit` holds', 'fires', 'green'),
                  ('3', '`tool.resetToDefault` `[*:*] keyDown(Escape)`', 'ambient', '0 0 0 1', 'step 4', 'none', 'not asked', 'white'),
              ],
              [
-                 '`escape` leads on specificity (step 3, its phase part) and declines. `exitPathEdit` and `tool.resetToDefault` tie through step 3; step 4 puts the one whose rule holds first. Outside path edit, `exitPathEdit` is dropped as ineligible instead.',
+                 '`deselect` leads on specificity (step 3, its phase part) and declines. `exitPathEdit` and `tool.resetToDefault` tie through step 3; step 4 puts the one whose rule holds first. Outside path edit, `exitPathEdit` is dropped as ineligible instead.',
              ])
 
 ey = example(ey + 16, 'Bare drag on empty canvas, select tool active',

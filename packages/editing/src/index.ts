@@ -128,7 +128,7 @@ export type {
 
 export { ENGINE_STANDARD_ACTIONS } from './engineStandardActions';
 export { createSelection, useSelection, type UseSelectionOptions } from './selection/useSelection';
-export { escapeAction } from './actions/edit/escape';
+export { deselectAction } from './actions/edit/deselect';
 export { selectAllAction } from './actions/edit/selectAll';
 export { duplicateAction, duplicateSelection } from './actions/edit/duplicate';
 export { groupAction, ungroupAction } from './actions/edit/group';

@@ -1,7 +1,7 @@
 import { cancelGestureAction, contextMenuAction } from '@weasel-js/core';
 import type { FeaturePreset } from '@weasel-js/core';
 import { duplicateAction } from '../actions/edit/duplicate';
-import { escapeAction } from '../actions/edit/escape';
+import { deselectAction } from '../actions/edit/deselect';
 import { groupAction, ungroupAction } from '../actions/edit/group';
 import { selectAllAction } from '../actions/edit/selectAll';
 import { setFillAction } from '../actions/edit/setFill';
@@ -18,7 +18,7 @@ import { selectionPreset } from './selection';
 import { deleteAction } from '../actions/delete/delete';
 
 /** Escape, and canceling the gesture in flight. */
-export const escapePreset: FeaturePreset = { id: 'escape', label: 'Escape', actions: [escapeAction, cancelGestureAction], includes: [selectionPreset] };
+export const escapePreset: FeaturePreset = { id: 'escape', label: 'Escape', actions: [deselectAction, cancelGestureAction], includes: [selectionPreset] };
 /** The context menu. */
 export const contextMenuPreset: FeaturePreset = { id: 'contextMenu', label: 'Context menu', actions: [contextMenuAction], includes: [selectionPreset] };
 /** Cmd/Ctrl+A. */

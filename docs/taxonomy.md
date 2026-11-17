@@ -286,7 +286,7 @@ user-intent operations; the action↔op mapping is many-to-many:
 
 - **1 action → 1 op**: `delete` → `createDeleteOp`.
 - **1 action → N ops**: `align left` → N `createSetPoseOp`s (one per selected item).
-- **0 ops for an action**: `zoom in`, `escape`, `toggle grid` — non-undoable state
+- **0 ops for an action**: `zoom in`, `deselect`, `toggle grid` — non-undoable state
   changes bypass the op pipeline.
 - **Ops without an action**: a gesture commit can emit ops directly
   without dispatching through the action registry.
@@ -400,15 +400,15 @@ dispatcher; one without a binding still registers, and is reached by
 Actions are the *application layer* of state change — the verbs the user can
 invoke. Each one either produces an [Op](#op) batch (for undoable mutations like
 `delete`, `align`, `move`) or emits no ops (for transient/UI state like
-`zoom in`, `escape`, `toggle grid`).
+`zoom in`, `deselect`, `toggle grid`).
 
-Source layout reflects this: both one-shot actions (`delete`, `align`, `escape`, …)
+Source layout reflects this: both one-shot actions (`delete`, `align`, `deselect`, …)
 and drag-based actions (`move`, `resize`, `rotate`, `insert`, `area-select`, …) live
 under `packages/core/src/interactions/actions/`. All default actions are registered as descriptors
 and dispatched through the action registry. A tool's entire input surface is
 `Tool.bindings`, and every gesture resolves through one engine.
 
-Examples: `selectAll`, `escape`, `duplicate`, `nudge`, `reorder`, `delete`,
+Examples: `selectAll`, `deselect`, `duplicate`, `nudge`, `reorder`, `delete`,
 `align.{left,...}`, `distribute.{horizontal,vertical}`, `flip.{x,y}`. Kit defaults
 register via `<SceneCanvas>`, each with the `features` preset that carries it
 (`FEATURE_ACTION_IDS`), or with a tool that binds it; consumer-level actions
@@ -869,7 +869,7 @@ they fit.
   `useDragRadial`, `useDragGesture` — the spatial input primitives.
 - **Actions** (depend on selection + scene): the
   [Actions Registry](#action) and its descriptors — `duplicate`, `delete`,
-  `nudge.*`, `reorder.*`, `selectAll`, `escape`, and the rest. Presets carry
+  `nudge.*`, `reorder.*`, `selectAll`, `deselect`, and the rest. Presets carry
   the descriptors, and `<SceneCanvas>` or `useStandardActions` registers them.
 - **Tools** (depend on gestures + actions): `useSelectTool`, `useRectTool` and
   the other shape tools, `useHandTool`, the viewport tools; `@weasel-js/path-tools`' `usePenTool`.
@@ -1022,7 +1022,7 @@ rebind:
 |---|---|---|---|
 | `select.deep` | the select tool | Cmd+Alt-press (Ctrl+Alt off macOS) on a body | selects the deepest pickable node under the pointer |
 | `group.enter` | `createGroupEntryContribution`, under any tool | double-click on a member of a group outside the entered one | enters the outermost such group |
-| `group.leave.key` | `createGroupEntryContribution`, under any tool | Escape, yielding to `escape` when nothing is entered | leaves one level |
+| `group.leave.key` | `createGroupEntryContribution`, under any tool | Escape, yielding to `deselect` when nothing is entered | leaves one level |
 | `group.leave.press` | the select tool | a press outside the entered group's box | leaves every group that box is outside of |
 
 The entered group is session state beside the selection (`enteredGroup` dep), never saved
