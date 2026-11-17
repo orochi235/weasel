@@ -72,7 +72,7 @@ describe('cameraRigActions', () => {
   });
 
   it('leaves out an action whose every gesture is off', () => {
-    const ids = cameraRigActions({ wheel: false, trackpadPinch: false, touchPinch: false, home: false })
+    const ids = cameraRigActions({ wheel: false, trackpadPinch: false, touchPinch: false, doubleClick: false })
       .map((a) => a.id);
     expect(ids).toEqual([]);
   });

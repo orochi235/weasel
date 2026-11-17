@@ -240,7 +240,7 @@ function OrbitDispatch({
   const actions = useMemo(
     () => [
       ...(labMenu !== null ? [contextMenuAction] : []),
-      ...cameraRigActions({ drag, wheel, trackpadPinch, touchPinch, home: homes }),
+      ...cameraRigActions({ drag, wheel, trackpadPinch, touchPinch, doubleClick: homes }),
     ],
     [drag, wheel, trackpadPinch, touchPinch, homes, labMenu],
   );

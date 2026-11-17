@@ -18,7 +18,7 @@ export interface CameraRigGestures {
   /** Two fingers on a touch screen dolly. Default `true`. */
   touchPinch?: boolean;
   /** A double click returns the camera to the dep's `home`. Default `true`. */
-  home?: boolean;
+  doubleClick?: boolean;
 }
 
 /** Options for {@link cameraRig}. */
@@ -38,7 +38,7 @@ function bind(action: Action, bindings: readonly (BoundGesture | false)[]): Acti
  * the host's own. An action none of whose gestures is on is left out. Every action reads the `camera3d` dep.
  */
 export function cameraRigActions(gestures: CameraRigGestures = {}): Action[] {
-  const { drag = false, wheel = 'plain', trackpadPinch = true, touchPinch = true, home = true } = gestures;
+  const { drag = false, wheel = 'plain', trackpadPinch = true, touchPinch = true, doubleClick = true } = gestures;
   return [
     ...bind(cameraOrbitAction, [drag && ORBIT_DRAG]),
     ...bind(cameraPanAction, [drag && PAN_DRAG]),
@@ -49,7 +49,7 @@ export function cameraRigActions(gestures: CameraRigGestures = {}): Action[] {
       trackpadPinch && DOLLY_PINCH,
     ]),
     ...bind(cameraPinchDollyAction, [touchPinch && PINCH_DOLLY_TOUCH]),
-    ...bind(cameraHomeAction, [home && HOME_DOUBLE_CLICK]),
+    ...bind(cameraHomeAction, [doubleClick && HOME_DOUBLE_CLICK]),
   ];
 }
 
