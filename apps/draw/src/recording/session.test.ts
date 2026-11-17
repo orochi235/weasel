@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import type { SceneSnapshot } from '../recorder';
+import type { Recording, SceneSnapshot } from '../recorder';
 import { deserializeRecording } from '../recordingIO';
 import { createRecordingSession, RECORD_KEY, type RecordingHost } from './session';
 
@@ -103,7 +103,7 @@ describe('recording session', () => {
     for (const [text, why] of cases) {
       const t = setup({ pick: async () => new Blob([text]) });
       await t.session.play('flush');
-      expect(t.host.failed).toHaveBeenCalledWith(expect.stringMatching(why));
+      expect(t.host.failed).toHaveBeenCalledWith(expect.stringMatching(why), 'play');
       expect(t.host.restore).not.toHaveBeenCalled();
       expect(t.session.playing).toBe(false);
       t.detach();
@@ -123,5 +123,43 @@ describe('recording session', () => {
     t.detach();
     expect(t.session.recording).toBe(false);
     expect(t.saved).toHaveLength(0);
+  });
+
+  /** A recording file of a press, then another press a minute on. */
+  const LONG = (): Blob => {
+    const press = (t: number) => ({ type: 'pointerdown', t, clientX: 1, clientY: 1, pointerId: 1, target: 'canvas' }) as const;
+    const rec: Recording = { version: 1, startedAt: '', viewport: { w: 1, h: 1 }, scene: null, events: [press(0), press(60_000)] };
+    return new Blob([JSON.stringify(rec)]);
+  };
+
+  it('stops a replay when the surface goes away, and is ready to play again', async () => {
+    const t = setup({ pick: async () => LONG() });
+    const presses = vi.fn();
+    t.canvas.addEventListener('pointerdown', presses);
+    const played = t.session.play('realtime');
+    await vi.waitFor(() => expect(presses).toHaveBeenCalledOnce());
+    t.detach();
+    await played;
+    expect(presses).toHaveBeenCalledOnce();
+    expect(t.session.playing).toBe(false);
+  });
+
+  it('stops a replay on a second Play', async () => {
+    const t = setup({ pick: vi.fn(async () => LONG()) });
+    const played = t.session.play('realtime');
+    await vi.waitFor(() => expect(t.session.playing).toBe(true));
+    await t.session.play('realtime');
+    await played;
+    expect(t.session.playing).toBe(false);
+    expect(t.host.pick).toHaveBeenCalledOnce();
+  });
+
+  it('reports a recording it cannot save', async () => {
+    const t = setup({ snapshot: () => ({ ...SNAPSHOT, scene: { big: 1n } }) as unknown as SceneSnapshot });
+    await t.session.toggle();
+    await t.session.toggle();
+    expect(t.saved).toHaveLength(0);
+    expect(t.host.failed).toHaveBeenCalledWith(expect.stringMatching(/BigInt/), 'save');
+    expect(t.session.recording).toBe(false);
   });
 });

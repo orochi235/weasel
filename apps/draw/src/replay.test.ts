@@ -153,6 +153,33 @@ describe('replayRecording', () => {
     ]);
   });
 
+  it('replays each move of a two-pointer gesture as its own pointer', async () => {
+    const moves: Array<{ buttons: number; pointerId: number; isPrimary: boolean }> = [];
+    canvas.addEventListener('pointermove', (e) => {
+      const pe = e as PointerEvent;
+      moves.push({ buttons: pe.buttons, pointerId: pe.pointerId, isPrimary: pe.isPrimary });
+    });
+    const down = (t: number, pointerId: number) =>
+      ({ type: 'pointerdown', t, clientX: 0, clientY: 0, button: 0, buttons: 1, pointerType: 'touch', pointerId, target: 'canvas' }) as const;
+    const up = (t: number, pointerId: number) =>
+      ({ type: 'pointerup', t, clientX: 0, clientY: 0, button: 0, buttons: 0, pointerType: 'touch', pointerId, target: 'canvas' }) as const;
+    const rec = baseRecording([
+      down(0, 1),
+      down(1, 2),
+      { type: 'pointermove', t: 2, clientX: 1, clientY: 1, pointerId: 1, target: 'canvas' },
+      { type: 'pointermove', t: 3, clientX: 2, clientY: 2, target: 'canvas' },
+      up(4, 2),
+      { type: 'pointermove', t: 5, clientX: 3, clientY: 3, target: 'canvas' },
+      up(6, 1),
+    ]);
+    await replayRecording(rec, { canvas, mode: 'flush' });
+    expect(moves).toEqual([
+      { buttons: 1, pointerId: 1, isPrimary: true },
+      { buttons: 1, pointerId: 2, isPrimary: false },
+      { buttons: 1, pointerId: 1, isPrimary: true },
+    ]);
+  });
+
   it('replays a key with its physical code and repeat flag', async () => {
     const keys: Array<{ key: string; code: string; repeat: boolean }> = [];
     document.addEventListener('keydown', (e) => {

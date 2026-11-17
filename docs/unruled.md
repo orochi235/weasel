@@ -2601,3 +2601,8 @@ Calls the lanes made without a ruling:
 
 - 2026-11-17 (the fixer's call): `watchHookPresence` throws a `RangeError` on an empty `delays`, which used to probe
   in a tight loop forever. Falling back to the default delays was the alternative.
+## Audit round thirty-four (2026-11-17): draw's recording and SVG files
+
+- 2026-11-17 (the fixer's call): draw's Play recording, pressed while a recording replays, stops it (the action shows
+  active while one plays); detaching the canvas stops it too. Play stayed disabled through a replay before, with
+  nothing to stop one. A Record press during a replay still does nothing.

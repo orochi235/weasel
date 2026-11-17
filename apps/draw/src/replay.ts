@@ -24,6 +24,8 @@ export interface ReplayOptions {
   beforeFirstEvent?: () => Promise<void> | void;
   /** Per-event progress callback — fired just before dispatch. */
   onEvent?: (e: RecordedEvent, i: number) => void;
+  /** Ends the replay: no event is dispatched once it aborts, and a wait in progress is cut short. */
+  signal?: AbortSignal;
 }
 
 function rafTick(): Promise<void> {
@@ -36,9 +38,14 @@ function rafTick(): Promise<void> {
   });
 }
 
-function sleep(ms: number): Promise<void> {
-  if (ms <= 0) return Promise.resolve();
-  return new Promise((resolve) => { after(ms, resolve); });
+/** Wait `ms`, or until `signal` aborts. */
+function sleep(ms: number, signal: AbortSignal | undefined): Promise<void> {
+  if (ms <= 0 || signal?.aborted) return Promise.resolve();
+  return new Promise((resolve) => {
+    const done = () => { cancel(); signal?.removeEventListener('abort', done); resolve(); };
+    const cancel = after(ms, done);
+    signal?.addEventListener('abort', done);
+  });
 }
 
 function pickTarget(rec: RecordedEvent, canvas: HTMLCanvasElement): EventTarget {
@@ -49,8 +56,11 @@ function pickTarget(rec: RecordedEvent, canvas: HTMLCanvasElement): EventTarget 
   return canvas;
 }
 
-/** A recorded move leaves out the fields its press already carries; `press` supplies them. */
-function buildPointerEvent(rec: RecordedEvent, press: RecordedEvent | undefined): PointerEvent {
+/**
+ * A recorded move leaves out the fields its press already carries; `press` supplies them.
+ * `primary` is whether the event's pointer is the first of those held.
+ */
+function buildPointerEvent(rec: RecordedEvent, press: RecordedEvent | undefined, primary: boolean): PointerEvent {
   const from = rec.type === 'pointermove' && press ? press : rec;
   return new PointerEvent(rec.type, {
     bubbles: true,
@@ -62,9 +72,35 @@ function buildPointerEvent(rec: RecordedEvent, press: RecordedEvent | undefined)
     buttons: from.buttons ?? 0,
     ...decodeModifiers(rec),
     pointerType: from.pointerType ?? 'mouse',
-    pointerId: from.pointerId ?? 1,
-    isPrimary: true,
+    pointerId: rec.pointerId ?? from.pointerId ?? 1,
+    isPrimary: primary,
   });
+}
+
+/** The presses held at each point of a replay, by pointer, in the order they went down. */
+class HeldPresses {
+  private readonly byId = new Map<number, RecordedEvent>();
+
+  /** The press a pointer event belongs to: its own pointer's, or for a move that names
+   *  none, the latest held. */
+  of(rec: RecordedEvent): RecordedEvent | undefined {
+    if (rec.pointerId !== undefined) return this.byId.get(rec.pointerId);
+    return rec.type === 'pointermove' ? [...this.byId.values()].at(-1) : undefined;
+  }
+
+  /** Whether `rec`'s pointer is the first held, or would be on pressing. */
+  isPrimary(rec: RecordedEvent, pointerId: number | undefined): boolean {
+    const first = this.byId.keys().next();
+    if (first.done) return true;
+    return rec.type !== 'pointerdown' && first.value === pointerId;
+  }
+
+  /** Track `rec`, once its event has been built. */
+  track(rec: RecordedEvent): void {
+    const id = rec.pointerId ?? 1;
+    if (rec.type === 'pointerdown') this.byId.set(id, rec);
+    else if (rec.type === 'pointerup' || rec.type === 'pointercancel') this.byId.delete(id);
+  }
 }
 
 function buildWheelEvent(rec: RecordedEvent): WheelEvent {
@@ -92,13 +128,16 @@ function buildKeyboardEvent(rec: RecordedEvent): KeyboardEvent {
   });
 }
 
-function buildEvent(rec: RecordedEvent, press: RecordedEvent | undefined): Event {
+function buildEvent(rec: RecordedEvent, held: HeldPresses): Event {
   switch (rec.type) {
     case 'pointerdown':
     case 'pointermove':
     case 'pointerup':
-    case 'pointercancel':
-      return buildPointerEvent(rec, press);
+    case 'pointercancel': {
+      const press = held.of(rec);
+      const pointerId = rec.pointerId ?? press?.pointerId;
+      return buildPointerEvent(rec, press, held.isPrimary(rec, pointerId));
+    }
     case 'wheel':
       return buildWheelEvent(rec);
     case 'keydown':
@@ -109,26 +148,28 @@ function buildEvent(rec: RecordedEvent, press: RecordedEvent | undefined): Event
 
 export async function replayRecording(rec: Recording, opts: ReplayOptions): Promise<void> {
   const mode = opts.mode ?? 'realtime';
+  const { signal } = opts;
+  if (signal?.aborted) return;
   if (opts.beforeFirstEvent) {
     await opts.beforeFirstEvent();
   }
   let prevT = 0;
-  /** The press of the gesture in flight, so its moves replay held rather than as hovers. */
-  let press: RecordedEvent | undefined;
+  /** The presses of the gestures in flight, so their moves replay held rather than as hovers. */
+  const held = new HeldPresses();
   for (let i = 0; i < rec.events.length; i++) {
     const ev = rec.events[i];
     if (i > 0) {
       if (mode === 'realtime') {
-        await sleep(ev.t - prevT);
+        await sleep(ev.t - prevT, signal);
       } else {
         await rafTick();
       }
     }
+    if (signal?.aborted) return;
     opts.onEvent?.(ev, i);
     const target = pickTarget(ev, opts.canvas);
-    const native = buildEvent(ev, press);
-    if (ev.type === 'pointerdown') press = ev;
-    else if ((ev.type === 'pointerup' || ev.type === 'pointercancel') && ev.pointerId === press?.pointerId) press = undefined;
+    const native = buildEvent(ev, held);
+    held.track(ev);
     target.dispatchEvent(native);
     prevT = ev.t;
   }

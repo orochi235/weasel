@@ -299,15 +299,22 @@ export function svgNodesToSceneDrafts(
   const marks = new Map<string, Pick<DraftBase, 'label' | 'locked'>>();
   const pageOfGroup = new Map<string, string>();
   const used = new Set<string>();
+  /** A minted id no draft holds yet: a file's carried ids may look like minted ones. */
+  const fresh = (): string => {
+    let id = nextId();
+    while (used.has(id)) id = nextId();
+    used.add(id);
+    return id;
+  };
   const idOf = (n: SvgNode): string => {
     const attrs = n.meta?.wd?.attrs;
     if (n.kind === 'group' && attrs?.role === PAGE_ROLE && attrs['page-id']) {
-      const id = nextId();
+      const id = fresh();
       pageOfGroup.set(id, attrs['page-id']);
       return id;
     }
     const carried = n.kind === 'group' ? attrs?.['group-id'] ?? attrs?.['leaf-id'] : attrs?.['leaf-id'];
-    const id = carried !== undefined && !used.has(carried) ? carried : nextId();
+    const id = carried !== undefined && !used.has(carried) ? carried : fresh();
     used.add(id);
     const named = decodeNodeAttrs(attrs);
     if (named.label !== undefined || named.locked) marks.set(id, named);
