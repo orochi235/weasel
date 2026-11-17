@@ -9,7 +9,7 @@ import { appendFileSync, existsSync, mkdirSync, readdirSync, readFileSync, rmSyn
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { runArea } from './area.mjs';
-import { addWorktree, applyFix, commitRecord, fastForwardMain, gitIn, makeBatch, removeWorktree, runFleetScript } from './batch.mjs';
+import { addWorktree, applyFix, catchUpWithMain, commitRecord, fastForwardMain, gitIn, makeBatch, removeWorktree, runFleetScript } from './batch.mjs';
 import {
   AREAS_PER_NIGHT, AREA_USD_GUESS, JOB_BUDGET_USD, JOB_IN, KEEP_NIGHTS, NIGHT_USD_CAP, REVIEW_SLOTS_PER_NODE, STATE_DIR, STOP_AT, nodesAt,
 } from './config.mjs';
@@ -167,6 +167,9 @@ const patchAreas = ({ root, round, commit, nightDir, results, outcomes, say }) =
   return branches;
 };
 
+/** How many times a green batch merges a moved main in and tests again before leaving the fast-forward to fail. */
+const MAIN_CATCH_UPS = 2;
+
 /** Merges the branches into the batch, records the round there, runs the fleet on its tip, and merges if green. */
 const batchAndTest = async ({ root, git, round, commit, date, nightDir, branches, results, outcomes, merge, say, setStep }) => {
   const batch = makeBatch(root, { round, date, commit, branches });
@@ -177,17 +180,28 @@ const batchAndTest = async ({ root, git, round, commit, date, nightDir, branches
     results.find((s) => s.id === idOf(branch)).fixCommits = [];
     say(`batch: ${branch} conflicts; left out`);
   }
-  const tip = commitRecord(batch.tree, { round, commit, date, nightDir, areas: results, outcomes, coAuthor: CO_AUTHOR });
-  say(`record: docs/audits/round-${round}/ committed on ${batch.name} at ${tip.slice(0, 10)}`);
+  const recorded = commitRecord(batch.tree, { round, commit, date, nightDir, areas: results, outcomes, coAuthor: CO_AUTHOR });
+  say(`record: docs/audits/round-${round}/ committed on ${batch.name} at ${recorded.slice(0, 10)}`);
 
   setStep('fleet');
   const logName = batch.name.replace(/\//g, '-');
-  const [tests, postbuild] = await Promise.all([
-    runFleetScript(root, 'test:fleet', batch.name, join(nightDir, `${logName}.test-fleet.log`)),
-    runFleetScript(root, 'test:fleet:postbuild', batch.name, join(nightDir, `${logName}.postbuild.log`)),
-  ]);
-  say(`fleet: test:fleet ${tests === 0 ? 'passed' : `failed (${tests})`}, test:fleet:postbuild ${postbuild === 0 ? 'passed' : `failed (${postbuild})`}`);
-  if (tests !== 0 || postbuild !== 0) return `red: ${batch.name} and its branches kept; worktree ${batch.tree}; logs in ${nightDir}`;
+  let tip = recorded;
+  // main can move during the night; each pass merges it in and tests the result, so main only ever lands on a tested tip.
+  for (let pass = 1; ; pass++) {
+    const suffix = pass === 1 ? '' : `.${pass}`;
+    const [tests, postbuild] = await Promise.all([
+      runFleetScript(root, 'test:fleet', batch.name, join(nightDir, `${logName}${suffix}.test-fleet.log`)),
+      runFleetScript(root, 'test:fleet:postbuild', batch.name, join(nightDir, `${logName}${suffix}.postbuild.log`)),
+    ]);
+    say(`fleet: test:fleet ${tests === 0 ? 'passed' : `failed (${tests})`}, test:fleet:postbuild ${postbuild === 0 ? 'passed' : `failed (${postbuild})`}`);
+    if (tests !== 0 || postbuild !== 0) return `red: ${batch.name} and its branches kept; worktree ${batch.tree}; logs in ${nightDir}`;
+    if (!merge || pass === MAIN_CATCH_UPS + 1) break;
+    const caught = catchUpWithMain(batch.tree);
+    if (caught.conflict) return `green, but main moved and merging it conflicts: ${batch.name} and its branches kept; worktree ${batch.tree}`;
+    if (!caught.moved) break;
+    tip = caught.tip;
+    say(`batch: main moved during the night; merged it in at ${tip.slice(0, 10)} and testing again`);
+  }
   removeWorktree(root, batch.tree);
   if (!merge) return `green; --no-merge, so main is untouched and ${batch.name} and its branches are kept`;
   const result = fastForwardMain(root, tip);

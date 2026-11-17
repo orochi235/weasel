@@ -22,7 +22,7 @@ completes (`review 3/16 …`).
 | fix | Per area with findings, one fixer job (`briefs/fixer.md`), permissions bypassed, in the node's own synced tree. It first commits the synced tree and checks it hashes to the frozen commit's tree, installs if the lockfile changed, then hands back its commits as an mbox. |
 | patch | Each mbox is applied with `git am` onto `audit<N>-<area>` at the frozen commit. One that does not apply is reported and left out. |
 | batch | Every branch merges into `batch/<date>-audit<N>` (a worktree); a conflicting one is left out and reported. The round's record is committed there. Then `npm run test:fleet` and `npm run test:fleet:postbuild` run on its tip, as `CLAUDE.md` "Worktrees and the fleet" says. |
-| merge | Green: local `main` fast-forwards to the batch (never pushed), and the branches are deleted. Red: the batch worktree and its branches stay, and the report names them. |
+| merge | Green: local `main` fast-forwards to the batch (never pushed), and the branches are deleted. If `main` moved during the night, `main` is merged into the batch and both runs go again, up to twice, so `main` only lands on a tested commit; a conflict there keeps the batch for you. Red: the batch worktree and its branches stay, and the report names them. |
 
 The record, in `docs/audits/round-<N>/`: per area `files.txt`, `A.md`, `B.md`, `match.json`, `fix.md` and
 `area.json` (counts, estimate, the previous pass's estimate this one tests, findings in files changed since,

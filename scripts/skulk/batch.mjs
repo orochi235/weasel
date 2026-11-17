@@ -113,6 +113,18 @@ export const runFleetScript = (root, script, ref, logPath) =>
     });
   });
 
+/** Merges `main` into the batch checked out at `tree` unless it already holds it. Answers whether it moved, the new tip, or a conflict. */
+export const catchUpWithMain = (tree) => {
+  const git = gitIn(tree);
+  if (tryGit(git, 'merge-base', '--is-ancestor', 'main', 'HEAD').ok) return { moved: false };
+  const run = tryGit(git, 'merge', '--no-edit', '-m', "Merge branch 'main' into the batch", 'main');
+  if (!run.ok) {
+    tryGit(git, 'merge', '--abort');
+    return { moved: false, conflict: true };
+  }
+  return { moved: true, tip: git('rev-parse', 'HEAD') };
+};
+
 /**
  * Moves `main` to `tip` when that is a fast-forward and the main checkout is on `main` and clean.
  * Answers what happened, in a sentence for the report.
