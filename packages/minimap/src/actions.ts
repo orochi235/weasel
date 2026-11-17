@@ -16,8 +16,8 @@ export const MINIMAP_CENTER = 'minimap.center';
 export const MINIMAP_PAN = 'minimap.pan';
 /** Action id for `minimapZoomAction`. */
 export const MINIMAP_ZOOM = 'minimap.zoom';
-/** Action id for `minimapPinchAction`. */
-export const MINIMAP_PINCH = 'minimap.pinch';
+/** Action id for `minimapTouchZoomAction`. */
+export const MINIMAP_TOUCH_ZOOM = 'minimap.touchZoom';
 
 /** The main view's zoom limits, as an action takes them: fixed, read on each sample, or the kit defaults. */
 export type MinimapZoomClamp = ZoomClampOptions | (() => ZoomClampOptions | undefined);
@@ -145,9 +145,9 @@ export function minimapZoomAction(clamp?: MinimapZoomClamp): Action {
 /** Zoom the main camera with a two-finger touch pinch, by the ratio of the fingers' spread, about the world point
  *  between them, read through the minimap's own camera (`view`). That point keeps its place in the main view as
  *  the fingers move, so the main view follows them as a one-finger pan does. `clamp` is as `minimapZoomAction`'s. */
-export function minimapPinchAction(clamp?: MinimapZoomClamp): Action {
+export function minimapTouchZoomAction(clamp?: MinimapZoomClamp): Action {
   return {
-    id: MINIMAP_PINCH,
+    id: MINIMAP_TOUCH_ZOOM,
     label: 'Minimap — pinch to zoom the view',
     requires: ['rootView', 'view'],
     invoker: {
@@ -180,7 +180,7 @@ export function minimapPinchAction(clamp?: MinimapZoomClamp): Action {
 }
 
 /** The minimap's bindings, each id prefixed with `id`: press to center, drag to pan, and with `zoom` the wheel, a
- *  trackpad pinch (as `viewport.zoom` takes them) and a two-finger touch pinch (as `viewport.pinchZoom` does) to
+ *  trackpad pinch (as `viewport.zoom` takes them) and a two-finger touch pinch (as `viewport.touchZoom` does) to
  *  zoom. `views` scopes them to the minimap's view on a surface that routes several. */
 export function minimapBindings(id: string, zoom: boolean, views?: readonly string[]): Tool['bindings'] {
   const scope = views ? { views: [...views] } : {};
@@ -192,7 +192,7 @@ export function minimapBindings(id: string, zoom: boolean, views?: readonly stri
       { spec: { kind: 'wheel' as const }, actionId: MINIMAP_ZOOM, opts: { id: `${id}.wheel`, ...scope } },
       { spec: { kind: 'wheel' as const, mods: { ctrl: true } }, actionId: MINIMAP_ZOOM, opts: { id: `${id}.trackpad`, ...scope } },
       { spec: { kind: 'pinch' as const }, actionId: MINIMAP_ZOOM, opts: { id: `${id}.pinch`, ...scope } },
-      { spec: { kind: 'multiTouch' as const, fingers: 2 }, actionId: MINIMAP_PINCH, opts: { id: `${id}.multiTouch`, ...scope } },
+      { spec: { kind: 'multiTouch' as const, fingers: 2 }, actionId: MINIMAP_TOUCH_ZOOM, opts: { id: `${id}.multiTouch`, ...scope } },
     ] : []),
   ];
 }

@@ -211,7 +211,7 @@ describe('SceneCanvas consumer-tools keybindings auto-wiring', () => {
           scene={scene}
           width={100} height={100}
           layers={{}}
-          viewport={{ pinchZoom: true }}
+          viewport={{ touchZoom: true }}
           enableKeybindings={false}
           onToolsCreated={(t) => { captured = t; }}
         />

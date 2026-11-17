@@ -2179,9 +2179,9 @@ Calls the lanes made without a ruling:
   WebKit's gesture events when wheel zoom is on. A WebKit pinch carries the world point under its focal point, as a
   wheel does, so an action can zoom about it without its own client-to-world map.
 - 2026-11-13 (maintainer-approved; the lane's calls on the shape): the minimap takes a two-finger touch pinch,
-  `minimap.pinch` bound as `<id>.multiTouch`. It zooms the main camera about the world point between the fingers,
+  `minimap.touchZoom` bound as `<id>.multiTouch`. It zooms the main camera about the world point between the fingers,
   read through the minimap's own camera, and that point keeps its place in the main view as the fingers move, so the
-  main view follows them the way a one-finger pan does (the opposite sign to `viewport.pinchZoom`, whose content
+  main view follows them the way a one-finger pan does (the opposite sign to `viewport.touchZoom`, whose content
   follows the fingers). It clamps as the wheel does. The minimap's camera reaches the action as the `view` dep, which
   `<MinimapCanvas>` now publishes beside `rootView`: the pair a `<CanvasView>` answers on a surface, so one action
   runs in both hosts, and any secondary view with a dispatcher of its own answers the same pair. Its `set` drops the

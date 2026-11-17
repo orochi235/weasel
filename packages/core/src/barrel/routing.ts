@@ -79,10 +79,10 @@ export {
 export { NUDGE_LABEL, nudgeDelta, nudgeSpec, type NudgeDirection } from '../interactions/actions/defaults/nudgeSteps';
 export { reachesLocked } from '../interactions/actions/defaults/lockedReach';
 export {
-  pinchZoomAction,
-  createPinchZoomAction,
-  type PinchZoomOptions,
-} from '../interactions/actions/defaults/pinchZoom';
+  touchZoomAction,
+  createTouchZoomAction,
+  type TouchZoomOptions,
+} from '../interactions/actions/defaults/touchZoom';
 export type { SliceDep, ClipboardDep, OperandsDep } from '../interactions/actions/depSchema';
 export { operandList } from '../interactions/actions/operands';
 export { useActionSet, useStandardDeps } from '../interactions/actions/useActionSet';

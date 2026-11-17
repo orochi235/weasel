@@ -124,7 +124,7 @@ macOS Option+bracket emits a curly quote, so both codepoints are listed.
 | `editEffectText` (*text-tools*) | click on a body: in path edit on a path an effect hides, a click on that effect opens its text, off the open path's anchors |
 | `insertPathAnchor` (*path-tools*) | Alt+click |
 | `cutPathAtAnchor` (*path-tools*) | Alt+Shift+click |
-| `viewport.pinchZoom` | two-finger `multiTouch` |
+| `viewport.touchZoom` | two-finger `multiTouch` |
 | `ingest` | `drop` or `paste`, any modifiers |
 | `clipboard.pasteEvent` | `paste` carrying `text/plain`, any modifiers — registered only where `ingest` is not |
 

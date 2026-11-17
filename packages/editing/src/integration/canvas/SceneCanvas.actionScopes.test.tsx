@@ -3,7 +3,7 @@
  * opts out of must stay live for the other, and come back when the opting-out
  * canvas leaves.
  *
- * Pinch zoom is the vehicle because `viewport={{ pinchZoom: false }}` is the
+ * Pinch zoom is the vehicle because `viewport={{ touchZoom: false }}` is the
  * shortest path to an opt-out. These assert the emitted view, so the absent
  * WebGL context is irrelevant.
  */
@@ -75,12 +75,12 @@ describe('SceneCanvas action scopes', () => {
       <ActionsProvider>
         <SceneCanvas features={[drawPreset]}
           scene={sceneA} layers={{}} width={400} height={400}
-          viewport={{ pinchZoom: true }}
+          viewport={{ touchZoom: true }}
           onViewChange={(v) => { keeps.push(v); }}
         />
         <SceneCanvas features={[drawPreset]}
           scene={sceneB} layers={{}} width={400} height={400}
-          viewport={{ pinchZoom: false }}
+          viewport={{ touchZoom: false }}
           onViewChange={(v) => { optsOut.push(v); }}
         />
       </ActionsProvider>,
@@ -101,12 +101,12 @@ describe('SceneCanvas action scopes', () => {
       <ActionsProvider>
         <SceneCanvas features={[drawPreset]}
           scene={sceneA} layers={{}} width={400} height={400}
-          viewport={{ pinchZoom: true }}
+          viewport={{ touchZoom: true }}
           onViewChange={(v) => { keeps.push(v); }}
         />
         <SceneCanvas features={[drawPreset]}
           scene={sceneB} layers={{}} width={400} height={400}
-          viewport={{ pinchZoom: false }}
+          viewport={{ touchZoom: false }}
         />
       </ActionsProvider>
     );
@@ -116,7 +116,7 @@ describe('SceneCanvas action scopes', () => {
         <ActionsProvider>
           <SceneCanvas features={[drawPreset]}
             scene={sceneA} layers={{}} width={400} height={400}
-            viewport={{ pinchZoom: true }}
+            viewport={{ touchZoom: true }}
             onViewChange={(v) => { keeps.push(v); }}
           />
         </ActionsProvider>,
@@ -138,7 +138,7 @@ describe('SceneCanvas action scopes', () => {
         />
         <SceneCanvas features={[drawPreset]}
           scene={sceneB} layers={{}} width={400} height={400}
-          actions={{ 'viewport.pinchZoom': null }}
+          actions={{ 'viewport.touchZoom': null }}
         />
       </ActionsProvider>,
     );

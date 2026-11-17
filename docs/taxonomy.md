@@ -537,7 +537,7 @@ still shares by lifting its provider above both.
 
 `mute(id)` declares an id **not for this scope**: here and below it lists as
 absent and neither `trigger` nor `begin` fires it, while it stays registered
-where it was. `viewport={{ pinchZoom: false }}` and `actions={{ id: null }}` are
+where it was. `viewport={{ touchZoom: false }}` and `actions={{ id: null }}` are
 opt-outs for one canvas this way. `unregister` is the other door: it drops the
 action from the tier it is called on.
 

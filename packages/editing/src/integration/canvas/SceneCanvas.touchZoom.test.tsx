@@ -1,7 +1,7 @@
 /**
  * SceneCanvas — two-finger pinch zoom.
  *
- * Pinch is the `viewport.pinchZoom` action, driven by the gesture dispatcher's
+ * Pinch is the `viewport.touchZoom` action, driven by the gesture dispatcher's
  * multitouch stream. It is the only pinch path in the kit.
  *
  * These assert the emitted view, so the absent WebGL context is irrelevant.
@@ -34,7 +34,7 @@ type PinchConfig = boolean | { min?: number; max?: number };
 /** Renders SceneCanvas uncontrolled and records every view it emits.
  *  `offset` places the canvas away from the viewport top-left. */
 function mountAndPinch(
-  pinchZoom: PinchConfig | undefined,
+  touchZoom: PinchConfig | undefined,
   offset: { left: number; top: number } = { left: 0, top: 0 },
   /** Features to rerender with before the pinch, changing the canvas's standard actions. */
   then?: readonly FeaturePreset[],
@@ -48,7 +48,7 @@ function mountAndPinch(
       width={400}
       height={400}
       features={features}
-      viewport={pinchZoom === undefined ? {} : { pinchZoom }}
+      viewport={touchZoom === undefined ? {} : { touchZoom }}
       onViewChange={(v) => { emitted.push(v); }}
     />
   );
@@ -79,27 +79,27 @@ function mountAndPinch(
 }
 
 describe('SceneCanvas pinch zoom', () => {
-  it('applies the factor once with viewport.pinchZoom on', () => {
+  it('applies the factor once with viewport.touchZoom on', () => {
     const emitted = mountAndPinch(true);
     expect(emitted.map((v) => v.scale.x)).toEqual([2]);
   });
 
-  it('applies the factor once with viewport.pinchZoom omitted', () => {
+  it('applies the factor once with viewport.touchZoom omitted', () => {
     const emitted = mountAndPinch(undefined);
     expect(emitted.map((v) => v.scale.x)).toEqual([2]);
   });
 
-  it('clamps to the max from viewport.pinchZoom', () => {
+  it('clamps to the max from viewport.touchZoom', () => {
     const emitted = mountAndPinch({ min: 0.5, max: 1.5 });
     expect(emitted.map((v) => v.scale.x)).toEqual([1.5]);
   });
 
-  it('keeps the clamp from viewport.pinchZoom after the canvas\'s actions change', () => {
+  it('keeps the clamp from viewport.touchZoom after the canvas\'s actions change', () => {
     const emitted = mountAndPinch({ min: 0.5, max: 1.5 }, undefined, [drawPreset]);
     expect(emitted.map((v) => v.scale.x)).toEqual([1.5]);
   });
 
-  it('does not zoom when viewport.pinchZoom is false', () => {
+  it('does not zoom when viewport.touchZoom is false', () => {
     expect(mountAndPinch(false)).toEqual([]);
   });
 

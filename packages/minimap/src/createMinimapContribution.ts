@@ -16,7 +16,7 @@ import {
   computeFitView, FALLBACK_FIT_VIEW, type IndicatorStyle, type MinimapFit,
 } from './minimapMath';
 import {
-  minimapBindings, minimapCenterAction, minimapPanAction, minimapPinchAction, minimapZoomAction,
+  minimapBindings, minimapCenterAction, minimapPanAction, minimapTouchZoomAction, minimapZoomAction,
 } from './actions';
 import { createIndicatorLayer, createLinkedCursorLayer } from './layers';
 import { accentColorOf, FALLBACK_ACCENT, watchThemeOf } from '@weasel-js/core';
@@ -180,7 +180,7 @@ export function createMinimapContribution<TData = unknown, TLayer extends string
     }],
     actions: [
       minimapCenterAction(), minimapPanAction(),
-      ...(zoom ? [minimapZoomAction(zoom.clamp), minimapPinchAction(zoom.clamp)] : []),
+      ...(zoom ? [minimapZoomAction(zoom.clamp), minimapTouchZoomAction(zoom.clamp)] : []),
     ],
     bindings: minimapBindings(id, zoom !== null, [id]),
     overlay: [indicator, cursor.layer],

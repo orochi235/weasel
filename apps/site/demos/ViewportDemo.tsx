@@ -82,7 +82,7 @@ export function ViewportDemo() {
           features={[viewPreset, TEXT]}
           viewport={{
             inertia: inertiaConfig,
-            pinchZoom: true,
+            touchZoom: true,
             animatedZoom: true,
           }}
         />

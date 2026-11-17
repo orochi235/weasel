@@ -167,7 +167,7 @@ export function useSceneStandardActions(inputs: SceneStandardActionsInputs): voi
   useViewportActions({
     pan: viewOn ? (viewport?.pan ?? true) : false,
     zoom: viewOn ? viewportZoom : false,
-    pinchZoom: viewOn ? (viewport?.pinchZoom ?? true) : false,
+    touchZoom: viewOn ? (viewport?.touchZoom ?? true) : false,
     rev: standardActionsKey,
   });
 

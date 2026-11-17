@@ -90,7 +90,7 @@ function Draw({ planted = [] }: { planted?: readonly Contribution[] }) {
   return (
     <SceneCanvas features={[...DRAW_FEATURES, createSpacingHintsPreset()]} scene={scene as never} layers={{}}
       width={64} height={64} ambient={ambient} modes={machine.registry} pathEdit={pathEdit}
-      defaultTools={[BUILTIN_TOOLS]} tune={DRAW_TUNE} viewport={{ pinchZoom: true }}
+      defaultTools={[BUILTIN_TOOLS]} tune={DRAW_TUNE} viewport={{ touchZoom: true }}
       tools={{ ...pathToolsTools, measure: measureTool, opacityScrub: opacityScrubTool, eyedropper: eyedropperTool }}>
       <Commands />
     </SceneCanvas>

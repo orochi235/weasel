@@ -1,4 +1,4 @@
-/** Integration tests for pinchZoomAction via the gesture dispatcher. */
+/** Integration tests for touchZoomAction via the gesture dispatcher. */
 
 import { describe, it, expect, beforeAll, vi } from 'vitest';
 import { render, act } from '@testing-library/react';
@@ -8,7 +8,7 @@ import { DepRegistryProvider, useDepRegistry } from '@weasel-js/routing/react';
 import '../actions/depSchema';
 import { ActiveToolContextProvider } from '@weasel-js/routing/react';
 import { useGestureDispatcher } from '@weasel-js/routing/react';
-import { pinchZoomAction } from '../actions/defaults/pinchZoom';
+import { touchZoomAction } from '../actions/defaults/touchZoom';
 import type { View } from 'core/viewport/view';
 import type { ViewApi } from '../actions/depSchema';
 
@@ -44,10 +44,10 @@ function RegisterViewDep({ viewApi }: { viewApi: ViewApi }) {
   return null;
 }
 
-function RegisterPinchZoom() {
+function RegisterTouchZoom() {
   const registry = useActionsRegistry();
-  if (registry && !registry.list().find((a) => a.id === 'viewport.pinchZoom')) {
-    registry.register(pinchZoomAction);
+  if (registry && !registry.list().find((a) => a.id === 'viewport.touchZoom')) {
+    registry.register(touchZoomAction);
   }
   return null;
 }
@@ -60,7 +60,7 @@ function buildHarness(viewApi: ViewApi) {
         <ActiveToolContextProvider>
             <ActionsProvider>
               <RegisterViewDep viewApi={viewApi} />
-              <RegisterPinchZoom />
+              <RegisterTouchZoom />
               <MountDispatcher canvasRef={ref} />
             </ActionsProvider>
         </ActiveToolContextProvider>
@@ -106,7 +106,7 @@ function firePointerUp(canvas: HTMLElement, opts: { pointerId: number; clientX: 
   );
 }
 
-describe('pinchZoomAction integration', () => {
+describe('touchZoomAction integration', () => {
   it('two-finger spread-out zooms in (scale increases)', () => {
     const viewApi = makeViewApi({ x: 0, y: 0, scale: { x: 1, y: 1 } });
     const Harness = buildHarness(viewApi);

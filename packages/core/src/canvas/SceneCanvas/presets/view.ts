@@ -1,4 +1,4 @@
-import { pinchZoomAction } from 'interactions/actions/defaults/pinchZoom';
+import { touchZoomAction } from 'interactions/actions/defaults/touchZoom';
 import { viewportDragPanAction } from 'interactions/actions/defaults/viewportDragPan';
 import { middleDragPanContribution } from 'tools/builtin/hand/dragPanContribution';
 import type { FeaturePreset } from '../features';
@@ -8,7 +8,7 @@ import { viewToolsPreset } from './viewTools';
 export const viewPreset: FeaturePreset = {
   id: 'view',
   label: 'View',
-  actions: [pinchZoomAction, viewportDragPanAction],
+  actions: [touchZoomAction, viewportDragPanAction],
   ambient: () => middleDragPanContribution(),
   includes: [viewToolsPreset],
 };

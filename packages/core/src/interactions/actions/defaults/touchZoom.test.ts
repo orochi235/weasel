@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { stubDeps } from '../testUtils';
-import { pinchZoomAction } from './pinchZoom';
+import { touchZoomAction } from './touchZoom';
 import type { InvocationCtx } from '@weasel-js/routing';
 import type { ViewApi } from '../depSchema';
 import type { View } from 'core/viewport/view';
@@ -47,7 +47,7 @@ function makeMoveCtx(centroid: { x: number; y: number }, currentSpread: number, 
   };
 }
 
-function getOngoingInvoker(action: typeof pinchZoomAction) {
+function getOngoingInvoker(action: typeof touchZoomAction) {
   if (!action.invoker || action.invoker.timing !== 'ongoing') {
     throw new Error('Expected ongoing invoker');
   }
@@ -58,24 +58,24 @@ function getOngoingInvoker(action: typeof pinchZoomAction) {
 // Tests
 // ---------------------------------------------------------------------------
 
-describe('pinchZoomAction descriptor', () => {
+describe('touchZoomAction descriptor', () => {
   it('declares id, label, multiTouch defaultBinding, and ongoing timing', () => {
-    expect(pinchZoomAction.id).toBe('viewport.pinchZoom');
-    expect(pinchZoomAction.label).toBe('Pinch Zoom');
-    expect(pinchZoomAction.defaultBinding).toEqual([{ spec: { kind: 'multiTouch', fingers: 2 }, opts: { id: 'viewport.pinchZoom.multiTouch' } }]);
-    expect(pinchZoomAction.invoker?.timing).toBe('ongoing');
+    expect(touchZoomAction.id).toBe('viewport.touchZoom');
+    expect(touchZoomAction.label).toBe('Touch Zoom');
+    expect(touchZoomAction.defaultBinding).toEqual([{ spec: { kind: 'multiTouch', fingers: 2 }, opts: { id: 'viewport.touchZoom.multiTouch' } }]);
+    expect(touchZoomAction.invoker?.timing).toBe('ongoing');
   });
 
   it('requires view dep', () => {
-    expect(pinchZoomAction.requires).toContain('view');
+    expect(touchZoomAction.requires).toContain('view');
   });
 
   it('enabled returns true (always enabled)', () => {
-    expect(pinchZoomAction.enabled!()).toBe(true);
+    expect(touchZoomAction.enabled!()).toBe(true);
   });
 
   it('start returns empty handle when view dep is absent', () => {
-    const invoker = getOngoingInvoker(pinchZoomAction);
+    const invoker = getOngoingInvoker(touchZoomAction);
     const emptyCtx: InvocationCtx = {
       world: { x: 0, y: 0 },
       screen: { x: 0, y: 0 },
@@ -87,7 +87,7 @@ describe('pinchZoomAction descriptor', () => {
   });
 
   it('start returns empty handle when multiTouch is absent', () => {
-    const invoker = getOngoingInvoker(pinchZoomAction);
+    const invoker = getOngoingInvoker(touchZoomAction);
     const ctxNoMT: InvocationCtx = {
       world: { x: 0, y: 0 },
       screen: { x: 0, y: 0 },
@@ -99,7 +99,7 @@ describe('pinchZoomAction descriptor', () => {
   });
 
   it('onMove zooms in when spread increases (factor > 1)', () => {
-    const invoker = getOngoingInvoker(pinchZoomAction);
+    const invoker = getOngoingInvoker(touchZoomAction);
     const viewApi = makeViewApi({ x: 0, y: 0, scale: { x: 1, y: 1 } });
     // Start: spread 100
     const handle = invoker.start(makeCtx(viewApi, 100), undefined);
@@ -112,7 +112,7 @@ describe('pinchZoomAction descriptor', () => {
   });
 
   it('onMove zooms out when spread decreases (factor < 1)', () => {
-    const invoker = getOngoingInvoker(pinchZoomAction);
+    const invoker = getOngoingInvoker(touchZoomAction);
     const viewApi = makeViewApi({ x: 0, y: 0, scale: { x: 1, y: 1 } });
     // Start: spread 100
     const handle = invoker.start(makeCtx(viewApi, 100), undefined);
@@ -125,7 +125,7 @@ describe('pinchZoomAction descriptor', () => {
   });
 
   it('onMove pans by the centroid delta when the spread holds steady', () => {
-    const invoker = getOngoingInvoker(pinchZoomAction);
+    const invoker = getOngoingInvoker(touchZoomAction);
     const viewApi = makeViewApi({ x: 0, y: 0, scale: { x: 1, y: 1 } });
     // Start centroid is (100, 100) — see makeCtx.
     const handle = invoker.start(makeCtx(viewApi, 100), undefined);
@@ -140,7 +140,7 @@ describe('pinchZoomAction descriptor', () => {
   });
 
   it('keeps the world point under the centroid pinned across a pinch-drag', () => {
-    const invoker = getOngoingInvoker(pinchZoomAction);
+    const invoker = getOngoingInvoker(touchZoomAction);
     const start: View = { x: 10, y: 20, scale: { x: 2, y: 2 } };
     const viewApi = makeViewApi(start);
     const handle = invoker.start(makeCtx(viewApi, 100), undefined);
@@ -161,7 +161,7 @@ describe('pinchZoomAction descriptor', () => {
   });
 
   it('onMove is a no-op when pinch field is absent from multiTouch', () => {
-    const invoker = getOngoingInvoker(pinchZoomAction);
+    const invoker = getOngoingInvoker(touchZoomAction);
     const viewApi = makeViewApi({ x: 0, y: 0, scale: { x: 1, y: 1 } });
     const handle = invoker.start(makeCtx(viewApi, 100), undefined);
 

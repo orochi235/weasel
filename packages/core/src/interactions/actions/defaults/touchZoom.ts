@@ -13,9 +13,9 @@ interface PinchScratch {
 }
 
 /**
- * Tuning for {@link createPinchZoomAction}.
+ * Tuning for {@link createTouchZoomAction}.
  */
-export interface PinchZoomOptions {
+export interface TouchZoomOptions {
   /** Lower clamp on the resulting view scale, forwarded to `zoomAt`. Default 0.1. */
   min?: number;
   /** Upper clamp on the resulting view scale, forwarded to `zoomAt`. Default 8. */
@@ -26,20 +26,20 @@ export interface PinchZoomOptions {
 }
 
 /**
- * Build a `viewport.pinchZoom` Action descriptor with a configurable scale
+ * Build a `viewport.touchZoom` Action descriptor with a configurable scale
  * clamp. The same two-finger gesture zooms and pans, applied each frame.
  */
 // No `eligible` field → pinch zoom is always eligible across all modes.
-export function createPinchZoomAction(
-  opts: PinchZoomOptions = {},
+export function createTouchZoomAction(
+  opts: TouchZoomOptions = {},
 ): Action & { requires: string[] } {
   const clamp = { min: opts.min ?? DEFAULT_MIN_ZOOM, max: opts.max ?? DEFAULT_MAX_ZOOM };
   const axis = opts.axis ?? 'both';
   return {
-    id: 'viewport.pinchZoom',
-    label: 'Pinch Zoom',
+    id: 'viewport.touchZoom',
+    label: 'Touch Zoom',
     group: 'viewport',
-    defaultBinding: [{ spec: { kind: 'multiTouch', fingers: 2 }, opts: { id: 'viewport.pinchZoom.multiTouch' } }],
+    defaultBinding: [{ spec: { kind: 'multiTouch', fingers: 2 }, opts: { id: 'viewport.touchZoom.multiTouch' } }],
     requires: ['view', 'debug'],
     invoker: {
       timing: 'ongoing',
@@ -91,7 +91,7 @@ export function createPinchZoomAction(
 }
 
 /**
- * Default `viewport.pinchZoom` descriptor: two-finger pinch with the kit's
- * default 0.1–8 scale clamp. Equivalent to `createPinchZoomAction()`.
+ * Default `viewport.touchZoom` descriptor: two-finger pinch with the kit's
+ * default 0.1–8 scale clamp. Equivalent to `createTouchZoomAction()`.
  */
-export const pinchZoomAction: Action & { requires: string[] } = createPinchZoomAction();
+export const touchZoomAction: Action & { requires: string[] } = createTouchZoomAction();

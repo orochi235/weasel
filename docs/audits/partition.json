@@ -1930,7 +1930,7 @@
    "packages/core/src/interactions/actions/defaults/index.ts",
    "packages/core/src/interactions/actions/defaults/lockedReach.ts",
    "packages/core/src/interactions/actions/defaults/nudgeSteps.ts",
-   "packages/core/src/interactions/actions/defaults/pinchZoom.ts",
+   "packages/core/src/interactions/actions/defaults/touchZoom.ts",
    "packages/core/src/interactions/actions/defaults/requiresSelection.ts",
    "packages/core/src/interactions/actions/defaults/segmentUnder.ts",
    "packages/core/src/interactions/actions/defaults/sliceOps.ts",
