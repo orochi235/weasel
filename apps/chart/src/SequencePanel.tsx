@@ -66,20 +66,23 @@ export function SequencePanel({ tools, scene, selected, values }: {
   };
   const head = sel?.participants[0] === undefined ? undefined : sel.data.participants.find((p) => p.id === sel.participants[0]);
   const frag = sel?.fragments[0] === undefined ? null : findStep(sel.data.steps, sel.fragments[0]);
-  const arrow = sel?.messages[0] === undefined ? null : arrowNameOf(sel.data, sel.messages[0]);
+  // A selected head or message drawn with a figure or arrow the picker doesn't name shows no value, so any choice applies.
+  const headKind: SeqParticipantKind | null = head === undefined ? participant
+    : head.outline === 'actor' ? 'actor' : head.outline === undefined || head.outline === 'rect' ? 'participant' : null;
+  const arrow = sel?.messages[0] === undefined ? arrowChoice : arrowNameOf(sel.data, sel.messages[0]);
   return (
     <SidebarPanel title="Sequence" collapsed={collapsed} onCollapsedChange={setCollapsed}>
       <ToolPalette tools={tools} include={isSequenceTool} columns={5} aria-label="Sequence tools" />
       <Select
         label="Adds" orientation="row" width="fit" options={choicesOf<SeqParticipantKind>(PARTICIPANT)}
-        selectedKey={head === undefined ? participant : head.outline === 'actor' ? 'actor' : 'participant'}
+        selectedKey={headKind}
         onSelectionChange={(kind) => {
           setParticipant(kind);
           apply((d) => foldEach(d, sel!.participants, (e, id) => setParticipantOutline(e, id, kind === 'actor' ? 'actor' : undefined)), 'Change participant');
         }}
       />
       <Select
-        label="Arrow" orientation="row" width="fit" options={choicesOf<SeqArrowName>(MESSAGE)} selectedKey={arrow ?? arrowChoice}
+        label="Arrow" orientation="row" width="fit" options={choicesOf<SeqArrowName>(MESSAGE)} selectedKey={arrow}
         onSelectionChange={(name) => {
           setArrow(name);
           apply((d) => foldEach(d, sel!.messages, (e, id) => setMessageArrow(e, id, name)), 'Change arrow');
