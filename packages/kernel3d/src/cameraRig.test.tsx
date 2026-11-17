@@ -4,7 +4,7 @@ import { act, cleanup } from '@testing-library/react';
 import { renderWithKeys as render } from '@weasel-js/react/testing/giveKeys';
 import { SceneCanvas } from '@weasel-js/core';
 import { createCamera, type Camera3d } from './camera';
-import { cameraRig, cameraRigActions } from './cameraRig';
+import { cameraRig, createCameraRigActions } from './cameraRig';
 import { createNestedTestScene } from './testScene';
 import type { Action } from '@weasel-js/routing';
 
@@ -41,16 +41,16 @@ describe('cameraRig', () => {
     expect(camera.distance).toBeLessThan(10);
   });
 
-  it('carries the actions cameraRigActions builds from the same options', () => {
+  it('carries the actions createCameraRigActions builds from the same options', () => {
     const dep = { get: () => createCamera({}), set: () => {}, size: () => ({ width: 1, height: 1 }) };
     const opts = { drag: true, wheel: 'mod', touchPinch: false } as const;
-    expect(bound(cameraRig(dep, opts).actions ?? [])).toEqual(bound(cameraRigActions(opts)));
+    expect(bound(cameraRig(dep, opts).actions ?? [])).toEqual(bound(createCameraRigActions(opts)));
   });
 });
 
-describe('cameraRigActions', () => {
+describe('createCameraRigActions', () => {
   it('binds the wheel, both pinches and the double click by default, and no drag', () => {
-    expect(bound(cameraRigActions())).toEqual([
+    expect(bound(createCameraRigActions())).toEqual([
       ['camera.dolly', [{ kind: 'wheel' }, { kind: 'wheel', mods: { ctrl: true } }, { kind: 'pinch' }]],
       ['camera.pinchDolly', [{ kind: 'multiTouch', fingers: 2 }]],
       ['camera.home', [{ kind: 'doubleClick' }]],
@@ -58,21 +58,21 @@ describe('cameraRigActions', () => {
   });
 
   it('orbits on a drag and pans on Shift+drag when asked to', () => {
-    expect(bound(cameraRigActions({ drag: true })).slice(0, 2)).toEqual([
+    expect(bound(createCameraRigActions({ drag: true })).slice(0, 2)).toEqual([
       ['camera.orbit', [{ kind: 'drag' }]],
       ['camera.pan', [{ kind: 'drag', mods: { shift: true } }]],
     ]);
   });
 
   it('dollies on Mod+wheel, or leaves the wheel alone', () => {
-    expect(bound(cameraRigActions({ wheel: 'mod', trackpadPinch: false }))[0])
+    expect(bound(createCameraRigActions({ wheel: 'mod', trackpadPinch: false }))[0])
       .toEqual(['camera.dolly', [{ kind: 'wheel', mods: { mod: true } }]]);
-    expect(bound(cameraRigActions({ wheel: false })).find(([id]) => id === 'camera.dolly'))
+    expect(bound(createCameraRigActions({ wheel: false })).find(([id]) => id === 'camera.dolly'))
       .toEqual(['camera.dolly', [{ kind: 'wheel', mods: { ctrl: true } }, { kind: 'pinch' }]]);
   });
 
   it('leaves out an action whose every gesture is off', () => {
-    const ids = cameraRigActions({ wheel: false, trackpadPinch: false, touchPinch: false, doubleClick: false })
+    const ids = createCameraRigActions({ wheel: false, trackpadPinch: false, touchPinch: false, doubleClick: false })
       .map((a) => a.id);
     expect(ids).toEqual([]);
   });
