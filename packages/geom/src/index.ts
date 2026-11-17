@@ -78,7 +78,7 @@ export {
   cornerShapePoint, isCornerShape, nextCornerShape, type CornerKeyword, type CornerPiece, type CornerShape,
   type CornerShapeFrame,
 } from './paths/cornerShape';
-export { unionBoundsPath } from './paths/unionBoundsPath';
+export { boundsOfPaths } from './paths/boundsOfPaths';
 export { translatePath, scalePathToBounds } from './paths/transform';
 export { transformPath, type TransformPathOptions } from './paths/transformPath';
 export { composePath, decomposePath } from './paths/compose';

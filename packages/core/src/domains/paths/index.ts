@@ -80,7 +80,7 @@ export {
   splitSubpaths,
   splitByClosure,
   hasOpenSubpath,
-  unionBoundsPath,
+  boundsOfPaths,
   pathSignedArea,
   reversePath,
   resolveCorners,

@@ -3487,7 +3487,7 @@
    "packages/geom/src/paths/transformPath.ts",
    "packages/geom/src/paths/tugPathEnd.ts",
    "packages/geom/src/paths/tweenPaths.ts",
-   "packages/geom/src/paths/unionBoundsPath.ts",
+   "packages/geom/src/paths/boundsOfPaths.ts",
    "packages/geom/src/paths/winding.ts",
    "packages/geom/src/paths/zigzagPath.ts"
   ]

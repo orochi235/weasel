@@ -136,7 +136,7 @@ measure readout does; whether it should follow the rule is open in
 `docs/unruled.md`.
 
 A bounds function given nothing to bound returns `null` (`boundsOfCoords`,
-`unionRects`, `unionBoundsPath`, `aabbOfPoints`); one given a path that draws
+`unionRects`, `boundsOfPaths`, `aabbOfPoints`); one given a path that draws
 nothing returns a zero-size box.
 
 ## An action's tunable values are its params

@@ -163,16 +163,16 @@ not the control points, so the box does not overshoot. An empty path gives a
 zero-size rect at the origin.
 
 ```ts
-import { boundsOfPath, ellipsePath, pathFromD, unionBoundsPath } from '@weasel-js/geom';
+import { boundsOfPath, ellipsePath, pathFromD, boundsOfPaths } from '@weasel-js/geom';
 
 const triangle = pathFromD('M0 0 L100 0 L50 80 Z');
 boundsOfPath(triangle); // { kind: 'rect', x: 0, y: 0, width: 100, height: 80 }
 
 const dot = ellipsePath({ x: 150, y: 0, width: 20, height: 20 });
-unionBoundsPath([triangle, dot]); // { kind: 'rect', x: 0, y: 0, width: 170, height: 80 }
+boundsOfPaths([triangle, dot]); // { kind: 'rect', x: 0, y: 0, width: 170, height: 80 }
 ```
 
-`unionBoundsPath` takes any iterable of paths and returns `null` when it is
+`boundsOfPaths` takes any iterable of paths and returns `null` when it is
 empty.
 
 `pathSignedArea(path)` returns the enclosed area, positive for a contour that

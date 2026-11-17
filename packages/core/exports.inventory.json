@@ -2383,7 +2383,7 @@
     "undoKeyStep": "function",
     "unionAABB": "function",
     "unionBounds": "function",
-    "unionBoundsPath": "function",
+    "boundsOfPaths": "function",
     "unionOfChildren": "function",
     "unionOfChildrenVia": "function",
     "unitFrameAt": "function",

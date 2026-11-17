@@ -69,7 +69,7 @@ What operates on a path:
   `regularPolygonPath`, `starPath`, `linePath`, `circlePath`, and
   `roundRectPath` for common shapes; `pathFromD` to parse an SVG `d` string;
   `schneiderFit` to fit cubic curves through sampled points.
-- **Measuring.** `boundsOfPath`, `unionBoundsPath`, `pathSignedArea`,
+- **Measuring.** `boundsOfPath`, `boundsOfPaths`, `pathSignedArea`,
   `pointAlongPath`.
 - **Transforming.** `translatePath`, `transformPath`, `scalePathToBounds`,
   `reversePath`.
