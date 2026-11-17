@@ -395,7 +395,9 @@ over the canvas is the scene's, its pan and zoom included.
 
 ```tsx
 import { createScene } from '@weasel-js/core';
+import { drawPreset } from '@weasel-js/editing';
 import { gridSnapSource } from '@weasel-js/guides';
+import { useMemo } from 'react';
 import { icon } from './icons.gen'; // the app's icon(): see @weasel-js/icons
 import {
   type ConfigOf, defineInstrument, f, type RenderContext, type SceneTrialState,
@@ -405,10 +407,10 @@ import {
 const config = f.schema({ snap: f.boolean(true).label('Snap to grid') });
 
 function Body({ ctx }: { ctx: RenderContext<SceneTrialState, ConfigOf<typeof config>> }) {
-  const scene = useTrialScene(ctx, () => createScene({ systemLayers: [{ id: 'default' }], initial: NODES }));
+  const scene = useTrialScene(ctx, () => createScene({ systemLayers: [{ id: 'default' }] }));
   const snap = useMemo(() => ({ sources: ctx.config.snap ? [gridSnapSource({ spacing: 20 })] : [] }), [ctx.config.snap]);
   return (
-    <TrialSceneCanvas features={[drawPreset]} defaultTools={['rect', 'pen']}
+    <TrialSceneCanvas features={[drawPreset]} defaultTools={['select', 'rect']}
       scene={scene} trial={ctx.trial} snap={snap} />
   );
 }
@@ -677,7 +679,6 @@ or raw WebGL you take rects and dirtiness from labkit and keep the GL yourself:
 
 ```tsx
 import { toDeviceRect, useSurfaceTile, useTiledSurface } from '@weasel-js/labkit/surface';
-import { drawPreset } from '@weasel-js/editing';
 ```
 
 A trial's `view` is persisted, restored on Reset and handed to the instrument;
