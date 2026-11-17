@@ -1,6 +1,6 @@
 /** Grouping traced loops into regions, and writing contours back out as paths. */
 
-import { pointInPolygon } from '../polyline';
+import { polygonContainsPoint } from '../polyline';
 import type { PolygonPath, PathFillRule } from '../path';
 import { PATH_C, PATH_L, PATH_M, PATH_Q, PATH_Z } from '../commands';
 import { type Contour, evalSeg, sampleContour, signedArea } from './contourSegments';
@@ -14,7 +14,7 @@ export function assembleRegions(outers: Contour[], holes: Contour[]): Contour[][
     const hp = evalSeg(h[0], 0.5);
     let best: (typeof regions)[number] | null = null;
     for (const r of regions) {
-      if (pointInPolygon(r.ring, hp.x, hp.y) && (!best || r.area < best.area)) best = r;
+      if (polygonContainsPoint(r.ring, hp.x, hp.y) && (!best || r.area < best.area)) best = r;
     }
     best?.loops.push(h);
   }

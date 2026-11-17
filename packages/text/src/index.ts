@@ -94,7 +94,7 @@ export { verticalAlignOffset } from './measure/verticalAlign';
 export type { TextVerticalAlign } from './measure/verticalAlign';
 
 export type { TextPose } from './pose';
-export { pointInTextPose, caretIndexAt } from './hitTest';
+export { textPoseContainsPoint, caretIndexAt } from './hitTest';
 export type { CaretIndexAtOptions, PointInTextPoseOptions } from './hitTest';
 export { fitTextPose } from './fitTextPose';
 export type { FitTextPoseOptions } from './fitTextPose';

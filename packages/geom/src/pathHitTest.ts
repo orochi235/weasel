@@ -10,7 +10,7 @@
  * `fillsOpenSubpaths`.
  */
 
-import { pointInPolygon, segmentsCross } from './polyline';
+import { polygonContainsPoint, segmentsCross } from './polyline';
 import { pointSegmentDist2 } from './points2';
 import { rectsIntersect, type Rect } from './box';
 import type { Path } from './path';
@@ -142,8 +142,8 @@ function flattenVerts(poly: readonly Point[]): number[] {
 /** Edge-vs-edge segment intersection check between two closed polygons. */
 function polygonsIntersect(a: readonly Point[], b: readonly Point[]): boolean {
   if (a.length === 0 || b.length === 0) return false;
-  if (pointInPolygon(flattenVerts(a), b[0].x, b[0].y)) return true;
-  if (pointInPolygon(flattenVerts(b), a[0].x, a[0].y)) return true;
+  if (polygonContainsPoint(flattenVerts(a), b[0].x, b[0].y)) return true;
+  if (polygonContainsPoint(flattenVerts(b), a[0].x, a[0].y)) return true;
   for (let i = 0; i < a.length; i++) {
     const a0 = a[i], a1 = a[(i + 1) % a.length];
     for (let j = 0; j < b.length; j++) {
@@ -217,7 +217,7 @@ function anyVertexInRect(subpaths: readonly (readonly number[])[], r: Rect): boo
 function anyVertexInPolygon(subpaths: readonly (readonly number[])[], flatPoly: readonly number[]): boolean {
   for (const sub of subpaths) {
     for (let i = 0; i < sub.length; i += 2) {
-      if (pointInPolygon(flatPoly, sub[i], sub[i + 1])) return true;
+      if (polygonContainsPoint(flatPoly, sub[i], sub[i + 1])) return true;
     }
   }
   return false;
@@ -331,7 +331,7 @@ export function polygonContainsPath(
   const flatPoly = flattenVerts(polygon);
   for (const sub of subpaths) {
     for (let i = 0; i < sub.length; i += 2) {
-      if (!pointInPolygon(flatPoly, sub[i], sub[i + 1])) return false;
+      if (!polygonContainsPoint(flatPoly, sub[i], sub[i + 1])) return false;
     }
   }
   // Every vertex is inside, but a concave polygon can still cut an edge. An

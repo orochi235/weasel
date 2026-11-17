@@ -8,7 +8,7 @@ import earcut from 'earcut';
 import type { PolygonPath } from '../path';
 import type { Point } from '../paths/cubicMath';
 import { boundsOfPath } from '../paths/bounds';
-import { pointInPolygon } from '../polyline';
+import { polygonContainsPoint } from '../polyline';
 import { flattenPolygon } from '../tessellate/tessellate';
 import { resolveCrossings, type FlattenedContours } from '../tessellate/crossings';
 import { nestRings } from '../tessellate/nesting';
@@ -94,7 +94,7 @@ function regionsOf(path: PolygonPath, tolerance: number, h: number): { regions: 
 const flatRing = (ring: MeshPoint[]) => ring.flatMap((p) => [p.x, p.y]);
 
 function inside(region: Region, x: number, y: number, flats = region.rings.map(flatRing)): boolean {
-  return flats.every((ring, i) => pointInPolygon(ring, x, y) === (i === 0));
+  return flats.every((ring, i) => polygonContainsPoint(ring, x, y) === (i === 0));
 }
 
 /** The nearest point on any ring of `region` to `(x, y)`. */

@@ -4,7 +4,7 @@
  * whatever the camera's distance.
  */
 
-import { pointInPolygon, pointSegmentDist, type Point } from '@weasel-js/geom';
+import { polygonContainsPoint, pointSegmentDist, type Point } from '@weasel-js/geom';
 import { add, dot, normalize, scale, sub, type Vec3 } from '@weasel-js/geom/3d';
 import { cameraBasis } from '../camera';
 import { projectPoint, type Viewport3d } from '../project';
@@ -112,7 +112,7 @@ export function axisHandleAt(handles: readonly AxisHandle[], point: Point, hitPx
   let bestD = hitPx;
   for (const h of handles) {
     const [tip, b1, b2] = h.head;
-    const onHead = pointInPolygon([tip.x, tip.y, b1.x, b1.y, b2.x, b2.y], point.x, point.y);
+    const onHead = polygonContainsPoint([tip.x, tip.y, b1.x, b1.y, b2.x, b2.y], point.x, point.y);
     const d = onHead ? 0 : pointSegmentDist(point.x, point.y, h.from.x, h.from.y, tip.x, tip.y);
     if (d <= bestD) {
       best = h;

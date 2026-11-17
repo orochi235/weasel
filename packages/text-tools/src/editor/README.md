@@ -102,7 +102,7 @@ kit — is `@weasel-js/text`'s `layout/`. The atlas itself (`FontAtlas`,
 `useTextEdit` is the primitive, in `@weasel-js/text-dom`; `useSceneTextEdit` here is the
 scene-wired version. `domRuns.ts`, beside the primitive, bridges to a DOM editing surface (contenteditable) — text editing
 uses real DOM for IME, spellcheck, and accessibility rather than reimplementing
-a caret on canvas. `hitTest.ts` (in `@weasel-js/text`) provides `pointInTextPose` and `caretIndexAt`
+a caret on canvas. `hitTest.ts` (in `@weasel-js/text`) provides `textPoseContainsPoint` and `caretIndexAt`
 to map clicks back into the run model; the caret snaps to the advance cells
 `layoutTextPose` produced, so it cannot drift from the painted glyphs. The
 overlay is `white-space: pre-wrap` at the pose width when the style declares

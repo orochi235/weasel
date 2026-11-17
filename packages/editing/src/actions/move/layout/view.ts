@@ -30,7 +30,7 @@ export function draggedInView(view: StrategyView<unknown>, arg: LayoutDragged<un
 
 /** World `point` in `view`'s space, carried there as the center of `pose`
  *  (measured by `g`) moved onto it. */
-export function pointInView(
+export function viewContainsPoint(
   view: StrategyView<unknown>, g: PoseDescriptor<unknown>, pose: unknown, point: { x: number; y: number },
 ): { x: number; y: number } {
   if (!view.turned) return point;

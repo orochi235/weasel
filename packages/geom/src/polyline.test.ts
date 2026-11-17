@@ -1,17 +1,17 @@
 import { describe, it, expect } from 'vitest';
-import { pointInPolygon, ringSignedArea, segmentsCross } from './polyline';
+import { polygonContainsPoint, ringSignedArea, segmentsCross } from './polyline';
 import { pointSegmentDist2 } from './points2';
 import { approxEq } from './scalar';
 
 // An L-shaped (non-convex) polygon, interleaved & unclosed.
 const L = [0, 0, 4, 0, 4, 2, 2, 2, 2, 4, 0, 4];
 
-describe('pointInPolygon (flat, even-odd)', () => {
-  it('inside the lower arm', () => expect(pointInPolygon(L, 1, 1)).toBe(true));
-  it('inside the upper arm', () => expect(pointInPolygon(L, 1, 3)).toBe(true));
-  it('in the notch (outside)', () => expect(pointInPolygon(L, 3, 3)).toBe(false));
-  it('far outside', () => expect(pointInPolygon(L, 9, 9)).toBe(false));
-  it('degenerate (<3 verts) is false', () => expect(pointInPolygon([0, 0, 1, 1], 0, 0)).toBe(false));
+describe('polygonContainsPoint (flat, even-odd)', () => {
+  it('inside the lower arm', () => expect(polygonContainsPoint(L, 1, 1)).toBe(true));
+  it('inside the upper arm', () => expect(polygonContainsPoint(L, 1, 3)).toBe(true));
+  it('in the notch (outside)', () => expect(polygonContainsPoint(L, 3, 3)).toBe(false));
+  it('far outside', () => expect(polygonContainsPoint(L, 9, 9)).toBe(false));
+  it('degenerate (<3 verts) is false', () => expect(polygonContainsPoint([0, 0, 1, 1], 0, 0)).toBe(false));
 });
 
 describe('segmentsCross', () => {
@@ -50,13 +50,13 @@ describe('segmentsCross degenerate configurations', () => {
   });
 });
 
-describe('pointInPolygon degenerate contours', () => {
+describe('polygonContainsPoint degenerate contours', () => {
   it('rejects fewer than three vertices', () => {
-    expect(pointInPolygon([0, 0, 10, 10], 5, 5)).toBe(false);
-    expect(pointInPolygon([], 0, 0)).toBe(false);
+    expect(polygonContainsPoint([0, 0, 10, 10], 5, 5)).toBe(false);
+    expect(polygonContainsPoint([], 0, 0)).toBe(false);
   });
   it('rejects a zero-area collinear contour', () => {
-    expect(pointInPolygon([0, 0, 5, 0, 10, 0], 5, 0)).toBe(false);
+    expect(polygonContainsPoint([0, 0, 5, 0, 10, 0], 5, 0)).toBe(false);
   });
 });
 
@@ -66,7 +66,7 @@ describe('pointSegmentDist2 degenerate segment', () => {
   });
 });
 
-describe('pointInPolygon over a vertex range', () => {
+describe('polygonContainsPoint over a vertex range', () => {
   // Two contours in one buffer: a 0..10 square, then a 20..30 square.
   const coords = [
     0, 0, 10, 0, 10, 10, 0, 10,
@@ -74,14 +74,14 @@ describe('pointInPolygon over a vertex range', () => {
   ];
 
   it('tests only the requested contour', () => {
-    expect(pointInPolygon(coords, 5, 5, 0, 4)).toBe(true);
-    expect(pointInPolygon(coords, 25, 25, 0, 4)).toBe(false);
-    expect(pointInPolygon(coords, 25, 25, 4, 8)).toBe(true);
-    expect(pointInPolygon(coords, 5, 5, 4, 8)).toBe(false);
+    expect(polygonContainsPoint(coords, 5, 5, 0, 4)).toBe(true);
+    expect(polygonContainsPoint(coords, 25, 25, 0, 4)).toBe(false);
+    expect(polygonContainsPoint(coords, 25, 25, 4, 8)).toBe(true);
+    expect(polygonContainsPoint(coords, 5, 5, 4, 8)).toBe(false);
   });
 
   it('rejects a range of fewer than three vertices', () => {
-    expect(pointInPolygon(coords, 5, 5, 0, 2)).toBe(false);
+    expect(polygonContainsPoint(coords, 5, 5, 0, 2)).toBe(false);
   });
 });
 

@@ -7,7 +7,7 @@ import { applyPathWarp, pinWarpMap } from '@weasel-js/geom/warp';
 
 describe('package exports', () => {
   it('core barrel exposes the tiers', () => {
-    for (const name of ['cross', 'boxToBox', 'pointInPolygon', 'transformCoords', 'cubicBounds', 'forEachSegment', 'placeRect', 'clampRectWithin', 'quadraticEvalAt', 'splitCubicAt', 'splitQuadraticAt', 'splitLineAt', 'nearestOnLine', 'segmentT', 'pointSegmentDist', 'pointSegmentDist2', 'distance', 'distance2', 'lerp', 'lerpPoint', 'nearestOnQuadratic', 'nearestOnCubic', 'nearestOnPath', 'lineShape', 'arcShape', 'rectPath', 'pathFromD', 'boundsOfPath', 'transformPath', 'pointAlongPath', 'schneiderFit', 'resolveEasing', 'easeOutBack']) {
+    for (const name of ['cross', 'boxToBox', 'polygonContainsPoint', 'transformCoords', 'cubicBounds', 'forEachSegment', 'placeRect', 'clampRectWithin', 'quadraticEvalAt', 'splitCubicAt', 'splitQuadraticAt', 'splitLineAt', 'nearestOnLine', 'segmentT', 'pointSegmentDist', 'pointSegmentDist2', 'distance', 'distance2', 'lerp', 'lerpPoint', 'nearestOnQuadratic', 'nearestOnCubic', 'nearestOnPath', 'lineShape', 'arcShape', 'rectPath', 'pathFromD', 'boundsOfPath', 'transformPath', 'pointAlongPath', 'schneiderFit', 'resolveEasing', 'easeOutBack']) {
       expect(typeof (core as Record<string, unknown>)[name]).toBe('function');
     }
   });

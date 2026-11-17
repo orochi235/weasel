@@ -7,7 +7,7 @@ import {
   type UnitScope,
   type AnyScene,
 } from '@weasel-js/core';
-import { transformPoint, pointInPolygon, type Affine, type Point } from '@weasel-js/geom';
+import { transformPoint, polygonContainsPoint, type Affine, type Point } from '@weasel-js/geom';
 import type { GridSpacing } from './axes';
 
 /** Which of a scene's containers run a grid of their own. */
@@ -107,7 +107,7 @@ export function gridOwner(scene: ScopedScene, id: NodeId, owners: GridOwners, in
 export function regionAt(regions: readonly GridRegion[] | undefined, point: Point): GridRegion | null {
   for (const r of regions ?? []) {
     const flat = r.outline.flatMap((p) => [p.x, p.y]);
-    if (pointInPolygon(flat, point.x, point.y)) return regionAt(r.regions, point) ?? r;
+    if (polygonContainsPoint(flat, point.x, point.y)) return regionAt(r.regions, point) ?? r;
   }
   return null;
 }
