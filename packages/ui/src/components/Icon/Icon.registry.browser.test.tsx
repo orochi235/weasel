@@ -9,7 +9,7 @@ afterEach(cleanup);
 
 describe('<Icon> from the registry', () => {
   it('draws the glyph the registry holds', async () => {
-    const screen = render(<IconRegistryProvider icons={uiIcons}><Icon name={icon('close')} label="Close" /></IconRegistryProvider>);
+    const screen = render(<IconRegistryProvider icons={uiIcons}><Icon name={icon('close')} aria-label="Close" /></IconRegistryProvider>);
     const svg = screen.getByRole('img', { name: 'Close' }) as unknown as SVGSVGElement;
     // Parsed the same way, so the comparison ignores how the browser serializes a self-closed element.
     const expected = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
@@ -22,8 +22,8 @@ describe('<Icon> from the registry', () => {
     const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
     const screen = render(
       <IconRegistryProvider icons={uiIcons}>
-        <Icon name={'ui:nope' as never} label="A" />
-        <Icon name={'ui:nope' as never} label="B" />
+        <Icon name={'ui:nope' as never} aria-label="A" />
+        <Icon name={'ui:nope' as never} aria-label="B" />
       </IconRegistryProvider>,
     );
     const svg = screen.getByRole('img', { name: 'A' }) as unknown as SVGSVGElement;
@@ -34,7 +34,7 @@ describe('<Icon> from the registry', () => {
   });
 
   it('composes a mark from the registry', async () => {
-    const screen = render(<IconRegistryProvider icons={uiIcons}><Icon name={icon('close')} mark={icon('add')} label="M" /></IconRegistryProvider>);
+    const screen = render(<IconRegistryProvider icons={uiIcons}><Icon name={icon('close')} mark={icon('add')} aria-label="M" /></IconRegistryProvider>);
     expect((screen.getByRole('img', { name: 'M' }) as unknown as SVGSVGElement).querySelector('mask')).not.toBeNull();
   });
 });

@@ -13,7 +13,7 @@ export interface IconProps {
   size?: number;
   /** Accessible name. Omit inside a button that already labels itself; the
    *  glyph is then `aria-hidden`. */
-  label?: string;
+  'aria-label'?: string;
   /** Shade the region the glyph encloses, in the same `currentColor` at
    *  `fillOpacity`. Ignored by a glyph with no enclosed region — a spiral, or a
    *  function with poles — so a caller can set it across a set without checking. */
@@ -43,7 +43,7 @@ export function Icon({
   name: spec,
   className,
   size = 20,
-  label,
+  'aria-label': label,
   filled = false,
   fillOpacity = 0.16,
   mark: markProp,
