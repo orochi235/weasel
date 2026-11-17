@@ -47,7 +47,7 @@ describe('@weasel-js/audio public surface', () => {
 
   it('exports the scoring layer, from a mood down to a bar of events', () => {
     const mood: audio.ScoreMood = audio.scoreCues[0].mood;
-    const params: audio.ScoreParams = audio.scoreParams(mood);
+    const params: audio.ScoreSettings = audio.resolveScoreMood(mood);
     const bar: audio.PatternEvent[] = audio.scoreBar(params, 0);
     expect(bar.length).toBeGreaterThan(0);
     expect(audio.readScoreCue(mood).name).toBe(audio.scoreCues[0].name);

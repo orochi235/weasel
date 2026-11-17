@@ -1,6 +1,6 @@
 import type { Envelope } from './envelope';
 import type { PatternNote } from './patternPlayer';
-import { scoreModes, type ScoreParams } from './scoreMood';
+import { scoreModes, type ScoreSettings } from './scoreMood';
 
 /** Steps in a bar of score: sixteenths in 4/4. */
 export const SCORE_BAR_STEPS = 16;
@@ -25,7 +25,7 @@ const PROGRESSION = [0, 5, 3, 4];
  * since the score began; a cluster stays on the tonic, and the other harmonies
  * walk a four-chord progression inside the mode.
  */
-export function scoreChord(params: ScoreParams, chord: number, tonic = 0): number[] {
+export function scoreChord(params: ScoreSettings, chord: number, tonic = 0): number[] {
   const scale = scoreModes[params.mode];
   const tone = (degree: number): number =>
     params.register + tonic + scale[degree % 7] + 12 * Math.floor(degree / 7);
@@ -69,7 +69,7 @@ const PLUCK: Envelope = { attack: 5, decay: 140, sustain: 0.2, release: 80 };
  * are an ostinato over the chord's tones, a bass on the root, the ostinato
  * doubled an octave up on the off pulses, and the chord held as a pad.
  */
-export function scoreBar(params: ScoreParams, bar: number, opts: ScoreBarOptions = {}): PatternNote[] {
+export function scoreBar(params: ScoreSettings, bar: number, opts: ScoreBarOptions = {}): PatternNote[] {
   const gain = opts.gain ?? 0.5;
   const chord = scoreChord(params, Math.floor(bar / params.harmonicRhythm), opts.tonic);
   const swell: Envelope = { attack: params.attack, release: params.attack };

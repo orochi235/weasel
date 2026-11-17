@@ -4,7 +4,7 @@
  */
 import { describe, expect, it } from 'vitest';
 import fc from 'fast-check';
-import { readScoreCue, scoreCues, scoreParams, type ScoreMood } from './scoreMood';
+import { readScoreCue, scoreCues, resolveScoreMood, type ScoreMood } from './scoreMood';
 import { anyFinite, runs, tally, timeoutFor } from './pbt.fixture';
 
 const RUNS = 400;
@@ -55,13 +55,13 @@ describe('readScoreCue', () => {
   }, timeoutFor(RUNS, 1));
 });
 
-describe('scoreParams', () => {
+describe('resolveScoreMood', () => {
   it('takes each parameter from its one axis, monotonically, and reads a mood out of range as its nearest end', () => {
     fc.assert(fc.property(inRangeMood, inRangeMood, fc.constantFrom('valence', 'tension', 'urgency'), (a, b, axis) => {
       // `b` differs from `a` on `axis` alone, and lies above it there.
       const lo = { ...a, [axis]: Math.min(a[axis], b[axis]) };
       const hi = { ...a, [axis]: Math.max(a[axis], b[axis]) };
-      const [p, q] = [scoreParams(lo), scoreParams(hi)];
+      const [p, q] = [resolveScoreMood(lo), resolveScoreMood(hi)];
       for (const [other, keys] of Object.entries(BY_AXIS)) {
         if (other === axis) continue;
         for (const k of keys) expect(q[k], k).toEqual(p[k]);
@@ -83,6 +83,6 @@ describe('scoreParams', () => {
       expect(p.spread).toBeLessThanOrEqual(3);
       expect(p.tempo).toBeGreaterThan(0);
     }), runs(RUNS));
-    fc.assert(fc.property(anyMood, (m) => { expect(scoreParams(m)).toEqual(scoreParams(clamped(m))); }), runs(RUNS));
+    fc.assert(fc.property(anyMood, (m) => { expect(resolveScoreMood(m)).toEqual(resolveScoreMood(clamped(m))); }), runs(RUNS));
   }, timeoutFor(RUNS, 2));
 });

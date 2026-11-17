@@ -1,9 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import { patternVoicePeaks } from './patternLoad';
 import { scoreBar, scoreChord } from './scoreBar';
-import { scoreCues, scoreModes, scoreParams } from './scoreMood';
+import { scoreCues, scoreModes, resolveScoreMood } from './scoreMood';
 
-const params = (name: string) => scoreParams(scoreCues.find((c) => c.name === name)!.mood);
+const params = (name: string) => resolveScoreMood(scoreCues.find((c) => c.name === name)!.mood);
 const midi = (e: { pitch: unknown }) => (e.pitch as { midi: number }).midi;
 
 describe('scoreChord', () => {
@@ -83,7 +83,7 @@ describe('scoreBar', () => {
 
   it('routes and scales every note, never past the gain it is given', () => {
     for (const cue of scoreCues) {
-      const events = scoreBar(scoreParams(cue.mood), 8, { bus: 'music', gain: 0.4 });
+      const events = scoreBar(resolveScoreMood(cue.mood), 8, { bus: 'music', gain: 0.4 });
       const byStep = new Map<number, number>();
       for (const e of events) {
         expect(e.bus).toBe('music');
@@ -95,7 +95,7 @@ describe('scoreBar', () => {
 
   it('fits every cue in the default voice limit', () => {
     for (const cue of scoreCues) {
-      const p = scoreParams(cue.mood);
+      const p = resolveScoreMood(cue.mood);
       const peaks = patternVoicePeaks(scoreBar(p, 8), { tempo: p.tempo, length: 16 });
       expect(peaks.sfx).toBeLessThanOrEqual(32);
     }

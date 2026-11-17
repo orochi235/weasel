@@ -1,9 +1,9 @@
 import { useEffect, useRef, useState } from 'react';
 import { DrawCanvas } from '@weasel-js/core';
 import {
-  createAudioEngine, createScore, readScoreCue, scoreBar, scoreCues, scoreParams,
+  createAudioEngine, createScore, readScoreCue, scoreBar, scoreCues, resolveScoreMood,
 } from '@weasel-js/audio';
-import type { AudioEngine, Score, ScoreMood, ScoreParams, ScoreState } from '@weasel-js/audio';
+import type { AudioEngine, Score, ScoreMood, ScoreSettings, ScoreState } from '@weasel-js/audio';
 import { scoreRoll } from './score/scoreRoll';
 import { Button } from '@weasel-js/ui/components/Button';
 import { InlineRange } from '@weasel-js/ui/components/InlineRange';
@@ -18,9 +18,9 @@ const BUILT_BAR = 8;
 
 type Axis = keyof ScoreMood;
 
-/** Each axis, its ends in words, and the parameters `scoreParams` reads off it. */
+/** Each axis, its ends in words, and the parameters `resolveScoreMood` reads off it. */
 const AXES: readonly {
-  axis: Axis; min: number; low: string; high: string; reads: readonly (keyof ScoreParams)[];
+  axis: Axis; min: number; low: string; high: string; reads: readonly (keyof ScoreSettings)[];
 }[] = [
   { axis: 'valence', min: -1, low: 'dark', high: 'bright', reads: ['mode', 'register', 'spread'] },
   { axis: 'tension', min: 0, low: 'settled', high: 'dissonant', reads: ['harmony', 'layers'] },
@@ -30,9 +30,9 @@ const AXES: readonly {
   },
 ];
 
-const LABELS: Partial<Record<keyof ScoreParams, string>> = { harmonicRhythm: 'chord every' };
+const LABELS: Partial<Record<keyof ScoreSettings, string>> = { harmonicRhythm: 'chord every' };
 
-function shown(params: ScoreParams, key: keyof ScoreParams): string {
+function shown(params: ScoreSettings, key: keyof ScoreSettings): string {
   switch (key) {
     case 'register': return `MIDI ${params.register}`;
     case 'spread': return `${params.spread} oct`;
@@ -86,7 +86,7 @@ export function ScoreDemo() {
   // While it plays, everything shown is the bar in force; a slider's move
   // lands on the next bar line, as it does in the sound.
   const cue = heard?.cue ?? readScoreCue(mood);
-  const params = heard?.params ?? scoreParams(mood);
+  const params = heard?.params ?? resolveScoreMood(mood);
   const cueBar = heard?.cueBar ?? BUILT_BAR;
   const device = scoreCues.find((c) => c.name === cue.name)!.device;
 

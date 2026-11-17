@@ -87,8 +87,8 @@ export const scoreModes: Record<ScoreMode, readonly number[]> = {
   phrygian: [0, 1, 3, 5, 7, 8, 10],
 };
 
-/** The musical parameters a mood resolves to. Each follows one axis only. */
-export interface ScoreParams {
+/** The musical settings a mood resolves to. Each follows one axis only. */
+export interface ScoreSettings {
   /** From valence. */
   mode: ScoreMode;
   /** MIDI note of the tonic the chords are built up from. From valence. */
@@ -112,8 +112,8 @@ export interface ScoreParams {
   attack: number;
 }
 
-/** Resolve a mood to the parameters `scoreBar` writes music from. */
-export function scoreParams(mood: ScoreMood): ScoreParams {
+/** Resolve a mood to the settings `scoreBar` writes music from. */
+export function resolveScoreMood(mood: ScoreMood): ScoreSettings {
   const { valence, tension, urgency } = inRange(mood);
   const sustained = urgency < 0.35;
   return {

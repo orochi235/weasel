@@ -149,7 +149,7 @@ them, so the score says what it is doing: `state()` and `onBar` give the cue in
 force, each cue's share of the mood (`cue.weights`), and every parameter the bar
 was written from. Show it.
 
-The layers underneath are usable on their own: `scoreParams(mood)` resolves a
+The layers underneath are usable on their own: `resolveScoreMood(mood)` resolves a
 mood, `scoreChord` and `scoreBar` write a chord and a bar of pattern events
 from the parameters, and `readScoreCue(mood)` names the cue.
 

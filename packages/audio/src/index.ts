@@ -31,9 +31,9 @@ export {
 } from './patternPlayer';
 export { patternVoicePeaks, type PatternVoicePeaksOptions } from './patternLoad';
 export {
-  readScoreCue, scoreCues, scoreModes, scoreParams,
+  readScoreCue, scoreCues, scoreModes, resolveScoreMood,
   type ScoreMood, type ScoreCue, type ScoreCueName, type ScoreCueReading, type ScoreMode,
-  type ScoreParams,
+  type ScoreSettings,
 } from './scoreMood';
 export { SCORE_BAR_STEPS, scoreBar, scoreChord, type ScoreBarOptions } from './scoreBar';
 export { createScore, type Score, type ScoreOptions, type ScoreState } from './score';
