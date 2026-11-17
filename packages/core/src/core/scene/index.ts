@@ -42,6 +42,8 @@ export type {
   SceneArrivalHandler,
   ScenePoseReports,
   SceneRegistry,
+  NodeUpgrade,
+  SavedNode,
   SerializedNode,
   SerializedLayer,
   SerializedNodeV1,

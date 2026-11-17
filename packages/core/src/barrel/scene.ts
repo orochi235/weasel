@@ -125,6 +125,8 @@ export type {
   SceneEditSummary,
   ScenePoseReports,
   SceneRegistry,
+  NodeUpgrade,
+  SavedNode,
   SerializedLayer,
   SerializedNode,
   SerializedNodeV1,
