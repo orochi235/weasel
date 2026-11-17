@@ -16,7 +16,7 @@ import {
 } from './dynamic/dynamicAtlas';
 import { getFontFallbackPolicy, getDefaultFontFamily, _clearFallbackWarnings } from './fallback';
 import {
-  hasFontOutlines, listFontOutlines, loadFontOutlines, outlineMetrics, outlineStatus,
+  hasFontOutlines, listFontOutlines, loadFontOutlines, outlineFace, outlineStatus,
 } from './outline/outlineRegistry';
 import type { FaceMetrics } from './faceMetrics';
 import { atlasResult, sharedExactResult } from './atlasResult';
@@ -99,7 +99,7 @@ export function faceMetricsFor(
   style: FontStyle = 'normal',
 ): FaceMetrics | undefined {
   return getFont(family, weight, style)?.font.faceMetrics
-    ?? outlineMetrics(family, weight, style)?.faceMetrics;
+    ?? outlineFace(family, weight, style)?.faceMetrics;
 }
 
 /** One family in the registry and the variants registered for it — what a
@@ -435,7 +435,7 @@ function missResolveResult(
   // Outline-only: a family with parsed font bytes and no atlas. Ranked above
   // every fallback below because it is the *real* face, and below explicit
   // canvas enrollment, which is a consumer saying which tier it wants.
-  const face = outlineMetrics(family, weight, style);
+  const face = outlineFace(family, weight, style);
   if (face) {
     return {
       entry: null,

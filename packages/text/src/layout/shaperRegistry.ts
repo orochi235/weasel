@@ -4,7 +4,7 @@
  */
 import { engineSlot, type RegisterEngineOptions } from './engineSlot';
 import {
-  cachedFontVariant, outlineMetrics, type FaceEmbedding, type FontStyle, type OutlineFace, type ResolveResult,
+  cachedFontVariant, outlineFace, type FaceEmbedding, type FontStyle, type OutlineFace, type ResolveResult,
 } from '@weasel-js/font';
 import type { TextShaper } from './shaperSeam';
 
@@ -48,7 +48,7 @@ export function shapingFace(resolved: ResolveResult): FaceEmbedding | null {
   const { family, weight, style } = resolved.resolved;
   const face = resolved.outlineFace ?? (resolved.source === 'outline'
     ? undefined
-    : outlineMetrics(family, weight, style));
+    : outlineFace(family, weight, style));
   if (!face) return null;
   let embedding = embeddingOf.get(face);
   if (embedding === undefined) {

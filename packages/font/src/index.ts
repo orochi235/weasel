@@ -70,7 +70,7 @@ export {
   listFontOutlines,
   fontOutlineRegistry,
   glyphOutline,
-  outlineMetrics,
+  outlineFace,
   loadFontOutlines,
 } from './outline/outlineRegistry';
 export type {

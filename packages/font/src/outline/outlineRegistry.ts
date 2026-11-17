@@ -255,7 +255,7 @@ export function glyphOutline(
  * Starts the load on a first call and answers `null` for now, like
  * `glyphOutline`.
  */
-export function outlineMetrics(
+export function outlineFace(
   family: string,
   weight: number,
   style: FontStyle,

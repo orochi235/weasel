@@ -5,7 +5,7 @@
  */
 import { type FontStyle } from '@weasel-js/core';
 import { fitTextToBox, resolveRunFace, resolveTextStyle, TextOutlinesError, toRuns } from '@weasel-js/text';
-import { cachedFontVariant, cssString, outlineMetrics, type FaceEmbedding } from '@weasel-js/font';
+import { cachedFontVariant, cssString, outlineFace, type FaceEmbedding } from '@weasel-js/font';
 import { svgTextOutlines } from './textOutlines';
 import type { SvgNode, SvgTextMode, SvgTextNode } from './types';
 import type { Warn } from './strokeAttrs';
@@ -39,8 +39,8 @@ export function requestedFaces(node: SvgTextNode): TextFace[] {
 /** The face a requested one renders in, and its embedding once its outlines have loaded. */
 function embeddingOf(requested: TextFace): { face: TextFace; embedding: FaceEmbedding | null } {
   const face = cachedFontVariant(requested.family, requested.weight, requested.style).resolved;
-  const outline = outlineMetrics(face.family, face.weight, face.style)
-    ?? outlineMetrics(requested.family, requested.weight, requested.style);
+  const outline = outlineFace(face.family, face.weight, face.style)
+    ?? outlineFace(requested.family, requested.weight, requested.style);
   return { face, embedding: outline?.embedding?.() ?? null };
 }
 
