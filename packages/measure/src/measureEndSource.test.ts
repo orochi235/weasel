@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 import { type AnyScene, asNodeId, createScene, type RectPose, type Scene, type SnapMods } from '@weasel-js/core';
 import { createSnapSession2dForTests } from '@weasel-js/core/test-seams';
-import { measureAt, measureEndSource } from './measureHit';
+import { measureHitAt, measureEndSource } from './measureHit';
 import { measureNode } from './measurement';
 
 const FREE: SnapMods = { suspend: false, constrain: false };
@@ -52,16 +52,16 @@ describe('measureEndSource', () => {
   });
 });
 
-describe('measureAt', () => {
+describe('measureHitAt', () => {
   it('finds an end where it is shown', () => {
     const s = shownMoved(scene());
-    expect(measureAt(s, { layer: 'main' }, { x: 199, y: 50 }, 4)).toEqual({ id: 'm', part: 'end' });
+    expect(measureHitAt(s, { layer: 'main' }, { x: 199, y: 50 }, 4)).toEqual({ id: 'm', part: 'end' });
   });
 
   it("reads only the measurement layer's nodes, not the whole scene", () => {
     const s = scene();
     const walk = vi.spyOn(s, 'renderOrderNodes');
-    expect(measureAt(s, { layer: 'main' }, { x: 99, y: 50 }, 4)).toEqual({ id: 'm', part: 'end' });
+    expect(measureHitAt(s, { layer: 'main' }, { x: 99, y: 50 }, 4)).toEqual({ id: 'm', part: 'end' });
     // A proxy for the cost: a hit test per pointer move should not walk every node of every layer.
     expect(walk).not.toHaveBeenCalled();
   });

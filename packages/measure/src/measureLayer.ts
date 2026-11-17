@@ -6,7 +6,7 @@ import { pxReach, rectPath } from '@weasel-js/geom';
 import { measureDrawCommands } from './measurePainter';
 import { measureEndsOf, type MeasurePoint } from './measurement';
 import type { Measurements } from './measurements';
-import { measureAt, type MeasureHit } from './measureHit';
+import { measureHitAt, type MeasureHit } from './measureHit';
 import { MEASURE_HIT_PX } from './measureGestures';
 
 /** The registered layer's id; a press it claims routes as `layer:<id>`. */
@@ -57,7 +57,7 @@ export function measurementsLayer(scene: AnyScene, ms: Measurements): RenderLaye
       return out;
     },
     hitTest: (wx, wy, _data, view): LayerHit<MeasureHit> | null => {
-      const hit = measureAt(scene, ms, { x: wx, y: wy }, pxReach(MEASURE_HIT_PX, view.scale));
+      const hit = measureHitAt(scene, ms, { x: wx, y: wy }, pxReach(MEASURE_HIT_PX, view.scale));
       if (!hit) return null;
       const onPickedEnd = hit.part !== 'line' && hit.id === ms.picked.get();
       if (ms.measuring.get() && !onPickedEnd) return null;
