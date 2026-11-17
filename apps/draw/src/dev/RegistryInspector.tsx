@@ -26,7 +26,18 @@ function parseSelectionFromHash(hash: string): { kind: string; id: string } | nu
   return kind && id ? { kind, id } : null;
 }
 
-function writeSelectionToHash(sel: { kind: string; id: string } | null): void {
+interface EntryKey { kind: string; id: string }
+
+/** The entry `key` names in the tree, or null. */
+function findEntry(nodes: readonly TreeCategoryNode[], key: EntryKey): TreeEntry | null {
+  for (const node of nodes) {
+    const hit = node.entries.find((e) => e.kind === key.kind && e.id === key.id);
+    if (hit) return hit;
+  }
+  return null;
+}
+
+function writeSelectionToHash(sel: EntryKey | null): void {
   const next = sel
     ? `#/dev/registry?kind=${encodeURIComponent(sel.kind)}&id=${encodeURIComponent(sel.id)}`
     : '#/dev/registry';
@@ -38,13 +49,16 @@ function writeSelectionToHash(sel: { kind: string; id: string } | null): void {
 export function RegistryInspector() {
   const [runtime, setRuntime] = useState<RegistrySnapshot>({ tools: [], actions: [], properties: [] });
   const [textFilter, setTextFilter] = useState<string>('');
-  const [selected, setSelected] = useState<TreeEntry | null>(null);
+  // The selection is held as kind + id and resolved against `nodes` each render, so the detail
+  // pane follows an entry the probe's snapshot rebuilds rather than keeping the object it replaced.
+  const [selectedKey, setSelectedKey] = useState<EntryKey | null>(null);
   // Pending deep-link from the URL — the matching entry may not exist yet
   // when the probe hasn't fired its first snapshot. Drained below once the
   // tree nodes are populated.
-  const [pendingDeepLink, setPendingDeepLink] = useState<{ kind: string; id: string } | null>(
+  const [pendingDeepLink, setPendingDeepLink] = useState<EntryKey | null>(
     () => parseSelectionFromHash(window.location.hash),
   );
+  const select = (key: EntryKey | null): void => setSelectedKey(key);
 
   const onSnapshot = useCallback((snap: RegistrySnapshot) => setRuntime(snap), []);
 
@@ -95,41 +109,34 @@ export function RegistryInspector() {
       });
   }, [bundles, icons, shapeKinds, propertiesEntries, gestures, phaseOutputs, opKinds, slots, coreExports, meta]);
 
+  const selected = selectedKey ? findEntry(nodes, selectedKey) : null;
+
   // Clear selection when the active filters narrow past the selected entry.
-  if (selected) {
-    const inTree = nodes.some((n) => n.entries.some((e) => e.kind === selected.kind && e.id === selected.id));
-    const matches = matchQuery(textFilter, { text: [selected.label, selected.id] }) !== null;
-    if (!inTree || !matches) setSelected(null);
+  if (selectedKey) {
+    const matches = selected !== null && matchQuery(textFilter, { text: [selected.label, selected.id] }) !== null;
+    if (!matches) setSelectedKey(null);
   }
 
   // Drain any pending deep-link once the matching entry exists in the tree.
   // The probe pushes its snapshot async on first render, so the URL-decoded
   // selection may name an entry that won't be in `nodes` for a frame or two.
-  if (pendingDeepLink) {
-    const hit = nodes
-      .flatMap((node) => node.entries)
-      .find((e) => e.kind === pendingDeepLink.kind && e.id === pendingDeepLink.id);
-    if (hit) {
-      setSelected(hit);
-      setPendingDeepLink(null);
-    }
+  if (pendingDeepLink && findEntry(nodes, pendingDeepLink)) {
+    select(pendingDeepLink);
+    setPendingDeepLink(null);
   }
 
   // Mirror the selection into the URL hash so the inspector is deep-linkable.
   useEffect(() => {
-    writeSelectionToHash(selected ? { kind: selected.kind, id: selected.id } : null);
-  }, [selected]);
+    writeSelectionToHash(selectedKey);
+  }, [selectedKey]);
 
   // Respond to external hash changes (browser back/forward, manual URL edits).
   useWindowEvent('hashchange', () => {
     const parsed = parseSelectionFromHash(window.location.hash);
-    if (!parsed) { setSelected(null); return; }
+    if (!parsed) { select(null); return; }
     // Resolve immediately if the entry already exists; otherwise queue.
-    for (const node of nodes) {
-      const hit = node.entries.find((e) => e.kind === parsed.kind && e.id === parsed.id);
-      if (hit) { setSelected(hit); return; }
-    }
-    setPendingDeepLink(parsed);
+    if (findEntry(nodes, parsed)) select(parsed);
+    else setPendingDeepLink(parsed);
   });
 
   const categories: readonly RegistryCategory[] = useMemo(() => nodes.map((n) => ({
@@ -167,7 +174,7 @@ export function RegistryInspector() {
           selected={pick}
           onSelect={(p) => {
             const hit = nodes.find((n) => n.id === p.category)?.entries.find((e) => entryKey(e) === p.id);
-            if (hit) setSelected(hit);
+            if (hit) select({ kind: hit.kind, id: hit.id });
           }}
           filter={textFilter}
           onFilterChange={setTextFilter}
@@ -179,10 +186,7 @@ export function RegistryInspector() {
                 actions={runtime.actions}
                 category={selectedCategory}
                 onNavigate={(t) => {
-                  for (const node of nodes) {
-                    const hit = node.entries.find((e) => e.kind === t.kind && e.id === t.id);
-                    if (hit) { setSelected(hit); return; }
-                  }
+                  if (findEntry(nodes, t)) select({ kind: t.kind, id: t.id });
                 }}
               />
             : <p className={s.empty}>Select an entry to see details.</p>}
