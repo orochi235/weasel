@@ -37,9 +37,9 @@ export interface ElementTargetOptions<T> {
   /** The value it starts at, which the target then holds. Give `get` and `set` instead to keep
    *  the value yourself. */
   value?: T;
-  /** The committed value, where the caller keeps it. */
+  /** The committed value, where the caller keeps it. Given with `set`, never alone. */
   get?(): T;
-  /** Commits a value, where the caller keeps it. */
+  /** Commits a value, where the caller keeps it. Given with `get`, never alone. */
   set?(value: T): void;
   /** How `T` maps to numbers, as `createTarget` takes it. */
   axes?: TargetAxes<T>;
@@ -81,6 +81,9 @@ function writeStyle(el: StyledElement, css: ElementStyle): void {
 export function createElementTarget<T>(opts: ElementTargetOptions<T>): Target<T> {
   const { element, style } = opts;
   let held = opts.value as T;
+  if (!opts.get !== !opts.set) {
+    throw new Error(`createElementTarget: give \`get\` and \`set\` together, not \`${opts.get ? 'get' : 'set'}\` alone`);
+  }
   if (!opts.get && opts.value === undefined) {
     throw new Error('createElementTarget: give `value`, or `get` and `set`');
   }
