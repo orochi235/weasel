@@ -211,7 +211,8 @@ export function createTimeline(
   /** Put a finished timeline back on the animator's table. A re-registered
    *  entry's `virtualNow` restarts at 0, so `offset` carries the playhead. */
   const rearm = (): void => {
-    if (canceled || playhead >= duration) return;
+    // At the end it plays toward, a timeline is finished: forward its end, backward the start of its first lap.
+    if (canceled || (wantScale < 0 ? playhead <= 0 && lap === 0 : playhead >= duration)) return;
     done = false;
     if (live) return;
     booker?.rearm();
