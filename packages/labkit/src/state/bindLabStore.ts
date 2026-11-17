@@ -18,6 +18,7 @@ import {
 import { ownUndoOf } from './ownUndo';
 import type { LabStore } from './store';
 import type { SavedSnapshot, SerializedTrial, TrialRecord, UnreadableRecord } from './types';
+import type { UndockedPanels } from './undock';
 import { onUndoSteps } from './watchTrialHistories';
 
 export interface BindOptions {
@@ -224,9 +225,7 @@ export function bindLabStore(
           patch.layout = isPlainObject(value) ? value : {};
           break;
         case 'undock':
-          patch.undockedPanels = isPlainObject(value)
-            ? (value as typeof current.undockedPanels)
-            : {};
+          patch.undockedPanels = isPlainObject(value) ? (value as UndockedPanels) : {};
           break;
         case 'meta': {
           const meta = value as Partial<LabMeta> | undefined;
