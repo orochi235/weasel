@@ -2,8 +2,8 @@ import { describe, expect, it } from 'vitest';
 import { createHoldStore } from './holdStore';
 
 /** A store over `rows` rows of `axes` numbers, committed at `committed`. */
-function rig(axes: number, rows: number, angles?: number[]) {
-  const committed = new Float64Array(rows * axes);
+function rig(axes: number, rows: number, angles?: number[], room = rows) {
+  const committed = new Float64Array(room * axes);
   let reads = 0;
   const store = createHoldStore(axes, rows, (row, out, at) => {
     reads += 1;
@@ -120,5 +120,15 @@ describe('a hold store', () => {
     expect(r.delta(0)).toEqual([0]);
     expect(r.store.count[0]).toBe(0);
     expect([...r.store.held.subarray(0, r.store.size)]).toEqual([9]);
+  });
+  it('leaves a row the store grew into holding every axis for a layer that covers only some on another row', () => {
+    const r = rig(2, 1, undefined, 2);
+    const layer = r.store.free(0);
+    r.store.join(layer, 0, { ...constant([5, 7]), covers: Uint8Array.of(0, 1) });
+    r.store.grow(2);
+    r.store.join(layer, 1, constant([3, 4]));
+    r.store.refold(1);
+    expect(r.delta(1)).toEqual([3, 4]);
+    expect(r.cover(1)).toEqual([1, 1]);
   });
 });

@@ -128,4 +128,24 @@ describe('animator.holdRows', () => {
     expect(animator.isActive()).toBe(false);
     expect(t.target(0).active).toBe(false);
   });
+
+  it('holds no row, and interrupts nothing, when one of its rows is not in the table', () => {
+    const { animator } = setup();
+    const t = table3();
+    act(() => { animator.hold({ target: t.target(2), value: [5, 5], cancelKey: 'k' }); });
+    expect(() => animator.holdRows({ table: t, rows: [0, 1, 99], cancelKey: 'k' })).toThrow();
+    expect(animator.live()).toHaveLength(1);
+    const other = setup().animator;
+    expect(() => act(() => { other.tween({ target: t.target(0), to: [1, 1], ms: 100 }); })).not.toThrow();
+  });
+
+  it('lets go of the rows it took when a later one is another animator\'s', () => {
+    const { animator } = setup();
+    const other = setup().animator;
+    const t = table3();
+    act(() => { other.tween({ target: t.target(1), to: [1, 1], ms: 100 }); });
+    expect(() => animator.holdRows({ table: t, rows: [0, 1] })).toThrow(/another animator/);
+    expect(shown(t, 0)).toEqual([0, 0]);
+    expect(() => act(() => { other.tween({ target: t.target(0), to: [1, 1], ms: 100 }); })).not.toThrow();
+  });
 });

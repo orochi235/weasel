@@ -91,6 +91,9 @@ export interface AnimationContext {
   wake(): void;
   /** True once the host has unmounted; logs the first time. */
   tripwire(): boolean;
+  /** Says `id` threw outside its own tick, from a voice or a hold a frame read: the frame
+   *  retires it as it does one whose tick threw. */
+  fail(id: number, error: unknown): void;
   /** Retires whoever holds `key` as interrupted by `by`, ahead of `by`'s own registration. */
   interrupt(key: string, by: AnimationSeed): void;
   /** The summed velocity of the animations holding `key` on `target`; null where none does. */

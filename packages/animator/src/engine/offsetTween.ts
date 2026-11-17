@@ -6,20 +6,21 @@ import { commitOrLeave, type AnimationContext, type AnimationSeed } from './cont
 import { axesFor, bump, bumpOn, comeOut, commitOffset, goBehind, minus, plus, runsOn, seat, shareBehind, takeUp, times, travel } from './offsets';
 
 /** A tween on a target: its destination is committed as it starts, and its voice is what is
- *  left to travel. */
-export function startOffsetTween<T>(ctx: AnimationContext, o: TargetTweenOptions<T>): AnimationHandle {
+ *  left to travel. Given `interrupted`, what holds its key was interrupted already, by that id,
+ *  which it takes. */
+export function startOffsetTween<T>(ctx: AnimationContext, o: TargetTweenOptions<T>, interrupted?: number): AnimationHandle {
   const { codec } = ctx;
   const s = stateOf(o.target);
   const ax = s.axes;
   const to = axesFor(ax, o.to, 'to');
   const given = o.from === undefined ? null : axesFor(ax, o.from, 'from');
-  const id = ctx.nextId();
+  const id = interrupted ?? ctx.nextId();
   const interrupts = o.interrupt !== false;
   const seed = {
     id, kind: 'tween', cancelKey: o.cancelKey, label: o.label, target: s, keepExisting: !interrupts,
   } as AnimationSeed;
   // Ahead of reading the committed value: an interrupted animation commits where it stopped.
-  if (o.cancelKey != null && interrupts) ctx.interrupt(o.cancelKey, seed);
+  if (interrupted === undefined && o.cancelKey != null && interrupts) ctx.interrupt(o.cancelKey, seed);
   s.handoff?.release();
   const committed = ax.to(s.get());
   const base = takeUp(s);

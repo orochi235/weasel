@@ -2572,3 +2572,14 @@ Calls the lanes made without a ruling:
 - 2026-11-16 (the fixer's call): an `axes` name that is both one axis's name and the start of other axes' paths, as
   `arm.x` is on a skeleton with joints `arm` and `arm.x`, throws rather than answering both. A name on axes without
   `paths` keeps reading every dot as a step.
+
+## Audit round thirty-three (2026-11-17): animator engine
+
+- 2026-11-17 (the fixer's call): a hold's `value` or `weight`, or a target tween's `easing`, `interpolate` or
+  `interpolator`, that throws as a frame or a `touch` reads it retires its animation (a timeline, for a track's hold)
+  at the next frame, logged and with an `error` event, as a throwing `onTick` is; the hold weighs nothing from its
+  first throw. A `touch` between frames no longer throws the error to its caller. A throw only at the call that
+  starts it still goes to that caller.
+- 2026-11-17 (the fixer's call): an animation whose cancel throws (its target's setter, as it commits what it showed)
+  still leaves the table, with its completion and its `cancel` event, and `cancelAll` and a `cancelKey` interrupt go on
+  to the rest; the first throw then goes on to whoever canceled. Retiring one whose own tick threw logs a second throw.
