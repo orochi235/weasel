@@ -4,7 +4,7 @@ import { createAudioEngine } from '@weasel-js/audio';
 import { pickFile } from '@weasel-js/editor';
 import { stageFromType, type EffectPipeline } from '@weasel-js/diagram/effect';
 import { AUDIO_STAGE_TYPES, createLiveAudioRunner } from '@weasel-js/diagram/effect-audio';
-import { splitDomains, usePipelineAudio } from './pipelineAudio';
+import { mergeRuns, splitDomains, usePipelineAudio } from './pipelineAudio';
 
 vi.mock('@weasel-js/editor', async (original) => ({ ...(await original<object>()), pickFile: vi.fn() }));
 vi.mock('@weasel-js/audio', async (original) => ({ ...(await original<object>()), createAudioEngine: vi.fn() }));
@@ -36,6 +36,13 @@ describe('splitDomains', () => {
       expect(half.groups).toBe(pipeline.groups);
       expect(half.types).toBe(pipeline.types);
     }
+  });
+});
+
+describe('mergeRuns', () => {
+  it('keeps the stage a stepped run is on', () => {
+    const merged = mergeRuns({ stages: { blur: { cost: 1 } }, at: 'blur' }, { stages: { 'audio.file': { error: 'no source audio' } } });
+    expect(merged).toEqual({ stages: { blur: { cost: 1 }, 'audio.file': { error: 'no source audio' } }, at: 'blur' });
   });
 });
 

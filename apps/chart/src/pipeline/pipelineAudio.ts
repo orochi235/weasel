@@ -22,11 +22,12 @@ export function splitDomains(pipeline: EffectPipeline): { image: EffectPipeline;
 
 const hasStages = (run: EffectRun | undefined): run is EffectRun => run !== undefined && Object.keys(run.stages).length > 0;
 
-/** One run holding the stages of both; undefined when neither has any. */
+/** One run holding the stages of both, on the stage either is stepped to; undefined when neither has any. */
 export function mergeRuns(a: EffectRun | undefined, b: EffectRun | undefined): EffectRun | undefined {
   if (!hasStages(b)) return a;
   if (!hasStages(a)) return b;
-  return { stages: { ...a.stages, ...b.stages } };
+  const at = a.at ?? b.at;
+  return { stages: { ...a.stages, ...b.stages }, ...(at !== undefined ? { at } : {}) };
 }
 
 /** What pipeline mode plays its audio stages with. */
