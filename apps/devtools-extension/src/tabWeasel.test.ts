@@ -18,6 +18,13 @@ describe('probeFrame', () => {
     expect(probeFrame()).toBeNull();
   });
 
+  it('counts no canvases for a hook whose roots() is not a list, or throws', () => {
+    w.__weaselDevtools__ = { kitVersion: '1.0.0', roots: () => new Map([[1, {}]]) };
+    expect(probeFrame()).toEqual({ kitVersion: '1.0.0', roots: 0 });
+    w.__weaselDevtools__ = { kitVersion: '1.0.0', roots: () => { throw new Error('broken'); } };
+    expect(probeFrame()).toEqual({ kitVersion: '1.0.0', roots: 0 });
+  });
+
   it('closes over nothing, since only its source reaches the page', () => {
     w.__weaselDevtools__ = { kitVersion: '2.0.0', roots: () => [] };
     const detached = new Function(`return (${probeFrame.toString()})()`) as () => unknown;
@@ -33,6 +40,11 @@ describe('summarize', () => {
 
   it('answers null when no frame has one', () => {
     expect(summarize([null, undefined])).toBeNull();
+  });
+
+  it('skips a frame whose count is not one', () => {
+    expect(summarize([{ kitVersion: '1.0.0', roots: undefined }, { kitVersion: '1.0.0', roots: 2 }]))
+      .toEqual({ kitVersion: '1.0.0', roots: 2, frames: 1 });
   });
 });
 
