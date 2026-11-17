@@ -33,7 +33,7 @@ export { createScrollOffsets, scrolledFrames, viewPoseAdapter } from 'core/scene
 export type { SceneScroll, ScrollOffsets, ScrollSource } from 'core/scene/scrollOffsets';
 export { carriedDescendants, heldInFrame, sceneCarrySource } from 'core/scene/carryDescendants';
 export type { CarrySource } from 'core/scene/carryDescendants';
-export { nestedHitTester } from 'core/scene/nestedHit';
+export { createNestedHitTester } from 'core/scene/nestedHit';
 export { unionOfChildrenVia } from 'core/scene/unionOfChildren';
 export type {
   NestedHitOptions,
