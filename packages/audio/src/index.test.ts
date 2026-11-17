@@ -53,7 +53,7 @@ describe('@weasel-js/audio public surface', () => {
     expect(audio.readScoreCue(mood).name).toBe(audio.scoreCues[0].name);
     expect(audio.scoreChord(params, 0)).toHaveLength(3);
     expect(typeof audio.createScore).toBe('function');
-    const load: audio.PatternLoadOptions = { tempo: params.tempo, length: audio.SCORE_BAR_STEPS };
+    const load: audio.PatternVoicePeaksOptions = { tempo: params.tempo, length: audio.SCORE_BAR_STEPS };
     // Each bar's three tones are still releasing as the next bar's begin.
     expect(audio.patternVoicePeaks(bar, load).sfx).toBe(6);
   });

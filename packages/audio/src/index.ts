@@ -29,7 +29,7 @@ export {
   type PatternPlayer, type PatternPlayerOptions, type PatternEvent, type PatternNote,
   type PatternHit, type PatternNoise, type PatternDetune,
 } from './patternPlayer';
-export { patternVoicePeaks, type PatternLoadOptions } from './patternLoad';
+export { patternVoicePeaks, type PatternVoicePeaksOptions } from './patternLoad';
 export {
   readScoreCue, scoreCues, scoreModes, scoreParams,
   type ScoreMood, type ScoreCue, type ScoreCueName, type ScoreCueReading, type ScoreMode,
