@@ -93,8 +93,10 @@ export function useLabChordActions(
       {
         id: 'lab.snapshot',
         label: 'Save snapshot',
-        // Held, so a key repeat is the same press and saves nothing more.
-        defaultBinding: [{ spec: { ...keySpec(SNAPSHOT_SHORTCUT), kind: 'keyHeld' } }],
+        // Held, so a key repeat is the same press and saves nothing more. A text field has no use for Mod+S.
+        defaultBinding: [
+          { spec: { ...keySpec(SNAPSHOT_SHORTCUT), kind: 'keyHeld' }, opts: { inFields: true } },
+        ],
         enabled: enabled('snapshot'),
         invoker: {
           timing: 'ongoing',

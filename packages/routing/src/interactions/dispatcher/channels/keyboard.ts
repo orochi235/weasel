@@ -43,6 +43,9 @@ function releaseOf(down: HeldKey, mods: Mods): InputEvent {
   };
 }
 
+/** A keystroke in a text field that a binding may still take: a chord with Ctrl or Cmd. Any other key is typing. */
+const fieldChord = (e: KeyboardEvent): boolean => e.ctrlKey || e.metaKey;
+
 /** True inside an open ARIA menu, which owns every key typed in it. */
 const inMenu = (t: EventTarget | null): boolean => t instanceof Element && t.closest('[role="menu"]') !== null;
 
@@ -75,7 +78,8 @@ export function keyboardInput(core: DispatchCore): {
   const onKeyDown = (e: KeyboardEvent) => {
     // Before the filters: a key another surface took is still down.
     downKeys.set(physicalKey(e), { key: e.key, ...codeOf(e), withCmd: e.metaKey });
-    if (e.defaultPrevented || isEditableTarget(e.target) || inMenu(e.target) || focusedControlOwnsKey(e)) return;
+    if (e.defaultPrevented || inMenu(e.target) || focusedControlOwnsKey(e)) return;
+    if (isEditableTarget(e.target) && !fieldChord(e)) return;
     if (inModalOver(e.target, core.canvas) || taken.has(e)) return;
     // Every dispatcher hears keys on window. The one holding them acts, and so
     // does the one under the pointer, for its `over` bindings alone.
@@ -99,6 +103,13 @@ export function keyboardInput(core: DispatchCore): {
     // so things like Cmd+= step-zoom keep auto-repeating.
     if (e.repeat && (heldKeys.has(physicalKey(e)) || keymaps.quiet(physicalKey(e)))) {
       e.preventDefault();
+      return;
+    }
+
+    // In a text field the key is the field's, but for a chord a binding declares `inFields` for. Keymaps never
+    // see it: a leader sequence typed there is text.
+    if (isEditableTarget(e.target)) {
+      core.batch(() => press(e, { altKey: e.altKey, ctrlKey: e.ctrlKey }, { ...reach, field: true }));
       return;
     }
 
