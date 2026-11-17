@@ -1,6 +1,7 @@
 /**
  * Every module a published package imports must be one its manifest declares, type-only imports
- * included, since those land in its .d.ts; and every sibling it declares, its shipped code names.
+ * included, since those land in its .d.ts. The reverse, a declared sibling nothing ships, is
+ * check:idle-deps, which reads the build.
  *
  * An undeclared import passes everything inside the monorepo, where hoisting
  * resolves it. Published, a bundling build inlines the module and a per-module
@@ -46,7 +47,7 @@ export function isShipped(rel, own, manifest) {
 // extension. The icons plugin loads from source during @weasel-js/icons' own build, before its dist exists.
 const CROSS_PACKAGE = [{ from: 'packages/icons-plugin', to: 'packages/icons/src/names' }];
 
-const TEST_SURFACE =/^\.\/(test-seams$|testing\/)/;
+const TEST_SURFACE = /^\.\/(test-seams$|testing\/)/;
 
 /** Whether `subpath` (`./x`) is one `exports` lists, a `*` pattern included. */
 export function exportsSubpath(exports, subpath) {
@@ -59,12 +60,12 @@ export function exportsSubpath(exports, subpath) {
   });
 }
 
-function walk(dir, out = [], match = SOURCE) {
+function walk(dir, out = []) {
   for (const name of readdirSync(dir)) {
     const path = join(dir, name);
     if (statSync(path).isDirectory()) {
-      if (name !== 'node_modules' && name !== 'dist') walk(path, out, match);
-    } else if (match.test(name)) {
+      if (name !== 'node_modules' && name !== 'dist') walk(path, out);
+    } else if (SOURCE.test(name)) {
       out.push(path);
     }
   }
@@ -120,7 +121,6 @@ if (import.meta.url === pathToFileURL(process.argv[1] ?? '').href) {
   }
 
   const offenders = [];
-  const unused = [];
   const escapes = [];
   const reaches = [];
   let checked = 0;
@@ -142,10 +142,6 @@ if (import.meta.url === pathToFileURL(process.argv[1] ?? '').href) {
     const devDeclared = new Set(Object.keys(manifest.devDependencies ?? {}));
     const aliases = ownAliases(dir).filter((alias) => !alias.startsWith('@weasel-js/'));
     const missing = new Map();
-    const named = new Set();
-    for (const sheet of walk(join(dir, 'src'), [], /\.css$/)) {
-      for (const m of readFileSync(sheet, 'utf8').matchAll(/@weasel-js\/[a-z0-9-]+/g)) named.add(m[0]);
-    }
 
     for (const file of walk(join(dir, 'src'))) {
       const rel = relative(ROOT, file);
@@ -153,7 +149,6 @@ if (import.meta.url === pathToFileURL(process.argv[1] ?? '').href) {
       const testSurface = NOT_SHIPPED.test(rel) || /\/test-seams\.tsx?$/.test(rel);
       const source = readFileSync(file, 'utf8');
       const runtime = new Set(importSpecifiers(source, file));
-      for (const m of source.matchAll(/declare module ['"](@weasel-js\/[a-z0-9-]+)/g)) named.add(m[1]);
       for (const written of namedSpecifiers(source, file)) {
         const specifier = written.replace(/\?.*$/, '');
         if (specifier.startsWith('.')) {
@@ -165,7 +160,6 @@ if (import.meta.url === pathToFileURL(process.argv[1] ?? '').href) {
         }
         if (!isBare(specifier)) continue;
         const pkg = packageOf(specifier);
-        named.add(pkg);
         const sibling = siblings.get(pkg);
         if (sibling && pkg !== manifest.name) {
           const subpath = `.${specifier.slice(pkg.length)}`;
@@ -181,9 +175,6 @@ if (import.meta.url === pathToFileURL(process.argv[1] ?? '').href) {
       }
     }
     if (missing.size > 0) offenders.push({ name: manifest.name, missing });
-    const runtimeDeclared = [...Object.keys(manifest.dependencies ?? {}), ...Object.keys(manifest.peerDependencies ?? {})];
-    const idle = runtimeDeclared.filter((pkg) => siblings.has(pkg) && !named.has(pkg));
-    if (idle.length > 0) unused.push({ name: manifest.name, idle });
   }
 
   // An app is not published, but its source is what a demo teaches: it reaches a package the way a
@@ -235,13 +226,7 @@ if (import.meta.url === pathToFileURL(process.argv[1] ?? '').href) {
     console.error('\n  Add each to the package\'s dependencies or peerDependencies.\n');
   }
 
-  if (unused.length > 0) {
-    console.error(`\n[declared-imports] BLOCKED: ${unused.length} package(s) declare a sibling their shipped code never names.\n`);
-    for (const { name, idle } of unused) console.error(`  ${name}   ${idle.join(', ')}`);
-    console.error("\n  Drop each from dependencies and peerDependencies, or move it to devDependencies if only tests use it.\n");
-  }
-
-  if (escapes.length > 0 || reaches.length > 0 || offenders.length > 0 || unused.length > 0) process.exit(1);
+  if (escapes.length > 0 || reaches.length > 0 || offenders.length > 0) process.exit(1);
 
   console.log(`[declared-imports] OK — ${checked} published package(s) and the apps, every import declared and public.`);
 }

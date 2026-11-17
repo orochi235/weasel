@@ -120,7 +120,6 @@
     "@weasel-js/core": "1.19.1",
     "@weasel-js/cursor": "1.19.1",
     "@weasel-js/editing": "1.19.1",
-    "@weasel-js/storage": "1.19.1",
     "@weasel-js/text-tools": "1.19.1"
   }
 }
