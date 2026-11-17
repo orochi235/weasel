@@ -1,6 +1,6 @@
 /**
  * What makes an edge label grabbable, so a drag can move it along and beside
- * its edge (`labelDragAction`).
+ * its edge (`moveLabelAction`).
  *
  * Built the way the route handles are: rect regions with a `null` `targetId`
  * and no paint, composed into a layer whose id is the kind a press reports.

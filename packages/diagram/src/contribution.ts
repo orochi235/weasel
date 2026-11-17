@@ -33,7 +33,7 @@ import {
 import { EDIT_EDGE_LABEL_ACTION_ID } from './edgeLabel';
 import { createToggleHopsAction } from './hops/hopsAction';
 import { createResetLabelAction } from './labelCommands';
-import { MOVE_LABEL_ACTION_ID, createLabelDragAction, type LabelDragOptions } from './labelDragAction';
+import { MOVE_LABEL_ACTION_ID, createMoveLabelAction, type MoveLabelOptions } from './moveLabelAction';
 import { LABEL_DRAG_AFFORDANCE_KIND, LABEL_DRAG_LAYER_ID, createLabelDragLayer, labelScratchOf } from './labelDragLayer';
 import { createPortLayer } from './portLayer';
 import { PORT_LAYER_ID, type PortAffordanceOptions } from './portAffordance';
@@ -146,7 +146,7 @@ function selectLabelEdgeAction(): Action {
  * `EDIT_EDGE_LABEL_ACTION_ID`, which the host registers.
  */
 export function diagramLabels(
-  opts: LabelDragOptions & { scene: AnyScene; selected: () => readonly string[]; cursor?: CursorSpec },
+  opts: MoveLabelOptions & { scene: AnyScene; selected: () => readonly string[]; cursor?: CursorSpec },
 ): SurfaceContribution {
   const actionId = opts.id ?? MOVE_LABEL_ACTION_ID;
   const target = `affordance:${LABEL_DRAG_AFFORDANCE_KIND}` as const;
@@ -155,7 +155,7 @@ export function diagramLabels(
     eligibility: { claimed: [LABEL_DRAG_LAYER_ID] },
     layers: [createLabelDragLayer(opts.scene, opts.cursor !== undefined ? { cursor: opts.cursor } : {})],
     actions: [
-      createLabelDragAction({ ...opts, id: actionId }),
+      createMoveLabelAction({ ...opts, id: actionId }),
       createResetLabelAction({ selected: opts.selected, ...(opts.commit ? { commit: opts.commit } : {}) }),
       grabPortAction(GRAB_LABEL_ACTION_ID),
       selectLabelEdgeAction(),

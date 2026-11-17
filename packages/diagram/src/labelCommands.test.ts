@@ -3,7 +3,7 @@ import { ActionDisabledReason, createScene, type ActionDeps, type InvocationCtx,
 import { EDGE_DERIVE_PATH } from './edge';
 import { edgeLabelSpec } from './edgeLabel';
 import { LABEL_PLACEMENT, diagramLabelOf } from './labelTrait';
-import { movedLabelData, type LabelEdit } from './labelDragAction';
+import { movedLabelData, type LabelEdit } from './moveLabelAction';
 import { createResetLabelAction, RESET_LABEL_ACTION_ID } from './labelCommands';
 
 interface Rect { x: number; y: number; width: number; height: number }

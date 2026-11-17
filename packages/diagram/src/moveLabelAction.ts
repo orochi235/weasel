@@ -30,8 +30,8 @@ export interface LabelEdit {
   placement: DiagramLabel | null;
 }
 
-/** Options for {@link createLabelDragAction}. */
-export interface LabelDragOptions {
+/** Options for {@link createMoveLabelAction}. */
+export interface MoveLabelOptions {
   /** Defaults to {@link commitLabelToScene} against `deps.scene`. */
   commit?: (edit: LabelEdit, ctx: InvocationCtx) => void;
   id?: string;
@@ -107,7 +107,7 @@ function poseAt(p: LabelPress, spot: LabelSpot): unknown {
 }
 
 /** The `diagram.moveLabel` action: an ongoing drag moving one edge label along and beside its edge. */
-export function createLabelDragAction(opts: LabelDragOptions = {}): Action {
+export function createMoveLabelAction(opts: MoveLabelOptions = {}): Action {
   const { commit = commitLabelToScene } = opts;
   return {
     id: opts.id ?? MOVE_LABEL_ACTION_ID,

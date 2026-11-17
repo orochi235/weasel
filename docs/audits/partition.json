@@ -2489,7 +2489,7 @@
    "packages/diagram/src/keyedIndex.ts",
    "packages/diagram/src/label.ts",
    "packages/diagram/src/labelCommands.ts",
-   "packages/diagram/src/labelDragAction.ts",
+   "packages/diagram/src/moveLabelAction.ts",
    "packages/diagram/src/labelDragLayer.ts",
    "packages/diagram/src/labelTrait.ts",
    "packages/diagram/src/labels/fit.ts",

@@ -8,7 +8,7 @@ import { EDGE_DERIVE_PATH } from './edge';
 import { edgeLabelSpec, createEditEdgeLabelAction } from './edgeLabel';
 import { diagramLabelOf, type DiagramLabel } from './labelTrait';
 import { labelCenter, labelSpotAt } from './labels/station';
-import { createLabelDragAction } from './labelDragAction';
+import { createMoveLabelAction } from './moveLabelAction';
 import { LABEL_DRAG_AFFORDANCE_KIND, labelUnder, type LabelScratch } from './labelDragLayer';
 
 interface Rect { x: number; y: number; width: number; height: number }
@@ -46,13 +46,13 @@ function drag(scene: Sc, press: Vec2) {
       affordance: { kind: LABEL_DRAG_AFFORDANCE_KIND, payload: { targetId: LABEL, labelId: LABEL, edgeId: 'ab' } satisfies LabelScratch },
     },
   }) as unknown as InvocationCtx;
-  const invoker = createLabelDragAction().invoker!;
+  const invoker = createMoveLabelAction().invoker!;
   if (invoker.timing !== 'ongoing') throw new Error('expected an ongoing invoker');
   const handle = invoker.start(ctxAt(press), undefined) as OngoingHandle;
   return { handle, ctxAt };
 }
 
-describe('createLabelDragAction', () => {
+describe('createMoveLabelAction', () => {
   it('previews the label under the pointer and commits at, offset and dodge: false', () => {
     const scene = load();
     const size = boxOf(scene, LABEL);
