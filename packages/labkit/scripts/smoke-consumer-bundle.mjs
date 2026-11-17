@@ -63,7 +63,6 @@ const TYPES_ONLY = new Set([
   '@weasel-js/animator',
   '@weasel-js/icons',
   '@weasel-js/menu',
-  '@weasel-js/prefs-schema',
 ]);
 async function walk(dir) {
   const out = [];

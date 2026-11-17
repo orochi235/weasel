@@ -141,7 +141,6 @@
     "@weasel-js/paint": "1.19.1",
     "@weasel-js/path-tools": "1.19.1",
     "@weasel-js/prefs": "1.19.1",
-    "@weasel-js/prefs-schema": "1.19.1",
     "@weasel-js/quantity": "1.19.1",
     "@weasel-js/react": "1.19.1",
     "@weasel-js/registry": "1.19.1",

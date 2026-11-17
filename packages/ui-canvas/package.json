@@ -34,11 +34,14 @@
     "./package.json": "./package.json"
   },
   "dependencies": {
+    "@weasel-js/geom": "1.19.1",
+    "@weasel-js/history": "1.19.1",
     "@weasel-js/icons": "1.19.1",
     "@weasel-js/paint": "1.19.1",
     "@weasel-js/paint-kinds": "1.19.1",
     "@weasel-js/plot": "1.19.1",
     "@weasel-js/prefs": "1.19.1",
+    "@weasel-js/quantity": "1.19.1",
     "@weasel-js/react": "1.19.1",
     "@weasel-js/registry": "1.19.1",
     "@weasel-js/renderer": "1.19.1",
@@ -49,6 +52,7 @@
   "peerDependencies": {
     "@weasel-js/core": "1.19.1",
     "@weasel-js/editing": "1.19.1",
+    "@weasel-js/guides": "1.19.1",
     "react": ">=18",
     "react-dom": ">=18"
   },

@@ -75,7 +75,6 @@
     "@weasel-js/routing": "1.19.1",
     "@weasel-js/scale": "1.19.1",
     "@weasel-js/select": "1.19.1",
-    "@weasel-js/storage": "1.19.1",
     "@weasel-js/text": "1.19.1",
     "@weasel-js/theme": "1.19.1",
     "@weasel-js/ui-input": "1.19.1",
@@ -121,6 +120,7 @@
     "@weasel-js/core": "1.19.1",
     "@weasel-js/cursor": "1.19.1",
     "@weasel-js/editing": "1.19.1",
+    "@weasel-js/storage": "1.19.1",
     "@weasel-js/text-tools": "1.19.1"
   }
 }
