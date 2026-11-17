@@ -3,7 +3,7 @@ import type { ReactNode, PointerEvent as ReactPointerEvent, RefCallback } from '
 import { startThresholdDrag, swallowNextClick, type ThresholdDragHandle } from '@weasel-js/routing';
 import { gapByMidpoint, isNoopDrop, nudgeGap } from '@weasel-js/ui-input';
 import { useKitSetting, useLatest } from '@weasel-js/react';
-import { modKey, isInControlWithin, isPrimaryPress } from '@weasel-js/gestures';
+import { modKey, isInControlWithin, isPrimaryPress, type EventModifiers } from '@weasel-js/gestures';
 import type { SelectModifiers, SelectPolicy } from '@weasel-js/select';
 
 /** One row in a reorderable list. */
@@ -29,7 +29,7 @@ export interface UseReorderDragListOptions {
    *  is given, the DOM click that follows the press is dropped, so a row that
    *  also handles `click` sees one press, not two. A press that starts on a
    *  control inside the row (a toggle) is left to the control. */
-  onPress?(id: string, mods: PressModifiers): void;
+  onPress?(id: string, mods: EventModifiers): void;
   /** Pointer-move distance (px) before pending drag engages. Default the `gestures.dragPx` kit setting, else `DRAG_THRESHOLD_PX`. */
   threshold?: number;
   /** Selector matching the container's children that are rows, for a list
@@ -53,16 +53,8 @@ export interface ReorderLine {
   pointer(client: { clientX: number; clientY: number }): number;
 }
 
-/** Modifier keys held when a press began. */
-export interface PressModifiers {
-  shiftKey: boolean;
-  ctrlKey: boolean;
-  metaKey: boolean;
-  altKey: boolean;
-}
-
 /** The modifiers an event carries, as a press reports them. */
-export function modsOf(e: PressModifiers): PressModifiers {
+export function modsOf(e: EventModifiers): EventModifiers {
   return { shiftKey: e.shiftKey, ctrlKey: e.ctrlKey, metaKey: e.metaKey, altKey: e.altKey };
 }
 
@@ -70,7 +62,7 @@ export function modsOf(e: PressModifiers): PressModifiers {
 export const listKeys = (): Pick<SelectPolicy, 'toggle' | 'range'> => ({ toggle: modKey(), range: 'shift' });
 
 /** A press's modifiers as `@weasel-js/select` reads them. */
-export function selectModifiers(mods: PressModifiers): SelectModifiers {
+export function selectModifiers(mods: EventModifiers): SelectModifiers {
   return { shift: mods.shiftKey, meta: mods.metaKey, ctrl: mods.ctrlKey };
 }
 
@@ -233,7 +225,7 @@ export function useReorderDragList(opts: UseReorderDragListOptions): ReorderDrag
     if (!container || dragRef.current || !isPrimaryPress(e)) return;
     if (isInControlWithin(e.target, e.currentTarget as Element)) return;
 
-    const mods: PressModifiers = {
+    const mods: EventModifiers = {
       shiftKey: e.shiftKey, ctrlKey: e.ctrlKey, metaKey: e.metaKey, altKey: e.altKey,
     };
     let draggedIds: string[] = [];

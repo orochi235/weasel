@@ -1,7 +1,7 @@
 import type { KeyboardEvent, MouseEvent, ReactNode, Ref } from 'react';
+import type { EventModifiers } from '@weasel-js/gestures';
 import type { HoldProps } from '../Disabled';
 import type { TreeDropTarget } from '../../dropTarget';
-import type { PressModifiers } from '../../useReorderDragList';
 import type { TreeGhost, TreeGhostWhere } from './TreeGhost';
 import type { TreeDropHandle } from './useOutsideDrop';
 import type { TreeDragEffect } from './useTreeDrag';
@@ -93,7 +93,7 @@ export interface TreeProps extends HoldProps {
   onSelectionChange?(ids: Set<string>): void;
 
   /** A row was activated — click, Enter or Space — with the modifiers held. */
-  onAction?(id: string, mods: PressModifiers): void;
+  onAction?(id: string, mods: EventModifiers): void;
   /** A key pressed on a row itself, ahead of the tree's own keys: `preventDefault()` keeps the tree out. Keys on a
    *  row's controls do not reach it. */
   onRowKeyDown?(id: string, e: KeyboardEvent<HTMLElement>): void;

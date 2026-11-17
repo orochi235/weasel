@@ -7,7 +7,7 @@ import {
   type ReactNode,
 } from 'react';
 import { historyKey } from '@weasel-js/gestures';
-import { openPointerSession, type PointerSession } from '@weasel-js/routing';
+import { openPointerSession, type ModifierState, type PointerSession } from '@weasel-js/routing';
 import { useKitSettings, useLatest } from '@weasel-js/react';
 import {
   Plot2D,
@@ -27,7 +27,7 @@ import { useControlHold } from '../Disabled/controlHold';
 import { deepEqual } from '@weasel-js/registry';
 import { useLayerHistory, type LayerSnapshot } from './useLayerHistory';
 import type {
-  LayerCtx, LayerGesture, LayerModifiers, ModelPoint, PlotPoint,
+  LayerCtx, LayerGesture, ModelPoint, PlotPoint,
 } from './layerTypes';
 
 /** Props for {@link LayeredCurveEditor}. Disabled or read-only, no press, key, or context menu reaches a layer, and
@@ -112,7 +112,7 @@ export function LayeredCurveEditor(props: LayeredCurveEditorProps) {
 
   // ── Coord helpers ──────────────────────────────────────────────────
   const makeCtx = useCallback(
-    (modifiers: LayerModifiers): LayerCtx => ({ ...layerCtxOver(modelRangeRef.current, plotSizeRef.current, kitSettings), modifiers }),
+    (modifiers: ModifierState): LayerCtx => ({ ...layerCtxOver(modelRangeRef.current, plotSizeRef.current, kitSettings), modifiers }),
     [modelRangeRef, plotSizeRef, kitSettings],
   );
 

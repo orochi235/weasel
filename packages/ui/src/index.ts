@@ -158,7 +158,6 @@ export type {
   ReorderDragState,
   ReorderGhost,
   ReorderDragHandlers,
-  PressModifiers,
   ReorderLine,
 } from './useReorderDragList';
 export { rovingTarget, useRovingTabIndex } from './useRovingTabIndex';

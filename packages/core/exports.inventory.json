@@ -498,7 +498,6 @@
     "KeepPaint": "type",
     "KeyBinding": "type",
     "KeyHeldSpec": "type",
-    "KeyModifiers": "type",
     "KeyReach": "type",
     "KeySpec": "type",
     "KeyState": "type",

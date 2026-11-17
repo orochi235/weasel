@@ -1,7 +1,8 @@
 import { isApplePlatform } from '@weasel-js/gestures';
+import type { EventModifiers } from '@weasel-js/gestures';
 import { nudgeOf, rowKey, treeKey, type RowKeyAction, type RowKeysShape, type TreeShape } from '@weasel-js/ui-input';
 import { useEffect, useLayoutEffect, useRef, useState, type KeyboardEvent } from 'react';
-import { modsOf, type PressModifiers } from './useReorderDragList';
+import { modsOf } from './useReorderDragList';
 import { useRemovedRowFocus, type FocusRow } from './useRemovedRowFocus';
 import { useTypeahead } from './useTypeahead';
 import { inlineDirection } from './useRovingTabIndex';
@@ -32,7 +33,7 @@ export interface RowNavigationOptions<E extends HTMLElement> {
   /** Alt+Up (`-1`) or Alt+Down (`1`) on a row. Focus follows the row unless this returns `false`. Unset, Alt moves focus as a plain move does. */
   onNudge?(id: string, delta: -1 | 1): boolean | void;
   /** Enter or Space on a row, with the modifiers held. */
-  onActivate?(id: string, mods: PressModifiers): void;
+  onActivate?(id: string, mods: EventModifiers): void;
   /** Cmd/Ctrl+A. */
   onSelectAll?(): void;
   /** Set for a list that folds: Right opens a closed branch, then steps to its first child; Left closes an open branch, else steps to the parent. */
