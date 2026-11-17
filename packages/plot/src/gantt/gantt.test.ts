@@ -3,7 +3,7 @@ import { handlesOf } from '../editing/editors';
 import { PLOT_THEME, seriesColor } from '../theme';
 import { compileGantt } from './compile';
 import { formatGanttDate, formatHasHours, parseGanttDate, strftime } from './dates';
-import { moveGanttTask, setGanttEnd, setGanttSectionName, setGanttTaskName } from './edit';
+import { setGanttStartDay, setGanttEnd, setGanttSectionName, setGanttTaskName } from './edit';
 import { ganttEditor } from './editor';
 import { addGanttDuration, excludedDays, scheduleGantt } from './schedule';
 import type { GanttData } from './types';
@@ -186,11 +186,11 @@ describe('compileGantt', () => {
 
 describe('gantt edits', () => {
   it('moves a task onto a date, leaving any dependency', () => {
-    const moved = moveGanttTask(PLAN, 1, 0, at('2026-01-12'));
+    const moved = setGanttStartDay(PLAN, 1, 0, at('2026-01-12'));
     expect(moved.sections[1]!.tasks[0]!.start).toEqual({ kind: 'date', date: '2026-01-12' });
     expect(scheduleGantt(moved).spans[1]![1]!.start).toBe(at('2026-01-23'));
-    expect(moveGanttTask(PLAN, 0, 0, at('2026-01-05'))).toBe(PLAN);
-    expect(() => moveGanttTask(PLAN, 0, 5, 0)).toThrow(/no task 5 in section 0/);
+    expect(setGanttStartDay(PLAN, 0, 0, at('2026-01-05'))).toBe(PLAN);
+    expect(() => setGanttStartDay(PLAN, 0, 5, 0)).toThrow(/no task 5 in section 0/);
   });
 
   it('ends a task in whole units of its duration, counting past excluded days', () => {
