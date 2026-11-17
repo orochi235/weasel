@@ -301,3 +301,10 @@ describe('parseNumber in a locale', () => {
     expect(parseNumber('1.50.000', undefined, 'de-DE')).toBeNaN();
   });
 });
+
+
+describe('scientific numbers with magnitude suffixes', () => {
+  it.each([['1e3k', 1_000_000], ['1.1e-2k', 11], ['1e-3m', 1000]])('reads %s', (text, value) => {
+    expect(parseNumber(text)).toBe(value);
+  });
+});

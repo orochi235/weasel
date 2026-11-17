@@ -106,7 +106,8 @@ function readNumber(text: string, units?: Readonly<UnitTable>): number {
   // `Number` alone also reads `0x10`, `0b11`, and `1e400`, none of which is a typed amount.
   if (!DECIMAL_NUMBER.test(t)) return Number.NaN;
   // Scaled through the exponent rather than by multiplying: 1.1 * 1000 is 1100.0000000000002.
-  const n = Number(exponent === undefined ? t : `${t}e${exponent}`);
+  const [mantissa, power = '0'] = t.toLowerCase().split('e');
+  const n = Number(exponent === undefined ? t : `${mantissa}e${Number(power) + exponent}`);
   return Number.isFinite(n) ? n : Number.NaN;
 }
 
@@ -182,11 +183,18 @@ const BIDI_MARKS = /[\u061c\u200e\u200f]/g;
  */
 export function numberWithin(text: string, locale: string): string {
   const t = latinDigits(text, locale);
-  const m = new RegExp(shapeOf(locale).run.source).exec(t);
+  const candidates = [locale, 'en-US']
+    .map((tag) => new RegExp(shapeOf(tag).run.source).exec(t))
+    .filter((m): m is RegExpExecArray => m !== null)
+    .sort((a, b) => a.index - b.index || b[0].length - a[0].length);
+  const m = candidates[0];
   if (!m) return '';
-  const around = t.slice(0, m.index) + t.slice(m.index + m[0].length);
-  const suffix = /^[kmbt](?!\p{L})/iu.exec(t.slice(m.index + m[0].length))?.[0] ?? '';
-  return `${/[-\u2212]/.test(around) ? '-' : ''}${m[0]}${suffix}`;
+  const tail = t.slice(m.index + m[0].length);
+  const exponent = /^[eE][-−+]?\d+/.exec(tail)?.[0] ?? '';
+  const suffix = /^[kmbt](?!\p{L})/iu.exec(tail.slice(exponent.length))?.[0] ?? '';
+  const number = `${m[0]}${exponent}${suffix}`;
+  const around = t.slice(0, m.index) + t.slice(m.index + number.length);
+  return `${/[-\u2212]/.test(around) ? '-' : ''}${number}`;
 }
 
 /** The mark `locale` writes before a fraction: `.` in `en-US`, `,` in `de-DE`. */
