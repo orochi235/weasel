@@ -131,8 +131,8 @@ describe('compileGantt', () => {
     const { layout, get } = byKey(PLAN);
     const spec = get('task:0:0')!;
     expect(spec.data.plotMark).toEqual({ kind: 'span', datum: { section: 0, task: 0 } });
-    expect(spec.pose.x).toBeCloseTo(layout.time.map(at('2026-01-05')));
-    expect(spec.pose.x + spec.pose.width).toBeCloseTo(layout.time.map(at('2026-01-10')));
+    expect(spec.pose.x).toBeCloseTo(layout.time.position(at('2026-01-05')));
+    expect(spec.pose.x + spec.pose.width).toBeCloseTo(layout.time.position(at('2026-01-10')));
     expect(spec.data.fill?.paint.color).toBe(PLOT_THEME.axis);
     expect(get('task:0:1')!.data.fill?.paint.color).toBe(seriesColor(PLOT_THEME, 1));
     expect(get('task:1:0')!.data.fill?.paint.color).toBe(seriesColor(PLOT_THEME, 3));
@@ -143,7 +143,7 @@ describe('compileGantt', () => {
     const { layout, get } = byKey(PLAN);
     const ship = get('task:1:1')!;
     expect(ship.data.plotMark).toEqual({ kind: 'area', datum: { section: 1, task: 1 } });
-    expect(ship.pose.x + ship.pose.width / 2).toBeCloseTo(layout.time.map(at('2026-01-23')));
+    expect(ship.pose.x + ship.pose.width / 2).toBeCloseTo(layout.time.position(at('2026-01-23')));
     expect(ship.pose.width).toBeCloseTo(ship.pose.height);
   });
 
@@ -168,7 +168,7 @@ describe('compileGantt', () => {
     const { layout, get } = byKey({ ...PLAN, axisFormat: '%d %b' });
     expect(get('axis:time:label:0')!.data.text).toMatch(/^\d\d [A-Z][a-z]{2}$/);
     const today = get('today')!;
-    expect(today.pose.x).toBeCloseTo(layout.time.map(at('2026-01-14')));
+    expect(today.pose.x).toBeCloseTo(layout.time.position(at('2026-01-14')));
     expect(today.data.stroke?.paint.color).toBe(seriesColor(PLOT_THEME, 9));
     expect(byKey({ ...PLAN, todayMarker: 'off' }).get('today')).toBeUndefined();
     expect(byKey({ ...PLAN, todayMarker: 'stroke-width:5px,stroke:#0f0,opacity:0.5' }).get('today')!.data.stroke).toMatchObject({ paint: { color: '#0f0' }, width: 5 });
@@ -233,9 +233,9 @@ describe('the gantt editor', () => {
     const { layout, get } = byKey(PLAN);
     const trait = get('task:0:1')!.data.plotMark;
     const move = ganttEditor.drag(PLAN, trait, SIZE, PLOT_THEME, measure, 'move')!;
-    expect(move({ x: layout.time.map(at('2026-01-12') + 3_600_000), y: 0 }).sections[0]!.tasks[1]!.start).toEqual({ kind: 'date', date: '2026-01-12' });
+    expect(move({ x: layout.time.position(at('2026-01-12') + 3_600_000), y: 0 }).sections[0]!.tasks[1]!.start).toEqual({ kind: 'date', date: '2026-01-12' });
     const end = ganttEditor.drag(PLAN, trait, SIZE, PLOT_THEME, measure, 'end')!;
-    expect(end({ x: layout.time.map(at('2026-01-16')), y: 0 }).sections[0]!.tasks[1]!.end).toEqual({ kind: 'duration', amount: 4, unit: 'd' });
+    expect(end({ x: layout.time.position(at('2026-01-16')), y: 0 }).sections[0]!.tasks[1]!.end).toEqual({ kind: 'duration', amount: 4, unit: 'd' });
     expect(ganttEditor.drag(PLAN, trait, SIZE, PLOT_THEME, measure)).toBeNull();
   });
 

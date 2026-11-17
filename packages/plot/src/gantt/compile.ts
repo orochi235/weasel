@@ -90,7 +90,7 @@ export function compileGantt(
   const today = Date.now();
   const [d0, d1] = schedule.domain;
   if (data.todayMarker?.trim() !== 'off' && today >= d0 && today <= d1) {
-    const x = time.map(today);
+    const x = time.position(today);
     marks.push(ruleMark({ key: 'today', from: { x, y: top }, to: { x, y: bottom }, ...todayStroke(data.todayMarker, theme) }));
   }
   marks.push(...taskMarks(data, layout, rowHeight, theme, measure));
@@ -110,8 +110,8 @@ function taskMarks(data: GanttData, layout: GanttLayout, rowHeight: number, them
     const fill = ganttTaskFill(task.tags, theme);
     const datum = { section: s, task: t };
     const key = `task:${s}:${t}`;
-    let x0 = time.map(span.start);
-    let x1 = time.map(span.end);
+    let x0 = time.position(span.start);
+    let x1 = time.position(span.end);
     if (task.tags?.includes('milestone')) {
       const r = barHeight / 2;
       const points = [{ x: x0 - r, y: cy }, { x: x0, y: cy - r }, { x: x0 + r, y: cy }, { x: x0, y: cy + r }];

@@ -110,11 +110,11 @@ function seriesMarks(data: XyChartData, layout: XyLayout, theme: PlotTheme): Plo
   const [lo, hi] = [Math.min(...value.range), Math.max(...value.range)];
   const { plot } = layout;
   const area = rectArea(vertical ? { x: plot.x, y: lo, width: plot.width, height: hi - lo } : { x: lo, y: plot.y, width: hi - lo, height: plot.height });
-  const place = (v: number) => Math.min(hi, Math.max(lo, value.map(v)));
-  const at = (along: number, v: number) => (vertical ? { x: along, y: value.map(v) } : { x: value.map(v), y: along });
+  const place = (v: number) => Math.min(hi, Math.max(lo, value.position(v)));
+  const at = (along: number, v: number) => (vertical ? { x: along, y: value.position(v) } : { x: value.position(v), y: along });
   const [d0, d1] = value.domain;
   const inside = (v: number) => v >= Math.min(d0, d1) && v <= Math.max(d0, d1);
-  const baseline = value.map(Math.min(Math.max(0, Math.min(d0, d1)), Math.max(d0, d1)));
+  const baseline = value.position(Math.min(Math.max(0, Math.min(d0, d1)), Math.max(d0, d1)));
   const bars = data.series.filter((s) => s.kind === 'bar');
   const barWidth = slotWidth / Math.max(1, bars.length);
   const categories = categoriesOf(data);

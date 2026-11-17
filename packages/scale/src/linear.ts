@@ -159,7 +159,6 @@ export function linearScale(opts: LinearScaleOptions): LinearScale {
     kind: 'linear',
     domain,
     range,
-    map,
     position: map,
     invert: (at) => (r1 === r0 ? d0 : unmap((at - r0) / (r1 - r0))),
     tickStep: step,

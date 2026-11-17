@@ -19,7 +19,7 @@ describe('window fractions', () => {
       const scale = windowScale(w, width);
       expect(spanPlace(w, w.from)).toBe(0);
       expect(spanPlace(w, w.to)).toBeCloseTo(1, 9);
-      expect(spanPlace(w, at) * width).toBeCloseTo(scale.map(at), Math.max(0, 4 - Math.log10(1 + Math.abs(scale.map(at)))));
+      expect(spanPlace(w, at) * width).toBeCloseTo(scale.position(at), Math.max(0, 4 - Math.log10(1 + Math.abs(scale.position(at)))));
       expect(spanShare(w, at - w.from)).toBeCloseTo(spanPlace(w, at), 9);
     }), runs(RUNS));
   }, timeoutFor(RUNS, 1));

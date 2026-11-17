@@ -29,7 +29,7 @@ describe('compileJourney', () => {
     const tea = get('task:0:0')!;
     expect(tea.data.plotMark).toEqual({ kind: 'point', datum: { section: 0, task: 0 } });
     expect(tea.pose.width).toBe(16);
-    expect(tea.pose.y + 8).toBeCloseTo(layout.score.map(5));
+    expect(tea.pose.y + 8).toBeCloseTo(layout.score.position(5));
     expect(tea.pose.x + 8).toBeCloseTo(layout.steps.position('0'));
     const sit = get('task:1:0')!;
     expect(sit.pose.x + 8).toBeCloseTo(layout.steps.position('2'));
@@ -91,8 +91,8 @@ describe('journey edits', () => {
 
   it('reads the score under the pointer as a whole number from 1 to 5', () => {
     const { layout } = byKey(DAY);
-    expect(journeyScoreAt(layout, { x: 0, y: layout.score.map(3.4) })).toBe(3);
-    expect(journeyScoreAt(layout, { x: 0, y: layout.score.map(3.6) })).toBe(4);
+    expect(journeyScoreAt(layout, { x: 0, y: layout.score.position(3.4) })).toBe(3);
+    expect(journeyScoreAt(layout, { x: 0, y: layout.score.position(3.6) })).toBe(4);
     expect(journeyScoreAt(layout, { x: 0, y: -1000 })).toBe(5);
     expect(journeyScoreAt(layout, { x: 0, y: 5000 })).toBe(1);
   });
@@ -102,11 +102,11 @@ describe('journey edits', () => {
     const step = get('task:0:1')!;
     const handle = journeyEditor.handle(DAY, { trait: step.data.plotMark, pose: step.pose }) as PlotHandle;
     expect(handle.cursor).toBe('ns-resize');
-    expect(handle.at.y).toBeCloseTo(layout.score.map(3));
+    expect(handle.at.y).toBeCloseTo(layout.score.position(3));
     const actor = get('task:actor:1:0:0')!;
     expect(journeyEditor.handle(DAY, { trait: actor.data.plotMark, pose: actor.pose })).toBeNull();
     const drag = journeyEditor.drag(DAY, step.data.plotMark, SIZE, PLOT_THEME, measure)!;
-    expect(drag({ x: handle.at.x, y: layout.score.map(1.8) }).sections[0]!.tasks[1]!.score).toBe(2);
+    expect(drag({ x: handle.at.x, y: layout.score.position(1.8) }).sections[0]!.tasks[1]!.score).toBe(2);
   });
 
   it('the editor sets text typed in place', () => {

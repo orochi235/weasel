@@ -37,7 +37,6 @@ export function warpScale(opts: WarpScaleOptions): WarpScale {
     kind: 'warp',
     domain: [d0, d1],
     range: [r0, r1],
-    map,
     position: map,
     invert: (at) => (r1 === r0 ? d0 : from(unmap((at - r0) / (r1 - r0)))),
     ticks: (count = DEFAULT_TICKS) => stepTicks(d0, d1, step(count)),

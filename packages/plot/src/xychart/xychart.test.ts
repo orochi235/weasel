@@ -30,8 +30,8 @@ describe('compileXyChart', () => {
     const { layout, get } = byKey(SALES);
     const bar = get('bar:0:1')!;
     expect(bar.data.plotMark).toEqual({ kind: 'bar', datum: { series: 0, index: 1, value: 50, category: 'feb' } });
-    expect(bar.pose.y + bar.pose.height).toBeCloseTo(layout.value.map(0));
-    expect(bar.pose.y).toBeCloseTo(layout.value.map(50));
+    expect(bar.pose.y + bar.pose.height).toBeCloseTo(layout.value.position(0));
+    expect(bar.pose.y).toBeCloseTo(layout.value.position(50));
     expect(bar.pose.x + bar.pose.width / 2).toBeCloseTo(layout.slots[1]!);
     expect(bar.data.fill?.paint.color).toBe(seriesColor(PLOT_THEME, 0));
   });
@@ -40,7 +40,7 @@ describe('compileXyChart', () => {
     const { layout, get } = byKey(SALES);
     expect(get('line:1')!.data.stroke?.paint.color).toBe(seriesColor(PLOT_THEME, 1));
     const point = get('point:1:2')!;
-    expect(point.pose.y + point.pose.height / 2).toBeCloseTo(layout.value.map(40));
+    expect(point.pose.y + point.pose.height / 2).toBeCloseTo(layout.value.position(40));
     expect(point.data.plotMark.datum).toMatchObject({ series: 1, index: 2, value: 40 });
   });
 
@@ -85,8 +85,8 @@ describe('compileXyChart', () => {
   it('runs categories down y and values along x when horizontal', () => {
     const { layout, get } = byKey({ ...SALES, orientation: 'horizontal' });
     const bar = get('bar:0:2')!;
-    expect(bar.pose.x).toBeCloseTo(layout.value.map(0));
-    expect(bar.pose.x + bar.pose.width).toBeCloseTo(layout.value.map(80));
+    expect(bar.pose.x).toBeCloseTo(layout.value.position(0));
+    expect(bar.pose.x + bar.pose.width).toBeCloseTo(layout.value.position(80));
     expect(layout.slots[0]!).toBeLessThan(layout.slots[2]!);
   });
 
@@ -109,8 +109,8 @@ describe('xychart edits', () => {
 
   it('xyValueAt reads the value axis, rounded to a tenth of a tick', () => {
     const { layout } = byKey(SALES);
-    expect(xyValueAt(layout, { x: 0, y: layout.value.map(42.3) })).toBe(42);
-    expect(xyValueAt(layout, { x: 0, y: layout.value.map(57.8) })).toBe(58);
+    expect(xyValueAt(layout, { x: 0, y: layout.value.position(42.3) })).toBe(42);
+    expect(xyValueAt(layout, { x: 0, y: layout.value.position(57.8) })).toBe(58);
   });
 
   it('the editor puts a bar\'s handle on its value end when the bar runs down from the baseline', () => {
@@ -124,7 +124,7 @@ describe('xychart edits', () => {
       const handle = handlesOf(xyEditor.handle(data, { trait: bar.data.plotMark, pose: bar.pose }))[0]!;
       // 20 lies below the first chart's fixed 30, so its bar is cut at the plot's edge and its handle sits there.
       const [lo, hi] = [Math.min(...layout.value.range), Math.max(...layout.value.range)];
-      const end = Math.min(hi, Math.max(lo, layout.value.map(20)));
+      const end = Math.min(hi, Math.max(lo, layout.value.position(20)));
       expect(data.orientation === 'horizontal' ? handle.at.x : handle.at.y).toBeCloseTo(end);
     }
   });
@@ -137,7 +137,7 @@ describe('xychart edits', () => {
     expect(handle.cursor).toBe('ns-resize');
     expect(xyEditor.handle(SALES, { trait: get('line:1')!.data.plotMark, pose: get('line:1')!.pose })).toBeNull();
     const drag = xyEditor.drag(SALES, bar.data.plotMark, SIZE, PLOT_THEME, measure)!;
-    expect(drag({ x: handle.at.x, y: layout.value.map(70) }).series[0]!.values).toEqual([20, 70, 80]);
+    expect(drag({ x: handle.at.x, y: layout.value.position(70) }).series[0]!.values).toEqual([20, 70, 80]);
   });
 
   it('counts the longest of a million series without overflowing the call stack', () => {

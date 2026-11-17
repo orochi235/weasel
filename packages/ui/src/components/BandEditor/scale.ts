@@ -11,7 +11,7 @@ export function trackOf(scale: ContinuousScaleFactory, min: number, max: number)
   const unit = unitScale(scale, min, max);
   return {
     unit,
-    toUnit: (v: number): number => clamp01(unit.map(v)),
+    toUnit: (v: number): number => clamp01(unit.position(v)),
     fromUnit: (u: number): number => unit.invert(clamp01(u)),
   };
 }
@@ -25,8 +25,8 @@ export function trackOf(scale: ContinuousScaleFactory, min: number, max: number)
 export function withinAxis(scale: ContinuousScaleFactory, min: number, max: number): ContinuousScaleFactory {
   return ({ domain: [lo, hi], range: [r0, r1] }) => {
     const whole = unitScale(scale, min, max);
-    const a = whole.map(lo);
-    const b = whole.map(hi);
+    const a = whole.position(lo);
+    const b = whole.position(hi);
     if (b === a) return scale({ domain: [min, max], range: [r0, r0] });
     const stretch = (r1 - r0) / (b - a);
     const start = r0 - a * stretch;
