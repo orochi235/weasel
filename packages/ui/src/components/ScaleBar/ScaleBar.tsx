@@ -29,8 +29,8 @@ const PIXEL_BOARD: readonly UnitScope[] = [{ system: PIXELS }];
  * lengths and says what size it is drawn at.
  */
 export function ScaleBar({ zoom, scopes = PIXEL_BOARD, maxPx, lengths, className }: ScaleBarProps): ReactElement {
-  const bar = scaleBar({ pxPerUnit: zoom, scopes, ...(maxPx === undefined ? {} : { maxPx }), ...(lengths ? { lengths } : {}) });
   const locale = useFieldLocale();
+  const bar = scaleBar({ pxPerUnit: zoom, scopes, locale, ...(maxPx === undefined ? {} : { maxPx }), ...(lengths ? { lengths } : {}) });
   const drawn = bar.magnification === 1 ? null : `drawn at ${present(bar.magnification, multiplier({ figures: 3 }), { locale }).text}`;
   const span = { '--wzl-scale-bar-px': `${bar.px}px` } as CSSProperties;
   return (

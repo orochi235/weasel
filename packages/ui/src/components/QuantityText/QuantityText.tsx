@@ -1,11 +1,12 @@
 import { amount, present, presentRange, presentVector, unitSymbol, type Display, type Presentation, type Quantity } from '@weasel-js/quantity';
 import s from './QuantityText.module.css';
+import { useFieldLocale } from '../../useFieldLocale';
 
 /** Props for {@link QuantityText}: one of `value`, `range`, `vector`, and `unit`. */
 export type QuantityTextProps = {
   /** The display for a value that carries none of its own. */
   display?: Display;
-  /** BCP 47 locale. Default `en-US`. */
+  /** BCP 47 locale. Default the number fields' locale: the nearest `I18nProvider`'s, else the browser's. */
   locale?: string;
   /** Draw no copy for a screen reader: set where the control around this speaks the value itself. */
   mute?: boolean;
@@ -46,8 +47,8 @@ export type QuantityTextProps = {
       }
   );
 
-function presented(props: Exclude<QuantityTextProps, { unit: string }>): Presentation {
-  const { display, locale } = props;
+function presented(props: Exclude<QuantityTextProps, { unit: string }>, locale: string): Presentation {
+  const { display } = props;
   if (props.range !== undefined) {
     return presentRange(props.range[0], props.range[1], display, { locale, separator: props.separator, spokenSeparator: props.spokenSeparator });
   }
@@ -67,12 +68,13 @@ function presented(props: Exclude<QuantityTextProps, { unit: string }>): Present
  * differs from the text, a screen reader gets the spoken form.
  */
 export function QuantityText(props: QuantityTextProps) {
+  const locale = useFieldLocale(props.locale);
   const className = [s.quantity, props.className].filter(Boolean).join(' ');
   if (props.unit !== undefined) {
     const shown = unitSymbol(props.unit, { compact: props.compact });
     return <span className={className}><span data-part="unit" data-attach={shown.attaches ? '' : undefined} data-raise={shown.attaches && shown.raised ? '' : undefined}>{shown.text}</span></span>;
   }
-  const { text, spoken, html, mathml, stacked } = presented(props);
+  const { text, spoken, html, mathml, stacked } = presented(props, locale);
   const reads = !props.mute && spoken !== text;
   return (
     <span className={className}>

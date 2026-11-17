@@ -1,6 +1,8 @@
 import { niceStep } from '@weasel-js/geom';
 import { magnificationOf, toRoot, type UnitScope } from './scope';
-import { entryScale, formatUnit, resolveUnit, type Unit, type UnitValue } from './units';
+import { entryScale, resolveUnit, type Unit, type UnitValue } from './units';
+import { decimal } from './kinds/plain';
+import { present } from './present';
 
 /** Options for {@link scaleBar}. */
 export interface ScaleBarOptions {
@@ -14,7 +16,12 @@ export interface ScaleBarOptions {
   /** The lengths it chooses among, in the innermost scope's units. Default:
    *  1, 2 and 5 of every decade of every unit that scope's system carries. */
   lengths?: readonly UnitValue[];
+  /** BCP 47 locale the label's number is written in. Default `defaultLocale()`: the browser's, else `en-US`. */
+  locale?: string;
 }
+
+/** Up to three places, no grouping: `0.125in`, `50000px`. */
+const LENGTH = decimal({ maxPlaces: 3, grouping: false });
 
 /** A scale bar's length and label. */
 export interface ScaleBar {
@@ -58,8 +65,10 @@ export function scaleBar(opts: ScaleBarOptions): ScaleBar {
     : longestNice(units.map((u) => u.factor), fit);
   const fills = [...units].reverse().filter((u) => length / u.factor >= 1 - 1e-9);
   const whole = fills.find((u) => Math.abs(length / u.factor - Math.round(length / u.factor)) < 1e-9);
-  const unit = (whole ?? fills[0])?.unit ?? system.base;
-  return { length, px: length * pxPerBase, label: formatUnit(length, unit, system, { precision: 3 }), unit, magnification };
+  const chosen = whole ?? fills[0];
+  const unit = chosen?.unit ?? system.base;
+  const label = `${present(length / (chosen?.factor ?? 1), LENGTH, { locale: opts.locale }).text}${unit}`;
+  return { length, px: length * pxPerBase, label, unit, magnification };
 }
 
 /** The longest of `lengths` no longer than `fit`, or the shortest when none is. */

@@ -45,4 +45,19 @@ describe('liveSelection', () => {
     run.revert();
     expect([...h.value()].sort()).toEqual(['a', 'b', 'c']);
   });
+
+  it('puts back a single selection\'s press-time value on revert, null or off the list included', () => {
+    for (const [initial, allowDeselect] of [[null, false], [null, true], ['z', false], ['z', true]] as const) {
+      let value: string | null = initial;
+      const build = () => selection<string>({ value, allowDeselect, onChange: (next) => { value = next; } }, VALUES);
+      let model = build();
+      const run = sweepFrom(liveSelection(() => model, () => VALUES.length), 0);
+      run.reach(1);
+      model = build();
+      run.reach(2);
+      expect(value).toBe('c');
+      run.revert();
+      expect(value).toBe(initial);
+    }
+  });
 });

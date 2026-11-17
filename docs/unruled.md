@@ -2538,3 +2538,19 @@ Calls the lanes made without a ruling:
   as part of the document rather than an edit of the node.
 - 2026-11-16 (my call): a Mermaid flowchart node's `@{ … }` metadata that is not `key: value` pairs throws, naming
   the line, as a kanban card's does; the flowchart had read `shape` alone as a key with an empty value.
+
+## Audit round thirty (2026-11-16): the component kit
+
+- 2026-11-16 (the fixer's call): `QuantityText` passes even an explicit `locale` through `fieldLocale`, as every
+  number field does, so a locale whose numbers do not read back is drawn with Latin digits or in `en-US`.
+- 2026-11-16 (the fixer's call): `liveSelection` keeps its second argument, now unread, rather than drop it in a
+  breaking change.
+- Open: how Escape puts back a mixed segment after a sweep crossed it (`SegmentedBar` `sweep` with `mixedValues`,
+  SelectionPanel's flag bar). A list `onChange` cannot say "mixed", so the bar would need a sweep lifecycle (begin,
+  commit, cancel) and the panel a way to drop its drafts (`leafWrites`' `restore`); today the sweep's steps commit, and
+  Escape writes the mixed flag off on every node.
+- Open: whether `CharacterOptions` draws No fill as mixed over a `MIXED` fill. `RangeStyle` cannot say whether the runs
+  disagree on having a fill or only on its color, and a test asserts it stays unlit.
+- Open: `check:imports` skips type-only imports, so a package whose `.d.ts` names an undeclared sibling passes it.
+  Counting them flags core's `math` entry re-exporting `@weasel-js/simulation` types (core does not declare it, and
+  declaring it would put simulation in base's closure) and forge's `vite/ast.ts` (`@babel/types`, a dev dependency).

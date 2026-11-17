@@ -66,6 +66,36 @@ function commitToggle<TLayer extends string>(
   commit(ops, values.every(Boolean) ? on : values.some(Boolean) ? mixed : off);
 }
 
+/**
+ * How many of `shown`, the siblings under `parent` a drag left behind, lie behind a drop at gap `at` of the list's
+ * top level, where the page run's children are listed beside the other roots. A sibling is behind when its front-most
+ * row there is at or past the gap; the run, whose rows are its children's, counts by the first of them.
+ */
+function behindTopGap(
+  childrenOf: (id: NodeId) => readonly NodeId[],
+  roots: readonly NodeId[],
+  run: NodeId | null,
+  moved: ReadonlySet<string>,
+  parent: string | null,
+  shown: readonly NodeId[],
+  at: number,
+): number {
+  const owners: (NodeId | undefined)[] = [];
+  for (const root of [...roots].reverse()) {
+    if (root !== run) {
+      if (!moved.has(root)) owners.push(parent === null ? root : undefined);
+      continue;
+    }
+    for (const kid of [...childrenOf(root)].reverse()) {
+      if (!moved.has(kid)) owners.push(parent === null ? root : parent === run ? kid : undefined);
+    }
+  }
+  return shown.filter((id) => {
+    const first = owners.indexOf(id);
+    return first < 0 || first >= at;
+  }).length;
+}
+
 /** The `<LayerList>` props `useSceneLayerList` answers. */
 export type SceneLayerListProps = Required<Pick<LayerListProps, 'items' | 'selectedIds' | 'onSelectionChange' | 'onReorder' | 'canMove' | 'onVisibilityChange' | 'onLockChange'>>
   & Pick<LayerListProps, 'onRemove' | 'onRename'>;
@@ -164,7 +194,9 @@ export function useSceneLayerList<TData, TLayer extends string, TPose>(
       // level among them; the rows shown stand for the siblings of the list's own level.
       const shown = left.filter((id) => (layer !== null ? scene.get(id)?.layer === layer : !isAnnotation(id)));
       const at = parentId === null ? Math.max(0, index - annotationRows.length) : index;
-      const back = Math.max(0, shown.length - at);
+      const back = parentId === null && layer === null
+        ? behindTopGap((id) => scene.childrenOf(id), scene.roots.filter((id) => !isAnnotation(id)), run, moved, parent, shown, at)
+        : Math.max(0, shown.length - at);
       const to = back < shown.length ? left.indexOf(shown[back]!) : shown.length > 0 ? left.indexOf(shown.at(-1)!) + 1 : left.length;
       // A node from another container joins this one first, back to front as the scene orders children.
       const joining = [...ids].reverse().flatMap((id) => {

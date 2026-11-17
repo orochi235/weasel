@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { render, screen } from '@testing-library/react';
-import { IMPERIAL_INCHES, type UnitScope } from '@weasel-js/quantity';
+import { IMPERIAL_INCHES, PIXELS, type UnitScope } from '@weasel-js/quantity';
+import { I18nProvider } from '../../useFieldLocale';
 import { ScaleBar } from './ScaleBar';
 
 const BOARD: UnitScope = { system: IMPERIAL_INCHES };
@@ -20,4 +21,13 @@ describe('ScaleBar', () => {
     render(<ScaleBar zoom={10} scopes={[BOARD, { ...BOARD, drawnAt: 0.4 }]} />);
     expect(screen.getByRole('img', { name: 'Scale: 2ft, drawn at 0.4×' })).toHaveTextContent('2ftdrawn at 0.4×');
   });
+});
+
+it("writes its length and its magnification in the number fields' locale", () => {
+  render(
+    <I18nProvider locale="de-DE">
+      <ScaleBar zoom={500} scopes={[{ system: PIXELS }, { system: PIXELS, drawnAt: 1.5 }]} />
+    </I18nProvider>,
+  );
+  expect(screen.getByRole('img').getAttribute('aria-label')).toBe('Scale: 0,1px, drawn at 1,5×');
 });

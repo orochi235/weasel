@@ -90,6 +90,20 @@ const release = (y: number) =>
   fireEvent.pointerUp(document, { pointerId: 1, clientX: 100, clientY: y });
 
 describe('useReorderDragList', () => {
+  it('starts nothing from a press of any button but the primary one', () => {
+    for (const button of [1, 2]) {
+      const { onReorder, onPress, row, unmount } = setup(ITEMS, ['a']);
+      press(row('c'), 80, { button });
+      move(10);
+      release(10);
+      press(row('b'), 48, { button });
+      release(48);
+      expect(onReorder).not.toHaveBeenCalled();
+      expect(onPress).not.toHaveBeenCalled();
+      unmount();
+    }
+  });
+
   it('plain pointerdown + pointerup (no move) does not fire onReorder', () => {
     const { onReorder, row } = setup(ITEMS, ['a']);
     press(row('b'), 48);

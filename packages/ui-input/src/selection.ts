@@ -66,14 +66,37 @@ export interface SelectionModel {
   /** What a click on item `index` does: choose it, or flip it. */
   press(index: number): void;
   /** Start a run of changes. Each `set` reports as it happens, from the edit's own copy, so a run faster than
-   *  the component re-renders loses none of them. */
-  edit(): SelectionEdit;
+   *  the component re-renders loses none of them. Given `from`, an edit of an earlier model of the same selection,
+   *  the run continues that one: its `revert` puts back what `from` started from, a value no item shows included. */
+  edit(from?: SelectionEdit): SelectionEdit;
   /** The arrow keys choose as they move. */
   readonly followsFocus: boolean;
 }
 
 /** Whether `a` and `b` are one value as `Array.prototype.includes` reads them: `NaN` is itself, `-0` is `0`. */
 const same = (a: unknown, b: unknown): boolean => a === b || (Number.isNaN(a) && Number.isNaN(b));
+
+/** What each edit started from, by mode, for an edit that continues it. */
+const startOf = new WeakMap<SelectionEdit, { mode: 'single' | 'multiple' | 'each'; initial: unknown }>();
+
+/** `edit`, recorded as starting from `initial`. */
+function begun<E extends SelectionEdit>(edit: E, mode: 'single' | 'multiple' | 'each', initial: unknown): E {
+  startOf.set(edit, { mode, initial });
+  return edit;
+}
+
+/** `edit`, recorded as starting where `from` did: an edit that stands in for `from`, so one can continue it. */
+export function continuing<E extends SelectionEdit>(edit: E, from: SelectionEdit): E {
+  const start = startOf.get(from);
+  if (start) startOf.set(edit, start);
+  return edit;
+}
+
+/** Where an edit continuing `from` starts: what `from` started from, when it was an edit of this kind, else `now`. */
+function startFrom<T>(from: SelectionEdit | undefined, mode: 'single' | 'multiple' | 'each', now: T): T {
+  const start = from && startOf.get(from);
+  return start && start.mode === mode ? (start.initial as T) : now;
+}
 
 /** `spec`'s selection over `values`, one per item in order. */
 export function selection<V>(spec: SelectionSpec<V>, values: readonly V[]): SelectionModel {
@@ -86,10 +109,10 @@ export function selection<V>(spec: SelectionSpec<V>, values: readonly V[]): Sele
       followsFocus: false,
       stateOf: (i) => (on.includes(values[i]!) ? 'on' : mixed.includes(values[i]!) ? 'mixed' : 'off'),
       press: (i) => spec.onChange(flip(on, values[i]!, !on.includes(values[i]!))),
-      edit: () => {
-        const initial = on;
-        let working: readonly V[] = initial;
-        return {
+      edit: (from) => {
+        const initial = startFrom<readonly V[]>(from, 'multiple', on);
+        let working: readonly V[] = on;
+        return begun({
           set: (i, to) => {
             const v = values[i]!;
             if (working.includes(v) === to) return;
@@ -105,7 +128,7 @@ export function selection<V>(spec: SelectionSpec<V>, values: readonly V[]): Sele
             spec.onChange([...next]);
           },
           revert: () => { if (working !== initial) spec.onChange([...initial]); },
-        };
+        }, 'multiple', initial);
       },
     };
   }
@@ -118,10 +141,10 @@ export function selection<V>(spec: SelectionSpec<V>, values: readonly V[]): Sele
       if (!same(spec.value, values[i])) choose(values[i]!);
       else if (spec.allowDeselect) choose(null);
     },
-    edit: () => {
-      const initial = spec.value;
-      let working = initial;
-      return {
+    edit: (from) => {
+      const initial = startFrom<V | null>(from, 'single', spec.value);
+      let working = spec.value;
+      return begun({
         set: (i, to) => {
           const next = to ? values[i]! : same(working, values[i]) && spec.allowDeselect ? null : working;
           if (same(next, working)) return;
@@ -139,7 +162,7 @@ export function selection<V>(spec: SelectionSpec<V>, values: readonly V[]): Sele
           choose(next);
         },
         revert: () => { if (!same(working, initial)) choose(initial); },
-      };
+      }, 'single', initial);
     },
   };
 }
@@ -151,25 +174,25 @@ export function selectionOfEach(items: readonly OwnSelection[]): SelectionModel 
     followsFocus: false,
     stateOf: (i) => (items[i]!.selected ? 'on' : 'off'),
     press: (i) => items[i]!.onChange(!items[i]!.selected),
-    edit: () => {
-      const initial = items.map((it) => it.selected);
-      const working = [...initial];
+    edit: (from) => {
+      const initial = startFrom<readonly boolean[]>(from, 'each', items.map((it) => it.selected));
+      const working = items.map((it) => it.selected);
       const set = (i: number, to: boolean): void => {
         if (working[i] === to) return;
         working[i] = to;
         items[i]!.onChange(to);
       };
-      return {
+      return begun({
         set,
         apply: (changes) => { for (const [i, to] of changes) set(i, to); },
         revert: () => {
           working.forEach((to, i) => {
-            if (to === initial[i]) return;
+            if (i >= initial.length || to === initial[i]) return;
             working[i] = initial[i]!;
             items[i]!.onChange(initial[i]!);
           });
         },
-      };
+      }, 'each', initial);
     },
   };
 }

@@ -62,4 +62,14 @@ describe('PlotDataPanel', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Add period' }));
     expect(onChange.mock.lastCall![0].sections[0].periods).toEqual([{ label: '2001', events: [] }, { label: 'Period 2', events: [] }]);
   });
+
+  it('keeps a row open on its item when a row above it is removed', () => {
+    const timeline: TimelineData = { kind: 'timeline', sections: ['A', 'B', 'C'].map((name) => ({ name, periods: [] })) };
+    render(<Host initial={timeline} />);
+    fireEvent.click(screen.getAllByRole('button', { name: 'Show details' })[2]!);
+    expect(screen.getAllByRole('button', { name: 'Hide details' })).toHaveLength(1);
+    fireEvent.click(screen.getByRole('button', { name: 'Remove A' }));
+    const toggles = screen.getAllByRole('button', { name: /details$/ }).map((b) => b.getAttribute('aria-label'));
+    expect(toggles).toEqual(['Show details', 'Hide details']);
+  });
 });
