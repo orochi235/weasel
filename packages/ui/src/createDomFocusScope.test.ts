@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { domFocusScope } from './domFocusScope';
+import { createDomFocusScope } from './createDomFocusScope';
 
 afterEach(() => { document.body.innerHTML = ''; });
 
@@ -8,10 +8,10 @@ const mount = (html: string) => {
   root.innerHTML = html;
   document.body.append(root);
   const el = (id: string) => root.querySelector<HTMLElement>(`#${id}`)!;
-  return { root, el, scope: domFocusScope(root) };
+  return { root, el, scope: createDomFocusScope(root) };
 };
 
-describe('domFocusScope', () => {
+describe('createDomFocusScope', () => {
   it('orders a positive tabindex first, then document order, skipping what Tab skips', () => {
     const { scope } = mount(`
       <button id="a">a</button><button id="b" tabindex="2">b</button><button id="off" disabled>x</button>

@@ -4,7 +4,7 @@ import {
   type HeadlessComponent,
 } from '@weasel-js/ui-logic';
 import { nodeText } from '../../nodeText';
-import type { DomTarget } from '../../domMeasureEnv';
+import type { DomTarget } from '../../createDomMeasureEnv';
 import s from './Button.module.css';
 import { ButtonTooltip, type TooltipFields } from '../Tooltip/buttonTooltip';
 import type { DisableableProps } from '../Disabled';
@@ -198,7 +198,7 @@ function ButtonPartSlot(
 
 /**
  * {@link Button} on the measure/draw contract a HUD button implements too: `measure` is `@weasel-js/ui-logic`'s
- * `measureButton` (pass `domMeasureEnv(el)` for any element in the themed root), and `draw` renders the button.
+ * `measureButton` (pass `createDomMeasureEnv(el)` for any element in the themed root), and `draw` renders the button.
  */
 export const domButton: HeadlessComponent<ButtonProps, ButtonLayout, DomTarget<HTMLButtonElement>, ReactElement> = {
   measure: (props, c, env) => measureButton(buttonFaceOf(props), c, env),

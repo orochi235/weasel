@@ -6,7 +6,7 @@ import { ActionsProvider, useAction, useMenuHost, useMenus } from '@weasel-js/ro
 import type { MenuDef, MenuHost } from '@weasel-js/routing';
 import { fixedWidth, measureMenuPanel, MENU_CARET_SIZE, UNBOUNDED, type MenuRowFace } from '@weasel-js/ui-logic';
 import { ContextMenuHost } from '@weasel-js/ui/components/Menu';
-import { domMeasureEnv } from '@weasel-js/ui';
+import { createDomMeasureEnv } from '@weasel-js/ui';
 import { Button, domButton, type ButtonProps } from '@weasel-js/ui/components/Button';
 import { domItemList } from '@weasel-js/ui/components/ItemList';
 import s from './ItemList/ItemList.module.css';
@@ -37,7 +37,7 @@ describe('a DOM button is the box measureButton gives', () => {
   ])('%s', (_, props) => {
     render(<div data-testid="host"><Button {...props} /></div>);
     const button = screen.getByRole('button');
-    const m = domButton.measure(props, UNBOUNDED, domMeasureEnv(button));
+    const m = domButton.measure(props, UNBOUNDED, createDomMeasureEnv(button));
     const box = button.getBoundingClientRect();
     near(box.width, m.width);
     near(box.height, m.height);
@@ -54,7 +54,7 @@ describe('a DOM button is the box measureButton gives', () => {
   test('a full-width button centers its parts in the width it is given', () => {
     render(<div style={{ width: 300 }}><Button fullWidth>Go</Button></div>);
     const button = screen.getByRole('button');
-    const m = domButton.measure({ children: 'Go' }, fixedWidth(300), domMeasureEnv(button));
+    const m = domButton.measure({ children: 'Go' }, fixedWidth(300), createDomMeasureEnv(button));
     near(button.getBoundingClientRect().width, 300);
     near(boxIn(button.firstElementChild!, button).x, m.layout.parts[0]!.rect.x);
   });
@@ -76,7 +76,7 @@ describe('a DOM item list is the box measureRowList gives', () => {
     );
     const list = document.querySelector(`.${s.list}`)!;
     const slotWidth = (_: unknown, slot: 'leading' | 'trailing') => (slot === 'leading' ? 12 : list.querySelector(`.${s.trailing}:not(:empty)`)!.getBoundingClientRect().width);
-    const m = domItemList.measure({ props: { rows }, slotWidth }, fixedWidth(240), domMeasureEnv(list));
+    const m = domItemList.measure({ props: { rows }, slotWidth }, fixedWidth(240), createDomMeasureEnv(list));
     near(list.getBoundingClientRect().height, m.height);
     const rowEls = [...list.querySelectorAll(`.${s.row}`)];
     expect(rowEls).toHaveLength(3);
@@ -93,7 +93,7 @@ describe('a DOM item list is the box measureRowList gives', () => {
   test('the empty state', () => {
     render(<div style={{ width: 240 }}><ItemListHost rows={[]} /></div>);
     const list = document.querySelector(`.${s.list}`)!;
-    const m = domItemList.measure({ props: { rows: [] } }, fixedWidth(240), domMeasureEnv(list));
+    const m = domItemList.measure({ props: { rows: [] } }, fixedWidth(240), createDomMeasureEnv(list));
     near(list.getBoundingClientRect().height, m.height);
   });
 });
@@ -133,7 +133,7 @@ describe('a DOM menu panel is the box measureMenuPanel gives, as the HUD menu dr
       })),
     };
     expect(face.rows.map((r) => r.kind)).toEqual(['row', 'row', 'separator', 'row']);
-    const m = measureMenuPanel(face, UNBOUNDED, domMeasureEnv(panel));
+    const m = measureMenuPanel(face, UNBOUNDED, createDomMeasureEnv(panel));
     const box = panel.getBoundingClientRect();
     near(box.width, m.width);
     near(box.height, m.height);

@@ -9,7 +9,7 @@ let context: CanvasRenderingContext2D | null = null;
  * is read, and text measured by the browser's own fonts on a canvas. Measure from any element inside the themed
  * root, mounted or not yet laid out.
  */
-export function domMeasureEnv(element: Element): MeasureEnv {
+export function createDomMeasureEnv(element: Element): MeasureEnv {
   const style = element.ownerDocument.defaultView!.getComputedStyle(element);
   return {
     token(name) {

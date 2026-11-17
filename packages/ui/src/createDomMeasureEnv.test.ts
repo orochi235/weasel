@@ -1,5 +1,5 @@
 import { afterEach, expect, it, vi } from 'vitest';
-import { domMeasureEnv } from './domMeasureEnv';
+import { createDomMeasureEnv } from './createDomMeasureEnv';
 
 afterEach(() => vi.restoreAllMocks());
 
@@ -15,7 +15,7 @@ it('quotes a lone family name in the font it measures with, as every other font 
     if (tag === 'canvas') (el as HTMLCanvasElement).getContext = (() => ctx) as unknown as HTMLCanvasElement['getContext'];
     return el;
   });
-  const env = domMeasureEnv(document.body);
+  const env = createDomMeasureEnv(document.body);
   env.text('x', { family: 'Font 3D', size: 12 });
   env.text('x', { family: 'Inter, sans-serif', size: 12 });
   expect(fonts.slice(-2)).toEqual(['400 12px "Font 3D"', '400 12px Inter, sans-serif']);
