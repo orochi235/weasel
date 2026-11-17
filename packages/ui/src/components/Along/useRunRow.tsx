@@ -1,5 +1,5 @@
 import { useRef, type CSSProperties, type FocusEvent as ReactFocusEvent, type PointerEvent as ReactPointerEvent, type ReactElement, type RefObject } from 'react';
-import { placeAlongRun, runLength, runStationAt, trackShapeD, type RunAlign, type RunPlace, type TrackRun, type TrackShape } from '@weasel-js/geom';
+import { placeAlongRun, runLength, runPlaceAt, trackShapeD, type RunAlign, type RunPlace, type TrackRun, type TrackShape } from '@weasel-js/geom';
 import { icon } from '../../icons.gen';
 import { Icon } from '../Icon/Icon';
 import { placeStyle } from './placeOnRun';
@@ -115,7 +115,7 @@ export function RunEnds({ row, run }: { row: RunRow; run: TrackRun }): ReactElem
   // The chevron glyph points down, a quarter turn clockwise from the left to right `angle` tips to.
   const mark = (at: 'start' | 'end') => {
     const left = (at === 'start') === (run.direction === 'ltr');
-    const style = placeStyle(runStationAt(run, at === 'start' ? -MORE_PAST_OUT : run.length + MORE_PAST_OUT, 0, 'follow'), left ? 90 : -90);
+    const style = placeStyle(runPlaceAt(run, at === 'start' ? -MORE_PAST_OUT : run.length + MORE_PAST_OUT, 0, 'follow'), left ? 90 : -90);
     return (
       <span className={s.morePast} data-more-past={at} aria-hidden="true" style={style}>
         <Icon name={icon('chevron')} size={14} />

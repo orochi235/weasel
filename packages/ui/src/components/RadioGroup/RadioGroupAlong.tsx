@@ -1,6 +1,6 @@
 import { createContext, useMemo, useRef, type CSSProperties, type ReactElement } from 'react';
 import { Label, RadioGroup as RACRadioGroup } from 'react-aria-components';
-import { runStationAt, type RunAlign, type TrackRun, type TrackShape } from '@weasel-js/geom';
+import { runPlaceAt, type RunAlign, type TrackRun, type TrackShape } from '@weasel-js/geom';
 import { useRowRun } from '../Along/useRowRun';
 import { RunScope } from '../Run';
 import { placeStyle } from '../Along/placeOnRun';
@@ -63,5 +63,5 @@ export function RadioGroupAlong({ label, description, errorMessage, children, cl
  */
 function hintStyle(run: TrackRun, inward: number): CSSProperties {
   const side = bendAt(run, 0.5) === 1 ? 1 : -1;
-  return { ...placeStyle(runStationAt(run, run.length / 2, side * inward)), '--hang': -side } as CSSProperties;
+  return { ...placeStyle(runPlaceAt(run, run.length / 2, side * inward)), '--hang': -side } as CSSProperties;
 }

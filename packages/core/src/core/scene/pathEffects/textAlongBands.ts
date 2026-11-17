@@ -2,7 +2,7 @@
  * The bands text along a path carries — decoration rules cut into clusters — joined across neighboring items and drawn
  * as ribbons that bend with the path.
  */
-import { polygonFromPoints, runStationAt, type Point, type TrackRun } from '@weasel-js/geom';
+import { polygonFromPoints, runPlaceAt, type Point, type TrackRun } from '@weasel-js/geom';
 import type { DerivedPart } from '../derivedParts';
 import type { EffectBand, EffectItem } from './source';
 
@@ -63,7 +63,7 @@ function ribbonPart(r: Ribbon, run: TrackRun, shift: number): DerivedPart {
   const bottom: Point[] = [];
   for (let i = 0; i <= n; i++) {
     const d = r.from + ((r.to - r.from) * i) / n;
-    const { point, normal } = runStationAt(run, run.closed ? ((d % L) + L) % L : d);
+    const { point, normal } = runPlaceAt(run, run.closed ? ((d % L) + L) % L : d);
     const up = (y: number): Point => ({ x: point.x + (shift - y) * normal.x, y: point.y + (shift - y) * normal.y });
     top.push(up(r.y0));
     bottom.push(up(r.y1));

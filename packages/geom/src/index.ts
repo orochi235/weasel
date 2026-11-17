@@ -33,7 +33,7 @@ export { trackShapeD } from './track/pathData';
 export { bendSide, shiftTrack } from './track/shift';
 export { trackSlice } from './track/slice';
 export {
-  placeAlongRun, runLength, runPlaces, runStationAt,
+  placeAlongRun, runLength, runPlaces, runPlaceAt,
   type PlaceAlongRunOptions, type RunAlign, type RunOrder, type RunPast, type RunPlace, type RunSpot,
 } from './track/place';
 export { PORT_REACH, portControls, portCurvePoints } from './portCurve2';

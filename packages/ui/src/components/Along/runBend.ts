@@ -1,4 +1,4 @@
-import { clamp, runStationAt, type TrackRun } from '@weasel-js/geom';
+import { clamp, runPlaceAt, type TrackRun } from '@weasel-js/geom';
 
 /** Which way a run bends at `g`: `1` toward its items' up, `-1` away from it, `0` where it runs straight. */
 export function bendAt(run: TrackRun, g: number): -1 | 0 | 1 {
@@ -26,7 +26,7 @@ export function runStretchD(run: TrackRun, from: number, to: number, shift = 0):
   const steps = Math.max(1, Math.ceil(Math.abs(to - from) / 4));
   const parts: string[] = [];
   for (let i = 0; i <= steps; i++) {
-    const { point } = runStationAt(run, from + ((to - from) * i) / steps, shift, 'follow');
+    const { point } = runPlaceAt(run, from + ((to - from) * i) / steps, shift, 'follow');
     parts.push(`${i === 0 ? 'M' : 'L'} ${round(point.x)} ${round(point.y)}`);
   }
   return parts.join(' ');

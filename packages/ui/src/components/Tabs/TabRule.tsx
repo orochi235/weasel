@@ -1,4 +1,4 @@
-import { clamp, runStationAt, type TrackRun } from '@weasel-js/geom';
+import { clamp, runPlaceAt, type TrackRun } from '@weasel-js/geom';
 import { forwardRef, type Ref } from 'react';
 import { bendAt, runStretchD } from '../Along/runBend';
 import type { RunSlotHost } from '../Along/runSlots';
@@ -52,7 +52,7 @@ export const TabRule = forwardRef(function TabRule(
 /** A mark standing across the row at `at` px along `run`, as thick as the row. */
 function dropD(run: TrackRun, at: number, half: number): string {
   const d = clamp(at, 0, run.length);
-  const a = runStationAt(run, d, -half).point;
-  const b = runStationAt(run, d, half).point;
+  const a = runPlaceAt(run, d, -half).point;
+  const b = runPlaceAt(run, d, half).point;
   return `M ${a.x} ${a.y} L ${b.x} ${b.y}`;
 }

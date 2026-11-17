@@ -1,6 +1,6 @@
 import { useEffect, useLayoutEffect, useRef, type RefObject } from 'react';
 import { useLatest } from '@weasel-js/react';
-import { runStationAt, type Point, type TrackRun } from '@weasel-js/geom';
+import { runPlaceAt, type Point, type TrackRun } from '@weasel-js/geom';
 import row from './runRow.module.css';
 import s from './runText.module.css';
 
@@ -158,7 +158,7 @@ function lay(bend: Bend, run: TrackRun, center: Point, origin: Point, turn: numb
   const sink = (font.ascent - font.descent) / 2;
   const base = { x: center.x - Math.sin(turn) * sink, y: center.y + Math.cos(turn) * sink };
   const d = run.nearest(base, { open: true, about: run.nearest(base).f }).f * run.length;
-  const at = runStationAt(run, d, 0, 'follow');
+  const at = runPlaceAt(run, d, 0, 'follow');
   const shift = (base.x - at.point.x) * at.normal.x + (base.y - at.point.y) * at.normal.y;
   const reach = font.width / 2 + font.ascent * 2;
   const steps = Math.max(2, Math.ceil((2 * reach) / STEP));
@@ -166,7 +166,7 @@ function lay(bend: Bend, run: TrackRun, center: Point, origin: Point, turn: numb
   const sin = Math.sin(-turn);
   const pts: Point[] = [];
   for (let i = 0; i <= steps; i++) {
-    const p = runStationAt(run, d - reach + (2 * reach * i) / steps, shift, 'follow').point;
+    const p = runPlaceAt(run, d - reach + (2 * reach * i) / steps, shift, 'follow').point;
     const x = p.x - origin.x;
     const y = p.y - origin.y;
     pts.push({ x: x * cos - y * sin, y: x * sin + y * cos });
