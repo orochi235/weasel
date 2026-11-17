@@ -125,11 +125,11 @@ export function graphPagesOf(doc: DiagramDocument, format: string, warn: (messag
 }
 
 /** Whether `format` can write every page of `doc`. */
-export function formatHolds(format: DiagramFormat, doc: DiagramDocument): boolean {
-  return formatTakes(format, new Set(doc.pages.map((p) => p.kind)));
+export function formatFits(format: DiagramFormat, doc: DiagramDocument): boolean {
+  return formatFitsKinds(format, new Set(doc.pages.map((p) => p.kind)));
 }
 
 /** Whether `format` reads and writes every kind in `kinds`: what a menu asks of `scenePageKinds`. */
-export function formatTakes(format: DiagramFormat, kinds: ReadonlySet<PageKind>): boolean {
+export function formatFitsKinds(format: DiagramFormat, kinds: ReadonlySet<PageKind>): boolean {
   return [...kinds].every((k) => format.kinds.includes(k));
 }

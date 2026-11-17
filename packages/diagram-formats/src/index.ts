@@ -6,7 +6,7 @@
  * @packageDocumentation
  */
 export {
-  formatHolds, formatTakes, requireGraphPage, graphPagesOf, writtenPage,
+  formatFits, formatFitsKinds, requireGraphPage, graphPagesOf, writtenPage,
   type DiagramDocument, type DiagramFormat, type DocumentPage, type ExportResult, type GraphPage, type ImportResult, type PageBase, type PageLayout,
   type PageKind, type PlotPage, type SequencePage, type WriteOptions,
 } from './document';

@@ -1,7 +1,7 @@
 import { placedPagesOf } from '@weasel-js/core';
 import { DIAGRAM_THEMES, sequenceRootOf, type SequenceData } from '@weasel-js/diagram';
 import { describe, expect, it } from 'vitest';
-import { formatTakes, type DiagramDocument, type SequencePage } from './document';
+import { formatFitsKinds, type DiagramDocument, type SequencePage } from './document';
 import { DIAGRAM_DOT } from './dot/format';
 import { documentFromScene } from './fromScene';
 import { DIAGRAM_JSON } from './jsonFormat';
@@ -55,8 +55,8 @@ describe('sequence pages', () => {
     expect([...kinds].sort()).toEqual(['graph', 'sequence']);
     expect([...scenePageKinds(sceneOf({ pages: [DOC.pages[0]!] }))]).toEqual(['graph']);
     expect([...scenePageKinds(sceneOf({ pages: [DOC.pages[1]!] }))]).toEqual(['sequence']);
-    expect(formatTakes(DIAGRAM_JSON, kinds)).toBe(true);
-    expect(formatTakes(DIAGRAM_DOT, kinds)).toBe(false);
+    expect(formatFitsKinds(DIAGRAM_JSON, kinds)).toBe(true);
+    expect(formatFitsKinds(DIAGRAM_DOT, kinds)).toBe(false);
   });
 
   it('answers the kind of the one page a one-page writer writes', () => {
@@ -65,7 +65,7 @@ describe('sequence pages', () => {
     expect([...scenePageKinds(scene, { page: graph!.id })]).toEqual(['graph']);
     expect([...scenePageKinds(scene, { page: sequence!.id })]).toEqual(['sequence']);
     expect([...scenePageKinds(scene, { page: 'nowhere' })]).toEqual(['graph']);
-    expect(formatTakes(DIAGRAM_DOT, scenePageKinds(scene, { page: graph!.id }))).toBe(true);
+    expect(formatFitsKinds(DIAGRAM_DOT, scenePageKinds(scene, { page: graph!.id }))).toBe(true);
   });
 
   it('round-trips through the JSON format', async () => {
