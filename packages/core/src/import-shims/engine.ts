@@ -194,7 +194,7 @@ export type { OverlayVisibilityId, ResolvedOverlay } from '../interactions/actio
 export { closeRun, commitRunOps, readRunLifecycle, reduceBehaviorEnd, runBehaviorCancel, runBehaviorSettled, runLifecycleParams } from '../interactions/actions/runLifecycle';
 export type { ClosingRun, OwnEndFields, RunLifecycle, RunLifecycleOptions } from '../interactions/actions/runLifecycle';
 export type { SnapBegin, SnapConstrain, SnapDep, SnapGeometry, SnapMods, SnapOutcome, SnapResizeBox, SnapSession } from '../interactions/actions/snapDep';
-export { commitTransformOps, finishTransformOps, transformApplyOps, transformFinisher, transformPreview } from '../interactions/actions/transformFinish';
+export { commitTransformOps, createTransformCommit, finishTransformOps, transformFinisher, transformPreview } from '../interactions/actions/transformFinish';
 export type { TransformFinisher, TransformFollower, TransformPreview, TransformPreviewNode } from '../interactions/actions/transformFinish';
 export { useActionSet, useStandardDeps } from '../interactions/actions/useActionSet';
 export type { StandardDeps } from '../interactions/actions/useActionSet';

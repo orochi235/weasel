@@ -16,7 +16,7 @@ export { poseFrame } from '../interactions/actions/poseFrame';
 export { shapeSources, uncarried } from '../interactions/actions/selectionSubtree';
 export { settleWithinRounding } from '../interactions/actions/settleWithinRounding';
 export { actionReferenceSources } from '../interactions/actions/spatialReference';
-export { commitTransformOps, transformApplyOps } from '../interactions/actions/transformFinish';
+export { commitTransformOps, createTransformCommit } from '../interactions/actions/transformFinish';
 export { reachableInGroup } from '../canvas/deps/enteredGroup';
 export { hitTestRect } from '../canvas/deps/hitTestArea';
 export { groupingSite } from '../core/pages/pagePlacement';

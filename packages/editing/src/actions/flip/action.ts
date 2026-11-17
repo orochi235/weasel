@@ -1,5 +1,5 @@
 import type { NodeId, Scene, OperandsDep, Bounds, Op, PoseDescriptor, RectPose } from '@weasel-js/core';
-import { shapeSources, uncarried, withoutPageStructure, createSetPoseOp, poseDescriptorOf, unionAABB, drawnBoxes, type DrawnBoxes, isNoInkExtents, scenePoseFrame, type PoseFrame, actionReferenceSources, resolveSpatialReference, sameValue, finiteThroughout, defaultCommitAdapter, operandMethods, transformApplyOps, requiresOperands, geometryDataOp, type GeometryProjection } from '@weasel-js/core';
+import { shapeSources, uncarried, withoutPageStructure, createSetPoseOp, poseDescriptorOf, unionAABB, drawnBoxes, type DrawnBoxes, isNoInkExtents, scenePoseFrame, type PoseFrame, actionReferenceSources, resolveSpatialReference, sameValue, finiteThroughout, defaultCommitAdapter, operandMethods, createTransformCommit, requiresOperands, geometryDataOp, type GeometryProjection } from '@weasel-js/core';
 import { multiply, rotate, translate, type Affine } from '@weasel-js/geom';
 import {
   flipPoseAboutBounds,
@@ -180,7 +180,7 @@ export const flipAction = defineAction({
       if (!selection || !scene) return;
       const ops = flipOpsFor(deps, selection, scene, params);
       if (ops.length === 0) return;
-      const applyOps = transformApplyOps(deps);
+      const applyOps = createTransformCommit(deps);
       if (applyOps) applyOps(ops, 'Flip');
       else scene.applyBatch(ops, 'Flip', defaultCommitAdapter(scene, operandMethods(selection)));
     },

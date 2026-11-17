@@ -1,6 +1,6 @@
 import type { Scene, OperandsDep, PoseDescriptor, GeometryProjection } from '@weasel-js/core/engine';
 import type { Op } from '@weasel-js/core';
-import { poseDescriptorOf, defaultCommitAdapter, operandMethods, transformApplyOps } from '@weasel-js/core/engine';
+import { poseDescriptorOf, defaultCommitAdapter, operandMethods, createTransformCommit } from '@weasel-js/core/engine';
 import { ActionDisabledReason, type Action } from '@weasel-js/routing';
 import { requiresOperands, moveNodesOps, nudgeSpec, NUDGE_LABEL, nudgeDelta, type NudgeDirection, recordTransform } from '@weasel-js/core';
 
@@ -49,7 +49,7 @@ function makeNudgeAction(dir: NudgeDirection): Action & { requires: string[] } {
         const { dx, dy } = nudgeDelta(dir, params?.magnitude);
         const selection = deps.operands;
         const scene = deps.scene;
-        const applyOps = transformApplyOps(deps);
+        const applyOps = createTransformCommit(deps);
         const geometryProjection = deps.geometryProjection;
         if (!selection || !scene) return;
         if (translateSelection(selection, scene, dx, dy, applyOps, geometryProjection, poseDescriptorOf(deps.poseDescriptor))) {
