@@ -1,4 +1,6 @@
 import {
+  boundsOfPath,
+  pathThroughPoseFrame,
   PATH_L,
   PATH_M,
   PATH_Z,
@@ -12,7 +14,7 @@ import { textEngineGeneration, textLineBoxes, type TextOutlineSource } from '@we
 import { faceGeneration } from '@weasel-js/font';
 import type { PathInWorldPose } from '@weasel-js/geom';
 import { textEffectItems } from './textItems';
-import { textOutlineOf } from './textOutline';
+import { clippedOutline, textOutlineOf } from './textOutline';
 import { commandFill, textCommandFromPose, type DrawCommand } from '@weasel-js/renderer';
 import { INHERIT, resolveFill, resolveStroke } from '@weasel-js/paint';
 import { textFrameOf, textShadowBox, type TextEdge, type TextShadow } from './textFrame';
@@ -151,7 +153,10 @@ export const TEXT_PAINTER: NodeShapeEntry<unknown, RectPose> = {
   },
   outline: (node, pose, ctx) => {
     const d = node.data as TextNodeData;
-    return textOutlineOf(d, { ...pose, ...textBoxOf(d, pose) }, ctx?.inherited);
+    const outline = textOutlineOf(d, { ...pose, ...textBoxOf(d, pose) }, ctx?.inherited);
+    if (d.overflow !== 'clip') return outline;
+    const clip = pathThroughPoseFrame({ kind: 'rect', x: pose.x, y: pose.y, width: pose.width, height: pose.height }, pose);
+    return clippedOutline(outline, clip, boundsOfPath(clip));
   },
   // Line boxes and glyphs follow the faces and the registered layout engines.
   geometryGeneration: () => faceGeneration() + textEngineGeneration(),

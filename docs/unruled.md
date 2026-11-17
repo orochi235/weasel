@@ -705,6 +705,9 @@ The snap pipeline ([snapping.md](./snapping.md)) landed on 2026-10-18 with these
   default included, into its `::selection` rule only when `parsesAsColor` (`@weasel-js/paint`) reads it as a CSS
   color; any other value is left out with a warning, and the rule is not written when neither is one. There is no
   override: the value is stored document data going into a page-wide stylesheet.
+- 2026-11-16 (audit 29, the lane's call): a clipped text node's outline (`overflow: 'clip'`) is its glyphs cut to its
+  box with `pathIntersect`, curves kept, so Create Outlines and a boolean take only the ink it draws. A stroked part's
+  stroke then also runs along the cut, where the painter shows none.
 
 ## SVG and paths
 
