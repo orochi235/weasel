@@ -3,7 +3,7 @@ import { withTitle } from '../chartTitle';
 import type { PlotEditor } from '../editing/editors';
 import type { PlotDatum } from '../marks/types';
 import { compileGantt } from './compile';
-import { setGanttStartDay, setGanttEnd, setGanttSectionName, setGanttTaskName, snapGantt } from './edit';
+import { setGanttStartDay, setGanttEndDay, setGanttSectionName, setGanttTaskName, snapGantt } from './edit';
 import type { GanttData } from './types';
 
 /** The task a mark stands for, or `null` for a mark that stands for none the chart holds. */
@@ -44,7 +44,7 @@ export const ganttEditor: PlotEditor<GanttData> = {
     if (part === 'move') return (p) => setGanttStartDay(data, at.section, at.task, instant(p.x));
     // A duration rounds to its own unit, which may be finer than the snap.
     const snaps = data.sections[at.section]!.tasks[at.task]!.end.kind === 'date';
-    return (p) => setGanttEnd(data, at.section, at.task, snaps ? instant(p.x) : layout.time.invert(p.x));
+    return (p) => setGanttEndDay(data, at.section, at.task, snaps ? instant(p.x) : layout.time.invert(p.x));
   },
   text: setText,
 };

@@ -29,7 +29,7 @@ export type { GanttData, GanttEnd, GanttSection, GanttStart, GanttTag, GanttTask
 export { compileGantt, type GanttLayout } from './gantt/compile';
 export { scheduleGantt, type GanttSchedule, type GanttSpan } from './gantt/schedule';
 export { GANTT_DATE_FORMAT, formatGanttDate, parseGanttDate } from './gantt/dates';
-export { setGanttStartDay, setGanttEnd, setGanttSectionName, setGanttTaskName } from './gantt/edit';
+export { setGanttStartDay, setGanttEndDay, setGanttSectionName, setGanttTaskName } from './gantt/edit';
 export type { TimelineData, TimelinePeriod, TimelineSection } from './timeline/types';
 export { compileTimeline, type TimelineLayout } from './timeline/compile';
 export {

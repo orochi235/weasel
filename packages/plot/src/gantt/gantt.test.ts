@@ -3,7 +3,7 @@ import { handlesOf } from '../editing/editors';
 import { PLOT_THEME, seriesColor } from '../theme';
 import { compileGantt } from './compile';
 import { formatGanttDate, formatHasHours, parseGanttDate, strftime } from './dates';
-import { setGanttStartDay, setGanttEnd, setGanttSectionName, setGanttTaskName } from './edit';
+import { setGanttStartDay, setGanttEndDay, setGanttSectionName, setGanttTaskName } from './edit';
 import { ganttEditor } from './editor';
 import { addGanttDuration, excludedDays, scheduleGantt } from './schedule';
 import type { GanttData } from './types';
@@ -194,19 +194,19 @@ describe('gantt edits', () => {
   });
 
   it('ends a task in whole units of its duration, counting past excluded days', () => {
-    const review = setGanttEnd(PLAN, 0, 1, at('2026-01-16'));
+    const review = setGanttEndDay(PLAN, 0, 1, at('2026-01-16'));
     expect(review.sections[0]!.tasks[1]!.end).toEqual({ kind: 'duration', amount: 4, unit: 'd' });
     expect(scheduleGantt(review).spans[0]![1]!.end).toBe(at('2026-01-16'));
-    expect(setGanttEnd(PLAN, 0, 1, at('2026-01-10')).sections[0]!.tasks[1]!.end).toEqual({ kind: 'duration', amount: 1, unit: 'd' });
-    expect(setGanttEnd(PLAN, 1, 1, at('2026-01-20')).sections[1]!.tasks[1]!.end).toMatchObject({ amount: 0 });
-    expect(setGanttEnd(PLAN, 0, 1, at('2026-01-14'))).toBe(PLAN);
+    expect(setGanttEndDay(PLAN, 0, 1, at('2026-01-10')).sections[0]!.tasks[1]!.end).toEqual({ kind: 'duration', amount: 1, unit: 'd' });
+    expect(setGanttEndDay(PLAN, 1, 1, at('2026-01-20')).sections[1]!.tasks[1]!.end).toMatchObject({ amount: 0 });
+    expect(setGanttEndDay(PLAN, 0, 1, at('2026-01-14'))).toBe(PLAN);
   });
 
   it('sets a date end, not before the start, and turns an until end into days', () => {
-    expect(setGanttEnd(PLAN, 1, 0, at('2026-01-30')).sections[1]!.tasks[0]!.end).toEqual({ kind: 'date', date: '2026-01-30' });
-    expect(setGanttEnd(PLAN, 1, 0, at('2026-01-01')).sections[1]!.tasks[0]!.end).toEqual({ kind: 'date', date: '2026-01-10' });
+    expect(setGanttEndDay(PLAN, 1, 0, at('2026-01-30')).sections[1]!.tasks[0]!.end).toEqual({ kind: 'date', date: '2026-01-30' });
+    expect(setGanttEndDay(PLAN, 1, 0, at('2026-01-01')).sections[1]!.tasks[0]!.end).toEqual({ kind: 'date', date: '2026-01-10' });
     const until: GanttData = { kind: 'gantt', sections: [{ tasks: [{ name: 'T', start: { kind: 'date', date: '2026-01-05' }, end: { kind: 'until', ids: ['x'] } }] }] };
-    expect(setGanttEnd(until, 0, 0, at('2026-01-08')).sections[0]!.tasks[0]!.end).toEqual({ kind: 'duration', amount: 3, unit: 'd' });
+    expect(setGanttEndDay(until, 0, 0, at('2026-01-08')).sections[0]!.tasks[0]!.end).toEqual({ kind: 'duration', amount: 3, unit: 'd' });
   });
 
   it('renames sections and tasks, an empty name changing nothing', () => {

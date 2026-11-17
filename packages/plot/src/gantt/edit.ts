@@ -36,8 +36,8 @@ export function setGanttStartDay(data: GanttData, section: number, task: number,
  * at least 1 (0 for a milestone), days and weeks counted past excluded days; a date takes the new date, not before the
  * start; an `until` end becomes a duration in days.
  */
-export function setGanttEnd(data: GanttData, section: number, task: number, end: number): GanttData {
-  const target = taskAt(data, section, task, 'setGanttEnd');
+export function setGanttEndDay(data: GanttData, section: number, task: number, end: number): GanttData {
+  const target = taskAt(data, section, task, 'setGanttEndDay');
   const start = scheduleGantt(data).spans[section]![task]!.start;
   const old = target.end;
   let next: GanttEnd;
