@@ -29,11 +29,11 @@ export const deselectAction: Action & { requires: string[] } = {
       deps.selection?.set([]);
     },
   },
-  // Defer to `exitPathEditAction` while path-anchor edit mode is active.
+  // Defer to `leavePathEdit` while path-anchor edit mode is active.
   // Otherwise the more-specific phase qualifier on this binding would beat
-  // `exitPathEdit`'s bare key spec, swallowing the Escape that should leave
+  // `leavePathEdit`'s bare key spec, swallowing the Escape that should leave
   // edit mode. With this gate, `deselect` reports a disabled reason in that
-  // case and the dispatcher falls through to `exitPathEdit`.
+  // case and the dispatcher falls through to `leavePathEdit`.
   // With nothing selected there is nothing to clear, so the press falls
   // through to `tool.resetToDefault` instead of being spent here.
   enabled: (deps) => {

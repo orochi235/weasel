@@ -38,7 +38,7 @@ describe('deselectAction (descriptor)', () => {
       expect(deselectAction.enabled?.({})).not.toBe(true);
     });
 
-    it('returns a disabled reason while path-edit mode is active (defers to exitPathEdit)', () => {
+    it('returns a disabled reason while path-edit mode is active (defers to leavePathEdit)', () => {
       const editAnchors = { editingId: 'p1', setEditingId: () => {}, getEditablePath: () => null, getStorageKind: () => null, getNodeShape: () => null, applyEdit: () => {} };
       expect(deselectAction.enabled?.({ editAnchors } as never)).not.toBe(true);
     });
