@@ -101,7 +101,7 @@ function memo<F extends object>(face: F, build: (face: F) => GlyphMetrics): Glyp
  * miss, which has none. One object per face, so two results that landed on the
  * same face compare equal by identity.
  */
-export function metricsOf(result: ResolveResult): GlyphMetrics | undefined {
+export function glyphMetricsOf(result: ResolveResult): GlyphMetrics | undefined {
   if (result.outlineFace) return memo(result.outlineFace, outlineMetricsOf);
   if (result.entry) {
     return memo(result.entry.font, (font) => atlasMetrics(font, (cp) => font.charMap.get(cp)?.xadvance ?? null));

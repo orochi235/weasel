@@ -81,7 +81,7 @@ export type {
 } from './outline/outlineRegistry';
 export type { OutlineFace, OutlineParser, FaceEmbedding } from './outline/OutlineFace';
 export { fontEmbedding } from './outline/fontEmbedding';
-export { metricsOf } from './glyphMetrics';
+export { glyphMetricsOf } from './glyphMetrics';
 export type { GlyphMetrics } from './glyphMetrics';
 export { glyphIn, resolveGlyph, resolveColorCluster } from './resolveGlyph';
 export type { ResolvedGlyph } from './resolveGlyph';
