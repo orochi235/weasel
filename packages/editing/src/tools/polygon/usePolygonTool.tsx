@@ -102,7 +102,7 @@ export function createPolygonTool(options: CreatePolygonToolOptions = {}): Tool 
       // doesn't conflict with the unmodified wheel binding above.
       {
         spec: { kind: 'wheel', phase: 'engaged', mods: { shift: true } },
-        actionId: 'insert.adjustRotation',
+        actionId: 'insert.rotate',
         opts: { id: 'polygon.wheelRotation' },
       },
       // ArrowUp/Down → adjust side count. These were phase-table

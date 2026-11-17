@@ -64,7 +64,7 @@ const KIT_IDS = [
   'pathfinder.exclude', 'pathfinder.divide', 'pathfinder.crop',
   'pathfinder.trim', 'pathfinder.merge', 'pathfinder.booleanGroup',
   'move',
-  'resize', 'rotate', 'areaSelect', 'insert', 'place', 'insert.adjustRotation', 'insert.reposition', 'clone',
+  'resize', 'rotate', 'areaSelect', 'insert', 'place', 'insert.rotate', 'insert.reposition', 'clone',
   'lassoSelect', 'viewport.pinchZoom',
   // viewport.pan / viewport.zoom are registered conditionally by SceneCanvas's
   // useViewportActions, not by useStandardActions — see useViewportActions.ts.

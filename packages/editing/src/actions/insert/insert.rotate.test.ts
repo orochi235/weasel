@@ -31,7 +31,7 @@ function rotate(s: ReturnType<typeof scope>, deltaY: number): void {
 
 const rotationOf = (extras: InsertExtras): number => (extras as { rotation: number }).rotation;
 
-describe('insert.adjustRotation', () => {
+describe('insert.rotate', () => {
   it('turns the insert in flight in its own scope', () => {
     const a = scope();
     const handle = start(a);

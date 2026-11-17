@@ -14,7 +14,7 @@ const ROTATION_SENSITIVITY = Math.PI / 720;
  * insert is in flight.
  */
 export const insertRotateAction = defineAction({
-  id: 'insert.adjustRotation',
+  id: 'insert.rotate',
   label: 'Insert — rotate',
   group: 'insert',
   eligible: { capability: 'creates-shapes' },
