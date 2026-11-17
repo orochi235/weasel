@@ -6,7 +6,7 @@
 import type { DataEdge, DataNode, Outline } from '@weasel-js/diagram';
 import type { ImportResult, PageLayout } from '../../document';
 import { Warnings, graphPage } from '../../graphRead';
-import { pageNameOf } from '../common/lines';
+import { readPageName } from '../common/lines';
 import { textLines } from '../common/text';
 import { parseMindmap, type MindmapNode, type MindmapShape } from './parse';
 
@@ -61,7 +61,7 @@ export function readMindmap(text: string): ImportResult {
   const edges: DataEdge[] = order.filter((n) => parents.has(n)).map((n) => ({
     from: idOf.get(parents.get(n)!)!, to: idOf.get(n)!, colors: { markerEnd: null },
   }));
-  const name = pageNameOf(source, warnings);
+  const name = readPageName(source, warnings);
   const page = graphPage({ ...(name !== undefined ? { name } : {}), nodes, edges, containers: [] });
   return { document: { pages: [{ ...page, layout: MINDMAP_LAYOUT, notation: 'mindmap' }] }, warnings: warnings.all() };
 }

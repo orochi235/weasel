@@ -9,7 +9,7 @@ import { getOwn } from '@weasel-js/registry';
 import type { ImportResult } from '../../document';
 import { Warnings, decodeEntities, graphPage } from '../../graphRead';
 import { lineError } from '../../lineError';
-import { pageNameOf } from '../common/lines';
+import { readPageName } from '../common/lines';
 import { mermaidColor } from '../common/styles';
 import { ELEMENT_WIDTH, elementRows, hasTechnology, kindOfMacro, outlineOf, roleOf } from './kinds';
 import { parseC4, type C4Args, type C4Header, type C4Stmt } from './parse';
@@ -148,7 +148,7 @@ export function readC4(source: string): ImportResult {
   const known = (id: string) => r.nodes.has(id) || r.containers.some((c) => c.id === id);
   const edges = r.edges.filter((e) => known(e.from) && known(e.to));
   if (edges.length < r.edges.length) r.warnings.add('Mermaid C4 relationships to elements never declared were dropped.');
-  const named = pageNameOf(src, r.warnings);
+  const named = readPageName(src, r.warnings);
   const name = r.title ?? named;
   const page = graphPage({ ...(name !== undefined ? { name } : {}), nodes: [...r.nodes.values()], edges, containers: r.containers });
   return { document: { pages: [{ ...page, notation: C4_NOTATIONS[header] }] }, warnings: r.warnings.all() };

@@ -8,7 +8,7 @@ import { setOwn } from '@weasel-js/registry';
 import type { DataContainer, DataEdge, DataNode, EdgeStyle, GridOptions, Outline } from '@weasel-js/diagram';
 import type { ImportResult, PageLayout } from '../../document';
 import { IdMint, Warnings, graphPage } from '../../graphRead';
-import { pageNameOf } from '../common/lines';
+import { readPageName } from '../common/lines';
 import { StyleSheet } from '../common/styles';
 import { textLines } from '../common/text';
 import { SHAPE_OUTLINES } from '../flowchart/read';
@@ -141,7 +141,7 @@ export function readBlockDiagram(text: string): ImportResult {
     const colors = r.styles.colorsOf(id);
     return { id, role: 'container', ...(members.length > 0 ? { members } : {}), ...(colors !== undefined ? { colors } : {}) };
   });
-  const name = pageNameOf(source, r.warnings);
+  const name = readPageName(source, r.warnings);
   const page = graphPage({ ...(name !== undefined ? { name } : {}), nodes, edges: r.edges, containers });
   return { document: { pages: [{ ...page, layout: r.layout(), notation: 'block' }] }, warnings: r.warnings.all() };
 }

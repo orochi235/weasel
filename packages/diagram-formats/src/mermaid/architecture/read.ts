@@ -8,7 +8,7 @@ import type { DataContainer, DataEdge, DataNode, Outline } from '@weasel-js/diag
 import type { ImportResult } from '../../document';
 import { Warnings, graphPage } from '../../graphRead';
 import { lineError } from '../../lineError';
-import { pageNameOf } from '../common/lines';
+import { readPageName } from '../common/lines';
 import { textLines } from '../common/text';
 import { parseArchitecture, type ArchEnd, type ArchSide, type ArchStmt } from './parse';
 import { getOwn } from '@weasel-js/registry';
@@ -106,7 +106,7 @@ export function readArchitecture(text: string): ImportResult {
     const members = r.order.filter((m) => r.parent.get(m) === id);
     return { id, role: 'container', ...(title !== undefined ? { label: textLines(title).filter((l) => l !== '').join(' ') } : {}), ...(members.length > 0 ? { members } : {}) };
   });
-  const name = pageNameOf(source, r.warnings);
+  const name = readPageName(source, r.warnings);
   const page = graphPage({ ...(name !== undefined ? { name } : {}), direction: 'right', nodes: r.nodes, edges: r.edges, containers });
   return { document: { pages: [{ ...page, notation: 'architecture' }] }, warnings: r.warnings.all() };
 }
