@@ -155,8 +155,8 @@ export function createFunctionLayer(cfg: FunctionLayerOptions = {}): CurveLayer<
             const node = cfg.renderAnchor({
               point: points[i], index: i,
               cx: a.x, cy: a.y,
-              isActive: active, isLocked: locked,
-              isPinnedEndpoint: pinned, isEndpoint,
+              active, locked,
+              pinned, endpoint: isEndpoint,
             });
             if (node !== null && node !== undefined) {
               return <g key={i} data-anchor-index={i} {...a11y}>{node}</g>;

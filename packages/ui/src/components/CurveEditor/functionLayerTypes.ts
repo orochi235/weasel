@@ -38,10 +38,10 @@ export interface AnchorRenderCtx {
   index: number;
   cx: number;
   cy: number;
-  isActive: boolean;
-  isLocked: boolean;
-  isPinnedEndpoint: boolean;
-  isEndpoint: boolean;
+  active: boolean;
+  locked: boolean;
+  pinned: boolean;
+  endpoint: boolean;
 }
 
 /**

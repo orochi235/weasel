@@ -30,7 +30,7 @@ function createPartitionLayer(): CurveLayer<PartitionState> {
     render(state, ctx) {
       const x = ctx.toPlot({ x: state.x, y: 0 }).x;
       const h = ctx.plotSize.height;
-      const stroke = ctx.isActive ? 'rgba(20,20,20,0.85)' : 'rgba(50,50,50,0.55)';
+      const stroke = ctx.active ? 'rgba(20,20,20,0.85)' : 'rgba(50,50,50,0.55)';
       return (
         <g>
           <line x1={x} x2={x} y1={0} y2={h} stroke={stroke} strokeDasharray="5 4" strokeWidth={1.5} />
