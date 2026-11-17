@@ -14,8 +14,8 @@
 import { layoutTextPose } from './layout/textPoseLayout';
 import type { TextPose } from './pose';
 
-/** Options for `fitTextPose`. */
-export interface FitTextPoseOptions {
+/** Options for `fitBoxToText`. */
+export interface FitBoxToTextOptions {
   /** Which axis (or axes) to recompute. Default: `'height'`. */
   axis?: 'height' | 'both';
   /** Padding (world units) added to all four sides. Default 0. */
@@ -23,9 +23,9 @@ export interface FitTextPoseOptions {
 }
 
 /** Recompute a `TextPose`'s `width`/`height` to fit its content; pure helper, doesn't mutate scene state. */
-export function fitTextPose(
+export function fitBoxToText(
   pose: TextPose,
-  opts: FitTextPoseOptions = {},
+  opts: FitBoxToTextOptions = {},
 ): TextPose {
   const axis = opts.axis ?? 'height';
   const { padX, padY } = resolvePadding(opts.padding);
@@ -42,7 +42,7 @@ export function fitTextPose(
   };
 }
 
-function resolvePadding(p: FitTextPoseOptions['padding']): { padX: number; padY: number } {
+function resolvePadding(p: FitBoxToTextOptions['padding']): { padX: number; padY: number } {
   if (p == null) return { padX: 0, padY: 0 };
   if (typeof p === 'number') return { padX: p, padY: p };
   return { padX: p.x ?? 0, padY: p.y ?? 0 };

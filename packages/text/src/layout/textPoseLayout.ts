@@ -1,7 +1,7 @@
 /**
  * How a text pose lays out — the one decision every consumer of a text node
  * reads: the painters (`kit:text`, `createTextLayer`), picking
- * (`textLineBoxes`), the caret (`caretIndexAt`), fitting (`fitTextPose`) and
+ * (`textLineBoxes`), the caret (`caretIndexAt`), fitting (`fitBoxToText`) and
  * the DOM edit overlay.
  *
  * The pose width is always the box `align` resolves within. It is the wrap

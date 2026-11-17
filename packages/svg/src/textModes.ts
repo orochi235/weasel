@@ -4,7 +4,7 @@
  * in `@font-face` rules.
  */
 import { type FontStyle } from '@weasel-js/core';
-import { fitTextToBox, resolveRunFace, resolveTextStyle, TextOutlinesError, toRuns } from '@weasel-js/text';
+import { bakeTextFit, resolveRunFace, resolveTextStyle, TextOutlinesError, toRuns } from '@weasel-js/text';
 import { cachedFontVariant, cssString, outlineFace, type FaceEmbedding } from '@weasel-js/font';
 import { svgTextOutlines } from './textOutlines';
 import type { SvgNode, SvgTextMode, SvgTextNode } from './types';
@@ -107,7 +107,7 @@ export function withTextMode(
 function settled(node: SvgTextNode): SvgTextNode {
   if (node.fit !== 'shrink') return node;
   const { fit: _, ...plain } = node;
-  const { style, runs } = fitTextToBox(node);
+  const { style, runs } = bakeTextFit(node);
   return { ...plain, style, ...(runs ? { runs } : {}) };
 }
 

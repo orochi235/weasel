@@ -48,7 +48,7 @@ A text node lays out one way, whoever asks. `layoutTextPose` (in
 resolves within, and the wrap width only when the style declares `wrap`
 (default `false`). The `kit:text` painter and `createTextLayer` — for text that
 is not in a scene — both emit `textCommandFromPose`, whose options are the
-same ones; `textLineBoxes`, `caretIndexAt`, `fitTextPose` and the edit overlay
+same ones; `textLineBoxes`, `caretIndexAt`, `fitBoxToText` and the edit overlay
 read the same property.
 
 > **The GL renderer uses MSDF text.** Font registration lives in
@@ -69,7 +69,7 @@ stands in for the glyphs.
 ## Measurement
 
 `measureText` (advance/metrics) and `measureTextBounds` (ink bounds) are
-distinct; `fitTextPose.ts` and `verticalAlign.ts` (both in `@weasel-js/text`) build on them for
+distinct; `fitBoxToText.ts` and `verticalAlign.ts` (both in `@weasel-js/text`) build on them for
 fit-to-box and baseline placement. Every 2D-side width goes through
 `measuredWidth`, which adds tracking the way `layoutRuns` does, and
 `measureText` wraps through the same `wrapLines` as `layoutRuns`, so a box it

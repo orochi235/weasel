@@ -1,5 +1,5 @@
 /**
- * `fitTextPose` sizes a pose from the layout the renderer paints, so every
+ * `fitBoxToText` sizes a pose from the layout the renderer paints, so every
  * expectation below is a number that layout produces.
  *
  * The `inter` fixture atlas is baked at size 32 and carries exactly two
@@ -12,7 +12,7 @@ import { describe, expect, it, beforeEach, vi } from 'vitest';
 import { registerFont, FIXTURE_FONT } from '@weasel-js/font';
 import { _resetFontRegistryForTests } from '@weasel-js/font/test-seams';
 import { _resetLayoutCacheForTests } from './test-seams';
-import { fitTextPose } from './fitTextPose';
+import { fitBoxToText } from './fitBoxToText';
 import { layoutTextPose } from './layout/textPoseLayout';
 import type { TextPose } from './pose';
 
@@ -22,7 +22,7 @@ const WRAP = { ...STYLE, wrap: true };
 /** `fontSize * lineHeight` at the 1.2 default. */
 const LINE = SIZE * 1.2;
 
-describe('fitTextPose', () => {
+describe('fitBoxToText', () => {
   beforeEach(async () => {
     _resetFontRegistryForTests();
     _resetLayoutCacheForTests();
@@ -48,7 +48,7 @@ describe('fitTextPose', () => {
   }
 
   it('keeps x, y and width when growing height', () => {
-    const fit = fitTextPose(textPose());
+    const fit = fitBoxToText(textPose());
     expect(fit.x).toBe(5);
     expect(fit.y).toBe(7);
     expect(fit.width).toBe(400);
@@ -57,51 +57,51 @@ describe('fitTextPose', () => {
 
   it('grows height to fit wrapped content', () => {
     // 'AB AB' is 44 + 8 + 44 = 96 unwrapped; at width 60 it wraps to 2 lines.
-    const fit = fitTextPose(textPose({ width: 60, text: 'AB AB', style: WRAP }));
+    const fit = fitBoxToText(textPose({ width: 60, text: 'AB AB', style: WRAP }));
     expect(fit.height).toBe(2 * LINE);
   });
 
   it('does not wrap a node whose style declares no wrap', () => {
-    const fit = fitTextPose(textPose({ width: 60, text: 'AB AB' }));
+    const fit = fitBoxToText(textPose({ width: 60, text: 'AB AB' }));
     expect(fit.height).toBe(LINE);
   });
 
   it('respects vertical padding when growing height', () => {
-    const fit = fitTextPose(textPose(), { padding: { y: 4 } });
+    const fit = fitBoxToText(textPose(), { padding: { y: 4 } });
     expect(fit.height).toBe(LINE + 8);
   });
 
   it('subtracts horizontal padding from the wrap width', () => {
     // 'AB AB' fits on one line at 96 wide, but not once padding takes 40 of it.
-    const wide = fitTextPose(textPose({ width: 100, text: 'AB AB', style: WRAP }));
+    const wide = fitBoxToText(textPose({ width: 100, text: 'AB AB', style: WRAP }));
     expect(wide.height).toBe(LINE);
-    const padded = fitTextPose(textPose({ width: 100, text: 'AB AB', style: WRAP }), { padding: { x: 20 } });
+    const padded = fitBoxToText(textPose({ width: 100, text: 'AB AB', style: WRAP }), { padding: { x: 20 } });
     expect(padded.height).toBe(2 * LINE);
   });
 
   it('axis=both fits to the longest line and ignores the pose width', () => {
-    const fit = fitTextPose(textPose({ width: 9, text: 'A\nAB\nB' }), { axis: 'both' });
+    const fit = fitBoxToText(textPose({ width: 9, text: 'A\nAB\nB' }), { axis: 'both' });
     // 'AB' is the longest: 23 + 22 - 1 kern = 44.
     expect(fit.width).toBe(44);
     expect(fit.height).toBe(3 * LINE);
   });
 
   it('axis=both adds padding on both axes', () => {
-    const fit = fitTextPose(textPose({ text: 'AB' }), { axis: 'both', padding: 6 });
+    const fit = fitBoxToText(textPose({ text: 'AB' }), { axis: 'both', padding: 6 });
     expect(fit.width).toBe(44 + 12);
     expect(fit.height).toBe(LINE + 12);
   });
 
   it('sizes by the kerned width, not the sum of the advances', () => {
     // Summing per character gives 23 + 22 = 45, and the painted line is 44.
-    const fit = fitTextPose(textPose({ text: 'AB' }), { axis: 'both' });
+    const fit = fitBoxToText(textPose({ text: 'AB' }), { axis: 'both' });
     expect(fit.width).toBe(44);
   });
 
   it('measures per-run sizes, which the pose-level style alone cannot', () => {
     // A second run at double the size is twice as wide.
-    const plain = fitTextPose(textPose({ text: 'AB' }), { axis: 'both' });
-    const mixed = fitTextPose(
+    const plain = fitBoxToText(textPose({ text: 'AB' }), { axis: 'both' });
+    const mixed = fitBoxToText(
       textPose({ text: 'AB', runs: [{ text: 'A' }, { text: 'B', fontSize: SIZE * 2 }] }),
       { axis: 'both' },
     );
@@ -114,7 +114,7 @@ describe('fitTextPose', () => {
     // At this size and tracking the wrap's width for 'AB AB AB' and the line's
     // own sum differ in the last bits; the box is the line's.
     const pose = textPose({ text: 'AB AB AB', style: { ...WRAP, fontSize: 11, letterSpacing: 0.01 } });
-    const fit = fitTextPose(pose, { axis: 'both' });
+    const fit = fitBoxToText(pose, { axis: 'both' });
     expect(layoutTextPose(fit).laid.lines).toHaveLength(1);
   });
 });

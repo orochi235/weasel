@@ -1948,7 +1948,7 @@ Calls the lanes made without a ruling:
 - 2026-11-12: The scripts the no-shaper warning names are Arabic, Syriac, Thaana, N'Ko, the Indic blocks, Tibetan,
   Myanmar, Khmer and Mongolian, letters and marks only. Thai and Lao are left out: set one glyph per code point,
   they read, if with marks placed less well.
-- `fittedTextPose` is renamed `fitTextToBox`, on the maintainer's call (2026-11-12): `fitTextPose` sizes a text
+- `fittedTextPose` is renamed `bakeTextFit`, on the maintainer's call (2026-11-12): `fitBoxToText` sizes a text
   pose's box to its text, and the renamed one sizes the text to its box.
 
 ## Audit round twenty-one (2026-11-12): geometry and drawing

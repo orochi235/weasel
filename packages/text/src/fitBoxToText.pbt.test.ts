@@ -1,7 +1,7 @@
 /** A pose fitted to its text holds it as laid out: wrapping at the fitted width breaks no line, and a second fit changes nothing. */
 import { beforeAll, describe, expect, it } from 'vitest';
 import fc from 'fast-check';
-import { fitTextPose } from './fitTextPose';
+import { fitBoxToText } from './fitBoxToText';
 import { layoutTextPose } from './layout/textPoseLayout';
 import type { TextPose } from './pose';
 import { mixedText, registerPropertyFont, runs, tally, timeoutFor } from './pbt.fixture';
@@ -21,16 +21,16 @@ const pose = fc.record({
   pose: { x: 5, y: 7, width: 100, height: 10, text, style: { fontFamily: 'inter', fontSize, letterSpacing, align } } as TextPose,
 }));
 
-describe('fitTextPose, property', () => {
+describe('fitBoxToText, property', () => {
   it('fits both axes so that wrapping at the fitted width breaks no line', () => {
     const t = tally();
     fc.assert(fc.property(pose, ({ pose: p, padding }) => {
-      const fitted = fitTextPose(p, { axis: 'both', padding });
+      const fitted = fitBoxToText(p, { axis: 'both', padding });
       const unwrapped = layoutTextPose({ ...p, style: { ...p.style, wrap: false } }).laid.lines;
       const inner = { ...fitted, width: fitted.width - padding * 2, style: { ...p.style, wrap: true } };
       const wrapped = layoutTextPose(inner).laid.lines;
       expect(wrapped.length, JSON.stringify(p.text)).toBe(unwrapped.length);
-      expect(fitTextPose(fitted, { axis: 'both', padding })).toEqual(fitted);
+      expect(fitBoxToText(fitted, { axis: 'both', padding })).toEqual(fitted);
       if (fitted.width > padding * 2 + 40) t.count('wide');
     }), runs(RUNS));
     t.atLeast('wide', 50);
@@ -42,7 +42,7 @@ describe('fitTextPose, property', () => {
       x: 5, y: 7, width: 100, height: 10, text: '\u{1f1fa}\u{1f1f8}\u{1f1eb}\u{1f1f7}\u200b\u0301',
       style: { fontFamily: 'inter', fontSize: 13, letterSpacing: -0.6, align: 'left' },
     };
-    const fitted = fitTextPose(p, { axis: 'both' });
+    const fitted = fitBoxToText(p, { axis: 'both' });
     expect(layoutTextPose({ ...fitted, style: { ...p.style, wrap: true } }).laid.lines).toHaveLength(1);
   });
 });

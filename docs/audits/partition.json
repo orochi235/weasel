@@ -5718,8 +5718,8 @@
  {
   "id": "text",
   "files": [
-   "packages/text/src/fitTextPose.ts",
-   "packages/text/src/fitTextToBox.ts",
+   "packages/text/src/fitBoxToText.ts",
+   "packages/text/src/bakeTextFit.ts",
    "packages/text/src/glyphOutlines.ts",
    "packages/text/src/glyphTurn.ts",
    "packages/text/src/hitTest.ts",
