@@ -1,6 +1,6 @@
 /** `kit:text`'s answers to picking and culling: its ink, its bounds, and its blank-node silhouette. */
 import { beforeEach, describe, expect, it } from 'vitest';
-import { strokeOf } from '@weasel-js/paint';
+import { solidStroke } from '@weasel-js/paint';
 import { findShapeBounds, findShapeInk, shapeCoversPoint, type SceneNode as Node } from '@weasel-js/core';
 import { _resetShapePaintersForTests } from 'canvas/NodeShape';
 import { withTextPainter } from '../testing/textPainter';
@@ -46,11 +46,11 @@ describe('findShapeInk — text', () => {
   } as unknown as Node<unknown, string, RectPose>);
 
   it('reports no stroke for text, whose stroke follows its glyphs', () => {
-    expect(findShapeInk(textNode({ stroke: strokeOf('#000', 4) }), POSE)).not.toHaveProperty('stroke');
+    expect(findShapeInk(textNode({ stroke: solidStroke('#000', 4) }), POSE)).not.toHaveProperty('stroke');
   });
 
   it('gives a stroked text node the same reach as any other kind', () => {
-    expect(reachOf(textNode({ stroke: strokeOf('#000', 4) }), POSE))
+    expect(reachOf(textNode({ stroke: solidStroke('#000', 4) }), POSE))
       .toEqual({ filled: true, outset: 2, inset: 2 });
   });
 
@@ -63,7 +63,7 @@ describe('findShapeInk — text', () => {
     // `fill: null` paints no glyph fill, but the silhouette is line boxes
     // rather than glyph ink: reporting it unfilled would leave a word
     // grabbable at its line-box edge and nowhere near the letters.
-    expect(reachOf(textNode({ fill: null, stroke: strokeOf('#000', 4) }), POSE))
+    expect(reachOf(textNode({ fill: null, stroke: solidStroke('#000', 4) }), POSE))
       .toEqual({ filled: true, outset: 2, inset: 2 });
   });
 });

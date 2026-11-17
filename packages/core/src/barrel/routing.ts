@@ -45,12 +45,12 @@ export type {
   FinishPathParams, IngestParams, InsertParams, MoveParams, PaintParams, RotateParams,
   PlaceParams, CountStepParams, OpacityParams, ViewportZoomParams, WheelScrollParams, PickParams,
 } from '../interactions/actions/actionParamSchema';
-export { bindAction, defineAction, dynamicActionId, routedOpts } from '@weasel-js/routing';
+export { bindAction, defineAction, dynamicActionId, bindingOptionsOf } from '@weasel-js/routing';
 export type {
   ActionOf, ActionParamsOf, ActionSettingsOf, ActionVariantOf, BindingOf, DynamicActionId, InvokeParams,
   KnownActionId, NoParams,
 } from '@weasel-js/routing';
-export { eligibleNow, evaluateActive, evaluateEnabled, buildDepsFromRequires } from '@weasel-js/routing';
+export { eligibleNow, checkActive, checkEnabled, createActionDeps } from '@weasel-js/routing';
 export type { ActionEnabledResult } from '@weasel-js/routing';
 export { actionItemShortcuts, actionShortcuts, keySpecShortcut } from '@weasel-js/routing';
 export type { ActionShortcut } from '@weasel-js/routing';

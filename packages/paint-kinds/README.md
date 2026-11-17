@@ -9,7 +9,7 @@ editor and a serializer read: its label and glyph, the paint it seeds from a col
 SVG.
 
 ```ts
-import { getPaintKind, registerPaintKind, switchGradientKind } from '@weasel-js/paint-kinds';
+import { getPaintKind, registerPaintKind, withPaintKind } from '@weasel-js/paint-kinds';
 import { usePaintKinds } from '@weasel-js/paint-kinds/react';
 ```
 

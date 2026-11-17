@@ -6,12 +6,12 @@
  *  these rather than re-declaring the literals.
  *
  *  All values are `#rrggbbaa` so they round-trip through the kit's hex8 alpha
- *  helpers (`toHex8`, `getAlpha01`) without ambiguity.
+ *  helpers (`toHex8`, `hexAlpha`) without ambiguity.
  */
 import { colorLiteralToHex, hexToColorLiteral, resolvePaletteColor, type ColorLiteral, type Palette } from './palette';
 import type { CommandStroke, SolidPaint } from './commandPaint';
 import type { Paint, Stroke } from './paint';
-import { getAlpha01, toHex8 } from './hexAlpha';
+import { hexAlpha, toHex8 } from './hexAlpha';
 
 /** Default fill paint for shapes and the fill action — opaque white. */
 export const DEFAULT_FILL_COLOR = '#ffffffff';
@@ -36,7 +36,7 @@ export const DEFAULT_PALETTE: Palette = {
 /** The `seq`th color of `palette`'s entries as hex, wrapping past the end.
  *  An entry that resolves to nothing, or to a space with no hex form, gives
  *  `fallback`. */
-export function cycleFill(seq: number, palette: Palette = DEFAULT_PALETTE, fallback = DEFAULT_FILL_COLOR): string {
+export function paletteColorAt(seq: number, palette: Palette = DEFAULT_PALETTE, fallback = DEFAULT_FILL_COLOR): string {
   const { entries } = palette;
   const entry = entries[((seq % entries.length) + entries.length) % entries.length];
   const color = entry && resolvePaletteColor(palette, { ref: entry.name });
@@ -46,7 +46,7 @@ export function cycleFill(seq: number, palette: Palette = DEFAULT_PALETTE, fallb
 /** Preview / "ghost" stroke color used by drag-to-draw tool overlays and the
  *  selected-anchor highlight. Derived from the first palette entry so the
  *  preview chrome matches the default insert color. */
-export const GHOST_STROKE: string = cycleFill(0);
+export const GHOST_STROKE_COLOR: string = paletteColorAt(0);
 
 /**
  * A solid paint from a color string — the authoring shorthand for the one
@@ -59,7 +59,7 @@ export const GHOST_STROKE: string = cycleFill(0);
 export function solid(color: string): SolidPaint {
   if (!hasHexAlpha(color)) return { color };
   const hex8 = toHex8(color);
-  const a = getAlpha01(hex8);
+  const a = hexAlpha(hex8);
   const rgb = hex8.slice(0, 7);
   return a === 1 ? { color: rgb } : { color: rgb, opacity: a };
 }
@@ -71,11 +71,11 @@ function hasHexAlpha(color: string): boolean {
 
 /** A solid stroke of `color` at `width` world units. Authoring shorthand for
  *  `{ paint: solid(color), width }`. */
-export function strokeOf(color: string, width = 1): CommandStroke & { paint: SolidPaint } {
+export function solidStroke(color: string, width = 1): CommandStroke & { paint: SolidPaint } {
   return { paint: solid(color), width };
 }
 
-/** A stroke painted with `paint` at `width` world units — `strokeOf`'s sibling
+/** A stroke painted with `paint` at `width` world units — `solidStroke`'s sibling
  *  for a gradient or pattern, which has no color to pass. */
 export function strokeWith(paint: Paint, width = 1): Stroke {
   return { paint, width };

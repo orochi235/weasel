@@ -7,7 +7,7 @@ import type { MarkerRef } from '@weasel-js/core';
 import type { DataContainer, DataEdge, DataNode, EdgeStyle, LayoutDirection, Row } from '@weasel-js/diagram';
 import type { ImportResult } from '../../document';
 import { IdMint, Membership, Warnings, decodeEntities, graphPage } from '../../graphRead';
-import { pageNameOf, type MermaidDirection } from '../common/lines';
+import { readPageName, type MermaidDirection } from '../common/lines';
 import { StyleSheet } from '../common/styles';
 import { parseClassDiagram, type ClassHead, type ClassMember, type ClassStmt } from './parse';
 
@@ -134,7 +134,7 @@ export function readClassDiagram(text: string): ImportResult {
     const members = r.membership.members(id);
     return { id, role: 'container', label: id, ...(members.length > 0 ? { members } : {}) };
   });
-  const name = pageNameOf(source, r.warnings);
+  const name = readPageName(source, r.warnings);
   const direction = r.direction !== undefined ? DIRECTIONS[r.direction] : undefined;
   const page = graphPage({
     ...(name !== undefined ? { name } : {}),

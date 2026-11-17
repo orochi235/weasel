@@ -1,16 +1,16 @@
 /**
- * `buildDepsFromRequires` wiring coverage.
+ * `createActionDeps` wiring coverage.
  *
  * The builtin transform actions read `deps.geometryProjection` (the opt-in
  * data-geometry sync seam). Reading a dep is only half the contract — it must
  * also appear in the action's `requires`, or the dispatcher never resolves it
  * and the seam silently no-ops (the WeaselDraw flip-corruption bug: a resize
  * past the opposite edge left a raw negative-height pose because the sync
- * never ran). These tests go through the real `buildDepsFromRequires` path
+ * never ran). These tests go through the real `createActionDeps` path
  * that the action unit tests bypass with hand-rolled `ctx.deps`.
  */
 import { describe, it, expect, vi, afterEach } from 'vitest';
-import { buildDepsFromRequires } from '@weasel-js/routing';
+import { createActionDeps } from '@weasel-js/routing';
 import type { DepRegistry } from '@weasel-js/routing/react';
 import type { Action } from '@weasel-js/routing';
 import { flipAction, alignLeftAction, distributeHorizontalAction, groupAction, duplicateAction, nudgeUpAction, nudgeDownAction, nudgeLeftAction, nudgeRightAction } from '@weasel-js/editing';
@@ -44,8 +44,8 @@ describe('builtin transform actions declare geometryProjection', () => {
     ['nudgeRight', nudgeRightAction],
   ];
 
-  it.each(actions)('%s receives the dep through buildDepsFromRequires', (_name, action) => {
-    const deps = buildDepsFromRequires(action, stubRegistry());
+  it.each(actions)('%s receives the dep through createActionDeps', (_name, action) => {
+    const deps = createActionDeps(action, stubRegistry());
     expect(deps.geometryProjection).toBe(PROJECTION);
   });
 
@@ -63,7 +63,7 @@ describe('undeclared dep reads (dev builds)', () => {
   const action = { id: 'test-action', requires: ['selection'] } as unknown as Action;
 
   it('throws, so the gesture fails visibly instead of silently degrading', () => {
-    const deps = buildDepsFromRequires(action, stubRegistry());
+    const deps = createActionDeps(action, stubRegistry());
     vi.spyOn(console, 'warn').mockImplementation(() => {});
     expect(() => (deps as Record<string, unknown>).geometryProjection).toThrow(
       /action "test-action" read deps\.geometryProjection/,
@@ -71,7 +71,7 @@ describe('undeclared dep reads (dev builds)', () => {
   });
 
   it('still warns before throwing (console trail survives a caught throw)', () => {
-    const deps = buildDepsFromRequires(action, stubRegistry());
+    const deps = createActionDeps(action, stubRegistry());
     const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
     try {
       void (deps as Record<string, unknown>).geometryProjection;
@@ -82,7 +82,7 @@ describe('undeclared dep reads (dev builds)', () => {
   });
 
   it('declared reads stay quiet even when the registry has no entry', () => {
-    const deps = buildDepsFromRequires(action, {
+    const deps = createActionDeps(action, {
       register: () => () => {},
       get: () => undefined,
     } as unknown as DepRegistry);

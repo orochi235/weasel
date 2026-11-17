@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import type { DiagramSpec } from '../fromData';
 import { PROBLEM_COLOR } from './draw';
 import { SAMPLES } from './lab/samples';
-import { sequenceSlots } from '../reorder';
+import { slotsAlong } from '../reorder';
 import { LANE_INSET, laneId, laneTypeOf, lanes } from './lanes';
 import { paintRun } from './run';
 import { built, P, type Box } from './lanesFixture';
@@ -171,7 +171,7 @@ describe('lanes order', () => {
     expect(drawn.order!.axis).toBe('x');
     const ids = drawn.order!.items.map((i) => i.id);
     expect(ids).toEqual(['src', 'q', 'blur', 'mix', 'out']);
-    const { gaps } = sequenceSlots('x', ids.map((id) => ({ id, bounds: box(id) })));
+    const { gaps } = slotsAlong('x', ids.map((id) => ({ id, bounds: box(id) })));
     for (let k = 1; k < ids.length; k++) {
       expect(gaps[k]!.a.x).toBeGreaterThan(box(ids[k - 1]!).x + box(ids[k - 1]!).width);
       expect(gaps[k]!.a.x).toBeLessThan(box(ids[k]!).x);

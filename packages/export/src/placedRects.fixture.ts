@@ -13,8 +13,8 @@ export function placedRects(commands: readonly DrawCommand[], at: GlMat3 = mat3.
       out.push(...placedRects(c.children, m));
     } else if (c.kind === 'path' && c.path.kind === 'rect') {
       const { x, y, width, height } = c.path;
-      const [ax, ay] = mat3.apply(at, x, y);
-      const [bx, by] = mat3.apply(at, x + width, y + height);
+      const [ax, ay] = mat3.transformPoint(at, x, y);
+      const [bx, by] = mat3.transformPoint(at, x + width, y + height);
       out.push({ x0: Math.min(ax, bx), y0: Math.min(ay, by), x1: Math.max(ax, bx), y1: Math.max(ay, by) });
     }
   }

@@ -3,14 +3,14 @@ import { join } from 'node:path';
 import { beforeAll, describe, expect, it } from 'vitest';
 import type { DataContainer, DataEdge, DataNode } from '@weasel-js/diagram';
 import type { DiagramDocument } from '../document';
-import { DRAW_XML } from './format';
+import { DIAGRAM_DRAW_XML } from './format';
 import { outlineOf } from './readStyle';
 import { parseStyle } from './style';
 import { asGraph } from '../testing/asGraph';
 import { documentSpecs } from '../toScene';
 
 const fixture = (name: string): string => readFileSync(join(__dirname, 'fixtures', name), 'utf8');
-const read = (text: string) => Promise.resolve(DRAW_XML.read!(text));
+const read = (text: string) => Promise.resolve(DIAGRAM_DRAW_XML.read!(text));
 
 const nodes = (doc: DiagramDocument, page = 0): Map<string, DataNode> => new Map(doc.pages.map(asGraph)[page]!.data.nodes.map((n) => [n.id, n]));
 const edges = (doc: DiagramDocument, page = 0): Map<string, DataEdge> => new Map(doc.pages.map(asGraph)[page]!.data.edges.map((e) => [e.id!, e]));
@@ -19,15 +19,15 @@ const regions = (doc: DiagramDocument, page = 0): Map<string, DataContainer> =>
 
 describe('detecting draw-style XML', () => {
   it('knows the file by its root element', () => {
-    expect(DRAW_XML.detect(fixture('flow.xml'))).toBe(true);
-    expect(DRAW_XML.detect(fixture('model.xml'))).toBe(true);
-    expect(DRAW_XML.detect('<!-- a note -->\n<mxfile><diagram/></mxfile>')).toBe(true);
+    expect(DIAGRAM_DRAW_XML.detect(fixture('flow.xml'))).toBe(true);
+    expect(DIAGRAM_DRAW_XML.detect(fixture('model.xml'))).toBe(true);
+    expect(DIAGRAM_DRAW_XML.detect('<!-- a note -->\n<mxfile><diagram/></mxfile>')).toBe(true);
   });
 
   it('turns down other XML and other text', () => {
-    expect(DRAW_XML.detect('<?xml version="1.0"?><svg xmlns="http://www.w3.org/2000/svg"/>')).toBe(false);
-    expect(DRAW_XML.detect('{"format":"weasel-diagram"}')).toBe(false);
-    expect(DRAW_XML.detect('digraph { a -> b }')).toBe(false);
+    expect(DIAGRAM_DRAW_XML.detect('<?xml version="1.0"?><svg xmlns="http://www.w3.org/2000/svg"/>')).toBe(false);
+    expect(DIAGRAM_DRAW_XML.detect('{"format":"weasel-diagram"}')).toBe(false);
+    expect(DIAGRAM_DRAW_XML.detect('digraph { a -> b }')).toBe(false);
   });
 });
 

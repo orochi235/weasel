@@ -3,7 +3,7 @@
  * curves refitted through them.
  */
 import type { PolygonPath } from '../path';
-import { nearestOnCubic, nearestOnLine } from '../nearest';
+import { nearestOnCubic, nearestOnSegment } from '../nearest';
 import { anchorsToPath, isAnchorSmooth, pathToAnchors, type PenAnchor } from './anchors';
 import { keepCorner } from './fitRun';
 import { arcRun, type ArcRun } from './arcRun';
@@ -150,7 +150,7 @@ function fitPiece(
   }
   const a = samples[0];
   const e = samples[FIT_SAMPLES];
-  if (worst(samples, (p) => nearestOnLine(p.x, p.y, a.x, a.y, e.x, e.y).dist) <= tol) {
+  if (worst(samples, (p) => nearestOnSegment(p.x, p.y, a.x, a.y, e.x, e.y).dist) <= tol) {
     out.push({ end: e });
     return;
   }

@@ -1,4 +1,4 @@
-import { resolveStrokeWidth, type CommandStroke, type DrawCommand, type View } from '@weasel-js/core';
+import { resolveScreenLength, type CommandStroke, type DrawCommand, type View } from '@weasel-js/core';
 import { PATH_L, PATH_M, pxExtent, pxExtentInFrame, type Affine, type PolygonPath, maxOf, minOf, type Point, type Rect } from '@weasel-js/geom';
 import { linesIn, type AxisLines, type GridLines } from './axes';
 
@@ -48,7 +48,7 @@ export function lattice(
   const draw = (axis: Axis, at: readonly number[], s: CommandStroke): void => {
     const [lo, hi] = across(other(axis));
     if (!(hi > lo)) return;
-    const width = resolveStrokeWidth(s.width ?? 1, 1) * px[axis];
+    const width = resolveScreenLength(s.width ?? 1, 1) * px[axis];
     for (const p of at) {
       const coords = axis === 'x' ? [p, lo, p, hi] : [lo, p, hi, p];
       const path: PolygonPath = {

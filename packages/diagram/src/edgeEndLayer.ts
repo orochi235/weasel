@@ -146,7 +146,7 @@ export function createEdgeEndAffordance<TPose>(
 /** The composed layer, for `CanvasExtensionApi.registerLayer`. Register it
  *  after the port layer: the last-registered layer is hit first, and an edge's
  *  end sits on a port. */
-export function edgeEndLayer<TPose>(
+export function createEdgeEndLayer<TPose>(
   participants: ParticipantSource<TPose>,
   selected: () => readonly string[],
   opts: EdgeEndAffordanceOptions<TPose> = {},

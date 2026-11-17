@@ -17,7 +17,7 @@ import type { Vec2 } from '@weasel-js/core/math';
 import { maxOf, minOf } from '@weasel-js/geom';
 import { getOwn } from '@weasel-js/registry';
 import type { Graph, GraphCluster } from './graph';
-import { DEFAULT_NODE_GAP, graphOrder, pinnedSet, translated, type LayoutFn } from './layout';
+import { DEFAULT_NODE_GAP, graphOrder, pinnedSet, movesFrom, type LayoutFn } from './layout';
 
 /** How `grid` fills its cells. Ids are node and group ids. */
 export interface GridOptions {
@@ -138,5 +138,5 @@ export const grid: LayoutFn = (graph, opts = {}) => {
     }
   };
   put(null, { x: 0, y: 0 });
-  return translated(graph, placed, pinnedSet(graph, opts), opts.tolerance);
+  return movesFrom(graph, placed, pinnedSet(graph, opts), opts.tolerance);
 };

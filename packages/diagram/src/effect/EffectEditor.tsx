@@ -199,8 +199,8 @@ export const EffectEditor = forwardRef<EffectEditorApi, EffectEditorProps>(funct
       onDelete={handlers.onDelete}
       {...(look === 'nodeGraph' ? { onEdit: handlers.onEdit } : { ambient })}
       selectionMode="multiple"
-      onSelect={picks.pick}
-      {...(picks.shown !== undefined ? { selected: picks.shown } : {})}
+      onSelectionChange={picks.pick}
+      {...(picks.shown !== undefined ? { selection: picks.shown } : {})}
       {...(pages !== undefined ? { pages } : {})}
       {...(title !== null ? { overlays: title } : {})}
       {...(background !== undefined ? { background } : {})}

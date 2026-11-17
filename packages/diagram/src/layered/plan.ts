@@ -13,7 +13,7 @@ import {
   axesFor,
   extent,
   pinnedSet,
-  translated,
+  movesFrom,
   untilSettled,
   worldOf,
   type LayoutOptions,
@@ -28,7 +28,7 @@ import { holdPins } from './pins';
 import { turnOutward } from './inward';
 import { boxReach } from './reach';
 import { placeAcross } from './place';
-import { ranksByLength } from './rank';
+import { simplexRanks } from './rank';
 import { settlePlaces } from './places';
 import { layeredPorts } from '../route';
 
@@ -94,7 +94,7 @@ function planOnce(graph: Graph, opts: LayoutOptions = {}): LayeredPlan {
   const finding = opts.order === 'barycenter';
 
   const back = backEdges(graph);
-  const ranks = ranksByLength(graph, back);
+  const ranks = simplexRanks(graph, back);
   const expanded = expand(graph, ranks, back, { axes, nodeGap });
   let rows = finding ? orderRows(expanded.rows, expanded.hops, { groups: graph.groups ?? [] }) : expanded.rows;
 
@@ -141,7 +141,7 @@ function planOnce(graph: Graph, opts: LayoutOptions = {}): LayeredPlan {
     const slot = slots.get(node.id);
     if (slot !== undefined) placed.set(node.id, worldOf(slot, extent(node.bounds, axes.rank), axes));
   }
-  const moves = translated(graph, placed, pinned, opts.tolerance);
+  const moves = movesFrom(graph, placed, pinned, opts.tolerance);
   const offset = anchorOffset(graph, placed, pinned);
 
   // A pinned node stays where it is, not where its rank would put it, so

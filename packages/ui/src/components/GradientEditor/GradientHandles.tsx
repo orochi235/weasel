@@ -19,8 +19,8 @@ export interface GradientHandlesProps {
    * A `units: 'bounds'` gradient is not such a frame: `x` and `y` are
    * fractions of two different lengths, so a circle there is an ellipse on
    * screen and polar math silently mixes scales. Resolve it first with
-   * `fillInPoseFrame(fill, box)` and convert edits back with
-   * `fillToBoundsFrame(next, box)`.
+   * `paintToLocalUnits(fill, box)` and convert edits back with
+   * `paintToBoundsUnits(next, box)`.
    */
   value: GradientPaint;
   /**

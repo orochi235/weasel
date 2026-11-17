@@ -11,7 +11,7 @@ import type { ActionDeps, ImmediateInvoker } from '../interactions/actions/invok
 import type { GestureBinding } from '../interactions/actions/binding';
 import {
   setToolOption, steppedOption, toolOptionNumberLeaf, toolOptionParams,
-  type ToolOptions, type ToolOptionStep, type ToolOptionValues,
+  type ToolOptionsSpec, type ToolOptionStep, type ToolOptionValues,
 } from './toolOptions';
 
 /** The keys each step action is bound to while its tool is active. */
@@ -34,7 +34,7 @@ const STEPS: readonly StepSpec[] = [
 
 /** Move `toolId`'s `step` option one step in `dir`, in `values`. */
 function stepOption(
-  toolId: string, options: ToolOptions, values: ToolOptionValues, step: ToolOptionStep, leaf: PrefNumber, dir: 1 | -1,
+  toolId: string, options: ToolOptionsSpec, values: ToolOptionValues, step: ToolOptionStep, leaf: PrefNumber, dir: 1 | -1,
 ): void {
   const held = getOwn(toolOptionParams(toolId, options, values), step.option);
   const current = typeof held === 'number' ? held : leaf.default ?? 0;
@@ -44,7 +44,7 @@ function stepOption(
 const enabledFor = (toolId: string) => (deps?: ActionDeps) =>
   deps?.activeTool?.active === toolId && deps.toolOptionValues ? true : ActionDisabledReason.NotApplicable;
 
-function stepAction(toolId: string, toolLabel: string, options: ToolOptions, spec: StepSpec): Action | null {
+function stepAction(toolId: string, toolLabel: string, options: ToolOptionsSpec, spec: StepSpec): Action | null {
   const step = options[spec.which];
   const leaf = step ? toolOptionNumberLeaf(options, step.option) : undefined;
   if (!step || !leaf) return null;
@@ -79,7 +79,7 @@ const finite = (v: unknown): number => (typeof v === 'number' && Number.isFinite
  * Reads `deltaX` when `deltaY` is 0, because macOS turns a Shift+wheel into a
  * horizontal one.
  */
-function wheelSizeAction(toolId: string, toolLabel: string, options: ToolOptions): Action | null {
+function wheelSizeAction(toolId: string, toolLabel: string, options: ToolOptionsSpec): Action | null {
   const step = options.size;
   const leaf = step ? toolOptionNumberLeaf(options, step.option) : undefined;
   if (!step || !leaf) return null;
@@ -121,7 +121,7 @@ function wheelSizeAction(toolId: string, toolLabel: string, options: ToolOptions
 /** The step actions for `toolId`'s size and strength options, and the key and
  *  wheel bindings that reach them. */
 export function toolOptionSteps(
-  toolId: string, toolLabel: string, options: ToolOptions,
+  toolId: string, toolLabel: string, options: ToolOptionsSpec,
 ): { actions: Action[]; bindings: GestureBinding[] } {
   const actions: Action[] = [];
   const bindings: GestureBinding[] = [];

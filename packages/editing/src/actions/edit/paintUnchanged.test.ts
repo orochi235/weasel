@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { Action } from '@weasel-js/routing';
-import { solid, strokeOf } from '@weasel-js/paint';
+import { solid, solidStroke } from '@weasel-js/paint';
 import { makeCtx, makeScene, ongoingInvoker } from './paintActionTestUtils';
 import { setFillAction } from './setFill';
 import { setFillOpacityAction } from './setFillOpacity';
@@ -24,7 +24,7 @@ function commit(action: Action, scene: ReturnType<typeof makeScene>, params: Rec
 describe('a paint action setting the value a node already wears', () => {
   for (const [action, params] of CASES) {
     it(`${action.id} commits no undo entry`, () => {
-      const scene = makeScene({ a: { fill: { paint: solid('#336699ff') }, stroke: strokeOf('#000000ff', 2) } });
+      const scene = makeScene({ a: { fill: { paint: solid('#336699ff') }, stroke: solidStroke('#000000ff', 2) } });
       commit(action, scene, params);
       expect(scene.batches).toHaveLength(1);
       commit(action, scene, params);

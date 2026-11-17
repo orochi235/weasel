@@ -4,7 +4,7 @@ import { PATH_M, PATH_L, pathFromD, type Path, type PolygonPath } from '@weasel-
 import { MAX_DASH_RUNS, type Stroke } from '@weasel-js/paint';
 import { strokeInsets } from '../markerInset';
 import { markerHeads } from '../markerHeads';
-import { strokeSpaceOf } from './metric';
+import { strokeMetricOf } from './metric';
 
 const LINE: PolygonPath = {
   kind: 'polygon',
@@ -87,7 +87,7 @@ describe('tessellateStroke under a trim', () => {
   });
 
   it('rect under a stretching metric trims in world length', () => {
-    const { metric } = strokeSpaceOf(4, 0, 0, 1);
+    const { metric } = strokeMetricOf(4, 0, 0, 1);
     const rect: Path = { kind: 'rect', x: 0, y: 0, width: 100, height: 50 };
     // A quarter of the 300-unit world perimeter is 75 along the top edge; measured in
     // the metric's space (top 200, side 25) a quarter would stop at x 56.25.
@@ -119,7 +119,7 @@ describe('tessellateStroke under a trim', () => {
   });
 
   it('keeps the dash fixed under a metric with a start inset measured in world', () => {
-    const { metric } = strokeSpaceOf(4, 0, 0, 1);
+    const { metric } = strokeMetricOf(4, 0, 0, 1);
     const bend: PolygonPath = {
       kind: 'polygon',
       commands: new Uint8Array([PATH_M, PATH_L, PATH_L]),

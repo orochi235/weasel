@@ -171,7 +171,7 @@ describe('gradient units — which space a gradient measures its geometry in', (
         children: [{ kind: 'path', path: EVEN_ODD, fill: { paint: { ...RADIAL, units: 'local' } } }],
       }] as DrawCommand[]);
       // A fragment at screen (100, 40) is the group's local origin.
-      expect(mat3.apply(new Float32Array(worldInv()), 100, 40)).toEqual([0, 0]);
+      expect(mat3.transformPoint(new Float32Array(worldInv()), 100, 40)).toEqual([0, 0]);
     });
 
     const worldInvUploads = (): number =>
@@ -194,7 +194,7 @@ describe('gradient units — which space a gradient measures its geometry in', (
     it("units: 'world' inverts the frame's view matrix, pinning the paint to the scene", () => {
       evenOdd({ ...RADIAL, units: 'world' }, mat3.translated(mat3.identity(), 25, 75));
       // Screen (25, 75) is world origin.
-      expect(mat3.apply(new Float32Array(worldInv()), 25, 75)).toEqual([0, 0]);
+      expect(mat3.transformPoint(new Float32Array(worldInv()), 25, 75)).toEqual([0, 0]);
     });
 
     it("units: 'world' degrades to screen space when the caller passed no view", () => {

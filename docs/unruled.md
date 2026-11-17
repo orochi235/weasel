@@ -422,7 +422,7 @@ The snap pipeline ([snapping.md](./snapping.md)) landed on 2026-10-18 with these
   `scene.add`, `scene.move`, and `scene.reorder` record the index the node lands at by the same rule (`slotIndex`:
   truncated, held to the ends, `NaN` at the start), so a reorder at `NaN` of a node already first is no edit.
 - 2026-11-11 (my call, core second property pass): a box remap from a box of subnormal width or height keeps that
-  axis's scale, as one from a box of no extent does: geom's `extentScale`, which `boxToBox`, the rect pose descriptor,
+  axis's scale, as one from a box of no extent does: geom's `extentScale`, which `rectToRect`, the rect pose descriptor,
   and `remapRotatedLeaf` share. The true factor is past the double range.
 
 ## Rendering, canvas, and paint
@@ -1318,7 +1318,7 @@ The snap pipeline ([snapping.md](./snapping.md)) landed on 2026-10-18 with these
 - 2026-11-11 (my call, cursor second pass): `placeCursorPath` throws a `RangeError` for a scale or move that makes a
   coordinate `NaN` or infinite (e3481a9d2), as `bakeCursor` refuses an infinite size, rather than dropping the point.
 - Open (dither second pass, 2026-11-11): `dither()` takes an output grid whose pitch is 0, `NaN`, or infinite, as
-  `gridOnScreen` gives for a view scaled to 0, and passes it to the shader, which divides by it. No ruling on whether
+  `deviceGrid` gives for a view scaled to 0, and passes it to the shader, which divides by it. No ruling on whether
   it throws, draws nothing, or falls back to the screen grid.
 
 ## draw
@@ -2002,8 +2002,9 @@ Calls the lanes made without a ruling:
   types, which core's barrel re-exports, are the text lane's.
 - 2026-11-12: Layer factories are named `create*Layer` (now in `docs/conventions.md`); core's `pagesLayer`,
   `workspaceTintLayer` and `modeDecorationLayer` were renamed to it.
-- Open: diagram's `edgeEndLayer`, `labelDragLayer`, `laneLayer`, `portLayer`, `seamLayer`, `sequenceLayer`
-  and `waypointLayer`, and guides' `rulersHitLayer`, are bare-named layer factories outside this lane.
+- 2026-11-17: diagram's `edgeEndLayer`, `labelDragLayer`, `laneLayer`, `portLayer`, `sequenceLayer` and
+  `waypointLayer` became `create*Layer`.
+- Open: labkit's `seamLayer` and guides' `rulersHitLayer` are bare-named layer factories outside this lane.
 - 2026-11-12: `useSliceDep` was removed rather than given siblings: it was `useDepSource('slice', () => dep)`
   under another name, and no other dep had one.
 - 2026-11-12: `<SceneCanvas initialActiveTool>` became `defaultActiveTool`, the prefix `defaultView` and

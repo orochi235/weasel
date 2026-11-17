@@ -10,7 +10,7 @@
  * tighter tolerance.
  */
 
-import { pointSegmentDist } from './points2';
+import { pointSegmentDistance } from './points2';
 
 /** The tolerance, in world units, the flatteners use when none is given. */
 export const DEFAULT_FLATTEN_TOLERANCE = 0.5;
@@ -95,8 +95,8 @@ function flattenCubicRec(
   out: number[],
   depth: number,
 ): void {
-  const d1 = pointSegmentDist(x1, y1, x0, y0, x3, y3);
-  const d2 = pointSegmentDist(x2, y2, x0, y0, x3, y3);
+  const d1 = pointSegmentDistance(x1, y1, x0, y0, x3, y3);
+  const d2 = pointSegmentDistance(x2, y2, x0, y0, x3, y3);
   if (Math.max(d1, d2) <= tolerance || depth >= MAX_FLATTEN_DEPTH) {
     out.push(x3, y3);
     return;
@@ -135,7 +135,7 @@ function flattenQuadraticRec(
   out: number[],
   depth: number,
 ): void {
-  const d = pointSegmentDist(x1, y1, x0, y0, x2, y2);
+  const d = pointSegmentDistance(x1, y1, x0, y0, x2, y2);
   if (d <= tolerance || depth >= MAX_FLATTEN_DEPTH) {
     out.push(x2, y2);
     return;
@@ -184,8 +184,8 @@ function flattenCubicArcRec(
   accum: number,
   depth: number,
 ): number {
-  const d1 = pointSegmentDist(x1, y1, x0, y0, x3, y3);
-  const d2 = pointSegmentDist(x2, y2, x0, y0, x3, y3);
+  const d1 = pointSegmentDistance(x1, y1, x0, y0, x3, y3);
+  const d2 = pointSegmentDistance(x2, y2, x0, y0, x3, y3);
   const flat = Math.max(d1, d2) <= tolerance
     && (offset === 0 || edgesWithin(x0, y0, x1, y1, x2, y2, x3, y3, offset, tolerance));
   if (flat || depth >= MAX_FLATTEN_DEPTH) {
@@ -240,7 +240,7 @@ function flattenQuadraticArcRec(
   accum: number,
   depth: number,
 ): number {
-  const d = pointSegmentDist(x1, y1, x0, y0, x2, y2);
+  const d = pointSegmentDistance(x1, y1, x0, y0, x2, y2);
   const flat = d <= tolerance
     && (offset === 0 || edgesWithin(x0, y0, x1, y1, x2, y2, x2, y2, offset, tolerance));
   if (flat || depth >= MAX_FLATTEN_DEPTH) {

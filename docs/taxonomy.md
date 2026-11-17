@@ -179,7 +179,7 @@ active, beneath any other tuning, and a host draws the options row from the same
 schema. Naming a size or a strength gives the tool step actions on `[` `]`,
 `Shift+[` `Shift+]`, and Shift+wheel, bound at active scope.
 
-An option is kept per tool unless it names a **shared key** (`ToolOptions.share`),
+An option is kept per tool unless it names a **shared key** (`ToolOptionsSpec.share`),
 and every tool naming that key reads and writes one value. Every read and write
 goes through the slot `toolOptionSlot` resolves. The shape tools share `fill`,
 `stroke`, `strokeWidth`, and `fillRule`, and text its `textFill`. A brush's size
@@ -651,7 +651,7 @@ first whose action starts the gesture owns it to the end. An action hands a
 drag on only on purpose: an empty handle from `start`, or `'pass'` from
 `onMove`, offers it to the next candidate in rank order.
 
-A **sweep** (`sweepAction`) is that rule set put to use: an action on a
+A **sweep** (`createSweepAction`) is that rule set put to use: an action on a
 `drag` taking any modifiers (`SWEEP_SPEC`) at the ambient tier, the lowest
 rank a drag binding holds, that sets each item of its surface the pointer
 crosses. Any drag naming a target or a modifier outranks it, an item's own

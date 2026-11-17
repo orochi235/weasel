@@ -1,5 +1,5 @@
 import { useMemo, useRef, useState } from 'react';
-import { solid, strokeOf } from '@weasel-js/paint';
+import { solid, solidStroke } from '@weasel-js/paint';
 import { SceneCanvas, WeaselProvider, asNodeId, boundsOfPath, hexToRgba, pathFromD, polygonFromPoints, polylineFromPoints, pressureToWidth, regularPolygonPath, rgbaToHex, useActionsRegistry, vertexHalfWidths, useScene, type InsertNodeFactories, type InvokeParams, type Paint, type GradientPaint, type Path, type Scene, type Stroke, type View, type Fill, pathNode } from '@weasel-js/core';
 import { pathsPreset, usePencilTool } from '@weasel-js/path-tools';
 import { ColorField } from '@weasel-js/ui/components/ColorField';
@@ -87,7 +87,7 @@ function StrokeAndFill() {
     initial: [
       leaf(SWATCH, pathFromD('M40 40 H280 V210 H40 Z'), {
         fill: { paint: GRADIENT },
-        stroke: strokeOf('#1d2733ff', 6),
+        stroke: solidStroke('#1d2733ff', 6),
       }),
       leaf(PETAL, regularPolygonPath({ x: 430, y: 125 }, 85, RAINBOW.length, -Math.PI / 2), {
         // A placeholder fill: the renderer only enters the per-vertex shader
@@ -97,7 +97,7 @@ function StrokeAndFill() {
       }),
       leaf(RIBBON, polylineFromPoints(TAPER_POINTS), {
         stroke: {
-          ...strokeOf('#7fb069ff', 4),
+          ...solidStroke('#7fb069ff', 4),
           vertexWidths: taperWidths(20),
           cap: 'round',
           join: 'miter',
@@ -125,7 +125,7 @@ function StrokeAndFill() {
         data: {
           path,
           stroke: {
-            ...strokeOf('#a48bd4ff', 4),
+            ...solidStroke('#a48bd4ff', 4),
             vertexWidths: samples.map((s) => pressureToWidth(s.pressure ?? 0, {
               minWidth: 1, maxWidth: 18, gamma: 1.6,
             })),

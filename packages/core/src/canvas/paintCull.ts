@@ -1,7 +1,7 @@
 import type { View } from 'core/viewport/view';
 import type { Bounds } from 'core/viewport/fitViewToBounds';
-import { poseFrameOf } from '@weasel-js/geom';
-import { boundsMissRect, type CullRect } from '@weasel-js/renderer';
+import { poseFrameOf, type Rect } from '@weasel-js/geom';
+import { boundsMissRect } from '@weasel-js/renderer';
 import { mat3, viewToMat3 } from '@weasel-js/geom';
 import type { NodePaintCtx } from './nodeShapeTypes';
 
@@ -21,7 +21,7 @@ export type PaintBoundsFn<TNode, TPose> = (
 export function paintMissesView<TNode, TPose>(
   paintBounds: PaintBoundsFn<TNode, TPose>,
   view: View,
-  rect: CullRect,
+  rect: Rect,
 ): (node: TNode, pose: TPose, layerView?: View) => boolean {
   // `layerView` is a parallax plane's own view; planes are few, so one slot
   // of memo covers a walk that meets them layer by layer.

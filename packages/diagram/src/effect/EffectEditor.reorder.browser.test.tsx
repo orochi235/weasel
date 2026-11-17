@@ -4,7 +4,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { viewToTransform, type RectPose } from '@weasel-js/core';
 import { registerCanvasFont } from '@weasel-js/font';
 import { fitDiagram } from '@weasel-js/diagram';
-import { diagramScene, sequenceSlots } from '@weasel-js/diagram';
+import { diagramScene, slotsAlong } from '@weasel-js/diagram';
 import { EFFECT_MIN_SCALE, EffectEditor, editorScene, type EditorLookOptions, mainChain } from '@weasel-js/diagram/effect';
 import type { EffectDoc, EffectStage } from './types';
 import { canvasGl } from '@weasel-js/core/testing/canvasPixels';
@@ -50,7 +50,7 @@ function drawn(options?: RackEditorOptions, size: Size = SIZE) {
   const specs = diagramScene(built.data, built.scene);
   const t = viewToTransform(fitDiagram(specs, size, { anchor: 'start', minScale: EFFECT_MIN_SCALE })!);
   const box = (id: string) => specs.find((s) => s.id === id)!.pose as RectPose;
-  const slots = sequenceSlots(built.order!.axis, built.order!.items.map(({ id }) => ({ id, bounds: box(id) })));
+  const slots = slotsAlong(built.order!.axis, built.order!.items.map(({ id }) => ({ id, bounds: box(id) })));
   const screen = (p: { x: number; y: number }) => ({ x: t.panX + p.x * t.zoom.x, y: t.panY + p.y * t.zoom.y });
   const center = (id: string) => screen({ x: box(id).x + box(id).width / 2, y: box(id).y + box(id).height / 2 });
   const gap = (k: number) => {

@@ -3,7 +3,7 @@ import { splitPathBySegment, splitPathByPolyline, snipPathByPolyline } from './s
 import { PathBuilder, rectPath, polygonFromPoints } from '../paths/builder';
 import { extractPolylines } from '../tessellate/polyline';
 import { boundsOfPath } from '../paths/bounds';
-import { pointInPath } from '../pathHitTest';
+import { pathContainsPoint } from '../pathHitTest';
 import { PATH_C, PATH_L, PATH_M, PATH_Q, PATH_Z } from '../commands';
 import type { Path, PolygonPath } from '../path';
 import type { Point } from '../paths/cubicMath';
@@ -104,7 +104,7 @@ const circle = (cx: number, cy: number, r: number): PolygonPath => {
 };
 
 const inside = (p: Path, x: number, y: number): boolean =>
-  pointInPath(p, x, y);
+  pathContainsPoint(p, x, y);
 
 /** A U: base y∈[0,30] spanning x∈[0,100], arms x∈[0,30] and x∈[70,100] up to y=100. */
 const uShape = polygonFromPoints([

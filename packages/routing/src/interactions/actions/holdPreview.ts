@@ -4,7 +4,7 @@
  * the kit's cancel-gesture action — takes the preview down and runs nothing.
  */
 import type { Action } from './action';
-import { evaluateEnabled } from './actionEnabled';
+import { checkEnabled } from './actionEnabled';
 import { resolveParams, type OngoingHandle } from './invoker';
 import { dynamicActionId, type DynamicActionId } from './actionIds';
 import { showPreview } from './showPreview';
@@ -40,7 +40,7 @@ export function holdPreview(action: Action): Action {
             hide();
             if (reason !== 'commit' || invoker?.timing !== 'immediate') return;
             // Asked again: what the press previewed may have stopped applying while the key was held.
-            if (evaluateEnabled(action, ctx.deps, ctx.world, params).enabled) invoker.run(ctx.deps, params);
+            if (checkEnabled(action, ctx.deps, ctx.world, params).enabled) invoker.run(ctx.deps, params);
           },
         };
       },

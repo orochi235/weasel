@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { createScene, type Scene } from '@weasel-js/core';
-import { portLayer, sceneParticipants } from './portLayer';
+import { createPortLayer, sceneParticipants } from './portLayer';
 import {
   PORT_AFFORDANCE_KIND, PORT_LAYER_ID, createPortAffordance, portScratchOf,
 } from './portAffordance';
@@ -28,9 +28,9 @@ describe('sceneParticipants', () => {
   });
 });
 
-describe('portLayer', () => {
+describe('createPortLayer', () => {
   it('hit-tests a port and reports it under the layer id the binding names', () => {
-    const layer = portLayer(sceneParticipants(sceneWith()));
+    const layer = createPortLayer(sceneParticipants(sceneWith()));
     expect(layer.id).toBe(PORT_LAYER_ID);
     expect(PORT_AFFORDANCE_KIND).toBe(`layer:${PORT_LAYER_ID}`);
     // The layer unwraps a `CanvasHelpers` envelope or takes a bare state; it
@@ -49,7 +49,7 @@ describe('portLayer', () => {
   });
 
   it('reports nothing where there is no port', () => {
-    const layer = portLayer(sceneParticipants(sceneWith()));
+    const layer = createPortLayer(sceneParticipants(sceneWith()));
     const state = {
       selection: [], multiActive: false, boundsOf: () => null, unionBounds: null,
       modifiers: { alt: false, shift: false, meta: false, ctrl: false },
@@ -60,13 +60,13 @@ describe('portLayer', () => {
   });
 });
 
-describe('portLayer and the scene\'s gates', () => {
+describe('createPortLayer and the scene\'s gates', () => {
   const state = {
     selection: [], multiActive: false, boundsOf: () => null, unionBounds: null,
     modifiers: { alt: false, shift: false, meta: false, ctrl: false },
   };
   /** `a`'s east port, at (100, 20). */
-  const hitEast = (scene: Scene<Data, 'main', Rect>) => portLayer(sceneParticipants(scene)).hitTest!(
+  const hitEast = (scene: Scene<Data, 'main', Rect>) => createPortLayer(sceneParticipants(scene)).hitTest!(
     100, 20, state, { x: 0, y: 0, scale: { x: 1, y: 1 } }, { width: 200, height: 200 },
   );
   const regionsOf = (scene: Scene<Data, 'main', Rect>) =>
@@ -117,7 +117,7 @@ describe('portLayer and the scene\'s gates', () => {
     for (const [painted, ports] of [[false, 0], [true, 4]] as const) {
       const asked = { ...state, layerIsPainted: (layer: string) => layer !== 'main' || painted };
       expect(createPortAffordance(sceneParticipants(scene)).regions(asked)).toHaveLength(ports);
-      const hit = portLayer(sceneParticipants(scene)).hitTest!(100, 20, asked, view, { width: 200, height: 200 });
+      const hit = createPortLayer(sceneParticipants(scene)).hitTest!(100, 20, asked, view, { width: 200, height: 200 });
       expect(hit !== null).toBe(painted);
     }
   });

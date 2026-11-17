@@ -1,5 +1,5 @@
 import { useRef } from 'react';
-import { getAlpha01, toHex8, withAlpha01 } from '@weasel-js/paint';
+import { hexAlpha, toHex8, withAlpha01 } from '@weasel-js/paint';
 import { ColorField } from '../ColorField';
 import { PaintField } from '../PaintField';
 import { PaintInput } from '../PaintInput';
@@ -14,7 +14,7 @@ import { useNameText } from './nameOf';
 function splitAlpha(value: string | undefined): { rgb: string; alpha: number } {
   const eight = toHex8(value?.trim() ?? '');
   if (!/^#[0-9a-f]{8}$/i.test(eight)) return { rgb: '#000000', alpha: 1 };
-  return { rgb: eight.slice(0, 7).toLowerCase(), alpha: getAlpha01(eight) };
+  return { rgb: eight.slice(0, 7).toLowerCase(), alpha: hexAlpha(eight) };
 }
 
 export function ColorControl(p: PropertyColorFieldProps) {

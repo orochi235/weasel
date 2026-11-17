@@ -31,19 +31,19 @@ import {
   type ConnectActionOptions,
 } from './connect';
 import { EDIT_EDGE_LABEL_ACTION_ID } from './edgeLabel';
-import { createSetHopsAction } from './hops/hopsAction';
+import { createToggleHopsAction } from './hops/hopsAction';
 import { createResetLabelAction } from './labelCommands';
-import { MOVE_LABEL_ACTION_ID, createLabelDragAction, type LabelDragOptions } from './labelDragAction';
-import { LABEL_DRAG_AFFORDANCE_KIND, LABEL_DRAG_LAYER_ID, labelDragLayer, labelScratchOf } from './labelDragLayer';
-import { portLayer } from './portLayer';
+import { MOVE_LABEL_ACTION_ID, createMoveLabelAction, type MoveLabelOptions } from './moveLabelAction';
+import { LABEL_DRAG_AFFORDANCE_KIND, LABEL_DRAG_LAYER_ID, createLabelDragLayer, labelScratchOf } from './labelDragLayer';
+import { createPortLayer } from './portLayer';
 import { PORT_LAYER_ID, type PortAffordanceOptions } from './portAffordance';
 import { REMOVE_WAYPOINT_ACTION_ID, createRemoveWaypointAction, createResetRouteAction } from './routeCommands';
-import { routerActions } from './routerCommands';
-import { ROUTE_EDIT_ACTION_ID, createRouteEditAction, type RouteEditOptions } from './waypointAction';
+import { createRouterActions } from './routerCommands';
+import { EDIT_ROUTE_ACTION_ID, createRouteEditAction, type RouteEditOptions } from './waypointAction';
 import {
   WAYPOINT_AFFORDANCE_KIND,
   WAYPOINT_LAYER_ID,
-  waypointLayer,
+  createWaypointLayer,
   type WaypointAffordanceOptions,
 } from './waypointLayer';
 import type {} from './actionParamSchema';
@@ -65,7 +65,7 @@ export function diagramPorts<TPose>(opts: DiagramContributionOptions<TPose>): Su
     id: 'weasel-diagram',
     eligibility: { claimed: [PORT_LAYER_ID] },
     // `opts.id` names the connect action; the layer keeps its own id.
-    layers: [portLayer(opts.participants, { ...opts, id: PORT_LAYER_ID })],
+    layers: [createPortLayer(opts.participants, { ...opts, id: PORT_LAYER_ID })],
     actions: [createConnectAction({ ...opts, id: actionId }), createClaimPressAction()],
     bindings: [connectBinding(actionId), ...claimPressBindings()],
   };
@@ -80,24 +80,24 @@ export const GRAB_WAYPOINT_ACTION_ID = 'diagram.grabWaypoint';
  * it. It carries the handle layer, the drag, the double-click that removes, the
  * `diagram.resetRoute` command, the commands that set the selected
  * connectors' router (`SET_ROUTER_ACTION_IDS`), and the line jumps toggle
- * (`SET_HOPS_ACTION_ID`).
+ * (`TOGGLE_HOPS_ACTION_ID`).
  */
 export function diagramWaypoints<TPose>(
   opts: RouteEditOptions<TPose> & Omit<WaypointAffordanceOptions<TPose>, 'id'>,
 ): SurfaceContribution {
-  const actionId = opts.id ?? ROUTE_EDIT_ACTION_ID;
+  const actionId = opts.id ?? EDIT_ROUTE_ACTION_ID;
   const target = `affordance:${WAYPOINT_AFFORDANCE_KIND}` as const;
   return {
     id: 'weasel-diagram-waypoints',
     eligibility: { claimed: [WAYPOINT_LAYER_ID] },
     // `opts.id` names the drag action; the layer keeps its own id.
-    layers: [waypointLayer(opts.participants, opts.selected, { ...opts, id: WAYPOINT_LAYER_ID })],
+    layers: [createWaypointLayer(opts.participants, opts.selected, { ...opts, id: WAYPOINT_LAYER_ID })],
     actions: [
       createRouteEditAction({ ...opts, id: actionId }),
       createRemoveWaypointAction(opts),
       createResetRouteAction(opts),
-      ...routerActions({ participants: opts.participants, selected: opts.selected }),
-      createSetHopsAction(),
+      ...createRouterActions({ participants: opts.participants, selected: opts.selected }),
+      createToggleHopsAction(),
       createClaimPressAction(GRAB_WAYPOINT_ACTION_ID),
     ],
     bindings: [
@@ -145,17 +145,17 @@ function selectLabelEdgeAction(): Action {
  * label's edge, and a double-click that edits the label's text through
  * `EDIT_EDGE_LABEL_ACTION_ID`, which the host registers.
  */
-export function diagramLabelDrag(
-  opts: LabelDragOptions & { scene: AnyScene; selected: () => readonly string[]; cursor?: CursorSpec },
+export function diagramLabels(
+  opts: MoveLabelOptions & { scene: AnyScene; selected: () => readonly string[]; cursor?: CursorSpec },
 ): SurfaceContribution {
   const actionId = opts.id ?? MOVE_LABEL_ACTION_ID;
   const target = `affordance:${LABEL_DRAG_AFFORDANCE_KIND}` as const;
   return {
     id: 'weasel-diagram-label-drag',
     eligibility: { claimed: [LABEL_DRAG_LAYER_ID] },
-    layers: [labelDragLayer(opts.scene, opts.cursor !== undefined ? { cursor: opts.cursor } : {})],
+    layers: [createLabelDragLayer(opts.scene, opts.cursor !== undefined ? { cursor: opts.cursor } : {})],
     actions: [
-      createLabelDragAction({ ...opts, id: actionId }),
+      createMoveLabelAction({ ...opts, id: actionId }),
       createResetLabelAction({ selected: opts.selected, ...(opts.commit ? { commit: opts.commit } : {}) }),
       createClaimPressAction(GRAB_LABEL_ACTION_ID),
       selectLabelEdgeAction(),

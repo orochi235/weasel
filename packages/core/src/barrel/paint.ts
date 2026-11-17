@@ -11,7 +11,7 @@ export type { TilePatternOptions } from '@weasel-js/renderer';
 // Mesh gradients live on `@weasel-js/core/mesh`, off the root barrel.
 export {
   resolvePatternSpec,
-  resolveFillPattern,
+  resolvePaintPattern,
 } from '@weasel-js/renderer';
 
 // ─── Paint types: Paint, Stroke, gradients ──────────────────────────────
@@ -45,7 +45,6 @@ export {
   wcagLevels,
   widestHalfWidth,
 } from '@weasel-js/paint';
-export { resolveStrokeWidth } from '@weasel-js/stroke';
 export type {
   Inherit,
   PaintedFill,
@@ -104,8 +103,7 @@ export {
   gradientGeometry,
   gradientForBounds,
 } from '@weasel-js/paint';
-export { fillInPoseFrame, fillToBoundsFrame } from '@weasel-js/renderer';
-export type { FillPoseBox } from '@weasel-js/renderer';
+export { paintToLocalUnits, paintToBoundsUnits } from '@weasel-js/renderer';
 // A node's paint resolved into what a draw command takes.
 export { commandFill, commandPaint, commandStroke } from '@weasel-js/renderer';
 

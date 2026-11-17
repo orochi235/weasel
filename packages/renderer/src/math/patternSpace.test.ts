@@ -6,7 +6,7 @@ import { patternTileSpace } from './patternSpace';
 describe('patternTileSpace', () => {
   it('only subtracts the origin when there is no transform', () => {
     const m = patternTileSpace(mat3.identity(), { x: 10, y: -4 }, undefined)!;
-    expect(mat3.apply(m, 13, 1)).toEqual([3, 5]);
+    expect(mat3.transformPoint(m, 13, 1)).toEqual([3, 5]);
   });
 
   it('takes a paint-space point back to the tile point the transform sent there', () => {
@@ -16,7 +16,7 @@ describe('patternTileSpace', () => {
     const [u, v] = [4, -9];
     const px = origin.x + t[0] * u + t[2] * v;
     const py = origin.y + t[1] * u + t[3] * v;
-    const [bu, bv] = mat3.apply(m, px, py);
+    const [bu, bv] = mat3.transformPoint(m, px, py);
     expect(bu).toBeCloseTo(u, 4);
     expect(bv).toBeCloseTo(v, 4);
   });
@@ -26,7 +26,7 @@ describe('patternTileSpace', () => {
     // 90° turn takes paint-space +y back to tile +x.
     const spaceInverse = mat3.fromAffine([0.5, 0, 0, 0.5, 0, 0]);
     const m = patternTileSpace(spaceInverse, { x: 0, y: 0 }, composePatternTransform({ rotation: Math.PI / 2 }))!;
-    const [u, v] = mat3.apply(m, 0, 20);
+    const [u, v] = mat3.transformPoint(m, 0, 20);
     expect(u).toBeCloseTo(10, 5);
     expect(v).toBeCloseTo(0, 5);
   });

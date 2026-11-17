@@ -1,8 +1,8 @@
 import { describe, expect, it, vi } from 'vitest';
-import { createToolOptionValues, defineTool, type ActionTuning, type ToolOptions, type ToolOptionValues } from '../index';
+import { createToolOptionValues, defineTool, type ActionTuning, type ToolOptionsSpec, type ToolOptionValues } from '../index';
 import { tuneToolOptions } from './tuneToolOptions';
 
-const OPTIONS: ToolOptions = {
+const OPTIONS: ToolOptionsSpec = {
   actionId: 'brush',
   prefs: {
     name: 'Brush', description: '',
@@ -56,7 +56,7 @@ describe('tuneToolOptions', () => {
     };
     const values = createToolOptionValues();
     const active = { active: 'b' as string | null };
-    const shared: ToolOptions = { ...OPTIONS, actionId: ['brush', 'tap'] };
+    const shared: ToolOptionsSpec = { ...OPTIONS, actionId: ['brush', 'tap'] };
     tuneToolOptions(registry, depsOf(values, active) as never, [
       defineTool({ id: 'b', options: shared }), defineTool({ id: 'c', options: shared }),
     ]);

@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 import { createScene, type ActionDeps, type RectPose } from '@weasel-js/core';
-import { reportDeleteAction } from './diagramEditing';
+import { createReportDeleteAction } from './diagramEditing';
 import { withDiagramRegistry } from './edge';
 import { diagramScene, edgeIdOf, type DiagramData } from './fromData';
 import { deletePreset } from '@weasel-js/editing';
@@ -55,7 +55,7 @@ describe("DiagramView's report-only delete", () => {
       registry: withDiagramRegistry(),
     });
     const report = vi.fn();
-    const action = reportDeleteAction(report);
+    const action = createReportDeleteAction(report);
     const selection = { get: () => selected, set: vi.fn() };
     (action.invoker as { run: (deps: ActionDeps) => void }).run({ scene, operands: selection, applyOps: vi.fn() } as unknown as ActionDeps);
     return { report, scene, selection };

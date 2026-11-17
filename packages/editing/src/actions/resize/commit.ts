@@ -1,4 +1,4 @@
-import { boxToBox, type Affine } from '@weasel-js/geom';
+import { rectToRect, type Affine } from '@weasel-js/geom';
 import type { Op, NodeId } from '@weasel-js/core';
 import { createSetPoseOp, defaultCommitAdapter, geometryDataOp, type GeometryProjection } from '@weasel-js/core/engine';
 import { commitRunOps, reduceBehaviorEnd } from '@weasel-js/core';
@@ -18,7 +18,7 @@ function projectedGeometry(
 ): { dataOp: Op; pose: unknown } | null {
   const sb = g.getBounds(from);
   const db = g.getBounds(next);
-  const m: Affine = boxToBox(
+  const m: Affine = rectToRect(
     sb.x, sb.y, sb.width, sb.height,
     db.x, db.y, db.width, db.height,
   );

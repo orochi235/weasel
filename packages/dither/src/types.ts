@@ -16,7 +16,7 @@ export interface RgbaImage {
 }
 
 /** How `ditherPixels` quantizes an image. */
-export interface DitherOptions {
+export interface DitherPixelsOptions {
   /** Default `'threshold'`. */
   method?: DitherMethod;
   /** Gray (0–255) below it is ink. Default 128. */

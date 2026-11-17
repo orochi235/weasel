@@ -3,7 +3,7 @@ import type { JourneyData, JourneyTask } from '@weasel-js/plot';
 import type { ImportResult, PlotPage } from '../../document';
 import { Warnings } from '../../graphRead';
 import { lineError } from '../../lineError';
-import { pageNameOf, statementsOf, type Statement } from '../common/lines';
+import { readPageName, statementsOf, type Statement } from '../common/lines';
 
 /** The page a journey is read onto. */
 export const JOURNEY_PAGE = { width: 800, height: 450 } as const;
@@ -37,7 +37,7 @@ export function readMermaidJourney(text: string): ImportResult {
       sections[sections.length - 1]!.tasks.push(taskOf(s));
     }
   }
-  const named = pageNameOf(src, warnings);
+  const named = readPageName(src, warnings);
   if (title !== undefined && src.title !== undefined && src.title !== title) warnings.add('The front matter title was dropped; the chart is titled by its own.');
   title ??= src.title;
   const data: JourneyData = { kind: 'journey', ...(title !== undefined ? { title } : {}), sections };

@@ -6,7 +6,7 @@ import type { ContainerStencil } from '../containers/containerStencils';
 import type { StencilGroup } from '../diagramTypes/types';
 import { contentBox, outlinePath } from '../outline';
 import { resolveOutline } from '../outlines/table';
-import { stencilBuild, type DiagramStencil } from '../stencil';
+import { stencilInsertOps, type DiagramStencil } from '../stencil';
 
 type Box = { x: number; y: number; width: number; height: number };
 type Built = { id: string; parent?: string | null; pose: Box; data: { diagram?: { outline?: unknown }; text?: string } };
@@ -25,7 +25,7 @@ const inside = (inner: Box, outer: Box): boolean =>
 /** The body and rows `stencil` builds on a click at the origin, as inserted nodes, each posed where it draws. */
 export function builtNodes(stencil: DiagramStencil): Built[] {
   let n = 0;
-  const { ops } = stencilBuild(stencil, { x: 0, y: 0, width: 0, height: 0 }, { layer: 'main', newId: () => `${stencil.id}${++n}`, measure });
+  const { ops } = stencilInsertOps(stencil, { x: 0, y: 0, width: 0, height: 0 }, { layer: 'main', newId: () => `${stencil.id}${++n}`, measure });
   const nodes = ops.map((op) => (op.args as { node: Built }).node);
   const world = worldPosesOf(nodes as never, RIGID_POSE_COMPOSITION);
   return nodes.map((node) => ({ ...node, pose: world.get(node.id) as Box }));

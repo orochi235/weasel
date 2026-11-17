@@ -9,7 +9,7 @@ import {
   type PolygonPath,
   translatePath,
 } from '@weasel-js/geom';
-import { rotatePathAround } from '@weasel-js/geom';
+import { rotatePathAbout } from '@weasel-js/geom';
 import { pathPoseDescriptor } from 'core/geometry/pathPoseDescriptor';
 import { PATH_CMD_LENGTHS } from './index';
 
@@ -41,7 +41,7 @@ describe('path opcode table', () => {
       const moved = translatePath(path, 3, 5) as PolygonPath;
       expect([...moved.coords]).toEqual(source.map((v, i) => v + (i % 2 ? 5 : 3)));
 
-      const rotated = rotatePathAround(path, 0, 0, 0);
+      const rotated = rotatePathAbout(path, 0, 0, 0);
       expect([...rotated.coords]).toEqual(source);
 
       const remapped = pathPoseDescriptor.remapBounds(

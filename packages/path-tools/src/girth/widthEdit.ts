@@ -8,8 +8,9 @@ import {
 } from '@weasel-js/geom';
 import {
   type HalfWidths, type Stroke, type VertexWidth, vertexHalfWidths, vertexWidthFromSides,
+  resolveScreenLength,
 } from '@weasel-js/paint';
-import { resolveStrokeWidth, strokeEdgeNear, type StrokeEdgeHit, type StrokeSide } from '@weasel-js/stroke';
+import { nearestStrokeEdge, type StrokeEdgeHit, type StrokeSide } from '@weasel-js/stroke';
 import { pathNodesOf, withPath, type PathNode, type SceneNode, type AnyScene } from '@weasel-js/core';
 
 
@@ -68,7 +69,7 @@ function targetOf(scene: AnyScene, node: SceneNode<unknown, string, unknown>, sc
   const stroke = (node.data as { stroke?: Stroke | null } | null)?.stroke;
   if (!stroke?.paint) return null;
   const [found] = pathNodesOf(scene, [node.id]);
-  return found ? { ...found, stroke, fallback: resolveStrokeWidth(stroke.width ?? 1, scale) } : null;
+  return found ? { ...found, stroke, fallback: resolveScreenLength(stroke.width ?? 1, scale) } : null;
 }
 
 /** The topmost stroke, and its edge nearest `(x, y)`, that `accept` takes.
@@ -80,7 +81,7 @@ function edgeAt(
   for (let i = nodes.length - 1; i >= 0; i--) {
     const target = targetOf(scene, nodes[i], scale);
     if (!target) continue;
-    const edge = strokeEdgeNear(target.path, target.stroke, x, y, { scale });
+    const edge = nearestStrokeEdge(target.path, target.stroke, x, y, { scale });
     if (edge && accept(edge)) return { target, edge };
   }
   return null;

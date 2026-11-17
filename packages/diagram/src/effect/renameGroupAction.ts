@@ -6,7 +6,7 @@ import { groupAt } from './groupOrder';
 import type {} from '../actionParamSchema';
 
 /** The action that opens a group's name field. */
-export const RENAME_GROUP_ACTION_ID = 'effect.renameGroup';
+export const RENAME_GROUP_ACTION_ID = 'diagram.renameGroup';
 
 /** A double-click on a group's grip ({@link groupAt}), handing `rename` the innermost group there. */
 export function renameGroupContribution(now: () => ReorderSource, rename: (group: string) => void): Contribution {

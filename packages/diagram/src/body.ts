@@ -217,7 +217,7 @@ function splitHeader(rows: readonly Row[]): { header?: Extract<Row, { kind: 'hea
  * The authored size, grown to fit the body. Never shrinks: a row removed
  * leaves the node the size the author last saw it at.
  */
-export function sizeToBody<TPose extends Bounds>(pose: TPose, floor: BodyFloor): TPose {
+export function growToBody<TPose extends Bounds>(pose: TPose, floor: BodyFloor): TPose {
   const width = Math.max(pose.width, floor.minWidth);
   const height = Math.max(pose.height, floor.minHeight);
   if (width === pose.width && height === pose.height) return pose;

@@ -4,13 +4,13 @@ import type { DiagramData } from '@weasel-js/diagram';
 import { asGraph } from '../testing/asGraph';
 import { docOf, graphData, runs, timeoutFor, tokenSoup } from '../pbt.fixture';
 import type { DiagramDocument } from '../document';
-import { DRAW_XML } from './format';
+import { DIAGRAM_DRAW_XML } from './format';
 
 const RUNS = runs(100);
 const TIMEOUT = timeoutFor(100, 60);
 
-const write = (doc: DiagramDocument) => DRAW_XML.write!(doc).text;
-const read = async (text: string) => (await DRAW_XML.read!(text)).document;
+const write = (doc: DiagramDocument) => DIAGRAM_DRAW_XML.write!(doc).text;
+const read = async (text: string) => (await DIAGRAM_DRAW_XML.read!(text)).document;
 const back = async (data: DiagramData) => asGraph((await read(write(docOf(data)))).pages[0]!);
 
 /** A cell's text as it reads back: a no-break space as a space, and blank lines at either end dropped. */
@@ -49,7 +49,7 @@ describe('draw-style XML, property', () => {
     await fc.assert(fc.asyncProperty(graphData({ placed: true, endLabels: true, ports: true }), async (data) => {
       const once = write(await read(write(docOf(data))));
       expect(write(await read(once))).toBe(once);
-      expect(DRAW_XML.detect(once)).toBe(true);
+      expect(DIAGRAM_DRAW_XML.detect(once)).toBe(true);
     }), RUNS);
   }, TIMEOUT);
 

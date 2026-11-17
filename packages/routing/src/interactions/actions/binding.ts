@@ -43,7 +43,7 @@ export function bindAction<Id extends string>(
 }
 
 /** `binding`'s options as routing reads them, whichever action it names: its params an open record. */
-export function routedOpts(binding: GestureBinding): BindingOptions | undefined {
+export function bindingOptionsOf(binding: GestureBinding): BindingOptions | undefined {
   // Every schema entry is a record of params; an entry declared as an interface just does not say so.
   return binding.opts as BindingOptions | undefined;
 }

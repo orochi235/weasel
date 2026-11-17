@@ -26,7 +26,7 @@ import {
   type PenAnchor,
 } from './anchors';
 import { editAnchorSetTracked } from './anchorOrigins';
-import { cubicPointAt, splitCubicAtT } from './cubicMath';
+import { cubicPointAt, splitCubicPoints } from './cubicMath';
 import { fitCubicThroughDeletion } from './spanFit';
 import { lerp } from '../scalar';
 
@@ -172,7 +172,7 @@ export function insertAnchorOnSegment(
     return flatAnchorIndex(set, args.sub, at);
   }
   const p0 = a, p1 = a.outHandle ?? a, p2 = b.inHandle ?? b, p3 = b;
-  const { left, right } = splitCubicAtT(p0, p1, p2, p3, args.t);
+  const { left, right } = splitCubicPoints(p0, p1, p2, p3, args.t);
   a.outHandle = { x: left[1].x, y: left[1].y };
   b.inHandle = { x: right[2].x, y: right[2].y };
   set.anchors[args.sub].splice(at, 0, {

@@ -3,7 +3,7 @@ import { BAYER_4X4, bayerCutoff } from './shared';
 import { ditherPixels } from './ditherPixels';
 import { maskToRgba } from './maskToRgba';
 import { protectMask } from './protectMask';
-import { protectTexture } from './gpu/protectTexture';
+import { createProtectTexture } from './gpu/createProtectTexture';
 
 describe('an image size that is not a whole number of pixels', () => {
   const sizes: [number, number][] = [[-1, -1], [-2, 2], [1.5, 2], [NaN, 1], [Infinity, 0]];
@@ -14,7 +14,7 @@ describe('an image size that is not a whole number of pixels', () => {
       .toThrow(want);
     expect(() => maskToRgba(new Uint8Array(0), w, h)).toThrow(want);
     expect(() => protectMask([], w, h)).toThrow(want);
-    await expect(protectTexture(new Uint8Array(0), w, h)).rejects.toThrow(want);
+    await expect(createProtectTexture(new Uint8Array(0), w, h)).rejects.toThrow(want);
   });
 
   it('takes zero', () => {

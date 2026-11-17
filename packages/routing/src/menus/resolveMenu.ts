@@ -11,7 +11,7 @@ import type { Action } from '../interactions/actions/action';
 import type { ActionDeps } from '../interactions/actions/invoker';
 import { actionItems, type ActionItem } from '../interactions/actions/actionItems';
 import { actionItemShortcuts, type ActionShortcut } from '../interactions/actions/actionShortcuts';
-import { evaluateActive, evaluateEnabled, type ActionEnabledResult } from '../interactions/actions/actionEnabled';
+import { checkActive, checkEnabled, type ActionEnabledResult } from '../interactions/actions/actionEnabled';
 import { actionSettingsParams, readActionSettings } from '../interactions/actions/actionSettings';
 import { isDev } from '@weasel-js/react';
 import { sep, tidy, withReason } from './separators';
@@ -72,7 +72,7 @@ function itemOf(ctx: Ctx, it: ActionItem, key: string, label: string, off: boole
   const params = { ...ctx.params, ...it.params, ...(ctx.at ? { world: ctx.at } : {}) };
   const { enabled, reason }: ActionEnabledResult = ctx.src.eligible?.(it.action) === false
     ? { enabled: false }
-    : evaluateEnabled(it.action, deps, ctx.at, params);
+    : checkEnabled(it.action, deps, ctx.at, params);
   const why = !off && reason !== undefined ? { disabledReason: reason } : {};
   if (it.action.settings) return settingsOf(ctx, it, key, label, off || !enabled, why, access);
   return {
@@ -85,7 +85,7 @@ function itemOf(ctx: Ctx, it: ActionItem, key: string, label: string, off: boole
     shortcut: shortcutOf(it),
     disabled: off || !enabled,
     ...why,
-    checked: evaluateActive(it.action, deps, params),
+    checked: checkActive(it.action, deps, params),
     run: () => { ctx.src.trigger(it.action.id, params); },
   };
 }

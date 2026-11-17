@@ -21,7 +21,7 @@ import { groupBoxParts } from './groupBox';
 import { solid } from '@weasel-js/paint';
 import {
   boundsOfPath,
-  fillToBoundsFrame,
+  paintToBoundsUnits,
   getMarker,
   INHERIT,
   registerMarker,
@@ -134,7 +134,7 @@ export function strokeDataFromSvg(
  *  paint is already a kit `Paint`, so it comes here directly. */
 function fillInBoxFrame(fill: Paint, box: SvgDraftBounds): Paint {
   const units = 'units' in fill ? fill.units : undefined;
-  return units === 'world' ? fillToBoundsFrame(fill, box) : fill;
+  return units === 'world' ? paintToBoundsUnits(fill, box) : fill;
 }
 
 /** The same rebase for a run's own overrides, which `<tspan fill="url(#g)">`

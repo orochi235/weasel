@@ -15,7 +15,7 @@ export {
   layoutBody,
   layoutRowPorts,
   measureBody,
-  sizeToBody,
+  growToBody,
 } from './body';
 export type {
   BodyFloor,
@@ -46,13 +46,13 @@ export {
 export type { CanConnect, ConnectActionOptions, MovingEnd, PendingEdge } from './connect';
 export type { DropRefusal, DropVerdict } from '@weasel-js/core';
 export {
-  DIAGRAM_ITEM_CARRY, ITEM_DROP_ACTION_ID, createItemDropAction, dragItemProps, itemDropContribution, startItemDrag,
+  DIAGRAM_ITEM_CARRY, DROP_ITEM_ACTION_ID, createItemDropAction, dragItemProps, itemDropContribution, startItemDrag,
 } from './itemDrop';
 export type { CanDropItem, ItemDrop, ItemDropOptions, ItemDropTarget } from './itemDrop';
 export { bodyAt, isBodyEnd } from './connectTargets';
 export type { BodyEnd, BodyHit, ConnectEnd, ConnectView } from './connectTargets';
-export { CONNECTOR_ACTION_ID, CONNECTOR_TOOL_ID, connectorTool, useConnectorTool } from './connectorTool';
-export { FLOWCHART_STENCILS, stencilBuild, stencilIdOf, stencilKind } from './stencil';
+export { DRAW_CONNECTOR_ACTION_ID, CONNECTOR_TOOL_ID, connectorTool, useConnectorTool } from './connectorTool';
+export { FLOWCHART_STENCILS, stencilInsertOps, stencilIdOf, stencilKind } from './stencil';
 export type { DiagramStencil } from './stencil';
 export { stencilTool, useStencilInsert, useStencilTool } from './stencilTool';
 export {
@@ -63,7 +63,7 @@ export { StencilGhost, type StencilGhostProps } from './StencilGhost';
 export * from './containers';
 export {
   GRAB_LABEL_ACTION_ID, GRAB_WAYPOINT_ACTION_ID, SELECT_LABEL_EDGE_ACTION_ID,
-  diagramLabelDrag, diagramPorts, diagramWaypoints,
+  diagramLabels, diagramPorts, diagramWaypoints,
 } from './contribution';
 export type { DiagramContributionOptions } from './contribution';
 export {
@@ -72,17 +72,17 @@ export {
   WAYPOINT_LAYER_ID,
   createWaypointAffordance,
   routeStateOf,
-  waypointLayer,
+  createWaypointLayer,
   waypointScratchOf,
 } from './waypointLayer';
 export type { EdgeRouteState, WaypointAffordanceOptions, WaypointScratch } from './waypointLayer';
-export { ROUTE_EDIT_ACTION_ID, commitRouteToScene, createRouteEditAction, routedData } from './waypointAction';
+export { EDIT_ROUTE_ACTION_ID, commitRouteToScene, createRouteEditAction, routedData } from './waypointAction';
 export {
   REMOVE_WAYPOINT_ACTION_ID, RESET_ROUTE_ACTION_ID, createRemoveWaypointAction, createResetRouteAction,
 } from './routeCommands';
 export type { RouteEdit, RouteEditOptions } from './waypointAction';
 export {
-  ROUTER_LABELS, SET_ROUTER_ACTION_IDS, commitRouterToScene, createSetRouterAction, routerActions, withRouter,
+  ROUTER_LABELS, SET_ROUTER_ACTION_IDS, commitRouterToScene, createSetRouterAction, createRouterActions, withRouter,
 } from './routerCommands';
 export type { RouterEdit, SetRouterOptions } from './routerCommands';
 export {
@@ -111,14 +111,14 @@ export { installHops } from './hops/install';
 export type { Hops, HopsOptions } from './hops/install';
 export { hopFollower } from './hops/follower';
 export { useHops } from './hops/useHops';
-export { SET_HOPS_ACTION_ID, createSetHopsAction } from './hops/hopsAction';
-export type { SetHopsOptions } from './hops/hopsAction';
+export { TOGGLE_HOPS_ACTION_ID, createToggleHopsAction } from './hops/hopsAction';
+export type { ToggleHopsOptions } from './hops/hopsAction';
 export { createSpecHops } from './hops/specHops';
 export {
   EDGE_END_AFFORDANCE_KIND,
   EDGE_END_LAYER_ID,
   createEdgeEndAffordance,
-  edgeEndLayer,
+  createEdgeEndLayer,
   edgeEndScratchOf,
 } from './edgeEndLayer';
 export type { EdgeEndAffordanceOptions, EdgeEndOptions, EdgeEnds, EdgeEndScratch } from './edgeEndLayer';
@@ -131,7 +131,7 @@ export {
   reconnectBinding,
 } from './reconnect';
 export type { EndChange, ReconnectOptions } from './reconnect';
-export { REORDER_ACTION_ID, createReorderAction, reorderBinding, reorderContribution, createReorderPreset, sequenceSlots } from './reorder';
+export { REORDER_ACTION_ID, createReorderAction, reorderBinding, reorderContribution, createReorderPreset, slotsAlong } from './reorder';
 export type { ReorderGap, ReorderItem, ReorderMove, ReorderOptions, ReorderSlots } from './reorder';
 export {
   STEP_REORDER_ACTION_ID, createStepReorderAction, groupReorderContribution, createGroupReorderPreset, groupReorderSlots,
@@ -167,15 +167,15 @@ export type {
   GraphSource,
 } from './graph';
 export {
-  EDIT_EDGE_LABEL_ACTION_ID, END_LABEL_PLACEMENT, dropEmptyEdgeLabel, edgeLabelIdOf, edgeLabelSpec, editEdgeLabelAction, editEdgeLabelBinding, endLabelIdOf, labelSize,
+  EDIT_EDGE_LABEL_ACTION_ID, END_LABEL_PLACEMENT, dropEmptyEdgeLabel, edgeLabelIdOf, edgeLabelSpec, createEditEdgeLabelAction, editEdgeLabelBinding, endLabelIdOf, labelSize,
 } from './edgeLabel';
 export type { EdgeLabelOptions, EditEdgeLabelOptions } from './edgeLabel';
 export {
-  LABEL_DRAG_AFFORDANCE_KIND, LABEL_DRAG_LAYER_ID, draggableLabels, labelDragLayer, labelScratchOf, labelUnder,
+  LABEL_DRAG_AFFORDANCE_KIND, LABEL_DRAG_LAYER_ID, draggableLabels, createLabelDragLayer, labelScratchOf, labelUnder,
 } from './labelDragLayer';
 export type { DraggableLabel, LabelScratch } from './labelDragLayer';
-export { MOVE_LABEL_ACTION_ID, commitLabelToScene, createLabelDragAction, movedLabelData } from './labelDragAction';
-export type { LabelDragOptions, LabelEdit } from './labelDragAction';
+export { MOVE_LABEL_ACTION_ID, commitLabelToScene, createMoveLabelAction, movedLabelData } from './moveLabelAction';
+export type { MoveLabelOptions, LabelEdit } from './moveLabelAction';
 export { RESET_LABEL_ACTION_ID, createResetLabelAction } from './labelCommands';
 export { DIAGRAM_LABEL, LABEL_DERIVE_POSE, labelCenter, labelDerivePose } from './label';
 export type { LabelPoseOptions } from './label';
@@ -255,7 +255,7 @@ export type {
   UseLiveLayoutOptions,
 } from './live';
 export { chain } from './chain';
-export { backEdges, layered, layeredPlan, ranksByLength, ranksOf, type LayeredPlan } from './layered';
+export { backEdges, layered, layeredPlan, simplexRanks, longestPathRanks, type LayeredPlan } from './layered';
 export { layeredRoutes } from './route';
 export type { LayeredRoute, LayeredRouteInput, RouteEdge } from './route';
 export {
@@ -269,8 +269,8 @@ export {
   planOf,
   plannerPlan,
   seededOrder,
-  settle,
-  translated,
+  placeSlots,
+  movesFrom,
   untilSettled,
 } from './layout';
 export type {
@@ -311,7 +311,7 @@ export type {
   PortAffordanceOptions,
   PortScratch,
 } from './portAffordance';
-export { portLayer, sceneParticipants } from './portLayer';
+export { createPortLayer, sceneParticipants } from './portLayer';
 export type { ParticipantScene } from './portLayer';
 export { boxForContent, contentBox, outlineDetail, outlineFromD, outlinePath, outlineRegistry, outlineSolid, registerOutline } from './outline';
 export { diagramShape, registerDiagramShape } from './shape';

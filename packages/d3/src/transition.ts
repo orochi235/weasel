@@ -289,7 +289,7 @@ function makeStage<TData, TPose>(
       if (removeOnEnd) armRemoval();
       if (!ctx.geometry.lerp) {
         throw new Error(
-          'd3Bind.transition: its pose descriptor has no `lerp` — pass `poseDescriptor` with one in BindOptions',
+          'd3Bind.transition: its pose descriptor has no `lerp` — pass `poseDescriptor` with one in D3BindOptions',
         );
       }
       ids.forEach((_, i) => track(i));

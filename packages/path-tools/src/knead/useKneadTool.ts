@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
 import { shareToolOptions, type ToolKeybinding, type ToolOptionShare } from '@weasel-js/routing';
-import { PATH_GROUP, defineTool, type Tool, type ToolOptions } from '@weasel-js/core';
+import { PATH_GROUP, defineTool, type Tool, type ToolOptionsSpec } from '@weasel-js/core';
 import { icon } from '../icons.gen';
 import { KNEAD_PARAMS } from './knead';
 import type {} from '../actionParamSchema';
@@ -12,7 +12,7 @@ export const KNEAD_TOOL_OPTIONS = {
   prefs: KNEAD_PARAMS,
   size: { option: 'radiusPx', times: 1.25 },
   strength: { option: 'strength', plus: 0.1 },
-} satisfies ToolOptions;
+} satisfies ToolOptionsSpec;
 
 /** Options for `useKneadTool`. */
 export interface UseKneadToolOptions {

@@ -12,7 +12,7 @@
 import { afterEach, describe, it, expect } from 'vitest';
 import type { SvgNode, SvgPathNode, SvgTextNode, SvgGroupNode } from '@weasel-js/svg';
 import { parseSvg, serializeSvg } from '@weasel-js/svg';
-import { solid, strokeOf } from '@weasel-js/paint';
+import { solid, solidStroke } from '@weasel-js/paint';
 import { getMarker, resolveStroke } from '@weasel-js/core';
 import { _resetMarkersForTests } from '@weasel-js/core/test-seams';
 import type { Stroke, Fill } from '@weasel-js/core';
@@ -65,7 +65,7 @@ describe('objToSvgNode', () => {
       id: 'r1', tool: 'rect',
       x: 10, y: 20, width: 30, height: 40,
       path: { kind: 'rect', x: 10, y: 20, width: 30, height: 40 },
-      fill: { paint: solid('#ff0000') }, stroke: strokeOf('#000000', 2),
+      fill: { paint: solid('#ff0000') }, stroke: solidStroke('#000000', 2),
     };
     const node = objToSvgNode(rect as never) as SvgPathNode;
     expect(node.kind).toBe('path');
@@ -101,7 +101,7 @@ describe('objToSvgNode', () => {
       id: 'p1', tool: 'pen',
       x: 0, y: 0, width: 50, height: 50,
       path: { kind: 'polygon', commands: new Uint8Array([0, 1, 1]), coords: new Float32Array([0, 0, 50, 0, 50, 50]), fillRule: 'nonzero' },
-      fill: null, stroke: strokeOf('#000000', 1),
+      fill: null, stroke: solidStroke('#000000', 1),
     };
     const node = objToSvgNode(path as never) as SvgPathNode;
     expect(node.fill).toEqual({ kind: 'none' });
@@ -112,7 +112,7 @@ describe('objToSvgNode', () => {
       id: 'p2', tool: 'pen',
       x: 0, y: 0, width: 50, height: 50,
       path: { kind: 'polygon', commands: new Uint8Array([0, 1, 1, 4]), coords: new Float32Array([0, 0, 50, 0, 50, 50]), fillRule: 'nonzero' },
-      fill: { paint: solid('#00ff00') }, stroke: strokeOf('#000000', 1),
+      fill: { paint: solid('#00ff00') }, stroke: solidStroke('#000000', 1),
     };
     const node = objToSvgNode(path as never) as SvgPathNode;
     expect(node.fill).toEqual({ kind: 'solid', color: '#00ff00' });
@@ -496,7 +496,7 @@ describe('objToSvgNode — coverage gaps', () => {
         coords: new Float32Array([0, 0, 50, 50, 100, 0]),
         fillRule: 'nonzero' as const,
       },
-      fill: null, stroke: strokeOf('#000', 2),
+      fill: null, stroke: solidStroke('#000', 2),
     };
     const node = objToSvgNode(original as never);
     expect(node.kind).toBe('path');

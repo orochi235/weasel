@@ -5,7 +5,7 @@
 import type { Mesh } from '@weasel-js/geom/tessellate';
 import type { LaidOutGroup, LaidOutOutlineGlyph } from '@weasel-js/text';
 import { scaledDash, strokeHasInk } from '@weasel-js/paint';
-import { strokeSpaceOf } from '@weasel-js/stroke';
+import { strokeMetricOf } from '@weasel-js/stroke';
 import type { GlMat3 } from '@weasel-js/geom';
 import { quantizeStrokeScale } from './cache/strokeMeshCache';
 import { outlineMesh } from './cache/outlineMeshCache';
@@ -54,7 +54,7 @@ export function outlineGroupStrokeMesh(
       // The em-to-screen map: shear, the glyph's turn, then `transform`.
       const [cos, sin] = glyphTurn(glyph.rotate);
       const ex = [cos * s, sin * s], ey = [-(cos * shear + sin) * s, (cos - sin * shear) * s];
-      const space = strokeSpaceOf(
+      const space = strokeMetricOf(
         a * ex[0] + c * ex[1], b * ex[0] + d * ex[1], a * ey[0] + c * ey[1], b * ey[0] + d * ey[1],
       );
       const pxPerEm = quantizeStrokeScale(width.px, space.scale);

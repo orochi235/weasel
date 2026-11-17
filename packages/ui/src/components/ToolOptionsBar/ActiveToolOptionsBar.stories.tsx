@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from '@weasel-js/forge';
-import { createToolOptionValues, defineTool, shareToolOptions, type ToolOptions } from '@weasel-js/routing';
+import { createToolOptionValues, defineTool, shareToolOptions, type ToolOptionsSpec } from '@weasel-js/routing';
 import { pref, PX_UNIT } from '@weasel-js/prefs';
 import { useState } from 'react';
 import { ActiveToolOptionsBar } from '@weasel-js/ui/components/ToolOptionsBar';
@@ -13,8 +13,8 @@ export default meta;
 
 type Story = StoryObj<typeof ActiveToolOptionsBar>;
 
-const brushOptions = (label: string, id: string, share: boolean): ToolOptions => {
-  const own: ToolOptions = {
+const brushOptions = (label: string, id: string, share: boolean): ToolOptionsSpec => {
+  const own: ToolOptionsSpec = {
     actionId: id,
     prefs: pref.group(label, {
       radiusPx: pref.number('Size', 16, { min: 4, max: 120, step: 1, control: 'slider', unit: PX_UNIT }),

@@ -1,7 +1,7 @@
 import { pageName, useCommand } from '@weasel-js/core';
 import { diagramThemeFrom, rendererMeasure } from '@weasel-js/diagram';
 import {
-  DIAGRAM_FORMATS, documentFromScene, documentSpecs, formatTakes, readDocument, scenePageKinds, writtenPage, type DiagramFormat,
+  DIAGRAM_FORMATS, documentFromScene, documentSpecs, formatFitsKinds, readDocument, scenePageKinds, writtenPage, type DiagramFormat,
 } from '@weasel-js/diagram-formats';
 import type { PrefGroup } from '@weasel-js/prefs';
 import { downloadBlob, pickFile, reportFileWarnings, menuRun } from '@weasel-js/editor';
@@ -65,7 +65,7 @@ function FormatExport({ scene, pages, format }: { scene: ChartScene; pages: Char
     }
     downloadBlob(exported.blob, exported.name);
     reportFileWarnings('Exported', exported.warnings, 'chart-export-warnings');
-  }, { enabled: () => can(formatTakes(format, scenePageKinds(scene, format.onePage ? { page: pages.shown?.id } : {}))) });
+  }, { enabled: () => can(formatFitsKinds(format, scenePageKinds(scene, format.onePage ? { page: pages.shown?.id } : {}))) });
   return null;
 }
 

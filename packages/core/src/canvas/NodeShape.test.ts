@@ -8,7 +8,7 @@ import {
   _resetShapePaintersForTests,
   type NodeShapeEntry,
 } from './NodeShape';
-import { solid, strokeOf } from '@weasel-js/paint';
+import { solid, solidStroke } from '@weasel-js/paint';
 import { pathFromD, type PolygonPath } from '@weasel-js/geom';
 import type { Node } from 'core/scene/types';
 import type { DrawCommand } from '@weasel-js/renderer';
@@ -149,7 +149,7 @@ describe('shapeCoversPoint', () => {
     const filled = { ...node({ path, fill: { paint: solid('#f00') }, stroke: null }), pose };
     expect(shapeCoversPoint(filled, pose, 75, 25)).toBe(true);
     expect(shapeCoversPoint(filled, pose, 25, 75)).toBe(false);
-    const line = { ...node({ path, fill: null, stroke: strokeOf('#000', 2) }), pose };
+    const line = { ...node({ path, fill: null, stroke: solidStroke('#000', 2) }), pose };
     expect(shapeCoversPoint(line, pose, 75, 25)).toBe(false);
     expect(shapeCoversPoint(line, pose, 50, 0)).toBe(true);
   });

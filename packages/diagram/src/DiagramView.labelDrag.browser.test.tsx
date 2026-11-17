@@ -92,8 +92,8 @@ describe('label dragging in DiagramView', () => {
 
   it('selects the edge on a click on its label, and reports no move', async () => {
     const onMoveLabel = vi.fn();
-    const onSelect = vi.fn();
-    const { canvas, api } = await mount({ onMoveLabel, onSelect });
+    const onSelectionChange = vi.fn();
+    const { canvas, api } = await mount({ onMoveLabel, onSelectionChange });
     const { x, y } = labelCenter(canvas, api);
 
     pointer(canvas, 'pointermove', x, y);
@@ -101,7 +101,7 @@ describe('label dragging in DiagramView', () => {
     pointer(canvas, 'pointerup', x, y);
     await frame();
 
-    expect(onSelect).toHaveBeenLastCalledWith(AB, [AB]);
+    expect(onSelectionChange).toHaveBeenLastCalledWith(AB, [AB]);
     expect(onMoveLabel).not.toHaveBeenCalled();
   });
 });

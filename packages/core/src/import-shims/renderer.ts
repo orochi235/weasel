@@ -47,7 +47,6 @@ export type {
   CommandPaint,
   CommandPaintUnits,
   CommandStroke,
-  CullRect,
   DrawCommand,
   Effect,
   EffectProgramSource,

@@ -1,4 +1,4 @@
-import { solid, strokeOf } from '@weasel-js/paint';
+import { solid, solidStroke } from '@weasel-js/paint';
 import { createScene, defaultNodeProperties } from '@weasel-js/core';
 import type { RectPose, Scene, Stroke, Fill } from '@weasel-js/core';
 import { defineInstrument, f, hasConfigPath, type RenderContext, valueAtPath, withValueAtPath } from '@weasel-js/labkit';
@@ -21,7 +21,7 @@ interface ShapeData {
 type Config = Record<string, unknown>;
 
 const FILL: Fill = { paint: solid('#7fb069') };
-const STROKE: Stroke = strokeOf('#1c1c1c', 6);
+const STROKE: Stroke = solidStroke('#1c1c1c', 6);
 
 /** Nested at each field's node path: labkit reads a dotted key as a path. */
 export const START: Config = Object.entries({

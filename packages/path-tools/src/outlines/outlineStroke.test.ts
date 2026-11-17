@@ -3,7 +3,7 @@
  * part a stub adapter would let slide.
  */
 import { describe, it, expect } from 'vitest';
-import { boundsOfPath, pathFromD, pointInPath, type Path, type Rect } from '@weasel-js/geom';
+import { boundsOfPath, pathFromD, pathContainsPoint, type Path, type Rect } from '@weasel-js/geom';
 import type { Paint, Stroke, Fill } from '@weasel-js/paint';
 import { asNodeId, createScene, defaultCommitAdapter, type NodeId, pathPaintOf } from '@weasel-js/core';
 import type { CreateOutlinesAdapter } from './createOutlines';
@@ -92,8 +92,8 @@ describe('applyOutlineStroke', () => {
     expect(ring.fill).toEqual({ paint: RED });
     expect(boundsOfPath(ring.path!)).toMatchObject({ x: -5, y: -5, width: 110, height: 110 });
     // A ring: ink on the edge, none in the middle.
-    expect(pointInPath(ring.path!, 0, 50)).toBe(true);
-    expect(pointInPath(ring.path!, 50, 50)).toBe(false);
+    expect(pathContainsPoint(ring.path!, 0, 50)).toBe(true);
+    expect(pathContainsPoint(ring.path!, 50, 50)).toBe(false);
   });
 
   it('lays the two paths flat in the slot when the adapter mints no container', () => {

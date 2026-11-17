@@ -8,9 +8,9 @@
  * @packageDocumentation
  */
 
-export { inkWidth, tessellateStroke, resolveStrokeWidth, ribbonAligns } from './tessellate/stroke';
+export { widthHasInk, tessellateStroke, ribbonAligns } from './tessellate/stroke';
 export type { StrokeOptions } from './tessellate/stroke';
-export { dashLength, splitForDash, type MeasuredPolyline } from './tessellate/dash';
+export { dashRunLength, splitForDash, type MeasuredPolyline } from './tessellate/dash';
 export type { RibbonStyle } from './tessellate/expandPolyline';
 export { populatePolylineWidths, widestStrokeWidth } from './tessellate/vertexWidths';
 export { nibWidthScale } from './tessellate/nib';
@@ -19,7 +19,7 @@ export { trimInSpace } from './tessellate/insets';
 export { resolveTrim } from './trim/resolveTrim';
 export { trimSpan } from './trim/trimSpan';
 export { trimmedPath, trimmedRuns } from './trim/trimmedPath';
-export { insetPath } from './trim/insetPath';
+export { trimPathEnds } from './trim/trimPathEnds';
 export type { TrimmedPath, TrimmedRun, TrimmedRunsOptions } from './trim/trimmedPath';
 export { CLIP_CUT, CLIP_OPEN, CLIP_WHOLE, clipRibbon } from './trim/clipRibbon';
 export type { ClipRibbon, ClipRibbonOptions, ClipSubpath } from './trim/clipRibbon';
@@ -27,7 +27,7 @@ export { clipWindow } from './trim/clipWindow';
 export type { ClipWindow } from './trim/clipWindow';
 export type { InsetLength, MeasuredLength } from './tessellate/insets';
 export {
-  screenSpaceKey, strokeSpaceOf, metricKey, polylineIntoMetric, polylineOutOfMetric, sameMetric,
+  screenSpaceKey, strokeMetricOf, metricKey, polylineIntoMetric, polylineOutOfMetric, sameMetric,
   worldWidthInMetric, worldWidthInMetricAlongWorld, coordsOutOfMetric, metricKeepsRects, rectIntoMetric,
 } from './tessellate/metric';
 export type { StrokeMetric, ScreenSpace, StrokeSpaces } from './tessellate/metric';
@@ -44,7 +44,7 @@ export {
 } from './markerHeads';
 export type { MarkerHead, MarkerPlacement } from './markerHeads';
 
-export { strokeEdgeNear } from './strokeEdge';
+export { nearestStrokeEdge } from './strokeEdge';
 export type { StrokeEdgeHit, StrokeEdgeOptions, StrokeSide } from './strokeEdge';
 export { strokeToPath } from './strokeToPath';
 export type { StrokeToPathOptions } from './strokeToPath';

@@ -8,7 +8,7 @@
  */
 import {
   boundsOfPath,
-  boxToBox,
+  rectToRect,
   isCornerShape,
   pathFromD,
   pathToD,
@@ -71,6 +71,6 @@ export function pathWithCorners(drawn: Path, attrs: Record<string, string> | und
   const to = boundsOfPath(drawn);
   const size = Math.max(to.width, to.height);
   if (!close(from.width, to.width, size) || !close(from.height, to.height, size)) return drawn;
-  const m = boxToBox(from.x, from.y, from.width, from.height, to.x, to.y, to.width, to.height);
+  const m = rectToRect(from.x, from.y, from.width, from.height, to.x, to.y, to.width, to.height);
   return transformPath(spec, m);
 }

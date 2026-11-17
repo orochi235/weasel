@@ -65,7 +65,7 @@ bindings: [
 | `useStandardActions(opts)` | Registers the kit-standard descriptors and publishes `selection` / `view` / `scene` / `history` / `activeTool` as live dep sources. No-ops silently when either provider is absent. |
 | `useActionsRegistry()` | The registry handle: `register(action)`, `trigger(id, params?)`, enumeration for palettes and toolbars. |
 | `useAction(action)` | Register one `Action` descriptor for the lifetime of the calling component. No-ops when no `<ActionsProvider>` is in scope — with a dev-only warning, so a production build says nothing. |
-| `evaluateEnabled(...)` | Resolve an action's `enabled` predicate against current deps. |
+| `checkEnabled(...)` | Resolve an action's `enabled` predicate against current deps. |
 | `useKeybindings(...)` | Tool-activation hotkeys, as the parametric `tool.activate` action, and Escape back to the default tool, as `tool.resetToDefault`. Mounted by `<SceneCanvas>`. A tool's hold-to-engage `hotkey` becomes `tool.offhand`, registered with the tool rather than here. |
 | `useGestureDispatcher(...)` | The input router `<SceneCanvas>` mounts. Reach for it only if you're building a custom canvas surface. |
 

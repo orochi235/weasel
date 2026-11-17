@@ -1,5 +1,5 @@
 import { useToolOptionParams } from '@weasel-js/routing/react';
-import { setToolOption, toolSetHas, type Tool, type ToolOptions, type ToolOptionValues, type ToolsApi } from '@weasel-js/core';
+import { setToolOption, toolSetHas, type Tool, type ToolOptionsSpec, type ToolOptionValues, type ToolsApi } from '@weasel-js/core';
 import {
   SEQUENCE_FRAGMENT_OPTIONS, SEQUENCE_MARK_OPTIONS, SEQUENCE_MESSAGE_OPTIONS, SEQUENCE_PARTICIPANT_OPTIONS, SEQUENCE_TOOLS,
   findStep, sequenceRootOf, sequenceSelectionOf, setFragmentType, setMessageArrow, setParticipantOutline,
@@ -20,7 +20,7 @@ export const isSequenceTool = (tool: Tool): boolean => toolSetHas(SEQUENCE_TOOLS
 /** One sequence tool's option: the tool, its options, and the one the panel's picker sets. */
 interface Choice {
   tool: string;
-  options: ToolOptions;
+  options: ToolOptionsSpec;
   option: string;
 }
 

@@ -11,7 +11,7 @@ import { withCorner, type CornerSpec } from './cornerSpec';
 import { CORNER_KEYWORDS, cornerShapeK } from './cornerShape';
 import { anchorsToPath, pathToAnchors } from './anchors';
 import { pathFromD } from './pathFromD';
-import { pointInPath } from '../pathHitTest';
+import { pathContainsPoint } from '../pathHitTest';
 import { tessellate } from '../tessellate/tessellate';
 import { pathSignedArea } from './winding';
 
@@ -139,9 +139,9 @@ describe('the geometry readers see corners expanded', () => {
   });
 
   it('hit-tests the cut-away corner as outside', () => {
-    expect(pointInPath(square(), 98, 2)).toBe(true);
-    expect(pointInPath(cut(), 98, 2)).toBe(false);
-    expect(pointInPath(cut(), 50, 50)).toBe(true);
+    expect(pathContainsPoint(square(), 98, 2)).toBe(true);
+    expect(pathContainsPoint(cut(), 98, 2)).toBe(false);
+    expect(pathContainsPoint(cut(), 50, 50)).toBe(true);
   });
 
   it('measures the area of the expanded outline', () => {

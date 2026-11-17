@@ -25,7 +25,7 @@ afterEach(() => {
   document.body.replaceChildren();
 });
 
-async function mount(more: { selected?: string; onViewChange?: (v: View) => void; onMove?: DiagramViewProps['onMove'] } = {}, specs = SPECS) {
+async function mount(more: { selection?: string; onViewChange?: (v: View) => void; onMove?: DiagramViewProps['onMove'] } = {}, specs = SPECS) {
   const host = document.createElement('div');
   document.body.append(host);
   const api = createRef<DiagramViewApi>();

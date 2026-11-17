@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { solid, strokeOf } from '@weasel-js/paint';
+import { solid, solidStroke } from '@weasel-js/paint';
 import { asNodeId, createScene, rectPath, type NodeId } from '@weasel-js/core';
 import { applyOutlineStroke } from '@weasel-js/path-tools';
 import type { WeaselDrawData, WeaselDrawLayer, WeaselDrawPose } from './drawDocument';
@@ -24,7 +24,7 @@ const dataOf = (scene: ReturnType<typeof setup>['scene'], id: string) => scene.g
 describe('drawOutlinesAdapter', () => {
   it('names the group a filled, stroked node becomes as the node was named, and leaves its paths unnamed', () => {
     const { scene, adapter } = setup({
-      path: rectPath(0, 0, 10, 10), fill: { paint: solid('#f00') }, stroke: strokeOf('#00f', 2), label: 'Welcome',
+      path: rectPath(0, 0, 10, 10), fill: { paint: solid('#f00') }, stroke: solidStroke('#00f', 2), label: 'Welcome',
     });
     const result = applyOutlineStroke(adapter);
     const [group] = result.kind === 'applied' ? result.resultIds : [];
@@ -37,11 +37,11 @@ describe('drawOutlinesAdapter', () => {
 
   it('names the one path an unfilled, stroked node becomes as the node was named, in the stroke\'s paint', () => {
     const { scene, adapter } = setup({
-      path: rectPath(0, 0, 10, 10), fill: null, stroke: strokeOf('#00f', 2), label: 'Frame',
+      path: rectPath(0, 0, 10, 10), fill: null, stroke: solidStroke('#00f', 2), label: 'Frame',
     });
     const result = applyOutlineStroke(adapter);
     const [made] = result.kind === 'applied' ? result.resultIds : [];
-    expect(dataOf(scene, made!)).toMatchObject({ label: 'Frame', fill: { paint: strokeOf('#00f', 2).paint } });
+    expect(dataOf(scene, made!)).toMatchObject({ label: 'Frame', fill: { paint: solidStroke('#00f', 2).paint } });
     expect(dataOf(scene, made!).stroke).toBeUndefined();
   });
 
@@ -49,7 +49,7 @@ describe('drawOutlinesAdapter', () => {
     // A new session's generator starts over, and the document it reopens holds what the last one minted.
     let n = 0;
     const { scene, adapter } = setup(
-      { path: rectPath(0, 0, 10, 10), fill: { paint: solid('#f00') }, stroke: strokeOf('#00f', 2) },
+      { path: rectPath(0, 0, 10, 10), fill: { paint: solid('#f00') }, stroke: solidStroke('#00f', 2) },
       () => asNodeId(`n${n++}`),
     );
     const old = ['n0', 'n1', 'n2'];

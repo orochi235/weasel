@@ -4,7 +4,7 @@ import {
   findNodeShape, findShapeBounds, findShapeSilhouette, registerNodeShape, shapeCoversPoint,
   _resetShapePaintersForTests, type NodeShapeEntry,
 } from 'canvas/NodeShape';
-import { solid, strokeOf } from '@weasel-js/paint';
+import { solid, solidStroke } from '@weasel-js/paint';
 import type { Node } from 'core/scene/types';
 
 const TRIANGLE: Path = polygonFromPoints([{ x: 0, y: 0 }, { x: 100, y: 0 }, { x: 50, y: 80 }]);
@@ -17,7 +17,7 @@ afterEach(() => { _resetShapePaintersForTests(); });
 
 describe('kit:path-pose', () => {
   it('paints a Path pose in its data.fill and data.stroke', () => {
-    const n = node({ fill: { paint: solid('#7fb069') }, stroke: strokeOf('#1a130d', 2) });
+    const n = node({ fill: { paint: solid('#7fb069') }, stroke: solidStroke('#1a130d', 2) });
     const painter = findNodeShape(n)!;
     expect(painter.id).toBe('kit:path-pose');
     const [cmd] = painter.paint(n, TRIANGLE);
@@ -25,7 +25,7 @@ describe('kit:path-pose', () => {
   });
 
   it('outlines the pose, picks its inside, and bounds it with its stroke', () => {
-    const n = node({ fill: { paint: solid('#7fb069') }, stroke: strokeOf('#000', 10) });
+    const n = node({ fill: { paint: solid('#7fb069') }, stroke: solidStroke('#000', 10) });
     expect(findShapeSilhouette(n, TRIANGLE)).not.toBeNull();
     expect(shapeCoversPoint(n, TRIANGLE, 50, 30)).toBe(true);
     expect(shapeCoversPoint(n, TRIANGLE, 5, 70)).toBe(false);

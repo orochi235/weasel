@@ -1,5 +1,5 @@
 import { remapPerAnchor, resolveCornersWithSources, type Path, type RectPath } from '@weasel-js/geom';
-import type { ScreenLength, Stroke } from '@weasel-js/paint';
+import type { Stroke } from '@weasel-js/paint';
 import { alignedStrokeRect, alignedStrokeRectHolds, DEFAULT_MITER_LIMIT, resolveScreenLength } from '@weasel-js/paint';
 import { type Mesh, extractPolylines, type Polyline } from '@weasel-js/geom/tessellate';
 import { dashPolylines } from './dash';
@@ -45,13 +45,6 @@ const EMPTY_MESH: Mesh = {
 };
 
 
-/** Resolve a stroke width to world units. A number is already world units;
- *  `{ px }` is screen pixels divided by the accumulated scale, so it holds its
- *  on-screen thickness as the view zooms. */
-export function resolveStrokeWidth(width: ScreenLength, scale: number): number {
-  return resolveScreenLength(width, scale);
-}
-
 /**
  * Build a triangle-mesh ribbon from a stroked Path.
  *
@@ -69,7 +62,7 @@ export function tessellateStroke(
   opts: StrokeOptions = {},
 ): Mesh {
   const style = ribbonStyle(stroke);
-  if (!inkWidth(style.width)) return EMPTY_MESH;
+  if (!widthHasInk(style.width)) return EMPTY_MESH;
   const metric = opts.metric;
   const { polylines, rectInMetric } = strokePolylines(path, stroke, style.width, opts.flattenTolerance, metric);
   const out: RibbonOut = { verts: [], idx: [], anchorA: [], anchorB: [], anchorT: [] };
@@ -106,7 +99,7 @@ export function ribbonStyle(stroke: Stroke): RibbonStyle {
   // gets here; a stroke that reaches the tessellator unresolved is read at
   // scale 1, matching what the ribbon cache keys it under.
   return {
-    width: resolveStrokeWidth(stroke.width ?? 1, 1),
+    width: resolveScreenLength(stroke.width ?? 1, 1),
     join: stroke.join ?? 'miter',
     cap: stroke.cap ?? 'butt',
     miterLimit: stroke.miterLimit ?? DEFAULT_MITER_LIMIT,
@@ -181,6 +174,6 @@ const DEFAULT_VARYING_WIDTH_JOIN_THRESHOLD = 1.5;
 
 /** Whether a ribbon `width` wide has vertices to give: positive and finite.
  *  An infinite one would put NaN in every vertex its normals scale. */
-export function inkWidth(width: number): boolean {
+export function widthHasInk(width: number): boolean {
   return width > 0 && Number.isFinite(width);
 }

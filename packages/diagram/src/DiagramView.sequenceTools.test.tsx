@@ -126,8 +126,8 @@ describe('sequence tools on a DiagramView', () => {
   });
 
   it('reports a click on empty canvas with no start as nothing', () => {
-    const onSelect = vi.fn();
-    const { canvas, edits } = mount('diagram.sequence.participant', { onSelect, width: layout.width + 400 });
+    const onSelectionChange = vi.fn();
+    const { canvas, edits } = mount('diagram.sequence.participant', { onSelectionChange, width: layout.width + 400 });
     click(canvas, layout.width + 200, 20);
     expect(edits).toHaveLength(0);
   });

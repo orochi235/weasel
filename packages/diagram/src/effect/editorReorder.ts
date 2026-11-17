@@ -4,7 +4,7 @@
 import type { Contribution } from '@weasel-js/core';
 import { moveItems } from '@weasel-js/ui-input';
 import { maxOf, minOf } from '@weasel-js/geom';
-import { reorderContribution, sequenceSlots, type ReorderMove, type ReorderSlots } from '../reorder';
+import { reorderContribution, slotsAlong, type ReorderMove, type ReorderSlots } from '../reorder';
 import { moveInChain, moveRunInChain } from './chainEdit';
 import type { LookOrder } from './draw';
 import { ensureWireIds, setLaneOrder } from './edit';
@@ -37,7 +37,7 @@ function slotsOf(order: LookOrder | undefined, boxOf: ReorderSource['boxOf']): R
     const bounds = boxOf(i.id);
     return bounds === undefined ? [] : [{ id: i.id, bounds, ...(i.grip !== undefined ? { grip: i.grip } : {}) }];
   });
-  return items.length < 2 ? null : sequenceSlots(order.axis, items);
+  return items.length < 2 ? null : slotsAlong(order.axis, items);
 }
 
 /** `next`, or `null` where it splits a group whose stages sat together on the chain in `doc`. */

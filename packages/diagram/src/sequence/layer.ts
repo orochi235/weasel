@@ -119,7 +119,7 @@ function regionsIn(scene: AnyScene) {
 }
 
 /** The composed layer, for `CanvasExtensionApi.registerLayer`. Register it last: the last registered is hit first. */
-export function sequenceLayer(scene: AnyScene): RenderLayer<unknown> {
+export function createSequenceLayer(scene: AnyScene): RenderLayer<unknown> {
   const parts: Affordance = { id: SEQUENCE_LAYER_ID, regions: () => regionsIn(scene).parts };
   const ends: Affordance = { id: `${SEQUENCE_LAYER_ID}-ends`, regions: () => regionsIn(scene).ends };
   return composeAffordanceLayer(SEQUENCE_LAYER_ID, 'Sequence diagram parts', [parts, ends]) as unknown as RenderLayer<unknown>;

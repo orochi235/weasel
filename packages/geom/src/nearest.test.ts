@@ -1,20 +1,20 @@
 import { describe, it, expect } from 'vitest';
-import { nearestOnLine, nearestOnQuadratic, nearestOnCubic, nearestOnPath } from './nearest';
+import { nearestOnSegment, nearestOnQuadratic, nearestOnCubic, nearestOnPath } from './nearest';
 import { cubicEvalAt } from './curve';
 import { PATH_M, PATH_L, PATH_Q, PATH_C, PATH_Z } from './commands';
 
-describe('nearestOnLine', () => {
+describe('nearestOnSegment', () => {
   it('drops a perpendicular onto the interior', () => {
-    expect(nearestOnLine(5, 3, 0, 0, 10, 0)).toEqual({ x: 5, y: 0, t: 0.5, dist: 3 });
+    expect(nearestOnSegment(5, 3, 0, 0, 10, 0)).toEqual({ x: 5, y: 0, t: 0.5, dist: 3 });
   });
 
   it('clamps to the endpoints', () => {
-    expect(nearestOnLine(-4, 3, 0, 0, 10, 0)).toEqual({ x: 0, y: 0, t: 0, dist: 5 });
-    expect(nearestOnLine(14, -3, 0, 0, 10, 0)).toEqual({ x: 10, y: 0, t: 1, dist: 5 });
+    expect(nearestOnSegment(-4, 3, 0, 0, 10, 0)).toEqual({ x: 0, y: 0, t: 0, dist: 5 });
+    expect(nearestOnSegment(14, -3, 0, 0, 10, 0)).toEqual({ x: 10, y: 0, t: 1, dist: 5 });
   });
 
   it('answers t = 0 on a zero-length segment', () => {
-    expect(nearestOnLine(3, 4, 0, 0, 0, 0)).toEqual({ x: 0, y: 0, t: 0, dist: 5 });
+    expect(nearestOnSegment(3, 4, 0, 0, 0, 0)).toEqual({ x: 0, y: 0, t: 0, dist: 5 });
   });
 });
 
@@ -173,10 +173,10 @@ describe('nearestOnPath', () => {
   });
 });
 
-describe('nearestOnLine at either end of the double range', () => {
+describe('nearestOnSegment at either end of the double range', () => {
   it('reports the distance to a probe past 1e154 or below 1e-154 away', () => {
     for (const scale of [1e-200, 1e200]) {
-      expect(nearestOnLine(0, 4 * scale, -scale, 0, scale, 0).dist / scale).toBeCloseTo(4, 12);
+      expect(nearestOnSegment(0, 4 * scale, -scale, 0, scale, 0).dist / scale).toBeCloseTo(4, 12);
     }
   });
 });

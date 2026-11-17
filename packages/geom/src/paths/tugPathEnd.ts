@@ -18,10 +18,10 @@
 import type { AnchorSet } from './anchorEdits';
 import { flatAnchorIndex, locateAnchor } from './anchorEdits';
 import { isStraightSegment, type PenAnchor } from './anchors';
-import { splitCubicAtT, type Point } from './cubicMath';
+import { splitCubicPoints, type Point } from './cubicMath';
 import { cubicCurvatureAt, cubicDerivativeAt } from './curvature';
 import type { OpenPathEnd } from './reachPath';
-import { nearestOnCubic, nearestOnLine } from '../nearest';
+import { nearestOnCubic, nearestOnSegment } from '../nearest';
 import {
   easeLength, extensionPieces, pieceLengthAt, type EaseOptions, type TugMode, type PathEndFrame,
 } from './pathEndExtension';
@@ -170,7 +170,7 @@ function lengthAlongEased(frame: PathEndFrame, point: Point, opts: EaseOptions):
   for (const piece of extensionPieces(frame, reach, 'eased', opts)) {
     const [q0, q1, q2, q3] = piece.pts;
     const hit = piece.pts.length === 2
-      ? nearestOnLine(point.x, point.y, q0.x, q0.y, q1.x, q1.y)
+      ? nearestOnSegment(point.x, point.y, q0.x, q0.y, q1.x, q1.y)
       : nearestOnCubic(point.x, point.y, q0.x, q0.y, q1.x, q1.y, q2.x, q2.y, q3.x, q3.y);
     if (hit.dist < best.dist) best = { dist: hit.dist, length: walked + pieceLengthAt(piece, hit.t) };
     walked += piece.length;
@@ -248,7 +248,7 @@ function cutTail(sub: PenAnchor[], keep: number, len: number): void {
     return;
   }
   const t = segmentTAtLength(flatPoints([p0, p1, p2, p3]), 2, keep);
-  const { left } = splitCubicAtT(p0, p1, p2, p3, t);
+  const { left } = splitCubicPoints(p0, p1, p2, p3, t);
   if (p0.outHandle) p0.outHandle = left[1];
   p3.inHandle = left[2];
   p3.x = left[3].x;

@@ -3,7 +3,7 @@ import {
 } from '@weasel-js/core';
 import {
   STENCIL_GROUPS, bodyFollower, diagramSequence, diagramCanDropInto, diagramTypeEdgeStroke, isContainerStencil, diagramContainers, diagramEdgeEnds,
-  diagramLabelDrag, diagramOffPage, diagramPorts, diagramWaypoints, editEdgeLabelAction, editEdgeLabelBinding,
+  diagramLabels, diagramOffPage, diagramPorts, diagramWaypoints, createEditEdgeLabelAction, editEdgeLabelBinding,
   registerDiagramShape, roleStyle, sceneParticipants, themeFont,
   themeLabelStyle, useAvoidRouting, useFaceRemeasure, useHops, useLabelPlacement, rendererMeasure, useDiagramTools, useOffPageMarkers,
   useStencilInsert, waypointFollower, type DiagramStencil, type DiagramTheme, type DiagramType,
@@ -22,7 +22,7 @@ const ROUTER = 'avoid';
 const edgeLabel = (theme: DiagramTheme): Contribution => ({
   id: 'weaselchart-edge-label',
   eligibility: { always: true },
-  actions: [editEdgeLabelAction({ fill: theme.label.fill, style: themeLabelStyle(theme) })],
+  actions: [createEditEdgeLabelAction({ fill: theme.label.fill, style: themeLabelStyle(theme) })],
   bindings: [editEdgeLabelBinding()],
 });
 
@@ -73,7 +73,7 @@ export function useChartDiagram(
   );
   const route = useMemo(() => diagramWaypoints<ChartPose>({ selected, participants }), [selected, participants]);
   const containers = useMemo(() => diagramContainers({ scene: scene as never, selected }), [scene, selected]);
-  const labelDrag = useMemo(() => diagramLabelDrag({ scene: scene as never, selected }), [scene, selected]);
+  const labelDrag = useMemo(() => diagramLabels({ scene: scene as never, selected }), [scene, selected]);
   const label = useMemo(() => edgeLabel(theme), [theme]);
   const drop = useMemo(() => stencilDrop(participants), [participants]);
   const sequenceEdit = useMemo(() => diagramSequence({ scene: scene as never, measure: rendererMeasure }), [scene]);

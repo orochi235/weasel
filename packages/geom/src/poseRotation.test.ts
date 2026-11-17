@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { poseRotationOf, rotatePathAround } from './poseRotation';
+import { poseRotationOf, rotatePathAbout } from './poseRotation';
 import { PATH_M, PATH_L, PATH_Z, type PolygonPath } from '@weasel-js/geom';
 
 describe('poseRotationOf', () => {
@@ -21,7 +21,7 @@ describe('poseRotationOf', () => {
   });
 });
 
-describe('rotatePathAround', () => {
+describe('rotatePathAbout', () => {
   it('rotates a polygon point about the pivot', () => {
     // A single segment from (1,0) to (2,0); rotate 90° about origin (0,0).
     const p: PolygonPath = {
@@ -30,7 +30,7 @@ describe('rotatePathAround', () => {
       coords: new Float32Array([1, 0, 2, 0]),
       fillRule: 'nonzero',
     };
-    const out = rotatePathAround(p, 0, 0, Math.PI / 2) as PolygonPath;
+    const out = rotatePathAbout(p, 0, 0, Math.PI / 2) as PolygonPath;
     expect(out.kind).toBe('polygon');
     expect(out.coords[0]).toBeCloseTo(0);
     expect(out.coords[1]).toBeCloseTo(1);
@@ -39,7 +39,7 @@ describe('rotatePathAround', () => {
   });
 
   it('promotes a rotated rect to a four-corner polygon', () => {
-    const out = rotatePathAround(
+    const out = rotatePathAbout(
       { kind: 'rect', x: 0, y: 0, width: 10, height: 10 },
       5, 5, Math.PI / 2,
     ) as PolygonPath;

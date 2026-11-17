@@ -1,7 +1,7 @@
 /** An insert in a paged scene, through the insert dep `<SceneCanvas>` sources. */
 import { describe, expect, it } from 'vitest';
 import { render } from '@testing-library/react';
-import { buildDepsFromRequires, type BindingOptions, type InvocationCtx } from '@weasel-js/routing';
+import { createActionDeps, type BindingOptions, type InvocationCtx } from '@weasel-js/routing';
 import { DepRegistryProvider, useDepRegistry, type DepRegistry } from '@weasel-js/routing/react';
 import { useInsertDepSource } from '../../deps/insert';
 import { sceneToAdapter, insertParent } from '@weasel-js/core';
@@ -22,7 +22,7 @@ function draw(from: { x: number; y: number }, to: { x: number; y: number }, past
     return null;
   }
   render(<DepRegistryProvider><Wire /></DepRegistryProvider>);
-  const deps = buildDepsFromRequires(insertAction, reg);
+  const deps = createActionDeps(insertAction, reg);
   const invoker = insertAction.invoker!;
   if (invoker.timing !== 'ongoing') throw new Error('expected ongoing');
   const ctx = { world: from, screen: from, modifiers: MODS, deps } as unknown as InvocationCtx;

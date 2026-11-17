@@ -67,7 +67,7 @@ return <SceneCanvas scene={scene} ambient={[ports]} />;
 ```
 
 The other editing entries below (`diagramWaypoints`, `diagramEdgeEnds`,
-`diagramLabelDrag`, `diagramContainers`, `diagramSequence`) are built the same
+`diagramLabels`, `diagramContainers`, `diagramSequence`) are built the same
 way. Their layers are hit in `ambient` order, the last first:
 `[containers, labelDrag, ports, route, ends, sequence]`.
 
@@ -244,7 +244,7 @@ hopping over them draw without hops; the release puts them back.
 `installHops(scene)` does the same without React. Its pass runs at
 `DIAGRAM_PASS_ORDER.hops`, after routing.
 
-`diagram.hops` (`SET_HOPS_ACTION_ID`, carried by `diagramWaypoints`) toggles the
+`diagram.toggleHops` (`TOGGLE_HOPS_ACTION_ID`, carried by `diagramWaypoints`) toggles the
 value, at radius 5 (`DEFAULT_HOP_SIZE`). A data-backed `DiagramView` takes
 `hops={radius}`, applied after `router`; `createSpecHops` is that step on its
 own. `edgeHops`, which finds the hops over plain polylines, is in
@@ -253,7 +253,7 @@ own. `edgeHops`, which finds the hops over plain polylines, is in
 ### Edge labels
 
 `onEditLabel` reports a double-click on an edge. `edgeLabelSpec` builds the
-label node that rides the edge's route, and `editEdgeLabelAction` creates one
+label node that rides the edge's route, and `createEditEdgeLabelAction` creates one
 or edits the existing one in place.
 
 ```tsx
@@ -600,7 +600,7 @@ const theme = diagramThemeOf(scene, DIAGRAM_THEMES.paper);   // the scene's them
 `themeWrites(scene, theme)` is the pure half: the new `data` for every node the theme recolors.
 New shapes and connectors take the theme from whatever inserts them: pass `roleStyle(theme)` and
 `themeFont(theme)` to `useStencilInsert`, `themeEdgeStroke(theme)` as a connect action's
-`edgeStroke`, and `themeLabelStyle(theme)` and `theme.label.fill` to `editEdgeLabelAction`.
+`edgeStroke`, and `themeLabelStyle(theme)` and `theme.label.fill` to `createEditEdgeLabelAction`.
 `diagramScene` takes `theme` too, drawing each `DataNode` in its `style` role, and the effect
 looks take one in their options (default `night`, which draws them as they always were).
 
@@ -660,7 +660,7 @@ it; `layeredPlan` names it in `unheld`.
 relaxation seeded from the current positions, so re-running it keeps relaxing.
 
 `layered` turns around any edge that closes a cycle, then gives each node a
-rank that keeps the total edge length as short as it can (`ranksByLength`,
+rank that keeps the total edge length as short as it can (`simplexRanks`,
 network simplex), so a node with no inputs sits beside what it feeds rather
 than in the first rank. A group's members share one rank wherever the edges
 between them allow it, and a group's box closes any stretch none of its members
@@ -678,7 +678,7 @@ with several places is read at the one nearest where the wire's other end
 falls among the node's wires on that side. `layeredPlan(graph, opts)`, also reachable as `layered.plan`,
 answers with the moves plus each node's rank, each spanning edge's waypoints
 and where among them each label's room is, for drawing those edges where their
-room was left. `ranksOf` is the plain longest-path ranking, which `chain` uses.
+room was left. `longestPathRanks` is the plain longest-path ranking, which `chain` uses.
 
 On a live scene the layout action and a live `layered` run write those routes
 too, in the same undo entry as the moves: each long edge gets its waypoints,
@@ -739,12 +739,12 @@ when `rankGap` is unset. Edges and `direction` are ignored, so a second run move
 
 ```tsx
 const specs = useMemo(() => diagramScene(data, { nodeStyle }), [data]);
-return <DiagramView specs={specs} width={360} height={600} selected={id} onSelect={setId} />;
+return <DiagramView specs={specs} width={360} height={600} selection={id} onSelectionChange={setId} />;
 ```
 
-`onSelect(id, ids)` reports the latest pick and every id picked. With
+`onSelectionChange(id, ids)` reports the latest pick and every id picked. With
 `selectionMode="multiple"`, Cmd-click (Ctrl off macOS) adds a node, group or edge
-to the pick or takes it out, and Shift-click picks everything between it and the last one clicked; `selected` takes one id or an array, and handing back the
+to the pick or takes it out, and Shift-click picks everything between it and the last one clicked; `selection` takes one id or an array, and handing back the
 reported `id` leaves the rest picked.
 
 Every box is a `buildBody` body, so a data node takes the same knobs a body
@@ -1429,7 +1429,7 @@ given chain could disagree with the wiring.
 The drag itself is general: `createReorderAction` (in `@weasel-js/diagram`)
 carries one item of any drawn sequence along its axis, and the item lands in
 the gap nearest its middle. Give it `slots`, the items and gaps that
-`sequenceSlots(axis, items)` builds from their boxes, and a `commit` that hears
+`slotsAlong(axis, items)` builds from their boxes, and a `commit` that hears
 `{ id, from, to, order }`. `show: 'bar'` (the default) draws the insertion bar;
 `show: 'slide'` slides the other items into the places they would take instead,
 moving each item's `carries` as pose overrides, which is how `onReorder` shows a

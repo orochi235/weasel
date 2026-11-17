@@ -25,37 +25,37 @@ function mount(extra: Partial<DiagramViewProps>) {
 const pointer = (canvas: HTMLCanvasElement, type: string, x: number, y: number) =>
   canvas.dispatchEvent(new PointerEvent(type, { bubbles: true, clientX: x, clientY: y, pointerId: 1, button: 0, buttons: 1 }));
 
-describe('DiagramView onSelect', () => {
+describe('DiagramView onSelectionChangeionChange', () => {
   it('reports the node a drag picks, as a click would', async () => {
-    const onSelect = vi.fn();
-    const canvas = mount({ onSelect, onMove: () => {}, selected: 'a' });
+    const onSelectionChange = vi.fn();
+    const canvas = mount({ onSelectionChange, onMove: () => {}, selection: 'a' });
     await act(async () => {
       pointer(canvas, 'pointerdown', 350, 20);
       pointer(canvas, 'pointermove', 360, 40);
       pointer(canvas, 'pointermove', 380, 80);
       pointer(canvas, 'pointerup', 380, 80);
     });
-    expect(onSelect).toHaveBeenCalledTimes(1);
-    expect(onSelect).toHaveBeenLastCalledWith('b', ['b']);
+    expect(onSelectionChange).toHaveBeenCalledTimes(1);
+    expect(onSelectionChange).toHaveBeenLastCalledWith('b', ['b']);
   });
 
   it('reports a click once', async () => {
-    const onSelect = vi.fn();
-    const canvas = mount({ onSelect });
+    const onSelectionChange = vi.fn();
+    const canvas = mount({ onSelectionChange });
     await act(async () => {
       pointer(canvas, 'pointerdown', 350, 20);
       pointer(canvas, 'pointerup', 350, 20);
     });
-    expect(onSelect).toHaveBeenCalledTimes(1);
-    expect(onSelect).toHaveBeenLastCalledWith('b', ['b']);
+    expect(onSelectionChange).toHaveBeenCalledTimes(1);
+    expect(onSelectionChange).toHaveBeenLastCalledWith('b', ['b']);
   });
 
-  it('does not report a pick pushed in through selected', async () => {
-    const onSelect = vi.fn();
-    const { rerender } = render(<DiagramView specs={SPECS} width={500} height={300} view={IDENTITY} onViewChange={() => {}} onSelect={onSelect} selected="a" />);
+  it('does not report a pick pushed in through selection', async () => {
+    const onSelectionChange = vi.fn();
+    const { rerender } = render(<DiagramView specs={SPECS} width={500} height={300} view={IDENTITY} onViewChange={() => {}} onSelectionChange={onSelectionChange} selection="a" />);
     await act(async () => {
-      rerender(<DiagramView specs={SPECS} width={500} height={300} view={IDENTITY} onViewChange={() => {}} onSelect={onSelect} selected="b" />);
+      rerender(<DiagramView specs={SPECS} width={500} height={300} view={IDENTITY} onViewChange={() => {}} onSelectionChange={onSelectionChange} selection="b" />);
     });
-    expect(onSelect).not.toHaveBeenCalled();
+    expect(onSelectionChange).not.toHaveBeenCalled();
   });
 });

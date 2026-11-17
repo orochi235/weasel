@@ -32,7 +32,7 @@ export function regionHeaderAt(deps: ActionDeps | undefined, at: { x: number; y:
 }
 
 /** The action that hands `commit` the region whose header a double-click landed on. It declines anywhere else. */
-export function editContainerTitleAction(commit: (id: string) => void): Action {
+export function createEditContainerTitleAction(commit: (id: string) => void): Action {
   return defineAction({
     id: EDIT_CONTAINER_TITLE_ACTION_ID,
     label: 'Edit container title',

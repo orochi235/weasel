@@ -36,7 +36,7 @@ export interface SweepRun<K> {
   end?(how: 'commit' | 'cancel'): void;
 }
 
-/** What {@link sweepAction} needs from the surface it sweeps. */
+/** What {@link createSweepAction} needs from the surface it sweeps. */
 export interface SweepOptions<K> {
   /** Action id. Default `'sweep'`; a surface with two sweeps names them apart. */
   id?: string;
@@ -97,7 +97,7 @@ function itemAt<K>(surface: Element, keyOf: SweepOptions<K>['keyOf'], x: number,
  * `clientToWorld` unset; a surface whose items are controls sets
  * `controls: 'take'` on it.
  */
-export function sweepAction<K>(opts: SweepOptions<K>): Action {
+export function createSweepAction<K>(opts: SweepOptions<K>): Action {
   const pressed = (at: { x: number; y: number } | undefined): SweepItem<K> | null => {
     const surface = opts.surface();
     return surface && at ? itemAt(surface, opts.keyOf, at.x, at.y) : null;

@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { pathUnion } from './index';
 import { PATH_M, PATH_L, PATH_C, PATH_Z } from '../commands';
 import type { RectPath, PolygonPath } from '../path';
-import { pointInPath } from '../pathHitTest';
+import { pathContainsPoint } from '../pathHitTest';
 
 const r = (x: number, y: number, w: number, h: number): RectPath => ({
   kind: 'rect', x, y, width: w, height: h,
@@ -13,19 +13,19 @@ describe('pathUnion', () => {
     const a = r(0, 0, 10, 10);
     const b = r(5, 5, 10, 10);
     const u = pathUnion(a, b);
-    expect(pointInPath(u, 2, 2)).toBe(true);
-    expect(pointInPath(u, 12, 12)).toBe(true);
-    expect(pointInPath(u, 7, 7)).toBe(true);
-    expect(pointInPath(u, 20, 20)).toBe(false);
+    expect(pathContainsPoint(u, 2, 2)).toBe(true);
+    expect(pathContainsPoint(u, 12, 12)).toBe(true);
+    expect(pathContainsPoint(u, 7, 7)).toBe(true);
+    expect(pathContainsPoint(u, 20, 20)).toBe(false);
   });
 
   it('disjoint inputs union to a multi-contour PolygonPath', () => {
     const a = r(0, 0, 5, 5);
     const b = r(10, 10, 5, 5);
     const u = pathUnion(a, b);
-    expect(pointInPath(u, 2, 2)).toBe(true);
-    expect(pointInPath(u, 12, 12)).toBe(true);
-    expect(pointInPath(u, 7, 7)).toBe(false);
+    expect(pathContainsPoint(u, 2, 2)).toBe(true);
+    expect(pathContainsPoint(u, 12, 12)).toBe(true);
+    expect(pathContainsPoint(u, 7, 7)).toBe(false);
   });
 });
 
@@ -36,9 +36,9 @@ describe('pathIntersect', () => {
     const a = r(0, 0, 10, 10);
     const b = r(5, 5, 10, 10);
     const i = pathIntersect(a, b);
-    expect(pointInPath(i, 7, 7)).toBe(true);
-    expect(pointInPath(i, 2, 2)).toBe(false);
-    expect(pointInPath(i, 12, 12)).toBe(false);
+    expect(pathContainsPoint(i, 7, 7)).toBe(true);
+    expect(pathContainsPoint(i, 2, 2)).toBe(false);
+    expect(pathContainsPoint(i, 12, 12)).toBe(false);
   });
 
   it('returns an empty path when inputs are disjoint', () => {
@@ -57,18 +57,18 @@ describe('pathSubtract', () => {
     const a = r(0, 0, 10, 10);
     const b = r(5, 5, 10, 10);
     const s = pathSubtract(a, b);
-    expect(pointInPath(s, 2, 2)).toBe(true);
-    expect(pointInPath(s, 7, 7)).toBe(false);
-    expect(pointInPath(s, 12, 12)).toBe(false);
+    expect(pathContainsPoint(s, 2, 2)).toBe(true);
+    expect(pathContainsPoint(s, 7, 7)).toBe(false);
+    expect(pathContainsPoint(s, 12, 12)).toBe(false);
   });
 
   it('inner-contained subtract produces an annulus (multi-contour)', () => {
     const outer = r(0, 0, 20, 20);
     const inner = r(5, 5, 10, 10);
     const ann = pathSubtract(outer, inner);
-    expect(pointInPath(ann, 2, 2)).toBe(true);
-    expect(pointInPath(ann, 10, 10)).toBe(false);
-    expect(pointInPath(ann, 25, 25)).toBe(false);
+    expect(pathContainsPoint(ann, 2, 2)).toBe(true);
+    expect(pathContainsPoint(ann, 10, 10)).toBe(false);
+    expect(pathContainsPoint(ann, 25, 25)).toBe(false);
   });
 
   it('full subtraction produces an empty path', () => {
@@ -86,9 +86,9 @@ describe('pathExclude', () => {
     const a = r(0, 0, 10, 10);
     const b = r(5, 5, 10, 10);
     const x = pathExclude(a, b);
-    expect(pointInPath(x, 2, 2)).toBe(true);
-    expect(pointInPath(x, 12, 12)).toBe(true);
-    expect(pointInPath(x, 7, 7)).toBe(false);
+    expect(pathContainsPoint(x, 2, 2)).toBe(true);
+    expect(pathContainsPoint(x, 12, 12)).toBe(true);
+    expect(pathContainsPoint(x, 7, 7)).toBe(false);
   });
 });
 
@@ -103,7 +103,7 @@ describe('pathDivide', () => {
     for (const p of parts) {
       expect(p.commands.length).toBeGreaterThan(0);
     }
-    const inside = (path: PolygonPath, x: number, y: number) => pointInPath(path, x, y);
+    const inside = (path: PolygonPath, x: number, y: number) => pathContainsPoint(path, x, y);
     const counts = [2, 7, 12].map((c) =>
       parts.filter((p) => inside(p, c, c)).length,
     );
@@ -136,7 +136,7 @@ describe('pathDivide', () => {
       [15, 15],  // A∩B∩C
     ];
     for (const [x, y] of probes) {
-      const hits = parts.filter((p) => pointInPath(p, x, y));
+      const hits = parts.filter((p) => pathContainsPoint(p, x, y));
       expect(hits, `(${x},${y}) should land in exactly one region`).toHaveLength(1);
     }
   });
@@ -153,10 +153,10 @@ describe('pathCrop', () => {
     const cropped = pathCrop(a, b, mask);
     expect(cropped).toHaveLength(2);
     // Right halves survive; left halves are clipped away.
-    expect(pointInPath(cropped[0], 7, 5)).toBe(true);
-    expect(pointInPath(cropped[0], 2, 5)).toBe(false);
-    expect(pointInPath(cropped[1], 7, 15)).toBe(true);
-    expect(pointInPath(cropped[1], 2, 15)).toBe(false);
+    expect(pathContainsPoint(cropped[0], 7, 5)).toBe(true);
+    expect(pathContainsPoint(cropped[0], 2, 5)).toBe(false);
+    expect(pathContainsPoint(cropped[1], 7, 15)).toBe(true);
+    expect(pathContainsPoint(cropped[1], 2, 15)).toBe(false);
   });
 
   it('drops sources that lie entirely outside the mask', () => {
@@ -165,7 +165,7 @@ describe('pathCrop', () => {
     const mask = r(0, 0, 10, 10);
     const cropped = pathCrop(inside, outside, mask);
     expect(cropped).toHaveLength(1);
-    expect(pointInPath(cropped[0], 2, 2)).toBe(true);
+    expect(pathContainsPoint(cropped[0], 2, 2)).toBe(true);
   });
 
   it('returns [] when fewer than two inputs', () => {
@@ -179,17 +179,17 @@ describe('boolean ops — edge cases', () => {
     const a = r(0, 0, 10, 10);
     const b = r(10, 0, 10, 10);
     const u = pathUnion(a, b);
-    expect(pointInPath(u, 15, 5)).toBe(true);
-    expect(pointInPath(u, 25, 5)).toBe(false);
-    expect(pointInPath(u, 5, 5)).toBe(true);
+    expect(pathContainsPoint(u, 15, 5)).toBe(true);
+    expect(pathContainsPoint(u, 25, 5)).toBe(false);
+    expect(pathContainsPoint(u, 5, 5)).toBe(true);
   });
 
   it('handles two rects touching at a single vertex', () => {
     const a = r(0, 0, 10, 10);
     const b = r(10, 10, 10, 10);
     const u = pathUnion(a, b);
-    expect(pointInPath(u, 5, 5)).toBe(true);
-    expect(pointInPath(u, 15, 15)).toBe(true);
+    expect(pathContainsPoint(u, 5, 5)).toBe(true);
+    expect(pathContainsPoint(u, 15, 15)).toBe(true);
   });
 
   it('mixes RectPath and PolygonPath inputs without issue', () => {
@@ -201,8 +201,8 @@ describe('boolean ops — edge cases', () => {
       fillRule: 'nonzero',
     };
     const u = pathUnion(rect, tri);
-    expect(pointInPath(u, 2, 2)).toBe(true);
-    expect(pointInPath(u, 12, 8)).toBe(true);
+    expect(pathContainsPoint(u, 2, 2)).toBe(true);
+    expect(pathContainsPoint(u, 12, 8)).toBe(true);
   });
 
   it('flattens cubic beziers in inputs', () => {
@@ -218,7 +218,7 @@ describe('boolean ops — edge cases', () => {
     };
     const u = pathUnion(bezier);
     expect(u.commands.length).toBeGreaterThan(0);
-    expect(pointInPath(u, 5, 5)).toBe(true);
+    expect(pathContainsPoint(u, 5, 5)).toBe(true);
   });
 });
 
@@ -241,26 +241,26 @@ const donut = (fillRule: 'nonzero' | 'evenodd', innerReversed: boolean): Polygon
 describe('holes', () => {
   it('pathSubtract of a far-away rect leaves a nonzero donut hole intact', () => {
     const s = pathSubtract(donut('nonzero', true), r(1000, 1000, 10, 10));
-    expect(pointInPath(s, 10, 10)).toBe(true);
-    expect(pointInPath(s, 50, 50)).toBe(false);
+    expect(pathContainsPoint(s, 10, 10)).toBe(true);
+    expect(pathContainsPoint(s, 50, 50)).toBe(false);
   });
 
   it('pathSubtract of a far-away rect leaves an evenodd donut hole intact', () => {
     const s = pathSubtract(donut('evenodd', false), r(1000, 1000, 10, 10));
-    expect(pointInPath(s, 10, 10)).toBe(true);
-    expect(pointInPath(s, 50, 50)).toBe(false);
+    expect(pathContainsPoint(s, 10, 10)).toBe(true);
+    expect(pathContainsPoint(s, 50, 50)).toBe(false);
   });
 
   it('pathUnion with a disjoint rect leaves the donut hole intact', () => {
     const u = pathUnion(donut('nonzero', true), r(1000, 1000, 10, 10));
-    expect(pointInPath(u, 10, 10)).toBe(true);
-    expect(pointInPath(u, 50, 50)).toBe(false);
-    expect(pointInPath(u, 1005, 1005)).toBe(true);
+    expect(pathContainsPoint(u, 10, 10)).toBe(true);
+    expect(pathContainsPoint(u, 50, 50)).toBe(false);
+    expect(pathContainsPoint(u, 1005, 1005)).toBe(true);
   });
 
   it('pathIntersect against a rect covering the donut keeps the hole', () => {
     const i = pathIntersect(donut('nonzero', true), r(-10, -10, 200, 200));
-    expect(pointInPath(i, 10, 10)).toBe(true);
-    expect(pointInPath(i, 50, 50)).toBe(false);
+    expect(pathContainsPoint(i, 10, 10)).toBe(true);
+    expect(pathContainsPoint(i, 50, 50)).toBe(false);
   });
 });

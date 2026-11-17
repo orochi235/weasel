@@ -101,7 +101,7 @@ export function rigidRigApply<TPose>(descriptor: PoseDescriptor<TPose>): RigAppl
     const b = descriptor.getBounds(rest);
     const cx = b.x + b.width / 2;
     const cy = b.y + b.height / 2;
-    const [nx, ny] = mat3.apply(fromRest, cx, cy);
+    const [nx, ny] = mat3.transformPoint(fromRest, cx, cy);
     const moved = descriptor.translate
       ? descriptor.translate(rest, nx - cx, ny - cy)
       : descriptor.remapBounds(rest, b, { ...b, x: b.x + nx - cx, y: b.y + ny - cy });

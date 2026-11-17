@@ -8,7 +8,7 @@ import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { registerFontOutlines, loadFontOutlines } from '@weasel-js/font';
 import { _resetFontRegistryForTests, _resetFontOutlinesForTests } from '@weasel-js/font/test-seams';
-import { boundsOfPath, pointInPath, type Path, type Rect } from '@weasel-js/geom';
+import { boundsOfPath, pathContainsPoint, type Path, type Rect } from '@weasel-js/geom';
 import { createScene } from 'core/scene/scene';
 import { asNodeId, type NodeId } from 'core/scene/types';
 import { defaultCommitAdapter } from 'interactions/actions/defaultCommitAdapter';
@@ -96,7 +96,7 @@ describe('applyCreateOutlines', () => {
     expect(data.stroke).toEqual(STROKE);
     // The 'H' stem, near the left edge of the text box, is filled geometry.
     const b = boundsOfPath(data.path!);
-    expect(pointInPath(data.path!, b.x + 3, b.y + b.height * 0.8)).toBe(true);
+    expect(pathContainsPoint(data.path!, b.x + 3, b.y + b.height * 0.8)).toBe(true);
     expect([...scene.getSelection()]).toEqual([asNodeId(id)]);
   });
 

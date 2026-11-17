@@ -9,7 +9,7 @@
 import type { DrawCommand } from '@weasel-js/renderer';
 import { viewToMat3 } from '@weasel-js/renderer';
 import {
-  boxToBox, identity, invert, meanScale, multiply, pathToAnchors, poseFrameOf, transformPath, type Affine, type Path,
+  rectToRect, identity, invert, meanScale, multiply, pathToAnchors, poseFrameOf, transformPath, type Affine, type Path,
 } from '@weasel-js/geom';
 import { offsetPath, strokeToPath } from '@weasel-js/stroke';
 import type { CommandStroke, Stroke } from '@weasel-js/paint';
@@ -129,7 +129,7 @@ function boxMove(from: unknown, to: unknown): Affine | null {
   if (b?.x == null || b.y == null || b.width == null || b.height == null) return null;
   const unframe = invert(poseFrameOf(from) ?? identity());
   if (!unframe) return null;
-  const box = boxToBox(a.x, a.y, a.width, a.height, b.x, b.y, b.width, b.height);
+  const box = rectToRect(a.x, a.y, a.width, a.height, b.x, b.y, b.width, b.height);
   return multiply(poseFrameOf(to) ?? identity(), multiply(box, unframe));
 }
 

@@ -23,7 +23,7 @@
 
 import type { GlMat3, Path, PolygonPath } from '@weasel-js/geom';
 import { PATH_L, PATH_M, PATH_Z, polygonFromPoints, ringSignedArea } from '@weasel-js/geom';
-import type { ClipRect } from './batchClip';
+import type { ClipBox } from './batchClip';
 import { createPart } from '@weasel-js/registry';
 
 /** Half-planes one set of clips can hold, nested clips' together once
@@ -111,7 +111,7 @@ export function hullOf(path: Path, m: GlMat3, map: WindowMap): Hull | null {
 /** A rect clip on the hull grid: the rect staged geometry is cut to, and the
  *  same rect as a hull, for an item the cut refuses. */
 export interface SnappedRect {
-  readonly rect: ClipRect;
+  readonly rect: ClipBox;
   readonly hull: Hull;
 }
 
@@ -130,7 +130,7 @@ export function snappedRectOf(path: Path, m: GlMat3, map: WindowMap): SnappedRec
   return snappedRectAround(hull);
 }
 
-function boundsOf(path: PolygonPath): ClipRect {
+function boundsOf(path: PolygonPath): ClipBox {
   const ox = path.origin?.x ?? 0;
   const oy = path.origin?.y ?? 0;
   const c = path.coords;

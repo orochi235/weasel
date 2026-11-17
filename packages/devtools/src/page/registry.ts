@@ -1,6 +1,6 @@
 /** What one canvas has registered — its tools, actions, deps and node kinds — as plain data for `get-registry`. */
 import {
-  actionBindings, buildDepsFromRequires, evaluateActive, evaluateEnabled, overriddenBindings, routesForSpec,
+  actionBindings, createActionDeps, checkActive, checkEnabled, overriddenBindings, routesForSpec,
   type Action, type ActionSource, type Contribution, type DepRegistry, type GestureBinding, type ResolvedBindingOverrides,
   type ToolShortcuts,
 } from '@weasel-js/routing';
@@ -71,8 +71,8 @@ function toolOf(
 }
 
 function actionOf(action: Action, deps: DepRegistry | null): DevtoolsActionEntry {
-  const bag = deps ? buildDepsFromRequires(action, deps) : undefined;
-  const enabled = evaluateEnabled(action, bag);
+  const bag = deps ? createActionDeps(action, deps) : undefined;
+  const enabled = checkEnabled(action, bag);
   const rule: unknown = action.eligible;
   return {
     id: action.id,
@@ -88,7 +88,7 @@ function actionOf(action: Action, deps: DepRegistry | null): DevtoolsActionEntry
       key: v.key, label: v.label, icon: iconText(v.icon), params: serialize(v.params),
     })),
     enabled: enabled.enabled ? true : (enabled.reason ?? 'disabled'),
-    active: evaluateActive(action, bag) ?? null,
+    active: checkActive(action, bag) ?? null,
     hasPreview: action.preview !== undefined,
     // A fluent condition is callable and carries its rule tree on `.rule`.
     eligible: serialize(typeof rule === 'function' ? (rule as { rule?: unknown }).rule : (rule ?? null)),

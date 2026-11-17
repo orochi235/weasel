@@ -26,7 +26,7 @@ import {
   graphOrder,
   pinnedSet,
   seededOrder,
-  settle,
+  placeSlots,
   untilSettled,
   type LayoutFn,
   type Slot,
@@ -189,5 +189,5 @@ const treeOnce: LayoutFn = (graph, opts = {}) => {
     for (const [id, slot] of slots) slots.set(id, { ...slot, cross: crossAt.get(id) ?? slot.cross });
   }
 
-  return settle(graph, slots, opts);
+  return placeSlots(graph, slots, opts);
 };

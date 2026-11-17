@@ -51,13 +51,13 @@ export function runLength(lengths: readonly number[], gap: number): number {
   return lengths.reduce((sum, length, i) => sum + length + (i > 0 ? gap : 0), 0);
 }
 
-/** How {@link runStationAt} carries a place past either end of its run: straight along that end, tipped as it is there
+/** How {@link runPlaceAt} carries a place past either end of its run: straight along that end, tipped as it is there
  *  (`'extend'`), or on along the run's shape itself (`'follow'`), as a shape's `at` reads `open`. */
 export type RunPast = 'extend' | 'follow';
 
 /** The place `distance` along `run`, carried past either end as `past` says (default `'extend'`). The point then moves
  *  `shift` along the place's up. */
-export function runStationAt(run: TrackRun, distance: number, shift = 0, past: RunPast = 'extend'): TrackPlace {
+export function runPlaceAt(run: TrackRun, distance: number, shift = 0, past: RunPast = 'extend'): TrackPlace {
   const { length } = run;
   if (past === 'follow' && length > 0) {
     const place = run.at(distance / length, { open: true });
@@ -113,7 +113,7 @@ export function placeAlongRun(run: TrackRun, lengths: readonly number[], options
     let distance = spot.center;
     if (past === 'hold' && clipped === 'past') distance = clamp(distance, lap?.start ?? 0, lap?.end ?? length);
     if (lap && length > 0) distance = ((distance % length) + length) % length;
-    return { ...runStationAt(run, mirror ? length - distance : distance, shift, past === 'extend' ? 'extend' : 'follow'), center: spot.center, clipped };
+    return { ...runPlaceAt(run, mirror ? length - distance : distance, shift, past === 'extend' ? 'extend' : 'follow'), center: spot.center, clipped };
   });
 }
 

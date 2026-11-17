@@ -10,7 +10,7 @@ import type { Path } from './path';
 import { resolveCorners } from './paths/corners';
 import { transformPath } from './paths/transformPath';
 import { isSimilarity, stretchOf } from './screenBand';
-import { poseRotationOf, rotatePathAround } from './poseRotation';
+import { poseRotationOf, rotatePathAbout } from './poseRotation';
 
 /**
  * The linear part of a box pose that its box, rotation, and flips cannot
@@ -107,5 +107,5 @@ export function pathThroughPoseFrame(path: Path, pose: unknown): Path {
     return transformPath(path.kind === 'polygon' && !uniform ? resolveCorners(path) : path, frame);
   }
   const r = poseRotationOf(pose);
-  return r ? rotatePathAround(path, r.cx, r.cy, r.rotation) : path;
+  return r ? rotatePathAbout(path, r.cx, r.cy, r.rotation) : path;
 }

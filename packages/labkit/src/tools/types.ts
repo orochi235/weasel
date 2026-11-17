@@ -1,6 +1,6 @@
 import type { ShortcutInput } from '@weasel-js/gestures';
 import type { IconSpec } from '@weasel-js/icons';
-import type { ToolOptions } from '@weasel-js/routing';
+import type { ToolOptionsSpec } from '@weasel-js/routing';
 
 /**
  * A tool a trial can be in. labkit's own — core's `ToolsApi` carries hotkey
@@ -22,7 +22,7 @@ export interface TrialTool {
   group?: string;
   /** Its options, which the lab's options palette draws while it is the active tool and keeps in the lab's records.
    *  Shared keys work as they do for a canvas's tools. */
-  options?: ToolOptions;
+  options?: ToolOptionsSpec;
 }
 
 /** What an instrument declares to get a palette region. */

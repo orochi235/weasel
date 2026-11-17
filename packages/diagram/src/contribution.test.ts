@@ -1,12 +1,12 @@
 import { describe, it, expect, vi } from 'vitest';
 import { IDENTITY_POSE_COMPOSITION, createScene, type ActionDeps } from '@weasel-js/core';
 import {
-  CONNECT_ACTION_ID, GRAB_WAYPOINT_ACTION_ID, SELECT_LABEL_EDGE_ACTION_ID, diagramLabelDrag, diagramPorts, diagramWaypoints,
+  CONNECT_ACTION_ID, GRAB_WAYPOINT_ACTION_ID, SELECT_LABEL_EDGE_ACTION_ID, diagramLabels, diagramPorts, diagramWaypoints,
 } from './contribution';
-import { SET_HOPS_ACTION_ID } from './hops/hopsAction';
+import { TOGGLE_HOPS_ACTION_ID } from './hops/hopsAction';
 import { PORT_AFFORDANCE_KIND, PORT_LAYER_ID } from './portAffordance';
 import { REMOVE_WAYPOINT_ACTION_ID, RESET_ROUTE_ACTION_ID } from './routeCommands';
-import { ROUTE_EDIT_ACTION_ID } from './waypointAction';
+import { EDIT_ROUTE_ACTION_ID } from './waypointAction';
 import { WAYPOINT_AFFORDANCE_KIND, WAYPOINT_LAYER_ID } from './waypointLayer';
 
 interface Rect { x: number; y: number; width: number; height: number }
@@ -76,7 +76,7 @@ describe('diagramWaypoints', () => {
     expect(onHandles.map((b) => `${b.spec.kind}>${b.actionId}`).sort()).toEqual([
       `click>${GRAB_WAYPOINT_ACTION_ID}`,
       `doubleClick>${REMOVE_WAYPOINT_ACTION_ID}`,
-      `drag>${ROUTE_EDIT_ACTION_ID}`,
+      `drag>${EDIT_ROUTE_ACTION_ID}`,
       `pointerDown>${GRAB_WAYPOINT_ACTION_ID}`,
     ]);
   });
@@ -86,7 +86,7 @@ describe('diagramWaypoints', () => {
   });
 
   it('carries the line jumps command', () => {
-    expect(bundle().actions!.map((a) => a.id)).toContain(SET_HOPS_ACTION_ID);
+    expect(bundle().actions!.map((a) => a.id)).toContain(TOGGLE_HOPS_ACTION_ID);
   });
 
   it('carries the layer the handles are composed into', () => {
@@ -94,9 +94,9 @@ describe('diagramWaypoints', () => {
   });
 });
 
-describe('diagramLabelDrag', () => {
+describe('diagramLabels', () => {
   it("applies a click on a label to its edge's selection with the click's modifiers", () => {
-    const contribution = diagramLabelDrag({ scene: createScene({ composition: IDENTITY_POSE_COMPOSITION, systemLayers: [{ id: 'main' }] }), selected: () => [] });
+    const contribution = diagramLabels({ scene: createScene({ composition: IDENTITY_POSE_COMPOSITION, systemLayers: [{ id: 'main' }] }), selected: () => [] });
     const click = contribution.bindings!.find((b) => b.actionId === SELECT_LABEL_EDGE_ACTION_ID)!;
     expect((click.spec as { mods?: unknown }).mods).toMatchObject({ shift: 'optional', meta: 'optional' });
     const action = contribution.actions!.find((a) => a.id === SELECT_LABEL_EDGE_ACTION_ID)!;
@@ -109,7 +109,7 @@ describe('diagramLabelDrag', () => {
   });
 
   it("ranges the way the select tool does, through the canvas's selectRange inside the entered group", () => {
-    const contribution = diagramLabelDrag({ scene: createScene({ composition: IDENTITY_POSE_COMPOSITION, systemLayers: [{ id: 'main' }] }), selected: () => [] });
+    const contribution = diagramLabels({ scene: createScene({ composition: IDENTITY_POSE_COMPOSITION, systemLayers: [{ id: 'main' }] }), selected: () => [] });
     const action = contribution.actions!.find((a) => a.id === SELECT_LABEL_EDGE_ACTION_ID)!;
     if (action.invoker?.timing !== 'immediate') throw new Error('expected an immediate invoker');
     const applyClick = vi.fn();

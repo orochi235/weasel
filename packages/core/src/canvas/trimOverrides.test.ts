@@ -4,7 +4,7 @@ import { ColorOverrideRegistry, TrimOverrideRegistry } from '@weasel-js/animator
 import { useAnimator } from '@weasel-js/animator/react';
 import { act, renderHook } from '@testing-library/react';
 import { linear, pathFromD } from '@weasel-js/geom';
-import { INHERIT, type StrokeTrim, strokeOf } from '@weasel-js/paint';
+import { INHERIT, type StrokeTrim, solidStroke } from '@weasel-js/paint';
 import type { DrawCommand, PathDrawCommand } from '@weasel-js/renderer';
 import { pathFromParts } from 'core/scene/derivedParts';
 import { createPathLayer } from 'domains/paths/pathLayer';
@@ -25,7 +25,7 @@ function strokedScene(trim?: StrokeTrim) {
     kind: 'mark',
     layer: 'main',
     pose: POSE,
-    data: { path: PATH, stroke: { ...strokeOf('#fff', 4), ...(trim ? { trim } : {}) } },
+    data: { path: PATH, stroke: { ...solidStroke('#fff', 4), ...(trim ? { trim } : {}) } },
   });
   return { scene, id };
 }
@@ -108,7 +108,7 @@ describe('animated stroke trims on default-painted nodes', () => {
 
   it('trims the stroke of a built-in shape node', () => {
     const scene = createScene<Record<string, unknown>, 'main'>({ systemLayers: [{ id: 'main' }] });
-    const id = scene.add({ kind: 'mark', layer: 'main', pose: POSE, data: { shape: 'rect', stroke: strokeOf('#fff', 2) } });
+    const id = scene.add({ kind: 'mark', layer: 'main', pose: POSE, data: { shape: 'rect', stroke: solidStroke('#fff', 2) } });
     const registry = new TrimOverrideRegistry();
     registry.set(id, { start: 0.25 });
     expect(paintedTrims(scene, registry)).toEqual([{ start: 0.25 }]);
@@ -117,12 +117,12 @@ describe('animated stroke trims on default-painted nodes', () => {
   it("reaches a derived part stroked as its node, and not a part with a stroke of its own", () => {
     const scene = createScene<Record<string, unknown>, 'main'>({ systemLayers: [{ id: 'main' }] });
     const anchor = scene.add({ kind: 'mark', layer: 'main', pose: POSE, data: {} });
-    const own = { ...strokeOf('#000', 1), trim: { end: 0.9 } };
+    const own = { ...solidStroke('#000', 1), trim: { end: 0.9 } };
     const id = scene.add({
       kind: 'mark',
       layer: 'main',
       pose: { x: 0, y: 0, width: 0, height: 0 },
-      data: { stroke: { ...strokeOf('#fff', 2), trim: { start: 0.1 } } },
+      data: { stroke: { ...solidStroke('#fff', 2), trim: { start: 0.1 } } },
       dependsOn: [anchor],
       derivePath: () => pathFromParts([
         { path: pathFromD('M0 0 L100 0'), stroke: INHERIT },
@@ -141,7 +141,7 @@ describe('animated stroke trims on default-painted nodes', () => {
       kind: 'mark',
       layer: 'main',
       pose: { x: 0, y: 0, width: 0, height: 0 },
-      data: { stroke: strokeOf('#fff', 2) },
+      data: { stroke: solidStroke('#fff', 2) },
       dependsOn: [anchor],
       derivePath: () => pathFromD('M0 0 L100 0'),
     });
@@ -158,7 +158,7 @@ describe('createPathLayer trimOverrides', () => {
     const layer = createPathLayer({
       getNodes: () => [{ id: 'a' }, { id: 'b' }],
       getPath: () => PATH,
-      getStroke: () => ({ ...strokeOf('#fff', 2), trim: { start: 0.1 } }),
+      getStroke: () => ({ ...solidStroke('#fff', 2), trim: { start: 0.1 } }),
       trimOverrides: registry,
     });
     const drawn = pathsOf(layer.draw(null, VIEW, { width: 100, height: 100, dpr: 1 }));

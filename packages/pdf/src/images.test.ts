@@ -1,6 +1,6 @@
 import type { DrawCommand } from '@weasel-js/renderer';
 import {
-  adoptBitmapSrc, registerTexture, releaseImage, resolveFillPattern, unregisterTexture,
+  adoptBitmapSrc, registerTexture, releaseImage, resolvePaintPattern, unregisterTexture,
 } from '@weasel-js/renderer';
 import { afterEach, describe, expect, it } from 'vitest';
 import { latin1 } from './latin1';
@@ -173,7 +173,7 @@ describe('texture paint', () => {
     const src = 'weasel-bitmap:pdf-pattern.1';
     adoptBitmapSrc(src, Object.assign(fakeImage(4, 2), { close() {} }));
     try {
-      const fill = resolveFillPattern({ kind: 'image', src });
+      const fill = resolvePaintPattern({ kind: 'image', src });
       const { s, skipped } = await render([
         { kind: 'path', path: { kind: 'rect', x: 0, y: 0, width: 50, height: 50 }, fill: { paint: fill as never } },
       ]);

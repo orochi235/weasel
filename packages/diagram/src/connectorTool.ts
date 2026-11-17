@@ -13,7 +13,7 @@ import { icon } from './icons.gen';
 /** The connector tool's id. */
 export const CONNECTOR_TOOL_ID = 'diagram.connector';
 /** The action the connector tool binds a drag to. */
-export const CONNECTOR_ACTION_ID = 'diagram.connectorDraw';
+export const DRAW_CONNECTOR_ACTION_ID = 'diagram.drawConnector';
 
 /** The connector tool's definition, outside React. `id`, `startFrom` and
  *  `bodies` are the tool's own. */
@@ -23,8 +23,8 @@ export function connectorTool<TPose>(opts: ConnectActionOptions<TPose>): Tool {
     hookName: 'useConnectorTool',
     cursor: 'crosshair',
     presentation: { label: 'Connector', icon: icon('core:arrow'), group: 'draw' },
-    actions: [createConnectAction({ ...opts, id: CONNECTOR_ACTION_ID, startFrom: 'body', bodies: true })],
-    bindings: [{ spec: { kind: 'drag' }, actionId: CONNECTOR_ACTION_ID, opts: { id: `${CONNECTOR_TOOL_ID}.drag` } }],
+    actions: [createConnectAction({ ...opts, id: DRAW_CONNECTOR_ACTION_ID, startFrom: 'body', bodies: true })],
+    bindings: [{ spec: { kind: 'drag' }, actionId: DRAW_CONNECTOR_ACTION_ID, opts: { id: `${CONNECTOR_TOOL_ID}.drag` } }],
   });
 }
 

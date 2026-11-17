@@ -9,7 +9,7 @@
  */
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import type { Path } from '@weasel-js/geom';
-import { pointSegmentDist } from '@weasel-js/geom/nd';
+import { pointSegmentDistance } from '@weasel-js/geom/nd';
 import type { Stroke } from '@weasel-js/paint';
 import { linePath, mat3, type GlMat3 } from '@weasel-js/geom';
 import { createGLRecorder } from './testing/glRecorder';
@@ -101,7 +101,7 @@ describe('renderer — { px } strokes under a non-uniform transform', () => {
   it('paints a diagonal line half a pixel either side of it', () => {
     const { ribbon } = frame([{ path: linePath({ x: 0, y: 0 }, { x: 30, y: 40 }), stroke: onePx }]);
     expect(ribbon.length).toBeGreaterThan(0);
-    for (const p of ribbon) expect(pointSegmentDist(p, [0, 0], [120, 40])).toBeCloseTo(0.5, 4);
+    for (const p of ribbon) expect(pointSegmentDistance(p, [0, 0], [120, 40])).toBeCloseTo(0.5, 4);
   });
 
   it('outlines a rect one pixel thick on both axes, and aligns it inside', () => {

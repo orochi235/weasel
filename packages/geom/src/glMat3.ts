@@ -33,22 +33,22 @@ function identity(): GlMat3 {
   return create(1, 0, 0, 1, 0, 0);
 }
 
-function multiply(out: GlMat3, m: GlMat3): GlMat3 {
-  // out := out · m  (right-multiply by m).
-  const a = out[0], b = out[1];
-  const c = out[3], d = out[4];
-  const tx = out[6], ty = out[7];
-  const ma = m[0], mb = m[1];
-  const mc = m[3], md = m[4];
-  const mtx = m[6], mty = m[7];
+/** `m · n`, as a new matrix; neither argument is written. */
+function multiply(m: GlMat3, n: GlMat3): GlMat3 {
+  const a = m[0], b = m[1];
+  const c = m[3], d = m[4];
+  const tx = m[6], ty = m[7];
+  const na = n[0], nb = n[1];
+  const nc = n[3], nd = n[4];
+  const ntx = n[6], nty = n[7];
 
   return create(
-    a * ma + c * mb,                 // new a
-    b * ma + d * mb,                 // new b
-    a * mc + c * md,                 // new c
-    b * mc + d * md,                 // new d
-    a * mtx + c * mty + tx,          // new tx
-    b * mtx + d * mty + ty,          // new ty
+    a * na + c * nb,                 // new a
+    b * na + d * nb,                 // new b
+    a * nc + c * nd,                 // new c
+    b * nc + d * nd,                 // new d
+    a * ntx + c * nty + tx,          // new tx
+    b * ntx + d * nty + ty,          // new ty
   );
 }
 
@@ -88,7 +88,8 @@ function toUniform(m: GlMat3): Float32Array {
   return Float32Array.from(m);
 }
 
-function apply(m: GlMat3, x: number, y: number): [number, number] {
+/** The point `(x, y)` mapped through `m`. */
+function transformPoint(m: GlMat3, x: number, y: number): [number, number] {
   const a = m[0], b = m[1];
   const c = m[3], d = m[4];
   const tx = m[6], ty = m[7];
@@ -143,7 +144,7 @@ export const mat3 = {
   scaled,
   invert,
   toUniform,
-  apply,
+  transformPoint,
   screenToClip,
   meanScaleOf,
   minScaleOf,

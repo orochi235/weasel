@@ -163,16 +163,16 @@ not the control points, so the box does not overshoot. An empty path gives a
 zero-size rect at the origin.
 
 ```ts
-import { boundsOfPath, ellipsePath, pathFromD, unionBoundsPath } from '@weasel-js/geom';
+import { boundsOfPath, ellipsePath, pathFromD, boundsOfPaths } from '@weasel-js/geom';
 
 const triangle = pathFromD('M0 0 L100 0 L50 80 Z');
 boundsOfPath(triangle); // { kind: 'rect', x: 0, y: 0, width: 100, height: 80 }
 
 const dot = ellipsePath({ x: 150, y: 0, width: 20, height: 20 });
-unionBoundsPath([triangle, dot]); // { kind: 'rect', x: 0, y: 0, width: 170, height: 80 }
+boundsOfPaths([triangle, dot]); // { kind: 'rect', x: 0, y: 0, width: 170, height: 80 }
 ```
 
-`unionBoundsPath` takes any iterable of paths and returns `null` when it is
+`boundsOfPaths` takes any iterable of paths and returns `null` when it is
 empty.
 
 `pathSignedArea(path)` returns the enclosed area, positive for a contour that
@@ -188,7 +188,7 @@ Each transform returns a new path and leaves the input alone.
 
 ```ts
 import {
-  boundsOfPath, multiply, rectPath, rotateAboutPoint, scale, scalePathToBounds,
+  boundsOfPath, multiply, rectPath, rotateAboutPoint, scale, fitPathToRect,
   transformPath, translatePath,
 } from '@weasel-js/geom';
 
@@ -201,7 +201,7 @@ const tilted = transformPath(box, rotateAboutPoint(20, 10, Math.PI / 6));
 tilted.kind;                              // 'polygon'
 
 // Fit a path into a target box, as a resize handle does.
-const fitted = scalePathToBounds(tilted, rectPath(0, 0, 100, 100));
+const fitted = fitPathToRect(tilted, rectPath(0, 0, 100, 100));
 boundsOfPath(fitted);                     // the 100 by 100 target, to float32 precision
 
 // Compose transforms with multiply(m, n), which applies n first.
@@ -213,7 +213,7 @@ const spun = transformPath(box, multiply(scale(2, 2), rotateAboutPoint(20, 10, M
 mirror, and becomes a four-corner polygon under rotation or shear. That is why
 these functions return `Path` and not the kind you passed in.
 
-`scalePathToBounds` maps the path's current bounding box onto the target. If
+`fitPathToRect` maps the path's current bounding box onto the target. If
 the source has zero width or height, that axis is moved without being scaled.
 
 ## Flatten to polylines
@@ -268,7 +268,7 @@ pointing toward the end of the path.
 
 A fill and a stroke are separate tests.
 
-[pointInPath](#pkg/geom/reference/pointInPath) answers whether a point is in
+[pathContainsPoint](#pkg/geom/reference/pathContainsPoint) answers whether a point is in
 the filled region. It honors the path's `fillRule`, so the hole of an
 `'evenodd'` ring is outside.
 
@@ -277,16 +277,16 @@ within `threshold` of the outline. Pass half the stroke width to test against a
 drawn stroke. It works on open and closed subpaths alike.
 
 ```ts
-import { pathFromD, pointInPath, strokeHitTest } from '@weasel-js/geom';
+import { pathFromD, pathContainsPoint, strokeHitTest } from '@weasel-js/geom';
 
 const triangle = pathFromD('M0 0 L100 0 L50 80 Z');
 
-pointInPath(triangle, 50, 20);        // true
-pointInPath(triangle, 50, -3);        // false: above the top edge
+pathContainsPoint(triangle, 50, 20);        // true
+pathContainsPoint(triangle, 50, -3);        // false: above the top edge
 strokeHitTest(triangle, 50, -3, 4);   // true: 3 units from the top edge
 
 // A shape with both fill and stroke is hit by either.
-const hit = pointInPath(triangle, 50, -3) || strokeHitTest(triangle, 50, -3, 4);
+const hit = pathContainsPoint(triangle, 50, -3) || strokeHitTest(triangle, 50, -3, 4);
 ```
 
 Both take a `tolerance` option, the flattening tolerance used for curved

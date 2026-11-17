@@ -1,4 +1,4 @@
-import { rgbaHex } from '@weasel-js/paint';
+import { opaqueHexOfBytes } from '@weasel-js/paint';
 import type { CanvasSource, SourceBox } from './canvasSource';
 import type { LoupePoint } from './geometry';
 
@@ -114,7 +114,7 @@ export function createSampler(sources: readonly PixelSource[] | (() => readonly 
     rgba,
     sample(p) {
       const got = rgba(p);
-      return isPromise(got) ? got.then((c) => (c ? rgbaHex(c) : null)) : got ? rgbaHex(got) : null;
+      return isPromise(got) ? got.then((c) => (c ? opaqueHexOfBytes(c) : null)) : got ? opaqueHexOfBytes(got) : null;
     },
   };
 }

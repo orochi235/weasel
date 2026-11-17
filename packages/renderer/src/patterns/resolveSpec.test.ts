@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { installFakeOffscreenCanvas, uninstallFakeOffscreenCanvas } from './test-utils/fakeOffscreenCanvas';
 import {
-  resolvePatternSpec, resolveFillPattern, _resetPatternSpecCacheForTests,
+  resolvePatternSpec, resolvePaintPattern, _resetPatternSpecCacheForTests,
   PATTERN_TILE_CACHE_LIMIT,
 } from './resolveSpec';
 import { _resetTextureRegistryForTests, getTexture, textureRegistry } from '../textures/registerTexture';
@@ -97,7 +97,7 @@ describe('the pattern tile cache', () => {
   });
 });
 
-describe('resolveFillPattern', () => {
+describe('resolvePaintPattern', () => {
   beforeEach(() => {
     installFakeOffscreenCanvas();
     _resetPatternSpecCacheForTests();
@@ -106,20 +106,20 @@ describe('resolveFillPattern', () => {
   afterEach(uninstallFakeOffscreenCanvas);
 
   it('swaps a tile paint for a texture paint', () => {
-    const out = resolveFillPattern({ ...HATCH });
+    const out = resolvePaintPattern({ ...HATCH });
     expect(out).toEqual({ kind: 'texture', texture: { id: expect.any(String) } });
   });
 
   it('keys the texture on the tile alone, so placement does not split it', () => {
-    const plain = resolveFillPattern({ ...HATCH }) as TexturePaint;
+    const plain = resolvePaintPattern({ ...HATCH }) as TexturePaint;
     const there: TilePaint = { ...HATCH, units: 'local', origin: { x: 3, y: 4 } };
-    const placed = resolveFillPattern(there) as TexturePaint;
+    const placed = resolvePaintPattern(there) as TexturePaint;
     expect(placed.texture).toBe(plain.texture);
   });
 
   it('preserves the paint\'s other fields', () => {
     const placed: TilePaint = { ...HATCH, units: 'local', origin: { x: 3, y: 4 }, opacity: 0.5 };
-    const out = resolveFillPattern(placed) as TexturePaint;
+    const out = resolvePaintPattern(placed) as TexturePaint;
     expect(out.units).toBe('local');
     expect(out.origin).toEqual({ x: 3, y: 4 });
     expect(out.opacity).toBe(0.5);
@@ -127,9 +127,9 @@ describe('resolveFillPattern', () => {
 
   it('leaves a texture paint and non-pattern fills alone', () => {
     const handlePaint: Paint = { kind: 'texture', texture: { id: 'tex_9' } };
-    expect(resolveFillPattern(handlePaint)).toBe(handlePaint);
+    expect(resolvePaintPattern(handlePaint)).toBe(handlePaint);
 
     const solid: Paint = { color: '#123456' };
-    expect(resolveFillPattern(solid)).toBe(solid);
+    expect(resolvePaintPattern(solid)).toBe(solid);
   });
 });

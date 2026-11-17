@@ -215,7 +215,7 @@ export interface TextPaint {
  * taking the glyph paint from the node rather than from the style.
  *
  * `scale` is the view scale any `{ px }` size resolves against — the same
- * mean-of-the-axes factor `resolveStrokeWidth` takes.
+ * mean-of-the-axes factor `resolveScreenLength` takes.
  */
 export function resolveTextStyle(
   style?: TextStyle,

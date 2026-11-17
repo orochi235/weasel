@@ -1,14 +1,14 @@
 import { describe, it, expect } from 'vitest';
 import { at, graphOf, moved } from './layoutFixture';
 import { force } from './force';
-import { backEdges, layered, ranksOf } from './layered';
+import { backEdges, layered, longestPathRanks } from './layered';
 import { DEFAULT_NODE_GAP, DEFAULT_RANK_GAP, type LayoutResult } from './layout';
 import { forestOf, tree } from './tree';
 
 describe('layered', () => {
   it('puts each node one rank past its deepest predecessor', () => {
     const graph = graphOf({ a: [0, 0], b: [0, 0], c: [0, 0] }, [['a', 'b'], ['b', 'c'], ['a', 'c']]);
-    const ranks = ranksOf(graph, backEdges(graph));
+    const ranks = longestPathRanks(graph, backEdges(graph));
     expect([ranks.get('a'), ranks.get('b'), ranks.get('c')]).toEqual([0, 1, 2]);
   });
 
@@ -81,7 +81,7 @@ describe('layered', () => {
 
   it('treats a self-edge as a loop rather than a rank', () => {
     const graph = graphOf({ a: [0, 0] }, [['a', 'a']]);
-    expect(ranksOf(graph, backEdges(graph)).get('a')).toBe(0);
+    expect(longestPathRanks(graph, backEdges(graph)).get('a')).toBe(0);
   });
 });
 

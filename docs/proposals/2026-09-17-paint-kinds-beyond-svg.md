@@ -117,7 +117,7 @@ exports to PDF nearly losslessly, which is the opposite of SVG's situation.
 ## What this would mean here
 
 The registry already has the shape. A mesh or function-based kind needs `seed`,
-`colorOf`, `bind`, and the `inPoseFrame`/`toBoundsFrame` pair — all slots that
+`colorOf`, `bind`, and the `toLocalUnits`/`toBoundsUnits` pair — all slots that
 exist — plus a `toSvg` that has to invent something, since SVG has no element to
 target. The open question is only what that slot writes:
 

@@ -13,7 +13,7 @@ import { findShapeBounds, findNodeShape } from './NodeShape';
 import { defaultDrawOne, defaultPaintBounds } from './defaultDrawOne';
 import { cullDrawCommands } from '@weasel-js/renderer';
 import { mat3, PATH_C, PATH_L, PATH_M, PATH_Z, boundsOfPath } from '@weasel-js/geom';
-import { solid, strokeOf } from '@weasel-js/paint';
+import { solid, solidStroke } from '@weasel-js/paint';
 import type { DrawCommand } from '@weasel-js/renderer';
 import type { Node } from 'core/scene/types';
 import { asNodeId } from 'core/scene/types';
@@ -27,7 +27,7 @@ function node(data: Record<string, unknown>): Node<unknown, string, RectPose> {
   return { id: asNodeId('n'), kind: 'mark', layer: 'main', pose: POSE, data } as unknown as Node<unknown, string, RectPose>;
 }
 
-const SPIKY = { ...strokeOf('#000', 6), miterLimit: 10, align: 'outer' as const };
+const SPIKY = { ...solidStroke('#000', 6), miterLimit: 10, align: 'outer' as const };
 
 /** A cubic whose control points sit far outside its own box. */
 const CURVE = {
@@ -40,7 +40,7 @@ const CASES: Array<[string, Record<string, unknown>]> = [
   ['a stroked rect shape', { shape: 'rect', fill: { paint: solid('#f00') }, stroke: SPIKY }],
   ['a stroked star', { shape: 'star', stroke: SPIKY }],
   ['an ellipse', { shape: 'ellipse' }],
-  ['a curved path with an arrowhead', { path: CURVE, stroke: { ...strokeOf('#000', 4), markerEnd: 'arrow' } }],
+  ['a curved path with an arrowhead', { path: CURVE, stroke: { ...solidStroke('#000', 4), markerEnd: 'arrow' } }],
   ['an image placeholder', { image: { src: 'data:image/png;base64,' } }],
   ['a rect-fallback node', { fill: { paint: solid('#0f0') } }],
   ['a stroked rect-fallback node', { fill: { paint: solid('#0f0') }, stroke: SPIKY }],
@@ -106,7 +106,7 @@ describe('defaultPaintBounds', () => {
     };
     const n = node({
       path: line,
-      stroke: { ...strokeOf('#000', 1), width: { px: 2 }, markerEnd: { key: 'bar', size: { px: 20 } } },
+      stroke: { ...solidStroke('#000', 1), width: { px: 2 }, markerEnd: { key: 'bar', size: { px: 20 } } },
     });
     const b = defaultPaintBounds(n, pose, { ...VIEW, scale: { x: 4, y: 1 } })!;
     expect(b.y).toBeLessThanOrEqual(0);
@@ -114,7 +114,7 @@ describe('defaultPaintBounds', () => {
   });
 
   it('reads a screen-pixel stroke width at the view scale', () => {
-    const n = node({ shape: 'rect', stroke: { ...strokeOf('#000', 1), width: { px: 8 } } });
+    const n = node({ shape: 'rect', stroke: { ...solidStroke('#000', 1), width: { px: 8 } } });
     const near = defaultPaintBounds(n, POSE, { ...VIEW, scale: { x: 4, y: 4 } })!;
     const far = defaultPaintBounds(n, POSE, { ...VIEW, scale: { x: 0.5, y: 0.5 } })!;
     expect(far.width).toBeGreaterThan(near.width);

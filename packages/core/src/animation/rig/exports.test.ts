@@ -13,14 +13,14 @@ describe('rig public surface', () => {
   });
 
   it('exports the mat3 namespace, so a resolved joint can be read without indexing it', () => {
-    expect(typeof kit.mat3.apply).toBe('function');
+    expect(typeof kit.mat3.transformPoint).toBe('function');
     expect(typeof kit.mat3.multiply).toBe('function');
 
     const skeleton: Skeleton = {
       joints: [{ name: 'hip', parent: null, bind: { ...IDENTITY_JOINT, x: 10, y: 20 } }],
     };
     const hip = resolveSkeleton(skeleton, {}).get('hip')!;
-    expect(kit.mat3.apply(hip, 0, 0)).toEqual([10, 20]);
-    expect(kit.mat3.apply(hip, 5, 0)).toEqual([15, 20]);
+    expect(kit.mat3.transformPoint(hip, 0, 0)).toEqual([10, 20]);
+    expect(kit.mat3.transformPoint(hip, 5, 0)).toEqual([15, 20]);
   });
 });

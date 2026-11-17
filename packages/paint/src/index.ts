@@ -94,7 +94,7 @@ export { lerpHueDeg, type HueInterpolation } from './hue';
 export { mixOklab, mixRgba, mixRgbaWeighted } from './mix';
 export { contrastLineColor, contrastRatio, luminanceContrast, relativeLuminance, wcagLevels } from './contrast';
 export { lerpFill, lerpPaint, lerpStroke } from './lerpPaint';
-export { byteHex, parseHexBytes, hexToRgbBytes, rgbaHex } from './hex';
+export { byteHex, parseHexBytes, hexToRgbBytes, opaqueHexOfBytes } from './hex';
 export {
   parseColor,
   parseColorBytes,
@@ -138,15 +138,15 @@ export {
   type Palette,
   type PaletteEntry,
 } from './palette';
-export { toHex8, getAlpha01, withAlpha01, mergeAlphaFromPrev } from './hexAlpha';
+export { toHex8, hexAlpha, withAlpha01, mergeAlphaFromPrev } from './hexAlpha';
 export {
   DEFAULT_FILL_COLOR,
   DEFAULT_STROKE_COLOR,
   DEFAULT_PALETTE,
-  cycleFill,
-  GHOST_STROKE,
+  paletteColorAt,
+  GHOST_STROKE_COLOR,
   solid,
-  strokeOf,
+  solidStroke,
   strokeWith,
   paintAlpha,
   paintWithAlpha,

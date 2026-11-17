@@ -1,5 +1,5 @@
 import { Fragment, useId, useLayoutEffect, useState, type CSSProperties, type ReactElement, type RefObject } from 'react';
-import { clamp, runStationAt, trackShapeD, type RunAlign, type TrackRun, type TrackShape } from '@weasel-js/geom';
+import { clamp, runPlaceAt, trackShapeD, type RunAlign, type TrackRun, type TrackShape } from '@weasel-js/geom';
 import { screenDirection } from '../Along/rowRun';
 import { useRowRun } from '../Along/useRowRun';
 import { RunScope } from '../Run';
@@ -77,7 +77,7 @@ function stretchD(run: TrackRun, { lo, hi }: Stretch): string {
   if (length <= 0) return trackShapeD(run.shape, shapeAt(run, lo), shapeAt(run, hi));
   const on = trackShapeD(run.shape, shapeAt(run, Math.max(lo, 0)), shapeAt(run, Math.min(hi, length)));
   const xy = (d: number): string => {
-    const { x, y } = runStationAt(run, d).point;
+    const { x, y } = runPlaceAt(run, d).point;
     return `${x} ${y}`;
   };
   return `${lo < 0 ? `M ${xy(lo)} L` : 'M'}${on.slice(1)}${hi > length ? ` L ${xy(hi)}` : ''}`;

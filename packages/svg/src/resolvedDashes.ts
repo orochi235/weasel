@@ -1,6 +1,6 @@
 /** Every stroke's dash as `dashPattern` reads it, the rule the canvas and pdf follow. */
 import { dashPattern, type Stroke } from '@weasel-js/core';
-import { dashLength } from '@weasel-js/stroke';
+import { dashRunLength } from '@weasel-js/stroke';
 import type { SvgInherits, SvgNode, SvgPathNode, SvgStroke, SvgTextNode } from './types';
 
 /** `inherits` without the stroke: a leaf whose dash reads differently from its group's states its own. */
@@ -31,7 +31,7 @@ export function resolvedDash<T extends Pick<Stroke, 'dash' | 'width'> & { dashOf
 
 function pathDashes(node: SvgPathNode): SvgPathNode {
   if (!node.stroke?.dash) return node;
-  const stroke: SvgStroke | null = resolvedDash(node.stroke, dashLength(node.path), true);
+  const stroke: SvgStroke | null = resolvedDash(node.stroke, dashRunLength(node.path), true);
   if (stroke === node.stroke) return node;
   const { stroke: _, inherits, ...rest } = node;
   const kept = ownStroke(inherits);

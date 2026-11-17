@@ -7,12 +7,12 @@ import { createDragPanContribution, useLatest, type Action, type ActionsProp, ty
 import { useMemo } from 'react';
 import { isBodyEnd } from './connectTargets';
 import { diagramContainerOf, titleIdOf } from './containers/trait';
-import { diagramLabelDrag, diagramPorts, diagramWaypoints } from './contribution';
-import { editEdgeLabelAction, editEdgeLabelBinding } from './edgeLabel';
+import { diagramLabels, diagramPorts, diagramWaypoints } from './contribution';
+import { createEditEdgeLabelAction, editEdgeLabelBinding } from './edgeLabel';
 import { diagramEdgeOf } from './edgeTrait';
 import type { DiagramSpec } from './dataTypes';
 import type { ParticipantSource } from './portAffordance';
-import { portLayer } from './portLayer';
+import { createPortLayer } from './portLayer';
 import { diagramEdgeEnds, type EndChange } from './reconnect';
 import { createGroupReorderPreset } from './groupReorder';
 import { regionEditing } from './regionEditing';
@@ -64,7 +64,7 @@ export function removedData(scene: AnyScene, ids: readonly string[]): DeleteRepo
 }
 
 /** Core's `delete`, reporting what it would remove instead of removing it. */
-export function reportDeleteAction(report: (removed: DeleteReport) => void): Action {
+export function createReportDeleteAction(report: (removed: DeleteReport) => void): Action {
   return createDeleteAction({
     commit: (ids, deps) => {
       if (deps.scene === undefined) return;
@@ -107,7 +107,7 @@ export function resizeReports(
 
 /** Core's `resize`, reporting the selected boxes it would leave instead of writing them, in world: a
  *  container's or pool's to `region` as a box edit, any other's to `report`. */
-export function reportResizeAction(
+export function createReportResizeAction(
   report: ((resizes: readonly NodeResize[]) => void) | undefined,
   region?: (edit: ContainerEdit) => void,
 ): Action {
@@ -182,7 +182,7 @@ export function useDiagramEditing(
   // A registered layer with no `hitTest` is painted and claims no press.
   const shown = useMemo((): SurfaceContribution | null => {
     if (mode !== 'show') return null;
-    const { hitTest: _hitTest, ...paintOnly } = portLayer<RectPose>(source, portOptions);
+    const { hitTest: _hitTest, ...paintOnly } = createPortLayer<RectPose>(source, portOptions);
     return { id: 'weasel-diagram-ports-shown', eligibility: { always: true }, layers: [paintOnly] };
   }, [mode, source, portOptions]);
   const ends = useMemo(() => reconnects
@@ -204,7 +204,7 @@ export function useDiagramEditing(
       })
     : null, [routes, source, selected, report]);
   const labelDrag = useMemo(() => labelMoves
-    ? diagramLabelDrag({
+    ? diagramLabels({
         scene,
         selected,
         commit: ({ edgeId, placement }) => report.current.onMoveLabel?.({ edge: edgeId, placement }),
@@ -214,7 +214,7 @@ export function useDiagramEditing(
     ? {
         id: 'weasel-diagram-edge-label',
         eligibility: { always: true },
-        actions: [editEdgeLabelAction({ commit: (edgeId) => report.current.onEditLabel?.(edgeId) })],
+        actions: [createEditEdgeLabelAction({ commit: (edgeId) => report.current.onEditLabel?.(edgeId) })],
         bindings: [editEdgeLabelBinding()],
       }
     : null, [labels, report]);
@@ -231,9 +231,9 @@ export function useDiagramEditing(
     ...NO_MARQUEE,
     ...(sequences
       ? { delete: sequenceDeleteAction(scene, (edit) => report.current.onEditSequence?.(edit), deletes ? (r) => report.current.onDelete?.(r) : null) }
-      : deletes ? { delete: reportDeleteAction((r) => report.current.onDelete?.(r)) } : {}),
+      : deletes ? { delete: createReportDeleteAction((r) => report.current.onDelete?.(r)) } : {}),
     ...(resizes || regionEdits
-      ? { resize: reportResizeAction((r) => report.current.onResize?.(r), (e) => report.current.onEditContainer?.(e)) }
+      ? { resize: createReportResizeAction((r) => report.current.onResize?.(r), (e) => report.current.onEditContainer?.(e)) }
       : {}),
   }), [deletes, sequences, scene, resizes, regionEdits, report]);
 

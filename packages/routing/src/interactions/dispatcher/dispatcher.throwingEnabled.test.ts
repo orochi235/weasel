@@ -1,4 +1,4 @@
-/** A binding whose action's `enabled` throws declines, as `evaluateEnabled` reads it everywhere else. */
+/** A binding whose action's `enabled` throws declines, as `checkEnabled` reads it everywhere else. */
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { createDispatcher } from './dispatcher';
 import type { InputEvent } from './matcher';

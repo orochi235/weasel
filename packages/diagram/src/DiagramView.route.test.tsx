@@ -44,10 +44,10 @@ const drag = (canvas: HTMLCanvasElement, from: [number, number], to: [number, nu
 describe('DiagramView route editing', () => {
   it('reports a drag off a selected edge\'s leg as its new waypoints, and writes nothing', () => {
     const onEditRoute = vi.fn();
-    const onSelect = vi.fn();
-    const canvas = mount({ onEditRoute, onSelect });
+    const onSelectionChange = vi.fn();
+    const canvas = mount({ onEditRoute, onSelectionChange });
     click(canvas, 160, 20);
-    expect(onSelect).toHaveBeenLastCalledWith(AB, [AB]);
+    expect(onSelectionChange).toHaveBeenLastCalledWith(AB, [AB]);
     drag(canvas, [200, 20], [200, 120]);
     expect(onEditRoute).toHaveBeenCalledTimes(1);
     expect(onEditRoute).toHaveBeenCalledWith({ edge: AB, waypoints: [{ x: 200, y: 120 }] });
@@ -83,12 +83,12 @@ describe('DiagramView router="avoid"', () => {
     const route = (routed.data as { diagram: DiagramEdge }).diagram.route!;
     const run = route.findIndex((p, i) => i > 0 && p.y === route[i - 1]!.y);
     const on = { x: (route[run - 1]!.x + route[run]!.x) / 2, y: route[run]!.y };
-    const onSelect = vi.fn();
+    const onSelectionChange = vi.fn();
     const { container } = render(
-      <DiagramView specs={specs} router="avoid" pickEdges onSelect={onSelect} width={500} height={300} view={IDENTITY} onViewChange={() => {}} />,
+      <DiagramView specs={specs} router="avoid" pickEdges onSelectionChange={onSelectionChange} width={500} height={300} view={IDENTITY} onViewChange={() => {}} />,
     );
     const canvas = container.querySelector('canvas')!;
     click(canvas, on.x, on.y);
-    expect(onSelect).toHaveBeenLastCalledWith(AB, [AB]);
+    expect(onSelectionChange).toHaveBeenLastCalledWith(AB, [AB]);
   });
 });

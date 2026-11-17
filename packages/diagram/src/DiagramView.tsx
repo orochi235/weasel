@@ -67,7 +67,7 @@ export const DiagramView = forwardRef<DiagramViewApi, DiagramViewProps>(function
 });
 
 function Inner({
-  specs: given, router, labels, hops, width, height, selectionMode = 'single', selected, onSelect, onHeaderClick, onHover, onMove, onResize, onConnect, onReconnect, onEditRoute, onDelete, onEditLabel, onMoveLabel,
+  specs: given, router, labels, hops, width, height, selectionMode = 'single', selection: heldSelection, onSelectionChange, onHeaderClick, onHover, onMove, onResize, onConnect, onReconnect, onEditRoute, onDelete, onEditLabel, onMoveLabel,
   onEditSequence,
   onReorder, onEditContainer, connectBodies, canReparent, onDropItem, canDropItem,
   pickEdges, overlays = NO_OVERLAYS,
@@ -97,8 +97,8 @@ function Inner({
   });
   const selection = useSelection({ scene, mode: selectionMode });
   useSceneSync(scene, specs, { onMove, onEditContainer });
-  // After the sync, so a `selected` naming a node these specs add finds it in the scene.
-  const mirror = useMirroredSelection(selection, selected, onSelect, scene.subscribe);
+  // After the sync, so a `selection` naming a node these specs add finds it in the scene.
+  const mirror = useMirroredSelection(selection, heldSelection, onSelectionChange, scene.subscribe);
   useReleasedImages(specs);
 
   const source = useMemo(() => sceneParticipants<RectPose>(scene), [scene]);

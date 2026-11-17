@@ -7,7 +7,7 @@
  */
 import { createContext, useCallback, useContext, useMemo, useState, useSyncExternalStore, type ReactNode } from 'react';
 import { DEFAULT_FILL, DEFAULT_STROKE, type ActivePaint } from '../../newShapePaint';
-import { solidColorOf, DEFAULT_FILL_COLOR, DEFAULT_STROKE_COLOR, getAlpha01, mergeAlphaFromPrev, toHex8, withAlpha01 } from '@weasel-js/paint';
+import { solidColorOf, DEFAULT_FILL_COLOR, DEFAULT_STROKE_COLOR, hexAlpha, mergeAlphaFromPrev, toHex8, withAlpha01 } from '@weasel-js/paint';
 import {
   createToolOptionValues,
   SHARED_TOOL_OPTIONS,
@@ -133,7 +133,7 @@ export function ColorContextProvider({
 
   const focusedPaint = focused === 'fill' ? fill : stroke;
   const focusedColor = solidColorOf(focusedPaint);
-  const focusedAlpha = focusedColor === undefined ? 1 : getAlpha01(focusedColor);
+  const focusedAlpha = focusedColor === undefined ? 1 : hexAlpha(focusedColor);
   const setFocusedAlpha = useCallback((alpha01: number) => {
     setPaints((cur) => {
       const which = focusedRef.current;

@@ -20,8 +20,8 @@ import '@weasel-js/paint-kinds/mesh';
 export interface MeshHandlesProps {
   /** The mesh whose points these handles move, in the space `toScreen`
    *  maps from. A `units: 'bounds'` mesh is resolved first with
-   *  `fillInPoseFrame(fill, box)`, and edits converted back with
-   *  `fillToBoundsFrame(next, box)`. */
+   *  `paintToLocalUnits(fill, box)`, and edits converted back with
+   *  `paintToBoundsUnits(next, box)`. */
   value: MeshGradientPaint;
   /** Mesh space → overlay pixels. */
   toScreen: (p: Point) => Point;

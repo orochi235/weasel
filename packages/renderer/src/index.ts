@@ -9,7 +9,6 @@
  */
 
 export { WeaselRenderer } from './WeaselRenderer';
-export type { PixelRect } from './readPixels';
 export {
   type WeaselRendererOptions, type RenderTarget,
   type RenderOptions, type RenderSpan, type RenderSpanStats, type RenderStats, type RetainedStats,
@@ -22,7 +21,7 @@ export type { WebGPUSurface } from './gpu/webgpu/openWebGPU';
 export type * from './gpu/types';
 export { MAX_PICK_ID } from './shaders/idOutput';
 export type { BatchStage } from './batchStage';
-export type { BatchCut, ClipRect } from './batchClip';
+export type { BatchCut, ClipBox } from './batchClip';
 export { releaseImageSource, type ImageMinification } from './cache/GLImageCache';
 export { DEFAULT_FLATTEN_TOLERANCE_PX, type FlattenTolerance } from './draw/flattenTolerance';
 export type {
@@ -38,7 +37,7 @@ export type { CommandFill, CommandPaint, CommandStroke, CommandPaintUnits, Posed
 export { SPRITE_STRIDE } from './DrawCommand';
 export { frameRect, type SpriteSheet } from './spriteSheet';
 export { mat3, viewToMat3, type GlMat3, type View } from '@weasel-js/geom';
-export { cullDrawCommands, type CullRect } from './cullDrawCommands';
+export { cullDrawCommands } from './cullDrawCommands';
 export { commandsBounds } from './retain/contentBounds';
 export { tessellate, type TessellateOptions } from '@weasel-js/geom/tessellate';
 export { tessellateStroke, type StrokeOptions } from '@weasel-js/stroke';
@@ -109,11 +108,11 @@ export {
   type PaintTexture,
   type PaintUniform,
 } from './paintKinds';
-export { fillInPoseFrame, fillToBoundsFrame, type FillPoseBox } from './fillInPoseFrame';
+export { paintToLocalUnits, paintToBoundsUnits } from './paintToLocalUnits';
 export { commandFill, commandPaint, commandStroke } from './patterns/commandPaint';
 export { dropShadowCommand, dropShadowLayers, spreadRadius, type DropShadow } from './dropShadow';
 export { createTilePattern, type TilePatternOptions } from './patterns';
-export { resolveFillPattern, resolvePatternSpec } from './patterns/resolveSpec';
+export { resolvePaintPattern, resolvePatternSpec } from './patterns/resolveSpec';
 export { textCommand, textCommandFromPose, textCommandFromRuns, textCommandFromRunsInto } from './textCommand';
 export {
   adoptBitmapSrc,

@@ -47,7 +47,7 @@ export { viewToMat3 } from '@weasel-js/renderer';
 
 // Drops the commands that cannot reach a screen rectangle — what the scene
 // slot's `cull` option runs, for a custom layer to run over its own output.
-export { cullDrawCommands, type CullRect } from '@weasel-js/renderer';
+export { cullDrawCommands } from '@weasel-js/renderer';
 
 // An id frame's read-back, and the coverage mask of some of its ids — what
 // `pickAt` and `RasterSession.renderIds` stand on.

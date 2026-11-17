@@ -1,7 +1,7 @@
 import type { Scale2 } from '../pxExtent';
 import type { AnchorSet } from './anchorEdits';
 import type { Point } from './cubicMath';
-import { pointSegmentDist2 } from '../points2';
+import { pointSegmentDistance2 } from '../points2';
 
 /**
  * Flat indices of every anchor a round brush covers as it moves from `from` to
@@ -23,7 +23,7 @@ export function anchorsUnderBrush(
   let flat = 0;
   for (const sub of set.anchors) {
     for (const a of sub) {
-      if (pointSegmentDist2(a.x * scale.x, a.y * scale.y, ax, ay, bx, by) <= r2) hits.push(flat);
+      if (pointSegmentDistance2(a.x * scale.x, a.y * scale.y, ax, ay, bx, by) <= r2) hits.push(flat);
       flat++;
     }
   }

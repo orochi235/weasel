@@ -14,7 +14,7 @@ import type { TextureHandle } from './texture';
  * `units` names the space the tile's origin and scale live in, not the space
  * of any geometry (a pattern has none). Under `'bounds'` the tile anchors to
  * the painted node's box, so the pattern travels with the node and a resize
- * reveals more tiles rather than stretching them; `fillInPoseFrame` resolves
+ * reveals more tiles rather than stretching them; `paintToLocalUnits` resolves
  * that to a `'local'` paint with an explicit `origin` before the renderer
  * sees it.
  *

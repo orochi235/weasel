@@ -1,5 +1,5 @@
 /** A kit paint and stroke as the `SvgPaint` and `SvgStroke` an element is written with. */
-import { fillInPoseFrame, resolveStroke, type Paint, type PoseLinear, type Stroke } from '@weasel-js/core';
+import { paintToLocalUnits, resolveStroke, type Paint, type PoseLinear, type Stroke } from '@weasel-js/core';
 import type { SvgPaint, SvgStroke } from './types';
 
 /** A leaf's box: where it is drawn, and the frame its box-relative paints
@@ -23,7 +23,7 @@ export function svgPaintFromKit(fill: Paint | null, box: SvgKitPose): SvgPaint {
   if (fill.kind === undefined || fill.kind === 'solid') {
     return { kind: 'solid', color: fill.color, ...(fill.opacity != null ? { opacity: fill.opacity } : {}) };
   }
-  return { kind: 'gradient', paint: fillInPoseFrame(fill, box) };
+  return { kind: 'gradient', paint: paintToLocalUnits(fill, box) };
 }
 
 /** A kit `Stroke` as an `SvgStroke` — the inverse of `strokeDataFromSvg`.

@@ -13,7 +13,7 @@
  */
 import {
   boundsOfPath,
-  boxToBox,
+  rectToRect,
   fitAffine,
   identity,
   invert,
@@ -115,7 +115,7 @@ export function storedPathOf(node: EditableShape): { path: PolygonPath; toWorld:
   if (storage.kind === 'pose') return { path: node.pose as PolygonPath, toWorld: identity() };
   const { pose, data } = storage;
   const b = boundsOfPath(data.path);
-  const box = boxToBox(b.x, b.y, b.width, b.height, pose.x, pose.y, pose.width, pose.height);
+  const box = rectToRect(b.x, b.y, b.width, b.height, pose.x, pose.y, pose.width, pose.height);
   return { path: data.path, toWorld: multiply(poseFrameOf(pose) ?? identity(), box) };
 }
 

@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { toHex8, getAlpha01, withAlpha01, mergeAlphaFromPrev } from './hexAlpha';
+import { toHex8, hexAlpha, withAlpha01, mergeAlphaFromPrev } from './hexAlpha';
 
 describe('toHex8', () => {
   it('expands #rgb to #rrggbbff', () => {
@@ -18,28 +18,28 @@ describe('toHex8', () => {
     expect(toHex8('#xyz')).toBe('#xyz');
     expect(toHex8('#12345')).toBe('#12345');
     expect(withAlpha01('#xyz', 0.5)).toBe('#xyz');
-    expect(getAlpha01('#aabbcc8g')).toBe(1);
+    expect(hexAlpha('#aabbcc8g')).toBe(1);
   });
   it('expands #rgba to #rrggbbaa', () => {
     expect(toHex8('#F008')).toBe('#ff000088');
-    expect(getAlpha01(toHex8('#f008'))).toBeCloseTo(0x88 / 255);
+    expect(hexAlpha(toHex8('#f008'))).toBeCloseTo(0x88 / 255);
     expect(withAlpha01('#f008', 1)).toBe('#ff0000ff');
   });
 });
 
-describe('getAlpha01', () => {
+describe('hexAlpha', () => {
   it('reads alpha from hex8', () => {
-    expect(getAlpha01('#aabbcc80')).toBeCloseTo(0x80 / 255);
+    expect(hexAlpha('#aabbcc80')).toBeCloseTo(0x80 / 255);
   });
   it('reads alpha from #rgba', () => {
-    expect(getAlpha01('#f008')).toBeCloseTo(0x88 / 255);
+    expect(hexAlpha('#f008')).toBeCloseTo(0x88 / 255);
     expect(mergeAlphaFromPrev('#00ff00', '#f008')).toBe('#00ff0088');
   });
   it('returns 1 for hex without alpha', () => {
-    expect(getAlpha01('#aabbcc')).toBe(1);
+    expect(hexAlpha('#aabbcc')).toBe(1);
   });
   it('returns 1 for non-hex', () => {
-    expect(getAlpha01('red')).toBe(1);
+    expect(hexAlpha('red')).toBe(1);
   });
 });
 

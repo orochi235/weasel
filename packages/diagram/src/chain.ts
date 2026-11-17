@@ -11,13 +11,13 @@ import { maxOf } from '@weasel-js/geom';
 import { groupHanging, levelGaps, lineGaps } from './chainGroups';
 import { inPortOrder, SIDE_TRACK_GAP, sideRoutes, tracksNeeded, type Hanging } from './chainRoutes';
 import type { Graph, GraphNode } from './graph';
-import { backEdges, ranksOf } from './layered';
+import { backEdges, longestPathRanks } from './layered';
 import {
   DEFAULT_NODE_GAP,
   DEFAULT_RANK_GAP,
   axesFor,
   extent,
-  settle,
+  placeSlots,
   type LayoutAxes,
   type LayoutFn,
   type LayoutOptions,
@@ -37,7 +37,7 @@ function lineOf(graph: Graph, ids: readonly string[] | undefined): GraphNode[] {
   });
   if (given.length > 0) return given;
   const back = backEdges(graph);
-  const ranks = ranksOf(graph, back);
+  const ranks = longestPathRanks(graph, back);
   let end: GraphNode | undefined;
   for (const node of graph.nodes) {
     if (end === undefined || ranks.get(node.id)! > ranks.get(end.id)!) end = node;
@@ -120,7 +120,7 @@ function chainPlan(graph: Graph, opts: LayoutOptions = {}): LayoutPlan {
   const gaps = grouped
     ? lineGaps(graph, line, hanging, rankGap, axes, slots(line.map(() => 0), []))
     : line.map(() => rankGap);
-  const place = (side: number) => settle(graph, slots(gaps, across(side)), opts);
+  const place = (side: number) => placeSlots(graph, slots(gaps, across(side)), opts);
   // Where a side edge turns depends only on positions along the line, which
   // the gap across it does not move, so one trial run counts the tracks.
   let moves = place(nodeGap);

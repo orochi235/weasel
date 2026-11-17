@@ -5,7 +5,7 @@
  */
 import { describe, expect, it } from 'vitest';
 import fc from 'fast-check';
-import { rgbaHex } from '@weasel-js/paint';
+import { opaqueHexOfBytes } from '@weasel-js/paint';
 import { compositeOver, createSampler, type PixelSource } from './sampler';
 import { rgbaBytes, runs, tally, timeoutFor } from './pbt.fixture';
 
@@ -30,7 +30,7 @@ describe('createSampler', () => {
       const want = compositeOver([...stack].reverse().map((l) => l.px), [...stack].reverse().map((l) => l.premultiplied));
       const got = await createSampler(sources).rgba({ x: 0, y: 0 });
       expect(got).toEqual(want);
-      expect(await createSampler(sources).sample({ x: 0, y: 0 })).toBe(want ? rgbaHex(want) : null);
+      expect(await createSampler(sources).sample({ x: 0, y: 0 })).toBe(want ? opaqueHexOfBytes(want) : null);
       if (got) for (const c of got) expect(Number.isInteger(c) && c >= 0 && c <= 255).toBe(true);
       const top = stack.map((l) => l.px?.[3] === 255).lastIndexOf(true);
       seen.count(top >= 0 ? 'opaque' : 'see-through');

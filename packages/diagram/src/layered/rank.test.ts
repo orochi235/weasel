@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import type { Graph, GraphEdge, GraphNode } from '../graph';
-import { backEdges, ranksOf } from '../layered';
-import { ranksByLength } from './rank';
+import { backEdges, longestPathRanks } from '../layered';
+import { simplexRanks } from './rank';
 
 function graphOf(ids: readonly string[], pairs: readonly (readonly [string, string])[]): Graph {
   const nodes: GraphNode[] = ids.map((id) => ({ id, bounds: { x: 0, y: 0, width: 10, height: 10 }, pinned: false }));
@@ -59,12 +59,12 @@ function generated(nodeCount: number, edgeCount: number, seed: number): Graph {
   return graphOf(ids, pairs);
 }
 
-describe('ranksByLength', () => {
+describe('simplexRanks', () => {
   it('reaches the minimum total length on the EffectChart pipeline', () => {
     const none = new Set<string>();
-    const ranks = ranksByLength(PIPELINE, none);
+    const ranks = simplexRanks(PIPELINE, none);
     expect(total(lengths(PIPELINE, none, ranks))).toBe(9);
-    expect(total(lengths(PIPELINE, none, ranksOf(PIPELINE, none)))).toBe(14);
+    expect(total(lengths(PIPELINE, none, longestPathRanks(PIPELINE, none)))).toBe(14);
     expect(ranks.get('Source')).toBe(0);
     expect(ranks.get('Osc')).toBe(1);
     expect(ranks.get('Sun')).toBe(2);
@@ -81,7 +81,7 @@ describe('ranksByLength', () => {
     ];
     for (const graph of graphs) {
       const back = backEdges(graph);
-      const ranks = ranksByLength(graph, back);
+      const ranks = simplexRanks(graph, back);
       expect(ranks.size).toBe(graph.nodes.length);
       for (const length of lengths(graph, back, ranks)) expect(length).toBeGreaterThanOrEqual(1);
       expect(Math.min(...ranks.values())).toBe(0);
@@ -98,16 +98,16 @@ describe('ranksByLength', () => {
       [['A', 'B'], ['B', 'C'], ['C', 'D'], ['D', 'E'], ['A', 'Q'], ['P', 'Q'], ['Q', 'D'], ['Q', 'E']],
     );
     const none = new Set<string>();
-    const ranks = ranksByLength(graph, none);
+    const ranks = simplexRanks(graph, none);
     expect(ranks.get('Q')).toBe(2);
     expect(ranks.get('P')).toBe(1);
     expect(total(lengths(graph, none, ranks))).toBe(10);
-    expect(total(lengths(graph, none, ranksOf(graph, none)))).toBe(11);
+    expect(total(lengths(graph, none, longestPathRanks(graph, none)))).toBe(11);
   });
 
   it('starts each disconnected component at rank 0', () => {
     const graph = graphOf(['a', 'b', 'c', 'x', 'y', 'lone'], [['a', 'b'], ['b', 'c'], ['x', 'y']]);
-    const ranks = ranksByLength(graph, new Set());
+    const ranks = simplexRanks(graph, new Set());
     expect(Object.fromEntries(ranks)).toEqual({ a: 0, b: 1, c: 2, x: 0, y: 1, lone: 0 });
   });
 
@@ -118,7 +118,7 @@ describe('ranksByLength', () => {
       ['R', 'A', 'B', 'U', 'T'],
       [['R', 'A'], ['A', 'B'], ['B', 'U'], ['R', 'T'], ['T', 'T'], ['T', 'U'], ['T', 'U']],
     );
-    const ranks = ranksByLength(graph, new Set());
+    const ranks = simplexRanks(graph, new Set());
     expect(ranks.get('T')).toBe(2);
     expect(ranks.get('U')).toBe(3);
   });
@@ -127,14 +127,14 @@ describe('ranksByLength', () => {
     const ids = ['A', 'M', 'N', 'C', 'X', 'Y'];
     const pairs: [string, string][] = [['A', 'M'], ['M', 'N'], ['N', 'C'], ['A', 'X'], ['X', 'C'], ['A', 'Y'], ['Y', 'C']];
     const graph = graphOf(ids, pairs);
-    expect(ranksByLength(graph, new Set())).toEqual(ranksByLength(graph, new Set()));
+    expect(simplexRanks(graph, new Set())).toEqual(simplexRanks(graph, new Set()));
 
     // X and Y are interchangeable, so each may sit at rank 1 or 2. Swapping
     // their names swaps their answers: position in the graph decides, not name.
     const swap = (id: string) => (id === 'X' ? 'Y' : id === 'Y' ? 'X' : id);
     const swapped = graphOf(ids.map(swap), pairs.map(([a, b]) => [swap(a), swap(b)] as const));
-    const first = ranksByLength(graph, new Set());
-    const second = ranksByLength(swapped, new Set());
+    const first = simplexRanks(graph, new Set());
+    const second = simplexRanks(swapped, new Set());
     expect(second.get('Y')).toBe(first.get('X'));
     expect(second.get('X')).toBe(first.get('Y'));
   });
@@ -146,9 +146,9 @@ describe('ranksByLength', () => {
       ['P', 'a', 'b', 'T', 'U', 'Q', 'Q2'],
       [['P', 'a'], ['P', 'b'], ['a', 'T'], ['T', 'U'], ['U', 'Q'], ['b', 'Q'], ['b', 'Q2'], ['U', 'Q2']],
     );
-    expect(ranksByLength(graph, new Set()).get('b')).toBe(3);
+    expect(simplexRanks(graph, new Set()).get('b')).toBe(3);
     const grouped = { ...graph, groups: [{ id: 'g', members: ['a', 'b'], inset: { top: 0, right: 0, bottom: 0, left: 0 } }] };
-    const ranks = ranksByLength(grouped, new Set());
+    const ranks = simplexRanks(grouped, new Set());
     expect(ranks.get('a')).toBe(1);
     expect(ranks.get('b')).toBe(1);
     expect(ranks.size).toBe(graph.nodes.length);
@@ -156,15 +156,15 @@ describe('ranksByLength', () => {
 
   it('keeps an edge between two members of a group a rank long', () => {
     const graph = { ...graphOf(['a', 'b', 'c'], [['a', 'b'], ['b', 'c']]), groups: [{ id: 'g', members: ['a', 'b', 'c'], inset: { top: 0, right: 0, bottom: 0, left: 0 } }] };
-    expect(Object.fromEntries(ranksByLength(graph, new Set()))).toEqual({ a: 0, b: 1, c: 2 });
+    expect(Object.fromEntries(simplexRanks(graph, new Set()))).toEqual({ a: 0, b: 1, c: 2 });
   });
 
   it('ranks a generated 150-node graph validly and shorter than longest path', () => {
     const graph = generated(150, 300, 12345);
     const none = new Set<string>();
-    const ranks = ranksByLength(graph, none);
+    const ranks = simplexRanks(graph, none);
     const ls = lengths(graph, none, ranks);
     for (const length of ls) expect(length).toBeGreaterThanOrEqual(1);
-    expect(total(ls)).toBeLessThan(total(lengths(graph, none, ranksOf(graph, none))));
+    expect(total(ls)).toBeLessThan(total(lengths(graph, none, longestPathRanks(graph, none))));
   });
 });

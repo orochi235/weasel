@@ -7,7 +7,7 @@
  * the four corners are baked into world coords.
  */
 
-import { transformPoint, boxToBox } from '../affine';
+import { transformPoint, rectToRect } from '../affine';
 import type { Path, PolygonPath } from '../path';
 import { poseFrameInverseOf, poseFrameOf, type PoseLinear } from '../poseFrame';
 import { boundsOfPath } from './bounds';
@@ -33,7 +33,7 @@ export interface PathInWorldPose {
  * Rects rebase onto the pose's `width`/`height` because resize updates the pose,
  * not the stored `RectPath` — so the live size lives on the pose.
  */
-export function pathInPoseFrame(path: Path, pose: PathInWorldPose): Path {
+export function pathInPoseBox(path: Path, pose: PathInWorldPose): Path {
   if (path.kind === 'rect') {
     if (
       path.x === pose.x && path.y === pose.y
@@ -47,7 +47,7 @@ export function pathInPoseFrame(path: Path, pose: PathInWorldPose): Path {
   if (b.x === pose.x && b.y === pose.y && b.width === pose.width && b.height === pose.height) {
     return path;
   }
-  const m = boxToBox(b.x, b.y, b.width, b.height, pose.x, pose.y, pose.width, pose.height);
+  const m = rectToRect(b.x, b.y, b.width, b.height, pose.x, pose.y, pose.width, pose.height);
   return transformPath(path, m);
 }
 
@@ -56,9 +56,9 @@ export function pathInPoseFrame(path: Path, pose: PathInWorldPose): Path {
  * in world space. Returns a fresh `Path` instance; never mutates inputs.
  */
 export function pathInWorld(path: Path, pose: PathInWorldPose): Path {
-  // Shares `pathInPoseFrame` with the renderer so world geometry never diverges
+  // Shares `pathInPoseBox` with the renderer so world geometry never diverges
   // from what's painted.
-  const local = pathInPoseFrame(path, pose);
+  const local = pathInPoseBox(path, pose);
 
   // The pose's rotation and its `transform` about its AABB center, composed by
   // `poseFrameOf` as the renderer's wrap composes them.

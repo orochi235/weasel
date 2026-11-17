@@ -1,4 +1,4 @@
-import { getAlpha01, toHex8, withAlpha01 } from '@weasel-js/paint';
+import { hexAlpha, toHex8, withAlpha01 } from '@weasel-js/paint';
 import { isBuiltinPref, type PrefLeaf, type PrefNumber, prefValueOrDefault } from '@weasel-js/prefs';
 import { qty } from '@weasel-js/quantity';
 import { prefFieldProps } from '@weasel-js/ui/components/Prefs';
@@ -169,7 +169,7 @@ function colorCell({
         }}
         onChange={(e) => {
           const rgb = e.currentTarget.value;
-          onChange(alpha ? withAlpha01(rgb, getAlpha01(stored)) : rgb);
+          onChange(alpha ? withAlpha01(rgb, hexAlpha(stored)) : rgb);
         }}
       />
     );

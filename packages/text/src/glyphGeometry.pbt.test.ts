@@ -7,7 +7,7 @@ import { beforeAll, describe, expect, it } from 'vitest';
 import fc from 'fast-check';
 import type { ResolveResult } from '@weasel-js/font';
 import { syntheticBoldGrowth } from '@weasel-js/font';
-import { boundsOfPath, pathFromD, pathSignedArea, pathToCubicContours, pointInPath, type PolygonPath } from '@weasel-js/geom';
+import { boundsOfPath, pathFromD, pathSignedArea, pathToCubicContours, pathContainsPoint, type PolygonPath } from '@weasel-js/geom';
 import { glyphTurn } from './glyphTurn';
 import { glyphOutlineAt } from './glyphOutlines';
 import { emboldenGlyph, syntheticBoldOffset } from './syntheticBold';
@@ -59,7 +59,7 @@ function edgesInsideFill(p: PolygonPath, e: number): number {
       const dy = c[7] + c[5] - c[3] - c[1];
       const l = Math.hypot(dx, dy);
       if (l < 1e-9) continue;
-      const inside = (u: number, v: number) => pointInPath(p, u, v, { flattenTolerance: 1e-9 });
+      const inside = (u: number, v: number) => pathContainsPoint(p, u, v, { flattenTolerance: 1e-9 });
       if (inside(x + (dy / l) * e, y - (dx / l) * e) && inside(x - (dy / l) * e, y + (dx / l) * e)) n++;
     }
   }

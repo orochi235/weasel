@@ -8,7 +8,7 @@ import type { MeasureRowText } from './body';
 import { diagramDropParentAt, type DropParentScene } from './containers/canDropInto';
 import { containerBuild, type ContainerStencil } from './containers/containerStencils';
 import type { NodeStyle } from './dataTypes';
-import { stencilBuild, stencilIdOf, stencilKind, type DiagramStencil } from './stencil';
+import { stencilInsertOps, stencilIdOf, stencilKind, type DiagramStencil } from './stencil';
 import { roleStyle } from './theme/resolve';
 import type { DiagramTheme } from './theme/types';
 import { INSERT_DRAG_MODS, INSERT_REPOSITION_BINDING } from '@weasel-js/editing';
@@ -97,7 +97,7 @@ export function useStencilInsert(stencils: readonly DiagramStencil[], opts: Sten
         });
       }
       const shapeStyle = stencil.themeRole !== undefined && theme !== undefined ? roleStyle(theme, stencil.themeRole) : style;
-      return stencilBuild(stencil, bounds, {
+      return stencilInsertOps(stencil, bounds, {
         ...common, ...(shapeStyle ? { style: shapeStyle } : {}), ...(measure ? { measure } : {}), ...(font ? { font } : {}),
       });
     };

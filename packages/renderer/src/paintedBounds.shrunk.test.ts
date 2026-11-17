@@ -15,7 +15,7 @@ describe('pathBox, shrunk', () => {
     const box = pathBox(path, stroke, m)!;
     const v = strokeMesh(path, resolved.stroke, undefined, spaces).vertices;
     for (let i = 0; i < v.length; i += 2) {
-      const [x, y] = mat3.apply(m, v[i]!, v[i + 1]!);
+      const [x, y] = mat3.transformPoint(m, v[i]!, v[i + 1]!);
       expect(x).toBeGreaterThanOrEqual(box.minX);
       expect(x).toBeLessThanOrEqual(box.maxX);
       expect(y).toBeGreaterThanOrEqual(box.minY);
@@ -34,7 +34,7 @@ describe('pathBox, shrunk', () => {
     const box = pathBox(path, stroke, m)!;
     const v = strokeMesh(path, doubled, undefined, spaces).vertices;
     for (let i = 0; i < v.length; i += 2) {
-      const [x, y] = mat3.apply(m, v[i]!, v[i + 1]!);
+      const [x, y] = mat3.transformPoint(m, v[i]!, v[i + 1]!);
       expect(x >= box.minX && x <= box.maxX && y >= box.minY && y <= box.maxY, `${x}, ${y}`).toBe(true);
     }
   });

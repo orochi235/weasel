@@ -65,7 +65,7 @@ function placedBounds(stencil: DiagramStencil, b: Rect): Rect {
  * `font` is the face its text rows fall back on; default 12px sans-serif.
  * `parent` is the container the body goes in; default the top level.
  */
-export function stencilBuild<TLayer extends string>(
+export function stencilInsertOps<TLayer extends string>(
   stencil: DiagramStencil,
   bounds: Rect,
   opts: {

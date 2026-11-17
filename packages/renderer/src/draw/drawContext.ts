@@ -9,7 +9,7 @@ import type { ShaderProgram } from '../shaders/ShaderProgram';
 import type { BatchVariants } from '../shaders/builtinPrograms';
 import type { Hull, HullSet } from '../batchHull';
 import { DrawBatch } from '../drawBatch';
-import type { ClipRect } from '../batchClip';
+import type { ClipBox } from '../batchClip';
 import type { EffectTargets } from '../effects/EffectTargets';
 import type { RetainedSurfaces } from '../retain/RetainedSurfaces';
 import type { DeviceRect } from '../retain/contentBounds';
@@ -153,7 +153,7 @@ export interface ClipEntry {
   transform: GlMat3;
   /** Where staged geometry is cut, for a clip that is an axis-aligned rect;
    *  `null` otherwise. */
-  rect: ClipRect | null;
+  rect: ClipBox | null;
   /** The clip as half-planes the batch shader tests, for a convex one it can
    *  decide; `null` otherwise. A clip with none of this, `rect` and `planes`
    *  is one only the stencil can express. A rect clip has one too where it is snapped to

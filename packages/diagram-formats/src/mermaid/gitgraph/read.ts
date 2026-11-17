@@ -3,7 +3,7 @@ import { replayGitGraph, type GitGraphData } from '@weasel-js/plot';
 import type { ImportResult, PlotPage } from '../../document';
 import { Warnings } from '../../graphRead';
 import { lineError } from '../../lineError';
-import { pageNameOf, statementsOf } from '../common/lines';
+import { readPageName, statementsOf } from '../common/lines';
 import { commandOf } from './parse';
 
 /** The page a gitGraph is read onto. */
@@ -28,7 +28,7 @@ export function readMermaidGitGraph(text: string): ImportResult {
   if (error !== undefined) throw lineError('Mermaid', src.body[error.command]!.line, error.message);
   const warnings = new Warnings();
   if (commands.some((c) => c.kind === 'commit' && c.message !== undefined)) warnings.add('Commit messages are kept but not drawn.');
-  const name = pageNameOf(src, warnings);
+  const name = readPageName(src, warnings);
   const page: PlotPage = { kind: 'plot', id: 'page-1', ...(name ? { name } : {}), ...GITGRAPH_PAGE, data };
   return { document: { pages: [page] }, warnings: warnings.all() };
 }

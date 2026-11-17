@@ -36,7 +36,7 @@ export function poseRotationOf(pose: unknown): PoseRotation | null {
  * A `rect` promotes to a four-corner polygon (axis-aligned rects can't encode
  * rotation). Returns a fresh `PolygonPath`; never mutates the input.
  */
-export function rotatePathAround(path: Path, cx: number, cy: number, rotation: number): PolygonPath {
+export function rotatePathAbout(path: Path, cx: number, cy: number, rotation: number): PolygonPath {
   if (path.kind === 'rect') {
     return rotateRectCorners(path.x, path.y, path.width, path.height, cx, cy, rotation);
   }

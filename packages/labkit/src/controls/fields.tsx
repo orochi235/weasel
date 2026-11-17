@@ -1,4 +1,4 @@
-import { getAlpha01, toHex8, withAlpha01 } from '@weasel-js/paint';
+import { hexAlpha, toHex8, withAlpha01 } from '@weasel-js/paint';
 import {
   type PrefBoundReader,
   type PrefLeaf,
@@ -139,7 +139,7 @@ export function BareControl({
       const keep =
         (send: (hex: string) => void) =>
         (rgb: string): void =>
-          send(field.alpha ? withAlpha01(rgb, getAlpha01(stored)) : rgb);
+          send(field.alpha ? withAlpha01(rgb, hexAlpha(stored)) : rgb);
       return (
         <PropertyControl
           {...field}

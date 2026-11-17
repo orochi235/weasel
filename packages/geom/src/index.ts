@@ -10,7 +10,7 @@ export { clamp, clamp01, cross, dot, sub, len2, sign, approxEq, lerp, trimNumber
 export { niceStep, type NiceRounding } from './niceStep';
 export { DEG_TO_RAD, RAD_TO_DEG, wrapAngle, wrapPositive, type HalfTurn } from './angle';
 export { normalizeZoom, viewRectToScreen, viewScreenToWorld, viewWorldToScreen, ZOOM_FLOOR, type View } from './view';
-export { identity, translate, scale, rotate, multiply, invert, transformPoint, boxToBox, extentScale, rotateAboutPoint, type Affine } from './affine';
+export { identity, translate, scale, rotate, multiply, invert, transformPoint, rectToRect, extentScale, rotateAboutPoint, type Affine } from './affine';
 export {
   boundsOfCoords, unionBox, boxContainsPoint, boxContainsBox, boxesIntersect, rectToContour,
   rectsOverlap, rectsIntersect, rectContainsPoint, rectContainsPointHalfOpen, rectBetween, unionRects,
@@ -23,7 +23,7 @@ export {
   splitCubicAt, splitQuadraticAt, splitLineAt,
   type LineCoords, type QuadraticCoords, type CubicCoords,
 } from './curve';
-export { nearestOnLine, nearestOnQuadratic, nearestOnCubic, nearestOnPath, type CurveNearest, type PathNearest } from './nearest';
+export { nearestOnSegment, nearestOnQuadratic, nearestOnCubic, nearestOnPath, type CurveNearest, type PathNearest } from './nearest';
 export { lineShape, type TrackShape, type TrackShapeKind, type TrackStation, type TrackNearest, type TrackNearestOptions, type TrackAtOptions } from './track/shape';
 export { arcShape, type ArcTrackSpec, type ArcTrackShape } from './track/arc';
 export { ellipseShape, type EllipseTrackSpec, type EllipseTrackShape } from './track/ellipse';
@@ -33,7 +33,7 @@ export { trackShapeD } from './track/pathData';
 export { bendSide, shiftTrack } from './track/shift';
 export { trackSlice } from './track/slice';
 export {
-  placeAlongRun, runLength, runPlaces, runStationAt,
+  placeAlongRun, runLength, runPlaces, runPlaceAt,
   type PlaceAlongRunOptions, type RunAlign, type RunOrder, type RunPast, type RunPlace, type RunSpot,
 } from './track/place';
 export { PORT_REACH, portControls, portCurvePoints } from './portCurve2';
@@ -43,7 +43,7 @@ export {
 } from './flatten';
 export { pointInPolygon, ringSignedArea, segmentsCross } from './polyline';
 export { flatSubpaths, type FlatSubpaths } from './pathSubpaths';
-export { distance, distance2, lerpPoint, pointSegmentDist, pointSegmentDist2, segmentT } from './points2';
+export { distance, distance2, lerpPoint, pointSegmentDistance, pointSegmentDistance2, segmentT } from './points2';
 export {
   anchorAtLength, closingAnchor, lengthAtAnchor, lengthAtSegmentFraction, lengthAtSubpath, lengthTable,
   type LengthRun, type LengthSpan, type LengthTable,
@@ -78,8 +78,8 @@ export {
   cornerShapePoint, isCornerShape, nextCornerShape, type CornerKeyword, type CornerPiece, type CornerShape,
   type CornerShapeFrame,
 } from './paths/cornerShape';
-export { unionBoundsPath } from './paths/unionBoundsPath';
-export { translatePath, scalePathToBounds } from './paths/transform';
+export { boundsOfPaths } from './paths/boundsOfPaths';
+export { translatePath, fitPathToRect } from './paths/transform';
 export { transformPath, type TransformPathOptions } from './paths/transformPath';
 export { composePath, decomposePath } from './paths/compose';
 export { splitSubpaths } from './paths/splitSubpaths';
@@ -102,7 +102,7 @@ export { roughenPath, type RoughenPathOptions } from './paths/roughenPath';
 export { zigzagPath, type ZigzagPathOptions } from './paths/zigzagPath';
 export { puckerBloatPath, type PuckerBloatPathOptions } from './paths/puckerBloatPath';
 export { pathDistanceToPoint } from './paths/pathDistance';
-export { intersectSegments, type SegmentCrossing } from './intersect/segmentIntersections';
+export { segmentCrossings, type SegmentCrossing } from './intersect/segmentIntersections';
 export { pathSegments, type PathSegment } from './intersect/pathSegments';
 export { pathCrossings, type PathCrossing, type PathCrossingsOptions, type PathStop } from './intersect/pathCrossings';
 export {
@@ -120,7 +120,7 @@ export {
   type EaseOptions, type TugMode, type PathEndFrame,
 } from './paths/tugPathEnd';
 export { easeLength, extensionPieces, type ExtensionPiece } from './paths/pathEndExtension';
-export { cubicPointAt, splitCubicAtT, type Point } from './paths/cubicMath';
+export { cubicPointAt, splitCubicPoints, type Point } from './paths/cubicMath';
 export { fitCubicThroughDeletion } from './paths/spanFit';
 export { schneiderFit, fitCubicWithTangents } from './paths/schneiderFit';
 export { simplifyPath, simplifySpan, simplifySubpath, type SimplifyPathOptions } from './paths/simplifyPath';
@@ -149,11 +149,11 @@ export {
   type EulerFit, type EulerSegment,
 } from './paths/eulerSpiral';
 export {
-  pointInPath, strokeHitTest,
+  strokeHitTest,
   pathContainsPoint, pathContainsRect, pathIntersectsRect,
   pathContainsPolygon, pathIntersectsPolygon,
   polygonContainsPath, polygonIntersectsPath,
-  type PointInPathOptions, type PolygonIntersectsPathOptions, type StrokeHitTestOptions,
+  type PathHitTestOptions, type PolygonIntersectsPathOptions, type StrokeHitTestOptions,
 } from './pathHitTest';
 export { transformCoords } from './affine';
 export { fitAffine } from './affineFit';
@@ -188,7 +188,7 @@ export { sampleMonotone } from './spline/monotone';
 export { sampleByInterpolation, type InterpolationMode } from './spline/interpolation';
 export { meanScale } from './meanScale';
 export { pxExtent, pxExtentInFrame, pxReach, scaleDelta, screenAngleOf, standoff, withinPxBox, withinPxRadius, type Scale2 } from './pxExtent';
-export { poseRotationOf, rotatePathAround, type PoseRotation } from './poseRotation';
+export { poseRotationOf, rotatePathAbout, type PoseRotation } from './poseRotation';
 export {
   boxFrameOf, poseFrameOf, poseFrameInverseOf, poseLinearOf, pathThroughPoseFrame, type FramedBox, type PoseLinear,
 } from './poseFrame';
@@ -241,7 +241,7 @@ export {
   type AnchorField, type AnchorFieldValues, type NumberEntry,
 } from './paths/anchorFields';
 export { nearestPathAnchor, reverseAnchors, type PathAnchorHit } from './paths/nearestAnchor';
-export { pathInPoseFrame, pathInWorld, worldEditToStorage, type PathInWorldPose } from './paths/pathInWorld';
+export { pathInPoseBox, pathInWorld, worldEditToStorage, type PathInWorldPose } from './paths/pathInWorld';
 export {
   reviveTypedArrays, tagTypedArray, tagTypedArrays, typedArrayReplacer, typedArrayReplacerWrapping, untagTypedArray,
   isRawWrapper, namedNumber, numberName, TYPED_ARRAY_CONSTRUCTORS, type NumberName, type NumberTypedArray, type RawWrapper,

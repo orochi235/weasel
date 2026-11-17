@@ -29,4 +29,4 @@ export type {
   Raster1bpp,
   RgbaImage,
 } from 'obwat';
-export type { DitherMethod, DitherOptions } from '@weasel-js/dither';
+export type { DitherMethod, DitherPixelsOptions } from '@weasel-js/dither';

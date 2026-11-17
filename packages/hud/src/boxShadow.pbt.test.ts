@@ -5,7 +5,7 @@
  */
 import { describe, expect, it } from 'vitest';
 import fc from 'fast-check';
-import { pointInPath, type Path } from '@weasel-js/geom';
+import { pathContainsPoint, type Path } from '@weasel-js/geom';
 import type { BoxShadow } from '@weasel-js/theme';
 import { boxShadowCommands } from './boxShadow';
 import { runs, tally } from './pbt.fixture';
@@ -47,7 +47,7 @@ describe('boxShadowCommands', () => {
       const px = b.x + (i % b.w) + 0.5, py = b.y + (j % b.h) + 0.5;
       const ix = b.x + s.x + s.spread, iy = b.y + s.y + s.spread, iw = b.w - 2 * s.spread, ih = b.h - 2 * s.spread;
       const inHole = iw > 0 && ih > 0 && px >= ix && px < ix + iw && py >= iy && py < iy + ih;
-      expect(pointInPath(ring!, px, py)).toBe(!inHole);
+      expect(pathContainsPoint(ring!, px, py)).toBe(!inHole);
       seen.hit(inHole ? 'clear' : 'shadowed');
     }), runs(RUNS * 3));
     seen.atLeast('clear', 50);
@@ -62,7 +62,7 @@ describe('boxShadowCommands', () => {
         const px = b.x + i + 0.5, py = b.y + j + 0.5;
         const ox = b.x + s.x - s.spread, oy = b.y + s.y - s.spread, ow = b.w + 2 * s.spread, oh = b.h + 2 * s.spread;
         const inShadow = ow > 0 && oh > 0 && px >= ox && px < ox + ow && py >= oy && py < oy + oh;
-        expect(paths.some((p) => pointInPath(p, px, py))).toBe(inShadow);
+        expect(paths.some((p) => pathContainsPoint(p, px, py))).toBe(inShadow);
         seen.hit(inShadow ? 'shadowed' : 'clear');
       }), runs(RUNS * 3));
     seen.atLeast('clear', 50);

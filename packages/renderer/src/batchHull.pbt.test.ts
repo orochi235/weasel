@@ -64,7 +64,7 @@ function snapped(path: Path, m: GlMat3, map: WindowMap): number[] {
   const local = cornersOf(path)!;
   const pts: number[] = [];
   for (let i = 0; i < local.length; i += 2) {
-    const [sx, sy] = mat3.apply(m, local[i]!, local[i + 1]!);
+    const [sx, sy] = mat3.transformPoint(m, local[i]!, local[i + 1]!);
     pts.push(Math.round((map.ax * sx + map.bx * sy + map.cx) * U), Math.round((map.ay * sx + map.by * sy + map.cy) * U));
   }
   let area = 0;

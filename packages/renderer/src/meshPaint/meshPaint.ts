@@ -8,12 +8,11 @@
  */
 
 import type { GradStop } from '@weasel-js/paint';
-import { DEG_TO_RAD, mat3, trimNumber, maxOf, minOf } from '@weasel-js/geom';
+import { DEG_TO_RAD, mat3, trimNumber, maxOf, minOf, type Rect } from '@weasel-js/geom';
 import type { PaintBindContext, PaintBinding, PaintDrawKind, PaintResources, PaintTexture } from '../paintKinds';
 import { parseColor, rgbaToHex } from '@weasel-js/paint';
 import { oklabToOklch, oklabToSrgbU8, oklchToOklab, srgbFloatToOklab } from '@weasel-js/paint';
 import type { ColorSpace, Paint, PaintUnits } from '@weasel-js/paint';
-import type { FillPoseBox } from '../fillInPoseFrame';
 import { bakeMesh, meshBounds, type MeshBox } from './bake';
 import { MeshBakeCache, meshBakeSize } from './bakeCache';
 import { isValidPatch, type MeshPatch, type MeshPoint } from './surface';
@@ -216,7 +215,7 @@ function devicePixelsOf(ctx: PaintBindContext, mesh: MeshGradientPaint, box: Mes
   return Math.max(box.width * Math.hypot(m[0], m[1]), box.height * Math.hypot(m[3], m[4]));
 }
 
-function bakeFor(ctx: PaintBindContext, mesh: MeshGradientPaint): CachedBake | null {
+function ensureBake(ctx: PaintBindContext, mesh: MeshGradientPaint): CachedBake | null {
   const box = meshBounds(mesh.patches);
   if (!box) return null;
   const size = meshBakeSize(devicePixelsOf(ctx, mesh, box), ctx.maxTextureSize);
@@ -239,7 +238,7 @@ function bindMesh(ctx: PaintBindContext, fill: Paint): PaintBinding | null {
   const mesh = asMesh(fill);
   if (!mesh.patches.some(isValidPatch)) return null;
 
-  const entry = bakeFor(ctx, mesh);
+  const entry = ensureBake(ctx, mesh);
   if (!entry) return null;
 
   const { box } = entry;
@@ -264,7 +263,7 @@ export const meshDrawKind: PaintDrawKind = {
   id: MESH_GRADIENT_KIND,
   programs: { [MESH_PROGRAM_ID]: { glsl: { vert: MESH_VERT_SRC, frag: MESH_FRAG_SRC }, wgsl: { frag: MESH_WGSL } } },
   bind: bindMesh,
-  inPoseFrame: (fill, box: FillPoseBox) => {
+  toLocalUnits: (fill, box: Rect) => {
     const mesh = asMesh(fill);
     if (mesh.units !== 'bounds') return fill;
     const posed = asFill({
@@ -278,7 +277,7 @@ export const meshDrawKind: PaintDrawKind = {
     BAKE_SOURCE.set(posed, fill);
     return posed;
   },
-  toBoundsFrame: (fill, box: FillPoseBox) => {
+  toBoundsUnits: (fill, box: Rect) => {
     const mesh = asMesh(fill);
     if (mesh.units === 'bounds' || box.width === 0 || box.height === 0) return fill;
     return asFill({

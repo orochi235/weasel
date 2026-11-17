@@ -6,7 +6,7 @@
  * operation cut into or moved stays expanded.
  */
 import type { Path, PolygonPath } from '../path';
-import { nearestOnCubic, nearestOnLine } from '../nearest';
+import { nearestOnCubic, nearestOnSegment } from '../nearest';
 import { PathBuilder } from './builder';
 import { flatAnchorIndices } from './cornerCarry';
 import { decodeContours, type Contour, type Seg } from './cornerSegments';
@@ -50,7 +50,7 @@ function onTrace(p: Point, t: CornerTrace, tol: number): boolean {
   let from = t.start;
   for (const piece of t.pieces) {
     const d = piece.kind === 'line'
-      ? nearestOnLine(p.x, p.y, from.x, from.y, piece.to.x, piece.to.y).dist
+      ? nearestOnSegment(p.x, p.y, from.x, from.y, piece.to.x, piece.to.y).dist
       : nearestOnCubic(p.x, p.y, from.x, from.y, piece.c1.x, piece.c1.y, piece.c2.x, piece.c2.y, piece.to.x, piece.to.y).dist;
     if (d <= tol) return true;
     from = piece.to;
@@ -105,7 +105,7 @@ interface Run { from: number; to: number; trace: CornerTrace }
 function endsCut(a: Point, edge: Seg, p: Point, t: CornerTrace, tol: number): boolean {
   if (distance(a, p) <= tol) return true;
   return edge.line && onTrace(a, t, tol)
-    && nearestOnLine(p.x, p.y, edge.p0.x, edge.p0.y, edge.p3.x, edge.p3.y).dist <= tol;
+    && nearestOnSegment(p.x, p.y, edge.p0.x, edge.p0.y, edge.p3.x, edge.p3.y).dist <= tol;
 }
 
 function findRun(c: Contour, t: CornerTrace, tol: number): Run | null {

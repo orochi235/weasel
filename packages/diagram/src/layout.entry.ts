@@ -32,7 +32,7 @@ export {
   layoutBody,
   layoutRowPorts,
   measureBody,
-  sizeToBody,
+  growToBody,
 } from './body';
 export { buildBody } from './buildBody';
 export type { BodyNodeSpec, BuildBodyOptions, RowNodeData } from './buildBody';
@@ -55,7 +55,7 @@ export { placeLabels } from './labels/place';
 export type { LabelPlacements, PlaceLabel, PlaceLabelsInput, PlaceLabelsOptions, PlaceRoute } from './labels/place';
 export { labelCenter } from './labels/station';
 export type { DiagramLabel, LabelSpot } from './labelTrait';
-export { backEdges, layered, layeredPlan, ranksByLength, ranksOf, type LayeredPlan } from './layered';
+export { backEdges, layered, layeredPlan, simplexRanks, longestPathRanks, type LayeredPlan } from './layered';
 export type {
   LayoutAxes,
   LayoutDirection,
@@ -79,8 +79,8 @@ export {
   planOf,
   plannerPlan,
   seededOrder,
-  settle,
-  translated,
+  placeSlots,
+  movesFrom,
   untilSettled,
 } from './layout';
 export { outlinePolyline, portsOnOutline, rayHit } from './onOutline';

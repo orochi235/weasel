@@ -92,8 +92,8 @@ function figure(prefix: string, rootX: number, color: string): Figure {
   const bindings: Record<string, NodeId[]> = {};
   for (const bone of BONES) {
     const m = rest.get(bone.name)!;
-    const [ox, oy] = mat3.apply(m, 0, 0);
-    const [tx, ty] = mat3.apply(m, bone.length, 0);
+    const [ox, oy] = mat3.transformPoint(m, 0, 0);
+    const [tx, ty] = mat3.transformPoint(m, bone.length, 0);
     const ids = ['bone', 'joint', 'label'].map((k) => asNodeId(`${prefix}:${k}:${bone.name}`));
     nodes.push(
       {
@@ -153,7 +153,7 @@ const INITIAL: NodeSpec[] = [
 const rigid = rigidRigApply(RECT_POSE_DESCRIPTOR);
 const APPLY: RigApply<RectPose> = (world, ctx) => {
   if (!ctx.node.includes(':label:')) return rigid(world, ctx);
-  const [x, y] = mat3.apply(world, 0, 0);
+  const [x, y] = mat3.transformPoint(world, 0, 0);
   return { ...ctx.rest, x: x + 8, y: y - 14 };
 };
 

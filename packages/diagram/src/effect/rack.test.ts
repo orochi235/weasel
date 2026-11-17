@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { diagramScene } from '../fromData';
-import { sequenceSlots } from '../reorder';
+import { slotsAlong } from '../reorder';
 import { PROBLEM_COLOR } from './draw';
 import { mainChain, skipDecisions } from './mainChain';
 import { rack, SIDE_PORT_GAP } from './rack';
@@ -198,7 +198,7 @@ describe('rack order', () => {
     const specs = diagramScene(drawn.data, drawn.scene);
     type Box = { x: number; y: number; width: number; height: number };
     const items = drawn.order!.items.map(({ id }) => ({ id, bounds: specs.find((s) => s.id === id)!.pose as Box }));
-    const { gaps } = sequenceSlots('x', items);
+    const { gaps } = slotsAlong('x', items);
     for (let k = 1; k < items.length; k++) {
       const [a, b] = [items[k - 1]!.bounds, items[k]!.bounds];
       expect(gaps[k]!.a.x).toBeGreaterThan(a.x + a.width);
@@ -294,7 +294,7 @@ describe('rack direction: down', () => {
     expect(drawn.order!.axis).toBe('y');
     const at = boxes(drawn);
     const items = drawn.order!.items.map(({ id }) => ({ id, bounds: at(id) }));
-    const { gaps } = sequenceSlots('y', items);
+    const { gaps } = slotsAlong('y', items);
     for (let k = 1; k < items.length; k++) {
       const [a, b] = [items[k - 1]!.bounds, items[k]!.bounds];
       expect(gaps[k]!.a.y).toBeGreaterThan(a.y + a.height);

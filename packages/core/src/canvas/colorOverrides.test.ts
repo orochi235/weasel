@@ -5,7 +5,7 @@ import { pathFromD, countPathAnchors } from '@weasel-js/geom';
 import { defaultDrawOne } from './defaultDrawOne';
 import { wireSceneSlotToScene } from './sceneSlotWiring';
 import { buildSceneViewCommands } from './sceneViewRender';
-import { solid, strokeOf } from '@weasel-js/paint';
+import { solid, solidStroke } from '@weasel-js/paint';
 import type { DrawCommand, PathDrawCommand } from '@weasel-js/renderer';
 
 const VIEW = { x: 0, y: 0, scale: { x: 1, y: 1 } };
@@ -22,7 +22,7 @@ function strokedScene() {
     kind: 'mark',
     layer: 'main',
     pose: POSE,
-    data: { path: PATH, stroke: { ...strokeOf('#fff', 4), vertexColors: RAINBOW } },
+    data: { path: PATH, stroke: { ...solidStroke('#fff', 4), vertexColors: RAINBOW } },
   });
   return { scene, id };
 }
@@ -115,7 +115,7 @@ describe('animated vertex colors on default-painted nodes', () => {
       kind: 'mark',
       layer: 'main',
       pose: POSE,
-      data: { shape: 'rect', stroke: strokeOf('#fff', 2) },
+      data: { shape: 'rect', stroke: solidStroke('#fff', 2) },
     });
     const node = scene.get(id)!;
     const registry = new ColorOverrideRegistry();

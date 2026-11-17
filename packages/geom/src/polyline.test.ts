@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { pointInPolygon, ringSignedArea, segmentsCross } from './polyline';
-import { pointSegmentDist2 } from './points2';
+import { pointSegmentDistance2 } from './points2';
 import { approxEq } from './scalar';
 
 // An L-shaped (non-convex) polygon, interleaved & unclosed.
@@ -23,12 +23,12 @@ describe('segmentsCross', () => {
   });
 });
 
-describe('pointSegmentDist2', () => {
+describe('pointSegmentDistance2', () => {
   it('perpendicular distance squared to a segment', () => {
-    expect(approxEq(pointSegmentDist2(2, 3, 0, 0, 4, 0), 9)).toBe(true);
+    expect(approxEq(pointSegmentDistance2(2, 3, 0, 0, 4, 0), 9)).toBe(true);
   });
   it('clamps to the nearer endpoint past the end', () => {
-    expect(approxEq(pointSegmentDist2(-3, 0, 0, 0, 4, 0), 9)).toBe(true);
+    expect(approxEq(pointSegmentDistance2(-3, 0, 0, 0, 4, 0), 9)).toBe(true);
   });
 });
 
@@ -60,9 +60,9 @@ describe('pointInPolygon degenerate contours', () => {
   });
 });
 
-describe('pointSegmentDist2 degenerate segment', () => {
+describe('pointSegmentDistance2 degenerate segment', () => {
   it('falls back to the endpoint distance when the segment has no length', () => {
-    expect(pointSegmentDist2(3, 4, 0, 0, 0, 0)).toBe(25);
+    expect(pointSegmentDistance2(3, 4, 0, 0, 0, 0)).toBe(25);
   });
 });
 

@@ -44,9 +44,9 @@ interface Part {
  * graph always ranks the same.
  *
  * If `back` leaves a cycle, no valid ranking exists; that component keeps its
- * longest-path start, which `ranksOf` would also give.
+ * longest-path start, which `longestPathRanks` would also give.
  */
-export function ranksByLength(graph: Graph, back: ReadonlySet<string>): Map<string, number> {
+export function simplexRanks(graph: Graph, back: ReadonlySet<string>): Map<string, number> {
   const index = new Map<string, number>();
   graph.nodes.forEach((node, i) => index.set(node.id, i));
   const arcs: Arc[] = [];

@@ -122,8 +122,8 @@ export function EffectChart<TOptions = never>({
       portOptions={portOptions}
       anchor="start"
       {...(background !== undefined ? { background } : {})}
-      {...(selected !== undefined ? { selected } : {})}
-      {...(onSelect ? { onSelect: (id: string | null) => onSelect(id !== null && stageIds.has(id) ? id : null) } : {})}
+      {...(selected !== undefined ? { selection: selected } : {})}
+      {...(onSelect ? { onSelectionChange: (id: string | null) => onSelect(id !== null && stageIds.has(id) ? id : null) } : {})}
       {...(className !== undefined ? { className } : {})}
     />
   );

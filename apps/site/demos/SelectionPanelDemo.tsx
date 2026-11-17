@@ -1,4 +1,4 @@
-import { solid, strokeOf } from '@weasel-js/paint';
+import { solid, solidStroke } from '@weasel-js/paint';
 import { SceneCanvas, useScene, defaultNodeRouting, defaultNodeProperties, asNodeId } from '@weasel-js/core';
 import type { Stroke, Fill, RectPose } from '@weasel-js/core';
 import { SelectionPanel } from '@weasel-js/ui-canvas/components/inspector/SelectionPanel';
@@ -16,7 +16,7 @@ export function SelectionPanelDemo() {
     systemLayers: [{ id: 'default' }],
     initial: [
       { id: asNodeId('a'), kind: 'mark', layer: 'default', pose: { x: 60, y: 50, width: 120, height: 80 }, data: { kind: 'rect', shape: 'rect', fill: { paint: solid('#7fb069ff') } } },
-      { id: asNodeId('b'), kind: 'mark', layer: 'default', pose: { x: 240, y: 90, width: 90, height: 90 }, data: { kind: 'ellipse', shape: 'ellipse', fill: { paint: solid('#d98f6fff') }, stroke: strokeOf('#5a3d2bff', 2) } },
+      { id: asNodeId('b'), kind: 'mark', layer: 'default', pose: { x: 240, y: 90, width: 90, height: 90 }, data: { kind: 'ellipse', shape: 'ellipse', fill: { paint: solid('#d98f6fff') }, stroke: solidStroke('#5a3d2bff', 2) } },
       { id: asNodeId('c'), kind: 'mark', layer: 'default', pose: { x: 130, y: 190, width: 140, height: 70 }, data: { kind: 'rect', shape: 'rect', fill: { paint: solid('#6f9fd9ff') } } },
     ],
   });

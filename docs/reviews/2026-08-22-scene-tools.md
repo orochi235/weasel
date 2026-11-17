@@ -24,11 +24,11 @@ afterwards ran `onEnd` again, committing over an already-cancelled gesture.
 **`align.*` and `distribute.*` were permanently disabled.** Both declared
 `enabled: () => ActionDisabledReason.SelectionRequired`, a constant stub of
 exactly the kind `requiresOperands`'s docstring warns against, so
-`evaluateEnabled` greyed out all eight `<ActionBar>` entries no matter what was
+`checkEnabled` greyed out all eight `<ActionBar>` entries no matter what was
 selected. Each predicate now reads the selection and matches its invoker's own
 guard (two nodes for align, three for distribute).
 
-**Four descriptor families read undeclared deps.** `buildDepsFromRequires`
+**Four descriptor families read undeclared deps.** `createActionDeps`
 builds a dispatched action's bag from `requires` and, in dev, throws on any
 undeclared read. `reorder.backward` read `applyOps` without declaring it (its
 `forward` twin declares all three); `align.*`, `distribute.*` and

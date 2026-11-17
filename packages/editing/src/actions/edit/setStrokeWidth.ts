@@ -1,7 +1,7 @@
 import type { Action, ActionParamsOf } from '@weasel-js/routing';
 import type { Stroke, VertexWidth } from '@weasel-js/paint';
 import { createPaintAction } from './createPaintAction';
-import { strokeOf, DEFAULT_STROKE_COLOR } from '@weasel-js/paint';
+import { solidStroke, DEFAULT_STROKE_COLOR } from '@weasel-js/paint';
 
 /** `setStrokeWidth`'s gesture state: what it writes, each part only when given. */
 interface SetStrokeWidthState {
@@ -39,7 +39,7 @@ export const setStrokeWidthAction: Action = createPaintAction<
     return { ...prev, ...(width !== undefined ? { width } : {}), ...(vertexWidths !== undefined ? { vertexWidths } : {}) };
   },
   merge: (prev, state) => {
-    const base: Stroke = prev ?? strokeOf(DEFAULT_STROKE_COLOR);
+    const base: Stroke = prev ?? solidStroke(DEFAULT_STROKE_COLOR);
     const next: Stroke = state.width !== undefined ? { ...base, width: state.width } : { ...base };
     if (state.vertexWidths === null) delete next.vertexWidths;
     else if (state.vertexWidths !== undefined) next.vertexWidths = [...state.vertexWidths];

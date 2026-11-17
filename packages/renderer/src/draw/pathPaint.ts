@@ -1,10 +1,10 @@
-import { scaleVertexWidth, type CommandPaint, type Stroke, type Paint, type VertexWidth } from '@weasel-js/paint';
+import { resolveScreenLength, scaleVertexWidth, type CommandPaint, type Stroke, type Paint, type VertexWidth } from '@weasel-js/paint';
 import type { PathDrawCommand } from '../DrawCommand';
 import { createPart } from '@weasel-js/registry';
 import type { GLMeshHandle } from '../cache/GLMeshCache';
 import type { Mesh } from '@weasel-js/geom/tessellate';
 import type { ShaderProgram } from '../shaders/ShaderProgram';
-import { inkWidth, resolveStrokeWidth } from '@weasel-js/stroke';
+import { widthHasInk } from '@weasel-js/stroke';
 import { strokeMesh } from '../cache/strokeMeshCache';
 import { resolveStrokeLengths, type StrokedPathCommand } from '../strokeLengths';
 import { ribbonAligns, type StrokeSpaces } from '@weasel-js/stroke';
@@ -117,8 +117,8 @@ function drawPathStroke(ctx: DrawContext, rawCmd: StrokedPathCommand): void {
   const { cmd, spaces } = resolveStrokeLengths(ctx.state.transform, rawCmd);
   const stroke = cmd.stroke;
   // No width draws nothing, heads and per-vertex widths included.
-  const width = resolveStrokeWidth(stroke.width ?? 1, 1);
-  if (!inkWidth(width)) return;
+  const width = resolveScreenLength(stroke.width ?? 1, 1);
+  if (!widthHasInk(width)) return;
   const align = stroke.align ?? 'center';
   const metric = spaces.ribbon?.metric;
   // A rect the metric turns is no longer a rect in the space its ribbon is
@@ -227,7 +227,7 @@ const doubledVertexWidths = createPart(
 function doubledStroke(stroke: Stroke): Stroke {
   return {
     ...stroke,
-    width: resolveStrokeWidth(stroke.width ?? 1, 1) * 2,
+    width: resolveScreenLength(stroke.width ?? 1, 1) * 2,
     ...(stroke.vertexWidths ? { vertexWidths: doubledVertexWidths(stroke.vertexWidths) } : {}),
     align: 'center',
   };

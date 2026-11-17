@@ -7,7 +7,7 @@ import type { DataEdge, DataNode, Row } from '@weasel-js/diagram';
 import type { ImportResult } from '../../document';
 import { Warnings, graphPage } from '../../graphRead';
 import { DIRECTIONS } from '../class/read';
-import { pageNameOf, type MermaidDirection } from '../common/lines';
+import { readPageName, type MermaidDirection } from '../common/lines';
 import { StyleSheet } from '../common/styles';
 import { parseRequirementDiagram } from './parse';
 
@@ -37,7 +37,7 @@ export function readRequirementDiagram(text: string): ImportResult {
     return { id, rows, ...(colors !== undefined ? { colors } : {}) };
   });
   if ([...blocks.values()].includes(null)) warnings.add('Mermaid relationships named blocks the diagram never declares; they were read as plain boxes.');
-  const name = pageNameOf(source, warnings);
+  const name = readPageName(source, warnings);
   const dir = direction !== undefined ? DIRECTIONS[direction] : undefined;
   const page = graphPage({ ...(name !== undefined ? { name } : {}), ...(dir !== undefined ? { direction: dir } : {}), nodes, edges, containers: [] });
   return { document: { pages: [{ ...page, notation: 'requirement' }] }, warnings: warnings.all() };
