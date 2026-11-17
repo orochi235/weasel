@@ -113,11 +113,13 @@ downgrades the run to the classic path — which fails, and reports it as
 `E404` or `ENEEDAUTH`, errors that read like a missing package rather than an
 auth misconfiguration.
 
-### Setting up a new package
+### Seeding a new package
 
-Trust config is held per package, with no org-wide setting, and OIDC cannot create a
-package, so a new publishable workspace is published once by hand and then registered.
-Both commands name the package, and both run in a real terminal:
+**Seeding** a package is its first publish to npm, made by hand, followed by registering it for
+trusted publishing. Trust config is held per package, with no org-wide setting, and OIDC cannot
+create a package, so every new publishable workspace is seeded before a release can carry it; until
+then `check:first-publish` fails the release. A package needs seeding when `npm view <pkg> version`
+answers `E404`. Both commands name the package, and both run in a real terminal:
 
 ```sh
 npm run build -w @weasel-js/<pkg>
