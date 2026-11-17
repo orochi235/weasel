@@ -1,3 +1,4 @@
+import { nestedLength } from './length';
 import type { EventBooking, EventBookingHandle, EventTrack, NestedTimeline, TimelineEvent, Track } from './types';
 
 /** A clock read further than this from the frame clock's prediction is taken
@@ -68,7 +69,7 @@ interface Booking {
 
 /** Where a nested timeline starting at root time `from` stops, inside parents that stop at `end`. */
 const endWithin = (end: number, from: number, timeline: NestedTimeline): number =>
-  Math.min(end, from + (timeline.duration ?? Infinity));
+  Math.min(end, from + nestedLength(timeline));
 
 /** `laps` laps of `duration`: none of an endless duration is none, not `NaN`. */
 const lapsOf = (laps: number, duration: number): number => (laps === 0 ? 0 : laps * duration);

@@ -350,3 +350,14 @@ describe('event booking on an endless timeline', () => {
     expect(r.live().map((b) => b.when)).toEqual([START + 70 + 35]);
   });
 });
+
+describe('event booking in a nested timeline of negative duration', () => {
+  it('books the event at its start, as it fires it', () => {
+    const track: EventTrack = { kind: 'event', events: [] };
+    const r = rig({ duration: 2000, tracks: [{ kind: 'timeline', at: 1000, timeline: { duration: -5, tracks: [track] } }] });
+    track.events = [bookingEvent(r.log, 0)];
+    r.frame(0);
+    r.frame(950);
+    expect(r.whens()).toEqual([START + 1000]);
+  });
+});

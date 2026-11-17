@@ -1,4 +1,5 @@
 import type { Target } from '../target';
+import { nestedLength } from './length';
 import { sampleTrack } from './sampleTrack';
 import type { SampledTrack, Track } from './types';
 
@@ -95,7 +96,7 @@ export function createTrackSampler(open?: OpenTrackHold, gone: () => boolean = (
         if (st.target) place(st, v, t);
         st.onTick?.(v);
       } else if (track.kind === 'timeline') {
-        visit(track.timeline.tracks, Math.min(t - track.at, track.timeline.duration ?? Infinity));
+        visit(track.timeline.tracks, Math.min(t - track.at, nestedLength(track.timeline)));
       }
     }
   };

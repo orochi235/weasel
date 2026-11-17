@@ -64,3 +64,11 @@ describe('a timeline canceled partway through a frame', () => {
     expect(fired).toEqual([]);
   });
 });
+
+describe('a nested timeline of negative duration', () => {
+  it('holds its target at its first key, as it plays for none', () => {
+    const r = rig(() => ({ duration: 200, tracks: [{ kind: 'timeline', at: 0, timeline: { duration: -5, tracks: [ramp()] } }] }));
+    r.frame(0);
+    expect(r.open.size).toBe(1);
+  });
+});

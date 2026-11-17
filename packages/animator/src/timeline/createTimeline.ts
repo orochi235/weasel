@@ -1,7 +1,8 @@
 import { createEmitter } from '@weasel-js/registry';
 import type { AnimationHandle } from '../types';
 import { createBooker } from './booking';
-import { createEventCursor, createEventFirer, lengthOf } from './fireEvents';
+import { createEventCursor, createEventFirer } from './fireEvents';
+import { lengthOf } from './length';
 import { createTrackSampler, type OpenTrackHold } from './trackHolds';
 import type { EventTrack, TimelineEvent, TimelineHandle, TimelineOptions, Track } from './types';
 
