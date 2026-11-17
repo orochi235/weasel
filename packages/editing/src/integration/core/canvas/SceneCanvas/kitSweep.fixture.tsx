@@ -152,7 +152,7 @@ function coreFactories(s: Sweep): void {
   s.value(editing.selectionResizeContribution(), 'selectionResizeContribution');
   s.value(editing.selectionRotateContribution(), 'selectionRotateContribution');
   s.value(editing.areaSelectContribution(), 'areaSelectContribution');
-  s.value(core.dragPanContribution(), 'dragPanContribution');
+  s.value(core.createDragPanContribution(), 'createDragPanContribution');
   s.value(core.createPresentationContribution(), 'createPresentationContribution');
   const modes = createModeRegistry({
     initial: 'object',

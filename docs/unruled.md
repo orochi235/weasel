@@ -2058,7 +2058,7 @@ Calls the lanes made without a ruling:
   animations. Its `NoisePatch.noise` stays beside the graph's `NoiseNodeOptions.color`, since patterns are saved as
   data (2026-11-12).
 - Contribution factories keep their packages' names (`diagramPorts`, `plotEditing`, `createMinimapContribution`): core
-  itself mixes `dragPanContribution` and `createPresentationContribution`, and no convention picks one. Presets do
+  itself mixes `createDragPanContribution` and `createPresentationContribution`, and no convention picks one. Presets do
   have one, now in `docs/conventions.md` (2026-11-12).
 - A `createSpacingHintsPreset` given an `id` names its sources `<id>.spacing` and `<id>.alignment`; with none they
   keep `spacing` and `alignment`, so a canvas with one preset reads as before (2026-11-12).

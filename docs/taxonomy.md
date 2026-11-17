@@ -359,7 +359,7 @@ raises for it, while held on macOS and Linux or just after the release on
 Windows, so its menu opens on the release in place of the press (2026-11-11). An
 affordance's claim on the pointer is a claim on its primary press and does not
 bar a drag with another button. The `view` preset binds a middle drag to
-`viewport.dragPan` under every tool (`middleDragPanContribution`).
+`viewport.dragPan` under every tool (`createMiddleDragPanContribution`).
 
 A `hover` spec with `held` keeps reporting while a button is down, read the way
 `mods` reads a modifier: `held: 'optional'` (`hover ?held` in a route) fires
@@ -625,7 +625,7 @@ in path edit, Escape exits the edit instead of resetting the tool. A plain drag
 carries no intent of its own, so no kit action binds one by default: the select
 tool marquees, the shape tools insert and the hand tool pans through their own
 bindings, and a canvas that wants a marquee or a pan under every tool adds
-`areaSelectContribution()` or `dragPanContribution()`. Path edit's anchor
+`areaSelectContribution()` or `createDragPanContribution()`. Path edit's anchor
 editing binds ambient drags on its own affordances, and a path-edit tool such
 as Sand binds its drag at the active tier, which outranks them;
 the `anchors` tool path edit starts on binds nothing, so they take the drag.

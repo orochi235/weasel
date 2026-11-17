@@ -4,7 +4,7 @@ import { SceneCanvas } from '../../../canvas/SceneCanvas';
 import { IDENTITY_POSE_COMPOSITION } from 'core/scene/composeFrame';
 import { createScene } from 'core/scene/scene';
 import type { View } from 'core/viewport/view';
-import { dragPanContribution } from './dragPanContribution';
+import { createDragPanContribution } from './createDragPanContribution';
 import type { Contribution } from '../../overlayBinding';
 import { viewPreset } from 'canvas/SceneCanvas/presets';
 import type { FeaturePreset } from 'canvas/SceneCanvas/features';
@@ -65,18 +65,18 @@ function drag(ambient: Contribution[], { features = [viewPreset], button = 0 }: 
 
 const dragOnce = (ambient: Contribution[]): View => drag(ambient).view;
 
-describe('dragPanContribution', () => {
+describe('createDragPanContribution', () => {
   it('a plain drag pans nothing on a canvas that did not opt in', () => {
     expect(dragOnce([])).toEqual(START);
   });
 
   it('pans the view on a plain drag once the canvas opts in', () => {
-    const v = dragOnce([dragPanContribution()]);
+    const v = dragOnce([createDragPanContribution()]);
     expect([v.x, v.y]).toEqual([-30, -20]);
   });
 
   it("passes its params to the pan: axis 'x' leaves y alone", () => {
-    const v = dragOnce([dragPanContribution({ axis: 'x' })]);
+    const v = dragOnce([createDragPanContribution({ axis: 'x' })]);
     expect([v.x, v.y]).toEqual([-30, 0]);
   });
 });

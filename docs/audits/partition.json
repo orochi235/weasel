@@ -1969,7 +1969,7 @@
  {
   "id": "core.tools",
   "files": [
-   "packages/core/src/tools/builtin/hand/dragPanContribution.ts",
+   "packages/core/src/tools/builtin/hand/createDragPanContribution.ts",
    "packages/core/src/tools/builtin/hand/index.ts",
    "packages/core/src/tools/builtin/hand/useHandTool.ts",
    "packages/core/src/tools/builtin/index.ts",

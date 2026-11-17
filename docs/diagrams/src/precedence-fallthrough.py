@@ -42,7 +42,7 @@ items = [
         '• required modifiers: how many',
         '• phase: 2 when channel and phase are both named, 1 when one is a wildcard, 0 for none',
         '• drop, carry or paste with a MIME filter: 2, anything else 1',
-        '▸ target: `[*:*] drag => unselected-body` (`move`) beats `[*:*] drag` (`viewport.dragPan`, from `dragPanContribution`).',
+        '▸ target: `[*:*] drag => unselected-body` (`move`) beats `[*:*] drag` (`viewport.dragPan`, from `createDragPanContribution`).',
         '▸ modifiers: `[*:*] drag +shift` beats `[*:*] drag ?shift` (`lassoSelect`); an optional modifier counts for nothing.',
         '▸ phase: `[*:engaged] keyDown(Escape)` (`dispatch.cancelAll`) beats `[*:*] keyDown(Escape)` (`tool.resetToDefault`).',
         '▸ MIME: `[*:*] drop(text/csv)` beats `[*:*] drop ?shift ?alt ?ctrl ?meta` (`ingest`).',
@@ -150,10 +150,10 @@ ey = example(ey, 'Escape while editing a path',
              ])
 
 ey = example(ey + 16, 'Bare drag on empty canvas, select tool active',
-             'Default mode, which allows `creates-selection`, on a canvas that opted into `dragPanContribution`.',
+             'Default mode, which allows `creates-selection`, on a canvas that opted into `createDragPanContribution`.',
              [
                  ('1', '`areaSelect` from the select tool, `[*:*] drag => predicate` (empty canvas)', 'active', '1 0 0 1', 'step 2, tier', '`creates-selection` holds', 'fires', 'green'),
-                 ('2', '`viewport.dragPan` from `dragPanContribution`, `[*:*] drag`', 'ambient', '0 0 0 1', 'step 2, tier', 'none', 'not asked', 'white'),
+                 ('2', '`viewport.dragPan` from `createDragPanContribution`, `[*:*] drag`', 'ambient', '0 0 0 1', 'step 2, tier', 'none', 'not asked', 'white'),
              ],
              [
                  'The tier settles this one: the select tool\'s binding sits in the active tier, above the ambient pan.',

@@ -135,7 +135,7 @@ and contributions that want one bind it: `areaSelect` from the select tool (or,
 under every tool, `areaSelectContribution()`), `insert` and
 `insert.adjustRotation` from the shape tools, `lassoSelect` from the lasso tool,
 `slice` from path-tools' slice tool, `viewport.dragPan` from the hand tool (or, on any
-unclaimed drag, `dragPanContribution()`), and `resize`, `rotate` and `clone`
+unclaimed drag, `createDragPanContribution()`), and `resize`, `rotate` and `clone`
 from the `resize`, `rotate` and `move` presets' selection contributions.
 
 `clearSelection` (fires from `useSelectTool`'s empty-click binding),
