@@ -147,3 +147,6 @@ export const csfChecks = [
     },
   },
 ];
+
+/** Where `csf.mjs` writes check `index`'s screenshot; checks share stories, so the position keeps each apart. */
+export const csfShot = (dir, index, id) => `${dir}/forge-csf-${index + 1}-${id}.png`;

@@ -1,7 +1,7 @@
 // Headless check that forge renders a sample of Storybook's CSF stories: node apps/forge/e2e/csf.mjs [origin] [screenshot-dir]
 import { chromium } from '@playwright/test';
 import ports from '../../../scripts/dev-ports.json' with { type: 'json' };
-import { csfChecks as stories } from './stories.mjs';
+import { csfShot, csfChecks as stories } from './stories.mjs';
 
 const [origin = `http://[::1]:${ports.forge}`, shots = '.'] = process.argv.slice(2);
 
@@ -28,7 +28,7 @@ try {
       ];
       if (faults.length > 0) throw new Error(`fault shown: ${faults.join(' | ')}`);
       if (errors.length > 0) throw new Error(`page error: ${errors.join(' | ')}`);
-      const shot = `${shots}/forge-csf-${story.id}.png`;
+      const shot = csfShot(shots, i, story.id);
       await page.screenshot({ path: shot });
       console.log(`${i + 1}/${stories.length} ${story.id}  ok  (${story.what}) ${shot}`);
     } catch (error) {

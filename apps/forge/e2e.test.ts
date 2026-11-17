@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it } from 'vitest';
-import { csfChecks } from './e2e/stories.mjs';
+import { csfChecks, csfShot } from './e2e/stories.mjs';
 
 /** A story host as TrialHost renders one in dev: the scroller, then devtoolsDock's box-less wrapper, then the story. */
 function host(story: HTMLElement): HTMLElement {
@@ -51,5 +51,12 @@ describe("forge csf checks' host reads", () => {
     await expect(run(/apps\/draw story/, el)).rejects.toThrow(/off screen/);
     rect(story, 10, 200);
     await expect(run(/apps\/draw story/, el)).resolves.toBeUndefined();
+  });
+});
+
+describe("forge csf checks' screenshots", () => {
+  it('go to a path of their own for each check', () => {
+    const paths = csfChecks.map((c, i) => csfShot('shots', i, c.id));
+    expect(new Set(paths).size).toBe(csfChecks.length);
   });
 });
