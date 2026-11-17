@@ -88,7 +88,7 @@ export function useBoneTool(options: UseBoneToolOptions): Tool {
       { spec: { kind: 'click', mods: { shift: 'optional', alt: 'optional' } }, actionId: 'bone.pick', opts: { id: 'bone.pick' } },
       { spec: { kind: 'drag', mods: { shift: 'optional', alt: 'optional' } }, actionId: 'bone.drag', opts: { id: 'bone.drag' } },
       { spec: { kind: 'key', key: ['Delete', 'Backspace'] }, actionId: 'bone.remove', opts: { id: 'bone.remove' } },
-      { spec: { kind: 'key', key: 'Escape' }, actionId: 'bone.clear', opts: { id: 'bone.clear' } },
+      { spec: { kind: 'key', key: 'Escape' }, actionId: 'bone.deselect', opts: { id: 'bone.deselect' } },
     ],
   }), [actions, overlay, keybinding, env]);
 }

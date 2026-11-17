@@ -106,7 +106,7 @@ function dragAction(env: BoneEnv, editing: () => true | ActionDisabledReason): A
   };
 }
 
-/** The bone tool's actions: `bone.drag`, `bone.pick`, `bone.remove`, and `bone.clear`. */
+/** The bone tool's actions: `bone.drag`, `bone.pick`, `bone.remove`, and `bone.deselect`. */
 export function createBoneActions(env: BoneEnv): Action[] {
   const editing = () => (env.placed() ? true : ActionDisabledReason.NotApplicable);
   const hasActive = () => {
@@ -152,7 +152,7 @@ export function createBoneActions(env: BoneEnv): Action[] {
       },
     },
     {
-      id: 'bone.clear',
+      id: 'bone.deselect',
       label: 'Bone — clear the active joint',
       eligible,
       enabled: hasActive,

@@ -145,7 +145,7 @@ describe('useBoneTool', () => {
   it('declines Delete and Escape with no joint active, and everything with no rig', () => {
     const t = setup();
     expect(t.fire('bone.remove')).toBe(false);
-    expect(t.fire('bone.clear')).toBe(false);
+    expect(t.fire('bone.deselect')).toBe(false);
     t.setTarget(null);
     expect(t.fire('bone.pick', { press: { x: 0, y: 0 } })).toBe(false);
     expect(t.drag([0, 0], [10, 10])).toEqual({});

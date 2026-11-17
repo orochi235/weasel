@@ -256,8 +256,8 @@ class Remove implements fc.Command<Model, Real> {
 class Clear implements fc.Command<Model, Real> {
   check = () => true;
   run(m: Model, r: Real): void {
-    if (!enabled(r, 'bone.clear')) { expect(validActive(m)).toBeNull(); return; }
-    runImmediate(r, 'bone.clear');
+    if (!enabled(r, 'bone.deselect')) { expect(validActive(m)).toBeNull(); return; }
+    runImmediate(r, 'bone.deselect');
     m.active = null;
     check(m, r);
   }
