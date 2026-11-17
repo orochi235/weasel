@@ -1,5 +1,5 @@
 import { useLatest } from '@weasel-js/core';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { type Dispatch, type SetStateAction, useCallback, useEffect, useRef, useState } from 'react';
 import type { JobCapability, JobFailure, JobHandle, JobStatus } from './types';
 
 /** Inputs to `useJob`. `setState` receives each item folded in by the
@@ -27,6 +27,46 @@ const IDLE: Progress = { status: 'idle', done: 0, total: null, failures: [], err
 function sameKey(a: readonly unknown[] | null, b: readonly unknown[] | null): boolean {
   if (a === null || b === null) return a === b;
   return a.length === b.length && a.every((v, i) => Object.is(v, b[i]));
+}
+
+/**
+ * One run of the capability `cap()` reads: its items folded into state and its events into progress while `live()`
+ * holds. A superseded run ends without touching either.
+ */
+async function drive<TS, TC, TItem>(
+  cap: () => JobCapability<TS, TC, TItem>,
+  args: { config: TC; state: TS; signal: AbortSignal },
+  live: () => boolean,
+  setState: (fold: (prev: TS) => TS) => void,
+  setProgress: Dispatch<SetStateAction<Progress>>,
+): Promise<void> {
+  try {
+    for await (const event of cap().run(args)) {
+      if (!live()) return;
+      if (event.kind === 'total') {
+        setProgress((p) => ({ ...p, total: event.total }));
+      } else if (event.kind === 'failed') {
+        setProgress((p) => ({
+          ...p,
+          failures: [...p.failures, { index: event.index, error: event.error }],
+        }));
+      } else {
+        const fold = cap().onItem;
+        const item = event.item;
+        setState((prev) => fold(item, prev));
+        setProgress((p) => ({ ...p, done: p.done + 1 }));
+      }
+    }
+    if (!live()) return;
+    setProgress((p) => ({ ...p, status: 'done' }));
+  } catch (err) {
+    if (!live()) return;
+    setProgress((p) => ({
+      ...p,
+      status: 'error',
+      error: err instanceof Error ? err.message : String(err),
+    }));
+  }
 }
 
 /**
@@ -79,40 +119,13 @@ export function useJob<TS, TC, TItem>({
     const startConfig = configRef.current;
     if (begin) setStateRef.current((prev) => begin(prev, startConfig));
 
-    void (async () => {
-      try {
-        const iterable = capRef.current.run({
-          config: configRef.current,
-          state: stateRef.current,
-          signal: controller.signal,
-        });
-        for await (const event of iterable) {
-          if (token.current !== mine) return;
-          if (event.kind === 'total') {
-            setProgress((p) => ({ ...p, total: event.total }));
-          } else if (event.kind === 'failed') {
-            setProgress((p) => ({
-              ...p,
-              failures: [...p.failures, { index: event.index, error: event.error }],
-            }));
-          } else {
-            const fold = capRef.current.onItem;
-            const item = event.item;
-            setStateRef.current((prev) => fold(item, prev));
-            setProgress((p) => ({ ...p, done: p.done + 1 }));
-          }
-        }
-        if (token.current !== mine) return;
-        setProgress((p) => ({ ...p, status: 'done' }));
-      } catch (err) {
-        if (token.current !== mine) return;
-        setProgress((p) => ({
-          ...p,
-          status: 'error',
-          error: err instanceof Error ? err.message : String(err),
-        }));
-      }
-    })();
+    void drive(
+      () => capRef.current,
+      { config: configRef.current, state: stateRef.current, signal: controller.signal },
+      () => token.current === mine,
+      (fold) => setStateRef.current(fold),
+      setProgress,
+    );
   }, [capRef, configRef, setStateRef, stateRef]);
 
   // Re-run when the declared key changes. `auto` covers the first mount too.
