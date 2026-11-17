@@ -52,7 +52,7 @@ export {
 } from './lines/pack';
 export { createLinePass, type LineDrawOptions, type LinePass } from './lines/pass';
 export {
-  orbitAction, panAction, dollyAction, pinchDollyAction, homeAction, useOrbitTool,
+  cameraOrbitAction, cameraPanAction, cameraDollyAction, cameraPinchDollyAction, cameraHomeAction, useOrbitTool,
 } from './tools';
 export { KERNEL3D_TOOLS, useKernel3dTools, type Kernel3dToolId } from './toolSets';
 export type { Camera3dDep } from './cameraDep';

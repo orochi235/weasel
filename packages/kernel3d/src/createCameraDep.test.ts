@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import type { ActionDeps, InvocationCtx, OngoingInvoker } from '@weasel-js/core';
 import { cameraBasis, createCamera, type Camera3d } from './camera';
 import { createCameraDep } from './createCameraDep';
-import { panAction } from './tools';
+import { cameraPanAction } from './tools';
 import type { Viewport3d } from './project';
 
 const Z_UP = { x: 0, y: 0, z: 1 };
@@ -10,7 +10,7 @@ const NO_MODS = { alt: false, ctrl: false, meta: false, shift: false };
 
 function panRight(deps: ActionDeps, px: number): void {
   const ctx = { world: { x: 0, y: 0 }, screen: { x: 0, y: 0 }, modifiers: NO_MODS, deps } as InvocationCtx;
-  const handle = (panAction.invoker as OngoingInvoker).start(ctx, undefined);
+  const handle = (cameraPanAction.invoker as OngoingInvoker).start(ctx, undefined);
   handle.onMove!({ ...ctx, drag: { start: { x: 0, y: 0 }, current: { x: px, y: 0 }, delta: { x: px, y: 0 }, screenDelta: { x: px, y: 0 } } } as unknown as InvocationCtx);
 }
 

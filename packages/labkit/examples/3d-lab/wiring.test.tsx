@@ -22,7 +22,7 @@ import {
   type Tool,
 } from '@weasel-js/core';
 import {
-  createCamera, createNodeAtPoint, orbitAction, useOrbitTool, type Viewport3d,
+  createCamera, createNodeAtPoint, cameraOrbitAction, useOrbitTool, type Viewport3d,
 } from '@weasel-js/kernel3d';
 import { aabbOfSolid, createSolidScene, type SolidNode, type SolidScene } from './scene3d';
 
@@ -68,7 +68,7 @@ function mount(harness: Harness, toolId: string) {
       size: () => ({ width: WIDTH, height: HEIGHT }),
     }));
 
-    useAction(orbitAction);
+    useAction(cameraOrbitAction);
     const orbit = useOrbitTool();
     const entriesById = useMemo(() => new Map<string, Tool>([['orbit', orbit as Tool]]), [orbit]);
 
@@ -110,7 +110,7 @@ describe('the dispatcher over a 3D viewport', () => {
   it('hands the action the screen point, with no view transform applied', () => {
     const seen: Array<{ world: { x: number; y: number }; screen: { x: number; y: number } }> = [];
     const start = vi
-      .spyOn(orbitAction.invoker as { start: (ctx: never) => unknown }, 'start')
+      .spyOn(cameraOrbitAction.invoker as { start: (ctx: never) => unknown }, 'start')
       .mockImplementation((ctx: never) => {
         const c = ctx as unknown as {
           world: { x: number; y: number };

@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import type { ActionDeps, ImmediateInvoker, InvocationCtx, OngoingInvoker } from '@weasel-js/core';
 import { createKitSettingsStore, type KitSettingsOverrides } from '@weasel-js/react';
 import { createCamera, type Camera3d } from './camera';
-import { DOLLY_RATE, ORBIT_RATE, dollyAction, orbitAction } from './tools';
+import { DOLLY_RATE, ORBIT_RATE, cameraDollyAction, cameraOrbitAction } from './tools';
 import { kernel3dKitSettingsSchema } from './kitSettings';
 
 function cameraDeps(settings?: KitSettingsOverrides) {
@@ -17,14 +17,14 @@ function cameraDeps(settings?: KitSettingsOverrides) {
 const orbitYaw = (settings?: KitSettingsOverrides): number => {
   const { deps, camera } = cameraDeps(settings);
   const base = { world: { x: 0, y: 0 }, screen: { x: 0, y: 0 }, modifiers: { alt: false, ctrl: false, meta: false, shift: false }, deps };
-  const handle = (orbitAction.invoker as OngoingInvoker).start(base as InvocationCtx, undefined);
+  const handle = (cameraOrbitAction.invoker as OngoingInvoker).start(base as InvocationCtx, undefined);
   handle.onMove!({ ...base, drag: { start: { x: 0, y: 0 }, current: { x: 10, y: 0 }, delta: { x: 10, y: 0 }, screenDelta: { x: 10, y: 0 } } } as InvocationCtx);
   return camera().yaw;
 };
 
 const dollied = (settings?: KitSettingsOverrides): number => {
   const { deps, camera } = cameraDeps(settings);
-  (dollyAction.invoker as ImmediateInvoker).run(deps, { deltaY: 100 });
+  (cameraDollyAction.invoker as ImmediateInvoker).run(deps, { deltaY: 100 });
   return camera().distance;
 };
 

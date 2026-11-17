@@ -13,7 +13,7 @@ import type { Camera3dDep } from './cameraDep';
 import { createNodeAtPoint, screenBoxOf } from './deps';
 import { pose3, type Pose3 } from './pose3';
 import { projectPoint, type Viewport3d } from './project';
-import { dollyAction, orbitAction, panAction } from './tools';
+import { cameraDollyAction, cameraOrbitAction, cameraPanAction } from './tools';
 
 const Z: Vec3 = { x: 0, y: 0, z: 1 };
 /** The quarter turn about x carrying a y-up world onto a z-up one. */
@@ -127,7 +127,7 @@ function depsFor(camera: Camera3d, up?: Vec3) {
 const NO_MODS = { alt: false, ctrl: false, meta: false, shift: false };
 const ctxOf = (deps: ActionDeps, more: Partial<InvocationCtx> = {}) =>
   ({ world: { x: 0, y: 0 }, screen: { x: 0, y: 0 }, modifiers: NO_MODS, deps, ...more }) as InvocationCtx;
-function drag(action: typeof orbitAction, deps: ActionDeps, to: { x: number; y: number }) {
+function drag(action: typeof cameraOrbitAction, deps: ActionDeps, to: { x: number; y: number }) {
   const handle = (action.invoker as OngoingInvoker).start(ctxOf(deps), undefined);
   handle.onMove?.(ctxOf(deps, {
     drag: { start: { x: 0, y: 0 }, current: to, delta: to, screenDelta: to },
@@ -138,9 +138,9 @@ describe('the camera actions in a z-up world', () => {
   it('orbit, pan and dolly the camera3d dep as they do in a y-up one, turned', () => {
     for (const init of CAMERAS) {
       for (const act of [
-        (deps: ActionDeps) => drag(orbitAction, deps, { x: 40, y: -25 }),
-        (deps: ActionDeps) => drag(panAction, deps, { x: -70, y: 30 }),
-        (deps: ActionDeps) => (dollyAction.invoker as ImmediateInvoker).run(deps, { deltaY: -150, clientX: 600, clientY: 200 }),
+        (deps: ActionDeps) => drag(cameraOrbitAction, deps, { x: 40, y: -25 }),
+        (deps: ActionDeps) => drag(cameraPanAction, deps, { x: -70, y: 30 }),
+        (deps: ActionDeps) => (cameraDollyAction.invoker as ImmediateInvoker).run(deps, { deltaY: -150, clientX: 600, clientY: 200 }),
       ]) {
         const y = depsFor(yUp(init)), z = depsFor(zUp(init), Z);
         act(y.deps);

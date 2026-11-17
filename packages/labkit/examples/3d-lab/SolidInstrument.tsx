@@ -34,8 +34,8 @@ import {
   projectSnapMarks,
   screenBoxOf,
   useOrbitTool,
-  orbitAction,
-  panAction,
+  cameraOrbitAction,
+  cameraPanAction,
   type AxisMove,
   type Camera3d,
   type ChromeBox,
@@ -282,8 +282,8 @@ function Viewport({ config }: { config: SolidConfig }): ReactNode {
   useDepSource('insert', () => insert);
   useDepSource('snap', () => snap);
   useDepSource('poseDescriptor', () => poseDescriptor as never);
-  useAction(orbitAction);
-  useAction(panAction);
+  useAction(cameraOrbitAction);
+  useAction(cameraPanAction);
 
   // ── Tools ──────────────────────────────────────────────────────────────
   const pickEvery = useCallback(

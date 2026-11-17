@@ -5,7 +5,7 @@ import {
   PINCH_DOLLY_TOUCH,
 } from './cameraBindings';
 import type { Camera3dDep } from './cameraDep';
-import { dollyAction, homeAction, orbitAction, panAction, pinchDollyAction } from './tools';
+import { cameraDollyAction, cameraHomeAction, cameraOrbitAction, cameraPanAction, cameraPinchDollyAction } from './tools';
 
 /** Which gestures an orbit camera's rig binds. Each one left off reaches whatever is under the camera. */
 export interface CameraRigGestures {
@@ -40,16 +40,16 @@ function bind(action: Action, bindings: readonly (BoundGesture | false)[]): Acti
 export function cameraRigActions(gestures: CameraRigGestures = {}): Action[] {
   const { drag = false, wheel = 'plain', trackpadPinch = true, touchPinch = true, home = true } = gestures;
   return [
-    ...bind(orbitAction, [drag && ORBIT_DRAG]),
-    ...bind(panAction, [drag && PAN_DRAG]),
-    ...bind(dollyAction, [
+    ...bind(cameraOrbitAction, [drag && ORBIT_DRAG]),
+    ...bind(cameraPanAction, [drag && PAN_DRAG]),
+    ...bind(cameraDollyAction, [
       wheel === 'plain' && DOLLY_WHEEL,
       wheel === 'mod' && DOLLY_MOD_WHEEL,
       trackpadPinch && DOLLY_TRACKPAD_PINCH,
       trackpadPinch && DOLLY_PINCH,
     ]),
-    ...bind(pinchDollyAction, [touchPinch && PINCH_DOLLY_TOUCH]),
-    ...bind(homeAction, [home && HOME_DOUBLE_CLICK]),
+    ...bind(cameraPinchDollyAction, [touchPinch && PINCH_DOLLY_TOUCH]),
+    ...bind(cameraHomeAction, [home && HOME_DOUBLE_CLICK]),
   ];
 }
 
