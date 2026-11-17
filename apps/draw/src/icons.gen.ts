@@ -7,22 +7,6 @@ export type DrawIconName =
   | 'releaseCompound'
   | 'symmetry'
   | 'settings'
-  | 'width'
-  | 'height'
-  | 'fontSize'
-  | 'bold'
-  | 'italic'
-  | 'underline'
-  | 'strikethrough'
-  | 'opacity'
-  | 'strokeWidth'
-  | 'rotation'
-  | 'cornerRadius'
-  | 'letterSpacing'
-  | 'lineHeight'
-  | 'position'
-  | 'fill'
-  | 'stroke'
   | 'record'
   | 'playRecording';
 
@@ -37,22 +21,6 @@ export const ICON_GROUPS: readonly { label: string; names: readonly DrawIconName
       "releaseCompound",
       "symmetry",
       "settings",
-      "width",
-      "height",
-      "fontSize",
-      "bold",
-      "italic",
-      "underline",
-      "strikethrough",
-      "opacity",
-      "strokeWidth",
-      "rotation",
-      "cornerRadius",
-      "letterSpacing",
-      "lineHeight",
-      "position",
-      "fill",
-      "stroke",
       "record",
       "playRecording"
     ]
@@ -64,22 +32,6 @@ declare module '@weasel-js/icons' {
     'draw:releaseCompound': true;
     'draw:symmetry': true;
     'draw:settings': true;
-    'draw:width': true;
-    'draw:height': true;
-    'draw:fontSize': true;
-    'draw:bold': true;
-    'draw:italic': true;
-    'draw:underline': true;
-    'draw:strikethrough': true;
-    'draw:opacity': true;
-    'draw:strokeWidth': true;
-    'draw:rotation': true;
-    'draw:cornerRadius': true;
-    'draw:letterSpacing': true;
-    'draw:lineHeight': true;
-    'draw:position': true;
-    'draw:fill': true;
-    'draw:stroke': true;
     'draw:record': true;
     'draw:playRecording': true;
   }

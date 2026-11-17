@@ -1,23 +1,23 @@
 import { describe, expect, it } from 'vitest';
-import { ACTIONS } from './actions.mjs';
+import { readdirSync, readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
+import { ICON_GROUPS } from '../src/icons.gen.ts';
 
-const nums = (s: string) => s.trim().split(/[\s,]+/).map(Number);
+const SRC = resolve(import.meta.dirname, '../src');
 
-describe('draw:rotation', () => {
-  it('carries its head on a straight run that leaves the arc, pointing the way the run travels', () => {
-    const d = [...ACTIONS.rotation.matchAll(/ d="([^"]+)"/g)].map((m) => m[1]!);
-    const shaft = d[0]!.match(/^M([^A]+)A([^L]+)L(.+)$/);
-    expect(shaft, d[0]).not.toBeNull();
-    const [ax, ay] = nums(shaft![2]!).slice(5);
-    const [runX, runY] = nums(shaft![3]!);
-    const run = [runX! - ax!, runY! - ay!];
-    expect(run[0] === 0 || run[1] === 0, 'run on an axis').toBe(true);
+function sourceText(): string {
+  return readdirSync(SRC, { recursive: true, encoding: 'utf8' })
+    .filter((f) => /\.tsx?$/.test(f) && !/\.test\.tsx?$/.test(f) && !/^icons\.(gen|table)\./.test(f))
+    .map((f) => readFileSync(resolve(SRC, f), 'utf8'))
+    .join('\n');
+}
 
-    const [b1x, b1y, tipX, tipY, b2x, b2y] = nums(d[1]!.replace(/[ML]/g, ' '));
-    expect([tipX, tipY]).toEqual([runX, runY]);
-    // Both barbs trail back against the run's direction.
-    const back = (bx: number, by: number) => (bx - tipX!) * run[0]! + (by - tipY!) * run[1]!;
-    expect(back(b1x!, b1y!)).toBeLessThan(0);
-    expect(back(b2x!, b2y!)).toBeLessThan(0);
+describe('draw glyphs', () => {
+  it('are each named by draw\'s source', () => {
+    const text = sourceText();
+    const unnamed = ICON_GROUPS.flatMap((g) => g.names).filter(
+      (name) => !text.includes(`icon('${name}')`) && !text.includes(`'draw:${name}'`),
+    );
+    expect(unnamed).toEqual([]);
   });
 });

@@ -1338,6 +1338,12 @@ The snap pipeline ([snapping.md](./snapping.md)) landed on 2026-10-18 with these
   user. Open: whether draw and chart should toast it, and whether anything should offer the copy back.
   2026-11-14: saves refuse to write over or remove `<key>` until that copy has landed, answering false, so a
   copy that will not save surfaces as a failed save rather than a lost document.
+- 2026-11-17 (the fixer's call, audit round 33): draw draws only the glyphs its source names. Sixteen it named
+  nowhere are gone (`width`, `height`, `fontSize`, `bold`, `italic`, `underline`, `strikethrough`, `opacity`,
+  `strokeWidth`, `rotation`, `cornerRadius`, `letterSpacing`, `lineHeight`, `position`, `fill`, `stroke`). Four
+  duplicated core's path-drawn text-styling glyphs (`core:bold` and its siblings) as `<text>` in whatever font is
+  present. `apps/draw/icons/actions.test.ts` fails on an unnamed one. Restoring them was the alternative; `rotation` was fixed
+  first, so reverting the deletion brings back a correct glyph.
 
 ## Build
 
