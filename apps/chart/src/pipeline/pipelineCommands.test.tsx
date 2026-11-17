@@ -7,7 +7,7 @@ import { PIPELINE_ACTIONS, usePipelineCommands } from './pipelineCommands';
 import { emptyPipeline, type PipelineDoc } from './usePipelineDoc';
 
 const pipeline: PipelineDoc = {
-  doc: emptyPipeline(), change: () => {}, undo: () => {}, redo: () => {}, canUndo: true, canRedo: true,
+  doc: emptyPipeline(), change: () => {}, preview: () => {}, cancel: () => {}, undo: () => {}, redo: () => {}, canUndo: true, canRedo: true,
 };
 const wrapper = ({ children }: { children: ReactNode }) => <ActionsProvider>{children}</ActionsProvider>;
 

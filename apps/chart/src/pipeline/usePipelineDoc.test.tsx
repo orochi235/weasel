@@ -32,15 +32,50 @@ describe('usePipelineDoc', () => {
     expect(result.current.doc).toBe(next);
   });
 
-  it('keeps two edits of one param as one undo step, and edits of different params apart', () => {
+  it('shows a preview without an undo step, and records the edit it ends in as one step from where it began', () => {
     const { result } = renderHook(() => usePipelineDoc());
     const empty = result.current.doc;
     const a = addStage(empty, stageFromType(blur, 'blur'));
     act(() => result.current.change(a, 'Add stage'));
-    act(() => result.current.change({ ...a }, 'Set radius', 'blur:radius'));
-    act(() => result.current.change({ ...a }, 'Set radius', 'blur:radius'));
+    const b1 = { ...a };
+    const b2 = { ...a };
+    act(() => result.current.preview(b1));
+    act(() => result.current.preview(b2));
+    expect(result.current.doc).toBe(b2);
+    const b3 = { ...a };
+    act(() => result.current.change(b3, 'Set radius'));
+    expect(result.current.doc).toBe(b3);
     act(() => result.current.undo());
     expect(result.current.doc).toBe(a);
+    act(() => result.current.undo());
+    expect(result.current.doc).toBe(empty);
+  });
+
+  it('puts a canceled preview back, leaving the undo and redo stacks as they were', () => {
+    const { result } = renderHook(() => usePipelineDoc());
+    const empty = result.current.doc;
+    const a = addStage(empty, stageFromType(blur, 'blur'));
+    const c = { ...a };
+    act(() => result.current.change(a, 'Add stage'));
+    act(() => result.current.change(c, 'Set radius'));
+    act(() => result.current.undo());
+    act(() => result.current.preview({ ...a }));
+    act(() => result.current.cancel());
+    expect(result.current.doc).toBe(a);
+    expect(result.current.canRedo).toBe(true);
+    act(() => result.current.undo());
+    expect(result.current.doc).toBe(empty);
+  });
+
+  it('keeps two quick edits of one param as two undo steps', () => {
+    const { result } = renderHook(() => usePipelineDoc());
+    const a = addStage(result.current.doc, stageFromType(blur, 'blur'));
+    const b = { ...a };
+    act(() => result.current.change(a, 'Add stage'));
+    act(() => result.current.change(b, 'Set radius'));
+    act(() => result.current.change({ ...a }, 'Set radius'));
+    act(() => result.current.undo());
+    expect(result.current.doc).toBe(b);
   });
 
   it('saves each change and loads it in a fresh hook', () => {

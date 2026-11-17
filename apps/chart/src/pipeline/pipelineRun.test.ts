@@ -1,7 +1,8 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
+import { act, renderHook } from '@testing-library/react';
 import { pickFile } from '@weasel-js/editor';
 import { createLatest } from '@weasel-js/registry';
-import { chooseImage } from './pipelineRun';
+import { chooseImage, useSourceImage } from './pipelineRun';
 
 vi.mock('@weasel-js/editor', async (original) => ({ ...(await original<object>()), pickFile: vi.fn() }));
 
@@ -39,5 +40,30 @@ describe('chooseImage', () => {
     await vi.waitFor(() => expect(decoded).toBeDefined(), { timeout: 10_000 });
     decoded(image);
     expect(await first).toBe(image);
+  });
+});
+
+describe('useSourceImage', () => {
+  const image = () => ({ close: vi.fn() }) as unknown as ImageBitmap;
+
+  it('closes a replaced image once the runner is idle, and the last one on unmount', async () => {
+    let idle!: () => void;
+    const runner = {
+      setSources: vi.fn(),
+      idle: vi.fn(() => new Promise<void>((resolve) => { idle = resolve; })),
+    };
+    const { result, unmount } = renderHook(() => useSourceImage());
+    const card = image();
+    const photo = image();
+    act(() => result.current.replace(card, runner));
+    act(() => result.current.replace(photo, runner));
+    expect(runner.setSources).toHaveBeenLastCalledWith({ image: photo });
+    expect(result.current.sources).toEqual({ image: photo });
+    expect(card.close).not.toHaveBeenCalled();
+    idle();
+    await vi.waitFor(() => expect(card.close).toHaveBeenCalled());
+    unmount();
+    idle();
+    await vi.waitFor(() => expect(photo.close).toHaveBeenCalled());
   });
 });

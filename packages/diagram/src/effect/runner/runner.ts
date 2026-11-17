@@ -42,6 +42,9 @@ export interface EffectRunner {
    *  way starts over. */
   setPipeline(pipeline: EffectPipeline): void;
   setSources(sources: Readonly<Record<string, unknown>>): void;
+  /** Settles once every run and step asked for so far has finished, failed or been dropped; then
+   *  no run reads the sources it was handed before, so their owner may close them. */
+  idle(): Promise<void>;
   setOptions(opts: Partial<Omit<EffectRunnerOptions, 'pipeline' | 'sources'>>): void;
   /** Says `run` is on screen: every preview of an older run that `run` does
    *  not show is closed. */
@@ -174,6 +177,7 @@ export function createEffectRunner(opts: EffectRunnerOptions): EffectRunner {
       options = { ...options, sources };
       dropStepping();
     },
+    idle: () => tail,
     setOptions(next) {
       options = { ...options, ...next };
     },

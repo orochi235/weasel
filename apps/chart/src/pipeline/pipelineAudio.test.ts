@@ -4,7 +4,7 @@ import { createAudioEngine } from '@weasel-js/audio';
 import { pickFile } from '@weasel-js/editor';
 import { stageFromType, type EffectPipeline } from '@weasel-js/diagram/effect';
 import { AUDIO_STAGE_TYPES, createLiveAudioRunner } from '@weasel-js/diagram/effect-audio';
-import { splitDomains, usePipelineAudio } from './pipelineAudio';
+import { mergeRuns, splitDomains, usePipelineAudio } from './pipelineAudio';
 
 vi.mock('@weasel-js/editor', async (original) => ({ ...(await original<object>()), pickFile: vi.fn() }));
 vi.mock('@weasel-js/audio', async (original) => ({ ...(await original<object>()), createAudioEngine: vi.fn() }));
@@ -39,6 +39,13 @@ describe('splitDomains', () => {
   });
 });
 
+describe('mergeRuns', () => {
+  it('keeps the stage a stepped run is on', () => {
+    const merged = mergeRuns({ stages: { blur: { cost: 1 } }, at: 'blur' }, { stages: { 'audio.file': { error: 'no source audio' } } });
+    expect(merged).toEqual({ stages: { blur: { cost: 1 }, 'audio.file': { error: 'no source audio' } }, at: 'blur' });
+  });
+});
+
 describe('usePipelineAudio', () => {
   it('says a File stage has no source audio before any engine is made', () => {
     const typed = (type: string) => stageFromType(AUDIO_STAGE_TYPES.find((t) => t.type === type)!, type);
@@ -62,6 +69,33 @@ describe('usePipelineAudio', () => {
       await picking.catch(() => {});
     });
     expect(createAudioEngine).not.toHaveBeenCalled();
+  });
+
+  it('settles quietly when the component goes while a file decodes', async () => {
+    let fail!: (err: Error) => void;
+    const decodeAudioData = () => new Promise<AudioBuffer>((_, reject) => { fail = reject; });
+    vi.mocked(createAudioEngine).mockReturnValue({ context: { decodeAudioData }, dispose: vi.fn() } as never);
+    vi.mocked(createLiveAudioRunner).mockReturnValue({
+      setSources: vi.fn(), setPipeline: vi.fn(), setPreviews: vi.fn(), drawn: vi.fn(), dispose: vi.fn(),
+      subscribe: () => () => {}, state: { run: undefined, playing: false },
+    } as never);
+    vi.mocked(pickFile).mockResolvedValue(new File([new Uint8Array(4)], 'a.wav'));
+    const { result, unmount } = renderHook(() => usePipelineAudio({ stages: [], wires: [] }, 'off'));
+    const picking = result.current.chooseSource();
+    await vi.waitFor(() => expect(fail).toBeDefined(), { timeout: 10_000 });
+    unmount();
+    fail(new Error('the context was closed'));
+    await expect(picking).resolves.toBeUndefined();
+  });
+
+  it('still reports a file that fails to decode', async () => {
+    const decodeAudioData = () => Promise.reject(new Error('unreadable'));
+    vi.mocked(createAudioEngine).mockReturnValue({ context: { decodeAudioData }, dispose: vi.fn() } as never);
+    vi.mocked(pickFile).mockResolvedValue(new File([new Uint8Array(4)], 'a.wav'));
+    const { result } = renderHook(() => usePipelineAudio({ stages: [], wires: [] }, 'off'));
+    await act(async () => {
+      await expect(result.current.chooseSource()).rejects.toThrow('unreadable');
+    });
   });
 
   it('keeps the file picked last when an earlier one finishes decoding after it', async () => {
