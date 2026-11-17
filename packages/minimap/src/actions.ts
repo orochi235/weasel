@@ -11,13 +11,13 @@ import {
 import type {} from './actionParamSchema';
 
 /** Action id for `minimapCenterAction`. */
-export const MINIMAP_CENTER = 'minimap.center';
+export const MINIMAP_CENTER_ACTION_ID = 'minimap.center';
 /** Action id for `minimapPanAction`. */
-export const MINIMAP_PAN = 'minimap.pan';
+export const MINIMAP_PAN_ACTION_ID = 'minimap.pan';
 /** Action id for `minimapZoomAction`. */
-export const MINIMAP_ZOOM = 'minimap.zoom';
+export const MINIMAP_ZOOM_ACTION_ID = 'minimap.zoom';
 /** Action id for `minimapTouchZoomAction`. */
-export const MINIMAP_TOUCH_ZOOM = 'minimap.touchZoom';
+export const MINIMAP_TOUCH_ZOOM_ACTION_ID = 'minimap.touchZoom';
 
 /** The main view's zoom limits, as an action takes them: fixed, read on each sample, or the kit defaults. */
 export type MinimapZoomClamp = ZoomClampOptions | (() => ZoomClampOptions | undefined);
@@ -53,7 +53,7 @@ function rootOf(deps: InvocationCtx['deps']): ViewApi | undefined {
 /** Recenter the main camera on the pressed world point. */
 export function minimapCenterAction(): Action {
   return defineAction({
-    id: MINIMAP_CENTER,
+    id: MINIMAP_CENTER_ACTION_ID,
     label: 'Minimap — center the view here',
     requires: ['rootView'],
     invoker: {
@@ -74,7 +74,7 @@ export function minimapCenterAction(): Action {
  *  and a cancel ends where a release does. */
 export function minimapPanAction(): Action {
   return {
-    id: MINIMAP_PAN,
+    id: MINIMAP_PAN_ACTION_ID,
     label: 'Minimap — pan the view',
     requires: ['rootView'],
     invoker: {
@@ -124,7 +124,7 @@ function centerOf(root: ViewApi): { x: number; y: number } | null {
  *  defaults `viewport.zoom` also uses. */
 export function minimapZoomAction(clamp?: MinimapZoomClamp): Action {
   return defineAction({
-    id: MINIMAP_ZOOM,
+    id: MINIMAP_ZOOM_ACTION_ID,
     label: 'Minimap — zoom the view',
     requires: ['rootView'],
     invoker: {
@@ -147,7 +147,7 @@ export function minimapZoomAction(clamp?: MinimapZoomClamp): Action {
  *  the fingers move, so the main view follows them as a one-finger pan does. `clamp` is as `minimapZoomAction`'s. */
 export function minimapTouchZoomAction(clamp?: MinimapZoomClamp): Action {
   return {
-    id: MINIMAP_TOUCH_ZOOM,
+    id: MINIMAP_TOUCH_ZOOM_ACTION_ID,
     label: 'Minimap — pinch to zoom the view',
     requires: ['rootView', 'view'],
     invoker: {
@@ -185,14 +185,14 @@ export function minimapTouchZoomAction(clamp?: MinimapZoomClamp): Action {
 export function minimapBindings(id: string, zoom: boolean, views?: readonly string[]): Tool['bindings'] {
   const scope = views ? { views: [...views] } : {};
   return [
-    { spec: { kind: 'pointerDown' }, actionId: MINIMAP_CENTER, opts: { id: `${id}.pointerDown`, ...scope } },
-    { spec: { kind: 'drag' }, actionId: MINIMAP_PAN, opts: { id: `${id}.drag`, ...scope } },
+    { spec: { kind: 'pointerDown' }, actionId: MINIMAP_CENTER_ACTION_ID, opts: { id: `${id}.pointerDown`, ...scope } },
+    { spec: { kind: 'drag' }, actionId: MINIMAP_PAN_ACTION_ID, opts: { id: `${id}.drag`, ...scope } },
     // A trackpad pinch arrives as ctrl+wheel, which a bare-wheel spec rejects, and in Safari as WebKit's pinch.
     ...(zoom ? [
-      { spec: { kind: 'wheel' as const }, actionId: MINIMAP_ZOOM, opts: { id: `${id}.wheel`, ...scope } },
-      { spec: { kind: 'wheel' as const, mods: { ctrl: true } }, actionId: MINIMAP_ZOOM, opts: { id: `${id}.trackpad`, ...scope } },
-      { spec: { kind: 'pinch' as const }, actionId: MINIMAP_ZOOM, opts: { id: `${id}.pinch`, ...scope } },
-      { spec: { kind: 'multiTouch' as const, fingers: 2 }, actionId: MINIMAP_TOUCH_ZOOM, opts: { id: `${id}.multiTouch`, ...scope } },
+      { spec: { kind: 'wheel' as const }, actionId: MINIMAP_ZOOM_ACTION_ID, opts: { id: `${id}.wheel`, ...scope } },
+      { spec: { kind: 'wheel' as const, mods: { ctrl: true } }, actionId: MINIMAP_ZOOM_ACTION_ID, opts: { id: `${id}.trackpad`, ...scope } },
+      { spec: { kind: 'pinch' as const }, actionId: MINIMAP_ZOOM_ACTION_ID, opts: { id: `${id}.pinch`, ...scope } },
+      { spec: { kind: 'multiTouch' as const, fingers: 2 }, actionId: MINIMAP_TOUCH_ZOOM_ACTION_ID, opts: { id: `${id}.multiTouch`, ...scope } },
     ] : []),
   ];
 }
