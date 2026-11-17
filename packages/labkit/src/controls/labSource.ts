@@ -21,7 +21,7 @@ import { useMemo } from 'react';
 import { isRecord, valueAtPath, withValueAtPath } from '../config/path';
 import { isEncodedLeaf } from '../config/storedDefault';
 import type { ResolvedConfig } from '../config/types';
-import { isLeafActive, isLeafEnabled, isLeafVisible } from '../config/visible';
+import { isRowActive, isRowEnabled, isRowVisible } from '../config/visible';
 import { leafValueAt } from './fields';
 
 /** What the row at `path` shows of `config` while pinned: an encoded leaf's stored value read through its encoding. */
@@ -89,9 +89,9 @@ export function createLabConfigSource(input: LabConfigInput): PrefsSource {
       if (autoAt(path) !== undefined) setRowAuto?.(path, next, valueAt(path).value);
     },
     stateAt: (path): LeafState => ({
-      disabled: !isLeafEnabled(resolved, path, config, over),
-      hidden: !isLeafVisible(resolved, path, config, true, over),
-      active: isLeafActive(resolved, path, config, over),
+      disabled: !isRowEnabled(resolved, path, config, over),
+      hidden: !isRowVisible(resolved, path, config, true, over),
+      active: isRowActive(resolved, path, config, over),
     }),
     reset: (paths) => {
       const plan = sourceResetPlan(source, paths);

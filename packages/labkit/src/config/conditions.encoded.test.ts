@@ -2,7 +2,7 @@ import type { PrefLeaf } from '@weasel-js/prefs';
 import { describe, expect, it } from 'vitest';
 import { f } from './builder';
 import type { ResolvedConfig } from './types';
-import { isConfigNodeShown, isLeafEnabled, isLeafVisible } from './visible';
+import { isConfigNodeShown, isRowEnabled, isRowVisible } from './visible';
 
 const italic = {
   read: (stored: unknown) => stored === 'italic',
@@ -43,10 +43,10 @@ const resolved: ResolvedConfig = {
 
 describe('a condition over a leaf stored through an encoding', () => {
   it('compares what the control shows, and not what it stores', () => {
-    expect(isLeafVisible(resolved, 'angle', { slant: 'italic' })).toBe(true);
-    expect(isLeafVisible(resolved, 'angle', { slant: 'normal' })).toBe(false);
-    expect(isLeafEnabled(resolved, 'weight', { slant: 'italic' })).toBe(false);
-    expect(isLeafEnabled(resolved, 'weight', { slant: 'normal' })).toBe(true);
+    expect(isRowVisible(resolved, 'angle', { slant: 'italic' })).toBe(true);
+    expect(isRowVisible(resolved, 'angle', { slant: 'normal' })).toBe(false);
+    expect(isRowEnabled(resolved, 'weight', { slant: 'italic' })).toBe(false);
+    expect(isRowEnabled(resolved, 'weight', { slant: 'normal' })).toBe(true);
   });
 
   it('does the same for a node of a schema not yet walked by path', () => {

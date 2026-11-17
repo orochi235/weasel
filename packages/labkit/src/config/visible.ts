@@ -94,7 +94,7 @@ function statusAt(
  * hidden leaf keeps its value and the instrument still reads it. `over` is
  * the schema the panel's aliases point into, where that is not its own.
  */
-export function isLeafVisible(
+export function isRowVisible(
   resolved: ResolvedConfig,
   path: string,
   config: Record<string, unknown>,
@@ -111,7 +111,7 @@ export function isLeafVisible(
  * holds, and so does that of every group above it. `over` is the schema
  * the panel's aliases point into, where that is not its own.
  */
-export function isLeafEnabled(
+export function isRowEnabled(
   resolved: ResolvedConfig,
   path: string,
   config: Record<string, unknown>,
@@ -125,7 +125,7 @@ export function isLeafEnabled(
  * and that holds. `over` is the schema the panel is drawn over, which the
  * condition may read a setting of.
  */
-export function isLeafActive(
+export function isRowActive(
   resolved: ResolvedConfig,
   path: string,
   config: Record<string, unknown>,

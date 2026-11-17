@@ -24,7 +24,7 @@ import { Fragment, type ReactNode } from 'react';
 import { drawsOwn } from '../config/drawsOwn';
 import { schemaNodeAtPath, valueAtPath } from '../config/path';
 import type { LeafRenderer, ResolvedConfig } from '../config/types';
-import { isLeafActive, isLeafEnabled, isLeafVisible } from '../config/visible';
+import { isRowActive, isRowEnabled, isRowVisible } from '../config/visible';
 import { boundAction } from './boundAction';
 import { ControlBar } from './ControlBar';
 import { ControlRow } from './ControlRow';
@@ -81,9 +81,9 @@ function conditionsAt<TC extends Record<string, unknown>>({
 }: PanelRowsSource<TC>) {
   const values = config as Record<string, unknown>;
   return {
-    enabled: (path: string): boolean => isLeafEnabled(resolved, path, values, over),
-    visible: (path: string): boolean => isLeafVisible(resolved, path, values, showHidden, over),
-    active: (path: string): boolean => isLeafActive(resolved, path, values, over),
+    enabled: (path: string): boolean => isRowEnabled(resolved, path, values, over),
+    visible: (path: string): boolean => isRowVisible(resolved, path, values, showHidden, over),
+    active: (path: string): boolean => isRowActive(resolved, path, values, over),
   };
 }
 

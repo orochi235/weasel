@@ -71,4 +71,4 @@ export type {
 } from './types';
 export { useConfigSchema } from './useConfigSchema';
 export { useResolvedConfig } from './useResolvedConfig';
-export { conditionedLeaf, isConfigNodeShown, isLeafEnabled, isLeafVisible } from './visible';
+export { conditionedLeaf, isConfigNodeShown, isRowEnabled, isRowVisible } from './visible';

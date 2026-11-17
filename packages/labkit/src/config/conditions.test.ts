@@ -2,7 +2,7 @@ import type { PrefGroup, PrefLeaf } from '@weasel-js/prefs';
 import { describe, expect, it, vi } from 'vitest';
 import { f } from './builder';
 import { resolveConfigSchema } from './resolve';
-import { isConfigNodeShown, isLeafEnabled, isLeafVisible } from './visible';
+import { isConfigNodeShown, isRowEnabled, isRowVisible } from './visible';
 
 const schema = () =>
   f.schema({
@@ -91,7 +91,7 @@ describe('a condition written as data', () => {
   });
 });
 
-describe('isLeafVisible and isLeafEnabled', () => {
+describe('isRowVisible and isRowEnabled', () => {
   const r = resolveConfigSchema(schema(), []);
   const base = {
     showGrid: true,
@@ -104,20 +104,20 @@ describe('isLeafVisible and isLeafEnabled', () => {
 
   it('answer a condition and a function alike', () => {
     for (const path of ['cellSize', 'seed', 'grid', 'fine', 'grid.color', 'showGrid']) {
-      expect(isLeafVisible(r, path, base)).toBe(true);
-      expect(isLeafEnabled(r, path, base)).toBe(true);
+      expect(isRowVisible(r, path, base)).toBe(true);
+      expect(isRowEnabled(r, path, base)).toBe(true);
     }
     const off = { ...base, showGrid: false };
-    expect(isLeafVisible(r, 'cellSize', off)).toBe(false);
-    expect(isLeafVisible(r, 'fine', off)).toBe(false);
-    expect(isLeafEnabled(r, 'seed', off)).toBe(false);
-    expect(isLeafEnabled(r, 'grid', off)).toBe(false);
+    expect(isRowVisible(r, 'cellSize', off)).toBe(false);
+    expect(isRowVisible(r, 'fine', off)).toBe(false);
+    expect(isRowEnabled(r, 'seed', off)).toBe(false);
+    expect(isRowEnabled(r, 'grid', off)).toBe(false);
     const column = { ...base, mode: 'column' };
-    expect(isLeafVisible(r, 'seed', column)).toBe(false);
-    expect(isLeafVisible(r, 'grid', column)).toBe(false);
-    expect(isLeafEnabled(r, 'cellSize', column)).toBe(false);
-    expect(isLeafEnabled(r, 'fine', column)).toBe(false);
-    expect(isLeafEnabled(r, 'grid.color', { ...base, grid: { color: '#fff', size: 4 } })).toBe(
+    expect(isRowVisible(r, 'seed', column)).toBe(false);
+    expect(isRowVisible(r, 'grid', column)).toBe(false);
+    expect(isRowEnabled(r, 'cellSize', column)).toBe(false);
+    expect(isRowEnabled(r, 'fine', column)).toBe(false);
+    expect(isRowEnabled(r, 'grid.color', { ...base, grid: { color: '#fff', size: 4 } })).toBe(
       false,
     );
   });
@@ -125,19 +125,19 @@ describe('isLeafVisible and isLeafEnabled', () => {
   it('answer for everything above a path too, whichever form its condition takes', () => {
     const off = { ...base, showGrid: false };
     // `grid` is disabled by data and `fine` hidden by a function.
-    expect(isLeafEnabled(r, 'grid.size', off)).toBe(false);
-    expect(isLeafEnabled(r, 'grid.color', off)).toBe(false);
-    expect(isLeafVisible(r, 'fine.step', off)).toBe(false);
+    expect(isRowEnabled(r, 'grid.size', off)).toBe(false);
+    expect(isRowEnabled(r, 'grid.color', off)).toBe(false);
+    expect(isRowVisible(r, 'fine.step', off)).toBe(false);
     const column = { ...base, mode: 'column' };
-    expect(isLeafVisible(r, 'grid.size', column)).toBe(false);
-    expect(isLeafEnabled(r, 'fine.step', column)).toBe(false);
-    expect(isLeafVisible(r, 'grid.size', base)).toBe(true);
-    expect(isLeafEnabled(r, 'fine.step', base)).toBe(true);
+    expect(isRowVisible(r, 'grid.size', column)).toBe(false);
+    expect(isRowEnabled(r, 'fine.step', column)).toBe(false);
+    expect(isRowVisible(r, 'grid.size', base)).toBe(true);
+    expect(isRowEnabled(r, 'fine.step', base)).toBe(true);
   });
 
   it('answer yes for a path with neither, and for one naming nothing', () => {
-    expect(isLeafEnabled(r, 'showGrid', {})).toBe(true);
-    expect(isLeafEnabled(r, 'nowhere', {})).toBe(true);
+    expect(isRowEnabled(r, 'showGrid', {})).toBe(true);
+    expect(isRowEnabled(r, 'nowhere', {})).toBe(true);
   });
 });
 
@@ -188,8 +188,8 @@ describe('resolveConfigSchema', () => {
       expect(warn).toHaveBeenCalledWith(
         `[labkit] showIf of "size": "mode" never holds 'diagonal': its options are 'row', 'column'`,
       );
-      expect(isLeafVisible(r, 'size', { mode: 'row' })).toBe(false);
-      expect(isLeafVisible(r, 'size', { mode: 'column' })).toBe(false);
+      expect(isRowVisible(r, 'size', { mode: 'row' })).toBe(false);
+      expect(isRowVisible(r, 'size', { mode: 'column' })).toBe(false);
     } finally {
       warn.mockRestore();
     }
