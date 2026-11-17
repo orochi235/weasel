@@ -84,7 +84,7 @@ export function AnnotationTargets({
         <AnnotationOverlay
           key={t.id}
           target={t}
-          scene={annotations.sceneFor(t.id)}
+          scene={annotations.openScene(t.id)}
           meaning={capability.meaning}
           config={config}
           activeToolId={activeToolId}

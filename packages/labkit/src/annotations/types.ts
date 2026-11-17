@@ -249,7 +249,7 @@ export interface AnnotationsApi {
   /** The scene a target's marks live in, created on first ask. One per target
    *  because a pane's hit-test, marquee and paint walk the whole scene they
    *  are given: a shared one would put a neighbour's marks under the pointer. */
-  sceneFor(target: string): MarkScene;
+  openScene(target: string): MarkScene;
   /** The targets the instrument declares, in declaration order. Chrome needs
    *  the list and cannot get it from the capability, which wants instrument
    *  state the chrome context does not carry. */

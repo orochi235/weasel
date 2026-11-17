@@ -81,8 +81,8 @@ describe('the annotation store', () => {
     store.add({ ...RING, target: 'occt' });
     // Not a filter over one scene: the scene a pane is handed holds only its
     // own marks, because its hit-test and marquee walk all of what they get.
-    expect(store.sceneFor('naive').renderOrder()).toHaveLength(1);
-    expect(store.sceneFor('occt').renderOrder()).toHaveLength(1);
+    expect(store.openScene('naive').renderOrder()).toHaveLength(1);
+    expect(store.openScene('occt').renderOrder()).toHaveLength(1);
     expect(store.query({ target: 'naive' }).map((a) => a.target)).toEqual(['naive']);
   });
 
@@ -188,10 +188,10 @@ describe('the annotation store', () => {
   it('reads back what the canvas would have written into the scene', () => {
     const store = makeStore();
     const id = store.add(RING);
-    const [node] = [...store.sceneFor('naive').renderOrder()];
+    const [node] = [...store.openScene('naive').renderOrder()];
     if (node === undefined) throw new Error('unreachable');
 
-    store.sceneFor('naive').setSelection([node]);
+    store.openScene('naive').setSelection([node]);
     expect(store.selection()).toEqual([id]);
   });
 
@@ -203,7 +203,7 @@ describe('the annotation store', () => {
     store.setSelection([onNaive]);
     store.setSelection([onOcct]);
     expect(store.selection()).toEqual([onOcct]);
-    expect(store.sceneFor('naive').getSelection()).toEqual([]);
+    expect(store.openScene('naive').getSelection()).toEqual([]);
   });
 
   it('drops an id it cannot resolve instead of throwing', () => {
@@ -244,7 +244,7 @@ describe('the annotation store', () => {
     /** Selects a mark the way its pane's canvas does: on that target's scene. */
     const click = (store: AnnotationsApi, id: string): void => {
       const [target, node] = id.split('/') as [string, string];
-      store.sceneFor(target).setSelection([asNodeId(node)]);
+      store.openScene(target).setSelection([asNodeId(node)]);
     };
 
     it('clears a selection standing in one target when a mark is selected in another', () => {
@@ -255,7 +255,7 @@ describe('the annotation store', () => {
       click(store, onNaive);
       click(store, onOcct);
       expect(store.selection()).toEqual([onOcct]);
-      expect(store.sceneFor('naive').getSelection()).toEqual([]);
+      expect(store.openScene('naive').getSelection()).toEqual([]);
     });
 
     it('tells subscribers once, after the other target is already cleared', () => {
@@ -290,7 +290,7 @@ describe('the annotation store', () => {
       click(store, onNaive);
 
       store.add({ ...RING, target: 'occt' });
-      store.sceneFor('occt').setSelection([]);
+      store.openScene('occt').setSelection([]);
       expect(store.selection()).toEqual([onNaive]);
     });
 
@@ -476,7 +476,7 @@ describe('a moved mark', () => {
     const store = makeStore();
     const id = store.add(POINT);
     const node = asNodeId(id.slice(id.lastIndexOf('/') + 1));
-    store.sceneFor('naive').setPose(node, { x: 0.5 * 256, y: 0.1 * 170, width: 0, height: 0 });
+    store.openScene('naive').setPose(node, { x: 0.5 * 256, y: 0.1 * 170, width: 0, height: 0 });
 
     expectNear([centerOf(drawn(store))], [{ x: 0.5, y: 0.1 }]);
     expect(store.get(id)?.points).toEqual([{ x: 0.5, y: 0.1 }]);
@@ -535,7 +535,7 @@ describe('a moved mark', () => {
       },
     };
     const store = annotationsFromJSON(legacy, () => []);
-    store.sceneFor('naive');
+    store.openScene('naive');
     const [node] = (store.toJSON().scenes.naive as { nodes: { data: unknown }[] }).nodes;
     expect(node?.data).toEqual({ target: 'naive', kind: 'line', points: LINE.points });
   });
