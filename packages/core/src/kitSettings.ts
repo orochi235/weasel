@@ -1,31 +1,17 @@
+import type { PrefValuesOf } from '@weasel-js/prefs-schema';
 import type { KitSettingsStore } from '@weasel-js/react';
 import type { GestureKitSettings } from '@weasel-js/routing';
+import type { coreKitSettingsSchema } from './kitSettingsSchema';
 
 export type { GestureKitSettings };
 
+type CoreKitSettings = PrefValuesOf<typeof coreKitSettingsSchema>;
+
 /** Core's `targets` leaves: hit radii and overlay dot sizes, in CSS px. */
-export interface CoreKitTargetSettings {
-  /** Selection corner-handle size and hit radius, before device scaling. */
-  handlePx: number;
-  /** Path anchor and control-point hit radius, before device scaling. */
-  anchorHitPx: number;
-  /** Distance from a selection's top edge to the rotation handle, before device scaling. */
-  rotationDistancePx: number;
-  /** Reach of a path segment being edited. */
-  segmentHitPx: number;
-  /** Radius around an anchor that a click selects it within. */
-  anchorClickPx: number;
-  /** Grab slop around a shape's outline. */
-  pickTolerancePx: number;
-  /** How near a snap target pulls a point, for a snap source that sets no reach of its own. */
-  snapPx: number;
-}
+export type CoreKitTargetSettings = CoreKitSettings['targets'];
 
 /** Core's `view` area. */
-export interface ViewKitSettings {
-  /** How long an animated camera move takes, in ms. */
-  animationMs: number;
-}
+export type ViewKitSettings = CoreKitSettings['view'];
 
 declare module '@weasel-js/react' {
   interface KitSettings {

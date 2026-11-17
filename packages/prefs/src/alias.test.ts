@@ -1,7 +1,7 @@
 import { createMemoryAdapter, createRecordCache } from '@weasel-js/storage';
 import { describe, expect, expectTypeOf, it } from 'vitest';
 import { prefAliasedLeaf, prefAliasName, prefAliasTarget, type PrefAlias, type PrefGroup, type PrefSection, prefHoldsValue, prefLeafAt } from '@weasel-js/prefs-schema';
-import type { PrefPath } from './paths';
+import type { PrefPath } from '@weasel-js/prefs-schema';
 import { createPrefsStore } from './store';
 
 const alias = (of: string, name = ''): PrefAlias => ({ kind: 'alias', name, description: '', default: undefined, of });

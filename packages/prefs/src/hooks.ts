@@ -1,5 +1,5 @@
 import { useCallback, useMemo, useSyncExternalStore } from 'react';
-import type { PrefPath, PrefValueAt } from './paths';
+import type { PrefPath, PrefValueAt } from '@weasel-js/prefs-schema';
 import type { PrefGroup, PrefScope, PrefSelection } from '@weasel-js/prefs-schema';
 import type { PrefsStore } from './store';
 

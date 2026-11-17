@@ -1,6 +1,7 @@
 import { describe, expectTypeOf, it } from 'vitest';
-import type { PrefAtPath, PrefPath, PrefValueAt, PrefValueOf } from './paths';
-import type { PrefUnion, PrefGroup } from '@weasel-js/prefs-schema';
+import type { PrefAtPath, PrefPath, PrefValueAt, PrefValueOf, PrefValuesOf } from './paths';
+import type { PrefUnion, PrefGroup } from './index';
+import { pref } from './build';
 
 const _schema = {
   name: 'Test',
@@ -152,5 +153,22 @@ describe('PrefValueAt', () => {
   it('adds undefined for a clearable enum and leaves a paint open', () => {
     expectTypeOf<PrefValueAt<Schema, 'clear'>>().toEqualTypeOf<string | undefined>();
     expectTypeOf<PrefValueAt<Schema, 'paint'>>().toEqualTypeOf<unknown>();
+  });
+});
+
+describe('PrefValuesOf', () => {
+  it('types a built group as the object of its values, nested groups included', () => {
+    const _view = pref.group('View', {
+      grid: pref.group('Grid', {
+        visible: pref.boolean('Shown', true),
+        pitch: pref.number('Pitch', 8),
+      }),
+      mode: pref.enum('Mode', 'fit', ['fit', 'fill']),
+      reset: pref.action('view.reset'),
+    });
+    expectTypeOf<PrefValuesOf<typeof _view>>().toEqualTypeOf<{
+      grid: { visible: boolean; pitch: number };
+      mode: 'fit' | 'fill';
+    }>();
   });
 });

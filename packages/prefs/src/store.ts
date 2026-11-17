@@ -8,7 +8,7 @@ import { prefHoldsValue, prefLeaves, VERSION_RECORD, isPrefScope, type PrefScope
 import { assignPrefValueAtPath, setOwnPrefValue, selectionWeights } from '@weasel-js/prefs-schema/internal';
 import { createSnapshots, resolveHeld, selectionAt, weightsUnder, type SnapshotSource } from './snapshot';
 import { checkPrefSplits, prefSelectors, admittedSelectors } from './splitCheck';
-import type { PrefPath, PrefValueAt } from './paths';
+import type { PrefPath, PrefValueAt } from '@weasel-js/prefs-schema';
 import { prefWrites } from './storeWrites';
 
 /** One leaf changing, as a store subscriber hears it: the value readers now

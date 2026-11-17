@@ -184,7 +184,7 @@ export { kitSettingsCssOptions } from './kitCss';
 export { prefAliasTargets, type PrefAliasTargets, type PrefAliasTargetsOptions } from './aliasTargets';
 export { prefType } from './type';
 export { prefFitsHeading, prefHeadingKey } from './heading';
-export type { PrefAtPath, PrefFieldsOf, PrefPath, PrefValueAt, PrefValueOf } from './paths';
+export type { PrefAtPath, PrefFieldsOf, PrefPath, PrefValueAt, PrefValueOf, PrefValuesOf } from '@weasel-js/prefs-schema';
 export type { PrefsMigration } from './migrate';
 export { openPrefs, openPrefsSync, type PrefsOptions } from './open';
 export type { PrefChange, PrefsStore } from './store';

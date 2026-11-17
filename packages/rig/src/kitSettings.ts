@@ -1,18 +1,7 @@
 import type {} from '@weasel-js/react';
-import { pref, PX_UNIT } from '@weasel-js/prefs';
+import { pref, PX_UNIT, type PrefValuesOf } from '@weasel-js/prefs';
 import { JOINT_RADIUS_PX } from './bone/boneOverlay';
 import { POINT_RADIUS_PX } from './weight/weightOverlay';
-
-/** The rig tools' `targets` leaves: overlay dot sizes, in CSS px. */
-export interface RigKitTargetSettings {
-  boneJointRadiusPx: number;
-  weightPointRadiusPx: number;
-}
-
-declare module '@weasel-js/react' {
-  // eslint-disable-next-line @typescript-eslint/no-empty-object-type
-  interface KitTargetSettings extends RigKitTargetSettings {}
-}
 
 const pxLeaf = (name: string, def: number) =>
   pref.number(name, def, { unit: PX_UNIT, min: 1, max: 16, step: 0.5 });
@@ -24,3 +13,11 @@ export const rigKitSettingsSchema = pref.group('Rig', {
     weightPointRadiusPx: pxLeaf('Weight point dot', POINT_RADIUS_PX),
   }),
 });
+
+/** The rig tools' `targets` leaves: overlay dot sizes, in CSS px. */
+export type RigKitTargetSettings = PrefValuesOf<typeof rigKitSettingsSchema>['targets'];
+
+declare module '@weasel-js/react' {
+  // eslint-disable-next-line @typescript-eslint/no-empty-object-type
+  interface KitTargetSettings extends RigKitTargetSettings {}
+}

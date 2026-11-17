@@ -5,7 +5,7 @@ import { checkPrefCondition } from './conditionCheck';
 import { prefsCss } from './css';
 import { prefsDefaultsSource } from './defaultsSource';
 import { prefDrawsSeveral, prefIsCompound } from './kinds';
-import type { PrefPath } from './paths';
+import type { PrefPath } from '@weasel-js/prefs-schema';
 import { createPrefsStore } from './store';
 
 const arrange: PrefActions = { kind: 'actions', name: 'Arrange', description: '', default: undefined, group: 'arrange' };

@@ -195,7 +195,7 @@ export type {
 export {
   ANY_MODS, DRAG_THRESHOLD_PX, pastDragThreshold, CONTROL_SELECTOR, isInControlWithin, isPrimaryPress,
 } from '@weasel-js/gestures';
-export { DEFAULT_KEYMAP_UNBOUND, type GestureKitSettings } from './kitSettings';
+export { DEFAULT_KEYMAP_UNBOUND, gestureKitSettingsSchema, type GestureKitSettings } from './kitSettings';
 export { openPointerSession, swallowClick, swallowNextClick } from './interactions/pointerSession';
 export { startThresholdDrag } from './interactions/thresholdDrag';
 export { tuneToolOptions } from './tools/tuneToolOptions';

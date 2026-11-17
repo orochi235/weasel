@@ -66,3 +66,16 @@ export type PrefValueOf<L> =
 
 /** What the leaf at `P` holds. */
 export type PrefValueAt<G, P extends string> = PrefValueOf<PrefAtPath<G, P>>;
+
+/** What a group holds: an object keyed like its `children`, with each leaf's value
+ *  at its key and each nested group's values under its own. A leaf that holds no
+ *  value (an action, an alias, a label, a separator) gets no key. */
+export type PrefValuesOf<G> = G extends { children: infer C }
+  ? {
+      -readonly [K in keyof C as C[K] extends { kind: 'action' | 'actions' | 'alias' | 'label' | 'separator' }
+        ? never
+        : C[K] extends { kind: string } | { children: unknown } ? K : never]: C[K] extends { kind: string }
+        ? PrefValueOf<C[K]>
+        : PrefValuesOf<C[K]>;
+    }
+  : never;
