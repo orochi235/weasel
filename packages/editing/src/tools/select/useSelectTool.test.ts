@@ -191,7 +191,7 @@ describe('useSelectTool', () => {
     expect(sel.applyClick).toHaveBeenCalledTimes(1);
   });
 
-  it('pickBest (when supplied) replaces pickEvery + pickTopMostHit', () => {
+  it('pickBest (when supplied) replaces pickEvery + topmostOf', () => {
     const pickBest = vi.fn(() => 'group-1');
     const tool = mount({ pickEvery: () => ['leaf', 'group-1'], pickBest });
     const sel = selectionStub([]);

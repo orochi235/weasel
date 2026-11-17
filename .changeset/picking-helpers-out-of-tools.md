@@ -2,6 +2,6 @@
 '@weasel-js/core': patch
 ---
 
-`pickTopMostHit`, `pressTarget` and the range and centers pickers move from the tools folder to `canvas/`; exports are unchanged.
+Core's picking helpers move from the tools folder to `canvas/`; their exports are unchanged.
 
 <!-- entry: internal -->

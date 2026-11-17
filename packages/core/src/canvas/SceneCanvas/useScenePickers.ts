@@ -15,7 +15,7 @@ import type { View } from 'core/viewport/view';
 import type { Bounds } from 'core/viewport/fitViewToBounds';
 import { centersAmong } from 'canvas/centersBetween';
 import { rangeAmong, type SelectRangeDep } from 'canvas/selectRange';
-import { pickTopMostHit, type PickTopMostHitAdapter } from 'canvas/pickTopMostHit';
+import { topmostOf, type TopmostTree } from 'canvas/topmostOf';
 import type { Scene } from 'core/scene/types';
 import { asNodeId } from 'core/scene/types';
 import type { UseMoveOptions } from 'interactions/gestures/moveOptions';
@@ -118,7 +118,7 @@ export interface ScenePickers<TPose> {
    *  caller's `geometry.pickEvery` or the pose-walk default. */
   pickEvery: (world: WorldPoint, view?: PickView | null) => string[];
   /** Single-best hit under the world point, or null. Runs `pickEvery` then
-   *  collapses parent/child overlap via `pickTopMostHit` — matches the id
+   *  collapses parent/child overlap via `topmostOf` — matches the id
    *  the select tool's pointerdown classifier would settle on for a bare
    *  click. The canvas's `getNodeAtPoint` resolves through it. */
   pickBest: (world: WorldPoint, view?: PickView | null) => string | null;
@@ -237,7 +237,7 @@ export function useScenePickers<TData, TLayer extends string, TPose>(
   const wiredPickBest = useMemo(() => {
     return (world: WorldPoint, view?: PickView | null): string | null => {
       const ids = wiredHitBody(world, view);
-      return pickTopMostHit(ids, adapter as unknown as PickTopMostHitAdapter);
+      return topmostOf(ids, adapter as unknown as TopmostTree);
     };
   }, [wiredHitBody, adapter]);
 
@@ -278,7 +278,7 @@ function usePointPick<TData, TLayer extends string, TPose>(args: {
   } = args;
   // Default pickEvery: walk renderOrder() forward (back-to-front) and collect
   // every node whose pose contains the world point. Order matches the
-  // `useSelectTool` contract — last element is the topmost — so `pickTopMostHit`
+  // `useSelectTool` contract — last element is the topmost — so `topmostOf`
   // picks correctly. Wraps the caller's `pickEvery` (string-or-null) into the
   // array form `useSelectTool` expects. `poseContainsRotated` reads
   // `pose.rotation` directly (the kit's one rotation convention), so rotated

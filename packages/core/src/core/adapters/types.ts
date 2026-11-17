@@ -70,10 +70,10 @@ export interface MoveAdapter<TNode extends { id: string }, TPose> {
   getPose(id: string): TPose;
   /** The node's container, `null` for a root. */
   getParent(id: string): string | null;
-  /** Optional paint depth, read by `pickTopMostHit` to resolve two *siblings*
+  /** Optional paint depth, read by `topmostOf` to resolve two *siblings*
    *  whose bodies both cover the pointer. Without it the hit list's own order
    *  decides, which is right for a back-to-front walk and wrong for anything
-   *  else. See `PickTopMostHitAdapter` for the `compareZ` alternative. */
+   *  else. See `TopmostTree` for the `compareZ` alternative. */
   getZIndex?(id: string): number | null | undefined;
   compareZ?(a: string, b: string): number;
   setPose(id: string, pose: TPose): void;

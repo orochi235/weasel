@@ -1,6 +1,6 @@
-/** What `pickTopMostHit` ranks a hit list by: the tree, and a z signal where
+/** What `topmostOf` ranks a hit list by: the tree, and a z signal where
  *  the adapter has one. */
-export interface PickTopMostHitAdapter {
+export interface TopmostTree {
   getParent: (id: string) => string | null;
   /** Paint depth of `id`; higher draws later, so higher wins a hit. Ids the
    *  adapter doesn't know sort below every id it does. */
@@ -18,9 +18,9 @@ export interface PickTopMostHitAdapter {
  *  With no z signal the LAST id wins: scenes walked forward come back
  *  bottom-first by convention. A caller that z-sorts topmost-first and exposes
  *  neither z hook should resolve before calling. */
-export function pickTopMostHit(
+export function topmostOf(
   ids: readonly string[],
-  adapter: PickTopMostHitAdapter,
+  adapter: TopmostTree,
 ): string | null {
   if (ids.length === 0) return null;
   if (ids.length === 1) return ids[0];
@@ -54,7 +54,7 @@ export function pickTopMostHit(
  *  the tiebreaker, so equal-z ids resolve the same way as no-z ones. */
 function pickHighestZ(
   ids: readonly string[],
-  adapter: PickTopMostHitAdapter,
+  adapter: TopmostTree,
 ): string {
   const compareZ = adapter.compareZ;
   if (typeof compareZ === 'function') {

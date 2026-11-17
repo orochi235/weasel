@@ -2,7 +2,7 @@ import { useMemo } from 'react';
 import { useLatest } from '@weasel-js/react';
 import type { View, Tool } from '@weasel-js/core';
 import type { LayerEnumerableAdapter, MoveAdapter, AreaSelectAdapter, PoseDescriptor } from '@weasel-js/core/engine';
-import { defineTool, pickTopMostHit, rangeAmong } from '@weasel-js/core';
+import { defineTool, topmostOf, rangeAmong } from '@weasel-js/core';
 import type { WorldPoint } from '@weasel-js/routing';
 import { ANY_MODS } from '@weasel-js/gestures';
 import { createSelectPickAction } from './selectPick';
@@ -18,7 +18,7 @@ import type {} from '@weasel-js/core';
 export interface UseSelectToolOptions<TPose> {
   /** Return ids of all objects whose painted body covers `world`.
    *  Order doesn't matter — the tool collapses parent/child overlap via
-   *  `pickTopMostHit`. When omitted, defaults to an AABB-vs-point walk of
+   *  `topmostOf`. When omitted, defaults to an AABB-vs-point walk of
    *  the adapter's tree using the pose descriptor. Override for tighter
    *  shapes (path / polygon hit-tests). `viewId` is the view the press
    *  landed in, where the host routes views. */
@@ -227,7 +227,7 @@ export function createSelectToolWith<TNode extends { id: string }, TPose>(
     if (opts.pickBest) return opts.pickBest(world, alt, sel, ...routed(viewId));
     const ids = opts.pickEvery(world, ...routed(viewId));
     if (ids.length === 0) return null;
-    return pickTopMostHit(ids, adapter()) ?? ids[0];
+    return topmostOf(ids, adapter()) ?? ids[0];
   };
 
   const extendLocked = () => options().extendClickLocked?.() === true;

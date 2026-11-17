@@ -164,7 +164,7 @@ interface CommonMemo { path?: Path; next: Map<Path, CommonMemo> }
 
 /**
  * Collect every candidate the query hits, back-to-front — the last element is
- * the topmost, which is the order `pickTopMostHit` expects.
+ * the topmost, which is the order `topmostOf` expects.
  */
 export function pickWalk<TPose>(
   src: PickSource<TPose>,

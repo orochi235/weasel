@@ -108,7 +108,7 @@ export type { DepName, DepRegistry, DepListing, DepSource } from '@weasel-js/rou
 // re-export, so `DepName = keyof DepSchema` resolves to a documented symbol.
 export type { DepSchema } from '../interactions/actions/depSchema';
 export type { RangeBetween, SelectRangeDep } from '../canvas/selectRange';
-export { pickTopMostHit, type PickTopMostHitAdapter } from '../canvas/pickTopMostHit';
+export { topmostOf, type TopmostTree } from '../canvas/topmostOf';
 export { pressTarget, type PressTargetTree } from '../canvas/pressTarget';
 export type {
   AreaSelectDep,
