@@ -167,7 +167,7 @@ export const ItemList = forwardRef(function ItemList(
       },
     } : {}),
     ...(onNudge && !hold.refuses ? { onNudge: (id: string, delta: -1 | 1) => onNudge(id, rows.findIndex((r) => r.id === id), delta) } : {}),
-    onActivate: (id, mods) => {
+    onAction: (id, mods) => {
       nav.anchor.current = id;
       if (looks) onActivate?.(id, rows.findIndex((r) => r.id === id), mods);
     },

@@ -146,7 +146,7 @@ export const Tree = forwardRef(function Tree(
         commitSelection(rangeOf(ids, ids[0]!, ids[ids.length - 1]!, single));
       },
     } : {}),
-    onActivate: (id, mods) => { const node = nodeAt(id); if (node) activate(node, mods); },
+    onAction: (id, mods) => { const node = nodeAt(id); if (node) activate(node, mods); },
     tree: {
       isBranch: (id) => !!nodeAt(id)?.children,
       isOpen: (id) => !!nodeAt(id)?.children && expanded.has(id),
