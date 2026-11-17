@@ -136,7 +136,7 @@ function pickOnRay<TData, TLayer extends string>(
  * ray the point names, cast from the camera of the view the pick is asked for,
  * passing over the layers that view does not paint.
  */
-export function createPickEvery<TData, TLayer extends string>(
+export function createPickNearest<TData, TLayer extends string>(
   world: World3d<TData, TLayer>,
 ): (point: { x: number; y: number }, view?: HitTestView) => NodeId | null {
   return (point, view) => pickOnRay(world, view?.viewId, point, undefined, layerGateOf(view));

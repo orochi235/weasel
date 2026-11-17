@@ -12,7 +12,7 @@ import { add, aabbAround, intersectRayAabb, len, sub, type Aabb, type Vec3 } fro
 import { rectsOverlap } from '@weasel-js/geom';
 import { cameraEye, dollyToward, orbitBy, panBy } from './camera';
 import { POSE3_COMPOSITION } from './composePose3';
-import { createAreaSelect, createNodeAtPoint, createPickEvery, screenBoxOf } from './deps';
+import { createAreaSelect, createNodeAtPoint, createPickNearest, screenBoxOf } from './deps';
 import { camera, runs, tally, timeoutFor, v3 } from './pbt.fixture';
 import type { Pose3 } from './pose3';
 import { projectPoint, rayAt, rectOf, type Viewport3d } from './project';
@@ -89,7 +89,7 @@ describe('picks through view changes, stateful', () => {
       const vp = { current: { camera: c0, width: 800, height: 600 } as Viewport3d };
       const world: W = { scene, viewport: () => vp.current, bounds: (n) => boxOf(n) };
       const pick = createNodeAtPoint(world);
-      const pickEvery = createPickEvery(world);
+      const pickEvery = createPickNearest(world);
       let selected: NodeId[] = [];
       const area = createAreaSelect(world, { get: () => selected, set: (ids) => { selected = ids; } });
       for (const c of cmds) {

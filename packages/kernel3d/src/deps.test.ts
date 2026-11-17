@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import {
   createAreaSelect,
   createNodeAtPoint,
-  createPickEvery,
+  createPickNearest,
   createPoseDescriptor,
   screenBoxOf,
   type Viewport3d,
@@ -143,10 +143,10 @@ describe('createNodeAtPoint', () => {
   });
 });
 
-describe('createPickEvery', () => {
+describe('createPickNearest', () => {
   it('passes over a layer the asking view does not paint', () => {
     const scene = createTestScene();
-    const pick = createPickEvery(world(scene));
+    const pick = createPickNearest(world(scene));
     expect(pick(CENTER, { viewId: null })).toBe(idsOf(scene)[1]);
     expect(pick(CENTER, { viewId: null, layerIsPainted: (layer) => layer !== 'solids' })).toBeNull();
   });

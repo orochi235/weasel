@@ -57,7 +57,7 @@ const editing: SurfaceContribution = {
   tools={{ orbit: useOrbitTool(), box }} // `box` binds a drag to `insert`
   ambient={[rig, editing]}
   poseDescriptor={createPoseDescriptor(world)}
-  geometry={{ pickEvery: createPickEvery(world) }}
+  geometry={{ pickEvery: createPickNearest(world) }}
   layers={{ scene: { drawOne: () => [] }, solids: { layer: mySolidsLayer, before: 'scene' } }}
 />
 ```

@@ -8,7 +8,7 @@ import { act, cleanup } from '@testing-library/react';
 import { renderWithKeys as render } from '@weasel-js/react/testing/giveKeys';
 import { SceneCanvas, createEnteredGroup, type CanvasViewProps, type NodeId, type SelectionApi } from '@weasel-js/core';
 import { createCamera, type Camera3d } from './camera';
-import { createNodeAtPoint, createPickEvery, createPoseDescriptor, worldPoseOf } from './deps';
+import { createNodeAtPoint, createPickNearest, createPoseDescriptor, worldPoseOf } from './deps';
 import { projectPoint, type Viewport3d } from './project';
 import { boundsOfTestNode, createNestedTestScene, createTestScene, type TestScene } from './testScene';
 import type { World3d } from './world';
@@ -59,7 +59,7 @@ function setup(scene: TestScene, aim: Record<ViewName, NodeId>) {
     return (
       <SceneCanvas scene={scene} layers={{}} width={W} height={H} selection={sel} features={[pickPreset, selectPreset, movePreset]}
         enteredGroup={entered} onHover={(id) => hovered.push(id)}
-        poseDescriptor={createPoseDescriptor(world)} geometry={{ pickEvery: createPickEvery(world) }}
+        poseDescriptor={createPoseDescriptor(world)} geometry={{ pickEvery: createPickNearest(world) }}
         views={[viewProps('left'), viewProps('right')]} />
     );
   }
