@@ -6,12 +6,12 @@ const dev = import.meta.env.DEV;
 
 export const FORGE_LAB: LabPage = {
   label: 'weaselforge',
-  href: dev ? `http://localhost:${ports.forge}` : '/weasel/docs/ui/forge',
+  href: dev ? `http://localhost:${ports.forge}` : '/weasel/docs/ui/forge/',
 };
 
 export const PALETTE_LAB: LabPage = {
   label: 'Palette lab',
-  href: dev ? `http://localhost:${ports.themeEditor}/weasel/theme-editor` : '/weasel/theme-editor',
+  href: dev ? `http://localhost:${ports.themeEditor}/weasel/theme-editor/` : '/weasel/theme-editor/',
 };
 
 export const THEME_EDITOR_LAB: LabPage = {
