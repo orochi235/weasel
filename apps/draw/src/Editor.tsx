@@ -148,7 +148,7 @@ export function Editor({ scene, selection, modality }: EditorProps): ReactElemen
               <StripDock className="wd-dock">
                 <div className="wd-dock-main">
                   <div ref={optionsRef}>
-                    <CharacterOptions style={textEdit.effectiveStyle} onPatch={textEdit.applyStyleToSelection} />
+                    <CharacterOptions value={textEdit.effectiveStyle} onChange={textEdit.applyStyleToSelection} />
                     <ActiveToolOptionsBar tool={activeTool} values={toolOptions} />
                   </div>
                   <div className="wd-body">

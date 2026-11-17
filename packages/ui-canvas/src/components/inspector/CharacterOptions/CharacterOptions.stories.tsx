@@ -10,8 +10,8 @@ export const Editing: Story = {
   render: () => (
     <div style={{ width: 1180 }}>
       <CharacterOptions
-        style={{ bold: true, fontWeight: 700, underline: true, fontFamily: 'Inter', fontSize: 24, fill: { paint: { color: '#1e293b' } } }}
-        onPatch={() => {}}
+        value={{ bold: true, fontWeight: 700, underline: true, fontFamily: 'Inter', fontSize: 24, fill: { paint: { color: '#1e293b' } } }}
+        onChange={() => {}}
       />
     </div>
   ),
@@ -19,15 +19,15 @@ export const Editing: Story = {
 
 // No edit in progress: the row keeps its height and shows nothing.
 export const Idle: Story = {
-  render: () => <CharacterOptions onPatch={() => {}} />,
+  render: () => <CharacterOptions onChange={() => {}} />,
 };
 
 export const MixedRange: Story = {
   render: () => (
     <div style={{ width: 1180 }}>
       <CharacterOptions
-        style={{ bold: MIXED, fontWeight: MIXED, fontSize: MIXED, script: MIXED, fill: MIXED, fontFamily: 'Inter' }}
-        onPatch={() => {}}
+        value={{ bold: MIXED, fontWeight: MIXED, fontSize: MIXED, script: MIXED, fill: MIXED, fontFamily: 'Inter' }}
+        onChange={() => {}}
       />
     </div>
   ),

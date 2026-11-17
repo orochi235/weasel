@@ -19,9 +19,9 @@ import type { ReactNode } from 'react';
 export interface CharacterOptionsProps {
   /** Styling to display. `MIXED` at a key means the sources disagree there.
    *  Absent or `null` renders no bar, unless `children` gives it a tenant. */
-  style?: RangeStyle | null;
+  value?: RangeStyle | null;
   /** Apply a styling change. One call per completed edit. */
-  onPatch: (patch: RunStylePatch) => void;
+  onChange: (patch: RunStylePatch) => void;
   /** Tenants of the bar that are not character styling, e.g. loupe controls. */
   children?: ReactNode;
   className?: string;
@@ -44,20 +44,20 @@ type StyleKey = keyof typeof CHARACTER_OPTIONS.children;
 
 /**
  * The strip of character controls for a text edit in progress. Wire it to
- * `useTextEdit`: `style` takes `effectiveStyle`, `onPatch` takes
+ * `useTextEdit`: `value` takes `effectiveStyle`, `onChange` takes
  * `applyStyleToSelection`, and {@link isCharacterChrome} goes in as
  * `isEditorChrome`.
  */
-export function CharacterOptions({ style, onPatch, children, className }: CharacterOptionsProps) {
-  const editing = style != null;
+export function CharacterOptions({ value, onChange, children, className }: CharacterOptionsProps) {
+  const editing = value != null;
   return (
     <ToolOptionsBar
       className={className ? `${CHROME_CLASS} ${className}` : CHROME_CLASS}
       label={editing ? 'Text' : undefined}
       schema={editing ? CHARACTER_OPTIONS : undefined}
-      values={editing ? characterValues(style) : undefined}
-      mixed={editing ? characterMixed(style) : undefined}
-      onChange={(path, value) => onPatch(characterPatch(path, value))}
+      values={editing ? characterValues(value) : undefined}
+      mixed={editing ? characterMixed(value) : undefined}
+      onChange={(path, next) => onChange(characterPatch(path, next))}
     >
       {children}
     </ToolOptionsBar>
