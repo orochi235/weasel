@@ -1,0 +1,61 @@
+{
+ "id": "apps.draw",
+ "commit": "d4226fab0e3e2669740411edb2a1d35dadeb46b1",
+ "date": "2026-11-17",
+ "files": [
+  "apps/draw/icons/actions.mjs",
+  "apps/draw/icons/index.mjs",
+  "apps/draw/tests-e2e/asset-editor.spec.ts",
+  "apps/draw/tests-e2e/delete-undo-zorder.spec.ts",
+  "apps/draw/tests-e2e/playwright.config.ts",
+  "apps/draw/vite-plugin-callback-source.ts",
+  "apps/draw/vite-plugin-trait-schemas.ts",
+  "apps/draw/vite-plugin-trait-schemas/extract-actions.ts",
+  "apps/draw/vite-plugin-trait-schemas/extract-gestures.ts",
+  "apps/draw/vite-plugin-trait-schemas/extract-node.ts",
+  "apps/draw/vite-plugin-trait-schemas/extract-ops.ts",
+  "apps/draw/vite-plugin-trait-schemas/extract-shapes.ts",
+  "apps/draw/vite-plugin-trait-schemas/extract.ts",
+  "apps/draw/vite.config.ts"
+ ],
+ "a": 10,
+ "b": 7,
+ "m": 7,
+ "distinct": 10,
+ "chapman": 10,
+ "unfound": 0,
+ "read": {
+  "A": 14,
+  "B": 14
+ },
+ "patches": 10,
+ "questions": 0,
+ "budgetHit": [],
+ "jobs": {
+  "minutes": {
+   "A": 4.2,
+   "B": 3.5,
+   "match": 0.1,
+   "fix": 17.2
+  },
+  "nodes": {
+   "A": "studio",
+   "B": "studio",
+   "fix": "teitou"
+  },
+  "tokens": 18745121,
+  "costUsd": 8.36
+ },
+ "fixCommits": [
+  "5179cc2e854b05028be2e2b26f22ee2047360a2a",
+  "66cad75c949293137d01455d9f82bcaf4a37ef37",
+  "999628ddf2cfe0f1a461fd02915121750d24f1bc",
+  "cbc283636bf09b7b4fc3d53d9e583a6a143745e0",
+  "720d2abc754ebb9771249d0445ed25a66e2b3791",
+  "aa14c75e7771277935eb6cb8bbff7475c3a393c2",
+  "f5bb6b81083b468ee797c97e181bc4514b7aa5cb",
+  "1f875b934e8f99a0039ac0cfa6ad7f0d0e6fc7f0",
+  "3652166b1ae4fe665b7119f3d4d0437deb488577",
+  "305af19d789c7de7b11ca678b0a16d712919b9fe"
+ ]
+}

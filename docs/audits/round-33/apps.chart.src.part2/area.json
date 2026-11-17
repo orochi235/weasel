@@ -1,0 +1,69 @@
+{
+ "id": "apps.chart.src.part2",
+ "commit": "d4226fab0e3e2669740411edb2a1d35dadeb46b1",
+ "date": "2026-11-17",
+ "files": [
+  "apps/chart/src/prefs.ts",
+  "apps/chart/src/reportFailure.ts",
+  "apps/chart/src/stencilDrop.ts",
+  "apps/chart/src/templates/TemplateDialog.tsx",
+  "apps/chart/src/templates/templateDialog.css",
+  "apps/chart/src/testIcons.ts",
+  "apps/chart/src/testing/canvasPixels.ts",
+  "apps/chart/src/testing/chartSession.ts",
+  "apps/chart/src/testing/choose.ts",
+  "apps/chart/src/testing/mountChartApp.tsx",
+  "apps/chart/src/testing/pointer.ts",
+  "apps/chart/src/testing/savedChart.ts",
+  "apps/chart/src/theme/StylePanel.tsx",
+  "apps/chart/src/theme/ThemePanel.tsx",
+  "apps/chart/src/theme/ThemeRoles.tsx",
+  "apps/chart/src/theme/applyChartTheme.ts",
+  "apps/chart/src/theme/stylePanel.css",
+  "apps/chart/src/theme/themeCommands.tsx",
+  "apps/chart/src/theme/themeFields.tsx",
+  "apps/chart/src/theme/themePanel.css",
+  "apps/chart/src/theme/useThemeEdit.ts",
+  "apps/chart/src/toolbar/ChartToolbar.tsx",
+  "apps/chart/src/toolbar/toolbar.css",
+  "apps/chart/src/toolbar/toolbarAssets.ts",
+  "apps/chart/src/useChartDiagram.tsx",
+  "apps/chart/src/useChartSnap.ts",
+  "apps/chart/src/workspace.css"
+ ],
+ "a": 3,
+ "b": 3,
+ "m": 0,
+ "distinct": 6,
+ "chapman": 15,
+ "unfound": 9,
+ "read": {
+  "A": 27,
+  "B": 27
+ },
+ "patches": 5,
+ "questions": 0,
+ "budgetHit": [],
+ "jobs": {
+  "minutes": {
+   "A": 5.2,
+   "B": 11.4,
+   "match": 0.1,
+   "fix": 8.5
+  },
+  "nodes": {
+   "A": "teitou",
+   "B": "orochi",
+   "fix": "teitou"
+  },
+  "tokens": 13762041,
+  "costUsd": 6.88
+ },
+ "fixCommits": [
+  "148926e0d0bc3abe437b18c3ae143871a790952b",
+  "59514c88b1c4705569777b1e3c5781e7c45c8389",
+  "1daf5d8e7d4b4f25f8585f1fce123e91574a2d14",
+  "f08289ab88457f7998b3772d1a144175755f2b8b",
+  "cad10a38be6f579d3c3d050fe1ef1ec1e0e54ec3"
+ ]
+}

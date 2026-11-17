@@ -1,0 +1,12 @@
+packages/animator/src/timeline/booking.ts
+packages/animator/src/timeline/clip.ts
+packages/animator/src/timeline/clipShape.ts
+packages/animator/src/timeline/createTimeline.test-harness.ts
+packages/animator/src/timeline/createTimeline.ts
+packages/animator/src/timeline/fireEvents.ts
+packages/animator/src/timeline/index.ts
+packages/animator/src/timeline/sampleTrack.ts
+packages/animator/src/timeline/targetStops.ts
+packages/animator/src/timeline/timeline.fixture.ts
+packages/animator/src/timeline/trackHolds.ts
+packages/animator/src/timeline/types.ts

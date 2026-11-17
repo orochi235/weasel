@@ -1,0 +1,14 @@
+{
+ "pairs": [],
+ "a": [
+  "The Sequence panel's \"Adds\" picker reads any non-actor head as \"Participant\", so a database/queue/boundary head cannot be set to a plain participant from it",
+  "The Sequence pickers and SequenceEdits' Activates/Deactivates show only the first selected item's value, so a mixed selection cannot be set to that value",
+  "File › Export › As DOT / draw.io is turned off by a page the export would never write, or would leave out with a warning"
+ ],
+ "b": [
+  "The Data panel keeps one chart's error note and open rows when the selection moves to another chart",
+  "The Sequence panel's Adds and Arrow pickers show the tool's value, not the selection's, when the selected head or message has a figure or arrow the picker doesn't name",
+  "The page tabs' add button adds a blank page, not \"a page of the chart's own type\" as ChartPageStrip says",
+  "Page Setup's target id is never cleared when its page goes away, so the dialog reopens if the page comes back"
+ ]
+}

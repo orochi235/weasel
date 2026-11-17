@@ -1,0 +1,13 @@
+{
+ "pairs": [],
+ "a": [
+  "The Theme panel ignores a canceled color or size drag, leaving its live edit open and the shipped theme forked",
+  "Renaming a role to its own name forks a shipped theme and records an undo entry that changes nothing",
+  "The Style panel's Text color reads a header shape's header row, which takes the fill color, so it never shows the text color it sets"
+ ],
+ "b": [
+  "A theme change re-lays out every plot with the default text measure, dropping the caller's `measure`",
+  "The Style panel shows no color for shapes drawn in a translucent theme color",
+  "The Style panel finds a connector's label by a hand-built id while the color write finds it by its dependency"
+ ]
+}

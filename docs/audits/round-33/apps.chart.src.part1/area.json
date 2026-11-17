@@ -1,0 +1,63 @@
+{
+ "id": "apps.chart.src.part1",
+ "commit": "d4226fab0e3e2669740411edb2a1d35dadeb46b1",
+ "date": "2026-11-17",
+ "files": [
+  "apps/chart/src/App.tsx",
+  "apps/chart/src/ChartWorkspace.tsx",
+  "apps/chart/src/NewChartDialog.tsx",
+  "apps/chart/src/PlotDataSection.tsx",
+  "apps/chart/src/SequenceEdits.tsx",
+  "apps/chart/src/SequencePanel.tsx",
+  "apps/chart/src/StencilPanel.tsx",
+  "apps/chart/src/app.css",
+  "apps/chart/src/autoLayout.ts",
+  "apps/chart/src/chartCommands.ts",
+  "apps/chart/src/chartDocument.ts",
+  "apps/chart/src/chartPersistence.ts",
+  "apps/chart/src/exportCommands.ts",
+  "apps/chart/src/icons.gen.ts",
+  "apps/chart/src/icons.table.ts",
+  "apps/chart/src/importExport.tsx",
+  "apps/chart/src/main.tsx",
+  "apps/chart/src/menuBar.ts",
+  "apps/chart/src/modes.ts",
+  "apps/chart/src/page.css",
+  "apps/chart/src/pages/AddPageDialog.tsx",
+  "apps/chart/src/pages/ChartPageStrip.tsx",
+  "apps/chart/src/pages/PageSetupDialog.tsx",
+  "apps/chart/src/pages/pageCommands.ts",
+  "apps/chart/src/pages/pageSizes.ts",
+  "apps/chart/src/pages/useChartPages.ts",
+  "apps/chart/src/pages/useFittedView.ts"
+ ],
+ "a": 3,
+ "b": 4,
+ "m": 0,
+ "distinct": 7,
+ "chapman": 19,
+ "unfound": 12,
+ "read": {
+  "A": 27,
+  "B": 27
+ },
+ "patches": 6,
+ "questions": 0,
+ "budgetHit": [],
+ "jobs": {
+  "minutes": {
+   "A": 8.8,
+   "B": 4,
+   "match": 0.2,
+   "fix": 10.3
+  },
+  "nodes": {
+   "A": "teitou",
+   "B": "teitou",
+   "fix": "teitou"
+  },
+  "tokens": 16400079,
+  "costUsd": 7.72
+ },
+ "fixCommits": []
+}

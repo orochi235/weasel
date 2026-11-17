@@ -1,0 +1,53 @@
+{
+ "id": "apps.chart.src.pipeline",
+ "commit": "d4226fab0e3e2669740411edb2a1d35dadeb46b1",
+ "date": "2026-11-17",
+ "files": [
+  "apps/chart/src/pipeline/ParamPanel.tsx",
+  "apps/chart/src/pipeline/PipelineWorkspace.tsx",
+  "apps/chart/src/pipeline/StagePalette.tsx",
+  "apps/chart/src/pipeline/pipelineAudio.ts",
+  "apps/chart/src/pipeline/pipelineCommands.ts",
+  "apps/chart/src/pipeline/pipelineGroups.ts",
+  "apps/chart/src/pipeline/pipelineLook.ts",
+  "apps/chart/src/pipeline/pipelinePages.ts",
+  "apps/chart/src/pipeline/pipelineRun.ts",
+  "apps/chart/src/pipeline/usePipelineDoc.ts"
+ ],
+ "a": 3,
+ "b": 4,
+ "m": 2,
+ "distinct": 5,
+ "chapman": 5.7,
+ "unfound": 0.7,
+ "read": {
+  "A": 10,
+  "B": 10
+ },
+ "patches": 6,
+ "questions": 0,
+ "budgetHit": [],
+ "jobs": {
+  "minutes": {
+   "A": 10,
+   "B": 9.8,
+   "match": 0.1,
+   "fix": 11.3
+  },
+  "nodes": {
+   "A": "orochi",
+   "B": "orochi",
+   "fix": "teitou"
+  },
+  "tokens": 7937481,
+  "costUsd": 4.75
+ },
+ "fixCommits": [
+  "2f8f66912cf582db09b14580f115c950d4e8dc8d",
+  "a464af4e4b2f2e661145d06c4db8ea229c0efb9b",
+  "407061c25a740ef9240a0412cb0eee3f1c77eacb",
+  "1fe898a610fd8ee76ea23c583f1985f67148a084",
+  "2c2021d87b7ea0f916f7e635a57d036b963b0ff5",
+  "1db60f09457ead3f05545078183823e65c1b4ba4"
+ ]
+}

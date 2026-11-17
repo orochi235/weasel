@@ -1,0 +1,29 @@
+{
+ "pairs": [
+  [
+   1,
+   3
+  ],
+  [
+   2,
+   0
+  ]
+ ],
+ "a": [
+  "A hold store's growth leaves a covering layer's new rows covering no axis, so a full hold joined there shows nothing",
+  "A frame's ticks stop running in registration order once a waiting animation wakes or one turns backward",
+  "A throw from a hold's `value`/`weight` or a target tween's `interpolate` leaves `framing` true for good, and the animator never asks for another frame",
+  "A handed-off start that falls back to the main thread has already interrupted under an id that never registers",
+  "`retire` asks for a frame from inside a frame's ticks, which `register` refuses to do for a stated reason"
+ ],
+ "b": [
+  "A user callback that throws inside the codec or hold pass leaves `framing` stuck true, and the animator never runs another frame",
+  "`holdRows` leaves the rows it already held held forever when a later row throws",
+  "A compositor tween with `ms: Infinity` commits `to`, then throws from `Element.animate`",
+  "After any `due` animation wakes, a frame no longer ticks animations in the order they registered",
+  "`cancelAll` reports a `cancel` for an animation already reported ended, where `retire` does not",
+  "The compositor path interrupts the key before it validates `to`, `from` and the spring constants; the main-thread path validates first",
+  "A spring interrupting a target tween that has `interpolate`/`interpolator` inherits zero velocity",
+  "`retire`/`cancelAll` don't guard `onCancel`, so a throwing target setter leaves rows on the table and aborts the cancel partway"
+ ]
+}

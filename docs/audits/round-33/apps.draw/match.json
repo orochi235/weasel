@@ -1,0 +1,53 @@
+{
+ "pairs": [
+  [
+   0,
+   1
+  ],
+  [
+   1,
+   0
+  ],
+  [
+   2,
+   4
+  ],
+  [
+   5,
+   2
+  ],
+  [
+   6,
+   3
+  ],
+  [
+   7,
+   5
+  ],
+  [
+   8,
+   6
+  ]
+ ],
+ "a": [
+  "Node extractor finds no variants: NodeBase/MarkNode/GroupNode/Node now live in nodeTypes.ts, scene/types.ts only re-exports them",
+  "watchedFilesFor lists two deleted files and omits the files the extractors actually read, so dev HMR never refreshes the schema index for them",
+  "Gesture catalog lists a nonexistent 'pointerdown' kind and omits six real GestureSpec kinds",
+  "Op catalog reads a fixed 7-file list and misses most op factories core exports",
+  "Type-alias op args always yield an empty params list: getChildrenOfKind on a TypeLiteral never sees its members",
+  "Shape extractor's makeLeaf model is obsolete: every shape comes out empty, and polygon/star report a callback as shape data",
+  "Action extractor drops every action declared through defineAction or a factory, leaving only undo/redo",
+  "Callback-source plugin still targets core's tool and action dirs; the actions and tools that moved to editing get no source links",
+  "The draw `rotation` glyph's arrowhead points down while its arc arrives travelling right",
+  "16 of draw's 21 glyphs are named nowhere, and the text-styling ones duplicate core's differently drawn copies"
+ ],
+ "b": [
+  "Trait-schema watcher watches two paths that no longer exist and misses the files the extractors actually read",
+  "extract-node reads a file that only re-exports the node interfaces, so the SceneNode schema is always empty",
+  "extract-shapes finds no shape data for any kit shape: the editing preset calls `createXTool(insert)` and never `makeLeaf`",
+  "extract-actions catalogs only undo and redo: `defineAction({...})` and factory calls aren't unwrapped, and editing's actions aren't read at all",
+  "The gesture catalog lists kinds no spec has and leaves out six that exist",
+  "callback-source plugin never tags editing's tools and actions, which moved out of the include dirs",
+  "The `rotation` glyph's arrowhead points down while the arc arrives moving right"
+ ]
+}
