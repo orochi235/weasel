@@ -101,11 +101,14 @@ describe('a lab with no instruments', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Count 0' }));
     fireEvent.click(screen.getByRole('button', { name: 'Count 1' }));
     // QWERTZ: the key labeled Y sits where a US keyboard has Z. Ctrl+Y asks to redo, and there is nothing to redo.
-    await act(async () => fireEvent.keyDown(document.body, { key: 'y', code: 'KeyZ', ctrlKey: true }));
+    await act(async () =>
+      fireEvent.keyDown(document.body, { key: 'y', code: 'KeyZ', ctrlKey: true }),
+    );
     expect(screen.getByRole('button', { name: 'Count 2' })).toBeTruthy();
     // Dvorak: Ctrl+; is typed on the US Z position and asks for nothing.
-    await act(async () => fireEvent.keyDown(document.body, { key: ';', code: 'KeyZ', ctrlKey: true }));
+    await act(async () =>
+      fireEvent.keyDown(document.body, { key: ';', code: 'KeyZ', ctrlKey: true }),
+    );
     expect(screen.getByRole('button', { name: 'Count 2' })).toBeTruthy();
   });
 });
-

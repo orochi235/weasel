@@ -81,6 +81,9 @@ const same = (a: Box, b: Box) => a.x === b.x && a.y === b.y && a.width === b.wid
 const sameBand = (a: HeaderBand | undefined, b: HeaderBand): boolean =>
   a !== undefined && a.height === b.height && a.text.y === b.text.y && a.text.height === b.text.height && a.aside?.width === b.aside?.width;
 
+const lockedAmong = (scene: RelayoutScene, ids: readonly string[]): boolean =>
+  scene.isLocked !== undefined && ids.some((id) => scene.isLocked!(id as never));
+
 /**
  * Lays each body among `ids` out again from its text rows as they are now:
  * the body grows to what its rows need, never shrinks, and its rows are
@@ -88,9 +91,6 @@ const sameBand = (a: HeaderBand | undefined, b: HeaderBand): boolean =>
  * record is left alone. Call inside the batch that changed the text, so it is
  * the same undo entry.
  */
-const lockedAmong = (scene: RelayoutScene, ids: readonly string[]): boolean =>
-  scene.isLocked !== undefined && ids.some((id) => scene.isLocked!(id as never));
-
 export function relayoutBodies(scene: RelayoutScene, ids: Iterable<string>, measure?: MeasureRowText): void {
   for (const id of new Set(ids)) {
     const node = scene.get(id as never);

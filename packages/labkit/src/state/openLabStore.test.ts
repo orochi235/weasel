@@ -4,7 +4,14 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import type { Instrument } from '../instrument/types';
 import { CURRENT_DOCUMENT_VERSION, labDocumentKey, quarantineKey } from './document';
 import { labStorageKey } from './helpers';
-import { LAYOUT_RECORD, labPrefix, recordsOfDocument, saveRecord, trialRecord, UNDOCK_RECORD } from './labRecords';
+import {
+  LAYOUT_RECORD,
+  labPrefix,
+  recordsOfDocument,
+  saveRecord,
+  trialRecord,
+  UNDOCK_RECORD,
+} from './labRecords';
 import { type OpenLabStoreOptions, openLabStore } from './openLabStore';
 import type { LabDocument, TrialRecord } from './types';
 

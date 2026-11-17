@@ -315,7 +315,7 @@ describe('<TrialChrome>', () => {
     expect(undo).toHaveBeenCalledTimes(1);
   });
 
-  it('saves a snapshot on Mod+S typed in a text field, keeping the browser\'s save dialog shut', async () => {
+  it("saves a snapshot on Mod+S typed in a text field, keeping the browser's save dialog shut", async () => {
     const saveSnapshot = vi.fn();
     await renderSettled(
       <ChromeHarness labOverrides={{ saveSnapshot }}>

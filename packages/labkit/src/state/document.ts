@@ -1,6 +1,6 @@
 import { isPlainObject } from '@weasel-js/registry';
-import { isColorModePreference } from '@weasel-js/theme';
 import { type StorageAdapter, sameStored } from '@weasel-js/storage';
+import { isColorModePreference } from '@weasel-js/theme';
 import { labStorageKey } from './helpers';
 import type { LabDocument, LabMode, Migration, SavedSnapshot, SerializedTrial } from './types';
 import type { UndockedPanels } from './undock';
@@ -111,8 +111,7 @@ export async function readLegacyDocument(
   );
   if ([workspaces, saves, layout, theme].every((v) => v === undefined)) return null;
 
-  const mode =
-    isColorModePreference(theme) || theme === 'interstellar' ? theme : fallbackMode;
+  const mode = isColorModePreference(theme) || theme === 'interstellar' ? theme : fallbackMode;
 
   return {
     version: 0,

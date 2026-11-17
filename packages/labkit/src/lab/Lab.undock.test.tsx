@@ -147,7 +147,9 @@ describe('undocking a sidebar section', () => {
       const trials = container.querySelectorAll('.lk-trial');
       await act(async () => fireEvent.pointerDown(trials[1] as Element, { button: 0 }));
       expect(lab?.focusedTrialId).toBe(second);
-      const spot = container.querySelector<HTMLElement>('.lk-panel-tile [data-testid="notes-body"]');
+      const spot = container.querySelector<HTMLElement>(
+        '.lk-panel-tile [data-testid="notes-body"]',
+      );
       await act(async () => spot?.focus());
       expect(lab?.focusedTrialId).toBe(first);
       await act(async () => fireEvent.keyDown(spot as HTMLElement, { key: 's', ctrlKey: true }));

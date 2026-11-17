@@ -183,9 +183,16 @@ describe('builtinContributions', () => {
       auto: new Set(['gap']),
     };
     const copy = builtinContributions(bare, withSchema).find((c) => c.id === 'copy-settings');
-    (copy?.item as { onActivate: (c: TrialChromeContext) => void }).onActivate(withSchema);
+    if (copy === undefined) throw new Error('no copy-settings contribution');
+    (copy.item as { onActivate: (c: TrialChromeContext) => void }).onActivate(withSchema);
     const copied = JSON.parse((writeText.mock.calls[0] as unknown as [string])[0]);
-    expect(copied).toEqual({ width: 240, gap: 10, limit: 'Infinity', floor: '-Infinity', cap: null });
+    expect(copied).toEqual({
+      width: 240,
+      gap: 10,
+      limit: 'Infinity',
+      floor: '-Infinity',
+      cap: null,
+    });
     vi.unstubAllGlobals();
   });
 
@@ -354,4 +361,3 @@ describe('TRANSIENT_BUILTINS', () => {
     expect(somewhere.filter((id) => !TRANSIENT_BUILTINS.has(id))).toEqual([]);
   });
 });
-

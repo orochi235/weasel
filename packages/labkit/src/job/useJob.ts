@@ -1,5 +1,12 @@
 import { useLatest } from '@weasel-js/core';
-import { type Dispatch, type SetStateAction, useCallback, useEffect, useRef, useState } from 'react';
+import {
+  type Dispatch,
+  type SetStateAction,
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+} from 'react';
 import type { JobCapability, JobFailure, JobHandle, JobStatus } from './types';
 
 /** Inputs to `useJob`. `setState` receives each item folded in by the
