@@ -43,7 +43,7 @@ export interface MenuSeparatorEntry {
 }
 
 /** A row that opens another level. */
-export interface SubmenuEntry {
+export interface MenuSubmenuEntry {
   kind: 'submenu';
   key: string;
   label: string;
@@ -129,7 +129,7 @@ export interface MenuTextEntry {
 
 /** One line of a menu. */
 export type MenuEntry =
-  | MenuItemEntry | MenuSeparatorEntry | SubmenuEntry | MenuNumberEntry | MenuColorEntry | MenuTextEntry;
+  | MenuItemEntry | MenuSeparatorEntry | MenuSubmenuEntry | MenuNumberEntry | MenuColorEntry | MenuTextEntry;
 
 /** An entry the highlight can land on. */
 export type MenuRowEntry = Exclude<MenuEntry, MenuSeparatorEntry>;

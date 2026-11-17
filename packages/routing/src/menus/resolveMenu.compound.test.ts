@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import type { MenuColorEntry, MenuEntry, MenuItemEntry, MenuNumberEntry, MenuTextEntry, SubmenuEntry } from '@weasel-js/menu';
+import type { MenuColorEntry, MenuEntry, MenuItemEntry, MenuNumberEntry, MenuTextEntry, MenuSubmenuEntry } from '@weasel-js/menu';
 import {
   pref, type PrefField, type PrefGroup, type PrefLeaf, type PrefList, type PrefMap, type PrefObject, type PrefPaint,
   type PrefUnion,
@@ -22,7 +22,7 @@ function store(initial: Record<string, unknown>, extra: Partial<MenuSources> = {
 
 const menu = (children: Record<string, PrefLeaf | PrefGroup>): PrefGroup => ({ name: '', children });
 const only = (es: MenuEntry[]) => { expect(es).toHaveLength(1); return es[0]!; };
-const sub = (e: MenuEntry) => { expect(e.kind).toBe('submenu'); return e as SubmenuEntry; };
+const sub = (e: MenuEntry) => { expect(e.kind).toBe('submenu'); return e as MenuSubmenuEntry; };
 const rowsOf = (e: MenuEntry) => sub(e).entries.filter((x) => x.kind !== 'separator');
 const leafOf = <L extends PrefLeaf>(l: Omit<L, 'description'>): L => ({ description: '', ...l }) as unknown as L;
 

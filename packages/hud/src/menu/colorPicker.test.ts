@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 import type { OpenMenu } from '@weasel-js/core';
 import type { DrawCommand } from '@weasel-js/core/renderer';
-import type { MenuColorEntry, MenuEntry, MenuItemEntry, MenuTextEntry, SubmenuEntry } from '@weasel-js/menu';
+import type { MenuColorEntry, MenuEntry, MenuItemEntry, MenuTextEntry, MenuSubmenuEntry } from '@weasel-js/menu';
 import type { HudDrawCtx, HudKeyEvent } from '../widget';
 import { hexColor, withColorPickers } from './colorPicker';
 import { createMenuWidget } from './menuWidget';
@@ -31,7 +31,7 @@ describe('withColorPickers', () => {
     const nested: MenuEntry = { kind: 'submenu', key: 'more', label: 'More', entries: [fill('#ff0000')] };
     const c = ctrl();
     const { entries, swatchOf } = withColorPickers([fill('#e53935'), readOnly, off, nested], ['#000000', '#e53935'], () => c);
-    const picker = entries[0] as SubmenuEntry;
+    const picker = entries[0] as MenuSubmenuEntry;
     expect(picker).toMatchObject({ kind: 'submenu', key: 'fill', label: 'Fill' });
     expect(picker.entries.map((e) => e.kind)).toEqual(['item', 'item', 'separator', 'text']);
     expect(picker.entries.map((e) => (e as MenuItemEntry).checked)).toEqual([false, true, undefined, undefined]);
@@ -39,13 +39,13 @@ describe('withColorPickers', () => {
     expect(swatchOf(picker.entries[0]!)).toBe('#000000');
     expect(entries[1]).toBe(readOnly);
     expect(entries[2]).toBe(off);
-    expect((entries[3] as SubmenuEntry).entries[0]!.kind).toBe('submenu');
+    expect((entries[3] as MenuSubmenuEntry).entries[0]!.kind).toBe('submenu');
   });
 
   it('writes a swatch and typed hex through the controller, keeping alpha', () => {
     const row = { ...fill('#00000080'), alpha: true };
     const c = ctrl();
-    const picker = withColorPickers([row], ['#1e88e5'], () => c).entries[0] as SubmenuEntry;
+    const picker = withColorPickers([row], ['#1e88e5'], () => c).entries[0] as MenuSubmenuEntry;
     expect(picker.entries[0]).toMatchObject({ keepOpen: true });
     (picker.entries[0] as MenuItemEntry).run();
     expect(c.setColor).toHaveBeenCalledWith(row, '#1e88e580');
@@ -60,7 +60,7 @@ describe('withColorPickers', () => {
 
   it('checks the swatch the color holds at its current alpha, not the one it opened with', () => {
     const row = { ...fill('#000000ff'), alpha: true };
-    const picker = withColorPickers([row], ['#000000', '#1e88e5'], () => ctrl('#1e88e580')).entries[0] as SubmenuEntry;
+    const picker = withColorPickers([row], ['#000000', '#1e88e5'], () => ctrl('#1e88e580')).entries[0] as MenuSubmenuEntry;
     expect(picker.entries.slice(0, 2).map((e) => (e as MenuItemEntry).checked)).toEqual([false, true]);
   });
 });
