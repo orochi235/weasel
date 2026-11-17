@@ -206,7 +206,7 @@ type PreviewScene = Scene<unknown, 'default', unknown>;
  * A scene of one node holding each leaf's default at the node path its key names, and for a pointer into `over`
  * the default of the leaf it shows, at that leaf's path.
  */
-function sceneOf(schema: PrefSection, over: SchemaRoot | undefined): PreviewScene {
+function createPreviewScene(schema: PrefSection, over: SchemaRoot | undefined): PreviewScene {
   let node: { pose?: unknown; data?: unknown } = {};
   for (const [key, leaf] of prefSectionLeaves(schema.members)) {
     const shown = leaf.kind === 'alias' && over ? prefAliasTarget(leaf as PrefAlias, (at) => prefLeafAt(over, at)) : { path: key, leaf };
@@ -227,7 +227,7 @@ function SectionPreview({ schema, renderers, selected, onSelect, onDefaults, ove
 }) {
   // Each leaf's value as the node was seeded, which is no value for a key outside `pose` and `data`: only what an edit changed is a new default.
   const [scene, seeded] = useMemo(() => {
-    const made = sceneOf(schema, over);
+    const made = createPreviewScene(schema, over);
     const node = made.get(NODE);
     return [made, new Map(prefSectionLeaves(schema.members).map(([key]) => [key, JSON.stringify(prefValueAtPath(node, key))]))] as const;
   }, [schema, over]);
