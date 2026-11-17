@@ -15,7 +15,7 @@ import type { CanvasExtensionApi } from '../canvasExtension';
 import { useOptionalViewRegistry } from '../viewRegistry';
 import { presetChromeRules, type EnabledPresets } from './features';
 import { PRESET_OWNED_CHROME } from './presets/chrome';
-import type { NodeAtPoint } from './useNodeAtPoint';
+import type { BestHitPicker } from './useBestHit';
 import { worldPointAt } from './worldPointAt';
 import { useChromeRulesDep } from '../deps/chromeRules';
 
@@ -29,7 +29,7 @@ export function useSceneHover(args: {
   canvasApiRef: RefObject<Pick<CanvasExtensionApi, 'clientToWorld'> | null>;
   /** The surface's own camera, for a point no declared view claims. */
   viewRef: { readonly current: View };
-  nodeAtPointRef: { readonly current: NodeAtPoint | undefined };
+  nodeAtPointRef: { readonly current: BestHitPicker | undefined };
   enabled: boolean;
   onChange?: (id: NodeId | null) => void;
 }): HoverTracking {
