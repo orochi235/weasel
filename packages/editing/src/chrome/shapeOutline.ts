@@ -55,7 +55,7 @@ export function createShapeOutliner(): {
       const paths: Path[] = [];
       const boxed: string[] = [];
       for (const id of ids) {
-        const edge = edgeOf(id, reads, scale, edges);
+        const edge = traceEdge(id, reads, scale, edges);
         if (edge) paths.push(edge);
         else boxed.push(id);
       }
@@ -68,7 +68,7 @@ export function createShapeOutliner(): {
   };
 }
 
-function edgeOf(id: string, reads: ShapeOutlineReads, scale: number, edges: Map<string, Edge>): Path | null {
+function traceEdge(id: string, reads: ShapeOutlineReads, scale: number, edges: Map<string, Edge>): Path | null {
   const { scene } = reads;
   const node = scene.get(id as NodeId);
   if (!node || node.kind === 'group' || holdsMembers(scene, id as NodeId)) return null;
