@@ -1,6 +1,6 @@
 import { getOwn } from '@weasel-js/registry';
 import { AUTO, prefCanAuto, type LeafReading } from '../autoReset';
-import { type PrefGroup, type PrefSection, prefLeafAt, prefValueAtPath, prefLeafValue, type PrefLeaf } from '@weasel-js/prefs-schema';
+import { type PrefGroup, type PrefSection, prefLeafAt, prefValueAtPath, prefValueOrDefault, type PrefLeaf } from '@weasel-js/prefs-schema';
 import { sourceResetPlan, writeResetPlan } from './policy';
 import { FREE_LEAF_STATUS, type PrefLeafStatus, type PrefsSource } from './prefsSource';
 
@@ -57,7 +57,7 @@ export function createValuesSource(
       const unpinned = autoAt(path);
       const at = unpinned === undefined ? {} : { auto: unpinned };
       if (mixed?.has(path)) return { value: undefined, mixed: true, each: [], ...at };
-      const value = leaf ? prefLeafValue(leaf, stored) : stored;
+      const value = leaf ? prefValueOrDefault(leaf, stored) : stored;
       return { value, mixed: false, each: [value], ...at };
     },
     write,

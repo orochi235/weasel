@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import { prefAsBox, prefLeafValue, type PrefLeaf, type PrefObject } from '@weasel-js/prefs';
+import { prefAsBox, prefValueOrDefault, type PrefLeaf, type PrefObject } from '@weasel-js/prefs';
 import type { ControlForm } from '../ActionButton/controlForm';
 import { MotifFrame } from '../MotifFrame';
 import { PropertyRow } from '../Properties/PropertyRow';
@@ -38,7 +38,7 @@ export function ObjectLeaf({
   const parts: ObjectLeafParts<{ key: string; child: PrefLeaf; field: LeafContext }> = {
     path: ctx.path,
     off,
-    cell: (key, child) => ({ key, child, field: objectFieldContext(ctx, key, child, prefLeafValue) }),
+    cell: (key, child) => ({ key, child, field: objectFieldContext(ctx, key, child, prefValueOrDefault) }),
     rows: (cells) => cells.map(({ key, child, field }) => {
       const width = rowWidth(child);
       const stacked = width !== 'column';

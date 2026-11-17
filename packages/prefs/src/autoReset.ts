@@ -2,7 +2,7 @@
 // lab's controls.
 
 import { deepEqual } from '@weasel-js/registry';
-import { type PrefGroup, type PrefSection, isPrefLeaf, isPrefSection, prefHoldsValue, type PrefLeaf, prefLeafValue } from '@weasel-js/prefs-schema';
+import { type PrefGroup, type PrefSection, isPrefLeaf, isPrefSection, prefHoldsValue, type PrefLeaf, prefValueOrDefault } from '@weasel-js/prefs-schema';
 
 /** Whether a leaf can be auto: one holding a value that opts in by declaring `auto`. A leaf without it never is. */
 export function prefCanAuto(leaf: PrefLeaf): boolean {
@@ -103,7 +103,7 @@ export interface LeafReading<T = unknown> {
 export function readingIsAtReset(leaf: PrefLeaf, reading: LeafReading): boolean {
   if (!prefHoldsValue(leaf) || (leaf as { readout?: boolean }).readout === true) return true;
   if (reading.mixed) return false;
-  return reading.each.every((value) => prefIsAtReset(leaf, { auto: reading.auto, value: prefLeafValue(leaf, value) }));
+  return reading.each.every((value) => prefIsAtReset(leaf, { auto: reading.auto, value: prefValueOrDefault(leaf, value) }));
 }
 
 /** One write a reset makes: {@link AUTO} to unpin, else the value the leaf stores at its default. */

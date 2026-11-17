@@ -1,7 +1,7 @@
 import { type ReactNode } from 'react';
 import {
   prefAliasName,
-  prefLeafValue,
+  prefValueOrDefault,
   prefValueAtPath,
   type PrefAlias,
   type PrefAliasTargets,
@@ -136,7 +136,7 @@ export function prefRenderContext(
   const inside = at === undefined ? undefined : ctx.targets;
   const entryAt = inside?.entryAt ?? ctx.entryAt;
   const toggles = autoTracked(ctx, path);
-  const value = mixed ? undefined : prefLeafValue(pref, stored);
+  const value = mixed ? undefined : prefValueOrDefault(pref, stored);
   const reset = rowReset(ctx, path, pref);
   const renderCtx: LeafContext = {
     path,

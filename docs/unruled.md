@@ -972,7 +972,7 @@ The snap pipeline ([snapping.md](./snapping.md)) landed on 2026-10-18 with these
   `horizontal`, `both` and grid layouts, reading the container's computed `direction` at each key
   unless the new `dir` option says otherwise. ui declares its own `RovingDirection` rather than
   depend on `@weasel-js/text` for `TextDirection`.
-- 2026-10-20 (overnight pass): Every params surface reads a leaf's value through `prefLeafValue`
+- 2026-10-20 (overnight pass): Every params surface reads a leaf's value through `prefValueOrDefault`
   (`@weasel-js/prefs`): the held value, else the default, with `undefined` and `null` both absent,
   except a paint's `null`, which means no paint. A clearable leaf holding nothing shows cleared,
   so labkit now draws a clearable number empty where its key is missing. `SelectionPanel` keeps its

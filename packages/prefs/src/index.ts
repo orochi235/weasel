@@ -39,7 +39,7 @@ export {
   prefIsShown,
   prefJudge,
   prefLeafAt,
-  prefLeafValue,
+  prefValueOrDefault,
   prefLeaves,
   prefNumberAt,
   prefObjectBase,

@@ -3,7 +3,7 @@ import {
   type PrefBoundReader,
   type PrefLeaf,
   type PrefNumber,
-  prefLeafValue,
+  prefValueOrDefault,
   prefNumberAt,
 } from '@weasel-js/prefs';
 import {
@@ -46,9 +46,9 @@ export function extra<T>(leaf: PrefLeaf, key: LeafExtra): T | undefined {
   return (leaf as unknown as Record<string, T | undefined>)[key];
 }
 
-/** What the row of `leaf` at `path` shows of `config` ({@link prefLeafValue}). */
+/** What the row of `leaf` at `path` shows of `config` ({@link prefValueOrDefault}). */
 export function leafValueAt(config: unknown, path: string, leaf: PrefLeaf): unknown {
-  return prefLeafValue(leaf, valueAtPath(config, path));
+  return prefValueOrDefault(leaf, valueAtPath(config, path));
 }
 
 /**

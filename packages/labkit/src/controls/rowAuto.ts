@@ -4,7 +4,7 @@ import {
   type PrefNumber,
   prefAutoValue,
   prefCanAuto,
-  prefLeafValue,
+  prefValueOrDefault,
 } from '@weasel-js/prefs';
 import { PropertyAutoReadout } from '@weasel-js/ui/components/Properties';
 import { createElement, type ReactNode, useMemo } from 'react';
@@ -80,7 +80,7 @@ export function useRowAuto(source: RowAutoSource) {
   // An auto row's control stays live, so it draws the value in effect (`prefAutoValue`: the report or the
   // resolver's, else `auto.value`), never the stale pinned value underneath. Pinning keeps it. With none yet,
   // the control has to draw something, and draws what a field holding nothing draws.
-  const value = isAutoRow ? prefLeafValue(leaf, prefAutoValue(leaf, resolvedValue)) : pinned;
+  const value = isAutoRow ? prefValueOrDefault(leaf, prefAutoValue(leaf, resolvedValue)) : pinned;
   const setAuto = (next: boolean): void => setRowAuto?.(path, next, value);
   // What the row would read as auto, pinned or not: the config resolved with
   // this path unpinned beside the ones that already are. Only where something

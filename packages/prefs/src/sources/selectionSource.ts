@@ -1,6 +1,6 @@
 import { getOwn } from '@weasel-js/registry';
 import type { ResetWrite } from '../autoReset';
-import { type PrefSection, prefLeafValue, type PrefLeaf } from '@weasel-js/prefs-schema';
+import { type PrefSection, prefValueOrDefault, type PrefLeaf } from '@weasel-js/prefs-schema';
 import { sourceResetPlan } from './policy';
 import { FREE_LEAF_STATUS, sharedReading, type PrefLeafStatus, type PrefsSource, type SourceWriteOptions } from './prefsSource';
 
@@ -10,7 +10,7 @@ export interface SelectionSourceInput {
   leaves: Readonly<Record<string, PrefLeaf>>;
   /** Each target's value at `path` as it holds it, in selection order. */
   read: (path: string) => readonly unknown[];
-  /** What a target holding `held` at `leaf` shows. Default: {@link prefLeafValue}, holding nothing showing the
+  /** What a target holding `held` at `leaf` shows. Default: {@link prefValueOrDefault}, holding nothing showing the
    *  default. A host whose targets hold nothing where they have no such property says so here. */
   shown?: (leaf: PrefLeaf, held: unknown) => unknown;
   /** Write into every target what `next` derives from the value it shows at `path`, as one undo step; a draft is
@@ -33,7 +33,7 @@ export interface SelectionSource extends PrefsSource {
  * and a write lands in every one. A target keeps no auto state, so no leaf is auto here.
  */
 export function createSelectionSource(input: SelectionSourceInput): SelectionSource {
-  const { leaves, read, shown = prefLeafValue, write, stateAt = () => FREE_LEAF_STATUS } = input;
+  const { leaves, read, shown = prefValueOrDefault, write, stateAt = () => FREE_LEAF_STATUS } = input;
   const schema: PrefSection = { name: '', members: leaves };
   const source: SelectionSource = {
     schema,

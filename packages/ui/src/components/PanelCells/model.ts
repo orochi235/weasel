@@ -15,7 +15,7 @@ import {
   pairRuns,
   createAliasTargets,
   prefHeadingKey,
-  prefLeafValue,
+  prefValueOrDefault,
   prefSectionPath,
   sharedReading,
   type PrefAlias,
@@ -278,10 +278,10 @@ const put = (copy: Record<string, unknown>, key: string, value: unknown): void =
   else setOwn(copy, key, value);
 };
 
-/** What a node holding `held` at a leaf's path shows there ({@link prefLeafValue}). Holding nothing reads as the
+/** What a node holding `held` at a leaf's path shows there ({@link prefValueOrDefault}). Holding nothing reads as the
  *  leaf's default only where it says absence means that, else as `undefined`, which a panel draws as unset. */
 export const nodeLeafValue = (leaf: PrefLeaf, held: unknown): unknown =>
-  prefLeafValue(leaf, held, { unset: leaf.absentIsDefault !== true });
+  prefValueOrDefault(leaf, held, { unset: leaf.absentIsDefault !== true });
 
 /** The one value `values` all are, or `MIXED`. */
 export function sharedValue(values: readonly unknown[]): unknown | Mixed {

@@ -1,5 +1,5 @@
 import { useState, type ReactNode } from 'react';
-import { prefLeafValue, type PrefMap } from '@weasel-js/prefs';
+import { prefValueOrDefault, type PrefMap } from '@weasel-js/prefs';
 import { Input } from '../Input';
 import { ListEditor } from '../ListEditor';
 import s from './MapEditor.module.css';
@@ -63,7 +63,7 @@ export function MapEditor({ pref, value, onChange, renderValue, disabled }: MapE
         <div className={s.entry}>
           <Input aria-label={`${name} key`} className={s.key} placeholder="Key" value={key} disabled={disabled} onChange={(next) => set([next, held])} />
           <div className={s.value}>
-            {renderValue(prefLeafValue(item, held), (next) => set([key, next]), key === '' ? name : `${label} ${key}`, key)}
+            {renderValue(prefValueOrDefault(item, held), (next) => set([key, next]), key === '' ? name : `${label} ${key}`, key)}
           </div>
         </div>
       )}

@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import { prefLeafValue, type PrefList, type PrefString } from '@weasel-js/prefs';
+import { prefValueOrDefault, type PrefList, type PrefString } from '@weasel-js/prefs';
 import { ListEditor, type ListEditorProps } from '../ListEditor';
 import { TokenField } from '../TokenField';
 import { entriesDisabled, entryDisabledAt } from './entry';
@@ -33,7 +33,7 @@ export function PrefTextList({ pref, entryDisabled, ...props }: PrefTextListProp
 
 /** What an entry of a list reads as: one holding nothing is the item's default, which is what a new entry starts as. */
 export function prefListEntry(pref: PrefList, entry: unknown): unknown {
-  return prefLeafValue(pref.item, entry);
+  return prefValueOrDefault(pref.item, entry);
 }
 
 /**

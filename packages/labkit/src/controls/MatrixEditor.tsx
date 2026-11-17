@@ -3,7 +3,7 @@ import {
   type PrefGroup,
   type PrefLeaf,
   type PrefSection,
-  prefLeafValue,
+  prefValueOrDefault,
 } from '@weasel-js/prefs';
 import { enumControlAt, prefFieldProps } from '@weasel-js/ui/components/Prefs';
 import { PropertyField } from '@weasel-js/ui/components/Properties';
@@ -54,7 +54,7 @@ export function MatrixEditor({
     ? prefFieldProps(
         leaf,
         {
-          value: prefLeafValue(leaf, valueAtPath(config, path)),
+          value: prefValueOrDefault(leaf, valueAtPath(config, path)),
           setValue: (next) => setConfig(path, next),
           fields: choices,
           disabled,

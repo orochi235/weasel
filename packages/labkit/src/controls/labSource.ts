@@ -9,7 +9,7 @@ import {
   prefAutoValue,
   prefCanAuto,
   prefLeafAt,
-  prefLeafValue,
+  prefValueOrDefault,
   prefNodeAt,
   prefResets,
   prefShownValue,
@@ -69,7 +69,7 @@ export function createLabConfigSource(input: LabConfigInput): PrefsSource {
       return { value, mixed: false, each: [value], ...at };
     }
     const value = unpinned
-      ? prefLeafValue(leaf, prefAutoValue(leaf, valueAtPath(shown, path)))
+      ? prefValueOrDefault(leaf, prefAutoValue(leaf, valueAtPath(shown, path)))
       : shownAt(config, path, leaf);
     return { value, mixed: false, each: [value], ...at };
   };

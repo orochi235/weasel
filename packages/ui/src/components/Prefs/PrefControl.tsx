@@ -1,4 +1,4 @@
-import { prefLeafValue, type PrefLeaf } from '@weasel-js/prefs';
+import { prefValueOrDefault, type PrefLeaf } from '@weasel-js/prefs';
 import type { EntryAt } from './entry';
 import { loneLeafContext } from '../PrefsSource/leafContext';
 import { renderPrefControl, type LeafRenderer } from './PrefsRow';
@@ -39,7 +39,7 @@ export function PrefControl({ pref, path = '', value, values, onChange, renderer
   const { settles, textWaitMs } = useParamsPolicy('form');
   return renderPrefControl(
     {
-      ...loneLeafContext(path, pref, prefLeafValue(pref, value), onChange),
+      ...loneLeafContext(path, pref, prefValueOrDefault(pref, value), onChange),
       values,
       ...(fields ? { fields } : {}),
       disabled,
