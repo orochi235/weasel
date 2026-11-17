@@ -1,4 +1,5 @@
 import type { Target } from '../target';
+import { nestedLength } from './length';
 import { sampleTrack } from './sampleTrack';
 import type { SampledTrack, Track } from './types';
 
@@ -40,7 +41,8 @@ interface Held {
   pass: number;
 }
 
-export function createTrackSampler(open?: OpenTrackHold): TrackSampler {
+/** `gone` says the timeline was canceled, by a track's `onTick` among others: the tracks after it are not sampled. */
+export function createTrackSampler(open?: OpenTrackHold, gone: () => boolean = () => false): TrackSampler {
   // Per-sampled-track sampling caches, dropped wholesale by `edited`.
   let caches = new WeakMap<object, Map<number, (u: number) => unknown>>();
   const cacheFor = (track: object): Map<number, (u: number) => unknown> => {
@@ -86,6 +88,7 @@ export function createTrackSampler(open?: OpenTrackHold): TrackSampler {
 
   const visit = (tracks: Track[], t: number): void => {
     for (const track of tracks) {
+      if (gone()) return;
       if (track.kind === 'sampled') {
         const st = track as SampledTrack<unknown>;
         const v = sampleTrack(st, t, cacheFor(st));
@@ -93,7 +96,7 @@ export function createTrackSampler(open?: OpenTrackHold): TrackSampler {
         if (st.target) place(st, v, t);
         st.onTick?.(v);
       } else if (track.kind === 'timeline') {
-        visit(track.timeline.tracks, Math.min(t - track.at, track.timeline.duration ?? Infinity));
+        visit(track.timeline.tracks, Math.min(t - track.at, nestedLength(track.timeline)));
       }
     }
   };

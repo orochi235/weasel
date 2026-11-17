@@ -832,6 +832,9 @@ The snap pipeline ([snapping.md](./snapping.md)) landed on 2026-10-18 with these
   `NaN`, as d3's `duration(NaN)` does, and one below 0 plays as 0.
 - 2026-11-11 (my call, animator second property pass): an event handler that cancels or seeks its timeline stops the
   rest of that frame's crossings; one that pauses it does not, and the events the frame already crossed still fire.
+- 2026-11-17 (my call, audit round 33): `toClip` throws, naming where, on a timeline whose `duration` is infinite, as it
+  does on any time, offset, weight or bezier point that is not finite: JSON writes each as `null`. A clip has no form
+  for an endless timeline; leaving `duration` out lets it play to its last track's end instead.
 - Open (animator second property pass, 2026-11-11): a spring or a coast ends at the first frame that finds it under its
   rest threshold, so where it ends depends on the frames: one at 0 → 1 (stiffness 120, damping 14, velocity 18.5)
   ends at a frame at 892 ms, but a single frame at 1062 ms finds it 1.0009 and still moving, and it runs on.

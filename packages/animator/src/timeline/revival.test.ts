@@ -339,3 +339,46 @@ describe('a live timeline', () => {
     expect(tl.time()).toBe(30);
   });
 });
+
+describe('a timeline played backward', () => {
+  it('goes on into the lap behind it from exactly 0, as it goes on into the next from exactly its end', () => {
+    const h = harness();
+    const onDone = vi.fn();
+    const tl = createTimeline(h.register, 1, { tracks: [numberTrack()], duration: 100, loop: 3, onDone });
+    h.frame(150);
+    tl.setTimeScale(-1);
+    h.frame(50);
+    expect(tl.time()).toBe(0);
+    expect(onDone).not.toHaveBeenCalled();
+    expect(h.isLive()).toBe(true);
+    h.frame(10);
+    expect(tl.time()).toBe(90);
+  });
+
+  it('is revived by a seek to its end once it finished forward', () => {
+    const h = harness();
+    const tl = createTimeline(h.register, 1, { tracks: [numberTrack()], duration: 100 });
+    h.frame(150);
+    expect(h.isLive()).toBe(false);
+    tl.setTimeScale(-1);
+    tl.seek(100);
+    expect(h.isLive()).toBe(true);
+    h.frame(30);
+    expect(tl.time()).toBe(70);
+  });
+
+  it('is not revived by a seek to 0 once it finished there, and calls onDone once', () => {
+    const h = harness();
+    const onDone = vi.fn();
+    const tl = createTimeline(h.register, 1, { tracks: [numberTrack()], duration: 100, onDone });
+    h.frame(50);
+    tl.setTimeScale(-1);
+    h.frame(60);
+    expect(onDone).toHaveBeenCalledTimes(1);
+    expect(h.isLive()).toBe(false);
+    tl.seek(0);
+    expect(h.isLive()).toBe(false);
+    h.frame(10);
+    expect(onDone).toHaveBeenCalledTimes(1);
+  });
+});
