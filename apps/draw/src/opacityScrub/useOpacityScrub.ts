@@ -13,6 +13,8 @@ interface ScrubSession {
   snapshots: Map<string, PaintSnapshot>;
   /** The brightest alpha across `snapshots`: every node scales by `targetAlpha / base`. */
   base: number;
+  /** The paints each node was last left holding by this session, to tell another edit's from its own. */
+  written: Map<string, PaintSnapshot>;
   targetAlpha: number;
 }
 
@@ -71,6 +73,7 @@ export function useOpacityScrub({ scene, selection }: UseOpacityScrubArgs) {
           const currentNode = sceneRef.current.get(asNodeId(id));
           if (!currentNode) continue;
           const out = computeScrubbedPaints(snap, session.targetAlpha, session.base);
+          session.written.set(id, out);
           sceneRef.current.update(asNodeId(id), {
             data: {
               ...(currentNode.data as object),
@@ -91,16 +94,28 @@ export function useOpacityScrub({ scene, selection }: UseOpacityScrubArgs) {
         snapshots.set(id, snap);
         base = Math.max(base, brightestAlphaOf(snap));
       }
-      return { snapshots, base };
+      return { snapshots, base, written: new Map(snapshots) };
+    }
+
+    /** A paint edit made since the session last wrote becomes the session's new starting point. */
+    function rebaseIfRepainted(session: ScrubSession) {
+      const repainted = [...session.written].some(([id, w]) => {
+        const data = sceneRef.current.get(asNodeId(id))?.data as PaintSnapshot | undefined;
+        return !data || data.fill !== w.fill || data.stroke !== w.stroke;
+      });
+      if (!repainted) return;
+      Object.assign(session, snapshotsOf(session.snapshots.keys()));
+      session.targetAlpha = session.base;
     }
 
     function startSession() {
-      const { snapshots, base } = snapshotsOf(selectionRef.current.current);
+      const { snapshots, base, written } = snapshotsOf(selectionRef.current.current);
       if (snapshots.size === 0) return;
       sessionRef.current = {
         coalesceKey: `draw.opacityScrub:${++sessionCount.current}`,
         snapshots,
         base,
+        written,
         targetAlpha: base,
       };
       setPercent(Math.round(base * 100));
@@ -121,6 +136,7 @@ export function useOpacityScrub({ scene, selection }: UseOpacityScrubArgs) {
         run: (_deps, params) => {
           const session = sessionRef.current;
           if (!session) return;
+          rebaseIfRepainted(session);
           const step = params?.step ?? COARSE_STEP;
           // Held Shift turns a mouse wheel's scroll horizontal in some browsers, macOS's among them.
           const delta = params?.deltaY || (params?.deltaX ?? 0);

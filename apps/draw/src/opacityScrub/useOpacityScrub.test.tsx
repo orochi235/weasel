@@ -265,4 +265,16 @@ describe('opacity scrub', () => {
     expect(t.alpha()).toBe(90);
     expect(t.alpha(B)).toBe(27);
   });
+
+  it('keeps a paint edit made between two wheel turns', () => {
+    const t = setup();
+    t.key('keydown');
+    t.wheel();
+    const scene = t.api().scene;
+    act(() => scene.update(ID, { data: { fill: { paint: solid('#0000ff') } } }));
+    t.wheel();
+    const fill = (scene.get(ID)!.data as D).fill!;
+    expect(fill.paint).toEqual({ color: '#0000ff', opacity: 0.95 });
+    expect(t.api().percent).toBe(95);
+  });
 });
