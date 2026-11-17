@@ -61,7 +61,7 @@ export {
 export {
   nudgeAnchorsDownAction, nudgeAnchorsLeftAction, nudgeAnchorsRightAction, nudgeAnchorsUpAction,
 } from './pathEdit/anchorNudge';
-export { createHandleCommand, type HandleEdit, type HandleScope } from './pathEdit/anchorHandles';
+export { createHandleEditAction, type HandleEdit, type HandleScope } from './pathEdit/anchorHandles';
 export { joinSelectedAnchors, type AnchorEdit } from './pathEdit/anchorJoin';
 export { deleteSelectedMark, editTargetOf, markUnder } from './pathEdit/pathEditMarks';
 

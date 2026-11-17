@@ -20,7 +20,7 @@ export type HandleScope = 'selected' | 'selectedOrAll';
 
 /** A path-edit command running `edit` on the anchors `scope` names, as one
  *  history entry labeled `label`. Enabled only where it would change the path. */
-export function createHandleCommand(
+export function createHandleEditAction(
   id: string,
   label: string,
   icon: Action['icon'],
@@ -61,7 +61,7 @@ function selectedOrAll(selected: ReadonlySet<number>): number[] | undefined {
 }
 
 /** Collapse the selected anchors' handles onto them, making sharp corners. */
-export const retractHandlesAction = createHandleCommand(
+export const retractHandlesAction = createHandleEditAction(
   'retractHandles',
   'Retract handles',
   icon('core:retractHandles'),
@@ -69,7 +69,7 @@ export const retractHandlesAction = createHandleCommand(
 );
 
 /** Give each selected anchor equal, opposite handles, making it smooth. */
-export const makeHandlesSymmetricAction = createHandleCommand(
+export const makeHandlesSymmetricAction = createHandleEditAction(
   'makeHandlesSymmetric',
   'Make handles symmetric',
   icon('core:symmetricHandles'),
