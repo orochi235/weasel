@@ -24,13 +24,13 @@ import { lerp } from './scalar';
 
 
 /** Options for the path hit-tests. */
-export interface PointInPathOptions {
+export interface PathHitTestOptions {
   /** Bezier flattening tolerance in world units. Default 0.5. */
   flattenTolerance?: number;
 }
 
 /** Options for {@link polygonIntersectsPath}. */
-export interface PolygonIntersectsPathOptions extends PointInPathOptions {
+export interface PolygonIntersectsPathOptions extends PathHitTestOptions {
   /** False when nothing paints the path's interior: only its outline can meet
    *  the polygon, and a polygon lying wholly inside meets nothing. Default true. */
   filled?: boolean;
@@ -59,7 +59,7 @@ export function pathContainsPoint(
   path: Path,
   x: number,
   y: number,
-  opts: PointInPathOptions = {},
+  opts: PathHitTestOptions = {},
 ): boolean {
   if (path.kind === 'rect') {
     return x >= path.x && x <= path.x + path.width && y >= path.y && y <= path.y + path.height;
@@ -224,7 +224,7 @@ function anyVertexInPolygon(subpaths: readonly (readonly number[])[], flatPoly: 
 }
 
 /** Returns true if `rect` is entirely contained within `path`. */
-export function pathContainsRect(path: Path, rect: Rect, opts: PointInPathOptions = {}): boolean {
+export function pathContainsRect(path: Path, rect: Rect, opts: PathHitTestOptions = {}): boolean {
   if (path.kind === 'rect') {
     return (
       rect.x >= path.x &&
@@ -244,7 +244,7 @@ export function pathContainsRect(path: Path, rect: Rect, opts: PointInPathOption
 }
 
 /** Returns true if `rect` overlaps (intersects or contains) `path`. */
-export function pathIntersectsRect(path: Path, rect: Rect, opts: PointInPathOptions = {}): boolean {
+export function pathIntersectsRect(path: Path, rect: Rect, opts: PathHitTestOptions = {}): boolean {
   if (path.kind === 'rect') return rectsIntersect(path, rect);
   const subpaths = closedSubpaths(path, opts);
   if (subpaths.length === 0) return false;
@@ -259,7 +259,7 @@ export function pathIntersectsRect(path: Path, rect: Rect, opts: PointInPathOpti
 export function pathContainsPolygon(
   path: Path,
   polygon: readonly Point[],
-  opts: PointInPathOptions = {},
+  opts: PathHitTestOptions = {},
 ): boolean {
   if (polygon.length === 0) return false;
   if (path.kind === 'rect') {
@@ -284,7 +284,7 @@ export function pathContainsPolygon(
 export function pathIntersectsPolygon(
   path: Path,
   polygon: readonly Point[],
-  opts: PointInPathOptions = {},
+  opts: PathHitTestOptions = {},
 ): boolean {
   if (polygon.length === 0) return false;
   if (path.kind === 'rect') {
@@ -307,7 +307,7 @@ export function pathIntersectsPolygon(
 export function polygonContainsPath(
   polygon: readonly Point[],
   path: Path,
-  opts: PointInPathOptions = {},
+  opts: PathHitTestOptions = {},
 ): boolean {
   if (polygon.length < 3) return false;
   let subpaths: (readonly number[])[];

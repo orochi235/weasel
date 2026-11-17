@@ -823,7 +823,7 @@
     "PlaneValue": "type",
     "Point2": "type",
     "PointAlongPathOptions": "type",
-    "PointInPathOptions": "type",
+    "PathHitTestOptions": "type",
     "PointRegionShape": "type",
     "PointSnap": "type",
     "PointerContextProvider": "function",

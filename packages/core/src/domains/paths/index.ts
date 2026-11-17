@@ -35,7 +35,7 @@ export {
   fitCubicThroughDeletion,
   type Point,
   strokeHitTest,
-  type PointInPathOptions,
+  type PathHitTestOptions,
   type StrokeHitTestOptions,
   pathContainsPoint,
   pathContainsRect,

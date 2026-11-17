@@ -142,7 +142,7 @@ export type {
   RectPath,
   PathFillRule,
   PenAnchor,
-  PointInPathOptions,
+  PathHitTestOptions,
   CreatePathLayerOptions,
   CreatePathEditingOverlayLayerOptions,
   PathEditingOverlayStyle,

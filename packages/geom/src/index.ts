@@ -153,7 +153,7 @@ export {
   pathContainsPoint, pathContainsRect, pathIntersectsRect,
   pathContainsPolygon, pathIntersectsPolygon,
   polygonContainsPath, polygonIntersectsPath,
-  type PointInPathOptions, type PolygonIntersectsPathOptions, type StrokeHitTestOptions,
+  type PathHitTestOptions, type PolygonIntersectsPathOptions, type StrokeHitTestOptions,
 } from './pathHitTest';
 export { transformCoords } from './affine';
 export { fitAffine } from './affineFit';
