@@ -110,8 +110,8 @@ In labkit, modes, d3, paint, and ui:
 labkit's camera (`worldToScreen`, `zoomAt`, `centerOn`, `clampZoomAbout`) is a
 pan/zoom/`yDir` view model, not affine kernel math. labkit's `fitView` anchors at
 the origin where `TrialOverview`'s `fitRect` centers with padding. `toShape`
-collapses a zero-size axis to 0 where `boxToBox` keeps scale 1, and Plot2D's
-`modelToPlot` fails on a zero range where `boxToBox` would silently not scale.
+collapses a zero-size axis to 0 where `rectToRect` keeps scale 1, and Plot2D's
+`modelToPlot` fails on a zero range where `rectToRect` would silently not scale.
 `toDeviceRect` is a y-flip plus device-pixel snap. Badge's `polygonSampler`
 parameterizes a polygon by CSS-pixel arc length under the viewBox's anisotropic
 scale, and Powerline carries its own normals. paint's `lerpHueDeg` is CSS Color 4

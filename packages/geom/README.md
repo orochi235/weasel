@@ -33,7 +33,7 @@ loop allocates nothing. The types that do exist are small:
 | `GlMat3` | nine-element `Float64Array` or `Float32Array` | The same affine laid out column-major for a WebGL `uniformMatrix3fv` upload. |
 | `Path` | `RectPath \| PolygonPath` | A shape. See below. |
 
-`translate`, `scale`, `rotate`, `rotateAboutPoint`, and `boxToBox` build a
+`translate`, `scale`, `rotate`, `rotateAboutPoint`, and `rectToRect` build a
 `Affine`. `multiply(m, n)` composes two, applying `n` first. `invert` returns
 `null` for a singular matrix, and `transformPoint` maps one point.
 

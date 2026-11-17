@@ -8,7 +8,7 @@
  * proportionally.
  */
 
-import { boxToBox } from '../affine';
+import { rectToRect } from '../affine';
 import { forEachSegment, pathCommandCoordCount } from '../commands';
 import { boundsOfPath } from './bounds';
 import { transformPath } from './transformPath';
@@ -45,7 +45,7 @@ function translatePolygonCopy(path: PolygonPath, dx: number, dy: number): Polygo
  * interactions use this to make a polygon follow a corner-handle drag.
  *
  * A degenerate source axis (zero width or height) has no ratio to scale by,
- * so `boxToBox` translates that axis instead — a zero scale is not
+ * so `rectToRect` translates that axis instead — a zero scale is not
  * invertible and would discard what is left on it.
  */
 export function scalePathToBounds(path: Path, target: RectPath): Path {
@@ -57,7 +57,7 @@ export function scalePathToBounds(path: Path, target: RectPath): Path {
 }
 
 function scalePolygon(path: PolygonPath, src: RectPath, dst: RectPath): PolygonPath {
-  const m = boxToBox(src.x, src.y, src.width, src.height, dst.x, dst.y, dst.width, dst.height);
+  const m = rectToRect(src.x, src.y, src.width, src.height, dst.x, dst.y, dst.width, dst.height);
   // src/dst are axis-aligned, so the polygon stays a polygon after this pure scale+translate.
   return transformPath(path, m) as PolygonPath;
 }

@@ -422,7 +422,7 @@ The snap pipeline ([snapping.md](./snapping.md)) landed on 2026-10-18 with these
   `scene.add`, `scene.move`, and `scene.reorder` record the index the node lands at by the same rule (`slotIndex`:
   truncated, held to the ends, `NaN` at the start), so a reorder at `NaN` of a node already first is no edit.
 - 2026-11-11 (my call, core second property pass): a box remap from a box of subnormal width or height keeps that
-  axis's scale, as one from a box of no extent does: geom's `extentScale`, which `boxToBox`, the rect pose descriptor,
+  axis's scale, as one from a box of no extent does: geom's `extentScale`, which `rectToRect`, the rect pose descriptor,
   and `remapRotatedLeaf` share. The true factor is past the double range.
 
 ## Rendering, canvas, and paint

@@ -10,7 +10,7 @@ export { clamp, clamp01, cross, dot, sub, len2, sign, approxEq, lerp, trimNumber
 export { niceStep, type NiceRounding } from './niceStep';
 export { DEG_TO_RAD, RAD_TO_DEG, wrapAngle, wrapPositive, type HalfTurn } from './angle';
 export { normalizeZoom, viewRectToScreen, viewScreenToWorld, viewWorldToScreen, ZOOM_FLOOR, type View } from './view';
-export { identity, translate, scale, rotate, multiply, invert, transformPoint, boxToBox, extentScale, rotateAboutPoint, type Affine } from './affine';
+export { identity, translate, scale, rotate, multiply, invert, transformPoint, rectToRect, extentScale, rotateAboutPoint, type Affine } from './affine';
 export {
   boundsOfCoords, unionBox, boxContainsPoint, boxContainsBox, boxesIntersect, rectToContour,
   rectsOverlap, rectsIntersect, rectContainsPoint, rectContainsPointHalfOpen, rectBetween, unionRects,

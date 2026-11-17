@@ -76,8 +76,8 @@ export function extentScale(from: number, to: number): number {
   return from !== 0 && Number.isFinite(k) ? k : 1;
 }
 
-/** Affine that maps source box (sx,sy,sw,sh) onto destination box (dx,dy,dw,dh). */
-export function boxToBox(
+/** Affine that maps source rect (sx,sy,sw,sh) onto destination rect (dx,dy,dw,dh). */
+export function rectToRect(
   sx: number, sy: number, sw: number, sh: number,
   dx: number, dy: number, dw: number, dh: number,
 ): Affine {

@@ -7,7 +7,7 @@
  * the four corners are baked into world coords.
  */
 
-import { transformPoint, boxToBox } from '../affine';
+import { transformPoint, rectToRect } from '../affine';
 import type { Path, PolygonPath } from '../path';
 import { poseFrameInverseOf, poseFrameOf, type PoseLinear } from '../poseFrame';
 import { boundsOfPath } from './bounds';
@@ -47,7 +47,7 @@ export function pathInPoseFrame(path: Path, pose: PathInWorldPose): Path {
   if (b.x === pose.x && b.y === pose.y && b.width === pose.width && b.height === pose.height) {
     return path;
   }
-  const m = boxToBox(b.x, b.y, b.width, b.height, pose.x, pose.y, pose.width, pose.height);
+  const m = rectToRect(b.x, b.y, b.width, b.height, pose.x, pose.y, pose.width, pose.height);
   return transformPath(path, m);
 }
 

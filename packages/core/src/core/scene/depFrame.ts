@@ -4,7 +4,7 @@
  * something in another container would otherwise read it in that
  * container's frame and place itself as though the two frames were one.
  */
-import { boxToBox, multiply, poseFrameInverseOf, poseFrameOf, transformPath, type Affine, type Path } from '@weasel-js/geom';
+import { rectToRect, multiply, poseFrameInverseOf, poseFrameOf, transformPath, type Affine, type Path } from '@weasel-js/geom';
 import { composeWorldPose, composesFrames, frameAtOrAbove, type PoseAdapter, type PoseComposition } from './composeFrame';
 import { derivedPartsOf, pathFromParts } from './derivedParts';
 import type { NodeId } from './types';
@@ -63,7 +63,7 @@ function isBox(pose: unknown): pose is Box {
 export function carryBoxPath(path: Path, from: unknown, to: unknown): Path {
   if (!isBox(from) || !isBox(to)) return path;
   if (from.x === to.x && from.y === to.y && from.width === to.width && from.height === to.height) return path;
-  return carryPathBy(path, boxToBox(from.x, from.y, from.width, from.height, to.x, to.y, to.width, to.height));
+  return carryPathBy(path, rectToRect(from.x, from.y, from.width, from.height, to.x, to.y, to.width, to.height));
 }
 
 /**
@@ -75,7 +75,7 @@ export function carryDepPath(path: Path, from: unknown, to: unknown): Path {
   if (!isBox(from) || !isBox(to)) return path;
   const back = poseFrameInverseOf(from);
   const fwd = poseFrameOf(to);
-  let m: Affine = boxToBox(from.x, from.y, from.width, from.height, to.x, to.y, to.width, to.height);
+  let m: Affine = rectToRect(from.x, from.y, from.width, from.height, to.x, to.y, to.width, to.height);
   if (back !== null) m = multiply(m, back);
   if (fwd !== null) m = multiply(fwd, m);
   return carryPathBy(path, m);
@@ -92,7 +92,7 @@ export function pathAsPainted(path: Path, box: unknown, at: unknown): Path {
   const fwd = poseFrameOf(at);
   const same = box.x === at.x && box.y === at.y && box.width === at.width && box.height === at.height;
   if (fwd === null && same) return path;
-  const m = boxToBox(box.x, box.y, box.width, box.height, at.x, at.y, at.width, at.height);
+  const m = rectToRect(box.x, box.y, box.width, box.height, at.x, at.y, at.width, at.height);
   return carryPathBy(path, fwd === null ? m : multiply(fwd, m));
 }
 

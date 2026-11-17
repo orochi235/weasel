@@ -11,7 +11,7 @@
  */
 import {
   boundsOfPath,
-  boxToBox,
+  rectToRect,
   clamp,
   poseFrameOf,
   regularPolygonPath,
@@ -114,7 +114,7 @@ function pathMatches(path: unknown, g: ShapeGenerator): boolean {
   if (p.coords.length !== unit.coords.length) return false;
   const u = boundsOfPath(unit);
   const b = boundsOfPath(p);
-  const m = boxToBox(u.x, u.y, u.width, u.height, b.x, b.y, b.width, b.height);
+  const m = rectToRect(u.x, u.y, u.width, u.height, b.x, b.y, b.width, b.height);
   // Paths store float32 coordinates, so the slack scales with how far they are from the point they are measured from.
   const o = originOf(p);
   const tol = 1e-4 * Math.max(1, Math.abs(b.x - o.x) + b.width, Math.abs(b.y - o.y) + b.height);
@@ -149,7 +149,7 @@ export function regenerateShape<P extends PathInWorldPose>(
   const was = boundsOfPath(shapeGeneratorPath(held));
   const { pose } = node;
   // Where the unit circle of the held generator lands in the pose's local frame.
-  const toLocal = boxToBox(was.x, was.y, was.width, was.height, pose.x, pose.y, pose.width, pose.height);
+  const toLocal = rectToRect(was.x, was.y, was.width, was.height, pose.x, pose.y, pose.width, pose.height);
   const local = transformPath(shapeGeneratorPath(g), toLocal) as PolygonPath;
   const frame = poseFrameOf(pose);
   const world = frame ? (transformPath(local, frame) as PolygonPath) : local;
