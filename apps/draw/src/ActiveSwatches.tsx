@@ -13,7 +13,6 @@ import type { ReactElement } from 'react';
 import { useOngoingAction, type Paint } from '@weasel-js/core';
 import { FillStrokeSwatch } from '@weasel-js/ui/components/FillStrokeSwatch';
 import { useColorContext } from './tools/colorContext';
-import { DEFAULT_FILL, DEFAULT_STROKE } from './newShapePaint';
 
 export function ActiveSwatches(): ReactElement {
   const colors = useColorContext();
@@ -41,9 +40,7 @@ export function ActiveSwatches(): ReactElement {
       }}
       onToggleNone={(slot) => {
         colors.setFocus(slot);
-        const set = slot === 'fill' ? colors.setFill : colors.setStroke;
-        const cur = slot === 'fill' ? colors.fill : colors.stroke;
-        set(cur === null ? (slot === 'fill' ? DEFAULT_FILL : DEFAULT_STROKE) : null);
+        colors.toggleNone(slot);
       }}
       onSwap={colors.swap}
       shortcuts={{ none: '/', swap: 'X' }}
