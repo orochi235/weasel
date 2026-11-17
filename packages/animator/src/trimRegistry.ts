@@ -34,7 +34,13 @@ export class TrimOverrideRegistry {
   private readonly listeners = createEmitter();
   private _version = 0;
 
+  /** Paints `override`'s edges over `id`'s trim. One giving neither edge drops `id`'s override
+   *  from `set`, as nothing then paints; its targets stay. */
   set(id: string, override: TrimOverride): void {
+    if (override.start === undefined && override.end === undefined) {
+      if (this.map.delete(id)) this.changed();
+      return;
+    }
     const held = this.map.get(id);
     if (held && deepEqual(held, override, { undefinedAsAbsent: true })) return;
     this.map.set(id, { ...override });
