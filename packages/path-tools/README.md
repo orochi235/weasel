@@ -55,7 +55,7 @@ and an app that imports only some never loads the others:
 | `warpPreset` | Expand and configure a held warp; `usePlaneWarpTool`, `useClothWarpTool`, and `usePinWarpTool` bring their own drags |
 
 `PATH_EDIT_TOOLS` names the path-edit tools, the anchors tool, Sand and Tug, and `usePathEditTools` builds them,
-beside `DRAW_TOOLS` (the pen and pencil), `SLICE_TOOLS` (the knife), `RESHAPE_TOOLS` and `usePathToolsTools`.
+beside `DRAW_TOOLS` (the pen, pencil and spiro pen), `SLICE_TOOLS` (the knife), `RESHAPE_TOOLS` and `usePathToolsTools`.
 Each path-edit tool carries `edits-anchors`, so only path edit allows it; Sand's and Tug's bindings outrank anchor
 editing's, and path edit starts on the `anchors` tool, which binds nothing. The pen's, pencil's and knife's dot sizes
 and reaches are kit settings (`targets.pen*`, `targets.slice*`), whose prefs schema is `pathToolsKitSettingsSchema`.

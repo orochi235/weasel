@@ -34,8 +34,8 @@ export const RESHAPE_TOOLS: ToolSet<PathToolId> = toolSet('reshape', ['girth', '
  *  `anchors` tool, which binds nothing, is the one path edit starts on. */
 export const PATH_EDIT_TOOLS: ToolSet<PathToolId> = toolSet('path-edit', ['anchors', 'sand', 'tug'], { label: 'Path edit' });
 
-/** The tools that draw a path: the pen and the pencil. */
-export const DRAW_TOOLS: ToolSet<PathToolId> = toolSet('draw', ['pen', 'pencil'], { label: 'Draw' });
+/** The tools that draw a path: the pen, the pencil and the spiro pen. */
+export const DRAW_TOOLS: ToolSet<PathToolId> = toolSet('draw', ['pen', 'pencil', 'spiro'], { label: 'Draw' });
 
 /** The knife (`slice`), which cuts what a line drawn across it crosses. */
 export const SLICE_TOOLS: ToolSet<PathToolId> = toolSet('slice', ['slice'], { label: 'Slice' });
@@ -43,7 +43,7 @@ export const SLICE_TOOLS: ToolSet<PathToolId> = toolSet('slice', ['slice'], { la
 /** Every tool `@weasel-js/path-tools` ships: the path-edit tools, the pen and pencil, the reshaping tools, the
  *  spiro pen, the shape builder, and the knife. */
 export const PATH_TOOLS_TOOLS: ToolSet<PathToolId> = toolSet(
-  'path-tools', [PATH_EDIT_TOOLS, DRAW_TOOLS, RESHAPE_TOOLS, 'spiro', 'shapeBuilder', SLICE_TOOLS], { label: 'Path tools' },
+  'path-tools', [PATH_EDIT_TOOLS, DRAW_TOOLS, RESHAPE_TOOLS, 'shapeBuilder', SLICE_TOOLS], { label: 'Path tools' },
 );
 
 /** Every tool in {@link PATH_EDIT_TOOLS}, keyed by id, each its own hook with its default options. */
