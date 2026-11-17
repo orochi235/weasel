@@ -150,6 +150,25 @@ describe('a frame and the animations it ticks', () => {
     expect(r.tick(64)).toEqual(['a@64', 'b@64', 'c@64', 'd@64']);
   });
 
+  it('keeps ticking in the order they registered on the frames after one wakes', () => {
+    const r = rig();
+    r.start('a', 1000, { due: 20 });
+    r.start('b', 1000);
+    r.start('c', 1000, { due: 40 });
+    expect(r.tick(32)).toEqual(['a@32', 'b@32']);
+    expect(r.tick(48)).toEqual(['a@48', 'b@48', 'c@48']);
+    expect(r.tick(64)).toEqual(['a@64', 'b@64', 'c@64']);
+  });
+
+  it('keeps registration order for one ticked every frame while it plays backward', () => {
+    const r = rig();
+    const a = r.start('a', -1, { due: 500 });
+    r.start('b', 1000);
+    r.tick(0);
+    r.table.pace(r.table.animations.get(a.id)!, false, -1);
+    expect(r.tick(16)).toEqual(['a@-16', 'b@16']);
+  });
+
   it('never ticks one whose `due` is Infinity, and says the frame loop may sleep when it is idle', () => {
     const r = rig();
     r.start('held', 0, { due: Infinity, idle: true });

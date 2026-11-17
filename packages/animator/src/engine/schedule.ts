@@ -31,8 +31,27 @@ export interface Schedule {
 /** `elapsed` answers the animator's clock, which only goes forward: its time scale and pauses
  *  are already in it. `direction` is -1 while the animator plays backward. */
 export function createSchedule(elapsed: () => number, direction: () => number = () => 1): Schedule {
-  /** Ticked every frame, in the order they joined. */
+  /** Ticked every frame, in the order they registered once {@link inOrder} has run. */
   const every = new Set<ActiveAnimation>();
+  /** The highest `seq` that has joined `every`, and whether one joined behind it since. */
+  let lastSeq = -1;
+  let shuffled = false;
+  /** Has `a` ticked every frame. One that waited, or turned backward, joins behind later ones. */
+  const join = (a: ActiveAnimation): void => {
+    every.add(a);
+    if (a.seq < lastSeq) shuffled = true;
+    else lastSeq = a.seq;
+  };
+  /** `every`, in the order its animations registered. */
+  const inOrder = (): ActiveAnimation[] => {
+    const all = [...every];
+    if (!shuffled) return all;
+    all.sort((p, q) => p.seq - q.seq);
+    every.clear();
+    for (const a of all) every.add(a);
+    shuffled = false;
+    return all;
+  };
   /** Waiting for the animator's clock to reach the time their own reaches `due`. */
   const wakes = createWakes<ActiveAnimation>();
   let seq = 0;
@@ -55,7 +74,7 @@ export function createSchedule(elapsed: () => number, direction: () => number = 
       if (every.has(a)) return;
       wakes.remove(a);
       waiting -= 1;
-      every.add(a);
+      join(a);
       a.rewinding = true;
       return;
     }
@@ -79,7 +98,7 @@ export function createSchedule(elapsed: () => number, direction: () => number = 
       a.rewinding = false;
       if (!a.idle) awake += 1;
       if (a.due === undefined) {
-        every.add(a);
+        join(a);
         return;
       }
       waiting += 1;
@@ -112,7 +131,7 @@ export function createSchedule(elapsed: () => number, direction: () => number = 
       wait(a);
     },
     ticks() {
-      const steady = [...every];
+      const steady = inOrder();
       const woke = wakes.due(elapsed());
       if (woke.length === 0) return steady;
       waiting -= woke.length;
@@ -122,7 +141,7 @@ export function createSchedule(elapsed: () => number, direction: () => number = 
         // Rounding may leave its clock a hair short of the time it was woken for.
         a.base = Math.max(clockOf(a), a.due!);
         a.anchor = elapsed();
-        every.add(a);
+        join(a);
         while (i < steady.length && steady[i]!.seq < a.seq) out.push(steady[i++]!);
         out.push(a);
       }
@@ -133,6 +152,8 @@ export function createSchedule(elapsed: () => number, direction: () => number = 
     get waiting() { return waiting; },
     clear() {
       every.clear();
+      lastSeq = -1;
+      shuffled = false;
       wakes.clear();
       awake = 0;
       waiting = 0;
