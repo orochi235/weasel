@@ -217,7 +217,7 @@ describe('path snapping, property', () => {
           for (const i of h.paths) {
             const p = ps[i]!;
             if (p.kind === 'rect') continue;
-            expect(nearestOnPath(p.commands, p.coords, h.x, h.y)!.dist).toBeLessThan(1e-3);
+            expect(nearestOnPath(p.commands, p.coords, h.x, h.y)!.distance).toBeLessThan(1e-3);
           }
         }
         if (h.kind === 'nearest') tally.nearest++;

@@ -102,7 +102,7 @@ function nearestEdge(region: Region, x: number, y: number): { d: number; ring: n
   let best = { d: Infinity, ring: 0, edge: 0, t: 0 };
   region.rings.forEach((ring, r) => ring.forEach((a, i) => {
     const b = ring[(i + 1) % ring.length];
-    const { t, dist: d } = nearestOnLine(x, y, a.x, a.y, b.x, b.y);
+    const { t, distance: d } = nearestOnLine(x, y, a.x, a.y, b.x, b.y);
     if (d < best.d) best = { d, ring: r, edge: i, t };
   }));
   return best;

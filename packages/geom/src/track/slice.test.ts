@@ -52,7 +52,7 @@ describe('trackSlice', () => {
     const u = pathShape(pathFromD('M 0 0 L 0 100 L 100 100 L 100 0'))!;
     const arm = trackSlice(u, 0, 1 / 3);
     const n = arm.nearest({ x: 90, y: 50 });
-    expect(n.dist).toBeCloseTo(90, 3);
+    expect(n.distance).toBeCloseTo(90, 3);
     expect(n.f).toBeCloseTo(0.5, 3);
   });
 

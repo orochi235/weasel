@@ -170,7 +170,7 @@ describe('producers that pick an origin', () => {
     expect(m.at(0.5).point).toEqual({ x: expect.closeTo(X + 0.5, 6), y: 1 });
     const near = m.nearest({ x: X + 0.25, y: 0.5 });
     expect(near.s).toBeCloseTo(0.25, 6);
-    expect(near.dist).toBeCloseTo(0.5, 6);
+    expect(near.distance).toBeCloseTo(0.5, 6);
     expect(pointAlongPath(pathFromD('M20000 0 L20010 0'), 0)!.point).toEqual({ x: 20000, y: 0 });
     const table = pathLengthTable(p);
     expect(table.origin).toEqual(p.origin);

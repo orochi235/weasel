@@ -43,7 +43,7 @@ function worstOff(sub: readonly PenAnchor[], poly: readonly PenAnchor[]): number
   for (const p of sampleSub(sub)) {
     let best = Infinity;
     for (let i = 0; i + 1 < poly.length; i++) {
-      best = Math.min(best, nearestOnLine(p.x, p.y, poly[i].x, poly[i].y, poly[i + 1].x, poly[i + 1].y).dist);
+      best = Math.min(best, nearestOnLine(p.x, p.y, poly[i].x, poly[i].y, poly[i + 1].x, poly[i + 1].y).distance);
     }
     worst = Math.max(worst, best);
   }

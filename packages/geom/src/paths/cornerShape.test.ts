@@ -113,7 +113,7 @@ describe('cornerShapePieces', () => {
         let from = FRAME.start, best = Infinity;
         for (const p of pieces) {
           if (p.kind !== 'cubic') continue;
-          best = Math.min(best, nearestOnCubic(q.x, q.y, from.x, from.y, p.c1.x, p.c1.y, p.c2.x, p.c2.y, p.to.x, p.to.y).dist);
+          best = Math.min(best, nearestOnCubic(q.x, q.y, from.x, from.y, p.c1.x, p.c1.y, p.c2.x, p.c2.y, p.to.x, p.to.y).distance);
           from = p.to;
         }
         worst = Math.max(worst, best);

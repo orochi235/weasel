@@ -12,13 +12,13 @@ export interface TrackStation extends PathStation {
 /** The nearest spot on a track to a point: its fraction along and the distance to it. */
 export interface TrackNearest {
   f: number;
-  dist: number;
+  distance: number;
 }
 
 /** How `nearest` treats a track's ends. */
 export interface TrackNearestOptions {
   /** Let `f` run on past 0 and 1: a line extends straight, an arc, an ellipse or a closed path round itself, unwrapped about
-   *  `about`. A shape that cannot extend clamps. `dist` is to the track either way. */
+   *  `about`. A shape that cannot extend clamps. `distance` is to the track either way. */
   open?: boolean;
   /** Where along the track an open arc is unwrapped about, in the same terms as the `f` this `nearest` answers (a
    *  `TrackRun` reads it in reading order): a point is placed on whichever side of it is nearer by angle. Default 0.5,
@@ -69,9 +69,9 @@ export function lineShape(from: Point, to: Point): TrackShape {
     },
     nearest(p, options) {
       const n = nearestOnLine(p.x, p.y, from.x, from.y, to.x, to.y);
-      if (!options?.open || length === 0) return { f: n.t, dist: n.dist };
+      if (!options?.open || length === 0) return { f: n.t, distance: n.distance };
       const f = ((p.x - from.x) * dx + (p.y - from.y) * dy) / (length * length);
-      return { f, dist: n.dist };
+      return { f, distance: n.distance };
     },
   };
 }

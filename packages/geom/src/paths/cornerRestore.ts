@@ -50,8 +50,8 @@ function onTrace(p: Point, t: CornerTrace, tol: number): boolean {
   let from = t.start;
   for (const piece of t.pieces) {
     const d = piece.kind === 'line'
-      ? nearestOnLine(p.x, p.y, from.x, from.y, piece.to.x, piece.to.y).dist
-      : nearestOnCubic(p.x, p.y, from.x, from.y, piece.c1.x, piece.c1.y, piece.c2.x, piece.c2.y, piece.to.x, piece.to.y).dist;
+      ? nearestOnLine(p.x, p.y, from.x, from.y, piece.to.x, piece.to.y).distance
+      : nearestOnCubic(p.x, p.y, from.x, from.y, piece.c1.x, piece.c1.y, piece.c2.x, piece.c2.y, piece.to.x, piece.to.y).distance;
     if (d <= tol) return true;
     from = piece.to;
   }
@@ -105,7 +105,7 @@ interface Run { from: number; to: number; trace: CornerTrace }
 function endsCut(a: Point, edge: Seg, p: Point, t: CornerTrace, tol: number): boolean {
   if (distance(a, p) <= tol) return true;
   return edge.line && onTrace(a, t, tol)
-    && nearestOnLine(p.x, p.y, edge.p0.x, edge.p0.y, edge.p3.x, edge.p3.y).dist <= tol;
+    && nearestOnLine(p.x, p.y, edge.p0.x, edge.p0.y, edge.p3.x, edge.p3.y).distance <= tol;
 }
 
 function findRun(c: Contour, t: CornerTrace, tol: number): Run | null {

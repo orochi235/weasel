@@ -55,7 +55,7 @@ describe('the nearest point of a segment', () => {
 
       const near = nearestOnLine(px, py, ax, ay, bx, by);
       const c = nearestPointOnSegment(p, a, b);
-      expect([near.x, near.y, near.t, near.dist]).toEqual([c[0], c[1], t, pointSegmentDist(p, a, b)]);
+      expect([near.x, near.y, near.t, near.distance]).toEqual([c[0], c[1], t, pointSegmentDist(p, a, b)]);
 
       // On the plane z = 0 the 3D wrapper answers the same as the planar rule.
       const c3 = nearestPointOnSegment3({ x: px, y: py, z: 0 }, { x: ax, y: ay, z: 0 }, { x: bx, y: by, z: 0 });

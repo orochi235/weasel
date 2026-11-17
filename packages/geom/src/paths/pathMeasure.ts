@@ -35,7 +35,7 @@ export interface PathNearestStation extends PathStation {
   /** Arc length at `point`, on the scale {@link PathMeasure.at} reads. */
   s: number;
   /** Distance from the queried point to `point`. */
-  dist: number;
+  distance: number;
 }
 
 /** A measured path: its length, and the station at any distance along it. */
@@ -116,7 +116,7 @@ export function measurePath(path: Path, opts: MeasurePathOptions = {}): PathMeas
       at: () => ({ point: { ...origin }, tangent: { x: 1, y: 0 } }),
       nearest: (p) => ({
         s: 0,
-        dist: Math.hypot(p.x - origin.x, p.y - origin.y),
+        distance: Math.hypot(p.x - origin.x, p.y - origin.y),
         point: { ...origin },
         tangent: { x: 1, y: 0 },
       }),
@@ -160,7 +160,7 @@ export function measurePath(path: Path, opts: MeasurePathOptions = {}): PathMeas
       }
       const s = best.start + best.arc * bestU;
       const point = pointAt(best, s);
-      return { s, dist: Math.hypot(q.x - point.x, q.y - point.y), point, tangent: { x: best.tx, y: best.ty } };
+      return { s, distance: Math.hypot(q.x - point.x, q.y - point.y), point, tangent: { x: best.tx, y: best.ty } };
     },
   };
 }

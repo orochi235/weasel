@@ -193,7 +193,7 @@ describe('onPath constraints', () => {
   ];
   const offCurve = (pts: ConstraintPoint[]) => {
     const [p, a, b] = pts;
-    return nearestOnCubic(p.x, p.y, a.x, a.y, a.outHandle!.x, a.outHandle!.y, b.inHandle!.x, b.inHandle!.y, b.x, b.y).dist;
+    return nearestOnCubic(p.x, p.y, a.x, a.y, a.outHandle!.x, a.outHandle!.y, b.inHandle!.x, b.inHandle!.y, b.x, b.y).distance;
   };
   const ON: PathConstraint = { kind: 'onPath', anchor: 0, segment: [1, 2] };
   const ENDS: PathConstraint[] = [{ kind: 'fixed', anchor: 1 }, { kind: 'fixed', anchor: 2 }];

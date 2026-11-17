@@ -79,7 +79,7 @@ function fitOne(pts: Point[], tStart: Point, tEnd: Point, tol: number): Seg | nu
 
 function withinLine(pts: Point[], a: Point, e: Point, tol: number): boolean {
   for (let i = 1; i < pts.length - 1; i++) {
-    if (nearestOnLine(pts[i].x, pts[i].y, a.x, a.y, e.x, e.y).dist > tol) return false;
+    if (nearestOnLine(pts[i].x, pts[i].y, a.x, a.y, e.x, e.y).distance > tol) return false;
   }
   return true;
 }

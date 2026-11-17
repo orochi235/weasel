@@ -11,7 +11,7 @@ export interface SliderMeasure {
   /** The same, unclamped past the ends (a line extends straight, an arc by angle): what shift-drag differences. */
   gRaw: number;
   /** Distance from the point to its nearest spot on the span, in px. */
-  dist: number;
+  distance: number;
   /** Distance off the span along its normal, in px. */
   across: number;
   /** The span's length in px: what the stop-snap distance is divided by. */
@@ -56,8 +56,8 @@ export function lineGeometry(rail: () => HTMLElement | null, frame: () => SVGGra
       const p = boxPoint(matrixed ?? el, clientX, clientY);
       const { width, height } = matrixed ? layoutBox(el) : el.getBoundingClientRect();
       const run = trackRun(lineShape({ x: 0, y: height / 2 }, { x: width, y: height / 2 }), 0, 1, { direction });
-      const { f: g, dist } = run.nearest(p);
-      return { g, gRaw: run.nearest(p, OPEN).f, dist, across: acrossAt(run, g, p), length: width, thickness: height, reach: height };
+      const { f: g, distance: dist } = run.nearest(p);
+      return { g, gRaw: run.nearest(p, OPEN).f, distance: dist, across: acrossAt(run, g, p), length: width, thickness: height, reach: height };
     },
   };
 }
@@ -106,9 +106,9 @@ export function curvedGeometry(run: TrackRun, band: () => SVGGraphicsElement | n
       const el = band();
       if (!el) return null;
       const p = boxPoint(el, clientX, clientY);
-      const { f: g, dist } = run.nearest(p);
+      const { f: g, distance: dist } = run.nearest(p);
       const thickness = thicknessOf(el);
-      return { g, gRaw: run.nearest(p, OPEN).f, dist, across: acrossAt(run, g, p), length: run.length, thickness, reach: reachOf(el, thickness) };
+      return { g, gRaw: run.nearest(p, OPEN).f, distance: dist, across: acrossAt(run, g, p), length: run.length, thickness, reach: reachOf(el, thickness) };
     },
   };
 }

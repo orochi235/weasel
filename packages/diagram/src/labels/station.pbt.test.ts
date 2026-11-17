@@ -54,7 +54,7 @@ describe('labelCenter', () => {
       const c = labelCenter(path, { at }, sz)!;
       const m = measurePath(path)!;
       const near = m.nearest(c);
-      expect(near.dist).toBeLessThanOrEqual(1e-6 * Math.max(1, m.length));
+      expect(near.distance).toBeLessThanOrEqual(1e-6 * Math.max(1, m.length));
       const there = m.at(at * m.length).point;
       expect(close(c, there, 1e-9)).toBe(true);
       if (m.length > 0) seen.count('long');
@@ -77,7 +77,7 @@ describe('labelSpotAt', () => {
       const m = measurePath(path)!;
       const station = m.at(spot.at * m.length).point;
       const reach = Math.hypot(stood.x - station.x, stood.y - station.y);
-      if (reach > m.nearest(stood).dist + 1e-9 * Math.max(1, reach)) return;
+      if (reach > m.nearest(stood).distance + 1e-9 * Math.max(1, reach)) return;
       const again = labelSpotAt(path, stood, sz)!;
       const back = labelCenter(path, { at: again.at, offset: again.offset }, sz)!;
       if (spot.offset !== 0) seen.count('beside');

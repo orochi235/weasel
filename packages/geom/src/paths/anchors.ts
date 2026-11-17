@@ -249,7 +249,7 @@ function nearestOnSegment(a: PenAnchor, b: PenAnchor, x: number, y: number): { t
   const hit = isStraightSegment(a, b)
     ? nearestOnLine(x, y, a.x, a.y, b.x, b.y)
     : nearestOnCubic(x, y, a.x, a.y, p1.x, p1.y, p2.x, p2.y, b.x, b.y);
-  return { t: hit.t, d2: hit.dist * hit.dist };
+  return { t: hit.t, d2: hit.distance * hit.distance };
 }
 
 /** The segment of a decoded path nearest `(wx, wy)`, and the parameter `t`

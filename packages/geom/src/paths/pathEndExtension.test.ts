@@ -39,8 +39,8 @@ function easedTruth(f: PathEndFrame, ease: number, distance: number, steps = 200
 
 function distanceToPieces(q: Point, pieces: ExtensionPiece[]): number {
   return Math.min(...pieces.map(({ pts: [a, b, c, d] }) => (d
-    ? nearestOnCubic(q.x, q.y, a.x, a.y, b.x, b.y, c.x, c.y, d.x, d.y).dist
-    : nearestOnLine(q.x, q.y, a.x, a.y, b.x, b.y).dist)));
+    ? nearestOnCubic(q.x, q.y, a.x, a.y, b.x, b.y, c.x, c.y, d.x, d.y).distance
+    : nearestOnLine(q.x, q.y, a.x, a.y, b.x, b.y).distance)));
 }
 
 describe("extensionPieces in 'eased' mode", () => {

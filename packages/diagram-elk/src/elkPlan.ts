@@ -217,7 +217,7 @@ function nearestOnRoute(route: readonly Vec2[], probe: Vec2): Vec2 {
     const a = route[i - 1]!;
     const b = route[i]!;
     const hit = nearestOnLine(probe.x, probe.y, a.x, a.y, b.x, b.y);
-    if (hit.dist < bestDist) [best, bestDist] = [{ x: hit.x, y: hit.y }, hit.dist];
+    if (hit.distance < bestDist) [best, bestDist] = [{ x: hit.x, y: hit.y }, hit.distance];
   }
   return best;
 }
