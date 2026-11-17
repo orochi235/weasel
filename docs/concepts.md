@@ -100,7 +100,7 @@ those on too; any of them can also be passed alone:
 
 Path edit, the pen, the pencil, the knife, the path commands and Create Outlines are
 `@weasel-js/path-tools`': its `pathsPreset` (`anchorKeysPreset`, `outlinesPreset`, `pathEditPreset`,
-`pathCommandsPreset`), which `pathTools` includes, and the tools `usePathToolsTools` builds.
+`pathCommandsPreset`), which `pathToolsPreset` includes, and the tools `usePathToolsTools` builds.
 
 Text is a package of its own, `@weasel-js/text-tools`: `textPreset` teaches a canvas the text node
 kind (its painter, routing, properties, inserts, in-place editor, a double-click opening it, and

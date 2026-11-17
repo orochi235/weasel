@@ -55,7 +55,7 @@ export function usePathEditTools(): Record<PathEditToolId, Tool> {
 
 /**
  * Every tool in {@link PATH_TOOLS_TOOLS}, keyed by id, for `<SceneCanvas tools>` beside the
- * `pathTools` feature whose actions they bind. Each is the tool's own hook with its default
+ * `pathToolsPreset` feature whose actions they bind. Each is the tool's own hook with its default
  * options; to configure one, call its hook and put that tool over this one's.
  */
 export function usePathToolsTools(): Record<PathToolId, Tool> {

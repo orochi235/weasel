@@ -54,7 +54,7 @@ A bare `<SceneCanvas>` only renders. It keeps a selection that nothing sets from
 | `ingestPreset` | dropped and pasted content: images, SVG, files, and consumer content handlers, on Cmd/Ctrl+V or an OS drop |
 | `drawPreset` | every preset above |
 
-Path editing, the pen, pencil and knife, the path commands and Create Outlines are `@weasel-js/path-tools`': `features={[drawPreset, pathTools]}` with `tools={usePathToolsTools()}`.
+Path editing, the pen, pencil and knife, the path commands and Create Outlines are `@weasel-js/path-tools`': `features={[drawPreset, pathToolsPreset]}` with `tools={usePathToolsTools()}`.
 
 `defaultTools` mounts tools by id on top, and each brings the actions it binds: `defaultTools={['hand']}` drags the view without `viewPreset`, and `defaultTools={['rect']}` brings `insert` wherever a preset offers the rect (editing's `drawPreset` or `shapeToolsOfferedPreset`).
 

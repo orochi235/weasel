@@ -1,6 +1,6 @@
 /**
  * Path edit and the commands on paths, as `<SceneCanvas features>` presets:
- * `pathsPreset` for all of them, or one at a time. `pathTools` includes it.
+ * `pathsPreset` for all of them, or one at a time. `pathToolsPreset` includes it.
  */
 import type { FeaturePreset } from '@weasel-js/core';
 import { anchorsTool } from './pathEdit/anchorsTool';

@@ -49,7 +49,7 @@ throws on a duplicate entry id, dep name, view id or marker id.
 ### Presets
 
 A package ships its behavior as a `FeaturePreset`, and an app turns it on by
-passing the object beside core's: `features={[drawPreset, pathTools]}`. An
+passing the object beside core's: `features={[drawPreset, pathToolsPreset]}`. An
 app that does not import a preset never loads its code.
 
 ```ts

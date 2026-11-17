@@ -205,7 +205,7 @@ export type SceneCanvasProps<TData, TLayer extends string, TPose> =
      *   built-in tool set and nothing else.
      *
      * Path edit, the pen, pencil and knife, and the path commands are
-     * `@weasel-js/path-tools`' `pathTools` and its tools.
+     * `@weasel-js/path-tools`' `pathToolsPreset` and its tools.
      *
      * The parts of `editPreset` and `arrangePreset` are presets
      * of their own (`nudgePreset`, `alignPreset`, …), and a package's preset

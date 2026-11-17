@@ -1,7 +1,7 @@
 import { defaultNodeProperties, describePresets } from '@weasel-js/core';
 import { FEATURE_PRESETS } from '@weasel-js/editing';
 import { EDITOR_CONTEXT_MENUS } from '@weasel-js/editor';
-import { pathTools } from '@weasel-js/path-tools';
+import { pathToolsPreset } from '@weasel-js/path-tools';
 import type { PrefGroup, PrefGroupAs } from '@weasel-js/prefs';
 import { mergeMenuDefs } from '@weasel-js/routing';
 import { bundlesAsset, type Asset, type Workspace } from '@weasel-js/prefs/edit';
@@ -53,7 +53,7 @@ const nodes: Asset[] = defaultNodeProperties.map((e) => ({
 // The guides package's presets are made by factories that need the app's options, so they are not listed.
 const bundles = bundlesAsset('bundles', 'Feature bundles', describePresets({
   '@weasel-js/core': Object.values(FEATURE_PRESETS),
-  '@weasel-js/path-tools': [pathTools],
+  '@weasel-js/path-tools': [pathToolsPreset],
 }));
 
 /**

@@ -19,14 +19,14 @@ the knife, and the tools below.
 
 ```tsx
 import { SceneCanvas } from '@weasel-js/core';
-import { pathTools, usePathToolsTools } from '@weasel-js/path-tools';
+import { pathToolsPreset, usePathToolsTools } from '@weasel-js/path-tools';
 import { drawPreset } from '@weasel-js/editing';
 
 const tools = usePathToolsTools();
-<SceneCanvas scene={scene} features={[drawPreset, pathTools]} tools={tools} />;
+<SceneCanvas scene={scene} features={[drawPreset, pathToolsPreset]} tools={tools} />;
 ```
 
-`pathTools` turns every family on but Drape and handle snapping, which
+`pathToolsPreset` turns every family on but Drape and handle snapping, which
 change what every anchor or handle drag does. Each is also a preset of its own,
 and an app that imports only some never loads the others:
 
@@ -35,8 +35,8 @@ and an app that imports only some never loads the others:
 | `pathsPreset` | Path edit (`pathEditPreset`: double-click a path to open it, the `anchors` tool, anchor and handle editing, bending a segment), its keys (`anchorKeysPreset`), the path commands (`pathCommandsPreset`: Simplify, Offset, Cut at crossings, Join), and Create Outlines and Outline Stroke (`outlinesPreset`). Every other preset here assumes it |
 | `sandPreset` | `sand`, which `useSandTool` binds: Sand, a path-edit tool that refits the curve it passes over |
 | `handleLocksPreset` | The `handleLock.angle` and `handleLock.length` toggles |
-| `createDrapePreset` | Drape: dragging anchors also moves the anchors near them along the path, by a falloff over a radius in screen pixels that the wheel scrubs mid-drag; the reach is drawn as a band. Not in `pathTools` |
-| `handleSnapPreset`, `createHandleSnapPreset` | Handle snapping: a dragged handle's angle snaps to steps and to the line through its anchor's other handle, through a snap session whose angles `handleSnapSource` offers. Not in `pathTools` |
+| `createDrapePreset` | Drape: dragging anchors also moves the anchors near them along the path, by a falloff over a radius in screen pixels that the wheel scrubs mid-drag; the reach is drawn as a band. Not in `pathToolsPreset` |
+| `handleSnapPreset`, `createHandleSnapPreset` | Handle snapping: a dragged handle's angle snaps to steps and to the line through its anchor's other handle, through a snap session whose angles `handleSnapSource` offers. Not in `pathToolsPreset` |
 | `bridgePreset` | Bridge: join open ends with a curve along each end's heading, on paths or on two anchors |
 | `spiroPreset` | Spiro curves: path edit edits a spiro node's points and solves the curve again through them, `setSpiroKind` sets the kind of the selected points, and `releaseSpiro` converts a spiro curve to an ordinary path; `useSpiroTool` (Shift+P) draws them |
 | `tugPreset` | `tugPath`, which `useTugTool` binds: Tug, a path-edit tool whose drag on an open end grows the path along its end tangent or curvature, or trims it back |
@@ -109,4 +109,4 @@ own actions and need no preset:
 | Tool | What it does |
 |---|---|
 | `useGirthTool` (Shift+W) | Shapes a stroke's `vertexWidths` by dragging its edges |
-| `useShapeBuilderTool` (Shift+M) | With two or more paths selected, a drag unites the faces their outlines cut each other into, and an Alt-drag deletes them; it reads the `booleansAdapter` dep, which `@weasel-js/editing`'s `booleansPreset` publishes over the canvas's path leaves (`pathTools` and `pathfinderPreset` include it). `planShapeBuilder` is the engine under it |
+| `useShapeBuilderTool` (Shift+M) | With two or more paths selected, a drag unites the faces their outlines cut each other into, and an Alt-drag deletes them; it reads the `booleansAdapter` dep, which `@weasel-js/editing`'s `booleansPreset` publishes over the canvas's path leaves (`pathToolsPreset` and `pathfinderPreset` include it). `planShapeBuilder` is the engine under it |

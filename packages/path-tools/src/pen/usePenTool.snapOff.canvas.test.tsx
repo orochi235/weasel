@@ -8,7 +8,7 @@ import { renderWithKeys as render } from '@weasel-js/react/testing/giveKeys';
 import type { PolygonPath } from '@weasel-js/geom';
 import { SceneCanvas, createScene } from '@weasel-js/core';
 import { gridSnapSourceForTests as gridSource } from '@weasel-js/core/test-seams';
-import { pathTools } from '../presets';
+import { pathToolsPreset } from '../presets';
 import { usePathToolsTools } from '../toolSets';
 import { drawPreset, KIT_TOOL_IDS } from '@weasel-js/editing';
 
@@ -38,7 +38,7 @@ function penAnchors(enabled: boolean, points: readonly { x: number; y: number }[
   function Harness() {
     return (
       <SceneCanvas
-        features={[drawPreset, pathTools]} tools={usePathToolsTools()} scene={scene} width={200} height={200} layers={{}}
+        features={[drawPreset, pathToolsPreset]} tools={usePathToolsTools()} scene={scene} width={200} height={200} layers={{}}
         defaultTools={KIT_TOOL_IDS} defaultActiveTool="pen"
         snap={{ sources: [gridSource(10)], enabled }}
       />
