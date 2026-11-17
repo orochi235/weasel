@@ -253,7 +253,7 @@ own. `edgeHops`, which finds the hops over plain polylines, is in
 ### Edge labels
 
 `onEditLabel` reports a double-click on an edge. `edgeLabelSpec` builds the
-label node that rides the edge's route, and `editEdgeLabelAction` creates one
+label node that rides the edge's route, and `createEditEdgeLabelAction` creates one
 or edits the existing one in place.
 
 ```tsx
@@ -600,7 +600,7 @@ const theme = diagramThemeOf(scene, DIAGRAM_THEMES.paper);   // the scene's them
 `themeWrites(scene, theme)` is the pure half: the new `data` for every node the theme recolors.
 New shapes and connectors take the theme from whatever inserts them: pass `roleStyle(theme)` and
 `themeFont(theme)` to `useStencilInsert`, `themeEdgeStroke(theme)` as a connect action's
-`edgeStroke`, and `themeLabelStyle(theme)` and `theme.label.fill` to `editEdgeLabelAction`.
+`edgeStroke`, and `themeLabelStyle(theme)` and `theme.label.fill` to `createEditEdgeLabelAction`.
 `diagramScene` takes `theme` too, drawing each `DataNode` in its `style` role, and the effect
 looks take one in their options (default `night`, which draws them as they always were).
 

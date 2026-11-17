@@ -94,7 +94,7 @@ export function dropEmptyEdgeLabel(scene: AnyScene, id: string): boolean {
 /** The action that adds or edits an edge's label. */
 export const EDIT_EDGE_LABEL_ACTION_ID = 'diagram.editEdgeLabel';
 
-/** Options for {@link editEdgeLabelAction}. */
+/** Options for {@link createEditEdgeLabelAction}. */
 export interface EditEdgeLabelOptions {
   /** Runs in place of the default add-then-edit. */
   commit?: (edgeId: string, ctx: InvocationCtx) => void;
@@ -139,7 +139,7 @@ function beginEditing(edgeId: string, ctx: InvocationCtx, look: Pick<EditEdgeLab
  * An immediate invoker is handed no `InvocationCtx`, so `commit` gets one
  * built from the deps and the click point.
  */
-export function editEdgeLabelAction(opts: EditEdgeLabelOptions = {}): Action {
+export function createEditEdgeLabelAction(opts: EditEdgeLabelOptions = {}): Action {
   const commit = opts.commit ?? ((edgeId: string, ctx: InvocationCtx) => beginEditing(edgeId, ctx, opts));
   return defineAction({
     id: EDIT_EDGE_LABEL_ACTION_ID,

@@ -82,7 +82,7 @@ export {
 } from './routeCommands';
 export type { RouteEdit, RouteEditOptions } from './waypointAction';
 export {
-  ROUTER_LABELS, SET_ROUTER_ACTION_IDS, commitRouterToScene, createSetRouterAction, routerActions, withRouter,
+  ROUTER_LABELS, SET_ROUTER_ACTION_IDS, commitRouterToScene, createSetRouterAction, createRouterActions, withRouter,
 } from './routerCommands';
 export type { RouterEdit, SetRouterOptions } from './routerCommands';
 export {
@@ -167,7 +167,7 @@ export type {
   GraphSource,
 } from './graph';
 export {
-  EDIT_EDGE_LABEL_ACTION_ID, END_LABEL_PLACEMENT, dropEmptyEdgeLabel, edgeLabelIdOf, edgeLabelSpec, editEdgeLabelAction, editEdgeLabelBinding, endLabelIdOf, labelSize,
+  EDIT_EDGE_LABEL_ACTION_ID, END_LABEL_PLACEMENT, dropEmptyEdgeLabel, edgeLabelIdOf, edgeLabelSpec, createEditEdgeLabelAction, editEdgeLabelBinding, endLabelIdOf, labelSize,
 } from './edgeLabel';
 export type { EdgeLabelOptions, EditEdgeLabelOptions } from './edgeLabel';
 export {

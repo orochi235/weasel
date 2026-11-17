@@ -3,7 +3,7 @@ import {
 } from '@weasel-js/core';
 import {
   STENCIL_GROUPS, bodyFollower, diagramSequence, diagramCanDropInto, diagramTypeEdgeStroke, isContainerStencil, diagramContainers, diagramEdgeEnds,
-  diagramLabels, diagramOffPage, diagramPorts, diagramWaypoints, editEdgeLabelAction, editEdgeLabelBinding,
+  diagramLabels, diagramOffPage, diagramPorts, diagramWaypoints, createEditEdgeLabelAction, editEdgeLabelBinding,
   registerDiagramShape, roleStyle, sceneParticipants, themeFont,
   themeLabelStyle, useAvoidRouting, useFaceRemeasure, useHops, useLabelPlacement, rendererMeasure, useDiagramTools, useOffPageMarkers,
   useStencilInsert, waypointFollower, type DiagramStencil, type DiagramTheme, type DiagramType,
@@ -22,7 +22,7 @@ const ROUTER = 'avoid';
 const edgeLabel = (theme: DiagramTheme): Contribution => ({
   id: 'weaselchart-edge-label',
   eligibility: { always: true },
-  actions: [editEdgeLabelAction({ fill: theme.label.fill, style: themeLabelStyle(theme) })],
+  actions: [createEditEdgeLabelAction({ fill: theme.label.fill, style: themeLabelStyle(theme) })],
   bindings: [editEdgeLabelBinding()],
 });
 

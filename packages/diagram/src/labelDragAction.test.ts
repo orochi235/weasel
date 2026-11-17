@@ -5,7 +5,7 @@ import {
 } from '@weasel-js/core';
 import type { Path, Vec2 } from '@weasel-js/core/math';
 import { EDGE_DERIVE_PATH } from './edge';
-import { edgeLabelSpec, editEdgeLabelAction } from './edgeLabel';
+import { edgeLabelSpec, createEditEdgeLabelAction } from './edgeLabel';
 import { diagramLabelOf, type DiagramLabel } from './labelTrait';
 import { labelCenter, labelSpotAt } from './labels/station';
 import { createLabelDragAction } from './labelDragAction';
@@ -153,11 +153,11 @@ describe('labelUnder', () => {
   });
 });
 
-describe('editEdgeLabelAction on a label', () => {
+describe('createEditEdgeLabelAction on a label', () => {
   it('edits the text on a double-click on the label', () => {
     const scene = load();
     const at = labelCenter(pathOf(scene), labelOf(scene), boxOf(scene, LABEL))!;
     const deps = { scene, nodeAtPoint: () => null } as unknown as ActionDeps;
-    expect(editEdgeLabelAction().enabled!(deps, at)).toBe(true);
+    expect(createEditEdgeLabelAction().enabled!(deps, at)).toBe(true);
   });
 });

@@ -6,7 +6,7 @@ import { isDiagramBody } from './bodyNode';
 import type { Contribution, NodeId, RectPose, SurfaceContribution, AnyScene } from '@weasel-js/core';
 import { worldWith } from './worldWith';
 import { diagramContainers, laneResizeFrame, type LaneResize } from './containers/containerActions';
-import { editContainerTitleAction, editContainerTitleBinding } from './containers/containerTitle';
+import { createEditContainerTitleAction, editContainerTitleBinding } from './containers/containerTitle';
 import { poolsOf } from './containers/laneBoundaryLayer';
 import { diagramContainerOf } from './containers/trait';
 import { DEFAULT_LANE_SIZE } from './dataTypes';
@@ -75,7 +75,7 @@ export function regionEditing(
   const title: Contribution = {
     id: 'weasel-diagram-container-title',
     eligibility: { always: true },
-    actions: [editContainerTitleAction((id) => edit({ kind: 'title', id }))],
+    actions: [createEditContainerTitleAction((id) => edit({ kind: 'title', id }))],
     bindings: [editContainerTitleBinding()],
   };
   return [containers, title];

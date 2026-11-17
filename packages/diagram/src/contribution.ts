@@ -38,7 +38,7 @@ import { LABEL_DRAG_AFFORDANCE_KIND, LABEL_DRAG_LAYER_ID, createLabelDragLayer, 
 import { createPortLayer } from './portLayer';
 import { PORT_LAYER_ID, type PortAffordanceOptions } from './portAffordance';
 import { REMOVE_WAYPOINT_ACTION_ID, createRemoveWaypointAction, createResetRouteAction } from './routeCommands';
-import { routerActions } from './routerCommands';
+import { createRouterActions } from './routerCommands';
 import { ROUTE_EDIT_ACTION_ID, createRouteEditAction, type RouteEditOptions } from './waypointAction';
 import {
   WAYPOINT_AFFORDANCE_KIND,
@@ -96,7 +96,7 @@ export function diagramWaypoints<TPose>(
       createRouteEditAction({ ...opts, id: actionId }),
       createRemoveWaypointAction(opts),
       createResetRouteAction(opts),
-      ...routerActions({ participants: opts.participants, selected: opts.selected }),
+      ...createRouterActions({ participants: opts.participants, selected: opts.selected }),
       createToggleHopsAction(),
       grabPortAction(GRAB_WAYPOINT_ACTION_ID),
     ],
