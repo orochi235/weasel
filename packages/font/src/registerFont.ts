@@ -387,7 +387,7 @@ function settle(family: string, token: object): void {
  * registered for this exact variant has not finished loading. Tells a face
  * that is missing from one that is merely late.
  */
-export function fontPending(family: string, weight = 400, style: FontStyle = 'normal'): boolean {
+export function isFontPending(family: string, weight = 400, style: FontStyle = 'normal'): boolean {
   if (atlasPending(family)) return true;
   const outline = outlineStatus(family, weight, style);
   return outline === 'idle' || outline === 'loading';
@@ -446,7 +446,7 @@ function missResolveResult(
     };
   }
   // Its bytes are on their way, which outranks a stand-in as a pending atlas does.
-  if (fontPending(family, weight, style)) return pendingMiss(family, weight, style);
+  if (isFontPending(family, weight, style)) return pendingMiss(family, weight, style);
 
   const policy = getFontFallbackPolicy();
 

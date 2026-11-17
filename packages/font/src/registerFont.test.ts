@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import {
   registerFont, getAtlasFont, resolveFontVariant, resolveGlyphFallback, listAtlasFonts, listFontWeights,
-  fontRegistry, fontPending, warmFonts,
+  fontRegistry, isFontPending, warmFonts,
   _resetFontRegistryForTests,
 } from './registerFont';
 import { setFontFallbackPolicy, _resetFallbackForTests } from './fallback';
@@ -517,14 +517,14 @@ describe('registerFont and the glyph-ready signal', () => {
   });
 });
 
-describe('fontPending', () => {
+describe('isFontPending', () => {
   it('is true from registerFont until it resolves, for any variant of the family', async () => {
     const landing = registerFont('late', { weight: 700 }, '/late.json', '/late.png');
 
-    expect(fontPending('late', 400, 'normal')).toBe(true);
-    expect(fontPending('other')).toBe(false);
+    expect(isFontPending('late', 400, 'normal')).toBe(true);
+    expect(isFontPending('other')).toBe(false);
     await landing;
-    expect(fontPending('late', 700, 'normal')).toBe(false);
+    expect(isFontPending('late', 700, 'normal')).toBe(false);
   });
 
   it('is false once a registration fails, and the failure wakes subscribers', async () => {
@@ -534,7 +534,7 @@ describe('fontPending', () => {
 
     await registerFont('broken', {}, '/b.json', '/b.png').catch(() => {});
 
-    expect(fontPending('broken')).toBe(false);
+    expect(isFontPending('broken')).toBe(false);
     expect(redraw).toHaveBeenCalledTimes(1);
     unsubscribe();
   });
@@ -545,7 +545,7 @@ describe('fontPending', () => {
 
     _resetFontRegistryForTests();
 
-    expect(fontPending('stuck')).toBe(false);
+    expect(isFontPending('stuck')).toBe(false);
   });
 });
 
@@ -567,7 +567,7 @@ describe('registerFont — lazy', () => {
     expect(first.entry).toBeNull();
     expect(first.substituted).toBeUndefined();
     expect(fetchCalls()).toBe(2);
-    expect(fontPending('inter')).toBe(true);
+    expect(isFontPending('inter')).toBe(true);
 
     await landed;
     expect(redraw).toHaveBeenCalled();
@@ -594,7 +594,7 @@ describe('registerFont — lazy', () => {
 
   it('is pending before anything asks, so a first layout defers its warning', () => {
     void registerFont('inter', {}, '/i.json', '/i.png', { lazy: true });
-    expect(fontPending('inter')).toBe(true);
+    expect(isFontPending('inter')).toBe(true);
     expect(fetchCalls()).toBe(0);
   });
 
@@ -694,13 +694,13 @@ describe('registerFont — lazy', () => {
     const landed = registerFont('inter', {}, '/i.json', '/i.png', { lazy: true });
     resolveFontVariant('inter', 400, 'normal');
     await expect(landed).rejects.toThrow('weasel registerFont');
-    expect(fontPending('inter')).toBe(false);
+    expect(isFontPending('inter')).toBe(false);
   });
 
   it('is cleared by the reset seam', () => {
     void registerFont('inter', {}, '/i.json', '/i.png', { lazy: true });
     _resetFontRegistryForTests();
-    expect(fontPending('inter')).toBe(false);
+    expect(isFontPending('inter')).toBe(false);
     expect(listAtlasFonts()).toEqual([]);
   });
 });
@@ -717,7 +717,7 @@ describe('warmFonts', () => {
     expect(urls()).toEqual(['/r.json', '/r.png', '/b.json', '/b.png', '/m.json', '/m.png']);
     expect(getAtlasFont('inter', 700, 'normal')).not.toBeNull();
     expect(getAtlasFont('mono')).not.toBeNull();
-    expect(fontPending('inter')).toBe(false);
+    expect(isFontPending('inter')).toBe(false);
   });
 
   it('loads only the families named', async () => {
@@ -725,7 +725,7 @@ describe('warmFonts', () => {
     void registerFont('mono', {}, '/m.json', '/m.png', { lazy: true });
     await warmFonts(['mono']);
     expect(urls()).toEqual(['/m.json', '/m.png']);
-    expect(fontPending('inter')).toBe(true);
+    expect(isFontPending('inter')).toBe(true);
   });
 
   it('joins a fetch already running rather than starting another', async () => {

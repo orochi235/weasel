@@ -6,7 +6,7 @@
 
 `cssFontFamily` and `cssFontFamilyLoading` take a weight and a style after the family, instead of an object.
 
-That is how `getAtlasFont`, `fontPending` and the other face lookups take them.
+That is how `getAtlasFont`, `isFontPending` and the other face lookups take them.
 
 ```ts
 // before

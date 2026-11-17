@@ -1943,7 +1943,7 @@ Calls the lanes made without a ruling:
 - 2026-11-12: Face addressing splits by job. Registering and loading take a `FontVariant` object
   (`registerFont`, `registerFontOutlines`, `unregisterFontOutlines`, `loadFontOutlines`, `warmFonts`'s
   `FontRequest`); a lookup of one face takes `(family, weight = 400, style = 'normal')` positionally (`getAtlasFont`,
-  `fontPending`, `hasFontOutlines`, `outlineStatus`, `cssFontFamily`, `cssFontFamilyLoading`), since those run per
+  `isFontPending`, `hasFontOutlines`, `outlineStatus`, `cssFontFamily`, `cssFontFamilyLoading`), since those run per
   run and per frame. `cssFontFamily` moved to the lookup shape.
 - 2026-11-12: The scripts the no-shaper warning names are Arabic, Syriac, Thaana, N'Ko, the Indic blocks, Tibetan,
   Myanmar, Khmer and Mongolian, letters and marks only. Thai and Lao are left out: set one glyph per code point,

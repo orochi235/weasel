@@ -21,7 +21,7 @@ export {
   listAtlasFonts,
   listFontWeights,
   fontRegistry,
-  fontPending,
+  isFontPending,
   warmFonts,
 } from './registerFont';
 export type {
