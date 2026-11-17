@@ -113,7 +113,7 @@ export {
 export type {
   ViewMarkerProps, ViewMarkerStyle, ViewMarkerHost, AimSource, ViewMarkerGrab,
 } from '../domains/viewports/viewMarker';
-export { VIEW_MARKER_DRAG, viewMarkerDragAction, createViewMarkerContribution } from '../domains/viewports/viewMarkerDrag';
+export { VIEW_MARKER_DRAG, createViewMarkerDragAction, createViewMarkerContribution } from '../domains/viewports/viewMarkerDrag';
 
 // ─── Detached scene-view + minimap: read-only canvases with their own GL ─────
 // `<SceneViewCanvas>` is a pointer-inert read-only render of a scene at a
