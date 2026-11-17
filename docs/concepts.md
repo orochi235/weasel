@@ -605,7 +605,7 @@ interface Op {
 }
 ```
 
-Constructors live under `packages/core/src/core/ops/`: `createTransformOp`,
+Constructors live under `packages/core/src/core/ops/`: `createSetPoseOp`,
 `createInsertOp`, `createDeleteOp`, `createSetSelectionOp`,
 `createReorderOp`, etc. Every gesture and action hook produces ops on
 commit; `dispatchApplyBatch(adapter, ops, label)` calls

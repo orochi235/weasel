@@ -6,7 +6,7 @@
  * of it.
  */
 import { it } from 'vitest';
-import { createScene, createTransformOp, type RectPose, type Scene } from '@weasel-js/core';
+import { createScene, createSetPoseOp, type RectPose, type Scene } from '@weasel-js/core';
 import { seeded } from '../avoid/avoidFixture';
 import { EDGE_DERIVE_PATH, withDiagramRegistry } from '../edge';
 import { DIAGRAM_PASS_ORDER } from '../passOrder';
@@ -73,7 +73,7 @@ function commits(): void {
     const ids = new Set(Array.from({ length: 6 }, (_, i) => `s${(c * 17 + i * 31) % SHAPES}`));
     const ops = [...ids].map((id) => {
       const from = scene.get(id as never)!.pose;
-      return createTransformOp({ id, from, to: { ...from, x: from.x + 23, y: from.y + 11 } });
+      return createSetPoseOp({ id, from, to: { ...from, x: from.x + 23, y: from.y + 11 } });
     });
     scene.applyBatch(ops, 'Move', adapter);
     times.push(watch.last());

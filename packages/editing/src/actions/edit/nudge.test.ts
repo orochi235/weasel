@@ -13,7 +13,7 @@ type Pose = { x: number; y: number; width: number; height: number };
 // ---------------------------------------------------------------------------
 // Stub scene
 //
-// The commit now emits `createTransformOp`s routed through `commitOps`:
+// The commit now emits `createSetPoseOp`s routed through `commitOps`:
 // `applyOps(ops, 'Nudge')` when a consumer hook is present, else
 // `scene.applyBatch(ops, 'Nudge', defaultCommitAdapter(scene))`. The stub
 // mirrors the real scene: `applyBatch` records one undo entry and applies each

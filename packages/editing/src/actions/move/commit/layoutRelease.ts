@@ -1,5 +1,5 @@
 import { createReparentOp, asNodeId, type NodeId, followerOpsFor } from '@weasel-js/core';
-import { createTransformOp, composeChildFrame, composeWorldPose, rebaseLocalPose, type PoseAdapter, sceneViewPoseAdapter, poseDescriptorForNode, pageOfNode } from '@weasel-js/core/engine';
+import { createSetPoseOp, composeChildFrame, composeWorldPose, rebaseLocalPose, type PoseAdapter, sceneViewPoseAdapter, poseDescriptorForNode, pageOfNode } from '@weasel-js/core/engine';
 import type { Op } from '@weasel-js/core';
 import type { LayoutChild, LayoutContainer } from '@weasel-js/core/engine';
 import { draggedWorldPose, grabbedPoseAdapter } from '../delta';
@@ -121,7 +121,7 @@ export function layoutReleaseOps(
         toParentId: toParent as string | null,
         label: 'Reparent',
       }));
-      exitOps.push(createTransformOp<unknown>({
+      exitOps.push(createSetPoseOp<unknown>({
         id: id as string,
         from: node.pose,
         to,

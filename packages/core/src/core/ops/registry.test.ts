@@ -8,7 +8,7 @@
 import { describe, expect, it } from 'vitest';
 import { createInsertOp } from './create';
 import { createDeleteOp } from './delete';
-import { createTransformOp } from './transform';
+import { createSetPoseOp } from './setPose';
 import { createSetPathOp, type SetPathFields } from './setPath';
 import { createSetTextOp } from './setText';
 import { createReparentOp } from './reparent';
@@ -105,11 +105,11 @@ describe('op-factory registry — per-factory round trip', () => {
   it('transform', () => {
     const args = { id: 'r1', from: { x: 0, y: 0 }, to: { x: 10, y: 20 }, label: 'Move' };
     applyBoth(
-      () => createTransformOp(args),
+      () => createSetPoseOp(args),
       (ad) => ad.poseCalls,
     );
     // Invert round-trips too.
-    const op = createTransformOp(args);
+    const op = createSetPoseOp(args);
     const inv = op.invert();
     expect(inv.name).toBe('transform');
     const rebuilt = defaultOpRegistry.rebuild(inv.name!, inv.args)!;

@@ -1,5 +1,5 @@
 import { createReparentOp } from 'core/ops/reparent';
-import { createTransformOp } from 'core/ops/transform';
+import { createSetPoseOp } from 'core/ops/setPose';
 import type { Op } from 'core/ops/types';
 import { rehomedFollowers } from 'core/pages/pagePlacement';
 import { composeWorldPose, rebaseLocalPose } from 'core/scene/composePose';
@@ -51,6 +51,6 @@ export function followerOpsFor(scene: AnyScene, landed: ReadonlyMap<string, stri
 export function followerMoveOps(moves: readonly FollowerMove[], label: string | undefined): Op[] {
   return moves.flatMap((m) => [
     createReparentOp({ id: m.id as string, fromParentId: m.parent, toParentId: m.into as string | null, label }),
-    createTransformOp<unknown>({ id: m.id as string, from: m.from, to: m.to, label }),
+    createSetPoseOp<unknown>({ id: m.id as string, from: m.from, to: m.to, label }),
   ]);
 }

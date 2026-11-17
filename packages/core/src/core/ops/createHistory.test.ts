@@ -10,7 +10,7 @@
 import { describe, expect, it } from 'vitest';
 import type { Op } from '@weasel-js/history';
 import { createHistory } from './createHistory';
-import { createTransformOp } from './transform';
+import { createSetPoseOp } from './setPose';
 import { registerOpFactory } from './registry';
 
 interface Pose { x: number; y: number }
@@ -27,8 +27,8 @@ describe('createHistory (core wrapper) — serialize / restore via the registry'
   it('round-trips an undo stack across save / restore', () => {
     const a1 = makeAdapter();
     const h1 = createHistory(a1);
-    h1.apply(createTransformOp<Pose>({ id: 'a', from: { x: 0, y: 0 }, to: { x: 1, y: 1 } }));
-    h1.apply(createTransformOp<Pose>({ id: 'a', from: { x: 1, y: 1 }, to: { x: 2, y: 2 } }));
+    h1.apply(createSetPoseOp<Pose>({ id: 'a', from: { x: 0, y: 0 }, to: { x: 1, y: 1 } }));
+    h1.apply(createSetPoseOp<Pose>({ id: 'a', from: { x: 1, y: 1 }, to: { x: 2, y: 2 } }));
     const snap = h1.serialize();
     expect(snap.undoStack).toHaveLength(2);
     expect(snap.redoStack).toHaveLength(0);
@@ -56,8 +56,8 @@ describe('createHistory (core wrapper) — serialize / restore via the registry'
   it('preserves redo stack across restore', () => {
     const a1 = makeAdapter();
     const h1 = createHistory(a1);
-    h1.apply(createTransformOp<Pose>({ id: 'a', from: { x: 0, y: 0 }, to: { x: 1, y: 1 } }));
-    h1.apply(createTransformOp<Pose>({ id: 'a', from: { x: 1, y: 1 }, to: { x: 2, y: 2 } }));
+    h1.apply(createSetPoseOp<Pose>({ id: 'a', from: { x: 0, y: 0 }, to: { x: 1, y: 1 } }));
+    h1.apply(createSetPoseOp<Pose>({ id: 'a', from: { x: 1, y: 1 }, to: { x: 2, y: 2 } }));
     h1.undo(); // one entry on redo
     const snap = h1.serialize();
     expect(snap.undoStack).toHaveLength(1);

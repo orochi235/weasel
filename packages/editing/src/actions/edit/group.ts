@@ -1,5 +1,5 @@
 import type { SceneNode as Node, NodeId, Op } from '@weasel-js/core';
-import { createInsertOp, groupingSite, pageOfNode, translatePoseViaDescriptor, unionBounds, poseDescriptorOf, visualBoundsViaDescriptor, createTransformOp, scenePoseFrame, commitOps } from '@weasel-js/core/engine';
+import { createInsertOp, groupingSite, pageOfNode, translatePoseViaDescriptor, unionBounds, poseDescriptorOf, visualBoundsViaDescriptor, createSetPoseOp, scenePoseFrame, commitOps } from '@weasel-js/core/engine';
 import { createReparentOp, createDeleteOp, createSetDependsOnOp, selectedRoots, followerOpsFor, finiteThroughout, requiresContent, selectedContent, inPaintOrder, slotAbove } from '@weasel-js/core';
 import { ActionDisabledReason, type Action, type ActionDeps, BETWEEN_GESTURES } from '@weasel-js/routing';
 import { icon } from '../../icons.gen';
@@ -102,7 +102,7 @@ export const groupAction: Action & { requires: string[] } = {
           toIndex: i,
           label: 'Group',
         }));
-        ops.push(createTransformOp<unknown>({ id: node.id as string, from: node.pose, to: locals.get(node.id), label: 'Group' }));
+        ops.push(createSetPoseOp<unknown>({ id: node.id as string, from: node.pose, to: locals.get(node.id), label: 'Group' }));
       });
       ops.push(...followers);
 
@@ -191,7 +191,7 @@ function ungroupOps(scene: AnyScene, plan: UngroupPlan): Op[] | null {
         toSlot: { index, before: containerId as string },
         label: 'Ungroup',
       }));
-      moves.push(createTransformOp<unknown>({
+      moves.push(createSetPoseOp<unknown>({
         id: childId as string,
         from: scene.get(childId)!.pose,
         to,

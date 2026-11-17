@@ -1,6 +1,6 @@
 import { useCallback } from 'react';
 import { useLatest } from '@weasel-js/react';
-import { createTransformOp, dispatchApplyBatch, RECT_POSE_DESCRIPTOR, type PoseDescriptor, unionAABB, poseFrame, type PoseFrame, uncarried, IDENTITY_POSE_COMPOSITION, type PoseComposition, drawnAABBOf, type DrawnBoundsOptions, type DrawnBoundsScene, settleWithinRounding, resolveSpatialReference, type SpatialReference, type SpatialReferenceSources, visualBoundsViaDescriptor, translatePoseViaDescriptor } from '@weasel-js/core';
+import { createSetPoseOp, dispatchApplyBatch, RECT_POSE_DESCRIPTOR, type PoseDescriptor, unionAABB, poseFrame, type PoseFrame, uncarried, IDENTITY_POSE_COMPOSITION, type PoseComposition, drawnAABBOf, type DrawnBoundsOptions, type DrawnBoundsScene, settleWithinRounding, resolveSpatialReference, type SpatialReference, type SpatialReferenceSources, visualBoundsViaDescriptor, translatePoseViaDescriptor } from '@weasel-js/core';
 import type { Op, NodeId, Bounds } from '@weasel-js/core';
 import { usePointerContext } from '@weasel-js/routing/react';
 import type { Scale2 } from '@weasel-js/geom';
@@ -148,7 +148,7 @@ export function useAlign<TPose>(
       const to = frame.local(sel[i], translatePoseViaDescriptor(poses[i], dx, dy, geom));
       // No stored pose in a singular frame reaches the edge, so the node stays where it is.
       if (to === null) continue;
-      ops.push(createTransformOp<TPose>({ id: sel[i], from: a.getPose(sel[i]), to }));
+      ops.push(createSetPoseOp<TPose>({ id: sel[i], from: a.getPose(sel[i]), to }));
     }
     if (ops.length === 0) return;
     dispatchApplyBatch(a, ops, o.label ?? 'Align');

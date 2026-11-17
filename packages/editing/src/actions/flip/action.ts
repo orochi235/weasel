@@ -1,5 +1,5 @@
 import type { NodeId, Scene, OperandsDep, Bounds, Op, PoseDescriptor, RectPose } from '@weasel-js/core';
-import { shapeSources, uncarried, withoutPageStructure, createTransformOp, poseDescriptorOf, unionAABB, drawnBoxes, type DrawnBoxes, isNoInkExtents, scenePoseFrame, type PoseFrame, actionReferenceSources, resolveSpatialReference, sameValue, finiteThroughout, defaultCommitAdapter, operandMethods, transformApplyOps, requiresSelection, geometryDataOp, type GeometryProjection } from '@weasel-js/core';
+import { shapeSources, uncarried, withoutPageStructure, createSetPoseOp, poseDescriptorOf, unionAABB, drawnBoxes, type DrawnBoxes, isNoInkExtents, scenePoseFrame, type PoseFrame, actionReferenceSources, resolveSpatialReference, sameValue, finiteThroughout, defaultCommitAdapter, operandMethods, transformApplyOps, requiresSelection, geometryDataOp, type GeometryProjection } from '@weasel-js/core';
 import { multiply, rotate, translate, type Affine } from '@weasel-js/geom';
 import {
   flipPoseAboutBounds,
@@ -123,7 +123,7 @@ function flipOps(
     const mirror = localMirror(axis, frame, id, about ?? geom.getBounds(world));
     if (mirror === null) continue;
     const moved = !sameValue(node.pose, to);
-    if (moved) ops.push(createTransformOp<unknown>({ id: id as string, from: node.pose, to, label: 'Flip' }));
+    if (moved) ops.push(createSetPoseOp<unknown>({ id: id as string, from: node.pose, to, label: 'Flip' }));
     // Mirror the data-held geometry about the SAME pivot the pose flip uses.
     // A pose-only flip of a bare-AABB pose is identity, so this data op is
     // the only way an asymmetric shape actually mirrors.
@@ -135,7 +135,7 @@ function flipOps(
       'Flip',
     );
     if (dataOp) {
-      if (!moved) ops.push(createTransformOp<unknown>({ id: id as string, from: node.pose, to, label: 'Flip' }));
+      if (!moved) ops.push(createSetPoseOp<unknown>({ id: id as string, from: node.pose, to, label: 'Flip' }));
       ops.push(dataOp);
     }
   }

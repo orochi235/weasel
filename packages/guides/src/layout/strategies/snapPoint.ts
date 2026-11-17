@@ -1,6 +1,6 @@
 import {
   type Vec2,
-  createTransformOp,
+  createSetPoseOp,
   type LayoutSnap,
   type LayoutStrategy,
 } from '@weasel-js/core';
@@ -110,7 +110,7 @@ export function snapPoint<TPose extends Vec2>(
     commitDrop(_container, _children, dragged, target) {
       const to = target === null ? dragged.pose : target.pose;
       return [
-        createTransformOp<TPose>({
+        createSetPoseOp<TPose>({
           id: dragged.id,
           from: dragged.originPose,
           to,

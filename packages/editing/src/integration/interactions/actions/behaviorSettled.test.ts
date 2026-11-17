@@ -4,7 +4,7 @@
  */
 import { describe, it, expect, vi } from 'vitest';
 import type { BindingOptions, InvocationCtx, OngoingHandle } from '@weasel-js/routing';
-import { createScene, createSetSelectionOp, createTransformOp } from '@weasel-js/core/engine';
+import { createScene, createSetSelectionOp, createSetPoseOp } from '@weasel-js/core/engine';
 import type { NodeId } from '@weasel-js/core';
 import { moveAction } from '../../../actions/move/action';
 import { resizeAction } from '../../../actions/resize/action';
@@ -270,7 +270,7 @@ describe('insertAction — onSettled', () => {
     const from = scene.get(a)!.pose;
     const log: string[] = [];
     const behavior = {
-      onEnd: () => [createTransformOp<Pose>({ id: a, from, to: { ...from, x: 7 }, label: 'Place' })],
+      onEnd: () => [createSetPoseOp<Pose>({ id: a, from, to: { ...from, x: 7 }, label: 'Place' })],
       onSettled: (_ctx: unknown, committed: boolean) => { log.push(`settled:${committed}:${scene.get(a)!.pose.x}`); },
     };
     draw(behavior, minted, 'commit', 40, { scene });

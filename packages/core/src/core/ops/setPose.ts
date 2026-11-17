@@ -3,12 +3,12 @@ import { sameValue } from '../scene/sameValue';
 import { alreadyHolds } from './alreadyHolds';
 import { registerKitOpFactory } from './registry';
 
-interface TransformAdapter<TPose> {
+interface SetPoseAdapter<TPose> {
   setPose(id: string, pose: TPose): void;
 }
 
-/** Arguments to {@link createTransformOp}: replace node `id`'s pose `from` → `to`. */
-export interface TransformArgs<TPose> {
+/** Arguments to {@link createSetPoseOp}: replace node `id`'s pose `from` → `to`. */
+export interface SetPoseArgs<TPose> {
   id: string;
   from: TPose;
   to: TPose;
@@ -20,7 +20,7 @@ export interface TransformArgs<TPose> {
  *  `transform:${id}` so successive pose writes to the same node (drag-move,
  *  resize, repeated nudges) merge into one undo entry within the history's
  *  coalesce window. Pass an explicit key (or a unique one) to opt out. */
-export function createTransformOp<TPose>(args: TransformArgs<TPose>): Op {
+export function createSetPoseOp<TPose>(args: SetPoseArgs<TPose>): Op {
   const { id, from, to, label, coalesceKey = `transform:${id}` } = args;
   return {
     name: 'transform',
@@ -33,16 +33,16 @@ export function createTransformOp<TPose>(args: TransformArgs<TPose>): Op {
       // report a no-op to history when the pose is already `to`. The node is
       // the answer where it can be read: a stated `from` can be stale.
       const held = alreadyHolds(adapter, id, (node) => sameValue(node.pose, to)) ?? poseShallowEqual(from, to);
-      (adapter as TransformAdapter<TPose>).setPose(id, to);
+      (adapter as SetPoseAdapter<TPose>).setPose(id, to);
       return held ? false : undefined;
     },
     invert() {
-      return createTransformOp<TPose>({ id, from: to, to: from, label, coalesceKey });
+      return createSetPoseOp<TPose>({ id, from: to, to: from, label, coalesceKey });
     },
   };
 }
 
-registerKitOpFactory<TransformArgs<unknown>>('transform', (args) => createTransformOp(args));
+registerKitOpFactory<SetPoseArgs<unknown>>('transform', (args) => createSetPoseOp(args));
 
 function poseShallowEqual<TPose>(a: TPose, b: TPose): boolean {
   if (a === b) return true;

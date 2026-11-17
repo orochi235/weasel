@@ -9,7 +9,7 @@ import {
   asNodeId,
   commitOps,
   createScene,
-  createTransformOp,
+  createSetPoseOp,
   type AnyScene,
 } from '@weasel-js/core';
 import { resolvePathWarp } from './pathWarp';
@@ -51,7 +51,7 @@ describe('a warp on a polygon pose measured from an origin', () => {
     expect(resolvePathWarp(scene.get(asNodeId('a')))).not.toBeNull();
 
     const moved = transformPath(warped, translate(30, 0));
-    commitOps(depsOf(scene), [createTransformOp({ id: asNodeId('a'), from: warped, to: moved, label: 'Move' })], 'Move');
+    commitOps(depsOf(scene), [createSetPoseOp({ id: asNodeId('a'), from: warped, to: moved, label: 'Move' })], 'Move');
     const resolved = resolvePathWarp(scene.get(asNodeId('a')))!;
     expect(resolved).not.toBeNull();
     // The dragged corner's handle moved with the pose.

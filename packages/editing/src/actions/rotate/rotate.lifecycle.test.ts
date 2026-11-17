@@ -1,7 +1,7 @@
 import { describe, it, expect, vi } from 'vitest';
 import type { BindingOptions, InvocationCtx } from '@weasel-js/routing';
 import { rotateAction } from './action';
-import { createScene, createTransformOp } from '@weasel-js/core/engine';
+import { createScene, createSetPoseOp } from '@weasel-js/core/engine';
 import type { NodeId } from '@weasel-js/core';
 import type { RotateBehavior } from '@weasel-js/core/engine';
 
@@ -157,7 +157,7 @@ describe('rotateAction — behaviors', () => {
   it('onEnd returning ops commits those in place of the rotation', () => {
     const s = setup();
     const marker: Pose = { x: 7, y: 7, width: 11, height: 11 };
-    const onEnd = () => [createTransformOp<Pose>({ id: s.a, from: s.scene.get(s.a)!.pose, to: marker, label: 'Marker' })];
+    const onEnd = () => [createSetPoseOp<Pose>({ id: s.a, from: s.scene.get(s.a)!.pose, to: marker, label: 'Marker' })];
     const onGestureEnd = vi.fn();
     turn(s, { behaviors: [{ onEnd }], params: { onGestureEnd } });
     expect(s.scene.get(s.a)!.pose).toEqual(marker);

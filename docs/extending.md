@@ -399,7 +399,7 @@ Each action pins the proposed/result shape; pick the matching alias
   paints at full opacity rather than as a ghost.
 - `onEnd` decides commit ops. First non-`undefined` return wins: `Op[]`
   commits, `null` aborts, `undefined` falls through to the next behavior
-  or the action's default ops (move emits one `createTransformOp` per id).
+  or the action's default ops (move emits one `createSetPoseOp` per id).
   Every behavior's `onEnd` runs, with `end.answered` true once an earlier one
   has answered or thrown; after a throw nothing commits, and the first error
   is rethrown once all have run.

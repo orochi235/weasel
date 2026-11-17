@@ -1,6 +1,6 @@
 import { useCallback } from 'react';
 import { useLatest } from '@weasel-js/react';
-import { createTransformOp, dispatchApplyBatch, RECT_POSE_DESCRIPTOR, type PoseDescriptor, translatePoseViaDescriptor, poseFrame, type PoseFrame, uncarried, IDENTITY_POSE_COMPOSITION, type PoseComposition } from '@weasel-js/core';
+import { createSetPoseOp, dispatchApplyBatch, RECT_POSE_DESCRIPTOR, type PoseDescriptor, translatePoseViaDescriptor, poseFrame, type PoseFrame, uncarried, IDENTITY_POSE_COMPOSITION, type PoseComposition } from '@weasel-js/core';
 import type { Op, NodeId } from '@weasel-js/core';
 import { alignBoxReader, type UseAlignOptions } from '../align/align';
 import { planDistribute } from './plan';
@@ -98,7 +98,7 @@ export function useDistribute<TPose>(
       const to = frame.local(it.id, translatePoseViaDescriptor(it.pose, dx, dy, geom));
       // No stored pose in a singular frame reaches the spacing, so the node stays where it is.
       if (to === null) continue;
-      ops.push(createTransformOp<TPose>({ id: it.id, from: a.getPose(it.id), to }));
+      ops.push(createSetPoseOp<TPose>({ id: it.id, from: a.getPose(it.id), to }));
     }
     if (ops.length === 0) return;
     dispatchApplyBatch(a, ops, o.label ?? 'Distribute');

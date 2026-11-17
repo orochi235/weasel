@@ -3,7 +3,7 @@ import type { Affine } from '@weasel-js/geom';
 import {
   leadUnder, translatePoseViaDescriptor, type PoseDescriptor, type TranslateLead,
 } from 'core/geometry/poseDescriptor';
-import { createTransformOp } from 'core/ops/transform';
+import { createSetPoseOp } from 'core/ops/setPose';
 import { sameValue } from 'core/scene/sameValue';
 import { finiteThroughout } from './finiteFrame';
 import type { Op } from 'core/ops/types';
@@ -49,7 +49,7 @@ export function translateNodeOps(
     const to = translatePoseViaDescriptor(from, l.dx, l.dy, descriptorOf(id), l.lead);
     // A step rounding absorbs, as one far out near the double range is, moves nothing.
     if (sameValue(from, to)) continue;
-    ops.push(createTransformOp<unknown>({ id: id as string, from, to, label }));
+    ops.push(createSetPoseOp<unknown>({ id: id as string, from, to, label }));
     const m: Affine = [1, 0, 0, 1, l.dx, l.dy];
     const dataOp = geometryDataOp(geometryProjection, { id: id as string, data: node.data, pose: from }, m, to, label);
     if (dataOp) ops.push(dataOp);

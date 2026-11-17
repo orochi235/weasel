@@ -275,7 +275,7 @@ implementing the slices its readers take. See
 ### Op
 
 An invertible, adapter-agnostic mutation: `{ apply(adapter), invert(): Op, label?, coalesceKey? }`.
-Op constructors live in `packages/core/src/core/ops/`: `createTransformOp`, `createInsertOp`,
+Op constructors live in `packages/core/src/core/ops/`: `createSetPoseOp`, `createInsertOp`,
 `createDeleteOp`, `createSetSelectionOp`, `createSetTextOp`, `createReorderOp`,
 `createSetPathOp`, etc. `dispatchApplyBatch(adapter, ops, label)` applies them in
 order (or hands them to `adapter.applyBatch` for history integration).
@@ -285,7 +285,7 @@ change. [Actions](#action) at the application layer produce op batches to expres
 user-intent operations; the action↔op mapping is many-to-many:
 
 - **1 action → 1 op**: `delete` → `createDeleteOp`.
-- **1 action → N ops**: `align left` → N `createTransformOp`s (one per selected item).
+- **1 action → N ops**: `align left` → N `createSetPoseOp`s (one per selected item).
 - **0 ops for an action**: `zoom in`, `escape`, `toggle grid` — non-undoable state
   changes bypass the op pipeline.
 - **Ops without an action**: a gesture commit can emit ops directly

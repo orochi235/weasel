@@ -1,5 +1,5 @@
 import {
-  type AnyNode, type AnyScene, createSetDataOp, createTransformOp, deleteNode, insertAt, type NodeId, type Op,
+  type AnyNode, type AnyScene, createSetDataOp, createSetPoseOp, deleteNode, insertAt, type NodeId, type Op,
 } from '@weasel-js/core';
 import {
   measureEndsOf, measureNode, measurePose, withMeasureEnd,
@@ -31,7 +31,7 @@ export function addMeasureOp(
 /** `node` as it reads after `next`: what an edit writes and its preview shows. */
 function changeOps(node: AnyNode, next: { data: MeasureData; pose: unknown }, label: string): Op[] {
   return [
-    createTransformOp({ id: node.id, from: node.pose, to: next.pose, label }),
+    createSetPoseOp({ id: node.id, from: node.pose, to: next.pose, label }),
     createSetDataOp({ id: node.id, from: node.data, to: next.data, label }),
   ];
 }

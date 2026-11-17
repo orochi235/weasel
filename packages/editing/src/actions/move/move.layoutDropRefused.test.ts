@@ -4,7 +4,7 @@
  */
 import { describe, it, expect, vi } from 'vitest';
 import type { InvocationCtx } from '@weasel-js/routing';
-import { createScene, createTransformOp, asNodeId, type RectPose } from '@weasel-js/core/engine';
+import { createScene, createSetPoseOp, asNodeId, type RectPose } from '@weasel-js/core/engine';
 import type { LayoutStrategy } from '@weasel-js/core/engine';
 import { moveAction } from './action';
 
@@ -21,7 +21,7 @@ const refusing = {
   getDropTargets: () => [{ pose: SLOT, origin: { x: SLOT.x, y: SLOT.y } }],
   reflowPoses: () => new Map(),
   commitDrop: (_c: unknown, _k: unknown, dragged: { id: string; originPose: RectPose }, target: { pose: RectPose }) =>
-    [createTransformOp<RectPose>({ id: dragged.id, from: dragged.originPose, to: target.pose, label: 'Drop' })],
+    [createSetPoseOp<RectPose>({ id: dragged.id, from: dragged.originPose, to: target.pose, label: 'Drop' })],
   arrive: () => null,
 } as unknown as LayoutStrategy<RectPose>;
 

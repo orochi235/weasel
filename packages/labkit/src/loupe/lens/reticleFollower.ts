@@ -1,5 +1,5 @@
 import {
-  createTransformOp,
+  createSetPoseOp,
   type RectPose,
   type TransformFollower,
   type TransformPreviewNode,
@@ -43,7 +43,7 @@ export function reticleFollower<C>(scene: LensScene<C>): TransformFollower {
       if (written === null) return [...ops];
       const poses = new Map([...written].map(([id, w]) => [id, w.pose]));
       const follow = resized(scene, poses).map((r) =>
-        createTransformOp({
+        createSetPoseOp({
           id: r.id,
           from: poses.get(r.id) ?? scene.get(r.id as never)?.pose,
           to: r.pose,

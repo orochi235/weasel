@@ -4,7 +4,7 @@
  */
 import { describe, it, expect, vi } from 'vitest';
 import type { BindingOptions, InvocationCtx } from '@weasel-js/routing';
-import { createScene, createTransformOp, asNodeId, type RectPose } from '@weasel-js/core/engine';
+import { createScene, createSetPoseOp, asNodeId, type RectPose } from '@weasel-js/core/engine';
 import type { LayoutStrategy, MoveBehavior } from '@weasel-js/core/engine';
 import { moveAction } from './action';
 
@@ -59,7 +59,7 @@ describe('moveAction — reparent-on-drop behind the other behaviors', () => {
       childPoses: () => new Map(),
       getDropTargets: () => [{ pose: SLOT, origin: { x: SLOT.x, y: SLOT.y } }],
       reflowPoses: () => new Map(),
-      commitDrop: () => [createTransformOp<RectPose>({ id: A, from: HOME, to: SLOT, label: 'Drop' })],
+      commitDrop: () => [createSetPoseOp<RectPose>({ id: A, from: HOME, to: SLOT, label: 'Drop' })],
     } as unknown as LayoutStrategy<unknown>;
     const { scene, nodeAtPoint } = drop(195, { deps: { layout: { getLayout: (id: string) => (id === T ? layout : null) } } });
     expect(nodeAtPoint).not.toHaveBeenCalled();

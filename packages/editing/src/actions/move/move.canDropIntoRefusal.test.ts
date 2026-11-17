@@ -5,7 +5,7 @@
  */
 import { describe, it, expect, vi } from 'vitest';
 import type { BindingOptions, InvocationCtx, OngoingOverlay } from '@weasel-js/routing';
-import { createScene, createTransformOp, asNodeId, type RectPose } from '@weasel-js/core/engine';
+import { createScene, createSetPoseOp, asNodeId, type RectPose } from '@weasel-js/core/engine';
 import type { DropVerdict, LayoutStrategy } from '@weasel-js/core/engine';
 import { moveAction } from './action';
 
@@ -21,7 +21,7 @@ const free = {
   getDropTargets: (_c: unknown, _k: unknown, d: { pose: RectPose }) => [{ pose: d.pose, origin: { x: d.pose.x, y: d.pose.y } }],
   reflowPoses: () => new Map(),
   commitDrop: (_c: unknown, _k: unknown, d: { id: string; originPose: RectPose; pose: RectPose }) =>
-    [createTransformOp<RectPose>({ id: d.id, from: d.originPose, to: d.pose, label: 'Drop' })],
+    [createSetPoseOp<RectPose>({ id: d.id, from: d.originPose, to: d.pose, label: 'Drop' })],
 } as unknown as LayoutStrategy<unknown>;
 
 function makeScene() {

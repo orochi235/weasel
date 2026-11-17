@@ -1,4 +1,4 @@
-import { createTransformOp, pageAt, pageOfBounds, type PlacedPage, pageNodeOf, pageOfNode, placedPagesOf, refusalOf, sceneViewPoseAdapter } from '@weasel-js/core/engine';
+import { createSetPoseOp, pageAt, pageOfBounds, type PlacedPage, pageNodeOf, pageOfNode, placedPagesOf, refusalOf, sceneViewPoseAdapter } from '@weasel-js/core/engine';
 import type { Op, NodeId } from '@weasel-js/core';
 import { isFollower, keepOnPage, pasteboardOn, placedPage, rehomedFollowers, followerMove, followerMoveOps } from '@weasel-js/core';
 import { draggedWorldPose, grabbedPoseAdapter } from '../delta';
@@ -155,7 +155,7 @@ export function pageDropOps(
     const cascade = landedCascadeOps(session, below.get(id) ?? [], drop.into, d, layer);
     if (to === null || cascade === null) return null;
     ops.push(...landOps(session, id, drop.into, toIndex, layer));
-    ops.push(createTransformOp<unknown>({ id: id as string, from: node.pose, to, label }));
+    ops.push(createSetPoseOp<unknown>({ id: id as string, from: node.pose, to, label }));
     ops.push(...cascade);
   }
   return ops;

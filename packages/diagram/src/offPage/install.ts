@@ -8,7 +8,7 @@ import {
   createDeleteOp,
   createInsertOp,
   createSetDataOp,
-  createTransformOp,
+  createSetPoseOp,
   followerHome,
   pageOfNode,
   placedPagesOf,
@@ -99,7 +99,7 @@ function tagOps(scene: AnyScene, edge: SceneNode, split: OffPageSplit | null, pa
       };
       ops.push(createSetDataOp({ id, from: tag.data, to: { ...(tag.data as object), ...offPageTagData(edge.id, end, text, kept) }, label: 'Off-page' }));
       const pose = tag.pose as Record<string, unknown>;
-      ops.push(createTransformOp({ id, from: tag.pose, to: { ...pose, ...offPageTagSize(text, kept) }, label: 'Off-page' }));
+      ops.push(createSetPoseOp({ id, from: tag.pose, to: { ...pose, ...offPageTagSize(text, kept) }, label: 'Off-page' }));
     }
   }
   return ops;

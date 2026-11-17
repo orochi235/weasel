@@ -1561,7 +1561,7 @@
    "packages/core/src/core/ops/setPath.ts",
    "packages/core/src/core/ops/setText.ts",
    "packages/core/src/core/ops/slot.ts",
-   "packages/core/src/core/ops/transform.ts",
+   "packages/core/src/core/ops/setPose.ts",
    "packages/core/src/core/ops/types.ts",
    "packages/core/src/core/ops/writtenBy.ts"
   ]

@@ -1,5 +1,5 @@
 import {
-  createTransformOp,
+  createSetPoseOp,
   type Op,
   type ContainerBounds,
   type DropTarget,
@@ -264,7 +264,7 @@ export function tileGrid<TPose>(
         const swap = computeSwap(container, children, dragged, target);
         if (swap !== null) {
           ops.push(
-            createTransformOp<TPose>({
+            createSetPoseOp<TPose>({
               id: swap.occupant,
               from: swap.from,
               to: swap.newPose,
@@ -274,7 +274,7 @@ export function tileGrid<TPose>(
         }
       }
       ops.push(
-        createTransformOp<TPose>({
+        createSetPoseOp<TPose>({
           id: dragged.id,
           from: dragged.originPose,
           to: droppedPose,

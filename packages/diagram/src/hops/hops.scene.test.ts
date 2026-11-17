@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { createScene, createTransformOp, derivedDepOf, type RectPose, type Scene } from '@weasel-js/core';
+import { createScene, createSetPoseOp, derivedDepOf, type RectPose, type Scene } from '@weasel-js/core';
 import { EDGE_DERIVE_PATH, withDiagramRegistry } from '../edge';
 import type { DiagramEdge } from '../edgeTrait';
 import { installHops } from './install';
@@ -35,7 +35,7 @@ function load(on = true) {
   const adapter = { setPose: (id: string, pose: RectPose) => scene.setPose(id as never, pose) };
   const move = (id: string, x: number, y: number) => {
     const from = scene.get(id as never)!.pose;
-    scene.applyBatch([createTransformOp({ id, from, to: { ...from, x, y } })], 'Move', adapter);
+    scene.applyBatch([createSetPoseOp({ id, from, to: { ...from, x, y } })], 'Move', adapter);
   };
   return { scene, hops, move };
 }

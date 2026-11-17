@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { createTransformOp } from './transform';
+import { createSetPoseOp } from './setPose';
 
 interface FakePose { x: number; y: number; w?: number }
 
@@ -11,16 +11,16 @@ function makeAdapter() {
   };
 }
 
-describe('createTransformOp', () => {
+describe('createSetPoseOp', () => {
   it('apply writes the to-pose', () => {
-    const op = createTransformOp<FakePose>({ id: 'a', from: { x: 1, y: 2 }, to: { x: 3, y: 4 } });
+    const op = createSetPoseOp<FakePose>({ id: 'a', from: { x: 1, y: 2 }, to: { x: 3, y: 4 } });
     const adapter = makeAdapter();
     op.apply(adapter as any);
     expect(adapter.calls).toEqual([{ id: 'a', pose: { x: 3, y: 4 } }]);
   });
 
   it('invert swaps from and to', () => {
-    const op = createTransformOp<FakePose>({ id: 'a', from: { x: 1, y: 2 }, to: { x: 3, y: 4 } });
+    const op = createSetPoseOp<FakePose>({ id: 'a', from: { x: 1, y: 2 }, to: { x: 3, y: 4 } });
     const inv = op.invert();
     const adapter = makeAdapter();
     inv.apply(adapter as any);
@@ -28,7 +28,7 @@ describe('createTransformOp', () => {
   });
 
   it('exposes a label', () => {
-    const op = createTransformOp<FakePose>({ id: 'a', from: { x: 0, y: 0 }, to: { x: 1, y: 1 }, label: 'Move' });
+    const op = createSetPoseOp<FakePose>({ id: 'a', from: { x: 0, y: 0 }, to: { x: 1, y: 1 }, label: 'Move' });
     expect(op.label).toBe('Move');
   });
 });

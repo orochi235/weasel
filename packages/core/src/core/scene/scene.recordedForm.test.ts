@@ -9,7 +9,7 @@ import type { Op } from 'core/ops/types';
 import { createDeleteOp } from 'core/ops/delete';
 import { createSetSelectionOp } from 'core/ops/select';
 import { createSetDataOp } from 'core/ops/setData';
-import { createTransformOp } from 'core/ops/transform';
+import { createSetPoseOp } from 'core/ops/setPose';
 import { createScene } from './scene';
 import { sceneMutators } from './sceneMutators';
 import { asNodeId, type Scene } from './types';
@@ -35,7 +35,7 @@ function fixture(options: { coalesceWindowMs?: number } = {}) {
   scene.add({ id: B, kind: 'mark', layer: 'main', data: { label: 'b' }, pose: at(100) });
   scene.history.clear();
   const adapter = commitAdapter(scene);
-  const move = (id: string, from: number, to: number): Op => createTransformOp<Pose>({ id, from: at(from), to: at(to) });
+  const move = (id: string, from: number, to: number): Op => createSetPoseOp<Pose>({ id, from: at(from), to: at(to) });
   const x = (id = A): number => scene.get(id)!.pose.x;
   const labels = (): string[] => scene.historyEntries().map((e) => e.label);
   return { scene, adapter, move, x, labels };

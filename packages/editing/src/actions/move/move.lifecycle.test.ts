@@ -1,7 +1,7 @@
 import { describe, it, expect, vi } from 'vitest';
 import type { BindingOptions, InvocationCtx } from '@weasel-js/routing';
 import { moveAction } from './action';
-import { createScene, createTransformOp } from '@weasel-js/core/engine';
+import { createScene, createSetPoseOp } from '@weasel-js/core/engine';
 import type { NodeId } from '@weasel-js/core';
 import type { MoveBehavior } from '@weasel-js/core/engine';
 import { snapBackOrDelete } from './behaviors/snapBackOrDelete';
@@ -85,7 +85,7 @@ describe('moveAction — label', () => {
   it('a behavior commit keeps its own op label when params.label is unset', () => {
     const { scene, a, base } = setup();
     const behavior: MoveBehavior<unknown> = {
-      onEnd: () => [createTransformOp<Pose>({
+      onEnd: () => [createSetPoseOp<Pose>({
         id: a as string,
         from: { x: 0, y: 0, width: 10, height: 10 },
         to: { x: 1, y: 1, width: 10, height: 10 },

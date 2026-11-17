@@ -5,7 +5,7 @@
 import { describe, it, expect } from 'vitest';
 import { moveAction } from './action';
 import type { BindingOptions, InvocationCtx, OngoingHandle, OngoingInvoker, SelectionApi } from '@weasel-js/routing';
-import { createScene, createTransformOp } from '@weasel-js/core/engine';
+import { createScene, createSetPoseOp } from '@weasel-js/core/engine';
 import type { Op, NodeId, RectPose } from '@weasel-js/core';
 import type { MoveBehavior, MoveEnd } from '@weasel-js/core/engine';
 
@@ -48,7 +48,7 @@ describe('MoveEnd.translateOps', () => {
   it('translates the roots a behavior names, beside the ones it placed itself', () => {
     const { scene, a, b } = fixture();
     commit(scene, [a, b], (end) => [
-      createTransformOp<RectPose>({ id: a, from: box(0, 0), to: box(7, 7), label: 'Place' }),
+      createSetPoseOp<RectPose>({ id: a, from: box(0, 0), to: box(7, 7), label: 'Place' }),
       ...end.translateOps([b]),
     ]);
     expect(scene.get(a)!.pose).toEqual(box(7, 7));

@@ -1,6 +1,6 @@
 import type { BooleanShapeOp, AnyScene } from '@weasel-js/core/engine';
 import { booleanGroupFields, followerMoveOps, followerMoves, createReparentOp, requiresContent, selectedRoots, inPaintOrder, slotAbove } from '@weasel-js/core';
-import { groupingSite, pageOfNode, commitOps, defaultCommitAdapter, createInsertOp, createTransformOp, AUTO_POSE_DESCRIPTOR, unionBounds, scenePoseFrame } from '@weasel-js/core/engine';
+import { groupingSite, pageOfNode, commitOps, defaultCommitAdapter, createInsertOp, createSetPoseOp, AUTO_POSE_DESCRIPTOR, unionBounds, scenePoseFrame } from '@weasel-js/core/engine';
 import type { Op, SceneNode as Node, NodeId } from '@weasel-js/core';
 import { ActionDisabledReason, type Action } from '@weasel-js/routing';
 import { icon } from '../../icons.gen';
@@ -56,7 +56,7 @@ export function booleanGroupOps(
   nodes.forEach((n, i) => {
     ops.push(createReparentOp({ id: n.id, fromParentId: n.parent ?? null, toParentId: group, toIndex: i, label }));
     // The group derives its pose from its members, so it is no frame: they keep the frame it sits in.
-    ops.push(createTransformOp<unknown>({ id: n.id, from: n.pose, to: locals.get(n.id), label }));
+    ops.push(createSetPoseOp<unknown>({ id: n.id, from: n.pose, to: locals.get(n.id), label }));
   });
   ops.push(...followerMoveOps(followers, label));
   return { ops, group };

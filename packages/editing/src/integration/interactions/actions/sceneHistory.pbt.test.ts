@@ -7,7 +7,7 @@
 import { describe, it, expect } from 'vitest';
 import fc from 'fast-check';
 import type { ImmediateInvoker } from '@weasel-js/routing';
-import { createScene, createInsertOp, createTransformOp, defaultCommitAdapter } from '@weasel-js/core/engine';
+import { createScene, createInsertOp, createSetPoseOp, defaultCommitAdapter } from '@weasel-js/core/engine';
 import type { NodeId, Scene, Op } from '@weasel-js/core';
 import type { RectPose } from '@weasel-js/core/engine';
 import { createDeleteOp, createReparentOp, createMoveToIndexOp, createReorderOp, type ReorderDirection, createSetLayerOp, createSetHiddenOp, createSetLockedOp, createSetDependsOnOp } from '@weasel-js/core';
@@ -120,7 +120,7 @@ class SetPose extends Edit {
   constructor(readonly pick: number, readonly pose: RectPose) { super(); }
   edit(r: Real): void {
     const id = pickFrom(ids(r.scene), this.pick);
-    if (id) commit(r, [createTransformOp({ id, from: r.scene.get(id)!.pose, to: this.pose })], 'Move');
+    if (id) commit(r, [createSetPoseOp({ id, from: r.scene.get(id)!.pose, to: this.pose })], 'Move');
   }
   toString(): string { return `SetPose(${this.pick}, ${JSON.stringify(this.pose)})`; }
 }
@@ -277,7 +277,7 @@ class OpThenInverse implements fc.Command<Model, Real> {
     switch (this.which % 4) {
       case 0: return createInsertOp({ node: { id: r.scene.mintId(), kind: 'mark', layer: id ? r.scene.get(id)!.layer : 'main', pose: this.pose, data: {}, parent: id ?? null }, index: this.pick % 3 });
       case 1: return id ? createDeleteOp({ node: r.scene.get(id)! }) : null;
-      case 2: return id ? createTransformOp({ id, from: r.scene.get(id)!.pose, to: this.pose }) : null;
+      case 2: return id ? createSetPoseOp({ id, from: r.scene.get(id)!.pose, to: this.pose }) : null;
       default: {
         if (!id) return null;
         const to = this.to === null ? null : pickFrom(groups(r.scene), this.to) ?? null;

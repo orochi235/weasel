@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { createScene } from './scene';
 import { asNodeId } from './types';
-import { createTransformOp } from 'core/ops/transform';
+import { createSetPoseOp } from 'core/ops/setPose';
 
 const POSE = { x: 0, y: 0, width: 10, height: 10 };
 const A = asNodeId('a');
@@ -12,7 +12,7 @@ function makeScene() {
   scene.history.clear();
   const adapter = { setPose: (id: string, pose: unknown) => { scene.setPose(asNodeId(id), pose as typeof POSE); } };
   const move = (from: number, to: number) =>
-    scene.applyBatch([createTransformOp({ id: A, from: { ...POSE, x: from }, to: { ...POSE, x: to } })], 'move', adapter);
+    scene.applyBatch([createSetPoseOp({ id: A, from: { ...POSE, x: from }, to: { ...POSE, x: to } })], 'move', adapter);
   const x = () => scene.get(A)!.pose.x;
   return { scene, move, x };
 }

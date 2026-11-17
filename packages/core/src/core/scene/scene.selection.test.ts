@@ -2,7 +2,7 @@ import { describe, it, expect, vi } from 'vitest';
 import { createScene } from './scene';
 import { asNodeId } from './types';
 import type { NodeId } from './types';
-import { createTransformOp } from 'core/ops/transform';
+import { createSetPoseOp } from 'core/ops/setPose';
 
 interface Data { label: string }
 type Layer = 'default';
@@ -67,7 +67,7 @@ describe('Scene — selection', () => {
     scene.setSelection(ids(['a', 'b']));
 
     scene.applyBatch(
-      [createTransformOp({ id: asNodeId('a'), from: { ...POSE }, to: { ...POSE, x: 20 } })],
+      [createSetPoseOp({ id: asNodeId('a'), from: { ...POSE }, to: { ...POSE, x: 20 } })],
       'move',
       { setPose: (id: string, pose: unknown) => { scene.setPose(asNodeId(id), pose as typeof POSE); } },
     );

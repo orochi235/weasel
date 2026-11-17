@@ -9,7 +9,7 @@ import type { ActionDeps } from '@weasel-js/routing';
 import { countPathAnchors, type PointOrigin, type PolygonPath } from '@weasel-js/geom';
 import type { Node, NodeId, Scene } from 'core/scene/types';
 import type { Op } from 'core/ops/types';
-import { createTransformOp } from 'core/ops/transform';
+import { createSetPoseOp } from 'core/ops/setPose';
 import { createSetDataOp } from 'core/ops/setData';
 import { createInsertOp } from 'core/ops/create';
 import { createDeleteOp } from 'core/ops/delete';
@@ -103,7 +103,7 @@ export function reshapeOps(target: PathNode, worldPath: PolygonPath, label: stri
 /** The ops taking `node` from what it is to `next`, labeled `label`. */
 export function reshapeTo(node: Node<unknown, string, unknown>, next: { pose: unknown; data: unknown }, label: string): Op[] {
   const ops: Op[] = [];
-  if (next.pose !== node.pose) ops.push(createTransformOp({ id: node.id, from: node.pose, to: next.pose, label }));
+  if (next.pose !== node.pose) ops.push(createSetPoseOp({ id: node.id, from: node.pose, to: next.pose, label }));
   if (next.data !== node.data) ops.push(createSetDataOp({ id: node.id, from: node.data, to: next.data, label }));
   return ops;
 }
