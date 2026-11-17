@@ -208,6 +208,12 @@ test('puts the API beside the stories in a trial as wide as the workshop gives o
   expect(aside.getBoundingClientRect().left).toBeGreaterThanOrEqual(stories.getBoundingClientRect().right - 1);
 });
 
+test('caps the API at 260px and gives the stories the rest of the row', () => {
+  const { aside, stories } = apiPage(1600);
+  expect(aside.getBoundingClientRect().width).toBeLessThanOrEqual(260);
+  expect(stories.getBoundingClientRect().width).toBeGreaterThan(1600 - 260 - 100);
+});
+
 test('stacks the API under the header below 560px', () => {
   const { aside, head, stories } = apiPage(500);
   expect(aside.getBoundingClientRect().top).toBeGreaterThanOrEqual(head.getBoundingClientRect().bottom - 1);
