@@ -1,0 +1,15 @@
+{
+ "pairs": [],
+ "a": [
+  "The Resolution widget's \"active tool\" is the first registry id alphabetically, not the canvas's active tool",
+  "The Resolution widget's `key` gesture can never match a binding",
+  "Source lookup globs the wrong directories: kit symbols never resolve, and draw links point at a nonexistent path",
+  "The Properties category never lists the kinds draw's presets add (text), because the probe reports core's defaults",
+  "Draw's own action glyphs are listed twice under one id, as an `action` icon and as an `app` icon",
+  "The inspector's selected entry is a stale snapshot: its detail never updates when the probe's snapshot arrives",
+  "Every shape kind's \"op factories\" links go nowhere: the tree has no op-factory category",
+  "A deep link that has not resolved yet keeps waiting, and later overrides the user's own pick",
+  "Gesture pages and counts ignore 7 of the 16 catalogued gesture kinds on tools"
+ ],
+ "b": []
+}

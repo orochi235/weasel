@@ -1,0 +1,52 @@
+{
+ "id": "apps.shared",
+ "commit": "7192f7a6fc5b8fa10a7ab628983a47025811c0dc",
+ "date": "2026-11-17",
+ "files": [
+  "apps/shared/buildInfo.ts",
+  "apps/shared/defaultFont.ts",
+  "apps/shared/hashRoute.ts",
+  "apps/shared/labs.ts",
+  "apps/shared/markdown.ts",
+  "apps/shared/packageDocs.ts",
+  "apps/shared/packageRoutes.ts",
+  "apps/shared/prefsRoundTrip.ts",
+  "apps/shared/reference.ts",
+  "apps/shared/releases.ts"
+ ],
+ "a": 5,
+ "b": 1,
+ "m": 1,
+ "distinct": 5,
+ "chapman": 5,
+ "unfound": 0,
+ "read": {
+  "A": 10,
+  "B": 10
+ },
+ "patches": 5,
+ "questions": 0,
+ "budgetHit": [],
+ "jobs": {
+  "minutes": {
+   "A": 2.4,
+   "B": 2.5,
+   "match": 0.1,
+   "fix": 5.6
+  },
+  "nodes": {
+   "A": "studio",
+   "B": "studio",
+   "fix": "teitou"
+  },
+  "tokens": 4301014,
+  "costUsd": 2.8
+ },
+ "fixCommits": [
+  "64c8bd82d83c1f78e0eaf3e0d5f2002458b77e25",
+  "b9b0a766076efe8496ae238a7c75defc3eadab28",
+  "46f4378e828ae30852956e57732e47b234f45053",
+  "f90f54cb556b6fd82fe5db0a91e0b18b7088a506",
+  "51f445cfc8acee7f0ad82e4dd3fb7e39a0aa225f"
+ ]
+}

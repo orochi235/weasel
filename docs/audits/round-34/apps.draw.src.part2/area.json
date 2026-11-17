@@ -1,0 +1,83 @@
+{
+ "id": "apps.draw.src.part2",
+ "commit": "7192f7a6fc5b8fa10a7ab628983a47025811c0dc",
+ "date": "2026-11-17",
+ "files": [
+  "apps/draw/src/opacityScrub/OpacityHud.module.css",
+  "apps/draw/src/opacityScrub/OpacityHud.tsx",
+  "apps/draw/src/opacityScrub/computeScrubbedPaints.ts",
+  "apps/draw/src/opacityScrub/useOpacityScrub.ts",
+  "apps/draw/src/openSession.ts",
+  "apps/draw/src/openSvg.ts",
+  "apps/draw/src/outlinesAdapter.ts",
+  "apps/draw/src/page.css",
+  "apps/draw/src/pageLayers.ts",
+  "apps/draw/src/pages/DrawPageStrip.tsx",
+  "apps/draw/src/pages/drawPages.ts",
+  "apps/draw/src/pages/pageCommands.ts",
+  "apps/draw/src/pages/pageStrip.css",
+  "apps/draw/src/paintRenderers.tsx",
+  "apps/draw/src/paperSizes.ts",
+  "apps/draw/src/pasteOmissions.ts",
+  "apps/draw/src/persistence.ts",
+  "apps/draw/src/prefs.ts",
+  "apps/draw/src/recorder.ts",
+  "apps/draw/src/recording/contribution.tsx",
+  "apps/draw/src/recording/depSchemaAugmentation.ts",
+  "apps/draw/src/recording/session.ts",
+  "apps/draw/src/recording/useRecording.ts",
+  "apps/draw/src/recordingIO.ts",
+  "apps/draw/src/registry/RegistrySelect.tsx",
+  "apps/draw/src/registry/toolEnumSource.ts",
+  "apps/draw/src/registry/types.ts",
+  "apps/draw/src/releaseCompound.ts",
+  "apps/draw/src/replay.ts",
+  "apps/draw/src/saveSvg.ts",
+  "apps/draw/src/sceneLoading.ts",
+  "apps/draw/src/sessionRecords.ts",
+  "apps/draw/src/sidebarPanels.tsx",
+  "apps/draw/src/svgCorners.ts",
+  "apps/draw/src/svgEffects.ts",
+  "apps/draw/src/svgExport.ts",
+  "apps/draw/src/svgImport.ts",
+  "apps/draw/src/svgInterop.ts"
+ ],
+ "a": 8,
+ "b": 6,
+ "m": 5,
+ "distinct": 9,
+ "chapman": 9.5,
+ "unfound": 0.5,
+ "read": {
+  "A": 38,
+  "B": 38
+ },
+ "patches": 8,
+ "questions": 1,
+ "budgetHit": [],
+ "jobs": {
+  "minutes": {
+   "A": 5.9,
+   "B": 4.2,
+   "match": 0.1,
+   "fix": 16.3
+  },
+  "nodes": {
+   "A": "studio",
+   "B": "teitou",
+   "fix": "teitou"
+  },
+  "tokens": 19919398,
+  "costUsd": 9.31
+ },
+ "fixCommits": [
+  "9a372a45c083bbfa70bcde32e903aedb21007a3e",
+  "f73a21685b4b7fb7e31de53b3785f7476b6fd77e",
+  "c8b25bb519b3cdc8da6cbb9789ddb729ac95d56e",
+  "91b4b4102a2679303739e65e1150006a53fb254f",
+  "3cf9642d8a249718ac68969e7d2ea2df17889de6",
+  "3fb3f7b52397e785defde6dac1a987729bd1af66",
+  "86c3dda83ac7bd6332e6a03f09e1604b7460a2f2",
+  "1c1e8062fee4997afb162e1d028d806379ef69f0"
+ ]
+}

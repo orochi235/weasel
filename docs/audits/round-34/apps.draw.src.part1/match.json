@@ -1,0 +1,9 @@
+{
+ "pairs": [],
+ "a": [
+  "`isInstalled` reads `document.fonts.check` as \"installed\", which it reports true for families that are absent",
+  "`effectNodeName` throws on a path effect whose kind this build does not know, taking down the Layers panel",
+  "The swatches' \"none\" toggle re-implements `toggleFocusedNone` instead of calling it"
+ ],
+ "b": []
+}
