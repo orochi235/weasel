@@ -61,10 +61,10 @@ export { prefShownReader, prefDecodedValue } from './shown';
 export { prefValueOrDefault, prefValueAbsent } from './leafValue';
 export {
   isPrefScope,
-  scopeSelectors as prefScopeSelectors,
-  memberAt as prefScopeValue,
-  overrideOptions as prefOverrideOptions,
-  scopeOptionValue as prefScopeOptionValue,
+  prefScopeSelectors,
+  prefScopeValue,
+  prefOverrideOptions,
+  prefScopeOptionValue,
   PREF_ELSE,
   type PrefScope,
   type PrefSelection,

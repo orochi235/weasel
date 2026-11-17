@@ -10,10 +10,10 @@ export { prefLeavesHolding, prefLeavesHoldingIn, UNSEEN, type PrefLeavesFound, t
 export {
   dropUnlisted,
   mapScopeValues,
-  overrideOptions,
+  prefOverrideOptions,
   repairScope,
-  scopeOptionValue,
-  scopeSelectors,
+  prefScopeOptionValue,
+  prefScopeSelectors,
   selectionWeights,
   upgradeScope,
   weighScope,

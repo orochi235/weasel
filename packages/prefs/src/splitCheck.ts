@@ -2,7 +2,7 @@
 // `scopes` that names something else: what a store warns of.
 
 import { type PrefGroup, prefHoldsValue, prefLeaves, prefOverridesOf, type PrefEnum, type PrefLeaf } from '@weasel-js/prefs-schema';
-import { overrideOptions, scopeSelectorsOf, scopeSelectors } from '@weasel-js/prefs-schema/internal';
+import { prefOverrideOptions, scopeSelectorsOf, prefScopeSelectors } from '@weasel-js/prefs-schema/internal';
 
 /** One thing wrong with a pref's scopes, or with what the schema admits. */
 export interface PrefScopeProblem {
@@ -65,7 +65,7 @@ function perProblems(at: string, leaf: PrefLeaf, leaves: ReadonlyMap<string, Pre
     }
     const options = new Set((leaves.get(path) as PrefEnum).options.map((option) => option.value));
     const overrides = prefOverridesOf(leaf, path);
-    for (const option of overrides ? overrideOptions(overrides) : []) {
+    for (const option of overrides ? prefOverrideOptions(overrides) : []) {
       if (!options.has(option)) out.push({ code: 'per', at, path, problem: `its closed list names "${option}", which is no option of "${path}"` });
     }
   });
@@ -82,7 +82,7 @@ export function checkPrefScopes(schema: PrefGroup): PrefScopeProblem[] {
   }
   for (const [at, leaf] of leaves) {
     const axes = scopeSelectorsOf(leaf);
-    for (const path of scopeSelectors(leaf.defaultScope)) {
+    for (const path of prefScopeSelectors(leaf.defaultScope)) {
       if (axes?.includes(path)) continue;
       out.push({ code: 'default', at, path, problem: `its defaultScope is split by "${path}", which its scopes do not name` });
     }

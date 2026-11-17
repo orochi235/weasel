@@ -5,7 +5,7 @@
 import { getOwn } from '@weasel-js/registry';
 import type { OwnedRecordCache } from '@weasel-js/storage';
 import { blendPref, type PrefBlend } from './blend';
-import { assignPrefValueAtPath, setOwnPrefValue, prefOverridesLookup, scopeSelectors, repairScope, selectionWeights, weighScope } from '@weasel-js/prefs-schema/internal';
+import { assignPrefValueAtPath, setOwnPrefValue, prefOverridesLookup, prefScopeSelectors, repairScope, selectionWeights, weighScope } from '@weasel-js/prefs-schema/internal';
 import { prefScopedDefault, isPrefScope, type PrefScope, type PrefSelection, type PrefWeights, type PrefValidator, repairPrefValue, type PrefLeaf } from '@weasel-js/prefs-schema';
 import { isAutoRecord, recordValue } from './stamp';
 import { prefCanAuto, prefStartsAuto } from './autoReset';
@@ -122,7 +122,7 @@ export function createSnapshots(source: SnapshotSource): { current: () => Snapsh
     for (const [path, leaf] of leaves) {
       const value = held.get(path);
       if (isPrefScope(value)) scopes.set(path, value);
-      for (const selector of scopeSelectors(value)) splitUnder.set(selector, [...(splitUnder.get(selector) ?? []), path]);
+      for (const selector of prefScopeSelectors(value)) splitUnder.set(selector, [...(splitUnder.get(selector) ?? []), path]);
       const read = resolveHeld(source, leaf, value, weights);
       byPath.set(path, read);
       assignPrefValueAtPath(tree, path, read);
