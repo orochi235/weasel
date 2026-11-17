@@ -11,7 +11,7 @@ import {
 } from '@weasel-js/core';
 import { createSymmetry } from './controller';
 import { symmetryRegistry } from './group';
-import { guideHandles, symmetryGuideLayer, type SymmetryHandle } from './guide';
+import { guideHandles, createSymmetryGuideLayer, type SymmetryHandle } from './guide';
 import { handleChange, handleDragAction } from './handleDrag';
 import { symmetryTransforms, type SymmetrySpec } from './kinds';
 import { lookup, maxDiff, near, point, runs, spec, tally, timeoutFor } from './pbt.fixture';
@@ -247,7 +247,7 @@ describe('the guide', () => {
   it('takes a press on each handle as a handle within its hit radius, and draws nothing that is not finite', () => {
     const t = tally();
     fc.assert(fc.property(spec(), point(), view, (s, c, vw) => {
-      const layer = symmetryGuideLayer({ current: () => ({ group: 'g', spec: s, center: c }), subscribe: () => () => {} });
+      const layer = createSymmetryGuideLayer({ current: () => ({ group: 'g', spec: s, center: c }), subscribe: () => () => {} });
       for (const h of guideHandles(s, c, vw, KNOB, 0, 9)) {
         const wx = h.at.x / vw.scale.x + vw.x;
         const wy = h.at.y / vw.scale.y + vw.y;

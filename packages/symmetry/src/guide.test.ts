@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import type { View } from '@weasel-js/core';
 import { boundsOfPath } from '@weasel-js/geom';
-import { guideHandles, symmetryGuideLayer, type SymmetryHandlePress } from './guide';
+import { guideHandles, createSymmetryGuideLayer, type SymmetryHandlePress } from './guide';
 import { handleChange } from './handleDrag';
 import { DEFAULT_SYMMETRY, HORIZONTAL_AXIS, type SymmetrySpec } from './kinds';
 
@@ -42,9 +42,9 @@ describe('guideHandles', () => {
   });
 });
 
-describe('symmetryGuideLayer', () => {
+describe('createSymmetryGuideLayer', () => {
   it('claims a press on a handle, saying which, and nothing elsewhere on the line', () => {
-    const layer = symmetryGuideLayer(source(spec({ kind: 'mirror', angle: HORIZONTAL_AXIS })));
+    const layer = createSymmetryGuideLayer(source(spec({ kind: 'mirror', angle: HORIZONTAL_AXIS })));
     const hit = layer.hitTest!(50, 50, undefined, VIEW, DIMS);
     expect(hit?.strength).toBe('exclusive');
     expect(hit?.initialScratch).toEqual({ handle: 'center', group: 'g' });
@@ -55,7 +55,7 @@ describe('symmetryGuideLayer', () => {
   it('draws the handle a press takes on top where two overlap', () => {
     // A step shorter than the hit radius puts the step handle over the center, and a press takes the step.
     const s = spec({ kind: 'repeat', angle: 0, spacing: 1 });
-    const layer = symmetryGuideLayer(source(s));
+    const layer = createSymmetryGuideLayer(source(s));
     const hit = layer.hitTest!(C.x, C.y, undefined, VIEW, DIMS);
     expect((hit?.initialScratch as SymmetryHandlePress).handle).toBe('step');
     const dots = layer.draw(undefined, VIEW, DIMS).filter((c) => c.kind === 'path' && 'fill' in c && c.fill && c.stroke);
@@ -66,13 +66,13 @@ describe('symmetryGuideLayer', () => {
 
   it('outlines a wallpaper\'s extent', () => {
     const wall = spec({ kind: 'wallpaper', extent: { x: -10, y: -20, width: 30, height: 40 } });
-    const draws = symmetryGuideLayer(source(wall)).draw(undefined, VIEW, DIMS);
+    const draws = createSymmetryGuideLayer(source(wall)).draw(undefined, VIEW, DIMS);
     const outline = draws.find((d) => d.kind === 'path' && d.stroke?.dash);
     expect(outline?.kind === 'path' && boundsOfPath(outline.path)).toMatchObject({ x: 80, y: 60, width: 60, height: 80 });
   });
 
   it('draws nothing without an active group', () => {
-    const layer = symmetryGuideLayer({ current: () => null, subscribe: () => () => {} });
+    const layer = createSymmetryGuideLayer({ current: () => null, subscribe: () => () => {} });
     expect(layer.draw(undefined, VIEW, { width: 100, height: 100, dpr: 1 })).toEqual([]);
   });
 });

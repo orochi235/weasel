@@ -13,7 +13,7 @@ export {
 } from './group';
 export { bakeSymmetry, carryPose, type BakeResult, type BoxPose } from './bake';
 export {
-  SYMMETRY_GUIDE_ID, SYMMETRY_HANDLE_KIND, guideHandles, symmetryGuideLayer,
+  SYMMETRY_GUIDE_ID, SYMMETRY_HANDLE_KIND, guideHandles, createSymmetryGuideLayer,
   type SymmetryGuideSource, type SymmetryGuideStyle, type SymmetryHandle, type SymmetryHandlePress,
 } from './guide';
 export { SYMMETRY_HANDLE_ACTION_ID, handleChange, handleDragAction, type SymmetryHandleSnap } from './handleDrag';

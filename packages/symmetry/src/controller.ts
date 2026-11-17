@@ -7,7 +7,7 @@ import {
 } from './group';
 import { keepContentsPut, reachFrom } from './frames';
 import { handleDragAction, SYMMETRY_HANDLE_ACTION_ID } from './handleDrag';
-import { SYMMETRY_GUIDE_ID, SYMMETRY_HANDLE_KIND, symmetryGuideLayer, type SymmetryGuideStyle } from './guide';
+import { SYMMETRY_GUIDE_ID, SYMMETRY_HANDLE_KIND, createSymmetryGuideLayer, type SymmetryGuideStyle } from './guide';
 import type { SymmetrySpec } from './kinds';
 import type { Point } from '@weasel-js/geom';
 
@@ -127,7 +127,7 @@ export function createSymmetry(scene: Scene<unknown, string, unknown>, opts: Cre
     contribution: undefined as unknown as SurfaceContribution,
   };
 
-  const guide = symmetryGuideLayer({
+  const guide = createSymmetryGuideLayer({
     current() {
       const id = ctrl.active();
       const g = readGroup(scene, id);

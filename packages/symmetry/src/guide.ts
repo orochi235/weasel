@@ -110,7 +110,7 @@ function mirrorAngles(spec: SymmetrySpec): number[] {
  * move the center, turn the axis and stretch a repeat. Only a handle is hit;
  * a stroke can start anywhere else, on a line included.
  */
-export function symmetryGuideLayer(source: SymmetryGuideSource, style: SymmetryGuideStyle = {}): RenderLayer<unknown> {
+export function createSymmetryGuideLayer(source: SymmetryGuideSource, style: SymmetryGuideStyle = {}): RenderLayer<unknown> {
   const color = style.color ?? 'rgba(0, 140, 255, 0.9)';
   const faint = style.faintColor ?? 'rgba(0, 140, 255, 0.35)';
   const r = style.handleRadiusPx ?? 5;
