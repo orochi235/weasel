@@ -199,11 +199,11 @@ export const AREA_SELECT_ID = 'selection.areaSelect';
 
 /** A press on empty canvas: no hit, and not on chrome over it — the rotation
  *  handle and the outer half of a resize handle sit off the body. */
-export const onEmptyCanvas = hitPredicate((hit, body) => hit == null && body === 'empty');
+export const isEmptyOffChrome = hitPredicate((hit, body) => hit == null && body === 'empty');
 
 /** A press on a node, off chrome. With no `classifyTarget` wired there is no
  *  body class to read, and every press off chrome passes. */
-export const onBody = hitPredicate((hit, body) => hit == null && body !== 'empty');
+export const isBodyOffChrome = hitPredicate((hit, body) => hit == null && body !== 'empty');
 
 /** An always-live entry that marquee-selects on a drag across empty canvas,
  *  under any tool that does not claim the drag itself. No preset installs it:
@@ -214,7 +214,7 @@ export function areaSelectContribution(): Contribution {
     id: AREA_SELECT_ID,
     eligibility: { always: true },
     bindings: [{
-      spec: { kind: 'drag', target: { kindOf: onEmptyCanvas }, mods: { shift: 'optional' } },
+      spec: { kind: 'drag', target: { kindOf: isEmptyOffChrome }, mods: { shift: 'optional' } },
       actionId: 'areaSelect',
       opts: { id: 'selection.areaSelect.drag' },
     }],

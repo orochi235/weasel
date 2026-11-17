@@ -9,7 +9,7 @@ import { createSelectPickAction } from './selectPick';
 import { createCollapseDeferredAction } from './collapseDeferred';
 import { GROUP_LEAVE_PRESS_BINDING } from './groupEntry';
 import { createSelectDeepAction } from './selectDeep';
-import { onBody, onEmptyCanvas } from './selectionContributions';
+import { isBodyOffChrome, isEmptyOffChrome } from './selectionContributions';
 import { icon } from '../../icons.gen';
 import type {} from '@weasel-js/core';
 
@@ -139,7 +139,7 @@ const SELECT_TOOL_BINDINGS = [
   {
     spec: {
       kind: 'pointerDown' as const,
-      target: { kindOf: onBody },
+      target: { kindOf: isBodyOffChrome },
       mods: { mod: true, alt: true, shift: 'optional' as const },
     },
     actionId: 'select.deep',
@@ -164,7 +164,7 @@ const SELECT_TOOL_BINDINGS = [
   {
     spec: {
       kind: 'pointerDown' as const,
-      target: { kindOf: onBody },
+      target: { kindOf: isBodyOffChrome },
       mods: ANY_MODS,
     },
     actionId: 'select.pick',
@@ -175,25 +175,25 @@ const SELECT_TOOL_BINDINGS = [
   {
     spec: {
       kind: 'click' as const,
-      target: { kindOf: onBody },
+      target: { kindOf: isBodyOffChrome },
       mods: ANY_MODS,
     },
     actionId: 'select.collapseDeferred',
     opts: { id: 'select.collapseDeferred' },
   },
   GROUP_LEAVE_PRESS_BINDING,
-  // Empty drag → marquee, adding to the selection with Shift held. `onEmptyCanvas` rather than a bare `'empty'`
+  // Empty drag → marquee, adding to the selection with Shift held. `isEmptyOffChrome` rather than a bare `'empty'`
   // target: the ambient bindings that own the handles rank below this
   // active one, so `'empty'` took drags that start on them.
   {
-    spec: { kind: 'drag' as const, target: { kindOf: onEmptyCanvas }, mods: { shift: 'optional' as const } },
+    spec: { kind: 'drag' as const, target: { kindOf: isEmptyOffChrome }, mods: { shift: 'optional' as const } },
     actionId: 'areaSelect',
     opts: { id: 'select.marquee' },
   },
   // resize/rotate bind only drag (no click), so a click on either handle
   // (body genuinely empty) would hit target:'empty' and wrongly clear selection.
   {
-    spec: { kind: 'click' as const, target: { kindOf: onEmptyCanvas }, mods: {} },
+    spec: { kind: 'click' as const, target: { kindOf: isEmptyOffChrome }, mods: {} },
     actionId: 'clearSelection',
     opts: { id: 'select.clearOnClick' },
   },
