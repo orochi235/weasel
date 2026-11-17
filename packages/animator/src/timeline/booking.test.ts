@@ -308,3 +308,23 @@ describe('event booking clock mapping', () => {
     expect(r.whens()).toEqual([START + 1000 + 600]);
   });
 });
+
+describe('event booking on an endless timeline', () => {
+  it('books only within its lookahead, at finite clock times', () => {
+    const r = withEvents({ duration: Infinity }, [0, 60_000]);
+    r.frame(0);
+    expect(r.whens()).toEqual([START]);
+    r.frame(59_950);
+    expect(r.whens()).toEqual([START, START + 60_000]);
+  });
+
+  it('retimes a booking on an endless timeline when the rate changes', () => {
+    const r = withEvents({ duration: Infinity }, [150]);
+    r.frame(0);
+    r.frame(60);
+    expect(r.live().map((b) => b.when)).toEqual([START + 150]);
+    r.handle.setTimeScale(2);
+    r.frame(70, 80);
+    expect(r.live().map((b) => b.when)).toEqual([START + 70 + 35]);
+  });
+});

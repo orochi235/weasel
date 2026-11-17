@@ -70,6 +70,9 @@ interface Booking {
 const endWithin = (end: number, from: number, timeline: NestedTimeline): number =>
   Math.min(end, from + (timeline.duration ?? Infinity));
 
+/** `laps` laps of `duration`: none of an endless duration is none, not `NaN`. */
+const lapsOf = (laps: number, duration: number): number => (laps === 0 ? 0 : laps * duration);
+
 const isAfter = (a: Cursor, b: Cursor): boolean => a.lap > b.lap || (a.lap === b.lap && a.r > b.r);
 
 export function createBooker(opts: EventBooking, host: BookerHost): Booker {
@@ -86,7 +89,7 @@ export function createBooker(opts: EventBooking, host: BookerHost): Booker {
   const playheadCursor = (): Cursor => ({ lap: host.lap(), r: host.playhead() });
 
   const unwrapped = (b: { lap: number; r: number }): number =>
-    (b.lap - host.lap()) * host.duration() + b.r;
+    lapsOf(b.lap - host.lap(), host.duration()) + b.r;
 
   const ahead = (b: Booking): boolean => isAfter(b, playheadCursor());
 
@@ -116,7 +119,7 @@ export function createBooker(opts: EventBooking, host: BookerHost): Booker {
     const { events } = track;
     let c = cursors.get(track) ?? start;
     for (;;) {
-      const lapStart = (c.lap - lap) * duration;
+      const lapStart = lapsOf(c.lap - lap, duration);
       if (lapStart > horizon) break;
       const i = (c.open ? firstAtOrAfter : firstAfter)(events, c.r - at);
       if (i >= events.length || at + events[i].t > Math.min(duration, end)) {
