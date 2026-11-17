@@ -4,7 +4,7 @@ I couldn't save `.skulk/out/findings.md`: permission to write it was declined. A
 
 ## A user callback that throws inside the codec or hold pass leaves `framing` stuck true, and the animator never runs another frame
 - where: packages/animator/src/engine/frame.ts:105-123 (createFrame `tick`)
-- scenario: some user code throws while a frame reads its voices or holds. Examples: a tween's custom `easing`, which runs inside blits during `host.codec.frame(dt)`; a target tween's `interpolate`/`interpolator`, which is `codec.path`'s `at`; a function-valued `animator.hold({ value: () => … })`, which `targets.settle()` → `store.frame()` → `ask` calls. Only the per-animation ticks are wrapped in try/catch. A throw here leaves the frame after `framing = true` and before `framing = false` and `requestFrame()`, and `useAnimator`/`hostAnimator` don't catch it. After that, `framing()` answers true forever:
+- scenario: some user code throws while a frame reads its voices or holds. Examples: a tween's custom `easing`, which runs inside blits during `host.codec.frame(dt)`; a target tween's `interpolate`/`interpolator`, which is `codec.path`'s `at`; a function-valued `animator.hold({ value: () => … })`, which `targets.settle()` → `store.frame()` → `ask` calls. Only the per-animation ticks are wrapped in try/catch. A throw here leaves the frame after `framing = true` and before `framing = false` and `requestFrame()`, and `useAnimator`/`createHostedAnimator` don't catch it. After that, `framing()` answers true forever:
   - `table.register` never asks for a frame (`!host.framing()`).
   - `ctx.touch` only adds the target to `touched`.
   - `ctx.wake` does nothing.

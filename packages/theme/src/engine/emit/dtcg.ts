@@ -24,7 +24,7 @@ interface Layer {
   modes: Record<string, Record<string, DtcgGroup>>;
 }
 
-/** A DTCG document as {@link toDTCG} writes it. */
+/** A DTCG document as {@link toDtcg} writes it. */
 export interface DtcgExport {
   readonly name: string;
   readonly defaultMode?: string;
@@ -38,8 +38,8 @@ export interface DtcgExport {
 }
 
 /**
- * A theme's own tokens as a DTCG document `loadDTCG` reads back. `extends` is
- * not carried; pass it to `loadDTCG`. Every mode the chain declares is written,
+ * A theme's own tokens as a DTCG document `fromDtcg` reads back. `extends` is
+ * not carried; pass it to `fromDtcg`. Every mode the chain declares is written,
  * so a token that leaves one out still falls through to the parent on the way back.
  *
  * DTCG has one variant dimension, so the plain groups hold mode, with every
@@ -48,7 +48,7 @@ export interface DtcgExport {
  * layer per combination of non-default values some token actually varies by.
  * The theme's own ramps and tints travel under `com.weasel.ramps` and `com.weasel.tints`.
  */
-export function toDTCG(theme: Theme): DtcgExport {
+export function toDtcg(theme: Theme): DtcgExport {
   const axes = themeAxes(theme);
   const defaults = fullAxisChoice(axes);
   const nonMode = Object.keys(axes).filter((a) => a !== 'mode');

@@ -18,7 +18,7 @@ import { SegmentedBar } from '@weasel-js/ui/components/Segmented';
 import { ToolPalette } from '@weasel-js/ui/components/ToolPalette';
 import styles from './ModesDemo.module.css';
 import { DemoStage } from './DemoStage';
-import { movePreset, pickPreset, transformPreset, shapeToolKitPreset } from '@weasel-js/editing';
+import { movePreset, pickPreset, transformPreset, shapeToolsOfferedPreset } from '@weasel-js/editing';
 
 const W = 620, H = 340;
 
@@ -151,7 +151,7 @@ export function ModesDemo() {
             backgroundFill={{ color: '#ffffff' }}
             scene={scene}
             selectionOptions={{ mode: 'multiple' }}
-            features={[pickPreset, movePreset, transformPreset, shapeToolKitPreset]}
+            features={[pickPreset, movePreset, transformPreset, shapeToolsOfferedPreset]}
             defaultTools={['select', 'hand', 'rect', 'ellipse']}
             modes={registry}
             ambient={shortcuts}

@@ -13,7 +13,7 @@
  */
 
 import type { FontStyle } from './fontStyle';
-import { getFont } from './registerFont';
+import { getAtlasFont } from './registerFont';
 import { PAGE_SIZE, SDF_RADIUS } from './dynamic/dynamicAtlas';
 import { BAKE_SIZE } from './dynamic/glyphRasterizer';
 
@@ -188,7 +188,7 @@ export function glyphFieldScale(
   source: 'atlas' | 'canvas', family: string, weight: number, style: FontStyle,
 ): readonly [number, number] | undefined {
   if (source === 'canvas') return CANVAS_FIELD_SCALE;
-  const font = getFont(family, weight, style)?.font;
+  const font = getAtlasFont(family, weight, style)?.font;
   if (!font) return undefined;
   const range = font.distanceRange ?? DEFAULT_MSDF_RANGE;
   const u = font.common.scaleW / range, v = font.common.scaleH / range;
@@ -217,7 +217,7 @@ export function syntheticBoldGrowth(
   source: 'atlas' | 'canvas', family: string, weight: number, style: FontStyle,
 ): number | undefined {
   if (source === 'canvas') return (SYNTH_BOLD_AMOUNT * SDF_RADIUS) / BAKE_SIZE;
-  const font = getFont(family, weight, style)?.font;
+  const font = getAtlasFont(family, weight, style)?.font;
   if (!font) return undefined;
   return (SYNTH_BOLD_AMOUNT * (font.distanceRange ?? DEFAULT_MSDF_RANGE)) / font.info.size;
 }

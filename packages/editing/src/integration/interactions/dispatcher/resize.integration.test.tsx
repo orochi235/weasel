@@ -11,7 +11,7 @@ import type {} from '@weasel-js/core'; // augments DepSchema with 'selection' an
 import { createScene, asNodeId } from '@weasel-js/core/engine';
 import type { Scene } from '@weasel-js/core/engine';
 import type { SelectionApi, AffordanceHit } from '@weasel-js/routing';
-import { SELECTION_TRANSFORM_ID, selectionTransformContribution } from '@weasel-js/editing';
+import { SELECTION_TRANSFORM_ID, createSelectionTransformContribution } from '@weasel-js/editing';
 import { resizeAction } from '../../../actions/resize/action';
 
 type D = { kind: 'rect' };
@@ -62,7 +62,7 @@ function MountDispatcher({
     actions: registry!,
     // resize has no default binding; the `transform` preset's handle binding
     // is what routes a handle drag to it.
-    entriesById: new Map([[SELECTION_TRANSFORM_ID, selectionTransformContribution()]]),
+    entriesById: new Map([[SELECTION_TRANSFORM_ID, createSelectionTransformContribution()]]),
     affordanceAt,
   });
   return <canvas ref={canvasRef} data-testid="canvas" />;

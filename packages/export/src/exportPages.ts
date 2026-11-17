@@ -12,7 +12,7 @@ export function pageRegion(page: PlacedPage): ExportRegion {
  * as that document places it, found by its id, and named for it. A page the
  * document no longer holds fails the export.
  */
-export function pageRegionsOf(pages: readonly PlacedPage[]): (doc: ExportScene) => readonly ExportRegion[] {
+export function pageRegionsSource(pages: readonly PlacedPage[]): (doc: ExportScene) => readonly ExportRegion[] {
   const ids = pages.map((p) => p.id);
   return (doc) => {
     const placed = new Map(placedPagesOf(doc).map((p) => [p.id, p]));
@@ -24,15 +24,15 @@ export function pageRegionsOf(pages: readonly PlacedPage[]): (doc: ExportScene) 
   };
 }
 
-/** One page as {@link pageRegionsOf} reads it: the region source of a single-region export. */
-export function pageRegionOf(page: PlacedPage): (doc: ExportScene) => ExportRegion {
-  const read = pageRegionsOf([page]);
+/** One page as {@link pageRegionsSource} reads it: the region source of a single-region export. */
+export function pageRegionSource(page: PlacedPage): (doc: ExportScene) => ExportRegion {
+  const read = pageRegionsSource([page]);
   return (doc) => read(doc)[0]!;
 }
 
 /**
  * Write `pages` of `scene` in the format registered as `formatId`, each page
- * a region named for the page: `exportRegions` over {@link pageRegionsOf}. A
+ * a region named for the page: `exportRegions` over {@link pageRegionsSource}. A
  * single-region format takes one page.
  */
 export function exportPages(
@@ -41,5 +41,5 @@ export function exportPages(
   formatId: string,
   opts: ExportOptions & Readonly<Record<string, unknown>> = {},
 ): Promise<Blob> {
-  return exportRegions(scene, pageRegionsOf(pages), formatId, opts);
+  return exportRegions(scene, pageRegionsSource(pages), formatId, opts);
 }

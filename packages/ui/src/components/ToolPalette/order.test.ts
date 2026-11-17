@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { type Tool } from '@weasel-js/core';
 import { groupTools } from './order';
-import { BUILTIN_TOOL_IDS, TOOL_GROUP_ORDER } from '@weasel-js/editing';
+import { KIT_TOOL_IDS, TOOL_GROUP_ORDER } from '@weasel-js/editing';
 
 const tool = (id: string, group?: string): Tool => ({ id, presentation: { label: id, group } }) as Tool;
 const ids = (groups: ReturnType<typeof groupTools>) => groups.map(({ key, tools }) => [key, tools.map((t) => t.id)]);
@@ -11,7 +11,7 @@ describe('groupTools', () => {
     const list = [
       tool('text', 'type'), tool('hand', 'view'), tool('rect', 'shape'), tool('lasso', 'select'), tool('select', 'select'),
     ];
-    expect(ids(groupTools(list, TOOL_GROUP_ORDER, BUILTIN_TOOL_IDS))).toEqual([
+    expect(ids(groupTools(list, TOOL_GROUP_ORDER, KIT_TOOL_IDS))).toEqual([
       ['select', ['select', 'lasso']],
       ['view', ['hand']],
       ['shape', ['rect']],
@@ -21,21 +21,21 @@ describe('groupTools', () => {
 
   it('orders a group by the natural tool order, whatever order the tools registered in', () => {
     const list = ['star', 'line', 'rect', 'polygon', 'ellipse'].map((id) => tool(id, 'shape'));
-    expect(ids(groupTools(list, TOOL_GROUP_ORDER, BUILTIN_TOOL_IDS))).toEqual([
+    expect(ids(groupTools(list, TOOL_GROUP_ORDER, KIT_TOOL_IDS))).toEqual([
       ['shape', ['rect', 'ellipse', 'line', 'polygon', 'star']],
     ]);
   });
 
   it('keeps tools the order does not name in registration order, after those it does', () => {
     const list = [tool('eyedropper', 'view'), tool('measure', 'view'), tool('hand', 'view')];
-    expect(ids(groupTools(list, TOOL_GROUP_ORDER, BUILTIN_TOOL_IDS))).toEqual([
+    expect(ids(groupTools(list, TOOL_GROUP_ORDER, KIT_TOOL_IDS))).toEqual([
       ['view', ['hand', 'eyedropper', 'measure']],
     ]);
   });
 
   it('keeps unknown groups in registration order after the known ones, and misc last', () => {
     const list = [tool('orphan'), tool('b', 'zeta'), tool('select', 'select'), tool('a', 'alpha')];
-    expect(ids(groupTools(list, TOOL_GROUP_ORDER, BUILTIN_TOOL_IDS))).toEqual([
+    expect(ids(groupTools(list, TOOL_GROUP_ORDER, KIT_TOOL_IDS))).toEqual([
       ['select', ['select']], ['zeta', ['b']], ['alpha', ['a']], ['misc', ['orphan']],
     ]);
   });
@@ -51,6 +51,6 @@ describe('groupTools', () => {
 describe('the natural order', () => {
   it('names the built-in tool sets, selection then navigation first', () => {
     expect(TOOL_GROUP_ORDER).toEqual(['select', 'view', 'shape']);
-    expect(BUILTIN_TOOL_IDS.slice(0, 3)).toEqual(['select', 'lasso', 'hand']);
+    expect(KIT_TOOL_IDS.slice(0, 3)).toEqual(['select', 'lasso', 'hand']);
   });
 });

@@ -103,7 +103,7 @@ const PASTE_EVENT_HANDLERS = [kitWeaselJsonHandler];
  * Bound to `text/plain` because that is the only flavor of a copy a paste
  * event carries; a paste without text stays the page's.
  */
-export const clipboardPasteEventAction = defineAction({
+export const clipboardPasteCopiedAction = defineAction({
   id: 'clipboard.pasteEvent',
   label: 'Paste copied nodes',
   defaultBinding: [{ spec: { kind: 'paste', types: ['text/plain'], mods: ANY_MODS }, opts: { id: 'clipboard.pasteEvent.paste' } }],

@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { resolveFontVariant, getFont, _resetFontRegistryForTests } from './registerFont';
+import { resolveFontVariant, getAtlasFont, _resetFontRegistryForTests } from './registerFont';
 import type { FontFallbackPolicy } from './fallback';
 import { setDefaultFontFamily, setFontFallbackPolicy, _resetFallbackForTests } from './fallback';
 import {
@@ -26,7 +26,7 @@ describe('substitute policy', () => {
 
     const result = resolveFontVariant('Comic Sans', 400, 'normal');
 
-    expect(result.entry).toBe(getFont('Inter', 400, 'normal'));
+    expect(result.entry).toBe(getAtlasFont('Inter', 400, 'normal'));
     expect(result.substituted).toEqual({ requested: 'Comic Sans', resolved: 'Inter' });
     // The atlas identity a renderer keys its texture lookup on. Reporting the
     // requested family here is what made substitution a visual no-op.
@@ -162,7 +162,7 @@ describe('canvas enrollment provenance', () => {
 
     setFontFallbackPolicy('substitute');
     const substituted = resolveFontVariant('Comic Sans', 400, 'normal');
-    expect(substituted.entry).toBe(getFont('Inter', 400, 'normal'));
+    expect(substituted.entry).toBe(getAtlasFont('Inter', 400, 'normal'));
     expect(substituted.substituted).toEqual({ requested: 'Comic Sans', resolved: 'Inter' });
     warn.mockRestore();
   });

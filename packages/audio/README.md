@@ -64,7 +64,7 @@ A `wave` of `{ partials }` sums sine oscillators at any ratios of the pitch,
 each with its own level and an optional exponential `decay` (a time constant in
 ms) — the partials of a bell, a bar or struck metal, which sit off the harmonic
 series where a `PeriodicWave` cannot reach. Levels are scaled to sum to 1.
-`partialPresets` holds a `bell`, `marimba` and `metal` to start from.
+`PARTIAL_PRESETS` holds a `bell`, `marimba` and `metal` to start from.
 
 `playNoise` is the same kind of voice with white, pink or brown noise as its
 source, looped from a buffer made once per color per context. Either voice takes
@@ -72,7 +72,7 @@ a `filter`: a biquad ahead of the envelope, whose cutoff can follow an envelope
 of its own, at `frequency + amount × level`.
 
 ```ts
-engine.playNote({ pitch: 'C5', wave: partialPresets.bell, duration: 1500, envelope: { release: 800 } });
+engine.playNote({ pitch: 'C5', wave: PARTIAL_PRESETS.bell, duration: 1500, envelope: { release: 800 } });
 engine.playNote({ pitch: 310, wave: { partials: [{ ratio: 1, decay: 110 }, { ratio: 1.71, gain: 0.5, decay: 80 }] } });
 // A thump: lowpassed noise whose cutoff falls from 4 kHz to 80 Hz.
 engine.playNoise({
@@ -90,7 +90,7 @@ harmonic past Nyquist is left out, so they do not alias; pan, position, and
 routing are not a kernel's.
 
 ```ts
-const samples = renderNote({ pitch: 'C5', wave: partialPresets.bell, duration: 1500 }, ctx.sampleRate);
+const samples = renderNote({ pitch: 'C5', wave: PARTIAL_PRESETS.bell, duration: 1500 }, ctx.sampleRate);
 const buffer = ctx.createBuffer(1, samples.length, ctx.sampleRate);
 buffer.getChannelData(0).set(samples);
 const bell = engine.register(buffer);
@@ -143,13 +143,13 @@ score.setMood({ valence: 0, tension: 0.7, urgency: 1 }); // from the next bar li
 ```
 
 The corners of that space are the stock devices of documentary and news
-scoring, listed in `scoreCues` with a sentence each on what they do: `dread`,
+scoring, listed in `SCORE_CUES` with a sentence each on what they do: `dread`,
 `investigation`, `wonder` and `urgency`. They work on a listener without asking
 them, so the score says what it is doing: `state()` and `onBar` give the cue in
 force, each cue's share of the mood (`cue.weights`), and every parameter the bar
 was written from. Show it.
 
-The layers underneath are usable on their own: `scoreParams(mood)` resolves a
+The layers underneath are usable on their own: `resolveScoreMood(mood)` resolves a
 mood, `scoreChord` and `scoreBar` write a chord and a bar of pattern events
 from the parameters, and `readScoreCue(mood)` names the cue.
 
@@ -188,14 +188,14 @@ first bus by default), which can be edited while it plays. Every structural
 edit crossfades — `add`, `remove`, `replace`, `connect`, `disconnect` — and
 `set` ramps a param. Sources are `createFileSourceNode` (a looping buffer),
 `createOscillatorNode` and `createNoiseNode`; `createGainNode`,
-`createPanNode`, `createMixNode`, `filterNode`, `delayNode`, `reverbNode` and
-`compressorNode` process, and `insertNode` wraps any insert effect. `tap(id)`
+`createPanNode`, `createMixNode`, `createFilterNode`, `createDelayNode`, `createReverbNode` and
+`createCompressorNode` process, and `createInsertNode` wraps any insert effect. `tap(id)`
 puts an analyser on a node. The graph is disposed with the engine.
 
 ```ts
 const g = engine.graph('music');
 g.add('osc', createOscillatorNode(engine.context, { frequency: 220 }));
-g.add('echo', delayNode(engine.context, { time: 300, feedback: 0.4 }));
+g.add('echo', createDelayNode(engine.context, { time: 300, feedback: 0.4 }));
 g.connect('osc', { node: 'echo', port: 'in' });
 g.connect('echo', { output: true });
 g.start();

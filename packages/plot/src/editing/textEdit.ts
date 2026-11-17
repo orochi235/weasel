@@ -15,7 +15,7 @@ import type { PlotEdit } from './dragAction';
 import { plotEditorOf } from './editors';
 
 /** The datum of a text mark an edit can set: one naming what it edits under `edit`, or `null` for any other node. */
-export function plotTextOf(node: { data: unknown } | undefined): PlotDatum | null {
+export function plotTextDatumOf(node: { data: unknown } | undefined): PlotDatum | null {
   const mark = plotMarkOf(node);
   return mark?.kind === 'text' && typeof mark.datum?.edit === 'string' ? mark.datum : null;
 }
@@ -30,7 +30,7 @@ function compiledText(scene: AnyScene, rootId: string, markId: string): string |
 }
 
 /** Whether `data` is a chart's text an edit can set. */
-export const isPlotText = (data: unknown): boolean => isTextData(data) && plotTextOf({ data }) !== null;
+export const isPlotText = (data: unknown): boolean => isTextData(data) && plotTextDatumOf({ data }) !== null;
 
 /**
  * Folds a text edit just written to one of a chart's text marks into its
@@ -42,7 +42,7 @@ export const isPlotText = (data: unknown): boolean => isTextData(data) && plotTe
  */
 export function foldPlotText(scene: AnyScene, textId: string, commit: (edit: PlotEdit & { label: string }) => void): void {
   const node = scene.get(textId as NodeId);
-  const datum = plotTextOf(node);
+  const datum = plotTextDatumOf(node);
   const rootId = datum === null ? null : node!.parent;
   const trait = rootId === null ? null : plotRootOf(scene.get(rootId));
   const editor = trait === null ? null : plotEditorOf(trait.data);

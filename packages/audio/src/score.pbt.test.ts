@@ -9,7 +9,7 @@ import { describe, expect, it } from 'vitest';
 import fc from 'fast-check';
 import { createAudioEngine } from './createAudioEngine';
 import { createScore, type ScoreState } from './score';
-import { scoreCues, type ScoreMood } from './scoreMood';
+import { SCORE_CUES, type ScoreMood } from './scoreMood';
 import { createFakeAudioContext } from './testing/fakeAudioContext';
 import { runs, tally, timeoutFor } from './pbt.fixture';
 
@@ -42,7 +42,7 @@ async function harness() {
 }
 
 const mood: fc.Arbitrary<ScoreMood> = fc.oneof(
-  fc.constantFrom(...scoreCues.map((c) => c.mood)),
+  fc.constantFrom(...SCORE_CUES.map((c) => c.mood)),
   fc.record({ valence: fc.double({ min: -1, max: 1, noNaN: true }), tension: fc.double({ min: 0, max: 1, noNaN: true }), urgency: fc.double({ min: 0, max: 1, noNaN: true }) }),
 );
 type Cmd =

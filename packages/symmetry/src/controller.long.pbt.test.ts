@@ -10,7 +10,7 @@ import { describe, expect, it } from 'vitest';
 import fc from 'fast-check';
 import { asNodeId, createScene, type NodeId, type RectPose } from '@weasel-js/core';
 import { createSymmetry } from './controller';
-import { editSymmetries, isSymmetryGroup, readGroup, symmetryGroupOf, symmetryRegistry } from './group';
+import { editSymmetries, isSymmetryGroup, symmetryOf, symmetryGroupOf, symmetryRegistry } from './group';
 import { symmetryTransforms, type SymmetrySpec } from './kinds';
 import { point, runs, spec, tally, timeoutFor } from './pbt.fixture';
 
@@ -101,7 +101,7 @@ describe('live symmetry over long runs', () => {
         for (const n of under(scene)) {
           const node = scene.get(n)!;
           if (isSymmetryGroup(scene as never, n)) {
-            const g = readGroup(scene as never, n)!;
+            const g = symmetryOf(scene as never, n)!;
             for (const m of [...symmetryTransforms(g.spec, g.center), ...editSymmetries(scene as never, n)]) {
               expect(m.every(Number.isFinite)).toBe(true);
             }

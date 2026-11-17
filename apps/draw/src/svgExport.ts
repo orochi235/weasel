@@ -8,7 +8,7 @@ import { textFrameFields } from './svgNote';
 import { type Fill, type Path, type PlacedPage, type Scene, type Stroke, boundsOfPath, composesFrames, definesFrame, derivedDepOf, documentOf, inheritedPaintIn, withInheritedPaint, paintToLocalUnits, isAnnotationNode, pageIdOf, pathEffectOf, pathEffectParts, resolveFill, resolvePartPaint, resolveStroke, pathInPoseBox, shapeGeneratorOf, type ShapeGenerator, worldPoses } from '@weasel-js/core';
 import { layoutTextPose } from '@weasel-js/text';
 import {
-  computeBounds,
+  svgBoundsOf,
   serializeSvg,
   warmSvg,
   type SerializeOptions,
@@ -277,7 +277,7 @@ export function selectionToSvgString<TLayer extends string>(
   ids: readonly string[],
 ): Promise<string> {
   const nodes = sceneToSvgNodes(sceneSourceOf(scene, poseOfIn(scene)), ids);
-  const bounds = computeBounds(nodes);
+  const bounds = svgBoundsOf(nodes);
   return serializeWarm(nodes, {
     viewBox: bounds,
     width: bounds.width,

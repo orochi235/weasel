@@ -19,7 +19,7 @@ import { faceMetricsOf, cachedFontVariant, type FaceMetrics, type FontStyle } fr
 import type { StyledRun } from '../runs';
 import type { ResolvedTextStyle } from '../textStyle';
 import { transformRunTexts, type RunSourceMap } from './textTransform';
-import { ownSmallCaps, smallCapsScaleFor, smallCapsText } from './smallCaps';
+import { hasOwnSmallCaps, smallCapsScaleFor, smallCapsText } from './smallCaps';
 import { rejoinSplitPairs } from './codePointCuts';
 import { createPart } from '@weasel-js/registry';
 
@@ -190,7 +190,7 @@ export function resolveRuns(
  * run already at an index is rewritten when it has the same optional fields as
  * its replacement. For a caller that owns `out` and hands nothing it held
  * to anyone who keeps it; one whose runs the text caches have seen calls
- * `clearRuns` on them first.
+ * `evictRunsForRefill` on them first.
  */
 export function resolveRunsInto(
   out: ResolvedRun[],
@@ -229,7 +229,7 @@ export function resolveRunsInto(
     let fontFeatures: readonly string[] | undefined;
     const smallCaps = (run.fontVariantCaps ?? style.fontVariantCaps) === 'small-caps';
     // A face with small capitals of its own draws them; the rest are synthesized.
-    if (smallCaps && ownSmallCaps(fontFamily, fontWeight, fontStyle)) {
+    if (smallCaps && hasOwnSmallCaps(fontFamily, fontWeight, fontStyle)) {
       fontFeatures = SMALL_CAPS_FEATURES;
     } else if (smallCaps) {
       const caps = smallCapsText(text, srcMap, run.lang ?? style.lang);

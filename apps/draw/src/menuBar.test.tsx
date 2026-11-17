@@ -12,7 +12,7 @@ import { DRAW_MENU_BAR } from './menuBar';
 import { registerDrawExports } from './exportPage';
 import { saveSvgFile } from './saveSvg';
 import { withIcons } from './testIcons';
-import { BUILTIN_TOOL_IDS } from '@weasel-js/editing';
+import { KIT_TOOL_IDS } from '@weasel-js/editing';
 
 vi.mock('./saveSvg', () => ({ saveSvgFile: vi.fn(async () => {}) }));
 vi.mock('./openSvg', () => ({ openSvgFile: vi.fn(async () => {}), importSvgFile: vi.fn(async () => {}) }));
@@ -59,7 +59,7 @@ function setup() {
         <Probe />
         <MenuBar schema={DRAW_MENU_BAR} />
         <SceneCanvas<WeaselDrawData, WeaselDrawLayer, WeaselDrawPose> features={DRAW_FEATURES} claimKeys
-          scene={scene} layers={{}} width={64} height={64} defaultTools={BUILTIN_TOOL_IDS}
+          scene={scene} layers={{}} width={64} height={64} defaultTools={KIT_TOOL_IDS}
           onToolsCreated={(t) => { tools = t; }}
           ambient={[appCommandsContribution(() => commands)]} />
       </ActionsProvider>

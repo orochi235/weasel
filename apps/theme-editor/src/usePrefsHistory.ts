@@ -1,4 +1,4 @@
-import { createHistory, swapOp, type History } from '@weasel-js/history';
+import { createHistory, createSwapOp, type History } from '@weasel-js/history';
 import { prefLeaves, type PrefGroup, type PrefPath, type PrefSelection, type PrefsStore } from '@weasel-js/prefs';
 import { deepEqual } from '@weasel-js/registry';
 import { useMemo } from 'react';
@@ -57,7 +57,7 @@ export function usePrefsHistory(store: PrefsStore<PrefGroup>): PrefsHistory {
       const next = heldOf(store, paths);
       if (deepEqual(Object.fromEntries(prev), Object.fromEntries(next))) return;
       // The apply finds the write already made, and writes nothing.
-      history.apply(swapOp({
+      history.apply(createSwapOp({
         name: 'theme-prefs:held', label, before: prev, after: next, coalesceKey: key, emit: (held) => restoreHeld(store, paths, held),
       }), label);
     };

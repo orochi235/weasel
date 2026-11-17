@@ -2,9 +2,9 @@ import { describe, it, expect, vi, beforeAll } from 'vitest';
 import { createEvent, act } from '@testing-library/react';
 import { renderWithKeys as render } from '@weasel-js/react/testing/giveKeys';
 import { SceneCanvas, useScene, type ToolsApi } from '@weasel-js/core';
-import { pathTools } from '../presets';
+import { pathToolsPreset } from '../presets';
 import { usePathToolsTools } from '../toolSets';
-import { drawPreset, BUILTIN_TOOL_IDS } from '@weasel-js/editing';
+import { drawPreset, KIT_TOOL_IDS } from '@weasel-js/editing';
 
 beforeAll(() => {
   const proto = HTMLCanvasElement.prototype as unknown as Record<string, unknown>;
@@ -38,12 +38,12 @@ function mount() {
     const tools = usePathToolsTools();
     return (
       <SceneCanvas
-        features={[drawPreset, pathTools]}
+        features={[drawPreset, pathToolsPreset]}
         tools={tools}
         scene={scene}
         width={200} height={200}
         layers={{}}
-        defaultTools={BUILTIN_TOOL_IDS}
+        defaultTools={KIT_TOOL_IDS}
         defaultActiveTool="pen"
         onToolsCreated={(t) => { captured.tools = t; }}
       />

@@ -1,7 +1,7 @@
 import type { DragSample } from '@weasel-js/routing';
 import type { InsertPoint, InsertEnds, InsertExtras } from '@weasel-js/core/engine';
 import { applyUserRotation, buildExtras } from './extras';
-import { computeBounds, effectiveOriginMode } from './geometry';
+import { insertRectFor, effectiveOriginMode } from './geometry';
 import type { InsertFrame } from './session';
 import { minSizeOf, type MinSize } from '@weasel-js/core';
 import { insertStyleOf, type InsertStyle } from './style';
@@ -81,7 +81,7 @@ export function insertShape(
   const { start } = ends;
   const min = NO_MINIMUM.has(kind) ? null : minSizeOf(resolved);
   const current = min ? reachMinimum(start, ends.current, min, mode) : ends.current;
-  const bounds = computeBounds(start.x, start.y, current.x, current.y, mode);
+  const bounds = insertRectFor(start.x, start.y, current.x, current.y, mode);
   const extras = buildExtras(
     { ...(resolved ?? {}), originMode: mode },
     start.x, start.y, current.x, current.y,

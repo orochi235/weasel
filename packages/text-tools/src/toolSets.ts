@@ -6,11 +6,8 @@ import { useTextTool } from './tools/text/useTextTool';
 /** The ids {@link useTextToolsTools} keys its tools by. */
 export type TextToolId = 'text' | 'sticky';
 
-/** The text tools: text and the sticky note. A palette groups them as `type`. */
-export const TEXT_TOOLS: ToolSet<TextToolId> = toolSet('type', ['text', 'sticky'], { label: 'Type' });
-
-/** The tools a whiteboard makes things with: text and the sticky note. A pencil is `@weasel-js/path-tools`'. */
-export const WHITEBOARD_TOOLS: ToolSet<TextToolId> = toolSet('whiteboard', ['text', 'sticky'], { label: 'Whiteboard' });
+/** The text tools: text and the sticky note. A palette groups them as `text`. */
+export const TEXT_TOOLS: ToolSet<TextToolId> = toolSet('text', ['text', 'sticky'], { label: 'Text' });
 
 /**
  * Every tool in {@link TEXT_TOOLS}, keyed by id, for `<SceneCanvas tools>` beside `textPreset`, whose actions

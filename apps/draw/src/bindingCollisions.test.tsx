@@ -30,7 +30,7 @@ import { modePathEdit } from './modality/pathEditHost';
 import { modalityShortcuts } from './modality/shortcuts';
 import { useOpacityScrub } from './opacityScrub/useOpacityScrub';
 import { usePageCommands } from './pages/pageCommands';
-import { PATHFINDER_KEYMAP, BUILTIN_TOOLS, useEyedropperTool } from '@weasel-js/editing';
+import { PATHFINDER_KEYMAP, KIT_TOOLS, useEyedropperTool } from '@weasel-js/editing';
 
 beforeAll(() => {
   const proto = HTMLCanvasElement.prototype as unknown as {
@@ -90,7 +90,7 @@ function Draw({ planted = [] }: { planted?: readonly Contribution[] }) {
   return (
     <SceneCanvas features={[...DRAW_FEATURES, createSpacingHintsPreset()]} scene={scene as never} layers={{}}
       width={64} height={64} ambient={ambient} modes={machine.registry} pathEdit={pathEdit}
-      defaultTools={[BUILTIN_TOOLS]} tune={DRAW_TUNE} viewport={{ touchZoom: true }}
+      defaultTools={[KIT_TOOLS]} tune={DRAW_TUNE} viewport={{ touchZoom: true }}
       tools={{ ...pathToolsTools, measure: measureTool, opacityScrub: opacityScrubTool, eyedropper: eyedropperTool }}>
       <Commands />
     </SceneCanvas>

@@ -58,7 +58,7 @@ describe('registerBidi', () => {
         levels: new Uint8Array(end - start),
       }),
       mirror: () => null,
-      baseLevel: () => 0,
+      paragraphLevel: () => 0,
     };
     registerBidi(bidi);
     expect(visual(layoutRuns([RUN(HEBREW)], { ...OPTS, bidi: logical }))).toEqual([0, 1, 2]);

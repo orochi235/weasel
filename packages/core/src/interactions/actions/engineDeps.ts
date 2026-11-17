@@ -156,7 +156,7 @@ declare module '@weasel-js/routing' {
      *  provide a typed node factory (e.g. with custom data payloads). */
     insert: InsertDep;
     /** Where `insertAction` keeps its gesture in flight, so
-     *  `insert.adjustRotation` reaches the one in its own input scope.
+     *  `insert.rotate` reaches the one in its own input scope.
      *  Sourced by `<SceneCanvas>`; without it the rotation does nothing. */
     insertLive?: InsertLive;
     /** The params an action starts with in this scope when its binding
@@ -194,7 +194,7 @@ declare module '@weasel-js/routing' {
      * Resize-policy dep — bounds constraints, point-snap behaviors and
      * group expansion for `resizeAction`. Optional: when omitted,
      * `resizeAction` falls back to identity defaults. Consumers wire via
-     * `useDepSource('resizePolicy', ...)` or the `useResizePolicy` helper.
+     * `useDepSource('resizePolicy', ...)` or the `useResizePolicyDepSource` helper.
      */
     resizePolicy?: ResizePolicy<unknown>;
     /**

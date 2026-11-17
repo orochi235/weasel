@@ -46,7 +46,7 @@ function guideAt(guides: readonly Guide[], view: View, s: { x: number; y: number
  * swallows its presses. Off the rulers it claims a press on one of
  * `getGuides`, so a drag moves that guide.
  */
-export function rulersHitLayer(id: string, size: number, getGuides: () => readonly Guide[]): RenderLayer<unknown> {
+export function createRulersHitLayer(id: string, size: number, getGuides: () => readonly Guide[]): RenderLayer<unknown> {
   return {
     id,
     label: 'Rulers',

@@ -31,7 +31,7 @@ const engine = (order: readonly number[]): BidiEngine => ({
   analyze: () => null,
   reorder: () => ({ order, levels: [0, 0, 0] }),
   mirror: () => null,
-  baseLevel: () => 0,
+  paragraphLevel: () => 0,
 });
 
 const line = (order?: readonly number[]): LaidOutLineBox => layoutRuns([RUN], {

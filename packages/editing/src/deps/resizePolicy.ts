@@ -7,9 +7,9 @@ import { useLatest } from '@weasel-js/react';
 import type { ResizePolicy, BoundsConstraint, RunLifecycleOptions } from '@weasel-js/core/engine';
 import type { Bounds, ResizeOptions } from '@weasel-js/core';
 
-/** Options for `useResizePolicy`. Each omitted field falls back to the kit
+/** Options for `useResizePolicyDepSource`. Each omitted field falls back to the kit
  *  default. */
-export interface UseResizePolicyOptions<TPose> extends RunLifecycleOptions {
+export interface UseResizePolicyDepSourceOptions<TPose> extends RunLifecycleOptions {
   constraints?: TPose extends Bounds ? BoundsConstraint<TPose>[] : never[];
   expandIds?: (ids: string[]) => string[];
 }
@@ -19,8 +19,8 @@ const EMPTY: readonly unknown[] = Object.freeze([]);
 
 /** Publish how resizing should behave — constraints and group expansion —
  *  for the resize action to consult. */
-export function useResizePolicy<TPose>(
-  options: UseResizePolicyOptions<TPose>,
+export function useResizePolicyDepSource<TPose>(
+  options: UseResizePolicyDepSourceOptions<TPose>,
 ): void {
   const optsRef = useLatest(options);
 
@@ -37,11 +37,11 @@ export function useResizePolicy<TPose>(
   });
 }
 
-/** `<SceneCanvas selectTool.resize>` as {@link useResizePolicy} options.
+/** `<SceneCanvas selectTool.resize>` as {@link useResizePolicyDepSource} options.
  *  `resizable` is read by `<SceneCanvas>` itself. */
-export function resizePolicyOptions<TPose>(o: ResizeOptions<TPose>): UseResizePolicyOptions<TPose> {
+export function resizePolicyOptions<TPose>(o: ResizeOptions<TPose>): UseResizePolicyDepSourceOptions<TPose> {
   return {
-    constraints: o.behaviors as UseResizePolicyOptions<TPose>['constraints'],
+    constraints: o.behaviors as UseResizePolicyDepSourceOptions<TPose>['constraints'],
     expandIds: o.expandIds,
     label: o.resizeLabel,
     transient: o.transient,

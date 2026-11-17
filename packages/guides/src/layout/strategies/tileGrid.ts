@@ -11,7 +11,7 @@ import {
   type LayoutStrategy,
 } from '@weasel-js/core';
 import type { Rect } from '@weasel-js/geom';
-import { cellAt } from '../snaps';
+import { cellThenNearest } from '../snaps';
 import { defaultCenterOf } from './sequence';
 
 interface TileMeta {
@@ -78,7 +78,7 @@ export function tileGrid<TPose>(
   const gap = opts.gap ?? 0;
   const byColumn = opts.flow === 'column';
   const overflow = opts.overflow ?? 'reject';
-  const snap = opts.snap ?? cellAt<TPose>();
+  const snap = opts.snap ?? cellThenNearest<TPose>();
   const capacity = cols * rows;
   /** Cells per line in fill order, and the declared line count. */
   const perLine = byColumn ? rows : cols;

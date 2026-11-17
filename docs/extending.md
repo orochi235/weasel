@@ -49,7 +49,7 @@ throws on a duplicate entry id, dep name, view id or marker id.
 ### Presets
 
 A package ships its behavior as a `FeaturePreset`, and an app turns it on by
-passing the object beside core's: `features={[drawPreset, pathTools]}`. An
+passing the object beside core's: `features={[drawPreset, pathToolsPreset]}`. An
 app that does not import a preset never loads its code.
 
 ```ts
@@ -90,7 +90,7 @@ maps core's names to the objects, at the cost of loading every core preset.
 
 A `ToolSet` names a group of tool ids, and other sets, as one unit: `defaultTools`,
 a preset's `tools`, and `ToolPalette`'s `include` each take one. Core ships `VIEW_TOOLS`,
-`@weasel-js/editing` `SELECT_TOOLS`, `SHAPE_TOOLS` and `BUILTIN_TOOLS` over the three, and a
+`@weasel-js/editing` `SELECT_TOOLS`, `SHAPE_TOOLS` and `KIT_TOOLS` over the three, and a
 package ships its own (`@weasel-js/path-tools`' `PATH_EDIT_TOOLS`, `DRAW_TOOLS`, `SLICE_TOOLS`,
 `RESHAPE_TOOLS`, …; `@weasel-js/text-tools`' `TEXT_TOOLS`); `withoutTools(set, ...omit)` leaves some
 out, so an app takes "everything but the warps" without
@@ -1031,9 +1031,9 @@ so that a tool hook stays callable from anywhere.
 
 **Add the selection's own bindings.** The select tool only chooses. Dragging
 the selection to move or clone it, and its resize and rotation handles, are the
-`always` entries `selectionMoveContribution()` and
-`selectionTransformContribution()` (or `selectionResizeContribution()` and
-`selectionRotateContribution()` for one handle without the other); put them in
+`always` entries `createSelectionMoveContribution()` and
+`createSelectionTransformContribution()` (or `createSelectionResizeContribution()` and
+`createSelectionRotateContribution()` for one handle without the other); put them in
 the dispatcher's `entriesById` beside your tools (handles first, since a handle
 sits over the body it resizes). The 3d lab (`packages/labkit/examples/3d-lab/SolidInstrument.tsx`)
 adds the move one.

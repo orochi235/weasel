@@ -1,8 +1,8 @@
-/** A page export placed by `pageRegionOf` reads the page's bounds from the revision it draws. */
+/** A page export placed by `pageRegionSource` reads the page's bounds from the revision it draws. */
 import { afterEach, describe, expect, it } from 'vitest';
 import { registerPaintKindLoader } from '@weasel-js/paint-kinds';
 import { addOnPages, movePage, removePage, type Paint } from '@weasel-js/core';
-import { pageRegionOf, pageRegionsOf } from '@weasel-js/export';
+import { pageRegionSource, pageRegionsSource } from '@weasel-js/export';
 import { plainScene } from '@weasel-js/export/testing/plainScene';
 import { DIAGRAM_THEMES } from '@weasel-js/diagram';
 import { exportPageSvg, exportPagesPdf } from './pageSvg';
@@ -31,7 +31,7 @@ describe('page exports across a page move', () => {
   it('writes the page where the document has moved it while the export loaded', async () => {
     const { scene, pages, release } = heldOnPageTwo('test:held-page');
     expect(pages[1]!.x).toBe(240);
-    const svg = exportPageSvg(scene, pageRegionOf(pages[1]!), { background: null });
+    const svg = exportPageSvg(scene, pageRegionSource(pages[1]!), { background: null });
     await tick();
     movePage(scene, 'p2', 0);
     release();
@@ -41,7 +41,7 @@ describe('page exports across a page move', () => {
 
   it('fails a PDF of pages one of which the document lost while the export loaded', async () => {
     const { scene, pages, release } = heldOnPageTwo('test:held-pages');
-    const pdf = exportPagesPdf(scene, pageRegionsOf(pages), { background: null, compress: false });
+    const pdf = exportPagesPdf(scene, pageRegionsSource(pages), { background: null, compress: false });
     await tick();
     removePage(scene, 'p2');
     release();
@@ -51,7 +51,7 @@ describe('page exports across a page move', () => {
   it('paints the page color of the theme the document is in when the export reads it', async () => {
     const { scene, pages, release } = heldOnPageTwo('test:held-theme');
     scene.doc.set('diagram:theme', 'night');
-    const svg = exportPageSvg(scene, pageRegionOf(pages[1]!));
+    const svg = exportPageSvg(scene, pageRegionSource(pages[1]!));
     await tick();
     scene.doc.set('diagram:theme', 'paper');
     release();

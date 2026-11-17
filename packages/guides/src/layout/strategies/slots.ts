@@ -1,5 +1,5 @@
 import type { LayoutSnap, LayoutStrategy } from '@weasel-js/core';
-import { nearest } from '../snaps';
+import { nearestSnap } from '../snaps';
 import type { Arrangement, Slot } from './arrangements';
 import { defaultCenterOf, sequenceLayout } from './sequence';
 
@@ -8,7 +8,7 @@ export interface SlotsOptions<TPose> {
   /** Where the slots are for a given child count: `rowSlots`, `gridSlots`,
    *  `ringSlots`, or a function of your own. */
   arrangement: Arrangement;
-  /** Which slot a drag means. Default `nearest()`. */
+  /** Which slot a drag means. Default `nearestSnap()`. */
   snap?: LayoutSnap<TPose>;
   /** The pose a child takes in a slot. Default centers the child's own
    *  `width`/`height` on the slot and keeps every other field. */
@@ -52,7 +52,7 @@ export function slots<TPose>(opts: SlotsOptions<TPose>): LayoutStrategy<TPose> {
   const centerOf = opts.centerOf ?? defaultCenterOf;
 
   return sequenceLayout<TPose>({
-    snap: opts.snap ?? nearest<TPose>(),
+    snap: opts.snap ?? nearestSnap<TPose>(),
     centerOf,
     labels: { drop: 'Slot drop', shift: 'Slot shift' },
 

@@ -154,6 +154,11 @@ export class TrimOverrideRegistry {
   }
 }
 
+/** An empty {@link TrimOverrideRegistry}. */
+export function createTrimOverrideRegistry(): TrimOverrideRegistry {
+  return new TrimOverrideRegistry();
+}
+
 /** One edge's painted value: `set`'s plus a moving target's travel, else a painted target's. */
 function edgeOf(set: number | undefined, slot: EdgeSlot | undefined): number | undefined {
   const painted = slot?.painted === true;

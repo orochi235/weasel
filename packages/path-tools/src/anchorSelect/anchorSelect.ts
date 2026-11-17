@@ -11,7 +11,7 @@ import {
   shrinkAnchorSelection, smoothAnchors, type AnchorSet, type PolygonPath,
 } from '@weasel-js/geom';
 import { pathOperationTags, type EditAnchorsDep, type KeySpec } from '@weasel-js/core';
-import { depOf, requiresAnchorSelection } from '../pathEdit/anchorEditing';
+import { openPathEditOf, requiresAnchorSelection } from '../pathEdit/anchorEditing';
 import { icon, type PathToolsIconName } from '../icons.gen';
 import { pref, type PrefGroup } from '@weasel-js/prefs';
 
@@ -27,7 +27,7 @@ function editedSet(dep: EditAnchorsDep): AnchorSet | null {
 }
 
 const pathOpen = (deps?: ActionDeps): true | ActionDisabledReason =>
-  depOf(deps) ? true : ActionDisabledReason.SelectionRequired;
+  openPathEditOf(deps) ? true : ActionDisabledReason.SelectionRequired;
 
 /** A selection command bound to `key`; `needsSelection` when `pick` reads
  *  the current selection and so has nothing to do without one. */
@@ -48,7 +48,7 @@ function createAnchorSelectAction<const Id extends PathToolsIconName>(
     invoker: {
       timing: 'immediate',
       run: (deps, params) => {
-        const dep = depOf(deps);
+        const dep = openPathEditOf(deps);
         const set = dep && enabled(deps) === true ? editedSet(dep) : null;
         if (set) dep!.setSelectedAnchors(pick(set, [...dep!.selectedAnchors], params));
       },

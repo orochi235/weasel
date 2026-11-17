@@ -36,7 +36,7 @@ export type { DecorationKind } from './layout/decorationMetrics';
 export { transformRunTexts } from './runs/textTransform';
 export type { TextTransform, RunSourceMap, TransformedRunText } from './runs/textTransform';
 export {
-  SMALL_CAPS_SCALE, ownSmallCaps, smallCapsScale, smallCapsScaleFor, smallCapsText, isSmallCapsLetter,
+  SMALL_CAPS_SCALE, hasOwnSmallCaps, smallCapsScale, smallCapsScaleFor, smallCapsText, isSmallCapsLetter,
 } from './runs/smallCaps';
 export type { FontVariantCaps, SmallCapsText } from './runs/smallCaps';
 
@@ -46,14 +46,14 @@ export {
 } from './layout/lineBreak/lineBreaks';
 export {
   cachedLayoutRuns,
-  dropRuns,
-  clearRuns,
+  evictRuns,
+  evictRunsForRefill,
   LAYOUT_CACHE_VARIANT_LIMIT,
   LAYOUT_CACHE_STRUCTURAL_LIMIT,
 } from './layout/layoutCache';
 export { layoutTextPose, textPoseLayoutInput, textFitScale } from './layout/textPoseLayout';
 export { TEXT_FIT_TOLERANCE, type TextFit } from './layout/textFit';
-export { fitTextToBox } from './fitTextToBox';
+export { bakeTextFit } from './bakeTextFit';
 export type { TextPoseLayout, TextPoseLayoutInput } from './layout/textPoseLayout';
 export type { BidiEngine, BidiReordering, BidiAnalysis } from './layout/bidiSeam';
 export { registerBidi, registeredBidi, paragraphDirection, warnRtlWithoutEngine } from './layout/bidiRegistry';
@@ -96,30 +96,30 @@ export type { TextVerticalAlign } from './measure/verticalAlign';
 export type { TextPose } from './pose';
 export { textPoseContainsPoint, caretIndexAt } from './hitTest';
 export type { CaretIndexAtOptions, PointInTextPoseOptions } from './hitTest';
-export { fitTextPose } from './fitTextPose';
-export type { FitTextPoseOptions } from './fitTextPose';
+export { fitBoxToText } from './fitBoxToText';
+export type { FitBoxToTextOptions } from './fitBoxToText';
 export { renderLabel, defaultLabelTextRenderer } from './renderLabel';
 export type { LabelOptions } from './renderLabel';
 export { isTextData } from './isTextData';
 
-export { layoutMarkdown } from './markdownText';
+export { layoutCanvasRuns } from './markdownText';
 export { createMarkdownRenderer } from './markdownRenderer';
 export type {
   MarkdownFontOptions,
-  LayoutMarkdownOptions,
+  LayoutCanvasRunsOptions,
   MarkdownFont,
-  MeasureFn,
+  CanvasMeasureFn,
   FaceMetricsFn,
-  PositionedRun,
-  LayoutLine,
-  LayoutResult,
+  CanvasPositionedRun,
+  CanvasRunsLine,
+  CanvasRunsLayout,
 } from './markdownText';
 export type { TextRenderer } from './markdownRenderer';
 
 export { MIXED, styleAtRange, applyStyleToRange, patchRangeStyle, hasStyledRun, supersededKey } from './runs/rangeStyle';
 export type { Mixed, RangeStyle, RunStylePatch, StyleKey } from './runs/rangeStyle';
 export { effectiveRangeStyle, rangeWeight } from './runs/effectiveRangeStyle';
-export { setFlagOverRange, nodeHasFlag, unboldPatch } from './runs/flagRange';
+export { setFlagOverRange, styleHasFlag, unboldPatch } from './runs/flagRange';
 export type { FlagKey, SetFlagResult } from './runs/flagRange';
 
 export { SYNTHETIC_ITALIC_RADIANS } from './syntheticItalic';

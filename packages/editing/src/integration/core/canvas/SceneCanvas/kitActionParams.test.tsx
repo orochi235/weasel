@@ -74,7 +74,7 @@ function sources(dir: string): string[] {
   });
 }
 
-const DEFINES_ACTION = /\binvoker:|\blivePathEdit\(/;
+const DEFINES_ACTION = /\binvoker:|\bcreateLivePathEditAction\(/;
 
 /** The trivial numbers no allowlist entry is asked to explain: zero, one, two and their negatives. */
 const TRIVIAL = new Set(['0', '1', '2']);

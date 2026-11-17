@@ -11,7 +11,7 @@ import { registerFixture, stubFetch, RUN_PLAIN } from './testing/fontFixtures';
 import { _resetArrayPoolForTests, pooledElements } from './arrayPool';
 import { LineBox } from './layoutColumns';
 import {
-  cachedLayoutRuns, dropRuns, _resetLayoutCacheForTests, LAYOUT_CACHE_STRUCTURAL_LIMIT, LAYOUT_CACHE_VARIANT_LIMIT,
+  cachedLayoutRuns, evictRuns, _resetLayoutCacheForTests, LAYOUT_CACHE_STRUCTURAL_LIMIT, LAYOUT_CACHE_VARIANT_LIMIT,
 } from './layoutCache';
 import { layoutRuns, type LaidOutRuns } from './layoutRuns';
 import { cachedPaintRuns } from './paintCache';
@@ -57,7 +57,7 @@ describe('recycling a layout', () => {
     const a = draw('AB 12');
     const nums = numsOf(a.laid);
     const quads = a.painted.groups.map((g) => g.quadData);
-    dropRuns(a.runs);
+    evictRuns(a.runs);
     evictAll('x');
     const b = draw('BA 21');
     expect(numsOf(b.laid)).toBe(nums);
@@ -67,7 +67,7 @@ describe('recycling a layout', () => {
   it('lays out and paints into reused arrays exactly as into fresh ones', () => {
     const a = draw('AB 12');
     const nums = numsOf(a.laid);
-    dropRuns(a.runs);
+    evictRuns(a.runs);
     evictAll('x');
     const b = draw('BA 21');
     expect(numsOf(b.laid)).toBe(nums);
@@ -84,7 +84,7 @@ describe('recycling a layout', () => {
     const kept = cachedLayoutRuns(a.runs, OPTS);
     const cells = kept.lines[0].cells.map((c) => ({ ...c }));
     const nums = numsOf(kept);
-    dropRuns(a.runs);
+    evictRuns(a.runs);
     evictAll('x');
     const b = draw('BA 21');
     expect(numsOf(b.laid)).not.toBe(nums);
@@ -96,7 +96,7 @@ describe('recycling a layout', () => {
     const a = draw('AB 12');
     const painted = cachedPaintRuns(a.laid, a.runs);
     const quads = [...painted.groups[0].quadData];
-    dropRuns(a.runs);
+    evictRuns(a.runs);
     evictAll('x');
     draw('BA 21');
     expect([...painted.groups[0].quadData]).toEqual(quads);
@@ -105,7 +105,7 @@ describe('recycling a layout', () => {
   it('waits while the structural list still holds a dropped layout', () => {
     const a = draw('AB 12');
     const nums = numsOf(a.laid);
-    dropRuns(a.runs);
+    evictRuns(a.runs);
     expect(pooledElements()).toBe(0);
     const b = draw('BA 21');
     expect(numsOf(b.laid)).not.toBe(nums);
@@ -119,17 +119,17 @@ describe('recycling a layout', () => {
     const twin = [RUN_PLAIN('AB 12')];
     expect(cachedLayoutRuns(twin, OPTS, 'read')).toBe(a.laid);
     const nums = numsOf(a.laid);
-    dropRuns(a.runs);
+    evictRuns(a.runs);
     evictAll('x');
     expect(cachedLayoutRuns(twin, OPTS, 'read')).toBe(a.laid);
     expect(numsOf(a.laid)).toBe(nums);
-    dropRuns(twin);
+    evictRuns(twin);
     expect(pooledElements()).toBeGreaterThan(0);
   });
 
   it('paints dropped runs passed once more for themselves, not from the entry the next runs took', () => {
     const a = draw('AB 12');
-    dropRuns(a.runs);
+    evictRuns(a.runs);
     const b = draw('CD 34');
     const laid = cachedLayoutRuns(a.runs, OPTS, 'read');
     const painted = cachedPaintRuns(laid, a.runs, {}, 'read');
@@ -160,7 +160,7 @@ describe('recycling a layout', () => {
 
   it('lays out again when dropped runs are passed once more', () => {
     const a = draw('AB 12');
-    dropRuns(a.runs);
+    evictRuns(a.runs);
     evictAll('x');
     const again = cachedLayoutRuns(a.runs, OPTS, 'read');
     expect(again).not.toBe(a.laid);
@@ -171,7 +171,7 @@ describe('recycling a layout', () => {
     const a = draw('AB 12');
     const box = a.laid.lines[0];
     const group = a.painted.groups[0];
-    dropRuns(a.runs);
+    evictRuns(a.runs);
     fillBehind('x');
     const b = draw('BA 21');
     expect(b.laid).toBe(a.laid);
@@ -184,7 +184,7 @@ describe('recycling a layout', () => {
     expect(a.laid.lines[0].cells).toHaveLength(5);
     const group = a.painted.groups[0];
     expect(group.quads.length).toBeGreaterThan(0);
-    dropRuns(a.runs);
+    evictRuns(a.runs);
     fillBehind('x');
     const b = draw('BAB');
     const fresh = layoutRuns([RUN_PLAIN('BAB')], OPTS);

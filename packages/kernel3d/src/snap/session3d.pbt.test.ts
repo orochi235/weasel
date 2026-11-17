@@ -1,5 +1,5 @@
 /**
- * A 3D snap session through `createSnap`: a point gesture lands on a ground grid point beside the pointer's cast
+ * A 3D snap session through `createSnap3dDep`: a point gesture lands on a ground grid point beside the pointer's cast
  * and stays there when asked again, never moves the pointer past its reach to a box, and passes it through when
  * suspended; a move keeps some probe of what it drags within reach of where the pointer put it.
  */
@@ -7,7 +7,7 @@ import { describe, expect, it } from 'vitest';
 import fc from 'fast-check';
 import { IDENTITY_POSE_COMPOSITION, createScene, type NodeId } from '@weasel-js/core';
 import { add, intersectRayPlane, pointOnRay, sub, type Vec3 } from '@weasel-js/geom/3d';
-import { createSnap } from '../deps';
+import { createSnap3dDep } from '../deps';
 import { coord, paneAt, paneFractions, pose, runs, tally, timeoutFor, v3, viewport } from '../pbt.fixture';
 import { aabbOfPose, type Pose3 } from '../pose3';
 import { projectPoint, rayAt, rectOf, viewProjectionOf, type Viewport3d } from '../project';
@@ -65,7 +65,7 @@ describe('a 3D point gesture, property', () => {
     const seen = tally();
     fc.assert(fc.property(groundView, paneFractions(), step, (vp, f, s) => {
       const { world } = worldOf([], vp);
-      const snap = createSnap(world, { sources: [groundGridSource({ world, step: s })] });
+      const snap = createSnap3dDep(world, { sources: [groundGridSource({ world, step: s })] });
       const p = paneAt(vp, f);
       const raw = cast(vp, p, 0);
       const out = snap.begin({ gesture: 'point', press: p }).at(p, FREE);
@@ -95,7 +95,7 @@ describe('a 3D point gesture, property', () => {
     const aim = fc.record({ corner: fc.integer({ min: 0, max: 8 }), jitter: fc.tuple(fc.double({ min: -2, max: 2, noNaN: true }), fc.double({ min: -2, max: 2, noNaN: true })) });
     fc.assert(fc.property(sceneOf(0.5, 1), paneFractions(), reachPx, aim, ({ vp, poses }, f, reach, { corner, jitter }) => {
       const { world } = worldOf(poses, vp);
-      const snap = createSnap(world, { sources: [boxSnapSource(world), alignPlaneSource(world)], reachPx: reach });
+      const snap = createSnap3dDep(world, { sources: [boxSnapSource(world), alignPlaneSource(world)], reachPx: reach });
       const near = poses.length > 0 ? projectPoint(boxProbes(aabbOfPose(poses[0]!))[corner]!.at, vp) : null;
       const p = near ? { x: near.x + jitter[0] * reach, y: near.y + jitter[1] * reach } : paneAt(vp, f);
       const out = snap.begin({ gesture: 'point', press: p }).at(p, FREE);
@@ -131,7 +131,7 @@ describe('a 3D move, property', () => {
       if (!anchor) return;
       const target = projectPoint(add(anchor, { x: push.x, y: 0, z: push.z }), vp);
       if (!target) return;
-      const snap = createSnap(world, { sources: [boxSnapSource(world), alignPlaneSource(world)], reachPx: reach });
+      const snap = createSnap3dDep(world, { sources: [boxSnapSource(world), alignPlaneSource(world)], reachPx: reach });
       const out = snap.begin({ gesture: 'move', ids: [id], press }).at(target, FREE);
       expect(Number.isFinite(out.point.x) && Number.isFinite(out.point.y)).toBe(true);
       if (!out.held) {

@@ -101,7 +101,7 @@ actions with no default binding fire only via a tool's `bindings` or a `trigger`
 | `createOutlines` (*path-tools*) | Mod+Enter |
 | `joinPaths` (*path-tools*) | Mod+J; in path edit `joinAnchors` answers it |
 | `averageAnchors` (*path-tools*) | Mod+Alt+Shift+J (`axis: 'both'`) |
-| `exitPathEdit` (*path-tools*) | Escape; with a tool on other than the mode's `defaultTool` it returns to that tool instead (`returnToModeDefault`), so a second Escape leaves path edit. A mode shortcut's `exit` and `cancel` do the same |
+| `leavePathEdit` (*path-tools*) | Escape; with a tool on other than the mode's `defaultTool` it returns to that tool instead (`returnToModeDefault`), so a second Escape leaves path edit. A mode shortcut's `exit` and `cancel` do the same |
 | `deleteAnchors` (*path-tools*) | Delete, Backspace (phase `initial`) |
 | `nudgeAnchors.<dir>` (*path-tools*) | Arrow / Shift+Arrow, as `nudge` |
 
@@ -116,9 +116,9 @@ macOS Option+bracket emits a curly quote, so both codepoints are listed.
 | `move` | drag on `selected-body` |
 | `editAnchors` (*path-tools*) | drag whose press hit an anchor or control-handle affordance; it ties `move` on specificity, and `move` turns those presses down, as it does a segment's or a path-tools poise grip's (`isPathEditPart`) |
 | `bendSegment` (*path-tools*) | drag whose press hit the edited path's `segment` affordance, between anchors; `move` turns those down too |
-| `marqueeAnchors` (*path-tools*) | drag on `empty` |
+| `areaSelectAnchors` (*path-tools*) | drag on `empty` |
 | `enterPathEdit` (*path-tools*) | double-click on a body |
-| `editTextAt` | double-click on a body: opens the text node under the pointer (the `textEdit` feature) |
+| `enterTextEditAt` | double-click on a body: opens the text node under the pointer (the `textEdit` feature) |
 | `menu.context` | the `contextMenu` gesture |
 | `selectAnchor` (*path-tools*) | click |
 | `editEffectText` (*text-tools*) | click on a body: in path edit on a path an effect hides, a click on that effect opens its text, off the open path's anchors |
@@ -132,8 +132,8 @@ macOS Option+bracket emits a curly quote, so both codepoints are listed.
 
 A plain drag carries no intent, so no action answers one by default. The tools
 and contributions that want one bind it: `areaSelect` from the select tool (or,
-under every tool, `areaSelectContribution()`), `insert` and
-`insert.adjustRotation` from the shape tools, `lassoSelect` from the lasso tool,
+under every tool, `createAreaSelectContribution()`), `insert` and
+`insert.rotate` from the shape tools, `lassoSelect` from the lasso tool,
 `slice` from path-tools' slice tool, `viewport.dragPan` from the hand tool (or, on any
 unclaimed drag, `createDragPanContribution()`), and `resize`, `rotate` and `clone`
 from the `resize`, `rotate` and `move` presets' selection contributions.
@@ -222,7 +222,7 @@ same question by id. The two answer `TextEditDep.textAt` and
 `TextEditDep.isTextNode`.
 
 A canvas running `@weasel-js/text-tools`' `textPreset` mounts one of these itself, so it needs
-no wiring for the text and sticky tools to open an edit, nor for a double-click to: `editTextAt`
+no wiring for the text and sticky tools to open an edit, nor for a double-click to: `enterTextEditAt`
 is bound to it, opens what `textAt` names, and declines where the double-click names a group,
 whose own double-click enters it. `createTextPreset({ editor })` takes the same options, or
 `false` for none. It stands down for a host's own: a `useSceneTextEdit` whose container

@@ -9,7 +9,7 @@ import fc from 'fast-check';
 import { act, renderHook } from '@testing-library/react';
 import { createHistory, type History } from '@weasel-js/history';
 import { eighth, runs, tally, timeoutFor } from '../pbt.fixture';
-import { addGuideOp, removeGuideOp, replaceGuideOp } from './ops';
+import { createAddGuideOp, createRemoveGuideOp, createReplaceGuideOp } from './ops';
 import type { Guide } from './types';
 import { useGuides, type UseGuidesReturn } from './useGuides';
 
@@ -29,7 +29,7 @@ const now = (m: Model): Guide[] => m.lists[m.at]!;
 const list = (r: Real): readonly Guide[] => r.hook.current.getGuides();
 
 /** Commit `op` as an undo step, and take `next` as the list it leaves. */
-function commit(m: Model, r: Real, op: ReturnType<typeof addGuideOp>, next: Guide[] | null): void {
+function commit(m: Model, r: Real, op: ReturnType<typeof createAddGuideOp>, next: Guide[] | null): void {
   const depth = r.history.undoDepth();
   act(() => { r.history.apply(op); });
   if (next === null) {
@@ -55,7 +55,7 @@ class Add implements fc.Command<Model, Real> {
       next.splice(this.index === undefined ? cur.length : Math.max(0, Math.min(this.index, cur.length)), 0, this.g);
     }
     seen.count(i >= 0 ? 'add over' : 'add');
-    commit(m, r, addGuideOp(r.hook.current, this.g, this.index), next);
+    commit(m, r, createAddGuideOp(r.hook.current, this.g, this.index), next);
   }
   toString = () => `add(${JSON.stringify(this.g)}, ${this.index})`;
 }
@@ -71,7 +71,7 @@ class Move implements fc.Command<Model, Real> {
     const to = { ...g, offset: this.to };
     seen.count(cur.length === 0 ? 'move missing' : this.stale ? 'move stale' : 'move');
     const i = cur.findIndex((h) => h.id === to.id);
-    commit(m, r, replaceGuideOp(r.hook.current, from, to), i >= 0 ? cur.map((h, j) => (j === i ? to : h)) : [...cur, to]);
+    commit(m, r, createReplaceGuideOp(r.hook.current, from, to), i >= 0 ? cur.map((h, j) => (j === i ? to : h)) : [...cur, to]);
   }
   toString = () => `move(${this.pick}, ${this.to}, ${this.stale ? 'stale' : 'fresh'}, ${this.id})`;
 }
@@ -86,7 +86,7 @@ class Remove implements fc.Command<Model, Real> {
     const g = missing ? { id: `${this.id}!`, axis: 'y' as const, offset: 3 } : cur[this.pick % cur.length]!;
     const handed = this.kind === 'stale' && !missing ? { ...g, offset: g.offset + 1 } : g;
     seen.count(missing ? 'remove missing' : `remove ${this.kind}`);
-    commit(m, r, removeGuideOp(r.hook.current, handed), missing ? null : cur.filter((h) => h.id !== g.id));
+    commit(m, r, createRemoveGuideOp(r.hook.current, handed), missing ? null : cur.filter((h) => h.id !== g.id));
   }
   toString = () => `remove(${this.pick}, ${this.kind}, ${this.id})`;
 }

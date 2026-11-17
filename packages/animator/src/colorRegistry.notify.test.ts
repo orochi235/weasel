@@ -1,9 +1,9 @@
 import { describe, expect, it } from 'vitest';
-import { ColorOverrideRegistry } from './colorRegistry';
+import { createColorOverrideRegistry } from './colorRegistry';
 
 describe('ColorOverrideRegistry notifies', () => {
   it('when an array edited in place is set again', () => {
-    const r = new ColorOverrideRegistry();
+    const r = createColorOverrideRegistry();
     const c = [1, 0, 0, 1];
     r.set('n', 'fill', c);
     let calls = 0;
@@ -16,7 +16,7 @@ describe('ColorOverrideRegistry notifies', () => {
   });
 
   it('when a target at a new length drops the colors the old one left painted', () => {
-    const r = new ColorOverrideRegistry();
+    const r = createColorOverrideRegistry();
     r.target('n', 'fill', 4).commit([1, 0, 0, 1]);
     expect(r.get('n', 'fill')).toBeDefined();
     let calls = 0;

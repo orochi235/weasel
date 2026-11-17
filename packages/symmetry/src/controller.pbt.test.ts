@@ -11,8 +11,8 @@ import {
 } from '@weasel-js/core';
 import { createSymmetry } from './controller';
 import { symmetryRegistry } from './group';
-import { guideHandles, symmetryGuideLayer, type SymmetryHandle } from './guide';
-import { handleChange, handleDragAction } from './handleDrag';
+import { guideHandles, createSymmetryGuideLayer, type SymmetryHandle } from './guide';
+import { symmetryHandleChange, createSymmetryHandleAction } from './handleDrag';
 import { symmetryTransforms, type SymmetrySpec } from './kinds';
 import { lookup, maxDiff, near, point, runs, spec, tally, timeoutFor } from './pbt.fixture';
 
@@ -163,7 +163,7 @@ function drag(sym: ReturnType<typeof rig>['sym'], group: NodeId, handle: Symmetr
     world: p, screen: p, modifiers: { alt: false, ctrl: false, meta: false, shift: false }, deps: {},
     drag: { start: from, current: p, delta: { x: p.x - from.x, y: p.y - from.y }, affordance: { payload: { handle, group } } },
   }) as unknown as InvocationCtx;
-  const h = (handleDragAction(sym).invoker as OngoingInvoker).start(ctx(from), undefined);
+  const h = (createSymmetryHandleAction(sym).invoker as OngoingInvoker).start(ctx(from), undefined);
   for (const p of path) h.onMove!(ctx(p));
   h.onEnd!(ctx(path[path.length - 1] ?? from), 'commit');
 }
@@ -215,8 +215,8 @@ describe('a handle drag', () => {
     const identity = { point: (p: Point) => p, angle: (a: number) => a };
     fc.assert(fc.property(spec(), exact(), fc.constantFrom(...handles), exact(), exact(), exact(), (s, c, handle, from, to, v) => {
       const plus = (p: Point) => ({ x: p.x + v.x, y: p.y + v.y });
-      const a = handleChange({ handle, group: 'g' }, { center: c, spec: s }, from, to, identity);
-      const b = handleChange({ handle, group: 'g' }, { center: plus(c), spec: s }, plus(from), plus(to), identity);
+      const a = symmetryHandleChange({ handle, group: 'g' }, { center: c, spec: s }, from, to, identity);
+      const b = symmetryHandleChange({ handle, group: 'g' }, { center: plus(c), spec: s }, plus(from), plus(to), identity);
       if (a.center) expect(maxDiff([b.center!.x, b.center!.y], [a.center.x + v.x, a.center.y + v.y])).toBeLessThan(1e-9);
       for (const [k, x] of Object.entries(a.spec ?? {})) {
         const y = (b.spec as Record<string, number>)[k]!;
@@ -247,7 +247,7 @@ describe('the guide', () => {
   it('takes a press on each handle as a handle within its hit radius, and draws nothing that is not finite', () => {
     const t = tally();
     fc.assert(fc.property(spec(), point(), view, (s, c, vw) => {
-      const layer = symmetryGuideLayer({ current: () => ({ group: 'g', spec: s, center: c }), subscribe: () => () => {} });
+      const layer = createSymmetryGuideLayer({ current: () => ({ group: 'g', spec: s, center: c }), subscribe: () => () => {} });
       for (const h of guideHandles(s, c, vw, KNOB, 0, 9)) {
         const wx = h.at.x / vw.scale.x + vw.x;
         const wy = h.at.y / vw.scale.y + vw.y;

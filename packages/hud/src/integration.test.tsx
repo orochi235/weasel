@@ -4,7 +4,7 @@ import { render, act } from '@testing-library/react';
 import React from 'react';
 import { SceneCanvas, useScene } from '@weasel-js/core';
 import type { Contribution, SceneCanvasApi, SelectionApi, ClaimableGesture } from '@weasel-js/core';
-import { selectToolKitPreset, shapeToolKitPreset, type KitToolId, useSelection } from '@weasel-js/editing';
+import { selectToolsOfferedPreset, shapeToolsOfferedPreset, type KitToolId, useSelection } from '@weasel-js/editing';
 import { useHud, useHudContribution } from './react';
 import type { HudPointerEvent, Widget } from './widget';
 import { _resetFontRegistryForTests } from '@weasel-js/font/test-seams';
@@ -58,7 +58,7 @@ function Harness(
       scene={scene}
       selection={selection}
       layers={{}}
-      features={[selectToolKitPreset, shapeToolKitPreset]}
+      features={[selectToolsOfferedPreset, shapeToolsOfferedPreset]}
       ambient={[hudTool, ...(extraAmbient ?? [])]}
       {...(defaultActiveTool
         ? { defaultActiveTool, defaultTools: ['select', defaultActiveTool] }

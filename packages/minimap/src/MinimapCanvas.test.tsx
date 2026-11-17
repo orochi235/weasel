@@ -25,7 +25,7 @@ import { MinimapCanvas } from './MinimapCanvas';
 import { renderThenAbandon } from '@weasel-js/react/testing/abandonRender';
 import { computeFitView } from './minimapMath';
 import { defaultDrawOne } from '@weasel-js/core';
-import { ColorOverrideRegistry } from '@weasel-js/animator';
+import { createColorOverrideRegistry } from '@weasel-js/animator';
 import type { Animator } from '@weasel-js/animator';
 import { pathFromD } from '@weasel-js/geom';
 import { solidStroke } from '@weasel-js/paint';
@@ -555,7 +555,7 @@ describe('<MinimapCanvas> — animator', () => {
       pose: { x: 0, y: 0, width: 100, height: 40 },
       data: { path: pathFromD('M0 20 L50 0 L100 20'), stroke: { ...solidStroke('#fff', 4), vertexColors: RAINBOW } },
     });
-    const colorOverrides = new ColorOverrideRegistry();
+    const colorOverrides = createColorOverrideRegistry();
     colorOverrides.set(id, 'stroke', RED);
     const onTick = vi.fn(() => () => {});
     const animator = { colorOverrides, onTick } as unknown as Animator;

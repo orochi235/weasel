@@ -3,7 +3,7 @@ import { IDENTITY_POSE_COMPOSITION, createScene, moveNodes, moveNodesOps, type G
 import type { Affine } from '@weasel-js/geom';
 import { createCamera } from './camera';
 import { add, intersectRayPlane, pointOnRay, sub, type Vec3 } from '@weasel-js/geom/3d';
-import { createPoseDescriptor, createSnap, screenBoxOf } from './deps';
+import { createPoseDescriptor, createSnap3dDep, screenBoxOf } from './deps';
 import { aabbOfPose, pose3, type Pose3 } from './pose3';
 import { projectPoint, rayAt, type Viewport3d } from './project';
 import { boxSnapSource } from './snap/sources';
@@ -169,7 +169,7 @@ describe('a 3D move of several roots', () => {
       operands: { get: () => [a!, b!], set: () => {} },
       scene,
       poseDescriptor: createPoseDescriptor(world),
-      snap: createSnap(world, { sources: [boxSnapSource(world)] }),
+      snap: createSnap3dDep(world, { sources: [boxSnapSource(world)] }),
     }, { x: to.x - anchor.x, y: to.y - anchor.y });
 
     const max = aabbOfPose(scene.get(b!)!.pose).max;

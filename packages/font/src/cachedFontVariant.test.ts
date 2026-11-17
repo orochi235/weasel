@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach } from 'vitest';
-import { cachedFontVariant, getFont, resolveFontVariant, _resetFontRegistryForTests } from './registerFont';
+import { cachedFontVariant, getAtlasFont, resolveFontVariant, _resetFontRegistryForTests } from './registerFont';
 import { registerTestFont } from './testing/registerTestFont';
 
 beforeEach(() => {
@@ -21,7 +21,7 @@ describe('cachedFontVariant', () => {
     _resetFontRegistryForTests();
     await registerTestFont('inter', 400, 'normal');
     const after = cachedFontVariant('inter', 400, 'normal');
-    expect(after.entry).toBe(getFont('inter', 400, 'normal'));
+    expect(after.entry).toBe(getAtlasFont('inter', 400, 'normal'));
     expect(after.entry).not.toBe(before.entry);
   });
 

@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { getFont, textureCacheKey, _resetFontRegistryForTests } from './registerFont';
+import { getAtlasFont, textureCacheKey, _resetFontRegistryForTests } from './registerFont';
 import { registerTestFont } from './testing/registerTestFont';
 import {
   GLYPH_AREA_FROM, GLYPH_AREA_FULL, GLYPH_COVERAGE_GLSL, GLYPH_POINT_COVERAGE_GLSL, GLYPH_MODE_MSDF, glyphNeedsArea, GLYPH_MODE_R8, SYNTH_BOLD_AMOUNT, glyphFieldScale, syntheticBoldGrowth,
@@ -132,7 +132,7 @@ describe('glyphFieldScale', () => {
     _resetFontRegistryForTests();
     await registerTestFont('fs-a');
     await registerTestFont('fs-b');
-    const b = getFont('fs-b', 400, 'normal')!.font;
+    const b = getAtlasFont('fs-b', 400, 'normal')!.font;
     b.common = { ...b.common, scaleW: b.common.scaleW * 2 };
     const a = glyphFieldScale('atlas', 'fs-a', 400, 'normal')!;
     expect(glyphFieldScale('atlas', 'fs-a', 400, 'normal')).toEqual(a);

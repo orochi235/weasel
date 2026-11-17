@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { createScene } from 'core/scene/scene';
-import { ColorOverrideRegistry } from '@weasel-js/animator';
+import { createColorOverrideRegistry } from '@weasel-js/animator';
 import { pathFromD, countPathAnchors } from '@weasel-js/geom';
 import { defaultDrawOne } from './defaultDrawOne';
 import { wireSceneSlotToScene } from './sceneSlotWiring';
@@ -41,7 +41,7 @@ function bodyOf(cmds: readonly DrawCommand[]): PathDrawCommand {
 describe('animated vertex colors on default-painted nodes', () => {
   it('the live scene slot paints a stroke override in place of the node\'s own colors', () => {
     const { scene, id } = strokedScene();
-    const registry = new ColorOverrideRegistry();
+    const registry = createColorOverrideRegistry();
     registry.set(id, 'stroke', RED);
     const slot = wireSceneSlotToScene({ drawOne: defaultDrawOne }, scene, undefined, { colorOverrides: registry });
     const node = scene.get(id)!;
@@ -50,7 +50,7 @@ describe('animated vertex colors on default-painted nodes', () => {
 
   it('the headless walk paints the same override', () => {
     const { scene, id } = strokedScene();
-    const registry = new ColorOverrideRegistry();
+    const registry = createColorOverrideRegistry();
     registry.set(id, 'stroke', RED);
     const cmds = buildSceneViewCommands(scene, VIEW, defaultDrawOne, undefined, undefined, undefined, { colorOverrides: registry });
     expect(bodyOf(cmds).stroke?.vertexColors).toEqual(RED);
@@ -58,7 +58,7 @@ describe('animated vertex colors on default-painted nodes', () => {
 
   it('hands a function override the node\'s own colors as its base', () => {
     const { scene, id } = strokedScene();
-    const registry = new ColorOverrideRegistry();
+    const registry = createColorOverrideRegistry();
     let seen: readonly number[] | undefined;
     registry.set(id, 'stroke', (base) => { seen = base; return GRAY; });
     const slot = wireSceneSlotToScene({ drawOne: defaultDrawOne }, scene, undefined, { colorOverrides: registry });
@@ -69,7 +69,7 @@ describe('animated vertex colors on default-painted nodes', () => {
 
   it('paints the node\'s own colors again once the override clears, without re-tessellating', () => {
     const { scene, id } = strokedScene();
-    const registry = new ColorOverrideRegistry();
+    const registry = createColorOverrideRegistry();
     const slot = wireSceneSlotToScene({ drawOne: defaultDrawOne }, scene, undefined, { colorOverrides: registry });
     const node = scene.get(id)!;
     const before = bodyOf(slot.drawOne(node, node.pose, VIEW));
@@ -85,7 +85,7 @@ describe('animated vertex colors on default-painted nodes', () => {
 
   it('drops an override whose length does not match the path\'s anchors', () => {
     const { scene, id } = strokedScene();
-    const registry = new ColorOverrideRegistry();
+    const registry = createColorOverrideRegistry();
     registry.set(id, 'stroke', [1, 0, 0, 1]);
     const slot = wireSceneSlotToScene({ drawOne: defaultDrawOne }, scene, undefined, { colorOverrides: registry });
     const node = scene.get(id)!;
@@ -100,7 +100,7 @@ describe('animated vertex colors on default-painted nodes', () => {
       pose: POSE,
       data: { path: pathFromD('M0 0 L100 0 L50 40 Z'), fill: { paint: solid('#fff') }, vertexColors: RAINBOW },
     });
-    const registry = new ColorOverrideRegistry();
+    const registry = createColorOverrideRegistry();
     const slot = wireSceneSlotToScene({ drawOne: defaultDrawOne }, scene, undefined, { colorOverrides: registry });
     const node = scene.get(id)!;
     expect(bodyOf(slot.drawOne(node, node.pose, VIEW)).vertexColors).toEqual(RAINBOW);
@@ -118,7 +118,7 @@ describe('animated vertex colors on default-painted nodes', () => {
       data: { shape: 'rect', stroke: solidStroke('#fff', 2) },
     });
     const node = scene.get(id)!;
-    const registry = new ColorOverrideRegistry();
+    const registry = createColorOverrideRegistry();
     const slot = wireSceneSlotToScene({ drawOne: defaultDrawOne }, scene, undefined, { colorOverrides: registry });
     const body = bodyOf(slot.drawOne(node, node.pose, VIEW));
     const colors = Array.from({ length: countPathAnchors(body.path) }, () => [0, 1, 0, 1]).flat();

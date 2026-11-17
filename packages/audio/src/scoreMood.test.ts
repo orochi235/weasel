@@ -1,11 +1,11 @@
 import { describe, expect, it } from 'vitest';
-import { readScoreCue, scoreCues, scoreParams, type ScoreMood } from './scoreMood';
+import { readScoreCue, SCORE_CUES, resolveScoreMood, type ScoreMood } from './scoreMood';
 
-const home = (name: string): ScoreMood => scoreCues.find((c) => c.name === name)!.mood;
+const home = (name: string): ScoreMood => SCORE_CUES.find((c) => c.name === name)!.mood;
 
 describe('readScoreCue', () => {
   it('names each cue at its own home, with the whole weight', () => {
-    for (const cue of scoreCues) {
+    for (const cue of SCORE_CUES) {
       const reading = readScoreCue(cue.mood);
       expect(reading.name).toBe(cue.name);
       expect(reading.weights[cue.name]).toBe(1);
@@ -31,39 +31,39 @@ describe('readScoreCue', () => {
   });
 });
 
-describe('scoreParams', () => {
+describe('resolveScoreMood', () => {
   it('makes dread sustained, low, pulseless and dissonant', () => {
-    expect(scoreParams(home('dread'))).toMatchObject({
+    expect(resolveScoreMood(home('dread'))).toMatchObject({
       density: 0, articulation: 'sustained', harmony: 'cluster', register: 36, mode: 'phrygian',
     });
   });
 
   it('makes investigation a layered minor ostinato', () => {
-    const p = scoreParams(home('investigation'));
+    const p = resolveScoreMood(home('investigation'));
     expect(p).toMatchObject({ mode: 'aeolian', articulation: 'plucked', harmony: 'triadic' });
     expect(p.density).toBeGreaterThan(0);
     expect(p.layers).toBeGreaterThan(1);
   });
 
   it('makes wonder Lydian, open and soft', () => {
-    const p = scoreParams(home('wonder'));
+    const p = resolveScoreMood(home('wonder'));
     expect(p).toMatchObject({ mode: 'lydian', articulation: 'sustained', harmony: 'triadic' });
     expect(p.spread).toBeGreaterThanOrEqual(2);
     expect(p.attack).toBeGreaterThanOrEqual(200);
   });
 
   it('makes urgency driving sixteenths on fourths and fifths', () => {
-    const p = scoreParams(home('urgency'));
+    const p = resolveScoreMood(home('urgency'));
     expect(p).toMatchObject({ density: 4, articulation: 'plucked', harmony: 'quartal', harmonicRhythm: 1 });
     expect(p.tempo).toBeGreaterThanOrEqual(120);
   });
 
   it('moves each parameter with one axis and no other', () => {
     const base = { valence: 0, tension: 0.5, urgency: 0.5 };
-    const p = scoreParams(base);
-    const v = scoreParams({ ...base, valence: 1 });
-    const t = scoreParams({ ...base, tension: 1 });
-    const u = scoreParams({ ...base, urgency: 1 });
+    const p = resolveScoreMood(base);
+    const v = resolveScoreMood({ ...base, valence: 1 });
+    const t = resolveScoreMood({ ...base, tension: 1 });
+    const u = resolveScoreMood({ ...base, urgency: 1 });
     const same = (a: object, b: object, keys: string[]) =>
       expect(keys.map((k) => (a as never)[k])).toEqual(keys.map((k) => (b as never)[k]));
     same(p, v, ['tempo', 'density', 'articulation', 'harmonicRhythm', 'attack', 'harmony', 'layers']);

@@ -1,4 +1,4 @@
-import { createHistory, swapOp, type History, type SwapArgs } from '@weasel-js/history';
+import { createHistory, createSwapOp, type History, type SwapArgs } from '@weasel-js/history';
 import { deepEqual } from '@weasel-js/registry';
 import { useCallback, useEffect, useMemo, useReducer, useRef } from 'react';
 import { type LabHistoryStore, useSavedLabHistory } from './historyStorage';
@@ -14,7 +14,7 @@ const SWAP_OP = 'theme-editor:swap';
 /** A whole-state step: the editor's state is small enough to replace wholesale, so every control gets undo
  *  without an op per field. `coalesceKey` merges a drag's ticks into one step. */
 function stateSwap<T>(holder: Holder<T>, { before, after }: SwapArgs<T>, label: string, coalesceKey?: string) {
-  return swapOp({ name: SWAP_OP, label, before, after, coalesceKey, emit: (value) => { holder.value = value; } });
+  return createSwapOp({ name: SWAP_OP, label, before, after, coalesceKey, emit: (value) => { holder.value = value; } });
 }
 
 const sameJson = (a: unknown, b: unknown) => deepEqual(a, b, { undefinedAsAbsent: true });

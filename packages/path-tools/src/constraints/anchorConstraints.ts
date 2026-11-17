@@ -20,7 +20,7 @@ import {
   type PolygonPath,
 } from '@weasel-js/geom';
 import { type EditAnchorsDep, pathOperationTags } from '@weasel-js/core';
-import { depOf } from '../pathEdit/anchorEditing';
+import { openPathEditOf } from '../pathEdit/anchorEditing';
 import { deleteSelectedMark } from '../pathEdit/pathEditMarks';
 import { constraintsOf } from './pathConstraints';
 import { editedPath, selectedConstraintOf, setConstraints } from './constraintsExtension';
@@ -129,7 +129,7 @@ function constraintCommand<const Id extends 'constrainAnchors' | 'unconstrainAnc
   variants?: readonly ActionVariantOf<ActionParamsOf<Id>>[],
 ) {
   const ready = (deps: ActionDeps | undefined) => {
-    const dep = depOf(deps);
+    const dep = openPathEditOf(deps);
     return dep?.store && dep.selectedAnchors.size > 0 ? dep : null;
   };
   return defineAction<Id, ActionParamsOf<Id>>({
@@ -173,12 +173,12 @@ export const deleteConstraintAction: Action & { requires: string[] } = {
   invoker: {
     timing: 'immediate',
     run: (deps) => {
-      const dep = depOf(deps);
+      const dep = openPathEditOf(deps);
       if (dep && selectedConstraintOf(dep) !== null) deleteSelectedMark(dep);
     },
   } as ImmediateInvoker,
   enabled: (deps) => {
-    const dep = depOf(deps);
+    const dep = openPathEditOf(deps);
     return dep?.store && selectedConstraintOf(dep) !== null ? true : ActionDisabledReason.SelectionRequired;
   },
 };

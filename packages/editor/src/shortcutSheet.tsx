@@ -1,6 +1,6 @@
 import { createContext, useCallback, useContext, useEffect, useState, type ReactNode } from 'react';
 import type { ShortcutTool, ToolSet, ToolsApi } from '@weasel-js/core';
-import { BUILTIN_TOOL_GROUPS } from '@weasel-js/editing';
+import { KIT_TOOL_GROUPS } from '@weasel-js/editing';
 import { ShortcutSheet, useShortcutSheetCommand } from '@weasel-js/ui/components/ShortcutSheet';
 import type { EditorCommandOptions } from './editorCommands';
 
@@ -51,7 +51,7 @@ export function ShortcutSheetHost({ options, children }: { options: EditorComman
             open={sheetOpen}
             onOpenChange={setOpen}
             tools={shown?.tools ?? null}
-            toolSets={shown?.toolSets ?? BUILTIN_TOOL_GROUPS}
+            toolSets={shown?.toolSets ?? KIT_TOOL_GROUPS}
           />
         </>
       )}

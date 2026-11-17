@@ -29,7 +29,7 @@ export type { GanttData, GanttEnd, GanttSection, GanttStart, GanttTag, GanttTask
 export { compileGantt, type GanttLayout } from './gantt/compile';
 export { scheduleGantt, type GanttSchedule, type GanttSpan } from './gantt/schedule';
 export { GANTT_DATE_FORMAT, formatGanttDate, parseGanttDate } from './gantt/dates';
-export { moveGanttTask, setGanttEnd, setGanttSectionName, setGanttTaskName } from './gantt/edit';
+export { setGanttStartDay, setGanttEndDay, setGanttSectionName, setGanttTaskName } from './gantt/edit';
 export type { TimelineData, TimelinePeriod, TimelineSection } from './timeline/types';
 export { compileTimeline, type TimelineLayout } from './timeline/compile';
 export {
@@ -40,7 +40,7 @@ export { compilePie, type PieLayout } from './pie/compile';
 export { setPieLabel, setPieValue } from './pie/edit';
 export type { QuadrantAxis, QuadrantData, QuadrantPoint, QuadrantPointStyle } from './quadrant/types';
 export { compileQuadrant, type QuadrantLayout } from './quadrant/compile';
-export { setQuadrantAxisLabel, setQuadrantLabel, setQuadrantPoint, setQuadrantPointName } from './quadrant/edit';
+export { setQuadrantAxisLabel, setQuadrantLabel, setQuadrantPointAt, setQuadrantPointName } from './quadrant/edit';
 export type { JourneyData, JourneySection, JourneyTask } from './journey/types';
 export { compileJourney, type JourneyLayout } from './journey/compile';
 export { setJourneyScore, setJourneySectionName, setJourneyTaskName } from './journey/edit';
@@ -66,13 +66,13 @@ export {
 } from './plotScene';
 
 export { handlesOf, plotEditorOf, type PlotEditor, type PlotHandle } from './editing/editors';
-export { foldPlotText, isPlotText, plotTextOf, usePlotTextEdit } from './editing/textEdit';
+export { foldPlotText, isPlotText, plotTextDatumOf, usePlotTextEdit } from './editing/textEdit';
 export {
-  PLOT_HANDLE_AFFORDANCE_KIND, PLOT_HANDLE_LAYER_ID, plotHandleLayer, plotHandles, plotHandleScratchOf, plotOrigin,
+  PLOT_HANDLE_AFFORDANCE_KIND, PLOT_HANDLE_LAYER_ID, createPlotHandleLayer, plotHandles, plotHandleScratchOf, plotOrigin,
   type PlotHandleScratch,
 } from './editing/handleLayer';
-export { PLOT_DRAG_ACTION_ID, commitPlotToScene, createPlotDragAction, type PlotDragOptions, type PlotEdit } from './editing/dragAction';
-export { GRAB_PLOT_HANDLE_ACTION_ID, plotEditing } from './editing/plotEditing';
+export { EDIT_PLOT_VALUE_ACTION_ID, commitPlotToScene, createPlotDragAction, type PlotDragOptions, type PlotEdit } from './editing/dragAction';
+export { GRAB_PLOT_HANDLE_ACTION_ID, createPlotEditingContribution } from './editing/createPlotEditingContribution';
 export { PlotView, type PlotViewProps } from './PlotView';
 
 export type {

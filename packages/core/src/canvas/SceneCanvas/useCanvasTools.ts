@@ -38,7 +38,7 @@ const entryKey = (e: FeaturePreset): string => {
 };
 
 /** The presets a canvas runs with. Keyed on the entries, not the array, so
- *  an inline `features={[drawPreset, pathTools]}` does not re-derive every render. */
+ *  an inline `features={[drawPreset, pathToolsPreset]}` does not re-derive every render. */
 export function useEnabledFeatures(
   features: readonly FeaturePreset[] | undefined,
   selectRotates: boolean,

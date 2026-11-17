@@ -8,7 +8,7 @@ import { useMemo } from 'react';
 import { useDepRegistry } from '@weasel-js/routing/react';
 import { type InsertDep } from '@weasel-js/core/engine';
 import { type NodeId } from '@weasel-js/routing';
-import { createInsert, pose3, type ViewportSource } from '@weasel-js/kernel3d';
+import { createInsert3dDep, pose3, type ViewportSource } from '@weasel-js/kernel3d';
 import type { SolidScene } from './scene3d';
 
 export function useBoxInsert(scene: SolidScene, viewport: ViewportSource): InsertDep {
@@ -18,7 +18,7 @@ export function useBoxInsert(scene: SolidScene, viewport: ViewportSource): Inser
       const into = registry.get('insertInto')?.get();
       return into != null && scene.get(into as NodeId)?.kind === 'group' ? into as NodeId : null;
     };
-    return createInsert({
+    return createInsert3dDep({
       world: { scene, viewport },
       // The lab keeps its selection in React state, behind the `selection` dep.
       selection: {

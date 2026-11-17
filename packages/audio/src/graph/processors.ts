@@ -49,7 +49,7 @@ export function createMixNode(ctx: BaseAudioContext, opts: { inputs: readonly st
 }
 
 /** Wrap an insert effect as a node with one port, `in`. */
-export function insertNode(effect: InsertEffect, params: GraphNodeDef['params']): GraphNodeDef {
+export function createInsertNode(effect: InsertEffect, params: GraphNodeDef['params']): GraphNodeDef {
   return {
     inputs: { in: effect.input },
     output: effect.output,
@@ -59,10 +59,10 @@ export function insertNode(effect: InsertEffect, params: GraphNodeDef['params'])
 }
 
 /** A graph node over a filter insert: port `in`; params `frequency`, `Q`, `gain`. */
-export function filterNode(ctx: BaseAudioContext, opts: FilterEffectOptions = {}): GraphNodeDef {
+export function createFilterNode(ctx: BaseAudioContext, opts: FilterEffectOptions = {}): GraphNodeDef {
   const { filter } = createFilterEffect(ctx, opts);
   const write = (p: AudioParam) => (value: number, rampMs: number) => writeParam(ctx, p, value, rampMs);
-  return insertNode({ input: filter, output: filter }, {
+  return createInsertNode({ input: filter, output: filter }, {
     frequency: write(filter.frequency),
     Q: write(filter.Q),
     gain: write(filter.gain),
@@ -70,16 +70,16 @@ export function filterNode(ctx: BaseAudioContext, opts: FilterEffectOptions = {}
 }
 
 /** A graph node over a delay insert: port `in`; params `time` (ms), `feedback`, `mix`. */
-export function delayNode(ctx: BaseAudioContext, opts: DelayEffectOptions = {}): GraphNodeDef {
+export function createDelayNode(ctx: BaseAudioContext, opts: DelayEffectOptions = {}): GraphNodeDef {
   const fx = createDelayEffect(ctx, { ...opts, maxTime: opts.maxTime ?? Math.max(2000, opts.time ?? 0) });
-  return insertNode(fx, {
+  return createInsertNode(fx, {
     time: (value, rampMs) => fx.setTime(value, rampMs),
     feedback: (value, rampMs) => fx.setFeedback(value, rampMs),
     mix: (value, rampMs) => fx.setMix(value, rampMs),
   });
 }
 
-/** Options for `reverbNode`: the reverb effect's options, plus an `impulse` or the `seconds` of a synthesized one. */
+/** Options for `createReverbNode`: the reverb effect's options, plus an `impulse` or the `seconds` of a synthesized one. */
 export type ReverbNodeOptions = Omit<ReverbEffectOptions, 'impulse'> & {
   impulse?: AudioBuffer;
   /** Length of the synthesized impulse when none is given. Default 2. */
@@ -87,19 +87,19 @@ export type ReverbNodeOptions = Omit<ReverbEffectOptions, 'impulse'> & {
 };
 
 /** A graph node over a reverb insert: port `in`; param `mix`. */
-export function reverbNode(ctx: BaseAudioContext, opts: ReverbNodeOptions = {}): GraphNodeDef {
+export function createReverbNode(ctx: BaseAudioContext, opts: ReverbNodeOptions = {}): GraphNodeDef {
   const { seconds, impulse, ...rest } = opts;
   const fx = createReverbEffect(ctx, { ...rest, impulse: impulse ?? impulseResponse(ctx, seconds ?? 2) });
-  return insertNode(fx, { mix: (value, rampMs) => fx.setMix(value, rampMs) });
+  return createInsertNode(fx, { mix: (value, rampMs) => fx.setMix(value, rampMs) });
 }
 
 /** A graph node over a compressor insert: port `in`; params `threshold`, `knee`, `ratio`, `attack` (ms), `release` (ms), `makeup`. */
-export function compressorNode(ctx: BaseAudioContext, opts: CompressorEffectOptions = {}): GraphNodeDef {
+export function createCompressorNode(ctx: BaseAudioContext, opts: CompressorEffectOptions = {}): GraphNodeDef {
   const fx = createCompressorEffect(ctx, opts);
   const { compressor, makeup } = fx;
   const write = (p: AudioParam, scale = 1) => (value: number, rampMs: number) =>
     writeParam(ctx, p, value * scale, rampMs);
-  return insertNode(fx, {
+  return createInsertNode(fx, {
     threshold: write(compressor.threshold),
     knee: write(compressor.knee),
     ratio: write(compressor.ratio),

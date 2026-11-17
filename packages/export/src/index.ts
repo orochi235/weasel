@@ -1,5 +1,5 @@
 export { exportFormatRegistry, exportFormats, exportRegions, pickExportOptions, registerExportFormat } from './exportFormats';
-export { exportPages, pageRegion, pageRegionOf, pageRegionsOf } from './exportPages';
+export { exportPages, pageRegion, pageRegionSource, pageRegionsSource } from './exportPages';
 export { exportRegionPng, type ExportRegionPngOptions, type PngExportOptions } from './regionPng';
 export { selectionRegion } from './selectionRegion';
 export { regionRenderArgs, type RegionRenderArgs, type RegionRenderArgsOptions } from './regionRenderArgs';

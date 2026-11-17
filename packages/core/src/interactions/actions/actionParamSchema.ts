@@ -58,7 +58,7 @@ declare module '@weasel-js/routing' {
     'tool.activate': { toolId: string };
     insert: InsertParams;
     place: PlaceParams;
-    'insert.adjustRotation': Pick<ImmediateParams, 'deltaY'>;
+    'insert.rotate': Pick<ImmediateParams, 'deltaY'>;
     'polygon.adjustSides': CountStepParams;
     'star.adjustPoints': CountStepParams;
     lassoSelect: { mode?: LassoHitMode; minVertexSpacing?: number };

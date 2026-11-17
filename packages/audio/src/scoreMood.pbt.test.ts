@@ -4,7 +4,7 @@
  */
 import { describe, expect, it } from 'vitest';
 import fc from 'fast-check';
-import { readScoreCue, scoreCues, scoreParams, type ScoreMood } from './scoreMood';
+import { readScoreCue, SCORE_CUES, resolveScoreMood, type ScoreMood } from './scoreMood';
 import { anyFinite, runs, tally, timeoutFor } from './pbt.fixture';
 
 const RUNS = 400;
@@ -13,9 +13,9 @@ const inRangeMood: fc.Arbitrary<ScoreMood> = fc.record({ valence: fc.double({ mi
 const anyMood: fc.Arbitrary<ScoreMood> = fc.oneof(
   inRangeMood,
   fc.record({ valence: anyFinite, tension: anyFinite, urgency: anyFinite }),
-  fc.constantFrom(...scoreCues.map((c) => c.mood)),
+  fc.constantFrom(...SCORE_CUES.map((c) => c.mood)),
   // A hair from a cue, where an inverse squared distance can overflow.
-  fc.tuple(fc.constantFrom(...scoreCues.map((c) => c.mood)), fc.constantFrom('valence', 'tension', 'urgency'), fc.double({ min: 1e-200, max: 1e-140, noNaN: true }))
+  fc.tuple(fc.constantFrom(...SCORE_CUES.map((c) => c.mood)), fc.constantFrom('valence', 'tension', 'urgency'), fc.double({ min: 1e-200, max: 1e-140, noNaN: true }))
     .map(([m, axis, d]) => ({ ...m, [axis]: m[axis] + (m[axis] > 0 ? -d : d) })),
 );
 const clamp = (v: number, lo: number, hi: number): number => Math.min(hi, Math.max(lo, v));
@@ -35,7 +35,7 @@ describe('readScoreCue', () => {
     fc.assert(fc.property(anyMood, (mood) => {
       const r = readScoreCue(mood);
       const ws = Object.values(r.weights);
-      expect(ws).toHaveLength(scoreCues.length);
+      expect(ws).toHaveLength(SCORE_CUES.length);
       for (const w of ws) {
         expect(Number.isFinite(w)).toBe(true);
         expect(w).toBeGreaterThanOrEqual(0);
@@ -44,7 +44,7 @@ describe('readScoreCue', () => {
       expect(ws.reduce((a, b) => a + b, 0)).toBeCloseTo(1, 12);
       expect(r.weights[r.name]).toBe(Math.max(...ws));
       expect(readScoreCue(clamped(mood))).toEqual(r);
-      const cue = scoreCues.find((c) => c.mood.valence === mood.valence && c.mood.tension === mood.tension && c.mood.urgency === mood.urgency);
+      const cue = SCORE_CUES.find((c) => c.mood.valence === mood.valence && c.mood.tension === mood.tension && c.mood.urgency === mood.urgency);
       if (cue) {
         expect(r.name).toBe(cue.name);
         expect(r.weights[cue.name]).toBe(1);
@@ -55,13 +55,13 @@ describe('readScoreCue', () => {
   }, timeoutFor(RUNS, 1));
 });
 
-describe('scoreParams', () => {
+describe('resolveScoreMood', () => {
   it('takes each parameter from its one axis, monotonically, and reads a mood out of range as its nearest end', () => {
     fc.assert(fc.property(inRangeMood, inRangeMood, fc.constantFrom('valence', 'tension', 'urgency'), (a, b, axis) => {
       // `b` differs from `a` on `axis` alone, and lies above it there.
       const lo = { ...a, [axis]: Math.min(a[axis], b[axis]) };
       const hi = { ...a, [axis]: Math.max(a[axis], b[axis]) };
-      const [p, q] = [scoreParams(lo), scoreParams(hi)];
+      const [p, q] = [resolveScoreMood(lo), resolveScoreMood(hi)];
       for (const [other, keys] of Object.entries(BY_AXIS)) {
         if (other === axis) continue;
         for (const k of keys) expect(q[k], k).toEqual(p[k]);
@@ -83,6 +83,6 @@ describe('scoreParams', () => {
       expect(p.spread).toBeLessThanOrEqual(3);
       expect(p.tempo).toBeGreaterThan(0);
     }), runs(RUNS));
-    fc.assert(fc.property(anyMood, (m) => { expect(scoreParams(m)).toEqual(scoreParams(clamped(m))); }), runs(RUNS));
+    fc.assert(fc.property(anyMood, (m) => { expect(resolveScoreMood(m)).toEqual(resolveScoreMood(clamped(m))); }), runs(RUNS));
   }, timeoutFor(RUNS, 2));
 });

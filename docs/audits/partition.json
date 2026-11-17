@@ -9,7 +9,7 @@
    "packages/animator/src/colorInterpolate.ts",
    "packages/animator/src/colorRegistry.ts",
    "packages/animator/src/elementTarget.ts",
-   "packages/animator/src/hostAnimator.ts",
+   "packages/animator/src/createHostedAnimator.ts",
    "packages/animator/src/index.ts",
    "packages/animator/src/loop.ts",
    "packages/animator/src/observe.ts",
@@ -2890,7 +2890,7 @@
    "packages/editing/src/tools/select/selectionContributions.ts",
    "packages/editing/src/tools/select/testing/rectListAdapter.ts",
    "packages/editing/src/tools/select/useSelectTool.ts",
-   "packages/editing/src/tools/select/useSelectToolWith.ts",
+   "packages/editing/src/tools/select/usePickerSelectTool.ts",
    "packages/editing/src/tools/shared/countOption.ts",
    "packages/editing/src/tools/shared/insertToolOptions.ts",
    "packages/editing/src/tools/shared/pointerFollower.ts",
@@ -3683,7 +3683,7 @@
    "packages/history/src/restore.ts",
    "packages/history/src/serialized.ts",
    "packages/history/src/stackTime.ts",
-   "packages/history/src/swapOp.ts",
+   "packages/history/src/createSwapOp.ts",
    "packages/history/src/walk.ts"
   ]
  },
@@ -4640,7 +4640,7 @@
    "packages/path-tools/src/pathEdit/editAnchors/preview.ts",
    "packages/path-tools/src/pathEdit/editAnchors/symmetry.ts",
    "packages/path-tools/src/pathEdit/enterPathEdit.ts",
-   "packages/path-tools/src/pathEdit/exitPathEdit.ts",
+   "packages/path-tools/src/pathEdit/leavePathEdit.ts",
    "packages/path-tools/src/pathEdit/insertPathAnchor.ts",
    "packages/path-tools/src/pathEdit/pathEditMarks.ts"
   ]
@@ -4688,7 +4688,7 @@
    "packages/plot/src/editing/editors.ts",
    "packages/plot/src/editing/handleLayer.ts",
    "packages/plot/src/editing/lists.ts",
-   "packages/plot/src/editing/plotEditing.ts",
+   "packages/plot/src/editing/createPlotEditingContribution.ts",
    "packages/plot/src/editing/schemaKit.ts",
    "packages/plot/src/editing/schemaTypes.ts",
    "packages/plot/src/editing/schemas.ts",
@@ -5718,8 +5718,8 @@
  {
   "id": "text",
   "files": [
-   "packages/text/src/fitTextPose.ts",
-   "packages/text/src/fitTextToBox.ts",
+   "packages/text/src/fitBoxToText.ts",
+   "packages/text/src/bakeTextFit.ts",
    "packages/text/src/glyphOutlines.ts",
    "packages/text/src/glyphTurn.ts",
    "packages/text/src/hitTest.ts",
@@ -5804,7 +5804,7 @@
   "files": [
    "packages/text-tools/src/actionParamSchema.ts",
    "packages/text-tools/src/actions/editEffectText.ts",
-   "packages/text-tools/src/actions/editTextAt.ts",
+   "packages/text-tools/src/actions/enterTextEditAt.ts",
    "packages/text-tools/src/actions/enterTextEdit.ts",
    "packages/text-tools/src/editor/canvasEditor.tsx",
    "packages/text-tools/src/editor/editingDrawOne.ts",
@@ -5935,7 +5935,7 @@
    "packages/theme/src/hooks/panels.ts",
    "packages/theme/src/index.ts",
    "packages/theme/src/inherited.module.css",
-   "packages/theme/src/loadDTCG.ts",
+   "packages/theme/src/fromDtcg.ts",
    "packages/theme/src/numeric.module.css",
    "packages/theme/src/panel.ts",
    "packages/theme/src/pbt.fixture.ts",

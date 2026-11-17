@@ -63,7 +63,7 @@ export function textCommandFromRuns(
 /**
  * {@link textCommandFromRuns} into `cmd`, an earlier result of it that the
  * caller owns, refilled in place along with its runs and returned. For text
- * rewritten every frame: call `clearRuns(cmd.runs)` first, and anything still
+ * rewritten every frame: call `evictRunsForRefill(cmd.runs)` first, and anything still
  * holding `cmd` sees the new text.
  */
 export function textCommandFromRunsInto(

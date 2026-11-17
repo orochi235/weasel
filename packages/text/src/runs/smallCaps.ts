@@ -42,7 +42,7 @@ export function smallCapsScaleFor(family: string, weight: number, style: FontSty
 /** Whether a run set in `(family, weight, style)` draws small caps from the face's own `smcp` glyphs, as a
  *  registered shaper finds them, rather than synthesizing them as {@link smallCapsText} does. Every reader
  *  of small caps asks here, so the canvas and the edit overlay set the same capitals. */
-export function ownSmallCaps(family: string, weight: number, style: FontStyle): boolean {
+export function hasOwnSmallCaps(family: string, weight: number, style: FontStyle): boolean {
   return shapesWithFeature(family, weight, style, 'smcp');
 }
 

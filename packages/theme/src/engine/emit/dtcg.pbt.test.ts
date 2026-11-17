@@ -1,24 +1,24 @@
 /**
- * Property tests of the DTCG interchange path: a theme written by `toDTCG`, through JSON, and read back by
- * `loadDTCG` over the same parent resolves as the original does at every selection, failures included.
+ * Property tests of the DTCG interchange path: a theme written by `toDtcg`, through JSON, and read back by
+ * `fromDtcg` over the same parent resolves as the original does at every selection, failures included.
  */
 import fc from 'fast-check';
 import { describe, expect, it } from 'vitest';
 import { enumerateAxisChoices } from '../../axes';
-import { loadDTCG, type DtcgDocument } from '../../loadDTCG';
+import { fromDtcg, type DtcgDocument } from '../../fromDtcg';
 import { chainTheme, outcome, runs, tally, timeoutFor } from '../../pbt.fixture';
 import { resolveTheme, themeAxes } from '../../resolveTheme';
-import { toDTCG } from './dtcg';
+import { toDtcg } from './dtcg';
 
 const RUNS = 300;
 
-describe('toDTCG and loadDTCG', () => {
+describe('toDtcg and fromDtcg', () => {
   it('a theme read back resolves as it did, at every selection', () => {
     const t = tally();
     fc.assert(
       fc.property(chainTheme, (theme) => {
-        const doc = JSON.parse(JSON.stringify(toDTCG(theme))) as DtcgDocument;
-        const back = loadDTCG({ ...doc, extends: theme.extends });
+        const doc = JSON.parse(JSON.stringify(toDtcg(theme))) as DtcgDocument;
+        const back = fromDtcg({ ...doc, extends: theme.extends });
         expect(back.name).toBe(theme.name);
         for (const sel of enumerateAxisChoices(themeAxes(theme))) {
           const want = outcome(() => resolveTheme(theme, sel));
@@ -40,10 +40,10 @@ describe('toDTCG and loadDTCG', () => {
 
   // Not the first document: a `by` naming none of its axis' values writes an empty override layer, which reads back as nothing.
   it('a document read back and written again is unchanged from then on', () => {
-    const write = (doc: DtcgDocument, parent: DtcgDocument['extends']) => JSON.parse(JSON.stringify(toDTCG(loadDTCG({ ...doc, extends: parent })))) as DtcgDocument;
+    const write = (doc: DtcgDocument, parent: DtcgDocument['extends']) => JSON.parse(JSON.stringify(toDtcg(fromDtcg({ ...doc, extends: parent })))) as DtcgDocument;
     fc.assert(
       fc.property(chainTheme, (theme) => {
-        const once = write(JSON.parse(JSON.stringify(toDTCG(theme))) as DtcgDocument, theme.extends);
+        const once = write(JSON.parse(JSON.stringify(toDtcg(theme))) as DtcgDocument, theme.extends);
         expect(write(once, theme.extends)).toEqual(once);
       }),
       runs(RUNS),

@@ -33,7 +33,7 @@ export interface ShapeKindDescriptor {
 /**
  * Declaration order is the enumeration order of every derived list —
  * `KIT_SHAPE_KINDS`, and through it `defaultNodeRouting` /
- * `defaultNodeProperties` / `BUILTIN_TOOL_IDS`.
+ * `defaultNodeProperties` / `KIT_TOOL_IDS`.
  */
 export const SHAPE_KINDS = {
   rect: { tool: true, insertPreview: true, family: 'shape' },

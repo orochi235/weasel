@@ -26,7 +26,7 @@ export interface VoicesDeps {
   scheduler: Pick<Scheduler, 'schedule'>;
   chains: ChainPool;
   busInput(bus: string): AudioNode;
-  slotsFor(bus: string): Slots;
+  requireSlots(bus: string): Slots;
   defaultBus: string;
   warn: DropWarnings;
   staleFloor(): number;
@@ -275,7 +275,7 @@ export function createVoices(deps: VoicesDeps): Voices {
       }
 
       const busName = common.bus ?? deps.defaultBus;
-      const slots = deps.slotsFor(busName);
+      const slots = deps.requireSlots(busName);
       const bookedAt = ctx.currentTime * 1000;
       const when = common.when ?? bookedAt;
       const baseGain = common.gain ?? 1;

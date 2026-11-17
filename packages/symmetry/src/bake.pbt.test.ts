@@ -9,7 +9,7 @@ import { boxFrameOf, multiply, rotate, translate, type Affine } from '@weasel-js
 import { asNodeId, createScene, worldPoseOf, type NodeId, type RectPose } from '@weasel-js/core';
 import { carryPose, bakeSymmetry, type BoxPose } from './bake';
 import { createSymmetry } from './controller';
-import { isSymmetryGroup, readGroup, symmetryRegistry } from './group';
+import { isSymmetryGroup, symmetryOf, symmetryRegistry } from './group';
 import { symmetryTransforms } from './kinds';
 import { ID, angle, coord, near, point, runs, spec, tally, timeoutFor } from './pbt.fixture';
 
@@ -107,7 +107,7 @@ describe('bakeSymmetry', () => {
       leaves.forEach((pose, k) => {
         scene.add({ kind: 'mark', layer: 'main', parent: into, id: asNodeId(`leaf${k}`), pose: pose as RectPose, data: { k } });
       });
-      const live = readGroup(scene as never, group)!;
+      const live = symmetryOf(scene as never, group)!;
       const copies = symmetryTransforms(live.spec, live.center);
       const before = leavesUnder(scene, group);
       const drawn = frames(scene, before);
@@ -147,8 +147,8 @@ describe('bakeSymmetry of a symmetry group inside another', () => {
       leaves.forEach((pose, k) => {
         scene.add({ kind: 'mark', layer: 'main', parent: h, id: asNodeId(`leaf${k}`), pose: pose as RectPose, data: { k } });
       });
-      const o = readGroup(scene as never, g)!;
-      const i = readGroup(scene as never, h)!;
+      const o = symmetryOf(scene as never, g)!;
+      const i = symmetryOf(scene as never, h)!;
       const drawn = frames(scene, leavesUnder(scene, g));
       const outerCopies = [ID, ...symmetryTransforms(o.spec, o.center)];
       const innerCopies = [ID, ...symmetryTransforms(i.spec, i.center)];

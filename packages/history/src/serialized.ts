@@ -158,7 +158,7 @@ export function snapshot(stacks: Stacks, logger: HistoryLogger): SerializedHisto
  *  - `args.node.id` (string) — insert, delete
  *  - `args.nodes[].id` (string) — an op that takes several nodes at once
  *  Ops that match none of them contribute nothing. */
-export function touchedIdsFromOps(ops: readonly Op[]): ReadonlySet<string> {
+export function touchedIdsOf(ops: readonly Op[]): ReadonlySet<string> {
   const ids = new Set<string>();
   for (const op of ops) {
     if (op.args === null || typeof op.args !== 'object') continue;

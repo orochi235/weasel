@@ -3,7 +3,7 @@ import type { AudioEngine } from '../createAudioEngine';
 import type { AudioEngineOptions } from '../types';
 import { renderEngineStereo } from '@weasel-js/audio/testing/renderEngine';
 import { rms } from '@weasel-js/audio/testing/spectrum';
-import { createGainNode, delayNode, createFileSourceNode, createOscillatorNode } from '@weasel-js/audio';
+import { createGainNode, createDelayNode, createFileSourceNode, createOscillatorNode } from '@weasel-js/audio';
 import type { AudioGraph } from './types';
 
 // The unit tests prove the wiring against a double; these render it through a
@@ -88,7 +88,7 @@ describe('audio graph in a real engine', () => {
   it("patching a running graph doesn't reset a delay's tail", async () => {
     const build = (g: AudioGraph, e: AudioEngine): void => {
       g.add('src', createFileSourceNode(e.context, { buffer: burst(e.context), loop: false }));
-      g.add('delay', delayNode(e.context, { time: 100, feedback: 0.5, mix: 1 }));
+      g.add('delay', createDelayNode(e.context, { time: 100, feedback: 0.5, mix: 1 }));
       g.connect('src', { node: 'delay', port: 'in' });
       g.connect('delay', { output: true });
       g.start();

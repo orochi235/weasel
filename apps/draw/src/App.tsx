@@ -1,5 +1,5 @@
 /**
- * WeaselDraw's editor: one `<SceneCanvas features={[drawPreset, pathTools]}>` with every built-in tool over a
+ * WeaselDraw's editor: one `<SceneCanvas features={[drawPreset, pathToolsPreset]}>` with every built-in tool over a
  * `useScene` document, saved to the session (IndexedDB, or localStorage without it) 300 ms after each change.
  */
 import { useScene } from '@weasel-js/core';

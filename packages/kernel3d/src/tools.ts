@@ -92,7 +92,7 @@ function dragCamera(
 
 /** `camera.orbit`: an ongoing drag that turns the `camera3d` dep about its
  *  target. */
-export const orbitAction: Action = {
+export const cameraOrbitAction: Action = {
   id: 'camera.orbit',
   label: 'Orbit',
   icon: icon('orbit'),
@@ -112,7 +112,7 @@ export const orbitAction: Action = {
 
 /** `camera.pan`: an ongoing drag that slides the `camera3d` dep's target
  *  across the screen plane, so the point at the target follows the pointer. */
-export const panAction: Action = {
+export const cameraPanAction: Action = {
   id: 'camera.pan',
   label: 'Pan',
   group: 'viewport',
@@ -152,7 +152,7 @@ function wheelPoint(params: Readonly<Partial<DollyParams>> | undefined): { x: nu
  *  one rate for both, as a 2D camera zooms by both. Safari's pinch arrives as
  *  a `scale` and divides the distance by it. Bound to all three by default, in
  *  every tool. */
-export const dollyAction: Action = defineAction({
+export const cameraDollyAction: Action = defineAction({
   id: 'camera.dolly',
   label: 'Dolly',
   icon: icon('dollyIn'),
@@ -180,7 +180,7 @@ export const dollyAction: Action = defineAction({
 
 /** `camera.pinchDolly`: two fingers spreading dolly the `camera3d` dep in and
  *  closing dolly it out, by the ratio of their spread, about where they began. */
-export const pinchDollyAction: Action = {
+export const cameraPinchDollyAction: Action = {
   id: 'camera.pinchDolly',
   label: 'Pinch Dolly',
   group: 'viewport',
@@ -211,7 +211,7 @@ export const pinchDollyAction: Action = {
 
 /** `camera.home`: returns the `camera3d` dep to its `home`. Bound to a double
  *  click by default. */
-export const homeAction: Action = {
+export const cameraHomeAction: Action = {
   id: 'camera.home',
   label: 'Reset Camera',
   icon: icon('home'),
@@ -238,7 +238,7 @@ export function useOrbitTool(): Tool {
     hookName: 'useOrbitTool',
     cursor: 'grab',
     presentation: { label: 'Orbit', icon: icon('orbit'), group: 'view' },
-    actions: [orbitAction, panAction],
+    actions: [cameraOrbitAction, cameraPanAction],
     bindings: [
       { spec: { kind: 'drag' }, actionId: 'camera.orbit', opts: { id: 'orbit.orbit' } },
       { spec: { kind: 'drag', mods: { shift: true } }, actionId: 'camera.pan', opts: { id: 'orbit.pan' } },

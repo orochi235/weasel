@@ -7,7 +7,7 @@ import {
   shapeKindsWhere,
 } from '@weasel-js/core/engine';
 import type { ShapeKindsWhere } from '@weasel-js/core/engine';
-import { BUILTIN_TOOL_IDS } from '@weasel-js/editing';
+import { KIT_TOOL_IDS } from '@weasel-js/editing';
 import { defaultNodeRouting } from '@weasel-js/core';
 import { defaultNodeProperties } from '@weasel-js/core';
 
@@ -32,7 +32,7 @@ describe('shape-kind table', () => {
     expect([...KIT_SHAPE_KINDS]).toEqual(shapeKindsWhere(SHAPE_KINDS, 'tool'));
     expect(defaultNodeRouting.map((e) => e.name)).toEqual([...KIT_SHAPE_KINDS]);
     expect(defaultNodeProperties.map((e) => e.name)).toEqual([...KIT_SHAPE_KINDS]);
-    expect(KIT_SHAPE_KINDS.filter((k) => !BUILTIN_TOOL_IDS.includes(k))).toEqual([]);
+    expect(KIT_SHAPE_KINDS.filter((k) => !KIT_TOOL_IDS.includes(k))).toEqual([]);
   });
 
   it('answers per-kind questions through one accessor', () => {

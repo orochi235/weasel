@@ -88,7 +88,7 @@ const OFF_SCREEN = Object.freeze({ x: NaN, y: NaN, width: NaN, height: NaN });
  * that did, rather than snapping the node back. Mid-gesture means a preview is in flight; a call with none, as a
  * gesture's first frame and a nudge are, starts afresh, so no gesture moves through an earlier one's camera.
  */
-function castableViewportOf<TData, TLayer extends string>(
+function createCastableViewportReader<TData, TLayer extends string>(
   world: World3d<TData, TLayer>, viewId: string | null | undefined,
 ): () => Viewport3d | null {
   let lastCastable: Viewport3d | null = null;
@@ -111,7 +111,7 @@ function castableViewportOf<TData, TLayer extends string>(
  * 3D views gives each `<CanvasView deps>` its own. The same goes for every
  * factory here that takes one.
  */
-export function createNodeAtPoint<TData, TLayer extends string>(
+export function createNodeAtPoint3dDep<TData, TLayer extends string>(
   world: World3d<TData, TLayer>,
   viewId?: string | null,
 ): NodeAtPointDep {
@@ -136,7 +136,7 @@ function pickOnRay<TData, TLayer extends string>(
  * ray the point names, cast from the camera of the view the pick is asked for,
  * passing over the layers that view does not paint.
  */
-export function createPickEvery<TData, TLayer extends string>(
+export function createPickNearest<TData, TLayer extends string>(
   world: World3d<TData, TLayer>,
 ): (point: { x: number; y: number }, view?: PickingView) => NodeId | null {
   return (point, view) => pickOnRay(world, view?.viewId, point, undefined, layerGateOf(view));
@@ -147,7 +147,7 @@ function layerGateOf(view: PickingView | undefined): ((layer: string) => boolean
   return view?.layerIsPainted ? (layer) => view.layerIsPainted!(layer) : undefined;
 }
 
-/** Options for `createAreaSelect`. */
+/** Options for `createAreaSelect3dDep`. */
 export interface AreaSelect3dOptions {
   /** The entered group, as the canvas's `enteredGroup` dep has it. Given, a marquee reaches only what a press
    *  can and selects what a press on each hit selects: the outermost container above it that is not entered. */
@@ -156,7 +156,7 @@ export interface AreaSelect3dOptions {
 
 /** Marquee: the nodes whose projected box the screen rectangle touches, in render
  *  order, less those on a layer the view the marquee was drawn in does not paint. */
-export function createAreaSelect<TData, TLayer extends string>(
+export function createAreaSelect3dDep<TData, TLayer extends string>(
   world: World3d<TData, TLayer>,
   selection: { get(): readonly NodeId[]; set(ids: NodeId[]): void },
   viewId?: string | null,
@@ -180,7 +180,7 @@ export function createAreaSelect<TData, TLayer extends string>(
   };
 }
 
-/** Options for `createSnap`. */
+/** Options for `createSnap3dDep`. */
 export interface Snap3dOptions {
   /** What a gesture snaps to, in order: earlier wins a full tie. Two sharing
    *  an id throw. Default none, which leaves only the gesture's own constraint. */
@@ -205,7 +205,7 @@ function warnGestureSources(): void {
   warnedGestureSources = true;
   console.warn(
     '[kernel3d] a gesture passed snap `sources`, which are 2D and are not asked in a 3D host. ' +
-    'List 3D sources in createSnap({ sources }).',
+    'List 3D sources in createSnap3dDep({ sources }).',
   );
 }
 
@@ -215,9 +215,9 @@ function warnGestureSources(): void {
  * plane it already moves on, or along `along` when the gesture names one; an
  * insert snaps the pointer on the ground. Each answers with a screen point and,
  * as its `landing`, the exact world point (`Landing3d`) that `translate` and
- * `createInsert` store, so a snap to a grid line stores the line's own coordinate.
+ * `createInsert3dDep` store, so a snap to a grid line stores the line's own coordinate.
  */
-export function createSnap<TData, TLayer extends string>(
+export function createSnap3dDep<TData, TLayer extends string>(
   world: World3d<TData, TLayer>, opts: Snap3dOptions = {},
 ): SnapDep {
   const store = opts.store ?? createSnapOutcomeStore<Vec3>();
@@ -256,7 +256,7 @@ export function createPoseDescriptor<TData, TLayer extends string>(
   const upAxis = groundAxes(up).up;
   const specialized = new WeakMap<object, PoseDescriptor<Pose3, Node3d<TData, TLayer>>>();
 
-  const castableViewport = castableViewportOf(world, viewId);
+  const castableViewport = createCastableViewportReader(world, viewId);
 
   function build(worldBox: (pose: Pose3) => Aabb): PoseDescriptor<Pose3, Node3d<TData, TLayer>> {
     const boundsIn = (vp: Viewport3d, pose: Pose3) =>

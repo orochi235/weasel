@@ -6,7 +6,7 @@ import type { ImmediateParams } from '@weasel-js/routing';
 
 declare module '@weasel-js/routing' {
   interface ActionParamSchema {
-    editTextAt: Pick<ImmediateParams, 'world'>;
+    enterTextEditAt: Pick<ImmediateParams, 'world'>;
     editEffectText: Pick<ImmediateParams, 'world'>;
   }
 }

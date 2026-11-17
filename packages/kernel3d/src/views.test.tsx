@@ -8,7 +8,7 @@ import { act, cleanup } from '@testing-library/react';
 import { renderWithKeys as render } from '@weasel-js/react/testing/giveKeys';
 import { SceneCanvas, createEnteredGroup, type CanvasViewProps, type NodeId, type SelectionApi } from '@weasel-js/core';
 import { createCamera, type Camera3d } from './camera';
-import { createNodeAtPoint, createPickEvery, createPoseDescriptor, worldPoseOf } from './deps';
+import { createNodeAtPoint3dDep, createPickNearest, createPoseDescriptor, worldPoseOf } from './deps';
 import { projectPoint, type Viewport3d } from './project';
 import { boundsOfTestNode, createNestedTestScene, createTestScene, type TestScene } from './testScene';
 import type { World3d } from './world';
@@ -48,7 +48,7 @@ function setup(scene: TestScene, aim: Record<ViewName, NodeId>) {
   const world: World3d<TestData, TestLayer> = { scene, viewport, bounds: boundsOfTestNode };
   const viewProps = (id: ViewName): CanvasViewProps => ({
     id, bounds: RECTS[id],
-    deps: { nodeAtPoint: createNodeAtPoint(world, id), poseDescriptor: createPoseDescriptor(world, id) },
+    deps: { nodeAtPoint: createNodeAtPoint3dDep(world, id), poseDescriptor: createPoseDescriptor(world, id) },
   });
 
   const entered = createEnteredGroup(scene as never);
@@ -59,7 +59,7 @@ function setup(scene: TestScene, aim: Record<ViewName, NodeId>) {
     return (
       <SceneCanvas scene={scene} layers={{}} width={W} height={H} selection={sel} features={[pickPreset, selectPreset, movePreset]}
         enteredGroup={entered} onHover={(id) => hovered.push(id)}
-        poseDescriptor={createPoseDescriptor(world)} geometry={{ pickEvery: createPickEvery(world) }}
+        poseDescriptor={createPoseDescriptor(world)} geometry={{ pickEvery: createPickNearest(world) }}
         views={[viewProps('left'), viewProps('right')]} />
     );
   }
@@ -98,7 +98,7 @@ describe('two 3D views on one surface', () => {
     const t = solids();
     // Where the second camera draws `c`, the first draws something else.
     const there = t.clientOf('right', t.ids.c);
-    const firstSees = createNodeAtPoint(t.world, 'left')({ x: there.x - HALF, y: there.y });
+    const firstSees = createNodeAtPoint3dDep(t.world, 'left')({ x: there.x - HALF, y: there.y });
     expect(firstSees).not.toBe(t.ids.c);
   });
 

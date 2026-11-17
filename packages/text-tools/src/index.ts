@@ -17,7 +17,7 @@ export {
   createTextPreset, createTextToolsPreset, textNodeRouting, textPreset, textToolsPreset, whiteboardPreset,
   type TextPresetOptions, type TextToolsPresetOptions,
 } from './presets';
-export { TEXT_TOOLS, WHITEBOARD_TOOLS, useTextToolsTools, type TextToolId } from './toolSets';
+export { TEXT_TOOLS, useTextToolsTools, type TextToolId } from './toolSets';
 
 // ─── The text node kind ────────────────────────────────────────────────────
 export {
@@ -32,14 +32,14 @@ export { textNodeFactory } from './node/insert';
 // ─── Editing ───────────────────────────────────────────────────────────────
 export { useSceneTextEdit, type DefaultTextData, type UseSceneTextEditOptions, type UseSceneTextEditReturn } from './editor/useSceneTextEdit';
 export { textEditJoin } from './editor/sceneTextDrafts';
-export { drawOneEditing, withoutText, type EditingDrawOne } from './editor/editingDrawOne';
+export { drawOneWithoutEditedText, withoutText, type EditingDrawOne } from './editor/editingDrawOne';
 export { createTextLayer, type CreateTextLayerOptions } from './editor/textLayer';
 export type { CanvasTextEditorOptions } from './editor/canvasEditor';
 export type { TextEditDep } from './editor/textEditDep';
 
 // ─── Actions ───────────────────────────────────────────────────────────────
 export { enterTextEditAction } from './actions/enterTextEdit';
-export { editTextAtAction } from './actions/editTextAt';
+export { enterTextEditAtAction } from './actions/enterTextEditAt';
 export { editEffectTextAction } from './actions/editEffectText';
 
 // ─── Tools ─────────────────────────────────────────────────────────────────

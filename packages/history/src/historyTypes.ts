@@ -25,7 +25,7 @@ export interface HistoryEntry {
   /** How many pushes this entry holds: 1 when it was pushed once, plus one
    *  for every later push coalesced into it. */
   pushes: number;
-  /** Set of node ids touched by any op in this entry, as `touchedIdsFromOps`
+  /** Set of node ids touched by any op in this entry, as `touchedIdsOf`
    *  reads them from each op's `args`. A restored entry has it too: `restore`
    *  derives it from the rebuilt ops. */
   touchedIds: ReadonlySet<string>;

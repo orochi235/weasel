@@ -1,7 +1,7 @@
 /**
  * The package's behavior as `<SceneCanvas features>` presets: one per tool
- * family, and `pathTools` for all of them. Each assumes `pathsPreset`, which
- * opens a path for editing; `pathTools` includes it.
+ * family, and `pathToolsPreset` for all of them. Each assumes `pathsPreset`, which
+ * opens a path for editing; `pathToolsPreset` includes it.
  */
 import { never, type FeaturePreset } from '@weasel-js/core';
 import { booleansPreset } from '@weasel-js/editing';
@@ -241,7 +241,7 @@ export const warpPreset: FeaturePreset = {
  *  direction, and fillets with their defaults — except Drape and
  *  handle snapping, which change what every anchor or handle drag does — and editing's `booleansPreset`, the
  *  `booleansAdapter` the shape builder works through. */
-export const pathTools: FeaturePreset = {
+export const pathToolsPreset: FeaturePreset = {
   id: 'pathTools',
   includes: [
     pathsPreset, sandPreset, handleLocksPreset, bridgePreset, spiroPreset, snipPreset, reachPreset, tugPreset,

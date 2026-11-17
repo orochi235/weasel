@@ -1,6 +1,6 @@
 /**
  * Cut at Crossings and Join: the path commands that change how many paths
- * there are. Join spans a gap straight; `joinPathsCommand` builds a join that
+ * there are. Join spans a gap straight; `createJoinPathsAction` builds a join that
  * spans it some other way.
  */
 import {
@@ -144,7 +144,7 @@ function turnedOrigins(
 /** A command joining the selected paths by {@link planJoin} as one undo step,
  *  spanning gaps as `options` reads from its params. Disabled in path edit,
  *  where joins act on the selected anchors. */
-export function joinPathsCommand(
+export function createJoinPathsAction(
   base: Pick<Action, 'id' | 'label' | 'icon' | 'defaultBinding'>,
   options: (params: Record<string, unknown> | undefined) => JoinOptions,
 ): Action & { requires: string[] } {
@@ -183,7 +183,7 @@ export function joinPathsCommand(
  * straight. In path edit, `joinAnchors` joins the two selected anchors
  * instead.
  */
-export const joinPathsAction = joinPathsCommand(
+export const joinPathsAction = createJoinPathsAction(
   { id: 'joinPaths', label: 'Join', icon: icon('core:join'), defaultBinding: [{ spec: { kind: 'key', key: 'j', mods: { mod: true }, phase: BETWEEN_GESTURES }, opts: { id: 'joinPaths.key' } }] },
   () => ({}),
 );

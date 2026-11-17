@@ -15,7 +15,7 @@ import { pathNodesOf, withPath, type PathNode, type SceneNode, type AnyScene } f
 
 
 /** A stroked path node and its centerline in world space. */
-export interface WidthTarget extends PathNode {
+export interface GirthTarget extends PathNode {
   stroke: Stroke;
   /** The stroke's own width in world units: what an unset entry takes. */
   fallback: number;
@@ -23,8 +23,8 @@ export interface WidthTarget extends PathNode {
 
 /** A stroke edge found under a point, and the width point a press there
  *  moves: anchor `index`, or one inserted at `at` when `index` is null. */
-export interface WidthEdgeHit {
-  target: WidthTarget;
+export interface GirthEdgeHit {
+  target: GirthTarget;
   edge: StrokeEdgeHit;
   index: number | null;
   at: Point;
@@ -34,8 +34,8 @@ export interface WidthEdgeHit {
  * The width point a drag edits, on a node's geometry as the press leaves it:
  * `path` gained an anchor at `index` when the press fell between two.
  */
-export interface WidthGrip {
-  target: WidthTarget;
+export interface GirthGrip {
+  target: GirthTarget;
   /** The world path, with the inserted anchor if there is one. */
   path: PolygonPath;
   /** One entry per anchor of `path`; `NaN` takes the stroke's own width. */
@@ -64,7 +64,7 @@ export function isWidthSet(entry: VertexWidth | undefined): boolean {
 }
 
 /** The node's stroke, when it paints one along an editable path. */
-function targetOf(scene: AnyScene, node: SceneNode<unknown, string, unknown>, scale: number): WidthTarget | null {
+function targetOf(scene: AnyScene, node: SceneNode<unknown, string, unknown>, scale: number): GirthTarget | null {
   if (node.kind !== 'mark' || node.derivePath || node.derivePose || scene.isLocked(node.id) || scene.isHidden(node.id)) return null;
   const stroke = (node.data as { stroke?: Stroke | null } | null)?.stroke;
   if (!stroke?.paint) return null;
@@ -76,7 +76,7 @@ function targetOf(scene: AnyScene, node: SceneNode<unknown, string, unknown>, sc
  *  `scale` resolves a `{ px }` width. */
 function edgeAt(
   scene: AnyScene, x: number, y: number, scale: number, accept: (edge: StrokeEdgeHit) => boolean,
-): { target: WidthTarget; edge: StrokeEdgeHit } | null {
+): { target: GirthTarget; edge: StrokeEdgeHit } | null {
   const nodes = scene.renderOrderNodes();
   for (let i = nodes.length - 1; i >= 0; i--) {
     const target = targetOf(scene, nodes[i], scale);
@@ -88,13 +88,13 @@ function edgeAt(
 }
 
 /** The topmost stroke whose ink is within `reach` of `(x, y)`. */
-export function widthTargetAt(scene: AnyScene, x: number, y: number, scale: number, reach: number): WidthTarget | null {
+export function widthTargetAt(scene: AnyScene, x: number, y: number, scale: number, reach: number): GirthTarget | null {
   return edgeAt(scene, x, y, scale, (edge) => edge.gap <= reach)?.target ?? null;
 }
 
 /** The topmost stroke edge within `reach` of `(x, y)`, and the width point a
  *  press there moves: the anchor within `reach` along the path, or a new one. */
-export function widthEdgeAt(scene: AnyScene, x: number, y: number, scale: number, reach: number): WidthEdgeHit | null {
+export function widthEdgeAt(scene: AnyScene, x: number, y: number, scale: number, reach: number): GirthEdgeHit | null {
   const found = edgeAt(scene, x, y, scale, (edge) => Math.abs(edge.gap) <= reach);
   if (!found) return null;
   const { edge } = found;
@@ -109,7 +109,7 @@ export function widthEdgeAt(scene: AnyScene, x: number, y: number, scale: number
 }
 
 /** `target`'s per-vertex widths, one per anchor; `NaN` where none is set. */
-export function widthsOf(target: WidthTarget, count: number): VertexWidth[] {
+export function widthsOf(target: GirthTarget, count: number): VertexWidth[] {
   const own = target.stroke.vertexWidths ?? [];
   return Array.from({ length: count }, (_, i) => (isWidthSet(own[i]) ? own[i] : NaN));
 }
@@ -139,7 +139,7 @@ export function anchorNormals(path: PolygonPath): Point[] {
 
 /** The index of the set width point whose line across the stroke passes
  *  within `reach` of `(x, y)`, nearest first, or -1. */
-export function widthPointNear(target: WidthTarget, x: number, y: number, reach: number): number {
+export function widthPointNear(target: GirthTarget, x: number, y: number, reach: number): number {
   const anchors = anchorPoints(target.path);
   const normals = anchorNormals(target.path);
   const widths = widthsOf(target, anchors.length);
@@ -159,7 +159,7 @@ export function widthPointNear(target: WidthTarget, x: number, y: number, reach:
 
 /** Take hold of the width point `hit` names, inserting its anchor — the
  *  path's shape and the stroke's width there both kept — when it is new. */
-export function gripAt(hit: WidthEdgeHit): WidthGrip | null {
+export function gripAt(hit: GirthEdgeHit): GirthGrip | null {
   const { target, edge } = hit;
   const count = anchorPoints(target.path).length;
   const widths = widthsOf(target, count);
@@ -195,20 +195,20 @@ function sideNormal(normal: Point | undefined, edge: StrokeEdgeHit): Point {
 
 /** The grabbed edge's distance from the path after the pointer has moved
  *  `delta` along the grip's normal, as stored: never below zero. */
-export function movedSide(grip: WidthGrip, delta: number): number {
+export function movedSide(grip: GirthGrip, delta: number): number {
   return Math.max(0, grip.start[grip.side] + delta / grip.factor);
 }
 
 /** The width point's entry once its grabbed edge sits `moved` from the path:
  *  both edges there, or with `oneSided` only the grabbed one. */
-export function draggedWidth(grip: WidthGrip, moved: number, oneSided: boolean): VertexWidth {
+export function draggedWidth(grip: GirthGrip, moved: number, oneSided: boolean): VertexWidth {
   if (!oneSided) return 2 * moved;
   return grip.side === 'left' ? vertexWidthFromSides(moved, grip.start.right) : vertexWidthFromSides(grip.start.left, moved);
 }
 
 /** The node's pose and data with `grip`'s geometry and `widths`, or null
  *  when the node cannot store the geometry. All-unset widths drop the list. */
-export function storedWith(grip: WidthGrip, widths: readonly VertexWidth[]): { pose: unknown; data: unknown } | null {
+export function storedWith(grip: GirthGrip, widths: readonly VertexWidth[]): { pose: unknown; data: unknown } | null {
   const { node, stroke } = grip.target;
   const shaped = grip.inserted ? withPath(grip.target, grip.path) : { pose: node.pose, data: node.data };
   if (!shaped) return null;

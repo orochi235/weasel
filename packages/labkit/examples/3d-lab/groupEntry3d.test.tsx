@@ -9,7 +9,7 @@ import { describe, it, expect } from 'vitest';
 import { render, act } from '@testing-library/react';
 import { useCallback, useMemo, useRef, useState } from 'react';
 import { ActionsProvider, ActiveToolContextProvider, DepRegistryProvider, useActionsRegistry, useActiveToolContext, useDepSource, useGestureDispatcher, type InsertDep, type NodeId, type Tool } from '@weasel-js/core';
-import { createCamera, createNodeAtPoint, screenBoxOf, type Viewport3d } from '@weasel-js/kernel3d';
+import { createCamera, createNodeAtPoint3dDep, screenBoxOf, type Viewport3d } from '@weasel-js/kernel3d';
 import { STACK, aabbOfSolid, createSolidScene, type SolidNode } from './scene3d';
 import { useGroupEntry3d, type GroupEntry3d } from './groupEntry3d';
 import { useBoxInsert } from './insert3d';
@@ -52,7 +52,7 @@ function mount() {
     }) as never);
 
     const viewport = useCallback(() => VIEWPORT, []);
-    const worldPick = useMemo(() => createNodeAtPoint(world), []);
+    const worldPick = useMemo(() => createNodeAtPoint3dDep(world), []);
     const entry = useGroupEntry3d(world, viewport, worldPick, () => {});
     out.entry = entry;
     useDepSource('nodeAtPoint', () => entry.pick);

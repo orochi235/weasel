@@ -243,21 +243,21 @@ function evaluateFeature(inner: string, env: SvgMediaEnvironment): Tri {
     else segments[segments.length - 1].push(t);
   }
   if (segments.some((s) => s.length === 0)) return null;
-  const featureAt = (s: Tok[]): Feature | undefined =>
+  const featureFor = (s: Tok[]): Feature | undefined =>
     (s.length === 1 && s[0].k === 'ident' ? getOwn(FEATURES, s[0].v) : undefined);
 
   if (ops.length === 1) {
     const [lhs, rhs] = segments;
-    const named = featureAt(lhs) ?? featureAt(rhs);
+    const named = featureFor(lhs) ?? featureFor(rhs);
     if (!named) return null;
     if (named.kind !== 'range') return null;
-    const nameFirst = featureAt(lhs) != null;
+    const nameFirst = featureFor(lhs) != null;
     const v = rangeValue(nameFirst ? rhs : lhs, named.type, env);
     if (v == null) return null;
     return nameFirst ? compare(named.get(env), ops[0], v) : compare(named.get(env), FLIP[ops[0]], v);
   }
   if (ops.length === 2) {
-    const f = featureAt(segments[1]);
+    const f = featureFor(segments[1]);
     if (!f || f.kind !== 'range') return null;
     const lt = ops.every((o) => o === '<' || o === '<=');
     const gt = ops.every((o) => o === '>' || o === '>=');

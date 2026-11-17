@@ -10,7 +10,7 @@ import { dot, type Vec3 } from '@weasel-js/geom/3d';
 import { aimSpace3d } from './aim';
 import { createCamera, MAX_PITCH } from './camera';
 import { fromAimPoint, groundAxes, groundHit, toAimPoint } from './ground';
-import { createInsert, type Footprint } from './insert';
+import { createInsert3dDep, type Footprint } from './insert';
 import { coord, isFinite3, paneAt, paneFractions, runs, tally, timeoutFor, v3, viewport } from './pbt.fixture';
 import { projectPoint, type Viewport3d } from './project';
 
@@ -124,13 +124,13 @@ describe('aimSpace3d, property', () => {
   }, T);
 });
 
-function footprintOf(vp: Viewport3d, u: Vec3, minExtent: number, ...commit: Parameters<ReturnType<typeof createInsert>['commit']>): Footprint | null {
+function footprintOf(vp: Viewport3d, u: Vec3, minExtent: number, ...commit: Parameters<ReturnType<typeof createInsert3dDep>['commit']>): Footprint | null {
   let seen: Footprint | null = null;
-  createInsert({ world: { viewport: () => vp, up: u }, minExtent, mint: (f) => ((seen = f), 'n' as NodeId) }).commit(...commit);
+  createInsert3dDep({ world: { viewport: () => vp, up: u }, minExtent, mint: (f) => ((seen = f), 'n' as NodeId) }).commit(...commit);
   return seen;
 }
 
-describe('createInsert, property', () => {
+describe('createInsert3dDep, property', () => {
   it('spans the ground between a drag\'s ends, either way round, on the ground and no smaller than its minimum', () => {
     const seen = tally();
     fc.assert(fc.property(

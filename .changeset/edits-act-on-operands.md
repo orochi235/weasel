@@ -15,6 +15,6 @@ useDepSource('operands', () => operandList([b, c]));
 deleteAction.invoker.run({ scene, operands: operandList(ids) }, undefined);
 ```
 
-`selectionMethods` is now `operandMethods`, taking an `OperandsDep`; `IngestCtx.selection` is `IngestCtx.operands`; `useBooleansAdapterSource`, `useSliceDepSource` and `usePathLeafDepSources` take an `OperandsDep` where they took a `SelectionApi`, and `<SceneCanvas>` hands them `useLiveOperands()`, which reads the registry's `operands` on each call.
+`selectionMethods` is now `operandMethods`, taking an `OperandsDep`; `IngestCtx.selection` is `IngestCtx.operands`; `useBooleansAdapterDepSource`, `useSliceDepSource` and `usePathLeafDepSources` take an `OperandsDep` where they took a `SelectionApi`, and `<SceneCanvas>` hands them `useLiveOperands()`, which reads the registry's `operands` on each call.
 
 <!-- entry: rank=10 breaking api -->

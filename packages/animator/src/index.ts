@@ -1,5 +1,5 @@
 export * from './types';
-export { hostAnimator, type AnimatorHost, type HostedAnimator } from './hostAnimator';
+export { createHostedAnimator, type AnimatorHost, type HostedAnimator } from './createHostedAnimator';
 export { createTarget, type AxisBuffer, type Target, type TargetAxes, type TargetOptions } from './target';
 export type { AxisName, AxisRef } from './axisNames';
 export {
@@ -10,10 +10,10 @@ export { createTargetTable, type ShownArray, type TargetTable, type TargetTableO
 export { axesOf, type Axes } from './engine/axes';
 export { createSlew, slewToward, type Slew, type SlewRates } from './slew';
 export {
-  ColorOverrideRegistry,
+  createColorOverrideRegistry, type ColorOverrideRegistry,
   type ColorOverride, type ColorOverrideFn, type VertexColorChannel,
 } from './colorRegistry';
-export { TrimOverrideRegistry, type TrimEdge, type TrimOverride } from './trimRegistry';
+export { createTrimOverrideRegistry, type TrimOverrideRegistry, type TrimEdge, type TrimOverride } from './trimRegistry';
 export {
   tweenVertexColors, springVertexColors, staggerVertexColors,
   type TweenVertexColorsOptions, type SpringVertexColorsOptions, type StaggerVertexColorsOptions,
@@ -44,10 +44,10 @@ export { resolveSkeleton } from './rig/resolveSkeleton';
 export { jointAxes, skeletonAxes } from './rig/skeletonAxes';
 export { solveIk, type IkLimit, type IkPoint, type IkResult, type SolveIkOptions } from './rig/solveIk';
 export { IDENTITY_JOINT, type Joint, type JointTransform, type SkeletonPose, type Skeleton } from './rig/types';
-export { motionsFromRest, skinnable, skinPath, type Skin } from './rig/skin';
+export { motionsFromRest, toSkinPolygon, skinPath, type Skin } from './rig/skin';
 export { autoSkin, type AutoSkinOptions } from './rig/autoSkin';
 export { addJoint, dropSkinJoints, jointAt, jointPositions, moveJoint, removeJoint } from './rig/skeletonEdits';
-export { brushWeights, jointShares, setWeights } from './rig/weightEdits';
+export { brushWeights, jointShares, setJointWeights } from './rig/weightEdits';
 
 // `createLoop` / `createTweenLoop` / `createStagger` / `createTimeline` are
 // intentionally NOT re-exported. They take internal seams (supervisor factory,

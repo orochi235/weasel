@@ -37,9 +37,9 @@ import { DRAW_NODE_ROUTING } from './nodeKinds';
 import { usePathOverlays } from './usePathOverlays';
 import { useSymmetry } from './useSymmetry';
 import { useSpacingHints } from './useSpacingHints';
-import { BUILTIN_TOOLS, useEyedropperTool } from '@weasel-js/editing';
+import { KIT_TOOLS, useEyedropperTool } from '@weasel-js/editing';
 
-const DRAW_TOOLS = [BUILTIN_TOOLS];
+const DRAW_TOOLS = [KIT_TOOLS];
 
 // OS-dropped and pasted SVG files unpack into real scene nodes rather than one embedded-image
 // node. `clipboard.reviver` revives typed-array node data carried by weasel-JSON clipboard

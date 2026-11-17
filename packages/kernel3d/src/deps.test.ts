@@ -1,14 +1,14 @@
 import { describe, it, expect } from 'vitest';
 import {
-  createAreaSelect,
-  createNodeAtPoint,
-  createPickEvery,
+  createAreaSelect3dDep,
+  createNodeAtPoint3dDep,
+  createPickNearest,
   createPoseDescriptor,
   screenBoxOf,
   type Viewport3d,
   type ViewportSource,
 } from './deps';
-import { createInsert, type Footprint } from './insert';
+import { createInsert3dDep, type Footprint } from './insert';
 import { createCamera, cameraEye, cameraViewProjection } from './camera';
 import { add, dot, len, scale, sub, type Vec3 } from '@weasel-js/geom/3d';
 import { pose3 } from './pose3';
@@ -63,23 +63,23 @@ function mintBox(scene: TestScene) {
   };
 }
 
-describe('createNodeAtPoint', () => {
+describe('createNodeAtPoint3dDep', () => {
   it('picks the solid under the middle of the screen', () => {
     const scene = createTestScene();
-    const pick = createNodeAtPoint(world(scene));
+    const pick = createNodeAtPoint3dDep(world(scene));
     // The sphere is the one at the camera target.
     expect(pick(CENTER)).toBe(idsOf(scene)[1]);
   });
 
   it('picks nothing over empty sky', () => {
     const scene = createTestScene();
-    const pick = createNodeAtPoint(world(scene));
+    const pick = createNodeAtPoint3dDep(world(scene));
     expect(pick({ x: 10, y: 10 })).toBeNull();
   });
 
   it('honors the exclude set', () => {
     const scene = createTestScene();
-    const pick = createNodeAtPoint(world(scene));
+    const pick = createNodeAtPoint3dDep(world(scene));
     const first = pick(CENTER)!;
     expect(pick(CENTER, [first])).not.toBe(first);
   });
@@ -87,7 +87,7 @@ describe('createNodeAtPoint', () => {
   it('prefers the nearer of two solids on the same ray', () => {
     const scene = createTestScene();
     const vp = viewport();
-    const pick = createNodeAtPoint(world(scene, () => vp));
+    const pick = createNodeAtPoint3dDep(world(scene, () => vp));
     const { target } = vp.camera;
     const sphere = idsOf(scene)[1];
     // Past the sphere on the center ray, and last in render order.
@@ -104,7 +104,7 @@ describe('createNodeAtPoint', () => {
   it('follows the camera: retargeting changes what is under the cursor', () => {
     const scene = createTestScene();
     let vp = viewport();
-    const pick = createNodeAtPoint(world(scene, () => vp));
+    const pick = createNodeAtPoint3dDep(world(scene, () => vp));
     expect(pick(CENTER)).toBe(idsOf(scene)[1]);
     vp = { ...vp, camera: createCamera({ distance: 12, pitch: 0.4, target: { x: -2.2, y: 0.5, z: 0 } }) };
     expect(pick(CENTER)).toBe(idsOf(scene)[0]);
@@ -113,7 +113,7 @@ describe('createNodeAtPoint', () => {
   it('picks only what the camera draws, between its near and far planes', () => {
     const scene = createTestScene();
     const vp = viewport();
-    const pick = createNodeAtPoint(world(scene, () => vp));
+    const pick = createNodeAtPoint3dDep(world(scene, () => vp));
     const eye = cameraEye(vp.camera);
     const forward = scale(sub(vp.camera.target, eye), 1 / vp.camera.distance);
     const sphere = idsOf(scene)[1];
@@ -138,25 +138,25 @@ describe('createNodeAtPoint', () => {
     // Sitting on its target, inside the middle solid: a fabricated ray would
     // start inside it and report a hit.
     const flat = viewport({ camera: createCamera({ distance: 0, target: { x: 0, y: 0.5, z: 0 } }) });
-    const pick = createNodeAtPoint(world(scene, () => flat));
+    const pick = createNodeAtPoint3dDep(world(scene, () => flat));
     expect(pick(CENTER)).toBeNull();
   });
 });
 
-describe('createPickEvery', () => {
+describe('createPickNearest', () => {
   it('passes over a layer the asking view does not paint', () => {
     const scene = createTestScene();
-    const pick = createPickEvery(world(scene));
+    const pick = createPickNearest(world(scene));
     expect(pick(CENTER, { viewId: null })).toBe(idsOf(scene)[1]);
     expect(pick(CENTER, { viewId: null, layerIsPainted: (layer) => layer !== 'solids' })).toBeNull();
   });
 });
 
-describe('createAreaSelect', () => {
+describe('createAreaSelect3dDep', () => {
   it('catches every solid under a rectangle spanning the viewport', () => {
     const scene = createTestScene();
     let held: readonly NodeId[] = [];
-    const area = createAreaSelect(world(scene), {
+    const area = createAreaSelect3dDep(world(scene), {
       get: () => held,
       set: (ids) => {
         held = ids;
@@ -175,20 +175,20 @@ describe('createAreaSelect', () => {
       kind: 'mark', layer: 'solids', data: {},
       pose: pose3(add(eye, scale(forward, vp.camera.far * 2)), { x: 50, y: 50, z: 50 }),
     });
-    const area = createAreaSelect(world(scene, () => vp), { get: () => [], set: () => {} });
+    const area = createAreaSelect3dDep(world(scene, () => vp), { get: () => [], set: () => {} });
     expect(area.hitTestArea({ x: 0, y: 0, width: WIDTH, height: HEIGHT })).not.toContain(past);
     expect(screenBoxOf(world(scene, () => vp), past, vp)).toBeNull();
   });
 
   it('catches nothing in a corner the solids do not reach', () => {
     const scene = createTestScene();
-    const area = createAreaSelect(world(scene), { get: () => [], set: () => {} });
+    const area = createAreaSelect3dDep(world(scene), { get: () => [], set: () => {} });
     expect(area.hitTestArea({ x: 0, y: 0, width: 4, height: 4 })).toHaveLength(0);
   });
 
   it('takes nothing on a layer the asking view does not paint', () => {
     const scene = createTestScene();
-    const area = createAreaSelect(world(scene), { get: () => [], set: () => {} });
+    const area = createAreaSelect3dDep(world(scene), { get: () => [], set: () => {} });
     const all = { x: 0, y: 0, width: WIDTH, height: HEIGHT };
     expect(area.hitTestArea(all, { layerIsPainted: (layer) => layer !== 'solids' })).toEqual([]);
     expect(area.hitTestArea(all, { layerIsPainted: () => true })).toHaveLength(3);
@@ -197,7 +197,7 @@ describe('createAreaSelect', () => {
   it('reads and writes the selection it was handed', () => {
     const scene = createTestScene();
     let held: readonly NodeId[] = ['a' as NodeId];
-    const area = createAreaSelect(world(scene), {
+    const area = createAreaSelect3dDep(world(scene), {
       get: () => held,
       set: (ids) => {
         held = ids;
@@ -209,11 +209,11 @@ describe('createAreaSelect', () => {
   });
 });
 
-describe('createInsert', () => {
+describe('createInsert3dDep', () => {
   it('mints from the ground-plane footprint under the drag rectangle', () => {
     const vp = viewport();
     const seen: Footprint[] = [];
-    const insert = createInsert({
+    const insert = createInsert3dDep({
       world: { viewport: () => vp },
       mint: (footprint) => {
         seen.push(footprint);
@@ -246,7 +246,7 @@ describe('createInsert', () => {
     const shallow = viewport({
       camera: createCamera({ distance: 12, pitch: 0.05, target: { x: 0, y: 0.5, z: 0 } }),
     });
-    const insert = createInsert({ world: { viewport: () => shallow }, mint: mintBox(scene) });
+    const insert = createInsert3dDep({ world: { viewport: () => shallow }, mint: mintBox(scene) });
     expect(
       insert.commit({ x: 0, y: 0, width: 10, height: 10 }, { kind: 'rect' } as never),
     ).toBeNull();
@@ -255,7 +255,7 @@ describe('createInsert', () => {
   it('inserts nothing when the camera casts no ray', () => {
     const scene = createTestScene();
     const flat = viewport({ camera: createCamera({ distance: 0, target: { x: 0, y: 0.5, z: 0 } }) });
-    const insert = createInsert({ world: { viewport: () => flat }, mint: mintBox(scene) });
+    const insert = createInsert3dDep({ world: { viewport: () => flat }, mint: mintBox(scene) });
     expect(
       insert.commit({ x: 300, y: 300, width: 120, height: 120 }, { kind: 'rect' } as never),
     ).toBeNull();

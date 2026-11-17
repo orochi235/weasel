@@ -9,8 +9,8 @@ function withPoint(data: QuadrantData, point: number, change: Partial<QuadrantPo
 }
 
 /** `data` with point `point` moved to `x`, `y`. Throws on a point the chart does not hold. */
-export const setQuadrantPoint = (data: QuadrantData, point: number, at: { x: number; y: number }): QuadrantData =>
-  withPoint(data, point, { x: at.x, y: at.y }, 'setQuadrantPoint');
+export const setQuadrantPointAt = (data: QuadrantData, point: number, at: { x: number; y: number }): QuadrantData =>
+  withPoint(data, point, { x: at.x, y: at.y }, 'setQuadrantPointAt');
 
 /** `data` with point `point` named `name`. Throws on a point the chart does not hold. */
 export const setQuadrantPointName = (data: QuadrantData, point: number, name: string): QuadrantData =>

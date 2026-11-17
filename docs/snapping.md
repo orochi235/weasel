@@ -235,7 +235,7 @@ the last frame, filled where the result met it.
 ## 3D
 
 The resolver is written over n-vectors, so a 3D host uses the same sources, ranking and marks with
-`Vec3` points. kernel3d's `createSnap(world, { sources, reachPx, kitSettings, store })` is its
+`Vec3` points. kernel3d's `createSnap3dDep(world, { sources, reachPx, kitSettings, store })` is its
 `snap` dep, reading its reach from `targets.snapPx` in `kitSettings`. It honors a gesture's
 `omit` and passes `ids` and `parent` on to its sources; a gesture's `sources` are 2D, so it does not
 ask them and warns once in dev. Two sources
@@ -244,7 +244,7 @@ sharing an id throw, as on a canvas:
 - A move's `H` is the plane through the subject perpendicular to `up`, the plane `translate`
   already moves on; an insert snaps the pointer on the ground plane.
 - The session still answers in ctx coordinates, which in a 3D host are screen points: it projects
-  the snapped world position back, and `translate` and `createInsert` cast it onto the same plane,
+  the snapped world position back, and `translate` and `createInsert3dDep` cast it onto the same plane,
   so `InvocationCtx` stays 2D. The round trip is exact only to rounding: a box snapped to a ground
   grid line can store `0.4999999999999929` for `0.5`.
 - `boxSnapSource`, `alignPlaneSource` and `groundGridSource` are its sources, and

@@ -7,9 +7,9 @@
 import type { BmFont, BmFontChar } from './FontAtlas';
 import { hasEmojiPresentation } from './emojiCluster';
 import type { FontStyle } from './fontStyle';
-import { metricsOf, usableGlyph, type GlyphMetrics } from './glyphMetrics';
+import { glyphMetricsOf, usableGlyph, type GlyphMetrics } from './glyphMetrics';
 import { warnMissingGlyph } from './glyphWarnings';
-import { resolveGlyphFallback, type ResolveResult } from './registerFont';
+import { resolveCanvasFallback, type ResolveResult } from './registerFont';
 
 /** A code point's glyph, and the tier that ended up serving it. */
 export interface ResolvedGlyph {
@@ -31,7 +31,7 @@ export interface ResolvedGlyph {
  *  returned: a caller that reads the fields at once and keeps none allocates
  *  nothing a code point. */
 export function glyphIn(resolved: ResolveResult, cp: number, into?: ResolvedGlyph): ResolvedGlyph | null {
-  const metrics = metricsOf(resolved);
+  const metrics = glyphMetricsOf(resolved);
   if (!metrics) return null;
   if (resolved.outlineFace) {
     const advance = metrics.advanceOf(cp);
@@ -70,7 +70,7 @@ export function resolveGlyph(
 ): ResolvedGlyph | null {
   const own = glyphIn(resolved, cp, into);
   if (own) return own;
-  const fallback = resolveGlyphFallback(family, weight, style);
+  const fallback = resolveCanvasFallback(family, weight, style);
   const escalated = fallback && glyphIn(fallback, cp, into);
   if (escalated) return escalated;
   if (warn) warnMissingGlyph(resolved.resolved.family, cp);
@@ -93,9 +93,9 @@ export function resolveColorCluster(
   cluster: string,
 ): ResolvedGlyph | null {
   if (!hasEmojiPresentation(cluster)) return null;
-  const tier = resolved.dynamicFace ? resolved : resolveGlyphFallback(family, weight, style);
+  const tier = resolved.dynamicFace ? resolved : resolveCanvasFallback(family, weight, style);
   const face = tier?.dynamicFace;
-  const metrics = tier && metricsOf(tier);
+  const metrics = tier && glyphMetricsOf(tier);
   const glyph = face?.requestCluster(cluster);
   if (!tier || !face || !metrics || !glyph) return null;
   return { resolved: tier, metrics, advance: glyph.xadvance, font: face.font, glyph };

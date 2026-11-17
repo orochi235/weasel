@@ -80,7 +80,7 @@ describe('layoutRuns — single line', () => {
 
 describe('layoutRuns — substituted families', () => {
   // The renderer looks the group's atlas up by `group.family` (exact
-  // `getFont`). A group tagged with the *requested* family therefore resolves
+  // `getAtlasFont`). A group tagged with the *requested* family therefore resolves
   // to nothing and paints nothing, however correct the ResolveResult was.
   it('tags the group with the atlas family it will be looked up by', async () => {
     await registerFixture('inter', [{}]);

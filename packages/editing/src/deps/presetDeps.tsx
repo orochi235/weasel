@@ -1,10 +1,10 @@
 import type { PresetComponentProps, ResizeOptions } from '@weasel-js/core';
 import { useLiveOperands } from '@weasel-js/core';
 import { useAreaSelectDepSource } from './areaSelect';
-import { useBooleansAdapterSource } from './booleans';
+import { useBooleansAdapterDepSource } from './booleans';
 import { useInsertDepSource } from './insert';
 import { useLassoSelectDepSource } from './lassoSelect';
-import { resizePolicyOptions, useResizePolicy } from './resizePolicy';
+import { resizePolicyOptions, useResizePolicyDepSource } from './resizePolicy';
 
 /** Publishes the `areaSelect` and `lassoSelect` deps over the canvas's scene, selection and pickers. */
 export function RegionSelectDeps({ canvas }: PresetComponentProps) {
@@ -28,13 +28,13 @@ export function ResizePolicyDeps({ canvas }: PresetComponentProps) {
 }
 
 function ResizePolicy({ options }: { options: ResizeOptions<unknown> }) {
-  useResizePolicy<unknown>(resizePolicyOptions(options));
+  useResizePolicyDepSource<unknown>(resizePolicyOptions(options));
   return null;
 }
 
 /** Publishes the `booleansAdapter` dep over the canvas's path leaves, acting on `operands`. */
 export function BooleansDeps({ canvas }: PresetComponentProps) {
   const operands = useLiveOperands();
-  useBooleansAdapterSource(canvas.scene(), operands, canvas.adapter(), canvas.poseDescriptor());
+  useBooleansAdapterDepSource(canvas.scene(), operands, canvas.adapter(), canvas.poseDescriptor());
   return null;
 }

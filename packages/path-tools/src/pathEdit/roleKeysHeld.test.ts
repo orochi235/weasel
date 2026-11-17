@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest';
 import { matchModifiers } from '@weasel-js/gestures';
 import { actionBindings, type Action, type ModifierRoles } from '@weasel-js/routing';
 import { editAnchorsAction } from './editAnchors/editAnchors';
-import { marqueeAnchorsAction } from './anchorEditing';
+import { areaSelectAnchorsAction } from './anchorEditing';
 
 const KEY_FLAG = { shift: 'shiftKey', alt: 'altKey', ctrl: 'ctrlKey', meta: 'metaKey' } as const;
 
@@ -11,7 +11,7 @@ function keysOf(roles: ModifierRoles): string[] {
   return [...new Set(Object.values(roles).flatMap((r) => r.keys.flatMap((k) => (k === 'mod' ? ['meta', 'ctrl'] : [k]))))];
 }
 
-describe.each([editAnchorsAction, marqueeAnchorsAction] as Action[])('$id', (action) => {
+describe.each([editAnchorsAction, areaSelectAnchorsAction] as Action[])('$id', (action) => {
   it.each(keysOf(action.modifierRoles!))('matches its drag with %s held', (key) => {
     const e = { altKey: false, ctrlKey: false, metaKey: false, shiftKey: false, [KEY_FLAG[key as keyof typeof KEY_FLAG]]: true };
     for (const { spec } of actionBindings(action)) {

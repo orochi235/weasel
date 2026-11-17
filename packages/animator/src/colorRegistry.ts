@@ -224,6 +224,11 @@ export class ColorOverrideRegistry {
   }
 }
 
+/** An empty {@link ColorOverrideRegistry}. */
+export function createColorOverrideRegistry(): ColorOverrideRegistry {
+  return new ColorOverrideRegistry();
+}
+
 /** The colors `slot`'s row shows now. */
 function shownOf(slot: ColorSlot): number[] {
   const { shown } = slot.table;

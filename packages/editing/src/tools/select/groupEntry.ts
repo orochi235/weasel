@@ -5,7 +5,7 @@ import {
   createEnterGroupAction, createLeaveGroupAction, type EnterGroupOptions, type LeaveGroupOptions,
 } from '../../actions/group/enterGroup';
 import type { Contribution } from '@weasel-js/core';
-import { onBody, onEmptyCanvas } from './selectionContributions';
+import { isBodyOffChrome, isEmptyOffChrome } from './selectionContributions';
 import { BETWEEN_GESTURES } from '@weasel-js/routing';
 import type {} from '@weasel-js/core';
 
@@ -27,7 +27,7 @@ export function createGroupEntryContribution(opts: EnterGroupOptions & LeaveGrou
     actions: [createEnterGroupAction(opts), createLeaveGroupAction(opts)],
     bindings: [
       {
-        spec: { kind: 'doubleClick', target: { kindOf: onBody }, phase: BETWEEN_GESTURES },
+        spec: { kind: 'doubleClick', target: { kindOf: isBodyOffChrome }, phase: BETWEEN_GESTURES },
         actionId: 'group.enter',
         opts: { id: 'group.enter' },
       },
@@ -58,7 +58,7 @@ export function useGroupEntryContribution(opts: EnterGroupOptions & LeaveGroupOp
  * the group take no hits, so every such press lands on empty canvas.
  */
 export const GROUP_LEAVE_PRESS_BINDING = {
-  spec: { kind: 'pointerDown' as const, target: { kindOf: onEmptyCanvas }, mods: ANY_MODS },
+  spec: { kind: 'pointerDown' as const, target: { kindOf: isEmptyOffChrome }, mods: ANY_MODS },
   actionId: 'group.leave',
   opts: { id: 'group.leave.press' },
 };

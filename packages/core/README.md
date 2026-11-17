@@ -54,15 +54,15 @@ A bare `<SceneCanvas>` only renders. It keeps a selection that nothing sets from
 | `ingestPreset` | dropped and pasted content: images, SVG, files, and consumer content handlers, on Cmd/Ctrl+V or an OS drop |
 | `drawPreset` | every preset above |
 
-Path editing, the pen, pencil and knife, the path commands and Create Outlines are `@weasel-js/path-tools`': `features={[drawPreset, pathTools]}` with `tools={usePathToolsTools()}`.
+Path editing, the pen, pencil and knife, the path commands and Create Outlines are `@weasel-js/path-tools`': `features={[drawPreset, pathToolsPreset]}` with `tools={usePathToolsTools()}`.
 
-`defaultTools` mounts tools by id on top, and each brings the actions it binds: `defaultTools={['hand']}` drags the view without `viewPreset`, and `defaultTools={['rect']}` brings `insert` wherever a preset offers the rect (editing's `drawPreset` or `shapeToolKitPreset`).
+`defaultTools` mounts tools by id on top, and each brings the actions it binds: `defaultTools={['hand']}` drags the view without `viewPreset`, and `defaultTools={['rect']}` brings `insert` wherever a preset offers the rect (editing's `drawPreset` or `shapeToolsOfferedPreset`).
 
 Interactions are **actions** — descriptors registered into an actions registry — reached by **gesture bindings**. A tool is a list of `{ spec, actionId }` pairs and nothing more; the kit's own select, shape and viewport tools are built that way.
 
 ```tsx
 import { SceneCanvas, useScene } from '@weasel-js/core';
-import { BUILTIN_TOOL_IDS, drawPreset, useSelection } from '@weasel-js/editing';
+import { KIT_TOOL_IDS, drawPreset, useSelection } from '@weasel-js/editing';
 import { createGridPreset } from '@weasel-js/guides';
 
 const grid = createGridPreset({ spacing: 20 });
@@ -81,7 +81,7 @@ export function Editor() {
       scene={scene}
       selection={selection}
       features={[drawPreset, grid]}
-      defaultTools={BUILTIN_TOOL_IDS}
+      defaultTools={KIT_TOOL_IDS}
     />
   );
 }

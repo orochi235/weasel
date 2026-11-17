@@ -2,9 +2,9 @@ import { describe, it, expect } from 'vitest';
 import { matchSorted, type ScopedBinding, type GestureBinding } from '@weasel-js/routing';
 import {
   selectionMoveBindings,
-  selectionMoveContribution,
+  createSelectionMoveContribution,
   selectionTransformBindings,
-  selectionTransformContribution,
+  createSelectionTransformContribution,
 } from './selectionContributions';
 import { snapToContainer } from '../../actions/move/behaviors/snapToContainer';
 
@@ -49,7 +49,7 @@ describe('selectionMoveBindings — binding opts', () => {
 
 describe('selection contributions', () => {
   it('are always live and carry only bindings', () => {
-    for (const entry of [selectionMoveContribution(), selectionTransformContribution()]) {
+    for (const entry of [createSelectionMoveContribution(), createSelectionTransformContribution()]) {
       expect(entry.eligibility).toEqual({ always: true });
       expect(entry.actions).toBeUndefined();
       expect(entry.bindings?.length).toBeGreaterThan(0);

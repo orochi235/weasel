@@ -8,7 +8,7 @@ import { insertBindingBehaviors, shapeToolOptions, type InsertToolOptions, INSER
 const PRESENTATION = {
   label: 'Text',
   icon: icon('core:text'),
-  group: 'type',
+  group: 'text',
 };
 
 /** The text tool's options: the fill new text is set in, shared under `textFill`. Not the shapes' `fill`: a white

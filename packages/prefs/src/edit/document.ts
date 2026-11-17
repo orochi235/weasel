@@ -1,4 +1,4 @@
-import { swapOp as swap, type Op, type SerializedHistory } from '@weasel-js/history';
+import { createSwapOp as swap, type Op, type SerializedHistory } from '@weasel-js/history';
 
 /**
  * Where a draft is kept: the calls of a `Storage` the editor makes. `setItem` may throw when the text is more

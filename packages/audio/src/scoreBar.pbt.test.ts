@@ -6,7 +6,7 @@
 import { describe, expect, it } from 'vitest';
 import fc from 'fast-check';
 import { SCORE_BAR_STEPS, scoreBar, scoreChord } from './scoreBar';
-import { scoreParams, type ScoreMood } from './scoreMood';
+import { resolveScoreMood, type ScoreMood } from './scoreMood';
 import { runs, tally, timeoutFor } from './pbt.fixture';
 
 const RUNS = 300;
@@ -28,7 +28,7 @@ describe('scoreBar', () => {
   it('writes the same bar from the same arguments, inside the bar, at no more than its gain on any step', () => {
     const seen = tally();
     fc.assert(fc.property(mood, fc.integer({ min: 0, max: 64 }), opts, (m, bar, o) => {
-      const params = scoreParams(m);
+      const params = resolveScoreMood(m);
       const events = scoreBar(params, bar, o);
       expect(scoreBar(params, bar, o)).toEqual(events);
       expect(events.length).toBeGreaterThan(0);
@@ -60,7 +60,7 @@ describe('scoreBar', () => {
 
   it('changes chord only on the harmonic rhythm', () => {
     fc.assert(fc.property(mood, fc.integer({ min: 0, max: 64 }), fc.integer({ min: -12, max: 12 }), (m, bar, tonic) => {
-      const params = scoreParams(m);
+      const params = resolveScoreMood(m);
       const first = bar - (bar % params.harmonicRhythm);
       expect(scoreChord(params, Math.floor(bar / params.harmonicRhythm), tonic)).toEqual(scoreChord(params, Math.floor(first / params.harmonicRhythm), tonic));
       const chord = scoreChord(params, bar, tonic);

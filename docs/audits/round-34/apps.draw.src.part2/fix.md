@@ -3,7 +3,7 @@
 - A paint edit made while O is held is reverted by the next wheel turn (A+B): fixed 0705fc76b1.
 - Recorded moves drop `pointerId`, so a two-pointer gesture replays as the wrong pointer (A+B): fixed 5f27c81e2b.
 - A path effect inside a frame (a later page or a rigid group) exports at its frame-local coordinates (A): fixed 7f1cedf650. It now places through the same helper `booleanToObj` uses.
-- Copy-as-SVG's viewBox is the geometric box, so strokes and markers are cut off and skipped roots take room (A): fixed b469d8a152. The selection is now fitted with `computeBounds`, which `@weasel-js/svg` now exports. That export has a `minor` `api` changeset.
+- Copy-as-SVG's viewBox is the geometric box, so strokes and markers are cut off and skipped roots take room (A): fixed b469d8a152. The selection is now fitted with `svgBoundsOf`, which `@weasel-js/svg` now exports. That export has a `minor` `api` changeset.
 - SVG import can mint an `svg-N` id that the file already carries, giving two drafts one id (A+B): fixed f031e06fd0.
 - A replay outlives a detached canvas and can't be stopped (A+B): fixed 1e4d3801f8.
   - Question: pressing Play during a replay now stops it, and the action shows as active while a replay runs. That was my call; it is recorded in `docs/unruled.md` under round thirty-four.

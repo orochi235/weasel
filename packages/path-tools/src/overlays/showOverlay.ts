@@ -20,7 +20,7 @@ export function overlayShown(rules: ChromeRulesDep | undefined, chromeId: string
 }
 
 /** The toggle `pathEdit.show.<name>`, which shows or hides the overlay drawn under `chromeId`. */
-export function showOverlayAction(name: string, chromeId: string, label: string, glyph: IconRef): Action & { requires: string[] } {
+export function createOverlayToggleAction(name: string, chromeId: string, label: string, glyph: IconRef): Action & { requires: string[] } {
   const rules = (deps: ActionDeps | undefined) => deps?.chromeRules;
   return {
     id: `pathEdit.show.${name}`,
@@ -41,10 +41,10 @@ export function showOverlayAction(name: string, chromeId: string, label: string,
 }
 
 /** `pathEdit.show.direction`: the direction arrows and start rings. */
-export const showDirectionAction = showOverlayAction('direction', PATH_DIRECTION_CHROME_ID, 'Path direction', icon('pathDirection'));
+export const showDirectionAction = createOverlayToggleAction('direction', PATH_DIRECTION_CHROME_ID, 'Path direction', icon('pathDirection'));
 /** `pathEdit.show.comb`: the curvature comb. */
-export const showCombAction = showOverlayAction('comb', PATH_COMB_CHROME_ID, 'Curvature comb', icon('core:fairing'));
+export const showCombAction = createOverlayToggleAction('comb', PATH_COMB_CHROME_ID, 'Curvature comb', icon('core:fairing'));
 /** `pathEdit.show.poise`: the handle poise lines and grips. */
-export const showPoiseAction = showOverlayAction('poise', PATH_POISE_CHROME_ID, 'Poise lines', icon('poise'));
+export const showPoiseAction = createOverlayToggleAction('poise', PATH_POISE_CHROME_ID, 'Poise lines', icon('poise'));
 /** `pathEdit.show.fillets`: the fillet widgets. */
-export const showFilletsAction = showOverlayAction('fillets', PATH_FILLETS_CHROME_ID, 'Fillet widgets', icon('cornerRadius'));
+export const showFilletsAction = createOverlayToggleAction('fillets', PATH_FILLETS_CHROME_ID, 'Fillet widgets', icon('cornerRadius'));

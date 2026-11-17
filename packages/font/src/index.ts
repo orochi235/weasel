@@ -11,17 +11,17 @@ export type { FaceMetrics, FaceRuleMetrics, FaceScriptMetrics, FaceMetricTables 
 
 export {
   registerFont,
-  getFont,
+  getAtlasFont,
   faceMetricsFor,
   ensureFontTexture,
   textureCacheKey,
   resolveFontVariant,
   cachedFontVariant,
-  resolveGlyphFallback,
-  listFonts,
+  resolveCanvasFallback,
+  listAtlasFonts,
   listFontWeights,
   fontRegistry,
-  fontPending,
+  isFontPending,
   warmFonts,
 } from './registerFont';
 export type {
@@ -70,18 +70,18 @@ export {
   listFontOutlines,
   fontOutlineRegistry,
   glyphOutline,
-  outlineMetrics,
+  outlineFace,
   loadFontOutlines,
 } from './outline/outlineRegistry';
 export type {
   OutlineSource,
-  OutlineFontOptions,
+  RegisterFontOutlinesOptions,
   OutlineStatus,
   OutlineFaceInfo,
 } from './outline/outlineRegistry';
 export type { OutlineFace, OutlineParser, FaceEmbedding } from './outline/OutlineFace';
 export { fontEmbedding } from './outline/fontEmbedding';
-export { metricsOf } from './glyphMetrics';
+export { glyphMetricsOf } from './glyphMetrics';
 export type { GlyphMetrics } from './glyphMetrics';
 export { glyphIn, resolveGlyph, resolveColorCluster } from './resolveGlyph';
 export type { ResolvedGlyph } from './resolveGlyph';

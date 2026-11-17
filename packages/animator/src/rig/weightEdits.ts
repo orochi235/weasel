@@ -8,7 +8,7 @@ import type { Skin } from './skin';
  * as it would when the skin is applied. Every array comes back `count` long, and a joint left
  * weighing nothing is dropped.
  */
-export function setWeights(
+export function setJointWeights(
   skin: Skin,
   count: number,
   joint: string,
@@ -39,7 +39,7 @@ export function setWeights(
  * within `radius`, a weight falling off linearly from the center. `'add'` raises a point
  * toward 1 and `'remove'` lowers it toward 0; neither moves a point the other way. `current` is the joint's
  * share of each point ({@link jointShares}), not its raw weight. Answers only the points that change, by index,
- * for {@link setWeights}.
+ * for {@link setJointWeights}.
  */
 export function brushWeights(
   coords: ArrayLike<number>,

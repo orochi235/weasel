@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
 import { linear } from '@weasel-js/geom';
 import { useAnimator } from './useAnimator';
-import { ColorOverrideRegistry } from './colorRegistry';
+import { createColorOverrideRegistry } from './colorRegistry';
 import { tweenVertexColors, springVertexColors, staggerVertexColors } from './colorHelpers';
 import { cycleVertexColors } from './colorCycle';
 
@@ -48,14 +48,14 @@ const BASE = [0.5, 0.5, 0.5, 1];
 
 describe('ColorOverrideRegistry.target', () => {
   it('hands two callers one target for a node and channel, and another per channel', () => {
-    const r = new ColorOverrideRegistry();
+    const r = createColorOverrideRegistry();
     expect(r.target('a', 'fill', 4)).toBe(r.target('a', 'fill', 4));
     expect(r.target('a', 'stroke', 4)).not.toBe(r.target('a', 'fill', 4));
     expect(r.target('b', 'fill', 4)).not.toBe(r.target('a', 'fill', 4));
   });
 
   it('refuses a length that is not whole colors', () => {
-    const r = new ColorOverrideRegistry();
+    const r = createColorOverrideRegistry();
     expect(() => r.target('a', 'fill', 6)).toThrow('multiple of 4');
   });
 
@@ -69,7 +69,7 @@ describe('ColorOverrideRegistry.target', () => {
   });
 
   it('kills a resting target when it is released, and hands out a new one', () => {
-    const r = new ColorOverrideRegistry();
+    const r = createColorOverrideRegistry();
     const old = r.target('a', 'fill', 4);
     r.release('a', 'fill');
     expect(r.has('a')).toBe(false);
@@ -80,7 +80,7 @@ describe('ColorOverrideRegistry.target', () => {
   });
 
   it('paints nothing of its own until something moves it', () => {
-    const r = new ColorOverrideRegistry();
+    const r = createColorOverrideRegistry();
     r.target('a', 'fill', 4);
     expect(r.resolve('a', 'fill', BASE, 0)).toBe(BASE);
     expect(r.get('a', 'fill')).toBeUndefined();

@@ -4,7 +4,7 @@ import { describe, expect, it } from 'vitest';
 import type { Action } from '@weasel-js/routing';
 import { actionsTagged, PATH_GESTURE_TAGS, type FeaturePreset } from '@weasel-js/core';
 import { sliceAction } from './slice/slice';
-import { pathTools } from './presets';
+import { pathToolsPreset } from './presets';
 import {
   createAddPinAction, createRemovePinAction, createWarpDragAction, createWarpGrabAction,
 } from './warp/warpActions';
@@ -34,11 +34,11 @@ function presetActions(preset: FeaturePreset): Action[] {
 
 const WARPS: WarpKind[] = ['plane', 'cloth', 'pin'];
 
-/** Core's pathfinder, the slice tool, `pathTools` (which includes `pathsPreset`), and the warp tools'
+/** Core's pathfinder, the slice tool, `pathToolsPreset` (which includes `pathsPreset`), and the warp tools'
  *  own actions: everything that can carry a path operation. */
 const ALL: Action[] = [
   ...presetActions(pathfinderPreset), sliceAction,
-  ...presetActions(pathTools),
+  ...presetActions(pathToolsPreset),
   ...WARPS.flatMap((k) => [createWarpDragAction(k), createWarpGrabAction(k)]),
   createAddPinAction(), createRemovePinAction(),
 ];

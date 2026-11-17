@@ -170,7 +170,7 @@ export function voiceFilter(
  * Ready-made inharmonic waves. The ratios are the textbook modes of each
  * object; the levels and decays are a starting point to spread and adjust.
  */
-export const partialPresets = {
+export const PARTIAL_PRESETS = {
   /** A church bell's hum, prime, tierce, quint and nominal, and above. */
   bell: {
     partials: [

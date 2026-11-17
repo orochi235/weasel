@@ -71,7 +71,7 @@ export function createStickyTool(options: UseStickyToolOptions = {}): Tool {
       presentation: {
         label: 'Sticky note',
         icon: icon('core:sticky'),
-        group: 'type',
+        group: 'text',
       },
       bindings: [
         { spec: { kind: 'drag', mods: INSERT_DRAG_MODS }, actionId: 'insert', opts: { id: 'sticky.drag', params: look, ...insertBindingBehaviors(behaviors) } },

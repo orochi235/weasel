@@ -3,7 +3,7 @@ import {
   faceGeneration,
   listCanvasFonts,
   listFontWeights,
-  listFonts,
+  listAtlasFonts,
   resolveFontVariant,
   subscribeGlyphReady,
 } from '@weasel-js/font';
@@ -38,14 +38,14 @@ function unregisteredLabel(family: string, weight: number, style: 'normal' | 'it
 /**
  * `Select` options for a font family, read from the font registry now.
  *
- * It offers both tiers that can paint: `listFonts()` for families with a baked atlas, and `listCanvasFonts()`
+ * It offers both tiers that can paint: `listAtlasFonts()` for families with a baked atlas, and `listCanvasFonts()`
  * for the families the canvas-SDF tier serves. A `value` the registry can't back stays on offer as its own
  * entry, naming what paints instead: dropping it would rewrite the document on the next edit, and showing it
  * bare would claim a font is in use that isn't.
  */
 export function fontFamilyOptions(args: FontFamilyOptionsArgs = {}): ListOption<string>[] {
   const { value, weight = 400, fontStyle = 'normal' } = args;
-  const baked = listFonts();
+  const baked = listAtlasFonts();
   const canvas = listCanvasFonts().filter((c) => !baked.some((f) => f.family === c.family));
   const available = [...baked.map((f) => f.family), ...canvas.map((c) => c.family)];
   const options: ListOption<string>[] = available.map((family) => ({ value: family, label: family }));

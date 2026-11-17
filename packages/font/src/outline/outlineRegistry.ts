@@ -48,7 +48,7 @@ export type OutlineSource =
   | (() => ArrayBuffer | Blob | Promise<ArrayBuffer | Blob>);
 
 /** Options for registering an outline font. */
-export interface OutlineFontOptions {
+export interface RegisterFontOutlinesOptions {
   /** Override the default opentype.js parser. Mostly a test seam; also the
    *  hook for a consumer who already has a font parser in their bundle. */
   parser?: OutlineParser;
@@ -116,7 +116,7 @@ export function registerFontOutlines(
   family: string,
   variant: FontVariant,
   source: OutlineSource,
-  opts: OutlineFontOptions = {},
+  opts: RegisterFontOutlinesOptions = {},
 ): () => void {
   const { weight, style } = normalizeVariant(variant);
   const key = slotKey(family, weight, style);
@@ -165,7 +165,7 @@ export function outlineStatus(
 }
 
 /** Every registered outline face and its load state — the enumeration a
- *  debug overlay or font picker needs, mirroring `listFonts`. */
+ *  debug overlay or font picker needs, mirroring `listAtlasFonts`. */
 export function listFontOutlines(): readonly OutlineFaceInfo[] {
   return slots.entries()
     .map(({ value: { family, weight, style, status } }) => ({ family, weight, style, status }))
@@ -255,7 +255,7 @@ export function glyphOutline(
  * Starts the load on a first call and answers `null` for now, like
  * `glyphOutline`.
  */
-export function outlineMetrics(
+export function outlineFace(
   family: string,
   weight: number,
   style: FontStyle,

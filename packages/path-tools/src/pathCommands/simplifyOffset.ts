@@ -10,7 +10,7 @@ import { pref, type PrefNumber } from '@weasel-js/prefs';
 import type { Op } from '@weasel-js/core';
 import type { OffsetPathParams } from '../actionParamSchema';
 import type { ActionParamsOf } from '@weasel-js/routing';
-import { livePathEdit } from './livePathEdit';
+import { createLivePathEditAction } from './livePathEdit';
 import { createInsertNodeOp, pathCopy, reshapeOps, slotOf } from '@weasel-js/core';
 import { icon } from '../icons.gen';
 
@@ -55,7 +55,7 @@ function offsetOptions(params: Readonly<Partial<OffsetPathParams>>): OffsetPathO
  * Refit each selected path with as few anchors as keep it
  * within `params.tolerance` of where it was (`simplifyPath`).
  */
-export const simplifyPathAction = livePathEdit<ActionParamsOf<'simplifyPath'>>({
+export const simplifyPathAction = createLivePathEditAction<ActionParamsOf<'simplifyPath'>>({
   id: 'simplifyPath',
   label: 'Simplify',
   icon: icon('core:simplify'),
@@ -72,7 +72,7 @@ export const simplifyPathAction = livePathEdit<ActionParamsOf<'simplifyPath'>>({
  * source and a shrunk one in front, so neither hides the other; the new
  * paths are selected.
  */
-export const offsetPathAction = livePathEdit<OffsetPathParams>({
+export const offsetPathAction = createLivePathEditAction<OffsetPathParams>({
   id: 'offsetPath',
   label: 'Offset Path',
   icon: icon('core:offsetPath'),

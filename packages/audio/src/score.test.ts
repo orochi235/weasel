@@ -1,10 +1,10 @@
 import { describe, expect, it } from 'vitest';
 import { midiToFrequency } from './pitch';
 import { createScore, type ScoreState } from './score';
-import { scoreCues, type ScoreMood } from './scoreMood';
+import { SCORE_CUES, type ScoreMood } from './scoreMood';
 import { engineHarness } from './testing/engineHarness';
 
-const home = (name: string): ScoreMood => scoreCues.find((c) => c.name === name)!.mood;
+const home = (name: string): ScoreMood => SCORE_CUES.find((c) => c.name === name)!.mood;
 const unique = (xs: number[]) => [...new Set(xs)];
 
 // Dread is 60 bpm, a 4000 ms bar. Urgency is 140 bpm: a bar is 12000/7 ms.

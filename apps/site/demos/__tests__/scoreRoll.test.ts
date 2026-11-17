@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { scoreBar, scoreCues, scoreParams } from '@weasel-js/audio';
+import { scoreBar, SCORE_CUES, resolveScoreMood } from '@weasel-js/audio';
 import type { DrawCommand } from '@weasel-js/core';
 import { ROLL_PITCHES, scoreRoll } from '../score/scoreRoll';
 
@@ -14,7 +14,7 @@ const notes = (commands: readonly DrawCommand[]): RectCommand['path'][] =>
     .map((c) => c.path);
 
 const barOf = (cue: string, bar: number) =>
-  scoreBar(scoreParams(scoreCues.find((c) => c.name === cue)!.mood), bar);
+  scoreBar(resolveScoreMood(SCORE_CUES.find((c) => c.name === cue)!.mood), bar);
 
 describe('scoreRoll', () => {
   it('draws one bar per note, a step wide per step of its length', () => {
@@ -30,7 +30,7 @@ describe('scoreRoll', () => {
     ], SIZE));
     expect(high.y).toBeLessThan(low.y);
     expect(low.y - high.y).toBeCloseTo((24 / (ROLL_PITCHES.high - ROLL_PITCHES.low)) * SIZE.height);
-    for (const cue of scoreCues) {
+    for (const cue of SCORE_CUES) {
       for (const bar of notes(scoreRoll(barOf(cue.name, 8), SIZE))) {
         expect(bar.y, cue.name).toBeGreaterThanOrEqual(0);
         expect(bar.y + bar.height, cue.name).toBeLessThanOrEqual(SIZE.height);

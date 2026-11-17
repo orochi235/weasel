@@ -43,7 +43,7 @@ Either/ors an agent settled on 2026-10-11, one commit each: `9dfd8a5aa`, `d3635e
   handle a consumer re-shows with `chromeVisibility` does nothing when dragged and warns nothing.
 - 2026-10-19: A tool lives in the package that owns the action it binds, written into CLAUDE.md's
   "What gets its own package". `ToolSet` is the composition unit (`defaultTools`, preset `tools`,
-  and `ToolPalette`'s `include` take one); `BUILTIN_TOOL_IDS` is now derived from `BUILTIN_TOOLS`,
+  and `ToolPalette`'s `include` take one); `KIT_TOOL_IDS` is now derived from `KIT_TOOLS`,
   and a shape kind's `family` decides which set names it. draw's `usePathToolsTools` moved into
   path-tools and now also builds spiro and the shape builder.
 
@@ -448,7 +448,7 @@ The snap pipeline ([snapping.md](./snapping.md)) landed on 2026-10-18 with these
 - Ruled 2026-11-10 (my call, overnight sweep): kernel3d's `headFor` gives a head whose `maxShare` is 0 no length
   on a line of unknown (infinite) length, reading `0 · ∞` at its limit: a head allowed no share of the line has none.
 - Ruled 2026-11-10 (my call, overnight sweep): kernel3d's `aimSpace3d` unprojects onto the ground at height 0 when
-  `up` lies just off an axis, as `createInsert` lays its footprint at 0: the hit is on the ground by construction, so
+  `up` lies just off an axis, as `createInsert3dDep` lays its footprint at 0: the hit is on the ground by construction, so
   rounding left in `up` is no height.
 - 2026-11-11 (my call, core second property pass): `zoomAt` takes a `NaN` or negative factor as no zoom on that axis
   (a negative one had turned the axis over, `NaN` had dropped it to `ZOOM_FLOOR`), and a factor of 0 as the clamp's
@@ -1312,7 +1312,7 @@ The snap pipeline ([snapping.md](./snapping.md)) landed on 2026-10-18 with these
   `symmetryTransforms` and every `SYMMETRY_KINDS` row (ce0289dd1). That includes a point turn about a center near
   the double range's end, whose copy would draw at finite places but whose affine's translation overflows; the
   original still draws. Rejected: throwing, which would fail every draw of a group a far drag put there.
-- 2026-11-11 (my call, symmetry second pass): `specOfData` reads a field of the wrong type at its default, a kind
+- 2026-11-11 (my call, symmetry second pass): `symmetrySpecOf` reads a field of the wrong type at its default, a kind
   `SYMMETRY_KINDS` does not hold as its own as `mirror`, and a cell that is not a wallpaper cell as `none`
   (b686c535b). It does not report them; nothing in symmetry has a place to.
 - 2026-11-11 (my call, cursor second pass): `placeCursorPath` throws a `RangeError` for a scale or move that makes a
@@ -1426,8 +1426,8 @@ calls its builds made where the spec was silent.
   a cycle only through an edge still fading out is wired once that edge has closed. The graph's
   output starts at gain 0, so the first `start()` fades in. `apply` validates the whole list first,
   but a `set` that throws lets the rest apply and then rethrows. `dispose()` fades out over `fadeMs`
-  while sounding. `delayNode`'s `maxTime` defaults to 2000 ms. `impulseResponse` lives in
-  `@weasel-js/audio`, and `reverbNode` builds its impulse from `seconds` (default 2).
+  while sounding. `createDelayNode`'s `maxTime` defaults to 2000 ms. `impulseResponse` lives in
+  `@weasel-js/audio`, and `createReverbNode` builds its impulse from `seconds` (default 2).
 - 2026-10-20 (arc 4, live runner): Audio stage types are prefixed `audio.`, and pipeline mode splits a
   mixed pipeline so the image runner never sees them. The runner ships from
   `@weasel-js/diagram/effect-audio`, with `@weasel-js/audio` an optional peer. Stages on a feedback
@@ -1521,7 +1521,7 @@ Calls the round made:
 - `CommandPalette`'s action-settings dialog stays editable when its action turns disabled; the popover disables. Left as is.
 - `CommandPalette`'s `reasonLabels` replaces the default wording rather than merging with it. Left as is.
 - `createMarkdownRenderer` ignores a run's own `fill`, and under a `textBaseline` other than alphabetic places each
-  run by its own font's metrics. Left as is. `PositionedRun.lineSize` is new, after `size` was removed.
+  run by its own font's metrics. Left as is. `CanvasPositionedRun.lineSize` is new, after `size` was removed.
 - `onClick`, hover, `getNodeAtPoint` and press classification take the topmost hit, not `selectTool.pickBest`, whose
   docs say they name the node a click selects; `pickBest` cannot see the asking view's camera or the live Alt key.
   Left as is.
@@ -1942,13 +1942,13 @@ Calls the lanes made without a ruling:
   `@weasel-js/text` already called it, over text-shaping's `Shaper`).
 - 2026-11-12: Face addressing splits by job. Registering and loading take a `FontVariant` object
   (`registerFont`, `registerFontOutlines`, `unregisterFontOutlines`, `loadFontOutlines`, `warmFonts`'s
-  `FontRequest`); a lookup of one face takes `(family, weight = 400, style = 'normal')` positionally (`getFont`,
-  `fontPending`, `hasFontOutlines`, `outlineStatus`, `cssFontFamily`, `cssFontFamilyLoading`), since those run per
+  `FontRequest`); a lookup of one face takes `(family, weight = 400, style = 'normal')` positionally (`getAtlasFont`,
+  `isFontPending`, `hasFontOutlines`, `outlineStatus`, `cssFontFamily`, `cssFontFamilyLoading`), since those run per
   run and per frame. `cssFontFamily` moved to the lookup shape.
 - 2026-11-12: The scripts the no-shaper warning names are Arabic, Syriac, Thaana, N'Ko, the Indic blocks, Tibetan,
   Myanmar, Khmer and Mongolian, letters and marks only. Thai and Lao are left out: set one glyph per code point,
   they read, if with marks placed less well.
-- `fittedTextPose` is renamed `fitTextToBox`, on the maintainer's call (2026-11-12): `fitTextPose` sizes a text
+- `fittedTextPose` is renamed `bakeTextFit`, on the maintainer's call (2026-11-12): `fitBoxToText` sizes a text
   pose's box to its text, and the renamed one sizes the text to its box.
 
 ## Audit round twenty-one (2026-11-12): geometry and drawing
@@ -1978,7 +1978,7 @@ Calls the lanes made without a ruling:
   follow `Array.find`).
 - Sticky keeps S, Knead moves to U, and Reach moves from U to Shift+U, on the maintainer's call
   (2026-11-12). The star tool has no default key at all.
-- Open: two tool sets are not named for their tools' palette group, which `BUILTIN_TOOL_GROUPS` says each set is:
+- Open: two tool sets are not named for their tools' palette group, which `KIT_TOOL_GROUPS` says each set is:
   `RESHAPE_TOOLS` (`reshape`) holds tools in the `path` group, and `RIG_TOOLS` (`rig`) tools in `shape`. Renaming
   the groups moves where the tools sit on a palette; renaming the sets does not.
 - Open: most tool hooks outside the drag-to-insert tools take a `keybinding` option (`null` to drop the key):
@@ -2110,7 +2110,7 @@ Calls the lanes made without a ruling:
 - 2026-11-13 (the lane's call): the hand tool and the lasso commit nothing to the history (a pan edits the view, a
   lasso the selection), so the walk over every built-in tool checks that they leave the history alone instead of
   undoing them. `image`, `eyedropper` and `measure` need arguments, so they are in no built-in tool set and no
-  `BUILTIN_TOOL_GROUPS` entry; they sit in the `shape` and `view` palette groups when a host mounts them.
+  `KIT_TOOL_GROUPS` entry; they sit in the `shape` and `view` palette groups when a host mounts them.
 - No two tool keys collide, in core or across path-tools and rig, and no action binds a bare letter. The star and
   image tools have no key; the bare letters no tool takes are C, D, O, Q, X and Z (B is pin warp, F plane warp, J bone,
   U knead, W weight and Y snip).
@@ -2143,6 +2143,7 @@ Calls the lanes made without a ruling:
   `hover` bindings, which all run (2026-11-13).
 - An action's own key binding carries `BETWEEN_GESTURES`, or a phase of its own, unless it only moves the view
   (`viewport.zoom.*`), is an Escape that `dispatch.cancelAll` takes mid-drag (`exitPathEdit`, `tool.resetToDefault`), or
+  (`viewport.zoom.*`), is an Escape that `cancelGesture` takes mid-drag (`leavePathEdit`, `tool.resetToDefault`), or
   opens a keymap. `kitBindingPhases.test.tsx` holds the kit to it, and the tool keys now carry it as the offhand keys
   did. draw's color keys and view toggles do not: they change the next shape's style or the view, not the document,
   and a change mid-draw reaching the shape is how the tool options work (2026-11-13).
@@ -2312,10 +2313,10 @@ Calls the lanes made without a ruling:
 
 ## Audit round twenty-three (2026-11-13): the apps
 
-- 2026-11-13 (the lane's call): a double-click on text opens it through `editTextAt`, an action of its own in the
+- 2026-11-13 (the lane's call): a double-click on text opens it through `enterTextEditAt`, an action of its own in the
   `textEdit` feature (part of `edit`), rather than a default binding on `enterTextEdit`: that one opens the
   selection and is what the text and sticky tools' clicks reach, which should keep opening the selected node
-  whatever glyph is under the click. `editTextAt` declines where the double-click names a group, so text
+  whatever glyph is under the click. `enterTextEditAt` declines where the double-click names a group, so text
   in a group enters the group first and opens on the next double-click, as path edit does.
 - 2026-11-13 (the lane's call): a canvas inside a host's `useSceneTextEdit` container answers the `textEdit` dep
   with that editor, so a host binds nothing for a double-click or a text tool to reach it. `TextEditDepPublisher`

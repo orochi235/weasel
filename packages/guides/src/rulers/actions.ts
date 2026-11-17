@@ -13,10 +13,10 @@ import {
   type UnitScope,
   type AnyScene,
 } from '@weasel-js/core';
-import { addGuideOp, removeGuideOp, replaceGuideOp, type GuideStore } from '../guides/ops';
+import { createAddGuideOp, createRemoveGuideOp, createReplaceGuideOp, type GuideStore } from '../guides/ops';
 import type { Guide } from '../guides/types';
 import { guideAxisOf, rulerPartAt, type RulerHit, type RulerPart } from './hit';
-import { documentRulerFrame, rulerFrameAt, type RulerFrame } from './reading';
+import { documentRulerFrame, createRulerFrameLookup, type RulerFrame } from './reading';
 import type { RulersState } from './layout';
 import type { Point } from '@weasel-js/geom';
 
@@ -38,7 +38,7 @@ function frameReader(ctx: RulersActionCtx): (scene: AnyScene | undefined, p: Poi
   return (scene, p) => {
     if (scene === undefined) return documentRulerFrame(ctx.root, ctx.origin);
     const version = scene.getVersion();
-    if (built?.scene !== scene || built.version !== version) built = { scene, version, at: rulerFrameAt(scene, ctx.root, ctx.origin) };
+    if (built?.scene !== scene || built.version !== version) built = { scene, version, at: createRulerFrameLookup(scene, ctx.root, ctx.origin) };
     return built.at(p);
   };
 }
@@ -79,9 +79,9 @@ function commit(deps: ActionDeps, op: Op): void {
 /** What a drag ending with the guide at `to` (`null` over a ruler) commits:
  *  a guide placed, moved, or dropped back on a ruler and removed. */
 function guideEdit(store: GuideStore, moving: Guide | null, to: Guide | null): Op | null {
-  if (moving === null) return to === null ? null : addGuideOp(store, to);
-  if (to === null) return removeGuideOp(store, moving);
-  return to.offset === moving.offset ? null : replaceGuideOp(store, moving, to);
+  if (moving === null) return to === null ? null : createAddGuideOp(store, to);
+  if (to === null) return createRemoveGuideOp(store, moving);
+  return to.offset === moving.offset ? null : createReplaceGuideOp(store, moving, to);
 }
 
 /**

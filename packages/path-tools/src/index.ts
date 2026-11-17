@@ -1,7 +1,7 @@
 /**
  * `@weasel-js/path-tools` — path-editing tools for a weasel canvas, each
  * family a `FeaturePreset` an app turns on beside core's: `features={[drawPreset,
- * pathTools]}` for all of them, or one at a time.
+ * pathToolsPreset]}` for all of them, or one at a time.
  *
  * @packageDocumentation
  */
@@ -31,7 +31,7 @@ export {
   fairingPreset,
   pathEffectsPreset,
   pathStructurePreset,
-  pathTools,
+  pathToolsPreset,
   segmentTypePreset,
   resamplePreset,
   sandPreset,
@@ -55,20 +55,20 @@ export {
 export { editedPathSymmetries } from './pathEdit/editAnchors/symmetry';
 export { HANDLE_LOCK_ROLES, locksInForce } from './pathEdit/editAnchors/handleDrag';
 export {
-  anchorEditWouldChange, commitAnchorEdit, deleteAnchorsAction, depOf, requiresAnchorSelection,
+  anchorEditWouldChange, commitAnchorEdit, deleteAnchorsAction, openPathEditOf, requiresAnchorSelection,
   selectAnchorAction,
 } from './pathEdit/anchorEditing';
 export {
   nudgeAnchorsDownAction, nudgeAnchorsLeftAction, nudgeAnchorsRightAction, nudgeAnchorsUpAction,
 } from './pathEdit/anchorNudge';
-export { createHandleCommand, type HandleEdit, type HandleScope } from './pathEdit/anchorHandles';
+export { createHandleEditAction, type HandleEdit, type HandleScope } from './pathEdit/anchorHandles';
 export { joinSelectedAnchors, type AnchorEdit } from './pathEdit/anchorJoin';
 export { deleteSelectedMark, editTargetOf, markUnder } from './pathEdit/pathEditMarks';
 
 // ─── Path commands and outlines ────────────────────────────────────────────
-export { joinPathsCommand, planJoin, type JoinPlan } from './pathCommands/cutJoin';
+export { createJoinPathsAction, planJoin, type JoinPlan } from './pathCommands/cutJoin';
 export { DEFAULT_SIMPLIFY_TOLERANCE, OFFSET_PATH_PARAMS, SIMPLIFY_PATH_PARAMS } from './pathCommands/simplifyOffset';
-export { livePathEdit, type LivePathEditSpec } from './pathCommands/livePathEdit';
+export { createLivePathEditAction, type LivePathEditSpec } from './pathCommands/livePathEdit';
 export {
   applyCreateOutlines, type CreateOutlinesAdapter, type CreateOutlinesResult, type OutlinePathSpec,
 } from './outlines/createOutlines';
@@ -102,7 +102,7 @@ export { TUG_PATH_PARAMS, tugPathAction, type TugPathParams } from './tug/tugPat
 export { useTugTool } from './tug/useTugTool';
 export {
   overlayShown, PATH_OVERLAYS_GROUP, showPoiseAction, showCombAction, showFilletsAction, showDirectionAction,
-  showOverlayAction,
+  createOverlayToggleAction,
 } from './overlays/showOverlay';
 export {
   DEFAULT_KNEAD_RADIUS_PX, DEFAULT_KNEAD_STRENGTH, KNEAD_PARAMS, kneadAction, type KneadParams,
@@ -156,7 +156,7 @@ export {
 } from './shapeBuilder';
 export {
   useGirthTool, createGirthOverlay, createGirthActions, DEFAULT_GIRTH_REACH_PX, GIRTH_CLEAR_ID, GIRTH_DRAG_ID,
-  GIRTH_DRAG_PARAMS, GIRTH_HOVER_ID, GIRTH_UNHOVER_ID, type GirthDragParams, type UseGirthToolOptions, type WidthEdgeHit, type GirthEnv, type GirthFocus, type WidthGrip, type WidthTarget,
+  GIRTH_DRAG_PARAMS, GIRTH_HOVER_ID, GIRTH_UNHOVER_ID, type GirthDragParams, type UseGirthToolOptions, type GirthEdgeHit, type GirthEnv, type GirthFocus, type GirthGrip, type GirthTarget,
 } from './girth';
 
 // ─── Spiro curves ──────────────────────────────────────────────────────────

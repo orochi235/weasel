@@ -100,7 +100,7 @@ those on too; any of them can also be passed alone:
 
 Path edit, the pen, the pencil, the knife, the path commands and Create Outlines are
 `@weasel-js/path-tools`': its `pathsPreset` (`anchorKeysPreset`, `outlinesPreset`, `pathEditPreset`,
-`pathCommandsPreset`), which `pathTools` includes, and the tools `usePathToolsTools` builds.
+`pathCommandsPreset`), which `pathToolsPreset` includes, and the tools `usePathToolsTools` builds.
 
 Text is a package of its own, `@weasel-js/text-tools`: `textPreset` teaches a canvas the text node
 kind (its painter, routing, properties, inserts, in-place editor, a double-click opening it, and
@@ -133,8 +133,8 @@ itself. For a page that picks presets by name (a URL, a settings file); importin
 it puts every core preset in the bundle.
 
 `move`, `resize` and `rotate` belong to the selection, not to the select tool:
-they are always-live entries (editing's `selectionMoveContribution`,
-`selectionResizeContribution`, `selectionRotateContribution`), so a drag on the selection moves it under
+they are always-live entries (editing's `createSelectionMoveContribution`,
+`createSelectionResizeContribution`, `createSelectionRotateContribution`), so a drag on the selection moves it under
 any tool that leaves the drag unclaimed. The select tool itself only chooses:
 it picks on press, marquees on an empty drag, and clears on an empty click.
 
@@ -1020,7 +1020,7 @@ The kit maintains several **registry** data structures — keyed lookups that ma
 
 | Registry | Keyed by | Scope | Mutability | Where it lives | Reflection | Used by |
 |---|---|---|---|---|---|---|
-| **Fonts** | `family` → `weight\|style` | App (module) lifetime | Runtime-mutable; entries are idempotent | Module-global reflectable in `registerFont.ts` | `fontRegistry`; `listFonts()`; `listFontWeights(family)` | `WeaselRenderer`, text layout |
+| **Fonts** | `family` → `weight\|style` | App (module) lifetime | Runtime-mutable; entries are idempotent | Module-global reflectable in `registerFont.ts` | `fontRegistry`; `listAtlasFonts()`; `listFontWeights(family)` | `WeaselRenderer`, text layout |
 | **Font outlines** | `family\|weight\|style` | App (module) lifetime | Runtime-mutable; register / unregister | Module-global reflectable in `outline/outlineRegistry.ts` | `fontOutlineRegistry` (notifies on load-state changes too); `listFontOutlines()` | `paintRuns` (above the size threshold) |
 | **Tools** | Tool id string | Component lifetime, pinned at `useTools` call | Constructor-fixed (registry reference is live, but entries are set at hook call) | Hook return (`ToolsApi.registry`) in `packages/routing/src/tools/useTools.ts` | Implicitly — `registry` field is enumerable | Gesture dispatcher, tool palette UI |
 | **Ops** | Op kind string (`kit:*` reserved) | Scene lifetime | Constructor-fixed via `ops` option; runtime additions via `scene.registerOp()` | Internal `Map` inside `createScene` closure | No | `Scene.undo()`, `Scene.redo()`, `scene.recordOp()` |

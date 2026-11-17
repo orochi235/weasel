@@ -271,12 +271,12 @@ Owner tags, after the priority (2026-10-26):
   a compressor.
 
 - **(P3) [maintainer] Nobody has listened to the generative score.** Every number
-  `scoreParams` maps a mood through was chosen from descriptions of the four
+  `resolveScoreMood` maps a mood through was chosen from descriptions of the four
   cues and is tested as structure only. Whether dread reads as dread is for
   ears: the `score` demo (`apps/site/demos/ScoreDemo.tsx`) plays each cue with
   its parameters beside the sliders.
   Closes when the maintainer has listened to all four cues in the `score` demo and kept or retuned their
-  `scoreParams`.
+  `resolveScoreMood`.
 
 ---
 
