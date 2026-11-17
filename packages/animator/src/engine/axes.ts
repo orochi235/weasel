@@ -7,6 +7,8 @@ export interface Axes<T> {
   shape: string;
   /** A name for each axis where the value has them: a plain object's fields. */
   names?: readonly string[];
+  /** Each name as a path of one step, so a dot in a field's name makes no path. */
+  paths?: readonly (readonly string[])[];
   to(v: T): number[];
   /** The value whose `count` axes start at `at` in `a`. */
   from(a: ArrayLike<number>, at?: number): T;
@@ -93,6 +95,8 @@ export function axesOf<T>(sample: T): Axes<T> | null {
     count: keys.length,
     shape: `object:${JSON.stringify(keys)}`,
     names: keys,
+    // A field's name is one step, so `a` does not reach a field called `a.b`.
+    paths: keys.map((k) => [k]),
     to: (v) => keys.map((k) => getOwn(v as Fields, k)!),
     from: (a, at = 0) => {
       const out: Fields = {};

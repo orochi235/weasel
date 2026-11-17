@@ -2567,3 +2567,6 @@ Calls the lanes made without a ruling:
   starts is canceled, with every animation it has started, and the throw goes on: to the caller for an animation that
   starts at once, and to the frame (which logs it) for a later one. The stagger's other items do not start, and no
   `onDone` comes. Counting the thrown item as done and starting the rest was the alternative.
+- 2026-11-16 (the fixer's call): an `axes` name that is both one axis's name and the start of other axes' paths, as
+  `arm.x` is on a skeleton with joints `arm` and `arm.x`, throws rather than answering both. A name on axes without
+  `paths` keeps reading every dot as a step.
