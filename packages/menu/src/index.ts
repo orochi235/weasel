@@ -8,7 +8,7 @@ export type {
   MenuEntry, MenuItemEntry, MenuSeparatorEntry, MenuSubmenuEntry, MenuNumberEntry, MenuColorEntry, MenuTextEntry, MenuRowEntry, MenuGrade,
 } from './entries';
 export { placeMenu, placeMenuUnder, placeSubmenu } from './placement';
-export type { MenuDirection, MenuSide, Point, Rect, Size } from './placement';
+export type { MenuDirection, MenuSide, Point, MenuRect, MenuSize } from './placement';
 export { accessLetter, accessMatch } from './access';
 export { withLinks } from './links';
 export { menuNumberDisplay, menuNumberText } from './numberText';

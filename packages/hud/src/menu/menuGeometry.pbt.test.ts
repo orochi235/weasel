@@ -4,7 +4,7 @@
  */
 import { describe, expect, it } from 'vitest';
 import fc from 'fast-check';
-import { createMenuController, type MenuNumberEntry, type Rect } from '@weasel-js/menu';
+import { createMenuController, type MenuNumberEntry, type MenuRect } from '@weasel-js/menu';
 import { draftText, grapheme, menuLevel, openPath, runs, tally } from '../pbt.fixture';
 import { chipUnder, levelAt } from './chipRepeat';
 import { menuRowSpans } from '@weasel-js/ui-logic';
@@ -22,7 +22,7 @@ const rect = fc.record({
 });
 /** A fraction spread evenly over `[lo, hi]`, not crowded at its ends as fast-check's doubles are. */
 const between = (lo: number, hi: number) => fc.integer({ min: 0, max: 10_000 }).map((k) => lo + (hi - lo) * k / 10_000);
-const inside = (r: Rect, x: number, y: number) => x >= r.x && x < r.x + r.w && y >= r.y && y < r.y + r.h;
+const inside = (r: MenuRect, x: number, y: number) => x >= r.x && x < r.x + r.w && y >= r.y && y < r.y + r.h;
 
 describe('menu hit tests', () => {
   it('finds the row drawn under a point, and none in the padding', () => {

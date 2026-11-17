@@ -1,4 +1,4 @@
-import { createMenuController, withLinks, type MenuController, type Rect } from '@weasel-js/menu';
+import { createMenuController, withLinks, type MenuController, type MenuRect } from '@weasel-js/menu';
 import { faceGeneration } from '@weasel-js/font';
 import type { ClaimableGesture, OpenMenu } from '@weasel-js/core';
 import { createEmitter } from '@weasel-js/registry';
@@ -45,14 +45,14 @@ export interface MenuWidgetOptions {
   onChange(): void;
 }
 
-function underOnCanvas(r: Rect, toCanvas: (client: Point) => Point): Rect {
+function underOnCanvas(r: MenuRect, toCanvas: (client: Point) => Point): MenuRect {
   const a = toCanvas({ x: r.x, y: r.y });
   const b = toCanvas({ x: r.x + r.w, y: r.y + r.h });
   return { x: a.x, y: a.y, w: b.x - a.x, h: b.y - a.y };
 }
 
 /** The box around every panel. */
-function union(panels: readonly Rect[]): WidgetBounds {
+function union(panels: readonly MenuRect[]): WidgetBounds {
   const x0 = minOf(panels, (p) => p.x);
   const y0 = minOf(panels, (p) => p.y);
   const x1 = maxOf(panels, (p) => p.x + p.w);
@@ -63,7 +63,7 @@ function union(panels: readonly Rect[]): WidgetBounds {
 /** The edit `typing` runs as a widget's text input: its caret's place on the canvas, read off `panels()`, and its
  *  composition. `measure` gives the width of a run of a row's text. */
 function menuTextInput(
-  c: Pick<MenuController, 'entriesAt'>, typing: ReturnType<typeof createTextEditor>, panels: () => readonly Rect[],
+  c: Pick<MenuController, 'entriesAt'>, typing: ReturnType<typeof createTextEditor>, panels: () => readonly MenuRect[],
   metrics: () => MenuPanelMetrics, measure: (text: string) => number, subscribe: HudTextInput['subscribe'],
 ): HudTextInput {
   const read = () => {
@@ -132,7 +132,7 @@ export function createMenuWidget(opts: MenuWidgetOptions): Widget {
   let family: string | null = null;
   let tokens = (builtIn ??= resolveTheme(weaselTheme));
   let placed = place(c, family, tokens);
-  let panels: Rect[] = placed.map((p) => p.rect);
+  let panels: MenuRect[] = placed.map((p) => p.rect);
   const replace = () => { placed = place(c, family, tokens); panels = placed.map((p) => p.rect); };
   let disposed = false;
   let armed = false;

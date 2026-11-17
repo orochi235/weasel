@@ -5,7 +5,7 @@ import { entriesAt, isRow, type MenuColorEntry, type MenuEntry, type MenuNumberE
 import { firstRow, type MenuStack } from './keys';
 import { EMPTY_TYPEAHEAD, timerScheduler, type Scheduler, type TypeaheadBuffer } from '@weasel-js/ui-input';
 import { planKey } from './keyPlan';
-import type { MenuDirection, Point, Rect } from './placement';
+import type { MenuDirection, Point, MenuRect } from './placement';
 import { inTriangle } from './triangle';
 
 export { TYPEAHEAD_RESET_MS } from '@weasel-js/ui-input';
@@ -40,7 +40,7 @@ export interface MenuController {
   hover(level: number, index: number | null, point?: Point): void;
   press(level: number, index: number): void;
   /** Where `level`'s panel is, for the diagonal allowance. */
-  setPanel(level: number, rect: Rect): void;
+  setPanel(level: number, rect: MenuRect): void;
   /** What a number row holds now: the last value set while the menu is open, else the one it opened with. */
   numberValue(e: MenuNumberEntry): number | undefined;
   /** Write a number row, held within its bounds. The menu stays open; subscribers hear it. */
@@ -61,7 +61,7 @@ export interface MenuController {
 
 /** Heading from `from`, the point the deferral began, toward the near edge of the child of `level`'s panel. */
 function headingIntoChild(
-  panels: ReadonlyMap<number, Rect>, stack: MenuStack, from: Point | null, level: number, p: Point,
+  panels: ReadonlyMap<number, MenuRect>, stack: MenuStack, from: Point | null, level: number, p: Point,
 ): boolean {
   const child = panels.get(level + 1);
   const parent = panels.get(level);
@@ -76,7 +76,7 @@ export function createMenuController(opts: MenuControllerOptions): MenuControlle
   const sched = opts.scheduler ?? timerScheduler;
   let stack: MenuStack = [opts.highlightFirst ? firstRow(root) : null];
   let listeners = createEmitter();
-  const panels = new Map<number, Rect>();
+  const panels = new Map<number, MenuRect>();
   let pending: (() => void) | null = null;
   let pendingKind: 'open' | 'diagonal' | null = null;
   let lastPoint: Point | null = null;
