@@ -2,3 +2,6 @@ packages/weasel-gl/fonts/**/*.png binary
 
 # Unicode conformance fixtures, stored gzipped (see packages/bidi/src/__fixtures__/README.md).
 packages/bidi/src/__fixtures__/*.gz binary
+
+# Every audit fixer appends its open questions here; a union merge keeps each night's sections side by side.
+docs/unruled.md merge=union
