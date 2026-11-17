@@ -13,7 +13,7 @@ import type { Page, PlacedPage } from './pages';
 import { placeOnPages } from './placeOnPages';
 import {
   addPageNode, createPageRun, pageIdsOf, pageInfo, pageNodeOf, pageOfNode, pagePoses, pageRunOf, pagesOf, placedPagesOf,
-  runInfo, runPose, type PagesDoc,
+  requireDistinctPageIds, runInfo, runPose, type PagesDoc,
 } from './pageNodes';
 import type { AnyScene } from 'core/scene/anyScene';
 
@@ -74,13 +74,14 @@ function writePage(scene: AnyScene, id: NodeId, page: Page, pose: RectPose): voi
  * drops are deleted with everything on them and whatever follows that. A
  * scene with no page run gets one, and what it held goes onto the pages
  * (`placeOnPages`, measured with `options.descriptor`). Content keeps its
- * place on its page.
+ * place on its page. Throws when two of `next.pages` share an id.
  */
 export function setPages<TData, TLayer extends string, TPose>(
   scene: Scene<TData, TLayer, TPose>,
   next: PagesDoc,
   options: PageEditOptions = {},
 ): void {
+  requireDistinctPageIds(next.pages, 'setPages');
   const s = asAny(scene);
   const { label = 'Set pages', descriptor } = options;
   const place = descriptor ? { descriptor } : {};
@@ -129,13 +130,14 @@ function edit<TData, TLayer extends string, TPose>(
 }
 
 /** Insert `page` at `index`, by default after the last page. An index past either end is held to it, as {@link movePage}
- *  holds one. */
+ *  holds one. Throws when the scene already has a page with `page.id`; {@link nextPageId} mints a free one. */
 export function addPage<TData, TLayer extends string, TPose>(
   scene: Scene<TData, TLayer, TPose>,
   page: Page,
   options: PageEditOptions & { index?: number } = {},
 ): void {
   edit(scene, 'Add page', options, (pages) => {
+    if (pages.some((p) => p.id === page.id)) throw new Error(`addPage: page id "${page.id}" is already in use`);
     pages.splice(heldIndex(options.index ?? pages.length, pages.length, 'addPage'), 0, page);
     return pages;
   });

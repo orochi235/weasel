@@ -20,7 +20,8 @@ export interface AppliedLogEnv {
 export interface AppliedLog {
   /**
    * Run `fn` as all-or-nothing: if it throws, every kit op it applied is
-   * reverted, newest first, and the selection goes back to where it was.
+   * reverted, newest first, and the selection goes back to where it was. A
+   * revert that throws is logged and skipped; `fn`'s throw is the one rethrown.
    * The log is at kit-op grain rather than per external op, because one
    * external op can issue several scene mutations (a container move cascading
    * to its children) and fail halfway through its own.
@@ -50,11 +51,17 @@ export function createAppliedLog(env: AppliedLogEnv): AppliedLog {
         return result;
       } catch (err) {
         applied = null;
+        // Best-effort, as the history engine unwinds a failed step: the caller sees the first throw, and one taking
+        // back an op is only logged, so the ops before it are still taken back and the selection restored.
         env.lifted(() => {
           for (let i = log.length - 1; i >= 0; i--) {
             const { kind, payload, reverted } = log[i];
             const handler = env.registered.get(kind)!;
-            (reverted ? handler.apply : handler.revert)(payload);
+            try {
+              (reverted ? handler.apply : handler.revert)(payload);
+            } catch (back) {
+              console.warn(`[weasel] Scene: taking back op "${kind}" after a failed edit threw: ${String(back)}`);
+            }
           }
         });
         env.setSelection(selectionBefore);

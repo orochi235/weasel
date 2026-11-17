@@ -26,7 +26,7 @@ import type { PathEditExtension } from 'domains/paths/pathEditExtension';
 import type { SnapSource } from 'domains/snap/types';
 import type { SurfaceContribution } from '../surfaceContribution';
 import type { CustomLayerEntry } from '../layerSlots';
-import { mergeByKey, refinesRelation } from './presetMerge';
+import { mergeByKey, refinesRelation, type RefinesRelation } from './presetMerge';
 import type { NodeRoutingEntry } from 'core/scene/NodeRouting';
 import type { NodePropertiesEntry } from 'core/scene/NodeProperties';
 import type { InsertNodeFactories } from '../deps/insertFactories';
@@ -277,21 +277,27 @@ export function resolveFeatures(
     builds: [...builds.keys()],
     buildOwners: [...builds.values()],
     refines,
-    selection: oneOf(presets, 'selection', 'build the canvas\'s selection'),
-    selectionChrome: oneOf(presets, 'selectionChrome', 'draw the selection chrome'),
+    selection: oneOf(presets, refines, 'selection', 'build the canvas\'s selection'),
+    selectionChrome: oneOf(presets, refines, 'selectionChrome', 'draw the selection chrome'),
     has: (id) => byId.has(id),
   };
 }
 
-/** The one value `presets` give for `role`, or undefined; two presets giving different ones throw. */
+/** The one value `presets` give for `role`, or undefined. Of two presets giving different ones, the one refining the
+ *  other wins, as in `mergeByKey`; two where neither refines the other throw. */
 function oneOf<K extends 'selection' | 'selectionChrome'>(
-  presets: readonly FeaturePreset[], role: K, what: string,
+  presets: readonly FeaturePreset[], refines: RefinesRelation, role: K, what: string,
 ): FeaturePreset[K] | undefined {
   let found: { id: string; value: NonNullable<FeaturePreset[K]> } | undefined;
   for (const p of presets) {
     const value = p[role];
     if (!value || found?.value === value) continue;
-    if (found) throw new Error(`[SceneCanvas] presets "${found.id}" and "${p.id}" both ${what}`);
+    if (found) {
+      if (refines(found.id, p.id)) continue;
+      if (!refines(p.id, found.id)) {
+        throw new Error(`[SceneCanvas] presets "${found.id}" and "${p.id}" both ${what}, and neither refines the other`);
+      }
+    }
     found = { id: p.id, value };
   }
   return found?.value;

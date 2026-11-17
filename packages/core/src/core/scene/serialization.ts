@@ -46,7 +46,7 @@ export function layerFromSerialized<TLayer extends string>(
     id: spec.id,
     visible: spec.visible ?? true,
     locked: spec.locked ?? false,
-    ...(spec.parallax ? { parallax: spec.parallax } : {}),
+    ...(spec.parallax ? { parallax: detach(spec.parallax) } : {}),
     ...(spec.annotation ? { annotation: true } : {}),
   };
   return spec.kind === 'user'
@@ -61,7 +61,7 @@ export function serializeScene<TData, TLayer extends string, TPose>(
   state: SerializableState<TData, TLayer, TPose>,
   fnFields: readonly NodeFnField[],
   doc?: SerializedDoc,
-  /** What a pose or `data` value becomes in the snapshot: `detach` for one the caller owns. */
+  /** What a pose, `data` or declared-field value becomes in the snapshot: `detach` for one the caller owns. */
   copy: <T>(value: T) => T = detach,
 ): SerializedScene<TData, TLayer, TPose> {
   const nodes: SerializedNode<TData, TLayer, TPose>[] = [];
@@ -76,8 +76,8 @@ export function serializeScene<TData, TLayer extends string, TPose>(
     };
     if (n.parent != null) out.parent = n.parent;
     if (n.dependsOn === 'children') out.dependsOn = 'children';
-    else if (n.dependsOn && n.dependsOn.length > 0) out.dependsOn = n.dependsOn;
-    Object.assign(out, statedFields(n));
+    else if (n.dependsOn && n.dependsOn.length > 0) out.dependsOn = copy(n.dependsOn);
+    Object.assign(out, statedFields(n, copy));
     Object.assign(
       out,
       fnKeysOf(fnFields, n as unknown as FnBearingNode, 'jsonKey', (field) => {
@@ -93,7 +93,7 @@ export function serializeScene<TData, TLayer extends string, TPose>(
     const layer: SerializedLayer<TLayer> = { id: l.id };
     if (l.visible === false) layer.visible = false;
     if (l.locked === true) layer.locked = true;
-    if (l.parallax) layer.parallax = l.parallax;
+    if (l.parallax) layer.parallax = copy(l.parallax);
     if (l.annotation) layer.annotation = true;
     if (l.kind === 'user') {
       layer.kind = 'user';
@@ -167,11 +167,11 @@ function currentSpecs<TData, TLayer extends string, TPose>(
       data: detach(n.data),
     };
     if (n.parent !== undefined) spec.parent = n.parent as NodeId;
-    Object.assign(spec, statedFields(n));
+    Object.assign(spec, statedFields(n, detach));
     if (n.dependsOn !== undefined) {
       spec.dependsOn = n.dependsOn === 'children'
         ? 'children'
-        : (n.dependsOn as readonly NodeId[]);
+        : detach(n.dependsOn as readonly NodeId[]);
     }
     const serialized = n as unknown as Record<string, string | undefined>;
     for (const field of NODE_FN_FIELDS) {

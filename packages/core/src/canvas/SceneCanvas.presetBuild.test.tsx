@@ -125,4 +125,15 @@ describe('FeaturePreset.selection', () => {
     vi.spyOn(console, 'error').mockImplementation(() => {});
     expect(() => mount([a, b])).toThrow(/both build the canvas's selection/);
   });
+
+  it('takes the one from a preset refining the other', () => {
+    let ctx!: PresetBuildContext;
+    const base: FeaturePreset = { id: 'base', selection: (store, o) => writable(store, o) };
+    const refined: FeaturePreset = {
+      id: 'refined', refines: ['base'], selection: writable, build: (c) => { ctx = c; return {}; },
+    };
+    const { scene, id } = mount([base, refined]);
+    act(() => { ctx.selection().set([id]); });
+    expect(scene.getSelection()).toEqual([id]);
+  });
 });

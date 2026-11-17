@@ -60,7 +60,7 @@ export function createSceneState<TData, TLayer extends string, TPose>(
     },
     toJSON: () => serializeScene(state, fnFields, docValues.toJSON()),
   };
-  registerSharedJSON(reads.toJSON, () => serializeScene(state, fnFields, docValues.toJSON(), (v) => v));
+  registerSharedJSON(reads.toJSON, () => serializeScene(state, fnFields, docValues.toJSON((v) => v), (v) => v));
 
   return {
     state,
