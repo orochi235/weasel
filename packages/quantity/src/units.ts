@@ -106,7 +106,7 @@ export function formatUnit(
   const display = (baseValue - offset) / factor;
   let s = display.toFixed(precision);
   if (Number(s) === 0) s = s.replace(/^-/, '');
-  if (!opts?.pad && s.includes('.')) {
+  if (!opts?.pad && s.includes('.') && !s.includes('e')) {
     s = s.replace(/0+$/, '').replace(/\.$/, '');
   }
   return suffix ? `${s}${displayUnit}` : s;
