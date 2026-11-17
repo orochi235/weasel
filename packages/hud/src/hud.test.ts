@@ -66,17 +66,17 @@ describe('Hud', () => {
     expect(dispose).toHaveBeenCalled();
   });
 
-  it('markDirty triggers redraw when bound', () => {
+  it('requestRedraw triggers redraw when bound', () => {
     const hud = createHud();
     const host = makeHost();
     hud.bind(host);
-    hud.markDirty();
+    hud.requestRedraw();
     expect(host.redrawCount).toBe(1);
   });
 
-  it('markDirty before bind is a no-op (no crash, no redraw)', () => {
+  it('requestRedraw before bind is a no-op (no crash, no redraw)', () => {
     const hud = createHud();
-    expect(() => hud.markDirty()).not.toThrow();
+    expect(() => hud.requestRedraw()).not.toThrow();
   });
 
   it('mutating a hud-managed rect triggers redraw via injected onChange', () => {
@@ -118,7 +118,7 @@ describe('Hud', () => {
     expect(hud.widgets()).toEqual([]);
   });
 
-  it('window() adds the widget and wires onChange to markDirty', () => {
+  it('window() adds the widget and wires onChange to requestRedraw', () => {
     const hud = createHud();
     const redraw = vi.fn();
     hud.bind({ requestRedraw: redraw, registerLayer: () => () => {}, subscribeFrame: () => () => {} });
