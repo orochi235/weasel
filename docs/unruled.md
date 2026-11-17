@@ -1426,8 +1426,8 @@ calls its builds made where the spec was silent.
   a cycle only through an edge still fading out is wired once that edge has closed. The graph's
   output starts at gain 0, so the first `start()` fades in. `apply` validates the whole list first,
   but a `set` that throws lets the rest apply and then rethrows. `dispose()` fades out over `fadeMs`
-  while sounding. `delayNode`'s `maxTime` defaults to 2000 ms. `impulseResponse` lives in
-  `@weasel-js/audio`, and `reverbNode` builds its impulse from `seconds` (default 2).
+  while sounding. `createDelayNode`'s `maxTime` defaults to 2000 ms. `impulseResponse` lives in
+  `@weasel-js/audio`, and `createReverbNode` builds its impulse from `seconds` (default 2).
 - 2026-10-20 (arc 4, live runner): Audio stage types are prefixed `audio.`, and pipeline mode splits a
   mixed pipeline so the image runner never sees them. The runner ships from
   `@weasel-js/diagram/effect-audio`, with `@weasel-js/audio` an optional peer. Stages on a feedback

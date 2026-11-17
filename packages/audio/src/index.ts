@@ -56,8 +56,8 @@ export {
   type NoiseNodeOptions, type OscillatorNodeOptions, type OscillatorWave,
 } from './graph/sources';
 export {
-  compressorNode, createGainNode, createMixNode, createPanNode, delayNode, filterNode, insertNode,
-  reverbNode, type ReverbNodeOptions,
+  createCompressorNode, createGainNode, createMixNode, createPanNode, createDelayNode, createFilterNode, createInsertNode,
+  createReverbNode, type ReverbNodeOptions,
 } from './graph/processors';
 export type {
   AudioGraph, AudioGraphOptions, GraphNodeDef, GraphPatch, GraphTarget,

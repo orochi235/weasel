@@ -188,14 +188,14 @@ first bus by default), which can be edited while it plays. Every structural
 edit crossfades — `add`, `remove`, `replace`, `connect`, `disconnect` — and
 `set` ramps a param. Sources are `createFileSourceNode` (a looping buffer),
 `createOscillatorNode` and `createNoiseNode`; `createGainNode`,
-`createPanNode`, `createMixNode`, `filterNode`, `delayNode`, `reverbNode` and
-`compressorNode` process, and `insertNode` wraps any insert effect. `tap(id)`
+`createPanNode`, `createMixNode`, `createFilterNode`, `createDelayNode`, `createReverbNode` and
+`createCompressorNode` process, and `createInsertNode` wraps any insert effect. `tap(id)`
 puts an analyser on a node. The graph is disposed with the engine.
 
 ```ts
 const g = engine.graph('music');
 g.add('osc', createOscillatorNode(engine.context, { frequency: 220 }));
-g.add('echo', delayNode(engine.context, { time: 300, feedback: 0.4 }));
+g.add('echo', createDelayNode(engine.context, { time: 300, feedback: 0.4 }));
 g.connect('osc', { node: 'echo', port: 'in' });
 g.connect('echo', { output: true });
 g.start();

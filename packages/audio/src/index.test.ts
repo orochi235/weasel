@@ -82,8 +82,8 @@ describe('@weasel-js/audio public surface', () => {
   it('exports the patchable graph and its node factories', () => {
     for (const f of [
       audio.createAudioGraph, audio.createFileSourceNode, audio.createOscillatorNode, audio.createNoiseNode,
-      audio.createGainNode, audio.createPanNode, audio.createMixNode, audio.filterNode, audio.delayNode,
-      audio.reverbNode, audio.compressorNode, audio.insertNode, audio.impulseResponse,
+      audio.createGainNode, audio.createPanNode, audio.createMixNode, audio.createFilterNode, audio.createDelayNode,
+      audio.createReverbNode, audio.createCompressorNode, audio.createInsertNode, audio.impulseResponse,
     ]) expect(typeof f).toBe('function');
     const patch: audio.GraphPatch = { kind: 'connect', from: 'a', to: { output: true } };
     const wave: audio.OscillatorWave = 'square';

@@ -6,7 +6,7 @@ import { AUDIO_STAGE_TYPES } from './stageTypes';
 
 vi.mock('@weasel-js/audio', async (importOriginal) => {
   const actual = await importOriginal<typeof import('@weasel-js/audio')>();
-  return { ...actual, reverbNode: vi.fn(actual.reverbNode) };
+  return { ...actual, createReverbNode: vi.fn(actual.createReverbNode) };
 });
 
 const setup = () => createFakeAudioContext() as never as BaseAudioContext & ReturnType<typeof createFakeAudioContext>;
@@ -58,11 +58,11 @@ describe('settings', () => {
     expect(audioStageNodes['audio.file']!.settings({}, { audio: buffer })).toEqual({ buffer });
   });
 
-  it('keeps reverb seconds as a setting and hands reverbNode seconds and mix', () => {
+  it('keeps reverb seconds as a setting and hands createReverbNode seconds and mix', () => {
     const node = audioStageNodes['audio.reverb']!;
     expect(node.settings({ seconds: 3, mix: 0.3 }, {})).toEqual({ seconds: 3 });
     const ctx = setup();
     node.build(ctx, { seconds: 3 }, { mix: 0.3 });
-    expect(audio.reverbNode).toHaveBeenCalledWith(ctx, { seconds: 3, mix: 0.3 });
+    expect(audio.createReverbNode).toHaveBeenCalledWith(ctx, { seconds: 3, mix: 0.3 });
   });
 });
