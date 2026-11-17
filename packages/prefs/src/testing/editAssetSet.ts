@@ -1,5 +1,5 @@
 import type { PrefAlias, PrefGroup } from '@weasel-js/prefs';
-import type { Workspace } from '../edit/workspace';
+import type { AssetSet } from '../edit/assetSet';
 
 export const pointer = (of: string, name = ''): PrefAlias => ({ kind: 'alias', name, description: '', default: undefined, of });
 
@@ -15,7 +15,7 @@ export const SETTINGS: PrefGroup = {
 
 export const CODE: PrefGroup = { name: 'Code', children: { grid: pointer('view.grid'), snap: pointer('view.snap') } };
 
-export const WORKSPACE: Workspace = {
+export const ASSET_SET: AssetSet = {
   assets: [
     { id: 'settings', label: 'Settings', kind: 'schema', root: SETTINGS },
     { id: 'code', label: 'Code', kind: 'layout', root: CODE, over: 'settings' },

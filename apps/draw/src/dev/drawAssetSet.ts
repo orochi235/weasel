@@ -4,7 +4,7 @@ import { EDITOR_CONTEXT_MENUS } from '@weasel-js/editor';
 import { pathTools } from '@weasel-js/path-tools';
 import type { PrefGroup, PrefGroupAs } from '@weasel-js/prefs';
 import { mergeMenuDefs } from '@weasel-js/routing';
-import { bundlesAsset, type Asset, type Workspace } from '@weasel-js/prefs/edit';
+import { bundlesAsset, type Asset, type AssetSet } from '@weasel-js/prefs/edit';
 import { DRAW_MENU_BAR } from '../menuBar';
 import { DRAW_MENUS } from '../menus';
 import { PREFS } from '../prefs';
@@ -57,9 +57,9 @@ const bundles = bundlesAsset('bundles', 'Feature bundles', describePresets({
 }));
 
 /**
- * Every schema WeaselDraw ships, as one workspace: its preferences and each node's properties as dialogs, its
+ * Every schema WeaselDraw ships, as one asset set: its preferences and each node's properties as dialogs, its
  * toolbar, panel, menu bar, and context-menu assets as layouts, and the feature presets it loads as bundles.
  */
-export const DRAW_WORKSPACE: Workspace = {
+export const DRAW_ASSET_SET: AssetSet = {
   assets: [{ id: PREFS_ID, label: 'WeaselDraw preferences', kind: 'schema', root: PREFS }, ...nodes, ...surfaces, menuBar, ...menus, bundles],
 };

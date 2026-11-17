@@ -241,7 +241,7 @@ changes; `kitSettingsCssOptions(at)` is the naming it uses.
 
 `@weasel-js/prefs/edit` is the model behind a schema editor, with no React and no DOM: edits to a schema's tree
 (`addNode`, `moveNodes`, `renameKey`, `copyNodes`, `aliasNodes`), a leaf's kind and attributes (`changeKind`,
-`setAttribute`), printing a schema as source and diffing two (`printSchema`, `diffSchemas`), a `Workspace` of
-schema, layout, action, and bundle assets and its `workspaceCodec`, and a condition's rows and its flow as a diagram
+`setAttribute`), printing a schema as source and diffing two (`printSchema`, `diffSchemas`), an `AssetSet` of
+schema, layout, action, and bundle assets and its `assetSetCodec`, and a condition's rows and its flow as a diagram
 (`prefConditionFlow`). `@weasel-js/prefs-editor` draws an editor over it.
 

@@ -8,7 +8,7 @@ const ROWS: readonly TreeNode[] = [
   soughtRow({ id: 'view', label: 'View', children: [
     soughtRow({ id: 'view.grid', label: 'Show grid' }, { text: ['Show grid', 'grid'], tags: ['guides'] }),
     soughtRow({ id: 'view.snap', label: 'Snap' }, { text: ['Snap', 'snap'] }),
-  ] }, { text: ['View', 'view'], tags: ['workspace'] }),
+  ] }, { text: ['View', 'view'], tags: ['assetSet'] }),
 ];
 
 describe('seekRows', () => {
@@ -18,7 +18,7 @@ describe('seekRows', () => {
   });
 
   it('keeps a whole branch its own tag answers', () => {
-    expect(ids(seekRows(ROWS, 'workspace'))).toEqual([['view', ['view.grid', 'view.snap']]]);
+    expect(ids(seekRows(ROWS, 'assetSet'))).toEqual([['view', ['view.grid', 'view.snap']]]);
   });
 
   it('is every row for an empty query, and none for one nothing answers', () => {

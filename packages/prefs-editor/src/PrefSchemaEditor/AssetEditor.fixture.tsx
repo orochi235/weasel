@@ -1,24 +1,24 @@
 import { fireEvent, screen, within } from '@testing-library/react';
 import { useState } from 'react';
 import { AssetEditor, type AssetEditorProps } from '@weasel-js/prefs-editor';
-import { type Workspace, workspaceCodec } from '@weasel-js/prefs/edit';
-import { CODE, pointer, SETTINGS, WORKSPACE } from '@weasel-js/prefs/testing/editWorkspace';
+import { type AssetSet, assetSetCodec } from '@weasel-js/prefs/edit';
+import { CODE, pointer, SETTINGS, ASSET_SET } from '@weasel-js/prefs/testing/editAssetSet';
 import { keyedRow } from './treeRows.fixture';
 
-const codec = workspaceCodec([]);
+const codec = assetSetCodec([]);
 
-/** `WORKSPACE` with a panel that takes no edits, one of whose pointers names a setting the dialog does not hold. */
-export const WITH_LOCKED: Workspace = {
+/** `ASSET_SET` with a panel that takes no edits, one of whose pointers names a setting the dialog does not hold. */
+export const WITH_LOCKED: AssetSet = {
   assets: [
-    ...WORKSPACE.assets,
+    ...ASSET_SET.assets,
     { id: 'layout', label: 'Layout', kind: 'layout', over: 'settings', readOnly: true, root: { name: 'Layout', children: { rows: { name: 'Rows', as: 'section', children: { snap: pointer('view.snap'), gone: pointer('view.gone') } } } } },
   ],
 };
 
-/** An editor over a workspace it keeps, with the list drawn. */
-export function Live({ start = WORKSPACE, onChange, ...rest }: { start?: Workspace; onChange?(next: Workspace): void } & Partial<Omit<AssetEditorProps, 'workspace' | 'onChange'>>) {
-  const [workspace, setWorkspace] = useState(start);
-  return <AssetEditor list codec={codec} {...rest} workspace={workspace} onChange={(next) => { onChange?.(next); setWorkspace(next); }} />;
+/** An editor over an asset set it keeps, with the list drawn. */
+export function Live({ start = ASSET_SET, onChange, ...rest }: { start?: AssetSet; onChange?(next: AssetSet): void } & Partial<Omit<AssetEditorProps, 'assetSet' | 'onChange'>>) {
+  const [assetSet, setAssetSet] = useState(start);
+  return <AssetEditor list codec={codec} {...rest} assetSet={assetSet} onChange={(next) => { onChange?.(next); setAssetSet(next); }} />;
 }
 
 export const structure = () => screen.getByRole('tree', { name: 'Schema structure' });
@@ -44,4 +44,4 @@ export function rekey(key: string): void {
   fireEvent.blur(field);
 }
 
-export { CODE, SETTINGS, WORKSPACE };
+export { CODE, SETTINGS, ASSET_SET };

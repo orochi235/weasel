@@ -1,6 +1,6 @@
 import type { DocumentCodec, DraftStorage } from './document';
-import type { Workspace } from './workspace';
-import { workspaceChanges } from './workspaceChanges';
+import type { AssetSet } from './assetSet';
+import { assetSetChanges } from './assetSetChanges';
 
 const NONE: ReadonlySet<string> = new Set();
 
@@ -20,8 +20,8 @@ function readOnly(storage: DraftStorage | undefined): DraftStorage {
  * assets `changed` before any of them has been opened.
  */
 export function draftChangedAssets(
-  key: string, original: Workspace, codec: DocumentCodec<Workspace>, storage?: DraftStorage,
+  key: string, original: AssetSet, codec: DocumentCodec<AssetSet>, storage?: DraftStorage,
 ): ReadonlySet<string> {
   const opened = codec.openDraft(key, original, readOnly(storage));
-  return opened === null ? NONE : new Set(workspaceChanges(original, opened.value).map((asset) => asset.id));
+  return opened === null ? NONE : new Set(assetSetChanges(original, opened.value).map((asset) => asset.id));
 }

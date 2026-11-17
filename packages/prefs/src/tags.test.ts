@@ -7,7 +7,7 @@ const SCHEMA: PrefGroup = {
   children: {
     canvas: {
       name: 'Canvas',
-      tags: ['workspace'],
+      tags: ['assetSet'],
       children: {
         grid: { kind: 'boolean', name: 'Show grid', description: '', default: true, tags: ['guides'] },
         snap: {
@@ -24,7 +24,7 @@ const SCHEMA: PrefGroup = {
 describe('prefLeavesTagged', () => {
   it('gathers the leaves carrying a tag, by path, one under a group carrying it included', () => {
     expect([...prefLeavesTagged(SCHEMA, 'guides').keys()]).toEqual(['canvas.grid', 'canvas.snap.toGrid']);
-    expect([...prefLeavesTagged(SCHEMA, 'workspace').keys()]).toEqual(['canvas.grid', 'canvas.snap.toGrid']);
+    expect([...prefLeavesTagged(SCHEMA, 'assetSet').keys()]).toEqual(['canvas.grid', 'canvas.snap.toGrid']);
     expect(prefLeavesTagged(SCHEMA, 'guide').size).toBe(0);
   });
 
@@ -42,8 +42,8 @@ describe('prefLeavesTagged', () => {
 
 describe('prefLeafTags', () => {
   it('is the tags of every group above a leaf, outermost first, then its own', () => {
-    expect(prefLeafTags(SCHEMA, 'canvas.snap.toGrid')).toEqual(['workspace', 'guides']);
-    expect(prefLeafTags(SCHEMA, 'canvas.grid')).toEqual(['workspace', 'guides']);
+    expect(prefLeafTags(SCHEMA, 'canvas.snap.toGrid')).toEqual(['assetSet', 'guides']);
+    expect(prefLeafTags(SCHEMA, 'canvas.grid')).toEqual(['assetSet', 'guides']);
     expect(prefLeafTags(SCHEMA, 'author')).toEqual([]);
   });
 });

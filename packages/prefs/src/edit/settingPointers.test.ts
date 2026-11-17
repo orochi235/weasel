@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import type { PrefGroup, PrefSection } from '@weasel-js/prefs';
 import { pointable, pointedAt, pointersTo } from './settingPointers';
-import { pointer } from '../testing/editWorkspace';
+import { pointer } from '../testing/editAssetSet';
 
 const flag = (name: string) => ({ kind: 'boolean', name, description: '', default: false }) as const;
 const OVER: PrefGroup = {

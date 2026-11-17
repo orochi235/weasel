@@ -260,7 +260,7 @@
    "apps/draw/src/dev/detail/shared.tsx",
    "apps/draw/src/dev/detail/sourceLinks.tsx",
    "apps/draw/src/dev/devRoutes.ts",
-   "apps/draw/src/dev/drawWorkspace.ts",
+   "apps/draw/src/dev/drawAssetSet.ts",
    "apps/draw/src/dev/registryData.ts",
    "apps/draw/src/dev/registryEntries.ts",
    "apps/draw/src/dev/registryProbe.tsx",
@@ -4812,7 +4812,7 @@
    "packages/prefs/src/storeWrites.ts",
    "packages/prefs/src/tabRuns.ts",
    "packages/prefs/src/tags.ts",
-   "packages/prefs/src/testing/editWorkspace.ts",
+   "packages/prefs/src/testing/editAssetSet.ts",
    "packages/prefs/src/type.ts",
    "packages/prefs/src/usePrefsStore.ts",
    "packages/prefs/src/vite.ts",
@@ -4981,10 +4981,10 @@
    "packages/prefs/src/edit/types.ts",
    "packages/prefs/src/edit/unplaced.ts",
    "packages/prefs/src/edit/valuePaths.ts",
-   "packages/prefs/src/edit/workspace.ts",
-   "packages/prefs/src/edit/workspaceChanges.ts",
-   "packages/prefs/src/edit/workspaceCodec.ts",
-   "packages/prefs/src/edit/workspaceEdit.ts"
+   "packages/prefs/src/edit/assetSet.ts",
+   "packages/prefs/src/edit/assetSetChanges.ts",
+   "packages/prefs/src/edit/assetSetCodec.ts",
+   "packages/prefs/src/edit/assetSetEdit.ts"
   ]
  },
  {

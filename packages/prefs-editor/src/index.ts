@@ -1,6 +1,6 @@
 /**
  * @weasel-js/prefs-editor — an editor for preferences schemas: `PrefSchemaEditor` builds one schema's sections,
- * fields, conditions, and kinds by hand and previews the form it draws; `AssetEditor` edits a workspace of schemas,
+ * fields, conditions, and kinds by hand and previews the form it draws; `AssetEditor` edits an asset set of schemas,
  * layouts, actions, and bundles together and exports them; `PrefConditionEditor` edits one `showIf` or `enableIf`.
  * The model they edit through, with no React, is `@weasel-js/prefs/edit`. Its styles are `@weasel-js/prefs-editor/style.css`.
  *

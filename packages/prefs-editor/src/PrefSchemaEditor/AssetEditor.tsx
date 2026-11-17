@@ -12,7 +12,7 @@ import {
   aliasNodes, type Asset, assetOf, BUILTIN_KINDS, changedAttributes, changedPaths, copyNodes, type CustomKinds,
   type DocumentCodec, editAsset, joinPath, type ListedAsset, moveInAsset, NO_MOVES, NO_TYPES, overOf, parentPath,
   type PrefTypes, rebasePaths, removeInAsset, renameInAsset, sameRoots, type SchemaRoot, type SchemaTarget,
-  shownAssets, VALUE_LINKS, withRoots, type Workspace,
+  shownAssets, VALUE_LINKS, withRoots, type AssetSet,
 } from '@weasel-js/prefs/edit';
 import { ExportPanel, type SubmitChanges } from './ExportPanel';
 import { heirAfter } from './heirAfter';
@@ -25,7 +25,7 @@ import { usePreviewDropZone } from './usePreviewDropZone';
 import { useRowMarks } from './useRowMarks';
 import { StructurePane } from './StructurePane';
 import { useDocument } from './useDocument';
-import { useAssetChanges, type SubmitAssets, type WorkspaceChanges } from './useAssetChanges';
+import { useAssetChanges, type SubmitAssets, type AssetSetChanges } from './useAssetChanges';
 import { useActionCatalog } from './useActionCatalog';
 import { useBundleView } from './useBundleView';
 import { useAssetView } from './useAssetView';
@@ -67,16 +67,16 @@ function onEditorKey(e: KeyboardEvent<HTMLDivElement>, step: (to: 'undo' | 'redo
   }
 }
 
-/** Props for {@link AssetEditor}: {@link PrefSchemaEditorProps} over a workspace in place of one schema. */
+/** Props for {@link AssetEditor}: {@link PrefSchemaEditorProps} over an asset set in place of one schema. */
 export interface AssetEditorProps extends Omit<PrefSchemaEditorProps<PrefGroup>, 'schema' | 'onChange' | 'original' | 'onSubmit' | 'actionCatalog' | 'onActionCatalogChange'> {
-  workspace: Workspace;
-  onChange(next: Workspace): void;
-  /** Baseline for the change list. Default: the first `workspace` seen. */
-  original?: Workspace;
-  codec: DocumentCodec<Workspace>;
-  /** Whether two workspaces are one: the editor's own from a host's, and the baseline from an edit. Default: they hold the same
-   *  roots under the same ids, which is all a draft keeps, so a host may make its workspace anew each time it draws. */
-  same?: (a: Workspace, b: Workspace) => boolean;
+  assetSet: AssetSet;
+  onChange(next: AssetSet): void;
+  /** Baseline for the change list. Default: the first `assetSet` seen. */
+  original?: AssetSet;
+  codec: DocumentCodec<AssetSet>;
+  /** Whether two asset sets are one: the editor's own from a host's, and the baseline from an edit. Default: they hold the same
+   *  roots under the same ids, which is all a draft keeps, so a host may make its asset set anew each time it draws. */
+  same?: (a: AssetSet, b: AssetSet) => boolean;
   /** List the assets in a pane at the editor's far edge, to pick the one shown. Left out, the editor shows the first. */
   list?: boolean;
   /** Assets another editor holds, listed after this one's under the same headings. */
@@ -100,7 +100,7 @@ export interface AssetEditorProps extends Omit<PrefSchemaEditorProps<PrefGroup>,
 
 /** What the shown asset exports and has changed since its baseline: every change, the paths they touch, and the
  *  attributes changed on the row `lead`. */
-function useShownChanges(changedAssets: WorkspaceChanges, assetId: string, types: PrefTypes | undefined, lead: string | null) {
+function useShownChanges(changedAssets: AssetSetChanges, assetId: string, types: PrefTypes | undefined, lead: string | null) {
   const exported = changedAssets.exported(assetId, types);
   const changes = changedAssets.of(assetId);
   const changed = useMemo(() => changedPaths(changes), [changes]);
@@ -109,47 +109,47 @@ function useShownChanges(changedAssets: WorkspaceChanges, assetId: string, types
 }
 
 /**
- * The editor {@link PrefSchemaEditorProps} describes, over a workspace: it shows and edits one asset's root, and its
- * history and draft are the workspace's. With `list` its far pane lists the assets, to pick the one shown; picking is
+ * The editor {@link PrefSchemaEditorProps} describes, over an asset set: it shows and edits one asset's root, and its
+ * history and draft are the asset set's. With `list` its far pane lists the assets, to pick the one shown; picking is
  * not an edit, and an undo or a redo shows the asset it changed. A setting re-keyed, moved, or removed in a dialog
  * takes the pointers of every layout over that dialog with it, in the same step. A read-only asset takes no edit.
  *
- * A workspace's `actions` asset is the catalog its Actions pane lists: the reader drags its rows to sort and group
+ * An asset set's `actions` asset is the catalog its Actions pane lists: the reader drags its rows to sort and group
  * them, and a row picked there shows its attributes, where what a pref dragged out of it carries is edited. Start
  * one from `actionCatalog`. With none the pane lists the host's actions by their keys, and nothing sorts them.
  */
 export function AssetEditor(
-  { workspace, onChange, original, codec, same = sameRoots, list = false, elsewhere, order, onElsewhere, onChangedAssets, startOn, preview, kinds = NO_KINDS, types = NO_TYPES, renderers, unplaced, actions, draftKey, draftStorage, onSubmit, taken = false, prefs, bar, maxDepth = 2, rowMark, className }: AssetEditorProps,
+  { assetSet, onChange, original, codec, same = sameRoots, list = false, elsewhere, order, onElsewhere, onChangedAssets, startOn, preview, kinds = NO_KINDS, types = NO_TYPES, renderers, unplaced, actions, draftKey, draftStorage, onSubmit, taken = false, prefs, bar, maxDepth = 2, rowMark, className }: AssetEditorProps,
 ) {
-  const [first] = useState(workspace);
+  const [first] = useState(assetSet);
   const base = original ?? first;
   const [opened] = useState(() => (draftKey === undefined ? null : codec.openDraft(draftKey, base, draftStorage)));
   const [notice, setNotice] = useState<string | null>(() => (opened ? DRAFT_NOTICE[opened.met] : null));
-  const view = useAssetView(workspace, opened?.value, draftKey, startOn);
+  const view = useAssetView(assetSet, opened?.value, draftKey, startOn);
   const { asset, expanded, setExpanded, selection } = view;
   const assetId = asset.id;
   const schema = asset.root;
   const readOnly = asset.readOnly === true;
   const pageless = asset.kind === 'layout' || asset.kind === 'bundles';
-  const over = overOf(workspace, asset);
+  const over = overOf(assetSet, asset);
   const bundles = useBundleView(asset, kinds);
   const kindsShown = bundles?.kinds ?? kinds;
   const [toolSlot, setToolSlot] = useState<HTMLDivElement | null>(null);
   const [shelfSlot, setShelfSlot] = useState<HTMLDivElement | null>(null);
 
-  const latest = useLatest({ workspace, schema, paths: selection.paths });
+  const latest = useLatest({ assetSet, schema, paths: selection.paths });
   const { stage, drop, outside, dropping, beforeOpening } = usePreviewDropZone({
     schema: () => latest.current.schema, selected: () => latest.current.paths, maxDepth, pageless, locked: readOnly, onOpen: (paths) => select(paths),
   });
-  const doc = useDocument<Workspace>({
-    value: workspace, onChange: (next) => onChange(withRoots(latest.current.workspace, next)), base, same, codec, opened, draftKey, draftStorage, taken, onCommit: (before, after) => changedAssets.follow(before, after),
+  const doc = useDocument<AssetSet>({
+    value: assetSet, onChange: (next) => onChange(withRoots(latest.current.assetSet, next)), base, same, codec, opened, draftKey, draftStorage, taken, onCommit: (before, after) => changedAssets.follow(before, after),
     selection: { get: () => [...view.recorded(beforeOpening.current ?? latest.current.paths), ...(catalog?.recorded() ?? [])], set: (ids) => { view.restore(ids); catalog?.restore(ids); } },
   });
   // A key names its asset, so the same path edited in two of them close together is two steps.
   const coalesce = (key?: string) => (key === undefined ? undefined : `${assetId}:${key}`);
-  /** Whether there was anything to commit: an asset that takes no edit gives the workspace back. */
+  /** Whether there was anything to commit: an asset that takes no edit gives the asset set back. */
   const commit = (next: SchemaRoot, coalesceKey?: string): boolean => {
-    const ws = latest.current.workspace;
+    const ws = latest.current.assetSet;
     const edited = editAsset(ws, assetId, next, NO_MOVES);
     if (edited === ws) return false;
     doc.commit(edited, coalesce(coalesceKey));
@@ -161,12 +161,12 @@ export function AssetEditor(
     view.stepped(before, doc.current());
   };
 
-  const changedAssets = useAssetChanges(base, workspace, same, onChangedAssets);
+  const changedAssets = useAssetChanges(base, assetSet, same, onChangedAssets);
   const { exported, changes, changed, changedAttrs } = useShownChanges(changedAssets, assetId, types, selection.lead);
   // The document packs every asset as sent, so every changed one is handed over, whichever is shown.
   const submit: SubmitChanges | undefined = onSubmit && (() => doc.send(() => onSubmit(changedAssets.sent(types))));
   const actionList = useEditorActions(actions);
-  const catalog = useActionCatalog({ workspace, current: () => latest.current.workspace, actions: actionList, write: doc.commit, onPick: () => { selection.set([]); setNotice(null); } });
+  const catalog = useActionCatalog({ assetSet, current: () => latest.current.assetSet, actions: actionList, write: doc.commit, onPick: () => { selection.set([]); setNotice(null); } });
   // A row picked among the actions is what the attributes show, until one of the structure's is.
   const ofActions = catalog !== null && catalog.selected.length > 0;
   const picked = () => { catalog?.clear(); setNotice(null); };
@@ -191,11 +191,11 @@ export function AssetEditor(
   };
   // `restore` is the selection to go back to where the drop keeps it: a drag begun in the preview selected its row on the press.
   const moveTo = (paths: readonly string[], target: SchemaTarget, restore?: readonly string[]) => {
-    const ws = latest.current.workspace;
+    const ws = latest.current.assetSet;
     const moved = moveInAsset(ws, assetId, paths, target);
     // Dropped where it already was: nothing to step back from.
-    if (moved.workspace === ws) return;
-    doc.commit(moved.workspace);
+    if (moved.assetSet === ws) return;
+    doc.commit(moved.assetSet);
     const moves = moved.from.map((f, i) => [f, moved.paths[i]!] as const);
     setExpanded((e) => rebasePaths(e, moves));
     // A selection left where it was still has to follow its nodes to their new paths.
@@ -213,7 +213,7 @@ export function AssetEditor(
   };
   const aliasTo = (paths: readonly string[], target: SchemaTarget, restore?: readonly string[]) => {
     // `aliasNodes` reads tree paths as setting paths, which a layout's are not.
-    if (assetOf(latest.current.workspace, assetId)?.kind === 'layout') { copyTo(paths, target, restore); return; }
+    if (assetOf(latest.current.assetSet, assetId)?.kind === 'layout') { copyTo(paths, target, restore); return; }
     const made = aliasNodes(latest.current.schema, paths, target, bundles?.structure.links ?? VALUE_LINKS);
     if (!commit(made.root)) return;
     if (keepsSelection() && restore !== undefined) selection.set(restore);
@@ -232,7 +232,7 @@ export function AssetEditor(
   const setDefaultsFrom = (edits: readonly DefaultEdit[]) =>
     commit(setDefaults(latest.current.schema, edits), `default:${edits.map(([path]) => path.join('.')).join(',')}`);
   const remove = () => {
-    const { paths, workspace: ws } = latest.current;
+    const { paths, assetSet: ws } = latest.current;
     if (paths.length === 0) return;
     const heir = heirAfter(latest.current.schema, expanded, paths);
     const next = removeInAsset(ws, assetId, paths);
@@ -242,7 +242,7 @@ export function AssetEditor(
   };
   const attrKey = `attr:${[...selection.paths].sort().join(',')}`;
   const rename = (path: string, key: string) => {
-    const ws = latest.current.workspace;
+    const ws = latest.current.assetSet;
     const next = renameInAsset(ws, assetId, path, key);
     if (next === ws) return;
     doc.commit(next, coalesce(attrKey));
@@ -293,7 +293,7 @@ export function AssetEditor(
         <>
           <ResizeHandle className={s.asideHandle} invert {...asideSize} {...RANGE.aside} aria-label="Resize sidebar" />
           <aside className={`${s.pane} ${s.aside}`} aria-label="Sidebar">
-            <AssetList assets={shownAssets(workspace)} elsewhere={elsewhere} order={order} onElsewhere={onElsewhere} selected={assetId} changed={changedAssets.ids} onSelect={(id) => { view.show(id); setNotice(null); }} />
+            <AssetList assets={shownAssets(assetSet)} elsewhere={elsewhere} order={order} onElsewhere={onElsewhere} selected={assetId} changed={changedAssets.ids} onSelect={(id) => { view.show(id); setNotice(null); }} />
           </aside>
         </>
       )}

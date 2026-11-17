@@ -1,7 +1,7 @@
 /**
  * @weasel-js/prefs/edit — the model behind a schema editor, with no React and no DOM: edits to a preferences
  * schema's tree (add, move, rename, copy, alias), its keys and value paths, a leaf's kind and attributes, printing a
- * schema and diffing two, a workspace of schema, layout, actions, and bundle assets and its codec, drafts and their
+ * schema and diffing two, an asset set of schema, layout, actions, and bundle assets and its codec, drafts and their
  * history, and a condition's rows and flow. `@weasel-js/prefs-editor` draws an editor over it.
  *
  * @packageDocumentation
@@ -46,7 +46,7 @@ export {
   holdsPages, isLoose, looseKeys, looseTarget, mayUnplace, placedOnly, schemaTarget, topLevelAllows,
 } from './edit/loose';
 export { trackOrigins, type NodeOrigins } from './edit/nodeOrigins';
-export { asWorkspace, catalogIn, ONE, oneAssetCodec, sameSchema, schemaOf } from './edit/oneAsset';
+export { asAssetSet, catalogIn, ONE, oneAssetCodec, sameSchema, schemaOf } from './edit/oneAsset';
 export { deadPointers, drawnLeaf, pointerAttributes, pointerTarget } from './edit/pointers';
 export { type PresetDescription } from '@weasel-js/prefs-schema';
 export { type RegisteredAction } from './edit/registeredActionAttrs';
@@ -71,8 +71,8 @@ export { valuePathOf, valuePathsAt, type ValueMove } from './edit/valuePaths';
 export {
   assetOf, bundlesAsset, catalogOf, headingOf, isShown, overOf, sameRoots, shownAssets, withRoots, type ActionsAsset,
   type Asset, type AssetBase, type AssetHeading, type BundlesAsset, type LayoutAsset, type ListedAsset, type SchemaAsset,
-  type ShownAsset, type Workspace,
-} from './edit/workspace';
-export { changedAsset, workspaceChanges, type AssetChanges } from './edit/workspaceChanges';
-export { workspaceCodec } from './edit/workspaceCodec';
-export { editAsset, moveInAsset, NO_MOVES, removeInAsset, renameInAsset } from './edit/workspaceEdit';
+  type ShownAsset, type AssetSet,
+} from './edit/assetSet';
+export { changedAsset, assetSetChanges, type AssetChanges } from './edit/assetSetChanges';
+export { assetSetCodec } from './edit/assetSetCodec';
+export { editAsset, moveInAsset, NO_MOVES, removeInAsset, renameInAsset } from './edit/assetSetEdit';

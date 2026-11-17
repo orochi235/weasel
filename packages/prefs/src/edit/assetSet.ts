@@ -4,7 +4,7 @@ import { bundleTree } from './bundleTree';
 import type { SchemaRoot } from './schemaEdit';
 import { sameList } from '@weasel-js/registry';
 
-/** The fields every asset in the editor's workspace carries. */
+/** The fields every asset in the editor's asset set carries. */
 export interface AssetBase {
   id: string;
   label: string;
@@ -30,7 +30,7 @@ export interface LayoutAsset extends AssetBase {
 /**
  * The host's actions as the Actions pane lists them: a group of `action` prefs, each firing one by key, in the
  * groups and the order the reader sorts them into. It is no dialog and no layout, so the asset list leaves it out,
- * and a workspace's first is the one its editor uses.
+ * and an asset set's first is the one its editor uses.
  */
 export interface ActionsAsset extends AssetBase {
   kind: 'actions';
@@ -88,44 +88,44 @@ export interface ListedAsset {
 }
 
 /** Everything one editor holds: its dialogs, and the layouts that point into them. The set is the host's, and fixed. */
-export interface Workspace {
+export interface AssetSet {
   readonly assets: readonly Asset[];
 }
 
 const NO_DIALOG: SchemaRoot = { name: '', children: {} };
 
 /**
- * The root a layout's pointers name settings in, which holds none where the workspace has no such dialog.
+ * The root a layout's pointers name settings in, which holds none where the asset set has no such dialog.
  * `undefined` for a dialog, whose aliases are of its own settings.
  */
-export function overOf(workspace: Workspace, asset: Asset): SchemaRoot | undefined {
-  return asset.kind === 'layout' ? assetOf(workspace, asset.over)?.root ?? NO_DIALOG : undefined;
+export function overOf(assetSet: AssetSet, asset: Asset): SchemaRoot | undefined {
+  return asset.kind === 'layout' ? assetOf(assetSet, asset.over)?.root ?? NO_DIALOG : undefined;
 }
 
 /** The asset `id` names, or `undefined`. */
-export function assetOf(workspace: Workspace, id: string): Asset | undefined {
-  return workspace.assets.find((a) => a.id === id);
+export function assetOf(assetSet: AssetSet, id: string): Asset | undefined {
+  return assetSet.assets.find((a) => a.id === id);
 }
 
 /** Whether an asset is one the structure tree shows: all but the action catalog. */
 export const isShown = (asset: Asset): asset is ShownAsset => asset.kind !== 'actions';
 
-/** The assets the asset list offers, in the workspace's order. */
-export function shownAssets(workspace: Workspace): ShownAsset[] {
-  return workspace.assets.filter(isShown);
+/** The assets the asset list offers, in the asset set's order. */
+export function shownAssets(assetSet: AssetSet): ShownAsset[] {
+  return assetSet.assets.filter(isShown);
 }
 
-/** The catalog of the host's actions, where the workspace holds one. */
-export function catalogOf(workspace: Workspace): ActionsAsset | undefined {
-  return workspace.assets.find((a): a is ActionsAsset => a.kind === 'actions');
+/** The catalog of the host's actions, where the asset set holds one. */
+export function catalogOf(assetSet: AssetSet): ActionsAsset | undefined {
+  return assetSet.assets.find((a): a is ActionsAsset => a.kind === 'actions');
 }
 
 /**
- * `current` with the roots `stepped` holds, by id: an undo step keeps the workspace as it was when the step was made,
+ * `current` with the roots `stepped` holds, by id: an undo step keeps the asset set as it was when the step was made,
  * and what a host has said of an asset since (its label, its lock) is not the step's to take back. An asset
  * `stepped` lacks keeps its root. `stepped` itself where it already says of every asset what `current` does.
  */
-export function withRoots(current: Workspace, stepped: Workspace): Workspace {
+export function withRoots(current: AssetSet, stepped: AssetSet): AssetSet {
   const said = (a: Asset, b: Asset): boolean => a.label === b.label && a.kind === b.kind && a.readOnly === b.readOnly && (a as LayoutAsset).over === (b as LayoutAsset).over;
   const assets = current.assets.map((asset) => {
     const was = assetOf(stepped, asset.id);
@@ -135,7 +135,7 @@ export function withRoots(current: Workspace, stepped: Workspace): Workspace {
   return sameList(assets, stepped.assets) ? stepped : { assets };
 }
 
-/** Whether two workspaces hold the same roots under the same ids, which is all a draft keeps of one. */
-export function sameRoots(a: Workspace, b: Workspace): boolean {
+/** Whether two asset sets hold the same roots under the same ids, which is all a draft keeps of one. */
+export function sameRoots(a: AssetSet, b: AssetSet): boolean {
   return a === b || (a.assets.length === b.assets.length && a.assets.every((asset, i) => asset.id === b.assets[i]!.id && asset.root === b.assets[i]!.root));
 }

@@ -2,7 +2,7 @@ import { useMemo } from 'react';
 import type { PrefGroup } from '@weasel-js/prefs';
 import {
   addNode, catalogOf, childrenOf, dissolve, editAsset, filed, joinPath, keyOf, moveNodes, NO_CATALOG, NO_MOVES,
-  nodeAt, parentPath, pathsIn, type SchemaRoot, type SchemaTarget, scopedPath, uniqueKey, type Workspace,
+  nodeAt, parentPath, pathsIn, type SchemaRoot, type SchemaTarget, scopedPath, uniqueKey, type AssetSet,
 } from '@weasel-js/prefs/edit';
 import type { EditorAction } from './editorActions';
 import { useEditorSelection } from './useEditorSelection';
@@ -12,10 +12,10 @@ const unfolded = (): void => {};
 /** The host's actions as the Actions pane lists them, and what the pane does to the list. */
 export interface ActionCatalog {
   actions: readonly EditorAction[];
-  /** The workspace's catalog with every action it does not hold yet filed into it, or one made of the actions
-   *  alone where the workspace holds none. */
+  /** The asset set's catalog with every action it does not hold yet filed into it, or one made of the actions
+   *  alone where the asset set holds none. */
   root: PrefGroup;
-  /** The workspace holds a catalog that takes edits. Without one the list is the registry's, and nothing sorts it. */
+  /** The asset set holds a catalog that takes edits. Without one the list is the registry's, and nothing sorts it. */
   editable: boolean;
   /** The rows selected, by tree path, the newest last. */
   selected: readonly string[];
@@ -36,17 +36,17 @@ export interface ActionCatalog {
 }
 
 /**
- * The catalog of `actions` in `workspace`; `null` with no way to know which actions exist. `current` is the
- * workspace as of the event in hand, `write` commits an edited one, and `onPick` is told when a row is picked.
+ * The catalog of `actions` in `assetSet`; `null` with no way to know which actions exist. `current` is the
+ * asset set as of the event in hand, `write` commits an edited one, and `onPick` is told when a row is picked.
  */
-export function useActionCatalog({ workspace, current, actions, write, onPick }: {
-  workspace: Workspace;
-  current(): Workspace;
+export function useActionCatalog({ assetSet, current, actions, write, onPick }: {
+  assetSet: AssetSet;
+  current(): AssetSet;
   actions: readonly EditorAction[] | null;
-  write(next: Workspace, coalesceKey?: string): void;
+  write(next: AssetSet, coalesceKey?: string): void;
   onPick(): void;
 }): ActionCatalog | null {
-  const asset = catalogOf(workspace);
+  const asset = catalogOf(assetSet);
   const held = (asset?.root as PrefGroup | undefined) ?? NO_CATALOG;
   const root = useMemo(() => filed(held, actions ?? []), [held, actions]);
   const selection = useEditorSelection(root, unfolded);

@@ -2,9 +2,9 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { useState } from 'react';
 import { act, cleanup, fireEvent, screen, within } from '@testing-library/react';
 import { AssetEditor } from './AssetEditor';
-import { asset, Live, pickRow, rekey, SETTINGS, structure, WORKSPACE } from './AssetEditor.fixture';
+import { asset, Live, pickRow, rekey, SETTINGS, structure, ASSET_SET } from './AssetEditor.fixture';
 import {
-  diffSchemas, formatChanges, printSchema, removeNode, type Workspace, workspaceCodec,
+  diffSchemas, formatChanges, printSchema, removeNode, type AssetSet, assetSetCodec,
 } from '@weasel-js/prefs/edit';
 import type { SentAsset } from './useAssetChanges';
 import { renderWithIcons } from '@weasel-js/ui/testing/withIcons';
@@ -34,16 +34,16 @@ describe('AssetEditor changes', () => {
   });
 
   it('lists one asset\'s changes as they were before there were assets', () => {
-    const one: Workspace = { assets: [WORKSPACE.assets[0]!] };
+    const one: AssetSet = { assets: [ASSET_SET.assets[0]!] };
     renderWithIcons(<Live start={one} />);
     pickRow('snap');
     fireEvent.keyDown(structure(), { key: 'Delete' });
     expect(listed().join('\n')).toBe(formatChanges(diffSchemas(SETTINGS, removeNode(SETTINGS, 'view/snap'))));
   });
 
-  it('submits every changed asset in the workspace\'s order, each with its literal', async () => {
+  it('submits every changed asset in the asset set\'s order, each with its literal', async () => {
     const onSubmit = vi.fn<(assets: readonly SentAsset[]) => void>();
-    const onChange = vi.fn<(next: Workspace) => void>();
+    const onChange = vi.fn<(next: AssetSet) => void>();
     renderWithIcons(<Live onSubmit={onSubmit} onChange={onChange} />);
     expect(submit()).toBeDisabled();
     pickRow('grid');
@@ -54,7 +54,7 @@ describe('AssetEditor changes', () => {
     const sent = onSubmit.mock.calls[0]![0];
     expect(sent.map((a) => [a.id, a.kind])).toEqual([['settings', 'schema'], ['code', 'layout']]);
     expect(sent.map((a) => a.literal)).toEqual(now.assets.map((a) => printSchema(a.root)));
-    expect(sent.map((a) => a.changes)).toEqual(now.assets.map((a, i) => diffSchemas(WORKSPACE.assets[i]!.root, a.root)));
+    expect(sent.map((a) => a.changes)).toEqual(now.assets.map((a, i) => diffSchemas(ASSET_SET.assets[i]!.root, a.root)));
     expect(sent.every((a) => a.changes.length > 0)).toBe(true);
   });
 
@@ -70,11 +70,11 @@ describe('AssetEditor changes', () => {
     expect(onSubmit.mock.calls[0]![0].map((a) => a.id)).toEqual(['code']);
   });
 
-  it('goes on saying a submission was sent under a host that makes its workspace anew each time it draws', async () => {
+  it('goes on saying a submission was sent under a host that makes its asset set anew each time it draws', async () => {
     function Host({ tick }: { tick: number }) {
-      const [roots, setRoots] = useState(WORKSPACE.assets.map((a) => a.root));
-      const workspace: Workspace = { assets: WORKSPACE.assets.map((a, i) => ({ ...a, root: roots[i]! })) };
-      return <AssetEditor key="editor" list className={`t${tick}`} workspace={workspace} original={WORKSPACE} codec={workspaceCodec([])} onChange={(next) => setRoots(next.assets.map((a) => a.root))} onSubmit={() => {}} />;
+      const [roots, setRoots] = useState(ASSET_SET.assets.map((a) => a.root));
+      const assetSet: AssetSet = { assets: ASSET_SET.assets.map((a, i) => ({ ...a, root: roots[i]! })) };
+      return <AssetEditor key="editor" list className={`t${tick}`} assetSet={assetSet} original={ASSET_SET} codec={assetSetCodec([])} onChange={(next) => setRoots(next.assets.map((a) => a.root))} onSubmit={() => {}} />;
     }
     const view = renderWithIcons(<Host tick={0} />);
     pickRow('snap');

@@ -2,8 +2,8 @@ import { afterEach, describe, expect, it } from 'vitest';
 import { cleanup, fireEvent, screen, within } from '@testing-library/react';
 import type { PrefGroup } from '@weasel-js/prefs';
 import { asset, attributes, Live, pickRow, row, SETTINGS } from './AssetEditor.fixture';
-import { conditionProblems, type Workspace } from '@weasel-js/prefs/edit';
-import { pointer } from '@weasel-js/prefs/testing/editWorkspace';
+import { conditionProblems, type AssetSet } from '@weasel-js/prefs/edit';
+import { pointer } from '@weasel-js/prefs/testing/editAssetSet';
 import { renderWithIcons } from '@weasel-js/ui/testing/withIcons';
 
 afterEach(cleanup);
@@ -16,7 +16,7 @@ const LAYOUT: PrefGroup = {
     lost: { name: 'Lost', as: 'section', showIf: { path: 'view.gone' }, children: { grid: pointer('view.grid') } },
   },
 };
-const WORKSPACE: Workspace = {
+const ASSET_SET: AssetSet = {
   assets: [
     { id: 'settings', label: 'Settings', kind: 'schema', root: SETTINGS },
     { id: 'panel', label: 'Panel', kind: 'layout', root: LAYOUT, over: 'settings' },
@@ -32,14 +32,14 @@ describe('what is wrong with a layout\'s conditions, held to the dialog it is dr
 
 describe('AssetEditor on a layout whose conditions read its dialog\'s settings', () => {
   it('marks a condition bad only where it reads a setting the dialog does not hold', () => {
-    renderWithIcons(<Live start={WORKSPACE} />);
+    renderWithIcons(<Live start={ASSET_SET} />);
     fireEvent.click(asset('Panel'));
     expect(within(row('rows')).queryByText('bad condition')).toBeNull();
     expect(within(row('lost')).getByText('bad condition')).toBeInTheDocument();
   });
 
   it('offers the dialog\'s settings to a condition, named for the dialog, and says nothing against a row that reads one', () => {
-    renderWithIcons(<Live start={WORKSPACE} />);
+    renderWithIcons(<Live start={ASSET_SET} />);
     fireEvent.click(asset('Panel'));
     pickRow('rows');
     const shownIf = within(attributes()).getByRole('group', { name: 'Shown if' });

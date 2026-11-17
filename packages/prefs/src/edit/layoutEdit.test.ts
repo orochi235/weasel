@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import type { PrefAlias, PrefGroup } from '@weasel-js/prefs';
 import { moveLayoutNodes, removeLayoutNodes, renameLayoutKey } from './layoutEdit';
 import { nodeAt } from './schemaEdit';
-import { pointer } from '../testing/editWorkspace';
+import { pointer } from '../testing/editAssetSet';
 
 // `all` names the dialog's setting `grid`, which the layout's own key `grid` has nothing to do with.
 const LAYOUT: PrefGroup = {

@@ -1,7 +1,7 @@
 import type { PrefGroup } from '@weasel-js/prefs';
 import { describe, expect, it } from 'vitest';
-import { pointer } from '../testing/editWorkspace';
-import { headingOf, type LayoutAsset } from './workspace';
+import { pointer } from '../testing/editAssetSet';
+import { headingOf, type LayoutAsset } from './assetSet';
 
 const layout = (root: PrefGroup): LayoutAsset => ({ id: 'l', label: 'L', kind: 'layout', over: 's', root });
 const menu = (children: PrefGroup['children'] = {}): PrefGroup => ({ name: 'Edit', as: 'menu', children });

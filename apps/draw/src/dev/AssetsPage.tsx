@@ -1,12 +1,12 @@
 import { useMemo, useState } from 'react';
 import { AssetEditor, PREF_SCHEMA_EDITOR_PREFS } from '@weasel-js/prefs-editor';
-import { type CustomKinds, workspaceCodec } from '@weasel-js/prefs/edit';
+import { type CustomKinds, assetSetCodec } from '@weasel-js/prefs/edit';
 import { usePrefsStore } from '@weasel-js/prefs/react';
 import type { LeafRenderer } from '@weasel-js/ui/components/Prefs';
 import { localStorageAdapter } from '@weasel-js/storage';
 import { DataControl, RegistryEnumControl } from '../drawPrefsDialog';
 import { DevShell } from './DevShell';
-import { DRAW_LEAF_KINDS, DRAW_WORKSPACE } from './drawWorkspace';
+import { DRAW_LEAF_KINDS, DRAW_ASSET_SET } from './drawAssetSet';
 import { RegistryProbe } from './registryProbe';
 import s from './AssetsPage.module.css';
 
@@ -39,13 +39,13 @@ const noop = () => {};
 /** Edit every schema the app ships, in a scratch copy, and export it. The probe registers the kit's actions, so the
  *  editor can offer them to toolbars and menus. */
 export function AssetsPage() {
-  const [workspace, setWorkspace] = useState(DRAW_WORKSPACE);
-  const codec = useMemo(() => workspaceCodec([]), []);
+  const [assetSet, setAssetSet] = useState(DRAW_ASSET_SET);
+  const codec = useMemo(() => assetSetCodec([]), []);
   const editorPrefs = usePrefsStore(PREF_SCHEMA_EDITOR_PREFS, EDITOR_PREFS);
   return (
     <DevShell title="Assets">
       <RegistryProbe onSnapshot={noop} />
-      <AssetEditor list className={s.editor} workspace={workspace} original={DRAW_WORKSPACE} onChange={setWorkspace}
+      <AssetEditor list className={s.editor} assetSet={assetSet} original={DRAW_ASSET_SET} onChange={setAssetSet}
         codec={codec} draftKey={DRAFT_KEY} kinds={KINDS} renderers={RENDERERS} prefs={editorPrefs} />
     </DevShell>
   );

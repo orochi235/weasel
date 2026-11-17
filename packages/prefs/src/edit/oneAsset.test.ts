@@ -2,11 +2,11 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { createHistory } from '@weasel-js/history';
 import type { PrefGroup } from '@weasel-js/prefs';
 import { swapOp, type DocumentCodec, type DraftStorage } from './document';
-import { asWorkspace, ONE, oneAssetCodec, sameSchema, schemaOf } from './oneAsset';
+import { asAssetSet, ONE, oneAssetCodec, sameSchema, schemaOf } from './oneAsset';
 import { schemaCodec } from './schemaCodec';
 import { setAttribute } from './schemaEdit';
 import type { PrefTypes } from './types';
-import { editAsset, NO_MOVES } from './workspaceEdit';
+import { editAsset, NO_MOVES } from './assetSetEdit';
 
 const BASE: PrefGroup = {
   name: 'Prefs',
@@ -43,19 +43,19 @@ function driven<V>(codec: DocumentCodec<V>, base: V, edit: (value: V, to: (schem
   return storage;
 }
 
-describe('a schema as a workspace of one', () => {
+describe('a schema as an asset set of one', () => {
   beforeEach(() => { vi.useFakeTimers({ now: 1_000 }); });
   afterEach(() => { vi.useRealTimers(); });
 
   it('holds the schema it was made of', () => {
-    expect(schemaOf(asWorkspace(BASE))).toBe(BASE);
-    expect(sameSchema(asWorkspace(BASE), asWorkspace(BASE))).toBe(true);
-    expect(sameSchema(asWorkspace(BASE), asWorkspace({ ...BASE }))).toBe(false);
+    expect(schemaOf(asAssetSet(BASE))).toBe(BASE);
+    expect(sameSchema(asAssetSet(BASE), asAssetSet(BASE))).toBe(true);
+    expect(sameSchema(asAssetSet(BASE), asAssetSet({ ...BASE }))).toBe(false);
   });
 
   it('stores the draft and what was sent byte for byte as the schema’s own codec does', () => {
     const alone = driven(schemaCodec<PrefGroup>(TYPES), BASE, (schema, to) => to(schema));
-    const asOne = driven(oneAssetCodec<PrefGroup>(TYPES), asWorkspace(BASE), (ws, to) => editAsset(ws, ONE, to(schemaOf(ws)), NO_MOVES));
+    const asOne = driven(oneAssetCodec<PrefGroup>(TYPES), asAssetSet(BASE), (ws, to) => editAsset(ws, ONE, to(schemaOf(ws)), NO_MOVES));
     expect([...asOne.held.keys()]).toEqual(['k', 'k:sent']);
     expect(asOne.held.get('k')).toBe(alone.held.get('k'));
     expect(asOne.held.get('k:sent')).toBe(alone.held.get('k:sent'));
@@ -64,7 +64,7 @@ describe('a schema as a workspace of one', () => {
 
   it('opens a draft the schema’s own codec stored, a step back to the baseline landing on its schema', () => {
     const alone = driven(schemaCodec<PrefGroup>(TYPES), BASE, (schema, to) => to(schema));
-    const base = asWorkspace(BASE);
+    const base = asAssetSet(BASE);
     const opened = oneAssetCodec<PrefGroup>(TYPES).openDraft('k', base, alone)!;
     expect(schemaOf<PrefGroup>(opened.value).name).toBe('Settings');
     const first = opened.stacks!.undoStack[0]!.forwardOps[0]!.args as { before: typeof base };
