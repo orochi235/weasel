@@ -32,7 +32,7 @@ const grid = { pitch: 72 / 180, origin: { x: 0, y: 0 } }; // 180 dpi, in points
 const layerGroup = {
   id: 'print',
   layers: ['scene'],
-  effects: (view, dims) => dither({ method: 'bayer', grid: gridOnScreen(grid, view, dims.dpr) }),
+  effects: (view, dims) => dither({ method: 'bayer', grid: deviceGrid(grid, view, dims.dpr) }),
 };
 ```
 

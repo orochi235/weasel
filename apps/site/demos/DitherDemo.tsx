@@ -12,7 +12,7 @@ import {
   viewPreset,
 } from '@weasel-js/core';
 import {
-  dither, gridOnScreen, createProtectTexture,
+  dither, deviceGrid, createProtectTexture,
   type DitherMethod, type ProtectTexture,
 } from '@weasel-js/dither';
 import num from '@weasel-js/theme/numeric.module.css';
@@ -130,7 +130,7 @@ export function DitherDemo() {
   }, [scene, version, masked, printGrid]);
 
   const layerGroups = useMemo<LayerGroup[]>(() => {
-    const at = (view: View, dpr: number) => (printGrid ? gridOnScreen(printGrid, view, dpr) : 'screen' as const);
+    const at = (view: View, dpr: number) => (printGrid ? deviceGrid(printGrid, view, dpr) : 'screen' as const);
     if (crisp === 'layer') {
       return [
         { id: 'dither-art', layers: ['scene:art'], effects: (view, dims) => dither({ method: gpuMethod, threshold, grid: at(view, dims.dpr) }) },

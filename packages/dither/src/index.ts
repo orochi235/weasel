@@ -4,5 +4,5 @@ export { maskToRgba } from './maskToRgba';
 export { protectMask } from './protectMask';
 export { protectRects } from './protectRects';
 export { dither, type DitherOptions } from './gpu/dither';
-export { gridOnScreen, type DeviceGrid } from './gpu/gridOnScreen';
+export { deviceGrid, type DeviceGrid } from './gpu/deviceGrid';
 export { createProtectTexture, type ProtectTexture } from './gpu/createProtectTexture';

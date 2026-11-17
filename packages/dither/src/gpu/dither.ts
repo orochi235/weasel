@@ -2,7 +2,7 @@ import { registerEffect, type Effect, type TextureHandle } from '@weasel-js/rend
 import { DEFAULT_THRESHOLD, WHITE } from '../shared';
 import type { Rgb, Rgba } from '../types';
 import { DITHER_FRAG, DITHER_WGSL } from './frag';
-import type { DeviceGrid } from './gridOnScreen';
+import type { DeviceGrid } from './deviceGrid';
 
 const PROGRAM = registerEffect('weasel:dither', { glsl: DITHER_FRAG, wgsl: DITHER_WGSL });
 
@@ -23,7 +23,7 @@ export interface DitherOptions {
   /** Default transparent. */
   blank?: Rgba;
   /** `'screen'` (one dot per device pixel, the default), or an output grid
-   *  placed with `gridOnScreen`. */
+   *  placed with `deviceGrid`. */
   grid?: 'screen' | DeviceGrid;
   /** A protect mask in dot space, from `createProtectTexture`. Needs an output grid. */
   protect?: { texture: TextureHandle; width: number; height: number };
