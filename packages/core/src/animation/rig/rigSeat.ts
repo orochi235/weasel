@@ -1,10 +1,10 @@
 import { getOwn, setOwn } from '@weasel-js/registry';
 import type { GlMat3 } from '@weasel-js/geom';
-import { createTarget, skeletonAxes, type Pose, type Skeleton, type Target } from '@weasel-js/animator';
+import { createTarget, skeletonAxes, type SkeletonPose, type Skeleton, type Target } from '@weasel-js/animator';
 
 /** One binding of a rig to the scene: what a seat shows its pose through. */
 export interface RigBinding {
-  show(pose: Pose): void;
+  show(pose: SkeletonPose): void;
   /** Drop the overrides, leaving the seat as it is. */
   drop(): void;
 }
@@ -24,9 +24,9 @@ interface Carried {
  * target.
  */
 export interface RigSeat {
-  readonly target: Target<Pose>;
+  readonly target: Target<SkeletonPose>;
   /** The committed pose, less what `carried` adds to it. */
-  committed: Pose;
+  committed: SkeletonPose;
   root: GlMat3 | undefined;
   binding: RigBinding | null;
   /** Whether the pose is on screen: set as a binding shows it, cleared as the rig is released. */
@@ -47,8 +47,8 @@ function travel(carried: Carried): number[] {
 }
 
 /** The joints of `pose` that `skeleton` names. */
-function jointsOf(pose: Pose, skeleton: Skeleton): Pose {
-  const out: Pose = {};
+function jointsOf(pose: SkeletonPose, skeleton: Skeleton): SkeletonPose {
+  const out: SkeletonPose = {};
   for (const { name } of skeleton.joints) {
     const joint = getOwn(pose, name);
     if (joint) setOwn(out, name, joint);
@@ -64,7 +64,7 @@ function jointsOf(pose: Pose, skeleton: Skeleton): Pose {
  */
 export function createRigSeat(skeleton: Skeleton, prior?: RigSeat): RigSeat {
   const axes = skeletonAxes(skeleton);
-  const shifted = (pose: Pose, by: number[], sign: 1 | -1): Pose =>
+  const shifted = (pose: SkeletonPose, by: number[], sign: 1 | -1): SkeletonPose =>
     axes.from(axes.to(pose).map((v, i) => v + sign * by[i]!));
   const seat: RigSeat = {
     committed: prior ? jointsOf(prior.target.read(), skeleton) : {},
@@ -72,7 +72,7 @@ export function createRigSeat(skeleton: Skeleton, prior?: RigSeat): RigSeat {
     binding: null,
     shown: prior?.shown ?? false,
     carried: prior && moving(prior) ? carry(prior, axes.names ?? []) : null,
-    target: createTarget<Pose>({
+    target: createTarget<SkeletonPose>({
       get: () => {
         const { carried } = seat;
         if (!carried) return seat.committed;

@@ -43,7 +43,7 @@ export { mirrorPose } from './rig/mirrorPose';
 export { resolveSkeleton } from './rig/resolveSkeleton';
 export { jointAxes, skeletonAxes } from './rig/skeletonAxes';
 export { solveIk, type IkLimit, type IkPoint, type IkResult, type SolveIkOptions } from './rig/solveIk';
-export { IDENTITY_JOINT, type Joint, type JointTransform, type Pose, type Skeleton } from './rig/types';
+export { IDENTITY_JOINT, type Joint, type JointTransform, type SkeletonPose, type Skeleton } from './rig/types';
 export { motionsFromRest, skinnable, skinPath, type Skin } from './rig/skin';
 export { autoSkin, type AutoSkinOptions } from './rig/autoSkin';
 export { addJoint, dropSkinJoints, jointAt, jointPositions, moveJoint, removeJoint } from './rig/skeletonEdits';

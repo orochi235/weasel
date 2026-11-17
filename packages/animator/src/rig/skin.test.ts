@@ -4,7 +4,7 @@ import {
 } from '@weasel-js/geom';
 import { resolveSkeleton } from './resolveSkeleton';
 import { motionsFromRest, skinPath } from './skin';
-import { IDENTITY_JOINT, type Pose, type Skeleton } from './types';
+import { IDENTITY_JOINT, type SkeletonPose, type Skeleton } from './types';
 
 const j = (name: string, parent: string | null, x = 0, y = 0) => ({
   name, parent, bind: { ...IDENTITY_JOINT, x, y },
@@ -13,8 +13,8 @@ const j = (name: string, parent: string | null, x = 0, y = 0) => ({
 /** shoulder at the origin, elbow 100 along x, wrist 100 further. */
 const ARM: Skeleton = { joints: [j('shoulder', null), j('elbow', 'shoulder', 100), j('wrist', 'elbow', 100)] };
 
-const motions = (pose: Pose) => motionsFromRest(ARM, resolveSkeleton(ARM, pose));
-const QUARTER: Pose = { elbow: { rotation: Math.PI / 2 } };
+const motions = (pose: SkeletonPose) => motionsFromRest(ARM, resolveSkeleton(ARM, pose));
+const QUARTER: SkeletonPose = { elbow: { rotation: Math.PI / 2 } };
 
 const points = (path: PolygonPath): number[][] => {
   const out: number[][] = [];

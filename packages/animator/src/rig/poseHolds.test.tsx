@@ -3,7 +3,7 @@ import { act, renderHook } from '@testing-library/react';
 import { createTarget } from '../target';
 import { useAnimator } from '../useAnimator';
 import { skeletonAxes } from './skeletonAxes';
-import { IDENTITY_JOINT, type Pose, type Skeleton } from './types';
+import { IDENTITY_JOINT, type SkeletonPose, type Skeleton } from './types';
 
 const skeleton: Skeleton = {
   joints: [
@@ -14,9 +14,9 @@ const skeleton: Skeleton = {
 const TAU = Math.PI * 2;
 
 /** What a pose target shows with `poses` held on it at `weights`, over `committed`. */
-function held(poses: Pose[], weights: number[], committed: Pose = {}): Pose {
+function held(poses: SkeletonPose[], weights: number[], committed: SkeletonPose = {}): SkeletonPose {
   let pose = committed;
-  const target = createTarget<Pose>({ get: () => pose, set: (p) => { pose = p; }, axes: skeletonAxes(skeleton) });
+  const target = createTarget<SkeletonPose>({ get: () => pose, set: (p) => { pose = p; }, axes: skeletonAxes(skeleton) });
   const { result } = renderHook(() => useAnimator({ now: () => 0, requestFrame: () => 0, cancelFrame: () => {} }));
   act(() => { poses.forEach((value, i) => result.current.hold({ target, value, weight: weights[i] })); });
   return target.read();
@@ -98,19 +98,19 @@ describe('poses held on a target', () => {
 
   it('turns two held rotations the short way toward each other, wherever the committed pose is', () => {
     // 3 and -3 are 0.28 apart through PI, and 6 apart through the bind pose's 0.
-    const poses: Pose[] = [{ hip: { rotation: 3 } }, { hip: { rotation: -3 } }];
+    const poses: SkeletonPose[] = [{ hip: { rotation: 3 } }, { hip: { rotation: -3 } }];
     expect(Math.cos(held(poses, [0.5, 0.5]).hip!.rotation!)).toBeCloseTo(-1, 6);
     expect(Math.cos(held(poses, [0.5, 0.5], { hip: { rotation: Math.PI } }).hip!.rotation!)).toBeCloseTo(-1, 6);
     expect(Math.cos(held(poses, [0.5, 0.5], { hip: { rotation: 1 } }).hip!.rotation!)).toBeCloseTo(-1, 6);
   });
 
   it('does not let a hold at almost no weight decide which way the others turn', () => {
-    const poses: Pose[] = [{ hip: { rotation: 0 } }, { hip: { rotation: 3 } }, { hip: { rotation: -3 } }];
+    const poses: SkeletonPose[] = [{ hip: { rotation: 0 } }, { hip: { rotation: 3 } }, { hip: { rotation: -3 } }];
     expect(Math.cos(held(poses, [0.001, 0.4995, 0.4995]).hip!.rotation!)).toBeCloseTo(-1, 4);
   });
 
   it('turns the short way from the committed pose toward where the holds meet, at weights short of 1', () => {
-    const poses: Pose[] = [{ hip: { rotation: 3 } }, { hip: { rotation: -3 } }];
+    const poses: SkeletonPose[] = [{ hip: { rotation: 3 } }, { hip: { rotation: -3 } }];
     // They meet at PI, which is PI - 3 past a committed 3; half of that shows.
     expect(held(poses, [0.25, 0.25], { hip: { rotation: 3 } }).hip!.rotation).toBeCloseTo(3 + (Math.PI - 3) / 2, 6);
   });

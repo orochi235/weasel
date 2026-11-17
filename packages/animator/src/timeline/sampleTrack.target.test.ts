@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { createTarget, type Target } from '../target';
 import { skeletonAxes } from '../rig/skeletonAxes';
-import { IDENTITY_JOINT, type Pose, type Skeleton } from '../rig/types';
+import { IDENTITY_JOINT, type SkeletonPose, type Skeleton } from '../rig/types';
 import { sampleTrack } from './sampleTrack';
 import type { Keyframe, SampledTrack } from './types';
 
@@ -13,12 +13,12 @@ const skeleton: Skeleton = {
 };
 const TAU = Math.PI * 2;
 
-function poseTarget(): Target<Pose> {
-  let pose: Pose = {};
-  return createTarget<Pose>({ get: () => pose, set: (p) => { pose = p; }, axes: skeletonAxes(skeleton) });
+function poseTarget(): Target<SkeletonPose> {
+  let pose: SkeletonPose = {};
+  return createTarget<SkeletonPose>({ get: () => pose, set: (p) => { pose = p; }, axes: skeletonAxes(skeleton) });
 }
 
-const track = (keys: Keyframe<Pose>[], more: Partial<SampledTrack<Pose>> = {}): SampledTrack<Pose> =>
+const track = (keys: Keyframe<SkeletonPose>[], more: Partial<SampledTrack<SkeletonPose>> = {}): SampledTrack<SkeletonPose> =>
   ({ kind: 'sampled', keys, target: poseTarget(), ...more });
 
 describe('sampling a track with a target', () => {
@@ -39,7 +39,7 @@ describe('sampling a track with a target', () => {
       { t: 100, value: { hip: { x: 10 } } },
       { t: 200, value: {} },
     ]);
-    const full = (x: number): Pose => ({
+    const full = (x: number): SkeletonPose => ({
       hip: { x, y: 0, rotation: 0, scaleX: 1, scaleY: 1 },
       knee: { x: 0, y: 0, rotation: 0, scaleX: 1, scaleY: 1 },
     });

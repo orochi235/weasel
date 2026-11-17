@@ -11,7 +11,7 @@ import { compose, resolveSkeleton } from './resolveSkeleton';
 import { addJoint, jointAt, jointPositions, moveJoint, removeJoint } from './skeletonEdits';
 import { solveIk, type IkLimit } from './solveIk';
 import { jointShares, setWeights } from './weightEdits';
-import type { JointTransform, Pose, Skeleton } from './types';
+import type { JointTransform, SkeletonPose, Skeleton } from './types';
 import { runs, tally } from '../pbt.fixture';
 
 const RUNS = runs(300);
@@ -27,7 +27,7 @@ const skeleton: fc.Arbitrary<Skeleton> = fc.array(fc.tuple(fc.nat(), fc.boolean(
     joints: js.map(([p, root, bind], i) => ({ name: `j${i}`, parent: i === 0 || root ? null : `j${p % i}`, bind })),
   }));
 const delta = fc.record({ x: coord, y: coord, rotation: angle, scaleX: scale, scaleY: scale }, { requiredKeys: [] });
-const poseOf = (s: Skeleton): fc.Arbitrary<Pose> =>
+const poseOf = (s: Skeleton): fc.Arbitrary<SkeletonPose> =>
   fc.array(fc.option(delta, { nil: undefined }), { minLength: s.joints.length, maxLength: s.joints.length })
     .map((ds) => Object.fromEntries(ds.flatMap((d, i) => (d ? [[`j${i}`, d]] : []))));
 

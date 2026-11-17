@@ -4,7 +4,7 @@ import { createTimeline, type TimelineRegister } from '../timeline/createTimelin
 import type { SampledTrack } from '../timeline/types';
 import { skeletonAxes } from './skeletonAxes';
 import { resolveSkeleton } from './resolveSkeleton';
-import { IDENTITY_JOINT, type Pose, type Skeleton } from './types';
+import { IDENTITY_JOINT, type SkeletonPose, type Skeleton } from './types';
 
 function harness() {
   let tick: ((virtualNow: number) => boolean) | null = null;
@@ -26,14 +26,14 @@ const skeleton: Skeleton = {
 };
 
 /** A pose target nothing reads: the track's own `onTick` is what these tests watch. */
-const target = createTarget<Pose>({ get: () => ({}), set: () => {}, axes: skeletonAxes(skeleton) });
+const target = createTarget<SkeletonPose>({ get: () => ({}), set: () => {}, axes: skeletonAxes(skeleton) });
 const hold = () => ({ touch: () => {}, leave: () => {} });
 
 describe('animating a rig is an ordinary sampled track', () => {
   it('interpolates poses in the target\'s axes, with no interpolate', () => {
     const h = harness();
-    let latest: Pose = {};
-    const track: SampledTrack<Pose> = {
+    let latest: SkeletonPose = {};
+    const track: SampledTrack<SkeletonPose> = {
       kind: 'sampled',
       label: 'walk',
       keys: [
@@ -51,8 +51,8 @@ describe('animating a rig is an ordinary sampled track', () => {
 
   it('feeds resolveSkeleton to drive joint world transforms over time', () => {
     const h = harness();
-    let latest: Pose = {};
-    const track: SampledTrack<Pose> = {
+    let latest: SkeletonPose = {};
+    const track: SampledTrack<SkeletonPose> = {
       kind: 'sampled',
       keys: [
         { t: 0, value: { hip: { rotation: 0 } } },

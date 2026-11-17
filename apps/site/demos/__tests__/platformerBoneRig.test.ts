@@ -7,13 +7,13 @@ import {
 } from '@weasel-js/core';
 import { resolveSkeleton } from '@weasel-js/animator';
 import type { RectPose } from '@weasel-js/core';
-import type { Clip, ClipSampledTrack, Pose } from '@weasel-js/animator';
+import type { Clip, ClipSampledTrack, SkeletonPose } from '@weasel-js/animator';
 import { describe, expect, it } from 'vitest';
 import { boneLocalPoses } from '../platformer/boneRig';
 import { boneId, boneNodes, type WorldData, type WorldLayer } from '../platformer/sceneWorld';
 import { FALL, HURT, IDLE, JUMP, POLE, RUN } from '../platformer/clips';
 
-const keyPose = (clip: Clip, i: number): Pose => (clip.tracks[0] as ClipSampledTrack).keys[i].value as Pose;
+const keyPose = (clip: Clip, i: number): SkeletonPose => (clip.tracks[0] as ClipSampledTrack).keys[i].value as SkeletonPose;
 import { BONE_LENGTH, BONE_WIDTH, PLAYER_SKELETON, ROOT_TO_FOOT } from '../platformer/skeleton';
 
 /**
@@ -22,7 +22,7 @@ import { BONE_LENGTH, BONE_WIDTH, PLAYER_SKELETON, ROOT_TO_FOOT } from '../platf
  * parented version has to reproduce — a conversion that changes where a limb
  * lands is a regression, and nothing else in the suite would see it.
  */
-function flattenedWorld(pose: Pose, at: { x: number; y: number }, facing: 1 | -1) {
+function flattenedWorld(pose: SkeletonPose, at: { x: number; y: number }, facing: 1 | -1) {
   const joints = resolveSkeleton(PLAYER_SKELETON, pose);
   const root = new Float32Array(9) as unknown as Parameters<typeof mat3.multiply>[0];
   root[0] = facing; root[1] = 0; root[2] = 0;
@@ -93,7 +93,7 @@ function corners(p: RectPose): number[] {
   return pts.flat();
 }
 
-const POSES: Array<[string, Pose]> = [
+const POSES: Array<[string, SkeletonPose]> = [
   ['idle', keyPose(IDLE, 0)],
   ['run 0', keyPose(RUN, 0)],
   ['run 1', keyPose(RUN, 1)],

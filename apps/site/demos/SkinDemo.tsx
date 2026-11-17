@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { autoSkin } from '@weasel-js/animator';
 import { useAnimator } from '@weasel-js/animator/react';
-import type { Pose, SampledTrack, Skeleton } from '@weasel-js/animator';
+import type { SkeletonPose, SampledTrack, Skeleton } from '@weasel-js/animator';
 import { solid } from '@weasel-js/paint';
 import { asNodeId, easeInOutSine, polygonFromPoints, SceneCanvas, useRig, useScene } from '@weasel-js/core';
 import type { NodeId, Path, RectPose, Stroke, Fill } from '@weasel-js/core';
@@ -53,7 +53,7 @@ const INITIAL: NodeSpec[] = [
 ];
 const RIGID_BINDINGS = { shoulder: UPPER, elbow: LOWER };
 
-const bent = (angle: number): Pose => ({ elbow: { rotation: -angle } });
+const bent = (angle: number): SkeletonPose => ({ elbow: { rotation: -angle } });
 
 export function SkinDemo() {
   const scene = useScene<Data, 'main', RectPose>({
@@ -75,7 +75,7 @@ export function SkinDemo() {
       skinned.pose(bent(angle));
       return;
     }
-    const tracks = [rigid, skinned].map((rig): SampledTrack<Pose> => ({
+    const tracks = [rigid, skinned].map((rig): SampledTrack<SkeletonPose> => ({
       kind: 'sampled',
       keys: [
         { t: 0, value: bent(0) },
