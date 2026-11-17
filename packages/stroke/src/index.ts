@@ -27,7 +27,7 @@ export { clipWindow } from './trim/clipWindow';
 export type { ClipWindow } from './trim/clipWindow';
 export type { InsetLength, MeasuredLength } from './tessellate/insets';
 export {
-  screenSpaceKey, strokeSpaceOf, metricKey, polylineIntoMetric, polylineOutOfMetric, sameMetric,
+  screenSpaceKey, strokeMetricOf, metricKey, polylineIntoMetric, polylineOutOfMetric, sameMetric,
   worldWidthInMetric, worldWidthInMetricAlongWorld, coordsOutOfMetric, metricKeepsRects, rectIntoMetric,
 } from './tessellate/metric';
 export type { StrokeMetric, ScreenSpace, StrokeSpaces } from './tessellate/metric';
