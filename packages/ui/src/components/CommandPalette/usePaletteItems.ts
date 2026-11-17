@@ -2,7 +2,7 @@ import { useMemo } from 'react';
 import { useActionsRegistry, useOptionalDepRegistry } from '@weasel-js/routing/react';
 import {
   actionItems,
-  buildDepsFromRequires,
+  createActionDeps,
   eligibleNow,
   evaluateEnabled,
   matchActionItem,
@@ -41,7 +41,7 @@ export function usePaletteItems(open: boolean, query: string): PaletteItems {
         m.set(item.key, { enabled: false });
         continue;
       }
-      const deps = depReg ? buildDepsFromRequires(item.action, depReg) : undefined;
+      const deps = depReg ? createActionDeps(item.action, depReg) : undefined;
       m.set(item.key, evaluateEnabled(item.action, deps, undefined, item.params));
     }
     return m;

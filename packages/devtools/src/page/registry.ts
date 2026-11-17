@@ -1,6 +1,6 @@
 /** What one canvas has registered — its tools, actions, deps and node kinds — as plain data for `get-registry`. */
 import {
-  actionBindings, buildDepsFromRequires, evaluateActive, evaluateEnabled, overriddenBindings, routesForSpec,
+  actionBindings, createActionDeps, evaluateActive, evaluateEnabled, overriddenBindings, routesForSpec,
   type Action, type ActionSource, type Contribution, type DepRegistry, type GestureBinding, type ResolvedBindingOverrides,
   type ToolShortcuts,
 } from '@weasel-js/routing';
@@ -71,7 +71,7 @@ function toolOf(
 }
 
 function actionOf(action: Action, deps: DepRegistry | null): DevtoolsActionEntry {
-  const bag = deps ? buildDepsFromRequires(action, deps) : undefined;
+  const bag = deps ? createActionDeps(action, deps) : undefined;
   const enabled = evaluateEnabled(action, bag);
   const rule: unknown = action.eligible;
   return {

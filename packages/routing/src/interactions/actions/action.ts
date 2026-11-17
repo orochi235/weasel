@@ -125,7 +125,7 @@ export interface ActionDispatch extends BindingSource {
    *  The dispatcher (and `trigger`, when `requires` is present) resolves
    *  each name against the `DepRegistry` at invocation time and passes the
    *  resulting bag to the invoker. Dev builds warn when the invoker reads a
-   *  dep it didn't declare here — see `buildDepsFromRequires`. */
+   *  dep it didn't declare here — see `createActionDeps`. */
   requires?: readonly DepName[];
   /** Pluggable invocation strategy. The gesture dispatcher routes matched
    *  bindings through `invoker.start` / `invoker.run` depending on timing.

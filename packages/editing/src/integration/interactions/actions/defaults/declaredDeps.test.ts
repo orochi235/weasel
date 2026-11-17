@@ -1,5 +1,5 @@
 /**
- * Every dispatched action gets its deps from `buildDepsFromRequires`, whose
+ * Every dispatched action gets its deps from `createActionDeps`, whose
  * dev-mode Proxy throws on a read the descriptor didn't declare in `requires`.
  * These descriptors are reachable only through consumer-wired bindings, so a
  * missing name shows up as a dead keystroke rather than a failing test —
@@ -8,7 +8,7 @@
 
 import { IDENTITY_POSE_COMPOSITION, asNodeId, createPoseOverrides } from '@weasel-js/core/engine';
 import { describe, it, expect, vi } from 'vitest';
-import { buildDepsFromRequires } from '@weasel-js/routing';
+import { createActionDeps } from '@weasel-js/routing';
 import type { DepRegistry } from '@weasel-js/routing/react';
 import type { Action, ImmediateInvoker } from '@weasel-js/routing';
 import { reorderForwardAction, reorderBackwardAction, alignLeftAction, alignCenterYAction, distributeHorizontalAction, distributeVerticalAction, pathfinderUnionAction, pathfinderExcludeAction } from '@weasel-js/editing';
@@ -63,7 +63,7 @@ describe('kit descriptors declare every dep they read', () => {
   for (const action of DESCRIPTORS) {
     it(`${action.id} runs on a bag built from its own \`requires\``, () => {
       const { registry } = makeDeps();
-      const deps = buildDepsFromRequires(action, registry);
+      const deps = createActionDeps(action, registry);
       expect(() => action.enabled?.(deps)).not.toThrow();
       expect(() => (action.invoker as ImmediateInvoker).run(deps, {})).not.toThrow();
     });
@@ -73,7 +73,7 @@ describe('kit descriptors declare every dep they read', () => {
     const { registry, applyOps } = makeDeps();
     for (const action of [reorderForwardAction, reorderBackwardAction]) {
       applyOps.mockClear();
-      const deps = buildDepsFromRequires(action, registry);
+      const deps = createActionDeps(action, registry);
       (action.invoker as ImmediateInvoker).run(deps, { distance: 'adjacent' });
       expect(applyOps, action.id).toHaveBeenCalled();
     }

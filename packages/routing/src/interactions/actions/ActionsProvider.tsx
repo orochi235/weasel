@@ -20,7 +20,7 @@ import {
   type DepRegistry,
   type DepName,
 } from './depRegistry';
-import { buildDepsFromRequires } from './buildDeps';
+import { createActionDeps } from './buildDeps';
 import type { ActionDeps, WorldPoint } from './invoker';
 import { dynamicActionId, type ActionParamsOf, type InvokeParams } from './actionIds';
 import type { ImmediateParams } from '../dispatcher/inputFacts';
@@ -45,7 +45,7 @@ export const ActionsContext = createContext<ActionsRegistry | null>(null);
  *  action that needs the consumer's history must declare it. */
 function depsFor(a: Action, r: DepRegistry | null): ActionDeps {
   if (!r) return {};
-  if (a.requires) return buildDepsFromRequires(a, r);
+  if (a.requires) return createActionDeps(a, r);
   return {
     selection: r.get('selection' as DepName),
     scene: r.get('scene' as DepName),

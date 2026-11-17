@@ -149,7 +149,7 @@ export { defineAction } from './interactions/actions/defineAction';
 export type { ActionOf, ActionSettingsOf, ActionVariantOf } from './interactions/actions/defineAction';
 export { evaluateActive, evaluateEnabled } from './interactions/actions/actionEnabled';
 export type { ActionEnabledResult } from './interactions/actions/actionEnabled';
-export { buildDepsFromRequires } from './interactions/actions/buildDeps';
+export { createActionDeps } from './interactions/actions/buildDeps';
 export { createDepRegistry } from './interactions/actions/depNode';
 export type { DepRegistry, DepListing, DepSource } from './interactions/actions/depNode';
 export { validateActionId, validateActionDefaultBinding } from './interactions/actions/registry';

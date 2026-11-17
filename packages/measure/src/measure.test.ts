@@ -13,7 +13,7 @@ import { measureCreateAction, measureDragAction, measurePickAtAction } from './m
 import { measureEndSource, type MeasureHit } from './measureHit';
 import { MEASURE_AFFORDANCE_KIND } from './measureLayer';
 import { gridSource, sessionDep } from './testing/snapDep';
-import { buildDepsFromRequires } from '@weasel-js/routing';
+import { createActionDeps } from '@weasel-js/routing';
 import type { DepRegistry } from '@weasel-js/routing/react';
 
 type Pt = { x: number; y: number };
@@ -247,7 +247,7 @@ describe('transform by the measurement', () => {
     rig.measure({ x: 0, y: 0 }, { x: 0, y: -10 });
     const bag: Record<string, unknown> = { ...rig.deps, drawnBoxes: inkBoxes };
     const action = measureCommands(rig.ms).find((x) => x.id === MEASURE_ACTION_IDS.rotateBy)!;
-    const deps = buildDepsFromRequires(action, { get: (name: string) => bag[name] } as unknown as DepRegistry);
+    const deps = createActionDeps(action, { get: (name: string) => bag[name] } as unknown as DepRegistry);
     (action.invoker as ImmediateInvoker).run(deps, undefined);
     // The ink spans x -10..150, so a quarter turn carries b's center onto x 70; the pose boxes' would be 75.
     const pb = rig.pose(b);

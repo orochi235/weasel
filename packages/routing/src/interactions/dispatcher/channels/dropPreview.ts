@@ -3,7 +3,7 @@
  * action its drop would run shows what that would do, through `Action.preview`.
  * A dragover never invokes the action, so this is the only place it is asked.
  */
-import { buildDepsFromRequires } from '../../actions/buildDeps';
+import { createActionDeps } from '../../actions/buildDeps';
 import type { DispatcherContext, ResolveOnlyResult } from '../dispatcherApi';
 import { immediateParams } from '../inputFacts';
 import type { InputEvent } from '../matcher';
@@ -47,7 +47,7 @@ export function dropPreview(): DropPreview {
     const { action } = winner;
     if (!action.preview) return;
     try {
-      const out = action.preview(buildDepsFromRequires(action, ctx.depRegistry), immediateParams(event, winner.params));
+      const out = action.preview(createActionDeps(action, ctx.depRegistry), immediateParams(event, winner.params));
       stop = typeof out === 'function' ? out : null;
     } catch (err) {
       console.error(`weasel dispatcher: preview of "${action.id}" threw`, err);

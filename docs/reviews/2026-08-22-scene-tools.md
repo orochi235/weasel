@@ -28,7 +28,7 @@ exactly the kind `requiresSelection`'s docstring warns against, so
 selected. Each predicate now reads the selection and matches its invoker's own
 guard (two nodes for align, three for distribute).
 
-**Four descriptor families read undeclared deps.** `buildDepsFromRequires`
+**Four descriptor families read undeclared deps.** `createActionDeps`
 builds a dispatched action's bag from `requires` and, in dev, throws on any
 undeclared read. `reorder.backward` read `applyOps` without declaring it (its
 `forward` twin declares all three); `align.*`, `distribute.*` and

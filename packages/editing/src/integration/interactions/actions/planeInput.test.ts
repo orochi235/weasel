@@ -7,7 +7,7 @@ import { describe, it, expect, vi } from 'vitest';
 import type {
   Action, BindingOptions, DepRegistry, InvocationCtx, OngoingHandle, OngoingInvoker, OngoingOverlay,
 } from '@weasel-js/routing';
-import { buildDepsFromRequires } from '@weasel-js/routing';
+import { createActionDeps } from '@weasel-js/routing';
 import { createScene } from '@weasel-js/core/engine';
 import { asNodeId, type NodeId, type RectPose, type Scene, inPlane, selectionLayer } from '@weasel-js/core';
 import type { SelectionApi } from '@weasel-js/routing';
@@ -173,7 +173,7 @@ describe('editing a node on a parallax plane', () => {
     } as unknown as DepRegistry;
     const at = (p: { x: number; y: number }) => ({
       ...ctxOf(scene, { x: 160, y: 60 }, p),
-      deps: buildDepsFromRequires(rotateAction, registry),
+      deps: createActionDeps(rotateAction, registry),
     });
     const handle = (rotateAction.invoker as OngoingInvoker).start(at({ x: 160, y: 60 }));
     handle.onMove!(at({ x: 110, y: 110 }));
