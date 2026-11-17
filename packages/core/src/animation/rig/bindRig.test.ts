@@ -125,7 +125,7 @@ describe('bindRig', () => {
       scene, skeleton: ARM, bindings: { upper },
       apply: (world, ctx) => {
         seen.push(ctx.joint);
-        const [x, y] = mat3.apply(world, 0, 0);
+        const [x, y] = mat3.transformPoint(world, 0, 0);
         return { ...ctx.rest, x, y };
       },
     });
@@ -144,7 +144,7 @@ describe('bindRig', () => {
     const { scene, upper } = armScene();
     const rig = bindRig({ scene, skeleton: ARM, bindings: { upper } });
     rig.pose({ upper: { x: 5 } });
-    const [x, y] = mat3.apply(rig.world().get('lower')!, 0, 0);
+    const [x, y] = mat3.transformPoint(rig.world().get('lower')!, 0, 0);
     expect([x, y]).toEqual([155, 100]);
   });
 

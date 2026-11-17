@@ -84,7 +84,7 @@ describe('paint-kind resources', () => {
     const r = new WeaselRenderer({ gl: createGLRecorder().gl, width: 10, height: 10, dpr: 2 });
     r.render(frame, mat3.scaled(mat3.identity(), 3, 3));
     const world = seen[0].spaceToDevice('world')!;
-    expect(mat3.apply(world, 1, 1)).toEqual([6, 6]);
+    expect(mat3.transformPoint(world, 1, 1)).toEqual([6, 6]);
     expect(seen[0].maxTextureSize).toBeGreaterThan(0);
   });
 });

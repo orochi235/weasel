@@ -49,7 +49,7 @@ describe('pathBox, property', () => {
       const ribbon = ribbonPoints(path, s, m);
       t.count(ribbon.length > 0 ? `${path.kind}:${s.align}` : 'no ribbon');
       const out = [...meshPoints(getMesh(path)), ...ribbon]
-        .map((p) => mat3.apply(m, p.x, p.y)).find(([x, y]) => !within(box, x, y, slack));
+        .map((p) => mat3.transformPoint(m, p.x, p.y)).find(([x, y]) => !within(box, x, y, slack));
       expect(out, `${out} outside ${JSON.stringify(box)}`).toBeUndefined();
     }), runs(200));
     for (const k of ['rect:center', 'rect:outer', 'rect:inner', 'polygon:center', 'polygon:outer', 'polygon:inner']) t.atLeast(k, 8);
@@ -89,7 +89,7 @@ describe('paintedBox, property', () => {
       if (sprites.length === 0) expect(sheet.minX).toBe(Infinity);
       const check = (box: ScreenBox, [qx, qy, qw, qh]: readonly number[]): void => {
         for (const [px, py] of [[qx, qy], [qx + qw, qy], [qx + qw, qy + qh], [qx, qy + qh]] as const) {
-          const [sx, sy] = mat3.apply(m, px!, py!);
+          const [sx, sy] = mat3.transformPoint(m, px!, py!);
           expect(within(box, sx, sy, 1e-9 * (1 + Math.abs(sx) + Math.abs(sy)))).toBe(true);
         }
       };

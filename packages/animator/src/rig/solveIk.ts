@@ -122,8 +122,8 @@ export function solveIk(skeleton: Skeleton, pose: Pose, options: SolveIkOptions)
       worlds.push(parent);
     }
   };
-  const pivot = (i: number) => mat3.apply(worlds[i], 0, 0);
-  const tipWorld = () => mat3.apply(worlds[n - 1], tip.x, tip.y);
+  const pivot = (i: number) => mat3.transformPoint(worlds[i], 0, 0);
+  const tipWorld = () => mat3.transformPoint(worlds[n - 1], tip.x, tip.y);
   /** The point joint `i` swings: the next joint's pivot, or the tip. */
   const next = (i: number) => (i + 1 < n ? pivot(i + 1) : tipWorld());
 
@@ -132,9 +132,9 @@ export function solveIk(skeleton: Skeleton, pose: Pose, options: SolveIkOptions)
   const aim = (i: number, effector: [number, number], goal: IkPoint): boolean => {
     const inv = mat3.invert(i === 0 ? base : worlds[i - 1]);
     if (!inv) return false;
-    const [ox, oy] = mat3.apply(inv, ...pivot(i));
-    const [ex, ey] = mat3.apply(inv, ...effector);
-    const [gx, gy] = mat3.apply(inv, goal.x, goal.y);
+    const [ox, oy] = mat3.transformPoint(inv, ...pivot(i));
+    const [ex, ey] = mat3.transformPoint(inv, ...effector);
+    const [gx, gy] = mat3.transformPoint(inv, goal.x, goal.y);
     if (Math.hypot(ex - ox, ey - oy) < 1e-9 || Math.hypot(gx - ox, gy - oy) < 1e-9) return false;
     const want = wrapAngle(rot[i] + Math.atan2(gy - oy, gx - ox) - Math.atan2(ey - oy, ex - ox), 'min');
     rot[i] = clampAngle(want, limits && getOwn(limits, chain[i].name));

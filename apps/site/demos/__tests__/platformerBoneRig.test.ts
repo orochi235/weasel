@@ -36,8 +36,8 @@ function flattenedWorld(pose: Pose, at: { x: number; y: number }, facing: 1 | -1
     const world = mat3.multiply(root, m);
     const len = BONE_LENGTH[j.name];
     const wid = BONE_WIDTH[j.name];
-    const [ox, oy] = mat3.apply(world, 0, 0);
-    const [tx, ty] = mat3.apply(world, len, 0);
+    const [ox, oy] = mat3.transformPoint(world, 0, 0);
+    const [tx, ty] = mat3.transformPoint(world, len, 0);
     out.set(j.name, {
       x: (ox + tx) / 2 - len / 2,
       y: (oy + ty) / 2 - wid / 2,

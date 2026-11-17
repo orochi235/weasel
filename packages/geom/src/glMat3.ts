@@ -88,7 +88,8 @@ function toUniform(m: GlMat3): Float32Array {
   return Float32Array.from(m);
 }
 
-function apply(m: GlMat3, x: number, y: number): [number, number] {
+/** The point `(x, y)` mapped through `m`. */
+function transformPoint(m: GlMat3, x: number, y: number): [number, number] {
   const a = m[0], b = m[1];
   const c = m[3], d = m[4];
   const tx = m[6], ty = m[7];
@@ -143,7 +144,7 @@ export const mat3 = {
   scaled,
   invert,
   toUniform,
-  apply,
+  transformPoint,
   screenToClip,
   meanScaleOf,
   minScaleOf,

@@ -174,10 +174,10 @@ function spritesBox(sprites: Float32Array, m: GlMat3): ScreenBox {
 
 /** The AABB of the local rect's corners taken through `m`. */
 export function screenBox(x0: number, y0: number, x1: number, y1: number, m: GlMat3): ScreenBox {
-  const [ax, ay] = mat3.apply(m, x0, y0);
-  const [bx, by] = mat3.apply(m, x1, y0);
-  const [cx, cy] = mat3.apply(m, x1, y1);
-  const [dx, dy] = mat3.apply(m, x0, y1);
+  const [ax, ay] = mat3.transformPoint(m, x0, y0);
+  const [bx, by] = mat3.transformPoint(m, x1, y0);
+  const [cx, cy] = mat3.transformPoint(m, x1, y1);
+  const [dx, dy] = mat3.transformPoint(m, x0, y1);
   return {
     minX: Math.min(ax, bx, cx, dx), minY: Math.min(ay, by, cy, dy),
     maxX: Math.max(ax, bx, cx, dx), maxY: Math.max(ay, by, cy, dy),

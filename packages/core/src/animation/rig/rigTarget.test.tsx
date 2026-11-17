@@ -43,7 +43,7 @@ function rigged() {
     turn: () => where(upper).rotation ?? 0,
     /** How far joint `name` sits along x from where the bind pose puts it. */
     shift: (name: 'upper' | 'lower' = 'upper') =>
-      mat3.apply(rig.world().get(name)!, 0, 0)[0] - (name === 'upper' ? 100 : 150),
+      mat3.transformPoint(rig.world().get(name)!, 0, 0)[0] - (name === 'upper' ? 100 : 150),
   };
 }
 

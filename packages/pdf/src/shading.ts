@@ -76,10 +76,10 @@ function isIdentity(m: GlMat3): boolean {
 function paintBox(path: Path, toPaint: GlMat3): Box {
   const b = boundsOfPath(path);
   const corners = [
-    mat3.apply(toPaint, b.x, b.y),
-    mat3.apply(toPaint, b.x + b.width, b.y),
-    mat3.apply(toPaint, b.x, b.y + b.height),
-    mat3.apply(toPaint, b.x + b.width, b.y + b.height),
+    mat3.transformPoint(toPaint, b.x, b.y),
+    mat3.transformPoint(toPaint, b.x + b.width, b.y),
+    mat3.transformPoint(toPaint, b.x, b.y + b.height),
+    mat3.transformPoint(toPaint, b.x + b.width, b.y + b.height),
   ];
   const xs = corners.map((c) => c[0]);
   const ys = corners.map((c) => c[1]);

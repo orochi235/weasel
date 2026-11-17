@@ -52,11 +52,11 @@ function placed(cmd: TextDrawCommand, m: GlMat3): number[][] {
     const tan = g.synthetic.italic ? Math.tan(SYNTHETIC_ITALIC_RADIANS) : 0;
     for (let at = 0; at < g.quadData.length; at += QUAD_STRIDE) {
       glyphCorners(g.quadData, at, dx, dy, tan, c);
-      for (let k = 0; k < 8; k += 2) out.push(mat3.apply(m, c[k]!, c[k + 1]!));
+      for (let k = 0; k < 8; k += 2) out.push(mat3.transformPoint(m, c[k]!, c[k + 1]!));
     }
   }
   for (const d of decorations) {
-    for (const [x, y] of [[d.x0, d.y0], [d.x1, d.y0], [d.x1, d.y1], [d.x0, d.y1]]) out.push(mat3.apply(m, x! + dx, y! + dy));
+    for (const [x, y] of [[d.x0, d.y0], [d.x1, d.y0], [d.x1, d.y1], [d.x0, d.y1]]) out.push(mat3.transformPoint(m, x! + dx, y! + dy));
   }
   return out;
 }

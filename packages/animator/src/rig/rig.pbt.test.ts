@@ -31,7 +31,7 @@ const poseOf = (s: Skeleton): fc.Arbitrary<Pose> =>
   fc.array(fc.option(delta, { nil: undefined }), { minLength: s.joints.length, maxLength: s.joints.length })
     .map((ds) => Object.fromEntries(ds.flatMap((d, i) => (d ? [[`j${i}`, d]] : []))));
 
-const origin = (m: GlMat3): [number, number] => mat3.apply(m, 0, 0);
+const origin = (m: GlMat3): [number, number] => mat3.transformPoint(m, 0, 0);
 /** Close to a float32 resolve of a chain of up to six joints of these sizes. */
 const near = (a: number, b: number): void => { expect(Math.abs(a - b)).toBeLessThanOrEqual(2e-3 * Math.max(1, Math.abs(a), Math.abs(b))); };
 
@@ -47,7 +47,7 @@ describe('mirrorPose, property', () => {
         near(fy, y);
         // The mirror of a point is the point mirrored, carried by the joint, and mirrored back.
         for (const [px, py] of [[1, 0], [0, 1], [3, -2]] as const) {
-          const [mx, my] = mat3.apply(m, -px, py), [gx, gy] = mat3.apply(f, px, py);
+          const [mx, my] = mat3.transformPoint(m, -px, py), [gx, gy] = mat3.transformPoint(f, px, py);
           near(gx, -mx);
           near(gy, my);
         }
@@ -160,7 +160,7 @@ describe('solveIk, property', () => {
     fc.assert(fc.property(chain, coord, coord, fc.boolean(), ({ skeleton: s, n, tip, limits }, x, y, limited) => {
       const joints = s.joints.map((j) => j.name);
       const r = solveIk(s, {}, { joints, tip, target: { x, y }, ...(limited ? { limits } : {}) });
-      const [tx, ty] = mat3.apply(resolveSkeleton(s, r.pose).get(`j${n - 1}`)!, tip.x, tip.y);
+      const [tx, ty] = mat3.transformPoint(resolveSkeleton(s, r.pose).get(`j${n - 1}`)!, tip.x, tip.y);
       near(r.distance, Math.hypot(tx - x, ty - y));
       expect(r.reached).toBe(r.distance <= 0.01);
       if (limited) {

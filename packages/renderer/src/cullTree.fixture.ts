@@ -97,7 +97,7 @@ function painted(cmd: DrawCommand, m: GlMat3, rect: CullRect): Pt[] {
   } else if (cmd.kind === 'image') {
     pts = [{ x: cmd.x, y: cmd.y }, { x: cmd.x + cmd.w, y: cmd.y }, { x: cmd.x + cmd.w, y: cmd.y + cmd.h }, { x: cmd.x, y: cmd.y + cmd.h }];
   }
-  return pts.map((p) => { const [x, y] = mat3.apply(m, p.x, p.y); return { x, y }; });
+  return pts.map((p) => { const [x, y] = mat3.transformPoint(m, p.x, p.y); return { x, y }; });
 }
 
 const E = 1e-3;

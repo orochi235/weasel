@@ -7,7 +7,7 @@ const j = (name: string, parent: string | null, x = 0, y = 0) => ({
   name, parent, bind: { ...IDENTITY_JOINT, x, y },
 });
 
-const apply = mat3.apply;
+const apply = mat3.transformPoint;
 
 describe('resolveSkeleton', () => {
   it('returns the bind translation for a root joint at rest', () => {

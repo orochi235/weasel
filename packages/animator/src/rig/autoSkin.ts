@@ -24,7 +24,7 @@ interface Bone {
 function bonesOf(skeleton: Skeleton): Bone[] {
   const world = resolveSkeleton(skeleton, {});
   const at = new Map<string, [number, number]>();
-  for (const [name, m] of world) at.set(name, mat3.apply(m, 0, 0));
+  for (const [name, m] of world) at.set(name, mat3.transformPoint(m, 0, 0));
   const bones = new Map<string, Bone>();
   for (const joint of skeleton.joints) {
     if (joint.parent == null) continue;

@@ -19,7 +19,7 @@ const TIP = { x: 10, y: 0 };
 
 /** Where the tip of `last` lands under `pose`. */
 function tipOf(skel: Skeleton, pose: Pose, last: string, tip = TIP): [number, number] {
-  return mat3.apply(resolveSkeleton(skel, pose).get(last)!, tip.x, tip.y);
+  return mat3.transformPoint(resolveSkeleton(skel, pose).get(last)!, tip.x, tip.y);
 }
 const dist = (a: readonly [number, number], b: { x: number; y: number }) =>
   Math.hypot(a[0] - b.x, a[1] - b.y);
@@ -70,7 +70,7 @@ describe('solveIk', () => {
       expect(out.reached).toBe(false);
       const worlds = resolveSkeleton(skel, out.pose);
       for (const name of joints) {
-        const [x, y] = mat3.apply(worlds.get(name)!, 0, 0);
+        const [x, y] = mat3.transformPoint(worlds.get(name)!, 0, 0);
         expect(x).toBeCloseTo(0, 3);
         expect(y).toBeGreaterThanOrEqual(-1e-3);
       }
@@ -85,7 +85,7 @@ describe('solveIk', () => {
     const target = { x: 14, y: 0 };
     const up = solveIk(ARM, {}, { joints: ['shoulder', 'elbow'], tip: TIP, target, pole: { x: 7, y: 10 } });
     const down = solveIk(ARM, {}, { joints: ['shoulder', 'elbow'], tip: TIP, target, pole: { x: 7, y: -10 } });
-    const elbowY = (p: Pose) => mat3.apply(resolveSkeleton(ARM, p).get('elbow')!, 0, 0)[1];
+    const elbowY = (p: Pose) => mat3.transformPoint(resolveSkeleton(ARM, p).get('elbow')!, 0, 0)[1];
     expect(elbowY(up.pose)).toBeGreaterThan(1);
     expect(elbowY(down.pose)).toBeLessThan(-1);
     expect(dist(tipOf(ARM, up.pose, 'elbow'), target)).toBeLessThan(0.01);
@@ -96,7 +96,7 @@ describe('solveIk', () => {
     const target = { x: 14, y: 0 };
     const bentDown: Pose = { shoulder: { rotation: -0.3 }, elbow: { rotation: 0.6 } };
     const out = solveIk(ARM, bentDown, { joints: ['shoulder', 'elbow'], tip: TIP, target });
-    expect(mat3.apply(resolveSkeleton(ARM, out.pose).get('elbow')!, 0, 0)[1]).toBeLessThan(-1);
+    expect(mat3.transformPoint(resolveSkeleton(ARM, out.pose).get('elbow')!, 0, 0)[1]).toBeLessThan(-1);
   });
 
   it('holds every joint inside its limits', () => {

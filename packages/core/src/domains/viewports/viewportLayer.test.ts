@@ -209,7 +209,7 @@ describe('viewport draw', () => {
     const inner = group.children[0] as GroupDrawCommand;
     const composed = mat3.multiply(new Float32Array(group.transform!) as GlMat3, inner.transform!);
     const world = { x: 300, y: 250 };
-    const [sx, sy] = mat3.apply(composed, world.x, world.y);
+    const [sx, sy] = mat3.transformPoint(composed, world.x, world.y);
     const back = route([viewportOf([MARKER])], { x: sx, y: sy }).point;
     expect(back.x).toBeCloseTo(world.x);
     expect(back.y).toBeCloseTo(world.y);
