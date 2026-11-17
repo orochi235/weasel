@@ -23,8 +23,8 @@ It runs beside `@weasel-js/core`, `@weasel-js/geom`, `@weasel-js/guides`,
 
 | Area | Exports |
 |---|---|
-| Shell | `EditorShell`, `EDITOR_ACTIONS`, `EDITOR_PREFERENCES_KEY`, `SNAPPING_KEY`, `useEditorKeys`, `EDITOR_CONTEXT_MENUS`, `EDITOR_CONTEXT_MENUS_CONTRIBUTION` |
-| Preferences | `useEditorPrefs`, `useOpenPreferences`, `EditorPrefsDialog` |
+| Shell | `EditorShell`, `EDITOR_ACTIONS`, `EDITOR_PREFS_KEY`, `SNAPPING_KEY`, `useEditorKeys`, `EDITOR_CONTEXT_MENUS`, `EDITOR_CONTEXT_MENUS_CONTRIBUTION` |
+| Preferences | `useEditorPrefs`, `useOpenPrefs`, `EditorPrefsDialog` |
 | Menu bar | `editorMenuBar`, `menu`, `menuRun`, `EDITOR_MENU_TITLES` |
 | Session | `useSessionPersistence`, `useAutosave`, `readStored`, `writeSession`, `isUnreadableKey`, `sessionSaveReporter` |
 | Snapshots | `docFromSnapshot`, `nodeSpecsFromSnapshot`, `adoptSnapshotPages`, `snapshotRebuildsTree` |

@@ -5,7 +5,7 @@ import type { PrefGroup } from '@weasel-js/prefs';
 import { ContextMenuHost } from '@weasel-js/ui/components/Menu';
 import { MenuBar } from '@weasel-js/ui/components/MenuBar';
 import { EDITOR_CONTEXT_MENUS_CONTRIBUTION } from './contextMenus';
-import { type EditorCommandOptions, PreferencesCommand, useEditorKeys } from './editorCommands';
+import { type EditorCommandOptions, PrefsCommand, useEditorKeys } from './editorCommands';
 import {
   type EditorPrefs, EditorPrefsContext, EditorPrefsDialog, type EditorPrefsDialogProps, useOpenedPrefs,
 } from './editorPrefs';
@@ -94,7 +94,7 @@ function ShellBody({
           {top}
           {children}
         </ShortcutSheetHost>
-        {store && preferences !== null && <PreferencesCommand options={preferences} open={open} />}
+        {store && preferences !== null && <PrefsCommand options={preferences} open={open} />}
         {store && (
           <EditorPrefsDialog store={store} open={prefsOpen} onOpenChange={setPrefsOpen} dialog={prefsDialog} />
         )}

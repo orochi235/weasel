@@ -24,9 +24,9 @@ export { usePageGrid, type PageGridOptions } from './usePageGrid';
 export { EditorShell, type EditorShellProps } from './EditorShell';
 export { PublishEditorTools, usePublishEditorTools } from './shortcutSheet';
 export { EDITOR_CONTEXT_MENUS, EDITOR_CONTEXT_MENUS_CONTRIBUTION } from './contextMenus';
-export { EDITOR_ACTIONS, EDITOR_PREFERENCES_KEY, SNAPPING_KEY, useEditorKeys, type EditorCommandOptions } from './editorCommands';
+export { EDITOR_ACTIONS, EDITOR_PREFS_KEY, SNAPPING_KEY, useEditorKeys, type EditorCommandOptions } from './editorCommands';
 export {
-  useEditorPrefs, useOpenPreferences, EditorPrefsDialog,
+  useEditorPrefs, useOpenPrefs, EditorPrefsDialog,
   type EditorPrefs, type EditorPrefsOptions, type EditorPrefsDialogProps,
 } from './editorPrefs';
 export {

@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { actionBindings, browserReservedChord, modeShortcutSpec } from '@weasel-js/routing';
 import { key, type KeySpec } from '@weasel-js/gestures';
-import { DOC_CLIPBOARD_KEYS, EDITOR_PREFERENCES_KEY, FILE_KEYS, SNAPPING_KEY } from '@weasel-js/editor';
+import { DOC_CLIPBOARD_KEYS, EDITOR_PREFS_KEY, FILE_KEYS, SNAPPING_KEY } from '@weasel-js/editor';
 import { DEFAULT_MODES, shortcutOn } from '@weasel-js/modes';
 import * as pathTools from '@weasel-js/path-tools';
 import { LENS_KEYS, LOUPE_LEADER } from '@weasel-js/labkit/loupe';
@@ -54,7 +54,7 @@ describe('kit key bindings a browser reserves', () => {
     const editor = [
       ...Object.entries(FILE_KEYS).flatMap(([slot, spec]) => reserved(`FILE_KEYS.${slot}`, [spec])),
       ...Object.entries(DOC_CLIPBOARD_KEYS).flatMap(([slot, spec]) => reserved(`DOC_CLIPBOARD_KEYS.${slot}`, [spec])),
-      ...reserved('EDITOR_PREFERENCES_KEY', [EDITOR_PREFERENCES_KEY]),
+      ...reserved('EDITOR_PREFS_KEY', [EDITOR_PREFS_KEY]),
       ...reserved('SNAPPING_KEY', [SNAPPING_KEY]),
     ];
     const roles = ['entry', 'exit', 'discard', 'commit', 'cancel'] as const;
