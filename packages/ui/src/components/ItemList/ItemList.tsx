@@ -34,7 +34,7 @@ export interface ItemListRow {
    *  own clicks and keys, and turn the list into a grid. A control that edits
    *  with the arrow keys does not belong here. */
   trailing?: ReactNode;
-  /** The row the list considers current. With `selection` set this is also
+  /** The row the list considers current. With `selectionMode` set this is also
    *  `aria-selected`. */
   selected?: boolean;
   /** Present but not in effect — history's redo entries. */
@@ -65,7 +65,7 @@ export interface ItemListProps extends HoldProps {
    * `selected` to assistive tech; choosing what is selected stays with
    * `onActivate`.
    */
-  selection?: 'single' | 'multi';
+  selectionMode?: 'single' | 'multiple';
   /**
    * A row was clicked, or Enter/Space was pressed on it, with the modifiers
    * held. Clicks and keys on a row's `trailing` controls do not reach this.
@@ -77,7 +77,7 @@ export interface ItemListProps extends HoldProps {
    */
   onNudge?(id: string, index: number, delta: -1 | 1): void;
   /**
-   * With `selection="multi"`: Shift+Up/Down or Shift+Home/End moved focus,
+   * With `selectionMode="multiple"`: Shift+Up/Down or Shift+Home/End moved focus,
    * and `ids` is every row from the anchor to the newly focused one, in list
    * order. The anchor is the row last focused or activated other than by a
    * range move, so a click or a plain arrow move re-anchors. What the range does to
@@ -110,8 +110,8 @@ export interface ItemListProps extends HoldProps {
  *
  * **Semantics.** The role follows what the list can do:
  * - nothing to select or activate → `list` / `listitem`, and no row is focusable;
- * - `selection` with no row controls → `listbox` / `option`, `aria-selected`;
- * - any row with `trailing` controls, or `onActivate` without `selection` →
+ * - `selectionMode` with no row controls → `listbox` / `option`, `aria-selected`;
+ * - any row with `trailing` controls, or `onActivate` without `selectionMode` →
  *   `grid` / `row`, with the leading content and label in one `gridcell` and
  *   the controls in a second. An option may not contain interactive content,
  *   so a list whose rows host toggles cannot be a listbox.
@@ -126,13 +126,13 @@ export interface ItemListProps extends HoldProps {
  */
 export const ItemList = forwardRef(function ItemList(
   {
-    rows, empty, className, selection, onActivate, onNudge, onSelectRange, dropIndex, overlay,
+    rows, empty, className, selectionMode, onActivate, onNudge, onSelectRange, dropIndex, overlay,
     containerProps, ghost, ...own
   }: ItemListProps,
   ref: Ref<HTMLDivElement>,
 ) {
   const hasTrailing = rows.some((r) => r.trailing != null);
-  const mode = listMode({ selection, activatable: onActivate !== undefined, controls: hasTrailing });
+  const mode = listMode({ selectionMode, activatable: onActivate !== undefined, controls: hasTrailing });
   const interactive = mode !== 'list';
   const hold = useControlHold(own, { readonlyRole: mode === 'grid' });
   const looks = !hold.disabled;
@@ -148,7 +148,7 @@ export const ItemList = forwardRef(function ItemList(
 
   /** The element of each row that takes focus: the row itself, or in a grid its label cell. */
   const targets = useRef(new Map<string, HTMLElement>());
-  const ranges = selection === 'multi' && onSelectRange !== undefined && looks;
+  const ranges = selectionMode === 'multiple' && onSelectRange !== undefined && looks;
   const nav = useRowNavigation<HTMLDivElement>({
     rows,
     isSelected: (id) => !!rows.find((r) => r.id === id)?.selected,
@@ -236,7 +236,7 @@ export const ItemList = forwardRef(function ItemList(
       ref={setRefs}
       {...containerProps}
       role={roles.container}
-      aria-multiselectable={selection === 'multi' && mode !== 'list' ? true : undefined}
+      aria-multiselectable={selectionMode === 'multiple' && mode !== 'list' ? true : undefined}
       aria-readonly={hold.focus['aria-readonly']}
       data-held={hold.held}
     >
@@ -263,7 +263,7 @@ export const ItemList = forwardRef(function ItemList(
             ].filter(Boolean).join(' ')}
             {...heldRowProps(row, hold)}
             role={roles.row}
-            aria-selected={selection && mode !== 'list' ? !!row.selected : undefined}
+            aria-selected={selectionMode && mode !== 'list' ? !!row.selected : undefined}
             ref={(el) => {
               nav.rowRef(row.id)(el);
               if (mode === 'listbox') targetRef(row.id)(el);

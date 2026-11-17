@@ -27,7 +27,7 @@ export function App(): ReactElement {
     initial: initialScene,
     doc: initialDoc,
   });
-  const selection = useSelection({ mode: 'multi', scene });
+  const selection = useSelection({ mode: 'multiple', scene });
   const modality = useModality(scene);
   useSessionPersistence(scene);
 

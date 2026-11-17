@@ -51,7 +51,7 @@ describe('domItemList', () => {
 
   it('measures rows a control height tall and draws the list', () => {
     expect(domItemList.measure({ props: { rows } }, UNBOUNDED, env).height).toBe(28 * 2 + 1);
-    render(domItemList.draw({ props: { rows, selection: 'single' } }, {}));
+    render(domItemList.draw({ props: { rows, selectionMode: 'single' } }, {}));
     expect(screen.getAllByRole('option')).toHaveLength(2);
   });
 });

@@ -55,7 +55,7 @@ function setup(scene: TestScene, aim: Record<ViewName, NodeId>) {
   const hovered: (string | null)[] = [];
   let sel!: SelectionApi;
   function Canvas() {
-    sel = useSelection({ mode: 'multi' });
+    sel = useSelection({ mode: 'multiple' });
     return (
       <SceneCanvas scene={scene} layers={{}} width={W} height={H} selection={sel} features={[pickPreset, selectPreset, movePreset]}
         enteredGroup={entered} onHover={(id) => hovered.push(id)}

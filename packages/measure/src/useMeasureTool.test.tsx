@@ -90,7 +90,7 @@ describe('measurements through <SceneCanvas>', () => {
       return made;
     });
     scene = s;
-    const selection = useSelection({ mode: 'multi', scene: s });
+    const selection = useSelection({ mode: 'multiple', scene: s });
     selectionApi = selection;
     const ambient = useMemo(() => [measurementsContribution(s as never, m)], [s, m]);
     const snap = useMemo(() => ({ sources: [measureEndSource()] }), []);

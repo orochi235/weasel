@@ -116,7 +116,7 @@ describe('intentOf', () => {
     const t2 = tally();
     fc.assert(fc.property(
       fc.record({ shift: fc.boolean(), meta: fc.boolean(), ctrl: fc.boolean() }),
-      fc.constantFrom<'single' | 'multi'>('single', 'multi', 'multi'),
+      fc.constantFrom<'single' | 'multiple'>('single', 'multiple', 'multiple'),
       fc.option(fc.oneof(fc.constantFrom(...KEYS), fc.subarray([...KEYS])), { nil: undefined }),
       fc.option(fc.constantFrom(...KEYS), { nil: undefined }),
       (mods, mode, toggle, range) => {

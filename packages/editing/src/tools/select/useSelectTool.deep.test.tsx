@@ -35,7 +35,7 @@ function harness(
 ) {
   const { result } = renderHook(() => {
     const scene = useScene<unknown, 'default', Pose>({ systemLayers: [{ id: 'default' }], initial });
-    const sel = useSelection({ mode: 'multi' });
+    const sel = useSelection({ mode: 'multiple' });
     const adapter = sceneToAdapter(scene, { selection: sel });
     const options = scenePicking
       ? { pickEvery: ({ x, y }: { x: number; y: number }) => pickWalk(scenePickSource(scene), adapterPointQuery(AUTO_POSE_DESCRIPTOR, false)(x, y, 0)) }

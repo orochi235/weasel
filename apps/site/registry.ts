@@ -175,7 +175,7 @@ const DEMO_META: DemoMeta[] = [
     id: 'multi-select',
     title: 'Multi-select',
     category: 'Selection & actions',
-    description: '`selectionOptions={{ mode: "multi" }}` on `<SceneCanvas>` — Cmd-click (Ctrl off macOS) adds an item to the selection or takes it out, and shift-click selects every item whose center lies in the box from the last one clicked. With more than one item selected, the overlay collapses to a single union AABB with corner handles, clicks inside the union drag the whole set, and the corner handles resize the union (each member is scaled via the same remapBounds path).',
+    description: '`selectionOptions={{ mode: "multiple" }}` on `<SceneCanvas>` — Cmd-click (Ctrl off macOS) adds an item to the selection or takes it out, and shift-click selects every item whose center lies in the box from the last one clicked. With more than one item selected, the overlay collapses to a single union AABB with corner handles, clicks inside the union drag the whole set, and the corner handles resize the union (each member is scaled via the same remapBounds path).',
     hint: 'Click a rect to select; <kbd>Mod</kbd>-click another to add it, or <kbd>Shift</kbd>-click to take everything between; drag the body or grab a corner.',
     load: () => import('./demos/MultiSelectDemo').then((m) => m.MultiSelectDemo),
     path: 'apps/site/demos/MultiSelectDemo.tsx',

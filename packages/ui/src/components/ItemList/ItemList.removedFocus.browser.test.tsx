@@ -28,7 +28,7 @@ function Removable({ ids }: { ids: string[] }) {
 
 /** A selectable list with no controls, drawn from `ids`. */
 const options = (ids: string[]) => (
-  <ItemList selection="single" rows={ids.map((id) => ({ id, label: id }))} containerProps={{ 'aria-label': 'Items' }} />
+  <ItemList selectionMode="single" rows={ids.map((id) => ({ id, label: id }))} containerProps={{ 'aria-label': 'Items' }} />
 );
 
 const cell = (name: string) => screen.getByRole('gridcell', { name });

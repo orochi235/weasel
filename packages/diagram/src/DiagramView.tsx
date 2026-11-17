@@ -95,7 +95,7 @@ function Inner({
     initial: specs as DiagramSpec[],
     registry,
   });
-  const selection = useSelection({ scene, mode: selectionMode === 'multiple' ? 'multi' : 'single' });
+  const selection = useSelection({ scene, mode: selectionMode });
   useSceneSync(scene, specs, { onMove, onEditContainer });
   // After the sync, so a `selected` naming a node these specs add finds it in the scene.
   const mirror = useMirroredSelection(selection, selected, onSelect, scene.subscribe);

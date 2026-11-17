@@ -23,7 +23,7 @@ export function MultiSelectDemo() {
         features={[pickPreset, movePreset, transformPreset]}
         className="ckd-canvas"
         scene={scene}
-        selectionOptions={{ mode: 'multi' }}
+        selectionOptions={{ mode: 'multiple' }}
       />
     </DemoStage>
   );

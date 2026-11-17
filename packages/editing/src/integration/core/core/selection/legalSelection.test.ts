@@ -22,7 +22,7 @@ function makeScene() {
 describe('legalSelection', () => {
   function mount() {
     const scene = makeScene();
-    const { result } = renderHook(() => useSelection({ mode: 'multi' }));
+    const { result } = renderHook(() => useSelection({ mode: 'multiple' }));
     return { scene, api: result.current, view: legalSelection(result.current, scene.selectable) };
   }
 
@@ -60,7 +60,7 @@ describe('legalSelection', () => {
 describe('settleSelection', () => {
   it('drops what an edit put out of reach, and leaves a legal selection alone', () => {
     const scene = makeScene();
-    const { result } = renderHook(() => useSelection({ mode: 'multi' }));
+    const { result } = renderHook(() => useSelection({ mode: 'multiple' }));
     const api = result.current;
     act(() => api.set(ids(['c', 'd'])));
     const before = api.get();

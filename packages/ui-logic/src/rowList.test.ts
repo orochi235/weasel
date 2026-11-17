@@ -13,10 +13,10 @@ const env: MeasureEnv = {
 describe('listMode', () => {
   it('is a grid with row controls or activation alone, a listbox with selection, else a list', () => {
     expect(listMode({})).toBe('list');
-    expect(listMode({ selection: 'single' })).toBe('listbox');
-    expect(listMode({ selection: 'multi', activatable: true })).toBe('listbox');
+    expect(listMode({ selectionMode: 'single' })).toBe('listbox');
+    expect(listMode({ selectionMode: 'multiple', activatable: true })).toBe('listbox');
     expect(listMode({ activatable: true })).toBe('grid');
-    expect(listMode({ selection: 'single', controls: true })).toBe('grid');
+    expect(listMode({ selectionMode: 'single', controls: true })).toBe('grid');
   });
 });
 

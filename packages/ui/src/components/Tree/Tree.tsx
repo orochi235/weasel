@@ -115,7 +115,7 @@ export const Tree = forwardRef(function Tree(
   };
 
   const select = (id: string, mods: PressModifiers) => {
-    const policy: SelectPolicy = { mode: selectionMode === 'multiple' ? 'multi' : 'single', ...listKeys() };
+    const policy: SelectPolicy = { mode: selectionMode === 'multiple' ? 'multiple' : 'single', ...listKeys() };
     const result = selectFrom({ ids: [...selected], anchor: anchor.current }, id, intentOf(selectModifiers(mods), policy), {
       order: order(), forceSingle: single,
     });

@@ -36,7 +36,7 @@ function mount() {
     return null;
   }
   function Host() {
-    seen.selection = useSelection({ scene, mode: 'multi', extend: 'meta', range: 'shift' });
+    seen.selection = useSelection({ scene, mode: 'multiple', extend: 'meta', range: 'shift' });
     return (
       <SceneCanvas<object, 'main', P> scene={scene} width={200} height={200} selection={seen.selection} features={[pickPreset]}>
         <Probe />

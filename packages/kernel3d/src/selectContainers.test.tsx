@@ -52,7 +52,7 @@ function setup() {
   const rig = cameraRig(camera3d);
   let sel!: SelectionApi;
   function Canvas() {
-    sel = useSelection({ mode: 'multi' });
+    sel = useSelection({ mode: 'multiple' });
     return (
       <SceneCanvas scene={scene} layers={{}} width={W} height={H} selection={sel} features={[pickPreset]}
         enteredGroup={entered} poseDescriptor={poseDescriptor} geometry={{ pickEvery }} ambient={[rig]} />

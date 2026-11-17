@@ -996,7 +996,7 @@ function Editor() {
       width={W} height={H}
       scene={scene}
       features={[drawPreset]}
-      selectionOptions={{ mode: 'multi' }}
+      selectionOptions={{ mode: 'multiple' }}
       layers={{
         scene: {
           drawOne: (node, pose) => [

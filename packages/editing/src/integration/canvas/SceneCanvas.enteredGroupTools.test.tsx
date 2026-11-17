@@ -46,7 +46,7 @@ function setup(tool: 'select' | 'rect' = 'select') {
     return null;
   }
   function Canvas() {
-    sel = useSelection({ mode: 'multi', scene });
+    sel = useSelection({ mode: 'multiple', scene });
     return (
       <SceneCanvas features={[drawPreset]} scene={scene} layers={{}} width={300} height={100} selection={sel}
         enteredGroup={entered} defaultTools={['select', 'rect']} defaultActiveTool={tool}>

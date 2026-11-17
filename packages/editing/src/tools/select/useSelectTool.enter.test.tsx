@@ -32,7 +32,7 @@ const mark = (id: string, pose: Pose, parent?: string) => ({
 function harness(initial: UseSceneOptions<unknown, 'default', Pose>['initial']) {
   const { result } = renderHook(() => {
     const scene = useScene<unknown, 'default', Pose>({ systemLayers: [{ id: 'default' }], initial });
-    const sel = useSelection({ mode: 'multi' });
+    const sel = useSelection({ mode: 'multiple' });
     const adapter = sceneToAdapter(scene, { selection: sel });
     const pickEvery = ({ x, y }: { x: number; y: number }) =>
       pickWalk(scenePickSource(scene), adapterPointQuery(AUTO_POSE_DESCRIPTOR, false)(x, y, 0));

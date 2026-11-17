@@ -52,7 +52,7 @@ function TextEditStub({ startEdit }: { startEdit: (id: string, opts?: object) =>
 function Harness({ machine, scene, startEdit, into }: {
   machine: ModeMachine; scene: DrawScene; startEdit: (id: string) => void; into: (alphaFor: (id: string) => number) => void;
 }): ReactElement {
-  const selection = useSelection({ mode: 'multi', scene, initial: [asNodeId('fx')] });
+  const selection = useSelection({ mode: 'multiple', scene, initial: [asNodeId('fx')] });
   const [pathEdit] = useState(() => modePathEdit(machine, (id) => hasEditablePath(scene.get(asNodeId(id)))));
   const [dim] = useState(() => createScopingDim({ registry: machine.registry, getTargetIds: modeScope(machine, scene) }));
   into(dim.alphaFor);

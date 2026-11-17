@@ -53,7 +53,7 @@ function createLabScene() {
 
 function ShapeBuilderTrial({ ctx }: { ctx: RenderContext<State, Config> }) {
   const scene = useTrialScene(ctx, createLabScene);
-  const selection = useSelection({ scene, mode: 'multi' });
+  const selection = useSelection({ scene, mode: 'multiple' });
   const shapeBuilder = useShapeBuilderTool({ mode: ctx.config.mode });
   const tools = useMemo(() => ({ shapeBuilder }), [shapeBuilder]);
 

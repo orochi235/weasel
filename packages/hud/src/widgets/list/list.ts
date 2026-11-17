@@ -24,7 +24,7 @@ export interface ListOptions {
   empty?: string;
   /** Whether rows are selectable, and how many at once. As with ui's `ItemList`, the list announces `selected`;
    *  what is selected stays with `onActivate`. */
-  selection?: 'single' | 'multi';
+  selectionMode?: 'single' | 'multiple';
   /** A row was pressed, or Enter or Space was pressed on it. */
   onActivate?(id: string, index: number): void;
   /** What assistive tech calls the list. */
@@ -56,10 +56,10 @@ function listTree(
   opts: ListOptions, mode: ListMode, rows: readonly HudListRow[], active: number | null,
 ): HudAccessibleNode {
   const roles = LIST_ROLES[mode];
-  const selects = opts.selection !== undefined && mode !== 'list';
+  const selects = opts.selectionMode !== undefined && mode !== 'list';
   return {
     role: roles.container, key: 'list', label: opts.accessibleName ?? opts.id,
-    ...(opts.selection === 'multi' && selects ? { multiselectable: true } : {}),
+    ...(opts.selectionMode === 'multiple' && selects ? { multiselectable: true } : {}),
     children: rows.map((r, i): HudAccessibleNode => ({
       role: roles.row, key: r.id, label: r.label,
       ...(i === active ? { active: true } : {}),
@@ -71,7 +71,7 @@ function listTree(
 export function createList(opts: ListOptions): ListWidget {
   const rev = createRevision(opts.onChange);
   let subs = createEmitter();
-  const mode = listMode({ selection: opts.selection, activatable: opts.onActivate !== undefined });
+  const mode = listMode({ selectionMode: opts.selectionMode, activatable: opts.onActivate !== undefined });
   let disposed = false;
   let hidden = false;
   let rows: readonly HudListRow[] = [];

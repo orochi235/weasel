@@ -55,7 +55,7 @@ function mount(selectable: boolean, withOwn = false) {
   const scene = makeScene();
   const seen: Seen = {};
   function Host() {
-    const own = useSelection({ scene, mode: 'multi' });
+    const own = useSelection({ scene, mode: 'multiple' });
     seen.own = own;
     return (
       <SceneCanvas<D, L, P>
@@ -147,16 +147,16 @@ describe('selectable (default)', () => {
 });
 
 describe('click policy is the selection’s mode', () => {
-  function shiftClickB(own: 'single' | 'multi' | 'internal-multi') {
+  function shiftClickB(own: 'single' | 'multiple' | 'internal-multi') {
     const scene = makeScene();
     scene.setSelection([A]);
     function Host() {
-      const selection = useSelection({ scene, mode: own === 'multi' ? 'multi' : 'single' });
+      const selection = useSelection({ scene, mode: own === 'multiple' ? 'multiple' : 'single' });
       return (
         <SceneCanvas<D, L, P>
           features={[pickPreset]} scene={scene} width={200} height={200}
           {...(own === 'internal-multi'
-            ? { selectionOptions: { mode: 'multi' } }
+            ? { selectionOptions: { mode: 'multiple' } }
             : { selection })}
         />
       );
@@ -171,7 +171,7 @@ describe('click policy is the selection’s mode', () => {
   }
 
   it('a supplied multi selection extends on shift-click', () => {
-    expect(shiftClickB('multi')).toEqual([A, B]);
+    expect(shiftClickB('multiple')).toEqual([A, B]);
   });
 
   it('a supplied single selection replaces on shift-click', () => {
@@ -187,5 +187,5 @@ describe('click policy is the selection’s mode', () => {
 void function selectionModeIsNotAProp() {
   const scene = makeScene();
   // @ts-expect-error — the selection owns click policy
-  return <SceneCanvas<D, L, P> scene={scene} width={200} height={200} selectionMode="multi" />;
+  return <SceneCanvas<D, L, P> scene={scene} width={200} height={200} selectionMode="multiple" />;
 };

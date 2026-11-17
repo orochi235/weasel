@@ -49,7 +49,7 @@ const SELECTED = [asNodeId('eel')];
 
 function PinWarpTrial({ ctx }: { ctx: RenderContext<State, Config> }) {
   const scene = useTrialScene(ctx, createLabScene);
-  const selection = useSelection({ scene, mode: 'multi', initial: SELECTED });
+  const selection = useSelection({ scene, mode: 'multiple', initial: SELECTED });
   const { tolerance } = ctx.config;
   const settings = useMemo(() => ({ tolerance }), [tolerance]);
   useHeldWarpSettings('pin');

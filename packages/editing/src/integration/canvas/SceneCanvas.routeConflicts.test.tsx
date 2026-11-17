@@ -96,7 +96,7 @@ function ConsumerHarness({ features }: { features: readonly FeaturePreset[] }) {
       data: { color: '#f00' },
     }],
   });
-  const selection = useSelection({ mode: 'multi' });
+  const selection = useSelection({ mode: 'multiple' });
   const adapter = useSceneAdapter(scene, { selection });
   const select = useSelectTool(adapter, {});
   const tools = useTools({ active: 'select', registry: { select } });

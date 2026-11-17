@@ -22,7 +22,7 @@ function heightAfterTopHandleDrag(toolId: 'select' | 'plane'): number {
   const { container } = render(
     <SceneCanvas
       features={[drawPreset]} scene={scene} layers={{}} width={128} height={128}
-      selectionOptions={{ mode: 'multi', initial: [asNodeId('a')] }}
+      selectionOptions={{ mode: 'multiple', initial: [asNodeId('a')] }}
       tools={{ plane }} onToolsCreated={(t) => { tools.current = t; }}
     />,
   );

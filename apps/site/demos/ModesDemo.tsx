@@ -150,7 +150,7 @@ export function ModesDemo() {
             className="ckd-canvas"
             backgroundFill={{ color: '#ffffff' }}
             scene={scene}
-            selectionOptions={{ mode: 'multi' }}
+            selectionOptions={{ mode: 'multiple' }}
             features={[pickPreset, movePreset, transformPreset, shapeToolKitPreset]}
             defaultTools={['select', 'hand', 'rect', 'ellipse']}
             modes={registry}

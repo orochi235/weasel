@@ -25,7 +25,7 @@ import { useStandardActions, useSelection } from '@weasel-js/editing';
 // deps a story has no document for, and stay off.
 function Actions({ selected, compound, children }: { selected: number; compound: boolean; children: ReactNode }) {
   const selection = useSelection({
-    mode: 'multi',
+    mode: 'multiple',
     initial: Array.from({ length: selected }, (_, i) => asNodeId(`n${i}`)),
   });
   useStandardActions({ selection });

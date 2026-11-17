@@ -19,7 +19,7 @@ npm install @weasel-js/select
 import { intentOf, select } from '@weasel-js/select';
 
 // A list's convention: Cmd/Ctrl toggles a row, shift ranges from the anchor.
-const policy = { mode: 'multi', toggle: ['meta', 'ctrl'], range: 'shift' } as const;
+const policy = { mode: 'multiple', toggle: ['meta', 'ctrl'], range: 'shift' } as const;
 
 let state = { ids: ['b'], anchor: 'b' };
 state = select(state, 'd', intentOf({ shift: true, meta: false, ctrl: false }, policy), {

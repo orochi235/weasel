@@ -14,7 +14,7 @@ export function ShapeToolsDemo() {
     systemLayers: [{ id: 'default' }],
     initial: [],
   });
-  const selection = useSelection({ scene, mode: 'multi' });
+  const selection = useSelection({ scene, mode: 'multiple' });
 
   return (
     <WeaselProvider>

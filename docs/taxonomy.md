@@ -724,7 +724,7 @@ under `packages/guides/src/layout/strategies/`.
 `SelectionApi` — the kit's owned selection state, produced by `useSelection`.
 Exposes `current: string[]`, `get()`, `set()`, `add()`, `remove()`, `toggle()`,
 `clear()`, `contains()`, `applyClick()` and `intentOf()`. `applyClick` applies the configured
-click policy (`'single'` replaces; `'multi'` toggles with the extend key and ranges with the
+click policy (`'single'` replaces; `'multiple'` toggles with the extend key and ranges with the
 range key); `intentOf` says which of those a click's modifiers ask for, and is what a tool
 reads before a press rather than assuming a key. The
 `adapterMethods` sub-object (`{ getSelection, setSelection }`) is designed to be
