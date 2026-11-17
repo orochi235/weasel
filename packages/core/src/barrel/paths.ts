@@ -34,7 +34,7 @@ export {
   pointInPath,
   translatePath,
   scalePathToBounds,
-  pathInPoseFrame,
+  pathInPoseBox,
   pathInWorld,
   worldEditToStorage,
   poseRotationOf,

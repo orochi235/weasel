@@ -75,7 +75,7 @@ function boxKindData(
   switch (kind) {
     case 'rect':
       // The rect path lives at the origin and the pose carries position:
-      // `pathInPoseFrame` rebases a rect path onto the pose box, so don't
+      // `pathInPoseBox` rebases a rect path onto the pose box, so don't
       // double-count the position.
       return { path: rectPath(0, 0, bounds.width, bounds.height), ...painted() };
     case 'ellipse':

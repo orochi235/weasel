@@ -1,6 +1,6 @@
 /**
  * Resolve a `units: 'bounds'` gradient into the frame its node is painted in.
- * Node painters bake the pose into their geometry (`pathInPoseFrame`) rather
+ * Node painters bake the pose into their geometry (`pathInPoseBox`) rather
  * than emitting a per-node transform, so by the time the renderer sees a
  * scene node there is no node-local space left for a gradient to refer to.
  */

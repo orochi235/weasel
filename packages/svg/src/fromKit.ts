@@ -6,7 +6,7 @@
  * the canvas shows.
  */
 import {
-  asPolygonPath, fillInPoseFrame, clipOutline, definesFrame, pathInPoseFrame, pathThroughPoseFrame, poseFrameOf, poseLinearOf, resolveFill, resolveStroke, shapePathOf, type ImageNodeData, type NodeClip, type Path, type Stroke, type Fill, type Inherit, INHERIT, nodeShapesOf, type NodeShapes,
+  asPolygonPath, fillInPoseFrame, clipOutline, definesFrame, pathInPoseBox, pathThroughPoseFrame, poseFrameOf, poseLinearOf, resolveFill, resolveStroke, shapePathOf, type ImageNodeData, type NodeClip, type Path, type Stroke, type Fill, type Inherit, INHERIT, nodeShapesOf, type NodeShapes,
 } from '@weasel-js/core';
 import { type StyledRun, type TextStyle, type TextVerticalAlign, type TextFit } from '@weasel-js/text';
 import { textFrameOf, type TextEdge, type TextShadow } from '@weasel-js/text-tools';
@@ -125,7 +125,7 @@ export function svgLeafFromKit(
     const framed: SvgGroupNode = { kind: 'group', children: [box, ...over, text], ...clip };
     return under.length > 0 ? { kind: 'group', children: [...under, framed], textFrame: true } : { ...framed, textFrame: true };
   }
-  const outline = data.path ? pathInPoseFrame(data.path, pose) : shapePathOf(data, pose);
+  const outline = data.path ? pathInPoseBox(data.path, pose) : shapePathOf(data, pose);
   if (!outline) return data.image ? svgImageFromKit(data.image, pose) : null;
   const stroke = svgStrokeFromKit(resolveStroke(data.stroke), pose);
   const node: SvgPathNode = {

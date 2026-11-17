@@ -2018,7 +2018,7 @@
     "pathExclude": "function",
     "pathFromD": "function",
     "pathFromParts": "function",
-    "pathInPoseFrame": "function",
+    "pathInPoseBox": "function",
     "pathInWorld": "function",
     "pathIntersect": "function",
     "pathIntersectsPolygon": "function",

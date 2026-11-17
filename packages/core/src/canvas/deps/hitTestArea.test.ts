@@ -82,7 +82,7 @@ describe('hitTestArea — silhouette awareness', () => {
  */
 describe('hitTestArea — geometry held on node.data', () => {
   /** Same right triangle as above, but as `data.path` under a rect pose.
-   *  `pathInPoseFrame` maps the path's own [0,0,100,100] box onto the pose. */
+   *  `pathInPoseBox` maps the path's own [0,0,100,100] box onto the pose. */
   function dataTriangleScene(): Scene<unknown, string, unknown> {
     const nodes = new Map<string, { id: string; kind: 'mark'; pose: unknown; data: unknown }>();
     nodes.set('t', {

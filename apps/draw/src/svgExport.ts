@@ -5,7 +5,7 @@
  * rides on the node so the serializer emits a `rotate` transform.
  */
 import { textFrameFields } from './svgNote';
-import { type Fill, type Path, type PlacedPage, type Scene, type Stroke, boundsOfPath, composesFrames, definesFrame, derivedDepOf, documentOf, inheritedPaintIn, withInheritedPaint, fillInPoseFrame, isAnnotationNode, pageOfNode, pathEffectOf, pathEffectParts, resolveFill, resolvePartPaint, resolveStroke, pathInPoseFrame, shapeGeneratorOf, type ShapeGenerator, worldPoses } from '@weasel-js/core';
+import { type Fill, type Path, type PlacedPage, type Scene, type Stroke, boundsOfPath, composesFrames, definesFrame, derivedDepOf, documentOf, inheritedPaintIn, withInheritedPaint, fillInPoseFrame, isAnnotationNode, pageOfNode, pathEffectOf, pathEffectParts, resolveFill, resolvePartPaint, resolveStroke, pathInPoseBox, shapeGeneratorOf, type ShapeGenerator, worldPoses } from '@weasel-js/core';
 import { layoutTextPose } from '@weasel-js/text';
 import {
   computeBounds,
@@ -69,7 +69,7 @@ function leafToObj(id: string, data: ShownDrawData, pose: WeaselDrawPose): Obj |
   if (data.path == null) return null;
   const generator = shapeGeneratorOf(data);
   return {
-    ...pathObj(id, pathInPoseFrame(data.path, pose), pose, data.fill, data.stroke),
+    ...pathObj(id, pathInPoseBox(data.path, pose), pose, data.fill, data.stroke),
     ...(generator ? toolOfGenerator(generator) : {}),
   };
 }
@@ -111,7 +111,7 @@ function placedFromFrameOf<TLayer extends string>(
   while (frame != null && !definesFrame(scene.get(frame as never)!)) frame = scene.get(frame as never)!.parent;
   const above = frame != null && composesFrames(scene.composition) ? poseOf(frame) : undefined;
   const pose = above ? scene.composition.compose(above, { x, y, width, height }) : { x, y, width, height };
-  return { path: pathInPoseFrame(path, pose), pose };
+  return { path: pathInPoseBox(path, pose), pose };
 }
 
 /** A live path effect as the paths it shows — what Expand to Paths would

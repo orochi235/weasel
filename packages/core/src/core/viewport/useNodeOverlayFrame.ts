@@ -5,7 +5,7 @@
  *
  * `toScreen` maps the node's **unrotated world box** frame, which is the
  * frame `fillInPoseFrame` resolves a `units: 'bounds'` paint into and the
- * one `pathInPoseFrame` projects geometry into. The pose's rotation and
+ * one `pathInPoseBox` projects geometry into. The pose's rotation and
  * `transform` live in this hook, not in those: a node's stored geometry is
  * in its box by definition.
  */
