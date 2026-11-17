@@ -16,12 +16,16 @@ import s from './Dialog.module.css';
 /** Props for {@link Dialog}, on top of React Aria's `ModalOverlay` props. */
 export type DialogProps = Omit<
   WithoutPortalTarget<ModalOverlayProps>,
-  'children' | 'className' | 'isOpen'
+  'children' | 'className' | 'isOpen' | 'isDismissable' | 'isKeyboardDismissDisabled'
 > &
   OverlayPortalProps &
   AppearanceProps & {
     /** Whether the dialog is open, controlled; pairs with `onOpenChange`. */
     open?: boolean;
+    /** A click outside closes it. Default false. */
+    dismissable?: boolean;
+    /** Escape does not close it. Default false. */
+    keyboardDismissDisabled?: boolean;
     /** Heading rendered in the dialog's default header. Omit when supplying
      *  a custom `header` slot via children. */
     title?: ReactNode;
@@ -55,7 +59,7 @@ export type DialogProps = Omit<
  * `react-aria-components` upstream of this component.
  *
  * Escape, focus trap, and scroll lock all come from the underlying
- * primitives. A click outside closes it only with `isDismissable`. The appearance props work as on `<PropertyPanel>`:
+ * primitives. A click outside closes it only with `dismissable`. The appearance props work as on `<PropertyPanel>`:
  * a destructive confirm is `grade="danger"`.
  */
 export function Dialog(props: DialogProps) {
@@ -70,6 +74,8 @@ export function Dialog(props: DialogProps) {
     inline = false,
     'aria-label': ariaLabel,
     open,
+    dismissable,
+    keyboardDismissDisabled,
     onOpenChange,
     portalContainer,
     stance,
@@ -116,8 +122,8 @@ export function Dialog(props: DialogProps) {
         open={open}
         defaultOpen={rest.defaultOpen}
         onOpenChange={onOpenChange}
-        isDismissable={rest.isDismissable}
-        isKeyboardDismissDisabled={rest.isKeyboardDismissDisabled}
+        dismissable={dismissable}
+        keyboardDismissDisabled={keyboardDismissDisabled}
         shouldCloseOnInteractOutside={rest.shouldCloseOnInteractOutside}
         overlayClassName={s.overlay}
         modalClassName={[s.modal, className].filter(Boolean).join(' ')}
@@ -137,6 +143,8 @@ export function Dialog(props: DialogProps) {
         <ModalOverlay
           {...rest}
           isOpen={open}
+          isDismissable={dismissable}
+          isKeyboardDismissDisabled={keyboardDismissDisabled}
           onOpenChange={onOpenChange}
           className={s.overlay}
           data-weasel-overlay=""

@@ -10,8 +10,8 @@ export interface ContainedModalProps {
   open?: boolean;
   defaultOpen?: boolean;
   onOpenChange?: (open: boolean) => void;
-  isDismissable?: boolean;
-  isKeyboardDismissDisabled?: boolean;
+  dismissable?: boolean;
+  keyboardDismissDisabled?: boolean;
   /** Whether a press on `element` outside the modal may close it. */
   shouldCloseOnInteractOutside?: (element: Element) => boolean;
   overlayClassName: string;
@@ -69,13 +69,13 @@ export function inertOutside(root: Element, keep: Element): () => void {
  * `root` holds. React Aria's modal hides the whole document and locks its scrolling, with no way to scope either.
  */
 export function ContainedModal(props: ContainedModalProps) {
-  const { root, isDismissable = false, isKeyboardDismissDisabled = false, overlayClassName, modalClassName } = props;
+  const { root, dismissable = false, keyboardDismissDisabled = false, overlayClassName, modalClassName } = props;
   const state = useOpenState(props);
   const overlay = useRef<HTMLDivElement>(null);
   const modal = useRef<HTMLDivElement>(null);
   const { overlayProps, underlayProps } = useOverlay(
     {
-      isOpen: state.isOpen, onClose: state.close, isDismissable, isKeyboardDismissDisabled,
+      isOpen: state.isOpen, onClose: state.close, isDismissable: dismissable, isKeyboardDismissDisabled: keyboardDismissDisabled,
       shouldCloseOnInteractOutside: props.shouldCloseOnInteractOutside,
     },
     modal,

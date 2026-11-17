@@ -20,7 +20,7 @@ function Page({ open, onOpenChange, keep }: { open: boolean; onOpenChange?: (ope
         {box ? (
           <OverlayPortalProvider container={box} contained>
             <Dialog open={open} onOpenChange={onOpenChange} title="Prefs"
-              {...(keep ? { isDismissable: true, shouldCloseOnInteractOutside: keep } : {})}>
+              {...(keep ? { dismissable: true, shouldCloseOnInteractOutside: keep } : {})}>
               <button type="button">inside</button>
             </Dialog>
           </OverlayPortalProvider>

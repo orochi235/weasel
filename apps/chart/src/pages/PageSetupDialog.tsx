@@ -30,7 +30,7 @@ function SetupDialog({ page, onApply, onClose }: { page: { name: string; size: P
     </>
   );
   return (
-    <Dialog open onOpenChange={(open) => { if (!open) onClose(); }} title={`Page Setup: ${page.name}`} isDismissable footer={footer}>
+    <Dialog open onOpenChange={(open) => { if (!open) onClose(); }} title={`Page Setup: ${page.name}`} dismissable footer={footer}>
       <PropertyList>
         <PropertyField kind="enum" control="select" label="Size" value={setup.paper} options={PAPERS}
           onChange={(paper) => choose(paper, setup.orientation)} />

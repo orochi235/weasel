@@ -85,7 +85,7 @@ export function ShortcutSheet({
   const parts = sheetParts(description, query, platform);
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange} isDismissable title={title} className={styles.sheet} bodyClassName={styles.body}>
+    <Dialog open={open} onOpenChange={onOpenChange} dismissable title={title} className={styles.sheet} bodyClassName={styles.body}>
       <input
         className={styles.search}
         type="search"
