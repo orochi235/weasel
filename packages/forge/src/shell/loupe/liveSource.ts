@@ -1,6 +1,6 @@
 import type { LensSource, LensSourceRequest } from '@weasel-js/labkit/loupe';
 import { createEmitter } from '@weasel-js/registry';
-import type { Globals } from '../../protocol/messages';
+import type { StoryGlobals } from '../../protocol/messages';
 import type { ForgeComparison, ResolveContext, ResolvedConditions } from './conditions';
 import type { LiveLenses, LiveRequest } from './liveLenses';
 import { trialAt } from './trialAt';
@@ -66,8 +66,8 @@ const now = (run: () => void) => run();
  */
 export function createLiveSource(
   lenses: LiveLenses,
-  resolve: (c: ForgeComparison | null, base: Globals, ctx: ResolveContext) => ResolvedConditions,
-  conditions: () => { base: Globals; ctx: ResolveContext },
+  resolve: (c: ForgeComparison | null, base: StoryGlobals, ctx: ResolveContext) => ResolvedConditions,
+  conditions: () => { base: StoryGlobals; ctx: ResolveContext },
   schedule: (run: () => void) => void = now,
 ): LiveSource {
   const measures = createEmitter();

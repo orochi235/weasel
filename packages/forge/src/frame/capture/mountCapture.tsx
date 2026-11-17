@@ -2,7 +2,7 @@ import type { Theme } from '@weasel-js/theme';
 import { Component, type ReactNode } from 'react';
 import { getOwn } from '@weasel-js/registry';
 import { createKitRoot } from '../../kitIcons';
-import type { Globals } from '../../protocol/messages';
+import type { StoryGlobals } from '../../protocol/messages';
 import { loadIndexBundle, type Loaded } from '../../story/indexBundle';
 import { isIndexId } from '../../story/indexPages';
 import { LibrariesContext, type Library, librariesFrom } from '../../story/library';
@@ -19,7 +19,7 @@ export interface MountCaptureOptions {
   importers: FrameImporters;
   setup: FrameSetup;
   /** The shell config's `labTheme`; only the shell's capture page has one. */
-  labTheme?: ((globals: Globals) => Theme) | undefined;
+  labTheme?: ((globals: StoryGlobals) => Theme) | undefined;
   /** The shell config's `libraries`, which an index page's header names and tints. */
   libraries?: readonly Library[] | undefined;
   /** The component graph an index page reads its dependencies and history from, asked for at its first capture. */

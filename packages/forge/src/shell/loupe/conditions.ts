@@ -1,7 +1,7 @@
 import type { LabMode } from '@weasel-js/labkit';
 import { withValueAtPath } from '@weasel-js/labkit/config';
 import { systemColorScheme } from '@weasel-js/react';
-import type { Globals } from '../../protocol/messages';
+import type { StoryGlobals } from '../../protocol/messages';
 import { effectiveGlobals, FOLLOW_APP, GLOBALS_KEY, type GlobalDeclarations } from '../globals';
 import { getOwn } from '@weasel-js/registry';
 
@@ -17,7 +17,7 @@ export type ForgeComparison =
 
 /** The conditions a compared render runs under. `dpr` is null where the comparison leaves it alone. */
 export interface ResolvedConditions {
-  globals: Globals;
+  globals: StoryGlobals;
   args: Readonly<Record<string, unknown>>;
   dpr: number | null;
 }
@@ -46,7 +46,7 @@ const SWAP: Readonly<Record<string, string>> = { light: 'dark', dark: 'light' };
  * The mode opposite the one `base` shows, from its declaration's `opposite` or else a swap of light and dark; `to`
  * is undefined where it has none.
  */
-export function oppositeMode(base: Globals, ctx: ResolveContext): { from: string; to: string | undefined } {
+export function oppositeMode(base: StoryGlobals, ctx: ResolveContext): { from: string; to: string | undefined } {
   const from = shownMode(String(getOwn(base, ctx.modeGlobal) ?? ''), ctx);
   const own = getOwn(ctx.declarations, ctx.modeGlobal)?.opposite;
   return { from, to: own ? own(from, base) : getOwn(SWAP, from) };
@@ -57,7 +57,7 @@ export function oppositeMode(base: Globals, ctx: ResolveContext): { from: string
  * pins included. Resolved when a lens renders rather than when the comparison is chosen, so opposite mode keeps
  * showing the opposite after the lab's mode changes; a mode with no opposite leaves the story as it is.
  */
-export function resolveComparison(c: ForgeComparison | null, base: Globals, ctx: ResolveContext): ResolvedConditions {
+export function resolveComparison(c: ForgeComparison | null, base: StoryGlobals, ctx: ResolveContext): ResolvedConditions {
   if (c === null) return { globals: base, args: NO_ARGS, dpr: null };
   if (c.kind === 'opposite-mode') {
     const { to } = oppositeMode(base, ctx);
@@ -80,7 +80,7 @@ function globalLabel(key: string, value: string, declarations: GlobalDeclaration
 
 /** What a lens's comparison is named against: the globals it resolves over, and whether the lens shows Pixels. */
 export interface DescribeAgainst {
-  base: Globals;
+  base: StoryGlobals;
   ctx: ResolveContext;
   /** False on a lens that shows no Pixels, where a DPR comparison changes nothing. */
   pixels?: boolean;
@@ -118,7 +118,7 @@ export const withArgs = (config: unknown, args: Readonly<Record<string, unknown>
 
 /** The lab as a lens reads it when it renders: its globals, its mode, and the declarations behind them. */
 export interface LabConditions {
-  labValues: Globals;
+  labValues: StoryGlobals;
   mode: LabMode;
   declarations: GlobalDeclarations;
   modeGlobal: string;

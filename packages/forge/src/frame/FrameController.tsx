@@ -5,7 +5,7 @@ import type { Channel } from '../protocol/channel';
 import {
   type FaultPhase,
   type FromFrame,
-  type Globals,
+  type StoryGlobals,
   stableStringify,
   type ToFrame,
 } from '../protocol/messages';
@@ -26,7 +26,7 @@ export interface FrameSetup {
   decorators?: Decorator[];
   /** Applies globals to a target: theme mode, fonts. The target is a frame document's root, or one story's host in
    *  the workshop document, so a rule the setup writes goes through `target.style` under `target.scope`. */
-  applyGlobals?: (globals: Globals, target: GlobalsTarget) => void;
+  applyGlobals?: (globals: StoryGlobals, target: GlobalsTarget) => void;
   /**
    * The elements a CSS variable override is declared on; `:root` by default. An override has to be declared on
    * whichever element declares the token itself — a theme wrapper, say — or that element's own value wins.
@@ -101,7 +101,7 @@ export function startFrame({ story, channel, container, setup = {} }: StartFrame
   let rendered = false;
   let config: unknown;
   let state: unknown = null;
-  let globals: Globals = {};
+  let globals: StoryGlobals = {};
   let answeredKey: string | null = null;
   let resetKey = 0;
   let seq = 0;

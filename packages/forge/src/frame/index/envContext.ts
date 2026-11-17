@@ -1,5 +1,5 @@
 import { createContext, useContext } from 'react';
-import type { Globals } from '../../protocol/messages';
+import type { StoryGlobals } from '../../protocol/messages';
 import type { ApiTable } from '../../story/api';
 import type { ComponentDeps, Decorator, LoadedStory } from '../../story/types';
 
@@ -22,7 +22,7 @@ export interface IndexEnv {
   dependencies?: ComponentDeps;
   /** The component's props and ref: null where forge found no component, absent where it read none or for a gallery. */
   api?: ApiTable | null;
-  globals: Globals;
+  globals: StoryGlobals;
   /** The frame config's, outermost. */
   decorators: readonly Decorator[];
   open: (id: string) => void;

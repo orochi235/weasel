@@ -1,6 +1,6 @@
 import { memo } from 'react';
 import { StoryHost } from '../frame/StoryHost';
-import type { Globals } from '../protocol/messages';
+import type { StoryGlobals } from '../protocol/messages';
 import type { Decorator, LoadedStory, StoryContext } from '../story/types';
 
 export interface StoryBodyProps {
@@ -9,7 +9,7 @@ export interface StoryBodyProps {
   setConfig: StoryContext['setConfig'];
   state: unknown;
   setState: StoryContext['setState'];
-  globals: Globals;
+  globals: StoryGlobals;
   decorators: readonly Decorator[];
   resetKey: number;
   onError: (error: unknown) => void;

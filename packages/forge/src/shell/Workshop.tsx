@@ -10,7 +10,7 @@ import type { ShellConfig } from '../config';
 import { DEFAULT_TITLE } from '../title';
 import type { FrameSetup } from '../frame/FrameController';
 import type { FrameImporters } from '../frame/mountFrame';
-import { type Globals, stableStringify } from '../protocol/messages';
+import { type StoryGlobals, stableStringify } from '../protocol/messages';
 import { indexEntries } from '../story/indexPages';
 import { LibrariesContext, librariesFrom } from '../story/library';
 import type { DepGraph, IndexEntry } from '../story/types';
@@ -166,12 +166,12 @@ export function Workshop(props: WorkshopProps) {
   );
   const reload = registry.reload;
   useEffect(() => changes?.subscribe(reload), [changes, reload]);
-  const [labValues, setLabValues] = useState<Globals>(() => labGlobals(declarations, undefined));
+  const [labValues, setLabValues] = useState<StoryGlobals>(() => labGlobals(declarations, undefined));
   const themeFor = config?.labTheme;
   const labTheme = useMemo(() => themeFor?.(labValues), [themeFor, labValues]);
   const [infoOpen, setInfoOpen] = useState(false);
   const reportLabValues = useCallback(
-    (next: Globals) => setLabValues((prev) => (stableStringify(prev) === stableStringify(next) ? prev : next)),
+    (next: StoryGlobals) => setLabValues((prev) => (stableStringify(prev) === stableStringify(next) ? prev : next)),
     [],
   );
   const infoCommand = useMemo(() => infoItem(() => setInfoOpen(true)), []);

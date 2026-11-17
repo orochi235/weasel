@@ -1,5 +1,5 @@
 import { getOwn } from '@weasel-js/registry';
-import type { Globals } from '../../protocol/messages';
+import type { StoryGlobals } from '../../protocol/messages';
 import type { IndexBundle } from '../../story/indexBundle';
 import { isGallery } from '../../story/tags';
 import type { Decorator, DepGraph } from '../../story/types';
@@ -9,7 +9,7 @@ import type { IndexEnv } from './IndexPage';
 export interface IndexEnvInputs {
   /** The component graph, or null where it has not arrived or the document has none. */
   graph: DepGraph | null;
-  globals: Globals;
+  globals: StoryGlobals;
   /** The frame config's, outermost. */
   decorators: readonly Decorator[];
   open: (id: string) => void;

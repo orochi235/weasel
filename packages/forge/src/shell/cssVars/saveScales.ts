@@ -1,7 +1,7 @@
 import type { TokenScaleRule } from '@weasel-js/labkit';
 import { isByAxis, type AxisDefs, type Selection, type ThemeDefinition } from '@weasel-js/theme';
 import { getOwn, setOwn } from '@weasel-js/registry';
-import type { Globals } from '../../protocol/messages';
+import type { StoryGlobals } from '../../protocol/messages';
 
 /** A scale as the panel left it: what a save writes into the definition. */
 export interface ScaleEdit {
@@ -30,7 +30,7 @@ const RULE_KEYS = { factors: 'factors', ratio: 'ratio', step: 'step' } as const;
  * axis no global names renders at its default. A global holding something the axis does not offer (`mode: 'auto'`)
  * leaves that axis out, because which value it resolved to is not known here.
  */
-export function selectionFor(axes: AxisDefs, globals: Globals): Selection {
+export function selectionFor(axes: AxisDefs, globals: StoryGlobals): Selection {
   const out: Record<string, string> = {};
   for (const [axis, def] of Object.entries(axes)) {
     const value = getOwn(globals, axis);

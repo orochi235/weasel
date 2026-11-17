@@ -7,7 +7,7 @@ import { OverlayPortalProvider } from '@weasel-js/ui/portal-host';
 import { type CSSProperties, type ReactNode, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { useHostConditions } from '../../shell/hostConditions';
 import { LAB_DENSITY } from '../../shell/labDensity';
-import type { Globals } from '../../protocol/messages';
+import type { StoryGlobals } from '../../protocol/messages';
 import type { Loaded } from '../../story/indexBundle';
 import type { DepGraph, LoadedStory, StoryContext } from '../../story/types';
 import { holdAt } from '@weasel-js/clock';
@@ -29,7 +29,7 @@ export interface CaptureViewProps {
   payload: CapturePayload;
   setup: FrameSetup;
   /** The shell config's `labTheme`, which the workshop's lab is themed by. */
-  labTheme?: ((globals: Globals) => Theme) | undefined;
+  labTheme?: ((globals: StoryGlobals) => Theme) | undefined;
   /** Called once the story has painted with its fonts, so a screenshot taken then shows it settled. */
   onRendered: () => void;
 }

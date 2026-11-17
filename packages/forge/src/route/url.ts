@@ -1,6 +1,6 @@
 import { type ConfigSchema, type ConfigShape, isConfigBranch, valueAtPath } from '@weasel-js/labkit/config';
 import { isPlainObject } from '@weasel-js/core';
-import { type Globals, stableStringify } from '../protocol/messages';
+import { type StoryGlobals, stableStringify } from '../protocol/messages';
 import { setOwn, getOwn } from '@weasel-js/registry';
 import { GLOBALS_KEY } from '../shell/globals';
 
@@ -242,7 +242,7 @@ export function storyHref(
 const PIN_PREFIX = `${GLOBALS_KEY}.`;
 
 /** The params pinning a trial's globals to `globals`. Not knobs: they are read once, as the story opens, and dropped. */
-export function pinParams(globals: Globals): Record<string, string> {
+export function pinParams(globals: StoryGlobals): Record<string, string> {
   const params: Record<string, string> = {};
   for (const [key, value] of Object.entries(globals)) if (typeof value === 'string') params[`${PIN_PREFIX}${key}`] = value;
   return params;

@@ -11,7 +11,7 @@ import {
 } from 'react';
 import { createPortal } from 'react-dom';
 import type { FrameSetup } from '../../frame/FrameController';
-import type { Globals, Layout } from '../../protocol/messages';
+import type { StoryGlobals, StoryLayout } from '../../protocol/messages';
 import type { ClockHandle } from '@weasel-js/clock';
 import { ClockContext } from '../../timeline/context';
 import { effectiveGlobals, GLOBALS_KEY } from '../globals';
@@ -25,12 +25,12 @@ import { scrollerOf } from './trialAt';
 /** Props for `LiveCopies`: what a trial renders its own content with, which every copy of it shares. */
 export interface LiveCopiesProps {
   trialId: string | null;
-  layout: Layout;
+  layout: StoryLayout;
   setup: FrameSetup;
   /** The trial's whole config, read for its `$globals` pins. */
   trialConfig: unknown;
   /** One copy's content, under the copy's globals and with the lens's args to write over the trial's config. */
-  children: (globals: Globals, args: Readonly<Record<string, unknown>>) => ReactNode;
+  children: (globals: StoryGlobals, args: Readonly<Record<string, unknown>>) => ReactNode;
 }
 
 /** Props for `StoryCopy`. */
@@ -39,7 +39,7 @@ export interface StoryCopyProps {
   body: Omit<StoryBodyProps, 'globals'>;
   /** The trial's clock; a copy reads it and never drives it. */
   clock: ClockHandle | null;
-  globals: Globals;
+  globals: StoryGlobals;
   args: Readonly<Record<string, unknown>>;
 }
 
@@ -80,12 +80,12 @@ function AfterCommit({ sync }: { sync: () => void }) {
 }
 
 /** The globals a lens's copy renders under: the comparison resolved over the trial's own, pins included. */
-function useCopyGlobals(request: LiveRequest, trialConfig: unknown): Globals {
+function useCopyGlobals(request: LiveRequest, trialConfig: unknown): StoryGlobals {
   const labGlobals = useContext(StoryGlobalsContext);
   const pins = (trialConfig as Record<string, unknown> | null | undefined)?.[GLOBALS_KEY];
   const own = useMemo(() => effectiveGlobals(labGlobals, pins), [labGlobals, pins]);
   const { compare, ctx } = request;
-  return useMemo<Globals>(() => resolveComparison(compare, own, ctx).globals, [own, compare, ctx]);
+  return useMemo<StoryGlobals>(() => resolveComparison(compare, own, ctx).globals, [own, compare, ctx]);
 }
 
 /**
@@ -190,7 +190,7 @@ export function LiveCopies(props: LiveCopiesProps) {
 export interface LensFrameCopy {
   id: string;
   main: HTMLElement;
-  globals: Globals;
+  globals: StoryGlobals;
   args: Readonly<Record<string, unknown>>;
   factor: number;
 }

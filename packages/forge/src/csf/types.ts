@@ -10,7 +10,7 @@
  * reads. A field forge ignores is a field a story should not be writing.
  */
 import type { ComponentType, ReactNode } from 'react';
-import type { Globals } from '../protocol/messages';
+import type { StoryGlobals } from '../protocol/messages';
 import type { ArgType } from './argsToSchema';
 
 /** The props a story's args describe: a component type resolves to its props,
@@ -20,7 +20,7 @@ export type ArgsOf<T> = T extends ComponentType<infer P> ? P : T;
 /** What a `render`, `decorators` entry or `play` is handed alongside the args. */
 export interface CsfStoryContext {
   args: Record<string, unknown>;
-  globals: Globals;
+  globals: StoryGlobals;
   parameters: Record<string, unknown>;
   title: string;
   name: string;

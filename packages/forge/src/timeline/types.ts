@@ -11,7 +11,7 @@ export interface TimelineSpec {
 }
 
 /** The span a playhead may stand in, in ms. */
-export interface Span {
+export interface TimelineSpan {
   start: number;
   end: number;
 }
