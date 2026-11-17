@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { normalizeHex, parseColor, rgbaToHex, getAlpha01, withAlpha01 } from '@weasel-js/paint';
+import { normalizeHex, parseColor, rgbaToHex, hexAlpha, withAlpha01 } from '@weasel-js/paint';
 import { OpacityRange } from '../OpacityRange/OpacityRange';
 import { ColorChip, useRecordApplied, type AppliedColor } from './ColorChip';
 import s from './ColorField.module.css';
@@ -63,7 +63,7 @@ export function ColorField(props: ColorFieldProps) {
   const { value, mixed = false, unset = false, alpha = false, alphaDisabled = false, onInput, onChange, onCancel, id, className } = props;
   const hex8 = hex8Of(value ?? '#000000');
   const rgb6 = hex8.slice(0, 7);
-  const alpha01 = getAlpha01(hex8);
+  const alpha01 = hexAlpha(hex8);
 
   // The chip holds the color through a pick; this is the pick it last reported, until it commits, so the
   // opacity slider composes against it and an indeterminate chip stops looking indeterminate once edited.

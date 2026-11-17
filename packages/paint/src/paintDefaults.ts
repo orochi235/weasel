@@ -6,12 +6,12 @@
  *  these rather than re-declaring the literals.
  *
  *  All values are `#rrggbbaa` so they round-trip through the kit's hex8 alpha
- *  helpers (`toHex8`, `getAlpha01`) without ambiguity.
+ *  helpers (`toHex8`, `hexAlpha`) without ambiguity.
  */
 import { colorLiteralToHex, hexToColorLiteral, resolvePaletteColor, type ColorLiteral, type Palette } from './palette';
 import type { CommandStroke, SolidPaint } from './commandPaint';
 import type { Paint, Stroke } from './paint';
-import { getAlpha01, toHex8 } from './hexAlpha';
+import { hexAlpha, toHex8 } from './hexAlpha';
 
 /** Default fill paint for shapes and the fill action — opaque white. */
 export const DEFAULT_FILL_COLOR = '#ffffffff';
@@ -59,7 +59,7 @@ export const GHOST_STROKE_COLOR: string = paletteColorAt(0);
 export function solid(color: string): SolidPaint {
   if (!hasHexAlpha(color)) return { color };
   const hex8 = toHex8(color);
-  const a = getAlpha01(hex8);
+  const a = hexAlpha(hex8);
   const rgb = hex8.slice(0, 7);
   return a === 1 ? { color: rgb } : { color: rgb, opacity: a };
 }

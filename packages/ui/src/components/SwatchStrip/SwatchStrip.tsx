@@ -1,5 +1,5 @@
 import { useId, useState, type ReactElement } from 'react';
-import { getAlpha01 } from '@weasel-js/paint';
+import { hexAlpha } from '@weasel-js/paint';
 import type { RunAlign } from '@weasel-js/geom';
 import { useRun } from '../Run';
 import { SwatchGrid, swatchId, type SwatchChange, type SwatchGridOption } from '../SwatchGrid';
@@ -56,7 +56,7 @@ export interface SwatchStripProps extends HoldProps {
 export function describeColor(color: string): string {
   const c = normalizeRecentColor(color) ?? color;
   if (!c.startsWith('#') || c.length !== 9) return c;
-  const alpha = Math.round(getAlpha01(c) * 100);
+  const alpha = Math.round(hexAlpha(c) * 100);
   return alpha === 100 ? c.slice(0, 7) : `${c.slice(0, 7)}, ${alpha}% opacity`;
 }
 

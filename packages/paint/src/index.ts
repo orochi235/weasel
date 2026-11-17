@@ -138,7 +138,7 @@ export {
   type Palette,
   type PaletteEntry,
 } from './palette';
-export { toHex8, getAlpha01, withAlpha01, mergeAlphaFromPrev } from './hexAlpha';
+export { toHex8, hexAlpha, withAlpha01, mergeAlphaFromPrev } from './hexAlpha';
 export {
   DEFAULT_FILL_COLOR,
   DEFAULT_STROKE_COLOR,
