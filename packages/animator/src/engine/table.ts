@@ -201,7 +201,8 @@ export function createTable(host: TableHost): Table {
       roster.clear();
       cleared();
       for (const a of retired) fireCompletion(a.id);
-      if (hub.watched) for (const a of retired) hub.emit({ type: 'cancel', animation: infoOf(a) });
+      // One reported ended already, from an `onDone` that called this, was not canceled.
+      if (hub.watched) for (const a of retired) if (!a.ended) hub.emit({ type: 'cancel', animation: infoOf(a) });
     },
     watchCompletion,
   };

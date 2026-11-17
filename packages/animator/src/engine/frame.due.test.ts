@@ -193,6 +193,16 @@ describe('a frame and the animations it ticks', () => {
     expect(r.state.asked).toBe(1);
   });
 
+  it('reports no cancel from cancelAll for one that has ended already', () => {
+    const r = rig();
+    const events: string[] = [];
+    const stop = r.hub.add((e) => { events.push(e.type); });
+    r.start('a', 0, { tick: () => { r.table.reportEnd(1); r.table.cancelAll(() => {}); return true; } });
+    r.tick(16);
+    stop();
+    expect(events.filter((t) => t === 'cancel')).toEqual([]);
+  });
+
   it('never ticks one whose `due` is Infinity, and says the frame loop may sleep when it is idle', () => {
     const r = rig();
     r.start('held', 0, { due: Infinity, idle: true });
