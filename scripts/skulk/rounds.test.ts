@@ -10,7 +10,7 @@ afterEach(() => {
 });
 
 /** A repo root holding `docs/audits/round-<N>/<id>/area.json` for each pass. */
-const fixture = (passes: { round: number; id: string; distinct: number; files: string[]; commit?: string; fixCommits?: string[] }[]) => {
+const fixture = (passes: { round: number; id: string; distinct: number; files: string[]; commit?: string; fixCommits?: string[]; incomplete?: string[] }[]) => {
   const root = mkdtempSync(join(tmpdir(), 'skulk-'));
   dirs.push(root);
   for (const { round, ...pass } of passes) {
@@ -49,6 +49,16 @@ describe('pickAreas', () => {
     ]);
     const picked = pickAreas({ areas: ['a', 'b', 'c', 'd'].map((id) => area(id)), passes: readPasses(root), touched: never, count: 3 }).picked;
     expect(picked).toEqual(['c', 'd', 'b']);
+  });
+
+  it('picks an area again as never audited when its only pass had a reviewer that never ran', () => {
+    const root = fixture([
+      { round: 31, id: 'a', distinct: 0, files: ['a.ts'] },
+      { round: 34, id: 'b', distinct: 7, files: ['b.ts'], incomplete: ['B'] },
+    ]);
+    const passes = readPasses(root);
+    expect(passes.has('b')).toBe(false);
+    expect(pickAreas({ areas: [area('a'), area('b')], passes, touched: never, count: 1 }).picked).toEqual(['b']);
   });
 
   it('skips an area settled by two quiet passes on unchanged files, until its files change', () => {

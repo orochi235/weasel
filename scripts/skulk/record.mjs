@@ -4,6 +4,7 @@ const num = (n, width = 5) => (n === undefined ? '-' : n.toFixed(1)).padStart(wi
 const mtok = (n) => `${(n / 1e6).toFixed(2)}M`;
 const usd = (n) => `$${n.toFixed(2)}`;
 const ceiling = (s) => (s.budgetHit?.length ? `; ${s.budgetHit.join(', ')} stopped at its dollar ceiling` : '');
+const unrun = (s) => (s.incomplete?.length ? `; reviewer ${s.incomplete.join(' and ')} never ran, so no estimate` : '');
 
 /** The README of round `round`, from each area's summary (`area.json`) and what became of its branch. */
 export const roundReadme = ({ round, commit, date, areas, outcomes }) => {
@@ -11,7 +12,7 @@ export const roundReadme = ({ round, commit, date, areas, outcomes }) => {
     const fate = outcomes[s.id] ?? '';
     const prev = s.previous ? `${num(s.previous.unfound)} (r${s.previous.round})` : '-';
     const fresh = s.newCode ? `${s.newCode.findings} in ${s.newCode.changedFiles} changed` : '-';
-    return `| \`${s.id}\` | ${s.files.length} | ${s.read.A}/${s.read.B} | ${s.a} | ${s.b} | ${s.m} | ${s.distinct} | ${num(s.chapman)} | ${num(s.unfound)} | ${prev} | ${fresh} | ${s.patches} | ${s.questions} | ${mtok(s.jobs.tokens)} | ${usd(s.jobs.costUsd)} | ${fate}${ceiling(s)} |`;
+    return `| \`${s.id}\` | ${s.files.length} | ${s.read.A}/${s.read.B} | ${s.a} | ${s.b} | ${s.m} | ${s.distinct} | ${num(s.chapman)} | ${num(s.unfound)} | ${prev} | ${fresh} | ${s.patches} | ${s.questions} | ${mtok(s.jobs.tokens)} | ${usd(s.jobs.costUsd)} | ${fate}${ceiling(s)}${unrun(s)} |`;
   });
   const total = (k) => areas.reduce((sum, s) => sum + s[k], 0);
   return [
@@ -42,7 +43,7 @@ export const roundReadme = ({ round, commit, date, areas, outcomes }) => {
 export const hardeningRow = ({ round, date, areas }) => {
   const found = areas.reduce((s, a) => s + a.distinct, 0);
   const fixed = areas.reduce((s, a) => s + a.patches, 0);
-  const each = areas.map((a) => `${a.id} ${a.a}/${a.b}/${a.m}, est. ${a.chapman.toFixed(1)}`).join('; ');
+  const each = areas.map((a) => `${a.id} ${a.a}/${a.b}/${a.m}, ${a.chapman === undefined ? 'incomplete' : `est. ${a.chapman.toFixed(1)}`}`).join('; ');
   return `| ${date} | ${areas.map((a) => a.id).join(', ')} (audit round ${round}, nightly) | blind pairs | 0 | ${found} / ${fixed} commits | `
     + `Run by \`scripts/skulk\` with one file list per area; raw lists in \`docs/audits/round-${round}/\`. A/B/shared and Chapman's estimate per area: ${each}. |`;
 };

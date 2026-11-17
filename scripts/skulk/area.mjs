@@ -17,6 +17,10 @@ const fill = (text, vars) => text.replace(/\{\{(\w+)\}\}/g, (_, k) => String(var
 const readIf = (path) => (existsSync(path) ? readFileSync(path, 'utf8') : '');
 const minutesSince = (t0) => (Date.now() - t0) / 60_000;
 const round1 = (n) => Number(n.toFixed(1));
+const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+/** How many times a job that never reached its node is launched before its area is recorded incomplete. */
+const LAUNCHES = 3;
+const RELAUNCH_WAIT_MS = 60_000;
 const cents = (n) => Number(n.toFixed(2));
 
 /**
@@ -25,7 +29,7 @@ const cents = (n) => Number(n.toFixed(2));
  * `ctx.usage`, which counts it against the night and logs it).
  */
 const dispatch = async (ctx, area, role, spec) => {
-  for (;;) {
+  for (let launches = 1; ; launches++) {
     const slot = await ctx.acquire(role === 'fix' ? 'fix' : 'review');
     const t0 = Date.now();
     let result;
@@ -39,11 +43,18 @@ const dispatch = async (ctx, area, role, spec) => {
       ctx.say(`${role} ${area.id} refused by ${slot.node}, trying another node`);
       continue;
     }
+    const exit = readIf(join(spec.to, 'exit')).trim();
+    // No exit file: the job never ran on the node, so there is no reply to read, only another launch to try.
+    if (result.status !== 0 && !exit && launches < LAUNCHES) {
+      ctx.say(`${role} ${area.id} did not launch on ${slot.node} (launch ${launches} of ${LAUNCHES}); trying again`);
+      await sleep(RELAUNCH_WAIT_MS);
+      continue;
+    }
     const { reply, record } = parseEnvelope(readIf(join(spec.to, 'claude.json')));
-    const usage = { area: area.id, role, node: slot.node, ...record, exit: readIf(join(spec.to, 'exit')).trim() };
+    const usage = { area: area.id, role, node: slot.node, ...record, exit };
     ctx.usage(usage);
     if (usage.budgetHit) ctx.say(`${role} ${area.id} stopped at its $${ctx.budget[role.startsWith('review') ? 'review' : role]} ceiling`);
-    return { status: result.status, node: slot.node, minutes: minutesSince(t0), reply, usage };
+    return { status: result.status, launched: Boolean(exit), node: slot.node, minutes: minutesSince(t0), reply, usage };
   }
 };
 
@@ -57,12 +68,13 @@ const review = async (ctx, area, side) => {
   const text = readIf(join(to, 'findings.md')) || run.reply;
   const findings = parseFindings(text);
   const read = parseFilesRead(text).filter((f) => area.files.includes(f)).length;
+  if (!run.launched) ctx.say(`review ${area.id} ${side}: never launched; the area is recorded incomplete`);
   ctx.progress('review', `${area.id} ${side} on ${run.node}: ${findings.length} findings, ${read}/${area.files.length} files read, ${run.minutes.toFixed(1)} min, ${(run.usage.totalTokens / 1e6).toFixed(2)}M tokens${run.usage.budgetHit ? ', hit its ceiling' : ''}`, ctx.total.review);
   return { text, findings, read, ...run };
 };
 
 const match = async (ctx, area, a, b) => {
-  if (a.findings.length === 0 || b.findings.length === 0) return { pairs: [], minutes: 0 };
+  if (!a.launched || !b.launched || a.findings.length === 0 || b.findings.length === 0) return { pairs: [], minutes: 0 };
   writeFileSync(join(ctx.frozen, JOB_IN, area.id, 'match.md'), matchPrompt(brief('matcher.md'), a.findings, b.findings));
   const to = jobDir(ctx.nightDir, area.id, 'match');
   const run = await dispatch(ctx, area, 'match', {
@@ -120,7 +132,9 @@ export const runArea = async (ctx, area, { previous, changedSince }) => {
   writeFileSync(join(dir, 'match.json'), `${JSON.stringify({ pairs: matched.pairs, a: claims(a.findings), b: claims(b.findings) }, null, 1)}\n`);
   const [na, nb, m] = [a.findings.length, b.findings.length, matched.pairs.length];
   const distinct = na + nb - m;
-  const estimate = chapman(na, nb, m);
+  // A side that never ran found nothing because it looked at nothing; an estimate from it would be invented.
+  const incomplete = [a, b].flatMap((r, i) => (r.launched ? [] : [i === 0 ? 'A' : 'B']));
+  const estimate = incomplete.length ? undefined : chapman(na, nb, m);
   const fixed = distinct > 0 ? await fix(ctx, area) : undefined;
   if (fixed?.report) writeFileSync(join(dir, 'fix.md'), fixed.report);
   if (fixed?.mbox) copyFileSync(fixed.mbox, join(dir, 'fix.mbox'));
@@ -129,7 +143,8 @@ export const runArea = async (ctx, area, { previous, changedSince }) => {
   const spent = totals(records);
   return {
     id: area.id, commit: ctx.commit, date: ctx.date, files: area.files,
-    a: na, b: nb, m, distinct, chapman: round1(estimate), unfound: round1(estimate - distinct),
+    a: na, b: nb, m, distinct,
+    ...(estimate === undefined ? { incomplete } : { chapman: round1(estimate), unfound: round1(estimate - distinct) }),
     read: { A: a.read, B: b.read },
     newCode: previous ? { since: previous.round, changedFiles: changed.size, findings: [...a.findings, ...b.findings].filter((f) => citedPaths(f).some((p) => changed.has(p))).length } : undefined,
     previous: previous ? { round: previous.round, chapman: previous.chapman, unfound: previous.unfound } : undefined,

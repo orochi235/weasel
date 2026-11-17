@@ -25,6 +25,8 @@ export const readPasses = (root) => {
       const at = join(roundDir, area.name, 'area.json');
       if (!area.isDirectory() || !existsSync(at)) continue;
       const pass = { round, ...JSON.parse(readFileSync(at, 'utf8')) };
+      // A pass a reviewer never ran is no pass: the area comes back as if it had not been audited.
+      if (pass.incomplete?.length) continue;
       if (!passes.has(pass.id)) passes.set(pass.id, []);
       passes.get(pass.id).push(pass);
     }

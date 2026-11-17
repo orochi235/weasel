@@ -47,8 +47,9 @@
  "b": 0,
  "m": 0,
  "distinct": 9,
- "chapman": 9,
- "unfound": 0,
+ "incomplete": [
+  "B"
+ ],
  "read": {
   "A": 39,
   "B": 0
