@@ -7,11 +7,13 @@ type Listener = (tabId: number, info: { status?: string }) => void;
 function fakeApi() {
   let listener: Listener | undefined;
   let installed: (() => void) | undefined;
+  let removed: ((tabId: number) => void) | undefined;
   const setBadgeText = vi.fn();
   const api = {
     runtime: { onInstalled: { addListener: (l: () => void) => { installed = l; }, removeListener: () => {} } },
     tabs: {
       onUpdated: { addListener: (l: Listener) => { listener = l; }, removeListener: () => {} },
+      onRemoved: { addListener: (l: (tabId: number) => void) => { removed = l; }, removeListener: () => {} },
       query: async () => [{ id: 1 }, {}, { id: 2 }],
     },
     action: { setBadgeText },
@@ -20,6 +22,7 @@ function fakeApi() {
     api, setBadgeText,
     update: (tabId: number, status: string) => listener!(tabId, { status }),
     install: () => installed!(),
+    remove: (tabId: number) => removed!(tabId),
   };
 }
 
@@ -63,5 +66,18 @@ describe('watchBadges', () => {
     expect(second!()).toBe(true);
     update(3, 'loading');
     expect(second!()).toBe(false);
+  });
+
+  it('cancels the probes of a tab closed before they ran, and leaves the badge of one closed mid-probe', () => {
+    const { api, update, remove } = fakeApi();
+    const refresh = vi.fn();
+    watchBadges(api, refresh);
+    update(3, 'complete');
+    vi.advanceTimersByTime(0);
+    const [current] = refresh.mock.calls.map(([, c]) => c as () => boolean);
+    remove(3);
+    vi.advanceTimersByTime(BADGE_DELAYS.at(-1)!);
+    expect(refresh).toHaveBeenCalledTimes(1);
+    expect(current!()).toBe(false);
   });
 });

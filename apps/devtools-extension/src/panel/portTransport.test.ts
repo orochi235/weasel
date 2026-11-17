@@ -66,6 +66,25 @@ describe('the panel’s port transport', () => {
     expect(backgrounds[1]!.received.at(-1)).toMatchObject({ requestId: 3 });
   });
 
+  it('settles no later client’s request with a late answer to an earlier one', () => {
+    const { transport, backgrounds } = setup();
+    const heard: unknown[] = [];
+    transport.onMessage((m) => heard.push(m));
+    const ask = (requestId: number) => transport.send({ type: 'get-state', protocol: PROTOCOL, requestId, rootId: 'root-1' });
+    transport.send(yo);
+    ask(1);
+    const first = (backgrounds[0]!.received.at(-1) as { requestId: number }).requestId;
+    transport.send({ type: 'bye', protocol: PROTOCOL });
+    // The next panel mount's client numbers from 1 again.
+    transport.send(yo);
+    ask(1);
+    const second = (backgrounds[0]!.received.at(-1) as { requestId: number }).requestId;
+    expect(second).not.toBe(first);
+    backgrounds[0]!.postMessage({ type: 'result', protocol: PROTOCOL, requestId: first, result: 'stale' });
+    backgrounds[0]!.postMessage({ type: 'result', protocol: PROTOCOL, requestId: second, result: 'fresh' });
+    expect(heard).toEqual([{ type: 'result', protocol: PROTOCOL, requestId: 1, result: 'fresh' }]);
+  });
+
   it('does not say yo again after it said bye', () => {
     const { transport, backgrounds } = setup();
     transport.send(yo);

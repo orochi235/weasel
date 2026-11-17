@@ -26,7 +26,8 @@ export function manifestFor(target: Target, kitVersion: string): Record<string, 
     // `scripting` reaches tabs that loaded before the extension did, and reads a page's hook for the toolbar button.
     permissions: ['scripting'],
     host_permissions: ['<all_urls>'],
-    content_scripts: [{ matches: ['<all_urls>'], js: ['content.js'], all_frames: true }],
+    // An `about:blank` or `srcdoc` iframe matches no URL pattern, and weasel can run in one.
+    content_scripts: [{ matches: ['<all_urls>'], js: ['content.js'], all_frames: true, match_about_blank: true }],
     ...(target === 'chrome'
       ? { background: { service_worker: 'background.js' } }
       : {

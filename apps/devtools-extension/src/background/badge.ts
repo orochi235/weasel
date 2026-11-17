@@ -15,6 +15,8 @@ type Refresh = (tabId: number, current: () => boolean) => unknown;
 export function watchBadges(api: ExtensionApi, refresh: Refresh = (tabId, current) => refreshBadge(api, tabId, current)): void {
   // Per tab, so a probe that answers after a later one, or after the tab navigated, leaves the badge alone.
   const probes = new Map<number, Latest>();
+  // Per tab, so a closed tab's pending probes are cancelled rather than re-adding it to `probes`.
+  const pending = new Map<number, Set<ReturnType<typeof setTimeout>>>();
   const probe = (tabId: number): void => {
     let latest = probes.get(tabId);
     if (!latest) probes.set(tabId, (latest = createLatest()));
@@ -23,12 +25,23 @@ export function watchBadges(api: ExtensionApi, refresh: Refresh = (tabId, curren
   api.tabs?.onUpdated.addListener((tabId, info) => {
     if (info.status === 'loading') {
       probes.get(tabId)?.drop();
-      void api.action?.setBadgeText({ tabId, text: '' });
+      void clearBadge(api, tabId);
     }
     if (info.status !== 'complete') return;
-    for (const delay of BADGE_DELAYS) setTimeout(() => probe(tabId), delay);
+    let timers = pending.get(tabId);
+    if (!timers) pending.set(tabId, (timers = new Set()));
+    for (const delay of BADGE_DELAYS) {
+      const timer = setTimeout(() => {
+        timers.delete(timer);
+        probe(tabId);
+      }, delay);
+      timers.add(timer);
+    }
   });
   api.tabs?.onRemoved?.addListener((tabId) => {
+    for (const timer of pending.get(tabId) ?? []) clearTimeout(timer);
+    pending.delete(tabId);
+    probes.get(tabId)?.drop();
     probes.delete(tabId);
   });
   api.runtime.onInstalled?.addListener(() => {
@@ -36,4 +49,13 @@ export function watchBadges(api: ExtensionApi, refresh: Refresh = (tabId, curren
       for (const { id } of tabs) if (id !== undefined) probe(id);
     });
   });
+}
+
+/** A tab closed while its badge is written rejects the write; there is nothing left to show it on. */
+async function clearBadge(api: ExtensionApi, tabId: number): Promise<void> {
+  try {
+    await api.action?.setBadgeText({ tabId, text: '' });
+  } catch {
+    // The tab closed.
+  }
 }

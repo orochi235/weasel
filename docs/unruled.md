@@ -2597,3 +2597,7 @@ Calls the lanes made without a ruling:
 - 2026-11-17 (my call): chart's File › Export keeps a whole-document format such as draw-style XML off while any page
   holds a kind it cannot write, rather than offering an export its writer would finish by leaving that page out with
   a warning. A one-page format such as DOT asks only about the page in view, which is all it writes.
+## Audit round thirty-three (2026-11-17): the devtools extension
+
+- 2026-11-17 (the fixer's call): `watchHookPresence` throws a `RangeError` on an empty `delays`, which used to probe
+  in a tight loop forever. Falling back to the default delays was the alternative.

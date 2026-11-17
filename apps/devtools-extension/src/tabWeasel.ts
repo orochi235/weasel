@@ -14,13 +14,22 @@ export interface TabWeasel extends FrameWeasel {
 
 /** Runs in the page's own world through `scripting.executeScript`, which sends only its source: it may not close over anything. */
 export function probeFrame(): FrameWeasel | null {
-  const hook = (window as { __weaselDevtools__?: { kitVersion?: unknown; roots?: () => unknown[] } }).__weaselDevtools__;
+  const hook = (window as { __weaselDevtools__?: { kitVersion?: unknown; roots?: () => unknown } }).__weaselDevtools__;
   if (typeof hook !== 'object' || hook === null) return null;
-  return { kitVersion: String(hook.kitVersion ?? ''), roots: typeof hook.roots === 'function' ? hook.roots().length : 0 };
+  // The global is the page's to set, so a foreign or broken hook counts as one with no canvases.
+  let roots = 0;
+  try {
+    const listed = typeof hook.roots === 'function' ? hook.roots() : [];
+    if (Array.isArray(listed)) roots = listed.length;
+  } catch {
+    // A hook whose roots() throws.
+  }
+  return { kitVersion: String(hook.kitVersion ?? ''), roots };
 }
 
 export function summarize(frames: readonly unknown[]): TabWeasel | null {
-  const found = frames.filter((f): f is FrameWeasel => typeof f === 'object' && f !== null && 'roots' in f);
+  const found = frames.filter((f): f is FrameWeasel =>
+    typeof f === 'object' && f !== null && 'roots' in f && Number.isInteger(f.roots) && (f.roots as number) >= 0);
   if (found.length === 0) return null;
   return {
     kitVersion: found[0]!.kitVersion,
@@ -50,7 +59,12 @@ export function badgeText(tab: TabWeasel | null): string {
  *  overtaken it while the probe ran. */
 export async function refreshBadge(api: ExtensionApi, tabId: number, current: () => boolean = () => true): Promise<TabWeasel | null> {
   const tab = await probeTab(api, tabId);
-  if (current()) await api.action?.setBadgeText({ tabId, text: badgeText(tab) });
+  if (!current()) return tab;
+  try {
+    await api.action?.setBadgeText({ tabId, text: badgeText(tab) });
+  } catch {
+    // The tab closed while it was probed.
+  }
   return tab;
 }
 
