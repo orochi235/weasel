@@ -17,7 +17,7 @@ import {
   DEFAULT_RANK_GAP,
   axesFor,
   extent,
-  settle,
+  placeSlots,
   type LayoutAxes,
   type LayoutFn,
   type LayoutOptions,
@@ -120,7 +120,7 @@ function chainPlan(graph: Graph, opts: LayoutOptions = {}): LayoutPlan {
   const gaps = grouped
     ? lineGaps(graph, line, hanging, rankGap, axes, slots(line.map(() => 0), []))
     : line.map(() => rankGap);
-  const place = (side: number) => settle(graph, slots(gaps, across(side)), opts);
+  const place = (side: number) => placeSlots(graph, slots(gaps, across(side)), opts);
   // Where a side edge turns depends only on positions along the line, which
   // the gap across it does not move, so one trial run counts the tracks.
   let moves = place(nodeGap);

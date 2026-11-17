@@ -269,7 +269,7 @@ export {
   planOf,
   plannerPlan,
   seededOrder,
-  settle,
+  placeSlots,
   translated,
   untilSettled,
 } from './layout';
