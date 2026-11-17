@@ -46,13 +46,19 @@ export interface AnimatorCore {
 export function createAnimatorCore(host: CoreHost): AnimatorCore {
   const clock: AnimatorClock = { frameT: null, elapsed: 0, timeScale: 1, paused: false, drive: 1 };
   const hub = new AnimatorEventHub();
+  /** Animations that threw outside their own ticks, retired by the frame reading them. */
+  const faults: [number, unknown][] = [];
+  const fail = (id: number, error: unknown): void => {
+    faults.push([id, error]);
+    if (!frame.framing()) host.requestFrame();
+  };
   const codec = createCodec((on) => {
     // A move behind a row's holds runs in its table's lane for moves; the rest of a row's voices
     // run in its table's lane.
     if ('move' in on) return (on as Behind).move?.place;
     const { row } = on as TargetState;
     return row ? { group: row.table, tag: row.index } : undefined;
-  });
+  }, fail);
   const afterTicks: (() => void)[] = [];
   const subscribers = createEmitter();
   let nextId = 1;
@@ -90,7 +96,7 @@ export function createAnimatorCore(host: CoreHost): AnimatorCore {
     columns: (table) => codec.columns(table),
   });
   const frame = createFrame({
-    clock, table, codec, targets, hub, afterTicks, subscribers, refold: refoldTouched,
+    clock, table, codec, targets, hub, afterTicks, faults, subscribers, refold: refoldTouched,
     afterShow: () => handoffs.frame(), keepsTime: () => handoffs.any(), requestFrame: host.requestFrame, tripwire: host.tripwire,
   });
 
@@ -118,6 +124,7 @@ export function createAnimatorCore(host: CoreHost): AnimatorCore {
     },
     wake: () => { if (!frame.framing()) host.requestFrame(); },
     tripwire: host.tripwire,
+    fail,
     interrupt: (key, by) => table.cancelByKey(key, by as ActiveAnimation),
     velocityUnder: (key, target) => {
       let sum: number[] | null = null;

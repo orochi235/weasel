@@ -6,10 +6,10 @@ import { createTable } from './table';
 import { createEmitter } from '@weasel-js/registry';
 
 /** A table and a frame loop with nothing under them, and a log of every tick. */
-function rig() {
+function rig(codecFrame: () => void = () => {}) {
   const clock: AnimatorClock = { frameT: null, elapsed: 0, timeScale: 1, paused: false, drive: 1 };
   const hub = new AnimatorEventHub();
-  const state = { now: 0, tripped: false };
+  const state = { now: 0, tripped: false, asked: 0 };
   const log: string[] = [];
   const table = createTable({
     codec: { stop() {}, has: () => false, rate() {} },
@@ -20,16 +20,17 @@ function rig() {
     showNow() {},
     resting: () => false,
     framing: () => frame.framing(),
-    requestFrame() {},
+    requestFrame() { state.asked += 1; },
   });
   const frame = createFrame({
     clock, table, hub,
-    codec: { frame() {} },
+    codec: { frame: codecFrame },
     targets: { settle() {}, show() {} },
     afterTicks: [],
+    faults: [],
     subscribers: createEmitter(),
     refold() {},
-    requestFrame() {},
+    requestFrame() { state.asked += 1; },
     tripwire: () => state.tripped,
   });
   let nextId = 1;
@@ -167,6 +168,18 @@ describe('a frame and the animations it ticks', () => {
     r.tick(0);
     r.table.pace(r.table.animations.get(a.id)!, false, -1);
     expect(r.tick(16)).toEqual(['a@-16', 'b@16']);
+  });
+
+  it('ends a frame that threw unguarded, and asks for the next', () => {
+    let bad = true;
+    const r = rig(() => { if (bad) throw new Error('codec'); });
+    r.start('a', 1000);
+    r.state.asked = 0;
+    expect(() => r.tick(16)).toThrow('codec');
+    expect(r.state.asked).toBe(1);
+    bad = false;
+    r.start('b', 1000);
+    expect(r.state.asked).toBe(1 + 1);
   });
 
   it('never ticks one whose `due` is Infinity, and says the frame loop may sleep when it is idle', () => {

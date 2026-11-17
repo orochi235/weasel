@@ -83,7 +83,7 @@ function startTimeline(host: ApiHost, o: TimelineOptions): ReturnType<Animator['
   const hold: OpenTrackHold = (target, value, weight, axes, fixed) => {
     const s = stateOf(target);
     const show = (): void => { if (!host.framing()) ctx.targets.showNow(s); };
-    const held = openHold(ctx, { target: s, value, weight, axes, fixed });
+    const held = openHold(ctx, { target: s, value, weight, axes, fixed, onError: (error) => ctx.fail(id, error) });
     show();
     return {
       touch() { held.touch(); show(); },

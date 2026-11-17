@@ -17,6 +17,9 @@ export interface HoldSource<T> {
   /** True where `value` and `weight` answer the same until `touch` says otherwise. A target
    *  whose holds are all so is read again only when touched, or when its committed value moves. */
   fixed?: boolean;
+  /** Hears the first throw from `value` or `weight` as the hold is read; from then the hold
+   *  weighs nothing. Without it the throw goes on to whoever read the target. */
+  onError?(error: unknown): void;
 }
 
 /** A hold on its target, apart from any row on the animator's table. */
@@ -139,12 +142,25 @@ export function openHold<T>(ctx: AnimationContext, o: HoldSource<T>): OpenHold {
   state.handoff?.release();
   axesFor(ax, o.value(), 'value');
   let gone = false;
+  let broken = false;
+  const fail = (error: unknown): void => {
+    if (!o.onError) throw error;
+    if (!broken) o.onError(error);
+    broken = true;
+  };
+  const write = ax.write
+    ? (out: Float64Array, at: number) => ax.write!(o.value(), out, at)
+    : (out: Float64Array, at: number) => out.set(ax.to(o.value()), at);
   const covers = coverOf(o.axes, ax);
   const { layer } = enterHold(ctx, state, (store, row) => store.free(row), {
-    value: ax.write
-      ? (out, at) => ax.write!(o.value(), out, at)
-      : (out, at) => out.set(ax.to(o.value()), at),
-    weight: o.weight,
+    value: (out, at) => {
+      if (broken) return;
+      try { write(out, at); } catch (error) { fail(error); }
+    },
+    weight: () => {
+      if (broken) return 0;
+      try { return o.weight(); } catch (error) { fail(error); return 0; }
+    },
     covers,
     fixed: o.fixed === true,
   });
