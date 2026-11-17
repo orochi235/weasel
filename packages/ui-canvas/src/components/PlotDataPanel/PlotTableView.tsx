@@ -5,6 +5,7 @@ import { DataGrid, type DataGridColumn } from '@weasel-js/ui/components/DataGrid
 import { PropertyControl } from '@weasel-js/ui/components/Properties';
 import s from './PlotDataPanel.module.css';
 import { valueControl } from './valueControl';
+import { insertedAt, movedTo, removedAt, useRowIds } from './rowIds';
 
 /** Props for {@link PlotTableView}. */
 export interface PlotTableViewProps {
@@ -21,7 +22,8 @@ interface Row { id: string; index: number }
  *  another order, and opened onto the tables it holds. */
 export function PlotTableView({ data, table, scope, edit }: PlotTableViewProps): ReactElement {
   const count = table.count(data, scope);
-  const rows: Row[] = Array.from({ length: count }, (_, index) => ({ id: String(index), index }));
+  const { ids, track } = useRowIds(data, count);
+  const rows: Row[] = ids.map((id, index) => ({ id, index }));
   const rowName = (r: number) => table.rowLabel?.(data, scope, r) || `${table.item} ${r + 1}`;
   const columns: DataGridColumn<Row>[] = table.columns(data, scope).map((column) => ({
     id: column.key,
@@ -44,13 +46,13 @@ export function PlotTableView({ data, table, scope, edit }: PlotTableViewProps):
           {insert && (
             <Button
               size="sm" variant="ghost" aria-label={`Insert ${table.item} after ${rowName(index)}`}
-              onClick={() => edit((d) => insert(d, scope, index + 1), `Add ${table.item}`)}
+              onClick={() => edit(track((d) => insert(d, scope, index + 1), insertedAt(index + 1)), `Add ${table.item}`)}
             >
               +
             </Button>
           )}
           {remove && (
-            <Button {...CLOSE_BUTTON_PROPS} aria-label={`Remove ${rowName(index)}`} onClick={() => edit((d) => remove(d, scope, index), `Remove ${table.item}`)} />
+            <Button {...CLOSE_BUTTON_PROPS} aria-label={`Remove ${rowName(index)}`} onClick={() => edit(track((d) => remove(d, scope, index), removedAt(index)), `Remove ${table.item}`)} />
           )}
         </span>
       ),
@@ -66,10 +68,10 @@ export function PlotTableView({ data, table, scope, edit }: PlotTableViewProps):
         columns={columns}
         rowLabel={(r) => rowName(r.index)}
         empty={`No ${table.label.toLowerCase()}`}
-        onReorder={move && ((ids, target) => {
-          const from = Number(ids[0]);
+        onReorder={move && ((moved, target) => {
+          const from = rows.findIndex((r) => r.id === moved[0]);
           const to = target > from ? target - 1 : target;
-          if (to !== from) edit((d) => move(d, scope, from, to), `Reorder ${table.label.toLowerCase()}`);
+          if (from >= 0 && to !== from) edit(track((d) => move(d, scope, from, to), movedTo(from, to)), `Reorder ${table.label.toLowerCase()}`);
         })}
         renderDetail={children && (({ index }) => (
           <div className={s.nested}>
@@ -80,7 +82,7 @@ export function PlotTableView({ data, table, scope, edit }: PlotTableViewProps):
         ))}
       />
       {insert && (
-        <Button size="sm" variant="ghost" className={s.add} onClick={() => edit((d) => insert(d, scope, table.count(d, scope)), `Add ${table.item}`)}>
+        <Button size="sm" variant="ghost" className={s.add} onClick={() => edit(track((d) => insert(d, scope, table.count(d, scope)), insertedAt(count)), `Add ${table.item}`)}>
           {`Add ${table.item}`}
         </Button>
       )}
