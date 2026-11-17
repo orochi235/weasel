@@ -10,7 +10,7 @@ import { DRAW_FEATURES } from '../drawFeatures';
 import { useFileCommands } from '../fileCommands';
 import { useDebugCommands } from './devRoutes';
 import { DRAW_NODE_PROPERTIES } from './registryData';
-import type { DeclaredRoute, ToolSurface, ToolEntry, ActionEntry, CallbackRef, CallbackSource } from './registryEntries';
+import { GESTURE_CATALOG_KEYS, type DeclaredRoute, type ToolSurface, type ToolEntry, type ActionEntry, type CallbackRef, type CallbackSource } from './registryEntries';
 import s from './RegistryInspector.module.css';
 import { BUILTIN_TOOL_IDS } from '@weasel-js/editing';
 import { getOwn, hasOwnKey } from '@weasel-js/registry';
@@ -234,17 +234,13 @@ function bestActionHandlerSource(action: unknown): CallbackSource | undefined {
 /** Boolean-only digest of a tool's input surface: which gesture kinds its
  *  bindings declare, and what it emits. Route signatures carry the per-target
  *  detail; this is the at-a-glance row. */
-function summarizeSurface(tool: { bindings?: readonly { spec: { kind: string } }[]; cursor?: unknown; overlay?: unknown }): ToolSurface {
-  const gestures: Record<string, boolean> = {
-    click: false, doubleClick: false, pointerDown: false, drag: false,
-    wheel: false, key: false, keyHeld: false, contextMenu: false,
-    multiTouchTap: false,
-  };
+export function summarizeSurface(tool: { bindings?: readonly { spec: { kind: string } }[]; cursor?: unknown; overlay?: unknown }): ToolSurface {
+  const gestures = Object.fromEntries(GESTURE_CATALOG_KEYS.map((k) => [k, false])) as Record<string, boolean>;
   for (const b of tool.bindings ?? []) {
     if (hasOwnKey(gestures, b.spec.kind)) gestures[b.spec.kind] = true;
   }
   return {
-    gestures: gestures as unknown as ToolSurface['gestures'],
+    gestures: gestures as ToolSurface['gestures'],
     outputs: {
       cursor: tool.cursor !== undefined,
       overlay: tool.overlay !== undefined,

@@ -5,7 +5,8 @@ import { isPrefLeaf, type PrefGroup } from '@weasel-js/prefs';
 import { DRAW_MENU_BAR } from '../menuBar';
 import { EDITOR_CONTEXT_MENUS } from '@weasel-js/editor';
 import { DRAW_MENUS } from '../menus';
-import { RegistryProbe } from './registryProbe';
+import { RegistryProbe, summarizeSurface } from './registryProbe';
+import { GESTURE_CATALOG_KEYS } from './registryEntries';
 
 // jsdom doesn't implement getContext or pointer capture; stub minimally so
 // SceneCanvas can mount and synthesize tools/actions. Done at module scope
@@ -191,5 +192,15 @@ describe('RegistryProbe', () => {
       const registered = new Set(snapshots.at(-1)?.actions.map((a) => a.id));
       expect(named.filter((id) => !registered.has(id))).toEqual([]);
     });
+  });
+});
+
+describe('summarizeSurface', () => {
+  it('flags every catalogued gesture kind a tool binds, longPress and pinch included', () => {
+    const surface = summarizeSurface({ bindings: [{ spec: { kind: 'longPress' } }, { spec: { kind: 'pinch' } }] });
+    expect(Object.keys(surface.gestures).sort()).toEqual([...GESTURE_CATALOG_KEYS].sort());
+    expect(surface.gestures.longPress).toBe(true);
+    expect(surface.gestures.pinch).toBe(true);
+    expect(surface.gestures.drag).toBe(false);
   });
 });
