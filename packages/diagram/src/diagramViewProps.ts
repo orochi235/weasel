@@ -81,17 +81,17 @@ export interface DiagramViewProps {
   selectionMode?: 'single' | 'multiple';
   /** A participant id, a set of them, or null for none. One id under
    *  `'multiple'` agrees with a pick of several whose latest it is, so handing
-   *  back what `onSelect` reports as `id` leaves the rest picked. */
-  selected?: string | null | readonly string[];
+   *  back what `onSelectionChange` reports as `id` leaves the rest picked. */
+  selection?: string | null | readonly string[];
   /** Reports what each click leaves picked, and each change to the pick made
    *  any other way, such as a drag that picks the node it moves: its latest
    *  pick, `null` for none, and every id picked, in the order they were — a
    *  re-click on the picked node reports it again. A change pushed in through
-   *  `selected` is not reported. The canvas keeps the pick even if `selected`
-   *  does not follow it; only a change to `selected` is pushed in. */
-  onSelect?: (id: string | null, ids: readonly string[]) => void;
+   *  `selection` is not reported. The canvas keeps the pick even if `selection`
+   *  does not follow it; only a change to `selection` is pushed in. */
+  onSelectionChange?: (id: string | null, ids: readonly string[]) => void;
   /** Reports a click (not a drag) on a node's header band — its `header` row —
-   *  with the node's id, after `onSelect`. To collapse it, write `collapsed`. */
+   *  with the node's id, after `onSelectionChange`. To collapse it, write `collapsed`. */
   onHeaderClick?: (nodeId: string) => void;
   /** Reports the node, group or edge the pointer comes to be over, and `null`
    *  once it is over none or leaves the canvas. An edge answers only while

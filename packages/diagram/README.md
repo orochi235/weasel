@@ -739,12 +739,12 @@ when `rankGap` is unset. Edges and `direction` are ignored, so a second run move
 
 ```tsx
 const specs = useMemo(() => diagramScene(data, { nodeStyle }), [data]);
-return <DiagramView specs={specs} width={360} height={600} selected={id} onSelect={setId} />;
+return <DiagramView specs={specs} width={360} height={600} selection={id} onSelectionChange={setId} />;
 ```
 
-`onSelect(id, ids)` reports the latest pick and every id picked. With
+`onSelectionChange(id, ids)` reports the latest pick and every id picked. With
 `selectionMode="multiple"`, Cmd-click (Ctrl off macOS) adds a node, group or edge
-to the pick or takes it out, and Shift-click picks everything between it and the last one clicked; `selected` takes one id or an array, and handing back the
+to the pick or takes it out, and Shift-click picks everything between it and the last one clicked; `selection` takes one id or an array, and handing back the
 reported `id` leaves the rest picked.
 
 Every box is a `buildBody` body, so a data node takes the same knobs a body

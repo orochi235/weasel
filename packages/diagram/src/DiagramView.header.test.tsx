@@ -29,12 +29,12 @@ const click = (canvas: HTMLCanvasElement, x: number, y: number) => act(() => {
 describe('DiagramView onHeaderClick', () => {
   it('fires on the band, on its text and beside it, and not below it', () => {
     const onHeaderClick = vi.fn();
-    const onSelect = vi.fn();
-    const canvas = mount({ onHeaderClick, onSelect });
+    const onSelectionChange = vi.fn();
+    const canvas = mount({ onHeaderClick, onSelectionChange });
     click(canvas, 100, 40);
     expect(onHeaderClick).not.toHaveBeenCalled();
     click(canvas, 14, 10);
-    expect(onSelect).toHaveBeenLastCalledWith('a', ['a']);
+    expect(onSelectionChange).toHaveBeenLastCalledWith('a', ['a']);
     expect(onHeaderClick).toHaveBeenCalledTimes(1);
     click(canvas, 180, 10);
     expect(onHeaderClick).toHaveBeenCalledTimes(2);

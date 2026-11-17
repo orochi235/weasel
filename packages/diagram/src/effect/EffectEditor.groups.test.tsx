@@ -84,9 +84,9 @@ describe('EffectEditor groups under nodeGraph', () => {
     const { onSelectGroup, view } = mount();
     expect(view().specs.find((s) => s.id === 'g')).toMatchObject({ kind: 'mark' });
     expect(view().specs.find((s) => s.id === 'g')!.pickable).not.toBe(false);
-    act(() => view().onSelect!('g', ['g']));
+    act(() => view().onSelectionChange!('g', ['g']));
     expect(onSelectGroup).toHaveBeenLastCalledWith('g');
-    act(() => view().onSelect!('a', ['a']));
+    act(() => view().onSelectionChange!('a', ['a']));
     expect(onSelectGroup).toHaveBeenLastCalledWith(null);
   });
 
@@ -96,13 +96,13 @@ describe('EffectEditor groups under nodeGraph', () => {
     render(<EffectEditor ref={api} doc={DOC} onChange={vi.fn()} onSelect={onSelect} width={800} height={600} />);
     const view = seen[seen.length - 1]!;
     expect(view.selectionMode).toBe('multiple');
-    act(() => view.onSelect!('c', ['g', 'w1', 'c']));
+    act(() => view.onSelectionChange!('c', ['g', 'w1', 'c']));
     expect(onSelect).toHaveBeenLastCalledWith('c', ['g', 'c']);
   });
 
   it('hands DiagramView a controlled picked group', () => {
     const { view } = mount(DOC, { selectedGroup: 'g' });
-    expect(view().selected).toBe('g');
+    expect(view().selection).toBe('g');
   });
 
   it('opens a field over the title on a title double-click, and reports the new name', () => {
@@ -142,7 +142,7 @@ describe('EffectEditor groups under rack', () => {
     const view = seen.at(-1)!;
     expect(view.onEdit).toBeUndefined();
     expect(view.onEditContainer).toBeUndefined();
-    act(() => view.onSelect!('g', ['g']));
+    act(() => view.onSelectionChange!('g', ['g']));
     expect(onSelectGroup).toHaveBeenLastCalledWith('g');
   });
 });

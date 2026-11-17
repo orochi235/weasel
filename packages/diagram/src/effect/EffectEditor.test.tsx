@@ -140,12 +140,12 @@ describe('EffectEditor', () => {
     const onChange = vi.fn();
     const ui = render(<EffectEditor doc={doc} onChange={onChange} selected={null} width={600} height={400} />);
     const edge = seen.at(-1)!.specs.find((s) => diagramEdgeOf(s) !== null)!.id as string;
-    act(() => seen.at(-1)!.onSelect!(edge, [edge]));
-    expect(seen.at(-1)!.selected).toBe(edge);
+    act(() => seen.at(-1)!.onSelectionChange!(edge, [edge]));
+    expect(seen.at(-1)!.selection).toBe(edge);
     act(() => seen.at(-1)!.onDelete!({ nodes: [], edges: [edge] }));
     ui.rerender(<EffectEditor doc={onChange.mock.calls[0]![0]} onChange={onChange} selected={null} width={600} height={400} />);
     ui.rerender(<EffectEditor doc={doc} onChange={onChange} selected={null} width={600} height={400} />);
-    expect(seen.at(-1)!.selected).toBeNull();
+    expect(seen.at(-1)!.selection).toBeNull();
   });
 
   it('lets a wire whose end is moving land back on the input it feeds', () => {
@@ -204,8 +204,8 @@ describe('EffectEditor', () => {
     const onSelect = vi.fn();
     render(<EffectEditor doc={doc} onChange={() => {}} onSelect={onSelect} width={600} height={400} />);
     const v = seen[seen.length - 1]!;
-    act(() => v.onSelect!('blur', ['blur']));
-    act(() => v.onSelect!('w1', ['w1']));
+    act(() => v.onSelectionChange!('blur', ['blur']));
+    act(() => v.onSelectionChange!('w1', ['w1']));
     expect(onSelect.mock.calls.map((c) => c[0])).toEqual(['blur', null]);
   });
 });
