@@ -2,7 +2,7 @@ import { createEmitter, deepEqual } from '@weasel-js/registry';
 import { ANY_MODS, hitPredicate, type Action, type NodeId, type Scene, type SurfaceContribution } from '@weasel-js/core';
 import { bakeSymmetry, type BakeResult } from './bake';
 import {
-  centerUnder, editSymmetries, isSymmetryGroup, poseAtCenter, readGroup, specOfData, symmetryGroupOf,
+  centerUnder, editSymmetries, isSymmetryGroup, poseAtCenter, symmetryOf, specOfData, symmetryGroupOf,
   symmetryGroupSpec,
 } from './group';
 import { keepContentsPut, reachFrom } from './frames';
@@ -112,7 +112,7 @@ export function createSymmetry(scene: Scene<unknown, string, unknown>, opts: Cre
       ctrl.setActive(id);
       return id;
     },
-    read: (id) => readGroup(scene, id),
+    read: (id) => symmetryOf(scene, id),
     update(id, change, label = 'Change symmetry') {
       if (scene.batch(label, () => write(id, change))) notify();
     },
@@ -130,7 +130,7 @@ export function createSymmetry(scene: Scene<unknown, string, unknown>, opts: Cre
   const guide = createSymmetryGuideLayer({
     current() {
       const id = ctrl.active();
-      const g = readGroup(scene, id);
+      const g = symmetryOf(scene, id);
       return g === null || id === null ? null : { group: id, ...g, reach: reachFrom(scene, id, g.center) };
     },
     subscribe: ctrl.subscribe,

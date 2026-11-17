@@ -134,7 +134,7 @@ export function symmetryGroupOf(scene: Scene<unknown, string, unknown>, id: Node
 /** The spec and world center of group `id`, or `null` when it is not one.
  *  The center is where its copies turn and reflect about, in a group inside
  *  a frame as well as at the top of the scene. */
-export function readGroup(scene: Scene<unknown, string, unknown>, id: NodeId | string | null): { spec: SymmetrySpec; center: Point } | null {
+export function symmetryOf(scene: Scene<unknown, string, unknown>, id: NodeId | string | null): { spec: SymmetrySpec; center: Point } | null {
   if (!isSymmetryGroup(scene, id)) return null;
   const node = scene.get(id as NodeId)!;
   return { spec: specOfData(node.data), center: centerOfPose(worldPoses(scene, 'shown')(node.id)) };
@@ -146,6 +146,6 @@ export function readGroup(scene: Scene<unknown, string, unknown>, id: NodeId | s
  * `pathSymmetry` dep.
  */
 export function editSymmetries(scene: Scene<unknown, string, unknown>, id: NodeId | string | null): Affine[] {
-  const g = readGroup(scene, id);
+  const g = symmetryOf(scene, id);
   return g === null ? [] : SYMMETRY_KINDS[g.spec.kind].pointGroup(g.spec, g.center);
 }

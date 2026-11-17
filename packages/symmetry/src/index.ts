@@ -7,7 +7,7 @@ export {
   type LatticePoint, type WallpaperGroup, type WallpaperPreset,
 } from './wallpaper';
 export {
-  SYMMETRY_CLIP_KEY, SYMMETRY_COPIES_KEY, centerOfPose, editSymmetries, isSymmetryGroup, poseAtCenter, readGroup,
+  SYMMETRY_CLIP_KEY, SYMMETRY_COPIES_KEY, centerOfPose, editSymmetries, isSymmetryGroup, poseAtCenter, symmetryOf,
   specOfData, symmetryCopies, symmetryGroupOf, symmetryGroupSpec, symmetryRegistry,
   type SymmetryGroupData, type SymmetryGroupOptions, type SymmetryPose,
 } from './group';
