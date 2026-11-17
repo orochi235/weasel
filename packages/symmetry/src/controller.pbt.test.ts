@@ -12,7 +12,7 @@ import {
 import { createSymmetry } from './controller';
 import { symmetryRegistry } from './group';
 import { guideHandles, createSymmetryGuideLayer, type SymmetryHandle } from './guide';
-import { handleChange, createSymmetryHandleAction } from './handleDrag';
+import { symmetryHandleChange, createSymmetryHandleAction } from './handleDrag';
 import { symmetryTransforms, type SymmetrySpec } from './kinds';
 import { lookup, maxDiff, near, point, runs, spec, tally, timeoutFor } from './pbt.fixture';
 
@@ -215,8 +215,8 @@ describe('a handle drag', () => {
     const identity = { point: (p: Point) => p, angle: (a: number) => a };
     fc.assert(fc.property(spec(), exact(), fc.constantFrom(...handles), exact(), exact(), exact(), (s, c, handle, from, to, v) => {
       const plus = (p: Point) => ({ x: p.x + v.x, y: p.y + v.y });
-      const a = handleChange({ handle, group: 'g' }, { center: c, spec: s }, from, to, identity);
-      const b = handleChange({ handle, group: 'g' }, { center: plus(c), spec: s }, plus(from), plus(to), identity);
+      const a = symmetryHandleChange({ handle, group: 'g' }, { center: c, spec: s }, from, to, identity);
+      const b = symmetryHandleChange({ handle, group: 'g' }, { center: plus(c), spec: s }, plus(from), plus(to), identity);
       if (a.center) expect(maxDiff([b.center!.x, b.center!.y], [a.center.x + v.x, a.center.y + v.y])).toBeLessThan(1e-9);
       for (const [k, x] of Object.entries(a.spec ?? {})) {
         const y = (b.spec as Record<string, number>)[k]!;

@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import type { View } from '@weasel-js/core';
 import { boundsOfPath } from '@weasel-js/geom';
 import { guideHandles, createSymmetryGuideLayer, type SymmetryHandlePress } from './guide';
-import { handleChange } from './handleDrag';
+import { symmetryHandleChange } from './handleDrag';
 import { DEFAULT_SYMMETRY, HORIZONTAL_AXIS, type SymmetrySpec } from './kinds';
 
 const VIEW: View = { x: 0, y: 0, scale: { x: 2, y: 2 } };
@@ -77,31 +77,31 @@ describe('createSymmetryGuideLayer', () => {
   });
 });
 
-describe('handleChange', () => {
+describe('symmetryHandleChange', () => {
   const id = { point: (p: { x: number; y: number }) => p, angle: (theta: number) => theta };
   const press = (handle: SymmetryHandlePress['handle']): SymmetryHandlePress => ({ handle, group: 'g' });
 
   it('moves the center by the drag, through the snap', () => {
     const snap = { ...id, point: (p: { x: number; y: number }) => ({ x: Math.round(p.x / 10) * 10, y: p.y }) };
-    expect(handleChange(press('center'), { center: C, spec: DEFAULT_SYMMETRY }, { x: 0, y: 0 }, { x: 14, y: 3 }, snap))
+    expect(symmetryHandleChange(press('center'), { center: C, spec: DEFAULT_SYMMETRY }, { x: 0, y: 0 }, { x: 14, y: 3 }, snap))
       .toEqual({ center: { x: 60, y: 53 } });
   });
 
   it('turns the axis to point at the pointer, through the snap', () => {
     const step = { ...id, angle: (theta: number) => Math.round(theta / (Math.PI / 12)) * (Math.PI / 12) };
-    expect(handleChange(press('angle'), { center: C, spec: DEFAULT_SYMMETRY }, C, { x: 60, y: 51 }, id).spec!.angle).toBeCloseTo(Math.atan2(1, 10));
-    expect(handleChange(press('angle'), { center: C, spec: DEFAULT_SYMMETRY }, C, { x: 60, y: 51 }, step).spec!.angle).toBeCloseTo(0);
+    expect(symmetryHandleChange(press('angle'), { center: C, spec: DEFAULT_SYMMETRY }, C, { x: 60, y: 51 }, id).spec!.angle).toBeCloseTo(Math.atan2(1, 10));
+    expect(symmetryHandleChange(press('angle'), { center: C, spec: DEFAULT_SYMMETRY }, C, { x: 60, y: 51 }, step).spec!.angle).toBeCloseTo(0);
   });
 
   it('sets a repeat\'s direction and spacing from its step handle', () => {
-    const out = handleChange(press('step'), { center: C, spec: DEFAULT_SYMMETRY }, C, { x: 50, y: 90 }, id);
+    const out = symmetryHandleChange(press('step'), { center: C, spec: DEFAULT_SYMMETRY }, C, { x: 50, y: 90 }, id);
     expect(out.spec!.angle).toBeCloseTo(Math.PI / 2);
     expect(out.spec!.spacing).toBeCloseTo(40);
   });
 
   it('sets a wallpaper\'s row angle, from its step direction, and row spacing from its row handle', () => {
     const origin = { center: C, spec: spec({ kind: 'wallpaper', angle: 0.25 }) };
-    const out = handleChange(press('row'), origin, C, { x: 50, y: 90 }, id);
+    const out = symmetryHandleChange(press('row'), origin, C, { x: 50, y: 90 }, id);
     expect(out.spec!.rowAngle).toBeCloseTo(Math.PI / 2 - 0.25);
     expect(out.spec!.rowSpacing).toBeCloseTo(40);
     expect(out.spec!.angle).toBeUndefined();

@@ -16,7 +16,7 @@ export interface SymmetryHandleSnap {
 }
 
 /** The change one frame of a handle drag makes, from where the press began. */
-export function handleChange(
+export function symmetryHandleChange(
   press: SymmetryHandlePress,
   origin: { center: Point; spec: SymmetrySpec },
   from: Point,
@@ -86,7 +86,7 @@ export function createSymmetryHandleAction(ctrl: SymmetryController): Action & {
           kind: 'symmetry-guide',
           onMove(move: InvocationCtx): void {
             const mods = snapMods(move);
-            last = handleChange(press, origin, from, move.world, {
+            last = symmetryHandleChange(press, origin, from, move.world, {
               point: (p) => (session ? session.at(p, mods).point : p),
               angle: (theta) => (session ? session.angle(theta, mods).theta : theta),
             });
