@@ -31,8 +31,8 @@ export type DevtoolsRequest = { protocol: number; requestId: number; rootId: str
   | { type: 'get-trace'; cursor: number; coordCursor?: number }
   | { type: 'get-frame' }
   | { type: 'get-registry' }
-  /** The stack's entry labels come back only when `checkpoints` is true. */
-  | { type: 'get-history'; cursor: number; checkpoints?: boolean }
+  /** The stack's entry labels come back only when `historyEntries` is true. */
+  | { type: 'get-history'; cursor: number; historyEntries?: boolean }
   | { type: 'select'; ids: string[] }
   | { type: 'highlight'; ids: string[] }
   | { type: 'set-tool'; toolId: string | null }
@@ -196,7 +196,7 @@ export interface DevtoolsHistorySlice {
   cursor: number;
   position: { index: number; total: number; canUndo: boolean; canRedo: boolean };
   /** Every entry on the stacks, oldest applied first, then the redoable ones. */
-  checkpoints?: { id: string; label: string }[];
+  historyEntries?: { id: string; label: string }[];
 }
 
 /** The body of a `result` reply; which one depends on the request it answers. */

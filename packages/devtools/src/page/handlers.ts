@@ -112,7 +112,7 @@ export function answer(
     case 'get-registry':
       if (!root.source.registry) throw new Error('this root serves no registry');
       return root.source.registry();
-    case 'get-history': return historySlice(root, req.cursor, req.checkpoints);
+    case 'get-history': return historySlice(root, req.cursor, req.historyEntries);
     case 'select':
       root.source.select(req.ids);
       return null;

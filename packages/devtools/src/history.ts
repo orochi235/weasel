@@ -7,17 +7,17 @@ export interface HistoryFollower {
   /** The steps recorded since the last read, and where the history stands now. Reads run one after another. */
   read(): Promise<DevtoolsHistorySlice>;
   /** Ask for the stack's entries with every read from the next on. */
-  setCheckpoints(on: boolean): void;
+  setHistoryEntries(on: boolean): void;
 }
 
 /** Follow `rootId`'s history steps through `client`, from the oldest step the canvas still holds. */
 export function followHistory(client: DevtoolsClient, rootId: string): HistoryFollower {
   let cursor = 0;
-  let checkpoints = false;
+  let historyEntries = false;
   let last: Promise<unknown> = Promise.resolve();
 
   const readOnce = async (): Promise<DevtoolsHistorySlice> => {
-    const slice = await client.request(rootId, { type: 'get-history', cursor, ...(checkpoints ? { checkpoints } : {}) });
+    const slice = await client.request(rootId, { type: 'get-history', cursor, ...(historyEntries ? { historyEntries } : {}) });
     cursor = slice.cursor;
     return slice;
   };
@@ -28,8 +28,8 @@ export function followHistory(client: DevtoolsClient, rootId: string): HistoryFo
       last = next.catch(() => undefined);
       return next;
     },
-    setCheckpoints(on) {
-      checkpoints = on;
+    setHistoryEntries(on) {
+      historyEntries = on;
     },
   };
 }

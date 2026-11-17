@@ -22,7 +22,7 @@ const lookalike = fc.record({
   protocol: fc.oneof(fc.constant(P), fc.anything()),
   requestId: fc.oneof(fc.nat(), fc.anything()),
   rootId: fc.oneof(fc.constant('root-1'), fc.anything()),
-  nodeId: fc.anything(), cursor: fc.anything(), coordCursor: fc.anything(), checkpoints: fc.anything(),
+  nodeId: fc.anything(), cursor: fc.anything(), coordCursor: fc.anything(), historyEntries: fc.anything(),
   ids: fc.anything(), toolId: fc.anything(), overlays: fc.anything(), kitVersion: fc.anything(),
   roots: fc.anything(), root: fc.anything(), areas: fc.anything(), message: fc.anything(),
 }, { requiredKeys: [] });
