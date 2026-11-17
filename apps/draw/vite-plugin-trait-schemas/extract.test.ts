@@ -77,3 +77,17 @@ describe('extractGestures', () => {
     expect([...GESTURE_CATALOG_KEYS].sort()).toEqual([...SPEC_KINDS].sort());
   });
 });
+
+describe('extractShapes', () => {
+  it('has a schema per kind the insert dep builds, read from the node it builds', () => {
+    expect(Object.keys(index.shapes).sort()).toEqual(
+      ['ellipse', 'image', 'line', 'path', 'pencil', 'polygon', 'rect', 'star'],
+    );
+    const rect = index.shapes.rect!;
+    expect(rect.pose.map((p) => p.name)).toEqual(expect.arrayContaining(['x', 'y', 'width', 'height']));
+    expect(rect.data.map((p) => p.name)).toEqual(['path', 'fill', 'stroke']);
+    expect(index.shapes.polygon?.data.map((p) => p.name)).toEqual(['path', 'generator', 'fill', 'stroke']);
+    expect(index.shapes.image?.data.map((p) => p.name)).toEqual(['image']);
+    expect(rect.source.file).toBe('packages/editing/src/deps/insert.ts');
+  });
+});
