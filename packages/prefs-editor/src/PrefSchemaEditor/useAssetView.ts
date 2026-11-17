@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState, type Dispatch, type SetStateAction } from 'react';
 import {
-  assetOf, changedAsset, foldablePaths, foldsUnder, isShown, openAfterStep, pathsIn, type SchemaRoot, scopedPath,
+  assetOf, changedAsset, foldablePaths, foldsUnder, isTreeAsset, openAfterStep, pathsIn, type SchemaRoot, scopedPath,
   type ShownAsset, shownAssets, type Workspace,
 } from '@weasel-js/prefs/edit';
 import { useEditorSelection, type EditorSelection } from './useEditorSelection';
@@ -31,7 +31,7 @@ export interface AssetView {
 export function useAssetView(workspace: Workspace, opened: Workspace | undefined, draftKey: string | undefined, startOn?: string): AssetView {
   const shown = (id: string): ShownAsset | undefined => {
     const found = assetOf(workspace, id);
-    return found && isShown(found) ? found : undefined;
+    return found && isTreeAsset(found) ? found : undefined;
   };
   const [assetId, setAssetId] = useState((startOn !== undefined && shown(startOn)?.id) || shownAssets(workspace)[0]!.id);
   const asset = shown(assetId) ?? shownAssets(workspace)[0]!;
@@ -74,7 +74,7 @@ export function useAssetView(workspace: Workspace, opened: Workspace | undefined
       const kept = restored.current;
       restored.current = null;
       const changed = assetOf(after, changedAsset(before, after) ?? asset.id);
-      const to = changed && isShown(changed) ? changed : asset;
+      const to = changed && isTreeAsset(changed) ? changed : asset;
       // A step keeps every asset's selection from when it was made or left; the one it lands on takes its own.
       const paths = kept ? pathsIn(to.id, kept) : NONE;
       if (to.id !== asset.id) {

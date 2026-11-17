@@ -108,11 +108,11 @@ export function assetOf(workspace: Workspace, id: string): Asset | undefined {
 }
 
 /** Whether an asset is one the structure tree shows: all but the action catalog. */
-export const isShown = (asset: Asset): asset is ShownAsset => asset.kind !== 'actions';
+export const isTreeAsset = (asset: Asset): asset is ShownAsset => asset.kind !== 'actions';
 
 /** The assets the asset list offers, in the workspace's order. */
 export function shownAssets(workspace: Workspace): ShownAsset[] {
-  return workspace.assets.filter(isShown);
+  return workspace.assets.filter(isTreeAsset);
 }
 
 /** The catalog of the host's actions, where the workspace holds one. */

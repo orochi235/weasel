@@ -69,7 +69,7 @@ export { choiceOf, entryChoices, kindChoices, NO_TYPES, typeNamed, type KindChoi
 export { stillUnplaced, unplacedAt } from './edit/unplaced';
 export { valuePathOf, valuePathsAt, type ValueMove } from './edit/valuePaths';
 export {
-  assetOf, bundlesAsset, catalogOf, headingOf, isShown, overOf, sameRoots, shownAssets, withRoots, type ActionsAsset,
+  assetOf, bundlesAsset, catalogOf, headingOf, isTreeAsset, overOf, sameRoots, shownAssets, withRoots, type ActionsAsset,
   type Asset, type AssetBase, type AssetHeading, type BundlesAsset, type LayoutAsset, type ListedAsset, type SchemaAsset,
   type ShownAsset, type Workspace,
 } from './edit/workspace';
