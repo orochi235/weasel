@@ -44,9 +44,9 @@ export function watchHookPresence(opts: PresenceOptions, report: (present: boole
   const restart = (): void => {
     generation++;
     cancelPoll();
-    // The old page and its hook are gone; the panel drops its view before the new page answers.
+    // The old page and its hook are gone; the panel drops its view before the new page answers. An
+    // answer of absent stands until the new page turns out to have a hook, so it is not told twice.
     if (last) tell(false);
-    last = null;
     poll(generation, 0);
   };
 

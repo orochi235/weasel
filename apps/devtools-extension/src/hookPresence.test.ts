@@ -61,6 +61,22 @@ describe('watching for a hook in the inspected page', () => {
     expect(report.mock.calls).toEqual([[true], [false], [true]]);
   });
 
+  it('reports absence once across navigations between pages without a hook', async () => {
+    const p = page();
+    const report = vi.fn();
+    watchHookPresence(p.opts, report);
+    await vi.advanceTimersByTimeAsync(300);
+    p.navigate();
+    await vi.advanceTimersByTimeAsync(300);
+    p.state.hook = true;
+    p.navigate();
+    await vi.advanceTimersByTimeAsync(0);
+    p.state.hook = false;
+    p.navigate();
+    await vi.advanceTimersByTimeAsync(300);
+    expect(report.mock.calls).toEqual([[false], [true], [false]]);
+  });
+
   it('stops looking when stopped', async () => {
     const p = page();
     const report = vi.fn();
