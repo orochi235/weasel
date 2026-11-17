@@ -151,7 +151,7 @@ export type { FeatureBindingOptions, FeaturePreset, PresetBuild, PresetComponent
 export type { CanvasPickers, PresetBuildContext } from '../canvas/SceneCanvas/presetBuild';
 export type { SceneCanvasToolOptions } from '../canvas/SceneCanvas/toolProps';
 export {
-  nodeKindPreset, nodeTraitsOf, type NodeKindPresetSpec, type NodeTraitBase, type NodeTraits,
+  createNodeKindPreset, nodeTraitsOf, type NodeKindPresetSpec, type NodeTraitBase, type NodeTraits,
 } from '../canvas/SceneCanvas/nodeTraits';
 export { describePresets, isAtom, type PresetDescription } from '../canvas/SceneCanvas/describePresets';
 export { rotateAroundAABBCenter, VIEW_TOOLS } from '../canvas/SceneCanvas';
