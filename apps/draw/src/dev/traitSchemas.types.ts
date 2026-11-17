@@ -55,10 +55,13 @@ export interface ActionSchema {
   readonly source: SourceRef;
 }
 
+/** One `GestureSpec` kind: the fields a binding's spec of that kind declares. */
 export interface GestureSchema {
+  /** The spec's `kind`. */
   readonly id: string;
-  /** Payload property shape when the gesture has one. */
-  readonly payload: readonly PropertyDescriptor[];
+  /** The spec's fields other than `kind`. */
+  readonly fields: readonly PropertyDescriptor[];
+  readonly doc?: string;
   readonly source?: SourceRef;
 }
 

@@ -5,6 +5,7 @@ import { Project } from 'ts-morph';
 import type { TraitSchemaIndex } from '../src/dev/traitSchemas.types.ts';
 import { extractTraitSchemas } from './extract.ts';
 import { extractOps } from './extract-ops.ts';
+import { GESTURE_CATALOG_KEYS } from '../src/dev/registryEntries.ts';
 
 const repoRoot = resolve(import.meta.dirname, '../../..');
 let index: TraitSchemaIndex;
@@ -57,5 +58,22 @@ describe('extractActions', () => {
     ]));
     expect(index.actions['viewport.pinchZoom']).toMatchObject({ label: 'Pinch Zoom', group: 'viewport' });
     expect(index.actions.move?.source.file).toBe('packages/editing/src/actions/move/action.ts');
+  });
+});
+
+describe('extractGestures', () => {
+  const SPEC_KINDS = [
+    'key', 'keyHeld', 'wheel', 'pinch', 'click', 'doubleClick', 'contextMenu', 'drag', 'pointerDown',
+    'hover', 'longPress', 'multiTouch', 'multiTouchTap', 'drop', 'carry', 'paste',
+  ];
+
+  it('has one entry per GestureSpec kind, with that spec\'s fields', () => {
+    expect(Object.keys(index.gestures).sort()).toEqual([...SPEC_KINDS].sort());
+    expect(index.gestures.drag?.fields.map((f) => f.name)).toEqual(['button', 'target', 'mods', 'phase']);
+    expect(index.gestures.drag?.source?.file).toBe('packages/gestures/src/ui/spec.ts');
+  });
+
+  it('is the list the inspector\'s gesture catalog pages through', () => {
+    expect([...GESTURE_CATALOG_KEYS].sort()).toEqual([...SPEC_KINDS].sort());
   });
 });

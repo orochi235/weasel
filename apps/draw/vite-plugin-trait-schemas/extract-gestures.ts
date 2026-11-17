@@ -1,111 +1,38 @@
 /**
- * Extract `GestureSchema`s for the inspector's gesture catalog.
- *
- * The kit's `packages/core/src/interactions/gestures/types.ts` defines a few payload-bearing
- * types (`PointerState`, `GroupTransform`) but does not declare a payload alias
- * for every gesture id. For ids without a discoverable payload type we
- * fall back to a hand-encoded shape that matches the runtime dispatch.
+ * Extract `GestureSchema`s for the inspector's gesture catalog: one per member
+ * of `@weasel-js/gestures`' `GestureSpec` union, keyed by its `kind`, listing
+ * the fields a binding's spec of that kind declares.
  */
-import { type Project } from 'ts-morph';
+import { Node, type Project } from 'ts-morph';
 import { resolve } from 'node:path';
-import type { GestureSchema, PropertyDescriptor, SourceRef } from '../src/dev/traitSchemas.types.ts';
-import { srcRef, sourceFileOrThrow, propertiesOfTypeNode } from './extract.ts';
+import type { GestureSchema } from '../src/dev/traitSchemas.types.ts';
+import { srcRef, sourceFileOrThrow, propertiesOfTypeNode, readJsDoc } from './extract.ts';
 
-const GESTURE_IDS: readonly string[] = [
-  'click', 'pointerDown', 'dblTap', 'drag', 'wheel', 'pinch',
-  'keyDown', 'keyUp',
-  'doubleClick', 'key', 'keyHeld', 'multiTouch', 'multiTouchTap', 'pointerdown',
-];
-
-type Found = { payload: readonly PropertyDescriptor[]; source?: SourceRef };
+export const GESTURE_SPEC_FILE = 'packages/gestures/src/ui/spec.ts';
+const UNION_NAME = 'GestureSpec';
 
 export function extractGestures(
   project: Project,
   repoRoot: string,
 ): Record<string, GestureSchema> {
-  const typesPath = resolve(repoRoot, 'packages/core/src/interactions/gestures/types.ts');
-  const sf = sourceFileOrThrow(project, typesPath);
-
-  const pointer = sf.getInterface('PointerState') ?? sf.getTypeAlias('PointerState');
-  const pointerProps = pointer ? propertiesOfTypeNode(pointer) : null;
-  const pointerSrc = pointer ? srcRef(pointer, repoRoot) : undefined;
-
-  const groupTransform = sf.getTypeAlias('GroupTransform');
-  const groupTransformSrc = groupTransform ? srcRef(groupTransform, repoRoot) : undefined;
+  const sf = sourceFileOrThrow(project, resolve(repoRoot, GESTURE_SPEC_FILE));
+  const union = sf.getTypeAliasOrThrow(UNION_NAME).getTypeNode();
+  if (!union || !Node.isUnionTypeNode(union)) throw new Error(`${UNION_NAME} is not a union`);
 
   const out: Record<string, GestureSchema> = {};
-  for (const id of GESTURE_IDS) {
-    const found = resolveGesture(id, {
-      pointerProps,
-      pointerSrc,
-      groupTransformSrc,
-    });
+  for (const member of union.getTypeNodes()) {
+    if (!Node.isTypeReference(member)) continue;
+    const iface = member.getTypeName().getSymbol()?.getDeclarations().find(Node.isInterfaceDeclaration);
+    const kind = iface?.getProperty('kind')?.getType();
+    if (!iface || !kind?.isStringLiteral()) continue;
+    const id = String(kind.getLiteralValue());
+    const doc = readJsDoc(iface);
     out[id] = {
       id,
-      payload: found.payload,
-      ...(found.source ? { source: found.source } : {}),
+      fields: propertiesOfTypeNode(iface).filter((p) => p.name !== 'kind'),
+      ...(doc ? { doc } : {}),
+      source: srcRef(iface, repoRoot),
     };
   }
   return out;
 }
-
-function resolveGesture(
-  id: string,
-  ctx: {
-    pointerProps: readonly PropertyDescriptor[] | null;
-    pointerSrc: SourceRef | undefined;
-    groupTransformSrc: SourceRef | undefined;
-  },
-): Found {
-  switch (id) {
-    case 'drag':
-      return {
-        payload: [{ name: 'transform', type: 'GroupTransform', optional: false }],
-        source: ctx.groupTransformSrc,
-      };
-    case 'wheel':
-      return {
-        payload: [{ name: 'deltaY', type: 'number', optional: false }],
-      };
-    case 'pinch':
-      return {
-        payload: [
-          { name: 'scale', type: 'number', optional: false },
-          { name: 'rotation', type: 'number', optional: false },
-          { name: 'clientX', type: 'number', optional: false },
-          { name: 'clientY', type: 'number', optional: false },
-        ],
-      };
-    case 'key':
-    case 'keyDown':
-    case 'keyUp':
-    case 'keyHeld':
-      return {
-        payload: [
-          { name: 'code', type: 'string', optional: false },
-          { name: 'key', type: 'string', optional: false },
-        ],
-      };
-    case 'pointerDown':
-    case 'pointerdown':
-      if (ctx.pointerProps) {
-        return { payload: ctx.pointerProps, source: ctx.pointerSrc };
-      }
-      return {
-        payload: [
-          { name: 'worldX', type: 'number', optional: false },
-          { name: 'worldY', type: 'number', optional: false },
-          { name: 'clientX', type: 'number', optional: false },
-          { name: 'clientY', type: 'number', optional: false },
-        ],
-      };
-    case 'click':
-    case 'dblTap':
-    case 'doubleClick':
-    case 'multiTouch':
-    case 'multiTouchTap':
-    default:
-      return { payload: [] };
-  }
-}
-

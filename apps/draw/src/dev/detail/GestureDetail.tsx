@@ -47,18 +47,18 @@ export function flattenActionBindings(actions: readonly ActionEntry[]): ActionBi
   return rows;
 }
 
-/** Payload schema for a gesture's dispatched event, extracted from the kit
- *  source by the trait-schemas Vite plugin. */
-export function GesturePayloadPanel({ gestureId }: { gestureId: string }) {
+/** The fields a binding's spec of this kind declares, extracted from
+ *  `GestureSpec` by the trait-schemas Vite plugin. */
+export function GestureSpecPanel({ gestureId }: { gestureId: string }) {
   const schema = traitSchemas.gestures[gestureId];
   if (!schema) return null;
   return (
     <>
-      <h3 className={s.subHeading}>Payload</h3>
-      <SchemaTable rows={schema.payload} empty="No payload fields (event-only)." />
+      <h3 className={s.subHeading}>Spec fields</h3>
+      <SchemaTable rows={schema.fields} empty="No fields beyond kind." />
       {schema.source && (
         <p className={s.schemaSource}>
-          Payload type at <code>{schema.source.file}:{schema.source.line}</code>
+          Spec declared at <code>{schema.source.file}:{schema.source.line}</code>
         </p>
       )}
     </>
@@ -89,7 +89,7 @@ export function GestureDetail({
         Input channel. Tools below subscribe to it via the legacy phase
         grammar; actions below bind to it via the modern dispatcher.
       </p>
-      <GesturePayloadPanel gestureId={entry.id} />
+      <GestureSpecPanel gestureId={entry.id} />
       <h3 className={s.subHeading}>Actions binding this gesture</h3>
       <DataGrid
         rows={actionRows}
