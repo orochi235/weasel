@@ -79,6 +79,8 @@ export interface DispatcherContext {
 export interface KeyReach {
   held: boolean;
   over: boolean;
+  /** The key was typed in a text field: only a binding declaring `inFields` hears it. */
+  field?: boolean;
 }
 
 /**

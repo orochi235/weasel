@@ -106,6 +106,15 @@ describe('argsToSchema', () => {
       .toEqual({ kind: 'number', default: 200, min: 100, max: 800, step: 20, control: 'input' });
   });
 
+  it('drops bounds labkit cannot hold, an endless, unreadable or reversed pair, and keeps the control', () => {
+    for (const [min, max] of [[0, Infinity], [Number.NaN, 10], [100, 0]]) {
+      expect(shape(leaf({ size: 4 }, { size: { control: { type: 'range', min, max } } }, 'size')))
+        .toEqual({ kind: 'number', default: 4, control: 'slider' });
+      expect(shape(leaf({ size: 4 }, { size: { control: { type: 'number', min, max } } }, 'size')))
+        .toEqual({ kind: 'number', default: 4 });
+    }
+  });
+
   it("maps 'range' and 'slider' to a slider", () => {
     expect(shape(leaf({ step: 0.01 }, { step: { control: { type: 'range', min: 0.001, max: 0.5, step: 0.001 } } }, 'step')))
       .toEqual({ kind: 'number', default: 0.01, min: 0.001, max: 0.5, step: 0.001, control: 'slider' });

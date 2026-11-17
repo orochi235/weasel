@@ -43,6 +43,12 @@ function releaseOf(down: HeldKey, mods: Mods): InputEvent {
   };
 }
 
+/** The Alt and Ctrl a keystroke reports, as pressed. */
+const typedMods = (e: KeyboardEvent) => ({ altKey: e.altKey, ctrlKey: e.ctrlKey });
+
+/** A keystroke in a text field that a binding may still take: a chord with Ctrl or Cmd. Any other key is typing. */
+const fieldChord = (e: KeyboardEvent): boolean => e.ctrlKey || e.metaKey;
+
 /** True inside an open ARIA menu, which owns every key typed in it. */
 const inMenu = (t: EventTarget | null): boolean => t instanceof Element && t.closest('[role="menu"]') !== null;
 
@@ -75,7 +81,7 @@ export function keyboardInput(core: DispatchCore): {
   const onKeyDown = (e: KeyboardEvent) => {
     // Before the filters: a key another surface took is still down.
     downKeys.set(physicalKey(e), { key: e.key, ...codeOf(e), withCmd: e.metaKey });
-    if (e.defaultPrevented || isEditableTarget(e.target) || inMenu(e.target) || focusedControlOwnsKey(e)) return;
+    if (e.defaultPrevented || inMenu(e.target) || focusedControlOwnsKey(e) || (isEditableTarget(e.target) && !fieldChord(e))) return;
     if (inModalOver(e.target, core.canvas) || taken.has(e)) return;
     // Every dispatcher hears keys on window. The one holding them acts, and so
     // does the one under the pointer, for its `over` bindings alone.
@@ -101,6 +107,8 @@ export function keyboardInput(core: DispatchCore): {
       e.preventDefault();
       return;
     }
+    // In a text field only a binding declaring `inFields` hears the chord; a keymap never does, as there it is text.
+    if (isEditableTarget(e.target)) return core.batch(() => void press(e, typedMods(e), { ...reach, field: true }));
 
     // The chord as reported comes first, so a binding that names Ctrl+Alt keeps it —
     // except in an open keymap, which would swallow it before the character typed could try.

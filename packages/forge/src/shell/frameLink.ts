@@ -14,7 +14,7 @@ import {
 import type { IndexEntry } from '../story/types';
 import type { AnswerBook } from './answers';
 import { isForgePath, storyConfig } from './globals';
-import { reportFrameScroll } from './loupe/frameScroll';
+import { forgetFrameScroll, reportFrameScroll } from './loupe/frameScroll';
 import { type FrameReady, readyKey } from './readyKey';
 import { type A11yOutcome, type TrialFrames } from './trialFrames';
 import { setRoute } from './useRoute';
@@ -220,7 +220,11 @@ function openLink(deps: LinkDeps, link: RefObject<Link | null>, frame: HTMLIFram
       if (current.hasRendered) ask();
       else current.queued.push(ask);
     });
-  const disconnect = frames && trialId ? frames.connect(trialId, { send: channel.send, audit }) : () => {};
+  const unregister = frames && trialId ? frames.connect(trialId, { send: channel.send, audit }) : () => {};
+  const disconnect = (): void => {
+    unregister();
+    if (trialId && !deps.copy) forgetFrameScroll(trialId);
+  };
   const current: Link = {
     channel,
     deliver: (msg) => receive(deps, current, msg),

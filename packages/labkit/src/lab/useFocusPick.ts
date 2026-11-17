@@ -1,7 +1,8 @@
 import { useEffect } from 'react';
 import type { LabStore } from '../state/store';
+import { owningTrial } from './owningTrial';
 
-/** Calls `pick` with the id of the trial input lands in — a press, focus
+/** Calls `pick` with the id of the trial input lands in, or whose undocked panel it lands in — a press, focus
  *  moving in, or focus moving into a frame — among the trials `store` owns. */
 export function useFocusPick(
   labBody: HTMLElement | null,
@@ -12,13 +13,8 @@ export function useFocusPick(
     if (!labBody) return;
     const pickFrom = (node: unknown): void => {
       const owned = new Set(store.getState().trials.map((t) => t.id));
-      const nearest = (from: Element | null | undefined) =>
-        from?.closest<HTMLElement>('.lk-trial[data-trial-id]') ?? null;
-      let trial =
-        typeof (node as Element | null)?.closest === 'function' ? nearest(node as Element) : null;
-      // A trial can hold a lab of its own, whose trials this lab does not own.
-      while (trial && !owned.has(trial.dataset.trialId ?? '')) trial = nearest(trial.parentElement);
-      if (trial?.dataset.trialId) pick(trial.dataset.trialId);
+      const trial = owningTrial(node, (id) => owned.has(id));
+      if (trial !== null) pick(trial);
     };
     const onInput = (event: Event): void => pickFrom(event.target);
     // Focus moving into a frame fires nothing in this document: the window

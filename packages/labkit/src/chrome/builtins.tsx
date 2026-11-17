@@ -104,7 +104,9 @@ function shownKey(t: TrialTool, ctx: TrialChromeContext): TrialTool['shortcut'] 
  *  viewport does not until the canvas is measured. Marks, export, and the undo
  *  pair marks alone bring come and go with the lab's Marks switch. The
  *  floating sidebar's toggle is there only while the sidebar floats and has a
- *  section to show. */
+ *  section to show. The color mode switch comes only with an instrument drawn in
+ *  DOM, and Settings and Copy settings only with a config schema, so a lab-wide
+ *  `suppress` or `hide` of one is not an error on a trial without it. */
 export const TRANSIENT_BUILTINS: ReadonlySet<string> = new Set([
   'undo',
   'redo',
@@ -122,6 +124,9 @@ export const TRANSIENT_BUILTINS: ReadonlySet<string> = new Set([
   'scale',
   'fps',
   'panel',
+  'mode',
+  'settings',
+  'copy-settings',
 ]);
 
 /** The switch for the color mode a trial's content is drawn in, beside Undo and Redo. */

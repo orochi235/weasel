@@ -2511,3 +2511,20 @@ Calls the lanes made without a ruling:
   on a page id given twice, rather than minting a fresh id with `nextPageId`.
 - 2026-11-16 (the lane's call): `registerOp` refuses a kind starting `revert:`, as it refuses `kit:`, rather than
   renaming the inverse ops a saved history holds.
+
+## Audit round twenty-nine (2026-11-16): labs
+
+- 2026-11-16 (the lane's call): a trial's Copy settings as JSON copies an auto field at its resolver's value, not the
+  value the instrument last reported, and marks nothing as auto, so pasting the copy back pins it
+  (`chrome/trialActions.tsx`, `settingsJson`). An endless number is written `"Infinity"`, which config repair reads
+  back; a cleared value is written `null`, which a config seed reads as the field's default, not as cleared.
+- 2026-11-16 (the lane's call): a key binding declaring `inFields` hears a Ctrl or Cmd chord typed in a text field;
+  no other key typed there reaches the dispatcher, and keymaps never see one (`channels/keyboard.ts`). labkit's Mod+S
+  snapshot declares it, so it saves from a field as it did before it moved onto the lab's dispatcher; Undo and Redo
+  stay the field's.
+- 2026-11-16 (the lane's call): a job without `auto` re-runs on a `key` change once something has started it and
+  until something cancels it, finished runs included; one never started stays idle (`job/useJob.ts`). It had ignored
+  `key` entirely, folding a run for the old key into state for the new one.
+- 2026-11-16 (the lane's call): forge reads a Storybook number control whose bounds are not both finite and in order
+  (`max: Infinity`, a NaN, `min` above `max`) as having none, keeping its slider or field, rather than letting
+  labkit's `range()` throw and fault every story in the file (`csf/argsToSchema.ts`, `hasRange`). No warning names it.

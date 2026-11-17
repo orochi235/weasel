@@ -279,6 +279,17 @@ describe('ContrastReadout', () => {
     mount({ source: 'pixels' }, { pixels: source });
     expect(await screen.findByText('Nothing under the reticle')).toBeTruthy();
   });
+
+  it('says a Pixels capture failed, rather than leaving the last reading up', async () => {
+    const source: LensSource<ForgeComparison> = {
+      ...liveSource(),
+      kind: 'pixels',
+      produces: 'pixels',
+      capture: () => Promise.reject(new Error('server went away')),
+    };
+    mount({ source: 'pixels' }, { pixels: source });
+    expect(await screen.findByText('Capture failed: server went away')).toBeTruthy();
+  });
 });
 
 describe('TokenReadout', () => {

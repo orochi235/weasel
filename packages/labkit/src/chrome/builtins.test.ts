@@ -164,6 +164,31 @@ describe('builtinContributions', () => {
     vi.unstubAllGlobals();
   });
 
+  it('copies what the trial runs with: an auto value resolved, an endless one as "Infinity", a cleared one as null', () => {
+    const writeText = vi.fn(() => Promise.resolve());
+    vi.stubGlobal('navigator', { clipboard: { writeText } });
+    const withSchema = {
+      ...ctx,
+      configSchema: resolveConfigSchema(
+        f.schema({
+          width: f.number(240),
+          gap: f.number(12).auto((c) => (c.width as number) / 24),
+          limit: f.number(10).range(0, 100).endless(),
+          floor: f.number(0).range(-100, 100).endless(undefined, 'min'),
+          cap: f.number().clearable(),
+        }),
+        [],
+      ),
+      config: { width: 240, gap: 12, limit: Infinity, floor: -Infinity, cap: undefined },
+      auto: new Set(['gap']),
+    };
+    const copy = builtinContributions(bare, withSchema).find((c) => c.id === 'copy-settings');
+    (copy?.item as { onActivate: (c: TrialChromeContext) => void }).onActivate(withSchema);
+    const copied = JSON.parse((writeText.mock.calls[0] as unknown as [string])[0]);
+    expect(copied).toEqual({ width: 240, gap: 10, limit: 'Infinity', floor: '-Infinity', cap: null });
+    vi.unstubAllGlobals();
+  });
+
   it('contributes a settings section only when the schema has fields', () => {
     expect(ids(bare)).not.toContain('settings');
     const withSchema = {
@@ -311,4 +336,22 @@ describe('TRANSIENT_BUILTINS', () => {
     const varying = ids(withCanvas, full).filter((id) => !leanest.has(id));
     expect(varying.filter((id) => !TRANSIENT_BUILTINS.has(id))).toEqual([]);
   });
+
+  it('names every built-in some instruments contribute and others do not, which a lab-wide suppress reaches', () => {
+    const withSettings = {
+      ...ctx,
+      configSchema: resolveConfigSchema(f.schema({ bins: f.number(20) }), []),
+    };
+    const instruments: Instrument[] = [
+      bare,
+      withCanvas,
+      { ...bare, undo: {} },
+      { ...bare, annotations: { targets: [] } } as unknown as Instrument,
+    ];
+    const lists = [ctx, withSettings].flatMap((c) => instruments.map((i) => ids(i, c)));
+    const everywhere = lists.reduce((a, b) => a.filter((id) => b.includes(id)));
+    const somewhere = [...new Set(lists.flat())].filter((id) => !everywhere.includes(id));
+    expect(somewhere.filter((id) => !TRANSIENT_BUILTINS.has(id))).toEqual([]);
+  });
 });
+

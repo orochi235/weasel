@@ -13,6 +13,7 @@ function panelsOf(undocked: UndockedPanels): PanelDescriptor[] {
     key,
     title: panel.sectionId,
     as: panel.as,
+    trialId: panel.trialId,
   }));
 }
 

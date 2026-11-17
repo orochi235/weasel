@@ -18,9 +18,10 @@ export function liveInView(binding: GestureBinding, view: string | null): boolea
 }
 
 /** Whether `binding` is live for a key that reached `reach`. See
- *  `BindingOptions.over`. */
+ *  `BindingOptions.over` and `BindingOptions.inFields`. */
 export function liveForKeys(binding: GestureBinding, reach: KeyReach | undefined): boolean {
   if (reach === undefined) return true;
+  if (reach.field && binding.opts?.inFields !== true) return false;
   return binding.opts?.over ? reach.over : reach.held;
 }
 

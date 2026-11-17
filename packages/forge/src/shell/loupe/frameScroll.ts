@@ -22,6 +22,11 @@ export function reportFrameScroll(host: HTMLElement, scroll: ScrollPosition): vo
   host.dispatchEvent(new Event('scroll'));
 }
 
+/** Forgets where trial `trialId`'s frame document stood, once that document is gone: a new one starts at the top. */
+export function forgetFrameScroll(trialId: string): void {
+  frames.delete(trialId);
+}
+
 /** Where the story in `host` stands: its in-document scroller, or the frame document the host holds. */
 export function scrollOf(host: HTMLElement): ScrollPosition {
   const scroller = scrollerOf(host);
