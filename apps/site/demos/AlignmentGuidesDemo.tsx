@@ -4,7 +4,7 @@ import { alignmentSnapSource, spacingSnapSource } from '@weasel-js/guides';
 import type { Fill, Path, RectPose } from '@weasel-js/core';
 import { ToolPalette } from '@weasel-js/ui/components/ToolPalette';
 import { DemoStage } from './DemoStage';
-import { movePreset, pickPreset, shapeToolKitPreset, useSelection } from '@weasel-js/editing';
+import { movePreset, pickPreset, shapeToolsOfferedPreset, useSelection } from '@weasel-js/editing';
 
 // The same `{ path, fill }` shape the rect tool's insert dep mints, so the
 // kit's path painter draws both without a custom drawOne.
@@ -45,7 +45,7 @@ export function AlignmentGuidesDemo() {
       <div className="ckd-demo">
         <ToolPalette orientation="horizontal" />
         <DemoStage width={W} height={H}>
-          <SceneCanvas features={[viewPreset, pickPreset, movePreset, shapeToolKitPreset]}
+          <SceneCanvas features={[viewPreset, pickPreset, movePreset, shapeToolsOfferedPreset]}
             className="ckd-canvas"
             scene={scene}
             selection={selection}

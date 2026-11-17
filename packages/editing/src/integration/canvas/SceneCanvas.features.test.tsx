@@ -12,7 +12,7 @@ import { createScene } from '@weasel-js/core/engine';
 import { polygonFromPoints } from '@weasel-js/geom';
 import { useActionsRegistry, useDepRegistry } from '@weasel-js/routing/react';
 import type { Action, SelectionApi } from '@weasel-js/routing';
-import { KIT_STANDARD_ACTION_IDS, insertPreset, drawPreset, editPreset, movePreset, outlinePreset, pickPreset, resizePreset, rotatePreset, selectPreset, transformPreset, shapeToolKitPreset } from '@weasel-js/editing';
+import { KIT_STANDARD_ACTION_IDS, insertPreset, drawPreset, editPreset, movePreset, outlinePreset, pickPreset, resizePreset, rotatePreset, selectPreset, transformPreset, shapeToolsOfferedPreset } from '@weasel-js/editing';
 
 type D = { kind: 'rect' };
 type L = 'main';
@@ -284,12 +284,12 @@ describe('<SceneCanvas features>', () => {
   });
 
   it('registers the kit actions a registered tool binds', () => {
-    const { seen } = mount({ features: [shapeToolKitPreset], defaultTools: ['rect'] });
+    const { seen } = mount({ features: [shapeToolsOfferedPreset], defaultTools: ['rect'] });
     expect(seen.actionIds).toContain('insert');
   });
 
   it('defaultActiveTool overrides the select default', () => {
-    const { tools } = mount({ features: [pickPreset, shapeToolKitPreset], defaultTools: ['rect'], defaultActiveTool: 'rect' });
+    const { tools } = mount({ features: [pickPreset, shapeToolsOfferedPreset], defaultTools: ['rect'], defaultActiveTool: 'rect' });
     expect(tools().active).toBe('rect');
   });
 

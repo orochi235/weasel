@@ -56,7 +56,7 @@ A bare `<SceneCanvas>` only renders. It keeps a selection that nothing sets from
 
 Path editing, the pen, pencil and knife, the path commands and Create Outlines are `@weasel-js/path-tools`': `features={[drawPreset, pathTools]}` with `tools={usePathToolsTools()}`.
 
-`defaultTools` mounts tools by id on top, and each brings the actions it binds: `defaultTools={['hand']}` drags the view without `viewPreset`, and `defaultTools={['rect']}` brings `insert` wherever a preset offers the rect (editing's `drawPreset` or `shapeToolKitPreset`).
+`defaultTools` mounts tools by id on top, and each brings the actions it binds: `defaultTools={['hand']}` drags the view without `viewPreset`, and `defaultTools={['rect']}` brings `insert` wherever a preset offers the rect (editing's `drawPreset` or `shapeToolsOfferedPreset`).
 
 Interactions are **actions** — descriptors registered into an actions registry — reached by **gesture bindings**. A tool is a list of `{ spec, actionId }` pairs and nothing more; the kit's own select, shape and viewport tools are built that way.
 

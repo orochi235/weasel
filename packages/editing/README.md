@@ -31,8 +31,8 @@ own), `arrangePreset` (flip, reorder, align, distribute), `pathfinderPreset`,
 `shapeToolsPreset`. Core's `viewPreset` pans and zooms; a canvas given only it
 is a viewer, whose selection nothing it runs writes.
 
-The tools are editing's, offered to a canvas by id: `selectToolKitPreset`
-offers the select tool and the lasso, `shapeToolKitPreset` the rect, ellipse,
+The tools are editing's, offered to a canvas by id: `selectToolsOfferedPreset`
+offers the select tool and the lasso, `shapeToolsOfferedPreset` the rect, ellipse,
 line, polygon and star, and `defaultTools={['rect']}` mounts one wherever a
 preset offers it (`drawPreset` offers them all). `selectionPreset`, which every
 editing preset includes, builds the canvas's selection; `useSelection` is the

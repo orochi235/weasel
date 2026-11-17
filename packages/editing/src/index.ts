@@ -22,7 +22,7 @@ export {
 export { alignPreset, arrangePreset, distributePreset, flipPreset, reorderPreset } from './presets/arrange';
 export { pathfinderPreset } from './presets/pathfinder';
 export { booleansPreset } from './presets/booleans';
-export { selectToolKitPreset, selectToolsPreset, shapeToolKitPreset, shapeToolsPreset } from './presets/tools';
+export { selectToolsOfferedPreset, selectToolsPreset, shapeToolsOfferedPreset, shapeToolsPreset } from './presets/tools';
 import type {} from './tools/toolOptions';
 export {
   KIT_TOOL_GROUPS, KIT_TOOL_IDS, KIT_TOOLS, SELECT_TOOLS, SHAPE_TOOLS, TOOL_GROUP_ORDER, type KitToolId,

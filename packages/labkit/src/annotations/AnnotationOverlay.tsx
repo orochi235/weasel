@@ -15,7 +15,7 @@ import {
   type KitToolId,
   movePreset,
   pickPreset,
-  shapeToolKitPreset,
+  shapeToolsOfferedPreset,
   transformPreset,
 } from '@weasel-js/editing';
 import { usePencilTool } from '@weasel-js/path-tools';
@@ -131,7 +131,7 @@ const FEATURES = [
   movePreset,
   transformPreset,
   editPreset,
-  shapeToolKitPreset,
+  shapeToolsOfferedPreset,
   ANNOTATION_TEXT,
 ];
 const BUILTIN_ANNOTATION_TOOLS = ANNOTATION_WEASEL_TOOLS.filter((t): t is KitToolId =>
