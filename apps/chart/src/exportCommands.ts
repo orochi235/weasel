@@ -1,5 +1,5 @@
 import { pageName, useCommand, type PlacedPage } from '@weasel-js/core';
-import { pageRegionOf, pageRegionsOf } from '@weasel-js/export';
+import { pageRegionSource, pageRegionsSource } from '@weasel-js/export';
 import { exportPagePng, exportPageSvg, exportPagesPdf } from '@weasel-js/diagram-formats';
 import { pref, type PrefGroup } from '@weasel-js/prefs';
 import { downloadBlob, reportFileWarnings, menuRun } from '@weasel-js/editor';
@@ -45,7 +45,7 @@ export function useExportCommands(scene: ChartScene, pages: ChartPages): void {
   usePdfCommand(scene, pages);
   useCommand(EXPORT_ACTIONS.svg, 'Page as SVG…', () => exportPage(pages, async (page, name) => {
     const said: string[] = [];
-    const svg = await exportPageSvg(scene, pageRegionOf(page), { title: name, onDiagnostic: (d) => said.push(d.message) });
+    const svg = await exportPageSvg(scene, pageRegionSource(page), { title: name, onDiagnostic: (d) => said.push(d.message) });
     return { blob: new Blob([svg], { type: 'image/svg+xml' }), name: `${name}.svg`, warnings: { toast: 'chart-export-svg', said } };
   }));
   usePngCommand(scene, pages, 1);
@@ -56,7 +56,7 @@ export function useExportCommands(scene: ChartScene, pages: ChartPages): void {
 function usePngCommand(scene: ChartScene, pages: ChartPages, scale: 1 | 2 | 4): void {
   useCommand(EXPORT_ACTIONS[`png${scale}`], `Page as PNG (${scale}×)`, () => exportPage(pages, async (page, name) => {
     const said: string[] = [];
-    const blob = await exportPagePng(scene, pageRegionOf(page), { scale, onDiagnostic: (d) => said.push(d.message) });
+    const blob = await exportPagePng(scene, pageRegionSource(page), { scale, onDiagnostic: (d) => said.push(d.message) });
     return { blob, name: scale === 1 ? `${name}.png` : `${name}@${scale}x.png`, warnings: { toast: 'chart-export-png', said } };
   }));
 }
@@ -65,7 +65,7 @@ function usePdfCommand(scene: ChartScene, pages: ChartPages): void {
   useCommand(EXPORT_ACTIONS.pdf, 'Pages as PDF…', () => {
     if (pages.placed.length === 0) return;
     const said: string[] = [];
-    exportPagesPdf(scene, pageRegionsOf(pages.placed), { onDiagnostic: (d) => said.push(d.message) })
+    exportPagesPdf(scene, pageRegionsSource(pages.placed), { onDiagnostic: (d) => said.push(d.message) })
       .then((blob) => {
         downloadBlob(blob, 'chart.pdf');
         reportFileWarnings('Exported', said, 'chart-export-pdf');

@@ -16,12 +16,12 @@ export type PageRect = Pick<ExportRegion, 'x' | 'y' | 'width' | 'height'>;
 
 /**
  * A page as the page exports take it: a fixed rect, or a function reading it
- * from the document the export draws, as `@weasel-js/export`'s `pageRegionOf(page)` does, so
+ * from the document the export draws, as `@weasel-js/export`'s `pageRegionSource(page)` does, so
  * the page's bounds come from the revision drawn in them.
  */
 export type PageSource = PageRect | ((doc: PageExportScene) => PageRect);
 
-/** Pages as {@link exportPagesPdf} takes them: fixed rects, or a function reading them from the document, as `pageRegionsOf(pages)` does. */
+/** Pages as {@link exportPagesPdf} takes them: fixed rects, or a function reading them from the document, as `pageRegionsSource(pages)` does. */
 export type PagesSource = readonly PageRect[] | ((doc: PageExportScene) => readonly PageRect[]);
 
 /** Options for {@link exportPageSvg}. */

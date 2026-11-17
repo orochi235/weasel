@@ -400,17 +400,17 @@ what each format carries. The ones here add what a diagram needs:
 
 ```ts
 import { placedPagesOf } from '@weasel-js/core';
-import { pageRegionOf, pageRegionsOf } from '@weasel-js/export';
+import { pageRegionSource, pageRegionsSource } from '@weasel-js/export';
 import { exportPagePng, exportPageSvg, exportPagesPdf } from '@weasel-js/diagram-formats';
 
 const pages = placedPagesOf(scene);
-const svg = await exportPageSvg(scene, pageRegionOf(pages[0]), { title: 'Page 1' });
-const png = await exportPagePng(scene, pageRegionOf(pages[0]), { scale: 2 });
-const pdf = await exportPagesPdf(scene, pageRegionsOf(pages), { title: 'Chart', onDiagnostic: (d) => console.info(d.message) });
+const svg = await exportPageSvg(scene, pageRegionSource(pages[0]), { title: 'Page 1' });
+const png = await exportPagePng(scene, pageRegionSource(pages[0]), { scale: 2 });
+const pdf = await exportPagesPdf(scene, pageRegionsSource(pages), { title: 'Chart', onDiagnostic: (d) => console.info(d.message) });
 ```
 
 A page is a fixed rect or a function of the document the export draws.
-`pageRegionOf(page)` and `pageRegionsOf(pages)` find each page by its id in that
+`pageRegionSource(page)` and `pageRegionsSource(pages)` find each page by its id in that
 document, so a page moved while the export loaded is written where it now is,
 and one removed fails the export.
 
