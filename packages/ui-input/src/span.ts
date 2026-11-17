@@ -32,7 +32,7 @@ export function spanMap(span: Span): TrackMap {
 }
 
 /** `span` moved inside `bounds`, keeping its length, or shortened to `bounds` where it is the longer. */
-export function spanHold(span: Span, bounds: Span): Span {
+export function spanClamp(span: Span, bounds: Span): Span {
   if (span.from >= bounds.from && span.to <= bounds.to) return { from: span.from, to: span.to };
   const length = Math.min(span.to - span.from, bounds.to - bounds.from);
   let from = span.from;
@@ -43,7 +43,7 @@ export function spanHold(span: Span, bounds: Span): Span {
 
 /** `span` shifted by `by` inside `bounds`, keeping its length. */
 export function spanPan(span: Span, by: number, bounds: Span): Span {
-  return spanHold({ from: span.from + by, to: span.to + by }, bounds);
+  return spanClamp({ from: span.from + by, to: span.to + by }, bounds);
 }
 
 /** `span` scaled by `factor` about `at`, which keeps its place along the track unless `bounds` push it.
@@ -52,5 +52,5 @@ export function spanZoom(span: Span, at: number, factor: number, bounds: Span, m
   const length = span.to - span.from;
   const next = Math.min(bounds.to - bounds.from, Math.max(minLength, length * factor));
   const f = length === 0 ? 0.5 : (at - span.from) / length;
-  return spanHold({ from: at - f * next, to: at + (1 - f) * next }, bounds);
+  return spanClamp({ from: at - f * next, to: at + (1 - f) * next }, bounds);
 }

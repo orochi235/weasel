@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { spanHold, spanMap, spanPan, spanPlace, spanShare, spanValue, spanZoom } from './span';
+import { spanClamp, spanMap, spanPan, spanPlace, spanShare, spanValue, spanZoom } from './span';
 
 describe('a place along a span', () => {
   const span = { from: 200, to: 1200 };
@@ -50,7 +50,7 @@ describe('spanZoom', () => {
   });
 });
 
-describe('spanPan and spanHold', () => {
+describe('spanPan and spanClamp', () => {
   const bounds = { from: 0, to: 1000 };
 
   it('shifts both ends together', () => {
@@ -63,7 +63,7 @@ describe('spanPan and spanHold', () => {
   });
 
   it('shortens a span longer than the bounds to them', () => {
-    expect(spanHold({ from: -500, to: 2000 }, bounds)).toEqual(bounds);
+    expect(spanClamp({ from: -500, to: 2000 }, bounds)).toEqual(bounds);
   });
 
   it('a pan pinned to the end does not start an ulp before the bounds', () => {
