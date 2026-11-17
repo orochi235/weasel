@@ -38,7 +38,7 @@ export const PATH_EDIT_TOOLS: ToolSet<PathToolId> = toolSet('path-edit', ['ancho
 export const DRAW_TOOLS: ToolSet<PathToolId> = toolSet('draw', ['pen', 'pencil'], { label: 'Draw' });
 
 /** The knife (`slice`), which cuts what a line drawn across it crosses. */
-export const SLICE_TOOLS: ToolSet<PathToolId> = toolSet('page', ['slice'], { label: 'Slice' });
+export const SLICE_TOOLS: ToolSet<PathToolId> = toolSet('slice', ['slice'], { label: 'Slice' });
 
 /** Every tool `@weasel-js/path-tools` ships: the path-edit tools, the pen and pencil, the reshaping tools, the
  *  spiro pen, the shape builder, and the knife. */
