@@ -132,6 +132,8 @@ export class ColorOverrideRegistry {
       this.slots.set(id, node);
     }
     node[channel] = slot;
+    // The colors the old slot left painted are gone: what paints there now is the painter's own.
+    if (held?.painted) this.changed();
     return at.table.target(row);
   }
 
