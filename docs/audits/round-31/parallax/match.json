@@ -1,0 +1,21 @@
+{
+ "pairs": [
+  [
+   0,
+   2
+  ],
+  [
+   1,
+   1
+  ]
+ ],
+ "a": [
+  "A tiled layer whose one axis is empty still walks every copy index of the other, so a negative bleed can spin the draw for up to 2^53 iterations",
+  "`plane.set({ pan: undefined })` is accepted and makes every later draw of the plane throw"
+ ],
+ "b": [
+  "A bare-number `bleed` widens only the x axis, so a lattice tiled on both axes pops content in at its top and bottom edges",
+  "`plane.set({ pan: undefined })` makes every later draw of the parallax layer throw",
+  "A y range emptied by a negative bleed lets the copy-count guard pass, and the x loop then runs once per column with nothing to draw"
+ ]
+}

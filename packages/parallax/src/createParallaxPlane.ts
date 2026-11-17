@@ -11,7 +11,9 @@ export interface ParallaxSource extends RedrawSource {
 /** A {@link ParallaxSource} you write to — what an animator's `onTick` drives
  *  to tween a plane's `pan`, `zoom` or `anchor`. */
 export interface ParallaxPlane extends ParallaxSource {
-  /** Merge `patch` over the current opts and notify, unless that changes nothing. */
+  /** Merge `patch` over the current opts and notify, unless that changes nothing. A `pan` of
+   *  `undefined` leaves the pan as it was: it has no default to fall back to. An undefined `zoom` or
+   *  `anchor` clears it to its default. */
   set(patch: Partial<ParallaxOptions>): void;
 }
 
@@ -23,7 +25,7 @@ export function createParallaxPlane(initial: ParallaxOptions): ParallaxPlane {
   return {
     get: () => current,
     set(patch) {
-      const next = copyOpts({ ...current, ...patch });
+      const next = copyOpts({ ...current, ...patch, pan: patch.pan ?? current.pan });
       if (sameOpts(current, next)) return;
       current = next;
       listeners.emit();

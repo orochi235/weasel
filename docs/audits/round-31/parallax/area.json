@@ -1,0 +1,46 @@
+{
+ "id": "parallax",
+ "commit": "2af3a3aa4c66a58347f138b28ec33ca219128469",
+ "date": "2026-11-16",
+ "files": [
+  "packages/parallax/src/createParallaxLayer.ts",
+  "packages/parallax/src/createParallaxPlane.ts",
+  "packages/parallax/src/createTiledLayer.ts",
+  "packages/parallax/src/index.ts",
+  "packages/parallax/src/pbt.fixture.ts",
+  "packages/parallax/src/tiledProject.ts"
+ ],
+ "a": 2,
+ "b": 3,
+ "m": 2,
+ "distinct": 3,
+ "chapman": 3,
+ "unfound": 0,
+ "read": {
+  "A": 6,
+  "B": 6
+ },
+ "patches": 3,
+ "questions": 0,
+ "budgetHit": [],
+ "jobs": {
+  "minutes": {
+   "A": 3.9,
+   "B": 8.4,
+   "match": 0.1,
+   "fix": 8.7
+  },
+  "nodes": {
+   "A": "studio",
+   "B": "studio",
+   "fix": "studio"
+  },
+  "tokens": 2320655,
+  "costUsd": 2.2
+ },
+ "fixCommits": [
+  "c72e5bbe1edff9d08e95af3b6f3da04d2bf80d83",
+  "c6bf3a8dc9242e37ef139394d086e1277ea47561",
+  "08b33c99e92699e3dae787c1c6a0287d9b2df6a1"
+ ]
+}
