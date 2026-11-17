@@ -53,7 +53,7 @@ export { type RegisteredAction } from './edit/registeredActionAttrs';
 export { schemaCodec } from './edit/schemaCodec';
 export { aliasNodes, aliasOf, canAlias, copyNodes, VALUE_LINKS, type LinkRule } from './edit/schemaCopy';
 export {
-  addNode, carried, moveNodes, rebasePaths, removeNode, removeNodes, renameKey, replaceNode, setAttribute,
+  addNode, outermostInOrder, moveNodes, rebasePaths, removeNode, removeNodes, renameKey, replaceNode, setAttribute,
 } from './edit/schemaEdit';
 export {
   baselinePaths, changedAttributes, changedPaths, containsCode, diffSchemas, formatChanges, KEEP, printSchema,

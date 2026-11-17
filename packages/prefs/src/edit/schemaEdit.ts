@@ -167,7 +167,7 @@ export function shiftNodes<R extends SchemaRoot>(
 }
 
 /** The outermost of `paths`, in the order the schema holds them. */
-export function carried(root: SchemaRoot, paths: readonly string[]): string[] {
+export function outermostInOrder(root: SchemaRoot, paths: readonly string[]): string[] {
   const tops = new Set(outermost(paths));
   const out: string[] = [];
   const walk = (node: SchemaNode, path: string | null) => {
