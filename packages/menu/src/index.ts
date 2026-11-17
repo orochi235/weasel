@@ -19,7 +19,7 @@ export { typeaheadMatch } from './typeahead';
 export {
   createMenuController, timerScheduler, SUBMENU_OPEN_MS, DIAGONAL_GRACE_MS, TYPEAHEAD_RESET_MS,
 } from './controller';
-export type { MenuController, MenuControllerOptions, MenuScheduler } from './controller';
+export type { MenuController, MenuControllerOptions, Scheduler } from './controller';
 export { inTriangle } from './triangle';
 export { attachMenuDismiss } from './dismiss';
 export type { MenuDismissOptions, MenuDismissTarget } from './dismiss';

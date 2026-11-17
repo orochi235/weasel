@@ -1,11 +1,11 @@
 import { describe, expect, it, vi } from 'vitest';
-import { createMenuController, type MenuScheduler } from './controller';
+import { createMenuController, type Scheduler } from './controller';
 import type { MenuEntry } from './entries';
 
 function fakeScheduler() {
   let now = 0;
   let timers: { at: number; fn: () => void }[] = [];
-  const s: MenuScheduler = {
+  const s: Scheduler = {
     now: () => now,
     set(fn, ms) {
       const t = { at: now + ms, fn };

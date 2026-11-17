@@ -9,14 +9,11 @@ import type { MenuDirection, Point, MenuRect } from './placement';
 import { inTriangle } from './triangle';
 
 export { TYPEAHEAD_RESET_MS } from '@weasel-js/ui-input';
-export { timerScheduler };
+export { timerScheduler, type Scheduler };
 /** How long the pointer rests on a submenu row before its panel opens, in milliseconds. */
 export const SUBMENU_OPEN_MS = 200;
 /** How long a move toward an open submenu keeps it open while the pointer crosses other rows, in milliseconds. */
 export const DIAGONAL_GRACE_MS = 300;
-
-/** Clock and timer, injected so tests and headless hosts control time. */
-export type MenuScheduler = Scheduler;
 
 /** What {@link createMenuController} needs: the entries, how to close, and optionally a clock. */
 export interface MenuControllerOptions {
@@ -27,7 +24,8 @@ export interface MenuControllerOptions {
   onClose(): void;
   /** An arrow key ran off the menu: back from the first level (-1), or forward from a row with no submenu (1). */
   onEdge?(dir: -1 | 1): void;
-  scheduler?: MenuScheduler;
+  /** Clock and timer, injected so tests and headless hosts control time. */
+  scheduler?: Scheduler;
 }
 
 /** One open menu's behavior, independent of what draws it. */
