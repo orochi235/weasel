@@ -216,9 +216,25 @@ functions, built or declared, and on a `Map` keeping an array of them per key;
 a collection of callbacks that are not subscribers goes on its allowlist with
 the reason.
 
+A part each owner gets once, made on its first read and the same on every read after, goes through
+`createPart(make)` from registry, never a module-level `WeakMap` read and written by hand (2026-11-17). Its reader
+is a query, so it keeps a query name (`transportHoldOf`). `make` takes the owner alone: a part that also turns on
+another argument, a cache that is invalidated, or one that is read without being made is not a part, and keeps its
+own map.
+
 Equality goes through registry too: `deepEqual` for plain data, never
 `JSON.stringify` (which is key-order sensitive and drops `undefined` keys), and
 `sameList` for two lists in order.
+
+## Bundling registry
+
+A package that depends on no other weasel package (geom, paint, audio) still calls registry's helpers the way
+every other package does, so how a cache or a key read is written never turns on what a package depends on
+(2026-11-17). It lists `@weasel-js/registry` as a `devDependency` and sets `inlineRegistry: true` in its tsup
+preset, which inlines the parts it uses; its manifest keeps no weasel dependency, and it keeps its standalone
+badge. Registry is the only package inlined this way: its code holds no state that two copies would have to
+share, which is what made ui's bundled react-aria provider break dialogs (`check:bundled-deps`). A registry type
+never appears in an inlining package's exported types.
 
 ## Kit settings
 

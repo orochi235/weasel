@@ -137,6 +137,11 @@ if (import.meta.url === pathToFileURL(process.argv[1] ?? '').href) {
       ...Object.keys(manifest.peerDependencies ?? {}),
       ...Object.keys(manifest.optionalDependencies ?? {}),
     ]);
+    // A build that inlines registry ships it, so the devDependency is enough ("Bundling registry", docs/conventions.md).
+    const tsup = join(dir, 'tsup.config.ts');
+    if (manifest.devDependencies?.['@weasel-js/registry'] && existsSync(tsup) && /inlineRegistry:\s*true/.test(readFileSync(tsup, 'utf8'))) {
+      declared.add('@weasel-js/registry');
+    }
     const aliases = ownAliases(dir).filter((alias) => !alias.startsWith('@weasel-js/'));
     const missing = new Map();
 

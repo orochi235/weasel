@@ -192,7 +192,8 @@ export default [
   {
     /**
      * `@weasel-js/paint` is the bottom of the stack: plain paint vocabulary,
-     * named by text, geometry and the renderer alike. It imports nothing.
+     * named by text, geometry and the renderer alike. It imports nothing but
+     * registry, which is inlined at build ("Bundling registry" in docs/conventions.md).
      */
     files: ['packages/paint/src/**/*.{ts,tsx}'],
     languageOptions,
@@ -203,7 +204,7 @@ export default [
         {
           patterns: [
             {
-              group: ['@weasel-js/*', '!@weasel-js/paint', ...CORE_ALIASES],
+              group: ['@weasel-js/*', '!@weasel-js/paint', '!@weasel-js/registry', ...CORE_ALIASES],
               message:
                 '@weasel-js/paint must not depend on any weasel package.',
             },
@@ -218,7 +219,8 @@ export default [
      * takes plain `{ x, y }`, which is what lets a consumer use it without the
      * canvas. Its tsconfig extends the root, so every alias above resolves
      * from it and an accidental import would typecheck clean — nothing but
-     * this rule catches one.
+     * this rule catches one. Registry is inlined at build ("Bundling registry"
+     * in docs/conventions.md), so it is allowed.
      */
     files: ['packages/audio/src/**/*.{ts,tsx}'],
     languageOptions,
@@ -230,7 +232,7 @@ export default [
           patterns: [
             {
               // Its own name is how the workspace-resolution test imports it.
-              group: ['@weasel-js/*', '!@weasel-js/audio', ...CORE_ALIASES],
+              group: ['@weasel-js/*', '!@weasel-js/audio', '!@weasel-js/registry', ...CORE_ALIASES],
               message:
                 '@weasel-js/audio must not depend on any weasel package.',
             },
