@@ -159,7 +159,7 @@ export {
 export {
   prefAutoValue,
   prefCanAuto,
-  prefIsReset,
+  prefIsAtReset,
   prefResetOf,
   prefResets,
   prefStartsAuto,

@@ -47,7 +47,7 @@ export function prefStoredReset(leaf: PrefLeaf): unknown {
  * surface that keeps no auto state, where nothing is auto and a reset leaves the leaf at its default; `value`
  * is the value it holds while pinned.
  */
-export function prefIsReset(leaf: PrefLeaf, state: { auto: boolean | undefined; value: unknown }): boolean {
+export function prefIsAtReset(leaf: PrefLeaf, state: { auto: boolean | undefined; value: unknown }): boolean {
   if (state.auto === undefined) return deepEqual(state.value, leaf.default);
   const reset = prefResetOf(leaf);
   if (reset.auto) return state.auto;
@@ -103,7 +103,7 @@ export interface LeafReading<T = unknown> {
 export function leafIsAtReset(leaf: PrefLeaf, reading: LeafReading): boolean {
   if (!prefHoldsValue(leaf) || (leaf as { readout?: boolean }).readout === true) return true;
   if (reading.mixed) return false;
-  return reading.each.every((value) => prefIsReset(leaf, { auto: reading.auto, value: prefLeafValue(leaf, value) }));
+  return reading.each.every((value) => prefIsAtReset(leaf, { auto: reading.auto, value: prefLeafValue(leaf, value) }));
 }
 
 /** One write a reset makes: {@link AUTO} to unpin, else the value the leaf stores at its default. */

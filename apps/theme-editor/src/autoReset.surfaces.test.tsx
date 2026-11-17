@@ -9,7 +9,7 @@ import {
   openPrefsSync,
   prefAutoValue,
   prefCanAuto,
-  prefIsReset,
+  prefIsAtReset,
   prefLeafAt,
   prefResetOf,
   type PrefAuto,
@@ -70,7 +70,7 @@ function check(surface: Surface, run: readonly Step[]): void {
     else expect(pinButton(surface.row)).toBeNull();
     expect(surface.shown()).toEqual(shown());
     expect(surface.read()).toEqual(read());
-    const reset = prefIsReset(leaf, state);
+    const reset = prefIsAtReset(leaf, state);
     expect(resetButton(surface.row) === null).toBe(reset);
     expect(resetButton(surface.group)?.getAttribute('aria-disabled') === 'true').toBe(reset);
   };

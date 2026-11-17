@@ -1,7 +1,7 @@
 import { createMemoryAdapter, createRecordCache } from '@weasel-js/storage';
 import fc from 'fast-check';
 import { describe, expect, it, vi } from 'vitest';
-import { prefAutoValue, prefCanAuto, prefIsReset, prefResetOf, prefResets } from './autoReset';
+import { prefAutoValue, prefCanAuto, prefIsAtReset, prefResetOf, prefResets } from './autoReset';
 import { prefLeafAt, type PrefGroup } from '@weasel-js/prefs-schema';
 import { openPrefsSync } from './open';
 import { createPrefsStore } from './store';
@@ -160,8 +160,8 @@ describe('a prefs store against the one rule', () => {
           const leaf = leafAt(path);
           expect(store.isAuto(path)).toBe(want.auto);
           expect(store.get(path)).toEqual(want.auto ? prefAutoValue(leaf) : want.value);
-          expect(prefIsReset(leaf, { auto: store.isAuto(path), value: store.get(path) })).toBe(
-            prefIsReset(leaf, want),
+          expect(prefIsAtReset(leaf, { auto: store.isAuto(path), value: store.get(path) })).toBe(
+            prefIsAtReset(leaf, want),
           );
         }
       }),
