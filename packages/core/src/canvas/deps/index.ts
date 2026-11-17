@@ -5,7 +5,7 @@
  *
  * @packageDocumentation
  */
-export { hitTestArea, hitTestAreaPolygon, type AABBBounds } from './hitTestArea';
+export { hitTestRect, hitTestAreaPolygon, type AABBBounds } from './hitTestArea';
 export { useViewDepSource } from './view';
 export { useNodeAtPointDepSource } from './nodeAtPoint';
 export { useEditAnchorsDepSource } from './editAnchors';

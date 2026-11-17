@@ -11,7 +11,7 @@ import type { Action, ImmediateInvoker } from '@weasel-js/routing';
 import type { NodeId } from '@weasel-js/core';
 import type { RectPose } from '@weasel-js/core/engine';
 import { createInsertOp, defaultCommitAdapter } from '@weasel-js/core/engine';
-import { createReparentOp, createSetHiddenOp, createSetLockedOp, hitTestArea } from '@weasel-js/core';
+import { createReparentOp, createSetHiddenOp, createSetLockedOp, hitTestRect } from '@weasel-js/core';
 import { depsOfForTests as depsOf, makeSceneForTests as makeScene, runsForTests as runs, tallyForTests as tally, timeoutForForTests as timeoutFor, type TestSceneForTests as TestScene, assertFiniteForTests as assertFinite, driveForTests as drive, type PtForTests as Pt } from '@weasel-js/core/test-seams';
 import { rectPose } from './pbt.fixture';
 import { alignCenterXAction, alignLeftAction, distributeHorizontalAction, reorderForwardAction, flipAction, nudgeRightAction, duplicateAction, groupAction, ungroupAction, deleteAction } from '@weasel-js/editing';
@@ -60,7 +60,7 @@ function areaDeps(scene: TestScene) {
   return {
     ...depsOf(scene),
     areaSelect: {
-      hitTestArea: (b: { x: number; y: number; width: number; height: number }) => hitTestArea(scene as never, b),
+      hitTestArea: (b: { x: number; y: number; width: number; height: number }) => hitTestRect(scene as never, b),
       getSelection: () => [...scene.getSelection()],
       setSelection: (next: NodeId[]) => scene.setSelection(next),
     },

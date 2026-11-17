@@ -18,7 +18,7 @@ export { settleWithinRounding } from '../interactions/actions/settleWithinRoundi
 export { actionReferenceSources } from '../interactions/actions/spatialReference';
 export { commitTransformOps, transformApplyOps } from '../interactions/actions/transformFinish';
 export { reachableInGroup } from '../canvas/deps/enteredGroup';
-export { hitTestArea } from '../canvas/deps/hitTestArea';
+export { hitTestRect } from '../canvas/deps/hitTestArea';
 export { groupingSite } from '../core/pages/pagePlacement';
 export { paintInheritors } from '../core/scene/inheritedPaint';
 export { couldClaim, handlersFor, runIngest } from '../domains/ingestion/contentHandlers';

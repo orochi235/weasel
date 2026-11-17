@@ -22,7 +22,7 @@ import { sceneMutators } from 'core/scene/sceneMutators';
 import { asNodeId } from 'core/scene/types';
 import { nodeGates } from 'core/scene/nodeGates';
 import { applyOpsTo } from 'core/applyOps';
-import { hitTestArea, hitTestLassoPolygon, regionPickOptions } from 'canvas/deps/hitTestArea';
+import { hitTestRect, hitTestLassoPolygon, regionPickOptions } from 'canvas/deps/hitTestArea';
 import type { ScenePickSourceOptions } from 'canvas/pickWalk';
 import {
   poseDescriptorForNode,
@@ -233,7 +233,7 @@ export function sceneToAdapter<TData, TLayer extends string, TPose>(
     // The live marquee's and lasso's own hit-tests. Groups come back:
     // this adapter's consumer has nothing to fold children into them.
     hitTestArea(rect: Bounds, view?: PickingView) {
-      return hitTestArea(
+      return hitTestRect(
         scene,
         rect,
         pickOptsFor(view),

@@ -3,7 +3,7 @@ import { render } from '@testing-library/react';
 import { type PolygonPath, pathFromD } from '@weasel-js/geom';
 import { pathToAnchors } from '@weasel-js/geom';
 import {
-  hitTestAreaForTests as hitTestArea, useEditAnchorsDepSourceForTests as useEditAnchorsDepSource,
+  hitTestRectForTests as hitTestRect, useEditAnchorsDepSourceForTests as useEditAnchorsDepSource,
 } from '@weasel-js/core/test-seams';
 import { asNodeId, createScene, defaultCommitAdapter, type RectPose, resolveEditablePathOf } from '@weasel-js/core';
 import type { Scene, SelectionApi } from '@weasel-js/core';
@@ -180,7 +180,7 @@ describe('usePenTool', () => {
       }
       render(<DepRegistryProvider><Wire /></DepRegistryProvider>);
       return {
-        areaSelect: { hitTestArea: (b: Parameters<typeof hitTestArea>[1]) => hitTestArea(scene, b) },
+        areaSelect: { hitTestArea: (b: Parameters<typeof hitTestRect>[1]) => hitTestRect(scene, b) },
         editAnchors: (reg.get as (k: string) => unknown)('editAnchors'),
         scene,
         applyOps: undefined,

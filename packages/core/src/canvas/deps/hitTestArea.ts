@@ -51,7 +51,7 @@ export interface RegionQueryOptions {
    *  to fold members back into their group, asks for them. */
   includeGroups?: boolean;
   /** The asking view's scale, for a node that sizes itself in screen pixels
-   *  (`{ px }` text). `hitTestArea` and its siblings read it off the camera. */
+   *  (`{ px }` text). `hitTestRect` and its siblings read it off the camera. */
   scale?: number;
 }
 
@@ -71,7 +71,7 @@ export function regionPickOptions(
 }
 
 /** Marquee entry point: every node the rect `bounds` meets. */
-export function hitTestArea(
+export function hitTestRect(
   scene: Scene<unknown, string, unknown>,
   bounds: AABBBounds,
   opts?: ScenePickSourceOptions<unknown>,

@@ -14,7 +14,7 @@ import { useLatest } from '@weasel-js/react';
 import type { AreaSelectDep, PoseDescriptor } from '@weasel-js/core/engine';
 import type { Scene, NodeId } from '@weasel-js/core';
 import type { SelectionApi } from '@weasel-js/routing';
-import { hitTestArea as hitTestAreaShared, regionPickOptions } from '@weasel-js/core';
+import { hitTestRect, regionPickOptions } from '@weasel-js/core';
 
 export function useAreaSelectDepSource(
   scene: Scene<unknown, string, unknown>,
@@ -44,7 +44,7 @@ export function useAreaSelectDepSource(
     const keep = (ids: NodeId[]): NodeId[] => (r ? ids.filter((id) => r(id)) : ids);
     return {
       hitTestArea: (bounds, view) =>
-        keep(hitTestAreaShared(sc, bounds, regionPickOptions(view, a), d)),
+        keep(hitTestRect(sc, bounds, regionPickOptions(view, a), d)),
       ...(t ? { targetOf: t } : {}),
       getSelection: () => s.current as NodeId[],
       setSelection: (ids) => s.set(ids),
