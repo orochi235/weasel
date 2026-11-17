@@ -19,7 +19,7 @@ const nameOf = (name: string): string => (/^[\w-]+$/.test(name) ? name : `"${nam
 const fieldValue = (v: string): string => (/^".*"$/s.test(v) || v !== v.trim() ? `"${v}"` : v);
 
 /** A box's block kind, from a `<<kind>>` row, and its fields; a text row past the divider reads as `key: value`. */
-function blockOf(node: DataNode, warnings: Warnings): { type: string; fields: [string, string][] } {
+function writeBlock(node: DataNode, warnings: Warnings): { type: string; fields: [string, string][] } {
   const rows: readonly Row[] = node.rows ?? (node.lines ?? []).map((text) => ({ kind: 'label', text }));
   const kind = rows.find((r) => r.kind === 'label' && /^<<\w+>>$/.test(r.text)) as { text: string } | undefined;
   const type = kind?.text.slice(2, -2);
@@ -71,7 +71,7 @@ export function writeRequirementDiagram(doc: DiagramDocument, opts?: WriteOption
   const names = blockNames(page.data.nodes, warnings);
   const name = (id: string) => nameOf(names.get(id) ?? id);
   for (const n of page.data.nodes) {
-    const { type, fields } = blockOf(n, warnings);
+    const { type, fields } = writeBlock(n, warnings);
     lines.push(`  ${type} ${name(n.id)} {`, ...fields.map(([k, v]) => `    ${k}: ${fieldValue(v)}`), '  }');
   }
   for (const e of out.edges) {
