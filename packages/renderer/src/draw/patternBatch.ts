@@ -58,9 +58,9 @@ export function patternBatchPaint(
 /** Tile extent in paint-space units — one tile spans this many units of
  *  whatever space `units` names. A side the paint leaves out is the size the
  *  texture stands for, else its pixel size. */
-export function tileExtent(fill: TexturePaint, { source, size }: TextureEntry): [number, number] {
-  const w = fill.width ?? size?.width ?? ('naturalWidth' in source ? source.naturalWidth : source.width);
-  const h = fill.height ?? size?.height ?? ('naturalHeight' in source ? source.naturalHeight : source.height);
+export function tileExtent(paint: TexturePaint, { source, size }: TextureEntry): [number, number] {
+  const w = paint.width ?? size?.width ?? ('naturalWidth' in source ? source.naturalWidth : source.width);
+  const h = paint.height ?? size?.height ?? ('naturalHeight' in source ? source.naturalHeight : source.height);
   return [w > 0 ? w : 1, h > 0 ? h : 1];
 }
 
