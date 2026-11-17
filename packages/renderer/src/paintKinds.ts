@@ -187,11 +187,11 @@ export function getPaintDrawKind(kind: string | undefined): PaintDrawKind | unde
 export type PaintDrawKindLoader = () => Promise<PaintDrawKind>;
 
 /** Options for {@link registerPaintDrawKindLoader}. */
-export interface PaintDrawKindLoaderOptions {
+export interface PaintDrawKindLoaderOptions extends Pick<PushOptions, 'fallback'> {
   /**
    * Registers what the loader resolved to and returns its disposer, which
    * runs when the loader is disposed. Defaults to
-   * {@link registerPaintDrawKind}; a package
+   * {@link registerPaintDrawKind} with this loader's `fallback`; a package
    * keeping a registry of its own over the draw half registers both here.
    */
   register?(entry: PaintDrawKind): () => void;
@@ -229,9 +229,9 @@ const LOADERS = createReflectable<Loader>();
 export function registerPaintDrawKindLoader(
   id: string, load: PaintDrawKindLoader, options: PaintDrawKindLoaderOptions = {},
 ): () => void {
-  const register = options.register ?? ((entry: PaintDrawKind) => registerPaintDrawKind(entry));
+  const register = options.register ?? ((entry: PaintDrawKind) => registerPaintDrawKind(entry, { fallback: options.fallback }));
   const loader: Loader = { load, register, disposed: false };
-  const dropLoader = LOADERS.push(id, loader);
+  const dropLoader = LOADERS.push(id, loader, { fallback: options.fallback });
   return () => {
     if (loader.disposed) return;
     loader.disposed = true;

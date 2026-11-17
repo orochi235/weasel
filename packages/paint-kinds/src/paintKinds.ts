@@ -161,6 +161,7 @@ export function registerPaintKind(entry: PaintKindEntry, options?: Pick<PushOpti
  */
 export function registerPaintKindLoader(id: string, load: PaintKindLoader, options?: Pick<PushOptions, 'fallback'>): () => void {
   return registerPaintDrawKindLoader(id, load, {
+    fallback: options?.fallback,
     register: (entry: PaintKindEntry) => registerPaintKind(entry, options),
   });
 }

@@ -365,6 +365,14 @@ describe('paint kinds loaded on demand', () => {
     expect(listPaintKinds().map((k) => k.id)).not.toContain('test-wash');
   });
 
+  it('lets a consumer declare its own loader for a lazy built-in without the clash warning', () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    onTestFinished(() => warn.mockRestore());
+    const off = registerPaintKindLoader('mesh-gradient', async () => washEntry());
+    expect(warn).not.toHaveBeenCalled();
+    off();
+  });
+
   it('never calls a loader for a kind registered before its first lookup', () => {
     const load = vi.fn(async () => washEntry());
     registerPaintKindLoader('test-wash', load);
