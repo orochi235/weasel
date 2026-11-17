@@ -41,7 +41,7 @@ export interface ElkLayoutOptions extends Omit<LayoutOptions, 'order' | 'chain' 
   /** ELK options for the root, applied over the ones this derives from the
    *  rest, under their full or `elk.`-prefixed ids. Default algorithm
    *  `elk.layered`, placing nodes by network simplex. */
-  layoutOptions?: Record<string, string>;
+  elkOptions?: Record<string, string>;
 }
 
 /** {@link elkPlan}'s answer: a layout plan, and what else ELK placed. */
@@ -59,7 +59,7 @@ export interface ElkPlan extends LayoutPlan {
 
 const DIRECTIONS: Record<LayoutDirection, string> = { down: 'DOWN', up: 'UP', right: 'RIGHT', left: 'LEFT' };
 
-/** The ELK options a run starts from, before `opts.layoutOptions`. */
+/** The ELK options a run starts from, before `opts.elkOptions`. */
 export function rootOptions(opts: ElkLayoutOptions = {}): Record<string, string> {
   const spacing = String(opts.nodeGap ?? DEFAULT_NODE_GAP);
   return {
@@ -72,7 +72,7 @@ export function rootOptions(opts: ElkLayoutOptions = {}): Record<string, string>
     'elk.hierarchyHandling': 'INCLUDE_CHILDREN',
     'elk.json.shapeCoords': 'ROOT',
     'elk.json.edgeCoords': 'ROOT',
-    ...shortIds(opts.layoutOptions ?? {}),
+    ...shortIds(opts.elkOptions ?? {}),
   };
 }
 

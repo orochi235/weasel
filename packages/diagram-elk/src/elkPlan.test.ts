@@ -256,7 +256,7 @@ describe('elkPlan', () => {
       },
     };
     const graph = graphOf([node('a')], []);
-    await elkPlan(graph, { elk: elk as never, layoutOptions: { 'elk.algorithm': 'mrtree' } });
+    await elkPlan(graph, { elk: elk as never, elkOptions: { 'elk.algorithm': 'mrtree' } });
     expect(seen[0]!['elk.algorithm']).toBe('mrtree');
   });
 
@@ -269,7 +269,7 @@ describe('elkPlan', () => {
       },
     };
     const graph = graphOf([node('a', { group: 'G' })], [], [{ id: 'G', members: ['a'], inset: INSET, minWidth: 200 }]);
-    await elkPlan(graph, { elk: elk as never, direction: 'right', layoutOptions: { 'org.eclipse.elk.direction': 'DOWN' } });
+    await elkPlan(graph, { elk: elk as never, direction: 'right', elkOptions: { 'org.eclipse.elk.direction': 'DOWN' } });
     const options = seen[0]!.layoutOptions!;
     expect(Object.entries(options).filter(([k]) => k.endsWith('.direction'))).toEqual([['elk.direction', 'DOWN']]);
     expect(seen[0]!.children![0]!.layoutOptions!['elk.nodeSize.minimum']).toBe('(0, 200)');
