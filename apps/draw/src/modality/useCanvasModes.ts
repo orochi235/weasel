@@ -8,12 +8,11 @@ import {
   type SelectionApi,
   useLatest,
 } from '@weasel-js/core';
-import { useMemo } from 'react';
+import { useCallback, useMemo, useSyncExternalStore } from 'react';
 import type { DrawScene } from '../drawDocument';
 import { enterModeOn } from './enterModeOn';
 import type { ModeMachine } from './machine';
 import { modalityShortcuts } from './shortcuts';
-import { useModeId } from './useModeId';
 
 /** What `<SceneCanvas>` takes to enter and leave the machine's modes. */
 export interface CanvasModes {
@@ -60,15 +59,22 @@ export function useCanvasModes(
   return { ambient, pathEdit };
 }
 
-/** What the breadcrumb calls the node the current mode is on: its label, its text, or its id. */
+/**
+ * What the breadcrumb calls the node the current mode is on: its label, its text, or its id. Read
+ * again whenever the mode or the scene changes, so it follows a rename or the text being typed.
+ */
 export function useModeTargetLabel(machine: ModeMachine, scene: DrawScene): string | null {
-  // The subscription is what re-reads the target; the resolved id is a tighter memo key than the
-  // mode it came from.
-  useModeId(machine);
-  const targetId = machine.getActiveTargetId();
-  return useMemo(() => {
+  const { registry } = machine;
+  const subscribe = useCallback((fn: () => void) => {
+    const offMode = registry.subscribe(fn);
+    const offScene = scene.subscribe(fn);
+    return () => { offMode(); offScene(); };
+  }, [registry, scene]);
+  const read = useCallback((): string | null => {
+    const targetId = machine.getActiveTargetId();
     if (!targetId) return null;
     const data = scene.get(asNodeId(targetId))?.data;
     return data ? data.label ?? data.text ?? targetId : targetId;
-  }, [targetId, scene]);
+  }, [machine, scene]);
+  return useSyncExternalStore(subscribe, read, read);
 }
