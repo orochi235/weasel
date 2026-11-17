@@ -40,7 +40,7 @@ function sameDeclaration(a: ClockCapability, b: ClockCapability): boolean {
     a.speed === b.speed &&
     a.seekable === b.seekable &&
     a.step === b.step &&
-    String(a.rates) === String(b.rates)
+    String(a.speeds) === String(b.speeds)
   );
 }
 

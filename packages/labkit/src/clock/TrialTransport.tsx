@@ -62,7 +62,7 @@ export function TrialTransport({
         paused={!control.playing}
         loop={clock.loop}
         rate={control.speed}
-        rates={clock.rates}
+        rates={clock.speeds}
         {...(formatRate ? { formatRate } : {})}
         start={control.start}
         playhead={control.playhead}

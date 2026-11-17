@@ -1,5 +1,5 @@
 import type { ReactElement } from 'react';
-import { CLOCK_RATES } from '@weasel-js/clock';
+import { CLOCK_SPEEDS } from '@weasel-js/clock';
 import { multiplier, qty } from '@weasel-js/quantity';
 import type { HoldProps } from '../Disabled';
 import { useControlHold } from '../Disabled/controlHold';
@@ -14,7 +14,7 @@ import { Icon } from '../Icon/Icon';
 const RATE = multiplier({ symbol: 'x' });
 
 /** Playback rates the transport offers by default, slowest first. */
-export const TRANSPORT_RATES = CLOCK_RATES;
+export const TRANSPORT_RATES = CLOCK_SPEEDS;
 
 /** Props for {@link Transport}. Times are in ms. Disabled, by `disabled` or a scope, nothing in it responds; read-only,
  *  play and pause still work, and the switches and sliders, which hold values, change nothing. */
