@@ -171,7 +171,7 @@ export type { AngleCandidate, AngleCollect, Locus, SceneCanvasSnap, SnapAnchors,
 export { aimRectOf, aimSpace2d, isRectAim, rectAim, viewForAim } from '../domains/viewports/aim';
 export type { AimOutline, AimPoint, AimRect, AimSpace, RectAim, ViewAim } from '../domains/viewports/aim';
 export type { CoreIconName } from '../icons.gen';
-export { commitOps, createCommitSelectionOps, defaultCommitAdapter, operandMethods, selectCommitted } from '../interactions/actions/defaultCommitAdapter';
+export { commitOps, commitSelectionFrom, createCommitSelectionOps, defaultCommitAdapter, operandMethods } from '../interactions/actions/defaultCommitAdapter';
 export type { CommitSelection, CommitSelectionMethods } from '../interactions/actions/defaultCommitAdapter';
 export { drawnBoxes, poseBoxes } from '../interactions/actions/drawnBoxes';
 export type { DrawnBoxes, DrawnBoxesDeps, DrawnBoxesSource } from '../interactions/actions/drawnBoxes';

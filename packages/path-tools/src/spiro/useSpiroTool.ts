@@ -4,7 +4,7 @@ import type { Action, ActionDeps, ModifierState } from '@weasel-js/routing';
 import { ActionDisabledReason, defineAction } from '@weasel-js/routing';
 import { cursorFor } from '@weasel-js/cursor';
 import { boundsOfPath, isSpiroKind, withinPxRadius, type SpiroKind, type SpiroPoint } from '@weasel-js/geom';
-import { defineTool, pointSnap, selectCommitted, snapMods, type Tool } from '@weasel-js/core';
+import { defineTool, pointSnap, commitSelectionFrom, snapMods, type Tool } from '@weasel-js/core';
 import { PEN_CLOSE_HIT_PX } from '../pen/penPreviewLayer';
 import { icon } from '../icons.gen';
 import { createSpiroPreviewLayer, type SpiroPreviewState } from './spiroPreviewLayer';
@@ -68,7 +68,7 @@ function spiroActions(host: SpiroActionsHost): Action[] {
     const { points } = s();
     if (points.length >= 2) {
       const { path, representation } = spiroNodeData([{ points, closed }]);
-      const select = host.options().autoSelect ? selectCommitted(deps.operands) : undefined;
+      const select = host.options().autoSelect ? commitSelectionFrom(deps.operands) : undefined;
       deps.insert?.commit(boundsOfPath(path), { kind: 'path', path, closed, data: { representation } }, undefined, select);
     }
     host.reset();

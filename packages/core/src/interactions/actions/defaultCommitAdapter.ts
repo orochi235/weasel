@@ -103,6 +103,6 @@ export function createCommitSelectionOps(select: CommitSelection | undefined, id
 
 /** The {@link CommitSelection} that leaves the committed node selected, from
  *  `operands` as they stand; none without operands. */
-export function selectCommitted(operands: Pick<OperandsDep, 'get'> | undefined): CommitSelection | undefined {
+export function commitSelectionFrom(operands: Pick<OperandsDep, 'get'> | undefined): CommitSelection | undefined {
   return operands ? { from: [...operands.get()], selectNode: true } : undefined;
 }

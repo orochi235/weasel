@@ -219,7 +219,7 @@ export {
 export type { AnchorField, AnchorFieldValues, NumberEntry } from '@weasel-js/geom';
 
 // ─── Building path commands and path-edit features on core ─────────────────
-export { commitOps, createCommitSelectionOps, selectCommitted } from '../interactions/actions/defaultCommitAdapter';
+export { commitOps, createCommitSelectionOps, commitSelectionFrom } from '../interactions/actions/defaultCommitAdapter';
 export {
   createDeleteNodeOp,
   createInsertNodeOp,
