@@ -1,5 +1,5 @@
 import { applyDiagramTheme, type ApplyDiagramThemeOptions, type DiagramTheme } from '@weasel-js/diagram';
-import { plotThemeOf } from '@weasel-js/diagram-formats';
+import { plotMeasureOf, plotThemeOf } from '@weasel-js/diagram-formats';
 import { plotRootOf, plotRootsIn, replacePlotData } from '@weasel-js/plot';
 import type { ChartScene } from '../chartDocument';
 
@@ -10,8 +10,9 @@ export function applyChartTheme(
   scene.batch(label, () => {
     applyDiagramTheme(scene, theme, label, opts);
     const plotTheme = plotThemeOf(theme);
+    const measure = opts.measure === undefined ? {} : { measure: plotMeasureOf(opts.measure) };
     for (const id of plotRootsIn(scene as never)) {
-      replacePlotData(scene, id, plotRootOf(scene.get(id))!.data, { label, theme: plotTheme });
+      replacePlotData(scene, id, plotRootOf(scene.get(id))!.data, { label, theme: plotTheme, ...measure });
     }
   }, opts.coalesceKey !== undefined ? { coalesceKey: opts.coalesceKey } : {});
 }
