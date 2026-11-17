@@ -42,7 +42,6 @@ const TRIAL_ATTR = 'data-trial-id';
 const keySpec = (shortcut: { key: string; shift?: boolean }) => ({
   kind: 'key' as const,
   key: shortcut.key,
-  code: `Key${shortcut.key.toUpperCase()}`,
   mods: { mod: true, ...(shortcut.shift ? { shift: true } : {}) },
 });
 
