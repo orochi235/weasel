@@ -5,7 +5,7 @@
  */
 import {
   commitOps, createDeleteNodeOp, createInsertNodeOp, PATH_GROUP, pathCopy, type PathNode, pathOperationTags, reshapeOps,
-  selectedPathNodes, slotOf,
+  operandPathNodes, slotOf,
 } from '@weasel-js/core';
 import type { Action, ActionDeps, ImmediateInvoker } from '@weasel-js/routing';
 import { ActionDisabledReason } from '@weasel-js/routing';
@@ -27,7 +27,7 @@ type Cut = { node: PathNode; pieces: PolygonPath[]; at: number };
 /** Each selected path another selected path crosses, with its pieces, back to front; empty when none crosses. */
 function planCut(deps: ActionDeps | undefined): Cut[] {
   const scene = deps?.scene;
-  const nodes = selectedPathNodes(deps);
+  const nodes = operandPathNodes(deps);
   if (!scene || nodes.length < 2) return [];
   const pieces = snipPathsAtCrossings(nodes.map((n) => n.path));
   return nodes
@@ -68,7 +68,7 @@ export const snipAtCrossingsAction: Action & { requires: string[] } = {
     },
   } satisfies ImmediateInvoker,
   enabled: (deps) => {
-    if (selectedPathNodes(deps).length < 2) return ActionDisabledReason.SelectionRequired;
+    if (operandPathNodes(deps).length < 2) return ActionDisabledReason.SelectionRequired;
     return planCut(deps).length > 0 ? true : ActionDisabledReason.NotApplicable;
   },
 };
@@ -148,7 +148,7 @@ export function joinPathsCommand(
   base: Pick<Action, 'id' | 'label' | 'icon' | 'defaultBinding'>,
   options: (params: Record<string, unknown> | undefined) => JoinOptions,
 ): Action & { requires: string[] } {
-  const plan = (deps: ActionDeps | undefined, params?: Record<string, unknown>) => planJoin(selectedPathNodes(deps), options(params));
+  const plan = (deps: ActionDeps | undefined, params?: Record<string, unknown>) => planJoin(operandPathNodes(deps), options(params));
   return {
     ...base,
     group: PATH_GROUP,
@@ -170,7 +170,7 @@ export function joinPathsCommand(
     enabled: (deps?: ActionDeps) => {
       // In path edit these are the selected anchors' commands.
       if (deps?.editAnchors?.editingId) return ActionDisabledReason.NotApplicable;
-      if (selectedPathNodes(deps).length === 0) return ActionDisabledReason.SelectionRequired;
+      if (operandPathNodes(deps).length === 0) return ActionDisabledReason.SelectionRequired;
       return plan(deps) ? true : ActionDisabledReason.NotApplicable;
     },
   };

@@ -12,7 +12,7 @@ import {
   createSetPoseOp,
   type RectPose,
   resolveEditablePathOf,
-  selectedPathNodes,
+  operandPathNodes,
   type AnyScene,
 } from '@weasel-js/core';
 import { heldPathWarpOf, resolvePathWarp } from './pathWarp';
@@ -246,7 +246,7 @@ describe('paths warped together', () => {
     const moved = { ...(a.pose as RectPose), y: (a.pose as RectPose).y + 300 };
     commitOps(pairDeps(scene), [createSetPoseOp({ id: a.id, from: a.pose, to: moved, label: 'Move' })], 'Move');
 
-    const { held } = splitByWarp(selectedPathNodes(pairDeps(scene)), 'plane');
+    const { held } = splitByWarp(operandPathNodes(pairDeps(scene)), 'plane');
     const ids = new Map(held.map((t) => [String(t.node.id), t.held.id]));
     expect(ids.get('a')).not.toBe(ids.get('b'));
     // Each path's controls sit on the corners of the box the pair was warped in, carried with it.

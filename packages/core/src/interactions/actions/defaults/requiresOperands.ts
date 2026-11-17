@@ -8,7 +8,7 @@ import type { NodeId } from 'core/scene/types';
  * when the `operands` dep is non-empty, otherwise `SelectionRequired`. Called
  * without deps it reports `SelectionRequired`.
  */
-export function requiresSelection(deps?: ActionDeps): true | ActionDisabledReason {
+export function requiresOperands(deps?: ActionDeps): true | ActionDisabledReason {
   const operands = deps?.operands;
   if (!operands || operands.get().length === 0) {
     return ActionDisabledReason.SelectionRequired;
@@ -17,11 +17,11 @@ export function requiresSelection(deps?: ActionDeps): true | ActionDisabledReaso
 }
 
 /** The operands less pages and the page run (`withoutPageStructure`): what a scene action acts on. */
-export function selectedContent(deps?: ActionDeps): readonly NodeId[] {
+export function operandContent(deps?: ActionDeps): readonly NodeId[] {
   const ids = deps?.operands?.get() ?? [];
   return deps?.scene ? withoutPageStructure(deps.scene, ids) : ids;
 }
 
-/** `enabled` for an action needing `min` selected ids that are not page structure ({@link selectedContent}). */
+/** `enabled` for an action needing `min` selected ids that are not page structure ({@link operandContent}). */
 export const requiresContent = (min: number) => (deps?: ActionDeps): true | ActionDisabledReason =>
-  selectedContent(deps).length >= min ? true : ActionDisabledReason.SelectionRequired;
+  operandContent(deps).length >= min ? true : ActionDisabledReason.SelectionRequired;

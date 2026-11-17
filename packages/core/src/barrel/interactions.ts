@@ -76,7 +76,7 @@ export type { PoseFrame, PoseReading } from '../interactions/actions/poseFrame';
 export type { SpatialReference, SpatialReferenceSources } from '../interactions/actions/spatialReference';
 export { lastTransform, recordTransform, forgetTransform } from '../interactions/actions/transform-again/memory';
 export type { RepeatableTransform } from '../interactions/actions/transform-again/memory';
-export { requiresSelection } from '../interactions/actions/defaults/requiresSelection';
+export { requiresOperands } from '../interactions/actions/defaults/requiresOperands';
 export type { CloneBehavior, CloneBehaviorResult, CloneEnd } from '../interactions/gestures/types';
 
 // ─── Animation primitives (tween, spring, easings) ──────────────────────────

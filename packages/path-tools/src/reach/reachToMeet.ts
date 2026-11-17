@@ -6,7 +6,7 @@ import {
   type AnchorSet, type ReachToMeetOptions, type OpenPathEnd, type PenAnchor, type PointOrigin, type PolygonPath,
 } from '@weasel-js/geom';
 import { pref } from '@weasel-js/prefs';
-import { PATH_GROUP, commitOps, type Op, type PathNode, reshapeOps, selectedPathNodes, pathOperationTags } from '@weasel-js/core';
+import { PATH_GROUP, commitOps, type Op, type PathNode, reshapeOps, operandPathNodes, pathOperationTags } from '@weasel-js/core';
 import {
   pressOf, scenePathNodes, strokeReachPref, strokesBesides, type StrokePress, type StrokePressParams,
 } from '../shared/scenePaths';
@@ -115,7 +115,7 @@ function planExtend(deps: ActionDeps | undefined, params?: Readonly<ReachToMeetP
   const opts = extendOptions(params);
   const subjects = press ? endNearPress(all, press) : editing
     ? all.filter((n) => n.id === editing).map((node) => ({ node, ends: endsAt(node.path, deps!.editAnchors!.selectedAnchors) }))
-    : selectedPathNodes(deps).map((node) => ({ node, ends: openPathEnds(node.path) }));
+    : operandPathNodes(deps).map((node) => ({ node, ends: openPathEnds(node.path) }));
   for (const { node, ends } of subjects) {
     if (node.path.kind !== 'polygon') continue;
     const selected = node.id === editing ? deps!.editAnchors!.selectedAnchors : new Set<number>();

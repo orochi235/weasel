@@ -1,5 +1,5 @@
 import type { NodeId, Scene, OperandsDep, Bounds, Op, PoseDescriptor, RectPose } from '@weasel-js/core';
-import { shapeSources, uncarried, withoutPageStructure, createSetPoseOp, poseDescriptorOf, unionAABB, drawnBoxes, type DrawnBoxes, isNoInkExtents, scenePoseFrame, type PoseFrame, actionReferenceSources, resolveSpatialReference, sameValue, finiteThroughout, defaultCommitAdapter, operandMethods, transformApplyOps, requiresSelection, geometryDataOp, type GeometryProjection } from '@weasel-js/core';
+import { shapeSources, uncarried, withoutPageStructure, createSetPoseOp, poseDescriptorOf, unionAABB, drawnBoxes, type DrawnBoxes, isNoInkExtents, scenePoseFrame, type PoseFrame, actionReferenceSources, resolveSpatialReference, sameValue, finiteThroughout, defaultCommitAdapter, operandMethods, transformApplyOps, requiresOperands, geometryDataOp, type GeometryProjection } from '@weasel-js/core';
 import { multiply, rotate, translate, type Affine } from '@weasel-js/geom';
 import {
   flipPoseAboutBounds,
@@ -186,7 +186,7 @@ export const flipAction = defineAction({
     },
   },
   enabled: (deps, _at, _carried, params) => {
-    const needs = requiresSelection(deps);
+    const needs = requiresOperands(deps);
     if (needs !== true) return needs;
     return flipOpsFor(deps!, deps!.operands!, deps!.scene!, params).length > 0 ? true : ActionDisabledReason.NotApplicable;
   },

@@ -5,7 +5,7 @@
 import { resamplePath, type ResamplePathOptions } from '@weasel-js/geom';
 import { pref } from '@weasel-js/prefs';
 import { ActionDisabledReason, defineAction } from '@weasel-js/routing';
-import { commitOps, pathOperationTags, reshapeOps, selectedPathNodes } from '@weasel-js/core';
+import { commitOps, pathOperationTags, reshapeOps, operandPathNodes } from '@weasel-js/core';
 import { icon } from '../icons.gen';
 import type {} from '../actionParamSchema';
 
@@ -66,9 +66,9 @@ export const resamplePathAction = defineAction({
     timing: 'immediate',
     run: (deps, params) => {
       const options = resampleOptions(params ?? {});
-      const ops = selectedPathNodes(deps).flatMap((target) => reshapeOps(target, resamplePath(target.path, options), LABEL));
+      const ops = operandPathNodes(deps).flatMap((target) => reshapeOps(target, resamplePath(target.path, options), LABEL));
       commitOps(deps, ops, LABEL);
     },
   },
-  enabled: (deps) => (selectedPathNodes(deps).length > 0 ? true : ActionDisabledReason.SelectionRequired),
+  enabled: (deps) => (operandPathNodes(deps).length > 0 ? true : ActionDisabledReason.SelectionRequired),
 });

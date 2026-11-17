@@ -2,7 +2,7 @@ import type { Scene, OperandsDep, PoseDescriptor, GeometryProjection } from '@we
 import type { Op } from '@weasel-js/core';
 import { poseDescriptorOf, defaultCommitAdapter, operandMethods, transformApplyOps } from '@weasel-js/core/engine';
 import { ActionDisabledReason, type Action } from '@weasel-js/routing';
-import { requiresSelection, moveNodesOps, nudgeSpec, NUDGE_LABEL, nudgeDelta, type NudgeDirection, recordTransform } from '@weasel-js/core';
+import { requiresOperands, moveNodesOps, nudgeSpec, NUDGE_LABEL, nudgeDelta, type NudgeDirection, recordTransform } from '@weasel-js/core';
 
 /**
  * Apply a world translation of (dx, dy) to the selected nodes and the
@@ -59,7 +59,7 @@ function makeNudgeAction(dir: NudgeDirection): Action & { requires: string[] } {
     },
     // On while some selected node would move: a step rounding absorbs moves nothing (2026-11-10 ruling).
     enabled: (deps, _at, _carried, params) => {
-      const given = requiresSelection(deps);
+      const given = requiresOperands(deps);
       if (given !== true || !deps?.scene) return given;
       const { dx, dy } = nudgeDelta(dir, params?.magnitude);
       const ops = moveNodesOps(deps.scene, deps.operands!.get() as readonly string[], { dx, dy }, deps, 'Nudge');

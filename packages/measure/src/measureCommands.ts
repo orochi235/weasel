@@ -1,6 +1,6 @@
 import type { Action, ActionDeps } from '@weasel-js/routing';
 import { ActionDisabledReason } from '@weasel-js/routing';
-import { type AnyScene, commitOps, type NodeId, reachesLocked, requiresSelection } from '@weasel-js/core';
+import { type AnyScene, commitOps, type NodeId, reachesLocked, requiresOperands } from '@weasel-js/core';
 import { measurementOf, type Measurement } from './measurement';
 import { currentMeasureId, measureIds, type Measurements } from './measurements';
 import { deleteMeasureOps, MEASURE_LABELS } from './measureEdits';
@@ -23,7 +23,7 @@ function transformable(ms: Measurements, moves: (m: Measurement) => boolean) {
   return (deps?: ActionDeps) => {
     const c = current(deps, ms);
     if (!c || !moves(c.m)) return ActionDisabledReason.NotApplicable;
-    return requiresSelection(deps);
+    return requiresOperands(deps);
   };
 }
 

@@ -227,7 +227,7 @@ export {
   pathNodesOf,
   reshapeOps,
   reshapeTo,
-  selectedPathNodes,
+  operandPathNodes,
   slotOf,
   withPath,
   withShownPath,

@@ -36,7 +36,7 @@ import { SPECIFICITY_HEADER, withUniqueIds } from './gridCells';
 //  - Target is caveated. It stands in for a real hit-test, so a `kindOf` predicate can outrun
 //    the synthesized hit; predicate rows carry a `?`.
 //  - `disabled` reasons are caveated. `enabled()` runs against a stub DepRegistry that resolves
-//    every dep to undefined, so `requiresSelection` reports "selection-required" whatever is
+//    every dep to undefined, so `requiresOperands` reports "selection-required" whatever is
 //    really selected. Those rows carry a `?` too.
 //  - `ineligible` never appears: no `getRuleCtx` is supplied, so the eligibility gate is skipped.
 

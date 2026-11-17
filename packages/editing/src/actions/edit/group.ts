@@ -1,6 +1,6 @@
 import type { SceneNode as Node, NodeId, Op } from '@weasel-js/core';
 import { createInsertOp, groupingSite, pageOfNode, translatePoseViaDescriptor, unionBounds, poseDescriptorOf, visualBoundsViaDescriptor, createSetPoseOp, scenePoseFrame, commitOps } from '@weasel-js/core/engine';
-import { createReparentOp, createDeleteOp, createSetDependsOnOp, selectedRoots, followerOpsFor, finiteThroughout, requiresContent, selectedContent, inPaintOrder, slotAbove } from '@weasel-js/core';
+import { createReparentOp, createDeleteOp, createSetDependsOnOp, selectedRoots, followerOpsFor, finiteThroughout, requiresContent, operandContent, inPaintOrder, slotAbove } from '@weasel-js/core';
 import { ActionDisabledReason, type Action, type ActionDeps, BETWEEN_GESTURES } from '@weasel-js/routing';
 import { icon } from '../../icons.gen';
 import type { AnyScene } from '@weasel-js/core/engine';
@@ -228,14 +228,14 @@ export const ungroupAction: Action & { requires: string[] } = {
     run: (deps) => {
       const scene = deps.scene;
       if (!deps.operands || !scene) return;
-      const plan = ungroupPlan(scene, selectedContent(deps));
+      const plan = ungroupPlan(scene, operandContent(deps));
       if (!plan || plan.locked) return;
       const ops = ungroupOps(scene, plan);
       if (ops !== null) commitOps(deps, ops, 'Ungroup', { select: plan.freed });
     },
   },
   enabled: (deps) => {
-    const plan = ungroupPlan(deps?.scene, selectedContent(deps));
+    const plan = ungroupPlan(deps?.scene, operandContent(deps));
     if (!plan) return ActionDisabledReason.NotApplicable;
     if (plan.locked) return ActionDisabledReason.Locked;
     return ungroupOps(deps!.scene!, plan) === null ? ActionDisabledReason.NotApplicable : true;

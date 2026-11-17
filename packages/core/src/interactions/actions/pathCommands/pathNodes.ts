@@ -35,8 +35,8 @@ export interface PathNode {
 
 const asStored = (pose: unknown): unknown => pose;
 
-/** The selected leaves that hold an editable polygon, in selection order. */
-export function selectedPathNodes(deps: ActionDeps | undefined): PathNode[] {
+/** The operand leaves that hold an editable polygon, in operand order. */
+export function operandPathNodes(deps: ActionDeps | undefined): PathNode[] {
   const scene = deps?.scene as Scene<unknown, string, unknown> | undefined;
   return scene ? pathNodesOf(scene, deps?.operands?.get() ?? []) : [];
 }
