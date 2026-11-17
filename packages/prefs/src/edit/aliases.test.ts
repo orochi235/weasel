@@ -1,11 +1,11 @@
 import { describe, expect, it } from 'vitest';
 import type { PrefGroup } from '@weasel-js/prefs';
-import { deadPointers, drawnLeaf, pointerTarget } from './pointers';
+import { deadAliases, drawnLeaf, aliasTargetIn } from './aliases';
 import { CODE, pointer, SETTINGS } from '../testing/editWorkspace';
 
-describe('pointers', () => {
+describe('aliases', () => {
   it('names the setting at its path in the dialog', () => {
-    expect(pointerTarget(SETTINGS, pointer('view.grid'))).toEqual({ path: 'view.grid', leaf: (SETTINGS.children.view as PrefGroup).children.grid });
+    expect(aliasTargetIn(SETTINGS, pointer('view.grid'))).toEqual({ path: 'view.grid', leaf: (SETTINGS.children.view as PrefGroup).children.grid });
   });
 
   it('draws as its setting', () => {
@@ -19,6 +19,6 @@ describe('pointers', () => {
   it('draws nothing when its setting is gone, and is listed as dead', () => {
     const layout: PrefGroup = { ...CODE, children: { ...CODE.children, lost: pointer('view.nowhere') } };
     expect(drawnLeaf(SETTINGS, pointer('view.nowhere'))).toBeUndefined();
-    expect(deadPointers(layout, SETTINGS)).toEqual(['lost']);
+    expect(deadAliases(layout, SETTINGS)).toEqual(['lost']);
   });
 });

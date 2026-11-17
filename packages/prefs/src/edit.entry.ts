@@ -47,7 +47,7 @@ export {
 } from './edit/loose';
 export { trackOrigins, type NodeOrigins } from './edit/nodeOrigins';
 export { asWorkspace, catalogIn, ONE, oneAssetCodec, sameSchema, schemaOf } from './edit/oneAsset';
-export { deadPointers, drawnLeaf, pointerAttributes, pointerTarget } from './edit/pointers';
+export { deadAliases, drawnLeaf, aliasAttributes, aliasTargetIn } from './edit/aliases';
 export { type PresetDescription } from '@weasel-js/prefs-schema';
 export { type RegisteredAction } from './edit/registeredActionAttrs';
 export { schemaCodec } from './edit/schemaCodec';
@@ -64,7 +64,7 @@ export {
   branchUnder, childrenOf, entryHolderAt, fitsUnder, isUnder, joinPath, keyOf, keysOf, nodeAt, ownChildrenOf,
   parentPath, pathOf, withinDepth, type ChildMap, type SchemaNode, type SchemaRoot, type SchemaTarget,
 } from './edit/schemaTree';
-export { pointable, pointedAt, pointersTo } from './edit/settingPointers';
+export { isAliasable, aliasedPaths, aliasesTo } from './edit/settingAliases';
 export { choiceOf, entryChoices, kindChoices, NO_TYPES, typeNamed, type KindChoice, type PrefTypes } from './edit/types';
 export { stillUnplaced, unplacedAt } from './edit/unplaced';
 export { valuePathOf, valuePathsAt, type ValueMove } from './edit/valuePaths';

@@ -1,5 +1,5 @@
 import { gainsSetting, moveLayoutNodes, removeLayoutNodes, renameLayoutKey } from './layoutEdit';
-import { pointersIn } from './pointers';
+import { aliasesIn } from './aliases';
 import {
   heldValuePaths, joinPath, moveNodes, outermost, parentPath, rebaseValuePaths, removeNode, removeNodes, renameKey, valueMove,
   type SchemaRoot, type SchemaTarget, type ValueMove,
@@ -16,9 +16,9 @@ export const NO_MOVES: readonly ValueMove[] = [];
  */
 function following(layout: SchemaRoot, before: SchemaRoot, after: SchemaRoot, moves: readonly ValueMove[]): SchemaRoot {
   const followed = rebaseValuePaths(layout, moves);
-  const now = pointersIn(followed);
+  const now = aliasesIn(followed);
   const [held, holds] = [heldValuePaths(before), heldValuePaths(after)];
-  const lost = pointersIn(layout)
+  const lost = aliasesIn(layout)
     .filter(([, was], i) => now[i]![1].of === was.of && held.has(was.of) && !holds.has(was.of))
     .map(([path]) => path);
   // Not `removeNodes`: it takes a removed node's tree path for a value path, and would drop a pointer naming a live setting there.

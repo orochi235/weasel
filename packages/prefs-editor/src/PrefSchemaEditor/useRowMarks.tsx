@@ -1,8 +1,8 @@
 import { useMemo, type ReactNode } from 'react';
 import { Badge } from '@weasel-js/ui';
 import {
-  baselinePaths, type BundleProblem, bundleProblems, conditionProblems, deadActionPaths, deadPointers, joinPath,
-  keyClashes, keysOf, nodeAt, pointerTarget, type SchemaChange, type SchemaRoot,
+  baselinePaths, type BundleProblem, bundleProblems, conditionProblems, deadActionPaths, deadAliases, joinPath,
+  keyClashes, keysOf, nodeAt, aliasTargetIn, type SchemaChange, type SchemaRoot,
 } from '@weasel-js/prefs/edit';
 import type { EditorAction } from './editorActions';
 import { isPrefLeaf, type PrefAlias } from '@weasel-js/prefs';
@@ -35,7 +35,7 @@ export function useRowMarks({ schema, over, changes, actions, bundles = false, r
     [actions, schema, bundles],
   );
   const bundled = useMemo(() => (bundles ? bundleProblems(schema) : NO_PROBLEMS), [schema, bundles]);
-  const lost = useMemo(() => (over ? new Set(deadPointers(schema, over)) : NO_PATHS), [schema, over]);
+  const lost = useMemo(() => (over ? new Set(deadAliases(schema, over)) : NO_PATHS), [schema, over]);
   const unsound = useMemo(() => conditionProblems(schema, over), [schema, over]);
   const clashing = useMemo(() => keyClashes(schema), [schema]);
   return useMemo(() => {
@@ -44,7 +44,7 @@ export function useRowMarks({ schema, over, changes, actions, bundles = false, r
     const asked = (path: string): string | undefined => {
       if (!over) return keysOf(baseline(path)).join('.');
       const node = nodeAt(schema, path);
-      return node && isPrefLeaf(node) && node.kind === 'alias' ? pointerTarget(over, node as PrefAlias)?.path : undefined;
+      return node && isPrefLeaf(node) && node.kind === 'alias' ? aliasTargetIn(over, node as PrefAlias)?.path : undefined;
     };
     const hostMark = (path: string): ReactNode => {
       const at = rowMark ? asked(path) : undefined;
