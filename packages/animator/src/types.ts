@@ -363,7 +363,8 @@ export type AnimatorListener = (event: AnimatorEvent) => void;
 
 /** Options for `Animator.loop`. */
 export interface LoopOptions {
-  /** Maximum number of iterations. Default Infinity. */
+  /** Maximum number of iterations: a whole number, or Infinity (the default). Anything else
+   *  throws a `RangeError`. */
   count?: number;
   /** Invoked when the loop reaches `count` iterations naturally (not on cancel). */
   onDone?: () => void;

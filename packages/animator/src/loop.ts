@@ -25,6 +25,9 @@ export function createLoop(
   opts: LoopOptions = {},
 ): AnimationHandle {
   const max = opts.count ?? Infinity;
+  if (!(max === Infinity || (Number.isInteger(max) && max >= 0))) {
+    throw new RangeError(`animator.loop: count is a whole number of passes or Infinity, not ${max}`);
+  }
   let canceled = false;
   let current: AnimationHandle | null = null;
 
