@@ -52,7 +52,9 @@ export function PipelineWorkspace({ pipeline, look, setLook }: {
 
   const add = useCallback((type: EffectStageType) => {
     const id = editor.current?.addStage(type);
-    if (id !== undefined) pick(id, [id]);
+    if (id === undefined) return;
+    pick(id, [id]);
+    setPickedGroup(null);
   }, [pick]);
 
   return (
