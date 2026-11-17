@@ -59,7 +59,7 @@ should not depend on phase at all.
 | Gesture | Input | Argument | Takes a target |
 |---|---|---|---|
 | `click` | Press and release without moving past the drag threshold | none | yes |
-| `dblTap` | Two clicks close together in time and place | none | yes |
+| `doubleClick` | Two clicks close together in time and place | none | yes |
 | `drag` | Press, then movement past the drag threshold | none | yes |
 | `pointerDown` | The press itself, before it is known to be a click or a drag | none | yes |
 | `hover` | Pointer movement with no button held | none | yes |
@@ -166,9 +166,8 @@ spec('[initial] wheel(up)');
 ```
 
 Wildcards become omitted fields, so an unconstrained route produces the
-smallest spec. Most gesture names are also the spec kind. The exceptions:
-`dblTap` becomes `'doubleClick'`, `keyDown` becomes `'key'`, and `keyHeld`
-becomes `'keyHeld'`.
+smallest spec. Every gesture name is also its spec kind except `keyDown`, which
+becomes `'key'`.
 
 `routeToSpec` throws for a route no spec can express: any `keyUp` route, a key
 or finger-count gesture with no concrete argument, or a target that is not one

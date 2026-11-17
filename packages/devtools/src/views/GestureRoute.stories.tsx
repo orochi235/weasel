@@ -30,7 +30,7 @@ const SECTIONS: readonly { title: string; routes: readonly string[] }[] = [
     routes: [
       '[initial] click => handle',
       '[initial] pointerDown => handle',
-      '[initial] dblTap => node',
+      '[initial] doubleClick => node',
       '[initial] drag => handle',
       '[initial] contextMenu => node',
     ],

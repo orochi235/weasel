@@ -44,7 +44,7 @@ export const GESTURE_BADGE_PROPS: Omit<BadgeProps, 'children'> = {
   variant: 'outline',
 };
 
-const GESTURE_VALUES = ['click', 'pointerDown', 'dblTap', 'drag', 'wheel', 'keyDown', 'keyUp'] as const;
+const GESTURE_VALUES = ['click', 'pointerDown', 'doubleClick', 'drag', 'wheel', 'keyDown', 'keyUp'] as const;
 
 const gestureTokenSet: BadgeTokenSet = {
   kind: 'badge',
