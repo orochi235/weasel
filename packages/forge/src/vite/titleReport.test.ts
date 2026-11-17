@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { storyId } from '../story/ids';
 import type { IndexEntry } from '../story/types';
-import { titleReport } from './titleReport';
+import { titleReport, warnShared } from './titleReport';
 
 const entry = (title: string, file: string, exportName = 'Default'): IndexEntry => ({
   id: storyId(title, exportName),
@@ -38,3 +38,13 @@ describe('titleReport', () => {
     expect(lines).toEqual(['ui-bar--lab  declared by Bar.stories.tsx, lab/BarArc.stories.tsx', '1 story id is declared twice. Rename one of each pair\'s exports.']);
   });
 });
+
+describe('warnShared', () => {
+  it('keeps only the first entry of a story id two files declare, as its warning says', () => {
+    const first = entry('ui/Button', '/r/a.stories.tsx', 'Primary');
+    const second = entry('ui/Button', '/r/b.stories.tsx', 'Primary');
+    const other = entry('ui/Button', '/r/b.stories.tsx', 'Ghost');
+    expect(warnShared([first, second, other], '/r', undefined)).toEqual([first, other]);
+  });
+});
+
