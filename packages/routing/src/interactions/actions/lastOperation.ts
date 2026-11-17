@@ -70,6 +70,8 @@ function editStackOf(history: History): EditStack {
 
 interface Held {
   op: LastOperation;
+  /** Whether a gesture made it, so leaving the tool that bound that gesture ends it. */
+  gesture: boolean;
   entry: number | null;
   /** The stack the operation's entry is on. */
   stack: EditStack;
@@ -158,6 +160,12 @@ export class LastOperationKeeper implements LastOperationStore {
     this.listeners.emit();
   };
 
+  /** The active tool changed: forget an operation a gesture made, whose tool is no longer the one in use. An
+   *  operation a command made stays. */
+  readonly toolLeft = (): void => {
+    if (this.held?.gesture) this.dismiss();
+  };
+
   readonly adjust = (patch: Readonly<Record<string, unknown>>): boolean => {
     const held = this.held;
     if (!held || this.busy) return false;
@@ -236,7 +244,7 @@ export class LastOperationKeeper implements LastOperationStore {
         const op = { id: action.id, label: schema.name || action.label, schema, values };
         const keep = (v: Readonly<Record<string, unknown>>) => host.keep(action.id, v);
         const rerun = (v: Record<string, unknown>) => host.rerun(action.id, { ...rest, ...v });
-        this.hold({ op, entry, stack, history, restore, takeSelection: host.takeSelection, keep, rerun });
+        this.hold({ op, gesture: false, entry, stack, history, restore, takeSelection: host.takeSelection, keep, rerun });
       }
       return out;
     };
@@ -274,7 +282,7 @@ export class LastOperationKeeper implements LastOperationStore {
           replay.call(handle, { ...rest, ...v });
           return true;
         };
-        this.hold({ op, entry, stack, history, restore, takeSelection: host.takeSelection, keep, rerun });
+        this.hold({ op, gesture: true, entry, stack, history, restore, takeSelection: host.takeSelection, keep, rerun });
       };
       return { ...handle, onEnd: ended };
     };

@@ -8,6 +8,7 @@ import { isApplePlatform, type ClickMemory } from '@weasel-js/gestures';
 import { useKitSettings, useLatest } from '@weasel-js/react';
 import { useActiveToolContext } from '../actions/activeToolContext';
 import { actionsNodeOf } from '../actions/ActionsProvider';
+import type { ActionsRegistry } from '../actions/registry';
 import type { ActionSource } from '../actions/action';
 import { useDepRegistry, type DepRegistry } from '../actions/depRegistry';
 import type { RuleCtx } from '../../eligibility';
@@ -119,8 +120,7 @@ export function useGestureDispatcher(opts: UseGestureDispatcherOptions): void {
     entriesById,
     active: activeTool.active,
     hotkeyStack: activeTool.hotkeyStack,
-    // The incoming tool must not inherit a live gesture.
-    onSwitch: () => { for (const d of allDispatchers()) d.cancelAll('cancel'); },
+    onSwitch: () => endOutgoingTool(allDispatchers(), registryRef.current),
   });
 
   useKeyLease(actions, enabled);
@@ -160,4 +160,10 @@ export function useGestureDispatcher(opts: UseGestureDispatcherOptions): void {
     });
   }, [enabled, keyboard, yieldKeys, canvasRef, pointerChannel, hoverChannel, wheelChannel, pinchChannel, contextMenuChannel, ingestChannel, carryChannel,
     allDispatchers, clientToLocalRef, controlsRef, ctxRef, heldPointerRef, kitSettingsRef, longPressRef, onClickRef, onDoubleClickRef, cursorRef, registryRef, requestRedrawRef, rootTargetRef, viewsRef]);
+}
+
+/** The incoming tool must not inherit a live gesture, nor the last-operation panel of one the outgoing tool finished. */
+function endOutgoingTool(dispatchers: readonly Dispatcher[], actions: ActionsRegistry): void {
+  for (const d of dispatchers) d.cancelAll('cancel');
+  actionsNodeOf(actions)?.lastOperation.toolLeft();
 }
