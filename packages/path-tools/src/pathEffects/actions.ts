@@ -7,7 +7,7 @@ import {
   type Action, type ActionDeps, ActionDisabledReason, type ActionParamsOf, BETWEEN_GESTURES, defineAction, type ImmediateInvoker,
 } from '@weasel-js/routing';
 import { worldEditToStorage } from '@weasel-js/geom';
-import { commitOps, createSetDataOp, deleteNode, derivedDepOf, documentOf, insertAt, type NodeId, type Op, type PathEffect, pathEffectNode, pathEffectOf, pathEffectParts, resolvePartPaint, registeredPathEffects, type AnyNode, slotOf, pathOperationTags, type AnyScene } from '@weasel-js/core';
+import { commitOps, createSetDataOp, createDeleteNodeOp, derivedDepOf, documentOf, createInsertNodeOp, type NodeId, type Op, type PathEffect, pathEffectNode, pathEffectOf, pathEffectParts, resolvePartPaint, registeredPathEffects, type AnyNode, slotOf, pathOperationTags, type AnyScene } from '@weasel-js/core';
 import { isTextData } from '@weasel-js/text';
 import { newEffect, withEffectSettings } from './params';
 import { hiddenOnItsOwn, hiddenOps } from './hiding';
@@ -123,7 +123,7 @@ function createEffectAction<const Id extends CreateId>(spec: CreateSpec<Id>) {
           } as unknown as AnyNode;
           // Hiding a source after the insert, so undo shows it before the effect goes.
           const hide = effect.hideSources === true ? sources.flatMap((id) => hiddenOps(scene, id, true, spec.label)) : [];
-          ops.push(insertAt(node, index, spec.label), ...hide);
+          ops.push(createInsertNodeOp(node, index, spec.label), ...hide);
           made.push(node.id);
         }
         commitOps(deps, ops, spec.label, { select: made });
@@ -288,13 +288,13 @@ export const expandPathEffectAction: Action & { requires: string[] } = {
       for (const { node, at } of effects) {
         const sources = (Array.isArray(node.dependsOn) ? node.dependsOn : []).map((id) => derivedDepOf(documentOf(scene), id, node));
         const parts = pathEffectParts(node, sources) ?? [];
-        ops.push(deleteNode(scene, node, EXPAND_LABEL));
+        ops.push(createDeleteNodeOp(scene, node, EXPAND_LABEL));
         parts.forEach((part, k) => {
           const { pose, path } = worldEditToStorage({ x: 0, y: 0, width: 0, height: 0 }, part.path);
           const { fill, stroke } = resolvePartPaint(part, node.data as Parameters<typeof resolvePartPaint>[1]);
           const data = { path, ...(fill ? { fill } : {}), ...(stroke ? { stroke } : {}) };
           const copy = { id: scene.mintId(), kind: 'mark', layer: node.layer, parent: node.parent, pose, data } as AnyNode;
-          ops.push(insertAt(copy, at < 0 ? at : at + k, EXPAND_LABEL));
+          ops.push(createInsertNodeOp(copy, at < 0 ? at : at + k, EXPAND_LABEL));
           made.push(copy.id);
         });
       }

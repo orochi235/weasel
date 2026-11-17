@@ -1,5 +1,5 @@
 import {
-  type AnyNode, type AnyScene, createSetDataOp, createSetPoseOp, deleteNode, insertAt, type NodeId, type Op,
+  type AnyNode, type AnyScene, createSetDataOp, createSetPoseOp, createDeleteNodeOp, createInsertNodeOp, type NodeId, type Op,
 } from '@weasel-js/core';
 import {
   measureEndsOf, measureNode, measurePose, withMeasureEnd,
@@ -25,7 +25,7 @@ export function addMeasureOp(
   frames?: MeasureFrames,
 ): { id: NodeId; op: Op } {
   const id = scene.mintId();
-  return { id, op: insertAt(measureNode(id, layer, start, end, frames), -1, MEASURE_LABELS.add) };
+  return { id, op: createInsertNodeOp(measureNode(id, layer, start, end, frames), -1, MEASURE_LABELS.add) };
 }
 
 /** `node` as it reads after `next`: what an edit writes and its preview shows. */
@@ -70,7 +70,7 @@ export function deleteMeasureOps(scene: AnyScene, ids: readonly NodeId[], label:
   const ops: Op[] = [];
   for (const id of ids) {
     const node = scene.get(id);
-    if (node) ops.push(deleteNode(scene, node, label));
+    if (node) ops.push(createDeleteNodeOp(scene, node, label));
   }
   return ops;
 }

@@ -4,7 +4,7 @@
  * spans it some other way.
  */
 import {
-  commitOps, deleteNode, insertAt, PATH_GROUP, pathCopy, type PathNode, pathOperationTags, reshapeOps,
+  commitOps, createDeleteNodeOp, createInsertNodeOp, PATH_GROUP, pathCopy, type PathNode, pathOperationTags, reshapeOps,
   selectedPathNodes, slotOf,
 } from '@weasel-js/core';
 import type { Action, ActionDeps, ImmediateInvoker } from '@weasel-js/routing';
@@ -58,9 +58,9 @@ export const snipAtCrossingsAction: Action & { requires: string[] } = {
       const ops: Op[] = [];
       const made = new Map<string, string[]>();
       for (const { node, pieces: runs, at } of cut) {
-        ops.push(deleteNode(scene, node.node, CUT_LABEL));
+        ops.push(createDeleteNodeOp(scene, node.node, CUT_LABEL));
         const copies = runs.flatMap((p) => pathCopy(scene, node, p, pieceOrigins(node.path, p)) ?? []);
-        copies.forEach((copy, k) => ops.push(insertAt(copy, at < 0 ? at : at + k, CUT_LABEL)));
+        copies.forEach((copy, k) => ops.push(createInsertNodeOp(copy, at < 0 ? at : at + k, CUT_LABEL)));
         made.set(node.id, copies.map((c) => c.id));
       }
       const selected = deps.operands?.get() ?? [];
@@ -163,7 +163,7 @@ export function joinPathsCommand(
         const made = plan(deps, params);
         if (!scene || !made) return;
         const ops = reshapeOps(made.keep, made.path, base.label, made.anchorData);
-        if (made.drop) ops.push(deleteNode(scene, made.drop.node, base.label));
+        if (made.drop) ops.push(createDeleteNodeOp(scene, made.drop.node, base.label));
         commitOps(deps, ops, base.label, { select: [made.keep.id] });
       },
     } satisfies ImmediateInvoker,

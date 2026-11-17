@@ -14,7 +14,7 @@ import { useState } from 'react';
 import { useDepRegistry, useDepSource } from '@weasel-js/routing/react';
 import { useLatest } from '@weasel-js/react';
 import type { EditAnchorsDep } from 'interactions/actions/depSchema';
-import { commitSelectionOps } from 'interactions/actions/defaultCommitAdapter';
+import { createCommitSelectionOps } from 'interactions/actions/defaultCommitAdapter';
 import { locksOf, type EditAnchorsParams } from 'interactions/actions/edit-anchors/params';
 import type { Scene, NodeId } from 'core/scene/types';
 import type { SelectionApi } from '@weasel-js/routing';
@@ -188,7 +188,7 @@ function pathAccess(
     quantized: (_id, stored) => quantizedShape(sc, stored),
     applyEdit(id, worldPath, label, origins, select) {
       const ops = editOps(id, worldPath, label, origins);
-      if (ops.length > 0) ad.applyOps([...ops, ...commitSelectionOps(select, id, label)], label);
+      if (ops.length > 0) ad.applyOps([...ops, ...createCommitSelectionOps(select, id, label)], label);
     },
     editOps,
     finishEdit(id: string, worldPath: unknown, origins?: readonly (PointOrigin | null)[]) {

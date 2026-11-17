@@ -134,11 +134,11 @@ export function slotOf(scene: Scene<unknown, string, unknown>, id: NodeId): numb
 }
 
 /** Insert `node` at `index` among its parent's children. */
-export function insertAt(node: Node<unknown, string, unknown>, index: number, label: string): Op {
+export function createInsertNodeOp(node: Node<unknown, string, unknown>, index: number, label: string): Op {
   return createInsertOp(index >= 0 ? { node, index, label } : { node, label });
 }
 
 /** Delete `node`, remembering its slot for undo. */
-export function deleteNode(scene: Scene<unknown, string, unknown>, node: Node<unknown, string, unknown>, label: string): Op {
+export function createDeleteNodeOp(scene: Scene<unknown, string, unknown>, node: Node<unknown, string, unknown>, label: string): Op {
   return createDeleteOp({ node, index: slotOf(scene, node.id), label });
 }

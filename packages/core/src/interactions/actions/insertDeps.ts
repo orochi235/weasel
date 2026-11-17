@@ -79,7 +79,7 @@ export interface InsertDep {
      *  from its center. */
     ends?: InsertEnds,
     /** The selection change to commit in the same undo entry as the node. A
-     *  `commit` that applies ops appends `commitSelectionOps(select, id)` to
+     *  `commit` that applies ops appends `createCommitSelectionOps(select, id)` to
      *  them; one that applies none still sets the selection it names. */
     select?: CommitSelection,
   ): NodeId | null;

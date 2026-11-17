@@ -13,7 +13,7 @@ import { useLatest } from '@weasel-js/react';
 import type { InsertDep, InsertEnds, InsertExtras, InsertLive, ShapeGenerator } from '@weasel-js/core/engine';
 import { cycleFill, solid, strokeOf, strokeWith } from '@weasel-js/paint';
 import { insertSite, minSizeOf } from '@weasel-js/core';
-import { poseDescriptorOf, createInsertOp, commitSelectionOps, insertPreviewExtent } from '@weasel-js/core/engine';
+import { poseDescriptorOf, createInsertOp, createCommitSelectionOps, insertPreviewExtent } from '@weasel-js/core/engine';
 import type { Scene, NodeId, OpsApplier, Op, InsertNodeFactories, InsertedNode } from '@weasel-js/core';
 import {
   rectPath,
@@ -230,7 +230,7 @@ export function useInsertDepSource(
         const built = make(bounds, extras, ends);
         if (built === null) return null;
         const label = `Insert ${extras.kind}`;
-        const apply = () => ad.applyOps([...built.ops, ...commitSelectionOps(select, built.id, label)], label);
+        const apply = () => ad.applyOps([...built.ops, ...createCommitSelectionOps(select, built.id, label)], label);
         // An adapter whose `applyOps` keeps its own history records nothing in the batch.
         if (built.batch) sc.batch(label, apply, built.batch(String(built.id)));
         else apply();

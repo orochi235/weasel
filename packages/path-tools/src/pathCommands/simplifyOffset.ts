@@ -11,7 +11,7 @@ import type { Op } from '@weasel-js/core';
 import type { OffsetPathParams } from '../actionParamSchema';
 import type { ActionParamsOf } from '@weasel-js/routing';
 import { livePathEdit } from './livePathEdit';
-import { insertAt, pathCopy, reshapeOps, slotOf } from '@weasel-js/core';
+import { createInsertNodeOp, pathCopy, reshapeOps, slotOf } from '@weasel-js/core';
 import { icon } from '../icons.gen';
 
 /** Simplify's tolerance when none is given: world units off the original. */
@@ -95,7 +95,7 @@ export const offsetPathAction = livePathEdit<OffsetPathParams>({
     for (const { node, path, at } of placed) {
       const copy = pathCopy(scene, node, path);
       if (!copy) continue;
-      ops.push(insertAt(copy, at < 0 || distance > 0 ? at : at + 1, 'Offset Path'));
+      ops.push(createInsertNodeOp(copy, at < 0 || distance > 0 ? at : at + 1, 'Offset Path'));
     }
     return ops;
   },
