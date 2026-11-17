@@ -126,11 +126,11 @@ export function easedPaths<TPose>(
   easings: readonly RouteEasing[],
   u: number,
   poseOf: (id: string) => TPose | undefined,
-  geometry: PoseDescriptor<TPose> = AUTO_POSE_DESCRIPTOR as PoseDescriptor<TPose>,
+  poseDescriptor: PoseDescriptor<TPose> = AUTO_POSE_DESCRIPTOR as PoseDescriptor<TPose>,
 ): Map<string, Path> {
   const depOf = frameDeps(scene, poseOf);
   const centerOf = (dep: DerivedDep<TPose>): Vec2 => {
-    const b = geometry.getBounds(dep.pose);
+    const b = poseDescriptor.getBounds(dep.pose);
     return { x: b.x + b.width / 2, y: b.y + b.height / 2 };
   };
   const out = new Map<string, Path>();
@@ -230,12 +230,12 @@ export interface EasedRoutes<TPose> {
   /** The routes the run now eases; any shown before stop showing. */
   set(easings: readonly RouteEasing[]): void;
   /** Show each route `u` of the way there, its ends where `poseOf` puts
-   *  them; `null` shows none. `geometry` reads the poses' bounds. */
+   *  them; `null` shows none. `poseDescriptor` reads the poses' bounds. */
   show(
     scene: Scene<unknown, string, TPose>,
     u: number | null,
     poseOf: (id: string) => TPose | undefined,
-    geometry?: PoseDescriptor<TPose>,
+    poseDescriptor?: PoseDescriptor<TPose>,
   ): void;
   /** Stop showing them. */
   drop(): void;
@@ -249,14 +249,14 @@ export function useEasedRoutes<TPose>(): EasedRoutes<TPose> {
       held.current?.hold.drop();
       easings.current = next;
     },
-    show(scene, u, poseOf, geometry) {
+    show(scene, u, poseOf, poseDescriptor) {
       if (u === null) held.current?.hold.drop();
       if (u === null || easings.current.length === 0) return;
       if (held.current?.scene !== scene) {
         held.current?.hold.drop();
         held.current = { scene, hold: pathHold(scene) };
       }
-      held.current.hold.show(easedPaths(scene, easings.current, u, poseOf, geometry));
+      held.current.hold.show(easedPaths(scene, easings.current, u, poseOf, poseDescriptor));
     },
     drop() {
       held.current?.hold.drop();

@@ -67,7 +67,7 @@ export interface EdgeEndOptions<TPose> extends PortsOptions<TPose> {
  *  `derivePath` routes it. `null` for a node that is not a drawable edge. */
 export function createEdgeEnds<TPose>(participants: ParticipantSource<TPose>, opts: EdgeEndOptions<TPose> = {}) {
   const derive = edgeRouter<TPose>({
-    ...(opts.geometry ? { geometry: opts.geometry } : {}),
+    ...(opts.poseDescriptor ? { poseDescriptor: opts.poseDescriptor } : {}),
     ...(opts.read ? { read: opts.read } : {}),
     ...(opts.routers ? { routers: opts.routers } : {}),
   });

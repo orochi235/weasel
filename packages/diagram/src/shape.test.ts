@@ -67,9 +67,9 @@ describe('diagramShape', () => {
 
 describe('registerDiagramShape', () => {
   it('registers one painter for two calls with the same options', () => {
-    const geometry = { ...RECT_POSE_DESCRIPTOR };
-    const a = registerDiagramShape({ geometry });
-    const b = registerDiagramShape({ geometry });
+    const poseDescriptor = { ...RECT_POSE_DESCRIPTOR };
+    const a = registerDiagramShape({ poseDescriptor });
+    const b = registerDiagramShape({ poseDescriptor });
     a();
     b();
   });

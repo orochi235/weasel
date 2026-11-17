@@ -61,7 +61,7 @@ export function bodyAt<TPose>(
   at: Vec2,
   opts: PortsOptions<TPose> & { view?: ConnectView } = {},
 ): BodyHit<TPose> | null {
-  const geometry = opts.geometry ?? (AUTO_POSE_DESCRIPTOR as PoseDescriptor<TPose>);
+  const poseDescriptor = opts.poseDescriptor ?? (AUTO_POSE_DESCRIPTOR as PoseDescriptor<TPose>);
   let hit: BodyHit<TPose> | null = null;
   // Render order, so the last match is the one drawn on top.
   for (const participant of participants()) {
@@ -70,9 +70,9 @@ export function bodyAt<TPose>(
     if (diagramEdgeOf(node) !== null || diagramLabelOf(node) !== null || diagramGroupOf(node) !== null) continue;
     const trait = diagramNodeOf(node, opts.read);
     if (trait === null || trait.group !== undefined) continue;
-    const bounds = geometry.getBounds(participant.pose);
+    const bounds = poseDescriptor.getBounds(participant.pose);
     if (bounds.width <= 0 || bounds.height <= 0) continue;
-    const rotation = geometry.getRotation?.(participant.pose) ?? 0;
+    const rotation = poseDescriptor.getRotation?.(participant.pose) ?? 0;
     const local = rotation === 0
       ? at
       : rotatePoint(at.x, at.y, bounds.x + bounds.width / 2, bounds.y + bounds.height / 2, -rotation);
@@ -147,10 +147,10 @@ export function createTargets<TPose>(opts: TargetOptions<TPose>) {
 
 function createResolver<TPose>(opts: TargetOptions<TPose>) {
   const portOpts: PortsOptions<TPose> = {
-    ...(opts.geometry ? { geometry: opts.geometry } : {}),
+    ...(opts.poseDescriptor ? { poseDescriptor: opts.poseDescriptor } : {}),
     ...(opts.read ? { read: opts.read } : {}),
   };
-  const geometry = opts.geometry ?? (AUTO_POSE_DESCRIPTOR as PoseDescriptor<TPose>);
+  const poseDescriptor = opts.poseDescriptor ?? (AUTO_POSE_DESCRIPTOR as PoseDescriptor<TPose>);
 
   /** The nearest port in reach that `canConnect` does not silently turn away, or `null`. */
   function portTarget(from: ConnectEnd, at: Vec2, view: ConnectView): Landing | null {
@@ -200,7 +200,7 @@ function createResolver<TPose>(opts: TargetOptions<TPose>) {
    *  else its own point. */
   function centerOf(end: ConnectEnd): Vec2 {
     const participant = participantOf(end.nodeId);
-    return participant === undefined ? end.point : boxCenter(geometry, participant.pose);
+    return participant === undefined ? end.point : boxCenter(poseDescriptor, participant.pose);
   }
 
   /** The port an end is drawn to: itself, or for a body, the port facing
@@ -249,7 +249,7 @@ function createResolver<TPose>(opts: TargetOptions<TPose>) {
   /** The world box of `nodeId`'s participant, or `null`. */
   function boxOf(nodeId: string): { x: number; y: number; width: number; height: number } | null {
     const participant = participantOf(nodeId);
-    return participant === undefined ? null : geometry.getBounds(participant.pose);
+    return participant === undefined ? null : poseDescriptor.getBounds(participant.pose);
   }
 
   return { target, landing, portFor, preview, boxOf };

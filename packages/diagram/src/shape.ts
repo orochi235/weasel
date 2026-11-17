@@ -38,14 +38,14 @@ export interface DiagramShapeOptions<TPose> {
   /** How the trait is read. Default: the node's own `data.diagram`. */
   read?: DiagramNodeReader;
   /** Reads the box the outline is built in. Default `RECT_POSE_DESCRIPTOR`. */
-  geometry?: PoseDescriptor<TPose>;
+  poseDescriptor?: PoseDescriptor<TPose>;
 }
 
 /** The entry, for a consumer composing their own painter list. */
 export function diagramShape<TPose>(
   opts: DiagramShapeOptions<TPose> = {},
 ): NodeShapeEntry<unknown, TPose> {
-  const geometry = opts.geometry ?? (RECT_POSE_DESCRIPTOR as PoseDescriptor<TPose>);
+  const poseDescriptor = opts.poseDescriptor ?? (RECT_POSE_DESCRIPTOR as PoseDescriptor<TPose>);
   const outlineOf = (node: { id: string; kind: 'mark' | 'group'; data: unknown }) =>
     diagramNodeOf(node, opts.read)?.outline ?? laneOutlineOf(node) ?? sequenceOutlineOf(node);
 
@@ -56,7 +56,7 @@ export function diagramShape<TPose>(
       const outline = outlineOf(node);
       if (outline === undefined) return [];
       const d = node.data as { fill?: Fill | Inherit | null; stroke?: Stroke | Inherit | null };
-      const box = geometry.getBounds(pose);
+      const box = poseDescriptor.getBounds(pose);
       const declaredFill = resolveFill(d.fill, ctx?.inherited?.fill);
       const declaredStroke = resolveStroke(d.stroke, ctx?.inherited?.stroke);
       const fill = declaredFill && commandFill(declaredFill, box);
@@ -88,7 +88,7 @@ export function diagramShape<TPose>(
     // than its bounding box.
     silhouette: (node, pose) => {
       const outline = outlineOf(node);
-      return outline === undefined ? null : outlinePath(outline, geometry.getBounds(pose));
+      return outline === undefined ? null : outlinePath(outline, poseDescriptor.getBounds(pose));
     },
   };
 }
@@ -114,11 +114,11 @@ const diagramEntries = entryMemo<NodeShapeEntry<unknown, unknown>>();
  * Register {@link diagramShape}. Returns the disposer, and takes `'high'`
  * priority so a body outline wins over a `data.shape` or `data.path` the same
  * node may also carry. Calls with the same options register one painter, so
- * each may come and go on its own; a painter with its own `read` or `geometry`
+ * each may come and go on its own; a painter with its own `read` or `poseDescriptor`
  * registered beside another (`DiagramView`'s) needs an `id` of its own.
  */
 export function registerDiagramShape<TPose>(opts: DiagramShapeOptions<TPose> = {}): () => void {
-  const entry = diagramEntries([opts.id, opts.read, opts.geometry], () => diagramShape(opts as DiagramShapeOptions<unknown>));
+  const entry = diagramEntries([opts.id, opts.read, opts.poseDescriptor], () => diagramShape(opts as DiagramShapeOptions<unknown>));
   const unregister = registerNodeShape(entry, { priority: 'high' });
   // A node already drawn by an outline's name was painted and picked by what the name resolved to then.
   const unwatch = onOutlinesChange(refreshNodeShapes);

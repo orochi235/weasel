@@ -64,9 +64,9 @@ const touched = (s: SceneEditSummary): boolean =>
   s.added.size + s.removed.size + s.posed.size + s.reparented.size + s.dataChanged.size > 0;
 
 /** The offset carrying `before` to `after`, read off their bounds. */
-function offsetOf(geometry: PoseDescriptor<unknown>, before: unknown, after: unknown): Vec2 {
-  const a = geometry.getBounds(before);
-  const b = geometry.getBounds(after);
+function offsetOf(poseDescriptor: PoseDescriptor<unknown>, before: unknown, after: unknown): Vec2 {
+  const a = poseDescriptor.getBounds(before);
+  const b = poseDescriptor.getBounds(after);
   return { x: b.x - a.x, y: b.y - a.y };
 }
 
@@ -85,7 +85,7 @@ function carried(data: ReadonlyMap<string, unknown>, input: AvoidInput): AvoidIn
 /** The drag half: each frame previews the reroutes near what moved. */
 function avoidFollower<TPose>(scene: Scene<unknown, string, TPose>, router: AvoidRouter, opts: AvoidRoutingOptions<TPose>): TransformFollower {
   const sc = scene as unknown as AnyScene;
-  const geometry = (opts.geometry ?? AUTO_POSE_DESCRIPTOR) as PoseDescriptor<unknown>;
+  const poseDescriptor = (opts.poseDescriptor ?? AUTO_POSE_DESCRIPTOR) as PoseDescriptor<unknown>;
   let last: { frame: ReadonlyMap<string, unknown>; out: TransformPreviewNode[] } | null = null;
   const still = (frame: ReadonlyMap<string, unknown>): boolean => {
     if (last === null || last.frame.size !== frame.size) return false;
@@ -93,7 +93,7 @@ function avoidFollower<TPose>(scene: Scene<unknown, string, TPose>, router: Avoi
     for (const [id, pose] of frame) {
       const was = last.frame.get(id);
       if (was === undefined) return false;
-      const d = offsetOf(geometry, was, pose);
+      const d = offsetOf(poseDescriptor, was, pose);
       if (Math.abs(d.x) >= px || Math.abs(d.y) >= px) return false;
     }
     return true;

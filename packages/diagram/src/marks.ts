@@ -81,23 +81,23 @@ function checkMarkPath(nodeId: string, index: number, d: string): void {
 /** Options for {@link markShape} and {@link registerMarkShape}. */
 export interface MarkShapeOptions<TPose> {
   /** Names the painter. The registry holds one painter per id, so a painter with
-   *  its own `geometry` registered beside another (`DiagramView`'s) needs an id
+   *  its own `poseDescriptor` registered beside another (`DiagramView`'s) needs an id
    *  of its own. Default `'diagram:mark'`. */
   id?: string;
   /** Reads the box a mark is stretched over. Default `RECT_POSE_DESCRIPTOR`. */
-  geometry?: PoseDescriptor<TPose>;
+  poseDescriptor?: PoseDescriptor<TPose>;
 }
 
 /** The painter for a drawn mark. */
 export function markShape<TPose>(opts: MarkShapeOptions<TPose> = {}): NodeShapeEntry<unknown, TPose> {
-  const geometry = opts.geometry ?? (RECT_POSE_DESCRIPTOR as PoseDescriptor<TPose>);
+  const poseDescriptor = opts.poseDescriptor ?? (RECT_POSE_DESCRIPTOR as PoseDescriptor<TPose>);
   return {
     id: opts.id ?? 'diagram:mark',
     matches: (node) => diagramMarkOf(node) !== null,
     paint: (node, pose, ctx) => {
       const mark = diagramMarkOf(node);
       if (mark === null) return [];
-      const box = geometry.getBounds(pose);
+      const box = poseDescriptor.getBounds(pose);
       const d = node.data as { fill?: Fill | Inherit | null; stroke?: Stroke | Inherit | null };
       const declaredFill = resolveFill(d.fill, ctx?.inherited?.fill);
       const declaredStroke = resolveStroke(d.stroke, ctx?.inherited?.stroke);
@@ -116,7 +116,7 @@ export function markShape<TPose>(opts: MarkShapeOptions<TPose> = {}): NodeShapeE
 /** Register {@link markShape}; returns the disposer. Calls with the same
  *  options register one painter, so each may come and go on its own. */
 export function registerMarkShape<TPose>(opts: MarkShapeOptions<TPose> = {}): () => void {
-  const entry = markEntries([opts.id, opts.geometry], () => markShape(opts as MarkShapeOptions<unknown>));
+  const entry = markEntries([opts.id, opts.poseDescriptor], () => markShape(opts as MarkShapeOptions<unknown>));
   return registerNodeShape(entry, { priority: 'high' });
 }
 

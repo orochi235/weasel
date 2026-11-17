@@ -801,7 +801,7 @@ Marks move with their node. `DiagramView` registers the painters for outlines
 and marks itself; a scene drawn on your own `SceneCanvas` calls
 `registerDiagramShape()` once for outlines and `registerMarkShape()` once for
 marks, each of which returns its disposer, or they do not paint. Calls with the
-same options share one painter. A painter with its own `geometry` or `read`
+same options share one painter. A painter with its own `poseDescriptor` or `read`
 registered beside `DiagramView`'s takes an `id` of its own, since the registry
 holds one painter per id:
 

@@ -123,7 +123,7 @@ function fixedEndOf<TPose>(ends: EdgeEnds<TPose>, moving: 'from' | 'to', opts: R
   const { node, pose } = ends[side];
   const named = ends.trait[side].port;
   const port = named === undefined ? undefined : portOf(node, pose, named, {
-    ...(opts.geometry ? { geometry: opts.geometry } : {}),
+    ...(opts.poseDescriptor ? { poseDescriptor: opts.poseDescriptor } : {}),
     ...(opts.read ? { read: opts.read } : {}),
   });
   return port ?? { kind: 'body', nodeId: node.id, point: ends.points[side] };

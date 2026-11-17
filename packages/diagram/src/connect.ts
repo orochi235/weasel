@@ -88,7 +88,7 @@ export interface ConnectActionOptions<TPose> {
   /** Default {@link CONNECT_ACTION_ID}. */
   id?: string;
   read?: DiagramNodeReader;
-  geometry?: PoseDescriptor<TPose>;
+  poseDescriptor?: PoseDescriptor<TPose>;
   /** Default {@link defaultCanConnect}. */
   canConnect?: CanConnect;
   /** Which ports a connect may land on: a port this turns away is never a
