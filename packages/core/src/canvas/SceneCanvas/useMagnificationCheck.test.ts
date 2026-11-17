@@ -42,6 +42,19 @@ describe('useMagnificationCheck', () => {
     expect(warn).toHaveBeenCalledTimes(1);
   });
 
+  it('checks once a drag settles, not at each size along it', () => {
+    const scene = boardScene();
+    renderHook(() => useMagnificationCheck(scene as unknown as Scene<unknown, string, unknown>));
+    for (const s of [1.2, 1.4, 1.6, 1.8]) {
+      act(() => scene.setPose(asNodeId('inset'), { ...BOX, transform: [s, 0, 0, s] }));
+      act(() => vi.advanceTimersByTime(200));
+    }
+    expect(warn).not.toHaveBeenCalled();
+    act(() => vi.advanceTimersByTime(300));
+    expect(warn).toHaveBeenCalledTimes(1);
+    expect(String(warn.mock.calls[0]![0])).toMatch(/at 1\.8×/);
+  });
+
   it('stays quiet when the scale is declared', () => {
     const scene = boardScene();
     scene.setUnits(asNodeId('inset'), { ...IN, drawnAt: 1.5 });
