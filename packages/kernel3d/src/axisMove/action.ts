@@ -22,7 +22,7 @@ import {
 import { moveAction } from '@weasel-js/editing/engine';
 
 /** The axis move's action id. */
-export const AXIS_MOVE_ACTION_ID = 'move3d.axis';
+export const MOVE_AXIS_ACTION_ID = 'move3d.axis';
 /** Id of the entry `createAxisMove` builds. */
 export const AXIS_MOVE_CONTRIBUTION_ID = 'kernel3d.axisMove';
 /** The prefix of an axis handle's hit `kind`; the axis follows it. */
@@ -81,7 +81,7 @@ export function createAxisMove<TData, TLayer extends string>(
   const inner = moveAction.invoker;
 
   const action: Action = {
-    id: AXIS_MOVE_ACTION_ID,
+    id: MOVE_AXIS_ACTION_ID,
     label: 'Move Along Axis',
     group: 'transform',
     activeCursor: 'move',
@@ -110,7 +110,7 @@ export function createAxisMove<TData, TLayer extends string>(
       actions: [action],
       bindings: [{
         spec: { kind: 'drag', target: { kindOf: isAxisHandle }, mods: roleMods(SNAP_ROLES) },
-        actionId: AXIS_MOVE_ACTION_ID,
+        actionId: MOVE_AXIS_ACTION_ID,
         opts: { id: 'kernel3d.axisMove.handle' },
       }],
     },
