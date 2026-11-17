@@ -66,7 +66,7 @@ export {
 } from './plotScene';
 
 export { handlesOf, plotEditorOf, type PlotEditor, type PlotHandle } from './editing/editors';
-export { foldPlotText, isPlotText, plotTextOf, usePlotTextEdit } from './editing/textEdit';
+export { foldPlotText, isPlotText, plotTextDatumOf, usePlotTextEdit } from './editing/textEdit';
 export {
   PLOT_HANDLE_AFFORDANCE_KIND, PLOT_HANDLE_LAYER_ID, createPlotHandleLayer, plotHandles, plotHandleScratchOf, plotOrigin,
   type PlotHandleScratch,
