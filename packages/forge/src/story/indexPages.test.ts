@@ -24,6 +24,13 @@ describe('indexEntries', () => {
   });
 });
 
+describe('titles differing only in case or punctuation', () => {
+  it('get one index page, as their story ids already share one prefix', () => {
+    const pages = indexEntries([entry('labkit/Lab', 'One'), entry('Labkit/Lab', 'Two'), entry('ui/Color Field', 'A'), entry('ui/Color-Field', 'B')]);
+    expect(pages.map((p) => p.id)).toEqual(['labkit-lab:index', 'ui-color-field:index']);
+  });
+});
+
 describe('a title several files share', () => {
   const lab = entry('ui/Bar', 'OnAnArc', ['lab'], '/c/Bar/lab/BarArc.stories.tsx');
   const own = entry('ui/Bar', 'Default', undefined, '/c/Bar/Bar.stories.tsx');
