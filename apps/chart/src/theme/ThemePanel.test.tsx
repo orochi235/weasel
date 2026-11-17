@@ -101,6 +101,16 @@ describe('ThemePanel', () => {
     expect(fillOf(scene, 'a')).toBe(paper.roles.default!.fill);
     expect(scene.historyIndex()).toBe(depth + 3);
   });
+  it('records nothing for a role renamed to its own name', () => {
+    const { scene, depth } = setup();
+    const name = (screen.getAllByRole('textbox', { name: 'Name' }) as HTMLInputElement[])[1]!;
+    act(() => {
+      fireEvent.change(name, { target: { value: 'Accent ' } });
+      fireEvent.blur(name);
+    });
+    expect(scene.doc.get(DIAGRAM_THEME_KEY)).toBe('paper');
+    expect(scene.historyIndex()).toBe(depth);
+  });
   it('moves existing text with the theme size, one undo entry, but not a size set by hand', () => {
     const { scene, depth } = setup();
     setDiagramFontSize(scene, ['a'], 20);
