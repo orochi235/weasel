@@ -239,7 +239,7 @@ describe('d3Bind selection — filter / each', () => {
     ]);
   });
 
-  it('transition() throws without an animator in BindOptions', () => {
+  it('transition() throws without an animator in D3BindOptions', () => {
     const scene = setupScene();
     let sel: ReturnType<typeof binding.join>;
     const binding = d3Bind(scene.current, [{ id: 'a', label: 'A', x: 10 }] as Datum[], {

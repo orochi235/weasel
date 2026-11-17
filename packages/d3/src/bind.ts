@@ -5,7 +5,7 @@ import { cancelPendingRemoval } from './pendingRemovals';
 import { transitionCancelKey } from './cancelKey';
 import { createTransition, interruptNode } from './transition';
 import type {
-  BindOptions,
+  D3BindOptions,
   D3Binding,
   D3Selection,
 } from './types';
@@ -31,7 +31,7 @@ export function d3Bind<
 >(
   scene: Scene<TPayload, TLayer, TPose>,
   data: readonly TData[],
-  options: BindOptions<TData, TPose>,
+  options: D3BindOptions<TData, TPose>,
 ): D3Binding<TData, TPose, TPayload> {
   let poseFn: ((d: TData, i: number) => TPose) | null = null;
   let dataFn: ((d: TData, i: number) => TPayload) | null = null;
@@ -223,7 +223,7 @@ function createSelection<TData, TPose>(
     transition(name?: string) {
       if (!animator) {
         throw new Error(
-          'd3Bind.transition: pass `animator` in BindOptions to enable transitions',
+          'd3Bind.transition: pass `animator` in D3BindOptions to enable transitions',
         );
       }
       const resolvedGeometry = (geometry ??
