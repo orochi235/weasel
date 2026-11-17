@@ -1,5 +1,5 @@
 import { useRef, type ReactElement, type ReactNode } from 'react';
-import { selection, soloFrom, type MultipleSelection } from '@weasel-js/ui-input';
+import { createSelectionModel, soloFrom, type MultipleSelection } from '@weasel-js/ui-input';
 import { SegmentSweeper, SWEEP_INDEX_ATTR, useSweepGuard } from '../Segmented/segmentSweep';
 import type { SegmentedSweepProps } from '../Segmented/SegmentedBar';
 import { Checkbox } from '../Checkbox/Checkbox';
@@ -47,7 +47,7 @@ export function CheckboxGroup<V extends string | number = string>(props: Checkbo
   const held = useButtonAccess({ ...props, holdsValue: true }).state !== 'enabled';
   const usable = (i: number): boolean => !held && items[i] !== undefined && !items[i].disabled;
   const values = items.map((it) => it.value);
-  const model = selection<V>({ ...props, mode: 'multiple' }, values);
+  const model = createSelectionModel<V>({ ...props, mode: 'multiple' }, values);
   const guard = useSweepGuard();
   const root = useRef<HTMLDivElement>(null);
   const Box = control === 'switch' ? Switch : Checkbox;

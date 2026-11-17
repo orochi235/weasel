@@ -2,7 +2,7 @@
 '@weasel-js/ui-input': minor
 ---
 
-`liveSelection(current, count)`: a selection model that reads the model `current` returns at each call.
+`createLiveSelectionModel(current, count)`: a selection model that reads the model `current` returns at each call.
 
 An edit begun at a press then reports through the latest handler.
 

@@ -8,7 +8,7 @@ import { describe, expect, it } from 'vitest';
 import fc from 'fast-check';
 import { runs, tally, timeoutFor } from './pbt.fixture';
 import {
-  selection, selectionKeys, selectionOfEach, sweepFrom, type SelectState, type SelectionModel,
+  createSelectionModel, selectionKeys, createEachSelectionModel, sweepFrom, type SelectState, type SelectionModel,
 } from './selection';
 
 const RUNS = 200;
@@ -38,12 +38,12 @@ function makeReal(cfg: Config, init: Model): Real {
     cfg, single: init.single, multiple: [...init.multiple], each: [...init.each], reports: 0,
     model() {
       if (cfg.mode === 'single') {
-        return selection({ value: r.single, onChange: (v) => { r.single = v; r.reports++; }, allowDeselect: cfg.allowDeselect, followsFocus: cfg.followsFocus, mixedValues: cfg.mixed }, VALUES);
+        return createSelectionModel({ value: r.single, onChange: (v) => { r.single = v; r.reports++; }, allowDeselect: cfg.allowDeselect, followsFocus: cfg.followsFocus, mixedValues: cfg.mixed }, VALUES);
       }
       if (cfg.mode === 'multiple') {
-        return selection({ mode: 'multiple', value: r.multiple, onChange: (v) => { r.multiple = v; r.reports++; }, mixedValues: cfg.mixed }, VALUES);
+        return createSelectionModel({ mode: 'multiple', value: r.multiple, onChange: (v) => { r.multiple = v; r.reports++; }, mixedValues: cfg.mixed }, VALUES);
       }
-      return selectionOfEach(r.each.map((selected, i) => ({ selected, onChange: (v: boolean) => { r.each[i] = v; r.reports++; } })));
+      return createEachSelectionModel(r.each.map((selected, i) => ({ selected, onChange: (v: boolean) => { r.each[i] = v; r.reports++; } })));
     },
   };
   return r;

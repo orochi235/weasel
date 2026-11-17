@@ -65,9 +65,9 @@ reads the heading off an arrow key.
 
 ## Selection and grids
 
-`selection(spec, values)` is which of a run of items are on: one value or `null` (`mode: 'single'`, which may
+`createSelectionModel(spec, values)` is which of a run of items are on: one value or `null` (`mode: 'single'`, which may
 `allowDeselect` and may not follow focus), or a list of them (`'multiple'`), either with `mixedValues`, where the
-sources disagree. `selectionOfEach(items)` is the same over items that each own a boolean. The model says each
+sources disagree. `createEachSelectionModel(items)` is the same over items that each own a boolean. The model says each
 item's state (`'on'`, `'off'`, `'mixed'`), what a press does, and runs an `edit`, a run of changes from its own
 copy that it can revert; `sweepFrom` is a sweep's, setting each item it reaches to the opposite of whether the
 pressed one was on. `selectionKeys` says what the keyboard does with it.

@@ -40,8 +40,8 @@ export { SWEEP_CAP, stepsOf, range, values, frames, until } from './sweep';
 export type { Sweep, RangeSpec, FrameSpan, FrameOptions } from './sweep';
 export { rowOffset, tileGrid, tileRows, tileKey, gridLayout, rovingGridTarget } from './grid';
 export type { LastRow, Tiling, TileGrid, GridLayout } from './grid';
-export { selection, selectionOfEach, selectionKeys, soloFrom, soloSweepFrom, sweepFrom } from './selection';
-export { liveSelection } from './liveSelection';
+export { createSelectionModel, createEachSelectionModel, selectionKeys, soloFrom, soloSweepFrom, sweepFrom } from './selection';
+export { createLiveSelectionModel } from './createLiveSelectionModel';
 export type {
   SelectState, SingleSelection, MultipleSelection, SelectionSpec, OwnSelection, SelectionEdit, SelectionModel,
 } from './selection';

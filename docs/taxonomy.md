@@ -658,7 +658,7 @@ crosses. Any drag naming a target or a modifier outranks it, an item's own
 drag takes the press first, and its `begin` returning `null` hands the drag
 on. The `sweep` prop of a `multiple` or `each` `SegmentedBar`, and of a
 `ToggleChips`, mounts one on the row, setting items through its selection model
-(ui-input's `selection`). Alt, read once at the press from the sweep's
+(ui-input's `createSelectionModel`). Alt, read once at the press from the sweep's
 `ctx.modifiers`, makes it a solo: the items reached so far on and every other
 off, worked out from the states at the press (`soloSweepFrom`, by
 `soloChanges`).

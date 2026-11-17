@@ -6062,7 +6062,7 @@
    "packages/ui-input/src/index.ts",
    "packages/ui-input/src/keySteps.ts",
    "packages/ui-input/src/list.ts",
-   "packages/ui-input/src/liveSelection.ts",
+   "packages/ui-input/src/createLiveSelectionModel.ts",
    "packages/ui-input/src/pbt.fixture.ts",
    "packages/ui-input/src/press.ts",
    "packages/ui-input/src/reorder.ts",
