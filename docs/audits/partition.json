@@ -6066,7 +6066,6 @@
    "packages/ui-input/src/pbt.fixture.ts",
    "packages/ui-input/src/press.ts",
    "packages/ui-input/src/reorder.ts",
-   "packages/ui-input/src/scalar.ts",
    "packages/ui-input/src/scheduler.ts",
    "packages/ui-input/src/selection.ts",
    "packages/ui-input/src/slider.ts",

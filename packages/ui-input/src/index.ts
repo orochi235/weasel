@@ -45,4 +45,3 @@ export { liveSelection } from './liveSelection';
 export type {
   SelectState, SingleSelection, MultipleSelection, SelectionSpec, OwnSelection, SelectionEdit, SelectionModel,
 } from './selection';
-export type { Box } from './scalar';
