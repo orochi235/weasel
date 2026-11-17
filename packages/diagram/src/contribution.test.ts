@@ -6,7 +6,7 @@ import {
 import { TOGGLE_HOPS_ACTION_ID } from './hops/hopsAction';
 import { PORT_AFFORDANCE_KIND, PORT_LAYER_ID } from './portAffordance';
 import { REMOVE_WAYPOINT_ACTION_ID, RESET_ROUTE_ACTION_ID } from './routeCommands';
-import { ROUTE_EDIT_ACTION_ID } from './waypointAction';
+import { EDIT_ROUTE_ACTION_ID } from './waypointAction';
 import { WAYPOINT_AFFORDANCE_KIND, WAYPOINT_LAYER_ID } from './waypointLayer';
 
 interface Rect { x: number; y: number; width: number; height: number }
@@ -76,7 +76,7 @@ describe('diagramWaypoints', () => {
     expect(onHandles.map((b) => `${b.spec.kind}>${b.actionId}`).sort()).toEqual([
       `click>${GRAB_WAYPOINT_ACTION_ID}`,
       `doubleClick>${REMOVE_WAYPOINT_ACTION_ID}`,
-      `drag>${ROUTE_EDIT_ACTION_ID}`,
+      `drag>${EDIT_ROUTE_ACTION_ID}`,
       `pointerDown>${GRAB_WAYPOINT_ACTION_ID}`,
     ]);
   });

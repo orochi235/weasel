@@ -39,7 +39,7 @@ import { createPortLayer } from './portLayer';
 import { PORT_LAYER_ID, type PortAffordanceOptions } from './portAffordance';
 import { REMOVE_WAYPOINT_ACTION_ID, createRemoveWaypointAction, createResetRouteAction } from './routeCommands';
 import { createRouterActions } from './routerCommands';
-import { ROUTE_EDIT_ACTION_ID, createRouteEditAction, type RouteEditOptions } from './waypointAction';
+import { EDIT_ROUTE_ACTION_ID, createRouteEditAction, type RouteEditOptions } from './waypointAction';
 import {
   WAYPOINT_AFFORDANCE_KIND,
   WAYPOINT_LAYER_ID,
@@ -85,7 +85,7 @@ export const GRAB_WAYPOINT_ACTION_ID = 'diagram.grabWaypoint';
 export function diagramWaypoints<TPose>(
   opts: RouteEditOptions<TPose> & Omit<WaypointAffordanceOptions<TPose>, 'id'>,
 ): SurfaceContribution {
-  const actionId = opts.id ?? ROUTE_EDIT_ACTION_ID;
+  const actionId = opts.id ?? EDIT_ROUTE_ACTION_ID;
   const target = `affordance:${WAYPOINT_AFFORDANCE_KIND}` as const;
   return {
     id: 'weasel-diagram-waypoints',

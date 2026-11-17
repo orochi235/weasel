@@ -16,7 +16,7 @@ import { avoid } from './edge';
 import { dragSegment, dragVertex, insertWaypoint, pinSegment, type RouteHandle } from './waypoints';
 
 /** The action that drags a route handle. */
-export const ROUTE_EDIT_ACTION_ID = 'diagram.editRoute';
+export const EDIT_ROUTE_ACTION_ID = 'diagram.editRoute';
 
 /** An edge's route edited: its waypoints as they now stand. */
 export interface RouteEdit {
@@ -131,7 +131,7 @@ export function createRouteEditAction<TPose>(opts: RouteEditOptions<TPose>): Act
   const { commit = commitRouteToScene, snapPx = DEFAULT_SNAP_PX } = opts;
   const endsOf = createEdgeEnds(opts.participants, opts);
   return {
-    id: opts.id ?? ROUTE_EDIT_ACTION_ID,
+    id: opts.id ?? EDIT_ROUTE_ACTION_ID,
     label: 'Edit route',
     group: 'diagram',
     requires: ['scene', 'view', 'snap'],

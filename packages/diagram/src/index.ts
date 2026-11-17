@@ -46,7 +46,7 @@ export {
 export type { CanConnect, ConnectActionOptions, MovingEnd, PendingEdge } from './connect';
 export type { DropRefusal, DropVerdict } from '@weasel-js/core';
 export {
-  DIAGRAM_ITEM_CARRY, ITEM_DROP_ACTION_ID, createItemDropAction, dragItemProps, itemDropContribution, startItemDrag,
+  DIAGRAM_ITEM_CARRY, DROP_ITEM_ACTION_ID, createItemDropAction, dragItemProps, itemDropContribution, startItemDrag,
 } from './itemDrop';
 export type { CanDropItem, ItemDrop, ItemDropOptions, ItemDropTarget } from './itemDrop';
 export { bodyAt, isBodyEnd } from './connectTargets';
@@ -76,7 +76,7 @@ export {
   waypointScratchOf,
 } from './waypointLayer';
 export type { EdgeRouteState, WaypointAffordanceOptions, WaypointScratch } from './waypointLayer';
-export { ROUTE_EDIT_ACTION_ID, commitRouteToScene, createRouteEditAction, routedData } from './waypointAction';
+export { EDIT_ROUTE_ACTION_ID, commitRouteToScene, createRouteEditAction, routedData } from './waypointAction';
 export {
   REMOVE_WAYPOINT_ACTION_ID, RESET_ROUTE_ACTION_ID, createRemoveWaypointAction, createResetRouteAction,
 } from './routeCommands';
