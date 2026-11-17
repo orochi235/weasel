@@ -46,7 +46,7 @@ export function paletteColorAt(seq: number, palette: Palette = DEFAULT_PALETTE, 
 /** Preview / "ghost" stroke color used by drag-to-draw tool overlays and the
  *  selected-anchor highlight. Derived from the first palette entry so the
  *  preview chrome matches the default insert color. */
-export const GHOST_STROKE: string = paletteColorAt(0);
+export const GHOST_STROKE_COLOR: string = paletteColorAt(0);
 
 /**
  * A solid paint from a color string — the authoring shorthand for the one

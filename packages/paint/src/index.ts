@@ -144,7 +144,7 @@ export {
   DEFAULT_STROKE_COLOR,
   DEFAULT_PALETTE,
   paletteColorAt,
-  GHOST_STROKE,
+  GHOST_STROKE_COLOR,
   solid,
   strokeOf,
   strokeWith,
