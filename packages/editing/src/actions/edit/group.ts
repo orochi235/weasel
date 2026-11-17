@@ -1,6 +1,6 @@
 import type { SceneNode as Node, NodeId, Op } from '@weasel-js/core';
 import { createInsertOp, groupingSite, pageOfNode, translatePoseViaDescriptor, unionBounds, poseDescriptorOf, visualBoundsViaDescriptor, createSetPoseOp, scenePoseFrame, commitOps } from '@weasel-js/core/engine';
-import { createReparentOp, createDeleteOp, createSetDependsOnOp, selectedRoots, followerOpsFor, finiteThroughout, requiresContent, operandContent, inPaintOrder, slotAbove } from '@weasel-js/core';
+import { createReparentOp, createDeleteOp, createSetDependsOnOp, rootsAmong, followerOpsFor, finiteThroughout, requiresContent, operandContent, inPaintOrder, slotAbove } from '@weasel-js/core';
 import { ActionDisabledReason, type Action, type ActionDeps, BETWEEN_GESTURES } from '@weasel-js/routing';
 import { icon } from '../../icons.gen';
 import type { AnyScene } from '@weasel-js/core/engine';
@@ -11,7 +11,7 @@ import type { AnyScene } from '@weasel-js/core/engine';
 function groupPlan(deps: ActionDeps) {
   const scene = deps.scene;
   if (!deps.operands || !scene) return null;
-  const ids = selectedRoots(scene, deps.operands.get() as readonly string[]);
+  const ids = rootsAmong(scene, deps.operands.get() as readonly string[]);
   const nodes = inPaintOrder(scene, ids
     .map((id) => scene.get(id as NodeId))
     .filter((n): n is NonNullable<typeof n> => n !== undefined));

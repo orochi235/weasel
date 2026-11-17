@@ -1,5 +1,5 @@
 import type { BooleanShapeOp, AnyScene } from '@weasel-js/core/engine';
-import { booleanGroupFields, followerMoveOps, followerMoves, createReparentOp, requiresContent, selectedRoots, inPaintOrder, slotAbove } from '@weasel-js/core';
+import { booleanGroupFields, followerMoveOps, followerMoves, createReparentOp, requiresContent, rootsAmong, inPaintOrder, slotAbove } from '@weasel-js/core';
 import { groupingSite, pageOfNode, commitOps, defaultCommitAdapter, createInsertOp, createSetPoseOp, AUTO_POSE_DESCRIPTOR, unionBounds, scenePoseFrame } from '@weasel-js/core/engine';
 import type { Op, SceneNode as Node, NodeId } from '@weasel-js/core';
 import { ActionDisabledReason, type Action } from '@weasel-js/routing';
@@ -23,7 +23,7 @@ export function booleanGroupOps(
   op: BooleanShapeOp = 'union',
   label = 'Make Boolean Group',
 ): { ops: Op[]; group: NodeId } | null {
-  const nodes = inPaintOrder(scene, selectedRoots(scene, ids)
+  const nodes = inPaintOrder(scene, rootsAmong(scene, ids)
     .map((id) => scene.get(id))
     .filter((n): n is Node<unknown, string, unknown> => n !== undefined));
   if (nodes.length < 2 || new Set(nodes.map((n) => n.layer)).size > 1) return null;
@@ -90,6 +90,6 @@ export const makeBooleanGroupAction: Action & { requires: string[] } = {
   enabled: (deps) => {
     const given = requiresContent(2)(deps);
     if (given !== true) return given;
-    return selectedRoots(deps!.scene as AnyScene, deps!.operands!.get()).length >= 2 ? true : ActionDisabledReason.SelectionRequired;
+    return rootsAmong(deps!.scene as AnyScene, deps!.operands!.get()).length >= 2 ? true : ActionDisabledReason.SelectionRequired;
   },
 };

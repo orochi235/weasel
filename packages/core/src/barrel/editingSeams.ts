@@ -30,7 +30,7 @@ export { DUPLICATE_OFFSET } from '../interactions/actions/duplicateOffset';
 export { followerMoveOps, followerMoves, followerOpsFor } from '../interactions/actions/followerMoves';
 export { inPaintOrder, slotAbove } from '../interactions/actions/groupSlot';
 export { nodeDescriptors } from '../interactions/actions/poseDescriptorDep';
-export { selectedRoots, storedDelta } from '../interactions/actions/selectionSubtree';
+export { rootsAmong, storedDelta } from '../interactions/actions/selectionSubtree';
 export { finishTransformOps } from '../interactions/actions/transformFinish';
 export type { CopyPose } from '../interactions/actions/defaults/copySubtree';
 export type { FollowerMove } from '../interactions/actions/followerMoves';

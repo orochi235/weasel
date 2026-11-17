@@ -10,7 +10,7 @@ import type { Action, BindingOptions, InvocationCtx, OngoingHandle } from '@weas
 import type { OperandsDep, CloneEnd } from '@weasel-js/core/engine';
 import type { Scene, NodeId, Op } from '@weasel-js/core';
 import { defaultCommitAdapter, operandMethods, createSetSelectionOp, nodeDescriptors, poseDescriptorOf, translatePoseViaDescriptor, type PoseDescriptor, scenePoseFrame, type PoseFrame, SNAP_ROLES } from '@weasel-js/core/engine';
-import { runBehaviorCancel, runBehaviorSettled, copyOps, selectedRoots, translateTargets, carryPose, invertPlane, inPlane, planeOf, selectionLayer, recordTransform, finiteFrame, quantizedPreview } from '@weasel-js/core';
+import { runBehaviorCancel, runBehaviorSettled, copyOps, rootsAmong, translateTargets, carryPose, invertPlane, inPlane, planeOf, selectionLayer, recordTransform, finiteFrame, quantizedPreview } from '@weasel-js/core';
 import { startCloneBehaviors, type CloneBehaviors } from './behaviors';
 import { beginDragSnap, snappedDelta } from '../move/dragSnap';
 import { createEmitter } from '@weasel-js/registry';
@@ -146,7 +146,7 @@ export const cloneAction: Action & { requires: string[] } = inPlane({
       if (originPoses.size === 0) return {};
 
       const scratch: CloneScratch = {
-        ids: selectedRoots(scene, ids),
+        ids: rootsAmong(scene, ids),
         scene,
         descriptorOf,
         frame,
