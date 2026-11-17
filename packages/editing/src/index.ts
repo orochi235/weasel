@@ -46,7 +46,7 @@ export { createLassoTool, useLassoTool, LASSO_TOOL_OPTIONS, type UseLassoToolOpt
 export { useImageTool, type UseImageToolOptions } from './tools/image';
 export { useEyedropperTool, type UseEyedropperToolOptions } from './tools/eyedropper';
 export {
-  createSelectTool, createSelectToolWith, useSelectTool, useSelectToolWith, type SelectAdapter, type UseSelectToolOptions,
+  createSelectTool, createPickerSelectTool, useSelectTool, usePickerSelectTool, type SelectAdapter, type UseSelectToolOptions,
 } from './tools/select/useSelectTool';
 export {
   createSelectionMoveContribution, selectionMoveBindings, createSelectionTransformContribution, selectionTransformBindings,

@@ -2890,7 +2890,7 @@
    "packages/editing/src/tools/select/selectionContributions.ts",
    "packages/editing/src/tools/select/testing/rectListAdapter.ts",
    "packages/editing/src/tools/select/useSelectTool.ts",
-   "packages/editing/src/tools/select/useSelectToolWith.ts",
+   "packages/editing/src/tools/select/usePickerSelectTool.ts",
    "packages/editing/src/tools/shared/countOption.ts",
    "packages/editing/src/tools/shared/insertToolOptions.ts",
    "packages/editing/src/tools/shared/pointerFollower.ts",

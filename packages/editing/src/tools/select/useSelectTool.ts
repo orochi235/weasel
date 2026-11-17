@@ -6,10 +6,10 @@ import type { Tool } from '@weasel-js/core';
 import { adapterPointQuery } from './adapterPointQuery';
 import { useMemo } from 'react';
 import { useLatest } from '@weasel-js/react';
-import { createSelectToolWith, type SelectAdapter, type UseSelectToolOptions } from './useSelectToolWith';
+import { createPickerSelectTool, type SelectAdapter, type UseSelectToolOptions } from './usePickerSelectTool';
 
-export { createSelectToolWith, useSelectToolWith } from './useSelectToolWith';
-export type { SelectAdapter, UseSelectToolOptions } from './useSelectToolWith';
+export { createPickerSelectTool, usePickerSelectTool } from './usePickerSelectTool';
+export type { SelectAdapter, UseSelectToolOptions } from './usePickerSelectTool';
 
 /** The kit's picker for a bare adapter: a walk of its tree, each leaf tested
  *  against its pose box, or its painted silhouette under
@@ -43,13 +43,13 @@ function adapterBetween<TNode extends { id: string }, TPose>(
   });
 }
 
-/** The select tool: {@link createSelectToolWith} with `options().pickEvery` and `options().between`, or the kit's
+/** The select tool: {@link createPickerSelectTool} with `options().pickEvery` and `options().between`, or the kit's
  *  adapter walks where they are omitted, read live. */
 export function createSelectTool<TNode extends { id: string }, TPose>(
   adapter: () => SelectAdapter<TNode, TPose>,
   options: () => UseSelectToolOptions<TPose>,
 ): Tool {
-  return createSelectToolWith(adapter, () => {
+  return createPickerSelectTool(adapter, () => {
     const o = options();
     const a = adapter();
     return { ...o, pickEvery: o.pickEvery ?? adapterPickEvery(a, o), between: o.between ?? adapterBetween(a, o) };

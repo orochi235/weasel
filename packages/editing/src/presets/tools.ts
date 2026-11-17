@@ -1,7 +1,7 @@
 import type { FeaturePreset } from '@weasel-js/core';
 import { createEllipseTool } from '../tools/ellipse/useEllipseTool';
 import { createLassoTool } from '../tools/lasso/useLassoTool';
-import { createSelectToolWith, type SelectAdapter } from '../tools/select/useSelectToolWith';
+import { createPickerSelectTool, type SelectAdapter } from '../tools/select/usePickerSelectTool';
 import { createLineTool } from '../tools/line/useLineTool';
 import { createPolygonTool } from '../tools/polygon/usePolygonTool';
 import { createRectTool } from '../tools/rect/useRectTool';
@@ -24,7 +24,7 @@ export const selectToolKitPreset: FeaturePreset = {
   components: [RegionSelectDeps],
   build: (ctx) => ({
     tools: {
-      select: createSelectToolWith(() => ctx.adapter() as unknown as SelectAdapter<{ id: string }, unknown>, () => {
+      select: createPickerSelectTool(() => ctx.adapter() as unknown as SelectAdapter<{ id: string }, unknown>, () => {
         const { pickBest, extendClickLocked } = ctx.selectTool();
         return {
           pickEvery: ctx.pick.pressEvery, between: ctx.pick.between,

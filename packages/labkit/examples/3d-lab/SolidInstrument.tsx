@@ -50,7 +50,7 @@ import { useBoxTool } from './tools3d';
 import { useGroupEntry3d, type GroupEntry3d } from './groupEntry3d';
 import { useBoxInsert } from './insert3d';
 import { useSolidSelection } from './selection3d';
-import { useSelectToolWith, createSelectionMoveContribution, ENGINE_STANDARD_ACTIONS } from '@weasel-js/editing/engine';
+import { usePickerSelectTool, createSelectionMoveContribution, ENGINE_STANDARD_ACTIONS } from '@weasel-js/editing/engine';
 
 interface SolidState {
   /** Kept only so labkit has something to persist; the scene itself is a ref. */
@@ -315,7 +315,7 @@ function Viewport({ config }: { config: SolidConfig }): ReactNode {
     [scene, areaSelect, selectionRef, setSelection],
   );
 
-  const select = useSelectToolWith(selectAdapter, { pickEvery, pickBest, poseDescriptor });
+  const select = usePickerSelectTool(selectAdapter, { pickEvery, pickBest, poseDescriptor });
   const orbit = useOrbitTool() as Tool;
   const box = useBoxTool();
   // The select tool only picks; dragging a solid to move it is the

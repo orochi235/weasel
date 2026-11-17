@@ -213,7 +213,7 @@ const SELECT_TOOL_BINDINGS = [
  *  - moving and transforming the selection are not the tool's: they are the
  *    ambient bindings in `selectionContributions.ts`.
  */
-export function createSelectToolWith<TNode extends { id: string }, TPose>(
+export function createPickerSelectTool<TNode extends { id: string }, TPose>(
   adapter: () => SelectAdapter<TNode, TPose>,
   options: () => UseSelectToolOptions<TPose> & Required<Pick<UseSelectToolOptions<TPose>, 'pickEvery'>>,
 ): Tool {
@@ -267,15 +267,15 @@ export function createSelectToolWith<TNode extends { id: string }, TPose>(
   return { ...base, bindings: SELECT_TOOL_BINDINGS };
 }
 
-/** {@link createSelectToolWith} for the life of the calling component, reading `adapter` and `options` live. */
-export function useSelectToolWith<TNode extends { id: string }, TPose>(
+/** {@link createPickerSelectTool} for the life of the calling component, reading `adapter` and `options` live. */
+export function usePickerSelectTool<TNode extends { id: string }, TPose>(
   adapter: SelectAdapter<TNode, TPose>,
   options: UseSelectToolOptions<TPose> & Required<Pick<UseSelectToolOptions<TPose>, 'pickEvery'>>,
 ): Tool {
   const liveAdapter = useLatest(adapter);
   const liveOptions = useLatest(options);
   return useMemo(
-    () => createSelectToolWith(() => liveAdapter.current, () => liveOptions.current),
+    () => createPickerSelectTool(() => liveAdapter.current, () => liveOptions.current),
     [liveAdapter, liveOptions],
   );
 }
