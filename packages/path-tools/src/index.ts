@@ -66,7 +66,7 @@ export { joinSelectedAnchors, type AnchorEdit } from './pathEdit/anchorJoin';
 export { deleteSelectedMark, editTargetOf, markUnder } from './pathEdit/pathEditMarks';
 
 // ─── Path commands and outlines ────────────────────────────────────────────
-export { joinPathsCommand, planJoin, type JoinPlan } from './pathCommands/cutJoin';
+export { createJoinPathsAction, planJoin, type JoinPlan } from './pathCommands/cutJoin';
 export { DEFAULT_SIMPLIFY_TOLERANCE, OFFSET_PATH_PARAMS, SIMPLIFY_PATH_PARAMS } from './pathCommands/simplifyOffset';
 export { livePathEdit, type LivePathEditSpec } from './pathCommands/livePathEdit';
 export {

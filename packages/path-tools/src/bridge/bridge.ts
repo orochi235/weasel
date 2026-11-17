@@ -6,7 +6,7 @@
 import { type Action, ActionDisabledReason, BETWEEN_GESTURES, defineAction } from '@weasel-js/routing';
 import { ANCHORS_GROUP, pathOperationTags } from '@weasel-js/core';
 import { anchorEditWouldChange, commitAnchorEdit, depOf } from '../pathEdit/anchorEditing';
-import { joinPathsCommand } from '../pathCommands/cutJoin';
+import { createJoinPathsAction } from '../pathCommands/cutJoin';
 import { joinSelectedAnchors } from '../pathEdit/anchorJoin';
 import { pref } from '@weasel-js/prefs';
 import { icon } from '../icons.gen';
@@ -37,7 +37,7 @@ export function bridgeTensionOf(params: Readonly<Record<string, unknown>> | unde
  * `bridgeAnchors` bridges the two selected anchors instead.
  */
 export const bridgePathsAction: Action & { requires: string[] } = {
-  ...joinPathsCommand(
+  ...createJoinPathsAction(
     {
       id: 'bridgePaths',
       label: 'Bridge',
