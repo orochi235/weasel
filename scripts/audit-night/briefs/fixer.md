@@ -18,8 +18,9 @@ those as one.
    defect.
 2. Reproduce it with a test that fails before the fix (plain example test beside the code).
 3. Fix it, the general way: if the same mistake sits elsewhere in your area, fix those too.
-4. Commit each fix on its own: imperative subject saying what the change does, written for a reader with no
-   session context; end the message with `Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>`.
+4. Commit each fix on its own. The subject is lowercase imperative, as in this repo's `git log`: "end a color
+   cycle when cancelAll ends its keep-alive entry", never "End a color cycle …". It says what the change
+   does, for a reader with no session context; end the message with `Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>`.
    Each fix that a consumer could notice gets its own changeset — read "Writing a changeset" in
    `docs/releasing.md` first; `npm run check:changesets` must pass.
 5. A finding that needs a behavior call nobody has made: make the strict call (misuse throws or warns, with an
