@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { applyDiagramTheme, diagramStyleOf, setDiagramColor, setDiagramStyle } from './applyTheme';
 import { diagramThemeOf } from './resolve';
+import { forkTheme, setThemeValue } from './themeEdit';
 import { DIAGRAM_THEMES } from './themes';
 import { DIAGRAM_THEME_KEY, type DiagramTheme } from './types';
 import { AB, colorOf, themedScene } from './themeFixture';
@@ -69,5 +70,19 @@ describe('a color set by hand', () => {
     expect(colorOf(scene, `${AB}/label`, 'fill')).toBe('#00ff00');
     applyDiagramTheme(scene, blueprint!);
     expect(colorOf(scene, `${AB}/label`, 'fill')).toBe('#00ff00');
+  });
+});
+
+describe('applying a theme over a locked node', () => {
+  it('recolors the rest and leaves the locked shape, its rows and its size as they were', () => {
+    const scene = themedScene();
+    scene.setLocked('c' as never, true);
+    const before = scene.get('c' as never)!;
+    const row = scene.get('c/1' as never)!;
+    applyDiagramTheme(scene, setThemeValue(forkTheme(blueprint!), ['font', 'size'], 20));
+    expect(colorOf(scene, 'a', 'fill')).toBe(blueprint!.roles.accent!.fill);
+    expect(scene.get('c' as never)).toEqual(before);
+    expect(scene.get('c/1' as never)).toEqual(row);
+    expect(scene.doc.get(DIAGRAM_THEME_KEY)).toEqual(expect.objectContaining({ id: expect.any(String) }));
   });
 });

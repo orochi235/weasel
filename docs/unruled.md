@@ -2496,3 +2496,11 @@ Calls the lanes made without a ruling:
 - Open: whether an interior octant-spline weight other than 1 may kink the curve, against the doc's "C² across the whole octant".
 - Ruled 2026-11-15: `checkPipeline` reports a `group-loop` problem once per loop.
 - Open: whether `createDeleteAction({ commit })` keeps its old gate for a page-only selection, now that it is disabled there.
+
+## Audit round thirty (2026-11-16): diagrams
+
+- 2026-11-16 (my call): a rewrite the engine makes on its own — `applyDiagramTheme`, a face landing
+  (`remeasureText`), and the body relayout and sequence redraw both run — leaves a locked node as it stands, as
+  layout and the route writers already do. A locked shape keeps its old theme colors and size; a sequence with
+  any locked part is not drawn again. The alternative, writing through `scene.unlocked`, would treat a theme
+  as part of the document rather than an edit of the node.

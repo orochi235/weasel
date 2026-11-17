@@ -64,6 +64,8 @@ export interface RelayoutScene {
   childrenOf(id: never): readonly string[];
   setPose(id: never, pose: never): void;
   update(id: never, patch: never): void;
+  /** A body is left as it is while it or one of its rows is locked. */
+  isLocked?(id: never): boolean;
 }
 
 const rowStyle = (s: TextData['style']): RowTextStyle => ({
@@ -86,6 +88,9 @@ const sameBand = (a: HeaderBand | undefined, b: HeaderBand): boolean =>
  * record is left alone. Call inside the batch that changed the text, so it is
  * the same undo entry.
  */
+const lockedAmong = (scene: RelayoutScene, ids: readonly string[]): boolean =>
+  scene.isLocked !== undefined && ids.some((id) => scene.isLocked!(id as never));
+
 export function relayoutBodies(scene: RelayoutScene, ids: Iterable<string>, measure?: MeasureRowText): void {
   for (const id of new Set(ids)) {
     const node = scene.get(id as never);
@@ -99,6 +104,7 @@ export function relayoutBodies(scene: RelayoutScene, ids: Iterable<string>, meas
       if (data?.bodyAside === true) asideNode = child;
       else if (typeof data?.bodyRow === 'number') rowNodes.set(data.bodyRow, child);
     }
+    if (lockedAmong(scene, [id, ...rowNodes.values(), ...(asideNode === undefined ? [] : [asideNode])])) continue;
     const textOf = (child: string | undefined): string => {
       const t = (scene.get(child as never)?.data as TextData | undefined)?.text;
       return typeof t === 'string' ? t : '';
