@@ -237,7 +237,7 @@ describe('useGestureDispatcher hit-test coordinates', () => {
       id: 'panel',
       dispatcher: createDispatcher(),
       affordanceAt: (p) => { seen.affordance.push({ ...p }); return null; },
-      classifyTarget: (p) => { seen.classify.push({ ...p }); return { body: 'empty' }; },
+      classifyTarget: (p) => { seen.classify.push({ ...p }); return { bodyTarget: 'empty' }; },
       clientToWorld: (x, y) => ({ x: x - PANEL_RECT.x, y }),
     };
     const { container } = render(
