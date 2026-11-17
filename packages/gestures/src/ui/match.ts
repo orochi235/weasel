@@ -1,7 +1,7 @@
 /** Pure gesture matcher — no React, no state, no DOM. */
 
 import type { CarrySpec, DropSpec, GestureSpec, ModSpec, PasteSpec, PhaseSpec } from './spec';
-import type { InputEvent } from './inputEvent';
+import type { EventModifiers, InputEvent } from './inputEvent';
 import type { PhaseAtom } from '../grammar/routeGrammar';
 import { matchIngestTypes } from './ingestTypes';
 import { matchTarget } from './matchTarget';
@@ -10,10 +10,6 @@ import { chordKey, codeLetter } from './keyLetter';
 
 export { matchTarget, parseTargetSpec } from './matchTarget';
 export type { TargetSpecForm } from './matchTarget';
-
-/** The modifier-state fields `matchModifiers` reads. Structural, so a DOM
- *  `KeyboardEvent` or `PointerEvent` satisfies it directly. */
-export type ModifiersEvent = { altKey: boolean; ctrlKey: boolean; metaKey: boolean; shiftKey: boolean };
 
 type KeyRequirement = 'required' | 'forbidden' | 'optional';
 
@@ -34,7 +30,7 @@ function resolveSpecValue(value: boolean | 'optional' | undefined): KeyRequireme
  *   Apple. Where `mod` and that key's own field disagree, the stronger wins.
  */
 export function matchModifiers(
-  e: ModifiersEvent,
+  e: EventModifiers,
   mods: ModSpec | undefined,
   apple: boolean = isApplePlatform(),
 ): boolean {

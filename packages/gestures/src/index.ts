@@ -111,7 +111,7 @@ export { matchSpec, matchModifiers, matchKey, matchKeyEvent, matchTarget, matchP
 export { CHORD_MODIFIERS, chordKey, codeLetter } from './ui/keyLetter';
 export type { ChordSource } from './ui/keyLetter';
 export { mimeMatchesGlob, matchIngestTypes, UNKNOWN_MIME } from './ui/ingestTypes';
-export type { PhaseContext, ModifiersEvent, TargetSpecForm } from './ui/match';
+export type { PhaseContext, TargetSpecForm } from './ui/match';
 export { isApplePlatform, isContextPress, modHeld, modKey } from './ui/platform';
 export { historyKey } from './ui/historyKey';
 
