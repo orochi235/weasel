@@ -7,7 +7,9 @@
 import { faceGeneration } from '@weasel-js/font';
 import type { ResolvedRun } from '../runs/resolveRuns';
 import type { ResolvedTextStyle } from '../textStyle';
-import type { LayoutRunsOptions } from './layoutOpts';
+import { layoutBidi, layoutShaper, type LayoutRunsOptions } from './layoutOpts';
+import type { BidiEngine } from './bidiSeam';
+import type { TextShaper } from './shaperSeam';
 import { LineBox } from './layoutColumns';
 import { layoutRuns } from './layoutRuns';
 import { runsHash, same, sameRuns } from './runsKey';
@@ -33,6 +35,9 @@ interface Fit {
   hash: number;
   runs: readonly ResolvedRun[];
   opts: LayoutRunsOptions;
+  /** The engines the scale was searched under, the registered ones when `opts` names none. */
+  bidi: BidiEngine | null;
+  shaper: TextShaper | null;
   width: number;
   height: number;
   scale: number;
@@ -106,7 +111,7 @@ function search(runs: readonly ResolvedRun[], opts: LayoutRunsOptions, width: nu
  * The scale at which `runs`, laid out with `opts`, fit a box `width` by
  * `height`: 1 when they fit as they are, else the largest found to within
  * {@link TEXT_FIT_TOLERANCE}. Deterministic and bounded: a binary search of at
- * most 26 layouts, about 12 in practice, remembered per input until a face lands.
+ * most 26 layouts, about 12 in practice, remembered per input and layout engine until a face lands.
  */
 export function shrinkScale(
   runs: readonly ResolvedRun[], opts: LayoutRunsOptions, width: number, height: number,
@@ -117,17 +122,20 @@ export function shrinkScale(
     fitsGeneration = fonts;
   }
   const hash = runsHash(runs);
+  const bidi = layoutBidi(opts);
+  const shaper = layoutShaper(opts);
   let oldest = 0;
   for (let i = 0; i < fits.length; i++) {
     const f = fits[i]!;
-    if (f.hash === hash && same(f.width, width) && same(f.height, height) && sameOpts(f.opts, opts) && sameRuns(f.runs, runs)) {
+    if (f.hash === hash && same(f.width, width) && same(f.height, height) && sameOpts(f.opts, opts)
+      && f.bidi === bidi && f.shaper === shaper && sameRuns(f.runs, runs)) {
       f.used = ++clock;
       return f.scale;
     }
     if (f.used < fits[oldest]!.used) oldest = i;
   }
   const scale = search(runs, opts, width, height);
-  const entry: Fit = { hash, runs, opts: { ...opts }, width, height, scale, used: ++clock };
+  const entry: Fit = { hash, runs, opts: { ...opts }, bidi, shaper, width, height, scale, used: ++clock };
   if (fits.length >= FIT_CACHE_LIMIT) fits[oldest] = entry;
   else fits.push(entry);
   return scale;

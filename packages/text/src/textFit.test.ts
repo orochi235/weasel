@@ -19,6 +19,8 @@ import { textLineBoxes } from './measure/lineBoxes';
 import { caretIndexAt } from './hitTest';
 import { textToPath } from './textToPath';
 import type { TextPose } from './pose';
+import { registerShaper } from './layout/shaperRegistry';
+import type { ShapedGlyph, TextShaper } from './layout/shaperSeam';
 
 const INTER = resolve(import.meta.dirname, '../../../assets/fonts/inter/inter.ttf');
 
@@ -131,5 +133,29 @@ describe("fit: 'shrink'", () => {
   it('leaves fitTextPose sizing the box to the text at its own size', () => {
     const pose = headline();
     expect(fitTextPose(pose, { axis: 'both' }).width).toBeCloseTo(boundsOf({ ...pose, fit: undefined }).width, 6);
+  });
+});
+
+describe("fit: 'shrink' across a layout engine change", () => {
+  // Every glyph a full em wide: far wider than Inter's own capitals.
+  const wide: TextShaper = {
+    shape: (_face, text) => [...text].map((_c, i): ShapedGlyph => ({
+      gid: 100 + i, cluster: i, advance: 1, dx: 0, dy: 0, rtl: false,
+    })),
+    glyphD: (_face, gid) => `M0 0h${gid}`,
+    hasFeature: () => false,
+  };
+
+  it('fits again once a shaper is registered', () => {
+    const pose = headline();
+    const before = textFitScale(pose);
+    const off = registerShaper(wide);
+    try {
+      const after = textFitScale(pose);
+      expect(after).toBeLessThan(before);
+      expect(boundsOf(pose).width).toBeLessThanOrEqual(pose.width + 1e-6);
+    } finally {
+      off();
+    }
   });
 });
