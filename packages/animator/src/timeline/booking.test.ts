@@ -118,6 +118,28 @@ describe('event booking', () => {
     expect(r.whens()).toEqual([START + 1010]);
   });
 
+  it('books each place one timeline is nested, as it fires each', () => {
+    const track: EventTrack = { kind: 'event', events: [] };
+    const nested = { tracks: [track] };
+    const r = rig({
+      duration: 2000,
+      lookahead: 1000,
+      tracks: [{ kind: 'timeline', at: 0, timeline: nested }, { kind: 'timeline', at: 100, timeline: nested }],
+    });
+    track.events = [bookingEvent(r.log, 500)];
+    r.frame(0);
+    expect(r.whens()).toEqual([START + 500, START + 600]);
+  });
+
+  it('books an event track placed both at the root and nested', () => {
+    const track: EventTrack = { kind: 'event', events: [] };
+    const r = rig({ duration: 2000, lookahead: 1000, tracks: [{ kind: 'timeline', at: 100, timeline: { tracks: [track] } }, track] });
+    track.events = [bookingEvent(r.log, 500)];
+    r.frame(0);
+    r.frame(50);
+    expect(r.whens().sort()).toEqual([START + 500, START + 600]);
+  });
+
   it('books nothing of a nested timeline past the duration it declares', () => {
     const track: EventTrack = { kind: 'event', events: [] };
     const r = rig({
