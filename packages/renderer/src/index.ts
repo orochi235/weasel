@@ -22,7 +22,7 @@ export type { WebGPUSurface } from './gpu/webgpu/openWebGPU';
 export type * from './gpu/types';
 export { MAX_PICK_ID } from './shaders/idOutput';
 export type { BatchStage } from './batchStage';
-export type { BatchCut, ClipRect } from './batchClip';
+export type { BatchCut, ClipBox } from './batchClip';
 export { releaseImageSource, type ImageMinification } from './cache/GLImageCache';
 export { DEFAULT_FLATTEN_TOLERANCE_PX, type FlattenTolerance } from './draw/flattenTolerance';
 export type {
