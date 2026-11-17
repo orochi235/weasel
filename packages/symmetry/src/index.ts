@@ -8,7 +8,7 @@ export {
 } from './wallpaper';
 export {
   SYMMETRY_CLIP_KEY, SYMMETRY_COPIES_KEY, centerOfPose, editSymmetries, isSymmetryGroup, poseAtCenter, symmetryOf,
-  specOfData, symmetryCopies, symmetryGroupOf, symmetryGroupSpec, symmetryRegistry,
+  symmetrySpecOf, symmetryCopies, symmetryGroupOf, symmetryGroupSpec, symmetryRegistry,
   type SymmetryGroupData, type SymmetryGroupOptions, type SymmetryPose,
 } from './group';
 export { bakeSymmetry, carryPose, type BakeResult, type BoxPose } from './bake';

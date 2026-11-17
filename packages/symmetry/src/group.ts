@@ -50,7 +50,7 @@ const isExtent = (v: unknown): v is SymmetryExtent =>
  * file can: a kind or a cell the table does not name as its own, an extent that is not a box of numbers, or a number
  * or a flag that is not one.
  */
-export function specOfData(data: unknown): SymmetrySpec {
+export function symmetrySpecOf(data: unknown): SymmetrySpec {
   const s: unknown = (data as Partial<SymmetryGroupData> | null | undefined)?.symmetry;
   if (typeof s !== 'object' || s === null) return { ...DEFAULT_SYMMETRY };
   const out: Record<string, unknown> = { ...DEFAULT_SYMMETRY };
@@ -67,7 +67,7 @@ export function specOfData(data: unknown): SymmetrySpec {
 
 /** A symmetry group's copies: the `copiesFromPose` every group carries. */
 export const symmetryCopies: CopiesFromPoseFn<unknown> = (pose, node) =>
-  symmetryTransforms(specOfData(node.data), centerOfPose(pose));
+  symmetryTransforms(symmetrySpecOf(node.data), centerOfPose(pose));
 
 /** The registry key a group's `copiesFromPose` is saved under. */
 export const SYMMETRY_COPIES_KEY = 'weasel-symmetry:copies';
@@ -137,7 +137,7 @@ export function symmetryGroupOf(scene: Scene<unknown, string, unknown>, id: Node
 export function symmetryOf(scene: Scene<unknown, string, unknown>, id: NodeId | string | null): { spec: SymmetrySpec; center: Point } | null {
   if (!isSymmetryGroup(scene, id)) return null;
   const node = scene.get(id as NodeId)!;
-  return { spec: specOfData(node.data), center: centerOfPose(worldPoses(scene, 'shown')(node.id)) };
+  return { spec: symmetrySpecOf(node.data), center: centerOfPose(worldPoses(scene, 'shown')(node.id)) };
 }
 
 /**

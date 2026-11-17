@@ -1312,7 +1312,7 @@ The snap pipeline ([snapping.md](./snapping.md)) landed on 2026-10-18 with these
   `symmetryTransforms` and every `SYMMETRY_KINDS` row (ce0289dd1). That includes a point turn about a center near
   the double range's end, whose copy would draw at finite places but whose affine's translation overflows; the
   original still draws. Rejected: throwing, which would fail every draw of a group a far drag put there.
-- 2026-11-11 (my call, symmetry second pass): `specOfData` reads a field of the wrong type at its default, a kind
+- 2026-11-11 (my call, symmetry second pass): `symmetrySpecOf` reads a field of the wrong type at its default, a kind
   `SYMMETRY_KINDS` does not hold as its own as `mirror`, and a cell that is not a wallpaper cell as `none`
   (b686c535b). It does not report them; nothing in symmetry has a place to.
 - 2026-11-11 (my call, cursor second pass): `placeCursorPath` throws a `RangeError` for a scale or move that makes a

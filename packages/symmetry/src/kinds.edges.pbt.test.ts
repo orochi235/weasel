@@ -7,7 +7,7 @@
 import { describe, expect, it } from 'vitest';
 import fc from 'fast-check';
 import { SYMMETRY_KINDS, symmetryTransforms, type SymmetryKind } from './kinds';
-import { specOfData } from './group';
+import { symmetrySpecOf } from './group';
 import { MAX_WALLPAPER_COPIES } from './wallpaper';
 import { CELLS, isIsometry, point, runs, spec, tally, timeoutFor } from './pbt.fixture';
 
@@ -74,7 +74,7 @@ describe("a group's data", () => {
   it('reads from any JSON as a spec every kind draws from, its kind and cell its own names only', () => {
     const t = tally();
     fc.assert(fc.property(fc.oneof(data, json), point(500), (d, c) => {
-      const s = specOfData(d);
+      const s = symmetrySpecOf(d);
       expect(Object.hasOwn(SYMMETRY_KINDS, s.kind)).toBe(true);
       expect((CELLS as readonly string[]).includes(s.cell)).toBe(true);
       const ms = symmetryTransforms(s, c);
@@ -87,7 +87,7 @@ describe("a group's data", () => {
 
   it('keeps every field that holds a value of its own kind', () => {
     fc.assert(fc.property(spec(), (s) => {
-      expect(specOfData(JSON.parse(JSON.stringify({ symmetry: s })))).toEqual(JSON.parse(JSON.stringify(s)));
+      expect(symmetrySpecOf(JSON.parse(JSON.stringify({ symmetry: s })))).toEqual(JSON.parse(JSON.stringify(s)));
     }), runs(RUNS));
   });
 });

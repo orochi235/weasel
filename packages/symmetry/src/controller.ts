@@ -2,7 +2,7 @@ import { createEmitter, deepEqual } from '@weasel-js/registry';
 import { ANY_MODS, hitPredicate, type Action, type NodeId, type Scene, type SurfaceContribution } from '@weasel-js/core';
 import { bakeSymmetry, type BakeResult } from './bake';
 import {
-  centerUnder, editSymmetries, isSymmetryGroup, poseAtCenter, symmetryOf, specOfData, symmetryGroupOf,
+  centerUnder, editSymmetries, isSymmetryGroup, poseAtCenter, symmetryOf, symmetrySpecOf, symmetryGroupOf,
   symmetryGroupSpec,
 } from './group';
 import { keepContentsPut, reachFrom } from './frames';
@@ -79,7 +79,7 @@ export function createSymmetry(scene: Scene<unknown, string, unknown>, opts: Cre
     if (!node || !isSymmetryGroup(scene, id)) return false;
     let wrote = false;
     if (change.spec) {
-      const now = specOfData(node.data);
+      const now = symmetrySpecOf(node.data);
       const spec = { ...now, ...change.spec };
       if (!deepEqual(spec, now)) {
         scene.update(id, { data: { ...(node.data as object), symmetry: spec } });
