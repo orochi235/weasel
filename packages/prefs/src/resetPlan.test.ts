@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { AUTO, leafIsAtReset, prefNodeAt, resetPlan, resetPlanAt, type LeafReading } from './autoReset';
+import { AUTO, readingIsAtReset, prefNodeAt, resetPlan, resetPlanAt, type LeafReading } from './autoReset';
 import type { PrefGroup, PrefSection, PrefLeaf } from '@weasel-js/prefs-schema';
 
 const size = { kind: 'number', name: 'Size', description: '', default: 10, auto: { value: 40 } } as PrefLeaf;
@@ -12,24 +12,24 @@ const GROUP = { name: 'View', resettable: true, children: { size, gap, grid, sho
 
 const one = (value: unknown, auto?: boolean): LeafReading => ({ value, mixed: false, each: [value], auto });
 
-describe('leafIsAtReset', () => {
+describe('readingIsAtReset', () => {
   it('reads a mixed leaf as not at its reset, whatever value it shows', () => {
-    expect(leafIsAtReset(grid, { value: undefined, mixed: true, each: [true, false] })).toBe(false);
+    expect(readingIsAtReset(grid, { value: undefined, mixed: true, each: [true, false] })).toBe(false);
   });
 
   it('needs every target at its reset', () => {
-    expect(leafIsAtReset(grid, { value: true, mixed: false, each: [true, true] })).toBe(true);
-    expect(leafIsAtReset(grid, { value: undefined, mixed: false, each: [true, false] })).toBe(false);
+    expect(readingIsAtReset(grid, { value: true, mixed: false, each: [true, true] })).toBe(true);
+    expect(readingIsAtReset(grid, { value: undefined, mixed: false, each: [true, false] })).toBe(false);
   });
 
   it('reads a leaf that starts auto by its auto state where the surface keeps one, and by its default where not', () => {
-    expect(leafIsAtReset(gap, one(4, false))).toBe(false);
-    expect(leafIsAtReset(gap, one(undefined, true))).toBe(true);
-    expect(leafIsAtReset(gap, one(4))).toBe(true);
+    expect(readingIsAtReset(gap, one(4, false))).toBe(false);
+    expect(readingIsAtReset(gap, one(undefined, true))).toBe(true);
+    expect(readingIsAtReset(gap, one(4))).toBe(true);
   });
 
   it('always reads a readout as at its reset', () => {
-    expect(leafIsAtReset(shown, one(99))).toBe(true);
+    expect(readingIsAtReset(shown, one(99))).toBe(true);
   });
 });
 

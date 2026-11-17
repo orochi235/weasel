@@ -167,7 +167,7 @@ export {
   type PrefReset,
   type PrefResetEntry,
   AUTO,
-  leafIsAtReset,
+  readingIsAtReset,
   resetPlan,
   resetPlanAt,
   prefNodeAt,
@@ -194,6 +194,6 @@ export { PREF_KIND_TRAITS, prefDrawsSeveral, prefIsCompound, type PrefKindTraits
 export { mergePrefGroups } from './merge';
 export { orderPrefGroup, resolveOrder, type PrefOrder } from './order';
 export { LEAF_FREE, sharedReading, type LeafState, type PrefsSource, type SourceWriteOptions } from './sources/prefsSource';
-export { leafAtReset, resetReading, sourceIsAtReset, sourceResetPlan, writePlan } from './sources/policy';
+export { sourceLeafIsAtReset, resetReading, sourceIsAtReset, sourceResetPlan, writePlan } from './sources/policy';
 export { createRecordSource, createValuesSource, type ValuesSourceOptions } from './sources/valuesSource';
 export { createSelectionSource, type SelectionSource, type SelectionSourceInput } from './sources/selectionSource';

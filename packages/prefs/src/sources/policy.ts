@@ -1,7 +1,7 @@
 // The one reset policy every params surface runs: what a reset reaches, and whether a leaf already is at it.
 // `resetPlanAt` says what the reset writes; a source says what it reads.
 
-import { leafIsAtReset, resetPlanAt, type LeafReading, type ResetWrite } from '../autoReset';
+import { readingIsAtReset, resetPlanAt, type LeafReading, type ResetWrite } from '../autoReset';
 import type { PrefLeaf } from '@weasel-js/prefs-schema';
 import type { PrefsSource } from './prefsSource';
 
@@ -21,8 +21,8 @@ export function sourceIsAtReset(source: Pick<PrefsSource, 'schema' | 'stateAt' |
 }
 
 /** Whether the leaf at `path` already is as a reset leaves it, disabled or not: what a row's own reset reads. */
-export function leafAtReset(source: Pick<PrefsSource, 'valueAt'>, path: string, leaf: PrefLeaf): boolean {
-  return leafIsAtReset(leaf, source.valueAt(path));
+export function sourceLeafIsAtReset(source: Pick<PrefsSource, 'valueAt'>, path: string, leaf: PrefLeaf): boolean {
+  return readingIsAtReset(leaf, source.valueAt(path));
 }
 
 /** Runs `plan` through `write`, one call per leaf. */

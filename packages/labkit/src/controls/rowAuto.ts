@@ -1,5 +1,5 @@
 import {
-  leafAtReset,
+  sourceLeafIsAtReset,
   type PrefLeaf,
   type PrefNumber,
   prefAutoValue,
@@ -103,7 +103,7 @@ export function useRowAuto(source: RowAutoSource) {
   };
 }
 
-/** The row's reset, where its leaf is not already as a reset leaves it (`leafIsAtReset`). */
+/** The row's reset, where its leaf is not already as a reset leaves it (`readingIsAtReset`). */
 function rowReset({
   path,
   leaf,
@@ -115,5 +115,5 @@ function rowReset({
   setConfig,
 }: RowAutoSource): (() => void) | undefined {
   const source = createLabConfigSource({ resolved, config, shown, setConfig, auto, setRowAuto });
-  return leafAtReset(source, path, leaf) ? undefined : () => source.reset([path]);
+  return sourceLeafIsAtReset(source, path, leaf) ? undefined : () => source.reset([path]);
 }

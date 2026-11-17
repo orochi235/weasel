@@ -100,7 +100,7 @@ export interface LeafReading<T = unknown> {
 }
 
 /** Whether a reset of `leaf` would leave every target as it is: a readout, which no reset reaches, always is. */
-export function leafIsAtReset(leaf: PrefLeaf, reading: LeafReading): boolean {
+export function readingIsAtReset(leaf: PrefLeaf, reading: LeafReading): boolean {
   if (!prefHoldsValue(leaf) || (leaf as { readout?: boolean }).readout === true) return true;
   if (reading.mixed) return false;
   return reading.each.every((value) => prefIsAtReset(leaf, { auto: reading.auto, value: prefLeafValue(leaf, value) }));
@@ -126,7 +126,7 @@ export function resetPlan(
 ): ResetWrite[] {
   return prefResets(node, path).flatMap((r) => {
     const reading = read(r.path);
-    if (reading === undefined || leafIsAtReset(r.leaf, reading)) return [];
+    if (reading === undefined || readingIsAtReset(r.leaf, reading)) return [];
     return [{ path: r.path, leaf: r.leaf, write: r.auto && reading.auto !== undefined ? AUTO : prefStoredReset(r.leaf) }];
   });
 }

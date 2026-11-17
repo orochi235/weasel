@@ -2,7 +2,7 @@
 // writes is the form's source's to say (`PrefsSource`), through the one policy every params surface runs.
 
 import type { ReactNode } from 'react';
-import { leafAtReset, sourceIsAtReset, type PrefGroup, type PrefLeaf } from '@weasel-js/prefs';
+import { sourceLeafIsAtReset, sourceIsAtReset, type PrefGroup, type PrefLeaf } from '@weasel-js/prefs';
 import { ResetControl } from '../Properties/ResetControl';
 import type { WalkCtx } from './PrefsRow';
 
@@ -13,7 +13,7 @@ export function autoTracked(ctx: WalkCtx, path: string): boolean {
 
 /** A row's reset, where its leaf is not already as a reset leaves it. */
 export function rowReset(ctx: WalkCtx, path: string, leaf: PrefLeaf): (() => void) | undefined {
-  return leafAtReset(ctx.source, path, leaf) ? undefined : () => ctx.source.reset([path]);
+  return sourceLeafIsAtReset(ctx.source, path, leaf) ? undefined : () => ctx.source.reset([path]);
 }
 
 /** The reset in a `resettable` group's heading, disabled while every leaf it reaches is as a reset leaves it. */
