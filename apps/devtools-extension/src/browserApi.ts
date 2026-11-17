@@ -21,6 +21,8 @@ export interface PortLike {
 
 export interface ExtensionApi {
   runtime: {
+    /** Undefined in a content script orphaned by its extension's reload or removal. */
+    readonly id?: string;
     connect(info: { name: string }): PortLike;
     readonly onConnect: ExtEvent<[port: PortLike]>;
     sendMessage(message: unknown): Promise<unknown>;

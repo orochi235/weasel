@@ -2,7 +2,7 @@ import { describe, it, expect, vi } from 'vitest';
 import type { ExtensionApi, PortLike } from '../browserApi';
 import { portPair, type FakePort } from '../testing/fakePorts';
 import { CONNECT_REQUEST, HELLO, PORT_PAGE } from '../envelope';
-import { startContentScript } from './start';
+import { startContentScript, startContentScriptOnce, type BridgeScope } from './start';
 
 /** A content script's view of the extension API, with the background's answer to its hello. */
 function fakeApi(panelOpen: Promise<unknown>) {
@@ -72,5 +72,37 @@ describe('the content script', () => {
     f.ports[0]!.disconnect();
     f.ask(CONNECT_REQUEST);
     expect(f.ports).toHaveLength(2);
+  });
+});
+
+describe('injecting the content script again', () => {
+  it('starts once in a world a live copy already bridges', async () => {
+    const f = fakeApi(Promise.resolve(true));
+    (f.api.runtime as { id?: string }).id = 'ext';
+    const scope: BridgeScope = {};
+    startContentScriptOnce(f.api, window, scope);
+    startContentScriptOnce(f.api, window, scope);
+    await tick();
+    expect(f.sent).toEqual([HELLO]);
+  });
+
+  it('starts again in a world a copy orphaned by an extension reload marked', async () => {
+    const old = fakeApi(Promise.resolve(false));
+    (old.api.runtime as { id?: string }).id = 'ext';
+    const scope: BridgeScope = {};
+    startContentScriptOnce(old.api, window, scope);
+    delete (old.api.runtime as { id?: string }).id;
+    const reloaded = fakeApi(Promise.resolve(true));
+    (reloaded.api.runtime as { id?: string }).id = 'ext';
+    startContentScriptOnce(reloaded.api, window, scope);
+    await tick();
+    expect(reloaded.ports.map((p) => p.name)).toEqual([PORT_PAGE]);
+  });
+
+  it('starts over a mark an older build left', async () => {
+    const f = fakeApi(Promise.resolve(true));
+    startContentScriptOnce(f.api, window, { __weaselDevtoolsBridge__: true });
+    await tick();
+    expect(f.sent).toEqual([HELLO]);
   });
 });
