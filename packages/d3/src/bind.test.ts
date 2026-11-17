@@ -36,7 +36,7 @@ describe('d3Bind — diff and op emission', () => {
     act(() => {
       d3Bind(scene.current, data, { key: (d) => d.id })
         .pose((d) => ({ x: d.x, y: 0, width: 10, height: 10 }))
-        .data((d) => ({ label: d.label }))
+        .payload((d) => ({ label: d.label }))
         .join();
     });
     expect(scene.current.nodes.size).toBe(2);
@@ -49,13 +49,13 @@ describe('d3Bind — diff and op emission', () => {
     act(() => {
       d3Bind(scene.current, [{ id: 'a', label: 'A', x: 10 }] as Datum[], { key: (d) => d.id })
         .pose((d) => ({ x: d.x, y: 0, width: 10, height: 10 }))
-        .data((d) => ({ label: d.label }))
+        .payload((d) => ({ label: d.label }))
         .join();
     });
     act(() => {
       d3Bind(scene.current, [{ id: 'a', label: 'A', x: 99 }] as Datum[], { key: (d) => d.id })
         .pose((d) => ({ x: d.x, y: 0, width: 10, height: 10 }))
-        .data((d) => ({ label: d.label }))
+        .payload((d) => ({ label: d.label }))
         .join();
     });
     expect(scene.current.nodes.size).toBe(1);
@@ -71,14 +71,14 @@ describe('d3Bind — diff and op emission', () => {
         { key: (d) => d.id },
       )
         .pose((d) => ({ x: d.x, y: 0, width: 10, height: 10 }))
-        .data((d) => ({ label: d.label }))
+        .payload((d) => ({ label: d.label }))
         .join();
     });
     expect(scene.current.nodes.size).toBe(2);
     act(() => {
       d3Bind(scene.current, [{ id: 'b', label: 'B', x: 20 }] as Datum[], { key: (d) => d.id })
         .pose((d) => ({ x: d.x, y: 0, width: 10, height: 10 }))
-        .data((d) => ({ label: d.label }))
+        .payload((d) => ({ label: d.label }))
         .join();
     });
     expect(scene.current.nodes.size).toBe(1);
@@ -95,7 +95,7 @@ describe('d3Bind — diff and op emission', () => {
         { key: (d) => d.id },
       )
         .pose((d) => ({ x: d.x, y: 0, width: 10, height: 10 }))
-        .data((d) => ({ label: d.label }))
+        .payload((d) => ({ label: d.label }))
         .join();
     });
     // b stays (update), c is new (enter), a goes away (exit).
@@ -106,7 +106,7 @@ describe('d3Bind — diff and op emission', () => {
         { key: (d) => d.id },
       )
         .pose((d) => ({ x: d.x, y: 0, width: 10, height: 10 }))
-        .data((d) => ({ label: d.label }))
+        .payload((d) => ({ label: d.label }))
         .join();
     });
     expect(scene.current.nodes.size).toBe(2);
@@ -138,7 +138,7 @@ describe('d3Bind — diff and op emission', () => {
         layer: 'b',
       })
         .pose((d) => ({ x: d.x, y: 0, width: 10, height: 10 }))
-        .data((d) => ({ label: d.label }))
+        .payload((d) => ({ label: d.label }))
         .join();
     });
     expect(result.current.get('x' as never)?.layer).toBe('b');
@@ -148,7 +148,7 @@ describe('d3Bind — diff and op emission', () => {
     const scene = setupScene();
     expect(() => {
       d3Bind(scene.current, [{ id: 'a', label: 'A', x: 10 }] as Datum[], { key: (d) => d.id })
-        .data((d) => ({ label: d.label }))
+        .payload((d) => ({ label: d.label }))
         .join();
     }).toThrow(/pose/);
   });
@@ -162,7 +162,7 @@ describe('d3Bind — diff and op emission', () => {
     const join = () =>
       d3Bind(scene.current, twice, { key: (d) => d.id })
         .pose((d) => ({ x: d.x, y: 0, width: 10, height: 10 }))
-        .data((d) => ({ label: d.label }))
+        .payload((d) => ({ label: d.label }))
         .join();
     expect(() => act(() => void join())).toThrow(/key "a".*0 and 1/);
     act(() => {
@@ -186,7 +186,7 @@ describe('d3Bind selection — filter / each', () => {
     let sel: ReturnType<typeof binding.join>;
     const binding = d3Bind(scene.current, data, { key: (d) => d.id })
       .pose((d) => ({ x: d.x, y: 0, width: 10, height: 10 }))
-      .data((d) => ({ label: d.label }));
+      .payload((d) => ({ label: d.label }));
     act(() => {
       sel = binding.join();
     });
@@ -207,7 +207,7 @@ describe('d3Bind selection — filter / each', () => {
       { key: (d) => d.id },
     )
       .pose((d) => ({ x: d.x, y: 0, width: 10, height: 10 }))
-      .data((d) => ({ label: d.label }));
+      .payload((d) => ({ label: d.label }));
     act(() => {
       sel = binding.join();
     });
@@ -227,7 +227,7 @@ describe('d3Bind selection — filter / each', () => {
     let sel: ReturnType<typeof binding.join>;
     const binding = d3Bind(scene.current, data, { key: (d) => d.id })
       .pose((d) => ({ x: d.x, y: 0, width: 10, height: 10 }))
-      .data((d) => ({ label: d.label }));
+      .payload((d) => ({ label: d.label }));
     act(() => {
       sel = binding.join();
     });
@@ -246,7 +246,7 @@ describe('d3Bind selection — filter / each', () => {
       key: (d) => d.id,
     })
       .pose((d) => ({ x: d.x, y: 0, width: 10, height: 10 }))
-      .data((d) => ({ label: d.label }));
+      .payload((d) => ({ label: d.label }));
     act(() => {
       sel = binding.join();
     });
@@ -284,17 +284,17 @@ describe('d3Bind — the diff is scoped to the target layer', () => {
 });
 
 describe('d3Bind — typed data payload', () => {
-  it("types .data()'s return as the scene's node data", () => {
+  it("types .payload()'s return as the scene's node data", () => {
     const scene = setupScene();
     const binding = d3Bind(scene.current, [] as Datum[], { key: (d) => d.id });
     expectTypeOf(binding).toEqualTypeOf<D3Binding<Datum, Pose, { label: string }>>();
-    expectTypeOf<Parameters<typeof binding.data>[0]>().returns.toEqualTypeOf<{
+    expectTypeOf<Parameters<typeof binding.payload>[0]>().returns.toEqualTypeOf<{
       label: string;
     }>();
     // @ts-expect-error — `label` must be a string on this scene.
-    binding.data((d) => ({ label: d.x }));
+    binding.payload((d) => ({ label: d.x }));
     // @ts-expect-error — this scene's node data requires `label`.
-    binding.data(() => ({}));
+    binding.payload(() => ({}));
   });
 
   it('carries the payload type through the builder chain', () => {
@@ -302,7 +302,7 @@ describe('d3Bind — typed data payload', () => {
     const chained = d3Bind(scene.current, [] as Datum[], { key: (d) => d.id })
       .pose((d) => ({ x: d.x, y: 0, width: 1, height: 1 }))
       .enterFrom(() => ({ x: 0, y: 0, width: 0, height: 0 }))
-      .data((d) => ({ label: d.label }));
+      .payload((d) => ({ label: d.label }));
     expectTypeOf(chained).toEqualTypeOf<D3Binding<Datum, Pose, { label: string }>>();
   });
 
@@ -311,13 +311,13 @@ describe('d3Bind — typed data payload', () => {
     act(() => {
       d3Bind(scene.current, [{ id: 'a', label: 'A', x: 0 }] as Datum[], { key: (d) => d.id })
         .pose((d) => ({ x: d.x, y: 0, width: 1, height: 1 }))
-        .data((d) => ({ label: d.label }))
+        .payload((d) => ({ label: d.label }))
         .join();
     });
     act(() => {
       d3Bind(scene.current, [{ id: 'a', label: 'B', x: 0 }] as Datum[], { key: (d) => d.id })
         .pose((d) => ({ x: d.x, y: 0, width: 1, height: 1 }))
-        .data((d) => ({ label: d.label }))
+        .payload((d) => ({ label: d.label }))
         .join();
     });
     const data = scene.current.get(asNodeId('a'))?.data;
@@ -330,7 +330,7 @@ describe('d3Bind — typed data payload', () => {
       useScene<unknown, 'graph', Pose>({ systemLayers: [{ id: 'graph' }], initial: [] }),
     );
     const binding = d3Bind(result.current, [] as Datum[], { key: (d) => d.id });
-    binding.data((d) => ({ anything: d.x }));
+    binding.payload((d) => ({ anything: d.x }));
     expectTypeOf(binding).toEqualTypeOf<D3Binding<Datum, Pose, unknown>>();
   });
 });

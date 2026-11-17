@@ -53,7 +53,7 @@ describe('d3Bind join', () => {
           });
           const exited: NodeId[] = [];
           const b = d3Bind(scene, o.data, { key: (d) => d.id }).pose((d) => d.pose);
-          if (o.payload) b.data((d) => ({ tag: d.tag }));
+          if (o.payload) b.payload((d) => ({ tag: d.tag }));
           if (o.exit) b.exit((sel) => { exited.push(...sel.ids); });
           if (squatted.length > 0) {
             seen.count('squatted');

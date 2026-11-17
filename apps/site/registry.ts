@@ -636,7 +636,7 @@ const DEMO_META: DemoMeta[] = [
     id: 'd3-sortable',
     title: 'd3 plugin: sortable bars',
     package: 'd3',
-    description: 'Twelve bars bound to a data array with `@weasel-js/d3`: `d3Bind(scene, data, { key, animator }).pose(fn).data(fn).join()`. Picking an order reorders the data; the join diffs it against the scene and emits one batched op group, then `.transition().duration(600).ease(easeInOutCubic).delay(i × 30)` animates each bar to its new x-position through `useAnimator`, staggered.',
+    description: 'Twelve bars bound to a data array with `@weasel-js/d3`: `d3Bind(scene, data, { key, animator }).pose(fn).payload(fn).join()`. Picking an order reorders the data; the join diffs it against the scene and emits one batched op group, then `.transition().duration(600).ease(easeInOutCubic).delay(i × 30)` animates each bar to its new x-position through `useAnimator`, staggered.',
     hint: 'Pick an order: index, asc, desc, or shuffle.',
     load: () => import('./demos/D3SortableDemo').then((m) => m.D3SortableDemo),
     path: 'apps/site/demos/D3SortableDemo.tsx',

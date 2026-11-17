@@ -88,7 +88,7 @@ function D3SortableDemoInner() {
       animator,
     })
       .pose(poseFor)
-      .data((d) => ({ fill: { paint: solid(d.color) }, stroke: BAR_STROKE, value: d.value }));
+      .payload((d) => ({ fill: { paint: solid(d.color) }, stroke: BAR_STROKE, value: d.value }));
 
     const sel = binding.join();
 
