@@ -188,10 +188,13 @@ function kindIcon(id: Weasel.ShapeKind): ReactNode {
   return name === undefined ? undefined : actionIcon(toIconRef(`core:${name}`));
 }
 
+/** The property kinds a draw canvas merges: core's defaults and what draw's presets add (text's). */
+export const DRAW_NODE_PROPERTIES: readonly NodePropertiesEntry[] =
+  nodeTraitsOf(DRAW_FEATURES, { properties: defaultNodeProperties }).properties;
+
 export function collectPropertiesTrait(
-  live?: readonly NodePropertiesEntry[],
+  source: readonly NodePropertiesEntry[] = DRAW_NODE_PROPERTIES,
 ): readonly PropertiesKindEntry[] {
-  const source = live ?? nodeTraitsOf(DRAW_FEATURES, { properties: defaultNodeProperties }).properties;
   // An object leaf's fields are what the kind exposes; the leaf itself is
   // the container.
   const leafPaths = (schema: NodePropertiesEntry['schema']): string[] =>

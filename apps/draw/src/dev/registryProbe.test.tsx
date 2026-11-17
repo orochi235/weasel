@@ -56,6 +56,17 @@ describe('RegistryProbe', () => {
     expect(toolIds).toContain('rect');
   });
 
+  it("reports the property kinds its canvas merges, draw's presets' own included", async () => {
+    let properties: readonly { name: string }[] = [];
+    render(
+      <ActionsProvider>
+        <RegistryProbe onSnapshot={(snap) => { properties = snap.properties; }} />
+      </ActionsProvider>,
+    );
+    await waitFor(() => expect(properties.length).toBeGreaterThan(0));
+    expect(properties.map((p) => p.name)).toContain('text');
+  });
+
   // Built-in tools route most gestures through `ToolDef.bindings` rather than
   // legacy phase-table channels. The probe must reflect both into
   // `ToolEntry.routes`, otherwise the inspector's per-tool route list shows
