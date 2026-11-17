@@ -96,7 +96,8 @@ function widenLayer(l: Layer, rows: number, n: number): void {
   l.values = wider(l.values, rows * n);
   l.weights = wider(l.weights, rows);
   l.has = wider(l.has, rows);
-  if (l.covers) l.covers = wider(l.covers, rows * n);
+  // A row the store grows into holds every axis until a hold on it says otherwise, as `part` leaves one.
+  if (l.covers) l.covers = wider(l.covers, rows * n, 1);
 }
 
 /** Asks `row`'s sources in `l`: the weight first, and the value only where it weighs something. */
