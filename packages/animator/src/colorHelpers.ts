@@ -169,6 +169,15 @@ export function staggerVertexColors(
   const { from, to, anchorMs, perAnchorDelay } = opts;
   const n = from.length / 4;
   const easing = resolveEasing(opts.easing);
+  if (!(anchorMs >= 0 && anchorMs < Infinity)) {
+    throw new RangeError(`staggerVertexColors: anchorMs is a time of at least 0, not ${anchorMs}`);
+  }
+  if (!(perAnchorDelay >= 0 && perAnchorDelay < Infinity)) {
+    throw new RangeError(`staggerVertexColors: perAnchorDelay is a time of at least 0, not ${perAnchorDelay}`);
+  }
+  if (typeof opts.origin === 'number' && !Number.isFinite(opts.origin)) {
+    throw new RangeError(`staggerVertexColors: origin is an anchor's index, not ${opts.origin}`);
+  }
 
   const originIndex =
     opts.origin === 'last' ? n - 1 :
@@ -183,7 +192,10 @@ export function staggerVertexColors(
     for (let i = 0; i < n; i++) {
       const distance = Math.abs(i - originIndex);
       const startMs = distance * perAnchorDelay;
-      const localT = Math.max(0, Math.min(1, (elapsedMs - startMs) / anchorMs));
+      // An anchor given no time of its own steps to its end as it starts.
+      const localT = anchorMs === 0
+        ? (elapsedMs >= startMs ? 1 : 0)
+        : Math.max(0, Math.min(1, (elapsedMs - startMs) / anchorMs));
       const eased = easing(localT);
       const k = i * 4;
       const fSlice = [from[k], from[k + 1], from[k + 2], from[k + 3]];
