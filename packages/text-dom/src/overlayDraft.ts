@@ -35,13 +35,13 @@ export function draftChanged(sent: { current: string }, draft: TextEditDraft): b
   return true;
 }
 
-/** Write a finished edit through `opts`: its `commit` where there is one, else each setter it has. */
+/** Write a finished edit through `opts`: its `onChange` where there is one, else each setter it has. */
 export function writeEdit(
-  opts: Pick<UseTextEditOptions, 'commit' | 'setRuns' | 'setStyle' | 'setText'>,
+  opts: Pick<UseTextEditOptions, 'onChange' | 'setRuns' | 'setStyle' | 'setText'>,
   id: string,
   edit: TextEditCommit,
 ): void {
-  if (opts.commit) return opts.commit(id, edit);
+  if (opts.onChange) return opts.onChange(id, edit);
   if (edit.style) opts.setStyle?.(id, edit.style);
   opts.setText?.(id, edit.text);
   if (opts.setRuns && edit.runs) opts.setRuns(id, edit.runs);

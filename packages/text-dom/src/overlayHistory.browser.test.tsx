@@ -37,7 +37,7 @@ function Editor({ c }: { c: Case }) {
     getRuns: () => c.runs,
     getStyle: () => ({ fontFamily: 'Arial', fontSize: FONT_SIZE, lineHeight: 1.2, caretColor: 'transparent', ...c.style }),
     getScreenPose: (): TextEditScreenPose => ({ ...BOX, fontSize: FONT_SIZE, zoom: 1, ...c.pose }),
-    commit: (_id, e) => { commits.push(e); },
+    onChange: (_id, e) => { commits.push(e); },
   });
   const { startEdit } = edit;
   useEffect(() => { startEdit('n', { caret: c.caret }); }, [startEdit, c.caret]);

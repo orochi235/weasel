@@ -20,7 +20,7 @@ const redo = (el: HTMLElement) => act(() => { pressKey(el, 'z', { ctrl: true, sh
 function open(text: string, style: TextStyle = {}) {
   const h = makeRichHarness({ a: { text, runs: [{ text }] } });
   h.opts.getStyle = () => ({ fontSize: 16, ...style });
-  h.opts.commit = (id, edit) => { h.data[id] = { text: edit.text, runs: edit.runs }; };
+  h.opts.onChange = (id, edit) => { h.data[id] = { text: edit.text, runs: edit.runs }; };
   const hook = renderHook(() => useTextEdit(h.opts));
   act(() => hook.result.current.startEdit('a', { caret: 0 }));
   return { h, hook, el: getOverlay(h.container)! };
@@ -75,7 +75,7 @@ describe('useTextEdit — undo inside the edit', () => {
     expect(hook.result.current.nodeStyle).toBeNull();
     expect(el.style.fontStyle).toBe('italic');
     let written: unknown = 'nothing';
-    h.opts.commit = (_id, edit) => { written = edit; };
+    h.opts.onChange = (_id, edit) => { written = edit; };
     act(() => hook.result.current.commitEdit());
     expect(written).toBe('nothing');
   });

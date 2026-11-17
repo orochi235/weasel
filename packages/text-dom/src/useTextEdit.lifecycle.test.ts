@@ -42,7 +42,7 @@ describe('useTextEdit — an edit that changed nothing writes nothing', () => {
   it('does not call `commit` either', () => {
     const h = makeHarness({ a: 'hi' });
     const commit = vi.fn();
-    h.opts.commit = commit;
+    h.opts.onChange = commit;
     const { result } = renderHook(() => useTextEdit(h.opts));
     act(() => result.current.startEdit('a'));
     act(() => result.current.commitEdit());
