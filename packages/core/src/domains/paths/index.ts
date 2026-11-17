@@ -34,7 +34,6 @@ export {
   splitCubicAtT,
   fitCubicThroughDeletion,
   type Point,
-  pointInPath,
   strokeHitTest,
   type PointInPathOptions,
   type StrokeHitTestOptions,

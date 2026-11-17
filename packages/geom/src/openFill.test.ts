@@ -2,7 +2,7 @@ import { afterEach, describe, expect, it } from 'vitest';
 import { pathFromD } from './paths/pathFromD';
 import { pathSignedArea } from './paths/winding';
 import {
-  pathContainsRect, pathIntersectsPolygon, pathIntersectsRect, pointInPath, strokeHitTest,
+  pathContainsRect, pathIntersectsPolygon, pathIntersectsRect, pathContainsPoint, strokeHitTest,
 } from './pathHitTest';
 import { tessellate } from './tessellate/tessellate';
 import { defaultOpenFill, fillsOpenSubpaths, setDefaultOpenFill } from './openFill';
@@ -38,7 +38,7 @@ describe('whether an open subpath fills', () => {
     const path = open(rule);
     expect(tessellate(path).indices.length > 0).toBe(fills);
     expect(pathSignedArea(path) !== 0).toBe(fills);
-    expect(pointInPath(path, ...INSIDE)).toBe(fills);
+    expect(pathContainsPoint(path, ...INSIDE)).toBe(fills);
   });
 
   it('reads the engine default for a path that names no rule', () => {
@@ -46,12 +46,12 @@ describe('whether an open subpath fills', () => {
     const path = open();
     expect(tessellate(path).indices.length).toBe(0);
     expect(pathSignedArea(path)).toBe(0);
-    expect(pointInPath(path, ...INSIDE)).toBe(false);
+    expect(pathContainsPoint(path, ...INSIDE)).toBe(false);
   });
 
   it("keeps a path's own rule over the engine default", () => {
     setDefaultOpenFill('none');
-    expect(pointInPath(open('close'), ...INSIDE)).toBe(true);
+    expect(pathContainsPoint(open('close'), ...INSIDE)).toBe(true);
     expect(tessellate(open('close')).indices.length).toBe(3);
   });
 
@@ -59,7 +59,7 @@ describe('whether an open subpath fills', () => {
     const closed: PolygonPath = { ...(pathFromD('M0 0 L100 0 L100 100 Z') as PolygonPath), openFill: 'none' };
     expect(tessellate(closed).indices.length).toBe(3);
     expect(pathSignedArea(closed)).toBe(5000);
-    expect(pointInPath(closed, ...INSIDE)).toBe(true);
+    expect(pathContainsPoint(closed, ...INSIDE)).toBe(true);
   });
 
   it('fills only the closed contour of a path that mixes the two under none', () => {
@@ -69,7 +69,7 @@ describe('whether an open subpath fills', () => {
     };
     expect(tessellate(mixed).indices.length).toBe(3);
     expect(pathSignedArea(mixed)).toBe(5000);
-    expect(pointInPath(mixed, 275, 25)).toBe(false);
+    expect(pathContainsPoint(mixed, 275, 25)).toBe(false);
   });
 
   it('gives a boolean only the contours a fill covers', () => {
@@ -114,8 +114,8 @@ describe('everything that asks about a fill agrees on an open subpath it closes'
   const OPEN_TRIANGLE = open('close');
 
   it('contains a point the triangle paints, and not one past its closing edge', () => {
-    expect(pointInPath(OPEN_TRIANGLE, 75, 25)).toBe(true);
-    expect(pointInPath(OPEN_TRIANGLE, 25, 75)).toBe(false);
+    expect(pathContainsPoint(OPEN_TRIANGLE, 75, 25)).toBe(true);
+    expect(pathContainsPoint(OPEN_TRIANGLE, 25, 75)).toBe(false);
   });
 
   it('answers region questions against the same triangle', () => {
@@ -128,13 +128,13 @@ describe('everything that asks about a fill agrees on an open subpath it closes'
 
   it('closes a curved run the same way', () => {
     const lobe = pathFromD('M0 0 C0 100 100 100 100 0') as PolygonPath;
-    expect(pointInPath(lobe, 50, 40)).toBe(true);
-    expect(pointInPath(lobe, 50, 90)).toBe(false);
+    expect(pathContainsPoint(lobe, 50, 40)).toBe(true);
+    expect(pathContainsPoint(lobe, 50, 90)).toBe(false);
   });
 
   it('fills nothing for a run of two points', () => {
     const line = pathFromD('M0 0 L100 100');
-    expect(pointInPath(line, 50, 50)).toBe(false);
+    expect(pathContainsPoint(line, 50, 50)).toBe(false);
     expect(tessellate(line).indices.length).toBe(0);
   });
 

@@ -27,7 +27,7 @@ import { translatePath } from './transform';
 import { transformPath } from './transformPath';
 import { pathUnion } from '../booleans';
 import { pathToMultiPolygon } from '../booleans/adapter';
-import { pointInPath, polygonContainsPath, strokeHitTest } from '../pathHitTest';
+import { pathContainsPoint, polygonContainsPath, strokeHitTest } from '../pathHitTest';
 import { rotatePathAround } from '../poseRotation';
 import { pinWarpMesh } from '../warp/pinWarpMesh';
 import type { PolygonPath } from '../path';
@@ -43,8 +43,8 @@ const square = (dx = 0): PolygonPath => new PathBuilder().setOrigin(FAR, 0)
 describe('readers of a path measured from an origin', () => {
   it('hit-tests the path where its origin puts it', () => {
     const p = square();
-    expect(pointInPath(p, X + 0.01, 1.5)).toBe(true);
-    expect(pointInPath(p, X - 0.01, 1.5)).toBe(false);
+    expect(pathContainsPoint(p, X + 0.01, 1.5)).toBe(true);
+    expect(pathContainsPoint(p, X - 0.01, 1.5)).toBe(false);
     expect(strokeHitTest(p, X - 0.005, 1.5, 0.01)).toBe(true);
     expect(pathDistanceToPoint(p, X - 0.1, 1.5)).toBeCloseTo(0.1, 6);
     const lasso = [{ x: X - 0.01, y: 0.9 }, { x: X + 1.1, y: 0.9 }, { x: X + 1.1, y: 2.1 }, { x: X - 0.01, y: 2.1 }];

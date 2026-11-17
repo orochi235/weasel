@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { PATH_L, PATH_M, PATH_Q, PATH_Z } from './commands';
-import { pointInPath } from './pathHitTest';
+import { pathContainsPoint } from './pathHitTest';
 import { extractPolylines } from './tessellate/polyline';
 import { tessellate } from './tessellate/tessellate';
 import { pathToMultiPolygon } from './booleans/adapter';
@@ -32,9 +32,9 @@ function meshArea(vertices: Float32Array, indices: Uint32Array): number {
 
 describe('a drawing command after Z with no M', () => {
   it('fills the second subpath for a hit test', () => {
-    expect(pointInPath(TWO, 7, 3)).toBe(true);
-    expect(pointInPath(TWO, -7, -3)).toBe(true);
-    expect(pointInPath(TWO, -3, -7)).toBe(false);
+    expect(pathContainsPoint(TWO, 7, 3)).toBe(true);
+    expect(pathContainsPoint(TWO, -7, -3)).toBe(true);
+    expect(pathContainsPoint(TWO, -3, -7)).toBe(false);
   });
 
   it('starts a second polyline at the pen', () => {

@@ -2,7 +2,7 @@
  * Where a stroke's outline edge runs near a point: what an editor that drags a
  * stroke's edge hit-tests and measures against.
  */
-import { pointInPath, segmentT, lerp, type Path } from '@weasel-js/geom';
+import { pathContainsPoint, segmentT, lerp, type Path } from '@weasel-js/geom';
 import { extractPolylines } from '@weasel-js/geom/tessellate';
 import type { Stroke } from '@weasel-js/paint';
 import { strokeFlattening } from './tessellate/flattening';
@@ -124,5 +124,5 @@ function inkedSide(path: Path, P: ArrayLike<number>, segCount: number, inner: bo
   const probe = Math.min(longest, 1) * 1e-3;
   const mx = (P[at * 2] + P[j * 2]) / 2 - (dy / longest) * probe;
   const my = (P[at * 2 + 1] + P[j * 2 + 1]) / 2 + (dx / longest) * probe;
-  return pointInPath(path, mx, my) === inner ? 'right' : 'left';
+  return pathContainsPoint(path, mx, my) === inner ? 'right' : 'left';
 }

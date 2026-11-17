@@ -268,7 +268,7 @@ pointing toward the end of the path.
 
 A fill and a stroke are separate tests.
 
-[pointInPath](#pkg/geom/reference/pointInPath) answers whether a point is in
+[pathContainsPoint](#pkg/geom/reference/pathContainsPoint) answers whether a point is in
 the filled region. It honors the path's `fillRule`, so the hole of an
 `'evenodd'` ring is outside.
 
@@ -277,16 +277,16 @@ within `threshold` of the outline. Pass half the stroke width to test against a
 drawn stroke. It works on open and closed subpaths alike.
 
 ```ts
-import { pathFromD, pointInPath, strokeHitTest } from '@weasel-js/geom';
+import { pathFromD, pathContainsPoint, strokeHitTest } from '@weasel-js/geom';
 
 const triangle = pathFromD('M0 0 L100 0 L50 80 Z');
 
-pointInPath(triangle, 50, 20);        // true
-pointInPath(triangle, 50, -3);        // false: above the top edge
+pathContainsPoint(triangle, 50, 20);        // true
+pathContainsPoint(triangle, 50, -3);        // false: above the top edge
 strokeHitTest(triangle, 50, -3, 4);   // true: 3 units from the top edge
 
 // A shape with both fill and stroke is hit by either.
-const hit = pointInPath(triangle, 50, -3) || strokeHitTest(triangle, 50, -3, 4);
+const hit = pathContainsPoint(triangle, 50, -3) || strokeHitTest(triangle, 50, -3, 4);
 ```
 
 Both take a `tolerance` option, the flattening tolerance used for curved

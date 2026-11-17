@@ -14,7 +14,7 @@ const rect = rectPath(0, 0, 10, 10);
 const tri = polygonFromPoints([{ x: 0, y: 0 }, { x: 10, y: 0 }, { x: 5, y: 10 }]);
 
 describe('pathContainsPoint', () => {
-  it('answers as pointInPath does, inside and outside a triangle', () => {
+  it('answers as pathContainsPoint does, inside and outside a triangle', () => {
     expect(pathContainsPoint(tri, 5, 3)).toBe(true);
     expect(pathContainsPoint(tri, 8, 8)).toBe(false);
   });
@@ -50,7 +50,7 @@ describe('pathIntersectsRect', () => {
     const touching = { x: 10, y: 2, width: 5, height: 5 };
     expect(pathIntersectsRect(square, touching)).toBe(true);
     expect(pathIntersectsRect(rectPath(0, 0, 10, 10), touching)).toBe(true);
-    // A zero-size rect on the edge is a point pointInPath already calls inside.
+    // A zero-size rect on the edge is a point pathContainsPoint already calls inside.
     expect(pathIntersectsRect(rectPath(0, 0, 10, 10), { x: 10, y: 5, width: 0, height: 0 })).toBe(true);
   });
 });

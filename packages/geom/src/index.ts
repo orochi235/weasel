@@ -149,7 +149,7 @@ export {
   type EulerFit, type EulerSegment,
 } from './paths/eulerSpiral';
 export {
-  pointInPath, strokeHitTest,
+  strokeHitTest,
   pathContainsPoint, pathContainsRect, pathIntersectsRect,
   pathContainsPolygon, pathIntersectsPolygon,
   polygonContainsPath, polygonIntersectsPath,

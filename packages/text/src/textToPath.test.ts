@@ -12,7 +12,7 @@ import {
 } from '@weasel-js/font/test-seams';
 import { _resetLayoutCacheForTests } from '@weasel-js/text/test-seams';
 import { layoutTextPose, paintRuns, textPoseLayoutInput, type TextPose } from '@weasel-js/text';
-import { boundsOfPath, pointInPath, pathFromD, PATH_C, PATH_Q, type Path } from '@weasel-js/geom';
+import { boundsOfPath, pathContainsPoint, pathFromD, PATH_C, PATH_Q, type Path } from '@weasel-js/geom';
 import {
   textToPath, textToPathsByPaint, loadTextOutlines, TextOutlinesError, type TextOutlineSource,
 } from './textToPath';
@@ -107,8 +107,8 @@ describe('textToPath', () => {
     const path = textToPath(text('H'), POSE);
     const b = boundsOfPath(path);
     const midY = b.y + b.height * 0.25;
-    expect(pointInPath(path, b.x + 3, midY)).toBe(true);
-    expect(pointInPath(path, b.x + b.width / 2, midY)).toBe(false);
+    expect(pathContainsPoint(path, b.x + 3, midY)).toBe(true);
+    expect(pathContainsPoint(path, b.x + b.width / 2, midY)).toBe(false);
   });
 
   it('keeps the font\'s curves rather than flattening them', () => {
@@ -122,7 +122,7 @@ describe('textToPath', () => {
   it('keeps a counter as a hole', () => {
     const path = textToPath(text('O'), POSE);
     const b = boundsOfPath(path);
-    expect(pointInPath(path, b.x + b.width / 2, b.y + b.height / 2)).toBe(false);
+    expect(pathContainsPoint(path, b.x + b.width / 2, b.y + b.height / 2)).toBe(false);
   });
 
   it('works for text below the outline threshold on a face that has an atlas', async () => {
@@ -175,9 +175,9 @@ describe('textToPath', () => {
       const src = { text: 'AB', style: { fontFamily: 'squares', fontSize: 100, letterSpacing: -30 } };
       const path = textToPath(src, POSE);
       const y = baseline(src) - 25;
-      expect(pointInPath(path, POSE.x + 10, y)).toBe(true);
-      expect(pointInPath(path, POSE.x + 40, y)).toBe(true);
-      expect(pointInPath(path, POSE.x + 70, y)).toBe(true);
+      expect(pathContainsPoint(path, POSE.x + 10, y)).toBe(true);
+      expect(pathContainsPoint(path, POSE.x + 40, y)).toBe(true);
+      expect(pathContainsPoint(path, POSE.x + 70, y)).toBe(true);
     });
   });
 
@@ -189,7 +189,7 @@ describe('textToPath', () => {
     const { laid, x, y } = layoutTextPose(tp);
     const [rule] = paintRuns(laid, textPoseLayoutInput(tp).runs).decorations;
     const path = textToPath(src, POSE);
-    expect(pointInPath(path, x + 25, y + (rule.y0 + rule.y1) / 2)).toBe(true);
+    expect(pathContainsPoint(path, x + 25, y + (rule.y0 + rule.y1) / 2)).toBe(true);
   });
 
   it('keeps real overlaps filled in a real face', () => {
@@ -197,7 +197,7 @@ describe('textToPath', () => {
     const b = boundsOfPath(path);
     const y = b.y + b.height / 2;
     for (let x = b.x + 1; x < b.x + b.width - 1; x += 1) {
-      expect(pointInPath(path, x, y), `x=${x}`).toBe(true);
+      expect(pathContainsPoint(path, x, y), `x=${x}`).toBe(true);
     }
   });
 
@@ -216,12 +216,12 @@ describe('textToPath', () => {
     // inside the union — a rule wound against the glyph would cut a hole.
     let crossed = false;
     for (let px = x + rule.x0; px < x + rule.x1; px += 0.5) {
-      if (!pointInPath(plain, px, ry)) {
-        expect(pointInPath(ruled, px, ry), `rule at x=${px}`).toBe(true);
+      if (!pathContainsPoint(plain, px, ry)) {
+        expect(pathContainsPoint(ruled, px, ry), `rule at x=${px}`).toBe(true);
         continue;
       }
       crossed = true;
-      expect(pointInPath(ruled, px, ry), `crossing at x=${px}`).toBe(true);
+      expect(pathContainsPoint(ruled, px, ry), `crossing at x=${px}`).toBe(true);
     }
     expect(crossed).toBe(true);
   });
@@ -305,7 +305,7 @@ describe('textToPathsByPaint', () => {
   const OUTLINE = { width: 2, paint: { kind: 'solid', color: '#0c0' } } as const;
 
   /** Whether `p` covers `(x, y)` in any of `paths` — their union, sampled. */
-  const inAny = (paths: readonly Path[], x: number, y: number) => paths.some((p) => pointInPath(p, x, y));
+  const inAny = (paths: readonly Path[], x: number, y: number) => paths.some((p) => pathContainsPoint(p, x, y));
 
   it('splits a node into one path per paint, whose union is the whole outline', () => {
     const src: TextOutlineSource = {
@@ -324,7 +324,7 @@ describe('textToPathsByPaint', () => {
     let inked = 0;
     for (let x = b.x; x <= b.x + b.width; x += 1.5) {
       for (let y = b.y; y <= b.y + b.height; y += 1.5) {
-        const w = pointInPath(whole, x, y);
+        const w = pathContainsPoint(whole, x, y);
         if (w) inked++;
         expect(inAny(parts, x, y)).toBe(w);
       }
@@ -333,7 +333,7 @@ describe('textToPathsByPaint', () => {
     // 'll' is the blue group, and nothing else is in it.
     const blue = boundsOfPath(groups[1]!.path);
     const red = groups[0]!.path;
-    expect(pointInPath(red, blue.x + blue.width / 2, blue.y + blue.height * 0.5)).toBe(false);
+    expect(pathContainsPoint(red, blue.x + blue.width / 2, blue.y + blue.height * 0.5)).toBe(false);
   });
 
   it('keys a group on fill and stroke together', () => {

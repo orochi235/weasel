@@ -1,4 +1,4 @@
-import { pointInPath, rectContainsPointHalfOpen } from '@weasel-js/geom';
+import { pathContainsPoint, rectContainsPointHalfOpen } from '@weasel-js/geom';
 import type { NodeId, Scene, StrategyView } from '@weasel-js/core';
 import { poseDescriptorForNode, toPlane, type PlaneMap, childFrameAt, composeWorldPose, sceneViewPoseAdapter, refusalOf, isPageStructure } from '@weasel-js/core/engine';
 import type { DropRegion, LayoutContainer, LayoutStrategy, LayoutDep } from '@weasel-js/core/engine';
@@ -39,7 +39,7 @@ function regionContains(
   const local = { x: point.x - bounds.x, y: point.y - bounds.y };
   return typeof region === 'function'
     ? region(local)
-    : pointInPath(region, local.x, local.y);
+    : pathContainsPoint(region, local.x, local.y);
 }
 
 function chooseContainer(

@@ -2054,7 +2054,6 @@
     "planeOf": "function",
     "planeToPlane": "function",
     "pointAlongPath": "function",
-    "pointInPath": "function",
     "pointInRotatedRect": "function",
     "pointRegionFrame": "function",
     "pointSnap": "function",

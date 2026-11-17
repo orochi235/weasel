@@ -73,7 +73,7 @@ What operates on a path:
   `pointAlongPath`.
 - **Transforming.** `translatePath`, `transformPath`, `scalePathToBounds`,
   `reversePath`.
-- **Hit-testing.** `pointInPath` for the filled region, `strokeHitTest` for
+- **Hit-testing.** `pathContainsPoint` for the filled region, `strokeHitTest` for
   the outline, `pathContainsRect`, `pathIntersectsRect`, and the polygon
   variants for marquee and lasso selection, and `nearestOnPath` and
   `pathDistanceToPoint` for the closest point.
@@ -92,13 +92,13 @@ What operates on a path:
 
 ```ts
 import {
-  boundsOfPath, pathFromD, pointInPath, rotateAboutPoint, strokeHitTest, transformPath,
+  boundsOfPath, pathFromD, pathContainsPoint, rotateAboutPoint, strokeHitTest, transformPath,
 } from '@weasel-js/geom';
 
 const triangle = pathFromD('M0 0 L100 0 L50 80 Z');
 
 boundsOfPath(triangle);             // { kind: 'rect', x: 0, y: 0, width: 100, height: 80 }
-pointInPath(triangle, 50, 20);      // true: inside the fill
+pathContainsPoint(triangle, 50, 20);      // true: inside the fill
 strokeHitTest(triangle, 50, 3, 4);  // true: within 4 units of the outline
 
 const turned = transformPath(triangle, rotateAboutPoint(50, 40, Math.PI / 2));

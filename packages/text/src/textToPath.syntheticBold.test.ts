@@ -21,7 +21,7 @@ import {
   boundsOfPath,
   pathFromD,
   pathToCubicContours,
-  pointInPath,
+  pathContainsPoint,
   reversePath,
   PATH_C,
   PATH_Q,
@@ -90,13 +90,13 @@ describe('textToPath — synthetic bold', () => {
     const path = outline('I', 700);
     const g = ATLAS_GROWTH * SIZE;
     // The grown corner's tip: inside under a miter, outside under a round join.
-    expect(pointInPath(path, regular.x - g + 0.5, regular.y - g + 0.5)).toBe(true);
+    expect(pathContainsPoint(path, regular.x - g + 0.5, regular.y - g + 0.5)).toBe(true);
   });
 
   it('shrinks a counter rather than filling it', () => {
     const path = outline('O', 700);
     const b = boundsOfPath(path);
-    expect(pointInPath(path, b.x + b.width / 2, b.y + b.height / 2)).toBe(false);
+    expect(pathContainsPoint(path, b.x + b.width / 2, b.y + b.height / 2)).toBe(false);
   });
 
   it('keeps every curve a curve', () => {
@@ -123,7 +123,7 @@ describe('textToPath — synthetic bold', () => {
         const l = Math.hypot(dx, dy);
         if (l === 0) continue;
         const [nx, ny] = [(dy / l) * e, (-dx / l) * e];
-        const filled = (px: number, py: number) => pointInPath(path, px, py, { flattenTolerance: 0.01 });
+        const filled = (px: number, py: number) => pathContainsPoint(path, px, py, { flattenTolerance: 0.01 });
         if (filled(x + nx, y + ny) && filled(x - nx, y - ny)) inside.push(`${x.toFixed(1)},${y.toFixed(1)}`);
       }
     }
@@ -189,8 +189,8 @@ describe('syntheticBoldOffset — per tier', () => {
       [0.3, 0.35, false],
     ];
     for (const [x, y, inside] of probes) {
-      expect(pointInPath(forward, x, y)).toBe(inside);
-      expect(pointInPath(reversed, x, y)).toBe(inside);
+      expect(pathContainsPoint(forward, x, y)).toBe(inside);
+      expect(pathContainsPoint(reversed, x, y)).toBe(inside);
     }
   });
 });

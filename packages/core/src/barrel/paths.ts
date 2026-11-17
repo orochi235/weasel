@@ -31,7 +31,6 @@ export {
   boundsOfPath,
   countPathAnchors,
   pathToAnchors,
-  pointInPath,
   translatePath,
   scalePathToBounds,
   pathInPoseBox,

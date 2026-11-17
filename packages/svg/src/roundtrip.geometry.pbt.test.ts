@@ -7,7 +7,7 @@
 import { describe, it, expect } from 'vitest';
 import fc from 'fast-check';
 import {
-  PathBuilder, boundsOfPath, multiply, pointInPath, rotate, rotateAboutPoint, scale, strokeHitTest, transformPath,
+  PathBuilder, boundsOfPath, multiply, pathContainsPoint, rotate, rotateAboutPoint, scale, strokeHitTest, transformPath,
   translate, type Affine, type Path,
 } from '@weasel-js/geom';
 import { parseSvg } from './parse';
@@ -83,7 +83,7 @@ function sameDrawing(want: readonly SvgNode[], got: readonly SvgNode[], pts: rea
     const r = b[i]!;
     for (const [x, y] of pts) {
       if (strokeHitTest(l.path, x, y, 0.05) || strokeHitTest(r.path, x, y, 0.05)) continue;
-      expect(pointInPath(r.path, x, y), `leaf ${i} at (${x}, ${y})`).toBe(pointInPath(l.path, x, y));
+      expect(pathContainsPoint(r.path, x, y), `leaf ${i} at (${x}, ${y})`).toBe(pathContainsPoint(l.path, x, y));
       checked++;
     }
   });
