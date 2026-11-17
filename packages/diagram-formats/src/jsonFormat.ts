@@ -1,4 +1,5 @@
 /** The native format: a {@link DiagramDocument} written out as JSON, which carries everything the model holds. */
+import { diagramThemeErrors } from '@weasel-js/diagram';
 import type { DiagramDocument, DiagramFormat, DocumentPage, ExportResult, ImportResult, PageKind } from './document';
 
 const FORMAT = 'weasel-diagram';
@@ -34,6 +35,11 @@ function read(text: string): ImportResult {
     if (kind !== undefined && !(KINDS as readonly unknown[]).includes(kind)) {
       throw new Error(`A weasel diagram document with a page of kind ${JSON.stringify(kind)}, which this reader does not know`);
     }
+  }
+  const theme = (json as { theme?: unknown }).theme;
+  if (theme !== undefined && typeof theme !== 'string') {
+    const errors = diagramThemeErrors(theme);
+    if (errors.length > 0) throw new Error(`A weasel diagram document whose theme does not check: ${errors.join('; ')}`);
   }
   const { format: _f, version: _v, ...document } = json as DiagramJson;
   // Files written before pages had kinds hold only graphs.
