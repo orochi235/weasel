@@ -18,7 +18,7 @@ import { scenePickIndex } from 'canvas/pickIndex/scenePickIndex';
 import { scenePointQuery } from 'canvas/SceneCanvas/scenePointQuery';
 import { aabbOfPose } from 'canvas/SceneCanvas/poseGeometry';
 import type { Scene } from 'core/scene/types';
-import { pointInPath } from '@weasel-js/geom';
+import { pathContainsPoint } from '@weasel-js/geom';
 import { curvyPath, polygonPath, scatterScene } from './fixtures';
 
 const NODE_COUNTS = [100, 1000, 10000];
@@ -105,18 +105,18 @@ group('aabbOfPose — the per-node fast-reject itself', (bench) => {
   }
 });
 
-group('pointInPath — per-node kernel, by vertex count', (bench) => {
+group('pathContainsPoint — per-node kernel, by vertex count', (bench) => {
   // The point-pick path (`poseContains`) reaches this once per candidate.
   for (const sides of [4, 24, 256]) {
     const path = polygonPath(sides, 100, 0, 0);
     bench(`${sides}-gon`, () => {
-      pointInPath(path, 10, 10);
+      pathContainsPoint(path, 10, 10);
     });
   }
   for (const curves of [8, 64]) {
     const path = curvyPath(curves);
     bench(`${curves} cubics (flattened per call)`, () => {
-      pointInPath(path, 10, 10);
+      pathContainsPoint(path, 10, 10);
     });
   }
 });
