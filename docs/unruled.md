@@ -2601,3 +2601,9 @@ Calls the lanes made without a ruling:
 
 - 2026-11-17 (the fixer's call): `watchHookPresence` throws a `RangeError` on an empty `delays`, which used to probe
   in a tight loop forever. Falling back to the default delays was the alternative.
+## Audit round thirty-four (2026-11-17): the forge app
+
+- 2026-11-17 (the fixer's call): forge's Counter story is back, as `packages/forge/src/story/Counter.stories.tsx`
+  (`forge-counter--counter`), so `apps/forge/e2e/smoke.mjs` has the story with a string control and kept state it is
+  written around. It had been removed from `apps/forge/stories` on 2026-09-25 (`c1705be650`), leaving the smoke check
+  unable to pass. Deleting the smoke check was the alternative.

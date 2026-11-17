@@ -2,7 +2,7 @@ import { resolve } from 'node:path';
 import { createServer } from 'vite';
 import { describe, expect, it } from 'vitest';
 import { forge } from '@weasel-js/forge/vite';
-import { csfChecks } from './e2e/stories.mjs';
+import { csfChecks, smokeStory } from './e2e/stories.mjs';
 import { stories } from './viteShared';
 
 /** Every story id the workshop's index holds, read by forge's own plugin over the workshop's story globs. */
@@ -27,6 +27,6 @@ async function indexedIds(): Promise<Set<string>> {
 describe("forge's headless checks", () => {
   it('open only stories the workshop holds', async () => {
     const ids = await indexedIds();
-    expect(csfChecks.map((c) => c.id).filter((id) => !ids.has(id))).toEqual([]);
+    expect([smokeStory, ...csfChecks.map((c) => c.id)].filter((id) => !ids.has(id))).toEqual([]);
   }, 60_000);
 });

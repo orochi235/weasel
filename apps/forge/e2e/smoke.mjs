@@ -2,9 +2,10 @@
 // A second run with the same --profile and --expect-persisted checks that the trial survived a relaunch.
 import { chromium } from '@playwright/test';
 import ports from '../../../scripts/dev-ports.json' with { type: 'json' };
+import { smokeStory } from './stories.mjs';
 
 const args = process.argv.slice(2);
-const [url = `http://[::1]:${ports.forge}/#/forge-counter--counter`, shot = 'forge-smoke.png'] = args.filter((a) => !a.startsWith('--'));
+const [url = `http://[::1]:${ports.forge}/#/${smokeStory}`, shot = 'forge-smoke.png'] = args.filter((a) => !a.startsWith('--'));
 const profile = args.find((a) => a.startsWith('--profile='))?.slice('--profile='.length);
 const persisted = args.includes('--expect-persisted');
 const viewport = { width: 1280, height: 800 };
