@@ -49,7 +49,7 @@ items = [
     ], LW - 40, 'amber'), '3'),
     ('r4', Card('Context-gated before ungated', [
         'Within a run tied on tier and specificity, an action whose `eligible` rule holds now goes ahead of one with no rule (`preferContextual`).',
-        '▸ In path edit, `exitPathEdit` on `[*:*] keyDown(Escape)` beats `tool.resetToDefault` on the same route. '
+        '▸ In path edit, `leavePathEdit` on `[*:*] keyDown(Escape)` beats `tool.resetToDefault` on the same route. '
         'Only the `eligible` rule tells them apart, and the grammar has no notation for it.',
     ], LW - 40, 'amber'), '4'),
     ('r5', Card('Registration order', [
@@ -142,11 +142,11 @@ ey = example(ey, 'Escape while editing a path',
              [
                  ('—', '`cancelGesture` `[*:engaged] keyDown(Escape)`', 'ambient', '', 'the match, phase', '', 'not a candidate', 'gray'),
                  ('1', '`escape` `[*:initial] keyDown(Escape)`', 'ambient', '0 0 1 1', 'step 3, phase part', 'none', '`enabled()` declines while a path is edited', 'white'),
-                 ('2', '`exitPathEdit` `[*:*] keyDown(Escape)`', 'ambient', '0 0 0 1', 'step 4', '`mode: path-edit` holds', 'fires', 'green'),
+                 ('2', '`leavePathEdit` `[*:*] keyDown(Escape)`', 'ambient', '0 0 0 1', 'step 4', '`mode: path-edit` holds', 'fires', 'green'),
                  ('3', '`tool.resetToDefault` `[*:*] keyDown(Escape)`', 'ambient', '0 0 0 1', 'step 4', 'none', 'not asked', 'white'),
              ],
              [
-                 '`escape` leads on specificity (step 3, its phase part) and declines. `exitPathEdit` and `tool.resetToDefault` tie through step 3; step 4 puts the one whose rule holds first. Outside path edit, `exitPathEdit` is dropped as ineligible instead.',
+                 '`escape` leads on specificity (step 3, its phase part) and declines. `leavePathEdit` and `tool.resetToDefault` tie through step 3; step 4 puts the one whose rule holds first. Outside path edit, `leavePathEdit` is dropped as ineligible instead.',
              ])
 
 ey = example(ey + 16, 'Bare drag on empty canvas, select tool active',

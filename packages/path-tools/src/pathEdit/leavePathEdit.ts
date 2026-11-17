@@ -1,5 +1,5 @@
 /**
- * `exitPathEditAction` — immediate Action that exits path-anchor edit
+ * `leavePathEditAction` — immediate Action that leaves path-anchor edit
  * mode. Bound to Escape by default; companion to `enterPathEditAction`.
  * Clears `editAnchors.editingId`, which the gesture-side hit-test and
  * `pathEditingOverlayLayer` both gate on. Pressed with a tool on other than
@@ -11,10 +11,10 @@
 import { returnToModeDefault, type Action } from '@weasel-js/routing';
 import type { ImmediateInvoker } from '@weasel-js/routing';
 
-export const exitPathEditAction: Action & { requires: string[] } = {
-  id: 'exitPathEdit',
-  label: 'Exit path edit',
-  defaultBinding: [{ spec: { kind: 'key', key: 'Escape' }, opts: { id: 'exitPathEdit.key' } }],
+export const leavePathEditAction: Action & { requires: string[] } = {
+  id: 'leavePathEdit',
+  label: 'Leave path edit',
+  defaultBinding: [{ spec: { kind: 'key', key: 'Escape' }, opts: { id: 'leavePathEdit.key' } }],
   eligible: { mode: 'path-edit' },
   requires: ['editAnchors', 'activeTool', 'modeDefaultTool'],
   invoker: {

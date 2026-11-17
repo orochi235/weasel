@@ -49,7 +49,7 @@ export interface PathEditState {
    * The node whose anchors are editable now, or `''`: the stored id, or the
    * host's, while `PathEditSource` still lets it stand. Masked rather than
    * cleared: a host's mode machine can leave path-edit mode without running
-   * `exitPathEdit`, and nothing re-renders when it does, so there is no
+   * `leavePathEdit`, and nothing re-renders when it does, so there is no
    * moment to write the id back.
    */
   getEditingId(): string;

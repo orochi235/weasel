@@ -13,7 +13,7 @@ import { setAnchorFieldAction } from './pathEdit/anchorFields';
 import { averageAnchorsAction, joinAnchorsAction } from './pathEdit/anchorJoin';
 import { bendSegmentAction } from './pathEdit/bendSegment';
 import { enterPathEditAction } from './pathEdit/enterPathEdit';
-import { exitPathEditAction } from './pathEdit/exitPathEdit';
+import { leavePathEditAction } from './pathEdit/leavePathEdit';
 import { editAnchorsAction } from './pathEdit/editAnchors/editAnchors';
 import { insertPathAnchorAction } from './pathEdit/insertPathAnchor';
 import { createOutlinesAction } from './outlines/createOutlinesAction';
@@ -32,7 +32,7 @@ export const anchorKeysPreset: FeaturePreset = {
   refines: ['nudge', 'delete', 'escape'],
   actions: [
     nudgeAnchorsUpAction, nudgeAnchorsDownAction, nudgeAnchorsLeftAction, nudgeAnchorsRightAction,
-    deleteAnchorsAction, exitPathEditAction,
+    deleteAnchorsAction, leavePathEditAction,
   ],
 };
 

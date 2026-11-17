@@ -16,7 +16,7 @@ export interface ModeSwitchLogEntry {
   mode: string;
   from: string | null;
   to: string | null;
-  /** Optional free-form context — `'enterPathEdit'`, `'exitPathEdit'`,
+  /** Optional free-form context — `'enterPathEdit'`, `'leavePathEdit'`,
    *  `'selection-dropped target'`, etc. */
   detail?: string;
 }

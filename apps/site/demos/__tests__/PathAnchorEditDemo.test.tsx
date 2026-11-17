@@ -80,7 +80,7 @@ describe('PathAnchorEditDemo', () => {
     expect([...edited.slice(0, 2), ...edited.slice(4)]).toEqual([...before.slice(0, 2), ...before.slice(4)]);
 
     act(() => { document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true })); });
-    expect(fired().at(-1)).toBe('exitPathEdit');
+    expect(fired().at(-1)).toBe('leavePathEdit');
 
     // Out of edit mode, the same press moves the whole shape.
     drag(canvas, [140, 140], [150, 150]);

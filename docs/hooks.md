@@ -101,7 +101,7 @@ actions with no default binding fire only via a tool's `bindings` or a `trigger`
 | `createOutlines` (*path-tools*) | Mod+Enter |
 | `joinPaths` (*path-tools*) | Mod+J; in path edit `joinAnchors` answers it |
 | `averageAnchors` (*path-tools*) | Mod+Alt+Shift+J (`axis: 'both'`) |
-| `exitPathEdit` (*path-tools*) | Escape; with a tool on other than the mode's `defaultTool` it returns to that tool instead (`returnToModeDefault`), so a second Escape leaves path edit. A mode shortcut's `exit` and `cancel` do the same |
+| `leavePathEdit` (*path-tools*) | Escape; with a tool on other than the mode's `defaultTool` it returns to that tool instead (`returnToModeDefault`), so a second Escape leaves path edit. A mode shortcut's `exit` and `cancel` do the same |
 | `deleteAnchors` (*path-tools*) | Delete, Backspace (phase `initial`) |
 | `nudgeAnchors.<dir>` (*path-tools*) | Arrow / Shift+Arrow, as `nudge` |
 

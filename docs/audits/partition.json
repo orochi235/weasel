@@ -4640,7 +4640,7 @@
    "packages/path-tools/src/pathEdit/editAnchors/preview.ts",
    "packages/path-tools/src/pathEdit/editAnchors/symmetry.ts",
    "packages/path-tools/src/pathEdit/enterPathEdit.ts",
-   "packages/path-tools/src/pathEdit/exitPathEdit.ts",
+   "packages/path-tools/src/pathEdit/leavePathEdit.ts",
    "packages/path-tools/src/pathEdit/insertPathAnchor.ts",
    "packages/path-tools/src/pathEdit/pathEditMarks.ts"
   ]
