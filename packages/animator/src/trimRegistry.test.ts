@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
 import { linear } from '@weasel-js/geom';
 import { useAnimator } from './useAnimator';
-import { TrimOverrideRegistry } from './trimRegistry';
+import { createTrimOverrideRegistry } from './trimRegistry';
 
 function makeClock() {
   let now = 0;
@@ -39,7 +39,7 @@ function setup() {
 
 describe('TrimOverrideRegistry', () => {
   it('set + get round-trips an override', () => {
-    const r = new TrimOverrideRegistry();
+    const r = createTrimOverrideRegistry();
     r.set('a', { end: 0.25 });
     expect(r.get('a')).toEqual({ end: 0.25 });
     expect(r.has('a')).toBe(true);
@@ -47,7 +47,7 @@ describe('TrimOverrideRegistry', () => {
   });
 
   it('notifies nobody for a write of the override a node holds', () => {
-    const r = new TrimOverrideRegistry();
+    const r = createTrimOverrideRegistry();
     r.set('a', { start: Number.NaN, end: 0.5 });
     let calls = 0;
     r.subscribe(() => { calls++; });
@@ -61,7 +61,7 @@ describe('TrimOverrideRegistry', () => {
   });
 
   it('clear drops the override', () => {
-    const r = new TrimOverrideRegistry();
+    const r = createTrimOverrideRegistry();
     r.set('a', { start: 0.1, end: 0.5 });
     const v = r.version();
     r.clear('a');
@@ -71,7 +71,7 @@ describe('TrimOverrideRegistry', () => {
   });
 
   it('clearAll drops every override', () => {
-    const r = new TrimOverrideRegistry();
+    const r = createTrimOverrideRegistry();
     r.set('a', { end: 0.5 });
     r.set('b', { start: 0.5 });
     r.clearAll();
@@ -80,7 +80,7 @@ describe('TrimOverrideRegistry', () => {
   });
 
   it('hands every caller for one node and edge the same target, starting on the whole stroke', () => {
-    const r = new TrimOverrideRegistry();
+    const r = createTrimOverrideRegistry();
     expect(r.target('a', 'end')).toBe(r.target('a', 'end'));
     expect(r.target('a', 'start')).not.toBe(r.target('a', 'end'));
     expect(r.target('b', 'end')).not.toBe(r.target('a', 'end'));
@@ -89,7 +89,7 @@ describe('TrimOverrideRegistry', () => {
   });
 
   it('counts a target asked for and never moved as nothing', () => {
-    const r = new TrimOverrideRegistry();
+    const r = createTrimOverrideRegistry();
     r.target('a', 'end');
     expect(r.has('a')).toBe(false);
     expect(r.resolve('a')).toBeUndefined();
@@ -131,7 +131,7 @@ describe('TrimOverrideRegistry', () => {
     drawOn('a', 0.75);
     step(0);
     step(100);
-    const other = new TrimOverrideRegistry();
+    const other = createTrimOverrideRegistry();
     other.set('a', { end: 0.75 });
     expect(registry.resolve('a')).toEqual(other.resolve('a'));
   });
@@ -199,7 +199,7 @@ describe('TrimOverrideRegistry', () => {
   });
 
   it('tells subscribers of a bare commit on a resting target', () => {
-    const r = new TrimOverrideRegistry();
+    const r = createTrimOverrideRegistry();
     let told = 0;
     r.subscribe(() => { told += 1; });
     r.target('a', 'end').commit(0.5);

@@ -10,10 +10,10 @@ export { createTargetTable, type ShownArray, type TargetTable, type TargetTableO
 export { axesOf, type Axes } from './engine/axes';
 export { createSlew, slewToward, type Slew, type SlewRates } from './slew';
 export {
-  ColorOverrideRegistry,
+  createColorOverrideRegistry, type ColorOverrideRegistry,
   type ColorOverride, type ColorOverrideFn, type VertexColorChannel,
 } from './colorRegistry';
-export { TrimOverrideRegistry, type TrimEdge, type TrimOverride } from './trimRegistry';
+export { createTrimOverrideRegistry, type TrimOverrideRegistry, type TrimEdge, type TrimOverride } from './trimRegistry';
 export {
   tweenVertexColors, springVertexColors, staggerVertexColors,
   type TweenVertexColorsOptions, type SpringVertexColorsOptions, type StaggerVertexColorsOptions,

@@ -2,9 +2,9 @@
  * An animator with no React and no frame loop of its own: whoever hosts it drives its frames —
  * a render worker, sent each frame's time by the page, or any loop outside a component.
  */
-import { ColorOverrideRegistry } from './colorRegistry';
+import { createColorOverrideRegistry } from './colorRegistry';
 import { createAnimatorCore } from './engine/core';
-import { TrimOverrideRegistry } from './trimRegistry';
+import { createTrimOverrideRegistry } from './trimRegistry';
 import type { Animator } from './types';
 
 /** What a hosted animator asks of its host. */
@@ -37,8 +37,8 @@ export interface HostedAnimator {
 /** Host an animator on frames the caller runs. `useAnimator` is the same on a visible frame loop. */
 export function createHostedAnimator(host: AnimatorHost): HostedAnimator {
   let disposed = false;
-  const colorOverrides = new ColorOverrideRegistry();
-  const trimOverrides = new TrimOverrideRegistry();
+  const colorOverrides = createColorOverrideRegistry();
+  const trimOverrides = createTrimOverrideRegistry();
   const core = createAnimatorCore({
     now: host.now,
     requestFrame: () => { if (!disposed) host.requestFrame(); },

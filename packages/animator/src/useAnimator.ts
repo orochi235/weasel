@@ -1,8 +1,8 @@
 import { useCallback, useEffect, useInsertionEffect, useMemo, useRef } from 'react';
 import { isDev, useLatest, useVisibleRaf } from '@weasel-js/react';
 import type { Clock } from '@weasel-js/clock';
-import { ColorOverrideRegistry } from './colorRegistry';
-import { TrimOverrideRegistry } from './trimRegistry';
+import { type ColorOverrideRegistry, createColorOverrideRegistry } from './colorRegistry';
+import { type TrimOverrideRegistry, createTrimOverrideRegistry } from './trimRegistry';
 import { createAnimatorCore, type AnimatorCore } from './engine/core';
 import type { Animator } from './types';
 import type { UseAnimatorOptions } from './useAnimatorOptions';
@@ -12,8 +12,8 @@ import type { UseAnimatorOptions } from './useAnimatorOptions';
  *  canceled on unmount. */
 export function useAnimator(opts: UseAnimatorOptions = {}): Animator {
   const optsRef = useLatest(opts);
-  const colorOverrides = useRef<ColorOverrideRegistry>(new ColorOverrideRegistry());
-  const trimOverrides = useRef<TrimOverrideRegistry>(new TrimOverrideRegistry());
+  const colorOverrides = useRef<ColorOverrideRegistry>(createColorOverrideRegistry());
+  const trimOverrides = useRef<TrimOverrideRegistry>(createTrimOverrideRegistry());
 
   // The loop runs behind the visibility gate. The core is built in the memo
   // below, so the frame callback reaches it through a ref, published once the

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { createScene } from 'core/scene/scene';
-import { ColorOverrideRegistry, TrimOverrideRegistry } from '@weasel-js/animator';
+import { createColorOverrideRegistry, type TrimOverrideRegistry, createTrimOverrideRegistry } from '@weasel-js/animator';
 import { useAnimator } from '@weasel-js/animator/react';
 import { act, renderHook } from '@testing-library/react';
 import { linear, pathFromD } from '@weasel-js/geom';
@@ -67,14 +67,14 @@ describe('overrideTrim', () => {
 describe('animated stroke trims on default-painted nodes', () => {
   it("the live scene slot paints an override over the node's own trim", () => {
     const { scene, id } = strokedScene({ start: 0.2, pace: 'anchor' });
-    const registry = new TrimOverrideRegistry();
+    const registry = createTrimOverrideRegistry();
     registry.set(id, { end: 0.5 });
     expect(paintedTrims(scene, registry)).toEqual([{ start: 0.2, end: 0.5, pace: 'anchor' }]);
   });
 
   it('the headless walk paints the same override', () => {
     const { scene, id } = strokedScene();
-    const registry = new TrimOverrideRegistry();
+    const registry = createTrimOverrideRegistry();
     registry.set(id, { end: 0.5 });
     const cmds = buildSceneViewCommands(scene, VIEW, defaultDrawOne, undefined, undefined, undefined, { trimOverrides: registry });
     expect(pathsOf(cmds).map((cmd) => cmd.stroke?.trim)).toEqual([{ end: 0.5 }]);
@@ -82,7 +82,7 @@ describe('animated stroke trims on default-painted nodes', () => {
 
   it("paints the node's own trim again once the override clears, on the same path", () => {
     const { scene, id } = strokedScene({ end: 0.8 });
-    const registry = new TrimOverrideRegistry();
+    const registry = createTrimOverrideRegistry();
     const slot = wireSceneSlotToScene({ drawOne: defaultDrawOne }, scene, undefined, { trimOverrides: registry });
     const node = scene.get(id)!;
     const before = pathsOf(slot.drawOne(node, node.pose, VIEW))[0]!;
@@ -99,7 +99,7 @@ describe('animated stroke trims on default-painted nodes', () => {
     const { scene, id } = strokedScene({ end: 0.8 });
     const data = scene.get(id)!.data;
     const undoable = scene.history.canUndo();
-    const registry = new TrimOverrideRegistry();
+    const registry = createTrimOverrideRegistry();
     registry.set(id, { end: 0.5 });
     paintedTrims(scene, registry);
     expect(scene.get(id)!.data).toBe(data);
@@ -109,7 +109,7 @@ describe('animated stroke trims on default-painted nodes', () => {
   it('trims the stroke of a built-in shape node', () => {
     const scene = createScene<Record<string, unknown>, 'main'>({ systemLayers: [{ id: 'main' }] });
     const id = scene.add({ kind: 'mark', layer: 'main', pose: POSE, data: { shape: 'rect', stroke: strokeOf('#fff', 2) } });
-    const registry = new TrimOverrideRegistry();
+    const registry = createTrimOverrideRegistry();
     registry.set(id, { start: 0.25 });
     expect(paintedTrims(scene, registry)).toEqual([{ start: 0.25 }]);
   });
@@ -129,7 +129,7 @@ describe('animated stroke trims on default-painted nodes', () => {
         { path: pathFromD('M0 50 L100 50'), stroke: own },
       ]),
     });
-    const registry = new TrimOverrideRegistry();
+    const registry = createTrimOverrideRegistry();
     registry.set(id, { end: 0.5 });
     expect(paintedTrims(scene, registry)).toEqual([{ start: 0.1, end: 0.5 }, { end: 0.9 }]);
   });
@@ -145,7 +145,7 @@ describe('animated stroke trims on default-painted nodes', () => {
       dependsOn: [anchor],
       derivePath: () => pathFromD('M0 0 L100 0'),
     });
-    const registry = new TrimOverrideRegistry();
+    const registry = createTrimOverrideRegistry();
     registry.set(id, { end: 0.5 });
     expect(paintedTrims(scene, registry)).toEqual([{ end: 0.5 }]);
   });
@@ -153,7 +153,7 @@ describe('animated stroke trims on default-painted nodes', () => {
 
 describe('createPathLayer trimOverrides', () => {
   it("replaces the edges of getStroke's trim", () => {
-    const registry = new TrimOverrideRegistry();
+    const registry = createTrimOverrideRegistry();
     registry.set('a', { end: 0.5 });
     const layer = createPathLayer({
       getNodes: () => [{ id: 'a' }, { id: 'b' }],
@@ -215,7 +215,7 @@ describe('animated stroke trims from a running target', () => {
 
   it('passes the ctx through for a target that was asked for and never moved', () => {
     const { scene, id } = strokedScene();
-    const registry = new TrimOverrideRegistry();
+    const registry = createTrimOverrideRegistry();
     registry.target(id, 'end');
     const seen: (NodePaintCtx | undefined)[] = [];
     const spy: SceneViewDrawOne<Record<string, unknown>, 'main', RectPose> = (node, pose, view, ctx) => {
@@ -230,8 +230,8 @@ describe('animated stroke trims from a running target', () => {
 
   it('hands a node with both kinds of override one ctx carrying both', () => {
     const { scene, id } = strokedScene();
-    const colorOverrides = new ColorOverrideRegistry();
-    const trimOverrides = new TrimOverrideRegistry();
+    const colorOverrides = createColorOverrideRegistry();
+    const trimOverrides = createTrimOverrideRegistry();
     colorOverrides.set(id, 'stroke', [1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1]);
     trimOverrides.set(id, { end: 0.5 });
     const seen: NodePaintCtx[] = [];

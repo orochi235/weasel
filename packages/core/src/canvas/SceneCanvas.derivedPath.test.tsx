@@ -19,7 +19,7 @@ import { type Path, linePath } from '@weasel-js/geom';
 import { createScene } from 'core/scene/scene';
 import type { GesturePreviewSource } from './gestureBounds';
 import { createPaintedCursorState } from '@weasel-js/cursor';
-import { ColorOverrideRegistry } from '@weasel-js/animator';
+import { createColorOverrideRegistry } from '@weasel-js/animator';
 import { useAnimator } from '@weasel-js/animator/react';
 import type { Animator } from '@weasel-js/animator';
 import { strokeOf } from '@weasel-js/paint';
@@ -213,7 +213,7 @@ describe('<SceneCanvas> installs the scene wiring', () => {
       pose: pose(0),
       data: { path: linePath({ x: 0, y: 0 }, { x: 10, y: 0 }), stroke: strokeOf('#fff', 2) } as unknown as Data,
     });
-    const colorOverrides = new ColorOverrideRegistry();
+    const colorOverrides = createColorOverrideRegistry();
     colorOverrides.set(id, 'stroke', [1, 0, 0, 1, 0, 0, 1, 1]);
     const animator = { colorOverrides, onTick: () => () => {} } as unknown as Animator;
 
