@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it } from 'vitest';
-import { act, cleanup, fireEvent, render, screen } from '@testing-library/react';
+import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { createScene, type RectPose } from '@weasel-js/core';
 import {
   DIAGRAM_THEME_KEY, DIAGRAM_THEMES, applyDiagramTheme, diagramScene, setDiagramFontSize, withDiagramRegistry, type DiagramTheme,
@@ -53,6 +53,24 @@ describe('ThemePanel', () => {
     scene.undo();
     expect(scene.doc.get(DIAGRAM_THEME_KEY)).toBe('paper');
     expect(fillOf(scene, 'b')).toBe(paper.roles.default!.fill);
+  });
+
+  it('takes back a canceled color edit, leaving the shipped theme and no undo entry', async () => {
+    const { scene, depth, rerender } = setup();
+    const slider = screen.getByLabelText('Default fill opacity');
+    act(() => {
+      fireEvent.pointerDown(slider);
+      fireEvent.input(slider, { target: { value: '50' } });
+    });
+    await waitFor(() => expect(fillOf(scene, 'b')).toBe('#ffffff80'));
+    act(() => { fireEvent.keyDown(slider, { key: 'Escape' }); });
+    expect(scene.doc.get(DIAGRAM_THEME_KEY)).toBe('paper');
+    expect(fillOf(scene, 'b')).toBe(paper.roles.default!.fill);
+    expect(scene.historyIndex()).toBe(depth);
+    expect(scene.canRedo()).toBe(false);
+    rerender();
+    pick('Default fill', '#00ff00');
+    expect(scene.historyIndex()).toBe(depth + 1);
   });
 
   it('edits a custom theme in place', () => {
