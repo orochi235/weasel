@@ -89,8 +89,8 @@ export interface ReleaseIndexEntry extends ReleaseSummary {
   load: () => Promise<ChangelogEntry[]>;
 }
 
-/** How many entries a release without picks shows at its top, and how many it needs before it
- *  shows any: a short release is its own summary. */
+/** How many entries a release without picks shows at its top, and how many outside Internal it
+ *  needs before it shows any: a short release is its own summary. */
 export const FALLBACK_HIGHLIGHTS = 3;
 export const FALLBACK_MIN_ENTRIES = 8;
 
@@ -107,14 +107,12 @@ export function compareEntries(a: ChangelogEntry, b: ChangelogEntry): number {
 
 export function summarize(release: Release): ReleaseSummary {
   const picks = release.entries.filter((e) => e.pick);
+  const shown = release.entries.filter((e) => groupOf(e.tags) !== 'internal');
   const chosen = picks.length
     ? picks
-    : release.entries.length < FALLBACK_MIN_ENTRIES
+    : shown.length < FALLBACK_MIN_ENTRIES
       ? []
-      : release.entries
-        .filter((e) => groupOf(e.tags) !== 'internal')
-        .sort((a, b) => b.rank - a.rank || compareEntries(a, b))
-        .slice(0, FALLBACK_HIGHLIGHTS);
+      : shown.sort((a, b) => b.rank - a.rank || compareEntries(a, b)).slice(0, FALLBACK_HIGHLIGHTS);
   return {
     version: release.version,
     ...(release.date ? { date: release.date } : {}),
