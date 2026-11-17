@@ -15,6 +15,10 @@ import type {
  * in-flight child and prevents future iterations. Played backward, it starts each pass before
  * the one in flight at that pass's end, and ends at the start of pass 0.
  *
+ * A factory that throws cancels the loop and the throw goes on: to the caller for pass 0, and
+ * to whatever called `next` for a later pass. `count` is a whole number or `Infinity`, and
+ * anything else throws a `RangeError`.
+ *
  * The loop is registered with the animator under a supervisor entry, so
  * `animator.cancel(handle)`, `animator.cancelKey(key)`, and
  * `animator.isActive(key)` all work for it.
@@ -70,7 +74,15 @@ export function createLoop(
       return;
     }
     pass = i;
-    current = supervisor.starting(back, () => factory(i, next));
+    current = null;
+    try {
+      current = supervisor.starting(back, () => factory(i, next));
+    } catch (err) {
+      // A pass that cannot start ends the loop: left registered, it would hold `isActive` and the
+      // frame loop for good, with no pass in flight to call `next`.
+      supervisor.cancel();
+      throw err;
+    }
     if (supervisor.isPaused() || supervisor.timeScale() !== 1) {
       applyRate(supervisor.isPaused(), supervisor.timeScale());
     }

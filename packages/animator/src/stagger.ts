@@ -174,7 +174,8 @@ function delayFor(delay: StaggerDelay, i: number): number {
 }
 
 /**
- * Stagger primitive. With `factory`, returns the composite handle directly.
+ * Stagger primitive. With `factory`, returns the composite handle directly. A factory that
+ * throws cancels the stagger, with every item it has started, and the throw goes on.
  * Without `factory`, returns a `StaggerBuilder` whose `.each` runs the
  * stagger with a factory.
  */
@@ -229,7 +230,15 @@ function runStagger<TItem>(
   supervisor.starting(false, () => items.forEach((item, i) => {
     const ms = delays[i]!;
     const fire = (): void => {
-      const child = factory(item, i);
+      let child: AnimationHandle;
+      try {
+        child = factory(item, i);
+      } catch (err) {
+        // An item that cannot start ends the stagger, the items started before it with it: left
+        // registered, it would wait on that item for good.
+        composite.cancel();
+        throw err;
+      }
       // Hook into the child's deregistration (natural OR cancel). If the
       // composite is already canceled, the watcher fires immediately on
       // cancel and the noteChildDone branch is a no-op (canceled guard).

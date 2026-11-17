@@ -2560,3 +2560,10 @@ Calls the lanes made without a ruling:
 - Open: `check:imports` skips type-only imports, so a package whose `.d.ts` names an undeclared sibling passes it.
   Counting them flags core's `math` entry re-exporting `@weasel-js/simulation` types (core does not declare it, and
   declaring it would put simulation in base's closure) and forge's `vite/ast.ts` (`@babel/types`, a dev dependency).
+
+## Audit round thirty-two (2026-11-16): animator
+
+- 2026-11-16 (the fixer's call): a `loop`, `tweenLoop` or `stagger` whose factory throws as one of its animations
+  starts is canceled, with every animation it has started, and the throw goes on: to the caller for an animation that
+  starts at once, and to the frame (which logs it) for a later one. The stagger's other items do not start, and no
+  `onDone` comes. Counting the thrown item as done and starting the rest was the alternative.
