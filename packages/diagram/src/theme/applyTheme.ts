@@ -117,6 +117,41 @@ function textNodesOf(scene: AnyScene, id: string, kind: DiagramStyleState['kind'
   }).map((n) => n.id);
 }
 
+/** The text nodes a `field` color set on `id` reaches: a header row takes the box's fill, the
+ *  other rows and a connector's labels its text color, and a stroke reaches none. */
+function colorTextNodesOf(scene: AnyScene, id: string, state: DiagramStyleState, field: StyleField): string[] {
+  if (field === 'stroke') return [];
+  const header = (scene.get(id as never)!.data as Data).diagram?.header !== undefined;
+  return textNodesOf(scene, id, state.kind).filter((t) => (header && (scene.get(t as never)!.data as Data).bodyRow === 0) === (field === 'fill'));
+}
+
+/**
+ * The color `field` shows on the shape or connector `id`: its own fill or stroke, or, for `text`, the
+ * first text a `text` color set by {@link setDiagramColor} reaches. `undefined` when `id` is not one,
+ * or holds no such color.
+ */
+export function diagramColorOf(scene: AnyScene, id: string, field: StyleField): string | undefined {
+  const node = scene.get(id as never);
+  const state = node === undefined ? null : diagramStyleOf(node);
+  if (state === null) return undefined;
+  const paint = field === 'text'
+    ? colorTextNodesOf(scene, id, state, 'text').map((t) => (scene.get(t as never)!.data as Data).fill)[0]
+    : (node!.data as Data)[field];
+  const color = paint?.paint?.color;
+  return typeof color === 'string' ? color : undefined;
+}
+
+/** The size the first text of the shape or connector `id` is set at, among the text
+ *  {@link setDiagramFontSize} sets. `undefined` when `id` is not one, or its text names no size. */
+export function diagramFontSizeOf(scene: AnyScene, id: string): number | undefined {
+  const node = scene.get(id as never);
+  const state = node === undefined ? null : diagramStyleOf(node);
+  if (state === null) return undefined;
+  const first = textNodesOf(scene, id, state.kind)[0];
+  const size = first === undefined ? undefined : (scene.get(first as never)!.data as { style?: { fontSize?: unknown } }).style?.fontSize;
+  return typeof size === 'number' ? size : undefined;
+}
+
 /**
  * Sets `field` to `color` on every shape and connector among `ids` — `text`
  * reaching a shape's rows and a connector's label — and records it in their
@@ -134,11 +169,8 @@ export function setDiagramColor(scene: AnyScene, ids: readonly string[], field: 
       const next = withTrait(data, { ...data.diagram, ownStyle: own });
       if (field !== 'text') next[field] = painted(data[field], color);
       scene.update(id as never, { data: next });
-      // A header row is drawn against its band, in the box's fill.
-      const header = data.diagram?.header !== undefined;
-      for (const t of field === 'stroke' ? [] : textNodesOf(scene, id, state.kind)) {
+      for (const t of colorTextNodesOf(scene, id, state, field)) {
         const text = scene.get(t as never)!.data as Data;
-        if ((header && text.bodyRow === 0) !== (field === 'fill')) continue;
         scene.update(t as never, { data: { ...text, fill: painted(text.fill, color) } });
       }
     }

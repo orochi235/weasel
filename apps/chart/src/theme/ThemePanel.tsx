@@ -36,6 +36,7 @@ export function ThemePanel({ scene, onClose }: { scene: ChartScene; onClose: () 
           <PropertyField
             kind="number" label="Size" value={theme.font.size} min={4} max={96} step={1}
             onInput={(n) => edit.input(['font', 'size'], n)} onChange={(n) => edit.commit(['font', 'size'], n)}
+            onCancel={edit.cancel}
           />
         </PropertyGroup>
         <PropertyGroup title="Series" pack="one-up">

@@ -353,7 +353,7 @@ export type { RelayoutScene } from './bodyRelayout';
 export { installFaceRemeasure, remeasureText } from './faceRemeasure';
 export type { RemeasureOptions } from './faceRemeasure';
 export { useFaceRemeasure } from './useFaceRemeasure';
-export { applyDiagramTheme, diagramStyleOf, setDiagramColor, setDiagramFontSize, setDiagramStyle } from './theme/applyTheme';
+export { applyDiagramTheme, diagramColorOf, diagramFontSizeOf, diagramStyleOf, setDiagramColor, setDiagramFontSize, setDiagramStyle } from './theme/applyTheme';
 export type { ApplyDiagramThemeOptions, DiagramStyleEditOptions, DiagramStyleState } from './theme/applyTheme';
 export {
   addThemeRole, editableTheme, forkTheme, isShippedTheme, removeThemeRole, renameThemeRole, setThemeValue, themeRoles,

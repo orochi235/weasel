@@ -1,34 +1,19 @@
 import {
-  diagramStyleOf, rendererMeasure, setDiagramColor, setDiagramFontSize, setDiagramStyle, themeRoles, type DiagramStyleState, type DiagramTheme, type StyleField,
+  diagramColorOf, diagramFontSizeOf, diagramStyleOf, rendererMeasure, setDiagramColor, setDiagramFontSize, setDiagramStyle, themeRoles, type DiagramStyleState, type DiagramTheme, type StyleField,
 } from '@weasel-js/diagram';
 import { PropertyField, PropertyList, PropertyNote, PropertyPanel, type PropertyOption } from '@weasel-js/ui/components/Properties';
 import type { CSSProperties, ReactElement } from 'react';
 import type { ChartScene } from '../chartDocument';
 import './stylePanel.css';
+import { tryParseColor } from '@weasel-js/core';
 import { getOwn } from '@weasel-js/registry';
 
-interface Styled { id: string; state: DiagramStyleState; data: Record<string, unknown> }
+interface Styled { id: string; state: DiagramStyleState }
 
-const HEX = /^#[0-9a-f]{6}$/i;
-const colorIn = (paint: unknown): string | undefined => {
-  const color = (paint as { paint?: { color?: unknown } } | undefined)?.paint?.color;
-  return typeof color === 'string' && HEX.test(color) ? color : undefined;
-};
-
-/** The data of one shape's first text row, or one connector's label. */
-const firstText = (scene: ChartScene, s: Styled): { fill?: unknown; style?: { fontSize?: unknown } } | undefined => (s.state.kind === 'shape'
-  ? scene.childrenOf(s.id as never).map((id) => scene.get(id)).find((n) => typeof (n?.data as { text?: unknown })?.text === 'string')
-  : scene.get(`${s.id}/label` as never))?.data as never;
-
-/** The color `field` shows on one shape or connector: a fill or stroke, or its first text's. */
+/** The color `field` shows on one shape or connector, when it is one a color field can show. */
 function colorOf(scene: ChartScene, s: Styled, field: StyleField): string | undefined {
-  return field !== 'text' ? colorIn(s.data[field]) : colorIn(firstText(scene, s)?.fill);
-}
-
-/** The size one shape's or connector's first text is set at. */
-function sizeOf(scene: ChartScene, s: Styled): number | undefined {
-  const size = firstText(scene, s)?.style?.fontSize;
-  return typeof size === 'number' ? size : undefined;
+  const color = diagramColorOf(scene, s.id, field);
+  return color !== undefined && tryParseColor(color) !== null ? color : undefined;
 }
 
 /** One value when every item agrees, else `mixed`. */
@@ -50,17 +35,17 @@ export function StylePanel({ scene, selected, theme }: { scene: ChartScene; sele
   const styled: Styled[] = selected.flatMap((id) => {
     const node = scene.get(id as never);
     const state = node === undefined ? null : diagramStyleOf(node);
-    return state === null ? [] : [{ id, state, data: node!.data as Record<string, unknown> }];
+    return state === null ? [] : [{ id, state }];
   });
   const ids = styled.map((s) => s.id);
   const roles: PropertyOption<string>[] = themeRoles(theme).map((r) => ({ value: r.id, label: r.label, glyph: swatch(theme, r.id) }));
   const role = common(styled.map((s) => s.state.role ?? theme.defaultRole));
-  const size = common(styled.map((s) => sizeOf(scene, s)));
+  const size = common(styled.map((s) => diagramFontSizeOf(scene, s.id)));
   const field = (name: StyleField, label: string, among: readonly Styled[]) => {
     const color = common(among.map((s) => colorOf(scene, s, name)));
     return (
       <PropertyField
-        kind="color" label={label} value={color.value} mixed={color.mixed} disabled={among.length === 0}
+        kind="color" label={label} alpha value={color.value} mixed={color.mixed} disabled={among.length === 0}
         onChange={(next) => setDiagramColor(scene, among.map((s) => s.id), name, next)}
       />
     );

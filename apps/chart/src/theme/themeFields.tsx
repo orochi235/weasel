@@ -12,6 +12,7 @@ export function ThemeColor({ edit, path, label }: { edit: ThemeEdit; path: Theme
     <PropertyField
       kind="color" label={label} alpha value={themeValue(edit.theme, path) as string}
       onInput={(hex) => edit.input(path, stored(hex))} onChange={(hex) => edit.commit(path, stored(hex))}
+      onCancel={edit.cancel}
     />
   );
 }
