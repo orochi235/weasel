@@ -10,11 +10,11 @@ import { isPrefLeaf, type PrefSection, isBuiltinPref, type PrefLeaf, prefUnit, t
  */
 export function unitScopedPrefUnit(
   scopes: readonly UnitScope[],
-  opts?: { display?: Unit; precision?: number; suffix?: string; compact?: boolean },
+  opts?: { display?: Unit; places?: number; suffix?: string; compact?: boolean },
 ): PrefLinearUnit {
   const system = scopes[scopes.length - 1]!.system;
   const own = prefUnit(system, opts?.display ?? system.base, {
-    ...(opts?.precision === undefined ? {} : { precision: opts.precision }),
+    ...(opts?.places === undefined ? {} : { places: opts.places }),
     ...(opts?.suffix === undefined ? {} : { suffix: opts.suffix }),
     ...(opts?.compact ? { compact: true } : {}),
   });

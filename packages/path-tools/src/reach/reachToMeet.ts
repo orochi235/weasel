@@ -32,7 +32,7 @@ export const REACH_TO_MEET_PARAMS = pref.group(REACH_LABEL, {
   ], { description: 'Ease a curved end out of its bend, or carry it straight on along its tangent.', control: 'radio' }),
   easeTurn: pref.number('Ease turn', 30 * DEG_TO_RAD, {
     description: 'How far an eased end keeps turning before it runs straight.',
-    min: 5 * DEG_TO_RAD, max: 90 * DEG_TO_RAD, step: DEG_TO_RAD, control: 'slider', unit: { scale: DEG_TO_RAD, suffix: '°', precision: 0 },
+    min: 5 * DEG_TO_RAD, max: 90 * DEG_TO_RAD, step: DEG_TO_RAD, control: 'slider', unit: { scale: DEG_TO_RAD, suffix: '°', places: 0 },
   }),
   radiusPx: strokeReachPref(),
 });

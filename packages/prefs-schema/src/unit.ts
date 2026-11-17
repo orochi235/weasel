@@ -33,7 +33,7 @@ export interface PrefLinearUnit extends PrefUnitText {
    *  shows unrounded and formats to two places, trailing zeros trimmed.
    *  What is typed is stored unrounded either way: a decimal typed at a decimal `scale` is stored as the
    *  decimal the two multiply to, without the dust of multiplying them in binary. */
-  precision?: number;
+  places?: number;
 }
 
 /** A display unit as code, for a conversion that is not linear. It cannot be written to JSON or edited as data. */
@@ -56,8 +56,8 @@ export interface ResolvedPrefUnit extends PrefFunctionUnit {
   /** How a field shows the display number, where the unit fixes its places. */
   display?: Display;
   /** The decimal places `toDisplay` rounds to, where the unit fixes them. */
-  precision?: number;
-  /** `toDisplay` before any rounding to `precision`. */
+  places?: number;
+  /** `toDisplay` before any rounding to `places`. */
   toDisplayExact: (stored: number) => number;
 }
 
@@ -101,19 +101,19 @@ export function resolvePrefUnit(unit: PrefNumberUnit): ResolvedPrefUnit {
       format: unit.format ?? ((stored) => `${unit.toDisplay(stored)}${suffix ?? ''}`),
     };
   }
-  const { scale, offset = 0, precision, accepts } = unit;
+  const { scale, offset = 0, places, accepts } = unit;
   const system: UnitSystem = { base: 'stored', units: { [SHOWN]: { factor: scale, offset } } };
   const toDisplayExact = (stored: number): number => (stored - offset) / scale;
   return {
     toDisplay: (stored) => {
       const shown = toDisplayExact(stored);
-      return precision === undefined ? shown : Number(shown.toFixed(precision));
+      return places === undefined ? shown : Number(shown.toFixed(places));
     },
     toDisplayExact,
     fromDisplay: (shown) => storedOf(shown, scale, offset),
     format: (stored) =>
-      `${formatUnit(stored, SHOWN, system, { places: precision ?? 2, suffix: false, pad: precision !== undefined })}${suffix ?? ''}`,
-    ...(precision === undefined ? {} : { precision, display: decimal({ places: precision, grouping: false }) }),
+      `${formatUnit(stored, SHOWN, system, { places: places ?? 2, suffix: false, pad: places !== undefined })}${suffix ?? ''}`,
+    ...(places === undefined ? {} : { places, display: decimal({ places, grouping: false }) }),
     ...(suffix === undefined ? {} : { suffix }),
     ...(accepts === undefined ? {} : { accepts }),
   };
@@ -121,7 +121,7 @@ export function resolvePrefUnit(unit: PrefNumberUnit): ResolvedPrefUnit {
 
 /**
  * A display unit built from a {@link UnitSystem}: values are stored in the
- * system's base and shown in `display`, rounded to `precision` places when
+ * system's base and shown in `display`, rounded to `places` decimal places when
  * given, and every unit in the system is accepted as typed text. `suffix`
  * defaults to the unit's name and is accepted too. Every unit of a system is
  * linear, so what comes back is data.
@@ -129,7 +129,7 @@ export function resolvePrefUnit(unit: PrefNumberUnit): ResolvedPrefUnit {
 export function prefUnit(
   system: UnitSystem,
   display: Unit,
-  opts?: { precision?: number; suffix?: string; compact?: boolean },
+  opts?: { places?: number; suffix?: string; compact?: boolean },
 ): PrefLinearUnit {
   let self: Required<UnitScale>;
   try {
@@ -152,7 +152,7 @@ export function prefUnit(
     scale: self.factor,
     ...(self.offset === 0 ? {} : { offset: self.offset }),
     accepts,
-    ...(opts?.precision === undefined ? {} : { precision: opts.precision }),
+    ...(opts?.places === undefined ? {} : { places: opts.places }),
     ...(opts?.compact ? { compact: true } : {}),
   };
 }

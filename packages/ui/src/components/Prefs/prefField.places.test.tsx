@@ -6,7 +6,7 @@ import { PropertyField } from '../Properties/PropertyField';
 import { prefFieldProps } from './prefField';
 
 const length = (extra: Partial<PrefNumber> = {}): PrefNumber =>
-  ({ kind: 'number', name: 'Length', description: '', default: 0, unit: { scale: 1, precision: 2, suffix: 'in' }, ...extra }) as PrefNumber;
+  ({ kind: 'number', name: 'Length', description: '', default: 0, unit: { scale: 1, places: 2, suffix: 'in' }, ...extra }) as PrefNumber;
 
 function field(pref: PrefNumber, value: number) {
   const setValue = vi.fn();
@@ -23,7 +23,7 @@ function field(pref: PrefNumber, value: number) {
 
 afterEach(() => vi.useRealTimers());
 
-describe('a number leaf whose unit sets a precision', () => {
+describe('a number leaf whose unit sets its places', () => {
   it('shows that many places, trailing zeros included', () => {
     expect(field(length(), 1.5).input).toHaveValue('1.50');
   });

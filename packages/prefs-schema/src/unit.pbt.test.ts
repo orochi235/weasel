@@ -34,13 +34,13 @@ describe('linear prefs units, properties', () => {
     t.atLeast('binary off', 20);
   }, timeoutFor(500, 1));
 
-  it('shows a stored value rounded to its precision, within half a place of the exact one', () => {
+  it('shows a stored value rounded to its places, within half a place of the exact one', () => {
     fc.assert(
-      fc.property(fc.double({ min: -1e6, max: 1e6, noNaN: true }), fc.constantFrom(1, 0.1, Math.PI / 180, 25.4, 2.54), fc.integer({ min: 0, max: 4 }), (stored, scale, precision) => {
-        const unit = resolvePrefUnit({ scale, precision });
+      fc.property(fc.double({ min: -1e6, max: 1e6, noNaN: true }), fc.constantFrom(1, 0.1, Math.PI / 180, 25.4, 2.54), fc.integer({ min: 0, max: 4 }), (stored, scale, places) => {
+        const unit = resolvePrefUnit({ scale, places });
         const shown = unit.toDisplay(stored);
-        expect(Math.abs(shown - stored / scale)).toBeLessThanOrEqual(0.5 * 10 ** -precision * (1 + 1e-9) + Math.abs(stored / scale) * 1e-15);
-        expect(Number(shown.toFixed(precision)) === shown).toBe(true);
+        expect(Math.abs(shown - stored / scale)).toBeLessThanOrEqual(0.5 * 10 ** -places * (1 + 1e-9) + Math.abs(stored / scale) * 1e-15);
+        expect(Number(shown.toFixed(places)) === shown).toBe(true);
       }),
       runs(500),
     );

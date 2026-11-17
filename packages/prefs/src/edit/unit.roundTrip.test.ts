@@ -9,7 +9,7 @@ import { nodeAt, setAttribute } from './schemaEdit';
 import { KEEP, printSchema } from './schemaExport';
 import { NO_TYPES } from './types';
 
-const CELSIUS: PrefNumberUnit = { suffix: '°C', scale: 1, offset: 273.15, precision: 1, accepts: { K: { factor: 1, offset: -273.15 }, '°F': { factor: 5 / 9, offset: -160 / 9 } } };
+const CELSIUS: PrefNumberUnit = { suffix: '°C', scale: 1, offset: 273.15, places: 1, accepts: { K: { factor: 1, offset: -273.15 }, '°F': { factor: 5 / 9, offset: -160 / 9 } } };
 const halved: PrefNumberUnit = { toDisplay: (v) => Math.sqrt(v), fromDisplay: (v) => v * v, suffix: '√' };
 
 const number = (name: string, unit: PrefNumberUnit): PrefNumber => ({ kind: 'number', name, description: '', default: 0, unit });
@@ -22,7 +22,7 @@ const SCHEMA: PrefGroup = {
       name: 'Page',
       as: 'page',
       children: {
-        angle: number('Angle', prefUnit(ANGLE_RADIANS, 'deg', { precision: 1, suffix: '°' })),
+        angle: number('Angle', prefUnit(ANGLE_RADIANS, 'deg', { places: 1, suffix: '°' })),
         width: number('Width', prefUnit(METRIC_MM, 'cm')),
         heat: number('Heat', CELSIUS),
         plain: number('Plain', { scale: 1 }),

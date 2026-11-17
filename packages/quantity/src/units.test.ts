@@ -63,12 +63,12 @@ describe('formatUnit', () => {
     expect(formatUnit(36, 'ft', IMPERIAL_INCHES, { suffix: false })).toBe('3');
   });
 
-  it('respects precision', () => {
+  it('rounds to the places given', () => {
     expect(formatUnit(13, 'ft', IMPERIAL_INCHES, { places: 3 })).toBe('1.083ft');
     expect(formatUnit(13, 'ft', IMPERIAL_INCHES, { places: 0 })).toBe('1ft');
   });
 
-  it('keeps trailing zeros to precision when padding', () => {
+  it('keeps trailing zeros to its places when padding', () => {
     expect(formatUnit(1.5, 'in', IMPERIAL_INCHES, { places: 2, pad: true })).toBe('1.50in');
     expect(formatUnit(36, 'ft', IMPERIAL_INCHES, { places: 1, pad: true })).toBe('3.0ft');
     expect(formatUnit(-0.001, 'in', IMPERIAL_INCHES, { places: 2, pad: true })).toBe('0.00in');

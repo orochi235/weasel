@@ -31,7 +31,7 @@ export const TOOLBAR_ASSETS: readonly ToolbarAsset[] = [
   asset('zoom', 'Zoom', {
     out: pref.action('viewport.zoom:out', { icon: icon('ui:zoomOut') }),
     [ZOOM_PATH]: pref.number('Zoom', 1, {
-      min: DEFAULT_MIN_ZOOM, max: DEFAULT_MAX_ZOOM, unit: { suffix: '%', scale: 0.01, precision: 0 },
+      min: DEFAULT_MIN_ZOOM, max: DEFAULT_MAX_ZOOM, unit: { suffix: '%', scale: 0.01, places: 0 },
     }),
     in: pref.action('viewport.zoom:in', { icon: icon('ui:zoomIn') }),
     fit: pref.action('viewport.zoom:reset', { name: 'Fit page', icon: icon('ui:fit') }),

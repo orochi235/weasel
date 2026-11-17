@@ -35,7 +35,7 @@ export type CycleFilletParams = {
 export const CYCLE_FILLET_PARAMS = pref.group(CYCLE_LABEL, {
   share: pref.number('Size for sharp corners', DEFAULT_FILLET_TRIM_SHARE, {
     description: 'How much of the room a sharp corner has its new shape cuts. A corner that already had a radius keeps it.',
-    min: 0.05, max: 1, step: 0.05, control: 'slider', unit: { scale: 0.01, suffix: '%', precision: 0 },
+    min: 0.05, max: 1, step: 0.05, control: 'slider', unit: { scale: 0.01, suffix: '%', places: 0 },
   }),
 });
 

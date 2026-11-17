@@ -103,7 +103,7 @@ const detents = f.schema({
     .number(0.3)
     .range(0, 1)
     .step(0.01)
-    .unit({ suffix: '%', scale: 0.01, precision: 0 })
+    .unit({ suffix: '%', scale: 0.01, places: 0 })
     .stops([0.5]),
 });
 
@@ -294,7 +294,7 @@ export const Nested: Story = {
   },
 };
 
-const degrees = prefUnit(ANGLE_RADIANS, 'deg', { precision: 1 });
+const degrees = prefUnit(ANGLE_RADIANS, 'deg', { places: 1 });
 
 const presentation = f.schema({
   x: f.number(120).label('X').pair({ with: 'y', label: 'Offset' }),
