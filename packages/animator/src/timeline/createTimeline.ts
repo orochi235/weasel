@@ -135,7 +135,7 @@ export function createTimeline(
   const booker = opts.booking ? createBooker(opts.booking, {
     tracks: opts.tracks, duration: () => duration, lapsLeft: () => loopsLeft, lap: () => lap, playhead: () => playhead,
   }) : null;
-  const sampler = createTrackSampler(hold);
+  const sampler = createTrackSampler(hold, () => canceled);
 
   const events = createEventCursor(createEventFirer(report, booker !== null), () => canceled);
 
@@ -163,6 +163,9 @@ export function createTimeline(
       });
     }
 
+    // A handler on the outgoing lap's tail canceled it.
+    if (canceled) return true;
+
     const finished = playhead >= duration && !parked;
     // Played backward, it ends at its start as it ends at its end going forward.
     const rewound = rate < 0 && playhead <= 0;
@@ -170,6 +173,7 @@ export function createTimeline(
 
     // Sampled before fired, so a handler reads the current frame's values.
     sampler.apply(opts.tracks, playhead);
+    if (canceled) return true;
     const sought = rate > 0 ? events.to(opts.tracks, playhead) : rate < 0 && events.back(playhead);
     // A handler canceled it: it is off the table already, and books nothing more.
     if (canceled) return true;
