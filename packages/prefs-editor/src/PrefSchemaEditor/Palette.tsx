@@ -108,9 +108,9 @@ export function Palette({ items, sections = false, ghost = true, disabled = fals
       // The palette, not the button: the tree redraws around a drag and the session must outlast that.
       origin: root.current,
       threshold: dragPx,
-      onActivate: (ev) => move(at(ev)),
+      onStart: (ev) => move(at(ev)),
       onMove: (ev) => move(at(ev)),
-      onCommit: (ev) => {
+      onEnd: (ev) => {
         session.current = null;
         setDrag(null);
         onDrop(at(ev));

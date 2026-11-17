@@ -159,7 +159,7 @@ export function useFloatingPlacement({
     drag.current = startThresholdDrag(e, {
       threshold: latest.current.dragPx,
       captureAt: 'threshold',
-      onActivate: () => setLive({ at, over, dragging: true }),
+      onStart: () => setLive({ at, over, dragging: true }),
       onMove: (ev) => {
         if (ev.clientX === last.x && ev.clientY === last.y) return;
         last = { x: ev.clientX, y: ev.clientY };
@@ -167,7 +167,7 @@ export function useFloatingPlacement({
         moved = true;
         setLive({ at, over, dragging: true });
       },
-      onCommit: () => {
+      onEnd: () => {
         drag.current = null;
         if (!moved) return setLive(null);
         setLive({ at, over, dragging: false });

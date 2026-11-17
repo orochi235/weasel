@@ -89,9 +89,9 @@ export function usePreviewDrag({ stage, schema, place, onMove, onCopy, onAlias, 
     drag.current = startThresholdDrag(e, {
       origin: box,
       threshold: dragPx,
-      onActivate: update,
+      onStart: update,
       onMove: update,
-      onCommit: (ev) => {
+      onEnd: (ev) => {
         const to = place.target(landing(ev), held(ev), { x: ev.clientX, y: ev.clientY });
         // The release would otherwise click the label it began on, and toggle its control.
         swallowNextClick(box);

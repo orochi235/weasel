@@ -192,7 +192,7 @@ export function useTreeDrag(opts: UseTreeDragOptions) {
 
     drag.current = startThresholdDrag(e, {
       origin: box, threshold: o.current.dragPx,
-      onActivate: (ev) => {
+      onStart: (ev) => {
         ids = draggedIdsFor(o.current.nodes, o.current.selected, id);
         update(ev);
         // The event carries the modifiers as they stand once this key has changed.
@@ -207,7 +207,7 @@ export function useTreeDrag(opts: UseTreeDragOptions) {
         };
       },
       onMove: update,
-      onCommit: (ev) => {
+      onEnd: (ev) => {
         const how = effectOf(ev);
         if (outside.current) {
           o.current.onDropOutside?.(ids, { x: ev.clientX, y: ev.clientY }, how);

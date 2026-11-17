@@ -251,7 +251,7 @@ export function useReorderDragList(opts: UseReorderDragListOptions): ReorderDrag
       threshold: optsRef.current.items[index]?.locked
         ? Number.POSITIVE_INFINITY
         : optsRef.current.threshold,
-      onActivate: (ev) => {
+      onStart: (ev) => {
         draggedIds = draggedIdsFor(optsRef.current.items, optsRef.current.selectedIds, id, index);
         targetIndex = computeTargetIndex(ev, index);
         setState({ draggedIds, targetIndex, ghost: ghostAt(ev) });
@@ -260,7 +260,7 @@ export function useReorderDragList(opts: UseReorderDragListOptions): ReorderDrag
         targetIndex = computeTargetIndex(ev, index);
         setState({ draggedIds, targetIndex, ghost: ghostAt(ev) });
       },
-      onCommit: (ev) => {
+      onEnd: (ev) => {
         const drop = computeTargetIndex(ev, index);
         if (!isNoopDrop(indicesOf(optsRef.current.items, draggedIds), drop)) {
           optsRef.current.onReorder(draggedIds, drop);
