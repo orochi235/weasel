@@ -5,7 +5,7 @@
  * layers — selection handles, guides, a loupe's own window — is in it.
  */
 import { mat3, type GlMat3 } from '@weasel-js/geom';
-import { rgbaHex } from '@weasel-js/paint';
+import { opaqueHexOfBytes } from '@weasel-js/paint';
 import { cullDrawCommands, type DrawCommand } from '@weasel-js/renderer';
 import { drawOneLayer, type LayerDims, type RenderLayer } from 'core/layers/render';
 import type { View } from 'core/viewport/view';
@@ -106,7 +106,7 @@ export function createLayerSampler(options: RasterSessionOptions = {}): LayerSam
     rgba,
     sample(args) {
       const px = rgba(args);
-      return px ? rgbaHex(px) : null;
+      return px ? opaqueHexOfBytes(px) : null;
     },
     dispose() {
       session?.dispose();
