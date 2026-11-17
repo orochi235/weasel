@@ -23,7 +23,7 @@ export {
   splitCubicAt, splitQuadraticAt, splitLineAt,
   type LineCoords, type QuadraticCoords, type CubicCoords,
 } from './curve';
-export { nearestOnLine, nearestOnQuadratic, nearestOnCubic, nearestOnPath, type CurveNearest, type PathNearest } from './nearest';
+export { nearestOnSegment, nearestOnQuadratic, nearestOnCubic, nearestOnPath, type CurveNearest, type PathNearest } from './nearest';
 export { lineShape, type TrackShape, type TrackShapeKind, type TrackStation, type TrackNearest, type TrackNearestOptions, type TrackAtOptions } from './track/shape';
 export { arcShape, type ArcTrackSpec, type ArcTrackShape } from './track/arc';
 export { ellipseShape, type EllipseTrackSpec, type EllipseTrackShape } from './track/ellipse';

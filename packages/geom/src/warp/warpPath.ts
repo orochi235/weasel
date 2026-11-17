@@ -2,7 +2,7 @@ import type { PolygonPath } from '../path';
 import { anchorsToPath, pathToAnchors, type PenAnchor } from '../paths/anchors';
 import { cubicPointAt, type Point } from '../paths/cubicMath';
 import { fitPointRun, keepCorner } from '../paths/fitRun';
-import { nearestOnLine } from '../nearest';
+import { nearestOnSegment } from '../nearest';
 import { lerp } from '../scalar';
 
 /** Options for {@link warpPath}. */
@@ -110,7 +110,7 @@ function sampleWarped(curve: (t: number) => Point, count: number, tol: number): 
 
 /** How far `p` lies from the segment `a`–`b`. */
 function fromChord(p: Point, a: Point, b: Point): number {
-  return nearestOnLine(p.x, p.y, a.x, a.y, b.x, b.y).dist;
+  return nearestOnSegment(p.x, p.y, a.x, a.y, b.x, b.y).dist;
 }
 
 function dedupe(pts: Point[]): Point[] {

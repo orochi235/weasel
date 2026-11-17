@@ -1,4 +1,4 @@
-import { nearestOnLine } from '../nearest';
+import { nearestOnSegment } from '../nearest';
 import type { Point } from '../paths/cubicMath';
 import type { PathStation } from '../paths/pathMeasure';
 import { clamp } from '../scalar';
@@ -68,7 +68,7 @@ export function lineShape(from: Point, to: Point): TrackShape {
       };
     },
     nearest(p, options) {
-      const n = nearestOnLine(p.x, p.y, from.x, from.y, to.x, to.y);
+      const n = nearestOnSegment(p.x, p.y, from.x, from.y, to.x, to.y);
       if (!options?.open || length === 0) return { f: n.t, dist: n.dist };
       const f = ((p.x - from.x) * dx + (p.y - from.y) * dy) / (length * length);
       return { f, dist: n.dist };

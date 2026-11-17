@@ -23,7 +23,7 @@ import {
   type LayoutPorts,
   type LayoutResult,
 } from '@weasel-js/diagram/layout';
-import { nearestOnLine } from '@weasel-js/geom';
+import { nearestOnSegment } from '@weasel-js/geom';
 import type { ELK } from 'elkjs/lib/elk-api.js';
 import { fromElk, type ElkPlacement } from './fromElk';
 import { drawnEdges, portPoints, toElk, type DrawnEdge } from './toElk';
@@ -216,7 +216,7 @@ function nearestOnRoute(route: readonly Vec2[], probe: Vec2): Vec2 {
   for (let i = 1; i < route.length; i++) {
     const a = route[i - 1]!;
     const b = route[i]!;
-    const hit = nearestOnLine(probe.x, probe.y, a.x, a.y, b.x, b.y);
+    const hit = nearestOnSegment(probe.x, probe.y, a.x, a.y, b.x, b.y);
     if (hit.dist < bestDist) [best, bestDist] = [{ x: hit.x, y: hit.y }, hit.dist];
   }
   return best;

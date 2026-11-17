@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import type { AnchorSet } from './anchorEdits';
 import type { PenAnchor } from './anchors';
 import { cubicPointAt, type Point } from './cubicMath';
-import { nearestOnLine } from '../nearest';
+import { nearestOnSegment } from '../nearest';
 import { simplifyAnchorsAt } from './simplifyAnchors';
 
 const range = (from: number, to: number): number[] => Array.from({ length: to - from + 1 }, (_, i) => from + i);
@@ -43,7 +43,7 @@ function worstOff(sub: readonly PenAnchor[], poly: readonly PenAnchor[]): number
   for (const p of sampleSub(sub)) {
     let best = Infinity;
     for (let i = 0; i + 1 < poly.length; i++) {
-      best = Math.min(best, nearestOnLine(p.x, p.y, poly[i].x, poly[i].y, poly[i + 1].x, poly[i + 1].y).dist);
+      best = Math.min(best, nearestOnSegment(p.x, p.y, poly[i].x, poly[i].y, poly[i + 1].x, poly[i + 1].y).dist);
     }
     worst = Math.max(worst, best);
   }

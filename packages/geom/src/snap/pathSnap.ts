@@ -6,7 +6,7 @@
 import type { Path } from '../path';
 import type { Point } from '../paths/cubicMath';
 import { evalSeg, type Seg } from '../booleans/contourSegments';
-import { nearestOnCubic, nearestOnLine, nearestOnQuadratic } from '../nearest';
+import { nearestOnCubic, nearestOnSegment, nearestOnQuadratic } from '../nearest';
 import { pathCrossings } from '../intersect/pathCrossings';
 import { intersectSegments } from '../intersect/segmentIntersections';
 import { pathSegments, type PathSegment } from '../intersect/pathSegments';
@@ -218,7 +218,7 @@ function segmentsIn(index: PathSnapIndex, box: readonly number[]): (readonly [nu
 }
 
 function nearestOnSeg(s: Seg, p: Point): { x: number; y: number; dist: number } {
-  if (s.length === 2) return nearestOnLine(p.x, p.y, s[0].x, s[0].y, s[1].x, s[1].y);
+  if (s.length === 2) return nearestOnSegment(p.x, p.y, s[0].x, s[0].y, s[1].x, s[1].y);
   if (s.length === 3) return nearestOnQuadratic(p.x, p.y, s[0].x, s[0].y, s[1].x, s[1].y, s[2].x, s[2].y);
   return nearestOnCubic(p.x, p.y, s[0].x, s[0].y, s[1].x, s[1].y, s[2].x, s[2].y, s[3].x, s[3].y);
 }

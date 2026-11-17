@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import type { Point } from './cubicMath';
 import { cubicCurvatureAt, cubicDerivativeAt } from './curvature';
-import { nearestOnCubic, nearestOnLine } from '../nearest';
+import { nearestOnCubic, nearestOnSegment } from '../nearest';
 import { easeLength, extensionPieces, type ExtensionPiece, type PathEndFrame } from './pathEndExtension';
 
 const frame: PathEndFrame = { point: { x: 10, y: 20 }, tangent: { x: 0.6, y: 0.8 }, curvature: 1 / 40 };
@@ -40,7 +40,7 @@ function easedTruth(f: PathEndFrame, ease: number, distance: number, steps = 200
 function distanceToPieces(q: Point, pieces: ExtensionPiece[]): number {
   return Math.min(...pieces.map(({ pts: [a, b, c, d] }) => (d
     ? nearestOnCubic(q.x, q.y, a.x, a.y, b.x, b.y, c.x, c.y, d.x, d.y).dist
-    : nearestOnLine(q.x, q.y, a.x, a.y, b.x, b.y).dist)));
+    : nearestOnSegment(q.x, q.y, a.x, a.y, b.x, b.y).dist)));
 }
 
 describe("extensionPieces in 'eased' mode", () => {

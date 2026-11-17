@@ -26,8 +26,8 @@ export interface PathNearest extends CurveNearest {
   coordIndex: number;
 }
 
-/** Nearest point on segment (x0,y0)-(x1,y1) to (px,py). */
-export function nearestOnLine(
+/** Nearest point on the segment (x0,y0)-(x1,y1), clamped to its ends, to (px,py). */
+export function nearestOnSegment(
   px: number, py: number, x0: number, y0: number, x1: number, y1: number,
 ): CurveNearest {
   const t = segmentT(px, py, x0, y0, x1, y1);
@@ -151,7 +151,7 @@ export function nearestOnPath(
       startX = coords[ci]; startY = coords[ci + 1];
       return;
     } else if (cmd === PATH_L) {
-      hit = nearestOnLine(px, py, x0, y0, coords[ci], coords[ci + 1]);
+      hit = nearestOnSegment(px, py, x0, y0, coords[ci], coords[ci + 1]);
     } else if (cmd === PATH_Q) {
       hit = nearestOnQuadratic(px, py, x0, y0, coords[ci], coords[ci + 1], coords[ci + 2], coords[ci + 3]);
     } else if (cmd === PATH_C) {
@@ -160,7 +160,7 @@ export function nearestOnPath(
         coords[ci], coords[ci + 1], coords[ci + 2], coords[ci + 3], coords[ci + 4], coords[ci + 5],
       );
     } else if (cmd === PATH_Z) {
-      hit = nearestOnLine(px, py, x0, y0, startX, startY);
+      hit = nearestOnSegment(px, py, x0, y0, startX, startY);
     } else {
       throw new Error(`nearestOnPath: unknown command code ${cmd}`);
     }

@@ -6,7 +6,7 @@ import {
   distance as distance2D, distance2 as distance2D2, lerpPoint, pointSegmentDist as pointSegmentDist2D,
   pointSegmentDist2 as pointSegmentDist2D2, segmentT as segmentT2D,
 } from './points2';
-import { nearestOnLine } from './nearest';
+import { nearestOnSegment } from './nearest';
 import { closestPointOnSegment as closestPointOnSegment3, distance as distance3, lerpPoint as lerp3 } from './3d';
 
 describe('the nearest point of a segment', () => {
@@ -36,7 +36,7 @@ describe('the nearest point of a segment', () => {
   it('lands on the far end exactly, not one rounding off it', () => {
     const a = [0.1, 0.2], b = [0.7, 0.30000000000000004];
     expect(closestPointOnSegment([5, 5], a, b)).toEqual(b);
-    const hit = nearestOnLine(5, 5, 0.1, 0.2, 0.7, 0.30000000000000004);
+    const hit = nearestOnSegment(5, 5, 0.1, 0.2, 0.7, 0.30000000000000004);
     expect([hit.x, hit.y]).toEqual(b);
   });
 
@@ -53,7 +53,7 @@ describe('the nearest point of a segment', () => {
       expect(pointSegmentDist2D2(px, py, ax, ay, bx, by)).toBe(pointSegmentDist2(p, a, b));
       expect(pointSegmentDist2D(px, py, ax, ay, bx, by)).toBe(pointSegmentDist(p, a, b));
 
-      const near = nearestOnLine(px, py, ax, ay, bx, by);
+      const near = nearestOnSegment(px, py, ax, ay, bx, by);
       const c = closestPointOnSegment(p, a, b);
       expect([near.x, near.y, near.t, near.dist]).toEqual([c[0], c[1], t, pointSegmentDist(p, a, b)]);
 

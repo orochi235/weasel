@@ -5,7 +5,7 @@
  */
 import { pointAlongPath, type Path, type Vec2 } from '@weasel-js/core/math';
 import {
-  PATH_C, PATH_L, PATH_Q, forEachSegment, measurePath, nearestOnCubic, nearestOnLine, nearestOnQuadratic, worldCoords,
+  PATH_C, PATH_L, PATH_Q, forEachSegment, measurePath, nearestOnCubic, nearestOnSegment, nearestOnQuadratic, worldCoords,
   type CurveNearest,
 } from '@weasel-js/geom';
 import type { DiagramLabel, LabelSpot } from '../labelTrait';
@@ -27,7 +27,7 @@ function segmentStations(path: Path, near: Vec2): { point: Vec2; tangent: Vec2; 
     let hit: CurveNearest;
     let d: Vec2;
     if (cmd === PATH_L) {
-      hit = nearestOnLine(near.x, near.y, x0, y0, coords[ci]!, coords[ci + 1]!);
+      hit = nearestOnSegment(near.x, near.y, x0, y0, coords[ci]!, coords[ci + 1]!);
       d = { x: coords[ci]! - x0, y: coords[ci + 1]! - y0 };
     } else if (cmd === PATH_Q) {
       hit = nearestOnQuadratic(near.x, near.y, x0, y0, coords[ci]!, coords[ci + 1]!, coords[ci + 2]!, coords[ci + 3]!);
