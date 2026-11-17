@@ -11,7 +11,7 @@ import { menuRowSpans } from '@weasel-js/ui-logic';
 import { panelSize } from './drawPanel';
 import { menuTheme } from './menu.fixture';
 import { menuMeasureEnv } from './menuEnv';
-import { estimateWidth } from './measureLabel';
+import { estimateWidth } from './textWidth';
 import { createPlacer } from './placePanels';
 
 const RUNS = 200;

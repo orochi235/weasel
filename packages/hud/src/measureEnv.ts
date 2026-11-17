@@ -1,7 +1,7 @@
 import type { MeasureEnv } from '@weasel-js/ui-logic';
 import { cachedFontVariant, metricsOf } from '@weasel-js/font';
 import { expandVars, type ResolvedTheme } from '@weasel-js/theme';
-import { measureLabel } from './menu/measureLabel';
+import { textWidth } from './menu/textWidth';
 import { getOwn } from '@weasel-js/registry';
 
 /**
@@ -19,7 +19,7 @@ export function hudMeasureEnv(
       const raw = (overrides && getOwn(overrides, name)) ?? getOwn(tokens, name);
       return raw !== undefined && raw.includes('var(') ? expandVars(raw, tokens) : raw;
     },
-    text: (text, spec) => ({ width: measureLabel(text, spec.size, family), ...lineExtent(family, spec.size) }),
+    text: (text, spec) => ({ width: textWidth(text, spec.size, family), ...lineExtent(family, spec.size) }),
   };
 }
 

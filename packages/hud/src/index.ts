@@ -32,7 +32,7 @@ export {
 } from './widgets/window/zones';
 export type { HudContentCtx } from './widget';
 export { attachMenuHost, type AttachMenuHostOptions } from './menu/attachMenuHost';
-export { measureLabel } from './menu/measureLabel';
+export { textWidth } from './menu/textWidth';
 export { createMenuWidget, type MenuWidgetOptions } from './menu/menuWidget';
 export type { MenuIcons } from './menu/drawPanel';
 export { DEFAULT_MENU_PALETTE } from './menu/colorPicker';

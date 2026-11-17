@@ -3726,7 +3726,7 @@
    "packages/hud/src/menu/chipRepeat.ts",
    "packages/hud/src/menu/colorPicker.ts",
    "packages/hud/src/menu/drawPanel.ts",
-   "packages/hud/src/menu/measureLabel.ts",
+   "packages/hud/src/menu/textWidth.ts",
    "packages/hud/src/menu/menu.fixture.ts",
    "packages/hud/src/menu/menuEnv.ts",
    "packages/hud/src/menu/menuWidget.ts",
