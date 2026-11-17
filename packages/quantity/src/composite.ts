@@ -23,11 +23,13 @@ const SEPARATOR = 'separator';
 /** Part types that say what a value is measured in, rather than how much. */
 const MEASURE = new Set(['unit', 'percentSign']);
 
-/** The trailing parts of a value that name its measure: `ft` in `2ft`, with any space before it. */
+/** The trailing parts of a value that name its measure: `ft` in `2ft`, with any space before it.
+ *  None for a value written in several units (`2m 5s`), whose last unit measures only its last term. */
 function measureTail(parts: readonly Part[]): Part[] {
   let at = parts.length;
   while (at > 0 && (MEASURE.has(parts[at - 1]!.type) || parts[at - 1]!.type === 'literal')) at--;
   const tail = parts.slice(at);
+  if (parts.slice(0, at).some((p) => MEASURE.has(p.type))) return [];
   return tail.some((p) => MEASURE.has(p.type)) ? tail : [];
 }
 
