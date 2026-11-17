@@ -71,6 +71,7 @@ const RETRY_REALM_SETUP = './scripts/vitest-retry-realm.setup.ts';
 const PBT_SEED_SETUP = './scripts/vitest-pbt-seed.setup.ts';
 
 const VITE_SERVER_TESTS = [
+  'apps/forge/e2e.vite.test.ts',
   'packages/forge/src/csf/shims/alias.test.ts',
   'packages/forge/src/vite/capture/endpoint.test.ts',
   'packages/forge/src/vite/plugin.test.ts',
