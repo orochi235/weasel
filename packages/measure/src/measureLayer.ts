@@ -3,7 +3,7 @@ import {
 } from '@weasel-js/core';
 import type { DrawCommand } from '@weasel-js/renderer';
 import { pxReach, rectPath } from '@weasel-js/geom';
-import { measureCommands } from './measurePainter';
+import { measureDrawCommands } from './measurePainter';
 import { measureEndsOf, type MeasurePoint } from './measurement';
 import type { Measurements } from './measurements';
 import { measureAt, type MeasureHit } from './measureHit';
@@ -40,7 +40,7 @@ export function measurementsLayer(scene: AnyScene, ms: Measurements): RenderLaye
       };
       const out: DrawCommand[] = [];
       const draft = ms.draft.get();
-      if (draft) out.push(...measureCommands(toScreen(draft.start), toScreen(draft.end), 1));
+      if (draft) out.push(...measureDrawCommands(toScreen(draft.start), toScreen(draft.end), 1));
       const picked = ms.picked.get();
       const ends = picked === null ? null : measureEndsOf(shownLookup(scene).get(picked));
       if (ends && !scene.isHidden(picked!)) {

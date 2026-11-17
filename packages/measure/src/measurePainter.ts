@@ -11,7 +11,7 @@ export const MEASURE_TICK_PX = 5;
  * and the measurements layer draw it. `perPx` is world units per screen pixel, so the
  * line and its ticks keep their screen size at any zoom.
  */
-export function measureCommands(start: MeasurePoint, end: MeasurePoint, perPx: number): DrawCommand[] {
+export function measureDrawCommands(start: MeasurePoint, end: MeasurePoint, perPx: number): DrawCommand[] {
   const stroke = { ...OVERLAY_ROLE_STROKES['measure'], width: { px: 1 } };
   const len = Math.hypot(end.x - start.x, end.y - start.y);
   // The ticks run across the line; with no length yet they stand upright.
@@ -38,6 +38,6 @@ export const MEASURE_PAINTER: NodeShapeEntry = {
   paint: (node, _pose, ctx) => {
     const ends = measureEndsOf(node);
     if (!ends) return [];
-    return measureCommands(ends.start, ends.end, 1 / (ctx?.scale ?? 1));
+    return measureDrawCommands(ends.start, ends.end, 1 / (ctx?.scale ?? 1));
   },
 };
