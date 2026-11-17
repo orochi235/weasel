@@ -210,7 +210,7 @@ export function bindLabStore(
             break;
           }
           const [snapshot] = hydrateSnapshots(
-            [{ ...(value as SavedSnapshot), id }],
+            [{ ...value, id } as SavedSnapshot],
             store.getState().instrumentHooks(),
             failed,
           );
