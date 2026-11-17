@@ -19,7 +19,7 @@ export { setOwn };
 
 /** The value at a dotted path. `undefined` when a segment is missing or the
  *  walk hits something that is not a record. */
-export function valueAtPath(config: unknown, path: string): unknown {
+export function configValueAt(config: unknown, path: string): unknown {
   let cur = config;
   for (const segment of path.split('.')) {
     if (!isRecord(cur)) return undefined;
@@ -67,7 +67,7 @@ function writeIn(node: unknown, segments: readonly string[], value: unknown): un
 /** A copy of `config` with `value` written at a dotted path. Every record on
  *  the way down is copied and the input is left alone; a missing — or
  *  non-record — intermediate is replaced with the branch the path implies. */
-export function withValueAtPath<T>(config: T, path: string, value: unknown): T {
+export function withConfigValueAt<T>(config: T, path: string, value: unknown): T {
   return writeIn(config, path.split('.'), value) as T;
 }
 
@@ -92,7 +92,7 @@ export function fillConfigDefaults<T>(stored: unknown, defaults: T): T {
 /** A node in a resolved schema tree, by dotted path: a group's key and an
  *  object leaf's field key are segments, a section's key is not. Structural
  *  rather than `isPrefLeaf` so this stays free of a runtime import. */
-export function schemaNodeAtPath(group: PrefGroup, path: string): PrefLeaf | PrefGroup | undefined {
+export function schemaNodeAt(group: PrefGroup, path: string): PrefLeaf | PrefGroup | undefined {
   let node: PrefLeaf | PrefGroup | undefined = group;
   for (const segment of path.split('.')) {
     if (node === undefined || !('children' in node)) return undefined;

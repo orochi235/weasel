@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { checkPrefCondition } from './conditionCheck';
-import { type PrefGroup, type PrefSection, prefValueAtPath, type PrefLeaf, prefJudge, prefShownReader } from '@weasel-js/prefs-schema';
+import { type PrefGroup, type PrefSection, prefValueAt, type PrefLeaf, prefJudge, prefShownReader } from '@weasel-js/prefs-schema';
 
 const italic = { read: (stored: unknown) => stored === 'italic', write: (on: boolean) => (on ? 'italic' : undefined) };
 /** A dash array read as a style: lengths equal to the stroke's width are dots. */
@@ -23,18 +23,18 @@ const stroke = {
 const group: PrefGroup = { name: '', children: { text: { name: 'Text', children: { slant } }, stroke, plain: { kind: 'string', name: 'Plain', description: '', default: '' } } };
 const section: PrefSection = { name: '', members: { look: { name: 'Look', members: { 'data.slant': slant, 'data.stroke': stroke } } } };
 
-const over = (schema: PrefGroup | PrefSection, values: unknown) => prefJudge(schema, (path) => prefValueAtPath(values, path));
+const over = (schema: PrefGroup | PrefSection, values: unknown) => prefJudge(schema, (path) => prefValueAt(values, path));
 
 describe('prefShownReader', () => {
   it('hands back what an encoded leaf reads as, and anything else as it is stored', () => {
-    const read = prefShownReader(group, (path) => prefValueAtPath({ text: { slant: 'italic' }, plain: 'italic' }, path));
+    const read = prefShownReader(group, (path) => prefValueAt({ text: { slant: 'italic' }, plain: 'italic' }, path));
     expect(read('text.slant')).toBe(true);
     expect(read('plain')).toBe('italic');
     expect(read('nowhere')).toBeUndefined();
   });
 
   it('reads a field of an object leaf against the object it is a field of', () => {
-    const read = prefShownReader(group, (path) => prefValueAtPath({ stroke: { width: 3, dash: [3, 3] } }, path));
+    const read = prefShownReader(group, (path) => prefValueAt({ stroke: { width: 3, dash: [3, 3] } }, path));
     expect(read('stroke.dash')).toBe('dotted');
     expect(read('stroke.width')).toBe(3);
   });

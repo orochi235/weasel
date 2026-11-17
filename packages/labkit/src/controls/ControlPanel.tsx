@@ -17,7 +17,7 @@ import { type ReactNode, useMemo, useState } from 'react';
 import { auto as autoValue, isAuto } from '../config/auto';
 import { applyConfigWrite, autoPathsOf, resolveAutoConfig } from '../config/autoConfig';
 import { type AutoReports, withAutoReports } from '../config/autoReports';
-import { valueAtPath } from '../config/path';
+import { configValueAt } from '../config/path';
 import type { LeafRenderer, ResolvedConfig } from '../config/types';
 import { type ControlPack, gridOf } from './controlPack';
 import { FieldChoicesContext, useFieldChoicesOf } from './fieldChoices';
@@ -164,7 +164,7 @@ function usePanelAuto(
               ? ownAuto
               : new Set(next.autoPaths),
           );
-          if (!isAuto(value)) write(path, valueAtPath(next.config, path));
+          if (!isAuto(value)) write(path, configValueAt(next.config, path));
         };
   const setRowAuto = (path: string, next: boolean, value: unknown): void => {
     if (given) {

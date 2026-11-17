@@ -7,7 +7,7 @@ import {
   RowScope,
 } from '@weasel-js/ui/components/Properties';
 import { Fragment, type ReactNode } from 'react';
-import { valueAtPath } from '../config/path';
+import { configValueAt } from '../config/path';
 import { BareControl, leafValueAt } from './fields';
 
 /** A leaf this panel has no control for is named rather than dropped: a silent
@@ -103,7 +103,7 @@ export function PairedRow<TC extends Record<string, unknown>>({
               write={(value) => setConfig(path, value)}
               draft={draftConfig && ((value) => draftConfig(path, value))}
               disabled={disabled}
-              read={(p) => valueAtPath(shown, p)}
+              read={(p) => configValueAt(shown, p)}
             />
           </span>
         ))}

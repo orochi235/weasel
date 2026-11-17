@@ -1,6 +1,6 @@
 import { isPrefLeaf, type PrefLeaf, prefFitsHeading } from '@weasel-js/prefs';
 import { drawsOwn } from './drawsOwn';
-import { schemaNodeAtPath } from './path';
+import { schemaNodeAt } from './path';
 import { stutters, warnOfStutter, warnOnce } from './stutter';
 import type { LeafRenderer, ResolvedConfig } from './types';
 
@@ -15,7 +15,7 @@ export function headingLeaf(
   renderers?: Record<string, LeafRenderer>,
 ): { path: string; leaf: PrefLeaf } | undefined {
   const leafAt = (path: string): PrefLeaf | undefined => {
-    const found = schemaNodeAtPath(resolved.group, path);
+    const found = schemaNodeAt(resolved.group, path);
     return found && isPrefLeaf(found) ? found : undefined;
   };
   const marked = paths.find((p) => {

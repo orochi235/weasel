@@ -1,5 +1,5 @@
 import { useMemo, useRef, useState } from 'react';
-import { withValueAtPath } from './path';
+import { withConfigValueAt } from './path';
 
 /** The values an instrument reported for its auto paths, by dotted path. */
 export type AutoReports = ReadonlyMap<string, unknown>;
@@ -16,7 +16,7 @@ export function withAutoReports<TC>(
   if (!reports || reports.size === 0) return shown;
   let out = shown;
   for (const [path, value] of reports) {
-    if (auto.has(path) && value != null) out = withValueAtPath(out, path, value);
+    if (auto.has(path) && value != null) out = withConfigValueAt(out, path, value);
   }
   return out;
 }

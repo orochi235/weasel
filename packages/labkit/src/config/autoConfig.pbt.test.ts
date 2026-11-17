@@ -9,7 +9,7 @@ import { own, runs, tally, timeoutFor } from '../pbt.fixture';
 import { auto } from './auto';
 import { applyConfigWrite, resolveAutoConfig } from './autoConfig';
 import { f } from './builder';
-import { valueAtPath } from './path';
+import { configValueAt } from './path';
 import { resolveConfigSchema } from './resolve';
 
 const RUNS = 300;
@@ -105,7 +105,7 @@ describe('resolveAutoConfig', () => {
               expect(Object.hasOwn(out, l.key)).toBe(false);
             } else {
               t.count(l.auto ? 'resolved' : 'pinned');
-              expect(valueAtPath(out, l.key)).toBe(v);
+              expect(configValueAt(out, l.key)).toBe(v);
             }
           }
           if (leaves.some((l) => l.auto && l.reads?.some((d) => autoPaths.has(d))))
@@ -150,7 +150,7 @@ describe('applyConfigWrite', () => {
             }
             expect(new Set(autoPaths)).toEqual(unpinned);
             expect(autoPaths.length).toBe(unpinned.size);
-            for (const [p, v] of model) expect(valueAtPath(config, p)).toBe(v);
+            for (const [p, v] of model) expect(configValueAt(config, p)).toBe(v);
           }
         }),
         runs(RUNS),

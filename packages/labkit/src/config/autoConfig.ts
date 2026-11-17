@@ -1,7 +1,7 @@
 import { type PrefLeaf, prefAutoValue, prefStartsAuto } from '@weasel-js/prefs';
 import { isAuto } from './auto';
 import { configLeaves } from './leaves';
-import { isRecord, ownAt, setOwn, valueAtPath, withValueAtPath } from './path';
+import { isRecord, ownAt, setOwn, configValueAt, withConfigValueAt } from './path';
 import type { ResolvedConfig } from './types';
 
 type Resolver = (config: Record<string, unknown>) => unknown;
@@ -85,7 +85,7 @@ export function resolveAutoConfig<TC>(
       // dependencies, and each of those replaced `out`.
       const computed = resolve?.(demand(() => out, resolvers, need));
       const value = prefAutoValue(leaf, computed);
-      if (value !== undefined) out = withValueAtPath(out, path, value);
+      if (value !== undefined) out = withConfigValueAt(out, path, value);
     } finally {
       inFlight.delete(path);
     }
@@ -156,13 +156,13 @@ export function applyConfigWrite<TC>(
   value: unknown,
 ): { config: TC; autoPaths: readonly string[] } {
   const unpin: string[] = [];
-  const held = valueAtPath(config as Record<string, unknown>, path);
+  const held = configValueAt(config as Record<string, unknown>, path);
   const stored = withoutAuto(value, path, held, unpin);
   const under = (p: string): boolean => p === path || p.startsWith(`${path}.`);
   const next = [...autoPaths.filter((p) => !under(p)), ...unpin];
   const same = next.length === autoPaths.length && next.every((p) => autoPaths.includes(p));
   return {
-    config: isAuto(value) ? config : withValueAtPath(config, path, stored),
+    config: isAuto(value) ? config : withConfigValueAt(config, path, stored),
     autoPaths: same ? autoPaths : next,
   };
 }

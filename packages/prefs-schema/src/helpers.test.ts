@@ -1,13 +1,13 @@
 import { describe, expect, it } from 'vitest';
 import { ANGLE_RADIANS } from '@weasel-js/quantity';
 import {
-  assignPrefValueAtPath,
+  assignPrefValueAt,
   filterPrefSubtree,
   flattenPrefValues,
   nestPrefValues,
   prefDisplayBounds,
   prefLeaves,
-  prefValueAtPath,
+  prefValueAt,
   VERSION_RECORD,
   visiblePrefSubtree,
 } from './helpers';
@@ -280,8 +280,8 @@ describe('flattenPrefValues', () => {
 
 describe('paths through names every object inherits', () => {
   it('reads nothing a tree does not hold itself', () => {
-    expect(prefValueAtPath({}, 'toString')).toBeUndefined();
-    expect(prefValueAtPath({ a: {} }, 'a.constructor.name')).toBeUndefined();
+    expect(prefValueAt({}, 'toString')).toBeUndefined();
+    expect(prefValueAt({ a: {} }, 'a.constructor.name')).toBeUndefined();
     const leaf = { kind: 'boolean', name: 'On', description: '', default: true } as const;
     const schema: PrefGroup = { name: 'T', children: { constructor: leaf, valueOf: leaf } };
     expect(flattenPrefValues(schema, { valueOf: false })).toEqual([['valueOf', false]]);
@@ -289,13 +289,13 @@ describe('paths through names every object inherits', () => {
 
   it('assigns into the tree and nowhere else', () => {
     const tree: Record<string, unknown> = {};
-    assignPrefValueAtPath(tree, 'constructor.probe', 1);
-    assignPrefValueAtPath(tree, '__proto__.probe', 2);
+    assignPrefValueAt(tree, 'constructor.probe', 1);
+    assignPrefValueAt(tree, '__proto__.probe', 2);
     expect((Object as unknown as Record<string, unknown>).probe).toBeUndefined();
     expect(({} as Record<string, unknown>).probe).toBeUndefined();
     expect(Object.getPrototypeOf(tree)).toBe(Object.prototype);
-    expect(prefValueAtPath(tree, 'constructor.probe')).toBe(1);
-    expect(prefValueAtPath(tree, '__proto__.probe')).toBe(2);
+    expect(prefValueAt(tree, 'constructor.probe')).toBe(1);
+    expect(prefValueAt(tree, '__proto__.probe')).toBe(2);
   });
 
   it('nests dotted values into a tree of their own, through any key', () => {
@@ -303,9 +303,9 @@ describe('paths through names every object inherits', () => {
     expect((Object as unknown as Record<string, unknown>).probe).toBeUndefined();
     expect(({} as Record<string, unknown>).probe).toBeUndefined();
     expect(Object.getPrototypeOf(tree)).toBe(Object.prototype);
-    expect(prefValueAtPath(tree, 'a.b')).toBe(1);
-    expect(prefValueAtPath(tree, 'a.c')).toBe(2);
-    expect(prefValueAtPath(tree, '__proto__.probe')).toBe(3);
-    expect(prefValueAtPath(tree, 'constructor.prototype.probe')).toBe(4);
+    expect(prefValueAt(tree, 'a.b')).toBe(1);
+    expect(prefValueAt(tree, 'a.c')).toBe(2);
+    expect(prefValueAt(tree, '__proto__.probe')).toBe(3);
+    expect(prefValueAt(tree, 'constructor.prototype.probe')).toBe(4);
   });
 });

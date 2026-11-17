@@ -1,7 +1,7 @@
 import type { MenuEntry } from '@weasel-js/menu';
 import {
   isBuiltinPref, isPrefLeaf, isPrefSection, PREF_STATUS, prefAliasedLeaf, prefAliasTarget, prefConditionHolds, prefLeafAt,
-  prefStatusIn, prefStatusUnder, prefValueAtPath,
+  prefStatusIn, prefStatusUnder, prefValueAt,
   type PrefConditionJudge, type PrefOwner,
   type PrefAction, type PrefBoolean, type PrefColor, type PrefConditionReader, type PrefEnum, type PrefGroup,
   type PrefField, type PrefGroupAs, type PrefLeaf, type PrefList, type PrefMap, type PrefNumber, type PrefObject,
@@ -108,7 +108,7 @@ function settingsOf(
   const settings = it.action.settings!;
   const state = off ? null : readActionSettings(it.action, ctx.src.depsFor(it.action));
   const mixed = new Set(state?.mixed ?? []);
-  const values = (path: string): unknown => (mixed.has(path) ? undefined : prefValueAtPath(state?.values, path));
+  const values = (path: string): unknown => (mixed.has(path) ? undefined : prefValueAt(state?.values, path));
   const onChange = (path: string, value: unknown): void => {
     const params = actionSettingsParams(settings, path, value);
     if (params) ctx.src.trigger(it.action.id, { ...ctx.params, ...it.params, ...params });

@@ -2,7 +2,7 @@ import { adoptCss, KitSettingsProvider, styleRootOf, type KitSettingsOverrides }
 import { useLayoutEffect, useRef, useSyncExternalStore, type ReactNode } from 'react';
 import { prefsCss, prefsCssAttributes } from './css';
 import { claimAttributes, releaseAttributes } from './hostAttributes';
-import { type PrefGroup, prefValueAtPath } from '@weasel-js/prefs-schema';
+import { type PrefGroup, prefValueAt } from '@weasel-js/prefs-schema';
 import { kitSettingsCssOptions } from './kitCss';
 import type { PrefsStore } from './store';
 
@@ -31,7 +31,7 @@ export function KitSettingsFromPrefs<S extends PrefGroup>({
   children?: ReactNode;
 }): ReactNode {
   const values = useSyncExternalStore(store.subscribe, store.values, store.values);
-  const value = (at ? prefValueAtPath(values, at) : values) ?? {};
+  const value = (at ? prefValueAt(values, at) : values) ?? {};
   const anchor = useRef<HTMLSpanElement>(null);
 
   useLayoutEffect(() => {

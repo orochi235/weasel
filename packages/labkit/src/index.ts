@@ -235,9 +235,9 @@ export type { LabOver, OverAccess } from './config/over';
 export {
   fillConfigDefaults,
   hasConfigPath,
-  schemaNodeAtPath,
-  valueAtPath,
-  withValueAtPath,
+  schemaNodeAt,
+  configValueAt,
+  withConfigValueAt,
 } from './config/path';
 export { resolveConfigSchema } from './config/resolve';
 export { applyRules, builtinRules, titleCase } from './config/rules';

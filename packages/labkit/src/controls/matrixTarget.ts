@@ -1,5 +1,5 @@
 import { isPrefLeaf, type PrefAlias, type PrefAliasTargets, type PrefLeaf } from '@weasel-js/prefs';
-import { schemaNodeAtPath } from '../config/path';
+import { schemaNodeAt } from '../config/path';
 import type { ResolvedConfig } from '../config/types';
 
 /** What one cell of a `ControlMatrix` shows. */
@@ -24,7 +24,7 @@ export function matrixTargetAt(
   path: string,
   targets: PrefAliasTargets,
 ): MatrixTarget | undefined {
-  const node = schemaNodeAtPath(schema.group, path);
+  const node = schemaNodeAt(schema.group, path);
   if (!node || !isPrefLeaf(node)) return undefined;
   if (node.kind !== 'alias') return { node, leaf: node, at: path, own: true };
   const shown = targets.shown(node as PrefAlias);

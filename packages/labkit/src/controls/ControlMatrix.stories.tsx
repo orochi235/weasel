@@ -3,8 +3,8 @@ import {
   f,
   isAuto,
   resolveConfigSchema,
-  valueAtPath,
-  withValueAtPath,
+  configValueAt,
+  withConfigValueAt,
 } from '@weasel-js/labkit/config';
 import { ControlMatrix, type ControlMatrixColumn, ControlPanel } from '@weasel-js/labkit/controls';
 import { useMemo, useState } from 'react';
@@ -76,13 +76,13 @@ function useLooks() {
   for (const p of primitives) {
     for (const key of LOOK_KEYS) {
       const path = `looks.${p}.${key}`;
-      if (valueAtPath(stored, path) !== undefined) continue;
+      if (configValueAt(stored, path) !== undefined) continue;
       autoPaths.add(path);
-      shown = withValueAtPath(shown, path, valueAtPath(stored, `looks.defaults.${key}`));
+      shown = withConfigValueAt(shown, path, configValueAt(stored, `looks.defaults.${key}`));
     }
   }
   const setConfig = (path: string, value: unknown) =>
-    setStored((prev) => withValueAtPath(prev, path, isAuto(value) ? undefined : value));
+    setStored((prev) => withConfigValueAt(prev, path, isAuto(value) ? undefined : value));
   return { schema, shown, autoPaths, setConfig };
 }
 
@@ -120,7 +120,7 @@ export const BesideControlPanel: Story = {
         <ControlPanel
           title="Defaults"
           schema={resolveConfigSchema(f.schema(look()), [])}
-          config={valueAtPath(shown, 'looks.defaults') as Record<string, unknown>}
+          config={configValueAt(shown, 'looks.defaults') as Record<string, unknown>}
           setConfig={(path, value) => setConfig(`looks.defaults.${path}`, value)}
         />
         <ControlMatrix
@@ -172,7 +172,7 @@ export const PlainGrid: Story = {
             },
           ]}
           config={values}
-          setConfig={(path, value) => setValues((prev) => withValueAtPath(prev, path, value))}
+          setConfig={(path, value) => setValues((prev) => withConfigValueAt(prev, path, value))}
         />
       </div>
     );

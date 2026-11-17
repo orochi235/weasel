@@ -1,7 +1,7 @@
 import { ANGLE_RADIANS } from '@weasel-js/core';
 import type { Meta, StoryObj } from '@weasel-js/forge';
 import { DEG_TO_RAD } from '@weasel-js/geom';
-import { f, resolveConfigSchema, withValueAtPath } from '@weasel-js/labkit/config';
+import { f, resolveConfigSchema, withConfigValueAt } from '@weasel-js/labkit/config';
 import { ControlPanel, type ControlPanelProps } from '@weasel-js/labkit/controls';
 import { type PrefGroup, type PrefNumberUnit, prefUnit } from '@weasel-js/prefs';
 import { compact } from '@weasel-js/quantity';
@@ -46,7 +46,7 @@ function Harness({
       {...args}
       schema={schema}
       config={config}
-      setConfig={(path, value) => setConfig((prev) => withValueAtPath(prev, path, value))}
+      setConfig={(path, value) => setConfig((prev) => withConfigValueAt(prev, path, value))}
     />
   );
 }
@@ -86,7 +86,7 @@ function SchemaHarness({
       {...args}
       schema={schema}
       config={config}
-      setConfig={(path, value) => setConfig((prev) => withValueAtPath(prev, path, value))}
+      setConfig={(path, value) => setConfig((prev) => withConfigValueAt(prev, path, value))}
     />
   );
 }
@@ -112,7 +112,7 @@ function StopsHarness(args: Partial<ControlPanelProps<Record<string, unknown>>>)
   const [config, setConfig] = useState<Record<string, unknown>>(detents.defaults());
   const [writes, setWrites] = useState(0);
   const draft = (path: string, value: unknown) =>
-    setConfig((prev) => withValueAtPath(prev, path, value));
+    setConfig((prev) => withConfigValueAt(prev, path, value));
   return (
     <>
       <ControlPanel
@@ -194,7 +194,7 @@ export const Described: Story = {
         {...args}
         schema={schema}
         config={config}
-        setConfig={(path, value) => setConfig((prev) => withValueAtPath(prev, path, value))}
+        setConfig={(path, value) => setConfig((prev) => withConfigValueAt(prev, path, value))}
       />
     );
   },
@@ -223,7 +223,7 @@ export const Conditional: Story = {
         {...args}
         schema={schema}
         config={config}
-        setConfig={(path, value) => setConfig((prev) => withValueAtPath(prev, path, value))}
+        setConfig={(path, value) => setConfig((prev) => withConfigValueAt(prev, path, value))}
       />
     );
   },
@@ -254,7 +254,7 @@ export const EnableIf: Story = {
         {...args}
         schema={schema}
         config={config}
-        setConfig={(path, value) => setConfig((prev) => withValueAtPath(prev, path, value))}
+        setConfig={(path, value) => setConfig((prev) => withConfigValueAt(prev, path, value))}
       />
     );
   },
@@ -286,7 +286,7 @@ export const Nested: Story = {
           {...args}
           schema={schema}
           config={config}
-          setConfig={(path, value) => setConfig((prev) => withValueAtPath(prev, path, value))}
+          setConfig={(path, value) => setConfig((prev) => withConfigValueAt(prev, path, value))}
         />
         <pre>{JSON.stringify(config, null, 2)}</pre>
       </>
@@ -327,7 +327,7 @@ export const Presentation: Story = {
           {...args}
           schema={schema}
           config={config}
-          setConfig={(path, value) => setConfig((prev) => withValueAtPath(prev, path, value))}
+          setConfig={(path, value) => setConfig((prev) => withConfigValueAt(prev, path, value))}
         />
         <pre>{JSON.stringify(config, null, 2)}</pre>
       </>
@@ -371,7 +371,7 @@ export const Inline: Story = {
           {...args}
           schema={schema}
           config={config}
-          setConfig={(path, value) => setConfig((prev) => withValueAtPath(prev, path, value))}
+          setConfig={(path, value) => setConfig((prev) => withConfigValueAt(prev, path, value))}
         />
       </div>
     );
@@ -421,7 +421,7 @@ export const SidebarSliders: Story = {
           {...args}
           schema={schema}
           config={config}
-          setConfig={(path, value) => setConfig((prev) => withValueAtPath(prev, path, value))}
+          setConfig={(path, value) => setConfig((prev) => withConfigValueAt(prev, path, value))}
         />
       </div>
     );
@@ -463,7 +463,7 @@ export const AliasesIntoAnotherSchema: Story = {
           schema={schema}
           over={dialogSchema}
           config={config}
-          setConfig={(path, value) => setConfig((prev) => withValueAtPath(prev, path, value))}
+          setConfig={(path, value) => setConfig((prev) => withConfigValueAt(prev, path, value))}
         />
       </div>
     );

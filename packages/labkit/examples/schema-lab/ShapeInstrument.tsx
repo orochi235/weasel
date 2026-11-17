@@ -1,7 +1,7 @@
 import { solid, strokeOf } from '@weasel-js/paint';
 import { createScene, defaultNodeProperties } from '@weasel-js/core';
 import type { RectPose, Scene, Stroke, Fill } from '@weasel-js/core';
-import { defineInstrument, f, hasConfigPath, type RenderContext, valueAtPath, withValueAtPath } from '@weasel-js/labkit';
+import { defineInstrument, f, hasConfigPath, type RenderContext, configValueAt, withConfigValueAt } from '@weasel-js/labkit';
 import { prefSectionLeaves, type PrefSection } from '@weasel-js/prefs';
 import { useEffect, useRef } from 'react';
 import { SceneFrame } from './SceneHost';
@@ -31,7 +31,7 @@ export const START: Config = Object.entries({
   'pose.height': 180,
   'data.fill': FILL,
   'data.stroke': STROKE,
-}).reduce<Config>((config, [path, value]) => withValueAtPath(config, path, value), CONFIG.defaults());
+}).reduce<Config>((config, [path, value]) => withConfigValueAt(config, path, value), CONFIG.defaults());
 
 export function buildScene(): Scene<ShapeData, 'default', RectPose> {
   return createScene<ShapeData, 'default', RectPose>({
@@ -59,9 +59,9 @@ export function applyConfig(scene: Scene<ShapeData, 'default', RectPose>, config
   for (const [path] of prefSectionLeaves(RECT_SCHEMA.members)) {
     if (!hasConfigPath(config, path)) continue;
     const [root, ...rest] = path.split('.');
-    const value = valueAtPath(config, path);
-    if (root === 'pose') pose = withValueAtPath(pose, rest.join('.'), value);
-    else if (root === 'data') data = withValueAtPath(data, rest.join('.'), value);
+    const value = configValueAt(config, path);
+    if (root === 'pose') pose = withConfigValueAt(pose, rest.join('.'), value);
+    else if (root === 'data') data = withConfigValueAt(data, rest.join('.'), value);
   }
   scene.setPose(id, pose as unknown as RectPose);
   scene.update(id, { data: data as unknown as ShapeData });

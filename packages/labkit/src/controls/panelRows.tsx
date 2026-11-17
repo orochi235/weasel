@@ -22,7 +22,7 @@ import {
 } from '@weasel-js/ui/components/Properties';
 import { Fragment, type ReactNode } from 'react';
 import { drawsOwn } from '../config/drawsOwn';
-import { schemaNodeAtPath, valueAtPath } from '../config/path';
+import { schemaNodeAt, configValueAt } from '../config/path';
 import type { LeafRenderer, ResolvedConfig } from '../config/types';
 import { isLeafActive, isLeafEnabled, isLeafVisible } from '../config/visible';
 import { boundAction } from './boundAction';
@@ -126,7 +126,7 @@ export function panelRows<TC extends Record<string, unknown>>(source: PanelRowsS
 
   /** One node, which is either a group to recurse into or a row to draw. */
   const node = (path: string, rows: Rows): ReactNode => {
-    const found = schemaNodeAtPath(resolved.group, path);
+    const found = schemaNodeAt(resolved.group, path);
     if (!found) return null;
     if (!drawsAny(path)) return null;
     if (isPrefLeaf(found)) {
@@ -162,7 +162,7 @@ export function panelRows<TC extends Record<string, unknown>>(source: PanelRowsS
           enabled={enabled}
           active={active}
           value={(p, leaf) => leafValueAt(shown, p, leaf)}
-          read={(p) => valueAtPath(shown, p)}
+          read={(p) => configValueAt(shown, p)}
           write={setConfig}
           bind={(leaf) => boundAction(leaf, config as Record<string, unknown>, setConfig)}
           draft={draftConfig}
@@ -222,14 +222,14 @@ export function panelRows<TC extends Record<string, unknown>>(source: PanelRowsS
     const runs = pairRuns(paths, pairable);
     // A run of groups drawn as tabs shares one strip. A group is never paired, so each is a run of its own.
     const tabGroup = ({ items: [only], pair }: (typeof runs)[number]): boolean => {
-      const found = pair || only === undefined ? undefined : schemaNodeAtPath(resolved.group, only);
+      const found = pair || only === undefined ? undefined : schemaNodeAt(resolved.group, only);
       return found !== undefined && !isPrefLeaf(found) && found.as === 'tab';
     };
     const out: ReactNode[] = [];
     for (const step of prefTabRuns(runs, tabGroup, ({ items }) => items.some(drawsAny))) {
       if (step.tabs) {
         const tabs = step.tabs.flatMap((run) => run.items);
-        const group = (path: string) => schemaNodeAtPath(resolved.group, path) as PrefGroup;
+        const group = (path: string) => schemaNodeAt(resolved.group, path) as PrefGroup;
         const content = (found: PrefGroup, path: string) => listOf(rows, body(found, path, rows));
         out.push(controlTabs(step.tabs[0]?.items[0], tabs, { group, enabled, content }));
         continue;
@@ -241,7 +241,7 @@ export function panelRows<TC extends Record<string, unknown>>(source: PanelRowsS
       }
       const cells = items.map((path) => ({
         path,
-        leaf: schemaNodeAtPath(resolved.group, path) as PrefLeaf,
+        leaf: schemaNodeAt(resolved.group, path) as PrefLeaf,
         disabled: !enabled(path),
       }));
       out.push(

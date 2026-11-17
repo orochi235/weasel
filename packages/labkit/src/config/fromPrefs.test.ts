@@ -2,7 +2,7 @@ import type { PrefGroup, PrefLeaf, PrefSection } from '@weasel-js/prefs';
 import { describe, expect, it } from 'vitest';
 import { autoQuotes } from './autoConfig';
 import { f } from './builder';
-import { schemaNodeAtPath } from './path';
+import { schemaNodeAt } from './path';
 import { resolveConfigSchema } from './resolve';
 import { prefsFromConfig } from './toPrefs';
 import { isLeafEnabled, isLeafVisible } from './visible';
@@ -35,7 +35,7 @@ describe('f.prefs', () => {
       members: { a: num('A', { auto: { on: true } }), b: num('B') },
     });
     const resolved = resolveConfigSchema(config, []);
-    const leaf = (path: string) => schemaNodeAtPath(resolved.group, path) as PrefLeaf;
+    const leaf = (path: string) => schemaNodeAt(resolved.group, path) as PrefLeaf;
     expect(leaf('a').auto).toEqual({ on: true });
     expect('auto' in leaf('b')).toBe(false);
   });
@@ -43,7 +43,7 @@ describe('f.prefs', () => {
   it("keeps a leaf's .quote() through a round trip to a prefs schema", () => {
     const once = resolveConfigSchema(f.schema({ count: f.number(3).quote() }), []);
     const back = resolveConfigSchema(f.prefs(prefsFromConfig(once)), []);
-    expect(autoQuotes(schemaNodeAtPath(back.group, 'count') as PrefLeaf)).toBe(true);
+    expect(autoQuotes(schemaNodeAt(back.group, 'count') as PrefLeaf)).toBe(true);
   });
 
   it('nests each leaf at the path its key names, as the config holds it', () => {
@@ -53,19 +53,19 @@ describe('f.prefs', () => {
       pose: { x: 4, y: 0 },
     });
     const resolved = resolveConfigSchema(config, []);
-    expect(schemaNodeAtPath(resolved.group, 'pose.x')).toMatchObject({
+    expect(schemaNodeAt(resolved.group, 'pose.x')).toMatchObject({
       kind: 'number',
       name: 'X',
       default: 4,
       pair: { with: 'pose.y' },
     });
-    expect(schemaNodeAtPath(resolved.group, 'data.title')).toMatchObject({ kind: 'field' });
+    expect(schemaNodeAt(resolved.group, 'data.title')).toMatchObject({ kind: 'field' });
   });
 
   it('draws no heading for a segment of a path, which no group of the schema named', () => {
     const resolved = resolveConfigSchema(f.prefs(SCHEMA), []);
-    expect((schemaNodeAtPath(resolved.group, 'pose') as PrefGroup).name).toBe('');
-    expect((schemaNodeAtPath(resolved.group, 'data.stroke') as PrefGroup).name).toBe('');
+    expect((schemaNodeAt(resolved.group, 'pose') as PrefGroup).name).toBe('');
+    expect((schemaNodeAt(resolved.group, 'data.stroke') as PrefGroup).name).toBe('');
   });
 
   it('keeps a named section as a heading over its leaves, and an unnamed one as none', () => {
@@ -152,7 +152,7 @@ describe('f.prefs', () => {
         expect(isLeafEnabled(resolved, path, config('a', true))).toBe(true);
         expect(isLeafEnabled(resolved, path, config('a', false))).toBe(false);
       }
-      expect(schemaNodeAtPath(resolved.group, 'data.stroke.width')).toMatchObject({
+      expect(schemaNodeAt(resolved.group, 'data.stroke.width')).toMatchObject({
         enableIf: { all: [{ path: 'data.stroke.on' }, { path: 'data.stroke.width', above: -1 }] },
       });
     });

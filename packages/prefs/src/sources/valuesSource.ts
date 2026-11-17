@@ -1,6 +1,6 @@
 import { getOwn } from '@weasel-js/registry';
 import { AUTO, prefCanAuto, type LeafReading } from '../autoReset';
-import { type PrefGroup, type PrefSection, prefLeafAt, prefValueAtPath, prefLeafValue, type PrefLeaf } from '@weasel-js/prefs-schema';
+import { type PrefGroup, type PrefSection, prefLeafAt, prefValueAt, prefLeafValue, type PrefLeaf } from '@weasel-js/prefs-schema';
 import { sourceResetPlan, writePlan } from './policy';
 import { LEAF_FREE, type LeafState, type PrefsSource } from './prefsSource';
 
@@ -24,7 +24,7 @@ export interface ValuesSourceOptions {
 
 const parentOf = (values: unknown, path: string): Record<string, unknown> | undefined => {
   const dot = path.lastIndexOf('.');
-  const parent = dot === -1 ? values : prefValueAtPath(values, path.slice(0, dot));
+  const parent = dot === -1 ? values : prefValueAt(values, path.slice(0, dot));
   return typeof parent === 'object' && parent !== null ? (parent as Record<string, unknown>) : undefined;
 };
 
@@ -53,7 +53,7 @@ export function createValuesSource(
     schema,
     valueAt: (path): LeafReading => {
       const leaf = leafAt(path);
-      const stored = prefValueAtPath(get(), path);
+      const stored = prefValueAt(get(), path);
       const unpinned = autoAt(path);
       const at = unpinned === undefined ? {} : { auto: unpinned };
       if (mixed?.has(path)) return { value: undefined, mixed: true, each: [], ...at };
@@ -63,7 +63,7 @@ export function createValuesSource(
     write,
     update: (path, fn) => {
       const values = get();
-      write(path, fn(prefValueAtPath(values, path), parentOf(values, path)));
+      write(path, fn(prefValueAt(values, path), parentOf(values, path)));
     },
     autoAt,
     setAuto: (path, next) => {

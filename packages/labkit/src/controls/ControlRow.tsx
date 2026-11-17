@@ -33,7 +33,7 @@ import {
 } from '@weasel-js/ui/components/Properties';
 import type { ReactNode } from 'react';
 import { drawsOwn, entryAt } from '../config/drawsOwn';
-import { valueAtPath, withValueAtPath } from '../config/path';
+import { configValueAt, withConfigValueAt } from '../config/path';
 import type { LeafRenderer, ResolvedConfig } from '../config/types';
 import { aliasTargetsOf, conditionedLeaf, isLeafActive } from '../config/visible';
 import { boundAction } from './boundAction';
@@ -208,7 +208,7 @@ function CompoundRow({
         <CompoundControl
           {...control}
           // A condition inside the leaf reads the value being edited, not the one stored.
-          config={withValueAtPath(control.config, control.path, draft)}
+          config={withConfigValueAt(control.config, control.path, draft)}
           value={draft}
           onChange={setDraft}
         />
@@ -376,7 +376,7 @@ function LeafRow<TC extends Record<string, unknown>>({
       </RowScope>
     );
 
-  const read = (p: string): unknown => valueAtPath(shown, p);
+  const read = (p: string): unknown => configValueAt(shown, p);
   const field = labField(leaf, value, write, choices, disabled, draft, read, settles, textWaitMs);
   if (field === null)
     return <UnwiredRow label={label} kind={leaf.kind} description={description} />;

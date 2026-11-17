@@ -10,7 +10,7 @@ import {
 import { Focusable, Tooltip, TooltipTrigger } from '@weasel-js/ui/components/Tooltip';
 import { useOverlayPortal } from '@weasel-js/ui/portal-host';
 import { type ReactElement, type ReactNode, useRef, useState } from 'react';
-import { valueAtPath } from '../config/path';
+import { configValueAt } from '../config/path';
 import type { ResolvedConfig } from '../config/types';
 import { aliasTargetsOf, isLeafEnabled, isLeafVisible } from '../config/visible';
 import { FieldChoicesContext, useFieldChoicesOf } from './fieldChoices';
@@ -203,7 +203,7 @@ export function ControlMatrix({
                     key={column.key}
                     cell={cell}
                     shown={visible(path)}
-                    value={cell && valueAtPath(config, cell.at)}
+                    value={cell && configValueAt(config, cell.at)}
                     name={`${nameOf(column)} ${label}`}
                     absent={`${nameOf(column)} has no ${label}`}
                     inherited={inherited}

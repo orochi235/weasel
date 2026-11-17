@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { PrefSection } from './groups';
-import { prefValueAtPath } from './helpers';
+import { prefValueAt } from './helpers';
 import type { PrefLeaf } from './schema';
 import { applyPrefConditions, applyPrefEntryConditions, prefJudge, prefSectionPath } from './status';
 
@@ -8,7 +8,7 @@ const bool = (name: string, extra: Partial<PrefLeaf> = {}): PrefLeaf =>
   ({ kind: 'boolean', name, description: '', default: false, ...extra }) as PrefLeaf;
 const num = (name: string): PrefLeaf => ({ kind: 'number', name, description: '', default: 0 }) as PrefLeaf;
 
-const over = (values: unknown) => prefJudge({ name: '', children: {} }, (path) => prefValueAtPath(values, path));
+const over = (values: unknown) => prefJudge({ name: '', children: {} }, (path) => prefValueAt(values, path));
 
 describe('a section its enableIf turns off', () => {
   const schema: PrefSection = {

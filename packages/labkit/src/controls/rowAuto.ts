@@ -9,7 +9,7 @@ import {
 import { PropertyAutoReadout } from '@weasel-js/ui/components/Properties';
 import { createElement, type ReactNode, useMemo } from 'react';
 import { autoQuotes, autoResolverOf, resolveAutoConfig } from '../config/autoConfig';
-import { valueAtPath } from '../config/path';
+import { configValueAt } from '../config/path';
 import type { ResolvedConfig } from '../config/types';
 import { leafValueAt } from './fields';
 import { numberText, summarizeLeaf, summarizeValue } from './inDialog';
@@ -48,10 +48,10 @@ function useUnpinned(
 ): { value?: unknown; cycles?: true } {
   return useMemo(() => {
     if (!resolves) return {};
-    if (isAutoRow) return { value: valueAtPath(shown, path) };
+    if (isAutoRow) return { value: configValueAt(shown, path) };
     try {
       return {
-        value: valueAtPath(
+        value: configValueAt(
           resolveAutoConfig(resolved, config, new Set([...(auto ?? []), path])),
           path,
         ),
@@ -76,7 +76,7 @@ export function useRowAuto(source: RowAutoSource) {
   // Read out of the resolved config rather than re-running this leaf's own
   // resolver, so the row reports the value the instrument actually got — the
   // two diverge as soon as a resolver reads another auto path.
-  const resolvedValue = isAutoRow ? valueAtPath(shown, path) : undefined;
+  const resolvedValue = isAutoRow ? configValueAt(shown, path) : undefined;
   // An auto row's control stays live, so it draws the value in effect (`prefAutoValue`: the report or the
   // resolver's, else `auto.value`), never the stale pinned value underneath. Pinning keeps it. With none yet,
   // the control has to draw something, and draws what a field holding nothing draws.
