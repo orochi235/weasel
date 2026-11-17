@@ -47,7 +47,7 @@ function sceneOf() {
 function panel(selected?: readonly string[], onSelect?: (path: string, how: PrefSelectHow) => void) {
   const scene = sceneOf();
   const view = (now?: readonly string[]) => (
-    <SelectionPanel scene={scene} selection={selection} properties={properties} routing={routing} selected={now} onSelect={onSelect} />
+    <SelectionPanel scene={scene} selection={selection} properties={properties} routing={routing} marked={now} onMark={onSelect} />
   );
   const { container, rerender } = render(view(selected));
   return {

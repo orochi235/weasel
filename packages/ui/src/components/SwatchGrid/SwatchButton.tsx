@@ -37,28 +37,28 @@ export function swatchMarks(options: readonly SwatchGridOption[], value: SwatchV
 }
 
 /** What a palette is told when a swatch applies: the swatch's id (its color unless it names one), and the swatch. */
-export type SwatchChange = (id: string | null, option: SwatchGridOption) => void;
+export type SwatchSelect = (id: string | null, option: SwatchGridOption) => void;
 
 /** What a palette does with a swatch: apply it to either target, recording its color as recent. */
 export interface SwatchApply {
-  onChange: (option: SwatchGridOption) => void;
-  onAltChange: ((option: SwatchGridOption) => void) | undefined;
+  onSelect: (option: SwatchGridOption) => void;
+  onAltSelect: ((option: SwatchGridOption) => void) | undefined;
 }
 
-/** Applies that call `onChange` or `onAltChange` with the swatch's id and record its color into the nearest recent
+/** Applies that call `onSelect` or `onAltSelect` with the swatch's id and record its color into the nearest recent
  *  colors. */
-export function useSwatchApply(onChange: SwatchChange, onAltChange?: SwatchChange): SwatchApply {
+export function useSwatchApply(onSelect: SwatchSelect, onAltSelect?: SwatchSelect): SwatchApply {
   const record = useRecordRecentColor();
-  const recorded = (to: SwatchChange) => (o: SwatchGridOption): void => {
+  const recorded = (to: SwatchSelect) => (o: SwatchGridOption): void => {
     to(swatchId(o), o);
     if (o.value !== null) record(o.value);
   };
-  return { onChange: recorded(onChange), onAltChange: onAltChange && recorded(onAltChange) };
+  return { onSelect: recorded(onSelect), onAltSelect: onAltSelect && recorded(onAltSelect) };
 }
 
 /** `apply`, or, held, applies that apply nothing. */
 export function heldApply(apply: SwatchApply, hold: ControlHold): SwatchApply {
-  return { onChange: hold.gate(apply.onChange), onAltChange: hold.gate(apply.onAltChange) };
+  return { onSelect: hold.gate(apply.onSelect), onAltSelect: hold.gate(apply.onAltSelect) };
 }
 
 const GRID_KEYS = new Set(['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown', 'Home', 'End']);
@@ -70,9 +70,9 @@ export const swatchesIn = (root: Element | null): HTMLElement[] => [...(root?.qu
 export function swatchKeyDown(i: number, options: readonly SwatchGridOption[], columns: number, apply: SwatchApply, swatches: () => HTMLElement[], lastRow: LastRow = 'start') {
   return (e: KeyboardEvent<HTMLButtonElement>): void => {
     if (e.key === 'Enter') {
-      if (e.shiftKey && apply.onAltChange) {
+      if (e.shiftKey && apply.onAltSelect) {
         e.preventDefault();
-        if (!options[i]!.disabled) apply.onAltChange(options[i]!);
+        if (!options[i]!.disabled) apply.onAltSelect(options[i]!);
       }
       return;
     }
@@ -150,12 +150,12 @@ export function SwatchButton(
       style={paint}
       onClick={composeHandler(onClick, (e) => {
         if (off) return;
-        if (e.shiftKey && apply.onAltChange) apply.onAltChange(o);
-        else apply.onChange(o);
+        if (e.shiftKey && apply.onAltSelect) apply.onAltSelect(o);
+        else apply.onSelect(o);
       })}
       onContextMenu={composeHandler(
         onContextMenu,
-        apply.onAltChange ? (e) => { e.preventDefault(); if (!off) apply.onAltChange?.(o); } : undefined,
+        apply.onAltSelect ? (e) => { e.preventDefault(); if (!off) apply.onAltSelect?.(o); } : undefined,
       )}
     >
       {o.glyph != null && <span className={s.glyph} aria-hidden="true">{o.glyph}</span>}

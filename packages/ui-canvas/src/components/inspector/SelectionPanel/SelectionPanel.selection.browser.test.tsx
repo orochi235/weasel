@@ -19,7 +19,7 @@ const properties: NodePropertiesEntry[] = [
 test('a selected row is outlined, and no other', () => {
   const scene = createScene<unknown, 'default', unknown>({ composition: IDENTITY_POSE_COMPOSITION, systemLayers: [{ id: 'default' }] });
   scene.add({ id: asNodeId('n'), kind: 'mark', layer: 'default', pose: {}, data: {} });
-  render(<SelectionPanel scene={scene} selection={{ current: [asNodeId('n')] }} properties={properties} routing={routing} selected={['data.tint']} />);
+  render(<SelectionPanel scene={scene} selection={{ current: [asNodeId('n')] }} properties={properties} routing={routing} marked={['data.tint']} />);
   const outlined = (name: string): boolean => getComputedStyle(screen.getByText(name).closest('[data-pref-path]')!).outlineStyle === 'solid';
   expect([outlined('Name'), outlined('Tint')]).toEqual([false, true]);
 });
@@ -42,7 +42,7 @@ function sectioned(selected: readonly string[], onSelect?: (path: string) => voi
   scene.add({ id: asNodeId('n'), kind: 'mark', layer: 'default', pose: {}, data: {} });
   render(
     <SelectionPanel scene={scene} selection={{ current: [asNodeId('n')] }} properties={[{ name: 'thing', schema: SECTIONED }]}
-      routing={routing} selected={selected} onSelect={onSelect} />,
+      routing={routing} marked={selected} onMark={onSelect} />,
   );
 }
 

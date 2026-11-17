@@ -6,7 +6,7 @@ import {
 import type { HoldProps } from '../Disabled';
 import { useRacHold } from '../Disabled/racHold';
 import { useFieldControl } from '../Field/fieldSemantics';
-import { heldOf, type ToggleHeld } from '../toggleHeld';
+import { modifiersOf, type ToggleModifiers } from '../toggleModifiers';
 import s from './Switch.module.css';
 
 /**
@@ -16,7 +16,7 @@ import s from './Switch.module.css';
 export type SwitchProps = Omit<RACSwitchProps, 'children' | 'className' | 'isDisabled' | 'isReadOnly' | 'onChange'> & HoldProps & {
   children?: ReactNode;
   /** Called with the new state and the keys held as it changed, so a list of switches can solo on Alt. */
-  onChange?: (isSelected: boolean, held: ToggleHeld) => void;
+  onChange?: (isSelected: boolean, modifiers: ToggleModifiers) => void;
   className?: string;
   /** Receives the `<label>` the switch is drawn in. `ref` reaches the `<input>`. */
   rootRef?: Ref<HTMLLabelElement>;
@@ -38,7 +38,7 @@ export const Switch = forwardRef(function Switch(
 ) {
   const { rest: { children, className, rootRef, onChange, onClickCapture, ...rest }, rac, wrap } = useRacHold(props);
   // React Aria reports the new state alone; the click that changes it passes the label first, carrying its keys.
-  const held = useRef<ToggleHeld>(heldOf(undefined));
+  const mods = useRef<ToggleModifiers>(modifiersOf(undefined));
   // A switch has no invalid state to show, so the field's error only describes it.
   const { 'aria-invalid': _invalid, ...field } = useFieldControl({ ...rest, 'aria-describedby': rac['aria-describedby'], labeled: children !== undefined });
   return wrap(
@@ -49,12 +49,12 @@ export const Switch = forwardRef(function Switch(
       ref={rootRef}
       inputRef={ref}
       onClickCapture={(e) => {
-        held.current = heldOf(e);
+        mods.current = modifiersOf(e);
         onClickCapture?.(e);
       }}
       onChange={(on) => {
-        onChange?.(on, held.current);
-        held.current = heldOf(undefined);
+        onChange?.(on, mods.current);
+        mods.current = modifiersOf(undefined);
       }}
       className={[s.switch, className].filter(Boolean).join(' ')}
     >

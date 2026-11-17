@@ -224,7 +224,7 @@ export function CommandPalette({ open, onOpenChange, reasonLabels }: CommandPale
       <Dialog
         open={open}
         onOpenChange={onOpenChange}
-        isDismissable
+        dismissable
         title="Commands"
         showCloseButton={false}
         className={styles.palette}

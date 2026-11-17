@@ -89,8 +89,8 @@ export function MeasureReadout({ scene, measurements: ms, className }: MeasureRe
               description={items[i]!.description}
               grade={items[i]!.grade}
               labeled
-              disabled={!state.enabled}
-              {...(state.reason !== undefined ? { disabledReason: reasonLabel(state.reason) } : {})}
+              disabled={state.disabled}
+              {...(state.disabledReason !== undefined ? { disabledReason: reasonLabel(state.disabledReason) } : {})}
               onPress={() => trigger(cmd)}
             />
           );

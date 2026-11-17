@@ -59,7 +59,7 @@ describe('HeldClock', () => {
 describe('ClockFrames', () => {
   it('shows each frame of a looping pass under a clock held at its time', () => {
     render(
-      <ClockFrames label="Spin" spec={{ duration: 400, loop: true }} every={100}>
+      <ClockFrames aria-label="Spin" spec={{ duration: 400, loop: true }} every={100}>
         <Readout />
       </ClockFrames>,
     );

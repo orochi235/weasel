@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { spanShare, spanPercent, spanPlace, toPercent, windowScale } from './timeScale';
+import { spanShare, spanPercent, spanFraction, toPercent, windowScale } from './timeScale';
 
 describe('windowScale', () => {
   it('maps the window ends to the track ends', () => {
@@ -71,13 +71,13 @@ describe('width-free positioning', () => {
   const win = { from: 200, to: 1200 };
 
   it('places a time at its fraction of the window', () => {
-    expect(spanPlace(win, 700)).toBeCloseTo(0.5, 9);
+    expect(spanFraction(win, 700)).toBeCloseTo(0.5, 9);
     expect(toPercent(win, 700)).toBe('50%');
   });
 
   it('runs negative before the window and past 1 after it', () => {
-    expect(spanPlace(win, 100)).toBeCloseTo(-0.1, 9);
-    expect(spanPlace(win, 1700)).toBeCloseTo(1.5, 9);
+    expect(spanFraction(win, 100)).toBeCloseTo(-0.1, 9);
+    expect(spanFraction(win, 1700)).toBeCloseTo(1.5, 9);
   });
 
   it('measures a duration without subtracting the window origin', () => {
@@ -87,8 +87,8 @@ describe('width-free positioning', () => {
 
   it('collapses to zero rather than dividing by a zero span', () => {
     const degenerate = { from: 5, to: 5 };
-    expect(spanPlace(degenerate, 5)).toBe(0);
-    expect(spanPlace(degenerate, 99)).toBe(0);
+    expect(spanFraction(degenerate, 5)).toBe(0);
+    expect(spanFraction(degenerate, 99)).toBe(0);
     expect(spanShare(degenerate, 99)).toBe(0);
     expect(toPercent(degenerate, 99)).toBe('0%');
   });
@@ -96,7 +96,7 @@ describe('width-free positioning', () => {
   it('agrees with windowScale once a width is known', () => {
     const scale = windowScale(win, 400);
     for (const ms of [200, 450, 700, 1200]) {
-      expect(spanPlace(win, ms) * 400).toBeCloseTo(scale.map(ms), 9);
+      expect(spanFraction(win, ms) * 400).toBeCloseTo(scale.map(ms), 9);
     }
   });
 });

@@ -1,12 +1,12 @@
 /**
- * Property tests of `domFocusScope` over random subtrees of buttons, links, inputs, radio groups, and `tabindex`
+ * Property tests of `createDomFocusScope` over random subtrees of buttons, links, inputs, radio groups, and `tabindex`
  * divs, some disabled, some under `hidden`, `inert`, or a closed `<details>`: its tab order is a model's, Tab walks
  * that order from either end and then lets focus go, and focus never lands outside the scope.
  */
 import { afterEach, describe, expect, it } from 'vitest';
 import fc from 'fast-check';
 import { runs, tally, timeoutFor } from './pbt.fixture';
-import { domFocusScope } from './domFocusScope';
+import { createDomFocusScope } from './createDomFocusScope';
 
 const RUNS = 150;
 
@@ -131,14 +131,14 @@ function mount(nodes: readonly Node_[]) {
 
 afterEach(() => { document.body.replaceChildren(); });
 
-describe('domFocusScope', () => {
+describe('createDomFocusScope', () => {
   it('orders Tab as the model does', () => {
     const t = tally();
     fc.assert(fc.property(roomy, (nodes) => {
       document.body.replaceChildren();
       const { root, built } = mount(nodes);
       const want = modelOrder(built);
-      expect(domFocusScope(root).tabOrder()).toEqual(want);
+      expect(createDomFocusScope(root).tabOrder()).toEqual(want);
       if (want.length >= 3) t.count('several');
       if (built.some((b) => b.radio) && want.some((e) => (e as HTMLInputElement).type === 'radio')) t.count('radio');
       if (built.some((b) => !b.tabbable && b.el.tagName !== 'INPUT')) t.count('skipped');
@@ -152,7 +152,7 @@ describe('domFocusScope', () => {
     fc.assert(fc.property(roomy, fc.constantFrom<'next' | 'prev'>('next', 'prev'), (nodes, dir) => {
       document.body.replaceChildren();
       const { root, outside } = mount(nodes);
-      const scope = domFocusScope(root);
+      const scope = createDomFocusScope(root);
       const order = scope.tabOrder();
       const walk = dir === 'next' ? order : [...order].reverse();
       for (const want of walk) {
@@ -180,7 +180,7 @@ describe('domFocusScope', () => {
       document.body.replaceChildren();
       const { root } = mount(nodes);
       for (const el of root.querySelectorAll<HTMLElement>('[tabindex]')) if (el.tabIndex > 0) el.tabIndex = 0;
-      const scope = domFocusScope(root);
+      const scope = createDomFocusScope(root);
       const before = scope.tabOrder();
       if (before.length < 2) return;
       const gone = before[pick % before.length]!;

@@ -12,8 +12,8 @@ export interface FillStrokeSwatchProps extends OverlayPortalProps {
   stroke: Paint | null | undefined;
   /** The slot that edits aimed at "the current paint" land on — the None
    *  button, a palette click, a keyboard shortcut the app binds. */
-  focused: PaintSlot;
-  onFocusChange: (slot: PaintSlot) => void;
+  target: PaintSlot;
+  onTargetChange: (slot: PaintSlot) => void;
   /** Every tick of an edit in a chip's paint editor. `null` is no paint. */
   onInput?: (slot: PaintSlot, paint: Paint | null) => void;
   /** Once per edit in a chip's paint editor. Return the paint actually
@@ -21,7 +21,7 @@ export interface FillStrokeSwatchProps extends OverlayPortalProps {
    *  its color instead. */
   onChange: (slot: PaintSlot, paint: Paint | null) => Paint | null | void;
   /** Toggle a slot between no paint and a paint. Given, it adds the None
-   *  button (acting on `focused`) and shift-click on a chip. */
+   *  button (acting on `target`) and shift-click on a chip. */
   onToggleNone?: (slot: PaintSlot) => void;
   /** Given, adds a Swap button that exchanges the two paints. */
   onSwap?: () => void;
@@ -38,14 +38,14 @@ const SLOT_LABEL: Record<PaintSlot, string> = { fill: 'Fill', stroke: 'Stroke' }
 function Chip(props: {
   slot: PaintSlot;
   paint: Paint | null | undefined;
-  focused: boolean;
+  targeted: boolean;
   portalContainer?: Element | null;
-  onFocusChange: (slot: PaintSlot) => void;
+  onTargetChange: (slot: PaintSlot) => void;
   onInput?: (slot: PaintSlot, paint: Paint | null) => void;
   onChange: (slot: PaintSlot, paint: Paint | null) => Paint | null | void;
   onToggleNone?: (slot: PaintSlot) => void;
 }): ReactElement {
-  const { slot, paint, focused } = props;
+  const { slot, paint, targeted } = props;
   const trigger = useRef<HTMLButtonElement>(null);
   const [open, setOpen] = useState(false);
   const { anchor, provide, ready } = useOverlayPortal(props.portalContainer);
@@ -56,7 +56,7 @@ function Chip(props: {
     <span
       className={s.chip}
       data-slot={slot}
-      {...(focused ? { 'data-focused': '' } : {})}
+      {...(targeted ? { 'data-target': '' } : {})}
       {...(none ? { 'data-none': '' } : {})}
     >
       {anchor}
@@ -68,12 +68,12 @@ function Chip(props: {
         type="button"
         className={s.trigger}
         aria-label={SLOT_LABEL[slot]}
-        aria-current={focused ? 'true' : undefined}
+        aria-current={targeted ? 'true' : undefined}
         aria-haspopup="dialog"
         aria-expanded={open}
-        onFocus={() => props.onFocusChange(slot)}
+        onFocus={() => props.onTargetChange(slot)}
         onClick={(e) => {
-          props.onFocusChange(slot);
+          props.onTargetChange(slot);
           // Shift-click is the none toggle, and leaves the editor shut.
           if (e.shiftKey && props.onToggleNone) {
             props.onToggleNone(slot);
@@ -101,21 +101,21 @@ function Chip(props: {
  * The active fill and stroke as one overlapping pair, the way drawing apps
  * show the paint the next shape gets: fill a solid square behind, stroke a
  * frame in front of it. Each chip opens the whole paint editor, so a gradient
- * or a pattern is edited as itself; the focused chip is what the None button —
+ * or a pattern is edited as itself; the target chip is what the None button —
  * and whatever the app binds — acts on.
  *
- * Holds no state of its own: the paints and the focused slot are props, and
+ * Holds no state of its own: the paints and the target slot are props, and
  * the chips report each `Paint` through `onInput`/`onChange` for the app to route —
  * into its own active-paint state, into the selection through
  * `useOngoingAction`, or both.
  */
 export function FillStrokeSwatch(props: FillStrokeSwatchProps): ReactElement {
   const {
-    fill, stroke, focused, onFocusChange, onInput, onChange,
+    fill, stroke, target, onTargetChange, onInput, onChange,
     onToggleNone, onSwap, onReset, shortcuts, className, portalContainer,
   } = props;
-  const focusedPaint = focused === 'fill' ? fill : stroke;
-  const chip = { onFocusChange, onInput, onChange, onToggleNone, portalContainer };
+  const targetPaint = target === 'fill' ? fill : stroke;
+  const chip = { onTargetChange, onInput, onChange, onToggleNone, portalContainer };
   const anyButton = onToggleNone || onSwap || onReset;
 
   return (
@@ -125,8 +125,8 @@ export function FillStrokeSwatch(props: FillStrokeSwatchProps): ReactElement {
       aria-label={props['aria-label'] ?? 'Fill and stroke'}
     >
       <div className={s.pair}>
-        <Chip slot="fill" paint={fill} focused={focused === 'fill'} {...chip} />
-        <Chip slot="stroke" paint={stroke} focused={focused === 'stroke'} {...chip} />
+        <Chip slot="fill" paint={fill} targeted={target === 'fill'} {...chip} />
+        <Chip slot="stroke" paint={stroke} targeted={target === 'stroke'} {...chip} />
       </div>
       {anyButton && (
         <div className={s.buttons}>
@@ -134,8 +134,8 @@ export function FillStrokeSwatch(props: FillStrokeSwatchProps): ReactElement {
             <Button
               variant="ghost"
               size="sm"
-              pressed={focusedPaint === null}
-              onClick={() => onToggleNone(focused)}
+              pressed={targetPaint === null}
+              onClick={() => onToggleNone(target)}
               shortcut={shortcuts?.none}
             >
               None

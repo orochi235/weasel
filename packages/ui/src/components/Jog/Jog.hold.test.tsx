@@ -7,9 +7,9 @@ import { Jog } from './Jog';
 // is a slider, held as one.
 describeHold('Jog', (mount, own) => {
   const onStep = vi.fn();
-  const onPlay = vi.fn();
+  const onPlayingChange = vi.fn();
   const onScrub = vi.fn();
-  mount(<Jog index={2} count={24} playing={false} onStep={onStep} onPlay={onPlay} onScrub={onScrub} {...own} />);
+  mount(<Jog index={2} count={24} playing={false} onStep={onStep} onPlayingChange={onPlayingChange} onScrub={onScrub} {...own} />);
   const buttons = () => screen.getAllByRole('button');
   const scrubber = () => screen.getByRole('slider');
   return {
@@ -19,6 +19,6 @@ describeHold('Jog', (mount, own) => {
       for (const b of buttons()) unlessDisabled(b, (el) => fireEvent.click(el));
       fireEvent.keyDown(scrubber(), { key: 'ArrowRight' });
     },
-    changed: () => onStep.mock.calls.length + onPlay.mock.calls.length + onScrub.mock.calls.length > 0,
+    changed: () => onStep.mock.calls.length + onPlayingChange.mock.calls.length + onScrub.mock.calls.length > 0,
   };
 }, { ariaHeld: false });

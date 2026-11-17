@@ -13,7 +13,7 @@ import type { HoldProps } from '../Disabled';
 export type ThumbRenderCtx = {
   width: number;
   height: number;
-  isActive: boolean;
+  active: boolean;
 };
 
 /**

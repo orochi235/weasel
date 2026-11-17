@@ -33,7 +33,7 @@ export const Selectable: Story = {
         <ItemList {...args}
           selectionMode="single"
           containerProps={{ 'aria-label': 'History' }}
-          onActivate={setCurrent}
+          onAction={setCurrent}
           rows={['Initial', 'Draw rect', 'Fill', 'Move'].map((label, i) => ({
             id: String.fromCharCode(97 + i),
             label,
@@ -84,7 +84,7 @@ export const Reorder: Story = {
           ref={drag.containerProps.ref}
           selectionMode="multiple"
           containerProps={{ 'aria-label': 'Layers' }}
-          onActivate={(id, _i, mods) => press(id, mods)}
+          onAction={(id, _i, mods) => press(id, mods)}
           onSelectRange={setSelected}
           onNudge={drag.nudge}
           dropIndex={drag.state.targetIndex}
@@ -116,7 +116,7 @@ export const WithControls: Story = {
         <ItemList {...args}
           selectionMode="single"
           containerProps={{ 'aria-label': 'Layers' }}
-          onActivate={setSelected}
+          onAction={setSelected}
           rows={['Background', 'Sketch', 'Ink'].map((label, i) => {
             const id = String.fromCharCode(97 + i);
             return {

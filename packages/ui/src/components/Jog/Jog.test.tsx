@@ -10,7 +10,7 @@ const props = {
   index: 2,
   count: 24,
   playing: false,
-  onPlay: () => {},
+  onPlayingChange: () => {},
   onStep: () => {},
 };
 

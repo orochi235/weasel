@@ -17,7 +17,7 @@ const DEFAULTS = { fill: solid('#ffffffff'), stroke: solid('#000000ff') };
 
 function Live({ initial, ...args }: Partial<FillStrokeSwatchProps> & { initial: { fill: Paint | null; stroke: Paint | null } }) {
   const [paints, setPaints] = useState(initial);
-  const [focused, setFocused] = useState<PaintSlot>('fill');
+  const [target, setTarget] = useState<PaintSlot>('fill');
   const set = (slot: PaintSlot, paint: Paint | null) =>
     setPaints((p) => ({ ...p, [slot]: paint }));
   return (
@@ -26,8 +26,8 @@ function Live({ initial, ...args }: Partial<FillStrokeSwatchProps> & { initial: 
       {...args}
       fill={paints.fill}
       stroke={paints.stroke}
-      focused={focused}
-      onFocusChange={setFocused}
+      target={target}
+      onTargetChange={setTarget}
       onInput={set}
       onChange={set}
       onToggleNone={(slot) => set(slot, paints[slot] === null ? DEFAULTS[slot] : null)}

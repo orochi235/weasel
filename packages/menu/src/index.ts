@@ -5,10 +5,10 @@
  */
 export { entriesAt, isRow } from './entries';
 export type {
-  MenuEntry, MenuItemEntry, MenuSeparatorEntry, SubmenuEntry, MenuNumberEntry, MenuColorEntry, MenuTextEntry, MenuRowEntry, MenuGrade,
+  MenuEntry, MenuItemEntry, MenuSeparatorEntry, MenuSubmenuEntry, MenuNumberEntry, MenuColorEntry, MenuTextEntry, MenuRowEntry, MenuGrade,
 } from './entries';
 export { placeMenu, placeMenuUnder, placeSubmenu } from './placement';
-export type { MenuDirection, MenuSide, Point, Rect, Size } from './placement';
+export type { MenuDirection, MenuSide, Point, MenuRect, MenuSize } from './placement';
 export { accessLetter, accessMatch } from './access';
 export { withLinks } from './links';
 export { menuNumberDisplay, menuNumberText } from './numberText';
@@ -19,7 +19,7 @@ export { typeaheadMatch } from './typeahead';
 export {
   createMenuController, timerScheduler, SUBMENU_OPEN_MS, DIAGONAL_GRACE_MS, TYPEAHEAD_RESET_MS,
 } from './controller';
-export type { MenuController, MenuControllerOptions, MenuScheduler } from './controller';
+export type { MenuController, MenuControllerOptions, Scheduler } from './controller';
 export { inTriangle } from './triangle';
 export { attachMenuDismiss } from './dismiss';
 export type { MenuDismissOptions, MenuDismissTarget } from './dismiss';

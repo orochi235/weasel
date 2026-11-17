@@ -43,7 +43,7 @@ const follows = (a: Node, b: Node) => (a.compareDocumentPosition(b) & Node.DOCUM
  * document order — over those not disabled, hidden, inert or in a closed `<details>`, and one radio per named group.
  * Holds no state: it reads and moves the DOM's own focus.
  */
-export function domFocusScope(root: HTMLElement): FocusScope<HTMLElement> {
+export function createDomFocusScope(root: HTMLElement): FocusScope<HTMLElement> {
   const doc = root.ownerDocument;
   const focusedIn = (): HTMLElement | null => {
     const a = doc.activeElement;

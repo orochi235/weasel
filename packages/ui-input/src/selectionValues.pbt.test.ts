@@ -6,7 +6,7 @@
 import { describe, expect, it } from 'vitest';
 import fc from 'fast-check';
 import { runs, tally, timeoutFor } from './pbt.fixture';
-import { selection, type SelectionModel, type SelectState } from './selection';
+import { createSelectionModel, type SelectionModel, type SelectState } from './selection';
 
 const RUNS = 300;
 const OBJ = { id: 1 };
@@ -20,8 +20,8 @@ function replay(mode: 'single' | 'multiple', vals: unknown[], list: Step[], allo
   let single: unknown = null;
   let multiple: unknown[] = [];
   const model = (): SelectionModel => (mode === 'multiple'
-    ? selection({ mode: 'multiple', value: multiple, onChange: (v) => { multiple = v; }, mixedValues: mixed }, vals)
-    : selection({ value: single, onChange: (v) => { single = v; }, allowDeselect, mixedValues: mixed }, vals));
+    ? createSelectionModel({ mode: 'multiple', value: multiple, onChange: (v) => { multiple = v; }, mixedValues: mixed }, vals)
+    : createSelectionModel({ value: single, onChange: (v) => { single = v; }, allowDeselect, mixedValues: mixed }, vals));
   for (const s of list) {
     const i = s.at % vals.length;
     const before: SelectState[] = vals.map((_, j) => model().stateOf(j));
@@ -56,10 +56,10 @@ describe('selection over values of any kind', () => {
 describe('shrunk counterexamples', () => {
   it('a NaN value is chosen by its press and turned off by its next', () => {
     let single: unknown = null;
-    selection({ value: single, onChange: (v) => { single = v; } }, [Number.NaN, '']).press(0);
-    expect(selection({ value: single, onChange: () => {} }, [Number.NaN, '']).stateOf(0)).toBe('on');
+    createSelectionModel({ value: single, onChange: (v) => { single = v; } }, [Number.NaN, '']).press(0);
+    expect(createSelectionModel({ value: single, onChange: () => {} }, [Number.NaN, '']).stateOf(0)).toBe('on');
     let multiple: unknown[] = [Number.NaN];
-    selection({ mode: 'multiple', value: multiple, onChange: (v) => { multiple = v; } }, [Number.NaN]).press(0);
+    createSelectionModel({ mode: 'multiple', value: multiple, onChange: (v) => { multiple = v; } }, [Number.NaN]).press(0);
     expect(multiple).toEqual([]);
   });
 });

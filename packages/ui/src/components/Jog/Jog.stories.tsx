@@ -20,7 +20,7 @@ function useLive(args: JogProps, scrub?: boolean): JogProps {
     ...args,
     index,
     playing,
-    onPlay: setPlaying,
+    onPlayingChange: setPlaying,
     onStep: (by) => setIndex((i) => Math.min(count - 1, Math.max(0, i + by))),
     ...(scrub ? { onScrub: setIndex } : {}),
   };

@@ -18,12 +18,12 @@ import type {
   EmptyDownArgs, KeyDownArgs,
 } from './layerTypes';
 import type {
-  ControlPoint, CurveDomain, EndpointMode, AddPointMode, AnchorRenderProps, CurveSettings, FillSettings, FunctionLayerOptions, FunctionLayerState,
+  ControlPoint, CurveDomain, EndpointMode, AddPointMode, AnchorRenderCtx, CurveSettings, FillSettings, FunctionLayerOptions, FunctionLayerState,
 } from './functionLayerTypes';
 import { isPrimaryPress } from '@weasel-js/gestures';
 
 export type {
-  ControlPoint, CurveDomain, EndpointMode, AddPointMode, AnchorRenderProps, CurveSettings, FillSettings, FunctionLayerOptions, FunctionLayerState,
+  ControlPoint, CurveDomain, EndpointMode, AddPointMode, AnchorRenderCtx, CurveSettings, FillSettings, FunctionLayerOptions, FunctionLayerState,
 };
 
 const SAMPLES_PER_SEGMENT = 16;
@@ -155,8 +155,8 @@ export function createFunctionLayer(cfg: FunctionLayerOptions = {}): CurveLayer<
             const node = cfg.renderAnchor({
               point: points[i], index: i,
               cx: a.x, cy: a.y,
-              isActive: active, isLocked: locked,
-              isPinnedEndpoint: pinned, isEndpoint,
+              active, locked,
+              pinned, endpoint: isEndpoint,
             });
             if (node !== null && node !== undefined) {
               return <g key={i} data-anchor-index={i} {...a11y}>{node}</g>;

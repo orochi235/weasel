@@ -5,7 +5,7 @@
 import { describe, expect, it } from 'vitest';
 import fc from 'fast-check';
 import { runs, tally, timeoutFor, uniform } from './pbt.fixture';
-import { spanPan, spanPlace, spanZoom, type Span } from './span';
+import { spanPan, spanFraction, spanZoom, type Span } from './span';
 
 const RUNS = 500;
 
@@ -44,7 +44,7 @@ describe('spanZoom and spanPan', () => {
       const measurable = z.to - z.from > 1e-6 * (1 + Math.abs(at));
       if (free && s.to > s.from && measurable) {
         t.count('anchored');
-        expect(spanPlace(z, at)).toBeCloseTo(spanPlace(s, at), 6);
+        expect(spanFraction(z, at)).toBeCloseTo(spanFraction(s, at), 6);
       }
       t.count(f < 1 ? 'in' : 'out');
     }), runs(RUNS));

@@ -52,7 +52,7 @@ export interface GradientEditorProps extends DisableableProps {
   selectedStop?: number;
   /** The reader picked a stop, or an edit moved the selection: a stop was
    *  added, or the selected one removed. */
-  onSelectedStopChange?: (index: number) => void;
+  onSelectionChange?: (index: number) => void;
   className?: string;
 }
 
@@ -142,7 +142,7 @@ export function GradientEditor(props: GradientEditorProps): ReactElement {
           value={value}
           spaceBar={spaceBar}
           selectedStop={props.selectedStop}
-          onSelectedStopChange={props.onSelectedStopChange}
+          onSelectionChange={props.onSelectionChange}
           disabled={disabled}
           onInput={onInput}
           onChange={onChange}

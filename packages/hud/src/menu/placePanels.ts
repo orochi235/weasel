@@ -1,4 +1,4 @@
-import { placeMenu, placeMenuUnder, placeSubmenu, type MenuController, type MenuEntry, type Rect } from '@weasel-js/menu';
+import { placeMenu, placeMenuUnder, placeSubmenu, type MenuController, type MenuEntry, type MenuRect } from '@weasel-js/menu';
 import { faceGeneration } from '@weasel-js/font';
 import { menuPanelMetrics, menuRowSpans, type MenuPanelLayout } from '@weasel-js/ui-logic';
 import type { ResolvedTheme } from '@weasel-js/theme';
@@ -12,14 +12,14 @@ type XY = { x: number; y: number };
 export interface PlaceOptions {
   anchor: XY;
   /** The button the menu hangs from, in canvas pixels; when set, `anchor` is not used. */
-  under?: Rect;
+  under?: MenuRect;
   canvasSize(): { width: number; height: number };
   measure(text: string, fontSize: number, fontFamily: string): number;
 }
 
 /** An open level's panel: where it sits, and where its rows sit inside it. */
 export interface PlacedPanel {
-  readonly rect: Rect;
+  readonly rect: MenuRect;
   readonly layout: MenuPanelLayout;
 }
 

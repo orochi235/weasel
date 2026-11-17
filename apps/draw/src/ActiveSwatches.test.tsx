@@ -44,7 +44,7 @@ describe('ActiveSwatches', () => {
     fireEvent.click(trigger('Stroke'), { shiftKey: true });
     expect(screen.queryByRole('dialog')).toBeNull();
     expect(chip('Stroke').hasAttribute('data-none')).toBe(true);
-    expect(chip('Stroke').hasAttribute('data-focused')).toBe(true);
+    expect(chip('Stroke').hasAttribute('data-target')).toBe(true);
   });
 
   it('Swap exchanges the paints', () => {

@@ -5,18 +5,15 @@ import { entriesAt, isRow, type MenuColorEntry, type MenuEntry, type MenuNumberE
 import { firstRow, type MenuStack } from './keys';
 import { EMPTY_TYPEAHEAD, timerScheduler, type Scheduler, type TypeaheadBuffer } from '@weasel-js/ui-input';
 import { planKey } from './keyPlan';
-import type { MenuDirection, Point, Rect } from './placement';
+import type { MenuDirection, Point, MenuRect } from './placement';
 import { inTriangle } from './triangle';
 
 export { TYPEAHEAD_RESET_MS } from '@weasel-js/ui-input';
-export { timerScheduler };
+export { timerScheduler, type Scheduler };
 /** How long the pointer rests on a submenu row before its panel opens, in milliseconds. */
 export const SUBMENU_OPEN_MS = 200;
 /** How long a move toward an open submenu keeps it open while the pointer crosses other rows, in milliseconds. */
 export const DIAGONAL_GRACE_MS = 300;
-
-/** Clock and timer, injected so tests and headless hosts control time. */
-export type MenuScheduler = Scheduler;
 
 /** What {@link createMenuController} needs: the entries, how to close, and optionally a clock. */
 export interface MenuControllerOptions {
@@ -27,7 +24,8 @@ export interface MenuControllerOptions {
   onClose(): void;
   /** An arrow key ran off the menu: back from the first level (-1), or forward from a row with no submenu (1). */
   onEdge?(dir: -1 | 1): void;
-  scheduler?: MenuScheduler;
+  /** Clock and timer, injected so tests and headless hosts control time. */
+  scheduler?: Scheduler;
 }
 
 /** One open menu's behavior, independent of what draws it. */
@@ -40,7 +38,7 @@ export interface MenuController {
   hover(level: number, index: number | null, point?: Point): void;
   press(level: number, index: number): void;
   /** Where `level`'s panel is, for the diagonal allowance. */
-  setPanel(level: number, rect: Rect): void;
+  setPanel(level: number, rect: MenuRect): void;
   /** What a number row holds now: the last value set while the menu is open, else the one it opened with. */
   numberValue(e: MenuNumberEntry): number | undefined;
   /** Write a number row, held within its bounds. The menu stays open; subscribers hear it. */
@@ -61,7 +59,7 @@ export interface MenuController {
 
 /** Heading from `from`, the point the deferral began, toward the near edge of the child of `level`'s panel. */
 function headingIntoChild(
-  panels: ReadonlyMap<number, Rect>, stack: MenuStack, from: Point | null, level: number, p: Point,
+  panels: ReadonlyMap<number, MenuRect>, stack: MenuStack, from: Point | null, level: number, p: Point,
 ): boolean {
   const child = panels.get(level + 1);
   const parent = panels.get(level);
@@ -76,7 +74,7 @@ export function createMenuController(opts: MenuControllerOptions): MenuControlle
   const sched = opts.scheduler ?? timerScheduler;
   let stack: MenuStack = [opts.highlightFirst ? firstRow(root) : null];
   let listeners = createEmitter();
-  const panels = new Map<number, Rect>();
+  const panels = new Map<number, MenuRect>();
   let pending: (() => void) | null = null;
   let pendingKind: 'open' | 'diagonal' | null = null;
   let lastPoint: Point | null = null;

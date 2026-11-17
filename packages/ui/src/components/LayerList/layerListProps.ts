@@ -80,7 +80,7 @@ export interface LayerListProps extends HoldProps {
   /** Heading above the list. */
   title?: string;
   /** Names the list for assistive tech when it has no `title`. */
-  label?: string;
+  'aria-label'?: string;
   /** Kinds the user can add, as buttons beside the title. Shown only with `onAdd`. */
   addKinds?: string[];
   onAdd?: (kind: string) => void;

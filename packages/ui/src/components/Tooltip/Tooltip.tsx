@@ -12,7 +12,7 @@ import {
   type TooltipTriggerState,
 } from 'react-aria-components';
 import { targetInBlockUnits } from '../../overlays/blockFrame';
-import { frameBoundary, overlayFrameFor, targetInFrame } from '../../overlays/overlayFrame';
+import { frameBoundary, mountOverlayFrame, targetInFrame } from '../../overlays/overlayFrame';
 import { useEnterAnimation, useExitAnimation } from '../../overlays/overlayAnimation';
 import {
   useOverlayPortal,
@@ -146,7 +146,7 @@ function TooltipOverlay(own: OverlayProps) {
   const exiting = useExitAnimation(ref, state.isOpen);
   const isExiting = props.isExiting || (!state.shouldSkipAnimation && exiting) || false;
   const container = useReactAriaPortalTarget();
-  const frame = useMemo(() => overlayFrameFor(container), [container]);
+  const frame = useMemo(() => mountOverlayFrame(container), [container]);
   if (!state.isOpen && !isExiting) return null;
   return (
     <OverlayContainer portalContainer={frame ?? undefined}>

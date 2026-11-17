@@ -112,7 +112,7 @@ const OPEN_SPAN = 100;
 /** A slider's track: `min` and `max` are the track's ends, one stop beyond the
  *  range at an endless end, and `OPEN_SPAN` from the other where an end is
  *  missing. `settle` turns a track position or a typed number into a value,
- *  ±Infinity at that stop, and `onTrack` puts a value back on the track.
+ *  ±Infinity at that stop, and `toTrack` puts a value back on the track.
  *  `reach` is how far a typed or stepped value goes: an open end, one missing
  *  with no stop for infinity, holds none back, and `held` keeps a value in it. */
 function sliderBounds(p: PropertyNumberFieldProps): {
@@ -120,7 +120,7 @@ function sliderBounds(p: PropertyNumberFieldProps): {
   max: number;
   step: number;
   settle: (v: number) => number;
-  onTrack: (v: number) => number;
+  toTrack: (v: number) => number;
   held: (v: number) => number;
   reach: { min?: number; max?: number };
 } {
@@ -137,7 +137,7 @@ function sliderBounds(p: PropertyNumberFieldProps): {
     max: track.max,
     step,
     settle,
-    onTrack: within(track.min, track.max),
+    toTrack: within(track.min, track.max),
     held: within(openMin ? -Infinity : track.min, openMax ? Infinity : track.max),
     reach: { min: openMin ? undefined : track.min, max: openMax ? undefined : track.max },
   };
@@ -145,7 +145,7 @@ function sliderBounds(p: PropertyNumberFieldProps): {
 
 /** `keyed`: the track is the keyboard's way in, where the row's readout is not an editable one. */
 function SliderTrack({ keyed: tabbable = false, ...p }: PropertyNumberFieldProps & { keyed?: boolean }) {
-  const { min, max, step, settle, onTrack } = sliderBounds(p);
+  const { min, max, step, settle, toTrack } = sliderBounds(p);
   const live = (next: number) => p.onInput?.(next);
   const held = useControlAccess({ disabled: p.mixed || p.disabled, disabledReason: p.disabledReason }).state !== 'enabled';
   const commit = held ? undefined : p.onChange;
@@ -155,7 +155,7 @@ function SliderTrack({ keyed: tabbable = false, ...p }: PropertyNumberFieldProps
   const named = useFieldControl({ id: p.id, 'aria-label': p.name });
   // The thumb clamps to the track; the readout beside it does not, so a value
   // past `max` is still reported as what it is.
-  const value = known ? onTrack(p.value as number) : min;
+  const value = known ? toTrack(p.value as number) : min;
   const keyed = (next: number) => {
     live(settle(next));
     commit?.(settle(next));
@@ -223,13 +223,13 @@ function SliderReadout(p: PropertyNumberFieldProps) {
       step={step}
       reach={reach}
       settle={settle}
-      onTrack={held}
+      toTrack={held}
       stops={p.stops}
       display={p.display ?? stepDisplay(step)}
       format={p.format}
       unit={p.unit}
       disabled={p.disabled}
-      onCommit={(next) => {
+      onChange={(next) => {
         p.onInput?.(next);
         p.onChange(next);
       }}
@@ -268,14 +268,14 @@ interface EditableReadoutProps {
    *  endless end's stop. */
   settle: (v: number) => number;
   /** Where a value sits on the track. */
-  onTrack: (v: number) => number;
+  toTrack: (v: number) => number;
   /** Where a key step crossing one stops, as the track's keys do. */
   stops?: readonly number[];
   display: Display;
   format?: (value: number) => ReactNode;
   unit?: ReactNode;
   disabled?: boolean;
-  onCommit: (next: number) => void;
+  onChange: (next: number) => void;
 }
 
 /**
@@ -283,7 +283,7 @@ interface EditableReadoutProps {
  * cancels on Escape, and steps like the track beside it. Clicks are stopped so
  * a wrapping <label> doesn't forward focus to the slider thumb.
  */
-function EditableReadout({ named, value, min, max, step, reach, settle, onTrack, stops = [], display, format, unit, disabled, onCommit }: EditableReadoutProps) {
+function EditableReadout({ named, value, min, max, step, reach, settle, toTrack, stops = [], display, format, unit, disabled, onChange }: EditableReadoutProps) {
   // Draft is non-null only while the input is focused; the live value mirrors
   // into the input otherwise.
   const [draft, setDraft] = useState<string | null>(null);
@@ -304,7 +304,7 @@ function EditableReadout({ named, value, min, max, step, reach, settle, onTrack,
     // A draft still reading as the value shown writes nothing: the readout rounds, and that text is not an edit.
     if (draft !== null && !canceled.current && !hold.refuses && draft !== text(value)) {
       const n = read(draft);
-      if (!Number.isNaN(n)) onCommit(settle(n));
+      if (!Number.isNaN(n)) onChange(settle(n));
     }
     setDraft(null);
   };
@@ -315,7 +315,7 @@ function EditableReadout({ named, value, min, max, step, reach, settle, onTrack,
         type="text"
         role="spinbutton"
         {...named}
-        aria-valuenow={onTrack(value)}
+        aria-valuenow={toTrack(value)}
         aria-valuetext={format ? text(value) : qty(value, display, locale).spoken}
         aria-valuemin={reach.min}
         aria-valuemax={reach.max}
@@ -348,12 +348,12 @@ function EditableReadout({ named, value, min, max, step, reach, settle, onTrack,
           } else {
             if (hold.refuses) return;
             const typed = draft === null ? value : read(draft);
-            const from = onTrack(Number.isNaN(typed) ? value : typed);
+            const from = toTrack(Number.isNaN(typed) ? value : typed);
             const spun = spinKey(e.key, from, { step, ...reach });
             if (spun === null) return;
             const next = keyLanding(e.key, from, spun, stops);
             e.preventDefault();
-            onCommit(settle(next));
+            onChange(settle(next));
             // A step is committed already; the box shows the value it comes back as.
             setDraft(null);
           }

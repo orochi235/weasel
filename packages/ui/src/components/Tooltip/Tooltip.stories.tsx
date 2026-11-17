@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from '@weasel-js/forge';
-import { Sequence, values } from '@weasel-js/ui/components/Sequence';
+import { Sequence, valuesSweep } from '@weasel-js/ui/components/Sequence';
 import { Focusable, Tooltip, TooltipTrigger } from '@weasel-js/ui/components/Tooltip';
 import { Button } from '@weasel-js/ui/components/Button';
 
@@ -25,7 +25,7 @@ export const Basic: Story = {
 
 export const Placements: Story = {
   render: (args) => (
-    <Sequence label="Placements" sweep={values(['top', 'bottom', 'left', 'right'] as const)} caption={false}>
+    <Sequence aria-label="Placements" sweep={valuesSweep(['top', 'bottom', 'left', 'right'] as const)} caption={false}>
       {(p) => (
         <TooltipTrigger>
           <Focusable>

@@ -44,7 +44,7 @@ export function SelectDemo() {
         <ItemList
           selectionMode="multiple"
           containerProps={{ 'aria-label': 'Layers' }}
-          onActivate={(id, _index, mods) => press(id, mods)}
+          onAction={(id, _index, mods) => press(id, mods)}
           rows={ROWS.map((id) => ({
             id,
             selected: state.ids.includes(id),

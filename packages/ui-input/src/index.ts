@@ -14,7 +14,7 @@ export { tabSort, tabStep } from './tabOrder';
 export { COARSE_STEPS, arrowSteps, rangeKey } from './keySteps';
 export { usableStops, attract, evenMap, sliderAt, clampOrdered, sliderKey } from './slider';
 export type { SliderStop, SliderKeyShape, SliderAtShape, TrackMap } from './slider';
-export { spanPlace, spanValue, spanShare, spanMap, spanHold, spanPan, spanZoom } from './span';
+export { spanFraction, spanValue, spanShare, spanMap, spanClamp, spanPan, spanZoom } from './span';
 export type { Span } from './span';
 export { editEnd, imeKey } from './textCommit';
 export type { EditCause, EditEnd, EditEndShape, KeySource } from './textCommit';
@@ -36,13 +36,12 @@ export { timerScheduler } from './scheduler';
 export type { Scheduler } from './scheduler';
 export { createStepRepeat, REPEAT_DELAY_MS, REPEAT_EVERY_MS } from './stepRepeat';
 export type { StepRepeat, StepRepeatOptions } from './stepRepeat';
-export { SWEEP_CAP, stepsOf, range, values, frames, until } from './sweep';
+export { SWEEP_CAP, stepsOf, rangeSweep, valuesSweep, framesSweep, sweepUntil } from './sweep';
 export type { Sweep, RangeSpec, FrameSpan, FrameOptions } from './sweep';
 export { rowOffset, tileGrid, tileRows, tileKey, gridLayout, rovingGridTarget } from './grid';
 export type { LastRow, Tiling, TileGrid, GridLayout } from './grid';
-export { selection, selectionOfEach, selectionKeys, soloFrom, soloSweepFrom, sweepFrom } from './selection';
-export { liveSelection } from './liveSelection';
+export { createSelectionModel, createEachSelectionModel, selectionKeys, soloFrom, soloSweepFrom, sweepFrom } from './selection';
+export { createLiveSelectionModel } from './createLiveSelectionModel';
 export type {
   SelectState, SingleSelection, MultipleSelection, SelectionSpec, OwnSelection, SelectionEdit, SelectionModel,
 } from './selection';
-export type { Box } from './scalar';

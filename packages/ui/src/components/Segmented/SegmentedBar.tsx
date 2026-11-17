@@ -1,7 +1,7 @@
 import { type ReactElement, type ReactNode } from 'react';
 import {
-  selection,
-  selectionOfEach,
+  createSelectionModel,
+  createEachSelectionModel,
   soloFrom,
   stepsOf,
   type MultipleSelection,
@@ -125,7 +125,7 @@ function behaviorOf<V extends string | number>(
     };
     return { role: 'toolbar', aria: () => ({}), press: fire, keys: { onActivate: fire } };
   }
-  const model = props.mode === 'each' ? selectionOfEach(props.items) : selection<V>(props, items.map((it) => it.value));
+  const model = props.mode === 'each' ? createEachSelectionModel(props.items) : createSelectionModel<V>(props, items.map((it) => it.value));
   const keys = selectionRoving(model, items.length, usable);
   const press = (i: number): void => model.press(i);
   // Radios choose as the arrows move; segments that only take focus are toggle buttons.

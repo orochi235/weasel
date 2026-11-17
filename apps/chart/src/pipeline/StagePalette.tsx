@@ -34,7 +34,7 @@ export function StagePalette({ onAdd }: StagePaletteProps): ReactElement {
       />
       <ItemList
         rows={types.map((t) => ({ id: t.type, label: t.title }))}
-        onActivate={(id) => {
+        onAction={(id) => {
           const type = types.find((t) => t.type === id);
           if (type) onAdd(type);
         }}

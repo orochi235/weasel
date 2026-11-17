@@ -9,7 +9,7 @@ import s from './ToolPalette.module.css';
 import type { DisableableProps } from '../Disabled';
 import { icon } from '../../icons.gen';
 import { groupTools } from './order';
-import { slotsOf, stackIndex, warnStacks } from './stacks';
+import { placeSlots, stackIndex, warnStacks } from './stacks';
 import { useToolCarry } from './useToolCarry';
 
 /** Props for {@link ToolPalette}. */
@@ -142,7 +142,7 @@ function ToolPaletteRail(props: ToolPaletteProps & { tools: ToolsApi }) {
     };
   };
   const items = groupTools(list, groupOrder, toolOrder).flatMap(({ key, tools: group }) =>
-    slotsOf(group, shown, stackOf, placed).map((slot): ToolRailItem => (slot.kind === 'tool'
+    placeSlots(group, shown, stackOf, placed).map((slot): ToolRailItem => (slot.kind === 'tool'
       ? button(slot.tool, key)
       : { id: slot.members[0].id, group: key, members: slot.members.map((t) => button(t, key)) })));
 

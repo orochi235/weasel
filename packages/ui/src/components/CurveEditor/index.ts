@@ -10,7 +10,7 @@ export {
   type AddPointMode,
   type FillSettings,
   type CurveSettings,
-  type AnchorRenderProps,
+  type AnchorRenderCtx,
   createFunctionLayer,
   functionLayerState,
   type FunctionLayerOptions,

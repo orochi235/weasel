@@ -61,7 +61,7 @@ export function HistoryList({
         rows={rows}
         empty={empty}
         selectionMode="single"
-        onActivate={(_id, i) => onJump(i)}
+        onAction={(_id, i) => onJump(i)}
         containerProps={{ 'aria-label': ariaLabel }}
       />
     </div>

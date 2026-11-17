@@ -84,7 +84,7 @@ function Entry({ name, value, depth }: { name: ReactNode; value: SerializedValue
   return (
     <div>
       <div className={s.row}>
-        <Disclosure open={open} onToggle={() => setOpen((o) => !o)} label={`${String(name)} ${summaryOf(value)}`} size={11} />
+        <Disclosure open={open} onOpenChange={setOpen} label={`${String(name)} ${summaryOf(value)}`} size={11} />
         <span className={s.key}>{name}</span>
         <span className={s.muted}>{summaryOf(value)}</span>
       </div>

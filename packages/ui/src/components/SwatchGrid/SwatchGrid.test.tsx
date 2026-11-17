@@ -14,9 +14,9 @@ const OPTIONS: SwatchGridOption[] = [
 ];
 
 function mount(over: Partial<Parameters<typeof SwatchGrid>[0]> = {}) {
-  const onChange = vi.fn();
-  render(<SwatchGrid options={OPTIONS} onChange={onChange} columns={3} aria-label="Colors" {...over} />);
-  return { onChange };
+  const onSelect = vi.fn();
+  render(<SwatchGrid options={OPTIONS} onSelect={onSelect} columns={3} aria-label="Colors" {...over} />);
+  return { onSelect };
 }
 
 describe('SwatchGrid', () => {
@@ -29,20 +29,20 @@ describe('SwatchGrid', () => {
   });
 
   it('applies on click', () => {
-    const { onChange } = mount();
+    const { onSelect } = mount();
     fireEvent.click(screen.getByRole('button', { name: 'Green' }));
     fireEvent.click(screen.getByRole('button', { name: 'None' }));
-    expect(onChange.mock.calls).toEqual([['#00ff00ff', OPTIONS[2]], [null, OPTIONS[0]]]);
+    expect(onSelect.mock.calls).toEqual([['#00ff00ff', OPTIONS[2]], [null, OPTIONS[0]]]);
   });
 
   it('routes shift-click and right-click to the alternate target', () => {
-    const onAltChange = vi.fn();
-    const { onChange } = mount({ onAltChange });
+    const onAltSelect = vi.fn();
+    const { onSelect } = mount({ onAltSelect });
     fireEvent.click(screen.getByRole('button', { name: 'Red' }), { shiftKey: true });
     const notPrevented = fireEvent.contextMenu(screen.getByRole('button', { name: 'Green' }));
-    expect(onAltChange.mock.calls).toEqual([['#ff0000ff', OPTIONS[1]], ['#00ff00ff', OPTIONS[2]]]);
+    expect(onAltSelect.mock.calls).toEqual([['#ff0000ff', OPTIONS[1]], ['#00ff00ff', OPTIONS[2]]]);
     expect(notPrevented).toBe(false);
-    expect(onChange).not.toHaveBeenCalled();
+    expect(onSelect).not.toHaveBeenCalled();
   });
 
   it('leaves right-click to the browser with no alternate target', () => {
@@ -65,7 +65,7 @@ describe('SwatchGrid', () => {
   it('moves the tab stop with focus, so Tab leaves the palette, and puts it back on the current swatch as focus leaves', () => {
     render(
       <>
-        <SwatchGrid options={OPTIONS} onChange={() => {}} columns={3} value="#00ffffff" aria-label="Colors" />
+        <SwatchGrid options={OPTIONS} onSelect={() => {}} columns={3} value="#00ffffff" aria-label="Colors" />
         <button type="button">after</button>
       </>,
     );
@@ -94,10 +94,10 @@ describe('SwatchGrid', () => {
   });
 
   it('sends Shift+Enter to the alternate target', () => {
-    const onAltChange = vi.fn();
-    mount({ onAltChange });
+    const onAltSelect = vi.fn();
+    mount({ onAltSelect });
     fireEvent.keyDown(screen.getByRole('button', { name: 'Red' }), { key: 'Enter', shiftKey: true });
-    expect(onAltChange).toHaveBeenCalledWith('#ff0000ff', OPTIONS[1]);
+    expect(onAltSelect).toHaveBeenCalledWith('#ff0000ff', OPTIONS[1]);
   });
 
   describe('options keyed apart from their color', () => {
@@ -109,12 +109,12 @@ describe('SwatchGrid', () => {
     ];
 
     it('hands back the id of the swatch applied, with the option', () => {
-      const onAltChange = vi.fn();
-      const { onChange } = mount({ options: TAPES, onAltChange });
+      const onAltSelect = vi.fn();
+      const { onSelect } = mount({ options: TAPES, onAltSelect });
       fireEvent.click(screen.getByRole('button', { name: 'Cerulean, black text' }));
       fireEvent.click(screen.getByRole('button', { name: 'Cerulean, white text' }), { shiftKey: true });
-      expect(onChange.mock.calls).toEqual([['cerulean-black', TAPES[2]]]);
-      expect(onAltChange.mock.calls).toEqual([['cerulean-white', TAPES[1]]]);
+      expect(onSelect.mock.calls).toEqual([['cerulean-black', TAPES[2]]]);
+      expect(onAltSelect.mock.calls).toEqual([['cerulean-white', TAPES[1]]]);
     });
 
     it('marks only the swatch whose id is the value, and puts the tab stop on it', () => {
@@ -146,7 +146,7 @@ describe('SwatchGrid', () => {
       const store = createRecentColorsStore({ storage: null });
       render(
         <RecentColorsProvider store={store}>
-          <SwatchGrid options={TAPES} onChange={() => {}} aria-label="Tapes" />
+          <SwatchGrid options={TAPES} onSelect={() => {}} aria-label="Tapes" />
         </RecentColorsProvider>,
       );
       fireEvent.click(screen.getByRole('button', { name: 'Cerulean, white text' }));
@@ -158,19 +158,19 @@ describe('SwatchGrid', () => {
 describe('SwatchButton', () => {
   const red = OPTIONS[1]!;
   it("runs a caller's onClick before applying, and a prevented one applies nothing", () => {
-    const onChange = vi.fn();
+    const onSelect = vi.fn();
     const onClick = vi.fn();
-    const { rerender } = render(<SwatchButton option={red} tabStop current={false} apply={{ onChange, onAltChange: undefined }} onClick={onClick} />);
+    const { rerender } = render(<SwatchButton option={red} tabStop current={false} apply={{ onSelect, onAltSelect: undefined }} onClick={onClick} />);
     fireEvent.click(screen.getByRole('button', { name: 'Red' }));
     expect(onClick).toHaveBeenCalledOnce();
-    expect(onChange).toHaveBeenCalledOnce();
-    rerender(<SwatchButton option={red} tabStop current={false} apply={{ onChange, onAltChange: undefined }} onClick={(e) => e.preventDefault()} />);
+    expect(onSelect).toHaveBeenCalledOnce();
+    rerender(<SwatchButton option={red} tabStop current={false} apply={{ onSelect, onAltSelect: undefined }} onClick={(e) => e.preventDefault()} />);
     fireEvent.click(screen.getByRole('button', { name: 'Red' }));
-    expect(onChange).toHaveBeenCalledOnce();
+    expect(onSelect).toHaveBeenCalledOnce();
   });
 
   it('passes native and data attributes through, keeping its own tab stop', () => {
-    render(<SwatchButton option={red} tabStop={false} current apply={{ onChange: () => {}, onAltChange: undefined }} data-slot="2" aria-describedby="why" />);
+    render(<SwatchButton option={red} tabStop={false} current apply={{ onSelect: () => {}, onAltSelect: undefined }} data-slot="2" aria-describedby="why" />);
     const swatch = screen.getByRole('button', { name: 'Red' });
     expect(swatch).toHaveAttribute('data-slot', '2');
     expect(swatch).toHaveAttribute('aria-describedby', 'why');

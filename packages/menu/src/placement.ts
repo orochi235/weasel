@@ -1,9 +1,9 @@
 /** A position in viewport pixels (CSS pixels, as `getBoundingClientRect` reports). */
 export interface Point { x: number; y: number }
 /** A width and height in pixels. */
-export interface Size { w: number; h: number }
+export interface MenuSize { w: number; h: number }
 /** A rectangle in viewport pixels: top-left corner plus width and height. */
-export interface Rect { x: number; y: number; w: number; h: number }
+export interface MenuRect { x: number; y: number; w: number; h: number }
 
 /** Start at `at`, else end at `flipAt` (default `at`), else slide inside `[lo, lo + span]`. */
 function flipOrShift(at: number, len: number, lo: number, span: number, flipAt = at): number {
@@ -32,7 +32,7 @@ export type MenuDirection = 'ltr' | 'rtl';
 /** Where a menu of `size` opened at `anchor` goes: down and right of the
  *  anchor (left under `'rtl'`), flipped on an axis that does not fit, shifted inside `bounds`
  *  when neither side does. */
-export function placeMenu(size: Size, anchor: Point, bounds: Rect, dir: MenuDirection = 'ltr'): Point {
+export function placeMenu(size: MenuSize, anchor: Point, bounds: MenuRect, dir: MenuDirection = 'ltr'): Point {
   return {
     x: (dir === 'rtl' ? flipOrShiftBack : flipOrShift)(anchor.x, size.w, bounds.x, bounds.w),
     y: flipOrShift(anchor.y, size.h, bounds.y, bounds.h),
@@ -41,7 +41,7 @@ export function placeMenu(size: Size, anchor: Point, bounds: Rect, dir: MenuDire
 
 /** Where a submenu goes: beside `row`, right first (left under `'rtl'`), the other side if that does not
  *  fit, top-aligned with the row and shifted up to stay inside `bounds`. */
-export function placeSubmenu(size: Size, row: Rect, bounds: Rect, dir: MenuDirection = 'ltr'): Point {
+export function placeSubmenu(size: MenuSize, row: MenuRect, bounds: MenuRect, dir: MenuDirection = 'ltr'): Point {
   return {
     x: dir === 'rtl'
       ? flipOrShiftBack(row.x, size.w, bounds.x, bounds.w, row.x + row.w)
@@ -57,7 +57,7 @@ export type MenuSide = 'top' | 'bottom' | 'left' | 'right';
  *  when it does not fit there. Below or above, it is left-aligned and right-aligned to the button on an axis that does
  *  not fit (right-aligned first under `'rtl'`); beside, it is top-aligned and shifted up to stay inside `bounds`.
  *  Shifted inside `bounds` when neither side fits. */
-export function placeMenuUnder(size: Size, under: Rect, bounds: Rect, side: MenuSide = 'bottom', dir: MenuDirection = 'ltr'): Point {
+export function placeMenuUnder(size: MenuSize, under: MenuRect, bounds: MenuRect, side: MenuSide = 'bottom', dir: MenuDirection = 'ltr'): Point {
   if (side === 'left' || side === 'right') {
     const x = side === 'left' && under.x - size.w >= bounds.x
       ? held(under.x - size.w, size.w, bounds.x, bounds.w)

@@ -80,7 +80,7 @@ function HeldLayerList(props: LayerListProps) {
       )}
       <Tree
         nodes={layerNodes(items, props, { id: renaming, set: setRenaming })}
-        aria-label={props.label ?? title ?? 'Layers'}
+        aria-label={props['aria-label'] ?? title ?? 'Layers'}
         empty={empty ?? (palette.length > 0 ? 'No layers — add one above.' : 'No layers.')}
         expandedIds={branches.filter((id) => !collapsed.has(id))}
         onExpandedChange={onExpandedChange}

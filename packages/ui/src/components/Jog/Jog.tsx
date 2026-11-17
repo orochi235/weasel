@@ -18,7 +18,7 @@ export interface JogProps extends HoldProps {
   /** How many steps there are. */
   count: number;
   playing: boolean;
-  onPlay: (playing: boolean) => void;
+  onPlayingChange: (playing: boolean) => void;
   /** Move one step, back or forward. */
   onStep: (by: -1 | 1) => void;
   /** Jump to a step. Left out, no scrubber is drawn. */
@@ -74,7 +74,7 @@ export function Jog(props: JogProps) {
 }
 
 function jogParts(props: JogProps, access: ControlAccess): JogParts {
-  const { index, count, playing, onPlay, onStep, onScrub, unit = 'Step', caption } = props;
+  const { index, count, playing, onPlayingChange, onStep, onScrub, unit = 'Step', caption } = props;
   // Its buttons are actions, which a read-only scope passes over, so the Jog holds them itself, for its reason.
   const held = access.state !== 'enabled';
   const reason = access.reason;
@@ -106,7 +106,7 @@ function jogParts(props: JogProps, access: ControlAccess): JogParts {
         aria-label={playing ? 'Pause' : 'Play'}
         disabled={held || count < 2}
         disabledReason={held ? reason : undefined}
-        onClick={() => onPlay(!playing)}
+        onClick={() => onPlayingChange(!playing)}
       >
         {playing ? <Icon name={icon('pause')} size={16} /> : <Icon name={icon('play')} size={16} />}
       </Button>

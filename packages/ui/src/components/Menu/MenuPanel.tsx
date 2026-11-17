@@ -1,5 +1,5 @@
 import { useLayoutEffect, useRef, useState, type KeyboardEvent } from 'react';
-import type { MenuController, MenuEntry, MenuSide, Rect } from '@weasel-js/menu';
+import type { MenuController, MenuEntry, MenuSide, MenuRect } from '@weasel-js/menu';
 import { placeMenu, placeMenuUnder, placeSubmenu } from '@weasel-js/menu';
 import { inlineDirection } from '../../useRovingTabIndex';
 import { imeKey } from '@weasel-js/ui-input';
@@ -16,8 +16,8 @@ export function MenuPanel(props: {
   highlight: number | null; childOpen: boolean; idBase: string;
   /** The row a submenu hangs from. */
   labelledBy?: string;
-  anchor: { client: { x: number; y: number }; under?: Rect; side?: MenuSide } | null;
-  parentRow: () => Rect | null;
+  anchor: { client: { x: number; y: number }; under?: MenuRect; side?: MenuSide } | null;
+  parentRow: () => MenuRect | null;
   focus: boolean;
   /** While true, a pointerup over a row presses it. Read at the event, never rendered from. */
   releaseRuns: { readonly current: boolean };

@@ -4,7 +4,7 @@ import { circlePath, pathDivide, pathExclude, pathIntersect, pathSubtract, pathU
 import type { Fill, PolygonPath, RectPose } from '@weasel-js/core';
 import { ActionBar } from '@weasel-js/ui/components/ActionBar';
 import { Button } from '@weasel-js/ui/components/Button';
-import { Sequence, values } from '@weasel-js/ui/components/Sequence';
+import { Sequence, valuesSweep } from '@weasel-js/ui/components/Sequence';
 import { DemoStage, DemoStageGroup } from './DemoStage';
 import { pathfinderPreset, pickPreset, useSelection } from '@weasel-js/editing';
 
@@ -113,7 +113,7 @@ export function BooleanOpsDemo() {
         <WeaselProvider isolate>
           <InteractivePanel />
         </WeaselProvider>
-        <Sequence label="Each op on the inputs" sweep={values(STATIC, (op) => op.label)}>
+        <Sequence aria-label="Each op on the inputs" sweep={valuesSweep(STATIC, (op) => op.label)}>
           {(op) => <Panel paths={op.paths} />}
         </Sequence>
       </div>

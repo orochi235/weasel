@@ -47,8 +47,8 @@ export type DisclosureProps = Omit<
 > & DataAttributes & {
   /** Whether the section it controls is open. The consumer owns this. */
   open: boolean;
-  /** The press, after `onClick`; an `onClick` that calls `preventDefault()` skips it. */
-  onToggle: () => void;
+  /** Called with the state a press asks for, after `onClick`; an `onClick` that calls `preventDefault()` skips it. */
+  onOpenChange: (next: boolean) => void;
   /**
    * Names the section, for a screen reader. The control has no text of its
    * own, so without this it announces as an unlabeled button.
@@ -73,7 +73,7 @@ export type DisclosureProps = Omit<
  * `ref` forwards to the `<button>`.
  */
 export const Disclosure = forwardRef(function Disclosure(
-  { open, onToggle, label, size = 13, className, onClick, ...native }: DisclosureProps,
+  { open, onOpenChange, label, size = 13, className, onClick, ...native }: DisclosureProps,
   ref: Ref<HTMLButtonElement>,
 ) {
   return (
@@ -84,7 +84,7 @@ export const Disclosure = forwardRef(function Disclosure(
       className={className ? `${s.twisty} ${className}` : s.twisty}
       aria-expanded={open}
       aria-label={label}
-      onClick={composeHandler(onClick, onToggle)}
+      onClick={composeHandler(onClick, () => onOpenChange(!open))}
     >
       <DisclosureMark open={open} size={size} />
     </button>

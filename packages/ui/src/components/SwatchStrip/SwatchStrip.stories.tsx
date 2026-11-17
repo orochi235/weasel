@@ -36,7 +36,7 @@ function StripWithField({ args, palettes }: { args: Story['args']; palettes: rea
   return (
     <RecentColorsProvider store={store}>
       <ColorField value={fill ?? '#000000'} alpha onChange={setFill} aria-label="Fill" />
-      <SwatchStrip {...args} value={fill} onChange={setFill} palettes={palettes} />
+      <SwatchStrip {...args} value={fill} onSelect={setFill} palettes={palettes} />
     </RecentColorsProvider>
   );
 }

@@ -32,11 +32,11 @@ const base = {
   window: { from: 0, to: 1000 },
   mode: 'dope' as const,
   selection: null,
-  onSelect: () => {},
+  onSelectionChange: () => {},
   onKeyInput: () => {},
-  onKeyCommit: () => {},
+  onKeyChange: () => {},
   onInsert: () => {},
-  onToggleExpand: () => {},
+  onExpandedChange: () => {},
   expanded: false,
   snapTimes: [] as number[],
 };
@@ -79,16 +79,16 @@ describe('Lane', () => {
   });
 
   it('selects a key on pointerdown', () => {
-    const onSelect = vi.fn();
-    render(<Lane {...base} row={laneOf(sampled)} onSelect={onSelect} />);
+    const onSelectionChange = vi.fn();
+    render(<Lane {...base} row={laneOf(sampled)} onSelectionChange={onSelectionChange} />);
     fireEvent.pointerDown(screen.getAllByTestId('timeline-key')[1], { clientX: 250, button: 0 });
-    expect(onSelect).toHaveBeenCalledWith(1);
+    expect(onSelectionChange).toHaveBeenCalledWith(1);
   });
 
   it('leaves a key drag to its finger when a second finger presses another key', () => {
-    const onKeyCommit = vi.fn();
-    const onSelect = vi.fn();
-    render(<Lane {...base} row={laneOf(sampled)} onSelect={onSelect} onKeyCommit={onKeyCommit} />);
+    const onKeyChange = vi.fn();
+    const onSelectionChange = vi.fn();
+    render(<Lane {...base} row={laneOf(sampled)} onSelectionChange={onSelectionChange} onKeyChange={onKeyChange} />);
     const [first, second] = screen.getAllByTestId('timeline-key');
     const touch = (pointerId: number, clientX: number) => ({ clientX, clientY: 10, button: 0, pointerId, pointerType: 'touch' });
     fireEvent.pointerDown(second, touch(1, 250));
@@ -96,52 +96,52 @@ describe('Lane', () => {
     fireEvent.pointerMove(document, touch(1, 350));
     fireEvent.pointerUp(document, touch(1, 350));
     fireEvent.pointerUp(document, touch(2, 0));
-    expect(onSelect.mock.calls).toEqual([[1]]);
-    expect(onKeyCommit.mock.calls).toEqual([[1, 700]]);
+    expect(onSelectionChange.mock.calls).toEqual([[1]]);
+    expect(onKeyChange.mock.calls).toEqual([[1, 700]]);
   });
 
   it('puts a key back where it was when the browser cancels its drag', () => {
     const onKeyInput = vi.fn();
-    const onKeyCommit = vi.fn();
-    render(<Lane {...base} row={laneOf(sampled)} onKeyInput={onKeyInput} onKeyCommit={onKeyCommit} />);
+    const onKeyChange = vi.fn();
+    render(<Lane {...base} row={laneOf(sampled)} onKeyInput={onKeyInput} onKeyChange={onKeyChange} />);
     const key = screen.getAllByTestId('timeline-key')[1];
     fireEvent.pointerDown(key, { clientX: 250, clientY: 10, button: 0, pointerId: 1, pointerType: 'touch' });
     fireEvent.pointerMove(document, { clientX: 350, clientY: 10, pointerId: 1, pointerType: 'touch' });
     fireEvent.pointerCancel(document, { pointerId: 1, pointerType: 'touch' });
     expect(onKeyInput.mock.calls.at(-1)).toEqual([1, 500]);
-    expect(onKeyCommit).not.toHaveBeenCalled();
+    expect(onKeyChange).not.toHaveBeenCalled();
   });
 
   it('reports live times through the drag and one commit at its end', () => {
     const onKeyInput = vi.fn();
-    const onKeyCommit = vi.fn();
-    render(<Lane {...base} row={laneOf(sampled)} onKeyInput={onKeyInput} onKeyCommit={onKeyCommit} />);
+    const onKeyChange = vi.fn();
+    render(<Lane {...base} row={laneOf(sampled)} onKeyInput={onKeyInput} onKeyChange={onKeyChange} />);
     const key = screen.getAllByTestId('timeline-key')[1];
     fireEvent.pointerDown(key, { clientX: 250, clientY: 10, button: 0 });
     fireEvent.pointerMove(document, { clientX: 300, clientY: 10 });
     fireEvent.pointerMove(document, { clientX: 350, clientY: 10 });
     fireEvent.pointerUp(document, { clientX: 350, clientY: 10 });
     expect(onKeyInput).toHaveBeenCalledTimes(2);
-    expect(onKeyCommit).toHaveBeenCalledTimes(1);
-    expect(onKeyCommit).toHaveBeenCalledWith(1, 700);
+    expect(onKeyChange).toHaveBeenCalledTimes(1);
+    expect(onKeyChange).toHaveBeenCalledWith(1, 700);
   });
 
   it('snaps a dragged key to a nearby snap time', () => {
-    const onKeyCommit = vi.fn();
-    render(<Lane {...base} row={laneOf(sampled)} snapTimes={[600]} onKeyCommit={onKeyCommit} />);
+    const onKeyChange = vi.fn();
+    render(<Lane {...base} row={laneOf(sampled)} snapTimes={[600]} onKeyChange={onKeyChange} />);
     fireEvent.pointerDown(screen.getAllByTestId('timeline-key')[1], { clientX: 250, button: 0 });
     fireEvent.pointerMove(document, { clientX: 301, clientY: 10 });
     fireEvent.pointerUp(document, { clientX: 301, clientY: 10 });
-    expect(onKeyCommit).toHaveBeenCalledWith(1, 600);
+    expect(onKeyChange).toHaveBeenCalledWith(1, 600);
   });
 
   it('lets alt defeat snapping for the drag', () => {
-    const onKeyCommit = vi.fn();
-    render(<Lane {...base} row={laneOf(sampled)} snapTimes={[600]} onKeyCommit={onKeyCommit} />);
+    const onKeyChange = vi.fn();
+    render(<Lane {...base} row={laneOf(sampled)} snapTimes={[600]} onKeyChange={onKeyChange} />);
     fireEvent.pointerDown(screen.getAllByTestId('timeline-key')[1], { clientX: 250, button: 0, altKey: true });
     fireEvent.pointerMove(document, { clientX: 301, clientY: 10, altKey: true });
     fireEvent.pointerUp(document, { clientX: 301, clientY: 10, altKey: true });
-    expect(onKeyCommit).toHaveBeenCalledWith(1, 602);
+    expect(onKeyChange).toHaveBeenCalledWith(1, 602);
   });
 
   it('inserts a key on double-click', () => {
@@ -159,16 +159,16 @@ describe('Lane', () => {
   });
 
   it('selects a key without committing a move when the press does not travel', () => {
-    const onSelect = vi.fn();
+    const onSelectionChange = vi.fn();
     const onKeyInput = vi.fn();
-    const onKeyCommit = vi.fn();
-    render(<Lane {...base} row={laneOf(sampled)} onSelect={onSelect} onKeyInput={onKeyInput} onKeyCommit={onKeyCommit} />);
+    const onKeyChange = vi.fn();
+    render(<Lane {...base} row={laneOf(sampled)} onSelectionChange={onSelectionChange} onKeyInput={onKeyInput} onKeyChange={onKeyChange} />);
     fireEvent.pointerDown(screen.getAllByTestId('timeline-key')[1], { clientX: 252, clientY: 10, button: 0 });
     fireEvent.pointerMove(document, { clientX: 253, clientY: 10 });
     fireEvent.pointerUp(document, { clientX: 253, clientY: 10, altKey: true });
-    expect(onSelect).toHaveBeenCalledWith(1);
+    expect(onSelectionChange).toHaveBeenCalledWith(1);
     expect(onKeyInput).not.toHaveBeenCalled();
-    expect(onKeyCommit).not.toHaveBeenCalled();
+    expect(onKeyChange).not.toHaveBeenCalled();
   });
 
   it('moves a key only once the press passes the gestures.dragPx kit setting', () => {
@@ -187,25 +187,25 @@ describe('Lane', () => {
   });
 
   it('selects a focused key on Enter or Space', () => {
-    const onSelect = vi.fn();
-    render(<Lane {...base} row={laneOf(sampled)} onSelect={onSelect} />);
+    const onSelectionChange = vi.fn();
+    render(<Lane {...base} row={laneOf(sampled)} onSelectionChange={onSelectionChange} />);
     fireEvent.keyDown(screen.getAllByTestId('timeline-key')[1], { key: 'Enter' });
     fireEvent.keyDown(screen.getAllByTestId('timeline-key')[0], { key: ' ' });
-    expect(onSelect.mock.calls).toEqual([[1], [0]]);
+    expect(onSelectionChange.mock.calls).toEqual([[1], [0]]);
   });
 
   it('moves a focused key with the arrow keys', () => {
-    const onKeyCommit = vi.fn();
-    render(<Lane {...base} row={laneOf(sampled)} selection={1} onKeyCommit={onKeyCommit} />);
+    const onKeyChange = vi.fn();
+    render(<Lane {...base} row={laneOf(sampled)} selection={1} onKeyChange={onKeyChange} />);
     fireEvent.keyDown(screen.getAllByTestId('timeline-key')[1], { key: 'ArrowRight' });
-    expect(onKeyCommit).toHaveBeenCalledWith(1, 510);
+    expect(onKeyChange).toHaveBeenCalledWith(1, 510);
   });
 
   it('takes a bigger arrow step with shift', () => {
-    const onKeyCommit = vi.fn();
-    render(<Lane {...base} row={laneOf(sampled)} selection={1} onKeyCommit={onKeyCommit} />);
+    const onKeyChange = vi.fn();
+    render(<Lane {...base} row={laneOf(sampled)} selection={1} onKeyChange={onKeyChange} />);
     fireEvent.keyDown(screen.getAllByTestId('timeline-key')[1], { key: 'ArrowRight', shiftKey: true });
-    expect(onKeyCommit).toHaveBeenCalledWith(1, 600);
+    expect(onKeyChange).toHaveBeenCalledWith(1, 600);
   });
 
   // PROXY ASSERTION — see Ruler.test.tsx for why this is asserted rather than
@@ -263,51 +263,51 @@ describe('Lane in graph mode', () => {
   });
 
   it('selects a key on pointerdown', () => {
-    const onSelect = vi.fn();
-    render(<Lane {...base} mode="graph" row={laneOf(sampled)} onSelect={onSelect} />);
+    const onSelectionChange = vi.fn();
+    render(<Lane {...base} mode="graph" row={laneOf(sampled)} onSelectionChange={onSelectionChange} />);
     fireEvent.pointerDown(graphKeys()[1], { clientX: 250, clientY: 2, button: 0 });
-    expect(onSelect).toHaveBeenCalledWith(1);
+    expect(onSelectionChange).toHaveBeenCalledWith(1);
   });
 
   it('compares a pressed key against the committed selection, not an abandoned render\'s', () => {
-    const onSelect = vi.fn();
+    const onSelectionChange = vi.fn();
     renderThenAbandon<number | null>(null, 1, (selection) => (
-      <Lane {...base} mode="graph" row={laneOf(sampled)} selection={selection} onSelect={onSelect} />
+      <Lane {...base} mode="graph" row={laneOf(sampled)} selection={selection} onSelectionChange={onSelectionChange} />
     ));
     fireEvent.pointerDown(graphKeys()[1], { clientX: 250, clientY: 2, button: 0 });
-    expect(onSelect).toHaveBeenCalledWith(1);
+    expect(onSelectionChange).toHaveBeenCalledWith(1);
   });
 
   it('drags a key in value as well as time, reporting live keys and one commit', () => {
     const onKeysInput = vi.fn();
-    const onKeysCommit = vi.fn();
-    render(<Lane {...base} mode="graph" row={laneOf(sampled)} onKeysInput={onKeysInput} onKeysCommit={onKeysCommit} />);
+    const onKeysChange = vi.fn();
+    render(<Lane {...base} mode="graph" row={laneOf(sampled)} onKeysInput={onKeysInput} onKeysChange={onKeysChange} />);
     fireEvent.pointerDown(graphKeys()[1], { clientX: 250, clientY: 0, button: 0 });
     fireEvent.pointerMove(document, { clientX: 200, clientY: 10 });
     expect(onKeysInput).toHaveBeenCalledTimes(1);
     fireEvent.pointerUp(document, { clientX: 200, clientY: 10 });
-    expect(onKeysCommit).toHaveBeenCalledTimes(1);
-    const keys = onKeysCommit.mock.calls[0][0];
+    expect(onKeysChange).toHaveBeenCalledTimes(1);
+    const keys = onKeysChange.mock.calls[0][0];
     expect(keys[1].t).toBe(400);
     expect(keys[1].value).toBeCloseTo(5);
   });
 
   it('snaps a dragged key to a nearby snap time, in ruler time', () => {
-    const onKeysCommit = vi.fn();
+    const onKeysChange = vi.fn();
     const nested = { ...laneOf(sampled), offset: 100 };
-    render(<Lane {...base} mode="graph" row={nested} snapTimes={[700]} onKeysCommit={onKeysCommit} />);
+    render(<Lane {...base} mode="graph" row={nested} snapTimes={[700]} onKeysChange={onKeysChange} />);
     // Key 1 sits at ruler 600 → x 300. Dropped at ruler 702 → x 351.
     fireEvent.pointerDown(graphKeys()[1], { clientX: 300, clientY: 2, button: 0 });
     fireEvent.pointerMove(document, { clientX: 351, clientY: 2 });
     fireEvent.pointerUp(document, { clientX: 351, clientY: 2 });
-    expect(onKeysCommit.mock.calls[0][0][1].t).toBe(600);
+    expect(onKeysChange.mock.calls[0][0][1].t).toBe(600);
   });
 
   it('moves a focused key with the arrow keys', () => {
-    const onKeysCommit = vi.fn();
-    render(<Lane {...base} mode="graph" row={laneOf(sampled)} onKeysCommit={onKeysCommit} />);
+    const onKeysChange = vi.fn();
+    render(<Lane {...base} mode="graph" row={laneOf(sampled)} onKeysChange={onKeysChange} />);
     fireEvent.keyDown(graphKeys()[1], { key: 'ArrowRight', shiftKey: true });
-    expect(onKeysCommit.mock.calls[0][0][1].t).toBe(600);
+    expect(onKeysChange.mock.calls[0][0][1].t).toBe(600);
   });
 
   it('selects the segment under a click on the curve', () => {
@@ -318,15 +318,15 @@ describe('Lane in graph mode', () => {
   });
 
   it('commits a dragged bezier handle as the easing on the key', () => {
-    const onKeysCommit = vi.fn();
+    const onKeysChange = vi.fn();
     const onKeysInput = vi.fn();
-    render(<Lane {...base} mode="graph" row={laneOf(eased)} selectedSegment={1} onKeysInput={onKeysInput} onKeysCommit={onKeysCommit} />);
+    render(<Lane {...base} mode="graph" row={laneOf(eased)} selectedSegment={1} onKeysInput={onKeysInput} onKeysChange={onKeysChange} />);
     const handle = document.querySelector('[data-handle-index="0"]')!;
     fireEvent.pointerDown(handle, { clientX: 100, clientY: 18, button: 0 });
     fireEvent.pointerMove(document, { clientX: 150, clientY: 10 });
     fireEvent.pointerUp(document, { clientX: 150, clientY: 10 });
-    expect(onKeysCommit).toHaveBeenCalledTimes(1);
-    expect(onKeysCommit.mock.calls[0][0][1].easing).toHaveProperty('bezier');
+    expect(onKeysChange).toHaveBeenCalledTimes(1);
+    expect(onKeysChange.mock.calls[0][0][1].easing).toHaveProperty('bezier');
     // A live handle writes a fresh spec per move; none may reach the consumer.
     expect(onKeysInput).not.toHaveBeenCalled();
   });
@@ -370,24 +370,24 @@ describe('Lane in graph mode', () => {
   it('commits a key drag released outside the lane', () => {
     const outside = document.createElement('div');
     document.body.appendChild(outside);
-    const onKeysCommit = vi.fn();
-    render(<Lane {...base} mode="graph" row={laneOf(eased)} onKeysCommit={onKeysCommit} />);
+    const onKeysChange = vi.fn();
+    render(<Lane {...base} mode="graph" row={laneOf(eased)} onKeysChange={onKeysChange} />);
     fireEvent.pointerDown(graphKeys()[1], { clientX: 250, clientY: 2, button: 0, buttons: 1 });
     fireEvent.pointerMove(document, { clientX: 300, clientY: 2, buttons: 1 });
     fireEvent.pointerUp(outside, { clientX: 300, clientY: 2, bubbles: true });
-    expect(onKeysCommit).toHaveBeenCalledTimes(1);
+    expect(onKeysChange).toHaveBeenCalledTimes(1);
     outside.remove();
   });
 
   it('treats a move with no button held as the release the handle drag missed', () => {
-    const onKeysCommit = vi.fn();
-    render(<Lane {...base} mode="graph" row={laneOf(eased)} selectedSegment={1} onKeysCommit={onKeysCommit} />);
+    const onKeysChange = vi.fn();
+    render(<Lane {...base} mode="graph" row={laneOf(eased)} selectedSegment={1} onKeysChange={onKeysChange} />);
     fireEvent.pointerDown(document.querySelector('[data-handle-index="0"]')!, { clientX: 100, clientY: 18, button: 0, buttons: 1 });
     fireEvent.pointerMove(document, { clientX: 150, clientY: 10, buttons: 1 });
     fireEvent.pointerMove(document, { clientX: 200, clientY: 10, buttons: 0 });
-    expect(onKeysCommit).toHaveBeenCalledTimes(1);
+    expect(onKeysChange).toHaveBeenCalledTimes(1);
     fireEvent.pointerMove(document, { clientX: 250, clientY: 10, buttons: 1 });
-    expect(onKeysCommit).toHaveBeenCalledTimes(1);
+    expect(onKeysChange).toHaveBeenCalledTimes(1);
   });
 });
 
@@ -425,12 +425,12 @@ describe('Lane segment selection', () => {
     });
 
     it('moves the ghost with the pointer without committing', () => {
-      const onKeyCommit = vi.fn();
-      render(<Lane {...base} row={laneOf(sampled)} onKeyCommit={onKeyCommit} />);
+      const onKeyChange = vi.fn();
+      render(<Lane {...base} row={laneOf(sampled)} onKeyChange={onKeyChange} />);
       grab(1);
       fireEvent.pointerMove(document, { clientX: 400, clientY: 10 });
       expect(screen.getByTestId('timeline-key-ghost')).toHaveStyle({ left: '80%' });
-      expect(onKeyCommit).not.toHaveBeenCalled();
+      expect(onKeyChange).not.toHaveBeenCalled();
     });
 
     it('marks the grabbed key as the drag origin, so it can be dimmed', () => {
@@ -466,13 +466,13 @@ describe('Lane pointer session', () => {
   it('commits a key drag released outside the lane', () => {
     const outside = document.createElement('div');
     document.body.appendChild(outside);
-    const onKeyCommit = vi.fn();
-    render(<Lane {...base} row={laneOf(sampled)} onKeyCommit={onKeyCommit} />);
+    const onKeyChange = vi.fn();
+    render(<Lane {...base} row={laneOf(sampled)} onKeyChange={onKeyChange} />);
     fireEvent.pointerDown(screen.getAllByTestId('timeline-key')[1], { clientX: 250, clientY: 10, button: 0, buttons: 1 });
     fireEvent.pointerMove(document, { clientX: 350, clientY: 10, buttons: 1 });
     fireEvent.pointerUp(outside, { clientX: 350, clientY: 10, bubbles: true });
-    expect(onKeyCommit).toHaveBeenCalledTimes(1);
-    expect(onKeyCommit).toHaveBeenCalledWith(1, 700);
+    expect(onKeyChange).toHaveBeenCalledTimes(1);
+    expect(onKeyChange).toHaveBeenCalledWith(1, 700);
   });
 
   // Chrome releases capture a beat before it delivers pointerup, so ending the
@@ -480,27 +480,27 @@ describe('Lane pointer session', () => {
   // other half of the rule — a detached origin does cancel — belongs to
   // pointerSession.test.ts, which owns it without React in the way.
   it('keeps a key drag alive when the key loses capture but stays mounted', () => {
-    const onKeyCommit = vi.fn();
-    render(<Lane {...base} row={laneOf(sampled)} onKeyCommit={onKeyCommit} />);
+    const onKeyChange = vi.fn();
+    render(<Lane {...base} row={laneOf(sampled)} onKeyChange={onKeyChange} />);
     const key = screen.getAllByTestId('timeline-key')[1];
     fireEvent.pointerDown(key, { clientX: 250, clientY: 10, button: 0, buttons: 1 });
     fireEvent.pointerMove(document, { clientX: 350, clientY: 10, buttons: 1 });
     fireEvent(key, new PointerEvent('lostpointercapture', { pointerId: 0, bubbles: true }));
     expect(screen.queryByTestId('timeline-key-ghost')).toBeInTheDocument();
     fireEvent.pointerUp(document, { clientX: 400, clientY: 10 });
-    expect(onKeyCommit).toHaveBeenCalledTimes(1);
+    expect(onKeyChange).toHaveBeenCalledTimes(1);
   });
 
   it('treats a move with no button held as the release the key drag missed', () => {
-    const onKeyCommit = vi.fn();
+    const onKeyChange = vi.fn();
     const onKeyInput = vi.fn();
-    render(<Lane {...base} row={laneOf(sampled)} onKeyInput={onKeyInput} onKeyCommit={onKeyCommit} />);
+    render(<Lane {...base} row={laneOf(sampled)} onKeyInput={onKeyInput} onKeyChange={onKeyChange} />);
     fireEvent.pointerDown(screen.getAllByTestId('timeline-key')[1], { clientX: 250, clientY: 10, button: 0, buttons: 1 });
     fireEvent.pointerMove(document, { clientX: 350, clientY: 10, buttons: 1 });
     fireEvent.pointerMove(document, { clientX: 400, clientY: 10, buttons: 0 });
     expect(onKeyInput).toHaveBeenCalledTimes(1);
-    expect(onKeyCommit).toHaveBeenCalledTimes(1);
-    expect(onKeyCommit).toHaveBeenCalledWith(1, 800);
+    expect(onKeyChange).toHaveBeenCalledTimes(1);
+    expect(onKeyChange).toHaveBeenCalledWith(1, 800);
     expect(screen.queryByTestId('timeline-key-ghost')).not.toBeInTheDocument();
   });
 });

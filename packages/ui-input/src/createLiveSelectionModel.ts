@@ -28,7 +28,7 @@ function liveEdit(current: () => SelectionModel, from: SelectionEdit | undefined
 
 /** The selection model `current` gives at each call, so an edit begun at a press reports through the component's
  *  latest handler and value: a sweep's model. The second argument, once the item count, is no longer read. */
-export function liveSelection(current: () => SelectionModel, _count?: () => number): SelectionModel {
+export function createLiveSelectionModel(current: () => SelectionModel, _count?: () => number): SelectionModel {
   return {
     get mode() { return current().mode; },
     get followsFocus() { return current().followsFocus; },

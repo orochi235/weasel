@@ -14,7 +14,7 @@ import { EMPTY_TYPEAHEAD, TYPEAHEAD_RESET_MS, type TypeaheadBuffer } from '@weas
 import { spinKey } from '@weasel-js/quantity';
 import { foldText } from '@weasel-js/registry';
 import { accessLetter } from './access';
-import { createMenuController, SUBMENU_OPEN_MS, type MenuController, type MenuScheduler } from './controller';
+import { createMenuController, SUBMENU_OPEN_MS, type MenuController, type Scheduler } from './controller';
 import { isRow, type MenuEntry, type MenuNumberEntry } from './entries';
 import type { MenuDirection } from './placement';
 import { typeaheadStep } from './typeahead';
@@ -287,7 +287,7 @@ class Linger implements fc.Command<Model, Real> {
 function fakeScheduler() {
   let now = 0;
   let timers: { at: number; fn: () => void }[] = [];
-  const s: MenuScheduler = {
+  const s: Scheduler = {
     now: () => now,
     set(fn, ms) {
       const timer = { at: now + ms, fn };

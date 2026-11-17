@@ -5,7 +5,7 @@
  */
 import { describe, expect, it } from 'vitest';
 import fc from 'fast-check';
-import { createMenuController, type Rect } from '@weasel-js/menu';
+import { createMenuController, type MenuRect } from '@weasel-js/menu';
 import { menuLevel, openPath, runs, tally, timeoutFor } from '../pbt.fixture';
 import { menuRowSpans } from '@weasel-js/ui-logic';
 import { panelSize } from './drawPanel';
@@ -121,7 +121,7 @@ describe('createPlacer', () => {
       expect(place(c, s.family, s.theme.tokens).map((p) => p.rect)).toEqual(rects);
       const depth = c.stack().length;
       openPath(c, more);
-      const after: Rect[] = place(c, s.family, s.theme.tokens).map((p) => p.rect);
+      const after: MenuRect[] = place(c, s.family, s.theme.tokens).map((p) => p.rect);
       if (c.stack().length > depth) seen.hit('deeper');
       expect(after.slice(0, depth)).toEqual(rects);
     }), runs(RUNS));

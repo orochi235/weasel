@@ -34,11 +34,11 @@ function sceneWith(data: Data) {
 
 const selection = { current: [asNodeId('n')] };
 
-type Marks = Pick<SelectionPanelProps<Data, 'default', RectPose>, 'selected' | 'onSelect'>;
+type Marks = Pick<SelectionPanelProps<Data, 'default', RectPose>, 'marked' | 'onMark'>;
 
 const TEXT = [textPreset];
 
-function Panel({ data, selected, onSelect }: { data: Data } & Marks) {
+function Panel({ data, marked, onMark }: { data: Data } & Marks) {
   // One scene per story, so an edit outlasts the render a pressed row causes.
   const scene = useMemo(() => sceneWith(data), [data]);
   return (
@@ -49,8 +49,8 @@ function Panel({ data, selected, onSelect }: { data: Data } & Marks) {
         features={TEXT}
         properties={[...defaultNodeProperties, ...inferredNodeProperties]}
         routing={inferredNodeRouting}
-        selected={selected}
-        onSelect={onSelect}
+        marked={marked}
+        onMark={onMark}
       />
     </div>
   );
@@ -144,7 +144,7 @@ export const PatternFillPaint: Story = {
   },
 };
 
-/** What `selected` marks: the Position row, which `pose.y` shares with `pose.x`, and the Appearance section,
+/** What `marked` marks: the Position row, which `pose.y` shares with `pose.x`, and the Appearance section,
  *  named by its own key. A press on a row or on a section's heading selects it, and Cmd or Ctrl on a press adds
  *  it or takes it out. */
 export const SelectedRows: Story = {
@@ -154,8 +154,8 @@ export const SelectedRows: Story = {
     return (
       <Panel
         {...args}
-        selected={selected}
-        onSelect={(path, how) => setSelected((cur) =>
+        marked={selected}
+        onMark={(path, how) => setSelected((cur) =>
           !how.toggle ? [path] : cur.includes(path) ? cur.filter((p) => p !== path) : [...cur, path])}
       />
     );
