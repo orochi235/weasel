@@ -95,7 +95,7 @@ export class Sweep {
     (p.actions ?? []).forEach((a) => this.action(a, at));
     if (p.ambient) {
       this.owner(p.ambient({}), at);
-      this.owner(p.ambient({ move: { moveLabel: 'Move' }, rotate: { rotateLabel: 'Rotate' } }), at);
+      this.owner(p.ambient({ move: { label: 'Move' }, rotate: { rotateLabel: 'Rotate' } }), at);
     }
     (p.contributions ?? []).forEach((c) => this.value(c, at));
     (p.tools ?? []).forEach((t) => this.value(t, at));

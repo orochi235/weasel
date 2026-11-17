@@ -14,7 +14,7 @@ export interface MoveOptions<TPose> {
   dragThresholdPx?: number;
   /** History label for the committed move. Unset, a behavior's or a layout
    *  drop's own op label names it, else `'Move'`. */
-  moveLabel?: string;
+  label?: string;
   /** Commit without an undo entry (`scene.untracked`), bypassing the
    *  consumer `applyOps` hook. Unset, a behavior's `defaultTransient` decides. */
   transient?: boolean;

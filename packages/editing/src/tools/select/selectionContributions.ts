@@ -42,7 +42,7 @@ export function selectionMoveBindings<TPose>(
   // first-touch drag and a re-drag commit identically.
   const moveOpts: BindingOptions<MoveParams> = (() => {
     const move = options.move ?? {};
-    const params: MoveParams = runLifecycleParams({ ...move, label: move.moveLabel });
+    const params: MoveParams = runLifecycleParams(move);
     if (options.reparentOnDrop && options.reparentOnDrop !== 'off') params.reparentOnDrop = options.reparentOnDrop;
     if (move.expandIds) params.expandIds = move.expandIds;
     return {

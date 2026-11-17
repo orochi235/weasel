@@ -28,7 +28,7 @@ describe('selectionMoveBindings — binding opts', () => {
     const onRunEnd = () => {};
     const expandIds = (ids: string[]) => ids;
     const bindings = selectionMoveBindings({
-      move: { moveLabel: 'Drag', transient: true, onRunStart, onRunEnd, expandIds },
+      move: { label: 'Drag', transient: true, onRunStart, onRunEnd, expandIds },
     }).filter((b) => b.actionId === 'move');
     expect(bindings.length).toBeGreaterThan(0);
     for (const b of bindings) {
