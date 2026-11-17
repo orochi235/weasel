@@ -23,7 +23,7 @@ export type { LabelOptions, LabelWidget } from './widgets/label';
 export type { ButtonOptions, ButtonWidget, ButtonEvent, ButtonHandler, HudButtonState, HudButtonTarget } from './widgets/button';
 export { hudButton } from './widgets/button';
 export type { ListOptions, ListWidget } from './widgets/list/list';
-export { hudList, type HudListRow, type HudListState, type HudListTarget } from './widgets/list/drawList';
+export { hudItemList, type HudListRow, type HudListState, type HudListTarget } from './widgets/list/drawList';
 export { hudMeasureEnv } from './measureEnv';
 export type { WindowOptions, WindowWidget } from './widgets/window/window';
 export {

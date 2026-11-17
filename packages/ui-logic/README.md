@@ -33,7 +33,7 @@ coordinates measures with `exactly(w, h)` itself, and the DOM lays out by CSS fr
 
 `measureButton`, `measureRowList`, and `measureMenuPanel` are the ones so far, with `buttonParts` and
 `listMode` saying which parts and roles a state shows. `@weasel-js/ui`'s
-`domButton` and `domItemList` and `@weasel-js/hud`'s `hudButton` and `hudList` implement the first two. A menu
+`domButton` and `domItemList` and `@weasel-js/hud`'s `hudButton` and `hudItemList` implement the first two. A menu
 panel's rows, separators, icon, label, and trailing columns are sized by `menuPanelMetrics`: `@weasel-js/ui`'s
 menu stylesheet lays its panel out from the same tokens, and `@weasel-js/hud`'s menu widget places and
 draws its panels from `measureMenuPanel`.

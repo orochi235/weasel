@@ -58,7 +58,7 @@ is what lets a HUD render headlessly and identically. A window's `content`
 painter is the single, explicit exception.
 
 `button` and `list` implement the measure/draw contract from `@weasel-js/ui-logic` that ui's `Button`
-and `ItemList` implement in the DOM: `hudButton.measure` and `hudList.measure`, with `hudMeasureEnv(ctx)`,
+and `ItemList` implement in the DOM: `hudButton.measure` and `hudItemList.measure`, with `hudMeasureEnv(ctx)`,
 give the box either target draws, so a host can size a widget before creating it.
 
 ## HUD or DOM text?

@@ -10,7 +10,7 @@ import type {
 } from '../../widget';
 import { hudMeasureEnv } from '../../measureEnv';
 import { DEFAULT_FONT_FAMILY } from '../../fonts/registerDefaultFont';
-import { hudList, SWATCH_SIZE, type HudListRow } from './drawList';
+import { hudItemList, SWATCH_SIZE, type HudListRow } from './drawList';
 import { createListNav } from './listNav';
 
 /** Options for a list widget. */
@@ -131,7 +131,7 @@ export function createList(opts: ListOptions): ListWidget {
         // A theme with taller rows: the new height lands on the next frame.
         if (fit()) changed();
       }
-      return hudList.draw(
+      return hudItemList.draw(
         { rows, empty: opts.empty, mode, active: nav.active, hover: nav.hover, ring: nav.ring },
         { bounds, ctx, fontFamily: opts.fontFamily },
       );
