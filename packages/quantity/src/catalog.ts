@@ -121,7 +121,7 @@ for (const u of BUILTIN.map(catalogUnitOf)) for (const key of keysOf(u)) units.p
 
 /** The catalog by every text a unit is found by. A unit registered later shadows an earlier one and the
  *  built-ins (source `'kit'`) at every key they share. */
-export const unitCatalog: Reflection<CatalogUnit> = units.reflection;
+export const unitRegistry: Reflection<CatalogUnit> = units.reflection;
 
 /**
  * Add a unit to the catalog, or replace one: every name, symbol, and alias it
