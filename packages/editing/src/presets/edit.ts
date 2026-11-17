@@ -13,7 +13,7 @@ import { setVertexColorAction } from '../actions/edit/setVertexColor';
 import { transformAgainAction } from '../actions/transformAgain/action';
 import { nudgeDownAction, nudgeLeftAction, nudgeRightAction, nudgeUpAction } from '../actions/edit/nudge';
 import { insertPreset } from './insert';
-import { clipboardCopyAction, clipboardCutAction, clipboardPasteAction, clipboardPasteEventAction } from '../actions/clipboard/action';
+import { clipboardCopyAction, clipboardCutAction, clipboardPasteAction, clipboardPasteCopiedAction } from '../actions/clipboard/action';
 import { selectionPreset } from './selection';
 import { deleteAction } from '../actions/delete/delete';
 
@@ -55,7 +55,7 @@ export const stylePreset: FeaturePreset = {
 export const clipboardPreset: FeaturePreset = {
   id: 'clipboard',
   label: 'Clipboard',
-  actions: [clipboardCutAction, clipboardCopyAction, clipboardPasteAction, clipboardPasteEventAction],
+  actions: [clipboardCutAction, clipboardCopyAction, clipboardPasteAction, clipboardPasteCopiedAction],
   includes: [insertPreset],
 };
 

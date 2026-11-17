@@ -142,7 +142,7 @@ export { setVertexColorAction } from './actions/edit/setVertexColor';
 export { ingestAction } from './actions/edit/ingest';
 export { transformAgainAction } from './actions/transformAgain/action';
 export { transformSelection, type SelectionTransform } from './actions/transformAgain/transformSelection';
-export { clipboardCopyAction, clipboardCutAction, clipboardPasteAction, clipboardPasteEventAction } from './actions/clipboard/action';
+export { clipboardCopyAction, clipboardCutAction, clipboardPasteAction, clipboardPasteCopiedAction } from './actions/clipboard/action';
 export {
   PATHFINDER_STROKES, pathfinderUnionAction, pathfinderSubtractAction, pathfinderIntersectAction,
   pathfinderExcludeAction, pathfinderDivideAction, pathfinderCropAction, pathfinderTrimAction, pathfinderMergeAction,
