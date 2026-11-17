@@ -59,7 +59,7 @@ export function needsDefaultAttribute(program: WgpuProgram, geometry: WgpuGeomet
 
 /** The pipeline a draw of `program` is drawn with, or `null` where the GPU
  *  refused it: an invalid pipeline set on a pass voids the whole submit. */
-export function pipelineFor(
+export function ensurePipeline(
   device: GPUDevice, program: WgpuProgram, geometry: WgpuGeometry, target: PassAttachments, state: GpuDrawState,
 ): GPURenderPipeline | null {
   const key = `${geometry.layoutKey}|${target.key}|${stateKey(state)}`;
