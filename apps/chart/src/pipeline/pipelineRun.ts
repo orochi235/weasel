@@ -1,12 +1,13 @@
 import { useCommand } from '@weasel-js/core';
 import {
-  imageEvaluators, imageValueKinds, testCard, useEffectRunner, type EffectPipeline, type EffectRun, type RunRowOptions,
+  imageEvaluators, imageValueKinds, testCard, useEffectRunner,
+  type EffectPipeline, type EffectRun, type EffectRunner, type RunRowOptions,
 } from '@weasel-js/diagram/effect';
 import { pickFile, menuRun, type MenuRuns } from '@weasel-js/editor';
 import { useLatestOnly } from '@weasel-js/react';
 import type { Latest } from '@weasel-js/registry';
 import { pref } from '@weasel-js/prefs';
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { can } from '../menuBar';
 import { useChartPref } from '../prefs';
 import { mergeRuns, splitDomains, usePipelineAudio } from './pipelineAudio';
@@ -46,7 +47,7 @@ export interface PipelineRun {
 /** Runs the image stages of `pipeline` over the chosen source image, or a test card until one is
  *  chosen, plays its audio stages live, and registers the Run menu and View's run rows. */
 export function usePipelineRun(pipeline: EffectPipeline): PipelineRun {
-  const [sources, setSources] = useState<{ image: ImageBitmap } | undefined>(undefined);
+  const { sources, replace } = useSourceImage();
   const [showValues, setShowValues] = useChartPref('pipeline.showValues');
   const [showPreviews, setShowPreviews] = useChartPref('pipeline.showPreviews');
   const [showSpectrum, setShowSpectrum] = useChartPref('pipeline.showSpectrum');
@@ -62,10 +63,7 @@ export function usePipelineRun(pipeline: EffectPipeline): PipelineRun {
   const playing = () => r.state.playing || audio.runner?.state.playing === true;
   // The test card is drawn on the first run, not on mount, so the mode costs nothing until it runs.
   const prime = () => {
-    if (sources !== undefined) return;
-    const card = { image: testCard(CARD_SIZE) };
-    r.setSources(card);
-    setSources(card);
+    if (sources === undefined) replace(testCard(CARD_SIZE), r);
   };
 
   useCommand(RUN_ACTIONS.run, 'Run', () => { prime(); void r.run(); });
@@ -78,7 +76,7 @@ export function usePipelineRun(pipeline: EffectPipeline): PipelineRun {
   useCommand(RUN_ACTIONS.pause, 'Pause', () => { r.pause(); audio.runner?.pause(); }, { enabled: () => can(playing()) });
   useCommand(RUN_ACTIONS.reset, 'Reset', () => { r.reset(); audio.runner?.reset(); });
   useCommand(RUN_ACTIONS.source, 'Choose Source Image…', () => {
-    chooseImage(picks).then((image) => { if (image !== null) setSources({ image }); })
+    chooseImage(picks).then((image) => { if (image !== null) replace(image, r); })
       .catch(reportFailure('Could not read the image'));
   });
   useCommand(RUN_ACTIONS.audioSource, 'Choose Source Audio…', () => {
@@ -93,6 +91,36 @@ export function usePipelineRun(pipeline: EffectPipeline): PipelineRun {
   const rows = useMemo(() => ({ showValues, showPreviews }), [showValues, showPreviews]);
   const merged = useMemo(() => mergeRuns(runner.run, audio.run), [runner.run, audio.run]);
   return { run: merged, rows };
+}
+
+type SourceRunner = Pick<EffectRunner, 'setSources' | 'idle'>;
+
+/** The source image a runner runs over. Each one let go of, replaced or held at unmount, is closed
+ *  once the runner has finished every run that could read it. */
+export function useSourceImage(): {
+  sources: { image: ImageBitmap } | undefined;
+  /** Hands `runner` `image` as its source now, and lets go of the one before. */
+  replace(image: ImageBitmap, runner: SourceRunner): void;
+} {
+  const [sources, setSources] = useState<{ image: ImageBitmap } | undefined>(undefined);
+  const held = useRef<{ image: ImageBitmap; runner: SourceRunner } | null>(null);
+  const release = (was: { image: ImageBitmap; runner: SourceRunner } | null) => {
+    if (was !== null) void was.runner.idle().then(() => was.image.close());
+  };
+  useEffect(() => () => {
+    release(held.current);
+    held.current = null;
+  }, []);
+  const replace = (image: ImageBitmap, runner: SourceRunner) => {
+    const was = held.current;
+    if (was?.image === image) return;
+    const next = { image };
+    runner.setSources(next);
+    held.current = { image, runner };
+    setSources(next);
+    release(was);
+  };
+  return { sources, replace };
 }
 
 /** The image picked, or null for none or for one a later pick of `picks` has overtaken while it decoded. */
