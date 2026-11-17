@@ -188,7 +188,7 @@ function packageFactories(s: Sweep, scene: never): void {
   s.value(measure.measurementsContribution(scene, measurements), 'measure.measurementsContribution');
   s.value(diagram.diagramPorts({ participants: () => [] } as never), 'diagram.diagramPorts');
   s.value(diagram.diagramWaypoints({} as never), 'diagram.diagramWaypoints');
-  s.value(diagram.diagramLabelDrag({} as never), 'diagram.diagramLabelDrag');
+  s.value(diagram.diagramLabels({} as never), 'diagram.diagramLabels');
   s.value(diagram.diagramEdgeEnds({} as never), 'diagram.diagramEdgeEnds');
   s.value(diagram.reorderContribution({} as never), 'diagram.reorderContribution');
   s.value(diagram.groupReorderContribution(() => {}), 'diagram.groupReorderContribution');
