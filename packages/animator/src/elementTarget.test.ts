@@ -21,4 +21,12 @@ describe('createElementTarget', () => {
     expect(kept).toBe(3);
     expect(t.read()).toBe(3);
   });
+
+  it('shows a value committed while nothing moves it', () => {
+    const element = fakeElement();
+    const t = createElementTarget({ element, value: 0, style: (v: number) => ({ opacity: v }) });
+    t.commit(1);
+    expect(t.read()).toBe(1);
+    expect(element.style.opacity).toBe('1');
+  });
 });

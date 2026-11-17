@@ -72,7 +72,8 @@ export interface Target<T> {
   axisIndexes(axes: readonly AxisRef<T>[]): number[];
   /** The committed value: what shows once nothing is moving it. */
   committed(): T;
-  /** Writes the committed value. Animations moving the target go on adding to the new one. */
+  /** Writes the committed value. Animations moving the target go on adding to the new one; with
+   *  none, it is shown (`show`, then `publish`) at once. */
   commit(value: T): void;
   /** Whether any animation is moving it. */
   readonly active: boolean;
@@ -375,6 +376,11 @@ export function createTarget<T>(opts: TargetOptions<T>): Target<T> {
     commit: (value) => {
       s.handoff?.release();
       opts.set(value);
+      // Nothing moving it means no frame will show it: shown here, as a frame shows a target coming to rest.
+      if (s.live === 0 && s.handoff === null && s.show) {
+        s.show(readTarget(s));
+        s.publish?.();
+      }
     },
     get active() { return s.live > 0 || s.handoff !== null; },
     stop(o) {
