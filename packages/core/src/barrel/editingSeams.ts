@@ -76,7 +76,7 @@ export { followerMove } from '../interactions/actions/followerMoves';
 export { sceneGestureFrames } from '../interactions/actions/gestureFrames';
 export { closeRun, commitRunOps, readRunLifecycle, reduceBehaviorEnd, runBehaviorCancel, runBehaviorSettled } from '../interactions/actions/runLifecycle';
 export type { ClosingRun, RunLifecycle, OwnEndFields } from '../interactions/actions/runLifecycle';
-export { hitTargets, selectionFromHits } from '../interactions/actions/hitSelection';
+export { targetsOf, selectionFromHits } from '../interactions/actions/hitSelection';
 export { translateNodeOps } from '../interactions/actions/moveNodes';
 export { carryPose, invertPlane, planeOf } from '../interactions/actions/planeInput';
 export { pointerStateOf } from '../interactions/actions/pointerState';
