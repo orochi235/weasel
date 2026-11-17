@@ -357,6 +357,19 @@ describe('selectionToSvgString', () => {
     expect(parsed.viewBox).toEqual({ x: 0, y: 0, width: 30, height: 10 });
   });
 
+  it('fits the viewBox around a stroke, which reaches past the geometry', async () => {
+    const scene = fakeScene({
+      a: {
+        kind: 'mark',
+        pose: { x: 0, y: 0, width: 10, height: 10 },
+        data: { path: { kind: 'rect', x: 0, y: 0, width: 10, height: 10 }, stroke: { paint: solid('#000000'), width: 4 } },
+      },
+    }, ['a']);
+    const parsed = parseSvg(await selectionToSvgString(scene, ['a']));
+    expect(parsed.viewBox).toEqual({ x: -2, y: -2, width: 14, height: 14 });
+    expect(parsed.width).toBe(14);
+  });
+
   it('fits the viewBox to a rotated node\'s ink, not its unrotated pose box', async () => {
     const scene = fakeScene({
       a: {

@@ -5,9 +5,10 @@
  * rides on the node so the serializer emits a `rotate` transform.
  */
 import { textFrameFields } from './svgNote';
-import { type Fill, type Path, type PlacedPage, type Scene, type Stroke, boundsOfPath, composesFrames, definesFrame, derivedDepOf, documentOf, inheritedPaintIn, withInheritedPaint, fillInPoseFrame, isAnnotationNode, pageOfNode, pathEffectOf, pathEffectParts, resolveFill, resolvePartPaint, resolveStroke, pathInPoseFrame, shapeGeneratorOf, unionAABB, type ShapeGenerator, worldPoses } from '@weasel-js/core';
+import { type Fill, type Path, type PlacedPage, type Scene, type Stroke, boundsOfPath, composesFrames, definesFrame, derivedDepOf, documentOf, inheritedPaintIn, withInheritedPaint, fillInPoseFrame, isAnnotationNode, pageOfNode, pathEffectOf, pathEffectParts, resolveFill, resolvePartPaint, resolveStroke, pathInPoseFrame, shapeGeneratorOf, type ShapeGenerator, worldPoses } from '@weasel-js/core';
 import { layoutTextPose } from '@weasel-js/text';
 import {
+  computeBounds,
   serializeSvg,
   warmSvg,
   type SerializeOptions,
@@ -268,24 +269,15 @@ export function clipboardSnapshotRootIds(
 /**
  * Serialize a subset of a WeaselDraw scene — the given root ids and, for
  * containers, their descendants — to an SVG document string, fitted to the
- * union bounds of those roots rather than the full page.
- *
- * Bounds are read from each root's own world pose: a container's pose is
- * already the union-AABB of its leaf descendants.
+ * ink of what it writes (strokes and marker heads included) rather than the
+ * full page. A root the export leaves out takes no room.
  */
 export function selectionToSvgString<TLayer extends string>(
   scene: DrawScene<TLayer>,
   ids: readonly string[],
 ): Promise<string> {
-  const poseOf = poseOfIn(scene);
-  const nodes = sceneToSvgNodes(sceneSourceOf(scene, poseOf), ids);
-
-  const bounds = unionAABB(
-    ids
-      .map(poseOf)
-      .filter((p): p is WeaselDrawPose => p != null),
-  ) ?? { x: 0, y: 0, width: 0, height: 0 };
-
+  const nodes = sceneToSvgNodes(sceneSourceOf(scene, poseOfIn(scene)), ids);
+  const bounds = computeBounds(nodes);
   return serializeWarm(nodes, {
     viewBox: bounds,
     width: bounds.width,
