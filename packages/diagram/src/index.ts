@@ -15,7 +15,7 @@ export {
   layoutBody,
   layoutRowPorts,
   measureBody,
-  sizeToBody,
+  growToBody,
 } from './body';
 export type {
   BodyFloor,

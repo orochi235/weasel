@@ -2,7 +2,7 @@
  * A body as scene nodes: one container carrying the trait, and one leaf per
  * row, row port label and perimeter port label that wants drawing.
  */
-import { bodyTrait, labelSize, layoutBody, layoutRowPorts, measureBody, sizeToBody } from './body';
+import { bodyTrait, labelSize, layoutBody, layoutRowPorts, measureBody, growToBody } from './body';
 import type { BodySpec, MeasureRowText, Row, RowBox, RowPortBox } from './body';
 import type { Bounds } from './outline';
 import { portLabelsOf, type PerimeterPortLabelBox } from './portLabels';
@@ -67,7 +67,7 @@ export function buildBody<TData, TLayer extends string, TPose extends Bounds>(
   at: TPose,
   opts: BuildBodyOptions<TData, TLayer, TPose>,
 ): { pose: TPose; specs: BodyNodeSpec<TData, TLayer, TPose>[] } {
-  const pose = sizeToBody(at, measureBody(spec, opts.measure));
+  const pose = growToBody(at, measureBody(spec, opts.measure));
   const trait = bodyTrait(spec, pose, opts.measure);
   const specs: BodyNodeSpec<TData, TLayer, TPose>[] = [{
     kind: 'mark',

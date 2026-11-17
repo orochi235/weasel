@@ -32,7 +32,7 @@ export {
   layoutBody,
   layoutRowPorts,
   measureBody,
-  sizeToBody,
+  growToBody,
 } from './body';
 export { buildBody } from './buildBody';
 export type { BodyNodeSpec, BuildBodyOptions, RowNodeData } from './buildBody';

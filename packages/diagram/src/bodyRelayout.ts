@@ -5,7 +5,7 @@
  * back from the scene and handed to the same layout `buildBody` used.
  */
 import {
-  headerOf, layoutBody, measureBody, rowHeights, sizeToBody, stackRows, type BodySpec, type MeasureRowText, type Row, type RowBox, type RowTextStyle,
+  headerOf, layoutBody, measureBody, rowHeights, growToBody, stackRows, type BodySpec, type MeasureRowText, type Row, type RowBox, type RowTextStyle,
 } from './body';
 import type { Bounds } from './outline';
 import type { BodyDivider, BodyLayout, DiagramNode, HeaderBand } from './types';
@@ -131,7 +131,7 @@ export function relayoutBodies(scene: RelayoutScene, ids: Iterable<string>, meas
       scene.update(id as never, { data: { ...data, diagram: { ...trait, body: { ...layout, heights }, ...(band ? { header: band } : {}) } } } as never);
     }
     const pose = node.pose as Box;
-    const grown = sizeToBody(pose, measureBody(spec, measure));
+    const grown = growToBody(pose, measureBody(spec, measure));
     if (grown !== pose) scene.setPose(id as never, grown as never);
     // Rows are stored in the body's own frame.
     const place = (child: string | undefined, box: Box): void => {

@@ -12,7 +12,7 @@ import { placeContainers, containerSpecs } from './dataContainerPlace';
 import { containerLayoutNodes, resolveContainers, type ContainerLayout } from './dataContainers';
 import { groupSpecs, resolveGroups, type ResolvedGroup } from './dataGroups';
 import { bodyLayoutOf } from './bodyRelayout';
-import { bodyTrait, measureBody, sizeToBody, type BodySpec, type MeasureRowText, type Row, type RowTextStyle } from './body';
+import { bodyTrait, measureBody, growToBody, type BodySpec, type MeasureRowText, type Row, type RowTextStyle } from './body';
 import { buildBody } from './buildBody';
 import { faceCapCenter } from './faceCapCenter';
 import { estimatedWidth } from './rowMeasure';
@@ -217,7 +217,7 @@ function mainSpecs(data: DiagramData, opts: DiagramSceneOptions): DiagramSpec[] 
     // A collapsed node keeps the width its rows would give it open, so it does not jump on a toggle.
     const floor = measureBody(bodies[i]!, measure);
     const width = folded(n) ? Math.max(floor.minWidth, measureBody({ ...bodies[i]!, rows: n.rows! }, measure).minWidth) : floor.minWidth;
-    const pose = sizeToBody(
+    const pose = growToBody(
       { ...(n.at ?? { x: i, y: i }), width: n.width ?? opts.minWidth ?? MIN_WIDTH, height: folded(n) ? 0 : n.height ?? 0 },
       { minWidth: width, minHeight: floor.minHeight },
     );
