@@ -1712,7 +1712,7 @@
     "finishTransformOps": "function",
     "finiteFrame": "function",
     "finiteThroughout": "function",
-    "fitToBounds": "function",
+    "fitSize": "function",
     "fitViewToBounds": "function",
     "fitViewToPage": "function",
     "fitZoom": "function",

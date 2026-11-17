@@ -33,7 +33,7 @@ export function fitZoom(
  * a `viewportW x viewportH` (pixel) rect. `paddingPx` is uniform pixel padding
  * on every side. `null` when there is nothing to fit, as {@link fitZoom}.
  */
-export function fitToBounds(
+export function fitSize(
   viewportW: number,
   viewportH: number,
   contentW: number,

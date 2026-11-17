@@ -1,5 +1,5 @@
 import { useEffect, useRef } from 'react';
-import { fitZoom } from './fitToBounds';
+import { fitZoom } from './fitSize';
 
 /**
  * Compute zoom and pan that fit `contentW x contentH` (in content units)

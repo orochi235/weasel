@@ -1718,7 +1718,7 @@
    "packages/core/src/core/viewport/clampView.ts",
    "packages/core/src/core/viewport/clientToWorld.ts",
    "packages/core/src/core/viewport/createVelocityTracker.ts",
-   "packages/core/src/core/viewport/fitToBounds.ts",
+   "packages/core/src/core/viewport/fitSize.ts",
    "packages/core/src/core/viewport/fitViewToBounds.ts",
    "packages/core/src/core/viewport/homeView.ts",
    "packages/core/src/core/viewport/interpolateView.ts",

@@ -48,7 +48,7 @@ export {
   type DeviceProfileProviderProps,
   type DetectedDeviceFacts,
 } from '../core/device';
-export * from '../core/viewport/fitToBounds';
+export * from '../core/viewport/fitSize';
 export { fitViewToBounds, hasExtent } from '../core/viewport/fitViewToBounds';
 export { HOME_VIEW, resetView } from '../core/viewport/homeView';
 export type { Bounds, ViewportDims, FitViewToBoundsOptions } from '../core/viewport/fitViewToBounds';

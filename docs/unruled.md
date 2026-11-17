@@ -1495,7 +1495,7 @@ Calls the round made:
 
 ## Audit round seven (2026-11-08)
 
-- `fitViewToBounds`, `fitViewToPage`, `fitZoom`, `fitToBounds` and `computeFitViewport` return `null` for empty
+- `fitViewToBounds`, `fitViewToPage`, `fitZoom`, `fitSize` and `computeFitViewport` return `null` for empty
   content, and the viewport's owner resolves it to the reset view (Mike ruled that an empty fit goes to Cmd-0's view;
   the `null` return type, a breaking change, is the agent's way of getting there). Fit Content on a lone point now
   goes to the reset view rather than centering the point.
