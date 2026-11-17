@@ -9,7 +9,7 @@ import { useHostConditions } from '../../shell/hostConditions';
 import { LAB_DENSITY } from '../../shell/labDensity';
 import type { StoryGlobals } from '../../protocol/messages';
 import type { Loaded } from '../../story/indexBundle';
-import type { DepGraph, LoadedStory, StoryContext } from '../../story/types';
+import type { ComponentGraph, LoadedStory, StoryContext } from '../../story/types';
 import { holdAt } from '@weasel-js/clock';
 import { ClockContext } from '../../timeline/context';
 import { useOwnClock } from '../../timeline/StoryClock';
@@ -25,7 +25,7 @@ export interface CaptureViewProps {
   /** What the payload's id names: one story, or a component's index page. */
   subject: Loaded;
   /** The component graph an index page lists dependencies and history from. */
-  graph?: DepGraph | null | undefined;
+  graph?: ComponentGraph | null | undefined;
   payload: CapturePayload;
   setup: FrameSetup;
   /** The shell config's `labTheme`, which the workshop's lab is themed by. */

@@ -3228,7 +3228,7 @@
    "packages/forge/src/vite/capture/entries.ts",
    "packages/forge/src/vite/capture/payload.ts",
    "packages/forge/src/vite/componentOf.ts",
-   "packages/forge/src/vite/depGraph.ts",
+   "packages/forge/src/vite/componentGraph.ts",
    "packages/forge/src/vite/entries.ts",
    "packages/forge/src/vite/folderTitles.ts",
    "packages/forge/src/vite/foreignStories.ts",

@@ -155,7 +155,7 @@ export interface ComponentHistory {
 }
 
 /** One component's place in the component graph. Every list holds story titles, sorted. */
-export interface ComponentDeps {
+export interface ComponentNode {
   /** The file declaring the component, relative to the vite root; null when forge could not find one. */
   source: string | null;
   /** The listed components its own source imports. */
@@ -167,4 +167,4 @@ export interface ComponentDeps {
 }
 
 /** The component graph the vite plugin derives from source, by story title. A gallery has no entry. */
-export type DepGraph = Record<string, ComponentDeps>;
+export type ComponentGraph = Record<string, ComponentNode>;

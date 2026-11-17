@@ -1,7 +1,7 @@
 import { dirname, resolve as resolvePath } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import type { IndexEntry } from '../story/types';
-import { createDepGraph } from './depGraph';
+import { createComponentGraph } from './componentGraph';
 
 const ROOT = '/repo';
 
@@ -57,10 +57,10 @@ const ENTRIES = [
   entry('ui/Dialog', 'stories/Dialog.stories.tsx', { componentName: 'Dialog' }),
 ];
 
-describe('createDepGraph', () => {
+describe('createComponentGraph', () => {
   it('links components through barrels, re-exports and the component’s own relative files', async () => {
     const ws = workspace(FILES);
-    const graph = await createDepGraph({ root: ROOT, read: ws.read }).build(ENTRIES, ws.resolve);
+    const graph = await createComponentGraph({ root: ROOT, read: ws.read }).build(ENTRIES, ws.resolve);
     expect(graph).toEqual({
       'ui/Badge': { source: 'ui/Badge/Badge.tsx', uses: [], usedBy: ['ui/Button', 'ui/Dialog'] },
       'ui/Button': { source: 'ui/Button/Button.tsx', uses: ['ui/Badge'], usedBy: ['ui/Dialog'] },
@@ -74,7 +74,7 @@ describe('createDepGraph', () => {
       'stories/Dialog.stories.tsx': `import { Dialog } from '@ui';\nconst Demo = () => <Dialog />;\nexport default { title: 'ui/Dialog', component: Demo };\n`,
     });
     const entries = [...ENTRIES.slice(0, 2), entry('ui/Dialog', 'stories/Dialog.stories.tsx', { componentName: 'Demo' })];
-    const graph = await createDepGraph({ root: ROOT, read: ws.read }).build(entries, ws.resolve);
+    const graph = await createComponentGraph({ root: ROOT, read: ws.read }).build(entries, ws.resolve);
     expect(graph['ui/Dialog']?.source).toBe('ui/Dialog/Dialog.tsx');
   });
 
@@ -83,7 +83,7 @@ describe('createDepGraph', () => {
       ...FILES,
       'stories/Loose.stories.tsx': `export default { title: 'ui/Loose' };\nexport const A = {};\n`,
     });
-    const graph = await createDepGraph({ root: ROOT, read: ws.read }).build(
+    const graph = await createComponentGraph({ root: ROOT, read: ws.read }).build(
       [...ENTRIES, entry('ui/Loose', 'stories/Loose.stories.tsx')],
       ws.resolve,
     );
@@ -95,7 +95,7 @@ describe('createDepGraph', () => {
       ...FILES,
       'stories/All.stories.tsx': `import { Dialog } from '@ui';\nexport default { title: 'ui/All', component: Dialog, tags: ['gallery'] };\n`,
     });
-    const graph = await createDepGraph({ root: ROOT, read: ws.read }).build(
+    const graph = await createComponentGraph({ root: ROOT, read: ws.read }).build(
       [...ENTRIES, entry('ui/All', 'stories/All.stories.tsx', { componentName: 'Dialog', tags: ['gallery'] })],
       ws.resolve,
     );
@@ -109,7 +109,7 @@ describe('createDepGraph', () => {
       'ui/Button/Button.tsx': `import { Badge } from '../Badge/Badge';\nconst Label = () => <Badge />;\nexport function Button() { return <Label />; }\nexport function Plain() { return null; }\n`,
       'stories/Plain.stories.tsx': `import { Plain } from '../ui/Button/Button';\nexport default { title: 'ui/Plain', component: Plain };\n`,
     });
-    const graph = await createDepGraph({ root: ROOT, read: ws.read }).build(
+    const graph = await createComponentGraph({ root: ROOT, read: ws.read }).build(
       [...ENTRIES, entry('ui/Plain', 'stories/Plain.stories.tsx', { componentName: 'Plain' })],
       ws.resolve,
     );
@@ -119,7 +119,7 @@ describe('createDepGraph', () => {
 
   it('re-reads only the files an invalidation names', async () => {
     const ws = workspace(FILES);
-    const deps = createDepGraph({ root: ROOT, read: ws.read });
+    const deps = createComponentGraph({ root: ROOT, read: ws.read });
     await deps.build(ENTRIES, ws.resolve);
     ws.reads.length = 0;
     ws.table.set(ws.abs('ui/Badge/Badge.tsx'), `import { Button } from '../Button/Button';\nexport const Badge = () => <Button />;\n`);
@@ -132,7 +132,7 @@ describe('createDepGraph', () => {
 
   it('reads a file again after a reset when it could not be read before: one deleted and created again', async () => {
     const ws = workspace(FILES);
-    const deps = createDepGraph({ root: ROOT, read: ws.read });
+    const deps = createComponentGraph({ root: ROOT, read: ws.read });
     await deps.build(ENTRIES, ws.resolve);
     const badge = ws.abs('ui/Badge/Badge.tsx');
     const code = ws.table.get(badge)!;
@@ -149,7 +149,7 @@ describe('createDepGraph', () => {
 
   it('skips a file that fails to parse rather than failing the graph', async () => {
     const ws = workspace({ ...FILES, 'ui/Badge/Badge.tsx': `export const Badge = (` });
-    const graph = await createDepGraph({ root: ROOT, read: ws.read }).build(ENTRIES, ws.resolve);
+    const graph = await createComponentGraph({ root: ROOT, read: ws.read }).build(ENTRIES, ws.resolve);
     expect(graph['ui/Badge']).toEqual({ source: null, uses: [], usedBy: [] });
     expect(graph['ui/Button']?.uses).toEqual([]);
   });

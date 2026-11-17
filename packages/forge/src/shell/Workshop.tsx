@@ -13,7 +13,7 @@ import type { FrameImporters } from '../frame/mountFrame';
 import { type StoryGlobals, stableStringify } from '../protocol/messages';
 import { indexEntries } from '../story/indexPages';
 import { LibrariesContext, librariesFrom } from '../story/library';
-import type { DepGraph, IndexEntry } from '../story/types';
+import type { ComponentGraph, IndexEntry } from '../story/types';
 import { DependenciesContext } from './dependencies';
 import { missingInstrument } from './documentInstrument';
 import { A11Y_SECTION } from './a11y/A11yPanel';
@@ -57,7 +57,7 @@ export interface WorkshopProps {
   storageKey?: string;
   storage?: StorageAdapter;
   /** The component graph index pages list dependencies from. */
-  dependencies?: DepGraph;
+  dependencies?: ComponentGraph;
   /** The dev server's base, where it takes captures of a story; absent, lenses offer no Pixels source. */
   captureBase?: string;
   /** The dev server's base, where it lists a component's issues; absent, the Issues panel says it is not connected. */

@@ -1,5 +1,5 @@
 import type { FrameImporters } from '../frame/mountFrame';
-import type { DepGraph, IndexEntry } from '../story/types';
+import type { ComponentGraph, IndexEntry } from '../story/types';
 import type { MountedWorkshop } from './mountWorkshop';
 
 /** The part of vite's `import.meta.hot` the workshop listens on. */
@@ -21,7 +21,7 @@ export interface FollowedEdits {
 export function followEdits(hot: HotEvents | undefined, workshop: MountedWorkshop): FollowedEdits {
   const stale = new Set<string>();
   hot?.on('forge:index', (next: readonly IndexEntry[]) => workshop.setIndex(next));
-  hot?.on('forge:deps', (next: DepGraph) => workshop.setDependencies(next));
+  hot?.on('forge:deps', (next: ComponentGraph) => workshop.setDependencies(next));
   hot?.on('forge:story', ({ file }: { file: string }) => {
     stale.add(file);
     workshop.revise();

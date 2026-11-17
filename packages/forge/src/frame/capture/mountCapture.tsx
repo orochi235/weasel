@@ -7,7 +7,7 @@ import { loadIndexBundle, type Loaded } from '../../story/indexBundle';
 import { isIndexId } from '../../story/indexPages';
 import { LibrariesContext, type Library, librariesFrom } from '../../story/library';
 import { loadStories } from '../../story/load';
-import type { DepGraph, IndexEntry } from '../../story/types';
+import type { ComponentGraph, IndexEntry } from '../../story/types';
 import type { CapturePayload } from '../../vite/capture/payload';
 import type { FrameSetup } from '../FrameController';
 import type { FrameImporters } from '../mountFrame';
@@ -23,7 +23,7 @@ export interface MountCaptureOptions {
   /** The shell config's `libraries`, which an index page's header names and tints. */
   libraries?: readonly Library[] | undefined;
   /** The component graph an index page reads its dependencies and history from, asked for at its first capture. */
-  dependencies?: (() => Promise<DepGraph>) | undefined;
+  dependencies?: (() => Promise<ComponentGraph>) | undefined;
 }
 
 declare global {
@@ -62,7 +62,7 @@ export function mountCapture(options: MountCaptureOptions): void {
   const container = document.getElementById('root') ?? document.body;
   const root = createKitRoot(container, setup.icons);
   const prepared = new Map<string, Promise<Loaded>>();
-  let graph: Promise<DepGraph | null> | null = null;
+  let graph: Promise<ComponentGraph | null> | null = null;
   let renders = 0;
 
   const importOf = (file: string): Promise<Record<string, unknown>> => {
@@ -93,7 +93,7 @@ export function mountCapture(options: MountCaptureOptions): void {
     return loading;
   };
   // An index page without its graph still shows its stories; the screen shows it the same way until the graph lands.
-  const graphOf = (): Promise<DepGraph | null> => {
+  const graphOf = (): Promise<ComponentGraph | null> => {
     graph ??= options.dependencies ? options.dependencies().catch(() => null) : Promise.resolve(null);
     return graph;
   };

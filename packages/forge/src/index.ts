@@ -44,10 +44,10 @@ export { type StoryTimeline, usePlayhead, useTimeline } from './timeline/context
 export type { Library } from './story/library';
 export { GALLERY_TAG, LAB_TAG } from './story/tags';
 export type {
-  ComponentDeps,
+  ComponentNode,
   ComponentHistory,
   Decorator,
-  DepGraph,
+  ComponentGraph,
   IndexContext,
   IndexRender,
   IndexStoryProps,

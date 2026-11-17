@@ -1,4 +1,4 @@
-import type { ResolveImport } from './depGraph.ts';
+import type { ResolveImport } from './componentGraph.ts';
 import { foreignStories } from './foreignStories.ts';
 import type { ForeignCallee } from './indexFile.ts';
 import type { ForeignStories } from './nativeExports.ts';
