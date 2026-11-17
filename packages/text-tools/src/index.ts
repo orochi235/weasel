@@ -17,7 +17,7 @@ export {
   createTextPreset, createTextToolsPreset, textNodeRouting, textPreset, textToolsPreset, whiteboardPreset,
   type TextPresetOptions, type TextToolsPresetOptions,
 } from './presets';
-export { TEXT_TOOLS, WHITEBOARD_TOOLS, useTextToolsTools, type TextToolId } from './toolSets';
+export { TEXT_TOOLS, useTextToolsTools, type TextToolId } from './toolSets';
 
 // ─── The text node kind ────────────────────────────────────────────────────
 export {
