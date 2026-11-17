@@ -202,7 +202,7 @@ export { tuneToolOptions } from './tools/tuneToolOptions';
 export type { ThresholdDragOptions, ThresholdDragHandle } from './interactions/thresholdDrag';
 export { startCarry } from './interactions/carry';
 export type { Carry, CarryCallbacks, CarryPayload, CarryPointer, CarryStage } from './interactions/carry';
-export { sweepAction, SWEEP_BINDING } from './interactions/sweep';
+export { sweepAction, SWEEP_SPEC } from './interactions/sweep';
 export type { SweepItem, SweepOptions, SweepPress, SweepRun } from './interactions/sweep';
 export type {
   PointerSession, PointerSessionOptions, PointerSessionCallbacks, PointerSessionCancelReason, SwallowClickOptions,

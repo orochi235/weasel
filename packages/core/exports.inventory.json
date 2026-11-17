@@ -1007,7 +1007,7 @@
     "SPRITE_STRIDE": "const",
     "STAR_RATIO_RANGE": "const",
     "STROKE_DASH_RATIOS": "const",
-    "SWEEP_BINDING": "const",
+    "SWEEP_SPEC": "const",
     "SavedScene": "type",
     "ScalarOrXY": "type",
     "Scale2": "type",
