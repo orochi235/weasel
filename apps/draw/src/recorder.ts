@@ -145,9 +145,9 @@ export function createRecorder(opts: {
   let startedAt = '';
   let profile: RecordingProfile = 'gesture-only';
   let throttleMs = 16;
-  /** `t` (ms since start) of the most recently captured pointermove.
-   *  `-Infinity` lets the first move of a new gesture through unconditionally. */
-  let lastMoveT = -Infinity;
+  /** `t` (ms since start) of each pointer's most recently captured pointermove. A pointer
+   *  with none, as after its press, has its next move let through unconditionally. */
+  const lastMoveT = new Map<number, number>();
   let viewport = { w: 0, h: 0 };
   /** Pointer IDs with an active pointerdown that hasn't seen its matching
    *  up/cancel yet. Used to gate pointermove capture in `gesture-only`. */
@@ -190,16 +190,19 @@ export function createRecorder(opts: {
       if (profile === 'events-only') return;
       if (profile === 'gesture-only' && activeDowns.size === 0) return;
       const t = now();
-      if (throttleMs > 0 && t - lastMoveT < throttleMs) return;
-      lastMoveT = t;
-      // `button`/`buttons`/`pointerType`/`pointerId` don't change from the matching
-      // pointerdown, so a move omits them; replay reconstitutes via the down event.
+      if (throttleMs > 0 && t - (lastMoveT.get(pe.pointerId) ?? -Infinity) < throttleMs) return;
+      lastMoveT.set(pe.pointerId, t);
+      // `button`/`buttons`/`pointerType` don't change from the matching pointerdown, so a
+      // move omits them and replay takes them from the press. `pointerId` names that press
+      // unless it is the latest one held, which replay assumes when it is absent.
+      const latest = [...activeDowns].at(-1);
       events.push({
         type,
         t,
         clientX: pe.clientX,
         clientY: pe.clientY,
         ...modifiers(pe),
+        ...(latest !== undefined && latest !== pe.pointerId ? { pointerId: pe.pointerId } : {}),
         target: classifyTarget(pe.target),
       });
       return;
@@ -208,7 +211,7 @@ export function createRecorder(opts: {
       activeDowns.add(pe.pointerId);
       // Let the first pointermove of every new gesture through — threshold-crossing info
       // is the most replay-relevant move.
-      lastMoveT = -Infinity;
+      lastMoveT.delete(pe.pointerId);
     }
     if (type === 'pointerup' || type === 'pointercancel') activeDowns.delete(pe.pointerId);
     events.push({
@@ -265,7 +268,7 @@ export function createRecorder(opts: {
       startTime = clock();
       events = [];
       activeDowns.clear();
-      lastMoveT = -Infinity;
+      lastMoveT.clear();
       profile = startOpts?.profile ?? 'gesture-only';
       throttleMs = startOpts?.throttleMs ?? 16;
       startedAt = new Date().toISOString();

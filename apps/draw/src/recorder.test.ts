@@ -190,6 +190,32 @@ describe('createRecorder', () => {
     expect(Object.prototype.hasOwnProperty.call(e, 'm')).toBe(false);
   });
 
+  it('names the pointer of a move that is not the latest one pressed', () => {
+    const rec = createRecorder({ canvas: () => canvas });
+    rec.start({ throttleMs: 0 });
+    canvas.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true, pointerId: 1 }));
+    canvas.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true, pointerId: 2 }));
+    canvas.dispatchEvent(new PointerEvent('pointermove', { bubbles: true, pointerId: 1 }));
+    canvas.dispatchEvent(new PointerEvent('pointermove', { bubbles: true, pointerId: 2 }));
+    canvas.dispatchEvent(new PointerEvent('pointerup', { bubbles: true, pointerId: 2 }));
+    canvas.dispatchEvent(new PointerEvent('pointermove', { bubbles: true, pointerId: 1 }));
+    const moves = rec.stop().events.filter((e) => e.type === 'pointermove');
+    expect(moves.map((e) => e.pointerId)).toEqual([1, undefined, undefined]);
+  });
+
+  it('throttles each pointer of a gesture on its own', () => {
+    let t = 1000;
+    const rec = createRecorder({ canvas: () => canvas, clock: () => t });
+    rec.start();
+    canvas.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true, pointerId: 1 }));
+    canvas.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true, pointerId: 2 }));
+    canvas.dispatchEvent(new PointerEvent('pointermove', { bubbles: true, pointerId: 1 }));
+    t += 1;
+    canvas.dispatchEvent(new PointerEvent('pointermove', { bubbles: true, pointerId: 2 }));
+    const moves = rec.stop().events.filter((e) => e.type === 'pointermove');
+    expect(moves).toHaveLength(2);
+  });
+
   it('throttles pointermove at the default ~60Hz rate', () => {
     let t = 1000;
     const rec = createRecorder({ canvas: () => canvas, clock: () => t });
@@ -227,12 +253,12 @@ describe('createRecorder', () => {
     rec.start();  // default gesture-only + throttle 16
     // Gesture 1
     canvas.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true, pointerId: 1 }));
-    canvas.dispatchEvent(new PointerEvent('pointermove', { bubbles: true, clientX: 10, clientY: 10 }));
+    canvas.dispatchEvent(new PointerEvent('pointermove', { bubbles: true, clientX: 10, clientY: 10, pointerId: 1 }));
     canvas.dispatchEvent(new PointerEvent('pointerup', { bubbles: true, pointerId: 1 }));
     // Gesture 2 — immediately following, no real-time gap. The first
-    // pointermove must still land because pointerdown resets lastMoveT.
+    // pointermove must still land because pointerdown resets its pointer's throttle.
     canvas.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true, pointerId: 2 }));
-    canvas.dispatchEvent(new PointerEvent('pointermove', { bubbles: true, clientX: 20, clientY: 20 }));
+    canvas.dispatchEvent(new PointerEvent('pointermove', { bubbles: true, clientX: 20, clientY: 20, pointerId: 2 }));
     canvas.dispatchEvent(new PointerEvent('pointerup', { bubbles: true, pointerId: 2 }));
     const out = rec.stop();
     const moves = out.events.filter((e) => e.type === 'pointermove');
