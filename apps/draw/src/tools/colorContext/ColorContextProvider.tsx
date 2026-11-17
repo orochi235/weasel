@@ -68,7 +68,6 @@ type PaintSlot = keyof Paints;
  * outright.
  */
 export function colorKeepingAlpha(slot: PaintSlot, paint: ActivePaint, color: string): string {
-  if (color.length === 9) return color;
   return mergeAlphaFromPrev(color, solidColorOf(paint) ?? (slot === 'fill' ? DEFAULT_FILL_COLOR : DEFAULT_STROKE_COLOR));
 }
 

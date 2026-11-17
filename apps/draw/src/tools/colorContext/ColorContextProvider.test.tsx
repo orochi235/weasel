@@ -65,5 +65,10 @@ describe('ColorContextProvider — state cluster', () => {
     act(() => result.current.toggleFocusedNone());
     expect(result.current.fill).toEqual({ kind: 'solid', color: '#ffffffff' });
   });
-});
 
+  it('normalizes an 8-digit color it is given, as it does a 6-digit one', () => {
+    const { result } = renderHook(() => useColorContext(), { wrapper: makeWrapper() });
+    act(() => { result.current.setFillColor('#FF8800CC'); });
+    expect(result.current.fill).toEqual({ kind: 'solid', color: '#ff8800cc' });
+  });
+});
