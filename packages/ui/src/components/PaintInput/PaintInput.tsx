@@ -1,5 +1,5 @@
 import { useCallback, useState, type ReactElement } from 'react';
-import { switchGradientKind, type PaintKind, type PaintKindEntry } from '@weasel-js/paint-kinds';
+import { withPaintKind, type PaintKind, type PaintKindEntry } from '@weasel-js/paint-kinds';
 import { usePaintKind, usePaintKinds } from '@weasel-js/paint-kinds/react';
 import { Icon } from '../Icon/Icon';
 import type { IconSpec } from '@weasel-js/icons';
@@ -185,7 +185,7 @@ export function PaintInput(props: PaintInputProps): ReactElement {
       onChange(seen);
       return;
     }
-    const converted = value != null ? switchGradientKind(value, kind) : undefined;
+    const converted = value != null ? withPaintKind(value, kind) : undefined;
     if (converted !== undefined) {
       onChange(converted);
       return;

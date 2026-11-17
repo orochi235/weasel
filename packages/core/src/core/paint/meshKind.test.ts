@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { createGLRecorder, recordedPaintTextures } from '@weasel-js/renderer/testing/glRecorder';
-import { getPaintKind, listGradientKinds, listPaintKinds, switchGradientKind } from '@weasel-js/paint-kinds';
+import { getPaintKind, listGradientKinds, listPaintKinds, withPaintKind } from '@weasel-js/paint-kinds';
 import { paintToLocalUnits, paintToBoundsUnits } from '@weasel-js/renderer';
 import { seedMeshPatch, isMeshGradientPaint, meshGradientXml, MESH_GRADIENT_KIND } from '@weasel-js/renderer/mesh';
 import type { MeshGradientPaint } from '@weasel-js/renderer/mesh';
@@ -241,7 +241,7 @@ describe('the mesh as a gradient kind', () => {
   });
 
   it('builds from a stop list as one patch per gap, so the ramp survives the switch', () => {
-    const mesh = switchGradientKind(LINEAR, MESH_GRADIENT_KIND) as unknown as MeshGradientPaint;
+    const mesh = withPaintKind(LINEAR, MESH_GRADIENT_KIND) as unknown as MeshGradientPaint;
     expect(mesh.kind).toBe(MESH_GRADIENT_KIND);
     expect(mesh.units).toBe('bounds');
     expect(mesh.interpolate).toBe('oklch');
@@ -253,8 +253,8 @@ describe('the mesh as a gradient kind', () => {
   });
 
   it('reads back as the stop list it was built from', () => {
-    const mesh = switchGradientKind(LINEAR, MESH_GRADIENT_KIND)!;
-    const back = switchGradientKind(mesh, 'linear-gradient') as { stops: unknown; interpolate?: string; opacity?: number };
+    const mesh = withPaintKind(LINEAR, MESH_GRADIENT_KIND)!;
+    const back = withPaintKind(mesh, 'linear-gradient') as { stops: unknown; interpolate?: string; opacity?: number };
     expect(back.stops).toEqual(STOPS);
     expect(back.interpolate).toBe('oklch');
     expect(back.opacity).toBe(0.5);
@@ -262,7 +262,7 @@ describe('the mesh as a gradient kind', () => {
 
   it('reads a seeded mesh as its top edge, left to right', () => {
     const seed = seedMeshPatch('#ff0000ff');
-    const back = switchGradientKind(seed as unknown as Paint, 'radial-gradient') as { kind: string; stops: unknown };
+    const back = withPaintKind(seed as unknown as Paint, 'radial-gradient') as { kind: string; stops: unknown };
     expect(back.kind).toBe('radial-gradient');
     expect(back.stops).toEqual([
       { offset: 0, color: seed.patches[0].colors[0] },
@@ -271,11 +271,11 @@ describe('the mesh as a gradient kind', () => {
   });
 
   it('keeps geometry across a switch between two stop gradients', () => {
-    const radial = switchGradientKind(LINEAR, 'radial-gradient');
+    const radial = withPaintKind(LINEAR, 'radial-gradient');
     expect(radial).toMatchObject({ kind: 'radial-gradient', center: { x: 0.5, y: 0.5 }, radius: 0.5 });
   });
 
   it('declines a paint that is not a gradient', () => {
-    expect(switchGradientKind({ kind: 'solid', color: '#fff' }, MESH_GRADIENT_KIND)).toBeUndefined();
+    expect(withPaintKind({ kind: 'solid', color: '#fff' }, MESH_GRADIENT_KIND)).toBeUndefined();
   });
 });

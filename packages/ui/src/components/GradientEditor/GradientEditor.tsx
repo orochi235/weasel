@@ -1,6 +1,6 @@
 import { type ReactElement } from 'react';
 import { isGradientPaint, type ColorSpace, type Paint } from '@weasel-js/paint';
-import { switchGradientKind, type PaintKind, nativeSvgKind, nativeSvgSpace } from '@weasel-js/paint-kinds';
+import { withPaintKind, type PaintKind, nativeSvgKind, nativeSvgSpace } from '@weasel-js/paint-kinds';
 import { useGradientKinds, usePaintKind } from '@weasel-js/paint-kinds/react';
 import { paintKindEditor } from '../PaintInput/paintKindEditor';
 import { SegmentedBar, type SegmentedBarItem } from '../Segmented';
@@ -64,7 +64,7 @@ const inertWhen = (off: boolean) => (el: HTMLElement | null): void => {
 /**
  * Editor for a gradient's kind and colors: the stops of a linear, radial or
  * conic gradient, or the kind's own `Editor`, such as a mesh's corner colors.
- * Switching kind goes through `switchGradientKind`, so the colors carry across.
+ * Switching kind goes through `withPaintKind`, so the colors carry across.
  *
  * Stops are handles on the track, each drawn in its own color. One is
  * selected at a time — by a press, or by focus — and a single row under the
@@ -94,7 +94,7 @@ export function GradientEditor(props: GradientEditorProps): ReactElement {
   const spaces = SPACES.filter((item) => !svg || nativeSvgSpace(item.value) || item.value === space);
 
   const switchKind = (next: PaintKind): void => {
-    const converted = switchGradientKind(value, next);
+    const converted = withPaintKind(value, next);
     if (converted && converted !== value) onChange(converted);
   };
 
