@@ -48,3 +48,14 @@ describe('extractOps', () => {
     ]);
   });
 });
+
+describe('extractActions', () => {
+  it('catalogs actions declared through defineAction, a wrapper or a factory, from core and editing', () => {
+    expect(Object.keys(index.actions)).toEqual(expect.arrayContaining([
+      'undo', 'redo', 'viewport.dragPan', 'viewport.wheelPan', 'viewport.pinchZoom', 'viewport.zoom',
+      'move', 'resize', 'rotate', 'insert', 'delete',
+    ]));
+    expect(index.actions['viewport.pinchZoom']).toMatchObject({ label: 'Pinch Zoom', group: 'viewport' });
+    expect(index.actions.move?.source.file).toBe('packages/editing/src/actions/move/action.ts');
+  });
+});
