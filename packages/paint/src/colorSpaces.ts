@@ -104,9 +104,8 @@ export function oklabToSrgbU8(L: number, A: number, B: number): [number, number,
   return [linearToSrgbByte(rl), linearToSrgbByte(gl), linearToSrgbByte(bl)];
 }
 
-/** Blend two 8-bit sRGB colors through OKLab. Perceptually even, and it does
- *  not pass through the muddy midpoints an sRGB blend produces between
- *  complementary hues. */
+/** Blend two OKLab colors, component by component, `t` of the way from `from` to `to`. Perceptually even,
+ *  and it does not pass through the muddy midpoints an sRGB blend produces between complementary hues. */
 export function lerpOklab(
   from: readonly [number, number, number],
   to: readonly [number, number, number],
