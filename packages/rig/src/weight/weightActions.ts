@@ -7,7 +7,7 @@ import type { NodeId, Scene } from '@weasel-js/core';
 import { commitOps } from '@weasel-js/core';
 import type { RigNodeData } from '@weasel-js/core';
 import { jointAt } from '@weasel-js/animator';
-import { skinnable, type Skin } from '@weasel-js/animator';
+import { toSkinPolygon, type Skin } from '@weasel-js/animator';
 import { dataRestPath } from '@weasel-js/core';
 import { brushWeights, jointShares, setWeights } from '@weasel-js/animator';
 import { sceneReach, type PlacedRig } from '../bone/placedRig';
@@ -50,7 +50,7 @@ export function weighedPaths(env: Pick<WeightEnv, 'scene' | 'placed' | 'painted'
       const rest = node && dataRestPath(node);
       if (node && rest) {
         const skin = painted.get(id) ?? (node.data as RigNodeData | null | undefined)?.skin ?? {};
-        out.push({ id, path: skinnable(rest), skin });
+        out.push({ id, path: toSkinPolygon(rest), skin });
       }
       walk(id);
     }

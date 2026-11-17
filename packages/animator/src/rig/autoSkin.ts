@@ -1,6 +1,6 @@
 import { mat3, pointSegmentDist, worldCoords, type Path } from '@weasel-js/geom';
 import { resolveSkeleton } from './resolveSkeleton';
-import { skinnable, type Skin } from './skin';
+import { toSkinPolygon, type Skin } from './skin';
 import type { Skeleton } from './types';
 
 /** Options for `autoSkin`. */
@@ -52,7 +52,7 @@ export function autoSkin(path: Path, skeleton: Skeleton, options: AutoSkinOption
   const power = options.power ?? 4;
   const max = Math.max(1, options.max ?? 2);
   const bones = bonesOf(skeleton);
-  const coords = worldCoords(skinnable(path));
+  const coords = worldCoords(toSkinPolygon(path));
   const count = coords.length >> 1;
   const out = new Map<string, number[]>();
   const distance = new Float64Array(bones.length);
