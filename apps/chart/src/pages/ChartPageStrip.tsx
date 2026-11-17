@@ -1,9 +1,11 @@
 import { pageName, useMenuHost, useMenus } from '@weasel-js/core';
 import { PageTabs } from '@weasel-js/ui/components/PageTabs';
 import { useCallback, useState, type ReactElement } from 'react';
-import type { DiagramTheme } from '@weasel-js/diagram';
+import { diagramTypeOf, type DiagramTheme } from '@weasel-js/diagram';
+import { PAGE_TEMPLATES } from '@weasel-js/diagram-formats';
+import { getOwn } from '@weasel-js/registry';
 import type { ChartScene } from '../chartDocument';
-import { AddPageDialog } from './AddPageDialog';
+import { addChartPage, AddPageDialog } from './AddPageDialog';
 import { PAGE_TAB_MENU_ID, PAGE_TAB_MENUS, usePageCommands } from './pageCommands';
 import { PageSetupDialog } from './PageSetupDialog';
 import type { ChartPages } from './useChartPages';
@@ -31,7 +33,7 @@ export function ChartPageStrip({ scene, pages, theme }: { scene: ChartScene; pag
         onSelect={pages.goTo}
         onRename={pages.rename}
         onMove={pages.move}
-        onAdd={() => pages.add()}
+        onAdd={() => addChartPage(scene, pages, getOwn(PAGE_TEMPLATES, diagramTypeOf(scene).id)!, theme)}
         onTabContextMenu={(id, e) => {
           const opened = host?.open({ menu: PAGE_TAB_MENU_ID, client: { x: e.clientX, y: e.clientY }, params: { page: id }, source: 'pointer' });
           if (opened) e.preventDefault();

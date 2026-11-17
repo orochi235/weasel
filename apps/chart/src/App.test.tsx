@@ -344,6 +344,23 @@ describe('App', () => {
     }
   });
 
+  it("adds a page of the chart's own type from the page tabs' add button, its shapes shown again", () => {
+    mount();
+    choose('File', 'New…');
+    act(() => { fireEvent.click(within(screen.getByRole('dialog', { name: 'New Chart' })).getByRole('option', { name: /Flowchart/ })); });
+    act(() => { fireEvent.click(screen.getByRole('button', { name: 'Create' })); });
+    const panels = () => [...document.querySelectorAll('[role="toolbar"]')].map((t) => t.getAttribute('aria-label')).filter((n) => n !== null);
+    fireEvent.click(screen.getByRole('button', { name: /More shapes/ }), { detail: 1 });
+    act(() => { fireEvent.click(screen.getByRole('menuitemcheckbox', { name: /Flowchart/ })); });
+    expect(panels()).not.toContain('Flowchart');
+    act(() => { fireEvent.click(screen.getByRole('button', { name: 'Add page' })); });
+    expect(screen.getAllByRole('tab')).toHaveLength(2);
+    expect(panels()).toContain('Flowchart');
+    choose('Edit', 'Undo');
+    expect(screen.getAllByRole('tab')).toHaveLength(1);
+    expect(panels()).not.toContain('Flowchart');
+  });
+
   it('opens Page Setup on a page from the Page menu', () => {
     mount();
     choose('Page', 'Page Setup');
