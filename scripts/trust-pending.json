@@ -6,5 +6,6 @@
   "@weasel-js/prefs-editor",
   "@weasel-js/prefs-schema",
   "@weasel-js/scale",
-  "@weasel-js/text-tools"
+  "@weasel-js/text-tools",
+  "@weasel-js/ui-canvas"
 ]
