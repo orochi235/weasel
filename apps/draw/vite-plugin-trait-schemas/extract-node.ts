@@ -21,6 +21,8 @@ const VARIANT_NAMES: readonly string[] = ['MarkNode', 'GroupNode'];
 const BASE_NAME = 'NodeBase';
 const UNION_NAME = 'Node';
 const ENTRY = 'packages/core/src/core/scene/types.ts';
+/** `ENTRY`, and the file it re-exports the node types from. */
+export const NODE_READS: readonly string[] = [ENTRY, 'packages/core/src/core/scene/nodeTypes.ts'];
 
 export function extractNode(project: Project, repoRoot: string): SceneNodeSchema {
   const sf = sourceFileOrThrow(

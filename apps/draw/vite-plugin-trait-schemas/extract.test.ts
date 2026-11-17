@@ -3,7 +3,8 @@ import { beforeAll, describe, expect, it } from 'vitest';
 import { resolve } from 'node:path';
 import { Project } from 'ts-morph';
 import type { TraitSchemaIndex } from '../src/dev/traitSchemas.types.ts';
-import { extractTraitSchemas } from './extract.ts';
+import { existsSync } from 'node:fs';
+import { extractTraitSchemas, isWatched, watchedFilesFor } from './extract.ts';
 import { extractOps } from './extract-ops.ts';
 import { GESTURE_CATALOG_KEYS } from '../src/dev/registryEntries.ts';
 
@@ -89,5 +90,21 @@ describe('extractShapes', () => {
     expect(index.shapes.polygon?.data.map((p) => p.name)).toEqual(['path', 'generator', 'fill', 'stroke']);
     expect(index.shapes.image?.data.map((p) => p.name)).toEqual(['image']);
     expect(rect.source.file).toBe('packages/editing/src/deps/insert.ts');
+  });
+});
+
+describe('watchedFilesFor', () => {
+  it('names only paths that exist', () => {
+    for (const path of watchedFilesFor(repoRoot)) expect(existsSync(path), path).toBe(true);
+  });
+
+  it('covers every file a schema in the index was read from', () => {
+    const watched = watchedFilesFor(repoRoot);
+    const sources = [
+      ...Object.values(index.shapes), ...Object.values(index.ops), ...Object.values(index.actions),
+      ...Object.values(index.gestures), index.node,
+    ].flatMap((s) => (s.source ? [s.source.file] : []));
+    for (const file of new Set(sources)) expect(isWatched(watched, resolve(repoRoot, file)), file).toBe(true);
+    expect(isWatched(watched, resolve(repoRoot, 'packages/core/src/core/opsX/a.ts'))).toBe(false);
   });
 });
