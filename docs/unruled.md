@@ -2309,10 +2309,10 @@ Calls the lanes made without a ruling:
 
 ## Audit round twenty-three (2026-11-13): the apps
 
-- 2026-11-13 (the lane's call): a double-click on text opens it through `editTextAt`, an action of its own in the
+- 2026-11-13 (the lane's call): a double-click on text opens it through `enterTextEditAt`, an action of its own in the
   `textEdit` feature (part of `edit`), rather than a default binding on `enterTextEdit`: that one opens the
   selection and is what the text and sticky tools' clicks reach, which should keep opening the selected node
-  whatever glyph is under the click. `editTextAt` declines where the double-click names a group, so text
+  whatever glyph is under the click. `enterTextEditAt` declines where the double-click names a group, so text
   in a group enters the group first and opens on the next double-click, as path edit does.
 - 2026-11-13 (the lane's call): a canvas inside a host's `useSceneTextEdit` container answers the `textEdit` dep
   with that editor, so a host binds nothing for a double-click or a text tool to reach it. `TextEditDepPublisher`

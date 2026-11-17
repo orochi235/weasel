@@ -6,7 +6,7 @@
 import { isTextData } from '@weasel-js/text';
 import { viewPreset, type FeaturePreset, type NodeRoutingEntry } from '@weasel-js/core';
 import { editEffectTextAction } from './actions/editEffectText';
-import { editTextAtAction } from './actions/editTextAt';
+import { enterTextEditAtAction } from './actions/enterTextEditAt';
 import { enterTextEditAction } from './actions/enterTextEdit';
 import { canvasTextEditor, type CanvasTextEditorOptions } from './editor/canvasEditor';
 import type { DefaultTextData } from './editor/useSceneTextEdit';
@@ -37,7 +37,7 @@ export interface TextPresetOptions<TData = DefaultTextData> {
 /**
  * The text node kind and its editing, configured by `options`: the `kit:text` painter, whose glyphs are its
  * outline; `'text'` routing and properties; the `text` and `sticky` inserts; the canvas's own editor and the
- * `textEdit` dep; `enterTextEdit`, a double-click opening text in place (`editTextAt`), and a click on a path
+ * `textEdit` dep; `enterTextEdit`, a double-click opening text in place (`enterTextEditAt`), and a click on a path
  * effect's hidden text opening it (`editEffectText`); and plain-text paste.
  */
 export function createTextPreset<TData = DefaultTextData>(options: TextPresetOptions<TData> = {}): FeaturePreset {
@@ -48,7 +48,7 @@ export function createTextPreset<TData = DefaultTextData>(options: TextPresetOpt
     routing: [textNodeRouting],
     properties: [TEXT_PROPERTIES],
     insertNodeFactories: { text: textNodeFactory, sticky: stickyNodeFactory },
-    actions: [enterTextEditAction, editTextAtAction, editEffectTextAction],
+    actions: [enterTextEditAction, enterTextEditAtAction, editEffectTextAction],
     components: [canvasTextEditor(options.editor as CanvasTextEditorOptions | undefined)],
     contentHandlers: [textContentHandler],
   };

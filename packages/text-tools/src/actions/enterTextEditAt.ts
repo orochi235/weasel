@@ -8,12 +8,12 @@ import { ActionDisabledReason, defineAction, isBody } from '@weasel-js/routing';
  * double-click enters it, as `enterPathEdit` declines there. `enterTextEdit`
  * opens the selection instead.
  */
-export const editTextAtAction = defineAction({
-  id: 'editTextAt',
+export const enterTextEditAtAction = defineAction({
+  id: 'enterTextEditAt',
   label: 'Edit text here',
   defaultBinding: [{
     spec: { kind: 'doubleClick', target: { kindOf: isBody } },
-    opts: { id: 'editTextAt.doubleClick' },
+    opts: { id: 'enterTextEditAt.doubleClick' },
   }],
   eligible: { mode: 'normal' },
   requires: ['textEdit', 'hitAt'],

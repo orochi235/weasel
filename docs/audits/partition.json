@@ -5804,7 +5804,7 @@
   "files": [
    "packages/text-tools/src/actionParamSchema.ts",
    "packages/text-tools/src/actions/editEffectText.ts",
-   "packages/text-tools/src/actions/editTextAt.ts",
+   "packages/text-tools/src/actions/enterTextEditAt.ts",
    "packages/text-tools/src/actions/enterTextEdit.ts",
    "packages/text-tools/src/editor/canvasEditor.tsx",
    "packages/text-tools/src/editor/editingDrawOne.ts",

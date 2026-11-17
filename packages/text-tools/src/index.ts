@@ -39,7 +39,7 @@ export type { TextEditDep } from './editor/textEditDep';
 
 // ─── Actions ───────────────────────────────────────────────────────────────
 export { enterTextEditAction } from './actions/enterTextEdit';
-export { editTextAtAction } from './actions/editTextAt';
+export { enterTextEditAtAction } from './actions/enterTextEditAt';
 export { editEffectTextAction } from './actions/editEffectText';
 
 // ─── Tools ─────────────────────────────────────────────────────────────────

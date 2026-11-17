@@ -118,7 +118,7 @@ macOS Option+bracket emits a curly quote, so both codepoints are listed.
 | `bendSegment` (*path-tools*) | drag whose press hit the edited path's `segment` affordance, between anchors; `move` turns those down too |
 | `areaSelectAnchors` (*path-tools*) | drag on `empty` |
 | `enterPathEdit` (*path-tools*) | double-click on a body |
-| `editTextAt` | double-click on a body: opens the text node under the pointer (the `textEdit` feature) |
+| `enterTextEditAt` | double-click on a body: opens the text node under the pointer (the `textEdit` feature) |
 | `menu.context` | the `contextMenu` gesture |
 | `selectAnchor` (*path-tools*) | click |
 | `editEffectText` (*text-tools*) | click on a body: in path edit on a path an effect hides, a click on that effect opens its text, off the open path's anchors |
@@ -222,7 +222,7 @@ same question by id. The two answer `TextEditDep.textAt` and
 `TextEditDep.isTextNode`.
 
 A canvas running `@weasel-js/text-tools`' `textPreset` mounts one of these itself, so it needs
-no wiring for the text and sticky tools to open an edit, nor for a double-click to: `editTextAt`
+no wiring for the text and sticky tools to open an edit, nor for a double-click to: `enterTextEditAt`
 is bound to it, opens what `textAt` names, and declines where the double-click names a group,
 whose own double-click enters it. `createTextPreset({ editor })` takes the same options, or
 `false` for none. It stands down for a host's own: a `useSceneTextEdit` whose container

@@ -1,6 +1,6 @@
 import { describe, it, expect, vi } from 'vitest';
 import { ActionDisabledReason, type ActionDeps } from '@weasel-js/routing';
-import { editTextAtAction } from './editTextAt';
+import { enterTextEditAtAction } from './enterTextEditAt';
 
 const AT = { x: 10, y: 20 };
 
@@ -12,15 +12,15 @@ function deps(over: { text?: { id: string; caret: number } | null; groupNamed?: 
 }
 
 function run(d: ActionDeps, world: typeof AT | undefined) {
-  const inv = editTextAtAction.invoker;
+  const inv = enterTextEditAtAction.invoker;
   if (inv?.timing !== 'immediate') throw new Error('expected immediate invoker');
   inv.run(d, world ? { world } : undefined);
 }
 
-describe('editTextAtAction', () => {
+describe('enterTextEditAtAction', () => {
   it('binds a double-click on a body', () => {
-    expect(editTextAtAction.defaultBinding).toEqual([
-      expect.objectContaining({ spec: expect.objectContaining({ kind: 'doubleClick' }), opts: { id: 'editTextAt.doubleClick' } }),
+    expect(enterTextEditAtAction.defaultBinding).toEqual([
+      expect.objectContaining({ spec: expect.objectContaining({ kind: 'doubleClick' }), opts: { id: 'enterTextEditAt.doubleClick' } }),
     ]);
   });
 
@@ -39,11 +39,11 @@ describe('editTextAtAction', () => {
   });
 
   it('declines where no text is under the pointer, so another double-click takes it', () => {
-    expect(editTextAtAction.enabled!(deps({ text: null }).deps, AT)).toBe(ActionDisabledReason.NotApplicable);
-    expect(editTextAtAction.enabled!(deps().deps, AT)).toBe(true);
+    expect(enterTextEditAtAction.enabled!(deps({ text: null }).deps, AT)).toBe(ActionDisabledReason.NotApplicable);
+    expect(enterTextEditAtAction.enabled!(deps().deps, AT)).toBe(true);
   });
 
   it("declines where the double-click names a group above the text, which is the group's to enter", () => {
-    expect(editTextAtAction.enabled!(deps({ groupNamed: true }).deps, AT)).toBe(ActionDisabledReason.NotApplicable);
+    expect(enterTextEditAtAction.enabled!(deps({ groupNamed: true }).deps, AT)).toBe(ActionDisabledReason.NotApplicable);
   });
 });
