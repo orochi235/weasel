@@ -69,7 +69,7 @@ export function PipelineWorkspace({ pipeline, look, setLook }: {
         />
       </div>
       <Sidebar side="right" className="wc-sidebar" aria-label="Params">
-        <ParamPanel doc={doc} selected={selected} group={group} change={change} />
+        <ParamPanel doc={doc} selected={selected} group={group} change={change} preview={pipeline.preview} cancel={pipeline.cancel} />
       </Sidebar>
     </div>
   );

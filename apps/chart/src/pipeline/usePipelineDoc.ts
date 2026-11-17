@@ -8,9 +8,6 @@ import { reportPipelineSave } from '../reportFailure';
 export const PIPELINE_STORAGE_KEY = 'weaselchart:pipeline-v1';
 export const PIPELINE_FILE_EXTENSION = '.weaselpipeline.json';
 
-/** Long enough that one slider drag reads as one edit, short enough that two deliberate ones stay apart. */
-const COALESCE_MS = 500;
-
 const EMPTY: EffectDoc = { pipeline: { stages: [], wires: [], types: { number: { control: true } } }, places: {} };
 
 /** An empty pipeline, as New makes. */
@@ -31,9 +28,12 @@ export const pipelineFromJson = (text: string): EffectDoc => pipelineFromSaved(J
 
 export interface PipelineDoc {
   doc: EffectDoc;
-  /** Records `next` as one undo step named `label`. Successive changes sharing a `coalesceKey`
-   *  within half a second merge into one step. */
-  change: (next: EffectDoc, label: string, coalesceKey?: string) => void;
+  /** Records `next` as one undo step named `label`, from the doc as it was before any preview. */
+  change: (next: EffectDoc, label: string) => void;
+  /** Shows `next` while an edit runs, with no undo step. */
+  preview: (next: EffectDoc) => void;
+  /** Ends an edit with no step, putting back the doc as it was before its preview. */
+  cancel: () => void;
   undo(): void;
   redo(): void;
   canUndo: boolean;
@@ -45,7 +45,9 @@ export interface PipelineDoc {
 export function usePipelineDoc(storageKey: string = PIPELINE_STORAGE_KEY): PipelineDoc {
   const [doc, setDoc] = useState(() => readStored(storageKey, pipelineFromSaved, emptyPipeline));
   const current = useRef(doc);
-  const history = useMemo(() => createHistory(null, { coalesceWindowMs: COALESCE_MS }), []);
+  // The doc as it was before the preview on screen, while one is.
+  const base = useRef<EffectDoc | null>(null);
+  const history = useMemo(() => createHistory(null), []);
   const [, rerender] = useReducer((n: number) => n + 1, 0);
   useEffect(() => history.subscribe(rerender), [history]);
 
@@ -55,18 +57,28 @@ export function usePipelineDoc(storageKey: string = PIPELINE_STORAGE_KEY): Pipel
   }, []);
   useAutosave(() => ({ primary: [storageKey, encodeSnapshot(doc)] }), { revision: doc, onSaved: reportPipelineSave });
 
-  const change = useCallback((next: EffectDoc, label: string, coalesceKey?: string) => {
-    history.apply(swapOp({
-      name: 'pipeline.set', label, before: current.current, after: next, emit,
-      ...(coalesceKey !== undefined ? { coalesceKey } : {}),
-    }), label);
+  const change = useCallback((next: EffectDoc, label: string) => {
+    const before = base.current ?? current.current;
+    base.current = null;
+    history.apply(swapOp({ name: 'pipeline.set', label, before, after: next, emit }), label);
   }, [history, emit]);
+  const preview = useCallback((next: EffectDoc) => {
+    base.current ??= current.current;
+    emit(next);
+  }, [emit]);
+  const cancel = useCallback(() => {
+    const was = base.current;
+    base.current = null;
+    if (was !== null && was !== current.current) emit(was);
+  }, [emit]);
 
   return {
     doc,
     change,
-    undo: useCallback(() => history.undo(), [history]),
-    redo: useCallback(() => history.redo(), [history]),
+    preview,
+    cancel,
+    undo: useCallback(() => { cancel(); history.undo(); }, [history, cancel]),
+    redo: useCallback(() => { cancel(); history.redo(); }, [history, cancel]),
     canUndo: history.canUndo(),
     canRedo: history.canRedo(),
   };

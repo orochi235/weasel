@@ -10,10 +10,19 @@ export interface ParamPanelProps {
   /** The picked group's id, shown while no stage is selected. */
   group?: string | null;
   change: PipelineDoc['change'];
+  preview: PipelineDoc['preview'];
+  cancel: PipelineDoc['cancel'];
+}
+
+interface ParamEdit {
+  set: (c: EffectParamControl) => void;
+  show: (c: EffectParamControl) => void;
+  cancel: () => void;
 }
 
 /** The field for one param: its control's kind, or its display value read-only when it has none. */
-function ParamField({ param, set }: { param: EffectParam; set: (c: EffectParamControl) => void }): ReactElement {
+function ParamField({ param, edit }: { param: EffectParam; edit: ParamEdit }): ReactElement {
+  const { set, show, cancel } = edit;
   const c = param.control;
   const label = param.label;
   switch (c?.kind) {
@@ -26,7 +35,8 @@ function ParamField({ param, set }: { param: EffectParam; set: (c: EffectParamCo
           {...(c.step !== undefined ? { step: c.step } : {})}
           {...(c.unit !== undefined ? { unit: c.unit } : {})}
           onChange={(value) => set({ ...c, value })}
-          onInput={(value) => set({ ...c, value })}
+          onInput={(value) => show({ ...c, value })}
+          onCancel={cancel}
         />
       );
     case 'enum':
@@ -48,7 +58,7 @@ function ParamField({ param, set }: { param: EffectParam; set: (c: EffectParamCo
 
 /** The selected stage's params, each edited through its control and recorded as 'Set <label>'; with no
  *  stage selected, the picked group's name, recorded as 'Rename group'. */
-export function ParamPanel({ doc, selected, group, change }: ParamPanelProps): ReactElement {
+export function ParamPanel({ doc, selected, group, change, preview, cancel }: ParamPanelProps): ReactElement {
   const picked = selected === null && group != null ? doc.pipeline.groups?.find((g) => g.id === group) : undefined;
   if (picked !== undefined) {
     return (
@@ -71,9 +81,12 @@ export function ParamPanel({ doc, selected, group, change }: ParamPanelProps): R
         {stage !== undefined && params.length === 0 && <PropertyNote>This stage has no params.</PropertyNote>}
         {stage !== undefined && params.map((p) => {
           const key = p.id ?? p.label;
-          const set = (control: EffectParamControl) =>
-            change(setParam(doc, stage.id, key, control), `Set ${p.label}`, `${stage.id}:${key}`);
-          return <ParamField key={key} param={p} set={set} />;
+          const edit: ParamEdit = {
+            set: (control) => change(setParam(doc, stage.id, key, control), `Set ${p.label}`),
+            show: (control) => preview(setParam(doc, stage.id, key, control)),
+            cancel,
+          };
+          return <ParamField key={key} param={p} edit={edit} />;
         })}
       </PropertyList>
     </PropertyPanel>
