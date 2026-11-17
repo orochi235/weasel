@@ -15,6 +15,23 @@ describe('buildGraph', () => {
     );
     expect(graph).toEqual(new Map([['a', []], ['b', ['a']], ['c', ['b', 'a']]]));
   });
+
+  it('keeps a devDependency unless it leads back to the package', () => {
+    const graph = buildGraph(
+      [
+        { name: 'theme' },
+        { name: 'core', dependencies: { geom: '1' }, devDependencies: { theme: '1', labkit: '1' } },
+        { name: 'geom' },
+        { name: 'labkit', dependencies: { core: '1' } },
+        { name: 'text', devDependencies: { path: '1' } },
+        { name: 'path', devDependencies: { text: '1' } },
+      ],
+      {},
+    );
+    expect(graph.get('core')).toEqual(['geom', 'theme']);
+    expect(graph.get('text')).toEqual([]);
+    expect(graph.get('path')).toEqual([]);
+  });
 });
 
 describe('buildAll', () => {

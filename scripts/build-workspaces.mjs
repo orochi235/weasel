@@ -12,17 +12,31 @@ import { publishableWorkspaces } from './lib/workspaces.mjs';
 /** Builds that read another package's `dist` without declaring it: labkit's `styles.css` copies ui-canvas's CSS. */
 export const BUILD_AFTER = { '@weasel-js/labkit': ['@weasel-js/ui-canvas'] };
 
-/** Each published workspace and the siblings that must build before it. */
+/**
+ * Each published workspace and the siblings that must build before it: its dependencies and peers,
+ * BUILD_AFTER, and its devDependencies, since a build can read one (core's CSS composes a class from
+ * theme's dist). A devDependency that leads back to the package, through any of these, is left out:
+ * it is there for tests (text-tools and path-tools each test against the other), and the
+ * one-at-a-time build this replaced never had it built first either.
+ */
 export function buildGraph(manifests, after = BUILD_AFTER) {
   const names = new Set(manifests.map((m) => m.name));
-  return new Map(
+  const siblings = (m, map) => Object.keys(map ?? {}).filter((dep) => dep !== m.name && names.has(dep));
+  const graph = new Map(
     manifests.map((m) => [
       m.name,
-      [...new Set([...Object.keys({ ...m.dependencies, ...m.peerDependencies }), ...(after[m.name] ?? [])])].filter(
-        (dep) => dep !== m.name && names.has(dep),
-      ),
+      [...new Set([...siblings(m, m.dependencies), ...siblings(m, m.peerDependencies), ...(after[m.name] ?? [])])],
     ]),
   );
+  const every = new Map(manifests.map((m) => [m.name, [...graph.get(m.name), ...siblings(m, m.devDependencies)]]));
+  const reaches = (from, to, seen = new Set()) =>
+    from === to || (!seen.has(from) && (seen.add(from), every.get(from).some((n) => reaches(n, to, seen))));
+  for (const m of manifests) {
+    for (const dep of siblings(m, m.devDependencies)) {
+      if (!graph.get(m.name).includes(dep) && !reaches(dep, m.name)) graph.get(m.name).push(dep);
+    }
+  }
+  return graph;
 }
 
 /**
