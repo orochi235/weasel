@@ -47,7 +47,7 @@ export function undeclaredMagnifications(
  * read in their frames' shared scope chain (`sceneMagnification` with
  * `inclusive`) is the length they were modeled at.
  */
-export function unitFrameAt(scene: Scene<unknown, string, unknown>): (p: Point) => NodeId | null {
+export function createUnitFrameLookup(scene: Scene<unknown, string, unknown>): (p: Point) => NodeId | null {
   const frames = sceneBoxFrames(scene);
   const poses = scenePoseFrame(scene);
   const boxes: { id: NodeId; toLocal: Affine; width: number; height: number }[] = [];

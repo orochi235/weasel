@@ -70,7 +70,7 @@ export { translatePoseViaDescriptor, visualBoundsViaDescriptor } from '../core/g
 export { resolveSpatialReference } from '../interactions/actions/spatialReference';
 export { ANCHORS_GROUP, PATH_GROUP } from '../interactions/actions/pathActionGroups';
 export { sceneBoxFrames, scenePoseFrame, worldPoseOf, worldPoses } from '../interactions/actions/poseFrame';
-export { undeclaredMagnifications, unitFrameAt, type UndeclaredMagnification } from '../interactions/actions/magnification';
+export { undeclaredMagnifications, createUnitFrameLookup, type UndeclaredMagnification } from '../interactions/actions/magnification';
 export { moveNodes, moveNodesOps, MOVE_NODES_REQUIRES } from '../interactions/actions/moveNodes';
 export type { PoseFrame, PoseReading } from '../interactions/actions/poseFrame';
 export type { SpatialReference, SpatialReferenceSources } from '../interactions/actions/spatialReference';

@@ -1,7 +1,7 @@
 import type { Action, InvocationCtx, OngoingHandle } from '@weasel-js/routing';
 import { defineAction, resolveParams } from '@weasel-js/routing';
 import {
-  type AnyScene, commitOps, type NodeId, SNAP_ANGLE_STEP, SNAP_ROLES, snapMods, spanSnap, unitFrameAt,
+  type AnyScene, commitOps, type NodeId, SNAP_ANGLE_STEP, SNAP_ROLES, snapMods, spanSnap, createUnitFrameLookup,
 } from '@weasel-js/core';
 import {
   measureBetween, measureEndsOf, withMeasureEnd,
@@ -21,7 +21,7 @@ const pointOf = (at: InvocationCtx): MeasurePoint => at.drag?.current ?? at.worl
 
 /** Where an end lands among `scene`'s unit-scope frames; the top of the tree
  *  without a scene. Built once per gesture: the scene holds still under it. */
-const framesOf = (scene: AnyScene | undefined): MeasureFrameAt => (scene ? unitFrameAt(scene) : () => null);
+const framesOf = (scene: AnyScene | undefined): MeasureFrameAt => (scene ? createUnitFrameLookup(scene) : () => null);
 
 /**
  * The measure tool's drag: from press to pointer, each end through a `point`
@@ -29,7 +29,7 @@ const framesOf = (scene: AnyScene | undefined): MeasureFrameAt => (scene ? unitF
  * stays on the line through the snapped start at the nearest step of the
  * binding param `angleStep` (radians, default 15°), and lands where that line
  * meets a target. Each end records the unit-scope frame it lands in
- * (`unitFrameAt`), so the measurement reads in that frame's units. The drawing
+ * (`createUnitFrameLookup`), so the measurement reads in that frame's units. The drawing
  * shows in `ms.draft`; on release it becomes a measurement node, one undo
  * step, and the picked one.
  */
