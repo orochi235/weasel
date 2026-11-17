@@ -65,7 +65,7 @@ describe('select', () => {
   });
 
   it('single selects the one id and anchors there, whatever is selected', () => {
-    expect(select(state(['a', 'b'], 'a'), 'd', 'single', { order })).toEqual({ ids: ['d'], anchor: 'd' });
+    expect(select(state(['a', 'b'], 'a'), 'd', 'alone', { order })).toEqual({ ids: ['d'], anchor: 'd' });
   });
 
   it('toggle on a forced-single id selects it alone', () => {
