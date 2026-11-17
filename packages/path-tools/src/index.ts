@@ -156,7 +156,7 @@ export {
 } from './shapeBuilder';
 export {
   useGirthTool, createGirthOverlay, createGirthActions, DEFAULT_GIRTH_REACH_PX, GIRTH_CLEAR_ID, GIRTH_DRAG_ID,
-  GIRTH_DRAG_PARAMS, GIRTH_HOVER_ID, GIRTH_UNHOVER_ID, type GirthDragParams, type UseGirthToolOptions, type WidthEdgeHit, type GirthEnv, type GirthFocus, type WidthGrip, type WidthTarget,
+  GIRTH_DRAG_PARAMS, GIRTH_HOVER_ID, GIRTH_UNHOVER_ID, type GirthDragParams, type UseGirthToolOptions, type GirthEdgeHit, type GirthEnv, type GirthFocus, type GirthGrip, type GirthTarget,
 } from './girth';
 
 // ─── Spiro curves ──────────────────────────────────────────────────────────
