@@ -611,7 +611,7 @@ The snap pipeline ([snapping.md](./snapping.md)) landed on 2026-10-18 with these
   request no longer starts Chromium to fail there.
 - 2026-11-11 (my call, icons second property pass): the `.lbx` writer rasterizes a command whose object would hold a
   number that is not finite (a group transform with `NaN` or `Infinity`, an infinite stroke width, a scale past the
-  double range) and skips such `lbxObjects` with a reason, and `writeLbx` throws a `RangeError` for a `length` that
+  double range) and skips such `lbxObjectsCommand` with a reason, and `writeLbx` throws a `RangeError` for a `length` that
   is not a positive finite number. A `-0` position is written and reads back as `0`.
 - 2026-11-11 (my call, core canvas second pass): a marquee rect with a negative width or height (`rectRegion`,
   `hitTestArea`) is the same rect named from its other corner, as the marquee drag's `rectBetween` already makes it,

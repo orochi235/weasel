@@ -14,7 +14,7 @@ import { sliceAtCuts } from '../print';
 import { TAPES } from '../tape';
 import { finiteDeep, objectCommand, runs, shape, tape, timeoutFor } from '../pbt.fixture';
 import { writeLbx } from './writeLbx';
-import { lbxObjects } from './carried';
+import { lbxObjectsCommand } from './carried';
 
 const edge = fc.oneof(
   fc.constantFrom(0, -0, 1e308, -1e308, 1e200, Number.MIN_VALUE, -5e-324, 2 ** 53 + 1, Number.NaN, Infinity, -Infinity),
@@ -31,7 +31,7 @@ const edgeGroup = (children: fc.Arbitrary<DrawCommand[]>): fc.Arbitrary<DrawComm
   fc.record({ s: fc.oneof(edge, fc.constant(1)), tx: edge, ty: edge, children })
     .map(({ s, tx, ty, children }) => ({ kind: 'group', transform: mat3.scaled(mat3.translated(mat3.identity(), tx, ty), s, s), children }));
 const carrier: fc.Arbitrary<DrawCommand> = fc.record({ x: edge, y: edge, w: edge, h: edge })
-  .map(({ x, y, w, h }) => lbxObjects([{
+  .map(({ x, y, w, h }) => lbxObjectsCommand([{
     type: 'rect', shape: 'RECTANGLE', position: { x, y, width: w, height: h },
     pen: { style: 'NULL' }, brush: { style: 'SOLID', color: '#000000' },
   }]));
