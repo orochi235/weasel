@@ -25,7 +25,7 @@ export function autoQuotes(leaf: PrefLeaf): boolean {
 
 /** The dotted paths a schema declares as starting auto — every leaf that said
  *  `.initial(auto)`. This is what seeds a new trial's unpinned set. */
-export function autoPathsOf(resolved: ResolvedConfig): string[] {
+export function startAutoPathsOf(resolved: ResolvedConfig): string[] {
   const out: string[] = [];
   for (const [path, leaf] of configLeaves(resolved.group)) {
     if (prefStartsAuto(leaf)) out.push(path);

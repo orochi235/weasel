@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { auto } from './auto';
-import { autoPathsOf, resolveAutoConfig } from './autoConfig';
+import { startAutoPathsOf, resolveAutoConfig } from './autoConfig';
 import { f } from './builder';
 import { resolveConfigSchema } from './resolve';
 
@@ -13,16 +13,16 @@ const schema = f.schema({
 const resolved = resolveConfigSchema(schema);
 const raw = { width: 432, gap: 12, cols: 3, grid: { size: 8 } };
 
-describe('autoPathsOf', () => {
+describe('startAutoPathsOf', () => {
   it('lists the dotted paths a schema starts auto', () => {
-    expect(autoPathsOf(resolved)).toEqual(['cols']);
+    expect(startAutoPathsOf(resolved)).toEqual(['cols']);
   });
 
   it('reaches leaves nested under a group', () => {
     const nested = resolveConfigSchema(
       f.schema({ grid: f.group({ size: f.number(8).initial(auto) }) }),
     );
-    expect(autoPathsOf(nested)).toEqual(['grid.size']);
+    expect(startAutoPathsOf(nested)).toEqual(['grid.size']);
   });
 });
 
