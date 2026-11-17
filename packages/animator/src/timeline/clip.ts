@@ -173,9 +173,18 @@ function isClipValue(v: unknown): v is ClipValue {
   return Object.values(v as object).every((member) => member === undefined || isClipValue(member));
 }
 
+/** `n`, refused where it is not finite: JSON writes that as `null`, which `bindClip` refuses. */
+function finiteOr(n: number, problem: string): number {
+  if (!Number.isFinite(n)) throw new Error(`toClip: ${problem.replace('#', String(n))}, which JSON cannot hold.`);
+  return n;
+}
+
 function easingOf(spec: EasingSpec | undefined, where: string): EasingName | BezierEasing | undefined {
   if (spec === undefined || typeof spec === 'string') return spec;
-  if (typeof spec !== 'function') return { bezier: [...spec.bezier] as BezierEasing['bezier'] };
+  if (typeof spec !== 'function') {
+    if (!spec.bezier.every(Number.isFinite)) throw new Error(`toClip: ${where} eases a key by bezier points JSON cannot hold: ${spec.bezier.join(', ')}.`);
+    return { bezier: [...spec.bezier] as BezierEasing['bezier'] };
+  }
   const name = EASING_NAMES.get(spec);
   if (!name) throw new Error(`toClip: ${where} eases a key by a function that is not a built-in; name it or use bezier points.`);
   return name;
@@ -197,10 +206,11 @@ function sampledToClip(track: SampledTrack<any>, where: string): ClipSampledTrac
     keys: track.keys.map((k) => {
       const value = tagTypedArrays(k.value);
       if (!isClipValue(value)) throw new Error(`toClip: ${where} holds a value JSON cannot round-trip, at t = ${k.t}.`);
-      return defined<ClipKey>({ t: k.t, value, easing: easingOf(k.easing, where) });
+      return defined<ClipKey>({ t: finiteOr(k.t, `${where} has a key at t = #`), value, easing: easingOf(k.easing, where) });
     }),
     interpolate: track.interpolateName,
-    weight: typeof track.weight === 'function' ? track.weightName : track.weight,
+    weight: typeof track.weight === 'function' ? track.weightName
+      : track.weight === undefined ? undefined : finiteOr(track.weight, `${where} has a weight of #`),
     axes: track.axes && ([...track.axes] as ClipSampledTrack['axes']),
   });
 }
@@ -208,7 +218,9 @@ function sampledToClip(track: SampledTrack<any>, where: string): ClipSampledTrac
 function trackToClip(track: Track, index: number): ClipTrack {
   const where = `track "${track.label ?? index}"`;
   if (track.kind === 'timeline') {
-    return defined<ClipTimelineTrack>({ kind: 'timeline', label: track.label, at: track.at, timeline: timelineToClip(track.timeline) });
+    return defined<ClipTimelineTrack>({
+      kind: 'timeline', label: track.label, at: finiteOr(track.at, `${where} is at #`), timeline: timelineToClip(track.timeline, `${where}'s`),
+    });
   }
   if (track.kind === 'sampled') return sampledToClip(track, where);
   return defined<ClipEventTrack>({
@@ -217,13 +229,17 @@ function trackToClip(track: Track, index: number): ClipTrack {
     events: track.events.map((e) => {
       if (e.name === undefined) throw new Error(`toClip: ${where} has an event with no name, at t = ${e.t}.`);
       if (e.data !== undefined && !isClipValue(e.data)) throw new Error(`toClip: ${where} carries data JSON cannot round-trip, at t = ${e.t}.`);
-      return defined({ t: e.t, name: e.name, data: e.data as ClipValue | undefined });
+      return defined({ t: finiteOr(e.t, `${where} has an event at t = #`), name: e.name, data: e.data as ClipValue | undefined });
     }),
   });
 }
 
-function timelineToClip(timeline: NestedTimeline): ClipTimeline {
-  return defined<ClipTimeline>({ tracks: timeline.tracks.map(trackToClip), duration: timeline.duration });
+function timelineToClip(timeline: NestedTimeline, whose: string): ClipTimeline {
+  const { duration } = timeline;
+  return defined<ClipTimeline>({
+    tracks: timeline.tracks.map(trackToClip),
+    duration: duration === undefined ? undefined : finiteOr(duration, `${whose} duration is #`),
+  });
 }
 
 /**
@@ -232,8 +248,8 @@ function timelineToClip(timeline: NestedTimeline): ClipTimeline {
  * carries (`targetName`, `interpolateName`, an event's `name`), which `bindClip` sets and a
  * track written by hand can set too. A typed array in a key's value is written tagged.
  * Throws, naming the track, on anything a clip cannot hold: a function with no name, an
- * `onTick`, or a value JSON would not read back.
+ * `onTick`, or a value JSON would not read back, a time, duration or weight that is not finite among them.
  */
 export function toClip(timeline: NestedTimeline): Clip {
-  return { version: 1, ...timelineToClip(timeline) };
+  return { version: 1, ...timelineToClip(timeline, "the timeline's") };
 }

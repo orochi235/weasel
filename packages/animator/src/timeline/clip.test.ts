@@ -141,6 +141,18 @@ describe('toClip', () => {
     expect(clip({ ...base, keys: [{ t: 0, value: Float32Array.of(NaN) }] } as never)).toThrow(/track "x" holds a value JSON cannot/);
     expect(clip({ kind: 'event', label: 'e', events: [{ t: 0, fire: () => {} }] })).toThrow(/track "e" has an event with no name/);
   });
+
+  it('throws on a number JSON would write as null, naming where it is', () => {
+    const base: SampledTrack<number> = { kind: 'sampled', label: 'x', keys: [{ t: 0, value: 1 }] };
+    const clip = (track: Track, duration?: number) => () => toClip({ tracks: [track], duration });
+    expect(clip(base, Infinity)).toThrow(/toClip: the timeline's duration is Infinity/);
+    expect(clip({ ...base, keys: [{ t: Infinity, value: 1 }] })).toThrow(/track "x" has a key at t = Infinity/);
+    expect(clip({ ...base, weight: NaN })).toThrow(/track "x" has a weight of NaN/);
+    expect(clip({ ...base, keys: [{ t: 0, value: 1, easing: { bezier: [0, NaN, 1, 1] } }] })).toThrow(/track "x" eases a key by bezier points JSON cannot/);
+    expect(clip({ kind: 'event', label: 'e', events: [{ t: NaN, name: 'n' }] })).toThrow(/track "e" has an event at t = NaN/);
+    expect(clip({ kind: 'timeline', label: 'n', at: Infinity, timeline: { tracks: [] } })).toThrow(/track "n" is at Infinity/);
+    expect(clip({ kind: 'timeline', label: 'n', at: 0, timeline: { tracks: [], duration: -Infinity } })).toThrow(/track "n"'s duration is -Infinity/);
+  });
 });
 
 describe('a clip naming a target\'s axes', () => {
