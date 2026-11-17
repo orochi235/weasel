@@ -44,6 +44,9 @@ export interface TrialRecord<TS = unknown, TC = unknown, TV = unknown> {
   /** The extent the trial's sidebar was last dragged to, in pixels. Undefined
    *  until someone moves the seam. */
   sidebarWidth?: number;
+  /** The color mode this trial's content is drawn in, apart from the lab's. Absent means `'auto'`: the
+   *  content follows the lab. Kept by Clone, Reset and swapping its instrument. */
+  colorMode?: ColorModePreference;
   /** What the title bar reads. Undefined — the state a trial opens in, and the
    *  one `setTitle(null)` returns it to — means the instrument's name. */
   title?: string | null;

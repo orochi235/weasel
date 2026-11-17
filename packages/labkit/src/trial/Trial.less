@@ -70,6 +70,19 @@
     }
   }
 
+  // Inherited color and paint come from the lab's mode, so the trial's own mode has to set both again.
+  &__themed {
+    display: flex;
+    flex-direction: column;
+    color: var(--wzl-fg);
+    background: var(--wzl-surface-raised);
+
+    > * {
+      flex: 1 1 auto;
+      min-height: 0;
+    }
+  }
+
   &__canvas-host {
     position: relative;
     width: 100%;

@@ -1,5 +1,6 @@
 import type { History } from '@weasel-js/core';
 import { getOwn } from '@weasel-js/registry';
+import type { ColorModePreference } from '@weasel-js/theme';
 import { createStore, type StateCreator, type StoreApi } from 'zustand/vanilla';
 import type { ClockPosition } from '../clock/trialClock';
 import { applyConfigWrite } from '../config/autoConfig';
@@ -39,6 +40,8 @@ export interface LabStoreActions extends SnapshotActions {
   updateTrialConfig: (id: string, path: string, value: unknown) => void;
   updateTrialView: (id: string, view: unknown) => void;
   updateTrialSidebarWidth: (id: string, width: number) => void;
+  /** Set the color mode a trial's content is drawn in. `'auto'` returns it to the lab's. */
+  setTrialColorMode: (id: string, mode: ColorModePreference) => void;
   /** Retitle a trial. `null` returns it to its instrument's name. */
   setTrialTitle: (id: string, title: string | null) => void;
   /** Fold or unfold one of a trial's sections. */
@@ -135,6 +138,18 @@ export function createLabStore(options: CreateLabStoreOptions = {}): LabStore {
         trials: s.trials.map((w) =>
           w.id === id && w.sidebarWidth !== width ? { ...w, sidebarWidth: width } : w,
         ),
+      }));
+    },
+
+    setTrialColorMode: (id, mode) => {
+      set((s) => ({
+        trials: s.trials.map((w) => {
+          if (w.id !== id) return w;
+          const next = mode === 'auto' ? undefined : mode;
+          if (w.colorMode === next) return w;
+          const { colorMode: _was, ...rest } = w;
+          return next === undefined ? rest : { ...rest, colorMode: next };
+        }),
       }));
     },
 

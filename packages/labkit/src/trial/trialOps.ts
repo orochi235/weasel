@@ -141,7 +141,7 @@ export function resetTrial(
 /** Put a fresh trial running `instrumentName` where trial `id` is. It gets a
  *  new id, since the history, snapshots and marks keyed by the old one belong
  *  to what that trial was running, but keeps the width its sidebar was
- *  dragged to. */
+ *  dragged to and the color mode it was set to. */
 export function swapTrial(
   trials: TrialRecord[],
   instruments: InstrumentList,
@@ -154,6 +154,7 @@ export function swapTrial(
   if (!current) return trials;
   const [record] = addTrial([], instruments, instrumentName, options) as [TrialRecord];
   if (current.sidebarWidth !== undefined) record.sidebarWidth = current.sidebarWidth;
+  if (current.colorMode !== undefined) record.colorMode = current.colorMode;
   return [...trials.slice(0, idx), record, ...trials.slice(idx + 1)];
 }
 

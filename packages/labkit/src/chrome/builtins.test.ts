@@ -11,6 +11,8 @@ const ctx: TrialChromeContext = {
   undockedPanels: [],
   collapsedSections: {},
   setSectionCollapsed: () => {},
+  colorMode: 'auto',
+  setColorMode: () => {},
   undockPanel: () => {},
   dockPanel: () => {},
   instrumentName: 'Stub',
@@ -63,7 +65,19 @@ function ids(instrument: Instrument, c: TrialChromeContext = ctx): string[] {
 
 describe('builtinContributions', () => {
   it('always contributes the trial actions', () => {
-    expect(ids({ ...bare, undo: false })).toEqual(['clone', 'reset', 'snapshot', 'close']);
+    expect(ids({ ...withCanvas, undo: false }, ctxWithZoom(null))).toEqual([
+      'clone',
+      'reset',
+      'snapshot',
+      'close',
+    ]);
+  });
+
+  it('offers the mode switch beside undo to a DOM instrument, and none to a canvas', () => {
+    expect(ids(bare).slice(0, 3)).toEqual(['undo', 'redo', 'mode']);
+    expect(builtinContributions(bare, ctx).find((c) => c.id === 'mode')?.region).toBe('toolbar');
+    expect(ids(withCanvas)).not.toContain('mode');
+    expect(ids({ ...bare, stage: {} as Instrument['stage'] })).not.toContain('mode');
   });
 
   it('puts snapshot in the title bar with clone and reset, not the toolbar', () => {
@@ -81,7 +95,7 @@ describe('builtinContributions', () => {
 
   it('contributes the expand toggle only inside a lightbox, ahead of the trial actions', () => {
     expect(ids(bare)).not.toContain('expand');
-    expect(ids({ ...bare, undo: false }, { ...ctx, canExpand: true })).toEqual([
+    expect(ids({ ...withCanvas, undo: false }, { ...ctx, zoom: null, canExpand: true })).toEqual([
       'expand',
       'clone',
       'reset',

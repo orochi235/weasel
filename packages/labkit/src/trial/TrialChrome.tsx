@@ -4,6 +4,7 @@ import { useStore } from 'zustand/react';
 import { AnnotationsContext } from '../annotations/AnnotationsContext';
 import { CameraRegistryContext } from '../canvas/cameraRegistry';
 import { zoomCameraTo } from '../canvas/cameraZoom';
+import { drawsDom } from '../chrome/builtins';
 import { PaletteRegion } from '../chrome/regions/PaletteRegion';
 import { SidebarRegion } from '../chrome/regions/SidebarRegion';
 import { StatusRegion } from '../chrome/regions/StatusRegion';
@@ -34,6 +35,7 @@ import { as2DView, DEFAULT_VIEW, withZoom } from '../state/view';
 import { FloatSidebarContext } from './FloatSidebar';
 import { TrialBody } from './TrialBody';
 import type { TrialActions } from './TrialScope';
+import { TrialTheme } from './TrialTheme';
 import { TrialTitleBar } from './TrialTitleBar';
 import { TrialTitleContext } from './trialTitle';
 import { UndockedSections } from './UndockedSections';
@@ -138,10 +140,7 @@ const chromeView = (view: unknown) => as2DView(view) ?? (view === null ? DEFAULT
 
 /** The trial body's content class: flush for an instrument that draws its own canvas or stage. */
 const contentClassOf = (instrument: Instrument, presented: boolean): string | undefined =>
-  [
-    instrument.canvas || instrument.stage ? 'lk-trial__content--flush' : '',
-    presented ? 'lk-trial__stage' : '',
-  ]
+  [drawsDom(instrument) ? '' : 'lk-trial__content--flush', presented ? 'lk-trial__stage' : '']
     .filter(Boolean)
     .join(' ') || undefined;
 
@@ -213,6 +212,7 @@ export function TrialChrome({
   const updateTrialSidebarWidth = useStore(storeCtx.store, (s) => s.updateTrialSidebarWidth);
   const setTrialTitle = useStore(storeCtx.store, (s) => s.setTrialTitle);
   const setTrialSectionCollapsed = useStore(storeCtx.store, (s) => s.setTrialSectionCollapsed);
+  const setTrialColorMode = useStore(storeCtx.store, (s) => s.setTrialColorMode);
   const panels = useTrialPanels(storeCtx.store, trialId);
 
   const view2d = chromeView(record.view);
@@ -269,6 +269,8 @@ export function TrialChrome({
       overValues,
       collapsedSections: record.collapsedSections ?? NO_SECTIONS,
       setSectionCollapsed: (key, collapsed) => setTrialSectionCollapsed(trialId, key, collapsed),
+      colorMode: record.colorMode ?? 'auto',
+      setColorMode: (mode) => setTrialColorMode(trialId, mode),
       undockedPanels: panels.undocked,
       undockPanel: panels.undockPanel,
       dockPanel: panels.dockPanel,
@@ -297,6 +299,7 @@ export function TrialChrome({
     panels,
     setTrialTitle,
     setTrialSectionCollapsed,
+    setTrialColorMode,
     camera,
   ]);
 
@@ -351,7 +354,13 @@ export function TrialChrome({
           contentClassName={contentClassOf(instrument, presented)}
           sidebar={floating || sections.length === 0 ? null : [docked, undocked]}
         >
-          <Titled title={title}>{children}</Titled>
+          {drawsDom(instrument) ? (
+            <TrialTheme mode={record.colorMode ?? 'auto'}>
+              <Titled title={title}>{children}</Titled>
+            </TrialTheme>
+          ) : (
+            <Titled title={title}>{children}</Titled>
+          )}
           <ViewportRegion contributions={inRegion('viewport')} ctx={ctx} />
           {floating ? undocked : null}
         </TrialBody>

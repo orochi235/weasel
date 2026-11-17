@@ -1,5 +1,6 @@
 import { copyText } from '@weasel-js/react';
 import { getOwn, setOwn } from '@weasel-js/registry';
+import { COLOR_MODE_OPTIONS, CycleButton } from '@weasel-js/ui/components/CycleButton';
 import { FpsMeter } from '@weasel-js/ui/components/FpsMeter';
 import { ScaleBar } from '@weasel-js/ui/components/ScaleBar';
 import { ZoomControl } from '@weasel-js/ui/components/ZoomControl';
@@ -218,11 +219,15 @@ export const TRANSIENT_BUILTINS: ReadonlySet<string> = new Set([
   'panel',
 ]);
 
+/** Whether a trial's content is the instrument's own DOM, which a theme reaches, rather than a canvas or stage. */
+export const drawsDom = (instrument: Instrument): boolean =>
+  instrument.canvas == null && instrument.stage == null;
+
 // Zoom acts on the view of the trial, so it is a viewport control. A trial
 // holding a non-2D view reports zoom as null and gets none of this.
 function zoomContributions(instrument: Instrument, ctx: TrialChromeContext): TrialContribution[] {
   const zoom = ctx.zoom;
-  if ((instrument.canvas == null && instrument.stage == null) || zoom === null) return [];
+  if (drawsDom(instrument) || zoom === null) return [];
   const out: TrialContribution[] = [];
   out.push({
     id: 'zoom-out',
@@ -314,6 +319,23 @@ export function builtinContributions(
         disabled: !ctx.canRedo,
         onActivate: ctx.redo,
       },
+    });
+  }
+
+  // A canvas or stage paints its own colors, so only a trial drawn in DOM has a mode to switch.
+  if (drawsDom(instrument)) {
+    out.push({
+      id: 'mode',
+      region: 'toolbar',
+      group: 'mode',
+      render: (c) => (
+        <CycleButton
+          value={c.colorMode}
+          onChange={c.setColorMode}
+          options={COLOR_MODE_OPTIONS}
+          aria-label="Trial theme"
+        />
+      ),
     });
   }
 

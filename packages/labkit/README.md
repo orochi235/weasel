@@ -482,7 +482,13 @@ Contributions passed to `<Lab>` apply to every trial; an instrument's own
 throws on an id that is not there. A suppressed button takes its shortcut with
 it: with `snapshot` gone, Mod+S is the browser's again. `hide` drops the button
 and keeps its shortcut: `hide={['undo', 'redo']}` takes away each trial's undo
-row while Mod+Z still steps the trial.
+buttons while Mod+Z still steps the trial.
+
+A trial whose instrument draws no `canvas` or `stage` gets a color-mode switch
+(contribution id `mode`) after Undo and Redo. Its content is drawn in that mode
+while the lab's chrome keeps the lab's, so one trial can sit in Dark beside a
+clone in Light; Auto follows the lab. The trial keeps its mode through Clone and
+Reset, and switching it never remounts the instrument.
 
 `sidebar="float"` takes each trial's sidebar sections out of the pane beside its
 body and puts them in a panel over the body, opened and closed from a Trial

@@ -1,6 +1,6 @@
 /**
- * `<Lab hide>` drops a contribution's button and keeps what it binds: hiding Undo and Redo takes the trial's
- * toolbar row away and leaves Mod+Z stepping the trial's history.
+ * `<Lab hide>` drops a contribution's button and keeps what it binds: hiding Undo and Redo, and the mode switch
+ * beside them, takes the trial's toolbar row away and leaves Mod+Z stepping the trial's history.
  */
 import { fireEvent, screen } from '@testing-library/react';
 import { renderSettled } from '@weasel-js/react/testing/renderSettled';
@@ -21,7 +21,7 @@ const grid = () => screen.getByRole('checkbox', { name: 'Show grid' });
 
 describe('hiding a trial button', () => {
   it('drops the undo row and still undoes and redoes from the keys', async () => {
-    await renderSettled(<Lab instruments={[Gridded]} hide={['undo', 'redo']} />, {
+    await renderSettled(<Lab instruments={[Gridded]} hide={['undo', 'redo', 'mode']} />, {
       wrapper: withIcons,
     });
     expect(screen.queryByRole('button', { name: 'Undo' })).toBeNull();

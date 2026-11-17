@@ -1,6 +1,7 @@
 import type { ShortcutInput } from '@weasel-js/gestures';
 import type { IconSpec } from '@weasel-js/icons';
 import type { MenuEntry } from '@weasel-js/menu';
+import type { ColorModePreference } from '@weasel-js/theme';
 import type { AppearanceProps } from '@weasel-js/ui/appearance';
 import type { ReactNode } from 'react';
 import type { AutoReports } from '../config/autoReports';
@@ -254,6 +255,11 @@ export interface TrialChromeContext extends ToolSlotContext, SidebarSlotContext 
   collapsedSections: Readonly<Record<string, boolean>>;
   /** Fold or unfold one section, keyed as `collapsedSections` is. */
   setSectionCollapsed: (key: string, collapsed: boolean) => void;
+
+  /** The color mode the trial's content is drawn in: `'auto'` follows the lab's. Persisted with the trial, and
+   *  offered as the `mode` switch beside Undo and Redo on a trial whose instrument draws no canvas or stage. */
+  colorMode: ColorModePreference;
+  setColorMode: (mode: ColorModePreference) => void;
 
   /** Section ids this trial currently has torn out of its sidebar. */
   undockedPanels: readonly string[];
