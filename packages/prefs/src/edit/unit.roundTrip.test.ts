@@ -3,7 +3,9 @@ import { prefUnit, resolvePrefUnit, type PrefGroup, type PrefNumber, type PrefNu
 import { ANGLE_RADIANS, METRIC_MM } from '@weasel-js/quantity';
 import type { DraftStorage } from './document';
 import { packDraft, unpackDraft } from './draft';
+import { assetSetCodec } from './assetSetCodec';
 import { attributeSchema } from './kindSchemas';
+import { asAssetSet, schemaOf } from './oneAsset';
 import { schemaCodec } from './schemaCodec';
 import { nodeAt, setAttribute } from './schemaEdit';
 import { KEEP, printSchema } from './schemaExport';
@@ -91,5 +93,47 @@ describe('a number leaf in the attribute form', () => {
     const { own, readOnly } = attributeSchema(nodeAt(WITH_CODE, 'root')!);
     expect(own.unit).toBeUndefined();
     expect(readOnly).toEqual([['unit', halved]]);
+  });
+});
+
+describe('a draft saved while a unit named its places precision', () => {
+  const NO_STEPS = { version: 1 as const, undoStack: [], redoStack: [], nextEntryId: 1, droppedEntries: 0 };
+  const edited = setAttribute(SCHEMA, 'page/plain', 'unit', { suffix: 'pt', scale: 1, places: 3 });
+  /** Rewrite what storage holds under `key` as it was written before the rename. */
+  const writeAsBefore = (storage: DraftStorage, key: string): void => {
+    storage.setItem(key, storage.getItem(key)!.replaceAll('"places"', '"precision"'));
+  };
+  const shown = (root: PrefGroup, path: string): string => resolvePrefUnit((nodeAt(root, path) as PrefNumber).unit!).format(1.23456);
+
+  it('opens rounding as one saved with places, and saves again with places', () => {
+    const codec = schemaCodec<PrefGroup>(NO_TYPES);
+    const storage = memory();
+    codec.saveDraft('k', edited, SCHEMA, NO_STEPS, 1, storage);
+    writeAsBefore(storage, 'k');
+    expect(storage.getItem('k')).toContain('"precision":3');
+    const opened = codec.openDraft('k', SCHEMA, storage)!;
+    expect(opened.value).toEqual(edited);
+    expect(opened.met).toBe('same');
+    expect(shown(opened.value, 'page/plain')).toBe('1.235pt');
+    expect(shown(opened.value, 'page/angle')).toBe(shown(SCHEMA, 'page/angle'));
+    codec.saveDraft('k', opened.value, SCHEMA, NO_STEPS, 2, storage);
+    expect(storage.getItem('k')).toContain('"places":3');
+    expect(storage.getItem('k')).not.toContain('"precision"');
+  });
+
+  it('opens the same through the asset set codec', () => {
+    const codec = assetSetCodec(NO_TYPES);
+    const storage = memory();
+    codec.saveDraft('k', asAssetSet(edited), asAssetSet(SCHEMA), NO_STEPS, 1, storage);
+    writeAsBefore(storage, 'k');
+    expect(schemaOf<PrefGroup>(codec.openDraft('k', asAssetSet(SCHEMA), storage)!.value)).toEqual(edited);
+  });
+
+  it('reads what was submitted before the rename as what is submitted now', () => {
+    const codec = schemaCodec<PrefGroup>(NO_TYPES);
+    const storage = memory();
+    codec.saveSent('k', codec.packSent(edited, SCHEMA), storage);
+    writeAsBefore(storage, 'k:sent');
+    expect(codec.openSent('k', storage)).toEqual(codec.packSent(edited, SCHEMA));
   });
 });
