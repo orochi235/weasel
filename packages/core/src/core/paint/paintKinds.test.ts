@@ -356,6 +356,15 @@ describe('paint kinds loaded on demand', () => {
     error.mockRestore();
   });
 
+  it('removes the kind a loader registered, both halves, when the loader is disposed', async () => {
+    const off = registerPaintKindLoader('test-wash', async () => washEntry());
+    await warmPaintKinds(['test-wash']);
+    expect(getPaintKind('test-wash')?.label).toBe('Wash');
+    off();
+    expect(getPaintKind('test-wash')).toBeUndefined();
+    expect(listPaintKinds().map((k) => k.id)).not.toContain('test-wash');
+  });
+
   it('never calls a loader for a kind registered before its first lookup', () => {
     const load = vi.fn(async () => washEntry());
     registerPaintKindLoader('test-wash', load);

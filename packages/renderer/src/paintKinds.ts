@@ -186,12 +186,30 @@ export function getPaintDrawKind(kind: string | undefined): PaintDrawKind | unde
 /** Resolves with the draw half of a kind that is loaded on first use. */
 export type PaintDrawKindLoader = () => Promise<PaintDrawKind>;
 
-/** Each id's loaders, newest live, as the kinds themselves stack. */
-const LOADERS = createReflectable<PaintDrawKindLoader>();
+/** Options for {@link registerPaintDrawKindLoader}. */
+export interface PaintDrawKindLoaderOptions {
+  /**
+   * Registers what the loader resolved to and returns its disposer, which
+   * runs when the loader is disposed. Defaults to
+   * {@link registerPaintDrawKind}; a package
+   * keeping a registry of its own over the draw half registers both here.
+   */
+  register?(entry: PaintDrawKind): () => void;
+}
 
-/** One load per kind, kept after it settles: a failed load is not retried on
- *  every frame that meets the kind. */
-const LOADS = new Map<string, Promise<void>>();
+/** One `registerPaintDrawKindLoader` call: its own object, so the same function declared twice is two loaders. */
+interface Loader {
+  load(): Promise<PaintDrawKind>;
+  register(entry: PaintDrawKind): () => void;
+  /** Its load, kept after it settles: a failed load is not retried on every frame that meets the kind. */
+  started?: Promise<void>;
+  /** Removes the kind this loader registered. */
+  drop?: () => void;
+  disposed: boolean;
+}
+
+/** Each id's loaders, newest live, as the kinds themselves stack. */
+const LOADERS = createReflectable<Loader>();
 
 /**
  * Declare a paint kind that is loaded the first time something looks it up,
@@ -203,29 +221,42 @@ const LOADS = new Map<string, Promise<void>>();
  * instead.
  *
  * A kind that is already registered never calls its loader. Declaring a
- * second loader for an id overrides the first; the returned disposer removes
- * this one, uncovering whatever it displaced.
+ * second loader for an id overrides the first, whether or not the first has
+ * started or failed: the next lookup calls the new one, and a load the old
+ * one finishes afterward registers nothing. The returned disposer removes
+ * this loader, uncovering whatever it displaced, and the kind it registered.
  */
-export function registerPaintDrawKindLoader(id: string, load: PaintDrawKindLoader): () => void {
-  return LOADERS.push(id, load);
+export function registerPaintDrawKindLoader(
+  id: string, load: PaintDrawKindLoader, options: PaintDrawKindLoaderOptions = {},
+): () => void {
+  const register = options.register ?? ((entry: PaintDrawKind) => registerPaintDrawKind(entry));
+  const loader: Loader = { load, register, disposed: false };
+  const dropLoader = LOADERS.push(id, loader);
+  return () => {
+    if (loader.disposed) return;
+    loader.disposed = true;
+    dropLoader();
+    loader.drop?.();
+    loader.drop = undefined;
+  };
 }
 
 function startLoad(id: string): Promise<void> {
-  const running = LOADS.get(id);
-  if (running) return running;
-  const load = LOADERS.get(id)!;
-  const done = load().then(
-    (entry) => {
-      if (entry.id !== id) {
-        throw new Error(`weasel: the loader for paint kind "${id}" resolved to "${entry.id}".`);
-      }
-      if (!KINDS.has(id)) registerPaintDrawKind(entry);
-    },
-  ).catch((err: unknown) => {
+  const loader = LOADERS.get(id)!;
+  if (loader.started) return loader.started;
+  const failed = (err: unknown): never => {
     console.error(`weasel: paint kind "${id}" failed to load:`, err);
     throw err;
-  });
-  LOADS.set(id, done);
+  };
+  const done = loader.load().then((entry): Promise<void> | void => {
+    if (entry.id !== id) failed(new Error(`weasel: the loader for paint kind "${id}" resolved to "${entry.id}".`));
+    if (LOADERS.get(id) !== loader) {
+      // Displaced or disposed while it ran: the live loader, if any, answers instead.
+      return KINDS.has(id) || !LOADERS.has(id) ? undefined : startLoad(id);
+    }
+    if (!KINDS.has(id)) loader.drop = loader.register(entry);
+  }, failed);
+  loader.started = done;
   return done;
 }
 
@@ -262,5 +293,4 @@ export function warmPaintKinds(kinds?: readonly string[]): Promise<void> {
 export function _resetPaintDrawKindsForTests(): void {
   KINDS.clear();
   LOADERS.clear();
-  LOADS.clear();
 }
