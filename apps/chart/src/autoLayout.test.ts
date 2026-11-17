@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { commitOps, createScene, type ActionDeps } from '@weasel-js/core';
 import {
   EDGE_DERIVE_PATH, FLOWCHART_STENCILS, FLOWCHART_TYPE, MIND_MAP_STENCILS, MIND_MAP_TYPE, ORG_CHART_TYPE, ORG_STENCILS,
-  sceneParticipants, stencilBuild, type DiagramStencil, type DiagramType,
+  sceneParticipants, stencilInsertOps, type DiagramStencil, type DiagramType,
 } from '@weasel-js/diagram';
 import { autoLayout } from './autoLayout';
 import { CHART_LAYERS, CHART_REGISTRY, type ChartData, type ChartLayer, type ChartPose } from './chartDocument';
@@ -13,7 +13,7 @@ const TREE: DiagramType = { id: 'tree-test', label: 'Tree', groups: ['flowchart'
 function joined() {
   const scene = createScene<ChartData, ChartLayer, ChartPose>({ systemLayers: CHART_LAYERS, registry: CHART_REGISTRY });
   const ids = [100, 400].map((x) => {
-    const built = stencilBuild(FLOWCHART_STENCILS[0]!, { x, y: 100, width: 0, height: 0 }, { layer: 'shapes', newId: () => scene.mintId() });
+    const built = stencilInsertOps(FLOWCHART_STENCILS[0]!, { x, y: 100, width: 0, height: 0 }, { layer: 'shapes', newId: () => scene.mintId() });
     commitOps({ scene } as unknown as ActionDeps, built.ops, 'Insert');
     return built.id;
   });
@@ -32,7 +32,7 @@ function sketch(shapes: Record<string, DiagramStencil>, edges: readonly (readonl
   const scene = createScene<ChartData, ChartLayer, ChartPose>({ systemLayers: CHART_LAYERS, registry: CHART_REGISTRY });
   const ids: Record<string, string> = {};
   for (const [name, s] of Object.entries(shapes)) {
-    const built = stencilBuild(s, { x: 200, y: 200, width: 0, height: 0 }, { layer: 'shapes', newId: () => scene.mintId() });
+    const built = stencilInsertOps(s, { x: 200, y: 200, width: 0, height: 0 }, { layer: 'shapes', newId: () => scene.mintId() });
     commitOps({ scene } as unknown as ActionDeps, built.ops, 'Insert');
     ids[name] = built.id;
   }

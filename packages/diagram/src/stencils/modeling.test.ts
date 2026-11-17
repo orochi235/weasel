@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import type { RectPose } from '@weasel-js/core';
 import { DIAGRAM_TYPES, STENCIL_GROUPS } from '../diagramTypes/catalog';
 import { diagramTypeEdgeStroke } from '../diagramTypes/edge';
-import { stencilBuild, type DiagramStencil } from '../stencil';
+import { stencilInsertOps, type DiagramStencil } from '../stencil';
 import { DIAGRAM_THEMES } from '../theme/themes';
 import type { DiagramNode } from '../types';
 import { ERD_GROUP } from './erd';
@@ -13,7 +13,7 @@ type Built = { id: string; pose: RectPose; data: { diagram?: DiagramNode; text?:
 
 function build(stencil: DiagramStencil) {
   let k = 0;
-  const { ops } = stencilBuild(stencil, { x: 0, y: 0, width: 0, height: 0 }, { layer: 'main', newId: () => `n${++k}`, measure });
+  const { ops } = stencilInsertOps(stencil, { x: 0, y: 0, width: 0, height: 0 }, { layer: 'main', newId: () => `n${++k}`, measure });
   const [body, ...rows] = ops.map((op) => (op.args as { node: Built }).node);
   return { body: body!, rows };
 }

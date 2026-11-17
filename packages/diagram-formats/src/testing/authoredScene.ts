@@ -2,7 +2,7 @@
 import { createPageRun, createScene, defaultCommitAdapter, type Op, type RectPose } from '@weasel-js/core';
 import {
   DIAGRAM_THEME_KEY, DIAGRAM_TYPES, DIAGRAM_TYPE_DOC_KEY, STENCIL_GROUPS, commitEdgeToScene, containerBuild, diagramTypeDocValue,
-  diagramTypeEdgeStroke, diagramTypeOf, isContainerStencil, lanesOf, stencilBuild, withDiagramRegistry, type ContainerStencil, type DiagramStencil,
+  diagramTypeEdgeStroke, diagramTypeOf, isContainerStencil, lanesOf, stencilInsertOps, withDiagramRegistry, type ContainerStencil, type DiagramStencil,
 } from '@weasel-js/diagram';
 import type { DiagramDocument } from '../document';
 import { documentFromScene } from '../fromScene';
@@ -44,7 +44,7 @@ export function authoredScene(type: string, placements: readonly Placement[] = [
     const common = { layer: 'main', newId: () => `${p.stencil}-${++n}`, parent: parentOf(p) };
     const { id, ops } = isContainerStencil(stencil)
       ? containerBuild(stencil, bounds, common)
-      : stencilBuild(stencil, bounds, { ...common, measure: MEASURE });
+      : stencilInsertOps(stencil, bounds, { ...common, measure: MEASURE });
     scene.applyBatch(ops as Op[], `Insert ${stencil.label}`, defaultCommitAdapter(scene));
     ids.push(id);
   }

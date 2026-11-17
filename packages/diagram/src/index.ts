@@ -52,7 +52,7 @@ export type { CanDropItem, ItemDrop, ItemDropOptions, ItemDropTarget } from './i
 export { bodyAt, isBodyEnd } from './connectTargets';
 export type { BodyEnd, BodyHit, ConnectEnd, ConnectView } from './connectTargets';
 export { DRAW_CONNECTOR_ACTION_ID, CONNECTOR_TOOL_ID, connectorTool, useConnectorTool } from './connectorTool';
-export { FLOWCHART_STENCILS, stencilBuild, stencilIdOf, stencilKind } from './stencil';
+export { FLOWCHART_STENCILS, stencilInsertOps, stencilIdOf, stencilKind } from './stencil';
 export type { DiagramStencil } from './stencil';
 export { stencilTool, useStencilInsert, useStencilTool } from './stencilTool';
 export {
