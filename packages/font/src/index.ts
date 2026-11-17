@@ -18,7 +18,7 @@ export {
   resolveFontVariant,
   cachedFontVariant,
   resolveGlyphFallback,
-  listFonts,
+  listAtlasFonts,
   listFontWeights,
   fontRegistry,
   fontPending,

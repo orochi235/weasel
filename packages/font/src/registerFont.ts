@@ -38,7 +38,7 @@ export type FontFamilyFaces = ReadonlyMap<string, FontEntry>;
 
 const registry = createReflectable<FontFamilyFaces>({ name: 'fonts' });
 
-/** Every registered family and its faces, in registration order. `listFonts`
+/** Every registered family and its faces, in registration order. `listAtlasFonts`
  *  is the same set shaped for a font picker. */
 export const fontRegistry: Reflection<FontFamilyFaces> = registry.reflection;
 
@@ -113,7 +113,7 @@ export interface RegisteredFont {
  * Enumerate the registry. Families come back in registration order; variants
  * sorted by weight, then style.
  */
-export function listFonts(): readonly RegisteredFont[] {
+export function listAtlasFonts(): readonly RegisteredFont[] {
   const out: RegisteredFont[] = [];
   for (const family of registeredFamilies) {
     const keys = new Set([

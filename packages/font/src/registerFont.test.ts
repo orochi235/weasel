@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import {
-  registerFont, getFont, resolveFontVariant, resolveGlyphFallback, listFonts, listFontWeights,
+  registerFont, getFont, resolveFontVariant, resolveGlyphFallback, listAtlasFonts, listFontWeights,
   fontRegistry, fontPending, warmFonts,
   _resetFontRegistryForTests,
 } from './registerFont';
@@ -378,13 +378,13 @@ describe('listFontWeights', () => {
   });
 });
 
-describe('listFonts', () => {
+describe('listAtlasFonts', () => {
   it('reports each registered family with its variants', async () => {
     await registerTestFont('Inter', 400, 'normal');
     await registerTestFont('Inter', 700, 'normal');
     await registerTestFont('Roboto', 400, 'italic');
 
-    expect(listFonts()).toEqual([
+    expect(listAtlasFonts()).toEqual([
       { family: 'Inter', variants: [{ weight: 400, style: 'normal' }, { weight: 700, style: 'normal' }] },
       { family: 'Roboto', variants: [{ weight: 400, style: 'italic' }] },
     ]);
@@ -403,7 +403,7 @@ describe('listFonts', () => {
   });
 
   it('is empty before anything registers', () => {
-    expect(listFonts()).toEqual([]);
+    expect(listAtlasFonts()).toEqual([]);
   });
 
   it('sorts variants by weight then style', async () => {
@@ -411,7 +411,7 @@ describe('listFonts', () => {
     await registerTestFont('Inter', 400, 'normal');
     await registerTestFont('Inter', 400, 'italic');
 
-    expect(listFonts()[0].variants).toEqual([
+    expect(listAtlasFonts()[0].variants).toEqual([
       { weight: 400, style: 'italic' },
       { weight: 400, style: 'normal' },
       { weight: 700, style: 'italic' },
@@ -676,7 +676,7 @@ describe('registerFont — lazy', () => {
 
   it('lists a declared face before it loads', () => {
     void registerFont('inter', { weight: 700 }, '/b.json', '/b.png', { lazy: true });
-    expect(listFonts()).toEqual([{ family: 'inter', variants: [{ weight: 700, style: 'normal' }] }]);
+    expect(listAtlasFonts()).toEqual([{ family: 'inter', variants: [{ weight: 700, style: 'normal' }] }]);
     expect(listFontWeights('inter')).toEqual([700]);
     expect(fetchCalls()).toBe(0);
   });
@@ -701,7 +701,7 @@ describe('registerFont — lazy', () => {
     void registerFont('inter', {}, '/i.json', '/i.png', { lazy: true });
     _resetFontRegistryForTests();
     expect(fontPending('inter')).toBe(false);
-    expect(listFonts()).toEqual([]);
+    expect(listAtlasFonts()).toEqual([]);
   });
 });
 

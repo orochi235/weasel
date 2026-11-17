@@ -15,13 +15,13 @@ import {
 } from '@weasel-js/core';
 import { SelectionPanel } from './SelectionPanel';
 
-const listFonts = vi.fn();
+const listAtlasFonts = vi.fn();
 const listCanvasFonts = vi.fn();
 const resolveFontVariant = vi.fn();
 
 vi.mock('@weasel-js/font', async (importOriginal) => ({
   ...(await importOriginal<Record<string, unknown>>()),
-  listFonts: () => listFonts(),
+  listAtlasFonts: () => listAtlasFonts(),
   listCanvasFonts: () => listCanvasFonts(),
   resolveFontVariant: (...args: unknown[]) => resolveFontVariant(...args),
 }));
@@ -93,8 +93,8 @@ function renderPanel(rows: { id: string; style: TextData['style'] }[]) {
 }
 
 beforeEach(() => {
-  listFonts.mockReset();
-  listFonts.mockReturnValue([
+  listAtlasFonts.mockReset();
+  listAtlasFonts.mockReturnValue([
     { family: 'sans-serif', variants: [] },
     { family: 'serif', variants: [] },
   ]);

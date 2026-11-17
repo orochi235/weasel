@@ -165,7 +165,7 @@ export function outlineStatus(
 }
 
 /** Every registered outline face and its load state — the enumeration a
- *  debug overlay or font picker needs, mirroring `listFonts`. */
+ *  debug overlay or font picker needs, mirroring `listAtlasFonts`. */
 export function listFontOutlines(): readonly OutlineFaceInfo[] {
   return slots.entries()
     .map(({ value: { family, weight, style, status } }) => ({ family, weight, style, status }))

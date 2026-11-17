@@ -2,14 +2,14 @@
  * The atlas registry through `fc.commands` runs of eager and lazy registrations that load or fail (a variant held
  * under other URLs refuses them), warms, and the settling of loads in flight, over families named like
  * `Object.prototype` members and like the registry's own keys (`a|400`): after every step each variant is loaded,
- * declared, loading, or absent as a model says, and `getFont`, `listFonts`, `fontPending`, and `warmFonts` answer for
+ * declared, loading, or absent as a model says, and `getFont`, `listAtlasFonts`, `fontPending`, and `warmFonts` answer for
  * it alone, and a landed variant resolves to itself, cached or not.
  */
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import fc from 'fast-check';
 import { FIXTURE_FONT } from './FontAtlas';
 import {
-  _resetFontRegistryForTests, cachedFontVariant, fontPending, getFont, listFonts, registerFont, resolveFontVariant, warmFonts,
+  _resetFontRegistryForTests, cachedFontVariant, fontPending, getFont, listAtlasFonts, registerFont, resolveFontVariant, warmFonts,
 } from './registerFont';
 import { runs, tally, timeoutFor } from './pbt.fixture';
 import type { FontStyle } from './fontStyle';
@@ -72,7 +72,7 @@ function check(m: Model): void {
     }
     expect(fontPending(family), `fontPending(${family})`).toBe([...(variants?.values() ?? [])].some((v) => v.state !== 'loaded'));
   }
-  const listed = listFonts().map((f) => [f.family, f.variants.map(keyOf).sort()]);
+  const listed = listAtlasFonts().map((f) => [f.family, f.variants.map(keyOf).sort()]);
   const want = [...m.registered].flatMap((family) => {
     const keys = [...(m.variants.get(family) ?? [])].filter(([, v]) => v.state !== 'loading').map(([k]) => k).sort();
     return keys.length > 0 ? [[family, keys]] : [];
