@@ -17,7 +17,7 @@ const grabHandleAction: Action = {
  * Editing a scene's plots by dragging, as one entry to pass as `ambient`: the
  * handle layer, and a drag on a handle bound to `plot.dragValue`.
  */
-export function plotEditing(
+export function createPlotEditingContribution(
   opts: PlotDragOptions & { scene: AnyScene },
 ): SurfaceContribution {
   const actionId = opts.id ?? PLOT_DRAG_ACTION_ID;

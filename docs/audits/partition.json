@@ -4688,7 +4688,7 @@
    "packages/plot/src/editing/editors.ts",
    "packages/plot/src/editing/handleLayer.ts",
    "packages/plot/src/editing/lists.ts",
-   "packages/plot/src/editing/plotEditing.ts",
+   "packages/plot/src/editing/createPlotEditingContribution.ts",
    "packages/plot/src/editing/schemaKit.ts",
    "packages/plot/src/editing/schemaTypes.ts",
    "packages/plot/src/editing/schemas.ts",

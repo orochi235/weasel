@@ -72,7 +72,7 @@ export {
   type PlotHandleScratch,
 } from './editing/handleLayer';
 export { PLOT_DRAG_ACTION_ID, commitPlotToScene, createPlotDragAction, type PlotDragOptions, type PlotEdit } from './editing/dragAction';
-export { GRAB_PLOT_HANDLE_ACTION_ID, plotEditing } from './editing/plotEditing';
+export { GRAB_PLOT_HANDLE_ACTION_ID, createPlotEditingContribution } from './editing/createPlotEditingContribution';
 export { PlotView, type PlotViewProps } from './PlotView';
 
 export type {

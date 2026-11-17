@@ -1,7 +1,7 @@
 import { SceneCanvas, WeaselProvider, useLatest, useScene, type NodeId, type Paint, type RectPose } from '@weasel-js/core';
 import { useEffect, useMemo, useRef, useState, type ReactElement } from 'react';
 import { createTextPreset } from '@weasel-js/text-tools';
-import { plotEditing } from './editing/plotEditing';
+import { createPlotEditingContribution } from './editing/createPlotEditingContribution';
 import { usePlotTextEdit } from './editing/textEdit';
 import type { PlotMeasure } from './measure';
 import type { PlotData } from './plotData';
@@ -83,7 +83,7 @@ function Inner({ data, onChange, width, height, theme, measure, background, clas
     changed.current?.(now);
   }), [scene, changed]);
 
-  const editing = useMemo(() => plotEditing({ scene: scene as never, ...(measure ? { measure } : {}) }), [scene, measure]);
+  const editing = useMemo(() => createPlotEditingContribution({ scene: scene as never, ...(measure ? { measure } : {}) }), [scene, measure]);
   const ambient = useMemo(() => [editing], [editing]);
   const textEditor = usePlotTextEdit(scene as never, (edit) => replacePlotData(scene, edit.rootId, edit.data, {
     label: edit.label, ...(measure ? { measure } : {}),

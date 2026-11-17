@@ -5,7 +5,7 @@ import {
   commitSequence, createSequenceDeleteAction, diagramResizable, diagramTypeOf, dropEmptyEdgeLabel, foldSequenceText, isSequenceText,
   offPageTagOf, rendererMeasure, SEQUENCE_TOOLS, sequencePartOf, STENCIL_TOOLS,
 } from '@weasel-js/diagram';
-import { foldPlotText, isPlotText, plotEditing, plotMarkOf, replacePlotData } from '@weasel-js/plot';
+import { foldPlotText, isPlotText, createPlotEditingContribution, plotMarkOf, replacePlotData } from '@weasel-js/plot';
 import { Sidebar } from '@weasel-js/ui/components/Sidebar';
 import { useEditorTools, usePaperLayer, useSessionPersistence } from '@weasel-js/editor';
 import { useCallback, useMemo, useRef, useState, type ReactElement } from 'react';
@@ -74,7 +74,7 @@ export function ChartWorkspace(): ReactElement {
   const theme = chartThemeOf(scene);
   const [toolOptionValues] = useState(createToolOptionValues);
   const diagram = useChartDiagram(scene, selection, theme, diagramTypeOf(scene));
-  const plot = useMemo(() => plotEditing({ scene: scene as never }), [scene]);
+  const plot = useMemo(() => createPlotEditingContribution({ scene: scene as never }), [scene]);
   // The plot's handles first, so a diagram handle beside one is hit over it.
   const ambient = useMemo(() => [plot, ...diagram.ambient], [diagram.ambient, plot]);
   const selectTool = useMemo(() => ({ resize: { resizable: diagramResizable(scene) } }), [scene]);
