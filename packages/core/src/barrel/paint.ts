@@ -132,7 +132,7 @@ export { trimPolyline } from '@weasel-js/geom/tessellate';
 export type { Polyline } from '@weasel-js/geom/tessellate';
 
 export type { Palette, PaletteEntry } from '@weasel-js/paint';
-export { pathPaintOf, strokeCovers } from '../canvas/nodeShapes/nodePaint';
+export { pathPaintOf, hasStroke } from '../canvas/nodeShapes/nodePaint';
 export type { PathPaint } from '../canvas/nodeShapes/nodePaint';
 export { strokedBounds, type ScreenMap } from '../canvas/nodeShapes/strokedBounds';
 

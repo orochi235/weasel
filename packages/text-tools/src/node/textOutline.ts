@@ -5,14 +5,14 @@ import {
   loadTextOutlines, textToPath, textToPathsByPaint, TextOutlinesError, type TextOutlineSource,
 } from '@weasel-js/text';
 import type { TextNodeData } from './textPainter';
-import { NodeOutlineError, strokeCovers, withInheritedPaint, type InheritedPaint, type NodeOutline } from '@weasel-js/core';
+import { NodeOutlineError, hasStroke, withInheritedPaint, type InheritedPaint, type NodeOutline } from '@weasel-js/core';
 
 /** `d`'s glyphs laid in `box`, the box its padding insets, wearing its paint with `inherited`'s resolved. */
 export function textOutlineOf(d: TextNodeData, box: PathInWorldPose, inherited?: InheritedPaint): NodeOutline {
   const { text, runs, style, verticalAlign, fit, fill, stroke } = withInheritedPaint(d, inherited);
   const data: TextOutlineSource = { text, runs, style, verticalAlign, fit, fill, stroke };
   return {
-    stroked: strokeCovers(stroke) || !!runs?.some((r) => strokeCovers(r.stroke)),
+    stroked: hasStroke(stroke) || !!runs?.some((r) => hasStroke(r.stroke)),
     path: () => outlined(() => textToPath(data, box)),
     parts: () => outlined(() => textToPathsByPaint(data, box)),
     load: () => loadTextOutlines(data),
