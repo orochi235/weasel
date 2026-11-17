@@ -141,8 +141,8 @@ export interface FeaturePreset {
   readonly shapes?: readonly (NodeShapeEntry<never, never> | PresetNodeShape)[];
   readonly properties?: readonly NodePropertiesEntry[];
   /** Entries installed beside `<SceneCanvas ambient>`, with every role they
-   *  declare: deps, overlays, `attach`, views, frame hooks. A `tools` takeover
-   *  brings its own ambient and leaves them out. */
+   *  declare: deps, overlays, `attach`, views, frame hooks. They apply under a
+   *  `tools` takeover too, except one whose id the takeover holds. */
   readonly contributions?: readonly SurfaceContribution[];
   /** Components the canvas renders inside itself while the preset is on, after its own deps and before its
    *  children: for a part that needs React and the mounted canvas, such as an editing overlay. A dep one

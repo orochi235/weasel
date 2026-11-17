@@ -247,9 +247,9 @@ export type SceneCanvasProps<TData, TLayer extends string, TPose> =
     /** Always-on entries to register alongside the internal tools — every one
      *  a `SurfaceContribution`, whose views, deps, overlay, bindings, actions
      *  and `attach` all install from this one list, and uninstall when the
-     *  entry leaves it. A tool is a contribution too, so one can go here. If
-     *  you supply your own `tools` prop, this is ignored — wire `ambient`
-     *  through your own `useTools` call instead. */
+     *  entry leaves it. A tool is a contribution too, so one can go here.
+     *  Under a `tools` takeover they still apply, except one whose id the
+     *  takeover holds, which the takeover's entry replaces. */
     ambient?: readonly SurfaceContribution[];
 
     /** What an entry's `requires` does when the running kit does not meet

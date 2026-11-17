@@ -4,6 +4,7 @@ import type { Action } from '@weasel-js/routing';
 import { createLongPressFeedbackContribution } from '../../domains/longPress/longPressFeedback';
 import { createViewMarkerContribution } from '../../domains/viewports/viewMarkerDrag';
 import { useTools, type Contribution, type Tool, type ToolsApi } from '../../tools/overlayBinding';
+import { alwaysOn } from '@weasel-js/routing/react';
 import { useWithProvidedAmbient } from '../ambientContributions';
 import type { SurfaceContribution } from '../surfaceContribution';
 import {
@@ -80,7 +81,8 @@ export function useCanvasTools(args: {
   /** The canvas's own api, built whether or not a takeover replaces it. */
   internal: ToolsApi;
   takeover: ToolsApi | null;
-  /** The surface's own always-on entries a takeover's ambient leaves out: they apply under it too. */
+  /** Under a takeover, the canvas's own always-on entries whose ids the takeover holds no entry for: they apply
+   *  under it as they would without it. Empty with no takeover, where `internal` holds them. */
   surface: readonly SurfaceContribution[];
 } {
   const { enabled, tools: toolsProp, defaultTools, inertia, defaultActiveTool, modes, onToolsCreated } = args;
@@ -117,13 +119,10 @@ export function useCanvasTools(args: {
     ...(modes ? { modes } : {}),
   });
   const tools = takeover ?? internal;
-  const takeoverAmbient = takeover?.ambient;
-  const surface = useMemo(() => {
-    if (!takeoverAmbient) return [];
-    const missing = (e: SurfaceContribution | null): e is SurfaceContribution =>
-      e !== null && !takeoverAmbient.some((t) => t.id === e.id);
-    return [markerDrag, pressFeedback].filter(missing);
-  }, [takeoverAmbient, markerDrag, pressFeedback]);
+  const surface = useMemo(
+    () => (takeover ? mergedAmbient.filter((e) => !takeover.has(e.id)).map(alwaysOn) : []),
+    [takeover, mergedAmbient],
+  );
 
   const onToolsCreatedRef = useLatest(onToolsCreated);
   useEffect(() => { onToolsCreatedRef.current?.(tools); }, [tools, onToolsCreatedRef]);

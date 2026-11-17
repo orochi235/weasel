@@ -30,6 +30,14 @@ Owner tags, after the priority (2026-10-26):
 
 ## Tools & gestures
 
+- **(P3) [agent] Under a `tools` takeover, the canvas's own always-on entries draw their overlays ungated by
+  mode.** `useContributionRoles` registers a `surface` entry's `overlay` as a plain layer, while the same entry
+  without a takeover draws through `useContributions`' `overlays`, which leaves out one whose capabilities the
+  active mode bars. Only an entry declaring `eligibility.capabilities` is affected. The fix is one overlay
+  pathway: hand the surface entries' overlays to the layer stack through the same mode-gated read.
+  Closes when a `surface` entry whose capabilities the active mode bars draws no overlay under a takeover,
+  tested beside `takeoverAmbient.test.tsx`.
+
 - **(P3) [maintainer] External-content ingestion — the drag ghost seen in a real OS drag.** While a drag
   hovers, the dispatcher calls the drop action's `preview`, and `ingest` draws a placeholder box per claimable
   file (or one for text) through `previewPaths` (`packages/core/src/domains/ingestion/ghost.ts`). No test can
