@@ -2572,3 +2572,9 @@ Calls the lanes made without a ruling:
 - 2026-11-16 (the fixer's call): an `axes` name that is both one axis's name and the start of other axes' paths, as
   `arm.x` is on a skeleton with joints `arm` and `arm.x`, throws rather than answering both. A name on axes without
   `paths` keeps reading every dot as a step.
+
+## Audit round thirty-three (2026-11-17): the chart app
+
+- 2026-11-17 (my call): chart's File › Export keeps a whole-document format such as draw-style XML off while any page
+  holds a kind it cannot write, rather than offering an export its writer would finish by leaving that page out with
+  a warning. A one-page format such as DOT asks only about the page in view, which is all it writes.

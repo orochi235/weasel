@@ -65,12 +65,12 @@ function FormatExport({ scene, pages, format }: { scene: ChartScene; pages: Char
     }
     downloadBlob(exported.blob, exported.name);
     reportFileWarnings('Exported', exported.warnings, 'chart-export-warnings');
-  }, { enabled: () => can(formatTakes(format, scenePageKinds(scene))) });
+  }, { enabled: () => can(formatTakes(format, scenePageKinds(scene, format.onePage ? { page: pages.shown?.id } : {}))) });
   return null;
 }
 
 /** Registers File › Import… and File › Export's command for every diagram format that writes, each off while the format cannot
- *  hold every kind of page the chart has. `onReplaced` runs once Import has replaced the chart. */
+ *  hold every kind of page the chart has, or for a one-page format the page in view. `onReplaced` runs once Import has replaced the chart. */
 export function ImportExportCommands({ scene, pages, onReplaced }: {
   scene: ChartScene; pages: ChartPages; onReplaced: () => void;
 }): ReactElement {

@@ -11,8 +11,13 @@ import type { PageKind } from './document';
  * root a sequence page, any other a graph page. A root is on the page it is
  * under, or on the pasteboard the one holding its box. Cheap enough to ask on
  * every menu render.
+ *
+ * With `opts.page`, the kind of the one page a one-page writer would write
+ * (`writtenPage`): the page so named, else the first.
  */
-export function scenePageKinds<TData, TLayer extends string, TPose>(scene: Scene<TData, TLayer, TPose>): ReadonlySet<PageKind> {
+export function scenePageKinds<TData, TLayer extends string, TPose>(
+  scene: Scene<TData, TLayer, TPose>, opts: { page?: string | undefined } = {},
+): ReadonlySet<PageKind> {
   const placed = placedPagesOf(scene);
   const claimed = new Map<string, PageKind>();
   const kinds = new Set<PageKind>();
@@ -23,6 +28,10 @@ export function scenePageKinds<TData, TLayer extends string, TPose>(scene: Scene
     kinds.add(kind);
     const page = exportPageOf(scene, placed, id);
     if (page !== null && !claimed.has(page)) claimed.set(page, kind);
+  }
+  if ('page' in opts && placed.length > 0) {
+    const written = placed.find((p) => p.id === opts.page) ?? placed[0]!;
+    return new Set([claimed.get(written.id) ?? 'graph']);
   }
   if (placed.length === 0 ? kinds.size === 0 : placed.some((p) => !claimed.has(p.id))) kinds.add('graph');
   return kinds;
