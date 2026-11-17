@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import type { Action, ImmediateInvoker, InvocationCtx, OngoingInvoker } from '@weasel-js/routing';
-import { ActionDisabledReason, evaluateEnabled } from '@weasel-js/routing';
+import { ActionDisabledReason, checkEnabled } from '@weasel-js/routing';
 import {
   type AnyScene, createScene, inkBoxes, isAnnotationLayer, isAnnotationNode, lastTransform, type NodeId,
   type RectPose, sceneFromJSON, type SelectionApi, type SnapCollect,
@@ -73,7 +73,7 @@ function setup() {
     return handle;
   };
   const measure = (from: Pt, to: Pt, opts: Parameters<typeof drag>[3] = {}) => drag(MEASURE_ACTION_IDS.measure, from, to, opts);
-  const enabled = (id: string) => evaluateEnabled(action(id), deps as never);
+  const enabled = (id: string) => checkEnabled(action(id), deps as never);
   const run = (id: string, params?: Record<string, unknown>) =>
     (action(id).invoker as ImmediateInvoker).run(deps as never, params);
   const ids = () => measureIds(scene as unknown as AnyScene, ms);

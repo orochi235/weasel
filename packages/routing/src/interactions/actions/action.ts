@@ -34,7 +34,7 @@ export const ActionDisabledReason = {
   NotApplicable: 'not-applicable',
   /** A node the action would move or remove is locked, or sits in a locked subtree it would take. */
   Locked: 'locked',
-  /** Sentinel: the predicate threw. Surfaced by `evaluateEnabled`'s catch. */
+  /** Sentinel: the predicate threw. Surfaced by `checkEnabled`'s catch. */
   PredicateThrew: 'predicate-threw',
 } as const;
 /** Why an action is unavailable right now. */

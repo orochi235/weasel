@@ -1,5 +1,5 @@
 import { useLayoutEffect, useReducer, useSyncExternalStore } from 'react';
-import { createActionDeps, eligibleNow, evaluateActive, evaluateEnabled, type ActionItem } from '@weasel-js/routing';
+import { createActionDeps, eligibleNow, checkActive, checkEnabled, type ActionItem } from '@weasel-js/routing';
 import { useOptionalDepRegistry } from '@weasel-js/routing/react';
 
 /** What chrome shows of one action: whether it can run, and whether it is on. */
@@ -28,9 +28,9 @@ export function useActionStates(items: readonly ActionItem[]): ActionState[] {
   const depReg = useOptionalDepRegistry();
   const read = (item: ActionItem): ActionState => {
     const deps = depReg ? createActionDeps(item.action, depReg) : undefined;
-    const active = evaluateActive(item.action, deps, item.params);
+    const active = checkActive(item.action, deps, item.params);
     if (!eligibleNow(item.action, depReg?.get('ruleCtx'))) return { enabled: false, active };
-    const { enabled, reason } = evaluateEnabled(item.action, deps, undefined, item.params);
+    const { enabled, reason } = checkEnabled(item.action, deps, undefined, item.params);
     return { enabled, active, ...(reason !== undefined ? { reason } : {}) };
   };
   // The snapshot is what the chrome shows, so a notice that changes none of

@@ -147,7 +147,7 @@ export type {
 } from './interactions/actions/actionIds';
 export { defineAction } from './interactions/actions/defineAction';
 export type { ActionOf, ActionSettingsOf, ActionVariantOf } from './interactions/actions/defineAction';
-export { evaluateActive, evaluateEnabled } from './interactions/actions/actionEnabled';
+export { checkActive, checkEnabled } from './interactions/actions/actionEnabled';
 export type { ActionEnabledResult } from './interactions/actions/actionEnabled';
 export { createActionDeps } from './interactions/actions/buildDeps';
 export { createDepRegistry } from './interactions/actions/depNode';

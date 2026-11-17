@@ -4,7 +4,7 @@ import {
   actionItems,
   createActionDeps,
   eligibleNow,
-  evaluateEnabled,
+  checkEnabled,
   matchActionItem,
   type ActionItem,
   type ActionEnabledResult,
@@ -42,7 +42,7 @@ export function usePaletteItems(open: boolean, query: string): PaletteItems {
         continue;
       }
       const deps = depReg ? createActionDeps(item.action, depReg) : undefined;
-      m.set(item.key, evaluateEnabled(item.action, deps, undefined, item.params));
+      m.set(item.key, checkEnabled(item.action, deps, undefined, item.params));
     }
     return m;
   }, [allItems, depReg]);

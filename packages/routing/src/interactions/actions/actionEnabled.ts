@@ -43,7 +43,7 @@ export function warnThrew(which: keyof typeof threwWarned, action: Action, e: un
 
 /**
  * `ask()`, the call of `action.enabled` a caller makes with its own arguments, or the disabled reason a
- * throw reads as, warned of once per action in dev. The dispatcher's gate and {@link evaluateEnabled} both
+ * throw reads as, warned of once per action in dev. The dispatcher's gate and {@link checkEnabled} both
  * read the predicate through this.
  */
 export function gateEnabled(action: Action, ask: () => true | ActionUnavailable): true | ActionUnavailable {
@@ -62,7 +62,7 @@ export function gateEnabled(action: Action, ask: () => true | ActionUnavailable)
  * dev mode, warns once per action id when a single call exceeds 4ms (single
  * frame at 240fps — generous; real predicates should be sub-millisecond).
  */
-export function evaluateEnabled(
+export function checkEnabled(
   action: Action,
   deps?: ActionDeps,
   at?: { x: number; y: number },
@@ -95,7 +95,7 @@ export function evaluateEnabled(
  * names. `undefined` for an action with no pressed state; a predicate that
  * throws reads as not active, with the dev warning `enabled` gets.
  */
-export function evaluateActive(
+export function checkActive(
   action: Action,
   deps?: ActionDeps,
   params?: Readonly<Record<string, unknown>>,
