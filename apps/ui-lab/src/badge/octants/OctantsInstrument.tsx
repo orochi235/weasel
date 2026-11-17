@@ -2,7 +2,7 @@ import { trimNumber } from '@weasel-js/geom';
 import { type ConfigSchema, defineInstrument, f, type RenderContext } from '@weasel-js/labkit';
 import type { BadgeQuatrefoilBaseParams } from '@weasel-js/ui/components/Badge';
 import { quatrefoilRadius } from '@weasel-js/ui/components/Badge/geometry';
-import { Sequence, values as valuesOf } from '@weasel-js/ui/components/Sequence';
+import { Sequence, valuesSweep } from '@weasel-js/ui/components/Sequence';
 import { QUATREFOIL_PARAMS } from '../baseParams';
 import s from './Octants.module.css';
 
@@ -66,7 +66,7 @@ function Sweeps({ params }: { params: Config }) {
         other param is as the panel sets it.
       </p>
       {SWEEPS.map(({ param, values, title, format }) => {
-        const sweep = valuesOf(values, (v) => `${param} = ${format ? format(v) : v}`);
+        const sweep = valuesSweep(values, (v) => `${param} = ${format ? format(v) : v}`);
         return (
           <section key={param} className={s.sweep}>
             <h3 className={s.sweepTitle}>{title ?? param}</h3>

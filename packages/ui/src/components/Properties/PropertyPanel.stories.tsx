@@ -5,7 +5,7 @@ import { EMPHASES, GRADES, STANCES } from '@weasel-js/theme';
 import { EffectList, type EffectKind, type EffectListItem } from '@weasel-js/ui/components/EffectList';
 import { Subpanel, PropertyField, PropertyList, type PropertyListPack, PropertySpan, PropertyPanel, PropertyRow } from '@weasel-js/ui/components/Properties';
 import { Switch } from '@weasel-js/ui/components/Switch';
-import { Sequence, values } from '@weasel-js/ui/components/Sequence';
+import { Sequence, valuesSweep } from '@weasel-js/ui/components/Sequence';
 import s from './PropertyPanel.stories.module.css';
 
 // Args common to most stories — exposed as controls so the
@@ -227,7 +227,7 @@ const STANCE_CELLS: readonly StanceCell[] = [
 /** No stance and every stance, each grade, high and low emphasis, tints 0–3 on `clarify`, then a panel nested in each stance and a danger one in `clarify`. */
 export const Stances: Story = {
   render: () => (
-    <Sequence aria-label="Panel stances" sweep={values(STANCE_CELLS, (c) => c.nestIn?.title ?? c.title)} caption={false}>
+    <Sequence aria-label="Panel stances" sweep={valuesSweep(STANCE_CELLS, (c) => c.nestIn?.title ?? c.title)} caption={false}>
       {({ title, look, nestIn }) => {
         const panel = <PropertyPanel {...look} title={title}><StanceRows /></PropertyPanel>;
         if (!nestIn) return <div className={s.cell}>{panel}</div>;

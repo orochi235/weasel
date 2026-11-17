@@ -36,7 +36,7 @@ export { timerScheduler } from './scheduler';
 export type { Scheduler } from './scheduler';
 export { createStepRepeat, REPEAT_DELAY_MS, REPEAT_EVERY_MS } from './stepRepeat';
 export type { StepRepeat, StepRepeatOptions } from './stepRepeat';
-export { SWEEP_CAP, stepsOf, range, values, frames, until } from './sweep';
+export { SWEEP_CAP, stepsOf, rangeSweep, valuesSweep, framesSweep, sweepUntil } from './sweep';
 export type { Sweep, RangeSpec, FrameSpan, FrameOptions } from './sweep';
 export { rowOffset, tileGrid, tileRows, tileKey, gridLayout, rovingGridTarget } from './grid';
 export type { LastRow, Tiling, TileGrid, GridLayout } from './grid';

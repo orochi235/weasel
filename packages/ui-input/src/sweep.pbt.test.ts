@@ -1,12 +1,12 @@
 /**
  * Property tests of sweeps: a range walks from its start, a step apart, to at or before its end, both ends exact
  * where they are walked; `at` reaches the ends and agrees with the walk; frames keep their spacing, end on the
- * run's end, and stop a looping pass short of its own; `until` and `stepsOf` take prefixes.
+ * run's end, and stop a looping pass short of its own; `sweepUntil` and `stepsOf` take prefixes.
  */
 import { describe, expect, it } from 'vitest';
 import fc from 'fast-check';
 import { runs, tally, timeoutFor } from './pbt.fixture';
-import { frames, range, stepsOf, until, values } from './sweep';
+import { framesSweep, rangeSweep, stepsOf, sweepUntil, valuesSweep } from './sweep';
 
 const RUNS = 400;
 const near = (a: number, b: number, scale: number): boolean => Math.abs(a - b) <= 1e-9 * Math.max(1, Math.abs(scale));
@@ -18,12 +18,12 @@ const end = fc.oneof(
 );
 const stepSize = fc.oneof(fc.constantFrom(0.1, 0.25, 1, 2, 0.3, 7, 1e-3), fc.double({ min: 1e-3, max: 1e5, noNaN: true }));
 
-describe('range', () => {
+describe('rangeSweep', () => {
   it('with a step, walks from the start a step apart to at or before the end, and `at` agrees', () => {
     const t = tally();
     fc.assert(fc.property(end, end, stepSize, (from, to, step) => {
       fc.pre(Math.abs(to - from) / step < 5000);
-      const s = range({ from, to, step });
+      const s = rangeSweep({ from, to, step });
       const { steps, capped } = stepsOf(s, 6000);
       expect(capped).toBe(false);
       expect(steps[0]).toBe(from);
@@ -45,7 +45,7 @@ describe('range', () => {
   it('with a count, walks that many evenly, both ends exact, and `at` runs continuously between them', () => {
     const t = tally();
     fc.assert(fc.property(end, end, fc.integer({ min: 1, max: 30 }), fc.double({ min: 0, max: 1, noNaN: true }), (from, to, count, u) => {
-      const s = range({ from, to, count });
+      const s = rangeSweep({ from, to, count });
       const steps = [...s.walk()];
       expect(steps.length).toBe(count);
       expect(steps[0]).toBe(from);
@@ -63,10 +63,10 @@ describe('range', () => {
   }, timeoutFor(RUNS, 3));
 });
 
-describe('values, until, and stepsOf', () => {
+describe('valuesSweep, sweepUntil, and stepsOf', () => {
   it('values reaches both ends and snaps to the nearest', () => {
     fc.assert(fc.property(fc.array(fc.string(), { minLength: 1, maxLength: 8 }), fc.double({ min: -1, max: 2, noNaN: true }), (list, u) => {
-      const s = values(list);
+      const s = valuesSweep(list);
       expect(s.at(0)).toBe(list[0]);
       expect(s.at(1)).toBe(list.at(-1));
       const c = Math.min(1, Math.max(0, u));
@@ -78,13 +78,13 @@ describe('values, until, and stepsOf', () => {
     fc.assert(fc.property(fc.array(fc.integer({ min: 0, max: 9 }), { maxLength: 12 }), fc.integer({ min: 0, max: 9 }), fc.integer({ min: 0, max: 14 }), (list, stop, cap) => {
       const cut = list.indexOf(stop);
       const prefix = cut < 0 ? list : list.slice(0, cut);
-      expect([...until(values([0, ...list]), (v, i) => i > 0 && v === stop).walk()]).toEqual([0, ...prefix]);
-      expect(stepsOf(values([0, ...list]), cap)).toEqual({ steps: [0, ...list].slice(0, cap), capped: list.length + 1 > cap });
+      expect([...sweepUntil(valuesSweep([0, ...list]), (v, i) => i > 0 && v === stop).walk()]).toEqual([0, ...prefix]);
+      expect(stepsOf(valuesSweep([0, ...list]), cap)).toEqual({ steps: [0, ...list].slice(0, cap), capped: list.length + 1 > cap });
     }), runs(RUNS));
   }, timeoutFor(RUNS, 3));
 });
 
-describe('frames', () => {
+describe('framesSweep', () => {
   it('walks from 0 a frame apart, ends a run on its end and a looping pass short of its own', () => {
     const t = tally();
     fc.assert(fc.property(
@@ -94,7 +94,7 @@ describe('frames', () => {
       fc.constantFrom('first', 'all' as const),
       (duration, every, loop, passes) => {
         fc.pre(!(passes === 'all' && loop === true));
-        const s = frames({ duration, loop }, { every, passes });
+        const s = framesSweep({ duration, loop }, { every, passes });
         const { steps, capped } = stepsOf(s, 5000);
         fc.pre(!capped);
         const count = loop === true ? Infinity : loop === false ? 1 : Math.max(0, loop);
@@ -120,17 +120,17 @@ describe('frames', () => {
 
 describe('shrunk counterexamples', () => {
   it('a range keeps an end written with more than twelve digits', () => {
-    expect([...range({ from: -1.706187340793e-312, to: 0, step: 0.1 }).walk()]).toEqual([-1.706187340793e-312]);
-    expect(range({ from: 0, to: 3.151181923013e-312, count: 1 }).at(1)).toBe(3.151181923013e-312);
-    expect([...range({ from: 123456.7890123, to: 2e5, count: 2 }).walk()]).toEqual([123456.7890123, 2e5]);
+    expect([...rangeSweep({ from: -1.706187340793e-312, to: 0, step: 0.1 }).walk()]).toEqual([-1.706187340793e-312]);
+    expect(rangeSweep({ from: 0, to: 3.151181923013e-312, count: 1 }).at(1)).toBe(3.151181923013e-312);
+    expect([...rangeSweep({ from: 123456.7890123, to: 2e5, count: 2 }).walk()]).toEqual([123456.7890123, 2e5]);
   });
 
   it('a range given a count reads `at` inside its ends', () => {
-    expect(range({ from: 0, to: 60079.85937499993, count: 1 }).at(0.9999999999999996)).toBeLessThanOrEqual(60079.85937499993);
-    expect(range({ from: 9.565119516300001e-301, to: 9.565119516300001e-301, count: 1 }).at(5e-324)).toBe(9.565119516300001e-301);
+    expect(rangeSweep({ from: 0, to: 60079.85937499993, count: 1 }).at(0.9999999999999996)).toBeLessThanOrEqual(60079.85937499993);
+    expect(rangeSweep({ from: 9.565119516300001e-301, to: 9.565119516300001e-301, count: 1 }).at(5e-324)).toBe(9.565119516300001e-301);
   });
 
   it('frames show the end of a run whose last frame time rounds past it', () => {
-    expect([...frames({ duration: 1999.9999999999998, loop: false }, { every: 499.99999999999994 }).walk()].at(-1)).toBe(1999.9999999999998);
+    expect([...framesSweep({ duration: 1999.9999999999998, loop: false }, { every: 499.99999999999994 }).walk()].at(-1)).toBe(1999.9999999999998);
   });
 });

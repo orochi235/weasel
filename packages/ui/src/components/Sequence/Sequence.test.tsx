@@ -1,12 +1,12 @@
 import { render, screen, within } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
-import { range, until, values } from '@weasel-js/ui-input';
+import { rangeSweep, sweepUntil, valuesSweep } from '@weasel-js/ui-input';
 import { Sequence } from './Sequence';
 
 describe('Sequence', () => {
   it('renders a cell per step, captioned with the sweep’s label', () => {
     render(
-      <Sequence aria-label="Digits" sweep={range({ from: 0, to: 9, step: 1 })}>
+      <Sequence aria-label="Digits" sweep={rangeSweep({ from: 0, to: 9, step: 1 })}>
         {(d) => <span data-digit={d}>{d}</span>}
       </Sequence>,
     );
@@ -19,13 +19,13 @@ describe('Sequence', () => {
 
   it('takes its own caption, or none', () => {
     const { rerender } = render(
-      <Sequence aria-label="Sizes" sweep={values(['sm', 'lg'])} caption={(v) => `size ${v}`}>
+      <Sequence aria-label="Sizes" sweep={valuesSweep(['sm', 'lg'])} caption={(v) => `size ${v}`}>
         {() => <i />}
       </Sequence>,
     );
     expect(screen.getAllByRole('figure')[1]!.querySelector('figcaption')).toHaveTextContent('size lg');
     rerender(
-      <Sequence aria-label="Sizes" sweep={values(['sm', 'lg'])} caption={false}>
+      <Sequence aria-label="Sizes" sweep={valuesSweep(['sm', 'lg'])} caption={false}>
         {() => <i />}
       </Sequence>,
     );
@@ -34,7 +34,7 @@ describe('Sequence', () => {
 
   it('caps a sweep that does not end, and says so', () => {
     render(
-      <Sequence aria-label="Evens" sweep={range({ from: 0, to: Infinity, step: 2 })} cap={4}>
+      <Sequence aria-label="Evens" sweep={rangeSweep({ from: 0, to: Infinity, step: 2 })} cap={4}>
         {(n) => n}
       </Sequence>,
     );
@@ -42,9 +42,9 @@ describe('Sequence', () => {
     expect(screen.getByText('Showing the first 4 steps.')).toBeInTheDocument();
   });
 
-  it('ends where `until` says, with no cap note', () => {
+  it('ends where `sweepUntil` says, with no cap note', () => {
     render(
-      <Sequence aria-label="Squares" sweep={until(range({ from: 0, to: 9, step: 1 }), (n) => n * n > 10)}>
+      <Sequence aria-label="Squares" sweep={sweepUntil(rangeSweep({ from: 0, to: 9, step: 1 }), (n) => n * n > 10)}>
         {(n) => n * n}
       </Sequence>,
     );
@@ -54,7 +54,7 @@ describe('Sequence', () => {
 
   it('lays two sweeps out as a grid of every pairing, rows and columns labeled', () => {
     render(
-      <Sequence aria-label="Pairs" sweep={values(['a', 'b'])} across={range({ from: 1, to: 3, step: 1 })}>
+      <Sequence aria-label="Pairs" sweep={valuesSweep(['a', 'b'])} across={rangeSweep({ from: 1, to: 3, step: 1 })}>
         {(row, col) => `${row}${col}`}
       </Sequence>,
     );

@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from '@weasel-js/forge';
 import { PrefKindBadge } from '@weasel-js/ui/components/Prefs';
-import { Sequence, values } from '@weasel-js/ui/components/Sequence';
+import { Sequence, valuesSweep } from '@weasel-js/ui/components/Sequence';
 
 const meta: Meta<typeof PrefKindBadge> = {
   title: 'ui/Prefs/PrefKindBadge',
@@ -18,7 +18,7 @@ const KINDS = ['number', 'boolean', 'string', 'enum', 'color', 'paint', 'object'
 /** Every built-in kind, then a custom kind and a group, which are drawn muted. */
 export const AllKinds: Story = {
   render: (args) => (
-    <Sequence aria-label="Pref kinds" sweep={values(KINDS)} caption={false}>
+    <Sequence aria-label="Pref kinds" sweep={valuesSweep(KINDS)} caption={false}>
       {(k) => <PrefKindBadge {...args} kind={k} />}
     </Sequence>
   ),

@@ -3,7 +3,7 @@ import { Button } from '@weasel-js/ui/components/Button';
 import { PropertyField, PropertyGroup, PropertyList, PropertyPanel, Subpanel } from '@weasel-js/ui/components/Properties';
 import type { ReactNode } from 'react';
 import { DefaultMotif, type Motif, MotifFrame, type MotifFrameProps, notch, plaque, rule, stereo, tab, titlebar } from '@weasel-js/ui/components/MotifFrame';
-import { Sequence, values } from '@weasel-js/ui/components/Sequence';
+import { Sequence, valuesSweep } from '@weasel-js/ui/components/Sequence';
 import s from './MotifFrame.stories.module.css';
 
 const meta: Meta<typeof MotifFrame> = {
@@ -62,7 +62,7 @@ interface Frame {
 
 function Wall({ label, frames, args, actions }: { label: string; frames: Frame[]; args: Partial<MotifFrameProps>; actions?: ReactNode }) {
   return (
-    <Sequence aria-label={label} sweep={values(frames, (f) => f.title)} caption={false} className={s.frames}>
+    <Sequence aria-label={label} sweep={valuesSweep(frames, (f) => f.title)} caption={false} className={s.frames}>
       {(f) => (
         <MotifFrame {...args} title={f.title} motif={f.motif} tint={f.tint} actions={actions}>
           {f.jacks.map((names, i) => <Jacks key={i} names={names} />)}

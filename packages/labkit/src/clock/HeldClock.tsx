@@ -1,7 +1,7 @@
 import { isDev } from '@weasel-js/react';
 import {
   type FrameOptions,
-  frames,
+  framesSweep,
   Sequence,
   type SequenceProps,
 } from '@weasel-js/ui/components/Sequence';
@@ -94,7 +94,7 @@ export function ClockFrames({
 }: ClockFramesProps): ReactElement {
   const declared = useDeclared(spec);
   const sweep = useMemo(
-    () => frames(declared, { every, ...(passes ? { passes } : {}) }),
+    () => framesSweep(declared, { every, ...(passes ? { passes } : {}) }),
     [declared, every, passes],
   );
   return (

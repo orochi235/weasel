@@ -2,7 +2,7 @@ import { useState, type CSSProperties, type ReactElement } from 'react';
 import { arcShape, trackRun, wrapPositive } from '@weasel-js/geom';
 import { Along, arcInBox, type AlongArc } from '@weasel-js/ui/components/Along';
 import { PrefsBar } from '@weasel-js/ui/components/PrefsBar';
-import { range as rangeSweep, Sequence, type Sweep as SweepOf } from '@weasel-js/ui/components/Sequence';
+import { rangeSweep, Sequence, type Sweep as SweepOf } from '@weasel-js/ui/components/Sequence';
 import { Slider, type Thumb } from '@weasel-js/ui/components/Slider';
 import { actionsSchema, LabActions } from './labActions';
 import s from './lab.stories.module.css';

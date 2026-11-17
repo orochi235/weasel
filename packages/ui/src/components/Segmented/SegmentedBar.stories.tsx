@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import type { Meta, StoryObj } from '@weasel-js/forge';
 import { SegmentedBar, type SegmentedEachItem, type SegmentedMode, type SegmentedVariant } from '@weasel-js/ui/components/Segmented';
-import { range, Sequence, values } from '@weasel-js/ui/components/Sequence';
+import { rangeSweep, Sequence, valuesSweep } from '@weasel-js/ui/components/Sequence';
 import type { ControlSize } from '@weasel-js/ui/components/ControlSize';
 import { Icon } from '@weasel-js/ui/components/Icon';
 import { icon } from '../../icons.gen';
@@ -56,7 +56,7 @@ function ModeBar({ mode, variant, size }: { mode: SegmentedMode; variant?: Segme
 export const ModesByVariant: Story = {
   tags: ['gallery'],
   render: () => (
-    <Sequence aria-label="Mode by variant" sweep={values(MODES)} across={values(VARIANTS)}>
+    <Sequence aria-label="Mode by variant" sweep={valuesSweep(MODES)} across={valuesSweep(VARIANTS)}>
       {(mode, variant) => <ModeBar mode={mode} variant={variant} />}
     </Sequence>
   ),
@@ -66,7 +66,7 @@ export const ModesByVariant: Story = {
 export const ModesBySize: Story = {
   tags: ['gallery'],
   render: () => (
-    <Sequence aria-label="Mode by size" sweep={values(MODES)} across={values(SIZES)}>
+    <Sequence aria-label="Mode by size" sweep={valuesSweep(MODES)} across={valuesSweep(SIZES)}>
       {(mode, size) => <ModeBar mode={mode} size={size} />}
     </Sequence>
   ),
@@ -76,7 +76,7 @@ export const ModesBySize: Story = {
 export const FromASweep: Story = {
   render: ({ size, variant }) => {
     const [v, setV] = useState<number | null>(4);
-    return <SegmentedBar aria-label="Spacing" steps={range({ from: 0, to: 16, step: 4 })} value={v} onChange={setV} size={size} variant={variant} />;
+    return <SegmentedBar aria-label="Spacing" steps={rangeSweep({ from: 0, to: 16, step: 4 })} value={v} onChange={setV} size={size} variant={variant} />;
   },
 };
 
