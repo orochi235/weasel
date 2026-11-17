@@ -492,4 +492,17 @@ describe('createCodec voices on a shared subject', () => {
     b.frame(1000);
     expect(vals(r, 1)[0]).toBeGreaterThan(40);
   });
+
+  it("answers a path voice's velocity as a tween voice's, in axis units per second", () => {
+    const b = createCodec();
+    b.tween({ id: 1, ms: 1000, ease: (u) => u, from: [0], to: [10] });
+    b.path({ id: 2, ms: 1000, axes: 1, at: (u) => [10 * u] });
+    b.frame(0);
+    b.frame(500);
+    const tween = b.own(1)!.velocity[0]!;
+    expect(Math.abs(tween)).toBeCloseTo(10, 3);
+    expect(b.own(2)!.velocity[0]).toBeCloseTo(tween, 3);
+    b.frame(600);
+    expect(b.own(2)!.velocity).toEqual([0]);
+  });
 });

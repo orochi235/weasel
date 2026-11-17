@@ -79,6 +79,30 @@ interface Voice {
   queuedRate?: number;
   /** A path's axes as its patch last answered. */
   last?: number[];
+  /** A path's own start, and the linear progress its patch last read it at: none until a
+   *  frame has, when it stands at rest as a queued tween does. */
+  path?: PathStart;
+  phase?: number;
+}
+
+/** A path voice's velocity at its last reading, in axis units per second as a tween voice's: the
+ *  path is any function, so its slope is read off it. Zero before a frame reads it and once it
+ *  has ended. */
+function pathVelocity(v: Voice): number[] {
+  const { ms, at } = v.path!;
+  const u = v.phase;
+  if (u === undefined) return zeros(v.from.length);
+  const du = Math.min(1, ms / 2) / ms;
+  const a = Math.max(0, u - du);
+  const b = Math.min(1, u + du);
+  if (!(u < 1 && b > a)) return zeros(v.from.length);
+  try {
+    const pa = at(a);
+    const pb = at(b);
+    return pa.map((x, i) => ((pb[i]! - x) * 1000) / ((b - a) * ms));
+  } catch {
+    return zeros(v.from.length);
+  }
 }
 
 // A voice cued now reads voice time 0 at codec time `time`. Each patch holds its subject at rest
@@ -194,8 +218,9 @@ export function createCodec(
       const from = s.at(0);
       const last = s.atEnd ? s.at(1) : undefined;
       const slot = lanes.join(s.axes, shared ? s.on : s.id, shared ? zeros(s.axes) : last ?? from);
-      const v = { kind: 'path', slot, from, last } as Voice;
+      const v = { kind: 'path', slot, from, last, path: s } as Voice;
       const patch = fnPatch<unknown, Out>(s.ms, (phase) => {
+        v.phase = phase;
         try { v.last = s.at(phase); } catch (error) { fault(s.id, error); }
         return { v: v.last ?? from };
       }, { writes: ['v'] });
@@ -243,7 +268,8 @@ export function createCodec(
       if (!v) return undefined;
       if (v.kind === 'spring') return current(v);
       if (v.kind === 'path') {
-        return { value: rewinds.has(v) ? v.from : v.last ?? v.from, velocity: new Array<number>(v.from.length).fill(0) };
+        if (rewinds.has(v)) return { value: v.from, velocity: zeros(v.from.length) };
+        return { value: v.last ?? v.from, velocity: pathVelocity(v) };
       }
       return (!v.queued && motionOf(v))
         || { value: v.queued?.atEnd ? v.queued.to : v.from, velocity: zeros(v.from.length) };
