@@ -19,4 +19,4 @@ export {
   weighScope,
   writeDeclared,
 } from './scope';
-export { overridesOfPref, scopeSelectorsOf } from './scopeSpec';
+export { prefOverridesLookup, scopeSelectorsOf } from './scopeSpec';

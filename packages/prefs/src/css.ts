@@ -4,7 +4,7 @@
 import { catalogUnit } from '@weasel-js/quantity';
 import { trimNumber } from '@weasel-js/geom';
 import { type PrefGroup, prefHoldsValue, prefLeaves, prefValueAtPath, isPrefScope, type PrefScope, type PrefOverridesLookup, type PrefSelection, type PrefEnum, type PrefLeaf, type PrefNumber, resolvePrefUnit } from '@weasel-js/prefs-schema';
-import { scopeOptionValue, overridesOfPref } from '@weasel-js/prefs-schema/internal';
+import { scopeOptionValue, prefOverridesLookup } from '@weasel-js/prefs-schema/internal';
 import { prefSelectors } from './splitCheck';
 import { compositeKey } from '@weasel-js/registry';
 
@@ -134,7 +134,7 @@ export function prefsCss(store: PrefsCssSource, options: PrefsCssOptions = {}): 
     if (own) for (const option of own) declare([[path, option]], path, leaf, option);
     const held = store.scope(path);
     if (!held) continue;
-    for (const { under, value } of toldApart(held, (selector) => selectors.get(selector) ?? [], leaf.default, overridesOfPref(leaf))) {
+    for (const { under, value } of toldApart(held, (selector) => selectors.get(selector) ?? [], leaf.default, prefOverridesLookup(leaf))) {
       declare(under, path, leaf, value);
     }
   }

@@ -37,7 +37,7 @@ export function scopeSelectorsOf(pref: PrefLeaf): readonly string[] | undefined 
 const lookups = new WeakMap<PrefLeaf, PrefOverridesLookup | undefined>();
 
 /** {@link prefOverridesOf} for one pref, as the scope functions take it: none where no selector is closed. */
-export function overridesOfPref(pref: PrefLeaf): PrefOverridesLookup | undefined {
+export function prefOverridesLookup(pref: PrefLeaf): PrefOverridesLookup | undefined {
   if (!lookups.has(pref)) {
     lookups.set(pref, pref.scopes?.some((scope) => scope.overrides !== undefined) ? (selector) => prefOverridesOf(pref, selector) : undefined);
   }
