@@ -3,9 +3,11 @@
  * the properties inherited from `NodeBase` merged in first.
  */
 import {
+  Node,
   type Project,
   type InterfaceDeclaration,
   type PropertySignature,
+  type SourceFile,
   SyntaxKind,
 } from 'ts-morph';
 import { resolve } from 'node:path';
@@ -19,20 +21,21 @@ import { srcRef, sourceFileOrThrow, readJsDoc } from './extract.ts';
 const VARIANT_NAMES: readonly string[] = ['MarkNode', 'GroupNode'];
 const BASE_NAME = 'NodeBase';
 const UNION_NAME = 'Node';
+const ENTRY = 'packages/core/src/core/scene/types.ts';
 
 export function extractNode(project: Project, repoRoot: string): SceneNodeSchema {
   const sf = sourceFileOrThrow(
     project,
-    resolve(repoRoot, 'packages/core/src/core/scene/types.ts'),
+    resolve(repoRoot, ENTRY),
   );
 
-  const base = sf.getInterface(BASE_NAME);
+  const base = exportedInterface(sf, BASE_NAME);
   const baseProps = base ? propertiesOfInterface(base) : [];
 
   const variants: SceneNodeVariant[] = [];
   const kinds: string[] = [];
   for (const name of VARIANT_NAMES) {
-    const iface = sf.getInterface(name);
+    const iface = exportedInterface(sf, name);
     if (!iface) continue;
 
     const ownProps = propertiesOfInterface(iface);
@@ -49,12 +52,15 @@ export function extractNode(project: Project, repoRoot: string): SceneNodeSchema
     variants.push({ kind, properties: merged });
   }
 
-  const unionAlias = sf.getTypeAlias(UNION_NAME);
-  const source = unionAlias
-    ? srcRef(unionAlias, repoRoot)
-    : { file: 'packages/core/src/core/scene/types.ts', line: 1 };
+  const unionAlias = sf.getExportedDeclarations().get(UNION_NAME)?.find(Node.isTypeAliasDeclaration);
+  const source = unionAlias ? srcRef(unionAlias, repoRoot) : { file: ENTRY, line: 1 };
 
   return { kinds, variants, source };
+}
+
+/** The interface `sf` exports as `name`, followed through re-exports to the file that declares it. */
+function exportedInterface(sf: SourceFile, name: string): InterfaceDeclaration | undefined {
+  return sf.getExportedDeclarations().get(name)?.find(Node.isInterfaceDeclaration);
 }
 
 function propertiesOfInterface(iface: InterfaceDeclaration): readonly PropertyDescriptor[] {
