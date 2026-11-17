@@ -197,7 +197,7 @@ function syncTo(run: Run, hub: Hub, timestamp: number): void {
   }
 }
 
-function clockOf(run: Run, hub: Hub, seekable: boolean, speeds: readonly number[]): Clock {
+function createClockView(run: Run, hub: Hub, seekable: boolean, speeds: readonly number[]): Clock {
   const clock: Clock = {
     get elapsed() {
       return run.elapsed;
@@ -333,7 +333,7 @@ export function createClock(spec: ClockSpec, at?: ClockPosition): ClockHandle {
     follow: followMix(mix),
     opening,
   };
-  const clock = clockOf(run, hub, seekable, speeds);
+  const clock = createClockView(run, hub, seekable, speeds);
   hub.follow(run.elapsed);
 
   let declared: Declared = {
