@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { catalogUnit, catalogUnits, registerUnit, unitCatalog, unitSpellings, unitSymbol } from './catalog';
 import { speakUnit, unit } from './kinds/measure';
-import { parseNumber } from './number';
+import { parseNumber } from './localized';
 import { present } from './present';
 
 describe('unit catalog lookup', () => {

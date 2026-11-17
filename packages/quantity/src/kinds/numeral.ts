@@ -1,5 +1,5 @@
 import { numberPart, spokenSign, type DisplayKind } from '../kind';
-import { parseNumber, roundWhole } from '../number';
+import { parseNumberIn, roundWhole } from '../number';
 
 /**
  * A whole number in Roman numerals, `XII`. Spoken as the plain number, since a
@@ -62,7 +62,7 @@ export const romanKind: DisplayKind<RomanDisplay> = {
   speak: (value, _d, ctx) => spokenSign(numberPart(roundWhole(value), ctx.locale, { maximumFractionDigits: 0, useGrouping: false }).value),
   parse: (text, _d, ctx) => {
     const r = fromRoman(text);
-    return Number.isNaN(r) ? parseNumber(text, undefined, ctx.locale) : r;
+    return Number.isNaN(r) ? parseNumberIn(text, undefined, ctx.locale) : r;
   },
 };
 
@@ -89,5 +89,5 @@ export const ordinalKind: DisplayKind<OrdinalDisplay> = {
     const rule = new Intl.PluralRules('en-US', { type: 'ordinal' }).select(n);
     return [number, { type: 'ordinal', value: SUFFIXES[rule] ?? 'th' }];
   },
-  parse: (text, _d, ctx) => roundWhole(parseNumber(text.replace(/(st|nd|rd|th)\s*$/i, ''), undefined, ctx.locale)),
+  parse: (text, _d, ctx) => roundWhole(parseNumberIn(text.replace(/(st|nd|rd|th)\s*$/i, ''), undefined, ctx.locale)),
 };

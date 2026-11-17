@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import fc from 'fast-check';
-import { formatCompact, parseNumber, parseSignedNumber, roundWhole, formatNumber, type UnitTable } from './number';
+import { formatCompact, formatNumber, parseNumber } from './localized';
+import { parseSignedNumber, roundWhole, type UnitTable } from './number';
 import { decimalPlaces } from './places';
 import { decimal } from './kinds/plain';
 import { present } from './present';

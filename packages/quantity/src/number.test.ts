@@ -1,11 +1,6 @@
 import { describe, it, expect } from 'vitest';
-import {
-  formatCompact,
-  formatNumber,
-  MINUS_SIGN,
-  parseNumber,
-  parseSignedNumber,
-} from './number';
+import { formatCompact, formatNumber, parseNumber } from './localized';
+import { MINUS_SIGN, parseSignedNumber } from './number';
 import { qty } from './present';
 import { zoom } from './kinds/proportion';
 

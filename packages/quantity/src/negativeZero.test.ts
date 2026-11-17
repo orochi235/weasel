@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { currency, decimal, percent, present, unit } from './index';
-import { formatCompact, formatNumber, MINUS_SIGN } from './number';
+import { formatCompact, formatNumber } from './localized';
+import { MINUS_SIGN } from './number';
 import { formatUnit, IMPERIAL_INCHES } from './units';
 
 describe('a negative value that rounds to zero', () => {

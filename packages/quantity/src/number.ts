@@ -1,6 +1,5 @@
 import { entryScale, type UnitEntry } from './units';
 import { unitSpellings } from './catalog';
-import { defaultLocale } from './fieldLocale';
 
 /**
  * The real MINUS SIGN (U+2212), which display formatting uses instead of the
@@ -9,17 +8,6 @@ import { defaultLocale } from './fieldLocale';
  * align.
  */
 export const MINUS_SIGN = '−';
-
-/**
- * Formats a number for display, substituting {@link MINUS_SIGN} for the ASCII
- * hyphen `toLocaleString` emits. Non-finite values stringify as-is.
- */
-export function formatNumber(value: number, options?: Intl.NumberFormatOptions): string {
-  const formatted = Number.isFinite(value)
-    ? unsignedZero(value, (n) => n.toLocaleString(defaultLocale(), options))
-    : String(value);
-  return signed(formatted);
-}
 
 /** `-` swapped for {@link MINUS_SIGN} at the front of already-formatted text,
  *  past the bidi marks some locales write before a sign (`؜-` in `ar-EG`). */
@@ -68,16 +56,9 @@ const DECIMAL_NUMBER = /^[-+]?(?:\d+\.?\d*|\.\d+)(?:e[-+]?\d+)?$/i;
 /** Powers of ten a typed magnitude suffix stands for. */
 const EXPONENTS: Record<string, number> = { k: 3, m: 6, b: 9, t: 12 };
 
-/**
- * Formats a number the way a `compact` readout shows it: below 1,000 at
- * `decimals` places, from 1,000 up at three significant figures with a magnitude
- * suffix (`40.0K`, `294K`, `2.00M`), so the readout holds one width whatever the
- * value. The number is written in `locale` (`40,0K` in `de-DE`) and the suffix
- * stays the `K`/`M`/`B`/`T` that {@link parseNumber} reads in any locale, where
- * `Intl`'s own compact words (`2 Mio.`) would not read back.
- */
-export function formatCompact(value: number, decimals = 0, locale = defaultLocale()): string {
-  if (!Number.isFinite(value)) return formatNumber(value);
+/** {@link formatCompact} in a given locale. */
+export function formatCompactIn(value: number, decimals: number, locale: string): string {
+  if (!Number.isFinite(value)) return signed(String(value));
   if (belowCompact(value, decimals)) {
     const plain = { useGrouping: false, minimumFractionDigits: decimals, maximumFractionDigits: decimals };
     return signed(unsignedZero(value, (n) => n.toLocaleString(locale, plain)));
@@ -98,22 +79,8 @@ export function belowCompact(value: number, decimals: number): boolean {
   return Number(Math.abs(value).toFixed(decimals)) < 1000;
 }
 
-/**
- * Reads a typed number: anything {@link parseSignedNumber} reads, plus the
- * locale's group and decimal separators (`40,000` and `2.5` in `en-US`,
- * `40.000` and `2,5` in `de-DE`) and a `k`/`m`/`b`/`t` suffix in either case
- * (`2.5m` is 2,500,000). Empty text is NaN rather than zero.
- *
- * Text the locale's form does not read is tried as `en-US`, so `1.5` is still
- * one and a half in `de-DE`; where both read, the locale wins. A locale that
- * groups with a space accepts any space there, since a keyboard types a plain
- * one where `Intl` writes a no-break space.
- *
- * Given `units` — a suffix mapped to the factor it scales by — a trailing unit
- * name is read first: the longest match wins, exact case before any case, and
- * a unit beats a magnitude suffix, so with `m` accepted `2m` is `2 * units.m`.
- */
-export function parseNumber(text: string, units?: Readonly<UnitTable>, locale = defaultLocale()): number {
+/** {@link parseNumber} in a given locale. */
+export function parseNumberIn(text: string, units: Readonly<UnitTable> | undefined, locale: string): number {
   const n = readNumber(delocalized(text, locale), units);
   return Number.isNaN(n) && locale !== 'en-US' ? readNumber(delocalized(text, 'en-US'), units) : n;
 }

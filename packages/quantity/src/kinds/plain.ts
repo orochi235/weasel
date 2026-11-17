@@ -1,5 +1,5 @@
 import { intlParts, spokenSign, textOf, type DisplayKind } from '../kind';
-import { belowCompact, formatCompact, parseNumber, roundWhole } from '../number';
+import { belowCompact, formatCompactIn, parseNumberIn, roundWhole } from '../number';
 
 /** A plain number. `places` fixes the decimals, trailing zeros included;
  *  otherwise up to `maxPlaces` (default 3) show and trailing zeros drop. */
@@ -21,7 +21,7 @@ export const decimalKind: DisplayKind<DecimalDisplay> = {
   kind: 'decimal',
   format: (value, d, ctx) => intlParts(value, ctx.locale, decimalOptions(d)),
   speak: (value, d, ctx) => spokenSign(textOf(intlParts(value, ctx.locale, decimalOptions(d)))),
-  parse: (text, _d, ctx) => parseNumber(text, undefined, ctx.locale),
+  parse: (text, _d, ctx) => parseNumberIn(text, undefined, ctx.locale),
 };
 
 function decimalOptions(d: DecimalDisplay): Intl.NumberFormatOptions {
@@ -49,7 +49,7 @@ export const integerKind: DisplayKind<IntegerDisplay> = {
     intlParts(value, ctx.locale, { maximumFractionDigits: 0, useGrouping: d.grouping ?? true }),
   speak: (value, d, ctx) =>
     spokenSign(textOf(integerKind.format(value, d, ctx))),
-  parse: (text, _d, ctx) => roundWhole(parseNumber(text, undefined, ctx.locale)),
+  parse: (text, _d, ctx) => roundWhole(parseNumberIn(text, undefined, ctx.locale)),
 };
 
 /**
@@ -71,7 +71,7 @@ export function compact(options: Omit<CompactDisplay, 'kind'> = {}): CompactDisp
 export const compactKind: DisplayKind<CompactDisplay> = {
   kind: 'compact',
   format: (value, d, ctx) => {
-    const text = formatCompact(value, d.places ?? 0, ctx.locale);
+    const text = formatCompactIn(value, d.places ?? 0, ctx.locale);
     const m = /^(.*?[^A-Za-z])([A-Za-z]+)$/.exec(text);
     return m
       ? [
@@ -92,5 +92,5 @@ export const compactKind: DisplayKind<CompactDisplay> = {
             }),
       ),
     ),
-  parse: (text, _d, ctx) => parseNumber(text, undefined, ctx.locale),
+  parse: (text, _d, ctx) => parseNumberIn(text, undefined, ctx.locale),
 };

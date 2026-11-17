@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { bytes, parseAs, present } from './index';
-import { formatCompact, parseNumber } from './number';
+import { formatCompact, parseNumber } from './localized';
 
 describe('a value that rounds up to the next magnitude', () => {
   it('takes the suffix in formatCompact', () => {

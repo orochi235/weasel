@@ -6,8 +6,8 @@ import { bytesKind, currencyKind, durationKind, unitKind } from './kinds/measure
 import { ordinalKind, romanKind } from './kinds/numeral';
 import { scientificKind } from './kinds/scientific';
 import { infinityParts, infinityWord, readInfinity } from './infinity';
-import { parseNumber } from './number';
-import { defaultLocale } from './fieldLocale';
+import { parseNumberIn } from './number';
+import { defaultLocale } from './localized';
 import { amount, displayOf, retag, tag, unitOf, type Display, type Quantity, type Tagged } from './quantity';
 import { unitScale, type Unit, type UnitSystem } from './units';
 
@@ -128,7 +128,7 @@ export function parseAs(text: string, display?: Display, options?: PresentOption
   const infinite = readInfinity(text, d, ctx.locale);
   if (infinite !== undefined) return infinite;
   if (options?.unit !== undefined) ctx.unit = options.unit;
-  return kind.parse ? kind.parse(text, d, ctx) : parseNumber(text, undefined, ctx.locale);
+  return kind.parse ? kind.parse(text, d, ctx) : parseNumberIn(text, undefined, ctx.locale);
 }
 
 /**

@@ -107,15 +107,9 @@ export {
   type UnitSymbolOptions,
 } from './catalog';
 export { decimalPlaces, MAX_DECIMAL_PLACES } from './places';
-export { defaultLocale, fieldLocale } from './fieldLocale';
-export {
-  formatCompact,
-  formatNumber,
-  MINUS_SIGN,
-  parseNumber,
-  parseSignedNumber,
-  type UnitTable,
-} from './number';
+export { fieldLocale } from './fieldLocale';
+export { defaultLocale, formatCompact, formatNumber, parseNumber } from './localized';
+export { MINUS_SIGN, parseSignedNumber, type UnitTable } from './number';
 export {
   ANGLE_RADIANS,
   axisUnits,

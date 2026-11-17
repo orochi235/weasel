@@ -1,6 +1,6 @@
 import { intlParts, numberPart, plural, spokenSign, textOf, type DisplayKind, type Part } from '../kind';
 import { catalogUnit, unitSymbol } from '../catalog';
-import { decimalOf, escapeClass, latinDigits, numberWithin, parseNumber, type UnitTable } from '../number';
+import { decimalOf, escapeClass, latinDigits, numberWithin, parseNumberIn, type UnitTable } from '../number';
 
 /**
  * `value` in the unit `name` read aloud: through `Intl` where the catalog gives
@@ -22,7 +22,7 @@ export function speakUnit(
   }
   const number = numberPart(value, locale, { maximumFractionDigits: places, useGrouping: grouping }).value;
   const names = spoken ?? u?.spoken;
-  const word = names ? plural(Math.abs(parseNumber(number, undefined, locale)), locale, names[0], names[1]) : name;
+  const word = names ? plural(Math.abs(parseNumberIn(number, undefined, locale)), locale, names[0], names[1]) : name;
   return spokenSign(word ? `${number} ${word}` : number);
 }
 
@@ -70,7 +70,7 @@ export const unitKind: DisplayKind<UnitDisplay> = {
   speak: (value, d, ctx) => speakUnit(value, d.unit ?? ctx.unit, ctx.locale, { places: d.places, spoken: d.spoken }),
   parse: (text, d, ctx) => {
     const name = d.unit ?? ctx.unit;
-    return parseNumber(text, d.accepts ?? (name ? { [name]: 1 } : undefined), ctx.locale);
+    return parseNumberIn(text, d.accepts ?? (name ? { [name]: 1 } : undefined), ctx.locale);
   },
 };
 
@@ -102,7 +102,7 @@ export const currencyKind: DisplayKind<CurrencyDisplay> = {
   format: (value, d, ctx) => intlParts(value, ctx.locale, currencyOptions(d)),
   speak: (value, d, ctx) =>
     spokenSign(textOf(intlParts(value, ctx.locale, { ...currencyOptions(d), currencyDisplay: 'name' }))),
-  parse: (text, _d, ctx) => parseNumber(numberWithin(text, ctx.locale), undefined, ctx.locale),
+  parse: (text, _d, ctx) => parseNumberIn(numberWithin(text, ctx.locale), undefined, ctx.locale),
 };
 
 /**
@@ -189,7 +189,7 @@ export const durationKind: DisplayKind<DurationDisplay> = {
     // The units form's seconds carry a decimal in either mark, as the clock's do: `0.010s` is never ten seconds.
     const units = new RegExp(String.raw`^\s*([-−+]?)\s*(?:(\d+)\s*h\s*)?(?:(\d+)\s*m\s*)?(\d+)[.${d}](\d+)\s*s\s*$`).exec(latin);
     if (units) return signedSeconds(units[1]!, units[2], units[3], `${units[4]}.${units[5]}`);
-    return parseNumber(text, DURATION_UNITS, ctx.locale);
+    return parseNumberIn(text, DURATION_UNITS, ctx.locale);
   },
 };
 
@@ -252,5 +252,5 @@ export const bytesKind: DisplayKind<BytesDisplay> = {
     const symbol = (d.base === 1024 ? BINARY_BYTES : DECIMAL_BYTES)[step]!;
     return speakUnit(scaled, symbol, ctx.locale, { places, grouping: true });
   },
-  parse: (text, _d, ctx) => parseNumber(text, BYTE_UNITS, ctx.locale),
+  parse: (text, _d, ctx) => parseNumberIn(text, BYTE_UNITS, ctx.locale),
 };

@@ -1,5 +1,5 @@
 import { escapeMarkup, intlParts, numberPart, signed, spokenSign, textOf, type DisplayKind, type Part } from '../kind';
-import { latinDigits, MINUS_SIGN, parseNumber, unsignedZero } from '../number';
+import { latinDigits, MINUS_SIGN, parseNumberIn, unsignedZero } from '../number';
 
 /** A share of one as a percentage: 0.25 shows `25%`. Typed text reads as
  *  percent with or without the sign. */
@@ -30,7 +30,7 @@ export const percentKind: DisplayKind<PercentDisplay> = {
         }),
       ),
     ),
-  parse: (text, _d, ctx) => parseNumber(withoutPercentSign(text, ctx.locale), undefined, ctx.locale) / 100,
+  parse: (text, _d, ctx) => parseNumberIn(withoutPercentSign(text, ctx.locale), undefined, ctx.locale) / 100,
 };
 
 /**
@@ -168,7 +168,7 @@ function parseFraction(typed: string, locale: string): number {
   if (inline) magnitude = Number(inline[2] ?? 0) + Number(inline[3]) / Number(inline[4]);
   else if (diagonal) {
     magnitude = Number(diagonal[2] ?? 0) + fromDigits(diagonal[3]!, SUPERSCRIPT) / fromDigits(diagonal[4]!, SUBSCRIPT);
-  } else return parseNumber(text, undefined, locale);
+  } else return parseNumberIn(text, undefined, locale);
   const sign = (inline ?? diagonal)![1];
   return sign === '-' || sign === MINUS_SIGN ? -magnitude : magnitude;
 }
@@ -276,7 +276,7 @@ export const ratioKind: DisplayKind<RatioDisplay> = {
   },
   parse: (text, _d, ctx) => {
     const m = /^\s*(.+?)\s*:\s*(.+?)\s*$/.exec(text);
-    const read = (t: string) => parseNumber(t, undefined, ctx.locale);
+    const read = (t: string) => parseNumberIn(t, undefined, ctx.locale);
     return m ? read(m[1]!) / read(m[2]!) : read(text);
   },
 };
@@ -312,7 +312,7 @@ export const multiplierKind: DisplayKind<MultiplierDisplay> = {
     const own = d.symbol !== undefined && text.trimEnd().endsWith(d.symbol)
       ? text.trimEnd().slice(0, -d.symbol.length)
       : text.replace(/\s*[x×X]\s*$/, '');
-    return parseNumber(own, undefined, ctx.locale);
+    return parseNumberIn(own, undefined, ctx.locale);
   },
 };
 
@@ -354,7 +354,7 @@ export const zoomKind: DisplayKind<ZoomDisplay> = {
     ),
   parse: (text, _d, ctx) => {
     const t = text.trim();
-    if (/[x×X]$/.test(t)) return parseNumber(t.slice(0, -1), undefined, ctx.locale);
-    return parseNumber(t.replace(/[%٪]$/, ''), undefined, ctx.locale) / 100;
+    if (/[x×X]$/.test(t)) return parseNumberIn(t.slice(0, -1), undefined, ctx.locale);
+    return parseNumberIn(t.replace(/[%٪]$/, ''), undefined, ctx.locale) / 100;
   },
 };

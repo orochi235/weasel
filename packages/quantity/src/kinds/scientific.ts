@@ -1,5 +1,5 @@
 import { escapeMarkup, spokenSign, type DisplayKind, type FormatContext, type Part } from '../kind';
-import { latinDigits, MINUS_SIGN, parseNumber } from '../number';
+import { latinDigits, MINUS_SIGN, parseNumberIn } from '../number';
 
 /**
  * A mantissa times a power of ten at `digits` significant figures (default 3),
@@ -76,7 +76,7 @@ export const scientificKind: DisplayKind<ScientificDisplay> = {
     if (s === null) return zeroParts(ctx.locale)[0]!.value;
     return spokenSign(`${s.mantissa} times 10 to the power of ${spokenSign(String(s.exponent))}`);
   },
-  parse: (text, _d, ctx) => parseNumber(asENotation(latinDigits(text, ctx.locale)), undefined, ctx.locale),
+  parse: (text, _d, ctx) => parseNumberIn(asENotation(latinDigits(text, ctx.locale)), undefined, ctx.locale),
   mathml: (value, d, ctx) => {
     const s = split(value, d, ctx.locale);
     if (s === null) return undefined;

@@ -27,15 +27,6 @@ export function fieldLocale(requested?: string): string {
   return chosen;
 }
 
-/**
- * The locale numbers are shown and read in when none is asked for: the browser's language as
- * {@link fieldLocale} settles it, and `en-US` where there is none (on a server). Text for a person
- * defaults to this; a number written to be saved or read by a program passes `en-US` itself.
- */
-export function defaultLocale(): string {
-  return fieldLocale(globalThis.navigator?.language);
-}
-
 function latinOf(tag: string): string | undefined {
   try {
     return new Intl.Locale(tag, { numberingSystem: 'latn' }).toString();
