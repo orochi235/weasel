@@ -1,7 +1,7 @@
 /** A Mermaid radar's statements, read into the chart they describe. */
 import type { RadarAxis, RadarCurve, RadarData } from '@weasel-js/plot';
 import { lineError } from '../../lineError';
-import { numberAt } from '../common/number';
+import { requireNumber } from '../common/number';
 import type { Statement } from '../common/lines';
 
 const FORMAT = 'Mermaid';
@@ -44,7 +44,7 @@ function entriesOf(body: string, line: number): PendingCurve['entries'] {
   if (parts.length === 1 && parts[0] === '') return [];
   const entries = parts.map((p) => {
     const keyed = /^([A-Za-z_][\w-]*)\s*:\s*(.*)$/s.exec(p);
-    return keyed === null ? { value: numberAt(p, line) } : { axis: keyed[1]!, value: numberAt(keyed[2]!.trim(), line) };
+    return keyed === null ? { value: requireNumber(p, line) } : { axis: keyed[1]!, value: requireNumber(keyed[2]!.trim(), line) };
   });
   if (entries.some((e) => e.axis === undefined) && entries.some((e) => e.axis !== undefined)) {
     throw lineError(FORMAT, line, 'a curve\'s values are either all named by axis or none are');
@@ -118,7 +118,7 @@ export function parseRadarBody(body: readonly Statement[]): { data: RadarData; t
       case 'curve': pending.push(...curvesOf(rest, line)); break;
       case 'max':
       case 'min':
-      case 'ticks': opts[keyword] = numberAt(rest, line); break;
+      case 'ticks': opts[keyword] = requireNumber(rest, line); break;
       case 'graticule':
         if (rest !== 'circle' && rest !== 'polygon') throw lineError(FORMAT, line, `"${rest}" is not a graticule; it is circle or polygon`);
         opts.graticule = rest;

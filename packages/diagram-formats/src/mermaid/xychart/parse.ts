@@ -1,7 +1,7 @@
 /** A Mermaid xychart's text as statements, each with the line it came from. */
 import { decodeEntities } from '../../graphRead';
 import { lineError } from '../../lineError';
-import { numberAt } from '../common/number';
+import { requireNumber } from '../common/number';
 import { frontTitle } from '../common/header';
 
 /** One statement of an xychart, by the keyword that starts it. */
@@ -60,7 +60,7 @@ function axisBody(rest: string, line: number): { categories?: string[]; range?: 
   }
   const m = /^(\S+)\s*-->\s*(\S+)$/.exec(rest);
   if (m === null) throw lineError(FORMAT, line, `"${rest}" is neither a category list nor a range`);
-  return { range: [numberAt(m[1]!, line), numberAt(m[2]!, line)] };
+  return { range: [requireNumber(m[1]!, line), requireNumber(m[2]!, line)] };
 }
 
 function statementOf(keyword: string, rest: string, line: number): XyStatement {
@@ -78,7 +78,7 @@ function statementOf(keyword: string, rest: string, line: number): XyStatement {
     case 'line': {
       const { title, rest: body } = leadingTitle(rest);
       if (!body.startsWith('[') || !body.endsWith(']')) throw lineError(FORMAT, line, `a ${keyword} series needs its values in brackets`);
-      const values = listItems(body.slice(1, -1)).map((v) => numberAt(v, line));
+      const values = listItems(body.slice(1, -1)).map((v) => requireNumber(v, line));
       return { kind: keyword, ...(title !== undefined ? { name: title } : {}), values, line };
     }
     case 'accTitle:':

@@ -1,7 +1,7 @@
 /** A Mermaid quadrant chart's statements read into the parts of its spec. */
 import type { QuadrantAxis, QuadrantPoint, QuadrantPointStyle } from '@weasel-js/plot';
 import { lineError } from '../../lineError';
-import { numberAt } from '../common/number';
+import { requireNumber } from '../common/number';
 import type { Statement } from '../common/lines';
 import { unquote } from '../xychart/parse';
 
@@ -31,10 +31,10 @@ export function styleOf(text: string, line: number): QuadrantPointStyle {
     const key = m[1]!;
     const value = m[2]!;
     switch (key) {
-      case 'radius': style.radius = numberAt(value, line); break;
+      case 'radius': style.radius = requireNumber(value, line); break;
       case 'color': style.color = value; break;
       case 'stroke-color': style.strokeColor = value; break;
-      case 'stroke-width': style.strokeWidth = numberAt(value.replace(/px$/, ''), line); break;
+      case 'stroke-width': style.strokeWidth = requireNumber(value.replace(/px$/, ''), line); break;
       default: throw lineError('Mermaid', line, `"${key}" is not a point style`);
     }
   }
@@ -50,7 +50,7 @@ export function pointOf(s: Statement): QuadrantPoint | null {
   if (m === null) return null;
   const coords = m[3]!.split(',').map((c) => c.trim());
   if (coords.length !== 2) throw lineError('Mermaid', s.line, `a point takes [x, y], not [${m[3]}]`);
-  const [x, y] = coords.map((c) => numberAt(c, s.line)) as [number, number];
+  const [x, y] = coords.map((c) => requireNumber(c, s.line)) as [number, number];
   if (x < 0 || x > 1 || y < 0 || y > 1) throw lineError('Mermaid', s.line, `a point's x and y run from 0 to 1, and [${coords.join(', ')}] does not`);
   const style = styleOf(m[4]!, s.line);
   return {
