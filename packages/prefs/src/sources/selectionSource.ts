@@ -2,7 +2,7 @@ import { getOwn } from '@weasel-js/registry';
 import type { ResetWrite } from '../autoReset';
 import { type PrefSection, prefLeafValue, type PrefLeaf } from '@weasel-js/prefs-schema';
 import { sourceResetPlan } from './policy';
-import { LEAF_FREE, sharedReading, type LeafState, type PrefsSource, type SourceWriteOptions } from './prefsSource';
+import { FREE_LEAF_STATUS, sharedReading, type PrefLeafStatus, type PrefsSource, type SourceWriteOptions } from './prefsSource';
 
 /** What a selection source reads and writes: several targets, each holding its own value at every path. */
 export interface SelectionSourceInput {
@@ -19,7 +19,7 @@ export interface SelectionSourceInput {
   /** Make the writes of `plan` in every target as one undo step named `label`. */
   reset: (plan: readonly ResetWrite[], label: string) => void;
   /** What the conditions over a path leave it. */
-  stateAt?: (path: string) => LeafState;
+  stateAt?: (path: string) => PrefLeafStatus;
 }
 
 /** A selection's source, whose reset also takes the name of its undo step. */
@@ -33,7 +33,7 @@ export interface SelectionSource extends PrefsSource {
  * and a write lands in every one. A target keeps no auto state, so no leaf is auto here.
  */
 export function createSelectionSource(input: SelectionSourceInput): SelectionSource {
-  const { leaves, read, shown = prefLeafValue, write, stateAt = () => LEAF_FREE } = input;
+  const { leaves, read, shown = prefLeafValue, write, stateAt = () => FREE_LEAF_STATUS } = input;
   const schema: PrefSection = { name: '', members: leaves };
   const source: SelectionSource = {
     schema,

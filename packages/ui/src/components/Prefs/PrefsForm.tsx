@@ -235,7 +235,7 @@ function PrefsFormBody(props: PrefsFormProps) {
   const split = useSplitRows(props, schema, props.over);
   const { settles, textWaitMs } = useParamsPolicy('form');
   const stateAt = useMemo(
-    () => (path: string) => ({ disabled: disabled?.has(path) ?? false, hidden: applied?.hidden.has(path) ?? false, active: applied?.active.has(path) ?? false }),
+    () => (path: string) => ({ enabled: disabled?.has(path) !== true, shown: applied?.hidden.has(path) !== true, active: applied?.active.has(path) ?? false }),
     [disabled, applied],
   );
   const source = useValuesSource(schema, values, onChange, { auto, onAutoChange, canAuto: canInherit, mixed: props.mixed, onReset: props.onReset, over, stateAt });

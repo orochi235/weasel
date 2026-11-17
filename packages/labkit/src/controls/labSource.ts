@@ -1,7 +1,7 @@
 import {
   AUTO,
   type LeafReading,
-  type LeafState,
+  type PrefLeafStatus,
   type PrefGroup,
   type PrefLeaf,
   type PrefSection,
@@ -88,9 +88,9 @@ export function createLabConfigSource(input: LabConfigInput): PrefsSource {
     setAuto: (path, next) => {
       if (autoAt(path) !== undefined) setRowAuto?.(path, next, valueAt(path).value);
     },
-    stateAt: (path): LeafState => ({
-      disabled: !isRowEnabled(resolved, path, config, over),
-      hidden: !isRowVisible(resolved, path, config, true, over),
+    stateAt: (path): PrefLeafStatus => ({
+      enabled: isRowEnabled(resolved, path, config, over),
+      shown: isRowVisible(resolved, path, config, true, over),
       active: isRowActive(resolved, path, config, over),
     }),
     reset: (paths) => {

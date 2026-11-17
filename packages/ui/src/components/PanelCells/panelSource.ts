@@ -1,5 +1,5 @@
 import type { SelectionApi } from '@weasel-js/routing';
-import { createSelectionSource, type LeafState, type SelectionSource } from '@weasel-js/prefs';
+import { createSelectionSource, type PrefLeafStatus, type SelectionSource } from '@weasel-js/prefs';
 import { nodeLeafValue, panelLeafKey, type PanelLeaf, type PanelRecord } from './model';
 
 /** A panel's writes into the selected records. */
@@ -48,9 +48,9 @@ export function panelSource(input: PanelSourceInput): SelectionSource {
       const due = plan.flatMap((w) => byPath.get(w.path) ?? []);
       if (due.length > 0) writes.reset(selection, due, label);
     },
-    stateAt: (path): LeafState => {
+    stateAt: (path): PrefLeafStatus => {
       const key = keyOf(path);
-      return { disabled: disabled.has(key), hidden: hidden.has(key), active: active?.has(key) === true };
+      return { enabled: !disabled.has(key), shown: !hidden.has(key), active: active?.has(key) === true };
     },
   });
 }

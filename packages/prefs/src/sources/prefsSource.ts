@@ -1,16 +1,14 @@
 import { deepEqual } from '@weasel-js/registry';
 import type { LeafReading } from '../autoReset';
-import type { PrefGroup, PrefSection } from '@weasel-js/prefs-schema';
+import { PREF_STATUS, type PrefGroup, type PrefSection, type PrefStatus } from '@weasel-js/prefs-schema';
 
-/** What the conditions over a path leave it: an `enableIf` that fails, a `showIf` that fails, an `activeIf` that holds. */
-export interface LeafState {
-  disabled: boolean;
-  hidden: boolean;
+/** What the conditions over a path leave it: its {@link PrefStatus}, and whether an `activeIf` holds. */
+export interface PrefLeafStatus extends PrefStatus {
   active: boolean;
 }
 
-/** A path no condition reaches: enabled, shown, and not pressed. */
-export const LEAF_FREE: LeafState = { disabled: false, hidden: false, active: false };
+/** A path no condition reaches: shown, enabled, and not pressed. */
+export const FREE_LEAF_STATUS: PrefLeafStatus = { ...PREF_STATUS, active: false };
 
 /** How a write lands. `draft` is a value an edit passes through on its way to the one it settles on, as a
  *  slider's drag does: written, and kept out of undo, where the surface has a place for drafts. */
@@ -39,7 +37,7 @@ export interface PrefsSource {
    *  that keeps no auto state. */
   setAuto?(path: string, next: boolean): void;
   /** What the conditions over `path` leave it. */
-  stateAt(path: string): LeafState;
+  stateAt(path: string): PrefLeafStatus;
   /** Put each leaf or group at `paths` back as its schema starts it, as one step (`resetPlans`). */
   reset(paths: readonly string[]): void;
 }

@@ -2,7 +2,7 @@ import { getOwn } from '@weasel-js/registry';
 import { AUTO, prefCanAuto, type LeafReading } from '../autoReset';
 import { type PrefGroup, type PrefSection, prefLeafAt, prefValueAtPath, prefLeafValue, type PrefLeaf } from '@weasel-js/prefs-schema';
 import { sourceResetPlan, writeResetPlan } from './policy';
-import { LEAF_FREE, type LeafState, type PrefsSource } from './prefsSource';
+import { FREE_LEAF_STATUS, type PrefLeafStatus, type PrefsSource } from './prefsSource';
 
 /** What a values map's owner keeps beside the values. */
 export interface ValuesSourceOptions {
@@ -17,7 +17,7 @@ export interface ValuesSourceOptions {
   /** Puts a leaf back as its schema says, where the owner does that itself (a prefs store stores nothing for it). */
   onReset?: (path: string) => void;
   /** What the conditions over a path leave it. */
-  stateAt?: (path: string) => LeafState;
+  stateAt?: (path: string) => PrefLeafStatus;
   /** The schema the form's aliases point into, where an alias row's leaf is found. */
   over?: PrefGroup | PrefSection;
 }
@@ -38,7 +38,7 @@ export function createValuesSource(
   set: (path: string, value: unknown) => void,
   options: ValuesSourceOptions = {},
 ): PrefsSource {
-  const { auto, onAutoChange, canAuto, mixed, onReset, stateAt = () => LEAF_FREE, over } = options;
+  const { auto, onAutoChange, canAuto, mixed, onReset, stateAt = () => FREE_LEAF_STATUS, over } = options;
   const leafAt = (path: string) => prefLeafAt(schema, path) ?? (over ? prefLeafAt(over, path) : undefined);
   const autoAt = (path: string): boolean | undefined => {
     const leaf = leafAt(path);
@@ -88,7 +88,7 @@ export function createRecordSource(
   leaves: Readonly<Record<string, PrefLeaf>>,
   values: Readonly<Record<string, unknown>> | undefined,
   onChange: ((path: string, value: unknown) => void) | undefined,
-  { mixed, stateAt = () => LEAF_FREE }: { mixed?: ReadonlySet<string>; stateAt?: (path: string) => LeafState } = {},
+  { mixed, stateAt = () => FREE_LEAF_STATUS }: { mixed?: ReadonlySet<string>; stateAt?: (path: string) => PrefLeafStatus } = {},
 ): PrefsSource {
   const schema: PrefSection = { name: '', members: leaves };
   const write = (path: string, value: unknown): void => onChange?.(path, value);
