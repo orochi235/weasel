@@ -43,16 +43,22 @@ export async function prefsRoundTrip<S extends PrefGroup>(
   open: (storage: SyncStorageAdapter) => PrefsStore<S>,
 ): Promise<{ sent: Record<string, unknown>; read: Record<string, unknown> }> {
   const backing = new Map<string, unknown>();
-  const store = open(createMemoryAdapter(backing));
   const sent: Record<string, unknown> = {};
-  for (const [path, leaf] of prefLeaves(schema)) {
-    sent[path] = otherPrefValue(leaf);
-    store.set(path as never, sent[path] as never);
+  const store = open(createMemoryAdapter(backing));
+  try {
+    for (const [path, leaf] of prefLeaves(schema)) {
+      sent[path] = otherPrefValue(leaf);
+      store.set(path as never, sent[path] as never);
+    }
+    if (!(await store.flush())) throw new Error('the prefs did not reach storage');
+  } finally {
+    await store.close();
   }
-  if (!(await store.flush())) throw new Error('the prefs did not reach storage');
-  await store.close();
   const again = open(createMemoryAdapter(backing));
-  const read = Object.fromEntries(Object.keys(sent).map((path) => [path, again.get(path as never)]));
-  await again.close();
-  return { sent, read };
+  try {
+    const read = Object.fromEntries(Object.keys(sent).map((path) => [path, again.get(path as never)]));
+    return { sent, read };
+  } finally {
+    await again.close();
+  }
 }
