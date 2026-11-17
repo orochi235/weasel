@@ -155,7 +155,7 @@ export {
   type BooleanOpOptions, type BooleanStrokes, type BooleanSource, type BooleanOperands, type BooleanCommitPiece,
   type UseBooleansOptions, type UseBooleansReturn,
 } from './booleans';
-export { useBooleansAdapterSource } from './deps/booleans';
+export { useBooleansAdapterDepSource } from './deps/booleans';
 export {
   useClipboard, useClipboardOps, WEASEL_CLIPBOARD_MIME, WEASEL_CLIPBOARD_MIME_WEB, buildWeaselClipboardText,
   sniffWeaselClipboardText, parseWeaselClipboardText, embedWeaselMetadataInSvg, extractWeaselClipboardFromSvg,

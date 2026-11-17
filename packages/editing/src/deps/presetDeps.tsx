@@ -1,7 +1,7 @@
 import type { PresetComponentProps, UseResizeOptions } from '@weasel-js/core';
 import { useLiveOperands } from '@weasel-js/core';
 import { useAreaSelectDepSource } from './areaSelect';
-import { useBooleansAdapterSource } from './booleans';
+import { useBooleansAdapterDepSource } from './booleans';
 import { useInsertDepSource } from './insert';
 import { useLassoSelectDepSource } from './lassoSelect';
 import { resizePolicyOptions, useResizePolicyDepSource } from './resizePolicy';
@@ -35,6 +35,6 @@ function ResizePolicy({ options }: { options: UseResizeOptions<unknown> }) {
 /** Publishes the `booleansAdapter` dep over the canvas's path leaves, acting on `operands`. */
 export function BooleansDeps({ canvas }: PresetComponentProps) {
   const operands = useLiveOperands();
-  useBooleansAdapterSource(canvas.scene(), operands, canvas.adapter(), canvas.poseDescriptor());
+  useBooleansAdapterDepSource(canvas.scene(), operands, canvas.adapter(), canvas.poseDescriptor());
   return null;
 }

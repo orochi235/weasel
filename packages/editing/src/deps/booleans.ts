@@ -23,7 +23,7 @@ import type { OpsApplier } from '@weasel-js/core';
  * for: its layer, parent, frame, and data, with the result's path, and the
  * result's paint in place of the source's when the operation gives one.
  */
-export function useBooleansAdapterSource(
+export function useBooleansAdapterDepSource(
   scene: Scene<unknown, string, unknown>,
   operands: OperandsDep,
   adapter: OpsApplier,
