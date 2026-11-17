@@ -9,7 +9,7 @@ import fc from 'fast-check';
 import { bakeCursor, quantizeCursorAngle } from './bake';
 import { brushRing } from './brushRing';
 import { GLYPHS } from './glyphs';
-import { chromeLineWidthScale, cursorPaintMatrix, cursorPaintOps, cursorWorldSize } from './paint';
+import { chromeLineWidthScale, cursorPaintMatrix, cursorPaintOps, worldCursorPx } from './paint';
 import { cursorGlyph } from './registry';
 import { resolveCursor } from './resolve';
 import { CURSOR_ANGLE_STEPS, CURSOR_MAX_CSS_PX, type CursorGlyph } from './types';
@@ -107,7 +107,7 @@ describe('the painted tier', () => {
     const decade = fc.oneof(fc.integer({ min: -60, max: 300 }).map((e) => 10 ** (e / 2)), fc.double({ min: 1e306, max: 7e307, noNaN: true }));
     fc.assert(fc.property(fc.constantFrom(...(Object.keys(GLYPHS) as (keyof typeof GLYPHS)[])), decade, decade, (name, worldRadius, scale) => {
       const glyph: CursorGlyph = GLYPHS[name];
-      const size = cursorWorldSize(glyph, worldRadius, scale);
+      const size = worldCursorPx(glyph, worldRadius, scale);
       const r = glyph.radius ?? glyph.box / 2;
       const want = worldRadius * scale;
       const ring = size * (r / glyph.box);
@@ -152,7 +152,7 @@ describe('brushRing', () => {
       t.count('world');
       const world = resolveCursor(brushRing(radius, 'world'));
       expect(world).toMatchObject({ kind: 'painted', glyph: 'brush', worldRadius: radius });
-      const drawn = cursorWorldSize(GLYPHS.brush, radius, zoom) * (ring / box);
+      const drawn = worldCursorPx(GLYPHS.brush, radius, zoom) * (ring / box);
       expect(drawn).toBeCloseTo(radius * zoom, 6);
     }), runs(RUNS));
     t.atLeast('baked', 100);

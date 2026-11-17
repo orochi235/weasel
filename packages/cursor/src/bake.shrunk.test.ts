@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { bakeCursor, quantizeCursorAngle } from './bake';
 import { brushRing } from './brushRing';
 import { GLYPHS } from './glyphs';
-import { cursorWorldSize } from './paint';
+import { worldCursorPx } from './paint';
 import { cursorFor, cursorGlyph } from './registry';
 import { resolveCursor } from './resolve';
 
@@ -27,6 +27,6 @@ describe('cursor baking, shrunk', () => {
   });
 
   it('sizes a world ring finite where the radius on screen is near the double range', () => {
-    expect(Number.isFinite(cursorWorldSize(GLYPHS.brush, 1e307, 1))).toBe(true);
+    expect(Number.isFinite(worldCursorPx(GLYPHS.brush, 1e307, 1))).toBe(true);
   });
 });

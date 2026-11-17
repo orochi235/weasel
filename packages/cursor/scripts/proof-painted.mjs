@@ -20,7 +20,7 @@ import {
   chromeLineWidthScale,
   cursorPaintMatrix,
   cursorPaintOps,
-  cursorWorldSize,
+  worldCursorPx,
 } from '../src/paint.ts';
 import { GLYPHS } from '../src/glyphs.ts';
 
@@ -40,7 +40,7 @@ const el = (op) => {
 /** One glyph painted at a world radius, on a `pad`-margined canvas. */
 const raster = (name, worldRadius, dpr) => {
   const glyph = GLYPHS[name];
-  const size = cursorWorldSize(glyph, worldRadius, 1);
+  const size = worldCursorPx(glyph, worldRadius, 1);
   // Line weight stays chrome weight while the geometry scales — the rule the
   // layer applies for a world-sized spec.
   const ops = cursorPaintOps(glyph, { lineWidthScale: chromeLineWidthScale(glyph, size) });

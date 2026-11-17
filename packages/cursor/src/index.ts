@@ -11,7 +11,7 @@ export {
   chromeLineWidthScale,
   cursorPaintMatrix,
   cursorPaintOps,
-  cursorWorldSize,
+  worldCursorPx,
 } from './paint';
 export type { CursorMatrix, CursorPaintOp, PaintOptions, PaintPlacement } from './paint';
 export { GLYPHS, MARKS } from './glyphs';
