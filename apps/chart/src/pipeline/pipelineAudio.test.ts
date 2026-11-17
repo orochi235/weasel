@@ -71,6 +71,33 @@ describe('usePipelineAudio', () => {
     expect(createAudioEngine).not.toHaveBeenCalled();
   });
 
+  it('settles quietly when the component goes while a file decodes', async () => {
+    let fail!: (err: Error) => void;
+    const decodeAudioData = () => new Promise<AudioBuffer>((_, reject) => { fail = reject; });
+    vi.mocked(createAudioEngine).mockReturnValue({ context: { decodeAudioData }, dispose: vi.fn() } as never);
+    vi.mocked(createLiveAudioRunner).mockReturnValue({
+      setSources: vi.fn(), setPipeline: vi.fn(), setPreviews: vi.fn(), drawn: vi.fn(), dispose: vi.fn(),
+      subscribe: () => () => {}, state: { run: undefined, playing: false },
+    } as never);
+    vi.mocked(pickFile).mockResolvedValue(new File([new Uint8Array(4)], 'a.wav'));
+    const { result, unmount } = renderHook(() => usePipelineAudio({ stages: [], wires: [] }, 'off'));
+    const picking = result.current.chooseSource();
+    await vi.waitFor(() => expect(fail).toBeDefined(), { timeout: 10_000 });
+    unmount();
+    fail(new Error('the context was closed'));
+    await expect(picking).resolves.toBeUndefined();
+  });
+
+  it('still reports a file that fails to decode', async () => {
+    const decodeAudioData = () => Promise.reject(new Error('unreadable'));
+    vi.mocked(createAudioEngine).mockReturnValue({ context: { decodeAudioData }, dispose: vi.fn() } as never);
+    vi.mocked(pickFile).mockResolvedValue(new File([new Uint8Array(4)], 'a.wav'));
+    const { result } = renderHook(() => usePipelineAudio({ stages: [], wires: [] }, 'off'));
+    await act(async () => {
+      await expect(result.current.chooseSource()).rejects.toThrow('unreadable');
+    });
+  });
+
   it('keeps the file picked last when an earlier one finishes decoding after it', async () => {
     const decodes: { resolve: (b: AudioBuffer) => void }[] = [];
     const decodeAudioData = () => new Promise<AudioBuffer>((resolve) => { decodes.push({ resolve }); });

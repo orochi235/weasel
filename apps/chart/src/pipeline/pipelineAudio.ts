@@ -77,16 +77,23 @@ export function usePipelineAudio(pipeline: EffectPipeline, previews: AudioPrevie
   const runner = live?.runner ?? null;
   const { run } = useFollowAudioRunner(runner, { pipeline, sources, previews });
 
-  // A long file still decoding when a later one is picked must not replace it.
+  // A long file still decoding when a later one is picked, or when the component goes, neither
+  // replaces the source nor reports a failure: unmounting drops `picks`, so `current()` is false.
   const picks = useLatestOnly();
   const chooseSource = useCallback(async () => {
     const file = await pickFile('audio/*');
     if (file === null || !mounted.current) return;
     const current = picks.take();
     const { engine } = awake();
-    const bytes = await file.arrayBuffer();
-    if (!current()) return;
-    const audio = await engine.context.decodeAudioData(bytes);
+    let audio: AudioBuffer;
+    try {
+      const bytes = await file.arrayBuffer();
+      if (!current()) return;
+      audio = await engine.context.decodeAudioData(bytes);
+    } catch (err) {
+      if (!current()) return;
+      throw err;
+    }
     if (current()) setSources({ audio });
   }, [awake, picks]);
   const wake = useCallback(() => awake().runner, [awake]);
