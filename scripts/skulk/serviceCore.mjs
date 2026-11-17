@@ -1,8 +1,6 @@
 /** The service's decisions, apart from its process and its pipes, so they can be tested. */
 import { START_AT } from './config.mjs';
 
-const localDay = (d) => `${d.getFullYear()}-${d.getMonth() + 1}-${d.getDate()}`;
-
 /** Milliseconds from `now` to the next `hh:mm` local; 0 never, so a fire at the minute schedules tomorrow. */
 export const msUntil = (now, hhmm = START_AT) => {
   const [h, m] = hhmm.split(':').map(Number);
@@ -14,13 +12,16 @@ export const msUntil = (now, hhmm = START_AT) => {
 
 /**
  * Whether the service should start a night by itself at `now`: past START_AT, nothing running, and no
- * night started today (`lastStarted`, a Date or undefined).
+ * night started since today's START_AT (`lastStarted`, a Date or undefined). A night started after
+ * midnight by hand does not stand in for that evening's.
  */
 export const shouldAutoStart = ({ now, running, lastStarted, startAt = START_AT }) => {
   if (running) return false;
   const [h, m] = startAt.split(':').map(Number);
-  if (now.getHours() * 60 + now.getMinutes() < h * 60 + m) return false;
-  return !lastStarted || localDay(lastStarted) !== localDay(now);
+  const at = new Date(now);
+  at.setHours(h, m, 0, 0);
+  if (now < at) return false;
+  return !lastStarted || lastStarted < at;
 };
 
 const list = (v) => (Array.isArray(v) ? v.join(',') : String(v));
