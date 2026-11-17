@@ -24,7 +24,7 @@ function Probe({ actions, body, channels }: {
     canvasRef,
     actions: registry!,
     entriesById: new Map(),
-    classifyTarget: () => ({ body: body() }),
+    classifyTarget: () => ({ bodyTarget: body() }),
     ...(channels ? { channels } : {}),
   });
   return <canvas ref={canvasRef} />;

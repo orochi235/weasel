@@ -17,12 +17,12 @@ export function underPointer(view: DispatcherViewTarget, mods: EventModifiers, w
   return {
     altKey: mods.altKey, ctrlKey: mods.ctrlKey, metaKey: mods.metaKey, shiftKey: mods.shiftKey,
     ...(affordance !== undefined ? { affordance } : {}),
-    ...(body?.body !== undefined ? { bodyTarget: body.body } : {}),
-    ...(body?.kind !== undefined ? { bodyKind: body.kind } : {}),
+    ...(body?.bodyTarget !== undefined ? { bodyTarget: body.bodyTarget } : {}),
+    ...(body?.bodyKind !== undefined ? { bodyKind: body.bodyKind } : {}),
     ...(body?.doubleClick !== undefined ? { doubleClickBody: doubleClickBodyOf(body.doubleClick) } : {}),
   };
 }
 
-function doubleClickBodyOf(named: { body: BodyTarget; kind?: BodyKind }): DoubleClickBody {
-  return { bodyTarget: named.body, ...(named.kind !== undefined ? { bodyKind: named.kind } : {}) };
+function doubleClickBodyOf(named: { bodyTarget: BodyTarget; bodyKind?: BodyKind }): DoubleClickBody {
+  return { bodyTarget: named.bodyTarget, ...(named.bodyKind !== undefined ? { bodyKind: named.bodyKind } : {}) };
 }

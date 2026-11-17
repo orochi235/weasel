@@ -224,8 +224,8 @@ describe('<CanvasView layerVisibility> hides a layer in that view only', () => {
     const panel = registry.list().find((r) => r.id === 'panel')!;
     const outer = { x: 0, y: 0, scale: { x: 1, y: 1 } };
     expect(colorsIn(panel.layer.draw({}, outer, { width: 800, height: 800, dpr: 1 }))).toEqual([BASE]);
-    expect(panel.target.classifyTarget!({ x: 125, y: 45 })).toEqual({ body: 'empty' });
-    expect(panel.target.classifyTarget!({ x: 25, y: 45 }).body).toBe('unselected-body');
+    expect(panel.target.classifyTarget!({ x: 125, y: 45 })).toEqual({ bodyTarget: 'empty' });
+    expect(panel.target.classifyTarget!({ x: 25, y: 45 }).bodyTarget).toBe('unselected-body');
 
     const canvas = container.querySelector('canvas')!;
     expect(colorsIn(painted.get(canvas))).toContain(FX);

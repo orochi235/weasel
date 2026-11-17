@@ -96,7 +96,7 @@ function MountDispatcher({
     actions: registry!,
     entriesById,
     // All clicks land on 'empty' — no bodies to hit.
-    classifyTarget: () => ({ body: 'empty' }),
+    classifyTarget: () => ({ bodyTarget: 'empty' }),
     dispatcher,
     // Active tool is 'rect'.
   });

@@ -362,9 +362,9 @@ function Viewport({ config }: { config: SolidConfig }): ReactNode {
   const classifyTarget = useCallback(
     (point: { x: number; y: number }) => {
       const id = nodeAtPoint(point);
-      if (!id) return { body: 'empty' as const };
+      if (!id) return { bodyTarget: 'empty' as const };
       return {
-        body: (selectionRef.current.includes(id) ? 'selected-body' : 'unselected-body') as
+        bodyTarget: (selectionRef.current.includes(id) ? 'selected-body' : 'unselected-body') as
           | 'selected-body'
           | 'unselected-body',
       };

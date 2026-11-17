@@ -60,7 +60,7 @@ describe('pointerDown bindings', () => {
   it('fires while the button is still down, before any movement', () => {
     const spy = vi.fn();
     const { container } = render(
-      <Harness><Probe actionDef={pressAction(spy)} classifyTarget={() => ({ body: 'empty' })} /></Harness>,
+      <Harness><Probe actionDef={pressAction(spy)} classifyTarget={() => ({ bodyTarget: 'empty' })} /></Harness>,
     );
     const canvas = container.querySelector('canvas')!;
     act(() => { fire(canvas, 'pointerdown', { clientX: 10, clientY: 10, pointerId: 1 }); });
@@ -74,7 +74,7 @@ describe('pointerDown bindings', () => {
     // under a two-finger gesture is what that failed to prevent.
     const spy = vi.fn();
     const { container } = render(
-      <Harness><Probe actionDef={pressAction(spy)} classifyTarget={() => ({ body: 'empty' })} /></Harness>,
+      <Harness><Probe actionDef={pressAction(spy)} classifyTarget={() => ({ bodyTarget: 'empty' })} /></Harness>,
     );
     const canvas = container.querySelector('canvas')!;
     act(() => { fire(canvas, 'pointerdown', { clientX: 10, clientY: 10, pointerId: 1 }); });
@@ -103,7 +103,7 @@ describe('pointerDown bindings', () => {
       registry?.register(dragAction);
       useGestureDispatcher({
         canvasRef, actions: registry!, entriesById: new Map(), enabled: true,
-        classifyTarget: () => ({ body: 'empty' as const }),
+        classifyTarget: () => ({ bodyTarget: 'empty' as const }),
       });
       return <canvas ref={canvasRef} />;
     }
@@ -125,7 +125,7 @@ describe('pointerDown bindings', () => {
       invoker: { timing: 'ongoing', start: () => { startSpy(); return { onEnd: () => {} }; } },
     };
     const { container } = render(
-      <Harness><Probe actionDef={bad} classifyTarget={() => ({ body: 'empty' })} /></Harness>,
+      <Harness><Probe actionDef={bad} classifyTarget={() => ({ bodyTarget: 'empty' })} /></Harness>,
     );
     const canvas = container.querySelector('canvas')!;
     act(() => { fire(canvas, 'pointerdown', { clientX: 0, clientY: 0, pointerId: 1 }); });
@@ -146,7 +146,7 @@ describe('pointerDown bindings', () => {
       invoker: { timing: 'immediate', run: () => spy() },
     };
     const { container } = render(
-      <Harness><Probe actionDef={clickAction} classifyTarget={() => ({ body: 'empty' })} /></Harness>,
+      <Harness><Probe actionDef={clickAction} classifyTarget={() => ({ bodyTarget: 'empty' })} /></Harness>,
     );
     const canvas = container.querySelector('canvas')!;
     act(() => { fire(canvas, 'pointerdown', { clientX: 10, clientY: 10, pointerId: 1 }); });
@@ -164,7 +164,7 @@ describe('pointerDown bindings', () => {
       invoker: { timing: 'immediate', run: (_d, params) => spy(params) },
     };
     const { container } = render(
-      <Harness><Probe actionDef={clickAction} classifyTarget={() => ({ body: 'empty' })} /></Harness>,
+      <Harness><Probe actionDef={clickAction} classifyTarget={() => ({ bodyTarget: 'empty' })} /></Harness>,
     );
     const canvas = container.querySelector('canvas')!;
     // Press and release 2px apart — under the 4px drag threshold, so this

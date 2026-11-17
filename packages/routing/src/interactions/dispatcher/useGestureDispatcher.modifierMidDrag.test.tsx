@@ -14,7 +14,7 @@ function Probe({ actionDef }: { actionDef: Action }) {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   registry?.register(actionDef);
   useGestureDispatcher({
-    canvasRef, actions: registry!, entriesById: new Map(), classifyTarget: () => ({ body: 'empty' }),
+    canvasRef, actions: registry!, entriesById: new Map(), classifyTarget: () => ({ bodyTarget: 'empty' }),
   });
   return <canvas ref={canvasRef} />;
 }

@@ -76,7 +76,7 @@ function Mount({
     actions: registry!,
     entriesById,
     enabled: true,
-    classifyTarget: () => ({ body: 'empty' }),
+    classifyTarget: () => ({ bodyTarget: 'empty' }),
   });
   return <canvas ref={canvasRef} />;
 }

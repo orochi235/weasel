@@ -60,7 +60,7 @@ describe('multi-pointer policy', () => {
     };
     return (
       <Harness>
-        <Probe actionDef={dragAction} classifyTarget={() => ({ body: 'empty' })} />
+        <Probe actionDef={dragAction} classifyTarget={() => ({ bodyTarget: 'empty' })} />
       </Harness>
     );
   }
@@ -112,7 +112,7 @@ describe('multi-pointer policy', () => {
       invoker: { timing: 'immediate', run: () => clickSpy() },
     };
     const { container } = render(
-      <Harness><Probe actionDef={clickAction} classifyTarget={() => ({ body: 'empty' })} /></Harness>,
+      <Harness><Probe actionDef={clickAction} classifyTarget={() => ({ bodyTarget: 'empty' })} /></Harness>,
     );
     const canvas = container.querySelector('canvas')!;
 

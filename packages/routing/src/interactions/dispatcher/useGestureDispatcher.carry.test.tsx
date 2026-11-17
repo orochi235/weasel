@@ -163,7 +163,7 @@ describe('useGestureDispatcher — carry channel', () => {
   describe('over a target', () => {
     // World x in 50..100 is a selected body; everywhere else is empty.
     const classify = (w: { x: number; y: number }): BodyClassification =>
-      (w.x >= 50 && w.x <= 100 ? { body: 'selected-body', kind: 'rect' } : { body: 'empty' });
+      (w.x >= 50 && w.x <= 100 ? { bodyTarget: 'selected-body', bodyKind: 'rect' } : { bodyTarget: 'empty' });
 
     it('fires an immediate binding only when released over its target', () => {
       const run = vi.fn();
