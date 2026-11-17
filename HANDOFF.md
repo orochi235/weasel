@@ -4,6 +4,18 @@ For the session picking this up: what is in flight and what has no other home. O
 `docs/TODO.md`. Calls made without a ruling are `docs/unruled.md`. Decisions and traps from finished arcs are
 `docs/retained.md`.
 
+## In flight
+
+- `deps-tidy` (`.worktrees/deps-tidy`) was dropped from the 2026-11-17 batch. It removes labkit's
+  `@weasel-js/prefs-schema` dependency because no labkit source imports it, but labkit's built `.d.ts` names
+  `PrefGroup` and `PrefNumber` from it: TypeScript writes inferred types from the module that defines them, and
+  labkit's `build-dts.mts` copies any sibling it doesn't declare, so `check:unnameable` failed in postbuild. The
+  branch's new `check:imports` rule (a declared sibling the source never names fails) rejects putting the
+  dependency back, so the rule needs to see what the built declarations name, not only import lines. Also on
+  that branch: `packages/labkit/scripts/smoke-consumer-bundle.mjs` fails labkit's `lint` on formatting.
+  `main`'s `b98ad5fda1` declared ui-canvas's type dependencies first; the branch moves `@weasel-js/guides` to
+  a peer and duplicates that changeset, so a merge keeps the peer and deletes `ui-canvas-declare-type-deps.md`.
+
 ## Decisions taken in conversation and not visible in the code
 
 - weaselchart's grid and snapping (2026-10-19): pipeline mode's route editing takes the same snap change with
