@@ -28,7 +28,7 @@ function setup() {
   return { scene, handle, unit, ctx, start };
 }
 
-describe('plot.dragValue', () => {
+describe('plot.editValue', () => {
   it('previews the marks the moved value redraws, in their own frame, and writes nothing', () => {
     const { scene, handle, unit, ctx, start } = setup();
     const drag = start();
@@ -85,7 +85,7 @@ describe('plot.dragValue', () => {
     const { scene } = setup();
     const contribution = createPlotEditingContribution({ scene: scene as never });
     expect(contribution.bindings?.find((b) => b.spec.kind === 'drag')).toMatchObject({
-      spec: { target: 'affordance:layer:plot-handles' }, actionId: 'plot.dragValue',
+      spec: { target: 'affordance:layer:plot-handles' }, actionId: 'plot.editValue',
     });
   });
 });

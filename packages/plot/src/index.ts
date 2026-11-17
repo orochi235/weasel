@@ -71,7 +71,7 @@ export {
   PLOT_HANDLE_AFFORDANCE_KIND, PLOT_HANDLE_LAYER_ID, createPlotHandleLayer, plotHandles, plotHandleScratchOf, plotOrigin,
   type PlotHandleScratch,
 } from './editing/handleLayer';
-export { PLOT_DRAG_ACTION_ID, commitPlotToScene, createPlotDragAction, type PlotDragOptions, type PlotEdit } from './editing/dragAction';
+export { EDIT_PLOT_VALUE_ACTION_ID, commitPlotToScene, createPlotDragAction, type PlotDragOptions, type PlotEdit } from './editing/dragAction';
 export { GRAB_PLOT_HANDLE_ACTION_ID, createPlotEditingContribution } from './editing/createPlotEditingContribution';
 export { PlotView, type PlotViewProps } from './PlotView';
 
