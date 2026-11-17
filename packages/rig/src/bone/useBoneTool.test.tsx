@@ -44,8 +44,8 @@ function setup(settings?: KitSettingsOverrides) {
   });
   /** Press at `from`, move to `to`, and release or cancel. */
   const drag = (from: [number, number], to: [number, number], reason: 'commit' | 'cancel' = 'commit', peek?: () => void) => {
-    const invoker = actionOf('bone.drag').invoker;
-    if (invoker?.timing !== 'ongoing') throw new Error('bone.drag is not ongoing');
+    const invoker = actionOf('bone.shape').invoker;
+    if (invoker?.timing !== 'ongoing') throw new Error('bone.shape is not ongoing');
     const handle = invoker.start(ctx(from[0], from[1]), undefined);
     handle.onMove?.(ctx(to[0], to[1], { x: from[0], y: from[1] }));
     peek?.();

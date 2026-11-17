@@ -86,7 +86,7 @@ export function useBoneTool(options: UseBoneToolOptions): Tool {
     onDeactivate: () => env.show(null),
     bindings: [
       { spec: { kind: 'click', mods: { shift: 'optional', alt: 'optional' } }, actionId: 'bone.pick', opts: { id: 'bone.pick' } },
-      { spec: { kind: 'drag', mods: { shift: 'optional', alt: 'optional' } }, actionId: 'bone.drag', opts: { id: 'bone.drag' } },
+      { spec: { kind: 'drag', mods: { shift: 'optional', alt: 'optional' } }, actionId: 'bone.shape', opts: { id: 'bone.shape' } },
       { spec: { kind: 'key', key: ['Delete', 'Backspace'] }, actionId: 'bone.remove', opts: { id: 'bone.remove' } },
       { spec: { kind: 'key', key: 'Escape' }, actionId: 'bone.deselect', opts: { id: 'bone.deselect' } },
     ],

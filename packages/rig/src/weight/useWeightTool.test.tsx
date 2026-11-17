@@ -60,8 +60,8 @@ function setup(settings?: KitSettingsOverrides, initialSkin?: Skin) {
     return true;
   };
   const click = (x: number, y: number, alt = false, params: Record<string, unknown> = {}) => {
-    const invoker = actionOf('weight.click').invoker;
-    if (invoker?.timing !== 'immediate') throw new Error('weight.click is not immediate');
+    const invoker = actionOf('weight.dab').invoker;
+    if (invoker?.timing !== 'immediate') throw new Error('weight.dab is not immediate');
     invoker.run(deps, { ...params, press: { x, y }, mods: { alt } });
   };
   const skin = () => {
@@ -182,7 +182,7 @@ describe('useWeightTool', () => {
     values.set('weight', 'radiusPx', 6);
     const tuned = { params: {} as Record<string, unknown> };
     const registry = { tune: (id: string, tuning: ActionTuning) => {
-      if (id === 'weight.click') tuned.params = (tuning.params as () => Record<string, unknown>)();
+      if (id === 'weight.dab') tuned.params = (tuning.params as () => Record<string, unknown>)();
       return () => {};
     } };
     const deps = { get: (name: string) => (name === 'toolOptionValues' ? values : name === 'activeTool' ? { active: 'weight' } : undefined) };

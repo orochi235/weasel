@@ -188,7 +188,7 @@ class Drag implements fc.Command<Model, Real> {
   run(m: Model, r: Real): void {
     const p = resolve(m, this.from);
     const q = resolve(m, this.to);
-    const handle = startOngoing(r, 'bone.drag', ctx(p.x, p.y));
+    const handle = startOngoing(r, 'bone.shape', ctx(p.x, p.y));
     handle.onMove?.(ctx(q.x, q.y, p));
     handle.onEnd?.({ ...ctx(q.x, q.y), deps: {} as ActionDeps }, this.cancel ? 'cancel' : 'commit');
     if (this.cancel) { seen.count('drag cancel'); check(m, r); return; }
@@ -269,7 +269,7 @@ class Dab implements fc.Command<Model, Real> {
   check = () => true;
   run(m: Model, r: Real): void {
     const p = resolve(m, this.at);
-    runImmediate(r, 'weight.click', { press: p, mods: { alt: this.alt }, radiusPx: this.radiusPx });
+    runImmediate(r, 'weight.dab', { press: p, mods: { alt: this.alt }, radiusPx: this.radiusPx });
     const hit = hitOf(m.doc.joints, p.x, p.y);
     if (hit !== null) {
       m.active = hit;
