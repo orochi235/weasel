@@ -16,7 +16,7 @@ deliberately, but the pen and hit-test changes are close enough to matter.
 
 **A UI-driven ongoing action could commit twice.** `Dispatcher.beginUiOngoing`
 returns a control whose `end()` was guarded only by its own flag, while
-`cancelAll` — tool switch, Escape via `cancelGesture`, dispatcher teardown —
+`cancelAll` — tool switch, Escape via `dispatch.cancelAll`, dispatcher teardown —
 ends the handle behind the control's back. A color or opacity picker releasing
 afterwards ran `onEnd` again, committing over an already-cancelled gesture.
 `update()` had the mirror hole: it re-opened a preview nothing could then end.

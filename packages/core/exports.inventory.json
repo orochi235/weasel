@@ -1453,7 +1453,7 @@
     "canHover": "const",
     "canQueryLocalFonts": "function",
     "canSendBackward": "function",
-    "cancelGestureAction": "const",
+    "cancelAllAction": "const",
     "canvasCamera": "function",
     "canvasPaintsWith": "function",
     "canvasToClient": "function",

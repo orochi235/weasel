@@ -10,7 +10,7 @@ export const deselectAction: Action & { requires: string[] } = {
   id: 'deselect',
   label: 'Deselect',
   // Gated to "no tool is engaged" so a mid-drag Escape goes to
-  // `cancelGestureAction` (cancels the drag) instead of clearing
+  // `cancelAllAction` (cancels the drag) instead of clearing
   // selection.
   defaultBinding: [{
     spec: {

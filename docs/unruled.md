@@ -2139,7 +2139,7 @@ Calls the lanes made without a ruling:
   tools, tunings and commands on one canvas. Neither found a collision once `reportRouteConflicts` stopped counting
   `hover` bindings, which all run (2026-11-13).
 - An action's own key binding carries `BETWEEN_GESTURES`, or a phase of its own, unless it only moves the view
-  (`viewport.zoom.*`), is an Escape that `cancelGesture` takes mid-drag (`exitPathEdit`, `tool.resetToDefault`), or
+  (`viewport.zoom.*`), is an Escape that `dispatch.cancelAll` takes mid-drag (`exitPathEdit`, `tool.resetToDefault`), or
   opens a keymap. `kitBindingPhases.test.tsx` holds the kit to it, and the tool keys now carry it as the offhand keys
   did. draw's color keys and view toggles do not: they change the next shape's style or the view, not the document,
   and a change mid-draw reaching the shape is how the tool options work (2026-11-13).

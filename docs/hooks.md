@@ -85,7 +85,7 @@ actions with no default binding fire only via a tool's `bindings` or a `trigger`
 | Action id | Default binding |
 |---|---|
 | `deselect` | Escape (channel `*`, phase `initial`) |
-| `cancelGesture` | Escape (channel `*`, phase `engaged`) — aborts an in-flight gesture |
+| `dispatch.cancelAll` | Escape (channel `*`, phase `engaged`) — aborts an in-flight gesture |
 | `selectAll` | Mod+A |
 | `delete` | Delete, Backspace (phase `initial`, so a mid-drag press is ignored) |
 | `transformAgain` | Mod+D — repeats the last move, rotate, resize, or duplicate; duplicates when there is none |

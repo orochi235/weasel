@@ -5,11 +5,11 @@ import type { Action } from '@weasel-js/routing';
  * (`onEnd('cancel')` on each, no scene mutation).
  *
  * Phase-gated to `[*:engaged]` so it fires only when a handle is in flight,
- * leaving the idle-phase `escape` action (clears selection) without conflict.
+ * leaving the idle-phase `deselect` action without conflict.
  */
 // No `eligible` field: canceling an in-flight gesture must work in every mode.
-export const cancelGestureAction: Action & { requires: string[] } = {
-  id: 'cancelGesture',
+export const cancelAllAction: Action & { requires: string[] } = {
+  id: 'dispatch.cancelAll',
   label: 'Cancel gesture',
   defaultBinding: [{
     spec: {
@@ -17,7 +17,7 @@ export const cancelGestureAction: Action & { requires: string[] } = {
       key: 'Escape',
       phase: [{ channel: '*', phase: 'engaged' }],
     },
-    opts: { id: 'cancelGesture.key' },
+    opts: { id: 'dispatch.cancelAll.key' },
   }],
   requires: ['dispatcher'],
   invoker: {

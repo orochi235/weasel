@@ -44,7 +44,7 @@ items = [
         '• drop, carry or paste with a MIME filter: 2, anything else 1',
         '▸ target: `[*:*] drag => unselected-body` (`move`) beats `[*:*] drag` (`viewport.dragPan`, from `dragPanContribution`).',
         '▸ modifiers: `[*:*] drag +shift` beats `[*:*] drag ?shift` (`lassoSelect`); an optional modifier counts for nothing.',
-        '▸ phase: `[*:engaged] keyDown(Escape)` (`cancelGesture`) beats `[*:*] keyDown(Escape)` (`tool.resetToDefault`).',
+        '▸ phase: `[*:engaged] keyDown(Escape)` (`dispatch.cancelAll`) beats `[*:*] keyDown(Escape)` (`tool.resetToDefault`).',
         '▸ MIME: `[*:*] drop(text/csv)` beats `[*:*] drop ?shift ?alt ?ctrl ?meta` (`ingest`).',
     ], LW - 40, 'amber'), '3'),
     ('r4', Card('Context-gated before ungated', [
@@ -140,7 +140,7 @@ ey = 128
 ey = example(ey, 'Escape while editing a path',
              'Mode `path-edit`, a path is being edited, nothing in flight. All four actions are ambient and bound to Escape.',
              [
-                 ('—', '`cancelGesture` `[*:engaged] keyDown(Escape)`', 'ambient', '', 'the match, phase', '', 'not a candidate', 'gray'),
+                 ('—', '`dispatch.cancelAll` `[*:engaged] keyDown(Escape)`', 'ambient', '', 'the match, phase', '', 'not a candidate', 'gray'),
                  ('1', '`deselect` `[*:initial] keyDown(Escape)`', 'ambient', '0 0 1 1', 'step 3, phase part', 'none', '`enabled()` declines while a path is edited', 'white'),
                  ('2', '`exitPathEdit` `[*:*] keyDown(Escape)`', 'ambient', '0 0 0 1', 'step 4', '`mode: path-edit` holds', 'fires', 'green'),
                  ('3', '`tool.resetToDefault` `[*:*] keyDown(Escape)`', 'ambient', '0 0 0 1', 'step 4', 'none', 'not asked', 'white'),

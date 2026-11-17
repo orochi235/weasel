@@ -52,7 +52,7 @@ function ProbeDepSelection({ onValue }: { onValue: (v: unknown) => void }) {
 // Kit-standard descriptor IDs
 // ---------------------------------------------------------------------------
 const KIT_IDS = [
-  'deselect', 'menu.context', 'cancelGesture', 'selectAll', 'delete', 'duplicate', 'transformAgain',
+  'deselect', 'menu.context', 'dispatch.cancelAll', 'selectAll', 'delete', 'duplicate', 'transformAgain',
   'group', 'ungroup',
   'undo', 'redo',
   'flip',

@@ -1923,7 +1923,7 @@
  {
   "id": "core.interactions.actions.defaults",
   "files": [
-   "packages/core/src/interactions/actions/defaults/cancelGesture.ts",
+   "packages/core/src/interactions/actions/defaults/cancelAll.ts",
    "packages/core/src/interactions/actions/defaults/containerScroll.ts",
    "packages/core/src/interactions/actions/defaults/contextMenu.ts",
    "packages/core/src/interactions/actions/defaults/copySubtree.ts",

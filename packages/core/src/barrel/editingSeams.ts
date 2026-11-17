@@ -7,7 +7,7 @@ export { PRESET_CHROME } from '../canvas/SceneCanvas/presets/chrome';
 export { isNoInkExtents } from '../core/geometry/inkExtents';
 export { bringForward, bringToFront, sendBackward, sendToBack } from '../core/ops/reorder/algorithms';
 export { sameValue } from '../core/scene/sameValue';
-export { cancelGestureAction } from '../interactions/actions/defaults/cancelGesture';
+export { cancelAllAction } from '../interactions/actions/defaults/cancelAll';
 export { finiteThroughout } from '../interactions/actions/finiteFrame';
 export { geometryDataOp } from '../interactions/actions/geometryProjection';
 export { moveEachOps } from '../interactions/actions/moveNodes';

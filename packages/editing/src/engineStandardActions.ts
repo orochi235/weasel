@@ -1,5 +1,5 @@
 import type { Action } from '@weasel-js/routing';
-import { cancelGestureAction, redoAction, undoAction } from '@weasel-js/core';
+import { cancelAllAction, redoAction, undoAction } from '@weasel-js/core';
 import { duplicateAction } from './actions/edit/duplicate';
 import { deselectAction } from './actions/edit/deselect';
 import { groupAction, ungroupAction } from './actions/edit/group';
@@ -31,5 +31,5 @@ export const ENGINE_STANDARD_ACTIONS: readonly Action[] = [
   insertAction, placeAction, insertRotateAction, insertRepositionAction,
   nudgeUpAction, nudgeDownAction, nudgeLeftAction, nudgeRightAction,
   duplicateAction, deleteAction, groupAction, ungroupAction,
-  deselectAction, cancelGestureAction,
+  deselectAction, cancelAllAction,
 ];
