@@ -54,11 +54,14 @@ export function RegistryInspector() {
   const [selectedKey, setSelectedKey] = useState<EntryKey | null>(null);
   // Pending deep-link from the URL — the matching entry may not exist yet
   // when the probe hasn't fired its first snapshot. Drained below once the
-  // tree nodes are populated.
+  // tree nodes are populated, and dropped as soon as anything else is picked.
   const [pendingDeepLink, setPendingDeepLink] = useState<EntryKey | null>(
     () => parseSelectionFromHash(window.location.hash),
   );
-  const select = (key: EntryKey | null): void => setSelectedKey(key);
+  const select = (key: EntryKey | null): void => {
+    setSelectedKey(key);
+    setPendingDeepLink(null);
+  };
 
   const onSnapshot = useCallback((snap: RegistrySnapshot) => setRuntime(snap), []);
 
@@ -120,10 +123,7 @@ export function RegistryInspector() {
   // Drain any pending deep-link once the matching entry exists in the tree.
   // The probe pushes its snapshot async on first render, so the URL-decoded
   // selection may name an entry that won't be in `nodes` for a frame or two.
-  if (pendingDeepLink && findEntry(nodes, pendingDeepLink)) {
-    select(pendingDeepLink);
-    setPendingDeepLink(null);
-  }
+  if (pendingDeepLink && findEntry(nodes, pendingDeepLink)) select(pendingDeepLink);
 
   // Mirror the selection into the URL hash so the inspector is deep-linkable.
   useEffect(() => {
