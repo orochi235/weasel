@@ -47,6 +47,23 @@ export function parserOf(ns: OpenType): OpenType['parse'] {
 }
 
 /**
+ * Throws unless `ns` is opentype.js 2, whose `toPathData` reads the options object `glyphD` passes.
+ * 1.x takes a bare precision and formats every coordinate to a whole em, so each glyph would come
+ * out a box with nothing to say so; a broken install that resolved a hoisted 1.x copy did that.
+ */
+export function assertOpenType2(ns: OpenType): void {
+  const interop = ns as OpenType & { default?: OpenType };
+  const Path = (interop.default?.Path ?? ns.Path) as unknown as new () => PathData & { moveTo(x: number, y: number): void };
+  const probe = new Path();
+  probe.moveTo(0.25, 0.5);
+  const d = probe.toPathData({ decimalPlaces: 2, optimize: false, flipY: false });
+  if (d !== 'M0.25 0.50') {
+    throw new Error(`the opentype.js this resolved is older than 2 (its toPathData wrote "${d}" for "M0.25 0.50"); `
+      + '@weasel-js/font needs opentype.js 2, so check which copy the install resolves');
+  }
+}
+
+/**
  * Wrap a parsed opentype.js font.
  *
  * `charToGlyphIndex` reports 0 — `.notdef` — for a codepoint the font does
@@ -178,7 +195,9 @@ export function createOpenTypeParser(postScriptName?: string): OutlineParser {
       throw new Error('the file is WOFF2, whose compression the outline parser cannot read; '
         + 'register the face\'s TTF, OTF or WOFF file instead');
     }
-    const parse = parserOf(await loadOpenType());
+    const ns = await loadOpenType();
+    assertOpenType2(ns);
+    const parse = parserOf(ns);
     const { bytes: single, matched, names } = sfntFromCollection(bytes, postScriptName);
     if (!matched) {
       throw new Error(
