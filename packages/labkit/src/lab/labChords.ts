@@ -11,7 +11,7 @@ import {
   useLatest,
 } from '@weasel-js/core';
 import { createContext, useContext, useEffect, useState } from 'react';
-import { SNAPSHOT_SHORTCUT } from '../chrome/builtins';
+import { SNAPSHOT_SHORTCUT } from '../chrome/trialActions';
 import { REDO_SHORTCUT, UNDO_SHORTCUT } from '../undo/useUndoKeys';
 import { createKeyClaims, type KeyClaims, useClaimed } from './keyClaims';
 

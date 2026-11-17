@@ -117,7 +117,7 @@
     "longestFunction": 194
   },
   "packages/labkit/src/state/store.ts": {
-    "longestFunction": 161
+    "longestFunction": 139
   },
   "packages/labkit/src/surface/useTiledSurface.ts": {
     "longestFunction": 237
@@ -126,7 +126,7 @@
     "longestFunction": 297
   },
   "packages/labkit/src/trial/TrialChrome.tsx": {
-    "longestFunction": 178
+    "longestFunction": 176
   },
   "packages/path-tools/src/pen/penPreviewLayer.ts": {
     "longestFunction": 138

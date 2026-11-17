@@ -1,5 +1,4 @@
 import type { History } from '@weasel-js/core';
-import { getOwn } from '@weasel-js/registry';
 import type { ColorModePreference } from '@weasel-js/theme';
 import { createStore, type StateCreator, type StoreApi } from 'zustand/vanilla';
 import type { ClockPosition } from '../clock/trialClock';
@@ -14,6 +13,7 @@ import type { InstrumentList } from '../instrument/types';
 import { emptyDocument } from './document';
 import { hydrateSnapshots, hydrateTrials, rehydrated, withoutUnreadable } from './hydrate';
 import { type SnapshotActions, snapshotActions } from './snapshotActions';
+import { withColorMode, withSectionCollapsed, withSidebarWidth, withTitle } from './trialFields';
 import type {
   CreateLabStoreOptions,
   InstrumentHooks,
@@ -133,46 +133,12 @@ export function createLabStore(options: CreateLabStoreOptions = {}): LabStore {
       }));
     },
 
-    updateTrialSidebarWidth: (id, width) => {
-      set((s) => ({
-        trials: s.trials.map((w) =>
-          w.id === id && w.sidebarWidth !== width ? { ...w, sidebarWidth: width } : w,
-        ),
-      }));
-    },
-
-    setTrialColorMode: (id, mode) => {
-      set((s) => ({
-        trials: s.trials.map((w) => {
-          if (w.id !== id) return w;
-          const next = mode === 'auto' ? undefined : mode;
-          if (w.colorMode === next) return w;
-          const { colorMode: _was, ...rest } = w;
-          return next === undefined ? rest : { ...rest, colorMode: next };
-        }),
-      }));
-    },
-
-    setTrialTitle: (id, title) => {
-      set((s) => ({
-        trials: s.trials.map((w) => {
-          if (w.id !== id) return w;
-          const next = title === null ? undefined : title;
-          if ((w.title ?? undefined) === next) return w;
-          return { ...w, title: next };
-        }),
-      }));
-    },
-
-    setTrialSectionCollapsed: (id, key, collapsed) => {
-      set((s) => ({
-        trials: s.trials.map((w) => {
-          if (w.id !== id) return w;
-          if (w.collapsedSections && getOwn(w.collapsedSections, key) === collapsed) return w;
-          return { ...w, collapsedSections: { ...w.collapsedSections, [key]: collapsed } };
-        }),
-      }));
-    },
+    updateTrialSidebarWidth: (id, width) =>
+      set((s) => ({ trials: withSidebarWidth(s.trials, id, width) })),
+    setTrialColorMode: (id, mode) => set((s) => ({ trials: withColorMode(s.trials, id, mode) })),
+    setTrialTitle: (id, title) => set((s) => ({ trials: withTitle(s.trials, id, title) })),
+    setTrialSectionCollapsed: (id, key, collapsed) =>
+      set((s) => ({ trials: withSectionCollapsed(s.trials, id, key, collapsed) })),
 
     updateTrialAnnotations: (id, doc) => {
       set((s) => ({

@@ -6,7 +6,6 @@ import { ScaleBar } from '@weasel-js/ui/components/ScaleBar';
 import { ZoomControl } from '@weasel-js/ui/components/ZoomControl';
 import { ExportMenu } from '../annotations/ExportMenu';
 import { MarkList } from '../annotations/MarkList';
-import { withOverValues } from '../config/over';
 import type { LeafRenderer } from '../config/types';
 import { ControlPanel } from '../controls/ControlPanel';
 import { icon } from '../icons.gen';
@@ -14,10 +13,8 @@ import type { Instrument } from '../instrument/types';
 import { undoCapability } from '../instrument/undo';
 import type { TrialTool } from '../tools/types';
 import { REDO_SHORTCUT, UNDO_SHORTCUT } from '../undo/useUndoKeys';
+import { settingsConfig, trialActions } from './trialActions';
 import type { TrialChromeContext, TrialContribution } from './types';
-
-/** The chord that saves a snapshot of the focused trial, as the trial's keys match it and its button shows it. */
-export const SNAPSHOT_SHORTCUT = { key: 's', mod: true } as const;
 
 const ZOOM_STEP = 1.25;
 
@@ -85,12 +82,6 @@ function groupFolds(
   return out;
 }
 
-/** What the settings panel reads: the trial's config, and the lab's values for a schema it is drawn over. */
-function settingsConfig(ctx: TrialChromeContext): Record<string, unknown> {
-  const own = ctx.config as Record<string, unknown>;
-  return ctx.configSchema.over && ctx.overValues ? withOverValues(own, ctx.overValues) : own;
-}
-
 /** How the Settings panel writes a trial's config: its drafts reach the instrument on every move and keystroke,
  *  and the trial records them with the value they settle on as one undo step. */
 function settingsWrites(ctx: TrialChromeContext) {
@@ -98,92 +89,6 @@ function settingsWrites(ctx: TrialChromeContext) {
 }
 
 const settingsAuto = (ctx: TrialChromeContext) => ({ auto: ctx.auto, reported: ctx.reported });
-
-/** The snapshot loader, once there is a snapshot to load, and the title bar's actions on the trial itself. */
-function trialActions(ctx: TrialChromeContext): TrialContribution[] {
-  const out: TrialContribution[] = [];
-  if (ctx.savedSnapshots.length > 0) {
-    out.push({
-      id: 'snapshot-load',
-      region: 'toolbar',
-      group: 'trial',
-      end: true,
-      item: {
-        kind: 'menu',
-        label: 'Load snapshot',
-        entries: (c) =>
-          c.savedSnapshots.map((sn) => ({
-            kind: 'item',
-            key: sn.id,
-            label: sn.name,
-            run: () => c.loadSnapshot(sn.id),
-          })),
-      },
-    });
-  }
-  if (ctx.canExpand) {
-    out.push({
-      id: 'expand',
-      region: 'titlebar',
-      end: true,
-      item: {
-        icon: icon('ui:fullscreen'),
-        label: 'Expand trial',
-        pressed: ctx.expanded,
-        onActivate: ctx.toggleExpanded,
-      },
-    });
-  }
-  out.push({
-    id: 'clone',
-    region: 'titlebar',
-    end: true,
-    item: { icon: icon('ui:clone'), label: 'Clone trial', onActivate: ctx.clone },
-  });
-  out.push({
-    id: 'reset',
-    region: 'titlebar',
-    end: true,
-    item: { icon: icon('ui:reset'), label: 'Reset trial', onActivate: ctx.reset },
-  });
-  if (Object.keys(ctx.configSchema.group.children).length > 0) {
-    out.push({
-      id: 'copy-settings',
-      region: 'titlebar',
-      end: true,
-      item: {
-        icon: icon('core:copy'),
-        label: 'Copy settings as JSON',
-        onActivate: () => void copyText(JSON.stringify(settingsConfig(ctx), null, 2)),
-      },
-    });
-  }
-  out.push({
-    id: 'snapshot',
-    region: 'titlebar',
-    end: true,
-    item: {
-      icon: icon('ui:snapshot'),
-      label: 'Save snapshot',
-      shortcut: SNAPSHOT_SHORTCUT,
-      onActivate: () => ctx.saveSnapshot(),
-    },
-  });
-  out.push({
-    id: 'close',
-    region: 'titlebar',
-    end: true,
-    item: {
-      icon: icon('ui:close'),
-      label: 'Close trial',
-      danger: true,
-      disabled: ctx.isLastTrial,
-      disabledReason: 'It is the last trial',
-      onActivate: ctx.close,
-    },
-  });
-  return out;
-}
 
 /** The key a tool's rail button shows: the one its instrument reports it answers to now, else the one it declares. */
 function shownKey(t: TrialTool, ctx: TrialChromeContext): TrialTool['shortcut'] {
@@ -218,6 +123,21 @@ export const TRANSIENT_BUILTINS: ReadonlySet<string> = new Set([
   'fps',
   'panel',
 ]);
+
+/** The switch for the color mode a trial's content is drawn in, beside Undo and Redo. */
+const MODE_SWITCH: TrialContribution = {
+  id: 'mode',
+  region: 'toolbar',
+  group: 'mode',
+  render: (c) => (
+    <CycleButton
+      value={c.colorMode}
+      onChange={c.setColorMode}
+      options={COLOR_MODE_OPTIONS}
+      aria-label="Trial theme"
+    />
+  ),
+};
 
 /** Whether a trial's content is the instrument's own DOM, which a theme reaches, rather than a canvas or stage. */
 export const drawsDom = (instrument: Instrument): boolean =>
@@ -323,21 +243,7 @@ export function builtinContributions(
   }
 
   // A canvas or stage paints its own colors, so only a trial drawn in DOM has a mode to switch.
-  if (drawsDom(instrument)) {
-    out.push({
-      id: 'mode',
-      region: 'toolbar',
-      group: 'mode',
-      render: (c) => (
-        <CycleButton
-          value={c.colorMode}
-          onChange={c.setColorMode}
-          options={COLOR_MODE_OPTIONS}
-          aria-label="Trial theme"
-        />
-      ),
-    });
-  }
+  if (drawsDom(instrument)) out.push(MODE_SWITCH);
 
   // A tool id shares the contribution namespace, so a tool called `close`
   // collides with the built-in close button and throws. Annotation tools are

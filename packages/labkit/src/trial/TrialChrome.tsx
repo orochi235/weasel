@@ -1,6 +1,5 @@
 import { DevtoolsLabel } from '@weasel-js/core';
 import { type ReactNode, useContext, useMemo, useSyncExternalStore } from 'react';
-import { useStore } from 'zustand/react';
 import { AnnotationsContext } from '../annotations/AnnotationsContext';
 import { CameraRegistryContext } from '../canvas/cameraRegistry';
 import { zoomCameraTo } from '../canvas/cameraZoom';
@@ -208,11 +207,8 @@ export function TrialChrome({
   const { presented, ref: presentedRef } = usePresentedTrial(trialId);
   const storeCtx = useContext(LabStoreContext);
   if (!storeCtx) throw new Error('[labkit] TrialChrome requires <LabStoreProvider>');
-  const updateTrialView = useStore(storeCtx.store, (s) => s.updateTrialView);
-  const updateTrialSidebarWidth = useStore(storeCtx.store, (s) => s.updateTrialSidebarWidth);
-  const setTrialTitle = useStore(storeCtx.store, (s) => s.setTrialTitle);
-  const setTrialSectionCollapsed = useStore(storeCtx.store, (s) => s.setTrialSectionCollapsed);
-  const setTrialColorMode = useStore(storeCtx.store, (s) => s.setTrialColorMode);
+  // A store's actions never change, so they are read once rather than subscribed to.
+  const writes = useMemo(() => storeCtx.store.getState(), [storeCtx.store]);
   const panels = useTrialPanels(storeCtx.store, trialId);
 
   const view2d = chromeView(record.view);
@@ -244,13 +240,13 @@ export function TrialChrome({
   const ctx = useMemo<TrialChromeContext>(() => {
     const setZoom = (z: number): void => {
       if (camera) zoomCameraTo(camera, z);
-      else if (view2d) updateTrialView(trialId, withZoom(view2d, z));
+      else if (view2d) writes.updateTrialView(trialId, withZoom(view2d, z));
     };
     return {
       trialId,
       instrumentName: record.instrumentName,
       title,
-      setTitle: (next) => setTrialTitle(trialId, next),
+      setTitle: (next) => writes.setTrialTitle(trialId, next),
       isLastTrial,
       zoom: camera ? camera.zoomOf(record.view) : (view2d?.zoom ?? null),
       setZoom,
@@ -268,9 +264,10 @@ export function TrialChrome({
       draftConfig,
       overValues,
       collapsedSections: record.collapsedSections ?? NO_SECTIONS,
-      setSectionCollapsed: (key, collapsed) => setTrialSectionCollapsed(trialId, key, collapsed),
+      setSectionCollapsed: (key, collapsed) =>
+        writes.setTrialSectionCollapsed(trialId, key, collapsed),
       colorMode: record.colorMode ?? 'auto',
-      setColorMode: (mode) => setTrialColorMode(trialId, mode),
+      setColorMode: (mode) => writes.setTrialColorMode(trialId, mode),
       undockedPanels: panels.undocked,
       undockPanel: panels.undockPanel,
       dockPanel: panels.dockPanel,
@@ -283,7 +280,6 @@ export function TrialChrome({
     lab,
     title,
     isLastTrial,
-    updateTrialView,
     setConfig,
     draftConfig,
     undoBindings,
@@ -297,9 +293,7 @@ export function TrialChrome({
     reported,
     overValues,
     panels,
-    setTrialTitle,
-    setTrialSectionCollapsed,
-    setTrialColorMode,
+    writes,
     camera,
   ]);
 
@@ -350,26 +344,37 @@ export function TrialChrome({
         <PaletteRegion contributions={inRegion('palette')} ctx={ctx} />
         <TrialBody
           width={record.sidebarWidth}
-          onWidthChange={(w) => updateTrialSidebarWidth(trialId, w)}
+          onWidthChange={(w) => writes.updateTrialSidebarWidth(trialId, w)}
           contentClassName={contentClassOf(instrument, presented)}
           sidebar={floating || sections.length === 0 ? null : [docked, undocked]}
         >
-          {drawsDom(instrument) ? (
-            <TrialTheme mode={record.colorMode ?? 'auto'}>
-              <Titled title={title}>{children}</Titled>
-            </TrialTheme>
-          ) : (
+          <TrialTheme mode={drawsDom(instrument) ? (record.colorMode ?? 'auto') : null}>
             <Titled title={title}>{children}</Titled>
-          )}
+          </TrialTheme>
           <ViewportRegion contributions={inRegion('viewport')} ctx={ctx} />
           {floating ? undocked : null}
         </TrialBody>
       </div>
-      <div className="lk-trial__status">
-        {job ? <JobProgress job={job} /> : null}
-        <StatusRegion className="lk-trial__readouts" contributions={inRegion('status')} ctx={ctx} />
-      </div>
+      <TrialStatus job={job} contributions={inRegion('status')} ctx={ctx} />
     </section>
+  );
+}
+
+/** The strip along a trial's foot: its job's progress, then the status readouts. */
+function TrialStatus({
+  job,
+  contributions,
+  ctx,
+}: {
+  job: JobHandle | undefined;
+  contributions: TrialContribution[];
+  ctx: TrialChromeContext;
+}) {
+  return (
+    <div className="lk-trial__status">
+      {job ? <JobProgress job={job} /> : null}
+      <StatusRegion className="lk-trial__readouts" contributions={contributions} ctx={ctx} />
+    </div>
   );
 }
 
