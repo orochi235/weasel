@@ -41,7 +41,7 @@ export {
   poseFrameInverseOf,
   poseLinearOf,
   pathThroughPoseFrame,
-  rotatePathAround,
+  rotatePathAbout,
   createPathLayer,
   flattenCubic,
   flattenQuadratic,

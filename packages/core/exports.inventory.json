@@ -2186,7 +2186,7 @@
     "roleMods": "function",
     "roleReader": "function",
     "rotateAroundAABBCenter": "function",
-    "rotatePathAround": "function",
+    "rotatePathAbout": "function",
     "rotatePoint": "function",
     "rotatedRectCorners": "function",
     "rotationDegreesUnit": "const",

@@ -28,7 +28,7 @@ import { transformPath } from './transformPath';
 import { pathUnion } from '../booleans';
 import { pathToMultiPolygon } from '../booleans/adapter';
 import { pathContainsPoint, polygonContainsPath, strokeHitTest } from '../pathHitTest';
-import { rotatePathAround } from '../poseRotation';
+import { rotatePathAbout } from '../poseRotation';
 import { pinWarpMesh } from '../warp/pinWarpMesh';
 import type { PolygonPath } from '../path';
 
@@ -96,7 +96,7 @@ describe('readers of a path measured from an origin', () => {
     const moved = translatePath(p, 5, 6) as PolygonPath;
     expect(moved.origin).toEqual({ x: FAR + 5, y: 6 });
     expect(Array.from(moved.coords)).toEqual(Array.from(p.coords));
-    const turned = rotatePathAround(p, FAR, 0, Math.PI / 2);
+    const turned = rotatePathAbout(p, FAR, 0, Math.PI / 2);
     // A quarter turn about (FAR, 0) takes (FAR + 0.3, 1) to (FAR - 1, 0.3).
     expect(worldCoords(turned)[0]).toBeCloseTo(FAR - 1, 6);
     expect(worldCoords(turned)[1]).toBeCloseTo(0.3, 6);

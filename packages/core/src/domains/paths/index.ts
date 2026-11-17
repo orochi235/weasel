@@ -162,7 +162,7 @@ export {
   type AverageAxis, type JoinOptions, type SimplifyPathOptions, type SubpathEnd,
 } from '@weasel-js/geom';
 export { pathInPoseBox, pathInWorld, worldEditToStorage, type PathInWorldPose } from '@weasel-js/geom';
-export { poseRotationOf, rotatePathAround, type PoseRotation } from '@weasel-js/geom';
+export { poseRotationOf, rotatePathAbout, type PoseRotation } from '@weasel-js/geom';
 export { poseFrameOf, poseFrameInverseOf, poseLinearOf, pathThroughPoseFrame, type PoseLinear } from '@weasel-js/geom';
 export {
   reachToMeet, kneadPath, type KneadPathOptions, intersectSegments, tugOpenEnd, openEndRay, openPathEnds, pathCrossings, pathSegments, snipPathAt,
