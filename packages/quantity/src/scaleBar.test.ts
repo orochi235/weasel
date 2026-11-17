@@ -36,3 +36,8 @@ describe('scaleBar', () => {
     expect(scaleBar({ pxPerUnit: 1e6, scopes: [INCHES] })).toMatchObject({ length: 0.001 });
   });
 });
+
+it("writes the label's number in the locale it is given", () => {
+  expect(scaleBar({ pxPerUnit: 400, scopes: [INCHES], locale: 'de-DE' }).label).toBe('0,2in');
+  expect(scaleBar({ pxPerUnit: 400, scopes: [INCHES], locale: 'en-US' }).label).toBe('0.2in');
+});
