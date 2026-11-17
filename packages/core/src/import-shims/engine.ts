@@ -179,7 +179,7 @@ export { refusalOf } from '../interactions/actions/dropVerdict';
 export type { DropRefusal, DropVerdict } from '../interactions/actions/dropVerdict';
 export type { ClipboardDep, SliceDep } from '../interactions/actions/editDeps';
 export type { ResizePolicy, ViewApi } from '../interactions/actions/engineDeps';
-export { PATH_GEOMETRY_PROJECTION, geometryDataOp } from '../interactions/actions/geometryProjection';
+export { PATH_GEOMETRY_PROJECTION, createGeometryDataOp } from '../interactions/actions/geometryProjection';
 export type { GeometryProjection, PoseChange } from '../interactions/actions/geometryProjection';
 export { closeGesture, commitGestureOps, gestureLifecycleParams, readGestureLifecycle, reduceBehaviorEnd, runBehaviorCancel, runBehaviorSettled } from '../interactions/actions/gestureLifecycle';
 export type { ClosingGesture, GestureLifecycle, GestureLifecycleOptions, OwnEndFields } from '../interactions/actions/gestureLifecycle';

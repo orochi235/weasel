@@ -9,7 +9,7 @@ export { bringForward, bringToFront, sendBackward, sendToBack } from '../core/op
 export { sameValue } from '../core/scene/sameValue';
 export { cancelGestureAction } from '../interactions/actions/defaults/cancelGesture';
 export { finiteThroughout } from '../interactions/actions/finiteFrame';
-export { geometryDataOp } from '../interactions/actions/geometryProjection';
+export { createGeometryDataOp } from '../interactions/actions/geometryProjection';
 export { moveEachOps } from '../interactions/actions/moveNodes';
 export { poseDescriptorOf } from '../interactions/actions/poseDescriptorDep';
 export { poseFrame } from '../interactions/actions/poseFrame';

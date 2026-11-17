@@ -46,7 +46,7 @@ export const PATH_GEOMETRY_PROJECTION: GeometryProjection = {
  *  op strictly opt-in so adapters without `setData` are never invoked. `to` is
  *  the pose the node is stored with once the action lands; `node.pose` is the
  *  one before it. */
-export function geometryDataOp(
+export function createGeometryDataOp(
   projection: GeometryProjection | undefined,
   node: { id: string; data: unknown; pose: unknown } | undefined,
   m: Affine,

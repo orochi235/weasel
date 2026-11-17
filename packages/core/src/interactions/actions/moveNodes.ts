@@ -8,7 +8,7 @@ import { sameValue } from 'core/scene/sameValue';
 import { finiteThroughout } from './finiteFrame';
 import type { Op } from 'core/ops/types';
 import type { NodeId } from 'core/scene/types';
-import { geometryDataOp, type GeometryProjection } from './geometryProjection';
+import { createGeometryDataOp, type GeometryProjection } from './geometryProjection';
 import { nodeDescriptors, poseDescriptorOf } from './poseDescriptorDep';
 import { scenePoseFrame } from './poseFrame';
 import { moveSources, storedDelta, translateTargets } from './selectionSubtree';
@@ -51,7 +51,7 @@ export function translateNodeOps(
     if (sameValue(from, to)) continue;
     ops.push(createTransformOp<unknown>({ id: id as string, from, to, label }));
     const m: Affine = [1, 0, 0, 1, l.dx, l.dy];
-    const dataOp = geometryDataOp(geometryProjection, { id: id as string, data: node.data, pose: from }, m, to, label);
+    const dataOp = createGeometryDataOp(geometryProjection, { id: id as string, data: node.data, pose: from }, m, to, label);
     if (dataOp) ops.push(dataOp);
   }
   return ops;
