@@ -559,6 +559,12 @@ only story runner in the repo.
   the log omits which files it flagged. Closes on a second sighting with the flagged paths printed (fix the
   writer) or when 2026-12-15 passes without one.
 
+- **(P3) [waiting] `diagram/src/avoid/avoid.scene.test.ts` "previews a drag frame without writing the scene"
+  got an empty preview once under the full suite** on teitou at `4d760ec147` (2026-11-17), then passed 6 of 6
+  runs alone here, 3 of 3 alone on teitou, and the next full run. The router keeps no time budget, so load
+  alone should not change its answer. Closes on a second sighting (find the order-dependent state) or on
+  2026-12-17 with none, delete it.
+
 - **(P3) [waiting] `workerRender.browser.test.tsx` "dims a node by the alpha the page computes" read a null pixel
   once under the full suite** at `b7ed8c10f` (2026-11-11), then passed 3 of 3 runs alone. Waiting on a second
   sighting under load.
