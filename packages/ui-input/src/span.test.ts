@@ -1,11 +1,11 @@
 import { describe, expect, it } from 'vitest';
-import { spanClamp, spanMap, spanPan, spanPlace, spanShare, spanValue, spanZoom } from './span';
+import { spanClamp, spanMap, spanPan, spanFraction, spanShare, spanValue, spanZoom } from './span';
 
 describe('a place along a span', () => {
   const span = { from: 200, to: 1200 };
 
   it('puts a value at its fraction, and a fraction at its value', () => {
-    expect(spanPlace(span, 700)).toBeCloseTo(0.5, 12);
+    expect(spanFraction(span, 700)).toBeCloseTo(0.5, 12);
     expect(spanValue(span, 0.5)).toBe(700);
     expect(spanMap(span).toValue(spanMap(span).toFraction(450))).toBeCloseTo(450, 9);
   });
@@ -16,8 +16,8 @@ describe('a place along a span', () => {
   });
 
   it('runs negative before the span and past 1 after it', () => {
-    expect(spanPlace(span, 100)).toBeCloseTo(-0.1, 12);
-    expect(spanPlace(span, 1700)).toBeCloseTo(1.5, 12);
+    expect(spanFraction(span, 100)).toBeCloseTo(-0.1, 12);
+    expect(spanFraction(span, 1700)).toBeCloseTo(1.5, 12);
   });
 
   it("measures a length without subtracting the span's start", () => {
@@ -25,7 +25,7 @@ describe('a place along a span', () => {
   });
 
   it('reads zero for an empty span', () => {
-    expect(spanPlace({ from: 5, to: 5 }, 99)).toBe(0);
+    expect(spanFraction({ from: 5, to: 5 }, 99)).toBe(0);
     expect(spanShare({ from: 5, to: 5 }, 99)).toBe(0);
   });
 });
@@ -35,7 +35,7 @@ describe('spanZoom', () => {
 
   it('holds the anchor at its place along the track', () => {
     const z = spanZoom(bounds, 250, 0.5, bounds);
-    expect(spanPlace(z, 250)).toBeCloseTo(0.25, 9);
+    expect(spanFraction(z, 250)).toBeCloseTo(0.25, 9);
     expect(z.to - z.from).toBeCloseTo(500, 9);
   });
 

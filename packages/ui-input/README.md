@@ -97,7 +97,7 @@ the track with a map or in the value's own units without one.
 
 A track need not show its whole range. A `Span` is a stretch of values, and a track that shows
 one span of a longer range is a windowed track: `spanPan` and `spanZoom` move the window inside
-its bounds, `spanZoom` about a value that keeps its place, and `spanPlace` and `spanShare` put a
+its bounds, `spanZoom` about a value that keeps its place, and `spanFraction` and `spanShare` put a
 value and a length at their fractions of it. Values outside the window map to places off the
 track's ends, so a thumb can sit out of view and a drag can carry one there.
 

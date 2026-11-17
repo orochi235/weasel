@@ -14,7 +14,7 @@ export { tabSort, tabStep } from './tabOrder';
 export { COARSE_STEPS, arrowSteps, rangeKey } from './keySteps';
 export { usableStops, attract, evenMap, sliderAt, clampOrdered, sliderKey } from './slider';
 export type { SliderStop, SliderKeyShape, SliderAtShape, TrackMap } from './slider';
-export { spanPlace, spanValue, spanShare, spanMap, spanClamp, spanPan, spanZoom } from './span';
+export { spanFraction, spanValue, spanShare, spanMap, spanClamp, spanPan, spanZoom } from './span';
 export type { Span } from './span';
 export { editEnd, imeKey } from './textCommit';
 export type { EditCause, EditEnd, EditEndShape, KeySource } from './textCommit';

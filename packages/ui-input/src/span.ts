@@ -9,7 +9,7 @@ export interface Span {
 
 /** Where `v` sits along `span`, as a fraction: 0 at `from`, 1 at `to`, and outside that past either end.
  *  0 for an empty span. */
-export function spanPlace(span: Span, v: number): number {
+export function spanFraction(span: Span, v: number): number {
   const length = span.to - span.from;
   return length === 0 ? 0 : (v - span.from) / length;
 }
@@ -19,7 +19,7 @@ export function spanValue(span: Span, f: number): number {
   return lerp(span.from, span.to, f);
 }
 
-/** A length as a fraction of `span`'s. Unlike {@link spanPlace} it measures no position, so `span.from` has no say. */
+/** A length as a fraction of `span`'s. Unlike {@link spanFraction} it measures no position, so `span.from` has no say. */
 export function spanShare(span: Span, length: number): number {
   const whole = span.to - span.from;
   return whole === 0 ? 0 : length / whole;
@@ -28,7 +28,7 @@ export function spanShare(span: Span, length: number): number {
 /** `span` laid linearly along a track: the map {@link sliderAt} and {@link attract} read. Unclamped, so a
  *  place off either end of the track maps to a value outside the span. */
 export function spanMap(span: Span): TrackMap {
-  return { toFraction: (v) => spanPlace(span, v), toValue: (f) => spanValue(span, f) };
+  return { toFraction: (v) => spanFraction(span, v), toValue: (f) => spanValue(span, f) };
 }
 
 /** `span` moved inside `bounds`, keeping its length, or shortened to `bounds` where it is the longer. */
