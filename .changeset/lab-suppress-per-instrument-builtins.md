@@ -2,6 +2,8 @@
 '@weasel-js/labkit': patch
 ---
 
-`<Lab suppress>` or `hide` naming `mode`, `settings` or `copy-settings` drops it where a trial has it, instead of throwing for a trial whose instrument lacks it.
+`<Lab suppress>` or `hide` can name `mode`, `settings` or `copy-settings`.
+
+A trial whose instrument lacks the contribution no longer throws.
 
 <!-- entry: fix -->

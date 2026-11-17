@@ -2,6 +2,6 @@
 '@weasel-js/labkit': patch
 ---
 
-A trial with two cameras, or two mark stores, no longer logs a registry clash warning in development each time one is registered over the other.
+A trial's second camera or mark store no longer logs a registry clash warning in development.
 
 <!-- entry: fix -->
