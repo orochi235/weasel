@@ -1,5 +1,5 @@
 import { Fragment, useCallback, type ReactNode, type RefObject } from 'react';
-import { isPrefLeaf, prefAsBox, prefTabRuns, prefValueAtPath, type PrefAlias, type PrefGroup, type PrefLeaf } from '@weasel-js/prefs';
+import { isPrefLeaf, prefDrawsAsBox, prefTabRuns, prefValueAtPath, type PrefAlias, type PrefGroup, type PrefLeaf } from '@weasel-js/prefs';
 import { MotifFrame } from '../MotifFrame';
 import { FORM_FRAMES, headingInline } from './frames';
 import { groupHeading, groupOff } from './groupHeading';
@@ -131,7 +131,7 @@ export function paneChildren(
       out.push(<PaneSection key={key} ctx={ctx} group={child} path={p} depth={Math.max(depth, box ? 1 : 0)} box={box} />);
     } else if (box) {
       out.push(box(key, child, p));
-    } else if (prefAsBox(child.as)) {
+    } else if (prefDrawsAsBox(child.as)) {
       out.push(<PanePanel key={key} ctx={ctx} group={child} path={p} depth={depth} />);
     } else {
       out.push(<PaneSection key={key} ctx={ctx} group={child} path={p} depth={depth} />);

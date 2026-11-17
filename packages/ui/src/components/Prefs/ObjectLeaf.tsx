@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import { prefAsBox, prefValueOrDefault, type PrefLeaf, type PrefObject } from '@weasel-js/prefs';
+import { prefDrawsAsBox, prefValueOrDefault, type PrefLeaf, type PrefObject } from '@weasel-js/prefs';
 import type { ControlForm } from '../ActionButton/controlForm';
 import { MotifFrame } from '../MotifFrame';
 import { PropertyRow } from '../Properties/PropertyRow';
@@ -70,7 +70,7 @@ export function ObjectLeaf({
     lead: (key, section) => (section.description ? [<p key={`desc:${key}`} className={s.paneDesc}>{section.description}</p>] : []),
     frame: (key, section, inner, { labeled, path }) => {
       if (section.as === 'fragment') return inner;
-      if (prefAsBox(section.as)) {
+      if (prefDrawsAsBox(section.as)) {
         return [
           <MotifFrame
             key={`panel:${key}`}

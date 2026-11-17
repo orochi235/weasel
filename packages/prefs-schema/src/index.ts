@@ -82,7 +82,7 @@ export { prefObjectBase, prefObjectField, prefObjectWithField } from './object';
 export type { PrefList, PrefListControl } from './list';
 export type { PrefMap } from './map';
 export { prefVariantDefault, prefVariantOf, type PrefUnion } from './union';
-export { prefAsBox, prefGroupIsPage } from './groups';
+export { prefDrawsAsBox, prefGroupIsPage } from './groups';
 export type { PrefBarLead, PrefBarOverflow, PrefGroup, PrefGroupAs, PrefSection, PrefSectionAs } from './groups';
 export { repairPrefValue, type PrefValidator } from './repair';
 export {

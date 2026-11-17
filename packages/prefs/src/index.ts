@@ -27,7 +27,7 @@ export {
   prefAliasedLeaf,
   prefAliasName,
   prefAliasTarget,
-  prefAsBox,
+  prefDrawsAsBox,
   prefClampNumber,
   prefConditionHolds,
   prefConditionPaths,
