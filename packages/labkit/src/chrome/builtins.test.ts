@@ -336,4 +336,22 @@ describe('TRANSIENT_BUILTINS', () => {
     const varying = ids(withCanvas, full).filter((id) => !leanest.has(id));
     expect(varying.filter((id) => !TRANSIENT_BUILTINS.has(id))).toEqual([]);
   });
+
+  it('names every built-in some instruments contribute and others do not, which a lab-wide suppress reaches', () => {
+    const withSettings = {
+      ...ctx,
+      configSchema: resolveConfigSchema(f.schema({ bins: f.number(20) }), []),
+    };
+    const instruments: Instrument[] = [
+      bare,
+      withCanvas,
+      { ...bare, undo: {} },
+      { ...bare, annotations: { targets: [] } } as unknown as Instrument,
+    ];
+    const lists = [ctx, withSettings].flatMap((c) => instruments.map((i) => ids(i, c)));
+    const everywhere = lists.reduce((a, b) => a.filter((id) => b.includes(id)));
+    const somewhere = [...new Set(lists.flat())].filter((id) => !everywhere.includes(id));
+    expect(somewhere.filter((id) => !TRANSIENT_BUILTINS.has(id))).toEqual([]);
+  });
 });
+
