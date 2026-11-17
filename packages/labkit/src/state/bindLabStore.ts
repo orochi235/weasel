@@ -1,3 +1,4 @@
+import { isPlainObject } from '@weasel-js/core';
 import type { OwnedRecordCache, RecordCache } from '@weasel-js/storage';
 import { CURRENT_DOCUMENT_VERSION } from './document';
 import { serializeTrials } from './helpers';
@@ -78,7 +79,7 @@ function remoteTrial(
   nextOrder: () => number,
   failed: (u: UnreadableRecord) => void,
 ): TrialRecord[] {
-  if (value === undefined || !value || typeof value !== 'object') {
+  if (!isPlainObject(value)) {
     orderOf.delete(id);
     return trials.filter((t) => t.id !== id);
   }
@@ -203,7 +204,7 @@ export function bindLabStore(
         case 'save': {
           const id = parsed.id;
           unreadable = withoutUnreadable(unreadable, 'snapshot', id);
-          if (value === undefined || !value || typeof value !== 'object') {
+          if (!isPlainObject(value)) {
             saves = saves.filter((s) => s.id !== id);
             break;
           }
@@ -219,10 +220,10 @@ export function bindLabStore(
           break;
         }
         case 'layout':
-          patch.layout = (value as Record<string, unknown> | undefined) ?? {};
+          patch.layout = isPlainObject(value) ? value : {};
           break;
         case 'undock':
-          patch.undockedPanels = (value as typeof current.undockedPanels | undefined) ?? {};
+          patch.undockedPanels = isPlainObject(value) ? (value as typeof current.undockedPanels) : {};
           break;
         case 'meta': {
           const meta = value as Partial<LabMeta> | undefined;
