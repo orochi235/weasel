@@ -2002,8 +2002,9 @@ Calls the lanes made without a ruling:
   types, which core's barrel re-exports, are the text lane's.
 - 2026-11-12: Layer factories are named `create*Layer` (now in `docs/conventions.md`); core's `pagesLayer`,
   `workspaceTintLayer` and `modeDecorationLayer` were renamed to it.
-- Open: diagram's `edgeEndLayer`, `labelDragLayer`, `laneLayer`, `portLayer`, `seamLayer`, `sequenceLayer`
-  and `waypointLayer`, and guides' `rulersHitLayer`, are bare-named layer factories outside this lane.
+- 2026-11-17: diagram's `edgeEndLayer`, `labelDragLayer`, `laneLayer`, `portLayer`, `sequenceLayer` and
+  `waypointLayer` became `create*Layer`.
+- Open: labkit's `seamLayer` and guides' `rulersHitLayer` are bare-named layer factories outside this lane.
 - 2026-11-12: `useSliceDep` was removed rather than given siblings: it was `useDepSource('slice', () => dep)`
   under another name, and no other dep had one.
 - 2026-11-12: `<SceneCanvas initialActiveTool>` became `defaultActiveTool`, the prefix `defaultView` and

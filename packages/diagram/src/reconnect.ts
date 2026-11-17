@@ -1,7 +1,7 @@
 /**
  * Reconnect — dragging a selected edge's end onto another port or shape.
  *
- * The edge-end handles (`edgeEndLayer`) claim the press; this action carries
+ * The edge-end handles (`createEdgeEndLayer`) claim the press; this action carries
  * the end. It lands where a connect from the edge's other end would land, by
  * the same resolver and the same `canConnect`, asked with the edge's from/to
  * order kept, so a reconnect can never make an edge a connect could not.
@@ -35,7 +35,7 @@ import {
   EDGE_END_AFFORDANCE_KIND,
   EDGE_END_LAYER_ID,
   createEdgeEnds,
-  edgeEndLayer,
+  createEdgeEndLayer,
   edgeEndScratchOf,
   type EdgeEndAffordanceOptions,
   type EdgeEnds,
@@ -226,7 +226,7 @@ export function diagramEdgeEnds<TPose>(
     id: 'weasel-diagram-edge-ends',
     eligibility: { claimed: [EDGE_END_LAYER_ID] },
     // `opts.id` names the action; the layer keeps its own id.
-    layers: [edgeEndLayer(opts.participants, opts.selected, { ...opts, id: EDGE_END_LAYER_ID })],
+    layers: [createEdgeEndLayer(opts.participants, opts.selected, { ...opts, id: EDGE_END_LAYER_ID })],
     actions: [createReconnectAction({ ...opts, id: actionId }), grabPortAction(GRAB_EDGE_END_ACTION_ID)],
     bindings: [
       reconnectBinding(actionId),

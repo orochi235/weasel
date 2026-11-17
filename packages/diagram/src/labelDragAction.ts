@@ -1,7 +1,7 @@
 /**
  * Moving an edge label along and beside its edge.
  *
- * The label layer (`labelDragLayer`) claims the press; this action moves the
+ * The label layer (`createLabelDragLayer`) claims the press; this action moves the
  * label. The drag previews the label's own data at the station the pointer
  * proposes, and the pose that data derives, so the preview stands where the
  * commit will.

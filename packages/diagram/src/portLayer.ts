@@ -87,7 +87,7 @@ export function sceneParticipants<TPose>(
  * prop, or to a `Contribution.overlay`, paints the ports and makes none of them
  * grabbable.
  */
-export function portLayer<TPose>(
+export function createPortLayer<TPose>(
   participants: ParticipantSource<TPose>,
   opts: PortAffordanceOptions<TPose> = {},
 ): RenderLayer<unknown> & { hitTest: NonNullable<RenderLayer<unknown>['hitTest']> } {

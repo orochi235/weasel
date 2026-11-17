@@ -34,8 +34,8 @@ import { EDIT_EDGE_LABEL_ACTION_ID } from './edgeLabel';
 import { createToggleHopsAction } from './hops/hopsAction';
 import { createResetLabelAction } from './labelCommands';
 import { MOVE_LABEL_ACTION_ID, createLabelDragAction, type LabelDragOptions } from './labelDragAction';
-import { LABEL_DRAG_AFFORDANCE_KIND, LABEL_DRAG_LAYER_ID, labelDragLayer, labelScratchOf } from './labelDragLayer';
-import { portLayer } from './portLayer';
+import { LABEL_DRAG_AFFORDANCE_KIND, LABEL_DRAG_LAYER_ID, createLabelDragLayer, labelScratchOf } from './labelDragLayer';
+import { createPortLayer } from './portLayer';
 import { PORT_LAYER_ID, type PortAffordanceOptions } from './portAffordance';
 import { REMOVE_WAYPOINT_ACTION_ID, createRemoveWaypointAction, createResetRouteAction } from './routeCommands';
 import { routerActions } from './routerCommands';
@@ -43,7 +43,7 @@ import { ROUTE_EDIT_ACTION_ID, createRouteEditAction, type RouteEditOptions } fr
 import {
   WAYPOINT_AFFORDANCE_KIND,
   WAYPOINT_LAYER_ID,
-  waypointLayer,
+  createWaypointLayer,
   type WaypointAffordanceOptions,
 } from './waypointLayer';
 import type {} from './actionParamSchema';
@@ -65,7 +65,7 @@ export function diagramPorts<TPose>(opts: DiagramContributionOptions<TPose>): Su
     id: 'weasel-diagram',
     eligibility: { claimed: [PORT_LAYER_ID] },
     // `opts.id` names the connect action; the layer keeps its own id.
-    layers: [portLayer(opts.participants, { ...opts, id: PORT_LAYER_ID })],
+    layers: [createPortLayer(opts.participants, { ...opts, id: PORT_LAYER_ID })],
     actions: [createConnectAction({ ...opts, id: actionId }), grabPortAction()],
     bindings: [connectBinding(actionId), ...grabPortBindings()],
   };
@@ -91,7 +91,7 @@ export function diagramWaypoints<TPose>(
     id: 'weasel-diagram-waypoints',
     eligibility: { claimed: [WAYPOINT_LAYER_ID] },
     // `opts.id` names the drag action; the layer keeps its own id.
-    layers: [waypointLayer(opts.participants, opts.selected, { ...opts, id: WAYPOINT_LAYER_ID })],
+    layers: [createWaypointLayer(opts.participants, opts.selected, { ...opts, id: WAYPOINT_LAYER_ID })],
     actions: [
       createRouteEditAction({ ...opts, id: actionId }),
       createRemoveWaypointAction(opts),
@@ -153,7 +153,7 @@ export function diagramLabels(
   return {
     id: 'weasel-diagram-label-drag',
     eligibility: { claimed: [LABEL_DRAG_LAYER_ID] },
-    layers: [labelDragLayer(opts.scene, opts.cursor !== undefined ? { cursor: opts.cursor } : {})],
+    layers: [createLabelDragLayer(opts.scene, opts.cursor !== undefined ? { cursor: opts.cursor } : {})],
     actions: [
       createLabelDragAction({ ...opts, id: actionId }),
       createResetLabelAction({ selected: opts.selected, ...(opts.commit ? { commit: opts.commit } : {}) }),

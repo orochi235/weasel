@@ -1,7 +1,7 @@
 /**
  * Route editing — dragging a selected edge's waypoints and segments.
  *
- * The route handles (`waypointLayer`) claim the press; this action reshapes
+ * The route handles (`createWaypointLayer`) claim the press; this action reshapes
  * the route. The drag previews the edge's own data with the new waypoints,
  * so its `derivePath` draws the preview exactly as the commit will.
  */

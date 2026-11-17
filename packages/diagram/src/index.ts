@@ -72,7 +72,7 @@ export {
   WAYPOINT_LAYER_ID,
   createWaypointAffordance,
   routeStateOf,
-  waypointLayer,
+  createWaypointLayer,
   waypointScratchOf,
 } from './waypointLayer';
 export type { EdgeRouteState, WaypointAffordanceOptions, WaypointScratch } from './waypointLayer';
@@ -118,7 +118,7 @@ export {
   EDGE_END_AFFORDANCE_KIND,
   EDGE_END_LAYER_ID,
   createEdgeEndAffordance,
-  edgeEndLayer,
+  createEdgeEndLayer,
   edgeEndScratchOf,
 } from './edgeEndLayer';
 export type { EdgeEndAffordanceOptions, EdgeEndOptions, EdgeEnds, EdgeEndScratch } from './edgeEndLayer';
@@ -171,7 +171,7 @@ export {
 } from './edgeLabel';
 export type { EdgeLabelOptions, EditEdgeLabelOptions } from './edgeLabel';
 export {
-  LABEL_DRAG_AFFORDANCE_KIND, LABEL_DRAG_LAYER_ID, draggableLabels, labelDragLayer, labelScratchOf, labelUnder,
+  LABEL_DRAG_AFFORDANCE_KIND, LABEL_DRAG_LAYER_ID, draggableLabels, createLabelDragLayer, labelScratchOf, labelUnder,
 } from './labelDragLayer';
 export type { DraggableLabel, LabelScratch } from './labelDragLayer';
 export { MOVE_LABEL_ACTION_ID, commitLabelToScene, createLabelDragAction, movedLabelData } from './labelDragAction';
@@ -311,7 +311,7 @@ export type {
   PortAffordanceOptions,
   PortScratch,
 } from './portAffordance';
-export { portLayer, sceneParticipants } from './portLayer';
+export { createPortLayer, sceneParticipants } from './portLayer';
 export type { ParticipantScene } from './portLayer';
 export { boxForContent, contentBox, outlineDetail, outlineFromD, outlinePath, outlineRegistry, outlineSolid, registerOutline } from './outline';
 export { diagramShape, registerDiagramShape } from './shape';
