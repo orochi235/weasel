@@ -93,7 +93,7 @@ export interface OrderOptions {
 }
 
 /** A group's chain of enclosing groups, outermost first, ending with itself. */
-function chainsOf(groups: readonly GraphGroup[]): (group: string | undefined) => readonly string[] {
+function createChainReader(groups: readonly GraphGroup[]): (group: string | undefined) => readonly string[] {
   const parent = new Map(groups.map((g) => [g.id, g.parent]));
   const cache = new Map<string, string[]>();
   const chain = (id: string, seen: Set<string>): string[] => {
@@ -275,7 +275,7 @@ function transpose(work: Work): void {
 export function orderRows(rows: Rows, hops: readonly Hop[], opts: OrderOptions = {}): Rows {
   const patience = opts.patience ?? 4;
   const maxSweeps = opts.maxSweeps ?? 24;
-  const chainOf = chainsOf(opts.groups ?? []);
+  const chainOf = createChainReader(opts.groups ?? []);
   const places = placesOf(opts.groups ?? []);
   const byRank = hopsByRank(rows, hops);
   const ups = new Map<string, Near[]>();
