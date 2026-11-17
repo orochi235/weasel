@@ -4,7 +4,7 @@ import { defineTool, SNAP_ROLE_MODS, type Tool } from '@weasel-js/core';
 import { icon } from './icons.gen';
 import type { ToolKeybinding } from '@weasel-js/routing';
 import type { Measurements } from './measurements';
-import { measureCreateAction, measurePickAtAction } from './measureGestures';
+import { measureCreateAction, measurePickAtAction } from './measureActions';
 import { MEASURE_ACTION_IDS } from './actionIds';
 import type {} from './actionParamSchema';
 

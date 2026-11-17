@@ -9,7 +9,7 @@ import { lineSource, sessionDep } from './testing/snapDep';
 import { MEASURE_ACTION_IDS } from './actionIds';
 import { measureEndsOf } from './measurement';
 import { createMeasurements, measureIds } from './measurements';
-import { measureCreateAction, measureDragAction } from './measureGestures';
+import { measureCreateAction, measureDragAction } from './measureActions';
 import { measureEndSource } from './measureHit';
 import { MEASURE_AFFORDANCE_KIND } from './measureLayer';
 

@@ -4357,7 +4357,7 @@
    "packages/measure/src/measureCommands.ts",
    "packages/measure/src/measureContribution.ts",
    "packages/measure/src/measureEdits.ts",
-   "packages/measure/src/measureGestures.ts",
+   "packages/measure/src/measureActions.ts",
    "packages/measure/src/measureHit.ts",
    "packages/measure/src/measureLayer.ts",
    "packages/measure/src/measurePainter.ts",

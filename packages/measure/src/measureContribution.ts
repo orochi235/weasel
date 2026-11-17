@@ -2,7 +2,7 @@ import { ANY_MODS, hitPredicate } from '@weasel-js/gestures';
 import { nodeShapesOf, type Scene, type SurfaceContribution } from '@weasel-js/core';
 import type { Measurements } from './measurements';
 import { measureCommands } from './measureCommands';
-import { measureDragAction, measurePickAction } from './measureGestures';
+import { measureDragAction, measurePickAction } from './measureActions';
 import { MEASURE_AFFORDANCE_KIND, createMeasureLayer } from './measureLayer';
 import { MEASURE_ACTION_IDS } from './actionIds';
 import { MEASURE_PAINTER } from './measurePainter';

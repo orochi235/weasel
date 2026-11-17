@@ -7,7 +7,7 @@ import { measureDrawCommands } from './measurePainter';
 import { measureEndsOf, type MeasurePoint } from './measurement';
 import type { Measurements } from './measurements';
 import { measureHitAt, type MeasureHit } from './measureHit';
-import { MEASURE_HIT_PX } from './measureGestures';
+import { MEASURE_HIT_PX } from './measureActions';
 
 /** The registered layer's id; a press it claims routes as `layer:<id>`. */
 export const MEASURE_LAYER_ID = 'weasel-measure';

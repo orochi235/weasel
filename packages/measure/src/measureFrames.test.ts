@@ -4,7 +4,7 @@ import type { UnitScope } from '@weasel-js/quantity';
 import { type AddNodeSpec, type AnyScene, asNodeId, createScene, type NodeId, type RectPose } from '@weasel-js/core';
 import { measureEndsOf, measureMagnification, measurementOf } from './measurement';
 import { createMeasurements, measureIds } from './measurements';
-import { measureCreateAction, measureDragAction } from './measureGestures';
+import { measureCreateAction, measureDragAction } from './measureActions';
 import { MEASURE_AFFORDANCE_KIND } from './measureLayer';
 import type { MeasureHit } from './measureHit';
 
