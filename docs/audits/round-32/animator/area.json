@@ -1,0 +1,83 @@
+{
+ "id": "animator",
+ "commit": "402f4984ce970ab4f140a9e9504a66e8770a4ea1",
+ "date": "2026-11-16",
+ "files": [
+  "packages/animator/src/axisNames.ts",
+  "packages/animator/src/colorArrays.ts",
+  "packages/animator/src/colorCycle.ts",
+  "packages/animator/src/colorHelpers.ts",
+  "packages/animator/src/colorInterpolate.ts",
+  "packages/animator/src/colorRegistry.ts",
+  "packages/animator/src/elementTarget.ts",
+  "packages/animator/src/hostAnimator.ts",
+  "packages/animator/src/index.ts",
+  "packages/animator/src/loop.ts",
+  "packages/animator/src/observe.ts",
+  "packages/animator/src/pbt.fixture.ts",
+  "packages/animator/src/react.ts",
+  "packages/animator/src/rig/autoSkin.ts",
+  "packages/animator/src/rig/mirrorPose.ts",
+  "packages/animator/src/rig/resolveSkeleton.ts",
+  "packages/animator/src/rig/skeletonAxes.ts",
+  "packages/animator/src/rig/skeletonEdits.ts",
+  "packages/animator/src/rig/skin.ts",
+  "packages/animator/src/rig/solveIk.ts",
+  "packages/animator/src/rig/types.ts",
+  "packages/animator/src/rig/weightEdits.ts",
+  "packages/animator/src/slew.ts",
+  "packages/animator/src/stagger.ts",
+  "packages/animator/src/staggerTypes.ts",
+  "packages/animator/src/supervisor.ts",
+  "packages/animator/src/tableMoves.ts",
+  "packages/animator/src/target.ts",
+  "packages/animator/src/targetTable.ts",
+  "packages/animator/src/targetTypes.ts",
+  "packages/animator/src/trimRegistry.ts",
+  "packages/animator/src/types.ts",
+  "packages/animator/src/useAnimator.ts",
+  "packages/animator/src/useAnimatorOptions.ts"
+ ],
+ "a": 13,
+ "b": 8,
+ "m": 5,
+ "distinct": 16,
+ "chapman": 20,
+ "unfound": 4,
+ "read": {
+  "A": 34,
+  "B": 34
+ },
+ "patches": 12,
+ "questions": 0,
+ "budgetHit": [],
+ "jobs": {
+  "minutes": {
+   "A": 14,
+   "B": 6.9,
+   "match": 0.2,
+   "fix": 24.1
+  },
+  "nodes": {
+   "A": "studio",
+   "B": "studio",
+   "fix": "studio"
+  },
+  "tokens": 16821348,
+  "costUsd": 8.8
+ },
+ "fixCommits": [
+  "feec8443a8409dc76d175163020d99585964dc0b",
+  "e22565670ca27843464d8f5a42e1700c559ca7b5",
+  "de547d57cfa0aeb4f1ffcc50737edc5269310011",
+  "0bcb260f4eeec4bf490acff49fbbf8e06fefd0ae",
+  "9bd892d9dbf135f3c9ca143a53a13b09d55d89b7",
+  "b5b0782460d047a69f0c18127f1048543a98b1ac",
+  "12ded8a8b5011620bc8e08e27edc64365b80464c",
+  "e3b0356deacf7ed1079cc81a14f5704a14a1dd8d",
+  "c8a41dbf68f1bb1c25f7f2520c7eee02bb970e33",
+  "5aaee6b90493d31e41e87c40108ec4bb42ff6adc",
+  "ca79b0ec3f90f2a026f91e388472d5c521676fe4",
+  "b550d2570b2ef8154596e676e0205db7f64cfed2"
+ ]
+}

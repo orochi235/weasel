@@ -2179,6 +2179,7 @@
    "packages/diagram-formats/src/mermaid/class/write.ts",
    "packages/diagram-formats/src/mermaid/common/header.ts",
    "packages/diagram-formats/src/mermaid/common/lines.ts",
+   "packages/diagram-formats/src/mermaid/common/meta.ts",
    "packages/diagram-formats/src/mermaid/common/number.ts",
    "packages/diagram-formats/src/mermaid/common/styles.ts",
    "packages/diagram-formats/src/mermaid/common/text.ts",
@@ -2457,15 +2458,17 @@
    "packages/diagram/src/edgeTrait.ts",
    "packages/diagram/src/effect-audio.entry.ts",
    "packages/diagram/src/effect.entry.ts",
+   "packages/diagram/src/entryMemo.ts",
    "packages/diagram/src/faceCapCenter.ts",
    "packages/diagram/src/faceRemeasure.ts",
-   "packages/diagram/src/footprint.ts",
-   "packages/diagram/src/force.ts"
+   "packages/diagram/src/firstSight.ts",
+   "packages/diagram/src/footprint.ts"
   ]
  },
  {
   "id": "diagram.part2",
   "files": [
+   "packages/diagram/src/force.ts",
    "packages/diagram/src/forceGroups.ts",
    "packages/diagram/src/fromData.ts",
    "packages/diagram/src/graph.ts",
@@ -4079,6 +4082,7 @@
    "packages/labkit/src/lab/labProps.ts",
    "packages/labkit/src/lab/nebula.ts",
    "packages/labkit/src/lab/openLab.ts",
+   "packages/labkit/src/lab/owningTrial.ts",
    "packages/labkit/src/lab/panelHost.ts",
    "packages/labkit/src/lab/presentation.less",
    "packages/labkit/src/lab/presentation.tsx",
@@ -6012,6 +6016,7 @@
    "packages/ui-canvas/src/components/PlotDataPanel/PlotDataPanel.tsx",
    "packages/ui-canvas/src/components/PlotDataPanel/PlotTableView.tsx",
    "packages/ui-canvas/src/components/PlotDataPanel/index.ts",
+   "packages/ui-canvas/src/components/PlotDataPanel/rowIds.ts",
    "packages/ui-canvas/src/components/PlotDataPanel/valueControl.ts",
    "packages/ui-canvas/src/components/Rulers/Rulers.module.css",
    "packages/ui-canvas/src/components/Rulers/Rulers.stories.module.css",
@@ -7337,6 +7342,7 @@
    "packages/ui/src/components/Transport/Transport.stories.tsx",
    "packages/ui/src/components/Transport/Transport.tsx",
    "packages/ui/src/components/Transport/index.ts",
+   "packages/ui/src/components/Transport/timeText.ts",
    "packages/ui/src/components/Transport/timelineHandle.fixtures.ts",
    "packages/ui/src/components/Transport/useTimelinePlayback.ts",
    "packages/ui/src/components/ZoomControl/ZoomControl.module.css",
