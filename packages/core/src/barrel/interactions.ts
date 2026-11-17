@@ -58,7 +58,7 @@ export {
 export type { PointerSession, PointerSessionCallbacks, PointerSessionCancelReason, PointerSessionOptions } from '@weasel-js/routing';
 export { startCarry } from '@weasel-js/routing';
 export type { Carry, CarryCallbacks, CarryPayload, CarryPointer, CarryStage } from '@weasel-js/routing';
-export { sweepAction, SWEEP_BINDING } from '@weasel-js/routing';
+export { createSweepAction, SWEEP_BINDING } from '@weasel-js/routing';
 export { BETWEEN_GESTURES } from '@weasel-js/routing';
 export type { SweepItem, SweepOptions, SweepPress, SweepRun } from '@weasel-js/routing';
 export { enumerateAnchors, withCoord, type PathAnchor } from '../interactions/actions/edit-anchors/geometry';

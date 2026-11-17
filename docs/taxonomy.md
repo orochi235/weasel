@@ -651,7 +651,7 @@ first whose action starts the gesture owns it to the end. An action hands a
 drag on only on purpose: an empty handle from `start`, or `'pass'` from
 `onMove`, offers it to the next candidate in rank order.
 
-A **sweep** (`sweepAction`) is that rule set put to use: an action on a
+A **sweep** (`createSweepAction`) is that rule set put to use: an action on a
 `drag` taking any modifiers (`SWEEP_BINDING`) at the ambient tier, the lowest
 rank a drag binding holds, that sets each item of its surface the pointer
 crosses. Any drag naming a target or a modifier outranks it, an item's own

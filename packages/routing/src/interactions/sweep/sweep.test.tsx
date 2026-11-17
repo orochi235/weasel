@@ -8,7 +8,7 @@ import { DepRegistryProvider } from '../actions/depRegistry';
 import { ActiveToolContextProvider } from '../actions/activeToolContext';
 import { useGestureDispatcher } from '../dispatcher/useGestureDispatcher';
 import { openPointerSession } from '../pointerSession';
-import { sweepAction, type SweepOptions } from './sweep';
+import { createSweepAction, type SweepOptions } from './sweep';
 
 const KEYS = ['a', 'b', 'c', 'd', 'e', 'f'];
 
@@ -26,7 +26,7 @@ function Row({ sweep, actions = [], ownDrag }: {
 }) {
   const registry = useActionsRegistry();
   const hostRef = useRef<HTMLDivElement | null>(null);
-  registry?.register(sweepAction({
+  registry?.register(createSweepAction({
     surface: () => hostRef.current,
     keyOf: (el) => (el as HTMLElement).dataset.key,
     ...sweep,
@@ -69,7 +69,7 @@ function setup(props: Parameters<typeof Row>[0]) {
   return { row, at };
 }
 
-describe('sweepAction', () => {
+describe('createSweepAction', () => {
   it('enters the pressed item, then every item the drag crosses, in order', () => {
     const entered: string[] = [];
     const end = vi.fn();

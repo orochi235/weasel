@@ -7,7 +7,7 @@ import { afterEach, describe, expect, it } from 'vitest';
 import fc from 'fast-check';
 import type { InvocationCtx, OngoingInvoker } from '../actions/invoker';
 import { runs, tally, timeoutFor } from '../../pbt.fixture';
-import { sweepAction } from './sweep';
+import { createSweepAction } from './sweep';
 
 interface Grid { ox: number; oy: number; cols: number; rows: number; w: number; h: number }
 
@@ -46,7 +46,7 @@ function sweep(g: Grid, path: readonly { x: number; y: number }[]): { entered: s
     return key ? cells.get(key)! : document.body;
   };
   const entered: string[] = [];
-  const action = sweepAction<string>({
+  const action = createSweepAction<string>({
     surface: () => host,
     keyOf: (el) => (el as HTMLElement).dataset.key,
     begin: () => ({ enter: (item) => { entered.push(item.key); } }),
@@ -89,7 +89,7 @@ function expectFollows(g: Grid, path: readonly { x: number; y: number }[], { ent
   });
 }
 
-describe('sweepAction', () => {
+describe('createSweepAction', () => {
   it('stands on the cell under the pointer after every move, entering none twice running', () => {
     fc.assert(fc.property(drag, ([g, first, rest]) => {
       const path = [first, ...rest];
