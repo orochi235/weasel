@@ -218,7 +218,7 @@ export {
   CustomNode,
   EnumNode,
   f,
-  GroupNode,
+  ConfigGroup,
   isConfigBranch,
   LabelNode,
   ListNode,
