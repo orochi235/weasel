@@ -1,13 +1,13 @@
 import { describe, expect, it } from 'vitest';
 import { repairPrefValue, type PrefLeaf } from '@weasel-js/prefs-schema';
-import { prefType } from './type';
+import { namedPrefType } from './type';
 
-const Stop = prefType('GradientStop', {
+const Stop = namedPrefType('GradientStop', {
   kind: 'object', name: 'Stop', description: '', default: { at: 0.5 },
   children: { at: { kind: 'number', name: 'At', description: '', default: 0.5, min: 0, max: 1 } },
 } as PrefLeaf);
 
-describe('prefType', () => {
+describe('namedPrefType', () => {
   it('names the leaf and leaves the rest of it as it was', () => {
     expect(Stop).toMatchObject({ type: 'GradientStop', kind: 'object', name: 'Stop' });
   });

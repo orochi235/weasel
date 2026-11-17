@@ -3,7 +3,7 @@ import { cleanup, fireEvent, screen, within } from '@testing-library/react';
 import { afterEach, expect, test } from 'vitest';
 import { page } from 'vitest/browser';
 
-import { prefType, type PrefGroup, type PrefObject } from '@weasel-js/prefs';
+import { namedPrefType, type PrefGroup, type PrefObject } from '@weasel-js/prefs';
 import { PrefSchemaEditor } from '@weasel-js/prefs-editor';
 import { renderWithIcons } from '@weasel-js/ui/testing/withIcons';
 
@@ -11,7 +11,7 @@ import { renderWithIcons } from '@weasel-js/ui/testing/withIcons';
 
 afterEach(cleanup);
 
-const GradientStop = prefType('GradientStop', {
+const GradientStop = namedPrefType('GradientStop', {
   kind: 'object', name: 'Stop', description: '', default: { at: 0.5, color: '#888888' },
   children: {
     at: { kind: 'number', name: 'At', description: '', default: 0.5, min: 0, max: 1 },

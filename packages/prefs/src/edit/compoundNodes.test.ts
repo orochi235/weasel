@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { prefType, type PrefGroup, type PrefLeaf, type PrefObject } from '@weasel-js/prefs';
+import { namedPrefType, type PrefGroup, type PrefLeaf, type PrefObject } from '@weasel-js/prefs';
 import { packDraft, unpackDraft } from './draft';
 import { attributeSchema, blankLeaf, changeKind, convertLeaf } from './kindSchemas';
 import { addNode, childrenOf, nodeAt, setAttribute } from './schemaEdit';
@@ -11,7 +11,7 @@ const enc = { read: () => true, write: (on: boolean) => on };
 const lift = (value: unknown) => ({ at: value });
 const num = { kind: 'number', name: 'Phase', description: '', default: 0, min: 0 } as const;
 const circle = { kind: 'object', name: 'Circle', description: '', default: { r: 1 }, children: { r: { ...num, name: 'R' } } } as const;
-const Stop = prefType('GradientStop', {
+const Stop = namedPrefType('GradientStop', {
   kind: 'object', name: 'Stop', description: '', default: { at: 0.5 }, fromScalar: lift,
   children: { at: { ...num, name: 'At' } },
 } as PrefObject);

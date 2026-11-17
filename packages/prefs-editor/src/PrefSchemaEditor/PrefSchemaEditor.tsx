@@ -20,7 +20,7 @@ export interface PrefSchemaEditorProps<S extends PrefGroup | PrefSection = PrefG
   original?: NoInfer<S>;
   /** Attribute schemas for custom kinds, by kind. A leaf of an unlisted custom kind edits its base fields only. */
   kinds?: CustomKinds;
-  /** The types the editor may place: leaves made with `prefType`. Each is offered by name beside the kinds, for a
+  /** The types the editor may place: leaves made with `namedPrefType`. Each is offered by name beside the kinds, for a
    *  pref and for the entry of a list or a map. A leaf made from one is a single row in the tree, edits only what
    *  its use sets (its key, name, description, default, and flags), and prints as the type's name, which the
    *  reader imports where the literal is pasted. An `object` leaf with no type keeps its editable children; a

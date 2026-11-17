@@ -95,7 +95,7 @@ export interface PrefBase<K extends string, Value> {
   /** Opts the leaf into being auto: unpinned, reading what its owner computes (`prefAutoValue`), never its
    *  `default`. Unset, the leaf can never be auto. A store and every surface honor it alike. */
   auto?: PrefAuto<Value>;
-  /** The name of the type this leaf was made from, set by `prefType`. A
+  /** The name of the type this leaf was made from, set by `namedPrefType`. A
    *  schema editor shows such a leaf as one closed thing and prints the name
    *  in place of its literal. */
   type?: string;

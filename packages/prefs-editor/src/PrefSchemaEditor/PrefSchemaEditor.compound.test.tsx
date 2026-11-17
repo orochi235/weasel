@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, it } from 'vitest';
 import { cleanup, fireEvent, screen, within } from '@testing-library/react';
 import { useState } from 'react';
-import { prefType, type PrefGroup, type PrefLeaf } from '@weasel-js/prefs';
+import { namedPrefType, type PrefGroup, type PrefLeaf } from '@weasel-js/prefs';
 import { PrefSchemaEditor } from './PrefSchemaEditor';
 import { rowKey } from './treeRows.fixture';
 import { renderWithIcons } from '@weasel-js/ui/testing/withIcons';
@@ -14,7 +14,7 @@ const settle = (el: HTMLElement, value: string): void => {
 
 afterEach(cleanup);
 
-const GradientStop = prefType('GradientStop', {
+const GradientStop = namedPrefType('GradientStop', {
   kind: 'object', name: 'Stop', description: '', default: { at: 0.5 },
   children: { at: { kind: 'number', name: 'At', description: '', default: 0.5 } },
 } as PrefLeaf);

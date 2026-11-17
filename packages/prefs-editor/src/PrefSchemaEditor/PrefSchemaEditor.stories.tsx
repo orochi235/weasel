@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { solid } from '@weasel-js/paint';
 import { ActionsProvider, defaultNodeProperties, type Action } from '@weasel-js/core';
 import type { Meta, StoryObj } from '@weasel-js/forge';
-import { prefType, type PrefGroup, type PrefObject } from '@weasel-js/prefs';
+import { namedPrefType, type PrefGroup, type PrefObject } from '@weasel-js/prefs';
 import { PrefSchemaEditor, type PrefSchemaEditorProps } from '@weasel-js/prefs-editor';
 import s from './PrefSchemaEditor.stories.module.css';
 import { icon } from '../icons.gen';
@@ -91,7 +91,7 @@ export const Default: Story = {
   },
 };
 
-const GradientStop = prefType('GradientStop', {
+const GradientStop = namedPrefType('GradientStop', {
   kind: 'object',
   name: 'Stop',
   description: 'One color along a gradient.',
