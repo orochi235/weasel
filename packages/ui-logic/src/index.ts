@@ -7,7 +7,7 @@
 export type { FocusScope, FocusScopeOptions } from './focus';
 export { UNBOUNDED, exactly, fixedWidth, envPx, envNumber, centeredBaseline, offsetRect } from './measure';
 export type { Constraints, FontSpec, TextExtent, MeasureEnv, Measured, HeadlessComponent } from './measure';
-export { resolveSize } from './controlSize';
+export { resolveControlSize } from './controlSize';
 export type { ControlSize } from './controlSize';
 export { buttonParts, buttonMetrics, measureButton, BUTTON_SPINNER_SIZE } from './button';
 export type { ButtonFace, ButtonPart, ButtonMetrics, ButtonLayout } from './button';
