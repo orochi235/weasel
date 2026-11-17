@@ -13,7 +13,7 @@ import type { FillPoseBox } from './fillInPoseFrame';
 import type { GlMat3 } from '@weasel-js/geom';
 import type { GpuTexture } from './gpu/types';
 import {
-  registerProgram, type ProgramSource, type ShaderUniform,
+  programSourceRegistry, type ProgramSource, type ShaderUniform,
 } from './shaders/registerProgram';
 import { assemblePaintWgsl } from './gpu/webgpu/wgsl/paintPrelude';
 
@@ -148,25 +148,55 @@ const KINDS = createReflectable<PaintDrawKind>({ name: 'draw kinds' });
 /** Every registered draw kind, with the overrides each displaced. */
 export const paintDrawKindRegistry: Reflection<PaintDrawKind> = KINDS.reflection;
 
-/** Register a kind's draw half. Returns a disposer that removes it.
- *  Re-registering an existing id is an override; disposing it uncovers
- *  whatever it displaced. `fallback` marks an engine default, which a later
- *  registration replaces without the development clash warning. */
+/** The release of each program a registered kind holds, by kind and then program id. */
+const PROGRAMS_HELD = new Map<PaintDrawKind, Map<string, () => void>>();
+
+/** Register the programs `entry` declares in place of whatever those ids hold: the kind owns them. */
+function holdPrograms(entry: PaintDrawKind): void {
+  const releases = PROGRAMS_HELD.get(entry) ?? new Map<string, () => void>();
+  for (const [id, declared] of Object.entries(entry.programs ?? {})) {
+    if (!declared.glsl && !declared.wgsl) {
+      throw new Error(`weasel registerPaintKind: kind "${entry.id}" declares program "${id}" with no source.`);
+    }
+    const release = programSourceRegistry.register(id, paintProgramSource(declared), { replace: true });
+    releases.get(id)?.();
+    releases.set(id, release);
+  }
+  if (releases.size > 0) PROGRAMS_HELD.set(entry, releases);
+}
+
+function releasePrograms(entry: PaintDrawKind): void {
+  for (const release of PROGRAMS_HELD.get(entry)?.values() ?? []) release();
+  PROGRAMS_HELD.delete(entry);
+}
+
+/** Register a kind's draw half. Returns a disposer that removes it, and the
+ *  shader programs it declared. Re-registering an existing id is an
+ *  override; disposing it uncovers whatever it displaced, programs included.
+ *  `fallback` marks an engine default, which a later registration replaces
+ *  without the development clash warning. */
 export function registerPaintDrawKind(entry: PaintDrawKind, options?: Pick<PushOptions, 'fallback'>): () => void {
   if ((entry.inPoseFrame === undefined) !== (entry.toBoundsFrame === undefined)) {
     const missing = entry.inPoseFrame === undefined ? 'inPoseFrame' : 'toBoundsFrame';
     throw new Error(
-      `weasel registerPaintKind: kind "${entry.id}" is missing ${missing}. A kind ` +
-      'that converts one frame direction and not the other drifts on the next ' +
+      `weasel registerPaintKind: kind "${entry.id}" is missing ${missing}. A ` +
+      'kind that converts one frame direction and not the other drifts on the next ' +
       'resize; supply both or neither.',
     );
   }
-  for (const [id, declared] of Object.entries(entry.programs ?? {})) {
-    const src = paintProgramSource(declared);
-    // The kind owns the programs it declares: registering it again is a newer copy of them.
-    registerProgram(id, src, { replace: true });
-  }
-  return KINDS.push(entry.id, entry, options);
+  holdPrograms(entry);
+  const drop = KINDS.push(entry.id, entry, options);
+  let done = false;
+  return () => {
+    if (done) return;
+    done = true;
+    const wasLive = KINDS.get(entry.id) === entry;
+    drop();
+    const live = KINDS.get(entry.id);
+    if (live === entry) return;
+    releasePrograms(entry);
+    if (wasLive && live) holdPrograms(live);
+  };
 }
 
 /** A kind's program as the registry holds it: its WGSL inside the paint prelude. */
@@ -292,5 +322,6 @@ export function warmPaintKinds(kinds?: readonly string[]): Promise<void> {
 /** @internal Test helper — do not call from product code. */
 export function _resetPaintDrawKindsForTests(): void {
   KINDS.clear();
+  PROGRAMS_HELD.clear();
   LOADERS.clear();
 }
