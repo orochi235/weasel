@@ -13,9 +13,34 @@ package to harden. Add a row whenever a pass merges.
 | Unicode conformance files | locally | `packages/bidi`, `packages/text` |
 | Audit rounds: agent review lanes, one per area | agents | `node scripts/audit-yield.mjs` counts fix commits per round and lane, from `audit<N>-<lane>` branches and from branches merged into `batch/<date>-audit<N>`; a round merged under any other batch name is not counted (round 25, `batch/2026-11-15`) |
 | Design review: an audit round reading how an area is organized (duplicated decisions, state with two owners, options dropped on one path, teardown, layering) rather than driving inputs | agents | round 15, `audit15-<lane>` branches |
+| Blind pairs: two reviewers per area who never see each other's work, reporting without fixing; their overlap estimates what the area still holds | agents | rounds 28–30; method below |
 
-Not yet adopted: mutation testing (Stryker, on the fleet), coverage-guided fuzzing of parsers, and
-pairs of blind reviewers per lane, whose overlap estimates how many bugs remain.
+Not yet adopted: mutation testing (Stryker, on the fleet) and coverage-guided fuzzing of parsers.
+
+### Blind pairs
+
+The estimate is Chapman's: with reviewers finding `a` and `b` defects, `m` of them the same,
+the area holds about `(a+1)(b+1)/(m+1) − 1`. It counts only what reviewers searching that way, in
+those files, at that commit could find, so a pass's number is comparable to another's only when all
+three are pinned (ruled 2026-11-16, after rounds 28 and 30 put diagram at about 55 left and about 12 in
+all from different reading):
+
+- **One file list per area, given to both reviewers.** The controller writes it before the pass, and
+  each reviewer records which of its files it actually read. A reviewer reads alone; one that splits
+  the list among helpers reads far more than its partner, and the estimate assumes both are equally
+  likely to catch a given defect.
+- **One frozen commit**, a detached worktree both read from.
+- **The raw lists are kept**: the file list, both reviewers' findings and the controller's matching
+  of shared ones go to `docs/audits/round-<N>/` when the round merges.
+- **The next pass tests the last one's prediction.** On the files of the list unchanged since, it
+  should find about what the last estimate said was left. Files changed since are counted apart, as new
+  code.
+- **Planted defects, where cheap.** A few known bugs seeded in the reviewers' tree measure each
+  reviewer's catch rate directly instead of assuming the pair's are equal; they are counted out of the
+  findings before the estimate.
+
+Rounds 28–30 pinned the commit but not the file list, so their estimates are rough guesses and set no
+baseline.
 
 Each failure a property finds is fixed in the same pass. Its shrunk counterexample stays beside the
 property as a plain example test, and any behavior it raises a question about goes to
