@@ -103,7 +103,7 @@ describe('recording session', () => {
     for (const [text, why] of cases) {
       const t = setup({ pick: async () => new Blob([text]) });
       await t.session.play('flush');
-      expect(t.host.failed).toHaveBeenCalledWith(expect.stringMatching(why));
+      expect(t.host.failed).toHaveBeenCalledWith(expect.stringMatching(why), 'play');
       expect(t.host.restore).not.toHaveBeenCalled();
       expect(t.session.playing).toBe(false);
       t.detach();
@@ -123,5 +123,14 @@ describe('recording session', () => {
     t.detach();
     expect(t.session.recording).toBe(false);
     expect(t.saved).toHaveLength(0);
+  });
+
+  it('reports a recording it cannot save', async () => {
+    const t = setup({ snapshot: () => ({ ...SNAPSHOT, scene: { big: 1n } }) as unknown as SceneSnapshot });
+    await t.session.toggle();
+    await t.session.toggle();
+    expect(t.saved).toHaveLength(0);
+    expect(t.host.failed).toHaveBeenCalledWith(expect.stringMatching(/BigInt/), 'save');
+    expect(t.session.recording).toBe(false);
   });
 });

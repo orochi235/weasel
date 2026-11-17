@@ -18,7 +18,8 @@ export interface RecordingHost {
   pick(): Promise<Blob | null>;
   /** `recording` or `playing` changed. */
   changed(): void;
-  failed(message: string): void;
+  /** A recording could not be played, or could not be saved when it stopped. */
+  failed(message: string, during: 'play' | 'save'): void;
 }
 
 export interface RecordingSession {
@@ -65,10 +66,14 @@ export function createRecordingSession(host: RecordingHost): RecordingSession {
       }
       const recording = recorder.stop();
       host.changed();
-      const blob = await serializeRecording(recording);
-      const stamp = recording.startedAt.replace(/[:.]/g, '-');
-      const extension = blob.type === 'application/gzip' ? RECORDING_EXTENSION : 'json';
-      host.save(blob, `weaseldraw-recording-${stamp}.${extension}`);
+      try {
+        const blob = await serializeRecording(recording);
+        const stamp = recording.startedAt.replace(/[:.]/g, '-');
+        const extension = blob.type === 'application/gzip' ? RECORDING_EXTENSION : 'json';
+        host.save(blob, `weaseldraw-recording-${stamp}.${extension}`);
+      } catch (err) {
+        host.failed(err instanceof Error ? err.message : String(err), 'save');
+      }
     },
 
     async play(mode = 'realtime') {
@@ -87,7 +92,7 @@ export function createRecordingSession(host: RecordingHost): RecordingSession {
           ...(scene ? { beforeFirstEvent: () => host.restore(scene) } : {}),
         });
       } catch (err) {
-        host.failed(err instanceof Error ? err.message : String(err));
+        host.failed(err instanceof Error ? err.message : String(err), 'play');
       } finally {
         playing = false;
         host.changed();
