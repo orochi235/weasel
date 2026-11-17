@@ -9,7 +9,7 @@ import type {
 import { serialize } from './serialize';
 import { historySlice } from './history';
 
-function sceneOf(root: DevtoolsRoot): AnyScene {
+function requireScene(root: DevtoolsRoot): AnyScene {
   const scene = root.source.scene();
   if (!scene) throw new Error('scene not mounted yet');
   return scene;
@@ -34,13 +34,13 @@ function nodeOf(scene: AnyScene, id: string): AnyNode {
 }
 
 export function childrenOf(root: DevtoolsRoot, nodeId: string | undefined): DevtoolsNodeSummary[] {
-  const scene = sceneOf(root);
+  const scene = requireScene(root);
   const ids = nodeId === undefined ? scene.roots : (nodeOf(scene, nodeId), scene.childrenOf(nodeId as NodeId));
   return ids.map((id) => summaryOf(nodeOf(scene, id)));
 }
 
 export function nodeDetail(root: DevtoolsRoot, nodeId: string): DevtoolsNodeDetail {
-  const node = nodeOf(sceneOf(root), nodeId);
+  const node = nodeOf(requireScene(root), nodeId);
   return {
     ...summaryOf(node),
     parent: node.parent ?? null,
