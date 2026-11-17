@@ -120,7 +120,7 @@ export { sceneHistorySelection } from '../core/scene/sceneSelection';
 export type { SceneSelectionMembers } from '../core/scene/sceneSelection';
 export { createScrollOffsets, scrolledFrames, viewPoseAdapter } from '../core/scene/scrollOffsets';
 export type { SceneScroll, ScrollOffsets, ScrollSource } from '../core/scene/scrollOffsets';
-export { isSerializedScene, nodeKindOf, specsFromSerialized } from '../core/scene/serialization';
+export { isSerializedScene, savedNodeKind, specsFromSerialized } from '../core/scene/serialization';
 export type { SkippedKey, SpecsFromSerializedOptions, V1Classifier } from '../core/scene/serialization';
 export type { SavedScene, SerializedLayer, SerializedNode, SerializedNodeV1, SerializedScene, SerializedSceneV1, SerializedSceneV2 } from '../core/scene/serializedTypes';
 export { SnapshotKeyError } from '../core/scene/snapshotShape';
