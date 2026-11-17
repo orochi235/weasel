@@ -61,6 +61,14 @@ function applyEdit(
   }));
 }
 
+/** `n` when it is a depth `History.goto` takes, which `jumpToHistoryIndex` would clamp or refuse quietly instead. */
+function strictDepth(n: number, engine: Pick<History, 'undoDepth' | 'redoDepth'>, journalOpen: boolean): number {
+  const total = engine.undoDepth() + engine.redoDepth();
+  if (!Number.isInteger(n) || n < 0 || n > total) throw new RangeError(`goto: depth ${n} is not a whole number from 0 to ${total}`);
+  if (journalOpen) throw new Error('goto: a journal is open — commit, cancel, or suspend it first');
+  return n;
+}
+
 export function createSceneHistory(env: SceneHistoryEnv): {
   history: History;
   methods: SceneHistoryMethods;
@@ -144,7 +152,7 @@ export function createSceneHistory(env: SceneHistoryEnv): {
     },
     undo: () => { methods.undo(); },
     redo: () => { methods.redo(); },
-    goto: (n) => { methods.jumpToHistoryIndex(n); },
+    goto: (n) => { methods.jumpToHistoryIndex(strictDepth(n, engine, env.activeJournal() !== null)); },
     // Stack-only: nothing applies, but what `canUndo()` answers changes.
     clear: stackOnly(() => engine.clear()),
     recordEntry: stackOnly<Parameters<History['recordEntry']>>((ops, label, opts) => (journals.target() ?? engine).recordEntry(ops, label, opts)),
