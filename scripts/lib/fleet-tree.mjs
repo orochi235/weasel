@@ -107,22 +107,29 @@ export const lockScope = (before, after) => {
  * `seed` such a path is replaced by every file of what it belongs to, which reaches that package's
  * tests and its dependents' without running everything.
  */
+/** The workspace directories a changed path's tests are confined to, or undefined when it reaches past one. */
+const scopeOf = (path, { scoped = [], lockScope }) => {
+  if (path === LOCKFILE) return Array.isArray(lockScope) ? lockScope : undefined;
+  return scoped.some((glob) => matchesGlob(path, glob)) ? [path.split('/').slice(0, 2).join('/')] : undefined;
+};
+
+/** Whether a branch changing `changed` runs every test: it changes a trigger no one workspace owns. */
+export const runsEverything = (changed, { triggers, scoped = [], lockScope }) =>
+  changed.some((path) => !scopeOf(path, { scoped, lockScope }) && triggers.some((glob) => matchesGlob(path, glob)));
+
 export const branchChanges = (root, env, { triggers, scoped = [] }) => {
   const at = join(root, MARKER);
   if (!existsSync(at)) return undefined;
   const marker = JSON.parse(readFileSync(at, 'utf8'));
   if (!Array.isArray(marker.select) || env[STEP_ENV] || !env[COMMIT_ENV] || marker.commit !== env[COMMIT_ENV]) return undefined;
   const changed = marker.select;
-  const scopeOf = (path) => {
-    if (path === LOCKFILE) return Array.isArray(marker.lockScope) ? marker.lockScope : undefined;
-    return scoped.some((glob) => matchesGlob(path, glob)) ? [path.split('/').slice(0, 2).join('/')] : undefined;
-  };
+  const within = { scoped, lockScope: marker.lockScope };
+  if (runsEverything(changed, { triggers, ...within })) return undefined;
   const dirs = new Set();
   const direct = [];
   for (const path of changed) {
-    const scope = scopeOf(path);
+    const scope = scopeOf(path, within);
     if (scope) scope.forEach((dir) => dirs.add(dir));
-    else if (triggers.some((glob) => matchesGlob(path, glob))) return undefined;
     else direct.push(path);
   }
   const owned = [...dirs].filter((dir) => existsSync(join(root, dir))).flatMap((dir) => filesUnder(root, dir));

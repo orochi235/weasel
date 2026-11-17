@@ -39,6 +39,10 @@ export function armTree(tree: string, marker: TreeMarker, opts?: { plan?: boolea
 export function checkTree(root: string, env: Record<string, string | undefined>): TreeCheck;
 export function treeReport(check: TreeCheck): { ok: boolean; text: string };
 export function fleetBranch(root: string, env: Record<string, string | undefined>): string | undefined;
+export function runsEverything(
+  changed: string[],
+  opts: { triggers: string[]; scoped?: string[]; lockScope?: string[] | false | null },
+): boolean;
 export function branchChanges(
   root: string,
   env: Record<string, string | undefined>,

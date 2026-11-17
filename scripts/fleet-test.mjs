@@ -19,7 +19,8 @@
  */
 import { fileURLToPath } from 'node:url';
 import { openCommitTree, ontoWhenFree } from './lib/commit-tree.mjs';
-import { armTree, changedFiles, lockScope } from './lib/fleet-tree.mjs';
+import { armTree, changedFiles, lockScope, runsEverything } from './lib/fleet-tree.mjs';
+import { SCOPED, TRIGGERS } from './lib/fleet-triggers.mjs';
 
 const ROOT = fileURLToPath(new URL('..', import.meta.url));
 
@@ -75,7 +76,10 @@ try {
       ? "fleet-test: running the tests the branch reaches, or all of them if it changes one of scripts/lib/fleet-triggers.mjs's triggers; --full runs them all"
       : 'fleet-test: running every test',
   );
-  status = await ontoWhenFree(['test', '--dir', tree, '--ref', base, ...ontoArgs], {
+  // onto remembers a suite's test count per scope to start the next run's bar from, and a branch's
+  // few tests would otherwise seed a full run's.
+  const scope = !select || runsEverything(select, { triggers: TRIGGERS, scoped: SCOPED, lockScope: locked }) ? 'full' : 'branch';
+  status = await ontoWhenFree(['test', '--dir', tree, '--ref', base, '--scope', scope, ...ontoArgs], {
     say: (line) => console.log(`fleet-test: ${line}`),
   });
 } finally {

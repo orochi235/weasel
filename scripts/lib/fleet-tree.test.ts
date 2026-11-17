@@ -15,6 +15,7 @@ import {
   lockScope,
   selection,
   stampReport,
+  runsEverything,
   stepEnv,
   treeReport,
   treeStamp,
@@ -408,5 +409,23 @@ describe('stampReport', () => {
       ok: false,
       text: 'fleet-tree: the tree changed during the run (abc → def); this run is void, and none of its results count',
     });
+  });
+});
+
+describe('runsEverything', () => {
+  const triggers = ['**/package.json', 'package-lock.json', 'scripts/lib/**'];
+  const scoped = ['packages/*/package.json'];
+
+  it('is false for source alone and for a trigger one workspace owns', () => {
+    expect(runsEverything(['packages/ui/src/a.ts', 'packages/ui/package.json'], { triggers, scoped })).toBe(false);
+  });
+
+  it('is true for a trigger no workspace owns', () => {
+    expect(runsEverything(['packages/ui/src/a.ts', 'scripts/lib/x.mjs'], { triggers, scoped })).toBe(true);
+  });
+
+  it('counts the lockfile as owned only when its change is confined to named workspaces', () => {
+    expect(runsEverything(['package-lock.json'], { triggers, scoped, lockScope: ['packages/ui'] })).toBe(false);
+    expect(runsEverything(['package-lock.json'], { triggers, scoped, lockScope: null })).toBe(true);
   });
 });
