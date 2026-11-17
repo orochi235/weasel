@@ -2531,9 +2531,9 @@ Calls the lanes made without a ruling:
 - 2026-11-16 (the lane's call): a job without `auto` re-runs on a `key` change once something has started it and
   until something cancels it, finished runs included; one never started stays idle (`job/useJob.ts`). It had ignored
   `key` entirely, folding a run for the old key into state for the new one.
-- 2026-11-16 (the lane's call): forge reads a Storybook number control whose bounds are not both finite and in order
+- Ruled 2026-11-16: forge reads a Storybook number control whose bounds are not both finite and in order
   (`max: Infinity`, a NaN, `min` above `max`) as having none, keeping its slider or field, rather than letting
-  labkit's `range()` throw and fault every story in the file (`csf/argsToSchema.ts`, `hasRange`). No warning names it.
+  labkit's `range()` throw and fault every story in the file (`csf/argsToSchema.ts`, `hasRange`). It warns, naming the control.
 
 ## Audit round thirty (2026-11-16): diagrams
 
