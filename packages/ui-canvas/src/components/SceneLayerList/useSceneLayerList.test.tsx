@@ -255,4 +255,15 @@ describe('useSceneLayerList in a paged scene', () => {
     expect(scene.get(asNodeId('x'))!.parent).toBeNull();
     expect(scene.roots).toEqual([run, 'y', 'x']);
   });
+
+  it('places a top-level drop where it lands when the run shares the top level with a pasteboard root', () => {
+    const { hook, scene, run } = paged(true);
+    scene.add({ id: asNodeId('k'), kind: 'mark', layer: 'main', parent: run, pose: box, data: { name: 'k' } });
+    scene.add({ id: asNodeId('x'), kind: 'mark', layer: 'main', pose: box, data: { name: 'x' } });
+    hook.rerender();
+    expect(ids(hook.result.current.items)).toEqual(['x', 'k', ['p2', ['c']], ['p1', ['b', 'a']]]);
+    hook.result.current.onReorder({ ids: ['k'], parentId: null, index: 2 });
+    expect(scene.childrenOf(run)).toEqual(['p1', 'k', 'p2']);
+    expect(scene.roots).toEqual([run, 'x']);
+  });
 });
