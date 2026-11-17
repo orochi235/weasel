@@ -17,7 +17,7 @@ export {
   isPrefSection,
   mapPrefConditionPaths,
   nestPrefValues,
-  pairRowsOf,
+  prefPairRows,
   pref,
   PREF_CONDITION_FIELDS,
   PREF_ELSE,

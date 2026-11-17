@@ -100,7 +100,7 @@ export {
 export {
   isBuiltinPref,
   PREF_KINDS,
-  pairRowsOf,
+  prefPairRows,
   type BuiltinPref,
   type PrefAuto,
   type PrefBase,

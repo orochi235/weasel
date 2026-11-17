@@ -1,5 +1,5 @@
 import { describe, it, expect, expectTypeOf } from 'vitest';
-import { PREF_KINDS, isBuiltinPref, pairRowsOf } from './schema';
+import { PREF_KINDS, isBuiltinPref, prefPairRows } from './schema';
 import type {
   BuiltinPref,
   PrefKind,
@@ -90,12 +90,12 @@ describe('built-in kind table', () => {
   });
 });
 
-describe('pairRowsOf', () => {
+describe('prefPairRows', () => {
   const leaf = (name: string, pair?: PrefPair): PrefLeaf =>
     ({ kind: 'number', name, description: '', default: 0, ...(pair ? { pair } : {}) });
 
   it('puts the declaring leaf and every path it names on one row, labeled by the override', () => {
-    const rows = pairRowsOf([
+    const rows = prefPairRows([
       ['pose.x', leaf('X', { with: 'pose.y', label: 'Position' })],
       ['pose.y', leaf('Y')],
       ['pose.w', leaf('W')],
@@ -106,7 +106,7 @@ describe('pairRowsOf', () => {
   });
 
   it("labels a row with the declaring leaf's name when no label overrides it", () => {
-    const rows = pairRowsOf([['a', leaf('Size', { with: ['b', 'c'] })], ['b', leaf('B')], ['c', leaf('C')]]);
+    const rows = prefPairRows([['a', leaf('Size', { with: ['b', 'c'] })], ['b', leaf('B')], ['c', leaf('C')]]);
     expect(rows.get('c')).toEqual({ key: 'a', label: 'Size' });
   });
 });

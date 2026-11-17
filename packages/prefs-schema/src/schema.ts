@@ -354,7 +354,7 @@ export const PREF_KINDS: Record<PrefKind, true> = {
  *  members share (the declaring leaf's path) and the `label` it reads. A
  *  path no `pair` names is absent. `leaves` are given by the path each
  *  surface reads and writes them at, so references resolve in its terms. */
-export function pairRowsOf(
+export function prefPairRows(
   leaves: Iterable<readonly [path: string, leaf: PrefLeaf]>,
 ): Map<string, { key: string; label: string }> {
   const rows = new Map<string, { key: string; label: string }>();
