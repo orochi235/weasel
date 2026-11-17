@@ -37,4 +37,24 @@ describe('registering a layout engine over another', () => {
     registerShaper(shaperB);
     expect(registeredShaper()).toBe(shaperB);
   });
+
+  it('keeps an engine registered twice until both registrations release', () => {
+    const first = registerBidi(bidiA);
+    const second = registerBidi(bidiA);
+    first();
+    first();
+    expect(registeredBidi()).toBe(bidiA);
+    second();
+    expect(registeredBidi()).toBeNull();
+  });
+
+  it("ignores an old holder's release once the engine was replaced", () => {
+    const offA = registerShaper(shaperA);
+    registerShaper(shaperB, { replace: true });
+    const offA2 = registerShaper(shaperB);
+    offA();
+    expect(registeredShaper()).toBe(shaperB);
+    offA2();
+    expect(registeredShaper()).toBe(shaperB);
+  });
 });
