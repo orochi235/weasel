@@ -1,5 +1,6 @@
 import { beforeAll, describe, expect, it, vi } from 'vitest';
 import { render, fireEvent, screen } from '@testing-library/react';
+import { I18nProvider } from '../../useFieldLocale';
 import { TimeRuler } from './TimeRuler';
 
 const TRACK_WIDTH = 500;
@@ -192,4 +193,12 @@ describe('TimeRuler pointer session', () => {
     fireEvent.pointerMove(document, { clientX: 450, clientY: 5, buttons: 1 });
     expect(onScrub).not.toHaveBeenCalled();
   });
+});
+
+it("writes its tick labels in the number fields' locale", () => {
+  const { unmount } = render(<I18nProvider locale="de-DE"><TimeRuler {...props} window={{ from: 0, to: 2000 }} bounds={{ from: 0, to: 2000 }} /></I18nProvider>);
+  expect(tickLabels()).toContain('1,50s');
+  unmount();
+  render(<I18nProvider locale="de-DE"><TimeRuler {...props} window={{ from: 0, to: 1 }} /></I18nProvider>);
+  expect(tickLabels().some((l) => /^0,\d+ms$/.test(l ?? ''))).toBe(true);
 });

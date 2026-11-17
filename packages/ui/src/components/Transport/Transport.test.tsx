@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 import { fireEvent, screen } from '@testing-library/react';
 import { renderWithIcons } from '../../testing/withIcons';
+import { I18nProvider } from '../../useFieldLocale';
 import { Transport } from './Transport';
 
 const props = {
@@ -47,7 +48,8 @@ describe('Transport', () => {
 
   it('shows a playhead before zero and spans the scrub bar from start', () => {
     renderWithIcons(<Transport {...props} start={-500} duration={3000} playhead={-500} onSeek={() => {}} />);
-    expect(screen.getByTestId('timeline-time')).toHaveTextContent('-0.50s / 2.50s');
+    expect(screen.getByTestId('timeline-time')).toHaveTextContent('−0.50s / 2.50s');
+    expect(screen.getByRole('slider', { name: 'Position' })).toHaveAttribute('aria-valuetext', 'minus 0.50 seconds');
     const bar = screen.getByRole('slider', { name: 'Position' });
     expect(bar).toHaveAttribute('aria-valuemin', '-500');
     expect(bar).toHaveAttribute('aria-valuemax', '2500');
@@ -189,4 +191,14 @@ describe('Transport', () => {
     fireEvent.keyDown(scrub, { key: 'ArrowRight' });
     expect(onSeek).toHaveBeenLastCalledWith(520);
   });
+});
+
+it("writes and speaks its times in the locale its rate follows", () => {
+  renderWithIcons(
+    <I18nProvider locale="de-DE">
+      <Transport {...props} rate={1.5} playhead={1500} onSeek={() => {}} />
+    </I18nProvider>,
+  );
+  expect(screen.getByTestId('timeline-time')).toHaveTextContent('1,50s / 2,00s');
+  expect(screen.getByRole('slider', { name: 'Position' }).getAttribute('aria-valuetext')).toBe('1,50 seconds');
 });

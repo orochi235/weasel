@@ -8,6 +8,8 @@ import { Ruler, RulerMark, type RulerSpacing } from '../Ruler';
 import { MIN_SPAN_MS, TICK_SPACING_PX, type TimeWindow } from './timeScale';
 import { isPrimaryPress } from '@weasel-js/gestures';
 import { alongTrack } from '../../alongTrack';
+import { useFieldLocale } from '../../useFieldLocale';
+import { millisecondsText, secondsText } from '../Transport/timeText';
 
 /** One wheel notch's zoom factor. */
 const ZOOM_STEP = 0.0015;
@@ -26,16 +28,14 @@ export interface TimeRulerProps {
   onWindowChange: (w: TimeWindow) => void;
 }
 
-/** A tick's label, with the decimals ticks `step` ms apart need to differ. */
-function formatMs(ms: number, { step, decimals }: TickSet): string {
+/** A tick's label in `locale`, with the decimals ticks `step` ms apart need to differ. */
+function formatMs(ms: number, { step, decimals }: TickSet, locale: string): string {
   if (ms >= 1000) {
     const whole = Math.abs(ms / 1000 - Math.round(ms / 1000)) < 1e-9;
-    return `${(ms / 1000).toFixed(whole ? 0 : Math.max(2, decimalsOf(step / 1000)))}s`;
+    return secondsText(ms, whole ? 0 : Math.max(2, decimalsOf(step / 1000)), locale).text;
   }
-  return `${ms.toFixed(decimals)}ms`;
+  return millisecondsText(ms, decimals, locale);
 }
-
-const TIME_TICKS: RulerSpacing = { minSpacing: TICK_SPACING_PX, format: formatMs };
 
 /** A {@link Ruler} over time: a playhead line, scrubbing by pointer, and wheel pan and zoom. */
 export function TimeRuler(props: TimeRulerProps): ReactElement {
@@ -44,6 +44,8 @@ export function TimeRuler(props: TimeRulerProps): ReactElement {
   const sessionRef = useRef<PointerSession | null>(null);
   useEffect(() => () => { sessionRef.current?.cancel(); }, []);
 
+  const locale = useFieldLocale();
+  const ticks = useMemo((): RulerSpacing => ({ minSpacing: TICK_SPACING_PX, format: (ms, set) => formatMs(ms, set, locale) }), [locale]);
   const scale = useMemo(() => linearScale({ domain: [win.from, win.to], range: [0, 1] }), [win.from, win.to]);
 
   const widthOf = (): number => trackRef.current?.getBoundingClientRect().width ?? 0;
@@ -99,7 +101,7 @@ export function TimeRuler(props: TimeRulerProps): ReactElement {
       className={s.ruler}
       look="line"
       scale={scale}
-      ticks={TIME_TICKS}
+      ticks={ticks}
       data-testid="timeline-ruler"
       onPointerDown={onPointerDown}
     >
