@@ -1,7 +1,7 @@
 /** A quadrant chart as fields for its axes and quadrant labels, a table of points, and a table of named styles. */
 import { numberOf, textOf, titleField } from '../editing/schemaKit';
 import type { PlotColumn, PlotField, PlotSchema } from '../editing/schemaTypes';
-import { setQuadrantAxisLabel, setQuadrantLabel, setQuadrantPoint, setQuadrantPointName } from './edit';
+import { setQuadrantAxisLabel, setQuadrantLabel, setQuadrantPointAt, setQuadrantPointName } from './edit';
 import {
   insertQuadrantClass, insertQuadrantPoint, moveQuadrantClass, moveQuadrantPoint, quadrantClassEntries, quadrantClassNames, quadrantClassOf,
   removeQuadrantClass, removeQuadrantPoint, renameQuadrantClass, setQuadrantClassStyle, setQuadrantPointClass, setQuadrantPointStyle,
@@ -47,7 +47,7 @@ const unit = (axis: 'x' | 'y', label: string): PlotColumn<QuadrantData> => ({
   set: (d, _, r, v) => {
     const n = numberOf(v);
     const p = d.points[r];
-    return n === undefined || n < 0 || n > 1 || p === undefined ? d : setQuadrantPoint(d, r, { x: p.x, y: p.y, [axis]: n });
+    return n === undefined || n < 0 || n > 1 || p === undefined ? d : setQuadrantPointAt(d, r, { x: p.x, y: p.y, [axis]: n });
   },
 });
 

@@ -40,7 +40,7 @@ export { compilePie, type PieLayout } from './pie/compile';
 export { setPieLabel, setPieValue } from './pie/edit';
 export type { QuadrantAxis, QuadrantData, QuadrantPoint, QuadrantPointStyle } from './quadrant/types';
 export { compileQuadrant, type QuadrantLayout } from './quadrant/compile';
-export { setQuadrantAxisLabel, setQuadrantLabel, setQuadrantPoint, setQuadrantPointName } from './quadrant/edit';
+export { setQuadrantAxisLabel, setQuadrantLabel, setQuadrantPointAt, setQuadrantPointName } from './quadrant/edit';
 export type { JourneyData, JourneySection, JourneyTask } from './journey/types';
 export { compileJourney, type JourneyLayout } from './journey/compile';
 export { setJourneyScore, setJourneySectionName, setJourneyTaskName } from './journey/edit';
