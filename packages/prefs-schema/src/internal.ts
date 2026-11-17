@@ -13,10 +13,10 @@ export {
   prefOverrideOptions,
   repairScope,
   prefScopeOptionValue,
-  prefScopeSelectors,
+  prefStoredSelectors,
   selectionWeights,
   upgradeScope,
   weighScope,
   writeDeclared,
 } from './scope';
-export { prefOverridesLookup, scopeSelectorsOf } from './scopeSpec';
+export { prefOverridesLookup, declaredSelectorsOf } from './scopeSpec';

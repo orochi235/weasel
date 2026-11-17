@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { PREF_ELSE, dropUnlisted, prefScopeSelectors, prefScopeValue, repairScope, weighScope, writeDeclared, type PrefOverridesLookup, type PrefOverrides } from './scope';
+import { PREF_ELSE, dropUnlisted, prefStoredSelectors, prefScopeValue, repairScope, weighScope, writeDeclared, type PrefOverridesLookup, type PrefOverrides } from './scope';
 import { prefOverridesOf, prefScopedDefault, prefScopesOf } from './scopeSpec';
 import type { PrefLeaf } from './schema';
 
@@ -9,7 +9,7 @@ const scope = (by: string, own: Record<string, unknown>, shared?: unknown) =>
   (shared === undefined ? { $by: by, $in: own } : { $by: by, $in: own, [PREF_ELSE]: shared });
 /** A write along the selectors `stored` is already split by. */
 const write = (stored: unknown, under: Record<string, string>, next: unknown, overridesOf?: PrefOverridesLookup) =>
-  writeDeclared(stored, [...prefScopeSelectors(stored)], under, under, next, -1, overridesOf);
+  writeDeclared(stored, [...prefStoredSelectors(stored)], under, under, next, -1, overridesOf);
 const closed = (...lists: [string, PrefOverrides][]): PrefOverridesLookup => (selector) => Object.fromEntries(lists)[selector];
 
 describe('a closed selector', () => {
@@ -76,7 +76,7 @@ describe('nested entries', () => {
     expect(prefScopeValue(held, { [MODE]: 'dark', [LAYOUT]: 'explorer' }, -1, lists)).toBe(0.3);
     expect(prefScopeValue(held, { [MODE]: 'dark', [LAYOUT]: 'grid' }, -1, lists)).toBe(1.1);
     expect(prefScopeValue(held, { [MODE]: 'dark' }, -1, lists)).toBe(1.1);
-    expect([...prefScopeSelectors(held)]).toEqual([MODE, LAYOUT]);
+    expect([...prefStoredSelectors(held)]).toEqual([MODE, LAYOUT]);
   });
 
   it('write into the inner entry through the shared member, and drop stale members at any depth', () => {

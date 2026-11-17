@@ -30,7 +30,7 @@ export function prefOverridesOf(pref: PrefLeaf, selector: string): PrefOverrides
 }
 
 /** The paths of a pref's selectors, outermost first, where it has any. */
-export function scopeSelectorsOf(pref: PrefLeaf): readonly string[] | undefined {
+export function declaredSelectorsOf(pref: PrefLeaf): readonly string[] | undefined {
   return pref.scopes?.length ? pref.scopes.map((scope) => scope.selector) : undefined;
 }
 

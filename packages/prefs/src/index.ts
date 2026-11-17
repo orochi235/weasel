@@ -51,7 +51,7 @@ export {
   prefSchemaHolding,
   prefScopedDefault,
   prefScopeOptionValue,
-  prefScopeSelectors,
+  prefStoredSelectors,
   prefScopesOf,
   prefScopeValue,
   prefSectionLeaves,

@@ -194,7 +194,7 @@ export function mapScopeValues(stored: unknown, fn: (value: unknown) => unknown)
 }
 
 /** The path of every selector `stored` is split by, outermost first. */
-export function prefScopeSelectors(stored: unknown): Set<string> {
+export function prefStoredSelectors(stored: unknown): Set<string> {
   const out = new Set<string>();
   const walk = (value: unknown): void => {
     if (!isPrefScope(value)) return;

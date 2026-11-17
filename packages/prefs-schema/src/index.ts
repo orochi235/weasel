@@ -61,7 +61,7 @@ export { prefShownReader, prefDecodedValue } from './shown';
 export { prefValueOrDefault, prefValueAbsent } from './leafValue';
 export {
   isPrefScope,
-  prefScopeSelectors,
+  prefStoredSelectors,
   prefScopeValue,
   prefOverrideOptions,
   prefScopeOptionValue,

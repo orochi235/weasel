@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
   PREF_ELSE,
   isPrefScope,
-  prefScopeSelectors,
+  prefStoredSelectors,
   mapScopeValues,
   prefScopeValue,
   repairScope,
@@ -89,10 +89,10 @@ describe('prefScopeValue and writeDeclared', () => {
   });
 });
 
-describe('prefScopeSelectors and mapScopeValues', () => {
+describe('prefStoredSelectors and mapScopeValues', () => {
   it('names every selector a value is split by', () => {
-    expect([...prefScopeSelectors(byMode(byDensity(4, 8), 6))]).toEqual([MODE, DENSITY]);
-    expect([...prefScopeSelectors(4)]).toEqual([]);
+    expect([...prefStoredSelectors(byMode(byDensity(4, 8), 6))]).toEqual([MODE, DENSITY]);
+    expect([...prefStoredSelectors(4)]).toEqual([]);
   });
 
   it('maps each member and keeps the shape, returning the same value when nothing changed', () => {

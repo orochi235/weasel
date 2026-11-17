@@ -2,7 +2,7 @@
 // `scopes` that names something else: what a store warns of.
 
 import { type PrefGroup, prefHoldsValue, prefLeaves, prefOverridesOf, type PrefEnum, type PrefLeaf } from '@weasel-js/prefs-schema';
-import { prefOverrideOptions, scopeSelectorsOf, prefScopeSelectors } from '@weasel-js/prefs-schema/internal';
+import { prefOverrideOptions, declaredSelectorsOf, prefStoredSelectors } from '@weasel-js/prefs-schema/internal';
 
 /** One thing wrong with a pref's scopes, or with what the schema admits. */
 export interface PrefScopeProblem {
@@ -20,7 +20,7 @@ const refusal = (leaf: PrefLeaf | undefined): [PrefScopeProblem['code'], string]
   const selector = leaf as PrefEnum;
   if (selector.encoding) return ['encoded', 'names an enum with an encoding, whose stored value is not its option'];
   if (selector.clearable) return ['clearable', 'names a clearable enum, which may hold none of its options'];
-  if (scopeSelectorsOf(selector)?.length) return ['split', 'names a leaf that may itself be split'];
+  if (declaredSelectorsOf(selector)?.length) return ['split', 'names a leaf that may itself be split'];
   return undefined;
 };
 
@@ -28,7 +28,7 @@ const refusal = (leaf: PrefLeaf | undefined): [PrefScopeProblem['code'], string]
 export function prefSelectors(leaves: ReadonlyMap<string, PrefLeaf>): Map<string, readonly string[]> {
   const out = new Map<string, readonly string[]>();
   for (const leaf of leaves.values()) {
-    for (const path of scopeSelectorsOf(leaf) ?? []) {
+    for (const path of declaredSelectorsOf(leaf) ?? []) {
       const selector = leaves.get(path);
       if (out.has(path) || refusal(selector)) continue;
       out.set(path, (selector as PrefEnum).options.map((option) => option.value));
@@ -81,8 +81,8 @@ export function checkPrefScopes(schema: PrefGroup): PrefScopeProblem[] {
     if (leaves.has(path)) out.push({ code: 'admits', at: '', path, problem: `the schema admits "${path}", which is a pref` });
   }
   for (const [at, leaf] of leaves) {
-    const axes = scopeSelectorsOf(leaf);
-    for (const path of prefScopeSelectors(leaf.defaultScope)) {
+    const axes = declaredSelectorsOf(leaf);
+    for (const path of prefStoredSelectors(leaf.defaultScope)) {
       if (axes?.includes(path)) continue;
       out.push({ code: 'default', at, path, problem: `its defaultScope is split by "${path}", which its scopes do not name` });
     }

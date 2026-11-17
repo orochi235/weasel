@@ -2,7 +2,7 @@ import { useCallback, useId, useMemo, useState } from 'react';
 import {
   prefLeafAt,
   prefScopeValue,
-  prefScopeSelectors,
+  prefStoredSelectors,
   prefValueAtPath,
   prefOverrideOptions,
   prefOverridesOf,
@@ -111,7 +111,7 @@ export function splitShape(
 ): SplitShape | null {
   const axes = prefScopesOf(pref).map((scope) => scope.selector);
   if (!axes.length) return null;
-  const by = prefScopeSelectors(scope);
+  const by = prefStoredSelectors(scope);
   const levels: SplitLevel[] = [];
   for (const path of axes) {
     const leaf = selectorAt(path);
