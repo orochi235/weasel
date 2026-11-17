@@ -25,7 +25,7 @@ export interface DitherOptions {
   /** `'screen'` (one dot per device pixel, the default), or an output grid
    *  placed with `gridOnScreen`. */
   grid?: 'screen' | DeviceGrid;
-  /** A protect mask in dot space, from `protectTexture`. Needs an output grid. */
+  /** A protect mask in dot space, from `createProtectTexture`. Needs an output grid. */
   protect?: { texture: TextureHandle; width: number; height: number };
 }
 

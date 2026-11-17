@@ -46,7 +46,7 @@ Put the dither on the groups that have tone (a photo) and end the page with a
 `threshold` pass, and a barcode or a line of type stays crisp with nothing to
 protect. Where tone must be dithered over such artwork, protect it:
 `protectRects` maps items to rects on the grid, `protectMask` turns rects
-into the mask `ditherPixels` takes, and `protectTexture` uploads that mask
+into the mask `ditherPixels` takes, and `createProtectTexture` uploads that mask
 for `dither`, which needs an output grid to read it. Inside it pixels quantize
 at plain threshold, and error diffusion neither enters nor leaves it.
 

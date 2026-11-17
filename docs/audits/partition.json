@@ -2645,7 +2645,7 @@
    "packages/dither/src/gpu/dither.ts",
    "packages/dither/src/gpu/frag.ts",
    "packages/dither/src/gpu/gridOnScreen.ts",
-   "packages/dither/src/gpu/protectTexture.ts",
+   "packages/dither/src/gpu/createProtectTexture.ts",
    "packages/dither/src/gray.ts",
    "packages/dither/src/index.ts",
    "packages/dither/src/maskToRgba.ts",

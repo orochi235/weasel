@@ -12,10 +12,10 @@ export interface ProtectTexture {
 
 /** A protect mask (from `protectMask`, in dot space) as a texture `dither`
  *  can read. The caller disposes it when the mask changes or the view goes. */
-export async function protectTexture(mask: Uint8Array, width: number, height: number): Promise<ProtectTexture> {
-  checkImageSize('protectTexture', width, height);
+export async function createProtectTexture(mask: Uint8Array, width: number, height: number): Promise<ProtectTexture> {
+  checkImageSize('createProtectTexture', width, height);
   if (mask.length !== width * height) {
-    throw new RangeError(`protectTexture: mask holds ${mask.length} dots, ${width}×${height} needs ${width * height}`);
+    throw new RangeError(`createProtectTexture: mask holds ${mask.length} dots, ${width}×${height} needs ${width * height}`);
   }
   // A bitmap has at least one pixel; `width` and `height` still say the mask holds no dot.
   const bw = Math.max(1, width), bh = Math.max(1, height);

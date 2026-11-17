@@ -3,7 +3,7 @@
  */
 import { afterEach, describe, expect, it } from 'vitest';
 import { WeaselRenderer, type DrawCommand } from '@weasel-js/renderer';
-import { dither, ditherPixels, protectMask, protectTexture, type DitherOptions, type ProtectTexture } from '@weasel-js/dither';
+import { dither, ditherPixels, protectMask, createProtectTexture, type DitherOptions, type ProtectTexture } from '@weasel-js/dither';
 import type { DitherPixelsOptions } from '../types';
 
 // Large enough that the group's 64 px effects buffer is not pulled back to the
@@ -130,7 +130,7 @@ describe('dither effect against ditherPixels', () => {
   it('bayer with the top right protected', async () => {
     // Not symmetric in y, so a protect texture read upside down fails.
     const mask = protectMask([{ x: 6, y: 0, width: 6, height: 5 }], DOTS, DOTS);
-    held = await protectTexture(mask, DOTS, DOTS);
+    held = await createProtectTexture(mask, DOTS, DOTS);
     const k = 2;
     const gpu = render(group({ method: 'bayer', ...options(k), protect: held }, bands(k)), k);
     expect(gpu).toEqual(cpu(dotImage(), { method: 'bayer', protect: mask }));

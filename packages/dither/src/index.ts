@@ -5,4 +5,4 @@ export { protectMask } from './protectMask';
 export { protectRects } from './protectRects';
 export { dither, type DitherOptions } from './gpu/dither';
 export { gridOnScreen, type DeviceGrid } from './gpu/gridOnScreen';
-export { protectTexture, type ProtectTexture } from './gpu/protectTexture';
+export { createProtectTexture, type ProtectTexture } from './gpu/createProtectTexture';
