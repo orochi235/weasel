@@ -58,7 +58,7 @@ function unmoved(handle: SymmetryHandlePress['handle'], origin: { center: Point;
  * Without a `snap` dep nothing snaps. The drag lands as one undo step, and
  * cancel puts the group back.
  */
-export function handleDragAction(ctrl: SymmetryController): Action & { requires: string[] } {
+export function createSymmetryHandleAction(ctrl: SymmetryController): Action & { requires: string[] } {
   return {
     id: SYMMETRY_HANDLE_ACTION_ID,
     label: 'Move symmetry guide',

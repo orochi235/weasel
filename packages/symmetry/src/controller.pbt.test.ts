@@ -12,7 +12,7 @@ import {
 import { createSymmetry } from './controller';
 import { symmetryRegistry } from './group';
 import { guideHandles, createSymmetryGuideLayer, type SymmetryHandle } from './guide';
-import { handleChange, handleDragAction } from './handleDrag';
+import { handleChange, createSymmetryHandleAction } from './handleDrag';
 import { symmetryTransforms, type SymmetrySpec } from './kinds';
 import { lookup, maxDiff, near, point, runs, spec, tally, timeoutFor } from './pbt.fixture';
 
@@ -163,7 +163,7 @@ function drag(sym: ReturnType<typeof rig>['sym'], group: NodeId, handle: Symmetr
     world: p, screen: p, modifiers: { alt: false, ctrl: false, meta: false, shift: false }, deps: {},
     drag: { start: from, current: p, delta: { x: p.x - from.x, y: p.y - from.y }, affordance: { payload: { handle, group } } },
   }) as unknown as InvocationCtx;
-  const h = (handleDragAction(sym).invoker as OngoingInvoker).start(ctx(from), undefined);
+  const h = (createSymmetryHandleAction(sym).invoker as OngoingInvoker).start(ctx(from), undefined);
   for (const p of path) h.onMove!(ctx(p));
   h.onEnd!(ctx(path[path.length - 1] ?? from), 'commit');
 }

@@ -16,7 +16,7 @@ export {
   SYMMETRY_GUIDE_ID, SYMMETRY_HANDLE_KIND, guideHandles, createSymmetryGuideLayer,
   type SymmetryGuideSource, type SymmetryGuideStyle, type SymmetryHandle, type SymmetryHandlePress,
 } from './guide';
-export { SYMMETRY_HANDLE_ACTION_ID, handleChange, handleDragAction, type SymmetryHandleSnap } from './handleDrag';
+export { SYMMETRY_HANDLE_ACTION_ID, handleChange, createSymmetryHandleAction, type SymmetryHandleSnap } from './handleDrag';
 export {
   createSymmetry, type CreateSymmetryOptions, type SymmetryChange, type SymmetryController,
 } from './controller';

@@ -6,7 +6,7 @@ import {
   symmetryGroupSpec,
 } from './group';
 import { keepContentsPut, reachFrom } from './frames';
-import { handleDragAction, SYMMETRY_HANDLE_ACTION_ID } from './handleDrag';
+import { createSymmetryHandleAction, SYMMETRY_HANDLE_ACTION_ID } from './handleDrag';
 import { SYMMETRY_GUIDE_ID, SYMMETRY_HANDLE_KIND, createSymmetryGuideLayer, type SymmetryGuideStyle } from './guide';
 import type { SymmetrySpec } from './kinds';
 import type { Point } from '@weasel-js/geom';
@@ -136,7 +136,7 @@ export function createSymmetry(scene: Scene<unknown, string, unknown>, opts: Cre
     subscribe: ctrl.subscribe,
   }, opts.guide);
 
-  const action = handleDragAction(ctrl);
+  const action = createSymmetryHandleAction(ctrl);
   (ctrl as { contribution: SurfaceContribution }).contribution = {
     id: 'weasel-symmetry',
     eligibility: { claimed: [SYMMETRY_GUIDE_ID] },
