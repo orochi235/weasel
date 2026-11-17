@@ -12,7 +12,7 @@
  */
 import { useCallback, useEffect, useMemo, useRef } from 'react';
 import { useLatest } from '@weasel-js/react';
-import { drawOneEditing, type EditingDrawOne } from './editingDrawOne';
+import { drawOneWithoutEditedText, type EditingDrawOne } from './editingDrawOne';
 import { textHitAt } from './textHitAt';
 import { registerHostTextEditor, type HostTextEditorHandle } from './hostTextEditors';
 import { editedData, sceneTextDrafts } from './sceneTextDrafts';
@@ -297,7 +297,7 @@ export function useSceneTextEditor<
     return node !== undefined && read.isText(node.data);
   }, [read, sceneRef]);
 
-  const drawOne = useMemo(() => drawOneEditing(edit.editingId), [edit.editingId]);
+  const drawOne = useMemo(() => drawOneWithoutEditedText(edit.editingId), [edit.editingId]);
   return { ...edit, textAt, isTextNode, drawOne };
 }
 

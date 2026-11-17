@@ -32,7 +32,7 @@ export { textNodeFactory } from './node/insert';
 // ─── Editing ───────────────────────────────────────────────────────────────
 export { useSceneTextEdit, type DefaultTextData, type UseSceneTextEditOptions, type UseSceneTextEditReturn } from './editor/useSceneTextEdit';
 export { textEditJoin } from './editor/sceneTextDrafts';
-export { drawOneEditing, withoutText, type EditingDrawOne } from './editor/editingDrawOne';
+export { drawOneWithoutEditedText, withoutText, type EditingDrawOne } from './editor/editingDrawOne';
 export { createTextLayer, type CreateTextLayerOptions } from './editor/textLayer';
 export type { CanvasTextEditorOptions } from './editor/canvasEditor';
 export type { TextEditDep } from './editor/textEditDep';
