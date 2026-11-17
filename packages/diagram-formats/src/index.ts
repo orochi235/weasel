@@ -12,7 +12,7 @@ export {
 } from './document';
 export { DIAGRAM_FORMATS, detectFormat, readDocument } from './formats';
 export { DIAGRAM_JSON } from './jsonFormat';
-export { DRAW_XML } from './drawXml/format';
+export { DIAGRAM_DRAW_XML } from './drawXml/format';
 export { DIAGRAM_MERMAID } from './mermaid/format';
 export { readMermaidXychart } from './mermaid/xychart/read';
 export { writeMermaidXychart } from './mermaid/xychart/write';

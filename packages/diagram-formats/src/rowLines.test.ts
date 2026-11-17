@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import type { DataNode } from '@weasel-js/diagram';
 import type { DiagramDocument } from './document';
 import { writeDot } from './dot/write';
-import { DRAW_XML } from './drawXml/format';
+import { DIAGRAM_DRAW_XML } from './drawXml/format';
 import { writeFlowchart } from './mermaid/flowchart/write';
 
 const CLASS: DataNode = {
@@ -15,7 +15,7 @@ describe('a shape with divider rows, written to a text format', () => {
   it.each([
     ['DOT', () => writeDot(doc)],
     ['Mermaid', () => writeFlowchart(doc)],
-    ['draw-style XML', () => DRAW_XML.write!(doc)],
+    ['draw-style XML', () => DIAGRAM_DRAW_XML.write!(doc)],
   ])('keeps its text and drops its dividers without a warning in %s', (_name, write) => {
     const { text, warnings } = write();
     expect(text).toContain('Order');

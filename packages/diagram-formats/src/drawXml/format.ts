@@ -11,7 +11,7 @@ const ROOT = /^\s*(?:<\?[^]*?\?>\s*|<!--[^]*?-->\s*|<!DOCTYPE[^>]*>\s*)*<(mxfile
  * geometry, written out or compressed. Recognized by its root element, since
  * `.xml` names many formats.
  */
-export const DRAW_XML: DiagramFormat = {
+export const DIAGRAM_DRAW_XML: DiagramFormat = {
   id: 'draw-xml',
   name: 'Draw-style XML',
   extensions: ['.xml'],

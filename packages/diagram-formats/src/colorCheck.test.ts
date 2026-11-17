@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { asGraph } from './testing/asGraph';
 import { readDot } from './dot/read';
-import { DRAW_XML } from './drawXml/format';
+import { DIAGRAM_DRAW_XML } from './drawXml/format';
 import { readC4 } from './mermaid/c4/read';
 import { readFlowchart } from './mermaid/flowchart/read';
 import { readStateDiagram } from './mermaid/state/read';
@@ -50,7 +50,7 @@ describe('one color check for every reader', () => {
     const xml = '<mxGraphModel><root><mxCell id="0"/><mxCell id="1" parent="0"/>'
       + '<mxCell id="a" value="A" style="fillColor=bogus;strokeColor=#00ff00;fontColor=zz;" vertex="1" parent="1">'
       + '<mxGeometry x="10" y="10" width="80" height="40" as="geometry"/></mxCell></root></mxGraphModel>';
-    const r = await DRAW_XML.read!(xml);
+    const r = await DIAGRAM_DRAW_XML.read!(xml);
     expect(graph(r).data.nodes[0]!.colors).toEqual({ stroke: '#00ff00' });
     expect(r.warnings).toContain('Draw-style XML colors a diagram cannot draw were dropped: bogus, zz.');
   });

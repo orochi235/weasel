@@ -7,7 +7,7 @@ import { documentFromScene } from './fromScene';
 import { DIAGRAM_MERMAID } from './mermaid/format';
 import { MEASURE, drawnScene } from './testing/docScene';
 import { documentSpecs } from './toScene';
-import { DRAW_XML } from './drawXml/format';
+import { DIAGRAM_DRAW_XML } from './drawXml/format';
 import { asGraph } from './testing/asGraph';
 
 const DOC: DiagramDocument = {
@@ -34,10 +34,10 @@ describe('detectFormat', () => {
   });
 
   it('lists draw-style XML, known by its root element whatever the file is called', () => {
-    expect(DIAGRAM_FORMATS).toContain(DRAW_XML);
-    const text = DRAW_XML.write!(DOC).text;
-    expect(detectFormat(text, 'chart.xml')).toBe(DRAW_XML);
-    expect(detectFormat(text, 'chart.txt')).toBe(DRAW_XML);
+    expect(DIAGRAM_FORMATS).toContain(DIAGRAM_DRAW_XML);
+    const text = DIAGRAM_DRAW_XML.write!(DOC).text;
+    expect(detectFormat(text, 'chart.xml')).toBe(DIAGRAM_DRAW_XML);
+    expect(detectFormat(text, 'chart.txt')).toBe(DIAGRAM_DRAW_XML);
     expect(detectFormat('<svg/>', 'chart.xml')).toBeNull();
   });
 

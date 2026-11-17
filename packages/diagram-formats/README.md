@@ -107,7 +107,7 @@ with it and rejects on a file nothing reads.
 | Format | Extensions | Reads | Writes |
 | --- | --- | --- | --- |
 | `DIAGRAM_JSON`, the document as JSON | `.diagram.json` | yes, graph, sequence, and plot pages | the whole document |
-| `DRAW_XML`, draw-style XML | `.xml` | yes, plain or compressed | every graph page, uncompressed |
+| `DIAGRAM_DRAW_XML`, draw-style XML | `.xml` | yes, plain or compressed | every graph page, uncompressed |
 | `DIAGRAM_MERMAID`, a Mermaid flowchart, class, state, ER, mind map, requirement, block, architecture, C4, kanban, or sequence diagram, or a chart | `.mmd`, `.mermaid` | yes | one page, a graph, a sequence, or a chart |
 | `DIAGRAM_DOT`, a Graphviz DOT graph | `.dot`, `.gv` | yes | one page |
 
