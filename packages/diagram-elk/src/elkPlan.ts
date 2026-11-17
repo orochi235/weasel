@@ -60,7 +60,7 @@ export interface ElkPlan extends LayoutPlan {
 const DIRECTIONS: Record<LayoutDirection, string> = { down: 'DOWN', up: 'UP', right: 'RIGHT', left: 'LEFT' };
 
 /** The ELK options a run starts from, before `opts.elkOptions`. */
-export function rootOptions(opts: ElkLayoutOptions = {}): Record<string, string> {
+export function elkRootOptions(opts: ElkLayoutOptions = {}): Record<string, string> {
   const spacing = String(opts.nodeGap ?? DEFAULT_NODE_GAP);
   return {
     'elk.algorithm': 'layered',
@@ -93,7 +93,7 @@ function defaultElk(): Promise<ElkRunner> {
 /** Lay `graph` out with ELK: where each participant goes, each edge's route
  *  and the port at either end, each label's place, and each group's box. */
 export async function elkPlan(graph: Graph, opts: ElkLayoutOptions = {}): Promise<ElkPlan> {
-  const { root, index } = toElk(graph, rootOptions(opts));
+  const { root, index } = toElk(graph, elkRootOptions(opts));
   const elk = opts.elk ?? (await defaultElk());
   const placement = fromElk(await elk.layout(root), index);
   return planFrom(graph, placement, opts);

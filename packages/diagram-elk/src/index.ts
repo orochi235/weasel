@@ -5,5 +5,5 @@
  *
  * @packageDocumentation
  */
-export { elkLayout, elkPlan, elkPlanner, rootOptions, type ElkLayoutOptions, type ElkPlan, type ElkPlanner, type ElkRunner } from './elkPlan';
+export { elkLayout, elkPlan, elkPlanner, elkRootOptions, type ElkLayoutOptions, type ElkPlan, type ElkPlanner, type ElkRunner } from './elkPlan';
 export { toElk, type DrawnEdge, type ElkIndex } from './toElk';
