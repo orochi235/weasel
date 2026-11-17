@@ -6,6 +6,7 @@ import react from '@vitejs/plugin-react';
 import { playwright } from '@vitest/browser-playwright';
 import { weaselAliases } from './scripts/vite-aliases.ts';
 import { traitSchemasPlugin } from './apps/draw/vite-plugin-trait-schemas.ts';
+import { sourceIndexPlugin } from './apps/draw/vite-plugin-source-index.ts';
 import { forgeAliases, frameConfig as forgeFrameConfig, stories as forgeStories } from './apps/forge/viteShared.ts';
 import { forgeTest } from './packages/forge/src/vite/forgeTest.ts';
 import { ownEntries as forgeOwnEntries } from './packages/forge/src/vite/ownEntries.ts';
@@ -245,12 +246,12 @@ export default defineConfig({
         ...shared,
         ...vm,
         // The draw app's Bundle Inspector consumes
-        // `virtual:weasel-trait-schemas`, served by a Vite plugin that's
+        // `virtual:weasel-trait-schemas` and `virtual:weasel-source-index`, served by Vite plugins
         // wired in `apps/draw/vite.config.ts` for dev/build. Vitest
-        // doesn't inherit that config, so the plugin has to be added
+        // doesn't inherit that config, so the plugins have to be added
         // here too or any test that imports a Bundle Inspector module
         // fails to resolve the virtual id at load time.
-        plugins: [react(), cssCacheKey(), resolveCacheKey(), traitSchemasPlugin({ repoRoot: import.meta.dirname }), weaselIcons.vite({ mode: 'app' })],
+        plugins: [react(), cssCacheKey(), resolveCacheKey(), traitSchemasPlugin({ repoRoot: import.meta.dirname }), sourceIndexPlugin({ repoRoot: import.meta.dirname }), weaselIcons.vite({ mode: 'app' })],
         test: {
           name: 'draw',
           retry: RETRY_TIMEOUTS,
@@ -349,6 +350,7 @@ export default defineConfig({
           resolveCacheKey(),
           keepErrorsHome(),
           traitSchemasPlugin({ repoRoot: import.meta.dirname }),
+          sourceIndexPlugin({ repoRoot: import.meta.dirname }),
           forgeTest({ stories: forgeStories, frameConfig: forgeFrameConfig }),
         ],
         resolve: { alias: forgeAliases(import.meta.dirname) },

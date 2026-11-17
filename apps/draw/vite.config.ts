@@ -9,6 +9,7 @@ import { devSourcemaps } from '../../scripts/vite-sourcemaps.ts';
 import { prebundleWorkspace } from '../../scripts/vite-prebundle.ts';
 import { callbackSourcePlugin, packageSourceDirs } from './vite-plugin-callback-source.ts';
 import { traitSchemasPlugin } from './vite-plugin-trait-schemas.ts';
+import { sourceIndexPlugin } from './vite-plugin-source-index.ts';
 import { watchProbe } from '../../packages/forge/src/vite/watchProbe.ts';
 import { weaselIcons } from '../../packages/icons-plugin/src/index.ts';
 import ports from '../../scripts/dev-ports.json' with { type: 'json' };
@@ -48,6 +49,7 @@ export default defineConfig({
         })]
       : []),
     traitSchemasPlugin({ repoRoot }),
+    sourceIndexPlugin({ repoRoot }),
     weaselIcons.vite({ mode: 'app' }),
     localWake(),
     watchProbe(),
