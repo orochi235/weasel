@@ -18,7 +18,7 @@
 import type { AnchorSet } from './anchorEdits';
 import { flatAnchorIndex, locateAnchor } from './anchorEdits';
 import { isStraightSegment, type PenAnchor } from './anchors';
-import { splitCubicAtT, type Point } from './cubicMath';
+import { splitCubicPoints, type Point } from './cubicMath';
 import { cubicCurvatureAt, cubicDerivativeAt } from './curvature';
 import type { OpenPathEnd } from './reachPath';
 import { nearestOnCubic, nearestOnSegment } from '../nearest';
@@ -248,7 +248,7 @@ function cutTail(sub: PenAnchor[], keep: number, len: number): void {
     return;
   }
   const t = segmentTAtLength(flatPoints([p0, p1, p2, p3]), 2, keep);
-  const { left } = splitCubicAtT(p0, p1, p2, p3, t);
+  const { left } = splitCubicPoints(p0, p1, p2, p3, t);
   if (p0.outHandle) p0.outHandle = left[1];
   p3.inHandle = left[2];
   p3.x = left[3].x;

@@ -31,7 +31,7 @@ export {
   starPath,
   linePath,
   boundsOfPath,
-  splitCubicAtT,
+  splitCubicPoints,
   fitCubicThroughDeletion,
   type Point,
   strokeHitTest,

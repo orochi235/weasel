@@ -120,7 +120,7 @@ export {
   type EaseOptions, type TugMode, type PathEndFrame,
 } from './paths/tugPathEnd';
 export { easeLength, extensionPieces, type ExtensionPiece } from './paths/pathEndExtension';
-export { cubicPointAt, splitCubicAtT, type Point } from './paths/cubicMath';
+export { cubicPointAt, splitCubicPoints, type Point } from './paths/cubicMath';
 export { fitCubicThroughDeletion } from './paths/spanFit';
 export { schneiderFit, fitCubicWithTangents } from './paths/schneiderFit';
 export { simplifyPath, simplifySpan, simplifySubpath, type SimplifyPathOptions } from './paths/simplifyPath';
