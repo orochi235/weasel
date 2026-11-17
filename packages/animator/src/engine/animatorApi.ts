@@ -186,8 +186,9 @@ export function createAnimatorApi(host: ApiHost): Animator {
     colorOverrides: host.colorOverrides,
     trimOverrides: host.trimOverrides,
     onTick: (cb) => host.subscribers.subscribe(cb),
-    keepAlive: () => {
+    keepAlive: (onCancel) => {
       const sup = createSupervisor({ kind: 'keepAlive' });
+      if (onCancel) sup.setOnCancel(onCancel);
       return () => sup.cancel();
     },
     watch: (listener) => hub.add(listener),

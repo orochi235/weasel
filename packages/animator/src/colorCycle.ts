@@ -34,7 +34,8 @@ export interface CycleHandle {
  *  loop. To keep the loop alive (so `<SceneCanvas animator>`'s onTick
  *  subscription continues firing redraws while the cycle is installed),
  *  cycleVertexColors holds an `animator.keepAlive()` entry for the
- *  lifetime of the cycle; `cancel()` releases it. */
+ *  lifetime of the cycle; `cancel()` releases it, and `animator.cancelAll()` ends the cycle
+ *  with it. */
 export function cycleVertexColors(
   animator: Animator,
   opts: CycleVertexColorsOptions,
@@ -81,15 +82,19 @@ export function cycleVertexColors(
   // an explicit keep-alive entry the animator's RAF loop would idle and
   // SceneCanvas's onTick redraw subscription would never fire. Keep the
   // loop running until cancel().
-  const releaseKeepAlive = animator.keepAlive();
-
   let canceled = false;
+  const end = (): void => {
+    if (canceled) return;
+    canceled = true;
+    // An override set over the cycle since is someone else's to clear.
+    if (animator.colorOverrides.get(id, channel) === override) animator.colorOverrides.clear(id, channel);
+  };
+  // `cancelAll` ends the entry from outside, and the cycle with it: left painted, it would freeze.
+  const releaseKeepAlive = animator.keepAlive(end);
+
   return {
     cancel(): void {
-      if (canceled) return;
-      canceled = true;
-      // An override set over the cycle since is someone else's to clear.
-      if (animator.colorOverrides.get(id, channel) === override) animator.colorOverrides.clear(id, channel);
+      end();
       releaseKeepAlive();
     },
   };
