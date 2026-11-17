@@ -5,7 +5,7 @@
  */
 import fc from 'fast-check';
 import { describe, expect, it } from 'vitest';
-import { enumerateSelections, isByAxis, pick, type AxisDefs, type Varying } from '../axes';
+import { enumerateAxisChoices, isByAxis, pick, type AxisDefs, type Varying } from '../axes';
 import type { PinValue, ThemeDefinition } from '../definition';
 import { runs, tally, tokenName } from '../pbt.fixture';
 import { mergeChain } from './merge';
@@ -44,7 +44,7 @@ describe('mergeChain', () => {
       const merged = mergeChain(defs.kid!, lookup);
       const parent = mergeChain(defs.mid!, lookup);
       expect(Object.keys(merged.pins ?? {}).sort()).toEqual([...new Set([...Object.keys(parent.pins ?? {}), ...Object.keys(kidPins)])].sort());
-      for (const sel of enumerateSelections(AXES)) {
+      for (const sel of enumerateAxisChoices(AXES)) {
         for (const name of Object.keys(merged.pins ?? {})) {
           const got = pick(merged.pins![name]!, sel);
           const own = Object.hasOwn(kidPins, name) ? pick(kidPins[name]!, sel) : { ok: false as const };

@@ -7,7 +7,7 @@
 import fc from 'fast-check';
 import { describe, expect, it } from 'vitest';
 import { applyTheme, __resetThemeSheet } from './applyTheme';
-import { fullSelection, wzlValue, type AxisDefs, type Selection } from './axes';
+import { fullAxisChoice, wzlValue, type AxisDefs, type AxisChoice } from './axes';
 import { runs, tally, timeoutFor } from './pbt.fixture';
 import { resolveTheme, themeAxes } from './resolveTheme';
 import type { Theme } from './theme';
@@ -40,11 +40,11 @@ const theme: fc.Arbitrary<Theme> = fc
       }));
     }),
   );
-const selection: fc.Arbitrary<Selection> = fc.dictionary(fc.constantFrom(...AXIS_NAMES), fc.constantFrom(...VALUES, 'unknown'), { maxKeys: 2, noNullPrototype: true });
+const selection: fc.Arbitrary<AxisChoice> = fc.dictionary(fc.constantFrom(...AXIS_NAMES), fc.constantFrom(...VALUES, 'unknown'), { maxKeys: 2, noNullPrototype: true });
 
 interface Model {
   readonly themes: readonly Theme[];
-  held: ({ theme: number; sel: Selection; handle: number } | null)[];
+  held: ({ theme: number; sel: AxisChoice; handle: number } | null)[];
   releases: { el: number; release: () => void }[];
 }
 interface Real {
@@ -64,7 +64,7 @@ function check(m: Model, r: Real): void {
       return;
     }
     const th = m.themes[h.theme]!;
-    const sel = fullSelection(themeAxes(th), h.sel);
+    const sel = fullAxisChoice(themeAxes(th), h.sel);
     expect(el.getAttribute('data-wzl-theme')).toBe(wzlValue(th.name));
     for (const [axis, v] of Object.entries(sel)) expect(el.getAttribute(`data-wzl-${axis}`), axis).toBe(v);
     const mine = rules.filter((rule) => el.matches(rule.selectorText));
@@ -82,7 +82,7 @@ function check(m: Model, r: Real): void {
 }
 
 class Apply implements fc.Command<Model, Real> {
-  constructor(readonly el: number, readonly theme: number, readonly sel: Selection) {}
+  constructor(readonly el: number, readonly theme: number, readonly sel: AxisChoice) {}
   check = () => true;
   run(m: Model, r: Real): void {
     const release = applyTheme(r.els[this.el]!, m.themes[this.theme]!, this.sel);

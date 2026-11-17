@@ -1,6 +1,6 @@
 import { isPrefScope, prefLeaves, prefScopeSelectors, type PrefGroup, type PrefLeaf, type PrefScope, type PrefScopeSpec } from '@weasel-js/prefs';
 import { getOwn, setOwn } from '@weasel-js/registry';
-import { selectionKey } from '../axes.ts';
+import { axisChoiceKey } from '../axes.ts';
 import { weaselTheme, type Theme } from '../theme.ts';
 import { prefOfCss, tokenLeafKind } from './leaf.ts';
 import { foldAxes, tokenTable, type TokenRow } from './tokens.ts';
@@ -41,8 +41,8 @@ function tokenLeaf(row: TokenRow, table: ReturnType<typeof tokenTable>): PrefLea
     ...tokenLeafKind(row), name, description: row.description, default: undefined as unknown,
     ...(name === row.name ? {} : { tags: [row.name] }),
   } as PrefLeaf;
-  const fallback = getOwn(row.css, selectionKey(table.axes, {})) ?? Object.values(row.css)[0];
-  const held = foldAxes(table.axes, (selection) => prefOfCss(leaf, getOwn(row.css, selectionKey(table.axes, selection)) ?? fallback), scopeByAxis);
+  const fallback = getOwn(row.css, axisChoiceKey(table.axes, {})) ?? Object.values(row.css)[0];
+  const held = foldAxes(table.axes, (selection) => prefOfCss(leaf, getOwn(row.css, axisChoiceKey(table.axes, selection)) ?? fallback), scopeByAxis);
   leaf.default = prefOfCss(leaf, fallback);
   // Auto is following the theme, which computes the value; a pin goes over it.
   leaf.auto = { on: true, value: held };

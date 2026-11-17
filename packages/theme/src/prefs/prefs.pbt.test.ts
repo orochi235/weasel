@@ -9,7 +9,7 @@ import { openPrefsSync, prefLeaves, type PrefGroup } from '@weasel-js/prefs';
 import { createMemoryAdapter } from '@weasel-js/storage';
 import fc from 'fast-check';
 import { describe, expect, it } from 'vitest';
-import { enumerateSelections } from '../axes';
+import { enumerateAxisChoices } from '../axes';
 import { chainTheme, outcome, runs, tally, timeoutFor } from '../pbt.fixture';
 import { resolveTheme, themeAxes } from '../resolveTheme';
 import type { Theme } from '../theme';
@@ -34,7 +34,7 @@ const open = (schema: PrefGroup) => openPrefsSync(schema, { storage: createMemor
 /** `theme` resolved at every selection of its axes, or null when it does not resolve somewhere. */
 function resolvedEverywhere(theme: Theme): Map<string, Record<string, string>> | null {
   const out = new Map<string, Record<string, string>>();
-  for (const sel of enumerateSelections(themeAxes(theme))) {
+  for (const sel of enumerateAxisChoices(themeAxes(theme))) {
     const r = outcome(() => resolveTheme(theme, sel));
     if (typeof r === 'string') return null;
     out.set(JSON.stringify(sel), r);
@@ -52,7 +52,7 @@ describe('themePrefsSchema and a store over it', () => {
       const schema = themePrefsSchema(theme);
       const store = open(schema);
       expect(themePrefsPins(store)).toEqual({});
-      for (const sel of enumerateSelections(themeAxes(theme))) {
+      for (const sel of enumerateAxisChoices(themeAxes(theme))) {
         for (const [axis, v] of Object.entries(sel)) store.set(themeAxisPath(axis), v);
         const css = base.get(JSON.stringify(sel))!;
         for (const [path, leaf] of prefLeaves(schema)) {
@@ -85,7 +85,7 @@ describe('themePrefsSchema and a store over it', () => {
       const pinned = themeFromPrefs(store, theme);
       // A hook the theme leaves to its fallback resolves once written, to that fallback; only what it resolved before
       // is compared. A color leaf holds hex, so a color is compared as the color it is, not as its text.
-      for (const sel of enumerateSelections(themeAxes(theme))) {
+      for (const sel of enumerateAxisChoices(themeAxes(theme))) {
         const before = base.get(JSON.stringify(sel))!;
         const after: Record<string, string> = resolveTheme(pinned, sel);
         const compared = Object.keys(before).filter((n) => !unreadable(before[n]));

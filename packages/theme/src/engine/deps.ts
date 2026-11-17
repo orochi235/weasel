@@ -1,5 +1,5 @@
 import { getOwn, isPlainObject, setOwn } from '@weasel-js/registry';
-import { enumerateSelections, isByAxis, pick, type Selection } from '../axes.ts';
+import { enumerateAxisChoices, isByAxis, pick, type AxisChoice } from '../axes.ts';
 import { refTarget } from '../dtcg/resolve.ts';
 import type { SemanticRule, ThemeDefinition } from '../definition.ts';
 import { mergeChain, type Lookup } from './merge.ts';
@@ -63,7 +63,7 @@ function scanSteps(entry: unknown, into: Node): void {
 const stepsKey = (ramp: string) => `ramps.${ramp}`;
 
 /** Whether a pin replaces what it pins at `sel`: it has a value there, and any whole-value seed it names does too. */
-function pinApplies(pin: unknown, sel: Selection, seeds: Readonly<Record<string, unknown>>): boolean {
+function pinApplies(pin: unknown, sel: AxisChoice, seeds: Readonly<Record<string, unknown>>): boolean {
   const picked = pick(pin, sel);
   if (!picked.ok) return false;
   const value = isPlainObject(picked.value) && 'value' in picked.value ? picked.value.value : picked.value;
@@ -181,7 +181,7 @@ export function axisDependencies(definition: ThemeDefinition, lookup?: Lookup): 
     scan(v, n);
     nodes.set(name, n);
   }
-  const selections = enumerateSelections(def.axes ?? {});
+  const selections = enumerateAxisChoices(def.axes ?? {});
   for (const [name, v] of Object.entries(def.pins ?? {})) {
     const n = node();
     scan(v, n);

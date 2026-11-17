@@ -1,5 +1,5 @@
 import { isPlainObject } from '@weasel-js/core';
-import { type AxisDefs, isByAxis, type Selection, type ThemeDefinition } from '@weasel-js/theme';
+import { type AxisDefs, isByAxis, type AxisChoice, type ThemeDefinition } from '@weasel-js/theme';
 import { axisDependencies } from '@weasel-js/theme/engine';
 import { getOwn, setOwn } from '@weasel-js/registry';
 import { EditError, type Holder, ownAt, type ScaleEditResult, type Slot } from './saveScales';
@@ -17,7 +17,7 @@ function derived(entry: unknown): boolean {
 }
 
 /** The axis value `selection` reads for `axis`. Throws when it does not say. */
-function picked(selection: Selection, axis: string, where: string): string {
+function picked(selection: AxisChoice, axis: string, where: string): string {
   const value = getOwn(selection, axis);
   if (value === undefined || value === 'by') {
     throw new EditError(`${where} differs by ${axis}, and which ${axis} this trial shows is not known`);
@@ -26,7 +26,7 @@ function picked(selection: Selection, axis: string, where: string): string {
 }
 
 /** `holder[key]` through its per-axis branches; undefined where an entry leaves the selection out, so it writes nothing there. */
-function branchAt(holder: Holder, key: string, where: string, selection: Selection): Slot | undefined {
+function branchAt(holder: Holder, key: string, where: string, selection: AxisChoice): Slot | undefined {
   let slot: Slot = { holder, key, where };
   for (let value = ownAt(holder, key); isByAxis(value); value = ownAt(slot.holder, slot.key)) {
     const at = picked(selection, value.by, slot.where);
@@ -37,7 +37,7 @@ function branchAt(holder: Holder, key: string, where: string, selection: Selecti
 }
 
 /** The place `definition` writes `token`'s value out for `selection`, or null when the theme derives it there. */
-function writtenSlot(definition: ThemeDefinition, token: string, selection: Selection): Slot | null {
+function writtenSlot(definition: ThemeDefinition, token: string, selection: AxisChoice): Slot | null {
   for (const layer of LAYERS) {
     const entries = definition[layer] as Holder | undefined;
     if (!entries || !Object.hasOwn(entries, token)) continue;
@@ -69,7 +69,7 @@ function literal(old: unknown, value: string): unknown {
  * `entry`, a pin or nothing, made to give `value` wherever the axes the token varies on read as `selection` does,
  * and what it gave before everywhere else. A pin branch it leaves out keeps overriding nothing.
  */
-function pinOver(entry: unknown, axes: readonly string[], selection: Selection, value: string, defs: AxisDefs, where: string): unknown {
+function pinOver(entry: unknown, axes: readonly string[], selection: AxisChoice, value: string, defs: AxisDefs, where: string): unknown {
   if (isByAxis(entry)) {
     const at = picked(selection, entry.by, where);
     const rest = axes.filter((axis) => axis !== entry.by);
@@ -87,7 +87,7 @@ function pinOver(entry: unknown, axes: readonly string[], selection: Selection, 
 }
 
 /** Writes one edit into `root`, which it mutates. */
-function writeEdit(root: ThemeDefinition, token: string, value: string, selection: Selection): void {
+function writeEdit(root: ThemeDefinition, token: string, value: string, selection: AxisChoice): void {
   if (!Object.hasOwn(axisDependencies(root), token)) throw new EditError(`the theme defines no token "${token}"`);
   const slot = writtenSlot(root, token, selection);
   if (slot) {
@@ -108,7 +108,7 @@ function writeEdit(root: ThemeDefinition, token: string, value: string, selectio
 export function applyTokenEdits(
   definition: ThemeDefinition,
   edits: Readonly<Record<string, string>>,
-  selection: Selection,
+  selection: AxisChoice,
 ): ScaleEditResult {
   const root = structuredClone(definition);
   try {
@@ -121,6 +121,6 @@ export function applyTokenEdits(
 }
 
 /** Whether a save has a place for `token` under `selection`. */
-export function canSave(definition: ThemeDefinition, token: string, selection: Selection): boolean {
+export function canSave(definition: ThemeDefinition, token: string, selection: AxisChoice): boolean {
   return applyTokenEdits(definition, { [token]: '' }, selection).ok;
 }

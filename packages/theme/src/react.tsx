@@ -3,7 +3,7 @@ import React, { createContext, useCallback, useContext, useMemo, useRef, useLayo
 import { applyTheme } from './applyTheme';
 import { themeTints, type ColorList } from './colorListItems';
 import { colorSourceCss, colorSourceLiteral } from './colorSource';
-import { fullSelection, selectionKey, wzlValue, type Selection } from './axes';
+import { fullAxisChoice, axisChoiceKey, wzlValue, type AxisChoice } from './axes';
 import { resolveTheme, themeAxes, type ResolvedTheme } from './resolveTheme';
 import { weaselTheme, type Theme } from './theme';
 import { useResolvedColorMode } from './useColorMode';
@@ -21,7 +21,7 @@ export { isColorModePreference, type ColorMode, type ColorModePreference } from 
  *  fully resolved token record for that pair, and the tint list and palette in force. */
 export interface ThemeContextValue {
   readonly theme: Theme;
-  readonly selection: Selection;
+  readonly selection: AxisChoice;
   readonly resolved: ResolvedTheme;
   readonly tints: ColorList;
   readonly palette: Palette;
@@ -39,7 +39,7 @@ export interface ThemeProviderProps {
   /** Axis values, e.g. `{ mode: 'light' }`. A missing axis takes its default. `mode: 'auto'`
    *  follows the OS setting, live; any other value the theme lacks takes the default, and an axis
    *  the theme does not declare is ignored, each with a warning in development. */
-  readonly selection?: Selection;
+  readonly selection?: AxisChoice;
   /** Leave unwarned a selection axis the theme does not declare: for one selection shared across themes on purpose. */
   readonly ignoreUnknownAxes?: boolean;
   /** The colors a `tint` index picks from in this subtree. Absent: the theme's own. */
@@ -77,9 +77,9 @@ export function ThemeProvider({
   const autoMode = selection?.mode === 'auto' && !(Object.hasOwn(axes, 'mode') && Object.hasOwn(axes.mode!.values, 'auto'));
   const systemMode = useResolvedColorMode(autoMode ? 'auto' : 'dark');
   const given = autoMode ? { ...selection, mode: systemMode } : selection;
-  const full = fullSelection(axes, given);
+  const full = fullAxisChoice(axes, given);
   // Keyed on the selection's content: callers pass a fresh object every render.
-  const key = selectionKey(axes, full);
+  const key = axisChoiceKey(axes, full);
 
   const value = useMemo<ThemeContextValue>(
     () => ({ theme, selection: full, resolved: resolveTheme(theme, full), tints: tints ?? themeTints(theme), palette }),
@@ -137,7 +137,7 @@ export function useTints(): ThemeContextValue {
   if (ctx) return ctx;
   return (defaultTints ??= {
     theme: weaselTheme,
-    selection: fullSelection(themeAxes(weaselTheme)),
+    selection: fullAxisChoice(themeAxes(weaselTheme)),
     resolved: resolveTheme(weaselTheme),
     tints: themeTints(weaselTheme),
     palette: NO_PALETTE,

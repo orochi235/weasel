@@ -1,6 +1,6 @@
 import { isPrefScope, PREF_ELSE, prefLeaves, type PrefEnum, type PrefGroup, type PrefLeaf, type PrefScope } from '@weasel-js/prefs';
 import { getOwn, setOwn } from '@weasel-js/registry';
-import { selectionKey, type Selection, type Varying } from '../axes.ts';
+import { axisChoiceKey, type AxisChoice, type Varying } from '../axes.ts';
 import type { PinValue } from '../definition.ts';
 import { defineTheme, type Theme } from '../theme.ts';
 import { cssOfPref, prefOfCss } from './leaf.ts';
@@ -37,7 +37,7 @@ function pinOf(leaf: PrefLeaf, held: unknown, options: OptionsOf): Varying<PinVa
 }
 
 /** The value of each axis as the store has it set: the selection to resolve or apply its theme at. */
-export function themePrefsSelection(store: ThemePrefsSource): Selection {
+export function themePrefsSelection(store: ThemePrefsSource): AxisChoice {
   const out: Record<string, string> = {};
   for (const path of prefLeaves(store.schema).keys()) {
     const axis = themeAxisOf(path);
@@ -86,7 +86,7 @@ export function themePrefsValues(
 ): { values: Record<string, unknown>; scopes: ReadonlyMap<string, PrefScope> } {
   const { axes, rows } = tokenTable(themeFromPrefs(store, base));
   const css = new Map(rows.map((row) => [row.name, row.css]));
-  const now = selectionKey(axes, themePrefsSelection(store));
+  const now = axisChoiceKey(axes, themePrefsSelection(store));
   const values: Record<string, unknown> = { ...store.values() };
   const scopes = new Map(store.scopes());
   const copied = new Set<string>();
@@ -94,7 +94,7 @@ export function themePrefsValues(
     if (themeAxisOf(path) !== undefined || store.isSet(path)) continue;
     const resolved = css.get(themeTokenOf(path));
     if (!resolved || Object.values(resolved).some((text) => prefOfCss(leaf, text) === undefined)) continue;
-    const held = foldAxes(axes, (selection) => prefOfCss(leaf, getOwn(resolved, selectionKey(axes, selection))), scopeByAxis);
+    const held = foldAxes(axes, (selection) => prefOfCss(leaf, getOwn(resolved, axisChoiceKey(axes, selection))), scopeByAxis);
     if (isPrefScope(held)) scopes.set(path, held);
     else scopes.delete(path);
     const value = prefOfCss(leaf, getOwn(resolved, now));

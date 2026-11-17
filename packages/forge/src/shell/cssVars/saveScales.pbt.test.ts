@@ -4,7 +4,7 @@
  * written out plainly would, saving it again changes nothing, the definition handed in is left alone, and a scale
  * that shares no seed with an edited one derives as before everywhere.
  */
-import type { AxisDefs, Selection, ThemeDefinition } from '@weasel-js/theme';
+import type { AxisDefs, AxisChoice, ThemeDefinition } from '@weasel-js/theme';
 import { derive } from '@weasel-js/theme/engine';
 import fc from 'fast-check';
 import { describe, expect, it } from 'vitest';
@@ -81,14 +81,14 @@ const edit: fc.Arbitrary<ScaleEdit> = fc.record({
   ),
 });
 
-function selections(axes: AxisDefs): Selection[] {
-  return Object.entries(axes).reduce<Selection[]>(
+function selections(axes: AxisDefs): AxisChoice[] {
+  return Object.entries(axes).reduce<AxisChoice[]>(
     (acc, [axis, def]) => acc.flatMap((s) => Object.keys(def.values).map((v) => ({ ...s, [axis]: v }))),
     [{}],
   );
 }
 
-const stepsOf = (def: ThemeDefinition, name: string, s: Selection): unknown[] =>
+const stepsOf = (def: ThemeDefinition, name: string, s: AxisChoice): unknown[] =>
   STEPS.map((step) => {
     const tokens = derive(def, s).tokens;
     return Object.hasOwn(tokens, `${name}-${step}`) ? tokens[`${name}-${step}`]!.value : undefined;

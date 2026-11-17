@@ -7,7 +7,7 @@ import { describe, expect, it } from 'vitest';
 import { parseColor } from '@weasel-js/paint';
 import { loadDTCG, type DtcgDocument } from '../loadDTCG';
 import { rawToken, runs, tally, timeoutFor, tokenName } from '../pbt.fixture';
-import { enumerateSelections } from '../axes';
+import { enumerateAxisChoices } from '../axes';
 import { resolveTheme, themeAxes } from '../resolveTheme';
 import { withAlpha } from './color';
 import { flattenTokens } from './flatten';
@@ -189,7 +189,7 @@ describe('loadDTCG fuzzed', () => {
       }
       t.count('loaded');
       if (Object.keys(theme.axes).some((a) => a !== 'mode')) t.count('loaded with axes');
-      for (const sel of enumerateSelections(themeAxes(theme)).slice(0, 8)) {
+      for (const sel of enumerateAxisChoices(themeAxes(theme)).slice(0, 8)) {
         try {
           resolveTheme(theme, sel);
           t.count('resolved');

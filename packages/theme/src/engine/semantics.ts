@@ -1,5 +1,5 @@
 import { isPlainObject, getOwn } from '@weasel-js/registry';
-import { pick, type Selection, type Varying } from '../axes.ts';
+import { pick, type AxisChoice, type Varying } from '../axes.ts';
 import type { PinObject, SemanticRule } from '../definition.ts';
 import { refTarget } from '../dtcg/resolve.ts';
 import type { RawToken, TokenValue } from '../dtcg/types.ts';
@@ -11,7 +11,7 @@ const HEX = /^#[0-9a-f]{6}$/i;
 const MAX_DEPTH = 32;
 
 export interface SemanticContext {
-  readonly sel: Selection;
+  readonly sel: AxisChoice;
   /** Ramp and scale tokens derived so far. */
   readonly tokens: Readonly<Record<string, RawToken>>;
   /** Ramp name → its steps, in order. */
@@ -232,7 +232,7 @@ function requireKnown(owner: string, name: string, known: (name: string) => bool
 /** Audits every semantic's `check` against final tokens, so components and pins count. Run after references are checked, so every chain ends. */
 export function checkSemantics(
   rules: Readonly<Record<string, Varying<SemanticRule>>>,
-  sel: Selection,
+  sel: AxisChoice,
   tokens: Readonly<Record<string, RawToken>>,
   known: (name: string) => boolean,
   issues: Issue[],

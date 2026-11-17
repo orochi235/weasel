@@ -1,5 +1,5 @@
 import { getOwn, setOwn } from '@weasel-js/registry';
-import { axisScheme, enumerateSelections, fullSelection, pickAll, wzlAttr, type AxisDefs, type Selection } from '../../axes.ts';
+import { axisScheme, enumerateAxisChoices, fullAxisChoice, pickAll, wzlAttr, type AxisDefs, type AxisChoice } from '../../axes.ts';
 import { tokenAt } from '../../chainTokens.ts';
 import { mixAlpha } from '../../dtcg/color.ts';
 import { refTarget, resolveTokens } from '../../dtcg/resolve.ts';
@@ -31,7 +31,7 @@ function axisSets(axes: AxisDefs): string[][] {
   return sets.sort((a, b) => a.length - b.length);
 }
 
-function combinations(axes: AxisDefs, set: readonly string[]): Selection[] {
+function combinations(axes: AxisDefs, set: readonly string[]): AxisChoice[] {
   let out: Record<string, string>[] = [{}];
   for (const axis of set) out = out.flatMap((s) => Object.keys(getOwn(axes, axis)!.values).map((v) => ({ ...s, [axis]: v })));
   return out;
@@ -64,13 +64,13 @@ class Resolved {
     this.names = [...new Set(chain.flatMap((t) => Object.keys(t.tokens)))];
   }
 
-  token(name: string, sel: Selection): RawToken | undefined {
-    return tokenAt(this.chain, name, fullSelection(this.axes, sel));
+  token(name: string, sel: AxisChoice): RawToken | undefined {
+    return tokenAt(this.chain, name, fullAxisChoice(this.axes, sel));
   }
 
   /** What a browser computes: every `var()` substituted, down to literals. */
-  expanded(name: string, sel: Selection, stack: readonly string[] = []): string {
-    const key = JSON.stringify(fullSelection(this.axes, sel));
+  expanded(name: string, sel: AxisChoice, stack: readonly string[] = []): string {
+    const key = JSON.stringify(fullAxisChoice(this.axes, sel));
     const memo = this.memo.get(key) ?? this.memo.set(key, new Map()).get(key)!;
     const hit = memo.get(name);
     if (hit !== undefined) return hit;
@@ -104,7 +104,7 @@ interface Plan {
   readonly names: readonly string[];
   readonly all: (name: string) => readonly string[];
   readonly own: (name: string) => readonly string[];
-  readonly value: (name: string, sel: Selection) => RawToken | undefined;
+  readonly value: (name: string, sel: AxisChoice) => RawToken | undefined;
 }
 
 function blocks(lines: string[], plan: Plan, selector: (attrs: string) => string[]): void {
@@ -146,7 +146,7 @@ export function emitCss(themes: readonly EmitInput[]): string {
   const diffed = themes.filter((t) => !t.isDefault).map((t) => {
     const axes = combineAxes(t.baked.axes, def.baked.axes);
     const resolved = new Resolved(t.baked.axes, chainOf(t.baked, byName));
-    const selections = enumerateSelections(axes);
+    const selections = enumerateAxisChoices(axes);
     const differs = resolved.names.filter((n) =>
       selections.some((sel) => {
         const mine = resolved.token(n, sel);
@@ -179,7 +179,7 @@ export function emitCss(themes: readonly EmitInput[]): string {
   ];
 
   const { axes, name: theme } = def.baked;
-  const rootValues = pickAll(def.baked.tokens, fullSelection(axes, {}));
+  const rootValues = pickAll(def.baked.tokens, fullAxisChoice(axes, {}));
   // The default selection's scheme, not just its values: a surface that never calls
   // applyTheme would otherwise get dark colors with light native widgets.
   lines.push(':root {');
@@ -207,7 +207,7 @@ export function emitCss(themes: readonly EmitInput[]): string {
       names: Object.keys(def.baked.tokens),
       all: (n) => getOwn(def.deps, n)?.all ?? [],
       own: (n) => getOwn(def.deps, n)?.own ?? [],
-      value: (n, sel) => getOwn(pickAll(def.baked.tokens, fullSelection(axes, sel)), n),
+      value: (n, sel) => getOwn(pickAll(def.baked.tokens, fullAxisChoice(axes, sel)), n),
     },
     (attrs) => [`${wzlAttr('theme', theme)}${attrs},`, `${attrs} {`],
   );

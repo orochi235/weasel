@@ -1,4 +1,4 @@
-import { enumerateSelections, selectionKey } from '../axes.ts';
+import { enumerateAxisChoices, axisChoiceKey } from '../axes.ts';
 import type { ThemeDefinition } from '../definition.ts';
 import { hexToRgb } from '../engine/color/oklch.ts';
 import { contrastOver, type Rgba } from './computedColor.ts';
@@ -56,8 +56,8 @@ const STEP = /^rgb\(from currentColor r g b \/ ([\d.]+)\)$/;
 export function gateFailures(theme: Theme, definition: ThemeDefinition, lookup: Lookup, pairings: readonly Pairing[]): string[] {
   const axes = themeAxes(theme);
   const out: string[] = [];
-  for (const selection of enumerateSelections(axes)) {
-    const at = selectionKey(axes, selection);
+  for (const selection of enumerateAxisChoices(axes)) {
+    const at = axisChoiceKey(axes, selection);
     for (const issue of derive(definition, selection, lookup).issues) out.push(`${at}: ${JSON.stringify(issue)}`);
 
     const tokens = resolveTheme(theme, selection) as Readonly<Record<string, string>>;

@@ -1,5 +1,5 @@
 import { getOwn, hasOwnKey, isPlainObject, setOwn } from '@weasel-js/registry';
-import { fullSelection, isByAxis, pick, type Selection, type Varying } from '../axes.ts';
+import { fullAxisChoice, isByAxis, pick, type AxisChoice, type Varying } from '../axes.ts';
 import type { PinObject, PinValue, ThemeDefinition } from '../definition.ts';
 import { isSafeTokenName, unsafeTokenName, type RawToken, type TokenValue } from '../dtcg/types.ts';
 import { axisIssues } from './axisIssues.ts';
@@ -101,11 +101,11 @@ const isPinObject = (v: PinValue): v is PinObject =>
   isPlainObject(v) && 'value' in v;
 
 /** Derive every token of `definition` for one selection. Unmet rules are reported in `issues`; cycles and dangling references throw. */
-export function derive(definition: ThemeDefinition, selection: Selection = {}, lookup?: Lookup): DeriveResult {
+export function derive(definition: ThemeDefinition, selection: AxisChoice = {}, lookup?: Lookup): DeriveResult {
   const issues: Issue[] = [];
   const def = withoutUnsafeNames(mergeChain(definition, lookup), issues);
   issues.push(...axisIssues(def.axes ?? {}));
-  const sel = fullSelection(def.axes ?? {}, selection);
+  const sel = fullAxisChoice(def.axes ?? {}, selection);
   const seeds: Record<string, number | string> = {};
   for (const [k, v] of Object.entries(def.seeds ?? {})) {
     const picked = pick(v, sel);

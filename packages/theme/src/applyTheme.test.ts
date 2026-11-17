@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { applyTheme, __resetThemeSheet } from './applyTheme';
-import { declaredSelection } from './resolveTheme';
+import { declaredAxisChoice } from './resolveTheme';
 import { defineTheme, weaselTheme } from './theme';
 
 /** Read whichever delivery mechanism applyTheme chose. */
@@ -53,11 +53,11 @@ describe('applyTheme', () => {
       warn.mockRestore();
     });
 
-    it('stays quiet about an undeclared axis given `ignoreUnknownAxes`, or once `declaredSelection` drops it', () => {
+    it('stays quiet about an undeclared axis given `ignoreUnknownAxes`, or once `declaredAxisChoice` drops it', () => {
       const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
       const theme = modeOnly('shared-selection');
       applyTheme(document.createElement('div'), theme, { mode: 'light', density: 'roomy' }, { ignoreUnknownAxes: true });
-      applyTheme(document.createElement('div'), theme, declaredSelection(theme, { mode: 'light', density: 'roomy' }));
+      applyTheme(document.createElement('div'), theme, declaredAxisChoice(theme, { mode: 'light', density: 'roomy' }));
       expect(warnings(warn, 'shared-selection')).toEqual([]);
       warn.mockRestore();
     });
