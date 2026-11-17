@@ -2184,7 +2184,7 @@
     "rigidRigApply": "function",
     "roleMods": "function",
     "roleReader": "function",
-    "rotateAroundAabbCenter": "function",
+    "rotateAboutAabbCenter": "function",
     "rotatePathAround": "function",
     "rotatePoint": "function",
     "rotatedRectCorners": "function",

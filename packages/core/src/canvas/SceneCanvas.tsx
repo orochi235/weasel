@@ -54,7 +54,7 @@ import { ViewRegistryProvider } from './viewRegistry';
 import { useChromeColor } from './accentColor';
 import { ENTERED_FRAME_COLOR, ENTERED_FRAME_TOKEN } from 'domains/selection/enteredGroupFrame';
 export { defaultDrawOne } from './defaultDrawOne';
-export { rotateAroundAabbCenter } from './poseRotation';
+export { rotateAboutAabbCenter } from './poseRotation';
 
 function SceneCanvasInner<TData, TLayer extends string, TPose>(
   props: SceneCanvasProps<TData, TLayer, TPose>,

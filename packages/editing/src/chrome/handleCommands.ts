@@ -50,7 +50,7 @@ export function rectPathFor(x: number, y: number, width: number, height: number)
  * GL helper: build the matrix `translate(cx, cy) * rotate(θ) * translate(-cx, -cy)`
  * used to wrap rotated outline / handle commands.
  */
-function rotateAroundMat3(cx: number, cy: number, theta: number): GlMat3 {
+function rotateAboutMat3(cx: number, cy: number, theta: number): GlMat3 {
   const c = Math.cos(theta);
   const s = Math.sin(theta);
   // Composed in column-major (matches mat3 helpers): T(cx,cy) · R(θ) · T(-cx,-cy).
@@ -112,7 +112,7 @@ export function handleCommandsFor(
       } else {
         out.push({
           kind: 'group',
-          transform: rotateAroundMat3(center.x, center.y, angle),
+          transform: rotateAboutMat3(center.x, center.y, angle),
           children: [fillCmd, strokeCmd],
         });
       }

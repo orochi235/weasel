@@ -2,7 +2,7 @@
 '@weasel-js/core': major
 ---
 
-core's AABB helpers spell it `Aabb`, as the rest of the kit does: `unionAABB`, `drawnAABBOf` and `rotateAroundAABBCenter` are `unionAabb`, `drawnAabbOf` and `rotateAroundAabbCenter`.
+core's AABB helpers spell it `Aabb`, as the rest of the kit does: `unionAABB` and `drawnAABBOf` are `unionAabb` and `drawnAabbOf`.
 
 ```ts
 // before

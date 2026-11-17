@@ -1,10 +1,10 @@
 import { describe, it, expect } from 'vitest';
-import { rotateAroundAabbCenter, wrapWithPoseRotation } from './poseRotation';
+import { rotateAboutAabbCenter, wrapWithPoseRotation } from './poseRotation';
 import type { DrawCommand, GroupDrawCommand } from '@weasel-js/renderer';
 
-describe('rotateAroundAabbCenter', () => {
+describe('rotateAboutAabbCenter', () => {
   it('returns an identity-like matrix when rotation is zero', () => {
-    const m = rotateAroundAabbCenter(0, 0, 100, 100, 0);
+    const m = rotateAboutAabbCenter(0, 0, 100, 100, 0);
     expect(m[0]).toBeCloseTo(1);
     expect(m[1]).toBeCloseTo(0);
     expect(m[3]).toBeCloseTo(0);
@@ -15,7 +15,7 @@ describe('rotateAroundAabbCenter', () => {
 
   it('rotates around the AABB center, not the origin', () => {
     // 90deg rotation about center (50, 50) leaves the center fixed.
-    const m = rotateAroundAabbCenter(0, 0, 100, 100, Math.PI / 2);
+    const m = rotateAboutAabbCenter(0, 0, 100, 100, Math.PI / 2);
     // Apply to (50, 50): should map to (50, 50).
     const a = m[0], b = m[1], c = m[3], d = m[4], tx = m[6], ty = m[7];
     const x2 = a * 50 + c * 50 + tx;
@@ -58,7 +58,7 @@ describe('wrapWithPoseRotation', () => {
   // Regression for the bug where consumers supplying a custom drawOne got
   // no rotation visualization. The wrap now happens at the kit level so
   // ANY drawOne output gets wrapped uniformly.
-  it('wraps non-empty cmds in a group with rotateAroundAabbCenter transform when pose.rotation is non-zero', () => {
+  it('wraps non-empty cmds in a group with rotateAboutAabbCenter transform when pose.rotation is non-zero', () => {
     // Custom consumer drawOne output — note: a single plain rect with NO
     // rotation handling of its own. The kit must add the rotation wrap.
     const customCmds: DrawCommand[] = [{
@@ -73,7 +73,7 @@ describe('wrapWithPoseRotation', () => {
     expect(group.kind).toBe('group');
     expect(group.children).toBe(customCmds);
     expect(group.transform).toBeInstanceOf(Float64Array);
-    const expected = rotateAroundAabbCenter(10, 20, 80, 40, Math.PI / 4);
+    const expected = rotateAboutAabbCenter(10, 20, 80, 40, Math.PI / 4);
     expect(Array.from(group.transform!)).toEqual(Array.from(expected));
   });
 });
