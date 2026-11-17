@@ -2,6 +2,6 @@
 '@weasel-js/animator': patch
 ---
 
-A finished timeline set to play backward is revived by a seek away from its start, and a seek to 0 leaves one that finished backward finished, with no second `onDone`.
+A finished timeline set to play backward revives on a seek away from 0; one that finished at 0 stays finished, with no second `onDone`.
 
 <!-- entry: fix -->
