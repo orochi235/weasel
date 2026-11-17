@@ -92,7 +92,7 @@ export function createSceneRecording(env: SceneRecordingEnv): SceneRecording {
     selection: { get: selection.get, set: (ids) => selection.set(ids as readonly NodeId[]) },
     ...(config.coalesceWindowMs !== undefined ? { coalesceWindowMs: config.coalesceWindowMs } : {}),
     ...(config.historyLimit !== undefined ? { historyLimit: config.historyLimit } : {}),
-    rebuildOp: outer.rebuild,
+    rebuildOp: outer.rebuild, opRegistry: outer.opRegistry,
   });
 
   const log = createAppliedLog({
