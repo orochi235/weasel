@@ -215,7 +215,7 @@ function devicePixelsOf(ctx: PaintBindContext, mesh: MeshGradientPaint, box: Mes
   return Math.max(box.width * Math.hypot(m[0], m[1]), box.height * Math.hypot(m[3], m[4]));
 }
 
-function bakeFor(ctx: PaintBindContext, mesh: MeshGradientPaint): CachedBake | null {
+function ensureBake(ctx: PaintBindContext, mesh: MeshGradientPaint): CachedBake | null {
   const box = meshBounds(mesh.patches);
   if (!box) return null;
   const size = meshBakeSize(devicePixelsOf(ctx, mesh, box), ctx.maxTextureSize);
@@ -238,7 +238,7 @@ function bindMesh(ctx: PaintBindContext, fill: Paint): PaintBinding | null {
   const mesh = asMesh(fill);
   if (!mesh.patches.some(isValidPatch)) return null;
 
-  const entry = bakeFor(ctx, mesh);
+  const entry = ensureBake(ctx, mesh);
   if (!entry) return null;
 
   const { box } = entry;
