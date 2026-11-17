@@ -1,9 +1,9 @@
 import { describe, it, expect } from 'vitest';
-import { groupNodeRouting, type NodePropertiesEntry, type NodeRoutingEntry } from '@weasel-js/core';
+import { groupNodeRouting, routeKind, type NodePropertiesEntry, type NodeRoutingEntry } from '@weasel-js/core';
 import { styleAtRange } from '@weasel-js/text';
 import type { PrefPair } from '@weasel-js/prefs';
 import { MIXED, effectiveSections, isPanelSection, kindBreakdown, panelRowsOf, setAtPath } from '@weasel-js/ui/components/PanelCells';
-import { aggregateValue, classifyKind, nodeValueAt } from './nodeModel';
+import { aggregateValue, nodeValueAt, type AnyNode } from './nodeModel';
 
 const routing: NodeRoutingEntry[] = [
   { name: 'rect', matches: (d) => (d as { kind?: string })?.kind === 'rect' },
@@ -62,22 +62,23 @@ const entries: NodePropertiesEntry[] = [
 const leaf = (id: string, data: unknown, pose = { x: 0, y: 0 }) =>
   ({ id, kind: 'mark', layer: 'default', pose, data, parent: null }) as never;
 
-describe('classifyKind', () => {
+describe("routeKind over a panel's nodes", () => {
   const container = { ...(leaf('c', {}) as object), kind: 'group' } as never;
+  const kindOf = (node: AnyNode, entries: readonly NodeRoutingEntry[]) => routeKind(entries, node.data, node);
 
   it('classifies by the first routing entry that matches, unknown otherwise', () => {
-    expect(classifyKind(leaf('a', { kind: 'rect' }), routing)).toBe('rect');
-    expect(classifyKind(leaf('u', { kind: 'blob' }), routing)).toBe('unknown');
+    expect(kindOf(leaf('a', { kind: 'rect' }), routing)).toBe('rect');
+    expect(kindOf(leaf('u', { kind: 'blob' }), routing)).toBe('unknown');
   });
 
   it('names a container only through a routing entry, as the canvas does', () => {
-    expect(classifyKind(container, routing)).toBe('unknown');
-    expect(classifyKind(container, [groupNodeRouting, ...routing])).toBe('group');
+    expect(kindOf(container, routing)).toBe('unknown');
+    expect(kindOf(container, [groupNodeRouting, ...routing])).toBe('group');
   });
 
   it('hands each entry the node beside its data', () => {
     const byKind: NodeRoutingEntry = { name: 'leafy', matches: (_d, node) => node?.kind === 'mark' };
-    expect(classifyKind(leaf('b', {}), [byKind])).toBe('leafy');
+    expect(kindOf(leaf('b', {}), [byKind])).toBe('leafy');
   });
 });
 

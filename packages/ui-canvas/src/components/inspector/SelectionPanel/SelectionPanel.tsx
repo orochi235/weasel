@@ -6,6 +6,7 @@ import {
   asNodeId,
   nodeTraitsOf,
   paintAbove,
+  routeKind,
   type FeaturePreset,
   type NodePropertiesEntry,
   type NodeRoutingEntry,
@@ -16,7 +17,7 @@ import { panelSource } from '@weasel-js/ui/components/PanelCells';
 import { PrefsSource } from '@weasel-js/ui/components/PrefsSource';
 import type { LeafRenderer } from '@weasel-js/ui/components/PanelCells';
 import { kindBreakdown, panelEntryOf, panelRowsOf } from '@weasel-js/ui/components/PanelCells';
-import { classifyKind, type AnyNode } from './nodeModel';
+import type { AnyNode } from './nodeModel';
 import type { PrefGroup, PrefSection } from '@weasel-js/prefs';
 import { conditionedSections } from '@weasel-js/ui/components/PanelCells';
 import type { MarkHiddenProps } from '@weasel-js/ui/components/Prefs';
@@ -128,7 +129,7 @@ export function SelectionPanel<TData, TLayer extends string, TPose>(
   const traits = useLatest({ properties, routing });
   const writes = useMemo(
     () => leafWrites(scene, (node) =>
-      panelEntryOf(traits.current.properties, classifyKind(node, traits.current.routing))?.settle),
+      panelEntryOf(traits.current.properties, routeKind(traits.current.routing, node.data, node))?.settle),
     [scene, traits],
   );
 
@@ -136,7 +137,7 @@ export function SelectionPanel<TData, TLayer extends string, TPose>(
     .map((id) => scene.get(asNodeId(id)))
     .filter((n): n is NonNullable<typeof n> => n != null) as readonly AnyNode[];
 
-  const kinds = nodes.map((n) => classifyKind(n, routing));
+  const kinds = nodes.map((n) => routeKind(routing, n.data, n));
   const records = nodes.map((n) => nodeRecord(n, (node) => paintAbove(scene, node as never)));
   const selectionKey = compositeKey(nodes.map((n) => n.id));
   const scope = conditionedSections(kinds, properties, records, renderers?.alias !== undefined, props.markHidden === true, props.over);

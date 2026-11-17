@@ -1,20 +1,11 @@
 // Scene nodes as panel records: a node's kind, and its value at a leaf's path.
 
-import { routeKind, type AnyNode, type NodeRoutingEntry } from '@weasel-js/core';
+import type { AnyNode } from '@weasel-js/core';
 import { sharedValue, type Mixed } from '@weasel-js/ui/components/PanelCells';
 import { declaredField, nodeRoot } from './declaredFields';
 
 /** A scene node of any data, layer, and pose. */
 export type { AnyNode };
-
-/** A node's routing kind under `routing`, as a canvas given the same table names it. A
- *  container is `'group'` only when the table carries `groupNodeRouting`. */
-export function classifyKind(
-  node: AnyNode,
-  routing: readonly NodeRoutingEntry[],
-): string {
-  return routeKind(routing, node.data, node);
-}
 
 /** Read a node value at a dotted path of any depth (`pose.x`,
  *  `data.style.fontSize`, `data.style.fill.paint.color`), or at a field the
