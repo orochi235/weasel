@@ -12,9 +12,11 @@ import { parseAst, type Plugin } from 'vite';
 import MagicString from 'magic-string';
 import { walk } from 'estree-walker';
 import type { Node } from 'estree';
+import { existsSync, readdirSync } from 'node:fs';
+import { resolve } from 'node:path';
 
 interface Options {
-  /** Absolute filesystem paths (or path prefixes) to include. */
+  /** Absolute directory paths whose modules are rewritten. */
   includeDirs: readonly string[];
 }
 
@@ -116,11 +118,21 @@ function offsetToLineCol(
   return { line: lo + 1, col: offset - lineOffsets[lo]! };
 }
 
-function shouldTransform(id: string, includeDirs: readonly string[]): boolean {
+/** Every workspace package's `src` directory: tools and actions are declared across
+ *  the packages, not in one or two of them. */
+export function packageSourceDirs(repoRoot: string): readonly string[] {
+  const packages = resolve(repoRoot, 'packages');
+  return readdirSync(packages, { withFileTypes: true })
+    .filter((d) => d.isDirectory())
+    .map((d) => resolve(packages, d.name, 'src'))
+    .filter((dir) => existsSync(dir));
+}
+
+export function shouldTransform(id: string, includeDirs: readonly string[]): boolean {
   if (id.includes('node_modules')) return false;
   if (id.includes('?')) return false;
   if (!/\.(t|j)sx?$/.test(id)) return false;
   // Skip test files — irrelevant and adds noise.
   if (/\.(test|spec|stories)\.[tj]sx?$/.test(id)) return false;
-  return includeDirs.some((d) => id.startsWith(d));
+  return includeDirs.some((d) => id.startsWith(d.endsWith('/') ? d : `${d}/`));
 }
