@@ -4,14 +4,20 @@ import { createMemoryAdapter, type SyncStorageAdapter } from '@weasel-js/storage
 /** A value `leaf` holds that is not its default, for the kinds the apps' prefs use. Throws on any other kind, so a
  *  leaf of a new kind fails the round trip until it has one. */
 export function otherPrefValue(leaf: PrefLeaf): unknown {
+  const none = (): never => {
+    throw new Error(`no other value for the ${leaf.kind} pref ${leaf.name}`);
+  };
   switch (leaf.kind) {
     case 'boolean':
       return !leaf.default;
     case 'enum':
-      return (leaf as PrefEnum).options.find((o) => o.value !== leaf.default)!.value;
+      return ((leaf as PrefEnum).options.find((o) => o.value !== leaf.default) ?? none()).value;
     case 'number': {
       const { min, max, default: d } = leaf as PrefNumber & { default: number };
-      return max !== undefined && max !== d ? max : min !== undefined && min !== d ? min : d + 1;
+      if (max !== undefined && max !== d) return max;
+      if (min !== undefined && min !== d) return min;
+      if (max === undefined) return d + 1;
+      return min === undefined ? d - 1 : none();
     }
     case 'string':
     case 'registry-enum':
@@ -23,7 +29,7 @@ export function otherPrefValue(leaf: PrefLeaf): unknown {
     case 'data':
       return Array.isArray(leaf.default) ? [{ probe: true }] : { probe: { hidden: true } };
     default:
-      throw new Error(`no other value for a ${leaf.kind} pref`);
+      return none();
   }
 }
 
