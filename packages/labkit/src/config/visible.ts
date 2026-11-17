@@ -1,7 +1,7 @@
 import {
   applyPrefConditions,
   applyPrefEntryConditions,
-  PREF_STATUS,
+  ROOT_PREF_STATUS,
   type PrefAction,
   type PrefAlias,
   type PrefAliasTargets,
@@ -190,6 +190,6 @@ export function isConfigNodeShown(
   schema: PrefGroup | PrefSection,
 ): boolean {
   const judge = prefJudge(schema, (at) => valueAtPath(config, at));
-  if (!prefStatusUnder(PREF_STATUS, entry.annotations, judge).shown) return false;
+  if (!prefStatusUnder(ROOT_PREF_STATUS, entry.annotations, judge).shown) return false;
   return entry.options.showIf?.(config) ?? true;
 }

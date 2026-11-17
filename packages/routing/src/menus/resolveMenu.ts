@@ -1,6 +1,6 @@
 import type { MenuEntry } from '@weasel-js/menu';
 import {
-  isBuiltinPref, isPrefLeaf, isPrefSection, PREF_STATUS, prefAliasedLeaf, prefAliasTarget, prefConditionHolds, prefLeafAt,
+  isBuiltinPref, isPrefLeaf, isPrefSection, ROOT_PREF_STATUS, prefAliasedLeaf, prefAliasTarget, prefConditionHolds, prefLeafAt,
   prefStatusIn, prefStatusUnder, prefValueAtPath,
   type PrefConditionJudge, type PrefOwner,
   type PrefAction, type PrefBoolean, type PrefColor, type PrefConditionReader, type PrefEnum, type PrefGroup,
@@ -223,14 +223,14 @@ function drawIn(ctx: Ctx, values: (path: string) => unknown): MenuDraw {
     access: { values, ...(onChange ? { onChange } : {}) },
     leaf: (leaf, key, access, off, entry) => leafRows(through(ctx, access, entry), leaf, key, key, off),
     fields: (fields, prefix, access, off) => {
-      const status = { ...PREF_STATUS, enabled: !off };
+      const status = { ...ROOT_PREF_STATUS, enabled: !off };
       const inner = through(ctx, access);
       return tidy(groupRows(inner, fields, prefix, { node: {}, status, above: status, ...(inner.entry ? { entry: inner.entry } : {}) }));
     },
   };
 }
 
-const ROOT: PrefOwner = { node: {}, status: PREF_STATUS, above: PREF_STATUS };
+const ROOT: PrefOwner = { node: {}, status: ROOT_PREF_STATUS, above: ROOT_PREF_STATUS };
 
 function groupRows(ctx: Ctx, children: Children, prefix: string, owner: PrefOwner): MenuEntry[] {
   const { read } = ctx;

@@ -40,7 +40,7 @@ export {
   applyPrefEntryConditions,
   PREF_CONDITION_FIELDS,
   PREF_ENTRY,
-  PREF_STATUS,
+  ROOT_PREF_STATUS,
   prefJudge,
   prefReader,
   prefStatusAt,

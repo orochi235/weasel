@@ -23,7 +23,7 @@ export {
   PREF_ELSE,
   PREF_ENTRY,
   PREF_KINDS,
-  PREF_STATUS,
+  ROOT_PREF_STATUS,
   prefAliasedLeaf,
   prefAliasName,
   prefAliasTarget,
