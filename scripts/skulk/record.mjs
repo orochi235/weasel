@@ -17,7 +17,7 @@ export const roundReadme = ({ round, commit, date, areas, outcomes }) => {
   return [
     `# Audit round ${round}`,
     '',
-    `Blind pairs at \`${commit}\` (${date}), run by \`scripts/audit-night\`. Each area's directory holds its file`,
+    `Blind pairs at \`${commit}\` (${date}), run by \`scripts/skulk\`. Each area's directory holds its file`,
     'list (`files.txt`), both reviewers\' findings (`A.md`, `B.md`), the matching (`match.json`), the fixer\'s',
     'report (`fix.md`) and the numbers below (`area.json`). The method is `docs/hardening.md`, "Blind pairs".',
     '',
@@ -44,7 +44,7 @@ export const hardeningRow = ({ round, date, areas }) => {
   const fixed = areas.reduce((s, a) => s + a.patches, 0);
   const each = areas.map((a) => `${a.id} ${a.a}/${a.b}/${a.m}, est. ${a.chapman.toFixed(1)}`).join('; ');
   return `| ${date} | ${areas.map((a) => a.id).join(', ')} (audit round ${round}, nightly) | blind pairs | 0 | ${found} / ${fixed} commits | `
-    + `Run by \`scripts/audit-night\` with one file list per area; raw lists in \`docs/audits/round-${round}/\`. A/B/shared and Chapman's estimate per area: ${each}. |`;
+    + `Run by \`scripts/skulk\` with one file list per area; raw lists in \`docs/audits/round-${round}/\`. A/B/shared and Chapman's estimate per area: ${each}. |`;
 };
 
 /** `hardening` with `row` appended to the end of its Record table. */

@@ -1,7 +1,7 @@
 /**
  * Model jobs on the fleet. Each job runs `onto do` from the frozen tree, so the node's tree is the
- * frozen commit plus `.audit-night/in`, in a tree name of its own (a slot) so jobs on one node never
- * share a tree. What a job writes under `.audit-night/out` comes back to a local directory.
+ * frozen commit plus `.skulk/in`, in a tree name of its own (a slot) so jobs on one node never
+ * share a tree. What a job writes under `.skulk/out` comes back to a local directory.
  */
 import { spawn, spawnSync } from 'node:child_process';
 import { createWriteStream, mkdirSync } from 'node:fs';
@@ -47,13 +47,13 @@ export const matchShell = (area, budgetUsd) =>
 export const fixShell = (area, budgetUsd) =>
   [
     'set -e', NVM, fresh,
-    'grep -qx ".audit-night/" .git/info/exclude 2>/dev/null || echo ".audit-night/" >> .git/info/exclude',
+    'grep -qx ".skulk/" .git/info/exclude 2>/dev/null || echo ".skulk/" >> .git/info/exclude',
     'git add -A',
-    'git -c user.name=audit-night -c user.email=audit-night@localhost commit -q --no-verify --allow-empty -m "audit-night: frozen tree"',
+    'git -c user.name=skulk -c user.email=skulk@localhost commit -q --no-verify --allow-empty -m "skulk: frozen tree"',
     `if [ "$(git rev-parse 'HEAD^{tree}')" != "$FROZEN_TREE" ]; then echo "synced tree $(git rev-parse 'HEAD^{tree}') is not the frozen tree $FROZEN_TREE" > ${JOB_OUT}/tree-mismatch; exit 0; fi`,
     'BASE=$(git rev-parse HEAD)',
     'LOCK=$(shasum package-lock.json | cut -d" " -f1)',
-    `if [ "$(cat node_modules/.audit-night-lock 2>/dev/null)" != "$LOCK" ]; then npm ci --no-audit --no-fund > ${JOB_OUT}/npm-ci.log 2>&1 && echo "$LOCK" > node_modules/.audit-night-lock; fi`,
+    `if [ "$(cat node_modules/.skulk-lock 2>/dev/null)" != "$LOCK" ]; then npm ci --no-audit --no-fund > ${JOB_OUT}/npm-ci.log 2>&1 && echo "$LOCK" > node_modules/.skulk-lock; fi`,
     'set +e',
     claudeLine(`${JOB_IN}/${area}/fix.md`, budgetUsd, ['--dangerously-skip-permissions', ...model(FIX_MODEL)]),
     `git format-patch --stdout "$BASE..HEAD" > ${JOB_OUT}/fix.mbox`,
@@ -71,7 +71,7 @@ export const createSlots = (pinned) => {
       if (role === 'fix' && NO_FIXERS.includes(node)) continue;
       if (exclude.has(node) || (refusedUntil.get(node) ?? 0) > now.getTime()) continue;
       for (let k = 1; k <= perNode; k++) {
-        const tree = `weasel-audit-${role === 'fix' ? 'f' : 'r'}${k}`;
+        const tree = `weasel-skulk-${role === 'fix' ? 'f' : 'r'}${k}`;
         const key = `${node}/${tree}`;
         if (busy.has(key)) continue;
         busy.add(key);

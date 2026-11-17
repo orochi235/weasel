@@ -11,7 +11,7 @@ afterEach(() => {
 
 /** A repo root holding `docs/audits/round-<N>/<id>/area.json` for each pass. */
 const fixture = (passes: { round: number; id: string; distinct: number; files: string[]; commit?: string; fixCommits?: string[] }[]) => {
-  const root = mkdtempSync(join(tmpdir(), 'audit-night-'));
+  const root = mkdtempSync(join(tmpdir(), 'skulk-'));
   dirs.push(root);
   for (const { round, ...pass } of passes) {
     const dir = join(root, 'docs/audits', `round-${round}`, pass.id);
@@ -33,7 +33,7 @@ describe('nextRound', () => {
   it('follows the highest number used by a round directory, the hardening record, or a branch', () => {
     expect(nextRound({ roundDirs: ['round-12', 'partition.json'] })).toBe(13);
     expect(nextRound({ hardening: '| rounds 28–30; method below |\n| (audit round 15) |' })).toBe(31);
-    expect(nextRound({ branches: ['main', 'audit30-ui', 'batch/2026-11-17-audit33', 'audit-night'] })).toBe(34);
+    expect(nextRound({ branches: ['main', 'audit30-ui', 'batch/2026-11-17-audit33', 'skulk'] })).toBe(34);
     expect(nextRound({})).toBe(1);
   });
 });

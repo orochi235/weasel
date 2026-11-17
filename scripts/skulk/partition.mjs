@@ -3,7 +3,7 @@
  * Splits the repo's source into audit areas of at most MAX_AREA_FILES files, by directory. An area's id
  * is its directory's path, so regenerating keeps the id of every directory whose shape did not change.
  *
- *   node scripts/audit-night/partition.mjs [--ref <commit>]   # writes docs/audits/partition.json
+ *   node scripts/skulk/partition.mjs [--ref <commit>]   # writes docs/audits/partition.json
  */
 import { execFileSync } from 'node:child_process';
 import { mkdirSync, writeFileSync } from 'node:fs';

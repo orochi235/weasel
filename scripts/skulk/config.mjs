@@ -54,7 +54,7 @@ export const START_AT = '23:00';
 export const STOP_AT = '07:00';
 
 /** Per-night logs and job envelopes; the newest KEEP_NIGHTS are kept, the rest deleted when a night starts. */
-export const STATE_DIR = process.env.AUDIT_NIGHT_STATE ?? join(homedir(), '.local', 'state', 'weasel-audit-night');
+export const STATE_DIR = process.env.SKULK_STATE ?? join(homedir(), '.local', 'state', 'weasel-skulk');
 export const KEEP_NIGHTS = 30;
 
 export const CLAUDE_CONFIG = '~/.claude-msb';
@@ -62,10 +62,10 @@ export const CLAUDE_CONFIG = '~/.claude-msb';
 export const REVIEW_TOOLS = [
   'Read', 'Grep', 'Glob',
   'Bash(git log:*)', 'Bash(git show:*)', 'Bash(git diff:*)', 'Bash(git blame:*)',
-  'Write(./.audit-night/out/**)', 'Edit(./.audit-night/out/**)',
+  'Write(./.skulk/out/**)', 'Edit(./.skulk/out/**)',
 ];
 export const REVIEW_DENIED = ['Task', 'Agent'];
 
 /** Inside the frozen tree and every node tree: what a job reads, and what it hands back. */
-export const JOB_IN = '.audit-night/in';
-export const JOB_OUT = '.audit-night/out';
+export const JOB_IN = '.skulk/in';
+export const JOB_OUT = '.skulk/out';

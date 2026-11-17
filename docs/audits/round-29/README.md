@@ -1,6 +1,6 @@
 # Audit round 29
 
-Blind pairs at `f10daafb87` (2026-11-16), run by hand from one session before `scripts/audit-night` existed.
+Blind pairs at `f10daafb87` (2026-11-16), run by hand from one session before `scripts/skulk` existed.
 Each area's two reviewers read the frozen tree alone and reported without fixing (`<area>-A.md`,
 `<area>-B.md`, under `reviewer-brief.md`); one fixer per area then reproduced each distinct finding with a
 failing test and fixed it (`fixer-brief.md`). The method is `docs/hardening.md`, "Blind pairs".

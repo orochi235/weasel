@@ -2,7 +2,7 @@
 /**
  * One night of blind-pair audit rounds. README.md beside this file is its documentation.
  *
- *   node scripts/audit-night/night.mjs [--areas K] [--only <id>,…] [--nodes <a>,…] [--dry] [--no-merge]
+ *   node scripts/skulk/night.mjs [--areas K] [--only <id>,…] [--nodes <a>,…] [--dry] [--no-merge]
  *     [--cap-usd N] [--budget-review USD] [--budget-match USD] [--budget-fix USD]
  */
 import { appendFileSync, existsSync, mkdirSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';

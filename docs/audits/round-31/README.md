@@ -1,6 +1,6 @@
 # Audit round 31
 
-Blind pairs at `2af3a3aa4c66a58347f138b28ec33ca219128469` (2026-11-16), run by `scripts/audit-night`. Each area's directory holds its file
+Blind pairs at `2af3a3aa4c66a58347f138b28ec33ca219128469` (2026-11-16), run by `scripts/skulk`. Each area's directory holds its file
 list (`files.txt`), both reviewers' findings (`A.md`, `B.md`), the matching (`match.json`), the fixer's
 report (`fix.md`) and the numbers below (`area.json`). The method is `docs/hardening.md`, "Blind pairs".
 

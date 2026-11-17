@@ -40,7 +40,7 @@ export const removeWorktree = (root, path) => {
  */
 export const applyFix = (root, { round, area, commit, mbox }) => {
   const branch = `audit${round}-${area}`;
-  const tree = addWorktree(root, `audit-night-am-${area}`, commit, branch);
+  const tree = addWorktree(root, `skulk-am-${area}`, commit, branch);
   const git = gitIn(tree);
   try {
     const am = tryGit(git, 'am', '--3way', '--keep-cr', mbox);

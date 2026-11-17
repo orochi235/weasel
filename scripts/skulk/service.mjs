@@ -16,7 +16,7 @@ import { handle, msUntil, shouldAutoStart } from './serviceCore.mjs';
 
 /** The checkout nights run from: the main checkout, not onto's copy of the tree this service runs in. */
 const ROOT = process.env.WEASEL_ROOT ?? fileURLToPath(new URL('../..', import.meta.url));
-const NIGHT = join(ROOT, 'scripts/audit-night/night.mjs');
+const NIGHT = join(ROOT, 'scripts/skulk/night.mjs');
 const log = (line) => process.stderr.write(`${new Date().toISOString()} ${line}\n`);
 const readJson = (path) => {
   try {
