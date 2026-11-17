@@ -18,7 +18,9 @@ export const csfChecks = [
     what: 'apps/draw story, inside its host and on screen',
     check: async ({ frame }) => {
       const box = await frame.evaluate((host) => {
-        const story = host.firstElementChild;
+        // The host holds the scroller, and dev's devtools decorator wraps the story in a box-less element.
+        let story = host.querySelector('.fg-story__scroll')?.firstElementChild;
+        while (story && getComputedStyle(story).display === 'contents') story = story.firstElementChild;
         const rect = story?.getBoundingClientRect();
         return rect ? { top: rect.top, height: rect.height, viewport: innerHeight } : null;
       });
@@ -41,9 +43,9 @@ export const csfChecks = [
     id: 'labkit-primitives-jobprogress--determinate',
     what: 'labkit story inside the .lk-root decorator',
     check: async ({ frame }) => {
-      // LabRoot wraps itself in its own theme element inside a story host, so `.lk-root` sits one level down.
+      // LabRoot sits below the host's scroller and the story's own wrappers, inside a theme element of its own.
       const rooted = await frame.evaluate((host) => {
-        const root = host.querySelector(':scope > .lk-root, :scope > [data-wzl-theme] > .lk-root');
+        const root = host.querySelector('.fg-story__scroll .lk-root');
         return !!root && root.children.length > 0;
       });
       if (!rooted) throw new Error("the story's root has no .lk-root ancestor");
