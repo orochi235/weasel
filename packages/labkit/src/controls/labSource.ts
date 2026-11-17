@@ -12,7 +12,7 @@ import {
   prefValueOrDefault,
   prefNodeAt,
   prefResets,
-  prefShownValue,
+  prefDecodedValue,
   sourceResetPlan,
 } from '@weasel-js/prefs';
 import { type LeafContext, sourceLeafContext } from '@weasel-js/ui/components/PrefsSource';
@@ -29,7 +29,7 @@ export function shownAt(config: Record<string, unknown>, path: string, leaf: Pre
   if (!isEncodedLeaf(leaf)) return leafValueAt(config, path, leaf);
   const dot = path.lastIndexOf('.');
   const within = dot === -1 ? config : valueAtPath(config, path.slice(0, dot));
-  return prefShownValue(leaf, valueAtPath(config, path), isRecord(within) ? within : undefined);
+  return prefDecodedValue(leaf, valueAtPath(config, path), isRecord(within) ? within : undefined);
 }
 
 /** What a lab's config source reads and writes. */

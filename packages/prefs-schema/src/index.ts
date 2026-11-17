@@ -57,7 +57,7 @@ export {
   type PrefStatus,
   type PrefStatusAtOptions,
 } from './status';
-export { prefShownReader, prefShownValue } from './shown';
+export { prefShownReader, prefDecodedValue } from './shown';
 export { prefValueOrDefault, prefValueAbsent } from './leafValue';
 export {
   isPrefScope,

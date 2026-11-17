@@ -57,7 +57,7 @@ export {
   prefSectionLeaves,
   prefSectionPath,
   prefShownReader,
-  prefShownValue,
+  prefDecodedValue,
   prefStatusAt,
   prefStatusIn,
   prefStatusUnder,
