@@ -66,6 +66,7 @@ type CopyProp = { readonly id: string; readonly main: HTMLElement; readonly glob
  *  played by the test. */
 async function mountCopy(copy: CopyProp | null = COPY): Promise<{
   frame: Channel<ToFrame, FromFrame>; sent: ToFrame[]; container: HTMLElement; rerender: (copy: CopyProp) => void;
+  unmount: () => void;
 }> {
   const tree = (copy: CopyProp | null) => (
     <LabContext.Provider value={lab}>
@@ -88,12 +89,12 @@ async function mountCopy(copy: CopyProp | null = COPY): Promise<{
       </FramePoolContext.Provider>
     </LabContext.Provider>
   );
-  const { container, rerender } = render(tree(copy));
+  const { container, rerender, unmount } = render(tree(copy));
   const { frame, received } = connectFrame(container.querySelector('iframe.fg-frame-view') as HTMLIFrameElement);
   closers.push(() => frame.close());
   frame.send(ready);
   await flush();
-  return { frame, sent: received, container, rerender: (next) => rerender(tree(next)) };
+  return { frame, sent: received, container, rerender: (next) => rerender(tree(next)), unmount };
 }
 
 describe('FrameView copy', () => {
@@ -194,4 +195,16 @@ describe('FrameView', () => {
     expect(scrollOf(host)).toEqual({ left: 3, top: 250 });
     expect(scrolled).toHaveBeenCalledTimes(1);
   });
+
+  it('forgets where its frame stood once the frame is gone', async () => {
+    const { frame, unmount } = await mountCopy(null);
+    frame.send({ type: 'scroll', left: 3, top: 250 });
+    await flush();
+    unmount();
+    await flush();
+    const next = document.createElement('div');
+    next.dataset.fgHost = 't1';
+    expect(scrollOf(next)).toEqual({ left: 0, top: 0 });
+  });
 });
+
