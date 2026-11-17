@@ -9,7 +9,7 @@ import { describe, expect, it } from 'vitest';
 import fc from 'fast-check';
 import { IMPLICIT_TAGS } from './capabilities';
 import { createModeDecorations, type ModeDecorations } from './decorations';
-import { eligibleContribution, eligibleTool } from './eligibility';
+import { isContributionEligible, isToolEligible } from './eligibility';
 import type { ModeDefinition } from './modeDefinition';
 import { activeModeOf, createModeRegistry, createActiveModeReader, type ActiveMode, type ModeRegistry } from './registry';
 import { createScopingDim, OUT_OF_SCOPE_ALPHA, type ScopingDim } from './scopingLayer';
@@ -106,8 +106,8 @@ function step(m: Model, r: Real, changed: readonly Surface[], act: () => void): 
   r.last = { version, scope: scopeVersion, decor: decorVersion, active };
   for (const tag of TAGS) {
     const ok = active.allowedCapabilities.has(tag);
-    expect(eligibleTool(r.reg, { id: 't', capabilities: [tag] })).toBe(ok);
-    expect(eligibleContribution(r.reg, { id: 'c', eligibility: { capabilities: ['navigation', tag] } })).toBe(ok);
+    expect(isToolEligible(r.reg, { id: 't', capabilities: [tag] })).toBe(ok);
+    expect(isContributionEligible(r.reg, { id: 'c', eligibility: { capabilities: ['navigation', tag] } })).toBe(ok);
   }
 
   for (const id of NODE_IDS) {

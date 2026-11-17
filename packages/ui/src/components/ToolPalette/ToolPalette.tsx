@@ -1,7 +1,7 @@
 import { useEffect, type DragEvent, type ReactNode } from 'react';
 import { useScopedTools, type ToolsApi } from '@weasel-js/routing/react';
 import { toolIdsOf, toolSetHas, toolStacksOf, type CarryPayload, type ToolSet, type Tool } from '@weasel-js/routing';
-import { eligibleContribution, type ModeRegistry } from '@weasel-js/modes';
+import { isContributionEligible, type ModeRegistry } from '@weasel-js/modes';
 import { getOwn } from '@weasel-js/registry';
 import type { Orientation } from '../Run';
 import { ToolRail, type StackCycleModifier, type ToolRailButton, type ToolRailItem } from '../ToolRail';
@@ -114,7 +114,7 @@ function ToolPaletteRail(props: ToolPaletteProps & { tools: ToolsApi }) {
   const carry = useToolCarry(carryTool, carryGhost);
   const shows = include === undefined ? () => true
     : typeof include === 'function' ? include : (t: Tool) => toolSetHas(include, t.id);
-  const allowed = (t: Tool): boolean => !modeRegistry || eligibleContribution(modeRegistry, t);
+  const allowed = (t: Tool): boolean => !modeRegistry || isContributionEligible(modeRegistry, t);
   const list = Object.values(tools.registry)
     .filter((t) => !t.presentation?.hide && shows(t) && (ineligible === 'dim' || allowed(t)));
   const shown = new Map(list.map((t) => [t.id, t]));
