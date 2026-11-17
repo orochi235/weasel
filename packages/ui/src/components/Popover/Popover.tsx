@@ -2,7 +2,7 @@ import { forwardRef, useCallback, useMemo, useRef } from 'react';
 import { mergeRefs } from 'react-aria';
 import { Popover as RACPopover, type PopoverProps as RACPopoverProps } from 'react-aria-components';
 import { targetInBlockUnits } from '../../overlays/blockFrame';
-import { frameBoundary, overlayFrameFor, targetInFrame } from '../../overlays/overlayFrame';
+import { frameBoundary, mountOverlayFrame, targetInFrame } from '../../overlays/overlayFrame';
 import { useOverlayTarget, withPortalTarget } from '../../overlays/portalHost';
 
 /** Props for {@link Popover}: React Aria's, with `open` for its `isOpen`. */
@@ -35,7 +35,7 @@ export const Popover = forwardRef<HTMLElement, PopoverProps>(function Popover(
 ) {
   const own = useRef<HTMLElement | null>(null);
   const { anchor, container, ready } = useOverlayTarget(props);
-  const frame = useMemo(() => overlayFrameFor(container), [container]);
+  const frame = useMemo(() => mountOverlayFrame(container), [container]);
   const targetRect = useCallback(
     (target: Element) => {
       const rect = getTargetRect?.(target) ?? target.getBoundingClientRect();

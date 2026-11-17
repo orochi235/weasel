@@ -118,11 +118,11 @@ export function frameBoundary(frame: HTMLElement): HTMLElement {
 }
 
 /**
- * The frame an overlay portaled into `container` should be placed in, or null when the overlay's containing block
- * would be the viewport and React Aria's own measurement is right. Created inside the container on first use and
- * kept there.
+ * Mounts the frame an overlay portaled into `container` should be placed in, and returns it, or null when the
+ * overlay's containing block would be the viewport and React Aria's own measurement is right. Created inside the
+ * container on first use, and appended again if it has been taken out.
  */
-export function overlayFrameFor(container: Element | null | undefined): HTMLElement | null {
+export function mountOverlayFrame(container: Element | null | undefined): HTMLElement | null {
   if (!container || typeof document === 'undefined') return null;
   if (isFrame(container)) return container;
   const doc = container.ownerDocument;
