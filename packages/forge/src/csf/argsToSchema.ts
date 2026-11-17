@@ -165,9 +165,14 @@ function structured(argType: ArgType, value: unknown): Leaf | null {
   return (argType.type ? shaped(argType.type, value) : null) ?? inferred(value);
 }
 
+/** Whether `control` gives both bounds, finite and in order: anything else Storybook draws unbounded, and labkit
+ *  refuses as a range. */
+const hasRange = (control: Control): control is Control & { min: number; max: number } =>
+  Number.isFinite(control.min) && Number.isFinite(control.max) && (control.min as number) <= (control.max as number);
+
 function bounded(node: ReturnType<typeof f.number>, control: Control) {
   let out = node;
-  if (control.min !== undefined && control.max !== undefined) out = out.range(control.min, control.max);
+  if (hasRange(control)) out = out.range(control.min, control.max);
   if (control.step !== undefined) out = out.step(control.step);
   return out;
 }
@@ -179,7 +184,7 @@ function controlled(control: Control, argType: ArgType, has: boolean, value: unk
   switch (control.type) {
     case 'number': {
       const node = bounded(f.number(def()), control);
-      return control.min !== undefined && control.max !== undefined ? node.input() : node;
+      return hasRange(control) ? node.input() : node;
     }
     case 'range':
     case 'slider':
