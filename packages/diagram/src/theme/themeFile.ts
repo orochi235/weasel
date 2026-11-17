@@ -66,6 +66,14 @@ function checkTheme(t: Raw, errors: string[]): void {
   else t.series.forEach((c, i) => color(`series.${i}`, c));
 }
 
+/** What is wrong with `value` as a whole {@link DiagramTheme}, each error naming where; empty for a theme. */
+export function diagramThemeErrors(value: unknown): string[] {
+  if (!isPlainObject(value)) return ['a theme is an object'];
+  const errors: string[] = [];
+  checkTheme(value, errors);
+  return errors;
+}
+
 /** The theme a theme file holds, or what is wrong with it, each error naming where. */
 export function parseDiagramTheme(json: string): { theme: DiagramTheme } | { errors: string[] } {
   let raw: unknown;
@@ -74,8 +82,6 @@ export function parseDiagramTheme(json: string): { theme: DiagramTheme } | { err
   } catch (err) {
     return { errors: [`not JSON: ${(err as Error).message}`] };
   }
-  if (!isPlainObject(raw)) return { errors: ['a theme is an object'] };
-  const errors: string[] = [];
-  checkTheme(raw, errors);
+  const errors = diagramThemeErrors(raw);
   return errors.length > 0 ? { errors } : { theme: raw as unknown as DiagramTheme };
 }

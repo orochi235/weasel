@@ -1,6 +1,7 @@
 /** A Mermaid kanban board's grammar: columns, and the cards indented under each, with each one's line. */
 import { lineError } from '../../lineError';
 import { statementsOf, type MermaidSource } from '../common/lines';
+import { metaOf } from '../common/meta';
 
 /** A column or card: its id when it gives one, its text, and a card's `@{ … }` metadata in order. */
 export interface KanbanItem {
@@ -18,25 +19,11 @@ export interface KanbanBoard {
 
 const ITEM = /^([\p{L}\p{N}_][\p{L}\p{N}_-]*)?(?:\[(.*)\])?\s*(?:@\{(.*)\})?$/us;
 
-/** `ticket: MC-1, assigned: 'knsv'` as its pairs, values unquoted. */
-export function metaOf(meta: string, line: number): [string, string][] {
-  const out: [string, string][] = [];
-  const text = meta.trim();
-  const re = /\s*([\w-]+)\s*:\s*('[^']*'|"[^"]*"|[^,]*?)\s*(?:,|$)/y;
-  for (re.lastIndex = 0; re.lastIndex < text.length;) {
-    const at = re.lastIndex;
-    const m = re.exec(text);
-    if (m === null || m[0] === '') throw lineError('Mermaid', line, `cannot read "${text.slice(at).trim()}" as card metadata`);
-    out.push([m[1]!, /^(['"]).*\1$/s.test(m[2]!) ? m[2]!.slice(1, -1) : m[2]!]);
-  }
-  return out;
-}
-
 function itemOf(text: string, line: number): KanbanItem {
   const m = ITEM.exec(text);
   if (m === null || (m[1] === undefined && m[2] === undefined)) throw lineError('Mermaid', line, `cannot read "${text}" as a column or a card`);
   const [, id, label, meta] = m as unknown as (string | undefined)[];
-  return { ...(id !== undefined ? { id } : {}), text: (label ?? id!).trim(), meta: meta !== undefined ? metaOf(meta, line) : [], line };
+  return { ...(id !== undefined ? { id } : {}), text: (label ?? id!).trim(), meta: meta !== undefined ? metaOf(meta, line, 'card metadata') : [], line };
 }
 
 /** Parses a Mermaid kanban board: a line at the shallowest indent is a column, a deeper one a card in it. Throws,

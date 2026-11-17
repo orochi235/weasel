@@ -67,11 +67,13 @@ export function startSequence(
   return id;
 }
 
-/** Builds every sequence in `scene` again from its own data, in the batch the caller has open: after a theme change. */
+/** Builds every sequence in `scene` again from its own data, in the batch the caller has open: after a theme
+ *  change. A sequence whose root or any part is locked is left as it is. */
 export function redrawSequences(scene: AnyScene, opts: SequenceDrawOptions = {}): void {
   for (const node of scene.renderOrderNodes()) {
     const root = sequenceRootOf(node);
-    if (root !== null) rebuild(scene, node.id, root.sequence, opts);
+    if (root === null || [node.id, ...scene.childrenOf(node.id)].some((id) => scene.isLocked(id as never))) continue;
+    rebuild(scene, node.id, root.sequence, opts);
   }
 }
 

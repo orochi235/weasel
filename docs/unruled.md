@@ -2528,3 +2528,13 @@ Calls the lanes made without a ruling:
 - 2026-11-16 (the lane's call): forge reads a Storybook number control whose bounds are not both finite and in order
   (`max: Infinity`, a NaN, `min` above `max`) as having none, keeping its slider or field, rather than letting
   labkit's `range()` throw and fault every story in the file (`csf/argsToSchema.ts`, `hasRange`). No warning names it.
+
+## Audit round thirty (2026-11-16): diagrams
+
+- 2026-11-16 (my call): a rewrite the engine makes on its own — `applyDiagramTheme`, a face landing
+  (`remeasureText`), and the body relayout and sequence redraw both run — leaves a locked node as it stands, as
+  layout and the route writers already do. A locked shape keeps its old theme colors and size; a sequence with
+  any locked part is not drawn again. The alternative, writing through `scene.unlocked`, would treat a theme
+  as part of the document rather than an edit of the node.
+- 2026-11-16 (my call): a Mermaid flowchart node's `@{ … }` metadata that is not `key: value` pairs throws, naming
+  the line, as a kanban card's does; the flowchart had read `shape` alone as a key with an empty value.

@@ -4,8 +4,8 @@
 import type { RenderDiagnosticSink } from '@weasel-js/core';
 import { layoutTextPose } from '@weasel-js/text';
 import {
-  captureExport, exportReporter, pickExportOptions, regionsOfOne, registerExportFormat, type ExportFormat,
-  type ExportOptions, type ExportRegion, type ExportRegionSource, type ExportScene,
+  captureExport, exportBackgroundOf, exportReporter, pickExportOptions, regionsOfOne, registerExportFormat,
+  type ExportBackground, type ExportFormat, type ExportOptions, type ExportRegion, type ExportRegionSource, type ExportScene,
 } from '@weasel-js/export';
 import { regionSvgNodes, type RegionSvgNodesOptions } from './regionSvgNodes';
 import { serializeSvg } from './serialize';
@@ -15,8 +15,9 @@ import { warmSvg } from './warm';
 /** Options for {@link exportRegionSvg}. */
 export interface ExportRegionSvgOptions
   extends Pick<SerializeOptions, 'title' | 'pretty' | 'text'>, Pick<RegionSvgNodesOptions, 'painters'>, Pick<ExportOptions, 'onDiagnostic' | 'strict'> {
-  /** The color painted under the region. Default none: the region is transparent. */
-  background?: string | null;
+  /** The color painted under the region, or a function reading it from the document drawn. Default none: the
+   *  region is transparent. */
+  background?: ExportBackground;
 }
 
 /**
@@ -45,8 +46,9 @@ export async function exportRegionSvg(
   const nodesOf = (doc: ExportScene, r: ExportRegion, report: RenderDiagnosticSink): SvgNode[] => {
     const { x, y, width, height } = r;
     const nodes: SvgNode[] = [];
-    if (background != null) {
-      nodes.push({ kind: 'path', path: { kind: 'rect', x, y, width, height }, fill: { kind: 'solid', color: background } });
+    const color = exportBackgroundOf(background, doc);
+    if (color !== null) {
+      nodes.push({ kind: 'path', path: { kind: 'rect', x, y, width, height }, fill: { kind: 'solid', color } });
     }
     nodes.push(...regionSvgNodes(doc, r, { ...(painters ? { painters } : {}), onWarn: said(report) }));
     return nodes;

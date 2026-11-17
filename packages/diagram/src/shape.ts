@@ -23,6 +23,7 @@ import {
   type Inherit,
 } from '@weasel-js/core';
 import { bodyRules } from './bodyRules';
+import { entryMemo } from './entryMemo';
 import { onOutlinesChange } from './outlines/table';
 import { outlineDetail, outlinePath, outlineSolid, type Outline } from './outline';
 import { diagramContainerOf, headerBox, laneOutlineOf } from './containers/trait';
@@ -107,15 +108,17 @@ function dividerPath(box: Box, header: Box): Path {
     : polylineFromPoints([{ x: box.x, y: header.y + header.height }, { x: box.x + box.width, y: header.y + header.height }]);
 }
 
-let defaultDiagramShape: NodeShapeEntry<unknown, unknown> | undefined;
+const diagramEntries = entryMemo<NodeShapeEntry<unknown, unknown>>();
 
 /**
  * Register {@link diagramShape}. Returns the disposer, and takes `'high'`
  * priority so a body outline wins over a `data.shape` or `data.path` the same
- * node may also carry.
+ * node may also carry. Calls with the same options register one painter, so
+ * each may come and go on its own; a painter with its own `read` or `geometry`
+ * registered beside another (`DiagramView`'s) needs an `id` of its own.
  */
 export function registerDiagramShape<TPose>(opts: DiagramShapeOptions<TPose> = {}): () => void {
-  const entry = Object.keys(opts).length === 0 ? (defaultDiagramShape ??= diagramShape()) : diagramShape(opts);
+  const entry = diagramEntries([opts.id, opts.read, opts.geometry], () => diagramShape(opts as DiagramShapeOptions<unknown>));
   const unregister = registerNodeShape(entry, { priority: 'high' });
   // A node already drawn by an outline's name was painted and picked by what the name resolved to then.
   const unwatch = onOutlinesChange(refreshNodeShapes);

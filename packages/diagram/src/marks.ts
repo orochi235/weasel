@@ -23,6 +23,7 @@ import type { Vec2 } from '@weasel-js/core/math';
 import type { MeasureRowText, RowTextStyle } from './body';
 import type { DiagramTextStyle } from './fromData';
 import type { DiagramSpec, NodeStyle } from './dataTypes';
+import { entryMemo } from './entryMemo';
 import { ANCHOR_DERIVE_POSE } from './group';
 import type { Bounds } from './outline';
 import { DIAGRAM_TRAIT_KEY } from './trait';
@@ -77,13 +78,21 @@ function checkMarkPath(nodeId: string, index: number, d: string): void {
   });
 }
 
+/** Options for {@link markShape} and {@link registerMarkShape}. */
+export interface MarkShapeOptions<TPose> {
+  /** Names the painter. The registry holds one painter per id, so a painter with
+   *  its own `geometry` registered beside another (`DiagramView`'s) needs an id
+   *  of its own. Default `'diagram:mark'`. */
+  id?: string;
+  /** Reads the box a mark is stretched over. Default `RECT_POSE_DESCRIPTOR`. */
+  geometry?: PoseDescriptor<TPose>;
+}
+
 /** The painter for a drawn mark. */
-export function markShape<TPose>(
-  opts: { geometry?: PoseDescriptor<TPose> } = {},
-): NodeShapeEntry<unknown, TPose> {
+export function markShape<TPose>(opts: MarkShapeOptions<TPose> = {}): NodeShapeEntry<unknown, TPose> {
   const geometry = opts.geometry ?? (RECT_POSE_DESCRIPTOR as PoseDescriptor<TPose>);
   return {
-    id: 'diagram:mark',
+    id: opts.id ?? 'diagram:mark',
     matches: (node) => diagramMarkOf(node) !== null,
     paint: (node, pose, ctx) => {
       const mark = diagramMarkOf(node);
@@ -104,13 +113,14 @@ export function markShape<TPose>(
   };
 }
 
-/** Register {@link markShape}; returns the disposer. */
-export function registerMarkShape<TPose>(opts: { geometry?: PoseDescriptor<TPose> } = {}): () => void {
-  const entry = opts.geometry === undefined ? (defaultMarkShape ??= markShape()) : markShape(opts);
+/** Register {@link markShape}; returns the disposer. Calls with the same
+ *  options register one painter, so each may come and go on its own. */
+export function registerMarkShape<TPose>(opts: MarkShapeOptions<TPose> = {}): () => void {
+  const entry = markEntries([opts.id, opts.geometry], () => markShape(opts as MarkShapeOptions<unknown>));
   return registerNodeShape(entry, { priority: 'high' });
 }
 
-let defaultMarkShape: NodeShapeEntry<unknown, unknown> | undefined;
+const markEntries = entryMemo<NodeShapeEntry<unknown, unknown>>();
 
 /** The specs for one node's marks. `box` is where the node stands. */
 export function markSpecs(

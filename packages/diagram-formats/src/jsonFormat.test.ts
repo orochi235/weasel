@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { DIAGRAM_THEMES } from '@weasel-js/diagram';
 import type { DiagramDocument } from './document';
 import { DIAGRAM_JSON } from './jsonFormat';
 import { documentSpecs } from './toScene';
@@ -29,5 +30,14 @@ describe('DIAGRAM_JSON', () => {
       const { document } = await DIAGRAM_JSON.read!(text);
       expect(() => documentSpecs(document)).not.toThrow();
     }
+  });
+
+  it('refuses a document whose theme object is not a whole theme, and reads a whole one', () => {
+    const page = { kind: 'graph', id: 'p', width: 100, height: 100, data: { nodes: [], edges: [] } };
+    const text = (theme: unknown) => JSON.stringify({ format: 'weasel-diagram', version: 1, theme, pages: [page] });
+    expect(() => DIAGRAM_JSON.read!(text({ roles: {} }))).toThrow(/theme does not check: .*roles: missing/);
+    expect(() => DIAGRAM_JSON.read!(text(7))).toThrow(/theme does not check/);
+    expect(DIAGRAM_JSON.read!(text(DIAGRAM_THEMES.paper))).toMatchObject({ document: { theme: DIAGRAM_THEMES.paper } });
+    expect(DIAGRAM_JSON.read!(text('no-such-theme'))).toMatchObject({ document: { theme: 'no-such-theme' } });
   });
 });

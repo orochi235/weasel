@@ -40,10 +40,12 @@ export function diagramStyleOf(node: { data: unknown }): DiagramStyleState | nul
 
 type Sized = { style?: { fontSize?: unknown } } | undefined;
 
-/** Writes each node's new data, then lays out again every body whose text changed size. */
+/** Writes each node's new data, then lays out again every body whose text changed size. A locked
+ *  node keeps its look, as it keeps its place through a layout. */
 function writeAll(scene: AnyScene, writes: ReadonlyMap<string, unknown>, measure?: MeasureRowText): void {
   const bodies: string[] = [];
   for (const [id, data] of writes) {
+    if (scene.isLocked(id as never)) continue;
     const node = scene.get(id as never)!;
     if ((node.data as Sized)?.style?.fontSize !== (data as Sized)?.style?.fontSize && node.parent !== null) bodies.push(node.parent);
     scene.update(id as never, { data });

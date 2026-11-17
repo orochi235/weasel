@@ -240,7 +240,7 @@ export type {
   EdgeStyle,
   NodeStyle,
 } from './fromData';
-export { diagramMarkOf, markShape, registerMarkShape } from './marks';
+export { diagramMarkOf, markShape, registerMarkShape, type MarkShapeOptions } from './marks';
 export type { DataMark, DiagramMark } from './marks';
 export { force, forceRelaxation } from './force';
 export type { ForceBody, ForceOptions, ForceRelaxation } from './force';
@@ -360,7 +360,7 @@ export {
   themeValue,
 } from './theme/themeEdit';
 export type { ThemePath } from './theme/themeEdit';
-export { DIAGRAM_THEME_EXTENSION, parseDiagramTheme, themeToJson } from './theme/themeFile';
+export { DIAGRAM_THEME_EXTENSION, diagramThemeErrors, parseDiagramTheme, themeToJson } from './theme/themeFile';
 export * from './diagramTypes';
 export { FLOWCHART_GROUP } from './stencils/flowchart';
 export { CONTAINERS_GROUP } from './stencils/containers';

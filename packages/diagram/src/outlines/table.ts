@@ -10,7 +10,8 @@ import { MODELING_OUTLINES } from './modeling';
 import { STATE_OUTLINES } from './states';
 import { PARTICIPANT_OUTLINES } from './participants';
 import { STORAGE_OUTLINES } from './storage';
-import { createReflectable, type Reflection } from '@weasel-js/registry';
+import { createReflectable, isDev, type Reflection } from '@weasel-js/registry';
+import { firstSight } from '../firstSight';
 import type { OutlineDef } from './types';
 
 export { outlineFromD } from './fromD';
@@ -25,7 +26,7 @@ export type BuiltinOutline = keyof typeof BUILTINS;
 
 const table = createReflectable<OutlineDef>({ name: 'outlines' });
 for (const [name, def] of Object.entries(BUILTINS)) table.push(name, def as OutlineDef, { source: 'kit', fallback: true });
-const warned = new Set<string>();
+const unwarned = firstSight();
 
 /** Every outline name and the definition it resolves to: the built-ins (source `'kit'`) and what
  *  {@link registerOutline} added, a later registration shadowing an earlier one. */
@@ -43,12 +44,11 @@ export function registerOutline(name: string, def: OutlineDef): () => void {
 }
 
 /** The definition `name` resolves to. An unregistered name resolves to
- *  `rect`, with one warning per name. */
+ *  `rect`, with a development warning once per name. */
 export function resolveOutline(name: string): OutlineDef {
   const def = table.get(name);
   if (def) return def;
-  if (!warned.has(name)) {
-    warned.add(name);
+  if (isDev() && unwarned(name)) {
     console.warn(`@weasel-js/diagram: no outline named '${name}' is registered; painting it as 'rect'`);
   }
   return FLOWCHART_OUTLINES.rect;

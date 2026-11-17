@@ -29,7 +29,7 @@ const NONE: ReadonlySet<never> = new Set();
  * and lays each out to fit: a body grows to what its rows now need and never
  * shrinks, a label takes its text's size, and a sequence is built again from
  * its data. Untracked, since nothing was edited: undo never brings back a size
- * measured in a face that has since loaded.
+ * measured in a face that has since loaded. A locked node keeps its size.
  */
 export function remeasureText<TPose>(scene: Scene<unknown, string, TPose>, opts: RemeasureOptions): void {
   const sc = scene as unknown as AnyScene;
@@ -43,6 +43,7 @@ export function remeasureText<TPose>(scene: Scene<unknown, string, TPose>, opts:
   sc.untracked(() => {
     relayoutBodies(sc as unknown as RelayoutScene, bodies, opts.measure);
     for (const [id, size] of labelFitOps(sc, summary as never, opts.measure).sizes) {
+      if (sc.isLocked(id as never)) continue;
       sc.setPose(id as never, { ...(sc.get(id as never)!.pose as object), ...size } as never);
     }
     redrawSequences(sc, opts);

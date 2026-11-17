@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest';
-import { RIGID_POSE_COMPOSITION, worldPosesOf } from '@weasel-js/core';
+import { findNodeShape, RECT_POSE_DESCRIPTOR, RIGID_POSE_COMPOSITION, worldPosesOf } from '@weasel-js/core';
 import { diagramScene, type DiagramData } from './fromData';
 import { dataKeyReader } from './trait';
-import { diagramMarkOf, markShape } from './marks';
+import { diagramMarkOf, markShape, registerMarkShape } from './marks';
 
 const DATA: DiagramData = {
   nodes: [{
@@ -65,5 +65,24 @@ describe('marks', () => {
     expect(build('M0 0 L1')).toThrow(/node "gain".*mark 1/);
     expect(build('')).toThrow(/node "gain".*mark 1/);
     expect(build('M0 0 L1 1')).not.toThrow();
+  });
+});
+
+describe('registerMarkShape', () => {
+  const geometry = { ...RECT_POSE_DESCRIPTOR };
+
+  it('registers one painter for two calls with the same geometry, each disposed on its own', () => {
+    const a = registerMarkShape({ geometry });
+    const b = registerMarkShape({ geometry });
+    a();
+    expect(findNodeShape(drawn as never)?.id).toBe('diagram:mark');
+    b();
+  });
+
+  it('registers a painter of its own geometry beside the default one under its own id', () => {
+    const base = registerMarkShape();
+    const own = registerMarkShape({ id: 'test:mark', geometry });
+    own();
+    base();
   });
 });
