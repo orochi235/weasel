@@ -156,7 +156,10 @@ export const TEXT_PAINTER: NodeShapeEntry<unknown, RectPose> = {
   // Line boxes and glyphs follow the faces and the registered layout engines.
   geometryGeneration: () => faceGeneration() + textEngineGeneration(),
   silhouetteKey: (node, ctx) => textLayoutScale(node.data as TextNodeData, ctx?.scale),
-  effectItems: (node, pose) => textEffectItems(node.data as TextOutlineSource, pose as PathInWorldPose),
+  effectItems: (node, pose) => {
+    const d = node.data as TextNodeData;
+    return textEffectItems(d as TextOutlineSource, { ...pose, ...textBoxOf(d, pose) } as PathInWorldPose);
+  },
 };
 
 /** The view scale `d` lays out at: `scale` when its style or a run sizes
