@@ -240,7 +240,7 @@ export type {
   EdgeStyle,
   NodeStyle,
 } from './fromData';
-export { diagramMarkOf, markShape, registerMarkShape } from './marks';
+export { diagramMarkOf, markShape, registerMarkShape, type MarkShapeOptions } from './marks';
 export type { DataMark, DiagramMark } from './marks';
 export { force, forceRelaxation } from './force';
 export type { ForceBody, ForceOptions, ForceRelaxation } from './force';
