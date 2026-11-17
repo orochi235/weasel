@@ -32,7 +32,7 @@ export interface LaneProps {
   mode: 'dope' | 'graph';
   /** Index of the selected key on THIS row, or null. */
   selection: number | null;
-  onSelect: (keyIndex: number) => void;
+  onSelectionChange: (keyIndex: number) => void;
   /** Live during a dope-sheet drag. */
   onKeyInput: (keyIndex: number, toMs: number) => void;
   /** Once, at the end of a dope-sheet gesture. */
@@ -44,7 +44,7 @@ export interface LaneProps {
   /** A drag in either mode was canceled, after its preview was put back. */
   onCancel?: () => void;
   onInsert: (atMs: number) => void;
-  onToggleExpand: () => void;
+  onExpandedChange: (next: boolean) => void;
   expanded: boolean;
   /** Times a dragged key snaps to. */
   snapTimes: readonly number[];
@@ -68,7 +68,7 @@ export function Lane(props: LaneProps): ReactElement {
     row, window: win, mode, selection, onKeyInput, onKeyChange, onInsert, expanded, snapTimes,
     selectedSegment = null, onPressEmpty, hold = FREE,
   } = props;
-  const { onSelect, onSelectSegment, onToggleExpand, mark } = gated(props, hold);
+  const { onSelect, onSelectSegment, toggleExpanded, mark } = gated(props, hold);
   const trackRef = useRef<HTMLDivElement | null>(null);
   const times = entryTimes(row);
   const { drag, msAt, onKeyPointerDown } = useKeyDrag({
@@ -94,8 +94,8 @@ export function Lane(props: LaneProps): ReactElement {
             aria-expanded={expanded}
             data-testid="timeline-disclosure"
             className={s.disclosure}
-            onClick={onToggleExpand}
-            onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onToggleExpand(); } }}
+            onClick={toggleExpanded}
+            onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); toggleExpanded(); } }}
           >
             <DisclosureMark open={expanded} />
           </span>
@@ -191,9 +191,9 @@ const ignore = (): void => {};
 /** The lane's presses that only choose or look, refused while it is disabled, and what each mark carries of the hold. */
 function gated(props: LaneProps, hold: LaneHold) {
   return {
-    onSelect: hold.looks ? props.onSelect : ignore,
+    onSelect: hold.looks ? props.onSelectionChange : ignore,
     onSelectSegment: hold.looks ? props.onSelectSegment : undefined,
-    onToggleExpand: hold.looks ? props.onToggleExpand : ignore,
+    toggleExpanded: hold.looks ? () => props.onExpandedChange(!props.expanded) : ignore,
     mark: { tabIndex: hold.tabIndex, ...hold.focus },
   };
 }

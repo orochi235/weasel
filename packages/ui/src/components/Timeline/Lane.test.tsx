@@ -32,11 +32,11 @@ const base = {
   window: { from: 0, to: 1000 },
   mode: 'dope' as const,
   selection: null,
-  onSelect: () => {},
+  onSelectionChange: () => {},
   onKeyInput: () => {},
   onKeyChange: () => {},
   onInsert: () => {},
-  onToggleExpand: () => {},
+  onExpandedChange: () => {},
   expanded: false,
   snapTimes: [] as number[],
 };
@@ -79,16 +79,16 @@ describe('Lane', () => {
   });
 
   it('selects a key on pointerdown', () => {
-    const onSelect = vi.fn();
-    render(<Lane {...base} row={laneOf(sampled)} onSelect={onSelect} />);
+    const onSelectionChange = vi.fn();
+    render(<Lane {...base} row={laneOf(sampled)} onSelectionChange={onSelectionChange} />);
     fireEvent.pointerDown(screen.getAllByTestId('timeline-key')[1], { clientX: 250, button: 0 });
-    expect(onSelect).toHaveBeenCalledWith(1);
+    expect(onSelectionChange).toHaveBeenCalledWith(1);
   });
 
   it('leaves a key drag to its finger when a second finger presses another key', () => {
     const onKeyChange = vi.fn();
-    const onSelect = vi.fn();
-    render(<Lane {...base} row={laneOf(sampled)} onSelect={onSelect} onKeyChange={onKeyChange} />);
+    const onSelectionChange = vi.fn();
+    render(<Lane {...base} row={laneOf(sampled)} onSelectionChange={onSelectionChange} onKeyChange={onKeyChange} />);
     const [first, second] = screen.getAllByTestId('timeline-key');
     const touch = (pointerId: number, clientX: number) => ({ clientX, clientY: 10, button: 0, pointerId, pointerType: 'touch' });
     fireEvent.pointerDown(second, touch(1, 250));
@@ -96,7 +96,7 @@ describe('Lane', () => {
     fireEvent.pointerMove(document, touch(1, 350));
     fireEvent.pointerUp(document, touch(1, 350));
     fireEvent.pointerUp(document, touch(2, 0));
-    expect(onSelect.mock.calls).toEqual([[1]]);
+    expect(onSelectionChange.mock.calls).toEqual([[1]]);
     expect(onKeyChange.mock.calls).toEqual([[1, 700]]);
   });
 
@@ -159,14 +159,14 @@ describe('Lane', () => {
   });
 
   it('selects a key without committing a move when the press does not travel', () => {
-    const onSelect = vi.fn();
+    const onSelectionChange = vi.fn();
     const onKeyInput = vi.fn();
     const onKeyChange = vi.fn();
-    render(<Lane {...base} row={laneOf(sampled)} onSelect={onSelect} onKeyInput={onKeyInput} onKeyChange={onKeyChange} />);
+    render(<Lane {...base} row={laneOf(sampled)} onSelectionChange={onSelectionChange} onKeyInput={onKeyInput} onKeyChange={onKeyChange} />);
     fireEvent.pointerDown(screen.getAllByTestId('timeline-key')[1], { clientX: 252, clientY: 10, button: 0 });
     fireEvent.pointerMove(document, { clientX: 253, clientY: 10 });
     fireEvent.pointerUp(document, { clientX: 253, clientY: 10, altKey: true });
-    expect(onSelect).toHaveBeenCalledWith(1);
+    expect(onSelectionChange).toHaveBeenCalledWith(1);
     expect(onKeyInput).not.toHaveBeenCalled();
     expect(onKeyChange).not.toHaveBeenCalled();
   });
@@ -187,11 +187,11 @@ describe('Lane', () => {
   });
 
   it('selects a focused key on Enter or Space', () => {
-    const onSelect = vi.fn();
-    render(<Lane {...base} row={laneOf(sampled)} onSelect={onSelect} />);
+    const onSelectionChange = vi.fn();
+    render(<Lane {...base} row={laneOf(sampled)} onSelectionChange={onSelectionChange} />);
     fireEvent.keyDown(screen.getAllByTestId('timeline-key')[1], { key: 'Enter' });
     fireEvent.keyDown(screen.getAllByTestId('timeline-key')[0], { key: ' ' });
-    expect(onSelect.mock.calls).toEqual([[1], [0]]);
+    expect(onSelectionChange.mock.calls).toEqual([[1], [0]]);
   });
 
   it('moves a focused key with the arrow keys', () => {
@@ -263,19 +263,19 @@ describe('Lane in graph mode', () => {
   });
 
   it('selects a key on pointerdown', () => {
-    const onSelect = vi.fn();
-    render(<Lane {...base} mode="graph" row={laneOf(sampled)} onSelect={onSelect} />);
+    const onSelectionChange = vi.fn();
+    render(<Lane {...base} mode="graph" row={laneOf(sampled)} onSelectionChange={onSelectionChange} />);
     fireEvent.pointerDown(graphKeys()[1], { clientX: 250, clientY: 2, button: 0 });
-    expect(onSelect).toHaveBeenCalledWith(1);
+    expect(onSelectionChange).toHaveBeenCalledWith(1);
   });
 
   it('compares a pressed key against the committed selection, not an abandoned render\'s', () => {
-    const onSelect = vi.fn();
+    const onSelectionChange = vi.fn();
     renderThenAbandon<number | null>(null, 1, (selection) => (
-      <Lane {...base} mode="graph" row={laneOf(sampled)} selection={selection} onSelect={onSelect} />
+      <Lane {...base} mode="graph" row={laneOf(sampled)} selection={selection} onSelectionChange={onSelectionChange} />
     ));
     fireEvent.pointerDown(graphKeys()[1], { clientX: 250, clientY: 2, button: 0 });
-    expect(onSelect).toHaveBeenCalledWith(1);
+    expect(onSelectionChange).toHaveBeenCalledWith(1);
   });
 
   it('drags a key in value as well as time, reporting live keys and one commit', () => {

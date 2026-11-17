@@ -47,8 +47,8 @@ describe('targets.snapRadiusPx', () => {
     const onKeyChange = vi.fn();
     const track = { kind: 'sampled', label: 'x', keys: [{ t: 0, value: 0 }, { t: 500, value: 10 }], onTick: () => {} } as Track;
     render(under(settings, (
-      <Lane window={{ from: 0, to: 1000 }} mode="dope" selection={null} onSelect={() => {}} onKeyInput={() => {}}
-        onKeyChange={onKeyChange} onInsert={() => {}} onToggleExpand={() => {}} expanded={false} snapTimes={[600]}
+      <Lane window={{ from: 0, to: 1000 }} mode="dope" selection={null} onSelectionChange={() => {}} onKeyInput={() => {}}
+        onKeyChange={onKeyChange} onInsert={() => {}} onExpandedChange={() => {}} expanded={false} snapTimes={[600]}
         row={buildLanes([track], new Set())[0]} />
     )));
     fireEvent.pointerDown(screen.getAllByTestId('timeline-key')[1], { clientX: 250, button: 0 });
