@@ -11,6 +11,7 @@ import {
   rebaseLocalPose,
   sceneCarrySource,
   scenePoseAdapter,
+  settleWithinRounding,
   AUTO_POSE_DESCRIPTOR,
   type NodeId,
   type Action,
@@ -143,8 +144,9 @@ export function layoutPoses<TPose>(
     const at = result.get(id)!;
     const world = composeWorldPose(stored, id, compose) as TPose;
     const bounds = geometry.getBounds(world);
-    const dx = at.x - bounds.x;
-    const dy = at.y - bounds.y;
+    // A place a translate already wrote can land an ulp off it; that is no move.
+    const dx = settleWithinRounding(bounds.x, at.x, Math.max(Math.abs(at.x), Math.abs(bounds.x))) - bounds.x;
+    const dy = settleWithinRounding(bounds.y, at.y, Math.max(Math.abs(at.y), Math.abs(bounds.y))) - bounds.y;
     if (dx === 0 && dy === 0) continue;
     const parent = scene.get(id as never)!.parent;
     const local = rebaseLocalPose(decided, translatePoseViaDescriptor(world, dx, dy, geometry), parent, compose, decompose);
