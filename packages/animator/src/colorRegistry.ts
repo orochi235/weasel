@@ -48,6 +48,8 @@ export class ColorOverrideRegistry {
   private readonly listeners = createEmitter();
   private _version = 0;
 
+  /** Paints `override` over `id`'s `channel`. An array is kept as it is now: edited in place
+   *  afterward, it is set again to repaint. */
   set(id: string, channel: VertexColorChannel, override: ColorOverride): void {
     let entry = this.map.get(id);
     if (!entry) {
@@ -56,7 +58,8 @@ export class ColorOverrideRegistry {
     }
     const held = entry[channel];
     if (held !== undefined && sameOverride(held, override)) return;
-    entry[channel] = override;
+    // Kept as given now: an array the caller goes on editing in place is set again to repaint.
+    entry[channel] = typeof override === 'function' ? override : override.slice();
     this.changed();
   }
 
