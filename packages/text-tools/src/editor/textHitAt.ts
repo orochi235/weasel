@@ -1,6 +1,6 @@
 import { boundsOfPath, pathContainsPoint, type Path } from '@weasel-js/geom';
 import { caretIndexAt, pointInTextPose, type StyledRun, type TextFit, type TextStyle, type TextVerticalAlign } from '@weasel-js/text';
-import { textBoxOf } from '../node/textPainter';
+import { textBoxOf, textLayoutScale } from '../node/textPainter';
 import { AUTO_POSE_DESCRIPTOR, derivedPartsOf, effectSourceFor, indexedCandidates, nodesAsShown, sceneDerivedPathOf, scenePaintedPoseOf, shownLookup, targetTransformOf, worldToLocal, type RectPose, type Scene } from '@weasel-js/core';
 
 /** How a node's text fields are read from its `data`. */
@@ -13,6 +13,12 @@ export interface TextReads<TData> {
   padding(data: TData): number | undefined;
   /** How the text's size answers to its box. Absent reads none. */
   fit?(data: TData): TextFit | undefined;
+}
+
+/** Options for {@link textHitAt}. */
+export interface TextHitAtOptions {
+  /** The view scale, which text sized in `{ px }` is laid out at. Default 1. */
+  scale?: number;
 }
 
 /**
@@ -36,6 +42,7 @@ export function textHitAt<TData, TPose extends RectPose>(
   read: TextReads<TData>,
   cx: number,
   cy: number,
+  opts: TextHitAtOptions = {},
 ): { id: string; caret: number } | null {
   // renderOrder() is back-to-front, so iterate in reverse and stop on the first hit.
   // Hit as painted: an open edit's draft is what the glyphs and the caret are laid out from.
@@ -67,7 +74,8 @@ export function textHitAt<TData, TPose extends RectPose>(
     };
     const box = { x: at.x, y: at.y, width: at.width, height: at.height };
     if (!pointInTextPose(p.x, p.y, { ...pose, ...box })) continue;
-    return { id: String(node.id), caret: caretIndexAt(p.x, p.y, pose) };
+    const scale = textLayoutScale({ style: pose.style, runs: pose.runs }, opts.scale);
+    return { id: String(node.id), caret: caretIndexAt(p.x, p.y, pose, { scale }) };
   }
   return null;
 }

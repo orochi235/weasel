@@ -78,6 +78,11 @@ describe('formatUnit', () => {
   it('throws when displayUnit is not in the system', () => {
     expect(() => formatUnit(100, 'unknown', IMPERIAL_INCHES)).toThrow(/unknown unit 'unknown'/);
   });
+
+  it('keeps the zeros of an exponent when trimming a large value', () => {
+    expect(formatUnit(1.5e30, 'mm', METRIC_MM)).toBe('1.5e+30mm');
+    expect(formatUnit(1e21, 'mm', METRIC_MM)).toBe('1e+21mm');
+  });
 });
 
 describe('pre-built unit systems', () => {

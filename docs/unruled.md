@@ -701,6 +701,13 @@ The snap pipeline ([snapping.md](./snapping.md)) landed on 2026-10-18 with these
   as the end of its paragraph: X8 closes every embedding and isolate there, BD9 pairs no `PDI` past it, and `'auto'`
   takes its direction from before it, so `'\nא'` reads left to right where it read right to left. text's layout cuts
   paragraphs before calling it, so only a separator text does not cut at (U+001C–U+001E) meets this (f533898fb).
+- 2026-11-16 (audit 29, the lane's call): the edit overlay writes a `selectionBackground` or `selectionColor`,
+  default included, into its `::selection` rule only when `parsesAsColor` (`@weasel-js/paint`) reads it as a CSS
+  color; any other value is left out with a warning, and the rule is not written when neither is one. There is no
+  override: the value is stored document data going into a page-wide stylesheet.
+- 2026-11-16 (audit 29, the lane's call): a clipped text node's outline (`overflow: 'clip'`) is its glyphs cut to its
+  box with `pathIntersect`, curves kept, so Create Outlines and a boolean take only the ink it draws. A stroked part's
+  stroke then also runs along the cut, where the painter shows none.
 
 ## SVG and paths
 

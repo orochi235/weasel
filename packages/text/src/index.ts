@@ -95,7 +95,7 @@ export type { TextVerticalAlign } from './measure/verticalAlign';
 
 export type { TextPose } from './pose';
 export { pointInTextPose, caretIndexAt } from './hitTest';
-export type { PointInTextPoseOptions } from './hitTest';
+export type { CaretIndexAtOptions, PointInTextPoseOptions } from './hitTest';
 export { fitTextPose } from './fitTextPose';
 export type { FitTextPoseOptions } from './fitTextPose';
 export { renderLabel, defaultLabelTextRenderer } from './renderLabel';

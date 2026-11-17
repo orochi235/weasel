@@ -3,7 +3,7 @@ import { presentRange, presentVector, rangeParts, vectorParts } from './composit
 import { textOf } from './kind';
 import { decimal } from './kinds/plain';
 import { fraction, percent } from './kinds/proportion';
-import { unit } from './kinds/measure';
+import { duration, unit } from './kinds/measure';
 import { tag } from './quantity';
 
 describe('presentRange', () => {
@@ -25,6 +25,13 @@ describe('presentRange', () => {
     expect(shared.text.match(/ft/g)).toHaveLength(1);
     expect(shared.text).toBe('2–5ft');
     expect(mixed.text.match(/in|ft/g)).toEqual(['in', 'ft']);
+  });
+
+  it('keeps every unit of a value written in several, as a duration in units is', () => {
+    const display = duration({ style: 'units' });
+    const range = presentRange(125, 185, display, { locale: 'en-US' });
+    expect(range.text).toBe('2m 5s–3m 5s');
+    expect(textOf(rangeParts(125, 185, display, { locale: 'en-US' }))).toBe(range.text);
   });
 
   it('spaces the dash from a negative end, so it does not read as a double sign', () => {

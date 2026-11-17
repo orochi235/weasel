@@ -9,6 +9,7 @@ import { _resetLayoutCacheForTests } from '@weasel-js/text/test-seams';
 import { boundsOfPath, type PathInWorldPose } from '@weasel-js/geom';
 import { loadTextOutlines, type TextOutlineSource } from '@weasel-js/text';
 import { textEffectItems } from './textItems';
+import { TEXT_PAINTER } from './textPainter';
 import { withOutsideReads } from 'core/scene/outsideReads';
 
 vi.mock('@weasel-js/text', async (importOriginal) => {
@@ -116,5 +117,13 @@ describe('textEffectItems', () => {
 
   it('notes a font read when the outlines are there too', () => {
     expect(withOutsideReads(() => textEffectItems(text('Hi'), POSE)).outside).toBe(true);
+  });
+
+  it("a text node's items wrap in the box its padding insets, as it draws", () => {
+    const data = { text: 'Hi Hi', style: { fontFamily: 'bars', fontSize: 100, wrap: true }, fill: INK };
+    const node = (padding: number) => ({ id: 't', kind: 'text', layer: 'main', pose: POSE, data: { ...data, padding } });
+    const laid = (padding: number) => TEXT_PAINTER.effectItems!(node(padding) as never, POSE).length;
+    expect(laid(0)).toBe(5);
+    expect(laid(100)).toBeLessThan(5);
   });
 });

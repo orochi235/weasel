@@ -101,4 +101,13 @@ describe('effectiveRangeStyle', () => {
     const fill = { paint: { color: '#00ff00ff' } };
     expect(effectiveRangeStyle({ fill }, {}, { fill: { paint: { color: '#ff0000ff' } } }).fill).toBe(fill);
   });
+
+  it("reports the node's stroke, and a run's own over it", () => {
+    const stroke = { color: '#000', width: 2 };
+    const own = { color: '#f00', width: 1 };
+    expect(effectiveRangeStyle(null, {}, { stroke }).stroke).toBe(stroke);
+    expect(effectiveRangeStyle({}, {}, { stroke }).stroke).toBe(stroke);
+    expect(effectiveRangeStyle({ stroke: own }, {}, { stroke }).stroke).toBe(own);
+    expect('stroke' in effectiveRangeStyle(null, {}, {})).toBe(false);
+  });
 });
