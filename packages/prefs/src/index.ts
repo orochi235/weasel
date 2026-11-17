@@ -169,7 +169,7 @@ export {
   AUTO,
   readingIsAtReset,
   resetPlan,
-  resetPlanAt,
+  resetPlans,
   prefNodeAt,
   type Auto,
   type LeafReading,

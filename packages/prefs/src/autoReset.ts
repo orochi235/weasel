@@ -154,7 +154,7 @@ export function prefNodeAt(
 }
 
 /** {@link resetPlan} for each of `paths` under `root`, a leaf's or a group's. */
-export function resetPlanAt(
+export function resetPlans(
   root: PrefGroup | PrefSection,
   paths: readonly string[],
   read: (path: string) => LeafReading | undefined,

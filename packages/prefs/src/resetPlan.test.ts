@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { AUTO, readingIsAtReset, prefNodeAt, resetPlan, resetPlanAt, type LeafReading } from './autoReset';
+import { AUTO, readingIsAtReset, prefNodeAt, resetPlan, resetPlans, type LeafReading } from './autoReset';
 import type { PrefGroup, PrefSection, PrefLeaf } from '@weasel-js/prefs-schema';
 
 const size = { kind: 'number', name: 'Size', description: '', default: 10, auto: { value: 40 } } as PrefLeaf;
@@ -60,7 +60,7 @@ describe('resetPlan', () => {
 
   it('finds a group or a leaf by its path, under a section by the leaf\'s own key', () => {
     const root = { name: '', children: { view: GROUP } } as PrefGroup;
-    expect(resetPlanAt(root, ['view'], (p) => values[p]).map((w) => w.path)).toEqual(['view.size', 'view.gap', 'view.grid', 'view.dash']);
+    expect(resetPlans(root, ['view'], (p) => values[p]).map((w) => w.path)).toEqual(['view.size', 'view.gap', 'view.grid', 'view.dash']);
     expect(prefNodeAt(root, 'view.gap')).toBe(gap);
     const section = { name: '', members: { 'pose.x': grid, inner: { name: 'In', members: { y: size } } } } as unknown as PrefSection;
     expect(prefNodeAt(section, 'pose.x')).toBe(grid);

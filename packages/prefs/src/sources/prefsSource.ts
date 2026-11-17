@@ -40,7 +40,7 @@ export interface PrefsSource {
   setAuto?(path: string, next: boolean): void;
   /** What the conditions over `path` leave it. */
   stateAt(path: string): LeafState;
-  /** Put each leaf or group at `paths` back as its schema starts it, as one step (`resetPlanAt`). */
+  /** Put each leaf or group at `paths` back as its schema starts it, as one step (`resetPlans`). */
   reset(paths: readonly string[]): void;
 }
 
