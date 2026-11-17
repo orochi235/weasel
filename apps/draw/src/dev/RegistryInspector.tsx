@@ -172,7 +172,7 @@ export function RegistryInspector() {
         <RegistryBrowser
           categories={categories}
           selected={pick}
-          onSelect={(p) => {
+          onSelectionChange={(p) => {
             const hit = nodes.find((n) => n.id === p.category)?.entries.find((e) => entryKey(e) === p.id);
             if (hit) select({ kind: hit.kind, id: hit.id });
           }}
