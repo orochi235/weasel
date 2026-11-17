@@ -2,14 +2,14 @@ import { describe, expect, it } from 'vitest';
 import { renderHook } from '@testing-library/react';
 import { createScene, nodeShapesOf, type CanvasExtensionApi, type RectPose } from '@weasel-js/core';
 import { createMeasurements } from './measurements';
-import { measurementsContribution } from './measureContribution';
+import { createMeasurementsContribution } from './measureContribution';
 import { MEASURE_PAINTER } from './measurePainter';
 import { MEASURE_TOOLS, useMeasureTools } from './toolSets';
 
-describe('measurementsContribution', () => {
+describe('createMeasurementsContribution', () => {
   it("paints its scene's measurements while it is attached, and stops when it detaches", () => {
     const scene = createScene<object, 'notes', RectPose>({ systemLayers: [{ id: 'notes', annotation: true }] });
-    const c = measurementsContribution(scene as never, createMeasurements({ layer: 'notes' }));
+    const c = createMeasurementsContribution(scene as never, createMeasurements({ layer: 'notes' }));
     const api = { registerLayer: () => () => {}, requestRedraw: () => {} } as unknown as CanvasExtensionApi;
     const detach = c.attach!(api, { get: () => undefined });
     expect(nodeShapesOf(scene).entries()).toContain(MEASURE_PAINTER);

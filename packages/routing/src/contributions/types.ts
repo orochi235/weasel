@@ -58,7 +58,7 @@ export interface Eligibility {
   capabilities?: CapabilityTag[];
   /** A keymap: live only while it is the innermost one open, at the hotkey
    *  tier. `unbound` overrides the `gestures.keymapUnbound` kit setting for
-   *  this keymap. Open one with a leader (`keymapContribution`). */
+   *  this keymap. Open one with a leader (`createKeymapContribution`). */
   keymap?: true | { unbound?: KeymapUnbound };
 }
 

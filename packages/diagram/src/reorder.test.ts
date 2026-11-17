@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 import { ActionDisabledReason, createScene, overlaysOf, type InvocationCtx, type OngoingHandle, type AnyScene } from '@weasel-js/core';
-import { createReorderAction, reorderContribution, sequenceSlots, REORDER_ACTION_ID, type ReorderOptions } from './reorder';
+import { createReorderAction, createReorderContribution, sequenceSlots, REORDER_ACTION_ID, type ReorderOptions } from './reorder';
 
 const box = (x: number, y: number, width = 100, height = 40) => ({ x, y, width, height });
 
@@ -143,7 +143,7 @@ describe('createReorderAction with the insertion bar', () => {
   });
 
   it('packs into a contribution binding a drag to the action', () => {
-    const c = reorderContribution({ slots: () => SLOTS, commit: () => {} });
+    const c = createReorderContribution({ slots: () => SLOTS, commit: () => {} });
     expect(c.actions!.map((a) => a.id)).toEqual([REORDER_ACTION_ID]);
     expect(c.bindings).toEqual([expect.objectContaining({ spec: expect.objectContaining({ kind: 'drag' }), actionId: REORDER_ACTION_ID })]);
   });

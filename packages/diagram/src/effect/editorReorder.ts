@@ -4,7 +4,7 @@
 import type { Contribution } from '@weasel-js/core';
 import { moveItems } from '@weasel-js/ui-input';
 import { maxOf, minOf } from '@weasel-js/geom';
-import { reorderContribution, sequenceSlots, type ReorderMove, type ReorderSlots } from '../reorder';
+import { createReorderContribution, sequenceSlots, type ReorderMove, type ReorderSlots } from '../reorder';
 import { moveInChain, moveRunInChain } from './chainEdit';
 import type { LookOrder } from './draw';
 import { ensureWireIds, setLaneOrder } from './edit';
@@ -119,7 +119,7 @@ function groupReorder(now: () => ReorderSource): Contribution {
     const { doc, order } = now();
     return order === undefined ? null : groupMove(doc, order, unitsBefore(move), move);
   };
-  return reorderContribution({
+  return createReorderContribution({
     id: REORDER_GROUPS_ACTION_ID,
     label: 'Reorder group',
     slots: (_, at) => groupSlotsAt(now(), at),
@@ -132,9 +132,9 @@ function groupReorder(now: () => ReorderSource): Contribution {
 }
 
 /** All three reorders, each reading `now()` when it is pressed and released. */
-export function editorReorders(now: () => ReorderSource): Contribution[] {
+export function createEditorReorderContributions(now: () => ReorderSource): Contribution[] {
   return [
-    reorderContribution({
+    createReorderContribution({
       label: 'Reorder',
       slots: () => slotsOf(now().order, now().boxOf),
       canDrop: (move) => {
@@ -147,7 +147,7 @@ export function editorReorders(now: () => ReorderSource): Contribution[] {
         if (next !== null) onChange(next, 'Reorder');
       },
     }),
-    reorderContribution({
+    createReorderContribution({
       id: REORDER_LANES_ACTION_ID,
       label: 'Reorder lanes',
       slots: () => slotsOf(now().laneOrder, now().boxOf),

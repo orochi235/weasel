@@ -30,7 +30,7 @@ export function measureDrawCommands(start: MeasurePoint, end: MeasurePoint, perP
 
 /** Paints a measurement node — `data.measure`, in world units — in the
  *  canvas's measure color. It has no silhouette: a measurement is not content
- *  to pick. `measurementsContribution` registers it for its scene; a render
+ *  to pick. `createMeasurementsContribution` registers it for its scene; a render
  *  with no canvas registers it itself (`nodeShapesOf(scene).register`). */
 export const MEASURE_PAINTER: NodeShapeEntry = {
   id: 'measure:measurement',

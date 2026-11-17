@@ -56,18 +56,18 @@ wire; layout lays the node out with room for it, and a group's box takes it in.
 
 ### Making ports grabbable
 
-`diagramPorts` returns the connect gesture as one entry to pass as `ambient`:
+`createDiagramPortsContribution` returns the connect gesture as one entry to pass as `ambient`:
 the port layer, registered so the kit hit-tests it, and the bindings a press
 on a port starts.
 
 ```tsx
-const ports = useMemo(() => diagramPorts({ participants: sceneParticipants(scene) }), [scene]);
+const ports = useMemo(() => createDiagramPortsContribution({ participants: sceneParticipants(scene) }), [scene]);
 
 return <SceneCanvas scene={scene} ambient={[ports]} />;
 ```
 
-The other editing entries below (`diagramWaypoints`, `diagramEdgeEnds`,
-`diagramLabelDrag`, `diagramContainers`, `diagramSequence`) are built the same
+The other editing entries below (`createDiagramWaypointsContribution`, `createDiagramEdgeEndsContribution`,
+`diagramLabelDrag`, `createDiagramContainersContribution`, `createDiagramSequenceContribution`) are built the same
 way. Their layers are hit in `ambient` order, the last first:
 `[containers, labelDrag, ports, route, ends, sequence]`.
 
@@ -139,7 +139,7 @@ A double-click that would remove nothing falls through, to label editing say.
 
 `DiagramView` takes `onEditRoute`, which reports the edge's new waypoints and
 changes nothing: store them as the data edge's `waypoints` and clear its
-`routed`. On a bare canvas, `diagramWaypoints` returns the entry to pass as
+`routed`. On a bare canvas, `createDiagramWaypointsContribution` returns the entry to pass as
 `ambient` — after the ports and before the edge ends — which carries the
 handle layer and the `diagram.resetRoute` command that clears the selected
 edges' waypoints. The default commit writes
@@ -153,7 +153,7 @@ layout leaves it alone.
     : { ...e, waypoints, routed: undefined }))}
 />
 
-const route = useMemo(() => diagramWaypoints({ participants, selected }), [participants, selected]);
+const route = useMemo(() => createDiagramWaypointsContribution({ participants, selected }), [participants, selected]);
 ```
 
 An orthogonal segment drag writes every bend of the new route as a waypoint,
@@ -210,7 +210,7 @@ What a connector routes around:
 Authored waypoints are stops the route passes in order. Layout names an
 `avoid` connector's ports and writes it no waypoints. `diagram.router.avoid`,
 `.orthogonal`, `.straight`, and `.bezier` (`SET_ROUTER_ACTION_IDS`, carried by
-`diagramWaypoints`) set the selected connectors' router; leaving `avoid` drops
+`createDiagramWaypointsContribution`) set the selected connectors' router; leaving `avoid` drops
 the stored route.
 
 A data-backed `DiagramView` takes `router="avoid"`: it routes every edge of
@@ -244,7 +244,7 @@ hopping over them draw without hops; the release puts them back.
 `installHops(scene)` does the same without React. Its pass runs at
 `DIAGRAM_PASS_ORDER.hops`, after routing.
 
-`diagram.hops` (`SET_HOPS_ACTION_ID`, carried by `diagramWaypoints`) toggles the
+`diagram.hops` (`SET_HOPS_ACTION_ID`, carried by `createDiagramWaypointsContribution`) toggles the
 value, at radius 5 (`DEFAULT_HOP_SIZE`). A data-backed `DiagramView` takes
 `hops={radius}`, applied after `router`; `createSpecHops` is that step on its
 own. `edgeHops`, which finds the hops over plain polylines, is in
@@ -337,7 +337,7 @@ function Markers({ scene }) {
   return null;
 }
 
-const offPage = diagramOffPage();
+const offPage = createDiagramOffPageContribution();
 <SceneCanvas scene={scene} ambient={[offPage]} /* … */>
   <Markers scene={scene} />
 </SceneCanvas>
@@ -349,7 +349,7 @@ const offPage = diagramOffPage();
 | `offPageSplits`, `nextOffPageRef` | which connectors split, as arithmetic on page rects and end boxes; refs run A…Z, AA… and stay while a split does |
 | `offPageTagSpec`, `offPageTagOf` | a tag: a text node with a background, id `<edge>/offpage-<end>`, that stations itself past its stub |
 | `offPageOps` | the pass's ops for named connectors, or `'all'`, for a document saved before it had markers |
-| `diagramOffPage`, `createFollowOffPageAction` | a double-click on a tag selects the far shape and fits the view to its page; `follow` replaces that |
+| `createDiagramOffPageContribution`, `createFollowOffPageAction` | a double-click on a tag selects the far shape and fits the view to its page; `follow` replaces that |
 | `offPageTargetOf` | where a tag leads: the far shape and its page |
 
 Tags take the theme's label color and face on its page color, and applying a
@@ -462,7 +462,7 @@ nothing.
 
 Give each entry `touch-action: none` so a touch drag is a carry, not a scroll.
 `startItemDrag(event, item)` starts one from a pointer event of your own, and
-`createItemDropAction` (or `itemDropContribution`, to pass as `ambient`) is the
+`createItemDropAction` (or `createItemDropContribution`, to pass as `ambient`) is the
 canvas half for a `SceneCanvas` of your own; the carry travels as
 `DIAGRAM_ITEM_CARRY`. There its `report` gets the canvas's deps as well as the
 drop, and `requires` names the ones it reads, so it can add the item itself
@@ -526,7 +526,7 @@ drawn inside a container or a lane becomes its member (`diagramDropParentAt`).
 What a region admits is the `canDropInto` dep's call, and `diagramCanDropInto(scene, canReparent?)`
 is the one for a diagram: containers and lanes take shapes and containers, a
 pool takes only lanes, and a stencil body, an edge, or a label takes nothing.
-`diagramContainers` returns the entry to pass as `ambient`, which carries the
+`createDiagramContainersContribution` returns the entry to pass as `ambient`, which carries the
 lane layer, the boundary drag (`diagram.resizeLane`), the
 add-lane click (`diagram.addLane`), and the `diagram.releaseMembers` command.
 The two lane gestures take a swappable commit.
@@ -534,7 +534,7 @@ The two lane gestures take a swappable commit.
 ```tsx
 useStencilInsert(FLOWCHART_STENCILS, { containers: CONTAINER_STENCILS });
 useDepSource('canDropInto', () => diagramCanDropInto(scene));
-const containers = useMemo(() => diagramContainers({ scene, selected }), [scene, selected]);
+const containers = useMemo(() => createDiagramContainersContribution({ scene, selected }), [scene, selected]);
 ```
 
 ### Diagram types
@@ -1039,7 +1039,7 @@ fragment's section), `moveParticipant`, `reconnectMessage`, and
 `setSequenceText`. `DiagramView`'s `onEditSequence` turns them on as drags — a
 message or note to another row, a head sideways, a message end onto another
 lifeline — and double-click text editing, each reported as the sequence's new
-data. On a scene that is the document, `diagramSequence({ scene, measure })`
+data. On a scene that is the document, `createDiagramSequenceContribution({ scene, measure })`
 gives the entry, layer included, that commits each edit as one undo entry
 (`commitSequence`), and `foldSequenceText` turns a text edit on a part into one
 edit of the data. A theme applied with `applyDiagramTheme` draws every sequence
@@ -1433,7 +1433,7 @@ the gap nearest its middle. Give it `slots`, the items and gaps that
 `{ id, from, to, order }`. `show: 'bar'` (the default) draws the insertion bar;
 `show: 'slide'` slides the other items into the places they would take instead,
 moving each item's `carries` as pose overrides, which is how `onReorder` shows a
-group's members. `reorderContribution` packs the action and its binding to pass
+group's members. `createReorderContribution` packs the action and its binding to pass
 as `ambient`. Beside the `move` feature pass `createReorderPreset(…)` in `features`
 instead: a move binds the same press and would take it first, and the preset's
 drag is tried ahead of it, handing off to the move once it leaves `region`.

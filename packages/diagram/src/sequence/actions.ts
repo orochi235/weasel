@@ -147,7 +147,7 @@ const grab: Action = {
  * Text is edited in place by the host's text editor, through
  * `foldSequenceText`.
  */
-export function diagramSequence(opts: SequenceEditOptions & { scene: AnyScene }): SurfaceContribution {
+export function createDiagramSequenceContribution(opts: SequenceEditOptions & { scene: AnyScene }): SurfaceContribution {
   const actionId = opts.id ?? SEQUENCE_DRAG_ACTION_ID;
   const target = `affordance:${SEQUENCE_AFFORDANCE_KIND}` as const;
   return {

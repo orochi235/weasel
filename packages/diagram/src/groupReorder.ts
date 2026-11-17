@@ -20,7 +20,7 @@ import { moveItems, nudgeGap } from '@weasel-js/ui-input';
 import { diagramContainerOf } from './containers/trait';
 import { worldRectOf } from './overlays';
 import type { DiagramSceneData } from './dataTypes';
-import { reorderContribution, createReorderPreset, sequenceSlots, type ReorderOptions, type ReorderSlots } from './reorder';
+import { createReorderContribution, createReorderPreset, sequenceSlots, type ReorderOptions, type ReorderSlots } from './reorder';
 import { carriedWith, reorderTargetOf, type ReorderTarget } from './reorderModel';
 
 /** Alt and an arrow key: the selected member one place along. */
@@ -127,7 +127,7 @@ function groupReorderOptions(report: (change: ReorderChange) => void): ReorderOp
 /** The reorder drag and the step action, as an entry to pass in `ambient`. Beside the `move` feature the move takes
  *  every press first; {@link createGroupReorderPreset} is the form that works beside it. */
 export function groupReorderContribution(report: (change: ReorderChange) => void): Contribution {
-  const drag = reorderContribution(groupReorderOptions(report));
+  const drag = createReorderContribution(groupReorderOptions(report));
   return { ...drag, id: 'weasel-diagram-reorder', actions: [...(drag.actions ?? []), createStepReorderAction(report)] };
 }
 

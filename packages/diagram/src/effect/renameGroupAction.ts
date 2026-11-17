@@ -9,7 +9,7 @@ import type {} from '../actionParamSchema';
 export const RENAME_GROUP_ACTION_ID = 'effect.renameGroup';
 
 /** A double-click on a group's grip ({@link groupAt}), handing `rename` the innermost group there. */
-export function renameGroupContribution(now: () => ReorderSource, rename: (group: string) => void): Contribution {
+export function createRenameGroupContribution(now: () => ReorderSource, rename: (group: string) => void): Contribution {
   /** The group a double-click at `at` renames; none without a point, as from a palette. */
   const under = (at: Vec2 | undefined) => {
     if (at === undefined) return undefined;

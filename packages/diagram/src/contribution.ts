@@ -59,7 +59,7 @@ export interface DiagramContributionOptions<TPose>
  * `ambient`: the port layer, the connect action, and the bindings that reach
  * it from a press on a port.
  */
-export function diagramPorts<TPose>(opts: DiagramContributionOptions<TPose>): SurfaceContribution {
+export function createDiagramPortsContribution<TPose>(opts: DiagramContributionOptions<TPose>): SurfaceContribution {
   const actionId = opts.id ?? CONNECT_ACTION_ID;
   return {
     id: 'weasel-diagram',
@@ -75,14 +75,14 @@ export function diagramPorts<TPose>(opts: DiagramContributionOptions<TPose>): Su
 export const GRAB_WAYPOINT_ACTION_ID = 'diagram.grabWaypoint';
 
 /**
- * Route editing, as one entry to pass as `ambient` — after `diagramPorts` and
- * before `diagramEdgeEnds`, so an end handle wins over a route handle beside
+ * Route editing, as one entry to pass as `ambient` — after `createDiagramPortsContribution` and
+ * before `createDiagramEdgeEndsContribution`, so an end handle wins over a route handle beside
  * it. It carries the handle layer, the drag, the double-click that removes, the
  * `diagram.resetRoute` command, the commands that set the selected
  * connectors' router (`SET_ROUTER_ACTION_IDS`), and the line jumps toggle
  * (`SET_HOPS_ACTION_ID`).
  */
-export function diagramWaypoints<TPose>(
+export function createDiagramWaypointsContribution<TPose>(
   opts: RouteEditOptions<TPose> & Omit<WaypointAffordanceOptions<TPose>, 'id'>,
 ): SurfaceContribution {
   const actionId = opts.id ?? ROUTE_EDIT_ACTION_ID;
@@ -139,7 +139,7 @@ function selectLabelEdgeAction(): Action {
 }
 
 /**
- * Label dragging, as one entry to pass as `ambient` — before `diagramPorts`,
+ * Label dragging, as one entry to pass as `ambient` — before `createDiagramPortsContribution`,
  * so a port or a route handle wins over a label beside it. It carries the
  * label layer, the drag (`diagram.moveLabel`), a click that selects the
  * label's edge, and a double-click that edits the label's text through

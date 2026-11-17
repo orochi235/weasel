@@ -10,7 +10,7 @@ import type { BoundGesture, GestureBinding } from '../interactions/actions/bindi
 import type { Contribution, OverlayPosition } from '../contributions/types';
 import { KEYMAP_HOLD, type KeymapUnbound } from './keymapStack';
 
-/** What {@link keymapContribution} builds a keymap and its leader from. */
+/** What {@link createKeymapContribution} builds a keymap and its leader from. */
 export interface KeymapDef<TOverlay = never> {
   /** The keymap entry's id. Its leader action is `keymap.<id>`. */
   id: string;
@@ -53,7 +53,7 @@ const isPlainEscape = (spec: GestureSpec): boolean =>
  *  its keymap tapped; `trigger('keymap.<id>', { hold: true })` holds it open
  *  until Escape. Install both, with `<SceneCanvas ambient>`
  *  or `useTools`'s `ambient`; the leader entry carries the actions. */
-export function keymapContribution<TOverlay = never>(def: KeymapDef<TOverlay>): Contribution<TOverlay>[] {
+export function createKeymapContribution<TOverlay = never>(def: KeymapDef<TOverlay>): Contribution<TOverlay>[] {
   if (def.bindings.some((b) => isPlainEscape(b.spec))) {
     throw new Error(`keymap "${def.id}" binds Escape, which always closes a keymap`);
   }

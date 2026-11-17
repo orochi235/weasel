@@ -8,7 +8,7 @@ import { describe, it, expect, vi, beforeAll, afterEach } from 'vitest';
 import { cleanup } from '@testing-library/react';
 import { renderWithKeys as render } from '@weasel-js/react/testing/giveKeys';
 import { type Contribution, SceneCanvas, createScene, modeTriggers, useCommand } from '@weasel-js/core';
-import { createMeasurements, measurementsContribution, useMeasureTool } from '@weasel-js/measure';
+import { createMeasurements, createMeasurementsContribution, useMeasureTool } from '@weasel-js/measure';
 import { DEFAULT_MODES } from '@weasel-js/modes';
 import { useHudContribution } from '@weasel-js/hud/react';
 import { usePathToolsTools } from '@weasel-js/path-tools';
@@ -83,7 +83,7 @@ function Draw({ planted = [] }: { planted?: readonly Contribution[] }) {
     appCommandsContribution(() => ({}) as AppCommands),
     ...PATHFINDER_KEYMAP,
     recordingContribution({ attach: () => noop } as unknown as RecordingSession),
-    measurementsContribution(scene as never, measurements),
+    createMeasurementsContribution(scene as never, measurements),
     ...planted,
   ], [hud, machine, scene, measurements, planted]);
   const pathEdit = useMemo(() => modePathEdit(machine, () => true), [machine]);

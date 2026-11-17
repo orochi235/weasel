@@ -2048,7 +2048,7 @@ Calls the lanes made without a ruling:
   layers in `layers`, registered in entry order and all again when any entry's list changes, so a rebuilt entry keeps
   its place in hit order. `attach` → `registerLayer` would have moved a rebuilt entry's layer to the top. Every diagram
   editing helper and `plot`'s `plotEditing` return one entry; `createDiagramContribution`, the connect half without
-  its layer, is gone rather than kept beside `diagramPorts` (2026-11-12).
+  its layer, is gone rather than kept beside `createDiagramPortsContribution` (2026-11-12).
 - `d3` and `diagram-elk` are `weasel.tier: "other"`, not `plugin`: neither hands a canvas a layer, tool, action, dep or
   draw command. d3 joins data into a scene and diagram-elk is a layout planner for diagram. `kernel3d` stays `other`
   as a host for 3D scenes, though it ships a tool and deps (2026-11-12).
@@ -2057,7 +2057,7 @@ Calls the lanes made without a ruling:
 - Audio keeps `stopAll()` beside the renamed `cancelKey(key)`: it stops sound, and the animator's `cancelAll` names
   animations. Its `NoisePatch.noise` stays beside the graph's `NoiseNodeOptions.color`, since patterns are saved as
   data (2026-11-12).
-- Contribution factories keep their packages' names (`diagramPorts`, `plotEditing`, `createMinimapContribution`): core
+- Contribution factories keep their packages' names (`createDiagramPortsContribution`, `plotEditing`, `createMinimapContribution`): core
   itself mixes `dragPanContribution` and `createPresentationContribution`, and no convention picks one. Presets do
   have one, now in `docs/conventions.md` (2026-11-12).
 - A `createSpacingHintsPreset` given an `id` names its sources `<id>.spacing` and `<id>.alignment`; with none they

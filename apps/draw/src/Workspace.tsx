@@ -1,6 +1,6 @@
 import { SceneCanvas, type SceneCanvasApi, type SelectionApi, type PlacedPage, type ToolsApi, PATH_GEOMETRY_PROJECTION, type RenderLayer, type View, createWorkspaceTintLayer } from '@weasel-js/core';
 import {
-  type Measurements, measurementsContribution, measureEndSource, MeasureReadout, useMeasureTool,
+  type Measurements, createMeasurementsContribution, measureEndSource, MeasureReadout, useMeasureTool,
 } from '@weasel-js/measure';
 import { type UseSceneTextEditReturn } from '@weasel-js/text-tools';
 import { usePathToolsTools } from '@weasel-js/path-tools';
@@ -130,7 +130,7 @@ export function Workspace(props: WorkspaceProps): ReactElement {
   const pickColor = usePickColor();
   const eyedropperTool = useEyedropperTool({ onPick: (hex) => { if (hex) pickColor(hex); } });
   const measureEntry = useMemo(
-    () => measurementsContribution(scene as never, measurements),
+    () => createMeasurementsContribution(scene as never, measurements),
     [scene, measurements],
   );
   const rulersEntry = rulers.rulers?.contribution;

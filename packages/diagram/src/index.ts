@@ -46,7 +46,7 @@ export {
 export type { CanConnect, ConnectActionOptions, MovingEnd, PendingEdge } from './connect';
 export type { DropRefusal, DropVerdict } from '@weasel-js/core';
 export {
-  DIAGRAM_ITEM_CARRY, ITEM_DROP_ACTION_ID, createItemDropAction, dragItemProps, itemDropContribution, startItemDrag,
+  DIAGRAM_ITEM_CARRY, ITEM_DROP_ACTION_ID, createItemDropAction, dragItemProps, createItemDropContribution, startItemDrag,
 } from './itemDrop';
 export type { CanDropItem, ItemDrop, ItemDropOptions, ItemDropTarget } from './itemDrop';
 export { bodyAt, isBodyEnd } from './connectTargets';
@@ -63,7 +63,7 @@ export { StencilGhost, type StencilGhostProps } from './StencilGhost';
 export * from './containers';
 export {
   GRAB_LABEL_ACTION_ID, GRAB_WAYPOINT_ACTION_ID, SELECT_LABEL_EDGE_ACTION_ID,
-  diagramLabelDrag, diagramPorts, diagramWaypoints,
+  diagramLabelDrag, createDiagramPortsContribution, createDiagramWaypointsContribution,
 } from './contribution';
 export type { DiagramContributionOptions } from './contribution';
 export {
@@ -127,11 +127,11 @@ export {
   RECONNECT_ACTION_ID,
   commitReconnectToScene,
   createReconnectAction,
-  diagramEdgeEnds,
+  createDiagramEdgeEndsContribution,
   reconnectBinding,
 } from './reconnect';
 export type { EndChange, ReconnectOptions } from './reconnect';
-export { REORDER_ACTION_ID, createReorderAction, reorderBinding, reorderContribution, createReorderPreset, sequenceSlots } from './reorder';
+export { REORDER_ACTION_ID, createReorderAction, reorderBinding, createReorderContribution, createReorderPreset, sequenceSlots } from './reorder';
 export type { ReorderGap, ReorderItem, ReorderMove, ReorderOptions, ReorderSlots } from './reorder';
 export {
   STEP_REORDER_ACTION_ID, createStepReorderAction, groupReorderContribution, createGroupReorderPreset, groupReorderSlots,
@@ -202,7 +202,7 @@ export { installOffPageMarkers, offPageOps } from './offPage/install';
 export type { OffPageMarkerOptions } from './offPage/install';
 export { useOffPageMarkers } from './offPage/useOffPageMarkers';
 export {
-  FOLLOW_OFF_PAGE_ACTION_ID, createFollowOffPageAction, diagramOffPage, followOffPageBinding, offPageTargetOf,
+  FOLLOW_OFF_PAGE_ACTION_ID, createFollowOffPageAction, createDiagramOffPageContribution, followOffPageBinding, offPageTargetOf,
 } from './offPage/follow';
 export type { FollowOffPageOptions, OffPageTarget } from './offPage/follow';
 export { subpathOf } from './subpaths';

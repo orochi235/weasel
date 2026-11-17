@@ -551,7 +551,7 @@ of keys, clicks or drags reached through one key first, `Loupe ▸ 2`. A
 **leader** is the binding that opens it, on an action of its own,
 `keymap.<id>`, at the hotkey tier, so it outranks what the active tool binds to
 the same key and it opens mid-gesture too (decided 2026-10-20).
-`keymapContribution` builds both from one definition. "Chord" is not the word:
+`createKeymapContribution` builds both from one definition. "Chord" is not the word:
 here that means a modifier combination (`BROWSER_RESERVED_CHORDS`).
 
 Tapping the leader opens the keymap for the next input. Holding it keeps the

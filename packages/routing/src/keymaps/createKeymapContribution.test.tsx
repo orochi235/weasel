@@ -11,7 +11,7 @@ import { DepRegistryProvider } from '../interactions/actions/depRegistry';
 import type { Action } from '../interactions/actions/action';
 import type { BindingOverrides } from '../interactions/actions/bindingOverrides';
 import { useGestureDispatcher } from '../interactions/dispatcher/useGestureDispatcher';
-import { keymapContribution, type KeymapDef } from './keymapContribution';
+import { createKeymapContribution, type KeymapDef } from './createKeymapContribution';
 import { createKeymapStack } from './keymapStack';
 import { createDispatcher } from '../interactions/dispatcher/dispatcher';
 import type { InputEvent } from '../interactions/dispatcher/matcher';
@@ -23,7 +23,7 @@ function Probe({ def, outside, overrides, onRegistry }: {
   const registry = useActionsRegistry()!;
   onRegistry?.(registry);
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
-  const entries = keymapContribution(def);
+  const entries = createKeymapContribution(def);
   useEffect(() => {
     const releases = [outside, ...entries.flatMap((e) => e.actions ?? [])].map((a) => registry.register(a));
     const off = overrides ? registry.overrideBindings(overrides) : () => {};
@@ -74,7 +74,7 @@ describe('a leader mid-gesture', () => {
       id: 'drag', label: 'drag', defaultBinding: { kind: 'drag' },
       invoker: { timing: 'ongoing', start: () => ({ onMove, onEnd }) },
     };
-    const entries = keymapContribution({
+    const entries = createKeymapContribution({
       id: 'loupe', label: 'Loupe', leader: key('l'), bindings: [{ spec: key('2'), actionId: 'zoom' }],
     });
     const zoom = vi.fn();
@@ -102,7 +102,7 @@ describe('a leader mid-gesture', () => {
   });
 });
 
-describe('keymapContribution', () => {
+describe('createKeymapContribution', () => {
   it('a tapped leader opens the keymap for the next key, and only the leader sees its own key', () => {
     const { inside, outside, tap } = mount();
     tap('l');
@@ -170,7 +170,7 @@ describe('keymapContribution', () => {
   });
 
   it('puts its overlay on the keymap entry, so it draws only while the keymap is open', () => {
-    const [keymap, leader] = keymapContribution({
+    const [keymap, leader] = createKeymapContribution({
       id: 'loupe', label: 'Loupe', leader: key('l'), bindings: [], overlay: 'reticle', overlayPosition: 'after-selection',
     });
     expect(keymap).toMatchObject({ overlay: 'reticle', overlayPosition: 'after-selection' });
@@ -178,7 +178,7 @@ describe('keymapContribution', () => {
   });
 
   it('refuses a keymap that binds Escape', () => {
-    expect(() => keymapContribution({
+    expect(() => createKeymapContribution({
       id: 'k', label: 'K', leader: key('k'), bindings: [{ spec: key('Escape'), actionId: 'x' }],
     })).toThrow(/binds Escape/);
   });

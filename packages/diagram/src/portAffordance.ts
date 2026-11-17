@@ -105,7 +105,7 @@ export interface PortAffordanceOptions<TPose> {
   shows?: (node: DiagramNodeLike, state: ChromeState) => boolean;
   /** Which of a participant's ports show. Default: all of them. A port
    *  this turns away is not painted or grabbable, and passed with the connect
-   *  options (as `diagramPorts` and `DiagramView` do), no connect lands on it. */
+   *  options (as `createDiagramPortsContribution` and `DiagramView` do), no connect lands on it. */
   showsPort?: (port: Port) => boolean;
   /** Screen-pixel hit radius. Default 8, the kit's `HANDLE_BASE_PX`. */
   hitRadiusPx?: number;

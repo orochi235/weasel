@@ -8,7 +8,7 @@ import { actionBindings, type GestureBinding } from '../interactions/actions/bin
 import { keySpecShortcut, paramsMatch } from '../interactions/actions/actionShortcuts';
 import { resolveParams } from '../interactions/actions/invoker';
 import { NO_OVERRIDES, overriddenBindings, type ResolvedBindingOverrides } from '../interactions/actions/bindingOverrides';
-import { keymapLeaderId, leaderBindings, type KeymapDef } from './keymapContribution';
+import { keymapLeaderId, leaderBindings, type KeymapDef } from './createKeymapContribution';
 import type { OpenKeymap } from './keymapStack';
 
 /** One row of a keymap's hint: a key chip, or a pointer gesture in words, and what it does. */

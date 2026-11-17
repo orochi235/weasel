@@ -8,7 +8,7 @@ import { createScene, type NodeId, type Scene, SceneCanvas, useHandTool } from '
 import { useMeasureTool } from './useMeasureTool';
 import { createMeasurements, measureIds } from './measurements';
 import { measureEndsOf } from './measurement';
-import { measurementsContribution } from './measureContribution';
+import { createMeasurementsContribution } from './measureContribution';
 import { measureEndSource } from './measureHit';
 import { MEASURE_ACTION_IDS } from './actionIds';
 import { drawPreset, useEyedropperTool, useSelection } from '@weasel-js/editing';
@@ -92,7 +92,7 @@ describe('measurements through <SceneCanvas>', () => {
     scene = s;
     const selection = useSelection({ mode: 'multi', scene: s });
     selectionApi = selection;
-    const ambient = useMemo(() => [measurementsContribution(s as never, m)], [s, m]);
+    const ambient = useMemo(() => [createMeasurementsContribution(s as never, m)], [s, m]);
     const snap = useMemo(() => ({ sources: [measureEndSource()] }), []);
     return (
       <SceneCanvas

@@ -11,7 +11,7 @@ import type {} from './actionParamSchema';
 /** Options for `useMeasureTool`. */
 export interface UseMeasureToolOptions {
   /** Where the measurements go and which one is picked — the same object the
-   *  canvas's `measurementsContribution` and a readout are given. */
+   *  canvas's `createMeasurementsContribution` and a readout are given. */
   measurements: Measurements;
   /** The angle step, in radians, Shift holds a measurement to. Default 15°.
    *  Read on every pointer move, so a change mid-drag applies at once. */
@@ -28,7 +28,7 @@ export interface UseMeasureToolOptions {
  * current measurement. The measurements are scene nodes on an annotation
  * layer, so they stay when the tool changes; editing them under any tool,
  * and the commands that transform by them, come from
- * `measurementsContribution`, which the canvas installs beside this tool.
+ * `createMeasurementsContribution`, which the canvas installs beside this tool.
  */
 export function useMeasureTool(options: UseMeasureToolOptions): Tool {
   const { measurements: ms, keybinding } = options;

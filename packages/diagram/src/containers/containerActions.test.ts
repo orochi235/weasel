@@ -6,7 +6,7 @@ import {
 import type { Vec2 } from '@weasel-js/core/math';
 import { withDiagramRegistry } from '../edge';
 import { CONTAINER_STENCILS, containerBuild, lanesOf } from './containerStencils';
-import { createAddLaneAction, createLaneResizeAction, createReleaseMembersAction, diagramContainers } from './containerActions';
+import { createAddLaneAction, createLaneResizeAction, createReleaseMembersAction, createDiagramContainersContribution } from './containerActions';
 import { createLaneAffordance, LANE_AFFORDANCE_KIND, LANE_LAYER_ID, type LaneScratch } from './laneBoundaryLayer';
 
 function pool() {
@@ -138,7 +138,7 @@ describe('the add-lane action', () => {
 describe('a press on a lane affordance, through the dispatcher', () => {
   /** The containers, and after them a click on a lane affordance that `next` hears. */
   function surface(h: ReturnType<typeof pool>) {
-    const contribution = diagramContainers({ scene: h.scene as never });
+    const contribution = createDiagramContainersContribution({ scene: h.scene as never });
     const next = vi.fn();
     const after = {
       id: 'after', eligibility: { claimed: [LANE_LAYER_ID] },

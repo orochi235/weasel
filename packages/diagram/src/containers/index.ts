@@ -24,7 +24,7 @@ export {
 export type { LaneLayerOptions, LaneScratch, PoolLanes } from './laneBoundaryLayer';
 export {
   ADD_LANE_ACTION_ID, LANE_RESIZE_ACTION_ID, RELEASE_MEMBERS_ACTION_ID, commitLaneResizeToScene, createAddLaneAction,
-  createLaneResizeAction, createReleaseMembersAction, diagramContainers, laneResizeFrame,
+  createLaneResizeAction, createReleaseMembersAction, createDiagramContainersContribution, laneResizeFrame,
 } from './containerActions';
 export type { LaneActionOptions, LaneResize } from './containerActions';
 export { EDIT_CONTAINER_TITLE_ACTION_ID, editContainerTitleAction, editContainerTitleBinding, regionHeaderAt } from './containerTitle';

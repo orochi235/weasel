@@ -16,7 +16,7 @@ const onMeasurement = hitPredicate((hit) => (hit as { kind?: string } | null | u
  * by, Delete, Clear — a readout binds buttons to. Install it with
  * `<SceneCanvas ambient={[…]}>`; `useMeasureTool` adds the measuring itself.
  */
-export function measurementsContribution(
+export function createMeasurementsContribution(
   scene: Scene<unknown, string, unknown>,
   ms: Measurements,
 ): SurfaceContribution {
