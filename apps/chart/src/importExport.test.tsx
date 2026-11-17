@@ -197,6 +197,28 @@ describe('File › Import…', () => {
     expect(offIn('Diagram JSON')).toBe(false);
   });
 
+  it('asks a one-page format about the page in view alone, and a whole-document one about every page', () => {
+    const offIn = (name: string) => {
+      choose('Export');
+      const row = rowsOf(screen.getAllByRole('menu').at(-1)!).find((el) => el.textContent?.startsWith(`As ${name}`));
+      const off = row?.getAttribute('aria-disabled') === 'true';
+      act(() => { fireEvent.keyDown(document.activeElement ?? document.body, { key: 'Escape' }); });
+      act(() => { fireEvent.keyDown(document.activeElement ?? document.body, { key: 'Escape' }); });
+      return off;
+    };
+    mount();
+    act(() => { fireEvent.click(within(screen.getByRole('menubar')).getByRole('menuitem', { name: 'Page' })); });
+    act(() => { fireEvent.click(rowsOf(screen.getAllByRole('menu').at(-1)!).find((el) => el.textContent?.startsWith('Add Page'))!); });
+    const dialog = screen.getByRole('dialog', { name: 'Add Page' });
+    act(() => { fireEvent.click(within(dialog).getByRole('option', { name: 'Sequence' })); });
+    act(() => { fireEvent.click(within(dialog).getByRole('button', { name: 'Add' })); });
+    expect(offIn('Graphviz DOT')).toBe(true);
+    expect(offIn('Draw-style XML')).toBe(true);
+    act(() => { fireEvent.click(screen.getAllByRole('tab')[0]!); });
+    expect(offIn('Graphviz DOT')).toBe(false);
+    expect(offIn('Draw-style XML')).toBe(true);
+  });
+
   it('lists what the file had that a chart cannot hold in a toast', async () => {
     io.picked = new File([DIAGRAM_JSON.write!(DOC).text], 'flow.diagram.json');
     extra.warnings = ['A lost thing'];

@@ -2592,3 +2592,8 @@ Calls the lanes made without a ruling:
 - 2026-11-17 (the fixer's call): an animation whose cancel throws (its target's setter, as it commits what it showed)
   still leaves the table, with its completion and its `cancel` event, and `cancelAll` and a `cancelKey` interrupt go on
   to the rest; the first throw then goes on to whoever canceled. Retiring one whose own tick threw logs a second throw.
+## Audit round thirty-three (2026-11-17): the chart app
+
+- 2026-11-17 (my call): chart's File › Export keeps a whole-document format such as draw-style XML off while any page
+  holds a kind it cannot write, rather than offering an export its writer would finish by leaving that page out with
+  a warning. A one-page format such as DOT asks only about the page in view, which is all it writes.

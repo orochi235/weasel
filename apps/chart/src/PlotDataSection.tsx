@@ -11,5 +11,5 @@ export function PlotDataSection({ scene, selected }: { scene: ChartScene; select
   const [rootId] = roots as Set<string>;
   const trait = plotRootOf(scene.get(rootId as never));
   if (trait === null) return null;
-  return <PlotDataPanel data={trait.data} onChange={(next, label) => replacePlotData(scene, rootId, next, { label })} />;
+  return <PlotDataPanel key={rootId} data={trait.data} onChange={(next, label) => replacePlotData(scene, rootId, next, { label })} />;
 }
