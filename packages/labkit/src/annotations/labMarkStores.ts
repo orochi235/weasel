@@ -19,7 +19,7 @@ export interface LabMarkStores {
 
 /** A registry of trials' mark stores. */
 export function createLabMarkStores(): LabMarkStores {
-  const stores = createReflectable<AnnotationsApi>({ name: 'mark stores' });
+  const stores = createReflectable<AnnotationsApi>({ name: 'mark stores', layered: true });
   /** Relisted when a store comes or goes, not when one reports a change, so the list keeps its identity. */
   let listed: readonly AnnotationsApi[] = [];
   const change = (write: () => void): void => {
