@@ -21,6 +21,8 @@ export function ChartPageStrip({ scene, pages, theme }: { scene: ChartScene; pag
   const host = useMenuHost();
   const index = pages.placed.findIndex((p) => p.id === setupFor);
   const setupPage = pages.placed[index];
+  // A page that goes while Page Setup is open closes it for good, so its coming back (a redo) doesn't reopen it.
+  if (setupFor !== null && setupPage === undefined) setSetupFor(null);
 
   return (
     <>

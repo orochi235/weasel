@@ -369,6 +369,19 @@ describe('App', () => {
     expect(screen.queryByRole('dialog')).toBeNull();
   });
 
+  it('forgets Page Setup\'s page when the page goes, so bringing it back does not reopen the dialog', () => {
+    mount();
+    act(() => { fireEvent.click(screen.getByRole('button', { name: 'Add page' })); });
+    choose('Page', 'Page Setup');
+    expect(screen.getByRole('dialog', { name: /Page Setup: Page 2/ })).toBeTruthy();
+    act(() => { fireEvent.keyDown(window, { key: 'z', ctrlKey: true }); });
+    expect(screen.getAllByRole('tab', { hidden: true })).toHaveLength(1);
+    expect(screen.queryByRole('dialog')).toBeNull();
+    act(() => { fireEvent.keyDown(window, { key: 'z', ctrlKey: true, shiftKey: true }); });
+    expect(screen.getAllByRole('tab')).toHaveLength(2);
+    expect(screen.queryByRole('dialog')).toBeNull();
+  });
+
   it('says the chart is not being kept when the browser refuses to store it', async () => {
     const setItem = vi.spyOn(Storage.prototype, 'setItem').mockImplementation(() => {
       throw new DOMException('full', 'QuotaExceededError');
