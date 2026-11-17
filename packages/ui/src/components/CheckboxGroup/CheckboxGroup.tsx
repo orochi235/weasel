@@ -4,7 +4,7 @@ import { SegmentSweeper, SWEEP_INDEX_ATTR, useSweepGuard } from '../Segmented/se
 import type { SegmentedSweepProps } from '../Segmented/SegmentedBar';
 import { Checkbox } from '../Checkbox/Checkbox';
 import { Switch } from '../Switch/Switch';
-import type { ToggleHeld } from '../toggleHeld';
+import type { ToggleModifiers } from '../toggleModifiers';
 import { useButtonAccess } from '../Tooltip/buttonTooltip';
 import { holdScope, type DisableableProps, type ReadOnlyProps } from '../Disabled';
 import { useFieldControl } from '../Field/fieldSemantics';
@@ -51,7 +51,7 @@ export function CheckboxGroup<V extends string | number = string>(props: Checkbo
   const guard = useSweepGuard();
   const root = useRef<HTMLDivElement>(null);
   const Box = control === 'switch' ? Switch : Checkbox;
-  const change = (i: number, keys: ToggleHeld): void => {
+  const change = (i: number, keys: ToggleModifiers): void => {
     if (!usable(i) || guard.sweeping()) return;
     if (keys.alt) soloFrom(model, i, items.length, usable);
     else model.press(i);
@@ -69,7 +69,7 @@ export function CheckboxGroup<V extends string | number = string>(props: Checkbo
               disabled={item.disabled}
               disabledReason={item.disabledReason}
               aria-label={item.ariaLabel}
-              onChange={(_on: boolean, keys: ToggleHeld) => change(i, keys)}
+              onChange={(_on: boolean, keys: ToggleModifiers) => change(i, keys)}
             >
               {item.label}
             </Box>

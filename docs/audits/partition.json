@@ -7355,7 +7355,7 @@
    "packages/ui/src/components/appearanceIcons.ts",
    "packages/ui/src/components/checker.module.css",
    "packages/ui/src/components/listOption.ts",
-   "packages/ui/src/components/toggleHeld.ts",
+   "packages/ui/src/components/toggleModifiers.ts",
    "packages/ui/src/components/toggleLabel.module.css"
   ]
  },
