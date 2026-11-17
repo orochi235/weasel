@@ -5,7 +5,7 @@ import { type PrefGroup, prefHoldsValue, prefLeaves, prefOverridesOf, type PrefE
 import { overrideOptions, scopeSelectorsOf, scopeSelectors } from '@weasel-js/prefs-schema/internal';
 
 /** One thing wrong with a pref's scopes, or with what the schema admits. */
-export interface PrefSplitProblem {
+export interface PrefScopeProblem {
   code: 'valueless' | 'no-leaf' | 'not-enum' | 'encoded' | 'clearable' | 'split' | 'twice' | 'default' | 'per' | 'admits';
   /** The path of the pref whose `scopes` it is; `''` for the schema. */
   at: string;
@@ -14,7 +14,7 @@ export interface PrefSplitProblem {
   problem: string;
 }
 
-const refusal = (leaf: PrefLeaf | undefined): [PrefSplitProblem['code'], string] | undefined => {
+const refusal = (leaf: PrefLeaf | undefined): [PrefScopeProblem['code'], string] | undefined => {
   if (!leaf) return ['no-leaf', 'names no leaf'];
   if (leaf.kind !== 'enum') return ['not-enum', `names a ${leaf.kind} leaf, and only an enum has options to split by`];
   const selector = leaf as PrefEnum;
@@ -46,8 +46,8 @@ const notAdmitted = (path: string, admitted: ReadonlySet<string>): string =>
   `selector "${path}" is not admitted by this schema (${admitted.size ? `it admits: ${[...admitted].join(', ')}` : 'it admits none'})`;
 
 /** What is wrong with the `scopes` of the leaf at `at`. */
-function perProblems(at: string, leaf: PrefLeaf, leaves: ReadonlyMap<string, PrefLeaf>, admitted: ReadonlySet<string>): PrefSplitProblem[] {
-  const out: PrefSplitProblem[] = [];
+function perProblems(at: string, leaf: PrefLeaf, leaves: ReadonlyMap<string, PrefLeaf>, admitted: ReadonlySet<string>): PrefScopeProblem[] {
+  const out: PrefScopeProblem[] = [];
   leaf.scopes!.forEach((per, i) => {
     const path = per.selector;
     if (leaf.scopes!.findIndex((other) => other.selector === path) !== i) {
@@ -73,10 +73,10 @@ function perProblems(at: string, leaf: PrefLeaf, leaves: ReadonlyMap<string, Pre
 }
 
 /** Everything wrong with the `scopes` lists of `schema`'s prefs and with what it admits, in schema order. */
-export function checkPrefSplits(schema: PrefGroup): PrefSplitProblem[] {
+export function checkPrefScopes(schema: PrefGroup): PrefScopeProblem[] {
   const leaves = prefLeaves(schema);
   const admitted = admittedSelectors(schema);
-  const out: PrefSplitProblem[] = [];
+  const out: PrefScopeProblem[] = [];
   for (const path of admitted) {
     if (leaves.has(path)) out.push({ code: 'admits', at: '', path, problem: `the schema admits "${path}", which is a pref` });
   }

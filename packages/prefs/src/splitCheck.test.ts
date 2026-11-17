@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { type PrefGroup, prefLeaves } from '@weasel-js/prefs-schema';
-import { checkPrefSplits, prefSelectors } from './splitCheck';
+import { checkPrefScopes, prefSelectors } from './splitCheck';
 
 const option = (value: string) => ({ value, label: value });
 const leaf = (extra: object) => ({ name: 'x', description: '', ...extra });
@@ -19,9 +19,9 @@ const SCHEMA = {
   },
 } as unknown as PrefGroup;
 
-describe('checkPrefSplits', () => {
+describe('checkPrefScopes', () => {
   it('reports each entry that cannot be split by, with the leaf it is on, and nothing for a good list', () => {
-    expect(checkPrefSplits(SCHEMA).map(({ code, at, path }) => [at, path, code])).toEqual([
+    expect(checkPrefScopes(SCHEMA).map(({ code, at, path }) => [at, path, code])).toEqual([
       ['rule', undefined, 'valueless'],
       ['bad', 'nowhere', 'no-leaf'],
       ['bad', 'on', 'not-enum'],

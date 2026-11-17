@@ -177,7 +177,7 @@ export {
 } from './autoReset';
 export { createWeightAxes, type PrefWeightAxes } from './weightAxes';
 export { PREF_BLENDS, type PrefBlend } from './blend';
-export { checkPrefSplits, type PrefSplitProblem } from './splitCheck';
+export { checkPrefScopes, type PrefScopeProblem } from './splitCheck';
 export { prefsCss, prefsCssAttributes, type PrefsCssOptions, type PrefsCssSource } from './css';
 export { createDefaultsSource } from './defaultsSource';
 export { kitSettingsCssOptions } from './kitCss';
