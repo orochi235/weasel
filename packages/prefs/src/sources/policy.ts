@@ -26,6 +26,6 @@ export function sourceLeafIsAtReset(source: Pick<PrefsSource, 'valueAt'>, path: 
 }
 
 /** Runs `plan` through `write`, one call per leaf. */
-export function writePlan(plan: readonly ResetWrite[], write: (path: string, value: unknown) => void): void {
+export function writeResetPlan(plan: readonly ResetWrite[], write: (path: string, value: unknown) => void): void {
   for (const { path, write: value } of plan) write(path, value);
 }
