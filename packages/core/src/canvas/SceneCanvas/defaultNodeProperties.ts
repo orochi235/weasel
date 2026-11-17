@@ -230,8 +230,8 @@ export interface ShapePropertiesExtras {
 
 /** Build the standard shape schema — Layout (pose box + rotation) +
  *  Appearance (fill / stroke), and whatever a kind's `extras` add. Matches the
- *  kit's builtin-shape data template (`{ path, fill, stroke? }`,
- *  `useBuiltinShapeTools`). */
+ *  kit's builtin-shape data template (`{ path, fill, stroke? }`), as
+ *  editing's shape tools insert it. */
 export function shapePropertiesSchema(extras: ShapePropertiesExtras = {}): PrefSection {
   return shapeSchema({ ...extras });
 }

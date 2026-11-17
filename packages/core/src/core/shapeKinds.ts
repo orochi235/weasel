@@ -1,9 +1,9 @@
 /**
  * The kit's built-in shape kinds — one table, every other spelling derived.
  *
- * This module imports nothing at runtime on purpose: `useBuiltinShapeTools`
- * imports the package barrel, so anything barrel-reachable that needs these
- * lists at module-evaluation time must not route through it.
+ * This module imports nothing at runtime on purpose: anything barrel-reachable
+ * that needs these lists at module-evaluation time must not route through the
+ * package barrel.
  */
 
 import { getOwn } from '@weasel-js/registry';
@@ -11,7 +11,7 @@ import type { CoreIconName } from '../icons.gen';
 
 /** What the kit knows about one built-in shape kind. */
 export interface ShapeKindDescriptor {
-  /** Mounted as a built-in shape tool by `useBuiltinShapeTools`, and so a
+  /** Mounted as a built-in shape tool by editing's `shapeToolKitPreset`, and so a
    *  member of `BuiltinShapeToolId` / `KIT_SHAPE_KINDS`. `image` is false:
    *  `useImageTool` needs a `src` and can't be auto-mounted. So are `pen` and
    *  `pencil`, whose tools `@weasel-js/path-tools` ships. */
@@ -55,7 +55,7 @@ export type ShapeKindsWhere<T, F extends keyof ShapeKindDescriptor> = {
   [K in keyof T]: T[K] extends Record<F, true> ? K : never;
 }[keyof T];
 
-/** Built-in shape tool ids handled by `useBuiltinShapeTools`. */
+/** Built-in shape tool ids, the tools editing's `shapeToolKitPreset` mounts. */
 export type BuiltinShapeToolId = ShapeKindsWhere<typeof SHAPE_KINDS, 'tool'>;
 
 /** The insert kinds the kit's dispatcher overlay layer draws a shape of its own for.
