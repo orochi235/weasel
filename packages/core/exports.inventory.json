@@ -2160,7 +2160,7 @@
     "resolveEasing": "function",
     "resolveEditablePathOf": "function",
     "resolveFill": "function",
-    "resolveFillPattern": "function",
+    "resolvePaintPattern": "function",
     "resolveHolding": "function",
     "resolveMarkerSize": "function",
     "resolveOverlays": "function",

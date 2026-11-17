@@ -5,14 +5,14 @@
 
 import type { CommandFill, CommandPaint, CommandStroke, Fill, Paint, Stroke } from '@weasel-js/paint';
 import { paintToLocalUnits, type FillPoseBox } from '../paintToLocalUnits';
-import { resolveFillPattern } from './resolveSpec';
+import { resolvePaintPattern } from './resolveSpec';
 
 /**
  * `paint` as a draw command's paint: `'bounds'` units mapped onto `box`, and
  * a tile kind swapped for its texture. `null` when a tile cannot rasterize.
  */
 export function commandPaint(paint: Paint, box: FillPoseBox): CommandPaint | null {
-  return resolveFillPattern(paintToLocalUnits(paint, box));
+  return resolvePaintPattern(paintToLocalUnits(paint, box));
 }
 
 /**

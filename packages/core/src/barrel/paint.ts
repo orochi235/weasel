@@ -11,7 +11,7 @@ export type { TilePatternOptions } from '@weasel-js/renderer';
 // Mesh gradients live on `@weasel-js/core/mesh`, off the root barrel.
 export {
   resolvePatternSpec,
-  resolveFillPattern,
+  resolvePaintPattern,
 } from '@weasel-js/renderer';
 
 // ─── Paint types: Paint, Stroke, gradients ──────────────────────────────

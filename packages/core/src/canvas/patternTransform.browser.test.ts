@@ -8,7 +8,7 @@ import type { Paint, PatternTransform } from '@weasel-js/paint';
 import { composePatternTransform } from '@weasel-js/paint';
 import { createScene, renderSceneToPixels, type RasterImage } from '@weasel-js/core';
 import type { RectPose } from 'core/scene/composePose';
-import { resolveFillPattern } from '@weasel-js/renderer';
+import { resolvePaintPattern } from '@weasel-js/renderer';
 import type { DrawCommand } from '@weasel-js/renderer';
 
 const W = 64;
@@ -20,7 +20,7 @@ function render(transform: PatternTransform | undefined): RasterImage {
     units: 'world',
     transform,
   };
-  const fill = resolveFillPattern(paint)!;
+  const fill = resolvePaintPattern(paint)!;
   const drawOne = (_node: unknown, p: RectPose): DrawCommand[] => [{
     kind: 'path',
     path: { kind: 'rect', x: p.x, y: p.y, width: p.width, height: p.height },

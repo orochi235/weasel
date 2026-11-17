@@ -20,7 +20,7 @@ import {
   defaultDrawOne,
   type RectPose,
 } from '@weasel-js/core';
-import { resolveFillPattern } from '@weasel-js/renderer';
+import { resolvePaintPattern } from '@weasel-js/renderer';
 import { meshFromStops } from '@weasel-js/renderer/mesh';
 import '@weasel-js/core/mesh';
 import { registerEffect } from '@weasel-js/renderer';
@@ -206,7 +206,7 @@ describe('texture-painted atlas text in a batched frame', () => {
     text, fontFamily: FAMILY, fontSize: FONT_SIZE, fontWeight: 400, fontStyle: 'normal',
     fill: { paint: fill }, letterSpacing: 0, underline: false, strikethrough: false, overline: false, baselineShift: 0,
   });
-  const WORLD_STRIPES = resolveFillPattern({
+  const WORLD_STRIPES = resolvePaintPattern({
     kind: 'hatch', color: '#ffffff', size: 16, lineWidth: 6,
     units: 'world',
   })!;

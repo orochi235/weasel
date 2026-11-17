@@ -113,7 +113,7 @@ export { paintToLocalUnits, paintToBoundsUnits, type FillPoseBox } from './paint
 export { commandFill, commandPaint, commandStroke } from './patterns/commandPaint';
 export { dropShadowCommand, dropShadowLayers, spreadRadius, type DropShadow } from './dropShadow';
 export { createTilePattern, type TilePatternOptions } from './patterns';
-export { resolveFillPattern, resolvePatternSpec } from './patterns/resolveSpec';
+export { resolvePaintPattern, resolvePatternSpec } from './patterns/resolveSpec';
 export { textCommand, textCommandFromPose, textCommandFromRuns, textCommandFromRunsInto } from './textCommand';
 export {
   adoptBitmapSrc,
