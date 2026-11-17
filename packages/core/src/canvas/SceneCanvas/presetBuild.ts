@@ -2,7 +2,7 @@ import { useMemo, type RefObject } from 'react';
 import { useLatest } from '@weasel-js/react';
 import type { SelectionApi, WorldPoint } from '@weasel-js/routing';
 import { asNodeId, type Scene } from 'core/scene/types';
-import { pressTarget } from 'tools/builtin/pressTarget';
+import { pressTarget } from 'canvas/pressTarget';
 import type { EnteredGroupApi } from '../deps/enteredGroup';
 import type { InsertNodeFactories } from '../deps/insertFactories';
 import type { Bounds } from 'core/viewport/fitViewToBounds';

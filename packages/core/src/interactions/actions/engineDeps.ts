@@ -126,7 +126,7 @@ declare module '@weasel-js/routing' {
     enteredGroup?: EnteredGroupApi;
     /** What a range click covers, the way the select tool ranges, for an action that applies a
      *  click outside it. Sourced by `<SceneCanvas>`; absent, a range walks the selection's order. */
-    selectRange?: import('tools/builtin/select/selectRange').SelectRangeDep;
+    selectRange?: import('canvas/selectRange').SelectRangeDep;
     /** Current viewport — camera position + scale. */
     view: ViewApi;
     /**

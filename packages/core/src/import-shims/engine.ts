@@ -201,8 +201,8 @@ export { AUTO_ORIGIN_PROJECTION, RECT_ORIGIN_PROJECTION } from '../interactions/
 export type { OriginProjection } from '../interactions/gestures/shared/originProjection';
 export type { ActionBehavior, AreaSelectOverlay, BehaviorEnd, BehaviorResult, BoundsConstraint, CloneBehavior, CloneBehaviorResult, CloneEnd, GestureContext, GroupTransform, InsertBehavior, InsertMoveResult, InsertOverlay, InsertPoint, InsertProposed, LassoSelectBehavior, LassoSelectMoveResult, LassoSelectOverlay, LassoSelectPose, LassoSelectProposed, MoveBehavior, MoveEnd, PointerState, ResizeMoveResult, ResizeOverlay, ResizeProposed, RotateBehavior, RotateMoveResult, RotateOverlay, RotateProposed } from '../interactions/gestures/types';
 export type { ContainerBounds, DropRegion, DropTarget, LayoutArrival, LayoutChild, LayoutContainer, LayoutDragged, LayoutDropTargetMode, LayoutSnap, LayoutStrategy, ReflowGlideOptions, ReflowTransition } from '../layout/types';
-export { pressTarget } from '../tools/builtin/pressTarget';
-export type { PressTargetTree } from '../tools/builtin/pressTarget';
-export { rangeAmong } from '../tools/builtin/select/selectRange';
-export type { RangeBetween, SelectRangeDep } from '../tools/builtin/select/selectRange';
+export { pressTarget } from '../canvas/pressTarget';
+export type { PressTargetTree } from '../canvas/pressTarget';
+export { rangeAmong } from '../canvas/selectRange';
+export type { RangeBetween, SelectRangeDep } from '../canvas/selectRange';
 export { WeaselProvider } from '../WeaselProvider';

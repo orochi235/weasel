@@ -107,7 +107,9 @@ export type { DepName, DepRegistry, DepListing, DepSource } from '@weasel-js/rou
 // Exported from its defining module rather than through depRegistry's
 // re-export, so `DepName = keyof DepSchema` resolves to a documented symbol.
 export type { DepSchema } from '../interactions/actions/depSchema';
-export type { RangeBetween, SelectRangeDep } from '../tools/builtin/select/selectRange';
+export type { RangeBetween, SelectRangeDep } from '../canvas/selectRange';
+export { pickTopMostHit, type PickTopMostHitAdapter } from '../canvas/pickTopMostHit';
+export { pressTarget, type PressTargetTree } from '../canvas/pressTarget';
 export type {
   AreaSelectDep,
   HitTestView,

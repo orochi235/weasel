@@ -7,7 +7,7 @@ import { screenToWorld } from 'core/viewport/viewTransform';
 import { viewToTransform } from 'core/viewport/view';
 import { asNodeId } from 'core/scene/types';
 import type { Point } from '@weasel-js/geom';
-import { pressTarget } from 'tools/builtin/pressTarget';
+import { pressTarget } from 'canvas/pressTarget';
 import type { ImmediateParams } from '@weasel-js/routing';
 import { BETWEEN_GESTURES } from '@weasel-js/routing';
 

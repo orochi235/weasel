@@ -13,9 +13,9 @@ import {
 import { rectFromPlane, type PlaneMap } from 'core/viewport/parallax';
 import type { View } from 'core/viewport/view';
 import type { Bounds } from 'core/viewport/fitViewToBounds';
-import { centersAmong } from 'tools/builtin/select/centersBetween';
-import { rangeAmong, type SelectRangeDep } from 'tools/builtin/select/selectRange';
-import { pickTopMostHit, type PickTopMostHitAdapter } from 'tools/builtin/pickTopMostHit';
+import { centersAmong } from 'canvas/centersBetween';
+import { rangeAmong, type SelectRangeDep } from 'canvas/selectRange';
+import { pickTopMostHit, type PickTopMostHitAdapter } from 'canvas/pickTopMostHit';
 import type { Scene } from 'core/scene/types';
 import { asNodeId } from 'core/scene/types';
 import type { UseMoveOptions } from 'interactions/gestures/moveOptions';

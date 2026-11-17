@@ -1,5 +1,5 @@
 import type { NodeId } from 'core/scene/types';
-import { pressSelects, type PressTargetTree } from '../pressTarget';
+import { pressSelects, type PressTargetTree } from './pressTarget';
 
 /** The ids a range click from `from` to `to` selects. */
 export type RangeBetween = (from: NodeId, to: NodeId) => readonly NodeId[];
