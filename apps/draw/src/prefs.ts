@@ -13,12 +13,13 @@ import {
   type PrefBase,
   type PrefEnumControl,
   type PrefGroup,
+  type PrefGroupPath,
   type PrefPath,
   type PrefsStore,
   type PrefValidator,
   type PrefValueAt,
 } from '@weasel-js/prefs';
-import { usePref as usePrefOf } from '@weasel-js/prefs/react';
+import { usePref as usePrefOf, usePrefGroup as usePrefGroupOf } from '@weasel-js/prefs/react';
 import { pageLocalStorage } from '@weasel-js/react';
 import { localStorageAdapter, type SyncStorageAdapter } from '@weasel-js/storage';
 import { LOUPE_FACTOR, LOUPE_MODE } from './loupePrefs';
@@ -27,8 +28,10 @@ import type { ToolbarLayout } from '@weasel-js/ui/components/ToolbarDock';
 import type { RecordingProfile } from './recorder';
 import type { RegistryEnumFilter } from './registry/types';
 import {
-  dropPathToolsChrome, fillRuleToToolOptions, panelsToSurfaces, pathAidsToGroup, renamePathAids, renamePathTools,
+  dropPathToolsChrome, fillRuleToToolOptions, gridToGroup, panelsToSurfaces, pathAidsToGroup, renamePathAids, renamePathTools,
 } from './surfaces/prefsMigration';
+import { pageGridSchema } from '@weasel-js/editor';
+import { isPlainObject } from '@weasel-js/registry';
 import type { SurfacesValue } from './surfaces/types';
 import { ELLIPSE_TOOL_OPTIONS, LINE_TOOL_OPTIONS, POLYGON_TOOL_OPTIONS, RECT_TOOL_OPTIONS, STAR_TOOL_OPTIONS } from '@weasel-js/editing';
 
@@ -133,22 +136,7 @@ export const PREFS = {
       name: 'View',
       description: 'The canvas: grid, snapping, symmetry, and path editing aids.',
       children: {
-        gridVisible: {
-          kind: 'boolean',
-          name: 'Show grid',
-          description: 'Display the grid overlay on the canvas.',
-          default: false,
-        },
-        gridDensity: {
-          kind: 'number',
-          name: 'Grid density',
-          description: 'Spacing between grid lines, in document units (CSS pixels, 96 to the inch). Snap to grid uses the same spacing.',
-          default: 20,
-          min: 4,
-          max: 288,
-          step: 4,
-          control: 'slider',
-        },
+        grid: pageGridSchema,
         rulersVisible: {
           kind: 'boolean',
           name: 'Show rulers',
@@ -160,12 +148,6 @@ export const PREFS = {
           name: 'Snapping',
           description: 'Snap gestures to the grid, guides, other shapes and their anchors. Off, the pen and every other gesture place points where you put them. Hold Ctrl to suspend it for one drag.',
           default: true,
-        },
-        snapToGrid: {
-          kind: 'boolean',
-          name: 'Snap to grid',
-          description: 'Constrain move/resize gestures to grid intersections.',
-          default: false,
         },
         boundToContent: {
           kind: 'boolean',
@@ -303,7 +285,7 @@ const VALIDATORS: Record<string, PrefValidator> = {
 };
 
 /** `MIGRATIONS[i]` takes stored records from version `i` to `i + 1`. */
-const MIGRATIONS = [panelsToSurfaces, dropPathToolsChrome, pathAidsToGroup, fillRuleToToolOptions, renamePathAids, renamePathTools];
+const MIGRATIONS = [panelsToSurfaces, dropPathToolsChrome, pathAidsToGroup, fillRuleToToolOptions, renamePathAids, renamePathTools, gridToGroup];
 
 /** The app's prefs over `storage`. Tests pass a memory adapter. */
 export function openDrawPrefs(storage: SyncStorageAdapter): PrefsStore<typeof PREFS> {
@@ -373,6 +355,11 @@ function foldLegacyPrefs(
   if (parsed !== undefined && (parsed as { version?: unknown } | null)?.version !== 2) return;
   const ui = (parsed as { ui?: { panels?: unknown; surfaces?: unknown } } | undefined)?.ui;
   if (ui && typeof ui === 'object' && ui.panels !== undefined) ui.surfaces ??= ui.panels;
+  const view = (parsed as { view?: Record<string, unknown> } | undefined)?.view;
+  if (isPlainObject(view) && view.grid === undefined) {
+    const old = { visible: view.gridVisible, spacing: view.gridDensity, snap: view.snapToGrid };
+    view.grid = Object.fromEntries(Object.entries(old).filter(([, value]) => value !== undefined));
+  }
   for (const [path, value] of flattenPrefValues(PREFS, parsed)) {
     if (!target.isSet(path as DrawPrefPath)) target.set(path as DrawPrefPath, value as never);
   }
@@ -382,4 +369,9 @@ function foldLegacyPrefs(
 /** One leaf of the app's prefs, as React state. */
 export function usePref<P extends DrawPrefPath>(path: P) {
   return usePrefOf(drawPrefs(), path);
+}
+
+/** One group of the app's prefs, as React state. */
+export function usePrefGroup<P extends PrefGroupPath<typeof PREFS>>(path: P) {
+  return usePrefGroupOf(drawPrefs(), path);
 }

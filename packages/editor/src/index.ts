@@ -20,7 +20,7 @@ export {
   DOC_CLIPBOARD_ACTIONS, DOC_CLIPBOARD_KEYS, useDocClipboard,
   type DocClipboardCommandOptions, type DocClipboardOptions,
 } from './useDocClipboard';
-export { usePageGrid, type PageGridOptions } from './usePageGrid';
+export { pageGridSchema, usePageGrid, type PageGridOptions, type PageGridSettings } from './usePageGrid';
 export { EditorShell, type EditorShellProps } from './EditorShell';
 export { EditorTools, useEditorTools } from './shortcutSheet';
 export { EDITOR_CONTEXT_MENUS, EDITOR_CONTEXT_MENUS_CONTRIBUTION } from './contextMenus';

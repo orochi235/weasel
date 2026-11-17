@@ -26,7 +26,7 @@ describe('useGrid', () => {
   });
 
   it('shows the grid when the preference says so', () => {
-    act(() => drawPrefs().set('view.gridVisible', true));
+    act(() => drawPrefs().set('view.grid.visible', true));
     expect(mount().result.current.layer).toBeDefined();
   });
 
@@ -34,30 +34,30 @@ describe('useGrid', () => {
     const { result } = mount();
     act(() => result.current.commands.toggleGrid());
     act(() => result.current.commands.toggleSnap());
-    expect(drawPrefs().get('view.gridVisible')).toBe(true);
-    expect(drawPrefs().get('view.snapToGrid')).toBe(true);
+    expect(drawPrefs().get('view.grid.visible')).toBe(true);
+    expect(drawPrefs().get('view.grid.snap')).toBe(true);
     expect(result.current.commands.gridVisible).toBe(true);
     act(() => result.current.commands.toggleGrid());
-    expect(drawPrefs().get('view.gridVisible')).toBe(false);
+    expect(drawPrefs().get('view.grid.visible')).toBe(false);
   });
 
   it('snaps to the grid density the preference names', () => {
     act(() => {
-      drawPrefs().set('view.snapToGrid', true);
-      drawPrefs().set('view.gridDensity', 36);
+      drawPrefs().set('view.grid.snap', true);
+      drawPrefs().set('view.grid.spacing', 36);
     });
     const { result } = mount();
     const at = () => [...result.current.snapSource!.collect({ probes: [{ id: 'pointer', at: { x: 50, y: 19 }, role: 'pointer' }] } as never)]
       .map((c) => c.locus.at);
     expect(at()).toContainEqual({ x: 36, y: 19 });
-    act(() => drawPrefs().set('view.gridDensity', 8));
+    act(() => drawPrefs().set('view.grid.spacing', 8));
     expect(at()).toContainEqual({ x: 48, y: 19 });
   });
 
   it('hands the canvas a grid snap source at the grid density while snapping is on', () => {
     act(() => {
-      drawPrefs().set('view.snapToGrid', true);
-      drawPrefs().set('view.gridDensity', 36);
+      drawPrefs().set('view.grid.snap', true);
+      drawPrefs().set('view.grid.spacing', 36);
     });
     const source = mount().result.current.snapSource!;
     expect(source).toMatchObject({ id: 'grid', tier: 'fallback' });

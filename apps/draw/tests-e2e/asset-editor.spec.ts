@@ -101,7 +101,7 @@ test('the Changes tab lists an edit', async ({ page }) => {
   await row(page, /^Grid density/).click();
   await attrs(page).getByRole('textbox', { name: 'Description' }).fill('How far apart the grid lines are.');
   await page.getByRole('tab', { name: 'Changes' }).click();
-  await expect(page.getByRole('tabpanel', { name: 'Changes' })).toContainText('view/gridDensity.description');
+  await expect(page.getByRole('tabpanel', { name: 'Changes' })).toContainText('view/grid/spacing.description');
 });
 
 for (const asset of ['rect', 'Arrange', 'Menu bar', 'Selection']) {
@@ -137,7 +137,7 @@ test('dragging a row above another reorders the group, and Alt+Up moves the sele
   await page.mouse.down();
   for (let k = 1; k <= 12; k++) await page.mouse.move(from.x + 40, from.y + (to.y + 3 - from.y) * k / 12);
   await page.mouse.up();
-  await expect.poll(async () => { const all = await ids(); return all.indexOf('view/snapToGrid') < all.indexOf('view/gridVisible'); }).toBe(true);
+  await expect.poll(async () => { const all = await ids(); return all.indexOf('view/grid/snap') < all.indexOf('view/grid/visible'); }).toBe(true);
   await row(page, /^Spacing hints/).click();
   await page.keyboard.press('Alt+ArrowUp');
   await expect.poll(async () => { const all = await ids(); return all.indexOf('view/spacingHints') < all.indexOf('view/symmetryAxis'); }).toBe(true);

@@ -1,19 +1,31 @@
 import { contrastLineColor, type RenderLayer, type SnapSource } from '@weasel-js/core';
 import { createGridLayer, gridSnapSource } from '@weasel-js/guides';
+import { pref, type PrefValuesOf } from '@weasel-js/prefs';
 import { useMemo } from 'react';
 import type { PageSize } from './paperLayer';
 
-/** The page a `usePageGrid` grid covers, its pitch and look, and whether it shows and snaps. */
-export interface PageGridOptions {
+/** A page grid's settings as a prefs group: mount it in an app's schema and pass its values to `usePageGrid`. */
+export const pageGridSchema = pref.group('Grid', {
+  visible: pref.boolean('Show grid', false, { description: 'Display the grid overlay on the canvas.' }),
+  spacing: pref.number('Grid density', 20, {
+    description: 'Spacing between grid lines, in document units (CSS pixels, 96 to the inch). Snap to grid uses the same spacing.',
+    min: 4, max: 288, step: 4, control: 'slider',
+  }),
+  accentEvery: pref.number('Accent every', 5, {
+    description: 'Every this many lines, one is drawn darker.', min: 1, max: 20, step: 1,
+  }),
+  snap: pref.boolean('Snap to grid', false, { description: 'Constrain move/resize gestures to grid intersections.' }),
+});
+
+/** A page grid's settings: what `pageGridSchema` holds. */
+export type PageGridSettings = PrefValuesOf<typeof pageGridSchema>;
+
+/** A page grid's settings, plus the page it covers and the fill its line colors contrast with. */
+export interface PageGridOptions extends PageGridSettings {
   /** The page the grid covers; its lines start at the page's corner, default world `(0, 0)`. */
   page: PageSize & { x?: number; y?: number };
-  spacing: number;
   /** The page's fill; line colors are derived from it for contrast. */
   background: string;
-  /** Every Nth line is drawn as an accent. */
-  accentEvery: number;
-  visible: boolean;
-  snap: boolean;
 }
 
 /**

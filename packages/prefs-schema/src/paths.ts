@@ -67,6 +67,28 @@ export type PrefValueOf<L> =
 /** What the leaf at `P` holds. */
 export type PrefValueAt<G, P extends string> = PrefValueOf<PrefAtPath<G, P>>;
 
+/** Every group's dotted path in a `PrefGroup` schema: the paths `PrefValuesOf` can be read at. */
+export type PrefGroupPath<G, Prefix extends string = ''> =
+  G extends { children: infer C }
+    ? string extends keyof C
+      ? Prefix extends '' ? string : `${Prefix}.${string}`
+      : {
+          [K in keyof C & string]: C[K] extends { kind: string }
+            ? never
+            : C[K] extends { children: Record<string, unknown> }
+              ? (Prefix extends '' ? K : `${Prefix}.${K}`) | PrefGroupPath<C[K], Prefix extends '' ? K : `${Prefix}.${K}`>
+              : never;
+        }[keyof C & string]
+    : never;
+
+/** The group at `P`. */
+export type PrefGroupAt<G, P extends string> =
+  G extends { children: infer C }
+    ? P extends `${infer H}.${infer Rest}`
+      ? H extends keyof C ? PrefGroupAt<C[H], Rest> : never
+      : P extends keyof C ? (C[P] extends { kind: string } ? never : C[P]) : never
+    : never;
+
 /** What a group holds: an object keyed like its `children`, with each leaf's value
  *  at its key and each nested group's values under its own. A leaf that holds no
  *  value (an action, an alias, a label, a separator) gets no key. */

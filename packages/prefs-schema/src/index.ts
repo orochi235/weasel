@@ -129,4 +129,6 @@ export {
   type PrefStringControl,
 } from './schema';
 export type { PresetDescription } from './presets';
-export type { PrefAtPath, PrefFieldsOf, PrefPath, PrefValueAt, PrefValueOf, PrefValuesOf } from './paths';
+export type {
+  PrefAtPath, PrefFieldsOf, PrefGroupAt, PrefGroupPath, PrefPath, PrefValueAt, PrefValueOf, PrefValuesOf,
+} from './paths';

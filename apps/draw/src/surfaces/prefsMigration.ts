@@ -99,3 +99,18 @@ function renameEntry(map: Record<string, unknown>, from: string, to: string): Re
   const { [from]: moved, ...rest } = map;
   return Object.hasOwn(rest, to) ? rest : { ...rest, [to]: moved };
 }
+
+const GRID_LEAVES: readonly (readonly [string, string])[] = [
+  ['view.gridVisible', 'view.grid.visible'],
+  ['view.gridDensity', 'view.grid.spacing'],
+  ['view.snapToGrid', 'view.grid.snap'],
+];
+
+/** Version 6 to 7: the grid's leaves moved into the view's Grid group, which is `@weasel-js/editor`'s `pageGridSchema`. */
+export const gridToGroup: PrefsMigration = (records) => {
+  for (const [from, to] of GRID_LEAVES) {
+    if (!records.has(from)) continue;
+    if (!records.has(to)) records.set(to, records.get(from));
+    records.delete(from);
+  }
+};

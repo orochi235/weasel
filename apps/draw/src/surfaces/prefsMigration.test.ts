@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { pathAidsToGroup, renamePathAids, renamePathTools } from './prefsMigration';
+import { gridToGroup, pathAidsToGroup, renamePathAids, renamePathTools } from './prefsMigration';
 
 describe('path aid migrations', () => {
   it('carries a version 2 balance and corners toggle through to Poise and Fillet', () => {
@@ -49,5 +49,18 @@ describe('path aid migrations', () => {
     renamePathTools(records as never);
     expect(records.get('tools.lastTool')).toBe('pen');
     expect(records.get('ui.surfaces')).toBe(surfaces);
+  });
+});
+
+describe('gridToGroup', () => {
+  it('moves the grid leaves into the Grid group, keeping a value already there', () => {
+    const records = new Map<string, unknown>([
+      ['view.gridVisible', true],
+      ['view.gridDensity', 40],
+      ['view.snapToGrid', true],
+      ['view.grid.snap', false],
+    ]);
+    gridToGroup(records as never);
+    expect(Object.fromEntries(records)).toEqual({ 'view.grid.visible': true, 'view.grid.spacing': 40, 'view.grid.snap': false });
   });
 });
