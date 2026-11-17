@@ -131,6 +131,20 @@ describe('page edits', () => {
     expect(pagesOf(scene)).toEqual(TWO);
   });
 
+  it('throws on a page id given twice, or already in use, recording nothing', () => {
+    const { scene } = setup();
+    const depth = scene.history.undoDepth();
+    expect(() => addPage(scene, { id: 'a', width: 300, height: 300 }, { index: 2 }))
+      .toThrow(/addPage: page id "a" is already in use/);
+    expect(() => setPages(scene, { pages: [...TWO.pages, { id: 'b', width: 5, height: 5 }], layout: TWO.layout }))
+      .toThrow(/setPages: page id "b" appears twice/);
+    expect(scene.history.undoDepth()).toBe(depth);
+    expect(pagesOf(scene)).toEqual(TWO);
+    const bare = createScene<{ n: string }, 'l', Pose>({ systemLayers: [{ id: 'l' }] });
+    expect(() => createPageRun(bare, [TWO.pages[0]!, TWO.pages[0]!])).toThrow(/createPageRun: page id "a" appears twice/);
+    expect(pagesOf(bare)).toBeNull();
+  });
+
   it('throws on a NaN index to addPage or movePage, recording nothing; ±Infinity is held to either end', () => {
     const { scene } = setup();
     const depth = scene.history.undoDepth();

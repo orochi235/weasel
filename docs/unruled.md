@@ -2496,3 +2496,9 @@ Calls the lanes made without a ruling:
 - Open: whether an interior octant-spline weight other than 1 may kink the curve, against the doc's "C² across the whole octant".
 - Ruled 2026-11-15: `checkPipeline` reports a `group-loop` problem once per loop.
 - Open: whether `createDeleteAction({ commit })` keeps its old gate for a page-only selection, now that it is disabled there.
+
+
+## Audit round twenty-nine (2026-11-16): core and its state
+
+- 2026-11-16 (the lane's call): `addPage` throws on a page id the scene already has, and `setPages` and `createPageRun`
+  on a page id given twice, rather than minting a fresh id with `nextPageId`.
