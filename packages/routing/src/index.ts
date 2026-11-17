@@ -237,7 +237,7 @@ export {
   createToolOptionValues, heldToolOptions, keepToolOptions, setToolOption, shareToolOptions, SHARED_TOOL_OPTIONS,
   steppedOption, toolOptionActionIds, toolOptionLeaf, toolOptionNumberLeaf, toolOptionParams, toolOptionSlot, withToolOptionDefault,
 } from './tools/toolOptions';
-export type { ToolOptions, ToolOptionShare, ToolOptionStep, ToolOptionValues } from './tools/toolOptions';
+export type { ToolOptionsSpec, ToolOptionShare, ToolOptionStep, ToolOptionValues } from './tools/toolOptions';
 export { toolOptionSteps } from './tools/toolOptionSteps';
 export { prefsToolOptionValues, toolOptionsPrefs } from './tools/toolOptionPrefs';
 export { declaredToolShortcuts, TOOL_ACTIVATE_ID, toolShortcutsOf } from './tools/toolShortcuts';

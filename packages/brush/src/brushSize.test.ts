@@ -1,11 +1,11 @@
 import { describe, expect, it } from 'vitest';
 import {
   createToolOptionValues, setToolOption, shareToolOptions, SHARED_TOOL_OPTIONS, toolOptionParams, toolOptionSteps,
-  type ImmediateInvoker, type ToolOptions,
+  type ImmediateInvoker, type ToolOptionsSpec,
 } from '@weasel-js/routing';
 import { BRUSH_SIZE_PX, shareBrushSize } from './brushSize';
 
-const brush = (max: number): ToolOptions => ({
+const brush = (max: number): ToolOptionsSpec => ({
   actionId: 'paint',
   prefs: {
     name: 'Brush',

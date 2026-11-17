@@ -9,7 +9,7 @@ import type { PrefNumber } from '@weasel-js/prefs-schema';
 import { runs, tally } from '../pbt.fixture';
 import {
   createToolOptionValues, heldToolOptions, keepToolOptions, setToolOption, steppedOption, toolOptionParams,
-  type ToolOptions, type ToolOptionStep,
+  type ToolOptionsSpec, type ToolOptionStep,
 } from './toolOptions';
 
 /** A positive double of any magnitude, subnormals among them. */
@@ -76,7 +76,7 @@ describe('steppedOption', () => {
 const PROTO_KEYS = ['__proto__', 'toString', 'constructor', 'valueOf', 'hasOwnProperty'];
 const optionKey = fc.oneof(fc.constantFrom(...PROTO_KEYS, 'size'), fc.string({ minLength: 1, maxLength: 3 }));
 
-function optionsOf(keys: readonly string[], shared: ReadonlySet<string>): ToolOptions {
+function optionsOf(keys: readonly string[], shared: ReadonlySet<string>): ToolOptionsSpec {
   const children: Record<string, PrefNumber> = {};
   for (const [i, key] of keys.entries()) {
     Object.defineProperty(children, key, {

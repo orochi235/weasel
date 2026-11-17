@@ -6,7 +6,7 @@ export {
   toolOptionsPrefs, toolOptionSlot, toolOptionSteps, withToolOptionDefault,
 } from '@weasel-js/routing';
 export type {
-  OptionedTool, ToolOptionPrefsStore, ToolOptions, ToolOptionsPrefsSpec, ToolOptionShare, ToolOptionStep, ToolOptionValues,
+  OptionedTool, ToolOptionPrefsStore, ToolOptionsSpec, ToolOptionsPrefsSpec, ToolOptionShare, ToolOptionStep, ToolOptionValues,
 } from '@weasel-js/routing';
 export type { ToolSet, ToolSetOptions, ToolEntry } from '@weasel-js/routing';
 export type { ToolDef } from './overlayBinding';

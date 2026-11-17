@@ -1,6 +1,6 @@
 import type { PrefLeaf } from '@weasel-js/prefs';
 import { createEmitter, getOwn } from '@weasel-js/registry';
-import { type ToolOptions, type ToolOptionValues, toolOptionParams } from '@weasel-js/routing';
+import { type ToolOptionsSpec, type ToolOptionValues, toolOptionParams } from '@weasel-js/routing';
 import type { RecordCache } from '@weasel-js/storage';
 import { valueRecord } from '../state/labRecords';
 import { MARK_COLOR, MARK_TEXT_SIZE, MARK_WIDTH } from './paint';
@@ -41,14 +41,14 @@ export const MARK_SIZE_LEAF: PrefLeaf = {
 
 /** The options of a tool that draws a line: its width and color. Labkit binds no actions to them; the overlay reads
  *  them when it makes a mark. */
-export const MARK_LINE_OPTIONS: ToolOptions = {
+export const MARK_LINE_OPTIONS: ToolOptionsSpec = {
   actionId: [],
   prefs: { name: 'Mark', as: 'bar', children: { width: MARK_WIDTH_LEAF, color: MARK_COLOR_LEAF } },
   share: { width: MARK_WIDTH_KEY, color: MARK_COLOR_KEY },
 };
 
 /** The text tool's options: its size, and the color every mark shares. */
-export const MARK_TEXT_OPTIONS: ToolOptions = {
+export const MARK_TEXT_OPTIONS: ToolOptionsSpec = {
   actionId: [],
   prefs: {
     name: 'Text',
@@ -61,7 +61,7 @@ export const MARK_TEXT_OPTIONS: ToolOptions = {
 /** The style fields a mark of `kind` carries, read from `options` in `values`. */
 export function markStyleFrom(
   toolId: string,
-  options: ToolOptions | undefined,
+  options: ToolOptionsSpec | undefined,
   values: ToolOptionValues,
 ): Pick<AnnotationData, 'width' | 'color' | 'fontSize'> {
   if (!options) return {};

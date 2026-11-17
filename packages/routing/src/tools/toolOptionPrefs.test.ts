@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import { SHARED_TOOL_OPTIONS, toolOptionParams, setToolOption, type ToolOptions } from './toolOptions';
+import { SHARED_TOOL_OPTIONS, toolOptionParams, setToolOption, type ToolOptionsSpec } from './toolOptions';
 import { prefsToolOptionValues, toolOptionsPrefs, type ToolOptionPrefsStore } from './toolOptionPrefs';
 
 /** A store over a flat map of paths, filling in the shared fill's default as a `PrefsStore` does. */
@@ -32,7 +32,7 @@ function fakeStore(): ToolOptionPrefsStore & { get(path: string): unknown } {
   };
 }
 
-const options = (fill: string): ToolOptions => ({
+const options = (fill: string): ToolOptionsSpec => ({
   actionId: 'insert',
   prefs: {
     name: 'Shape',
@@ -99,7 +99,7 @@ describe('prefsToolOptionValues', () => {
 
 describe('tool ids and option keys named like Object.prototype members', () => {
   it('keeps a tool named __proto__ and an option named constructor as their own groups and leaves', () => {
-    const opts: ToolOptions = {
+    const opts: ToolOptionsSpec = {
       actionId: 'insert',
       prefs: { name: 'Odd', children: { constructor: { kind: 'number', name: 'C', description: '', default: 1 } } },
     };

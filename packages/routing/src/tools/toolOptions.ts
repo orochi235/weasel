@@ -27,7 +27,7 @@ export interface ToolOptionStep {
 export type ToolOptionShare = Readonly<Record<string, string | null>>;
 
 /** What a tool declares about its options. See {@link ToolDef.options}. */
-export interface ToolOptions {
+export interface ToolOptionsSpec {
   /** The action, or actions, the options are params of: each leaf of `prefs`
    *  is the param of the same key. */
   actionId: string | readonly string[];
@@ -78,39 +78,39 @@ export function createToolOptionValues(): ToolOptionValues {
 }
 
 /** `options` with `share` laid over its own: what a tool hook's `share` option does. */
-export function shareToolOptions(options: ToolOptions, share: ToolOptionShare | undefined): ToolOptions {
+export function shareToolOptions(options: ToolOptionsSpec, share: ToolOptionShare | undefined): ToolOptionsSpec {
   if (!share || Object.keys(share).length === 0) return options;
   return { ...options, share: { ...options.share, ...share } };
 }
 
 /** `options` with `option`'s default made `value`: a tool hook's way to take a starting value from its caller.
  *  `undefined`, or an option it does not declare, leaves `options` as they are. */
-export function withToolOptionDefault(options: ToolOptions, option: string, value: unknown): ToolOptions {
+export function withToolOptionDefault(options: ToolOptionsSpec, option: string, value: unknown): ToolOptionsSpec {
   const leaf = value === undefined ? undefined : toolOptionLeaf(options, option);
   if (!leaf) return options;
   return { ...options, prefs: { ...options.prefs, children: { ...options.prefs.children, [option]: { ...leaf, default: value } as PrefLeaf } } };
 }
 
 /** The actions `options` are params of. */
-export function toolOptionActionIds(options: ToolOptions): readonly string[] {
+export function toolOptionActionIds(options: ToolOptionsSpec): readonly string[] {
   return typeof options.actionId === 'string' ? [options.actionId] : options.actionId;
 }
 
 /** Where `toolId`'s option `option` is kept: under the tool, or under its shared key. */
-export function toolOptionSlot(toolId: string, options: ToolOptions, option: string): { owner: string; key: string } {
+export function toolOptionSlot(toolId: string, options: ToolOptionsSpec, option: string): { owner: string; key: string } {
   const shared = options.share && Object.hasOwn(options.share, option) ? options.share[option] : null;
   return shared ? { owner: SHARED_TOOL_OPTIONS, key: shared } : { owner: toolId, key: option };
 }
 
 /** `option`'s leaf in `options`, if it has one. */
-export function toolOptionLeaf(options: ToolOptions, option: string): PrefLeaf | undefined {
+export function toolOptionLeaf(options: ToolOptionsSpec, option: string): PrefLeaf | undefined {
   const children = options.prefs.children;
   const leaf = getOwn(children, option) as { kind?: string } | undefined;
   return leaf && typeof leaf.kind === 'string' ? (leaf as PrefLeaf) : undefined;
 }
 
 /** `option`'s leaf when it is a number. */
-export function toolOptionNumberLeaf(options: ToolOptions, option: string): PrefNumber | undefined {
+export function toolOptionNumberLeaf(options: ToolOptionsSpec, option: string): PrefNumber | undefined {
   const leaf = toolOptionLeaf(options, option);
   return leaf?.kind === 'number' ? (leaf as PrefNumber) : undefined;
 }
@@ -125,7 +125,7 @@ function readHeld(leaf: PrefLeaf, held: unknown): unknown {
   return repaired === (leaf as { default?: unknown }).default && !deepEqual(repaired, held) ? undefined : repaired;
 }
 
-function* optionKeys(options: ToolOptions): Iterable<[string, PrefLeaf]> {
+function* optionKeys(options: ToolOptionsSpec): Iterable<[string, PrefLeaf]> {
   for (const key of Object.keys(options.prefs.children)) {
     const leaf = toolOptionLeaf(options, key);
     if (leaf && 'default' in leaf) yield [key, leaf];
@@ -135,7 +135,7 @@ function* optionKeys(options: ToolOptions): Iterable<[string, PrefLeaf]> {
 /** The options `values` holds for `toolId`, each read from its slot: only those held, so an option it does not
  *  hold leaves whatever else sets it in place. */
 export function heldToolOptions(
-  toolId: string, options: ToolOptions, values: ToolOptionValues | undefined,
+  toolId: string, options: ToolOptionsSpec, values: ToolOptionValues | undefined,
 ): Record<string, unknown> {
   const out: Record<string, unknown> = {};
   if (!values) return out;
@@ -150,7 +150,7 @@ export function heldToolOptions(
 
 /** Every option's value for `toolId`: what its slot in `values` holds, else its default. */
 export function toolOptionParams(
-  toolId: string, options: ToolOptions, values: ToolOptionValues | undefined,
+  toolId: string, options: ToolOptionsSpec, values: ToolOptionValues | undefined,
 ): Record<string, unknown> {
   const out: Record<string, unknown> = {};
   for (const [key, leaf] of optionKeys(options)) setOwn(out, key, (leaf as { default?: unknown }).default);
@@ -159,7 +159,7 @@ export function toolOptionParams(
 
 /** Write `value` as `toolId`'s option `option`, into its slot. */
 export function setToolOption(
-  toolId: string, options: ToolOptions, values: ToolOptionValues, option: string, value: unknown,
+  toolId: string, options: ToolOptionsSpec, values: ToolOptionValues, option: string, value: unknown,
 ): void {
   const slot = toolOptionSlot(toolId, options, option);
   values.set(slot.owner, slot.key, value);
@@ -167,7 +167,7 @@ export function setToolOption(
 
 /** Write each of `toolId`'s options that `params` sets to a new value into its slot. */
 export function keepToolOptions(
-  toolId: string, options: ToolOptions, values: ToolOptionValues, params: Readonly<Record<string, unknown>>,
+  toolId: string, options: ToolOptionsSpec, values: ToolOptionValues, params: Readonly<Record<string, unknown>>,
 ): void {
   const now = toolOptionParams(toolId, options, values);
   for (const [key, leaf] of optionKeys(options)) {

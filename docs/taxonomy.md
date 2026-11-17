@@ -179,7 +179,7 @@ active, beneath any other tuning, and a host draws the options row from the same
 schema. Naming a size or a strength gives the tool step actions on `[` `]`,
 `Shift+[` `Shift+]`, and Shift+wheel, bound at active scope.
 
-An option is kept per tool unless it names a **shared key** (`ToolOptions.share`),
+An option is kept per tool unless it names a **shared key** (`ToolOptionsSpec.share`),
 and every tool naming that key reads and writes one value. Every read and write
 goes through the slot `toolOptionSlot` resolves. The shape tools share `fill`,
 `stroke`, `strokeWidth`, and `fillRule`, and text its `textFill`. A brush's size

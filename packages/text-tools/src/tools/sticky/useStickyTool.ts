@@ -2,7 +2,7 @@ import { useMemo } from 'react';
 import { cursorFor } from '@weasel-js/cursor';
 import { icon } from '../../icons.gen';
 import { STICKY_DEFAULTS, type StickyStyle } from './stickyNode';
-import { shareToolOptions, withToolOptionDefault, type ToolOptions } from '@weasel-js/routing';
+import { shareToolOptions, withToolOptionDefault, type ToolOptionsSpec } from '@weasel-js/routing';
 import type { Paint } from '@weasel-js/paint';
 import { defineTool, type Tool } from '@weasel-js/core';
 import { insertBindingBehaviors, styleOptionLeaves, toolOptionPaint, type InsertToolOptions, INSERT_DRAG_MODS, INSERT_REPOSITION_BINDING } from '@weasel-js/editing';
@@ -14,7 +14,7 @@ export interface UseStickyToolOptions extends InsertToolOptions, StickyStyle {}
 
 /** The sticky tool's options: the note's paper and its ink, its own rather than shared with the shape tools.
  *  Both inserts read them, the drag's and the click's. */
-export const STICKY_TOOL_OPTIONS: ToolOptions = {
+export const STICKY_TOOL_OPTIONS: ToolOptionsSpec = {
   actionId: ['insert', 'place'],
   prefs: {
     name: 'Sticky note',

@@ -2,14 +2,14 @@ import { describe, expect, it } from 'vitest';
 import type { ImmediateInvoker } from '../interactions/actions/invoker';
 import {
   createToolOptionValues, heldToolOptions, keepToolOptions, setToolOption, shareToolOptions, SHARED_TOOL_OPTIONS,
-  toolOptionParams, type ToolOptions,
+  toolOptionParams, type ToolOptionsSpec,
 } from './toolOptions';
 import { toolOptionSteps } from './toolOptionSteps';
 
 const RED = { color: '#ff0000' };
 const BLUE = { color: '#0000ff' };
 
-const shape = (fill: unknown): ToolOptions => ({
+const shape = (fill: unknown): ToolOptionsSpec => ({
   actionId: ['insert', 'reshape'],
   prefs: {
     name: 'Shape',
@@ -57,7 +57,7 @@ describe('shared tool options', () => {
   it('holds a shared number to each tool’s own bounds', () => {
     const values = createToolOptionValues();
     const wide = shareToolOptions(shape(RED), { sides: 'count' });
-    const narrow: ToolOptions = {
+    const narrow: ToolOptionsSpec = {
       ...wide,
       prefs: { ...wide.prefs, children: { sides: { kind: 'number', name: 'Sides', description: '', default: 4, min: 3, max: 5 } } },
     };

@@ -1,13 +1,13 @@
 import { getOwn } from '@weasel-js/registry';
 import type { CountStepParams } from '@weasel-js/core';
-import { setToolOption, steppedOption, toolOptionNumberLeaf, toolOptionParams, type ToolOptions, type ToolOptionValues } from '@weasel-js/routing';
+import { setToolOption, steppedOption, toolOptionNumberLeaf, toolOptionParams, type ToolOptionsSpec, type ToolOptionValues } from '@weasel-js/routing';
 
 /** Step `toolId`'s count option `option` by one, up or down as `params` say: a key binding's `delta`, or a wheel's
  *  `deltaY`, where up (deltaY > 0 under natural scrolling) adds one. Held to the leaf's bounds. Returns whether it
  *  moved anything. */
 export function stepCountOption(
   toolId: string,
-  options: ToolOptions,
+  options: ToolOptionsSpec,
   option: string,
   values: ToolOptionValues | undefined,
   params: Readonly<Partial<CountStepParams>> | undefined,

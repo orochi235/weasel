@@ -4,12 +4,12 @@
  */
 import type { PrefGroup, PrefLeaf } from '@weasel-js/prefs-schema';
 import { deepEqual, getOwn, setOwn } from '@weasel-js/registry';
-import { SHARED_TOOL_OPTIONS, toolOptionSlot, type ToolOptions, type ToolOptionValues } from './toolOptions';
+import { SHARED_TOOL_OPTIONS, toolOptionSlot, type ToolOptionsSpec, type ToolOptionValues } from './toolOptions';
 
 /** A tool as these read it: its id and its options. */
 export interface OptionedTool {
   readonly id: string;
-  readonly options?: ToolOptions;
+  readonly options?: ToolOptionsSpec;
 }
 
 /** The part of a `PrefsStore` {@link prefsToolOptionValues} uses. */

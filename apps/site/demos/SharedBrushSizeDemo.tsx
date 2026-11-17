@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
 import { solid } from '@weasel-js/paint';
-import { type Action, commitOps, createDeleteOp, createInsertOp, createToolOptionValues, defineAction, defineTool, ellipsePath, type InvocationCtx, type RectPose, resolveParams, SceneCanvas, shareToolOptions, type Tool, type ToolOptions, type ToolOptionShare, useScene, WeaselProvider } from '@weasel-js/core';
+import { type Action, commitOps, createDeleteOp, createInsertOp, createToolOptionValues, defineAction, defineTool, ellipsePath, type InvocationCtx, type RectPose, resolveParams, SceneCanvas, shareToolOptions, type Tool, type ToolOptionsSpec, type ToolOptionShare, useScene, WeaselProvider } from '@weasel-js/core';
 import { pxReach } from '@weasel-js/geom';
 import { pref, PX_UNIT } from '@weasel-js/prefs';
 import { brushRing } from '@weasel-js/cursor';
@@ -24,7 +24,7 @@ function brushTool(id: string, label: string, act: Act, share?: ToolOptionShare)
   const prefs = pref.group(label, {
     radiusPx: pref.number('Size', 16, { min: 4, max: 120, step: 1, control: 'slider', unit: PX_UNIT }),
   });
-  const own: ToolOptions = { actionId: id, prefs, size: { option: 'radiusPx', times: 1.25 } };
+  const own: ToolOptionsSpec = { actionId: id, prefs, size: { option: 'radiusPx', times: 1.25 } };
   const options = shareToolOptions(own, share);
   const radiusOf = (p: Readonly<BrushParams> | undefined) => p?.radiusPx ?? prefs.children.radiusPx.default;
   const action: Action = defineAction<string, BrushParams>({
