@@ -10,7 +10,7 @@ import { mirrorPose } from './mirrorPose';
 import { compose, resolveSkeleton } from './resolveSkeleton';
 import { addJoint, jointAt, jointPositions, moveJoint, removeJoint } from './skeletonEdits';
 import { solveIk, type IkLimit } from './solveIk';
-import { jointShares, setWeights } from './weightEdits';
+import { jointShares, setJointWeights } from './weightEdits';
 import type { JointTransform, Pose, Skeleton } from './types';
 import { runs, tally } from '../pbt.fixture';
 
@@ -109,7 +109,7 @@ describe('skeleton edits, property', () => {
   });
 });
 
-describe('setWeights, property', () => {
+describe('setJointWeights, property', () => {
   const weights = (count: number) => fc.array(fc.constantFrom(0, 0.25, 0.5, 1, 2), { maxLength: count + 2 });
   it('gives the joint its weight on each point named and leaves each such point summing to 1', () => {
     const t = tally();
@@ -120,7 +120,7 @@ describe('setWeights, property', () => {
       fc.array(fc.tuple(fc.integer({ min: -1, max: count }), fc.oneof(fc.double({ min: -0.5, max: 1.5, noNaN: true }), fc.constantFrom(0, 1)))),
     )), ([count, skin, joint, edits]) => {
       const set = new Map(edits);
-      const next = setWeights(skin, count, joint, set);
+      const next = setJointWeights(skin, count, joint, set);
       for (const w of Object.values(next)) {
         expect(w).toHaveLength(count);
         expect(w.some((x) => x > 0)).toBe(true);
