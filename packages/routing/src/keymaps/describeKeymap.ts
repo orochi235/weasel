@@ -2,7 +2,7 @@
  * What a hint, a menu or a binding list shows for a keymap: its rows, Escape
  * first, and each key's path through the leaders that reach it.
  */
-import { detectPlatform, formatShortcut, keyLegendsFromMods, type GestureSpec, type LogicalMod, type Platform, type ShortcutInput } from '@weasel-js/gestures';
+import { detectPlatform, formatShortcut, keyLegendsFromMods, type GestureSpec, type ModifierKey, type Platform, type ShortcutInput } from '@weasel-js/gestures';
 import type { Action } from '../interactions/actions/action';
 import { actionBindings, type GestureBinding } from '../interactions/actions/binding';
 import { keySpecShortcut, paramsMatch } from '../interactions/actions/actionShortcuts';
@@ -34,7 +34,7 @@ const GESTURE_WORDS: Partial<Record<GestureSpec['kind'], string>> = {
   contextMenu: 'right-click', wheel: 'scroll', pinch: 'pinch', pointerDown: 'press',
 };
 
-const MOD_ORDER: readonly LogicalMod[] = ['mod', 'ctrl', 'meta', 'alt', 'shift'];
+const MOD_ORDER: readonly ModifierKey[] = ['mod', 'ctrl', 'meta', 'alt', 'shift'];
 
 /** A pointer gesture in words, modifiers first and named as `platform`'s keyboard prints them: `Cmd-click`. */
 function gestureWords(spec: GestureSpec, platform: Platform): string | undefined {

@@ -4,7 +4,7 @@
 
 `@weasel-js/ui` no longer re-exports gestures' key-spec helpers; import them from `@weasel-js/gestures`.
 
-That is `keySpecsFromMods`, `keySpecFromKey`, `keySpecFromCode`, `keySpecsFromShortcut`, and `detectPlatform`. The types that came with them (`LogicalMod`, `LogicalModSpec`, `Platform`, `LegendStyle`, `KeySpecsFromModsOptions`, `KeyLabels`) move the same way, from the root barrel and from `@weasel-js/ui/components/Keycaps`. `KeySpec`, `KeyCap`, `KeySequence`, and the rest of Keycaps stay.
+That is `keySpecsFromMods`, `keySpecFromKey`, `keySpecFromCode`, `keySpecsFromShortcut`, and `detectPlatform`. The types that came with them (`ModifierKey`, `LogicalModSpec`, `Platform`, `LegendStyle`, `KeySpecsFromModsOptions`, `KeyLabels`) move the same way, from the root barrel and from `@weasel-js/ui/components/Keycaps`. `KeySpec`, `KeyCap`, `KeySequence`, and the rest of Keycaps stay.
 
 ```ts
 // before

@@ -118,7 +118,7 @@ export { historyKey } from './ui/historyKey';
 // Shortcut legends: how a keyboard prints a binding's keys, per platform
 export { keyLegendsFromMods, keyLegendFromKey, detectPlatform, MODIFIER_LABELS } from './ui/keyLegendsFromMods';
 export type {
-  KeyLegend, LogicalMod, LogicalModSpec, Platform, LegendStyle, KeyLegendOptions, KeyLabels,
+  KeyLegend, LogicalModSpec, Platform, LegendStyle, KeyLegendOptions, KeyLabels,
 } from './ui/keyLegendsFromMods';
 export { keyLegendsFromShortcut } from './ui/keyLegendsFromShortcut';
 export { keyLegendFromCode } from './ui/keyLegendFromCode';

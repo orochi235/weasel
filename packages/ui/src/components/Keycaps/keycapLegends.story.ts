@@ -1,8 +1,8 @@
-import { keyLegendFromKey, keyLegendsFromMods, type LegendStyle, type LogicalMod, type Platform } from '@weasel-js/gestures';
+import { keyLegendFromKey, keyLegendsFromMods, type LegendStyle, type ModifierKey, type Platform } from '@weasel-js/gestures';
 import { getOwn } from '@weasel-js/registry';
 import type { KeyLegend } from './Keycaps';
 
-const MOD_BY_GLYPH: Readonly<Record<string, LogicalMod | undefined>> = {
+const MOD_BY_GLYPH: Readonly<Record<string, ModifierKey | undefined>> = {
   '⌘': 'mod', '⇧': 'shift', '⌥': 'alt', '⌃': 'ctrl', '⇪': 'meta',
 };
 const NAMED_BY_GLYPH: Readonly<Record<string, string | undefined>> = {
