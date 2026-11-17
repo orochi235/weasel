@@ -5,7 +5,7 @@
 
 import type { Path, PolygonPath } from '../path';
 import type { Point } from './cubicMath';
-import { intersectSegments } from '../intersect/segmentIntersections';
+import { segmentCrossings } from '../intersect/segmentIntersections';
 import { pathSegments, type PathSegment } from '../intersect/pathSegments';
 import { editAnchorSetTracked } from './anchorOrigins';
 import { anchorsToPath, pathToAnchors } from './anchors';
@@ -99,7 +99,7 @@ export function reachToMeet(
   const touching = Math.max(1e-6, 1e-6 * Math.max(Math.abs(frame.point.x), Math.abs(frame.point.y)));
   for (const piece of extensionPieces(frame, reach, mode, opts)) {
     for (const s of all) {
-      for (const h of intersectSegments(piece.pts, s.pts)) {
+      for (const h of segmentCrossings(piece.pts, s.pts)) {
         const d = walked + pieceLengthAt(piece, h.ta);
         if (d > touching && (best === null || d < best)) best = d;
       }

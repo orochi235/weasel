@@ -3472,7 +3472,7 @@
    "packages/geom/src/paths/resamplePath.ts",
    "packages/geom/src/paths/roughenPath.ts",
    "packages/geom/src/paths/schneiderFit.ts",
-   "packages/geom/src/paths/segmentCrossings.ts",
+   "packages/geom/src/paths/crossingsAmong.ts",
    "packages/geom/src/paths/segmentLength.ts",
    "packages/geom/src/paths/segmentType.ts",
    "packages/geom/src/paths/simplifyAnchors.ts",

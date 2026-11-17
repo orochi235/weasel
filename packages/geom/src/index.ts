@@ -102,7 +102,7 @@ export { roughenPath, type RoughenPathOptions } from './paths/roughenPath';
 export { zigzagPath, type ZigzagPathOptions } from './paths/zigzagPath';
 export { puckerBloatPath, type PuckerBloatPathOptions } from './paths/puckerBloatPath';
 export { pathDistanceToPoint } from './paths/pathDistance';
-export { intersectSegments, type SegmentCrossing } from './intersect/segmentIntersections';
+export { segmentCrossings, type SegmentCrossing } from './intersect/segmentIntersections';
 export { pathSegments, type PathSegment } from './intersect/pathSegments';
 export { pathCrossings, type PathCrossing, type PathCrossingsOptions, type PathStop } from './intersect/pathCrossings';
 export {

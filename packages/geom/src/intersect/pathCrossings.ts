@@ -1,7 +1,7 @@
 /** Where paths cross one another and themselves. */
 
 import type { Path } from '../path';
-import { intersectSegments } from './segmentIntersections';
+import { segmentCrossings } from './segmentIntersections';
 import { adjacentSegments, boxesNear, pathSegments, type PathSegment } from './pathSegments';
 
 /** A place on a path's stroke: which segment, and how far along it. */
@@ -55,7 +55,7 @@ export function pathCrossings(paths: readonly Path[], opts: PathCrossingsOptions
         for (let n = i === j ? m + 1 : 0; n < segs[j].length; n++) {
           const sa = segs[i][m], sb = segs[j][n];
           if (!boxesNear(sa.box, sb.box)) continue;
-          for (const h of intersectSegments(sa.pts, sb.pts)) {
+          for (const h of segmentCrossings(sa.pts, sb.pts)) {
             if (i === j && sharedEnd(sa, sb, h.ta, h.tb)) continue;
             out.push({
               x: h.x,

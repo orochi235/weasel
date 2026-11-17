@@ -1818,7 +1818,7 @@
     "insetBox": "function",
     "interpolateSrgb": "function",
     "interpolateView": "function",
-    "intersectSegments": "function",
+    "segmentCrossings": "function",
     "invertPlane": "function",
     "isAnnotationLayer": "function",
     "isAnnotationNode": "function",

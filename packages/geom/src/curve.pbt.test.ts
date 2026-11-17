@@ -4,7 +4,7 @@ import { cubicBounds, cubicEvalAt, quadraticEvalAt, splitCubicAt, type CubicCoor
 import { nearestOnCubic } from './nearest';
 import { flattenCubic, flattenCubicWithArcLen, flattenQuadratic, flattenQuadraticWithArcLen } from './flatten';
 import { segmentLength, segmentTAtLength } from './paths/segmentLength';
-import { intersectSegments } from './intersect/segmentIntersections';
+import { segmentCrossings } from './intersect/segmentIntersections';
 import { pointSegmentDistance } from './points2';
 import { coord, runs, timeoutFor } from './pbt.fixture';
 
@@ -227,12 +227,12 @@ function clearCrossings(a: P[], b: P[], n: number): P[] {
   return out;
 }
 
-describe('intersectSegments, a crossing at the very end of a curve (shrunk counterexample)', () => {
+describe('segmentCrossings, a crossing at the very end of a curve (shrunk counterexample)', () => {
   it('reports parameters inside 0..1', () => {
     // A cubic of subnormal length: the chord test's slack put ta at -1e-6, and refinement stopped before clamping it.
     const a = [{ x: 0, y: 0 }, { x: 0, y: 0 }, { x: 0, y: 0 }, { x: 0, y: -1.7285717905e-314 }];
     const b = [{ x: 1e-323, y: 0 }, { x: 0, y: -85.50024445890497 }, { x: 99.99999999781028, y: 0 }, { x: 0, y: 0 }];
-    const hits = intersectSegments(a, b);
+    const hits = segmentCrossings(a, b);
     expect(hits.length).toBeGreaterThan(0);
     for (const h of hits) {
       expect(h.ta).toBeGreaterThanOrEqual(0);
@@ -241,7 +241,7 @@ describe('intersectSegments, a crossing at the very end of a curve (shrunk count
   });
 });
 
-describe('intersectSegments, property', () => {
+describe('segmentCrossings, property', () => {
   // Mostly plain coordinates, so curves cross often; sometimes the edge cases `coord` favors.
   const value = fc.oneof({ weight: 4, arbitrary: fc.integer({ min: -1e6, max: 1e6 }).map((n) => n / 1e4) }, { weight: 1, arbitrary: coord(100) });
   const seg = fc.integer({ min: 2, max: 4 }).chain((n) => fc.array(value, { minLength: 2 * n, maxLength: 2 * n })).map((c) => pts(c));
@@ -249,7 +249,7 @@ describe('intersectSegments, property', () => {
   it('reports only points on both segments, and every square crossing a sampling finds', () => {
     const tally = { crossings: 0 };
     fc.assert(fc.property(seg, seg, (a, b) => {
-      const hits = intersectSegments(a, b);
+      const hits = segmentCrossings(a, b);
       for (const h of hits) {
         expect(h.ta).toBeGreaterThanOrEqual(0);
         expect(h.ta).toBeLessThanOrEqual(1);

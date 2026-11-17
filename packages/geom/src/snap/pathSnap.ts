@@ -7,7 +7,7 @@ import type { Path } from '../path';
 import type { Point } from '../paths/cubicMath';
 import { evalSeg, nearestOnSeg, type Seg } from '../booleans/contourSegments';
 import { pathCrossings } from '../intersect/pathCrossings';
-import { intersectSegments } from '../intersect/segmentIntersections';
+import { segmentCrossings } from '../intersect/segmentIntersections';
 import { pathSegments, type PathSegment } from '../intersect/pathSegments';
 import { perpendicularTsFrom, segmentExtremaT, segmentMidT, tangentTsFrom } from './segmentFeatures';
 import { createBvh, type Bvh } from '../bvh/bvh';
@@ -160,7 +160,7 @@ function quadrantPoints(segs: readonly PathSegment[]): Point[] {
     const across: Seg[] = [[{ x: x0 - 1, y: cy }, { x: x1 + 1, y: cy }], [{ x: cx, y: y0 - 1 }, { x: cx, y: y1 + 1 }]];
     for (const line of across) {
       for (const s of sub) {
-        for (const h of intersectSegments(s.pts, line)) {
+        for (const h of segmentCrossings(s.pts, line)) {
           if (!out.some((p) => Math.hypot(p.x - h.x, p.y - h.y) < 1e-6)) out.push({ x: h.x, y: h.y });
         }
       }

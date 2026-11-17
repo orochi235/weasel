@@ -7,7 +7,7 @@ type Pt = [number, number];
 type C = CubicSegment['c'];
 
 /** One crossing of segments `a` and `b`, at parameter `s` on `a` and `t` on `b`. */
-export interface SegmentCrossing {
+export interface CubicCrossing {
   a: number;
   b: number;
   s: number;
@@ -22,10 +22,10 @@ const END = 1e-7;
  * meeting at an end of both is a shared corner, not a crossing, and is left
  * out too. Each curve is found on a flattening and then refined on the curves.
  */
-export function segmentCrossings(segs: readonly CubicSegment[]): SegmentCrossing[] {
+export function crossingsAmong(segs: readonly CubicSegment[]): CubicCrossing[] {
   const flat = segs.map((s) => flatten(s));
   const boxes = flat.map(boxOf);
-  const out: SegmentCrossing[] = [];
+  const out: CubicCrossing[] = [];
   for (let a = 0; a < segs.length; a++) {
     for (let b = a + 1; b < segs.length; b++) {
       if (!boxesIntersect(boxes[a]!, boxes[b]!)) continue;

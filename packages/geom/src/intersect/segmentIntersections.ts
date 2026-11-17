@@ -130,7 +130,7 @@ function refine(a: Seg, b: Seg, ta: number, tb: number): [number, number] {
  * Segments that overlap or run nearly along each other report at most
  * `maxHits` points of the stretch. Sorted by `ta`.
  */
-export function intersectSegments(a: Point[], b: Point[], maxHits = MAX_HITS): SegmentCrossing[] {
+export function segmentCrossings(a: Point[], b: Point[], maxHits = MAX_HITS): SegmentCrossing[] {
   if (a.length === 2 && b.length === 2) {
     const [p0, p1] = a, [q0, q1] = b;
     if (nearlyParallel(p1.x - p0.x, p1.y - p0.y, q1.x - q0.x, q1.y - q0.y)) return collinearOverlap(p0, p1, q0, q1);

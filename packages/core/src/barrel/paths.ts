@@ -119,7 +119,7 @@ export {
   averageAnchorsAt,
   joinAnchorsAt,
   transformPath,
-  intersectSegments,
+  segmentCrossings,
   pathCrossings,
   pathSegments,
   snipPathAt,
