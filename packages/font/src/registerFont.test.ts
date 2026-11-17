@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import {
-  registerFont, getFont, resolveFontVariant, resolveGlyphFallback, listAtlasFonts, listFontWeights,
+  registerFont, getAtlasFont, resolveFontVariant, resolveGlyphFallback, listAtlasFonts, listFontWeights,
   fontRegistry, fontPending, warmFonts,
   _resetFontRegistryForTests,
 } from './registerFont';
@@ -45,7 +45,7 @@ beforeEach(() => {
 describe('registerFont', () => {
   it('stores a parsed BmFont after successful fetch', async () => {
     await registerFont('inter', {}, '/fonts/inter/inter.json', '/fonts/inter/inter.png');
-    const entry = getFont('inter', 400, 'normal');
+    const entry = getAtlasFont('inter', 400, 'normal');
     expect(entry).not.toBeNull();
     expect(entry!.font.info.face).toBe('Inter');
     expect(entry!.font.charMap.size).toBe(2);
@@ -53,15 +53,15 @@ describe('registerFont', () => {
 
   it('calling twice for the same family is a no-op (returns same entry)', async () => {
     await registerFont('inter', {}, '/fonts/inter/inter.json', '/fonts/inter/inter.png');
-    const first = getFont('inter', 400, 'normal');
+    const first = getAtlasFont('inter', 400, 'normal');
     await registerFont('inter', {}, '/fonts/inter/inter.json', '/fonts/inter/inter.png');
-    const second = getFont('inter', 400, 'normal');
+    const second = getAtlasFont('inter', 400, 'normal');
     expect(first).toBe(second);
     expect((global.fetch as ReturnType<typeof vi.fn>).mock.calls.length).toBe(2);
   });
 
-  it('getFont returns null for unknown family', () => {
-    expect(getFont('unknown', 400, 'normal')).toBeNull();
+  it('getAtlasFont returns null for unknown family', () => {
+    expect(getAtlasFont('unknown', 400, 'normal')).toBeNull();
   });
 
   it('rejects with an informative error when fetch fails', async () => {
@@ -73,28 +73,28 @@ describe('registerFont', () => {
 
   it('throws when a variant is registered again with other URLs, eager or lazy, and keeps the first', async () => {
     await registerFont('inter', {}, '/a.json', '/a.png');
-    const first = getFont('inter', 400, 'normal');
+    const first = getAtlasFont('inter', 400, 'normal');
     await registerFont('inter', {}, '/a.json', '/a.png');
     expect(() => registerFont('inter', {}, '/b.json', '/b.png')).toThrow(/"inter" 400\/normal.*\/a\.json and \/a\.png, not \/b\.json and \/b\.png/);
     expect(() => registerFont('inter', {}, '/b.json', '/b.png', { lazy: true })).toThrow(/replace: true/);
-    expect(getFont('inter', 400, 'normal')).toBe(first);
+    expect(getAtlasFont('inter', 400, 'normal')).toBe(first);
   });
 
   it('swaps in other URLs with replace, fetching them for a loaded variant', async () => {
     await registerFont('inter', {}, '/a.json', '/a.png');
-    const first = getFont('inter', 400, 'normal');
+    const first = getAtlasFont('inter', 400, 'normal');
     await registerFont('inter', {}, '/b.json', '/b.png', { replace: true });
-    expect(getFont('inter', 400, 'normal')).not.toBe(first);
+    expect(getAtlasFont('inter', 400, 'normal')).not.toBe(first);
     expect((global.fetch as ReturnType<typeof vi.fn>).mock.calls.map((c) => c[0])).toContain('/b.json');
     await registerFont('inter', {}, '/b.json', '/b.png');
   });
 
   it('holds the URLs of the atlas still drawn when a replacement fails to fetch', async () => {
     await registerFont('inter', {}, '/a.json', '/a.png');
-    const first = getFont('inter', 400, 'normal');
+    const first = getAtlasFont('inter', 400, 'normal');
     (global.fetch as ReturnType<typeof vi.fn>).mockRejectedValueOnce(new Error('404'));
     await expect(registerFont('inter', {}, '/b.json', '/b.png', { replace: true })).rejects.toThrow(/404/);
-    expect(getFont('inter', 400, 'normal')).toBe(first);
+    expect(getAtlasFont('inter', 400, 'normal')).toBe(first);
     expect(() => registerFont('inter', {}, '/c.json', '/c.png')).toThrow(/\/a\.json and \/a\.png, not \/c\.json/);
     await registerFont('inter', {}, '/a.json', '/a.png');
   });
@@ -107,11 +107,11 @@ describe('registerFont', () => {
     stub.mockImplementationOnce((url: string) => held.then(() => answer(url)));
     const slow = registerFont('inter', {}, '/a.json', '/a.png');
     await registerFont('inter', {}, '/b.json', '/b.png', { replace: true });
-    const replaced = getFont('inter', 400, 'normal');
+    const replaced = getAtlasFont('inter', 400, 'normal');
     expect(replaced).not.toBeNull();
     release();
     await slow;
-    expect(getFont('inter', 400, 'normal')).toBe(replaced);
+    expect(getAtlasFont('inter', 400, 'normal')).toBe(replaced);
   });
 
   it('points a lazy declaration at the URLs that replace its own', async () => {
@@ -127,7 +127,7 @@ describe('registerFont', () => {
     (global.fetch as ReturnType<typeof vi.fn>).mockRejectedValueOnce(new Error('network error'));
     await expect(registerFont('inter', {}, '/bad.json', '/bad.png')).rejects.toThrow();
     await registerFont('inter', {}, '/a.json', '/a.png');
-    expect(getFont('inter', 400, 'normal')).not.toBeNull();
+    expect(getAtlasFont('inter', 400, 'normal')).not.toBeNull();
   });
 });
 
@@ -135,15 +135,15 @@ describe('registerFont variants', () => {
   it('stores regular and bold separately under the same family', async () => {
     await registerFont('inter', { weight: 400, style: 'normal' }, '/fonts/inter/inter.json', '/fonts/inter/inter.png');
     await registerFont('inter', { weight: 700, style: 'normal' }, '/fonts/inter/inter.json', '/fonts/inter/inter.png');
-    expect(getFont('inter', 400, 'normal')).not.toBeNull();
-    expect(getFont('inter', 700, 'normal')).not.toBeNull();
-    expect(getFont('inter', 400, 'normal')).not.toBe(getFont('inter', 700, 'normal'));
+    expect(getAtlasFont('inter', 400, 'normal')).not.toBeNull();
+    expect(getAtlasFont('inter', 700, 'normal')).not.toBeNull();
+    expect(getAtlasFont('inter', 400, 'normal')).not.toBe(getAtlasFont('inter', 700, 'normal'));
   });
 
   it('stores italic separately from normal', async () => {
     await registerFont('inter', { style: 'normal' }, '/fonts/inter/inter.json', '/fonts/inter/inter.png');
     await registerFont('inter', { style: 'italic' }, '/fonts/inter/inter.json', '/fonts/inter/inter.png');
-    expect(getFont('inter', 400, 'normal')).not.toBe(getFont('inter', 400, 'italic'));
+    expect(getAtlasFont('inter', 400, 'normal')).not.toBe(getAtlasFont('inter', 400, 'italic'));
   });
 
   it('does not drop a variant when the second-issued call resolves before the first (concurrent race)', async () => {
@@ -202,8 +202,8 @@ describe('registerFont variants', () => {
     releaseFirstMetrics();
     await firstCall;
 
-    expect(getFont('newfam', 400, 'normal')).not.toBeNull();
-    expect(getFont('newfam', 700, 'normal')).not.toBeNull();
+    expect(getAtlasFont('newfam', 400, 'normal')).not.toBeNull();
+    expect(getAtlasFont('newfam', 700, 'normal')).not.toBeNull();
   });
 });
 
@@ -247,14 +247,14 @@ describe('resolveFontVariant', () => {
     await registerFont('inter', { weight: 700, style: 'normal' }, '/fonts/inter/inter.json', '/fonts/inter/inter.png');
     await registerFont('inter', { weight: 900, style: 'normal' }, '/fonts/inter/inter.json', '/fonts/inter/inter.png');
     const r = resolveFontVariant('inter', 750, 'normal');
-    expect(r.entry).toBe(getFont('inter', 700, 'normal'));
+    expect(r.entry).toBe(getAtlasFont('inter', 700, 'normal'));
   });
 
   it('breaks weight-distance ties by picking the heavier weight', async () => {
     await registerFont('inter', { weight: 700, style: 'normal' }, '/fonts/inter/inter.json', '/fonts/inter/inter.png');
     await registerFont('inter', { weight: 900, style: 'normal' }, '/fonts/inter/inter.json', '/fonts/inter/inter.png');
     const r = resolveFontVariant('inter', 800, 'normal');
-    expect(r.entry).toBe(getFont('inter', 900, 'normal'));
+    expect(r.entry).toBe(getAtlasFont('inter', 900, 'normal'));
   });
 
   it('returns null entry when the family has no variants', () => {
@@ -555,7 +555,7 @@ describe('registerFont — lazy', () => {
   it('fetches nothing until text resolves the family', () => {
     void registerFont('inter', {}, '/i.json', '/i.png', { lazy: true });
     expect(fetchCalls()).toBe(0);
-    expect(getFont('inter')).toBeNull();
+    expect(getAtlasFont('inter')).toBeNull();
   });
 
   it('starts the fetch on first resolve, answers a pending miss, and wakes subscribers when it lands', async () => {
@@ -684,7 +684,7 @@ describe('registerFont — lazy', () => {
   it('an eager registration of a declared variant loads it now', async () => {
     const lazy = registerFont('inter', {}, '/i.json', '/i.png', { lazy: true });
     await registerFont('inter', {}, '/i.json', '/i.png');
-    expect(getFont('inter')).not.toBeNull();
+    expect(getAtlasFont('inter')).not.toBeNull();
     await lazy;
     expect(fetchCalls()).toBe(2);
   });
@@ -715,8 +715,8 @@ describe('warmFonts', () => {
 
     await warmFonts();
     expect(urls()).toEqual(['/r.json', '/r.png', '/b.json', '/b.png', '/m.json', '/m.png']);
-    expect(getFont('inter', 700, 'normal')).not.toBeNull();
-    expect(getFont('mono')).not.toBeNull();
+    expect(getAtlasFont('inter', 700, 'normal')).not.toBeNull();
+    expect(getAtlasFont('mono')).not.toBeNull();
     expect(fontPending('inter')).toBe(false);
   });
 

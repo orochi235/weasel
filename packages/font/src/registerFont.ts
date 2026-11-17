@@ -78,7 +78,7 @@ export function _resetFontRegistryForTests(): void {
 }
 
 /** Exact lookup — does NOT walk the fallback chain. Use `resolveFontVariant` for that. */
-export function getFont(
+export function getAtlasFont(
   family: string,
   weight: number = 400,
   style: FontStyle = 'normal',
@@ -89,7 +89,7 @@ export function getFont(
 /**
  * The decoration and script metrics of an exact `(family, weight, style)` —
  * the atlas's when one is registered, else a loaded outline face's. Like
- * {@link getFont}, it walks no fallback chain and enrolls no canvas font.
+ * {@link getAtlasFont}, it walks no fallback chain and enrolls no canvas font.
  * An idle outline face starts loading, as it would for layout.
  * A run already resolved for layout reads `faceMetricsOf(result)` instead.
  */
@@ -98,7 +98,7 @@ export function faceMetricsFor(
   weight: number = 400,
   style: FontStyle = 'normal',
 ): FaceMetrics | undefined {
-  return getFont(family, weight, style)?.font.faceMetrics
+  return getAtlasFont(family, weight, style)?.font.faceMetrics
     ?? outlineFace(family, weight, style)?.faceMetrics;
 }
 
@@ -404,7 +404,7 @@ export function ensureFontTexture(
   style: FontStyle,
   textureCache: GlyphTextureSink,
 ): boolean {
-  const entry = getFont(family, weight, style);
+  const entry = getAtlasFont(family, weight, style);
   if (!entry) return false;
   textureCache.upload(textureCacheKey(family, weight, style), entry.bitmap);
   return true;

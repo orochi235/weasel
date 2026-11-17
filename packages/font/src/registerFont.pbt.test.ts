@@ -2,14 +2,14 @@
  * The atlas registry through `fc.commands` runs of eager and lazy registrations that load or fail (a variant held
  * under other URLs refuses them), warms, and the settling of loads in flight, over families named like
  * `Object.prototype` members and like the registry's own keys (`a|400`): after every step each variant is loaded,
- * declared, loading, or absent as a model says, and `getFont`, `listAtlasFonts`, `fontPending`, and `warmFonts` answer for
+ * declared, loading, or absent as a model says, and `getAtlasFont`, `listAtlasFonts`, `fontPending`, and `warmFonts` answer for
  * it alone, and a landed variant resolves to itself, cached or not.
  */
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import fc from 'fast-check';
 import { FIXTURE_FONT } from './FontAtlas';
 import {
-  _resetFontRegistryForTests, cachedFontVariant, fontPending, getFont, listAtlasFonts, registerFont, resolveFontVariant, warmFonts,
+  _resetFontRegistryForTests, cachedFontVariant, fontPending, getAtlasFont, listAtlasFonts, registerFont, resolveFontVariant, warmFonts,
 } from './registerFont';
 import { runs, tally, timeoutFor } from './pbt.fixture';
 import type { FontStyle } from './fontStyle';
@@ -68,7 +68,7 @@ function check(m: Model): void {
   for (const family of FAMILIES) {
     const variants = m.variants.get(family);
     for (const v of VARIANTS) {
-      expect(getFont(family, v.weight, v.style) !== null, `getFont(${family}, ${keyOf(v)})`).toBe(variants?.get(keyOf(v))?.state === 'loaded');
+      expect(getAtlasFont(family, v.weight, v.style) !== null, `getAtlasFont(${family}, ${keyOf(v)})`).toBe(variants?.get(keyOf(v))?.state === 'loaded');
     }
     expect(fontPending(family), `fontPending(${family})`).toBe([...(variants?.values() ?? [])].some((v) => v.state !== 'loaded'));
   }
@@ -149,7 +149,7 @@ class Resolve implements fc.AsyncCommand<Model, Real> {
     const cached = cachedFontVariant(family, weight, style);
     expect(cachedFontVariant(family, weight, style)).toBe(cached);
     expect(resolveFontVariant(family, weight, style)).toEqual(cached);
-    expect(cached.entry).toBe(getFont(family, weight, style));
+    expect(cached.entry).toBe(getAtlasFont(family, weight, style));
     expect(cached.resolved).toEqual({ family, weight, style });
     for (const v of m.variants.get(family)!.values()) if (v.state === 'declared') v.state = 'loading';
     r.t.count('resolved');

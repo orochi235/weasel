@@ -11,7 +11,7 @@ export type { FaceMetrics, FaceRuleMetrics, FaceScriptMetrics, FaceMetricTables 
 
 export {
   registerFont,
-  getFont,
+  getAtlasFont,
   faceMetricsFor,
   ensureFontTexture,
   textureCacheKey,

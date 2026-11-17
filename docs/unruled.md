@@ -1942,7 +1942,7 @@ Calls the lanes made without a ruling:
   `@weasel-js/text` already called it, over text-shaping's `Shaper`).
 - 2026-11-12: Face addressing splits by job. Registering and loading take a `FontVariant` object
   (`registerFont`, `registerFontOutlines`, `unregisterFontOutlines`, `loadFontOutlines`, `warmFonts`'s
-  `FontRequest`); a lookup of one face takes `(family, weight = 400, style = 'normal')` positionally (`getFont`,
+  `FontRequest`); a lookup of one face takes `(family, weight = 400, style = 'normal')` positionally (`getAtlasFont`,
   `fontPending`, `hasFontOutlines`, `outlineStatus`, `cssFontFamily`, `cssFontFamilyLoading`), since those run per
   run and per frame. `cssFontFamily` moved to the lookup shape.
 - 2026-11-12: The scripts the no-shaper warning names are Arabic, Syriac, Thaana, N'Ko, the Indic blocks, Tibetan,
