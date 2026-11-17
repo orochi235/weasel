@@ -3,7 +3,7 @@
  * pointer, marked `held` while a button is down, and the cursor shown for what
  * a press there would do.
  */
-import { createCursorSink, resolveCursorTier, type CursorSink, type CursorSpec, type PaintedCursorState } from '@weasel-js/cursor';
+import { createCursorSink, resolveCursor, type CursorSink, type CursorSpec, type PaintedCursorState } from '@weasel-js/cursor';
 import type { EventModifiers, HoverWhere } from '@weasel-js/gestures';
 import { actionCursor } from '../../actions/action';
 import type { DispatchCore } from '../dispatchCore';
@@ -55,7 +55,7 @@ export function hoverCursorInput(
   const ownSink = createCursorSink({ element: () => canvas, painted: paintedCursor });
   const override = {
     apply: (spec: CursorSpec | null): void =>
-      (cursorSink() ?? ownSink).setOverride(spec === null ? null : resolveCursorTier(spec)),
+      (cursorSink() ?? ownSink).setOverride(spec === null ? null : resolveCursor(spec)),
     clear: (): void => (cursorSink() ?? ownSink).setOverride(null),
   };
   let last: Hover | null = null;

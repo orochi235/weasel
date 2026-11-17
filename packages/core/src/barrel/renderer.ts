@@ -117,7 +117,7 @@ export type { TextureHandle } from '@weasel-js/paint';
 // Named, not `export *` — a star re-export of an external package survives
 // typecheck and emits no binding in the bundle.
 export {
-  cursorFor, resolveCursor, resolveCursorTier, bakeCursor, CURSOR_ANGLE_STEPS, CURSOR_MAX_CSS_PX,
+  cursorFor, cursorCss, resolveCursor, bakeCursor, CURSOR_ANGLE_STEPS, CURSOR_MAX_CSS_PX,
 } from '@weasel-js/cursor';
 export type {
   CursorSpec,

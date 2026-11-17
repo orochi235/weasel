@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { brushRing } from './brushRing';
 import { GLYPHS } from './glyphs';
-import { resolveCursorTier } from './resolve';
+import { resolveCursor } from './resolve';
 
 describe('brushRing', () => {
   it("sizes the glyph so its ring, not its box, is `radius` px", () => {
@@ -13,6 +13,6 @@ describe('brushRing', () => {
 
   it('measures a world radius in world units, so it paints and follows the zoom', () => {
     expect(brushRing(12, 'world')).toEqual({ glyph: 'brush', worldRadius: 12, fallback: 'crosshair' });
-    expect(resolveCursorTier(brushRing(12, 'world'))).toMatchObject({ kind: 'painted', worldRadius: 12 });
+    expect(resolveCursor(brushRing(12, 'world'))).toMatchObject({ kind: 'painted', worldRadius: 12 });
   });
 });

@@ -1269,7 +1269,7 @@ The snap pipeline ([snapping.md](./snapping.md)) landed on 2026-10-18 with these
   step, and row still follow the pointer's own direction and distance once it moves, so a knob pressed off its line
   turns the axis onto the pointer at the first move.
 - Ruled 2026-11-10 (my call, overnight sweep): `bakeCursor` and `cursorFor` bake a size that is not a finite positive
-  number at the default 24, as `resolveCursorTier` already reads a spec's size, one rule for both; a size past the
+  number at the default 24, as `resolveCursor` already reads a spec's size, one rule for both; a size past the
   cap, `Infinity` included, still throws. `brushRing` gives a radius of 0 or more a size of at least one pixel, so a
   brush too small to round to one draws a one-pixel ring rather than the default 24; a negative or `NaN` radius still
   falls to the default.

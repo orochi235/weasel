@@ -60,7 +60,7 @@ const positive = (n: number | undefined): number | undefined =>
  * fixed size is past {@link CURSOR_MAX_CSS_PX} — above which the browser drops
  * the image and silently falls back to the keyword.
  */
-export function resolveCursorTier(spec: CursorSpec): ResolvedCursor {
+export function resolveCursor(spec: CursorSpec): ResolvedCursor {
   if (typeof spec === 'string') return { kind: 'css', css: spec };
   const { glyph, mark, fallback } = spec;
   const size = positive(spec.size);
@@ -91,10 +91,10 @@ export function resolveCursorTier(spec: CursorSpec): ResolvedCursor {
  * has to know which form it holds. A painted cursor answers `'none'` — the
  * native cursor gets out of the way and the painted-tier layer draws it. A
  * caller that writes that string without the layer installed leaves the user
- * with no cursor, so reach for {@link resolveCursorTier} if you need to know.
+ * with no cursor, so reach for {@link resolveCursor} if you need to know.
  */
-export function resolveCursor(spec: CursorSpec | undefined): string | undefined {
+export function cursorCss(spec: CursorSpec | undefined): string | undefined {
   if (spec === undefined) return undefined;
-  const r = resolveCursorTier(spec);
+  const r = resolveCursor(spec);
   return r.kind === 'css' ? r.css : 'none';
 }
