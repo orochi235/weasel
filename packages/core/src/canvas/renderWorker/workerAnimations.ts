@@ -3,7 +3,7 @@
  * does: the worker module registers each program under a key, and the page plays it by that key.
  * Its time comes from the page with each frame, so it moves only while the page's frame loop runs.
  */
-import { hostAnimator, type AnimationHandle, type Animator } from '@weasel-js/animator';
+import { createHostedAnimator, type AnimationHandle, type Animator } from '@weasel-js/animator';
 import type { Scene } from '../../core/scene/types';
 import type { AnimationOp, FrameTime } from './protocol';
 import { getOwn } from '@weasel-js/registry';
@@ -43,7 +43,7 @@ export function createWorkerAnimations(
   let following = false;
   // On a clock, the clock's next move brings the next frame: one asked for inside a follow would
   // only ask again at the same time.
-  const hosted = hostAnimator({ now: () => now, requestFrame: () => { if (!following) requestFrame(); } });
+  const hosted = createHostedAnimator({ now: () => now, requestFrame: () => { if (!following) requestFrame(); } });
   const { animator } = hosted;
   const handles = new Map<number, AnimationHandle>();
   /** The page's id for each run, by the animator's id on its handle. */

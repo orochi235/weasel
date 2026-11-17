@@ -35,7 +35,7 @@ export interface HostedAnimator {
 }
 
 /** Host an animator on frames the caller runs. `useAnimator` is the same on a visible frame loop. */
-export function hostAnimator(host: AnimatorHost): HostedAnimator {
+export function createHostedAnimator(host: AnimatorHost): HostedAnimator {
   let disposed = false;
   const colorOverrides = new ColorOverrideRegistry();
   const trimOverrides = new TrimOverrideRegistry();

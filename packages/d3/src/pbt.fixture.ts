@@ -4,7 +4,7 @@
  */
 import fc from 'fast-check';
 import { createScene, type Scene } from '@weasel-js/core';
-import { hostAnimator, type Animator } from '@weasel-js/animator';
+import { createHostedAnimator, type Animator } from '@weasel-js/animator';
 
 /** `{ numRuns: n }`, or the count in `WEASEL_PBT_RUNS` when set: a deep run on the fleet raises every property's at once. */
 export function runs(n: number): { numRuns: number } {
@@ -41,7 +41,7 @@ export function makeScene(): TestScene {
 export function makeAnimator(): { animator: Animator; advance(ms: number): void; dispose(): void } {
   let now = 0;
   let wanted = false;
-  const hosted = hostAnimator({ now: () => now, requestFrame: () => { wanted = true; }, cancelFrame: () => { wanted = false; } });
+  const hosted = createHostedAnimator({ now: () => now, requestFrame: () => { wanted = true; }, cancelFrame: () => { wanted = false; } });
   return {
     animator: hosted.animator,
     advance(ms) {

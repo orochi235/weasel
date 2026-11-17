@@ -104,7 +104,7 @@ the end of that task. So the worker paints nothing while the canvas is off scree
 hidden, with no visibility signal of its own. One frame is in flight at a time: a `sync()` while
 one is out marks a frame owed, and the worker's `drawn` asks for it.
 
-The worker's animator (`hostAnimator` from `@weasel-js/animator`) moves only on these frames, at
+The worker's animator (`createHostedAnimator` from `@weasel-js/animator`) moves only on these frames, at
 the time each one carries, so it too stops while nothing can see the canvas. Without a `clock` it
 runs on the page's frame times, and a frame loop that resumes says so, so the time it was hidden is
 charged to no animation. With a `clock` it follows the clock's position as `useAnimator({ clock })`

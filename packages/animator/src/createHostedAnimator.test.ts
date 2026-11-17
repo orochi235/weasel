@@ -1,12 +1,12 @@
 import { describe, expect, it } from 'vitest';
-import { hostAnimator } from './hostAnimator';
+import { createHostedAnimator } from './createHostedAnimator';
 import { createTarget } from './target';
 
-describe('hostAnimator', () => {
+describe('createHostedAnimator', () => {
   it('runs on the frames its host calls, forward and back on a followed clock', () => {
     let now = 0;
     let asked = 0;
-    const hosted = hostAnimator({ now: () => now, requestFrame: () => { asked++; } });
+    const hosted = createHostedAnimator({ now: () => now, requestFrame: () => { asked++; } });
     const seen: number[] = [];
     hosted.animator.tween({ from: 0, to: 100, ms: 100, easing: 'linear', onTick: (v) => seen.push(v) });
     expect(asked).toBeGreaterThan(0);
@@ -23,7 +23,7 @@ describe('hostAnimator', () => {
 
   it('refuses a tween whose ms is NaN at the call, rather than throwing out of every frame after', () => {
     let now = 0;
-    const hosted = hostAnimator({ now: () => now, requestFrame: () => {} });
+    const hosted = createHostedAnimator({ now: () => now, requestFrame: () => {} });
     const { animator } = hosted;
     const seen: number[] = [];
     animator.tween({ from: 0, to: 100, ms: 100, easing: 'linear', onTick: (v) => seen.push(v) });
@@ -41,7 +41,7 @@ describe('hostAnimator', () => {
 
   it('refuses a frame at a time that is not finite, which left every animation NaN for good', () => {
     let now = 0;
-    const hosted = hostAnimator({ now: () => now, requestFrame: () => {} });
+    const hosted = createHostedAnimator({ now: () => now, requestFrame: () => {} });
     const seen: number[] = [];
     hosted.animator.tween({ from: 0, to: 100, ms: 100, easing: 'linear', onTick: (v) => seen.push(v) });
     hosted.tick(0);

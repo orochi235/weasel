@@ -2,7 +2,7 @@
  * Helpers shared by the animator's property tests. Test-only: nothing in the package imports it.
  */
 import fc from 'fast-check';
-import { hostAnimator, type HostedAnimator } from './hostAnimator';
+import { createHostedAnimator, type HostedAnimator } from './createHostedAnimator';
 
 /** `{ numRuns: n }`, or the count in `WEASEL_PBT_RUNS` when set: a deep run on the fleet raises every property's at once. */
 export function runs(n: number): { numRuns: number } {
@@ -29,7 +29,7 @@ export function tally(): { count(what: string): void; atLeast(what: string, n: n
 /** A hosted animator on a clock the test moves: `at(t)` sets the clock and runs a frame there. */
 export function clocked(): HostedAnimator & { at(t: number): void; now(): number } {
   let now = 0;
-  const hosted = hostAnimator({ now: () => now, requestFrame: () => {} });
+  const hosted = createHostedAnimator({ now: () => now, requestFrame: () => {} });
   return {
     ...hosted,
     at(t) { now = t; hosted.tick(t); },
