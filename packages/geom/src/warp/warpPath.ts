@@ -48,7 +48,7 @@ function warpSubpath(sub: PenAnchor[], closed: boolean, map: (p: Point) => Point
   for (let i = 0; i < segments; i++) {
     const a = sub[i];
     const b = sub[(i + 1) % n];
-    const at = segmentAt(a, b);
+    const at = segmentCurve(a, b);
     const count = sampleCount(a, b, tol);
     const pts = sampleWarped((t) => map(at(t)), count, tol);
     const start = pts[0];
@@ -70,7 +70,7 @@ function warpSubpath(sub: PenAnchor[], closed: boolean, map: (p: Point) => Point
 }
 
 /** The segment from `a` to `b` as a function of its curve parameter. */
-function segmentAt(a: PenAnchor, b: PenAnchor): (t: number) => Point {
+function segmentCurve(a: PenAnchor, b: PenAnchor): (t: number) => Point {
   if (!a.outHandle && !b.inHandle) return (t) => ({ x: lerp(a.x, b.x, t), y: lerp(a.y, b.y, t) });
   const c1 = a.outHandle ?? a;
   const c2 = b.inHandle ?? b;
