@@ -473,6 +473,12 @@ The snap pipeline ([snapping.md](./snapping.md)) landed on 2026-10-18 with these
 - 2026-11-11 (my call, parallax second property pass): a `space: 'screen'` source inside `createTiledLayer` draws
   nothing under a view with no finite inverse (zoomed to 0 or a denormal on an axis), which collapses the lattice to
   a point; it had been drawn through a transform holding `Infinity`.
+- 2026-11-16 (my call, audit round 31): `createParallaxPlane`'s `set` reads `pan: undefined` as "leave the pan", not
+  as an error, since an animator writing `set({ pan: maybe })` means no change there and `pan` has no default to clear
+  to. It had been stored, and every later draw of the plane threw. An undefined `zoom` or `anchor` still clears it.
+- 2026-11-16 (my call, audit round 31): a bare-number `bleed` on `createTiledLayer` covers both axes, though a bare
+  `period` wraps x alone: a bleed is how far content overhangs its cell, which is not one axis's question. On a
+  lattice tiled in x only it draws as before.
 - Ruled 2026-11-10 (my call, overnight sweep): loupe's `placeBand` never answers a factor below `ZOOM_FLOOR`, the
   floor the loupe model holds its own factor to: on a host with no room it gives a lens of no size rather than a
   factor of 0 that a point in the lens could not be mapped back through.
