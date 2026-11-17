@@ -105,8 +105,9 @@ export function createTable(host: TableHost): Table {
     a.onCancel?.();
     codec.stop(id);
     remove(a);
-    // A target that came to rest is owed one more show, and no frame may be coming.
-    if (host.resting()) host.requestFrame();
+    // A target that came to rest is owed one more show, and no frame may be coming. A frame in
+    // progress shows it itself, and asks for the next after its ticks, as `register` says.
+    if (host.resting() && !host.framing()) host.requestFrame();
     fireCompletion(id);
     if (!hub.watched || a.ended || error) return;
     hub.emit(by

@@ -9,7 +9,7 @@ import { createEmitter } from '@weasel-js/registry';
 function rig(codecFrame: () => void = () => {}) {
   const clock: AnimatorClock = { frameT: null, elapsed: 0, timeScale: 1, paused: false, drive: 1 };
   const hub = new AnimatorEventHub();
-  const state = { now: 0, tripped: false, asked: 0 };
+  const state = { now: 0, tripped: false, asked: 0, resting: false };
   const log: string[] = [];
   const table = createTable({
     codec: { stop() {}, has: () => false, rate() {} },
@@ -18,7 +18,7 @@ function rig(codecFrame: () => void = () => {}) {
     direction: () => (clock.timeScale < 0 ? -1 : 1),
     seedClock: () => { clock.frameT ??= state.now; },
     showNow() {},
-    resting: () => false,
+    resting: () => state.resting,
     framing: () => frame.framing(),
     requestFrame() { state.asked += 1; },
   });
@@ -50,7 +50,7 @@ function rig(codecFrame: () => void = () => {}) {
     frame.tick(t);
     return log.slice();
   };
-  return { clock, table, state, start, tick };
+  return { clock, table, hub, state, start, tick };
 }
 
 describe('a frame and the animations it ticks', () => {
@@ -180,6 +180,17 @@ describe('a frame and the animations it ticks', () => {
     bad = false;
     r.start('b', 1000);
     expect(r.state.asked).toBe(1 + 1);
+  });
+
+  it('asks for no frame from a tick that cancels another, beyond the one the frame asks for', () => {
+    const r = rig();
+    let b = 0;
+    r.start('a', 1000, { tick: () => { r.table.retire(b); return false; } });
+    b = r.start('b', 1000).id;
+    r.state.resting = true;
+    r.state.asked = 0;
+    r.tick(16);
+    expect(r.state.asked).toBe(1);
   });
 
   it('never ticks one whose `due` is Infinity, and says the frame loop may sleep when it is idle', () => {
