@@ -12,30 +12,30 @@
  * A group may be a member of another: its column then sits inside its parent's.
  */
 import { maxOf, minOf } from '@weasel-js/geom';
-import type { Graph, GraphEdge, GraphGroup, GraphNode } from './graph';
+import type { Graph, GraphEdge, GraphCluster, GraphNode } from './graph';
 import { extent, type LayoutAxes } from './layout';
 
 /** Room a group's box keeps around its members, in world units. */
-export interface GroupInset {
+export interface ClusterInset {
   top: number;
   right: number;
   bottom: number;
   left: number;
 }
 
-/** A `DiagramGroup.inset` as all four sides. Default 12 on every side. */
-export function insetOf(inset: number | Partial<GroupInset> | undefined): GroupInset {
+/** A `DiagramCluster.inset` as all four sides. Default 12 on every side. */
+export function insetOf(inset: number | Partial<ClusterInset> | undefined): ClusterInset {
   if (typeof inset === 'number') return { top: inset, right: inset, bottom: inset, left: inset };
   return {
-    top: inset?.top ?? DEFAULT_GROUP_INSET,
-    right: inset?.right ?? DEFAULT_GROUP_INSET,
-    bottom: inset?.bottom ?? DEFAULT_GROUP_INSET,
-    left: inset?.left ?? DEFAULT_GROUP_INSET,
+    top: inset?.top ?? DEFAULT_CLUSTER_INSET,
+    right: inset?.right ?? DEFAULT_CLUSTER_INSET,
+    bottom: inset?.bottom ?? DEFAULT_CLUSTER_INSET,
+    left: inset?.left ?? DEFAULT_CLUSTER_INSET,
   };
 }
 
-/** `DiagramGroup.inset`'s default on each side, in world units. */
-export const DEFAULT_GROUP_INSET = 12;
+/** `DiagramCluster.inset`'s default on each side, in world units. */
+export const DEFAULT_CLUSTER_INSET = 12;
 
 /** A group's inset turned into the canonical frame a layout works in. */
 interface CanonicalInset {
@@ -45,7 +45,7 @@ interface CanonicalInset {
   rankHi: number;
 }
 
-function canonical(inset: GroupInset, axes: LayoutAxes): CanonicalInset {
+function canonical(inset: ClusterInset, axes: LayoutAxes): CanonicalInset {
   if (axes.rank === 'y') {
     return axes.sign === 1
       ? { crossLo: inset.left, crossHi: inset.right, rankLo: inset.top, rankHi: inset.bottom }
@@ -57,13 +57,13 @@ function canonical(inset: GroupInset, axes: LayoutAxes): CanonicalInset {
 }
 
 /** The room `inset` keeps on the low and high side across the rank. */
-export function crossInset(inset: GroupInset, axes: LayoutAxes): { lo: number; hi: number } {
+export function crossInset(inset: ClusterInset, axes: LayoutAxes): { lo: number; hi: number } {
   const c = canonical(inset, axes);
   return { lo: c.crossLo, hi: c.crossHi };
 }
 
 /** The room `inset` keeps before and after along the rank. */
-export function rankInset(inset: GroupInset, axes: LayoutAxes): { lo: number; hi: number } {
+export function rankInset(inset: ClusterInset, axes: LayoutAxes): { lo: number; hi: number } {
   const c = canonical(inset, axes);
   return { lo: c.rankLo, hi: c.rankHi };
 }
@@ -102,7 +102,7 @@ export function rankGaps(
 /** A group as the ranks see it: the ranks it reaches across, and the groups
  *  nested directly in it. */
 interface Span {
-  group: GraphGroup;
+  group: GraphCluster;
   lo: number;
   hi: number;
   parent?: Span;
@@ -302,7 +302,7 @@ function closeGaps(spans: readonly (readonly [number, number])[], gap: number): 
 /** Widen a block to its group's `minWidth`, centering what it holds, and
  *  answer the room added on each side. A label only runs along world x, so
  *  only a vertical layout widens for it. */
-function widen(block: Block, group: GraphGroup, inset: CanonicalInset, axes: LayoutAxes): number {
+function widen(block: Block, group: GraphCluster, inset: CanonicalInset, axes: LayoutAxes): number {
   const floor = axes.cross === 'x' ? (group.minWidth ?? 0) - inset.crossLo - inset.crossHi : 0;
   const slack = Math.max(0, floor - block.width) / 2;
   block.width += 2 * slack;
@@ -318,14 +318,14 @@ function widen(block: Block, group: GraphGroup, inset: CanonicalInset, axes: Lay
  * nested group, is that group's internal business and ranks nothing beyond
  * what its member-to-member edges already do.
  */
-export function expandGroupEdges(
+export function expandClusterEdges(
   edges: readonly GraphEdge[],
-  groups: readonly GraphGroup[],
+  groups: readonly GraphCluster[],
 ): GraphEdge[] {
   const byId = new Map(groups.map((g) => [g.id, g]));
   if (byId.size === 0) return [...edges];
   /** Whether `id`, a node or a group, is `group` or somewhere inside it. */
-  const within = (id: string, group: GraphGroup): boolean => {
+  const within = (id: string, group: GraphCluster): boolean => {
     if (!byId.has(id)) return group.members.includes(id);
     for (let at = byId.get(id); at !== undefined; at = at.parent === undefined ? undefined : byId.get(at.parent)) {
       if (at === group) return true;

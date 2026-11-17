@@ -25,7 +25,7 @@ import {
   type Vec2,
 } from '@weasel-js/core';
 import { getOwn } from '@weasel-js/registry';
-import { ANCHOR_DERIVE_POSE, DIAGRAM_ANCHOR, DIAGRAM_GROUP, GROUP_DERIVE_POSE } from './group';
+import { ANCHOR_DERIVE_POSE, DIAGRAM_ANCHOR, DIAGRAM_CLUSTER, CLUSTER_DERIVE_POSE } from './clusterBox';
 import { CONTAINER_LAYOUTS } from './containers/layouts';
 import { DIAGRAM_LABEL, LABEL_DERIVE_POSE } from './label';
 import { DIAGRAM_OFF_PAGE_TAG, OFF_PAGE_TAG_DERIVE_POSE } from './offPage/tag';
@@ -247,7 +247,7 @@ export function withDiagramRegistry<TPose, TData = unknown, TLayer extends strin
     },
     derivePose: {
       [DIAGRAM_LABEL]: LABEL_DERIVE_POSE as NonNullable<SceneRegistry<TPose, TData, TLayer>['derivePose']>[string],
-      [DIAGRAM_GROUP]: GROUP_DERIVE_POSE as NonNullable<SceneRegistry<TPose, TData, TLayer>['derivePose']>[string],
+      [DIAGRAM_CLUSTER]: CLUSTER_DERIVE_POSE as NonNullable<SceneRegistry<TPose, TData, TLayer>['derivePose']>[string],
       [DIAGRAM_ANCHOR]: ANCHOR_DERIVE_POSE as NonNullable<SceneRegistry<TPose, TData, TLayer>['derivePose']>[string],
       [DIAGRAM_OFF_PAGE_TAG]: OFF_PAGE_TAG_DERIVE_POSE as NonNullable<SceneRegistry<TPose, TData, TLayer>['derivePose']>[string],
       ...registry.derivePose,

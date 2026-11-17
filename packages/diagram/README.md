@@ -846,7 +846,7 @@ keep a group's members together; `radial` ignores groups but still draws them. U
 else enters, in every rank from its first member's to its last, and rank gaps
 widen where a box needs the room; `force` pulls a group's members toward each
 other and pushes groups apart. The box is an ordinary scene node that depends
-on its members and derives its pose from theirs (`groupDerivePose`), so
+on its members and derives its pose from theirs (`clusterDerivePose`), so
 dragging a member carries the box along. It also depends on the labels of the
 wires with both ends inside it, so a long label stays inside the box. It is
 never narrower than its label,

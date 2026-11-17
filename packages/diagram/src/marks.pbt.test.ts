@@ -6,7 +6,7 @@
 import { describe, expect, it } from 'vitest';
 import fc from 'fast-check';
 import type { RectPose } from '@weasel-js/core';
-import { anchorDerivePose } from './group';
+import { anchorDerivePose } from './clusterBox';
 import { diagramMarkOf, markSpecs, type DataMark } from './marks';
 import { nonFinite, runs, tally, timeoutFor, gridCoord } from './pbt.fixture';
 import { DEFAULT_NODE_STYLE } from './dataTypes';

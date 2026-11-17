@@ -7,10 +7,10 @@
  * the same answer in node and in a browser.
  */
 import { RIGID_POSE_COMPOSITION, localizeWorldPoses, type RectPose } from '@weasel-js/core';
-import { DEFAULT_GROUP_INSET, expandGroupEdges } from './cluster';
+import { DEFAULT_CLUSTER_INSET, expandClusterEdges } from './cluster';
 import { placeContainers, containerSpecs } from './dataContainerPlace';
 import { containerLayoutNodes, resolveContainers, type ContainerLayout } from './dataContainers';
-import { groupSpecs, resolveGroups, type ResolvedGroup } from './dataGroups';
+import { groupSpecs, resolveClusters, type ResolvedCluster } from './dataClusters';
 import { bodyLayoutOf } from './bodyRelayout';
 import { bodyTrait, measureBody, sizeToBody, type BodySpec, type MeasureRowText, type Row, type RowTextStyle } from './body';
 import { buildBody } from './buildBody';
@@ -24,12 +24,12 @@ import { scenePageSplits } from './dataPages';
 import { edgeSpecs, wireLabels } from './dataEdges';
 import {
   DEFAULT_NODE_STYLE, NODE_STROKE_WIDTH,
-  type DataEdge, type DataGroup, type DataNode, type DiagramData, type DiagramSceneData, type DiagramSceneOptions, type DiagramSpec,
+  type DataEdge, type DataCluster, type DataNode, type DiagramData, type DiagramSceneData, type DiagramSceneOptions, type DiagramSpec,
   type NodeStyle,
 } from './dataTypes';
 import { DEFAULT_FONT, labelSize, labelStyleOf } from './edgeLabel';
 import { grownBy } from './footprint';
-import { graphOf, labelFollowsLayout, type EdgeLabelRoom, type GraphEdge, type GraphGroup, type GraphNode } from './graph';
+import { graphOf, labelFollowsLayout, type EdgeLabelRoom, type GraphEdge, type GraphCluster, type GraphNode } from './graph';
 import { LABEL_PLACEMENT } from './labelTrait';
 import { asideFace, rowTextStyle, textFace, type DiagramTextStyle } from './rowStyle';
 import { layoutOf } from './layoutAction';
@@ -44,14 +44,14 @@ import type { Rect } from '@weasel-js/geom';
 export type { DiagramTextStyle };
 export { DEFAULT_NODE_STYLE };
 export type {
-  DataEdge, DataGroup, DataNode, DiagramData, DiagramRouter, DiagramSceneData, DiagramSceneOptions, DiagramSpec, EdgeStyle, NodeStyle,
+  DataEdge, DataCluster, DataNode, DiagramData, DiagramRouter, DiagramSceneData, DiagramSceneOptions, DiagramSpec, EdgeStyle, NodeStyle,
 } from './dataTypes';
 
 /** The frame an empty slot with an id draws, in the unit square a mark is drawn in. */
 export const SLOT_FRAME = 'M0 0H1V1H0Z';
 
 /** What a group is drawn with when there is no theme and nothing says otherwise. */
-export const DEFAULT_GROUP_STYLE: NodeStyle = { fill: 'rgba(123, 167, 199, 0.08)', stroke: '#7ba7c7', text: '#9fbdd6', strokeWidth: 1, dash: [4, 3] };
+export const DEFAULT_CLUSTER_STYLE: NodeStyle = { fill: 'rgba(123, 167, 199, 0.08)', stroke: '#7ba7c7', text: '#9fbdd6', strokeWidth: 1, dash: [4, 3] };
 export { LABEL_PLACEMENT };
 const LINE = 1.4;
 const MIN_WIDTH = 64;
@@ -172,7 +172,7 @@ function mainSpecs(data: DiagramData, opts: DiagramSceneOptions): DiagramSpec[] 
     ids.add(n.id);
   }
   const nodeIds = new Set(ids);
-  const pad = opts.groupPadding ?? DEFAULT_GROUP_INSET;
+  const pad = opts.groupPadding ?? DEFAULT_CLUSTER_INSET;
   const regions = resolveContainers(data.containers ?? [], ids, nodeIds);
   // A region is a node's scene parent and a group only gathers it for layout and draws around it: a
   // node in both would have two owners whose boxes disagree, so the data is refused rather than guessed at.
@@ -184,7 +184,7 @@ function mainSpecs(data: DiagramData, opts: DiagramSceneOptions): DiagramSpec[] 
   }
   const boxes = containerLayoutNodes(regions, { padding: pad, seed: (k) => ({ x: data.nodes.length + k, y: data.nodes.length + k }) });
   const titleStyle = { ...font, fontSize: font.fontSize - 1 };
-  const groups = resolveGroups(data.groups ?? [], ids, new Set([...nodeIds].filter((id) => !boxes.hidden.has(id))), {
+  const groups = resolveClusters(data.groups ?? [], ids, new Set([...nodeIds].filter((id) => !boxes.hidden.has(id))), {
     padding: pad,
     title: (text) => measure(text, titleStyle),
   });
@@ -235,7 +235,7 @@ function mainSpecs(data: DiagramData, opts: DiagramSceneOptions): DiagramSpec[] 
   const routes = laid.plan === null ? null
     : authoredOver(edges.filter((e) => !laid.remapped.has(e)).map((e) => ({ ...e, id: edgeIdOf(e) })), laid.plan);
   const edgeCtx = { idOf: edgeIdOf, font, labelFont, measure, labelPlacement: LABEL_PLACEMENT, routes, opts, ...(theme ? { theme } : {}) };
-  const groupLook = (g: DataGroup) => ({ style: opts.groupStyle?.(g) ?? theme?.container ?? DEFAULT_GROUP_STYLE, text: styleOf(titleStyle) });
+  const groupLook = (g: DataCluster) => ({ style: opts.groupStyle?.(g) ?? theme?.container ?? DEFAULT_CLUSTER_STYLE, text: styleOf(titleStyle) });
   const footprints = new Map([...placedAt, ...seeds.map((s) => [s.id, grownBy(placedAt.get(s.id)!, s.margin)] as const)]);
   // Regions and group boxes first, so a box never paints over what it holds.
   specs.push(...containerSpecs(regions, placedAt, theme, font.fontFamily));
@@ -271,12 +271,12 @@ function mainSpecs(data: DiagramData, opts: DiagramSceneOptions): DiagramSpec[] 
 function layOut(
   seeds: readonly GraphNode[],
   edges: readonly DataEdge[],
-  groups: readonly ResolvedGroup[],
+  groups: readonly ResolvedCluster[],
   boxes: ContainerLayout,
   opts: DiagramSceneOptions,
   room: (e: DataEdge) => EdgeLabelRoom | null,
 ): { placed: Map<string, Rect>; plan: LayoutPlan | null; remapped: ReadonlySet<DataEdge> } {
-  const graphGroups: GraphGroup[] = [...groups.map((g) => ({
+  const graphGroups: GraphCluster[] = [...groups.map((g) => ({
     id: g.group.id,
     members: g.members,
     inset: g.inset,
@@ -305,7 +305,7 @@ function layOut(
     return [{ ...rest, from, to, ...(from === e.from && e.fromPort ? { fromPort: e.fromPort } : {}),
       ...(to === e.to && e.toPort ? { toPort: e.toPort } : {}) }];
   });
-  const graph = graphOf(visible, expandGroupEdges(graphEdges, graphGroups), graphGroups);
+  const graph = graphOf(visible, expandClusterEdges(graphEdges, graphGroups), graphGroups);
   const layout: LayoutFn | null = typeof opts.layout === 'function' ? opts.layout
     : opts.layout === 'none' ? null
     : layoutOf(opts.layout ?? 'layered');

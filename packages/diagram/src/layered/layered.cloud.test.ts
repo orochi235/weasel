@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { DEFAULT_GROUP_INSET } from '../cluster';
+import { DEFAULT_CLUSTER_INSET } from '../cluster';
 import { diagramScene } from '../fromData';
 import { DEFAULT_NODE_GAP } from '../layout';
 import { CLOUD } from './cloudFixture';
@@ -22,7 +22,7 @@ describe('layered on a grouped cloud architecture', () => {
     const hi = Math.max(...boxes.map((b) => b.x + b.width));
     const packed = boxes.reduce((sum, b) => sum + b.width, 0) + (boxes.length - 1) * DEFAULT_NODE_GAP;
     expect(hi - lo).toBeLessThanOrEqual(packed + 1e-6);
-    expect(box(id).width).toBeLessThanOrEqual(hi - lo + 2 * DEFAULT_GROUP_INSET + 1e-6);
+    expect(box(id).width).toBeLessThanOrEqual(hi - lo + 2 * DEFAULT_CLUSTER_INSET + 1e-6);
   });
 
   it('routes no wire above the first rank or below the last', () => {

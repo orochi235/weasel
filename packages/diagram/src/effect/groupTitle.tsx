@@ -3,7 +3,7 @@ import { adoptCssOnce, useLatest } from '@weasel-js/react';
 import { imeKey } from '@weasel-js/ui-input';
 import { useMemo, useState, type ReactElement } from 'react';
 import { titleIdOf } from '../containers/trait';
-import { groupLabelIdOf } from '../dataGroups';
+import { clusterLabelIdOf } from '../dataClusters';
 import type { DiagramOverlay } from '../overlays';
 import type { EditorLook } from './editorMapping';
 import { renameGroup } from './groupEdit';
@@ -36,7 +36,7 @@ export function useGroupTitle(
   const group = renaming === null ? undefined : doc.pipeline.groups?.find((g) => g.id === renaming);
   const id = group?.id;
   const was = group?.label ?? '';
-  const over = id === undefined ? undefined : look === 'nodeGraph' ? titleIdOf(id) : was ? groupLabelIdOf(id) : id;
+  const over = id === undefined ? undefined : look === 'nodeGraph' ? titleIdOf(id) : was ? clusterLabelIdOf(id) : id;
   return useMemo(() => {
     if (id === undefined || over === undefined) return null;
     const done = (text: string | null) => {

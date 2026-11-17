@@ -1,5 +1,5 @@
 import { useMemo, useRef, useState } from 'react';
-import { DiagramView, diagramScene, type DataEdge, type DataGroup, type DataNode, type DiagramViewApi } from '@weasel-js/diagram';
+import { DiagramView, diagramScene, type DataEdge, type DataCluster, type DataNode, type DiagramViewApi } from '@weasel-js/diagram';
 import { Button } from '@weasel-js/ui/components/Button';
 import { FONT, moved, routed } from './diagram/shared';
 import { DemoStage } from './DemoStage';
@@ -15,7 +15,7 @@ const EDGES: DataEdge[] = [
   // An edge naming a group meets its box, and ranks against its first stage.
   { from: 'clock', to: 'ingest' },
 ];
-const GROUPS: DataGroup[] = [
+const GROUPS: DataCluster[] = [
   { id: 'ingest', members: ['fetch', 'decode', 'cache'], label: 'ingest' },
   { id: 'health', members: ['probe', 'score', 'report'], label: 'health' },
 ];

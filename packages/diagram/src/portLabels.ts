@@ -8,7 +8,7 @@
  * `ports` row's job, not this module's.
  */
 import type { Vec2 } from '@weasel-js/core/math';
-import type { GroupInset } from './cluster';
+import type { ClusterInset } from './cluster';
 import type { Bounds } from './outline';
 import { portsOf } from './ports';
 import type { DiagramNode, Port, PortSpec } from './types';
@@ -72,9 +72,9 @@ export function portLabelsOf(
 }
 
 /** How far `boxes` reach past `bounds` on each side; `undefined` for none. */
-export function marginOf(bounds: Bounds, boxes: readonly Bounds[]): GroupInset | undefined {
+export function marginOf(bounds: Bounds, boxes: readonly Bounds[]): ClusterInset | undefined {
   if (boxes.length === 0) return undefined;
-  const m: GroupInset = { top: 0, right: 0, bottom: 0, left: 0 };
+  const m: ClusterInset = { top: 0, right: 0, bottom: 0, left: 0 };
   for (const b of boxes) {
     m.top = Math.max(m.top, bounds.y - b.y);
     m.left = Math.max(m.left, bounds.x - b.x);

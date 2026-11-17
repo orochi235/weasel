@@ -16,7 +16,7 @@
  */
 import { createSimulation, type SimulationForce, type SimulationNode } from '@weasel-js/simulation';
 import type { Graph } from './graph';
-import { groupCohesion, separateGroups } from './forceGroups';
+import { groupCohesion, separateClusters } from './forceClusters';
 import {
   center,
   pinnedSet,
@@ -225,7 +225,7 @@ export function forceRelaxation(graph: Graph, opts: ForceOptions = {}): ForceRel
       gravity(bodies, centroid, gravityStrength),
       separateBoxes(bodies, padding),
       ...(groups.length > 0
-        ? [groupCohesion(groups, byId, groupStrength), separateGroups(groups, bodies, byId, padding)]
+        ? [groupCohesion(groups, byId, groupStrength), separateClusters(groups, bodies, byId, padding)]
         : []),
     ],
   });

@@ -1,9 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import { diagramScene } from '../fromData';
-import { contains, type Rect } from '../groupFixture';
+import { contains, type Rect } from '../clusterFixture';
 import type { LookOrder } from './draw';
 import { editorScene } from './editorMapping';
-import { groupLabelIdOf } from '../dataGroups';
+import { clusterLabelIdOf } from '../dataClusters';
 import { groupMove, stageMove, type ReorderSource } from './editorReorder';
 import { groupAt, groupGripOf, groupRuns, groupSlotsAt } from './groupOrder';
 import { mainChain } from './mainChain';
@@ -87,7 +87,7 @@ describe('groupGripOf', () => {
     const box = source.boxOf('g')!;
     const grip = groupGripOf(source.doc, 'g', source.boxOf)!;
     expect(grip).toEqual({ x: box.x, y: box.y, width: box.width, height: Math.min(source.boxOf('a')!.y, source.boxOf('b')!.y) - box.y });
-    expect(contains(grip, source.boxOf(groupLabelIdOf('g'))!)).toBe(true);
+    expect(contains(grip, source.boxOf(clusterLabelIdOf('g'))!)).toBe(true);
   });
 });
 
@@ -103,29 +103,29 @@ describe('groupAt', () => {
 describe('groupSlotsAt', () => {
   it('picks the innermost group whose title holds the press', () => {
     const source = rackSource(docOf(NESTED));
-    const slots = groupSlotsAt(source, middle(source.boxOf(groupLabelIdOf('g'))!))!;
+    const slots = groupSlotsAt(source, middle(source.boxOf(clusterLabelIdOf('g'))!))!;
     expect(slots.items.map((i) => i.id)).toEqual(['g', 'c']);
     expect(slots.items[0]!.grip).toEqual(groupGripOf(source.doc, 'g', source.boxOf));
-    expect([...slots.items[0]!.carries!].sort()).toEqual(['a', 'b', 'g', groupLabelIdOf('g')].sort());
+    expect([...slots.items[0]!.carries!].sort()).toEqual(['a', 'b', 'g', clusterLabelIdOf('g')].sort());
     expect(slots.items[1]!.grip).toBeNull();
   });
 
   it('gives an outer group the top level as its siblings, carrying the groups inside it', () => {
     const source = rackSource(docOf(NESTED));
-    const slots = groupSlotsAt(source, middle(source.boxOf(groupLabelIdOf('h'))!))!;
+    const slots = groupSlotsAt(source, middle(source.boxOf(clusterLabelIdOf('h'))!))!;
     expect(slots.items.map((i) => i.id)).toEqual(['src', 'h', 'd', 'out']);
-    expect([...slots.items[1]!.carries!].sort()).toEqual(['a', 'b', 'c', 'g', 'h', groupLabelIdOf('g'), groupLabelIdOf('h')].sort());
+    expect([...slots.items[1]!.carries!].sort()).toEqual(['a', 'b', 'c', 'g', 'h', clusterLabelIdOf('g'), clusterLabelIdOf('h')].sort());
   });
 
   it('has no slots on a group with no stage on the line', () => {
     const source = rackSource(docOf([{ id: 's', label: 'Side', members: ['side'] }]));
-    expect(source.boxOf(groupLabelIdOf('s'))).toBeDefined();
-    expect(groupSlotsAt(source, middle(source.boxOf(groupLabelIdOf('s'))!))).toBeNull();
+    expect(source.boxOf(clusterLabelIdOf('s'))).toBeDefined();
+    expect(groupSlotsAt(source, middle(source.boxOf(clusterLabelIdOf('s'))!))).toBeNull();
   });
 
   it('has no slots on a split group, and does not throw', () => {
     const source = rackSource(docOf([{ id: 'g', label: 'Split', members: ['a', 'c'] }]));
-    expect(groupSlotsAt(source, middle(source.boxOf(groupLabelIdOf('g'))!))).toBeNull();
+    expect(groupSlotsAt(source, middle(source.boxOf(clusterLabelIdOf('g'))!))).toBeNull();
   });
 
   it('has no slots off every title', () => {

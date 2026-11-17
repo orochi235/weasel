@@ -2,7 +2,7 @@
  * Order: reorder each rank to cut crossings, with barycenter sweeps and
  * transposition, keeping every group's members contiguous in each rank.
  */
-import type { GraphGroup, GraphNode } from '../graph';
+import type { GraphCluster, GraphNode } from '../graph';
 import { placeAmong, sidesOf, type Sides } from './places';
 import type { Hop, Rows } from './types';
 
@@ -85,7 +85,7 @@ export function crossings(rows: Rows, hops: readonly Hop[]): number {
 /** How {@link orderRows} keeps groups together and when it stops. */
 export interface OrderOptions {
   /** Groups as the graph has them, for keeping members together. */
-  groups?: readonly GraphGroup[];
+  groups?: readonly GraphCluster[];
   /** Sweeps in a row without improvement before stopping. Default 4. */
   patience?: number;
   /** Hard cap on sweeps. Default 24. */
@@ -93,7 +93,7 @@ export interface OrderOptions {
 }
 
 /** A group's chain of enclosing groups, outermost first, ending with itself. */
-function chainsOf(groups: readonly GraphGroup[]): (group: string | undefined) => readonly string[] {
+function chainsOf(groups: readonly GraphCluster[]): (group: string | undefined) => readonly string[] {
   const parent = new Map(groups.map((g) => [g.id, g.parent]));
   const cache = new Map<string, string[]>();
   const chain = (id: string, seen: Set<string>): string[] => {
@@ -122,7 +122,7 @@ const newBlock = (first: number, group?: string): Block => ({
 });
 
 /** Each ordered group's direct members by their place in its order. */
-function placesOf(groups: readonly GraphGroup[]): Map<string, Map<string, number>> {
+function placesOf(groups: readonly GraphCluster[]): Map<string, Map<string, number>> {
   return new Map(groups.filter((g) => g.ordered !== undefined).map((g) => [g.id, new Map(g.ordered!.map((m, i) => [m, i]))]));
 }
 

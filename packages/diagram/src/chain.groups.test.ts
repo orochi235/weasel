@@ -4,7 +4,7 @@ import { rack } from './effect/rack';
 import { io, w } from './effect/skipFixture';
 import type { EffectPipeline } from './effect/types';
 import { diagramScene } from './fromData';
-import { boxOf, graphOf, overlaps, placed, type Rect } from './groupFixture';
+import { boxOf, graphOf, overlaps, placed, type Rect } from './clusterFixture';
 import type { LayoutResult } from './layout';
 
 // `graphOf` seeds node i at (i, i), 100 by 40.

@@ -1,5 +1,5 @@
 /**
- * The group forces of the force layout, one tick at a time on random bodies and groups, nested through `nestGroups`.
+ * The group forces of the force layout, one tick at a time on random bodies and groups, nested through `nestClusters`.
  * Cohesion pulls each member straight at its group's centroid and moves no group's center of mass; separation never
  * pushes a group against one it holds, leaves boxes already clear alone, and one tick's push, taken as a move, clears
  * two overlapping groups, or a group and one outsider.
@@ -8,9 +8,9 @@ import { describe, expect, it } from 'vitest';
 import fc from 'fast-check';
 import { insetOf } from './cluster';
 import type { ForceBody } from './force';
-import { groupCohesion, separateGroups } from './forceGroups';
-import type { GraphGroup } from './graph';
-import { nestGroups } from './groupTree';
+import { groupCohesion, separateClusters } from './forceClusters';
+import type { GraphCluster } from './graph';
+import { nestClusters } from './clusterTree';
 import { nonFinite, runs, tally, timeoutFor } from './pbt.fixture';
 
 const RUNS = 300;
@@ -29,16 +29,16 @@ const insetArb = fc.oneof(fc.constant(12), fc.integer({ min: 0, max: 20 }), fc.r
   top: fc.nat(20), right: fc.nat(20), bottom: fc.nat(20), left: fc.nat(20),
 }));
 
-const groupsArb: fc.Arbitrary<GraphGroup[]> = fc.tuple(
+const groupsArb: fc.Arbitrary<GraphCluster[]> = fc.tuple(
   fc.tuple(...GROUP_IDS.map(() => fc.subarray([...IDS, ...GROUP_IDS], { maxLength: 4 }))),
   fc.tuple(...GROUP_IDS.map(() => insetArb)),
-).map(([members, insets]) => nestGroups(GROUP_IDS.map((id, i) => ({ id, members: members[i]! })), (id) => IDS.includes(id))
-  .map((g): GraphGroup => ({ id: g.id, members: g.members, inset: insetOf(insets[GROUP_IDS.indexOf(g.id)]), ...(g.parent ? { parent: g.parent } : {}) })));
+).map(([members, insets]) => nestClusters(GROUP_IDS.map((id, i) => ({ id, members: members[i]! })), (id) => IDS.includes(id))
+  .map((g): GraphCluster => ({ id: g.id, members: g.members, inset: insetOf(insets[GROUP_IDS.indexOf(g.id)]), ...(g.parent ? { parent: g.parent } : {}) })));
 
 const byIdOf = (bodies: readonly ForceBody[]) => new Map(bodies.map((b) => [b.id, b]));
 
 interface Box { x0: number; y0: number; x1: number; y1: number }
-function boxOf(g: GraphGroup, byId: ReadonlyMap<string, ForceBody>, groups: readonly GraphGroup[]): Box {
+function boxOf(g: GraphCluster, byId: ReadonlyMap<string, ForceBody>, groups: readonly GraphCluster[]): Box {
   let x0 = Infinity; let y0 = Infinity; let x1 = -Infinity; let y1 = -Infinity;
   for (const id of g.members) {
     const b = byId.get(id)!;
@@ -56,7 +56,7 @@ const clear = (a: Box, b: Box, padding: number) => {
   const reach = (a0: number, a1: number, b0: number, b1: number) => (a1 - a0 + b1 - b0 - Math.abs(b0 + b1 - a0 - a1)) / 2 + padding;
   return reach(a.x0, a.x1, b.x0, b.x1) <= 1e-9 || reach(a.y0, a.y1, b.y0, b.y1) <= 1e-9;
 };
-const holds = (outer: GraphGroup, inner: GraphGroup, groups: readonly GraphGroup[]): boolean => {
+const holds = (outer: GraphCluster, inner: GraphCluster, groups: readonly GraphCluster[]): boolean => {
   for (let at = inner.parent; at !== undefined; at = groups.find((g) => g.id === at)?.parent) if (at === outer.id) return true;
   return false;
 };
@@ -89,13 +89,13 @@ describe('groupCohesion', () => {
   }, timeoutFor(RUNS, 1));
 });
 
-describe('separateGroups', () => {
+describe('separateClusters', () => {
   it('leaves clear boxes alone and never pushes a group against one it holds', () => {
     const seen = tally();
     fc.assert(fc.property(bodiesArb, groupsArb, fc.nat(20), (drawn, groups, padding) => {
       const bodies = drawn.map((b) => ({ ...b }));
       const byId = byIdOf(bodies);
-      separateGroups(groups, bodies, byId, padding)(1);
+      separateClusters(groups, bodies, byId, padding)(1);
       expect(nonFinite(bodies)).toEqual([]);
       const reset = bodies.map((b) => ({ ...b, vx: 0, vy: 0 }));
       const byReset = byIdOf(reset);
@@ -111,7 +111,7 @@ describe('separateGroups', () => {
           if (g === h || !holds(g, h, groups)) continue;
           const pair = reset.map((b) => ({ ...b }));
           const chain = groups.filter((k) => k === g || k === h || (holds(g, k, groups) && holds(k, h, groups)));
-          separateGroups(chain, [], byIdOf(pair), padding)(1);
+          separateClusters(chain, [], byIdOf(pair), padding)(1);
           expect(pair.every((b) => b.vx === 0 && b.vy === 0)).toBe(true);
           seen.count('nested');
         }
@@ -133,7 +133,7 @@ describe('separateGroups', () => {
           const nest = [g, h];
           const was = byIdOf(pair);
           if (clear(boxOf(g, was, nest), boxOf(h, was, nest), padding)) continue;
-          separateGroups([g, h], [], was, padding)(1);
+          separateClusters([g, h], [], was, padding)(1);
           const after = byIdOf(stepped(pair));
           seen.count('groups');
           expect(clear(boxOf(g, after, nest), boxOf(h, after, nest), padding)).toBe(true);
@@ -145,7 +145,7 @@ describe('separateGroups', () => {
           const was = byIdOf(fresh);
           const o = was.get(outsider.id)!;
           if (clear(boxOf(g, was, nest), bodyBox(o), padding)) continue;
-          separateGroups([g], [o], was, padding)(1);
+          separateClusters([g], [o], was, padding)(1);
           const after = byIdOf(stepped(fresh));
           seen.count('outsider');
           expect(clear(boxOf(g, after, nest), bodyBox(after.get(o.id)!), padding)).toBe(true);

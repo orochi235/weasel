@@ -5,7 +5,7 @@ import {
 } from '@weasel-js/core';
 import {
   DIAGRAM_THEME_KEY, FLOWCHART_NOTATION, diagramLabelOf, diagramNotationOf, endLabelIdOf, diagramThemeFrom, sequenceRootOf, type DataContainer,
-  type DataEdge, type DataGroup, type DataNode, type DiagramTheme, type SequenceData,
+  type DataEdge, type DataCluster, type DataNode, type DiagramTheme, type SequenceData,
 } from '@weasel-js/diagram';
 import type { DiagramDocument, DocumentPage, GraphPage, PlotPage } from './document';
 import { graphPageSettingsOf } from './graphPageMeta';
@@ -26,7 +26,7 @@ type AnyScene = ReadScene & {
 };
 
 interface PageBucket {
-  nodes: DataNode[]; edges: DataEdge[]; groups: DataGroup[]; containers: DataContainer[];
+  nodes: DataNode[]; edges: DataEdge[]; groups: DataCluster[]; containers: DataContainer[];
   /** The first sequence on the page, which makes it a sequence page. */
   sequence?: SequenceData;
 }

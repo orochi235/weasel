@@ -7,7 +7,7 @@ import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { page, userEvent } from 'vitest/browser';
 import { fitViewToBounds as fitOrNull, viewToTransform, type RectPose } from '@weasel-js/core';
 
-import { diagramGroupOf, diagramScene, isBodyOrRegion } from '@weasel-js/diagram';
+import { diagramClusterOf, diagramScene, isBodyOrRegion } from '@weasel-js/diagram';
 import { EFFECT_MIN_SCALE, editorScene, type EffectDoc, type EffectGroup } from '@weasel-js/diagram/effect';
 import { registerCanvasFont } from '@weasel-js/font';
 import '@weasel-js/theme/tokens.css';
@@ -51,7 +51,7 @@ async function openCanvas() {
   const canvas = document.querySelector<HTMLCanvasElement>('.wc-host canvas')!;
   const r = canvas.getBoundingClientRect();
   const built = editorScene(DOC);
-  const boxes = diagramScene(built.data, built.scene).filter((s) => isBodyOrRegion(s) || diagramGroupOf(s) !== null).map((s) => s.pose as RectPose);
+  const boxes = diagramScene(built.data, built.scene).filter((s) => isBodyOrRegion(s) || diagramClusterOf(s) !== null).map((s) => s.pose as RectPose);
   const left = Math.min(...boxes.map((b) => b.x));
   const top = Math.min(...boxes.map((b) => b.y));
   const bounds = { x: left, y: top, width: Math.max(...boxes.map((b) => b.x + b.width)) - left, height: Math.max(...boxes.map((b) => b.y + b.height)) - top };

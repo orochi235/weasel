@@ -14,7 +14,7 @@ import {
 import type { Vec2 } from '@weasel-js/core/math';
 import { diagramContainerOf, headerBox } from '../containers/trait';
 import { diagramEdgeOf } from '../edgeTrait';
-import { diagramGroupOf } from '../group';
+import { diagramClusterOf } from '../clusterBox';
 import { diagramLabelOf } from '../labelTrait';
 import { portSitesOf, portsOf, type PortsOptions } from '../ports';
 import { diagramNodeOf } from '../trait';
@@ -37,7 +37,7 @@ const facingPorts = (ports: readonly Port[]): AvoidPort[] =>
 
 /** Every id under `node`, at any depth: its children, or what a derived group box holds. */
 function members(scene: AnyScene, node: SceneNode, into: Set<string>): Set<string> {
-  const under = Array.isArray(node.dependsOn) && diagramGroupOf(node) !== null ? node.dependsOn : scene.childrenOf(node.id as never);
+  const under = Array.isArray(node.dependsOn) && diagramClusterOf(node) !== null ? node.dependsOn : scene.childrenOf(node.id as never);
   for (const id of under) {
     if (into.has(id)) continue;
     into.add(id);
@@ -100,7 +100,7 @@ export function avoidSceneInput<TPose>(
     const header = container === null ? null : headerBox(box, container.header);
     if (header !== null) obstacles.push({ id: headerIdOf(node.id), kind: 'shape', box: header });
     if (container?.role === 'lane') continue;
-    const region = container !== null || diagramGroupOf(node) !== null;
+    const region = container !== null || diagramClusterOf(node) !== null;
     obstacles.push(region
       ? { id: node.id, kind: 'region', box, members: members(sc, node, new Set()) }
       : { id: node.id, kind: 'shape', box });

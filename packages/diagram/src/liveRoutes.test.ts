@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { act, renderHook } from '@testing-library/react';
 import { createScene, derivedDepOf, type NodeId, type RectPose, type Vec2 } from '@weasel-js/core';
 import { EDGE_DERIVE_PATH } from './edge';
-import { GROUP_DERIVE_POSE, boxAround } from './group';
+import { CLUSTER_DERIVE_POSE, boxAround } from './clusterBox';
 import { useLiveLayout } from './live';
 import { sceneParticipants } from './portLayer';
 
@@ -86,7 +86,7 @@ describe('a live run\'s eased routes', () => {
     const c = s.add({ kind: 'mark', layer: 'main', pose: box(260, 200), data: { diagram: {} } });
     const g = s.add({
       kind: 'mark', layer: 'main', pose: box(0, 0, 0, 0),
-      data: { diagram: { group: { inset: 12 } } }, dependsOn: [b, c], derivePose: GROUP_DERIVE_POSE as never,
+      data: { diagram: { group: { inset: 12 } } }, dependsOn: [b, c], derivePose: CLUSTER_DERIVE_POSE as never,
     });
     const e = addEdge(s, a, g);
     const { clock, handle } = live(s, 'layered');

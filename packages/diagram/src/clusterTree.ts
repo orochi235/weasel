@@ -9,13 +9,13 @@
  */
 
 /** A group as declared: its id and the ids it names. */
-export interface DeclaredGroup {
+export interface DeclaredCluster {
   id: string;
   members: readonly string[];
 }
 
 /** A group with its place in the tree settled. */
-export interface NestedGroup {
+export interface NestedCluster {
   id: string;
   /** The nodes and groups directly inside, in the order they were named. */
   direct: string[];
@@ -25,10 +25,10 @@ export interface NestedGroup {
   parent?: string;
 }
 
-export function nestGroups(
-  declared: readonly DeclaredGroup[],
+export function nestClusters(
+  declared: readonly DeclaredCluster[],
   isNode: (id: string) => boolean,
-): NestedGroup[] {
+): NestedCluster[] {
   const groupIds = new Set(declared.map((g) => g.id));
   const parentOf = new Map<string, string>();
   const claimedNodes = new Set<string>();

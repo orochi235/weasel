@@ -1,11 +1,11 @@
 import { describe, it, expect } from 'vitest';
-import { nestGroups } from './groupTree';
+import { nestClusters } from './clusterTree';
 
 const NODES = new Set(['a', 'b', 'c', 'd']);
 const nest = (raw: Record<string, string[]>) =>
-  nestGroups(Object.entries(raw).map(([id, members]) => ({ id, members })), (id) => NODES.has(id));
+  nestClusters(Object.entries(raw).map(([id, members]) => ({ id, members })), (id) => NODES.has(id));
 
-describe('nestGroups', () => {
+describe('nestClusters', () => {
   it('leaves flat groups as they were', () => {
     expect(nest({ G: ['a', 'b'], H: ['c'] })).toEqual([
       { id: 'G', direct: ['a', 'b'], members: ['a', 'b'] },

@@ -1,7 +1,7 @@
 /** The pages a {@link DiagramData} is drawn on, and the connectors that cross between them. */
 import { layoutPages, pageOfBounds, type Bounds, type PlacedPage } from '@weasel-js/core';
 import type { DiagramData, DiagramSpec } from './dataTypes';
-import { diagramGroupOf } from './group';
+import { diagramClusterOf } from './clusterBox';
 import { offPageSplits } from './offPage/split';
 import { offPageTagSpecs, type OffPageTagLook } from './offPage/tag';
 import type { OffPageSplit } from './offPage/trait';
@@ -50,6 +50,6 @@ export function scenePageSplits(
 ): { splits: ReadonlyMap<string, OffPageSplit>; tags: DiagramSpec[] } | null {
   const pages = diagramPages(data);
   if (pages.length === 0) return null;
-  const groups = new Map(specs.filter((s) => diagramGroupOf(s) !== null).map((s) => [String(s.id), s.pose as Bounds]));
+  const groups = new Map(specs.filter((s) => diagramClusterOf(s) !== null).map((s) => [String(s.id), s.pose as Bounds]));
   return dataOffPage(edges, pages, (id) => placedAt.get(id) ?? groups.get(id), look());
 }

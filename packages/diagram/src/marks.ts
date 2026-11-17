@@ -24,7 +24,7 @@ import type { MeasureRowText, RowTextStyle } from './body';
 import type { DiagramTextStyle } from './fromData';
 import type { DiagramSpec, NodeStyle } from './dataTypes';
 import { entryMemo } from './entryMemo';
-import { ANCHOR_DERIVE_POSE } from './group';
+import { ANCHOR_DERIVE_POSE } from './clusterBox';
 import type { Bounds } from './outline';
 import { DIAGRAM_TRAIT_KEY } from './trait';
 import type { PortAnchor } from './types';

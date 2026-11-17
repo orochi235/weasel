@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { force } from './force';
-import { boxOf, graphOf, overlaps, placed } from './groupFixture';
+import { boxOf, graphOf, overlaps, placed } from './clusterFixture';
 
 // Two triangles joined by cross edges, and an outsider tied to one of them:
 // ungrouped, the cross edges pull the two sets through each other.

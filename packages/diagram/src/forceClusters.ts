@@ -7,20 +7,20 @@
  * nodes and the boxes of the groups nested in it.
  */
 import type { SimulationForce } from '@weasel-js/simulation';
-import type { GraphGroup } from './graph';
+import type { GraphCluster } from './graph';
 import type { ForceBody } from './force';
 
 interface GroupBodies {
   /** Every body inside, through any nested group. */
   members: ForceBody[];
-  group: GraphGroup;
+  group: GraphCluster;
   parent?: GroupBodies;
   children: GroupBodies[];
 }
 
 interface Box { x0: number; y0: number; x1: number; y1: number }
 
-function resolve(groups: readonly GraphGroup[], byId: ReadonlyMap<string, ForceBody>): GroupBodies[] {
+function resolve(groups: readonly GraphCluster[], byId: ReadonlyMap<string, ForceBody>): GroupBodies[] {
   const out: GroupBodies[] = [];
   for (const group of groups) {
     const members = group.members.map((id) => byId.get(id)).filter((b) => b !== undefined);
@@ -38,7 +38,7 @@ function resolve(groups: readonly GraphGroup[], byId: ReadonlyMap<string, ForceB
 
 /** A pull on each member toward its group's centroid. */
 export function groupCohesion(
-  groups: readonly GraphGroup[],
+  groups: readonly GraphCluster[],
   byId: ReadonlyMap<string, ForceBody>,
   strength: number,
 ): SimulationForce<ForceBody> {
@@ -120,8 +120,8 @@ function shove(bodies: readonly ForceBody[], x: number, y: number): void {
  * not scaled by alpha: an overlap at the end of the run is as wrong as one at
  * the start.
  */
-export function separateGroups(
-  groups: readonly GraphGroup[],
+export function separateClusters(
+  groups: readonly GraphCluster[],
   bodies: readonly ForceBody[],
   byId: ReadonlyMap<string, ForceBody>,
   padding: number,

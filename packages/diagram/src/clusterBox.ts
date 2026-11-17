@@ -16,10 +16,10 @@ import {
   type PoseDescriptor,
 } from '@weasel-js/core';
 import type { Vec2 } from '@weasel-js/core/math';
-import { insetOf, type GroupInset } from './cluster';
+import { insetOf, type ClusterInset } from './cluster';
 import { grownBy } from './footprint';
 import { DIAGRAM_TRAIT_KEY } from './trait';
-import type { DiagramGroup, PortAnchor } from './types';
+import type { DiagramCluster, PortAnchor } from './types';
 
 /** Where an anchored node sits on its dependency. */
 export interface DiagramAnchor {
@@ -40,9 +40,9 @@ function traitOf(node: { data: unknown }): Record<string, unknown> | null {
 }
 
 /** The group trait on a node's data, or `null`. */
-export function diagramGroupOf(node: { data: unknown }): DiagramGroup | null {
+export function diagramClusterOf(node: { data: unknown }): DiagramCluster | null {
   const group = traitOf(node)?.group;
-  return group !== null && typeof group === 'object' ? (group as DiagramGroup) : null;
+  return group !== null && typeof group === 'object' ? (group as DiagramCluster) : null;
 }
 
 /** The anchor trait on a node's data, or `null`. */
@@ -51,9 +51,9 @@ export function diagramAnchorOf(node: { data: unknown }): DiagramAnchor | null {
   return anchor !== null && typeof anchor === 'object' && 'at' in anchor ? (anchor as DiagramAnchor) : null;
 }
 
-/** Options for {@link groupDerivePose} and {@link anchorDerivePose}.
+/** Options for {@link clusterDerivePose} and {@link anchorDerivePose}.
  *  `geometry` defaults to the kit's `AUTO_POSE_DESCRIPTOR`. */
-export interface GroupPoseOptions<TPose> {
+export interface ClusterPoseOptions<TPose> {
   geometry?: PoseDescriptor<TPose>;
 }
 
@@ -68,10 +68,10 @@ export type DiagramDerivePose<TPose> = (
  * what each takes up, its `margin` included, grown by the trait's inset. `null` — the authored pose stands — when the node
  * carries no group trait or every member is gone.
  */
-export function groupDerivePose<TPose>(opts: GroupPoseOptions<TPose> = {}): DiagramDerivePose<TPose> {
+export function clusterDerivePose<TPose>(opts: ClusterPoseOptions<TPose> = {}): DiagramDerivePose<TPose> {
   const geometry = opts.geometry ?? (AUTO_POSE_DESCRIPTOR as PoseDescriptor<TPose>);
   return (node, deps) => {
-    const group = diagramGroupOf(node);
+    const group = diagramClusterOf(node);
     if (group === null) return null;
     let x0 = Infinity;
     let y0 = Infinity;
@@ -79,7 +79,7 @@ export function groupDerivePose<TPose>(opts: GroupPoseOptions<TPose> = {}): Diag
     let y1 = -Infinity;
     for (const dep of deps) {
       if (dep === undefined) continue;
-      const b = grownBy(geometry.getBounds(dep.pose), traitOf(dep.node)?.margin as GroupInset | undefined);
+      const b = grownBy(geometry.getBounds(dep.pose), traitOf(dep.node)?.margin as ClusterInset | undefined);
       x0 = Math.min(x0, b.x);
       y0 = Math.min(y0, b.y);
       x1 = Math.max(x1, b.x + b.width);
@@ -94,7 +94,7 @@ export function groupDerivePose<TPose>(opts: GroupPoseOptions<TPose> = {}): Diag
  *  widened evenly to its `minWidth`. */
 export function boxAround(
   union: { x: number; y: number; width: number; height: number },
-  group: DiagramGroup,
+  group: DiagramCluster,
 ): { x: number; y: number; width: number; height: number } {
   const inset = insetOf(group.inset);
   const width = union.width + inset.left + inset.right;
@@ -111,7 +111,7 @@ export function boxAround(
  * A `derivePose` that keeps a node at a point on its dependency's bounds.
  * `null` when the node carries no anchor trait or the dependency is gone.
  */
-export function anchorDerivePose<TPose>(opts: GroupPoseOptions<TPose> = {}): DiagramDerivePose<TPose> {
+export function anchorDerivePose<TPose>(opts: ClusterPoseOptions<TPose> = {}): DiagramDerivePose<TPose> {
   const geometry = opts.geometry ?? (AUTO_POSE_DESCRIPTOR as PoseDescriptor<TPose>);
   return (node, deps) => {
     const anchor = diagramAnchorOf(node);
@@ -126,12 +126,12 @@ export function anchorDerivePose<TPose>(opts: GroupPoseOptions<TPose> = {}): Dia
   };
 }
 
-/** Registry key for {@link GROUP_DERIVE_POSE}. */
-export const DIAGRAM_GROUP = 'diagram:group';
+/** Registry key for {@link CLUSTER_DERIVE_POSE}. */
+export const DIAGRAM_CLUSTER = 'diagram:group';
 /** Registry key for {@link ANCHOR_DERIVE_POSE}. */
 export const DIAGRAM_ANCHOR = 'diagram:anchor';
 
 /** The default group derivation, a stable reference so `toJSON` can find its key. */
-export const GROUP_DERIVE_POSE = groupDerivePose<unknown>();
+export const CLUSTER_DERIVE_POSE = clusterDerivePose<unknown>();
 /** The default anchor derivation, a stable reference for the same reason. */
 export const ANCHOR_DERIVE_POSE = anchorDerivePose<unknown>();

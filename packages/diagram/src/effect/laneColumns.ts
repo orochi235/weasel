@@ -5,10 +5,10 @@
  */
 import { maxOf, minOf } from '@weasel-js/geom';
 import { widenForMinWidth } from '../chainGroups';
-import { DEFAULT_GROUP_INSET, insetOf, rankGaps } from '../cluster';
-import { groupMinWidth } from '../dataGroups';
-import type { GraphGroup } from '../graph';
-import { nestGroups } from '../groupTree';
+import { DEFAULT_CLUSTER_INSET, insetOf, rankGaps } from '../cluster';
+import { groupMinWidth } from '../dataClusters';
+import type { GraphCluster } from '../graph';
+import { nestClusters } from '../clusterTree';
 import type { DrawableWire } from './draw';
 import type { EffectGroup, EffectStage } from './types';
 
@@ -48,7 +48,7 @@ export function laneColumns(
   titles: ReadonlyMap<string, number> = new Map(),
 ): { column: Map<string, number>; blocks: LaneBlock[] } {
   const order = new Map(stages.map((s, i) => [s.id, i]));
-  const nested = nestGroups(groups, (id) => order.has(id));
+  const nested = nestClusters(groups, (id) => order.has(id));
   const byId = new Map(nested.map((g) => [g.id, g]));
   const grouped = new Set(nested.flatMap((g) => g.members));
   const first = (id: string) => minOf((byId.get(id)?.members ?? [id]), (m) => order.get(m)!);
@@ -56,7 +56,7 @@ export function laneColumns(
     const g = byId.get(id);
     if (g === undefined) return { stages: [id] };
     const inside = place(itemsOf(g.direct, depth + 1), wires, spans);
-    const minWidth = titles.has(g.id) ? groupMinWidth(titles.get(g.id)!, DEFAULT_GROUP_INSET) : 0;
+    const minWidth = titles.has(g.id) ? groupMinWidth(titles.get(g.id)!, DEFAULT_CLUSTER_INSET) : 0;
     const own: LaneBlock = { group: g.id, first: 0, last: inside.width - 1, depth, minWidth };
     return { stages: g.members, inner: { ...inside, blocks: [own, ...inside.blocks] } };
   });
@@ -142,7 +142,7 @@ export function columnLefts(
     }
     return { lo, hi };
   };
-  const inset = { lo: DEFAULT_GROUP_INSET, hi: DEFAULT_GROUP_INSET };
+  const inset = { lo: DEFAULT_CLUSTER_INSET, hi: DEFAULT_CLUSTER_INSET };
   widenForMinWidth([...blocks].sort((p, q) => q.depth - p.depth).map((b) => ({
     id: b.group,
     minWidth: b.minWidth,
@@ -162,9 +162,9 @@ function blockRoom(count: number, column: ReadonlyMap<string, number>, blocks: r
   const rows: { id: string }[][] = Array.from({ length: count + 2 }, () => []);
   for (const [id, c] of column) rows[c + 1]!.push({ id });
   const inside = (b: LaneBlock) => [...column].filter(([, c]) => c >= b.first && c <= b.last).map(([id]) => id);
-  const groups = blocks.map((b): GraphGroup => {
+  const groups = blocks.map((b): GraphCluster => {
     const parent = blocks.find((p) => p.depth === b.depth - 1 && p.first <= b.first && b.last <= p.last);
-    return { id: b.group, members: inside(b), inset: insetOf(DEFAULT_GROUP_INSET), ...(parent !== undefined ? { parent: parent.group } : {}) };
+    return { id: b.group, members: inside(b), inset: insetOf(DEFAULT_CLUSTER_INSET), ...(parent !== undefined ? { parent: parent.group } : {}) };
   });
   const gaps = rankGaps({ groups }, rows, { rank: 'x', cross: 'y', sign: 1 }, gap);
   return gaps.map((g, c) => (c === 0 || c === count ? g - gap : g));

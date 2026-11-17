@@ -3,21 +3,21 @@
  * it draws around them.
  */
 import { maxOf, minOf, type Rect } from '@weasel-js/geom';
-import type { GroupInset } from './cluster';
-import type { DataGroup, DiagramSceneData, DiagramSpec, NodeStyle } from './dataTypes';
-import { ANCHOR_DERIVE_POSE, GROUP_DERIVE_POSE, boxAround, type DiagramAnchor } from './group';
-import { nestGroups } from './groupTree';
+import type { ClusterInset } from './cluster';
+import type { DataCluster, DiagramSceneData, DiagramSpec, NodeStyle } from './dataTypes';
+import { ANCHOR_DERIVE_POSE, CLUSTER_DERIVE_POSE, boxAround, type DiagramAnchor } from './clusterBox';
+import { nestClusters } from './clusterTree';
 
 /** A group with its members settled and its inset worked out. */
-export interface ResolvedGroup {
-  group: DataGroup;
+export interface ResolvedCluster {
+  group: DataCluster;
   /** The nodes and groups directly inside, which the box derives from. */
   direct: readonly string[];
   /** Every node inside, through any nested group. */
   members: readonly string[];
   /** The group this one is directly inside. */
   parent?: string;
-  inset: GroupInset;
+  inset: ClusterInset;
   pad: number;
   title: { width: number; height: number } | null;
   /** Room for the title across the box, when there is one. */
@@ -28,22 +28,22 @@ export interface ResolvedGroup {
 export const groupMinWidth = (title: number, pad: number): number => title + 2 * pad;
 
 /**
- * Settle what each group holds (see `nestGroups`), outer groups ahead of the
+ * Settle what each group holds (see `nestClusters`), outer groups ahead of the
  * groups inside them. A group left with no node inside it is dropped. Throws
  * on a group id already in `ids`, and adds each group's id to it.
  */
-export function resolveGroups(
-  groups: readonly DataGroup[],
+export function resolveClusters(
+  groups: readonly DataCluster[],
   ids: Set<string>,
   nodeIds: ReadonlySet<string>,
   opts: { padding: number; title: (text: string) => { width: number; height: number } },
-): ResolvedGroup[] {
+): ResolvedCluster[] {
   for (const group of groups) {
     if (ids.has(group.id)) throw new Error(`diagramScene: group id "${group.id}" is already a node or group id`);
     ids.add(group.id);
   }
   const declared = new Map(groups.map((g) => [g.id, g]));
-  const nested = nestGroups(groups, (id) => nodeIds.has(id));
+  const nested = nestClusters(groups, (id) => nodeIds.has(id));
   const depthOf = new Map<string, number>();
   const byId = new Map(nested.map((g) => [g.id, g]));
   const depth = (id: string): number => {
@@ -68,7 +68,7 @@ export function resolveGroups(
 }
 
 /** The node id of a group's title. */
-export const groupLabelIdOf = (id: string): string => `${id}/label`;
+export const clusterLabelIdOf = (id: string): string => `${id}/label`;
 
 /** A label on a wire, as a group box takes it in: the label node's id, and
  *  where it sits when that is known before the scene derives it. */
@@ -81,7 +81,7 @@ export interface WireLabel {
 
 /** The labels each group's box takes in: those on wires with both ends
  *  inside it, each in the innermost group holding both. */
-export function labelsByGroup(groups: readonly ResolvedGroup[], labels: readonly WireLabel[]): Map<string, WireLabel[]> {
+export function labelsByCluster(groups: readonly ResolvedCluster[], labels: readonly WireLabel[]): Map<string, WireLabel[]> {
   const byId = new Map(groups.map((g) => [g.group.id, g]));
   const holder = new Map<string, string>();
   for (const g of groups) for (const m of g.direct) holder.set(m, g.group.id);
@@ -102,7 +102,7 @@ export function labelsByGroup(groups: readonly ResolvedGroup[], labels: readonly
 /** Each group's box around where its members were placed, and the labels
  *  it takes in where they are known. */
 export function groupBoxes(
-  groups: readonly ResolvedGroup[],
+  groups: readonly ResolvedCluster[],
   placedAt: ReadonlyMap<string, Rect>,
   labels: ReadonlyMap<string, readonly WireLabel[]> = new Map(),
 ): Map<string, Rect> {
@@ -133,15 +133,15 @@ export function groupBoxes(
  * Each group's box, and its label when it has one, around where its members
  * were placed. In the order given, so an outer box paints behind the boxes
  * inside it. A box depends on its members and on the labels it takes in
- * (see {@link labelsByGroup}), so a wire's label stays inside it.
+ * (see {@link labelsByCluster}), so a wire's label stays inside it.
  */
 export function groupSpecs(
-  groups: readonly ResolvedGroup[],
+  groups: readonly ResolvedCluster[],
   placedAt: ReadonlyMap<string, Rect>,
-  styleOf: (group: DataGroup) => { style: NodeStyle; text: NonNullable<DiagramSceneData['style']> },
+  styleOf: (group: DataCluster) => { style: NodeStyle; text: NonNullable<DiagramSceneData['style']> },
   wireLabels: readonly WireLabel[] = [],
 ): DiagramSpec[] {
-  const labels = labelsByGroup(groups, wireLabels);
+  const labels = labelsByCluster(groups, wireLabels);
   const boxes = groupBoxes(groups, placedAt, labels);
   const specs: DiagramSpec[] = [];
   for (const g of groups) {
@@ -169,12 +169,12 @@ export function groupSpecs(
         },
       },
       dependsOn: [...g.direct, ...(labels.get(g.group.id) ?? []).map((l) => l.id)] as never[],
-      derivePose: GROUP_DERIVE_POSE as never,
+      derivePose: CLUSTER_DERIVE_POSE as never,
     });
     if (g.title === null || !g.group.label) continue;
     const anchor: DiagramAnchor = { at: { u: 0, v: 0 }, offset: { x: g.pad, y: g.pad } };
     specs.push({
-      id: groupLabelIdOf(g.group.id) as never,
+      id: clusterLabelIdOf(g.group.id) as never,
       kind: 'mark',
       layer: 'main',
       pickable: false,

@@ -1,6 +1,6 @@
 /**
  * A group's box and anything anchored to a node. `boxAround` holds the union and its inset and widens evenly to its
- * minimum; `groupDerivePose` is that box around whichever members are there, moved whole with them; an anchored
+ * minimum; `clusterDerivePose` is that box around whichever members are there, moved whole with them; an anchored
  * node's `self` point lands on the `at` point of what it is anchored to. Then a scene built from random groups,
  * nested, through moves and resizes of its nodes, undos, and redos: every group's box stands around what it depends
  * on, every title on its group, and undo puts every node back exactly.
@@ -8,7 +8,7 @@
 import { describe, expect, it } from 'vitest';
 import fc from 'fast-check';
 import { createScene, effectivePose, type RectPose, type Scene } from '@weasel-js/core';
-import { boxAround, diagramAnchorOf, diagramGroupOf, groupDerivePose, anchorDerivePose } from './group';
+import { boxAround, diagramAnchorOf, diagramClusterOf, clusterDerivePose, anchorDerivePose } from './clusterBox';
 import { insetOf } from './cluster';
 import { withDiagramRegistry } from './edge';
 import { diagramScene, type DiagramData } from './fromData';
@@ -54,8 +54,8 @@ const member = (pose: Rect, margin?: { top: number; right: number; bottom: numbe
   ({ node: { data: { diagram: margin ? { margin } : {} } }, pose });
 const marginArb = fc.option(fc.record({ top: fc.nat(20), right: fc.nat(20), bottom: fc.nat(20), left: fc.nat(20) }), { nil: undefined });
 
-describe('groupDerivePose', () => {
-  const derive = groupDerivePose<Rect>();
+describe('clusterDerivePose', () => {
+  const derive = clusterDerivePose<Rect>();
 
   it('draws the box around the members there are, and moves it whole with them', () => {
     const seen = tally();
@@ -87,7 +87,7 @@ describe('groupDerivePose', () => {
 
   it('stands aside for a node that is not a group', () => {
     fc.assert(fc.property(fc.anything(), (data) => {
-      fc.pre(diagramGroupOf({ data }) === null);
+      fc.pre(diagramClusterOf({ data }) === null);
       expect(derive({ pose: { x: 0, y: 0, width: 0, height: 0 }, data }, [member({ x: 0, y: 0, width: 1, height: 1 })] as never)).toBeNull();
     }), runs(RUNS));
   }, timeoutFor(RUNS, 1));
@@ -139,7 +139,7 @@ function check(scene: AnyScene, model: Model): void {
   expect(authored(scene)).toEqual(model.stack[model.at]);
   const pose = (id: string) => effectivePose(scene as never, scene.get(id as never)! as never) as RectPose;
   for (const n of scene.renderOrderNodes()) {
-    const group = diagramGroupOf(n);
+    const group = diagramClusterOf(n);
     if (group !== null) {
       const deps = (n.dependsOn as readonly string[]).filter((id) => scene.get(id as never) !== undefined);
       if (deps.length === 0) continue;
@@ -222,7 +222,7 @@ describe('a scene of nested groups', () => {
         systemLayers: [{ id: 'main' }], initial: diagramScene(data, { layout: 'none' }) as never, registry: withDiagramRegistry(),
       }) as AnyScene;
       const nodes = [...scene.renderOrderNodes()];
-      if (nodes.some((n) => diagramGroupOf(n) !== null && (n.dependsOn as readonly string[]).some((d) => GROUPS.includes(d as string)))) seen.count('nested');
+      if (nodes.some((n) => diagramClusterOf(n) !== null && (n.dependsOn as readonly string[]).some((d) => GROUPS.includes(d as string)))) seen.count('nested');
       if (nodes.some((n) => diagramAnchorOf(n) !== null)) seen.count('titled');
       const model: Model = { stack: [authored(scene)], at: 0 };
       check(scene, model);

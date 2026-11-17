@@ -1,11 +1,11 @@
 /**
- * `nestGroups` on any declaration, members naming nodes, groups, themselves, each other in cycles, and ids that are
+ * `nestClusters` on any declaration, members naming nodes, groups, themselves, each other in cycles, and ids that are
  * neither: the result is a forest whose groups each hold a node, a node sits directly in the first group naming it,
  * and a group's members are its direct nodes and its direct groups' members, in order.
  */
 import { describe, expect, it } from 'vitest';
 import fc from 'fast-check';
-import { nestGroups, type DeclaredGroup } from './groupTree';
+import { nestClusters, type DeclaredCluster } from './clusterTree';
 import { runs, tally, timeoutFor } from './pbt.fixture';
 
 const RUNS = 500;
@@ -14,16 +14,16 @@ const NODES = ['a', 'b', 'c', 'd', 'e'];
 const GROUPS = ['G', 'H', 'I', 'J', 'K', '__proto__', 'constructor'];
 const id = fc.constantFrom(...NODES, ...GROUPS, 'x', 'toString');
 
-const declared: fc.Arbitrary<DeclaredGroup[]> = fc.uniqueArray(fc.constantFrom(...GROUPS), { maxLength: GROUPS.length })
+const declared: fc.Arbitrary<DeclaredCluster[]> = fc.uniqueArray(fc.constantFrom(...GROUPS), { maxLength: GROUPS.length })
   .chain((ids) => fc.tuple(...ids.map((g) => fc.array(id, { maxLength: 5 }).map((members) => ({ id: g, members })))));
 
 const isNode = (s: string) => NODES.includes(s);
 
-describe('nestGroups', () => {
+describe('nestClusters', () => {
   it('settles a forest of groups each holding a node, every node in the first group naming it', () => {
     const seen = tally();
     fc.assert(fc.property(declared, (groups) => {
-      const out = nestGroups(groups, isNode);
+      const out = nestClusters(groups, isNode);
       const byId = new Map(out.map((g) => [g.id, g]));
       expect(byId.size).toBe(out.length);
       const order = groups.map((g) => g.id);
