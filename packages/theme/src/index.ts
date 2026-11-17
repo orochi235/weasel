@@ -9,7 +9,7 @@ export { blendTheme, type AxisWeights } from './blendTheme';
 export { resolveCurrentColor } from './currentColor';
 export { expandVars, parseBoxShadow, type BoxShadow } from './boxShadow';
 export { isColorModePreference, type ColorMode, type ColorModePreference } from './colorMode';
-export { loadDTCG, type DtcgDocument } from './loadDTCG';
+export { fromDtcg, type DtcgDocument } from './fromDtcg';
 export { enumerateSelections, fullSelection, isByAxis, selectionKey, type AxisDef, type AxisDefs, type AxisValue, type ByAxis, type Selection, type Varying } from './axes';
 export type { ThemeDefinition, PinValue, PinObject } from './definition';
 export { parseTokenValue, serializeTokenValue } from './dtcg/value';

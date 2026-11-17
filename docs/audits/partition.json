@@ -5935,7 +5935,7 @@
    "packages/theme/src/hooks/panels.ts",
    "packages/theme/src/index.ts",
    "packages/theme/src/inherited.module.css",
-   "packages/theme/src/loadDTCG.ts",
+   "packages/theme/src/fromDtcg.ts",
    "packages/theme/src/numeric.module.css",
    "packages/theme/src/panel.ts",
    "packages/theme/src/pbt.fixture.ts",

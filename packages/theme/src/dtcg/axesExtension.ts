@@ -17,7 +17,7 @@ export interface DtcgLayer {
 }
 
 /**
- * What `toDTCG` writes under `$extensions["com.weasel.axes"]`.
+ * What `toDtcg` writes under `$extensions["com.weasel.axes"]`.
  *
  * - `axes`: every axis the theme resolves with, mode included.
  * - `varies`: token name → the non-mode axes its value depends on.

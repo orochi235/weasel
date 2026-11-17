@@ -9,7 +9,7 @@ export { scale, type ScaleParams } from './engine/scales.ts';
 export type { DeriveResult, Issue, Layer, Provenance } from './engine/types.ts';
 export type * from './definition.ts';
 export { cssValue, emitCss, type EmitInput } from './engine/emit/css.ts';
-export { toDTCG, type DtcgExport, type DtcgGroup } from './engine/emit/dtcg.ts';
+export { toDtcg, type DtcgExport, type DtcgGroup } from './engine/emit/dtcg.ts';
 export type { DtcgAxesExtension, DtcgLayer } from './dtcg/axesExtension.ts';
 export { emitManifest } from './engine/emit/manifest.ts';
 export { emitThemes, type ThemesInput } from './engine/emit/themes.ts';

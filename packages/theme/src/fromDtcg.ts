@@ -7,7 +7,7 @@ import type { FlatTokens, RawToken } from './dtcg/types';
 import { themeAxes } from './resolveTheme';
 import { weaselTheme, type Theme } from './theme';
 
-/** What `loadDTCG` reads: a `toDTCG` export, or a document shaped like one. */
+/** What `fromDtcg` reads: a `toDtcg` export, or a document shaped like one. */
 export interface DtcgDocument {
   name?: unknown;
   defaultMode?: unknown;
@@ -74,10 +74,10 @@ function readTints(raw: unknown): SerializableColorList | undefined {
  * exported by a design tool rather than authored in TS. A token a mode leaves
  * out takes the document's primitive of the same name, or else the base theme's.
  * Axes besides mode come from `$extensions["com.weasel.axes"]`, the encoding
- * `toDTCG` writes; a document without it loads with mode as its only axis.
+ * `toDtcg` writes; a document without it loads with mode as its only axis.
  * Ramps and tints come from `com.weasel.ramps` and `com.weasel.tints`.
  */
-export function loadDTCG(doc: DtcgDocument): Theme {
+export function fromDtcg(doc: DtcgDocument): Theme {
   if (typeof doc.name !== 'string' || doc.name === '') {
     throw new Error('DTCG document needs a string "name"');
   }

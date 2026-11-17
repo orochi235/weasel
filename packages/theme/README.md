@@ -60,7 +60,7 @@ accidentally incomplete. Overriding a primitive rebases every alias that
 references it — set `accent-base` and `--wzl-accent` and `--wzl-glass-tint`
 both follow.
 
-Themes exported from a design tool load through `loadDTCG(json)`.
+Themes exported from a design tool load through `fromDtcg(json)`.
 `interstellarTheme` in `@weasel-js/labkit` is a worked example of the other
 path: a pins-only definition in JSON, passed to `defineTheme`.
 
@@ -164,7 +164,7 @@ To title every group as a window, wrap the app in
 generated ramps and scales, semantic rules, components and pins. `derive`
 produces a definition's tokens for one selection, with where each came from and
 any issues; `bake` folds every selection into the tokens a runtime `Theme`
-holds; `toDTCG` writes a theme out as a DTCG document. The runtime entry never
+holds; `toDtcg` writes a theme out as a DTCG document. The runtime entry never
 loads it.
 
 ```ts
@@ -187,11 +187,11 @@ const theme: Theme = { ...bake(slate), extends: weaselTheme };
 
 ### Axes in DTCG
 
-DTCG has one variant dimension, so a document from `toDTCG` holds mode in
+DTCG has one variant dimension, so a document from `toDtcg` holds mode in
 `modes` and every other axis at its default value. That part is plain DTCG: a
 tool that ignores extensions reads a theme at `density=comfortable` (or whatever
 each axis defaults to). The other values ride in the root's
-`$extensions["com.weasel.axes"]`, which `loadDTCG` reads back:
+`$extensions["com.weasel.axes"]`, which `fromDtcg` reads back:
 
 ```json
 "$extensions": {

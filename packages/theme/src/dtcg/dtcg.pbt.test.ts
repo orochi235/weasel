@@ -1,11 +1,11 @@
 /**
  * Property tests of the DTCG reading side: alias resolution against a from-scratch oracle, token values written
- * and read back, alpha folded into a color, and `loadDTCG` and `flattenTokens` fuzzed with arbitrary JSON.
+ * and read back, alpha folded into a color, and `fromDtcg` and `flattenTokens` fuzzed with arbitrary JSON.
  */
 import fc from 'fast-check';
 import { describe, expect, it } from 'vitest';
 import { parseColor } from '@weasel-js/paint';
-import { loadDTCG, type DtcgDocument } from '../loadDTCG';
+import { fromDtcg, type DtcgDocument } from '../fromDtcg';
 import { rawToken, runs, tally, timeoutFor, tokenName } from '../pbt.fixture';
 import { enumerateSelections } from '../axes';
 import { resolveTheme, themeAxes } from '../resolveTheme';
@@ -171,7 +171,7 @@ function expectDocumentedError(e: unknown): void {
   expect(e).not.toBeInstanceOf(RangeError);
 }
 
-describe('loadDTCG fuzzed', () => {
+describe('fromDtcg fuzzed', () => {
   it.each([
     ['any JSON', docArb, ['refused', 'loaded', 'resolved']],
     ['a roughly well-formed document', structuredDoc, ['loaded with axes', 'resolved']],
@@ -181,7 +181,7 @@ describe('loadDTCG fuzzed', () => {
       const doc = JSON.parse(JSON.stringify(raw ?? {})) as DtcgDocument;
       let theme;
       try {
-        theme = loadDTCG({ ...doc, extends: null });
+        theme = fromDtcg({ ...doc, extends: null });
       } catch (e) {
         t.count('refused');
         expectDocumentedError(e);
