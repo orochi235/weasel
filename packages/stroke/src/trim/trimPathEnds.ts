@@ -7,7 +7,7 @@ import { trimmedPath } from './trimmedPath';
  * shaft a writer strokes natively under heads the line stops short of. `null`
  * when the insets eat the whole line, which then draws no shaft.
  */
-export function insetPath(path: Path, start: number, end: number): Path | null {
+export function trimPathEnds(path: Path, start: number, end: number): Path | null {
   if (!(start > 0) && !(end > 0)) return path;
   const total = pathLengthTable(path).total;
   if (Math.max(0, start) + Math.max(0, end) >= total) return null;

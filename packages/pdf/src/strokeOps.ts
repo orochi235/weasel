@@ -3,7 +3,7 @@ import {
   type CommandPaint, type CommandStroke, dashPattern, dashPhase, isSolidPaint, type Stroke,
 } from '@weasel-js/paint';
 import { markerDrawCommands, resolveStrokeLengths } from '@weasel-js/renderer';
-import { dashRunLength, insetPath, strokeInsets, strokeToPath, trimmedPath, trimmedRuns } from '@weasel-js/stroke';
+import { dashRunLength, trimPathEnds, strokeInsets, strokeToPath, trimmedPath, trimmedRuns } from '@weasel-js/stroke';
 import { solidColor } from './color';
 import { type DrawState, type PageCtx, skip, writeCommands } from './drawCommands';
 import { num } from './num';
@@ -82,7 +82,7 @@ function shaftOf(path: Path, start: number, end: number): Path | null {
   const subs = path.kind === 'polygon' ? splitSubpaths(path) : [path];
   const kept = subs.flatMap((sub) => {
     if (sub.kind !== 'polygon' || splitByClosure(sub).open === null) return [sub];
-    return insetPath(sub, start, end) ?? [];
+    return trimPathEnds(sub, start, end) ?? [];
   });
   return kept.length === 0 ? null : kept.length === 1 ? kept[0] : joinPaths(kept as PolygonPath[]);
 }

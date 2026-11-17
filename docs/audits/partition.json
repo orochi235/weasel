@@ -5595,7 +5595,7 @@
    "packages/stroke/src/test-seams.ts",
    "packages/stroke/src/trim/clipRibbon.ts",
    "packages/stroke/src/trim/clipWindow.ts",
-   "packages/stroke/src/trim/insetPath.ts",
+   "packages/stroke/src/trim/trimPathEnds.ts",
    "packages/stroke/src/trim/resolveTrim.ts",
    "packages/stroke/src/trim/trimSpan.ts",
    "packages/stroke/src/trim/trimmedPath.ts",

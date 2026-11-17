@@ -19,7 +19,7 @@ export { trimInSpace } from './tessellate/insets';
 export { resolveTrim } from './trim/resolveTrim';
 export { trimSpan } from './trim/trimSpan';
 export { trimmedPath, trimmedRuns } from './trim/trimmedPath';
-export { insetPath } from './trim/insetPath';
+export { trimPathEnds } from './trim/trimPathEnds';
 export type { TrimmedPath, TrimmedRun, TrimmedRunsOptions } from './trim/trimmedPath';
 export { CLIP_CUT, CLIP_OPEN, CLIP_WHOLE, clipRibbon } from './trim/clipRibbon';
 export type { ClipRibbon, ClipRibbonOptions, ClipSubpath } from './trim/clipRibbon';
