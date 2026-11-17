@@ -13,7 +13,7 @@
 // package stands alone; @weasel-js/core re-exports each from its own path.
 export type {
   NodeId, View, Bounds, SelectionApi, SelectionMode, SelectionExtendKey,
-  DeviceProfile, DebugSink, HandleKind, HitShape, ViewportGestureKind, ModifierState, ResizeAnchor,
+  DeviceProfile, DebugSink, HandleKind, HitShape, ViewportMoveKind, ModifierState, ResizeAnchor,
 } from './vocabulary';
 
 // ─── dependency schema ────────────────────────────────────────────────────
