@@ -1,6 +1,7 @@
 /** A Mermaid flowchart's tokens: ids, node shapes, links, and the raw rest of keyword lines. */
 import { lineError } from '../../lineError';
 import { frontMatter } from '../common/header';
+import { metaEnd } from '../common/meta';
 
 /** A node shape's syntax, by the brackets around its text. */
 export type MermaidShape =
@@ -133,7 +134,7 @@ class MermaidLexer {
       this.i += m[0].length;
       this.push({ kind: 'class', value: m[0], line });
     } else if (text.startsWith('@{', this.i)) {
-      const end = text.indexOf('}', this.i);
+      const end = metaEnd(text, this.i + 2);
       if (end < 0) throw fail(line, 'node metadata is never closed');
       this.push({ kind: 'meta', value: text.slice(this.i + 2, end), line });
       this.i = end + 1;

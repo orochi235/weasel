@@ -21,6 +21,12 @@ describe('parseFlowchart', () => {
     }]);
   });
 
+  it('reads a quoted metadata value whole, commas and braces in it included', () => {
+    const metaOf = (src: string) => (parseFlowchart(src).stmts[0] as { groups: { meta?: Record<string, string> }[][] }).groups[0]![0]!.meta;
+    expect(metaOf('flowchart TD\nA@{ shape: rect, label: "Hello, world" }')).toEqual({ shape: 'rect', label: 'Hello, world' });
+    expect(metaOf('flowchart TD\nA@{ label: "a}b" }')).toEqual({ label: 'a}b' });
+  });
+
   it('reads a metadata key named __proto__ as data', () => {
     const { stmts } = parseFlowchart('flowchart TD\nD@{ __proto__: hex }');
     const meta = (stmts[0] as { groups: { meta?: Record<string, string> }[][] }).groups[0]![0]!.meta!;
