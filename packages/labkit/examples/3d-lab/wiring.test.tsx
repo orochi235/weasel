@@ -22,7 +22,7 @@ import {
   type Tool,
 } from '@weasel-js/core';
 import {
-  createCamera, createNodeAtPoint, cameraOrbitAction, useOrbitTool, type Viewport3d,
+  createCamera, createNodeAtPoint3dDep, cameraOrbitAction, useOrbitTool, type Viewport3d,
 } from '@weasel-js/kernel3d';
 import { aabbOfSolid, createSolidScene, type SolidNode, type SolidScene } from './scene3d';
 
@@ -48,7 +48,7 @@ function mount(harness: Harness, toolId: string) {
     useDepSource('activeTool', () => activeTool);
 
     const nodeAtPoint = useMemo(() => {
-      const pick = createNodeAtPoint({
+      const pick = createNodeAtPoint3dDep({
         scene: harness.scene,
         viewport: () => ({ ...harness.viewport, camera: harness.camera.current }),
         bounds: (node: SolidNode) => aabbOfSolid(node.pose, node.data.kind),

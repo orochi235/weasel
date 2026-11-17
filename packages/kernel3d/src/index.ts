@@ -22,12 +22,12 @@ export {
   type ChromeBox, type ScreenBox,
 } from './screen';
 export {
-  screenBoxOf, createNodeAtPoint, createPickNearest, createAreaSelect, createSnap,
+  screenBoxOf, createNodeAtPoint3dDep, createPickNearest, createAreaSelect3dDep, createSnap3dDep,
   createPoseDescriptor, worldPoseOf,
   type AreaSelect3dOptions, type NodeBounds, type Node3d, type Scene3d, type Snap3dOptions, type Viewport3d,
   type ViewportSource, type World3d,
 } from './deps';
-export { createInsert, type Footprint, type InsertNode3d, type InsertOptions, type InsertSelection } from './insert';
+export { createInsert3dDep, type Footprint, type InsertNode3d, type InsertOptions, type InsertSelection } from './insert';
 export { projectPoint } from './project';
 export {
   aimOf3d, aimSpace3d, cameraOfAim3d, type Aim3d, type Aim3dOptions, type Frustum3d,

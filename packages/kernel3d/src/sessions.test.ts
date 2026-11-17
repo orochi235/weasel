@@ -5,7 +5,7 @@
 import { describe, expect, it } from 'vitest';
 import { IDENTITY_POSE_COMPOSITION, createEditingSession, createScene } from '@weasel-js/core';
 import { createCamera } from './camera';
-import { createNodeAtPoint } from './deps';
+import { createNodeAtPoint3dDep } from './deps';
 import { pose3, type Pose3 } from './pose3';
 import type { Viewport3d } from './project';
 import { boundsOfTestNode, type TestData, type TestLayer, type TestScene } from './testScene';
@@ -30,9 +30,9 @@ describe('kernel3d over editing sessions', () => {
     const [id] = [...scene.renderOrder()];
     const dragging = createEditingSession(scene);
     const watching = createEditingSession(scene);
-    const pickDragging = createNodeAtPoint(worldOver(dragging));
-    const pickWatching = createNodeAtPoint(worldOver(watching));
-    const pickScene = createNodeAtPoint(worldOver(scene));
+    const pickDragging = createNodeAtPoint3dDep(worldOver(dragging));
+    const pickWatching = createNodeAtPoint3dDep(worldOver(watching));
+    const pickScene = createNodeAtPoint3dDep(worldOver(scene));
 
     dragging.overrides.set(id!, { pose: AWAY });
     expect(pickDragging(CENTER)).toBeNull();

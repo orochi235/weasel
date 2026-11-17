@@ -10,7 +10,7 @@ import { add, cross, dot, len, scale, sub, type Vec3 } from '@weasel-js/geom/3d'
 import { aimOf3d } from './aim';
 import { cameraBasis, cameraEye, createCamera, dollyToward, orbitBy, panBy, type Camera3d } from './camera';
 import type { Camera3dDep } from './cameraDep';
-import { createNodeAtPoint, screenBoxOf } from './deps';
+import { createNodeAtPoint3dDep, screenBoxOf } from './deps';
 import { pose3, type Pose3 } from './pose3';
 import { projectPoint, type Viewport3d } from './project';
 import { cameraDollyAction, cameraOrbitAction, cameraPanAction } from './tools';
@@ -187,6 +187,6 @@ describe('a world whose only up is World3d.up', () => {
 
   it('picks along the rays it draws by', () => {
     const a = screenBoxOf(world, above!, world.viewport())!;
-    expect(createNodeAtPoint(world)({ x: a.x + a.width / 2, y: a.y + a.height / 2 })).toBe(above);
+    expect(createNodeAtPoint3dDep(world)({ x: a.x + a.width / 2, y: a.y + a.height / 2 })).toBe(above);
   });
 });

@@ -448,7 +448,7 @@ The snap pipeline ([snapping.md](./snapping.md)) landed on 2026-10-18 with these
 - Ruled 2026-11-10 (my call, overnight sweep): kernel3d's `headFor` gives a head whose `maxShare` is 0 no length
   on a line of unknown (infinite) length, reading `0 · ∞` at its limit: a head allowed no share of the line has none.
 - Ruled 2026-11-10 (my call, overnight sweep): kernel3d's `aimSpace3d` unprojects onto the ground at height 0 when
-  `up` lies just off an axis, as `createInsert` lays its footprint at 0: the hit is on the ground by construction, so
+  `up` lies just off an axis, as `createInsert3dDep` lays its footprint at 0: the hit is on the ground by construction, so
   rounding left in `up` is no height.
 - 2026-11-11 (my call, core second property pass): `zoomAt` takes a `NaN` or negative factor as no zoom on that axis
   (a negative one had turned the axis over, `NaN` had dropped it to `ZOOM_FLOOR`), and a factor of 0 as the clamp's

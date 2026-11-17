@@ -2,10 +2,10 @@
 '@weasel-js/kernel3d': minor
 ---
 
-`createInsert` takes a `node` factory and commits the node itself, as one undo step with the insert's selection change.
+`createInsert3dDep` takes a `node` factory and commits the node itself, as one undo step with the insert's selection change.
 
 ```ts
-createInsert({
+createInsert3dDep({
   world, // with its `scene`
   node: ({ center, width, depth }) => ({ data, pose: pose3({ ...center, y: 0.5 }, { x: width, y: 1, z: depth }) }),
 });

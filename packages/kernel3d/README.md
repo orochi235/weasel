@@ -11,7 +11,7 @@ calls into its own context.
 ```ts
 import { createScene } from '@weasel-js/core';
 import {
-  POSE3_COMPOSITION, createCamera, createNodeAtPoint, createPoseDescriptor, pose3, type Pose3,
+  POSE3_COMPOSITION, createCamera, createNodeAtPoint3dDep, createPoseDescriptor, pose3, type Pose3,
 } from '@weasel-js/kernel3d';
 
 const scene = createScene<MyData, 'solids', Pose3>({
@@ -23,7 +23,7 @@ const world = { scene, viewport: () => ({ camera, width, height }) };
 // Every dep takes its camera from a thunk. That is the whole trick: the
 // dispatcher keeps handing actions two numbers, and the camera each dep closes
 // over is what makes them a ray.
-const nodeAtPoint = createNodeAtPoint(world);
+const nodeAtPoint = createNodeAtPoint3dDep(world);
 const poseDescriptor = createPoseDescriptor(world);
 ```
 
@@ -34,7 +34,7 @@ camera through `cameraRig`'s ambient entry, and the insert and the snap as anoth
 `features={[pickPreset, movePreset]}` turns on the select tool's click and drag; the layers are yours to draw.
 
 ```tsx
-const insert = createInsert({
+const insert = createInsert3dDep({
   world,
   // The dep mints the id and commits the node as one undo step.
   node: ({ center, width, depth }) => ({ data: { color: 'tan' }, pose: pose3({ ...center, y: 0.5 }, { x: width, y: 1, z: depth }) }),
@@ -47,7 +47,7 @@ const editing: SurfaceContribution = {
   eligibility: { always: true },
   deps: {
     insert: () => insert,
-    snap: () => createSnap(world, { sources: [groundGridSource({ world, step: 1 })] }),
+    snap: () => createSnap3dDep(world, { sources: [groundGridSource({ world, step: 1 })] }),
   },
 };
 
@@ -101,15 +101,15 @@ geometry for the host to draw), a press claim on them for the dispatcher's
 `move3d.axis`. The action is core's move with its snap session held to the
 axis (`SnapBegin.along`): the pointer casts onto the plane through the axis
 that faces the camera, the move previews and commits as one undoable batch, and
-it snaps along the axis to whatever `createSnap`'s sources offer.
+it snaps along the axis to whatever `createSnap3dDep`'s sources offer.
 
 ## Snapping lands exactly
 
 A snap session answers core in screen points, which a descriptor would cast
-back onto a plane to within rounding. `createSnap`'s sessions also report the
+back onto a plane to within rounding. `createSnap3dDep`'s sessions also report the
 world point they landed on as `SnapOutcome.landing` (`Landing3d`), taking a
 target's own coordinate on each axis it pins; core carries it to `translate`
-and to `createInsert`, so a box snapped to a grid line at 0.5 is stored at 0.5.
+and to `createInsert3dDep`, so a box snapped to a grid line at 0.5 is stored at 0.5.
 
 ## The depth a screen rectangle does not name
 
@@ -147,7 +147,7 @@ out, `sceneFromJSON` throws on a scene with a nested `Pose3`, which the 2D defau
 
 A `kind: 'group'` container selects as it does in 2D: a click on a nested node
 selects its outermost container, a double-click enters it, and a click inside
-then selects the next level in. `createNodeAtPoint` answers the solid the ray
+then selects the next level in. `createNodeAtPoint3dDep` answers the solid the ray
 hits and core's select tool walks up from it, so this needs nothing from the
 host but `<SceneCanvas>`'s own select tool.
 
@@ -168,7 +168,7 @@ pane can mark each other. `aimOf3d(viewport, viewId)` is the `Aim3d` its camera
 sees, whose extent is a `Frustum3d`: the eye and the near and far rectangles.
 Outlined in a 3D space it draws its far rectangle; in a 2D one, its footprint on
 the ground, the plane through the origin at right angles to the `up` option
-(default +y, as `createInsert` reads it), cut off at the far plane. The 2D x and
+(default +y, as `createInsert3dDep` reads it), cut off at the far plane. The 2D x and
 y lie along the two axes `up` is not: x and z for a y-up world. `aimSpace3d`
 makes a pane a target, unprojecting onto the same ground, and `cameraOfAim3d`
 gives back the camera a dragged aim stands for — what an `AimSource`'s `setAim`

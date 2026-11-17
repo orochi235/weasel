@@ -24,12 +24,12 @@ import {
   alignPlaneSource,
   boxSnapSource,
   collectOverlayBoxes,
-  createAreaSelect,
+  createAreaSelect3dDep,
   createAxisMove,
   createCamera,
-  createNodeAtPoint,
+  createNodeAtPoint3dDep,
   createPoseDescriptor,
-  createSnap,
+  createSnap3dDep,
   groundGridSource,
   projectSnapMarks,
   screenBoxOf,
@@ -236,14 +236,14 @@ function Viewport({ config }: { config: SolidConfig }): ReactNode {
   // ── Deps ───────────────────────────────────────────────────────────────
   // Every pick below goes through the entered group's scope: outside it,
   // nothing takes a hit and a press lands on empty canvas.
-  const worldPick = useMemo(() => createNodeAtPoint(world), [world]);
+  const worldPick = useMemo(() => createNodeAtPoint3dDep(world), [world]);
   const groupEntry = useGroupEntry3d(world, viewportSource, worldPick, repaint);
   useEffect(() => {
     groupEntryRef.current = groupEntry;
   }, [groupEntry]);
   const nodeAtPoint = groupEntry.pick;
   const areaSelect = useMemo(
-    () => createAreaSelect(world, selectionApi, null, { entered: groupEntry.entered }),
+    () => createAreaSelect3dDep(world, selectionApi, null, { entered: groupEntry.entered }),
     [world, selectionApi, groupEntry.entered],
   );
   const insert = useBoxInsert(scene, viewportSource);
@@ -255,7 +255,7 @@ function Viewport({ config }: { config: SolidConfig }): ReactNode {
   const poseDescriptor = useMemo(() => createPoseDescriptor(world), [world]);
   const kitSettings = useKitSettings();
   const snap = useMemo(
-    () => createSnap(world, {
+    () => createSnap3dDep(world, {
       sources: [boxSnapSource(world), alignPlaneSource(world), groundGridSource({ step: 1, world })],
       store: snapMarks,
       kitSettings,

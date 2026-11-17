@@ -4,7 +4,7 @@
 
 A 3D host can drag the selection along any world axis, up included, from red, green and blue handles the kernel lays out and hit-tests.
 
-`createAxisMove(world, { selection })` returns the `move3d.axis` action, a `contribution` binding a drag on a handle to it, `handleAt` for the dispatcher's `affordanceAt`, and `handles(viewport)` to draw. The move previews, snaps along the axis through `createSnap`, and commits as one undo step.
+`createAxisMove(world, { selection })` returns the `move3d.axis` action, a `contribution` binding a drag on a handle to it, `handleAt` for the dispatcher's `affordanceAt`, and `handles(viewport)` to draw. The move previews, snaps along the axis through `createSnap3dDep`, and commits as one undo step.
 
 ```ts
 const axisMove = createAxisMove(world, { selection });

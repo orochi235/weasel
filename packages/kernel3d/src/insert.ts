@@ -50,7 +50,7 @@ function footprintPoints(
   return { points: hits, center: null };
 }
 
-/** The node a `createInsert` `node` factory makes: what it holds and where it sits, in world terms. */
+/** The node a `createInsert3dDep` `node` factory makes: what it holds and where it sits, in world terms. */
 export interface InsertNode3d<TData, TLayer extends string> {
   data: TData;
   pose: Pose3;
@@ -61,7 +61,7 @@ export interface InsertNode3d<TData, TLayer extends string> {
   parent?: NodeId | null;
 }
 
-/** Options for `createInsert`: where it casts from, as a world or as its parts, and what it makes there: a node
+/** Options for `createInsert3dDep`: where it casts from, as a world or as its parts, and what it makes there: a node
  *  for the dep to commit, or a `mint` that commits one itself. */
 export type InsertOptions<TData = unknown, TLayer extends string = string> = {
   /** The view whose camera a drag is cast through, for a `<CanvasView deps>` of its own. Default the surface's. */
@@ -110,7 +110,7 @@ function nodeMinter<TData, TLayer extends string>(
   node: (footprint: Footprint, extras: InsertExtras) => InsertNode3d<TData, TLayer> | null,
   selection: InsertSelection | undefined,
 ): { mint: MintFn; build(footprint: Footprint, extras: InsertExtras): Built | null } {
-  if (!scene) throw new Error('createInsert: a `node` factory needs `world.scene`, the scene its node goes into.');
+  if (!scene) throw new Error('createInsert3dDep: a `node` factory needs `world.scene`, the scene its node goes into.');
   const build = (footprint: Footprint, extras: InsertExtras): Built | null => {
     const made = node(footprint, extras);
     if (!made) return null;
@@ -142,7 +142,7 @@ function nodeMinter<TData, TLayer extends string>(
  * not know what it is inserting. The depth the 2D contract cannot express
  * comes from the plane, not from the caller.
  */
-export function createInsert<TData = unknown, TLayer extends string = string>(opts: InsertOptions<TData, TLayer>): InsertDep {
+export function createInsert3dDep<TData = unknown, TLayer extends string = string>(opts: InsertOptions<TData, TLayer>): InsertDep {
   const { viewport, up = DEFAULT_UP } = opts.world;
   const minExtent = opts.minExtent ?? 0.25;
   const { u, v } = groundAxes(up);
