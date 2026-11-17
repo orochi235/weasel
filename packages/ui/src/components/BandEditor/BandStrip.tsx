@@ -74,7 +74,7 @@ export function BandStrip<T, F extends Quantity>(props: BandStripProps<T, F>): R
       <button
         type="button"
         className={[s.band, isSelected && s.selected, bands[i]!.locked && s.locked, pinned && s.pinned].filter(Boolean).join(' ')}
-        aria-label={bandName(shown, i, from, to, display)}
+        aria-label={bandName(shown, i, from, to, display, locale)}
         aria-pressed={isSelected}
         data-band-index={i}
         tabIndex={hold.tabIndex(0)}
