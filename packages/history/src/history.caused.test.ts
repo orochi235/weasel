@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { createHistory, touchedIdsFromOps } from './history';
+import { createHistory, touchedIdsOf } from './history';
 import type { Op } from './op';
 
 /** A cell, a write to it, and an op that decides what to write as it runs
@@ -96,9 +96,9 @@ describe('an op that names what it caused', () => {
   });
 });
 
-describe('touchedIdsFromOps', () => {
+describe('touchedIdsOf', () => {
   it('reads every id in args.nodes', () => {
     const op: Op = { args: { nodes: [{ id: 'a' }, { id: 'b' }, null, { other: 1 }] }, apply: () => {}, invert: () => op };
-    expect([...touchedIdsFromOps([op])]).toEqual(['a', 'b']);
+    expect([...touchedIdsOf([op])]).toEqual(['a', 'b']);
   });
 });

@@ -1,5 +1,5 @@
 /** A scene's history steps as the devtools hook keeps them: one plain record per step, in a rolling ring. */
-import { touchedIdsFromOps, type History, type HistoryStep } from '@weasel-js/history';
+import { touchedIdsOf, type History, type HistoryStep } from '@weasel-js/history';
 import type { TraceRing } from '@weasel-js/routing';
 import type { DevtoolsHistoryOp, DevtoolsHistoryRecord, DevtoolsHistorySlice } from './protocol';
 import type { DevtoolsRoot } from './root';
@@ -11,7 +11,7 @@ export const HISTORY_RECORD_LIMITS = { entries: 50, ops: 50 };
 const SUMMARY = { depth: 4, items: 20, chars: 200 };
 
 function opOf(op: HistoryStep['entries'][number]['ops'][number]): DevtoolsHistoryOp {
-  return { kind: op.name ?? '?', targets: [...touchedIdsFromOps([op])], summary: serialize(op.args, SUMMARY) };
+  return { kind: op.name ?? '?', targets: [...touchedIdsOf([op])], summary: serialize(op.args, SUMMARY) };
 }
 
 function recordOf(step: HistoryStep, history: Pick<History, 'undoDepth' | 'redoDepth'>): DevtoolsHistoryRecord {

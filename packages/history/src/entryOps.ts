@@ -3,7 +3,7 @@
  * its stacks.
  */
 import type { Op } from './op';
-import { touchedIdsFromOps, type Entry, type HistoryLogger } from './serialized';
+import { touchedIdsOf, type Entry, type HistoryLogger } from './serialized';
 import type { HistoryEntry, HistoryStep } from './historyTypes';
 
 export /** Whether both lists are non-empty, every op is keyed, and the keys match as multisets. */
@@ -95,7 +95,7 @@ export function foldEntry(top: Entry, ops: Op[], at: number): void {
   top.timestamp = at;
   top.pushes++;
   const merged = new Set(top.touchedIds);
-  for (const id of touchedIdsFromOps(ops)) merged.add(id);
+  for (const id of touchedIdsOf(ops)) merged.add(id);
   top.touchedIds = merged;
 }
 

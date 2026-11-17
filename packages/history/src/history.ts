@@ -5,7 +5,7 @@ import { anyCaused, appliedHalves, createApplier, entryView, foldEntry, sameCoal
 import { createWalk, type Walked } from './walk';
 import { createJournalInternal, _resumeJournalInternal, _resumedByOwnerInternal, _refuseWhileActiveInternal as refuseWhileActive, type Journal, type BeginJournalOptions } from './journal';
 import {
-  snapshot, touchedIdsFromOps,
+  snapshot, touchedIdsOf,
   type Entry, type HistoryLogger, type SerializedHistory,
 } from './serialized';
 import { rebuilt, type HistoryRestoreReport, type RestoreOptions } from './restore';
@@ -13,7 +13,7 @@ import type {
   CreateHistoryOptions, History, HistoryBranch, HistoryStep, RecordEntryOptions,
 } from './historyTypes';
 
-export { touchedIdsFromOps } from './serialized';
+export { touchedIdsOf } from './serialized';
 export type { HistoryLogger, SerializedHistory, SerializedHistoryEntry, SerializedOp } from './serialized';
 export { HistoryRestoreError } from './restore';
 export type {
@@ -183,7 +183,7 @@ export function createHistory(adapter: unknown, options: CreateHistoryOptions = 
       return;
     }
     if (ops.length === 0) return;
-    const incoming = touchedIdsFromOps(ops);
+    const incoming = touchedIdsOf(ops);
     const top = undoStack[undoStack.length - 1];
     if (top && canCoalesce(top, ops)) {
       top.forwardOps = ops;
@@ -234,7 +234,7 @@ export function createHistory(adapter: unknown, options: CreateHistoryOptions = 
     const at = forkPoint();
     const entry: Entry = {
       id: nextEntryId++, forwardOps, baseOps, label, timestamp: now(), pushes: 1,
-      touchedIds: touchedIdsFromOps(forwardOps),
+      touchedIds: touchedIdsOf(forwardOps),
       ...(options.selectionBefore ? { selectionBefore: [...options.selectionBefore] } : {}),
       ...(key !== undefined ? { coalesceKey: key } : {}),
     };

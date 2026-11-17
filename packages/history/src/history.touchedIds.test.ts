@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { createHistory, touchedIdsFromOps } from './history';
+import { createHistory, touchedIdsOf } from './history';
 import type { Op } from './op';
 
 // ---------------------------------------------------------------------------
@@ -35,36 +35,36 @@ function noIdOp(): Op {
 }
 
 // ---------------------------------------------------------------------------
-// touchedIdsFromOps unit tests
+// touchedIdsOf unit tests
 // ---------------------------------------------------------------------------
 
-describe('touchedIdsFromOps', () => {
+describe('touchedIdsOf', () => {
   it('extracts id from ops with args.id', () => {
-    const result = touchedIdsFromOps([idOp('a'), idOp('b')]);
+    const result = touchedIdsOf([idOp('a'), idOp('b')]);
     expect(result.has('a')).toBe(true);
     expect(result.has('b')).toBe(true);
     expect(result.size).toBe(2);
   });
 
   it('extracts id from ops with args.node.id', () => {
-    const result = touchedIdsFromOps([nodeOp('x')]);
+    const result = touchedIdsOf([nodeOp('x')]);
     expect(result.has('x')).toBe(true);
   });
 
   it('ignores ops with no recognisable id field', () => {
-    const result = touchedIdsFromOps([noIdOp()]);
+    const result = touchedIdsOf([noIdOp()]);
     expect(result.size).toBe(0);
   });
 
   it('handles mixed op batches', () => {
-    const result = touchedIdsFromOps([idOp('a'), noIdOp(), nodeOp('b')]);
+    const result = touchedIdsOf([idOp('a'), noIdOp(), nodeOp('b')]);
     expect(result.has('a')).toBe(true);
     expect(result.has('b')).toBe(true);
     expect(result.size).toBe(2);
   });
 
   it('deduplicates the same id from multiple ops', () => {
-    const result = touchedIdsFromOps([idOp('a'), idOp('a')]);
+    const result = touchedIdsOf([idOp('a'), idOp('a')]);
     expect(result.size).toBe(1);
   });
 });
