@@ -35,7 +35,7 @@ import type { ReactNode } from 'react';
 import { drawsOwn, entryAt } from '../config/drawsOwn';
 import { valueAtPath, withValueAtPath } from '../config/path';
 import type { LeafRenderer, ResolvedConfig } from '../config/types';
-import { aliasTargetsOf, conditionedLeaf, isLeafActive } from '../config/visible';
+import { aliasTargetsOf, conditionedLeaf, isRowActive } from '../config/visible';
 import { boundAction } from './boundAction';
 import { CurveRow } from './CurveRow';
 import { type ControlPack, spansGrid } from './controlPack';
@@ -110,7 +110,7 @@ export function ControlRow<TC extends Record<string, unknown>>(props: ControlRow
             path={props.path}
             form="row"
             disabled={props.disabled}
-            active={isLeafActive(resolved, props.path, props.config, props.over)}
+            active={isRowActive(resolved, props.path, props.config, props.over)}
           />
         )}
       </PropertySpan>
@@ -278,7 +278,7 @@ function ActionRow({
           path={path}
           form="row"
           disabled={disabled}
-          active={isLeafActive(resolved, path, config, over)}
+          active={isRowActive(resolved, path, config, over)}
         />
       </PropertyRow>
     </RowScope>

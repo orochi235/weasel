@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import type { Meta, StoryObj } from '@weasel-js/forge';
 import { openPrefsSync, type PrefGroup } from '@weasel-js/prefs';
-import { usePrefsValues } from '@weasel-js/prefs/react';
+import { usePrefsState } from '@weasel-js/prefs/react';
 import { createMemoryAdapter } from '@weasel-js/storage';
 import { PrefsForm, type PrefsFormProps } from '@weasel-js/ui/components/Prefs';
 
@@ -36,7 +36,7 @@ const SCHEMA: PrefGroup = {
 
 function Form({ width, ...args }: Partial<PrefsFormProps> & { width: number }) {
   const [store] = useState(() => openPrefsSync(SCHEMA, { storage: createMemoryAdapter(), prefix: 'story.' }));
-  const { values, set } = usePrefsValues(store);
+  const { values, set } = usePrefsState(store);
   return (
     <div style={{ width, height: 360, display: 'flex' }}>
       <PrefsForm {...args} schema={SCHEMA} values={values} onChange={set} />

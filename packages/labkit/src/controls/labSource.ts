@@ -1,7 +1,7 @@
 import {
   AUTO,
   type LeafReading,
-  type LeafState,
+  type PrefLeafStatus,
   type PrefGroup,
   type PrefLeaf,
   type PrefSection,
@@ -9,10 +9,10 @@ import {
   prefAutoValue,
   prefCanAuto,
   prefLeafAt,
-  prefLeafValue,
+  prefValueOrDefault,
   prefNodeAt,
   prefResets,
-  prefShownValue,
+  prefDecodedValue,
   sourceResetPlan,
 } from '@weasel-js/prefs';
 import { type LeafContext, sourceLeafContext } from '@weasel-js/ui/components/PrefsSource';
@@ -21,7 +21,7 @@ import { useMemo } from 'react';
 import { isRecord, valueAtPath, withValueAtPath } from '../config/path';
 import { isEncodedLeaf } from '../config/storedDefault';
 import type { ResolvedConfig } from '../config/types';
-import { isLeafActive, isLeafEnabled, isLeafVisible } from '../config/visible';
+import { isRowActive, isRowEnabled, isRowVisible } from '../config/visible';
 import { leafValueAt } from './fields';
 
 /** What the row at `path` shows of `config` while pinned: an encoded leaf's stored value read through its encoding. */
@@ -29,7 +29,7 @@ export function shownAt(config: Record<string, unknown>, path: string, leaf: Pre
   if (!isEncodedLeaf(leaf)) return leafValueAt(config, path, leaf);
   const dot = path.lastIndexOf('.');
   const within = dot === -1 ? config : valueAtPath(config, path.slice(0, dot));
-  return prefShownValue(leaf, valueAtPath(config, path), isRecord(within) ? within : undefined);
+  return prefDecodedValue(leaf, valueAtPath(config, path), isRecord(within) ? within : undefined);
 }
 
 /** What a lab's config source reads and writes. */
@@ -69,7 +69,7 @@ export function createLabConfigSource(input: LabConfigInput): PrefsSource {
       return { value, mixed: false, each: [value], ...at };
     }
     const value = unpinned
-      ? prefLeafValue(leaf, prefAutoValue(leaf, valueAtPath(shown, path)))
+      ? prefValueOrDefault(leaf, prefAutoValue(leaf, valueAtPath(shown, path)))
       : shownAt(config, path, leaf);
     return { value, mixed: false, each: [value], ...at };
   };
@@ -88,16 +88,16 @@ export function createLabConfigSource(input: LabConfigInput): PrefsSource {
     setAuto: (path, next) => {
       if (autoAt(path) !== undefined) setRowAuto?.(path, next, valueAt(path).value);
     },
-    stateAt: (path): LeafState => ({
-      disabled: !isLeafEnabled(resolved, path, config, over),
-      hidden: !isLeafVisible(resolved, path, config, true, over),
-      active: isLeafActive(resolved, path, config, over),
+    stateAt: (path): PrefLeafStatus => ({
+      enabled: isRowEnabled(resolved, path, config, over),
+      shown: isRowVisible(resolved, path, config, true, over),
+      active: isRowActive(resolved, path, config, over),
     }),
     reset: (paths) => {
       const plan = sourceResetPlan(source, paths);
       for (const path of paths) {
         if (path === '') {
-          for (const w of plan) setConfig(w.path, w.write);
+          for (const w of plan) setConfig(w.path, w.value);
           continue;
         }
         const under = plan.filter((w) => w.path === path || w.path.startsWith(`${path}.`));
@@ -109,8 +109,8 @@ export function createLabConfigSource(input: LabConfigInput): PrefsSource {
         const kept = (node ? prefResets(node, path) : []).filter(
           (r) => !planned.has(r.path) && autoAt(r.path) === true,
         );
-        const next = [...under, ...kept.map((r) => ({ path: r.path, write: AUTO }))].reduce(
-          (at, w) => withValueAtPath(at, w.path, w.write),
+        const next = [...under, ...kept.map((r) => ({ path: r.path, value: AUTO }))].reduce(
+          (at, w) => withValueAtPath(at, w.path, w.value),
           config,
         );
         setConfig(path, valueAtPath(next, path));

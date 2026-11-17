@@ -2,7 +2,7 @@ import { type RenderContext, TrialIdContext, useTrialClockHandle } from '@weasel
 import { useLatest } from '@weasel-js/core';
 import { type RefObject, useCallback, useContext, useEffect, useRef, useState } from 'react';
 import type { FrameSetup } from '../frame/FrameController';
-import type { Globals } from '../protocol/messages';
+import type { StoryGlobals } from '../protocol/messages';
 import type { LoadedStory } from '../story/types';
 import { ClockContext } from '../timeline/context';
 import { frameDecorators } from '../frame/frameDecorators';
@@ -77,7 +77,7 @@ export function StoryTrial({ story, setup, ctx, hostRef, onRendered, onError }: 
     resetKey,
     onError: reportError,
   };
-  const render = (globals: Globals) => (
+  const render = (globals: StoryGlobals) => (
     <ClockContext.Provider value={clock}>
       <StoryBody {...body} globals={globals} />
     </ClockContext.Provider>

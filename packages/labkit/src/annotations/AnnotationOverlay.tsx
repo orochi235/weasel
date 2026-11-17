@@ -43,7 +43,7 @@ import { boundsOf, roundPoints, toShape, type WorldRect } from './frac';
 import { markStyleFrom } from './options';
 import { useOverlayTile } from './overlayTile';
 import { POINT_MARK_SHAPE } from './paint';
-import { seenFrom } from './staleness';
+import { seenValues } from './staleness';
 import type { MarkScene } from './store';
 import { ANNOTATION_WEASEL_TOOLS, annotationToolInfo, annotationToolOptions } from './toolMap';
 import type {
@@ -152,7 +152,7 @@ function insertFactories(
       const info = annotationToolInfo(toolRef.current);
       const kind: AnnotationKind | undefined = info?.kind;
       if (!kind) return null;
-      const seen = seenFrom(configRef.current, target.positionDependsOn ?? []);
+      const seen = seenValues(configRef.current, target.positionDependsOn ?? []);
       const tool = toolRef.current ?? '';
       const style = markStyleFrom(tool, annotationToolOptions(tool), values);
       const geometry = insertedGeometry(extras as unknown as Record<string, unknown>);

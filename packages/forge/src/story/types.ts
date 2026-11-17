@@ -1,6 +1,6 @@
 import type { ConfigSchema } from '@weasel-js/labkit/config';
 import type { ComponentType, ReactNode } from 'react';
-import type { Globals, Layout, Viewport } from '../protocol/messages.ts';
+import type { StoryGlobals, StoryLayout, StoryViewport } from '../protocol/messages.ts';
 import type { TimelineSpec } from '../timeline/types.ts';
 
 /** What a story's `render` and its decorators receive: the trial's config and state, the globals in force, and the
@@ -10,7 +10,7 @@ export interface StoryContext<C = unknown, S = unknown> {
   setConfig: (path: string, value: unknown) => void;
   state: S;
   setState: (next: S | ((prev: S) => S)) => void;
-  globals: Globals;
+  globals: StoryGlobals;
   title: string;
   name: string;
 }
@@ -19,7 +19,7 @@ export interface StoryContext<C = unknown, S = unknown> {
 export interface PlayContext<C = unknown> {
   canvasElement: HTMLElement;
   config: C;
-  globals: Globals;
+  globals: StoryGlobals;
 }
 
 /** Wraps a story: `story()` renders what it wraps, and the decorator returns that inside whatever it adds. */
@@ -29,7 +29,7 @@ export type Decorator = (story: () => ReactNode, ctx: StoryContext) => ReactNode
 export interface MetaSpec {
   title?: string;
   decorators?: Decorator[];
-  layout?: Layout;
+  layout?: StoryLayout;
   /** Renders this story in its own frame document, for a reason the value states. The default is the workshop document. */
   isolate?: string;
   /** The component's own index page, in place of the generated one. A CSF file sets `parameters.forge.index`. */
@@ -48,7 +48,7 @@ export interface IndexContext {
   description?: string;
   /** In file order. */
   stories: readonly LoadedStory[];
-  globals: Globals;
+  globals: StoryGlobals;
   /** One story, interactive, at its defaults with `config` over them. */
   Story: ComponentType<IndexStoryProps>;
   /** One story rendered once per value of each of its boolean and enum controls, the rest at their defaults. */
@@ -88,8 +88,8 @@ export interface StorySpec<C = Record<string, never>, S = undefined> {
   initialState?: (config: C) => S;
   render: (ctx: StoryContext<C, S>) => ReactNode;
   decorators?: Decorator[];
-  layout?: Layout;
-  viewport?: Viewport;
+  layout?: StoryLayout;
+  viewport?: StoryViewport;
   /** Renders this story in its own frame document, for a reason the value states. The default is the workshop document. */
   isolate?: string;
   play?: (ctx: PlayContext<C>) => void | Promise<void>;
@@ -111,8 +111,8 @@ export interface LoadedStory {
   render: (ctx: StoryContext) => ReactNode;
   /** Innermost first: the story's own, then the meta's. Global decorators are added by the frame. */
   decorators: Decorator[];
-  layout: Layout;
-  viewport: Viewport | null;
+  layout: StoryLayout;
+  viewport: StoryViewport | null;
   isolate: string | null;
   play: ((ctx: PlayContext) => void | Promise<void>) | null;
   /** The timeline the story declares, for a config; null when it declares none. */
@@ -136,7 +136,7 @@ export interface IndexEntry {
   /** Read statically from the source; a story with it renders in its own frame. */
   isolate?: string;
   /** A native story's `viewport`, when the source writes both sides as number literals. */
-  viewport?: Viewport;
+  viewport?: StoryViewport;
   /** The story's tags, read statically from the source: its meta's and its own. An index page's are those every
    *  story of its component carries. */
   tags?: string[];
@@ -155,7 +155,7 @@ export interface ComponentHistory {
 }
 
 /** One component's place in the component graph. Every list holds story titles, sorted. */
-export interface ComponentDeps {
+export interface ComponentNode {
   /** The file declaring the component, relative to the vite root; null when forge could not find one. */
   source: string | null;
   /** The listed components its own source imports. */
@@ -167,4 +167,4 @@ export interface ComponentDeps {
 }
 
 /** The component graph the vite plugin derives from source, by story title. A gallery has no entry. */
-export type DepGraph = Record<string, ComponentDeps>;
+export type ComponentGraph = Record<string, ComponentNode>;

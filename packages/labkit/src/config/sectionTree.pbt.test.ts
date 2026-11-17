@@ -22,7 +22,7 @@ import { f } from './builder';
 import { valueAtPath } from './path';
 import { resolveConfigSchema } from './resolve';
 import { sectionTree } from './sectionTree';
-import { isLeafVisible } from './visible';
+import { isRowVisible } from './visible';
 
 const RUNS = 100;
 
@@ -58,7 +58,7 @@ describe('sectionTree', () => {
           const shown = all.filter((p) => {
             const steps = p.split('.');
             return steps.every((_, i) =>
-              isLeafVisible(resolved, steps.slice(0, i + 1).join('.'), config, showHidden),
+              isRowVisible(resolved, steps.slice(0, i + 1).join('.'), config, showHidden),
             );
           });
           expect(home.map(([, p]) => p).sort()).toEqual([...shown].sort());

@@ -1,5 +1,5 @@
 export { type Auto, auto, isAuto } from './auto';
-export { applyConfigWrite, autoPathsOf, resolveAutoConfig } from './autoConfig';
+export { applyConfigWrite, startAutoPathsOf, resolveAutoConfig } from './autoConfig';
 export type { AutoReports } from './autoReports';
 export {
   ActionNode,
@@ -71,4 +71,4 @@ export type {
 } from './types';
 export { useConfigSchema } from './useConfigSchema';
 export { useResolvedConfig } from './useResolvedConfig';
-export { conditionedLeaf, isEntryShown, isLeafEnabled, isLeafVisible } from './visible';
+export { conditionedLeaf, isConfigNodeShown, isRowEnabled, isRowVisible } from './visible';

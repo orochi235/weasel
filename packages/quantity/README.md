@@ -126,7 +126,7 @@ A scope converts what is shown, typed and snapped to, never what is stored: a va
 the outermost scope's units however deep it sits (ruled 2026-10-20). In weasel a container
 declares one (`GroupNode.units`), its children's poses stay in world units, and pose
 composition does not scale by it. `sceneUnitScopes` and `sceneSharedUnitScopes` in
-`@weasel-js/core` read a scene's chain; `scopedPrefUnit` and `prefLeafInScopes` in
+`@weasel-js/core` read a scene's chain; `unitScopedPrefUnit` and `prefLeafInUnitScopes` in
 `@weasel-js/prefs` make a field's unit from one; `gridSnapSource`'s `scopes` option in
 `@weasel-js/guides` snaps on one.
 

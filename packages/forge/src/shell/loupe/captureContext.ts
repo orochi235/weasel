@@ -1,6 +1,6 @@
 import { createEmitter } from '@weasel-js/registry';
 import { createContext } from 'react';
-import type { Layout } from '../../protocol/messages';
+import type { StoryLayout } from '../../protocol/messages';
 import type { IndexEntry } from '../../story/types';
 import type { CssOverrides } from '../cssVars/overrides';
 
@@ -26,7 +26,7 @@ export function createRevision(): Revision & { bump(): void } {
 /** What a trial renders its story from, as a capture of it needs them. */
 export interface TrialInputs {
   entry: Pick<IndexEntry, 'id' | 'isolate'>;
-  layout: Layout;
+  layout: StoryLayout;
   /** The trial's whole config, forge's `$` keys included. */
   config: unknown;
   state: unknown;

@@ -1,4 +1,4 @@
-import { leafIsAtReset, createRecordSource, type PrefLeaf, type PrefsSource } from '@weasel-js/prefs';
+import { readingIsAtReset, createRecordSource, type PrefLeaf, type PrefsSource } from '@weasel-js/prefs';
 import type { LeafContext } from './types';
 
 /**
@@ -8,14 +8,14 @@ import type { LeafContext } from './types';
 export function sourceLeafContext(source: PrefsSource, path: string, pref: PrefLeaf): LeafContext {
   const reading = source.valueAt(path);
   const state = source.stateAt(path);
-  const atReset = (pref as { readout?: boolean }).readout === true || leafIsAtReset(pref, reading);
+  const atReset = (pref as { readout?: boolean }).readout === true || readingIsAtReset(pref, reading);
   return {
     ...reading,
     path,
     pref,
     source,
-    disabled: state.disabled,
-    hidden: state.hidden,
+    disabled: !state.enabled,
+    hidden: !state.shown,
     active: state.active,
     setValue: (value) => source.write(path, value),
     update: (fn) => source.update(path, fn),

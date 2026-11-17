@@ -1,6 +1,6 @@
 import { useVisibleRaf } from '@weasel-js/core';
 import { type RefObject, useEffect, useRef } from 'react';
-import type { ViewTransform } from '../instrument/types';
+import type { ViewTransform2D } from '../instrument/types';
 import { DEFAULT_FRAME, type WorldFrame } from './worldSpec';
 
 /** One layer of a canvas stack: its id, whether it is currently shown, and how
@@ -10,12 +10,12 @@ export interface CanvasLayerDescriptor {
   visible: boolean;
   /** Repaint on every `ticks` frame, not only when `render` or the view change. */
   timed?: boolean;
-  render: (ctx: CanvasRenderingContext2D, view: ViewTransform, frame: WorldFrame) => void;
+  render: (ctx: CanvasRenderingContext2D, view: ViewTransform2D, frame: WorldFrame) => void;
 }
 
 interface SchedulerOptions {
   layers: CanvasLayerDescriptor[];
-  view: ViewTransform;
+  view: ViewTransform2D;
   /** The instrument's coordinate system, resolved against `size`. */
   frame?: WorldFrame;
   canvasRefs: RefObject<Map<string, HTMLCanvasElement>>;

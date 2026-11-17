@@ -3,19 +3,19 @@ import type * as t from '@babel/types';
 import { dirname, relative, sep } from 'node:path';
 import { getOwn, setOwn } from './ownKeys.ts';
 import { isGallery } from '../story/tags.ts';
-import type { ComponentDeps, DepGraph, IndexEntry } from '../story/types.ts';
+import type { ComponentNode, ComponentGraph, IndexEntry } from '../story/types.ts';
 import { titleStandIn } from './componentOf.ts';
 
 /** Resolves an import as the bundler would: an absolute file, or null for anything that is not one. */
 export type ResolveImport = (specifier: string, importer: string) => Promise<string | null>;
 
-export interface DepGraphOptions {
+export interface ComponentGraphOptions {
   root: string;
   read: (file: string) => string;
 }
 
-export interface DepGraphBuilder {
-  build(entries: readonly IndexEntry[], resolve: ResolveImport): Promise<DepGraph>;
+export interface ComponentGraphBuilder {
+  build(entries: readonly IndexEntry[], resolve: ResolveImport): Promise<ComponentGraph>;
   /** Drops what was read from `file`. True when the graph had read it, so the graph may have changed. */
   invalidate(file: string): boolean;
   /** Drops every cached import resolution and every file that could not be read, keeping the parsed files. */
@@ -49,7 +49,7 @@ const DEFAULT_LOCAL = '*default*';
 const TYPE_KEYS = new Set(['typeAnnotation', 'typeParameters', 'typeArguments', 'returnType', 'superTypeParameters', 'implements']);
 
 /** `file` read and parsed; null for one that cannot be read or parsed. */
-function readModule(read: DepGraphOptions['read'], file: string): ModuleInfo | null {
+function readModule(read: ComponentGraphOptions['read'], file: string): ModuleInfo | null {
   try {
     return moduleInfo(read(file), file);
   } catch {
@@ -64,7 +64,7 @@ function readModule(read: DepGraphOptions['read'], file: string): ModuleInfo | n
  * its own declaration reaches, directly or through the file's local helpers and the relative imports in its own
  * directory. Each file is read and parsed once and each import resolved once, until `invalidate` names it.
  */
-export function createDepGraph({ root, read }: DepGraphOptions): DepGraphBuilder {
+export function createComponentGraph({ root, read }: ComponentGraphOptions): ComponentGraphBuilder {
   const modules = new Map<string, ModuleInfo | null>();
   const resolutions = new Map<string, Map<string, Promise<string | null>>>();
 
@@ -221,7 +221,7 @@ export function createDepGraph({ root, read }: DepGraphOptions): DepGraphBuilder
         return out;
       };
 
-      const graph: DepGraph = {};
+      const graph: ComponentGraph = {};
       for (const [title, key] of components) {
         setOwn(graph, title, { source: key ? relative(root, fileOfKey(key)).split(sep).join('/') : null, uses: [], usedBy: [] });
       }
@@ -231,7 +231,7 @@ export function createDepGraph({ root, read }: DepGraphOptions): DepGraphBuilder
         for (const target of await reached(key)) {
           for (const other of byKey.get(target) ?? []) if (other !== title) uses.add(other);
         }
-        const node = getOwn(graph, title) as ComponentDeps;
+        const node = getOwn(graph, title) as ComponentNode;
         node.uses = [...uses].sort();
         for (const other of node.uses) getOwn(graph, other)?.usedBy.push(title);
       }

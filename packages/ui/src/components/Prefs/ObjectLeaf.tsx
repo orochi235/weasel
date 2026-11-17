@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import { prefAsBox, prefLeafValue, type PrefLeaf, type PrefObject } from '@weasel-js/prefs';
+import { prefDrawsAsBox, prefValueOrDefault, type PrefLeaf, type PrefObject } from '@weasel-js/prefs';
 import type { ControlForm } from '../ActionButton/controlForm';
 import { MotifFrame } from '../MotifFrame';
 import { PropertyRow } from '../Properties/PropertyRow';
@@ -38,7 +38,7 @@ export function ObjectLeaf({
   const parts: ObjectLeafParts<{ key: string; child: PrefLeaf; field: LeafContext }> = {
     path: ctx.path,
     off,
-    cell: (key, child) => ({ key, child, field: objectFieldContext(ctx, key, child, prefLeafValue) }),
+    cell: (key, child) => ({ key, child, field: objectFieldContext(ctx, key, child, prefValueOrDefault) }),
     rows: (cells) => cells.map(({ key, child, field }) => {
       const width = rowWidth(child);
       const stacked = width !== 'column';
@@ -70,7 +70,7 @@ export function ObjectLeaf({
     lead: (key, section) => (section.description ? [<p key={`desc:${key}`} className={s.paneDesc}>{section.description}</p>] : []),
     frame: (key, section, inner, { labeled, path }) => {
       if (section.as === 'fragment') return inner;
-      if (prefAsBox(section.as)) {
+      if (prefDrawsAsBox(section.as)) {
         return [
           <MotifFrame
             key={`panel:${key}`}

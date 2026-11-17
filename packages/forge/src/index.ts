@@ -33,21 +33,21 @@ export type {
   A11yFinding,
   A11yNode,
   A11yReport,
-  Globals as StoryGlobals,
-  Layout as StoryLayout,
-  Viewport as StoryViewport,
+  StoryGlobals,
+  StoryLayout,
+  StoryViewport,
 } from './protocol/messages';
 export { FOLLOW_APP, type GlobalDeclaration, type GlobalDeclarations, type GlobalOption, type LabChrome } from './shell/globals';
 export { meta, story } from './story/define';
-export type { Span as TimelineSpan, SpanOverride, TimelineSpec } from './timeline/types';
+export type { TimelineSpan, SpanOverride, TimelineSpec } from './timeline/types';
 export { type StoryTimeline, usePlayhead, useTimeline } from './timeline/context';
 export type { Library } from './story/library';
 export { GALLERY_TAG, LAB_TAG } from './story/tags';
 export type {
-  ComponentDeps,
+  ComponentNode,
   ComponentHistory,
   Decorator,
-  DepGraph,
+  ComponentGraph,
   IndexContext,
   IndexRender,
   IndexStoryProps,

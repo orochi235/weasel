@@ -1,6 +1,6 @@
 import type { UnitScope } from '@weasel-js/quantity';
 import { asNodeId, sceneSharedUnitScopes, type ScopedScene } from '@weasel-js/core';
-import { prefLeafInScopes } from '@weasel-js/prefs';
+import { prefLeafInUnitScopes } from '@weasel-js/prefs';
 import { isPanelSection, type PanelItem, type PanelSection } from '@weasel-js/ui/components/PanelCells';
 import type { AnyNode } from './nodeModel';
 
@@ -13,6 +13,6 @@ export function sectionsInScopes(
   const within = (item: PanelItem): PanelItem =>
     isPanelSection(item)
       ? { ...item, items: item.items.map(within) }
-      : { ...item, leaves: item.leaves.map((l) => ({ ...l, leaf: prefLeafInScopes(l.leaf, chain) })) };
+      : { ...item, leaves: item.leaves.map((l) => ({ ...l, leaf: prefLeafInUnitScopes(l.leaf, chain) })) };
   return sections.map((section) => within(section) as PanelSection);
 }

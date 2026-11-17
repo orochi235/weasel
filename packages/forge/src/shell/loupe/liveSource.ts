@@ -1,6 +1,6 @@
 import type { LensSource, LensSourceRequest } from '@weasel-js/labkit/loupe';
 import { createEmitter } from '@weasel-js/registry';
-import type { Globals } from '../../protocol/messages';
+import type { StoryGlobals } from '../../protocol/messages';
 import type { ForgeComparison, ResolveContext, ResolvedConditions } from './conditions';
 import type { LiveLenses, LiveRequest } from './liveLenses';
 import { trialAt } from './trialAt';
@@ -43,7 +43,7 @@ function sameRequest(a: LiveRequest | null, b: LiveRequest): boolean {
 const LOOK_EVENTS = ['pointerover', 'pointerout', 'focusin', 'focusout', 'transitionend'] as const;
 
 /** Calls `notify` whenever the element it is pointed at changes; pointing it at null stops it. */
-function watchOf(notify: () => void): (el: HTMLElement | null) => void {
+function createWatcher(notify: () => void): (el: HTMLElement | null) => void {
   const observer = typeof MutationObserver === 'undefined' ? null : new MutationObserver(notify);
   let watched: HTMLElement | null = null;
   return (el) => {
@@ -66,8 +66,8 @@ const now = (run: () => void) => run();
  */
 export function createLiveSource(
   lenses: LiveLenses,
-  resolve: (c: ForgeComparison | null, base: Globals, ctx: ResolveContext) => ResolvedConditions,
-  conditions: () => { base: Globals; ctx: ResolveContext },
+  resolve: (c: ForgeComparison | null, base: StoryGlobals, ctx: ResolveContext) => ResolvedConditions,
+  conditions: () => { base: StoryGlobals; ctx: ResolveContext },
   schedule: (run: () => void) => void = now,
 ): LiveSource {
   const measures = createEmitter();
@@ -97,9 +97,9 @@ export function createLiveSource(
       empty.className = 'fg-lens-empty';
       empty.hidden = true;
       slot.append(target, empty);
-      const watchCopy = watchOf(notify);
+      const watchCopy = createWatcher(notify);
       watchCopy(target);
-      const watchStory = watchOf(notify);
+      const watchStory = createWatcher(notify);
       let request: LensSourceRequest<ForgeComparison> = first;
       let posted: LiveRequest | null = null;
       const post = (next: LiveRequest | null) => {

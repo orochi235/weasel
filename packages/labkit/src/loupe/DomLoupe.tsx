@@ -2,7 +2,7 @@ import { type LoupeMode, type LoupePoint, type LoupeSize, loupeExtent } from '@w
 import type { CSSProperties } from 'react';
 import { zoomAt } from '../canvas/camera';
 import type { ViewportSize, WorldFrame } from '../canvas/worldSpec';
-import type { ViewTransform } from '../instrument/types';
+import type { ViewTransform2D } from '../instrument/types';
 import type { LoupeRenderArgs } from './types';
 
 /** Props for `<DomLoupe>`. */
@@ -15,7 +15,7 @@ export interface DomLoupeProps {
   /** The host the instrument draws into, which the stage reproduces. */
   size: ViewportSize;
   /** The trial's own camera. */
-  view: ViewTransform;
+  view: ViewTransform2D;
   frame?: WorldFrame;
   render: (args: LoupeRenderArgs) => React.ReactNode;
 }

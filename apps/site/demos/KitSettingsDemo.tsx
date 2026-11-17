@@ -1,7 +1,7 @@
 import { coreKitSettingsSchema, SceneCanvas, useScene, type Fill } from '@weasel-js/core';
 import { alignmentSnapSource } from '@weasel-js/guides';
 import { kitSettingsCssOptions, mergePrefGroups, prefsCss } from '@weasel-js/prefs';
-import { KitSettingsFromPrefs, usePrefsStore, usePrefsValues } from '@weasel-js/prefs/react';
+import { KitSettingsFromPrefs, usePrefsStore, usePrefsState } from '@weasel-js/prefs/react';
 import { localStorageAdapter } from '@weasel-js/storage';
 import { Button } from '@weasel-js/ui/components/Button';
 import { UnitField } from '@weasel-js/ui/components/NumberField';
@@ -41,7 +41,7 @@ function Specimens() {
 
 export function KitSettingsDemo() {
   const store = usePrefsStore(SCHEMA, { storage: localStorageAdapter, prefix: 'weasel-demo-kit-settings.' });
-  const { form, reset } = usePrefsValues(store);
+  const { form, reset } = usePrefsState(store);
   return (
     <KitSettingsFromPrefs store={store} css>
       <div className={s.demo}>

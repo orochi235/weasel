@@ -6,7 +6,7 @@
  *
  * @packageDocumentation
  */
-export { actionCatalog, dissolve, filed, firedBy, keyTails, NO_CATALOG } from './edit/actionCatalog';
+export { actionCatalog, dissolve, fileActions, firedBy, keyTails, NO_CATALOG } from './edit/actionCatalog';
 export { actionLeaf, actionLeafKey, deadActionPaths, type SchemaAction } from './edit/actionLeaves';
 export { exportOf, type AssetExport } from './edit/assetExport';
 export { pathsIn, scopedPath } from './edit/assetScope';
@@ -46,14 +46,14 @@ export {
   holdsPages, isLoose, looseKeys, looseTarget, mayUnplace, placedOnly, schemaTarget, topLevelAllows,
 } from './edit/loose';
 export { trackOrigins, type NodeOrigins } from './edit/nodeOrigins';
-export { asAssetSet, catalogIn, ONE, oneAssetCodec, sameSchema, schemaOf } from './edit/oneAsset';
-export { deadPointers, drawnLeaf, pointerAttributes, pointerTarget } from './edit/pointers';
+export { asAssetSet, catalogIn, LONE_SCHEMA_ID, oneAssetCodec, sameSchema, schemaOf } from './edit/oneAsset';
+export { deadAliases, drawnLeaf, aliasAttributes, aliasTargetIn } from './edit/aliases';
 export { type PresetDescription } from '@weasel-js/prefs-schema';
 export { type RegisteredAction } from './edit/registeredActionAttrs';
 export { schemaCodec } from './edit/schemaCodec';
 export { aliasNodes, aliasOf, canAlias, copyNodes, VALUE_LINKS, type LinkRule } from './edit/schemaCopy';
 export {
-  addNode, carried, moveNodes, rebasePaths, removeNode, removeNodes, renameKey, replaceNode, setAttribute,
+  addNode, outermostInOrder, moveNodes, rebasePaths, removeNode, removeNodes, renameKey, replaceNode, setAttribute,
 } from './edit/schemaEdit';
 export {
   baselinePaths, changedAttributes, changedPaths, containsCode, diffSchemas, formatChanges, KEEP, printSchema,
@@ -64,12 +64,12 @@ export {
   branchUnder, childrenOf, entryHolderAt, fitsUnder, isUnder, joinPath, keyOf, keysOf, nodeAt, ownChildrenOf,
   parentPath, pathOf, withinDepth, type ChildMap, type SchemaNode, type SchemaRoot, type SchemaTarget,
 } from './edit/schemaTree';
-export { pointable, pointedAt, pointersTo } from './edit/settingPointers';
+export { isAliasable, aliasedPaths, aliasesTo } from './edit/settingAliases';
 export { choiceOf, entryChoices, kindChoices, NO_TYPES, typeNamed, type KindChoice, type PrefTypes } from './edit/types';
 export { stillUnplaced, unplacedAt } from './edit/unplaced';
 export { valuePathOf, valuePathsAt, type ValueMove } from './edit/valuePaths';
 export {
-  assetOf, bundlesAsset, catalogOf, headingOf, isShown, overOf, sameRoots, shownAssets, withRoots, type ActionsAsset,
+  assetOf, bundlesAsset, catalogOf, headingOf, isTreeAsset, overOf, sameRoots, shownAssets, withRoots, type ActionsAsset,
   type Asset, type AssetBase, type AssetHeading, type BundlesAsset, type LayoutAsset, type ListedAsset, type SchemaAsset,
   type ShownAsset, type AssetSet,
 } from './edit/assetSet';

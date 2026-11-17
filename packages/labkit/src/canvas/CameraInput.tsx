@@ -39,7 +39,7 @@ import {
   useRef,
 } from 'react';
 import type {} from '../actionParamSchema';
-import type { Point, ViewTransform } from '../instrument/types';
+import type { Point, ViewTransform2D } from '../instrument/types';
 import { LabContextMenusContext } from '../lab/labContextMenus';
 import { as2DView, normalize2DView } from '../state/view';
 import { useCameraWheelSlot } from './CameraWheelContext';
@@ -88,8 +88,8 @@ export function CameraScope({ yoke, children }: { yoke?: Yoke; children: ReactNo
 
 /** Options for {@link useCameraView}. */
 export interface CameraViewOptions {
-  view: ViewTransform;
-  onViewChange: (v: ViewTransform) => void;
+  view: ViewTransform2D;
+  onViewChange: (v: ViewTransform2D) => void;
   frame: WorldFrame;
   hostRef: RefObject<HTMLElement | null>;
   minZoom?: number;

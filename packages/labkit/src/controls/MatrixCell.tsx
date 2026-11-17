@@ -1,5 +1,5 @@
 import { getAlpha01, toHex8, withAlpha01 } from '@weasel-js/paint';
-import { isBuiltinPref, type PrefLeaf, type PrefNumber, prefLeafValue } from '@weasel-js/prefs';
+import { isBuiltinPref, type PrefLeaf, type PrefNumber, prefValueOrDefault } from '@weasel-js/prefs';
 import { qty } from '@weasel-js/quantity';
 import { prefFieldProps } from '@weasel-js/ui/components/Prefs';
 import { type PropertyControlProps, stepDisplay } from '@weasel-js/ui/components/Properties';
@@ -55,7 +55,7 @@ export function MatrixCell({
   setConfig: (path: string, value: unknown) => void;
   onOpen: (el: HTMLElement) => void;
 }) {
-  const shown = prefLeafValue(leaf, value);
+  const shown = prefValueOrDefault(leaf, value);
   const write = (next: unknown): void => setConfig(path, next);
   const choices = useFieldChoices();
   const field = isBuiltinPref(leaf)

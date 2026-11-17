@@ -23,7 +23,7 @@ import { Icon } from '@weasel-js/ui/components/Icon';
 import { icon } from '../../icons.gen';
 import { useCallback, useContext, useMemo, useRef, useState } from 'react';
 import { getOwn, setOwn } from '@weasel-js/registry';
-import type { Globals } from '../../protocol/messages';
+import type { StoryGlobals } from '../../protocol/messages';
 import { effectiveGlobals, GLOBALS_KEY } from '../globals';
 import { StoryGlobalsContext } from '../StoryGlobalsContext';
 import { useTrialFrame } from '../trialFrames';
@@ -124,12 +124,12 @@ function unsavedScales(edited: Readonly<Record<string, TokenScale>>, overrides: 
 
 export interface CssVarsPanelProps {
   /** The globals the trial renders under, which pick the axis values a save writes into. */
-  readonly globals?: Globals;
+  readonly globals?: StoryGlobals;
   /** Where a save goes. Defaults to the dev server's theme store. */
   readonly themeApi?: ThemeApi;
 }
 
-const NO_GLOBALS: Globals = {};
+const NO_GLOBALS: StoryGlobals = {};
 
 /**
  * Shows and overrides the CSS variables of the trial it is rendered inside: the theme's tokens, or what its frame

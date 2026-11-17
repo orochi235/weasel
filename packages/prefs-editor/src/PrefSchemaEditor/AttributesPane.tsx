@@ -9,7 +9,7 @@ import { PrefConditionEditor } from '../PrefConditionEditor/PrefConditionEditor'
 import {
   aggregateAttributes, type AutoRow, catalogAttributes, changeKind, choiceOf, CONDITION_KIND, containsCode,
   convertLeaf, type CustomKinds, entryChoices, entryHolderAt, entryOf, isObjectField, KEEP, keyFromName, keyOf,
-  keyProblem, keysOf, keysTakenAt, kindChoices, leafOf, nodeAt, normalizeAttr, parentPath, pointerAttributes,
+  keyProblem, keysOf, keysTakenAt, kindChoices, leafOf, nodeAt, normalizeAttr, parentPath, aliasAttributes,
   type PrefTypes, printValue, type SchemaRoot, setAttribute, setAutoRow, setObjectField, STUB, takesDottedKey,
   typeNamed, uniqueKey,
 } from '@weasel-js/prefs/edit';
@@ -108,7 +108,7 @@ export function AttributesPane({ schema, onChange, paths, onRename, added = fals
   const agg = useMemo(() => {
     if (nodes.length === 0) return null;
     const all = aggregateAttributes(nodes, custom, drawsMixed, actions);
-    return catalog ? catalogAttributes(all) : pointers ? { ...all, schema: pointerAttributes(all.schema) } : all;
+    return catalog ? catalogAttributes(all) : pointers ? { ...all, schema: aliasAttributes(all.schema) } : all;
   }, [nodes, custom, actions, pointers, catalog]);
   const mixedPaths = useMemo(
     () => new Set([...[...(agg?.mixed ?? [])].flatMap((k) => [k, `${OWN}.${k}`]), ...[...(agg?.auto.mixed ?? [])].map((k) => `${AUTO}.${k}`)]),

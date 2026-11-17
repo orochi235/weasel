@@ -18,7 +18,7 @@ import { watchCssVars } from '../frame/cssVarsWatch';
 import type { FrameSetup } from '../frame/FrameController';
 import { useNearViewport } from '@weasel-js/react';
 import { IN_VIEW_MARGIN } from './inViewMargin';
-import type { Globals, Layout, ToFrame } from '../protocol/messages';
+import type { StoryGlobals, StoryLayout, ToFrame } from '../protocol/messages';
 import { useCssOverrides } from './cssVars/overrides';
 import { effectiveGlobals, GLOBALS_KEY } from './globals';
 import { useHostConditions } from './hostConditions';
@@ -30,12 +30,12 @@ import { TrialFramesContext } from './trialFrames';
 
 /** Props for `TrialHost`. */
 export interface TrialHostProps {
-  layout: Layout;
+  layout: StoryLayout;
   setup: FrameSetup;
   /** The trial's config, read for its `$globals` pins. */
   config: unknown;
   /** Rendered once the host element exists, with the globals in force on it. */
-  children: (globals: Globals) => ReactNode;
+  children: (globals: StoryGlobals) => ReactNode;
   /** Receives the host element, for a caller with no trial to reach it through. */
   hostRef?: RefObject<HTMLElement | null>;
   /** Called once the children's first commit has painted. */
@@ -44,7 +44,7 @@ export interface TrialHostProps {
    * Makes this host a second copy of the trial's story: it takes `id` as its host id and `globals` in place of the
    * computed ones, carries `data-fg-copy`, and stays out of the frame registry, the a11y highlighter and `onRendered`.
    */
-  copy?: { id: string; globals: Globals };
+  copy?: { id: string; globals: StoryGlobals };
 }
 
 /**

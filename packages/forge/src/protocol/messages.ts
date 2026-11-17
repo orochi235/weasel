@@ -3,13 +3,13 @@ import type { SchemaDescription } from './schema.ts';
 export const PROTOCOL_VERSION = 1;
 
 /** The workshop's toolbar globals as a story reads them, by name. */
-export type Globals = Readonly<Record<string, unknown>>;
+export type StoryGlobals = Readonly<Record<string, unknown>>;
 /** How a story sits in its frame. */
-export type Layout = 'centered' | 'padded' | 'fullscreen';
+export type StoryLayout = 'centered' | 'padded' | 'fullscreen';
 /** The layout a story takes when it names none, in either story format. */
-export const DEFAULT_LAYOUT: Layout = 'padded';
+export const DEFAULT_LAYOUT: StoryLayout = 'padded';
 /** A frame size a story asks for, in CSS pixels. */
-export interface Viewport {
+export interface StoryViewport {
   width: number;
   height: number;
 }
@@ -68,10 +68,10 @@ export type A11yOutcome = { ok: true; report: A11yReport } | { ok: false; messag
 
 /** A message the workshop sends a story's frame. */
 export type ToFrame =
-  | { type: 'init'; config: unknown; state: unknown; globals: Globals }
+  | { type: 'init'; config: unknown; state: unknown; globals: StoryGlobals }
   | { type: 'config'; config: unknown }
   | { type: 'state'; state: unknown }
-  | { type: 'globals'; globals: Globals }
+  | { type: 'globals'; globals: StoryGlobals }
   | { type: 'vars.set'; name: string; value: string | null }
   /** Run axe over the story's own subtree. Answered by `a11y` carrying the same `id`. */
   | { type: 'a11y.run'; id: string }
@@ -82,7 +82,7 @@ export type ToFrame =
 
 /** A message a story's frame sends the workshop. */
 export type FromFrame =
-  | { type: 'ready'; schema: SchemaDescription; layout: Layout; viewport: Viewport | null }
+  | { type: 'ready'; schema: SchemaDescription; layout: StoryLayout; viewport: StoryViewport | null }
   /** Sent once, when the story's first render after `init` has committed. */
   | { type: 'rendered' }
   | { type: 'answers'; answers: ConfigAnswers }

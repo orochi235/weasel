@@ -13,7 +13,7 @@ import type { ResolvedConfig, SectionSpec } from './types';
 const SECTION_EXTRAS = ['collapsed', 'layout', 'pack', 'className'] as const;
 
 /** A section label as a member key no sibling holds. A section's key is no part of any path. */
-function slugOf(label: string, taken: Set<string>): string {
+function claimSlug(label: string, taken: Set<string>): string {
   const base =
     label
       .toLowerCase()
@@ -124,7 +124,7 @@ function membersOf(
     if (section === undefined) {
       section = sectionOf(spec);
       opened.set(spec, section);
-      setOwn(out, slugOf(spec.label, taken), section);
+      setOwn(out, claimSlug(spec.label, taken), section);
     }
     setOwn(section.members as Record<string, PrefLeaf | PrefSection>, key, node);
   }

@@ -1,4 +1,4 @@
-import { isPrefScope, prefLeaves, prefScopeSelectors, type PrefGroup, type PrefLeaf, type PrefScope, type PrefScopeSpec } from '@weasel-js/prefs';
+import { isPrefScope, prefLeaves, prefStoredSelectors, type PrefGroup, type PrefLeaf, type PrefScope, type PrefScopeSpec } from '@weasel-js/prefs';
 import { getOwn, setOwn } from '@weasel-js/registry';
 import { axisChoiceKey } from '../axes.ts';
 import { weaselTheme, type Theme } from '../theme.ts';
@@ -46,7 +46,7 @@ function tokenLeaf(row: TokenRow, table: ReturnType<typeof tokenTable>): PrefLea
   leaf.default = prefOfCss(leaf, fallback);
   // Auto is following the theme, which computes the value; a pin goes over it.
   leaf.auto = { on: true, value: held };
-  const differs = prefScopeSelectors(held);
+  const differs = prefStoredSelectors(held);
   const scopes = Object.keys(table.axes)
     .filter((axis) => differs.has(themeAxisPath(axis)) || row.scope?.includes(axis))
     .map((axis): PrefScopeSpec => ({ selector: themeAxisPath(axis) }));

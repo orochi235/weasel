@@ -110,7 +110,7 @@ export interface CanvasCapability<TS = unknown, TC = unknown> {
   /** Where the view starts. A function is called once the canvas knows its
    *  size, so an instrument can frame content it can only place in terms of
    *  the viewport; until then the trial's view is `null`. */
-  initialView?: ViewTransform | ((size: ViewportSize) => ViewTransform);
+  initialView?: ViewTransform2D | ((size: ViewportSize) => ViewTransform2D);
   /** Widens the camera's default zoom clamp; the opening zoom stays reachable
    *  regardless of these. */
   minZoom?: number;
@@ -128,7 +128,7 @@ export interface StageCapability<TS = unknown, TC = unknown> {
   size: ViewportSize;
   /** Where the view starts. Omitted, the content opens centered and shrunk to
    *  fit (`fitStage`). A function is called once the stage knows its size. */
-  initialView?: ViewTransform | ((viewport: ViewportSize) => ViewTransform);
+  initialView?: ViewTransform2D | ((viewport: ViewportSize) => ViewTransform2D);
   minZoom?: number;
   maxZoom?: number;
   /** As `CanvasCapability.gestures`. */
@@ -206,7 +206,7 @@ export type Point = { x: number; y: number };
 export type HitResult = { hit: boolean; layerId?: string; pointId?: string };
 /** A trial's camera. `zoom` is always positive and finite once labkit holds
  *  it — see `normalize2DView`. */
-export type ViewTransform = { zoom: number; pan: Point };
+export type ViewTransform2D = { zoom: number; pan: Point };
 /** A layer as the layer list shows it. `alwaysOn` layers cannot be hidden. */
 export type LayerDescriptor = { id: string; label: string; alwaysOn?: boolean };
 /** One draggable entry in an instrument's palette. */

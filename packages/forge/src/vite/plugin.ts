@@ -3,9 +3,9 @@ import { basename, relative, resolve, sep } from 'node:path';
 import type { EnvironmentModuleNode, Logger, Plugin, ViteDevServer } from 'vite';
 import { getOwn } from './ownKeys.ts';
 import { byComponent } from '../story/indexPages.ts';
-import type { DepGraph, IndexEntry } from '../story/types.ts';
+import type { ComponentGraph, IndexEntry } from '../story/types.ts';
 import { hoistPages, writePages } from './build.ts';
-import { createDepGraph, type DepGraphBuilder, type ResolveImport } from './depGraph.ts';
+import { createComponentGraph, type ComponentGraphBuilder, type ResolveImport } from './componentGraph.ts';
 import { createHistoryReader, type HistoryReader } from './history.ts';
 import { foreignCallees } from './indexFile.ts';
 import { indexStory } from './indexStory.ts';
@@ -62,14 +62,14 @@ const SCRIPT = /\.[cm]?[jt]sx?$/;
 
 interface SourceWatch {
   files: readonly string[];
-  depGraph: () => DepGraphBuilder;
+  componentGraph: () => ComponentGraphBuilder;
   reindex: (server: ViteDevServer, file: string, event: 'add' | 'change' | 'unlink') => Promise<boolean>;
   redeps: (server: ViteDevServer) => void;
   logError: (err: unknown) => void;
 }
 
 /** Watches the story files and everything they import, reindexing a changed story and pushing new deps. */
-function watchSources(server: ViteDevServer, { files, depGraph, reindex, redeps, logError }: SourceWatch): void {
+function watchSources(server: ViteDevServer, { files, componentGraph, reindex, redeps, logError }: SourceWatch): void {
   server.watcher.add([...files]);
   void warnWhenWatchIsSilent(server);
   for (const event of ['add', 'change', 'unlink'] as const) {
@@ -77,8 +77,8 @@ function watchSources(server: ViteDevServer, { files, depGraph, reindex, redeps,
       const file = resolve(path);
       // A new file can answer an import that resolved to nothing before.
       const added = event === 'add' && SCRIPT.test(file) && !file.split(sep).includes('node_modules');
-      if (added) depGraph().reset();
-      const read = added || (event !== 'add' && depGraph().invalidate(file));
+      if (added) componentGraph().reset();
+      const read = added || (event !== 'add' && componentGraph().invalidate(file));
       reindex(server, file, event).then((indexed) => {
         if (indexed || read) redeps(server);
       }, logError);
@@ -133,7 +133,7 @@ export function forge(options: ForgeOptions): Plugin[] {
   let base = '/';
   let byFile: Map<string, IndexEntry[]> | null = null;
   let logger: Logger | undefined;
-  let deps: DepGraphBuilder | null = null;
+  let deps: ComponentGraphBuilder | null = null;
   /** The graph last served or pushed; null until a page first asks for it, so no edit rebuilds it before then. */
   let depsSent: string | null = null;
   /** Per story file, which of its foreign callees are forge's `meta`/`story`, and what was read to decide it. */
@@ -200,12 +200,12 @@ export function forge(options: ForgeOptions): Plugin[] {
       }
     }
   };
-  const depGraph = (): DepGraphBuilder => (deps ??= createDepGraph({ root, read: (file) => readFileSync(file, 'utf8') }));
+  const componentGraph = (): ComponentGraphBuilder => (deps ??= createComponentGraph({ root, read: (file) => readFileSync(file, 'utf8') }));
   let history: HistoryReader | null = null;
 
   /** The component graph, each component with what git says of its source file. */
-  async function graphOf(resolveImport: ResolveImport): Promise<DepGraph> {
-    const graph = await depGraph().build(index(), resolveImport);
+  async function graphOf(resolveImport: ResolveImport): Promise<ComponentGraph> {
+    const graph = await componentGraph().build(index(), resolveImport);
     const sources = Object.values(graph).flatMap((entry) => (entry.source === null ? [] : [entry.source]));
     const histories = await (history ??= createHistoryReader(root)).read(sources);
     for (const entry of Object.values(graph)) {
@@ -351,7 +351,7 @@ export function forge(options: ForgeOptions): Plugin[] {
         for (const file of storiesReaching(modules)) server.ws.send({ type: 'custom', event: 'forge:story', data: { file } });
       },
       configureServer(server) {
-        watchSources(server, { files: [...files().keys()], depGraph, reindex, redeps, logError });
+        watchSources(server, { files: [...files().keys()], componentGraph, reindex, redeps, logError });
         capture = servePages(server, base, () => shellUnder(root));
         serveIssues(server, base, () => root);
       },

@@ -2,9 +2,9 @@ import { useEffect, useRef, useState, type PointerEvent as ReactPointerEvent, ty
 import { startThresholdDrag, swallowNextClick, type ThresholdDragHandle } from '@weasel-js/routing';
 import { isInControlWithin } from '@weasel-js/core';
 import { useKitSetting } from '@weasel-js/react';
-import { GHOST_WIDTH, ghostIsPage } from './NodeGhost';
+import { GHOST_WIDTH, nodeIsPage } from './NodeGhost';
 import {
-  aliasOf, canAlias, carried, nodeAt, parentPath, pathOf, type SchemaNode, type SchemaRoot, type SchemaTarget,
+  aliasOf, canAlias, outermostInOrder, nodeAt, parentPath, pathOf, type SchemaNode, type SchemaRoot, type SchemaTarget,
 } from '@weasel-js/prefs/edit';
 import type { DropOutside } from './StructurePane';
 import { isPrimaryPress, modHeld } from '@weasel-js/gestures';
@@ -66,7 +66,7 @@ export function usePreviewDrag({ stage, schema, place, onMove, onCopy, onAlias, 
     const topLevel = parentPath(path) === null;
     const chosen = selected();
     const several = chosen.length > 1 && chosen.includes(path);
-    const paths = several ? carried(schema(), chosen) : [path];
+    const paths = several ? outermostInOrder(schema(), chosen) : [path];
     const nodes = paths.map((p) => nodeAt(schema(), p)!);
 
     const end = () => {
@@ -84,7 +84,7 @@ export function usePreviewDrag({ stage, schema, place, onMove, onCopy, onAlias, 
     const update = (ev: PointerEvent) => {
       place.over(landing(ev), held(ev), { x: ev.clientX, y: ev.clientY });
       // Offset from the pointer so what is under it stays visible.
-      setGhost({ left: ev.clientX + 10, top: ev.clientY + 10, width: GHOST_WIDTH[ghostIsPage(node, topLevel) ? 'page' : 'node'], node, topLevel, count: paths.length });
+      setGhost({ left: ev.clientX + 10, top: ev.clientY + 10, width: GHOST_WIDTH[nodeIsPage(node, topLevel) ? 'page' : 'node'], node, topLevel, count: paths.length });
     };
     drag.current = startThresholdDrag(e, {
       origin: box,

@@ -1,7 +1,7 @@
 /** Shrunk counterexamples from `schema.pbt.test.ts` and `sectionTree.pbt.test.ts`, kept as plain examples. */
 import { isPrefLeaf, type PrefGroup } from '@weasel-js/prefs';
 import { describe, expect, it } from 'vitest';
-import { isStale, seenFrom } from '../annotations/staleness';
+import { isStale, seenValues } from '../annotations/staleness';
 import { f } from './builder';
 import { drawsOwn } from './drawsOwn';
 import { configFromPrefs } from './fromPrefs';
@@ -59,7 +59,7 @@ describe('a leaf keyed as something every object inherits', () => {
   });
 
   it('is never stale for a key a mark did not see', () => {
-    expect(isStale(seenFrom({}, ['toString']), { toString: 1 }, ['toString'])).toBe(false);
+    expect(isStale(seenValues({}, ['toString']), { toString: 1 }, ['toString'])).toBe(false);
   });
 });
 

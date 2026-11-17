@@ -292,7 +292,7 @@ The snap pipeline ([snapping.md](./snapping.md)) landed on 2026-10-18 with these
   `step` then work from `b`. Whether `current` should follow the last page gone to until the view moves.
 - 2026-10-20 (overnight pass): The document stores every pose in world units; a container's unit
   scope converts only for display, entry and snapping. Grid snapping (`gridSnapSource({ scopes })`)
-  and length fields (`measure: 'length'`, `prefLeafInScopes`, `SelectionPanel`'s `units`) use the
+  and length fields (`measure: 'length'`, `prefLeafInUnitScopes`, `SelectionPanel`'s `units`) use the
   scope every subject node shares. Inside a scope a bare `spacing` counts that scope's base units;
   the grid's origin stays in world space. Only box position, size and text padding are lengths.
   The drawn grid and an insert gesture's snap still use the root scope (filed under Units).
@@ -972,7 +972,7 @@ The snap pipeline ([snapping.md](./snapping.md)) landed on 2026-10-18 with these
   `horizontal`, `both` and grid layouts, reading the container's computed `direction` at each key
   unless the new `dir` option says otherwise. ui declares its own `RovingDirection` rather than
   depend on `@weasel-js/text` for `TextDirection`.
-- 2026-10-20 (overnight pass): Every params surface reads a leaf's value through `prefLeafValue`
+- 2026-10-20 (overnight pass): Every params surface reads a leaf's value through `prefValueOrDefault`
   (`@weasel-js/prefs`): the held value, else the default, with `undefined` and `null` both absent,
   except a paint's `null`, which means no paint. A clearable leaf holding nothing shows cleared,
   so labkit now draws a clearable number empty where its key is missing. `SelectionPanel` keeps its
@@ -1141,7 +1141,7 @@ The snap pipeline ([snapping.md](./snapping.md)) landed on 2026-10-18 with these
   see the test page's default 414×896.
 - 2026-10-11: Diagram groups nest and their boxes take presses; the `orthogonal` router turns at
   once after a waypoint where it would double back. Audio has `onDrop`.
-- 2026-10-12: labkit's `isEntryShown` takes the resolved schema; `DragState` carries `from`; a
+- 2026-10-12: labkit's `isConfigNodeShown` takes the resolved schema; `DragState` carries `from`; a
   remote mark write rebuilds the store. `createScore` is new in audio.
 - 2026-10-13: The platformer's bed is engine voices, and `voiceLimit` went from 24 to 48.
 - 2026-10-13 (pass 6): labkit's `dist` inlines no `@weasel-js` package. `LabSwitcher` is a bare
@@ -1881,7 +1881,7 @@ Calls the lanes made without a ruling:
 - 2026-11-12 (the lane's call): `PrefsForm` takes `errors`, a `ReadonlyMap` from leaf path to message, shown under the
   leaf's row as its `error` (set through `<RowScope>` since 2026-11-14). A map, as `auto` and `mixed` are sets,
   rather than a `validate` field on the leaf: what counts as wrong is the caller's to say. `SelectionPanel` has no such prop yet.
-- 2026-11-12 (the lane's call): `usePrefsValues` returns `setAuto(path, next)` for `PrefsForm`'s `onAutoChange`, where
+- 2026-11-12 (the lane's call): `usePrefsState` returns `setAuto(path, next)` for `PrefsForm`'s `onAutoChange`, where
   its JSDoc had offered `reset`. It pins at `store.get(path)`; theme-editor keeps its own, which pins at the value the
   pinned theme shows.
 - Open: `Slider` now follows the number fields' locale, but number text that only displays does not:
@@ -2080,7 +2080,7 @@ Calls the lanes made without a ruling:
 
 ## Audit round twenty-two (2026-11-13): the prefs schema
 
-- A store-bound form binds through `usePrefsValues(store).form`, spread on `PrefsForm` or `PrefsDialog`, so every
+- A store-bound form binds through `usePrefsState(store).form`, spread on `PrefsForm` or `PrefsDialog`, so every
   bundled one offers Auto and splits scoped leaves the same way. Theme-editor's form keeps its own binding: its
   writes go through its undo history and only its token rows inherit. `Prefs.split.stories.tsx` keeps its explicit
   props, since spreading `form` would add Auto toggles to a story about split rows (2026-11-13).
@@ -2216,7 +2216,7 @@ Calls the lanes made without a ruling:
 ## Auto and reset (2026-11-13)
 
 - Auto is opt-in and is a distinct concept from default (maintainer's ruling, 2026-11-13). A leaf can be auto only
-  where its schema declares `auto`; prefs, `PrefsForm`/`PrefsDialog`, `usePrefsValues(store).form`, `SelectionPanel`,
+  where its schema declares `auto`; prefs, `PrefsForm`/`PrefsDialog`, `usePrefsState(store).form`, `SelectionPanel`,
   labkit and the theme editor all read `prefCanAuto`. `auto: false` meant the same as no `auto` and is gone. While
   auto a leaf reads its owner's computed value, else `auto.value`, never `default`; this corrects the first pass
   of this section, which made the default the last case of auto and let a leaf with `auto` unset be auto

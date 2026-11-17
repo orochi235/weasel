@@ -1,5 +1,5 @@
 import { normalizeZoom } from '@weasel-js/core';
-import type { Point, ViewTransform } from '../instrument/types';
+import type { Point, ViewTransform2D } from '../instrument/types';
 import { DEFAULT_FRAME, type ViewportSize, type WorldFrame } from './worldSpec';
 
 /** Bounds and coordinate system a {@link zoomAt} works in. */
@@ -20,11 +20,11 @@ export interface ZoomAtOptions {
  * bound still anchors on the zoom it actually reached.
  */
 export function zoomAt(
-  view: ViewTransform,
+  view: ViewTransform2D,
   factor: number,
   at: Point,
   { frame = DEFAULT_FRAME, min, max }: ZoomAtOptions = {},
-): ViewTransform {
+): ViewTransform2D {
   // `pan` is measured from the frame's origin, so anchoring at the raw point
   // drifts by `(1 - ratio) * originPx` per step on any frame that moves it.
   const anchorX = at.x - frame.originPx.x;
@@ -50,7 +50,7 @@ export function centerOn(
   zoom: number,
   size: ViewportSize,
   frame: WorldFrame = DEFAULT_FRAME,
-): ViewTransform {
+): ViewTransform2D {
   const z = normalizeZoom(zoom);
   return {
     zoom: z,

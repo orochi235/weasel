@@ -1,7 +1,7 @@
 import { readFileSync } from 'node:fs';
 import type { IndexEntry } from '../story/types.ts';
 import { autoTitle } from './autoTitle.ts';
-import type { ResolveImport } from './depGraph.ts';
+import type { ResolveImport } from './componentGraph.ts';
 import { foreignCallees, indexFile } from './indexFile.ts';
 import { foreignFrom } from './nativeExports.ts';
 import { createWrapperResolver, type WrapperResolution } from './wrappers.ts';

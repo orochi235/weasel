@@ -3,7 +3,7 @@ import { useContext } from 'react';
 import type { FrameSetup } from '../frame/FrameController';
 import { indexEnvOf } from '../frame/index/indexEnv';
 import { IndexPage } from '../frame/index/IndexPage';
-import type { Globals } from '../protocol/messages';
+import type { StoryGlobals } from '../protocol/messages';
 import type { IndexBundle } from '../story/indexBundle';
 import { frameDecorators } from '../frame/frameDecorators';
 import { DependenciesContext } from './dependencies';
@@ -27,7 +27,7 @@ export function IndexTrial({ bundle, setup, config }: IndexTrialProps) {
     lab.swapTrial(trialId, id);
     setRoute(id, { inPlace: true });
   };
-  const render = (globals: Globals) => (
+  const render = (globals: StoryGlobals) => (
     <IndexPage env={indexEnvOf(bundle, { graph, globals, decorators: frameDecorators(setup), open })} render={bundle.render} />
   );
   return (

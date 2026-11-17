@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react';
 import { getOwn, setOwn } from '@weasel-js/registry';
-import { applyPrefConditions, orderPrefGroup, prefAliasTargets, prefJudge, prefLeafValue, prefReader, prefValueAtPath, createRecordSource, createValuesSource, type PrefAlias, type PrefAliasTargets, type PrefEntry, type PrefGroup, type PrefSection } from '@weasel-js/prefs';
+import { applyPrefConditions, orderPrefGroup, createAliasTargets, prefJudge, prefValueOrDefault, prefReader, prefValueAtPath, createRecordSource, createValuesSource, type PrefAlias, type PrefAliasTargets, type PrefEntry, type PrefGroup, type PrefSection } from '@weasel-js/prefs';
 import type { LiveControl } from '../Prefs/commitPolicy';
 import { entryApplier, type EntryAt } from '../Prefs/entry';
 import { useParamsPolicy } from '../Prefs/useParamsPolicy';
@@ -61,7 +61,7 @@ export function PrefsBar(props: PrefsBarProps) {
   const fields = prefFieldChoices(schema);
   const read = barReader(schema, values, overProp);
   const over = overProp ?? schema;
-  const targets = prefAliasTargets(over, (entry) => prefJudge(over, read, entry));
+  const targets = createAliasTargets(over, (entry) => prefJudge(over, read, entry));
   const judge = (entry?: PrefEntry) => prefJudge(schema, read, entry, overProp);
   const { shown, disabled, active } = applyPrefConditions(schema, judge(), { aliasOver: over, aliasHolds: targets.holds });
   const entryAt = entryApplier(judge);
@@ -141,7 +141,7 @@ function leafCell({ path: own, leaf, at }: BarLeafNode, surface: ControlForm, dr
   const { values, mixed, renderers, onChange, fields } = draw;
   const path = at ?? own;
   const isMixed = mixed?.has(path) === true;
-  const shown = isMixed ? undefined : prefLeafValue(leaf, values && getOwn(values, path));
+  const shown = isMixed ? undefined : prefValueOrDefault(leaf, values && getOwn(values, path));
   const ctx: LeafContext = {
     path,
     pref: leaf,

@@ -4,7 +4,7 @@ import { type Channel, type Mismatch, openChannel } from '../protocol/channel';
 import {
   type FaultPhase,
   type FromFrame,
-  type Globals,
+  type StoryGlobals,
   PORT_HANDOFF,
   type PortHandoff,
   PROTOCOL_VERSION,
@@ -37,7 +37,7 @@ export interface Link {
   /** The key of a `ready` whose `init` waits for an instrument built from it. */
   awaiting: string | null;
   /** What the frame holds, from `init` on — the story's config without the trial's pins; null until then. */
-  sent: { config: unknown; state: unknown; globals: Globals } | null;
+  sent: { config: unknown; state: unknown; globals: StoryGlobals } | null;
   /** `init`, `config`, `state` and `globals` messages sent; a render fault's `seq` counts the same messages. */
   inputs: number;
   /** Takes this link's channel out of the trial's frame registry. */
@@ -96,7 +96,7 @@ export interface FrameLinkLatest {
   answers: AnswerBook;
   onReady: (entry: IndexEntry, ready: FrameReady) => void;
   descriptionKey: string | null;
-  globals: Globals;
+  globals: StoryGlobals;
   overrides: Readonly<Record<string, string>>;
   lab: LabContextValue;
 }
@@ -117,7 +117,7 @@ export interface FrameLinkOptions {
   /** The inputs sent to the frame whenever one changes. */
   config: unknown;
   state: unknown;
-  globals: Globals;
+  globals: StoryGlobals;
   descriptionKey: string | null;
 }
 

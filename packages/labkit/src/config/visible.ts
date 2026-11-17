@@ -1,7 +1,7 @@
 import {
   applyPrefConditions,
   applyPrefEntryConditions,
-  PREF_STATUS,
+  ROOT_PREF_STATUS,
   type PrefAction,
   type PrefAlias,
   type PrefAliasTargets,
@@ -10,7 +10,7 @@ import {
   type PrefLeaf,
   type PrefSection,
   type PrefStatus,
-  prefAliasTargets,
+  createAliasTargets,
   prefJudge,
   prefLeafAt,
   prefReader,
@@ -33,7 +33,7 @@ export function aliasTargetsOf(
 ): PrefAliasTargets {
   const of = over ?? resolved.group;
   const read = over ? prefReader(over, config) : (at: string): unknown => valueAtPath(config, at);
-  return prefAliasTargets(of, (entry) => prefJudge(of, read, entry), { showHidden: true });
+  return createAliasTargets(of, (entry) => prefJudge(of, read, entry), { showHidden: true });
 }
 
 /**
@@ -94,7 +94,7 @@ function statusAt(
  * hidden leaf keeps its value and the instrument still reads it. `over` is
  * the schema the panel's aliases point into, where that is not its own.
  */
-export function isLeafVisible(
+export function isRowVisible(
   resolved: ResolvedConfig,
   path: string,
   config: Record<string, unknown>,
@@ -111,7 +111,7 @@ export function isLeafVisible(
  * holds, and so does that of every group above it. `over` is the schema
  * the panel's aliases point into, where that is not its own.
  */
-export function isLeafEnabled(
+export function isRowEnabled(
   resolved: ResolvedConfig,
   path: string,
   config: Record<string, unknown>,
@@ -125,7 +125,7 @@ export function isLeafEnabled(
  * and that holds. `over` is the schema the panel is drawn over, which the
  * condition may read a setting of.
  */
-export function isLeafActive(
+export function isRowActive(
   resolved: ResolvedConfig,
   path: string,
   config: Record<string, unknown>,
@@ -184,12 +184,12 @@ export function conditionedLeaf(
  * walk that skips what is under a node not shown counts the nesting. `schema`
  * is that schema resolved, which a condition reads each leaf's `encoding` from.
  */
-export function isEntryShown(
+export function isConfigNodeShown(
   entry: ConfigEntry,
   config: Record<string, unknown>,
   schema: PrefGroup | PrefSection,
 ): boolean {
   const judge = prefJudge(schema, (at) => valueAtPath(config, at));
-  if (!prefStatusUnder(PREF_STATUS, entry.annotations, judge).shown) return false;
+  if (!prefStatusUnder(ROOT_PREF_STATUS, entry.annotations, judge).shown) return false;
   return entry.options.showIf?.(config) ?? true;
 }

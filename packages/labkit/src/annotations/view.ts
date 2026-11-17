@@ -1,6 +1,6 @@
 import type { View } from '@weasel-js/core';
 import { fromCameraView, toCameraView } from '../canvas/cameraView';
-import type { ViewTransform } from '../instrument/types';
+import type { ViewTransform2D } from '../instrument/types';
 
 /** A target's world in CSS pixels: the box its fractions are fractions of. */
 export interface ContentSize {
@@ -25,13 +25,13 @@ export interface PaneSize {
 /** labkit's camera in weasel's shape. labkit's pan is a screen translation,
  *  weasel's `x`/`y` the world point at the top-left corner. Zoom is uniform,
  *  so it lands on both scale axes. */
-export function toWeaselView(v: ViewTransform): View {
+export function toWeaselView(v: ViewTransform2D): View {
   return toCameraView(v);
 }
 
 /** The inverse. A weasel view with unequal axis scales collapses to its x —
  *  labkit's camera has one zoom and cannot hold the other. */
-export function fromWeaselView(v: View): ViewTransform {
+export function fromWeaselView(v: View): ViewTransform2D {
   return fromCameraView(v);
 }
 
@@ -48,7 +48,7 @@ export function fitView(
   content: ContentSize,
   pane: PaneSize,
   shown?: ContentWindow,
-): ViewTransform {
+): ViewTransform2D {
   const part = shown ?? { x: 0, y: 0, w: content.w, h: content.h };
   const fit = part.w > 0 && part.h > 0 ? Math.min(pane.w / part.w, pane.h / part.h) : 1;
   const zoom = Number.isFinite(fit) && fit > 0 ? fit : 1;

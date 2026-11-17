@@ -1,6 +1,6 @@
 import { withoutMarkHistory } from '../annotations/history';
 import { isAuto } from '../config/auto';
-import { autoPathsOf } from '../config/autoConfig';
+import { startAutoPathsOf } from '../config/autoConfig';
 import { fillConfigDefaults, isRecord, setOwn } from '../config/path';
 import { defaultConfigOf } from '../instrument/defineInstrument';
 import { unruledConfigSchema } from '../instrument/serializers';
@@ -57,7 +57,7 @@ function splitAutoSeed(
 /** The paths an instrument's own schema declares as starting auto. */
 function schemaAutoPaths(instrument: Instrument): string[] {
   const schema = unruledConfigSchema(instrument);
-  return schema ? autoPathsOf(schema) : [];
+  return schema ? startAutoPathsOf(schema) : [];
 }
 
 /** Append a new trial running `instrumentName`, at that instrument's default

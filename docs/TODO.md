@@ -336,9 +336,9 @@ Owner tags, after the priority (2026-10-26):
   Linux Chrome; if it reproduces, the likely fix is for the keydown to suppress the native event.
   Closes when Shift+F10 on a real Windows or Linux Chrome opens the menu once.
 
-- **(P3) [waiting] Nothing in an app animates a selector's weights yet.** `prefWeightAxes` gives an
+- **(P3) [waiting] Nothing in an app animates a selector's weights yet.** `createWeightAxes` gives an
   animator target the axes, and nothing yet asks for a transition.
-  Closes when an app animates a selector's weights through `prefWeightAxes`, or on 2026-12-31 with none,
+  Closes when an app animates a selector's weights through `createWeightAxes`, or on 2026-12-31 with none,
   delete it.
 
 - **(P3) [maintainer] labkit and the apps hand-build what weasel-ui already draws.** Each waits on something

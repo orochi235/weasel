@@ -38,7 +38,7 @@ export type PrefOverridesLookup = (selector: string) => PrefOverrides | undefine
 const named = (overrides: PrefOverrides): overrides is readonly string[] => Array.isArray(overrides);
 
 /** The options an override list names. */
-export function overrideOptions(overrides: PrefOverrides): readonly string[] {
+export function prefOverrideOptions(overrides: PrefOverrides): readonly string[] {
   return named(overrides) ? overrides : Object.keys(overrides);
 }
 
@@ -84,7 +84,7 @@ export function selectionWeights(selection: PrefSelection): PrefWeights {
 /** Whether `option` of the scope's selector is one a closed list leaves out, which shares the shared value. */
 const shares = (scope: PrefScope, option: string, overridesOf: PrefOverridesLookup | undefined): boolean => {
   const overrides = overridesOf?.(scope.$by);
-  return overrides !== undefined && !overrideOptions(overrides).includes(option);
+  return overrides !== undefined && !prefOverrideOptions(overrides).includes(option);
 };
 
 /**
@@ -94,7 +94,7 @@ const shares = (scope: PrefScope, option: string, overridesOf: PrefOverridesLook
  * value. No option named reads the shared value too. Whatever is held
  * nothing for reads as `absent`.
  */
-export function scopeOptionValue(scope: PrefScope, option: string | undefined, absent: unknown, overridesOf?: PrefOverridesLookup): unknown {
+export function prefScopeOptionValue(scope: PrefScope, option: string | undefined, absent: unknown, overridesOf?: PrefOverridesLookup): unknown {
   if (option === undefined || shares(scope, option, overridesOf)) return restOr(scope, absent);
   if (Object.hasOwn(scope.$in, option)) return scope.$in[option];
   const overrides = overridesOf?.(scope.$by);
@@ -121,7 +121,7 @@ export function weighScope(stored: unknown, weights: PrefWeights, absent: unknow
       return;
     }
     for (const [option, share] of Object.entries(given)) {
-      if (share > 0) walk(scopeOptionValue(value, option, absent, overridesOf), weight * share);
+      if (share > 0) walk(prefScopeOptionValue(value, option, absent, overridesOf), weight * share);
     }
   };
   walk(stored, 1);
@@ -129,9 +129,9 @@ export function weighScope(stored: unknown, weights: PrefWeights, absent: unknow
 }
 
 /** The one value `selection` names. A selector it leaves out reads the shared value; an option the scope holds nothing for reads as `absent`. */
-export function memberAt(stored: unknown, selection: PrefSelection, absent: unknown, overridesOf?: PrefOverridesLookup): unknown {
+export function prefScopeValue(stored: unknown, selection: PrefSelection, absent: unknown, overridesOf?: PrefOverridesLookup): unknown {
   let value = stored;
-  while (isPrefScope(value)) value = scopeOptionValue(value, getOwn(selection, value.$by), absent, overridesOf);
+  while (isPrefScope(value)) value = prefScopeOptionValue(value, getOwn(selection, value.$by), absent, overridesOf);
   return value;
 }
 
@@ -139,7 +139,7 @@ export function memberAt(stored: unknown, selection: PrefSelection, absent: unkn
 export function dropUnlisted(stored: unknown, overridesOf: PrefOverridesLookup | undefined): unknown {
   if (!overridesOf || !isPrefScope(stored)) return stored;
   const overrides = overridesOf(stored.$by);
-  const list = overrides && overrideOptions(overrides);
+  const list = overrides && prefOverrideOptions(overrides);
   const stale = list ? Object.keys(stored.$in).filter((option) => !list.includes(option)) : [];
   const kept = stale.length ? { ...stored, $in: Object.fromEntries(Object.entries(stored.$in).filter(([option]) => list!.includes(option))) } : stored;
   return mapMembers(kept, (inner) => dropUnlisted(inner, overridesOf));
@@ -164,7 +164,7 @@ export function writeDeclared(
   let scope: PrefScope;
   if (isPrefScope(stored) && stored.$by === by) scope = stored;
   else {
-    const shared = isPrefScope(stored) ? memberAt(stored, now, absent, overridesOf) : stored;
+    const shared = isPrefScope(stored) ? prefScopeValue(stored, now, absent, overridesOf) : stored;
     scope = held ? { $by: by, $in: {}, [PREF_ELSE]: shared } : { $by: by, $in: {} };
   }
   const option = getOwn(under, by);
@@ -194,7 +194,7 @@ export function mapScopeValues(stored: unknown, fn: (value: unknown) => unknown)
 }
 
 /** The path of every selector `stored` is split by, outermost first. */
-export function scopeSelectors(stored: unknown): Set<string> {
+export function prefStoredSelectors(stored: unknown): Set<string> {
   const out = new Set<string>();
   const walk = (value: unknown): void => {
     if (!isPrefScope(value)) return;

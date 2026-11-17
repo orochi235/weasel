@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { PrefAlias, PrefGroup, PrefLeaf, PrefSection } from '@weasel-js/prefs';
-import { deadPointers, pointerTarget } from './pointers';
+import { deadAliases, aliasTargetIn } from './aliases';
 import { moveNodes, renameKey, setAttribute, type SchemaRoot } from './schemaEdit';
 import { assetOf, type AssetSet } from './assetSet';
 import { CODE, pointer, SETTINGS, ASSET_SET } from '../testing/editAssetSet';
@@ -41,7 +41,7 @@ describe('renameInAsset', () => {
     const after = assetOf(next, 'settings')!.root as PrefSection;
     expect(Object.keys(after.members)).toEqual(['display']);
     expect(ofAt(next, 'grid')).toBe('view.grid');
-    expect(pointerTarget(after, codeOf(next).grid as PrefAlias)).toBeDefined();
+    expect(aliasTargetIn(after, codeOf(next).grid as PrefAlias)).toBeDefined();
   });
 
   it('renames a key in a layout and leaves every pointer naming what it named', () => {
@@ -180,7 +180,7 @@ describe('editAsset', () => {
     const moved = moveNodes(dialog, ['view/grid'], { parentPath: 'box', index: 0 });
     const next = editAsset(assetSetOf(dialog, CODE_POINTERS), 'settings', moved.root, [['view.grid', 'box.grid']]);
     expect(ofAt(next, 'grid')).toBe('box.grid');
-    expect(deadPointers(assetOf(next, 'code')!.root, moved.root)).toEqual(['grid']);
+    expect(deadAliases(assetOf(next, 'code')!.root, moved.root)).toEqual(['grid']);
   });
 
   it('leaves a layout as it was when no setting moved or went', () => {
@@ -202,7 +202,7 @@ describe('a pointer to a field inside an object leaf', () => {
 
   it('stays, dead, while the field stands', () => {
     expect(ofAt(inside, 'grid')).toBe('box.grid');
-    expect(deadPointers(assetOf(inside, 'code')!.root, assetOf(inside, 'settings')!.root)).toEqual(['grid', 'lost']);
+    expect(deadAliases(assetOf(inside, 'code')!.root, assetOf(inside, 'settings')!.root)).toEqual(['grid', 'lost']);
   });
 
   it('goes with the field when the field is removed', () => {
@@ -216,7 +216,7 @@ describe('a pointer to a field inside an object leaf', () => {
   it('is live again once the field moves back out', () => {
     const out = moveInAsset(inside, 'settings', ['box/grid'], { parentPath: 'view', index: 0 }).assetSet;
     expect(ofAt(out, 'grid')).toBe('view.grid');
-    expect(deadPointers(assetOf(out, 'code')!.root, assetOf(out, 'settings')!.root)).toEqual(['lost']);
+    expect(deadAliases(assetOf(out, 'code')!.root, assetOf(out, 'settings')!.root)).toEqual(['lost']);
   });
 
   it('is kept when it names nothing at all, whatever else is removed', () => {

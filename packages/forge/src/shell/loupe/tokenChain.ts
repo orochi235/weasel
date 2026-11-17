@@ -170,7 +170,7 @@ interface Declared {
 }
 
 /** The rules declaring each property asked about, read from `rules` once per property. */
-function indexOf(rules: readonly Rule[]): (property: string) => readonly Declared[] {
+function createDeclaredIndex(rules: readonly Rule[]): (property: string) => readonly Declared[] {
   const index = new Map<string, Declared[]>();
   return (property) => {
     let got = index.get(property);
@@ -257,7 +257,7 @@ export function tokenChain(at: ColorAt): readonly ChainLink[] {
 }
 
 function chainOf(at: ColorAt): readonly ChainLink[] {
-  const declaring = indexOf(rulesOf(at.element.ownerDocument));
+  const declaring = createDeclaredIndex(rulesOf(at.element.ownerDocument));
   const chain: ChainLink[] = [];
   const seen = new Set<string>();
   const follow = (el: Element, property: string) => {

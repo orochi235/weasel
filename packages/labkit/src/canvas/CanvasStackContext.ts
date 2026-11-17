@@ -1,5 +1,5 @@
 import { createContext, type RefObject } from 'react';
-import type { ViewTransform } from '../instrument/types';
+import type { ViewTransform2D } from '../instrument/types';
 import type { CanvasLayerDescriptor } from './useLayerScheduler';
 import type { WorldFrame, WorldSpec } from './worldSpec';
 
@@ -23,7 +23,7 @@ export interface CanvasStackSurface {
  *  coordinate system it is read in, so DOM overlays can place themselves in the
  *  same coordinates the layers draw in. */
 export interface CanvasStackContextValue {
-  view: ViewTransform;
+  view: ViewTransform2D;
   frame: WorldFrame;
   /** Absent from a context assembled by hand, which has no stack behind it. */
   surface?: CanvasStackSurface;

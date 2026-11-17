@@ -20,7 +20,7 @@ export {
   VERSION_RECORD,
   visiblePrefSubtree,
 } from './helpers';
-export { prefClampNumber, prefNumberAt, type PrefBoundAt, type PrefBoundReader } from './bounds';
+export { prefClampNumber, prefBoundedNumber, type PrefBoundAt, type PrefBoundReader } from './bounds';
 export type { PrefAction, PrefActionContext, PrefActionControl, PrefActions, PrefGrade } from './action';
 export {
   isPrefCondition,
@@ -40,7 +40,7 @@ export {
   applyPrefEntryConditions,
   PREF_CONDITION_FIELDS,
   PREF_ENTRY,
-  PREF_STATUS,
+  ROOT_PREF_STATUS,
   prefJudge,
   prefReader,
   prefStatusAt,
@@ -57,14 +57,14 @@ export {
   type PrefStatus,
   type PrefStatusAtOptions,
 } from './status';
-export { prefShownReader, prefShownValue } from './shown';
-export { prefLeafValue, prefValueAbsent } from './leafValue';
+export { prefShownReader, prefDecodedValue } from './shown';
+export { prefValueOrDefault, prefValueAbsent } from './leafValue';
 export {
   isPrefScope,
-  scopeSelectors as prefScopeSelectors,
-  memberAt as prefScopeValue,
-  overrideOptions as prefOverrideOptions,
-  scopeOptionValue as prefScopeOptionValue,
+  prefStoredSelectors,
+  prefScopeValue,
+  prefOverrideOptions,
+  prefScopeOptionValue,
   PREF_ELSE,
   type PrefScope,
   type PrefSelection,
@@ -82,7 +82,7 @@ export { prefObjectBase, prefObjectField, prefObjectWithField } from './object';
 export type { PrefList, PrefListControl } from './list';
 export type { PrefMap } from './map';
 export { prefVariantDefault, prefVariantOf, type PrefUnion } from './union';
-export { prefAsBox, prefGroupIsPage } from './groups';
+export { prefDrawsAsBox, prefGroupIsPage } from './groups';
 export type { PrefBarLead, PrefBarOverflow, PrefGroup, PrefGroupAs, PrefSection, PrefSectionAs } from './groups';
 export { repairPrefValue, type PrefValidator } from './repair';
 export {
@@ -100,7 +100,7 @@ export {
 export {
   isBuiltinPref,
   PREF_KINDS,
-  pairRowsOf,
+  prefPairRows,
   type BuiltinPref,
   type PrefAuto,
   type PrefBase,

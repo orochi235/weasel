@@ -7,7 +7,7 @@ import { prefCanAuto, prefStartsAuto } from './autoReset';
 import { prefHoldsValue, prefLeaves, VERSION_RECORD, isPrefScope, type PrefScope, type PrefSelection, type PrefWeights, type PrefValidator, type PrefGroup } from '@weasel-js/prefs-schema';
 import { assignPrefValueAtPath, setOwnPrefValue, selectionWeights } from '@weasel-js/prefs-schema/internal';
 import { createSnapshots, resolveHeld, selectionAt, weightsUnder, type SnapshotSource } from './snapshot';
-import { checkPrefSplits, prefSelectors, admittedSelectors } from './splitCheck';
+import { checkPrefScopes, prefSelectors, admittedSelectors } from './splitCheck';
 import type { PrefPath, PrefValueAt } from './paths';
 import { prefWrites } from './storeWrites';
 
@@ -132,7 +132,7 @@ export function createPrefsStore<S extends PrefGroup>(
   for (const { field, at, problem } of checkPrefConditions(schema)) {
     console.warn(`[prefs] ${field} of ${at === '' ? 'the schema' : `"${at}"`}: ${problem}`);
   }
-  for (const { at, problem } of checkPrefSplits(schema)) console.warn(`[prefs] ${at === '' ? 'the schema' : `scopes of "${at}"`}: ${problem}`);
+  for (const { at, problem } of checkPrefScopes(schema)) console.warn(`[prefs] ${at === '' ? 'the schema' : `scopes of "${at}"`}: ${problem}`);
   const source: SnapshotSource = { leaves, cache, selectors: prefSelectors(leaves), admitted: admittedSelectors(schema), validators, blends };
   const { current, peek, drop } = createSnapshots(source);
 

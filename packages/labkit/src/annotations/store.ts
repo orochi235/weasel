@@ -19,7 +19,7 @@ import { markDataFrom } from './markData';
 import { markIdOf, splitMarkId } from './markId';
 import { migrateLegacyPoints, type SerializedMarks, shapeFor } from './markShape';
 import { matchesQuery } from './query';
-import { isStale as isStaleAgainst, seenFrom } from './staleness';
+import { isStale as isStaleAgainst, seenValues } from './staleness';
 import type {
   Annotation,
   AnnotationData,
@@ -43,7 +43,7 @@ export type MarkPose = WorldRect;
 export type MarkScene = Scene<AnnotationData, 'marks', MarkPose>;
 
 /** A mark scene: one layer, because marks do not stack in tiers. */
-export function createAnnotationScene(): MarkScene {
+export function createMarkScene(): MarkScene {
   return createScene<AnnotationData, 'marks', MarkPose>({ systemLayers: [{ id: 'marks' }] });
 }
 
@@ -136,7 +136,7 @@ export function createAnnotationStore(opts: AnnotationStoreOptions): Annotations
 
   const contentOf = (id: string) => targetOf(id)?.content ?? NO_CONTENT;
 
-  const sceneFor = (target: string): MarkScene => {
+  const openScene = (target: string): MarkScene => {
     const known = scenes.get(target);
     if (known) return known;
     const raw = restore ? ownAt(restore, target) : undefined;
@@ -145,7 +145,7 @@ export function createAnnotationStore(opts: AnnotationStoreOptions): Annotations
           migrateLegacyPoints(raw as SerializedMarks, contentOf(target)),
           {},
         )
-      : createAnnotationScene();
+      : createMarkScene();
     if (raw) restoreSceneHistory(scene, target, opts.history);
     scenes.set(target, scene);
     history.track(target, scene);
@@ -178,7 +178,7 @@ export function createAnnotationStore(opts: AnnotationStoreOptions): Annotations
   // Restored scenes are materialized up front: everything below reads
   // `scenes`, and a mark that only appears once its pane asks for its scene is
   // a mark a sidebar cannot list.
-  for (const target of Object.keys(restore ?? {})) sceneFor(target);
+  for (const target of Object.keys(restore ?? {})) openScene(target);
   history.fromJSON(opts.history);
 
   /** How a target's marks are drawn right now — one answer for the pane, an
@@ -233,7 +233,7 @@ export function createAnnotationStore(opts: AnnotationStoreOptions): Annotations
   };
 
   return {
-    sceneFor,
+    openScene,
 
     targets,
 
@@ -303,8 +303,8 @@ export function createAnnotationStore(opts: AnnotationStoreOptions): Annotations
       const target = targetOf(init.target);
       const frac = roundFrac(init.frac);
       const shape = shapeFor(init.kind, init.points, frac);
-      const data = markDataFrom(init, shape, seenFrom(config, target?.positionDependsOn ?? []));
-      const node = sceneFor(init.target).add({
+      const data = markDataFrom(init, shape, seenValues(config, target?.positionDependsOn ?? []));
+      const node = openScene(init.target).add({
         kind: 'mark',
         layer: 'marks',
         pose: fracToWorld(frac, target?.content ?? NO_CONTENT),
@@ -367,7 +367,7 @@ export function createAnnotationStore(opts: AnnotationStoreOptions): Annotations
       const result = await captureTarget(
         {
           target,
-          scene: sceneFor(target),
+          scene: openScene(target),
           draw: drawOptionsFor(info),
           base: info.base,
           onWarn: (message) => console.warn(`[labkit] capture: ${message}`),

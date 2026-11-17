@@ -27,7 +27,7 @@ import { hasConfigPath, schemaNodeAtPath, valueAtPath } from './path';
 import { resolveConfigSchema } from './resolve';
 import { prefsFromConfig } from './toPrefs';
 import type { ResolvedConfig } from './types';
-import { isLeafEnabled, isLeafVisible } from './visible';
+import { isRowEnabled, isRowVisible } from './visible';
 
 const RUNS = 100;
 
@@ -127,8 +127,8 @@ describe('a schema built with f', () => {
             t.count(shown ? 'shown' : 'not shown');
             t.count(enabled ? 'enabled' : 'disabled');
             if (above.some((g) => g.show && !holds(g.show, config))) t.count('hidden by a group');
-            expect(isLeafVisible(resolved, path, config, showHidden)).toBe(shown);
-            expect(isLeafEnabled(resolved, path, config)).toBe(enabled);
+            expect(isRowVisible(resolved, path, config, showHidden)).toBe(shown);
+            expect(isRowEnabled(resolved, path, config)).toBe(enabled);
           }
         }),
         runs(RUNS),

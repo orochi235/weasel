@@ -71,7 +71,7 @@ describe('undo across targets', () => {
     // append to the undo stack, leaving redo dead.
     const s = store();
     s.add({ ...MARK, target: 'left' });
-    s.sceneFor('left').undo();
+    s.openScene('left').undo();
 
     expect(s.query()).toHaveLength(0);
     expect(s.canRedo()).toBe(true);
@@ -86,7 +86,7 @@ describe('undo across targets', () => {
     s.add({ ...MARK, target: 'right' });
     s.undo();
     s.undo();
-    s.sceneFor('left').redo();
+    s.openScene('left').redo();
 
     expect(s.query({ target: 'left' })).toHaveLength(1);
     expect(s.canRedo()).toBe(true);

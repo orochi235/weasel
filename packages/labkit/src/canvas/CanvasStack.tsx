@@ -10,7 +10,7 @@ import {
   useRef,
   useState,
 } from 'react';
-import type { Point, ViewTransform } from '../instrument/types';
+import type { Point, ViewTransform2D } from '../instrument/types';
 import { normalize2DView } from '../state/view';
 import { CameraContext, CameraInput, CameraScope, useCameraView } from './CameraInput';
 import { CanvasStackContext } from './CanvasStackContext';
@@ -23,8 +23,8 @@ import { resolveFrame, type ViewportSize, type WorldSpec } from './worldSpec';
 /** Props for `<CanvasStack>`. */
 export interface CanvasStackProps {
   layers: CanvasLayerDescriptor[];
-  view: ViewTransform;
-  onViewChange: (v: ViewTransform) => void;
+  view: ViewTransform2D;
+  onViewChange: (v: ViewTransform2D) => void;
   /** The instrument's coordinate system. Omitted, world (0,0) sits at the
    *  element's top-left with y running down. */
   worldSpec?: WorldSpec;

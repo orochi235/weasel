@@ -14,5 +14,5 @@ export type {
   RenderContext,
   SystemEvent,
   UndoCapability,
-  ViewTransform,
+  ViewTransform2D,
 } from './types';

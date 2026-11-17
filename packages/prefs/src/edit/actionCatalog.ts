@@ -43,7 +43,7 @@ function fileUnder(group: PrefGroup, parts: readonly string[], action: SchemaAct
  * there is none. An action whose key is one part goes at the catalog's end. `catalog` itself where every action
  * is fired already, wherever the reader has put it.
  */
-export function filed(catalog: PrefGroup, actions: readonly SchemaAction[]): PrefGroup {
+export function fileActions(catalog: PrefGroup, actions: readonly SchemaAction[]): PrefGroup {
   const fired = firedIn(catalog, new Set());
   const missing = actions.filter((action) => !fired.has(action.key) && !!fired.add(action.key));
   const above = (action: SchemaAction): string[] => partsOf(action.key).slice(0, -1).map((part) => part.slice(0, -1));
@@ -54,7 +54,7 @@ export function filed(catalog: PrefGroup, actions: readonly SchemaAction[]): Pre
 
 /** A catalog of `actions` filed by their keys: what a host starts an `actions` asset from. */
 export function actionCatalog(actions: readonly SchemaAction[]): PrefGroup {
-  return filed(NO_CATALOG, actions);
+  return fileActions(NO_CATALOG, actions);
 }
 
 function keysUnder(node: SchemaNode): string[][] {

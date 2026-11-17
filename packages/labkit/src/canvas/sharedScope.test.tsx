@@ -7,7 +7,7 @@
 import { act, render } from '@testing-library/react';
 import { WeaselProvider } from '@weasel-js/core';
 import { beforeAll, describe, expect, it, vi } from 'vitest';
-import type { ViewTransform } from '../instrument/types';
+import type { ViewTransform2D } from '../instrument/types';
 import { CanvasStack } from './CanvasStack';
 
 beforeAll(() => {
@@ -34,7 +34,7 @@ function pointer(el: Element, type: string, x: number, y: number, buttons = 1) {
   );
 }
 
-const VIEW: ViewTransform = { zoom: 1, pan: { x: 0, y: 0 } };
+const VIEW: ViewTransform2D = { zoom: 1, pan: { x: 0, y: 0 } };
 
 function mountTwo() {
   const views = [vi.fn(), vi.fn()];

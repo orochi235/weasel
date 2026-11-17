@@ -74,7 +74,7 @@ export interface SelectionPanelProps<TData, TLayer extends string, TPose> extend
   over?: PrefGroup | PrefSection;
   /** The scene's outermost unit scope. Given, a field whose leaf measures a
    *  length shows it in the unit scopes the selected nodes share, through
-   *  `prefLeafInScopes`; what is typed is still stored in world units. */
+   *  `prefLeafInUnitScopes`; what is typed is still stored in world units. */
   units?: UnitScope;
   /** Kind → header label. Default: capitalized kind name. */
   kindLabel?: (kind: string) => string;

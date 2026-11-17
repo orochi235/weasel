@@ -117,14 +117,14 @@ export type {
 } from './annotations';
 export {
   annotationsFromJSON,
-  createAnnotationScene,
+  createMarkScene,
   createAnnotationStore,
   fracContains,
   fracEncloses,
   fracToWorld,
   isStale,
   roundFrac,
-  seenFrom,
+  seenValues,
   worldToFrac,
 } from './annotations';
 export type { AnnotationOverlayProps } from './annotations/AnnotationOverlay';
@@ -206,7 +206,7 @@ export {
 export * from './chrome';
 export * from './clock';
 export { type Auto, auto, isAuto } from './config/auto';
-export { autoPathsOf, resolveAutoConfig } from './config/autoConfig';
+export { startAutoPathsOf, resolveAutoConfig } from './config/autoConfig';
 export type { AutoReports } from './config/autoReports';
 export {
   ActionNode,
@@ -275,7 +275,7 @@ export type {
 } from './config/types';
 export { useConfigSchema } from './config/useConfigSchema';
 export { useResolvedConfig } from './config/useResolvedConfig';
-export { conditionedLeaf, isEntryShown, isLeafEnabled, isLeafVisible } from './config/visible';
+export { conditionedLeaf, isConfigNodeShown, isRowEnabled, isRowVisible } from './config/visible';
 export {
   ControlMatrix,
   type ControlMatrixColumn,
@@ -307,7 +307,7 @@ export type {
   StageCapability,
   SystemEvent,
   UndoCapability,
-  ViewTransform,
+  ViewTransform2D,
 } from './instrument/types';
 export * from './job';
 export { type LoupeKitSettings, labkitKitSettingsSchema } from './kitSettings';
@@ -349,7 +349,7 @@ export type { UndockedPanel, UndockedPanels } from './state/undock';
 export { dockPanel, panelKey, undockPanel } from './state/undock';
 export { type PersistedStateOptions, usePersistedState } from './state/usePersistedState';
 export { useTrialState } from './state/useTrialState';
-export type { ViewTransform2D, ViewTransform3D } from './state/view';
+export type { ViewTransform3D } from './state/view';
 export { as2DView, as3DView, DEFAULT_VIEW } from './state/view';
 export * from './surface';
 export { interstellarTheme } from './theme/interstellar';

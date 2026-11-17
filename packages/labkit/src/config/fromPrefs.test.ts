@@ -5,7 +5,7 @@ import { f } from './builder';
 import { schemaNodeAtPath } from './path';
 import { resolveConfigSchema } from './resolve';
 import { prefsFromConfig } from './toPrefs';
-import { isLeafEnabled, isLeafVisible } from './visible';
+import { isRowEnabled, isRowVisible } from './visible';
 
 const num = (name: string, extra: Partial<PrefLeaf> = {}): PrefLeaf =>
   ({ kind: 'number', name, description: '', default: 0, ...extra }) as PrefLeaf;
@@ -141,16 +141,16 @@ describe('f.prefs', () => {
 
     it('hides every leaf in the section while its showIf does not hold', () => {
       for (const path of ['data.stroke.on', 'data.stroke.width', 'data.stroke.dash']) {
-        expect(isLeafVisible(resolved, path, config('a', true))).toBe(true);
-        expect(isLeafVisible(resolved, path, config('b', true))).toBe(false);
+        expect(isRowVisible(resolved, path, config('a', true))).toBe(true);
+        expect(isRowVisible(resolved, path, config('b', true))).toBe(false);
       }
-      expect(isLeafVisible(resolved, 'mode', config('b', true))).toBe(true);
+      expect(isRowVisible(resolved, 'mode', config('b', true))).toBe(true);
     });
 
     it('disables every leaf in the section while its enableIf does not hold, and keeps the leaf its own condition', () => {
       for (const path of ['data.stroke.width', 'data.stroke.dash']) {
-        expect(isLeafEnabled(resolved, path, config('a', true))).toBe(true);
-        expect(isLeafEnabled(resolved, path, config('a', false))).toBe(false);
+        expect(isRowEnabled(resolved, path, config('a', true))).toBe(true);
+        expect(isRowEnabled(resolved, path, config('a', false))).toBe(false);
       }
       expect(schemaNodeAtPath(resolved.group, 'data.stroke.width')).toMatchObject({
         enableIf: { all: [{ path: 'data.stroke.on' }, { path: 'data.stroke.width', above: -1 }] },
@@ -158,7 +158,7 @@ describe('f.prefs', () => {
     });
 
     it('leaves the switch its enableIf reads live, so the section can be turned back on', () => {
-      expect(isLeafEnabled(resolved, 'data.stroke.on', config('a', false))).toBe(true);
+      expect(isRowEnabled(resolved, 'data.stroke.on', config('a', false))).toBe(true);
     });
   });
 });

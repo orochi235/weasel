@@ -67,7 +67,7 @@ describe('the composed document', () => {
   function sceneWithMark() {
     const store = createAnnotationStore({ targets });
     store.add({ target: 'flat', kind: 'rect', frac: { x: 0.1, y: 0.2, w: 0.3, h: 0.4 } });
-    return store.sceneFor('flat');
+    return store.openScene('flat');
   }
 
   it('frames the content box, and carries the scale as width and height', () => {

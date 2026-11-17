@@ -15,7 +15,7 @@ export interface PrefWeightAxes {
  * carry a read from one option to another. An option the weights leave out reads as 0, and one outside `options`
  * is dropped.
  */
-export function prefWeightAxes(options: Readonly<Record<string, readonly string[]>>): PrefWeightAxes {
+export function createWeightAxes(options: Readonly<Record<string, readonly string[]>>): PrefWeightAxes {
   const pairs = Object.entries(options).flatMap(([by, of]) => of.map((option) => [by, option] as const));
   return {
     count: pairs.length,

@@ -3,7 +3,7 @@ import { headingLeaf } from './headingLeaf';
 import { ownAt, setOwn, valueAtPath } from './path';
 import { bareGroup, type ConfigVerdict, configVerdict } from './railConditions';
 import type { ResolvedConfig } from './types';
-import { isLeafVisible } from './visible';
+import { isRowVisible } from './visible';
 
 /**
  * A resolved schema rearranged so its sections are groups.
@@ -83,7 +83,7 @@ function prune(
   const values: Record<string, unknown> = {};
   for (const [key, child] of Object.entries(group.children)) {
     const path = at === '' ? key : `${at}.${key}`;
-    if (!isLeafVisible(resolved, path, config, showHidden)) continue;
+    if (!isRowVisible(resolved, path, config, showHidden)) continue;
     if (isPrefLeaf(child)) {
       setOwn(children, key, verdict.rowAt(path, child));
       setOwn(values, key, valueAtPath(config, path));
@@ -175,7 +175,7 @@ export function sectionTree(
       const child = ownAt(resolved.group.children, path) as
         | PrefGroup['children'][string]
         | undefined;
-      if (!child || !isLeafVisible(resolved, path, config, showHidden)) continue;
+      if (!child || !isRowVisible(resolved, path, config, showHidden)) continue;
       if (isPrefLeaf(child)) {
         setOwn(kept, path, verdict.rowAt(path, child));
         setOwn(held, path, valueAtPath(config, path));
@@ -197,7 +197,7 @@ export function sectionTree(
   // Whatever no section claimed stays at the top level, where `prefRailItems`
   // gathers loose leaves into one item named for the root.
   for (const [key, child] of Object.entries(resolved.group.children)) {
-    if (claimed.has(key) || !isLeafVisible(resolved, key, config, showHidden)) continue;
+    if (claimed.has(key) || !isRowVisible(resolved, key, config, showHidden)) continue;
     if (isPrefLeaf(child)) {
       setOwn(children, key, verdict.rowAt(key, child));
       setOwn(values, key, valueAtPath(config, key));

@@ -1,5 +1,5 @@
 import { createContext } from 'react';
-import { prefAsBox, prefSectionLeaves, type PrefLeaf, type PrefObject } from '@weasel-js/prefs';
+import { prefDrawsAsBox, prefSectionLeaves, type PrefLeaf, type PrefObject } from '@weasel-js/prefs';
 import { GroupTabs, type GroupTab } from '../Prefs/GroupTabs';
 import { pathWithin, useHeldTab, type PrefMarks } from '../Prefs/selection';
 import { isFlagLeaf } from './cells';
@@ -68,7 +68,7 @@ export const sectionHeaded = (section: PanelSection): boolean =>
 
 /** Whether `selected` can name `section` by its key: it draws a heading, a tab, or a panel to carry the mark. */
 export const sectionNamed = (section: PanelSection): boolean =>
-  section.key !== '' && (section.as === 'tab' || prefAsBox(section.as) || sectionHeaded(section));
+  section.key !== '' && (section.as === 'tab' || prefDrawsAsBox(section.as) || sectionHeaded(section));
 
 /** Every section of `sections`, those nested in them included, and whether it is drawn on a bar's line. */
 function everySection(sections: readonly PanelSection[], inBar = false): Array<{ section: PanelSection; inBar: boolean }> {

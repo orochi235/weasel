@@ -2,7 +2,7 @@ import type { LabContribution, LabPage } from '@weasel-js/labkit';
 import type { Theme } from '@weasel-js/theme';
 import type { LeafRenderer } from '@weasel-js/labkit/config';
 import type { FrameSetup } from './frame/FrameController';
-import type { Globals } from './protocol/messages';
+import type { StoryGlobals } from './protocol/messages';
 import { checkShellConfig } from './shell/checkShellConfig';
 import type { GlobalDeclarations } from './shell/globals';
 import type { Library } from './story/library';
@@ -23,7 +23,7 @@ export interface ShellConfig {
   globals?: GlobalDeclarations;
   /** The theme the workshop's own chrome takes at the lab's current globals, so a global can restyle the workshop
    *  as well as the stories. Default: labkit's. */
-  labTheme?: (globals: Globals) => Theme;
+  labTheme?: (globals: StoryGlobals) => Theme;
   /** The project's libraries, each a stretch of file path and the label its stories carry in the tree's package
    *  filter, on index pages, and in Get Info. A story under none of them takes its title's first segment. */
   libraries?: readonly Library[];

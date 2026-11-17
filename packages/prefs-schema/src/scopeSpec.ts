@@ -31,12 +31,12 @@ export function prefOverridesOf(pref: PrefLeaf, selector: string): PrefOverrides
 }
 
 /** The paths of a pref's selectors, outermost first, where it has any. */
-export function scopeSelectorsOf(pref: PrefLeaf): readonly string[] | undefined {
+export function declaredSelectorsOf(pref: PrefLeaf): readonly string[] | undefined {
   return pref.scopes?.length ? pref.scopes.map((scope) => scope.selector) : undefined;
 }
 
 /** {@link prefOverridesOf} for one pref, as the scope functions take it: none where no selector is closed. */
-export const overridesOfPref = createPart((pref: PrefLeaf): PrefOverridesLookup | undefined =>
+export const prefOverridesLookup = createPart((pref: PrefLeaf): PrefOverridesLookup | undefined =>
   pref.scopes?.some((scope) => scope.overrides !== undefined) ? (selector) => prefOverridesOf(pref, selector) : undefined,
 );
 

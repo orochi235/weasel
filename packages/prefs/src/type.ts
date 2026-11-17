@@ -8,6 +8,6 @@ import type { PrefLeaf } from '@weasel-js/prefs-schema';
  * `item`. `name` is the identifier the type is exported under, which a schema
  * editor prints in place of the leaf's literal.
  */
-export function prefType<L extends PrefLeaf>(name: string, leaf: L): L & { type: string } {
+export function namedPrefType<L extends PrefLeaf>(name: string, leaf: L): L & { type: string } {
   return { ...leaf, type: name };
 }

@@ -1,6 +1,6 @@
 import { createKitRoot } from '../kitIcons';
 import type { FrameImporters } from '../frame/mountFrame';
-import type { DepGraph, IndexEntry } from '../story/types';
+import type { ComponentGraph, IndexEntry } from '../story/types';
 import { createRevision } from './loupe/captureContext';
 import { createStoryChanges } from './storyChanges';
 import { Workshop, type WorkshopProps } from './Workshop';
@@ -20,7 +20,7 @@ export interface MountedWorkshop {
   /** Loads `file` again for every story that had it, through the current importers. */
   reloadStory(file: string): void;
   /** Swaps in the component graph, as the vite plugin's `forge:deps` event carries. */
-  setDependencies(dependencies: DepGraph): void;
+  setDependencies(dependencies: ComponentGraph): void;
   /** Says a story, or a module one imports, was edited: no lens shows a capture taken before it. */
   revise(): void;
   unmount(): void;

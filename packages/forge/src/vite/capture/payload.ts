@@ -1,5 +1,5 @@
 import { isSafeOverride } from '../../frame/safeOverride.ts';
-import type { Globals, Layout } from '../../protocol/messages.ts';
+import type { StoryGlobals, StoryLayout } from '../../protocol/messages.ts';
 
 /** Everything the screen renders a story from, as the capture endpoint takes it. */
 export interface CapturePayload {
@@ -11,21 +11,21 @@ export interface CapturePayload {
   config: unknown;
   /** Must survive JSON. */
   state: unknown;
-  globals: Globals;
+  globals: StoryGlobals;
   /** CSS variable overrides, by property name. */
   overrides: Readonly<Record<string, string>>;
   /** Null for a story with no timeline, and for an isolated story. */
   playhead: number | null;
   /** The host's size in CSS pixels. */
   box: { width: number; height: number };
-  layout: Layout;
+  layout: StoryLayout;
   /** Device pixel ratio, in [1, 3]. */
   dpr: number;
   /** Where the story's scroller stands in its host, in CSS pixels, so the capture shows the patch the screen does. */
   scroll: { left: number; top: number };
   /** The workshop lab's theme as the screen shows it: the lab's globals, which the shell config's `labTheme` reads,
    *  and its resolved color mode. An isolated story's document has no lab, and ignores it. */
-  lab: { globals: Globals; mode: 'light' | 'dark' };
+  lab: { globals: StoryGlobals; mode: 'light' | 'dark' };
   /** The OS color scheme the screen sees, which the capture page emulates: a story or a lab in `auto` mode follows
    *  `prefers-color-scheme`, and headless Chromium would otherwise answer light. */
   colorScheme: 'light' | 'dark';
@@ -43,7 +43,7 @@ export const CAPTURE_PAGES = { shell: '__forge/capture.html', frame: '__forge/ca
 export const MIN_DPR = 1;
 export const MAX_DPR = 3;
 
-const LAYOUTS: readonly string[] = ['centered', 'padded', 'fullscreen'] satisfies readonly Layout[];
+const LAYOUTS: readonly string[] = ['centered', 'padded', 'fullscreen'] satisfies readonly StoryLayout[];
 
 const isRecord = (value: unknown): value is Record<string, unknown> =>
   typeof value === 'object' && value !== null && !Array.isArray(value);
@@ -85,7 +85,7 @@ export function parsePayload(body: unknown): CapturePayload | { error: string } 
     overrides: overrides as Record<string, string>,
     playhead,
     box: { width: box.width, height: box.height },
-    layout: layout as Layout,
+    layout: layout as StoryLayout,
     dpr,
     scroll: { left: scroll.left, top: scroll.top },
     lab: { globals: lab.globals, mode: lab.mode },

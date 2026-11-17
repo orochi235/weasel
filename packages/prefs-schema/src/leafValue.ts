@@ -11,7 +11,7 @@ export function prefValueAbsent(leaf: PrefLeaf, held: unknown): boolean {
  * nothing. `unset` is for a surface where holding nothing means the owner has
  * no such property, a scene node's: it shows nothing there too.
  */
-export function prefLeafValue(leaf: PrefLeaf, held: unknown, { unset = false }: { unset?: boolean } = {}): unknown {
+export function prefValueOrDefault(leaf: PrefLeaf, held: unknown, { unset = false }: { unset?: boolean } = {}): unknown {
   if (!prefValueAbsent(leaf, held)) return held;
   if (unset || (leaf as { clearable?: boolean }).clearable === true) return undefined;
   return (leaf as { default?: unknown }).default;

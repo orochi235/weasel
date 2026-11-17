@@ -10,7 +10,7 @@ import { prefSelectors, admittedSelectors } from './splitCheck';
  * default by its `defaultScope` — what `prefsCss` needs to write a schema's
  * stylesheet with no store and no storage, at build time say.
  */
-export function prefsDefaultsSource(schema: PrefGroup): PrefsCssSource {
+export function createDefaultsSource(schema: PrefGroup): PrefsCssSource {
   const leaves = new Map([...prefLeaves(schema)].filter(([, leaf]) => prefHoldsValue(leaf)));
   const selectors = prefSelectors(leaves);
   const admitted = admittedSelectors(schema);

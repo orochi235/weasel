@@ -1,6 +1,6 @@
 import type { PrefLeaf } from '../index';
 
-/** The types an editor may place: leaves made with `prefType`, each found by the name in its `type`. */
+/** The types an editor may place: leaves made with `namedPrefType`, each found by the name in its `type`. */
 export type PrefTypes = readonly PrefLeaf[];
 
 /** No types: the editor places kinds only. */

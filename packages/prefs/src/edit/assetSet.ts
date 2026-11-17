@@ -108,11 +108,11 @@ export function assetOf(assetSet: AssetSet, id: string): Asset | undefined {
 }
 
 /** Whether an asset is one the structure tree shows: all but the action catalog. */
-export const isShown = (asset: Asset): asset is ShownAsset => asset.kind !== 'actions';
+export const isTreeAsset = (asset: Asset): asset is ShownAsset => asset.kind !== 'actions';
 
 /** The assets the asset list offers, in the asset set's order. */
 export function shownAssets(assetSet: AssetSet): ShownAsset[] {
-  return assetSet.assets.filter(isShown);
+  return assetSet.assets.filter(isTreeAsset);
 }
 
 /** The catalog of the host's actions, where the asset set holds one. */
