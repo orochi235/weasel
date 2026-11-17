@@ -98,6 +98,11 @@ function crossLaps(
   if (laps !== 0) take(laps);
 }
 
+/** Whether the playhead stands at the end it plays toward: going forward its end, and played
+ *  backward the start of its first lap, as one exactly on a later lap's start goes on into the lap behind. */
+const atEnd = (playhead: number, duration: number, lap: number, backward: boolean): boolean =>
+  (backward ? playhead <= 0 && lap === 0 : playhead >= duration);
+
 /**
  * Create a timeline as a registered animator animation.
  *
@@ -164,20 +169,15 @@ export function createTimeline(
       });
     }
 
-    // A handler on the outgoing lap's tail canceled it.
-    if (canceled) return true;
-
     const finished = playhead >= duration && !parked;
-    // Played backward, it ends at its start as it ends at its end going forward: at the start
-    // of its first lap, as a playhead exactly on a later lap's start goes on into the one behind.
-    const rewound = rate < 0 && playhead <= 0 && lap === 0;
+    const rewound = rate < 0 && atEnd(playhead, duration, lap, true);
     playhead = Math.min(Math.max(playhead, 0), duration);
 
     // Sampled before fired, so a handler reads the current frame's values.
     sampler.apply(opts.tracks, playhead);
+    // A handler (on the outgoing lap's tail too) or an `onTick` canceled it: it is off the table, and does nothing more.
     if (canceled) return true;
     const sought = rate > 0 ? events.to(opts.tracks, playhead) : rate < 0 && events.back(playhead);
-    // A handler canceled it: it is off the table already, and books nothing more.
     if (canceled) return true;
     booker?.tick(virtualNow, rate);
 
@@ -211,8 +211,7 @@ export function createTimeline(
   /** Put a finished timeline back on the animator's table. A re-registered
    *  entry's `virtualNow` restarts at 0, so `offset` carries the playhead. */
   const rearm = (): void => {
-    // At the end it plays toward, a timeline is finished: forward its end, backward the start of its first lap.
-    if (canceled || (wantScale < 0 ? playhead <= 0 && lap === 0 : playhead >= duration)) return;
+    if (canceled || atEnd(playhead, duration, lap, wantScale < 0)) return;
     done = false;
     if (live) return;
     booker?.rearm();

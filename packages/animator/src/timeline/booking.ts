@@ -76,11 +76,26 @@ const lapsOf = (laps: number, duration: number): number => (laps === 0 ? 0 : lap
 
 const isAfter = (a: Cursor, b: Cursor): boolean => a.lap > b.lap || (a.lap === b.lap && a.r > b.r);
 
+/** Cursors by track, then by the root time it is placed at: one track nested in two places is two runs of events. */
+type Cursors = Map<EventTrack, Map<number, Cursor>>;
+
+function placesOf(cursors: Cursors, track: EventTrack): Map<number, Cursor> {
+  let placed = cursors.get(track);
+  if (!placed) cursors.set(track, placed = new Map());
+  return placed;
+}
+
+/** Moves every cursor past `at` back to it. */
+function pullBack(cursors: Cursors, at: Cursor): void {
+  for (const placed of cursors.values()) {
+    for (const [from, c] of placed) if (isAfter(c, at)) placed.set(from, at);
+  }
+}
+
 export function createBooker(opts: EventBooking, host: BookerHost): Booker {
   const lookahead = opts.lookahead ?? 100;
   const maxLate = opts.maxLate ?? Infinity;
-  /** By track, then by the root time it is placed at: one track nested in two places is two runs of events. */
-  const cursors = new Map<EventTrack, Map<number, Cursor>>();
+  const cursors: Cursors = new Map();
   let start: Cursor = { lap: 0, r: -Infinity };
   let bookings: Booking[] = [];
   /** Clock time of the current frame, smoothed. Null until anchored. */
@@ -105,9 +120,7 @@ export function createBooker(opts: EventBooking, host: BookerHost): Booker {
     // stands is skipped by identity, and an edit may have added events behind
     // the cursor that only a rescan finds.
     const at = playheadCursor();
-    for (const placed of cursors.values()) {
-      for (const [from, c] of placed) if (isAfter(c, at)) placed.set(from, at);
-    }
+    pullBack(cursors, at);
     if (isAfter(start, at)) start = at;
   };
 
@@ -121,9 +134,7 @@ export function createBooker(opts: EventBooking, host: BookerHost): Booker {
     const duration = host.duration();
     const playhead = host.playhead();
     const { events } = track;
-    let placed = cursors.get(track);
-    if (!placed) cursors.set(track, placed = new Map());
-    let c = placed.get(at) ?? start;
+    let c = placesOf(cursors, track).get(at) ?? start;
     for (;;) {
       const lapStart = lapsOf(c.lap - lap, duration);
       if (lapStart > horizon) break;
@@ -153,7 +164,7 @@ export function createBooker(opts: EventBooking, host: BookerHost): Booker {
         bookings.push({ event: ev, lap: c.lap, r, when, handle });
       }
     }
-    placed.set(at, c);
+    placesOf(cursors, track).set(at, c);
   };
 
   const visit = (
