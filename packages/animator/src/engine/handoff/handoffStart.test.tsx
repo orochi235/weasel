@@ -42,4 +42,13 @@ describe('a call handed to the compositor, as it starts', () => {
     expect(() => r.animator.spring({ target: r.e.target, to: { x: 0 }, stiffness: -1, cancelKey: 'k', compositor: 'auto' })).toThrow();
     expect(r.animator.live()).toHaveLength(1);
   });
+
+  it('runs a tween that never ends on the main thread', () => {
+    const r = setup();
+    const e = element(r.timeline);
+    act(() => { r.animator.tween({ target: e.target, to: { x: 100 }, ms: Infinity, compositor: 'auto' }); });
+    expect(e.made).toHaveLength(0);
+    expect(r.animator.live()).toHaveLength(1);
+    expect(() => r.animator.tween({ target: e.target, to: { x: 1 }, ms: Infinity, compositor: 'require' })).toThrow(/compositor/);
+  });
 });
