@@ -106,7 +106,8 @@ export type StorageArea = Pick<Storage, 'getItem' | 'setItem' | 'removeItem'>;
 const warnAreaLoss = jsonLossWarner('Web Storage');
 
 /** The value `localStorageAdapter` holds under `key`, read now, for a setting a first render needs: `undefined` when
- *  there is none, or where the browser refuses storage. Text stored as plain text, not JSON, reads back as itself.
+ *  there is none, or where the browser refuses storage. Text stored as plain text, not JSON, reads back as itself,
+ *  unless it is also JSON text: plain `2`, `false` or `null` reads as that number, boolean or `null`.
  *  `area` reads another store shaped like `localStorage` the same way. */
 export function readLocal(key: string, area?: StorageArea): unknown {
   try {
