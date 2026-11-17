@@ -260,7 +260,7 @@ function trimmedOutlineOf<TData, TPose>(
 
 /** The painters `shapes` resolves, in evaluation order — `'high'` tier first, then `'normal'`,
  *  then the rect fallback. Default `defaultNodeShapes`. */
-export function getNodeShapes(shapes: NodeShapes = defaultNodeShapes): readonly NodeShapeEntry[] {
+export function nodeShapeEntries(shapes: NodeShapes = defaultNodeShapes): readonly NodeShapeEntry[] {
   return shapes.entries();
 }
 

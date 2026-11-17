@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 import {
-  createScene, defaultDrawOne, getNodeShapes, RIGID_POSE_COMPOSITION, sceneToAdapter,
+  createScene, defaultDrawOne, nodeShapeEntries, RIGID_POSE_COMPOSITION, sceneToAdapter,
   type DrawCommand, type RectPose, type View,
 } from '@weasel-js/core';
 import { buildSceneLayer } from 'canvas/buildSceneLayer';
@@ -41,7 +41,7 @@ function paintCalls(cull: boolean, view: View): { calls: number; nodes: number }
     sceneToAdapter(scene) as never,
     () => null, () => null,
   );
-  const spies = getNodeShapes().map((p) => vi.spyOn(p, 'paint'));
+  const spies = nodeShapeEntries().map((p) => vi.spyOn(p, 'paint'));
   layer.draw(null, view, DIMS) as DrawCommand[];
   const calls = spies.reduce((n, s) => n + s.mock.calls.length, 0);
   for (const s of spies) s.mockRestore();

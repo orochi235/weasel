@@ -9,7 +9,7 @@
 import { nodeShapesOf } from 'canvas/nodeShapeRegistry';
 import { createBvh, createSettledCache, type Bvh, type SettledCache } from '@weasel-js/geom/nd';
 import { markerGeneration } from '@weasel-js/stroke';
-import { getNodeShapes } from 'canvas/NodeShape';
+import { nodeShapeEntries } from 'canvas/NodeShape';
 import { inheritedPaintOf, inheritsPaint } from 'core/scene/inheritedPaint';
 import { nodesAsShown } from 'core/scene/nodeAsShown';
 import { nodeMemoGeneration } from 'core/scene/nodeMemo';
@@ -190,7 +190,7 @@ export function scenePickIndex(scene: AnyScene, descriptor: PoseDescriptor<unkno
 
 function current(scene: AnyScene, descriptor: PoseDescriptor<unknown>): BuiltIndex | null {
   // Registers the built-in painters first, which bumps the memo generation.
-  getNodeShapes(nodeShapesOf(scene));
+  nodeShapeEntries(nodeShapesOf(scene));
   const version = scene.getVersion();
   const overrides = scene.overrides.getGeneration();
   // Boxed where each node is painted, which a container's scroll moves.
