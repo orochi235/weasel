@@ -20,3 +20,16 @@ describe('extractTraitSchemas', () => {
     expect(index.node.source.line).toBeGreaterThan(1);
   });
 });
+
+describe('extractOps', () => {
+  it('lists every op factory the ops barrel exports, from whichever file declares it', () => {
+    expect(Object.keys(index.ops)).toEqual(expect.arrayContaining([
+      'createInsertOp', 'createSetDataOp', 'createSetHiddenOp', 'createSetLockedOp', 'createSetLayoutOp',
+      'createSetLayerOp', 'createSetDependsOnOp', 'createArrangeOp', 'createReorderOp', 'createMoveToIndexOp',
+      'createSetChildOrderOp',
+    ]));
+    expect(index.ops.createSetChildOrderOp?.source.file).toBe('packages/core/src/core/ops/reorder/setChildOrder.ts');
+    expect(index.ops.createSetHiddenOp?.params.map((p) => p.name)).toContain('id');
+  });
+
+});

@@ -1,59 +1,39 @@
 /**
- * Produces an `OpFactorySchema` per exported `create*Op` function in the kit's
- * ops modules. The args object's type is resolved against the same source file.
- *
- * Missing files are skipped silently so a kit rename doesn't crash the
- * inspector. Args types that can't be resolved emit an empty `params` list
- * rather than throwing.
+ * Produces an `OpFactorySchema` per `create*Op` function the kit's ops barrel
+ * exports, followed through its re-exports. The args object's type is resolved
+ * through the checker, so an args type declared in another file is found too.
+ * Args types that can't be resolved emit an empty `params` list rather than
+ * throwing.
  */
 import {
-  SyntaxKind,
   Node,
+  SyntaxKind,
   type Project,
   type FunctionDeclaration,
-  type InterfaceDeclaration,
-  type SourceFile,
-  type TypeAliasDeclaration,
 } from 'ts-morph';
 import { resolve } from 'node:path';
 import type { OpFactorySchema, PropertyDescriptor } from '../src/dev/traitSchemas.types.ts';
-import { srcRef, readJsDoc, sourceFileOrThrow } from './extract.ts';
+import { srcRef, readJsDoc, sourceFileOrThrow, propertiesOfTypeNode } from './extract.ts';
 
-const SOURCES: readonly string[] = [
-  'packages/core/src/core/ops/create.ts',
-  'packages/core/src/core/ops/delete.ts',
-  'packages/core/src/core/ops/transform.ts',
-  'packages/core/src/core/ops/reparent.ts',
-  'packages/core/src/core/ops/select.ts',
-  'packages/core/src/core/ops/setText.ts',
-  'packages/core/src/core/ops/setPath.ts',
-];
+/** The ops barrel, and the directory holding every file it re-exports from. */
+export const OPS_BARREL = 'packages/core/src/core/ops/index.ts';
+export const OPS_READS: readonly string[] = ['packages/core/src/core/ops'];
 
 export function extractOps(project: Project, repoRoot: string): Record<string, OpFactorySchema> {
+  const barrel = sourceFileOrThrow(project, resolve(repoRoot, OPS_BARREL));
   const out: Record<string, OpFactorySchema> = {};
 
-  for (const rel of SOURCES) {
-    const abs = resolve(repoRoot, rel);
-    let sf: SourceFile;
-    try {
-      sf = sourceFileOrThrow(project, abs);
-    } catch {
-      continue; // kit may rename — skip silently
-    }
-
-    for (const fn of sf.getFunctions()) {
-      if (!fn.isExported()) continue;
-      const name = fn.getName();
-      if (!name || !name.startsWith('create') || !name.endsWith('Op')) continue;
-
-      out[name] = {
-        id: name,
-        params: paramsOf(fn, sf),
-        returnType: returnTypeOf(fn),
-        jsdoc: readJsDoc(fn),
-        source: srcRef(fn, repoRoot),
-      };
-    }
+  for (const [name, decls] of barrel.getExportedDeclarations()) {
+    if (!name.startsWith('create') || !name.endsWith('Op')) continue;
+    const fn = decls.find(Node.isFunctionDeclaration);
+    if (!fn) continue;
+    out[name] = {
+      id: name,
+      params: paramsOf(fn),
+      returnType: returnTypeOf(fn),
+      jsdoc: readJsDoc(fn),
+      source: srcRef(fn, repoRoot),
+    };
   }
 
   return out;
@@ -66,54 +46,19 @@ function returnTypeOf(fn: FunctionDeclaration): string {
   return fallback.length <= 120 ? fallback : `${fallback.slice(0, 117)}...`;
 }
 
-function paramsOf(fn: FunctionDeclaration, sf: SourceFile): readonly PropertyDescriptor[] {
-  const first = fn.getParameters()[0];
-  if (!first) return [];
-  const typeNode = first.getTypeNode();
-  if (!typeNode) return [];
-
-  // Expect a TypeReference like `InsertArgs<TNode>`; grab the identifier.
-  const refName = typeReferenceName(typeNode);
-  if (!refName) return [];
-
-  const decl = sf.getInterface(refName) ?? sf.getTypeAlias(refName);
-  if (!decl) return [];
-
-  return propertiesFromDecl(decl);
-}
-
-function typeReferenceName(typeNode: Node): string | null {
-  if (typeNode.getKind() !== SyntaxKind.TypeReference) return null;
-  const ident = typeNode.getFirstChildByKind(SyntaxKind.Identifier);
-  return ident ? ident.getText() : null;
-}
-
-function propertiesFromDecl(decl: InterfaceDeclaration | TypeAliasDeclaration): readonly PropertyDescriptor[] {
-  if (decl.getKind() === SyntaxKind.InterfaceDeclaration) {
-    return (decl as InterfaceDeclaration).getProperties().map(propertyToDescriptor);
+function paramsOf(fn: FunctionDeclaration): readonly PropertyDescriptor[] {
+  const typeNode = fn.getParameters()[0]?.getTypeNode();
+  if (!typeNode || !Node.isTypeReference(typeNode)) return [];
+  // `InsertArgs<TNode>`: follow the name to its declaration, through an import.
+  const symbol = typeNode.getTypeName().getSymbol();
+  const target = symbol?.getAliasedSymbol() ?? symbol;
+  for (const decl of target?.getDeclarations() ?? []) {
+    if (Node.isInterfaceDeclaration(decl)) return propertiesOfTypeNode(decl);
+    if (Node.isTypeAliasDeclaration(decl)) {
+      const aliased = decl.getTypeNode();
+      if (!aliased || !Node.isTypeLiteral(aliased)) return [];
+      return aliased.getChildrenOfKind(SyntaxKind.PropertySignature).map((m) => propertiesOfTypeNode(m)[0]!);
+    }
   }
-  // Type alias: peel to its TypeLiteral if present.
-  const aliasTypeNode = (decl as TypeAliasDeclaration).getTypeNode();
-  if (!aliasTypeNode || aliasTypeNode.getKind() !== SyntaxKind.TypeLiteral) return [];
-  const out: PropertyDescriptor[] = [];
-  for (const member of aliasTypeNode.getChildrenOfKind(SyntaxKind.PropertySignature)) {
-    out.push(propertyToDescriptor(member));
-  }
-  return out;
-}
-
-function propertyToDescriptor(member: Node): PropertyDescriptor {
-  const ps = member as unknown as {
-    getName: () => string;
-    hasQuestionToken: () => boolean;
-    getTypeNode: () => Node | undefined;
-  };
-  const typeNode = ps.getTypeNode();
-  const doc = readJsDoc(member);
-  return {
-    name: ps.getName(),
-    type: typeNode ? typeNode.getText() : 'unknown',
-    optional: ps.hasQuestionToken(),
-    ...(doc ? { doc } : {}),
-  };
+  return [];
 }
