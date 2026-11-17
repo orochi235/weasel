@@ -86,11 +86,12 @@ instead, so its text is not selectable.
 
 ## `skipped`
 
-Each entry is `{ kind: 'glyph' | 'command', detail }`. It reports:
+Each entry is `{ kind: 'glyph' | 'command' | 'font', detail }`. It reports:
 
 - an effects group, shader command or registered-paint fill with no `rasterize` hook, a composite group with none (drawn source-over), or a raster whose hook threw or returned the wrong number of pixels;
 - an image that could not be read, and a texture that cannot be drawn;
 - a glyph nothing can draw: a color glyph, a slot the layout left empty, or one with no outline in the outline fallback;
+- a face that could not be read for embedding or is not well-formed TrueType, once per face; its text is drawn as outlines;
 - a command holding NaN or an infinity, which is left out whole;
 - the approximations below, except the stroke width.
 
