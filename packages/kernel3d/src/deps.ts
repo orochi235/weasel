@@ -7,7 +7,7 @@
  * something in 3D is the camera each dep already closes over.
  */
 
-import type { AreaSelectDep, HitTestView, NodeAtPointDep, PoseDescriptor, SnapDep, SnapOutcomeStore, SnapSource } from '@weasel-js/core/engine';
+import type { AreaSelectDep, PickingView, NodeAtPointDep, PoseDescriptor, SnapDep, SnapOutcomeStore, SnapSource } from '@weasel-js/core/engine';
 import type { NodeId } from '@weasel-js/routing';
 import { DEFAULT_SNAP_PX, createSnapOutcomeStore, assertSnapSourceIds, createEnteredGroupScope, pressTarget, type EnteredGroupApi } from '@weasel-js/core/engine';
 import { isDev, type KitSettingsStore } from '@weasel-js/react';
@@ -138,12 +138,12 @@ function pickOnRay<TData, TLayer extends string>(
  */
 export function createPickEvery<TData, TLayer extends string>(
   world: World3d<TData, TLayer>,
-): (point: { x: number; y: number }, view?: HitTestView) => NodeId | null {
+): (point: { x: number; y: number }, view?: PickingView) => NodeId | null {
   return (point, view) => pickOnRay(world, view?.viewId, point, undefined, layerGateOf(view));
 }
 
 /** The asking view's layer gate, called as a method so it keeps its receiver. */
-function layerGateOf(view: HitTestView | undefined): ((layer: string) => boolean) | undefined {
+function layerGateOf(view: PickingView | undefined): ((layer: string) => boolean) | undefined {
   return view?.layerIsPainted ? (layer) => view.layerIsPainted!(layer) : undefined;
 }
 

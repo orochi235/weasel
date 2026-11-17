@@ -23,7 +23,7 @@ import {
 } from 'canvas/pickWalk';
 import { rectToPlane, toPlane, type PlaneMap } from 'core/viewport/parallax';
 
-import type { HitTestView } from 'interactions/actions/depSchema';
+import type { PickingView } from 'interactions/actions/depSchema';
 import { findShapeInk, findShapeSilhouette } from 'canvas/NodeShape';
 import {
   polygonRegion,
@@ -59,7 +59,7 @@ export interface RegionQueryOptions {
 /** The pick options a region dep hands the shared walk: the asking view's
  *  layer gate and camera, and the surface's alpha. */
 export function regionPickOptions(
-  view: HitTestView | undefined,
+  view: PickingView | undefined,
   alphaOf: ((id: string) => number) | undefined,
 ): ScenePickSourceOptions<unknown> {
   const camera = view?.get?.();

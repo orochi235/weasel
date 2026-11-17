@@ -25,7 +25,8 @@ import type { DebugSink, LongPressState } from '@weasel-js/routing';
 import type { SnapDep } from './snapDep';
 import type { EnteredGroupApi } from 'canvas/deps/enteredGroup';
 import type { TransformFollower, TransformPreviewNode } from './transformFinish';
-import type { ColorAtDep, HitTestView, NodeAtPointDep, AreaSelectDep, LassoSelectDep } from './regionSelectDeps';
+import type { ColorAtDep, NodeAtPointDep, AreaSelectDep, LassoSelectDep } from './regionSelectDeps';
+import type { PickingView } from 'core/adapters/types';
 import type { InsertDep, InsertEnds, InsertExtras, PathSymmetryDep, InsertIntoDep, InsertLive } from './insertDeps';
 import type { CommitSelection } from './defaultCommitAdapter';
 import type { LayoutDep, CanDropIntoDep } from './layoutDeps';
@@ -34,7 +35,7 @@ import type { OperandsDep } from './operands';
 
 export type { EnteredGroupApi, TransformFollower, TransformPreviewNode };
 export type { SnapDep, SnapGeometry } from './snapDep';
-export type { ColorAtDep, HitTestView, NodeAtPointDep, AreaSelectDep, LassoSelectDep };
+export type { ColorAtDep, PickingView, NodeAtPointDep, AreaSelectDep, LassoSelectDep };
 export type { InsertDep, InsertEnds, InsertExtras, CommitSelection, PathSymmetryDep, InsertIntoDep, InsertLive };
 export type { LayoutDep, CanDropIntoDep };
 export type { ClipboardDep, SliceDep };

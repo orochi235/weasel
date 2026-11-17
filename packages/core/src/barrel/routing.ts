@@ -112,7 +112,7 @@ export { topmostOf, type TopmostTree } from '../canvas/topmostOf';
 export { pressTarget, type PressTargetTree } from '../canvas/pressTarget';
 export type {
   AreaSelectDep,
-  HitTestView,
+  PickingView,
   ClipboardIngestCtx,
   EditAnchorsDep,
   FinishedEditFrame,

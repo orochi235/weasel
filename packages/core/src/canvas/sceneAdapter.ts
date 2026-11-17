@@ -10,7 +10,7 @@ import type {
   PasteCtx,
   LassoHitMode,
   LassoSelectAdapter,
-  RegionPickView,
+  PickingView,
   LayerEnumerableAdapter,
   MoveAdapter,
 } from 'core/adapters/types';
@@ -190,7 +190,7 @@ export function sceneToAdapter<TData, TLayer extends string, TPose>(
 
   const pickOpts: ScenePickSourceOptions<unknown> = {};
   // The asking view's layer gate and camera, over the adapter's own options.
-  const pickOptsFor = (view: RegionPickView | undefined): ScenePickSourceOptions<unknown> =>
+  const pickOptsFor = (view: PickingView | undefined): ScenePickSourceOptions<unknown> =>
     (view ? { ...pickOpts, ...regionPickOptions(view, undefined) } : pickOpts);
 
   const clipboardEnv: SceneClipboardEnv<TData, TLayer, TPose> = {
@@ -232,7 +232,7 @@ export function sceneToAdapter<TData, TLayer extends string, TPose>(
     setSelection,
     // The live marquee's and lasso's own hit-tests. Groups come back:
     // this adapter's consumer has nothing to fold children into them.
-    hitTestArea(rect: Bounds, view?: RegionPickView) {
+    hitTestArea(rect: Bounds, view?: PickingView) {
       return hitTestArea(
         scene,
         rect,
@@ -241,7 +241,7 @@ export function sceneToAdapter<TData, TLayer extends string, TPose>(
         { includeGroups: true },
       );
     },
-    hitTestLasso(polygon, mode: LassoHitMode, view?: RegionPickView) {
+    hitTestLasso(polygon, mode: LassoHitMode, view?: PickingView) {
       return hitTestLassoPolygon(
         scene,
         polygon,
