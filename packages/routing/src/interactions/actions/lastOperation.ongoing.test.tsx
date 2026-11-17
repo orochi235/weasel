@@ -3,7 +3,7 @@ import { act, render } from '@testing-library/react';
 import { createHistory, type History, type Op } from '@weasel-js/history';
 import { pref } from '@weasel-js/prefs-schema';
 import type { Action } from './action';
-import { ActionsProvider, useActionsRegistry } from './ActionsProvider';
+import { ActionsProvider, actionsNodeOf, useActionsRegistry } from './ActionsProvider';
 import { DepRegistryProvider, useDepRegistry, type DepName, type DepRegistry } from './depRegistry';
 import { resolveParams, type InvocationCtx, type OngoingHandle } from './invoker';
 import type { ActionsRegistry } from './registry';
@@ -162,6 +162,15 @@ describe('a gesture as the last operation', () => {
     held.factor = 5;
     drag(1);
     expect(doc.width).toBe(10 + 4 * 3 + 5);
+  });
+
+  it('ends when the active tool changes, leaving what the drag did', () => {
+    const { doc, history, registry, store, drag } = setup({ replays: true });
+    drag(4, { factor: 2 });
+    act(() => { actionsNodeOf(registry)!.lastOperation.toolLeft(); });
+    expect(store.get()).toBeNull();
+    expect(doc.width).toBe(18);
+    expect(history.undoDepth()).toBe(1);
   });
 
   it('holds nothing for a drag whose handle cannot replay', () => {

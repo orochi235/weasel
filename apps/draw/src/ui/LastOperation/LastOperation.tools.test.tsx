@@ -1,6 +1,6 @@
 /**
- * In draw, a Knead stroke and a Plane Warp drag leave the last-operation panel up, and a change there replays
- * the gesture in place. The brush's Size in the panel and in the options row are one setting: a change in the panel
+ * In draw, a Knead stroke and a Plane Warp drag leave the last-operation panel up until another tool is picked,
+ * and a change there replays the gesture in place. The brush's Size in the panel and in the options row are one setting: a change in the panel
  * is the value the row shows and the next stroke uses.
  */
 import { afterEach, beforeAll, describe, expect, it } from 'vitest';
@@ -93,5 +93,16 @@ describe('the last-operation panel in draw', () => {
     expect(warpOf()).toMatchObject({ kind: 'plane', mode: 'perspective' });
     expect(scene.history.undoDepth()).toBe(depth + 1);
     expect([...scene.getSelection()]).toEqual([A]);
+  });
+
+  it('closes a Cloth Warp drag\'s panel when another tool is picked, and leaves the warp', () => {
+    const { scene, canvas, use } = setup();
+    use('cloth');
+    drag(canvas, [220, 150], [250, 180]);
+    expect(screen.getByRole('region', { name: 'Cloth Warp' })).toBeInTheDocument();
+    const warped = pathOf(scene);
+    use('knead');
+    expect(screen.queryByRole('region', { name: 'Cloth Warp' })).not.toBeInTheDocument();
+    expect(pathOf(scene)).toBe(warped);
   });
 });

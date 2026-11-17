@@ -3,7 +3,7 @@ import { act, render } from '@testing-library/react';
 import { createHistory, type History, type Op } from '@weasel-js/history';
 import { pref } from '@weasel-js/prefs-schema';
 import type { Action } from './action';
-import { ActionsProvider, useActionsRegistry } from './ActionsProvider';
+import { ActionsProvider, actionsNodeOf, useActionsRegistry } from './ActionsProvider';
 import { DepRegistryProvider, useDepRegistry, type DepName, type DepRegistry } from './depRegistry';
 import type { ActionsRegistry } from './registry';
 import { lastOperationOf } from './useLastOperation';
@@ -69,6 +69,13 @@ describe('the last operation', () => {
     expect(store.get()).toBeNull();
     act(() => { registry.trigger(dynamicActionId('widen'), { by: 3 }); });
     expect(store.get()).toMatchObject({ id: 'widen', label: 'Widen', schema: WIDEN_PARAMS, values: { by: 3 } });
+  });
+
+  it('keeps a command\'s run when the active tool changes', () => {
+    const { registry, store } = setup();
+    act(() => { registry.trigger(dynamicActionId('widen'), { by: 3 }); });
+    act(() => { actionsNodeOf(registry)!.lastOperation.toolLeft(); });
+    expect(store.get()).toMatchObject({ id: 'widen', values: { by: 3 } });
   });
 
   it('holds a run the dispatcher makes, through the listed action', () => {

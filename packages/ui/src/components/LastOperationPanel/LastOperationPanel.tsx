@@ -18,8 +18,8 @@ export interface LastOperationPanelProps {
  * The last command run that has parameters, titled with its label and holding
  * its parameters at the values it used. Changing one reruns the command in
  * place, still as one undo entry. Renders nothing while there is no such
- * command: any other change to the history, an undo or redo, or the close
- * button clears it.
+ * command: any other change to the history, an undo or redo, the close
+ * button, or for a gesture's operation a switch to another tool, clears it.
  */
 export function LastOperationPanel({ store, closeLabel = 'Close', className }: LastOperationPanelProps) {
   const inScope = useLastOperationStore();
