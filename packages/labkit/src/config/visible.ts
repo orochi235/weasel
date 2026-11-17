@@ -10,7 +10,7 @@ import {
   type PrefLeaf,
   type PrefSection,
   type PrefStatus,
-  prefAliasTargets,
+  createAliasTargets,
   prefJudge,
   prefLeafAt,
   prefReader,
@@ -33,7 +33,7 @@ export function aliasTargetsOf(
 ): PrefAliasTargets {
   const of = over ?? resolved.group;
   const read = over ? prefReader(over, config) : (at: string): unknown => valueAtPath(config, at);
-  return prefAliasTargets(of, (entry) => prefJudge(of, read, entry), { showHidden: true });
+  return createAliasTargets(of, (entry) => prefJudge(of, read, entry), { showHidden: true });
 }
 
 /**

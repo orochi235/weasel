@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState, type ReactNode } from 'react';
-import { applyPrefConditions, prefAliasTargets, prefJudge, prefReader, visiblePrefSubtree, type PrefEntry, type PrefGroup, type PrefSection } from '@weasel-js/prefs';
+import { applyPrefConditions, createAliasTargets, prefJudge, prefReader, visiblePrefSubtree, type PrefEntry, type PrefGroup, type PrefSection } from '@weasel-js/prefs';
 import { Input } from '../Input';
 import { MotifFrame } from '../MotifFrame';
 import { withDrop, type PrefDrop } from './drop';
@@ -193,7 +193,7 @@ function PrefsFormBody(props: PrefsFormProps) {
   const over = props.over ?? schema;
   useEffect(() => warnUnmatchedRenderers(renderers, schema, props.over), [renderers, schema, props.over]);
   const targets = useMemo(
-    () => prefAliasTargets(over, (entry) => prefJudge(over, prefReader(over, values), entry), { showHidden, markHidden }),
+    () => createAliasTargets(over, (entry) => prefJudge(over, prefReader(over, values), entry), { showHidden, markHidden }),
     [over, values, showHidden, markHidden],
   );
   const keepEmpty = props.showEmpty === true;

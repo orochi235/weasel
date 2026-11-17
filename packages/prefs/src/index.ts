@@ -175,13 +175,13 @@ export {
   type LeafReading,
   type ResetWrite,
 } from './autoReset';
-export { prefWeightAxes, type PrefWeightAxes } from './weightAxes';
+export { createWeightAxes, type PrefWeightAxes } from './weightAxes';
 export { PREF_BLENDS, type PrefBlend } from './blend';
 export { checkPrefSplits, type PrefSplitProblem } from './splitCheck';
 export { prefsCss, prefsCssAttributes, type PrefsCssOptions, type PrefsCssSource } from './css';
-export { prefsDefaultsSource } from './defaultsSource';
+export { createDefaultsSource } from './defaultsSource';
 export { kitSettingsCssOptions } from './kitCss';
-export { prefAliasTargets, type PrefAliasTargets, type PrefAliasTargetsOptions } from './aliasTargets';
+export { createAliasTargets, type PrefAliasTargets, type PrefAliasTargetsOptions } from './aliasTargets';
 export { prefType } from './type';
 export { prefFitsHeading, prefHeadingKey } from './heading';
 export type { PrefAtPath, PrefFieldsOf, PrefPath, PrefValueAt, PrefValueOf } from './paths';

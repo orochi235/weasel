@@ -148,7 +148,7 @@ what a transition between two options shows on the way:
 store.get('limit', { weights: { 'look.mode': { dark: 0.25, light: 0.75 } } });
 ```
 
-`prefWeightAxes` lays weights out as numbers, the `axes` an `@weasel-js/animator` target takes, so an
+`createWeightAxes` lays weights out as numbers, the `axes` an `@weasel-js/animator` target takes, so an
 animation carries the read from one option to the other. `applyTheme`'s `weights` have the same shape:
 
 ```ts
@@ -156,7 +156,7 @@ let weights: PrefWeights = { 'look.mode': { dark: 1, light: 0 } };
 const target = createTarget({
   get: () => weights,
   set: (next) => { weights = next; },
-  axes: prefWeightAxes({ 'look.mode': ['dark', 'light'] }),
+  axes: createWeightAxes({ 'look.mode': ['dark', 'light'] }),
   show: (now) => draw(store.get('limit', { weights: now })),
 });
 animator.tween({ target, to: { 'look.mode': { dark: 0, light: 1 } }, ms: 300 });
@@ -216,8 +216,8 @@ a CSS unit, a boolean as `1` or `0`, an enum's option as an identifier, and a
 string quoted; a leaf of any other kind is left out unless the `value` option
 writes it. `root`, `property`, and `attribute` rename what it writes.
 
-`prefsDefaultsSource(schema)` stands in for a store at its defaults, so
-`prefsCss(prefsDefaultsSource(schema))` is a schema's stylesheet with no store.
+`createDefaultsSource(schema)` stands in for a store at its defaults, so
+`prefsCss(createDefaultsSource(schema))` is a schema's stylesheet with no store.
 The Vite plugin in `@weasel-js/prefs/vite` serves that sheet for every schema
 you name, by module and export, and rewrites it when a schema changes:
 

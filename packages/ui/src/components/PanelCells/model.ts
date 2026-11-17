@@ -13,7 +13,7 @@ import type { IconSpec } from '@weasel-js/icons';
 import {
   isPrefLeaf,
   pairRuns,
-  prefAliasTargets,
+  createAliasTargets,
   prefHeadingKey,
   prefLeafValue,
   prefSectionPath,
@@ -134,7 +134,7 @@ function panelItems<T>(entries: Iterable<T>, leaves: (entry: T) => PanelLeaf | u
 function flatten(schema: PrefSection, rawAliases: boolean, targets?: PrefAliasTargets): PanelSection[] {
   const sections: PanelSection[] = [];
   const untitled: PanelLeaf[] = [];
-  const into = targets ?? prefAliasTargets(schema, () => ALWAYS, { showHidden: true });
+  const into = targets ?? createAliasTargets(schema, () => ALWAYS, { showHidden: true });
   const shown = (key: string, leaf: PrefLeaf): PanelLeaf => {
     const target = leaf.kind === 'alias' && !rawAliases ? into.shown(leaf as PrefAlias) : undefined;
     return target ? { ...target, own: key } : { path: key, leaf };
