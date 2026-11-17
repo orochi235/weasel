@@ -2,6 +2,7 @@ import type { Stroke } from '@weasel-js/core';
 import { getOwn, isDev } from '@weasel-js/registry';
 import { labelStyleOf } from '../edgeLabel';
 import { edgeStrokeOf } from '../edgeStroke';
+import { firstSight } from '../firstSight';
 import type { EdgeStyle, NodeStyle } from '../dataTypes';
 import { isShippedTheme } from './themeEdit';
 import { DIAGRAM_THEMES } from './themes';
@@ -43,7 +44,7 @@ export const themeLabelFont = (theme: DiagramTheme, font = themeFont(theme)): { 
 /** The face a new connector label is set in under `theme`. */
 export const themeLabelStyle = (theme: DiagramTheme) => labelStyleOf(themeLabelFont(theme));
 
-const warnedThemeIds = new Set<string>();
+const unwarnedTheme = firstSight();
 
 /** The theme a document value names: a shipped theme by id, or a whole theme. `fallback` for none,
  *  or for an id no shipped theme has, with a development warning once per id. */
@@ -51,8 +52,7 @@ export function diagramThemeFrom(value: unknown, fallback: DiagramTheme = DIAGRA
   if (typeof value === 'string') {
     const shipped = getOwn(DIAGRAM_THEMES, value);
     if (shipped) return shipped;
-    if (isDev() && !warnedThemeIds.has(value)) {
-      warnedThemeIds.add(value);
+    if (isDev() && unwarnedTheme(value)) {
       console.warn(`@weasel-js/diagram: no theme named '${value}' ships in this build; drawing with '${fallback.id}'`);
     }
     return fallback;

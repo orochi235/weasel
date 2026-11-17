@@ -84,6 +84,15 @@ describe('an unregistered name', () => {
     outlinePath('test:elsewhere', BOX);
     expect(warn).toHaveBeenCalledTimes(2);
   });
+
+  it('keeps a bounded memory of the names it warned about', () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    outlinePath('test:forgotten', BOX);
+    for (let i = 0; i < 300; i++) outlinePath(`test:many-${i}`, BOX);
+    warn.mockClear();
+    outlinePath('test:forgotten', BOX);
+    expect(warn).toHaveBeenCalledTimes(1);
+  });
 });
 
 describe('outlineDetail', () => {
