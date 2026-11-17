@@ -6,13 +6,13 @@ import type { PrefLeaf } from '@weasel-js/prefs-schema';
 import type { PrefsSource } from './prefsSource';
 
 /** What a reset reads of `source`: nothing for a leaf an `enableIf` disables, which no reset reaches. */
-export function resetReading(source: Pick<PrefsSource, 'stateAt' | 'valueAt'>): (path: string) => LeafReading | undefined {
+export function resetReader(source: Pick<PrefsSource, 'stateAt' | 'valueAt'>): (path: string) => LeafReading | undefined {
   return (path) => (source.stateAt(path).disabled ? undefined : source.valueAt(path));
 }
 
 /** The writes a reset of the leaves and groups at `paths` makes in `source`. */
 export function sourceResetPlan(source: Pick<PrefsSource, 'schema' | 'stateAt' | 'valueAt'>, paths: readonly string[]): ResetWrite[] {
-  return resetPlanAt(source.schema, paths, resetReading(source));
+  return resetPlanAt(source.schema, paths, resetReader(source));
 }
 
 /** Whether every leaf at or under `path` already is as a reset leaves it. */
