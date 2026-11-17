@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import {
-  computeWheelAction,
+  viewAfterWheel,
   wheelPan,
   wheelZoom,
   wheelZoomFactor,
@@ -21,29 +21,29 @@ function worldUnder(view: View, x: number, y: number) {
 // Modifier convention
 // ---------------------------------------------------------------------------
 
-describe('computeWheelAction — modifier convention', () => {
+describe('viewAfterWheel — modifier convention', () => {
   it('pans on a bare wheel and leaves scale alone', () => {
-    const next = computeWheelAction(base, { deltaX: 10, deltaY: 40, ...at(100, 100) });
+    const next = viewAfterWheel(base, { deltaX: 10, deltaY: 40, ...at(100, 100) });
     expect(next.scale).toEqual({ x: 1, y: 1 });
     expect(next).toMatchObject({ x: 10, y: 40 });
   });
 
   it('routes deltaY into x on shift+wheel', () => {
-    const next = computeWheelAction(base, {
+    const next = viewAfterWheel(base, {
       deltaX: 0, deltaY: 40, shiftKey: true, ...at(100, 100),
     });
     expect(next).toMatchObject({ x: 40, y: 0 });
   });
 
   it('zooms on meta+wheel', () => {
-    const next = computeWheelAction(base, {
+    const next = viewAfterWheel(base, {
       deltaX: 0, deltaY: -100, metaKey: true, ...at(100, 100),
     });
     expect(next.scale.x).toBeCloseTo(1.1, 10);
   });
 
   it('zooms on ctrl+wheel (trackpad pinch)', () => {
-    const next = computeWheelAction(base, {
+    const next = viewAfterWheel(base, {
       deltaX: 0, deltaY: -100, ctrlKey: true, ...at(100, 100),
     });
     expect(next.scale.x).toBeCloseTo(1.1, 10);
@@ -54,17 +54,17 @@ describe('computeWheelAction — modifier convention', () => {
 // Coordinate convention
 // ---------------------------------------------------------------------------
 
-describe('computeWheelAction — coordinate convention', () => {
+describe('viewAfterWheel — coordinate convention', () => {
   it('divides the pan delta by scale, so one wheel pixel is one screen pixel', () => {
     const zoomed: View = { x: 0, y: 0, scale: { x: 2, y: 4 } };
-    const next = computeWheelAction(zoomed, { deltaX: 10, deltaY: 40, ...at(0, 0) });
+    const next = viewAfterWheel(zoomed, { deltaX: 10, deltaY: 40, ...at(0, 0) });
     expect(next).toMatchObject({ x: 5, y: 10 });
   });
 
   it('holds the world point under the anchor fixed while zooming', () => {
     const start: View = { x: 3, y: -7, scale: { x: 2, y: 2 } };
     const before = worldUnder(start, 250, 130);
-    const next = computeWheelAction(start, {
+    const next = viewAfterWheel(start, {
       deltaX: 0, deltaY: -100, metaKey: true, ...at(250, 130),
     });
     const after = worldUnder(next, 250, 130);
@@ -73,20 +73,20 @@ describe('computeWheelAction — coordinate convention', () => {
   });
 
   it('returns to the same scale when a step is undone', () => {
-    const inThenOut = computeWheelAction(
-      computeWheelAction(base, { deltaX: 0, deltaY: -73, metaKey: true, ...at(40, 40) }),
+    const inThenOut = viewAfterWheel(
+      viewAfterWheel(base, { deltaX: 0, deltaY: -73, metaKey: true, ...at(40, 40) }),
       { deltaX: 0, deltaY: 73, metaKey: true, ...at(40, 40) },
     );
     expect(inThenOut.scale.x).toBeCloseTo(1, 10);
   });
 
   it('clamps to the kit-wide zoom bounds', () => {
-    const wayIn = computeWheelAction(
+    const wayIn = viewAfterWheel(
       { x: 0, y: 0, scale: { x: 7.9, y: 7.9 } },
       { deltaX: 0, deltaY: -10000, metaKey: true, ...at(0, 0) },
     );
     expect(wayIn.scale.x).toBe(DEFAULT_MAX_ZOOM);
-    const wayOut = computeWheelAction(
+    const wayOut = viewAfterWheel(
       { x: 0, y: 0, scale: { x: 0.11, y: 0.11 } },
       { deltaX: 0, deltaY: 10000, metaKey: true, ...at(0, 0) },
     );
@@ -94,7 +94,7 @@ describe('computeWheelAction — coordinate convention', () => {
   });
 
   it('honors an explicit clamp', () => {
-    const next = computeWheelAction(
+    const next = viewAfterWheel(
       base,
       { deltaX: 0, deltaY: -10000, metaKey: true, ...at(0, 0) },
       { max: 3 },
@@ -125,7 +125,7 @@ describe('wheelZoomFactor / wheelZoom / wheelPan', () => {
 
   it('wheelZoom anchors where it is told', () => {
     expect(wheelZoom(base, { x: 200, y: 0 }, -100)).toEqual(
-      computeWheelAction(base, { deltaX: 0, deltaY: -100, metaKey: true, ...at(200, 0) }),
+      viewAfterWheel(base, { deltaX: 0, deltaY: -100, metaKey: true, ...at(200, 0) }),
     );
   });
 });

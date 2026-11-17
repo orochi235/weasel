@@ -279,7 +279,7 @@ not routed by the dispatcher — you own the pointer events.
 
 - `useCanvasSize(ref)` — observed CSS-pixel size.
 - `useAutoCenter(...)` — viewport helpers.
-- `computeWheelAction(view, input)` — the kit's wheel convention as a pure
+- `viewAfterWheel(view, input)` — the kit's wheel convention as a pure
   reducer over `View`: bare wheel pans, shift+wheel pans horizontally,
   Cmd/Ctrl+wheel zooms under the pointer. `wheelPan` / `wheelZoom` are its
   halves, and `viewport.wheelPan` / `viewport.zoom` are the wired form.

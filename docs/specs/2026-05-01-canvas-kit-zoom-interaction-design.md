@@ -10,7 +10,7 @@ canvas-kit already owns all the zoom math:
 
 - `ViewTransform.zoom` lives on the view transform.
 - `worldToScreen` / `screenToWorld` are zoom-aware.
-- `wheelHandler` (`computeWheelAction`) implements wheel-to-zoom with
+- `wheelHandler` (`viewAfterWheel`) implements wheel-to-zoom with
   focal-point preservation.
 
 What's missing is a **central hook that owns the zoom level and dispatches
@@ -137,7 +137,7 @@ setZoom(newZoom);
 setPan(newPan);
 ```
 
-This is the same formula `computeWheelAction` already uses, written in
+This is the same formula `viewAfterWheel` already uses, written in
 delta-form. Per-source focal:
 
 | Source           | Focal point                                                  |
@@ -304,14 +304,14 @@ Unit tests in `src/canvas-kit/hooks/useZoomInteraction.test.ts`, mirroring
 6. `reset()` — zoom→1, pan→{0,0}.
 7. `min === max` — every change is a no-op; pan also stays put (because k=1).
 
-## Relationship to `computeWheelAction`
+## Relationship to `viewAfterWheel`
 
-`computeWheelAction` (in `wheelHandler.ts`) implements the same focal-point
+`viewAfterWheel` (in `wheelHandler.ts`) implements the same focal-point
 math as a pure reducer, sibling to the hook. As of the Tier 1.5 cleanup pass,
 both use the multiplier convention with defaults `min=0.1`, `max=10`. The
 hook still inlines its own focal-point formula (a 5-line expression) rather
 than delegating, since the React lifecycle and ref handling don't compose
-cleanly with a pure reducer. `computeWheelAction` remains useful in
+cleanly with a pure reducer. `viewAfterWheel` remains useful in
 non-React reducers and for unit testing the math in isolation.
 
 ## Migration
