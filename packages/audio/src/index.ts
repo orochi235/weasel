@@ -15,7 +15,7 @@ export { createTickTimer, type TickTimer } from './tickTimer';
 export { createSoundCache, type SoundCache, type SoundHandle } from './soundCache';
 export {
   createVoicePool,
-  type VoicePool, type VoicePoolOptions, type VoiceRecord, type Acquisition,
+  type VoicePool, type VoicePoolOptions, type VoiceRecord, type VoiceAcquisition,
   type StealPolicy,
 } from './voicePool';
 export { spatialize, type SpatialOptions, type SpatialPoint } from './spatialize';

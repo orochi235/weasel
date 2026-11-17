@@ -18,7 +18,7 @@ export interface VoiceRecord {
 }
 
 /** The result of `VoicePool.acquire`. */
-export interface Acquisition {
+export interface VoiceAcquisition {
   slot: number;
   /** Identifies this voice, not its slot: a stolen slot is reissued at once,
    *  so `release` and `setGain` take the token and ignore a stale one. */
@@ -30,7 +30,7 @@ export interface Acquisition {
 
 /** Slot accounting for concurrent voices. See `createVoicePool`. */
 export interface VoicePool {
-  acquire(record: VoiceRecord): Acquisition;
+  acquire(record: VoiceRecord): VoiceAcquisition;
   release(slot: number, token: number): void;
   setGain(slot: number, token: number, gain: number): void;
   active(): number;
