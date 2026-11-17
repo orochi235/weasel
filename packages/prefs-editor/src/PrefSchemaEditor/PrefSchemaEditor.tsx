@@ -2,7 +2,7 @@ import { useMemo, useState, type ReactNode } from 'react';
 import type { PrefGroup, PrefSection } from '@weasel-js/prefs';
 import type { LeafRenderer } from '@weasel-js/ui';
 import {
-  asWorkspace, catalogIn, type CustomKinds, type DraftStorage, NO_CATALOG, NO_TYPES, ONE, oneAssetCodec,
+  asWorkspace, catalogIn, type CustomKinds, type DraftStorage, NO_CATALOG, NO_TYPES, LONE_SCHEMA_ID, oneAssetCodec,
   type PrefTypes, printSchema, sameSchema, schemaOf, type Workspace,
 } from '@weasel-js/prefs/edit';
 import { AssetEditor } from './AssetEditor';
@@ -103,7 +103,7 @@ export function PrefSchemaEditor<S extends PrefGroup | PrefSection = PrefGroup>(
   };
   // A submission holds the schema's changes alone: the catalog is the host's through `onActionCatalogChange`.
   const submit = onSubmit && ((sent: readonly SentAsset[]) => {
-    const mine = sent.find((a) => a.id === ONE);
+    const mine = sent.find((a) => a.id === LONE_SCHEMA_ID);
     return onSubmit(mine?.changes ?? [], mine?.literal ?? printSchema(schema, types));
   });
   return <AssetEditor {...rest} types={types} codec={codec} same={sameSchema} workspace={workspace} onChange={change} original={base} onSubmit={submit} />;

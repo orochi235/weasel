@@ -46,7 +46,7 @@ export {
   holdsPages, isLoose, looseKeys, looseTarget, mayUnplace, placedOnly, schemaTarget, topLevelAllows,
 } from './edit/loose';
 export { trackOrigins, type NodeOrigins } from './edit/nodeOrigins';
-export { asWorkspace, catalogIn, ONE, oneAssetCodec, sameSchema, schemaOf } from './edit/oneAsset';
+export { asWorkspace, catalogIn, LONE_SCHEMA_ID, oneAssetCodec, sameSchema, schemaOf } from './edit/oneAsset';
 export { deadAliases, drawnLeaf, aliasAttributes, aliasTargetIn } from './edit/aliases';
 export { type PresetDescription } from '@weasel-js/prefs-schema';
 export { type RegisteredAction } from './edit/registeredActionAttrs';

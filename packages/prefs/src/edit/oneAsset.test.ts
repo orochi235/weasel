@@ -2,7 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { createHistory } from '@weasel-js/history';
 import type { PrefGroup } from '@weasel-js/prefs';
 import { swapOp, type DocumentCodec, type DraftStorage } from './document';
-import { asWorkspace, ONE, oneAssetCodec, sameSchema, schemaOf } from './oneAsset';
+import { asWorkspace, LONE_SCHEMA_ID, oneAssetCodec, sameSchema, schemaOf } from './oneAsset';
 import { schemaCodec } from './schemaCodec';
 import { setAttribute } from './schemaEdit';
 import type { PrefTypes } from './types';
@@ -55,7 +55,7 @@ describe('a schema as a workspace of one', () => {
 
   it('stores the draft and what was sent byte for byte as the schema’s own codec does', () => {
     const alone = driven(schemaCodec<PrefGroup>(TYPES), BASE, (schema, to) => to(schema));
-    const asOne = driven(oneAssetCodec<PrefGroup>(TYPES), asWorkspace(BASE), (ws, to) => editAsset(ws, ONE, to(schemaOf(ws)), NO_MOVES));
+    const asOne = driven(oneAssetCodec<PrefGroup>(TYPES), asWorkspace(BASE), (ws, to) => editAsset(ws, LONE_SCHEMA_ID, to(schemaOf(ws)), NO_MOVES));
     expect([...asOne.held.keys()]).toEqual(['k', 'k:sent']);
     expect(asOne.held.get('k')).toBe(alone.held.get('k'));
     expect(asOne.held.get('k:sent')).toBe(alone.held.get('k:sent'));

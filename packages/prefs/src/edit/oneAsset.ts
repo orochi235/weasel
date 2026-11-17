@@ -8,7 +8,7 @@ import { catalogOf, type Workspace } from './workspace';
 import { workspaceCodec } from './workspaceCodec';
 
 /** The id of the one asset a lone schema is edited as. */
-export const ONE = 'schema';
+export const LONE_SCHEMA_ID = 'schema';
 /** The id of the catalog a lone schema's Actions pane sorts the host's actions in. */
 export const CATALOG = 'actions';
 
@@ -16,7 +16,7 @@ export const CATALOG = 'actions';
 export function asWorkspace(schema: SchemaRoot, catalog?: PrefGroup): Workspace {
   return {
     assets: [
-      { id: ONE, kind: 'schema', label: schema.name, root: schema },
+      { id: LONE_SCHEMA_ID, kind: 'schema', label: schema.name, root: schema },
       ...(catalog ? [{ id: CATALOG, kind: 'actions' as const, label: catalog.name, root: catalog }] : []),
     ],
   };
