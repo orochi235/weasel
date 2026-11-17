@@ -6,39 +6,33 @@
  */
 import { Project, type Node, SyntaxKind, type SourceFile } from 'ts-morph';
 import { readFileSync } from 'node:fs';
-import { resolve, relative } from 'node:path';
+import { resolve, relative, sep } from 'node:path';
 import type {
   TraitSchemaIndex,
   SceneNodeSchema,
   PropertyDescriptor,
   SourceRef,
 } from '../src/dev/traitSchemas.types.ts';
-import { extractShapes } from './extract-shapes.ts';
-import { extractOps } from './extract-ops.ts';
-import { extractActions } from './extract-actions.ts';
-import { extractGestures } from './extract-gestures.ts';
-import { extractNode } from './extract-node.ts';
+import { extractShapes, SHAPES_SOURCE } from './extract-shapes.ts';
+import { extractOps, OPS_READS } from './extract-ops.ts';
+import { extractActions, ACTION_READS } from './extract-actions.ts';
+import { extractGestures, GESTURE_SPEC_FILE } from './extract-gestures.ts';
+import { extractNode, NODE_READS } from './extract-node.ts';
 
-/** Source files (absolute paths) that the extractor reads. Returned so the
- *  Vite plugin can wire them into the dev-server file watcher. */
+/** The files and directories (absolute paths) the extractors read, so the Vite
+ *  plugin can wire them into the dev-server file watcher. */
 export function watchedFilesFor(repoRoot: string): readonly string[] {
   return [
-    resolve(repoRoot, 'packages/core/src/canvas/SceneCanvas/useBuiltinShapeTools.tsx'),
-    resolve(repoRoot, 'packages/core/src/core/ops/index.ts'),
-    resolve(repoRoot, 'packages/core/src/core/ops/create.ts'),
-    resolve(repoRoot, 'packages/core/src/core/ops/delete.ts'),
-    resolve(repoRoot, 'packages/core/src/core/ops/transform.ts'),
-    resolve(repoRoot, 'packages/core/src/core/ops/reparent.ts'),
-    resolve(repoRoot, 'packages/core/src/core/ops/select.ts'),
-    resolve(repoRoot, 'packages/core/src/core/ops/setText.ts'),
-    resolve(repoRoot, 'packages/core/src/core/ops/setPath.ts'),
-    resolve(repoRoot, 'packages/core/src/interactions/actions/registry.tsx'),
-    resolve(repoRoot, 'packages/core/src/interactions/actions/defaults/index.ts'),
-    resolve(repoRoot, 'packages/core/src/interactions/gestures/types.ts'),
-    resolve(repoRoot, 'packages/core/src/core/scene/types.ts'),
-    resolve(repoRoot, 'packages/core/exports.inventory.json'),
-  ];
+    SHAPES_SOURCE, ...OPS_READS, ...ACTION_READS, GESTURE_SPEC_FILE, ...NODE_READS, EXPORTS_INVENTORY,
+  ].map((rel) => resolve(repoRoot, rel));
 }
+
+/** Whether `file` is one of `watched` or inside one of its directories. */
+export function isWatched(watched: readonly string[], file: string): boolean {
+  return watched.some((w) => file === w || file.startsWith(w + sep));
+}
+
+const EXPORTS_INVENTORY = 'packages/core/exports.inventory.json';
 
 export function extractTraitSchemas(repoRoot: string): TraitSchemaIndex {
   const project = new Project({
@@ -55,7 +49,7 @@ export function extractTraitSchemas(repoRoot: string): TraitSchemaIndex {
   const gestures = safe('gestures', () => extractGestures(project, repoRoot)) ?? {};
   const node = safe('node', () => extractNode(project, repoRoot)) ?? FALLBACK_NODE;
   const exports = safe('exports', () =>
-    JSON.parse(readFileSync(resolve(repoRoot, 'packages/core/exports.inventory.json'), 'utf8')) as TraitSchemaIndex['exports']) ?? {};
+    JSON.parse(readFileSync(resolve(repoRoot, EXPORTS_INVENTORY), 'utf8')) as TraitSchemaIndex['exports']) ?? {};
 
   return {
     shapes, ops, actions, gestures, node, exports,

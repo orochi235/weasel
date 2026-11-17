@@ -1,6 +1,6 @@
 /** The rows the registry inspector's tree lists, one shape per category. */
 import type { IconRef, IconSpec } from '@weasel-js/icons';
-import type { ShortcutInput } from '@weasel-js/gestures';
+import type { GestureSpec, ShortcutInput } from '@weasel-js/gestures';
 
 /** Discriminated leaf entry. One of these per row in the tree's right pane. */
 export type TreeEntry =
@@ -242,10 +242,11 @@ export const GESTURE_CHANNEL_KEYS: readonly (keyof GestureChannels)[] = [
  *  There used to be two vocabularies here — phase-table channel names and
  *  `GestureSpec.kind` values — and the catalog listed both because a route
  *  could live in either. One grammar, one list. */
-export const GESTURE_CATALOG_KEYS: readonly string[] = [
-  'click', 'doubleClick', 'pointerDown', 'drag', 'wheel', 'pinch',
-  'key', 'keyHeld', 'contextMenu', 'multiTouch', 'multiTouchTap',
-];
+export const GESTURE_CATALOG_KEYS: readonly GestureSpec['kind'][] = Object.keys({
+  click: true, doubleClick: true, pointerDown: true, drag: true, wheel: true, pinch: true,
+  key: true, keyHeld: true, contextMenu: true, multiTouch: true, multiTouchTap: true,
+  hover: true, longPress: true, drop: true, carry: true, paste: true,
+} satisfies Record<GestureSpec['kind'], true>) as GestureSpec['kind'][];
 
 /** Non-gesture declarations — the tool emits these rather than reacting to
  *  them. Strictly typed against `ToolOutputs`. */
