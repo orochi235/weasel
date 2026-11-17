@@ -19,7 +19,7 @@ export const TRANSPORT_RATES = CLOCK_SPEEDS;
 /** Props for {@link Transport}. Times are in ms. Disabled, by `disabled` or a scope, nothing in it responds; read-only,
  *  play and pause still work, and the switches and sliders, which hold values, change nothing. */
 export interface TransportProps extends HoldProps {
-  paused: boolean;
+  playing: boolean;
   /** A `TimelineHandle`'s loop policy. The switch shows any value but
    *  `false` or `0` as on, and toggles between `true` and `false`. */
   loop: boolean | number;
@@ -35,8 +35,8 @@ export interface TransportProps extends HoldProps {
   /** Default `0`. */
   start?: number;
   duration: number;
-  onPlay: () => void;
-  onPause: () => void;
+  /** The play button asks for `next`: true to play, false to pause. */
+  onPlayingChange: (next: boolean) => void;
   onLoopChange: (loop: boolean | number) => void;
   onRateChange: (rate: number) => void;
   /** Moves the playhead, in ms, as the scrub bar is dragged or stepped from
@@ -104,7 +104,7 @@ export function PlayheadReadout({
  *  appear only with theirs. It reads left to right in a right-to-left
  *  locale too, as playback controls do. */
 export function Transport(props: TransportProps): ReactElement {
-  const { paused, loop, rate, playhead, duration, onPlay, onPause, onLoopChange, onRateChange, onSeek, onReverseChange } = props;
+  const { playing, loop, rate, playhead, duration, onPlayingChange, onLoopChange, onRateChange, onSeek, onReverseChange } = props;
   const hold = useControlHold(props, { readonlyRole: false });
   const why = hold.focus['aria-describedby'];
   const reverse = props.reverse ?? false;
@@ -132,12 +132,12 @@ export function Transport(props: TransportProps): ReactElement {
       <button
         type="button"
         className={s.transportButton}
-        aria-label={paused ? 'Play' : 'Pause'}
+        aria-label={playing ? 'Pause' : 'Play'}
         aria-describedby={why}
         {...hold.button(false)}
-        onClick={() => { if (!hold.disabled) (paused ? onPlay : onPause)(); }}
+        onClick={() => { if (!hold.disabled) onPlayingChange(!playing); }}
       >
-        {paused ? <Icon name={icon('play')} size={16} /> : <Icon name={icon('pause')} size={16} />}
+        {playing ? <Icon name={icon('pause')} size={16} /> : <Icon name={icon('play')} size={16} />}
       </button>
 
       {onReverseChange ? (

@@ -8,8 +8,8 @@ import { Jog } from './Jog';
 describeHold('Jog', (mount, own) => {
   const onStep = vi.fn();
   const onPlay = vi.fn();
-  const onScrub = vi.fn();
-  mount(<Jog index={2} count={24} playing={false} onStep={onStep} onPlay={onPlay} onScrub={onScrub} {...own} />);
+  const onSeek = vi.fn();
+  mount(<Jog index={2} count={24} playing={false} onStep={onStep} onPlay={onPlay} onSeek={onSeek} {...own} />);
   const buttons = () => screen.getAllByRole('button');
   const scrubber = () => screen.getByRole('slider');
   return {
@@ -19,6 +19,6 @@ describeHold('Jog', (mount, own) => {
       for (const b of buttons()) unlessDisabled(b, (el) => fireEvent.click(el));
       fireEvent.keyDown(scrubber(), { key: 'ArrowRight' });
     },
-    changed: () => onStep.mock.calls.length + onPlay.mock.calls.length + onScrub.mock.calls.length > 0,
+    changed: () => onStep.mock.calls.length + onPlay.mock.calls.length + onSeek.mock.calls.length > 0,
   };
 }, { ariaHeld: false });

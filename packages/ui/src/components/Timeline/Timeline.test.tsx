@@ -40,7 +40,7 @@ const base = {
   duration: 1000,
   playhead: 0,
   onChange: () => {},
-  onScrub: () => {},
+  onSeek: () => {},
 };
 
 describe('Timeline', () => {
@@ -65,7 +65,7 @@ describe('Timeline', () => {
       <Timeline
         {...base}
         tracks={tracks()}
-        transport={{ paused: true, loop: false, rate: 1, onPlay, onPause: () => {}, onLoopChange: () => {}, onRateChange: () => {} }}
+        transport={{ playing: false, loop: false, rate: 1, onPlayingChange: onPlay, onLoopChange: () => {}, onRateChange: () => {} }}
       />,
     );
     fireEvent.click(screen.getByRole('button', { name: 'Play' }));
@@ -150,10 +150,10 @@ describe('Timeline', () => {
   });
 
   it('scrubs from the ruler', () => {
-    const onScrub = vi.fn();
-    renderWithIcons(<Timeline {...base} tracks={tracks()} onScrub={onScrub} />);
+    const onSeek = vi.fn();
+    renderWithIcons(<Timeline {...base} tracks={tracks()} onSeek={onSeek} />);
     fireEvent.pointerDown(screen.getByTestId('timeline-ruler'), { clientX: 250, clientY: 5, button: 0 });
-    expect(onScrub).toHaveBeenCalledWith(500);
+    expect(onSeek).toHaveBeenCalledWith(500);
   });
 
   it('fits its window to a duration that arrives after mount', () => {

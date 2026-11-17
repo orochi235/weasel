@@ -6,7 +6,7 @@ import { useTimelinePlayback } from '../Transport/useTimelinePlayback';
 
 /** Props for {@link AnimatedTimeline}: `<Timeline>`'s, less what it reads off `handle`. */
 export interface AnimatedTimelineProps
-  extends Omit<TimelineProps, 'tracks' | 'duration' | 'playhead' | 'onChange' | 'onScrub' | 'transport'> {
+  extends Omit<TimelineProps, 'tracks' | 'duration' | 'playhead' | 'onChange' | 'onSeek' | 'transport'> {
   handle: TimelineHandle;
   /** `false` hides the transport, as on `<Timeline>`. */
   transport?: false;
@@ -42,7 +42,7 @@ export function AnimatedTimeline(props: AnimatedTimelineProps): ReactElement {
       duration={duration}
       playhead={playhead}
       onChange={onChange}
-      onScrub={onSeek}
+      onSeek={onSeek}
       transport={props.transport === false ? false : transport}
     />
   );

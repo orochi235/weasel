@@ -10,7 +10,7 @@
 // before
 <Ruler window={win} bounds={bounds} playhead={t} onScrub={setT} onWindowChange={setWin} />
 // after
-<TimeRuler window={win} bounds={bounds} playhead={t} onScrub={setT} onWindowChange={setWin} />
+<TimeRuler window={win} bounds={bounds} playhead={t} onSeek={setT} onWindowChange={setWin} />
 
 // a ruler of your own
 <Ruler scale={linearScale({ domain: [0, 250], range: [0, 1] })} ticks={{ minSpacing: 48 }}>

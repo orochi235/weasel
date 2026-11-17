@@ -23,7 +23,7 @@ export interface TimeRulerProps {
   /** Where the playhead line sits, in ms. */
   playhead: number;
   /** Called with the time under the pointer while the ruler is pressed or dragged. */
-  onScrub: (t: number) => void;
+  onSeek: (t: number) => void;
   /** Called with the new window when the wheel pans, or Ctrl+wheel zooms, within `bounds`. */
   onWindowChange: (w: TimeWindow) => void;
 }
@@ -39,7 +39,7 @@ function formatMs(ms: number, { step, decimals }: TickSet, locale: string): stri
 
 /** A {@link Ruler} over time: a playhead line, scrubbing by pointer, and wheel pan and zoom. */
 export function TimeRuler(props: TimeRulerProps): ReactElement {
-  const { window: win, bounds, playhead, onScrub, onWindowChange } = props;
+  const { window: win, bounds, playhead, onSeek, onWindowChange } = props;
   const trackRef = useRef<HTMLDivElement | null>(null);
   const sessionRef = useRef<PointerSession | null>(null);
   useEffect(() => () => { sessionRef.current?.cancel(); }, []);
@@ -59,11 +59,11 @@ export function TimeRuler(props: TimeRulerProps): ReactElement {
   // children of the scrubbed track.
   const onPointerDown = (e: ReactPointerEvent<HTMLDivElement>): void => {
     if (!isPrimaryPress(e) || sessionRef.current?.active) return;
-    onScrub(msAt(e.clientX));
+    onSeek(msAt(e.clientX));
 
     const end = (): void => { sessionRef.current = null; };
     sessionRef.current = openPointerSession(e.currentTarget, e, {
-      onMove: (ev) => { onScrub(msAt(ev.clientX)); },
+      onMove: (ev) => { onSeek(msAt(ev.clientX)); },
       onEnd: end,
       onCancel: end,
     }, { capture: false });

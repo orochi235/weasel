@@ -10,7 +10,7 @@ function setup(window: TimeWindow) {
   const onWindowChange = vi.fn<(w: TimeWindow) => void>();
   const { getByTestId } = render(
     <div style={{ width: 500 }}>
-      <TimeRuler window={window} bounds={{ from: 0, to: 1000 }} playhead={0} onScrub={() => {}} onWindowChange={onWindowChange} />
+      <TimeRuler window={window} bounds={{ from: 0, to: 1000 }} playhead={0} onSeek={() => {}} onWindowChange={onWindowChange} />
     </div>,
   );
   const ruler = getByTestId('timeline-ruler');
