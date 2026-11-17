@@ -6,16 +6,8 @@
  */
 
 import { isPatternPaint, type GradientPaint, type Paint, type PatternPaint, type PosedPaint } from '@weasel-js/paint';
+import type { Rect } from '@weasel-js/geom';
 import { getPaintDrawKind } from './paintKinds';
-
-/** The box a `'bounds'` gradient's normalized geometry is mapped onto —
- *  usually a node's bounds. */
-export interface FillPoseBox {
-  x: number;
-  y: number;
-  width: number;
-  height: number;
-}
 
 /**
  * Map a `'bounds'` gradient's `0..1` geometry onto `box`, returning it in the
@@ -28,7 +20,7 @@ export interface FillPoseBox {
  * so a non-square box cannot make it the ellipse SVG would — this keeps the
  * radius proportionate instead.
  */
-export function paintToLocalUnits(fill: Paint, box: FillPoseBox): PosedPaint {
+export function paintToLocalUnits(fill: Paint, box: Rect): PosedPaint {
   if (!isBuiltinKind(fill)) {
     return (getPaintDrawKind(fill.kind)?.toLocalUnits?.(fill, box) ?? fill) as PosedPaint;
   }
@@ -61,7 +53,7 @@ export function paintToLocalUnits(fill: Paint, box: FillPoseBox): PosedPaint {
  * A zero-width or zero-height box has no frame to normalize against; the
  * fill is returned untouched rather than divided by zero.
  */
-export function paintToBoundsUnits(fill: Paint, box: FillPoseBox): Paint {
+export function paintToBoundsUnits(fill: Paint, box: Rect): Paint {
   if (!isBuiltinKind(fill)) {
     return getPaintDrawKind(fill.kind)?.toBoundsUnits?.(fill, box) ?? fill;
   }

@@ -105,7 +105,6 @@ export {
   gradientForBounds,
 } from '@weasel-js/paint';
 export { paintToLocalUnits, paintToBoundsUnits } from '@weasel-js/renderer';
-export type { FillPoseBox } from '@weasel-js/renderer';
 // A node's paint resolved into what a draw command takes.
 export { commandFill, commandPaint, commandStroke } from '@weasel-js/renderer';
 

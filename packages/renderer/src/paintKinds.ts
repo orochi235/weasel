@@ -9,8 +9,7 @@
 
 import type { ColorSpace, Paint, PaintUnits, GradStop } from '@weasel-js/paint';
 import { createReflectable, type PushOptions, type Reflection } from '@weasel-js/registry';
-import type { FillPoseBox } from './paintToLocalUnits';
-import type { GlMat3 } from '@weasel-js/geom';
+import type { GlMat3, Rect } from '@weasel-js/geom';
 import type { GpuTexture } from './gpu/types';
 import {
   programSourceRegistry, type ProgramSource, type ShaderUniform,
@@ -123,9 +122,9 @@ export interface PaintDrawKind {
    */
   bind?(ctx: PaintBindContext, fill: Paint): PaintBinding | null;
   /** Bounds frame → the frame the node is painted in. */
-  toLocalUnits?(fill: Paint, box: FillPoseBox): Paint;
+  toLocalUnits?(fill: Paint, box: Rect): Paint;
   /** The inverse. Required whenever `toLocalUnits` is supplied. */
-  toBoundsUnits?(fill: Paint, box: FillPoseBox): Paint;
+  toBoundsUnits?(fill: Paint, box: Rect): Paint;
   /**
    * Shader programs `bind` names, keyed by program id; registering the kind
    * registers them. Declaring them here rather than

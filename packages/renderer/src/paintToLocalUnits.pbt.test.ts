@@ -1,7 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import fc from 'fast-check';
 import type { Paint } from '@weasel-js/paint';
-import { paintToLocalUnits, paintToBoundsUnits, type FillPoseBox } from './paintToLocalUnits';
+import type { Rect } from '@weasel-js/geom';
+import { paintToLocalUnits, paintToBoundsUnits } from './paintToLocalUnits';
 import { nonFinite, runs, spread, tally } from './pbt.fixture';
 
 const STOPS = [{ offset: 0, color: '#000000' }, { offset: 1, color: '#ffffff' }];
@@ -19,7 +20,7 @@ function fill(units: 'bounds' | 'local' | 'world' | 'screen' | undefined): fc.Ar
   );
 }
 
-const box: fc.Arbitrary<FillPoseBox> = fc.record({
+const box: fc.Arbitrary<Rect> = fc.record({
   x: spread(-500, 500), y: spread(-500, 500),
   width: fc.oneof(spread(0.5, 800), spread(-800, -0.5)), height: fc.oneof(spread(0.5, 800), spread(-800, -0.5)),
 });

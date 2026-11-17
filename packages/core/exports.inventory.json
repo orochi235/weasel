@@ -367,7 +367,6 @@
     "FeedDelta": "type",
     "FeedNode": "type",
     "Fill": "type",
-    "FillPoseBox": "type",
     "FinishPathParams": "type",
     "FinishedEditFrame": "type",
     "FinishedPathEdit": "type",
