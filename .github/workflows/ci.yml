@@ -25,7 +25,9 @@ jobs:
           node-version-file: .nvmrc
           cache: npm
       - run: npm install -g npm@${{ env.NPM_VERSION }}
-      - run: npm ci
+      # Skips the root `prepare`, a full build that exists for installs from a git URL: CI builds
+      # once, at its own `npm run build` step below.
+      - run: npm ci --ignore-scripts
       # Every pending changeset carries a valid entry marker. See docs/releasing.md.
       - run: npm run check:changesets
       # The `fixed` group is still the whole set: it is a hand-written list of
@@ -34,9 +36,6 @@ jobs:
       # A package importing a module its manifest does not declare builds here,
       # where hoisting resolves it, and ships inlined or unresolvable.
       - run: npm run check:imports
-      # A package built before a sibling it depends on gets no types for it.
-      # Only a clean install shows that, so the order is read, not built.
-      - run: npm run check:build-order
       # A package that has never been published cannot be published by the
       # release job's OIDC token — it needs one manual publish first. Warn
       # here rather than fail: the PR that adds a package is legitimately the

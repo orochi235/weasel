@@ -1,17 +1,55 @@
 import { describe, expect, it } from 'vitest';
-import { buildInOrder } from './build-workspaces.mjs';
+import { buildAll, buildGraph } from './build-workspaces.mjs';
 
-describe('buildInOrder', () => {
-  it('builds every workspace in order when all pass', () => {
-    const built: string[] = [];
-    expect(buildInOrder(['a', 'b', 'c'], (n) => (built.push(n), 0))).toBeNull();
-    expect(built).toEqual(['a', 'b', 'c']);
+const tick = () => new Promise((r) => setTimeout(r, 0));
+
+describe('buildGraph', () => {
+  it('keeps sibling dependencies and peers, and adds undeclared build reads', () => {
+    const graph = buildGraph(
+      [
+        { name: 'a' },
+        { name: 'b', dependencies: { a: '1', react: '1' } },
+        { name: 'c', peerDependencies: { b: '1' } },
+      ],
+      { c: ['a'] },
+    );
+    expect(graph).toEqual(new Map([['a', []], ['b', ['a']], ['c', ['b', 'a']]]));
+  });
+});
+
+describe('buildAll', () => {
+  it('builds each workspace after its dependencies', async () => {
+    const graph = new Map([['a', []], ['b', ['a']], ['c', ['a']], ['d', ['b', 'c']]]);
+    const order: string[] = [];
+    expect(await buildAll(graph, async (n) => (await tick(), order.push(n), 0), 4)).toBeNull();
+    expect(order.indexOf('a')).toBeLessThan(order.indexOf('b'));
+    expect(order.indexOf('c')).toBeLessThan(order.indexOf('d'));
+    expect(order).toHaveLength(4);
   });
 
-  it('stops at the first failure and names it', () => {
-    const built: string[] = [];
-    const failed = buildInOrder(['a', 'b', 'c'], (n) => (built.push(n), n === 'b' ? 2 : 0));
+  it('runs no more than `jobs` builds at once', async () => {
+    const graph = new Map(['a', 'b', 'c', 'd', 'e'].map((n) => [n, [] as string[]]));
+    let now = 0;
+    let most = 0;
+    await buildAll(graph, async () => {
+      most = Math.max(most, ++now);
+      await tick();
+      now--;
+      return 0;
+    }, 2);
+    expect(most).toBe(2);
+  });
+
+  it('starts nothing after a failure and names it', async () => {
+    const graph = new Map([['a', []], ['b', ['a']], ['c', ['b']]]);
+    const started: string[] = [];
+    const failed = await buildAll(graph, (n) => (started.push(n), n === 'b' ? 2 : 0), 1);
     expect(failed).toEqual({ name: 'b', code: 2 });
-    expect(built).toEqual(['a', 'b']);
+    expect(started).toEqual(['a', 'b']);
+  });
+
+  it('refuses a cycle', async () => {
+    const graph = new Map([['a', ['b']], ['b', ['a']]]);
+    await expect(buildAll(graph, () => 0, 2)).rejects.toThrow(/cycle/);
   });
 });

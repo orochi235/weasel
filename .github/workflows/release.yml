@@ -38,7 +38,7 @@ jobs:
       # reads like a missing package rather than an out-of-date CLI.
       - run: npm install -g npm@${{ env.NPM_VERSION }}
       - run: npm ci
-      # Builds every published workspace, in `scripts/build-workspaces.mjs`'s order.
+      # Builds every published workspace, each after the siblings it depends on.
       - run: npm run build
       # check:manifests, check:treeshake and check:react-free are not repeated here:
       # `test:fleet:postbuild` runs them on the commit, under this npm, before it merges.

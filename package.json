@@ -68,7 +68,6 @@
     "check:tiers": "node scripts/check-package-tiers.mjs",
     "check:published": "node scripts/check-published-versions.mjs",
     "test:smoke:registry": "node scripts/smoke-registry-install.mjs",
-    "check:build-order": "node scripts/check-build-order.mjs",
     "check:changesets": "node scripts/release/check.ts",
     "check:lockstep": "node scripts/check-lockstep.mjs",
     "check:frame-loops": "node scripts/check-frame-loops.mjs",

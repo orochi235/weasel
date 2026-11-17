@@ -11,7 +11,7 @@ import { tmpdir } from 'node:os';
 import { delimiter, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { calibrate, createBar, planWeights, readWeights, writeWeights } from './lib/ci-progress.mjs';
-import { CI_YML, builtSteps, readCi } from './lib/ci-steps.mjs';
+import { CI_YML, WRITES, builtSteps, installStep, readCi, stepGroups } from './lib/ci-steps.mjs';
 import { COMMIT_ENV, checkTree, stampReport, stepEnv, treeReport, treeStamp } from './lib/fleet-tree.mjs';
 
 const ROOT = fileURLToPath(new URL('..', import.meta.url));
@@ -48,7 +48,7 @@ if (!tree.ok) process.exit(1);
 const stamp = treeStamp(ROOT);
 
 const { env: jobEnv, steps } = readCi(readFileSync(CI_YML, 'utf8'));
-const plan = [{ run: 'npm ci', env: {} }, ...builtSteps(steps)];
+const plan = [installStep(steps), ...builtSteps(steps)];
 const labels = plan.map((step) => step.run.replace(/\n/g, ' && '));
 const weights = planWeights(labels, readWeights());
 
@@ -56,7 +56,8 @@ const weights = planWeights(labels, readWeights());
 // vitest-overlap.mjs uses: that is onto adapt's channel, and in a `do` job fd 3 is open to
 // something that refuses writes (ENXIO).
 const toOnto = (line) => console.log(line);
-const bar = createBar(weights, toOnto);
+const groups = stepGroups(plan.map((step) => step.run));
+const bar = createBar(groups.map((group) => Math.max(...group.map((i) => weights[i]))), toOnto);
 bar.start();
 const started = Date.now();
 
@@ -104,28 +105,36 @@ const width = String(plan.length).length;
 const secs = (s) => `${s.toFixed(1).padStart(7)}s`;
 let failed = 0;
 let broken = '';
-say(`setup took ${((Date.now() - started) / 1000).toFixed(1)}s; plan ${bar.total}s over ${plan.length} steps`);
-for (const [i, step] of plan.entries()) {
+say(`setup took ${((Date.now() - started) / 1000).toFixed(1)}s; plan ${bar.total}s over ${plan.length} steps in ${groups.length} groups`);
+const runOne = async (i) => {
+  const step = plan[i];
   const label = labels[i];
   const at = `${String(i + 1).padStart(width)}/${plan.length}`;
   const planned = secs(weights[i]).trim();
-  if (broken) {
-    bar.skip(i);
-    say(`${at} skip           (plan ${planned.padStart(7)})  ${label}  (after ${broken} failed)`);
-    continue;
-  }
   const t0 = Date.now();
-  bar.begin(i);
   const { ok, output } = await runStep(step.run, step.env);
-  bar.end(i);
   const took = (Date.now() - t0) / 1000;
   say(`${at} ${ok ? 'ok  ' : 'FAIL'} ${secs(took)}  (plan ${planned.padStart(7)}, ${(took / weights[i]).toFixed(2).padStart(5)}×)  ${label}`);
-  if (ok) continue;
+  if (ok) return;
   failed++;
   const lines = output.trimEnd().split('\n');
   console.log(lines.slice(-TAIL).map((line) => `    ${line}`).join('\n'));
   // Every later step reads what a build or an install writes.
-  if (/^npm (ci|run build)\b/.test(step.run)) broken = label;
+  if (WRITES.test(step.run)) broken = label;
+};
+
+// A step that writes runs alone; the reading steps between two of them run at once.
+for (const [g, group] of groups.entries()) {
+  if (broken) {
+    bar.skip(g);
+    for (const i of group) {
+      say(`${String(i + 1).padStart(width)}/${plan.length} skip           (plan ${secs(weights[i]).trim().padStart(7)})  ${labels[i]}  (after ${broken} failed)`);
+    }
+    continue;
+  }
+  bar.begin(g);
+  await Promise.all(group.map(runOne));
+  bar.end(g);
 }
 
 const score = bar.finish();

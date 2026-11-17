@@ -108,3 +108,30 @@ export const sourceChecks = (steps) =>
 
 /** The first build and every step after it. */
 export const builtSteps = (steps) => offCi(steps.slice(firstBuild(steps)));
+
+/** ci.yml's install step. */
+export const installStep = (steps) => {
+  const step = steps.find((s) => /^npm ci\b/.test(s.run));
+  if (!step) throw new Error('ci.yml: no `npm ci` step');
+  return step;
+};
+
+/** A step that writes what later steps read: an install, or a build of the packages' `dist`. */
+export const WRITES = /^npm (?:ci|run build)(?:\s|$)/;
+
+/**
+ * `runs` split into groups that can run at once, as lists of indices: a step matching `WRITES` runs
+ * alone, and the steps between two of those run together, since each only reads.
+ */
+export const stepGroups = (runs) => {
+  const groups = [];
+  let open = null;
+  runs.forEach((run, i) => {
+    if (WRITES.test(run)) {
+      groups.push([i]);
+      open = null;
+    } else if (open) open.push(i);
+    else groups.push((open = [i]));
+  });
+  return groups;
+};
