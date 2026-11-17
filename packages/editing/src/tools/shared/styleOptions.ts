@@ -5,14 +5,14 @@
  * of its own (`share: { fill: null }`).
  */
 import type { PrefGroup, PrefLeaf } from '@weasel-js/prefs-schema';
-import { isSolidPaint, type Paint, cycleFill, solid, toHex8 } from '@weasel-js/paint';
+import { isSolidPaint, type Paint, paletteColorAt, solid, toHex8 } from '@weasel-js/paint';
 import type { ToolOptionsSpec } from '@weasel-js/routing';
 import { DEFAULT_STROKE_WIDTH } from '../../actions/insert/style';
 import { type InsertStyle } from '../../actions/insert/style';
 import { type StyleOptionKey } from '../../actions/insert/style';
 
 /** The kit's color for a new shape: the first of its palette. */
-export const DEFAULT_SHAPE_PAINT: Paint = solid(cycleFill(0));
+export const DEFAULT_SHAPE_PAINT: Paint = solid(paletteColorAt(0));
 
 /** `paint` in the one spelling every tool option's color default takes: `solid`'s, six hex digits with any alpha
  *  as `opacity`, so `#000` and `#000000ff` read as one value. Any other paint comes back as it is. */

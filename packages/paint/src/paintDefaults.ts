@@ -36,7 +36,7 @@ export const DEFAULT_PALETTE: Palette = {
 /** The `seq`th color of `palette`'s entries as hex, wrapping past the end.
  *  An entry that resolves to nothing, or to a space with no hex form, gives
  *  `fallback`. */
-export function cycleFill(seq: number, palette: Palette = DEFAULT_PALETTE, fallback = DEFAULT_FILL_COLOR): string {
+export function paletteColorAt(seq: number, palette: Palette = DEFAULT_PALETTE, fallback = DEFAULT_FILL_COLOR): string {
   const { entries } = palette;
   const entry = entries[((seq % entries.length) + entries.length) % entries.length];
   const color = entry && resolvePaletteColor(palette, { ref: entry.name });
@@ -46,7 +46,7 @@ export function cycleFill(seq: number, palette: Palette = DEFAULT_PALETTE, fallb
 /** Preview / "ghost" stroke color used by drag-to-draw tool overlays and the
  *  selected-anchor highlight. Derived from the first palette entry so the
  *  preview chrome matches the default insert color. */
-export const GHOST_STROKE: string = cycleFill(0);
+export const GHOST_STROKE: string = paletteColorAt(0);
 
 /**
  * A solid paint from a color string — the authoring shorthand for the one

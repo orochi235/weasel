@@ -143,7 +143,7 @@ export {
   DEFAULT_FILL_COLOR,
   DEFAULT_STROKE_COLOR,
   DEFAULT_PALETTE,
-  cycleFill,
+  paletteColorAt,
   GHOST_STROKE,
   solid,
   strokeOf,
