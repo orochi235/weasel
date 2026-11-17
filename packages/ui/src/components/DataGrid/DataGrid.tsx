@@ -236,7 +236,7 @@ export function DataGrid<Row extends { id: string }>(props: DataGridProps<Row>) 
                         <Disclosure
                           open={isExpanded}
                           disabled={hold.disabled}
-                          onToggle={() => { if (!hold.disabled) toggleExpanded(row.id); }}
+                          onOpenChange={() => { if (!hold.disabled) toggleExpanded(row.id); }}
                           label={isExpanded ? 'Hide details' : 'Show details'}
                           aria-controls={detail != null ? detailId : undefined}
                         />

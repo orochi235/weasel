@@ -84,7 +84,7 @@ export function foldTwisty(fold: Fold, title: ReactNode, fallback = 'this sectio
   return createElement(Disclosure, {
     className: className ? `${twistyClass(fold)} ${className}` : twistyClass(fold),
     open: !fold.folded,
-    onToggle: fold.toggle,
+    onOpenChange: fold.toggle,
     label: typeof title === 'string' ? title : fallback,
     'aria-controls': fold.body.id,
   });
