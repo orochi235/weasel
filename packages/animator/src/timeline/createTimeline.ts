@@ -168,8 +168,9 @@ export function createTimeline(
     if (canceled) return true;
 
     const finished = playhead >= duration && !parked;
-    // Played backward, it ends at its start as it ends at its end going forward.
-    const rewound = rate < 0 && playhead <= 0;
+    // Played backward, it ends at its start as it ends at its end going forward: at the start
+    // of its first lap, as a playhead exactly on a later lap's start goes on into the one behind.
+    const rewound = rate < 0 && playhead <= 0 && lap === 0;
     playhead = Math.min(Math.max(playhead, 0), duration);
 
     // Sampled before fired, so a handler reads the current frame's values.

@@ -339,3 +339,19 @@ describe('a live timeline', () => {
     expect(tl.time()).toBe(30);
   });
 });
+
+describe('a timeline played backward', () => {
+  it('goes on into the lap behind it from exactly 0, as it goes on into the next from exactly its end', () => {
+    const h = harness();
+    const onDone = vi.fn();
+    const tl = createTimeline(h.register, 1, { tracks: [numberTrack()], duration: 100, loop: 3, onDone });
+    h.frame(150);
+    tl.setTimeScale(-1);
+    h.frame(50);
+    expect(tl.time()).toBe(0);
+    expect(onDone).not.toHaveBeenCalled();
+    expect(h.isLive()).toBe(true);
+    h.frame(10);
+    expect(tl.time()).toBe(90);
+  });
+});
