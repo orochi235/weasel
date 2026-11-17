@@ -1,7 +1,7 @@
 import { useEffect, useRef } from 'react';
 import { fitSize } from './fitSize';
 
-const AUTO_CENTER_FILL = 0.85;
+const FIT_ONCE_FILL = 0.85;
 
 /**
  * Fit and center the content with `fitSize` once the viewport has non-zero size and there is
@@ -9,7 +9,7 @@ const AUTO_CENTER_FILL = 0.85;
  * the view stays the initial one the caller set up. Later changes are
  * ignored — this hook centers exactly once.
  */
-export function useAutoCenter(
+export function useFitOnce(
   width: number,
   height: number,
   contentW: number,
@@ -21,7 +21,7 @@ export function useAutoCenter(
 
   useEffect(() => {
     if (width > 0 && height > 0 && !hasCentered.current) {
-      const fit = fitSize(width, height, contentW, contentH, 0, undefined, AUTO_CENTER_FILL);
+      const fit = fitSize(width, height, contentW, contentH, 0, undefined, FIT_ONCE_FILL);
       if (fit === null) return;
       hasCentered.current = true;
       setZoom(fit.zoom);

@@ -1725,7 +1725,7 @@
    "packages/core/src/core/viewport/parallax.ts",
    "packages/core/src/core/viewport/sceneNodeClientRect.ts",
    "packages/core/src/core/viewport/screenSlop.ts",
-   "packages/core/src/core/viewport/useAutoCenter.ts",
+   "packages/core/src/core/viewport/useFitOnce.ts",
    "packages/core/src/core/viewport/useCanvasSize.ts",
    "packages/core/src/core/viewport/useDecayLoop.ts",
    "packages/core/src/core/viewport/useNodeOverlayFrame.ts",

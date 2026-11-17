@@ -278,7 +278,7 @@ not routed by the dispatcher — you own the pointer events.
 `<SceneCanvas>` doesn't own these; wire them in your component.
 
 - `useCanvasSize(ref)` — observed CSS-pixel size.
-- `useAutoCenter(...)` — viewport helpers.
+- `useFitOnce(...)` — viewport helpers.
 - `viewAfterWheel(view, input)` — the kit's wheel convention as a pure
   reducer over `View`: bare wheel pans, shift+wheel pans horizontally,
   Cmd/Ctrl+wheel zooms under the pointer. `wheelPan` / `wheelZoom` are its

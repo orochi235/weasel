@@ -76,7 +76,7 @@ export { viewportWorldRect } from '../core/viewport/viewportWorldRect';
 export type { ClampBounds, CanvasSize } from '../core/viewport/clampView';
 export { sceneNodeClientRect } from '../core/viewport/sceneNodeClientRect';
 export type { SceneNodeClientRectOptions, NodeClientRect } from '../core/viewport/sceneNodeClientRect';
-export * from '../core/viewport/useAutoCenter';
+export * from '../core/viewport/useFitOnce';
 
 // ─── Scheduling: the visibility gate every weasel frame loop runs behind ────
 export { useVisibleRaf } from '@weasel-js/react';

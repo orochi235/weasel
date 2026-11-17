@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 import { renderHook } from '@testing-library/react';
-import { useAutoCenter } from './useAutoCenter';
+import { useFitOnce } from './useFitOnce';
 import { fitSize } from './fitSize';
 import { fitSize as fitSizeFromEntry } from '../../index';
 
@@ -49,12 +49,12 @@ describe('fitSize with a fill and no content', () => {
   });
 });
 
-describe('useAutoCenter', () => {
+describe('useFitOnce', () => {
   it('leaves the initial view while there is no content, and centers once there is', () => {
     const setZoom = vi.fn();
     const setPan = vi.fn();
     const { rerender } = renderHook(
-      ({ c }: { c: number }) => useAutoCenter(200, 200, c, c, setZoom, setPan),
+      ({ c }: { c: number }) => useFitOnce(200, 200, c, c, setZoom, setPan),
       { initialProps: { c: 0 } },
     );
     expect(setZoom).not.toHaveBeenCalled();
@@ -67,7 +67,7 @@ describe('useAutoCenter', () => {
   it('does nothing while viewport is zero-sized', () => {
     const setZoom = vi.fn();
     const setPan = vi.fn();
-    renderHook(() => useAutoCenter(0, 0, 10, 10, setZoom, setPan));
+    renderHook(() => useFitOnce(0, 0, 10, 10, setZoom, setPan));
     expect(setZoom).not.toHaveBeenCalled();
     expect(setPan).not.toHaveBeenCalled();
   });
@@ -76,7 +76,7 @@ describe('useAutoCenter', () => {
     const setZoom = vi.fn();
     const setPan = vi.fn();
     const { rerender } = renderHook(
-      ({ w, h }: { w: number; h: number }) => useAutoCenter(w, h, 10, 10, setZoom, setPan),
+      ({ w, h }: { w: number; h: number }) => useFitOnce(w, h, 10, 10, setZoom, setPan),
       { initialProps: { w: 0, h: 0 } },
     );
     expect(setZoom).not.toHaveBeenCalled();
@@ -92,7 +92,7 @@ describe('useAutoCenter', () => {
   it('passes computed fit values to setters', () => {
     const setZoom = vi.fn();
     const setPan = vi.fn();
-    renderHook(() => useAutoCenter(200, 200, 10, 10, setZoom, setPan));
+    renderHook(() => useFitOnce(200, 200, 10, 10, setZoom, setPan));
     // Default padRatio 0.85 -> zoom 17, pan 15
     expect(setZoom).toHaveBeenCalledWith(17);
     expect(setPan).toHaveBeenCalledWith(15, 15);
