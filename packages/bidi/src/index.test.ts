@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { bidi, analyze, reorder, mirror, baseLevel, UNICODE_VERSION } from './index';
+import { bidi, analyze, reorder, mirrorOf, baseLevel, UNICODE_VERSION } from './index';
 
 /** Hebrew alef-bet-gimel, a space, and Latin digits. */
 const HE = [0x05d0, 0x05d1, 0x05d2];
@@ -34,14 +34,14 @@ describe('the public seam', () => {
   });
 
   it('mirrors a bracket only where the caller finds an odd level', () => {
-    expect(mirror(0x28)).toBe(0x29);
-    expect(mirror(0x41)).toBe(null);
+    expect(mirrorOf(0x28)).toBe(0x29);
+    expect(mirrorOf(0x41)).toBe(null);
   });
 
   it('exposes the same calls on the default engine', () => {
     expect(bidi.analyze).toBe(analyze);
     expect(bidi.reorder).toBe(reorder);
-    expect(bidi.mirror).toBe(mirror);
+    expect(bidi.mirror).toBe(mirrorOf);
     expect(bidi.baseLevel).toBe(baseLevel);
   });
 

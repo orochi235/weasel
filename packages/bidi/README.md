@@ -21,7 +21,7 @@ Two calls because the algorithm splits at exactly one place. `analyze` is per pa
 `reorder` is per **line**, because L1 resets trailing whitespace against the end of a line
 rather than the end of a paragraph. Wrap between them, and one analysis serves every line.
 
-`mirror(cp)` is L4, applied at paint time against a character's resolved level — the same
+`mirrorOf(cp)` is L4, applied at paint time against a character's resolved level — the same
 code point mirrors in one run and not in another. `baseLevel(paragraph)` is the level the
 paragraph reads at, which under `'auto'` is what its first strong character decided.
 
