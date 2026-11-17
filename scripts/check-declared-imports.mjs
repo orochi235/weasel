@@ -1,5 +1,6 @@
 /**
- * Every module a published package imports must be one its manifest declares.
+ * Every module a published package imports must be one its manifest declares, type-only imports
+ * included, since those land in its .d.ts; and every sibling it declares, its shipped code names.
  *
  * An undeclared import passes everything inside the monorepo, where hoisting
  * resolves it. Published, a bundling build inlines the module and a per-module
@@ -15,7 +16,7 @@ import { existsSync, readFileSync, readdirSync, statSync } from 'node:fs';
 import { builtinModules } from 'node:module';
 import { dirname, join, relative, resolve } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
-import { SOURCE, importSpecifiers, isBare, packageOf } from './lib/imports.mjs';
+import { SOURCE, importSpecifiers, isBare, namedSpecifiers, packageOf } from './lib/imports.mjs';
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const PACKAGES = join(ROOT, 'packages');
@@ -45,7 +46,7 @@ export function isShipped(rel, own, manifest) {
 // extension. The icons plugin loads from source during @weasel-js/icons' own build, before its dist exists.
 const CROSS_PACKAGE = [{ from: 'packages/icons-plugin', to: 'packages/icons/src/names' }];
 
-const TEST_SURFACE = /^\.\/(test-seams$|testing\/)/;
+const TEST_SURFACE =/^\.\/(test-seams$|testing\/)/;
 
 /** Whether `subpath` (`./x`) is one `exports` lists, a `*` pattern included. */
 export function exportsSubpath(exports, subpath) {
@@ -58,12 +59,12 @@ export function exportsSubpath(exports, subpath) {
   });
 }
 
-function walk(dir, out = []) {
+function walk(dir, out = [], match = SOURCE) {
   for (const name of readdirSync(dir)) {
     const path = join(dir, name);
     if (statSync(path).isDirectory()) {
-      if (name !== 'node_modules' && name !== 'dist') walk(path, out);
-    } else if (SOURCE.test(name)) {
+      if (name !== 'node_modules' && name !== 'dist') walk(path, out, match);
+    } else if (match.test(name)) {
       out.push(path);
     }
   }
@@ -119,6 +120,7 @@ if (import.meta.url === pathToFileURL(process.argv[1] ?? '').href) {
   }
 
   const offenders = [];
+  const unused = [];
   const escapes = [];
   const reaches = [];
   let checked = 0;
@@ -137,14 +139,22 @@ if (import.meta.url === pathToFileURL(process.argv[1] ?? '').href) {
       ...Object.keys(manifest.peerDependencies ?? {}),
       ...Object.keys(manifest.optionalDependencies ?? {}),
     ]);
+    const devDeclared = new Set(Object.keys(manifest.devDependencies ?? {}));
     const aliases = ownAliases(dir).filter((alias) => !alias.startsWith('@weasel-js/'));
     const missing = new Map();
+    const named = new Set();
+    for (const sheet of walk(join(dir, 'src'), [], /\.css$/)) {
+      for (const m of readFileSync(sheet, 'utf8').matchAll(/@weasel-js\/[a-z0-9-]+/g)) named.add(m[0]);
+    }
 
     for (const file of walk(join(dir, 'src'))) {
       const rel = relative(ROOT, file);
       if (!isShipped(rel, relative(ROOT, dir), manifest)) continue;
       const testSurface = NOT_SHIPPED.test(rel) || /\/test-seams\.tsx?$/.test(rel);
-      for (const written of importSpecifiers(readFileSync(file, 'utf8'), file)) {
+      const source = readFileSync(file, 'utf8');
+      const runtime = new Set(importSpecifiers(source, file));
+      for (const m of source.matchAll(/declare module ['"](@weasel-js\/[a-z0-9-]+)/g)) named.add(m[1]);
+      for (const written of namedSpecifiers(source, file)) {
         const specifier = written.replace(/\?.*$/, '');
         if (specifier.startsWith('.')) {
           const target = relative(ROOT, resolve(dirname(file), specifier)).replace(/\.[cm]?[jt]sx?$/, '');
@@ -155,6 +165,7 @@ if (import.meta.url === pathToFileURL(process.argv[1] ?? '').href) {
         }
         if (!isBare(specifier)) continue;
         const pkg = packageOf(specifier);
+        named.add(pkg);
         const sibling = siblings.get(pkg);
         if (sibling && pkg !== manifest.name) {
           const subpath = `.${specifier.slice(pkg.length)}`;
@@ -162,11 +173,17 @@ if (import.meta.url === pathToFileURL(process.argv[1] ?? '').href) {
           else if (!testSurface && TEST_SURFACE.test(subpath)) reaches.push({ file: rel, specifier, why: 'is a test surface' });
         }
         if (declared.has(pkg) || BUILTINS.has(pkg)) continue;
+        // A type-only import leaves no specifier in the JavaScript, so a devDependency can meet it
+        // unless the type reaches the package's .d.ts; a sibling's always might, so it never may.
+        if (!runtime.has(written) && !siblings.has(pkg) && devDeclared.has(pkg)) continue;
         if (aliases.some((alias) => specifier === alias || specifier.startsWith(`${alias}/`))) continue;
         if (!missing.has(pkg)) missing.set(pkg, rel);
       }
     }
     if (missing.size > 0) offenders.push({ name: manifest.name, missing });
+    const runtimeDeclared = [...Object.keys(manifest.dependencies ?? {}), ...Object.keys(manifest.peerDependencies ?? {})];
+    const idle = runtimeDeclared.filter((pkg) => siblings.has(pkg) && !named.has(pkg));
+    if (idle.length > 0) unused.push({ name: manifest.name, idle });
   }
 
   // An app is not published, but its source is what a demo teaches: it reaches a package the way a
@@ -218,7 +235,13 @@ if (import.meta.url === pathToFileURL(process.argv[1] ?? '').href) {
     console.error('\n  Add each to the package\'s dependencies or peerDependencies.\n');
   }
 
-  if (escapes.length > 0 || reaches.length > 0 || offenders.length > 0) process.exit(1);
+  if (unused.length > 0) {
+    console.error(`\n[declared-imports] BLOCKED: ${unused.length} package(s) declare a sibling their shipped code never names.\n`);
+    for (const { name, idle } of unused) console.error(`  ${name}   ${idle.join(', ')}`);
+    console.error("\n  Drop each from dependencies and peerDependencies, or move it to devDependencies if only tests use it.\n");
+  }
+
+  if (escapes.length > 0 || reaches.length > 0 || offenders.length > 0 || unused.length > 0) process.exit(1);
 
   console.log(`[declared-imports] OK — ${checked} published package(s) and the apps, every import declared and public.`);
 }
