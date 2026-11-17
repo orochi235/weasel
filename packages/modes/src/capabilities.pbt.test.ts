@@ -6,7 +6,7 @@
  */
 import { describe, expect, it } from 'vitest';
 import fc from 'fast-check';
-import { capabilitiesAllowed, IMPLICIT_TAGS, isCapabilityTag, ALL_TAGS } from './capabilities';
+import { capabilitiesAllowed, IMPLICIT_TAGS, isShippedTag, SHIPPED_TAGS } from './capabilities';
 import { eligibleContribution, eligibleTool } from './eligibility';
 import { eligibleForMode } from './modeDefinition';
 import { createModeRegistry } from './registry';
@@ -45,8 +45,8 @@ describe('eligibility in the active mode', () => {
   }, timeoutFor(RUNS, 1));
 
   it('reads a shipped tag as one, and any other string as not', () => {
-    fc.assert(fc.property(fc.oneof(fc.constantFrom(...ALL_TAGS), tag, fc.string({ maxLength: 6 })), (s) => {
-      expect(isCapabilityTag(s)).toBe((ALL_TAGS as readonly string[]).includes(s));
+    fc.assert(fc.property(fc.oneof(fc.constantFrom(...SHIPPED_TAGS), tag, fc.string({ maxLength: 6 })), (s) => {
+      expect(isShippedTag(s)).toBe((SHIPPED_TAGS as readonly string[]).includes(s));
     }), runs(RUNS));
   }, timeoutFor(RUNS, 1));
 });

@@ -2,7 +2,7 @@ import { useCallback, useMemo, useRef, useSyncExternalStore } from 'react';
 import { solid } from '@weasel-js/paint';
 import { asNodeId, SceneCanvas, useScene, createModeDecorationLayer, createWorkspaceTintLayer, type DrawCommand, WeaselProvider, textCommandFromRuns } from '@weasel-js/core';
 import {
-  ALL_TAGS,
+  SHIPPED_TAGS,
   IMPLICIT_TAGS,
   createModeDecorations,
   createModeRegistry,
@@ -173,7 +173,7 @@ export function ModesDemo() {
           <dd>{mode.scoping ? 'on — shapes outside the target dim and ignore the pointer' : 'off'}</dd>
           <dt>Allows</dt>
           <dd className={styles.tags}>
-            {ALL_TAGS.map((tag) => {
+            {SHIPPED_TAGS.map((tag) => {
               const implicit = IMPLICIT_TAGS.includes(tag);
               const on = implicit || allowed.has(tag);
               return (

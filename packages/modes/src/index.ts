@@ -1,4 +1,4 @@
-export { ALL_TAGS, IMPLICIT_TAGS, capabilitiesAllowed, isCapabilityTag } from './capabilities';
+export { SHIPPED_TAGS, IMPLICIT_TAGS, capabilitiesAllowed, isShippedTag } from './capabilities';
 export type { CapabilityTag } from './capabilities';
 export { defaultToolOf, eligibleForMode, modeLabel, shortcutOn } from './modeDefinition';
 export type { ModeDefinition, ModeEntry, ModeShortcut, WorkspaceVisual } from './modeDefinition';
