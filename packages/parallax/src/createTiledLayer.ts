@@ -10,7 +10,10 @@ import { tiledProject } from './tiledProject';
  */
 export type TilePeriod = number | { x?: number; y?: number };
 
-/** How far the content reaches outside its own cell, in world units. */
+/**
+ * How far the content reaches outside its own cell, in world units. A bare
+ * number covers both axes; `{ x, y }` names each, and a key left out is 0.
+ */
 export type TileBleed = number | { x?: number; y?: number };
 
 /** Options for {@link createTiledLayer}. */
@@ -38,10 +41,17 @@ interface Axes { x: number; y: number }
  *  cell covers a pixel or two, and each copy still costs a full source draw. */
 const MAX_COPIES = 4096;
 
-function axes(v: TilePeriod | TileBleed | undefined, fallback: number): Axes {
-  if (v === undefined) return { x: fallback, y: fallback };
-  if (typeof v === 'number') return { x: v, y: fallback };
-  return { x: v.x ?? fallback, y: v.y ?? fallback };
+/** A bare period wraps x alone; an axis it leaves out does not wrap. */
+function periodAxes(v: TilePeriod): Axes {
+  if (typeof v === 'number') return { x: v, y: Infinity };
+  return { x: v.x ?? Infinity, y: v.y ?? Infinity };
+}
+
+/** A bare bleed reaches out on both axes; an axis it leaves out does not. */
+function bleedAxes(v: TileBleed | undefined): Axes {
+  if (v === undefined) return { x: 0, y: 0 };
+  if (typeof v === 'number') return { x: v, y: v };
+  return { x: v.x ?? 0, y: v.y ?? 0 };
 }
 
 /** Column-major, the layout `GlMat3` documents. */
@@ -86,8 +96,8 @@ export function createTiledLayer<TData>(
     space: 'world',
     subscribe: subscribeToSources(source),
     draw: (data, view, dims) => {
-      const p = axes(typeof period === 'function' ? period(view, dims) : period, Infinity);
-      const b = axes(bleed, 0);
+      const p = periodAxes(typeof period === 'function' ? period(view, dims) : period);
+      const b = bleedAxes(bleed);
       const shown = viewportWorldRect(view, dims);
       const kx = tiledProject(shown.x, shown.x + shown.width, p.x, b.x);
       const ky = tiledProject(shown.y, shown.y + shown.height, p.y, b.y);

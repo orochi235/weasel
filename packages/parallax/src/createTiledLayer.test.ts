@@ -110,6 +110,13 @@ describe('createTiledLayer', () => {
     expect(draw).not.toHaveBeenCalled();
   });
 
+  it('a bare-number bleed widens both axes of a lattice tiled on both', () => {
+    const { layer } = spyLayer();
+    const l = createTiledLayer({ id: 't', label: 'T', source: [layer], period: { x: 500, y: 500 }, bleed: 200 });
+    const out = l.draw(undefined, { x: 0, y: 0, scale: { x: 1, y: 1 } }, dims);
+    expect(out.map(offsetOf)).toContainEqual([0, -500]);
+  });
+
   it('accounts for zoom: a zoomed-out view sees more copies', () => {
     const { layer } = spyLayer();
     const l = createTiledLayer({ id: 't', label: 'T', source: [layer], period: 200 });
