@@ -229,7 +229,7 @@ function SliderReadout(p: PropertyNumberFieldProps) {
       format={p.format}
       unit={p.unit}
       disabled={p.disabled}
-      onCommit={(next) => {
+      onChange={(next) => {
         p.onInput?.(next);
         p.onChange(next);
       }}
@@ -275,7 +275,7 @@ interface EditableReadoutProps {
   format?: (value: number) => ReactNode;
   unit?: ReactNode;
   disabled?: boolean;
-  onCommit: (next: number) => void;
+  onChange: (next: number) => void;
 }
 
 /**
@@ -283,7 +283,7 @@ interface EditableReadoutProps {
  * cancels on Escape, and steps like the track beside it. Clicks are stopped so
  * a wrapping <label> doesn't forward focus to the slider thumb.
  */
-function EditableReadout({ named, value, min, max, step, reach, settle, toTrack, stops = [], display, format, unit, disabled, onCommit }: EditableReadoutProps) {
+function EditableReadout({ named, value, min, max, step, reach, settle, toTrack, stops = [], display, format, unit, disabled, onChange }: EditableReadoutProps) {
   // Draft is non-null only while the input is focused; the live value mirrors
   // into the input otherwise.
   const [draft, setDraft] = useState<string | null>(null);
@@ -304,7 +304,7 @@ function EditableReadout({ named, value, min, max, step, reach, settle, toTrack,
     // A draft still reading as the value shown writes nothing: the readout rounds, and that text is not an edit.
     if (draft !== null && !canceled.current && !hold.refuses && draft !== text(value)) {
       const n = read(draft);
-      if (!Number.isNaN(n)) onCommit(settle(n));
+      if (!Number.isNaN(n)) onChange(settle(n));
     }
     setDraft(null);
   };
@@ -353,7 +353,7 @@ function EditableReadout({ named, value, min, max, step, reach, settle, toTrack,
             if (spun === null) return;
             const next = keyLanding(e.key, from, spun, stops);
             e.preventDefault();
-            onCommit(settle(next));
+            onChange(settle(next));
             // A step is committed already; the box shows the value it comes back as.
             setDraft(null);
           }
