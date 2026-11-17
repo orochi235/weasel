@@ -57,6 +57,12 @@ describe('StylePanel', () => {
     expect(text()).toBe('#ff0000');
   });
 
+  it('shows a translucent color, with its opacity', () => {
+    setup(['a', 'b'], (scene) => setDiagramColor(scene, ['a', 'b'], 'fill', '#ff000080'));
+    expect((screen.getByLabelText('Fill') as HTMLInputElement).value).toBe('#ff0000');
+    expect((screen.getByLabelText('Fill opacity') as HTMLInputElement).value).toBe('50');
+  });
+
   it("sets the selected shapes' text size by hand, marking it the author's", () => {
     const { scene } = setup(['a']);
     const size = screen.getByRole('spinbutton', { name: 'Text size' }) as HTMLInputElement;

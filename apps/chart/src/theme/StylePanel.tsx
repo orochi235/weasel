@@ -5,14 +5,15 @@ import { PropertyField, PropertyList, PropertyNote, PropertyPanel, type Property
 import type { CSSProperties, ReactElement } from 'react';
 import type { ChartScene } from '../chartDocument';
 import './stylePanel.css';
+import { tryParseColor } from '@weasel-js/core';
 import { getOwn } from '@weasel-js/registry';
 
 interface Styled { id: string; state: DiagramStyleState }
 
-/** The color `field` shows on one shape or connector, when it is an opaque hex color. */
+/** The color `field` shows on one shape or connector, when it is one a color field can show. */
 function colorOf(scene: ChartScene, s: Styled, field: StyleField): string | undefined {
   const color = diagramColorOf(scene, s.id, field);
-  return color !== undefined && /^#[0-9a-f]{6}$/i.test(color) ? color : undefined;
+  return color !== undefined && tryParseColor(color) !== null ? color : undefined;
 }
 
 /** One value when every item agrees, else `mixed`. */
@@ -44,7 +45,7 @@ export function StylePanel({ scene, selected, theme }: { scene: ChartScene; sele
     const color = common(among.map((s) => colorOf(scene, s, name)));
     return (
       <PropertyField
-        kind="color" label={label} value={color.value} mixed={color.mixed} disabled={among.length === 0}
+        kind="color" label={label} alpha value={color.value} mixed={color.mixed} disabled={among.length === 0}
         onChange={(next) => setDiagramColor(scene, among.map((s) => s.id), name, next)}
       />
     );
