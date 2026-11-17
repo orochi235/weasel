@@ -1,5 +1,5 @@
 export { createScene, sceneFromJSON, type SceneFromJSONOptions } from './scene';
-export { sceneSelectionStore } from './sceneSelection';
+export { sceneHistorySelection } from './sceneSelection';
 export { useScene } from './useScene';
 export { createEditingSession, isEditingSession, type EditingSession } from './editingSession';
 export { useEditingSession } from './useEditingSession';

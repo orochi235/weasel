@@ -83,7 +83,7 @@ export * from '../core/adapters/types';
 
 // ─── Scene primitive (kit-owned tree of marks and groups) ──────────────
 export {
-  createScene, sceneFromJSON, nodeKindOf, specsFromSerialized, isSerializedScene, localizeInScene, localizeWorldPoses, worldPosesOf, sceneSelectionStore, useScene, createEditingSession, isEditingSession, useEditingSession, asNodeId, hasChildren, isLeaf, statedFields, SCENE_HISTORY_FORM,
+  createScene, sceneFromJSON, nodeKindOf, specsFromSerialized, isSerializedScene, localizeInScene, localizeWorldPoses, worldPosesOf, sceneHistorySelection, useScene, createEditingSession, isEditingSession, useEditingSession, asNodeId, hasChildren, isLeaf, statedFields, SCENE_HISTORY_FORM,
   createPoseFeed, createPoseOverrides, definesFrame, derivedDepOf, derivedPose, documentDepOf, documentOf, documentPose, effectivePose, nodeAsShown, nodesAsShown, shownLookup,
   CLIP_NOTHING, UNION_OF_CHILDREN, clipNothing, unionOfChildren, SceneArrivalRefused, SnapshotKeyError, SnapshotShapeError, reconcileSpecs, sceneDeclaredScopes, sceneMagnification, sceneSharedUnitScopes, sceneUnitScopes,
   BOOLEAN_OF_CHILDREN, booleanOfChildren, booleanOpOf, booleanGroupFields, RestoredOpError,

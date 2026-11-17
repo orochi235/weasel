@@ -52,7 +52,7 @@ undo any entry. What each entry restores is a selection, and which session it re
 
 The rule follows where the user is looking: an undo selects what it changed in the canvas it was pressed in.
 A consumer building a second `History` over the scene (a mode machine) passes
-`sceneSelectionStore(session)` to restore into a session the same way.
+`sceneHistorySelection(session)` to restore into a session the same way.
 
 ## Changes and subscriptions
 

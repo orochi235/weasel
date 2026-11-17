@@ -116,7 +116,7 @@ export { sceneMutators } from '../core/scene/sceneMutators';
 export type { SceneMutators } from '../core/scene/sceneMutators';
 export { scenePoseAdapter, sceneViewPoseAdapter } from '../core/scene/scenePoseAdapter';
 export type { SceneRegistry } from '../core/scene/sceneRegistry';
-export { sceneSelectionStore } from '../core/scene/sceneSelection';
+export { sceneHistorySelection } from '../core/scene/sceneSelection';
 export type { SceneSelectionMembers } from '../core/scene/sceneSelection';
 export { createScrollOffsets, scrolledFrames, viewPoseAdapter } from '../core/scene/scrollOffsets';
 export type { SceneScroll, ScrollOffsets, ScrollSource } from '../core/scene/scrollOffsets';
