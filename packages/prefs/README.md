@@ -31,9 +31,18 @@ repair stored values that no longer fit the schema without writing them back.
 `openPrefsSync` opens from an adapter that reads synchronously, such as
 `localStorageAdapter`, with no `await`.
 
-`usePref(store, path)` and `usePrefsValues(store)` bind it to React. They
-live in `@weasel-js/prefs/react`, so the main entry never loads React.
-`usePrefsValues` returns the pieces `@weasel-js/ui`'s `PrefsForm` takes.
+`PrefValuesOf<typeof group>` is what a group holds, so options can be typed
+from the schema that draws them rather than declared beside it:
+
+```ts
+type View = PrefValuesOf<typeof SCHEMA.children.view>; // { gridVisible: boolean; gridGap: number; mode: 'dark' | 'light' }
+```
+
+`usePref(store, path)`, `usePrefGroup(store, path)` and `usePrefsValues(store)`
+bind it to React. They live in `@weasel-js/prefs/react`, so the main entry
+never loads React. `usePrefGroup` reads a group as one object, ready to spread
+into options typed by `PrefValuesOf`, and its setter writes the leaves a patch
+names. `usePrefsValues` returns the pieces `@weasel-js/ui`'s `PrefsForm` takes.
 
 `usePrefsStore(schema, { storage, prefix })` gives a component a store of its
 own: open from its first render, closed with its writes sent when it unmounts.

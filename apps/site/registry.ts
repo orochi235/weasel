@@ -1541,6 +1541,16 @@ const DEMO_META: DemoMeta[] = [
     path: 'apps/site/demos/KitSettingsDemo.tsx',
   },
   {
+    id: 'page-grid-settings',
+    title: 'A feature\'s settings group',
+    package: 'editor',
+    description:
+      "A feature that exports its settings as a prefs group, and types its options from it. `pageGridSchema` is the page grid's settings; an app mounts it in its own schema, here at `grid`, and `usePrefGroup` reads the group as one object to spread into `usePageGrid`. The form and the canvas read the one definition, so a setting added to the group reaches both.",
+    hint: 'Turn on Show grid and Snap to grid, then drag a rectangle. Change Grid density and Accent every; values persist across a reload.',
+    load: () => import('./demos/PageGridDemo').then((m) => m.PageGridDemo),
+    path: 'apps/site/demos/PageGridDemo.tsx',
+  },
+  {
     id: 'registry',
     title: 'Reflectable registry',
     package: 'registry',

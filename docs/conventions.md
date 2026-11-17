@@ -231,11 +231,26 @@ stays, as the only definition of the default; the component reads
 snap strategy finds that store on its `GestureContext` as `kitSettings`. A
 component's own prop still wins over a provider.
 
-To add one: augment `KitSettings` from `@weasel-js/react` in the package's
-`kitSettings.ts` (`targets` leaves go on `KitTargetSettings`, which several
-packages add to), read it as above, and add a leaf to the package's
-`*KitSettingsSchema` whose default imports the constant. Each schema group
-has a test that its defaults equal the constants.
+To add one: add a leaf to the package's `*KitSettingsSchema` whose default
+imports the constant, and read it as above. The schema is the only
+declaration: the package's `kitSettings.ts` types its area as
+`PrefValuesOf<typeof schema>` and augments `KitSettings` from
+`@weasel-js/react` with it (`targets` leaves go on `KitTargetSettings`, which
+several packages add to), so no interface is written by hand. A leaf's
+`description` is its documentation and the settings page's help text both.
+Each schema group has a test that its defaults equal the constants.
+
+## Feature settings
+
+A feature's own settings — what a user turns on or tunes for one feature, as
+the page grid's shown, snapping and pitch — are a prefs group the feature
+exports (`pageGridSchema`), and its options type is
+`PrefValuesOf<typeof schema>` plus whatever cannot be a pref: the page, a
+color derived elsewhere, a callback. The values come in as an argument, not
+from a provider: an app mounts the group in its own schema and passes it with
+`usePrefGroup` (`usePageGrid({ ...grid, page, background })`), so two
+instances can differ and one subtree can serve every instance. Kit settings
+stay ambient because they tune every component at once.
 
 A numeric limit the code depends on — renderer slack, animator retiming, a
 budget, a dev tool's timeout — stays a constant: listing it as a setting

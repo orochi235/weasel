@@ -1,0 +1,6 @@
+.demo {
+  display: grid;
+  grid-template-columns: 300px auto;
+  gap: 24px;
+  align-items: start;
+}
