@@ -116,7 +116,7 @@ export type {
 } from './markdownText';
 export type { TextRenderer } from './markdownRenderer';
 
-export { MIXED, styleAtRange, applyStyleToRange, patchRangeStyle, runsCarryStyling, supersededKey } from './runs/rangeStyle';
+export { MIXED, styleAtRange, applyStyleToRange, patchRangeStyle, hasStyledRun, supersededKey } from './runs/rangeStyle';
 export type { Mixed, RangeStyle, RunStylePatch, StyleKey } from './runs/rangeStyle';
 export { effectiveRangeStyle, rangeWeight } from './runs/effectiveRangeStyle';
 export { setFlagOverRange, nodeHasFlag, unboldPatch } from './runs/flagRange';
