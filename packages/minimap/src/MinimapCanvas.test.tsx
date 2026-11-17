@@ -28,7 +28,7 @@ import { defaultDrawOne } from '@weasel-js/core';
 import { ColorOverrideRegistry } from '@weasel-js/animator';
 import type { Animator } from '@weasel-js/animator';
 import { pathFromD } from '@weasel-js/geom';
-import { strokeOf } from '@weasel-js/paint';
+import { solidStroke } from '@weasel-js/paint';
 import { PointerContextProvider, usePointerContext, type PointerContextValue } from '@weasel-js/routing/react';
 
 const RAINBOW = [1, 0, 0, 1, 0, 1, 0, 1, 0, 0, 1, 1];
@@ -553,7 +553,7 @@ describe('<MinimapCanvas> — animator', () => {
       kind: 'mark',
       layer: 'main',
       pose: { x: 0, y: 0, width: 100, height: 40 },
-      data: { path: pathFromD('M0 20 L50 0 L100 20'), stroke: { ...strokeOf('#fff', 4), vertexColors: RAINBOW } },
+      data: { path: pathFromD('M0 20 L50 0 L100 20'), stroke: { ...solidStroke('#fff', 4), vertexColors: RAINBOW } },
     });
     const colorOverrides = new ColorOverrideRegistry();
     colorOverrides.set(id, 'stroke', RED);

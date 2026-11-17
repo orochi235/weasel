@@ -11,7 +11,7 @@ import { useRef } from 'react';
 import { useDepRegistry, useDepSource } from '@weasel-js/routing/react';
 import { useLatest } from '@weasel-js/react';
 import type { InsertDep, InsertEnds, InsertExtras, InsertLive, ShapeGenerator } from '@weasel-js/core/engine';
-import { paletteColorAt, solid, strokeOf, strokeWith } from '@weasel-js/paint';
+import { paletteColorAt, solid, solidStroke, strokeWith } from '@weasel-js/paint';
 import { insertSite, minSizeOf } from '@weasel-js/core';
 import { poseDescriptorOf, createInsertOp, commitSelectionOps, insertPreviewExtent } from '@weasel-js/core/engine';
 import type { Scene, NodeId, OpsApplier, Op, InsertNodeFactories, InsertedNode } from '@weasel-js/core';
@@ -42,8 +42,8 @@ interface Painted { fill?: Fill | null; stroke?: Stroke | null }
 function paintOf(kind: string, style: InsertStyle | undefined, seq: number): Painted {
   if (!style) {
     const color = paletteColorAt(seq);
-    if (kind === 'line' || kind === 'pencil') return { stroke: strokeOf(color, DEFAULT_STROKE_WIDTH) };
-    if (kind === 'path') return { fill: { paint: solid(color) }, stroke: strokeOf(color, DEFAULT_STROKE_WIDTH) };
+    if (kind === 'line' || kind === 'pencil') return { stroke: solidStroke(color, DEFAULT_STROKE_WIDTH) };
+    if (kind === 'path') return { fill: { paint: solid(color) }, stroke: solidStroke(color, DEFAULT_STROKE_WIDTH) };
     return { fill: { paint: solid(color) } };
   }
   const out: Painted = {};

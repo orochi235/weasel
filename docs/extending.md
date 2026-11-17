@@ -733,7 +733,7 @@ import {
   createScene, linePath,
   type DerivePathFn, type RectPose,
 } from '@weasel-js/core';
-import { strokeOf } from '@weasel-js/paint';
+import { solidStroke } from '@weasel-js/paint';
 
 const center = (p: RectPose) => ({ x: p.x + p.width / 2, y: p.y + p.height / 2 });
 
@@ -754,7 +754,7 @@ scene.add({
   kind: 'mark',
   layer: 'main',
   pose: { x: 0, y: 0, width: 0, height: 0 },
-  data: { stroke: strokeOf('#1c1c1c', 2) },
+  data: { stroke: solidStroke('#1c1c1c', 2) },
   dependsOn: [a, b],
   derivePath: connectCenters,
 });

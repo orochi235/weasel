@@ -8,7 +8,7 @@
  */
 import { describe, expect, it } from 'vitest';
 import { shapeCoversPoint, findShapeInk, registerNodeShape, findNodeShape } from './NodeShape';
-import { solid, strokeOf } from '@weasel-js/paint';
+import { solid, solidStroke } from '@weasel-js/paint';
 import { linePath } from '@weasel-js/geom';
 import type { Node } from 'core/scene/types';
 import { asNodeId } from 'core/scene/types';
@@ -45,19 +45,19 @@ describe('findShapeInk', () => {
   it('reports a stroke-only path as unfilled', () => {
     // Matches `paint`: no fill declared and a stroke present means the
     // painter emits no fill at all (the pencil case).
-    expect(reachOf(pathNode({ stroke: strokeOf('#000', 2) }), POSE))
+    expect(reachOf(pathNode({ stroke: solidStroke('#000', 2) }), POSE))
       .toEqual({ filled: false, outset: 1, inset: 1 });
   });
 
   it('treats fill: null as unfilled', () => {
-    expect(reachOf(pathNode({ fill: null, stroke: strokeOf('#000', 3) }), POSE))
+    expect(reachOf(pathNode({ fill: null, stroke: solidStroke('#000', 3) }), POSE))
       .toEqual({ filled: false, outset: 1.5, inset: 1.5 });
   });
 
   it('treats stroke: null and zero width as unstroked', () => {
     expect(reachOf(pathNode({ fill: { paint: solid('#f00') }, stroke: null }), POSE))
       .toMatchObject({ outset: 0, inset: 0 });
-    expect(reachOf(pathNode({ fill: { paint: solid('#f00') }, stroke: strokeOf('#000', 0) }), POSE))
+    expect(reachOf(pathNode({ fill: { paint: solid('#f00') }, stroke: solidStroke('#000', 0) }), POSE))
       .toMatchObject({ outset: 0, inset: 0 });
   });
 
@@ -68,7 +68,7 @@ describe('findShapeInk', () => {
   it('reports kit:shape as filled only when it declares a fill', () => {
     const star = (data: Record<string, unknown>) => ({
       id: asNodeId('s'), kind: 'mark', layer: 'main', pose: POSE,
-      data: { shape: 'star', points: 5, stroke: strokeOf('#000', 6), ...data },
+      data: { shape: 'star', points: 5, stroke: solidStroke('#000', 6), ...data },
     } as unknown as Node<unknown, string, RectPose>);
     expect(reachOf(star({}), POSE)).toEqual({ filled: false, outset: 3, inset: 3 });
     expect(reachOf(star({ fill: { paint: solid('#f00') } }), POSE)).toEqual({ filled: true, outset: 3, inset: 3 });
@@ -94,7 +94,7 @@ describe('shapeCoversPoint — filled shapes', () => {
 });
 
 describe('shapeCoversPoint — unfilled shapes are grabbed by their outline', () => {
-  const outlined = pathNode({ fill: null, stroke: strokeOf('#000', 2) });
+  const outlined = pathNode({ fill: null, stroke: solidStroke('#000', 2) });
 
   it('does NOT cover its empty interior', () => {
     // The bug: a fill test said yes here, so clicking the hole in an outlined
@@ -120,7 +120,7 @@ describe('shapeCoversPoint — unfilled shapes are grabbed by their outline', ()
   });
 
   it('makes a hairline hittable, which its own width never could', () => {
-    const hairline = pathNode({ fill: null, stroke: strokeOf('#000') });
+    const hairline = pathNode({ fill: null, stroke: solidStroke('#000') });
     // Half a world unit of reach: two units off the edge and you've missed.
     expect(shapeCoversPoint(hairline, POSE, 52, 2)).toBe(false);
     expect(shapeCoversPoint(hairline, POSE, 52, 2, { tolerance: 4 })).toBe(true);
@@ -133,7 +133,7 @@ describe('shapeCoversPoint — open paths', () => {
     kind: 'mark',
     layer: 'main',
     pose: POSE,
-    data: { path: linePath({ x: 0, y: 0 }, { x: 100, y: 100 }), stroke: strokeOf('#000', 2) },
+    data: { path: linePath({ x: 0, y: 0 }, { x: 100, y: 100 }), stroke: solidStroke('#000', 2) },
   } as unknown as Node<unknown, string, RectPose>;
 
   it('covers points along the line', () => {
@@ -299,7 +299,7 @@ describe('shapeCoversPoint — align decides which side is grabbable', () => {
  * malformed node must not be able to blank the document.
  */
 describe('a stroke with no paint', () => {
-  const paintless = { width: 2 } as unknown as ReturnType<typeof strokeOf>;
+  const paintless = { width: 2 } as unknown as ReturnType<typeof solidStroke>;
 
   it('emits no stroke — a stroke with no paint has nothing to draw', () => {
     const node = pathNode({ fill: { paint: solid('#f00') }, stroke: paintless });
@@ -317,7 +317,7 @@ describe('a stroke with no paint', () => {
 
 describe('findShapeInk — the stroke drawn along the silhouette', () => {
   it('reports the resolved stroke of a path or shape node', () => {
-    const stroke = strokeOf('#000', 4);
+    const stroke = solidStroke('#000', 4);
     expect(findShapeInk(pathNode({ stroke }), POSE)?.stroke).toMatchObject({ width: 4 });
     expect(findShapeInk(pathNode({}), POSE)).not.toHaveProperty('stroke');
   });
@@ -326,7 +326,7 @@ describe('findShapeInk — the stroke drawn along the silhouette', () => {
 describe('shapeCoversPoint — screen slop under non-uniform zoom', () => {
   // A 2-wide stroke reaches 1 world unit past the outline; at 4:1 a 4px slop
   // is 1 more unit across x and 4 more down y.
-  const node = pathNode({ stroke: strokeOf('#000', 2) });
+  const node = pathNode({ stroke: solidStroke('#000', 2) });
   const tolerance = { px: 4, scale: { x: 4, y: 1 } };
 
   it('grows the ink by the slop measured on screen', () => {

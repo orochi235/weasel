@@ -7,9 +7,9 @@
 
 ```ts
 // before
-const stroke = strokeOf(GHOST_STROKE);
+const stroke = solidStroke(GHOST_STROKE);
 // after
-const stroke = strokeOf(GHOST_STROKE_COLOR);
+const stroke = solidStroke(GHOST_STROKE_COLOR);
 ```
 
 <!-- entry: breaking api -->

@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { defaultDrawOne } from './defaultDrawOne';
 import { registerNodeShape } from './NodeShape';
-import { solid, strokeOf } from '@weasel-js/paint';
+import { solid, solidStroke } from '@weasel-js/paint';
 import type { Node } from 'core/scene/types';
 import type { DrawCommand, PathDrawCommand, TextDrawCommand } from '@weasel-js/renderer';
 
@@ -53,7 +53,7 @@ describe('defaultDrawOne', () => {
     // at the right place + size without touching data.path.
     const path = { kind: 'rect' as const, x: 0, y: 0, width: 10, height: 10 };
     const cmds = defaultDrawOne(
-      node({ path, fill: { paint: solid('#f00') }, stroke: strokeOf('#000', 2) }),
+      node({ path, fill: { paint: solid('#f00') }, stroke: solidStroke('#000', 2) }),
       POSE,
     );
     expect(cmds).toHaveLength(1);

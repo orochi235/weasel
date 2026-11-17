@@ -1,4 +1,4 @@
-import { solid, strokeOf } from '@weasel-js/paint';
+import { solid, solidStroke } from '@weasel-js/paint';
 import {
   type AddNodeSpec,
   asNodeId,
@@ -76,7 +76,7 @@ function starterScene(): DrawSpec[] {
       data: {
         path: rectPath(80, 80, 160, 100),
         fill: { paint: solid('#7ab8d4') },
-        stroke: strokeOf('#0a3654', 2),
+        stroke: solidStroke('#0a3654', 2),
         label: 'Welcome',
       },
       id: asNodeId('starter-1'),

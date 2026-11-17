@@ -22,7 +22,7 @@ import { createPaintedCursorState } from '@weasel-js/cursor';
 import { ColorOverrideRegistry } from '@weasel-js/animator';
 import { useAnimator } from '@weasel-js/animator/react';
 import type { Animator } from '@weasel-js/animator';
-import { strokeOf } from '@weasel-js/paint';
+import { solidStroke } from '@weasel-js/paint';
 import { linear } from '@weasel-js/geom';
 import type { StrokeTrim } from '@weasel-js/paint';
 import type { TrimOverride } from '@weasel-js/animator';
@@ -132,7 +132,7 @@ function paintScene(layers: CapturedLayers): DrawCommand[] {
 /** A stroked line from (0, 0) to (`length`, 0) wearing `trim`. */
 function lineScene(trim?: StrokeTrim, length = 10) {
   const scene = createScene<Data, 'main', RectPose>({ systemLayers: [{ id: 'main' }] });
-  const data = { path: linePath({ x: 0, y: 0 }, { x: length, y: 0 }), stroke: { ...strokeOf('#fff', 2), ...(trim ? { trim } : {}) } };
+  const data = { path: linePath({ x: 0, y: 0 }, { x: length, y: 0 }), stroke: { ...solidStroke('#fff', 2), ...(trim ? { trim } : {}) } };
   const id = scene.add({ kind: 'mark', layer: 'main', pose: { x: 0, y: 0, width: length, height: 0 }, data: data as unknown as Data });
   return { scene, id, data };
 }
@@ -211,7 +211,7 @@ describe('<SceneCanvas> installs the scene wiring', () => {
       kind: 'mark',
       layer: 'main',
       pose: pose(0),
-      data: { path: linePath({ x: 0, y: 0 }, { x: 10, y: 0 }), stroke: strokeOf('#fff', 2) } as unknown as Data,
+      data: { path: linePath({ x: 0, y: 0 }, { x: 10, y: 0 }), stroke: solidStroke('#fff', 2) } as unknown as Data,
     });
     const colorOverrides = new ColorOverrideRegistry();
     colorOverrides.set(id, 'stroke', [1, 0, 0, 1, 0, 0, 1, 1]);

@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
 import type { Meta, StoryObj } from '@weasel-js/forge';
-import { solid, strokeOf, gradientForBounds } from '@weasel-js/paint';
+import { solid, solidStroke, gradientForBounds } from '@weasel-js/paint';
 import {
   asNodeId,
   createScene,
@@ -71,7 +71,7 @@ export const Shape: Story = {
     data: {
       path: { kind: 'rect', x: 40, y: 24, width: 220, height: 140 },
       fill: { paint: solid('#7fb069') },
-      stroke: { ...strokeOf('#1c1c1c', 6), cap: 'round', join: 'bevel' },
+      stroke: { ...solidStroke('#1c1c1c', 6), cap: 'round', join: 'bevel' },
     },
   },
 };
@@ -83,7 +83,7 @@ export const ImportedDash: Story = {
     data: {
       path: { kind: 'rect', x: 40, y: 24, width: 220, height: 140 },
       fill: { paint: solid('#7fb069') },
-      stroke: { ...strokeOf('#1c1c1c', 6), dash: [9, 2, 2, 2] },
+      stroke: { ...solidStroke('#1c1c1c', 6), dash: [9, 2, 2, 2] },
     },
   },
 };
@@ -113,7 +113,7 @@ export const GradientFillPaint: Story = {
     data: {
       path: { kind: 'rect', x: 40, y: 24, width: 220, height: 140 },
       fill: { paint: gradientForBounds('linear-gradient', UNIT_BOX, RAMP, 'bounds') },
-      stroke: strokeOf('#1c1c1c', 4),
+      stroke: solidStroke('#1c1c1c', 4),
     },
   },
 };
@@ -126,7 +126,7 @@ export const GradientStrokePaint: Story = {
       path: { kind: 'rect', x: 40, y: 24, width: 220, height: 140 },
       fill: { paint: solid('#7fb069') },
       stroke: {
-        ...strokeOf('#1c1c1c', 6),
+        ...solidStroke('#1c1c1c', 6),
         paint: gradientForBounds('radial-gradient', UNIT_BOX, RAMP, 'bounds'),
       },
     },
@@ -139,7 +139,7 @@ export const PatternFillPaint: Story = {
     data: {
       path: { kind: 'rect', x: 40, y: 24, width: 220, height: 140 },
       fill: { paint: { kind: 'crosshatch', color: '#7fb069ff', size: 8, units: 'bounds' } },
-      stroke: strokeOf('#1c1c1c', 4),
+      stroke: solidStroke('#1c1c1c', 4),
     },
   },
 };

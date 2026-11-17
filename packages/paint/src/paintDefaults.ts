@@ -71,11 +71,11 @@ function hasHexAlpha(color: string): boolean {
 
 /** A solid stroke of `color` at `width` world units. Authoring shorthand for
  *  `{ paint: solid(color), width }`. */
-export function strokeOf(color: string, width = 1): CommandStroke & { paint: SolidPaint } {
+export function solidStroke(color: string, width = 1): CommandStroke & { paint: SolidPaint } {
   return { paint: solid(color), width };
 }
 
-/** A stroke painted with `paint` at `width` world units — `strokeOf`'s sibling
+/** A stroke painted with `paint` at `width` world units — `solidStroke`'s sibling
  *  for a gradient or pattern, which has no color to pass. */
 export function strokeWith(paint: Paint, width = 1): Stroke {
   return { paint, width };

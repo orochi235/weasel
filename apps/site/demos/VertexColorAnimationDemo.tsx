@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { strokeOf } from '@weasel-js/paint';
+import { solidStroke } from '@weasel-js/paint';
 import {
   asNodeId,
   SceneCanvas,
@@ -32,7 +32,7 @@ type WaveData = { path: Path; stroke: Stroke & { vertexColors: number[] } };
 function wave(id: string, y: number) {
   let d = `M40 ${y}`;
   for (let i = 1; i < ANCHORS; i++) d += ` Q${10 + 60 * i} ${y + (i % 2 ? -40 : 40)} ${40 + 60 * i} ${y}`;
-  return pathNode(id, d, { stroke: { ...strokeOf('#ffffff', 10), vertexColors: RAINBOW } });
+  return pathNode(id, d, { stroke: { ...solidStroke('#ffffff', 10), vertexColors: RAINBOW } });
 }
 
 export function VertexColorAnimationDemo() {
