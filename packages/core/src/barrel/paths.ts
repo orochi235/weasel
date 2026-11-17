@@ -32,7 +32,7 @@ export {
   countPathAnchors,
   pathToAnchors,
   translatePath,
-  scalePathToBounds,
+  fitPathToRect,
   pathInPoseBox,
   pathInWorld,
   worldEditToStorage,

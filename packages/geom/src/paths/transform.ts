@@ -3,7 +3,7 @@
  * called every pointermove during a drag — so the polygon variant mutates
  * the float buffer directly to keep allocation pressure off the GC.
  *
- * `scalePathToBounds` is for the resize interaction: given the path's
+ * `fitPathToRect` is for the resize interaction: given the path's
  * current AABB and the desired new AABB, scales every coordinate
  * proportionally.
  */
@@ -41,14 +41,14 @@ function translatePolygonCopy(path: PolygonPath, dx: number, dy: number): Polygo
 }
 
 /**
- * Scale a path's coords so its current AABB maps to `target`. Resize
+ * Scale and translate a path's coords so its current AABB maps onto `target`. Resize
  * interactions use this to make a polygon follow a corner-handle drag.
  *
  * A degenerate source axis (zero width or height) has no ratio to scale by,
  * so `rectToRect` translates that axis instead — a zero scale is not
  * invertible and would discard what is left on it.
  */
-export function scalePathToBounds(path: Path, target: RectPath): Path {
+export function fitPathToRect(path: Path, target: RectPath): Path {
   if (path.kind === 'rect') {
     return { kind: 'rect', x: target.x, y: target.y, width: target.width, height: target.height };
   }

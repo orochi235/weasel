@@ -16,7 +16,7 @@ import type { PoseDescriptor } from 'core/geometry/poseDescriptor';
  * on `Path` directly. `getBounds` defers to the same `boundsOfPath` kernel
  * the rest of the kit uses.
  *
- * `remapBounds` mirrors `scalePathToBounds` but takes `src` explicitly: the
+ * `remapBounds` mirrors `fitPathToRect` but takes `src` explicitly: the
  * resize hook knows the group's origin AABB and uses it for every leaf,
  * instead of each leaf scaling against its own AABB (which would ignore
  * group context).

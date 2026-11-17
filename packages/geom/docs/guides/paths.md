@@ -188,7 +188,7 @@ Each transform returns a new path and leaves the input alone.
 
 ```ts
 import {
-  boundsOfPath, multiply, rectPath, rotateAboutPoint, scale, scalePathToBounds,
+  boundsOfPath, multiply, rectPath, rotateAboutPoint, scale, fitPathToRect,
   transformPath, translatePath,
 } from '@weasel-js/geom';
 
@@ -201,7 +201,7 @@ const tilted = transformPath(box, rotateAboutPoint(20, 10, Math.PI / 6));
 tilted.kind;                              // 'polygon'
 
 // Fit a path into a target box, as a resize handle does.
-const fitted = scalePathToBounds(tilted, rectPath(0, 0, 100, 100));
+const fitted = fitPathToRect(tilted, rectPath(0, 0, 100, 100));
 boundsOfPath(fitted);                     // the 100 by 100 target, to float32 precision
 
 // Compose transforms with multiply(m, n), which applies n first.
@@ -213,7 +213,7 @@ const spun = transformPath(box, multiply(scale(2, 2), rotateAboutPoint(20, 10, M
 mirror, and becomes a four-corner polygon under rotation or shear. That is why
 these functions return `Path` and not the kind you passed in.
 
-`scalePathToBounds` maps the path's current bounding box onto the target. If
+`fitPathToRect` maps the path's current bounding box onto the target. If
 the source has zero width or height, that axis is moved without being scaled.
 
 ## Flatten to polylines

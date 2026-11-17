@@ -79,7 +79,7 @@ export {
   type CornerShapeFrame,
 } from './paths/cornerShape';
 export { boundsOfPaths } from './paths/boundsOfPaths';
-export { translatePath, scalePathToBounds } from './paths/transform';
+export { translatePath, fitPathToRect } from './paths/transform';
 export { transformPath, type TransformPathOptions } from './paths/transformPath';
 export { composePath, decomposePath } from './paths/compose';
 export { splitSubpaths } from './paths/splitSubpaths';

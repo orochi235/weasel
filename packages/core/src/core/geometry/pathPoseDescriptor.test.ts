@@ -35,7 +35,7 @@ describe('pathPoseDescriptor.supportsRotation', () => {
 describe('pathPoseDescriptor.remapBounds on a degenerate source axis', () => {
   it('translates the collapsed axis instead of scaling it to zero', () => {
     // A zero-width source box: there is no ratio to scale by, and a zero scale
-    // is not invertible. Match `scalePathToBounds`, which shifts the axis.
+    // is not invertible. Match `fitPathToRect`, which shifts the axis.
     const p = polygonFromPoints([{ x: 0, y: 0 }, { x: 5, y: 10 }]);
     const out = pathPoseDescriptor.remapBounds(
       p,

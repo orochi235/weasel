@@ -71,7 +71,7 @@ What operates on a path:
   `schneiderFit` to fit cubic curves through sampled points.
 - **Measuring.** `boundsOfPath`, `boundsOfPaths`, `pathSignedArea`,
   `pointAlongPath`.
-- **Transforming.** `translatePath`, `transformPath`, `scalePathToBounds`,
+- **Transforming.** `translatePath`, `transformPath`, `fitPathToRect`,
   `reversePath`.
 - **Hit-testing.** `pathContainsPoint` for the filled region, `strokeHitTest` for
   the outline, `pathContainsRect`, `pathIntersectsRect`, and the polygon

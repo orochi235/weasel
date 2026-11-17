@@ -66,7 +66,7 @@ export {
   puckerBloatPath,
   type PuckerBloatPathOptions,
   translatePath,
-  scalePathToBounds,
+  fitPathToRect,
   transformPath,
   flattenCubic,
   flattenQuadratic,
