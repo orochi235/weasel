@@ -43,7 +43,18 @@ export function useSymmetry(scene: DrawScene, page: { id?: string; x?: number; y
   const onPage = page.id === undefined ? null : pageNodeOf(scene, page.id);
   // The node holding the pages: a New or Open replaces it, and the group with it.
   const runOf = useCallback(() => (onPage === null ? null : scene.get(onPage)?.parent ?? null), [scene, onPage]);
-  const run = useSyncExternalStore(useCallback((fn: () => void) => scene.subscribe(fn), [scene]), runOf, runOf);
+  const subscribe = useCallback((fn: () => void) => scene.subscribe(fn), [scene]);
+  const run = useSyncExternalStore(subscribe, runOf, runOf);
+  // Where the group drawn into stands, so the effect reruns when it goes (a delete, an undo) or a
+  // document group comes back (an undo of that delete). Gone with nothing in the document, the effect
+  // makes a fresh one, unless a redo is pending: then it waits, so undo can step past the group's
+  // making, and a redo that brings it back is drawn into again.
+  const standingOf = useCallback(() => {
+    if (!on) return 'off';
+    if (group.current !== null && ctrl.read(group.current) !== null) return 'held';
+    return existingGroup(scene, ctrl) ?? (scene.canRedo() ? 'waiting' : 'lost');
+  }, [scene, ctrl, on]);
+  const standing = useSyncExternalStore(subscribe, standingOf, standingOf);
   const cx = (page.x ?? 0) + page.width / 2;
   const cy = (page.y ?? 0) + page.height / 2;
   useLayoutEffect(() => {
@@ -51,13 +62,17 @@ export function useSymmetry(scene: DrawScene, page: { id?: string; x?: number; y
       ctrl.setActive(null);
       return;
     }
-    const id = (ctrl.read(group.current) ? group.current : null)
-      ?? existingGroup(scene, ctrl)
+    const found = (ctrl.read(group.current) ? group.current : null) ?? existingGroup(scene, ctrl);
+    if (found === null && group.current !== null && scene.canRedo()) {
+      ctrl.setActive(null);
+      return;
+    }
+    const id = found
       ?? ctrl.create({ center: { x: cx, y: cy }, symmetry: spec, parent: onPage });
     group.current = id;
     ctrl.setActive(id);
     if (!sameSpec(ctrl.read(id)!.spec, spec)) ctrl.update(id, { spec });
-  }, [ctrl, scene, on, spec, cx, cy, onPage, run]);
+  }, [ctrl, scene, on, spec, cx, cy, onPage, run, standing]);
 
   const commands: Pick<AppCommands, 'symmetryOn' | 'toggleSymmetry'> = {
     symmetryOn: on,

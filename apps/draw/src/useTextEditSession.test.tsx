@@ -81,6 +81,18 @@ describe('useTextEditSession keeps the text-edit mode in step with the edit', ()
     act(() => edit().cancelEdit());
     expect(scene.get(asNodeId('t'))).toBeUndefined();
   });
+
+  it('keeps an empty node whose background still paints, as a sticky note', () => {
+    const { scene, edit } = session({});
+    scene.add({
+      kind: 'mark', layer: 'default', id: asNodeId('s'),
+      pose: { x: 0, y: 0, width: 160, height: 160 },
+      data: { text: '', background: { paint: { kind: 'solid', color: '#fff1a6ff' } } },
+    });
+    act(() => edit().startEdit('s'));
+    act(() => edit().cancelEdit());
+    expect(scene.get(asNodeId('s'))).toBeDefined();
+  });
 });
 
 /** A real scene history under the machine, and a text box inserted as the insert dep makes one. */

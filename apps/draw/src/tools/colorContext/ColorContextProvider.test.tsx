@@ -77,4 +77,10 @@ describe('ColorContextProvider — state cluster', () => {
     act(() => result.current.toggleNone('stroke'));
     expect(result.current.stroke).toEqual({ kind: 'solid', color: '#000000ff' });
   });
+
+  it('normalizes an 8-digit color it is given, as it does a 6-digit one', () => {
+    const { result } = renderHook(() => useColorContext(), { wrapper: makeWrapper() });
+    act(() => { result.current.setFillColor('#FF8800CC'); });
+    expect(result.current.fill).toEqual({ kind: 'solid', color: '#ff8800cc' });
+  });
 });

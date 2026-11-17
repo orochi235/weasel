@@ -17,7 +17,7 @@ as applied here are `fixCommits` in `area.json`.
 | `apps.draw.src.modality` | 13 | 13/13 | 2 | 2 | 2 | 2 |   2.0 |   0.0 | - | - | 2 | 0 | 3.27M | $2.46 | `audit34-apps.draw.src.modality` |
 | `apps.draw.src.part1` | 38 | 0/0 | 3 | 0 | 0 | 3 |   3.0 |   0.0 | - | - | 3 | 0 | 9.15M | $4.50 | `audit34-apps.draw.src.part1` |
 | `apps.draw.src.part2` | 38 | 38/38 | 8 | 6 | 5 | 9 |   9.5 |   0.5 | - | - | 8 | 1 | 19.92M | $9.31 | `audit34-apps.draw.src.part2` |
-| `apps.draw.src.part3` | 36 | 36/0 | 7 | 0 | 0 | 7 |   7.0 |   0.0 | - | - | 6 | 0 | 10.46M | $4.73 | `audit34-apps.draw.src.part3`, left out: merge conflict |
+| `apps.draw.src.part3` | 36 | 36/0 | 7 | 0 | 0 | 7 |   7.0 |   0.0 | - | - | 6 | 0 | 10.46M | $4.73 | `audit34-apps.draw.src.part3`, merged by hand after the night (a test file both it and `apps.draw.src.part1` added to) |
 | `apps.draw.src.surfaces` | 16 | 0/0 | 0 | 0 | 0 | 0 |   0.0 |   0.0 | - | - | 0 | 0 | 0.00M | $0.00 | nothing to fix |
 | `apps.forge` | 17 | 17/17 | 2 | 2 | 0 | 4 |   8.0 |   4.0 | - | - | 6 | 0 | 8.93M | $4.66 | `audit34-apps.forge` |
 | `apps.shared` | 10 | 10/10 | 5 | 1 | 1 | 5 |   5.0 |   0.0 | - | - | 5 | 0 | 4.30M | $2.80 | `audit34-apps.shared` |
