@@ -42,7 +42,11 @@ function wrapJournal(raw: Journal, env: SceneHistoryEnv, open: OpenJournals): Jo
     entries: () => raw.entries(),
     seal: () => raw.seal(),
     observe: (listener) => raw.observe(listener),
-    beginJournal: (opts) => open.wrap(raw.beginJournal(opts), wrapped),
+    beginJournal(opts) {
+      const begun = open.wrap(raw.beginJournal(opts), wrapped);
+      notify();
+      return begun;
+    },
     getVersion: () => raw.getVersion(),
     subscribe: (listener) => raw.subscribe(listener),
     commit(label) {
@@ -57,7 +61,11 @@ function wrapJournal(raw: Journal, env: SceneHistoryEnv, open: OpenJournals): Jo
       open.close(wrapped);
       notify();
     },
-    suspend: () => raw.suspend(),
+    // Opening, suspending and resuming move what the scene's `canUndo` answers from, so each notifies.
+    suspend() {
+      raw.suspend();
+      notify();
+    },
     isActive: () => raw.isActive(),
   };
   return wrapped;
@@ -102,9 +110,14 @@ export function createSceneJournals(env: SceneHistoryEnv): SceneJournals {
   return {
     begin(opts) {
       const parent = env.activeJournal();
-      return open.wrap(parent ? (raws.get(parent) ?? parent).beginJournal(opts) : env.engine.beginJournal(opts), parent ?? undefined);
+      const begun = open.wrap(parent ? (raws.get(parent) ?? parent).beginJournal(opts) : env.engine.beginJournal(opts), parent ?? undefined);
+      env.notify();
+      return begun;
     },
-    resume: (journal) => env.engine.resumeJournal(raws.get(journal) ?? journal),
+    resume(journal) {
+      env.engine.resumeJournal(raws.get(journal) ?? journal);
+      env.notify();
+    },
     innermost() {
       for (let i = opened.length - 1; i >= 0; i--) if (opened[i]!.isActive()) return opened[i]!;
       return null;

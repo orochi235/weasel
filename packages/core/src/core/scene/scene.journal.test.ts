@@ -130,6 +130,22 @@ describe('Scene — a journal opened on scene.history with no accessor', () => {
   });
 });
 
+describe('Scene — journal state its subscribers hear', () => {
+  it('notifies when opening, suspending or resuming a journal changes what canUndo answers', () => {
+    const { scene, move } = makeScene();
+    move(0, 5);
+    let heard = 0;
+    scene.subscribe(() => { heard++; });
+    const seen: boolean[] = [];
+    const note = (fn: () => void) => { const before = heard; fn(); expect(heard).toBeGreaterThan(before); seen.push(scene.canUndo()); };
+    let journal!: ReturnType<typeof scene.history.beginJournal>;
+    note(() => { journal = scene.history.beginJournal({ label: 'session' }); });
+    note(() => journal.suspend());
+    note(() => scene.history.resumeJournal(journal));
+    expect(seen).toEqual([false, true, false]);
+  });
+});
+
 describe('Scene — history.goto holds to the History contract', () => {
   it('throws a RangeError for a depth outside the entries or not whole, and while a journal is open', () => {
     const { scene, move, x } = makeScene();
