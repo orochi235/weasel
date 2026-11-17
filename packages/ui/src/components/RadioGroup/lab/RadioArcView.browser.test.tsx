@@ -49,7 +49,7 @@ for (const [i, which] of (['top', 'bottom'] as const).entries()) {
     const parts = labelsIn(groups()[i]!);
     expect(parts[0]!.textContent).toBe(which === 'top' ? 'Top' : 'Bottom');
     const centers = parts.map(centerIn);
-    for (const c of centers) expect(run.nearest(c).dist).toBeLessThanOrEqual(1);
+    for (const c of centers) expect(run.nearest(c).distance).toBeLessThanOrEqual(1);
     for (let k = 1; k < centers.length; k++) expect(centers[k]!.x).toBeGreaterThan(centers[k - 1]!.x);
     for (const label of parts.slice(1)) {
       const dot = label.querySelector('[class*="dot"]')!.getBoundingClientRect();

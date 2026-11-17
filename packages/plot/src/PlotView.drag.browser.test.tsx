@@ -68,7 +68,7 @@ describe('dragging in PlotView', () => {
     const onChange = vi.fn();
     const canvas = await mount(onChange);
     const bar = markAt('bar:0:1');
-    await drag(canvas, { x: bar.x + bar.width / 2, y: bar.y }, layout.value.map(70));
+    await drag(canvas, { x: bar.x + bar.width / 2, y: bar.y }, layout.value.position(70));
     expect(onChange).toHaveBeenCalledTimes(1);
     expect(onChange.mock.calls[0]![0].series[0].values).toEqual([20, 70, 80]);
   });
@@ -77,7 +77,7 @@ describe('dragging in PlotView', () => {
     const onChange = vi.fn();
     const canvas = await mount(onChange);
     const point = markAt('point:1:2');
-    await drag(canvas, { x: point.x + point.width / 2, y: point.y + point.height / 2 }, layout.value.map(10));
+    await drag(canvas, { x: point.x + point.width / 2, y: point.y + point.height / 2 }, layout.value.position(10));
     expect(onChange).toHaveBeenCalledTimes(1);
     expect(onChange.mock.calls[0]![0].series[1].values).toEqual([30, 60, 10]);
   });
