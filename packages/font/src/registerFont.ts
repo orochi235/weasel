@@ -5,7 +5,7 @@
 
 import { textureCacheKey } from './textureCacheKey';
 import { variantKey } from './variantKey';
-import { _clearHeldFontUrls, claimFontUrls, holdsFontUrls, releaseFontUrls } from './heldFontUrls';
+import { _clearHeldFontUrls, claimFontUrls, landFontUrls, releaseFontUrls } from './heldFontUrls';
 import { createReflectable, type Reflection } from '@weasel-js/registry';
 import { normalizeVariant, type FontStyle, type FontVariant } from './fontStyle';
 import { notifyGlyphReady } from './glyphReady';
@@ -265,7 +265,7 @@ async function fetchVariant(
 
     // Copy the family as it is now, not as it was before the await: another
     // variant of it may have landed meanwhile, and a stale copy would drop it.
-    if (holdsFontUrls(family, key, metricsUrl, atlasUrl)) {
+    if (landFontUrls(family, key, metricsUrl, atlasUrl)) {
       registry.set(family, new Map(registry.get(family)).set(key, { font, bitmap }));
     }
     settle(family, token);

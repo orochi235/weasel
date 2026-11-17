@@ -104,6 +104,7 @@ export {
   type PaintBinding,
   type PaintDrawKind,
   type PaintDrawKindLoader,
+  type PaintDrawKindLoaderOptions,
   type PaintResources,
   type PaintTexture,
   type PaintUniform,

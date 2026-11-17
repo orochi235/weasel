@@ -9,6 +9,8 @@ import {
   derivedDepOf,
   derivedPartsOf,
   documentOf,
+  drawnAABBOf,
+  drawnBoundsScene,
   effectivePose,
   findNodeShape,
   nodeShapesOf,
@@ -17,6 +19,7 @@ import {
   isAnnotationLayer,
   scenePoseAdapter,
   type NodeShapeEntry,
+  type NodeId,
   type NodeShapes,
   type Path,
   type RectPose,
@@ -88,7 +91,7 @@ const derives = (node: SceneNode): boolean =>
 
 /**
  * The `SvgNode`s of everything in `region`, in paint order: every node on a
- * visible content layer whose box meets the region, with what is under it. A
+ * visible content layer whose drawn box meets the region, with what is under it. A
  * node a consumer painter claims (one of `opts.painters`, else one registered
  * with `registerNodeShape`) is written from that painter's paths, a node that
  * derives its path (a connector) is drawn along that path, and anything else
@@ -128,14 +131,16 @@ export function regionSvgNodes(live: ExportScene, region: ExportRegion, opts: Re
   };
 
   const shapes = nodeShapesOf(scene);
+  // Measured as drawn — turned, stroked, a group reaching as far as its members — as the raster formats clip.
+  const drawn = drawnBoundsScene(scene as never);
+  const worldPoseOf = (id: NodeId) => { const n = scene.get(id as never); return n && pose(n); };
   return svgNodesFromKit(tree, {
     shapes,
     ...(opts.onWarn ? { onWarn: opts.onWarn } : {}),
     include(id) {
       const node = scene.get(id as never);
       if (!node || !shown.has(node.layer)) return false;
-      const path = pathOf(node);
-      return meets(path ? boundsOfPath(path) : pose(node), region);
+      return meets(drawnAABBOf(drawn, id as NodeId, pose(node), { worldPoseOf }), region);
     },
     leaf(id, kit, inherited) {
       const node = scene.get(id as never)!;

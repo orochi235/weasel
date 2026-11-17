@@ -127,6 +127,15 @@ describe('format options', () => {
     warn.mockRestore();
   });
 
+  it('says nothing of an unread key whose value is undefined, as picking leaves it out', async () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    registerExportFormat(declaring());
+    const { scene, pages } = plainScene();
+    await exportRegions(scene, [pages[0]!], 'one', { unsetScale: undefined });
+    expect(warn).not.toHaveBeenCalled();
+    warn.mockRestore();
+  });
+
   it('checks nothing for a format that declares no options', async () => {
     const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
     registerExportFormat(fake('one', false));

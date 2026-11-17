@@ -41,6 +41,21 @@ describe('GLTextureCache', () => {
     expect(countAfterFirst).toBe(countAfterSecond);
   });
 
+  it('upload() sends a new source under an uploaded id into the same texture', () => {
+    // A font variant registered again with { replace: true } keeps its id
+    // and brings another atlas; its glyphs must sample the new pixels.
+    const { gl, calls, reset } = createGLRecorder();
+    const cache = new GLTextureCache(webglDevice(gl));
+    const next = { width: 4, height: 4, data: new Uint8ClampedArray(64) } as ImageData;
+    cache.upload('inter|400|normal', fakeImage);
+    reset();
+    cache.upload('inter|400|normal', next);
+    const uploads = calls.filter((c) => c.name === 'texImage2D');
+    expect(uploads.length).toBe(1);
+    expect(uploads[0].args.at(-1)).toBe(next);
+    expect(calls.filter((c) => c.name === 'createTexture').length).toBe(0);
+  });
+
   it('re-applies the wrap mode when an already-uploaded id is claimed with a different one', () => {
     const { gl, calls, reset } = createGLRecorder();
     const cache = new GLTextureCache(webglDevice(gl));

@@ -32,8 +32,10 @@ const CLAMPED = sampled('clamp');
 export class GLTextureCache {
   private readonly map = new Map<string, GpuTexture>();
   private readonly wraps = new Map<string, TextureWrap>();
-  /** The source each registry-backed id was last uploaded from. */
-  private readonly registered = new Map<string, TexSource>();
+  /** The source each image-backed id was last uploaded from. */
+  private readonly sources = new Map<string, TexSource>();
+  /** The ids that came from the texture registry, which a sweep may drop. */
+  private readonly registered = new Set<string>();
   private sweptVersion = -1;
 
   /** `drew` hears of each registry-backed source a draw binds, so the image cache spares it. */
@@ -43,10 +45,12 @@ export class GLTextureCache {
     return this.map.has(id);
   }
 
-  /** Uploads the pixels once per id. `wrap` is re-applied whenever it differs
-   *  from what the id was last uploaded under: the same registered image can
-   *  be a clamped shader texture in one draw and a repeating pattern tile in
-   *  the next. */
+  /** Uploads the pixels once per id and source: a different source under an
+   *  id already uploaded, as a font variant registered again with `replace`,
+   *  sends its pixels into the same texture. `wrap` is re-applied whenever it
+   *  differs from what the id was last uploaded under: the same registered
+   *  image can be a clamped shader texture in one draw and a repeating pattern
+   *  tile in the next. */
   upload(id: string, source: TexSource, wrap: TextureWrap = 'clamp'): string {
     // A font atlas's channels are a distance field, not a color: sent as held.
     return this.ensure(id, source, wrap, false);
@@ -55,6 +59,10 @@ export class GLTextureCache {
   private ensure(id: string, source: TexSource, wrap: TextureWrap, premultiply: boolean): string {
     const cached = this.map.get(id);
     if (cached) {
+      if (this.sources.get(id) !== source) {
+        this.gpu.writeTexture(cached, { source, premultiply });
+        this.sources.set(id, source);
+      }
       if (this.wraps.get(id) !== wrap) this.applyWrap(id, cached, wrap);
       return id;
     }
@@ -62,18 +70,15 @@ export class GLTextureCache {
     const tex = this.gpu.createTexture('rgba8', sampled(wrap), { source, premultiply });
     this.map.set(id, tex);
     this.wraps.set(id, wrap);
+    this.sources.set(id, source);
     return id;
   }
 
-  /** `upload` for an id from the texture registry, whose image can be replaced
-   *  under the same id: a changed source sends its pixels again. A registered
-   *  texture is an image, so its texels are premultiplied. */
+  /** `upload` for an id from the texture registry, which a sweep deletes once
+   *  the registry drops it. A registered texture is an image, so its texels
+   *  are premultiplied. */
   uploadRegistered(id: string, source: TexSource, wrap: TextureWrap = 'clamp'): string {
-    const cached = this.map.get(id);
-    if (cached && this.registered.get(id) !== source) {
-      this.gpu.writeTexture(cached, { source, premultiply: true });
-    }
-    this.registered.set(id, source);
+    this.registered.add(id);
     this.drew?.(source);
     return this.ensure(id, source, wrap, true);
   }
@@ -81,7 +86,7 @@ export class GLTextureCache {
   /** Whether `uploadRegistered(id, source)` would send new pixels to a
    *  texture already made for `id`. */
   replaces(id: string, source: TexSource): boolean {
-    return this.map.has(id) && this.registered.get(id) !== source;
+    return this.map.has(id) && this.sources.get(id) !== source;
   }
 
   /**
@@ -93,12 +98,13 @@ export class GLTextureCache {
     const version = registry.getVersion();
     if (version === this.sweptVersion) return;
     this.sweptVersion = version;
-    for (const id of this.registered.keys()) {
+    for (const id of this.registered) {
       if (registry.has(id)) continue;
       const tex = this.map.get(id);
       if (tex) this.gpu.deleteTexture(tex);
       this.map.delete(id);
       this.wraps.delete(id);
+      this.sources.delete(id);
       this.registered.delete(id);
     }
   }
@@ -155,6 +161,7 @@ export class GLTextureCache {
     for (const tex of this.map.values()) this.gpu.deleteTexture(tex);
     this.map.clear();
     this.wraps.clear();
+    this.sources.clear();
     this.registered.clear();
   }
 }

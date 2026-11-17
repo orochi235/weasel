@@ -155,14 +155,14 @@ export function registerPaintKind(entry: PaintKindEntry, options?: Pick<PushOpti
  * the first frame instead.
  *
  * A kind that is already registered never calls its loader. Declaring a
- * second loader for an id overrides the first; the returned disposer removes
- * this one, uncovering whatever it displaced.
+ * second loader for an id overrides the first, whether or not the first has
+ * started or failed. The returned disposer removes this loader, uncovering
+ * whatever it displaced, and the kind it registered.
  */
 export function registerPaintKindLoader(id: string, load: PaintKindLoader, options?: Pick<PushOptions, 'fallback'>): () => void {
-  return registerPaintDrawKindLoader(id, async () => {
-    const entry = await load();
-    if (entry.id === id && !KINDS.has(id)) registerPaintKind(entry, options);
-    return entry;
+  return registerPaintDrawKindLoader(id, load, {
+    fallback: options?.fallback,
+    register: (entry: PaintKindEntry) => registerPaintKind(entry, options),
   });
 }
 
