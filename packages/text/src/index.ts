@@ -46,7 +46,7 @@ export {
 } from './layout/lineBreak/lineBreaks';
 export {
   cachedLayoutRuns,
-  dropRuns,
+  evictRuns,
   clearRuns,
   LAYOUT_CACHE_VARIANT_LIMIT,
   LAYOUT_CACHE_STRUCTURAL_LIMIT,
