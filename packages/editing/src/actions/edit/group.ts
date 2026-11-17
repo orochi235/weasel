@@ -1,5 +1,5 @@
 import type { SceneNode as Node, NodeId, Op } from '@weasel-js/core';
-import { createInsertOp, groupingSite, pageOfNode, translatePoseViaDescriptor, unionBounds, poseDescriptorOf, visualBoundsViaDescriptor, createSetPoseOp, scenePoseFrame, commitOps } from '@weasel-js/core/engine';
+import { createInsertOp, groupingSite, pageIdOf, translatePoseViaDescriptor, unionBounds, poseDescriptorOf, visualBoundsViaDescriptor, createSetPoseOp, scenePoseFrame, commitOps } from '@weasel-js/core/engine';
 import { createReparentOp, createDeleteOp, createSetDependsOnOp, rootsAmong, followerOpsFor, finiteThroughout, requiresContent, operandContent, inPaintOrder, slotAbove } from '@weasel-js/core';
 import { ActionDisabledReason, type Action, type ActionDeps, BETWEEN_GESTURES } from '@weasel-js/routing';
 import { icon } from '../../icons.gen';
@@ -43,7 +43,7 @@ function groupPlan(deps: ActionDeps) {
     if (local === null) return null;
     locals.set(id, local);
   }
-  const page = parent === null ? null : pageOfNode(scene, parent);
+  const page = parent === null ? null : pageIdOf(scene, parent);
   const followers = followerOpsFor(scene, new Map(nodes.map((n) => [n.id as string, page])), 'Group');
   if (followers === null) return null;
   return { scene, nodes, locals, parent, pose, followers };

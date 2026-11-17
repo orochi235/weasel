@@ -44,7 +44,7 @@ export type { SetDataArgs } from '../core/ops/setData';
 export { createSetPoseOp } from '../core/ops/setPose';
 export type { SetPoseArgs } from '../core/ops/setPose';
 export { PAGE_CLIP, pageClip } from '../core/pages/pageClip';
-export { PAGES_DOC_KEY, createPageRun, isPaged, pageNodeOf, pageOfNode, pageRunOf, pagesOf, placedPagesOf } from '../core/pages/pageNodes';
+export { PAGES_DOC_KEY, createPageRun, isPaged, pageIdOf, pageNodeOf, pageRunOf, pagesOf, placedPagesOf } from '../core/pages/pageNodes';
 export type { CreatePageRunOptions, PageInfo, PageRunInfo, PageTreeReader, PagesDoc } from '../core/pages/pageNodes';
 export { followerHome, groupingSite, isFollower, keepOnPage, pasteboardOn, placedPage, rehomedFollowers } from '../core/pages/pagePlacement';
 export type { GroupingSite } from '../core/pages/pagePlacement';

@@ -10,7 +10,7 @@ import {
   createSetDataOp,
   createSetPoseOp,
   followerHome,
-  pageOfNode,
+  pageIdOf,
   placedPagesOf,
   type NodeId,
   type Op,
@@ -121,7 +121,7 @@ export function offPageOps<TPose>(
   const wanted = edges === 'all' ? null : new Set(edges);
   const pages = placedPagesOf(sc);
   const pageOf = (id: string | undefined): string | null | undefined =>
-    (id === undefined || sc.get(id as never) === undefined ? undefined : pageOfNode(sc, id as NodeId));
+    (id === undefined || sc.get(id as never) === undefined ? undefined : pageIdOf(sc, id as NodeId));
   const inputs: (OffPageEdgeInput & { node: SceneNode; trait: DiagramEdge })[] = [];
   const used: string[] = [];
   for (const node of sc.renderOrderNodes()) {

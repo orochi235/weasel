@@ -692,7 +692,7 @@ A paged document is one scene whose pages are nodes, so one view, one history, a
 them (`packages/core/src/core/pages/`). The **page run** is a root group laid out by `pageRunLayout`, its pages in a
 column or a row with a gap; each **page** is a group under it whose pose is its rect, which frames what is on it
 (local coordinates, origin at its top-left) and clips it (`pageClip`). What is on a page is its child: membership is
-the tree. `createPageRun` makes a scene paged, `isPaged` and `pageRunOf` ask whether it is, `pageOfNode` names the
+the tree. `createPageRun` makes a scene paged, `isPaged` and `pageRunOf` ask whether it is, `pageIdOf` names the
 page a node is under, and [taxonomy.md](./taxonomy.md#page) says how pages, followers, the pasteboard and paging
 relate.
 

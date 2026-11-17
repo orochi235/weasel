@@ -1,6 +1,6 @@
 import type { BooleanShapeOp, AnyScene } from '@weasel-js/core/engine';
 import { booleanGroupFields, followerMoveOps, followerMoves, createReparentOp, requiresContent, rootsAmong, inPaintOrder, slotAbove } from '@weasel-js/core';
-import { groupingSite, pageOfNode, commitOps, defaultCommitAdapter, createInsertOp, createSetPoseOp, AUTO_POSE_DESCRIPTOR, unionBounds, scenePoseFrame } from '@weasel-js/core/engine';
+import { groupingSite, pageIdOf, commitOps, defaultCommitAdapter, createInsertOp, createSetPoseOp, AUTO_POSE_DESCRIPTOR, unionBounds, scenePoseFrame } from '@weasel-js/core/engine';
 import type { Op, SceneNode as Node, NodeId } from '@weasel-js/core';
 import { ActionDisabledReason, type Action } from '@weasel-js/routing';
 import { icon } from '../../icons.gen';
@@ -36,7 +36,7 @@ export function booleanGroupOps(
   const index = slotAbove(scene, parent, front.id);
   const own = (front.data ?? {}) as Record<string, unknown>;
   const data = { boolean: op, ...Object.fromEntries(PAINT_KEYS.filter((k) => Object.hasOwn(own, k)).map((k) => [k, own[k]])) };
-  const page = parent === null ? null : pageOfNode(scene, parent);
+  const page = parent === null ? null : pageIdOf(scene, parent);
   const followers = followerMoves(scene, new Map(nodes.map((n) => [n.id as string, page])));
   const locals = new Map<NodeId, unknown>();
   for (const n of nodes) {

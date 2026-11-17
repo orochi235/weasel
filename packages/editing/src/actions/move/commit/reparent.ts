@@ -1,5 +1,5 @@
 import { createReparentOp, createSetLayerOp, followerOpsFor, carryPose, planeOf, translateNodeOps } from '@weasel-js/core';
-import { createSetPoseOp, isPageStructure, pageOfNode, planeToPlane, rebaseLocalPose, sceneViewPoseAdapter, refusalOf } from '@weasel-js/core/engine';
+import { createSetPoseOp, isPageStructure, pageIdOf, planeToPlane, rebaseLocalPose, sceneViewPoseAdapter, refusalOf } from '@weasel-js/core/engine';
 import type { Op, NodeId, ReparentOnDrop } from '@weasel-js/core';
 import { draggedWorldPose, grabbedPoseAdapter } from '../delta';
 import type { MoveSession } from '../session';
@@ -174,7 +174,7 @@ export function reparentOps(
     ops.push(createSetPoseOp<unknown>({ id: id as string, from: node.pose, to, label }));
   }
   const riders = [...new Set([...session.ids.filter((id) => !roots.has(id)), ...session.cascadeIds])];
-  const page = target.newParent === null ? null : pageOfNode(scene, target.newParent);
+  const page = target.newParent === null ? null : pageIdOf(scene, target.newParent);
   const landed = new Map([...roots].filter((id) => session.startPoses.has(id) && scene.get(id) !== undefined)
     .map((id) => [id as string, page]));
   const cascade = landedCascadeOps(session, riders, target.newParent, delta, target.newLayer);

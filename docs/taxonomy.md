@@ -1057,7 +1057,7 @@ A document is in one of two **modes**, read from its scene's structure, never st
 **Pages are containers** (decided 2026-11-02). The **page run** is a root group with a `pageRun` field, laid out
 by `pageRunLayout` (`direction`, `gap`, `align`); each **page** is a group under it with a `page` field (its name
 and `meta`), whose pose is its rect. A page's node id is its page id unless another node held that id when the page
-was made; then the `page` field keeps the page id, and `pageNodeOf` and `pageOfNode` translate (2026-11-03). A page frames its children, origin at its top-left, and clips them to its
+was made; then the `page` field keeps the page id, and `pageNodeOf` and `pageIdOf` translate (2026-11-03). A page frames its children, origin at its top-left, and clips them to its
 rect (`pageClip`). What is on a page is its child: membership is the tree, not geometry, so a page's content moves
 with it, and a drag onto another page reparents through the move action's `depart`/`arrive`, keeping its world
 position. `createPageRun` makes a scene paged; the page edits (`setPages`, `addPage`, `movePage`, …) write the

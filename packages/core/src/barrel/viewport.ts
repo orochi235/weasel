@@ -61,7 +61,7 @@ export {
   setPages,
 } from '../core/pages/pageEdits';
 export type { PageEditOptions, PagesDoc } from '../core/pages/pageEdits';
-export { createPageRun, isPaged, pageNodeOf, pageOfNode, pageRunOf, type PageTreeReader } from '../core/pages/pageNodes';
+export { createPageRun, isPaged, pageNodeOf, pageIdOf, pageRunOf, type PageTreeReader } from '../core/pages/pageNodes';
 export type { CreatePageRunOptions, PageInfo, PageRunInfo } from '../core/pages/pageNodes';
 export { PAGE_RUN, pageRunLayout } from '../core/pages/pageRunLayout';
 export { PAGE_CLIP, pageClip } from '../core/pages/pageClip';

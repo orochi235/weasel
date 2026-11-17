@@ -64,7 +64,7 @@ function pageIdOfNode(node: NodeId | string, info: unknown): string {
 
 /** The page `id` is on, by its page id (`Page.id`): its nearest ancestor that is a page, or `id` itself when it
  *  is one. `null` off every page. */
-export function pageOfNode(scene: PageTreeReader, id: NodeId): string | null {
+export function pageIdOf(scene: PageTreeReader, id: NodeId): string | null {
   for (let at: NodeId | null | undefined = id; at != null; at = scene.get(at)?.parent) {
     const page = scene.get(at)?.page;
     if (page !== undefined) return pageIdOfNode(at, page);

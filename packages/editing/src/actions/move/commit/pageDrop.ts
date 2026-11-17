@@ -1,4 +1,4 @@
-import { createSetPoseOp, pageAt, pageOfBounds, type PlacedPage, pageNodeOf, pageOfNode, placedPagesOf, refusalOf, sceneViewPoseAdapter } from '@weasel-js/core/engine';
+import { createSetPoseOp, pageAt, pageOfBounds, type PlacedPage, pageNodeOf, pageIdOf, placedPagesOf, refusalOf, sceneViewPoseAdapter } from '@weasel-js/core/engine';
 import type { Op, NodeId } from '@weasel-js/core';
 import { isFollower, keepOnPage, pasteboardOn, placedPage, rehomedFollowers, followerMove, followerMoveOps } from '@weasel-js/core';
 import { draggedWorldPose, grabbedPoseAdapter } from '../delta';
@@ -33,7 +33,7 @@ function containerOn(
   if (drop !== null && 'refused' in drop) return 'refused';
   const inner = drop?.newParent ?? null;
   const above = mode === 'above' ? drop?.hitSibling ?? null : null;
-  return inner !== null && pageOfNode(session.scene, inner) === under.id
+  return inner !== null && pageIdOf(session.scene, inner) === under.id
     ? { into: inner, above, layer: drop!.newLayer }
     : { into: page, above: null };
 }
@@ -79,7 +79,7 @@ export function pageDrops(
   const drops = new Map<NodeId, RootDrop>();
   for (const id of ours) {
     const parent = scene.get(id)!.parent;
-    const from = parent === null ? null : pageOfNode(scene, parent);
+    const from = parent === null ? null : pageIdOf(scene, parent);
     const bounds = session.descriptorOf(id).getBounds(draggedWorldPose(session, adapter, id, delta));
     const takers = placed.filter((p) => p.id === from || session.verdict(pageNodeOf(scene, p.id)!) === true);
     const page = under !== null && pageOfBounds([under], bounds) !== null ? under : pageOfBounds(takers, bounds);
@@ -98,7 +98,7 @@ export function pageDrops(
   }
   const landed = new Map<string, string | null>();
   for (const [id, { into }] of drops) {
-    if (into !== undefined) landed.set(id, into === null ? null : pageOfNode(scene, into));
+    if (into !== undefined) landed.set(id, into === null ? null : pageIdOf(scene, into));
   }
   for (const [id, into] of rehomedFollowers(scene, landed)) drops.set(id, { into, shift: STAY.shift });
   return drops.size === 0 ? null : drops;

@@ -1,5 +1,5 @@
 import { createReparentOp, followerOpsFor } from '@weasel-js/core';
-import { createSetPoseOp, asNodeId, rebaseLocalPose, sceneViewPoseAdapter, pageOfNode } from '@weasel-js/core/engine';
+import { createSetPoseOp, asNodeId, rebaseLocalPose, sceneViewPoseAdapter, pageIdOf } from '@weasel-js/core/engine';
 import type { Op } from '@weasel-js/core';
 import type { LayoutPass } from '../layout/types';
 import type { MoveSession } from '../session';
@@ -32,7 +32,7 @@ export function layoutDropOps(session: MoveSession, pass: LayoutPass): Op[] | nu
   // Every reparent precedes every drop.
   const reparentOps: Op[] = [];
   const dropOps: Op[] = [];
-  const page = pageOfNode(session.scene, asNodeId(destId));
+  const page = pageIdOf(session.scene, asNodeId(destId));
   const landed = new Map<string, string | null>();
   for (const placement of lp.placements) {
     if (placement.dragged.sourceContainerId !== destId) {

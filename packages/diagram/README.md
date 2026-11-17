@@ -311,7 +311,7 @@ different pages draws nothing across the gap. Each end draws a stub
 `OFF_PAGE_STUB` (24) world units out of its shape, ending at a tag that reads
 the other page's name and a reference letter, such as "Page 2 · A". The start
 stub ends in the connector's end marker, so it reads as leaving the page. A
-shape's page is its page ancestor (`pageOfNode`), not where it overlaps; a
+shape's page is its page ancestor (`pageIdOf`), not where it overlaps; a
 shape on the pasteboard is on none, and its connectors stay whole. A connector
 between pages is a child of the page run, and one whose ends share a page is
 that page's child (core's `followerHome`).

@@ -12,7 +12,7 @@ import type { NodeId, RectPose, Scene } from '../scene/types';
 import type { Page, PlacedPage } from './pages';
 import { placeOnPages } from './placeOnPages';
 import {
-  addPageNode, createPageRun, pageIdsOf, pageInfo, pageNodeOf, pageOfNode, pagePoses, pageRunOf, pagesOf, placedPagesOf,
+  addPageNode, createPageRun, pageIdsOf, pageInfo, pageNodeOf, pageIdOf, pagePoses, pageRunOf, pagesOf, placedPagesOf,
   requireDistinctPageIds, runInfo, runPose, type PagesDoc,
 } from './pageNodes';
 import type { AnyScene } from 'core/scene/anyScene';
@@ -95,7 +95,7 @@ export function setPages<TData, TLayer extends string, TPose>(
     }
     const node = s.get(run)!;
     const keep = new Set(next.pages.map((p) => p.id));
-    const dropped = pageIdsOf(s, run).filter((id) => !keep.has(pageOfNode(s, id)!));
+    const dropped = pageIdsOf(s, run).filter((id) => !keep.has(pageIdOf(s, id)!));
     if (dropped.length > 0) s.removeMany(dropped);
     const info = runInfo(next.layout, node.pageRun!.pasteboard);
     if (!sameValue(node.pageRun, info)) s.setPageRun(run, info);
