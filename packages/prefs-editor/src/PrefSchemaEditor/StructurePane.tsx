@@ -170,12 +170,12 @@ export function StructurePane({ schema, onChange, selected, lead, onPick, onSele
     onSelect([joinPath(parent, key)]);
   };
 
-  const nodesAt = (ids: readonly string[]): SchemaNode[] => ids.map((id) => nodeAt(schema, id)!);
+  const nodesFor = (ids: readonly string[]): SchemaNode[] => ids.map((id) => nodeAt(schema, id)!);
   const canLand = (ids: readonly string[], effect: TreeDragEffect): boolean =>
     effect !== 'link' || ids.every((id) => links.can(schema, id));
   /** What a drag would set down: the nodes themselves, or aliases of them. */
   const landing = (ids: readonly string[], effect: TreeDragEffect): SchemaNode[] =>
-    effect === 'link' ? ids.map((id) => links.of(schema, id)) : nodesAt(ids);
+    effect === 'link' ? ids.map((id) => links.of(schema, id)) : nodesFor(ids);
   const aliasAt = readOnly ? null : aliasTargetOf(schema, selected, lead, maxDepth, pageless, links);
 
   // A drag from the palette: over the tree it lands where the tree marks, and elsewhere wherever `outside` takes it.
@@ -184,7 +184,7 @@ export function StructurePane({ schema, onChange, selected, lead, onPick, onSele
   const carrying = useRef<PaletteDrag | null>(null);
   const treeDrop = useRef<TreeDropHandle>(null);
   /** The nodes a palette drag would set down: the ones the schema holds at its paths, else the one it makes. */
-  const carried = (drag: PaletteDrag): SchemaNode[] => (drag.from ? nodesAt(drag.from) : [drag.node]);
+  const carried = (drag: PaletteDrag): SchemaNode[] => (drag.from ? nodesFor(drag.from) : [drag.node]);
   const onPaletteDrag = (drag: PaletteDrag | null) => {
     carrying.current = drag;
     setPaletteDrag(drag);
@@ -209,7 +209,7 @@ export function StructurePane({ schema, onChange, selected, lead, onPick, onSele
 
   /** Whether the nodes at `ids`, which the schema holds, may be dropped under tree row `parentId`. */
   const takes = (ids: readonly string[], parentId: string | null): boolean => {
-    if (!withinDepth(parentId, nodesAt(ids), maxDepth)) return false;
+    if (!withinDepth(parentId, nodesFor(ids), maxDepth)) return false;
     const top = topLevelAllows(schema, ids, parentId, pageless);
     if (top !== undefined) return top;
     const parent = nodeAt(schema, parentId)!;
