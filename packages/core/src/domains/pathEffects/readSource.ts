@@ -10,9 +10,11 @@ import { noteOutsideRead } from 'core/scene/outsideReads';
 import type { EffectSource } from 'core/scene/pathEffects/source';
 import type { DerivedDep } from 'core/scene/types';
 import { pathPaintOf } from 'canvas/nodeShapes/nodePaint';
+import { withInheritedPaint } from 'core/scene/inheritedPaint';
 
 /** `dep` as a path effect's source, or `null` when it has no outline. A
- *  source whose painter lays it out as items (`effectItems`) carries them. */
+ *  source whose painter lays it out as items (`effectItems`) carries them,
+ *  laid from its data with an `'inherit'` fill or stroke resolved, as it draws. */
 export function readEffectSource(dep: DerivedDep<unknown>): EffectSource | null {
   const shapes = dep.scene ? nodeShapesOf(dep.scene) : undefined;
   const entry = findNodeShape(dep.node, shapes) as NodeShapeEntry<unknown, unknown> | undefined;
@@ -23,7 +25,14 @@ export function readEffectSource(dep: DerivedDep<unknown>): EffectSource | null 
   const source = readShape(dep, entry, shapes);
   const items = entry?.effectItems;
   if (source === null || !items) return source;
-  return { ...source, items: () => items(dep.node, dep.pose) };
+  return { ...source, items: () => items(withInheritedData(dep), dep.pose) };
+}
+
+function withInheritedData(dep: DerivedDep<unknown>): DerivedDep<unknown>['node'] {
+  const data = dep.node.data as { fill?: unknown; stroke?: unknown } | null | undefined;
+  if (data == null) return dep.node;
+  const shown = withInheritedPaint(data, dep.inherited);
+  return shown === data ? dep.node : { ...dep.node, data: shown };
 }
 
 function readShape(
