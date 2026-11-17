@@ -16,7 +16,7 @@ export const Digits = story({
   render: ({ config }) => {
     const c = config as { from: number; to: number; layout: 'wrap' | 'strip' };
     return (
-      <Sequence label="Digits" layout={c.layout} sweep={range({ from: c.from, to: c.to, step: 1 })} caption={false}>
+      <Sequence aria-label="Digits" layout={c.layout} sweep={range({ from: c.from, to: c.to, step: 1 })} caption={false}>
         {(d) => <span className={s.digit}>{d}</span>}
       </Sequence>
     );
@@ -33,7 +33,7 @@ export const Grid = story({
     const c = config as { hues: number; chroma: number };
     return (
       <Sequence
-        label="Hue by lightness"
+        aria-label="Hue by lightness"
         sweep={range({ from: 0.3, to: 0.9, step: 0.15, label: (l) => l.toFixed(2) })}
         across={range({ from: 0, to: 360 - 360 / c.hues, count: c.hues, label: (h) => `${Math.round(h)}°` })}
       >
@@ -51,7 +51,7 @@ export const Frames = story({
   render: ({ config }) => {
     const { every } = config as { every: number };
     return (
-      <Sequence label="One turn" sweep={frames({ duration: 1000, loop: true }, { every })}>
+      <Sequence aria-label="One turn" sweep={frames({ duration: 1000, loop: true }, { every })}>
         {(t) => (
           <span className={s.dial}>
             <span className={s.hand} style={{ '--turn': `${t / 1000}turn` } as CSSProperties} />

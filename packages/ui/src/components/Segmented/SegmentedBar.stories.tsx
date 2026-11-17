@@ -56,7 +56,7 @@ function ModeBar({ mode, variant, size }: { mode: SegmentedMode; variant?: Segme
 export const ModesByVariant: Story = {
   tags: ['gallery'],
   render: () => (
-    <Sequence label="Mode by variant" sweep={values(MODES)} across={values(VARIANTS)}>
+    <Sequence aria-label="Mode by variant" sweep={values(MODES)} across={values(VARIANTS)}>
       {(mode, variant) => <ModeBar mode={mode} variant={variant} />}
     </Sequence>
   ),
@@ -66,7 +66,7 @@ export const ModesByVariant: Story = {
 export const ModesBySize: Story = {
   tags: ['gallery'],
   render: () => (
-    <Sequence label="Mode by size" sweep={values(MODES)} across={values(SIZES)}>
+    <Sequence aria-label="Mode by size" sweep={values(MODES)} across={values(SIZES)}>
       {(mode, size) => <ModeBar mode={mode} size={size} />}
     </Sequence>
   ),

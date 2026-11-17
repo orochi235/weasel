@@ -227,7 +227,7 @@ const STANCE_CELLS: readonly StanceCell[] = [
 /** No stance and every stance, each grade, high and low emphasis, tints 0–3 on `clarify`, then a panel nested in each stance and a danger one in `clarify`. */
 export const Stances: Story = {
   render: () => (
-    <Sequence label="Panel stances" sweep={values(STANCE_CELLS, (c) => c.nestIn?.title ?? c.title)} caption={false}>
+    <Sequence aria-label="Panel stances" sweep={values(STANCE_CELLS, (c) => c.nestIn?.title ?? c.title)} caption={false}>
       {({ title, look, nestIn }) => {
         const panel = <PropertyPanel {...look} title={title}><StanceRows /></PropertyPanel>;
         if (!nestIn) return <div className={s.cell}>{panel}</div>;

@@ -62,7 +62,7 @@ interface Frame {
 
 function Wall({ label, frames, args, actions }: { label: string; frames: Frame[]; args: Partial<MotifFrameProps>; actions?: ReactNode }) {
   return (
-    <Sequence label={label} sweep={values(frames, (f) => f.title)} caption={false} className={s.frames}>
+    <Sequence aria-label={label} sweep={values(frames, (f) => f.title)} caption={false} className={s.frames}>
       {(f) => (
         <MotifFrame {...args} title={f.title} motif={f.motif} tint={f.tint} actions={actions}>
           {f.jacks.map((names, i) => <Jacks key={i} names={names} />)}

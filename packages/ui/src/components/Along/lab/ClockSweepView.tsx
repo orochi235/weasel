@@ -76,7 +76,7 @@ function Sweep({ title, bearings, config }: { title: string; bearings: SweepOf<n
   return (
     <section className={s.section} aria-label={title}>
       <h3 className={s.sectionTitle}>{title}</h3>
-      <Sequence label={title} sweep={bearings} caption={caption}>
+      <Sequence aria-label={title} sweep={bearings} caption={caption}>
         {(raw) => <Dial at={wrapPositive(raw, 360)} config={config} />}
       </Sequence>
     </section>

@@ -113,7 +113,7 @@ export function BooleanOpsDemo() {
         <WeaselProvider isolate>
           <InteractivePanel />
         </WeaselProvider>
-        <Sequence label="Each op on the inputs" sweep={values(STATIC, (op) => op.label)}>
+        <Sequence aria-label="Each op on the inputs" sweep={values(STATIC, (op) => op.label)}>
           {(op) => <Panel paths={op.paths} />}
         </Sequence>
       </div>

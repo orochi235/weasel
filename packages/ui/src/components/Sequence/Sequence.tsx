@@ -19,7 +19,7 @@ export interface SequenceProps<A, B = undefined> {
   /** Steps taken from a sweep that has not ended by then. Default `SWEEP_CAP`. */
   cap?: number;
   /** The accessible name of the list or grid. */
-  label: string;
+  'aria-label': string;
   className?: string;
 }
 
@@ -33,7 +33,7 @@ function Capped({ cap }: { cap: number }): ReactElement {
  * Each cell is live, keeping its own state and taking input.
  */
 export function Sequence<A, B = undefined>(props: SequenceProps<A, B>): ReactElement {
-  const { sweep, across, children, layout = 'wrap', cap = SWEEP_CAP, label, className } = props;
+  const { sweep, across, children, layout = 'wrap', cap = SWEEP_CAP, 'aria-label': label, className } = props;
   const rows = stepsOf(sweep, cap);
   if (across) {
     const cols = stepsOf(across, cap);

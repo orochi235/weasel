@@ -18,7 +18,7 @@ const KINDS = ['number', 'boolean', 'string', 'enum', 'color', 'paint', 'object'
 /** Every built-in kind, then a custom kind and a group, which are drawn muted. */
 export const AllKinds: Story = {
   render: (args) => (
-    <Sequence label="Pref kinds" sweep={values(KINDS)} caption={false}>
+    <Sequence aria-label="Pref kinds" sweep={values(KINDS)} caption={false}>
       {(k) => <PrefKindBadge {...args} kind={k} />}
     </Sequence>
   ),

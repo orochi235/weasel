@@ -52,7 +52,7 @@ export const EveryCapInOneRow: Story = {
 export const CapMatrix: Story = {
   tags: ['gallery'],
   render: (args) => (
-    <Sequence label="Edge caps" sweep={values(ALL_CAPS)} caption={false}>
+    <Sequence aria-label="Edge caps" sweep={values(ALL_CAPS)} caption={false}>
       {(cap) => (
         <Powerline {...args}>
           <Badge emphasis="high" endCap={cap}>{String(cap)}</Badge>

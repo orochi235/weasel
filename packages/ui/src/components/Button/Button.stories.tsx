@@ -210,7 +210,7 @@ const SIZES: ControlSize[] = ['sm', 'md'];
 export const Matrix: Story = {
   tags: ['gallery'],
   render: (args) => (
-    <Sequence label="Size by variant" sweep={values(SIZES)} across={values(VARIANTS)}>
+    <Sequence aria-label="Size by variant" sweep={values(SIZES)} across={values(VARIANTS)}>
       {(sz, v) => (
         <div className={s.pair}>
           <Button {...args} variant={v} size={sz}>Button</Button>

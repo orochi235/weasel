@@ -25,7 +25,7 @@ export const Basic: Story = {
 
 export const Placements: Story = {
   render: (args) => (
-    <Sequence label="Placements" sweep={values(['top', 'bottom', 'left', 'right'] as const)} caption={false}>
+    <Sequence aria-label="Placements" sweep={values(['top', 'bottom', 'left', 'right'] as const)} caption={false}>
       {(p) => (
         <TooltipTrigger>
           <Focusable>

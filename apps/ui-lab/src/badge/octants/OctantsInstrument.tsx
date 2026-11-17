@@ -70,7 +70,7 @@ function Sweeps({ params }: { params: Config }) {
         return (
           <section key={param} className={s.sweep}>
             <h3 className={s.sweepTitle}>{title ?? param}</h3>
-            <Sequence label={title ?? param} sweep={sweep} caption={(v) => <code className={s.cellLabel}>{sweep.label(v)}</code>}>
+            <Sequence aria-label={title ?? param} sweep={sweep} caption={(v) => <code className={s.cellLabel}>{sweep.label(v)}</code>}>
               {(v) => <OctantPlot params={{ ...params, [param]: v }} />}
             </Sequence>
           </section>
