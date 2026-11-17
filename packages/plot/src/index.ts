@@ -68,7 +68,7 @@ export {
 export { handlesOf, plotEditorOf, type PlotEditor, type PlotHandle } from './editing/editors';
 export { foldPlotText, isPlotText, plotTextOf, usePlotTextEdit } from './editing/textEdit';
 export {
-  PLOT_HANDLE_AFFORDANCE_KIND, PLOT_HANDLE_LAYER_ID, plotHandleLayer, plotHandles, plotHandleScratchOf, plotOrigin,
+  PLOT_HANDLE_AFFORDANCE_KIND, PLOT_HANDLE_LAYER_ID, createPlotHandleLayer, plotHandles, plotHandleScratchOf, plotOrigin,
   type PlotHandleScratch,
 } from './editing/handleLayer';
 export { PLOT_DRAG_ACTION_ID, commitPlotToScene, createPlotDragAction, type PlotDragOptions, type PlotEdit } from './editing/dragAction';

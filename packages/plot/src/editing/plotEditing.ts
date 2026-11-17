@@ -1,6 +1,6 @@
 import type { Action, SurfaceContribution, AnyScene } from '@weasel-js/core';
 import { PLOT_DRAG_ACTION_ID, createPlotDragAction, type PlotDragOptions } from './dragAction';
-import { PLOT_HANDLE_AFFORDANCE_KIND, PLOT_HANDLE_LAYER_ID, plotHandleLayer } from './handleLayer';
+import { PLOT_HANDLE_AFFORDANCE_KIND, PLOT_HANDLE_LAYER_ID, createPlotHandleLayer } from './handleLayer';
 
 /** The action id that absorbs a press on a handle, so it reaches neither marquee nor pan. */
 export const GRAB_PLOT_HANDLE_ACTION_ID = 'plot.grabHandle';
@@ -25,7 +25,7 @@ export function plotEditing(
   return {
     id: 'weasel-plot-editing',
     eligibility: { claimed: [PLOT_HANDLE_LAYER_ID] },
-    layers: [plotHandleLayer(opts.scene)],
+    layers: [createPlotHandleLayer(opts.scene)],
     actions: [createPlotDragAction({ ...opts, id: actionId }), grabHandleAction],
     bindings: [
       { spec: { kind: 'drag', target }, actionId, opts: { id: 'weasel-plot-editing.drag' } },
