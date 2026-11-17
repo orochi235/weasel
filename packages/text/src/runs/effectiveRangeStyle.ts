@@ -1,7 +1,7 @@
 import { resolveTextStyle } from '../textStyle';
 import type { TextPaint, TextStyle } from '../textStyle';
 import { isBoldWeight, numericWeight } from './resolveRuns';
-import { nodeHasFlag } from './flagRange';
+import { styleHasFlag } from './flagRange';
 import { MIXED } from './rangeStyle';
 import type { Mixed, RangeStyle } from './rangeStyle';
 
@@ -70,7 +70,7 @@ export function effectiveRangeStyle(
   if (resolved.lang !== undefined) out.lang = resolved.lang;
   Object.assign(out, rangeWeight(range, style));
   for (const key of FLAGS) {
-    const on = nodeHasFlag(node, key);
+    const on = styleHasFlag(node, key);
     const run = range?.[key];
     out[key] = on || run === undefined ? on : run;
   }

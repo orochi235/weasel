@@ -15,7 +15,7 @@ import type { StyledRun } from '@weasel-js/text';
 import { domToRuns, type OverlayRunBase } from './domRuns';
 import { holdForFaces, installSelectionStyle, openingRange } from './overlayOpen';
 import {
-  applyStyleToRange, effectiveRangeStyle, nodeHasFlag, rangeWeight, setFlagOverRange,
+  applyStyleToRange, effectiveRangeStyle, styleHasFlag, rangeWeight, setFlagOverRange,
   styleAtRange, unboldPatch, type FlagKey, type RangeStyle, type RunStylePatch,
 } from '@weasel-js/text';
 import { armedOver, armPatch, usePendingStyle } from './armedStyle';
@@ -57,7 +57,7 @@ function patchForToggle(
   }
   const on = toggle === 'bold'
     ? rangeWeight(current, nodeStyle).bold === true
-    : current[toggle] === true || nodeHasFlag(nodeStyle, toggle);
+    : current[toggle] === true || styleHasFlag(nodeStyle, toggle);
   return { [toggle]: !on };
 }
 
@@ -171,7 +171,7 @@ export function useTextEdit(
       ? (Object.keys(patch) as FlagKey[]).find((key) =>
           key !== 'bold'
           && patch[key] === false
-          && nodeHasFlag(styleOf(id) ?? {}, key))
+          && styleHasFlag(styleOf(id) ?? {}, key))
       : undefined;
     if (unsetFlag !== undefined && id !== null) {
       const r = setFlagOverRange(runs, styleOf(id) ?? {}, range.start, range.end, unsetFlag, false);
