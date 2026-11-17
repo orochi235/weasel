@@ -154,6 +154,20 @@ describe('svgNodesToSceneDrafts — <g> → scene container drafts', () => {
     expect(containers[0].pose).toEqual({ x: 0, y: 0, width: 30, height: 10 });
   });
 
+  it('mints no id a leaf in the file already carries, before or after it', () => {
+    const leaf = (id?: string): SvgPathNode => ({
+      kind: 'path',
+      path: { kind: 'rect', x: 0, y: 0, width: 10, height: 10 },
+      fill: { kind: 'solid', color: '#abc' },
+      ...(id ? { meta: { wd: { attrs: { 'leaf-id': id } } } } : {}),
+    });
+    const drafts = svgNodesToSceneDrafts([leaf('i0'), leaf(), leaf(), leaf('i3')], ids());
+    const got = drafts.map((d) => d.id);
+    expect(got).toHaveLength(4);
+    expect(new Set(got).size).toBe(4);
+    expect(got[0]).toBe('i0');
+  });
+
   it('emits parents before their children (addable in order)', () => {
     const leaf: SvgPathNode = {
       kind: 'path',
