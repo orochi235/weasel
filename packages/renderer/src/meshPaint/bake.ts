@@ -26,7 +26,7 @@ function gridFor(size: number): number {
 }
 
 /** The box a bake covers, in the paint's own space. */
-export interface MeshBox {
+export interface MeshRect {
   x: number;
   y: number;
   width: number;
@@ -41,11 +41,11 @@ export interface BakedMesh {
   size: number;
   /** Where the bitmap sits in paint space, which is what the shader maps a
    *  fragment through. */
-  box: MeshBox;
+  box: MeshRect;
 }
 
 /** The union of every patch's bounds, or `null` when nothing is drawable. */
-export function meshBounds(patches: readonly MeshPatch[]): MeshBox | null {
+export function meshBounds(patches: readonly MeshPatch[]): MeshRect | null {
   let minX = Infinity;
   let minY = Infinity;
   let maxX = -Infinity;

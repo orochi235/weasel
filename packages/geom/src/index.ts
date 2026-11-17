@@ -190,7 +190,7 @@ export { meanScale } from './meanScale';
 export { pxExtent, pxExtentInFrame, pxReach, scaleDelta, screenAngleOf, standoff, withinPxBox, withinPxRadius, type Scale2 } from './pxExtent';
 export { poseRotationOf, rotatePathAround, type PoseRotation } from './poseRotation';
 export {
-  boxFrameOf, poseFrameOf, poseFrameInverseOf, poseLinearOf, pathThroughPoseFrame, type FramedBox, type PoseLinear,
+  boxFrameOf, poseFrameOf, poseFrameInverseOf, poseLinearOf, pathThroughPoseFrame, type FramedRect, type PoseLinear,
 } from './poseFrame';
 export {
   anchorAt, anchorCount, anchorsInRect, deleteAnchorsAt, editAnchorSet, flatAnchorIndex, insertAnchorOnSegment,

@@ -5,7 +5,7 @@
  */
 import type { ActionDeps } from '@weasel-js/routing';
 import { unionRects } from '@weasel-js/geom';
-import type { WarpBox } from '@weasel-js/geom/warp';
+import type { WarpRect } from '@weasel-js/geom/warp';
 import { drawnAabbOf, type NodeId, type PathNode, pathNodesOf, shownNodeOf, type AnyScene } from '@weasel-js/core';
 import { type CreateOutlinesAdapter } from '../outlines/createOutlines';
 import { leavesOf } from '../shared/scenePaths';
@@ -49,13 +49,13 @@ export function selectedWarpPaths(deps: ActionDeps | undefined): PathNode[] {
 }
 
 /** The box around `a` and `b`, either of which may be missing. */
-export function unionBox(a: WarpBox | null, b: WarpBox | null): WarpBox | null {
+export function unionBox(a: WarpRect | null, b: WarpRect | null): WarpRect | null {
   return a && b ? unionRects([a, b]) : a ?? b;
 }
 
 /** The drawn box around the text nodes `texts`. */
-export function textsBox(scene: WarpScene, texts: readonly NodeId[]): WarpBox | null {
-  let box: WarpBox | null = null;
+export function textsBox(scene: WarpScene, texts: readonly NodeId[]): WarpRect | null {
+  let box: WarpRect | null = null;
   for (const id of texts) {
     const node = shownNodeOf(scene, id);
     if (node) box = unionBox(box, drawnAabbOf(scene, id, node.pose));

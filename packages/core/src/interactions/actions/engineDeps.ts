@@ -8,7 +8,7 @@
 
 import type { SelectionApi } from '@weasel-js/routing';
 import type { View } from 'core/viewport/view';
-import type { FramedBox } from '@weasel-js/geom';
+import type { FramedRect } from '@weasel-js/geom';
 import type { PlaneMap } from 'core/viewport/parallax';
 import type { DecayLoopOptions } from 'core/viewport/useDecayLoop';
 import type { ViewAnimationOptions } from 'core/viewport/useViewAnimation';
@@ -60,7 +60,7 @@ export interface ViewApi {
   /** The world rect the scene's content covers, a gesture in flight
    *  included; `null` when nothing is drawn. When wired, `viewportZoomAction`'s
    *  `fit` branch (Cmd-Alt-0) fits the view to it. */
-  contentBounds?(): FramedBox | null;
+  contentBounds?(): FramedRect | null;
   /** Optional canvas-local host dimensions (CSS px). When wired,
    *  `viewportZoomAction`'s keyboard branches (Cmd+= / Cmd+-) anchor at the
    *  host center instead of the top-left origin. Null when the host isn't

@@ -20,7 +20,7 @@ import {
   type PlaneMode,
   type ClothMapping,
   type PathWarp,
-  type WarpBox,
+  type WarpRect,
 } from '@weasel-js/geom/warp';
 import {
   heldWarpResult, rememberWarpResult, resolvePathWarp, warpFrameFor, type HeldPathWarp,
@@ -71,7 +71,7 @@ export interface WarpTarget {
 }
 
 /** A fresh warp of `kind` over `box` that leaves it where it is. */
-export function freshWarp(kind: WarpKind, box: WarpBox, settings: WarpSettings): PathWarp {
+export function freshWarp(kind: WarpKind, box: WarpRect, settings: WarpSettings): PathWarp {
   switch (kind) {
     case 'plane': return planeOver(box, settings.mode ?? 'free');
     case 'cloth':
@@ -105,7 +105,7 @@ export function withWarpSettings(held: HeldPathWarp, settings: WarpSettings): He
 }
 
 /** The box, in world space, around every path in `nodes`. */
-export function worldBoxOf(nodes: readonly PathNode[]): WarpBox | null {
+export function worldBoxOf(nodes: readonly PathNode[]): WarpRect | null {
   let x0 = Infinity, y0 = Infinity, x1 = -Infinity, y1 = -Infinity;
   for (const { path } of nodes) {
     const b = boundsOfPath(path);
@@ -151,7 +151,7 @@ function samePlacement(a: WarpTarget, b: WarpTarget): boolean {
 export function splitByWarp(
   nodes: readonly PathNode[],
   kind: WarpKind,
-): { held: WarpTarget[]; bare: PathNode[]; box: WarpBox | null } {
+): { held: WarpTarget[]; bare: PathNode[]; box: WarpRect | null } {
   const held: WarpTarget[] = [];
   const bare: PathNode[] = [];
   const groups = new Map<string, WarpTarget[]>();
@@ -181,7 +181,7 @@ export function splitByWarp(
  *  holding no such warp, and the text that converts when the warp begins. */
 export function freshWarpBox(
   scene: Parameters<typeof textsBox>[0], leaves: WarpLeaves, kind: WarpKind,
-): WarpBox | null {
+): WarpRect | null {
   return unionBox(splitByWarp(leaves.paths, kind).box, textsBox(scene, leaves.texts));
 }
 
@@ -192,7 +192,7 @@ export function freshWarpBox(
  * `box` when given — so dragging one of its controls warps them together.
  */
 export function warpTargets(
-  deps: ActionDeps | undefined, kind: WarpKind, settings: WarpSettings, over?: WarpBox | null,
+  deps: ActionDeps | undefined, kind: WarpKind, settings: WarpSettings, over?: WarpRect | null,
 ): WarpTarget[] {
   const { held: out, bare, box: around } = splitByWarp(selectedWarpPaths(deps), kind);
   const box = bare.length > 0 ? (over ?? around) : null;
