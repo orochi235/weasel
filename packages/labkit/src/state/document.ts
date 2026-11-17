@@ -1,4 +1,5 @@
 import { isPlainObject } from '@weasel-js/registry';
+import { isColorModePreference } from '@weasel-js/theme';
 import { type StorageAdapter, sameStored } from '@weasel-js/storage';
 import { labStorageKey } from './helpers';
 import type { LabDocument, LabMode, Migration, SavedSnapshot, SerializedTrial } from './types';
@@ -111,9 +112,7 @@ export async function readLegacyDocument(
   if ([workspaces, saves, layout, theme].every((v) => v === undefined)) return null;
 
   const mode =
-    theme === 'light' || theme === 'dark' || theme === 'auto' || theme === 'interstellar'
-      ? theme
-      : fallbackMode;
+    isColorModePreference(theme) || theme === 'interstellar' ? theme : fallbackMode;
 
   return {
     version: 0,
@@ -160,8 +159,7 @@ export function normalizeDocument(
   doc: Record<string, unknown>,
   fallbackMode: LabMode,
 ): LabDocument {
-  const mode =
-    doc.mode === 'light' || doc.mode === 'dark' || doc.mode === 'auto' ? doc.mode : fallbackMode;
+  const mode = isColorModePreference(doc.mode) ? doc.mode : fallbackMode;
   return {
     version: CURRENT_DOCUMENT_VERSION,
     trials: Array.isArray(doc.trials) ? (doc.trials as SerializedTrial[]) : [],
@@ -179,7 +177,7 @@ export function normalizeDocument(
  *  `workspaces` from a document it labels version 1. */
 export function migrateV0toV1(doc: Record<string, unknown>): Record<string, unknown> {
   const raw = doc.mode === 'interstellar' ? 'dark' : doc.mode;
-  const mode = raw === 'light' || raw === 'dark' || raw === 'auto' ? raw : 'auto';
+  const mode = isColorModePreference(raw) ? raw : 'auto';
   return {
     version: 1,
     workspaces: Array.isArray(doc.workspaces) ? doc.workspaces : [],

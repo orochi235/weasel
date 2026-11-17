@@ -1,5 +1,6 @@
 import { isPlainObject } from '@weasel-js/core';
 import type { OwnedRecordCache, RecordCache } from '@weasel-js/storage';
+import { isColorModePreference } from '@weasel-js/theme';
 import { CURRENT_DOCUMENT_VERSION } from './document';
 import { serializeTrials } from './helpers';
 import { hydrateSnapshots, hydrateTrials, withoutUnreadable } from './hydrate';
@@ -234,9 +235,7 @@ export function bindLabStore(
             if ('stopWriting' in records) (records as OwnedRecordCache).stopWriting();
             break;
           }
-          if (meta?.mode === 'light' || meta?.mode === 'dark' || meta?.mode === 'auto') {
-            patch.mode = meta.mode;
-          }
+          if (isColorModePreference(meta?.mode)) patch.mode = meta.mode;
           break;
         }
       }
