@@ -1,6 +1,7 @@
 import type { CSSProperties, ReactElement } from 'react';
 import { multiplier, PIXELS, present, scaleBar, type UnitScope, type UnitValue } from '@weasel-js/quantity';
 import s from './ScaleBar.module.css';
+import { useFieldLocale } from '../../useFieldLocale';
 
 /** Props for {@link ScaleBar}. */
 export interface ScaleBarProps {
@@ -21,8 +22,6 @@ export interface ScaleBarProps {
 
 const PIXEL_BOARD: readonly UnitScope[] = [{ system: PIXELS }];
 
-const times = (n: number): string => present(n, multiplier({ figures: 3 })).text;
-
 /**
  * A scale bar: a rule as long on screen as a round length of the frame it
  * measures, labeled with that length. It reads the frame's unit scopes, so
@@ -31,7 +30,8 @@ const times = (n: number): string => present(n, multiplier({ figures: 3 })).text
  */
 export function ScaleBar({ zoom, scopes = PIXEL_BOARD, maxPx, lengths, className }: ScaleBarProps): ReactElement {
   const bar = scaleBar({ pxPerUnit: zoom, scopes, ...(maxPx === undefined ? {} : { maxPx }), ...(lengths ? { lengths } : {}) });
-  const drawn = bar.magnification === 1 ? null : `drawn at ${times(bar.magnification)}`;
+  const locale = useFieldLocale();
+  const drawn = bar.magnification === 1 ? null : `drawn at ${present(bar.magnification, multiplier({ figures: 3 }), { locale }).text}`;
   const span = { '--wzl-scale-bar-px': `${bar.px}px` } as CSSProperties;
   return (
     <div className={[s.bar, className].filter(Boolean).join(' ')} role="img" aria-label={`Scale: ${bar.label}${drawn ? `, ${drawn}` : ''}`}>

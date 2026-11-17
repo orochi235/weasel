@@ -107,7 +107,7 @@ export {
   type UnitSymbolOptions,
 } from './catalog';
 export { decimalPlaces, MAX_DECIMAL_PLACES } from './places';
-export { fieldLocale } from './fieldLocale';
+export { defaultLocale, fieldLocale } from './fieldLocale';
 export {
   formatCompact,
   formatNumber,

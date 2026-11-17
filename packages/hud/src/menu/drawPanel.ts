@@ -92,7 +92,7 @@ export interface MenuDrawValues {
   swatch?(e: MenuEntry): string | undefined;
   /** Width of a label, which places the caret in typed text. Defaults to {@link measureLabel}. */
   measure?(text: string, fontSize: number, fontFamily: string): number;
-  /** The locale a number row's value is written in. Defaults to `en-US`. */
+  /** The locale a number row's value is written in. Defaults to the browser's, else `en-US`. */
   locale?: string;
 }
 

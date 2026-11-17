@@ -4,6 +4,7 @@ import { multiplier, qty } from '@weasel-js/quantity';
 import type { HoldProps } from '../Disabled';
 import { useControlHold } from '../Disabled/controlHold';
 import { QuantityText } from '../QuantityText';
+import { useFieldLocale } from '../../useFieldLocale';
 import { Slider, useDetents } from '../Slider';
 import s from './Transport.module.css';
 import { icon } from '../../icons.gen';
@@ -64,8 +65,6 @@ export interface PlayheadTime {
 
 const seconds = (ms: number): string => `${(ms / 1000).toFixed(2)}s`;
 const spokenSeconds = (ms: number): string => `${(ms / 1000).toFixed(2)} seconds`;
-const multiplierText = (r: number): string => qty(r, RATE).text;
-const multiplierSpoken = (r: number): string => qty(r, RATE).spoken;
 
 const readouts: Record<TimeReadout, (time: PlayheadTime) => string> = {
   absolute: ({ playhead, start, duration }) => `${seconds(playhead)} / ${seconds(start + duration)}`,
@@ -117,8 +116,9 @@ export function Transport(props: TransportProps): ReactElement {
   // gets its own detent — `useDetents` would otherwise round it to the
   // nearest and label the thumb with a rate the timeline is not running at.
   const offered: readonly number[] = props.rates ?? TRANSPORT_RATES;
-  const rateText = props.formatRate ?? multiplierText;
-  const rateSpoken = props.formatRate ?? multiplierSpoken;
+  const locale = useFieldLocale();
+  const rateText = props.formatRate ?? ((r: number) => qty(r, RATE, { locale }).text);
+  const rateSpoken = props.formatRate ?? ((r: number) => qty(r, RATE, { locale }).spoken);
   const rateDrawn = (r: number) => (props.formatRate ? props.formatRate(r) : <QuantityText value={r} display={RATE} mute />);
   const rates = offered.includes(rate) ? offered : [...offered, rate].sort((a, b) => a - b);
   const detents = useDetents({

@@ -7,6 +7,7 @@ import { ordinalKind, romanKind } from './kinds/numeral';
 import { scientificKind } from './kinds/scientific';
 import { infinityParts, infinityWord, readInfinity } from './infinity';
 import { parseNumber } from './number';
+import { defaultLocale } from './fieldLocale';
 import { amount, displayOf, retag, tag, unitOf, type Display, type Quantity, type Tagged } from './quantity';
 import { unitScale, type Unit, type UnitSystem } from './units';
 
@@ -45,7 +46,7 @@ export function displayKindOf(display: Display | undefined): DisplayKind<Display
 
 /** Options for presenting or parsing a quantity. */
 export interface PresentOptions {
-  /** BCP 47 locale. Default `en-US`. */
+  /** BCP 47 locale. Defaults to {@link defaultLocale}: the browser's, else `en-US`. */
   locale?: string;
 }
 
@@ -65,7 +66,8 @@ const DEFAULT_DISPLAY: Display = { kind: 'decimal' };
 
 function contextOf(q: Quantity, options: PresentOptions | undefined): FormatContext {
   const unit = unitOf(q);
-  return unit === undefined ? { locale: options?.locale ?? 'en-US' } : { locale: options?.locale ?? 'en-US', unit };
+  const locale = options?.locale ?? defaultLocale();
+  return unit === undefined ? { locale } : { locale, unit };
 }
 
 /** Parts as the unstyled HTML fragment {@link Presentation.html} describes. */
@@ -122,7 +124,7 @@ function isInfinite(value: number): boolean {
 export function parseAs(text: string, display?: Display, options?: PresentOptions & { unit?: Unit }): number {
   const d = display ?? DEFAULT_DISPLAY;
   const kind = displayKindOf(d);
-  const ctx: FormatContext = { locale: options?.locale ?? 'en-US' };
+  const ctx: FormatContext = { locale: options?.locale ?? defaultLocale() };
   const infinite = readInfinity(text, d, ctx.locale);
   if (infinite !== undefined) return infinite;
   if (options?.unit !== undefined) ctx.unit = options.unit;
