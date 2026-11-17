@@ -137,7 +137,7 @@ describe('cachedLayoutRuns', () => {
         levels: new Array<number>(end - start).fill(1),
       }),
       mirror: () => null,
-      baseLevel: () => 0,
+      paragraphLevel: () => 0,
     });
     try {
       expect(cachedLayoutRuns(runs, OPTS)).not.toBe(plain);
@@ -262,7 +262,7 @@ describe('what the key has to tell apart', () => {
         levels: new Array<number>(end - start).fill(1),
       }),
       mirror: () => null,
-      baseLevel: () => 0,
+      paragraphLevel: () => 0,
     });
     const runs = [run('ab')];
     const plain = cachedLayoutRuns(runs, OPTS);

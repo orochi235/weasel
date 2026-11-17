@@ -22,7 +22,7 @@ Two calls because the algorithm splits at exactly one place. `analyze` is per pa
 rather than the end of a paragraph. Wrap between them, and one analysis serves every line.
 
 `mirrorOf(cp)` is L4, applied at paint time against a character's resolved level — the same
-code point mirrors in one run and not in another. `baseLevel(paragraph)` is the level the
+code point mirrors in one run and not in another. `paragraphLevel(paragraph)` is the level the
 paragraph reads at, which under `'auto'` is what its first strong character decided.
 
 ## Giving it to weasel's text

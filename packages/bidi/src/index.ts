@@ -53,7 +53,7 @@ export function reorder(
  * The level an analysed paragraph reads at: 0 left to right, 1 right to left.
  * Under `'auto'` this is where P2/P3's first-strong answer comes back out.
  */
-export function baseLevel(analysis: BidiAnalysis): 0 | 1 {
+export function paragraphLevel(analysis: BidiAnalysis): 0 | 1 {
   return analysis.paragraphLevel;
 }
 
@@ -63,8 +63,8 @@ export interface BidiEngine {
   reorder(analysis: BidiAnalysis, start: number, end: number): ReorderedLine;
   /** L4, applied at paint time against a character's resolved level: `mirrorOf`. */
   mirror(cp: number): number | null;
-  baseLevel(analysis: BidiAnalysis): 0 | 1;
+  paragraphLevel(analysis: BidiAnalysis): 0 | 1;
 }
 
 /** The default engine — pass this where a `BidiEngine` is wanted. */
-export const bidi: BidiEngine = { analyze, reorder, mirror: mirrorOf, baseLevel };
+export const bidi: BidiEngine = { analyze, reorder, mirror: mirrorOf, paragraphLevel };

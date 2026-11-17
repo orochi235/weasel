@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { bidi, analyze, reorder, mirrorOf, baseLevel, UNICODE_VERSION } from './index';
+import { bidi, analyze, reorder, mirrorOf, paragraphLevel, UNICODE_VERSION } from './index';
 
 /** Hebrew alef-bet-gimel, a space, and Latin digits. */
 const HE = [0x05d0, 0x05d1, 0x05d2];
@@ -7,9 +7,9 @@ const cps = (s: string) => [...s].map((c) => c.codePointAt(0)!);
 
 describe('the public seam', () => {
   it('reports the level a paragraph reads at', () => {
-    expect(baseLevel(analyze(cps('abc')))).toBe(0);
-    expect(baseLevel(analyze(HE))).toBe(1);
-    expect(bidi.baseLevel(analyze(HE, 'ltr'))).toBe(0);
+    expect(paragraphLevel(analyze(cps('abc')))).toBe(0);
+    expect(paragraphLevel(analyze(HE))).toBe(1);
+    expect(bidi.paragraphLevel(analyze(HE, 'ltr'))).toBe(0);
   });
 
   it('leaves Latin text in logical order', () => {
@@ -42,7 +42,7 @@ describe('the public seam', () => {
     expect(bidi.analyze).toBe(analyze);
     expect(bidi.reorder).toBe(reorder);
     expect(bidi.mirror).toBe(mirrorOf);
-    expect(bidi.baseLevel).toBe(baseLevel);
+    expect(bidi.paragraphLevel).toBe(paragraphLevel);
   });
 
   it('reports the Unicode version its tables came from', () => {
