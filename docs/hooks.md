@@ -116,7 +116,7 @@ macOS Option+bracket emits a curly quote, so both codepoints are listed.
 | `move` | drag on `selected-body` |
 | `editAnchors` (*path-tools*) | drag whose press hit an anchor or control-handle affordance; it ties `move` on specificity, and `move` turns those presses down, as it does a segment's or a path-tools poise grip's (`isPathEditPart`) |
 | `bendSegment` (*path-tools*) | drag whose press hit the edited path's `segment` affordance, between anchors; `move` turns those down too |
-| `marqueeAnchors` (*path-tools*) | drag on `empty` |
+| `areaSelectAnchors` (*path-tools*) | drag on `empty` |
 | `enterPathEdit` (*path-tools*) | double-click on a body |
 | `editTextAt` | double-click on a body: opens the text node under the pointer (the `textEdit` feature) |
 | `menu.context` | the `contextMenu` gesture |

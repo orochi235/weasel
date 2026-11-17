@@ -4,7 +4,7 @@
  */
 import type { FeaturePreset } from '@weasel-js/core';
 import { anchorsTool } from './pathEdit/anchorsTool';
-import { cutPathAtAnchorAction, deleteAnchorsAction, marqueeAnchorsAction, selectAnchorAction } from './pathEdit/anchorEditing';
+import { cutPathAtAnchorAction, deleteAnchorsAction, areaSelectAnchorsAction, selectAnchorAction } from './pathEdit/anchorEditing';
 import {
   nudgeAnchorsDownAction, nudgeAnchorsLeftAction, nudgeAnchorsRightAction, nudgeAnchorsUpAction,
 } from './pathEdit/anchorNudge';
@@ -50,7 +50,7 @@ export const pathEditPreset: FeaturePreset = {
   actions: [
     editAnchorsAction, enterPathEditAction, insertPathAnchorAction, bendSegmentAction, cutPathAtAnchorAction,
     retractHandlesAction, makeHandlesSymmetricAction, averageAnchorsAction, joinAnchorsAction, setAnchorFieldAction,
-    marqueeAnchorsAction, selectAnchorAction,
+    areaSelectAnchorsAction, selectAnchorAction,
   ],
 };
 

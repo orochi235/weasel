@@ -7,7 +7,7 @@ import type { IconSpec } from '@weasel-js/icons';
 import {
   cutPathAtAnchorAction,
   deleteAnchorsAction,
-  marqueeAnchorsAction,
+  areaSelectAnchorsAction,
   selectAnchorAction,
 } from './anchorEditing';
 import { nudgeAnchorsUpAction, nudgeAnchorsRightAction } from './anchorNudge';
@@ -135,10 +135,10 @@ describe('cutPathAtAnchor', () => {
   });
 });
 
-describe('marqueeAnchors', () => {
+describe('areaSelectAnchors', () => {
   it('selects the anchors the band sweeps, live during the drag', () => {
     const { dep } = depOverPath(triangle());
-    const handle = ongoing(marqueeAnchorsAction).start(
+    const handle = ongoing(areaSelectAnchorsAction).start(
       ctxWith({ editAnchors: dep }, { world: { x: -1, y: -1 } }),
       undefined,
     );
@@ -153,7 +153,7 @@ describe('marqueeAnchors', () => {
 
   it('restores the prior selection and clears the band on cancel', () => {
     const { dep } = depOverPath(triangle(), [2]);
-    const handle = ongoing(marqueeAnchorsAction).start(
+    const handle = ongoing(areaSelectAnchorsAction).start(
       ctxWith({ editAnchors: dep }, { world: { x: -1, y: -1 } }),
       undefined,
     );
@@ -165,7 +165,7 @@ describe('marqueeAnchors', () => {
 
   it('adds to the existing selection when shift is held', () => {
     const { dep } = depOverPath(triangle(), [2]);
-    const handle = ongoing(marqueeAnchorsAction).start(
+    const handle = ongoing(areaSelectAnchorsAction).start(
       ctxWith({ editAnchors: dep }, { world: { x: -1, y: -1 }, modifiers: { alt: false, ctrl: false, meta: false, shift: true } }),
       undefined,
     );
@@ -175,12 +175,12 @@ describe('marqueeAnchors', () => {
 
   it('declines when no path is being edited, so areaSelect can take the drag', () => {
     const dep = makeEditAnchorsDep({ editingId: '' });
-    const handle = ongoing(marqueeAnchorsAction).start(ctxWith({ editAnchors: dep }), undefined);
+    const handle = ongoing(areaSelectAnchorsAction).start(ctxWith({ editAnchors: dep }), undefined);
     expect(handle).toEqual({});
   });
 });
 
-describe('areaSelect / marqueeAnchors handoff', () => {
+describe('areaSelect / areaSelectAnchors handoff', () => {
   const areaSelectDep = () => ({
     hitTestArea: vi.fn(() => []),
     getSelection: vi.fn(() => []),
@@ -271,7 +271,7 @@ describe('capability eligibility', () => {
       nudgeAnchorsRightAction,
       deleteAnchorsAction,
       cutPathAtAnchorAction,
-      marqueeAnchorsAction,
+      areaSelectAnchorsAction,
     ]) {
       expect(a.eligible, a.id).toEqual({ capability: 'edits-anchors' });
     }

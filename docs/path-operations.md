@@ -23,7 +23,7 @@ Tag: `path-drag`
 |---|---|---|---|---|---|
 | Edit anchors | `editAnchors` | Moves anchors and handles | Drag on an anchor or handle | main | path-tools |
 | Bend segment | `bendSegment` | Reshapes a segment by its middle; on a spiro curve, with `spiroPreset` on, adds a smooth point there and drags it | Drag on a segment | main | path-tools |
-| Marquee-select anchors | `marqueeAnchors` | Selects anchors in a box | Drag on empty canvas | main | path-tools |
+| Marquee-select anchors | `areaSelectAnchors` | Selects anchors in a box | Drag on empty canvas | main | path-tools |
 | Handle locks | `handleLock.angle`, `handleLock.length` | Hold a handle's angle or length during a drag | Toggles; Mod while dragging holds length | main | path-tools |
 | Poise | `poiseHandles` | Scales a segment's two handles together from a grip on its poise line; a length lock holds it still | Drag a poise grip, shown under `path-edit.poise` | main | path-tools |
 | Path constraints | `constrainAnchors`, `unconstrainAnchors` | Keep geometric relations (parallel, level, fixed) during any anchor drag | C / Shift+C in its lab; Alt+Shift and a letter, and a Constraints menu, in WeaselDraw | main | path-tools |

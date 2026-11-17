@@ -48,7 +48,7 @@ export interface CreatePathEditingOverlayLayerOptions {
    *  filled; unselected ones hollow. */
   getSelectedAnchors?(): ReadonlySet<number>;
   /** In-flight anchor-marquee rect in world coords, or null. Drawn as a
-   *  rubber band while `marqueeAnchorsAction` is dragging. */
+   *  rubber band while `areaSelectAnchorsAction` is dragging. */
   getMarquee?(view: View): { x: number; y: number; width: number; height: number } | null;
   /** The edited node's committed pose and data, which extensions' marks read. */
   getNode?(id: string): { pose: unknown; data: unknown; layer?: string } | null;

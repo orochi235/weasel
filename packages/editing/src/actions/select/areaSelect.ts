@@ -49,9 +49,9 @@ export const areaSelectAction: Action & { requires: string[] } = {
       }
 
       // Decline while a path is in anchor-edit mode, where an empty-canvas
-      // drag is `marqueeAnchorsAction`'s. Capability eligibility filters this
+      // drag is `areaSelectAnchorsAction`'s. Capability eligibility filters this
       // only for consumers that wired a mode registry; without one
-      // areaSelect's active scope would beat marqueeAnchors' ambient scope.
+      // areaSelect's active scope would beat areaSelectAnchors' ambient scope.
       const editAnchors = ctx.deps.editAnchors;
       if (editAnchors?.editingId) return {};
 

@@ -237,11 +237,11 @@ export const cutPathAtAnchorAction: Action = inPlane(defineAction({
 }), editingLayer);
 
 /** Shift on the press adds the marqueed anchors to the selection. */
-export const MARQUEE_ANCHORS_ROLES = {
+export const AREA_SELECT_ANCHORS_ROLES = {
   'selection.add': { label: 'Add to the anchor selection', keys: ['shift'] },
 } as const satisfies ModifierRoles;
 
-const addHeld = roleReader(MARQUEE_ANCHORS_ROLES);
+const addHeld = roleReader(AREA_SELECT_ANCHORS_ROLES);
 
 /**
  * Rubber-band select anchors by dragging on empty canvas while a path is
@@ -251,13 +251,13 @@ const addHeld = roleReader(MARQUEE_ANCHORS_ROLES);
  * The in-flight rect goes on the `editAnchors` dep so the path-editing
  * overlay can draw it.
  */
-export const marqueeAnchorsAction: Action & { requires: string[] } = inPlane({
-  id: 'marqueeAnchors',
+export const areaSelectAnchorsAction: Action & { requires: string[] } = inPlane({
+  id: 'areaSelectAnchors',
   label: 'Marquee-select anchors',
   tags: pathOperationTags('drag'),
-  defaultBinding: [{ spec: { kind: 'drag', target: 'empty', mods: roleMods(MARQUEE_ANCHORS_ROLES) }, opts: { id: 'marqueeAnchors.drag' } }],
+  defaultBinding: [{ spec: { kind: 'drag', target: 'empty', mods: roleMods(AREA_SELECT_ANCHORS_ROLES) }, opts: { id: 'areaSelectAnchors.drag' } }],
   eligible: { capability: 'edits-anchors' },
-  modifierRoles: MARQUEE_ANCHORS_ROLES,
+  modifierRoles: AREA_SELECT_ANCHORS_ROLES,
   requires: ['editAnchors'],
   invoker: {
     timing: 'ongoing',
