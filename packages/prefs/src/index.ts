@@ -188,7 +188,7 @@ export type { PrefAtPath, PrefFieldsOf, PrefPath, PrefValueAt, PrefValueOf } fro
 export type { PrefsMigration } from './migrate';
 export { openPrefs, openPrefsSync, type PrefsOptions } from './open';
 export type { PrefChange, PrefsStore } from './store';
-export { prefLeafInScopes, scopedPrefUnit } from './scopedUnit';
+export { prefLeafInUnitScopes, unitScopedPrefUnit } from './scopedUnit';
 export { pairRuns, type PairRun } from './pair';
 export { PREF_KIND_TRAITS, prefDrawsSeveral, prefIsCompound, type PrefKindTraits } from './kinds';
 export { mergePrefGroups } from './merge';

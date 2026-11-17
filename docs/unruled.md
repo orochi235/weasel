@@ -292,7 +292,7 @@ The snap pipeline ([snapping.md](./snapping.md)) landed on 2026-10-18 with these
   `step` then work from `b`. Whether `current` should follow the last page gone to until the view moves.
 - 2026-10-20 (overnight pass): The document stores every pose in world units; a container's unit
   scope converts only for display, entry and snapping. Grid snapping (`gridSnapSource({ scopes })`)
-  and length fields (`measure: 'length'`, `prefLeafInScopes`, `SelectionPanel`'s `units`) use the
+  and length fields (`measure: 'length'`, `prefLeafInUnitScopes`, `SelectionPanel`'s `units`) use the
   scope every subject node shares. Inside a scope a bare `spacing` counts that scope's base units;
   the grid's origin stays in world space. Only box position, size and text padding are lengths.
   The drawn grid and an insert gesture's snap still use the root scope (filed under Units).
