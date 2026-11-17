@@ -11,7 +11,7 @@ const BLANK: Rgba = [0, 0, 0, 0];
 const SCREEN: DeviceGrid = { pitch: [1, 1], origin: [0, 0] };
 
 /** How the `dither` effect quantizes what its group drew. */
-export interface GpuDitherOptions {
+export interface DitherOptions {
   /** Default `'threshold'`. Error diffusion runs on the CPU only. */
   method?: 'threshold' | 'bayer';
   /** Gray (0–255) below it is ink. Default 128. */
@@ -35,7 +35,7 @@ const premultiplied = ([r, g, b, a]: Rgba): number[] => {
 };
 
 /** Threshold or Bayer dithering as one effect pass. */
-export function dither(options: GpuDitherOptions = {}): Effect[] {
+export function dither(options: DitherOptions = {}): Effect[] {
   const method = options.method ?? 'threshold';
   if (method !== 'threshold' && method !== 'bayer') {
     throw new Error(`dither: '${String(method)}' is error diffusion, which runs on the CPU only (ditherPixels)`);

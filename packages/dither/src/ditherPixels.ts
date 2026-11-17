@@ -1,10 +1,10 @@
 import { ATKINSON, FLOYD_STEINBERG, diffuse } from './diffuse';
 import { toGray } from './gray';
 import { DEFAULT_THRESHOLD, WHITE, bayerCutoff, checkImageSize } from './shared';
-import type { DitherOptions, RgbaImage } from './types';
+import type { DitherPixelsOptions, RgbaImage } from './types';
 
 /** `image` quantized to ink: one byte per pixel, 1 = ink. */
-export function ditherPixels(image: RgbaImage, options: DitherOptions = {}): Uint8Array {
+export function ditherPixels(image: RgbaImage, options: DitherPixelsOptions = {}): Uint8Array {
   const { method = 'threshold', threshold = DEFAULT_THRESHOLD, background = WHITE, protect } = options;
   const { width, height } = image;
   checkImageSize('ditherPixels', width, height);

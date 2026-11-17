@@ -3,8 +3,8 @@
  */
 import { afterEach, describe, expect, it } from 'vitest';
 import { WeaselRenderer, type DrawCommand } from '@weasel-js/renderer';
-import { dither, ditherPixels, protectMask, protectTexture, type GpuDitherOptions, type ProtectTexture } from '@weasel-js/dither';
-import type { DitherOptions } from '../types';
+import { dither, ditherPixels, protectMask, protectTexture, type DitherOptions, type ProtectTexture } from '@weasel-js/dither';
+import type { DitherPixelsOptions } from '../types';
 
 // Large enough that the group's 64 px effects buffer is not pulled back to the
 // canvas corner, so the shader must place the grid from `u_windowOrigin`.
@@ -95,10 +95,10 @@ const options = (pitch: number) => ({
   grid: { pitch: [pitch, pitch] as const, origin: [ORIGIN, ORIGIN] as const },
 });
 
-const group = (effects: GpuDitherOptions, children: DrawCommand[]): DrawCommand[] =>
+const group = (effects: DitherOptions, children: DrawCommand[]): DrawCommand[] =>
   [{ kind: 'group', effects: dither(effects), children }];
 
-const cpu = (image: ReturnType<typeof dotImage>, opts: DitherOptions) => Array.from(ditherPixels(image, opts));
+const cpu = (image: ReturnType<typeof dotImage>, opts: DitherPixelsOptions) => Array.from(ditherPixels(image, opts));
 
 describe('dither effect against ditherPixels', () => {
   for (const method of ['threshold', 'bayer'] as const) {

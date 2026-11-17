@@ -1,7 +1,7 @@
 /**
  * A rendered label to paper: dots, pages at the cut marks, and the job sent through obwat.
  */
-import { ditherPixels, maskToRgba, type DitherOptions } from '@weasel-js/dither';
+import { ditherPixels, maskToRgba, type DitherPixelsOptions } from '@weasel-js/dither';
 import {
   NoGrantedDeviceError,
   rgbaToRaster,
@@ -37,7 +37,7 @@ const BLANK = [255, 255, 255, 255] as const;
  * `image` as the raster a printer lays down: dithered by `@weasel-js/dither`, then packed. The dots
  * reach obwat as pure black on white, which its own threshold passes through unchanged.
  */
-export function labelRaster(image: RgbaImage, media: MediaSpec, dither?: DitherOptions): Raster1bpp {
+export function labelRaster(image: RgbaImage, media: MediaSpec, dither?: DitherPixelsOptions): Raster1bpp {
   const mask = ditherPixels(image, dither);
   const dots = maskToRgba(mask, image.width, image.height, { ink: INK, blank: BLANK });
   return rgbaToRaster({ width: image.width, height: image.height, data: dots }, media);
@@ -54,7 +54,7 @@ export interface PrintLabelOptions {
   /** Where to cut along the label, in points: see {@link sliceAtCuts}. */
   cuts?: readonly number[];
   /** How gray becomes dots, as `ditherPixels` takes it; `labelGrid` places a `protect` mask's rects. Default a plain threshold. */
-  dither?: DitherOptions;
+  dither?: DitherPixelsOptions;
   /**
    * When no printer has been granted yet, show the browser's device picker and print to what is
    * chosen, rather than rejecting with obwat's `NoGrantedDeviceError`. Only works inside a user
