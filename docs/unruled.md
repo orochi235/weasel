@@ -2601,3 +2601,11 @@ Calls the lanes made without a ruling:
 
 - 2026-11-17 (the fixer's call): `watchHookPresence` throws a `RangeError` on an empty `delays`, which used to probe
   in a tight loop forever. Falling back to the default delays was the alternative.
+
+## Audit round thirty-four (2026-11-17): draw
+
+- 2026-11-17 (the fixer's call): while live symmetry is on, a group it draws into that goes (a delete, an undo) is
+  replaced by the document's other top-level symmetry group or a fresh one at the page center, as after New or Open,
+  except while a redo is pending: then nothing is drawn into, so undo can step past the group's making and a redo
+  brings it back. A shape drawn in that wait is unmirrored, and the fresh group comes after it. Turning symmetry off
+  when its group went was the alternative.

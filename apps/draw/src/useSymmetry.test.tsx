@@ -96,4 +96,31 @@ describe('useSymmetry', () => {
     act(() => { scene.undo(); });
     expect(insertInto(result)).toBe(old!.id);
   });
+
+  it('makes a fresh group when its group is deleted, and draws into the old one again when the delete is undone', () => {
+    act(() => drawPrefs().set('view.symmetry', true));
+    const scene = newScene();
+    const { result } = renderHook(() => useSymmetry(scene, PAGE));
+    const [old] = groups(scene);
+    act(() => { scene.batch('Delete', () => { scene.remove(old!.id); }); });
+    const [fresh] = groups(scene);
+    expect(fresh).toBeDefined();
+    expect(fresh!.id).not.toBe(old!.id);
+    expect(insertInto(result)).toBe(fresh!.id);
+    act(() => { scene.undo(); });
+    act(() => { scene.undo(); });
+    expect(insertInto(result)).toBe(old!.id);
+  });
+
+  it('waits while undo steps past its group\'s making, and draws into it again on redo', () => {
+    act(() => drawPrefs().set('view.symmetry', true));
+    const scene = newScene();
+    const { result } = renderHook(() => useSymmetry(scene, PAGE));
+    const [made] = groups(scene);
+    act(() => { scene.undo(); });
+    expect(groups(scene)).toHaveLength(0);
+    expect(insertInto(result)).toBeNull();
+    act(() => { scene.redo(); });
+    expect(insertInto(result)).toBe(made!.id);
+  });
 });
