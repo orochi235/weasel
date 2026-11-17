@@ -1,28 +1,10 @@
 import { useEffect, useRef } from 'react';
-import { fitZoom } from './fitSize';
+import { fitSize } from './fitSize';
+
+const AUTO_CENTER_FILL = 0.85;
 
 /**
- * Compute zoom and pan that fit `contentW x contentH` (in content units)
- * inside `viewportW x viewportH` (in pixels). `padRatio` is the fraction of
- * each axis to fill (default 0.85 — leaves a uniform 15% margin). `null` when
- * there is nothing to fit, as `fitZoom`.
- */
-export function computeFitViewport(
-  viewportW: number,
-  viewportH: number,
-  contentW: number,
-  contentH: number,
-  padRatio = 0.85,
-): { zoom: number; panX: number; panY: number } | null {
-  const zoom = fitZoom(viewportW * padRatio, viewportH * padRatio, contentW, contentH);
-  if (zoom === null) return null;
-  const cw = Math.max(0, contentW) * zoom;
-  const ch = Math.max(0, contentH) * zoom;
-  return { zoom, panX: (viewportW - cw) / 2, panY: (viewportH - ch) / 2 };
-}
-
-/**
- * Run `computeFitViewport` once the viewport has non-zero size and there is
+ * Fit and center the content with `fitSize` once the viewport has non-zero size and there is
  * content to fit, and apply the result via the supplied setters. Until then
  * the view stays the initial one the caller set up. Later changes are
  * ignored — this hook centers exactly once.
@@ -39,7 +21,7 @@ export function useAutoCenter(
 
   useEffect(() => {
     if (width > 0 && height > 0 && !hasCentered.current) {
-      const fit = computeFitViewport(width, height, contentW, contentH);
+      const fit = fitSize(width, height, contentW, contentH, 0, undefined, AUTO_CENTER_FILL);
       if (fit === null) return;
       hasCentered.current = true;
       setZoom(fit.zoom);

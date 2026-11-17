@@ -31,7 +31,9 @@ export function fitZoom(
 /**
  * Compute zoom + pan that centers `contentW x contentH` (content units) inside
  * a `viewportW x viewportH` (pixel) rect. `paddingPx` is uniform pixel padding
- * on every side. `null` when there is nothing to fit, as {@link fitZoom}.
+ * on every side, and `fill` the fraction of each padded axis the content may
+ * take (`0.85` leaves a 15% margin). `null` when there is nothing to fit, as
+ * {@link fitZoom}.
  */
 export function fitSize(
   viewportW: number,
@@ -40,9 +42,10 @@ export function fitSize(
   contentH: number,
   paddingPx = 0,
   clamp?: { min?: number; max?: number },
+  fill = 1,
 ): { zoom: number; panX: number; panY: number } | null {
-  const availW = Math.max(1, viewportW - paddingPx * 2);
-  const availH = Math.max(1, viewportH - paddingPx * 2);
+  const availW = Math.max(1, viewportW - paddingPx * 2) * fill;
+  const availH = Math.max(1, viewportH - paddingPx * 2) * fill;
   const zoom = fitZoom(availW, availH, contentW, contentH, clamp);
   if (zoom === null) return null;
   const contentPxW = Math.max(0, contentW) * zoom;

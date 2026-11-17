@@ -1497,7 +1497,6 @@
     "composeRigidPose": "function",
     "composeWorldPose": "function",
     "composesFrames": "function",
-    "computeFitViewport": "function",
     "computeSliceOps": "function",
     "cond": "function",
     "constrainPathEdit": "function",
