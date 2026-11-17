@@ -76,7 +76,7 @@ export type {
   SwapArgs,
   SwapOpOptions,
 } from '@weasel-js/history';
-export { swapOp } from '@weasel-js/history';
+export { createSwapOp } from '@weasel-js/history';
 
 // ─── Adapters: the contracts the interaction layer reads ────────────────────
 export * from '../core/adapters/types';

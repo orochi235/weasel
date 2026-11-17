@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { createHistory } from './history';
-import { type SwapArgs, swapOp } from './swapOp';
+import { type SwapArgs, createSwapOp } from './createSwapOp';
 
 function harness() {
   let value = 'a';
@@ -8,7 +8,7 @@ function harness() {
     value = next;
   };
   const swap = (before: string, after: string, coalesceKey?: string) =>
-    swapOp({ name: 'test.swap', label: 'edit', before, after, emit, coalesceKey });
+    createSwapOp({ name: 'test.swap', label: 'edit', before, after, emit, coalesceKey });
   let now = 0;
   const history = createHistory(null, {
     coalesceWindowMs: 100,
@@ -18,7 +18,7 @@ function harness() {
   return { history, swap, read: () => value, wait: (ms: number) => (now += ms) };
 }
 
-describe('swapOp', () => {
+describe('createSwapOp', () => {
   it('puts the new value in force, and the old one back on undo', () => {
     const { history, swap, read } = harness();
     history.applyOps([swap('a', 'b')], 'edit');

@@ -1,12 +1,12 @@
 import type { Op } from './op';
 
-/** What a {@link swapOp} carries as its `args`: the value it leaves and the one it makes. */
+/** What a {@link createSwapOp} carries as its `args`: the value it leaves and the one it makes. */
 export interface SwapArgs<V> {
   before: V;
   after: V;
 }
 
-/** What {@link swapOp} is built from. */
+/** What {@link createSwapOp} is built from. */
 export interface SwapOpOptions<V> extends SwapArgs<V> {
   /** The op's `name`, which a history's `rebuildOp` matches to rebuild it from a snapshot. */
   name: string;
@@ -20,7 +20,7 @@ export interface SwapOpOptions<V> extends SwapArgs<V> {
  * An edit as the swap of one whole value for another. For a value held immutably the two snapshots are
  * references, and the op carries both as `args`, so a serialized history can rebuild the step.
  */
-export function swapOp<V>({ name, label, before, after, emit, coalesceKey }: SwapOpOptions<V>): Op {
+export function createSwapOp<V>({ name, label, before, after, emit, coalesceKey }: SwapOpOptions<V>): Op {
   const forward: Op = {
     label,
     name,

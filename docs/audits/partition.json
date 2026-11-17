@@ -3683,7 +3683,7 @@
    "packages/history/src/restore.ts",
    "packages/history/src/serialized.ts",
    "packages/history/src/stackTime.ts",
-   "packages/history/src/swapOp.ts",
+   "packages/history/src/createSwapOp.ts",
    "packages/history/src/walk.ts"
   ]
  },
