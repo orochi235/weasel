@@ -117,7 +117,7 @@ export type {
 } from './annotations';
 export {
   annotationsFromJSON,
-  createAnnotationScene,
+  createMarkScene,
   createAnnotationStore,
   fracContains,
   fracEncloses,

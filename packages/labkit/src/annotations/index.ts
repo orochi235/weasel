@@ -13,7 +13,7 @@ export type { MarkStyle, PaintableMark } from './paint';
 export { markCommands } from './paint';
 export { isStale, seenFrom } from './staleness';
 export type { AnnotationStoreOptions, CaptureDeps, MarkPose, MarkScene } from './store';
-export { annotationsFromJSON, createAnnotationScene, createAnnotationStore } from './store';
+export { annotationsFromJSON, createMarkScene, createAnnotationStore } from './store';
 export { markSvgNodes } from './svgNodes';
 export type {
   Annotation,

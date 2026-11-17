@@ -16,7 +16,7 @@ import { SurfaceCanvasContext, SurfaceContext } from '../surface/SurfaceContext'
 import type { SurfaceClear, SurfaceHandle, TilePainter } from '../surface/useTiledSurface';
 import { AnnotationOverlay } from './AnnotationOverlay';
 import { seenFrom } from './staleness';
-import { createAnnotationScene } from './store';
+import { createMarkScene } from './store';
 import type { AnnotationTarget } from './types';
 
 const frames = new Set<() => void>();
@@ -104,7 +104,7 @@ const abandoned = document.createElement('canvas');
 function mountThenAbandon(): SurfaceClear[] {
   const clears: SurfaceClear[] = [];
   const surface = surfaceFor(clears);
-  const scene = createAnnotationScene();
+  const scene = createMarkScene();
   renderThenAbandon<Props>(
     { toolId: 'line', config: { k: 1 }, canvas: committed },
     { toolId: 'arrow', config: { k: 2 }, canvas: abandoned },

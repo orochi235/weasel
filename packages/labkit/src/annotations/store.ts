@@ -43,7 +43,7 @@ export type MarkPose = WorldRect;
 export type MarkScene = Scene<AnnotationData, 'marks', MarkPose>;
 
 /** A mark scene: one layer, because marks do not stack in tiers. */
-export function createAnnotationScene(): MarkScene {
+export function createMarkScene(): MarkScene {
   return createScene<AnnotationData, 'marks', MarkPose>({ systemLayers: [{ id: 'marks' }] });
 }
 
@@ -145,7 +145,7 @@ export function createAnnotationStore(opts: AnnotationStoreOptions): Annotations
           migrateLegacyPoints(raw as SerializedMarks, contentOf(target)),
           {},
         )
-      : createAnnotationScene();
+      : createMarkScene();
     if (raw) restoreSceneHistory(scene, target, opts.history);
     scenes.set(target, scene);
     history.track(target, scene);
