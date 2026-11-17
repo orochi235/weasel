@@ -1,6 +1,6 @@
 import type { Rect } from '@weasel-js/geom';
 import type { ContainerBounds, LayoutChild, LayoutSnap, LayoutStrategy } from '@weasel-js/core';
-import { nearest } from '../snaps';
+import { nearestSnap } from '../snaps';
 import { sequenceLayout } from './sequence';
 
 
@@ -23,7 +23,7 @@ export interface PackOptions<TPose> {
   overflow?: PackOverflow;
   /** The least height a `'grow'` container shrinks to. Default 0. */
   minHeight?: number;
-  /** Which index a drag means. Default `nearest()`. */
+  /** Which index a drag means. Default `nearestSnap()`. */
   snap?: LayoutSnap<TPose>;
   /** A child's box. Default reads `x`, `y`, `width`, and `height` off the pose. */
   rectOf?(pose: TPose): Rect;
@@ -79,7 +79,7 @@ export function pack<TPose>(opts: PackOptions<TPose> = {}): LayoutStrategy<TPose
   }
 
   const layout = sequenceLayout<TPose>({
-    snap: opts.snap ?? nearest<TPose>(),
+    snap: opts.snap ?? nearestSnap<TPose>(),
     labels: { drop: 'Pack drop', shift: 'Pack shift' },
     centerOf(pose) {
       const r = rectOf(pose);

@@ -1,5 +1,5 @@
 import { createTransformOp, type LayoutSnap, type LayoutStrategy } from '@weasel-js/core';
-import { none } from '../snaps';
+import { noSnap } from '../snaps';
 
 /** Options for `freeform`. */
 export interface FreeformOptions<TPose> {
@@ -13,7 +13,7 @@ export interface FreeformOptions<TPose> {
  * returns empty by default.
  */
 export function freeform<TPose>(opts: FreeformOptions<TPose> = {}): LayoutStrategy<TPose> {
-  const snap = opts.snap ?? none<TPose>();
+  const snap = opts.snap ?? noSnap<TPose>();
 
   return {
     snap,

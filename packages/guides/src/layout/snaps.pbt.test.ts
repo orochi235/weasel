@@ -6,7 +6,7 @@ import { describe, expect, it } from 'vitest';
 import fc from 'fast-check';
 import type { DropTarget, RectPose } from '@weasel-js/core';
 import { eighth, posEighth, runs, tally, timeoutFor } from '../pbt.fixture';
-import { containedThenNearest, nearest, nearestWithin } from './snaps';
+import { containedThenNearest, nearestSnap, nearestWithin } from './snaps';
 import { gridSlots, ringSlots, rowSlots } from './strategies/arrangements';
 import { snapPoint } from './strategies/snapPoint';
 
@@ -48,7 +48,7 @@ describe('drop-target pickers, property', () => {
   it('the order targets come in decides only between targets as near', () => {
     fc.assert(fc.property(targets, point, fc.infiniteStream(fc.nat()), (ts, p, picks) => {
       const shuffled = shuffle(ts, picks);
-      for (const snap of [nearest<P>(), containedThenNearest<P>()]) {
+      for (const snap of [nearestSnap<P>(), containedThenNearest<P>()]) {
         const a = pick(snap, ts, p);
         const b = pick(snap, shuffled, p);
         expect(b === null).toBe(a === null);
