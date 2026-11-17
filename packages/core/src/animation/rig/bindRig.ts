@@ -148,7 +148,7 @@ export function bindRigOn<TPose>(
   const apply = options.apply ?? rigidRigApply(descriptor);
   const restWorlds = resolveSkeleton(skeleton, {});
   const restInverses = new Map<string, GlMat3>();
-  const restInverseOf = (joint: string): GlMat3 => {
+  const requireRestInverse = (joint: string): GlMat3 => {
     let inverse = restInverses.get(joint);
     if (inverse) return inverse;
     const restWorld = restWorlds.get(joint);
@@ -160,11 +160,11 @@ export function bindRigOn<TPose>(
   };
 
   const skins = bindSkins(scene, options.skins ?? {}, options.restPath ?? dataRestPath, descriptor);
-  skins.joints.forEach(restInverseOf);
+  skins.joints.forEach(requireRestInverse);
 
   const bound: Bound<TPose>[] = [];
   for (const [joint, ids] of Object.entries(options.bindings ?? {})) {
-    restInverseOf(joint);
+    requireRestInverse(joint);
     const restWorld = restWorlds.get(joint)!;
     for (const node of typeof ids === 'string' ? [ids] : (ids as readonly NodeId[])) {
       if (options.skins && Object.hasOwn(options.skins, node)) {
@@ -199,7 +199,7 @@ export function bindRigOn<TPose>(
     const motionOf = (joint: string): GlMat3 => {
       let delta = fromRest.get(joint);
       if (!delta) {
-        delta = mat3.multiply(local.get(joint)!, restInverseOf(joint));
+        delta = mat3.multiply(local.get(joint)!, requireRestInverse(joint));
         fromRest.set(joint, delta);
       }
       return delta;
