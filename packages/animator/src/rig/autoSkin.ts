@@ -1,4 +1,4 @@
-import { mat3, pointSegmentDist, worldCoords, type Path } from '@weasel-js/geom';
+import { mat3, pointSegmentDistance, worldCoords, type Path } from '@weasel-js/geom';
 import { resolveSkeleton } from './resolveSkeleton';
 import { skinnable, type Skin } from './skin';
 import type { Skeleton } from './types';
@@ -64,7 +64,7 @@ export function autoSkin(path: Path, skeleton: Skeleton, options: AutoSkinOption
     for (let b = 0; b < bones.length; b++) {
       const s = bones[b].segments;
       let d = Infinity;
-      for (let k = 0; k < s.length; k += 4) d = Math.min(d, pointSegmentDist(px, py, s[k], s[k + 1], s[k + 2], s[k + 3]));
+      for (let k = 0; k < s.length; k += 4) d = Math.min(d, pointSegmentDistance(px, py, s[k], s[k + 1], s[k + 2], s[k + 3]));
       distance[b] = d;
     }
     order.sort((a, b) => distance[a] - distance[b] || a - b);

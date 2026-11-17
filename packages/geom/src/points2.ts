@@ -53,7 +53,7 @@ export function segmentT(
 }
 
 /** Squared distance from (px,py) to segment (ax,ay)-(bx,by), endpoint-clamped. */
-export function pointSegmentDist2(
+export function pointSegmentDistance2(
   px: number, py: number, ax: number, ay: number, bx: number, by: number,
 ): number {
   const t = segmentT(px, py, ax, ay, bx, by);
@@ -63,7 +63,7 @@ export function pointSegmentDist2(
 }
 
 /** Distance from (px,py) to segment (ax,ay)-(bx,by), endpoint-clamped. */
-export function pointSegmentDist(
+export function pointSegmentDistance(
   px: number, py: number, ax: number, ay: number, bx: number, by: number,
 ): number {
   const t = segmentT(px, py, ax, ay, bx, by);

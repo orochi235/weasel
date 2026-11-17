@@ -3,7 +3,7 @@
 import type { Point } from '../paths/cubicMath';
 import { evalSeg, derivSeg, type Seg } from '../booleans/contourSegments';
 import { nearlyParallel, lerp } from '../scalar';
-import { pointSegmentDist } from '../points2';
+import { pointSegmentDistance } from '../points2';
 
 /** One crossing of segments `a` and `b`: the parameter on each, and the point. */
 export interface SegmentCrossing {
@@ -45,7 +45,7 @@ function flatness(pts: Seg): number {
   const a = pts[0], b = pts[pts.length - 1];
   let worst = 0;
   for (let i = 1; i < pts.length - 1; i++) {
-    const d = pointSegmentDist(pts[i].x, pts[i].y, a.x, a.y, b.x, b.y);
+    const d = pointSegmentDistance(pts[i].x, pts[i].y, a.x, a.y, b.x, b.y);
     if (d > worst) worst = d;
   }
   return worst;

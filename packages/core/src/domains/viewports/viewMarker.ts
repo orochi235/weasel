@@ -1,4 +1,4 @@
-import { pointInPolygon, pointSegmentDist2, polygonFromPoints } from '@weasel-js/geom';
+import { pointInPolygon, pointSegmentDistance2, polygonFromPoints } from '@weasel-js/geom';
 import type { DrawCommand } from '@weasel-js/renderer';
 import type { RenderLayer } from 'core/layers/render';
 import { aimSpace2d, type AimOutline, type AimSpace, type ViewAim } from './aim';
@@ -143,7 +143,7 @@ function outlineHolds(outline: AimOutline, p: { x: number; y: number }, slop: nu
   for (let i = 0; i < outline.length; i++) {
     const a = outline[i]!;
     const b = outline[(i + 1) % outline.length]!;
-    if (pointSegmentDist2(p.x, p.y, a.x, a.y, b.x, b.y) <= slop * slop) return true;
+    if (pointSegmentDistance2(p.x, p.y, a.x, a.y, b.x, b.y) <= slop * slop) return true;
   }
   return false;
 }

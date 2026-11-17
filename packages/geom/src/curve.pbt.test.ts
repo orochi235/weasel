@@ -5,7 +5,7 @@ import { nearestOnCubic } from './nearest';
 import { flattenCubic, flattenCubicWithArcLen, flattenQuadratic, flattenQuadraticWithArcLen } from './flatten';
 import { segmentLength, segmentTAtLength } from './paths/segmentLength';
 import { intersectSegments } from './intersect/segmentIntersections';
-import { pointSegmentDist } from './points2';
+import { pointSegmentDistance } from './points2';
 import { coord, runs, timeoutFor } from './pbt.fixture';
 
 const RUNS = runs(200);
@@ -125,7 +125,7 @@ describe('flattenCubic, property', () => {
       }
       for (const [x, y] of samples(c, 1000)) {
         let best = Infinity;
-        for (let k = 0; k + 3 < line.length; k += 2) best = Math.min(best, pointSegmentDist(x, y, line[k]!, line[k + 1]!, line[k + 2]!, line[k + 3]!));
+        for (let k = 0; k + 3 < line.length; k += 2) best = Math.min(best, pointSegmentDistance(x, y, line[k]!, line[k + 1]!, line[k + 2]!, line[k + 3]!));
         expect(best).toBeLessThanOrEqual(tol + eps);
       }
     }), RUNS);
@@ -143,7 +143,7 @@ describe('flattenQuadratic, property', () => {
       for (let k = 0; k <= 1000; k++) {
         const [x, y] = quadraticEvalAt(...q, k / 1000);
         let best = Infinity;
-        for (let i = 0; i + 3 < line.length; i += 2) best = Math.min(best, pointSegmentDist(x, y, line[i]!, line[i + 1]!, line[i + 2]!, line[i + 3]!));
+        for (let i = 0; i + 3 < line.length; i += 2) best = Math.min(best, pointSegmentDistance(x, y, line[i]!, line[i + 1]!, line[i + 2]!, line[i + 3]!));
         expect(best).toBeLessThanOrEqual(tol + size(q) * 1e-12);
       }
     }), RUNS);

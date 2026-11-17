@@ -16,7 +16,7 @@ import type { ArapMesh } from './arap';
 import { refineTriangulation } from './refine';
 import { addOrigin } from '../paths/pathOrigin';
 import { nearestOnSegment } from '../nearest';
-import { pointSegmentDist } from '../points2';
+import { pointSegmentDistance } from '../points2';
 import { lerp } from '../scalar';
 
 /** A pin warp's mesh, and the vertex standing for each pin. */
@@ -151,7 +151,7 @@ function clearanceTest(rings: MeshPoint[][], r: number): (x: number, y: number) 
     for (let i = ci - 1; i <= ci + 1; i++) {
       for (let j = cj - 1; j <= cj + 1; j++) {
         for (const [a, b] of cells.get(key(i, j)) ?? []) {
-          if (pointSegmentDist(x, y, a.x, a.y, b.x, b.y) < r) return true;
+          if (pointSegmentDistance(x, y, a.x, a.y, b.x, b.y) < r) return true;
         }
       }
     }

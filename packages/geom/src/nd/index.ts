@@ -11,7 +11,7 @@
  */
 export { PORT_REACH, cubicPointAt, portControls, portCurvePoints } from '../portCurve';
 export {
-  closestPointOnSegment, distance, distance2, lerpPoint, pointSegmentDist, pointSegmentDist2, segmentT,
+  closestPointOnSegment, distance, distance2, lerpPoint, pointSegmentDistance, pointSegmentDistance2, segmentT,
 } from '../points';
 export {
   closestBetweenFlats, closestOnFlat, flatDim, intersectFlats,

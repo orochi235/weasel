@@ -11,7 +11,7 @@
  */
 
 import { pointInPolygon, segmentsCross } from './polyline';
-import { pointSegmentDist2 } from './points2';
+import { pointSegmentDistance2 } from './points2';
 import { rectsIntersect, type Rect } from './box';
 import type { Path } from './path';
 import type { CurveSpan } from './along/curvePosition';
@@ -111,7 +111,7 @@ export function strokeHitTest(
   }
   const t2 = threshold * threshold;
   return walk(path, opts, (ax, ay, bx, by) =>
-    pointSegmentDist2(x, y, ax, ay, bx, by) <= t2);
+    pointSegmentDistance2(x, y, ax, ay, bx, by) <= t2);
 }
 
 function walk(path: Path, opts: StrokeHitTestOptions, visit: SegmentVisit): boolean {

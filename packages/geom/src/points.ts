@@ -94,11 +94,11 @@ export function closestPointOnSegment(
 }
 
 /** Squared distance from `p` to segment `a`–`b`. */
-export function pointSegmentDist2(p: readonly number[], a: readonly number[], b: readonly number[]): number {
+export function pointSegmentDistance2(p: readonly number[], a: readonly number[], b: readonly number[]): number {
   return distance2(p, closestPointOnSegment(p, a, b));
 }
 
 /** Distance from `p` to segment `a`–`b`. */
-export function pointSegmentDist(p: readonly number[], a: readonly number[], b: readonly number[]): number {
+export function pointSegmentDistance(p: readonly number[], a: readonly number[], b: readonly number[]): number {
   return distance(p, closestPointOnSegment(p, a, b));
 }

@@ -4,8 +4,8 @@ import {
   boundsOfCoords, boxContainsBox, boxContainsPoint, boxesIntersect, rectBetween, rectContainsPoint,
   rectsIntersect, rectsOverlap, unionBox, unionRects, type Rect,
 } from './box';
-import { closestPointOnSegment, distance, pointSegmentDist } from './points';
-import { distance as distance2d, pointSegmentDist as segDist2d } from './points2';
+import { closestPointOnSegment, distance, pointSegmentDistance } from './points';
+import { distance as distance2d, pointSegmentDistance as segDist2d } from './points2';
 import { box, coord, runs } from './pbt.fixture';
 
 const RUNS = runs(300);
@@ -92,11 +92,11 @@ describe('distances, property', () => {
 
   it('a point is no farther from a segment than from either end, and the nearest point is that far', () => {
     fc.assert(fc.property(point, point, point, (p, a, b) => {
-      const d = pointSegmentDist(p, a, b);
+      const d = pointSegmentDistance(p, a, b);
       expect(d).toBeLessThanOrEqual(Math.min(distance(p, a), distance(p, b)) + slack(p, a, b));
       expect(Math.abs(distance(p, closestPointOnSegment(p, a, b)) - d)).toBeLessThanOrEqual(slack(p, a, b));
       expect(Math.abs(segDist2d(p[0], p[1], a[0], a[1], b[0], b[1]) - d)).toBeLessThanOrEqual(slack(p, a, b));
-      expect(Math.abs(pointSegmentDist(p, b, a) - d)).toBeLessThanOrEqual(slack(p, a, b) * 1e3);
+      expect(Math.abs(pointSegmentDistance(p, b, a) - d)).toBeLessThanOrEqual(slack(p, a, b) * 1e3);
     }), RUNS);
   });
 });
