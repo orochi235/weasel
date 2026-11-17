@@ -20,7 +20,7 @@ import {
   type AddPointMode,
   type CurveSettings,
   type FillSettings,
-  type AnchorRenderProps,
+  type AnchorRenderCtx,
   type FunctionLayerState,
 } from './createFunctionLayer';
 import { LayeredCurveEditor } from './LayeredCurveEditor';
@@ -32,7 +32,7 @@ import { ownHold } from '../Disabled/controlHold';
 export type { GridSettings, AxesSettings, TickSettings };
 export type {
   ControlPoint, CurveDomain, EndpointMode, AddPointMode,
-  CurveSettings, FillSettings, AnchorRenderProps,
+  CurveSettings, FillSettings, AnchorRenderCtx,
 };
 
 /**
@@ -65,7 +65,7 @@ export interface CurveEditorProps extends HoldProps {
   minPoints?: number;
   maxPoints?: number;
   addPointMode?: AddPointMode;
-  renderAnchor?: (info: AnchorRenderProps) => ReactNode;
+  renderAnchor?: (info: AnchorRenderCtx) => ReactNode;
   /** Drawn under the curve, in order: plain SVG, or more layers, which a press reaches after the curve. */
   children?: ReactNode;
   /** Accessible name for the plot. */

@@ -18,12 +18,12 @@ import type {
   EmptyDownArgs, KeyDownArgs,
 } from './layerTypes';
 import type {
-  ControlPoint, CurveDomain, EndpointMode, AddPointMode, AnchorRenderProps, CurveSettings, FillSettings, FunctionLayerOptions, FunctionLayerState,
+  ControlPoint, CurveDomain, EndpointMode, AddPointMode, AnchorRenderCtx, CurveSettings, FillSettings, FunctionLayerOptions, FunctionLayerState,
 } from './functionLayerTypes';
 import { isPrimaryPress } from '@weasel-js/gestures';
 
 export type {
-  ControlPoint, CurveDomain, EndpointMode, AddPointMode, AnchorRenderProps, CurveSettings, FillSettings, FunctionLayerOptions, FunctionLayerState,
+  ControlPoint, CurveDomain, EndpointMode, AddPointMode, AnchorRenderCtx, CurveSettings, FillSettings, FunctionLayerOptions, FunctionLayerState,
 };
 
 const SAMPLES_PER_SEGMENT = 16;
