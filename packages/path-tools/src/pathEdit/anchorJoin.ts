@@ -6,7 +6,7 @@ import { ANCHORS_GROUP, pathOperationTags } from '@weasel-js/core';
 import type { Action, ImmediateInvoker } from '@weasel-js/routing';
 import { ActionDisabledReason } from '@weasel-js/routing';
 import { averageAnchorsAt, joinAnchorsAt, type AnchorSet, type AverageAxis, type JoinOptions } from '@weasel-js/geom';
-import { anchorEditWouldChange, commitAnchorEdit, depOf } from './anchorEditing';
+import { anchorEditWouldChange, commitAnchorEdit, openPathEditOf } from './anchorEditing';
 import { icon } from '../icons.gen';
 import { BETWEEN_GESTURES } from '@weasel-js/routing';
 
@@ -45,14 +45,14 @@ export const averageAnchorsAction: Action & { requires: string[] } = {
   invoker: {
     timing: 'immediate',
     run: (deps, params) => {
-      const dep = depOf(deps);
+      const dep = openPathEditOf(deps);
       if (!dep || dep.selectedAnchors.size < 2) return;
       const selected = [...dep.selectedAnchors];
       commitAnchorEdit(dep, 'Average anchors', (set) => averageAnchorsAt(set, selected, axisOf(params)));
     },
   } as ImmediateInvoker,
   enabled: (deps, _at, _carried, params) => {
-    const dep = depOf(deps);
+    const dep = openPathEditOf(deps);
     if (!dep || dep.selectedAnchors.size < 2) return ActionDisabledReason.SelectionRequired;
     const selected = [...dep.selectedAnchors];
     return anchorEditWouldChange(deps, (set) => averageAnchorsAt(set, selected, axisOf(params)))
@@ -84,16 +84,16 @@ export const joinAnchorsAction: Action & { requires: string[] } = {
   invoker: {
     timing: 'immediate',
     run: (deps) => {
-      const dep = depOf(deps);
+      const dep = openPathEditOf(deps);
       if (!dep || dep.selectedAnchors.size !== 2) return;
       const selected = [...dep.selectedAnchors];
       if (commitAnchorEdit(dep, 'Join anchors', (set) => join(set, selected))) dep.setSelectedAnchors([]);
     },
   } as ImmediateInvoker,
   enabled: (deps) => {
-    const dep = depOf(deps);
+    const dep = openPathEditOf(deps);
     if (!dep || dep.selectedAnchors.size !== 2) return ActionDisabledReason.SelectionRequired;
-    return anchorEditWouldChange(deps, (set) => join(set, [...depOf(deps)!.selectedAnchors]))
+    return anchorEditWouldChange(deps, (set) => join(set, [...openPathEditOf(deps)!.selectedAnchors]))
       ? true : ActionDisabledReason.NotApplicable;
   },
 };

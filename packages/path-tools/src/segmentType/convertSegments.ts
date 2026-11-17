@@ -6,7 +6,7 @@
 import { ActionDisabledReason, BETWEEN_GESTURES, defineAction } from '@weasel-js/routing';
 import { convertSegments, editAnchorSetTracked, segmentsBetweenAnchors, type SegmentType } from '@weasel-js/geom';
 import { ANCHORS_GROUP, editingLayer, inPlane, pathOperationTags, segmentUnder } from '@weasel-js/core';
-import { anchorEditWouldChange, commitAnchorEdit, depOf } from '../pathEdit/anchorEditing';
+import { anchorEditWouldChange, commitAnchorEdit, openPathEditOf } from '../pathEdit/anchorEditing';
 import { icon } from '../icons.gen';
 import type {} from '../actionParamSchema';
 
@@ -38,14 +38,14 @@ export const convertSegmentsAction = defineAction({
   invoker: {
     timing: 'immediate',
     run: (deps, params) => {
-      const dep = depOf(deps);
+      const dep = openPathEditOf(deps);
       if (!dep) return;
       const selected = [...dep.selectedAnchors];
       commitAnchorEdit(dep, LABEL, (set) => convertSegments(set, segmentsBetweenAnchors(set, selected), typeOf(params)));
     },
   },
   enabled: (deps) => {
-    const selected = [...(depOf(deps)?.selectedAnchors ?? [])];
+    const selected = [...(openPathEditOf(deps)?.selectedAnchors ?? [])];
     const any = selected.length > 1
       && anchorEditWouldChange(deps, (set) => convertSegments(set, segmentsBetweenAnchors(set, selected)));
     return any ? true : ActionDisabledReason.SelectionRequired;

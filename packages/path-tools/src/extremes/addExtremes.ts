@@ -6,7 +6,7 @@ import { ActionDisabledReason, BETWEEN_GESTURES, defineAction } from '@weasel-js
 import { addExtremaAnchors, anchorAt, segmentEnds, type AnchorSet, type ExtremaAxes, type PenAnchor } from '@weasel-js/geom';
 import { pref } from '@weasel-js/prefs';
 import { ANCHORS_GROUP, pathOperationTags } from '@weasel-js/core';
-import { anchorEditWouldChange, commitAnchorEdit, depOf } from '../pathEdit/anchorEditing';
+import { anchorEditWouldChange, commitAnchorEdit, openPathEditOf } from '../pathEdit/anchorEditing';
 import { icon } from '../icons.gen';
 import type {} from '../actionParamSchema';
 
@@ -79,7 +79,7 @@ export const addExtremeAnchorsAction = defineAction({
   invoker: {
     timing: 'immediate',
     run: (deps, params) => {
-      const dep = depOf(deps);
+      const dep = openPathEditOf(deps);
       if (!dep) return;
       const axes = axesOf(params);
       let next: number[] | null = null;
@@ -88,7 +88,7 @@ export const addExtremeAnchorsAction = defineAction({
     },
   },
   enabled: (deps) => {
-    const dep = depOf(deps);
+    const dep = openPathEditOf(deps);
     if (!dep) return ActionDisabledReason.SelectionRequired;
     return anchorEditWouldChange(deps, (set) => addExtremesTo(set, dep.selectedAnchors, 'xy') !== null)
       ? true

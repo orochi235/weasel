@@ -5,7 +5,7 @@
  */
 import { type Action, ActionDisabledReason, BETWEEN_GESTURES, defineAction } from '@weasel-js/routing';
 import { ANCHORS_GROUP, pathOperationTags } from '@weasel-js/core';
-import { anchorEditWouldChange, commitAnchorEdit, depOf } from '../pathEdit/anchorEditing';
+import { anchorEditWouldChange, commitAnchorEdit, openPathEditOf } from '../pathEdit/anchorEditing';
 import { createJoinPathsAction } from '../pathCommands/cutJoin';
 import { joinSelectedAnchors } from '../pathEdit/anchorJoin';
 import { pref } from '@weasel-js/prefs';
@@ -72,7 +72,7 @@ export const bridgeAnchorsAction = defineAction({
   invoker: {
     timing: 'immediate',
     run: (deps, params) => {
-      const dep = depOf(deps);
+      const dep = openPathEditOf(deps);
       if (!dep || dep.selectedAnchors.size !== 2) return;
       const selected = [...dep.selectedAnchors];
       const bridge = joinSelectedAnchors({ tension: bridgeTensionOf(params) });
@@ -80,7 +80,7 @@ export const bridgeAnchorsAction = defineAction({
     },
   },
   enabled: (deps) => {
-    const dep = depOf(deps);
+    const dep = openPathEditOf(deps);
     if (!dep || dep.selectedAnchors.size !== 2) return ActionDisabledReason.SelectionRequired;
     const selected = [...dep.selectedAnchors];
     return anchorEditWouldChange(deps, (set) => join(set, selected)) ? true : ActionDisabledReason.NotApplicable;

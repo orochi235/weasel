@@ -6,7 +6,7 @@
 import { defineAction } from '@weasel-js/routing';
 import { ANCHOR_FIELDS, writeAnchorField, type AnchorField, type NumberEntry } from '@weasel-js/geom';
 import { pathOperationTags, type SetAnchorFieldParams } from '@weasel-js/core';
-import { commitAnchorEdit, depOf, requiresAnchorSelection } from './anchorEditing';
+import { commitAnchorEdit, openPathEditOf, requiresAnchorSelection } from './anchorEditing';
 import type {} from '../actionParamSchema';
 
 function entryOf(params: Readonly<Partial<SetAnchorFieldParams>> | undefined): { field: AnchorField; entry: NumberEntry } | null {
@@ -31,7 +31,7 @@ export const setAnchorFieldAction = defineAction({
   invoker: {
     timing: 'immediate',
     run: (deps, params) => {
-      const dep = depOf(deps);
+      const dep = openPathEditOf(deps);
       const asked = entryOf(params);
       if (!dep || !asked || dep.selectedAnchors.size === 0) return;
       const selected = [...dep.selectedAnchors];

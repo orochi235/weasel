@@ -9,7 +9,7 @@ import {
   type AnchorSet, type PolygonPath,
 } from '@weasel-js/geom';
 import { ANCHORS_GROUP, PATH_GROUP, commitOps, pathOperationTags, type Op } from '@weasel-js/core';
-import { anchorEditWouldChange, commitAnchorEdit, depOf } from '../pathEdit/anchorEditing';
+import { anchorEditWouldChange, commitAnchorEdit, openPathEditOf } from '../pathEdit/anchorEditing';
 import { icon } from '../icons.gen';
 
 const START_LABEL = 'Make start point';
@@ -17,7 +17,7 @@ const REVERSE_LABEL = 'Reverse path direction';
 
 /** The one selected anchor, when exactly one is selected in path edit. */
 function loneAnchor(deps: ActionDeps | undefined): number | null {
-  const dep = depOf(deps);
+  const dep = openPathEditOf(deps);
   return dep && dep.selectedAnchors.size === 1 ? [...dep.selectedAnchors][0] : null;
 }
 
@@ -37,7 +37,7 @@ export const setPathStartAction: Action & { requires: string[] } = {
   invoker: {
     timing: 'immediate',
     run: (deps) => {
-      const dep = depOf(deps);
+      const dep = openPathEditOf(deps);
       const flat = loneAnchor(deps);
       if (!dep || flat === null) return;
       let start = -1;
@@ -76,7 +76,7 @@ function reverseSelected(set: AnchorSet, selected: readonly number[], onAfter?: 
 
 /** Reverse the subpaths holding the selected anchors, or all of them, keeping the selection on its anchors. */
 function reverseInPathEdit(deps: ActionDeps): boolean {
-  const dep = depOf(deps);
+  const dep = openPathEditOf(deps);
   if (!dep) return false;
   const selected = [...dep.selectedAnchors];
   let after: number[] = [];
@@ -115,7 +115,7 @@ export const reversePathAction: Action & { requires: string[] } = {
   } as ImmediateInvoker,
   // An edit that would change nothing is disabled (ruled 2026-11-10): a path that reads the same either way.
   enabled: (deps) => {
-    const dep = depOf(deps);
+    const dep = openPathEditOf(deps);
     if (dep) {
       const selected = [...dep.selectedAnchors];
       return anchorEditWouldChange(deps, (set) => reverseSelected(set, selected)) ? true : ActionDisabledReason.NotApplicable;

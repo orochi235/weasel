@@ -7,7 +7,7 @@ import { ANCHORS_GROUP, pathOperationTags } from '@weasel-js/core';
 import type { Action, ImmediateInvoker } from '@weasel-js/routing';
 import { ActionDisabledReason } from '@weasel-js/routing';
 import { makeHandlesSymmetric, retractHandles, type AnchorSet } from '@weasel-js/geom';
-import { anchorEditWouldChange, commitAnchorEdit, depOf, requiresAnchorSelection } from './anchorEditing';
+import { anchorEditWouldChange, commitAnchorEdit, openPathEditOf, requiresAnchorSelection } from './anchorEditing';
 import { icon } from '../icons.gen';
 
 /** An edit of the handles of the anchors at `flatIndexes`; absent means
@@ -38,7 +38,7 @@ export function createHandleEditAction(
     invoker: {
       timing: 'immediate',
       run: (deps) => {
-        const dep = depOf(deps);
+        const dep = openPathEditOf(deps);
         if (!dep) return;
         const selected = selectedOrAll(dep.selectedAnchors);
         if (!selected && scope === 'selected') return;
@@ -48,9 +48,9 @@ export function createHandleEditAction(
     enabled: (deps) => {
       const ready = scope === 'selected'
         ? requiresAnchorSelection(deps)
-        : depOf(deps) ? true : ActionDisabledReason.SelectionRequired;
+        : openPathEditOf(deps) ? true : ActionDisabledReason.SelectionRequired;
       if (ready !== true) return ready;
-      const selected = selectedOrAll(depOf(deps)!.selectedAnchors);
+      const selected = selectedOrAll(openPathEditOf(deps)!.selectedAnchors);
       return anchorEditWouldChange(deps, (set) => edit(set, selected)) ? true : ActionDisabledReason.NotApplicable;
     },
   };

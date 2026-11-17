@@ -6,7 +6,7 @@ import { translateAnchorsSymmetric, type AnchorSet } from '@weasel-js/geom';
 import type { EditAnchorsDep, PathSymmetryDep } from '@weasel-js/core';
 import { editedPathSymmetries } from './editAnchors/symmetry';
 import { nudgeSpec, NUDGE_LABEL, nudgeDelta, type NudgeDirection } from '@weasel-js/core';
-import { anchorEditWouldChange, commitAnchorEdit, depOf, requiresAnchorSelection } from './anchorEditing';
+import { anchorEditWouldChange, commitAnchorEdit, openPathEditOf, requiresAnchorSelection } from './anchorEditing';
 import { icon } from '../icons.gen';
 
 const NUDGE_ICON = {
@@ -35,7 +35,7 @@ function makeNudgeAnchorsAction(dir: NudgeDirection): Action & { requires: strin
     invoker: {
       timing: 'immediate',
       run: (deps, params) => {
-        const dep = depOf(deps);
+        const dep = openPathEditOf(deps);
         if (!dep || dep.selectedAnchors.size === 0) return;
         commitAnchorEdit(dep, 'Nudge anchor', nudgeEdit(deps, dep, dir, params?.magnitude));
       },
@@ -45,7 +45,7 @@ function makeNudgeAnchorsAction(dir: NudgeDirection): Action & { requires: strin
     enabled: (deps, _at, _carried, params) => {
       const selection = requiresAnchorSelection(deps);
       if (selection !== true) return selection;
-      return anchorEditWouldChange(deps, nudgeEdit(deps, depOf(deps)!, dir, params?.magnitude))
+      return anchorEditWouldChange(deps, nudgeEdit(deps, openPathEditOf(deps)!, dir, params?.magnitude))
         ? true : ActionDisabledReason.NotApplicable;
     },
   };

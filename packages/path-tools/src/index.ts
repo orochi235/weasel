@@ -55,7 +55,7 @@ export {
 export { editedPathSymmetries } from './pathEdit/editAnchors/symmetry';
 export { HANDLE_LOCK_ROLES, locksInForce } from './pathEdit/editAnchors/handleDrag';
 export {
-  anchorEditWouldChange, commitAnchorEdit, deleteAnchorsAction, depOf, requiresAnchorSelection,
+  anchorEditWouldChange, commitAnchorEdit, deleteAnchorsAction, openPathEditOf, requiresAnchorSelection,
   selectAnchorAction,
 } from './pathEdit/anchorEditing';
 export {

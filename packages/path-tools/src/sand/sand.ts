@@ -13,7 +13,7 @@ import {
 } from '@weasel-js/geom';
 import { editingLayer, inPlane, pathOperationTags } from '@weasel-js/core';
 import { DEFAULT_SIMPLIFY_TOLERANCE, SIMPLIFY_PATH_PARAMS } from '../pathCommands/simplifyOffset';
-import { depOf } from '../pathEdit/anchorEditing';
+import { openPathEditOf } from '../pathEdit/anchorEditing';
 import { pathEditPreview } from '../pathEdit/editAnchors/preview';
 import type {} from '../actionParamSchema';
 
@@ -83,7 +83,7 @@ export const sandAction = inPlane(defineAction({
   invoker: {
     timing: 'ongoing',
     start(ctx, opts): OngoingHandle<SandParams> {
-      const dep = depOf(ctx.deps);
+      const dep = openPathEditOf(ctx.deps);
       if (!dep) return {};
       const id = dep.editingId;
       const origin = dep.getEditablePath(id) as PolygonPath | undefined;
@@ -141,5 +141,5 @@ export const sandAction = inPlane(defineAction({
       };
     },
   },
-  enabled: (deps) => (depOf(deps) ? true : ActionDisabledReason.NotApplicable),
+  enabled: (deps) => (openPathEditOf(deps) ? true : ActionDisabledReason.NotApplicable),
 }), editingLayer);
