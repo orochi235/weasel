@@ -63,7 +63,7 @@ describe('FeaturePreset.build', () => {
     const kit: FeaturePreset = { id: 'kit', build: (c) => { ctx = c; return {}; } };
     const { scene, id } = mount([kit]);
     expect(ctx.scene()).toBe(scene);
-    expect(ctx.pick.pressEvery({ x: 10, y: 10 })).toEqual([id]);
+    expect(ctx.pick.everyIn({ x: 10, y: 10 })).toEqual([id]);
     expect(ctx.pick.bestIn({ x: 80, y: 80 })).toBeNull();
     expect(ctx.pick.boundsOf(id)).toMatchObject({ x: 0, y: 0, width: 50, height: 50 });
     act(() => { scene.setSelection([id]); });

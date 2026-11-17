@@ -143,7 +143,7 @@ export interface ScenePickers<TPose> {
   /** What a range click covers, as the select tool ranges: the `selectRange` dep. */
   selectRange: SelectRangeDep;
   /** Every id a press routed to `viewId`'s view lands on, back to front: what the select tool picks from. */
-  pressEvery: (world: WorldPoint, viewId?: string | null) => string[];
+  pickEveryIn: (world: WorldPoint, viewId?: string | null) => string[];
   /** The nodes a range press from `from` to `to` covers. */
   between: (from: string, to: string) => readonly string[];
   /** `selectTool.move` — what the `move` preset's bindings carry. */
@@ -253,7 +253,7 @@ export function useScenePickers<TData, TLayer extends string, TPose>(
     planeOfNode: wiredPlaneOfNode,
     moveOptions: wiredMoveOptions,
     selectRange,
-    pressEvery: pressPick,
+    pickEveryIn: pressPick,
     between,
   };
 }
