@@ -53,10 +53,14 @@ function collectActionIcons(actions: readonly ActionEntry[]): IconEntry[] {
   return [...byGlyph.values()];
 }
 
+/** Every glyph once: the actions' first, then each of draw's own no action draws. */
 export function collectIcons(actions: readonly ActionEntry[]): readonly IconEntry[] {
   const out: IconEntry[] = collectActionIcons(actions);
+  const listed = new Set(out.map((e) => e.id));
   for (const name of ICON_GROUPS.flatMap((g) => g.names)) {
     const ref = icon(name);
+    if (listed.has(ref)) continue;
+    listed.add(ref);
     out.push({ kind: 'icon', id: ref, label: ref, source: 'app', ref });
   }
   return out;
