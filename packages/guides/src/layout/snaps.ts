@@ -84,7 +84,7 @@ function isCellMeta(m: unknown): m is CellMeta {
  * strategies; this variant remains for `tileGrid` and any caller that puts
  * its cell rect in `meta.cellRect` rather than `hitBounds`.
  */
-export function cellAt<TPose>(): LayoutSnap<TPose> {
+export function cellThenNearest<TPose>(): LayoutSnap<TPose> {
   return {
     pickTarget(targets, pointer) {
       for (const t of targets) {

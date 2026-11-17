@@ -197,7 +197,7 @@ describe('tileGrid', () => {
     expect(calls).toEqual([{ id: 'a', pose: draggedPose }]);
   });
 
-  it('default snap is cellAt (returns target under pointer)', () => {
+  it('default snap is cellThenNearest (returns target under pointer)', () => {
     const layout = tileGrid<P>({ cols: 2, rows: 1 });
     const targets = layout.getDropTargets(container, [], {
       id: 'd',
