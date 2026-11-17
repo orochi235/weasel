@@ -41,7 +41,7 @@ export {
   prefLeafAt,
   prefValueOrDefault,
   prefLeaves,
-  prefNumberAt,
+  prefBoundedNumber,
   prefObjectBase,
   prefObjectField,
   prefObjectWithField,

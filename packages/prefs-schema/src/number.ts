@@ -26,7 +26,7 @@ export interface PrefNumberBase extends PrefValueBase<'number', number | undefin
   max?: number;
   /** A lower bound read from where the value is held — a scene node's own
    *  minimum — taken with `min`, the larger winning. A surface resolves it
-   *  per holder with `prefNumberAt`. */
+   *  per holder with `prefBoundedNumber`. */
   minAt?: PrefBoundAt;
   /** The upper counterpart of `minAt`, taken with `max`, the smaller winning. */
   maxAt?: PrefBoundAt;

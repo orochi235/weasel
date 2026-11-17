@@ -1,6 +1,6 @@
 import type { MenuEntry } from '@weasel-js/menu';
 import {
-  prefDisplayBounds, prefNumberAt, prefUnitAccepts, resolvePrefUnit,
+  prefDisplayBounds, prefBoundedNumber, prefUnitAccepts, resolvePrefUnit,
   type PrefBoolean, type PrefColor, type PrefEnum, type PrefNumber, type PrefString,
 } from '@weasel-js/prefs-schema';
 import { endlessAllows } from '@weasel-js/quantity';
@@ -63,7 +63,7 @@ export function enumRows(src: RowAccess, leaf: PrefEnum, key: string, path: stri
 export function numberRows(src: RowAccess, given: PrefNumber, key: string, path: string, off: boolean): MenuEntry[] {
   const { values, onChange } = src;
   if (!values || !onChange) return [];
-  const leaf = prefNumberAt(given, values);
+  const leaf = prefBoundedNumber(given, values);
   const unit = leaf.unit && resolvePrefUnit(leaf.unit);
   const stored = values(path);
   const { min, max, step, endless } = prefDisplayBounds(leaf);
