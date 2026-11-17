@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { EDITOR_ACTIONS, EDITOR_PREFERENCES_KEY } from '@weasel-js/editor';
-import { actionBindings, actionItems, keySpecShortcut, SceneCanvas, defaultNodeRouting, defaultNodeProperties, useActionsRegistry, useCommand, useScene, type NodePropertiesEntry, type ToolDef, type ToolsApi } from '@weasel-js/core';
+import { actionBindings, actionItems, keySpecShortcut, SceneCanvas, defaultNodeRouting, useActionsRegistry, useCommand, useScene, type NodePropertiesEntry, type ToolDef, type ToolsApi } from '@weasel-js/core';
 import { routesForSpec } from '@weasel-js/core/routing';
 import { actionIcon } from '@weasel-js/ui/components/Icon';
 import { appCommandsContribution, type AppCommands } from '../appCommands';
@@ -9,7 +9,8 @@ import { DRAW_LAYERS, type WeaselDrawData, type WeaselDrawLayer, type WeaselDraw
 import { DRAW_FEATURES } from '../drawFeatures';
 import { useFileCommands } from '../fileCommands';
 import { useDebugCommands } from './devRoutes';
-import type { DeclaredRoute, ToolSurface, ToolEntry, ActionEntry, CallbackRef, CallbackSource } from './registryEntries';
+import { DRAW_NODE_PROPERTIES } from './registryData';
+import { GESTURE_CATALOG_KEYS, type DeclaredRoute, type ToolSurface, type ToolEntry, type ActionEntry, type CallbackRef, type CallbackSource } from './registryEntries';
 import s from './RegistryInspector.module.css';
 import { BUILTIN_TOOL_IDS } from '@weasel-js/editing';
 import { getOwn, hasOwnKey } from '@weasel-js/registry';
@@ -153,7 +154,7 @@ export function RegistryProbe({ onSnapshot }: ProbeProps) {
     });
     if (sig === lastRef.current) return;
     lastRef.current = sig;
-    onSnapshot({ tools: toolEntries, actions: actionEntries, properties: defaultNodeProperties });
+    onSnapshot({ tools: toolEntries, actions: actionEntries, properties: DRAW_NODE_PROPERTIES });
   });
 
   return (
@@ -233,17 +234,13 @@ function bestActionHandlerSource(action: unknown): CallbackSource | undefined {
 /** Boolean-only digest of a tool's input surface: which gesture kinds its
  *  bindings declare, and what it emits. Route signatures carry the per-target
  *  detail; this is the at-a-glance row. */
-function summarizeSurface(tool: { bindings?: readonly { spec: { kind: string } }[]; cursor?: unknown; overlay?: unknown }): ToolSurface {
-  const gestures: Record<string, boolean> = {
-    click: false, doubleClick: false, pointerDown: false, drag: false,
-    wheel: false, key: false, keyHeld: false, contextMenu: false,
-    multiTouchTap: false,
-  };
+export function summarizeSurface(tool: { bindings?: readonly { spec: { kind: string } }[]; cursor?: unknown; overlay?: unknown }): ToolSurface {
+  const gestures = Object.fromEntries(GESTURE_CATALOG_KEYS.map((k) => [k, false])) as Record<string, boolean>;
   for (const b of tool.bindings ?? []) {
     if (hasOwnKey(gestures, b.spec.kind)) gestures[b.spec.kind] = true;
   }
   return {
-    gestures: gestures as unknown as ToolSurface['gestures'],
+    gestures: gestures as ToolSurface['gestures'],
     outputs: {
       cursor: tool.cursor !== undefined,
       overlay: tool.overlay !== undefined,

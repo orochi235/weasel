@@ -23,7 +23,7 @@ const ICON_VARIANTS = {
 };
 
 // The dev surfaces are only reachable at `#/dev/*`, and `RegistryInspector`
-// reaches `dev/sourceLookup`, which embeds this app's own source as strings.
+// reaches `dev/sourceLookup`, which embeds an index of every export in the kit.
 // Importing them statically put all of that in the entry bundle for every
 // visitor who never opens them.
 const ToolkitBuilder = lazy(() =>

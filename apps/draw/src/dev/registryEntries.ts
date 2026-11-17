@@ -18,17 +18,8 @@ export type TreeEntry =
 
 /** Gesture kinds a tool binds. `true` when at least one entry in
  *  `Tool.bindings` declares that kind. */
-export interface GestureChannels {
-  click: boolean;
-  doubleClick: boolean;
-  pointerDown: boolean;
-  drag: boolean;
-  wheel: boolean;
-  key: boolean;
-  keyHeld: boolean;
-  contextMenu: boolean;
-  multiTouchTap: boolean;
-}
+/** Which gesture kinds a tool's bindings declare: one flag per `GestureSpec.kind`. */
+export type GestureChannels = Record<GestureSpec['kind'], boolean>;
 
 /** Things a tool *declares or emits* rather than reacting to. Kept apart
  *  from gestures so the "subscribing tools" framing doesn't misrepresent
@@ -229,13 +220,6 @@ export interface OpFactoryEntry {
 /** Lifecycle phase a `ToolDef` can declare routes in. `initial` is the
  *  resting phase; `engaged` is entered after a phase transition (e.g.
  *  start of a drag). */
-
-/** Gesture kinds a tool can bind. Strictly typed against
- *  `GestureChannels` so tool outputs can't sneak in. */
-export const GESTURE_CHANNEL_KEYS: readonly (keyof GestureChannels)[] = [
-  'click', 'doubleClick', 'pointerDown', 'drag', 'wheel',
-  'key', 'keyHeld', 'contextMenu', 'multiTouchTap',
-];
 
 /** Catalog entries for the inspector: one page per gesture kind, listing
  *  every tool binding and action `defaultBinding` that routes through it.

@@ -19,7 +19,7 @@
  *    `event.affordance`. `doubleClick`/`contextMenu` specs run it against
  *    `event.target` instead — those event shapes have no `affordance` field.
  */
-import type { InputEvent, BodyTarget, EventModifiers } from '@weasel-js/gestures';
+import type { InputEvent, BodyTarget, EventModifiers, GestureSpec } from '@weasel-js/gestures';
 
 /** Gesture kinds the picker offers. */
 export const RESOLUTION_GESTURES = [
@@ -135,4 +135,16 @@ export function synthesizeInput(input: ResolutionInput): InputEvent {
 export function isPredicateTarget(spec: unknown): boolean {
   const t = (spec as { target?: unknown } | null | undefined)?.target;
   return typeof t === 'object' && t !== null && 'kindOf' in t;
+}
+
+/** Every key a `key` spec among `specs` names, sorted and once each: what the
+ *  picker offers for the `key` gesture, since an event with no key matches
+ *  no binding. */
+export function keyNamesOf(specs: Iterable<GestureSpec>): string[] {
+  const keys = new Set<string>();
+  for (const spec of specs) {
+    if (spec.kind !== 'key') continue;
+    for (const k of Array.isArray(spec.key) ? spec.key : [spec.key]) keys.add(k);
+  }
+  return [...keys].sort();
 }

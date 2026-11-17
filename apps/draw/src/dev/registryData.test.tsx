@@ -38,6 +38,17 @@ describe('registryData static collectors', () => {
     expect(icons[2]?.actions).toEqual(['flip:y', 'app.thing']);
   });
 
+  it("collectIcons lists a draw glyph an action draws once, as the action's", () => {
+    const icons = collectIcons([{
+      kind: 'action', id: 'draw.settings', label: 'Settings',
+      items: [{ key: 'draw.settings', label: 'Settings', icon: icon('settings') }],
+    }]);
+    const settings = icons.filter((i) => i.id === icon('settings'));
+    expect(settings).toHaveLength(1);
+    expect(settings[0]).toMatchObject({ source: 'action', actions: ['draw.settings'] });
+    expect(new Set(icons.map((i) => i.id)).size).toBe(icons.length);
+  });
+
   it('collectBundles lists every core preset, each with the tools its includes mount', () => {
     const bundles = collectBundles();
     expect(bundles.map((b) => b.id)).toEqual([...FEATURE_NAMES]);
