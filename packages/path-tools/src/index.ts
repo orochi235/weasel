@@ -102,7 +102,7 @@ export { TUG_PATH_PARAMS, tugPathAction, type TugPathParams } from './tug/tugPat
 export { useTugTool } from './tug/useTugTool';
 export {
   overlayShown, PATH_OVERLAYS_GROUP, showPoiseAction, showCombAction, showFilletsAction, showDirectionAction,
-  showOverlayAction,
+  createOverlayToggleAction,
 } from './overlays/showOverlay';
 export {
   DEFAULT_KNEAD_RADIUS_PX, DEFAULT_KNEAD_STRENGTH, KNEAD_PARAMS, kneadAction, type KneadParams,
