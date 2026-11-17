@@ -31,13 +31,13 @@ export {
 } from './patternPlayer';
 export { patternVoicePeaks, type PatternVoicePeaksOptions } from './patternLoad';
 export {
-  readScoreCue, scoreCues, scoreModes, resolveScoreMood,
+  readScoreCue, SCORE_CUES, SCORE_MODES, resolveScoreMood,
   type ScoreMood, type ScoreCue, type ScoreCueName, type ScoreCueReading, type ScoreMode,
   type ScoreSettings,
 } from './scoreMood';
 export { SCORE_BAR_STEPS, scoreBar, scoreChord, type ScoreBarOptions } from './scoreBar';
 export { createScore, type Score, type ScoreOptions, type ScoreState } from './score';
-export { noiseSamples, partialPresets } from './synthVoice';
+export { noiseSamples, PARTIAL_PRESETS } from './synthVoice';
 export {
   createNoteKernel, createNoiseKernel, renderNote, renderNoise,
   type KernelNote, type KernelNoise, type VoiceKernel,

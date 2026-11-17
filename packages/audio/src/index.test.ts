@@ -26,7 +26,7 @@ describe('@weasel-js/audio public surface', () => {
 
   it('exports the noise and inharmonic voice surface', () => {
     expect(audio.noiseSamples('pink', 64)).toHaveLength(64);
-    const bell: audio.Inharmonic = audio.partialPresets.bell;
+    const bell: audio.Inharmonic = audio.PARTIAL_PRESETS.bell;
     const filter: audio.VoiceFilter = { frequency: 200, amount: 800, envelope: { decay: 40, sustain: 0 } };
     const hiss: audio.NoiseOptions = { noise: 'white', filter };
     const hat: audio.PatternEvent = { step: 2, ...hiss, length: 1 };
@@ -46,11 +46,11 @@ describe('@weasel-js/audio public surface', () => {
   });
 
   it('exports the scoring layer, from a mood down to a bar of events', () => {
-    const mood: audio.ScoreMood = audio.scoreCues[0].mood;
+    const mood: audio.ScoreMood = audio.SCORE_CUES[0].mood;
     const params: audio.ScoreSettings = audio.resolveScoreMood(mood);
     const bar: audio.PatternEvent[] = audio.scoreBar(params, 0);
     expect(bar.length).toBeGreaterThan(0);
-    expect(audio.readScoreCue(mood).name).toBe(audio.scoreCues[0].name);
+    expect(audio.readScoreCue(mood).name).toBe(audio.SCORE_CUES[0].name);
     expect(audio.scoreChord(params, 0)).toHaveLength(3);
     expect(typeof audio.createScore).toBe('function');
     const load: audio.PatternVoicePeaksOptions = { tempo: params.tempo, length: audio.SCORE_BAR_STEPS };

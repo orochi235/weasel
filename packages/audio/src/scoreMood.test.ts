@@ -1,11 +1,11 @@
 import { describe, expect, it } from 'vitest';
-import { readScoreCue, scoreCues, resolveScoreMood, type ScoreMood } from './scoreMood';
+import { readScoreCue, SCORE_CUES, resolveScoreMood, type ScoreMood } from './scoreMood';
 
-const home = (name: string): ScoreMood => scoreCues.find((c) => c.name === name)!.mood;
+const home = (name: string): ScoreMood => SCORE_CUES.find((c) => c.name === name)!.mood;
 
 describe('readScoreCue', () => {
   it('names each cue at its own home, with the whole weight', () => {
-    for (const cue of scoreCues) {
+    for (const cue of SCORE_CUES) {
       const reading = readScoreCue(cue.mood);
       expect(reading.name).toBe(cue.name);
       expect(reading.weights[cue.name]).toBe(1);

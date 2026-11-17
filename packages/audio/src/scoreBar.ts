@@ -1,6 +1,6 @@
 import type { Envelope } from './envelope';
 import type { PatternNote } from './patternPlayer';
-import { scoreModes, type ScoreSettings } from './scoreMood';
+import { SCORE_MODES, type ScoreSettings } from './scoreMood';
 
 /** Steps in a bar of score: sixteenths in 4/4. */
 export const SCORE_BAR_STEPS = 16;
@@ -26,7 +26,7 @@ const PROGRESSION = [0, 5, 3, 4];
  * walk a four-chord progression inside the mode.
  */
 export function scoreChord(params: ScoreSettings, chord: number, tonic = 0): number[] {
-  const scale = scoreModes[params.mode];
+  const scale = SCORE_MODES[params.mode];
   const tone = (degree: number): number =>
     params.register + tonic + scale[degree % 7] + 12 * Math.floor(degree / 7);
   if (params.harmony === 'cluster') {

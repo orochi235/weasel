@@ -21,7 +21,7 @@ export interface ScoreCue {
 }
 
 /** The built-in cues: each names a mood and the musical device that carries it. */
-export const scoreCues: readonly ScoreCue[] = [
+export const SCORE_CUES: readonly ScoreCue[] = [
   {
     name: 'dread',
     mood: { valence: -1, tension: 1, urgency: 0 },
@@ -64,22 +64,22 @@ const inRange = (mood: ScoreMood): ScoreMood => ({
 export function readScoreCue(mood: ScoreMood): ScoreCueReading {
   const m = inRange(mood);
   // Valence spans twice what the other axes do.
-  const distance = scoreCues.map((cue) =>
+  const distance = SCORE_CUES.map((cue) =>
     ((m.valence - cue.mood.valence) / 2) ** 2 + (m.tension - cue.mood.tension) ** 2 + (m.urgency - cue.mood.urgency) ** 2);
   // A mood within rounding of a cue is at it: past there, 1/d overflows and every weight is NaN.
   const exact = distance.findIndex((d) => 1 / d === Infinity);
   const raw = distance.map((d, i) => (exact >= 0 ? Number(i === exact) : 1 / d));
   const total = raw.reduce((sum, w) => sum + w, 0);
   const weights = {} as Record<ScoreCueName, number>;
-  scoreCues.forEach((cue, i) => { weights[cue.name] = raw[i] / total; });
-  return { name: scoreCues[raw.indexOf(Math.max(...raw))].name, weights };
+  SCORE_CUES.forEach((cue, i) => { weights[cue.name] = raw[i] / total; });
+  return { name: SCORE_CUES[raw.indexOf(Math.max(...raw))].name, weights };
 }
 
 /** The modes a score draws on, brightest first. */
 export type ScoreMode = 'lydian' | 'ionian' | 'dorian' | 'aeolian' | 'phrygian';
 
 /** Each mode's seven tones, in semitones above its tonic. */
-export const scoreModes: Record<ScoreMode, readonly number[]> = {
+export const SCORE_MODES: Record<ScoreMode, readonly number[]> = {
   lydian: [0, 2, 4, 6, 7, 9, 11],
   ionian: [0, 2, 4, 5, 7, 9, 11],
   dorian: [0, 2, 3, 5, 7, 9, 10],

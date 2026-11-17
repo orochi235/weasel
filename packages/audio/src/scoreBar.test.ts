@@ -1,9 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import { patternVoicePeaks } from './patternLoad';
 import { scoreBar, scoreChord } from './scoreBar';
-import { scoreCues, scoreModes, resolveScoreMood } from './scoreMood';
+import { SCORE_CUES, SCORE_MODES, resolveScoreMood } from './scoreMood';
 
-const params = (name: string) => resolveScoreMood(scoreCues.find((c) => c.name === name)!.mood);
+const params = (name: string) => resolveScoreMood(SCORE_CUES.find((c) => c.name === name)!.mood);
 const midi = (e: { pitch: unknown }) => (e.pitch as { midi: number }).midi;
 
 describe('scoreChord', () => {
@@ -25,7 +25,7 @@ describe('scoreChord', () => {
     const p = params('wonder');
     const chord = scoreChord(p, 0);
     expect(chord.at(-1)! - chord[0]).toBeGreaterThanOrEqual(24);
-    for (const n of chord) expect(scoreModes.lydian).toContain(n % 12);
+    for (const n of chord) expect(SCORE_MODES.lydian).toContain(n % 12);
     expect(chord.map((n) => n % 12)).toContain(6);
   });
 
@@ -34,7 +34,7 @@ describe('scoreChord', () => {
     const roots = [0, 1, 2, 3].map((i) => scoreChord(p, i)[0]);
     expect(new Set(roots).size).toBeGreaterThan(1);
     for (let i = 0; i < 4; i++) {
-      for (const n of scoreChord(p, i)) expect(scoreModes.aeolian).toContain(n % 12);
+      for (const n of scoreChord(p, i)) expect(SCORE_MODES.aeolian).toContain(n % 12);
     }
     expect(scoreChord(p, 0)[1] - scoreChord(p, 0)[0]).toBe(3);
   });
@@ -82,7 +82,7 @@ describe('scoreBar', () => {
   });
 
   it('routes and scales every note, never past the gain it is given', () => {
-    for (const cue of scoreCues) {
+    for (const cue of SCORE_CUES) {
       const events = scoreBar(resolveScoreMood(cue.mood), 8, { bus: 'music', gain: 0.4 });
       const byStep = new Map<number, number>();
       for (const e of events) {
@@ -94,7 +94,7 @@ describe('scoreBar', () => {
   });
 
   it('fits every cue in the default voice limit', () => {
-    for (const cue of scoreCues) {
+    for (const cue of SCORE_CUES) {
       const p = resolveScoreMood(cue.mood);
       const peaks = patternVoicePeaks(scoreBar(p, 8), { tempo: p.tempo, length: 16 });
       expect(peaks.sfx).toBeLessThanOrEqual(32);
