@@ -34,7 +34,7 @@ export type { HudContentCtx } from './widget';
 export { attachMenuHost, type AttachMenuHostOptions } from './menu/attachMenuHost';
 export { textWidth } from './menu/textWidth';
 export { createMenuWidget, type MenuWidgetOptions } from './menu/menuWidget';
-export type { MenuIcons } from './menu/drawPanel';
+export type { MenuIcons } from './menu/panelCommands';
 export { DEFAULT_MENU_PALETTE } from './menu/colorPicker';
 export { glyphCommands, iconCommands, type GlyphPlacement, type GlyphSource } from './glyph';
 export { boxShadowCommands } from './boxShadow';

@@ -8,7 +8,7 @@ import fc from 'fast-check';
 import { createMenuController, type Rect } from '@weasel-js/menu';
 import { menuLevel, openPath, runs, tally, timeoutFor } from '../pbt.fixture';
 import { menuRowSpans } from '@weasel-js/ui-logic';
-import { panelSize } from './drawPanel';
+import { panelSize } from './panelCommands';
 import { menuTheme } from './menu.fixture';
 import { menuMeasureEnv } from './menuEnv';
 import { estimateWidth } from './textWidth';

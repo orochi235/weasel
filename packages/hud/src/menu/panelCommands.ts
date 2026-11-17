@@ -103,7 +103,7 @@ export const OPENED_VALUES: MenuDrawValues = { number: (e) => e.value, text: (e)
  *  `highlight`, and every row, with the glyph `icons` holds for each row's icon. Rows sit where `layout` puts
  *  them, by default where {@link measurePanel} does in `b`. A value row shows what `values` says it holds, by
  *  default what it opened with. */
-export function drawPanel(
+export function panelCommands(
   ctx: HudDrawCtx, b: WidgetBounds, entries: readonly MenuEntry[], highlight: number | null,
   icons?: MenuIcons, values: MenuDrawValues = OPENED_VALUES, layout?: MenuPanelLayout,
 ): DrawCommand[] {

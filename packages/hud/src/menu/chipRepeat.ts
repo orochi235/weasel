@@ -1,7 +1,7 @@
 import { createStepRepeat, type StepRepeatOptions } from '@weasel-js/ui-input';
 import { menuNumberCanStep, type MenuController, type MenuNumberEntry, type Rect } from '@weasel-js/menu';
 import type { MenuPanelMetrics } from '@weasel-js/ui-logic';
-import { rowAt } from './drawPanel';
+import { rowAt } from './panelCommands';
 import { chipAt } from './valueRows';
 
 /** A number row's step chip: the row, and which way it steps. */

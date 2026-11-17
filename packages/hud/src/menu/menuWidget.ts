@@ -7,7 +7,7 @@ import { createRevision, type HudAccessibleTree, type HudTextInput, type HudKeyE
 import { accessibleMenu } from './accessibleMenu';
 import { menuPanelMetrics, menuRowSpans, type MenuPanelMetrics } from '@weasel-js/ui-logic';
 import { resolveTheme, weaselTheme, type ResolvedTheme } from '@weasel-js/theme';
-import { drawPanel, rowAt, type MenuIcons } from './drawPanel';
+import { panelCommands, rowAt, type MenuIcons } from './panelCommands';
 import { menuMeasureEnv } from './menuEnv';
 import { textWidth } from './textWidth';
 import { createPlacer } from './placePanels';
@@ -206,7 +206,7 @@ export function createMenuWidget(opts: MenuWidgetOptions): Widget {
         measure, locale,
       };
       return placed.flatMap(({ rect, layout }, level) =>
-        drawPanel(ctx, rect, c.entriesAt(level), c.stack()[level] ?? null, opts.icons, values, layout));
+        panelCommands(ctx, rect, c.entriesAt(level), c.stack()[level] ?? null, opts.icons, values, layout));
     },
     hitTest: (x, y) => levelAt(panels, x, y) >= 0,
     cursorAt: () => 'default',
