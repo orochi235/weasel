@@ -147,7 +147,7 @@ export { selectionRoving } from './selectionRoving';
 export { tiling, tilingRoving } from './tiling';
 export type { TileAttrs, TilingProps } from './tiling';
 export { useAsyncOptions } from './useAsyncOptions';
-export type { AsyncOption, AsyncOptionsResult, UseAsyncOptionsProps } from './useAsyncOptions';
+export type { AsyncOption, AsyncOptionsResult, UseAsyncOptionsOptions } from './useAsyncOptions';
 export { I18nProvider, useFieldLocale } from './useFieldLocale';
 export { IDLE_SETTLE_MS, useIdleSettle } from './useIdleSettle';
 export { heirOf, type FocusRow } from './useRemovedRowFocus';
