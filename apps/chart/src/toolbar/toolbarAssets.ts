@@ -2,7 +2,7 @@
 // value leaves `useToolbarBinding` binds.
 
 import { DEFAULT_MAX_ZOOM, DEFAULT_MIN_ZOOM } from '@weasel-js/core';
-import { SET_HOPS_ACTION_ID, SET_ROUTER_ACTION_IDS } from '@weasel-js/diagram';
+import { TOGGLE_HOPS_ACTION_ID, SET_ROUTER_ACTION_IDS } from '@weasel-js/diagram';
 import { pref, type PrefGroup } from '@weasel-js/prefs';
 import { CHART_ACTIONS } from '../chartCommands';
 import { icon } from '../icons.gen';
@@ -48,7 +48,7 @@ export const TOOLBAR_ASSETS: readonly ToolbarAsset[] = [
     orthogonal: pref.action(SET_ROUTER_ACTION_IDS.orthogonal),
     bezier: pref.action(SET_ROUTER_ACTION_IDS.bezier),
     avoid: pref.action(SET_ROUTER_ACTION_IDS.avoid),
-    hops: pref.action(SET_HOPS_ACTION_ID),
+    hops: pref.action(TOGGLE_HOPS_ACTION_ID),
   }),
   asset('arrange', 'Arrange', {
     autoLayout: pref.action(CHART_ACTIONS.autoLayout),

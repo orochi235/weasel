@@ -3,10 +3,10 @@ import { icon } from '../icons.gen';
 import { DEFAULT_HOP_SIZE, HOPS_DOC_KEY } from './types';
 
 /** The line jumps command's id. */
-export const SET_HOPS_ACTION_ID = 'diagram.hops';
+export const TOGGLE_HOPS_ACTION_ID = 'diagram.toggleHops';
 
-/** Options for {@link createSetHopsAction}. */
-export interface SetHopsOptions {
+/** Options for {@link createToggleHopsAction}. */
+export interface ToggleHopsOptions {
   /** The radius hops take when the command turns them on. Default
    *  {@link DEFAULT_HOP_SIZE}. */
   size?: number;
@@ -17,10 +17,10 @@ export interface SetHopsOptions {
  * writing its `HOPS_DOC_KEY` value: one history entry, which the hop pass
  * (`useHops`) joins with every connector's hops. Active while they are on.
  */
-export function createSetHopsAction(opts: SetHopsOptions = {}): Action {
+export function createToggleHopsAction(opts: ToggleHopsOptions = {}): Action {
   const size = opts.size ?? DEFAULT_HOP_SIZE;
   return {
-    id: SET_HOPS_ACTION_ID,
+    id: TOGGLE_HOPS_ACTION_ID,
     label: 'Line jumps',
     icon: icon('lineJumps'),
     group: 'diagram',

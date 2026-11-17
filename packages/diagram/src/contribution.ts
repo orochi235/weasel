@@ -31,7 +31,7 @@ import {
   type ConnectActionOptions,
 } from './connect';
 import { EDIT_EDGE_LABEL_ACTION_ID } from './edgeLabel';
-import { createSetHopsAction } from './hops/hopsAction';
+import { createToggleHopsAction } from './hops/hopsAction';
 import { createResetLabelAction } from './labelCommands';
 import { MOVE_LABEL_ACTION_ID, createLabelDragAction, type LabelDragOptions } from './labelDragAction';
 import { LABEL_DRAG_AFFORDANCE_KIND, LABEL_DRAG_LAYER_ID, labelDragLayer, labelScratchOf } from './labelDragLayer';
@@ -80,7 +80,7 @@ export const GRAB_WAYPOINT_ACTION_ID = 'diagram.grabWaypoint';
  * it. It carries the handle layer, the drag, the double-click that removes, the
  * `diagram.resetRoute` command, the commands that set the selected
  * connectors' router (`SET_ROUTER_ACTION_IDS`), and the line jumps toggle
- * (`SET_HOPS_ACTION_ID`).
+ * (`TOGGLE_HOPS_ACTION_ID`).
  */
 export function diagramWaypoints<TPose>(
   opts: RouteEditOptions<TPose> & Omit<WaypointAffordanceOptions<TPose>, 'id'>,
@@ -97,7 +97,7 @@ export function diagramWaypoints<TPose>(
       createRemoveWaypointAction(opts),
       createResetRouteAction(opts),
       ...routerActions({ participants: opts.participants, selected: opts.selected }),
-      createSetHopsAction(),
+      createToggleHopsAction(),
       grabPortAction(GRAB_WAYPOINT_ACTION_ID),
     ],
     bindings: [

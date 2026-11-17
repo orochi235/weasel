@@ -3,7 +3,7 @@ import { IDENTITY_POSE_COMPOSITION, createScene, type ActionDeps } from '@weasel
 import {
   CONNECT_ACTION_ID, GRAB_WAYPOINT_ACTION_ID, SELECT_LABEL_EDGE_ACTION_ID, diagramLabelDrag, diagramPorts, diagramWaypoints,
 } from './contribution';
-import { SET_HOPS_ACTION_ID } from './hops/hopsAction';
+import { TOGGLE_HOPS_ACTION_ID } from './hops/hopsAction';
 import { PORT_AFFORDANCE_KIND, PORT_LAYER_ID } from './portAffordance';
 import { REMOVE_WAYPOINT_ACTION_ID, RESET_ROUTE_ACTION_ID } from './routeCommands';
 import { ROUTE_EDIT_ACTION_ID } from './waypointAction';
@@ -86,7 +86,7 @@ describe('diagramWaypoints', () => {
   });
 
   it('carries the line jumps command', () => {
-    expect(bundle().actions!.map((a) => a.id)).toContain(SET_HOPS_ACTION_ID);
+    expect(bundle().actions!.map((a) => a.id)).toContain(TOGGLE_HOPS_ACTION_ID);
   });
 
   it('carries the layer the handles are composed into', () => {

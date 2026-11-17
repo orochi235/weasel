@@ -111,8 +111,8 @@ export { installHops } from './hops/install';
 export type { Hops, HopsOptions } from './hops/install';
 export { hopFollower } from './hops/follower';
 export { useHops } from './hops/useHops';
-export { SET_HOPS_ACTION_ID, createSetHopsAction } from './hops/hopsAction';
-export type { SetHopsOptions } from './hops/hopsAction';
+export { TOGGLE_HOPS_ACTION_ID, createToggleHopsAction } from './hops/hopsAction';
+export type { ToggleHopsOptions } from './hops/hopsAction';
 export { createSpecHops } from './hops/specHops';
 export {
   EDGE_END_AFFORDANCE_KIND,

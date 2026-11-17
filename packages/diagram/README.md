@@ -244,7 +244,7 @@ hopping over them draw without hops; the release puts them back.
 `installHops(scene)` does the same without React. Its pass runs at
 `DIAGRAM_PASS_ORDER.hops`, after routing.
 
-`diagram.hops` (`SET_HOPS_ACTION_ID`, carried by `diagramWaypoints`) toggles the
+`diagram.toggleHops` (`TOGGLE_HOPS_ACTION_ID`, carried by `diagramWaypoints`) toggles the
 value, at radius 5 (`DEFAULT_HOP_SIZE`). A data-backed `DiagramView` takes
 `hops={radius}`, applied after `router`; `createSpecHops` is that step on its
 own. `edgeHops`, which finds the hops over plain polylines, is in
