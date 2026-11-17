@@ -1,0 +1,13 @@
+apps/draw/src/modality/chrome/ModeBreadcrumb.module.css
+apps/draw/src/modality/chrome/ModeBreadcrumb.tsx
+apps/draw/src/modality/chrome/ModeStatusIndicator.tsx
+apps/draw/src/modality/enterModeOn.ts
+apps/draw/src/modality/enteredGroup.ts
+apps/draw/src/modality/index.ts
+apps/draw/src/modality/machine.ts
+apps/draw/src/modality/modeScope.ts
+apps/draw/src/modality/pathEditHost.ts
+apps/draw/src/modality/shortcuts.ts
+apps/draw/src/modality/useCanvasModes.ts
+apps/draw/src/modality/useModality.ts
+apps/draw/src/modality/useModeId.ts

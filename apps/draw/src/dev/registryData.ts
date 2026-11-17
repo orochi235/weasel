@@ -53,10 +53,14 @@ function collectActionIcons(actions: readonly ActionEntry[]): IconEntry[] {
   return [...byGlyph.values()];
 }
 
+/** Every glyph once: the actions' first, then each of draw's own no action draws. */
 export function collectIcons(actions: readonly ActionEntry[]): readonly IconEntry[] {
   const out: IconEntry[] = collectActionIcons(actions);
+  const listed = new Set(out.map((e) => e.id));
   for (const name of ICON_GROUPS.flatMap((g) => g.names)) {
     const ref = icon(name);
+    if (listed.has(ref)) continue;
+    listed.add(ref);
     out.push({ kind: 'icon', id: ref, label: ref, source: 'app', ref });
   }
   return out;
@@ -188,10 +192,13 @@ function kindIcon(id: Weasel.ShapeKind): ReactNode {
   return name === undefined ? undefined : actionIcon(toIconRef(`core:${name}`));
 }
 
+/** The property kinds a draw canvas merges: core's defaults and what draw's presets add (text's). */
+export const DRAW_NODE_PROPERTIES: readonly NodePropertiesEntry[] =
+  nodeTraitsOf(DRAW_FEATURES, { properties: defaultNodeProperties }).properties;
+
 export function collectPropertiesTrait(
-  live?: readonly NodePropertiesEntry[],
+  source: readonly NodePropertiesEntry[] = DRAW_NODE_PROPERTIES,
 ): readonly PropertiesKindEntry[] {
-  const source = live ?? nodeTraitsOf(DRAW_FEATURES, { properties: defaultNodeProperties }).properties;
   // An object leaf's fields are what the kind exposes; the leaf itself is
   // the container.
   const leafPaths = (schema: NodePropertiesEntry['schema']): string[] =>

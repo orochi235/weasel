@@ -82,7 +82,7 @@ export function serializeSvg(given: SvgNode[], opts: SerializeOptions = {}): str
   // After <defs>, before the geometry.
   const docMetaXml = metaElementsXml(opts.documentMeta, namespaces);
 
-  const defsXml = registry.toDefsXml(opts.onWarn);
+  const defsXml = registry.toDefsXml(warn);
 
   const titleXml = opts.title && opts.title.length > 0
     ? `<title>${escapeText(opts.title)}</title>`

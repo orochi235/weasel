@@ -28,6 +28,14 @@ describe('enterModeOn', () => {
     expect(m.getActiveTargetId()).toBe('p');
   });
 
+  it('leaves another soft mode on the same target for the one asked for', () => {
+    const m = machine();
+    m.enterMode('text-edit', { targetId: 'p' });
+    enterModeOn(m, 'path-edit', 'p');
+    expect(m.registry.current().id).toBe('path-edit');
+    expect(m.getActiveTargetId()).toBe('p');
+  });
+
   it('leaves a soft mode on something else for the new one', () => {
     const m = machine();
     m.enterMode('text-edit', { targetId: 't' });

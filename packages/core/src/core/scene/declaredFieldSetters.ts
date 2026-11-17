@@ -5,6 +5,7 @@
  */
 import type { UnitScope } from '@weasel-js/quantity';
 import type { LockGuard } from './lockGuard';
+import { own } from './owned';
 import { sameValue } from './sameValue';
 import type { Node, NodeClip, NodeId, RegisteredOp } from './types';
 import type { PageInfo, PageRunInfo } from '../pages/pageNodes';
@@ -37,7 +38,7 @@ interface DeclaredPayload { id: NodeId; from?: unknown; to?: unknown }
 /** Stored only while declared, so a snapshot of a node declaring none carries neither. */
 function write(node: Declared, field: Field, to: unknown): void {
   if (to === undefined) delete node[field];
-  else (node as Record<Field, unknown>)[field] = to;
+  else (node as Record<Field, unknown>)[field] = own(to);
 }
 
 const KIND: Record<Field, string> = {

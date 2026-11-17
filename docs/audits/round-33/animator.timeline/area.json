@@ -1,0 +1,59 @@
+{
+ "id": "animator.timeline",
+ "commit": "d4226fab0e3e2669740411edb2a1d35dadeb46b1",
+ "date": "2026-11-17",
+ "files": [
+  "packages/animator/src/timeline/booking.ts",
+  "packages/animator/src/timeline/clip.ts",
+  "packages/animator/src/timeline/clipShape.ts",
+  "packages/animator/src/timeline/createTimeline.test-harness.ts",
+  "packages/animator/src/timeline/createTimeline.ts",
+  "packages/animator/src/timeline/fireEvents.ts",
+  "packages/animator/src/timeline/index.ts",
+  "packages/animator/src/timeline/sampleTrack.ts",
+  "packages/animator/src/timeline/targetStops.ts",
+  "packages/animator/src/timeline/timeline.fixture.ts",
+  "packages/animator/src/timeline/trackHolds.ts",
+  "packages/animator/src/timeline/types.ts"
+ ],
+ "a": 7,
+ "b": 6,
+ "m": 4,
+ "distinct": 9,
+ "chapman": 10.2,
+ "unfound": 1.2,
+ "read": {
+  "A": 12,
+  "B": 12
+ },
+ "patches": 10,
+ "questions": 0,
+ "budgetHit": [],
+ "jobs": {
+  "minutes": {
+   "A": 7.6,
+   "B": 6.1,
+   "match": 0.1,
+   "fix": 17.2
+  },
+  "nodes": {
+   "A": "studio",
+   "B": "teitou",
+   "fix": "studio"
+  },
+  "tokens": 7106757,
+  "costUsd": 4.93
+ },
+ "fixCommits": [
+  "670ec07a29c6926010b602034c868d9143d7fe10",
+  "a124808852fd050f84857f2ca5ab718a811f4981",
+  "19d6faa946f810f047e25f030d1fc5b4e7992fbb",
+  "50e06ced00964a112160e3c847994dddb1965261",
+  "2d723fd12c18bc961e0e1ed06d152e9aa254afbd",
+  "cefbb9f37d3d33d641d5d65b8f2636c563b4fd8e",
+  "76b3ad2a3dcbfed3bf5f44b99ad9cd80cbba9d80",
+  "8994b949ed115c959a727c88ba82b8109decd35e",
+  "26c825763777a9e1b3f819b96b4a45c6833958c7",
+  "915bac8694bdcf091ab42d48bbdad1107176fb05"
+ ]
+}

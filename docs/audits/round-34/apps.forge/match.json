@@ -1,0 +1,11 @@
+{
+ "pairs": [],
+ "a": [
+  "csf.mjs's labkit and draw checks read the host's direct children, which have been forge's scroller since 2b1aeb54f4",
+  "csf.mjs writes the screenshots of its three JobProgress checks to one path, so each overwrites the one before"
+ ],
+ "b": [
+  "smoke.mjs's default URL opens forge/Counter, a story removed on 2026-09-25, so a run with no arguments always fails",
+  "csf.mjs's first check opens `ui-button--primary`, but ui/Button has no Primary story"
+ ]
+}

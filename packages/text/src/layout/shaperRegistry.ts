@@ -15,6 +15,8 @@ const slot = engineSlot<TextShaper>('registerShaper', 'shaper');
  * loadShaper())`, with `loadShaper` from `@weasel-js/text-shaping`. `layoutRuns` uses
  * it whenever its options carry none. Pass `null`, or call the function
  * returned, to take it out again.
+ * Registering the same engine again holds it again: it leaves once every
+ * registration's function has been called.
  * A different engine already registered throws unless `opts.replace` is set.
  *
  * Shaping reaches the text whose face has TrueType or OpenType bytes behind

@@ -6,10 +6,10 @@ import { createTable } from './table';
 import { createEmitter } from '@weasel-js/registry';
 
 /** A table and a frame loop with nothing under them, and a log of every tick. */
-function rig() {
+function rig(codecFrame: () => void = () => {}) {
   const clock: AnimatorClock = { frameT: null, elapsed: 0, timeScale: 1, paused: false, drive: 1 };
   const hub = new AnimatorEventHub();
-  const state = { now: 0, tripped: false };
+  const state = { now: 0, tripped: false, asked: 0, resting: false };
   const log: string[] = [];
   const table = createTable({
     codec: { stop() {}, has: () => false, rate() {} },
@@ -18,18 +18,19 @@ function rig() {
     direction: () => (clock.timeScale < 0 ? -1 : 1),
     seedClock: () => { clock.frameT ??= state.now; },
     showNow() {},
-    resting: () => false,
+    resting: () => state.resting,
     framing: () => frame.framing(),
-    requestFrame() {},
+    requestFrame() { state.asked += 1; },
   });
   const frame = createFrame({
     clock, table, hub,
-    codec: { frame() {} },
+    codec: { frame: codecFrame },
     targets: { settle() {}, show() {} },
     afterTicks: [],
+    faults: [],
     subscribers: createEmitter(),
     refold() {},
-    requestFrame() {},
+    requestFrame() { state.asked += 1; },
     tripwire: () => state.tripped,
   });
   let nextId = 1;
@@ -49,7 +50,7 @@ function rig() {
     frame.tick(t);
     return log.slice();
   };
-  return { clock, table, state, start, tick };
+  return { clock, table, hub, state, start, tick };
 }
 
 describe('a frame and the animations it ticks', () => {
@@ -148,6 +149,75 @@ describe('a frame and the animations it ticks', () => {
     r.start('d', 1000);
     expect(r.tick(16)).toEqual(['b@16', 'd@16']);
     expect(r.tick(64)).toEqual(['a@64', 'b@64', 'c@64', 'd@64']);
+  });
+
+  it('keeps ticking in the order they registered on the frames after one wakes', () => {
+    const r = rig();
+    r.start('a', 1000, { due: 20 });
+    r.start('b', 1000);
+    r.start('c', 1000, { due: 40 });
+    expect(r.tick(32)).toEqual(['a@32', 'b@32']);
+    expect(r.tick(48)).toEqual(['a@48', 'b@48', 'c@48']);
+    expect(r.tick(64)).toEqual(['a@64', 'b@64', 'c@64']);
+  });
+
+  it('keeps registration order for one ticked every frame while it plays backward', () => {
+    const r = rig();
+    const a = r.start('a', -1, { due: 500 });
+    r.start('b', 1000);
+    r.tick(0);
+    r.table.pace(r.table.animations.get(a.id)!, false, -1);
+    expect(r.tick(16)).toEqual(['a@-16', 'b@16']);
+  });
+
+  it('ends a frame that threw unguarded, and asks for the next', () => {
+    let bad = true;
+    const r = rig(() => { if (bad) throw new Error('codec'); });
+    r.start('a', 1000);
+    r.state.asked = 0;
+    expect(() => r.tick(16)).toThrow('codec');
+    expect(r.state.asked).toBe(1);
+    bad = false;
+    r.start('b', 1000);
+    expect(r.state.asked).toBe(1 + 1);
+  });
+
+  it('asks for no frame from a tick that cancels another, beyond the one the frame asks for', () => {
+    const r = rig();
+    let b = 0;
+    r.start('a', 1000, { tick: () => { r.table.retire(b); return false; } });
+    b = r.start('b', 1000).id;
+    r.state.resting = true;
+    r.state.asked = 0;
+    r.tick(16);
+    expect(r.state.asked).toBe(1);
+  });
+
+  it('reports no cancel from cancelAll for one that has ended already', () => {
+    const r = rig();
+    const events: string[] = [];
+    const stop = r.hub.add((e) => { events.push(e.type); });
+    r.start('a', 0, { tick: () => { r.table.reportEnd(1); r.table.cancelAll(() => {}); return true; } });
+    r.tick(16);
+    stop();
+    expect(events.filter((t) => t === 'cancel')).toEqual([]);
+  });
+
+  it('takes every animation off the table when an `onCancel` throws, then throws', () => {
+    const r = rig();
+    const bad = () => { throw new Error('setter'); };
+    r.start('a', 1000, { onCancel: bad });
+    r.start('b', 1000, { onCancel: bad });
+    let cleared = 0;
+    expect(() => r.table.cancelAll(() => { cleared += 1; })).toThrow('setter');
+    expect(cleared).toBe(1);
+    expect(r.table.animations.size).toBe(0);
+    const c = r.start('c', 1000, { onCancel: bad });
+    let done = false;
+    r.table.watchCompletion(c.id, () => { done = true; });
+    expect(() => c.cancel()).toThrow('setter');
+    expect(r.table.animations.size).toBe(0);
+    expect(done).toBe(true);
   });
 
   it('never ticks one whose `due` is Infinity, and says the frame loop may sleep when it is idle', () => {

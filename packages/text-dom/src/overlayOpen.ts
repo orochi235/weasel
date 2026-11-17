@@ -3,6 +3,7 @@
 import type { ResolvedTextStyle, StyledRun } from '@weasel-js/text';
 import { resolveRunFace } from '@weasel-js/text';
 import { cssFontFamilyLoading } from '@weasel-js/font';
+import { parsesAsColor } from '@weasel-js/paint';
 import { charOffsetToDomPosition } from './domRuns';
 
 /**
@@ -39,22 +40,28 @@ export function openingRange(overlay: HTMLElement, caret: number | 'all'): Range
 /**
  * Inject a `<style>` element scoped to `overlayClass` so the edit overlay's
  * `::selection` matches the configured colors, or `null` when none are set.
+ * A value that is not a CSS color is left out with a warning: it comes from
+ * stored document data and is written into a page-wide stylesheet.
  */
 export function installSelectionStyle(
   overlayClass: string,
   style: ResolvedTextStyle,
 ): HTMLStyleElement | null {
-  if (style.selectionBackground == null && style.selectionColor == null) return null;
-  const el = document.createElement('style');
   const decls: string[] = [];
-  if (style.selectionBackground != null) {
-    decls.push(`background: ${style.selectionBackground};`);
-  }
-  if (style.selectionColor != null) {
-    decls.push(`color: ${style.selectionColor};`);
-  }
+  const background = selectionColorOf('selectionBackground', style.selectionBackground);
+  if (background !== null) decls.push(`background: ${background};`);
+  const color = selectionColorOf('selectionColor', style.selectionColor);
+  if (color !== null) decls.push(`color: ${color};`);
+  if (decls.length === 0) return null;
+  const el = document.createElement('style');
   el.textContent = `.${overlayClass}::selection { ${decls.join(' ')} }`;
   document.head.appendChild(el);
   return el;
 }
 
+function selectionColorOf(key: string, value: string | null | undefined): string | null {
+  if (value == null) return null;
+  if (parsesAsColor(value)) return value;
+  console.warn(`weasel text edit: ${key} ${JSON.stringify(value)} is not a CSS color, so the selection does not use it`);
+  return null;
+}

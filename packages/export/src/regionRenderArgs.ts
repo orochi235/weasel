@@ -1,5 +1,5 @@
 import { documentOf, type RectPose, type RenderSceneToPixelsArgs } from '@weasel-js/core';
-import type { ExportRegion, ExportScene } from './exportTypes';
+import { exportBackgroundOf, type ExportBackground, type ExportRegion, type ExportScene } from './exportTypes';
 
 /** What {@link regionRenderArgs} answers: the part of `renderSceneToPixels`'s arguments a region decides. */
 export type RegionRenderArgs = Pick<RenderSceneToPixelsArgs<unknown, string, RectPose>, 'scene' | 'sourceRect' | 'scale' | 'background'>;
@@ -8,8 +8,8 @@ export type RegionRenderArgs = Pick<RenderSceneToPixelsArgs<unknown, string, Rec
 export interface RegionRenderArgsOptions {
   /** Output pixels per world unit. */
   scale: number;
-  /** The color painted under the region. Default none: transparent. */
-  background?: string | null;
+  /** The color painted under the region, or a function reading it from `scene`. Default none: transparent. */
+  background?: ExportBackground;
 }
 
 /**
@@ -22,10 +22,11 @@ export interface RegionRenderArgsOptions {
  * region from Node.
  */
 export function regionRenderArgs(scene: ExportScene, region: ExportRegion, opts: RegionRenderArgsOptions): RegionRenderArgs {
+  const background = exportBackgroundOf(opts.background, scene);
   return {
     scene: documentOf(scene),
     sourceRect: { x: region.x, y: region.y, width: region.width, height: region.height },
     scale: { x: opts.scale, y: opts.scale },
-    ...(opts.background != null ? { background: opts.background } : {}),
+    ...(background !== null ? { background } : {}),
   };
 }

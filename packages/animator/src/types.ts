@@ -273,11 +273,11 @@ export interface Animator {
    */
   onTick(cb: () => void): () => void;
   /**
-   * Keeps the animator's RAF loop running until the returned cancel function is called. For
-   * effects read on every frame that have no progress state of their own; without it the
-   * loop would idle and `onTick` would stop firing.
+   * Keeps the animator's RAF loop running, and `onTick` firing, until the returned function is
+   * called: for effects read every frame with no progress of their own. `onCancel` hears the
+   * entry end, by that function or from outside (`cancelAll`), so the effect can end with it.
    */
-  keepAlive(): () => void;
+  keepAlive(onCancel?: () => void): () => void;
   /**
    * Subscribe to the lifecycle of every animation this animator runs, the
    * composites and timelines included. Returns an unsubscribe. Events arrive
@@ -363,7 +363,7 @@ export type AnimatorListener = (event: AnimatorEvent) => void;
 
 /** Options for `Animator.loop`. */
 export interface LoopOptions {
-  /** Maximum number of iterations. Default Infinity. */
+  /** Maximum number of iterations: a whole number, or Infinity (the default); else a `RangeError`. */
   count?: number;
   /** Invoked when the loop reaches `count` iterations naturally (not on cancel). */
   onDone?: () => void;

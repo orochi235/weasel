@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 import { createScene } from './scene';
 import { asNodeId } from './types';
+import { createOpRegistry, registerOpFactory } from 'core/ops/registry';
 import { POSE, makeScene, type Data, type Layer } from './testing/makeScene';
 
 describe('history persistence (serializeHistory / restoreHistory)', () => {
@@ -148,5 +149,23 @@ describe('history persistence (serializeHistory / restoreHistory)', () => {
     const node = b.get(asNodeId('bed'));
     expect(node?.kind).toBe('group');
     expect((node as { clipFromPose?: unknown }).clipFromPose).toBeUndefined();
+  });
+});
+
+describe('history persistence through a scene\'s own op registry', () => {
+  it('restores nothing from the kit\'s default registry for a scene whose registry does not see it', () => {
+    const op = { name: 'audit29:hidden', args: {}, apply: () => {}, invert: () => op };
+    const off = registerOpFactory('audit29:hidden', () => op);
+    try {
+      const a = makeScene();
+      a.history.recordEntry([op], 'hidden');
+      const snap = a.serializeHistory();
+      const b = createScene<Data, Layer>({
+        systemLayers: [{ id: 'structures' }, { id: 'plantings' }], opRegistry: createOpRegistry({ parent: null }),
+      });
+      expect(() => b.restoreHistory(snap)).toThrow(/"audit29:hidden" \(unknown\)/);
+    } finally {
+      off();
+    }
   });
 });

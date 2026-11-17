@@ -118,6 +118,28 @@ describe('event booking', () => {
     expect(r.whens()).toEqual([START + 1010]);
   });
 
+  it('books each place one timeline is nested, as it fires each', () => {
+    const track: EventTrack = { kind: 'event', events: [] };
+    const nested = { tracks: [track] };
+    const r = rig({
+      duration: 2000,
+      lookahead: 1000,
+      tracks: [{ kind: 'timeline', at: 0, timeline: nested }, { kind: 'timeline', at: 100, timeline: nested }],
+    });
+    track.events = [bookingEvent(r.log, 500)];
+    r.frame(0);
+    expect(r.whens()).toEqual([START + 500, START + 600]);
+  });
+
+  it('books an event track placed both at the root and nested', () => {
+    const track: EventTrack = { kind: 'event', events: [] };
+    const r = rig({ duration: 2000, lookahead: 1000, tracks: [{ kind: 'timeline', at: 100, timeline: { tracks: [track] } }, track] });
+    track.events = [bookingEvent(r.log, 500)];
+    r.frame(0);
+    r.frame(50);
+    expect(r.whens().sort()).toEqual([START + 500, START + 600]);
+  });
+
   it('books nothing of a nested timeline past the duration it declares', () => {
     const track: EventTrack = { kind: 'event', events: [] };
     const r = rig({
@@ -306,5 +328,36 @@ describe('event booking clock mapping', () => {
     r.frame(496 + 1000, 496);
     r.frame(506 + 1000, 506);
     expect(r.whens()).toEqual([START + 1000 + 600]);
+  });
+});
+
+describe('event booking on an endless timeline', () => {
+  it('books only within its lookahead, at finite clock times', () => {
+    const r = withEvents({ duration: Infinity }, [0, 60_000]);
+    r.frame(0);
+    expect(r.whens()).toEqual([START]);
+    r.frame(59_950);
+    expect(r.whens()).toEqual([START, START + 60_000]);
+  });
+
+  it('retimes a booking on an endless timeline when the rate changes', () => {
+    const r = withEvents({ duration: Infinity }, [150]);
+    r.frame(0);
+    r.frame(60);
+    expect(r.live().map((b) => b.when)).toEqual([START + 150]);
+    r.handle.setTimeScale(2);
+    r.frame(70, 80);
+    expect(r.live().map((b) => b.when)).toEqual([START + 70 + 35]);
+  });
+});
+
+describe('event booking in a nested timeline of negative duration', () => {
+  it('books the event at its start, as it fires it', () => {
+    const track: EventTrack = { kind: 'event', events: [] };
+    const r = rig({ duration: 2000, tracks: [{ kind: 'timeline', at: 1000, timeline: { duration: -5, tracks: [track] } }] });
+    track.events = [bookingEvent(r.log, 0)];
+    r.frame(0);
+    r.frame(950);
+    expect(r.whens()).toEqual([START + 1000]);
   });
 });

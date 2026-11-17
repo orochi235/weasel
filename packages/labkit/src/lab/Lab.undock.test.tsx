@@ -1,4 +1,4 @@
-import { act, screen } from '@testing-library/react';
+import { act, fireEvent, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { renderSettled } from '@weasel-js/react/testing/renderSettled';
 import { withIcons } from '@weasel-js/ui/testing/withIcons';
@@ -18,7 +18,14 @@ const bare: Instrument = {
 const notes: TrialContribution = {
   id: 'notes',
   region: 'sidebar',
-  item: { title: 'Notes', body: <p data-testid="notes-body">jot</p> },
+  item: {
+    title: 'Notes',
+    body: (
+      <p data-testid="notes-body" tabIndex={-1}>
+        jot
+      </p>
+    ),
+  },
 };
 
 const floater: TrialContribution = {
@@ -133,6 +140,21 @@ describe('undocking a sidebar section', () => {
       expect(view.container.querySelector('.lk-panel-tile')).not.toBeNull();
       return view;
     }
+
+    it('sends a key pressed in the panel to its own trial, not the one focused last', async () => {
+      const { container } = await undockInFirstOfTwo();
+      const [first, second] = lab?.trials.map((t) => t.id) ?? [];
+      const trials = container.querySelectorAll('.lk-trial');
+      await act(async () => fireEvent.pointerDown(trials[1] as Element, { button: 0 }));
+      expect(lab?.focusedTrialId).toBe(second);
+      const spot = container.querySelector<HTMLElement>(
+        '.lk-panel-tile [data-testid="notes-body"]',
+      );
+      await act(async () => spot?.focus());
+      expect(lab?.focusedTrialId).toBe(first);
+      await act(async () => fireEvent.keyDown(spot as HTMLElement, { key: 's', ctrlKey: true }));
+      expect(lab?.savedSnapshots.map((s) => s.trialId)).toEqual([first]);
+    });
 
     it('takes the panel with it on close', async () => {
       const { container } = await undockInFirstOfTwo();

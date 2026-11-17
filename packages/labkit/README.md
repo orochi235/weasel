@@ -214,7 +214,9 @@ group included — is filled from the instrument's defaults as it loads, so
 growing a schema never strands a saved trial or a snapshot.
 
 A trial with settings has a Copy settings as JSON button in its title bar, which copies its current
-config, the way `setConfig` paths address it, to the clipboard.
+config, the way `setConfig` paths address it, to the clipboard. It copies the values the trial runs
+with: an auto field at the value its resolver gives, an endless number as `"Infinity"` or
+`"-Infinity"` (which a config reads back as the number), and a cleared one as `null`.
 
 ### Auto
 
@@ -393,7 +395,9 @@ over the canvas is the scene's, its pan and zoom included.
 
 ```tsx
 import { createScene } from '@weasel-js/core';
+import { drawPreset } from '@weasel-js/editing';
 import { gridSnapSource } from '@weasel-js/guides';
+import { useMemo } from 'react';
 import { icon } from './icons.gen'; // the app's icon(): see @weasel-js/icons
 import {
   type ConfigOf, defineInstrument, f, type RenderContext, type SceneTrialState,
@@ -403,10 +407,10 @@ import {
 const config = f.schema({ snap: f.boolean(true).label('Snap to grid') });
 
 function Body({ ctx }: { ctx: RenderContext<SceneTrialState, ConfigOf<typeof config>> }) {
-  const scene = useTrialScene(ctx, () => createScene({ systemLayers: [{ id: 'default' }], initial: NODES }));
+  const scene = useTrialScene(ctx, () => createScene({ systemLayers: [{ id: 'default' }] }));
   const snap = useMemo(() => ({ sources: ctx.config.snap ? [gridSnapSource({ spacing: 20 })] : [] }), [ctx.config.snap]);
   return (
-    <TrialSceneCanvas features={[drawPreset]} defaultTools={['rect', 'pen']}
+    <TrialSceneCanvas features={[drawPreset]} defaultTools={['select', 'rect']}
       scene={scene} trial={ctx.trial} snap={snap} />
   );
 }
@@ -675,7 +679,6 @@ or raw WebGL you take rects and dirtiness from labkit and keep the GL yourself:
 
 ```tsx
 import { toDeviceRect, useSurfaceTile, useTiledSurface } from '@weasel-js/labkit/surface';
-import { drawPreset } from '@weasel-js/editing';
 ```
 
 A trial's `view` is persisted, restored on Reset and handed to the instrument;

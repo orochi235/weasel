@@ -45,14 +45,15 @@ export function byComponent<E extends Pick<IndexEntry, 'title' | 'file'>>(storie
 }
 
 /**
- * One index-page entry per title in `stories`, in the order titles first appear. It routes and runs like a story:
+ * One index-page entry per title in `stories`, in the order titles first appear; titles their ids cannot tell
+ * apart (`labkit/Lab`, `Labkit/Lab`) share the first one's. It routes and runs like a story:
  * its `file` is the title's primary file, its descriptions are that file's, and its tags are those every story
  * of the title carries.
  */
 export function indexEntries(stories: readonly IndexEntry[]): IndexEntry[] {
   const byTitle = new Map<string, IndexEntry>();
   for (const entry of byComponent(stories)) {
-    const page = byTitle.get(entry.title);
+    const page = byTitle.get(indexId(entry.title));
     if (page) {
       if (page.tags) {
         const common = page.tags.filter((tag) => entry.tags?.includes(tag));
@@ -61,7 +62,7 @@ export function indexEntries(stories: readonly IndexEntry[]): IndexEntry[] {
       }
       continue;
     }
-    byTitle.set(entry.title, {
+    byTitle.set(indexId(entry.title), {
       id: indexId(entry.title),
       title: entry.title,
       name: INDEX_NAME,

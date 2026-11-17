@@ -14,6 +14,7 @@ import { createContext, useContext, useEffect, useState } from 'react';
 import { SNAPSHOT_SHORTCUT } from '../chrome/trialActions';
 import { REDO_SHORTCUT, UNDO_SHORTCUT } from '../undo/useUndoKeys';
 import { createKeyClaims, type KeyClaims, useClaimed } from './keyClaims';
+import { owningTrial, useOwnsTrial } from './owningTrial';
 
 /** A chord a trial answers. */
 export type LabChord = 'undo' | 'redo' | 'snapshot';
@@ -37,19 +38,15 @@ type LabChords = KeyClaims<ChordClaim>;
 const LabChordsContext = createContext<LabChords | null>(null);
 export const LabChordsProvider = LabChordsContext.Provider;
 
-const TRIAL_ATTR = 'data-trial-id';
-
 const keySpec = (shortcut: { key: string; shift?: boolean }) => ({
   kind: 'key' as const,
   key: shortcut.key,
-  code: `Key${shortcut.key.toUpperCase()}`,
   mods: { mod: true, ...(shortcut.shift ? { shift: true } : {}) },
 });
 
-/** The trial a key typed now belongs to: the one focus is in, else, from outside every trial, the focused one. */
-function ownerNow(focusedTrialId: string | null): Owner {
-  const at = document.activeElement?.closest(`[${TRIAL_ATTR}]`);
-  return at ? at.getAttribute(TRIAL_ATTR) : focusedTrialId;
+/** The trial a key typed now belongs to: the lab's trial focus is in, else, from outside every one, the focused one. */
+function ownerNow(focusedTrialId: string | null, owns: (id: string) => boolean): Owner {
+  return owningTrial(document.activeElement, owns) ?? focusedTrialId;
 }
 
 /**
@@ -61,6 +58,7 @@ export function useLabChordActions(
   focusedTrialId: string | null,
 ): LabChords {
   const focused = useLatest(focusedTrialId);
+  const owns = useLatest(useOwnsTrial());
   const [chords] = useState(() => createKeyClaims<ChordClaim>());
   const claimed = useClaimed(chords);
   useEffect(() => {
@@ -71,7 +69,7 @@ export function useLabChordActions(
       return found;
     };
     const target = (): ChordTarget | undefined =>
-      byOwner(ownerNow(focused.current)) ?? byOwner(null);
+      byOwner(ownerNow(focused.current, owns.current)) ?? byOwner(null);
     const enabled = (chord: LabChord) => () =>
       target()?.can(chord) ? true : ActionDisabledReason.NotApplicable;
     const immediate = (
@@ -95,8 +93,10 @@ export function useLabChordActions(
       {
         id: 'lab.snapshot',
         label: 'Save snapshot',
-        // Held, so a key repeat is the same press and saves nothing more.
-        defaultBinding: [{ spec: { ...keySpec(SNAPSHOT_SHORTCUT), kind: 'keyHeld' } }],
+        // Held, so a key repeat is the same press and saves nothing more. A text field has no use for Mod+S.
+        defaultBinding: [
+          { spec: { ...keySpec(SNAPSHOT_SHORTCUT), kind: 'keyHeld' }, opts: { inFields: true } },
+        ],
         enabled: enabled('snapshot'),
         invoker: {
           timing: 'ongoing',
@@ -111,7 +111,7 @@ export function useLabChordActions(
     return () => {
       for (const off of offs) off();
     };
-  }, [registry, chords, focused, claimed]);
+  }, [registry, chords, focused, owns, claimed]);
   return chords;
 }
 

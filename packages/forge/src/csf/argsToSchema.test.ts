@@ -106,6 +106,24 @@ describe('argsToSchema', () => {
       .toEqual({ kind: 'number', default: 200, min: 100, max: 800, step: 20, control: 'input' });
   });
 
+  it('drops bounds labkit cannot hold, an endless, unreadable, reversed or lone bound, keeps the control, and warns', () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    for (const [min, max] of [[0, Infinity], [Number.NaN, 10], [100, 0], [5, undefined]]) {
+      warn.mockClear();
+      expect(shape(leaf({ size: 4 }, { size: { control: { type: 'range', min, max } } }, 'size')))
+        .toEqual({ kind: 'number', default: 4, control: 'slider' });
+      expect(shape(leaf({ size: 4 }, { size: { control: { type: 'number', min, max } } }, 'size')))
+        .toEqual({ kind: 'number', default: 4 });
+      expect(warn).toHaveBeenCalledTimes(2);
+      expect(warn.mock.calls[0]?.[0]).toMatch(/"size" control's bounds/);
+    }
+    warn.mockClear();
+    leaf({ size: 4 }, { size: { control: { type: 'range', min: 0, max: 10 } } }, 'size');
+    leaf({ size: 4 }, { size: { control: { type: 'number' } } }, 'size');
+    expect(warn).not.toHaveBeenCalled();
+    warn.mockRestore();
+  });
+
   it("maps 'range' and 'slider' to a slider", () => {
     expect(shape(leaf({ step: 0.01 }, { step: { control: { type: 'range', min: 0.001, max: 0.5, step: 0.001 } } }, 'step')))
       .toEqual({ kind: 'number', default: 0.01, min: 0.001, max: 0.5, step: 0.001, control: 'slider' });

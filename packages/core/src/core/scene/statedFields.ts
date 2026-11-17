@@ -18,15 +18,19 @@ export interface StatedNodeFields {
  *  each present only when stated, so an unstated one keeps the scene's
  *  default, and a flag states only `true`. What a copy of a node carries over
  *  besides its kind, layer, pose, data and functions. */
-export function statedFields(n: StatedNodeFields & { kind?: string }): StatedNodeFields {
+export function statedFields(
+  n: StatedNodeFields & { kind?: string },
+  /** What each object-valued field becomes: `detach` for a copy the reader owns. */
+  copy: <T>(value: T) => T = (v) => v,
+): StatedNodeFields {
   const out: StatedNodeFields = {};
   if (n.pickable !== undefined) out.pickable = n.pickable;
   if (n.hidden === true) out.hidden = true;
   if (n.locked === true) out.locked = true;
-  if (n.units !== undefined) out.units = n.units;
-  if (n.clip !== undefined) out.clip = n.clip;
+  if (n.units !== undefined) out.units = copy(n.units);
+  if (n.clip !== undefined) out.clip = copy(n.clip);
   if (n.consumesChildren === true) out.consumesChildren = true;
-  if (n.page !== undefined) out.page = n.page;
-  if (n.pageRun !== undefined) out.pageRun = n.pageRun;
+  if (n.page !== undefined) out.page = copy(n.page);
+  if (n.pageRun !== undefined) out.pageRun = copy(n.pageRun);
   return out;
 }

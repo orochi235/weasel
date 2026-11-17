@@ -7,8 +7,9 @@ import { localWake } from '../../scripts/vite-wake.ts';
 import { devWatch } from '../../scripts/vite-watch.ts';
 import { devSourcemaps } from '../../scripts/vite-sourcemaps.ts';
 import { prebundleWorkspace } from '../../scripts/vite-prebundle.ts';
-import { callbackSourcePlugin } from './vite-plugin-callback-source.ts';
+import { callbackSourcePlugin, packageSourceDirs } from './vite-plugin-callback-source.ts';
 import { traitSchemasPlugin } from './vite-plugin-trait-schemas.ts';
+import { sourceIndexPlugin } from './vite-plugin-source-index.ts';
 import { watchProbe } from '../../packages/forge/src/vite/watchProbe.ts';
 import { weaselIcons } from '../../packages/icons-plugin/src/index.ts';
 import ports from '../../scripts/dev-ports.json' with { type: 'json' };
@@ -38,20 +39,17 @@ export default defineConfig({
     devWatch(),
     devSourcemaps(),
     prebundleWorkspace(repoRoot, [resolve(import.meta.dirname, 'src'), resolve(repoRoot, 'apps/shared')]),
-    // Opt-in: it AST-rewrites every module under those three trees on every
-    // serve transform, and it exists only to put source links on the dev
+    // Opt-in: it AST-rewrites every package's and draw's source modules on
+    // every serve transform, and it exists only to put source links on the dev
     // inspector's callback rows. `sourceOf` degrades to no link without it.
     // Run `WEASEL_CALLBACK_SOURCE=1 npm run dev:draw` when you want them.
     ...(process.env.WEASEL_CALLBACK_SOURCE
       ? [callbackSourcePlugin({
-          includeDirs: [
-            resolve(repoRoot, 'packages/core/src/tools'),
-            resolve(repoRoot, 'packages/core/src/interactions/actions'),
-            resolve(repoRoot, 'apps/draw/src'),
-          ],
+          includeDirs: [...packageSourceDirs(repoRoot), resolve(repoRoot, 'apps/draw/src')],
         })]
       : []),
     traitSchemasPlugin({ repoRoot }),
+    sourceIndexPlugin({ repoRoot }),
     weaselIcons.vite({ mode: 'app' }),
     localWake(),
     watchProbe(),

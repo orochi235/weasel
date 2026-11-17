@@ -65,5 +65,22 @@ describe('ColorContextProvider — state cluster', () => {
     act(() => result.current.toggleFocusedNone());
     expect(result.current.fill).toEqual({ kind: 'solid', color: '#ffffffff' });
   });
-});
 
+  it('toggleNone flips the named slot, whichever slot has focus', () => {
+    const { result } = renderHook(() => useColorContext(), {
+      wrapper: makeWrapper(),
+    });
+    expect(result.current.focused).toBe('fill');
+    act(() => result.current.toggleNone('stroke'));
+    expect(result.current.stroke).toBeNull();
+    expect(result.current.fill).toEqual({ kind: 'solid', color: '#ffffffff' });
+    act(() => result.current.toggleNone('stroke'));
+    expect(result.current.stroke).toEqual({ kind: 'solid', color: '#000000ff' });
+  });
+
+  it('normalizes an 8-digit color it is given, as it does a 6-digit one', () => {
+    const { result } = renderHook(() => useColorContext(), { wrapper: makeWrapper() });
+    act(() => { result.current.setFillColor('#FF8800CC'); });
+    expect(result.current.fill).toEqual({ kind: 'solid', color: '#ff8800cc' });
+  });
+});

@@ -1,0 +1,13 @@
+{
+ "pairs": [],
+ "a": [
+  "Canceling a Simplify or Offset slider drag reverts the geometry but leaves the slider (and Sand's tolerance pref) at the dragged value",
+  "An empty sticky note is deleted when its edit ends, though its paper paints",
+  "Release Compound's enabled state is computed at render from the scene, and goes stale on scene edits that don't re-render Workspace",
+  "Live symmetry stays \"on\" but stops mirroring once its group is deleted or undone away",
+  "`colorKeepingAlpha` stores any 9-character string verbatim, skipping the normalization its doc and `mergeAlphaFromPrev` promise",
+  "A saved page with `width=\"Infinity\"` (or height) is read back as an infinite page",
+  "The options strip's remembered height goes stale when it changes without `rows` changing, so a later row change pans by the sum"
+ ],
+ "b": []
+}

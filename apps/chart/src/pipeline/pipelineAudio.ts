@@ -22,11 +22,12 @@ export function splitDomains(pipeline: EffectPipeline): { image: EffectPipeline;
 
 const hasStages = (run: EffectRun | undefined): run is EffectRun => run !== undefined && Object.keys(run.stages).length > 0;
 
-/** One run holding the stages of both; undefined when neither has any. */
+/** One run holding the stages of both, on the stage either is stepped to; undefined when neither has any. */
 export function mergeRuns(a: EffectRun | undefined, b: EffectRun | undefined): EffectRun | undefined {
   if (!hasStages(b)) return a;
   if (!hasStages(a)) return b;
-  return { stages: { ...a.stages, ...b.stages } };
+  const at = a.at ?? b.at;
+  return { stages: { ...a.stages, ...b.stages }, ...(at !== undefined ? { at } : {}) };
 }
 
 /** What pipeline mode plays its audio stages with. */
@@ -76,16 +77,23 @@ export function usePipelineAudio(pipeline: EffectPipeline, previews: AudioPrevie
   const runner = live?.runner ?? null;
   const { run } = useFollowAudioRunner(runner, { pipeline, sources, previews });
 
-  // A long file still decoding when a later one is picked must not replace it.
+  // A long file still decoding when a later one is picked, or when the component goes, neither
+  // replaces the source nor reports a failure: unmounting drops `picks`, so `current()` is false.
   const picks = useLatestOnly();
   const chooseSource = useCallback(async () => {
     const file = await pickFile('audio/*');
     if (file === null || !mounted.current) return;
     const current = picks.take();
     const { engine } = awake();
-    const bytes = await file.arrayBuffer();
-    if (!current()) return;
-    const audio = await engine.context.decodeAudioData(bytes);
+    let audio: AudioBuffer;
+    try {
+      const bytes = await file.arrayBuffer();
+      if (!current()) return;
+      audio = await engine.context.decodeAudioData(bytes);
+    } catch (err) {
+      if (!current()) return;
+      throw err;
+    }
     if (current()) setSources({ audio });
   }, [awake, picks]);
   const wake = useCallback(() => awake().runner, [awake]);

@@ -315,6 +315,18 @@ describe('<TrialChrome>', () => {
     expect(undo).toHaveBeenCalledTimes(1);
   });
 
+  it("saves a snapshot on Mod+S typed in a text field, keeping the browser's save dialog shut", async () => {
+    const saveSnapshot = vi.fn();
+    await renderSettled(
+      <ChromeHarness labOverrides={{ saveSnapshot }}>
+        <input data-testid="field" type="text" />
+      </ChromeHarness>,
+      { wrapper: withIcons },
+    );
+    expect(fireEvent.keyDown(screen.getByTestId('field'), { key: 's', ctrlKey: true })).toBe(false);
+    expect(saveSnapshot).toHaveBeenCalledWith('ws-1', undefined);
+  });
+
   it('leaves Mod+Z to a text field, and still answers it from a slider', async () => {
     const undo = vi.fn();
     const bindings = { canUndo: true, canRedo: false, undo, redo: vi.fn() };

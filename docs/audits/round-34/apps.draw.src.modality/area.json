@@ -1,0 +1,52 @@
+{
+ "id": "apps.draw.src.modality",
+ "commit": "7192f7a6fc5b8fa10a7ab628983a47025811c0dc",
+ "date": "2026-11-17",
+ "files": [
+  "apps/draw/src/modality/chrome/ModeBreadcrumb.module.css",
+  "apps/draw/src/modality/chrome/ModeBreadcrumb.tsx",
+  "apps/draw/src/modality/chrome/ModeStatusIndicator.tsx",
+  "apps/draw/src/modality/enterModeOn.ts",
+  "apps/draw/src/modality/enteredGroup.ts",
+  "apps/draw/src/modality/index.ts",
+  "apps/draw/src/modality/machine.ts",
+  "apps/draw/src/modality/modeScope.ts",
+  "apps/draw/src/modality/pathEditHost.ts",
+  "apps/draw/src/modality/shortcuts.ts",
+  "apps/draw/src/modality/useCanvasModes.ts",
+  "apps/draw/src/modality/useModality.ts",
+  "apps/draw/src/modality/useModeId.ts"
+ ],
+ "a": 2,
+ "b": 2,
+ "m": 2,
+ "distinct": 2,
+ "chapman": 2,
+ "unfound": 0,
+ "read": {
+  "A": 13,
+  "B": 13
+ },
+ "patches": 2,
+ "questions": 0,
+ "budgetHit": [],
+ "jobs": {
+  "minutes": {
+   "A": 2.7,
+   "B": 1.8,
+   "match": 0.1,
+   "fix": 4.4
+  },
+  "nodes": {
+   "A": "studio",
+   "B": "teitou",
+   "fix": "studio"
+  },
+  "tokens": 3266012,
+  "costUsd": 2.46
+ },
+ "fixCommits": [
+  "03b6d0ae3bbca4f0822db7a451df5b75d8da895d",
+  "5525f2be7fdcb835c395e47aa224baf7dd9d0d18"
+ ]
+}

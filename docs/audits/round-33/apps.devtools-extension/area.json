@@ -1,0 +1,63 @@
+{
+ "id": "apps.devtools-extension",
+ "commit": "d4226fab0e3e2669740411edb2a1d35dadeb46b1",
+ "date": "2026-11-17",
+ "files": [
+  "apps/devtools-extension/manifest.ts",
+  "apps/devtools-extension/scripts/build.ts",
+  "apps/devtools-extension/scripts/gen-icons.ts",
+  "apps/devtools-extension/scripts/safari.ts",
+  "apps/devtools-extension/scripts/zip.ts",
+  "apps/devtools-extension/src/background/badge.ts",
+  "apps/devtools-extension/src/background/frames.ts",
+  "apps/devtools-extension/src/background/main.ts",
+  "apps/devtools-extension/src/background/relay.ts",
+  "apps/devtools-extension/src/browserApi.ts",
+  "apps/devtools-extension/src/content/bridge.ts",
+  "apps/devtools-extension/src/content/main.ts",
+  "apps/devtools-extension/src/content/start.ts",
+  "apps/devtools-extension/src/devtools/main.ts",
+  "apps/devtools-extension/src/envelope.ts",
+  "apps/devtools-extension/src/hookPresence.ts",
+  "apps/devtools-extension/src/panel/PanelHost.tsx",
+  "apps/devtools-extension/src/panel/main.tsx",
+  "apps/devtools-extension/src/panel/panel.css",
+  "apps/devtools-extension/src/panel/panel.module.css",
+  "apps/devtools-extension/src/panel/portTransport.ts",
+  "apps/devtools-extension/src/popup/main.ts",
+  "apps/devtools-extension/src/popup/popup.css",
+  "apps/devtools-extension/src/popup/status.ts",
+  "apps/devtools-extension/src/tabWeasel.ts",
+  "apps/devtools-extension/src/testing/fakePorts.ts",
+  "apps/devtools-extension/vite.config.ts"
+ ],
+ "a": 5,
+ "b": 5,
+ "m": 3,
+ "distinct": 7,
+ "chapman": 8,
+ "unfound": 1,
+ "read": {
+  "A": 27,
+  "B": 27
+ },
+ "patches": 7,
+ "questions": 0,
+ "budgetHit": [],
+ "jobs": {
+  "minutes": {
+   "A": 4,
+   "B": 5.5,
+   "match": 0.1,
+   "fix": 8.9
+  },
+  "nodes": {
+   "A": "teitou",
+   "B": "studio",
+   "fix": "studio"
+  },
+  "tokens": 5322117,
+  "costUsd": 4.46
+ },
+ "fixCommits": []
+}

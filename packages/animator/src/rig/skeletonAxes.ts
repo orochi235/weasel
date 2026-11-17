@@ -6,10 +6,13 @@ import { IDENTITY_JOINT, type JointTransform, type Pose, type Skeleton } from '.
 const FIELDS = ['x', 'y', 'rotation', 'scaleX', 'scaleY'] as const satisfies readonly (keyof JointTransform)[];
 const ROTATION = FIELDS.indexOf('rotation');
 
-/** A name for each axis of `skeletonAxes(skeleton)`: `<joint>.<field>`. */
-function axisNames(skeleton: Skeleton): string[] {
-  return skeleton.joints.flatMap((joint) => FIELDS.map((field) => `${joint.name}.${field}`));
+/** The path of each axis of `skeletonAxes(skeleton)`: `[<joint>, <field>]`. A joint's name is
+ *  one step, dots and all. */
+function axisPaths(skeleton: Skeleton): string[][] {
+  return skeleton.joints.flatMap((joint) => FIELDS.map((field) => [joint.name, field]));
 }
+
+const joinPaths = (paths: readonly (readonly string[])[]): string[] => paths.map((p) => p.join('.'));
 
 /**
  * The axes of `skeletonAxes(skeleton)` that belong to `joints`, as indexes, for a caller with
@@ -17,8 +20,8 @@ function axisNames(skeleton: Skeleton): string[] {
  * themselves: `animator.hold({ target: rig.target, value: pose, axes: arm })`.
  */
 export function jointAxes(skeleton: Skeleton, joints: readonly string[]): number[] {
-  const names = axisNames(skeleton);
-  return axisIndexes({ count: names.length, names }, joints, 'jointAxes: `joints`');
+  const paths = axisPaths(skeleton);
+  return axisIndexes({ count: paths.length, names: joinPaths(paths), paths }, joints, 'jointAxes: `joints`');
 }
 
 /**
@@ -32,10 +35,12 @@ export function jointAxes(skeleton: Skeleton, joints: readonly string[]): number
 export function skeletonAxes(skeleton: Skeleton): TargetAxes<Pose> {
   const names = skeleton.joints.map((j) => j.name);
   const n = FIELDS.length;
+  const paths = axisPaths(skeleton);
   return {
     count: names.length * n,
     angles: names.map((_, j) => j * n + ROTATION),
-    names: axisNames(skeleton),
+    names: joinPaths(paths),
+    paths,
     to(pose) {
       const out = new Array<number>(names.length * n);
       for (let j = 0; j < names.length; j++) {

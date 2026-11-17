@@ -1,169 +1,87 @@
 /**
- * Produces a `ShapeSchema` per member of `KIT_SHAPE_KINDS`. Each kit shape is
- * created via `makeLeaf(idCall, poseLiteral, dataLiteral)`: we find the
- * `<id>:` entry (or `const <id> =` binding) that builds the tool and walk its
- * initializer for the first `makeLeaf(...)` call.
- *
- * The pose/data arguments are not always plain object literals. In those
- * cases we fall back to the closest object literal in the initializer, and tag
- * the schema with a short note saying the picture is partial.
+ * Produces a `ShapeSchema` per kind the `insert` dep builds a node for with no
+ * consumer factory (`KIT_INSERT_KINDS` in `@weasel-js/editing`'s
+ * `deps/insert.ts`). A kind's data is the object literal returned from the
+ * `case '<kind>':` clause that builds it, spreads read through their types;
+ * its pose is the dep's `pose`, the insert's resolved extent.
  */
-import {
-  Node,
-  type Project,
-  SyntaxKind,
-  type ObjectLiteralExpression,
-  type CallExpression,
-  type PropertyAssignment,
-  type VariableDeclaration,
-} from 'ts-morph';
+import { Node, type Project, SyntaxKind, type ObjectLiteralExpression } from 'ts-morph';
 import { resolve } from 'node:path';
 import type { PropertyDescriptor, ShapeSchema } from '../src/dev/traitSchemas.types.ts';
 import { srcRef, sourceFileOrThrow, readJsDoc } from './extract.ts';
 
-const SOURCE = 'packages/editing/src/presets/tools.ts';
-
-/** Map from binding identifier inside the hook to public shape-kind id. */
-const BINDING_TO_KIND: Record<string, string> = {
-  rect: 'rect',
-  ellipse: 'ellipse',
-  line: 'line',
-  polygon: 'polygon',
-  star: 'star',
-  pencil: 'pencil',
-  pen: 'pen',
-  lasso: 'lasso',
-  text: 'text',
-};
+export const SHAPES_SOURCE = 'packages/editing/src/deps/insert.ts';
+const KINDS_NAME = 'KIT_INSERT_KINDS';
+const POSE_NAME = 'pose';
 
 export function extractShapes(project: Project, repoRoot: string): Record<string, ShapeSchema> {
-  const sf = sourceFileOrThrow(project, resolve(repoRoot, SOURCE));
+  const sf = sourceFileOrThrow(project, resolve(repoRoot, SHAPES_SOURCE));
+  const kindsDecl = sf.getVariableDeclarationOrThrow(KINDS_NAME);
+  const kinds = kindsDecl.getDescendantsOfKind(SyntaxKind.StringLiteral).map((l) => l.getLiteralValue());
+
+  const poseDecl = sf.getDescendantsOfKind(SyntaxKind.VariableDeclaration).find((d) => d.getName() === POSE_NAME);
+  const poseInit = poseDecl?.getInitializer();
+  const pose = poseInit ? propertiesOfType(poseInit) : [];
+
   const out: Record<string, ShapeSchema> = {};
-
-  for (const [binding, kindId] of Object.entries(BINDING_TO_KIND)) {
-    const decl = findBinding(sf, binding);
-    if (!decl) continue;
-    const initializer = decl.getInitializer();
-    if (!initializer) continue;
-
-    const makeLeafCall = findMakeLeafCall(initializer);
-    const objLiterals = collectObjectLiterals(initializer);
-
-    let pose: readonly PropertyDescriptor[] = [];
-    let data: readonly PropertyDescriptor[] = [];
-    let notes: string | undefined;
-
-    if (makeLeafCall) {
-      const args = makeLeafCall.getArguments();
-      const poseArg = args[1];
-      const dataArg = args[2];
-      pose = poseArg ? propertiesOf(poseArg) : [];
-      data = dataArg ? propertiesOf(dataArg) : [];
-    } else if (objLiterals.length > 0) {
-      // Best-effort: pick the first object literal as 'data'. The pose is
-      // synthesized elsewhere (insert-dep) and not visible here.
-      data = propertiesOf(objLiterals[0]!);
-      notes = `pose is synthesized outside this hook (likely via useInsertDepSource)`;
-    } else {
-      notes = `no createable literal found — selection-only or fully delegated`;
-    }
-
-    out[kindId] = {
-      id: kindId,
+  for (const kind of kinds) {
+    const clause = sf.getDescendantsOfKind(SyntaxKind.CaseClause).find((c) => {
+      const label = c.getExpression();
+      return Node.isStringLiteral(label) && label.getLiteralValue() === kind;
+    });
+    const built = clause && returnedLiteral(clause);
+    out[kind] = {
+      id: kind,
       pose,
-      data,
-      renderer: pose.length > 0 || data.length > 0 ? 'PATH_PAINTER' : undefined,
-      source: srcRef(decl, repoRoot),
-      ...(notes ? { notes } : {}),
+      data: built ? propertiesOfLiteral(built) : [],
+      source: srcRef(clause ?? kindsDecl, repoRoot),
+      ...(built ? {} : { notes: `no \`case '${kind}':\` returning an object literal in ${SHAPES_SOURCE}` }),
     };
   }
-
   return out;
 }
 
-function findBinding(sf: ReturnType<Project['getSourceFile']>, name: string): VariableDeclaration | PropertyAssignment | null {
-  if (!sf) return null;
-  // Shape tools are built inside a preset's `build`, not at the source-file
-  // top level, so we have to walk descendants.
-  let found: VariableDeclaration | PropertyAssignment | null = null;
-  sf.forEachDescendant((node, traverse) => {
-    if (found) { traverse.stop(); return; }
-    if (node.getKind() === SyntaxKind.PropertyAssignment) {
-      const p = node as PropertyAssignment;
-      if (p.getName() === name) { found = p; traverse.stop(); }
-      return;
-    }
-    if (node.getKind() !== SyntaxKind.VariableDeclaration) return;
-    const d = node as VariableDeclaration;
-    if (d.getName() === name) { found = d; traverse.stop(); return; }
-    const nameNode = d.getNameNode();
-    if (nameNode.getKind() === SyntaxKind.ObjectBindingPattern) {
-      const hit = nameNode.getDescendantsOfKind(SyntaxKind.BindingElement)
-        .find((el) => el.getName() === name);
-      if (hit) { found = d; traverse.stop(); }
-    }
-  });
-  return found;
-}
-
-function findMakeLeafCall(node: Node): CallExpression | null {
-  let found: CallExpression | null = null;
-  node.forEachDescendant((n, traverse) => {
-    if (found) { traverse.stop(); return; }
-    if (n.getKind() !== SyntaxKind.CallExpression) return;
-    const call = n as CallExpression;
-    const expr = call.getExpression();
-    if (expr.getText() === 'makeLeaf') { found = call; traverse.stop(); }
-  });
-  return found;
-}
-
-function collectObjectLiterals(node: Node): readonly ObjectLiteralExpression[] {
-  const out: ObjectLiteralExpression[] = [];
-  node.forEachDescendant((n) => {
-    if (n.getKind() === SyntaxKind.ObjectLiteralExpression) {
-      out.push(n as ObjectLiteralExpression);
-    }
-  });
-  return out;
-}
-
-function propertiesOf(arg: Node): readonly PropertyDescriptor[] {
-  // Unwrap parenthesized / `as` expressions.
-  let n: Node = arg;
-  while (
-    n.getKind() === SyntaxKind.ParenthesizedExpression
-    || n.getKind() === SyntaxKind.AsExpression
-    || n.getKind() === SyntaxKind.TypeAssertionExpression
-  ) {
-    n = (n as unknown as { getExpression: () => Node }).getExpression();
+/** The object literal the first `return` in `clause` returns. */
+function returnedLiteral(clause: Node): ObjectLiteralExpression | undefined {
+  for (const ret of clause.getDescendantsOfKind(SyntaxKind.ReturnStatement)) {
+    const expr = ret.getExpression();
+    if (expr && Node.isObjectLiteralExpression(expr)) return expr;
   }
-  if (n.getKind() !== SyntaxKind.ObjectLiteralExpression) return [];
-  const obj = n as ObjectLiteralExpression;
-  const out: PropertyDescriptor[] = [];
+  return undefined;
+}
+
+/** A literal's properties in order, a spread contributing the properties of its type. A later
+ *  property replaces an earlier one of the same name. */
+function propertiesOfLiteral(obj: ObjectLiteralExpression): readonly PropertyDescriptor[] {
+  const byName = new Map<string, PropertyDescriptor>();
+  const put = (p: PropertyDescriptor) => { byName.delete(p.name); byName.set(p.name, p); };
   for (const prop of obj.getProperties()) {
-    if (prop.getKind() === SyntaxKind.PropertyAssignment) {
-      const pa = prop as unknown as { getName: () => string; getInitializer: () => Node | undefined };
-      const init = pa.getInitializer();
-      let typeStr = 'unknown';
-      let lit: string | undefined;
-      if (init) {
-        try { typeStr = init.getType().getText(init); } catch { typeStr = init.getText(); }
-        if (init.getText().length < 80) lit = init.getText();
-      }
-      out.push({
-        name: pa.getName(),
-        type: clipType(typeStr),
+    if (Node.isPropertyAssignment(prop)) {
+      const init = prop.getInitializer();
+      const doc = readJsDoc(prop);
+      const text = init?.getText();
+      put({
+        name: prop.getName(),
+        type: init ? clipType(init.getType().getText(init)) : 'unknown',
         optional: false,
-        ...(lit !== undefined ? { defaultLiteral: lit } : {}),
-        ...(readJsDoc(prop) ? { doc: readJsDoc(prop) } : {}),
+        ...(text !== undefined && text.length < 80 ? { defaultLiteral: text } : {}),
+        ...(doc ? { doc } : {}),
       });
-    } else if (prop.getKind() === SyntaxKind.ShorthandPropertyAssignment) {
-      const sa = prop as unknown as { getName: () => string };
-      out.push({ name: sa.getName(), type: 'unknown', optional: false });
+    } else if (Node.isShorthandPropertyAssignment(prop)) {
+      put({ name: prop.getName(), type: clipType(prop.getType().getText(prop)), optional: false });
+    } else if (Node.isSpreadAssignment(prop)) {
+      for (const p of propertiesOfType(prop.getExpression())) put(p);
     }
   }
-  return out;
+  return [...byName.values()];
+}
+
+function propertiesOfType(node: Node): readonly PropertyDescriptor[] {
+  return node.getType().getProperties().map((sym) => ({
+    name: sym.getName(),
+    type: clipType(sym.getTypeAtLocation(node).getText(node)),
+    optional: sym.isOptional(),
+  }));
 }
 
 function clipType(t: string): string {

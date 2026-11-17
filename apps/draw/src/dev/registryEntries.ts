@@ -1,6 +1,6 @@
 /** The rows the registry inspector's tree lists, one shape per category. */
 import type { IconRef, IconSpec } from '@weasel-js/icons';
-import type { ShortcutInput } from '@weasel-js/gestures';
+import type { GestureSpec, ShortcutInput } from '@weasel-js/gestures';
 
 /** Discriminated leaf entry. One of these per row in the tree's right pane. */
 export type TreeEntry =
@@ -18,17 +18,8 @@ export type TreeEntry =
 
 /** Gesture kinds a tool binds. `true` when at least one entry in
  *  `Tool.bindings` declares that kind. */
-export interface GestureChannels {
-  click: boolean;
-  doubleClick: boolean;
-  pointerDown: boolean;
-  drag: boolean;
-  wheel: boolean;
-  key: boolean;
-  keyHeld: boolean;
-  contextMenu: boolean;
-  multiTouchTap: boolean;
-}
+/** Which gesture kinds a tool's bindings declare: one flag per `GestureSpec.kind`. */
+export type GestureChannels = Record<GestureSpec['kind'], boolean>;
 
 /** Things a tool *declares or emits* rather than reacting to. Kept apart
  *  from gestures so the "subscribing tools" framing doesn't misrepresent
@@ -230,22 +221,16 @@ export interface OpFactoryEntry {
  *  resting phase; `engaged` is entered after a phase transition (e.g.
  *  start of a drag). */
 
-/** Gesture kinds a tool can bind. Strictly typed against
- *  `GestureChannels` so tool outputs can't sneak in. */
-export const GESTURE_CHANNEL_KEYS: readonly (keyof GestureChannels)[] = [
-  'click', 'doubleClick', 'pointerDown', 'drag', 'wheel',
-  'key', 'keyHeld', 'contextMenu', 'multiTouchTap',
-];
-
 /** Catalog entries for the inspector: one page per gesture kind, listing
  *  every tool binding and action `defaultBinding` that routes through it.
  *  There used to be two vocabularies here — phase-table channel names and
  *  `GestureSpec.kind` values — and the catalog listed both because a route
  *  could live in either. One grammar, one list. */
-export const GESTURE_CATALOG_KEYS: readonly string[] = [
-  'click', 'doubleClick', 'pointerDown', 'drag', 'wheel', 'pinch',
-  'key', 'keyHeld', 'contextMenu', 'multiTouch', 'multiTouchTap',
-];
+export const GESTURE_CATALOG_KEYS: readonly GestureSpec['kind'][] = Object.keys({
+  click: true, doubleClick: true, pointerDown: true, drag: true, wheel: true, pinch: true,
+  key: true, keyHeld: true, contextMenu: true, multiTouch: true, multiTouchTap: true,
+  hover: true, longPress: true, drop: true, carry: true, paste: true,
+} satisfies Record<GestureSpec['kind'], true>) as GestureSpec['kind'][];
 
 /** Non-gesture declarations — the tool emits these rather than reacting to
  *  them. Strictly typed against `ToolOutputs`. */

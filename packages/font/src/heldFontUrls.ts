@@ -1,5 +1,7 @@
 /** The URLs each registered atlas variant was given, per family, keyed like the registry. */
 const held = new Map<string, Map<string, string>>();
+/** The URLs each variant's registered atlas came from, which a failed replacement falls back to. */
+const landed = new Map<string, Map<string, string>>();
 
 const pair = (metricsUrl: string, atlasUrl: string): string => `${metricsUrl}\n${atlasUrl}`;
 
@@ -27,16 +29,33 @@ export function claimFontUrls(
   return first !== undefined;
 }
 
-/** Whether a variant still holds these URLs: a fetch of ones since replaced lands nowhere. */
-export function holdsFontUrls(family: string, key: string, metricsUrl: string, atlasUrl: string): boolean {
+function holdsFontUrls(family: string, key: string, metricsUrl: string, atlasUrl: string): boolean {
   return held.get(family)?.get(key) === pair(metricsUrl, atlasUrl);
 }
 
-/** Let go of a variant's URLs if it still holds these, as when their fetch failed and a later call may try others. */
+/**
+ * Whether a variant still holds these URLs, recording that its atlas now comes
+ * from them when it does: a fetch of ones since replaced lands nowhere.
+ */
+export function landFontUrls(family: string, key: string, metricsUrl: string, atlasUrl: string): boolean {
+  if (!holdsFontUrls(family, key, metricsUrl, atlasUrl)) return false;
+  landed.set(family, (landed.get(family) ?? new Map<string, string>()).set(key, pair(metricsUrl, atlasUrl)));
+  return true;
+}
+
+/**
+ * Let go of a variant's URLs if it still holds these, as when their fetch
+ * failed and a later call may try others. A variant whose earlier atlas is
+ * still registered holds that atlas's URLs again.
+ */
 export function releaseFontUrls(family: string, key: string, metricsUrl: string, atlasUrl: string): void {
-  if (holdsFontUrls(family, key, metricsUrl, atlasUrl)) held.get(family)!.delete(key);
+  if (!holdsFontUrls(family, key, metricsUrl, atlasUrl)) return;
+  const before = landed.get(family)?.get(key);
+  if (before === undefined) held.get(family)!.delete(key);
+  else held.get(family)!.set(key, before);
 }
 
 export function _clearHeldFontUrls(): void {
   held.clear();
+  landed.clear();
 }

@@ -1,5 +1,6 @@
 /** A text node's glyphs as its outline: what `kit:text` answers for `NodeShapeEntry.outline`. */
-import type { PathInWorldPose } from '@weasel-js/geom';
+import { boundsOfPath, type Path, type PathInWorldPose, type Rect } from '@weasel-js/geom';
+import { pathIntersect } from '@weasel-js/geom/booleans';
 import {
   loadTextOutlines, textToPath, textToPathsByPaint, TextOutlinesError, type TextOutlineSource,
 } from '@weasel-js/text';
@@ -17,6 +18,22 @@ export function textOutlineOf(d: TextNodeData, box: PathInWorldPose, inherited?:
     load: () => loadTextOutlines(data),
   };
 }
+
+/** `outline` cut to `clip`, a world-space path whose bounds are `box`: what a clipped text node draws. */
+export function clippedOutline(outline: NodeOutline, clip: Path, box: Rect): NodeOutline {
+  const cut = (path: Path): Path => (inside(boundsOfPath(path), box) ? path : pathIntersect(path, clip));
+  return {
+    stroked: outline.stroked,
+    path: () => cut(outline.path()),
+    parts: () => outline.parts().map((p) => ({ ...p, path: cut(p.path) })).filter((p) => !emptyPath(p.path)),
+    load: () => outline.load(),
+  };
+}
+
+const inside = (b: Rect, box: Rect): boolean =>
+  b.x >= box.x && b.y >= box.y && b.x + b.width <= box.x + box.width && b.y + b.height <= box.y + box.height;
+
+const emptyPath = (p: Path): boolean => p.kind !== 'rect' && 'commands' in p && p.commands.length === 0;
 
 function outlined<T>(build: () => T): T {
   try {

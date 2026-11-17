@@ -30,8 +30,8 @@ export interface PackageRoute {
 /** The package page a hash names, or `null` for a hash that is not one. */
 export function parsePackageRoute(id: string): PackageRoute | null {
   if (!id.startsWith(PREFIX)) return null;
-  const [name, tab = 'overview', ...rest] = id.slice(PREFIX.length).split('/');
-  if (!name || !isTab(tab)) return null;
+  const [name, tab = 'overview', ...rest] = id.slice(PREFIX.length).replace(/\/+$/, '').split('/');
+  if (!name || !isTab(tab) || (tab === 'overview' && rest.length > 0)) return null;
   return { package: name, tab, rest: rest.join('/') };
 }
 

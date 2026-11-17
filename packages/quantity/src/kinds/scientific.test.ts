@@ -87,3 +87,10 @@ describe('scientific', () => {
     expect(parseAs('2,5 × 10³', scientific(), { locale: 'de-DE' })).toBe(2500);
   });
 });
+
+
+describe('scientific text with surrounding whitespace', () => {
+  it.each([' 1.23 × 10⁶ ', '\t10⁻³\n'])('reads %s', (text) => {
+    expect(parseAs(text, scientific())).toBe(parseAs(text.trim(), scientific()));
+  });
+});

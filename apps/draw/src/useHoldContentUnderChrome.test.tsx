@@ -1,6 +1,6 @@
 import { renderHook } from '@testing-library/react';
 import type { View } from '@weasel-js/core';
-import { describe, expect, it, vi } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { useHoldContentUnderChrome } from './useHoldContentUnderChrome';
 
 describe('useHoldContentUnderChrome', () => {
@@ -43,5 +43,36 @@ describe('useHoldContentUnderChrome', () => {
     height = 64;
     rerender({ rows: 'character tool' });
     expect(view.y).toBe(32);
+  });
+
+  describe('when the strip resizes with no row change', () => {
+    afterEach(() => vi.unstubAllGlobals());
+
+    it('pans a later row change by that change alone', () => {
+      const observed: (() => void)[] = [];
+      vi.stubGlobal('ResizeObserver', class {
+        constructor(cb: () => void) { observed.push(cb); }
+        observe() {}
+        disconnect() {}
+      });
+      const el = document.createElement('div');
+      let height = 32;
+      el.getBoundingClientRect = () => ({ height } as DOMRect);
+      let view: View = { x: 0, y: 0, scale: { x: 1, y: 1 } };
+      const setView = vi.fn((next: View | ((v: View) => View)) => {
+        view = typeof next === 'function' ? next(view) : next;
+      });
+      const { rerender } = renderHook(({ rows }) => useHoldContentUnderChrome({ current: el }, setView, rows), {
+        initialProps: { rows: 'wide' },
+      });
+      // The window narrows and the row wraps onto a second line.
+      height = 64;
+      for (const cb of observed) cb();
+      expect(setView).not.toHaveBeenCalled();
+      // A tool whose row is one line.
+      height = 32;
+      rerender({ rows: 'narrow' });
+      expect(view.y).toBe(-32);
+    });
   });
 });

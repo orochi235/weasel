@@ -162,6 +162,15 @@ export function pageInfo(page: Page, node: NodeId | string = page.id): PageInfo 
   };
 }
 
+/** Throw when two of `pages` share an id: a page id names one page, and the edits key pages by it. */
+export function requireDistinctPageIds(pages: readonly Page[], caller: string): void {
+  const seen = new Set<string>();
+  for (const { id } of pages) {
+    if (seen.has(id)) throw new Error(`${caller}: page id "${id}" appears twice`);
+    seen.add(id);
+  }
+}
+
 /** Options for {@link createPageRun}. */
 export type CreatePageRunOptions<TLayer extends string> = PageLayoutOptions & {
   /** Content may sit outside every page. Default off. */
@@ -173,7 +182,8 @@ export type CreatePageRunOptions<TLayer extends string> = PageLayoutOptions & {
 /**
  * Make the scene paged: add the page run, a root group laid out by
  * `pageRunLayout`, and a group under it for each of `pages`, whose id is the
- * page's unless a node already holds it (`pageNodeOf`). One undo entry. Returns the run's id. The run and its pages hold
+ * page's unless a node already holds it (`pageNodeOf`). One undo entry. Returns the run's id. Throws when two
+ * of `pages` share an id. The run and its pages hold
  * `data: undefined` whatever the scene's `TData`: a reader of every node's
  * `data` meets them too. Neither is pickable, and each page clips what is on
  * it to its rect (`pageClip`).
@@ -183,6 +193,7 @@ export function createPageRun<TData, TLayer extends string, TPose>(
   pages: readonly Page[],
   options: CreatePageRunOptions<TLayer> = {},
 ): NodeId {
+  requireDistinctPageIds(pages, 'createPageRun');
   const { pasteboard, layer = scene.layers[0]!.id, ...layout } = options;
   const s = asAny(scene);
   return s.batch('Add pages', () => {

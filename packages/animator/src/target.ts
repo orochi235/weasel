@@ -14,6 +14,9 @@ export interface TargetAxes<T> {
   /** A name for each axis, in the order `to` answers them, for `axes` options to go by. A dot
    *  makes a path: `knee.rotation` is also reached as `knee`, with the joint's other axes. */
   names?: readonly string[];
+  /** Each axis's name as its path's steps, joined by dots in `names`: `['spine.001', 'rotation']`,
+   *  which `spine` does not reach. Without it, every dot in a name is a step. */
+  paths?: readonly (readonly string[])[];
   /** Optional. `value` with `delta` added axis by axis: what `from` answers for `to(value)`
    *  plus `delta`, built with no array between. A read of a moving target goes through it. */
   add?(value: T, delta: ArrayLike<number>): T;
@@ -72,7 +75,8 @@ export interface Target<T> {
   axisIndexes(axes: readonly AxisRef<T>[]): number[];
   /** The committed value: what shows once nothing is moving it. */
   committed(): T;
-  /** Writes the committed value. Animations moving the target go on adding to the new one. */
+  /** Writes the committed value. Animations moving the target go on adding to the new one; with
+   *  none, it is shown (`show`, then `publish`) at once. */
   commit(value: T): void;
   /** Whether any animation is moving it. */
   readonly active: boolean;
@@ -375,6 +379,8 @@ export function createTarget<T>(opts: TargetOptions<T>): Target<T> {
     commit: (value) => {
       s.handoff?.release();
       opts.set(value);
+      // No frame will show it with nothing moving it, so it is shown here, as one coming to rest.
+      if (s.live === 0 && s.handoff === null && s.show) { s.show(readTarget(s)); s.publish?.(); }
     },
     get active() { return s.live > 0 || s.handoff !== null; },
     stop(o) {

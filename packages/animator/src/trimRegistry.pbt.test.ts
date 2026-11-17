@@ -75,7 +75,9 @@ const slotOf = (m: Model, id: string, e: TrimEdge): Slot => {
 
 const commands = [
   fc.tuple(id, override).map(([i, o]) => cmd(`set(${i}, ${JSON.stringify(o)})`, (m, r) => {
-    m.sets.set(i, { ...o });
+    // A set naming neither edge drops the override, as nothing then paints.
+    if (o.start === undefined && o.end === undefined) m.sets.delete(i);
+    else m.sets.set(i, { ...o });
     r.reg.set(i, o);
   })),
   id.map((i) => cmd(`clear(${i})`, (m, r) => {

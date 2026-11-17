@@ -1,3 +1,4 @@
+import { isColorModePreference } from '@weasel-js/theme';
 import { ownAt } from '../config/path';
 import { savedTrialHistory } from './savedUndo';
 import type { InstrumentSerializers, SerializedTrial, TrialRecord } from './types';
@@ -66,8 +67,10 @@ export function deserializeTrials(
   }
   return records.map((r) => {
     const d = ownAt(deserializers, r.instrumentName);
+    const { colorMode, ...rest } = r;
     return {
-      ...r,
+      ...rest,
+      ...(isColorModePreference(colorMode) ? { colorMode } : {}),
       state: d?.deserialize ? d.deserialize(r.state, r.config) : r.state,
     };
   });

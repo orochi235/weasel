@@ -59,6 +59,15 @@ describe('sequence pages', () => {
     expect(formatTakes(DIAGRAM_DOT, kinds)).toBe(false);
   });
 
+  it('answers the kind of the one page a one-page writer writes', () => {
+    const scene = sceneOf(DOC);
+    const [graph, sequence] = placedPagesOf(scene);
+    expect([...scenePageKinds(scene, { page: graph!.id })]).toEqual(['graph']);
+    expect([...scenePageKinds(scene, { page: sequence!.id })]).toEqual(['sequence']);
+    expect([...scenePageKinds(scene, { page: 'nowhere' })]).toEqual(['graph']);
+    expect(formatTakes(DIAGRAM_DOT, scenePageKinds(scene, { page: graph!.id }))).toBe(true);
+  });
+
   it('round-trips through the JSON format', async () => {
     const back = await DIAGRAM_JSON.read!(DIAGRAM_JSON.write!(DOC).text);
     expect(back.document).toEqual(DOC);

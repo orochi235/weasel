@@ -1,6 +1,7 @@
 import type { BlendFactors, CompositeOp, DrawCommand, Effect } from '@weasel-js/renderer';
 import type { View } from 'core/viewport/view';
 import type { LayerDims } from './dims';
+import { warnLayersOnce } from './unknownOrderIds';
 
 /**
  * Several consecutive layers composited as one.
@@ -71,7 +72,7 @@ export function groupMembership(
         const claimed = byLayer.get(id);
         if (claimed === group) continue;
         if (claimed) {
-          console.warn(
+          warnLayersOnce(
             `[weasel] layer "${id}" is claimed by layer groups "${claimed.id}" and ` +
             `"${group.id}"; it stays in "${claimed.id}".`,
           );
@@ -80,7 +81,7 @@ export function groupMembership(
         byLayer.set(id, group);
       }
       if (!matched) {
-        console.warn(
+        warnLayersOnce(
           `[weasel] layer group "${group.id}" names "${name}", which matches no layer ` +
           'being drawn, so it groups nothing. Check the id against the layer stack — a ' +
           'scene with declared layers draws as "scene:<layerId>", which "scene" covers.',

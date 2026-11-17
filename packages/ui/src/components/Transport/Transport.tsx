@@ -5,6 +5,7 @@ import type { HoldProps } from '../Disabled';
 import { useControlHold } from '../Disabled/controlHold';
 import { QuantityText } from '../QuantityText';
 import { useFieldLocale } from '../../useFieldLocale';
+import { secondsText } from './timeText';
 import { Slider, useDetents } from '../Slider';
 import s from './Transport.module.css';
 import { icon } from '../../icons.gen';
@@ -63,12 +64,9 @@ export interface PlayheadTime {
   duration: number;
 }
 
-const seconds = (ms: number): string => `${(ms / 1000).toFixed(2)}s`;
-const spokenSeconds = (ms: number): string => `${(ms / 1000).toFixed(2)} seconds`;
-
-const readouts: Record<TimeReadout, (time: PlayheadTime) => string> = {
-  absolute: ({ playhead, start, duration }) => `${seconds(playhead)} / ${seconds(start + duration)}`,
-  elapsed: ({ playhead, start, duration }) => `${seconds(playhead - start)} / ${seconds(duration)}`,
+const readouts: Record<TimeReadout, (time: PlayheadTime, seconds: (ms: number) => string) => string> = {
+  absolute: ({ playhead, start, duration }, seconds) => `${seconds(playhead)} / ${seconds(start + duration)}`,
+  elapsed: ({ playhead, start, duration }, seconds) => `${seconds(playhead - start)} / ${seconds(duration)}`,
 };
 
 /** The playhead, as `timeReadout` or `formatTime` reads it, in a cell as wide as the widest of its
@@ -86,7 +84,8 @@ export function PlayheadReadout({
   timeReadout?: TimeReadout;
   formatTime?: (time: PlayheadTime) => string;
 }): ReactElement {
-  const read = formatTime ?? readouts[timeReadout];
+  const locale = useFieldLocale();
+  const read = formatTime ?? ((time: PlayheadTime) => readouts[timeReadout](time, (ms) => secondsText(ms, 2, locale).text));
   const shown = Math.min(Math.max(playhead, start), start + duration);
   const bounds = [...new Set([read({ playhead: start, start, duration }), read({ playhead: start + duration, start, duration })])];
   return (
@@ -183,7 +182,7 @@ export function Transport(props: TransportProps): ReactElement {
       {onSeek ? (
         <Slider
           aria-label="Position"
-          thumbs={[{ value: shown, valueText: spokenSeconds(shown) }]}
+          thumbs={[{ value: shown, valueText: secondsText(shown, 2, locale).spoken }]}
           min={start}
           max={start + duration}
           onInput={([thumb]) => onSeek(Math.min(Math.max(thumb.value, start), start + duration))}

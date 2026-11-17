@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import { findShapeSilhouette, rectPath } from '@weasel-js/core';
+import { findShapeSilhouette, RECT_POSE_DESCRIPTOR, rectPath } from '@weasel-js/core';
 import { registerOutline } from './outline';
 import { diagramScene, DEFAULT_NODE_STYLE, type DiagramData } from './fromData';
 import { diagramShape, registerDiagramShape } from './shape';
@@ -62,5 +62,15 @@ describe('diagramShape', () => {
     expect(findShapeSilhouette(late, POSE as never)).toEqual(rectPath(0, 0, 40, 20));
     warn.mockRestore();
     undo();
+  });
+});
+
+describe('registerDiagramShape', () => {
+  it('registers one painter for two calls with the same options', () => {
+    const geometry = { ...RECT_POSE_DESCRIPTOR };
+    const a = registerDiagramShape({ geometry });
+    const b = registerDiagramShape({ geometry });
+    a();
+    b();
   });
 });

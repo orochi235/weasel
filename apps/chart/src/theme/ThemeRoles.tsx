@@ -14,7 +14,10 @@ function RoleFields({ edit, role }: { edit: ThemeEdit; role: RoleEntry }): React
     <>
       <PropertyField
         kind="string" label="Name" value={role.label}
-        onChange={(label) => { if (label.trim() !== '') edit.change((t) => renameThemeRole(t, role.id, label.trim()), 'Rename role'); }}
+        onChange={(label) => {
+          const name = label.trim();
+          if (name !== '' && name !== role.label) edit.change((t) => renameThemeRole(t, role.id, name), 'Rename role');
+        }}
       />
       <ThemeBox edit={edit} at={['roles', role.id]} name={role.label} />
     </>

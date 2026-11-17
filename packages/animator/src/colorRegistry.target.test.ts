@@ -206,7 +206,7 @@ describe('a color animation over an override', () => {
     step(50);
     expectClose(painted(BASE), [0.5, 1, 0, 1]);
     step(50);
-    expect(painted(BASE)).toBe(GREEN);
+    expect(painted(BASE)).toEqual(GREEN);
   });
 
   it('keeps a tween running when a cycle under it is canceled', () => {
@@ -229,7 +229,7 @@ describe('a color animation over an override', () => {
     act(() => { tweenVertexColors(animator, { id: 'a', channel: 'fill', from: RED, to: BLACK, ms: 100, easing: linear }); });
     step(0);
     step(50);
-    expect(painted(BASE)).toBe(eight);
+    expect(painted(BASE)).toEqual(eight);
   });
 
   it('tells subscribers of a bare commit on a resting target, and of nothing an animation frame does', () => {

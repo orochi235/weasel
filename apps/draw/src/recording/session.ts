@@ -18,24 +18,26 @@ export interface RecordingHost {
   pick(): Promise<Blob | null>;
   /** `recording` or `playing` changed. */
   changed(): void;
-  failed(message: string): void;
+  /** A recording could not be played, or could not be saved when it stopped. */
+  failed(message: string, during: 'play' | 'save'): void;
 }
 
 export interface RecordingSession {
   /** Bind to the canvas whose input is recorded and replayed. Returns the
-   *  teardown, which drops a recording in flight. */
+   *  teardown, which drops a recording in flight and stops a replay. */
   attach(canvas: () => HTMLCanvasElement | null): () => void;
   readonly recording: boolean;
   readonly playing: boolean;
   /** Start a recording, or stop the one in flight and save it. */
   toggle(): Promise<void>;
-  /** Pick a recording file and replay it. */
+  /** Pick a recording file and replay it; while one replays, stop it. */
   play(mode?: ReplayOptions['mode']): Promise<void>;
 }
 
 export function createRecordingSession(host: RecordingHost): RecordingSession {
   let canvas: () => HTMLCanvasElement | null = () => null;
-  let playing = false;
+  /** Ends the replay in flight; set exactly while one plays. */
+  let replay: AbortController | null = null;
   const recorder = createRecorder({
     canvas: () => canvas(),
     surface: () => canvas(),
@@ -50,14 +52,15 @@ export function createRecordingSession(host: RecordingHost): RecordingSession {
           recorder.stop();
           host.changed();
         }
+        replay?.abort();
         canvas = () => null;
       };
     },
     get recording() { return recorder.isRecording(); },
-    get playing() { return playing; },
+    get playing() { return replay !== null; },
 
     async toggle() {
-      if (playing || !canvas()) return;
+      if (replay || !canvas()) return;
       if (!recorder.isRecording()) {
         recorder.start({ snapshotScene: host.snapshot, profile: host.profile() });
         host.changed();
@@ -65,31 +68,42 @@ export function createRecordingSession(host: RecordingHost): RecordingSession {
       }
       const recording = recorder.stop();
       host.changed();
-      const blob = await serializeRecording(recording);
-      const stamp = recording.startedAt.replace(/[:.]/g, '-');
-      const extension = blob.type === 'application/gzip' ? RECORDING_EXTENSION : 'json';
-      host.save(blob, `weaseldraw-recording-${stamp}.${extension}`);
+      try {
+        const blob = await serializeRecording(recording);
+        const stamp = recording.startedAt.replace(/[:.]/g, '-');
+        const extension = blob.type === 'application/gzip' ? RECORDING_EXTENSION : 'json';
+        host.save(blob, `weaseldraw-recording-${stamp}.${extension}`);
+      } catch (err) {
+        host.failed(err instanceof Error ? err.message : String(err), 'save');
+      }
     },
 
     async play(mode = 'realtime') {
+      if (replay) {
+        replay.abort();
+        return;
+      }
       const target = canvas();
-      if (playing || recorder.isRecording() || !target) return;
+      if (recorder.isRecording() || !target) return;
       const blob = await host.pick();
-      if (!blob) return;
-      playing = true;
+      if (!blob || replay || canvas() !== target) return;
+      const controller = new AbortController();
+      replay = controller;
       host.changed();
       try {
         const recording = await deserializeRecording(blob);
         const { scene } = recording;
+        if (controller.signal.aborted) return;
         await replayRecording(recording, {
           canvas: target,
           mode,
+          signal: controller.signal,
           ...(scene ? { beforeFirstEvent: () => host.restore(scene) } : {}),
         });
       } catch (err) {
-        host.failed(err instanceof Error ? err.message : String(err));
+        host.failed(err instanceof Error ? err.message : String(err), 'play');
       } finally {
-        playing = false;
+        replay = null;
         host.changed();
       }
     },

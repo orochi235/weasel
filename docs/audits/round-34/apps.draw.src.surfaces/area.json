@@ -1,0 +1,53 @@
+{
+ "id": "apps.draw.src.surfaces",
+ "commit": "7192f7a6fc5b8fa10a7ab628983a47025811c0dc",
+ "date": "2026-11-17",
+ "files": [
+  "apps/draw/src/surfaces/CommandSurfaces.tsx",
+  "apps/draw/src/surfaces/SchemaSurfaces.module.css",
+  "apps/draw/src/surfaces/SchemaSurfaces.tsx",
+  "apps/draw/src/surfaces/StripSurfaces.tsx",
+  "apps/draw/src/surfaces/appLeaves.tsx",
+  "apps/draw/src/surfaces/assets.tsx",
+  "apps/draw/src/surfaces/chrome.tsx",
+  "apps/draw/src/surfaces/hostContext.ts",
+  "apps/draw/src/surfaces/panelAssets.tsx",
+  "apps/draw/src/surfaces/pathCommandAssets.module.css",
+  "apps/draw/src/surfaces/pathCommandAssets.tsx",
+  "apps/draw/src/surfaces/prefsMigration.ts",
+  "apps/draw/src/surfaces/surfaceState.ts",
+  "apps/draw/src/surfaces/surfaceSwitch.tsx",
+  "apps/draw/src/surfaces/types.ts",
+  "apps/draw/src/surfaces/useEditorSurfaceHost.ts"
+ ],
+ "a": 0,
+ "b": 0,
+ "m": 0,
+ "distinct": 0,
+ "incomplete": [
+  "A",
+  "B"
+ ],
+ "read": {
+  "A": 0,
+  "B": 0
+ },
+ "patches": 0,
+ "questions": 0,
+ "budgetHit": [],
+ "jobs": {
+  "minutes": {
+   "A": 29.4,
+   "B": 29.3,
+   "match": 0,
+   "fix": 0
+  },
+  "nodes": {
+   "A": "orochi",
+   "B": "orochi"
+  },
+  "tokens": 0,
+  "costUsd": 0
+ },
+ "fixCommits": []
+}

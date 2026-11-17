@@ -137,7 +137,7 @@ export function registerKitOps<TData, TLayer extends string, TPose>(
       state.nodes.set(p.id, node);
       attach(p.id, p.parent, p.index);
       if (p.dependsOn !== undefined) node.dependsOn = own(p.dependsOn);
-      Object.assign(node, statedFields(p));
+      Object.assign(node, statedFields(p, own));
       env.noteWritten(node);
       dependents.add(p.id, p.dependsOn === 'children' ? [] : p.dependsOn ?? []);
       trackChildDerived(p.id, p.dependsOn);

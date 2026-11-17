@@ -52,7 +52,9 @@ export function PipelineWorkspace({ pipeline, look, setLook }: {
 
   const add = useCallback((type: EffectStageType) => {
     const id = editor.current?.addStage(type);
-    if (id !== undefined) pick(id, [id]);
+    if (id === undefined) return;
+    pick(id, [id]);
+    setPickedGroup(null);
   }, [pick]);
 
   return (
@@ -69,7 +71,7 @@ export function PipelineWorkspace({ pipeline, look, setLook }: {
         />
       </div>
       <Sidebar side="right" className="wc-sidebar" aria-label="Params">
-        <ParamPanel doc={doc} selected={selected} group={group} change={change} />
+        <ParamPanel doc={doc} selected={selected} group={group} change={change} preview={pipeline.preview} cancel={pipeline.cancel} />
       </Sidebar>
     </div>
   );

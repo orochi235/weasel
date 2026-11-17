@@ -89,3 +89,13 @@ describe('editing a sequence in a scene', () => {
     expect((scene.get('seq/life:a' as never)!.data as Painted).stroke?.paint.color).toBe(paper.roles[paper.defaultRole]!.stroke);
   });
 });
+
+describe('a locked sequence', () => {
+  it('keeps its parts through a theme change', () => {
+    const scene = sceneOf();
+    scene.setLocked('seq' as never, true);
+    const before = (scene.get('seq/life:a' as never)!.data as Painted).stroke?.paint.color;
+    applyDiagramTheme(scene, DIAGRAM_THEMES.paper!);
+    expect((scene.get('seq/life:a' as never)!.data as Painted).stroke?.paint.color).toBe(before);
+  });
+});

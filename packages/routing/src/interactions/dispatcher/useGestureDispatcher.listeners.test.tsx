@@ -70,6 +70,39 @@ describe('useGestureDispatcher', () => {
     expect(spy).not.toHaveBeenCalled();
   });
 
+  it('in a text field, runs a chord only for a binding declaring inFields', () => {
+    const save = vi.fn();
+    const plain = vi.fn();
+    const saves: Action = {
+      id: 'demo.save',
+      label: 'Save',
+      defaultBinding: [{ spec: { kind: 'key', key: 's', mods: { ctrl: true } }, opts: { inFields: true } }],
+      invoker: { timing: 'immediate', run: () => save() },
+    };
+    const other: Action = {
+      id: 'demo.k',
+      label: 'K',
+      defaultBinding: { kind: 'key', key: 'k', mods: { ctrl: true } },
+      invoker: { timing: 'immediate', run: () => plain() },
+    };
+    render(<Harness><Probe actionDef={saves} /><Probe actionDef={other} /></Harness>);
+    const input = document.createElement('input');
+    document.body.appendChild(input);
+    input.focus();
+    const typed = (init: KeyboardEventInit) => {
+      const e = new KeyboardEvent('keydown', { ...init, bubbles: true, cancelable: true });
+      act(() => { input.dispatchEvent(e); });
+      return e.defaultPrevented;
+    };
+    expect(typed({ key: 's', ctrlKey: true })).toBe(true);
+    expect(save).toHaveBeenCalledTimes(1);
+    expect(typed({ key: 'k', ctrlKey: true })).toBe(false);
+    expect(typed({ key: 's' })).toBe(false);
+    expect(plain).not.toHaveBeenCalled();
+    expect(save).toHaveBeenCalledTimes(1);
+    document.body.removeChild(input);
+  });
+
   it('keydown inside editable target is skipped', () => {
     const spy = vi.fn();
     const action: Action = {

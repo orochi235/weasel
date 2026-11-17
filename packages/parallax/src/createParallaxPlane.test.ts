@@ -25,4 +25,14 @@ describe('createParallaxPlane', () => {
     plane.set({ pan: 0.2 });
     expect(fn).toHaveBeenCalledOnce();
   });
+
+  it('leaves pan where it is on a patch whose pan is undefined, as pan has no default to fall back to', () => {
+    const plane = createParallaxPlane({ pan: 0.5, zoom: 0.2 });
+    const fn = vi.fn();
+    plane.subscribe(fn);
+    plane.set({ pan: undefined, zoom: 0.3 });
+    expect(plane.get()).toEqual({ pan: 0.5, zoom: 0.3 });
+    plane.set({ pan: undefined });
+    expect(fn).toHaveBeenCalledOnce();
+  });
 });

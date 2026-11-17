@@ -1,6 +1,7 @@
 import { cleanup, render } from '@testing-library/react';
 import { decimal, fraction, present, presentRange, presentVector, tag, unit } from '@weasel-js/quantity';
 import { afterEach, expect, it } from 'vitest';
+import { I18nProvider } from '../../useFieldLocale';
 import { QuantityText } from './QuantityText';
 
 afterEach(cleanup);
@@ -94,4 +95,14 @@ it('keeps the HTML form for a fraction that is not stacked, and for a range of s
   cleanup();
   const ends = [tag(1 / 4, fraction({ form: 'stacked' })), tag(1 / 2, fraction({ form: 'stacked' }))] as const;
   expect(drawn(render(<QuantityText range={ends} />).container).form.querySelector('math')).toBeNull();
+});
+
+it("writes its number in the number fields' locale, and in its own locale over that", () => {
+  const { container } = render(
+    <I18nProvider locale="de-DE">
+      <QuantityText value={1.5} display={decimal()} />
+      <QuantityText value={1.5} display={decimal()} locale="en-US" />
+    </I18nProvider>,
+  );
+  expect([...container.children].map((el) => el.textContent)).toEqual(['1,5', '1.5']);
 });

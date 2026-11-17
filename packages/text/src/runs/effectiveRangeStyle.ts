@@ -33,7 +33,7 @@ export function rangeWeight(
 /** Keys a run overrides outright. `script` and the two primitives it presets
  *  have no node-level counterpart, so they only ever come from the range. */
 const OVERRIDES = [
-  'fontFamily', 'fontSize', 'letterSpacing', 'fill', 'script', 'baselineShift', 'fontScale',
+  'fontFamily', 'fontSize', 'letterSpacing', 'fill', 'stroke', 'script', 'baselineShift', 'fontScale',
   'textTransform', 'fontVariantCaps', 'rotate', 'lang',
 ] as const;
 
@@ -46,7 +46,8 @@ const OVERRIDES = [
  * makes the flag `true` across the range, `MIXED` runs included. Every other
  * key is the run's value where the range sets one, otherwise the node's.
  * The node level is resolved first, so the result has a value for every
- * key but the run-only ones, and for `fill` unless the node is unfilled.
+ * key but the run-only ones, for `fill` unless the node is unfilled, and
+ * for `stroke` when the node or the range has one.
  * Bold is read off the weight that renders (see {@link rangeWeight}), since
  * a run's own `fontWeight` can take a bold node's text back to regular.
  */
@@ -65,6 +66,7 @@ export function effectiveRangeStyle(
     fontVariantCaps: resolved.fontVariantCaps,
   };
   if (resolved.fill !== null) out.fill = resolved.fill;
+  if (resolved.stroke !== undefined) out.stroke = resolved.stroke;
   if (resolved.lang !== undefined) out.lang = resolved.lang;
   Object.assign(out, rangeWeight(range, style));
   for (const key of FLAGS) {

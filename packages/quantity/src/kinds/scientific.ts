@@ -49,7 +49,7 @@ const zeroParts = (locale: string): Part[] => [{ type: 'number', value: (0).toLo
 
 /** `× 10^n`, `x10^n`, `*10^n`, and the superscript form, rewritten as the `e` form `parseNumber` reads. */
 function asENotation(text: string): string {
-  const raised = text.replace(/[⁰¹²³⁴⁵⁶⁷⁸⁹⁻]+$/, (s) => `^${[...s].map((c) => (c === '⁻' ? '-' : SUPERSCRIPT.indexOf(c))).join('')}`);
+  const raised = text.trim().replace(/[⁰¹²³⁴⁵⁶⁷⁸⁹⁻]+$/, (s) => `^${[...s].map((c) => (c === '⁻' ? '-' : SUPERSCRIPT.indexOf(c))).join('')}`);
   const m = /^(?:(.*\d)\s*[×xX*·]\s*)?10\s*\^\s*([-−+]?\d+)$/.exec(raised.trim());
   return m ? `${m[1] ?? '1'}e${m[2]!}` : text;
 }

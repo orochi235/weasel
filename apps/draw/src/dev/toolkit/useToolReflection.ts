@@ -13,16 +13,20 @@ export interface ToolReflection {
   slots: ToolSlots;
   routes: readonly RegistryEntry[];
   conflicts: readonly Conflict[];
+  /** The tool input routes to now (`ToolsApi.routed`, else `active`), or `''` with none. */
+  activeToolId: string;
 }
 
 /** What a canvas's live tool set declares: its defs, its routes, and where two of them tie. */
 export function useToolReflection(): ToolReflection {
   // `useTools` rebuilds the api literal each render — track only the structural signature
-  // (sorted tool ids) so we don't spin in a render loop.
+  // (sorted tool ids) and the routed tool so we don't spin in a render loop.
   const toolsRef = useRef<ToolsApi | null>(null);
   const [toolsSig, setToolsSig] = useState<string>('');
+  const [activeToolId, setActiveToolId] = useState<string>('');
   const onToolsCreated = (api: ToolsApi) => {
     toolsRef.current = api;
+    setActiveToolId(api.routed ?? api.active ?? '');
     const sig = [
       ...Object.keys(api.registry),
       ...api.ambient.map((t) => `~${t.id}`),
@@ -80,5 +84,5 @@ export function useToolReflection(): ToolReflection {
   const routes = useMemo(() => buildRouteRegistry(toolList), [toolList]);
   const conflicts = useMemo(() => findConflicts(toolList), [toolList]);
 
-  return { onToolsCreated, defs: toolDefs, tools: toolList, slots: toolSlots, routes, conflicts };
+  return { onToolsCreated, defs: toolDefs, tools: toolList, slots: toolSlots, routes, conflicts, activeToolId };
 }

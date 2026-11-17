@@ -11,20 +11,21 @@ const withBlur = addStage(EMPTY, stageFromType(typeOf('blur'), 'blur'));
 
 describe('ParamPanel', () => {
   it("shows a Blur stage's radius as a slider bounded 0–50", () => {
-    render(<ParamPanel doc={withBlur} selected="blur" change={() => {}} />);
+    render(<ParamPanel doc={withBlur} selected="blur" change={() => {}} preview={() => {}} cancel={() => {}} />);
     const slider = screen.getByRole('slider', { name: 'radius' });
     expect(slider.getAttribute('min')).toBe('0');
     expect(slider.getAttribute('max')).toBe('50');
   });
 
-  it('sets the param through change, formatted, labeled "Set radius"', () => {
+  it('previews a slider drag through preview and records it through change, labeled "Set radius"', () => {
     const change = vi.fn();
-    render(<ParamPanel doc={withBlur} selected="blur" change={change} />);
+    const preview = vi.fn();
+    render(<ParamPanel doc={withBlur} selected="blur" change={change} preview={preview} cancel={() => {}} />);
     fireEvent.change(screen.getByRole('slider', { name: 'radius' }), { target: { value: '12' } });
-    // The slider previews through onInput and commits through onChange: both write, under one coalesce key,
-    // so they land as one undo step.
-    expect(new Set(change.mock.calls.map(([, label, key]) => `${label}|${key}`))).toEqual(new Set(['Set radius|blur:radius']));
-    const [next] = change.mock.calls.at(-1)!;
+    expect(preview).toHaveBeenCalled();
+    expect(change).toHaveBeenCalledTimes(1);
+    const [next, label] = change.mock.calls[0]!;
+    expect(label).toBe('Set radius');
     const radius = (next as EffectDoc).pipeline.stages[0]!.params![0]!;
     expect(radius.value).toBe('12 px');
     expect(radius.control).toMatchObject({ kind: 'number', value: 12, min: 0, max: 50 });
@@ -32,7 +33,7 @@ describe('ParamPanel', () => {
 
   it('shows a param without a control read-only', () => {
     const doc = addStage(EMPTY, { id: 'odd', title: 'Odd', params: [{ label: 'size', value: '3 px' }] });
-    render(<ParamPanel doc={doc} selected="odd" change={() => {}} />);
+    render(<ParamPanel doc={doc} selected="odd" change={() => {}} preview={() => {}} cancel={() => {}} />);
     expect(screen.getByRole('status', { name: 'size' }).textContent).toBe('3 px');
     expect(screen.queryByRole('textbox')).toBeNull();
   });
@@ -40,7 +41,7 @@ describe('ParamPanel', () => {
   it('offers an enum param as a select', () => {
     const doc = addStage(EMPTY, stageFromType(typeOf('composite'), 'comp'));
     const change = vi.fn();
-    render(<ParamPanel doc={doc} selected="comp" change={change} />);
+    render(<ParamPanel doc={doc} selected="comp" change={change} preview={() => {}} cancel={() => {}} />);
     // The select's trigger is named for its value then its label.
     act(() => {
       fireEvent.click(screen.getByRole('button', { name: /blend/ }));
@@ -54,7 +55,7 @@ describe('ParamPanel', () => {
   it("shows a picked group's name, renamed through change as 'Rename group'", () => {
     const doc: EffectDoc = { ...withBlur, pipeline: { ...withBlur.pipeline, groups: [{ id: 'g', label: 'Filters', members: ['blur'] }] } };
     const change = vi.fn();
-    render(<ParamPanel doc={doc} selected={null} group="g" change={change} />);
+    render(<ParamPanel doc={doc} selected={null} group="g" change={change} preview={() => {}} cancel={() => {}} />);
     const name = screen.getByRole('textbox', { name: 'Name' }) as HTMLInputElement;
     expect(name.value).toBe('Filters');
     fireEvent.change(name, { target: { value: 'Blurs' } });
@@ -65,7 +66,7 @@ describe('ParamPanel', () => {
   });
 
   it('says to pick a stage when none is selected', () => {
-    render(<ParamPanel doc={withBlur} selected={null} change={() => {}} />);
+    render(<ParamPanel doc={withBlur} selected={null} change={() => {}} preview={() => {}} cancel={() => {}} />);
     expect(screen.getByText('Select a stage to edit its params.')).toBeTruthy();
     expect(screen.queryByRole('slider')).toBeNull();
   });

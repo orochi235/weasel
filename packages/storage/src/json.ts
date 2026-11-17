@@ -1,7 +1,7 @@
 import { isPlainObject } from '@weasel-js/registry';
 
 /** Raw strings written before records existed come back as the string they
- *  are. */
+ *  are, unless they are also JSON text (`2`, `false`, `null`), which reads as that value. */
 export function parse(raw: string): unknown {
   try {
     return JSON.parse(raw);

@@ -61,6 +61,27 @@ describe('followScheme', () => {
     a.remove();
   });
 
+  it('forgets a target that left the document at the next apply, without waiting for the OS scheme to change', () => {
+    const flip = stubColorScheme('light');
+    const apply = vi.fn();
+    const a = document.createElement('div');
+    const b = document.createElement('div');
+    document.body.append(a, b);
+    const applyGlobals = followScheme(apply);
+    const ta = target(a);
+    applyGlobals({ mode: 'auto' }, ta);
+    b.remove();
+    applyGlobals({ mode: 'auto' }, target(b));
+    a.remove();
+    applyGlobals({ mode: 'auto' }, target(b));
+    // A proxy for the held reference: a forgotten root put back is not followed again.
+    document.body.append(a);
+    apply.mockClear();
+    flip('dark');
+    expect(apply.mock.calls.map(([, t]) => t.root)).toEqual([]);
+    a.remove();
+  });
+
   it('resolves auto to dark with no matchMedia, as the theme does', () => {
     vi.stubGlobal('matchMedia', undefined);
     const apply = vi.fn();

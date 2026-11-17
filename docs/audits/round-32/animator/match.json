@@ -1,0 +1,49 @@
+{
+ "pairs": [
+  [
+   0,
+   6
+  ],
+  [
+   3,
+   0
+  ],
+  [
+   5,
+   3
+  ],
+  [
+   8,
+   5
+  ],
+  [
+   9,
+   7
+  ]
+ ],
+ "a": [
+  "TargetTable.remove accepts a row already removed, so two later adds hand out the same row",
+  "TargetTable.add loses a row index when the value is the wrong length",
+  "loop/tweenLoop take any `count`: NaN loops forever, a fraction runs a different number of passes each way",
+  "A staggered item whose factory throws leaves the stagger registered for good and drops the items due beside it",
+  "createElementTarget with `get` but no `set` (or `set` but no `value`/`get`) silently drops every commit",
+  "A joint name with a dot is read as a path: `axes: ['spine']` also takes `spine.001`, `spine.002`…",
+  "`Target.commit` on a resting target never reaches its `show`, so an element target's style goes stale",
+  "`jointShares` counts weights `skinPath` ignores, so the brush works against a share the skin never applies",
+  "staggerVertexColors with `anchorMs: 0` paints NaN: the origin anchor's progress is 0/0 at the tween's start",
+  "ColorOverrideRegistry.target at a new length drops painted colors without notifying subscribers",
+  "ColorOverrideRegistry.set stores the caller's array by reference, so re-setting it after an in-place edit is now a silent no-op",
+  "TargetTable.target answers a target for a row that is not in use, reading past the table or a freed row",
+  "TrimOverrideRegistry.has says an empty override paints while get/resolve say nothing does"
+ ],
+ "b": [
+  "A stagger whose item throws as it starts stays registered for good, and so does its frame loop",
+  "A loop whose factory throws stays registered for good and keeps the frame loop running",
+  "createElementTarget with `value` and `set` but no `get` reads its starting value forever",
+  "A joint name that extends another by a dot drags that joint's axes into `axes: [name]`",
+  "animator.cancelAll stops a color cycle's frames but leaves its override painting",
+  "staggerVertexColors paints NaN when `anchorMs` is 0, and accepts any delay or origin unchecked",
+  "TargetTable.remove of a row twice, or of one never added, hands one index to two rows",
+  "ColorOverrideRegistry.target at a new length drops painted colors without notifying subscribers"
+ ]
+}

@@ -1,0 +1,42 @@
+{
+ "pairs": [
+  [
+   0,
+   0
+  ],
+  [
+   6,
+   1
+  ],
+  [
+   2,
+   2
+  ],
+  [
+   5,
+   3
+  ],
+  [
+   7,
+   5
+  ]
+ ],
+ "a": [
+  "Opacity scrub cannot raise a selection whose paints are all at alpha 0, while its HUD reports the rise",
+  "One wheel notch down raises the opacity of the dimmer nodes in a mixed selection",
+  "A recording of a two-pointer gesture replays every move as the last-pressed pointer's",
+  "A live path effect inside a frame (a page other than the first, or a non-envelope group) exports at its frame-local coordinates",
+  "Copy-as-SVG's viewBox is the selection's geometric box, so strokes and markers at its edges are cut off",
+  "An SVG whose `wd:leaf-id`/`wd:group-id` already uses an `svg-N` id gets two drafts with one id",
+  "A paint edit made while O is held is reverted by the next wheel turn",
+  "Detaching the canvas does not stop a replay in flight"
+ ],
+ "b": [
+  "Opacity scrub cannot raise a fully transparent selection: the HUD climbs while the paints stay at 0",
+  "Opacity scrub writes the session-start fill and stroke back on every tick, undoing an edit made between ticks",
+  "A recording loses which pointer each move belongs to, so a multi-pointer gesture replays wrong",
+  "SVG import can give two nodes the same id when a file's `wd:leaf-id`s look like the importer's minted ids",
+  "A recording that fails to serialize is dropped with no notice and an unhandled rejection",
+  "Playback cannot be stopped and outlives the canvas it was started on"
+ ]
+}

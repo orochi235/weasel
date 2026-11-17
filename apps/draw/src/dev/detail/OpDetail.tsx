@@ -10,8 +10,13 @@ import { KindBadge, Jsdoc, type Props } from './shared';
 import { SourceLink } from './sourceLinks';
 import { getOwn } from '@weasel-js/registry';
 
+/** The `createXOp` factory the kit names after op kind `kind`. */
+export function opFactoryName(kind: string): string {
+  return `create${kind.charAt(0).toUpperCase()}${kind.slice(1)}Op`;
+}
+
 export function OpKindDetail({ entry }: { entry: OpKindEntry; onNavigate: Props['onNavigate'] }) {
-  const factoryId = `create${entry.id.charAt(0).toUpperCase()}${entry.id.slice(1)}Op`;
+  const factoryId = opFactoryName(entry.id);
   const fn = getOwn(Weasel as Record<string, unknown>, factoryId);
   const match = findSourceMatch(factoryId);
   const arity = typeof fn === 'function' ? fn.length : undefined;
@@ -57,12 +62,13 @@ export function OpSchemaPanel({ factoryId }: { factoryId: string }) {
   );
 }
 
-/** Op factories that operate on any shape's pose regardless of kind. We don't
- *  have per-kind targeting in the registry today — every factory accepts any
- *  shape — so the list is uniform. Kept as a helper so a future per-kind
- *  filter (e.g. text-only `createSetTextOp`) plugs in here. */
-export function collectOpFactoriesTargeting(_kindId: string): readonly string[] {
-  return ['createInsertOp', 'createDeleteOp', 'createTransformOp', 'createReparentOp'];
+/** The op kinds that operate on any shape regardless of its kind, each an
+ *  entry of the tree's Ops category. We don't have per-kind targeting in the
+ *  registry today — every one of these accepts any shape — so the list is
+ *  uniform. Kept as a helper so a future per-kind filter (e.g. text-only
+ *  `setText`) plugs in here. */
+export function collectOpKindsTargeting(_kindId: string): readonly string[] {
+  return ['insert', 'delete', 'transform', 'reparent'];
 }
 
 export function OpFactoryDetail({ entry }: { entry: OpFactoryEntry }) {

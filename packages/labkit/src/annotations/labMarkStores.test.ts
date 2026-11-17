@@ -1,4 +1,4 @@
-import { describe, expect, it, vi } from 'vitest';
+import { describe, expect, it, onTestFinished, vi } from 'vitest';
 import { createLabMarkStores } from './labMarkStores';
 import type { AnnotationsApi } from './types';
 
@@ -93,5 +93,14 @@ describe('createLabMarkStores', () => {
     release();
     release();
     expect(off).toHaveBeenCalledTimes(1);
+  });
+
+  it('stacks a second store for a trial without a registry clash warning', () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    onTestFinished(() => warn.mockRestore());
+    const registry = createLabMarkStores();
+    registry.register('t', quietStore());
+    registry.register('t', quietStore());
+    expect(warn).not.toHaveBeenCalled();
   });
 });

@@ -5,9 +5,10 @@
  * rides on the node so the serializer emits a `rotate` transform.
  */
 import { textFrameFields } from './svgNote';
-import { type Fill, type Path, type PlacedPage, type Scene, type Stroke, boundsOfPath, composesFrames, definesFrame, derivedDepOf, documentOf, inheritedPaintIn, withInheritedPaint, fillInPoseFrame, isAnnotationNode, pageOfNode, pathEffectOf, pathEffectParts, resolveFill, resolvePartPaint, resolveStroke, pathInPoseFrame, shapeGeneratorOf, unionAABB, type ShapeGenerator, worldPoses } from '@weasel-js/core';
+import { type Fill, type Path, type PlacedPage, type Scene, type Stroke, boundsOfPath, composesFrames, definesFrame, derivedDepOf, documentOf, inheritedPaintIn, withInheritedPaint, fillInPoseFrame, isAnnotationNode, pageOfNode, pathEffectOf, pathEffectParts, resolveFill, resolvePartPaint, resolveStroke, pathInPoseFrame, shapeGeneratorOf, type ShapeGenerator, worldPoses } from '@weasel-js/core';
 import { layoutTextPose } from '@weasel-js/text';
 import {
+  computeBounds,
   serializeSvg,
   warmSvg,
   type SerializeOptions,
@@ -97,16 +98,36 @@ function pathObj(
   return o;
 }
 
+/** A path derived in `node`'s own frame, and the box it lands in once composed through the
+ *  nearest frame above `node`, as the canvas places it. */
+function placedFromFrameOf<TLayer extends string>(
+  scene: DrawScene<TLayer>,
+  node: { parent?: unknown },
+  path: Path,
+  poseOf: (id: string) => WeaselDrawPose | undefined,
+): { path: Path; pose: WeaselDrawPose } {
+  const { x, y, width, height } = boundsOfPath(path);
+  let frame = node.parent as string | null | undefined;
+  while (frame != null && !definesFrame(scene.get(frame as never)!)) frame = scene.get(frame as never)!.parent;
+  const above = frame != null && composesFrames(scene.composition) ? poseOf(frame) : undefined;
+  const pose = above ? scene.composition.compose(above, { x, y, width, height }) : { x, y, width, height };
+  return { path: pathInPoseFrame(path, pose), pose };
+}
+
 /** A live path effect as the paths it shows — what Expand to Paths would
  *  make of it, each part in its own paint — with what keeps it live. */
-function effectToObj<TLayer extends string>(scene: DrawScene<TLayer>, id: string): EffectObj {
+function effectToObj<TLayer extends string>(
+  scene: DrawScene<TLayer>,
+  id: string,
+  poseOf: (id: string) => WeaselDrawPose | undefined,
+): EffectObj {
   const node = scene.get(id as never)!;
   const dependsOn = (Array.isArray(node.dependsOn) ? node.dependsOn : []).map(String);
   const deps = dependsOn.map((d) => derivedDepOf(documentOf(scene), d as never, node));
   const parts = (pathEffectParts(node, deps) ?? []).map((part, k) => {
-    const { x, y, width, height } = boundsOfPath(part.path);
+    const placed = placedFromFrameOf(scene, node, part.path, poseOf);
     const { fill, stroke } = resolvePartPaint(part, node.data as WeaselDrawData, inheritedPaintIn(scene, node));
-    return pathObj(`${id}-${k}`, part.path, { x, y, width, height }, fill, stroke);
+    return pathObj(`${id}-${k}`, placed.path, placed.pose, fill, stroke);
   });
   return { id, effect: pathEffectOf(node)!, dependsOn, parts };
 }
@@ -121,13 +142,9 @@ function booleanToObj<TLayer extends string>(
   const node = scene.get(id as never)!;
   const path = derivedDepOf(documentOf(scene), id as never)?.path;
   if (!path) return undefined;
-  const { x, y, width, height } = boundsOfPath(path);
-  let frame = node.parent;
-  while (frame != null && !definesFrame(scene.get(frame)!)) frame = scene.get(frame)!.parent;
-  const above = frame != null && composesFrames(scene.composition) ? poseOf(frame) : undefined;
-  const pose = above ? scene.composition.compose(above, { x, y, width, height }) : { x, y, width, height };
+  const placed = placedFromFrameOf(scene, node, path, poseOf);
   const data = withInheritedPaint(node.data, inheritedPaintIn(scene, node));
-  return pathObj(id, pathInPoseFrame(path, pose), pose, resolveFill(data.fill), resolveStroke(data.stroke));
+  return pathObj(id, placed.path, placed.pose, resolveFill(data.fill), resolveStroke(data.stroke));
 }
 
 export interface SceneToSvgOptions {
@@ -183,7 +200,7 @@ function sceneSourceOf<TLayer extends string>(
     objOf: (id) => {
       const node = scene.get(id as never);
       if (!node || node.kind !== 'mark') return undefined;
-      if (pathEffectOf(node) !== null) return effectToObj(scene, id);
+      if (pathEffectOf(node) !== null) return effectToObj(scene, id, poseOf);
       if (node.consumesChildren === true) return booleanToObj(scene, id, poseOf);
       return leafToObj(id, withInheritedPaint(node.data, inheritedPaintIn(scene, node)), poseOf(id)!) ?? undefined;
     },
@@ -252,24 +269,15 @@ export function clipboardSnapshotRootIds(
 /**
  * Serialize a subset of a WeaselDraw scene — the given root ids and, for
  * containers, their descendants — to an SVG document string, fitted to the
- * union bounds of those roots rather than the full page.
- *
- * Bounds are read from each root's own world pose: a container's pose is
- * already the union-AABB of its leaf descendants.
+ * ink of what it writes (strokes and marker heads included) rather than the
+ * full page. A root the export leaves out takes no room.
  */
 export function selectionToSvgString<TLayer extends string>(
   scene: DrawScene<TLayer>,
   ids: readonly string[],
 ): Promise<string> {
-  const poseOf = poseOfIn(scene);
-  const nodes = sceneToSvgNodes(sceneSourceOf(scene, poseOf), ids);
-
-  const bounds = unionAABB(
-    ids
-      .map(poseOf)
-      .filter((p): p is WeaselDrawPose => p != null),
-  ) ?? { x: 0, y: 0, width: 0, height: 0 };
-
+  const nodes = sceneToSvgNodes(sceneSourceOf(scene, poseOfIn(scene)), ids);
+  const bounds = computeBounds(nodes);
   return serializeWarm(nodes, {
     viewBox: bounds,
     width: bounds.width,

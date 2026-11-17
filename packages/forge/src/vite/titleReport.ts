@@ -11,13 +11,16 @@ export function sharedIds(entries: readonly IndexEntry[], under = (file: string)
   return [...files].filter(([, of]) => of.length > 1);
 }
 
-/** `entries`, after warning once through `logger` of each story id two of them share. */
+/** `entries` with only the first of each story id two of them share, after warning once through `logger` of each. */
 export function warnShared(entries: IndexEntry[], root: string, logger: Logger | undefined): IndexEntry[] {
-  for (const [id, of] of sharedIds(entries, (file) => relative(root, file))) {
+  const shared = sharedIds(entries, (file) => relative(root, file));
+  if (shared.length === 0) return entries;
+  for (const [id, of] of shared) {
     const files = of.join(', ');
     warnOnce(logger, `[forge] story id ${id} is declared by ${files}; the workshop shows only the first. Rename one of the exports, or retitle one file.`);
   }
-  return entries;
+  const seen = new Set<string>();
+  return entries.filter((entry) => !seen.has(entry.id) && seen.add(entry.id));
 }
 
 /**

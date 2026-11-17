@@ -36,6 +36,8 @@ export interface ColorContextValue {
   setFocusedAlpha: (alpha01: number) => void;
   swap: () => void;
   swapFocus: () => void;
+  /** Sets `slot` to none, or back to its default paint when it already is none. */
+  toggleNone: (slot: 'fill' | 'stroke') => void;
   toggleFocusedNone: () => void;
   reset: () => void;
 }
@@ -68,7 +70,6 @@ type PaintSlot = keyof Paints;
  * outright.
  */
 export function colorKeepingAlpha(slot: PaintSlot, paint: ActivePaint, color: string): string {
-  if (color.length === 9) return color;
   return mergeAlphaFromPrev(color, solidColorOf(paint) ?? (slot === 'fill' ? DEFAULT_FILL_COLOR : DEFAULT_STROKE_COLOR));
 }
 
@@ -150,14 +151,14 @@ export function ColorContextProvider({
   const swapFocus = useCallback(() => {
     setFocus((cur) => (cur === 'fill' ? 'stroke' : 'fill'));
   }, [setFocus]);
-  const toggleFocusedNone = useCallback(() => {
+  const toggleNone = useCallback((which: 'fill' | 'stroke') => {
     setPaints((cur) => {
-      const which = focusedRef.current;
       const paint = which === 'fill' ? cur.fill : cur.stroke;
       const next: ActivePaint = paint === null ? (which === 'fill' ? DEFAULT_FILL : DEFAULT_STROKE) : null;
       return which === 'fill' ? { ...cur, fill: next } : { ...cur, stroke: next };
     });
-  }, [focusedRef, setPaints]);
+  }, [setPaints]);
+  const toggleFocusedNone = useCallback(() => toggleNone(focusedRef.current), [toggleNone, focusedRef]);
   const reset = useCallback(() => {
     setPaints({ fill: DEFAULT_FILL, stroke: DEFAULT_STROKE });
   }, [setPaints]);
@@ -167,13 +168,13 @@ export function ColorContextProvider({
     setFill, setStroke, setFocused, setFocus,
     setFillColor, setStrokeColor, setFocusedColor,
     focusedAlpha, setFocusedAlpha,
-    swap, swapFocus, toggleFocusedNone, reset,
+    swap, swapFocus, toggleNone, toggleFocusedNone, reset,
   }), [
     fill, stroke, focused,
     setFill, setStroke, setFocused, setFocus,
     setFillColor, setStrokeColor, setFocusedColor,
     focusedAlpha, setFocusedAlpha,
-    swap, swapFocus, toggleFocusedNone, reset,
+    swap, swapFocus, toggleNone, toggleFocusedNone, reset,
   ]);
 
   return (

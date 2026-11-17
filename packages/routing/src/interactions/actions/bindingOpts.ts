@@ -51,6 +51,13 @@ export interface BindingOptions<P = Record<string, unknown>> {
    */
   over?: boolean;
   /**
+   * For a key binding: live too while focus is in a text field, where every
+   * other key binding leaves the key to the field. Only a chord with Ctrl or
+   * Cmd held reaches one there, since any other key is typing. For a chord a
+   * field has no use for, such as Mod+S saving.
+   */
+  inFields?: boolean;
+  /**
    * Keys for some of the action's `modifierRoles` on this binding, by role
    * id, over the action's defaults and any tuning's.
    */

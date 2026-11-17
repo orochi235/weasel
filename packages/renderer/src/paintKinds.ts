@@ -13,7 +13,7 @@ import type { FillPoseBox } from './fillInPoseFrame';
 import type { GlMat3 } from '@weasel-js/geom';
 import type { GpuTexture } from './gpu/types';
 import {
-  registerProgram, type ProgramSource, type ShaderUniform,
+  programSourceRegistry, type ProgramSource, type ShaderUniform,
 } from './shaders/registerProgram';
 import { assemblePaintWgsl } from './gpu/webgpu/wgsl/paintPrelude';
 
@@ -148,25 +148,55 @@ const KINDS = createReflectable<PaintDrawKind>({ name: 'draw kinds' });
 /** Every registered draw kind, with the overrides each displaced. */
 export const paintDrawKindRegistry: Reflection<PaintDrawKind> = KINDS.reflection;
 
-/** Register a kind's draw half. Returns a disposer that removes it.
- *  Re-registering an existing id is an override; disposing it uncovers
- *  whatever it displaced. `fallback` marks an engine default, which a later
- *  registration replaces without the development clash warning. */
+/** The release of each program a registered kind holds, by kind and then program id. */
+const PROGRAMS_HELD = new Map<PaintDrawKind, Map<string, () => void>>();
+
+/** Register the programs `entry` declares in place of whatever those ids hold: the kind owns them. */
+function holdPrograms(entry: PaintDrawKind): void {
+  const releases = PROGRAMS_HELD.get(entry) ?? new Map<string, () => void>();
+  for (const [id, declared] of Object.entries(entry.programs ?? {})) {
+    if (!declared.glsl && !declared.wgsl) {
+      throw new Error(`weasel registerPaintKind: kind "${entry.id}" declares program "${id}" with no source.`);
+    }
+    const release = programSourceRegistry.register(id, paintProgramSource(declared), { replace: true });
+    releases.get(id)?.();
+    releases.set(id, release);
+  }
+  if (releases.size > 0) PROGRAMS_HELD.set(entry, releases);
+}
+
+function releasePrograms(entry: PaintDrawKind): void {
+  for (const release of PROGRAMS_HELD.get(entry)?.values() ?? []) release();
+  PROGRAMS_HELD.delete(entry);
+}
+
+/** Register a kind's draw half. Returns a disposer that removes it, and the
+ *  shader programs it declared. Re-registering an existing id is an
+ *  override; disposing it uncovers whatever it displaced, programs included.
+ *  `fallback` marks an engine default, which a later registration replaces
+ *  without the development clash warning. */
 export function registerPaintDrawKind(entry: PaintDrawKind, options?: Pick<PushOptions, 'fallback'>): () => void {
   if ((entry.inPoseFrame === undefined) !== (entry.toBoundsFrame === undefined)) {
     const missing = entry.inPoseFrame === undefined ? 'inPoseFrame' : 'toBoundsFrame';
     throw new Error(
-      `weasel registerPaintKind: kind "${entry.id}" is missing ${missing}. A kind ` +
-      'that converts one frame direction and not the other drifts on the next ' +
+      `weasel registerPaintKind: kind "${entry.id}" is missing ${missing}. A ` +
+      'kind that converts one frame direction and not the other drifts on the next ' +
       'resize; supply both or neither.',
     );
   }
-  for (const [id, declared] of Object.entries(entry.programs ?? {})) {
-    const src = paintProgramSource(declared);
-    // The kind owns the programs it declares: registering it again is a newer copy of them.
-    registerProgram(id, src, { replace: true });
-  }
-  return KINDS.push(entry.id, entry, options);
+  holdPrograms(entry);
+  const drop = KINDS.push(entry.id, entry, options);
+  let done = false;
+  return () => {
+    if (done) return;
+    done = true;
+    const wasLive = KINDS.get(entry.id) === entry;
+    drop();
+    const live = KINDS.get(entry.id);
+    if (live === entry) return;
+    releasePrograms(entry);
+    if (wasLive && live) holdPrograms(live);
+  };
 }
 
 /** A kind's program as the registry holds it: its WGSL inside the paint prelude. */
@@ -186,12 +216,30 @@ export function getPaintDrawKind(kind: string | undefined): PaintDrawKind | unde
 /** Resolves with the draw half of a kind that is loaded on first use. */
 export type PaintDrawKindLoader = () => Promise<PaintDrawKind>;
 
-/** Each id's loaders, newest live, as the kinds themselves stack. */
-const LOADERS = createReflectable<PaintDrawKindLoader>();
+/** Options for {@link registerPaintDrawKindLoader}. */
+export interface PaintDrawKindLoaderOptions extends Pick<PushOptions, 'fallback'> {
+  /**
+   * Registers what the loader resolved to and returns its disposer, which
+   * runs when the loader is disposed. Defaults to
+   * {@link registerPaintDrawKind} with this loader's `fallback`; a package
+   * keeping a registry of its own over the draw half registers both here.
+   */
+  register?(entry: PaintDrawKind): () => void;
+}
 
-/** One load per kind, kept after it settles: a failed load is not retried on
- *  every frame that meets the kind. */
-const LOADS = new Map<string, Promise<void>>();
+/** One `registerPaintDrawKindLoader` call: its own object, so the same function declared twice is two loaders. */
+interface Loader {
+  load(): Promise<PaintDrawKind>;
+  register(entry: PaintDrawKind): () => void;
+  /** Its load, kept after it settles: a failed load is not retried on every frame that meets the kind. */
+  started?: Promise<void>;
+  /** Removes the kind this loader registered. */
+  drop?: () => void;
+  disposed: boolean;
+}
+
+/** Each id's loaders, newest live, as the kinds themselves stack. */
+const LOADERS = createReflectable<Loader>();
 
 /**
  * Declare a paint kind that is loaded the first time something looks it up,
@@ -203,29 +251,42 @@ const LOADS = new Map<string, Promise<void>>();
  * instead.
  *
  * A kind that is already registered never calls its loader. Declaring a
- * second loader for an id overrides the first; the returned disposer removes
- * this one, uncovering whatever it displaced.
+ * second loader for an id overrides the first, whether or not the first has
+ * started or failed: the next lookup calls the new one, and a load the old
+ * one finishes afterward registers nothing. The returned disposer removes
+ * this loader, uncovering whatever it displaced, and the kind it registered.
  */
-export function registerPaintDrawKindLoader(id: string, load: PaintDrawKindLoader): () => void {
-  return LOADERS.push(id, load);
+export function registerPaintDrawKindLoader(
+  id: string, load: PaintDrawKindLoader, options: PaintDrawKindLoaderOptions = {},
+): () => void {
+  const register = options.register ?? ((entry: PaintDrawKind) => registerPaintDrawKind(entry, { fallback: options.fallback }));
+  const loader: Loader = { load, register, disposed: false };
+  const dropLoader = LOADERS.push(id, loader, { fallback: options.fallback });
+  return () => {
+    if (loader.disposed) return;
+    loader.disposed = true;
+    dropLoader();
+    loader.drop?.();
+    loader.drop = undefined;
+  };
 }
 
 function startLoad(id: string): Promise<void> {
-  const running = LOADS.get(id);
-  if (running) return running;
-  const load = LOADERS.get(id)!;
-  const done = load().then(
-    (entry) => {
-      if (entry.id !== id) {
-        throw new Error(`weasel: the loader for paint kind "${id}" resolved to "${entry.id}".`);
-      }
-      if (!KINDS.has(id)) registerPaintDrawKind(entry);
-    },
-  ).catch((err: unknown) => {
+  const loader = LOADERS.get(id)!;
+  if (loader.started) return loader.started;
+  const failed = (err: unknown): never => {
     console.error(`weasel: paint kind "${id}" failed to load:`, err);
     throw err;
-  });
-  LOADS.set(id, done);
+  };
+  const done = loader.load().then((entry): Promise<void> | void => {
+    if (entry.id !== id) failed(new Error(`weasel: the loader for paint kind "${id}" resolved to "${entry.id}".`));
+    if (LOADERS.get(id) !== loader) {
+      // Displaced or disposed while it ran: the live loader, if any, answers instead.
+      return KINDS.has(id) || !LOADERS.has(id) ? undefined : startLoad(id);
+    }
+    if (!KINDS.has(id)) loader.drop = loader.register(entry);
+  }, failed);
+  loader.started = done;
   return done;
 }
 
@@ -261,6 +322,6 @@ export function warmPaintKinds(kinds?: readonly string[]): Promise<void> {
 /** @internal Test helper — do not call from product code. */
 export function _resetPaintDrawKindsForTests(): void {
   KINDS.clear();
+  PROGRAMS_HELD.clear();
   LOADERS.clear();
-  LOADS.clear();
 }

@@ -4,7 +4,7 @@ import { AnimatorEventHub } from '../observe';
 import type { Behind, TargetState } from '../target';
 import type { Animator } from '../types';
 import { createAnimatorApi } from './animatorApi';
-import { createCodec } from './codec';
+import { createCodec, type Codec } from './codec';
 import type { ActiveAnimation, AnimationContext } from './context';
 import { createFrame, type AnimatorClock } from './frame';
 import { createHandoffs } from './handoff/handoffs';
@@ -46,13 +46,16 @@ export interface AnimatorCore {
 export function createAnimatorCore(host: CoreHost): AnimatorCore {
   const clock: AnimatorClock = { frameT: null, elapsed: 0, timeScale: 1, paused: false, drive: 1 };
   const hub = new AnimatorEventHub();
+  /** Animations that threw outside their own ticks, retired by the frame reading them. */
+  const faults: [number, unknown][] = [];
+  const fail = (id: number, error: unknown): void => { faults.push([id, error]); if (!frame.framing()) host.requestFrame(); };
   const codec = createCodec((on) => {
     // A move behind a row's holds runs in its table's lane for moves; the rest of a row's voices
     // run in its table's lane.
     if ('move' in on) return (on as Behind).move?.place;
     const { row } = on as TargetState;
     return row ? { group: row.table, tag: row.index } : undefined;
-  });
+  }, fail);
   const afterTicks: (() => void)[] = [];
   const subscribers = createEmitter();
   let nextId = 1;
@@ -90,7 +93,7 @@ export function createAnimatorCore(host: CoreHost): AnimatorCore {
     columns: (table) => codec.columns(table),
   });
   const frame = createFrame({
-    clock, table, codec, targets, hub, afterTicks, subscribers, refold: refoldTouched,
+    clock, table, codec, targets, hub, afterTicks, faults, subscribers, refold: refoldTouched,
     afterShow: () => handoffs.frame(), keepsTime: () => handoffs.any(), requestFrame: host.requestFrame, tripwire: host.tripwire,
   });
 
@@ -118,16 +121,9 @@ export function createAnimatorCore(host: CoreHost): AnimatorCore {
     },
     wake: () => { if (!frame.framing()) host.requestFrame(); },
     tripwire: host.tripwire,
+    fail,
     interrupt: (key, by) => table.cancelByKey(key, by as ActiveAnimation),
-    velocityUnder: (key, target) => {
-      let sum: number[] | null = null;
-      for (const a of table.under(key)) {
-        if (a.target !== target) continue;
-        const v = a.velocity?.() ?? codec.own(a.id)?.velocity;
-        if (v) sum = sum ? sum.map((x, i) => x + v[i]!) : v.slice();
-      }
-      return sum;
-    },
+    velocityUnder: (key, target) => velocityUnder(table.under(key), codec, target),
   };
 
   const handoffs = createHandoffs({ ctx, table, ...pacing.host });
@@ -162,6 +158,17 @@ export function createAnimatorCore(host: CoreHost): AnimatorCore {
       if (handoffs.any()) host.requestFrame();
     },
   };
+}
+
+/** The summed velocity of `under` on `target`; null where none of them moves it. */
+function velocityUnder(under: Iterable<ActiveAnimation>, codec: Pick<Codec, 'own'>, target: TargetState): number[] | null {
+  let sum: number[] | null = null;
+  for (const a of under) {
+    if (a.target !== target) continue;
+    const v = a.velocity?.() ?? codec.own(a.id)?.velocity;
+    if (v) sum = sum ? sum.map((x, i) => x + v[i]!) : v.slice();
+  }
+  return sum;
 }
 
 /** Refused before the frame starts: a NaN time is kept as the last frame's, and every frame

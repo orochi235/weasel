@@ -34,7 +34,9 @@ const ID = asNodeId('a');
 // The fixture has no `path`, so classify it as one outright to get draw's schema.
 const PANEL_ROUTING = [{ name: 'path', matches: () => true }];
 
-function setup({ selected = true, data = { fill: { paint: solid('#ff0000') } } as D } = {}) {
+const B = asNodeId('b');
+
+function setup({ selected = true, data = { fill: { paint: solid('#ff0000') } } as D, other = undefined as D | undefined } = {}) {
   const onViewChange = vi.fn();
   let api!: {
     scene: ReturnType<typeof useScene<D, L, P>>;
@@ -48,9 +50,13 @@ function setup({ selected = true, data = { fill: { paint: solid('#ff0000') } } a
         id: ID, kind: 'mark', layer: 'main',
         pose: { x: 0, y: 0, width: 50, height: 50 },
         data,
-      }],
+      }, ...(other ? [{
+        id: B, kind: 'mark' as const, layer: 'main' as const,
+        pose: { x: 60, y: 0, width: 50, height: 50 },
+        data: other,
+      }] : [])],
     });
-    const selection = useSelection({ mode: 'multi', scene, initial: selected ? [ID] : [] });
+    const selection = useSelection({ mode: 'multi', scene, initial: selected ? (other ? [ID, B] : [ID]) : [] });
     const { tool, percent } = useOpacityScrub({
       scene: scene as unknown as Parameters<typeof useOpacityScrub>[0]['scene'],
       selection,
@@ -86,8 +92,8 @@ function setup({ selected = true, data = { fill: { paint: solid('#ff0000') } } a
   const key = (type: 'keydown' | 'keyup') => act(() => {
     window.dispatchEvent(new KeyboardEvent(type, { key: 'o', code: 'KeyO' }));
   });
-  const alpha = () => {
-    const fill = (api.scene.get(ID)!.data as D).fill;
+  const alpha = (id = ID) => {
+    const fill = (api.scene.get(id)!.data as D).fill;
     return Math.round(paintAlpha(fill!.paint) * 100);
   };
   return { onViewChange, wheel, key, alpha, fillSlider, api: () => api };
@@ -238,5 +244,37 @@ describe('opacity scrub', () => {
     expect(scene.get(ID)!.pose.x).toBe(3);
     act(() => scene.undo());
     expect(scene.get(ID)!.pose.x).toBe(2);
+  });
+
+  it('raises a selection whose paints are all transparent, as its readout says', () => {
+    const t = setup({ data: { fill: { paint: solid('#ff000000') } } });
+    t.key('keydown');
+    expect(t.api().percent).toBe(0);
+    t.wheel({ deltaY: -10 });
+    t.wheel({ deltaY: -10 });
+    expect(t.api().percent).toBe(10);
+    expect(t.alpha()).toBe(10);
+  });
+
+  it('lowers every node of a mixed selection by the same proportion', () => {
+    const t = setup({ other: { fill: { paint: solid('#ff00004d') } } }); // 0x4d ≈ 0.3
+    t.key('keydown');
+    expect(t.api().percent).toBe(100);
+    t.wheel();
+    t.wheel();
+    expect(t.alpha()).toBe(90);
+    expect(t.alpha(B)).toBe(27);
+  });
+
+  it('keeps a paint edit made between two wheel turns', () => {
+    const t = setup();
+    t.key('keydown');
+    t.wheel();
+    const scene = t.api().scene;
+    act(() => scene.update(ID, { data: { fill: { paint: solid('#0000ff') } } }));
+    t.wheel();
+    const fill = (scene.get(ID)!.data as D).fill!;
+    expect(fill.paint).toEqual({ color: '#0000ff', opacity: 0.95 });
+    expect(t.api().percent).toBe(95);
   });
 });

@@ -1,0 +1,14 @@
+apps/draw/icons/actions.mjs
+apps/draw/icons/index.mjs
+apps/draw/tests-e2e/asset-editor.spec.ts
+apps/draw/tests-e2e/delete-undo-zorder.spec.ts
+apps/draw/tests-e2e/playwright.config.ts
+apps/draw/vite-plugin-callback-source.ts
+apps/draw/vite-plugin-trait-schemas.ts
+apps/draw/vite-plugin-trait-schemas/extract-actions.ts
+apps/draw/vite-plugin-trait-schemas/extract-gestures.ts
+apps/draw/vite-plugin-trait-schemas/extract-node.ts
+apps/draw/vite-plugin-trait-schemas/extract-ops.ts
+apps/draw/vite-plugin-trait-schemas/extract-shapes.ts
+apps/draw/vite-plugin-trait-schemas/extract.ts
+apps/draw/vite.config.ts

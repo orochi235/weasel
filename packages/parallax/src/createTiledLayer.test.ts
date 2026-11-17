@@ -99,6 +99,24 @@ describe('createTiledLayer', () => {
     expect(bled.draw(undefined, view, dims).map(offsetOf)).toEqual([[-500, 0], [0, 0], [500, 0]]);
   });
 
+  it('draws nothing at once when a negative bleed empties one axis, however many columns the other spans', () => {
+    const { layer, draw } = spyLayer();
+    const l = createTiledLayer({ id: 't', label: 'T', source: [layer], period: { x: 1, y: 100 }, bleed: { y: -1000 } });
+    // x spans 4e8 cells and y none: walking the columns would take seconds.
+    const start = performance.now();
+    const out = l.draw(undefined, { x: 0, y: 0, scale: { x: 1e-6, y: 1 } }, dims);
+    expect(performance.now() - start).toBeLessThan(200);
+    expect(out).toEqual([]);
+    expect(draw).not.toHaveBeenCalled();
+  });
+
+  it('a bare-number bleed widens both axes of a lattice tiled on both', () => {
+    const { layer } = spyLayer();
+    const l = createTiledLayer({ id: 't', label: 'T', source: [layer], period: { x: 500, y: 500 }, bleed: 200 });
+    const out = l.draw(undefined, { x: 0, y: 0, scale: { x: 1, y: 1 } }, dims);
+    expect(out.map(offsetOf)).toContainEqual([0, -500]);
+  });
+
   it('accounts for zoom: a zoomed-out view sees more copies', () => {
     const { layer } = spyLayer();
     const l = createTiledLayer({ id: 't', label: 'T', source: [layer], period: 200 });

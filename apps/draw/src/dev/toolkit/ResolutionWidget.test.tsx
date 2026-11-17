@@ -27,6 +27,7 @@ const TOOLS: readonly Tool[] = [
       // A string `affordance:` target — this is what the widget walks to
       // learn which chrome kinds exist, so the picker can offer them.
       { spec: { kind: 'click', target: 'affordance:anchor' }, actionId: 'pen.select' },
+      { spec: { kind: 'key', key: ['Delete', 'Backspace'] }, actionId: 'pen.select' },
     ],
   },
   {
@@ -111,9 +112,17 @@ describe('ResolutionWidget', () => {
     expect(screen.getByRole('row', { name: /viewport\.dragPan/ })).toBeTruthy();
   });
 
+  it('picks the key a key event carries from the keys the bindings name', () => {
+    renderWidget('pen');
+    choose('gesture', 'key');
+    expect(screen.getByRole('row', { name: /pen\.select/ }).textContent).toContain('fires');
+    choose('key', 'Delete');
+    expect(screen.getByRole('row', { name: /pen\.select/ }).textContent).toContain('fires');
+  });
+
   it('says so when nothing matches', () => {
     renderWidget();
-    choose('gesture', 'key');
+    choose('gesture', 'contextMenu');
     expect(screen.getByText('No binding matches this input.')).toBeTruthy();
     expect(screen.queryByRole('table')).toBeNull();
   });

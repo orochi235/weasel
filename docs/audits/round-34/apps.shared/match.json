@@ -1,0 +1,18 @@
+{
+ "pairs": [
+  [
+   0,
+   0
+  ]
+ ],
+ "a": [
+  "The Palette lab's dev link (and the Theme editor / Theme prefs links built on it) misses the theme editor's vite base and lands on vite's 404 page",
+  "otherPrefValue returns an out-of-range number when a leaf's default is its max and it has no min",
+  "prefsRoundTrip leaves the first store open when flush reports failure",
+  "parsePackageRoute rejects a package address with a trailing slash",
+  "The Releases fallback counts Internal entries toward FALLBACK_MIN_ENTRIES but never shows them"
+ ],
+ "b": [
+  "The dev-mode Palette lab, Theme editor and Theme prefs links 404 on the theme-editor dev server"
+ ]
+}

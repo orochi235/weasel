@@ -2,7 +2,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { createScene, type RectPose } from '@weasel-js/core';
 import { registerFont } from '@weasel-js/font';
 import { withDiagramRegistry } from './edge';
-import { installFaceRemeasure } from './faceRemeasure';
+import { installFaceRemeasure, remeasureText } from './faceRemeasure';
 import { diagramScene, type DiagramData } from './fromData';
 import { rendererMeasure } from './rendererMeasure';
 
@@ -57,5 +57,22 @@ describe('a body committed while its face is pending', () => {
     expect(widthOf(row.pose)).toBe(fitted - 16);
     expect(scene.canUndo()).toBe(false);
     off();
+  });
+});
+
+describe('remeasuring a scene with a locked node', () => {
+  it('lays out the rest and leaves the locked body as it stands', () => {
+    const two: DiagramData = { nodes: [{ id: 'a', at: { x: 0, y: 0 }, lines: ['aaaa'] }, { id: 'b', at: { x: 0, y: 100 }, lines: ['bbbb'] }], edges: [] };
+    const narrow = (text: string) => ({ width: text.length * 4, height: 10 });
+    const scene = createScene<unknown, 'main', RectPose>({
+      systemLayers: [{ id: 'main' }], registry: withDiagramRegistry(),
+      initial: diagramScene(two, { layout: 'none', measure: narrow }) as never,
+    });
+    scene.setLocked('a' as never, true);
+    const locked = scene.get('a' as never)!.pose;
+    const open = widthOf(scene.get('b' as never)!.pose);
+    remeasureText(scene, { measure: (text: string) => ({ width: text.length * 20, height: 30 }) });
+    expect(scene.get('a' as never)!.pose).toEqual(locked);
+    expect(widthOf(scene.get('b' as never)!.pose)).toBeGreaterThan(open);
   });
 });

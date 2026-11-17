@@ -15,7 +15,7 @@ import { leafWrites, nodeRecord, warnUnwritable } from './commitLeaf';
 import { panelSource } from '@weasel-js/ui/components/PanelCells';
 import { PrefsSource } from '@weasel-js/ui/components/PrefsSource';
 import type { LeafRenderer } from '@weasel-js/ui/components/PanelCells';
-import { kindBreakdown, panelRowsOf } from '@weasel-js/ui/components/PanelCells';
+import { kindBreakdown, panelEntryOf, panelRowsOf } from '@weasel-js/ui/components/PanelCells';
 import { classifyKind, type AnyNode } from './nodeModel';
 import type { PrefGroup, PrefSection } from '@weasel-js/prefs';
 import { conditionedSections } from '@weasel-js/ui/components/PanelCells';
@@ -45,8 +45,8 @@ export interface SelectionPanelProps<TData, TLayer extends string, TPose> extend
    *  `routing` and `properties`, as `nodeTraitsOf` merges them. */
   features?: readonly FeaturePreset[];
   /** Properties-trait entries, e.g. core's `defaultNodeProperties` /
-   *  `inferredNodeProperties` (+ consumer extras). Default
-   *  `inferredNodeProperties`. Memoize or hoist. */
+   *  `inferredNodeProperties` (+ consumer extras). A later entry of a name
+   *  replaces an earlier one. Default `inferredNodeProperties`. Memoize or hoist. */
   properties?: readonly NodePropertiesEntry[];
   /** Routing-trait classifiers used to derive each node's kind — pass
    *  the same list the canvas's `routing` prop takes. Default
@@ -128,7 +128,7 @@ export function SelectionPanel<TData, TLayer extends string, TPose>(
   const traits = useLatest({ properties, routing });
   const writes = useMemo(
     () => leafWrites(scene, (node) =>
-      traits.current.properties.find((e) => e.name === classifyKind(node, traits.current.routing))?.settle),
+      panelEntryOf(traits.current.properties, classifyKind(node, traits.current.routing))?.settle),
     [scene, traits],
   );
 

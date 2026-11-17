@@ -473,6 +473,12 @@ The snap pipeline ([snapping.md](./snapping.md)) landed on 2026-10-18 with these
 - 2026-11-11 (my call, parallax second property pass): a `space: 'screen'` source inside `createTiledLayer` draws
   nothing under a view with no finite inverse (zoomed to 0 or a denormal on an axis), which collapses the lattice to
   a point; it had been drawn through a transform holding `Infinity`.
+- 2026-11-16 (my call, audit round 31): `createParallaxPlane`'s `set` reads `pan: undefined` as "leave the pan", not
+  as an error, since an animator writing `set({ pan: maybe })` means no change there and `pan` has no default to clear
+  to. It had been stored, and every later draw of the plane threw. An undefined `zoom` or `anchor` still clears it.
+- 2026-11-16 (my call, audit round 31): a bare-number `bleed` on `createTiledLayer` covers both axes, though a bare
+  `period` wraps x alone: a bleed is how far content overhangs its cell, which is not one axis's question. On a
+  lattice tiled in x only it draws as before.
 - Ruled 2026-11-10 (my call, overnight sweep): loupe's `placeBand` never answers a factor below `ZOOM_FLOOR`, the
   floor the loupe model holds its own factor to: on a host with no room it gives a lens of no size rather than a
   factor of 0 that a point in the lens could not be mapped back through.
@@ -701,6 +707,13 @@ The snap pipeline ([snapping.md](./snapping.md)) landed on 2026-10-18 with these
   as the end of its paragraph: X8 closes every embedding and isolate there, BD9 pairs no `PDI` past it, and `'auto'`
   takes its direction from before it, so `'\nא'` reads left to right where it read right to left. text's layout cuts
   paragraphs before calling it, so only a separator text does not cut at (U+001C–U+001E) meets this (f533898fb).
+- Ruled 2026-11-16 (audit 29): the edit overlay writes a `selectionBackground` or `selectionColor`,
+  default included, into its `::selection` rule only when `parsesAsColor` (`@weasel-js/paint`) reads it as a CSS
+  color; any other value is left out with a warning, and the rule is not written when neither is one. There is no
+  override: the value is stored document data going into a page-wide stylesheet.
+- 2026-11-16 (audit 29, the lane's call): a clipped text node's outline (`overflow: 'clip'`) is its glyphs cut to its
+  box with `pathIntersect`, curves kept, so Create Outlines and a boolean take only the ink it draws. A stroked part's
+  stroke then also runs along the cut, where the painter shows none.
 
 ## SVG and paths
 
@@ -819,6 +832,9 @@ The snap pipeline ([snapping.md](./snapping.md)) landed on 2026-10-18 with these
   `NaN`, as d3's `duration(NaN)` does, and one below 0 plays as 0.
 - 2026-11-11 (my call, animator second property pass): an event handler that cancels or seeks its timeline stops the
   rest of that frame's crossings; one that pauses it does not, and the events the frame already crossed still fire.
+- 2026-11-17 (my call, audit round 33): `toClip` throws, naming where, on a timeline whose `duration` is infinite, as it
+  does on any time, offset, weight or bezier point that is not finite: JSON writes each as `null`. A clip has no form
+  for an endless timeline; leaving `duration` out lets it play to its last track's end instead.
 - Open (animator second property pass, 2026-11-11): a spring or a coast ends at the first frame that finds it under its
   rest threshold, so where it ends depends on the frames: one at 0 → 1 (stiffness 120, damping 14, velocity 18.5)
   ends at a frame at 892 ms, but a single frame at 1062 ms finds it 1.0009 and still moving, and it runs on.
@@ -1325,6 +1341,12 @@ The snap pipeline ([snapping.md](./snapping.md)) landed on 2026-10-18 with these
   user. Open: whether draw and chart should toast it, and whether anything should offer the copy back.
   2026-11-14: saves refuse to write over or remove `<key>` until that copy has landed, answering false, so a
   copy that will not save surfaces as a failed save rather than a lost document.
+- 2026-11-17 (the fixer's call, audit round 33): draw draws only the glyphs its source names. Sixteen it named
+  nowhere are gone (`width`, `height`, `fontSize`, `bold`, `italic`, `underline`, `strikethrough`, `opacity`,
+  `strokeWidth`, `rotation`, `cornerRadius`, `letterSpacing`, `lineHeight`, `position`, `fill`, `stroke`). Four
+  duplicated core's path-drawn text-styling glyphs (`core:bold` and its siblings) as `<text>` in whatever font is
+  present. `apps/draw/icons/actions.test.ts` fails on an unnamed one. Restoring them was the alternative; `rotation` was fixed
+  first, so reverting the deletion brings back a correct glyph.
 
 ## Build
 
@@ -2496,3 +2518,105 @@ Calls the lanes made without a ruling:
 - Open: whether an interior octant-spline weight other than 1 may kink the curve, against the doc's "C² across the whole octant".
 - Ruled 2026-11-15: `checkPipeline` reports a `group-loop` problem once per loop.
 - Open: whether `createDeleteAction({ commit })` keeps its old gate for a page-only selection, now that it is disabled there.
+
+
+## Audit round twenty-nine (2026-11-16): core and its state
+
+- Ruled 2026-11-16: `addPage` throws on a page id the scene already has, and `setPages` and `createPageRun`
+  on a page id given twice, rather than minting a fresh id with `nextPageId`.
+- Ruled 2026-11-16: `registerOp` refuses a kind starting `revert:`, as it refuses `kit:`, rather than
+  renaming the inverse ops a saved history holds.
+
+## Audit round twenty-nine (2026-11-16): labs
+
+- 2026-11-16 (the lane's call): a trial's Copy settings as JSON copies an auto field at its resolver's value, not the
+  value the instrument last reported, and marks nothing as auto, so pasting the copy back pins it
+  (`chrome/trialActions.tsx`, `settingsJson`). An endless number is written `"Infinity"`, which config repair reads
+  back; a cleared value is written `null`, which a config seed reads as the field's default, not as cleared.
+- 2026-11-16 (the lane's call): a key binding declaring `inFields` hears a Ctrl or Cmd chord typed in a text field;
+  no other key typed there reaches the dispatcher, and keymaps never see one (`channels/keyboard.ts`). labkit's Mod+S
+  snapshot declares it, so it saves from a field as it did before it moved onto the lab's dispatcher; Undo and Redo
+  stay the field's.
+- 2026-11-16 (the lane's call): a job without `auto` re-runs on a `key` change once something has started it and
+  until something cancels it, finished runs included; one never started stays idle (`job/useJob.ts`). It had ignored
+  `key` entirely, folding a run for the old key into state for the new one.
+- Ruled 2026-11-16: forge reads a Storybook number control whose bounds are not both finite and in order
+  (`max: Infinity`, a NaN, `min` above `max`) as having none, keeping its slider or field, rather than letting
+  labkit's `range()` throw and fault every story in the file (`csf/argsToSchema.ts`, `hasRange`). It warns, naming the control.
+
+## Audit round thirty (2026-11-16): diagrams
+
+- 2026-11-16 (my call): a rewrite the engine makes on its own — `applyDiagramTheme`, a face landing
+  (`remeasureText`), and the body relayout and sequence redraw both run — leaves a locked node as it stands, as
+  layout and the route writers already do. A locked shape keeps its old theme colors and size; a sequence with
+  any locked part is not drawn again. The alternative, writing through `scene.unlocked`, would treat a theme
+  as part of the document rather than an edit of the node.
+- Ruled 2026-11-16: a Mermaid flowchart node's `@{ … }` metadata that is not `key: value` pairs throws, naming
+  the line, as a kanban card's does; the flowchart had read `shape` alone as a key with an empty value.
+- Ruled 2026-11-16: the Diagram JSON reader refuses a file whose theme object does not check (`diagramThemeErrors`),
+  rather than taking it as is and failing later in `diagramThemeFrom`.
+
+## Audit round thirty (2026-11-16): the component kit
+
+- 2026-11-16 (the fixer's call): `QuantityText` passes even an explicit `locale` through `fieldLocale`, as every
+  number field does, so a locale whose numbers do not read back is drawn with Latin digits or in `en-US`.
+- 2026-11-16 (the fixer's call): `liveSelection` keeps its second argument, now unread, rather than drop it in a
+  breaking change.
+- Open: how Escape puts back a mixed segment after a sweep crossed it (`SegmentedBar` `sweep` with `mixedValues`,
+  SelectionPanel's flag bar). A list `onChange` cannot say "mixed", so the bar would need a sweep lifecycle (begin,
+  commit, cancel) and the panel a way to drop its drafts (`leafWrites`' `restore`); today the sweep's steps commit, and
+  Escape writes the mixed flag off on every node.
+- Open: whether `CharacterOptions` draws No fill as mixed over a `MIXED` fill. `RangeStyle` cannot say whether the runs
+  disagree on having a fill or only on its color, and a test asserts it stays unlit.
+- Open: `check:imports` skips type-only imports, so a package whose `.d.ts` names an undeclared sibling passes it.
+  Counting them flags core's `math` entry re-exporting `@weasel-js/simulation` types (core does not declare it, and
+  declaring it would put simulation in base's closure) and forge's `vite/ast.ts` (`@babel/types`, a dev dependency).
+
+## Audit round thirty-two (2026-11-16): animator
+
+- 2026-11-16 (the fixer's call): a `loop`, `tweenLoop` or `stagger` whose factory throws as one of its animations
+  starts is canceled, with every animation it has started, and the throw goes on: to the caller for an animation that
+  starts at once, and to the frame (which logs it) for a later one. The stagger's other items do not start, and no
+  `onDone` comes. Counting the thrown item as done and starting the rest was the alternative.
+- 2026-11-16 (the fixer's call): an `axes` name that is both one axis's name and the start of other axes' paths, as
+  `arm.x` is on a skeleton with joints `arm` and `arm.x`, throws rather than answering both. A name on axes without
+  `paths` keeps reading every dot as a step.
+
+## Audit round thirty-three (2026-11-17): animator engine
+
+- 2026-11-17 (the fixer's call): a hold's `value` or `weight`, or a target tween's `easing`, `interpolate` or
+  `interpolator`, that throws as a frame or a `touch` reads it retires its animation (a timeline, for a track's hold)
+  at the next frame, logged and with an `error` event, as a throwing `onTick` is; the hold weighs nothing from its
+  first throw. A `touch` between frames no longer throws the error to its caller. A throw only at the call that
+  starts it still goes to that caller.
+- 2026-11-17 (the fixer's call): an animation whose cancel throws (its target's setter, as it commits what it showed)
+  still leaves the table, with its completion and its `cancel` event, and `cancelAll` and a `cancelKey` interrupt go on
+  to the rest; the first throw then goes on to whoever canceled. Retiring one whose own tick threw logs a second throw.
+## Audit round thirty-three (2026-11-17): the chart app
+
+- 2026-11-17 (my call): chart's File › Export keeps a whole-document format such as draw-style XML off while any page
+  holds a kind it cannot write, rather than offering an export its writer would finish by leaving that page out with
+  a warning. A one-page format such as DOT asks only about the page in view, which is all it writes.
+## Audit round thirty-three (2026-11-17): the devtools extension
+
+- 2026-11-17 (the fixer's call): `watchHookPresence` throws a `RangeError` on an empty `delays`, which used to probe
+  in a tight loop forever. Falling back to the default delays was the alternative.
+## Audit round thirty-four (2026-11-17): draw's recording and SVG files
+
+- 2026-11-17 (the fixer's call): draw's Play recording, pressed while a recording replays, stops it (the action shows
+  active while one plays); detaching the canvas stops it too. Play stayed disabled through a replay before, with
+  nothing to stop one. A Record press during a replay still does nothing.
+## Audit round thirty-four (2026-11-17): the forge app
+
+- 2026-11-17 (the fixer's call): forge's Counter story is back, as `packages/forge/src/story/Counter.stories.tsx`
+  (`forge-counter--counter`), so `apps/forge/e2e/smoke.mjs` has the story with a string control and kept state it is
+  written around. It had been removed from `apps/forge/stories` on 2026-09-25 (`c1705be650`), leaving the smoke check
+  unable to pass. Deleting the smoke check was the alternative.
+
+## Audit round thirty-four (2026-11-17): draw
+
+- 2026-11-17 (the fixer's call): while live symmetry is on, a group it draws into that goes (a delete, an undo) is
+  replaced by the document's other top-level symmetry group or a fresh one at the page center, as after New or Open,
+  except while a redo is pending: then nothing is drawn into, so undo can step past the group's making and a redo
+  brings it back. A shape drawn in that wait is unmirrored, and the fresh group comes after it. Turning symmetry off
+  when its group went was the alternative.

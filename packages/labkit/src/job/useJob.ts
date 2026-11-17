@@ -1,5 +1,12 @@
 import { useLatest } from '@weasel-js/core';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import {
+  type Dispatch,
+  type SetStateAction,
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+} from 'react';
 import type { JobCapability, JobFailure, JobHandle, JobStatus } from './types';
 
 /** Inputs to `useJob`. `setState` receives each item folded in by the
@@ -30,10 +37,51 @@ function sameKey(a: readonly unknown[] | null, b: readonly unknown[] | null): bo
 }
 
 /**
+ * One run of the capability `cap()` reads: its items folded into state and its events into progress while `live()`
+ * holds. A superseded run ends without touching either.
+ */
+async function drive<TS, TC, TItem>(
+  cap: () => JobCapability<TS, TC, TItem>,
+  args: { config: TC; state: TS; signal: AbortSignal },
+  live: () => boolean,
+  setState: (fold: (prev: TS) => TS) => void,
+  setProgress: Dispatch<SetStateAction<Progress>>,
+): Promise<void> {
+  try {
+    for await (const event of cap().run(args)) {
+      if (!live()) return;
+      if (event.kind === 'total') {
+        setProgress((p) => ({ ...p, total: event.total }));
+      } else if (event.kind === 'failed') {
+        setProgress((p) => ({
+          ...p,
+          failures: [...p.failures, { index: event.index, error: event.error }],
+        }));
+      } else {
+        const fold = cap().onItem;
+        const item = event.item;
+        setState((prev) => fold(item, prev));
+        setProgress((p) => ({ ...p, done: p.done + 1 }));
+      }
+    }
+    if (!live()) return;
+    setProgress((p) => ({ ...p, status: 'done' }));
+  } catch (err) {
+    if (!live()) return;
+    setProgress((p) => ({
+      ...p,
+      status: 'error',
+      error: err instanceof Error ? err.message : String(err),
+    }));
+  }
+}
+
+/**
  * Drive a `JobCapability` and report its progress. `start` cancels any run in
  * flight and begins again; results from a superseded or canceled run are
- * dropped. With `auto`, it starts on mount and again whenever `key` changes
- * element-wise. Unmounting aborts the run.
+ * dropped. A `key` change element-wise starts it again: with `auto` always, on
+ * mount too; without, only once something has started it and not canceled it
+ * since. Unmounting aborts the run.
  */
 export function useJob<TS, TC, TItem>({
   capability,
@@ -48,6 +96,8 @@ export function useJob<TS, TC, TItem>({
   // state, so a superseded run finishes harmlessly instead of racing the winner.
   const token = useRef(0);
   const abort = useRef<AbortController | null>(null);
+  /** Whether a run was started and not canceled since: what a job without `auto` re-runs on a `key` change. */
+  const ran = useRef(false);
 
   // Read through refs: `run` is called once per run and must see the values as of
   // that moment rather than re-subscribing on every render.
@@ -57,6 +107,7 @@ export function useJob<TS, TC, TItem>({
   const setStateRef = useLatest(setState);
 
   const cancel = useCallback(() => {
+    ran.current = false;
     token.current += 1;
     abort.current?.abort();
     abort.current = null;
@@ -64,6 +115,7 @@ export function useJob<TS, TC, TItem>({
   }, []);
 
   const start = useCallback(() => {
+    ran.current = true;
     token.current += 1;
     const mine = token.current;
     abort.current?.abort();
@@ -74,40 +126,13 @@ export function useJob<TS, TC, TItem>({
     const startConfig = configRef.current;
     if (begin) setStateRef.current((prev) => begin(prev, startConfig));
 
-    void (async () => {
-      try {
-        const iterable = capRef.current.run({
-          config: configRef.current,
-          state: stateRef.current,
-          signal: controller.signal,
-        });
-        for await (const event of iterable) {
-          if (token.current !== mine) return;
-          if (event.kind === 'total') {
-            setProgress((p) => ({ ...p, total: event.total }));
-          } else if (event.kind === 'failed') {
-            setProgress((p) => ({
-              ...p,
-              failures: [...p.failures, { index: event.index, error: event.error }],
-            }));
-          } else {
-            const fold = capRef.current.onItem;
-            const item = event.item;
-            setStateRef.current((prev) => fold(item, prev));
-            setProgress((p) => ({ ...p, done: p.done + 1 }));
-          }
-        }
-        if (token.current !== mine) return;
-        setProgress((p) => ({ ...p, status: 'done' }));
-      } catch (err) {
-        if (token.current !== mine) return;
-        setProgress((p) => ({
-          ...p,
-          status: 'error',
-          error: err instanceof Error ? err.message : String(err),
-        }));
-      }
-    })();
+    void drive(
+      () => capRef.current,
+      { config: configRef.current, state: stateRef.current, signal: controller.signal },
+      () => token.current === mine,
+      (fold) => setStateRef.current(fold),
+      setProgress,
+    );
   }, [capRef, configRef, setStateRef, stateRef]);
 
   // Re-run when the declared key changes. `auto` covers the first mount too.
@@ -121,12 +146,15 @@ export function useJob<TS, TC, TItem>({
   useEffect(() => {
     const fresh = !Object.is(lastEpoch.current, epoch);
     lastEpoch.current = epoch;
+    const moved = started.current && !sameKey(lastKey.current, key);
+    lastKey.current = key;
     if (!auto) {
+      started.current = true;
       if (fresh) cancel();
+      else if (moved && ran.current) start();
       return;
     }
-    if (!fresh && started.current && sameKey(lastKey.current, key)) return;
-    lastKey.current = key;
+    if (!fresh && started.current && !moved) return;
     started.current = true;
     start();
   }, [auto, key, start, cancel, epoch]);

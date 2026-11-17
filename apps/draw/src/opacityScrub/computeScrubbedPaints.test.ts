@@ -46,12 +46,23 @@ describe('computeScrubbedPaints', () => {
     expect(alphas(out).stroke).toBe(0.5);
   });
 
-  it('returns zero opacities unchanged when both start at 0 (no ratio to preserve)', () => {
+  it('gives each paint the target when both start at 0, so a transparent node can be raised', () => {
     const out = computeScrubbedPaints(
       { fill: { paint: solid('#ff000000') }, stroke: strokeOf('#00ff0000') },
       0.5,
     );
-    expect(alphas(out)).toEqual({ fill: 0, stroke: 0 });
+    expect(alphas(out)).toEqual({ fill: 0.5, stroke: 0.5 });
+  });
+
+  it('scales against a shared base, so a dimmer node keeps its ratio to the brightest', () => {
+    // Base 1 is another node's fill; this one sits at 0.4 and drops by the same 5%.
+    const out = computeScrubbedPaints({ fill: { paint: solid('#ff000066') }, stroke: null }, 0.95, 1);
+    expect(alphas(out).fill).toBe(0.38);
+  });
+
+  it('raises a node that is transparent under a shared base of 0', () => {
+    const out = computeScrubbedPaints({ fill: { paint: solid('#ff000000') }, stroke: null }, 0.2, 0);
+    expect(alphas(out).fill).toBe(0.2);
   });
 
   it('scrubs a gradient fill, which the old hex-splicing form could not', () => {

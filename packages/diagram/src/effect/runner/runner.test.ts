@@ -38,6 +38,22 @@ describe('createEffectRunner', () => {
     expect(heard).toHaveBeenCalled();
   });
 
+  it('settles idle once the runs queued before it have finished, whether or not they failed', async () => {
+    let release!: () => void;
+    const gate = new Promise<void>((r) => { release = r; });
+    const runner = createEffectRunner({
+      pipeline: PIPELINE,
+      evaluators: { ...EVAL, clock: async ({ time }) => { await gate; throw new Error(`no clock at ${time}`); } },
+    });
+    void runner.run();
+    let idle = false;
+    void runner.idle().then(() => { idle = true; });
+    await settled();
+    expect(idle).toBe(false);
+    release();
+    await vi.waitFor(() => expect(idle).toBe(true));
+  });
+
   it('steps one stage at a time, at the stage it just evaluated, and starts over after the last', async () => {
     const runner = createEffectRunner({ pipeline: PIPELINE, evaluators: EVAL });
     await runner.step();

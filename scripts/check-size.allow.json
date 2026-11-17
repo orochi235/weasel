@@ -1,6 +1,6 @@
 {
   "packages/animator/src/engine/codec.ts": {
-    "longestFunction": 139
+    "longestFunction": 135
   },
   "packages/animator/src/timeline/booking.ts": {
     "longestFunction": 135
@@ -114,7 +114,7 @@
     "longestFunction": 126
   },
   "packages/labkit/src/state/bindLabStore.ts": {
-    "longestFunction": 194
+    "longestFunction": 192
   },
   "packages/labkit/src/state/store.ts": {
     "longestFunction": 139

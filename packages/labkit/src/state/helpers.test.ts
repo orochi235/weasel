@@ -86,6 +86,22 @@ describe('deserializeTrials', () => {
     expect(out[0].state).toEqual({ n: 2 });
   });
 
+  it("drops a trial's color mode that is not light, dark or auto, so the trial reads as auto", () => {
+    const stored = (colorMode: unknown) => ({
+      id: 'w1',
+      instrumentName: 'Test',
+      config: {},
+      state: {},
+      view: { zoom: 1, pan: { x: 0, y: 0 } },
+      colorMode,
+    });
+    const modes = deserializeTrials(
+      [stored('dark'), stored('auto'), stored('sepia'), stored(7)] as never,
+      {},
+    ).map((t) => t.colorMode);
+    expect(modes).toEqual(['dark', 'auto', undefined, undefined]);
+  });
+
   it('returns an empty list when given something that is not an array', () => {
     expect(deserializeTrials(undefined as never, {})).toEqual([]);
   });

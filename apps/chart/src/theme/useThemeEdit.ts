@@ -18,6 +18,8 @@ export interface ThemeEdit {
   input(path: ThemePath, value: string | number): void;
   /** The value a gesture settles on, or a single edit: applied now, and ends the gesture's entry. */
   commit(path: ThemePath, value: string | number): void;
+  /** The gesture was abandoned: what it applied is taken back, leaving no undo entry. */
+  cancel(): void;
   /** A whole-theme edit, such as a role added, as an undo entry of its own. */
   change(edit: (theme: DiagramTheme) => DiagramTheme, label: string): void;
 }
@@ -27,9 +29,12 @@ const keyOf = (path: ThemePath): string => `theme:${path.join('.')}`;
 /** The Theme panel's edits to `scene`'s theme. */
 export function useThemeEdit(scene: ChartScene): ThemeEdit {
   const pending = useRef<{ path: ThemePath; value: string | number } | null>(null);
+  /** The history index before the running gesture's first write, or null when none has written. */
+  const before = useRef<number | null>(null);
   const apply = (path: ThemePath, value: string | number) => {
     const current = chartThemeOf(scene);
     if (themeValue(current, path) === value) return;
+    before.current ??= scene.historyIndex();
     applyChartTheme(scene, setThemeValue(editableTheme(current), path, value), EDIT_THEME_LABEL, { coalesceKey: keyOf(path), from: current, measure: rendererMeasure });
   };
   const flush = () => {
@@ -49,6 +54,18 @@ export function useThemeEdit(scene: ChartScene): ThemeEdit {
       frame.cancel();
       pending.current = null;
       apply(path, value);
+      before.current = null;
+      scene.history.seal();
+    },
+    cancel() {
+      frame.cancel();
+      pending.current = null;
+      const start = before.current;
+      before.current = null;
+      if (start !== null && scene.historyIndex() > start) {
+        scene.jumpToHistoryIndex(start);
+        scene.history.dropRedo();
+      }
       scene.history.seal();
     },
     change(edit, label) {

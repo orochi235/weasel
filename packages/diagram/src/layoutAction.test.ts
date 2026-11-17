@@ -292,6 +292,17 @@ describe('createLayoutAction', () => {
       .toBe(ActionDisabledReason.NotApplicable);
   });
 
+  it('is disabled after a layout whose places the translate wrote to within rounding', () => {
+    const scene = chain();
+    const action = createLayoutAction<Rect>({
+      source: sceneParticipants(scene as never),
+      algorithm: () => new Map([['a', { x: 0.1, y: 0.3 }]]),
+    });
+    run(action, scene);
+    expect(scene.get('a' as never)!.pose.x).not.toBe(0.1);
+    expect(action.enabled!({ scene } as never)).toBe(ActionDisabledReason.NotApplicable);
+  });
+
   it('runs the layout once for any number of enabled reads and the run after them, and again once the scene changes', () => {
     const scene = chain();
     const algorithm = vi.fn(() => new Map([['a', { x: 42, y: 99 }]]));

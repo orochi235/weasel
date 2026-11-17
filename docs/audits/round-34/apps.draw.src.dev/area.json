@@ -1,0 +1,86 @@
+{
+ "id": "apps.draw.src.dev",
+ "commit": "7192f7a6fc5b8fa10a7ab628983a47025811c0dc",
+ "date": "2026-11-17",
+ "files": [
+  "apps/draw/src/dev/AssetsPage.module.css",
+  "apps/draw/src/dev/AssetsPage.tsx",
+  "apps/draw/src/dev/DevShell.tsx",
+  "apps/draw/src/dev/DevtoolsSidebarPanel.module.css",
+  "apps/draw/src/dev/DevtoolsSidebarPanel.tsx",
+  "apps/draw/src/dev/RegistryDetail.tsx",
+  "apps/draw/src/dev/RegistryInspector.module.css",
+  "apps/draw/src/dev/RegistryInspector.tsx",
+  "apps/draw/src/dev/SchemaTable.tsx",
+  "apps/draw/src/dev/ToolkitBuilder.module.css",
+  "apps/draw/src/dev/ToolkitBuilder.tsx",
+  "apps/draw/src/dev/badgeTokens.ts",
+  "apps/draw/src/dev/detail/BundleDetail.tsx",
+  "apps/draw/src/dev/detail/ExportsDetail.tsx",
+  "apps/draw/src/dev/detail/GestureDetail.tsx",
+  "apps/draw/src/dev/detail/IconDetail.tsx",
+  "apps/draw/src/dev/detail/KindDetail.tsx",
+  "apps/draw/src/dev/detail/MetaDetail.tsx",
+  "apps/draw/src/dev/detail/OpDetail.tsx",
+  "apps/draw/src/dev/detail/RouteBadge.tsx",
+  "apps/draw/src/dev/detail/SlotDetail.tsx",
+  "apps/draw/src/dev/detail/shared.tsx",
+  "apps/draw/src/dev/detail/sourceLinks.tsx",
+  "apps/draw/src/dev/devRoutes.ts",
+  "apps/draw/src/dev/drawWorkspace.ts",
+  "apps/draw/src/dev/registryData.ts",
+  "apps/draw/src/dev/registryEntries.ts",
+  "apps/draw/src/dev/registryProbe.tsx",
+  "apps/draw/src/dev/resolutionInput.ts",
+  "apps/draw/src/dev/sourceLookup.ts",
+  "apps/draw/src/dev/toolkit/ActionsWidget.tsx",
+  "apps/draw/src/dev/toolkit/ConflictsWidget.tsx",
+  "apps/draw/src/dev/toolkit/DispatchTraceWidget.tsx",
+  "apps/draw/src/dev/toolkit/ResolutionWidget.tsx",
+  "apps/draw/src/dev/toolkit/RoutesWidget.tsx",
+  "apps/draw/src/dev/toolkit/ToolsWidget.tsx",
+  "apps/draw/src/dev/toolkit/gridCells.tsx",
+  "apps/draw/src/dev/toolkit/useToolReflection.ts",
+  "apps/draw/src/dev/traitSchemas.types.ts"
+ ],
+ "a": 9,
+ "b": 0,
+ "m": 0,
+ "distinct": 9,
+ "incomplete": [
+  "B"
+ ],
+ "read": {
+  "A": 39,
+  "B": 0
+ },
+ "patches": 9,
+ "questions": 0,
+ "budgetHit": [],
+ "jobs": {
+  "minutes": {
+   "A": 6.6,
+   "B": 0.1,
+   "match": 0,
+   "fix": 25
+  },
+  "nodes": {
+   "A": "studio",
+   "B": "studio",
+   "fix": "studio"
+  },
+  "tokens": 4535686,
+  "costUsd": 7.05
+ },
+ "fixCommits": [
+  "7940bf692bfe1c6ad7b74033b31dcf5ce72ddc2f",
+  "73dc18501abd5e7ef152aaf3534c8f429d1f939a",
+  "3509b63346637502668745fd513c1ce91ab3d134",
+  "985e8a39121a49860b476364181df5fe0efbd1ba",
+  "cb426c83eb5240eeb333e1daabeb3cc7709a4e93",
+  "4ded149695cc4278d22f8b4ebd9f9013f9553f9c",
+  "37f172a974119584523bcb587e11320770e02020",
+  "eca3091c2433e7382905d9717e955778e7003578",
+  "eab1e6d3a5f3555c56f77c60940596d940f507f4"
+ ]
+}

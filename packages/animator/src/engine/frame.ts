@@ -31,6 +31,9 @@ export interface FrameHost {
   hub: AnimatorEventHub;
   /** Supervisor frame callbacks due this frame, run once its ticks are done. */
   afterTicks: (() => void)[];
+  /** Animations that threw outside their own ticks, from a voice or a hold: each frame retires
+   *  them once it has read its voices and its holds, and again once it has folded them anew. */
+  faults: [number, unknown][];
   /** Told once a frame, after its ticks and its targets are shown. */
   subscribers: Pick<Emitter, 'emit'>;
   /** Folds again the holds of each target a tick touched. */
@@ -84,15 +87,24 @@ export function createFrame(host: FrameHost): Frame {
         tickDepth -= 1;
       }
     }
-    for (const [anim, error] of threw) {
-      console.error('useAnimator: animation tick threw; retiring it', error);
-      if (animations.get(anim.id) !== anim) continue;
-      // One that ended before throwing (from `onDone`) is finished, not canceled.
-      if (anim.ended) table.drop(anim);
-      else table.retire(anim.id, undefined, true);
-      if (hub.watched) hub.emit({ type: 'error', animation: table.infoOf(anim), error });
-    }
+    for (const [anim, error] of threw) retireThrown(anim, error, 'tick');
     return finished;
+  };
+
+  const retireThrown = (anim: ActiveAnimation, error: unknown, what: string): void => {
+    console.error(`useAnimator: animation ${what} threw; retiring it`, error);
+    if (animations.get(anim.id) !== anim) return;
+    // One that ended before throwing (from `onDone`) is finished, not canceled.
+    if (anim.ended) table.drop(anim);
+    else table.retire(anim.id, undefined, true);
+    if (hub.watched) hub.emit({ type: 'error', animation: table.infoOf(anim), error });
+  };
+  /** Retires each animation a voice or a hold of which threw, once. */
+  const retireFaults = (): void => {
+    for (const [id, error] of host.faults.splice(0)) {
+      const anim = animations.get(id);
+      if (anim) retireThrown(anim, error, 'voice or hold');
+    }
   };
 
   return {
@@ -105,20 +117,29 @@ export function createFrame(host: FrameHost): Frame {
       const frameDt = clock.frameT == null ? 0 : Math.min(Number.MAX_VALUE, Math.max(0, (t - clock.frameT) * clock.drive));
       clock.frameT = t;
       framing = true;
-      // Backward is each animation's own rate: the clock under them only goes forward.
-      const dt = Math.min(Number.MAX_VALUE, frameDt * (clock.paused ? 0 : Math.abs(clock.timeScale)));
-      clock.elapsed = Math.min(Number.MAX_VALUE, clock.elapsed + dt);
-      host.codec.frame(dt);
-      host.targets.settle();
-      for (const anim of tickEach()) {
-        // Gone already if its own tick canceled it; replaced if something
-        // revived it under the same id since.
-        if (animations.get(anim.id) === anim) table.finish(anim.id);
+      try {
+        // Backward is each animation's own rate: the clock under them only goes forward.
+        const dt = Math.min(Number.MAX_VALUE, frameDt * (clock.paused ? 0 : Math.abs(clock.timeScale)));
+        clock.elapsed = Math.min(Number.MAX_VALUE, clock.elapsed + dt);
+        host.codec.frame(dt);
+        host.targets.settle();
+        retireFaults();
+        for (const anim of tickEach()) {
+          // Gone already if its own tick canceled it; replaced if something
+          // revived it under the same id since.
+          if (animations.get(anim.id) === anim) table.finish(anim.id);
+        }
+        for (const cb of host.afterTicks.splice(0)) {
+          try { cb(); } catch (err) { console.error('useAnimator: a staggered start threw', err); }
+        }
+        host.refold();
+        retireFaults();
+      } catch (error) {
+        // Whatever threw unguarded, the next frame comes: a frame left framing asks for no other.
+        framing = false;
+        if (table.awake) host.requestFrame();
+        throw error;
       }
-      for (const cb of host.afterTicks.splice(0)) {
-        try { cb(); } catch (err) { console.error('useAnimator: a staggered start threw', err); }
-      }
-      host.refold();
       framing = false;
       host.targets.show();
       host.afterShow?.();

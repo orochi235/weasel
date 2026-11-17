@@ -2,15 +2,16 @@ import { holdImageBitmaps } from '@weasel-js/renderer';
 import { createRasterSession, planPixelRender, rasterToPng, warmRender, type PixelRenderPlan, type RenderDiagnosticSink } from '@weasel-js/core';
 import { captureExport, regionsOfOne } from './captureExport';
 import { exportReporter } from './exportDiagnostics';
-import type { ExportFormat, ExportOptions, ExportRegionSource, ExportScene } from './exportTypes';
+import type { ExportBackground, ExportFormat, ExportOptions, ExportRegionSource, ExportScene } from './exportTypes';
 import { regionRenderArgs } from './regionRenderArgs';
 
 /** Options for {@link exportRegionPng}. */
 export interface ExportRegionPngOptions extends Pick<ExportOptions, 'onDiagnostic' | 'strict'> {
   /** Output pixels per world unit: 2 makes an image twice the region's size. */
   scale: number;
-  /** The color painted under the region. Default none: the image is transparent where nothing is drawn. */
-  background?: string | null;
+  /** The color painted under the region, or a function reading it from the document drawn. Default none: the
+   *  image is transparent where nothing is drawn. */
+  background?: ExportBackground;
 }
 
 /** The plan a PNG of `region` draws, read through `captureExport` from one revision of the document, its faces,

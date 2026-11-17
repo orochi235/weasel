@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { createScene, type RectPose } from '@weasel-js/core';
-import { removedData } from './diagramEditing';
+import { createScene, RIGID_POSE_COMPOSITION, worldPosesOf, type RectPose } from '@weasel-js/core';
+import { removedData, resizeReports } from './diagramEditing';
 import { withDiagramRegistry } from './edge';
 import { diagramScene, edgeIdOf, type DiagramData, type DiagramSceneData } from './fromData';
 
@@ -26,5 +26,19 @@ describe('removedData', () => {
   it('takes a deleted lane with what it holds, and leaves its pool', () => {
     const removed = removedData(sceneOf(DATA) as never, ['l2']);
     expect([...removed.nodes].sort()).toEqual(['b', 'l2']);
+  });
+});
+
+describe('resizeReports', () => {
+  it('reports a node and a region resized inside a lane at the world boxes they draw at', () => {
+    const scene = sceneOf(DATA);
+    const world = worldPosesOf(diagramScene(DATA, { layout: 'none' }), RIGID_POSE_COMPOSITION);
+    const grown = (id: string) => ({ ...(scene.get(id as never)!.pose as RectPose), width: 200 });
+    const { resizes, boxes } = resizeReports(scene as never, new Map([['a', grown('a')], ['k', grown('k')]]), new Set(['a', 'k']));
+    const a = world.get('a') as RectPose;
+    const k = world.get('k') as RectPose;
+    expect(a.x === (scene.get('a' as never)!.pose as RectPose).x && a.y === (scene.get('a' as never)!.pose as RectPose).y).toBe(false);
+    expect(resizes).toEqual([{ id: 'a', x: a.x, y: a.y, width: 200, height: a.height }]);
+    expect(boxes).toEqual([{ kind: 'box', id: 'k', box: { x: k.x, y: k.y, width: 200, height: k.height } }]);
   });
 });

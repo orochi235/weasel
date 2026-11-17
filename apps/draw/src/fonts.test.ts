@@ -1,6 +1,6 @@
 /**
  * The registry is mocked: what this module decides is which families to
- * enroll, and that decision is made entirely from `document.fonts.check`.
+ * enroll, and that decision is made entirely from measured text widths.
  */
 import { describe, expect, it, vi, beforeEach } from 'vitest';
 
@@ -22,19 +22,33 @@ const {
   enableMachineFontOutlines, disableMachineFontOutlines,
 } = await import('./fonts');
 
-/** Stub `document.fonts.check` to accept exactly `installed`. */
-function withInstalled(installed: string[] | Error): void {
-  const check = vi.fn((spec: string) => {
-    if (installed instanceof Error) throw installed;
-    return installed.some((f) => spec.includes(`"${f}"`));
-  });
-  Object.defineProperty(document, 'fonts', {
-    configurable: true,
-    value: { check },
-  });
+const GENERIC_WIDTH: Record<string, number> = { monospace: 600, serif: 500, 'sans-serif': 520 };
+
+/**
+ * Stub canvas text measurement: a font list whose first family is in `installed` measures at a width of its own,
+ * and anything else at its generic's width, as a browser does for an absent family. `document.fonts.check` answers
+ * true for every family, as the real API does for one the FontFaceSet does not hold.
+ */
+function withInstalled(installed: string[] | Error, widthOf: (family: string) => number = () => 777): void {
+  Object.defineProperty(document, 'fonts', { configurable: true, value: { check: () => true } });
+  vi.spyOn(HTMLCanvasElement.prototype, 'getContext').mockImplementation((() => {
+    const ctx = {
+      font: '10px sans-serif',
+      measureText(): { width: number } {
+        if (installed instanceof Error) throw installed;
+        const list = ctx.font.replace(/^\d+px /, '');
+        const first = /^"([^"]+)"/.exec(list)?.[1];
+        if (first !== undefined && installed.includes(first)) return { width: widthOf(first) };
+        const generic = list.split(',').at(-1)!.trim();
+        return { width: GENERIC_WIDTH[generic]! };
+      },
+    };
+    return ctx;
+  }) as never);
 }
 
 beforeEach(() => {
+  vi.restoreAllMocks();
   registerCanvasFont.mockReset();
   listCanvasFonts.mockReset();
   listCanvasFonts.mockReturnValue([]);
@@ -59,11 +73,25 @@ describe('registerAvailableFonts', () => {
     expect(registerCanvasFont).not.toHaveBeenCalled();
   });
 
+  it('does not enroll an absent family that document.fonts.check vouches for', () => {
+    withInstalled(['Georgia']);
+    expect(registerAvailableFonts()).toEqual(['Georgia']);
+  });
+
   it('quotes multi-word family names in the probe', () => {
-    // `check('16px Comic Sans MS')` is a parse error, not a false — an
-    // unquoted specifier would throw and take out the whole menu.
     withInstalled(['Comic Sans MS', 'Times New Roman']);
     expect(registerAvailableFonts()).toEqual(['Times New Roman', 'Comic Sans MS']);
+  });
+
+  it('enrolls a family that measures like one generic, by its difference from another', () => {
+    // Helvetica is macOS's default sans-serif, so it differs only from serif and monospace.
+    withInstalled(['Helvetica'], () => GENERIC_WIDTH['sans-serif']!);
+    expect(registerAvailableFonts()).toEqual(['Helvetica']);
+  });
+
+  it('enrolls nothing when there is no canvas to measure with', () => {
+    vi.spyOn(HTMLCanvasElement.prototype, 'getContext').mockReturnValue(null);
+    expect(registerAvailableFonts()).toEqual([]);
   });
 
   it('treats a throwing probe as "not available" rather than failing', () => {

@@ -1,8 +1,8 @@
 import { useMemo, useRef, useState } from 'react';
-import { paintAlpha } from '@weasel-js/paint';
 import { ActionDisabledReason, asNodeId, defineAction, defineTool, resolveFill, resolveStroke, useLatest } from '@weasel-js/core';
 import type { Stroke, Fill } from '@weasel-js/core';
 import {
+  brightestAlphaOf,
   computeScrubbedPaints,
   type PaintSnapshot,
 } from './computeScrubbedPaints';
@@ -11,6 +11,10 @@ interface ScrubSession {
   /** What this session's ticks coalesce under: one entry per run nothing interrupts. */
   coalesceKey: string;
   snapshots: Map<string, PaintSnapshot>;
+  /** The brightest alpha across `snapshots`: every node scales by `targetAlpha / base`. */
+  base: number;
+  /** The paints each node was last left holding by this session, to tell another edit's from its own. */
+  written: Map<string, PaintSnapshot>;
   targetAlpha: number;
 }
 
@@ -63,18 +67,13 @@ export function useOpacityScrub({ scene, selection }: UseOpacityScrubArgs) {
       return { fill: data.fill, stroke: data.stroke };
     }
 
-    function brightestAlphaOf(snap: PaintSnapshot): number {
-      const fill = resolveFill(snap.fill);
-      const stroke = resolveStroke(snap.stroke);
-      return Math.max(fill ? paintAlpha(fill.paint) : 0, stroke ? paintAlpha(stroke.paint) : 0);
-    }
-
     function applyLive(session: ScrubSession) {
       sceneRef.current.batch('Adjust opacity', () => {
         for (const [id, snap] of session.snapshots) {
           const currentNode = sceneRef.current.get(asNodeId(id));
           if (!currentNode) continue;
-          const out = computeScrubbedPaints(snap, session.targetAlpha);
+          const out = computeScrubbedPaints(snap, session.targetAlpha, session.base);
+          session.written.set(id, out);
           sceneRef.current.update(asNodeId(id), {
             data: {
               ...(currentNode.data as object),
@@ -86,22 +85,40 @@ export function useOpacityScrub({ scene, selection }: UseOpacityScrubArgs) {
       }, { coalesceKey: session.coalesceKey });
     }
 
-    function startSession() {
+    function snapshotsOf(ids: Iterable<string>) {
       const snapshots = new Map<string, PaintSnapshot>();
-      let sessionBrightest = 0;
-      for (const id of selectionRef.current.current) {
+      let base = 0;
+      for (const id of ids) {
         const snap = readSnapshot(id);
         if (!snap) continue;
         snapshots.set(id, snap);
-        sessionBrightest = Math.max(sessionBrightest, brightestAlphaOf(snap));
+        base = Math.max(base, brightestAlphaOf(snap));
       }
+      return { snapshots, base, written: new Map(snapshots) };
+    }
+
+    /** A paint edit made since the session last wrote becomes the session's new starting point. */
+    function rebaseIfRepainted(session: ScrubSession) {
+      const repainted = [...session.written].some(([id, w]) => {
+        const data = sceneRef.current.get(asNodeId(id))?.data as PaintSnapshot | undefined;
+        return !data || data.fill !== w.fill || data.stroke !== w.stroke;
+      });
+      if (!repainted) return;
+      Object.assign(session, snapshotsOf(session.snapshots.keys()));
+      session.targetAlpha = session.base;
+    }
+
+    function startSession() {
+      const { snapshots, base, written } = snapshotsOf(selectionRef.current.current);
       if (snapshots.size === 0) return;
       sessionRef.current = {
         coalesceKey: `draw.opacityScrub:${++sessionCount.current}`,
         snapshots,
-        targetAlpha: sessionBrightest,
+        base,
+        written,
+        targetAlpha: base,
       };
-      setPercent(Math.round(sessionBrightest * 100));
+      setPercent(Math.round(base * 100));
     }
 
     // The entries `applyLive` wrote are already in history.
@@ -119,6 +136,7 @@ export function useOpacityScrub({ scene, selection }: UseOpacityScrubArgs) {
         run: (_deps, params) => {
           const session = sessionRef.current;
           if (!session) return;
+          rebaseIfRepainted(session);
           const step = params?.step ?? COARSE_STEP;
           // Held Shift turns a mouse wheel's scroll horizontal in some browsers, macOS's among them.
           const delta = params?.deltaY || (params?.deltaX ?? 0);

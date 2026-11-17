@@ -40,7 +40,7 @@ describe('createCameraRegistry', () => {
     const offAgain = reg.register('a', second);
     offAgain();
     expect(reg.get('a')).toBe(first);
-    expect(warn).toHaveBeenCalledTimes(2);
+    expect(warn).not.toHaveBeenCalled();
   });
 
   it('reflects each key, reporting the camera a newer one covers', () => {
@@ -54,7 +54,7 @@ describe('createCameraRegistry', () => {
     expect(
       reg.reflection.entries().map((e) => [e.key, e.value, e.shadowed.map((s) => s.value)]),
     ).toEqual([['a', second, [first]]]);
-    expect(warn).toHaveBeenCalledTimes(1);
+    expect(warn).not.toHaveBeenCalled();
   });
 
   it('a release takes out its own registration when one camera is registered twice under a key', () => {
@@ -69,7 +69,7 @@ describe('createCameraRegistry', () => {
     offFirst();
     expect(reg.get('a')).toBe(cam);
     expect(reg.reflection.entries().map((e) => e.shadowed.map((s) => s.value))).toEqual([[other]]);
-    expect(warn).toHaveBeenCalledTimes(1);
+    expect(warn).not.toHaveBeenCalled();
   });
 
   it('tells subscribers when a key changes hands, and stops when they leave', () => {

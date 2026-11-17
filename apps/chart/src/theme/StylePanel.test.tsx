@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, it } from 'vitest';
 import { act, cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { createScene, type RectPose } from '@weasel-js/core';
-import { DIAGRAM_THEMES, diagramScene, withDiagramRegistry } from '@weasel-js/diagram';
+import { DIAGRAM_THEMES, diagramScene, setDiagramColor, withDiagramRegistry } from '@weasel-js/diagram';
 import { iconsWrapper } from '@weasel-js/ui/testing/withIcons';
 import type { ChartScene } from '../chartDocument';
 import { StylePanel } from './StylePanel';
@@ -12,12 +12,16 @@ const theme = DIAGRAM_THEMES.paper!;
 const fillOf = (scene: ChartScene, id: string) =>
   (scene.get(id as never)!.data as { fill: { paint: { color: string } } }).fill.paint.color;
 
-function setup(selected: readonly string[]) {
+function setup(selected: readonly string[], before?: (scene: ChartScene) => void) {
   const scene = createScene({
     systemLayers: [{ id: 'main' }],
-    initial: diagramScene({ nodes: [{ id: 'a', lines: ['a'] }, { id: 'b', lines: ['b'] }], edges: [] }, { theme, layout: 'none' }) as never,
+    initial: diagramScene({
+      nodes: [{ id: 'a', lines: ['a'] }, { id: 'b', lines: ['b'] }, { id: 'h', rows: [{ kind: 'header', text: 'Title' }, { kind: 'label', text: 'one' }] }],
+      edges: [],
+    }, { theme, layout: 'none' }) as never,
     registry: withDiagramRegistry<RectPose>(),
   }) as unknown as ChartScene;
+  before?.(scene);
   const view = render(<StylePanel scene={scene} selected={selected} theme={theme} />, { wrapper: iconsWrapper() });
   return { scene, rerender: () => view.rerender(<StylePanel scene={scene} selected={selected} theme={theme} />) };
 }
@@ -44,6 +48,21 @@ describe('StylePanel', () => {
     expect(fillOf(scene, 'a')).toBe(theme.roles.default!.fill);
     expect(fillOf(scene, 'b')).toBe(theme.roles.default!.fill);
   });
+  it("shows a header shape's text color, not its header's, and the color it is set to", () => {
+    const { scene, rerender } = setup(['h']);
+    const text = () => (screen.getByLabelText('Text') as HTMLInputElement).value;
+    expect(text()).toBe(theme.roles.default!.text);
+    setDiagramColor(scene, ['h'], 'text', '#ff0000');
+    rerender();
+    expect(text()).toBe('#ff0000');
+  });
+
+  it('shows a translucent color, with its opacity', () => {
+    setup(['a', 'b'], (scene) => setDiagramColor(scene, ['a', 'b'], 'fill', '#ff000080'));
+    expect((screen.getByLabelText('Fill') as HTMLInputElement).value).toBe('#ff0000');
+    expect((screen.getByLabelText('Fill opacity') as HTMLInputElement).value).toBe('50');
+  });
+
   it("sets the selected shapes' text size by hand, marking it the author's", () => {
     const { scene } = setup(['a']);
     const size = screen.getByRole('spinbutton', { name: 'Text size' }) as HTMLInputElement;

@@ -5,7 +5,8 @@ import {
   commandRasterizer, createRasterSession, holdImageBitmaps, planPixelRender, viewToMat3, warmRender, type RenderDiagnosticSink,
 } from '@weasel-js/core';
 import {
-  captureExport, exportReporter, pickExportOptions, regionRenderArgs, registerExportFormat, type ExportDiagnostic,
+  captureExport, exportBackgroundOf, exportReporter, pickExportOptions, regionRenderArgs, registerExportFormat,
+  type ExportBackground, type ExportDiagnostic,
   type ExportFormat, type ExportOptions, type ExportRegion, type ExportRegions, type ExportScene,
 } from '@weasel-js/export';
 import { registryFontSource } from './fonts/fontSource';
@@ -16,8 +17,9 @@ const PT_PER_UNIT = 0.75;
 
 /** Options for {@link exportRegionsPdf}. */
 export interface ExportRegionsPdfOptions extends Pick<ExportOptions, 'onDiagnostic' | 'strict'> {
-  /** The color painted under each page. Default none: the page is left unpainted. */
-  background?: string | null;
+  /** The color painted under each page, or a function reading it from the document drawn. Default none: the
+   *  page is left unpainted. */
+  background?: ExportBackground;
   /** The document's title. */
   title?: string;
   /** The document's language, a BCP 47 tag. Default: the language every text on the pages shares, if they share one. */
@@ -52,7 +54,7 @@ export async function exportRegionsPdf(
   // A page's commands hold bitmaps while the next page's images load.
   const release = holdImageBitmaps();
   try {
-    const blob = await writeRegions(scene, regions, opts.background ?? null, opts, reporter.report);
+    const blob = await writeRegions(scene, regions, opts.background, opts, reporter.report);
     reporter.settle();
     return blob;
   } finally {
@@ -68,7 +70,8 @@ function skipDiagnostic(skip: PdfSkip): ExportDiagnostic {
 }
 
 /** Every region of `doc` as a page: its size in points, and the commands it is drawn with. */
-function pagesOf(doc: ExportScene, regions: readonly ExportRegion[], background: string | null): PdfPage[] {
+function pagesOf(doc: ExportScene, regions: readonly ExportRegion[], given: ExportBackground | undefined): PdfPage[] {
+  const background = exportBackgroundOf(given, doc);
   return regions.map((region) => {
     const plan = planPixelRender(regionRenderArgs(doc, region, { scale: PT_PER_UNIT }));
     const width = region.width * PT_PER_UNIT;
@@ -87,7 +90,7 @@ function pagesOf(doc: ExportScene, regions: readonly ExportRegion[], background:
 }
 
 async function writeRegions(
-  scene: ExportScene, regions: ExportRegions, background: string | null, opts: ExportRegionsPdfOptions, report: RenderDiagnosticSink,
+  scene: ExportScene, regions: ExportRegions, background: ExportBackground | undefined, opts: ExportRegionsPdfOptions, report: RenderDiagnosticSink,
 ): Promise<Blob> {
   const out = await captureExport(scene, regions, {
     warm: async (doc, rs, hear) => {

@@ -5,13 +5,15 @@
  */
 import { groupNodeRouting, inferredNodeRouting, pathEffectOf, type NodeRoutingEntry, type PathEffect } from '@weasel-js/core';
 import { PATH_EFFECT_SETTINGS_SCHEMA } from '@weasel-js/path-tools';
+import { getOwn } from '@weasel-js/registry';
 
 type EffectKind = PathEffect['kind'];
 const EFFECT_KINDS: readonly EffectKind[] = ['textAlong', 'tween', 'bendAlong', 'repeatAlong', 'roughen', 'zigzag', 'puckerBloat'];
 
-/** An effect's name as its settings section and its menu item give it. */
-function effectName(kind: EffectKind): string {
-  return PATH_EFFECT_SETTINGS_SCHEMA.children[kind]!.name;
+/** An effect's name as its settings section and its menu item give it; `undefined` for a kind this build does
+ *  not know, which a saved or pasted document can carry. */
+function effectName(kind: string): string | undefined {
+  return getOwn(PATH_EFFECT_SETTINGS_SCHEMA.children, kind)?.name;
 }
 
 /** The kit's inferred kinds, with a path effect of each kind ahead of `text`
@@ -24,7 +26,8 @@ export const DRAW_NODE_ROUTING: readonly NodeRoutingEntry[] = [
 
 /** The Properties panel's title for a routing kind. */
 export function drawKindLabel(kind: string): string {
-  if ((EFFECT_KINDS as readonly string[]).includes(kind)) return effectName(kind as EffectKind);
+  const effect = (EFFECT_KINDS as readonly string[]).includes(kind) ? effectName(kind) : undefined;
+  if (effect !== undefined) return effect;
   if (kind === 'boolean') return 'Boolean group';
   return kind.length === 0 ? kind : kind[0]!.toUpperCase() + kind.slice(1);
 }

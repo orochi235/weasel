@@ -62,3 +62,15 @@ describe('multiplier with its own symbol', () => {
     expect(parseAs(shown, display)).toBe(2.5);
   });
 });
+
+
+describe('currency numeric text is preserved', () => {
+  it.each(['fr-FR', 'ar-EG', 'de-DE'])('reads en-US decimals in %s', (locale) => {
+    expect(parseAs('$1,234.50', currency('USD'), { locale })).toBe(1234.5);
+    expect(parseAs('$.50', currency('USD'), { locale })).toBe(0.5);
+  });
+
+  it.each([['$1e-3', 0.001], ['$-1e-3', -0.001], ['$1e3', 1000]])('reads %s without losing its exponent', (text, value) => {
+    expect(parseAs(text, currency('USD'), { locale: 'en-US' })).toBe(value);
+  });
+});

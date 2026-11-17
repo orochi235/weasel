@@ -544,14 +544,6 @@ only story runner in the repo.
 
 ## Release-gate & build hygiene
 
-- **(P2) [agent] Under a loaded full run, a new labkit trial can place its view twice.**
-  `presentation.browser.test.tsx` "a new trial places its view once, in the room its status strip leaves" failed
-  on teitou in the full run of `133f606a83` (2026-11-16): two views, `pan.y` 173.77 then 174.27, so the trial
-  was placed once before its status strip reached its final height and again after it grew by a pixel. It passed
-  in the full run of `a99e51e074` (the same labkit code) and alone at `133f606a83`. Closes when placement waits
-  for the strip to settle, or the strip's height is fixed from its first frame, and the test passes 20 times in a
-  row under a full run.
-
 - **(P3) [waiting] `typedoc/headerComments.test.mjs` "open no file with a doc comment on an export list" failed
   under the full suite** on studio at `c38ba3732` (2026-11-15), its retry too, taking 11.9 s against 1.3 s alone.
   It passed alone here and on studio's tree at the same commit, and passed in the next full run. It reads every

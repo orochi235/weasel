@@ -6,6 +6,7 @@ import react from '@vitejs/plugin-react';
 import { playwright } from '@vitest/browser-playwright';
 import { weaselAliases } from './scripts/vite-aliases.ts';
 import { traitSchemasPlugin } from './apps/draw/vite-plugin-trait-schemas.ts';
+import { sourceIndexPlugin } from './apps/draw/vite-plugin-source-index.ts';
 import { forgeAliases, frameConfig as forgeFrameConfig, stories as forgeStories } from './apps/forge/viteShared.ts';
 import { forgeTest } from './packages/forge/src/vite/forgeTest.ts';
 import { ownEntries as forgeOwnEntries } from './packages/forge/src/vite/ownEntries.ts';
@@ -26,6 +27,7 @@ import { RETRY_TIMEOUTS, timeoutRetries } from './scripts/vitest-timeout-retries
 import { loadReruns } from './scripts/vitest-load-reruns.ts';
 import { devWatch } from './scripts/vite-watch.ts';
 import { cssCacheKey } from './scripts/vitest-css-cache-key.ts';
+import { resolveCacheKey } from './scripts/vitest-resolve-cache-key.ts';
 import { HOST_GPU_ARGS } from './scripts/chromium-gpu-args.ts';
 import { spreadPlaywright } from './scripts/vitest-browser-spread.mjs';
 import { browserShape } from './scripts/lib/browser-shape.mjs';
@@ -44,7 +46,7 @@ const shared = {
   resolve: {
     alias: weaselAliases(import.meta.dirname),
   },
-  plugins: [react(), cssCacheKey()],
+  plugins: [react(), cssCacheKey(), resolveCacheKey()],
 };
 
 // Vitest disables dep discovery everywhere but its vm environment, where vite scans every index.html
@@ -70,6 +72,7 @@ const RETRY_REALM_SETUP = './scripts/vitest-retry-realm.setup.ts';
 const PBT_SEED_SETUP = './scripts/vitest-pbt-seed.setup.ts';
 
 const VITE_SERVER_TESTS = [
+  'apps/forge/e2e.vite.test.ts',
   'packages/forge/src/csf/shims/alias.test.ts',
   'packages/forge/src/vite/capture/endpoint.test.ts',
   'packages/forge/src/vite/plugin.test.ts',
@@ -135,6 +138,7 @@ export default defineConfig({
         plugins: [
           react(),
           cssCacheKey(),
+          resolveCacheKey(),
           demoTimestamps({ root: import.meta.dirname }),
           demoSources({ root: import.meta.dirname }),
           changelogs({ root: import.meta.dirname }),
@@ -243,12 +247,12 @@ export default defineConfig({
         ...shared,
         ...vm,
         // The draw app's Bundle Inspector consumes
-        // `virtual:weasel-trait-schemas`, served by a Vite plugin that's
+        // `virtual:weasel-trait-schemas` and `virtual:weasel-source-index`, served by Vite plugins
         // wired in `apps/draw/vite.config.ts` for dev/build. Vitest
-        // doesn't inherit that config, so the plugin has to be added
+        // doesn't inherit that config, so the plugins have to be added
         // here too or any test that imports a Bundle Inspector module
         // fails to resolve the virtual id at load time.
-        plugins: [react(), cssCacheKey(), traitSchemasPlugin({ repoRoot: import.meta.dirname }), weaselIcons.vite({ mode: 'app' })],
+        plugins: [react(), cssCacheKey(), resolveCacheKey(), traitSchemasPlugin({ repoRoot: import.meta.dirname }), sourceIndexPlugin({ repoRoot: import.meta.dirname }), weaselIcons.vite({ mode: 'app' })],
         test: {
           name: 'draw',
           retry: RETRY_TIMEOUTS,
@@ -294,7 +298,7 @@ export default defineConfig({
       // resolves none of. Headless Chromium, like forge-stories below.
       {
         ...shared,
-        plugins: [react(), cssCacheKey(), keepErrorsHome(), ...withPrebundle.plugins],
+        plugins: [react(), cssCacheKey(), resolveCacheKey(), keepErrorsHome(), ...withPrebundle.plugins],
         ...(withPrebundle.cacheDir && { cacheDir: withPrebundle.cacheDir }),
         // A dependency met mid-run makes vite re-optimize and reload the page under the suites, and a
         // node's warm cache skips the scan that would have found it. `optimizeDeps.force` is not the
@@ -344,8 +348,10 @@ export default defineConfig({
         plugins: [
           react(),
           cssCacheKey(),
+          resolveCacheKey(),
           keepErrorsHome(),
           traitSchemasPlugin({ repoRoot: import.meta.dirname }),
+          sourceIndexPlugin({ repoRoot: import.meta.dirname }),
           forgeTest({ stories: forgeStories, frameConfig: forgeFrameConfig }),
         ],
         resolve: { alias: forgeAliases(import.meta.dirname) },

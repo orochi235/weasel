@@ -9,14 +9,14 @@ import { enterModeOn } from './modality/enterModeOn';
 const TEXT_EDIT = 'text-edit';
 
 /** An edit that ends with no text leaves a node that paints nothing and still picks, so it is
- *  removed. The removal joins the edit's run, so for a box just drawn it folds into the insert's entry
+ *  removed, unless it has a `background` (a sticky note's paper), which still paints. The removal joins the edit's run, so for a box just drawn it folds into the insert's entry
  *  and undo brings no empty node back. */
 function discardIfEmpty(scene: DrawScene, id: string): void {
   const nid = asNodeId(id);
   const node = scene.get(nid);
   if (!node || node.kind !== 'mark') return;
-  const { text, runs } = node.data;
-  if (text !== '' || (Array.isArray(runs) && runs.length > 0)) return;
+  const { text, runs, background } = node.data;
+  if (text !== '' || (Array.isArray(runs) && runs.length > 0) || background) return;
   scene.batch('Discard empty text', () => { scene.remove(nid); }, textEditJoin(id));
 }
 

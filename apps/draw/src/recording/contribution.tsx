@@ -30,12 +30,14 @@ const recordAction: RecordingAction = {
 const playAction: RecordingAction = {
   id: 'record.play',
   label: 'Play recording',
+  description: 'Pick a recording and replay it; pressed while one plays, stop it.',
   icon: icon('playRecording'),
   group: 'record',
   requires: ['recording'],
+  active: (deps) => read(deps)?.playing === true,
   enabled: (deps) => {
     const session = read(deps);
-    return (!!session && !session.recording && !session.playing) || ActionDisabledReason.NotApplicable;
+    return (!!session && !session.recording) || ActionDisabledReason.NotApplicable;
   },
   invoker: { timing: 'immediate', run: (deps) => { void read(deps)?.play(); } },
 };

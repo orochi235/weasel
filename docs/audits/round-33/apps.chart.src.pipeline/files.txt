@@ -1,0 +1,10 @@
+apps/chart/src/pipeline/ParamPanel.tsx
+apps/chart/src/pipeline/PipelineWorkspace.tsx
+apps/chart/src/pipeline/StagePalette.tsx
+apps/chart/src/pipeline/pipelineAudio.ts
+apps/chart/src/pipeline/pipelineCommands.ts
+apps/chart/src/pipeline/pipelineGroups.ts
+apps/chart/src/pipeline/pipelineLook.ts
+apps/chart/src/pipeline/pipelinePages.ts
+apps/chart/src/pipeline/pipelineRun.ts
+apps/chart/src/pipeline/usePipelineDoc.ts

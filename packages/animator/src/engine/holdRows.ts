@@ -12,6 +12,11 @@ export function startHoldRows(ctx: AnimationContext, o: HoldRowsOptions): RowsHo
   const rows = rowTableOf(table);
   const n = table.axes;
   const store = rows.holds();
+  // Every row's target first, so a row not in the table refuses the call before it interrupts.
+  const targets = new Map<number, TargetState>();
+  for (const row of o.rows ? Array.from(o.rows) : rows.rows()) {
+    if (!targets.has(row)) targets.set(row, stateOf(table.target(row)) as TargetState);
+  }
   const id = ctx.nextId();
   const seed = {
     id, kind: 'hold', cancelKey: o.cancelKey, label: o.label, keepExisting: o.interrupt === false,
@@ -33,19 +38,6 @@ export function startHoldRows(ctx: AnimationContext, o: HoldRowsOptions): RowsHo
     // Read apart once, as the pass no longer shows it.
     rows.mark(row);
   };
-  for (const row of o.rows ? Array.from(o.rows) : rows.rows()) {
-    if (held.has(row)) continue;
-    const s = stateOf(table.target(row)) as TargetState;
-    covers ??= coverOf(o.axes, s.axes);
-    enterHold(ctx, s, (st) => (layer ??= st.layer()), { covers, fixed: true });
-    layer.values.set(table.committed.subarray(row * n, (row + 1) * n), row * n);
-    layer.weights[row] = weight;
-    const part = (): void => letGo(row, true);
-    s.parts.add(part);
-    held.set(row, { s, part });
-  }
-  layer ??= store.layer();
-
   const touch = (): void => {
     for (const row of held.keys()) store.refold(row);
     rows.refill();
@@ -57,6 +49,22 @@ export function startHoldRows(ctx: AnimationContext, o: HoldRowsOptions): RowsHo
     rows.refill();
     ctx.wake();
   };
+  try {
+    for (const [row, s] of targets) {
+      covers ??= coverOf(o.axes, s.axes);
+      enterHold(ctx, s, (st) => (layer ??= st.layer()), { covers, fixed: true });
+      layer.values.set(table.committed.subarray(row * n, (row + 1) * n), row * n);
+      layer.weights[row] = weight;
+      const part = (): void => letGo(row, true);
+      s.parts.add(part);
+      held.set(row, { s, part });
+    }
+  } catch (error) {
+    // A row another animator moves: the rows taken before it are let go as they were found.
+    if (layer) leave(false);
+    throw error;
+  }
+  layer ??= store.layer();
   touch();
   seed.onCancel = () => leave(true);
   seed.tick = () => {

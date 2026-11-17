@@ -1,12 +1,17 @@
 #!/usr/bin/env node
 // Gives a worktree nested in the main checkout an install of its own without `npm ci`: each
-// workspace package is linked into the worktree's `node_modules`, each package's own `node_modules`
-// (where npm puts a version that conflicts with the root's) is linked from the main checkout's, and
-// every other dependency still resolves from the main checkout's install. Refused when the two
-// lockfiles differ.
+// workspace package is linked into the worktree's `node_modules`, each package installed in a
+// package's own `node_modules` (where npm puts a version that conflicts with the root's) is linked
+// from the main checkout's, and every other dependency still resolves from the main checkout's
+// install. Refused when the two lockfiles differ.
+//
+// The links are per package inside a directory of the worktree's own, never the directory itself:
+// npm in the worktree renames a package it replaces out of the way first, and through a linked
+// directory that rename lands in the main checkout's install, which then lost font's opentype.js
+// and forge's @babel/parser (2026-11-16). A link to the package is renamed itself instead.
 //
 //   node scripts/link-workspaces.mjs [worktree]      default: the current directory
-import { existsSync, mkdirSync, readFileSync, readdirSync, rmSync, symlinkSync } from 'node:fs';
+import { existsSync, lstatSync, mkdirSync, readFileSync, readdirSync, rmSync, symlinkSync, unlinkSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 
 const root = resolve(process.argv[2] ?? '.');
@@ -36,6 +41,25 @@ if (installed(root) !== installed(host)) {
   process.exit(1);
 }
 
+const isLink = (path) => {
+  try {
+    return lstatSync(path).isSymbolicLink();
+  } catch {
+    return false;
+  }
+};
+
+/** Links each package in `from`, a `node_modules`, into `to`, a new directory; a scope's packages
+ *  one by one. Dot entries (`.bin`, npm's own records) stay behind. */
+const linkPackages = (from, to) => {
+  mkdirSync(to, { recursive: true });
+  for (const entry of readdirSync(from)) {
+    if (entry.startsWith('.')) continue;
+    if (entry.startsWith('@')) linkPackages(join(from, entry), join(to, entry));
+    else symlinkSync(join(from, entry), join(to, entry), 'dir');
+  }
+};
+
 let linked = 0;
 let nestedLinked = 0;
 for (const pattern of JSON.parse(read(join(root, 'package.json'))).workspaces) {
@@ -45,8 +69,10 @@ for (const pattern of JSON.parse(read(join(root, 'package.json'))).workspaces) {
     const manifest = join(root, dir, 'package.json');
     if (!existsSync(manifest)) continue;
     const nested = join(root, dir, 'node_modules');
+    // A worktree this linked before linked the whole directory; relink it package by package.
+    if (isLink(nested)) unlinkSync(nested);
     if (!existsSync(nested) && existsSync(join(host, dir, 'node_modules'))) {
-      symlinkSync(join(host, dir, 'node_modules'), nested, 'dir');
+      linkPackages(join(host, dir, 'node_modules'), nested);
       nestedLinked++;
     }
     const { name } = JSON.parse(read(manifest));

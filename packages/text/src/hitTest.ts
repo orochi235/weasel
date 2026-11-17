@@ -59,6 +59,13 @@ export function pointInTextPose(
   );
 }
 
+/** Options for `caretIndexAt`. */
+export interface CaretIndexAtOptions {
+  /** The view scale a `{ px }` `fontSize` or `letterSpacing` resolves against, as the painter
+   *  lays the pose out. Default 1. */
+  scale?: number;
+}
+
 /**
  * Map a world-space point inside `pose` to a character offset into the pose's
  * text (0..length). Clicks above the first line clamp to 0; clicks below the
@@ -69,8 +76,8 @@ export function pointInTextPose(
  * produced) and `pose.verticalAlign`. The offset is into the runs'
  * concatenated text, which `TextPose` requires to equal `pose.text`.
  */
-export function caretIndexAt(x: number, y: number, pose: TextPose): number {
-  const { laid, x: dx, y: dy } = layoutTextPose(pose);
+export function caretIndexAt(x: number, y: number, pose: TextPose, opts: CaretIndexAtOptions = {}): number {
+  const { laid, x: dx, y: dy } = layoutTextPose(pose, opts.scale);
   const lines = laid.lines;
   if (lines.length === 0) return 0;
 

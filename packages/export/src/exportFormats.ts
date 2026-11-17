@@ -91,7 +91,7 @@ function warnUnreadOptions(format: ExportFormat, opts: Readonly<Record<string, u
   if (!format.options || !isDev()) return;
   const reads = new Set<string>([...SHARED_OPTIONS, ...format.options]);
   for (const key of Object.keys(opts)) {
-    if (reads.has(key) || warnedOptions.has(`${format.id}\0${key}`)) continue;
+    if (opts[key] === undefined || reads.has(key) || warnedOptions.has(`${format.id}\0${key}`)) continue;
     warnedOptions.add(`${format.id}\0${key}`);
     console.warn(
       `exportRegions: the "${format.id}" format does not read the option "${key}", so it is ignored ` +

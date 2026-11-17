@@ -1,7 +1,7 @@
 import { type Contribution, type SelectionApi, type SurfaceContribution, useLatest, type View } from '@weasel-js/core';
 import { useHudContribution } from '@weasel-js/hud/react';
 import { createEmitter } from '@weasel-js/registry';
-import { useLayoutEffect, useMemo } from 'react';
+import { useCallback, useLayoutEffect, useMemo, useSyncExternalStore } from 'react';
 import { type AppCommands, appCommandsContribution } from './appCommands';
 import type { GridCommand } from './useGrid';
 import type { DrawScene } from './drawDocument';
@@ -42,6 +42,14 @@ export function useEditorAmbient(args: EditorAmbientArgs): readonly SurfaceContr
   const colorsRef = useLatest(useColorContext());
   const colorKeys = useMemo(() => colorContribution(() => colorsRef.current), [colorsRef]);
 
+  // Read from the scene, so an edit that adds or drops a subpath of a selected path (an undo, say)
+  // re-renders this and the command's enabled state follows.
+  const selected = selection.current;
+  const compoundOf = useCallback(() => hasCompoundPath(scene, selected), [scene, selected]);
+  const canReleaseCompound = useSyncExternalStore(
+    useCallback((fn: () => void) => scene.subscribe(fn), [scene]), compoundOf, compoundOf,
+  );
+
   const chrome = useChromeCommands();
   const appCommands: AppCommands = {
     ...args.grid,
@@ -49,7 +57,7 @@ export function useEditorAmbient(args: EditorAmbientArgs): readonly SurfaceContr
     ...args.bounds,
     ...args.symmetry.commands,
     ...chrome,
-    canReleaseCompound: hasCompoundPath(scene, selection.current),
+    canReleaseCompound,
     releaseCompound: () => selection.set(releaseCompoundPaths(scene, selection.current)),
     openPalette: args.openPalette,
   };

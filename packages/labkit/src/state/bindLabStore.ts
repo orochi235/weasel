@@ -1,4 +1,6 @@
+import { isPlainObject } from '@weasel-js/core';
 import type { OwnedRecordCache, RecordCache } from '@weasel-js/storage';
+import { isColorModePreference } from '@weasel-js/theme';
 import { CURRENT_DOCUMENT_VERSION } from './document';
 import { serializeTrials } from './helpers';
 import { hydrateSnapshots, hydrateTrials, withoutUnreadable } from './hydrate';
@@ -16,6 +18,7 @@ import {
 import { ownUndoOf } from './ownUndo';
 import type { LabStore } from './store';
 import type { SavedSnapshot, SerializedTrial, TrialRecord, UnreadableRecord } from './types';
+import type { UndockedPanels } from './undock';
 import { onUndoSteps } from './watchTrialHistories';
 
 export interface BindOptions {
@@ -78,7 +81,7 @@ function remoteTrial(
   nextOrder: () => number,
   failed: (u: UnreadableRecord) => void,
 ): TrialRecord[] {
-  if (value === undefined || !value || typeof value !== 'object') {
+  if (!isPlainObject(value)) {
     orderOf.delete(id);
     return trials.filter((t) => t.id !== id);
   }
@@ -203,12 +206,12 @@ export function bindLabStore(
         case 'save': {
           const id = parsed.id;
           unreadable = withoutUnreadable(unreadable, 'snapshot', id);
-          if (value === undefined || !value || typeof value !== 'object') {
+          if (!isPlainObject(value)) {
             saves = saves.filter((s) => s.id !== id);
             break;
           }
           const [snapshot] = hydrateSnapshots(
-            [{ ...(value as SavedSnapshot), id }],
+            [{ ...value, id } as SavedSnapshot],
             store.getState().instrumentHooks(),
             failed,
           );
@@ -219,10 +222,10 @@ export function bindLabStore(
           break;
         }
         case 'layout':
-          patch.layout = (value as Record<string, unknown> | undefined) ?? {};
+          patch.layout = isPlainObject(value) ? value : {};
           break;
         case 'undock':
-          patch.undockedPanels = (value as typeof current.undockedPanels | undefined) ?? {};
+          patch.undockedPanels = isPlainObject(value) ? (value as UndockedPanels) : {};
           break;
         case 'meta': {
           const meta = value as Partial<LabMeta> | undefined;
@@ -233,9 +236,7 @@ export function bindLabStore(
             if ('stopWriting' in records) (records as OwnedRecordCache).stopWriting();
             break;
           }
-          if (meta?.mode === 'light' || meta?.mode === 'dark' || meta?.mode === 'auto') {
-            patch.mode = meta.mode;
-          }
+          if (isColorModePreference(meta?.mode)) patch.mode = meta.mode;
           break;
         }
       }

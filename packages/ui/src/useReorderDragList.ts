@@ -3,7 +3,7 @@ import type { ReactNode, PointerEvent as ReactPointerEvent, RefCallback } from '
 import { startThresholdDrag, swallowNextClick, type ThresholdDragHandle } from '@weasel-js/routing';
 import { gapByMidpoint, isNoopDrop, nudgeGap } from '@weasel-js/ui-input';
 import { useKitSetting, useLatest } from '@weasel-js/react';
-import { modKey, isInControlWithin } from '@weasel-js/gestures';
+import { modKey, isInControlWithin, isPrimaryPress } from '@weasel-js/gestures';
 import type { SelectModifiers, SelectPolicy } from '@weasel-js/select';
 
 /** One row in a reorderable list. */
@@ -230,7 +230,7 @@ export function useReorderDragList(opts: UseReorderDragListOptions): ReorderDrag
 
   const onPointerDownRow = useCallback((id: string, index: number, e: ReactPointerEvent) => {
     const container = containerRef.current;
-    if (!container || dragRef.current) return;
+    if (!container || dragRef.current || !isPrimaryPress(e)) return;
     if (isInControlWithin(e.target, e.currentTarget as Element)) return;
 
     const mods: PressModifiers = {

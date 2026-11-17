@@ -18,6 +18,7 @@ import { createGroupReorderPreset } from './groupReorder';
 import { regionEditing } from './regionEditing';
 import type { ContainerEdit } from './regionSync';
 import { dataKeyReader } from './trait';
+import { worldWith } from './worldWith';
 import type { DeleteReport, DiagramViewProps, NodeResize, ReconnectChange } from './diagramViewProps';
 import { diagramSequence } from './sequence/actions';
 import type { SequenceEdit } from './sequence/commit';
@@ -86,7 +87,25 @@ function sequenceDeleteAction(
   });
 }
 
-/** Core's `resize`, reporting the selected boxes it would leave instead of writing them: a
+/** The world boxes a resize leaves the `picked` nodes in, from the stored poses it would write: a
+ *  container's or pool's as a box edit, any other's as a node resize. */
+export function resizeReports(
+  scene: AnyScene, poses: ReadonlyMap<string, unknown>, picked: ReadonlySet<string>,
+): { resizes: NodeResize[]; boxes: ContainerEdit[] } {
+  const at = worldWith(scene, poses);
+  const resizes: NodeResize[] = [];
+  const boxes: ContainerEdit[] = [];
+  for (const id of poses.keys()) {
+    const node = scene.get(id as never);
+    if (!picked.has(id) || node === undefined) continue;
+    const { x, y, width, height } = at(id) as RectPose;
+    if (diagramContainerOf(node) !== null) boxes.push({ kind: 'box', id, box: { x, y, width, height } });
+    else resizes.push({ id, x, y, width, height });
+  }
+  return { resizes, boxes };
+}
+
+/** Core's `resize`, reporting the selected boxes it would leave instead of writing them, in world: a
  *  container's or pool's to `region` as a box edit, any other's to `report`. */
 export function reportResizeAction(
   report: ((resizes: readonly NodeResize[]) => void) | undefined,
@@ -94,15 +113,9 @@ export function reportResizeAction(
 ): Action {
   return createResizeAction({
     commit: (poses, deps) => {
-      const picked = new Set(deps.operands?.get() ?? []);
-      const resizes: NodeResize[] = [];
-      for (const [id, pose] of poses) {
-        if (!picked.has(id)) continue;
-        const { x, y, width, height } = pose as RectPose;
-        const node = deps.scene?.get(id as never);
-        if (node !== undefined && diagramContainerOf(node) !== null) region?.({ kind: 'box', id, box: { x, y, width, height } });
-        else resizes.push({ id, x, y, width, height });
-      }
+      if (deps.scene === undefined) return;
+      const { resizes, boxes } = resizeReports(deps.scene as AnyScene, poses as ReadonlyMap<string, unknown>, new Set(deps.operands?.get() ?? []));
+      for (const box of boxes) region?.(box);
       if (resizes.length > 0) report?.(resizes);
     },
   });

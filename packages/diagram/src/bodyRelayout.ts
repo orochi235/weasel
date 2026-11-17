@@ -64,6 +64,8 @@ export interface RelayoutScene {
   childrenOf(id: never): readonly string[];
   setPose(id: never, pose: never): void;
   update(id: never, patch: never): void;
+  /** A body is left as it is while it or one of its rows is locked. */
+  isLocked?(id: never): boolean;
 }
 
 const rowStyle = (s: TextData['style']): RowTextStyle => ({
@@ -78,6 +80,9 @@ const same = (a: Box, b: Box) => a.x === b.x && a.y === b.y && a.width === b.wid
 
 const sameBand = (a: HeaderBand | undefined, b: HeaderBand): boolean =>
   a !== undefined && a.height === b.height && a.text.y === b.text.y && a.text.height === b.text.height && a.aside?.width === b.aside?.width;
+
+const lockedAmong = (scene: RelayoutScene, ids: readonly string[]): boolean =>
+  scene.isLocked !== undefined && ids.some((id) => scene.isLocked!(id as never));
 
 /**
  * Lays each body among `ids` out again from its text rows as they are now:
@@ -99,6 +104,7 @@ export function relayoutBodies(scene: RelayoutScene, ids: Iterable<string>, meas
       if (data?.bodyAside === true) asideNode = child;
       else if (typeof data?.bodyRow === 'number') rowNodes.set(data.bodyRow, child);
     }
+    if (lockedAmong(scene, [id, ...rowNodes.values(), ...(asideNode === undefined ? [] : [asideNode])])) continue;
     const textOf = (child: string | undefined): string => {
       const t = (scene.get(child as never)?.data as TextData | undefined)?.text;
       return typeof t === 'string' ? t : '';

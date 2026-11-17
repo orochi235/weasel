@@ -1,0 +1,30 @@
+{
+ "pairs": [
+  [
+   0,
+   0
+  ],
+  [
+   1,
+   1
+  ],
+  [
+   2,
+   2
+  ]
+ ],
+ "a": [
+  "After an extension reload in Chrome, re-injecting content.js into an already-open tab is a no-op, so the panel never connects",
+  "wakeTab stops injecting as soon as any one frame answers, so frames without a live content script are never bridged",
+  "A tab closed within 3 s of loading leaves a permanent entry in the badge probe map",
+  "watchHookPresence reports `false` twice in a row, despite promising to report only changes",
+  "probeFrame trusts the page's `roots()` to return an array, so a stray hook turns the badge and popup count into NaN"
+ ],
+ "b": [
+  "The content script's run-once marker blocks re-injection into tabs left with orphaned scripts after a Chrome extension reload or update",
+  "wakeTab skips injection when any one frame answers, so an older top frame never gets a content script",
+  "A badge probe scheduled before a tab closes re-adds that tab's entry to the probe map and leaves an unhandled rejection",
+  "watchHookPresence with an empty `delays` probes in a tight loop forever",
+  "One port transport outlives each DevtoolsPanel remount, and each new client numbers its requests from 1 again, so a late answer can settle the wrong request"
+ ]
+}

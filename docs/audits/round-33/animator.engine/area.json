@@ -1,0 +1,82 @@
+{
+ "id": "animator.engine",
+ "commit": "d4226fab0e3e2669740411edb2a1d35dadeb46b1",
+ "date": "2026-11-17",
+ "files": [
+  "packages/animator/src/engine/animatorApi.ts",
+  "packages/animator/src/engine/axes.ts",
+  "packages/animator/src/engine/codec.ts",
+  "packages/animator/src/engine/completions.ts",
+  "packages/animator/src/engine/context.ts",
+  "packages/animator/src/engine/core.ts",
+  "packages/animator/src/engine/decay.ts",
+  "packages/animator/src/engine/frame.ts",
+  "packages/animator/src/engine/handoff/eligible.ts",
+  "packages/animator/src/engine/handoff/handoffs.ts",
+  "packages/animator/src/engine/handoff/motion.ts",
+  "packages/animator/src/engine/handoff/run.ts",
+  "packages/animator/src/engine/handoff/start.ts",
+  "packages/animator/src/engine/handoff/takeBack.ts",
+  "packages/animator/src/engine/handoff/testing/fakeAnimate.ts",
+  "packages/animator/src/engine/holdAnimation.ts",
+  "packages/animator/src/engine/holdRows.ts",
+  "packages/animator/src/engine/holdStore.ts",
+  "packages/animator/src/engine/holds.ts",
+  "packages/animator/src/engine/integrator.ts",
+  "packages/animator/src/engine/lanes.ts",
+  "packages/animator/src/engine/offsetPhysics.ts",
+  "packages/animator/src/engine/offsetTween.ts",
+  "packages/animator/src/engine/offsets.ts",
+  "packages/animator/src/engine/physicsAnimation.ts",
+  "packages/animator/src/engine/rewinds.ts",
+  "packages/animator/src/engine/roster.ts",
+  "packages/animator/src/engine/schedule.ts",
+  "packages/animator/src/engine/springRest.ts",
+  "packages/animator/src/engine/springVoices.ts",
+  "packages/animator/src/engine/table.ts",
+  "packages/animator/src/engine/tweenAnimation.ts",
+  "packages/animator/src/engine/wakes.ts"
+ ],
+ "a": 5,
+ "b": 8,
+ "m": 2,
+ "distinct": 11,
+ "chapman": 17,
+ "unfound": 6,
+ "read": {
+  "A": 33,
+  "B": 33
+ },
+ "patches": 12,
+ "questions": 0,
+ "budgetHit": [],
+ "jobs": {
+  "minutes": {
+   "A": 10.6,
+   "B": 10.5,
+   "match": 0.2,
+   "fix": 20.2
+  },
+  "nodes": {
+   "A": "studio",
+   "B": "studio",
+   "fix": "studio"
+  },
+  "tokens": 16809936,
+  "costUsd": 9.48
+ },
+ "fixCommits": [
+  "357c9f1ed24d023d01129a296118a9cf879cef92",
+  "f834acb8b2721677a45c7e1afa63a663c1fa24fd",
+  "99c457ed7ed807d668e4d47be608ad76e6dd89eb",
+  "3b7ffd320c68cb55a851a00f5e2538b879622bfd",
+  "7a9a5c733944e9d4a6e1a74327a771ddf496f278",
+  "5aa7bc139a6ea24e681d28a0ba3554eb20f1f1ab",
+  "dec059b1df2cb4c60de494d801d2895ebbe6a59c",
+  "acb98a5ef640fc38d8cbb1b4f45891691608fad7",
+  "e765b9c7a36ddf4aa47637b2f14bcc48918eb755",
+  "4b16186d5d295781cc3e4c2c124fd1449279f83d",
+  "78aea3d73414be272548f88e6cd67353e729e2e3",
+  "f6938c9bc37c72f27c48b834f52683d10d92ce0f"
+ ]
+}

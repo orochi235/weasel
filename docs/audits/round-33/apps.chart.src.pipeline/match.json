@@ -1,0 +1,23 @@
+{
+ "pairs": [
+  [
+   1,
+   0
+  ],
+  [
+   2,
+   2
+  ]
+ ],
+ "a": [
+  "Merging the image and audio runs drops the image run's `at`, so Step never outlines its stage in a pipeline with audio stages",
+  "A param slider records its live preview values as undo steps, so a canceled drag leaves a no-op \"Set <label>\" step and a paused drag splits into several",
+  "Source images are never closed: a replaced source, the test card, and the last source on unmount all leak their ImageBitmap"
+ ],
+ "b": [
+  "ParamPanel records a slider's live `onInput` values as undo steps, so one drag can become several steps and a canceled drag leaves a no-op step",
+  "Adding a stage from the palette leaves the previously picked group armed for Ungroup",
+  "Chosen source images are never closed: each replacement, and the one held at unmount, leaks an ImageBitmap",
+  "Leaving pipeline mode while an audio file decodes shows a spurious \"Could not read the audio\" toast"
+ ]
+}

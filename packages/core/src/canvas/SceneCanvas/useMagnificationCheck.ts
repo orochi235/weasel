@@ -33,7 +33,8 @@ export function useMagnificationCheck(scene: Scene<unknown, string, unknown>): v
     };
     check();
     const unsubscribe = scene.subscribe(() => {
-      timer ??= setTimeout(check, SETTLE_MS);
+      if (timer !== null) clearTimeout(timer);
+      timer = setTimeout(check, SETTLE_MS);
     });
     return () => {
       unsubscribe();

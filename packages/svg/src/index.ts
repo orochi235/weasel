@@ -18,6 +18,7 @@
 
 export { parseSvg } from './parse';
 export { serializeSvg } from './serialize';
+export { computeBounds } from './serializeBounds';
 export { escapeAttr, escapeText } from '@weasel-js/registry';
 export { svgNeeds, warmSvg } from './warm';
 export { svgTextOutlines } from './textOutlines';

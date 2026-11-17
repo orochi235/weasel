@@ -3,9 +3,10 @@
  * the properties inherited from `NodeBase` merged in first.
  */
 import {
+  Node,
   type Project,
   type InterfaceDeclaration,
-  type PropertySignature,
+  type SourceFile,
   SyntaxKind,
 } from 'ts-morph';
 import { resolve } from 'node:path';
@@ -14,28 +15,31 @@ import type {
   SceneNodeVariant,
   PropertyDescriptor,
 } from '../src/dev/traitSchemas.types.ts';
-import { srcRef, sourceFileOrThrow, readJsDoc } from './extract.ts';
+import { srcRef, sourceFileOrThrow, propertiesOfTypeNode } from './extract.ts';
 
 const VARIANT_NAMES: readonly string[] = ['MarkNode', 'GroupNode'];
 const BASE_NAME = 'NodeBase';
 const UNION_NAME = 'Node';
+const ENTRY = 'packages/core/src/core/scene/types.ts';
+/** `ENTRY`, and the file it re-exports the node types from. */
+export const NODE_READS: readonly string[] = [ENTRY, 'packages/core/src/core/scene/nodeTypes.ts'];
 
 export function extractNode(project: Project, repoRoot: string): SceneNodeSchema {
   const sf = sourceFileOrThrow(
     project,
-    resolve(repoRoot, 'packages/core/src/core/scene/types.ts'),
+    resolve(repoRoot, ENTRY),
   );
 
-  const base = sf.getInterface(BASE_NAME);
-  const baseProps = base ? propertiesOfInterface(base) : [];
+  const base = exportedInterface(sf, BASE_NAME);
+  const baseProps = base ? propertiesOfTypeNode(base) : [];
 
   const variants: SceneNodeVariant[] = [];
   const kinds: string[] = [];
   for (const name of VARIANT_NAMES) {
-    const iface = sf.getInterface(name);
+    const iface = exportedInterface(sf, name);
     if (!iface) continue;
 
-    const ownProps = propertiesOfInterface(iface);
+    const ownProps = propertiesOfTypeNode(iface);
     // Base properties first, then variant-specific. Drop any duplicate
     // by name (variant override wins).
     const ownNames = new Set(ownProps.map((p) => p.name));
@@ -49,28 +53,15 @@ export function extractNode(project: Project, repoRoot: string): SceneNodeSchema
     variants.push({ kind, properties: merged });
   }
 
-  const unionAlias = sf.getTypeAlias(UNION_NAME);
-  const source = unionAlias
-    ? srcRef(unionAlias, repoRoot)
-    : { file: 'packages/core/src/core/scene/types.ts', line: 1 };
+  const unionAlias = sf.getExportedDeclarations().get(UNION_NAME)?.find(Node.isTypeAliasDeclaration);
+  const source = unionAlias ? srcRef(unionAlias, repoRoot) : { file: ENTRY, line: 1 };
 
   return { kinds, variants, source };
 }
 
-function propertiesOfInterface(iface: InterfaceDeclaration): readonly PropertyDescriptor[] {
-  const out: PropertyDescriptor[] = [];
-  for (const member of iface.getMembers()) {
-    if (member.getKind() !== SyntaxKind.PropertySignature) continue;
-    const ps = member as PropertySignature;
-    const typeNode = ps.getTypeNode();
-    out.push({
-      name: ps.getName(),
-      type: typeNode ? typeNode.getText() : 'unknown',
-      optional: ps.hasQuestionToken(),
-      doc: readJsDoc(ps),
-    });
-  }
-  return out;
+/** The interface `sf` exports as `name`, followed through re-exports to the file that declares it. */
+function exportedInterface(sf: SourceFile, name: string): InterfaceDeclaration | undefined {
+  return sf.getExportedDeclarations().get(name)?.find(Node.isInterfaceDeclaration);
 }
 
 /** The `kind` property's string-literal value (e.g. `'mark'`), or undefined

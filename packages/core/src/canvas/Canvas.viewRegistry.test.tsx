@@ -79,7 +79,29 @@ describe('view registration', () => {
       expect(error).toHaveBeenCalledTimes(1);
       expect(String(error.mock.calls[0]![0])).toContain('"detail"');
       release();
-      expect(registry.list()).toEqual([]);
+      expect(registry.list()).toEqual([second]);
+    } finally {
+      error.mockRestore();
+    }
+  });
+
+  it('registers a skipped view once the view holding its id goes away, and not after it went itself', () => {
+    let registry!: ViewRegistry;
+    render(
+      <ViewRegistryProvider>
+        <Probe onRegistry={(r) => { registry = r; }} />
+      </ViewRegistryProvider>,
+    );
+    const error = vi.spyOn(console, 'error').mockImplementation(() => {});
+    try {
+      const view = () => ({ id: 'detail', order: 0 }) as unknown as ViewRegistration;
+      const [first, second, third] = [view(), view(), view()];
+      const releaseFirst = registry.register(first);
+      const releaseSecond = registry.register(second);
+      registry.register(third);
+      releaseSecond();
+      releaseFirst();
+      expect(registry.list()).toEqual([third]);
     } finally {
       error.mockRestore();
     }

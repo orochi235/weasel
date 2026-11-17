@@ -30,4 +30,12 @@ describe('the extension manifest', () => {
     expect(extensionVersion('1.12.0-next.3')).toBe('1.12.0');
     expect(manifestFor('chrome', '2.0.1').version).toBe('2.0.1');
   });
+
+  it('bridges every frame, an about:blank or srcdoc iframe among them', () => {
+    for (const target of ['chrome', 'firefox'] as const) {
+      expect(manifestFor(target, '1.0.0').content_scripts).toEqual([
+        { matches: ['<all_urls>'], js: ['content.js'], all_frames: true, match_about_blank: true },
+      ]);
+    }
+  });
 });

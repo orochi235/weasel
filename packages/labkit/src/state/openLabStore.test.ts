@@ -4,7 +4,14 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import type { Instrument } from '../instrument/types';
 import { CURRENT_DOCUMENT_VERSION, labDocumentKey, quarantineKey } from './document';
 import { labStorageKey } from './helpers';
-import { labPrefix, recordsOfDocument } from './labRecords';
+import {
+  LAYOUT_RECORD,
+  labPrefix,
+  recordsOfDocument,
+  saveRecord,
+  trialRecord,
+  UNDOCK_RECORD,
+} from './labRecords';
 import { type OpenLabStoreOptions, openLabStore } from './openLabStore';
 import type { LabDocument, TrialRecord } from './types';
 
@@ -474,6 +481,24 @@ describe('openLabStore — two tabs', () => {
     expect(s.mode).toBe('dark');
     await tabA.records.flush();
     expect(setA).not.toHaveBeenCalled();
+  });
+
+  it("reads another tab's layout, undocked panels, trial and snapshot with the checks it opens them with", async () => {
+    const backing = new Map<string, unknown>();
+    storeLab(backing, { trials: [trial('t1')], layout: { t1: { h: 2 } } });
+    const tabA = await open(backing);
+    const other = createMemoryAdapter(backing);
+    await other.set(P + LAYOUT_RECORD, ['not', 'a', 'layout']);
+    await other.set(P + UNDOCK_RECORD, 'nope');
+    await other.set(P + trialRecord('t2'), [trial('t2')]);
+    await other.set(P + saveRecord('s9'), [SNAPSHOT]);
+    await tick();
+
+    const s = tabA.store.getState();
+    expect(s.layout).toEqual({});
+    expect(s.undockedPanels).toEqual({});
+    expect(s.trials.map((t) => t.id)).toEqual(['t1']);
+    expect(s.savedSnapshots).toEqual([]);
   });
 
   it('stops writing once another tab stores the lab with a newer labkit', async () => {

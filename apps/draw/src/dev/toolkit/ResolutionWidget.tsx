@@ -1,5 +1,6 @@
 import {
   type Action,
+  actionBindings,
   type ActionsRegistry,
   createDispatcher,
   type DepRegistry,
@@ -16,6 +17,7 @@ import { type ReactElement, useMemo, useState } from 'react';
 import {
   AFFORDANCE_PREFIX,
   isPredicateTarget,
+  keyNamesOf,
   KIND_PREFIX,
   RESOLUTION_BODY_TARGETS,
   RESOLUTION_GESTURES,
@@ -85,6 +87,15 @@ export function ResolutionWidget({
   const [gesture, setGesture] = useState<ResolutionGesture>('drag');
   const [target, setTarget] = useState<string>('selected-body');
   const [mods, setMods] = useState<ResolutionMods>({});
+  const [pickedKey, setPickedKey] = useState<string | null>(null);
+
+  // A key event matches only bindings naming its key, so the `key` gesture needs a key picked
+  // from the ones the mounted tools and actions bind.
+  const keyNames = useMemo(() => keyNamesOf([
+    ...tools.flatMap((t) => (t.bindings ?? []).map((b) => b.spec)),
+    ...actions.flatMap((a) => actionBindings(a).map((b) => b.spec)),
+  ]), [tools, actions]);
+  const key = pickedKey !== null && keyNames.includes(pickedKey) ? pickedKey : keyNames[0];
 
   // Options come from the targets the mounted tools actually bind against, so the picker can't
   // offer a target nothing listens for. Both lists are empty for a tool set that describes its
@@ -118,7 +129,7 @@ export function ResolutionWidget({
   const candidates = useMemo(() => {
     const dispatcher = createDispatcher();
     return dispatcher.resolveAll(
-      synthesizeInput({ gesture, target, mods }),
+      synthesizeInput({ gesture, target, mods, ...(key !== undefined ? { key } : {}) }),
       {
         actions: stubActionsRegistry(actions),
         depRegistry: STUB_DEP_REGISTRY,
@@ -131,7 +142,7 @@ export function ResolutionWidget({
       // winner distinguishes "outranked" from "outranked AND disabled".
       { evaluateShadowed: true },
     );
-  }, [gesture, target, mods, actions, activeToolId, tools]);
+  }, [gesture, target, mods, key, actions, activeToolId, tools]);
 
   return (
     <PropertyPanel stance="debug" className={s.widget} title={`Resolution · ${candidates.length}`}>
@@ -144,6 +155,16 @@ export function ResolutionWidget({
           selectedKey={gesture}
           onSelectionChange={setGesture}
         />
+        {gesture === 'key' && keyNames.length > 0 && (
+          <Select
+            label="key"
+            orientation="row"
+            width="fit"
+            options={keyNames.map((k) => ({ value: k, label: k }))}
+            selectedKey={key}
+            onSelectionChange={setPickedKey}
+          />
+        )}
         <span
           title={targetApplies
             ? undefined

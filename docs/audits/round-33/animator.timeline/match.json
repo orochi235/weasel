@@ -1,0 +1,37 @@
+{
+ "pairs": [
+  [
+   0,
+   0
+  ],
+  [
+   1,
+   1
+  ],
+  [
+   4,
+   2
+  ],
+  [
+   5,
+   4
+  ]
+ ],
+ "a": [
+  "A booking timeline of infinite duration books every event at once with a NaN start time",
+  "A nested timeline (or event track) used in two places books only one of them",
+  "A timeline canceled by an event handler during the wrap's tail flush reopens its target holds",
+  "A timeline canceled from a sampled track's `onTick` reopens later tracks' holds and fires one more event",
+  "A nested timeline's negative duration counts as 0 for firing and for the end time, but stays negative for sampling and booking",
+  "`toClip` writes an infinite duration that `bindClip` then refuses",
+  "A timeline that finished forward can't be revived at its end to play backward, but one that finished backward is revived at 0 and calls `onDone` again"
+ ],
+ "b": [
+  "A booked timeline of infinite duration books every event at once, at clock time NaN",
+  "The booker keeps one cursor and one dedup per event-track object, so a track reused at two offsets books once per lap while it fires twice",
+  "A nested timeline's negative duration is 0 when firing but stays negative when sampling and booking",
+  "Played backward onto exactly 0 with laps behind it, a looping timeline ends instead of going on into the lap before",
+  "toClip writes a non-finite time, duration, offset, weight or bezier point that bindClip then refuses",
+  "bindClip accepts a key with no value, and the track fails only when sampled"
+ ]
+}

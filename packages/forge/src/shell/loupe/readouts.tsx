@@ -14,6 +14,7 @@ import type { ForgeComparison } from './conditions';
 import { backgroundOf, colorAt, tokenChain } from './tokenChain';
 import { trialAt } from './trialAt';
 import { varRefs } from '../../frame/cssVarUse';
+import { messageOf } from '../../vite/capture/payload';
 
 export const NO_TEXT = 'No text under the aim';
 export const NO_BACKGROUND = 'No opaque background behind the text';
@@ -151,9 +152,14 @@ export function ContrastReadout({ lens, settings, sources, reticle, size, interi
       const { lens: ids, settings: s, reticle: r, size: box } = latest.current;
       const [request] = requestsOf(source, ids, s, r, box);
       if (!request) return;
-      void capture(request).then((got) => {
-        if (current) setPixels('reason' in got ? { unavailable: got.reason } : contrastAt('pixels', { capture: got, point: got.at }));
-      });
+      void capture(request).then(
+        (got) => {
+          if (current) setPixels('reason' in got ? { unavailable: got.reason } : contrastAt('pixels', { capture: got, point: got.at }));
+        },
+        (err: unknown) => {
+          if (current) setPixels({ unavailable: `Capture failed: ${messageOf(err)}` });
+        },
+      );
     }, 0);
     return () => {
       current = false;

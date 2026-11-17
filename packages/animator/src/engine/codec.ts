@@ -79,6 +79,46 @@ interface Voice {
   queuedRate?: number;
   /** A path's axes as its patch last answered. */
   last?: number[];
+  /** A path's own start, and the linear progress its patch last read it at: none until a
+   *  frame has, when it stands at rest as a queued tween does. */
+  path?: PathStart;
+  phase?: number;
+}
+
+/** A path voice's velocity at its last reading, in axis units per second as a tween voice's: the
+ *  path is any function, so its slope is read off it. Zero before a frame reads it and once it
+ *  has ended. */
+function pathVelocity(v: Voice): number[] {
+  const { ms, at } = v.path!;
+  const u = v.phase;
+  if (u === undefined) return zeros(v.from.length);
+  const du = Math.min(1, ms / 2) / ms;
+  const a = Math.max(0, u - du);
+  const b = Math.min(1, u + du);
+  if (!(u < 1 && b > a)) return zeros(v.from.length);
+  try {
+    const pa = at(a);
+    const pb = at(b);
+    return pa.map((x, i) => ((pb[i]! - x) * 1000) / ((b - a) * ms));
+  } catch {
+    return zeros(v.from.length);
+  }
+}
+
+/** Cues the tween `v` waits to start, its `ease` throwing to `fault` rather than out of the frame. */
+function cueQueued(v: Voice, fault: (id: number, error: unknown) => void): void {
+  const q = v.queued;
+  if (!q) return;
+  v.queued = undefined;
+  const key = v.slot.key;
+  const { id, ease } = q;
+  const guarded = (u: number): number => {
+    try { return ease(u); } catch (error) { fault(id, error); return u; }
+  };
+  const patch = tweenPatch<unknown, Out, number[]>('v', { from: q.from.slice(), to: q.from.slice(), ms: q.ms, ease: guarded });
+  v.handle = v.slot.lane.mix.cue({ patch, subjects: [key], seek: q.atEnd ? q.ms : 0 });
+  v.handle.to(key, q.to.slice(), 0);
+  if (v.queuedRate !== undefined) v.handle.rate = v.queuedRate;
 }
 
 // A voice cued now reads voice time 0 at codec time `time`. Each patch holds its subject at rest
@@ -103,8 +143,13 @@ const motionOf = (v: Voice): Motion<number[]> | undefined =>
 
 const zeros = (n: number): number[] => new Array<number>(n).fill(0);
 
-/** `placeOf` answers where a shared subject's voices run, for one kept in a lane of its own. */
-export function createCodec(placeOf?: (on: object) => LanePlace | undefined): Codec {
+/** `placeOf` answers where a shared subject's voices run, for one kept in a lane of its own.
+ *  `fault` hears a throw from a voice's own `ease` or `at` as a frame reads it, which then reads
+ *  on as linear progress or where the voice last stood; by default the throw goes on. */
+export function createCodec(
+  placeOf?: (on: object) => LanePlace | undefined,
+  fault: (id: number, error: unknown) => void = (_, error) => { throw error; },
+): Codec {
   const lanes = createLanes(placeOf);
   const voices = new Map<number, Voice>();
   // Tweens are cued together at the next frame, not one by one as they start: a burst of starts then
@@ -144,16 +189,7 @@ export function createCodec(placeOf?: (on: object) => LanePlace | undefined): Co
 
   return {
     frame(dtMs) {
-      for (const v of queue) {
-        const q = v.queued;
-        if (!q) continue;
-        v.queued = undefined;
-        const key = v.slot.key;
-        const patch = tweenPatch<unknown, Out, number[]>('v', { from: q.from.slice(), to: q.from.slice(), ms: q.ms, ease: q.ease });
-        v.handle = v.slot.lane.mix.cue({ patch, subjects: [key], seek: q.atEnd ? q.ms : 0 });
-        v.handle.to(key, q.to.slice(), 0);
-        if (v.queuedRate !== undefined) v.handle.rate = v.queuedRate;
-      }
+      for (const v of queue) cueQueued(v, fault);
       queue.length = 0;
       time = Math.min(Number.MAX_VALUE, time + dtMs);
       lanes.frame(time);
@@ -185,10 +221,11 @@ export function createCodec(placeOf?: (on: object) => LanePlace | undefined): Co
       const from = s.at(0);
       const last = s.atEnd ? s.at(1) : undefined;
       const slot = lanes.join(s.axes, shared ? s.on : s.id, shared ? zeros(s.axes) : last ?? from);
-      const v = { kind: 'path', slot, from, last } as Voice;
+      const v = { kind: 'path', slot, from, last, path: s } as Voice;
       const patch = fnPatch<unknown, Out>(s.ms, (phase) => {
-        v.last = s.at(phase);
-        return { v: v.last };
+        v.phase = phase;
+        try { v.last = s.at(phase); } catch (error) { fault(s.id, error); }
+        return { v: v.last ?? from };
       }, { writes: ['v'] });
       // Held at its end until the animator stops it, so a frame between the two reads the end.
       v.handle = slot.lane.mix.cue({ patch, subjects: [slot.key], loop: false, freeze: 'after', seek: s.atEnd ? s.ms : 0 });
@@ -234,7 +271,8 @@ export function createCodec(placeOf?: (on: object) => LanePlace | undefined): Co
       if (!v) return undefined;
       if (v.kind === 'spring') return current(v);
       if (v.kind === 'path') {
-        return { value: rewinds.has(v) ? v.from : v.last ?? v.from, velocity: new Array<number>(v.from.length).fill(0) };
+        if (rewinds.has(v)) return { value: v.from, velocity: zeros(v.from.length) };
+        return { value: v.last ?? v.from, velocity: pathVelocity(v) };
       }
       return (!v.queued && motionOf(v))
         || { value: v.queued?.atEnd ? v.queued.to : v.from, velocity: zeros(v.from.length) };

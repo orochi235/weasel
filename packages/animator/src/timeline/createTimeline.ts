@@ -1,7 +1,8 @@
 import { createEmitter } from '@weasel-js/registry';
 import type { AnimationHandle } from '../types';
 import { createBooker } from './booking';
-import { createEventCursor, createEventFirer, lengthOf } from './fireEvents';
+import { createEventCursor, createEventFirer } from './fireEvents';
+import { lengthOf } from './length';
 import { createTrackSampler, type OpenTrackHold } from './trackHolds';
 import type { EventTrack, TimelineEvent, TimelineHandle, TimelineOptions, Track } from './types';
 
@@ -97,6 +98,11 @@ function crossLaps(
   if (laps !== 0) take(laps);
 }
 
+/** Whether the playhead stands at the end it plays toward: going forward its end, and played
+ *  backward the start of its first lap, as one exactly on a later lap's start goes on into the lap behind. */
+const atEnd = (playhead: number, duration: number, lap: number, backward: boolean): boolean =>
+  (backward ? playhead <= 0 && lap === 0 : playhead >= duration);
+
 /**
  * Create a timeline as a registered animator animation.
  *
@@ -135,7 +141,7 @@ export function createTimeline(
   const booker = opts.booking ? createBooker(opts.booking, {
     tracks: opts.tracks, duration: () => duration, lapsLeft: () => loopsLeft, lap: () => lap, playhead: () => playhead,
   }) : null;
-  const sampler = createTrackSampler(hold);
+  const sampler = createTrackSampler(hold, () => canceled);
 
   const events = createEventCursor(createEventFirer(report, booker !== null), () => canceled);
 
@@ -164,14 +170,14 @@ export function createTimeline(
     }
 
     const finished = playhead >= duration && !parked;
-    // Played backward, it ends at its start as it ends at its end going forward.
-    const rewound = rate < 0 && playhead <= 0;
+    const rewound = rate < 0 && atEnd(playhead, duration, lap, true);
     playhead = Math.min(Math.max(playhead, 0), duration);
 
     // Sampled before fired, so a handler reads the current frame's values.
     sampler.apply(opts.tracks, playhead);
+    // A handler (on the outgoing lap's tail too) or an `onTick` canceled it: it is off the table, and does nothing more.
+    if (canceled) return true;
     const sought = rate > 0 ? events.to(opts.tracks, playhead) : rate < 0 && events.back(playhead);
-    // A handler canceled it: it is off the table already, and books nothing more.
     if (canceled) return true;
     booker?.tick(virtualNow, rate);
 
@@ -205,7 +211,7 @@ export function createTimeline(
   /** Put a finished timeline back on the animator's table. A re-registered
    *  entry's `virtualNow` restarts at 0, so `offset` carries the playhead. */
   const rearm = (): void => {
-    if (canceled || playhead >= duration) return;
+    if (canceled || atEnd(playhead, duration, lap, wantScale < 0)) return;
     done = false;
     if (live) return;
     booker?.rearm();

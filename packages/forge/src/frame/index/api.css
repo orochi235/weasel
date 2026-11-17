@@ -11,7 +11,7 @@
 
 .fg-index--api > .fg-index__body {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  grid-template-columns: minmax(0, 1fr) minmax(0, 260px);
   grid-template-areas: 'stories api';
   column-gap: calc(var(--wzl-space-lg) * 1.5);
 }

@@ -6,7 +6,8 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 import { registerFontOutlines, type OutlineFace } from '@weasel-js/font';
 import { _resetFontOutlinesForTests, _resetFontRegistryForTests } from '@weasel-js/font/test-seams';
-import { pathFromD } from '@weasel-js/geom';
+import { boundsOfPath, pathFromD, type Path } from '@weasel-js/geom';
+import { parseSvg } from '@weasel-js/svg';
 import { loadTextOutlines } from '@weasel-js/text';
 import { _resetLayoutCacheForTests } from '@weasel-js/text/test-seams';
 import { solid } from '@weasel-js/paint';
@@ -97,6 +98,29 @@ describe('a draw document with a tween', () => {
     const fills = [...svg.matchAll(/fill="(#[0-9a-f]{6})"/gi)].map((m) => m[1]!.toLowerCase());
     expect(new Set(fills).size).toBe(5);
     expect(warnings).toEqual([]);
+  });
+});
+
+describe('a tween inside a group that is a frame', () => {
+  it('exports its steps where the canvas draws them, through the frame', async () => {
+    const inFrame = (spec: Spec): Spec => ({ ...spec, parent: asNodeId('g') });
+    const scene = drawScene([
+      { kind: 'group', id: asNodeId('g'), layer: 'default', pose: { x: 200, y: 200, width: 150, height: 150 }, data: {} },
+      inFrame(box('a', 0, '#ff0000')),
+      inFrame({
+        ...pathEffectNode({ kind: 'tween', steps: 3 }, [asNodeId('a'), asNodeId('b')], 'default', PATH_EFFECT_DERIVATIONS),
+        id: asNodeId('tween'),
+      } as Spec),
+      inFrame(box('b', 100, '#0000ff')),
+    ]);
+    const svg = await sceneToSvgString(scene, {
+      filename: 'x.svg', pages: layoutPages([{ id: 'page-1', width: 400, height: 400 }]), backgroundColor: '#ffffff',
+    });
+    const paths = (n: { kind: string; path?: Path; children?: unknown[] }): Path[] =>
+      n.kind === 'path' ? [n.path!] : ((n.children ?? []) as never[]).flatMap(paths);
+    const lefts = parseSvg(svg).nodes.flatMap(paths as never).map((p) => boundsOfPath(p as Path).x);
+    expect(lefts).toHaveLength(5);
+    for (const x of lefts) expect(x).toBeGreaterThanOrEqual(200);
   });
 });
 

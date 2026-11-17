@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { createScene } from './scene';
 import { POSE, makeScene, type Data, type Layer } from './testing/makeScene';
 
@@ -231,6 +231,14 @@ describe('custom op seam', () => {
     ).toThrow(/reserved/);
   });
 
+  it('rejects a revert:* kind, which names another kind\'s inverse in a saved history', () => {
+    const s = makeScene();
+    expect(() => s.registerOp('revert:commit', { apply: () => {}, revert: () => {} })).toThrow(/reserved/);
+    expect(() =>
+      createScene<Data, Layer>({ systemLayers: [{ id: 'structures' }], ops: { 'revert:x': { apply: () => {}, revert: () => {} } } }),
+    ).toThrow(/reserved/);
+  });
+
   it('rejects a kit:* kind passed in options.ops, which would replace the kit op', () => {
     expect(() =>
       createScene<Data, Layer>({
@@ -305,5 +313,32 @@ describe('undo/redo of container add preserves clipFromPose', () => {
     expect(node?.kind).toBe('group');
     // clipFromPose must survive the undo/redo round-trip.
     expect((node as { clipFromPose?: unknown }).clipFromPose).toBe(fn);
+  });
+});
+
+describe('a failed edit taken back', () => {
+  it('takes back every op it can when one revert throws, and rethrows the original error', () => {
+    const s = makeScene();
+    const state = { a: 0, b: 0 };
+    s.registerOp('t:a', { apply: () => { state.a = 1; }, revert: () => { state.a = 0; } });
+    s.registerOp('t:b', { apply: () => { state.b = 1; }, revert: () => { throw new Error('b revert'); } });
+    s.registerOp('t:c', { apply: () => { throw new Error('c apply'); }, revert: () => {} });
+    const id = s.add({ kind: 'mark', layer: 'structures', pose: POSE, data: { label: 'a' } });
+    s.setSelection([id]);
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    try {
+      expect(() => s.batch('three', () => {
+        s.setSelection([]);
+        s.recordOp({ kind: 't:a', payload: null });
+        s.recordOp({ kind: 't:b', payload: null });
+        s.recordOp({ kind: 't:c', payload: null });
+      })).toThrow('c apply');
+      expect(warn).toHaveBeenCalledTimes(1);
+      expect(String(warn.mock.calls[0]![0])).toContain('t:b');
+    } finally {
+      warn.mockRestore();
+    }
+    expect(state.a).toBe(0);
+    expect(s.getSelection()).toEqual([id]);
   });
 });

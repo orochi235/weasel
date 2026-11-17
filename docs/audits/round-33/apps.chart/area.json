@@ -1,0 +1,38 @@
+{
+ "id": "apps.chart",
+ "commit": "d4226fab0e3e2669740411edb2a1d35dadeb46b1",
+ "date": "2026-11-17",
+ "files": [
+  "apps/chart/icons/actions.mjs",
+  "apps/chart/icons/index.mjs",
+  "apps/chart/vite.config.ts"
+ ],
+ "a": 0,
+ "b": 0,
+ "m": 0,
+ "distinct": 0,
+ "chapman": 0,
+ "unfound": 0,
+ "read": {
+  "A": 3,
+  "B": 0
+ },
+ "patches": 0,
+ "questions": 0,
+ "budgetHit": [],
+ "jobs": {
+  "minutes": {
+   "A": 3.8,
+   "B": 0,
+   "match": 0,
+   "fix": 0
+  },
+  "nodes": {
+   "A": "teitou",
+   "B": "teitou"
+  },
+  "tokens": 543250,
+  "costUsd": 0.62
+ },
+ "fixCommits": []
+}

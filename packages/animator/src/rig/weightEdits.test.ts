@@ -62,3 +62,11 @@ describe('jointShares', () => {
     expect(jointShares(skin, 'c', 2)).toEqual([0, 0]);
   });
 });
+
+describe('jointShares: weights the skin does not apply', () => {
+  it('counts only weights above 0, as skinPath does', () => {
+    const skin = { a: [1, 1, 0.5], b: [-0.5, NaN, 0.5] };
+    expect(jointShares(skin, 'a', 3)).toEqual([1, 1, 0.5]);
+    expect(jointShares(skin, 'b', 3)).toEqual([0, 0, 0.5]);
+  });
+});

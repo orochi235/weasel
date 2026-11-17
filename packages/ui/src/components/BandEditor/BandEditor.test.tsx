@@ -1,7 +1,8 @@
 import { describe, it, expect, vi, beforeAll } from 'vitest';
 import { useState } from 'react';
 import { render, fireEvent } from '@testing-library/react';
-import { fraction, percent, tag, type Tagged } from '@weasel-js/quantity';
+import { decimal, fraction, percent, tag, type Tagged } from '@weasel-js/quantity';
+import { I18nProvider } from '../../useFieldLocale';
 import { BandEditor } from './BandEditor';
 import type { Band } from './bands';
 
@@ -886,4 +887,18 @@ describe('BandEditor quantities', () => {
     expect(next.every((b) => b.from.display?.kind === 'fraction')).toBe(true);
     expect(next[2]!.from.value).toBeCloseTo(0.75);
   });
+});
+
+it("writes and speaks every number in the number fields' locale", () => {
+  const { container } = render(
+    <I18nProvider locale="de-DE">
+      <BandEditor value={[{ from: 0.5, data: 'a' }, { from: 1.5, data: 'b' }]} min={0.5} max={2.5} scale="linear"
+        ticks={[{ at: 2 }]} display={decimal()} onChange={() => {}} onRangeChange={() => {}} />
+    </I18nProvider>,
+  );
+  const names = [...container.querySelectorAll('[data-band-index]')].map((b) => b.getAttribute('aria-label'));
+  expect(names).toEqual(['Band 1, 0,5 to 1,5', 'Band 2, 1,5 to 2,5']);
+  expect(container.querySelector('[aria-label="Seam 1"]')!.getAttribute('aria-valuetext')).toBe('1,5');
+  expect(container.querySelector('[data-band-ruler]')!.textContent).not.toMatch(/\d\.\d/);
+  expect(container.querySelector('[data-band-ruler]')!.textContent).toMatch(/0,5.*2,5/);
 });

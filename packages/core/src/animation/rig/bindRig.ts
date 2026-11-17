@@ -222,9 +222,10 @@ export function bindRigOn<TPose>(
     skeleton,
     target,
     pose(pose, at) {
-      target.commit(pose);
       if (at) seat.root = at;
-      show(target.read());
+      target.commit(pose);
+      // A commit at rest shows itself; under a run, the new pose shows beneath it now, not next frame.
+      if (target.active) show(target.read());
     },
     place(at) {
       seat.root = at;

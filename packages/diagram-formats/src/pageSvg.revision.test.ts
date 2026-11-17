@@ -4,6 +4,7 @@ import { registerPaintKindLoader } from '@weasel-js/paint-kinds';
 import { addOnPages, movePage, removePage, type Paint } from '@weasel-js/core';
 import { pageRegionOf, pageRegionsOf } from '@weasel-js/export';
 import { plainScene } from '@weasel-js/export/testing/plainScene';
+import { DIAGRAM_THEMES } from '@weasel-js/diagram';
 import { exportPageSvg, exportPagesPdf } from './pageSvg';
 
 const drops: (() => void)[] = [];
@@ -45,5 +46,17 @@ describe('page exports across a page move', () => {
     removePage(scene, 'p2');
     release();
     await expect(pdf).rejects.toThrow(/no page "p2"/);
+  });
+
+  it('paints the page color of the theme the document is in when the export reads it', async () => {
+    const { scene, pages, release } = heldOnPageTwo('test:held-theme');
+    scene.doc.set('diagram:theme', 'night');
+    const svg = exportPageSvg(scene, pageRegionOf(pages[1]!));
+    await tick();
+    scene.doc.set('diagram:theme', 'paper');
+    release();
+    const doc = new DOMParser().parseFromString(await svg, 'image/svg+xml');
+    const ground = doc.documentElement.querySelector('rect, path')!;
+    expect(ground.getAttribute('fill')).toBe(DIAGRAM_THEMES.paper!.page);
   });
 });

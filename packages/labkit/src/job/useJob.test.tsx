@@ -216,6 +216,41 @@ describe('useJob', () => {
     expect(seen.state.items).toEqual([7]);
   });
 
+  it('re-runs a started job without auto when its key changes, and starts none it was not asked to', async () => {
+    const keyed: JobCapability<State, Config, number> = {
+      ...capability(),
+      key: (config) => [config.n],
+      begin: () => ({ items: [] }),
+    };
+    const seen: { handle: JobHandle | null; state: State } = { handle: null, state: { items: [] } };
+    const tree = (n: number) => (
+      <Harness
+        capability={keyed}
+        config={{ n }}
+        onHandle={(h, s) => {
+          seen.handle = h;
+          seen.state = s;
+        }}
+      />
+    );
+    const { rerender } = render(tree(3));
+    rerender(tree(4));
+    await new Promise((r) => setTimeout(r, 20));
+    expect(seen.handle?.status).toBe('idle');
+
+    act(() => seen.handle?.start());
+    await waitFor(() => expect(seen.handle?.status).toBe('running'));
+    rerender(tree(40));
+    rerender(tree(2));
+    await waitFor(() => expect(seen.handle?.status).toBe('done'));
+    expect(seen.state.items).toEqual([0, 1]);
+
+    act(() => seen.handle?.cancel());
+    rerender(tree(5));
+    await new Promise((r) => setTimeout(r, 20));
+    expect(seen.handle?.status).toBe('idle');
+  });
+
   it('does not start on its own without auto', async () => {
     const seen: { handle: JobHandle | null; state: State } = { handle: null, state: { items: [] } };
     render(

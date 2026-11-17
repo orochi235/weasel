@@ -420,6 +420,8 @@ describe('layer groups', () => {
     expect(out).toEqual([{ kind: 'group', effects: fx, children: [a] }]);
     expect(warn).toHaveBeenCalledTimes(1);
     expect(String(warn.mock.calls[0][0])).toContain('ghost');
+    run([screenLayer('a', [a])], [{ id: 'world', layers: ['a', 'ghost'], effects: fx }]);
+    expect(warn, 'a second frame warns no more').toHaveBeenCalledTimes(1);
     warn.mockRestore();
   });
 
