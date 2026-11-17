@@ -16,8 +16,10 @@ export type JobStatus = 'idle' | 'running' | 'done' | 'error';
 /** Declares that an instrument has work too slow to do during a render: what to
  *  run, when to re-run it, and how each result folds into state. */
 export interface JobCapability<TS = unknown, TC = unknown, TItem = unknown> {
-  /** Re-run whenever this value changes, compared element-wise. A job with no
-   *  `key` runs only when something calls `start()`. */
+  /** Re-run whenever this value changes, compared element-wise: an `auto` job
+   *  always, any other once something has called `start()` and nothing has
+   *  canceled it since. A job with no `key` runs only when something calls
+   *  `start()`. */
   key?: (config: TC, state: TS) => readonly unknown[];
   /** Start on mount and on every `key` change. Default false. */
   auto?: boolean;

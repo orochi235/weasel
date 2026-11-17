@@ -32,8 +32,9 @@ function sameKey(a: readonly unknown[] | null, b: readonly unknown[] | null): bo
 /**
  * Drive a `JobCapability` and report its progress. `start` cancels any run in
  * flight and begins again; results from a superseded or canceled run are
- * dropped. With `auto`, it starts on mount and again whenever `key` changes
- * element-wise. Unmounting aborts the run.
+ * dropped. A `key` change element-wise starts it again: with `auto` always, on
+ * mount too; without, only once something has started it and not canceled it
+ * since. Unmounting aborts the run.
  */
 export function useJob<TS, TC, TItem>({
   capability,
@@ -48,6 +49,8 @@ export function useJob<TS, TC, TItem>({
   // state, so a superseded run finishes harmlessly instead of racing the winner.
   const token = useRef(0);
   const abort = useRef<AbortController | null>(null);
+  /** Whether a run was started and not canceled since: what a job without `auto` re-runs on a `key` change. */
+  const ran = useRef(false);
 
   // Read through refs: `run` is called once per run and must see the values as of
   // that moment rather than re-subscribing on every render.
@@ -57,6 +60,7 @@ export function useJob<TS, TC, TItem>({
   const setStateRef = useLatest(setState);
 
   const cancel = useCallback(() => {
+    ran.current = false;
     token.current += 1;
     abort.current?.abort();
     abort.current = null;
@@ -64,6 +68,7 @@ export function useJob<TS, TC, TItem>({
   }, []);
 
   const start = useCallback(() => {
+    ran.current = true;
     token.current += 1;
     const mine = token.current;
     abort.current?.abort();
@@ -121,12 +126,15 @@ export function useJob<TS, TC, TItem>({
   useEffect(() => {
     const fresh = !Object.is(lastEpoch.current, epoch);
     lastEpoch.current = epoch;
+    const moved = started.current && !sameKey(lastKey.current, key);
+    lastKey.current = key;
     if (!auto) {
+      started.current = true;
       if (fresh) cancel();
+      else if (moved && ran.current) start();
       return;
     }
-    if (!fresh && started.current && sameKey(lastKey.current, key)) return;
-    lastKey.current = key;
+    if (!fresh && started.current && !moved) return;
     started.current = true;
     start();
   }, [auto, key, start, cancel, epoch]);

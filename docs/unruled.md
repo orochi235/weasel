@@ -2508,3 +2508,6 @@ Calls the lanes made without a ruling:
   no other key typed there reaches the dispatcher, and keymaps never see one (`channels/keyboard.ts`). labkit's Mod+S
   snapshot declares it, so it saves from a field as it did before it moved onto the lab's dispatcher; Undo and Redo
   stay the field's.
+- 2026-11-16 (the lane's call): a job without `auto` re-runs on a `key` change once something has started it and
+  until something cancels it, finished runs included; one never started stays idle (`job/useJob.ts`). It had ignored
+  `key` entirely, folding a run for the old key into state for the new one.
