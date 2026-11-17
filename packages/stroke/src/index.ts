@@ -8,7 +8,7 @@
  * @packageDocumentation
  */
 
-export { widthHasInk, tessellateStroke, resolveStrokeWidth, ribbonAligns } from './tessellate/stroke';
+export { widthHasInk, tessellateStroke, ribbonAligns } from './tessellate/stroke';
 export type { StrokeOptions } from './tessellate/stroke';
 export { dashLength, splitForDash, type MeasuredPolyline } from './tessellate/dash';
 export type { RibbonStyle } from './tessellate/expandPolyline';

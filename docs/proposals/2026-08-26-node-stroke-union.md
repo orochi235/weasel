@@ -55,7 +55,7 @@ them scrub a gradient — splicing hex could only ever touch a solid.
 silhouette outline. One number could not say which side the ink lands on:
 `align: 'inner'` puts none outside the silhouette, `'outer'` none inside. `ink`
 takes an optional `NodeInkCtx` carrying the view scale, so a `{ px }` width
-resolves through `resolveStrokeWidth`; absent, scale is 1. `shapeCoversPoint`
+resolves through `resolveScreenLength`; absent, scale is 1. `shapeCoversPoint`
 then picks the reach by side, which costs one `pathContainsPoint` on unfilled
 shapes that would otherwise skip it.
 

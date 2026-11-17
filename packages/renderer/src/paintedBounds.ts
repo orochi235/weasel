@@ -1,6 +1,6 @@
 import { type Path, mat3, type GlMat3 } from '@weasel-js/geom';
 import { DEFAULT_MITER_LIMIT, resolveScreenLength, type Stroke } from '@weasel-js/paint';
-import { markerReach, resolveStrokeWidth, widestStrokeWidth } from '@weasel-js/stroke';
+import { markerReach, widestStrokeWidth } from '@weasel-js/stroke';
 import {
   SPRITE_STRIDE, type DrawCommand, type ImageDrawCommand, type PathDrawCommand, type ShaderDrawCommand,
   type SpritesDrawCommand,
@@ -150,7 +150,7 @@ function strokeReach(stroke: Stroke, m: GlMat3): number {
 export function strokeReachAt(stroke: Stroke, scale: number, least = scale): number {
   const at = least > 0 ? least : scale;
   const px = typeof stroke.width === 'object';
-  const base = resolveStrokeWidth(stroke.width ?? 1, px ? at : scale);
+  const base = resolveScreenLength(stroke.width ?? 1, px ? at : scale);
   // A `{ px }` ribbon is built in the transform's stretch, where the miter of a world per-vertex width is limited
   // across its edge and can reach (scale / least)² as far in world along the axis the transform shrinks most.
   const stretch = px && least > 0 ? (scale / least) ** 2 : 1;

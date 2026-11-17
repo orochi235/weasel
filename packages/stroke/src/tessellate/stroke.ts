@@ -1,5 +1,5 @@
 import { remapPerAnchor, resolveCornersWithSources, type Path, type RectPath } from '@weasel-js/geom';
-import type { ScreenLength, Stroke } from '@weasel-js/paint';
+import type { Stroke } from '@weasel-js/paint';
 import { alignedStrokeRect, alignedStrokeRectHolds, DEFAULT_MITER_LIMIT, resolveScreenLength } from '@weasel-js/paint';
 import { type Mesh, extractPolylines, type Polyline } from '@weasel-js/geom/tessellate';
 import { dashPolylines } from './dash';
@@ -44,13 +44,6 @@ const EMPTY_MESH: Mesh = {
   anchorT: new Float32Array(0),
 };
 
-
-/** Resolve a stroke width to world units. A number is already world units;
- *  `{ px }` is screen pixels divided by the accumulated scale, so it holds its
- *  on-screen thickness as the view zooms. */
-export function resolveStrokeWidth(width: ScreenLength, scale: number): number {
-  return resolveScreenLength(width, scale);
-}
 
 /**
  * Build a triangle-mesh ribbon from a stroked Path.
@@ -106,7 +99,7 @@ export function ribbonStyle(stroke: Stroke): RibbonStyle {
   // gets here; a stroke that reaches the tessellator unresolved is read at
   // scale 1, matching what the ribbon cache keys it under.
   return {
-    width: resolveStrokeWidth(stroke.width ?? 1, 1),
+    width: resolveScreenLength(stroke.width ?? 1, 1),
     join: stroke.join ?? 'miter',
     cap: stroke.cap ?? 'butt',
     miterLimit: stroke.miterLimit ?? DEFAULT_MITER_LIMIT,

@@ -2171,7 +2171,6 @@
     "resolveScreenLength": "function",
     "resolveSpatialReference": "function",
     "resolveStroke": "function",
-    "resolveStrokeWidth": "function",
     "resolveUnit": "function",
     "resolveUnitExpr": "function",
     "resolveVisibility": "function",

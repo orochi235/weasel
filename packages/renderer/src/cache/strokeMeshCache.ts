@@ -7,8 +7,8 @@
  */
 
 import type { Path } from '@weasel-js/geom';
-import { strokeTrimKey, type Stroke, type VertexWidth } from '@weasel-js/paint';
-import { clipRibbon, tessellateStroke, resolveStrokeWidth, type ClipRibbon } from '@weasel-js/stroke';
+import { resolveScreenLength, strokeTrimKey, type Stroke, type VertexWidth } from '@weasel-js/paint';
+import { clipRibbon, tessellateStroke, type ClipRibbon } from '@weasel-js/stroke';
 import { strokeInsets } from '@weasel-js/stroke';
 import { metricKey, type ScreenSpace, type StrokeSpaces } from '@weasel-js/stroke';
 import type { InsetLength } from '@weasel-js/stroke';
@@ -55,7 +55,7 @@ let clips = new WeakMap<Path, Map<string, StrokeEntry<ClipRibbon>>>();
  *  resolved trim distance affects these triangles, so two heads with the
  *  same inset share one entry. */
 function configKey(stroke: Stroke, flattenTolerance: number | undefined, spaces: StrokeSpaces): string {
-  const width = resolveStrokeWidth(stroke.width ?? 1, 1);
+  const width = resolveScreenLength(stroke.width ?? 1, 1);
   const insets = strokeInsets(stroke, width);
   const ribbon = spaces.ribbon?.metric;
   return [
@@ -87,7 +87,7 @@ export function strokeMesh(
   spaces: StrokeSpaces = {},
 ): Mesh {
   return cached(cache, path, stroke, configKey(stroke, flattenTolerance, spaces), () => {
-    const insets = strokeInsets(stroke, resolveStrokeWidth(stroke.width ?? 1, 1));
+    const insets = strokeInsets(stroke, resolveScreenLength(stroke.width ?? 1, 1));
     return tessellateStroke(path, stroke, {
       flattenTolerance,
       startInset: insetIn(insets.start, spaces.start, spaces.ribbon),
@@ -108,7 +108,7 @@ export function strokeClipRibbon(
 ): ClipRibbon {
   const untrimmed: Stroke = { ...stroke, trim: undefined };
   return cached(clips, path, stroke, configKey(untrimmed, flattenTolerance, spaces), () => {
-    const insets = strokeInsets(stroke, resolveStrokeWidth(stroke.width ?? 1, 1));
+    const insets = strokeInsets(stroke, resolveScreenLength(stroke.width ?? 1, 1));
     return clipRibbon(path, untrimmed, {
       flattenTolerance, startInset: insets.start, endInset: insets.end, metric: spaces.ribbon?.metric,
     });

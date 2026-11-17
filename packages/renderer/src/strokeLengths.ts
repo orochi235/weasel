@@ -1,7 +1,6 @@
-import { scaledDash, type CommandPaint, type MarkerRef, type CommandStroke } from '@weasel-js/paint';
+import { resolveScreenLength, scaledDash, type CommandPaint, type MarkerRef, type CommandStroke } from '@weasel-js/paint';
 import type { PathDrawCommand } from './DrawCommand';
 import type { GlMat3 } from '@weasel-js/geom';
-import { resolveStrokeWidth } from '@weasel-js/stroke';
 import {
   strokeSpaceOf, type ScreenSpace, type StrokeSpaces,
 } from '@weasel-js/stroke';
@@ -51,8 +50,8 @@ export function resolveStrokeLengths(
   let ribbon: ScreenSpace | undefined;
   if (typeof stroke.width === 'object') {
     const pxPerUnit = snap(stroke.width.px, scale);
-    resolved.width = resolveStrokeWidth(stroke.width, pxPerUnit);
-    resolved = scaledDash(resolved, resolveStrokeWidth({ px: 1 }, pxPerUnit));
+    resolved.width = resolveScreenLength(stroke.width, pxPerUnit);
+    resolved = scaledDash(resolved, resolveScreenLength({ px: 1 }, pxPerUnit));
     ribbon = screen(pxPerUnit);
   }
   const head = (ref: MarkerRef | undefined): ScreenSpace | undefined => {

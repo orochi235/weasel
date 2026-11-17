@@ -45,7 +45,6 @@ export {
   wcagLevels,
   widestHalfWidth,
 } from '@weasel-js/paint';
-export { resolveStrokeWidth } from '@weasel-js/stroke';
 export type {
   Inherit,
   PaintedFill,

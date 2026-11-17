@@ -3,11 +3,12 @@
  * stroke's edge hit-tests and measures against.
  */
 import { pathContainsPoint, segmentT, lerp, type Path } from '@weasel-js/geom';
+import { resolveScreenLength } from '@weasel-js/paint';
 import { extractPolylines } from '@weasel-js/geom/tessellate';
 import type { Stroke } from '@weasel-js/paint';
 import { strokeFlattening } from './tessellate/flattening';
 import { nibWidthScale } from './tessellate/nib';
-import { widthHasInk, resolveStrokeWidth } from './tessellate/stroke';
+import { widthHasInk} from './tessellate/stroke';
 import { populateWidths } from './tessellate/vertexWidths';
 
 /** One side of a stroke's ribbon, as `VertexWidth` names them. */
@@ -55,7 +56,7 @@ export interface StrokeEdgeOptions {
 export function strokeEdgeNear(
   path: Path, stroke: Stroke, x: number, y: number, opts: StrokeEdgeOptions = {},
 ): StrokeEdgeHit | null {
-  const width = resolveStrokeWidth(stroke.width ?? 1, opts.scale ?? 1);
+  const width = resolveScreenLength(stroke.width ?? 1, opts.scale ?? 1);
   if (!widthHasInk(width)) return null;
   // The flattening is in the path's offsets from its origin; the point and the hit are not.
   if (path.kind === 'polygon' && path.origin) {

@@ -8,6 +8,7 @@
  */
 
 import type { DrawCommand } from '@weasel-js/renderer';
+import { resolveScreenLength } from '@weasel-js/paint';
 import type {
   SelectionHandlesLayerOptions, SelectionOutlineLayerOptions, SelectionOverlayLayerOptions,
 } from '@weasel-js/core';
@@ -18,7 +19,6 @@ import { containerAwareBoundsResolver } from './selectionPose';
 import { targetCorners, targetTransformOf, type TargetTransform } from '@weasel-js/core';
 import { AUTO_POSE_DESCRIPTOR } from '@weasel-js/core/engine';
 import type { CommandStroke } from '@weasel-js/paint';
-import { resolveStrokeWidth } from '@weasel-js/stroke';
 import { DEFAULT_ROTATION_HANDLE_DISTANCE } from './rotationHandleGeometry';
 import type { Bounds } from '@weasel-js/core';
 import type { ChromeState } from '@weasel-js/core';
@@ -82,7 +82,7 @@ function outlineCommandsFor(
 ): DrawCommand[] {
   const out: DrawCommand[] = [];
   const align = stroke.align ?? 'center';
-  const width = resolveStrokeWidth(stroke.width ?? 1, 1);
+  const width = resolveScreenLength(stroke.width ?? 1, 1);
   for (const id of ids) {
     const worldB = resolveBounds(id);
     if (!worldB) continue;
