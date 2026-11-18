@@ -45,7 +45,9 @@ export function Tabs({ children, className, disabled, selectedKey, defaultSelect
   const own = useMemo(() => createRunSlots(), []);
   // Held here, so a disabled tab focus lands on is refused rather than chosen: React Aria selects on focus.
   const [ownKey, setOwnKey] = useState<Key | null>(defaultSelectedKey ?? null);
-  const shown = selectedKey === undefined ? ownKey : selectedKey;
+  // Null until a tab is chosen, which React Aria reads as controlled and fills with its first tab, though its type
+  // leaves null out.
+  const shown = (selectedKey === undefined ? ownKey : selectedKey) as Key;
   const stateRef = useRef<ContextType<typeof TabListStateContext>>(null);
   const choose = (k: Key): void => {
     const coll = stateRef.current?.collection;
