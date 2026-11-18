@@ -71,15 +71,51 @@ function seedFromPoses<TPose>(
   return joinedPoses;
 }
 
-/** Where the first transition of a chain tweens an item: from its prior pose to `target()`, or to
- *  the joined pose without one. Null when the item has no prior or joined pose to tween between. */
-function rootEndpoints<TPose>(
-  from: TPose | undefined,
-  joined: TPose | undefined,
-  target: (() => TPose) | null,
+/**
+ * Where item `i` tweens its pose. A chained transition goes from where the node stands to its
+ * `.pose()`, if any; the first of a chain from the item's prior pose to its `.pose()`, or to the
+ * joined pose without one, and is null when the item has no prior or joined pose.
+ */
+function itemEnds<TData, TPose>(
+  ctx: TransitionCtx<TData, TPose>,
+  i: number,
+  poseFn: ((d: TData, i: number) => TPose) | null,
+  joinedPoses: ReadonlyMap<NodeId, TPose> | null,
 ): { from: TPose; to: TPose | undefined } | null {
+  const id = ctx.ids[i];
+  const target = poseFn ? (): TPose => poseFn(ctx.data[i], i) : null;
+  if (!joinedPoses) return { from: ctx.scene.get(id)!.pose, to: target?.() };
+  const from = ctx.priorPoses.get(id);
+  const joined = joinedPoses.get(id);
   if (from === undefined || joined === undefined) return null;
   return { from, to: target ? target() : joined };
+}
+
+/** Item `i`'s tweens: its pose, when it has somewhere to go, and every custom tween; `lost`
+ *  says the node has left the scene, and stops a tween writing to it. */
+function itemJobs<TData, TPose>(
+  ctx: TransitionCtx<TData, TPose>,
+  settings: StageSettings<TData, TPose>,
+  i: number,
+  ends: { from: TPose; to: TPose | undefined },
+  lost: () => boolean,
+): TweenJob[] {
+  const { scene, animator, name } = ctx;
+  const id = ctx.ids[i];
+  const d = ctx.data[i];
+  const jobs: TweenJob[] = [];
+  if (ends.to !== undefined) {
+    jobs.push(poseTweenJob(animator, settings, transitionCancelKey(name, id), ends.from, ends.to, ctx.geometry.lerp!, (pose) => {
+      if (!lost()) scene.setPose(id, pose);
+    }));
+  }
+  for (const ct of settings.tweens) {
+    jobs.push(customTweenJob(
+      animator, settings, transitionCancelKey(name, id, ct.name), ct, ct.from(d, i), ct.to(d, i),
+      (value) => { if (!lost()) ct.apply(d, id, value); },
+    ));
+  }
+  return jobs;
 }
 
 function makeStage<TData, TPose>(
@@ -116,35 +152,12 @@ function makeStage<TData, TPose>(
     return true;
   };
 
-  /** Item `i`'s tweens: its pose, when it has somewhere to go, and every custom tween. */
-  const jobsFor = (i: number, from: TPose | undefined, to: TPose | undefined): TweenJob[] => {
-    const id = ids[i];
-    const d = data[i];
-    const jobs: TweenJob[] = [];
-    if (to !== undefined) {
-      jobs.push(poseTweenJob(ctx.animator, settings, keys[i], from as TPose, to, ctx.geometry.lerp!, (pose) => {
-        if (!lost(i)) scene.setPose(id, pose);
-      }));
-    }
-    for (const ct of settings.tweens) {
-      jobs.push(customTweenJob(
-        ctx.animator, settings, transitionCancelKey(name, id, ct.name), ct, ct.from(d, i), ct.to(d, i),
-        (value) => { if (!lost(i)) ct.apply(d, id, value); },
-      ));
-    }
-    return jobs;
-  };
-
   const runItem = (i: number): void => {
     if (progress.canceled || lost(i)) return;
-    const poseFn = settings.pose;
-    const target = poseFn ? (): TPose => poseFn(data[i], i) : null;
-    const ends = parent
-      ? { from: scene.get(ids[i])!.pose, to: target?.() }
-      : rootEndpoints(priorPoses.get(ids[i]), joinedPoses.get(ids[i]), target);
+    const ends = itemEnds(ctx, i, settings.pose, parent ? null : joinedPoses);
     if (!ends) return finishItem(i);
 
-    const jobs = jobsFor(i, ends.from, ends.to);
+    const jobs = itemJobs(ctx, settings, i, ends, () => lost(i));
     if (jobs.length === 0) return finishItem(i);
     progress.start();
     const delayMs = settings.delay ? Math.max(0, settings.delay(data[i], i)) : 0;
