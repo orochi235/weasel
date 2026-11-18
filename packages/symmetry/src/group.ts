@@ -1,4 +1,4 @@
-import type { Affine, Point } from '@weasel-js/geom';
+import type { Affine, Point, Rect } from '@weasel-js/geom';
 import {
   clipNothing, worldPoses, type AddNodeSpec, type CopiesFromPoseFn, type NodeId, type Scene, type SceneRegistry,
 } from '@weasel-js/core';
@@ -13,12 +13,7 @@ export interface SymmetryGroupData {
 }
 
 /** The box a symmetry group is posed at: empty, at its center. */
-export interface SymmetryPose {
-  x: number;
-  y: number;
-  width: number;
-  height: number;
-}
+export type SymmetryPose = Rect;
 
 /** Where a group's copies turn and reflect about: the middle of its pose. */
 export function centerOfPose(pose: unknown): Point {
