@@ -12,7 +12,9 @@ import {
 } from './entities';
 import { flagpoleAt, grabsPole, SLIDE_SPEED, type Flagpole } from './flagpole';
 import { TILE, type Vec2 } from './level';
-import { createBodyState, spikeOverlap, stepBody, BODY_H, STEP, type BodyState, type Input } from './physics';
+import {
+  applyImpulse, createBodyState, spikeOverlap, stepBody, BODY_H, STEP, type BodyState, type Input,
+} from './physics';
 import { createAnimState, nextAnimState, type AnimState } from './animState';
 import type { SoundName } from './sfx';
 import { WORLD } from './worldLevel';
@@ -21,6 +23,9 @@ import { WORLD } from './worldLevel';
 const OW_CALLOUT_TTL = 0.9;
 const COINS_PER_LIFE = 5;
 const HEALTHCARE_CALLOUT_TTL = 1.6;
+/** An enemy hit's push away from the enemy: its speed, and how long it holds. */
+const KNOCKBACK_SPEED = 120;
+const KNOCKBACK_CARRY = 0.2;
 /** Seconds of screen shake after a first or second bonk. */
 export const SHAKE_DURATION = 0.25;
 /** World units of camera jitter at the shake's peak. */
@@ -163,10 +168,8 @@ export function stepWorld(g: GameRefs, step: Input, hooks: WorldHooks): void {
     } else {
       g.invuln = INVULN;
       g.lives--;
-      g.player = {
-        ...g.player,
-        body: { ...g.player.body, vy: -280, vx: g.player.body.facing * -120 },
-      };
+      const away = Math.sign(g.player.body.x - g.enemies[hit.index].x) || -g.player.body.facing;
+      g.player = applyImpulse(g.player, { vx: away * KNOCKBACK_SPEED, vy: -280 }, KNOCKBACK_CARRY);
       hooks.sound('hurt');
       hooks.duck();
       sayOw(g);

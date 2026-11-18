@@ -79,6 +79,18 @@ describe('stepWorld — damage', () => {
     expect(ows(g)).toHaveLength(1);
   });
 
+  it('knocks the player away from the enemy that hit them, whatever key is held', () => {
+    const g = freshGame();
+    const { x, y } = g.player.body;
+    // The enemy is just left of the player, who is running into it.
+    g.enemies = [{ x: x - 10, y, vx: 0, alive: true, phase: 0 }];
+    const run = { ...idle, left: true };
+    stepWorld(g, run, NO_HOOKS);
+    expect(g.lives).toBe(2);
+    for (let i = 0; i < 10; i++) stepWorld(g, run, NO_HOOKS);
+    expect(g.player.body.x).toBeGreaterThan(x);
+  });
+
   it('says ow when the player falls out of the level', () => {
     const g = freshGame();
     g.player = { ...g.player, body: { ...g.player.body, y: WORLD.heightPx + 200 } };

@@ -49,6 +49,9 @@ export interface BodyState {
   landed: boolean;
   /** Set only on the step a ceiling hit lands on a `?` block. */
   bonk: { cx: number; cy: number } | null;
+  /** Seconds left during which `vx` is the body's own, set by {@link applyImpulse},
+   *  and input does not steer it. */
+  carry: number;
 }
 
 export function createBodyState(at: Vec2): BodyState {
@@ -59,6 +62,20 @@ export function createBodyState(at: Vec2): BodyState {
     jumped: false,
     landed: false,
     bonk: null,
+    carry: 0,
+  };
+}
+
+/**
+ * Velocity imposed on the body from outside: a knockback, a bounce. Input sets
+ * `vx` afresh every step, so a horizontal push lasts only if `carry` holds it,
+ * for that many seconds.
+ */
+export function applyImpulse(s: BodyState, v: { vx?: number; vy?: number }, carry = 0): BodyState {
+  return {
+    ...s,
+    body: { ...s.body, vx: v.vx ?? s.body.vx, vy: v.vy ?? s.body.vy },
+    carry: Math.max(s.carry, carry),
   };
 }
 
@@ -134,7 +151,8 @@ export function stepBody(s: BodyState, level: Level, input: Input, dt: number): 
   let jumped = false;
 
   const dir = (input.right ? 1 : 0) - (input.left ? 1 : 0);
-  b.vx = dir * MOVE_SPEED;
+  if (s.carry <= 0) b.vx = dir * MOVE_SPEED;
+  const carry = Math.max(0, s.carry - dt);
   if (dir !== 0) b.facing = dir > 0 ? 1 : -1;
 
   if (jumpBuffer > 0 && coyote > 0) {
@@ -158,7 +176,7 @@ export function stepBody(s: BodyState, level: Level, input: Input, dt: number): 
   b.onGround = hit?.kind === 'floor';
   const bonk = hit?.kind === 'ceiling' && hit.tile === QUESTION ? { cx: hit.cx, cy: hit.cy } : null;
 
-  return { body: b, coyote, jumpBuffer, jumped, landed: b.onGround && !wasOnGround, bonk };
+  return { body: b, coyote, jumpBuffer, jumped, landed: b.onGround && !wasOnGround, bonk, carry };
 }
 
 export function spikeOverlap(b: Body, level: Level): boolean {
