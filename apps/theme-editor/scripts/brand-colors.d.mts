@@ -13,3 +13,4 @@ export function parseCopic(all: readonly Record<string, unknown>[]): CopicRow[];
 export function renderLego(rows: readonly LegoRow[]): string;
 export function renderCopic(rows: readonly CopicRow[]): string;
 export function decodeEntities(text: string): string;
+export function copicCodeOrder(a: string, b: string): number;

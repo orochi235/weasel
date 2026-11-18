@@ -1,6 +1,7 @@
 import { existsSync } from 'node:fs';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { PALETTE_FILES, decodeEntities, parseCopic, parseLego, renderCopic, renderLego } from './brand-colors.mjs';
+import { COPIC_COLORS } from '../src/palette/copicColors';
+import { PALETTE_FILES, copicCodeOrder, decodeEntities, parseCopic, parseLego, renderCopic, renderLego } from './brand-colors.mjs';
 
 const legoBlock = (name: string, rgb: string, type = 'Solid') =>
   `<article class='set'><a title="${name}"></a><div style="background-color:rgb(${rgb})"></div><a href='/colours/type-${type}'></a></article>`;
@@ -81,5 +82,17 @@ describe('sorting', () => {
     ]);
     expect(compare).toHaveBeenCalled();
     for (const call of compare.mock.calls) expect(call[1]).toBe('en');
+  });
+});
+
+describe('copicCodeOrder', () => {
+  it('runs each family palest first, the zero tiers before 01', () => {
+    const codes = ['B01', 'B00', 'B0000', 'B000', 'BG01', 'C-1', 'C-0', 'C-00', 'C-10', 'B12', '0', '100'];
+    expect(codes.sort(copicCodeOrder)).toEqual(['0', '100', 'B0000', 'B000', 'B00', 'B01', 'B12', 'BG01', 'C-00', 'C-0', 'C-1', 'C-10']);
+  });
+
+  it('is the order the committed table is in', () => {
+    const codes = COPIC_COLORS.map((c) => c.code);
+    expect(codes).toEqual([...codes].sort(copicCodeOrder));
   });
 });

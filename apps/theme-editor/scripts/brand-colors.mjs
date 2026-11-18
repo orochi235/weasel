@@ -75,6 +75,22 @@ export function parseLego(html) {
   return rows;
 }
 
+/** A code's tier within its family: `0000` < `000` < `00` < `0` < `01` < … < `10`. */
+function copicTier(digits) {
+  return /^0+$/.test(digits) ? -digits.length : Number(digits);
+}
+
+/**
+ * Copic's own order: by family, then palest first. A numeric compare reads
+ * `B0000`, `B000` and `B00` as the same number and breaks the tie however it
+ * likes; Copic puts more zeros paler, so the extra-pale tiers run 0000 first.
+ */
+export function copicCodeOrder(a, b) {
+  const [, fa, da] = /^(.*?)(\d*)$/.exec(a);
+  const [, fb, db] = /^(.*?)(\d*)$/.exec(b);
+  return fa.localeCompare(fb, 'en') || copicTier(da) - copicTier(db) || a.localeCompare(b, 'en');
+}
+
 /** meodai/copic-colors' `colors.json` to the marker rows, in code order. */
 export function parseCopic(all) {
   return all
@@ -87,7 +103,7 @@ export function parseCopic(all) {
       if (!/^#[0-9a-f]{6}$/.test(hex)) throw new Error(`gen-brand-colors: Copic ${code}'s colour ${JSON.stringify(c.extractedColor)} is not a #rrggbb hex`);
       return { name: c.name, code, hex };
     })
-    .sort((a, b) => a.code.localeCompare(b.code, 'en', { numeric: true }));
+    .sort((a, b) => copicCodeOrder(a.code, b.code));
 }
 
 /** Rows that came back empty mean the source changed shape, not that the range did. */
