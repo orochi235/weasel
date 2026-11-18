@@ -5,18 +5,14 @@ import traitSchemas from 'virtual:weasel-trait-schemas';
 import s from '../RegistryInspector.module.css';
 import { SchemaTable } from '../SchemaTable';
 import type { OpFactoryEntry, OpKindEntry } from '../registryEntries';
+import { opFactoryNameFor } from '../registryData';
 import { findSourceMatch } from '../sourceLookup';
 import { KindBadge, Jsdoc, type Props } from './shared';
 import { SourceLink } from './sourceLinks';
 import { getOwn } from '@weasel-js/registry';
 
-/** The `createXOp` factory the kit names after op kind `kind`. */
-export function opFactoryName(kind: string): string {
-  return `create${kind.charAt(0).toUpperCase()}${kind.slice(1)}Op`;
-}
-
 export function OpKindDetail({ entry }: { entry: OpKindEntry; onNavigate: Props['onNavigate'] }) {
-  const factoryId = opFactoryName(entry.id);
+  const factoryId = opFactoryNameFor(entry.id);
   const fn = getOwn(Weasel as Record<string, unknown>, factoryId);
   const match = findSourceMatch(factoryId);
   const arity = typeof fn === 'function' ? fn.length : undefined;
