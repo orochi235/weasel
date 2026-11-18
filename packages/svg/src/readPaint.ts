@@ -2,7 +2,7 @@
 
 import type { SvgPaint, SvgStroke } from './types';
 import type { Fill, Paint, Stroke } from '@weasel-js/core';
-import type { GradientTable } from './gradients';
+import type { GradientTable } from './readGradients';
 import { ownProp, ownValue, resolveCurrentColor, setsOwn, styleValue, type StyleContext } from './cascade';
 import { readProperty, type InheritedPropertyName } from './properties';
 

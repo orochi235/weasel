@@ -14,7 +14,7 @@
 import type { Stroke } from '@weasel-js/core';
 import type { StyledRun, TextPoseLayout } from '@weasel-js/text';
 import { maxOf } from '@weasel-js/geom';
-import type { PaintServerRegistry } from './gradients';
+import type { PaintServerRegistry } from './paintServers';
 import { WEASEL_NS_PREFIX } from './gradients';
 import { boxTransformAttr } from './placeBox';
 import { textXml } from './serializeText';

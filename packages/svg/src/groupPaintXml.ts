@@ -6,7 +6,7 @@
  */
 import { hasOwnKey } from '@weasel-js/registry';
 
-import type { PaintServerRegistry } from './gradients';
+import type { PaintServerRegistry } from './paintServers';
 import { paintAttrs, strokeAttrsFor, type Warn } from './strokeAttrs';
 import type { SvgGroupNode, SvgInherits } from './types';
 
