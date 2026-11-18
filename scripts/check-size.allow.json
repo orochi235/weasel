@@ -162,10 +162,6 @@
   "packages/svg/src/gradients.ts": {
     "lines": 495
   },
-  "packages/text-dom/src/useTextEdit.ts": {
-    "lines": 427,
-    "longestFunction": 341
-  },
   "packages/text/src/layout/lineBreak/lineBreaks.ts": {
     "longestFunction": 126
   },
