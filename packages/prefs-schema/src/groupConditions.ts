@@ -1,14 +1,13 @@
 // Tests a schema reads from a node's own group, turned into tests read from the root, so every reader of conditions
 // sees root paths and a group can be mounted anywhere.
 
-import { prefConditionInGroup, type PrefCondition } from './condition';
+import { createPart, setOwn } from '@weasel-js/registry';
+import { isPrefCondition, prefConditionInGroup } from './condition';
 import type { PrefGroup, PrefSection } from './groups';
 
 const CONDITIONS = ['showIf', 'enableIf', 'activeIf'] as const;
 
 type Node = Record<string, unknown>;
-
-const resolved = new WeakMap<object, object>();
 
 const isNode = (value: unknown): value is Node => typeof value === 'object' && value !== null && !Array.isArray(value);
 const isGroup = (node: Node): boolean => !('kind' in node) && isNode(node.children);
@@ -22,7 +21,7 @@ function mapNodes(held: Node, each: (key: string, node: Node) => Node): Node {
     const next = each(key, child);
     if (next === child) continue;
     out ??= { ...held };
-    out[key] = next;
+    setOwn(out, key, next);
   }
   return out ?? held;
 }
@@ -36,11 +35,12 @@ function resolveNode(node: Node, group: string, path: string): Node {
   let out: Node | undefined;
   const set = (key: string, value: unknown) => {
     out ??= { ...node };
-    out[key] = value;
+    setOwn(out, key, value);
   };
   for (const key of CONDITIONS) {
-    const condition = node[key] as PrefCondition | undefined;
-    if (condition === undefined) continue;
+    const condition = node[key];
+    // A malformed condition is left as it is, for checkPrefConditions to report.
+    if (!isPrefCondition(condition)) continue;
     const next = prefConditionInGroup(condition, group);
     if (next !== condition) set(key, next);
   }
@@ -66,15 +66,14 @@ function resolveNode(node: Node, group: string, path: string): Node {
   return out ?? node;
 }
 
+const resolvedOf = createPart((schema: object): object => resolveNode(schema as Node, '', ''));
+
 /**
  * `schema` with every condition test read from its node's group (`from: 'group'`) read from the root instead: the
  * form the condition readers, the status walks and the store's checks take. The same object comes back for the same
  * schema, and the schema itself where no test reads from its group.
  */
 export function resolvePrefGroupConditions<T extends PrefGroup | PrefSection>(schema: T): T {
-  const known = resolved.get(schema);
-  if (known !== undefined) return known as T;
-  const out = resolveNode(schema as unknown as Node, '', '') as unknown as T;
-  resolved.set(schema, out);
-  return out;
+  return resolvedOf(schema) as T;
 }
+

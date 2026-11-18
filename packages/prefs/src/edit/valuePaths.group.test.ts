@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { checkPrefConditions, type PrefGroup, type PrefLeaf } from '@weasel-js/prefs';
+import { conditionGroupAt, conditionProblems } from './conditionMarks';
 import { rebaseValuePaths } from './valuePaths';
 
 const flag = (name: string, more: object = {}): PrefLeaf => ({ kind: 'boolean', name, description: '', default: false, ...more });
@@ -29,5 +30,26 @@ describe('checkPrefConditions with a group test', () => {
     expect(checkPrefConditions(ROOT)).toEqual([]);
     const missing: PrefGroup = { name: 'Root', children: { feature: { name: 'F', children: { axis: flag('Axis', { enableIf: { from: 'group', path: 'gone' } }) } } } };
     expect(checkPrefConditions(missing).map((p) => [p.code, p.path])).toEqual([['no-leaf', 'feature.gone']]);
+  });
+
+  it('reports a malformed condition rather than failing to read the schema', () => {
+    const bad = { name: 'Root', children: { a: flag('A', { showIf: 'bad' }) } } as unknown as PrefGroup;
+    expect(checkPrefConditions(bad).map((p) => p.code)).toEqual(['malformed']);
+  });
+});
+
+describe('the editor with a group test', () => {
+  it('marks nothing wrong where the group holds the leaf, and marks a missing one by the path it reads', () => {
+    expect(conditionProblems(ROOT).size).toBe(0);
+    const missing: PrefGroup = { name: 'Root', children: { feature: { name: 'F', children: { axis: flag('Axis', { enableIf: { from: 'group', path: 'gone' } }) } } } };
+    expect([...conditionProblems(missing)].map(([at, marks]) => [at, marks.map((m) => m.path)])).toEqual([['feature/axis', ['feature.gone']]]);
+  });
+
+  it('finds the group a node is declared in', () => {
+    expect(conditionGroupAt(ROOT, 'view/feature/axis')).toBe('view.feature');
+    expect(conditionGroupAt(ROOT, 'view/feature')).toBe('view');
+    expect(conditionGroupAt(ROOT, 'on')).toBe('');
+    expect(conditionGroupAt(ROOT, null)).toBeUndefined();
+    expect(conditionGroupAt(ROOT, 'view/nothing')).toBeUndefined();
   });
 });

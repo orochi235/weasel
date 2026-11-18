@@ -1,7 +1,7 @@
 import type { MenuEntry } from '@weasel-js/menu';
 import {
   isBuiltinPref, isPrefLeaf, isPrefSection, ROOT_PREF_STATUS, prefAliasedLeaf, prefAliasTarget, prefConditionHolds, prefLeafAt,
-  prefStatusIn, prefStatusUnder, prefValueAt,
+  prefStatusIn, prefStatusUnder, prefValueAt, resolvePrefGroupConditions,
   type PrefConditionJudge, type PrefOwner,
   type PrefAction, type PrefBoolean, type PrefColor, type PrefConditionReader, type PrefEnum, type PrefGroup,
   type PrefField, type PrefGroupAs, type PrefLeaf, type PrefList, type PrefMap, type PrefNumber, type PrefObject,
@@ -119,7 +119,7 @@ function settingsOf(
     root: settings.schema,
     read: (path, from) => (from === 'item' ? undefined : values(path)),
   };
-  const entries = state ? tidy(groupRows(form, settings.schema.children, '', ROOT)) : [];
+  const entries = state ? tidy(groupRows(form, resolvePrefGroupConditions(settings.schema).children, '', ROOT)) : [];
   return {
     kind: 'submenu',
     key,
@@ -291,7 +291,7 @@ export function resolveSchemaMenu(
     at,
     params,
   };
-  return tidy(groupRows(ctx, schema.children, '', ROOT));
+  return tidy(groupRows(ctx, resolvePrefGroupConditions(schema).children, '', ROOT));
 }
 
 /** Turn a declared menu into model entries; see {@link resolveSchemaMenu}. */

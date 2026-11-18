@@ -7,7 +7,7 @@ import {
 import { Code, DetailList, DetailRow, Input, type LeafRenderer, renderPrefControl, Select } from '@weasel-js/ui';
 import { PrefConditionEditor } from '../PrefConditionEditor/PrefConditionEditor';
 import {
-  aggregateAttributes, type AutoRow, catalogAttributes, changeKind, choiceOf, CONDITION_KIND, containsCode,
+  aggregateAttributes, type AutoRow, catalogAttributes, changeKind, choiceOf, CONDITION_KIND, conditionGroupAt, containsCode,
   convertLeaf, type CustomKinds, entryChoices, entryHolderAt, entryOf, isObjectField, KEEP, keyFromName, keyOf,
   keyProblem, keysOf, keysTakenAt, kindChoices, leafOf, nodeAt, normalizeAttr, parentPath, aliasAttributes,
   type PrefTypes, printValue, type SchemaRoot, setAttribute, setAutoRow, setObjectField, STUB, takesDottedKey,
@@ -88,12 +88,14 @@ export interface AttributesPaneProps {
 function conditionRenderer(schema: SchemaRoot, exclude: readonly string[], holder: PrefList | PrefMap | undefined, targets: ReadonlyArray<string | null>, over: SchemaRoot | undefined): LeafRenderer {
   const holders = targets.map((p) => entryHolderAt(schema, p));
   const within = holders.every((h) => h === holders[0]) ? holders[0] : undefined;
+  const groups = targets.map((p) => conditionGroupAt(schema, p));
+  const group = groups.every((g) => g === groups[0]) ? groups[0] : undefined;
   return Object.assign<LeafRenderer, { group: boolean; wide: boolean }>(({ path, pref, value, setValue }) => {
     const ofEntry = path.startsWith(`${ENTRY}.`);
     const entryOf = ofEntry ? holder : within;
     return (
       <PrefConditionEditor aria-label={ofEntry ? `Entry ${pref.name.toLowerCase()}` : pref.name} schema={schema} over={over} exclude={exclude}
-        entryOf={entryOf} value={value as PrefCondition | undefined} onChange={setValue} />
+        entryOf={entryOf} group={group} value={value as PrefCondition | undefined} onChange={setValue} />
     );
   }, { group: true, wide: true });
 }

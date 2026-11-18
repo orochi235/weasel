@@ -29,7 +29,7 @@ export {
   testRowOf, type ConditionGroup, type Quantifier, type TestRow,
 } from './edit/conditionGroups';
 export { conditionLeafOf, conditionLeaves, leafKey, type ConditionLeaf } from './edit/conditionLeaves';
-export { conditionProblems, type ConditionMark } from './edit/conditionMarks';
+export { conditionGroupAt, conditionProblems, type ConditionMark } from './edit/conditionMarks';
 export {
   clauseChoices, clausesOf, COMPARISON_LABEL, comparisonsFor, openBound, operatorOf, printOperators, rowAt,
   withBound, withComparison, withoutClause, withValue, type Comparison, type Operator,

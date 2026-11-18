@@ -1,7 +1,7 @@
 // What is wrong with a condition as one of a schema's: what a store warns of
 // and a schema editor marks.
 
-import { type PrefConditionValue, type PrefTest, type PrefGroup, type PrefSection, isPrefLeaf, isPrefSection, prefHoldsValue, prefSchemaHolding, resolvePrefGroupConditions, PREF_CONDITION_FIELDS, type PrefConditionField, type PrefList, type PrefMap, isBuiltinPref, type PrefEnum, type PrefLeaf, type PrefObject, type PrefUnion } from '@weasel-js/prefs-schema';
+import { type PrefConditionValue, type PrefTest, type PrefGroup, type PrefSection, isPrefLeaf, isPrefSection, prefHoldsValue, prefSchemaHolding, prefConditionInGroup, resolvePrefGroupConditions, PREF_CONDITION_FIELDS, type PrefConditionField, type PrefList, type PrefMap, isBuiltinPref, type PrefEnum, type PrefLeaf, type PrefObject, type PrefUnion } from '@weasel-js/prefs-schema';
 import { formOf, ORDERINGS, partsOf, prefLeavesHolding, prefLeavesHoldingIn, UNSEEN } from '@weasel-js/prefs-schema/internal';
 
 /** One thing wrong with a condition: it is not one, it reads a path no leaf
@@ -36,6 +36,9 @@ export interface PrefConditionSite {
   within?: PrefList | PrefMap;
   /** The condition is the `showIf` of that list's or map's `item` itself. */
   itemShowIf?: boolean;
+  /** The value path of the group the node is declared in, empty at the root, which a test read from its group
+   *  (`from: 'group'`) is held to. Unset: such a test is not checked, there being no group to read it in. */
+  group?: string;
 }
 
 const show = (value: unknown): string => (typeof value === 'string' ? `'${value}'` : String(value));
@@ -67,6 +70,9 @@ function neverHolds(leaf: PrefLeaf, value: PrefConditionValue): string | undefin
 type Schema = PrefGroup | PrefSection;
 
 function testProblems(test: PrefTest, schema: Schema, site: PrefConditionSite, over: Schema | undefined): PrefConditionProblem[] {
+  if (test.from === 'group') {
+    return site.group === undefined ? [] : testProblems(prefConditionInGroup(test, site.group) as PrefTest, schema, site, over);
+  }
   const { path } = test;
   if (test.from === 'item' && site.within === undefined) {
     return [{ code: 'no-item', path, problem: `"${path}" is read from an entry, and this is inside no list or map` }];
