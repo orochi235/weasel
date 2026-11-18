@@ -4,6 +4,7 @@ import {
   type SceneCanvasApi,
   type SceneCanvasProps,
 } from '@weasel-js/core';
+import { useLatest } from '@weasel-js/react';
 import {
   type ForwardedRef,
   forwardRef,
@@ -16,7 +17,6 @@ import {
 } from 'react';
 import { useTrialHistory } from '../trial/trialHistory';
 import { useTrialTitle } from '../trial/trialTitle';
-import { useLatest } from '@weasel-js/react';
 import { sceneResetsOf } from './sceneResets';
 import { editStampsOf, sceneTrialHistory, stampSceneEdits } from './sceneTrialHistory';
 import { useSceneCamera } from './useSceneCamera';
@@ -62,10 +62,13 @@ function TrialSceneCanvasInner<TData, TLayer extends string, TPose>(
   const api = useRef<SceneCanvasApi | null>(null);
   const host = useRef<HTMLDivElement | null>(null);
   useSceneCamera(api, host);
-  // A Reset reopens the path the canvas opened on, or closes the open one, as a remount would.
+  // A Reset reopens the path the canvas opened on. With none, a host may own what is open, so it is left alone.
   const opening = useLatest(rest.defaultPathEdit);
   useEffect(
-    () => sceneResetsOf(scene).subscribe(() => api.current?.setPathEdit(opening.current ?? null)),
+    () =>
+      sceneResetsOf(scene).subscribe(() => {
+        if (opening.current) api.current?.setPathEdit(opening.current);
+      }),
     [scene, opening],
   );
   const both = useCallback(
