@@ -2624,3 +2624,11 @@ Calls the lanes made without a ruling:
   except while a redo is pending: then nothing is drawn into, so undo can step past the group's making and a redo
   brings it back. A shape drawn in that wait is unmirrored, and the fresh group comes after it. Turning symmetry off
   when its group went was the alternative.
+
+## Audit round thirty-five (2026-11-17): draw
+
+- 2026-11-17 (the fixer's call): live symmetry with no group to draw into waits while a redo is pending whether or
+  not it ever held one, so turning Symmetry on, or reloading with it on, never drops the redo by making a group.
+  Symmetry then reads on and draws unmirrored until the redo is gone; the shape that clears it is unmirrored too.
+  Making the group and dropping the redo, as before, was the alternative. The open P3 entry on Symmetry being a pref
+  or document state (`docs/TODO.md`) covers the same wait.

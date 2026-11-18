@@ -8,6 +8,7 @@ import { drawPrefs } from './prefs';
 import { useSymmetry } from './useSymmetry';
 
 const PAGE = { width: 600, height: 800 };
+const MARK = { kind: 'mark', layer: 'default', pose: { x: 0, y: 0, width: 10, height: 10 }, data: {} };
 
 beforeEach(() => act(() => drawPrefs().reset()));
 
@@ -122,5 +123,24 @@ describe('useSymmetry', () => {
     expect(insertInto(result)).toBeNull();
     act(() => { scene.redo(); });
     expect(insertInto(result)).toBe(made!.id);
+  });
+  it('keeps a pending redo when it is turned on or mounted with no group, and makes one once the redo is gone', () => {
+    const scene = newScene();
+    const draw = () => act(() => { scene.batch('Draw', () => { scene.add(MARK as never); }); });
+    draw();
+    act(() => { scene.undo(); });
+    for (const mount of ['toggle', 'remount'] as const) {
+      act(() => drawPrefs().set('view.symmetry.on', mount === 'remount'));
+      const { result, unmount } = renderHook(() => useSymmetry(scene, PAGE));
+      if (mount === 'toggle') act(() => result.current.commands.toggleSymmetry());
+      expect(groups(scene)).toHaveLength(0);
+      expect(scene.canRedo()).toBe(true);
+      expect(insertInto(result)).toBeNull();
+      unmount();
+    }
+    const { result } = renderHook(() => useSymmetry(scene, PAGE));
+    draw();
+    expect(groups(scene)).toHaveLength(1);
+    expect(insertInto(result)).toBe(groups(scene)[0]!.id);
   });
 });
