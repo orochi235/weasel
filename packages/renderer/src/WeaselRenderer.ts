@@ -22,6 +22,7 @@ import { CustomPrograms } from './shaders/CustomPrograms';
 import { EffectTargets } from './effects/EffectTargets';
 import { RetainedSurfaces } from './retain/RetainedSurfaces';
 import { ContextResources } from './contextResources';
+import { watchContextLoss, type ContextLossWatch } from './contextLoss';
 import { canvasPassFor, deviceRectFor, sizeCanvas, type DeviceRect } from './targetRect';
 import { paintDrawKindRegistry } from './paintKinds';
 import {
@@ -50,9 +51,8 @@ export class WeaselRenderer {
   private heightCss: number;
   private dpr: number;
   private canvas: HTMLCanvasElement | OffscreenCanvas | null = null;
-  /** Where context loss is announced: the context's own canvas, which the
-   *  renderer need not own the size of. */
-  private lossTarget: EventTarget | null = null;
+  /** Null on WebGPU, whose device is asked instead. */
+  private loss: ContextLossWatch | null = null;
   private target: RenderTarget | null = null;
   /** Offscreen buffers for group effects. Allocates nothing until a group
    *  with effects asks, so a canvas without them pays no memory. */
@@ -63,9 +63,6 @@ export class WeaselRenderer {
   private flattenTolerance?: FlattenTolerance;
   private readonly bakeBudget: number;
   private readonly textOutlineMinScreenSize: number;
-  private contextLost = false;
-  private boundOnLost = (e: Event) => this.onContextLost(e);
-  private boundOnRestored = () => this.onContextRestored();
   /** True after `dispose()`. A disposed renderer ignores further `render()`
    *  calls and `registerProgram()` calls. */
   private disposed = false;
@@ -110,12 +107,7 @@ export class WeaselRenderer {
       groupState: this.groupState,
     }));
     // Last: a constructor that throws (a lost context fails the compile above) must leave no listener to rebuild it.
-    const events: Partial<EventTarget> | null = opts.gpu ? null : this.canvas ?? lossTarget;
-    if (events && typeof events.addEventListener === 'function') {
-      this.lossTarget = events as EventTarget;
-      this.lossTarget.addEventListener('webglcontextlost', this.boundOnLost);
-      this.lossTarget.addEventListener('webglcontextrestored', this.boundOnRestored);
-    }
+    this.loss = watchContextLoss(opts.gpu ? null : this.canvas ?? lossTarget, () => this.onContextRestored());
   }
 
   /**
@@ -150,18 +142,12 @@ export class WeaselRenderer {
   getTarget(): RenderTarget | null { return this.target; }
 
   /** A WebGL context says so by event; a WebGPU device is asked, since it does not come back. */
-  isContextLost(): boolean { return this.contextLost || (this.backend === 'webgpu' && this.gpu.isContextLost()); }
+  isContextLost(): boolean { return this.loss?.lost === true || (this.backend === 'webgpu' && this.gpu.isContextLost()); }
 
   /** The GPU API this renderer draws with. */
   get backend(): RendererBackend { return this.gpu.language === 'wgsl' ? 'webgpu' : 'webgl2'; }
 
-  private onContextLost(e: Event): void {
-    e.preventDefault();
-    this.contextLost = true;
-  }
-
   private onContextRestored(): void {
-    this.contextLost = false;
     this.gpu.beginFrame();
     // Every target and texture the pool held died with the context. `releaseAll` deletes handles that are already gone, which is a
     // no-op, and drops the bookkeeping that would otherwise hand a dead FBO to
@@ -183,10 +169,7 @@ export class WeaselRenderer {
   dispose(): void {
     if (this.disposed) return;
     this.disposed = true;
-    if (this.lossTarget) {
-      this.lossTarget.removeEventListener('webglcontextlost', this.boundOnLost);
-      this.lossTarget.removeEventListener('webglcontextrestored', this.boundOnRestored);
-    }
+    this.loss?.detach();
     this.res.dispose();
     this.programs.dispose();
     this.effectTargets.releaseAll();
