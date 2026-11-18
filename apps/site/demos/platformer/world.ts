@@ -118,7 +118,7 @@ export function stepWorld(g: GameRefs, step: Input, hooks: WorldHooks): void {
   if (spikeOverlap(g.player.body, WORLD) && g.invuln <= 0) {
     g.invuln = INVULN;
     g.lives--;
-    g.player = { ...g.player, body: { ...g.player.body, vy: -300 } };
+    g.player = applyImpulse(g.player, { vy: -300 });
     hooks.sound('hurt');
     hooks.duck();
     sayOw(g);
@@ -163,7 +163,7 @@ export function stepWorld(g: GameRefs, step: Input, hooks: WorldHooks): void {
     } else if (hit.kind === 'stomp') {
       const victim = g.enemies[hit.index];
       g.enemies[hit.index].alive = false;
-      g.player = { ...g.player, body: { ...g.player.body, vy: -300 } };
+      g.player = applyImpulse(g.player, { vy: -300 });
       hooks.soundAt('stomp', { x: victim.x, y: victim.y }, 0.7);
     } else {
       g.invuln = INVULN;

@@ -91,6 +91,19 @@ describe('stepWorld — damage', () => {
     expect(g.player.body.x).toBeGreaterThan(x);
   });
 
+  it('bounces the player clear of spikes with jump released', () => {
+    const g = freshGame();
+    g.player = { ...g.player, body: { ...g.player.body, x: 20.5 * TILE, y: 14.5 * TILE } };
+    const start = g.player.body.y;
+    let top = start;
+    for (let i = 0; i < 30; i++) {
+      stepWorld(g, idle, NO_HOOKS);
+      top = Math.min(top, g.player.body.y);
+    }
+    // -300 against gravity 1800 rises 25 units; clipped to the jump cut it would rise 5.
+    expect(start - top).toBeGreaterThan(20);
+  });
+
   it('says ow when the player falls out of the level', () => {
     const g = freshGame();
     g.player = { ...g.player, body: { ...g.player.body, y: WORLD.heightPx + 200 } };

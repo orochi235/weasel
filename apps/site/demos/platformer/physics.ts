@@ -52,6 +52,9 @@ export interface BodyState {
   /** Seconds left during which `vx` is the body's own, set by {@link applyImpulse},
    *  and input does not steer it. */
   carry: number;
+  /** True while the body rises from a jump the player launched. Releasing jump
+   *  clips only that, never an impulse's rise. */
+  cuttable: boolean;
 }
 
 export function createBodyState(at: Vec2): BodyState {
@@ -63,6 +66,7 @@ export function createBodyState(at: Vec2): BodyState {
     landed: false,
     bonk: null,
     carry: 0,
+    cuttable: false,
   };
 }
 
@@ -76,6 +80,7 @@ export function applyImpulse(s: BodyState, v: { vx?: number; vy?: number }, carr
     ...s,
     body: { ...s.body, vx: v.vx ?? s.body.vx, vy: v.vy ?? s.body.vy },
     carry: Math.max(s.carry, carry),
+    cuttable: v.vy === undefined && s.cuttable,
   };
 }
 
@@ -149,6 +154,7 @@ export function stepBody(s: BodyState, level: Level, input: Input, dt: number): 
   let coyote = b.onGround ? COYOTE : Math.max(0, s.coyote - dt);
   let jumpBuffer = input.jumpPressed ? JUMP_BUFFER : Math.max(0, s.jumpBuffer - dt);
   let jumped = false;
+  let cuttable = s.cuttable;
 
   const dir = (input.right ? 1 : 0) - (input.left ? 1 : 0);
   if (s.carry <= 0) b.vx = dir * MOVE_SPEED;
@@ -158,11 +164,12 @@ export function stepBody(s: BodyState, level: Level, input: Input, dt: number): 
   if (jumpBuffer > 0 && coyote > 0) {
     b.vy = -JUMP_SPEED;
     jumped = true;
+    cuttable = true;
     jumpBuffer = 0;
     coyote = 0;
     b.onGround = false;
   }
-  if (!input.jumpHeld && b.vy < -JUMP_CUT) b.vy = -JUMP_CUT;
+  if (cuttable && !input.jumpHeld && b.vy < -JUMP_CUT) b.vy = -JUMP_CUT;
 
   b.vy = Math.min(b.vy + GRAVITY * dt, MAX_FALL);
 
@@ -176,7 +183,9 @@ export function stepBody(s: BodyState, level: Level, input: Input, dt: number): 
   b.onGround = hit?.kind === 'floor';
   const bonk = hit?.kind === 'ceiling' && hit.tile === QUESTION ? { cx: hit.cx, cy: hit.cy } : null;
 
-  return { body: b, coyote, jumpBuffer, jumped, landed: b.onGround && !wasOnGround, bonk, carry };
+  return { body: b, coyote, jumpBuffer, jumped, landed: b.onGround && !wasOnGround, bonk, carry,
+    cuttable: cuttable && b.vy < 0,
+  };
 }
 
 export function spikeOverlap(b: Body, level: Level): boolean {
