@@ -1,12 +1,13 @@
 import { depthAt, timestampAt } from './stackTime';
 import type { Op } from './op';
-import { anyCaused, appliedHalves, createApplier, entryView, foldEntry, sameCoalesceKeys, stepOf } from './entryOps';
+import { appliedHalves, createApplier, entryView, stepOf } from './entryOps';
 import { createWalk, type Walked } from './walk';
 import { createVersionClock } from './versionClock';
 import { createForks } from './forks';
+import { createRecorder } from './recording';
 import { createJournalInternal, _resumeJournalInternal, _resumedByOwnerInternal, _refuseWhileActiveInternal as refuseWhileActive, type Journal, type BeginJournalOptions } from './journal';
 import {
-  snapshot, touchedIdsOf,
+  snapshot,
   type Entry, type HistoryLogger, type SerializedHistory,
 } from './serialized';
 import { rebuilt, type HistoryRestoreReport, type RestoreOptions } from './restore';
@@ -59,15 +60,9 @@ export function createHistory(adapter: unknown, options: CreateHistoryOptions = 
   const customRebuild = options.rebuildOp;
   const selection = options.selection;
   const logger = options.debug ?? SILENT;
-  let nextEntryId = 1;
   const clock = createVersionClock();
 
   const forks = createForks({ undoStack, redoStack, branching: options.branching ?? false, onEvict: options.onEvict, logger });
-
-  /** Evict the oldest undo entries past `historyLimit`, reporting each. */
-  function enforceLimit(): void {
-    forks.evictPast(historyLimit);
-  }
 
   const applyAllOrNothing = createApplier(adapter, logger);
 
@@ -75,96 +70,10 @@ export function createHistory(adapter: unknown, options: CreateHistoryOptions = 
     undoStack, redoStack, selection, applyAllOrNothing, refuse: () => refuseWhileActive(activeJournal),
   });
 
-  /** Coalesce eligibility: inside the window, which a clock set back since (a machine waking to a corrected
-   *  time) is not, and the same keys. Matched by multiset rather than position so a multi-id selection can
-   *  re-emit ops in any order between batches without breaking the merge. */
-  function canCoalesce(top: Entry, incoming: Op[]): boolean {
-    const windowMs = typeof coalesceWindowMs === 'function' ? coalesceWindowMs() : coalesceWindowMs, gap = now() - top.timestamp;
-    if (!(windowMs > 0) || top.coalesceKey !== undefined || !clock.anchored() || !(gap >= 0 && gap <= windowMs)) return false;
-    return sameCoalesceKeys(top.forwardOps, incoming);
-  }
-
-  function pushOrCoalesce(applied: Op[], label: string, owned = false): void {
-    if (applied.length === 0) return;
-    const selectionBefore = readSelection();
-    const idle: Op[] = [];
-    const anyMutated = applyAllOrNothing(applied, undefined, idle);
-    const kept = idle.length === 0 ? applied : applied.filter((op) => !(op.elideNoop && idle.includes(op)));
-    const ops = anyCaused(kept) ? kept.flatMap((op) => op.caused?.() ?? [op]) : owned || kept !== applied ? kept : kept.slice();
-    if (!anyMutated) {
-      // Every op reported `false`/`'noop'`. Skip the push so undo stays
-      // tied to real state changes. Surfaced through the kit's debug
-      // flag so the upstream caller can consider avoiding the dispatch
-      // entirely. Hidden by default; enable via
-      // `localStorage.setItem('weasel.debug', '1')`.
-      logger.warn(
-        `'${label}' batch was a no-op — every op reported false/'noop'. ` +
-        `Skipping the undo entry; consider gating the dispatch upstream to avoid the wasted work.`,
-      );
-      return;
-    }
-    if (ops.length === 0) return;
-    const incoming = touchedIdsOf(ops);
-    const top = undoStack[undoStack.length - 1];
-    if (top && canCoalesce(top, ops)) {
-      top.forwardOps = ops;
-      top.timestamp = now();
-      top.pushes++;
-      // Merge incoming touched ids into the coalesced entry's set.
-      if (incoming.size > 0) {
-        const merged = new Set(top.touchedIds);
-        for (const id of incoming) merged.add(id);
-        top.touchedIds = merged;
-      }
-      // baseOps + label + id intentionally preserved — undo returns to the
-      // pre-edit state, the original label sticks, and the entry id stays
-      // stable so React lists keyed on id don't flicker. No dropRedo() here:
-      // the anchor only survives until the stack is stepped, and every step
-      // clears it, so a live anchor implies an empty redo stack.
-      logger.log(`coalesce '${label}' into entry id=${top.id} (${ops.length} ops)`);
-      clock.bump(clock.observed() ? { kind: 'coalesce', entries: [{ id: top.id, label: top.label, ops, applied: ops }] } : undefined);
-      clock.anchor();
-      return;
-    }
-    logger.log(`push '${label}' (${ops.length} ops)`);
-    const at = forks.forkPoint();
-    const entry: Entry = {
-      id: nextEntryId++, forwardOps: ops, baseOps: ops, label, timestamp: now(), pushes: 1, touchedIds: incoming,
-      ...(selectionBefore ? { selectionBefore } : {}),
-    };
-    undoStack.push(entry);
-    forks.retireRedo(at);
-    enforceLimit();
-    clock.bump(clock.observed() ? stepOf('push', [entry], [ops]) : undefined);
-    clock.anchor();
-  }
-
-  function fold(top: Entry, ops: Op[]): void {
-    foldEntry(top, ops, now());
-    clock.bump(clock.observed() ? { kind: 'coalesce', entries: [{ id: top.id, label: top.label, ops, applied: ops }] } : undefined);
-    clock.anchor();
-  }
-
-  function record(forwardOps: Op[], baseOps: Op[], label: string, options: RecordEntryOptions = {}): void {
-    if (forwardOps.length === 0) return;
-    const key = options.coalesceKey;
-    const top = undoStack[undoStack.length - 1];
-    if (key !== undefined && top?.coalesceKey === key && clock.anchored() && forwardOps === baseOps) {
-      return fold(top, forwardOps);
-    }
-    const at = forks.forkPoint();
-    const entry: Entry = {
-      id: nextEntryId++, forwardOps, baseOps, label, timestamp: now(), pushes: 1,
-      touchedIds: touchedIdsOf(forwardOps),
-      ...(options.selectionBefore ? { selectionBefore: [...options.selectionBefore] } : {}),
-      ...(key !== undefined ? { coalesceKey: key } : {}),
-    };
-    undoStack.push(entry);
-    forks.retireRedo(at);
-    enforceLimit();
-    clock.bump(clock.observed() ? stepOf('push', [entry], [forwardOps]) : undefined);
-    if (key !== undefined) clock.anchor();
-  }
+  const recorder = createRecorder({
+    undoStack, forks, clock, applyAllOrNothing, readSelection, now, coalesceWindowMs, historyLimit, logger,
+  });
+  const { pushOrCoalesce, record } = recorder;
 
   const history: History = {
     apply(op, label) {
@@ -247,7 +156,7 @@ export function createHistory(adapter: unknown, options: CreateHistoryOptions = 
     getVersion: clock.current,
     subscribe: clock.subscribe,
     observe: clock.observe,
-    serialize: () => snapshot({ undoStack, redoStack, ...forks.state(), nextEntryId }, logger),
+    serialize: () => snapshot({ undoStack, redoStack, ...forks.state(), nextEntryId: recorder.nextEntryId() }, logger),
     recordEntry(ops: Op[], label: string, options?: RecordEntryOptions): void {
       record(ops, ops, label, options);
     },
@@ -258,7 +167,7 @@ export function createHistory(adapter: unknown, options: CreateHistoryOptions = 
       }
       return out;
     },
-    nextEntryId: () => nextEntryId,
+    nextEntryId: recorder.nextEntryId,
     beginJournal(opts: BeginJournalOptions): Journal {
       refuseWhileActive(activeJournal);
       // `adapter` is the closure-captured adapter passed to createHistory.
@@ -283,7 +192,7 @@ export function createHistory(adapter: unknown, options: CreateHistoryOptions = 
       undoStack.splice(0, undoStack.length, ...next.undoStack);
       redoStack.splice(0, redoStack.length, ...next.redoStack);
       forks.replace(next);
-      nextEntryId = next.nextEntryId;
+      recorder.resumeIdsAt(next.nextEntryId);
       clock.bump(stepOf('restore'));
       return { restored: true, unresolved };
     },
