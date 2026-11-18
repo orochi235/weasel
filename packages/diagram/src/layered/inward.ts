@@ -35,10 +35,10 @@ const SLACK = 1;
 /**
  * `rows` with one rank turned on each side that needs it, or `undefined` when
  * none does. A rank needs it when its outer end is a run of placeholders that
- * all reach past the real nodes and group boxes; of those, the one turned is
+ * all reach past the real nodes and cluster boxes; of those, the one turned is
  * the rank whose outermost real node reaches furthest, which then moves beyond
- * the run. Only an ungrouped, unpinned node moves, and only past placeholders
- * outside every group. A run whose wire meets the node's in the next rank either
+ * the run. Only an unclustered, unpinned node moves, and only past placeholders
+ * outside every cluster. A run whose wire meets the node's in the next rank either
  * way is a wire going around its sibling, which reads best beside it, so that
  * rank stays as it is.
  */
@@ -79,7 +79,7 @@ export function turnOutward(input: OutwardInput): Rows | undefined {
   return changed ? out : undefined;
 }
 
-/** How far the real nodes and group boxes reach across the rank. */
+/** How far the real nodes and cluster boxes reach across the rank. */
 function drawingSpan(input: OutwardInput, size: (n: GraphNode) => number): Span | undefined {
   let lo = Infinity;
   let hi = -Infinity;
@@ -90,15 +90,15 @@ function drawingSpan(input: OutwardInput, size: (n: GraphNode) => number): Span 
   for (const n of input.rows.flat()) {
     if (!isPlaceholder(n.id)) take([input.crossAt.get(n.id)!, input.crossAt.get(n.id)! + size(n)]);
   }
-  for (const box of groupBoxes(input, size).values()) take(box);
+  for (const box of clusterBoxes(input, size).values()) take(box);
   return lo <= hi ? [lo, hi] : undefined;
 }
 
-/** Each group's box across the rank: its members', nested boxes included,
+/** Each cluster's box across the rank: its members', nested boxes included,
  *  widened by its inset. */
-function groupBoxes(input: OutwardInput, size: (n: GraphNode) => number): Map<string, Span> {
-  const groups = input.graph.clusters ?? [];
-  const byId = new Map(groups.map((g) => [g.id, g]));
+function clusterBoxes(input: OutwardInput, size: (n: GraphNode) => number): Map<string, Span> {
+  const clusters = input.graph.clusters ?? [];
+  const byId = new Map(clusters.map((g) => [g.id, g]));
   const inner = new Map<string, [number, number]>();
   const widen = (id: string, [a, b]: Span) => {
     const s = inner.get(id);

@@ -1,13 +1,13 @@
 /** Test fixture: a cloud architecture the layered layout once drew badly. */
 import type { DiagramData } from '../dataTypes';
 
-const fns = (group: string, ...ids: string[]) => ids.map((id) => ({ id, lines: [id], group }));
+const fns = (cluster: string, ...ids: string[]) => ids.map((id) => ({ id, lines: [id], cluster }));
 
 /** Shaped like a 28-node serverless site: a gateway fanning out to four
- *  groups of functions, most of which write one store, with a queue, a
+ *  clusters of functions, most of which write one store, with a queue, a
  *  scheduler and alerting below them. One admin function also drives the
  *  scheduler, so a ranking that follows edge length alone puts it two ranks
- *  above the rest of its group. */
+ *  above the rest of its cluster. */
 export const CLOUD: DiagramData = (() => {
   const plain = [
     ['browser', 'Reader or editor (browser)'],
@@ -23,14 +23,14 @@ export const CLOUD: DiagramData = (() => {
     ['secrets', 'Secret store (credentials)'],
     ['mail', 'Mail server'],
   ].map(([id, label]) => ({ id: id!, lines: [label!] }));
-  const grouped = [
+  const clustered = [
     ...fns('public', 'thumbs', 'short-links', 'sessions', 'replies', 'pingbacks', 'read-api'),
     ...fns('build', 'renderer', 'drafts'),
     ...fns('admin', 'admin-posts', 'admin-people', 'admin-config', 'admin-bulk'),
     ...fns('background', 'publish-later', 'mailer', 'cleanup', 'compact'),
   ];
-  const groups = ['public', 'build', 'admin', 'background'].map((id) => ({
-    id, label: id[0]!.toUpperCase() + id.slice(1), members: grouped.filter((n) => n.group === id).map((n) => n.id),
+  const clusters = ['public', 'build', 'admin', 'background'].map((id) => ({
+    id, label: id[0]!.toUpperCase() + id.slice(1), members: clustered.filter((n) => n.cluster === id).map((n) => n.id),
   }));
   const e = (from: string, to: string, label?: string) => ({ from, to, ...(label !== undefined ? { label } : {}) });
   const routed = ['thumbs', 'short-links', 'sessions', 'replies', 'pingbacks', 'read-api', 'drafts',
@@ -53,8 +53,8 @@ export const CLOUD: DiagramData = (() => {
     e('dead', 'alerts'), e('renderer', 'alerts'), e('gateway', 'alerts'), e('alerts', 'notify', 'notify'),
   ];
   return {
-    nodes: [...plain, ...grouped.map(({ id, lines }) => ({ id, lines }))],
+    nodes: [...plain, ...clustered.map(({ id, lines }) => ({ id, lines }))],
     edges,
-    clusters: groups,
+    clusters,
   };
 })();

@@ -1,6 +1,6 @@
 /**
  * Order: reorder each rank to cut crossings, with barycenter sweeps and
- * transposition, keeping every group's members contiguous in each rank.
+ * transposition, keeping every cluster's members contiguous in each rank.
  */
 import type { GraphCluster, GraphNode } from '../graph';
 import { placeAmong, sidesOf, type Sides } from './places';
@@ -82,7 +82,7 @@ export function crossings(rows: Rows, hops: readonly Hop[]): number {
   return total(rows, hopsByRank(rows, hops), positions(rows), sidesOf(hops));
 }
 
-/** How {@link orderRows} keeps groups together and when it stops. */
+/** How {@link orderRows} keeps clusters together and when it stops. */
 export interface OrderOptions {
   /** Clusters as the graph has them, for keeping members together. */
   clusters?: readonly GraphCluster[];
@@ -92,9 +92,9 @@ export interface OrderOptions {
   maxSweeps?: number;
 }
 
-/** A group's chain of enclosing groups, outermost first, ending with itself. */
-function createChainReader(groups: readonly GraphCluster[]): (group: string | undefined) => readonly string[] {
-  const parent = new Map(groups.map((g) => [g.id, g.parent]));
+/** A cluster's chain of enclosing clusters, outermost first, ending with itself. */
+function createChainReader(clusters: readonly GraphCluster[]): (cluster: string | undefined) => readonly string[] {
+  const parent = new Map(clusters.map((g) => [g.id, g.parent]));
   const cache = new Map<string, string[]>();
   const chain = (id: string, seen: Set<string>): string[] => {
     const known = cache.get(id);
@@ -105,11 +105,11 @@ function createChainReader(groups: readonly GraphCluster[]): (group: string | un
     cache.set(id, out);
     return out;
   };
-  return (group) => (group === undefined ? [] : chain(group, new Set()));
+  return (cluster) => (cluster === undefined ? [] : chain(cluster, new Set()));
 }
 
 interface Block {
-  group?: string;
+  cluster?: string;
   items: (GraphNode | Block)[];
   sub: Map<string, Block>;
   sum: number;
@@ -117,24 +117,24 @@ interface Block {
   first: number;
 }
 
-const newBlock = (first: number, group?: string): Block => ({
-  ...(group !== undefined ? { group } : {}), items: [], sub: new Map(), sum: 0, count: 0, first,
+const newBlock = (first: number, cluster?: string): Block => ({
+  ...(cluster !== undefined ? { cluster } : {}), items: [], sub: new Map(), sum: 0, count: 0, first,
 });
 
-/** Each ordered group's direct members by their place in its order. */
-function placesOf(groups: readonly GraphCluster[]): Map<string, Map<string, number>> {
-  return new Map(groups.filter((g) => g.ordered !== undefined).map((g) => [g.id, new Map(g.ordered!.map((m, i) => [m, i]))]));
+/** Each ordered cluster's direct members by their place in its order. */
+function placesOf(clusters: readonly GraphCluster[]): Map<string, Map<string, number>> {
+  return new Map(clusters.filter((g) => g.ordered !== undefined).map((g) => [g.id, new Map(g.ordered!.map((m, i) => [m, i]))]));
 }
 
 /**
- * One rank sorted by `key`, with each group sorted as one block keyed by the
+ * One rank sorted by `key`, with each cluster sorted as one block keyed by the
  * mean of its members' keys, recursively. Ties keep the current order. Inside
- * an ordered group, its members keep the group's order instead.
+ * an ordered cluster, its members keep the cluster's order instead.
  */
 function sortRank(
   row: readonly GraphNode[],
   key: (n: GraphNode, i: number) => number,
-  chainOf: (group: string | undefined) => readonly string[],
+  chainOf: (cluster: string | undefined) => readonly string[],
   places: ReadonlyMap<string, ReadonlyMap<string, number>> = new Map(),
 ): GraphNode[] {
   const root = newBlock(0);
@@ -160,10 +160,10 @@ function sortRank(
   });
   const out: GraphNode[] = [];
   const flatten = (block: Block) => {
-    const place = block.group === undefined ? undefined : places.get(block.group);
+    const place = block.cluster === undefined ? undefined : places.get(block.cluster);
     const items = block.items.map((item) => {
       if (place !== undefined) {
-        const k = place.get('id' in item ? item.id : item.group!) ?? Infinity;
+        const k = place.get('id' in item ? item.id : item.cluster!) ?? Infinity;
         return { item, k, first: 'id' in item ? firstOf.get(item)! : item.first };
       }
       if ('id' in item) return { item, k: keyOf.get(item)!, first: firstOf.get(item)! };
@@ -201,7 +201,7 @@ interface Work {
   ups: Map<string, Near[]>;
   downs: Map<string, Near[]>;
   sides: Sides;
-  chainOf: (group: string | undefined) => readonly string[];
+  chainOf: (cluster: string | undefined) => readonly string[];
   places: ReadonlyMap<string, ReadonlyMap<string, number>>;
 }
 
@@ -233,7 +233,7 @@ function between(work: Work, side: Map<string, Near[]>, u: string, v: string): n
   return n;
 }
 
-/** Swap neighbors with the same innermost group while that strictly lowers
+/** Swap neighbors with the same innermost cluster while that strictly lowers
  *  crossings with both adjacent ranks, until no swap helps. A port of several
  *  places is read for the order each side of the swap gives it. */
 function transpose(work: Work): void {
@@ -267,9 +267,9 @@ function transpose(work: Work): void {
  * The order with the fewest crossings found, starting from `rows`' own order.
  *
  * Sweeps alternate down (each rank keyed by its upper neighbors) and up (by
- * its lower ones), each followed by transposition. Every group's members in
- * a rank stay contiguous, nested groups inside their parent's run; a seed
- * that splits a group is made contiguous before anything is counted. The
+ * its lower ones), each followed by transposition. Every cluster's members in
+ * a rank stay contiguous, nested clusters inside their parent's run; a seed
+ * that splits a cluster is made contiguous before anything is counted. The
  * input is not mutated, and equal input gives equal output.
  */
 export function orderRows(rows: Rows, hops: readonly Hop[], opts: OrderOptions = {}): Rows {

@@ -1,5 +1,5 @@
 /**
- * How far group boxes reach past each rank's band along the rank axis.
+ * How far cluster boxes reach past each rank's band along the rank axis.
  */
 import { maxOf, minOf } from '@weasel-js/geom';
 import { rankInset } from '../cluster';
@@ -7,7 +7,7 @@ import type { Graph, GraphNode } from '../graph';
 import type { LayoutAxes } from '../layout';
 
 /** For each rank, how far before its band (`lo`) and after it (`hi`) the
- *  boxes of the groups starting or ending there reach, nested boxes adding
+ *  boxes of the clusters starting or ending there reach, nested boxes adding
  *  their insets to their parents'. */
 export function boxReach(
   graph: Pick<Graph, 'clusters'>,
@@ -16,16 +16,16 @@ export function boxReach(
 ): { lo: number[]; hi: number[] } {
   const lo = rows.map(() => 0);
   const hi = rows.map(() => 0);
-  const groups = graph.clusters ?? [];
-  const byId = new Map(groups.map((g) => [g.id, g]));
+  const clusters = graph.clusters ?? [];
+  const byId = new Map(clusters.map((g) => [g.id, g]));
   const rowOf = new Map<string, number>();
   rows.forEach((row, r) => row.forEach((n) => rowOf.set(n.id, r)));
   const span = new Map<string, [number, number]>();
-  for (const g of groups) {
+  for (const g of clusters) {
     const rs = g.members.map((m) => rowOf.get(m)).filter((r): r is number => r !== undefined);
     if (rs.length > 0) span.set(g.id, [minOf(rs), maxOf(rs)]);
   }
-  for (const g of groups) {
+  for (const g of clusters) {
     const own = span.get(g.id);
     if (own === undefined) continue;
     for (const [side, out] of [[0, lo], [1, hi]] as const) {

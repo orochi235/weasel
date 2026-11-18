@@ -4,8 +4,8 @@ import type { DiagramData } from '../dataTypes';
 const node = (id: string, ...lines: string[]) => ({ id, lines: lines.length > 0 ? lines : [id] });
 
 /** Shaped like blits' playground timing view of its `anchors` preset: two
- *  joins, a query, a long wire past the query, a group with a long label, and
- *  labeled wires into and out of the group's box. */
+ *  joins, a query, a long wire past the query, a cluster with a long label, and
+ *  labeled wires into and out of the cluster's box. */
 export const ANCHORS: DiagramData = {
   nodes: [
     node('voice:intro', 'intro', 'at 200 ms'),
@@ -24,13 +24,13 @@ export const ANCHORS: DiagramData = {
     { from: 'voice:intro', to: 'join:both:start', label: 'after' },
     { from: 'mark:beat', to: 'join:both:start', label: 'with' },
     { from: 'join:both:start', to: 'voice:both', label: 'start' },
-    { from: 'voice:both', to: 'group:pair', label: 'start after' },
-    { from: 'group:pair', to: 'voice:outro', label: 'start its end +200 ms' },
+    { from: 'voice:both', to: 'cluster:pair', label: 'start after' },
+    { from: 'cluster:pair', to: 'voice:outro', label: 'start its end +200 ms' },
     { from: 'voice:intro', to: 'join:either:start', label: 'after' },
     { from: 'voice:glint', to: 'query:spark' },
     { from: 'query:spark', to: 'join:either:start', label: 'after +100 ms' },
     { from: 'join:either:start', to: 'voice:either', label: 'start' },
     { from: 'voice:one', to: 'voice:two', label: 'then' },
   ],
-  clusters: [{ id: 'group:pair', label: 'pair · span, one after another', members: ['voice:one', 'voice:two'] }],
+  clusters: [{ id: 'cluster:pair', label: 'pair · span, one after another', members: ['voice:one', 'voice:two'] }],
 };

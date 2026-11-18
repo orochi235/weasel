@@ -139,7 +139,7 @@ describe('simplexRanks', () => {
     expect(second.get('X')).toBe(first.get('Y'));
   });
 
-  it('draws a group into one rank when its edges alone would split it', () => {
+  it('draws a cluster into one rank when its edges alone would split it', () => {
     // a heads a chain a > T > U > Q; b feeds Q and Q2 from P, so alone it
     // sits at 3, beside them, and a at 1.
     const graph = graphOf(
@@ -147,14 +147,14 @@ describe('simplexRanks', () => {
       [['P', 'a'], ['P', 'b'], ['a', 'T'], ['T', 'U'], ['U', 'Q'], ['b', 'Q'], ['b', 'Q2'], ['U', 'Q2']],
     );
     expect(simplexRanks(graph, new Set()).get('b')).toBe(3);
-    const grouped = { ...graph, clusters: [{ id: 'g', members: ['a', 'b'], inset: { top: 0, right: 0, bottom: 0, left: 0 } }] };
-    const ranks = simplexRanks(grouped, new Set());
+    const clustered = { ...graph, clusters: [{ id: 'g', members: ['a', 'b'], inset: { top: 0, right: 0, bottom: 0, left: 0 } }] };
+    const ranks = simplexRanks(clustered, new Set());
     expect(ranks.get('a')).toBe(1);
     expect(ranks.get('b')).toBe(1);
     expect(ranks.size).toBe(graph.nodes.length);
   });
 
-  it('keeps an edge between two members of a group a rank long', () => {
+  it('keeps an edge between two members of a cluster a rank long', () => {
     const graph = { ...graphOf(['a', 'b', 'c'], [['a', 'b'], ['b', 'c']]), clusters: [{ id: 'g', members: ['a', 'b', 'c'], inset: { top: 0, right: 0, bottom: 0, left: 0 } }] };
     expect(Object.fromEntries(simplexRanks(graph, new Set()))).toEqual({ a: 0, b: 1, c: 2 });
   });
