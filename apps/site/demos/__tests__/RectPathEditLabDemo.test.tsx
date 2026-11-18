@@ -86,6 +86,21 @@ describe('RectPathEditLabDemo', () => {
     expect(readout().getByText('rect-3')).toBeTruthy();
     expect(readout().queryByText('rect-3 (editing)')).toBeNull();
   });
+
+  it('reopens rect-1 in path edit on a Reset, as a fresh trial opens', async () => {
+    const { container } = await renderSettled(<RectPathEditLabDemo />, { wrapper: withIcons });
+    const canvas = container.querySelector('.lk-trial-scene canvas');
+    if (!canvas) throw new Error('no scene canvas in the trial');
+    await userEvent.click(screen.getByRole('button', { name: 'Done' }));
+    click(canvas, [470, 130]);
+    await userEvent.click(screen.getByRole('button', { name: 'Edit path' }));
+    // An edit, so the trial holds a scene for Reset to throw away.
+    drag(canvas, [430, 50], [420, 40]);
+    expect(readout().getByText('rect-3 (editing)')).toBeTruthy();
+    await userEvent.click(screen.getByRole('button', { name: 'Reset trial' }));
+    expect(window.__weaselTest!.getSelection()).toEqual(['rect-1']);
+    expect(readout().getByText('rect-1 (editing)')).toBeTruthy();
+  });
 });
 
 function click(canvas: Element, [x, y]: number[]) {
