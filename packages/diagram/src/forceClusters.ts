@@ -1,34 +1,34 @@
 /**
- * What a group adds to the relaxation in `force.ts`: its members drawn
+ * What a cluster adds to the relaxation in `force.ts`: its members drawn
  * together, and its box kept clear of everything that is not in it.
  *
- * A group is its members and nothing else here — the box is recomputed from
+ * A cluster is its members and nothing else here — the box is recomputed from
  * where they are on every tick, the way the scene derives it: around its own
- * nodes and the boxes of the groups nested in it.
+ * nodes and the boxes of the clusters nested in it.
  */
 import type { SimulationForce } from '@weasel-js/simulation';
 import type { GraphCluster } from './graph';
 import type { ForceBody } from './force';
 
-interface GroupBodies {
-  /** Every body inside, through any nested group. */
+interface ClusterBodies {
+  /** Every body inside, through any nested cluster. */
   members: ForceBody[];
-  group: GraphCluster;
-  parent?: GroupBodies;
-  children: GroupBodies[];
+  cluster: GraphCluster;
+  parent?: ClusterBodies;
+  children: ClusterBodies[];
 }
 
 interface Box { x0: number; y0: number; x1: number; y1: number }
 
-function resolve(groups: readonly GraphCluster[], byId: ReadonlyMap<string, ForceBody>): GroupBodies[] {
-  const out: GroupBodies[] = [];
-  for (const group of groups) {
-    const members = group.members.map((id) => byId.get(id)).filter((b) => b !== undefined);
-    if (members.length > 0) out.push({ members, group, children: [] });
+function resolve(clusters: readonly GraphCluster[], byId: ReadonlyMap<string, ForceBody>): ClusterBodies[] {
+  const out: ClusterBodies[] = [];
+  for (const cluster of clusters) {
+    const members = cluster.members.map((id) => byId.get(id)).filter((b) => b !== undefined);
+    if (members.length > 0) out.push({ members, cluster, children: [] });
   }
-  const byGroup = new Map(out.map((g) => [g.group.id, g]));
+  const byCluster = new Map(out.map((g) => [g.cluster.id, g]));
   for (const g of out) {
-    const parent = g.group.parent === undefined ? undefined : byGroup.get(g.group.parent);
+    const parent = g.cluster.parent === undefined ? undefined : byCluster.get(g.cluster.parent);
     if (parent === undefined) continue;
     g.parent = parent;
     parent.children.push(g);
@@ -36,13 +36,13 @@ function resolve(groups: readonly GraphCluster[], byId: ReadonlyMap<string, Forc
   return out;
 }
 
-/** A pull on each member toward its group's centroid. */
-export function groupCohesion(
-  groups: readonly GraphCluster[],
+/** A pull on each member toward its cluster's centroid. */
+export function clusterCohesion(
+  clusters: readonly GraphCluster[],
   byId: ReadonlyMap<string, ForceBody>,
   strength: number,
 ): SimulationForce<ForceBody> {
-  const resolved = resolve(groups, byId);
+  const resolved = resolve(clusters, byId);
   return (alpha) => {
     for (const { members } of resolved) {
       let cx = 0;
@@ -61,9 +61,9 @@ export function groupCohesion(
   };
 }
 
-/** The box of `g`: around its bodies and its nested groups' boxes, grown by
- *  its inset. A body inside a nested group is covered by that group's box. */
-function boxOf(g: GroupBodies): Box {
+/** The box of `g`: around its bodies and its nested clusters' boxes, grown by
+ *  its inset. A body inside a nested cluster is covered by that cluster's box. */
+function boxOf(g: ClusterBodies): Box {
   let x0 = Infinity;
   let y0 = Infinity;
   let x1 = -Infinity;
@@ -81,7 +81,7 @@ function boxOf(g: GroupBodies): Box {
     x1 = Math.max(x1, b.x1);
     y1 = Math.max(y1, b.y1);
   }
-  const { inset } = g.group;
+  const { inset } = g.cluster;
   return { x0: x0 - inset.left, y0: y0 - inset.top, x1: x1 + inset.right, y1: y1 + inset.bottom };
 }
 
@@ -100,7 +100,7 @@ function clearance(a: Box, b: Box, padding: number): { x: number; y: number } | 
 }
 
 /** Whether `inner` is nested somewhere inside `outer`. */
-function holds(outer: GroupBodies, inner: GroupBodies): boolean {
+function holds(outer: ClusterBodies, inner: ClusterBodies): boolean {
   for (let at = inner.parent; at !== undefined; at = at.parent) {
     if (at === outer) return true;
   }
@@ -115,18 +115,18 @@ function shove(bodies: readonly ForceBody[], x: number, y: number): void {
 }
 
 /**
- * Push a group's box clear of every other group's and of every body outside
- * it, moving the group as a block. Like the box separation between nodes it is
+ * Push a cluster's box clear of every other cluster's and of every body outside
+ * it, moving the cluster as a block. Like the box separation between nodes it is
  * not scaled by alpha: an overlap at the end of the run is as wrong as one at
  * the start.
  */
 export function separateClusters(
-  groups: readonly GraphCluster[],
+  clusters: readonly GraphCluster[],
   bodies: readonly ForceBody[],
   byId: ReadonlyMap<string, ForceBody>,
   padding: number,
 ): SimulationForce<ForceBody> {
-  const resolved = resolve(groups, byId);
+  const resolved = resolve(clusters, byId);
   const memberSets = resolved.map((g) => new Set(g.members));
   return () => {
     const boxes = resolved.map(boxOf);

@@ -10,21 +10,21 @@ const body = (id: string, x: number, y = 0): ForceBody => ({ id, x, y, hw: 10, h
  *  box reaches 22 from `p` and System's a further 12 beyond that. */
 function run(at: { p: number; s: number; o: number }) {
   const bodies = [body('p', at.p), body('s', at.s), body('o', at.o)];
-  const groups: GraphCluster[] = [
+  const clusters: GraphCluster[] = [
     { id: 'System', members: ['p', 's'], inset: insetOf(12) },
     { id: 'P', members: ['p'], inset: insetOf(12), parent: 'System' },
   ];
-  separateClusters(groups, bodies, new Map(bodies.map((b) => [b.id, b])), 0)(1);
+  separateClusters(clusters, bodies, new Map(bodies.map((b) => [b.id, b])), 0)(1);
   expect(bodies.map((b) => b.vy)).toEqual([0, 0, 0]);
   return Object.fromEntries(bodies.map((b) => [b.id, b.vx]));
 }
 
-describe('separateClusters with a group inside a group', () => {
-  it('does not push a group away from the group that holds it', () => {
+describe('separateClusters with a cluster inside a cluster', () => {
+  it('does not push a cluster away from the cluster that holds it', () => {
     expect(run({ p: 0, s: 100, o: 1000 })).toEqual({ p: 0, s: 0, o: 0 });
   });
 
-  it('pushes the outer group\'s own node out of the inner box', () => {
+  it('pushes the outer cluster\'s own node out of the inner box', () => {
     const v = run({ p: 0, s: 25, o: 1000 });
     expect(v.s).toBeGreaterThan(0);
     expect(v.p).toBeLessThan(0);
