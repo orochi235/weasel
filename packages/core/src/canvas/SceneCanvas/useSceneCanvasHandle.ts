@@ -54,13 +54,14 @@ export function useSceneCanvasHandle(args: {
   viewAt: SceneCanvasApi['viewAt'];
   aimOf: SceneCanvasApi['aimOf'];
   setAim: SceneCanvasApi['setAim'];
+  setPathEdit: SceneCanvasApi['setPathEdit'];
 }): {
   handleRef: (node: CanvasExtensionApi | null) => void;
   /** Whether the handle is attached, as state: an effect needing the handle
    *  keys off this instead of assuming when React attaches it. */
   ready: boolean;
 } {
-  const { ref, elementRef, apiRef, onElement, ingest, viewAnimation, camera, addView, viewAt, aimOf, setAim } = args;
+  const { ref, elementRef, apiRef, onElement, ingest, viewAnimation, camera, addView, viewAt, aimOf, setAim, setPathEdit } = args;
   const [ready, setReady] = useState(false);
   const handleRef = useCallback(
     (node: CanvasExtensionApi | null) => {
@@ -78,13 +79,14 @@ export function useSceneCanvasHandle(args: {
             viewAt,
             aimOf,
             setAim,
+            setPathEdit,
           }
         : null;
       apiRef.current = extended;
       setReady(extended !== null);
       assignRef(ref, extended);
     },
-    [ref, elementRef, apiRef, ingest, viewAnimation, camera, addView, viewAt, aimOf, setAim, onElement],
+    [ref, elementRef, apiRef, ingest, viewAnimation, camera, addView, viewAt, aimOf, setAim, setPathEdit, onElement],
   );
   return { handleRef, ready };
 }

@@ -84,7 +84,7 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
   const selection = useCanvasSelection({ scene, props, selectable, kindOf: kinds.kindOf, factory: enabled.selection });
   useViewportWithoutView(viewport, enabled);
   useIgnoredProps(props);
-  const { pathEditState, selectToolWithDefaults } = useSceneCanvasPathEdit({
+  const { pathEditState, selectToolWithDefaults, setPathEdit } = useSceneCanvasPathEdit({
     host: props.pathEdit, opening: props.defaultPathEdit, getActiveMode, scene, selection,
     extensions: enabled.pathEdit, selectTool: selectToolOpts,
   });
@@ -130,7 +130,7 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
   // The consumer's handle extends the primitive's with `ingest`, which needs the action stack.
   const { handleRef, ready: canvasReady } = useSceneCanvasHandle({
     ref, elementRef: internalCanvasRef, apiRef: canvasApiRef, onElement: chrome.trackHoverOn,
-    ingest, viewAnimation, camera, addView, viewAt, aimOf, setAim,
+    ingest, viewAnimation, camera, addView, viewAt, aimOf, setAim, setPathEdit,
   });
   const viewInputs = useSurfaceViewInputs({ picking, selection, resizeHandles: layered.resizeHandles, selectionChrome: enabled.selectionChrome,
     descriptor: descriptor as PoseDescriptor<unknown>, chromeCaps: chrome.chromeCaps, rotationBadge: layered.rotationBadge,

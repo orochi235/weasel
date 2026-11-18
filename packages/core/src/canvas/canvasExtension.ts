@@ -13,6 +13,7 @@ import type { ViewRect } from '../domains/viewports/viewResolver';
 import type { Target } from '@weasel-js/animator';
 import type { Animator } from '@weasel-js/animator';
 import type { Rect } from '@weasel-js/geom';
+import type { PathEditOpening } from './SceneCanvas/pathEditHost';
 
 /**
  * A view added through {@link SceneCanvasApi.addView}.
@@ -300,4 +301,10 @@ export interface SceneCanvasApi extends CanvasExtensionApi {
    *  An aim-held view reports the aim through `onAimChange`. `false` when there is no such view, the aim is
    *  not one it can read, or the write goes nowhere: no camera writer, or a controlled view with no handler. */
   setAim(id: string | null, aim: ViewAim): boolean;
+  /**
+   * Open `opening`'s path in anchor edit, as a double-click on it would, selecting its `anchors`; `null` closes
+   * the open path. It opens only while `opening.id` is selected. `defaultPathEdit` is this, applied on mount,
+   * so a host restoring a document to how it opened (a Reset) passes the same value again.
+   */
+  setPathEdit(opening: PathEditOpening | null): void;
 }

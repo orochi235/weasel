@@ -1,5 +1,6 @@
 import type { ActiveMode } from '@weasel-js/modes';
-import { useMemo } from 'react';
+import { useCallback, useMemo } from 'react';
+import type { SceneCanvasApi } from '../canvasExtension';
 import type { Scene } from 'core/scene/types';
 import type { SelectionApi } from '@weasel-js/routing';
 import { isSelectedNode } from 'domains/paths/pathEditState';
@@ -7,7 +8,7 @@ import { usePathEditState, type UsePathEditStateOptions } from 'domains/paths/us
 import type { SceneCanvasProps } from './props';
 
 /**
- * The canvas's path-edit state, and the select tool options that defer shift-click to it while
+ * The canvas's path-edit state, the handle's `setPathEdit` over it, and the select tool options that defer shift-click to it while
  * a path is being anchor-edited.
  */
 export function useSceneCanvasPathEdit<TData, TLayer extends string, TPose>(args: {
@@ -37,5 +38,10 @@ export function useSceneCanvasPathEdit<TData, TLayer extends string, TPose>(args
     ...selectTool,
   }), [selectTool, pathEditState]);
 
-  return { pathEditState, selectToolWithDefaults };
+  const setPathEdit = useCallback<SceneCanvasApi['setPathEdit']>((opening) => {
+    pathEditState.setEditingId(opening?.id ?? null);
+    pathEditState.setSelectedAnchors(new Set(opening?.anchors ?? []));
+  }, [pathEditState]);
+
+  return { pathEditState, selectToolWithDefaults, setPathEdit };
 }
