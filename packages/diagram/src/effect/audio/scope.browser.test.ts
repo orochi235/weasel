@@ -27,7 +27,7 @@ function pixels(bitmap: ImageBitmap) {
   const g = c.getContext('2d')!;
   g.drawImage(bitmap, 0, 0);
   const data = g.getImageData(0, 0, c.width, c.height).data;
-  return { w: c.width, h: c.height, alpha: (x: number, y: number) => data[(y * c.width + x) * 4 + 3]! };
+  return { width: c.width, height: c.height, alpha: (x: number, y: number) => data[(y * c.width + x) * 4 + 3]! };
 }
 
 describe('audio previews', () => {
@@ -35,8 +35,8 @@ describe('audio previews', () => {
     const { scope } = await draw();
     expect([scope.width, scope.height]).toEqual([96, 48]);
     const p = pixels(scope);
-    const x = p.w >> 1;
-    const away = Array.from({ length: p.h }, (_, y) => y).filter((y) => p.alpha(x, y) === 255 && Math.abs(y - p.h / 2) > 4);
+    const x = p.width >> 1;
+    const away = Array.from({ length: p.height }, (_, y) => y).filter((y) => p.alpha(x, y) === 255 && Math.abs(y - p.height / 2) > 4);
     expect(away.length).toBeGreaterThan(0);
   });
 
@@ -46,9 +46,9 @@ describe('audio previews', () => {
     // bands() splits the bins evenly, so a bucket spans nyquist / 32 of frequency.
     const bucket = Math.floor(1000 / (RATE / 2 / 32));
     const top = (b: number) => {
-      const x = Math.floor(((b + 0.4) * p.w) / 32);
-      for (let y = 0; y < p.h; y += 1) if (p.alpha(x, y) > 0) return y;
-      return p.h;
+      const x = Math.floor(((b + 0.4) * p.width) / 32);
+      for (let y = 0; y < p.height; y += 1) if (p.alpha(x, y) > 0) return y;
+      return p.height;
     };
     const tops = Array.from({ length: 32 }, (_, b) => top(b));
     expect(tops.indexOf(Math.min(...tops))).toBe(bucket);

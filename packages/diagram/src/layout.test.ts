@@ -194,15 +194,15 @@ describe('force', () => {
     const result = force(graphOf(wide, [['a', 'b'], ['b', 'c']]),
       { padding: 10, charge: -50, linkDistance: 20 });
     const boxes = Object.keys(wide).map((id) => {
-      const [, , w, h] = wide[id as keyof typeof wide];
+      const [, , width, height] = wide[id as keyof typeof wide];
       const p = at(wide, result, id);
-      return { x: p.x, y: p.y, w, h };
+      return { x: p.x, y: p.y, width, height };
     });
     for (let i = 0; i < boxes.length; i++) {
       for (let j = i + 1; j < boxes.length; j++) {
         const p = boxes[i]!;
         const q = boxes[j]!;
-        const overlaps = p.x < q.x + q.w && p.x + p.w > q.x && p.y < q.y + q.h && p.y + p.h > q.y;
+        const overlaps = p.x < q.x + q.width && p.x + p.width > q.x && p.y < q.y + q.height && p.y + p.height > q.y;
         expect(overlaps).toBe(false);
       }
     }
