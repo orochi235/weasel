@@ -10,7 +10,7 @@ import { offPageTagOf } from './offPage/trait';
 const TWO_PAGES = { pages: [{ id: 'p1', width: 200, height: 100 }, { id: 'p2', width: 200, height: 100 }] } as const;
 const node = (id: string, x: number): DataNode => ({ id, lines: [id], width: 30, at: { x, y: 20 } });
 
-/** Nodes, a labeled edge, a group, a container, and an edge from a group. */
+/** Nodes, a labeled edge, a cluster, a container, and an edge from a cluster. */
 const MIXED: DiagramData = {
   nodes: [
     { id: 'a', lines: ['level mix', '0–1'] },
@@ -68,8 +68,8 @@ describe('diagramScene with pages', () => {
     expect(diagramEdgeOf(edgeOf(one, 'edge:c->d'))!.offPage?.ref).toBe('A');
   });
 
-  it('splits an edge ending at a group by the group’s box', () => {
-    // `b` alone sits on p1; the group's box, with `c` and `e`, is mostly on p2.
+  it('splits an edge ending at a cluster by the cluster’s box', () => {
+    // `b` alone sits on p1; the cluster's box, with `c` and `e`, is mostly on p2.
     const specs = diagramScene({
       ...TWO_PAGES,
       nodes: [node('a', 20), node('b', 170), node('c', 260), node('e', 330)],

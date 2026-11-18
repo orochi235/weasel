@@ -1,7 +1,7 @@
 /**
  * `diagramScene` on random data, ids drawn from the characters its own part ids are spelled with. It builds specs
  * whose ids are all different or refuses the data with its own error, never a scene's id collision later: every node
- * is there once, every edge whose ends are nodes or groups once under `edgeIdOf`, a repeat of one dropped. Shuffling the nodes
+ * is there once, every edge whose ends are nodes or clusters once under `edgeIdOf`, a repeat of one dropped. Shuffling the nodes
  * or the edges changes no spec's id, nor what an edge's spec holds.
  */
 import { describe, expect, it } from 'vitest';
@@ -29,8 +29,8 @@ const dataArb: fc.Arbitrary<DiagramData> = fc.uniqueArray(ID, { minLength: 1, ma
     label: fc.option(fc.constantFrom('L', 'a/b'), { nil: undefined }),
     id: fc.option(fc.constantFrom('e', 'f', 'a', 'edge:a->b'), { freq: 3, nil: undefined }),
   }, { requiredKeys: ['from', 'to'] }).map((e) => Object.fromEntries(Object.entries(e).filter(([, v]) => v !== undefined)) as unknown as DataEdge), { maxLength: 5 }),
-  groups: fc.option(fc.constant([{ id: 'G', members: ids.slice(0, 2), label: 'T' }]), { freq: 3, nil: undefined }),
-})).map(({ nodes, edges, groups }) => ({ nodes, edges, ...(groups && !nodes.some((n) => n.id === 'G') ? { clusters: groups } : {}) }));
+  clusters: fc.option(fc.constant([{ id: 'G', members: ids.slice(0, 2), label: 'T' }]), { freq: 3, nil: undefined }),
+})).map(({ nodes, edges, clusters }) => ({ nodes, edges, ...(clusters && !nodes.some((n) => n.id === 'G') ? { clusters } : {}) }));
 
 const build = (data: DiagramData) => diagramScene(data, { layout: 'none' });
 

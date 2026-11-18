@@ -52,7 +52,7 @@ export type ConnectView = Parameters<typeof offersPorts>[1];
  * The topmost participant whose body contains `at`, or `null`.
  *
  * Its outline when it declares one, else its bounds, both taken in the pose's
- * unrotated frame. Edges, edge labels and group boxes are not bodies, and nor
+ * unrotated frame. Edges, edge labels and cluster boxes are not bodies, and nor
  * is anything the reader does not take as a participant or that `offersPorts`
  * turns away.
  */

@@ -17,7 +17,7 @@ import type { PortSpec } from './types';
 /** A compass point's port name. */
 export type Compass = keyof typeof COMPASS;
 
-/** One edge to route, by the ids of its ends: a node's or a group's. */
+/** One edge to route, by the ids of its ends: a node's or a cluster's. */
 export interface RouteEdge {
   id: string;
   from: string;
@@ -46,7 +46,7 @@ export interface LayeredRouteInput {
   /** Where each labeled edge's label room is among its waypoints, from
    *  `layeredPlan`. */
   labels?: ReadonlyMap<string, Vec2>;
-  /** Each group's node members, through nested groups. */
+  /** Each cluster's node members, through nested clusters. */
   members: ReadonlyMap<string, readonly string[]>;
   /** Ids whose ports are the four compass midpoints, which are the only ones
    *  a route names. */
@@ -101,7 +101,7 @@ export function layeredRoutes(input: LayeredRouteInput): Map<string, LayeredRout
  * The compass ports {@link layeredRoutes} names for each drawn edge of
  * `graph` that runs between ranks, keyed by the edge's id as drawn. A node
  * gets a face named only when it has a port by that name at that compass
- * point; a group always does.
+ * point; a cluster always does.
  */
 export function layeredPorts(
   graph: Graph,

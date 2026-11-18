@@ -155,14 +155,14 @@ describe('diagramScene with containers', () => {
     expect(specs.find((s) => s.parent === 'a' && s.data.text === 'a')!.data.style?.fontFamily).toBe('Themed Face');
   });
 
-  it('refuses a node that a group and a region both claim, naming both', () => {
+  it('refuses a node that a cluster and a region both claim, naming both', () => {
     const data: DiagramData = {
       nodes: [node('a'), node('b')],
       edges: [],
       clusters: [{ id: 'g', members: ['a', 'b'] }],
       containers: [{ id: 'k', role: 'container', members: ['a'], box: { x: 0, y: 0, width: 200, height: 100 } }],
     };
-    expect(() => diagramScene(data)).toThrow(/"a".*group "g".*region "k"/);
+    expect(() => diagramScene(data)).toThrow(/"a".*cluster "g".*region "k"/);
     expect(() => diagramScene({ ...data, containers: [{ id: 'k', role: 'container', members: ['a'] }] })).toThrow(/"a"/);
   });
 });

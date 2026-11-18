@@ -22,7 +22,7 @@ const facing = (ports: readonly Port[]): AvoidPort[] =>
 
 /** The obstacles specs make, as `avoidSceneInput` reads a scene: a shape's box; a
  *  container's or pool's box as a region holding what is inside it, and its header;
- *  a lane's header alone. A derived box, a group's, is none. */
+ *  a lane's header alone. A derived box, a cluster's, is none. */
 function obstaclesOf(specs: readonly DiagramSpec[], world: ReadonlyMap<string, RectPose>): AvoidObstacle[] {
   const children = new Map<string, string[]>();
   for (const s of specs) {

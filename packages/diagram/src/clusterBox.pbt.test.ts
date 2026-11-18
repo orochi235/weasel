@@ -1,9 +1,9 @@
 /**
- * A group's box and anything anchored to a node. `boxAround` holds the union and its inset and widens evenly to its
+ * A cluster's box and anything anchored to a node. `boxAround` holds the union and its inset and widens evenly to its
  * minimum; `clusterDerivePose` is that box around whichever members are there, moved whole with them; an anchored
- * node's `self` point lands on the `at` point of what it is anchored to. Then a scene built from random groups,
- * nested, through moves and resizes of its nodes, undos, and redos: every group's box stands around what it depends
- * on, every title on its group, and undo puts every node back exactly.
+ * node's `self` point lands on the `at` point of what it is anchored to. Then a scene built from random clusters,
+ * nested, through moves and resizes of its nodes, undos, and redos: every cluster's box stands around what it depends
+ * on, every title on its cluster, and undo puts every node back exactly.
  */
 import { describe, expect, it } from 'vitest';
 import fc from 'fast-check';
@@ -25,7 +25,7 @@ const insetArb = fc.oneof(
   fc.integer({ min: 0, max: 40 }),
   fc.record({ top: fc.integer({ min: 0, max: 40 }), right: fc.integer({ min: 0, max: 40 }), bottom: fc.integer({ min: 0, max: 40 }), left: fc.integer({ min: 0, max: 40 }) }, { requiredKeys: [] }),
 );
-const groupArb = fc.record({ inset: insetArb, minWidth: fc.option(fc.integer({ min: 0, max: 400 }), { nil: undefined }) })
+const clusterArb = fc.record({ inset: insetArb, minWidth: fc.option(fc.integer({ min: 0, max: 400 }), { nil: undefined }) })
   .map(({ inset, minWidth }) => ({ ...(inset !== undefined ? { inset } : {}), ...(minWidth !== undefined ? { minWidth } : {}) }));
 const anchor = fc.record({ u: fc.constantFrom(0, 0.5, 1), v: fc.constantFrom(0, 0.5, 1) });
 
@@ -34,11 +34,11 @@ const near = (a: number, b: number) => Math.abs(a - b) <= 1e-9 * Math.max(1, Mat
 describe('boxAround', () => {
   it('holds the union grown by the inset, and widens evenly to its minimum', () => {
     const seen = tally();
-    fc.assert(fc.property(rect(), groupArb, (u, group) => {
-      const box = boxAround(u, group);
-      const inset = insetOf(group.inset);
+    fc.assert(fc.property(rect(), clusterArb, (u, cluster) => {
+      const box = boxAround(u, cluster);
+      const inset = insetOf(cluster.inset);
       const width = u.width + inset.left + inset.right;
-      expect(box.width).toBe(Math.max(width, group.minWidth ?? 0));
+      expect(box.width).toBe(Math.max(width, cluster.minWidth ?? 0));
       if (box.width > width) seen.count('widened');
       expect(box.height).toBe(u.height + inset.top + inset.bottom);
       expect(box.y).toBe(u.y - inset.top);
@@ -60,9 +60,9 @@ describe('clusterDerivePose', () => {
   it('draws the box around the members there are, and moves it whole with them', () => {
     const seen = tally();
     fc.assert(fc.property(
-      groupArb, fc.array(fc.option(fc.tuple(rect(gridCoord), marginArb), { freq: 4 }), { maxLength: 5 }), gridCoord, gridCoord,
-      (group, deps, dx, dy) => {
-        const node = { pose: { x: 1, y: 2, width: 3, height: 4 }, data: { diagram: { cluster: group } } };
+      clusterArb, fc.array(fc.option(fc.tuple(rect(gridCoord), marginArb), { freq: 4 }), { maxLength: 5 }), gridCoord, gridCoord,
+      (cluster, deps, dx, dy) => {
+        const node = { pose: { x: 1, y: 2, width: 3, height: 4 }, data: { diagram: { cluster } } };
         const live = deps.map((d) => (d === null ? undefined : member(d[0], d[1])));
         const box = derive(node, live as never);
         const there = deps.filter((d) => d !== null);
@@ -76,7 +76,7 @@ describe('clusterDerivePose', () => {
         const x0 = Math.min(...grown.map((b) => b.x));
         const y0 = Math.min(...grown.map((b) => b.y));
         const union = { x: x0, y: y0, width: Math.max(...grown.map((b) => b.x + b.width)) - x0, height: Math.max(...grown.map((b) => b.y + b.height)) - y0 };
-        expect(box).toEqual(boxAround(union, group));
+        expect(box).toEqual(boxAround(union, cluster));
         const moved = derive(node, live.map((d) => (d === undefined ? d : { ...d, pose: { ...d.pose, x: d.pose.x + dx, y: d.pose.y + dy } })) as never)!;
         expect(moved).toEqual({ ...box!, x: box!.x + dx, y: box!.y + dy });
       },
@@ -85,7 +85,7 @@ describe('clusterDerivePose', () => {
     seen.atLeast('boxed', RUNS / 2);
   }, timeoutFor(RUNS, 1));
 
-  it('stands aside for a node that is not a group', () => {
+  it('stands aside for a node that is not a cluster', () => {
     fc.assert(fc.property(fc.anything(), (data) => {
       fc.pre(diagramClusterOf({ data }) === null);
       expect(derive({ pose: { x: 0, y: 0, width: 0, height: 0 }, data }, [member({ x: 0, y: 0, width: 1, height: 1 })] as never)).toBeNull();
@@ -115,19 +115,19 @@ describe('anchorDerivePose', () => {
   }, timeoutFor(RUNS, 1));
 });
 
-// --- a scene of nested groups, edited ---
+// --- a scene of nested clusters, edited ---
 
 const NODES = ['a', 'b', 'c', 'd', 'e'];
-const GROUPS = ['G', 'H', 'I'];
+const CLUSTERS = ['G', 'H', 'I'];
 
 const dataArb: fc.Arbitrary<DiagramData> = fc.record({
   at: fc.tuple(...NODES.map(() => fc.record({ x: gridCoord, y: gridCoord }))),
-  groups: fc.tuple(...GROUPS.map(() => fc.subarray([...NODES, ...GROUPS], { maxLength: 4 }))),
-  labels: fc.tuple(...GROUPS.map(() => fc.option(fc.constantFrom('G', 'a title'), { nil: undefined }))),
-}).map(({ at, groups, labels }) => ({
+  clusters: fc.tuple(...CLUSTERS.map(() => fc.subarray([...NODES, ...CLUSTERS], { maxLength: 4 }))),
+  labels: fc.tuple(...CLUSTERS.map(() => fc.option(fc.constantFrom('G', 'a title'), { nil: undefined }))),
+}).map(({ at, clusters, labels }) => ({
   nodes: NODES.map((id, i) => ({ id, lines: [id], at: at[i]! })),
   edges: [],
-  clusters: GROUPS.map((id, i) => ({ id, members: groups[i]!, ...(labels[i] !== undefined ? { label: labels[i] } : {}) })),
+  clusters: CLUSTERS.map((id, i) => ({ id, members: clusters[i]!, ...(labels[i] !== undefined ? { label: labels[i] } : {}) })),
 }));
 
 type AnyScene = Scene<unknown, 'main', RectPose>;
@@ -139,15 +139,15 @@ function check(scene: AnyScene, model: Model): void {
   expect(authored(scene)).toEqual(model.stack[model.at]);
   const pose = (id: string) => effectivePose(scene as never, scene.get(id as never)! as never) as RectPose;
   for (const n of scene.renderOrderNodes()) {
-    const group = diagramClusterOf(n);
-    if (group !== null) {
+    const cluster = diagramClusterOf(n);
+    if (cluster !== null) {
       const deps = (n.dependsOn as readonly string[]).filter((id) => scene.get(id as never) !== undefined);
       if (deps.length === 0) continue;
       const grown = deps.map((id) => grownBy(pose(id), (scene.get(id as never)!.data as { diagram?: { margin?: never } }).diagram?.margin));
       const x0 = Math.min(...grown.map((b) => b.x));
       const y0 = Math.min(...grown.map((b) => b.y));
       const union = { x: x0, y: y0, width: Math.max(...grown.map((b) => b.x + b.width)) - x0, height: Math.max(...grown.map((b) => b.y + b.height)) - y0 };
-      const box = boxAround(union, group);
+      const box = boxAround(union, cluster);
       const got = pose(n.id);
       for (const k of ['x', 'y', 'width', 'height'] as const) expect(near(got[k], box[k])).toBe(true);
     }
@@ -213,7 +213,7 @@ const commands = [
   fc.constant(new Redo()),
 ];
 
-describe('a scene of nested groups', () => {
+describe('a scene of nested clusters', () => {
   const SCENE_RUNS = 60;
   it('keeps every box around its members and every title on its box through moves, undos, and redos', () => {
     const seen = tally();
@@ -222,7 +222,7 @@ describe('a scene of nested groups', () => {
         systemLayers: [{ id: 'main' }], initial: diagramScene(data, { layout: 'none' }) as never, registry: withDiagramRegistry(),
       }) as AnyScene;
       const nodes = [...scene.renderOrderNodes()];
-      if (nodes.some((n) => diagramClusterOf(n) !== null && (n.dependsOn as readonly string[]).some((d) => GROUPS.includes(d as string)))) seen.count('nested');
+      if (nodes.some((n) => diagramClusterOf(n) !== null && (n.dependsOn as readonly string[]).some((d) => CLUSTERS.includes(d as string)))) seen.count('nested');
       if (nodes.some((n) => diagramAnchorOf(n) !== null)) seen.count('titled');
       const model: Model = { stack: [authored(scene)], at: 0 };
       check(scene, model);

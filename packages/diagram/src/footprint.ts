@@ -23,7 +23,7 @@ function anchorIn(box: Bounds, p: Vec2): PortAnchor {
 }
 
 /** `bounds` grown by `margin`: what a node takes up, labels and all. Layout
- *  spaces nodes by it, and a group's box is fitted around it. */
+ *  spaces nodes by it, and a cluster's box is fitted around it. */
 export function grownBy(bounds: Bounds, margin: ClusterInset | undefined): Bounds {
   if (margin === undefined) return bounds;
   return {

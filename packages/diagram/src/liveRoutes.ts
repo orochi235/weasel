@@ -118,7 +118,7 @@ export function routeEasings<TPose>(
  * Each eased route's path `u` of the way there, drawn by the edge's own
  * `derivePath` with its ends where `poseOf` puts them. A node `poseOf` does
  * not place is drawn where the scene shows it, unless it derives its pose —
- * a group's box — when it is derived afresh from where this frame puts what
+ * a cluster's box — when it is derived afresh from where this frame puts what
  * it depends on. An edge that derives no path is left out.
  */
 export function easedPaths<TPose>(

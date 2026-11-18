@@ -41,10 +41,10 @@ function regionAndMembers(scene: AnyScene, id: string, out: Set<string>): void {
 }
 
 /**
- * The data a delete of `ids` takes: the selected nodes and groups, every
+ * The data a delete of `ids` takes: the selected nodes and clusters, every
  * container, pool, or lane with what it holds, and every edge selected or
- * ending on one of them. Not `removalClosure`: a group depends on its
- * members, and deleting a member leaves the group standing.
+ * ending on one of them. Not `removalClosure`: a cluster depends on its
+ * members, and deleting a member leaves the cluster standing.
  */
 export function removedData(scene: AnyScene, ids: readonly string[]): DeleteReport {
   const nodes = new Set<string>();

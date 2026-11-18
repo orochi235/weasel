@@ -40,7 +40,7 @@ export function dataOffPage(
 }
 
 /** {@link dataOffPage} for `diagramScene`: ends are boxed by where nodes and regions were
- *  placed, and by the group specs already made. Nothing when `data` has no pages. */
+ *  placed, and by the cluster specs already made. Nothing when `data` has no pages. */
 export function scenePageSplits(
   data: DiagramData,
   placedAt: ReadonlyMap<string, Bounds>,
@@ -50,6 +50,6 @@ export function scenePageSplits(
 ): { splits: ReadonlyMap<string, OffPageSplit>; tags: DiagramSpec[] } | null {
   const pages = diagramPages(data);
   if (pages.length === 0) return null;
-  const groups = new Map(specs.filter((s) => diagramClusterOf(s) !== null).map((s) => [String(s.id), s.pose as Bounds]));
-  return dataOffPage(edges, pages, (id) => placedAt.get(id) ?? groups.get(id), look());
+  const clusters = new Map(specs.filter((s) => diagramClusterOf(s) !== null).map((s) => [String(s.id), s.pose as Bounds]));
+  return dataOffPage(edges, pages, (id) => placedAt.get(id) ?? clusters.get(id), look());
 }

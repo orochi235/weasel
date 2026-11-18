@@ -31,7 +31,7 @@ describe('diagramResizable', () => {
     expect(['p', 'l'].map(diagramResizable(scene))).toEqual([true, false]);
   });
 
-  it("refuses a group's box, which takes its size from its members", () => {
+  it("refuses a cluster's box, which takes its size from its members", () => {
     const specs = diagramScene({ nodes: [{ id: 'a', lines: ['a'] }], edges: [], clusters: [{ id: 'g', members: ['a'] }] });
     const scene = createScene<unknown, 'main', Rect>({ systemLayers: [{ id: 'main' }], initial: specs as never, registry: withDiagramRegistry() });
     expect(['a', 'g'].map(diagramResizable(scene))).toEqual([true, false]);

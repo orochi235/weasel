@@ -155,8 +155,8 @@ const treeOnce: LayoutFn = (graph, opts = {}) => {
   }
   const depths = [...bands.keys()].sort((a, b) => a - b);
   const rowsAt = depths.map((at) => rows.get(at)!);
-  const grouped = (graph.clusters?.length ?? 0) > 0;
-  const gaps = grouped ? rankGaps(graph, rowsAt, axes, rankGap) : depths.slice(1).map(() => rankGap);
+  const clustered = (graph.clusters?.length ?? 0) > 0;
+  const gaps = clustered ? rankGaps(graph, rowsAt, axes, rankGap) : depths.slice(1).map(() => rankGap);
   const bandStart = new Map<number, number>();
   let along = 0;
   for (const [i, at] of depths.entries()) {
@@ -180,8 +180,8 @@ const treeOnce: LayoutFn = (graph, opts = {}) => {
     });
   }
 
-  if (grouped) {
-    // The subtree blocks are where each node would go; groups then push them
+  if (clustered) {
+    // The subtree blocks are where each node would go; clusters then push them
     // apart only as far as their columns need.
     const preferred = new Map([...slots].map(([id, slot]) => [id, slot.cross]));
     const ordered = rowsAt.map((row) => [...row].sort((a, b) => preferred.get(a.id)! - preferred.get(b.id)!));

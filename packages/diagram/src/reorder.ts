@@ -1,6 +1,6 @@
 /**
  * Reorder: dragging one item of a drawn sequence — boxes in a row, rows in a
- * column, the members of a group — to another place in it. The item follows
+ * column, the members of a cluster — to another place in it. The item follows
  * the pointer along the sequence's axis and lands in the gap nearest its
  * middle. A `'bar'` drag marks that gap with an insertion bar; a `'slide'`
  * drag slides the other items into the places they would take. Either way

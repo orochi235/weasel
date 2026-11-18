@@ -69,7 +69,7 @@ it('reports nothing for a drag that leaves the order as it was', async () => {
   expect(changes).toEqual([]);
 });
 
-it('pans on a drag from a node outside any reorderable group', async () => {
+it('pans on a drag from a node outside any reorderable cluster', async () => {
   const views: View[] = [];
   const { api, canvas, changes } = await mount({ onViewChange: (v) => views.push(v) });
   await drag(canvas, middle(api.current!.rectOf('word')!), 60, 60);

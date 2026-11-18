@@ -5,28 +5,28 @@ import { tree } from './tree';
 import { contains, graphOf, nestedBoxOf, overlaps, placed } from './clusterFixture';
 
 // A system holding two subsystems and a node of its own, beside an outsider
-// every part of it talks to. Ungrouped, the outsider's edges pull it into the
+// every part of it talks to. Unclustered, the outsider's edges pull it into the
 // middle of the others in every rank.
 const IDS = ['in', 'p0', 'mid', 'q0', 'p1', 'out', 'q1', 's'];
 const EDGES = [
   ['in', 'p0'], ['in', 'q0'], ['p0', 'p1'], ['q0', 'q1'], ['p0', 'q1'], ['q0', 'p1'],
   ['p1', 's'], ['q1', 's'], ['in', 'out'], ['out', 's'], ['p0', 'out'], ['in', 'mid'], ['mid', 's'],
 ] as const;
-const GROUPS = { System: ['P', 's', 'Q'], P: ['p0', 'p1'], Q: ['q0', 'q1'] };
+const CLUSTERS = { System: ['P', 's', 'Q'], P: ['p0', 'p1'], Q: ['q0', 'q1'] };
 
 describe.each([
   ['layered', layered],
   ['tree', tree],
   ['force', force],
-] as const)('%s with a group inside a group', (name, fn) => {
+] as const)('%s with a cluster inside a cluster', (name, fn) => {
   const boxes = () => {
-    const graph = graphOf(IDS, EDGES, GROUPS);
+    const graph = graphOf(IDS, EDGES, CLUSTERS);
     const at = placed(graph, fn);
-    const box = (id: string) => nestedBoxOf(at, GROUPS, id, 12);
+    const box = (id: string) => nestedBoxOf(at, CLUSTERS, id, 12);
     return { graph, at, system: box('System'), p: box('P'), q: box('Q') };
   };
 
-  it('reads the inner groups as members of the outer one', () => {
+  it('reads the inner clusters as members of the outer one', () => {
     const { graph } = boxes();
     const byId = new Map(graph.clusters!.map((g) => [g.id, g]));
     expect(byId.get('P')!.parent).toBe('System');
@@ -40,7 +40,7 @@ describe.each([
     expect(overlaps(p, q), `P ${JSON.stringify(p)} Q ${JSON.stringify(q)}`).toBe(false);
   });
 
-  it('keeps the outer group\'s own node out of the inner boxes', () => {
+  it('keeps the outer cluster\'s own node out of the inner boxes', () => {
     const { at, p, q } = boxes();
     expect(overlaps(p, at.get('s')!)).toBe(false);
     expect(overlaps(q, at.get('s')!)).toBe(false);
@@ -63,7 +63,7 @@ describe.each([
   if (name !== 'force') {
     it('moves nothing on a second run', () => {
       const { at } = boxes();
-      const again = graphOf(IDS, EDGES, GROUPS);
+      const again = graphOf(IDS, EDGES, CLUSTERS);
       for (const n of again.nodes) n.bounds = at.get(n.id)!;
       expect(fn(again).size).toBe(0);
     });

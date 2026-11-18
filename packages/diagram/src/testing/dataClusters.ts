@@ -1,2 +1,2 @@
-// Group ids no entry exports, for tests.
+// Cluster ids no entry exports, for tests.
 export { clusterLabelIdOf } from '../dataClusters';

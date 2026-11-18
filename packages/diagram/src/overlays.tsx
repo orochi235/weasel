@@ -21,9 +21,9 @@ import { useCallback, useLayoutEffect, useRef, type ReactNode, type RefObject } 
 import { diagramEdgeOf } from './edgeTrait';
 import type { DiagramSceneData } from './dataTypes';
 
-/** One piece of DOM held against a node, a group or an edge. */
+/** One piece of DOM held against a node, a cluster or an edge. */
 export interface DiagramOverlay {
-  /** The node, group or edge it is held against. While no such id is in the
+  /** The node, cluster or edge it is held against. While no such id is in the
    *  diagram it is not shown. */
   target: string;
   /** Beside the target's box, flipped to the far side when the near one has
@@ -39,7 +39,7 @@ export interface DiagramOverlay {
 
 type DiagramScene = Scene<DiagramSceneData, 'main', RectPose>;
 
-/** Where `id` is drawn, in world units: a node's or group's box, or for an
+/** Where `id` is drawn, in world units: a node's or cluster's box, or for an
  *  edge an empty rect at the midpoint along its route. `null` when the scene
  *  has no such node. */
 export function worldRectOf(scene: DiagramScene, id: string): Bounds | null {

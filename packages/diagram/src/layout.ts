@@ -203,7 +203,7 @@ export function worldOf(slot: Slot, depth: number, axes: LayoutAxes): Vec2 {
  * Run `once` until a pass moves nothing, and answer with where that leaves
  * each node.
  *
- * A layout that keeps groups together can move an outsider out of a group's
+ * A layout that keeps clusters together can move an outsider out of a cluster's
  * column, which changes the order the next run would start from. `passes`
  * bounds an arrangement that never comes to rest.
  */

@@ -30,7 +30,7 @@ const rowsOf = (specs: readonly DiagramSpec[], id: string) =>
   specs.filter((s) => (s as { parent?: string }).parent === id).map((s) => s.id as string);
 const boxOf = (specs: readonly DiagramSpec[]) => (id: string) => specs.find((s) => s.id === id)?.pose ?? null;
 
-describe('a reorderable group under layered layout', () => {
+describe('a reorderable cluster under layered layout', () => {
   it('stacks its members in the order given', () => {
     for (const order of [['a', 'b', 'c'], ['c', 'a', 'b'], ['b', 'c', 'a']]) {
       const specs = diagramScene(layers(order), { layout: 'layered', layoutOptions: { direction: 'right' } });
@@ -54,7 +54,7 @@ describe('reorderTargetOf', () => {
     expect(reorderTargetOf(scene, 'b', boxOf(specs))?.member).toBe('b');
   });
 
-  it('has nothing to carry outside a reorderable group', () => {
+  it('has nothing to carry outside a reorderable cluster', () => {
     expect(reorderTargetOf(scene, 'word', boxOf(specs))).toBeNull();
   });
 

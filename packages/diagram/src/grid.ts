@@ -2,12 +2,12 @@
  * `grid` — nodes in rows of a fixed number of columns, read left to right and
  * top to bottom, as a block diagram stands them.
  *
- * Items go into cells in graph order: a node by its own place, a group by its
- * first member's, so a group stands where its first member would. An item
+ * Items go into cells in graph order: a node by its own place, a cluster by its
+ * first member's, so a cluster stands where its first member would. An item
  * may span several columns and may leave empty cells before it. Every column
  * of one grid is as wide as its widest item needs, a spanning item sharing
  * its width out over its columns, and every row as tall as its tallest item;
- * an item is centered in its cells. A group is a grid of its own inside its
+ * an item is centered in its cells. A cluster is a grid of its own inside its
  * cells, with its own column count, and its box keeps its inset around that
  * grid. Columns sit `nodeGap` apart and rows `rankGap`, `nodeGap` when that is
  * unset. Edges and `direction` are ignored; pins and `tolerance` behave as in
@@ -39,11 +39,11 @@ interface Cells {
   columns: number;
 }
 
-/** The items at one level, in graph order: nodes directly there, and groups directly inside. */
+/** The items at one level, in graph order: nodes directly there, and clusters directly inside. */
 function levels(graph: Graph): Map<string | null, string[]> {
   const order = graphOrder(graph);
-  const groups = graph.clusters ?? [];
-  const first = new Map<string, number>(groups.map((g) => [g.id, minOf(g.members, order)]));
+  const clusters = graph.clusters ?? [];
+  const first = new Map<string, number>(clusters.map((g) => [g.id, minOf(g.members, order)]));
   const at = (id: string) => first.get(id) ?? order(id);
   const out = new Map<string | null, string[]>();
   const add = (level: string | null, id: string) => {
@@ -52,7 +52,7 @@ function levels(graph: Graph): Map<string | null, string[]> {
     else out.set(level, [id]);
   };
   for (const n of graph.nodes) add(n.cluster ?? null, n.id);
-  for (const g of groups) add(g.parent ?? null, g.id);
+  for (const g of clusters) add(g.parent ?? null, g.id);
   for (const ids of out.values()) ids.sort((a, b) => at(a) - at(b));
   return out;
 }
@@ -103,11 +103,11 @@ export const grid: LayoutFn = (graph, opts = {}) => {
   const rowGap = opts.rankGap ?? gap;
   const spec = opts.grid ?? {};
   const byLevel = levels(graph);
-  const groups = new Map<string, GraphCluster>((graph.clusters ?? []).map((g) => [g.id, g]));
-  // Each group's inner grid, laid out innermost first, relative to its box's corner.
+  const clusters = new Map<string, GraphCluster>((graph.clusters ?? []).map((g) => [g.id, g]));
+  // Each cluster's inner grid, laid out innermost first, relative to its box's corner.
   const inner = new Map<string, { at: Map<string, Vec2>; size: Size }>();
   const sizeOf = (id: string): Size => {
-    const g = groups.get(id);
+    const g = clusters.get(id);
     if (g === undefined) return graph.node(id)!.bounds;
     const laid = layOut(id);
     return {
@@ -128,7 +128,7 @@ export const grid: LayoutFn = (graph, opts = {}) => {
   const put = (level: string | null, origin: Vec2) => {
     for (const [id, p] of layOut(level).at) {
       const corner = { x: origin.x + p.x, y: origin.y + p.y };
-      const g = groups.get(id);
+      const g = clusters.get(id);
       if (g === undefined) {
         placed.set(id, corner);
         continue;

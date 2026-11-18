@@ -13,7 +13,7 @@
  * root, its subtrees packed as solid blocks, and centered on the root.
  *
  * Further trees in a forest lay out the same way, stacked below the first,
- * their roots on the first one's vertical axis. `direction` and groups are
+ * their roots on the first one's vertical axis. `direction` and clusters are
  * ignored; pins and `tolerance` behave as in every other layout.
  */
 import type { Vec2 } from '@weasel-js/core/math';
