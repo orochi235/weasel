@@ -25,7 +25,7 @@ function placed(graph: Graph, moves: ReadonlyMap<string, { x: number; y: number 
   return new Map(graph.nodes.map((n) => [n.id, { ...n.bounds, ...(moves.get(n.id) ?? {}) }]));
 }
 
-/** a feeds a group G holding b and c, and inside G a group H holding d. a
+/** a feeds a cluster G holding b and c, and inside G a cluster H holding d. a
  *  leaves by its own east port; the edge into b is labeled. */
 function nested(): Graph {
   return graphOf(
@@ -48,7 +48,7 @@ function nested(): Graph {
 }
 
 describe('elkPlan', () => {
-  it('lays out a node or group naming a group the graph does not hold at the top level', async () => {
+  it('lays out a node or cluster naming a cluster the graph does not hold at the top level', async () => {
     const graph = graphOf([node('a'), node('b', { cluster: 'X' }), node('c', { cluster: 'G' })], [
       { id: 'ab', from: 'a', to: 'b' },
       { id: 'bc', from: 'b', to: 'c' },
@@ -58,7 +58,7 @@ describe('elkPlan', () => {
     expect(plan.clusters.has('G')).toBe(true);
   });
 
-  it('lays out groups whose parents form a cycle, and what they hold, at the top level', async () => {
+  it('lays out clusters whose parents form a cycle, and what they hold, at the top level', async () => {
     const graph = graphOf([node('a', { cluster: 'G' }), node('b')], [{ id: 'ab', from: 'a', to: 'b' }], [
       { id: 'G', members: ['a'], inset: INSET, parent: 'H' },
       { id: 'H', members: ['a'], inset: INSET, parent: 'G' },
@@ -146,7 +146,7 @@ describe('elkPlan', () => {
     expect((await elkPlan(graph)).routes.has('ab')).toBe(true);
   });
 
-  it('boxes each group around its members, nested inside its parent, with its inset', async () => {
+  it('boxes each cluster around its members, nested inside its parent, with its inset', async () => {
     const graph = nested();
     const plan = await elkPlan(graph);
     const at = placed(graph, plan.moves);
@@ -169,14 +169,14 @@ describe('elkPlan', () => {
   });
 
   // elkjs reads the minimum with its axes swapped when ranks run vertically.
-  it.each(['down', 'up', 'right', 'left'] as const)('widens a group to its minWidth, laid out %s', async (direction) => {
+  it.each(['down', 'up', 'right', 'left'] as const)('widens a cluster to its minWidth, laid out %s', async (direction) => {
     const graph = graphOf([node('b', { cluster: 'G' })], [], [{ id: 'G', members: ['b'], inset: INSET, minWidth: 400 }]);
     const G = (await elkPlan(graph, { direction })).clusters.get('G')!;
     expect(G.width).toBeGreaterThanOrEqual(400);
     expect(G.height).toBeLessThan(400);
   });
 
-  it.each(['down', 'up', 'right', 'left'] as const)('widens a group holding nothing to its minWidth, laid out %s', async (direction) => {
+  it.each(['down', 'up', 'right', 'left'] as const)('widens a cluster holding nothing to its minWidth, laid out %s', async (direction) => {
     const graph = graphOf([node('a')], [], [{ id: 'G', members: [], inset: INSET, minWidth: 400 }]);
     const G = (await elkPlan(graph, { direction })).clusters.get('G')!;
     expect(G.width).toBeGreaterThanOrEqual(400);
@@ -207,7 +207,7 @@ describe('elkPlan', () => {
     expect(waypoints).toEqual(route.slice(1, -1));
   });
 
-  it('routes an edge to a group once, under the edge as drawn', async () => {
+  it('routes an edge to a cluster once, under the edge as drawn', async () => {
     const graph = graphOf(
       [node('a'), node('b', { cluster: 'G' }), node('c', { cluster: 'G' })],
       [

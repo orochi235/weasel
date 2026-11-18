@@ -15,7 +15,7 @@ async function cloudPlan() {
   return { graph: graph!, plan: await elkPlan(graph!) };
 }
 
-describe('elkPlan on a grouped cloud architecture', () => {
+describe('elkPlan on a clustered cloud architecture', () => {
   it('runs every wire inside the drawing', async () => {
     const { graph, plan } = await cloudPlan();
     const xs = [...plan.clusters.values()].flatMap((b) => [b.x, b.x + b.width]);

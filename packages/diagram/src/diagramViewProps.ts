@@ -75,7 +75,7 @@ export interface DiagramViewProps {
    *  then needs a size of its own; a resize of the parent is a size change. */
   width?: number;
   height?: number;
-  /** `'multiple'` lets Cmd-click (Ctrl off macOS) add a node, group or edge to
+  /** `'multiple'` lets Cmd-click (Ctrl off macOS) add a node, cluster or edge to
    *  what is picked, or take it out, and Shift-click pick a range. Default
    *  `'single'`: every click picks one. */
   selectionMode?: 'single' | 'multiple';
@@ -93,7 +93,7 @@ export interface DiagramViewProps {
   /** Reports a click (not a drag) on a node's header band — its `header` row —
    *  with the node's id, after `onSelectionChange`. To collapse it, write `collapsed`. */
   onHeaderClick?: (nodeId: string) => void;
-  /** Reports the node, group or edge the pointer comes to be over, and `null`
+  /** Reports the node, cluster or edge the pointer comes to be over, and `null`
    *  once it is over none or leaves the canvas. An edge answers only while
    *  edges are picked (`pickEdges`). */
   onHover?: (id: string | null) => void;
@@ -101,7 +101,7 @@ export interface DiagramViewProps {
    *  like a node. Default: on when `onReconnect`, `onEditRoute`, `onDelete`,
    *  `onEditLabel` or `onMoveLabel` is set. */
   pickEdges?: boolean;
-  /** DOM held against nodes, groups and edges, kept in place through pans,
+  /** DOM held against nodes, clusters and edges, kept in place through pans,
    *  zooms, resizes and layout runs. The view's box is their containing
    *  block; their content takes the pointer, and the canvas beneath does not
    *  see it. */
@@ -138,14 +138,14 @@ export interface DiagramViewProps {
    *  as the data edge's `waypoints` and clear its `routed`. */
   onEditRoute?: (change: RouteChange) => void;
   /** Set to let Delete and Backspace remove the selection. Reports the
-   *  selected data nodes (a selected group, not its members; a selected
+   *  selected data nodes (a selected cluster, not its members; a selected
    *  container, pool, or lane with everything inside it) and every edge
    *  selected or ending on one of them, and removes nothing. */
   onDelete?: (removed: DeleteReport) => void;
-  /** Set to let a member of a group marked `reorder` be dragged along that
+  /** Set to let a member of a cluster marked `reorder` be dragged along that
    *  axis among its siblings, or the selected one stepped with Alt and an
    *  arrow key. Reports the members' new order and moves nothing: write it to
-   *  the group's `members`, which layered layout keeps. A container's member
+   *  the cluster's `members`, which layered layout keeps. A container's member
    *  dragged out of the container's box becomes a move, as `onMove` reports
    *  one, and lands wherever it is dropped. */
   onReorder?: (change: ReorderChange) => void;
@@ -275,7 +275,7 @@ export interface DiagramViewApi {
   worldAt(clientX: number, clientY: number): Vec2;
   /** The world rect the canvas shows, or `null` before it has a size. */
   visible(): { x: number; y: number; width: number; height: number } | null;
-  /** Where a node, group or edge is drawn, in client coordinates — for an
+  /** Where a node, cluster or edge is drawn, in client coordinates — for an
    *  edge, an empty rect at the midpoint along its route. `null` for an id the
    *  diagram does not hold, or before the canvas mounts. Read it again from
    *  {@link subscribeFrame}, after every paint. */

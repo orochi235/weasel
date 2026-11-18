@@ -53,7 +53,7 @@ describe('diagramScene', () => {
     warn.mockRestore();
   });
 
-  it('passes over group and container members naming unknown ids, warning once per id', () => {
+  it('passes over cluster and container members naming unknown ids, warning once per id', () => {
     const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
     const specs = diagramScene({
       nodes: DATA.nodes, edges: [],
@@ -62,7 +62,7 @@ describe('diagramScene', () => {
     });
     expect(specs.some((s) => s.id === 'ghost-g' || s.id === 'ghost-c')).toBe(false);
     expect(warn.mock.calls.map((c) => c[0])).toEqual([
-      expect.stringContaining('group "g" names "ghost-g"'),
+      expect.stringContaining('cluster "g" names "ghost-g"'),
       expect.stringContaining('container "box" names "ghost-c"'),
     ]);
     warn.mockRestore();
@@ -344,7 +344,7 @@ describe('diagramScene under a theme', () => {
     expect(specs.get('b')!.diagram!.style).toBeUndefined();
   });
 
-  it("draws edges, labels, groups, and text in the theme's colors and face", () => {
+  it("draws edges, labels, clusters, and text in the theme's colors and face", () => {
     const specs = diagramScene(data, { theme });
     const map = byId(specs);
     const edge = edgeIdOf(data.edges[0]!);

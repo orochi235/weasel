@@ -42,7 +42,7 @@ describe('a built diagram body', () => {
     expect(selected).toEqual(['body']);
   });
 
-  it('is told from a region, a diagram group box and an edge by its trait', () => {
+  it('is told from a region, a diagram cluster box and an edge by its trait', () => {
     expect(isDiagramBody({ data: { diagram: { outline: 'rect' } } })).toBe(true);
     expect(isDiagramBody({ data: { diagram: { container: { role: 'container' } } } })).toBe(false);
     expect(isBodyOrRegion({ data: { diagram: { container: { role: 'lane' } } } })).toBe(true);

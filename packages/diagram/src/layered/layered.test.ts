@@ -42,7 +42,7 @@ describe('layered, measured through diagramScene', () => {
   });
 });
 
-describe('layered inside a group', () => {
+describe('layered inside a cluster', () => {
   it('keeps a labeled wire between two members straight through its label room', () => {
     const data = {
       nodes: ['a', 'b', 'c', 'd'].map((id) => ({ id, lines: [id] })),
@@ -59,8 +59,8 @@ describe('layered inside a group', () => {
 });
 
 describe('layeredPlan', () => {
-  it('settles a grouped seeded layout the way layered does', () => {
-    // `mid` starts between the group's members and has to leave, which
+  it('settles a clustered seeded layout the way layered does', () => {
+    // `mid` starts between the cluster's members and has to leave, which
     // changes the order a second pass reads.
     const graph = generatedFrom(
       ['in', 'a0', 'mid', 'a1', 'z'],
@@ -83,9 +83,9 @@ describe('layeredPlan', () => {
   });
 });
 
-function generatedFrom(ids: string[], pairs: [string, string][], groups: Record<string, string[]>): Graph {
+function generatedFrom(ids: string[], pairs: [string, string][], clusters: Record<string, string[]>): Graph {
   const nodes: GraphNode[] = ids.map((id, i) => ({ id, bounds: { x: i * 120, y: 0, width: 80, height: 30 }, pinned: false }));
-  const gs: GraphCluster[] = Object.entries(groups).map(([id, members]) => ({ id, members, inset: insetOf(12) }));
+  const gs: GraphCluster[] = Object.entries(clusters).map(([id, members]) => ({ id, members, inset: insetOf(12) }));
   for (const g of gs) for (const m of g.members) nodes.find((n) => n.id === m)!.cluster = g.id;
   const edges = expandClusterEdges(pairs.map(([from, to], i) => ({ id: `e${i}`, from, to })), gs);
   const byId = new Map(nodes.map((n) => [n.id, n]));
@@ -99,16 +99,16 @@ function generatedFrom(ids: string[], pairs: [string, string][], groups: Record<
   };
 }
 
-/** `group`'s box in `graph`: its members' union, grown by its inset. */
-function boxOf(graph: Graph, group: GraphCluster): GraphNode['bounds'] {
-  const ms = group.members.map((m) => graph.node(m)!.bounds);
-  const x = Math.min(...ms.map((b) => b.x)) - group.inset.left;
-  const y = Math.min(...ms.map((b) => b.y)) - group.inset.top;
+/** `cluster`'s box in `graph`: its members' union, grown by its inset. */
+function boxOf(graph: Graph, cluster: GraphCluster): GraphNode['bounds'] {
+  const ms = cluster.members.map((m) => graph.node(m)!.bounds);
+  const x = Math.min(...ms.map((b) => b.x)) - cluster.inset.left;
+  const y = Math.min(...ms.map((b) => b.y)) - cluster.inset.top;
   return {
     x,
     y,
-    width: Math.max(...ms.map((b) => b.x + b.width)) + group.inset.right - x,
-    height: Math.max(...ms.map((b) => b.y + b.height)) + group.inset.bottom - y,
+    width: Math.max(...ms.map((b) => b.x + b.width)) + cluster.inset.right - x,
+    height: Math.max(...ms.map((b) => b.y + b.height)) + cluster.inset.bottom - y,
   };
 }
 
@@ -121,7 +121,7 @@ function lcg(seed: number): () => number {
   };
 }
 
-function generated(seed: number, grouped: boolean): Graph {
+function generated(seed: number, clustered: boolean): Graph {
   const rand = lcg(seed);
   const count = 6 + Math.floor(rand() * 14);
   const nodes: GraphNode[] = [];
@@ -137,19 +137,19 @@ function generated(seed: number, grouped: boolean): Graph {
     }
   }
   if (rand() < 0.5) pairs.push({ id: `e${pairs.length}`, from: `n${count - 1}`, to: 'n0' });
-  const groups: GraphCluster[] = [];
-  if (grouped && count >= 6) {
+  const clusters: GraphCluster[] = [];
+  if (clustered && count >= 6) {
     const start = 1 + Math.floor(rand() * (count - 4));
     const members = [`n${start}`, `n${start + 1}`, `n${start + 2}`];
-    groups.push({ id: 'G', members, inset: insetOf(12) });
+    clusters.push({ id: 'G', members, inset: insetOf(12) });
     for (const m of members) nodes.find((n) => n.id === m)!.cluster = 'G';
   }
-  const edges = expandClusterEdges(pairs, groups);
+  const edges = expandClusterEdges(pairs, clusters);
   const byId = new Map(nodes.map((n) => [n.id, n]));
   return {
     nodes,
     edges,
-    clusters: groups,
+    clusters,
     node: (id) => byId.get(id),
     outgoing: (id) => edges.filter((e) => e.from === id),
     incoming: (id) => edges.filter((e) => e.to === id),
@@ -203,9 +203,9 @@ const DIRECTIONS = ['down', 'right', 'up', 'left'] as const;
 
 /** Seed `seed`'s graph laid out, then with `n0` and one other node pinned
  *  and that other one dragged up to 150 either way along each axis. */
-function draggedPin(seed: number, opts: LayoutOptions, grouped = false): { dragged: Graph; pins: string[] } {
+function draggedPin(seed: number, opts: LayoutOptions, clustered = false): { dragged: Graph; pins: string[] } {
   const rand = lcg(seed * 7919);
-  const graph = generated(seed, grouped);
+  const graph = generated(seed, clustered);
   const laid = routed(graph, layeredPlan(graph, opts));
   const ids = laid.nodes.map((n) => n.id);
   const pins = ['n0', ids[2 + Math.floor(rand() * (ids.length - 2))]!];
@@ -215,10 +215,10 @@ function draggedPin(seed: number, opts: LayoutOptions, grouped = false): { dragg
 }
 
 describe('layered, over generated graphs', () => {
-  it.each(SEEDS)('seed %i: no two nodes overlap, and nothing enters a group\'s box', (seed) => {
+  it.each(SEEDS)('seed %i: no two nodes overlap, and nothing enters a cluster\'s box', (seed) => {
     for (const opts of MODES) {
-      for (const grouped of [false, true]) {
-        const graph = after(generated(seed, grouped), layered(generated(seed, grouped), opts));
+      for (const clustered of [false, true]) {
+        const graph = after(generated(seed, clustered), layered(generated(seed, clustered), opts));
         for (let i = 0; i < graph.nodes.length; i++) {
           for (let j = i + 1; j < graph.nodes.length; j++) {
             expect(overlap(graph.nodes[i]!.bounds, graph.nodes[j]!.bounds), `${graph.nodes[i]!.id} / ${graph.nodes[j]!.id}`).toBe(false);
@@ -238,9 +238,9 @@ describe('layered, over generated graphs', () => {
     for (const opts of MODES) {
       expect(layered(generated(seed, true), opts)).toEqual(layered(generated(seed, true), opts));
     }
-    for (const grouped of [false, true]) {
-      const plan = layeredPlan(generated(seed, grouped));
-      const again = layeredPlan(routed(generated(seed, grouped), plan));
+    for (const clustered of [false, true]) {
+      const plan = layeredPlan(generated(seed, clustered));
+      const again = layeredPlan(routed(generated(seed, clustered), plan));
       expect(again.moves.size).toBe(0);
       expect(again.waypoints).toEqual(plan.waypoints);
     }
@@ -254,13 +254,13 @@ describe('layered, over generated graphs', () => {
 
   it.each(SEEDS)('seed %i: with a second pin dragged, a re-run builds around both pins and then moves nothing', (seed) => {
     for (const direction of DIRECTIONS) {
-      for (const grouped of [false, true]) {
-        const { dragged, pins } = draggedPin(seed, { direction }, grouped);
+      for (const clustered of [false, true]) {
+        const { dragged, pins } = draggedPin(seed, { direction }, clustered);
         const plan = layeredPlan(dragged, { direction, pin: pins });
         if (plan.unheld.size > 0) continue;
         const next = routed(dragged, plan);
         expectClearOf(next, pins);
-        expect(layeredPlan(next, { direction, pin: pins }).moves.size, `${direction}${grouped ? ', grouped' : ''}`).toBe(0);
+        expect(layeredPlan(next, { direction, pin: pins }).moves.size, `${direction}${clustered ? ', clustered' : ''}`).toBe(0);
       }
     }
   });
@@ -279,7 +279,7 @@ describe('layered, over generated graphs', () => {
     expect(held).toBeGreaterThanOrEqual(154);
   });
 
-  it.each(SEEDS)('seed %i: holding a dragged pin puts nothing in a group\'s box that is not in the group', (seed) => {
+  it.each(SEEDS)('seed %i: holding a dragged pin puts nothing in a cluster\'s box that is not in the cluster', (seed) => {
     for (const direction of DIRECTIONS) {
       const { dragged, pins } = draggedPin(seed, { direction }, true);
       const plan = layeredPlan(dragged, { direction, pin: pins });
@@ -410,14 +410,14 @@ describe('layered, with two pins in one rank', () => {
   });
 });
 
-describe('layered, with pins that move the anchor\'s band or a group', () => {
-  function graphOf(nodes: GraphNode[], pairs: [string, string][], groups: GraphCluster[] = []): Graph {
-    const edges = expandClusterEdges(pairs.map(([from, to]) => ({ id: `${from}${to}`, from, to })), groups);
+describe('layered, with pins that move the anchor\'s band or a cluster', () => {
+  function graphOf(nodes: GraphNode[], pairs: [string, string][], clusters: GraphCluster[] = []): Graph {
+    const edges = expandClusterEdges(pairs.map(([from, to]) => ({ id: `${from}${to}`, from, to })), clusters);
     const byId = new Map(nodes.map((n) => [n.id, n]));
     return {
       nodes,
       edges,
-      clusters: groups,
+      clusters,
       node: (id) => byId.get(id),
       outgoing: (id) => edges.filter((e) => e.from === id),
       incoming: (id) => edges.filter((e) => e.to === id),
@@ -440,23 +440,23 @@ describe('layered, with pins that move the anchor\'s band or a group', () => {
     expect(t.y).toBeLessThanOrEqual(15 + 1e-6);
   });
 
-  it('widens a group\'s column to hold two of its members pinned apart, keeping outsiders out of its box', () => {
+  it('widens a cluster\'s column to hold two of its members pinned apart, keeping outsiders out of its box', () => {
     const box = (x: number) => ({ x, y: 0, width: 80, height: 30 });
-    const groups: GraphCluster[] = [{ id: 'G', members: ['m1', 'm2'], inset: insetOf(12) }];
+    const clusters: GraphCluster[] = [{ id: 'G', members: ['m1', 'm2'], inset: insetOf(12) }];
     const nodes: GraphNode[] = [
       { id: 'r', bounds: box(0), pinned: false },
       { id: 'm1', bounds: box(0), pinned: false, cluster: 'G' },
       { id: 'm2', bounds: box(0), pinned: false, cluster: 'G' },
       { id: 'o', bounds: box(0), pinned: false },
     ];
-    const graph = graphOf(nodes, [['r', 'm1'], ['r', 'm2'], ['r', 'o'], ['m1', 'm2']], groups);
+    const graph = graphOf(nodes, [['r', 'm1'], ['r', 'm2'], ['r', 'o'], ['m1', 'm2']], clusters);
     const laid = routed(graph, layeredPlan(graph));
     const m2 = laid.node('m2')!.bounds;
     const dragged = after(laid, new Map([['m2', { x: m2.x + 400, y: m2.y }]]));
     const plan = layeredPlan(dragged, { pin: ['m1', 'm2'] });
     expect(plan.unheld.size).toBe(0);
     const next = after(dragged, plan.moves);
-    const g = boxOf(next, groups[0]!);
+    const g = boxOf(next, clusters[0]!);
     for (const id of ['r', 'o']) expect(overlap(next.node(id)!.bounds, g), id).toBe(false);
     expectClearOf(next, ['m1', 'm2']);
   });

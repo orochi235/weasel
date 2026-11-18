@@ -12,8 +12,8 @@ import type { ElkIndex } from './toElk';
 export interface ElkPlacement {
   /** Each participant's top-left. */
   nodes: Map<string, Vec2>;
-  /** Each group's box. */
-  groups: Map<string, Bounds>;
+  /** Each cluster's box. */
+  clusters: Map<string, Bounds>;
   /** Each drawn edge's route, end to end. */
   routes: Map<string, Vec2[]>;
   /** Each labeled edge's label box. */
@@ -21,7 +21,7 @@ export interface ElkPlacement {
 }
 
 export function fromElk(root: ElkNode, index: ElkIndex): ElkPlacement {
-  const out: ElkPlacement = { nodes: new Map(), groups: new Map(), routes: new Map(), labels: new Map() };
+  const out: ElkPlacement = { nodes: new Map(), clusters: new Map(), routes: new Map(), labels: new Map() };
   const edges: ElkExtendedEdge[] = [];
   const visit = (n: ElkNode) => {
     edges.push(...(n.edges ?? []));
@@ -30,8 +30,8 @@ export function fromElk(root: ElkNode, index: ElkIndex): ElkPlacement {
       const y = child.y ?? 0;
       const node = index.nodes.get(child.id);
       if (node !== undefined) out.nodes.set(node.id, { x, y });
-      const group = index.groups.get(child.id);
-      if (group !== undefined) out.groups.set(group.id, { x, y, width: child.width ?? 0, height: child.height ?? 0 });
+      const cluster = index.clusters.get(child.id);
+      if (cluster !== undefined) out.clusters.set(cluster.id, { x, y, width: child.width ?? 0, height: child.height ?? 0 });
       visit(child);
     }
   };

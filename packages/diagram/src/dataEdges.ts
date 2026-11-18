@@ -38,7 +38,7 @@ function placementOf(e: DataEdge, route: LayeredRoute | undefined, ctx: EdgeSpec
   return route?.labelAt === undefined ? placement : { ...placement, at: { near: route.labelAt } };
 }
 
-/** Each edge's label as a group's box takes it in: where it sits, when layout
+/** Each edge's label as a cluster's box takes it in: where it sits, when layout
  *  stationed it beside its waypoints, else only its id. */
 export function wireLabels(edges: readonly DataEdge[], ctx: EdgeSpecContext): WireLabel[] {
   const out: WireLabel[] = [];

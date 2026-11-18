@@ -7,7 +7,7 @@ import { routedWires, wiresThroughBoxes } from './overlaps';
 
 type Rect = { x: number; y: number; width: number; height: number };
 
-describe('layered on a grouped cloud architecture', () => {
+describe('layered on a clustered cloud architecture', () => {
   const specs = diagramScene(CLOUD);
   const box = (id: string) => specs.find((s) => s.id === id)!.pose as Rect;
 

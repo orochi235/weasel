@@ -61,7 +61,7 @@ export function resolveContainers(
   const byId = new Map<string, DataRegion>();
   const parentOf = new Map<string, string>();
   const declare = (r: DataRegion) => {
-    if (ids.has(r.id)) throw new Error(`diagramScene: container id "${r.id}" is already a node, group, or container id`);
+    if (ids.has(r.id)) throw new Error(`diagramScene: container id "${r.id}" is already a node, cluster, or container id`);
     ids.add(r.id);
     byId.set(r.id, r);
   };
@@ -120,7 +120,7 @@ export interface ContainerLayout {
   /** Each fitted container outside every boxed region, kept together as a cluster. */
   clusters: GraphCluster[];
   /** The fitted container each node layout sees is directly inside. */
-  groupOf: ReadonlyMap<string, string>;
+  clusterOf: ReadonlyMap<string, string>;
   /** Every node and region inside a boxed region, which layout does not see. */
   hidden: ReadonlySet<string>;
   /** The outermost boxed region holding `id` or being it, else `id`: what an edge's end ranks against. */
@@ -153,7 +153,7 @@ function startBox(r: DataRegion, lanes: readonly DataRegion[], seed: Vec2): Rect
 
 /**
  * What layout sees of `regions`: an outermost boxed region is one node, a
- * fitted container outside every boxed region is a group around what it
+ * fitted container outside every boxed region is a cluster around what it
  * holds, and everything inside a boxed region is hidden. `seed` is where a
  * region giving no box starts, by its place among the regions.
  */
@@ -184,11 +184,11 @@ export function containerLayoutNodes(
   const below = (r: DataRegion): string[] =>
     r.direct.flatMap((id) => (seen(id) ? [id] : byId.get(id)?.fitted === true && !hidden.has(id) ? below(byId.get(id)!) : []));
   const clusters: GraphCluster[] = [];
-  const groupOf = new Map<string, string>();
+  const clusterOf = new Map<string, string>();
   for (const r of regions) {
     if (!r.fitted || hidden.has(r.id) || rootOf.has(r.id)) continue;
     clusters.push({ id: r.id, members: below(r), inset: fittedInset(opts.padding), ...(r.parent !== undefined ? { parent: r.parent } : {}) });
-    for (const id of r.direct) if (seen(id)) groupOf.set(id, r.id);
+    for (const id of r.direct) if (seen(id)) clusterOf.set(id, r.id);
   }
-  return { nodes, clusters, groupOf, hidden, endOf };
+  return { nodes, clusters, clusterOf, hidden, endOf };
 }

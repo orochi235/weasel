@@ -1,6 +1,6 @@
 /**
  * A diagram scene as the avoid router reads it: every participant, container,
- * pool, group box, and header as an obstacle, and every `avoid` connector not
+ * pool, cluster box, and header as an obstacle, and every `avoid` connector not
  * split across pages, with the ports each end may use and its label. A split
  * connector's label, on its first stub, is an obstacle of its own.
  */
@@ -35,7 +35,7 @@ export const headerIdOf = (id: string): string => `${id}/header`;
 const facingPorts = (ports: readonly Port[]): AvoidPort[] =>
   ports.flatMap((p) => (p.normal === null ? [] : [{ point: p.point, normal: p.normal }]));
 
-/** Every id under `node`, at any depth: its children, or what a derived group box holds. */
+/** Every id under `node`, at any depth: its children, or what a derived cluster box holds. */
 function members(scene: AnyScene, node: SceneNode, into: Set<string>): Set<string> {
   const under = Array.isArray(node.dependsOn) && diagramClusterOf(node) !== null ? node.dependsOn : scene.childrenOf(node.id as never);
   for (const id of under) {

@@ -4,7 +4,7 @@
  *
  * The signal-chain layout: a rack of effects with their side inputs under
  * them. Each chain node owns a column as long as the widest row hung on it, so
- * two neighbors' hangers never share space, and each group's members hang in
+ * two neighbors' hangers never share space, and each cluster's members hang in
  * one stretch of columns with room left for its box (`chainClusters`).
  */
 import { maxOf } from '@weasel-js/geom';
@@ -110,14 +110,14 @@ function chainPlan(graph: Graph, opts: LayoutOptions = {}): LayoutPlan {
   }
   for (const [id, column] of rows) if (column[1]) column[1] = inPortOrder(graph, id, column[1], axes);
   const before = opts.chainSide === 'before';
-  const grouped = (graph.clusters?.length ?? 0) > 0;
+  const clustered = (graph.clusters?.length ?? 0) > 0;
   const across = (side: number) => {
     const base = Array.from(levelSize.slice(1), (_, k) => (k === 0 ? side : nodeGap));
-    return grouped ? levelGaps(graph, hanging, levelSize, axes, before, base) : base;
+    return clustered ? levelGaps(graph, hanging, levelSize, axes, before, base) : base;
   };
   const slots = (rank: readonly number[], level: readonly number[]) =>
     slotsFor(line, rows, levelSize, axes, { node: nodeGap, rank, level }, before);
-  const gaps = grouped
+  const gaps = clustered
     ? lineGaps(graph, line, hanging, rankGap, axes, slots(line.map(() => 0), []))
     : line.map(() => rankGap);
   const place = (side: number) => placeSlots(graph, slots(gaps, across(side)), opts);

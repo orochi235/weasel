@@ -70,7 +70,7 @@ describe('themeWrites', () => {
     expect(tag.style!.fontSize).toBe(size + step);
   });
 
-  it('recolors a group box as a container, and its title in the container text color', () => {
+  it('recolors a cluster box as a container, and its title in the container text color', () => {
     const { writes } = writesOf();
     expect(writes.get('g')!.fill!.paint.color).toBe(blueprint.container.fill);
     expect(writes.get('g')!.stroke!.paint.color).toBe(blueprint.container.stroke);

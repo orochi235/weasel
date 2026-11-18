@@ -147,7 +147,7 @@ export function buildGraph<TPose>(
   const nodes: GraphNode[] = [];
   const byId = new Map<string, GraphNode>();
   const candidates: GraphEdge[] = [];
-  const groupNodes: { id: string; members: readonly string[]; inset: ClusterInset; minWidth?: number; reorders?: boolean }[] = [];
+  const clusterNodes: { id: string; members: readonly string[]; inset: ClusterInset; minWidth?: number; reorders?: boolean }[] = [];
   const routed = new Set<string>();
   const rooms = new Map<string, EdgeLabelRoom>();
   const items = [...source()];
@@ -187,7 +187,7 @@ export function buildGraph<TPose>(
     if (trait === null || outer.has(node.id)) continue;
     if (trait.cluster !== undefined) {
       const deps = node.dependsOn;
-      groupNodes.push({
+      clusterNodes.push({
         id: node.id,
         members: Array.isArray(deps) ? deps : [],
         inset: insetOf(trait.cluster.inset),
@@ -208,8 +208,8 @@ export function buildGraph<TPose>(
     byId.set(entry.id, entry);
   }
 
-  const declared = new Map(groupNodes.map((g) => [g.id, g]));
-  const live: GraphCluster[] = nestClusters(groupNodes, (id) => byId.has(id)).map((g) => {
+  const declared = new Map(clusterNodes.map((g) => [g.id, g]));
+  const live: GraphCluster[] = nestClusters(clusterNodes, (id) => byId.has(id)).map((g) => {
     for (const id of g.direct) {
       const node = byId.get(id);
       if (node !== undefined) node.cluster = g.id;

@@ -91,7 +91,7 @@ function defaultElk(): Promise<ElkRunner> {
 }
 
 /** Lay `graph` out with ELK: where each participant goes, each edge's route
- *  and the port at either end, each label's place, and each group's box. */
+ *  and the port at either end, each label's place, and each cluster's box. */
 export async function elkPlan(graph: Graph, opts: ElkLayoutOptions = {}): Promise<ElkPlan> {
   const { root, index } = toElk(graph, elkRootOptions(opts));
   const elk = opts.elk ?? (await defaultElk());
@@ -129,8 +129,8 @@ function planFrom(graph: Graph, placed: ElkPlacement, opts: ElkLayoutOptions): E
     if (Math.abs(to.x - node.bounds.x) > tolerance || Math.abs(to.y - node.bounds.y) > tolerance) unheld.add(node.id);
   }
 
-  const groups = new Map<string, Bounds>();
-  for (const [id, box] of placed.groups) groups.set(id, { ...box, ...shift(box) });
+  const clusters = new Map<string, Bounds>();
+  for (const [id, box] of placed.clusters) clusters.set(id, { ...box, ...shift(box) });
 
   const routes = new Map<string, Vec2[]>();
   const waypoints = new Map<string, Vec2[]>();
@@ -153,7 +153,7 @@ function planFrom(graph: Graph, placed: ElkPlacement, opts: ElkLayoutOptions): E
     waypoints,
     labels,
     ports,
-    clusters: groups,
+    clusters,
     routes,
     unheld,
   };
@@ -169,7 +169,7 @@ function drawnBySelfLoop(edge: DrawnEdge): boolean {
 /** The port an edge leaves and arrives by: the one it names, or else the
  *  declared port nearest where ELK met the node, among those on the face it
  *  met when there are any. Nearest overall can sit on another face of a wide
- *  box, and the wire then runs across the box to reach it. A group end has
+ *  box, and the wire then runs across the box to reach it. A cluster end has
  *  none. */
 function endPorts(
   graph: Graph,

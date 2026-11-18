@@ -42,7 +42,7 @@ describe("core's delete on a diagram", () => {
 });
 
 describe("DiagramView's report-only delete", () => {
-  const GROUPED: DiagramData = {
+  const CLUSTERED: DiagramData = {
     nodes: [{ id: 'a', lines: ['a'] }, { id: 'b', lines: ['b'] }, { id: 'c', lines: ['c'] }],
     edges: [{ from: 'G', to: 'c' }, { from: 'a', to: 'b' }],
     clusters: [{ id: 'G', members: ['a', 'b'] }],
@@ -51,7 +51,7 @@ describe("DiagramView's report-only delete", () => {
   function reportFor(selected: string[]) {
     const scene = createScene<unknown, 'main', RectPose>({
       systemLayers: [{ id: 'main' }],
-      initial: diagramScene(GROUPED, { layout: 'none' }) as never,
+      initial: diagramScene(CLUSTERED, { layout: 'none' }) as never,
       registry: withDiagramRegistry(),
     });
     const report = vi.fn();
@@ -61,14 +61,14 @@ describe("DiagramView's report-only delete", () => {
     return { report, scene, selection };
   }
 
-  it('reports a group member and its own edges, not the group or the edges on it', () => {
+  it('reports a cluster member and its own edges, not the cluster or the edges on it', () => {
     const { report, scene, selection } = reportFor(['a']);
     expect(report).toHaveBeenCalledWith({ nodes: ['a'], edges: [edgeIdOf({ from: 'a', to: 'b' })] });
     expect(scene.get('a' as never)).toBeDefined();
     expect(selection.set).not.toHaveBeenCalled();
   });
 
-  it('reports a selected group, not its members', () => {
+  it('reports a selected cluster, not its members', () => {
     const { report } = reportFor(['G']);
     expect(report).toHaveBeenCalledWith({ nodes: ['G'], edges: [edgeIdOf({ from: 'G', to: 'c' })] });
   });

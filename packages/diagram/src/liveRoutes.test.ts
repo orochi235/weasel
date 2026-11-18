@@ -79,7 +79,7 @@ describe('a live run\'s eased routes', () => {
     expect((s.get(e)!.data as { diagram: { from: { port?: string } } }).diagram.from.port).toBe('s');
   });
 
-  it('meet a group\'s box where its members are drawn this frame', () => {
+  it('meet a cluster\'s box where its members are drawn this frame', () => {
     const s = createScene<object, 'main', RectPose>({ systemLayers: LAYERS });
     const a = s.add({ kind: 'mark', layer: 'main', pose: box(0, 0), data: { diagram: {} } });
     const b = s.add({ kind: 'mark', layer: 'main', pose: box(300, 10), data: { diagram: {} } });
@@ -98,7 +98,7 @@ describe('a live run\'s eased routes', () => {
       const y0 = Math.min(pb.y, pc.y);
       const union = { x: x0, y: y0, width: Math.max(pb.x + pb.width, pc.x + pc.width) - x0, height: Math.max(pb.y + pb.height, pc.y + pc.height) - y0 };
       const g1 = boxAround(union, { inset: 12 });
-      // Downward layered arrives at the group by its north face.
+      // Downward layered arrives at the cluster by its north face.
       expect(drawn(s, e).at(-1)).toEqual({ x: g1.x + g1.width / 2, y: g1.y });
     }
   });

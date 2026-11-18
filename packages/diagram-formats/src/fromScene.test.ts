@@ -166,7 +166,7 @@ describe('documentFromScene', () => {
   });
 
   describe('where the scene splits a connector', () => {
-    it('reads a group at its derived box, not its stale stored pose', () => {
+    it('reads a cluster at its derived box, not its stale stored pose', () => {
       const scene = docScene({
         ...DOC_DATA,
         nodes: [

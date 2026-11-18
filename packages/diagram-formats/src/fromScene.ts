@@ -45,7 +45,7 @@ function contentPage(scene: AnyScene): PlacedPage {
 /**
  * Reads a diagram scene into a document: one page per page node (one page
  * around everything when it has none), each holding the shapes, connectors,
- * containers and pools, and groups on it, in coordinates from the page's
+ * containers and pools, and clusters on it, in coordinates from the page's
  * corner; a page holding a plot root is a plot page of its spec, and whatever
  * else is on it is left out. A shape belongs to the page it is under
  * (`pageIdOf`); one on the pasteboard, to the page its outermost container

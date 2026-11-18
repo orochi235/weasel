@@ -41,7 +41,7 @@ const inside = (p: Vec2, r: Rect, inset: number) =>
   p.x > r.x + inset && p.x < r.x + r.width - inset && p.y > r.y + inset && p.y < r.y + r.height - inset;
 
 /** Ids of the wires that pass through a node's box they do not join, or a
- *  group's box when neither end is inside that group. */
+ *  cluster's box when neither end is inside that cluster. */
 export function wiresThroughBoxes(data: DiagramData, specs: readonly DiagramSpec[]): string[] {
   const byId = new Map(specs.map((s) => [s.id as string, s]));
   const boxOf = (id: string) => byId.get(id)?.pose as Rect | undefined;
@@ -54,8 +54,8 @@ export function wiresThroughBoxes(data: DiagramData, specs: readonly DiagramSpec
       const box = boxOf(n.id);
       if (box) obstacles.push(box);
     }
-    for (const [g, inGroup] of members) {
-      if (g === wire.from || g === wire.to || inGroup.has(wire.from) || inGroup.has(wire.to)) continue;
+    for (const [g, inCluster] of members) {
+      if (g === wire.from || g === wire.to || inCluster.has(wire.from) || inCluster.has(wire.to)) continue;
       const box = boxOf(g);
       if (box) obstacles.push(box);
     }
@@ -92,8 +92,8 @@ export function labelsInTheWay(data: DiagramData, specs: readonly DiagramSpec[])
 const overlap = (a: Rect, b: Rect, inset: number) =>
   a.x + inset < b.x + b.width && b.x + inset < a.x + a.width && a.y + inset < b.y + b.height && b.y + inset < a.y + a.height;
 
-function membersOf(data: DiagramData, group: string): string[] {
-  const g = (data.clusters ?? []).find((x) => x.id === group);
+function membersOf(data: DiagramData, cluster: string): string[] {
+  const g = (data.clusters ?? []).find((x) => x.id === cluster);
   if (g === undefined) return [];
   return g.members.flatMap((m) => [m, ...membersOf(data, m)]);
 }

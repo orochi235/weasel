@@ -5,7 +5,7 @@ import { separateClusters } from './forceClusters';
 const point = (id: string): ForceBody => ({ id, x: 0, y: 0, hw: 0, hh: 0, vx: 0, vy: 0 });
 
 describe('separateClusters, shrunk', () => {
-  it('pushes an outsider inside a group\'s box past its far edge, padding and all', () => {
+  it('pushes an outsider inside a cluster\'s box past its far edge, padding and all', () => {
     const e = point('e');
     const o = point('o');
     separateClusters([{ id: 'H', members: ['e'], inset: { top: 1, right: 0, bottom: 1, left: 0 } }], [o], new Map([['e', e], ['o', o]]), 1)(1);

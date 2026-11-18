@@ -1,7 +1,7 @@
 /**
- * Every rank laid out across again around the pins held so far. A group's
+ * Every rank laid out across again around the pins held so far. A cluster's
  * column (see `packClusters`) moves as one through every rank it spans, so
- * keeping clear of a pin never slides an outsider into a group's box or a
+ * keeping clear of a pin never slides an outsider into a cluster's box or a
  * member out of it. A column holding a pin goes where its first pin puts it,
  * and widens to take in any other.
  */
@@ -23,15 +23,15 @@ export interface AcrossInput {
   nodeGap: number;
 }
 
-/** A node, or a group's column, as it sits side by side with others. */
+/** A node, or a cluster's column, as it sits side by side with others. */
 interface Item {
-  /** Its low edge across, with its group's inset, when nothing is held. */
+  /** Its low edge across, with its cluster's inset, when nothing is held. */
   pref: number;
   width: number;
   /** Where its low edge must go, when it holds a pin. */
   fixed?: number;
-  /** The group whose column it is, if it is one. */
-  group?: GraphCluster;
+  /** The cluster whose column it is, if it is one. */
+  cluster?: GraphCluster;
   /** The nodes it carries. */
   members: string[];
   /** Whether it spans more than one rank. */
@@ -41,10 +41,10 @@ interface Item {
 /** What every level of {@link settleAcross} shares. */
 interface Context {
   input: AcrossInput;
-  groups: ReadonlyMap<string, GraphCluster>;
+  clusters: ReadonlyMap<string, GraphCluster>;
   rankOf: ReadonlyMap<string, number>;
   sizes: ReadonlyMap<string, number>;
-  /** The groups each node is in, outermost first. */
+  /** The clusters each node is in, outermost first. */
   chains: ReadonlyMap<string, readonly GraphCluster[]>;
 }
 
@@ -53,11 +53,11 @@ const EPS = 1e-6;
 /**
  * Each node's low corner across, or `undefined` when the held pins leave
  * something nowhere to go: a column too wide for the room between two pins, or
- * a group's box over a pin it does not hold.
+ * a cluster's box over a pin it does not hold.
  */
 export function settleAcross(input: AcrossInput): Map<string, number> | undefined {
   const { graph, rows, axes } = input;
-  const groups = new Map((graph.clusters ?? []).map((g) => [g.id, g]));
+  const clusters = new Map((graph.clusters ?? []).map((g) => [g.id, g]));
   const rankOf = new Map<string, number>();
   const sizes = new Map<string, number>();
   const chains = new Map<string, GraphCluster[]>();
@@ -66,17 +66,17 @@ export function settleAcross(input: AcrossInput): Map<string, number> | undefine
       rankOf.set(node.id, r);
       sizes.set(node.id, extent(node.bounds, axes.cross));
       const chain: GraphCluster[] = [];
-      for (let g = node.cluster === undefined ? undefined : groups.get(node.cluster); g !== undefined; g = g.parent === undefined ? undefined : groups.get(g.parent)) chain.unshift(g);
+      for (let g = node.cluster === undefined ? undefined : clusters.get(node.cluster); g !== undefined; g = g.parent === undefined ? undefined : clusters.get(g.parent)) chain.unshift(g);
       chains.set(node.id, chain);
     }
   }
-  const ctx: Context = { input, groups, rankOf, sizes, chains };
+  const ctx: Context = { input, clusters, rankOf, sizes, chains };
   const out = new Map(input.preferred);
   return settleLevel(ctx, [...rankOf.keys()], 0, input.preferred, out) ? out : undefined;
 }
 
 /**
- * Lay `ids`, the nodes inside one group (or all of them, at `depth` 0), out
+ * Lay `ids`, the nodes inside one cluster (or all of them, at `depth` 0), out
  * across around the pins among them, writing into `out`. A column holding a
  * pin moves as one to put its first pin in place, and is laid out inside the
  * same way, so a second pin elsewhere widens it.
@@ -87,7 +87,7 @@ function settleLevel(ctx: Context, ids: readonly string[], depth: number, pref: 
   for (const item of items) {
     const pin = item.members.find((id) => held.has(id));
     if (pin === undefined) continue;
-    if (item.group === undefined) {
+    if (item.cluster === undefined) {
       item.fixed = held.get(pin)!;
       continue;
     }
@@ -95,7 +95,7 @@ function settleLevel(ctx: Context, ids: readonly string[], depth: number, pref: 
     const shifted = new Map(pref);
     for (const id of item.members) shifted.set(id, pref.get(id)! + shift);
     if (!settleLevel(ctx, item.members, depth + 1, shifted, out)) return false;
-    Object.assign(item, spanOf(ctx, item.group, item.members, out));
+    Object.assign(item, spanOf(ctx, item.cluster, item.members, out));
     item.fixed = item.pref;
   }
   const xs = items.map((it) => it.fixed ?? it.pref);
@@ -108,7 +108,7 @@ function settleLevel(ctx: Context, ids: readonly string[], depth: number, pref: 
     if (!clear(items, list, xs, gap)) return false;
   }
   for (const [i, item] of items.entries()) {
-    if (item.fixed !== undefined && item.group !== undefined) continue;
+    if (item.fixed !== undefined && item.cluster !== undefined) continue;
     for (const id of item.members) out.set(id, item.fixed !== undefined ? item.fixed : pref.get(id)! + xs[i]! - item.pref);
   }
   return true;
@@ -143,28 +143,28 @@ function squeeze(items: readonly Item[], order: readonly number[][], xs: number[
 }
 
 /** The items side by side in each rank among `ids`: a node directly at this
- *  level, or the column of a group directly in it, reserved in every rank
- *  from that group's first member's to its last. */
+ *  level, or the column of a cluster directly in it, reserved in every rank
+ *  from that cluster's first member's to its last. */
 function itemsAt(ctx: Context, ids: readonly string[], depth: number, pref: ReadonlyMap<string, number>): { items: Item[]; byRank: number[][] } {
   const items: Item[] = [];
   const byKey = new Map<string, number>();
   const ranks: [number, number][] = [];
   for (const id of ids) {
-    const group = ctx.chains.get(id)![depth];
-    const key = group?.id ?? `\u0000node:${id}`;
+    const cluster = ctx.chains.get(id)![depth];
+    const key = cluster?.id ?? `\u0000node:${id}`;
     const r = ctx.rankOf.get(id)!;
     let i = byKey.get(key);
     if (i === undefined) {
       i = items.length;
       byKey.set(key, i);
-      items.push({ pref: 0, width: 0, members: [], tall: false, ...(group !== undefined ? { group } : {}) });
+      items.push({ pref: 0, width: 0, members: [], tall: false, ...(cluster !== undefined ? { cluster } : {}) });
       ranks.push([r, r]);
     }
     items[i]!.members.push(id);
     ranks[i] = [Math.min(ranks[i]![0], r), Math.max(ranks[i]![1], r)];
   }
   for (const [i, item] of items.entries()) {
-    Object.assign(item, spanOf(ctx, item.group, item.members, pref));
+    Object.assign(item, spanOf(ctx, item.cluster, item.members, pref));
     item.tall = ranks[i]![0] !== ranks[i]![1];
   }
   const byRank: number[][] = ctx.input.rows.map(() => []);
@@ -172,23 +172,23 @@ function itemsAt(ctx: Context, ids: readonly string[], depth: number, pref: Read
   return { items, byRank };
 }
 
-/** Where `members` reach across at `at`, with `group`'s room around them. */
-function spanOf(ctx: Context, group: GraphCluster | undefined, members: readonly string[], at: ReadonlyMap<string, number>): { pref: number; width: number } {
+/** Where `members` reach across at `at`, with `cluster`'s room around them. */
+function spanOf(ctx: Context, cluster: GraphCluster | undefined, members: readonly string[], at: ReadonlyMap<string, number>): { pref: number; width: number } {
   const lo = minOf(members, (id) => at.get(id)!);
   const hi = maxOf(members, (id) => at.get(id)! + ctx.sizes.get(id)!);
-  const pad = group === undefined ? { lo: 0, hi: 0 } : padOf(group, ctx.groups, ctx.input.axes);
+  const pad = cluster === undefined ? { lo: 0, hi: 0 } : padOf(cluster, ctx.clusters, ctx.input.axes);
   return { pref: lo - pad.lo, width: hi - lo + pad.lo + pad.hi };
 }
 
-/** The room a group's box keeps across beyond its members on each side,
- *  through the deepest group nested in it on that side. */
-function padOf(group: GraphCluster, groups: ReadonlyMap<string, GraphCluster>, axes: LayoutAxes): { lo: number; hi: number } {
-  const own = crossInset(group.inset, axes);
+/** The room a cluster's box keeps across beyond its members on each side,
+ *  through the deepest cluster nested in it on that side. */
+function padOf(cluster: GraphCluster, clusters: ReadonlyMap<string, GraphCluster>, axes: LayoutAxes): { lo: number; hi: number } {
+  const own = crossInset(cluster.inset, axes);
   let lo = 0;
   let hi = 0;
-  for (const child of groups.values()) {
-    if (child.parent !== group.id) continue;
-    const pad = padOf(child, groups, axes);
+  for (const child of clusters.values()) {
+    if (child.parent !== cluster.id) continue;
+    const pad = padOf(child, clusters, axes);
     lo = Math.max(lo, pad.lo);
     hi = Math.max(hi, pad.hi);
   }
@@ -201,7 +201,7 @@ function padOf(group: GraphCluster, groups: ReadonlyMap<string, GraphCluster>, a
 function clear(items: readonly Item[], list: readonly number[], xs: readonly number[], gap: number): boolean {
   for (const [k, i] of list.entries()) {
     for (const j of list.slice(k + 1)) {
-      const pin = (k: number) => items[k]!.fixed !== undefined && items[k]!.group === undefined;
+      const pin = (k: number) => items[k]!.fixed !== undefined && items[k]!.cluster === undefined;
       if (pin(i) && pin(j)) continue;
       const apart = xs[j]! >= xs[i]! + items[i]!.width + gap - EPS || xs[i]! >= xs[j]! + items[j]!.width + gap - EPS;
       if (!apart) return false;

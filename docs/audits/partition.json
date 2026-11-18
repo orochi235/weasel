@@ -612,7 +612,7 @@
    "apps/site/demos/DiagramDropDemo.tsx",
    "apps/site/demos/DiagramEdgesDemo.tsx",
    "apps/site/demos/DiagramElkDemo.tsx",
-   "apps/site/demos/DiagramGroupsDemo.tsx",
+   "apps/site/demos/DiagramClustersDemo.tsx",
    "apps/site/demos/DiagramLayoutDemo.tsx",
    "apps/site/demos/DiagramLiveDemo.tsx",
    "apps/site/demos/DiagramNodesDemo.tsx",

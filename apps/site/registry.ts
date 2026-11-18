@@ -719,8 +719,8 @@ const DEMO_META: DemoMeta[] = [
     package: 'diagram',
     description: "A cluster in diagramScene's data draws a box around its members, and layered and tree keep those members together: each cluster gets a column on the cross axis that nothing else enters, in every rank from its first member's to its last. The box is a scene node that derives its pose from its members, so dragging a member carries the box with it. An edge naming a cluster meets the box, and ranks against the cluster's first stage.",
     hint: 'Drag a box and its cluster follows. Press layered or tree and the two clusters come back apart.',
-    load: () => import('./demos/DiagramGroupsDemo').then((m) => m.DiagramGroupsDemo),
-    path: 'apps/site/demos/DiagramGroupsDemo.tsx',
+    load: () => import('./demos/DiagramClustersDemo').then((m) => m.DiagramClustersDemo),
+    path: 'apps/site/demos/DiagramClustersDemo.tsx',
   },
   {
     id: 'diagram-reorder',

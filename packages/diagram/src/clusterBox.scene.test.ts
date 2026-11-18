@@ -8,7 +8,7 @@ import { moveAction } from '@weasel-js/editing';
 const DATA: DiagramData = {
   nodes: [{ id: 'a', lines: ['a'] }, { id: 'b', lines: ['b'] }, { id: 'x', lines: ['outside'] }],
   edges: [{ from: 'a', to: 'b' }, { from: 'x', to: 'G' }],
-  clusters: [{ id: 'G', members: ['a', 'b'], label: 'the group' }],
+  clusters: [{ id: 'G', members: ['a', 'b'], label: 'the cluster' }],
 };
 
 function load(data: DiagramData = DATA) {
@@ -26,7 +26,7 @@ const contains = (outer: RectPose, inner: RectPose) =>
   inner.x >= outer.x && inner.y >= outer.y
   && inner.x + inner.width <= outer.x + outer.width && inner.y + inner.height <= outer.y + outer.height;
 
-describe('a group in a scene', () => {
+describe('a cluster in a scene', () => {
   it('draws its box around its members, behind them', () => {
     const { specs, pose } = load();
     expect(contains(pose('G'), pose('a'))).toBe(true);
@@ -67,7 +67,7 @@ describe('a group in a scene', () => {
     expect(pose('G/label').y - pose('G').y).toBeCloseTo(label.y - box.y);
   });
 
-  it('can be picked, so a press on the box or its title grabs the group', () => {
+  it('can be picked, so a press on the box or its title grabs the cluster', () => {
     const { specs } = load();
     expect(specs.find((s) => s.id === 'G')!.pickable).toBeUndefined();
     expect(specs.find((s) => s.id === 'G/label')!.pickable).toBe(false);
@@ -100,7 +100,7 @@ describe('a group in a scene', () => {
     expect(label.y + label.height).toBeLessThanOrEqual(Math.min(pose('a').y, pose('b').y));
   });
 
-  it('ends an edge naming the group on the box, not on a member', () => {
+  it('ends an edge naming the cluster on the box, not on a member', () => {
     const { scene, pose } = load();
     const path = derivedDepOf(scene as never, edgeIdOf({ from: 'x', to: 'G' }) as never)!.path!;
     const end = pointAlongPath(path, 1)!.point;
@@ -119,11 +119,11 @@ describe('a group in a scene', () => {
     expect((g.y - view.y) * view.scale.y).toBeGreaterThanOrEqual(-1e-6);
   });
 
-  it('throws on a group id that is already a node id', () => {
+  it('throws on a cluster id that is already a node id', () => {
     expect(() => diagramScene({ ...DATA, clusters: [{ id: 'a', members: ['b'] }] })).toThrow(/already/);
   });
 
-  it('draws nothing for a group with no real members', () => {
+  it('draws nothing for a cluster with no real members', () => {
     const specs = diagramScene({ ...DATA, clusters: [{ id: 'G', members: ['nope'] }] });
     expect(specs.some((s) => s.id === 'G')).toBe(false);
   });
@@ -137,7 +137,7 @@ describe('a group in a scene', () => {
   });
 });
 
-describe('a group inside a group, in a scene', () => {
+describe('a cluster inside a cluster, in a scene', () => {
   const NESTED: DiagramData = {
     nodes: [
       { id: 'a', lines: ['a'] }, { id: 'b', lines: ['b'] }, { id: 'c', lines: ['c'] },

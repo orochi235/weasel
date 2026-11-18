@@ -8,7 +8,7 @@ import { sequencePartOf } from './sequence/trait';
  * `<SceneCanvas selectTool={{ resize: { resizable } }}>` for a diagram scene:
  * edges and edge labels take their geometry from what they are attached to,
  * so their own pose is a placeholder, and a resize handle on it sits at the
- * origin and resizes nothing. A group's box is its members' union, and a
+ * origin and resizes nothing. A cluster's box is its members' union, and a
  * pool's lane is sized by its pool's stack and resized by dragging its
  * boundary. A sequence's part is drawn from its root's data, and a selected
  * one is there to be deleted, not resized.

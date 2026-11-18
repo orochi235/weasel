@@ -54,13 +54,13 @@ export interface DataNode {
   colors?: Partial<NodeStyle>;
 }
 
-/** One edge of a {@link DiagramData}, between two nodes or groups by id. */
+/** One edge of a {@link DiagramData}, between two nodes or clusters by id. */
 export interface DataEdge {
   /** The scene node id this edge gets, for an editor that must find it again
    *  after its ends, ports or label change. Unset, {@link edgeIdOf} derives
    *  one from those. */
   id?: string;
-  /** A node's id, or a group's: an edge naming a group meets its box. */
+  /** A node's id, or a cluster's: an edge naming a cluster meets its box. */
   from: string;
   to: string;
   /** The port to leave from or arrive at. Unset, the end facing the other
@@ -136,11 +136,11 @@ export interface DiagramData {
 
 /**
  * A container or a pool, drawn as a region that holds its members. Its id
- * shares one namespace with node, group, and lane ids.
+ * shares one namespace with node, cluster, and lane ids.
  *
  * With a `box` it is laid out as one node of that size, and its members ride
  * along with it: a member with no `at` is seeded inside its body, in rows.
- * With none, a container is laid out as a group and its box fits its members.
+ * With none, a container is laid out as a cluster and its box fits its members.
  * A pool always has a box, {@link DEFAULT_POOL_ACROSS} across and
  * {@link DEFAULT_LANE_SIZE} along per lane when none is given. An edge with
  * an end inside a boxed region ranks against the outermost one holding it.
@@ -159,7 +159,7 @@ export interface DataContainer {
   lanes?: readonly DataLane[];
   /** Lets a container's members be dragged along this axis among each other
    *  with `onReorder`, which hears the container and its members in their
-   *  new order, as a group's do. Nothing moves until the members do: write
+   *  new order, as a cluster's do. Nothing moves until the members do: write
    *  the order to `members`, and place them by it. Not for a pool. */
   reorder?: 'x' | 'y';
   /** The axis a pool stacks its lanes along: `'y'` for rows. Default `'y'`. */
