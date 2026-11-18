@@ -104,10 +104,12 @@ export function createInflectionsLayer(
         pts.push(rep.evaluate(anchors, t));
       }
       const out: DrawCommand[] = [];
+      // Compared across zero samples, so a sign change landing on one is still seen.
+      let lastSign = Math.sign(ks[0]);
       for (let i = 1; i < ks.length; i++) {
-        if (ks[i - 1] === 0) continue;
-        if (Math.sign(ks[i]) !== Math.sign(ks[i - 1]) && ks[i] !== 0) {
-          const p = pts[i];
+        const sign = Math.sign(ks[i]);
+        if (sign !== 0 && lastSign !== 0 && sign !== lastSign) {
+          const p = pts[ks[i - 1] === 0 ? i - 1 : i];
           const { x: sx, y: sy } = viewWorldToScreen(view, p);
           out.push({
             kind: 'path',
@@ -115,6 +117,7 @@ export function createInflectionsLayer(
             stroke: { paint: { color: '#ffaa00' }, width: 1.5 },
           } as DrawCommand);
         }
+        if (sign !== 0) lastSign = sign;
         if (i > 1 && Math.abs(ks[i - 1]) > Math.abs(ks[i]) && Math.abs(ks[i - 1]) > Math.abs(ks[i - 2])) {
           const p = pts[i - 1];
           const { x: sx, y: sy } = viewWorldToScreen(view, p);
