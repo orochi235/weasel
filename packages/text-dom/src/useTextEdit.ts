@@ -9,19 +9,17 @@ import { useCallback, useEffect, useRef } from 'react';
 import { useLatest, useVisibleRaf } from '@weasel-js/react';
 import type { TextStyle } from '@weasel-js/text';
 import { resolveTextStyle } from '@weasel-js/text';
-import { editEnd, imeKey, timerScheduler } from '@weasel-js/ui-input';
+import { editEnd, imeKey } from '@weasel-js/ui-input';
 import { historyKey } from '@weasel-js/gestures';
 import { domToRuns } from './domRuns';
-import { holdForFaces, installSelectionStyle, openingRange } from './overlayOpen';
 import { effectiveRangeStyle, type RangeStyle, type RunStylePatch } from '@weasel-js/text';
 import { armedOver, usePendingStyle } from './armedStyle';
 import { overlayHistory, type OverlayHistory, type OverlayState } from './overlayHistory';
-import { seedDraft, writeEdit, type EditDraft } from './overlayDraft';
+import { writeEdit, type EditDraft } from './overlayDraft';
 import { usePublishedRange } from './publishedRange';
 import { overlayTop } from './overlayFrame';
-import { mountOverlayBoxes, placeOverlay } from './overlayPlace';
 export { overlayTop };
-import { applyOverlayStyle } from './overlayStyle';
+import { openEditOverlay } from './editOverlay';
 import { useHeldNodeStyle } from './heldNodeStyle';
 import {
   readSelectionOffsets, writeRunsPreservingSelection,
@@ -100,46 +98,18 @@ export function useTextEdit(
     holdNodeStyle(null);
 
     const style = resolveTextStyle(getStyle(editingId), getPaint?.(editingId));
-    const overlay = document.createElement('div');
-    const overlayClass = `weasel-text-edit-${++OVERLAY_SEQ}`;
-    overlay.classList.add(overlayClass);
-    overlay.setAttribute('contenteditable', 'true');
-    overlay.spellcheck = false;
     baseRef.current = style;
-    const initialRuns = optsRef.current.getRuns?.(editingId);
-    const draft = (draftRef.current = seedDraft(overlay, getText(editingId), initialRuns, style));
-    applyOverlayStyle(overlay, style);
+    const runs = optsRef.current.getRuns?.(editingId);
+    const node = { text: getText(editingId), runs, style };
+    const frame = {
+      pose: () => optsRef.current.getScreenPose(editingId),
+      clip: () => optsRef.current.getClipRect?.() ?? null,
+    };
     const holdFor = optsRef.current.fontHold ?? TEXT_EDIT_FONT_HOLD;
-    const hold = holdFor > 0 ? holdForFaces(style, initialRuns ?? []) : null;
-    if (hold) overlay.style.opacity = '0';
-    const styleEl = installSelectionStyle(overlayClass, style);
-    const boxes = mountOverlayBoxes(container, overlay);
+    const opened = openEditOverlay(container, node, frame, holdFor, initialCaretRef.current);
+    const { overlay, boxes, draft, place } = opened;
+    draftRef.current = draft;
     overlayRef.current = overlay;
-
-    const place = () => {
-      const clip = optsRef.current.getClipRect?.() ?? null;
-      placeOverlay(overlay, boxes, optsRef.current.getScreenPose(editingId), clip, style);
-    };
-    place();
-    // Measured again on release: the first `place` ran in the fallback face.
-    let held = hold !== null;
-    const release = () => {
-      if (!held) return;
-      held = false;
-      cancelHold();
-      place();
-      overlay.style.opacity = '';
-    };
-    const cancelHold = held ? timerScheduler.set(release, holdFor) : () => {};
-    void hold?.then(release);
-
-    const range = openingRange(overlay, initialCaretRef.current);
-    // Focus first, then place the caret: focusing an editable host itself
-    // moves the selection (jsdom collapses to the start; browsers vary).
-    boxes.scroller.focus();
-    const sel = window.getSelection();
-    sel?.removeAllRanges();
-    sel?.addRange(range);
     // Publish now rather than on the `selectionchange` task — a control mounted
     // alongside the editor would otherwise render one frame with no selection.
     syncSelection();
@@ -236,15 +206,12 @@ export function useTextEdit(
     frameLoop.request();
 
     return () => {
-      held = false;
-      cancelHold();
       frameLoop.cancel();
       tickRef.current = () => {};
       for (const [type, fn] of listeners) overlay.removeEventListener(type, fn);
       document.removeEventListener('pointerdown', onPointerDownOutside, true);
       document.removeEventListener('selectionchange', syncSelection);
-      boxes.remove();
-      styleEl?.remove();
+      opened.remove();
       overlayRef.current = null;
       historyRef.current = null;
       holdNodeStyle(null);
@@ -280,4 +247,3 @@ function shownStyle(
   );
 }
 
-let OVERLAY_SEQ = 0;
