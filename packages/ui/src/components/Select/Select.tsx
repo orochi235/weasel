@@ -1,4 +1,4 @@
-import { createContext, useContext, useRef, useState, type ReactNode, type Ref } from 'react';
+import { createContext, useContext, useRef, useState, type ContextType, type ReactNode, type Ref } from 'react';
 import { useObjectRef } from 'react-aria';
 import {
   Select as RACSelect,
@@ -10,10 +10,12 @@ import {
   ListBoxSection as RACListBoxSection,
   Header,
   Text,
+  SelectStateContext,
   type SelectProps as RACSelectProps,
   type ListBoxItemProps as RACListBoxItemProps,
 } from 'react-aria-components';
 import { Popover } from '../Popover';
+import { heldItemProps, isHeldKey, pastHeld, StateProbe, heldAriaRef } from '../heldItem';
 import { AlignOverTrigger, NO_NUDGE, type Press } from './alignOverTrigger';
 import { FieldFoot, fieldRootClass, type FieldSlotProps, type FieldStateProps } from '../Field/fieldSlots';
 import { useOverlayPortal, type OverlayPortalProps } from '../../overlays/portalHost';
@@ -157,6 +159,7 @@ export function Select<T extends OptionKey = string>(props: SelectProps<T>) {
   const placeholder = mixed ? MIXED_HINT : placeholderProp;
   const triggerRef = useObjectRef(ref);
   const pressRef = useRef<Press | null>(null);
+  const stateRef = useRef<ContextType<typeof SelectStateContext>>(null);
   const [nudge, setNudge] = useState(NO_NUDGE);
   const sized = useFieldSizeClass(size, className);
   const { id: triggerId, ...field } = useRacField({ id, 'aria-label': rest['aria-label'], 'aria-labelledby': rest['aria-labelledby'], 'aria-describedby': racHeld['aria-describedby'], invalid, required, labeled: label !== undefined });
@@ -168,14 +171,18 @@ export function Select<T extends OptionKey = string>(props: SelectProps<T>) {
       {...field}
       {...(held ? { isOpen: false, onOpenChange: undefined } : open !== undefined ? { isOpen: open } : {})}
       selectedKey={mixed ? null : shownKey}
-      onSelectionChange={(k) => {
+      onSelectionChange={(picked) => {
         if (held) return;
+        const coll = stateRef.current?.collection;
+        const k = picked !== null && coll && isHeldKey(coll, picked) ? pastHeld(coll, shownKey, picked) : picked;
+        if (k === null && picked !== null) return;
         if (selectedKey === undefined) setOwnKey(k as T | null);
         onSelectionChange?.(k as T);
       }}
       className={selectClass({ orientation, width, variant, indicator, className: sized })}
     >
       {anchor}
+      <StateProbe context={SelectStateContext} into={stateRef} />
       {label !== undefined && <Label className={f.label}>{label}</Label>}
       <TriggerTooltip
         content={tooltipContent({ tooltip, shortcut, ariaLabel: rest['aria-label'], label })}
@@ -355,7 +362,8 @@ export function SelectItem({ children, icon, className, textValue, description, 
   return (
     <RACListBoxItem
       {...rest}
-      isDisabled={disabled}
+      ref={heldAriaRef(disabled)}
+      {...heldItemProps(disabled)}
       textValue={textValueOf(children, textValue)}
       className={[s.option, className].filter(Boolean).join(' ')}
     >
