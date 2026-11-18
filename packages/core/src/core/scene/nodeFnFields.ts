@@ -19,6 +19,7 @@ export type FnBearingNode = { id: NodeId; kind: 'mark' | 'group' } & {
   [K in NodeFnFieldName]?: NodeFn;
 };
 
+/** The node fields whose functions a save stores as registry keys. */
 export type NodeFnFieldName = 'clipFromPose' | 'copiesFromPose' | 'derivePath' | 'derivePose' | 'layout';
 /** A function field's key in the `kit:add` and `kit:remove` op payloads. */
 export type NodeFnOpKey = 'clipKey' | 'copiesKey' | 'derivePathKey' | 'derivePoseKey' | 'layoutKey';

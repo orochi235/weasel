@@ -87,6 +87,7 @@ export type { AddLayerSpec, LayerRecord, LayerRecordBase, SceneLayerMembers, Sys
 export type { LayoutFrame, LayoutMove } from '../core/scene/layoutTypes';
 export { nodeAsShown, nodesAsShown, shownLookup } from '../core/scene/nodeAsShown';
 export type { ShownDataSource, ShownOverridesSource } from '../core/scene/nodeAsShown';
+export type { NodeFnFieldName } from '../core/scene/nodeFnFields';
 export type { Bivariant, ClipFromPoseFn, CopiesFromPoseFn, DerivePathFn, DerivePoseFn, DerivedDep } from '../core/scene/nodeFnTypes';
 export { contentRoots, hidesSubtree, isNodeHidden, isNodeLocked, isPageStructure, nodeGates, withoutPageStructure } from '../core/scene/nodeGates';
 export type { GateSource, GatedLayer, GatedNode, NodeGates } from '../core/scene/nodeGates';
@@ -115,7 +116,7 @@ export type { SceneChanges } from '../core/scene/sceneChanges';
 export { sceneMutators } from '../core/scene/sceneMutators';
 export type { SceneMutators } from '../core/scene/sceneMutators';
 export { scenePoseAdapter, sceneViewPoseAdapter } from '../core/scene/scenePoseAdapter';
-export type { SceneRegistry } from '../core/scene/sceneRegistry';
+export type { NodeUpgrade, SavedNode, SceneRegistry } from '../core/scene/sceneRegistry';
 export { sceneHistorySelection } from '../core/scene/sceneSelection';
 export type { SceneSelectionMembers } from '../core/scene/sceneSelection';
 export { createScrollOffsets, scrolledFrames, viewPoseAdapter } from '../core/scene/scrollOffsets';

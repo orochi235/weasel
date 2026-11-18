@@ -612,6 +612,7 @@
     "NodeClientRect": "type",
     "NodeClip": "type",
     "NodeFlagArgs": "type",
+    "NodeFnFieldName": "type",
     "NodeFrame": "type",
     "NodeGates": "type",
     "NodeId": "type",

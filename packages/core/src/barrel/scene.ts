@@ -135,6 +135,7 @@ export type {
   SerializedSceneV2,
   SavedScene,
   SkippedKey,
+  NodeFnFieldName,
   SpecsFromSerializedOptions,
   StatedNodeFields,
   V1Classifier,
