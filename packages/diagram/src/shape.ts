@@ -29,6 +29,7 @@ import { outlineDetail, outlinePath, outlineSolid, type Outline } from './outlin
 import { diagramContainerOf, headerBox, laneOutlineOf } from './containers/trait';
 import { diagramNodeOf, type DiagramNodeReader } from './trait';
 import { sequencePartOf } from './sequence/trait';
+import type { Rect } from '@weasel-js/geom';
 
 /** Options for {@link diagramShape} and {@link registerDiagramShape}. */
 export interface DiagramShapeOptions<TPose> {
@@ -99,10 +100,8 @@ function sequenceOutlineOf(node: { data: unknown }): Outline | undefined {
   return (node.data as { diagram?: { outline?: Outline } }).diagram?.outline;
 }
 
-type Box = { x: number; y: number; width: number; height: number };
-
 /** The line between a container's header and its body. */
-function dividerPath(box: Box, header: Box): Path {
+function dividerPath(box: Rect, header: Rect): Path {
   return header.width < box.width
     ? polylineFromPoints([{ x: header.x + header.width, y: box.y }, { x: header.x + header.width, y: box.y + box.height }])
     : polylineFromPoints([{ x: box.x, y: header.y + header.height }, { x: box.x + box.width, y: header.y + header.height }]);

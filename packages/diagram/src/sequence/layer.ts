@@ -16,9 +16,9 @@ import {
 } from '@weasel-js/core';
 import { createPart } from '@weasel-js/registry';
 import { keyedIndex } from '../keyedIndex';
-import type { SeqRect } from './layout';
 import { sequenceRootOf, type SequenceGeometry } from './trait';
 import { payloadOf } from '../payload';
+import type { Rect } from '@weasel-js/geom';
 
 /** The layer id the sequence regions are composed into. */
 export const SEQUENCE_LAYER_ID = 'diagram-sequence';
@@ -65,10 +65,10 @@ const REACH = 6;
 /** Half an end handle's side. */
 const END = 7;
 
-const moved = (r: SeqRect, o: Vec2): SeqRect => ({ x: r.x + o.x, y: r.y + o.y, width: r.width, height: r.height });
+const moved = (r: Rect, o: Vec2): Rect => ({ x: r.x + o.x, y: r.y + o.y, width: r.width, height: r.height });
 
 /** The rect a message takes a press in: its line, its loop, and its text. */
-export function messageReach(m: SequenceGeometry['messages'][number]): SeqRect {
+export function messageReach(m: SequenceGeometry['messages'][number]): Rect {
   const x0 = Math.min(m.x1, m.x2);
   const x1 = m.loopY !== undefined ? m.x1 + 32 : Math.max(m.x1, m.x2);
   const y1 = (m.loopY ?? m.y) + REACH;
@@ -78,7 +78,7 @@ export function messageReach(m: SequenceGeometry['messages'][number]): SeqRect {
   return { x: left, y: top, width: right - left, height: y1 - top };
 }
 
-function region(id: string, r: SeqRect, scratch: SequenceScratch, cursor: string): AffordanceRegion {
+function region(id: string, r: Rect, scratch: SequenceScratch, cursor: string): AffordanceRegion {
   return {
     id, targetId: null, shape: { kind: 'rect', x: r.x, y: r.y, width: r.width, height: r.height }, cursor: cursor as never,
     strength: 'exclusive', claimedKinds: ['pointer'], bind: () => ({ initialScratch: scratch }),

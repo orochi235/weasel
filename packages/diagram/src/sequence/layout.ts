@@ -3,14 +3,12 @@
  * diagram's own frame (its top-left at the origin). Pure geometry: the specs
  * draw it, the editing reads it back to place a drop.
  */
-import { unionRects, maxOf } from '@weasel-js/geom';
+import { unionRects, maxOf, type Rect } from '@weasel-js/geom';
 import type { MeasureRowText } from '../body';
 import { columnsOf } from './columns';
-import { SEQ, seqMeasure, type SeqRect } from './metrics';
+import { SEQ, seqMeasure } from './metrics';
 import { walkRows } from './rows';
 import type { SeqFragment, SeqMarkRef, SequenceData, StepPlace } from './types';
-
-export type { SeqRect };
 
 /** Options for {@link sequenceLayout}. */
 export interface SequenceLayoutOptions {
@@ -21,23 +19,23 @@ export interface SequenceLayoutOptions {
 }
 
 /** A head: at the top, or at its `create` row. */
-export interface SeqHeadPlace { id: string; box: SeqRect; created: boolean }
+export interface SeqHeadPlace { id: string; box: Rect; created: boolean }
 /** A lifeline, from under its head to the foot, or to where it was destroyed: by the `destroy` mark at `destroyedBy`. */
 export interface SeqLifelinePlace { id: string; x: number; y0: number; y1: number; destroyed: boolean; destroyedBy?: StepPlace }
 /** A message's line from `x1` (its `from` end) to `x2`, at `y`; a self-message loops down to `loopY`. */
 export interface SeqMessagePlace {
-  id: string; y: number; x1: number; x2: number; loopY?: number; text?: SeqRect; number?: { n: number; box: SeqRect };
+  id: string; y: number; x1: number; x2: number; loopY?: number; text?: Rect; number?: { n: number; box: Rect };
 }
 /** An activation bar, with what opened it and what closed it; one the diagram's end closed has no `closer`. */
-export interface SeqActivationPlace { participant: string; depth: number; box: SeqRect; opener: SeqMarkRef; closer?: SeqMarkRef }
+export interface SeqActivationPlace { participant: string; depth: number; box: Rect; opener: SeqMarkRef; closer?: SeqMarkRef }
 /** A note's box. */
-export interface SeqNotePlace { id: string; box: SeqRect }
+export interface SeqNotePlace { id: string; box: Rect }
 /** A fragment's box, its type tab (none for a `region`), and each section's top and label. */
 export interface SeqFragmentPlace {
-  id: string; type: SeqFragment['type']; box: SeqRect; tab?: SeqRect; sections: { y: number; label?: SeqRect }[];
+  id: string; type: SeqFragment['type']; box: Rect; tab?: Rect; sections: { y: number; label?: Rect }[];
 }
 /** A box around some participants' columns (`SeqBox`): its outline and its label. */
-export interface SeqBoxPlace { id: string; box: SeqRect; label?: SeqRect }
+export interface SeqBoxPlace { id: string; box: Rect; label?: Rect }
 /** Where a dragged step dropped at `y` would go. */
 export interface SeqSlot { y: number; place: StepPlace }
 

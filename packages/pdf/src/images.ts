@@ -129,7 +129,7 @@ interface Place {
   y: number;
   width: number;
   height: number;
-  source?: { x: number; y: number; width: number; height: number };
+  source?: Rect;
   flipX?: boolean;
   flipY?: boolean;
   opacity: number;

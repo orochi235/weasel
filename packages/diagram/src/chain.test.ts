@@ -1,8 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import { chain } from './chain';
 import { buildGraph, type GraphNodeLike } from './graph';
-import { graphOf, type Rect } from './clusterFixture';
+import { graphOf } from './clusterFixture';
 import type { LayoutResult } from './layout';
+import type { Rect } from '@weasel-js/geom';
 
 // `graphOf` seeds node i at (i, i), 100 by 40.
 const IDS = ['src', 'blur', 'mix', 'out', 'osc', 'mask'] as const;

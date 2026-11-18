@@ -20,6 +20,7 @@ import { insetOf, type ClusterInset } from './cluster';
 import { grownBy } from './footprint';
 import { DIAGRAM_TRAIT_KEY } from './trait';
 import type { DiagramCluster, PortAnchor } from './types';
+import type { Rect } from '@weasel-js/geom';
 
 /** Where an anchored node sits on its dependency. */
 export interface DiagramAnchor {
@@ -93,9 +94,9 @@ export function clusterDerivePose<TPose>(opts: ClusterPoseOptions<TPose> = {}): 
 /** A cluster's box around the union of its members: grown by its inset, and
  *  widened evenly to its `minWidth`. */
 export function boxAround(
-  union: { x: number; y: number; width: number; height: number },
+  union: Rect,
   cluster: DiagramCluster,
-): { x: number; y: number; width: number; height: number } {
+): Rect {
   const inset = insetOf(cluster.inset);
   const width = union.width + inset.left + inset.right;
   const grow = Math.max(0, (cluster.minWidth ?? 0) - width);

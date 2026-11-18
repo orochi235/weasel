@@ -15,6 +15,7 @@
  * the same metric and the ribbon cache keeps hitting.
  */
 import type { Polyline } from '@weasel-js/geom/tessellate';
+import type { Rect } from '@weasel-js/geom';
 
 /** `P` = [[p, q], [q, r]], with `pr − q² = 1`. */
 export interface StrokeMetric {
@@ -143,7 +144,7 @@ export function metricKeepsRects(m: StrokeMetric): boolean {
 /** `rect` in the metric's space, while `P` keeps it axis-aligned; otherwise
  *  `null`, and the rect has to be carried as a polygon. */
 export function rectIntoMetric(
-  rect: { x: number; y: number; width: number; height: number },
+  rect: Rect,
   m: StrokeMetric,
 ): { kind: 'rect'; x: number; y: number; width: number; height: number } | null {
   if (!metricKeepsRects(m)) return null;

@@ -1,5 +1,6 @@
 import type { TextPoseLayout } from '@weasel-js/text';
 import type { NamespaceMeta, SvgTextNode } from './types';
+import type { Rect } from '@weasel-js/geom';
 
 /**
  * How {@link serializeSvg} writes a text node. `'live'` is a `<text>` element
@@ -23,7 +24,7 @@ export interface SerializeOptions {
    */
   text?: SvgTextMode;
   /** The root `viewBox`. Default: a tight bounding box around the nodes. */
-  viewBox?: { x: number; y: number; width: number; height: number };
+  viewBox?: Rect;
   /**
    * Called for what the document cannot carry the way weasel draws it: a
    * paint SVG cannot express (a pattern carrying a `TextureHandle` instead of

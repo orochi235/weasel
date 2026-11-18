@@ -4,6 +4,7 @@ import type { View } from '../viewport/view';
 import type { PoseDescriptor } from '../geometry/poseDescriptor';
 import type { Target } from '@weasel-js/animator';
 import type { WorldPoint } from '@weasel-js/routing';
+import type { Rect } from '@weasel-js/geom';
 
 /**
  * Opaque clipboard payload: the kit never inspects entries. The adapter both
@@ -129,7 +130,7 @@ export interface AreaSelectAdapter {
   /** Returns ids of nodes intersecting the world-space rect, as the view the
    *  rect was drawn in paints them. */
   hitTestArea?(
-    rect: { x: number; y: number; width: number; height: number },
+    rect: Rect,
     view?: PickingView,
   ): string[];
   /** Current selection — read by behaviors to compute additive merges. */
@@ -180,7 +181,7 @@ export interface InsertAdapter<TNode extends { id: string }> {
   /** Materialize a new node from drag-rect bounds (drag-to-insert tools).
    *  Optional: `sceneToAdapter` only fills it in when `options.commitInsert`
    *  is supplied. */
-  commitInsert?(bounds: { x: number; y: number; width: number; height: number }): TNode | null;
+  commitInsert?(bounds: Rect): TNode | null;
   /** Materialize the new nodes from a clipboard snapshot, in order.
    *  Optional — required only for paste. What it returns becomes the
    *  clipboard the next paste reads, so each node must be shaped like an item

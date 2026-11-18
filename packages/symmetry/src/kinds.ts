@@ -1,4 +1,4 @@
-import { multiply, rotate, translate, type Affine, type Point } from '@weasel-js/geom';
+import { multiply, rotate, translate, type Affine, type Point, type Rect } from '@weasel-js/geom';
 import { MAX_WALLPAPER_COPIES, exact, latticePoints } from './wallpaper';
 
 /** Which copies a symmetry group draws. */
@@ -9,12 +9,7 @@ export type SymmetryKind = 'mirror' | 'both' | 'point' | 'radial' | 'kaleidoscop
 export type WallpaperCell = 'none' | 'mirror' | 'both' | 'point' | 'radial' | 'kaleidoscope';
 
 /** A box in world units from a group's center. */
-export interface SymmetryExtent {
-  x: number;
-  y: number;
-  width: number;
-  height: number;
-}
+export type SymmetryExtent = Rect;
 
 /**
  * Everything a symmetry group's copies are built from, besides its center.

@@ -12,7 +12,7 @@ import {
   type PoseDescriptor,
   type Vec2,
 } from '@weasel-js/core/math';
-import { pathContainsPoint, rectContainsPoint } from '@weasel-js/geom';
+import { pathContainsPoint, rectContainsPoint, type Rect } from '@weasel-js/geom';
 import { boxCenter, endAims, resolveEnd, type Router } from './edge';
 import { diagramEdgeOf } from './edgeTrait';
 import { diagramClusterOf } from './clusterBox';
@@ -85,7 +85,7 @@ export function bodyAt<TPose>(
 }
 
 /** A refused end's marks: its shape's box outlined refused, and the reason at the pointer. */
-function refusalMarks(box: { x: number; y: number; width: number; height: number } | null, at: Vec2, reason: string): OngoingOverlay[] {
+function refusalMarks(box: Rect | null, at: Vec2, reason: string): OngoingOverlay[] {
   const out: OngoingOverlay[] = [];
   if (box !== null) {
     const { x, y, width, height } = box;
@@ -247,7 +247,7 @@ function createResolver<TPose>(opts: TargetOptions<TPose>) {
   }
 
   /** The world box of `nodeId`'s participant, or `null`. */
-  function boxOf(nodeId: string): { x: number; y: number; width: number; height: number } | null {
+  function boxOf(nodeId: string): Rect | null {
     const participant = participantOf(nodeId);
     return participant === undefined ? null : poseDescriptor.getBounds(participant.pose);
   }

@@ -10,6 +10,7 @@ import { lensAimInput } from './aimInput';
 import { createPixelReadback } from './pixelReadback';
 import { createVectorLens, type LensHost } from './vectorLens';
 import { registerLoupe } from './loupeRoutes';
+import type { Rect } from '@weasel-js/geom';
 
 export type { LoupeMode };
 
@@ -27,7 +28,7 @@ export interface LoupeBaseOptions {
    *  one the aim is relative to. Pass `CanvasExtensionApi.getSurfaceRect` for
    *  a pane painted into a shared canvas. Defaults to `views.getSurfaceRect`
    *  when the lens is a view, and to the whole canvas otherwise. */
-  region?: () => { x: number; y: number; width: number; height: number };
+  region?: () => Rect;
   requestRedraw: () => void;
   /**
    * The version of what the canvas paints, read on every landed frame: when it moves, a lens whose aim has not

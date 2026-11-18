@@ -13,6 +13,7 @@ import { useEscapeDismissal } from './useEscapeDismissal';
 import { RectAnchor, useAnchorNudge } from './rectAnchor';
 import { CalloutBody } from './CalloutBody';
 import s from './Callout.module.css';
+import type { Rect } from '@weasel-js/geom';
 
 /**
  * Composition wrapper for press-to-open callouts:
@@ -70,7 +71,7 @@ export type CalloutProps = Omit<
    * recomputes it on pan, zoom, or scene edits keeps the arrow on its target.
    * Takes precedence over `triggerRef`.
    */
-    anchorRect?: { x: number; y: number; width: number; height: number };
+    anchorRect?: Rect;
   };
 
 /**

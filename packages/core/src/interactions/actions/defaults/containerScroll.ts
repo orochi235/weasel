@@ -4,7 +4,7 @@
  * says how far; the offset goes to `scene.scroll`, which moves what the view
  * shows and leaves the document where it is.
  */
-import { clamp } from '@weasel-js/geom';
+import { clamp, type Rect } from '@weasel-js/geom';
 import { defineAction, type ActionDeps } from '@weasel-js/routing';
 import { poseDescriptorForNode, type PoseDescriptor } from 'core/geometry/poseDescriptor';
 import { targetTransformOf, worldToLocal } from 'core/geometry/targetFrame';
@@ -58,15 +58,14 @@ export function scrollRange(scene: AnyScene, id: NodeId, descriptor: PoseDescrip
 
 const canScroll = (r: ScrollRange): boolean => r.x[0] < r.x[1] || r.y[0] < r.y[1];
 
-interface BoxLike { x: number; y: number; width: number; height: number }
-const isBox = (p: unknown): p is BoxLike => {
-  const b = p as Partial<BoxLike> | null;
+const isBox = (p: unknown): p is Rect => {
+  const b = p as Partial<Rect> | null;
   return typeof b?.x === 'number' && typeof b.y === 'number' && typeof b.width === 'number' && typeof b.height === 'number';
 };
 
 /** Whether the world point `at` falls on a container shown at `pose`, tested
  *  in its own unturned box, so a turned container takes only its own area. */
-function shownAt(pose: unknown, at: { x: number; y: number }, bounds: () => BoxLike): boolean {
+function shownAt(pose: unknown, at: { x: number; y: number }, bounds: () => Rect): boolean {
   const b = isBox(pose) ? pose : bounds();
   const p = isBox(pose) ? worldToLocal(targetTransformOf(pose), at.x, at.y) : at;
   return p !== null && p.x >= b.x && p.x <= b.x + b.width && p.y >= b.y && p.y <= b.y + b.height;

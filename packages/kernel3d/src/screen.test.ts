@@ -3,10 +3,10 @@ import {
   lookAt, multiply, normalize, perspective, transformPoint4, type Aabb, type Mat4, type Vec3,
 } from '@weasel-js/geom/3d';
 import {
-  ndcToScreen, projectAabbToScreen, rayThroughScreenPoint, screenToNdc, type ScreenBox,
+  ndcToScreen, projectAabbToScreen, rayThroughScreenPoint, screenToNdc, type ScreenRect,
 } from './screen';
 
-const RECT: ScreenBox = { x: 0, y: 0, width: 400, height: 300 };
+const RECT: ScreenRect = { x: 0, y: 0, width: 400, height: 300 };
 const NEAR = 0.1;
 
 function cameraAt(eye: Vec3, target: Vec3 = { x: 0, y: 0, z: 0 }): Mat4 {
@@ -19,7 +19,7 @@ function cameraAt(eye: Vec3, target: Vec3 = { x: 0, y: 0, z: 0 }): Mat4 {
 /** What the lab did before this package: drop every corner behind the camera
  *  rather than clip the edge. Kept so the near-plane test has something to be
  *  a fix *of* — an assertion that passes against both is not a fix. */
-function projectByDroppingCorners(box: Aabb, vp: Mat4, rect: ScreenBox) {
+function projectByDroppingCorners(box: Aabb, vp: Mat4, rect: ScreenRect) {
   let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity, any = false;
   for (let i = 0; i < 8; i++) {
     const corner: Vec3 = {
@@ -45,7 +45,7 @@ describe('screenToNdc / ndcToScreen', () => {
   });
 
   it('is rect-relative, so a pane offset moves the origin', () => {
-    const offset: ScreenBox = { x: 50, y: 20, width: 400, height: 300 };
+    const offset: ScreenRect = { x: 50, y: 20, width: 400, height: 300 };
     expect(screenToNdc({ x: 250, y: 170 }, offset)).toEqual({ x: 0, y: 0 });
   });
 });

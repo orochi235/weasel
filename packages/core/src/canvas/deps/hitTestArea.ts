@@ -7,7 +7,7 @@
  * rect, rotated if the pose is.
  */
 import type { Scene, NodeId } from 'core/scene/types';
-import { transformPoint, boundsOfPath, meanScale, pathIntersectsRect, type Affine } from '@weasel-js/geom';
+import { transformPoint, boundsOfPath, meanScale, pathIntersectsRect, type Affine, type Rect } from '@weasel-js/geom';
 import type { LassoHitMode } from 'core/adapters/types';
 import {
   poseDescriptorForNode,
@@ -35,14 +35,6 @@ import {
   regionTakesByBounds,
   type SelectRegion,
 } from 'core/geometry/regionHit';
-
-/** An axis-aligned world rect: what a marquee region query covers. */
-export interface AabbBounds {
-  x: number;
-  y: number;
-  width: number;
-  height: number;
-}
 
 /** What a region query takes back beyond leaves. */
 export interface RegionQueryOptions {
@@ -73,7 +65,7 @@ export function regionPickOptions(
 /** Marquee entry point: every node the rect `bounds` meets. */
 export function hitTestRect(
   scene: Scene<unknown, string, unknown>,
-  bounds: AabbBounds,
+  bounds: Rect,
   opts?: ScenePickSourceOptions<unknown>,
   descriptor: PoseDescriptor<unknown> = AUTO_POSE_DESCRIPTOR,
   query: RegionQueryOptions = {},
@@ -88,7 +80,7 @@ export function hitTestRect(
 export function hitTestAreaPolygon(
   scene: Scene<unknown, string, unknown>,
   area: ArrayLike<number>,
-  areaBounds?: AabbBounds,
+  areaBounds?: Rect,
   /** True when `area` IS its own bounding rect, so `areaBounds` containment
    *  implies containment in the area proper. Never pass this for a lasso
    *  polygon — a node inside the hull's box can miss the hull. */

@@ -17,7 +17,7 @@
  * a locked node is on screen and still out of reach.
  */
 
-import { invert, type Affine, type Path } from '@weasel-js/geom';
+import { invert, type Affine, type Path, type Rect } from '@weasel-js/geom';
 import { pathIntersect } from '@weasel-js/geom/booleans';
 import type { CopiesFromPoseFn } from 'core/scene/types';
 import { ownClipOf, type ClipBearing } from './ownClip';
@@ -92,7 +92,7 @@ export interface PickSource<TPose> {
 /** The box a query cannot hit outside of, for a source's index to look up. */
 export interface PickBroad {
   /** World box, already grown by the query's own slop. */
-  box: { x: number; y: number; width: number; height: number };
+  box: Rect;
   /** Screen px per world unit at the asking view (least axis); grows the box
    *  by the largest `outsetPx` the index holds. Omit for a query whose test
    *  reads no `outsetPx`. */

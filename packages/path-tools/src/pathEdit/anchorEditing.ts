@@ -34,7 +34,7 @@ import {
   deleteAnchorsAt,
   editAnchorSetTracked,
   openSubpathAt,
-  type AnchorSet,
+  type AnchorSet, type Rect,
 } from '@weasel-js/geom';
 import { pathToAnchors, type PolygonPath } from '@weasel-js/geom';
 import { rectBetween } from '@weasel-js/geom';
@@ -297,7 +297,7 @@ export const areaSelectAnchorsAction: Action & { requires: string[] } = inPlane(
 /** Flat indices of `path`'s anchors inside `rect`. */
 function anchorsOfPathInRect(
   path: PolygonPath,
-  rect: { x: number; y: number; width: number; height: number },
+  rect: Rect,
 ): number[] {
   return anchorsInRect(pathToAnchors(path) as AnchorSet, rect);
 }

@@ -1,4 +1,4 @@
-import type { Path } from '@weasel-js/geom';
+import type { Path, Rect } from '@weasel-js/geom';
 import { pathPoseDescriptor } from './pathPoseDescriptor';
 import { RECT_POSE_DESCRIPTOR, type PoseDescriptor } from './poseDescriptor';
 import type { Bounds } from 'core/viewport/fitViewToBounds';
@@ -31,16 +31,16 @@ export function isRectPose(p: unknown): p is { x: number; y: number; width: numb
 export const AUTO_POSE_DESCRIPTOR: PoseDescriptor<unknown> = {
   getBounds: (p) => isPathLike(p)
     ? pathPoseDescriptor.getBounds(p)
-    : RECT_POSE_DESCRIPTOR.getBounds(p as { x: number; y: number; width: number; height: number }),
+    : RECT_POSE_DESCRIPTOR.getBounds(p as Rect),
   remapBounds: (p, src, dst) => isPathLike(p)
     ? pathPoseDescriptor.remapBounds(p, src, dst)
-    : RECT_POSE_DESCRIPTOR.remapBounds(p as { x: number; y: number; width: number; height: number }, src, dst),
+    : RECT_POSE_DESCRIPTOR.remapBounds(p as Rect, src, dst),
   fromBounds: (b, template) => isPathLike(template)
     ? pathPoseDescriptor.fromBounds(b, template)
     : RECT_POSE_DESCRIPTOR.fromBounds(b, template as Bounds),
   translate: (p, dx, dy) => isPathLike(p)
     ? pathPoseDescriptor.translate!(p, dx, dy)
-    : RECT_POSE_DESCRIPTOR.translate!(p as { x: number; y: number; width: number; height: number }, dx, dy),
+    : RECT_POSE_DESCRIPTOR.translate!(p as Rect, dx, dy),
   lerp: (a, b, t) => (isPathLike(a) && isPathLike(b)
     ? pathPoseDescriptor.lerp!(a, b, t)
     : RECT_POSE_DESCRIPTOR.lerp!(a as Bounds, b as Bounds, t)),

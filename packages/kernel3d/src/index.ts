@@ -19,7 +19,7 @@ export { POSE3_COMPOSITION } from './composePose3';
 export { pathMotion3, type PathMotion3, type PathMotion3Options } from './pathMotion3';
 export {
   screenToNdc, ndcToScreen, rayThroughScreenPoint, projectAabbToScreen,
-  type ChromeBox, type ScreenBox,
+  type ChromeBox, type ScreenRect,
 } from './screen';
 export {
   screenBoxOf, createNodeAtPoint3dDep, createPickNearest, createAreaSelect3dDep, createSnap3dDep,

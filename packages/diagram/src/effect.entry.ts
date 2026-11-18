@@ -103,7 +103,6 @@ export type { EffectRunnerHandle, UseEffectRunnerOptions } from './effect/runner
 export { BRANCH_SYMBOLS, branchNode, symbolNameFor } from './effect/symbols';
 export type { BranchChoice, BranchNode, BranchOptions, BranchSymbol } from './effect/symbols';
 export type {
-  EffectBox,
   EffectDoc,
   EffectCluster,
   EffectParam,

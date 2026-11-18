@@ -100,7 +100,7 @@ function slotData(row: Extract<Row, { kind: 'slot' }>, style: NodeStyle): Diagra
 
 /** A node's box, its rows' text and slots, and its port labels, laid out in `box`. */
 function nodeSpecs(
-  n: DataNode, body: BodySpec, box: { x: number; y: number; width: number; height: number },
+  n: DataNode, body: BodySpec, box: Rect,
   look: { style: NodeStyle; text: (row: Row | undefined) => DiagramTextStyle; measure: MeasureRowText },
 ): DiagramSpec[] {
   const { style } = look;

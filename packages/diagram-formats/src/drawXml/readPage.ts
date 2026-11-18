@@ -6,10 +6,11 @@ import type { DocumentPage } from '../document';
 import { PAGE_MARGIN } from '../pageLayout';
 import { shiftData } from '../shiftData';
 import { geometryOf, pointsOf, type RawCell } from './cells';
-import { pageCells, type Box, type PageCells } from './pageCells';
+import { pageCells, type PageCells } from './pageCells';
 import {
   edgeColorsOf, labelPlacementOf, nodeColorsOf, outlineOf, portAt, routerOf, textOf, valueLines, verticalAlignOf, type Warn,
 } from './readStyle';
+import type { Rect } from '@weasel-js/geom';
 
 /** The ids a document has handed out, so a cell id an earlier page used is renamed rather than shared. */
 export type IdSpace = Set<string>;
@@ -65,7 +66,7 @@ function readRegion(r: Reader, cell: RawCell): DataContainer {
     return { ...common, role: 'container', ...(members.length > 0 ? { members } : {}) };
   }
   const axis = cell.style.values.get('horizontal') === '0' ? 'y' : 'x';
-  const start = (b: Box) => (axis === 'y' ? b.y : b.x);
+  const start = (b: Rect) => (axis === 'y' ? b.y : b.x);
   const lanes = page.childrenOf(cell.id).filter((c) => page.kindOf(c) === 'lane')
     .sort((p, q) => start(page.boxOf(p)) - start(page.boxOf(q)))
     .map((lane): DataLane => {
@@ -142,7 +143,7 @@ function readEdge({ page, idOf, groups, warn }: Reader, cell: RawCell, byCellId:
 
 /** What sits left of or above the page moves onto it, waypoints among it, and the page grows to hold what is on it. */
 function fitted(data: DiagramData, src: PageSource): { data: DiagramData; width: number; height: number } {
-  const boxes: Box[] = [
+  const boxes: Rect[] = [
     ...data.nodes.map((n) => ({ ...n.at!, width: n.width ?? 0, height: n.height ?? 0 })),
     ...(data.containers ?? []).map((c) => c.box!),
     ...data.edges.flatMap((e) => (e.waypoints ?? []).map((p) => ({ ...p, width: 0, height: 0 }))),

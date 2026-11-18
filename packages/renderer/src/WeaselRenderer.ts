@@ -23,7 +23,7 @@ import { EffectTargets } from './effects/EffectTargets';
 import { RetainedSurfaces } from './retain/RetainedSurfaces';
 import { ContextResources } from './contextResources';
 import { watchContextLoss, type ContextLossWatch } from './contextLoss';
-import { canvasPassFor, deviceRectFor, sizeCanvas, type DeviceRect } from './targetRect';
+import { canvasPassFor, deviceRectFor, sizeCanvas } from './targetRect';
 import { paintDrawKindRegistry } from './paintKinds';
 import {
   DEFAULT_RETAIN_BUDGET, type IdBuffer, type RenderIdsOptions, type RenderOptions, type RenderSpanStats,
@@ -125,7 +125,7 @@ export class WeaselRenderer {
     this.programs.register(handle.id);
   }
 
-  private deviceRect(): DeviceRect {
+  private deviceRect(): Rect {
     return deviceRectFor(this.target, this.widthCss, this.heightCss, this.dpr);
   }
 

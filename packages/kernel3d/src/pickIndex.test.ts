@@ -6,7 +6,7 @@ import { createAreaSelect3dDep, createNodeAtPoint3dDep, screenBoxOf } from './de
 import { worldPickIndex } from './pickIndex';
 import { pose3, type Pose3 } from './pose3';
 import { rayAt, type Viewport3d } from './project';
-import type { ScreenBox } from './screen';
+import type { ScreenRect } from './screen';
 import { boundsOfTestNode, type TestData, type TestLayer, type TestNode, type TestScene } from './testScene';
 import type { World3d } from './world';
 
@@ -84,7 +84,7 @@ function randomViewport(r: Rand): Viewport3d {
 
 const randomPoint = (r: Rand) => ({ x: between(r, -100, WIDTH + 100), y: between(r, -100, HEIGHT + 100) });
 
-function randomRect(r: Rand): ScreenBox {
+function randomRect(r: Rand): ScreenRect {
   const x = between(r, -200, WIDTH);
   const y = between(r, -200, HEIGHT);
   const zero = r() < 0.05;
@@ -111,7 +111,7 @@ function scanNearest(world: World3d<TestData, TestLayer>, point: { x: number; y:
   return best;
 }
 
-function scanArea(world: World3d<TestData, TestLayer>, b: ScreenBox): NodeId[] {
+function scanArea(world: World3d<TestData, TestLayer>, b: ScreenRect): NodeId[] {
   const vp = world.viewport();
   const hits: NodeId[] = [];
   for (const node of world.scene.renderOrderNodes()) {

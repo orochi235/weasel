@@ -1,14 +1,9 @@
 import type { Op } from 'core/ops/types';
 import type { Node } from 'core/scene/types';
-import type { Path } from '@weasel-js/geom';
+import type { Path, Rect } from '@weasel-js/geom';
 
 /** A layout container's extent in world units. */
-export type ContainerBounds = {
-  x: number;
-  y: number;
-  width: number;
-  height: number;
-};
+export type ContainerBounds = Rect;
 
 /** A child a layout strategy is arranging. */
 export interface LayoutChild<TPose> {
@@ -30,7 +25,7 @@ export interface DropTarget<TPose> {
    *  (e.g. `containedThenNearest`): a pointer inside this rect is a
    *  containment hit on this target. A point-like target can omit it and
    *  rely on `origin`-distance snaps. */
-  hitBounds?: { x: number; y: number; width: number; height: number };
+  hitBounds?: Rect;
   /** Strategy-private metadata (e.g. cell coords for tile-grid). */
   meta?: unknown;
 }

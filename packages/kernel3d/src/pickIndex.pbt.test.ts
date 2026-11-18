@@ -14,7 +14,7 @@ import { paneAt, paneFractions, pose, runs, scale3, tally, timeoutFor, viewport 
 import { worldPickIndex } from './pickIndex';
 import type { Pose3 } from './pose3';
 import { rayAt, rectOf, viewProjectionOf } from './project';
-import { projectAabbToScreen, type ScreenBox } from './screen';
+import { projectAabbToScreen, type ScreenRect } from './screen';
 import { snapBoxes } from './snap/boxIndex';
 import { boxAt, withDescendants, worldBoxes, worldPoses, type NodeBounds, type Node3d, type World3d } from './world';
 
@@ -119,7 +119,7 @@ function scanRay(world: W, point: { x: number; y: number }): NodeId | null {
   return best;
 }
 
-function scanRect(world: W, rect: ScreenBox): NodeId[] {
+function scanRect(world: W, rect: ScreenRect): NodeId[] {
   const vp = world.viewport();
   const poseOf = worldPoses(world.scene, 'shown');
   const out: NodeId[] = [];

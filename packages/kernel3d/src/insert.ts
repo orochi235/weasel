@@ -8,6 +8,7 @@ import { groundAxes, groundHit } from './ground';
 import type { Pose3 } from './pose3';
 import { landing3dOf } from './snap/landing';
 import { DEFAULT_UP, type Scene3d, type World3d } from './world';
+import type { Rect } from '@weasel-js/geom';
 
 /** The ground-plane rectangle a drag swept out, in world units. */
 export interface Footprint {
@@ -23,7 +24,7 @@ export interface Footprint {
  *  perspective the other two corners land outside the rectangle the ends make,
  *  and would carry the footprint past a corner the drag snapped to. */
 function footprintPoints(
-  bounds: { x: number; y: number; width: number; height: number },
+  bounds: Rect,
   ends: InsertEnds | undefined,
   cast: (p: { x: number; y: number }) => Vec3 | null,
 ): { points: Vec3[]; center: Vec3 | null } {
@@ -150,7 +151,7 @@ export function createInsert3dDep<TData = unknown, TLayer extends string = strin
   const mint = made ? made.mint : opts.mint!;
 
   const footprintOf = (
-    bounds: { x: number; y: number; width: number; height: number }, ends: InsertEnds | undefined,
+    bounds: Rect, ends: InsertEnds | undefined,
   ): Footprint | null => {
     const vp = viewport(opts.viewId);
     const { points: hits, center: given } = footprintPoints(bounds, ends, (p) => groundHit(vp, p, up));

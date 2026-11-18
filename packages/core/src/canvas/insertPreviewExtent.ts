@@ -9,17 +9,17 @@
  */
 import type { Bounds } from 'core/viewport/fitViewToBounds';
 import type { OngoingOverlay } from '@weasel-js/routing';
-import { boundsOfPath, regularPolygonPath, starPath, transformPath, type Affine, type Path, type Point } from '@weasel-js/geom';
+import { boundsOfPath, regularPolygonPath, starPath, transformPath, type Affine, type Path, type Point, type Rect } from '@weasel-js/geom';
 import { SHAPE_DEFAULTS } from 'domains/paths/shapeGenerator';
 
 /** The fields of an `insertPreview` overlay this needs. `canvas/deps/insert`
  *  passes the equivalent from its own `(bounds, extras)` commit arguments. */
 export interface InsertPreviewLike {
   shape: string;
-  bounds: { x: number; y: number; width: number; height: number };
+  bounds: Rect;
   extras: unknown;
   /** See the `insertPreview` overlay's `lands`. */
-  lands?: { x: number; y: number; width: number; height: number };
+  lands?: Rect;
 }
 
 /** Resolved preview geometry, in the terms the path builders take. */

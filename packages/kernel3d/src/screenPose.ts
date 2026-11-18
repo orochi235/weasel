@@ -8,9 +8,9 @@ import { aabbOfPoints, add, dot, len, quatIdentity, scale as scaleBy, sub, type 
 import { cameraBasis } from './camera';
 import type { Axis } from './ground';
 import type { Pose3 } from './pose3';
+import type { ScreenRect } from './screen';
 import { castOntoPlane, type Viewport3d } from './project';
 
-type ScreenRect = { x: number; y: number; width: number; height: number };
 
 /**
  * The plane through `p` that faces the camera.

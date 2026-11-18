@@ -45,6 +45,7 @@ import { ScopeOf } from './ScopeOf';
 import { useFocusReports } from './useFocusReports';
 import { useLensShapes } from './useLensShapes';
 import { useWheelPassThrough } from './useWheelPassThrough';
+import type { Rect } from '@weasel-js/geom';
 
 /** The camera a lens scene is drawn and picked through, in the px of the
  *  layer the lens canvas covers. */
@@ -96,7 +97,7 @@ const sameSize = (
   b: { width: number; height: number },
 ) => a !== null && a.width === b.width && a.height === b.height;
 
-function boxStyle(rect: { x: number; y: number; width: number; height: number }): CSSProperties {
+function boxStyle(rect: Rect): CSSProperties {
   // A measured rect has nowhere to live but the element's own style; set as
   // custom properties, which the stylesheet reads.
   return {

@@ -1,6 +1,7 @@
-import { boxWithin, covers, tilesOf, type DeviceBox, type DeviceRect } from './contentBounds';
+import { boxWithin, covers, tilesOf, type DeviceBox } from './contentBounds';
 import { keepKey, keyShift, sameKey, sameStamp, type RetainedKey } from './retainedKey';
 import type { GpuDevice, GpuTarget, GpuTexture } from '../gpu/types';
+import type { Rect } from '@weasel-js/geom';
 
 export type { RetainedClip, RetainedKey } from './retainedKey';
 
@@ -9,7 +10,7 @@ interface Surface {
    *  there are no pixels to keep. */
   target: GpuTarget | null;
   /** The part of the drawing buffer the texture covers, and its size. */
-  rect: DeviceRect;
+  rect: Rect;
   key: RetainedKey | null;
   stamp: readonly unknown[];
   frame: number;
@@ -18,7 +19,7 @@ interface Surface {
   /** For a surface that may stand in for its group moved: everything the
    *  group could paint when drawn, of which `rect` is the part inside
    *  `window`. `null` for one that may not. */
-  reach: { box: DeviceBox; window: DeviceRect } | null;
+  reach: { box: DeviceBox; window: Rect } | null;
   /** Its group has been drawn moved since the surface was made, so the next
    *  one is drawn with a margin past the buffer. */
   panned: boolean;
@@ -37,7 +38,7 @@ interface Surface {
  *  straight through this frame, its surface kept for a later one. */
 export type RetainedLookup =
   | { kind: 'kept'; pixels: RetainedPixels }
-  | { kind: 'redraw'; window: DeviceRect }
+  | { kind: 'redraw'; window: Rect }
   | { kind: 'through' };
 
 /** A shift within this of a whole device pixel draws the same pixels: a
@@ -56,7 +57,7 @@ export const RETAIN_TILE = 1024;
  *  buffer, and is `null` when `rect` is empty. */
 export interface RetainedPixels {
   texture: GpuTexture | null;
-  rect: DeviceRect;
+  rect: Rect;
 }
 
 /** A surface about to be drawn: for each of `tiles`, draw it into the
@@ -65,12 +66,12 @@ export interface RetainedPixels {
 export interface RetainedDraw {
   target: GpuTarget | null;
   /** The rect of the drawing buffer the surface covers. */
-  rect: DeviceRect;
+  rect: Rect;
   /** `rect` cut into rects of the drawing buffer no wider or taller than the
    *  scratch buffer. */
-  tiles: readonly DeviceRect[];
+  tiles: readonly Rect[];
   /** Keep what was just drawn in the scratch buffer as `tile` of the surface. */
-  resolve(tile: DeviceRect): void;
+  resolve(tile: Rect): void;
   commit(key: RetainedKey): RetainedPixels;
 }
 
@@ -221,8 +222,8 @@ export class RetainedSurfaces {
    *  Short of room, it first frees the surfaces of groups drawn straight
    *  through while they move, largest first, if that makes enough. */
   reserve(
-    id: string, width: number, height: number, rect: DeviceRect, multisample = true,
-    reach?: { box: DeviceBox; window: DeviceRect },
+    id: string, width: number, height: number, rect: Rect, multisample = true,
+    reach?: { box: DeviceBox; window: Rect },
   ): RetainedDraw | null {
     this.fitTo(width, height);
     const buffer = { x: 0, y: 0, width, height };
@@ -316,7 +317,7 @@ export class RetainedSurfaces {
   /** Whether `id` can hold a surface covering `rect` within the budget,
    *  counting what freeing other groups' surfaces that are adrift would make;
    *  with `free`, freeing them, largest first, until it can. */
-  private room(id: string, rect: DeviceRect, free: boolean): boolean {
+  private room(id: string, rect: Rect, free: boolean): boolean {
     const existing = this.surfaces.get(id);
     let over = this.keptBytes() + rectBytes(rect) - (existing ? rectBytes(existing.rect) : 0) - this.budget;
     if (over <= 0) return true;
@@ -355,7 +356,7 @@ export class RetainedSurfaces {
 
   /** Give `surface` a texture the size of `rect`, or none for an empty one,
    *  keeping one that is already that size. */
-  private fitSurface(surface: Surface, rect: DeviceRect): void {
+  private fitSurface(surface: Surface, rect: Rect): void {
     const was = surface.rect;
     surface.rect = { ...rect };
     if (surface.target && was.width === rect.width && was.height === rect.height) return;
@@ -387,6 +388,6 @@ function pixelsOf(surface: Surface, dx: number, dy: number): RetainedPixels {
   };
 }
 
-function rectBytes(rect: DeviceRect): number {
+function rectBytes(rect: Rect): number {
   return rect.width * rect.height * 4;
 }

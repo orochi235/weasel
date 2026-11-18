@@ -7,9 +7,9 @@ import type { StencilGroup } from '../diagramTypes/types';
 import { contentBox, outlinePath } from '../outline';
 import { resolveOutline } from '../outlines/table';
 import { stencilInsertOps, type DiagramStencil } from '../stencil';
+import type { Rect } from '@weasel-js/geom';
 
-type Box = { x: number; y: number; width: number; height: number };
-type Built = { id: string; parent?: string | null; pose: Box; data: { diagram?: { outline?: unknown }; text?: string } };
+type Built = { id: string; parent?: string | null; pose: Rect; data: { diagram?: { outline?: unknown }; text?: string } };
 
 /** Roughly a 12px sans-serif's advance, and `canvasMeasure`'s line height, so a row too narrow for its text shows. */
 export const measure: MeasureRowText = (text, s) => {
@@ -17,7 +17,7 @@ export const measure: MeasureRowText = (text, s) => {
   return { width: Math.ceil(text.length * size * (s.bold === true ? 0.62 : 0.56)), height: Math.ceil(size * 1.2) };
 };
 
-const inside = (inner: Box, outer: Box): boolean =>
+const inside = (inner: Rect, outer: Rect): boolean =>
   inner.x >= outer.x - 1e-6 && inner.y >= outer.y - 1e-6
   && inner.x + inner.width <= outer.x + outer.width + 1e-6
   && inner.y + inner.height <= outer.y + outer.height + 1e-6;
@@ -28,7 +28,7 @@ export function builtNodes(stencil: DiagramStencil): Built[] {
   const { ops } = stencilInsertOps(stencil, { x: 0, y: 0, width: 0, height: 0 }, { layer: 'main', newId: () => `${stencil.id}${++n}`, measure });
   const nodes = ops.map((op) => (op.args as { node: Built }).node);
   const world = worldPosesOf(nodes as never, RIGID_POSE_COMPOSITION);
-  return nodes.map((node) => ({ ...node, pose: world.get(node.id) as Box }));
+  return nodes.map((node) => ({ ...node, pose: world.get(node.id) as Rect }));
 }
 
 /** Every shape stencil names a registered outline, places at its own size, and lays one node per text row

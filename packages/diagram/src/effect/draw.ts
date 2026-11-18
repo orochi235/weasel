@@ -10,6 +10,7 @@ import type { PortSpec } from '../types';
 import { checkPipeline } from './check';
 import { formatParam } from './stageTypes';
 import type { EffectCluster, EffectPipeline, EffectPort, EffectStage, EffectWire } from './types';
+import type { Rect } from '@weasel-js/geom';
 
 /** The color of a value type, for a port or a wire. Answers `undefined`, a
  *  port with no type, with a neutral color. */
@@ -37,7 +38,7 @@ export interface EffectLookResult {
 export interface LookOrder {
   axis: 'x' | 'y';
   /** `grip` is where a press picks the item up, in world units; default its drawn box. */
-  items: readonly { id: string; grip?: { x: number; y: number; width: number; height: number } }[];
+  items: readonly { id: string; grip?: Rect }[];
 }
 
 /** One way of drawing a pipeline. Unparameterized, a look whose options are

@@ -12,6 +12,7 @@ import type { ViewAim } from '../domains/viewports/aim';
 import type { ViewRect } from '../domains/viewports/viewResolver';
 import type { Target } from '@weasel-js/animator';
 import type { Animator } from '@weasel-js/animator';
+import type { Rect } from '@weasel-js/geom';
 
 /**
  * A view added through {@link SceneCanvasApi.addView}.
@@ -88,7 +89,7 @@ export interface CanvasExtensionApi {
    * `(x + px, y + py)` on the surface, which is where a readback must look.
    * Read live: the value is the one the next paint uses.
    */
-  getSurfaceRect(): { x: number; y: number; width: number; height: number };
+  getSurfaceRect(): Rect;
   /**
    * A client point in this canvas's world: through the `clientToWorld`
    * override when the canvas was given one, and through {@link element}'s
@@ -187,7 +188,7 @@ export interface CanvasExtensionApi {
    * takes the id of the highest one that painted there; `null` when any of
    * them has no ids to give, timed out or failed included.
    */
-  readIds(rect: { x: number; y: number; width: number; height: number }, options?: CanvasIdReadOptions): Promise<IdBuffer | null>;
+  readIds(rect: Rect, options?: CanvasIdReadOptions): Promise<IdBuffer | null>;
   /**
    * {@link readIds} answered at once, for a pick that must answer inside the
    * event that asked. `null` when there is no frame to read, and where the
@@ -196,7 +197,7 @@ export interface CanvasExtensionApi {
    * whose ids are a round trip away.
    */
   readIdsSync(
-    rect: { x: number; y: number; width: number; height: number }, options?: CanvasIdReadOptions,
+    rect: Rect, options?: CanvasIdReadOptions,
   ): IdBuffer | null;
   /** The render worker's side of a canvas a worker paints part of: its animator and a snapshot of
    *  the whole stack of canvases. `null` when the page paints it all. */

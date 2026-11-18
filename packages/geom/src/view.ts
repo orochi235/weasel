@@ -1,3 +1,5 @@
+import type { Rect } from './box';
+
 /**
  * Viewport state. `(view.x, view.y)` is the world point currently rendered at
  * the canvas top-left; `view.scale.x` / `view.scale.y` is pixels per world
@@ -48,8 +50,8 @@ export function viewScreenToWorld(view: View, p: { x: number; y: number }): { x:
  */
 export function viewRectToScreen(
   view: View,
-  r: { x: number; y: number; width: number; height: number },
-): { x: number; y: number; width: number; height: number } {
+  r: Rect,
+): Rect {
   const x0 = (r.x - view.x) * view.scale.x;
   const y0 = (r.y - view.y) * view.scale.y;
   const w = r.width * view.scale.x;

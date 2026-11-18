@@ -65,7 +65,7 @@ export function clippedToBox(cmd: DrawCommand, box: Rect): DrawCommand {
 export function textBoxOf(
   d: Pick<TextNodeData, 'padding'>,
   p: RectPose,
-): { x: number; y: number; width: number; height: number } {
+): Rect {
   const pad = Math.max(0, d.padding ?? 0);
   const px = Math.min(pad, p.width / 2);
   const py = Math.min(pad, p.height / 2);
@@ -238,7 +238,7 @@ function strokedLinesBox(pose: RectPose, lines: readonly Rect[], reach: { x: num
  * covered rather than punching a hole where two lines happen to overlap —
  * which they do the moment `lineHeight` drops below 1.
  */
-export function rectsToPath(rects: readonly { x: number; y: number; width: number; height: number }[]): PolygonPath {
+export function rectsToPath(rects: readonly Rect[]): PolygonPath {
   const commands = new Uint8Array(rects.length * 6);
   const coords = new Float32Array(rects.length * 10);
   let ci = 0;

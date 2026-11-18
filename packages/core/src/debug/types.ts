@@ -4,6 +4,7 @@
  */
 import type { DebugSink, HitShape, HandleKind, View, ViewportMoveKind } from '@weasel-js/routing';
 import type { DEBUG_FEATURES } from './features';
+import type { Rect } from '@weasel-js/geom';
 export type { DebugSink, HitShape, HandleKind, ViewportMoveKind };
 
 /** One bit per debug feature; absent keys are off. */
@@ -102,7 +103,7 @@ export interface RecordedHandle {
 /** A node's bounds as computed during the current frame. */
 export interface RecordedBounds {
   id: string;
-  bounds: { x: number; y: number; width: number; height: number };
+  bounds: Rect;
 }
 
 /** A node's transform origin as used during the current frame. */

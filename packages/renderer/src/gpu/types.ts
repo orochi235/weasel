@@ -8,14 +8,10 @@
  * flips them against the target's height.
  */
 import type { BlendFactors } from '../effects/compositeOp';
+import type { Rect } from '@weasel-js/geom';
 
 /** A rect of a target, in its pixels from its bottom-left corner. */
-export interface GpuRect {
-  readonly x: number;
-  readonly y: number;
-  readonly width: number;
-  readonly height: number;
-}
+export type GpuRect = Readonly<Rect>;
 
 /** How a texture is filtered: the nearest texel, or a blend of the nearest four. */
 export type GpuFilter = 'nearest' | 'linear';

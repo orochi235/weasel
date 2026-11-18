@@ -1,7 +1,8 @@
 /** Edits to a pipeline's clusters: what each holds, its label, and its box under `nodeGraph`. */
 import type { Vec2 } from '@weasel-js/core/math';
 import { freshId, getOwn } from '@weasel-js/registry';
-import type { EffectBox, EffectDoc, EffectCluster, EffectPipeline } from './types';
+import type { EffectDoc, EffectCluster, EffectPipeline } from './types';
+import type { Rect } from '@weasel-js/geom';
 
 const clustersOf = (doc: EffectDoc): readonly EffectCluster[] => doc.pipeline.clusters ?? [];
 
@@ -114,7 +115,7 @@ export function moveToCluster(doc: EffectDoc, given: readonly string[], cluster:
 }
 
 /** Sets cluster `id`'s box under `nodeGraph`; `null` has it fit its members again. */
-export function setClusterBox(doc: EffectDoc, id: string, box: EffectBox | null): EffectDoc {
+export function setClusterBox(doc: EffectDoc, id: string, box: Rect | null): EffectDoc {
   const { [id]: _was, ...rest } = doc.clusterBoxes ?? {};
   return withClusters(doc, clustersOf(doc), box === null ? rest : { ...rest, [id]: { x: box.x, y: box.y, width: box.width, height: box.height } });
 }

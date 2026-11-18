@@ -57,17 +57,13 @@ import {
   type PersistedFloatingPanelProps,
 } from '../primitives/PersistedFloatingPanel';
 import { OverviewMarks } from './OverviewMarks';
+import type { Rect } from '@weasel-js/geom';
 
 /** The view id the overview publishes its pointer under. */
 export const OVERVIEW_VIEW_ID = 'overview';
 
 /** A rect in the instrument's world. */
-export interface OverviewBounds {
-  x: number;
-  y: number;
-  width: number;
-  height: number;
-}
+export type OverviewBounds = Rect;
 
 /** What an overview's `render` is handed. */
 export interface OverviewRenderArgs {

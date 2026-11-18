@@ -1,6 +1,6 @@
 import type { TexturePaint } from '@weasel-js/paint';
 import type { Mesh } from '@weasel-js/geom/tessellate';
-import { mat3 } from '@weasel-js/geom';
+import { mat3, type Rect } from '@weasel-js/geom';
 import type { GradientUV } from '../drawBatch';
 import { PAINT_MODE_IMAGE, withMatrix } from '../shaders/batchFill';
 import { getTexture, type TextureEntry } from '../textures/registerTexture';
@@ -109,7 +109,7 @@ function nearTile(uv: GradientUV, x: number, y: number): GradientUV {
 
 export function pushPatternRect(
   ctx: DrawContext,
-  rect: { x: number; y: number; width: number; height: number },
+  rect: Rect,
   paint: PatternBatchPaint,
 ): void {
   const { slot, tint } = stagePattern(ctx, paint, 4);

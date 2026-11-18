@@ -14,6 +14,7 @@ import type { Outline } from './outline';
 import type { DiagramTextStyle } from './rowStyle';
 import type { DiagramTheme } from './theme/types';
 import type { DiagramNode, PortSpec } from './types';
+import type { Rect } from '@weasel-js/geom';
 
 /** One node of a {@link DiagramData}: its rows of text, and optionally its outline, ports, size, and starting place. */
 export interface DataNode {
@@ -166,7 +167,7 @@ export interface DataContainer {
   axis?: 'x' | 'y';
   /** Where it stands and how big it is, in world units. A pool's size along
    *  its stack is shared by the lanes that give no `size`. */
-  box?: { x: number; y: number; width: number; height: number };
+  box?: Rect;
   /** Layout leaves its box where it is. */
   pinned?: boolean;
   /** The theme role it is drawn in. Unset, a container takes the theme's

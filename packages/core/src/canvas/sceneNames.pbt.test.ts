@@ -14,8 +14,9 @@ import { pickWalk, scenePickSource, type PickQuery } from './pickWalk';
 import { pointPick, regionPick } from './pickIndex/pickIndexFixture';
 import { sceneToAdapter } from './sceneAdapter';
 import {
-  LAYERS, buildScene, intBox, nodeIdOf, protoNames, runs, sceneSpec, timeoutFor, type Box, type BoxScene, type SceneNames,
+  LAYERS, buildScene, intBox, nodeIdOf, protoNames, runs, sceneSpec, timeoutFor, type BoxScene, type SceneNames,
 } from './pbt.fixture';
+import type { Rect } from '@weasel-js/geom';
 
 const RUNS = 200;
 const d = AUTO_POSE_DESCRIPTOR;
@@ -36,7 +37,7 @@ function sceneFor(spec: Parameters<typeof buildScene>[0], names: SceneNames, pla
 const walk = (scene: BoxScene, q: PickQuery<unknown>, indexed: boolean): string[] =>
   pickWalk(scenePickSource(scene as never, { camera: CAMERA, ...(indexed ? { index: { descriptor: d } } : {}) }), q);
 
-const draw = (node: { id: string }, pose: Box): DrawCommand[] =>
+const draw = (node: { id: string }, pose: Rect): DrawCommand[] =>
   [{ kind: 'path', path: { kind: 'rect', ...pose }, fill: { paint: { kind: 'solid', color: node.id } } } as DrawCommand];
 
 function painted(out: readonly DrawCommand[]): string[] {

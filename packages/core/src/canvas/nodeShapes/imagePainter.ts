@@ -1,5 +1,5 @@
 import {
-  linePath
+  linePath, type Rect
 } from '@weasel-js/geom';
 import type { Stroke } from '@weasel-js/paint';
 import type { NodeShapeEntry } from 'canvas/NodeShape';
@@ -15,7 +15,7 @@ import { paintsPose, poseBoxBounds } from './poseBox';
 export function sourceInPixels(
   s: NonNullable<ImageNodeData['image']['source']>,
   bmp: ImageBitmap,
-): { x: number; y: number; width: number; height: number } {
+): Rect {
   return {
     x: s.x * bmp.width, y: s.y * bmp.height, width: s.width * bmp.width, height: s.height * bmp.height,
   };

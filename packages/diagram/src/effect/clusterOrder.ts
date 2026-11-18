@@ -1,6 +1,6 @@
 /** Where each cluster sits along the main chain, and the sequence a cluster's title drags it along. */
 import type { Vec2 } from '@weasel-js/core';
-import { maxOf, minOf, rectContainsPoint } from '@weasel-js/geom';
+import { maxOf, minOf, rectContainsPoint, type Rect } from '@weasel-js/geom';
 import { clusterLabelIdOf } from '../dataClusters';
 import { slotsAlong, type ReorderItem, type ReorderSlots } from '../reorder';
 import type { ReorderSource } from './editorReorder';
@@ -33,11 +33,9 @@ export function clusterRuns(pipeline: EffectPipeline, chain: readonly string[]):
   return runs;
 }
 
-type Box = { x: number; y: number; width: number; height: number };
-
 /** The band across a cluster's box from its top edge to the top of its highest
  *  member: its title row, or the top padding where it has no title. */
-export function clusterGripOf(doc: EffectDoc, cluster: string, boxOf: ReorderSource['boxOf']): Box | undefined {
+export function clusterGripOf(doc: EffectDoc, cluster: string, boxOf: ReorderSource['boxOf']): Rect | undefined {
   const box = boxOf(cluster);
   const members = doc.pipeline.clusters?.find((g) => g.id === cluster)?.members ?? [];
   const tops = members.flatMap((m) => boxOf(m)?.y ?? []);

@@ -4,12 +4,11 @@ import {
   DEFAULT_PORTS, edgeIdOf, endLabelIdOf, type DataEdge, type DataNode, type DiagramLabel, type DiagramTheme,
 } from '@weasel-js/diagram';
 import { freshId } from '@weasel-js/registry';
-import type { Box } from './pageCells';
 import type { Warn } from './readStyle';
 import { writeStyle, type StylePart } from './style';
 import { edgeStyle } from './writeStyle';
 import { edgeXml, endLabelXml } from './writeXml';
-import { lerp } from '@weasel-js/geom';
+import { lerp, type Rect } from '@weasel-js/geom';
 
 /** What an edge needs of the page it is on. */
 export interface EdgePage {
@@ -17,13 +16,13 @@ export interface EdgePage {
   layer: string;
   nodes: ReadonlyMap<string, DataNode>;
   /** The box of every shape, region, lane, and cluster, by id. */
-  boxes: ReadonlyMap<string, Box>;
+  boxes: ReadonlyMap<string, Rect>;
   /** The cell ids already written. An edge takes its own id, numbered on when another cell has it. */
   taken: Set<string>;
   warn: Warn;
 }
 
-const center = (b: Box): Vec2 => ({ x: b.x + b.width / 2, y: b.y + b.height / 2 });
+const center = (b: Rect): Vec2 => ({ x: b.x + b.width / 2, y: b.y + b.height / 2 });
 
 /** How far along `line` the point nearest `p` is, as a fraction of its length. */
 function fractionNear(line: readonly Vec2[], p: Vec2): number {

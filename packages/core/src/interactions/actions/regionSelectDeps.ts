@@ -2,6 +2,7 @@
 import type { NodeId } from 'core/scene/types';
 import type { PickingView } from 'core/adapters/types';
 import type { WorldPoint } from '@weasel-js/routing';
+import type { Rect } from '@weasel-js/geom';
 
 /**
  * Topmost-node-at-world-point dep, for any action that needs a single-best
@@ -28,7 +29,7 @@ export interface AreaSelectDep {
   /** Return ids of all scene nodes whose AABB overlaps `bounds`, skipping any
    *  on a layer `view` — the view the gesture ran in — does not paint. */
   hitTestArea(
-    bounds: { x: number; y: number; width: number; height: number },
+    bounds: Rect,
     view?: PickingView,
   ): NodeId[];
   /** The node selecting `id` selects: the outermost group above it that is
@@ -58,7 +59,7 @@ export interface LassoSelectDep {
   ): string[];
   /** Return ids of nodes whose AABB overlaps the given rect (fallback). */
   hitTestArea(
-    bounds: { x: number; y: number; width: number; height: number },
+    bounds: Rect,
     view?: PickingView,
   ): string[];
   /** The node selecting `id` selects: the outermost group above it that is

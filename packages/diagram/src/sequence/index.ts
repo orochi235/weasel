@@ -17,7 +17,7 @@ export {
 } from './authorSteps';
 export {
   sequenceLayout, type SeqActivationPlace, type SeqBoxPlace, type SeqFragmentPlace, type SeqHeadPlace, type SeqLifelinePlace,
-  type SeqMessagePlace, type SeqNotePlace, type SeqRect, type SequenceLayout, type SequenceLayoutOptions, type SeqSlot,
+  type SeqMessagePlace, type SeqNotePlace, type SequenceLayout, type SequenceLayoutOptions, type SeqSlot,
 } from './layout';
 export { SEQUENCE_ROLES, sequenceSpecs, type SequenceSpecsOptions } from './specs';
 export {

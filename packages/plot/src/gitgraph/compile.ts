@@ -1,5 +1,5 @@
 /** A gitgraph compiled to its scales and marks. */
-import { maxOf } from '@weasel-js/geom';
+import { maxOf, type Rect } from '@weasel-js/geom';
 import { CHART_PAD as PAD, chartTitle } from '../chartTitle';
 import { barMark, pointMark } from '../marks/boxes';
 import { lineMark, ruleMark } from '../marks/paths';
@@ -26,7 +26,7 @@ const MAX_LANE = 60;
 
 /** The lanes and commit points of `history` in `box`, commits in sequence along the run, lanes across it. */
 function place(
-  data: GitGraphData, history: GitHistory, box: { x: number; y: number; width: number; height: number }, labelRoom: number,
+  data: GitGraphData, history: GitHistory, box: Rect, labelRoom: number,
 ): GitGraphLayout {
   const dir = data.orientation ?? 'LR';
   const lr = dir === 'LR';

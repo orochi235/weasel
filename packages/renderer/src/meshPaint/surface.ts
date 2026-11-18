@@ -1,3 +1,5 @@
+import type { Rect } from '@weasel-js/geom';
+
 /**
  * Coons and tensor-product patch surfaces — PDF's shading types 6 and 7, as
  * pure geometry.
@@ -152,7 +154,7 @@ export function cornerWeights(u: number, v: number): [number, number, number, nu
  *  bound a Bézier but not tightly. */
 export function patchBounds(
   patch: MeshPatch<unknown>, steps = 8,
-): { x: number; y: number; width: number; height: number } {
+): Rect {
   let minX = Infinity;
   let minY = Infinity;
   let maxX = -Infinity;

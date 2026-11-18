@@ -1,5 +1,5 @@
 /** A user journey compiled to its sections, scored steps and actor legend. */
-import { maxOf } from '@weasel-js/geom';
+import { maxOf, type Rect } from '@weasel-js/geom';
 import { axisMarks, axisRoom } from '../axes';
 import { CHART_PAD as PAD, chartTitle } from '../chartTitle';
 import { pointMark, spanMark } from '../marks/boxes';
@@ -15,7 +15,7 @@ import type { JourneyData } from './types';
 
 /** Where a journey's parts landed: the plot area, the score scale up it, and each step's band across it. */
 export interface JourneyLayout {
-  plot: { x: number; y: number; width: number; height: number };
+  plot: Rect;
   score: LinearScale;
   /** Over every step in order, keyed by its place among them all from `'0'`. */
   steps: BandScale;

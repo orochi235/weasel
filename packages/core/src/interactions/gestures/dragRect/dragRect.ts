@@ -1,5 +1,5 @@
 import { useCallback, useMemo, useRef, useState } from 'react';
-import { rectBetween } from '@weasel-js/geom';
+import { rectBetween, type Rect } from '@weasel-js/geom';
 import { useLatest } from '@weasel-js/react';
 import { useDragGesture } from '../dragGesture';
 import type { ModifierState } from '../types';
@@ -10,7 +10,7 @@ import { dlog } from '../../../debug/flag';
 export type DragRectPoint = WorldPoint;
 /** The axis-aligned box between the drag's two corners, always with
  *  non-negative extents regardless of drag direction. */
-export interface DragRectBounds { x: number; y: number; width: number; height: number }
+export type DragRectBounds = Rect;
 
 /** Live state of a rectangle drag, handed to each lifecycle callback. Either
  *  corner can be moved mid-gesture, which is how a tool re-anchors a drag

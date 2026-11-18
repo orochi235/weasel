@@ -47,9 +47,6 @@ export const SEQ = {
   cross: 12,
 } as const;
 
-/** A box in world units. */
-export interface SeqRect { x: number; y: number; width: number; height: number }
-
 /** Measures text as the layout and the specs both read it. */
 export interface SeqMeasure {
   font: { fontFamily: string; fontSize: number };

@@ -24,7 +24,7 @@ import {
   polygonFromPoints,
   schneiderFit,
   type PathFillRule,
-  type PolygonPath,
+  type PolygonPath, type Rect,
 } from '@weasel-js/geom';
 import type { Stroke, Fill } from '@weasel-js/paint';
 import { DEFAULT_STROKE_WIDTH, type InsertStyle } from '../actions/insert/style';
@@ -68,7 +68,7 @@ export const KIT_INSERT_KINDS: readonly string[] = Object.freeze([
 /** The kit's default data for a kind drawn as a box, or `null` for a kind it has none for. */
 function boxKindData(
   kind: string,
-  bounds: { x: number; y: number; width: number; height: number },
+  bounds: Rect,
   extras: InsertExtras,
   painted: (as?: string) => Painted,
 ): unknown {

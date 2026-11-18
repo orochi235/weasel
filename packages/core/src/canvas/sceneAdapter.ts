@@ -41,6 +41,7 @@ import type { Bounds } from '../core/viewport/fitViewToBounds';
 import { scenePoseTarget } from '../animation/poseTarget';
 import { pasteSceneSnapshot, snapshotSceneSelection, type SceneClipboardEnv } from './sceneClipboard';
 import { DUPLICATE_OFFSET } from '../interactions/actions/duplicateOffset';
+import type { Rect } from '@weasel-js/geom';
 
 /** A scene adapter's pose reads: the stored pose, the world pose, and the fold between them. */
 function scenePoseReads<TData, TLayer extends string, TPose>(scene: Scene<TData, TLayer, TPose>) {
@@ -257,7 +258,7 @@ export function sceneToAdapter<TData, TLayer extends string, TPose>(
     // the second add throws on id collision.
     ...(options.commitInsert
       ? {
-          commitInsert: (bounds: { x: number; y: number; width: number; height: number }) => {
+          commitInsert: (bounds: Rect) => {
             const created = options.commitInsert!(bounds);
             if (!created) return null;
             const layer = (options.insertLayer ?? ('default' as TLayer));

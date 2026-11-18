@@ -1,10 +1,8 @@
 /** Test fixture: a clustered graph, and where a layout leaves its boxes. */
-import { rectsOverlap } from '@weasel-js/geom';
+import { rectsOverlap, type Rect } from '@weasel-js/geom';
 import { getOwn } from '@weasel-js/registry';
 import { buildGraph, type Graph, type GraphNodeLike } from './graph';
 import type { LayoutOptions, LayoutResult } from './layout';
-
-export interface Rect { x: number; y: number; width: number; height: number }
 
 const DEGENERATE: Rect = { x: 0, y: 0, width: 0, height: 0 };
 

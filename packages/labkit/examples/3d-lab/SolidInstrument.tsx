@@ -51,6 +51,7 @@ import { useGroupEntry3d, type GroupEntry3d } from './groupEntry3d';
 import { useBoxInsert } from './insert3d';
 import { useSolidSelection } from './selection3d';
 import { usePickerSelectTool, createSelectionMoveContribution, ENGINE_STANDARD_ACTIONS } from '@weasel-js/editing/engine';
+import type { Rect } from '@weasel-js/geom';
 
 interface SolidState {
   /** Kept only so labkit has something to persist; the scene itself is a ref. */
@@ -307,7 +308,7 @@ function Viewport({ config }: { config: SolidConfig }): ReactNode {
       getParent: (id: string) => scene.get(id as NodeId)?.parent ?? null,
       getChildren: (parentId: string | null): string[] =>
         (parentId === null ? [...scene.roots] : [...scene.childrenOf(parentId as NodeId)]),
-      hitTestArea: (rect: { x: number; y: number; width: number; height: number }) =>
+      hitTestArea: (rect: Rect) =>
         areaSelect.hitTestArea(rect) as string[],
       getSelection: () => [...selectionRef.current] as string[],
       setSelection: (ids: string[]) => setSelection(ids as NodeId[]),
