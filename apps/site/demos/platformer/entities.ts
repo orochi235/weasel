@@ -29,8 +29,16 @@ export type Contact =
   | { kind: 'hurt'; index: number }
   | { kind: 'coin'; index: number };
 
+/** Each enemy stands on the bottom of the tile it was placed in, which is the
+ *  top of the floor under it; `at` is anywhere in that tile, usually its center. */
 export const createEnemies = (at: Vec2[]): Enemy[] =>
-  at.map((p, i) => ({ x: p.x, y: p.y, vx: i % 2 === 0 ? ENEMY_SPEED : -ENEMY_SPEED, alive: true, phase: i * 0.37 }));
+  at.map((p, i) => ({
+    x: p.x,
+    y: (toRow(p.y) + 1) * TILE - ENEMY_H / 2,
+    vx: i % 2 === 0 ? ENEMY_SPEED : -ENEMY_SPEED,
+    alive: true,
+    phase: i * 0.37,
+  }));
 
 export const createCoins = (at: Vec2[]): Coin[] => at.map((p) => ({ x: p.x, y: p.y, taken: false }));
 

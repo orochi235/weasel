@@ -13,6 +13,13 @@ const LEDGE = parseLevel([
   '.......',
 ]);
 
+describe('createEnemies', () => {
+  it('stands each enemy on the floor under its tile', () => {
+    const [e] = createEnemies([{ x: 3.5 * TILE, y: 1.5 * TILE }]);
+    expect(e.y + ENEMY_H / 2).toBe(2 * TILE);
+  });
+});
+
 describe('stepEnemy', () => {
   it('walks along its platform', () => {
     let e = createEnemies([{ x: 3.5 * TILE, y: 1.5 * TILE }])[0];
@@ -65,13 +72,13 @@ describe('resolveContacts', () => {
 
   it('reads a descending player above an enemy as a stomp', () => {
     const enemies = createEnemies([{ x: 100, y: 100 }]);
-    const body = { ...at(100, 100 - ENEMY_H / 2 - 6), vy: 200 };
+    const body = { ...at(100, enemies[0].y - ENEMY_H / 2 - 6), vy: 200 };
     expect(resolveContacts(body, enemies, [], 0)).toEqual([{ kind: 'stomp', index: 0 }]);
   });
 
   it('reads a side collision as a hurt', () => {
     const enemies = createEnemies([{ x: 100, y: 100 }]);
-    const body = { ...at(100 - ENEMY_W / 2 - 2, 100), vy: 0 };
+    const body = { ...at(100 - ENEMY_W / 2 - 2, enemies[0].y), vy: 0 };
     expect(resolveContacts(body, enemies, [], 0)).toEqual([{ kind: 'hurt', index: 0 }]);
   });
 
