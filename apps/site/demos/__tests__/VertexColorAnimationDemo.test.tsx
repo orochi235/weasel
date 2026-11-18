@@ -1,7 +1,28 @@
 import { act, fireEvent, render, screen } from '@testing-library/react';
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { rainbowVertexColors, solidVertexColors } from '@weasel-js/animator';
+import type { Animator } from '@weasel-js/animator';
 import { VertexColorAnimationDemo } from '../VertexColorAnimationDemo';
+
+const animators = vi.hoisted(() => [] as unknown[]);
+vi.mock('@weasel-js/animator/react', async (importOriginal) => {
+  const mod = await importOriginal<typeof import('@weasel-js/animator/react')>();
+  return {
+    ...mod,
+    useAnimator: (...args: Parameters<typeof mod.useAnimator>) => {
+      const animator = mod.useAnimator(...args);
+      if (!animators.includes(animator)) animators.push(animator);
+      return animator;
+    },
+  };
+});
+
+/** The colors painted over the node's stroke right now, read from the first animator the
+ *  demo's mount made: the one its canvas paints from. */
+function shown(id: string): number[] {
+  const painted = (animators[0] as Animator).colorOverrides.get(id, 'stroke');
+  return painted === undefined || typeof painted === 'function' ? strokeColors(id) : Array.from(painted);
+}
 
 const RAINBOW = rainbowVertexColors(7);
 
@@ -22,6 +43,7 @@ beforeAll(() => {
   window.history.replaceState(null, '', '/?test=1');
 });
 beforeEach(() => {
+  animators.length = 0;
   vi.useFakeTimers({ toFake: ['requestAnimationFrame', 'cancelAnimationFrame', 'performance'] });
 });
 afterEach(() => {
@@ -45,6 +67,19 @@ describe('VertexColorAnimationDemo', () => {
     click('tween');
     advance(1000);
     expect(strokeColors('tween')).toEqual(RAINBOW);
+  });
+
+  it.each(['tween', 'stagger'])('turns a %s clicked mid-run back from the colors on screen', (id) => {
+    render(<VertexColorAnimationDemo />);
+    click(id);
+    advance(300);
+    const before = shown(id);
+    expect(before).not.toEqual(RAINBOW);
+    click(id);
+    advance(16);
+    shown(id).forEach((v, i) => { expect(v).toBeCloseTo(before[i]!, 1); });
+    advance(3000);
+    expect(strokeColors(id)).toEqual(RAINBOW);
   });
 
   it('commits a stagger once its last anchor finishes', () => {

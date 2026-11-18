@@ -33,7 +33,7 @@ export const CURVE_PRESETS: readonly CurvePreset[] = [
   {
     id: 'near-circle',
     label: 'Near-circle (4 anchors at cardinals)',
-    description: 'NURBS with weights ≈ 0.707 hits an exact circle. Bezier and Spiro approximate.',
+    description: 'Four anchors on a circle, left open. None of these representations draws a circle exactly, so this shows how far each strays; cubic NURBS passes through only the end anchors.',
     anchors: [
       { x: 200, y: 60 },
       { x: 340, y: 200 },

@@ -36,6 +36,10 @@ function loadDemoFace(): Promise<void> {
   facePromise ??= new FontFace(FAMILY, `url(${INTER_TTF})`).load().then((face) => {
     document.fonts.add(face);
     registerCanvasFont(FAMILY);
+  }, (err: unknown) => {
+    // Forgotten, so the next mount tries again.
+    facePromise = null;
+    throw err;
   });
   return facePromise;
 }
@@ -82,7 +86,9 @@ export function TextOutlinesDemo() {
   const [zoom, setZoom] = useState(1);
   const [status, setStatus] = useState('loading');
 
-  useEffect(() => { void loadDemoFace(); }, []);
+  useEffect(() => {
+    loadDemoFace().catch((err: unknown) => { console.warn(`[TextOutlinesDemo] ${FAMILY} did not load`, err); });
+  }, []);
 
   // Paint is the node's, not the style's. `null` is an explicit no-fill, the
   // same value every other node kind reads.

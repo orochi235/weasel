@@ -137,4 +137,47 @@ describe('flick to grid', () => {
     act(() => { scene.undo(); });
     expect(pose()).toMatchObject({ x: 60, y: 60 });
   });
+
+  /** Drags the block through `moves` (pointer x, ms since the last event), releases it after
+   *  `holdMs` at rest, and runs the flick out. Returns where the block landed. */
+  function flick(moves: [number, number][], holdMs = 0) {
+    const proto = HTMLCanvasElement.prototype as unknown as Record<string, unknown>;
+    proto.setPointerCapture = vi.fn();
+    proto.releasePointerCapture = vi.fn();
+    vi.useFakeTimers({ toFake: ['setTimeout'] });
+    const { clock, step } = stubFrames();
+    vi.spyOn(performance, 'now').mockImplementation(() => clock.now);
+    scenes.length = 0;
+
+    const { container } = render(<AnimationDemo />);
+    const scene = scenes.find((s) => s.get('block' as never))!;
+    const canvas = container.querySelectorAll('canvas')[1]!;
+    const fire = (type: string, x: number): void => act(() => {
+      canvas.dispatchEvent(new PointerEvent(type, { bubbles: true, clientX: x, clientY: 80, pointerId: 1, buttons: 1 }));
+    });
+    fire('pointerdown', 80);
+    let x = 80;
+    for (const [to, ms] of moves) {
+      clock.now += ms;
+      x = to;
+      fire('pointermove', x);
+    }
+    clock.now += holdMs;
+    fire('pointerup', x);
+    for (let i = 0; i < 4; i++) step();
+    act(() => { vi.advanceTimersByTime(200); });
+    for (let i = 0; i < 400 && scene.overrides.has('block' as never); i++) step();
+    expect(scene.overrides.has('block' as never)).toBe(false);
+    return scene.get('block' as never)!.pose;
+  }
+
+  it('snaps a block dropped with too few moves to measure a flick', () => {
+    // One move: the block is at x 80, nearest the cell at 60.
+    expect(flick([[100, 16]])).toMatchObject({ x: 60, y: 60 });
+  });
+
+  it('lands a block released after coming to rest where it was let go', () => {
+    // Fast to x 150, then a second still: the block rests at x 130, nearest the cell at 120.
+    expect(flick([[90, 16], [110, 16], [130, 16], [150, 16]], 1000)).toMatchObject({ x: 120, y: 60 });
+  });
 });
