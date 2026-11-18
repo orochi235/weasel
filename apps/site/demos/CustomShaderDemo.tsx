@@ -81,7 +81,7 @@ function Panel({
     draw: (_data, _view, dims): DrawCommand[] => disabled ? [] : [{
       kind: 'shader',
       program,
-      bounds: { x: 0, y: 0, w: dims.width, h: dims.height },
+      bounds: { x: 0, y: 0, width: dims.width, height: dims.height },
       uniforms: uniformsRef.current(secondsOf(clock), dims),
     }],
   }), [program, disabled, title, uniformsRef, clock]);

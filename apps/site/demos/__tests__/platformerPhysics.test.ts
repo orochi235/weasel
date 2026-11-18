@@ -32,7 +32,7 @@ describe('stepBody gravity and floor', () => {
     expect(s.body.onGround).toBe(true);
     expect(s.body.vy).toBe(0);
     // The floor is row 3, so its top edge is at 3 * TILE; the body rests on it.
-    expect(s.body.y + s.body.h / 2).toBeCloseTo(3 * TILE, 3);
+    expect(s.body.y + s.body.height / 2).toBeCloseTo(3 * TILE, 3);
   });
 
   it('reports the landing frame exactly once', () => {
@@ -76,14 +76,14 @@ describe('stepBody walls', () => {
     let s = settle();
     for (let i = 0; i < 240; i++) s = stepBody(s, WALLS, RIGHT, STEP);
     // The wall column is 5, so its left face is at 5 * TILE.
-    expect(s.body.x + s.body.w / 2).toBeCloseTo(5 * TILE, 3);
+    expect(s.body.x + s.body.width / 2).toBeCloseTo(5 * TILE, 3);
   });
 
   it('stops rising at a ceiling', () => {
     let s = createBodyState({ x: 3 * TILE, y: 5 * TILE });
     for (let i = 0; i < 240; i++) s = stepBody(s, WALLS, IDLE, STEP);
     for (let i = 0; i < 120; i++) s = stepBody(s, WALLS, JUMP, STEP);
-    expect(s.body.y - s.body.h / 2).toBeGreaterThanOrEqual(3 * TILE - 0.01);
+    expect(s.body.y - s.body.height / 2).toBeGreaterThanOrEqual(3 * TILE - 0.01);
   });
 });
 
@@ -101,19 +101,19 @@ describe('one-way platforms', () => {
     let s = createBodyState({ x: 2 * TILE, y: 0 });
     for (let i = 0; i < 240; i++) s = stepBody(s, ONEWAY_LEVEL, IDLE, STEP);
     expect(s.body.onGround).toBe(true);
-    expect(s.body.y + s.body.h / 2).toBeCloseTo(3 * TILE, 3);
+    expect(s.body.y + s.body.height / 2).toBeCloseTo(3 * TILE, 3);
   });
 
   it('lets a body jump up through it', () => {
     // Start resting on the floor below the platform.
     let s = createBodyState({ x: 2 * TILE, y: 4.5 * TILE });
     for (let i = 0; i < 120; i++) s = stepBody(s, ONEWAY_LEVEL, IDLE, STEP);
-    expect(s.body.y + s.body.h / 2).toBeCloseTo(5 * TILE, 3);
+    expect(s.body.y + s.body.height / 2).toBeCloseTo(5 * TILE, 3);
     let minTop = Infinity;
     s = stepBody(s, ONEWAY_LEVEL, JUMP, STEP);
     for (let i = 0; i < 60; i++) {
       s = stepBody(s, ONEWAY_LEVEL, { ...JUMP, jumpPressed: false }, STEP);
-      minTop = Math.min(minTop, s.body.y - s.body.h / 2);
+      minTop = Math.min(minTop, s.body.y - s.body.height / 2);
     }
     // It got above the platform's top rather than being stopped under it.
     expect(minTop).toBeLessThan(3 * TILE);
@@ -254,7 +254,7 @@ describe('? blocks and bonks', () => {
     const RIGHT: Input = { left: false, right: true, jumpHeld: false, jumpPressed: false };
     for (let i = 0; i < 240; i++) s = stepBody(s, WALL, RIGHT, STEP);
     // The `?` column is 2, so its left face is at 2 * TILE.
-    expect(s.body.x + s.body.w / 2).toBeCloseTo(2 * TILE, 3);
+    expect(s.body.x + s.body.width / 2).toBeCloseTo(2 * TILE, 3);
   });
 
   it('reports a bonk with the struck cell on a real upward hit', () => {

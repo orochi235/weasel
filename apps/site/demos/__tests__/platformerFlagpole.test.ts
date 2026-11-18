@@ -5,7 +5,7 @@ import { freshGame, stepEnding, stepWorld, NO_HOOKS, POLE, type WorldHooks } fro
 import { WORLD } from '../platformer/worldLevel';
 
 const body = (x: number, y: number) => ({
-  x, y, w: BODY_W, h: BODY_H, vx: 0, vy: 0, onGround: false, facing: 1 as const,
+  x, y, width: BODY_W, height: BODY_H, vx: 0, vy: 0, onGround: false, facing: 1 as const,
 });
 
 describe('flagpole geometry', () => {

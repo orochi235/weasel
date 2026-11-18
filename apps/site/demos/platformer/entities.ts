@@ -58,14 +58,14 @@ export function resolveContacts(body: Body, enemies: Enemy[], coins: Coin[], inv
   const out: Contact[] = [];
   enemies.forEach((e, index) => {
     if (!e.alive) return;
-    if (!overlaps(body.x, body.y, body.w, body.h, e.x, e.y, ENEMY_W, ENEMY_H)) return;
-    const feet = body.y + body.h / 2;
+    if (!overlaps(body.x, body.y, body.width, body.height, e.x, e.y, ENEMY_W, ENEMY_H)) return;
+    const feet = body.y + body.height / 2;
     if (body.vy > 0 && feet < e.y) out.push({ kind: 'stomp', index });
     else if (invuln <= 0) out.push({ kind: 'hurt', index });
   });
   coins.forEach((c, index) => {
     if (c.taken) return;
-    if (overlaps(body.x, body.y, body.w, body.h, c.x, c.y, COIN_R * 2, COIN_R * 2)) {
+    if (overlaps(body.x, body.y, body.width, body.height, c.x, c.y, COIN_R * 2, COIN_R * 2)) {
       out.push({ kind: 'coin', index });
     }
   });
@@ -74,4 +74,4 @@ export function resolveContacts(body: Body, enemies: Enemy[], coins: Coin[], inv
 
 /** True when the player's box covers the goal tile's center. */
 export const atGoal = (body: Body, goal: Vec2): boolean =>
-  overlaps(body.x, body.y, body.w, body.h, goal.x, goal.y, TILE, TILE);
+  overlaps(body.x, body.y, body.width, body.height, goal.x, goal.y, TILE, TILE);

@@ -143,7 +143,7 @@ export function CompoundPathsDemo() {
     const g = scene.get(asNodeId('goose'));
     if (!g) return null;
     const b = pathPoseDescriptor.getBounds(g.pose);
-    return { x: b.x + b.width / 2 - 18, y: b.y - 22, w: 36, h: 16 };
+    return { x: b.x + b.width / 2 - 18, y: b.y - 22, width: 36, height: 16 };
   };
 
   return (
@@ -249,7 +249,7 @@ export function CompoundPathsDemo() {
   );
 }
 
-function HonkButton({ getBounds, onHonk }: { getBounds: () => { x: number; y: number; w: number; h: number } | null; onHonk: () => void }) {
+function HonkButton({ getBounds, onHonk }: { getBounds: () => { x: number; y: number; width: number; height: number } | null; onHonk: () => void }) {
   const b = getBounds();
   if (!b) return null;
   return (
@@ -257,7 +257,7 @@ function HonkButton({ getBounds, onHonk }: { getBounds: () => { x: number; y: nu
       type="button"
       onClick={onHonk}
       className={styles.honk}
-      style={{ left: b.x, top: b.y, width: b.w, height: b.h }}
+      style={{ left: b.x, top: b.y, width: b.width, height: b.height }}
     >
       honk
     </button>
