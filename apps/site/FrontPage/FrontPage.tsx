@@ -1,4 +1,5 @@
 import { ThemeProvider } from '@weasel-js/theme/react';
+import { FORGE_LAB } from '@shared/labs';
 import { PACKAGES_ID } from '@shared/packageRoutes';
 import { DEMOS_ID, GET_STARTED_ID, RELEASES_ID } from '../routes';
 import { projectTheme } from './projectTheme';
@@ -13,7 +14,7 @@ const LINKS = [
   { href: `#${GET_STARTED_ID}`, title: 'Get started', note: 'Install, first scene' },
   { href: `#${PACKAGES_ID}`, title: 'Packages', note: 'Guides and API reference' },
   { href: `#${DEMOS_ID}`, title: 'Demos', note: 'Live, with source' },
-  { href: './docs/ui/forge/', title: 'Components', note: 'The UI workshop' },
+  { href: FORGE_LAB.href, title: 'Components', note: 'The UI workshop' },
   { href: './draw/', title: 'WeaselDraw', note: 'The app built on it' },
   { href: './chart/', title: 'WeaselChart', note: 'A diagram editor built on it' },
   { href: `#${RELEASES_ID}`, title: 'Releases', note: 'Every version' },
