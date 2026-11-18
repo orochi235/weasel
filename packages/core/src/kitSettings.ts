@@ -5,13 +5,11 @@ import type { coreKitSettingsSchema } from './kitSettingsSchema';
 
 export type { GestureKitSettings };
 
-type CoreKitSettings = PrefValuesOf<typeof coreKitSettingsSchema>;
-
 /** Core's `targets` leaves: hit radii and overlay dot sizes, in CSS px. */
-export type CoreKitTargetSettings = CoreKitSettings['targets'];
+export type CoreKitTargetSettings = PrefValuesOf<typeof coreKitSettingsSchema>['targets'];
 
 /** Core's `view` area. */
-export type ViewKitSettings = CoreKitSettings['view'];
+export type ViewKitSettings = PrefValuesOf<typeof coreKitSettingsSchema>['view'];
 
 declare module '@weasel-js/react' {
   interface KitSettings {
