@@ -173,7 +173,7 @@ export class WebGLDevice implements GpuDevice, GlProgramHost {
     this.gl.clear(this.gl.STENCIL_BUFFER_BIT);
   }
 
-  draw(state: GpuDrawState, geometry: GpuGeometry, count: number, firstIndex = 0): void {
+  draw(state: GpuDrawState, geometry: GpuGeometry, count: number, firstIndex = 0, instances?: number): void {
     const gl = this.gl;
     const cache = this.cache;
     const program = state.program as GlProgram;
@@ -191,7 +191,9 @@ export class WebGLDevice implements GpuDevice, GlProgramHost {
     cache.bindVertexArray(geom.vao);
     cache.bindTextures(program.textures as readonly (res.GlTexture | null)[]);
     const type = res.indexType(gl, geom.indexFormat);
-    gl.drawElements(gl.TRIANGLES, count, type, firstIndex * (geom.indexFormat === 'uint16' ? 2 : 4));
+    const offset = firstIndex * (geom.indexFormat === 'uint16' ? 2 : 4);
+    if (instances === undefined) gl.drawElements(gl.TRIANGLES, count, type, offset);
+    else gl.drawElementsInstanced(gl.TRIANGLES, count, type, offset, instances);
   }
 
   resolve(source: GpuTarget, dest: GpuTarget, width: number, height: number, x: number, y: number): void {
