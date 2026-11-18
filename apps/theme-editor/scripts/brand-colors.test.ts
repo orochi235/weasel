@@ -36,3 +36,20 @@ describe('PALETTE_FILES', () => {
     expect(PALETTE_FILES.lego).toMatch(/apps\/theme-editor\/src\/palette\/legoColors\.ts$/);
   });
 });
+
+describe('parseCopic', () => {
+  const marker = { name: 'Frost Blue', number: 'B00', extractedColor: '#C4FAFE' };
+
+  it('lowercases the sampled hex', () => {
+    expect(parseCopic([marker])).toEqual([{ name: 'Frost Blue', code: 'B00', hex: '#c4fafe' }]);
+  });
+
+  it('throws on a marker with no name rather than writing `name: undefined`', () => {
+    expect(() => parseCopic([{ ...marker, name: undefined }])).toThrow(/B00 has no name/);
+  });
+
+  it('throws on a sampled colour that is not a 6-digit hex', () => {
+    expect(() => parseCopic([{ ...marker, extractedColor: 'rgb(1,2,3)' }])).toThrow(/B00.*not a #rrggbb hex/);
+    expect(() => parseCopic([{ ...marker, extractedColor: '#fff' }])).toThrow(/not a #rrggbb hex/);
+  });
+});

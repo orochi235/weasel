@@ -60,7 +60,14 @@ export function parseLego(html) {
 export function parseCopic(all) {
   return all
     .filter((c) => c.extractedColor && c.number)
-    .map((c) => ({ name: c.name, code: String(c.number), hex: c.extractedColor.toLowerCase() }))
+    .map((c) => {
+      const code = String(c.number);
+      // A row the generated file's types reject is an upstream change to look at, not one to write.
+      if (typeof c.name !== 'string' || !c.name) throw new Error(`gen-brand-colors: Copic ${code} has no name`);
+      const hex = String(c.extractedColor).toLowerCase();
+      if (!/^#[0-9a-f]{6}$/.test(hex)) throw new Error(`gen-brand-colors: Copic ${code}'s colour ${JSON.stringify(c.extractedColor)} is not a #rrggbb hex`);
+      return { name: c.name, code, hex };
+    })
     .sort((a, b) => a.code.localeCompare(b.code, undefined, { numeric: true }));
 }
 
