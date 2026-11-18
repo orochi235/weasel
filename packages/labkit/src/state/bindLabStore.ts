@@ -1,99 +1,17 @@
-import { isPlainObject } from '@weasel-js/core';
-import type { OwnedRecordCache, RecordCache } from '@weasel-js/storage';
-import { isColorModePreference } from '@weasel-js/theme';
-import { CURRENT_DOCUMENT_VERSION } from './document';
+import type { RecordCache } from '@weasel-js/storage';
 import { serializeTrials } from './helpers';
-import { hydrateSnapshots, hydrateTrials, withoutUnreadable } from './hydrate';
-import {
-  compareTrialOrder,
-  LAYOUT_RECORD,
-  type LabMeta,
-  META_RECORD,
-  parseRecordName,
-  saveRecord,
-  trialRecord,
-  trialValuesPrefix,
-  UNDOCK_RECORD,
-} from './labRecords';
+import { remoteState } from './labRecordReads';
+import { trialRecord } from './labRecords';
+import { type UnsavedState, writeStoreChanges, writeUnsaved } from './labRecordWrites';
 import { ownUndoOf } from './ownUndo';
 import type { LabStore } from './store';
-import type { SavedSnapshot, SerializedTrial, TrialRecord, UnreadableRecord } from './types';
-import type { UndockedPanels } from './undock';
+import type { TrialRecord } from './types';
 import { onUndoSteps } from './watchTrialHistories';
 
 export interface BindOptions {
   orders: Map<string, number>;
   /** What the store holds that the records do not: written once, at binding. */
-  unsaved?: {
-    trials: readonly string[];
-    saves: readonly string[];
-    layout: boolean;
-    undock: boolean;
-    mode: boolean;
-  };
-}
-
-function persistedFieldsDiffer(a: TrialRecord, b: TrialRecord): boolean {
-  if (a === b) return false;
-  const fields = [...Object.keys(a), ...Object.keys(b)] as (keyof TrialRecord)[];
-  for (const key of new Set(fields)) {
-    if (key !== 'history' && !Object.is(a[key], b[key])) return true;
-  }
-  return false;
-}
-
-function inOrder(trials: TrialRecord[], orderOf: ReadonlyMap<string, number>): boolean {
-  for (let i = 1; i < trials.length; i++) {
-    const a = trials[i - 1] as TrialRecord;
-    const b = trials[i] as TrialRecord;
-    const at = { trial: a, order: orderOf.get(a.id) ?? 0 };
-    const bt = { trial: b, order: orderOf.get(b.id) ?? 0 };
-    if (compareTrialOrder(at, bt) >= 0) return false;
-  }
-  return true;
-}
-
-/** Delete the records of what left `was` for `now`: each one was discarded. */
-function deleteDiscarded(
-  records: RecordCache,
-  now: UnreadableRecord[],
-  was: UnreadableRecord[],
-): boolean {
-  const gone = now === was ? [] : was.filter((u) => !now.includes(u));
-  for (const { kind, id } of gone) {
-    records.delete(kind === 'trial' ? trialRecord(id) : saveRecord(id));
-    if (kind !== 'trial') continue;
-    for (const [name] of records.entries(trialValuesPrefix(id))) records.delete(name);
-  }
-  return gone.length > 0;
-}
-
-/**
- * `trials` with the record another tab wrote for trial `id`: replaced, added, or gone. The trial
- * hydrates with that tab's undo, which describes the state it wrote.
- */
-function remoteTrial(
-  store: LabStore,
-  trials: TrialRecord[],
-  id: string,
-  value: unknown,
-  orderOf: Map<string, number>,
-  nextOrder: () => number,
-  failed: (u: UnreadableRecord) => void,
-): TrialRecord[] {
-  if (!isPlainObject(value)) {
-    orderOf.delete(id);
-    return trials.filter((t) => t.id !== id);
-  }
-  const { order, ...rest } = value as SerializedTrial & { order?: unknown };
-  orderOf.set(id, typeof order === 'number' && Number.isFinite(order) ? order : nextOrder());
-  const hooks = store.getState().instrumentHooks();
-  const [replacement] = hydrateTrials([{ ...rest, id }], hooks.serializers, hooks, failed);
-  // Kept, the stale trial's next edit would write over a record this tab cannot read.
-  if (!replacement) return trials.filter((t) => t.id !== id);
-  return trials.some((t) => t.id === id)
-    ? trials.map((t) => (t.id === id ? replacement : t))
-    : [...trials, replacement];
+  unsaved?: UnsavedState;
 }
 
 /** Keep `store` and `records` in step, both ways. Returns the unbinding. */
@@ -103,17 +21,13 @@ export function bindLabStore(
   options: BindOptions,
 ): () => void {
   const orderOf = new Map(options.orders);
+  const hooks = () => store.getState().instrumentHooks();
   let applyingRemote = false;
 
-  const nextOrder = (): number => {
-    let max = -1;
-    for (const order of orderOf.values()) max = Math.max(max, order);
-    return max + 1;
-  };
-
   const writeTrial = (trial: TrialRecord): void => {
-    const { serializers } = store.getState().instrumentHooks();
-    const [serialized] = serializeTrials([trial], serializers, (id) => ownUndoOf(store, id));
+    const [serialized] = serializeTrials([trial], hooks().serializers, (id) =>
+      ownUndoOf(store, id),
+    );
     records.set(trialRecord(trial.id), { ...serialized, order: orderOf.get(trial.id) });
   };
   const offSteps = onUndoSteps(store, (trial) => {
@@ -121,166 +35,23 @@ export function bindLabStore(
   });
 
   const offStore = store.subscribe((state, prev) => {
-    if (applyingRemote) return;
-    let wrote = deleteDiscarded(records, state.unreadable, prev.unreadable);
-
-    if (state.trials !== prev.trials) {
-      const before = new Map(prev.trials.map((t) => [t.id, t]));
-      const now = new Set(state.trials.map((t) => t.id));
-      for (const t of prev.trials) {
-        if (now.has(t.id)) continue;
-        records.delete(trialRecord(t.id));
-        for (const [name] of records.entries(trialValuesPrefix(t.id))) records.delete(name);
-        orderOf.delete(t.id);
-        wrote = true;
-      }
-      const added = state.trials.filter((t) => !before.has(t.id));
-      for (const t of added) orderOf.set(t.id, nextOrder());
-      if (inOrder(state.trials, orderOf)) {
-        for (const t of state.trials) {
-          const old = before.get(t.id);
-          if (old && !persistedFieldsDiffer(old, t)) continue;
-          writeTrial(t);
-          wrote = true;
-        }
-      } else {
-        // A reorder, or a trial inserted mid-list: renumber them all.
-        for (const [i, t] of state.trials.entries()) orderOf.set(t.id, i);
-        for (const t of state.trials) writeTrial(t);
-        wrote = true;
-      }
-    }
-
-    if (state.savedSnapshots !== prev.savedSnapshots) {
-      const before = new Map(prev.savedSnapshots.map((s) => [s.id, s]));
-      const now = new Set(state.savedSnapshots.map((s) => s.id));
-      for (const s of state.savedSnapshots) {
-        if (before.get(s.id) === s) continue;
-        records.set(saveRecord(s.id), s);
-        wrote = true;
-      }
-      for (const s of prev.savedSnapshots) {
-        if (now.has(s.id)) continue;
-        records.delete(saveRecord(s.id));
-        wrote = true;
-      }
-    }
-
-    if (state.layout !== prev.layout) {
-      records.set(LAYOUT_RECORD, state.layout);
-      wrote = true;
-    }
-    if (state.undockedPanels !== prev.undockedPanels) {
-      records.set(UNDOCK_RECORD, state.undockedPanels);
-      wrote = true;
-    }
-    if (state.mode !== prev.mode || (wrote && !records.has(META_RECORD))) {
-      records.set(META_RECORD, {
-        version: CURRENT_DOCUMENT_VERSION,
-        mode: state.mode,
-      } satisfies LabMeta);
-    }
+    if (!applyingRemote) writeStoreChanges(records, state, prev, orderOf, writeTrial);
   });
 
   const offRecords = records.subscribe((changes) => {
     const remote = changes.filter((c) => c.origin === 'remote');
     if (remote.length === 0) return;
-
-    const current = store.getState();
-    let trials = current.trials;
-    let saves = current.savedSnapshots;
-    let unreadable = current.unreadable;
-    const failed = (u: UnreadableRecord): void => {
-      unreadable = [...unreadable, u];
-    };
-    const patch: Partial<Pick<typeof current, 'layout' | 'undockedPanels' | 'mode'>> = {};
-
-    for (const { name, value } of remote) {
-      const parsed = parseRecordName(name);
-      if (!parsed) continue;
-      switch (parsed.kind) {
-        case 'trial':
-          unreadable = withoutUnreadable(unreadable, 'trial', parsed.id);
-          trials = remoteTrial(store, trials, parsed.id, value, orderOf, nextOrder, failed);
-          break;
-        case 'save': {
-          const id = parsed.id;
-          unreadable = withoutUnreadable(unreadable, 'snapshot', id);
-          if (!isPlainObject(value)) {
-            saves = saves.filter((s) => s.id !== id);
-            break;
-          }
-          const [snapshot] = hydrateSnapshots(
-            [{ ...value, id } as SavedSnapshot],
-            store.getState().instrumentHooks(),
-            failed,
-          );
-          if (!snapshot) break;
-          saves = saves.some((s) => s.id === id)
-            ? saves.map((s) => (s.id === id ? snapshot : s))
-            : [...saves, snapshot];
-          break;
-        }
-        case 'layout':
-          patch.layout = isPlainObject(value) ? value : {};
-          break;
-        case 'undock':
-          patch.undockedPanels = isPlainObject(value) ? (value as UndockedPanels) : {};
-          break;
-        case 'meta': {
-          const meta = value as Partial<LabMeta> | undefined;
-          if (typeof meta?.version === 'number' && meta.version > CURRENT_DOCUMENT_VERSION) {
-            console.warn(
-              '[labkit] another tab wrote this lab with a newer labkit; no longer persisting',
-            );
-            if ('stopWriting' in records) (records as OwnedRecordCache).stopWriting();
-            break;
-          }
-          if (isColorModePreference(meta?.mode)) patch.mode = meta.mode;
-          break;
-        }
-      }
-    }
-
-    if (trials !== current.trials) {
-      trials = [...trials].sort((a, b) =>
-        compareTrialOrder(
-          { trial: a, order: orderOf.get(a.id) ?? 0 },
-          { trial: b, order: orderOf.get(b.id) ?? 0 },
-        ),
-      );
-    }
+    const next = remoteState(store.getState(), hooks, records, remote, orderOf);
     applyingRemote = true;
     try {
-      store.setState({ ...patch, trials, savedSnapshots: saves, unreadable });
+      store.setState(next);
     } finally {
       applyingRemote = false;
     }
   });
 
-  const { unsaved } = options;
-  if (unsaved) {
-    const state = store.getState();
-    let wrote = unsaved.layout || unsaved.undock;
-    for (const t of state.trials) {
-      if (!unsaved.trials.includes(t.id)) continue;
-      orderOf.set(t.id, nextOrder());
-      writeTrial(t);
-      wrote = true;
-    }
-    for (const s of state.savedSnapshots) {
-      if (!unsaved.saves.includes(s.id)) continue;
-      records.set(saveRecord(s.id), s);
-      wrote = true;
-    }
-    if (unsaved.layout) records.set(LAYOUT_RECORD, state.layout);
-    if (unsaved.undock) records.set(UNDOCK_RECORD, state.undockedPanels);
-    if (unsaved.mode || (wrote && !records.has(META_RECORD))) {
-      records.set(META_RECORD, {
-        version: CURRENT_DOCUMENT_VERSION,
-        mode: state.mode,
-      } satisfies LabMeta);
-    }
+  if (options.unsaved) {
+    writeUnsaved(records, store.getState(), options.unsaved, orderOf, writeTrial);
   }
 
   return () => {
