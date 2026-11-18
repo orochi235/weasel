@@ -202,6 +202,23 @@ describe('leaving a page', () => {
   });
 });
 
+describe('a new page', () => {
+  // Stacked on a narrow viewport the app scrolls, not the main pane; wide, the main pane does.
+  it.each(['.ckd-app', '.ckd-main'])('starts at its top when %s is what scrolled', async (selector) => {
+    const [first, second] = DEMOS;
+    go(`#${first.id}`);
+    renderWithIcons(<WeaselDemos />);
+    await heading(first.title);
+    const pane = document.querySelector<HTMLElement>(selector)!;
+    let top = 0;
+    Object.defineProperty(pane, 'scrollTop', { get: () => top, set: (v: number) => { top = v; }, configurable: true });
+    top = 900;
+    fireEvent.click(within(screen.getByRole('navigation')).getByRole('link', { name: second.title }));
+    await heading(second.title);
+    expect(top).toBe(0);
+  });
+});
+
 describe('the source panel', () => {
   it('opens each demo on its first tab, whichever tab the last one was left on', async () => {
     const [first, second] = DEMOS.filter((d) => d.sources.length > 1);
