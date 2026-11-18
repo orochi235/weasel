@@ -61,8 +61,9 @@ function EffectBody({ effect, effects, onChange, onDraft }: {
  * The ordered effect stack: add one, open a card by its number to edit it, drag a card by its number to
  * reorder, and switch, rename, duplicate, or remove each one.
  */
-function EffectsEditor({ effects, onChange, onDraft }: {
+function EffectsEditor({ effects, onChange, onDraft, disabled }: {
   effects: readonly LabEffect[];
+  disabled: boolean;
   onChange: (next: LabEffect[]) => void;
   /** The stack an edit is passing through, which the edit's settled `onChange` makes one undo step with. */
   onDraft: (next: LabEffect[]) => void;
@@ -77,6 +78,7 @@ function EffectsEditor({ effects, onChange, onDraft }: {
         placeholder="Add effect…"
         selectedKey={null}
         options={TYPE_OPTIONS}
+        disabled={disabled}
         onSelectionChange={(type) => {
           onChange(addEffect(effects, type));
           setSelected(String(next));
@@ -87,6 +89,7 @@ function EffectsEditor({ effects, onChange, onDraft }: {
         aria-label="Effects"
         items={cards}
         kinds={EFFECT_KINDS}
+        disabled={disabled}
         onChange={(list) => onChange(list.map(effectOf))}
         selected={selected}
         onSelectionChange={setSelected}
@@ -104,6 +107,7 @@ export const effectsRenderer: LeafRenderer = Object.assign(
       effects={(ctx.value as LabEffect[] | undefined) ?? []}
       onChange={ctx.setValue}
       onDraft={ctx.drafts?.setValue ?? ctx.setValue}
+      disabled={ctx.disabled === true}
     />
   ),
   { wide: true },
