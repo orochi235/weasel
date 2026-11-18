@@ -26,6 +26,68 @@ export function createNodeStore<TData, TLayer extends string, TPose>(
   invalidateOrder: () => void,
   fnFields: readonly NodeFnField[],
 ) {
+  const links = createTreeLinks(state, invalidateOrder);
+  return {
+    ...createDerivationIndex(state, links),
+    ...links,
+    ...createNodeFunctions(state, fnFields),
+  };
+}
+
+/** The tree's links: each node's parent, and each parent's ordered children. */
+function createTreeLinks<TData, TLayer extends string, TPose>(
+  state: NodeStoreState<TData, TLayer, TPose>,
+  invalidateOrder: () => void,
+) {
+  function requireNode(id: NodeId): MutableNode<TData, TLayer, TPose> {
+    const n = state.nodes.get(id);
+    if (!n) throw new SceneMembershipError(`Scene: unknown node id "${id}"`);
+    return n;
+  }
+
+  function siblingsOf(parent: NodeId | null): NodeId[] {
+    if (parent === null) return state.roots;
+    const p = requireNode(parent);
+    return (p.children ??= []);
+  }
+
+  function detach(id: NodeId): { parent: NodeId | null; index: number } {
+    const node = requireNode(id);
+    const sibs = siblingsOf(node.parent);
+    const idx = sibs.indexOf(id);
+    if (idx < 0) throw new Error(`Scene: node "${id}" not found in its parent's children`);
+    sibs.splice(idx, 1);
+    invalidateOrder();
+    return { parent: node.parent, index: idx };
+  }
+
+  function attach(id: NodeId, parent: NodeId | null, index: number): void {
+    const sibs = siblingsOf(parent);
+    sibs.splice(slotIndex(index, sibs.length), 0, id);
+    const node = requireNode(id);
+    node.parent = parent;
+    invalidateOrder();
+  }
+
+  function descendants(id: NodeId, out: NodeId[]): void {
+    const n = state.nodes.get(id);
+    if (!n?.children) return;
+    for (const c of n.children) {
+      out.push(c);
+      descendants(c, out);
+    }
+  }
+
+  return { requireNode, siblingsOf, detach, attach, descendants };
+}
+
+/** Who derives from whom: the reverse index of explicit `dependsOn` lists, the
+ *  containers that hug their children, and the invalidation and removal walks
+ *  over both. */
+function createDerivationIndex<TData, TLayer extends string, TPose>(
+  state: NodeStoreState<TData, TLayer, TPose>,
+  { requireNode, descendants }: Pick<ReturnType<typeof createTreeLinks<TData, TLayer, TPose>>, 'requireNode' | 'descendants'>,
+) {
   /** Maintained from `kit:add` / `kit:remove` — the only two places a node is
    *  created or destroyed, and unlike `add`/`remove` they replay on undo/redo.
    *  Only explicit `dependsOn` id lists are registered here; `'children'` is
@@ -98,45 +160,6 @@ export function createNodeStore<TData, TLayer extends string, TPose>(
     invalidateDependents(id);
   }
 
-  function requireNode(id: NodeId): MutableNode<TData, TLayer, TPose> {
-    const n = state.nodes.get(id);
-    if (!n) throw new SceneMembershipError(`Scene: unknown node id "${id}"`);
-    return n;
-  }
-
-  function siblingsOf(parent: NodeId | null): NodeId[] {
-    if (parent === null) return state.roots;
-    const p = requireNode(parent);
-    return (p.children ??= []);
-  }
-
-  function detach(id: NodeId): { parent: NodeId | null; index: number } {
-    const node = requireNode(id);
-    const sibs = siblingsOf(node.parent);
-    const idx = sibs.indexOf(id);
-    if (idx < 0) throw new Error(`Scene: node "${id}" not found in its parent's children`);
-    sibs.splice(idx, 1);
-    invalidateOrder();
-    return { parent: node.parent, index: idx };
-  }
-
-  function attach(id: NodeId, parent: NodeId | null, index: number): void {
-    const sibs = siblingsOf(parent);
-    sibs.splice(slotIndex(index, sibs.length), 0, id);
-    const node = requireNode(id);
-    node.parent = parent;
-    invalidateOrder();
-  }
-
-  function descendants(id: NodeId, out: NodeId[]): void {
-    const n = state.nodes.get(id);
-    if (!n?.children) return;
-    for (const c of n.children) {
-      out.push(c);
-      descendants(c, out);
-    }
-  }
-
   /** Everything removing `rootIds` takes with it: each root's subtree, then
    *  every node deriving from any of those, then those nodes' subtrees in turn.
    *  A dependent is not a descendant, so the second pass is a separate
@@ -171,6 +194,17 @@ export function createNodeStore<TData, TLayer extends string, TPose>(
     return { ids, removing };
   }
 
+  return {
+    dependents, childDerived, invalidateDependents, invalidateChildDerivedFrom, trackChildDerived, retarget,
+    removalClosure,
+  };
+}
+
+/** The function fields a node carries beside its data, which no op payload can. */
+function createNodeFunctions<TData, TLayer extends string, TPose>(
+  state: NodeStoreState<TData, TLayer, TPose>,
+  fnFields: readonly NodeFnField[],
+) {
   /** The functions a live `scene.add` attached, by the `kit:add` payload it
    *  recorded: redo replays that payload without the spec. Keyed on the
    *  payload rather than the node id because an id is reusable, and each
@@ -215,9 +249,5 @@ export function createNodeStore<TData, TLayer extends string, TPose>(
     }
   }
 
-  return {
-    dependents, childDerived, invalidateDependents, invalidateChildDerivedFrom, trackChildDerived, retarget,
-    requireNode, siblingsOf, detach, attach, descendants, removalClosure, addedFns, patchNodeFunctions,
-    restoreNodeFunctions,
-  };
+  return { addedFns, patchNodeFunctions, restoreNodeFunctions };
 }

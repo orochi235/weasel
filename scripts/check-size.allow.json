@@ -15,21 +15,6 @@
     "lines": 419,
     "longestFunction": 169
   },
-  "packages/core/src/animation/reflow.ts": {
-    "longestFunction": 162
-  },
-  "packages/core/src/canvas/CanvasView.tsx": {
-    "longestFunction": 220
-  },
-  "packages/core/src/core/scene/kitOps.ts": {
-    "longestFunction": 167
-  },
-  "packages/core/src/core/scene/nodeStore.ts": {
-    "longestFunction": 201
-  },
-  "packages/core/src/core/scene/renderOrder.ts": {
-    "longestFunction": 164
-  },
   "packages/d3/src/bind.ts": {
     "longestFunction": 139
   },
