@@ -42,6 +42,40 @@ export function importedNames(source, file) {
   return out;
 }
 
+/** Every name `file` imports or re-exports from each module, type-only ones included: what it is
+ *  written against. `*` stands for a namespace import, `export *` or a bare `import '…'`, which
+ *  reach the whole module. */
+export function writtenNames(source, file) {
+  const { staticImports, staticExports } = parse(source, file).module;
+  const out = new Map();
+  const add = (specifier, name) => {
+    if (!out.has(specifier)) out.set(specifier, new Set());
+    out.get(specifier).add(name);
+  };
+  const nameOf = ({ importName }) => (importName.kind === 'Name' ? importName.name : importName.kind === 'Default' ? 'default' : '*');
+  for (const { moduleRequest, entries } of staticImports) {
+    if (entries.length === 0) add(moduleRequest.value, '*');
+    for (const e of entries) add(moduleRequest.value, nameOf(e));
+  }
+  for (const { entries } of staticExports) for (const e of entries) if (e.moduleRequest) add(e.moduleRequest.value, nameOf(e));
+  return out;
+}
+
+/** The names `file` re-exports from another module, by the module they come from: `export { a }
+ *  from '…'` gives `a`, under the name it is exported as. */
+export function reexportedNames(source, file) {
+  const out = new Map();
+  for (const { entries } of parse(source, file).module.staticExports) {
+    for (const e of entries) {
+      if (!e.moduleRequest || e.exportName.kind !== 'Name') continue;
+      const from = e.moduleRequest.value;
+      if (!out.has(from)) out.set(from, new Set());
+      out.get(from).add(e.exportName.name);
+    }
+  }
+  return out;
+}
+
 /**
  * What a browser-test scan needs from `file` in one parse: its run-time specifiers, every
  * `import.meta.glob` with literal patterns (and whether it loads the matches as modules or, through

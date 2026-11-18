@@ -36,6 +36,8 @@ jobs:
       # A package importing a module its manifest does not declare builds here,
       # where hoisting resolves it, and ships inlined or unresolvable.
       - run: npm run check:imports
+      # A package that only declares settings depends on prefs-schema, not on the store prefs adds.
+      - run: npm run check:reexported-deps
       # A package that has never been published cannot be published by the
       # release job's OIDC token — it needs one manual publish first. Warn
       # here rather than fail: the PR that adds a package is legitimately the
