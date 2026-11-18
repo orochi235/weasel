@@ -37,8 +37,9 @@ type ButtonElement = ReactElement<DOMAttributes<HTMLButtonElement> & { disabled?
 const refuse = (e: SyntheticEvent) => e.preventDefault();
 
 /** `button` held by `aria-disabled` or `data-readonly`, since native `disabled` takes it out of hover and focus and
- *  so out of its tooltip's reach. It drops every press handler and keeps its focus, hover and key handlers. A composite
- *  widget's arrow keys still pass over it (`useRovingTabIndex`, ruled 2026-11-17). Stylesheets dim `data-disabled`. */
+ *  so out of its tooltip's reach. It drops every press handler and keeps its focus, hover and key handlers. A toolbar's
+ *  arrow keys pass over it, and a menu's, listbox's or tab list's land on it (`useRovingTabIndex`'s `disabled`).
+ *  Stylesheets dim `data-disabled`. */
 function stillReachable(button: ButtonElement, access: ControlAccess): ButtonElement {
   return cloneElement(button as ReactElement<Record<string, unknown>>, {
     disabled: false,

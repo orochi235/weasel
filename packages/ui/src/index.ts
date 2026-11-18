@@ -161,6 +161,6 @@ export type {
   ReorderLine,
 } from './useReorderDragList';
 export { rovingTarget, useRovingTabIndex } from './useRovingTabIndex';
-export type { RovingDirection, RovingOrientation, RovingTabIndex, UseRovingTabIndexOptions } from './useRovingTabIndex';
+export type { RovingDirection, RovingDisabled, RovingOrientation, RovingTabIndex, UseRovingTabIndexOptions } from './useRovingTabIndex';
 export { pickActiveSection, useScrollSpy } from './useScrollSpy';
 export type { ScrollSpy, SectionOffset, UseScrollSpyOptions } from './useScrollSpy';
