@@ -3,7 +3,12 @@ import { useLatest, useVisibleRaf } from '@weasel-js/react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { SurfaceScope } from './measureTiles';
 import type { Box } from './rect';
-import { type SurfaceClear, TiledSurface, type TilePainter } from './tiledSurface';
+import {
+  type SurfaceClear,
+  type SurfaceFrame,
+  TiledSurface,
+  type TilePainter,
+} from './tiledSurface';
 import { useElementWatch } from './useElementWatch';
 
 export type { SurfaceClear, SurfaceFrame, TilePainter } from './tiledSurface';
