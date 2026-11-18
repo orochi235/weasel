@@ -1,34 +1,12 @@
 import { watchDevicePixelRatio } from '@weasel-js/core/engine';
-import { rectsOverlap } from '@weasel-js/geom';
 import { useLatest, useVisibleRaf } from '@weasel-js/react';
-import { createEmitter } from '@weasel-js/registry';
-import { useCallback, useEffect, useMemo, useRef } from 'react';
-import { flushSync } from 'react-dom';
-import { measureTiles, type SurfaceScope, sameRects, sameScope, scopeHolds } from './measureTiles';
-import type { Box, Rect } from './rect';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import type { SurfaceScope } from './measureTiles';
+import type { Box } from './rect';
+import { type SurfaceClear, TiledSurface, type TilePainter } from './tiledSurface';
 import { useElementWatch } from './useElementWatch';
 
-/** What a surface owner is handed once per animation frame. `rects` carries every
- *  tile, not only the dirty ones: a scissored draw has to know where it is drawing
- *  relative to a surface that may have resized under it.
- *
- *  Its keys are what `useTileId` returns — `<trial>/<id>` for a tile registered
- *  inside a trial — not the bare id the tile was named with. */
-export interface SurfaceFrame {
-  dirty: ReadonlySet<string>;
-  rects: ReadonlyMap<string, Rect>;
-  /** The part of each tile's rect its clipping ancestors leave showing: the
-   *  rect a tile confines its drawing and its input to, where `rects` is the
-   *  one it places them against. Zero-sized for a tile wholly out of sight. */
-  visible: ReadonlyMap<string, Rect>;
-  dpr: number;
-  size: { width: number; height: number };
-  /** The tile geometry changed this frame — a tile moved, resized, appeared or
-   *  went away, or the dpr did. Every tile is dirty on such a frame, but the
-   *  pixels a tile vacated are in no tile's scissor now, so the owner clears
-   *  the whole buffer. `<Lab>` does; a host owning its own surface must too. */
-  retiled: boolean;
-}
+export type { SurfaceClear, SurfaceFrame, TilePainter } from './tiledSurface';
 
 /** The invalidators and the two ref callbacks that publish geometry. */
 export interface SurfaceHandle {
@@ -72,36 +50,10 @@ export interface SurfaceHandle {
   subscribeScope: (listener: () => void) => () => void;
 }
 
-/** What a tile's painter is handed: where it sits on the surface now, and the
- *  frame that dirtied it, whose `visible` says how much of that shows.
- *
- *  Every painter of a frame runs inside one `flushSync`, so the state they set commits once, together. A painter
- *  that has to draw against that committed state returns a function, which runs after the commit. */
-// biome-ignore lint/suspicious/noConfusingVoidType: a painter that returns nothing is the common case
-export type TilePainter = (rect: Rect, frame: SurfaceFrame) => void | (() => void);
-
-/** Erase the whole shared buffer. Device pixels, because that is what a GL
- *  viewport takes. */
-export type SurfaceClear = (size: { width: number; height: number }, dpr: number) => void;
-
 /** Inputs to `useTiledSurface`. `onFrame` runs once per frame that has dirty
  *  tiles, before any tile paints — the place to size the shared buffer. */
 export interface UseTiledSurfaceOptions {
   onFrame: (frame: SurfaceFrame) => void;
-}
-
-/** Every dirty tile's painter, in one commit, then what each asked to run after it. A `flushSync` per tile would
- *  count each as a nested update while any other work is pending, and React gives up past 50. */
-function paintTiles(frame: SurfaceFrame, painters: ReadonlyMap<string, TilePainter>): void {
-  const after: (() => void)[] = [];
-  flushSync(() => {
-    for (const id of frame.dirty) {
-      const rect = frame.rects.get(id);
-      const then = rect ? painters.get(id)?.(rect, frame) : undefined;
-      if (typeof then === 'function') after.push(then);
-    }
-  });
-  for (const then of after) then();
 }
 
 /**
@@ -116,13 +68,49 @@ function onAnyScroll(doc: Document, onScroll: () => void): () => void {
   return () => doc.removeEventListener('scroll', onScroll, true);
 }
 
-/** `box`, a client rect, measured from `origin`'s top-left corner. */
-const toLocalRect = (box: Box, origin: Box): Rect => ({
-  x: box.left - origin.left,
-  y: box.top - origin.top,
-  width: box.width,
-  height: box.height,
-});
+/** The handle's methods: each records its work on `surface`, then asks for a frame. */
+function createSurfaceHandle(
+  surface: TiledSurface,
+  schedule: () => void,
+  invalidateRects: () => void,
+  watch: ReturnType<typeof useElementWatch>['watch'],
+  unlistenScroll: { current: (() => void) | null },
+): SurfaceHandle {
+  return {
+    invalidate: (id) => {
+      surface.invalidate(id);
+      schedule();
+    },
+    invalidateAll: () => {
+      surface.invalidateAll();
+      schedule();
+    },
+    invalidateBox: (box) => {
+      if (surface.invalidateBox(box)) schedule();
+    },
+    invalidateRects,
+    registerTile: (id, el) => {
+      if (!surface.placeTile(id, el)) return;
+      watch(`tile:${id}`, el, { moves: true });
+      schedule();
+    },
+    registerClear: (id, clear) => surface.holdClear(id, clear),
+    registerPainter: (id, paint) => surface.holdPainter(id, paint),
+    containerRef: (el) => {
+      if (!surface.setContainer(el)) return;
+      watch('container', el);
+      unlistenScroll.current?.();
+      unlistenScroll.current = el ? onAnyScroll(el.ownerDocument, invalidateRects) : null;
+      schedule();
+    },
+    getContainer: () => surface.getContainer(),
+    scope: (el) => {
+      if (surface.setScope(el)) schedule();
+    },
+    inScope: (id) => surface.inScope(id),
+    subscribeScope: (listener) => surface.subscribeScope(listener),
+  };
+}
 
 /**
  * Share one drawing buffer among tiles laid out by the DOM. Tiles register
@@ -132,203 +120,29 @@ const toLocalRect = (box: Box, origin: Box): Rect => ({
  * tile's painter.
  */
 export function useTiledSurface({ onFrame }: UseTiledSurfaceOptions): SurfaceHandle {
-  const container = useRef<HTMLElement | null>(null);
-  const tiles = useRef(new Map<string, HTMLElement>());
-  const rects = useRef(new Map<string, Rect>());
-  const visible = useRef(new Map<string, Rect>());
-  const dirty = useRef(new Set<string>());
-  const painters = useRef(new Map<string, TilePainter>());
-  const clears = useRef(new Map<string, SurfaceClear>());
-  const needsMeasure = useRef(true);
-  const tileLeft = useRef(false);
-  const lastDpr = useRef(0);
-  const scopeEl = useRef<SurfaceScope>(null);
-  const scopeChanged = useRef(createEmitter());
+  const [surface] = useState(() => new TiledSurface());
 
-  // Held in a ref so a caller passing an inline closure does not re-create every
-  // callback below on each render.
+  // Held in a ref so a caller passing an inline closure does not re-create the
+  // handle on each render.
   const onFrameRef = useLatest(onFrame);
-
-  const measure = useCallback((): boolean => {
-    const el = container.current;
-    if (!el) return false;
-    const next = measureTiles(el, tiles.current, scopeEl.current);
-    const changed =
-      !sameRects(rects.current, next.rects) || !sameRects(visible.current, next.visible);
-    rects.current = next.rects;
-    visible.current = next.visible;
-    return changed;
-  }, []);
 
   const frameLoop = useVisibleRaf(
     (_time, frameLoop) => {
-      const el = container.current;
-      if (!el) {
-        dirty.current.clear();
-        return;
-      }
-      let retiled = false;
-      let left = false;
-      if (needsMeasure.current) {
-        needsMeasure.current = false;
-        const moved = measure();
-        left = tileLeft.current;
-        tileLeft.current = false;
-        if (moved || left) {
-          retiled = true;
-          for (const id of rects.current.keys()) dirty.current.add(id);
-          // Geometry that changed may still be moving: a panel whose size has
-          // settled while its position animates gives `ResizeObserver` nothing
-          // more to report, and the tile would hold the frame it was caught
-          // mid-flight at. Measure again next frame, and keep going until a
-          // measurement finds nothing moved.
-          needsMeasure.current = true;
-          frameLoop.request();
-        }
-      }
-      const dpr = globalThis.devicePixelRatio ?? 1;
-      if (dpr !== lastDpr.current) {
-        lastDpr.current = dpr;
-        retiled = true;
-        for (const id of rects.current.keys()) dirty.current.add(id);
-      }
-      // The last tile leaving dirties nothing, and still has pixels to clear.
-      if (dirty.current.size === 0 && !left) return;
-      const box = el.getBoundingClientRect();
-      const frame: SurfaceFrame = {
-        dirty: new Set(dirty.current),
-        rects: new Map(rects.current),
-        visible: new Map(visible.current),
-        dpr,
-        size: { width: box.width, height: box.height },
-        retiled,
-      };
-      // Cleared before the owner runs, not after the painters: sizing the
-      // buffer blanks every tile, so the owner answers with `invalidateAll`,
-      // and a set cleared at the end of the frame would swallow it.
-      dirty.current.clear();
-      onFrameRef.current(frame);
-      // After the owner sized the buffer, before anything paints into it.
-      if (retiled) {
-        for (const clear of clears.current.values()) clear(frame.size, dpr);
-      }
-      // After the owner, which is what resized the buffer this frame — and
-      // whatever it just dirtied paints now rather than a frame later.
-      const painting = new Set(frame.dirty);
-      for (const id of dirty.current) painting.add(id);
-      dirty.current.clear();
-      paintTiles({ ...frame, dirty: painting }, painters.current);
+      if (surface.step(onFrameRef.current)) frameLoop.request();
     },
     // The host attaches its container through `containerRef`, which may land
     // well after this hook's first effect; the gate re-resolves it per request.
-    { target: () => container.current },
+    { target: () => surface.getContainer() },
   );
-
   const schedule = frameLoop.request;
 
-  const invalidate = useCallback(
-    (id: string) => {
-      dirty.current.add(id);
-      schedule();
-    },
-    [schedule],
-  );
-
-  const invalidateAll = useCallback(() => {
-    for (const id of tiles.current.keys()) dirty.current.add(id);
-    schedule();
-  }, [schedule]);
-
-  const invalidateBox = useCallback(
-    (box: Box) => {
-      const el = container.current;
-      if (!el) return;
-      const local = toLocalRect(box, el.getBoundingClientRect());
-      let hit = false;
-      for (const [id, r] of rects.current) {
-        if (rectsOverlap(r, local)) {
-          dirty.current.add(id);
-          hit = true;
-        }
-      }
-      if (hit) schedule();
-    },
-    [schedule],
-  );
-
   const invalidateRects = useCallback(() => {
-    needsMeasure.current = true;
+    surface.invalidateRects();
     schedule();
-  }, [schedule]);
+  }, [surface, schedule]);
 
   const { watch } = useElementWatch(invalidateRects);
-
-  const registerTile = useCallback(
-    (id: string, el: HTMLElement | null) => {
-      const known = tiles.current.get(id);
-      if (known === el) return;
-      if (el && known?.isConnected) throw takenError('tile', id);
-      watch(`tile:${id}`, el, { moves: true });
-      if (el) {
-        tiles.current.set(id, el);
-      } else {
-        tiles.current.delete(id);
-        // Its rect goes now, so the next measurement cannot see that it left.
-        if (rects.current.delete(id)) tileLeft.current = true;
-        visible.current.delete(id);
-        dirty.current.delete(id);
-      }
-      needsMeasure.current = true;
-      schedule();
-    },
-    [schedule, watch],
-  );
-
-  const registerClear = useCallback(
-    (id: string, clear: SurfaceClear) => hold(clears.current, 'clear', id, clear),
-    [],
-  );
-
-  const registerPainter = useCallback(
-    (id: string, paint: TilePainter) => hold(painters.current, 'painter', id, paint),
-    [],
-  );
-
-  const getContainer = useCallback(() => container.current, []);
-
-  const scope = useCallback(
-    (el: SurfaceScope) => {
-      if (sameScope(scopeEl.current, el)) return;
-      scopeEl.current = el;
-      needsMeasure.current = true;
-      schedule();
-      scopeChanged.current.emit();
-    },
-    [schedule],
-  );
-
-  const inScope = useCallback((id: string) => {
-    const tile = tiles.current.get(id);
-    return !scopeEl.current || (tile !== undefined && scopeHolds(scopeEl.current, tile));
-  }, []);
-
-  const subscribeScope = useCallback((listener: () => void) => {
-    return scopeChanged.current.subscribe(listener);
-  }, []);
-
   const unlistenScroll = useRef<(() => void) | null>(null);
-  const containerRef = useCallback(
-    (el: HTMLElement | null) => {
-      if (container.current === el) return;
-      container.current = el;
-      watch('container', el);
-      unlistenScroll.current?.();
-      unlistenScroll.current = el ? onAnyScroll(el.ownerDocument, invalidateRects) : null;
-      needsMeasure.current = true;
-      schedule();
-    },
-    [schedule, watch, invalidateRects],
-  );
 
   useEffect(() => () => frameLoop.cancel(), [frameLoop]);
 
@@ -336,53 +150,7 @@ export function useTiledSurface({ onFrame }: UseTiledSurfaceOptions): SurfaceHan
   useEffect(() => watchDevicePixelRatio(invalidateRects), [invalidateRects]);
 
   return useMemo(
-    () => ({
-      invalidate,
-      invalidateAll,
-      invalidateBox,
-      invalidateRects,
-      registerTile,
-      registerClear,
-      registerPainter,
-      containerRef,
-      getContainer,
-      scope,
-      inScope,
-      subscribeScope,
-    }),
-    [
-      invalidate,
-      invalidateAll,
-      invalidateBox,
-      invalidateRects,
-      registerTile,
-      registerClear,
-      registerPainter,
-      containerRef,
-      getContainer,
-      scope,
-      inScope,
-      subscribeScope,
-    ],
-  );
-}
-
-/** Put `value` in `held` under `id`, throwing if something already is there; returns its release. */
-function hold<T>(
-  held: Map<string, T>,
-  kind: 'painter' | 'clear',
-  id: string,
-  value: T,
-): () => void {
-  if (held.has(id)) throw takenError(kind, id);
-  held.set(id, value);
-  return () => {
-    if (held.get(id) === value) held.delete(id);
-  };
-}
-
-function takenError(kind: 'tile' | 'painter' | 'clear', id: string): Error {
-  return new Error(
-    `[labkit] surface ${kind} ${JSON.stringify(id)} is already registered and still live. Give each ${kind} its own id, or release the first before registering another.`,
+    () => createSurfaceHandle(surface, schedule, invalidateRects, watch, unlistenScroll),
+    [surface, schedule, invalidateRects, watch],
   );
 }
