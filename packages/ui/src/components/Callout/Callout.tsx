@@ -14,6 +14,7 @@ import { Button, CLOSE_BUTTON_PROPS } from '../Button';
 import { type AppearanceProps, useAppearance } from '../appearance';
 import { useEscapeDismissal } from './useEscapeDismissal';
 import s from './Callout.module.css';
+import type { Rect } from '@weasel-js/geom';
 
 /** Far past the 1/64px a browser lays out in, and far short of anything seen. */
 const ANCHOR_NUDGE_PX = 1 / 16;
@@ -74,7 +75,7 @@ export type CalloutProps = Omit<
    * recomputes it on pan, zoom, or scene edits keeps the arrow on its target.
    * Takes precedence over `triggerRef`.
    */
-    anchorRect?: { x: number; y: number; width: number; height: number };
+    anchorRect?: Rect;
   };
 
 /**
