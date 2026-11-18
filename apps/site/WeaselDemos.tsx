@@ -66,17 +66,19 @@ export function WeaselDemos() {
 
   useEffect(() => {
     // A hash that named nothing: hand the page back to the front page.
-    if (activeId === FRONT_ID) goFront();
+    if (activeId === FRONT_ID) goFront('replace');
     else if (window.location.hash.replace(/^#/, '') !== activeId) {
       window.history.replaceState(null, '', `#${activeId}`);
     }
   }, [activeId]);
 
-  // The main pane is what scrolls, so a new page starts at its top, not where the last one was left.
-  // A layout effect, so it lands before a page's own effects can scroll to a deep link.
+  // A new page starts at its top, not where the last one was left. The main pane scrolls, or on a
+  // narrow viewport the whole app does, so both are reset. A layout effect, so it lands before a
+  // page's own effects can scroll to a deep link.
+  const appRef = useRef<HTMLDivElement>(null);
   const mainRef = useRef<HTMLElement>(null);
   useLayoutEffect(() => {
-    if (mainRef.current) mainRef.current.scrollTop = 0;
+    for (const pane of [appRef.current, mainRef.current]) if (pane) pane.scrollTop = 0;
   }, [activeId]);
 
   const active = DEMOS_BY_ID.get(activeId) ?? null;
@@ -84,7 +86,7 @@ export function WeaselDemos() {
   if (activeId === FRONT_ID) return null;
 
   return (
-    <div className="ckd-app">
+    <div className="ckd-app" ref={appRef}>
       <aside className="ckd-sidebar">
         <header className="ckd-sidebar-header">
           <img src={logoUrl} alt="weasel logo" className="ckd-sidebar-logo" />
@@ -93,7 +95,7 @@ export function WeaselDemos() {
               href="./"
               className="ckd-sidebar-home"
               aria-label="weasel home"
-              onClick={(e) => { e.preventDefault(); goFront(); }}
+              onClick={(e) => { e.preventDefault(); goFront('push'); }}
             ><Wordmark /></a>
             <VersionPill className="ckd-sidebar-version" />
           </h1>

@@ -28,9 +28,15 @@ function readFilter(): Filter {
   };
 }
 
-function writeFilter(filter: Filter): void {
+function readVersion(): string | null {
+  return new URLSearchParams(window.location.search).get(VERSION_PARAM);
+}
+
+/** Write this view's query params, each dropped when it has no value. */
+function writeParams(filter: Filter, version: string | null): void {
   const url = new URL(window.location.href);
-  for (const [name, list] of [[PACKAGE_PARAM, filter.packages], [TAG_PARAM, filter.tags]] as const) {
+  const params = [[PACKAGE_PARAM, filter.packages], [TAG_PARAM, filter.tags], [VERSION_PARAM, version ? [version] : []]] as const;
+  for (const [name, list] of params) {
     if (list.length === 0) url.searchParams.delete(name);
     else url.searchParams.set(name, list.join(','));
   }
@@ -47,13 +53,21 @@ function toggled<T extends string>(list: readonly T[], item: T): T[] {
  *  entries load when it is opened. */
 export function Releases() {
   const [filter, setFilter] = useState<Filter>(readFilter);
-  const [linked] = useState(() => new URLSearchParams(window.location.search).get(VERSION_PARAM));
+  /** The version the URL named at mount, kept in the URL while this view is shown. */
+  const [version] = useState(readVersion);
+  const [linked, setLinked] = useState(version);
+  // The link is spent once the first render has opened its section: a section that a filter
+  // change remounts later is not being linked to.
+  // eslint-disable-next-line react-hooks/set-state-in-effect -- consumes the deep link after the mount that used it
+  useEffect(() => setLinked(null), []);
 
   useWindowEvent('popstate', () => setFilter(readFilter()));
 
   useEffect(() => {
-    writeFilter(filter);
-  }, [filter]);
+    writeParams(filter, version);
+  }, [filter, version]);
+  // The params are this view's: the page navigated to next keeps the rest of the query, not them.
+  useEffect(() => () => writeParams(NO_FILTER, null), []);
 
   const togglePackage = useCallback((name: string) => {
     setFilter((f) => ({ ...f, packages: toggled(f.packages, name) }));
