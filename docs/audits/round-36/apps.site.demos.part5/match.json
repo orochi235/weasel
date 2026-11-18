@@ -1,0 +1,37 @@
+{
+ "pairs": [
+  [
+   0,
+   1
+  ],
+  [
+   1,
+   0
+  ],
+  [
+   4,
+   6
+  ],
+  [
+   5,
+   4
+  ]
+ ],
+ "a": [
+  "A second \"save frames\" click while one is running leaves the looping ball frozen and the first run uncancelable",
+  "Unmounting the frames demo mid-save keeps downloading and setting state",
+  "Flick-to-grid flings a block released after holding still, from stale velocity samples",
+  "A drop with fewer than two move samples lands off the grid",
+  "Pausing the trial clock forgets its direction, and \"Reverse\" while paused starts it playing",
+  "Clicking \"tween\" or \"stagger\" again mid-run snaps the wave back to its old colors instead of reversing"
+ ],
+ "b": [
+  "TimelineFramesDemo's save keeps downloading frames after the demo unmounts",
+  "A second \"save frames\" click while one runs makes \"cancel\" unable to stop the newer run",
+  "The curve lab's \"Near-circle\" preset sets no weights, so its promised exact NURBS circle never appears",
+  "The curve lab's inflection overlay misses an inflection whose curvature lands exactly on 0 at a sample",
+  "VertexColorAnimationDemo's tween or stagger clicked mid-flight snaps the wave back and replays the same transition",
+  "TextOutlinesDemo caches a failed font load forever",
+  "TrialClockDemo's Pause then Play drops reverse playback, and Reverse while paused starts playing"
+ ]
+}

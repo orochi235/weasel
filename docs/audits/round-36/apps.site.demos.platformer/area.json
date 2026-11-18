@@ -1,0 +1,71 @@
+{
+ "id": "apps.site.demos.platformer",
+ "commit": "f16e5466194fff9854ec06b3c556ffe2ef3373f2",
+ "date": "2026-11-18",
+ "files": [
+  "apps/site/demos/platformer/animState.ts",
+  "apps/site/demos/platformer/bed.ts",
+  "apps/site/demos/platformer/boneRig.ts",
+  "apps/site/demos/platformer/callouts.ts",
+  "apps/site/demos/platformer/camera.ts",
+  "apps/site/demos/platformer/clips.ts",
+  "apps/site/demos/platformer/entities.ts",
+  "apps/site/demos/platformer/flagpole.ts",
+  "apps/site/demos/platformer/footsteps.ts",
+  "apps/site/demos/platformer/level.ts",
+  "apps/site/demos/platformer/physics.ts",
+  "apps/site/demos/platformer/playerPose.ts",
+  "apps/site/demos/platformer/sceneWorld.ts",
+  "apps/site/demos/platformer/sfx.ts",
+  "apps/site/demos/platformer/skeleton.ts",
+  "apps/site/demos/platformer/skin.ts",
+  "apps/site/demos/platformer/useInput.ts",
+  "apps/site/demos/platformer/usePlatformerAudio.ts",
+  "apps/site/demos/platformer/world.ts",
+  "apps/site/demos/platformer/worldLevel.ts"
+ ],
+ "a": 11,
+ "b": 9,
+ "m": 5,
+ "distinct": 15,
+ "chapman": 19,
+ "unfound": 4,
+ "read": {
+  "A": 20,
+  "B": 20
+ },
+ "patches": 14,
+ "questions": 0,
+ "budgetHit": [],
+ "jobs": {
+  "minutes": {
+   "A": 3,
+   "B": 6.5,
+   "match": 0.1,
+   "fix": 18.6
+  },
+  "nodes": {
+   "A": "studio",
+   "B": "orochi",
+   "fix": "studio"
+  },
+  "tokens": 8281019,
+  "costUsd": 5.33
+ },
+ "fixCommits": [
+  "870882eac47041acdc9b90ad49ac66fdf046fb36",
+  "3ab65fe5500ae4f321e04f048df70b6f26a38b76",
+  "363e6d978e0f37b397cb17a8ec9e74df8f7e37af",
+  "59feed00f5b76ffdeaba315a1ef8f06aa5498646",
+  "9f6e6795dac0f189c64c3e08791851239277d9f0",
+  "838b59c1da25a02cc517ddc0fa35a5e6e2adf3c4",
+  "61a4274c8504fa66472467cbcb930a20d78ed2b4",
+  "a8e9eb67de1568167576e162ad310980fceb1a61",
+  "c7a868c832be872eda447b557d30d9349832bd26",
+  "c022c68b7c5d9a882b47ec731e701084063b2f01",
+  "eacce2a2231d8349afe0ca30cf2464d4562ee1fe",
+  "2955eee9308d5590044d0424d1057787dd1e7866",
+  "d625934dbdcc8b42b13f5004d5104723f1d88ad8",
+  "48354962886550102390458243d5b94b21ec524c"
+ ]
+}

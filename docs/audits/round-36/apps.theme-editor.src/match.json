@@ -1,0 +1,35 @@
+{
+ "pairs": [
+  [
+   2,
+   5
+  ],
+  [
+   3,
+   6
+  ],
+  [
+   4,
+   0
+  ]
+ ],
+ "a": [
+  "ThemeEditor crashes when the theme list comes back empty",
+  "Inspect reports tokens from @media / @supports rules that do not currently apply",
+  "The Scales layer throws when the draft does not derive, crashing the workbench",
+  "\"Compare in preview\" throws during render once the draft stops deriving",
+  "A literal semantic's number becomes a string when edited in the drawer"
+ ],
+ "b": [
+  "The semantic drawer's literal field turns a number or array literal into a string",
+  "Toggling \"Varies by\" off and on for a rule split by a non-mode axis leaves the drawer editing a branch the new rule has no key for",
+  "The swatch panel decides \"pinned\" by anchor name, which the three sources and the hex pin share",
+  "The categorical gates editor shows a gate that varies by axis or names a seed as a default number, and a slider move overwrites it",
+  "A reload while the theme draft does not derive drops the whole undo history",
+  "The Scales layer derives the raw draft during render, so opening it while the draft does not derive crashes the app",
+  "\"Compare in preview\" derives the raw draft during render, so a non-deriving draft crashes the app while a ramp is focused",
+  "The palette lab's saved history sits under its live state's key prefix, so every live save re-reads and parses up to a megabyte",
+  "Undo on the theme prefs page puts back every leaf, so it also reverts changes the step never made",
+  "Saving a preset under a built-in's name does nothing and says nothing"
+ ]
+}

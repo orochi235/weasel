@@ -1,0 +1,79 @@
+{
+ "id": "apps.ui-lab",
+ "commit": "f16e5466194fff9854ec06b3c556ffe2ef3373f2",
+ "date": "2026-11-18",
+ "files": [
+  "apps/ui-lab/src/App.tsx",
+  "apps/ui-lab/src/app.css",
+  "apps/ui-lab/src/badge/baseParams.ts",
+  "apps/ui-lab/src/badge/compose/Compose.module.css",
+  "apps/ui-lab/src/badge/compose/ComposeInstrument.tsx",
+  "apps/ui-lab/src/badge/compose/EffectsRow.tsx",
+  "apps/ui-lab/src/badge/compose/OctantSplineEditor.module.css",
+  "apps/ui-lab/src/badge/compose/OctantSplineEditor.tsx",
+  "apps/ui-lab/src/badge/compose/PresetsPanel.tsx",
+  "apps/ui-lab/src/badge/compose/SplineRow.tsx",
+  "apps/ui-lab/src/badge/compose/composeConfig.ts",
+  "apps/ui-lab/src/badge/compose/presets.ts",
+  "apps/ui-lab/src/badge/compose/snippet.ts",
+  "apps/ui-lab/src/badge/compose/splineActions.ts",
+  "apps/ui-lab/src/badge/compose/splineAnchors.ts",
+  "apps/ui-lab/src/badge/compose/splineGeometry.ts",
+  "apps/ui-lab/src/badge/effectParams.ts",
+  "apps/ui-lab/src/badge/effects.ts",
+  "apps/ui-lab/src/badge/octants/Octants.module.css",
+  "apps/ui-lab/src/badge/octants/OctantsInstrument.tsx",
+  "apps/ui-lab/src/badge/params.ts",
+  "apps/ui-lab/src/badge/shapeParams.ts",
+  "apps/ui-lab/src/badge/shapes/Shapes.module.css",
+  "apps/ui-lab/src/badge/shapes/ShapesInstrument.tsx",
+  "apps/ui-lab/src/badge/shapes/shapesConfig.ts",
+  "apps/ui-lab/src/labTestSetup.ts",
+  "apps/ui-lab/src/main.tsx",
+  "apps/ui-lab/vite.config.ts"
+ ],
+ "a": 7,
+ "b": 7,
+ "m": 4,
+ "distinct": 10,
+ "chapman": 11.8,
+ "unfound": 1.8,
+ "read": {
+  "A": 23,
+  "B": 28
+ },
+ "patches": 14,
+ "questions": 0,
+ "budgetHit": [],
+ "jobs": {
+  "minutes": {
+   "A": 3.2,
+   "B": 6,
+   "match": 0.2,
+   "fix": 25.8
+  },
+  "nodes": {
+   "A": "studio",
+   "B": "teitou",
+   "fix": "studio"
+  },
+  "tokens": 19541838,
+  "costUsd": 8.7
+ },
+ "fixCommits": [
+  "f31a5e72f4e690a84b445b748209129f58686115",
+  "2daa787aae08d23d4735395aea50a7d31c838ee3",
+  "595a2c697ff84e7d8f09ca5fb60ffab4a9230d34",
+  "03be48dbbb82173307ab7bc1fa03a7119a5066a9",
+  "6e286c8325f2fae55537f13b962b6165c30c4aa5",
+  "fd4f38d6f4d2a511922eb5c7ec6896b6ed0c0496",
+  "60512170948ed46b74f16510d6d946dfc0fd1b5c",
+  "bc75bfcee01d225f3ebc495500bdf42cdb54aa95",
+  "5d1afc80138e9fb535ab17a019028c27eb58c62c",
+  "98620a3278c0feb161a7f9d96342e6737bbdbf59",
+  "8408f3fc84a62a304c1ab4cc07e8d3ae506e1358",
+  "6ec15631f3d2bdae65b7c042fdd23a2b30a88e60",
+  "67ee77656a5da03e450d591094544a150cabbb52",
+  "54915c1fab8fa2df0b4574d2e729a9da5d5265ff"
+ ]
+}

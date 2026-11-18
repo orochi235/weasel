@@ -1,0 +1,27 @@
+{
+ "pairs": [
+  [
+   2,
+   0
+  ],
+  [
+   3,
+   1
+  ]
+ ],
+ "a": [
+  "DrapeLabDemo writes a wheel-scrubbed radius into config outside the schema's 10–600 range",
+  "EffectChartPreviewDemo makes a fresh ImageBitmap per preview slot every frame and never closes one",
+  "FontFallbackDemo drops every holder's Georgia enrollment on unmount, and leaves one it promoted behind",
+  "GeomDemo draws each dot from its node's data, so a dragged dot stays where it started while the curve follows it",
+  "ImageDemo's image tool can never insert: the canvas lacks `insertPreset`, so its `insert` binding has no action",
+  "InsertDemo's rect tool inserts nothing: the canvas has no features, so neither `insert` nor its dep is registered"
+ ],
+ "b": [
+  "FontFallbackDemo drops registerCanvasFont's release handle and tears Georgia out with unregisterCanvasFont, removing every other holder",
+  "GeomDemo draws each dot from `n.data`, the item as created, so a dragged dot stays where it started while the curve follows it",
+  "GeomDemo's split-length row shows NaN% when the four curve points coincide",
+  "LayeredCurveDemo's partition handle claims a full-height band at the seam, so the two seam anchors can never be dragged and the C0 sync never runs from the seam",
+  "HistoryDemo's stack sections use `s.stack`, a class its stylesheet does not define"
+ ]
+}

@@ -1,0 +1,21 @@
+{
+ "pairs": [
+  [
+   4,
+   3
+  ]
+ ],
+ "a": [
+  "StrokeTrimLab's palette offers a Select tool that its canvas never registers",
+  "QuantityDemo's BandEditor drops Escape-cancel, so a canceled drag stays shown as the value",
+  "RigDemo's \"track u\" readout keeps its last value after the track stops",
+  "SvgDemo serializes the old scene under the wrong viewBox while the source fails to parse",
+  "RegistryDemo's registry is module-level, so its entries outlive the demo's unmount"
+ ],
+ "b": [
+  "The \"joint labels\" checkbox also hides both captions, which sit on the same `labels` layer",
+  "RepeatAlongLab seeds its copies node from the schema defaults, not the trial's config, so a seeded trial or a Reset shows settings the panel doesn't",
+  "RectPathEditLab's path-edit host outlives a trial Reset, so a reset trial doesn't reopen on rect-1",
+  "RegistryDemo's registry is a module singleton, so its entries survive unmount and are shared by every mounted copy"
+ ]
+}

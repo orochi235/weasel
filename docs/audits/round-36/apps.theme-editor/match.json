@@ -1,0 +1,25 @@
+{
+ "pairs": [
+  [
+   0,
+   0
+  ],
+  [
+   1,
+   3
+  ]
+ ],
+ "a": [
+  "gen-brand-colors overwrites legoColors.ts with an empty palette when Brickset answers with anything but the expected page",
+  "gen-brand-colors writes to cwd-relative paths, so running it from anywhere but the repo root throws or writes outside the app",
+  "Copic rows with no name are emitted as `name: undefined`, which breaks the generated file's `readonly name: string` type",
+  "Generated row order depends on the machine's default locale"
+ ],
+ "b": [
+  "gen-brand-colors overwrites legoColors.ts with an empty list when Brickset answers with an error or block page",
+  "Brickset color names are written without decoding HTML entities",
+  "Copic codes are sorted out of Copic's own order within the 0/00/000/0000 tiers",
+  "The generator writes cwd-relative paths, so running it from anywhere but the repo root fails or writes elsewhere",
+  "theme-editor's base path is `/weasel/theme-editor/`, but fleet-dev advertises its URL at `/`"
+ ]
+}

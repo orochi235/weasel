@@ -1,0 +1,17 @@
+{
+ "pairs": [
+  [
+   0,
+   0
+  ]
+ ],
+ "a": [
+  "ParallaxDemo's intro undoes a per-plane-zoom toggle made while it plays",
+  "PTouchLabelDemo's Download swallows a failure that Print reports",
+  "PathMotionDemo keeps the last ride's tilt after \"turn with the path\" is unticked"
+ ],
+ "b": [
+  "ParallaxDemo's intro tween keeps writing the per-plane-zoom setting it captured at click, undoing a toggle made mid-intro",
+  "PlotKindsDemo keys the chart by kind but not its data panel, so the panel's edit error and row state carry over to the next chart kind"
+ ]
+}

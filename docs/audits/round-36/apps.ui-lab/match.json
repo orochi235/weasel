@@ -1,0 +1,38 @@
+{
+ "pairs": [
+  [
+   0,
+   6
+  ],
+  [
+   2,
+   2
+  ],
+  [
+   3,
+   3
+  ],
+  [
+   4,
+   4
+  ]
+ ],
+ "a": [
+  "Effect cards' sliders write one undo step per move: EffectBody's ControlPanel has no draftConfig",
+  "SplineRow's Anchors slider commits on every input tick instead of drafting",
+  "Shapes lab params drift from the shapes' real defaults and params, so the gallery and \"Copy changed params\" are wrong",
+  "Copy JSX leaves out padding, so the snippet doesn't reproduce the stage's badge",
+  "Compose's effect params omit params the effects take, despite \"every param on the panel\"",
+  "Copy JSX writes the label unescaped, so a label with `{`, `}` or `<` gives invalid JSX",
+  "A horizontal wheel over a spline anchor increases its weight"
+ ],
+ "b": [
+  "A spline base in quadrant mode is drawn with a different end radius than the editor shows",
+  "The cloud shape's `padding` and `roundness` sliders do nothing, and its `erosion` param has no control",
+  "The ribbon shape's lab default `taperWidth` is 12, but the shape draws with 8",
+  "\"Copy JSX\" leaves out the padding, so the snippet doesn't reproduce the badge on the stage",
+  "Spikes' `cornerCompensation` has no control, so a new spikes effect can't change it and the \"sun\" preset's value is hidden",
+  "The spline editor's hit radius is smaller than the dots it draws",
+  "Slider edits inside the effects and spline rows ignore the leaf's drafts"
+ ]
+}

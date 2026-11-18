@@ -1,0 +1,48 @@
+{
+ "id": "apps.theme-editor",
+ "commit": "f16e5466194fff9854ec06b3c556ffe2ef3373f2",
+ "date": "2026-11-18",
+ "files": [
+  "apps/theme-editor/icons/index.mjs",
+  "apps/theme-editor/scripts/gen-brand-colors.mjs",
+  "apps/theme-editor/vite.config.ts"
+ ],
+ "a": 4,
+ "b": 5,
+ "m": 2,
+ "distinct": 7,
+ "chapman": 9,
+ "unfound": 2,
+ "read": {
+  "A": 3,
+  "B": 3
+ },
+ "patches": 8,
+ "questions": 0,
+ "budgetHit": [],
+ "jobs": {
+  "minutes": {
+   "A": 4.2,
+   "B": 4.2,
+   "match": 0.1,
+   "fix": 7.3
+  },
+  "nodes": {
+   "A": "orochi",
+   "B": "orochi",
+   "fix": "studio"
+  },
+  "tokens": 3298496,
+  "costUsd": 2.59
+ },
+ "fixCommits": [
+  "fc63da77819d333423f386c7704c07bfa86541f4",
+  "02b072da59e13a96061ccdef6dbcab5fbf1af9ff",
+  "5fcf2c770aa43c86b5d82a8717e800d1c733623b",
+  "0f421d8440301db86d6426ae59ebf760bbb20fac",
+  "b64b1fead3b8d3633724b8a0f3f57f6455ca07b6",
+  "5b30095896c75ffbc5b50c7b104f193bc69a3e0e",
+  "a19c39f2180dbb091e1a30d1465e1a885a93d102",
+  "6c3427754343fb9d32f9010d60cf5001da157e4e"
+ ]
+}

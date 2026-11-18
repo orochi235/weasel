@@ -1,0 +1,3 @@
+apps/theme-editor/icons/index.mjs
+apps/theme-editor/scripts/gen-brand-colors.mjs
+apps/theme-editor/vite.config.ts
