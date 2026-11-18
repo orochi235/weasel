@@ -12,6 +12,21 @@ export const BADGE_BASES: readonly BadgeBase[] = Object.keys(BASES) as BadgeBase
 /** Every treatment a composed badge's `effects` can name. */
 export const BADGE_EFFECTS: readonly BadgeEffect[] = Object.keys(EFFECTS) as BadgeEffect[];
 
+/** The params `shape` draws with where a badge's `shapeParams` sets none; empty for a shape that takes none. */
+export function badgeShapeDefaults(shape: BadgeShape): Readonly<Record<string, unknown>> {
+  return { ...SHAPES[shape].defaults };
+}
+
+/** The params `base` draws with where a composed badge's `baseParams` sets none; empty for a base that takes none. */
+export function badgeBaseDefaults(base: BadgeBase): Readonly<Record<string, unknown>> {
+  return { ...BASES[base].defaults };
+}
+
+/** The params `effect` draws with where its spec's `params` sets none; empty for an effect that takes none. */
+export function badgeEffectDefaults(effect: BadgeEffect): Readonly<Record<string, unknown>> {
+  return { ...EFFECTS[effect].defaults };
+}
+
 /**
  * How a shape is drawn: `css` is the box's own border and radius, `svg` an outline the shape draws itself, and
  * `composed` a base and effects the shape names, as a badge given `base` and `effects` is drawn.
