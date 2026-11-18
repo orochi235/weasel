@@ -1,5 +1,6 @@
 import { DEFAULT_CONSTRAINTS, type Anchor, type Constraints } from '@weasel-js/theme/engine';
 import { readStored, writeSession } from '@weasel-js/editor';
+import { readLocal, writeLocal } from '@weasel-js/storage';
 import { type LabHistoryStore, localHistoryStore } from './historyStorage';
 
 export type SurfaceKey = 'dark' | 'light';
@@ -118,8 +119,23 @@ function stateOf(stored: unknown): LabState {
  */
 export const loadLive = (): LabState | null => readStored<LabState | null>(LIVE_KEY, liveOf, () => null);
 
+// Not starting with LIVE_KEY: reading or writing the live state lists and parses every key that does.
+const LIVE_HISTORY_KEY = 'weasel.theme-editor.palette-history';
+const liveHistoryStore = localHistoryStore<LabState>(LIVE_HISTORY_KEY);
+
 /** Where the palette lab keeps its undo history, beside the state it ends on. */
-export const liveHistory: LabHistoryStore<LabState> = localHistoryStore(`${LIVE_KEY}.history`);
+export const liveHistory: LabHistoryStore<LabState> = {
+  ...liveHistoryStore,
+  load: () => {
+    // A history kept under LIVE_KEY before moves out from under it.
+    const moved = readLocal(`${LIVE_KEY}.history`);
+    if (moved !== undefined) {
+      writeLocal(`${LIVE_KEY}.history`, undefined);
+      if (readLocal(LIVE_HISTORY_KEY) === undefined) writeLocal(LIVE_HISTORY_KEY, moved);
+    }
+    return liveHistoryStore.load();
+  },
+};
 
 /** Store the lab's state; resolves whether the browser took it, which a private window or a full quota refuses, as it
  *  refuses to write over a state `loadLive` could not read until that one is kept aside. */

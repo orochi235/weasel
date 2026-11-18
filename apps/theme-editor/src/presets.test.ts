@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { INITIAL, liveOf, loadLive, loadSaved, persist, persistLive, savedOf, storedPresets } from './presets';
+import { INITIAL, liveHistory, liveOf, loadLive, loadSaved, persist, persistLive, savedOf, storedPresets } from './presets';
 
 /** A stored value as `JSON.parse` reads it back. */
 const stored = (value: unknown): unknown => JSON.parse(JSON.stringify(value));
@@ -96,5 +96,37 @@ describe('the stored presets and live state', () => {
     expect(await persistLive(INITIAL)).toBe(true);
     expect(JSON.parse(localStorage.getItem(`${key}:unreadable`)!)).toBe('{"c":');
     expect(loadLive()).toEqual(INITIAL);
+  });
+});
+
+describe('the live history', () => {
+  afterEach(() => vi.unstubAllGlobals());
+
+  it('is kept off the live state key, so saving the state never reads the history', async () => {
+    const items = new Map<string, string>();
+    const getItem = vi.fn((k: string) => items.get(k) ?? null);
+    vi.stubGlobal('localStorage', {
+      get length() {
+        return items.size;
+      },
+      key: (i: number) => [...items.keys()][i] ?? null,
+      getItem,
+      setItem: (k: string, v: string) => void items.set(k, v),
+      removeItem: (k: string) => void items.delete(k),
+    });
+    liveHistory.save({ state: INITIAL, history: { version: 1, undoStack: [], redoStack: [] } as never });
+    const historyKeys = [...items.keys()];
+    expect(historyKeys).toHaveLength(1);
+    getItem.mockClear();
+    await persistLive(INITIAL);
+    expect(getItem.mock.calls.map(([k]) => k)).not.toContain(historyKeys[0]);
+  });
+
+  it('moves a history kept under the live state key out from under it', () => {
+    const saved = { state: INITIAL, history: { version: 1, undoStack: [], redoStack: [] } };
+    localStorage.setItem('weasel.theme-editor.live.history', JSON.stringify(saved));
+    expect(liveHistory.load()).toEqual(saved);
+    expect(localStorage.getItem('weasel.theme-editor.live.history')).toBeNull();
+    localStorage.clear();
   });
 });
