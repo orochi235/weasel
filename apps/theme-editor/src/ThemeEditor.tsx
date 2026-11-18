@@ -1,5 +1,7 @@
 import { Lab } from '@weasel-js/labkit';
 import { LABS, THEME_EDITOR_LAB } from '@shared/labs';
+import { Button } from '@weasel-js/ui/components/Button';
+import { Input } from '@weasel-js/ui/components/Input';
 import { useCallback, useEffect, useState } from 'react';
 import styles from './ThemeEditor.module.css';
 import { ThemeWorkbench } from './ThemeWorkbench';
@@ -23,6 +25,23 @@ function withUnsavedDrafts(themes: readonly StoredTheme[]): StoredTheme[] {
     return definition ? [{ name, hash: '', emits: true, definition }] : [];
   });
   return [...themes, ...unsaved];
+}
+
+/** What the editor shows with no theme to open: an empty or misconfigured themes directory, or the last draft discarded. */
+function NoThemes({ onNew }: { readonly onNew: (name: string) => string | null }) {
+  const [name, setName] = useState('');
+  const [problem, setProblem] = useState<string | null>(null);
+  return (
+    <Lab title="Theme editor" pages={LABS} path={THEME_EDITOR_LAB.href}>
+      <div className={styles.loading}>
+        <p>No themes to edit: the theme list came back empty. Name one to start it as a draft.</p>
+        <Input label="Name" value={name} onChange={setName} errorMessage={problem ?? undefined} invalid={problem !== null} />
+        <Button stance="confirm" onClick={() => setProblem(onNew(name.trim()))}>
+          Create
+        </Button>
+      </div>
+    </Lab>
+  );
 }
 
 export function ThemeEditor({ api }: { readonly api?: ThemeApi }) {
@@ -61,15 +80,6 @@ export function ThemeEditor({ api }: { readonly api?: ThemeApi }) {
     );
   }
 
-  const current = loaded.themes.find((t) => t.name === name) ?? loaded.themes[0];
-  const draft = loadDraft(current.name);
-  const reload = async () => {
-    const fresh = await loaded.api.get(current.name);
-    void clearDraft(current.name);
-    clearDraftHistory(current.name);
-    replace(fresh);
-    setGeneration((g) => g + 1);
-  };
   const create = (newName: string): string | null => {
     const problem = themeNameProblem(newName, loaded.themes.map((t) => t.name));
     if (problem) return problem;
@@ -78,6 +88,16 @@ export function ThemeEditor({ api }: { readonly api?: ThemeApi }) {
     persistLastTheme(newName);
     setName(newName);
     return null;
+  };
+  const current = loaded.themes.find((t) => t.name === name) ?? loaded.themes[0];
+  if (!current) return <NoThemes onNew={create} />;
+  const draft = loadDraft(current.name);
+  const reload = async () => {
+    const fresh = await loaded.api.get(current.name);
+    void clearDraft(current.name);
+    clearDraftHistory(current.name);
+    replace(fresh);
+    setGeneration((g) => g + 1);
   };
   const onDisk = current.hash !== '' || loaded.listed.has(current.name);
   const discard = () => {
