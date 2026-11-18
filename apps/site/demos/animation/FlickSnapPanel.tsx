@@ -66,14 +66,18 @@ function flickToGrid(args: {
 
       let live: Pose = release;
       let landed = false;
+      let snapped = false;
       let handle: PhysicsHandle<Pose> | undefined;
-      const land = (): void => {
+      const land = (settled = false): void => {
         if (landed) return;
         landed = true;
-        if (flight.current?.land === land) flight.current = null;
+        if (handle && flight.current?.handle === handle) flight.current = null;
         handle?.cancel();
-        // The target committed the landing untracked; put the document back so the op records the move.
-        const to = target.committed();
+        // A flick too slow to coast rests before the retarget below, so it snaps here.
+        const to = settled && !snapped
+          ? { ...live, ...nearestGridCell(live, area()) }
+          // The target committed the landing untracked; put the document back so the op records the move.
+          : target.committed();
         target.commit(from);
         ctx.adapter.applyOps?.([createSetPoseOp<Pose>({ id, from, to })], 'flick');
       };
@@ -87,14 +91,16 @@ function flickToGrid(args: {
         damping: 5,
         stiffness: 80,
         onTick: (p) => { live = p; },
-        onDone: () => land(),
+        onDone: () => land(true),
       });
       if (landed) return null;
-      const self: Flight = { handle, land };
+      const self: Flight = { handle, land: () => land() };
       flight.current = self;
       // A newer flick, or the demo unmounting, has already ended this one.
       setTimeout(() => {
-        if (flight.current === self) self.handle.setTarget({ ...live, ...nearestGridCell(live, area()) });
+        if (flight.current !== self) return;
+        snapped = true;
+        self.handle.setTarget({ ...live, ...nearestGridCell(live, area()) });
       }, FLICK_COAST_MS);
       return null;
     },
