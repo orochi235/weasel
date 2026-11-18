@@ -1,22 +1,19 @@
 import type { PrefGroup, PrefSection } from '@weasel-js/prefs';
-import { getOwn } from '@weasel-js/registry';
 import type { AppearanceProps } from '@weasel-js/ui/appearance';
 import {
   type CollapseProps,
-  PropertyHelp,
   PropertyPanel,
   useCollapse,
 } from '@weasel-js/ui/components/Properties';
-import { Focusable, Tooltip, TooltipTrigger } from '@weasel-js/ui/components/Tooltip';
 import { useOverlayPortal } from '@weasel-js/ui/portal-host';
 import { type ReactElement, type ReactNode, useRef, useState } from 'react';
-import { configValueAt } from '../config/path';
 import type { ResolvedConfig } from '../config/types';
-import { aliasTargetsOf, isRowEnabled, isRowVisible } from '../config/visible';
+import { aliasTargetsOf, isRowVisible } from '../config/visible';
 import { FieldChoicesContext, useFieldChoicesOf } from './fieldChoices';
 import type { OpenCell } from './MatrixEditor';
+import { ColumnHeader, ColumnHeads, columnNameOf, headClassFor } from './MatrixHeads';
 import { MatrixPopover } from './MatrixPopover';
-import { MatrixSlot } from './MatrixSlot';
+import { MatrixRow, type MatrixRowScope, rowSpecsOf } from './MatrixRow';
 import { type MatrixTarget, matrixTargetAt } from './matrixTarget';
 
 /** One column of a {@link ControlMatrix}: a config group, every one the same shape. */
@@ -76,46 +73,11 @@ export interface ControlMatrixProps extends AppearanceProps, CollapseProps {
   className?: string;
 }
 
-const nameOf = (column: ControlMatrixColumn): string => column.title ?? column.label;
 const NO_AUTO: ReadonlySet<string> = new Set();
 const firstColumnHint =
   (fallback: ControlMatrixColumn | undefined) =>
   (_: ControlMatrixColumn): string =>
-    fallback ? `from ${nameOf(fallback)}` : '';
-
-type RowSpec = {
-  row: ControlMatrixProps['rows'][number];
-  cells: (MatrixTarget | undefined)[];
-  label: string;
-  about: string | undefined;
-};
-
-function rowSpecsOf(
-  rows: ControlMatrixProps['rows'],
-  columns: readonly ControlMatrixColumn[],
-  cellAt: (path: string) => MatrixTarget | undefined,
-  visible: (path: string) => boolean,
-): RowSpec[] {
-  return (
-    rows
-      .map((row) => {
-        const cells = columns.map((column) => cellAt(`${column.key}.${row.key}`));
-        const named = cells.find((cell) => cell !== undefined)?.leaf;
-        return {
-          row,
-          cells,
-          label: row.label ?? named?.name ?? row.key,
-          about: named?.description,
-        };
-      })
-      // A setting no column shows has no row; one no column has keeps its row of dashes.
-      .filter(
-        ({ row, cells }) =>
-          cells.every((cell) => cell === undefined) ||
-          cells.some((cell, i) => cell !== undefined && visible(`${columns[i]?.key}.${row.key}`)),
-      )
-  );
-}
+    fallback ? `from ${columnNameOf(fallback)}` : '';
 
 /**
  * One setting across several config groups of the same shape: settings down
@@ -156,23 +118,24 @@ export function ControlMatrix({
 
   // A row is named in `rows`, so a leaf's static `hidden` does not drop it; a `showIf` does.
   const visible = (path: string): boolean => isRowVisible(schema, path, config, true, over);
-  const rowSpecs = rowSpecsOf(rows, columns, cellAt, visible);
+  const scope: MatrixRowScope = {
+    columns,
+    schema,
+    over,
+    config,
+    auto,
+    inherit,
+    setConfig,
+    visible,
+    hintFor,
+    onOpen: (el, cell) => {
+      triggerRef.current = el;
+      setOpen(cell);
+    },
+  };
 
-  const fold = useCollapse({ collapsible, defaultCollapsed, collapsed, onCollapsedChange, twisty });
   // With a title row to sit in, the headers leave the table for it.
   const lifted = title !== undefined;
-  const headClass = (i: number): string =>
-    i === 0 && inherit ? 'lk-control-matrix__head is-first' : 'lk-control-matrix__head';
-  const heads = (
-    <div className="lk-control-matrix__heads">
-      {columns.map((column, i) => (
-        <span key={column.key} className={headClass(i)}>
-          <ColumnHeader column={column} onClick={onColumnClick} />
-        </span>
-      ))}
-    </div>
-  );
-
   const table = (
     <div className={className ? `lk-control-matrix ${className}` : 'lk-control-matrix'}>
       {anchor}
@@ -183,43 +146,19 @@ export function ControlMatrix({
           <tr>
             <td className="lk-control-matrix__corner" />
             {columns.map((column, i) => (
-              <th key={column.key} scope="col" className={headClass(i)}>
-                {lifted ? nameOf(column) : <ColumnHeader column={column} onClick={onColumnClick} />}
+              <th key={column.key} scope="col" className={headClassFor(i, inherit)}>
+                {lifted ? (
+                  columnNameOf(column)
+                ) : (
+                  <ColumnHeader column={column} onClick={onColumnClick} />
+                )}
               </th>
             ))}
           </tr>
         </thead>
         <tbody>
-          {rowSpecs.map(({ row, cells, label, about }) => (
-            <tr key={row.key}>
-              <RowLabel label={label} about={about} />
-              {columns.map((column, i) => {
-                const path = `${column.key}.${row.key}`;
-                const cell = cells[i];
-                const first = inherit && i === 0;
-                const inherited = inherit && !first && cell?.own === true && auto.has(path);
-                return (
-                  <MatrixSlot
-                    key={column.key}
-                    cell={cell}
-                    shown={visible(path)}
-                    value={cell && configValueAt(config, cell.at)}
-                    name={`${nameOf(column)} ${label}`}
-                    absent={`${nameOf(column)} has no ${label}`}
-                    inherited={inherited}
-                    hint={inherited ? hintFor(column) : undefined}
-                    canUnpin={inherit && !first && !inherited}
-                    summary={row.summary ?? (cell && getOwn(schema.dialogs, cell.at)?.summary)}
-                    disabled={!isRowEnabled(schema, path, config, over)}
-                    setConfig={setConfig}
-                    onOpen={(el) => {
-                      triggerRef.current = el;
-                      if (cell) setOpen({ path, leaf: cell.node, column, first, label, cell });
-                    }}
-                  />
-                );
-              })}
-            </tr>
+          {rowSpecsOf(rows, columns, cellAt, visible).map((spec) => (
+            <MatrixRow key={spec.row.key} spec={spec} scope={scope} />
           ))}
         </tbody>
       </table>
@@ -241,73 +180,59 @@ export function ControlMatrix({
     </div>
   );
 
-  const panel =
-    title === undefined &&
-    !Object.values(appearance).some((v) => v !== undefined) &&
-    !fold.folds ? (
-      table
-    ) : (
-      <PropertyPanel
-        className="lk-control-matrix-panel"
+  return (
+    <FieldChoicesContext.Provider value={choices}>
+      <MatrixFrame
         title={title}
-        actions={lifted && !fold.folded ? heads : undefined}
-        {...appearance}
-        {...(fold.folds
-          ? { collapsible: true, collapsed: fold.folded, onCollapsedChange: fold.toggle, twisty }
-          : {})}
+        appearance={appearance}
+        fold={{ collapsible, defaultCollapsed, collapsed, onCollapsedChange, twisty }}
+        heads={<ColumnHeads columns={columns} inherit={inherit} onClick={onColumnClick} />}
       >
         {table}
-      </PropertyPanel>
-    );
-  return <FieldChoicesContext.Provider value={choices}>{panel}</FieldChoicesContext.Provider>;
-}
-
-/** A row's name, its `about` shown in a tooltip when the name is hovered or the row's first control has focus. */
-function RowLabel({ label, about }: { label: string; about: string | undefined }): ReactElement {
-  const text = <span className="lk-control-matrix__label-text">{label}</span>;
-  return (
-    <th scope="row" className="lk-control-matrix__label">
-      {about ? (
-        <PropertyHelp label={label} description={about} within="tr">
-          {text}
-        </PropertyHelp>
-      ) : (
-        text
-      )}
-    </th>
+      </MatrixFrame>
+    </FieldChoicesContext.Provider>
   );
 }
 
-function ColumnHeader({
-  column,
-  onClick,
+/** The table on its own, or in a `<PropertyPanel>` when it has a title, an appearance or a fold. A titled
+ *  panel carries the column headers in its title row while it is open. */
+function MatrixFrame({
+  title,
+  appearance,
+  fold: foldProps,
+  heads,
+  children,
 }: {
-  column: ControlMatrixColumn;
-  onClick?: (column: ControlMatrixColumn) => void;
-}) {
-  const name = nameOf(column);
-  if (!onClick) {
-    return column.title && column.title !== column.label ? (
-      <abbr title={column.title} className="lk-control-matrix__head-text">
-        {column.label}
-      </abbr>
-    ) : (
-      <span className="lk-control-matrix__head-text">{column.label}</span>
-    );
+  title: ReactNode;
+  appearance: AppearanceProps;
+  fold: CollapseProps;
+  heads: ReactNode;
+  children: ReactElement;
+}): ReactElement {
+  const fold = useCollapse(foldProps);
+  if (
+    title === undefined &&
+    !Object.values(appearance).some((v) => v !== undefined) &&
+    !fold.folds
+  ) {
+    return children;
   }
   return (
-    <TooltipTrigger>
-      <Focusable>
-        <button
-          type="button"
-          className="lk-control-matrix__head-button"
-          aria-label={name}
-          onClick={() => onClick(column)}
-        >
-          {column.label}
-        </button>
-      </Focusable>
-      <Tooltip>{name}</Tooltip>
-    </TooltipTrigger>
+    <PropertyPanel
+      className="lk-control-matrix-panel"
+      title={title}
+      actions={title !== undefined && !fold.folded ? heads : undefined}
+      {...appearance}
+      {...(fold.folds
+        ? {
+            collapsible: true,
+            collapsed: fold.folded,
+            onCollapsedChange: fold.toggle,
+            twisty: foldProps.twisty,
+          }
+        : {})}
+    >
+      {children}
+    </PropertyPanel>
   );
 }
