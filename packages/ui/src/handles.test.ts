@@ -42,7 +42,7 @@ describe('handle size tokens', () => {
   // The module-scope read resolves to the same number a literal would, so the
   // rendered radius cannot tell the two apart; the source text can.
   it('is what the curve editor sizes its round handles from', () => {
-    const anchors = readFileSync(resolve(here, 'components/CurveEditor/createFunctionLayer.tsx'), 'utf8');
+    const anchors = readFileSync(resolve(here, 'components/CurveEditor/functionAnchorMarks.tsx'), 'utf8');
     expect(anchors).toContain("handleHalf('--wzl-handle-dot-size')");
     expect(anchors).not.toMatch(/\br=\{[\d.]+\}/);
     const keys = readFileSync(resolve(here, 'components/CurveEditor/createKeyframeLayer.tsx'), 'utf8');
