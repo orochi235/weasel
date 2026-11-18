@@ -1,0 +1,48 @@
+ 1/48  line  text  still  glyphs      3520  cmds     44  cpu p50     0.83ms  p95     1.39ms  gpu    0.64ms  draws    1  up    0.56MB  first    10.5ms  frame   16.9ms  synced    1.2ms
+ 2/48  line  text  moving glyphs      3520  cmds     44  cpu p50     1.10ms  p95     1.39ms  gpu    0.65ms  draws    1  up    0.56MB  first     0.7ms  frame   16.9ms  synced    3.0ms
+ 3/48  line  layer still  glyphs      3520  cmds     44  cpu p50     0.14ms  p95     0.25ms  gpu    0.69ms  draws    1  up    0.00MB  first   106.5ms  frame   16.9ms  synced    1.2ms
+ 4/48  line  layer moving glyphs      3520  cmds     44  cpu p50     0.13ms  p95     0.25ms  gpu    0.64ms  draws    1  up    0.00MB  first     0.9ms  frame   17.0ms  synced    1.0ms
+ 5/48  block text  still  glyphs      3520  cmds     44  cpu p50     0.54ms  p95     1.34ms  gpu    0.64ms  draws    1  up    0.56MB  first     0.8ms  frame   17.4ms  synced    2.3ms
+ 6/48  block text  moving glyphs      3520  cmds     44  cpu p50     0.75ms  p95     1.35ms  gpu    0.73ms  draws    1  up    0.56MB  first     0.5ms  frame   17.5ms  synced    2.0ms
+ 7/48  block layer still  glyphs      3520  cmds     44  cpu p50     0.10ms  p95     0.19ms  gpu    0.65ms  draws    1  up    0.00MB  first     0.5ms  frame   17.5ms  synced    1.4ms
+ 8/48  block layer moving glyphs      3520  cmds     44  cpu p50     0.08ms  p95     0.18ms  gpu    0.75ms  draws    1  up    0.00MB  first     0.5ms  frame   17.5ms  synced    0.8ms
+ 9/48  line  text  still  glyphs     13360  cmds    167  cpu p50     2.09ms  p95     4.06ms  gpu    1.74ms  draws    2  up    2.14MB  first     9.4ms  frame   17.0ms  synced    4.4ms
+10/48  line  text  moving glyphs     13360  cmds    167  cpu p50     1.66ms  p95     4.01ms  gpu    1.92ms  draws    2  up    2.14MB  first     7.0ms  frame   17.0ms  synced    3.5ms
+11/48  line  layer still  glyphs     13360  cmds    167  cpu p50     0.08ms  p95     0.16ms  gpu    1.19ms  draws    1  up    0.00MB  first     4.9ms  frame   17.0ms  synced    1.5ms
+12/48  line  layer moving glyphs     13360  cmds    167  cpu p50     0.09ms  p95     0.17ms  gpu    2.02ms  draws    1  up    0.00MB  first     5.7ms  frame   17.0ms  synced    1.6ms
+13/48  block text  still  glyphs     13360  cmds     56  cpu p50     1.75ms  p95     3.77ms  gpu    1.56ms  draws    2  up    2.14MB  first     8.6ms  frame   17.0ms  synced    3.6ms
+14/48  block text  moving glyphs     13360  cmds     56  cpu p50     2.06ms  p95     3.91ms  gpu    1.68ms  draws    2  up    2.14MB  first     1.7ms  frame   17.0ms  synced    3.8ms
+15/48  block layer still  glyphs     13360  cmds     56  cpu p50     0.10ms  p95     0.20ms  gpu    1.15ms  draws    1  up    0.00MB  first     2.8ms  frame   17.3ms  synced    1.0ms
+16/48  block layer moving glyphs     13360  cmds     56  cpu p50     0.09ms  p95     0.18ms  gpu    1.21ms  draws    1  up    0.00MB  first     0.8ms  frame   17.3ms  synced    1.1ms
+17/48  line  text  still  glyphs     44080  cmds    551  cpu p50     4.12ms  p95     5.07ms  gpu    2.68ms  draws    6  up    7.05MB  first    19.4ms  frame   17.4ms  synced    5.8ms
+18/48  line  text  moving glyphs     44080  cmds    551  cpu p50     4.65ms  p95     5.20ms  gpu    2.38ms  draws    6  up    7.05MB  first    10.3ms  frame   17.3ms  synced    6.2ms
+19/48  line  layer still  glyphs     44080  cmds    551  cpu p50     0.10ms  p95     0.18ms  gpu    2.35ms  draws    1  up    0.00MB  first     9.2ms  frame   17.4ms  synced    2.0ms
+20/48  line  layer moving glyphs     44080  cmds    551  cpu p50     0.12ms  p95     0.19ms  gpu    2.82ms  draws    1  up    0.00MB  first     8.5ms  frame   17.3ms  synced    1.5ms
+21/48  block text  still  glyphs     44080  cmds     62  cpu p50     4.11ms  p95     5.37ms  gpu    2.80ms  draws    6  up    7.05MB  first    10.6ms  frame   17.3ms  synced    5.7ms
+22/48  block text  moving glyphs     44080  cmds     62  cpu p50     4.11ms  p95     5.37ms  gpu    2.46ms  draws    6  up    7.05MB  first     3.4ms  frame   17.3ms  synced    5.0ms
+23/48  block layer still  glyphs     44080  cmds     62  cpu p50     0.06ms  p95     0.19ms  gpu    2.61ms  draws    1  up    0.00MB  first     2.9ms  frame   17.3ms  synced    1.4ms
+24/48  block layer moving glyphs     44080  cmds     62  cpu p50     0.12ms  p95     0.18ms  gpu    2.66ms  draws    1  up    0.00MB  first     1.4ms  frame   16.9ms  synced    1.3ms
+25/48  line  text  still  glyphs    114400  cmds   1430  cpu p50     8.83ms  p95     9.62ms  gpu    3.78ms  draws   14  up   18.30MB  first    30.6ms  frame   16.9ms  synced   12.2ms
+26/48  line  text  moving glyphs    114400  cmds   1430  cpu p50     8.83ms  p95     9.71ms  gpu    4.27ms  draws   14  up   18.30MB  first    27.0ms  frame   16.9ms  synced   11.3ms
+27/48  line  layer still  glyphs    114400  cmds   1430  cpu p50     0.08ms  p95     0.14ms  gpu    3.93ms  draws    1  up    0.00MB  first    21.1ms  frame   16.9ms  synced    3.4ms
+28/48  line  layer moving glyphs    114400  cmds   1430  cpu p50     0.07ms  p95     0.16ms  gpu    4.35ms  draws    1  up    0.00MB  first    32.1ms  frame   16.9ms  synced    3.1ms
+29/48  block text  still  glyphs    114400  cmds     63  cpu p50     8.13ms  p95     8.96ms  gpu    4.21ms  draws   14  up   18.30MB  first    34.1ms  frame   16.9ms  synced   10.7ms
+30/48  block text  moving glyphs    114400  cmds     63  cpu p50     8.09ms  p95     8.85ms  gpu    3.89ms  draws   14  up   18.30MB  first     7.5ms  frame   17.3ms  synced   11.1ms
+31/48  block layer still  glyphs    114400  cmds     63  cpu p50     0.09ms  p95     0.15ms  gpu    3.47ms  draws    1  up    0.00MB  first     8.4ms  frame   17.2ms  synced    3.2ms
+32/48  block layer moving glyphs    114400  cmds     63  cpu p50     0.10ms  p95     0.16ms  gpu    3.67ms  draws    1  up    0.00MB  first     4.6ms  frame   16.9ms  synced    3.1ms
+33/48  line  text  still  glyphs    320000  cmds   4000  cpu p50    22.59ms  p95    24.44ms  gpu    7.50ms  draws   40  up   51.20MB  first    96.0ms  frame   22.7ms  synced   31.2ms
+34/48  line  text  moving glyphs    320000  cmds   4000  cpu p50    22.51ms  p95    24.10ms  gpu    7.49ms  draws   40  up   51.20MB  first    74.2ms  frame   22.7ms  synced   31.0ms
+35/48  line  layer still  glyphs    320000  cmds   4000  cpu p50     0.09ms  p95     0.14ms  gpu    7.74ms  draws    1  up    0.00MB  first    61.1ms  frame   16.9ms  synced    8.2ms
+36/48  line  layer moving glyphs    320000  cmds   4000  cpu p50     0.08ms  p95     0.15ms  gpu    8.04ms  draws    1  up    0.00MB  first    74.2ms  frame   17.3ms  synced    8.0ms
+37/48  block text  still  glyphs    320000  cmds     64  cpu p50    20.29ms  p95    21.75ms  gpu    6.78ms  draws   40  up   51.20MB  first    61.0ms  frame   20.4ms  synced   27.5ms
+38/48  block text  moving glyphs    320000  cmds     64  cpu p50    20.10ms  p95    21.94ms  gpu    6.82ms  draws   40  up   51.20MB  first    20.4ms  frame   20.2ms  synced   27.6ms
+39/48  block layer still  glyphs    320000  cmds     64  cpu p50     0.07ms  p95     0.15ms  gpu    7.76ms  draws    1  up    0.00MB  first    19.3ms  frame   17.4ms  synced    7.6ms
+40/48  block layer moving glyphs    320000  cmds     64  cpu p50     0.08ms  p95     0.13ms  gpu    7.71ms  draws    1  up    0.00MB  first    13.4ms  frame   17.0ms  synced    7.6ms
+41/48  line  text  still  glyphs   1280000  cmds  16000  cpu p50   112.03ms  p95   123.44ms  gpu   38.95ms  draws  157  up  204.80MB  first   312.7ms  frame  112.2ms  synced  116.6ms
+42/48  line  text  moving glyphs   1280000  cmds  16000  cpu p50   111.47ms  p95   123.21ms  gpu   38.09ms  draws  157  up  204.80MB  first   298.9ms  frame  111.7ms  synced  124.4ms
+43/48  line  layer still  glyphs   1280000  cmds  16000  cpu p50     0.05ms  p95     0.07ms  gpu   94.29ms  draws    1  up    0.00MB  first   280.3ms  frame   16.9ms  synced   32.9ms
+44/48  line  layer moving glyphs   1280000  cmds  16000  cpu p50     0.06ms  p95     0.09ms  gpu  120.71ms  draws    1  up    0.00MB  first   275.6ms  frame   17.0ms  synced   33.3ms
+45/48  block text  still  glyphs   1280000  cmds     64  cpu p50   101.89ms  p95   111.04ms  gpu   31.13ms  draws  157  up  204.80MB  first   275.5ms  frame  102.1ms  synced  106.1ms
+46/48  block text  moving glyphs   1280000  cmds     64  cpu p50    96.19ms  p95   107.47ms  gpu   31.15ms  draws  157  up  204.80MB  first   103.4ms  frame   96.3ms  synced  102.8ms
+47/48  block layer still  glyphs   1280000  cmds     64  cpu p50     0.03ms  p95     0.06ms  gpu  147.49ms  draws    1  up    0.00MB  first    96.5ms  frame   17.0ms  synced   26.6ms
+48/48  block layer moving glyphs   1280000  cmds     64  cpu p50     0.02ms  p95     0.05ms  gpu  181.89ms  draws    1  up    0.00MB  first    41.7ms  frame   16.8ms  synced   26.0ms
