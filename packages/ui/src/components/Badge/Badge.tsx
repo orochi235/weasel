@@ -14,7 +14,8 @@ import { useInsets } from './useInsets';
 import type { BadgeShape, BadgeVariant, BadgeSize } from './types';
 import { useSvgBox } from './useSvgBox';
 import { BadgeRemove, BadgeTarget } from './BadgeLabel';
-import { Focusable, Tooltip, TooltipTrigger } from '../Tooltip';
+import { BadgeRoot } from './BadgeRoot';
+import { badgeRoles } from './badgeRoles';
 import { type AppearanceProps, useAppearance } from '../appearance';
 import type { EdgeCap } from './bases/edgeProfiles';
 import { PowerlineSlotContext } from '../Powerline/slot';
@@ -100,13 +101,6 @@ function badgeStyle(
   };
 }
 
-function chooseElement(props: BadgeProps): 'span' | 'button' | 'a' {
-  if (props.as) return props.as;
-  if (props.href) return 'a';
-  if (props.onClick) return 'button';
-  return 'span';
-}
-
 /**
  * A small labelled chip. Renders as a `<span>`, or as a `<button>`/`<a>` when
  * given `onClick`/`href` — override with `as`.
@@ -150,16 +144,12 @@ export const Badge = forwardRef(function Badge(props: BadgeProps, ref: Ref<HTMLE
     effects,
     tooltip, labelProps,
     as: _as,
-    'aria-label': ariaLabelProp,
+    'aria-label': _ariaLabel,
     onFocus,
     onBlur,
     ...domProps
   } = usePowerlineProps(props);
-  const element = chooseElement(props);
-  const tooltipOnPlainBadge = tooltip != null && element === 'span';
-  const split = onRemove != null && (element !== 'span' || tooltip != null);
-  const ariaLabel = ariaLabelProp
-    ?? (tooltipOnPlainBadge && (typeof children === 'string' || typeof children === 'number') ? String(children) : undefined);
+  const { element, tooltipOnPlainBadge, split, ariaLabel } = badgeRoles(props);
   const [focused, setFocused] = useState(false);
   const shapeModule = SHAPES[shape] ?? SHAPES.pill;
   const resolvedShape = SHAPES[shape] ? shape : 'pill';
@@ -231,28 +221,9 @@ export const Badge = forwardRef(function Badge(props: BadgeProps, ref: Ref<HTMLE
     </>
   );
 
-  if (split) return <span {...commonProps} ref={ref}>{inner}</span>;
-  let badge;
-  if (element === 'button') {
-    badge = (
-      <button type="button" {...commonProps} ref={ref as Ref<HTMLButtonElement>} onClick={onClick}>
-        {inner}
-      </button>
-    );
-  } else if (element === 'a') {
-    badge = (
-      <a href={href} {...commonProps} ref={ref as Ref<HTMLAnchorElement>} onClick={onClick}>
-        {inner}
-      </a>
-    );
-  } else {
-    badge = <span {...commonProps} ref={ref}>{inner}</span>;
-  }
-  if (tooltip == null) return badge;
   return (
-    <TooltipTrigger>
-      <Focusable>{badge}</Focusable>
-      <Tooltip>{tooltip}</Tooltip>
-    </TooltipTrigger>
+    <BadgeRoot element={element} split={split} rootProps={commonProps} rootRef={ref} href={href} onClick={onClick} tooltip={tooltip}>
+      {inner}
+    </BadgeRoot>
   );
 });
