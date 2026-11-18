@@ -8,7 +8,7 @@ import fc from 'fast-check';
 import { runs, tally } from '../../pbt.fixture';
 import { addCarrySurface, startCarry, type CarryStage } from './carry';
 
-interface Box { parent: number; x: number; y: number; w: number; h: number }
+interface Box { parent: number; x: number; y: number; width: number; height: number }
 
 const cleanups: (() => void)[] = [];
 afterEach(() => {
@@ -16,7 +16,7 @@ afterEach(() => {
   delete (document as { elementFromPoint?: unknown }).elementFromPoint;
 });
 
-const inside = (b: Box, x: number, y: number) => x >= b.x && x <= b.x + b.w && y >= b.y && y <= b.y + b.h;
+const inside = (b: Box, x: number, y: number) => x >= b.x && x <= b.x + b.width && y >= b.y && y <= b.y + b.height;
 
 /** Carry along `path` over `boxes`, registered in `order`: the log of what each surface heard, and what each step reached. */
 function carry(boxes: readonly Box[], order: readonly number[], path: readonly { x: number; y: number }[]) {
@@ -24,7 +24,7 @@ function carry(boxes: readonly Box[], order: readonly number[], path: readonly {
   document.body.append(root);
   const els = boxes.map((b) => {
     const el = document.createElement('div');
-    el.getBoundingClientRect = () => ({ left: b.x, top: b.y, right: b.x + b.w, bottom: b.y + b.h, x: b.x, y: b.y, width: b.w, height: b.h, toJSON: () => ({}) });
+    el.getBoundingClientRect = () => ({ left: b.x, top: b.y, right: b.x + b.width, bottom: b.y + b.height, x: b.x, y: b.y, width: b.width, height: b.height, toJSON: () => ({}) });
     return el;
   });
   boxes.forEach((b, i) => (b.parent < 0 ? root : els[b.parent]!).append(els[i]!));
@@ -59,7 +59,7 @@ function carry(boxes: readonly Box[], order: readonly number[], path: readonly {
   return { log, reached, docOrder };
 }
 
-const boxes = fc.array(fc.record({ x: fc.integer({ min: 0, max: 60 }), y: fc.integer({ min: 0, max: 60 }), w: fc.integer({ min: 0, max: 60 }), h: fc.integer({ min: 0, max: 60 }) }), { minLength: 1, maxLength: 6 })
+const boxes = fc.array(fc.record({ x: fc.integer({ min: 0, max: 60 }), y: fc.integer({ min: 0, max: 60 }), width: fc.integer({ min: 0, max: 60 }), height: fc.integer({ min: 0, max: 60 }) }), { minLength: 1, maxLength: 6 })
   .chain((bs) => fc.tuple(...bs.map((b, i) => fc.integer({ min: -1, max: i - 1 }).map((parent) => ({ ...b, parent })))));
 const point = fc.record({ x: fc.integer({ min: -5, max: 125 }), y: fc.integer({ min: -5, max: 125 }) });
 

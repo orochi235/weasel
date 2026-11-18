@@ -288,7 +288,7 @@ describe('createMarkdownRenderer', () => {
  */
 function makeRecordingCtx(init: { textBaseline?: CanvasTextBaseline; textAlign?: CanvasTextAlign } = {}) {
   const texts: Array<{ text: string; x: number; y: number; fillStyle: string; textAlign: string }> = [];
-  const rects: Array<{ x: number; y: number; w: number; h: number; fillStyle: string }> = [];
+  const rects: Array<{ x: number; y: number; width: number; height: number; fillStyle: string }> = [];
   const sizeOf = (font: string) => Number(/([\d.]+)px/.exec(font)?.[1] ?? 0);
   const ctx = {
     font: '',
@@ -309,7 +309,7 @@ function makeRecordingCtx(init: { textBaseline?: CanvasTextBaseline; textAlign?:
     },
     strokeText() {},
     fillRect(x: number, y: number, w: number, h: number) {
-      rects.push({ x, y, w, h, fillStyle: ctx.fillStyle });
+      rects.push({ x, y, width: w, height: h, fillStyle: ctx.fillStyle });
     },
   };
   return { ctx: ctx as unknown as CanvasRenderingContext2D, raw: ctx, texts, rects };
@@ -336,7 +336,7 @@ describe('createMarkdownRenderer decorations', () => {
     const r = createMarkdownRenderer(ctx, [{ text: 'abc', underline: true }], 20);
     r.renderer(ctx, '', 5, 100);
     // Top edge 0.10em below the baseline, 0.05em thick.
-    expect(rects).toEqual([{ x: 5, y: 102, w: 30, h: 1, fillStyle: '#FFFFFF' }]);
+    expect(rects).toEqual([{ x: 5, y: 102, width: 30, height: 1, fillStyle: '#FFFFFF' }]);
   });
 
   it('places strikethrough and overline off the same baseline, in that order', () => {
@@ -346,7 +346,7 @@ describe('createMarkdownRenderer decorations', () => {
     );
     r.renderer(ctx, '', 0, 100);
     expect(rects.map((q) => q.y)).toEqual([102, 94, 82]);
-    expect(rects.every((q) => q.h === 1 && q.w === 20)).toBe(true);
+    expect(rects.every((q) => q.height === 1 && q.width === 20)).toBe(true);
   });
 
   it('draws one rule across contiguous runs that share decoration and fill', () => {
@@ -355,7 +355,7 @@ describe('createMarkdownRenderer decorations', () => {
       ctx, [{ text: 'ab ', underline: true }, { text: 'cd', underline: true, bold: true }], 20,
     );
     r.renderer(ctx, '', 0, 100);
-    expect(rects).toEqual([{ x: 0, y: 102, w: 50, h: 1, fillStyle: '#FFFFFF' }]);
+    expect(rects).toEqual([{ x: 0, y: 102, width: 50, height: 1, fillStyle: '#FFFFFF' }]);
   });
 
   it('splits the rule where the fill changes, with the halves meeting exactly', () => {
@@ -365,8 +365,8 @@ describe('createMarkdownRenderer decorations', () => {
     );
     r.renderer(ctx, '', 0, 100);
     expect(rects).toEqual([
-      { x: 0, y: 102, w: 20, h: 1, fillStyle: '#FFFFFF' },
-      { x: 20, y: 102, w: 30, h: 1, fillStyle: 'rgba(255, 255, 255, 0.7)' },
+      { x: 0, y: 102, width: 20, height: 1, fillStyle: '#FFFFFF' },
+      { x: 20, y: 102, width: 30, height: 1, fillStyle: 'rgba(255, 255, 255, 0.7)' },
     ]);
   });
 
@@ -387,16 +387,16 @@ describe('createMarkdownRenderer decorations', () => {
     const size = 20 * 0.583;
     const baseline = 100 - 20 * 0.333;
     expect(rects[1].x).toBe(10);
-    expect(rects[1].w).toBe(10);
+    expect(rects[1].width).toBe(10);
     expect(rects[1].y).toBeCloseTo(baseline + 0.10 * size, 6);
-    expect(rects[1].h).toBeCloseTo(0.05 * size, 6);
+    expect(rects[1].height).toBeCloseTo(0.05 * size, 6);
   });
 
   it('underlines a small-caps word as one rule at the run\'s size, as the GL tier does', () => {
     const { ctx, rects } = makeRecordingCtx();
     const r = createMarkdownRenderer(ctx, [{ text: 'Hello', fontVariantCaps: 'small-caps', underline: true }], 20);
     r.renderer(ctx, '', 0, 100);
-    expect(rects).toEqual([{ x: 0, y: 102, w: 50, h: 1, fillStyle: '#FFFFFF' }]);
+    expect(rects).toEqual([{ x: 0, y: 102, width: 50, height: 1, fillStyle: '#FFFFFF' }]);
   });
 
   it('finds the baseline under textBaseline top', () => {
@@ -414,7 +414,7 @@ describe('createMarkdownRenderer decorations', () => {
     );
     r.renderer(ctx, '', 100, 50);
     expect(texts.map((t) => [t.x, t.textAlign])).toEqual([[80, 'left'], [100, 'left']]);
-    expect(rects.map((q) => [q.x, q.w])).toEqual([[80, 20], [100, 20]]);
+    expect(rects.map((q) => [q.x, q.width])).toEqual([[80, 20], [100, 20]]);
     expect(raw.textAlign).toBe('center');
   });
 
@@ -442,7 +442,7 @@ describe('createMarkdownRenderer decorations', () => {
     const { ctx, rects } = makeRecordingCtx();
     const r = createMarkdownRenderer(ctx, [{ text: 'aaa bbb', underline: true }], 20, 40);
     r.renderer(ctx, '', 0, 100);
-    expect(rects.map((q) => [q.x, q.y, q.w])).toEqual([[0, 102, 30], [0, 128, 30]]);
+    expect(rects.map((q) => [q.x, q.y, q.width])).toEqual([[0, 102, 30], [0, 128, 30]]);
   });
 });
 

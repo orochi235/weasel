@@ -115,7 +115,7 @@ describe('kit:text — a { px } font size, clipping its children', () => {
   // Inside the world-size line box, outside the one drawn at scale 2.
   const inWorldOnly = () => {
     const [full] = textLineBoxes(textPoseOf(data, POSE));
-    return { x: full!.width * 0.75, y: full!.height * 0.25, w: full!.width, h: full!.height };
+    return { x: full!.width * 0.75, y: full!.height * 0.25, width: full!.width, height: full!.height };
   };
   function clipScene() {
     const scene = createScene<unknown, 'main', RectPose>({ systemLayers: [{ id: 'main' }] });
@@ -165,7 +165,7 @@ describe('kit:text — a { px } font size, clipping its children', () => {
 
   it('lets a marquee take a child only inside the outline drawn at the asking view\'s scale', () => {
     const scene = clipScene();
-    const { x, y, w, h } = inWorldOnly();
+    const { x, y, width: w, height: h } = inWorldOnly();
     const box = { x, y, width: w * 0.05, height: h * 0.1 };
     expect(hitTestRect(scene, box, { camera: at(1) })).toContain(asNodeId('c'));
     expect(hitTestRect(scene, box, { camera: at(2) })).not.toContain(asNodeId('c'));
