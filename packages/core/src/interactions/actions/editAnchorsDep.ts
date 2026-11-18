@@ -1,4 +1,4 @@
-import type { PointOrigin } from '@weasel-js/geom';
+import type { PointOrigin, Rect } from '@weasel-js/geom';
 import type { Op } from 'core/ops/types';
 import type { CommitSelection } from './defaultCommitAdapter';
 import type { PathEditExtension, PathEditMark, PathEditStore } from 'domains/paths/pathEditExtension';
@@ -92,9 +92,9 @@ export interface EditAnchorsDep {
 
   /** In-flight anchor-marquee rect in world coords, or null when no
    *  marquee drag is active. */
-  marquee: { x: number; y: number; width: number; height: number } | null;
+  marquee: Rect | null;
   /** Set or clear the in-flight marquee rect. */
-  setMarquee(rect: { x: number; y: number; width: number; height: number } | null): void;
+  setMarquee(rect: Rect | null): void;
 
   /** The handle locks held for every handle drag, on top of the modifiers —
    *  what the `handleLock.angle` and `handleLock.length` toggles set. Absent,

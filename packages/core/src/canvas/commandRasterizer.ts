@@ -2,7 +2,7 @@
  * Draw commands to pixels through a `RasterSession`: the hook a file writer calls for what its
  * format cannot express, and gets back an image to place instead.
  */
-import { mat3, type GlMat3 } from '@weasel-js/geom';
+import { mat3, type GlMat3, type Rect } from '@weasel-js/geom';
 import type { DrawCommand } from '@weasel-js/renderer';
 import { createScene } from '../core/scene/scene';
 import type { RasterImage } from './renderSceneToPixelsTypes';
@@ -10,12 +10,7 @@ import type { RasterSession } from './renderSceneToPixels';
 import { warmRender } from './renderSceneToPixels';
 
 /** An axis-aligned rectangle in page units. */
-export interface RasterRect {
-  x: number;
-  y: number;
-  width: number;
-  height: number;
-}
+export type RasterRect = Rect;
 
 /**
  * Draws `commands`, which are in a page's frame, in order onto a clear raster of `rect` at `scale`

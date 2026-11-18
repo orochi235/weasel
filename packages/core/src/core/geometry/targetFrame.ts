@@ -3,7 +3,7 @@
  * target's bounds, with the helpers the outline, the handles, their hit
  * regions, and the resize and rotate actions all place themselves by.
  */
-import { transformPoint, invert, poseFrameOf, pxExtentInFrame, type Affine, type Scale2 } from '@weasel-js/geom';
+import { transformPoint, invert, poseFrameOf, pxExtentInFrame, type Affine, type Scale2, type Rect } from '@weasel-js/geom';
 
 /** Local↔world maps for a chrome target. Local is the target's unrotated box
  *  frame; world is where the node is drawn. */
@@ -79,7 +79,7 @@ export function pxExtentIn(px: number, scale: Scale2, xf: TargetTransform): { x:
 
 /** The target's box corners in world, TL/TR/BR/BL. */
 export function targetCorners(
-  b: { x: number; y: number; width: number; height: number },
+  b: Rect,
   xf: TargetTransform,
 ): { x: number; y: number }[] {
   return [

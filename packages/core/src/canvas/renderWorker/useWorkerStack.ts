@@ -18,6 +18,7 @@ import {
   type CanvasWorkerSurface, type PageFrames, type StackFrame, type StackSurface,
 } from './workerStack';
 import type { WorkerCanvasHandle } from './WorkerSceneView';
+import type { Rect } from '@weasel-js/geom';
 
 export interface WorkerStack {
   runs: readonly LayerRun[];
@@ -26,7 +27,7 @@ export interface WorkerStack {
   /** React's ref callback for the canvas of run `index`, below the top one. */
   canvasRef(index: number): (el: HTMLCanvasElement | null) => void;
   paint(frame: StackFrame, top: WeaselRenderer): void;
-  readIds(rect: { x: number; y: number; width: number; height: number }, options?: CanvasIdReadOptions): Promise<IdBuffer | null>;
+  readIds(rect: Rect, options?: CanvasIdReadOptions): Promise<IdBuffer | null>;
   handle: WorkerCanvasHandle;
   /** The page's frames are back after time nobody saw. */
   resumed(): void;

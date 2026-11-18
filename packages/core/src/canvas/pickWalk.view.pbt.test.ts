@@ -12,7 +12,8 @@ import { fromPlane, planeMap } from 'core/viewport/parallax';
 import type { View } from 'core/viewport/view';
 import { pickWalk, scenePickSource, type PickQuery } from './pickWalk';
 import { mixedScene, pointPick, regionPick } from './pickIndex/pickIndexFixture';
-import { LAYERS, buildScene, intBox, runs, sceneSpec, timeoutFor, type Box, type BoxScene, type SceneSpec } from './pbt.fixture';
+import { LAYERS, buildScene, intBox, runs, sceneSpec, timeoutFor, type BoxScene, type SceneSpec } from './pbt.fixture';
+import type { Rect } from '@weasel-js/geom';
 
 const RUNS = 200;
 const d = AUTO_POSE_DESCRIPTOR;
@@ -82,9 +83,9 @@ describe('a marquee grown', () => {
     fc.assert(fc.property(fc.integer({ min: 1, max: 6 }), rect, grow, fc.boolean(), (seed, r, [l, t, rr, bb], groups) => {
       let scene = scenes.get(seed);
       if (!scene) scenes.set(seed, scene = mixedScene(seed, seed % 2 === 0));
-      const big: Box = { x: r.x - l, y: r.y - t, width: r.width + l + rr, height: r.height + t + bb };
+      const big: Rect = { x: r.x - l, y: r.y - t, width: r.width + l + rr, height: r.height + t + bb };
       const src = scenePickSource(scene as never, { index: { descriptor: d } });
-      const take = (b: Box, mode: LassoHitMode) => pickWalk(src, regionPick(rectRegion(b), mode, d, groups));
+      const take = (b: Rect, mode: LassoHitMode) => pickWalk(src, regionPick(rectRegion(b), mode, d, groups));
       for (const mode of MODES) {
         const small = take(r, mode);
         const large = new Set(take(big, mode));

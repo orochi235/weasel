@@ -1,12 +1,8 @@
 import type { View } from './view';
+import type { Rect } from '@weasel-js/geom';
 
 /** The world rect a view is not allowed to show outside of. */
-export interface ClampBounds {
-  x: number;
-  y: number;
-  width: number;
-  height: number;
-}
+export type ClampBounds = Rect;
 
 /** Canvas dimensions in CSS pixels — needed to know how much world a view
  *  actually shows. */

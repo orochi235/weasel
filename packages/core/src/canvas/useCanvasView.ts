@@ -12,6 +12,7 @@ import type { Dims } from 'core/layers/render';
 import type { Bounds } from 'core/viewport/fitViewToBounds';
 import { clampView } from 'core/viewport/clampView';
 import { normalizeView, sameView, type View } from 'core/viewport/view';
+import type { Rect } from '@weasel-js/geom';
 
 /** The view props a canvas takes for its camera. */
 export interface CameraProps {
@@ -30,7 +31,7 @@ export interface CameraProps {
    * and a resize of the canvas. An axis where the visible rect is larger than the bounds is
    * centered. Has no effect on `scale`.
    */
-  viewBounds?: { x: number; y: number; width: number; height: number };
+  viewBounds?: Rect;
 }
 
 /** Bounds read at each write: those a view moving from `from` must stay in,

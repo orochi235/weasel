@@ -6,6 +6,7 @@ import type { DrawCommand } from '@weasel-js/renderer';
 import type { SerializedNode, SerializedScene } from '../../core/scene/types';
 import type { View } from '../../core/viewport/view';
 import type { IdBuffer, ImageRasterSize } from '@weasel-js/renderer';
+import type { Rect } from '@weasel-js/geom';
 
 /** A node as it crosses: its saved form, function fields as registry keys. */
 export type WireNode = SerializedNode<unknown, string, unknown>;
@@ -85,15 +86,7 @@ export type ToWorker =
   /** The answer to the worker's `image` request of the same `id`. */
   | { type: 'image'; id: number; src: string; bitmap?: ImageBitmap; error?: string }
   /** The ids the last frame painted over `rect`, CSS pixels from the canvas's top-left. */
-  | { type: 'readIds'; id: number; rect: IdRect; minAlpha?: number; exclude?: number[] };
-
-/** A rectangle of the canvas, CSS pixels from its top-left. */
-export interface IdRect {
-  x: number;
-  y: number;
-  width: number;
-  height: number;
-}
+  | { type: 'readIds'; id: number; rect: Rect; minAlpha?: number; exclude?: number[] };
 
 export type FromWorker =
   /** The worker took the canvas and can paint. */

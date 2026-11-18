@@ -20,6 +20,7 @@ import type { Op } from 'core/ops/types';
 import type { ClipboardIngestCtx, InsertDep, SnapDep, SvgIngestOptions } from 'interactions/actions/depSchema';
 import { admitIngestMime, type ActionDeps, type IngestItem } from '@weasel-js/routing';
 import { createReflectable, createValuesReader, type Reflection } from '@weasel-js/registry';
+import type { Rect } from '@weasel-js/geom';
 
 /** Context handed to every content handler for one ingest event. */
 export interface IngestCtx {
@@ -32,7 +33,7 @@ export interface IngestCtx {
    *  Absent reads as the items the handler was handed. */
   items?: readonly IngestItem[];
   /** Visible canvas area in world coordinates. */
-  viewportWorldRect(): { x: number; y: number; width: number; height: number };
+  viewportWorldRect(): Rect;
   /** The kit insert dep — id/layer/undoable-op supplied; the canonical way
    *  for a handler to mint a node (`insert.commit(bounds, { kind, ... })`). */
   insert: InsertDep;

@@ -1,6 +1,7 @@
 /** The deps external-content ingestion reads: the `ingest` action's dep and
  *  the SVG and clipboard seams it carries. */
 import type { InsertAdapter, PasteOmission } from 'core/adapters/types';
+import type { Rect } from '@weasel-js/geom';
 
 /**
  * Options for the kit `image/svg+xml` content handler, threaded from
@@ -55,7 +56,7 @@ export interface ClipboardIngestCtx {
 /** Dep for the `ingest` action (external-content ingestion). */
 export interface IngestionDep {
   /** Visible canvas area in world coordinates. */
-  viewportWorldRect(): { x: number; y: number; width: number; height: number };
+  viewportWorldRect(): Rect;
   /** Consumer file→src resolver (from SceneCanvas's `ingestion` prop).
    *  Live accessor — read it at use time. Destructuring (or copying the
    *  property early) snapshots the current value and won't track later

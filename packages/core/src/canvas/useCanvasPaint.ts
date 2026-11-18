@@ -16,6 +16,7 @@ import { NO_LAYER_VISIBILITY, type LayerGate } from './useExtraLayers';
 import { ViewSnap } from './viewSnap';
 import type { WorkerStack } from './renderWorker/useWorkerStack';
 import type { CanvasWorkerSurface } from './renderWorker/workerStack';
+import type { Rect } from '@weasel-js/geom';
 
 /** What a frame's paint reads that a React render owns. */
 export interface PaintInputs extends Pick<CanvasProps<unknown>, 'dpr' | 'layerGroups' | 'shaders' | 'flattenTolerance' | 'imageMinification' | 'retain'> {
@@ -65,8 +66,6 @@ export interface PaintStack {
   inputs: CanvasWorkerSurface['inputs'];
 }
 const NO_STACK = { current: null };
-
-type IdRect = { x: number; y: number; width: number; height: number };
 
 /**
  * Publish the canvas's paint into `paintRef`, which the frame loop calls. The paint binds the
@@ -171,7 +170,7 @@ export function useCanvasPaint(
       const last = lastFrameRef.current;
       return last && !last.renderer.isContextLost() ? last : null;
     };
-    const args = (last: { commands: DrawCommand[]; view: View }, rect: IdRect, options?: CanvasIdReadOptions) =>
+    const args = (last: { commands: DrawCommand[]; view: View }, rect: Rect, options?: CanvasIdReadOptions) =>
       [last.commands, viewToMat3(last.view), { rect, minAlpha: options?.minAlpha, exclude: options?.exclude }] as const;
     return {
       readIds: (rect, options) => {

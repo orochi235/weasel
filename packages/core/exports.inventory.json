@@ -3357,8 +3357,6 @@
     "specKindForRouteGesture": "function"
   },
   "./test-seams": {
-    "AabbBounds": "type",
-    "AnchorMarquee": "type",
     "BuildAffordanceAtOptions": "type",
     "CIRCLE_POSE_DESCRIPTORForTests": "const",
     "ChromeAffordanceOptions": "type",

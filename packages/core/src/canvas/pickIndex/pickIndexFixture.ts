@@ -3,7 +3,7 @@
  * of node the walk treats differently, and the point and region queries the
  * scene's picks ask, each carrying the broad box its entry point sets.
  */
-import { linePath, rotateAboutPoint, translate, PATH_L, PATH_M, PATH_Z, type Affine, type Path } from '@weasel-js/geom';
+import { linePath, rotateAboutPoint, translate, PATH_L, PATH_M, PATH_Z, type Affine, type Path, type Rect } from '@weasel-js/geom';
 import type { LassoHitMode } from 'core/adapters/types';
 import type { SelectRegion } from 'core/geometry/regionHit';
 import { IDENTITY_POSE_COMPOSITION, RIGID_POSE_COMPOSITION } from 'core/scene/composePose';
@@ -112,7 +112,7 @@ export function mixedScene(seed: number, composed: boolean): AnyScene {
   }
   const clip = add({
     id: id('clip'), kind: 'group', pose: { x: 600, y: 600, width: 100, height: 100, rotation: 0.3 },
-    clipFromPose: (p: { x: number; y: number; width: number; height: number }) =>
+    clipFromPose: (p: Rect) =>
       ({ kind: 'rect', x: p.x, y: p.y, width: p.width, height: p.height }),
   });
   add({ id: id('clip.in'), parent: clip, pose: { x: 620, y: 620, width: 30, height: 30 }, data: { shape: 'rect', fill: SOLID } });
