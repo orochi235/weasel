@@ -1,8 +1,8 @@
-import { createEmitter } from '@weasel-js/registry';
 import { depthAt, timestampAt } from './stackTime';
 import type { Op } from './op';
 import { anyCaused, appliedHalves, createApplier, entryView, foldEntry, sameCoalesceKeys, stepOf } from './entryOps';
 import { createWalk, type Walked } from './walk';
+import { createVersionClock } from './versionClock';
 import { createJournalInternal, _resumeJournalInternal, _resumedByOwnerInternal, _refuseWhileActiveInternal as refuseWhileActive, type Journal, type BeginJournalOptions } from './journal';
 import {
   snapshot, touchedIdsOf,
@@ -70,21 +70,7 @@ export function createHistory(adapter: unknown, options: CreateHistoryOptions = 
   const selection = options.selection;
   const logger = options.debug ?? SILENT;
   let nextEntryId = 1;
-  let version = 0;
-  /** `version` as of the last push or coalesce. A batch may only merge into
-   *  the top entry while this still matches: every other operation bumps
-   *  `version`, so undo, redo, goto, clear, restore and `recordEntry` all
-   *  expire the merge window without having to remember to. Without that, an
-   *  edit made after stepping back rewrites whatever entry the step left on
-   *  top, and one undo then jumps past it. */
-  let coalesceAnchorVersion = -1;
-  const changed = createEmitter();
-  const stepped = createEmitter<[HistoryStep]>();
-  function bump(step?: HistoryStep): void {
-    version++;
-    if (step && stepped.size > 0) stepped.emit(step);
-    changed.emit();
-  }
+  const clock = createVersionClock();
 
   /** Report entries that just became permanently unreachable. A throwing
    *  callback must not desync the stacks mid-mutation, so failures are
@@ -159,7 +145,7 @@ export function createHistory(adapter: unknown, options: CreateHistoryOptions = 
    *  re-emit ops in any order between batches without breaking the merge. */
   function canCoalesce(top: Entry, incoming: Op[]): boolean {
     const windowMs = typeof coalesceWindowMs === 'function' ? coalesceWindowMs() : coalesceWindowMs, gap = now() - top.timestamp;
-    if (!(windowMs > 0) || top.coalesceKey !== undefined || version !== coalesceAnchorVersion || !(gap >= 0 && gap <= windowMs)) return false;
+    if (!(windowMs > 0) || top.coalesceKey !== undefined || !clock.anchored() || !(gap >= 0 && gap <= windowMs)) return false;
     return sameCoalesceKeys(top.forwardOps, incoming);
   }
 
@@ -201,8 +187,8 @@ export function createHistory(adapter: unknown, options: CreateHistoryOptions = 
       // the anchor only survives until the stack is stepped, and every step
       // clears it, so a live anchor implies an empty redo stack.
       logger.log(`coalesce '${label}' into entry id=${top.id} (${ops.length} ops)`);
-      bump(stepped.size > 0 ? { kind: 'coalesce', entries: [{ id: top.id, label: top.label, ops, applied: ops }] } : undefined);
-      coalesceAnchorVersion = version;
+      clock.bump(clock.observed() ? { kind: 'coalesce', entries: [{ id: top.id, label: top.label, ops, applied: ops }] } : undefined);
+      clock.anchor();
       return;
     }
     logger.log(`push '${label}' (${ops.length} ops)`);
@@ -214,21 +200,21 @@ export function createHistory(adapter: unknown, options: CreateHistoryOptions = 
     undoStack.push(entry);
     retireRedo(at);
     enforceLimit();
-    bump(stepped.size > 0 ? stepOf('push', [entry], [ops]) : undefined);
-    coalesceAnchorVersion = version;
+    clock.bump(clock.observed() ? stepOf('push', [entry], [ops]) : undefined);
+    clock.anchor();
   }
 
   function fold(top: Entry, ops: Op[]): void {
     foldEntry(top, ops, now());
-    bump(stepped.size > 0 ? { kind: 'coalesce', entries: [{ id: top.id, label: top.label, ops, applied: ops }] } : undefined);
-    coalesceAnchorVersion = version;
+    clock.bump(clock.observed() ? { kind: 'coalesce', entries: [{ id: top.id, label: top.label, ops, applied: ops }] } : undefined);
+    clock.anchor();
   }
 
   function record(forwardOps: Op[], baseOps: Op[], label: string, options: RecordEntryOptions = {}): void {
     if (forwardOps.length === 0) return;
     const key = options.coalesceKey;
     const top = undoStack[undoStack.length - 1];
-    if (key !== undefined && top?.coalesceKey === key && version === coalesceAnchorVersion && forwardOps === baseOps) {
+    if (key !== undefined && top?.coalesceKey === key && clock.anchored() && forwardOps === baseOps) {
       return fold(top, forwardOps);
     }
     const at = forkPoint();
@@ -241,8 +227,8 @@ export function createHistory(adapter: unknown, options: CreateHistoryOptions = 
     undoStack.push(entry);
     retireRedo(at);
     enforceLimit();
-    bump(stepped.size > 0 ? stepOf('push', [entry], [forwardOps]) : undefined);
-    if (key !== undefined) coalesceAnchorVersion = version;
+    clock.bump(clock.observed() ? stepOf('push', [entry], [forwardOps]) : undefined);
+    if (key !== undefined) clock.anchor();
   }
 
   const history: History = {
@@ -255,15 +241,15 @@ export function createHistory(adapter: unknown, options: CreateHistoryOptions = 
     undo() {
       if (undoStack.length === 0) return;
       const { walked, applied } = walkTo(undoStack.length - 1);
-      bump(stepOf('undo', walked, applied));
+      clock.bump(stepOf('undo', walked, applied));
     },
     redo() {
       if (redoStack.length === 0) return;
       const { walked, applied } = walkTo(undoStack.length + 1);
-      bump(stepOf('redo', walked, applied));
+      clock.bump(stepOf('redo', walked, applied));
     },
     seal() {
-      coalesceAnchorVersion = -1;
+      clock.seal();
     },
     canUndo: () => undoStack.length > 0,
     canRedo: () => redoStack.length > 0,
@@ -275,7 +261,7 @@ export function createHistory(adapter: unknown, options: CreateHistoryOptions = 
       redoStack.length = 0;
       forks.clear();
       floorId = 0;
-      if (had) bump(stepOf('clear'));
+      if (had) clock.bump(stepOf('clear'));
     },
     entries() {
       // redoStack is internally stored newest-on-top (so `pop()` redoes the
@@ -303,10 +289,10 @@ export function createHistory(adapter: unknown, options: CreateHistoryOptions = 
         } catch (back) {
           logger.warn(`goto: returning to depth ${start} threw: ${String(back)}`);
         }
-        if (undoStack.length !== start) bump();
+        if (undoStack.length !== start) clock.bump();
         throw err;
       }
-      bump(stepOf('goto', walked.walked, walked.applied));
+      clock.bump(stepOf('goto', walked.walked, walked.applied));
     },
     timestampAt: (i) => timestampAt(undoStack, redoStack, i),
     depthAt: (t) => depthAt(undoStack, redoStack, t),
@@ -316,7 +302,7 @@ export function createHistory(adapter: unknown, options: CreateHistoryOptions = 
       if (k === 0) return;
       const evicted = undoStack.splice(0, k);
       evictFloor(evicted);
-      bump(stepOf('prune', evicted));
+      clock.bump(stepOf('prune', evicted));
     },
     branches() {
       const view = (entries: readonly Entry[], current: boolean): HistoryBranch => {
@@ -331,7 +317,7 @@ export function createHistory(adapter: unknown, options: CreateHistoryOptions = 
       if (redoStack.length === 0) return;
       const dropped = [...redoStack].reverse();
       retireRedo(forkPoint());
-      bump(stepOf('drop', dropped));
+      clock.bump(stepOf('drop', dropped));
     },
     switchBranch(id) {
       if (redoStack[redoStack.length - 1]?.id === id) return;
@@ -344,11 +330,11 @@ export function createHistory(adapter: unknown, options: CreateHistoryOptions = 
       if (kept.length > 0) forks.set(at, kept);
       else forks.delete(at);
       redoStack.push(...[...chosen!].reverse());
-      bump(stepOf('branch', chosen));
+      clock.bump(stepOf('branch', chosen));
     },
-    getVersion: () => version,
-    subscribe: changed.subscribe,
-    observe: stepped.subscribe,
+    getVersion: clock.current,
+    subscribe: clock.subscribe,
+    observe: clock.observe,
     serialize: () => snapshot({ undoStack, redoStack, forks, floorId, nextEntryId }, logger),
     recordEntry(ops: Op[], label: string, options?: RecordEntryOptions): void {
       record(ops, ops, label, options);
@@ -387,7 +373,7 @@ export function createHistory(adapter: unknown, options: CreateHistoryOptions = 
       forks.clear();
       for (const [at, kept] of next.forks) forks.set(at, kept);
       floorId = next.floorId; nextEntryId = next.nextEntryId;
-      bump(stepOf('restore'));
+      clock.bump(stepOf('restore'));
       return { restored: true, unresolved };
     },
   };
