@@ -1,3 +1,4 @@
+export const PALETTE_FILES: { readonly lego: string; readonly copic: string };
 export interface LegoRow {
   name: string;
   hex: string;

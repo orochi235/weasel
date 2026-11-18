@@ -1,5 +1,6 @@
+import { existsSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
-import { parseCopic, parseLego, renderCopic, renderLego } from './brand-colors.mjs';
+import { PALETTE_FILES, parseCopic, parseLego, renderCopic, renderLego } from './brand-colors.mjs';
 
 const legoBlock = (name: string, rgb: string, type = 'Solid') =>
   `<article class='set'><a title="${name}"></a><div style="background-color:rgb(${rgb})"></div><a href='/colours/type-${type}'></a></article>`;
@@ -26,5 +27,12 @@ describe('rendering', () => {
 
   it('writes a row per colour', () => {
     expect(renderLego([{ name: 'Coral', hex: '#ff8066' }])).toContain(`{ name: "Coral", hex: '#ff8066' },`);
+  });
+});
+
+describe('PALETTE_FILES', () => {
+  it('names the committed tables wherever the script runs from', () => {
+    expect(existsSync(PALETTE_FILES.lego) && existsSync(PALETTE_FILES.copic)).toBe(true);
+    expect(PALETTE_FILES.lego).toMatch(/apps\/theme-editor\/src\/palette\/legoColors\.ts$/);
   });
 });

@@ -2,6 +2,14 @@
  * The parsing and rendering behind `gen-brand-colors.mjs`, kept apart from its
  * fetches and writes so it can be tested on fixed input.
  */
+import { join } from 'node:path';
+
+/** Where the tables go, from this file rather than the cwd, so the script runs from anywhere. */
+export const PALETTE_FILES = {
+  lego: join(import.meta.dirname, '../src/palette/legoColors.ts'),
+  copic: join(import.meta.dirname, '../src/palette/copicColors.ts'),
+};
+
 const hex2 = (n) => Number(n).toString(16).padStart(2, '0');
 
 /** sRGB hex to OKLab, so "how colourful is this" is one number. */

@@ -12,7 +12,7 @@
  *         the swatch images on copic.jp rather than someone's idealisation.
  */
 import { writeFileSync } from 'node:fs';
-import { parseCopic, parseLego, renderCopic, renderLego } from './brand-colors.mjs';
+import { PALETTE_FILES, parseCopic, parseLego, renderCopic, renderLego } from './brand-colors.mjs';
 
 const UA = { 'user-agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7)' };
 
@@ -31,7 +31,7 @@ const [legoRows, copicRows] = await Promise.all([
 // Both render before either is written, so a failure leaves both files as they were.
 const lego = renderLego(legoRows);
 const copic = renderCopic(copicRows);
-writeFileSync('apps/theme-editor/src/palette/legoColors.ts', lego);
-writeFileSync('apps/theme-editor/src/palette/copicColors.ts', copic);
+writeFileSync(PALETTE_FILES.lego, lego);
+writeFileSync(PALETTE_FILES.copic, copic);
 console.log(`lego: ${legoRows.length} current solid chromatic colours`);
 console.log(`copic: ${copicRows.length} markers`);
