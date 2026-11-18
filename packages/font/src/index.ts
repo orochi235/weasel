@@ -15,15 +15,14 @@ export {
   faceMetricsFor,
   ensureFontTexture,
   textureCacheKey,
-  resolveFontVariant,
-  cachedFontVariant,
-  resolveCanvasFallback,
   listAtlasFonts,
   listFontWeights,
   fontRegistry,
   isFontPending,
   warmFonts,
 } from './registerFont';
+export { resolveFontVariant, cachedFontVariant } from './resolveFontVariant';
+export { resolveCanvasFallback } from './canvasFallback';
 export type {
   FontEntry, FontFamilyFaces, FontRequest, ResolveResult, RegisteredFont, RegisterFontOptions,
 } from './registerFont';

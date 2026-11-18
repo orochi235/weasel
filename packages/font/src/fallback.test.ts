@@ -1,5 +1,6 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { resolveFontVariant, getAtlasFont, _resetFontRegistryForTests } from './registerFont';
+import { getAtlasFont, _resetFontRegistryForTests } from './registerFont';
+import { resolveFontVariant } from './resolveFontVariant';
 import type { FontFallbackPolicy } from './fallback';
 import { setDefaultFontFamily, setFontFallbackPolicy, _resetFallbackForTests } from './fallback';
 import {
