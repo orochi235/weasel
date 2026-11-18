@@ -1,5 +1,7 @@
 /**
- * Every module a published package imports must be one its manifest declares.
+ * Every module a published package imports must be one its manifest declares, type-only imports
+ * included, since those land in its .d.ts. The reverse, a declared sibling nothing ships, is
+ * check:idle-deps, which reads the build.
  *
  * An undeclared import passes everything inside the monorepo, where hoisting
  * resolves it. Published, a bundling build inlines the module and a per-module
@@ -15,7 +17,7 @@ import { existsSync, readFileSync, readdirSync, statSync } from 'node:fs';
 import { builtinModules } from 'node:module';
 import { dirname, join, relative, resolve } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
-import { SOURCE, importSpecifiers, isBare, packageOf } from './lib/imports.mjs';
+import { SOURCE, importSpecifiers, isBare, namedSpecifiers, packageOf } from './lib/imports.mjs';
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const PACKAGES = join(ROOT, 'packages');
@@ -137,6 +139,7 @@ if (import.meta.url === pathToFileURL(process.argv[1] ?? '').href) {
       ...Object.keys(manifest.peerDependencies ?? {}),
       ...Object.keys(manifest.optionalDependencies ?? {}),
     ]);
+    const devDeclared = new Set(Object.keys(manifest.devDependencies ?? {}));
     // A build that inlines registry ships it, so the devDependency is enough ("Bundling registry", docs/conventions.md).
     const tsup = join(dir, 'tsup.config.ts');
     if (manifest.devDependencies?.['@weasel-js/registry'] && existsSync(tsup) && /inlineRegistry:\s*true/.test(readFileSync(tsup, 'utf8'))) {
@@ -149,7 +152,9 @@ if (import.meta.url === pathToFileURL(process.argv[1] ?? '').href) {
       const rel = relative(ROOT, file);
       if (!isShipped(rel, relative(ROOT, dir), manifest)) continue;
       const testSurface = NOT_SHIPPED.test(rel) || /\/test-seams\.tsx?$/.test(rel);
-      for (const written of importSpecifiers(readFileSync(file, 'utf8'), file)) {
+      const source = readFileSync(file, 'utf8');
+      const runtime = new Set(importSpecifiers(source, file));
+      for (const written of namedSpecifiers(source, file)) {
         const specifier = written.replace(/\?.*$/, '');
         if (specifier.startsWith('.')) {
           const target = relative(ROOT, resolve(dirname(file), specifier)).replace(/\.[cm]?[jt]sx?$/, '');
@@ -167,6 +172,11 @@ if (import.meta.url === pathToFileURL(process.argv[1] ?? '').href) {
           else if (!testSurface && TEST_SURFACE.test(subpath)) reaches.push({ file: rel, specifier, why: 'is a test surface' });
         }
         if (declared.has(pkg) || BUILTINS.has(pkg)) continue;
+        // A type-only import leaves no specifier in the JavaScript, so a devDependency can meet it
+        // unless the type reaches the package's .d.ts, which check:idle-deps reads the build to catch.
+        if (!runtime.has(written) && devDeclared.has(pkg)) continue;
+        // The icons plugin replaces every icon() call in a library build, so icons.gen's scopedIcon never ships.
+        if (pkg === '@weasel-js/icons' && rel.endsWith('/icons.gen.ts') && devDeclared.has(pkg)) continue;
         if (aliases.some((alias) => specifier === alias || specifier.startsWith(`${alias}/`))) continue;
         if (!missing.has(pkg)) missing.set(pkg, rel);
       }

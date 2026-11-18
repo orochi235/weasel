@@ -5,7 +5,9 @@
 '@weasel-js/font': minor
 ---
 
-A `text-layer` draw command keeps text on the GPU: `{ kind: 'text-layer', texts }` draws its `TextDrawCommand`s as drawing each in turn would, but uploads every glyph once, as one instance, and draws it with one call a frame however the view moves.
+A `text-layer` draw command keeps text on the GPU.
+
+`{ kind: 'text-layer', texts }` draws its `TextDrawCommand`s as drawing each in turn would, but uploads every glyph once, as one instance, and draws it with one call a frame however the view moves.
 
 At 114,400 glyphs, a frame of unchanged text drops from 8 ms of CPU to 0.1 ms, and from 11 ms to 3 ms end to end, still or moving; at 1.28M, from 103 ms to 26 ms (`tests/perf/text-wall.spec.ts`). The layer is kept by the identity of `texts` and freed at the end of a frame that does not draw it. A layer holding an underline, a stroke, a fill that is not a solid color, a color glyph, or a glyph big enough on screen for the outline tier is drawn text by text instead.
 

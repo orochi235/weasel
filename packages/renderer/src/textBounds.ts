@@ -3,6 +3,7 @@ import type { TextDrawCommand, TextLayerDrawCommand } from './DrawCommand';
 import { screenBox, strokeReachAt, type ScreenBox } from './paintedBounds';
 import { laidOutText } from './textLayout';
 import { glyphTurn } from '@weasel-js/text';
+import { createPart } from '@weasel-js/registry';
 
 /**
  * How far past a glyph's advance cell its ink can reach, in ems of its own
@@ -48,7 +49,7 @@ export function textBox(cmd: TextDrawCommand, m: GlMat3): ScreenBox | null {
 
 const IDENTITY = mat3.identity();
 /** Each stroke-free layer's box in its own space, `null` for one painting nothing. */
-const layerBoxes = new WeakMap<readonly TextDrawCommand[], ScreenBox | null>();
+const layerBoxOf = createPart((texts: readonly TextDrawCommand[]) => unionOf(texts, IDENTITY));
 
 /**
  * {@link textBox} for every text of a layer. A layer whose runs carry no
@@ -58,11 +59,7 @@ const layerBoxes = new WeakMap<readonly TextDrawCommand[], ScreenBox | null>();
 export function textLayerBox(cmd: TextLayerDrawCommand, m: GlMat3): ScreenBox | null {
   const texts = cmd.texts;
   if (texts.some((t) => t.runs.some((r) => r.stroke !== undefined))) return unionOf(texts, m);
-  let local = layerBoxes.get(texts);
-  if (local === undefined) {
-    local = unionOf(texts, IDENTITY);
-    layerBoxes.set(texts, local);
-  }
+  const local = layerBoxOf(texts);
   return local && screenBox(local.minX, local.minY, local.maxX, local.maxY, m);
 }
 

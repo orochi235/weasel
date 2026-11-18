@@ -63,6 +63,7 @@
     "check:treeshake": "node scripts/check-treeshake.mjs",
     "check:react-free": "node scripts/check-react-free.mjs",
     "check:bundled-deps": "node scripts/check-bundled-deps.mjs",
+    "check:idle-deps": "node scripts/check-idle-deps.mjs",
     "check:unnameable": "node scripts/check-unnameable-types.mjs",
     "check:needs": "node scripts/check-package-needs.mjs",
     "check:doc-imports": "node scripts/check-doc-imports.mjs",

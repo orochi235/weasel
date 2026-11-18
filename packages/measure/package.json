@@ -52,7 +52,6 @@
     "@weasel-js/registry": "1.19.1",
     "@weasel-js/renderer": "1.19.1",
     "@weasel-js/routing": "1.19.1",
-    "@weasel-js/theme": "1.19.1",
     "@weasel-js/ui": "1.19.1"
   },
   "peerDependencies": {
@@ -64,5 +63,8 @@
   "publishConfig": {
     "access": "public",
     "provenance": true
+  },
+  "devDependencies": {
+    "@weasel-js/theme": "1.19.1"
   }
 }

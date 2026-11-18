@@ -150,6 +150,8 @@ jobs:
       # A build carrying its own copy of a dependency it declares splits that
       # dependency's contexts. See scripts/check-bundled-deps.mjs.
       - run: npm run check:bundled-deps
+      # A declared sibling that nothing a package ships names. See scripts/check-idle-deps.mjs.
+      - run: npm run check:idle-deps
       # A public declaration naming a type its package does not export. See
       # scripts/check-unnameable-types.mjs.
       - run: npm run check:unnameable
