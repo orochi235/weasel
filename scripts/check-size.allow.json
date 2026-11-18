@@ -176,24 +176,6 @@
   "packages/theme/src/engine/derive.ts": {
     "longestFunction": 172
   },
-  "packages/ui/src/components/Badge/Badge.tsx": {
-    "longestFunction": 132
-  },
-  "packages/ui/src/components/Badge/bases/RoundedRect.tsx": {
-    "longestFunction": 136
-  },
-  "packages/ui/src/components/Badge/effects/Aqua.tsx": {
-    "longestFunction": 122
-  },
-  "packages/ui/src/components/Badge/effects/Metal.tsx": {
-    "longestFunction": 127
-  },
-  "packages/ui/src/components/BandEditor/BandEditor.tsx": {
-    "longestFunction": 225
-  },
-  "packages/ui/src/components/Callout/Callout.tsx": {
-    "longestFunction": 136
-  },
   "packages/ui/src/components/CurveEditor/LayeredCurveEditor.tsx": {
     "longestFunction": 286
   },
@@ -204,18 +186,6 @@
   "packages/ui/src/components/CurveEditor/createKeyframeLayer.tsx": {
     "lines": 431,
     "longestFunction": 290
-  },
-  "packages/ui/src/components/DataGrid/DataGrid.tsx": {
-    "longestFunction": 161
-  },
-  "packages/ui/src/components/ItemList/ItemList.tsx": {
-    "longestFunction": 168
-  },
-  "packages/ui/src/components/Plot2D/Plot2D.tsx": {
-    "longestFunction": 214
-  },
-  "packages/ui/src/components/Prefs/prefField.tsx": {
-    "longestFunction": 126
   },
   "packages/ui/src/components/Slider/useThumbDrags.ts": {
     "longestFunction": 132
