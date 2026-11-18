@@ -44,7 +44,7 @@ describe('a module\'s index', () => {
           { title: 'Interfaces', exports: [{ name: 'Foo', kinds: ['interface'] }] },
         ],
         symbols: [
-          { name: 'Foo', kind: 'variable', summary: 'Old factory', doc: [], deprecated: html('Gone.'), code: [] },
+          { name: 'Foo', kind: 'variable', summary: 'Old factory', doc: [], deprecated: html('Gone.'), code: [], members: [] },
           { name: 'Foo', kind: 'interface', summary: 'The shape of a Foo', doc: [], code: [], members: [] },
         ],
       }],
