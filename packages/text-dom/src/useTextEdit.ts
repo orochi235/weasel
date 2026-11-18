@@ -14,15 +14,11 @@ import { historyKey } from '@weasel-js/gestures';
 import type { StyledRun } from '@weasel-js/text';
 import { domToRuns } from './domRuns';
 import { holdForFaces, installSelectionStyle, openingRange } from './overlayOpen';
-import {
-  applyStyleToRange, effectiveRangeStyle, styleHasFlag, rangeWeight, setFlagOverRange,
-  styleAtRange, unboldPatch, type FlagKey, type RangeStyle, type RunStylePatch,
-} from '@weasel-js/text';
-import { armedOver, armPatch, usePendingStyle } from './armedStyle';
+import { effectiveRangeStyle, type RangeStyle, type RunStylePatch } from '@weasel-js/text';
+import { armedOver, usePendingStyle } from './armedStyle';
 import { overlayHistory, type OverlayHistory, type OverlayState } from './overlayHistory';
 import { draftChanged, overlayDraft, writeEdit } from './overlayDraft';
-import { runStyleAt } from './runSplice';
-import { styleAtCaret, usePublishedRange } from './publishedRange';
+import { usePublishedRange } from './publishedRange';
 import { overlayTop } from './overlayFrame';
 import { mountOverlayBoxes, placeOverlay } from './overlayPlace';
 export { overlayTop };
@@ -30,38 +26,17 @@ import { applyOverlayStyle } from './overlayStyle';
 import { useHeldNodeStyle } from './heldNodeStyle';
 import { seedOverlay, type CaretHolder } from './overlaySeed';
 import {
-  readSelectionOffsets, restoreOverlayFocus, writeRunsPreservingSelection,
+  readSelectionOffsets, writeRunsPreservingSelection,
 } from './overlaySelection';
 import { typingHandlers } from './overlayTyping';
 import { toggleForKey } from './styleShortcuts';
 import { useEditingId } from './editSession';
+import { useSelectionStyling } from './selectionStyling';
 import { TEXT_EDIT_FONT_HOLD } from './textEditTypes';
 import type {
-  StartEditOptions, StyleToggle, TextEditSelection, UseTextEditOptions,
+  StartEditOptions, TextEditSelection, UseTextEditOptions,
   UseTextEditReturn,
 } from './textEditTypes';
-
-/**
- * The patch that toggles `toggle` against the styling in `current`: if it is
- * already carried, clear it; otherwise set it — so a mixed range turns fully
- * on. `nodeStyle` is read as well as `current`: a node flag renders on every
- * run whether or not the runs carry it, so the runs alone would read Cmd+B
- * inside a `fontWeight: 700` node as "not bold" and *add* bold.
- */
-function patchForToggle(
-  current: RangeStyle,
-  toggle: StyleToggle,
-  nodeStyle: TextStyle,
-): RunStylePatch {
-  if (toggle === 'super' || toggle === 'sub') {
-    return { script: current.script === toggle ? undefined : toggle };
-  }
-  const on = toggle === 'bold'
-    ? rangeWeight(current, nodeStyle).bold === true
-    : current[toggle] === true || styleHasFlag(nodeStyle, toggle);
-  return { [toggle]: !on };
-}
-
 
 /** In-place text editing via a contenteditable overlay positioned over the text node's screen-space pose. */
 export function useTextEdit(
@@ -126,93 +101,10 @@ export function useTextEdit(
     if (id !== null && draftChanged(sentRef, draft)) optsRef.current.onInput?.(id, draft);
   }, [editingIdRef, optsRef, nodeStyleRef]);
 
-  const applyStyle = useCallback(function applyStyle(patch: RunStylePatch) {
-    const overlay = overlayRef.current;
-    if (!overlay) return;
-    // An empty patch would still round-trip the runs through
-    // `applyStyleToRange`, whose normalization applies to the whole array.
-    if (Object.keys(patch).length === 0) return;
-    // Fall back to the last range that WAS in the overlay: the caller may be
-    // a control that took focus (and with it the DOM selection) to be clicked.
-    const range = readSelectionOffsets(overlay) ?? selectionRef.current;
-    if (!range) return;
-
-    // Lowering a flag the node itself sets is not expressible additively, so
-    // it takes the rewrite in `setFlagOverRange`: clear the node flag, raise
-    // it outside the range. It reaches existing text even from a collapsed caret.
-    const id = editingIdRef.current;
-    const canWriteStyle = optsRef.current.setStyle !== undefined || optsRef.current.onChange !== undefined;
-    const runs = domToRuns(overlay);
-    if (patch.bold === false && !('fontWeight' in patch) && id !== null) {
-      patch = { ...patch, ...unboldPatch(styleOf(id) ?? {}) };
-    }
-    const unsetFlag = id !== null && canWriteStyle
-      ? (Object.keys(patch) as FlagKey[]).find((key) =>
-          key !== 'bold'
-          && patch[key] === false
-          && styleHasFlag(styleOf(id) ?? {}, key))
-      : undefined;
-    if (unsetFlag !== undefined && id !== null) {
-      const r = setFlagOverRange(runs, styleOf(id) ?? {}, range.start, range.end, unsetFlag, false);
-      const resolved = restyleNode(overlay, id, r.style);
-      writeRunsPreservingSelection(overlay, r.runs, range.start, range.end, resolved);
-      publishRange(overlay, range);
-      // The rewrite raised the flag on every existing run, so a caret sitting
-      // at the end of one is now *inside* a flagged span and the next
-      // character would be absorbed by it. Arming the `false` makes
-      // `beforeinput` open a fresh span instead.
-      if (range.start === range.end) {
-        armPending({ ...pendingRef.current, [unsetFlag]: false }, range.start);
-      }
-      restoreOverlayFocus(overlay, range);
-      // Whatever else the patch carried still applies on its own terms.
-      const rest = { ...patch };
-      delete rest[unsetFlag];
-      if (Object.keys(rest).length > 0) applyStyle(rest);
-      sendDraft(overlay);
-      return;
-    }
-
-    // A collapsed caret has no run to restyle, so the styling is armed for
-    // the next character instead of silently doing nothing.
-    if (range.start === range.end) {
-      armPending(armPatch(runStyleAt(runs, range.start), pendingRef.current, patch), range.start);
-      restoreOverlayFocus(overlay, range);
-      return;
-    }
-
-    const next = applyStyleToRange(runs, range.start, range.end, patch);
-    writeRunsPreservingSelection(overlay, next, range.start, range.end, baseRef.current);
-    restoreOverlayFocus(overlay, range);
-    // Republish from the range we just styled, not from the DOM selection:
-    // when the patch came from chrome the selection is in that control.
-    publishRange(overlay, range);
-    sendDraft(overlay);
-  }, [publishRange, armPending, editingIdRef, optsRef, styleOf, restyleNode, sendDraft, pendingRef, selectionRef, baseRef]);
-
-  /** `applyStyle`, as one step of the edit's undo. */
-  const applyStyleToSelection = useCallback((patch: RunStylePatch) => {
-    historyRef.current?.before('other');
-    applyStyle(patch);
-    historyRef.current?.after();
-  }, [applyStyle]);
-
-  const toggleStyle = useCallback((toggle: StyleToggle) => {
-    const overlay = overlayRef.current;
-    if (!overlay) return;
-    const range = readSelectionOffsets(overlay) ?? selectionRef.current;
-    if (!range) return;
-    const runs = domToRuns(overlay);
-    const id = editingIdRef.current;
-    const nodeStyle = (id !== null ? styleOf(id) : undefined) ?? {};
-    // At a collapsed caret the styling in play is what the caret sits in plus
-    // whatever is already armed, so pressing Cmd+B twice disarms rather than
-    // arming a second time.
-    const current = range.start === range.end
-      ? armedOver(styleAtCaret(runs, range.start), pendingRef.current)
-      : styleAtRange(runs, range.start, range.end);
-    applyStyleToSelection(patchForToggle(current, toggle, nodeStyle));
-  }, [applyStyleToSelection, editingIdRef, styleOf, pendingRef, selectionRef]);
+  const { applyStyleToSelection, toggleStyle } = useSelectionStyling({
+    overlayRef, editingIdRef, optsRef, historyRef, styleOf, restyleNode, baseRef, sendDraft,
+    pendingRef, armPending, selectionRef, publishRange,
+  });
 
   useEffect(() => {
     if (editingId == null) return;
