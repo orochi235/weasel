@@ -47,7 +47,11 @@ function toggled<T extends string>(list: readonly T[], item: T): T[] {
  *  entries load when it is opened. */
 export function Releases() {
   const [filter, setFilter] = useState<Filter>(readFilter);
-  const [linked] = useState(() => new URLSearchParams(window.location.search).get(VERSION_PARAM));
+  const [linked, setLinked] = useState(() => new URLSearchParams(window.location.search).get(VERSION_PARAM));
+  // The link is spent once the first render has opened its section: a section that a filter
+  // change remounts later is not being linked to.
+  // eslint-disable-next-line react-hooks/set-state-in-effect -- consumes the deep link after the mount that used it
+  useEffect(() => setLinked(null), []);
 
   useWindowEvent('popstate', () => setFilter(readFilter()));
 
