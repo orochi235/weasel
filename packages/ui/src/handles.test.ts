@@ -45,7 +45,7 @@ describe('handle size tokens', () => {
     const anchors = readFileSync(resolve(here, 'components/CurveEditor/functionAnchorMarks.tsx'), 'utf8');
     expect(anchors).toContain("handleHalf('--wzl-handle-dot-size')");
     expect(anchors).not.toMatch(/\br=\{[\d.]+\}/);
-    const keys = readFileSync(resolve(here, 'components/CurveEditor/createKeyframeLayer.tsx'), 'utf8');
+    const keys = readFileSync(resolve(here, 'components/CurveEditor/keyframeMarks.tsx'), 'utf8');
     expect(keys).toContain("handleHalf('--wzl-handle-dot-size-sm')");
     expect(keys).not.toMatch(/RADIUS = [\d.]+/);
   });
