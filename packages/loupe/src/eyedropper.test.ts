@@ -7,7 +7,7 @@ const red = () => '#ff0000';
 
 function surface(sample: (p: { x: number; y: number }) => string | null): LoupeSurface {
   return {
-    lens: () => ({ x: 0, y: 0, w: 100, h: 100 }),
+    lens: () => ({ x: 0, y: 0, width: 100, height: 100 }),
     covers: () => false,
     sample,
     hidden: () => false,

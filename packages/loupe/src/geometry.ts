@@ -1,4 +1,4 @@
-import { normalizeZoom, type View } from '@weasel-js/geom';
+import { normalizeZoom, type Rect, type View } from '@weasel-js/geom';
 
 /** A point on the magnified surface, in its own CSS pixels. */
 export interface LoupePoint {
@@ -16,10 +16,7 @@ export function loupeExtent(size: LoupeSize): { width: number; height: number } 
 }
 
 /** The lens' rectangle on that surface. */
-export interface LoupeRect extends LoupePoint {
-  w: number;
-  h: number;
-}
+export type LoupeRect = Rect;
 
 /**
  * The inner `View` a loupe renders its content through: the outer view's
@@ -34,8 +31,8 @@ export function loupeInnerView(
 ): View {
   const scale = { x: outer.scale.x * factor, y: outer.scale.y * factor };
   return {
-    x: target.x - rect.w / 2 / scale.x,
-    y: target.y - rect.h / 2 / scale.y,
+    x: target.x - rect.width / 2 / scale.x,
+    y: target.y - rect.height / 2 / scale.y,
     scale,
   };
 }
@@ -55,8 +52,8 @@ export function loupeSourcePoint(
   factor: number,
 ): LoupePoint {
   return {
-    x: aim.x + (p.x - (rect.x + rect.w / 2)) / factor,
-    y: aim.y + (p.y - (rect.y + rect.h / 2)) / factor,
+    x: aim.x + (p.x - (rect.x + rect.width / 2)) / factor,
+    y: aim.y + (p.y - (rect.y + rect.height / 2)) / factor,
   };
 }
 
@@ -92,14 +89,14 @@ export interface BandPlacement {
  */
 export function placeBand({ band, factor, maxWidth, maxHeight }: PlaceBandArgs): BandPlacement {
   let fit = factor;
-  if (band.w > 0) fit = Math.min(fit, maxWidth / band.w);
-  if (maxHeight !== undefined && band.h > 0) fit = Math.min(fit, maxHeight / band.h);
+  if (band.width > 0) fit = Math.min(fit, maxWidth / band.width);
+  if (maxHeight !== undefined && band.height > 0) fit = Math.min(fit, maxHeight / band.height);
   // A host with no room still gets a factor a point in the lens can be divided back by.
   fit = normalizeZoom(fit);
-  // Held to the host, which rounding in `band.w * fit` can pass by an ulp.
-  const width = Math.min(band.w * fit, maxWidth);
-  const height = maxHeight === undefined ? band.h * fit : Math.min(band.h * fit, maxHeight);
-  const shows = { x: band.x + band.w / 2, y: band.y + band.h / 2 };
+  // Held to the host, which rounding in `band.width * fit` can pass by an ulp.
+  const width = Math.min(band.width * fit, maxWidth);
+  const height = maxHeight === undefined ? band.height * fit : Math.min(band.height * fit, maxHeight);
+  const shows = { x: band.x + band.width / 2, y: band.y + band.height / 2 };
   const within = (c: number, half: number, max: number): number =>
     Math.min(Math.max(c, half), Math.max(half, max - half));
   return {

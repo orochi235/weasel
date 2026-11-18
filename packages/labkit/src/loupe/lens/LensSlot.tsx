@@ -205,7 +205,7 @@ export function LensSlot<C>(props: LensSlotProps<C>) {
   const sides = lensSides(settings);
   const wantsGrid = settings.readouts.includes('grid');
   const split = sides.length > 1;
-  const { seamX } = splitRects({ x: 0, y: 0, w: size.width, h: size.height }, settings.seam);
+  const { seamX } = splitRects({ x: 0, y: 0, ...size }, settings.seam);
   const sideRequests = (side: LensSide) =>
     side === 'base' ? requests.map((r) => ({ ...r, conditions: null })) : requests;
   return (

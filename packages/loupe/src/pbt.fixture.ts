@@ -39,7 +39,7 @@ export const factor = fc.oneof(fc.double({ min: 0.01, max: 256, noNaN: true }), 
 
 /** A lens on the host, in CSS px. */
 export const lensRect: fc.Arbitrary<LoupeRect> = fc.record({
-  x: coord(), y: coord(), w: fc.double({ min: 1, max: 1000, noNaN: true }), h: fc.double({ min: 1, max: 1000, noNaN: true }),
+  x: coord(), y: coord(), width: fc.double({ min: 1, max: 1000, noNaN: true }), height: fc.double({ min: 1, max: 1000, noNaN: true }),
 });
 
 /** A view at a finite position and a zoom of either sign. */

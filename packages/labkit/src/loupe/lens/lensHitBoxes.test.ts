@@ -19,14 +19,14 @@ describe('hitBoxesOf', () => {
     expect(boxes[0]).toEqual({
       nodeId: 'a:body',
       role: 'lens-body',
-      rect: { x: 300 - BODY_SIZE / 2, y: 200 - BODY_SIZE / 2, w: BODY_SIZE, h: BODY_SIZE },
+      rect: { x: 300 - BODY_SIZE / 2, y: 200 - BODY_SIZE / 2, width: BODY_SIZE, height: BODY_SIZE },
       round: true,
     });
     const patch = BODY_SIZE / 4;
     expect(boxes[1]).toEqual({
       nodeId: 'a:reticle',
       role: 'lens-reticle',
-      rect: { x: 100 - patch / 2, y: 100 - patch / 2, w: patch, h: patch },
+      rect: { x: 100 - patch / 2, y: 100 - patch / 2, width: patch, height: patch },
       round: true,
     });
   });
@@ -36,17 +36,17 @@ describe('hitBoxesOf', () => {
     expect(hitBoxesOf(scene, new Set(), view)[0]?.rect).toEqual({
       x: (300 - BODY_SIZE / 2 - 10) * 2,
       y: (200 - BODY_SIZE / 2 - 20) * 2,
-      w: BODY_SIZE * 2,
-      h: BODY_SIZE * 2,
+      width: BODY_SIZE * 2,
+      height: BODY_SIZE * 2,
     });
   });
 
   it('grows a selected body’s box by the handle slop', () => {
     expect(HANDLE_SLOP).toBe(12);
     const body = hitBoxesOf(scene, new Set(['a:body']))[0];
-    expect(body?.rect.w).toBe(BODY_SIZE + 24);
+    expect(body?.rect.width).toBe(BODY_SIZE + 24);
     expect(body?.rect.x).toBe(300 - BODY_SIZE / 2 - 12);
-    expect(hitBoxesOf(scene, new Set(['a:reticle']))[1]?.rect.w).toBe(BODY_SIZE / 4);
+    expect(hitBoxesOf(scene, new Set(['a:reticle']))[1]?.rect.width).toBe(BODY_SIZE / 4);
   });
 
   it('squares a selected round body’s box, so the handles on its corners stay reachable', () => {

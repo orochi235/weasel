@@ -27,10 +27,15 @@ export function splitRects(
   interior: LoupeRect,
   seam: number,
 ): { left: LoupeRect; right: LoupeRect; seamX: number } {
-  const seamX = interior.x + Math.round(interior.w * seam);
+  const seamX = interior.x + Math.round(interior.width * seam);
   return {
-    left: { x: interior.x, y: interior.y, w: seamX - interior.x, h: interior.h },
-    right: { x: seamX, y: interior.y, w: interior.x + interior.w - seamX, h: interior.h },
+    left: { x: interior.x, y: interior.y, width: seamX - interior.x, height: interior.height },
+    right: {
+      x: seamX,
+      y: interior.y,
+      width: interior.x + interior.width - seamX,
+      height: interior.height,
+    },
     seamX,
   };
 }
@@ -101,10 +106,7 @@ export function seamHit<C>(
     const p = effectivePose(scene, node);
     if (x < p.x - grab || x > p.x + p.width + grab || y < p.y || y > p.y + p.height) continue;
     if (!showsSeam(settings)) return null;
-    const { seamX } = splitRects(
-      { x: p.x, y: p.y, w: p.width, h: p.height },
-      seamOf(settings, preview, lensId),
-    );
+    const { seamX } = splitRects(p, seamOf(settings, preview, lensId));
     return Math.abs(x - seamX) <= grab ? { lensId } : null;
   }
   return null;
