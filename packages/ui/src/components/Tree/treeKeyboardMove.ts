@@ -9,7 +9,7 @@ import type { TreeDragEffect } from './useTreeDrag';
 
 const MOVE_KEYS: Record<string, KeyboardMove | undefined> = { ArrowUp: 'up', ArrowDown: 'down' };
 
-interface MoveKeyCtx {
+export interface MoveKeyCtx {
   nodes: readonly TreeNode[];
   selected: ReadonlySet<string>;
   expanded: ReadonlySet<string>;
