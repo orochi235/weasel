@@ -15,7 +15,7 @@ import {
   type Key,
   type TabRenderProps,
 } from 'react-aria-components';
-import { freeKeyFrom, heldAriaRef, isHeldKey, StateProbe } from '../heldItem';
+import { freeKeyFrom, isHeldKey, StateProbe, useHeldAriaRef } from '../heldItem';
 import { Tooltip, TooltipTrigger } from '../Tooltip';
 import { useRun } from '../Run';
 import { createRunSlots, slotClass, useRunSlot, type RunSlots } from '../Along/runSlots';
@@ -103,15 +103,8 @@ export type TabProps = Omit<RACTabProps, 'className' | 'children' | 'isDisabled'
 export function Tab({ children, className, disabled, disabledReason, ...rest }: TabProps) {
   const slot = useRunSlot(TabSlotsContext, rest.id === undefined ? undefined : String(rest.id));
   const el = useRef<HTMLElement | null>(null);
-  const aria = heldAriaRef(disabled, disabledReason);
   // React Aria disables a tab only by passing over it; this marks it held, read back by `isHeldKey`.
-  const held = {
-    ...(disabled ? { 'aria-disabled': true } : {}),
-    ref: (node: HTMLElement | null) => {
-      el.current = node;
-      return aria?.(node);
-    },
-  };
+  const held = { ...(disabled ? { 'aria-disabled': true } : {}), ref: useHeldAriaRef(disabled, disabledReason, el) };
   const body = ({ isFocusVisible, isHovered }: TabRenderProps): ReactNode => (
     <>
       {children}

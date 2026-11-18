@@ -15,7 +15,7 @@ import {
   type ListBoxItemProps as RACListBoxItemProps,
 } from 'react-aria-components';
 import { Popover } from '../Popover';
-import { heldAriaRef, heldItemProps, useHeldPick } from '../heldItem';
+import { heldItemProps, useHeldAriaRef, useHeldPick } from '../heldItem';
 import { AlignOverTrigger, NO_NUDGE, type Press } from './alignOverTrigger';
 import { FieldFoot, fieldRootClass, type FieldSlotProps, type FieldStateProps } from '../Field/fieldSlots';
 import { useOverlayPortal, type OverlayPortalProps } from '../../overlays/portalHost';
@@ -361,10 +361,11 @@ function textValueOf(children: ReactNode, explicit: string | undefined): string 
  */
 export function SelectItem({ children, icon, className, textValue, description, disabled, disabledReason, ...rest }: SelectItemProps) {
   const note = (disabled && disabledReason) || description;
+  const row = useHeldAriaRef(disabled);
   return (
     <RACListBoxItem
       {...rest}
-      ref={heldAriaRef(disabled)}
+      ref={row}
       {...heldItemProps(disabled)}
       textValue={textValueOf(children, textValue)}
       className={[s.option, className].filter(Boolean).join(' ')}

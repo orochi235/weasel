@@ -24,7 +24,7 @@ import type { OptionKey } from '../../optionKey';
 import { useRacField } from '../Field/racField';
 import f from '../Field/Field.module.css';
 import listbox from '../Select/listbox.module.css';
-import { heldAriaRef, heldItemProps, isHeldKey } from '../heldItem';
+import { heldItemProps, isHeldKey, useHeldAriaRef } from '../heldItem';
 import s from './ComboBox.module.css';
 
 
@@ -275,10 +275,11 @@ export type ComboBoxItemProps = Omit<RACListBoxItemProps, 'className' | 'isDisab
 /** One row in a {@link ComboBox}'s filtered list. */
 export function ComboBoxItem({ className, disabled, icon, description, disabledReason, children, textValue, ...rest }: ComboBoxItemProps) {
   const note = (disabled && disabledReason) || description;
+  const row = useHeldAriaRef(disabled);
   return (
     <RACListBoxItem
       {...rest}
-      ref={heldAriaRef(disabled)}
+      ref={row}
       {...heldItemProps(disabled)}
       textValue={textValue ?? (typeof children === 'string' ? children : undefined)}
       className={[listbox.option, className].filter(Boolean).join(' ')}

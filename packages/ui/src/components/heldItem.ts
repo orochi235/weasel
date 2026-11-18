@@ -1,29 +1,32 @@
-import { createElement, useContext, useLayoutEffect, useRef, type Context, type ReactElement, type RefCallback, type RefObject } from 'react';
+import { createElement, useCallback, useContext, useLayoutEffect, useRef, type Context, type ReactElement, type RefCallback, type RefObject } from 'react';
 import type { Key } from 'react-aria-components';
 
 /**
  * React Aria props that keep a disabled list row in reach of the arrow keys but out of selection, as the ARIA guide
  * has a listbox do: the item's own `disabledBehavior`, which React Aria reads off an item though its types leave it
- * out. React Aria then marks the row neither `aria-disabled` nor `data-disabled`; {@link heldAriaRef} marks it.
+ * out. React Aria then marks the row neither `aria-disabled` nor `data-disabled`; {@link useHeldAriaRef} marks it.
  */
 export function heldItemProps(disabled: boolean | undefined): { isDisabled?: boolean } {
   return disabled ? ({ isDisabled: true, disabledBehavior: 'selection' } as { isDisabled?: boolean }) : {};
 }
 
-/** A ref that marks its element `aria-disabled` while `held`, with `reason` as its `aria-description`: React Aria
- *  writes neither on a row or tab it lets focus land on, and passes neither through as a prop. A callback, since
- *  React Aria renders a collection's element after the item component that declared it. */
-export function heldAriaRef(held: boolean | undefined, reason?: string): RefCallback<HTMLElement> | undefined {
-  if (!held) return undefined;
-  return (el) => {
-    if (!el) return;
+/** A ref that marks its element `aria-disabled` while `held`, with `reason` as its `aria-description`, and keeps it
+ *  on `into`: React Aria writes neither on a row or tab it lets focus land on, and passes neither through as a prop.
+ *  A callback, since React Aria renders a collection's element after the item component that declared it, and the
+ *  same one while `held` and `reason` stay, since React Aria rebuilds its press handling on a new ref. */
+export function useHeldAriaRef(
+  held: boolean | undefined, reason?: string, into?: RefObject<HTMLElement | null>,
+): RefCallback<HTMLElement> {
+  return useCallback((el: HTMLElement | null) => {
+    if (into) into.current = el;
+    if (!el || !held) return;
     el.setAttribute('aria-disabled', 'true');
     if (reason) el.setAttribute('aria-description', reason);
     return () => {
       el.removeAttribute('aria-disabled');
       el.removeAttribute('aria-description');
     };
-  };
+  }, [held, reason, into]);
 }
 
 /** The items of a React Aria collection, enough of it to walk. */
