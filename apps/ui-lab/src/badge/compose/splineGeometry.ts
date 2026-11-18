@@ -89,7 +89,8 @@ export function normalAxisAt(samples: readonly Point[], point: Point): Axis {
   return { nx: (flip * -ty) / length, ny: (flip * tx) / length, ox: origin.x, oy: origin.y };
 }
 
-/** An anchor's weight after one wheel notch: scrolling up adds a tenth. */
+/** An anchor's weight after one wheel notch: scrolling up adds a tenth, and a sideways scroll changes nothing. */
 export function wheelWeight(w: number, deltaY: number): number {
+  if (deltaY === 0) return w;
   return clamp(Math.round((w + (deltaY > 0 ? -0.1 : 0.1)) * 10) / 10, 0, 3);
 }

@@ -143,7 +143,8 @@ export function splineEditorActions(input: { readonly current: SplineEditorInput
         const { world, deltaY = 0 } = params ?? {};
         const now = input.current;
         const idx = anchorAt(now, world);
-        if (idx < 0) return 'pass';
+        // A sideways scroll has no weight change to make, so it passes on rather than writing an empty step.
+        if (idx < 0 || deltaY === 0) return 'pass';
         const anchor = now.anchors[idx]!;
         now.commit(idx, { ...anchor, w: wheelWeight(anchor.w, deltaY) });
         return undefined;
