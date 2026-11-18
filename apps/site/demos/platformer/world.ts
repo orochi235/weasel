@@ -123,16 +123,19 @@ export function stepWorld(g: GameRefs, step: Input, hooks: WorldHooks): void {
   g.callouts = stepCallouts(g.callouts, g.elapsed);
 
   // A bonk requires the ceiling branch of resolveY to have actually fired
-  // this step — walking under a `?` block never sets it.
+  // this step — walking under a `?` block never sets it. It always knocks, but
+  // like every other hit it costs a life only outside invulnerability.
   if (g.player.bonk && g.outcome === 'playing') {
     const at = { x: (g.player.bonk.cx + 0.5) * TILE, y: (g.player.bonk.cy + 0.5) * TILE };
-    sayOw(g);
     hooks.soundAt('hurt', at, 0.7);
     g.shake = SHAKE_DURATION;
-    g.lives--;
-    g.invuln = INVULN;
-    hooks.duck();
     hooks.bonk();
+    if (g.invuln <= 0) {
+      sayOw(g);
+      g.lives--;
+      g.invuln = INVULN;
+      hooks.duck();
+    }
   }
 
   g.enemies = g.enemies.map((e) => stepEnemy(e, WORLD, STEP));

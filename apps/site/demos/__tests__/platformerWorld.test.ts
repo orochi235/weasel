@@ -3,7 +3,7 @@ import { describe, it, expect } from 'vitest';
 import { SOLID, TILE, tileAt, toCol, toRow } from '../platformer/level';
 import { WORLD } from '../platformer/worldLevel';
 import { advanceWorld, freshGame, NO_HOOKS, stepWorld, type GameRefs } from '../platformer/world';
-import { STEP } from '../platformer/physics';
+import { BODY_H, STEP } from '../platformer/physics';
 
 describe('WORLD', () => {
   it('is 80 by 16 tiles', () => {
@@ -44,6 +44,30 @@ describe('stepWorld — damage', () => {
     stepWorld(g, idle, NO_HOOKS);
     expect(g.lives).toBe(lives - 1);
     expect(ows(g)).toHaveLength(1);
+  });
+
+  /** The player just under WORLD's first `?` block (column 3, row 12), rising into it. */
+  const underBlock = (g: GameRefs) => {
+    g.player = { ...g.player, body: { ...g.player.body, x: 3.5 * TILE, y: 13 * TILE + BODY_H / 2 + 1, vy: -400 } };
+  };
+
+  it('costs a life for a bonk', () => {
+    const g = freshGame();
+    underBlock(g);
+    stepWorld(g, { ...idle, jumpHeld: true }, NO_HOOKS);
+    expect(g.lives).toBe(2);
+    expect(ows(g)).toHaveLength(1);
+  });
+
+  it('costs no life for a bonk while invulnerable, though it still knocks', () => {
+    const g = freshGame();
+    underBlock(g);
+    g.invuln = 1;
+    let bonks = 0;
+    stepWorld(g, { ...idle, jumpHeld: true }, { ...NO_HOOKS, bonk: () => { bonks++; } });
+    expect(bonks).toBe(1);
+    expect(g.lives).toBe(3);
+    expect(ows(g)).toHaveLength(0);
   });
 
   it('says ow when the player falls out of the level', () => {
