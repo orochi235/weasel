@@ -1,22 +1,16 @@
-import { useCallback, useMemo, useReducer, useRef, useState } from 'react';
+import { useMemo, useReducer, useState } from 'react';
 import { useKitSettings, useLatest } from '@weasel-js/react';
 import { defineTool, pointSnap } from '@weasel-js/core';
-import type { ModifierState, Tool } from '@weasel-js/core';
-import type { Action, ToolOptionShare } from '@weasel-js/routing';
-import { ActionDisabledReason, defineAction } from '@weasel-js/routing';
-import type { ActionDeps, InvocationCtx } from '@weasel-js/routing';
-import { type PathAnchorHit, type PolygonPath } from '@weasel-js/geom';
-import { createPenPreviewLayer, penReachOf } from './penPreviewLayer';
-import { commitPen } from './penCommit';
-import { pickUpEndpoint } from './penContinuation';
-import { commitJoin, joinable } from './penJoin';
-import { createPenTrail } from './penTrail';
-import { placeAt, withinCloseRadius, type PenPlacement } from './penTargets';
-import { PEN_HANDLE_ROLES, pullHandle } from './penHandle';
+import type { Tool } from '@weasel-js/core';
+import type { ToolOptionShare } from '@weasel-js/routing';
+import type { PolygonPath } from '@weasel-js/geom';
 import { cursorFor } from '@weasel-js/cursor';
 import { icon } from '../icons.gen';
-import { penOptionValues, penToolOptions } from './penOptions';
-import { anchorCount, freshScratch, resetScratch, startSubpath } from './penScratch';
+import { createPenActions } from './penActions';
+import { penToolOptions } from './penOptions';
+import { createPenPreviewLayer, penReachOf } from './penPreviewLayer';
+import { freshScratch, resetScratch } from './penScratch';
+import { createPenTrail } from './penTrail';
 
 /**
  * In-progress pen anchor. A click places a corner, with no handles. A drag
@@ -123,8 +117,7 @@ export function usePenTool(
   const { autoSelect = true, autoCommitOnClose, closeHitRadius, share } = options;
   const toolOptions = useMemo(() => penToolOptions(share, autoCommitOnClose), [share, autoCommitOnClose]);
 
-  const scratchRef = useRef<PenScratch | null>(null);
-  if (scratchRef.current === null) scratchRef.current = freshScratch();
+  const [scratch] = useState(freshScratch);
 
   const optsRef = useLatest({ autoSelect, toolOptions, closeHitRadius, kitSettings: useKitSettings() });
   const [snaps] = useState(pointSnap);
@@ -132,211 +125,17 @@ export function usePenTool(
   // Scratch mutations alone don't trigger React re-renders, so the preview
   // layer would not repaint. Force a render after every scratch mutation.
   const [, forceRender] = useReducer((x: number) => x + 1, 0);
-  const [overlay] = useState(() => createPenPreviewLayer({ state: scratchRef.current!, kitSettings: () => optsRef.current.kitSettings }));
-
-  const commit = useCallback((s: PenScratch, deps: ActionDeps): void => commitPen(s, deps, optsRef.current), [optsRef]);
-
-  const commitJoinAt = useCallback((s: PenScratch, deps: ActionDeps, hit: PathAnchorHit): void => commitJoin(s, deps, hit, optsRef.current), [optsRef]);
-
-  const pickUpEndpointAt = useCallback((deps: ActionDeps, wx: number, wy: number): boolean =>
-    pickUpEndpoint(scratchRef.current!, deps, wx, wy, penReachOf(optsRef.current).close), [optsRef]);
-
-  const placeAnchorAt = useCallback((deps: ActionDeps, x: number, y: number, mods: ModifierState): PenPlacement =>
-    placeAt(deps, snaps, x, y, mods, penReachOf(optsRef.current).close, scratchRef.current!.current?.anchors.at(-1)), [snaps, optsRef]);
-
-  const closesAt = useCallback((deps: ActionDeps, ax: number, ay: number, wx: number, wy: number): boolean =>
-    withinCloseRadius(deps, ax, ay, wx, wy, penReachOf(optsRef.current).close), [optsRef]);
+  const [overlay] = useState(() => createPenPreviewLayer({ state: scratch, kitSettings: () => optsRef.current.kitSettings }));
 
   const trail = useMemo(
-    () => createPenTrail(scratchRef.current!, snaps, () => penReachOf(optsRef.current).close, forceRender),
-    [snaps, optsRef],
+    () => createPenTrail(scratch, snaps, () => penReachOf(optsRef.current).close, forceRender),
+    [scratch, snaps, optsRef],
   );
 
-  /**
-   * Actions the pen owns, registered by `useToolActions` from inside the
-   * ActionsProvider — see `ToolDef.actions`. They close over `scratchRef`,
-   * so the state never leaves the hook.
-   */
-  const actions = useMemo<Action[]>(() => {
-    const s = () => scratchRef.current!;
-
-    return [
-      defineAction({
-        id: 'pen.placeAnchor',
-        label: 'Pen — place anchor',
-        eligible: { capability: 'creates-paths' },
-        requires: ['view', 'pointer', 'areaSelect', 'editAnchors', 'scene', 'applyOps', 'insert', 'operands', 'snap', 'toolOptionValues'],
-        invoker: {
-          timing: 'immediate',
-          run: (deps, p) => {
-            const press = p?.press;
-            if (!press) return;
-            // The press point, not the release: a click may drift up to the
-            // drag threshold.
-            if (pickUpEndpointAt(deps, press.x, press.y)) {
-              trail.update(deps);
-              return;
-            }
-            const { x: wx, y: wy, hit } = placeAnchorAt(deps, press.x, press.y, p.mods ?? NO_KEYS);
-            const scratch = s();
-
-            // Close-on-first-anchor (>= 3 anchors). With `autoCommitOnClose`
-            // off the closed subpath stays in scratch for compound-path builds.
-            if (scratch.current && scratch.current.anchors.length >= 3) {
-              const first = scratch.current.anchors[0];
-              if (closesAt(deps, first.x, first.y, wx, wy)) {
-                scratch.current.closed = true;
-                scratch.finishedSubpaths.push(scratch.current);
-                scratch.current = null;
-                scratch.closeHintActive = false;
-                if (penOptionValues(optsRef.current.toolOptions, deps).autoCommitOnClose) { commit(scratch, deps); scratch.justClosed = true; }
-                trail.update(deps);
-                return;
-              }
-            }
-
-            const join = joinable(scratch, deps, hit);
-            scratch.current ??= startSubpath(scratch);
-            scratch.current.anchors.push({ x: wx, y: wy });
-            if (join) commitJoinAt(scratch, deps, hit);
-            trail.update(deps);
-          },
-        },
-      }),
-
-      defineAction({
-        id: 'pen.finishOpen',
-        label: 'Pen — finish open path',
-        eligible: { capability: 'creates-paths' },
-        requires: ['editAnchors', 'insert', 'operands', 'toolOptionValues'],
-        // Needs a path, or a double click's own lone anchor, to take back. Declining lets a
-        // ⌘-click with fewer than two anchors reach the plain-click binding.
-        enabled: () => (anchorCount(s()) >= 2 || s().current?.followsClose ? true : ActionDisabledReason.NotApplicable),
-        invoker: {
-          timing: 'immediate',
-          run: (deps, p) => {
-            const scratch = s();
-            if (!p?.viaDoubleClick && anchorCount(scratch) < 2) return 'pass';
-
-            // A double click arrives AFTER both of its clicks, so the second one has already
-            // appended an anchor: pop it, and the subpath with it when it was the only one
-            // (the FIRST click closed a subpath and the second started a fresh one).
-            if (p?.viaDoubleClick && scratch.current) {
-              scratch.current.anchors.pop();
-              if (scratch.current.anchors.length === 0) scratch.current = null;
-            }
-
-            commit(scratch, deps);
-            trail.refresh();
-            return undefined;
-          },
-        },
-      }),
-
-      {
-        id: 'pen.dragHandle',
-        label: 'Pen — drag out a bezier handle',
-        eligible: { capability: 'creates-paths' },
-        modifierRoles: PEN_HANDLE_ROLES,
-        requires: ['view', 'pointer', 'areaSelect', 'editAnchors', 'scene', 'applyOps', 'insert', 'operands', 'snap', 'toolOptionValues'],
-        invoker: {
-          timing: 'ongoing' as const,
-          start: (ctx: InvocationCtx) => {
-            const scratch = s();
-            // `drag.start` is the pointerdown position, so the anchor lands
-            // where the user pressed rather than where the drag threshold
-            // happened to be crossed.
-            const origin = ctx.drag?.start ?? ctx.world;
-            // Dragging from an open path's end picks the path up and pulls
-            // that end's own handle rather than placing a new anchor on it.
-            const pickedUp = pickUpEndpointAt(ctx.deps, origin.x, origin.y);
-            // Dragging on another open path's endpoint joins onto it once
-            // the handle is set.
-            let joinHit: PathAnchorHit | null = null;
-            if (!pickedUp) {
-              const { x: ax, y: ay, hit } = placeAnchorAt(ctx.deps, origin.x, origin.y, ctx.modifiers);
-              if (joinable(scratch, ctx.deps, hit)) joinHit = hit;
-              scratch.current ??= startSubpath(scratch);
-              scratch.current.anchors.push({ x: ax, y: ay });
-            }
-            scratch.draggingHandleAt = scratch.current!.anchors.length - 1;
-            // A picked-up endpoint's in-handle belongs to the existing
-            // segment into it, which the pen does not reshape.
-            const handle = pullHandle(scratch, ctx, !pickedUp);
-            handle.to(ctx);
-            trail.update(ctx.deps);
-
-            return {
-              onMove: (moveCtx: InvocationCtx) => {
-                handle.to(moveCtx);
-                forceRender();
-              },
-              onEnd: (endCtx: InvocationCtx, reason: 'commit' | 'cancel') => {
-                const se = s();
-                try {
-                  if (reason === 'cancel') {
-                    // `start` appended the anchor (or picked a path up); a
-                    // cancel has to take it back out.
-                    if (pickedUp) {
-                      resetScratch(se);
-                    } else if (se.current && se.draggingHandleAt === se.current.anchors.length - 1) {
-                      se.current.anchors.pop();
-                      if (se.current.anchors.length === 0) se.current = null;
-                    }
-                    se.draggingHandleAt = null;
-                    return;
-                  }
-                  handle.to(endCtx);
-                  se.draggingHandleAt = null;
-                  if (joinHit && se.current) commitJoinAt(se, ctx.deps, joinHit);
-                } finally {
-                  handle.end();
-                  trail.refresh();
-                }
-              },
-            };
-          },
-        },
-      },
-
-      {
-        id: 'pen.finish',
-        label: 'Pen — finish path',
-        eligible: { capability: 'creates-paths' },
-        requires: ['editAnchors', 'insert', 'operands', 'toolOptionValues'],
-        enabled: () => (anchorCount(s()) > 0 ? true : ActionDisabledReason.NotApplicable),
-        invoker: {
-          timing: 'immediate' as const,
-          run: (deps) => {
-            commit(s(), deps);
-            trail.refresh();
-          },
-        },
-      },
-
-      {
-        id: 'pen.cancel',
-        label: 'Pen — discard path',
-        eligible: { capability: 'creates-paths' },
-        // Declining with nothing drawn is what keeps Escape's first-match
-        // ladder intact: an empty pen passes the key to `escape`, which goes
-        // on to clear the selection / return to the default tool.
-        enabled: () => {
-          const scratch = s();
-          return scratch.current !== null || scratch.finishedSubpaths.length > 0
-            ? true
-            : ActionDisabledReason.NotApplicable;
-        },
-        invoker: {
-          timing: 'immediate' as const,
-          run: () => {
-            resetScratch(s());
-            trail.refresh();
-          },
-        },
-      },
-    ];
-  }, [commit, placeAnchorAt, closesAt, pickUpEndpointAt, commitJoinAt, optsRef, trail, forceRender]);
+  const actions = useMemo(
+    () => createPenActions({ scratch, snaps, trail, settings: () => optsRef.current, repaint: forceRender }),
+    [scratch, snaps, trail, optsRef],
+  );
 
   return useMemo(() => {
     return defineTool({
@@ -346,7 +145,7 @@ export function usePenTool(
       hookName: 'usePenTool',
       options: toolOptions,
       cursor: () =>
-        scratchRef.current?.closeHintActive
+        scratch.closeHintActive
           ? 'pointer'
           : cursorFor('pen', { fallback: 'crosshair' }),
       presentation: {
@@ -361,7 +160,7 @@ export function usePenTool(
       onDeactivate: () => {
         // Anything still in scratch is incomplete. Switching tools mid-path
         // discards it, as Escape does, rather than committing a stub polyline.
-        resetScratch(scratchRef.current!);
+        resetScratch(scratch);
         trail.stop();
       },
 
@@ -381,8 +180,5 @@ export function usePenTool(
         { spec: { kind: 'key' as const, key: 'Escape' }, actionId: 'pen.cancel', opts: { id: 'pen.cancel' } },
       ],
     });
-  }, [actions, trail, overlay, toolOptions]);
+  }, [scratch, actions, trail, overlay, toolOptions]);
 }
-
-
-const NO_KEYS: ModifierState = { alt: false, ctrl: false, meta: false, shift: false };
