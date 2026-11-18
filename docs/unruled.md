@@ -2632,3 +2632,8 @@ Calls the lanes made without a ruling:
   of its package's entries (a root export `booleans` beside the entry `@weasel-js/geom/booleans`), since that
   address opens the entry's index and the export's page could never be reached. Giving such a page an escaped
   address was the alternative.
+## Audit round thirty-six (2026-11-18): the theme editor's brand-colour generator
+
+- 2026-11-18 (the fixer's call): `gen-brand-colors` throws, writing neither table, on a Copic marker with no name
+  or a sampled colour that is not `#rrggbb`, and on a LEGO name holding a named HTML reference other than `&amp;`,
+  `&lt;`, `&gt;`, `&quot;`, `&apos;` and `&nbsp;`. Skipping the row with a warning was the alternative.
