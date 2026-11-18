@@ -1,3 +1,4 @@
+import { getOwn } from '@weasel-js/registry';
 import { EASINGS, type EasingFn, type EasingName } from './easings';
 
 /** Cubic-bezier control points, CSS `cubic-bezier()` order. The curve's two
@@ -82,7 +83,7 @@ export function resolveEasing(spec?: EasingSpec): EasingFn {
   if (spec === undefined) return EASINGS.linear;
   if (typeof spec === 'function') return spec;
   if (typeof spec === 'string') {
-    const fn = Object.hasOwn(EASINGS, spec) ? EASINGS[spec] : undefined;
+    const fn = getOwn(EASINGS, spec);
     if (!fn) throw new Error(`resolveEasing: unknown easing name "${spec}"`);
     return fn;
   }

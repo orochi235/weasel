@@ -1,3 +1,4 @@
+import { getOwn } from '@weasel-js/registry';
 import { linearToSrgb, oklabToLinearSrgb, oklchToOklab } from './colorSpaces';
 import { hslToSrgb } from './hsl';
 import { byteHex, parseHexBytes } from './hex';
@@ -51,7 +52,8 @@ function parseColorUncached(input: string): [number, number, number, number] {
 
   const lower = s.toLowerCase();
 
-  if (Object.hasOwn(NAMED_COLORS, lower)) return NAMED_COLORS[lower]!;
+  const named = getOwn(NAMED_COLORS, lower);
+  if (named) return named;
 
   if (lower.startsWith('rgb')) {
     const parsed = parseRgbFunction(lower);

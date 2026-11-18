@@ -231,7 +231,8 @@ every other package does, so how a cache or a key read is written never turns on
 (2026-11-17). It lists `@weasel-js/registry` as a `devDependency` and sets `inlineRegistry: true` in its tsup
 preset, which inlines the parts it uses; its manifest keeps no weasel dependency, and it keeps its standalone
 badge. Registry is the only package inlined this way: its code holds no state that two copies would have to
-share, which is what made ui's bundled react-aria provider break dialogs (`check:bundled-deps`). A registry type
+share, which is what made ui's bundled react-aria provider break dialogs (`check:bundled-deps`). The exception
+is `MIXED`, a symbol a second copy would mint afresh, so an inlining package never uses it. A registry type
 never appears in an inlining package's exported types.
 
 ## Kit settings

@@ -1,3 +1,4 @@
+import { getOwn } from '@weasel-js/registry';
 import { parseColor } from './color';
 import { oklabToSrgbU8, oklchToOklab } from './colorSpaces';
 import { byteHex, parseHexBytes } from './hex';
@@ -169,7 +170,7 @@ const PREDEFINED_SPACES = new Set(['srgb', 'srgb-linear', 'display-p3', 'a98-rgb
 export function cssColorNotation(space: string, coords: readonly (number | 'none')[], alpha = 1): string | null {
   if (coords.length !== 3) return null;
   const slash = alpha < 1 ? ` / ${alpha}` : '';
-  const percent = Object.hasOwn(FUNCTIONAL_SPACES, space) ? FUNCTIONAL_SPACES[space] : undefined;
+  const percent = getOwn(FUNCTIONAL_SPACES, space);
   if (percent) return `${space}(${coords.map((c, i) => (c !== 'none' && percent.includes(i) ? `${c}%` : c)).join(' ')}${slash})`;
   if (PREDEFINED_SPACES.has(space)) return `color(${space} ${coords.join(' ')}${slash})`;
   return null;
