@@ -18,6 +18,10 @@ const DIRECTIONS: { value: BidiDirection; label: string }[] = [
   { value: 'rtl', label: 'rtl' },
 ];
 
+/** `cps` as a string, a code point at a time: spread into one call, a long text
+ *  passes the engine's argument limit and throws. */
+export const fromCodePoints = (cps: readonly number[]) => cps.map((cp) => String.fromCodePoint(cp)).join('');
+
 const shown = (cp: number) => (cp === 0x20 ? '␣' : String.fromCodePoint(cp));
 
 export function BidiDemo() {
@@ -81,7 +85,7 @@ export function BidiDemo() {
         <dt>browser</dt>
         <dd dir={direction}>{text}</dd>
         <dt>bidi</dt>
-        <dd className={s.forced}>{String.fromCodePoint(...painted.map((p) => p.cp))}</dd>
+        <dd className={s.forced}>{fromCodePoints(painted.map((p) => p.cp))}</dd>
       </dl>
     </div>
   );

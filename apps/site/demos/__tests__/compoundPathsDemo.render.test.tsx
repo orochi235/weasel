@@ -1,6 +1,21 @@
 import { act, fireEvent, render } from '@testing-library/react';
 import { describe, it, expect, vi } from 'vitest';
-import { CompoundPathsDemo } from '../CompoundPathsDemo';
+import { asNodeId, translatePath, type Path, type Scene } from '@weasel-js/core';
+
+const scenes = vi.hoisted(() => [] as Scene<unknown, string, Path>[]);
+vi.mock('@weasel-js/core', async (importOriginal) => {
+  const core = await importOriginal<typeof import('@weasel-js/core')>();
+  return {
+    ...core,
+    useScene: (opts: never) => {
+      const scene = core.useScene(opts) as unknown as Scene<unknown, string, Path>;
+      if (!scenes.includes(scene)) scenes.push(scene);
+      return scene;
+    },
+  };
+});
+
+const { CompoundPathsDemo } = await import('../CompoundPathsDemo');
 
 describe('CompoundPathsDemo', () => {
   it('mounts without throwing and renders a canvas', () => {
@@ -31,5 +46,21 @@ describe('the compound paths honk', () => {
     } finally {
       vi.useRealTimers();
     }
+  });
+});
+
+describe('the honk button', () => {
+  it('follows the goose through a drag, before the drag commits', () => {
+    scenes.length = 0;
+    const { getByRole } = render(<CompoundPathsDemo />);
+    const scene = scenes.at(-1)!;
+    const honk = getByRole('button', { name: 'honk' });
+    const left = parseFloat(honk.style.left);
+    const goose = scene.get(asNodeId('goose'))!;
+    act(() => {
+      scene.overrides.set(goose.id, { pose: translatePath(goose.pose, 50, 0) });
+      scene.overrides.commit();
+    });
+    expect(parseFloat(honk.style.left)).toBeCloseTo(left + 50);
   });
 });

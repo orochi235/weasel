@@ -1,7 +1,7 @@
 import { useMemo, useRef, useState } from 'react';
 import { DiagramView, diagramScene, type DataEdge, type DataNode, type DiagramViewApi } from '@weasel-js/diagram';
 import { Button } from '@weasel-js/ui/components/Button';
-import { FONT, moved } from './diagram/shared';
+import { FONT, moved, routed } from './diagram/shared';
 import { DemoStage } from './DemoStage';
 
 const W = 640, H = 360;
@@ -31,7 +31,8 @@ const EDGES: DataEdge[] = [
 
 export function DiagramLayoutDemo() {
   const [nodes, setNodes] = useState(NODES);
-  const specs = useMemo(() => diagramScene({ nodes, edges: EDGES }, { layout: 'none', font: FONT }), [nodes]);
+  const [edges, setEdges] = useState(EDGES);
+  const specs = useMemo(() => diagramScene({ nodes, edges }, { layout: 'none', font: FONT }), [nodes, edges]);
   const view = useRef<DiagramViewApi>(null);
   return (
     <div className="ckd-demo">
@@ -48,7 +49,10 @@ export function DiagramLayoutDemo() {
           specs={specs}
           className="ckd-canvas"
           live={LIVE}
-          onMove={(moves) => setNodes((ns) => moved(ns, moves))}
+          onMove={(moves, routes) => {
+            setNodes((ns) => moved(ns, moves));
+            setEdges((es) => routed(es, routes));
+          }}
         />
       </DemoStage>
     </div>
