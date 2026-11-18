@@ -7,6 +7,7 @@ import { dropSide, moveItems, nudgeOf, soloChanges } from '@weasel-js/ui-input';
 import { useReorderDragList } from '../../useReorderDragList';
 import { useRemovedRowFocus } from '../../useRemovedRowFocus';
 import { tintSource } from '../appearance';
+import { holdScope, type HoldProps, useControlAccess } from '../Disabled';
 import { EffectCard } from './EffectCard';
 import s from './EffectList.module.css';
 
@@ -29,7 +30,7 @@ export interface EffectKind {
 }
 
 /** Props for {@link EffectList}. */
-export interface EffectListProps<T extends EffectListItem> {
+export interface EffectListProps<T extends EffectListItem> extends HoldProps {
   items: readonly T[];
   kinds: Readonly<Record<string, EffectKind>>;
   /** The whole list after a move, a switch, a rename, a duplicate, or a removal. */
@@ -53,7 +54,9 @@ export interface EffectListProps<T extends EffectListItem> {
  * in its kind's color. A card is dragged by its number, or moved with Alt+Up / Alt+Down from anywhere in it;
  * a press on the number that does not drag opens or closes it. Each card switches on and off, is renamed in
  * place, and can be duplicated and removed; an Alt-click on a card's switch runs that card alone, or, when it
- * already runs alone, every card again. Only the open card shows its body.
+ * already runs alone, every card again. Only the open card shows its body. Disabled or read-only, it takes no
+ * move, switch, rename, duplicate or removal, and holds every control in the open card's body the same way; a
+ * read-only list still opens and closes its cards.
  */
 export function EffectList<T extends EffectListItem>({
   items,
@@ -66,14 +69,19 @@ export function EffectList<T extends EffectListItem>({
   removable = true,
   'aria-label': ariaLabel,
   className,
+  ...hold
 }: EffectListProps<T>) {
+  const access = useControlAccess(hold);
+  const held = access.state !== 'enabled';
   const css = useColorCss();
   const reorderItems = useMemo(() => items.map((it) => ({ id: it.id, label: it.name })), [items]);
   const kindList = useMemo(() => Object.values(kinds), [kinds]);
   const drag = useReorderDragList({
     items: reorderItems,
     selectedIds: [],
-    onReorder: ([id], to) => onChange(moveItems(items, [items.findIndex((it) => it.id === id)], to)),
+    onReorder: ([id], to) => {
+      if (!held) onChange(moveItems(items, [items.findIndex((it) => it.id === id)], to));
+    },
     onPress: (id) => onSelectionChange?.(selected === id ? null : id),
   });
   const { targetIndex, draggedIds } = drag.state;
@@ -93,27 +101,32 @@ export function EffectList<T extends EffectListItem>({
 
   const nudge = (e: KeyboardEvent, item: T, i: number): void => {
     // A list nested in a card's body has already moved its own card.
-    if (e.defaultPrevented) return;
+    if (e.defaultPrevented || held) return;
     const by = nudgeOf(e);
     if (by === null) return;
     e.preventDefault();
     if (drag.nudge(item.id, i, by)) refocus.current = e.target as HTMLElement;
   };
-  const patch = (id: string, next: Partial<EffectListItem>): void =>
-    onChange(items.map((it) => (it.id === id ? { ...it, ...next } : it)));
+  const patch = (id: string, next: Partial<EffectListItem>): void => {
+    if (!held) onChange(items.map((it) => (it.id === id ? { ...it, ...next } : it)));
+  };
   const solo = (id: string): void => {
+    if (held) return;
     const changes = soloChanges(new Map(items.map((it) => [it.id, it.on])), new Set([id]));
     onChange(items.map((it) => (Object.hasOwn(changes, it.id) ? { ...it, on: changes[it.id]! } : it)));
   };
   const remove = (item: T): void => {
+    if (held) return;
     onChange(items.filter((it) => it.id !== item.id));
     if (selected === item.id) onSelectionChange?.(null);
   };
   const duplicate = onDuplicate
-    ? (item: T, i: number): void => onChange([...items.slice(0, i + 1), onDuplicate(item), ...items.slice(i + 1)])
+    ? (item: T, i: number): void => {
+      if (!held) onChange([...items.slice(0, i + 1), onDuplicate(item), ...items.slice(i + 1)]);
+    }
     : undefined;
 
-  return (
+  return holdScope(hold, (
     <div
       className={[s.list, className].filter(Boolean).join(' ')}
       role="group"
@@ -127,6 +140,7 @@ export function EffectList<T extends EffectListItem>({
           <EffectCard
             key={item.id}
             cardRef={kept.rowRef(item.id)}
+            access={access}
             item={item}
             index={i}
             kind={kind}
@@ -135,7 +149,7 @@ export function EffectList<T extends EffectListItem>({
             open={selected === item.id}
             dragging={draggedIds?.includes(item.id) ?? false}
             drop={side}
-            onGripDown={drag.rowProps(item.id, i).onPointerDown}
+            onGripDown={held ? undefined : drag.rowProps(item.id, i).onPointerDown}
             onToggleOpen={() => onSelectionChange?.(selected === item.id ? null : item.id)}
             onKeyDown={(e) => nudge(e, item, i)}
             onPatch={(next) => patch(item.id, next)}
@@ -148,5 +162,5 @@ export function EffectList<T extends EffectListItem>({
         );
       })}
     </div>
-  );
+  ));
 }
