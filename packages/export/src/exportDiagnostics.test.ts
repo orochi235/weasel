@@ -72,7 +72,7 @@ describe('raster export diagnostics', () => {
     lossyPainter((pose) => [
       { kind: 'text', x: pose.x, y: pose.y, style: {} as never, runs: [{ text: 'Hi', fontFamily: 'lost', fontSize: 12, fontWeight: 400, fontStyle: 'normal', fill: { paint: { kind: 'solid', color: '#000' } } }] as never },
       { kind: 'path', path: { kind: 'rect', x: pose.x, y: pose.y, width: 5, height: 5 }, fill: { paint: { kind: 'test:nothing' } as never } },
-      { kind: 'shader', program: wgslOnly, uniforms: {}, bounds: { x: 0, y: 0, w: 5, h: 5 } },
+      { kind: 'shader', program: wgslOnly, uniforms: {}, bounds: { x: 0, y: 0, width: 5, height: 5 } },
     ]);
     const heard = await heardIn(scene, page);
     expect(heard.map((d) => [d.kind, d.subject])).toEqual(expect.arrayContaining([

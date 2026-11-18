@@ -41,7 +41,7 @@ describe('<CanvasView> chrome on a parallax layer', () => {
     }
     render(
       <SceneCanvas features={[drawPreset]} scene={scene} layers={{ probe: { layer: probe } }} width={300} height={200}>
-        <CanvasView id="panel" bounds={{ x: 100, y: 0, w: 100, h: 100 }} view={{ x: 0, y: 0, scale: { x: 2, y: 2 } }} />
+        <CanvasView id="panel" bounds={{ x: 100, y: 0, width: 100, height: 100 }} view={{ x: 0, y: 0, scale: { x: 2, y: 2 } }} />
         <Peek />
       </SceneCanvas>,
     );

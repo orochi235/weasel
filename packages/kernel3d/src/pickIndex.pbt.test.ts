@@ -136,7 +136,7 @@ const meets = (a: Aabb, q: readonly number[]): boolean =>
 
 const query = fc.record({
   points: fc.array(paneFractions(), { minLength: 1, maxLength: 4 }),
-  rect: fc.record({ fx: fc.double({ min: -0.2, max: 1, noNaN: true }), fy: fc.double({ min: -0.2, max: 1, noNaN: true }), w: fc.double({ min: 0, max: 0.8, noNaN: true }), h: fc.double({ min: 0, max: 0.8, noNaN: true }) }),
+  rect: fc.record({ fx: fc.double({ min: -0.2, max: 1, noNaN: true }), fy: fc.double({ min: -0.2, max: 1, noNaN: true }), width: fc.double({ min: 0, max: 0.8, noNaN: true }), height: fc.double({ min: 0, max: 0.8, noNaN: true }) }),
   near: fc.array(fc.tuple(fc.double({ min: -15, max: 15, noNaN: true }), fc.double({ min: -15, max: 15, noNaN: true }), fc.double({ min: -15, max: 15, noNaN: true }), fc.double({ min: 0, max: 6, noNaN: true })), { maxLength: 3 }),
   exclude: fc.nat({ max: 40 }),
 });
@@ -157,7 +157,7 @@ describe('the pick and snap indexes through scene edits, stateful', () => {
           if (want !== null) seen.count('ray hit');
           expect(index.nearestOnRay(ray, null)).toBe(want);
         }
-        const rect = { x: (vp.originX ?? 0) + q.rect.fx * vp.width, y: (vp.originY ?? 0) + q.rect.fy * vp.height, width: q.rect.w * vp.width, height: q.rect.h * vp.height };
+        const rect = { x: (vp.originX ?? 0) + q.rect.fx * vp.width, y: (vp.originY ?? 0) + q.rect.fy * vp.height, width: q.rect.width * vp.width, height: q.rect.height * vp.height };
         const area = scanRect(world, rect);
         if (area.length > 0) seen.count('rect hit');
         expect(index.inScreenRect(vp, rect)).toEqual(area);

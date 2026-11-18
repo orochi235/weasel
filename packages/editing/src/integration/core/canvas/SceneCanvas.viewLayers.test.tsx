@@ -211,7 +211,7 @@ describe('<CanvasView layerVisibility> hides a layer in that view only', () => {
       return (
         <SceneCanvas features={[drawPreset]} scene={makeScene()} selection={selection} width={800} height={800} layers={LAYERS}
           views={[{
-            id: 'panel', bounds: { x: 500, y: 500, w: 200, h: 200 },
+            id: 'panel', bounds: { x: 500, y: 500, width: 200, height: 200 },
             layers: onlyScene, layerVisibility: HIDE_FX,
           }]}>
           <Probe />
@@ -271,7 +271,7 @@ describe('the chrome state a layer draws with answers for its own view', () => {
       return (
         <SceneCanvas features={[drawPreset]} scene={makeScene()} width={800} height={800}
           layers={{ ...LAYERS, probe: { layer } }}
-          views={[{ id: 'panel', bounds: { x: 500, y: 500, w: 200, h: 200 }, layerVisibility: HIDE_FX }]}>
+          views={[{ id: 'panel', bounds: { x: 500, y: 500, width: 200, height: 200 }, layerVisibility: HIDE_FX }]}>
           <RegistryOut set={(found) => { registry = found; }} />
         </SceneCanvas>
       );
@@ -301,7 +301,7 @@ describe('selection chrome stays off a layer a panel hides', () => {
         <SceneCanvas features={[drawPreset]} scene={makeScene()} selection={selection} width={800} height={800}
           layers={LAYERS}
           views={[{
-            id: 'panel', bounds: { x: 0, y: 0, w: 400, h: 400 },
+            id: 'panel', bounds: { x: 0, y: 0, width: 400, height: 400 },
             ...(layerVisibility ? { layerVisibility } : {}),
           }]}>
           <RegistryOut set={(found) => { registry = found; }} />

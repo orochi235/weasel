@@ -89,16 +89,16 @@ describe('path booleans, area laws (property)', () => {
 /** A rect on a coarse grid, in cells: edges shared, corners touching, one inside another, often. */
 const cell = fc.record({
   x: fc.integer({ min: 0, max: 4 }), y: fc.integer({ min: 0, max: 4 }),
-  w: fc.integer({ min: 1, max: 4 }), h: fc.integer({ min: 1, max: 4 }),
+  width: fc.integer({ min: 1, max: 4 }), height: fc.integer({ min: 1, max: 4 }),
 });
-type Cells = { x: number; y: number; w: number; h: number };
-const covers = (r: Cells, i: number, j: number): boolean => i >= r.x && i < r.x + r.w && j >= r.y && j < r.y + r.h;
+type Cells = { x: number; y: number; width: number; height: number };
+const covers = (r: Cells, i: number, j: number): boolean => i >= r.x && i < r.x + r.width && j >= r.y && j < r.y + r.height;
 
 describe('path booleans, degenerate contact (property)', () => {
   it('rects sharing edges and corners combine to the cells each logic names', () => {
     const tally = { touching: 0 };
     fc.assert(fc.property(cell, cell, fc.constantFrom(1, 0.1, 7.5), (ca, cb, unit) => {
-      const toPath = (r: Cells): Path => ({ kind: 'rect', x: r.x * unit, y: r.y * unit, width: r.w * unit, height: r.h * unit });
+      const toPath = (r: Cells): Path => ({ kind: 'rect', x: r.x * unit, y: r.y * unit, width: r.width * unit, height: r.height * unit });
       const a = toPath(ca), b = toPath(cb);
       const count = (keep: (inA: boolean, inB: boolean) => boolean): number => {
         let n = 0;
@@ -106,7 +106,7 @@ describe('path booleans, degenerate contact (property)', () => {
         return n * unit * unit;
       };
       const apart = count((p, q) => p && q) === 0;
-      const touch = ca.x <= cb.x + cb.w && cb.x <= ca.x + ca.w && ca.y <= cb.y + cb.h && cb.y <= ca.y + ca.h;
+      const touch = ca.x <= cb.x + cb.width && cb.x <= ca.x + ca.width && ca.y <= cb.y + cb.height && cb.y <= ca.y + ca.height;
       if (apart && touch) tally.touching++;
       const tol = 1e-6 * (area(a) + area(b));
       const ops = { union: pathUnion(a, b), intersect: pathIntersect(a, b), subtract: pathSubtract(a, b), exclude: pathExclude(a, b) };
