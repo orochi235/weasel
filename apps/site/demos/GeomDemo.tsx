@@ -127,6 +127,10 @@ export function drawDot(role: Role, p: { x: number; y: number }): DrawCommand[] 
   return [{ kind: 'path', path: circle, fill: { paint: { color: '#ffffff' } }, stroke: { paint: INK, width: { px: 1.5 } } }];
 }
 
+/** Percent of the curve's length up to t; a curve of no length has none to share. */
+export const splitShare = (m: { length: number; beforeLength: number }) =>
+  m.length > 0 ? (100 * m.beforeLength) / m.length : 0;
+
 const fmt = (n: number, w = 6, p = 1) => qty(n, decimal({ places: p, grouping: false })).text.padStart(w, '\u2007');
 
 export function GeomDemo() {
@@ -190,7 +194,7 @@ export function GeomDemo() {
           <tr>
             <td className={s.fn}><span className={s.swatchT} />splitCubicAt</td>
             <td>share of the length in the curve up to t, split off as a cubic of its own</td>
-            <td className={s.num}>{fmt((100 * m.beforeLength) / m.length)}%</td>
+            <td className={s.num}>{fmt(splitShare(m))}%</td>
           </tr>
           <tr>
             <td className={s.fn}><span className={s.swatchProbe} />nearestOnCubic</td>
