@@ -68,7 +68,7 @@ const SIZES: Record<ButtonSize, { height: string; padX: string; icon: number; fo
  *  button and the HUD one agree in any theme. */
 export function buttonMetrics(env: MeasureEnv, size: ButtonSize = 'md', iconOnly = false): ButtonMetrics {
   const z = SIZES[size];
-  const height = envPx(env, z.height);
+  const height = envPx(env, '--wzl-button-h', z.height);
   return {
     height,
     padX: iconOnly ? 0 : envPx(env, '--wzl-button-pad-x', z.padX),

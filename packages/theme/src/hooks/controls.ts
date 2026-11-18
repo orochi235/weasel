@@ -21,6 +21,12 @@ export const CONTROL_HOOKS: readonly TokenHook[] = [
     description: 'The glyph in a Button. Unset, 12px at xs and sm and 14px at md.',
   },
   {
+    name: 'button-h',
+    type: 'dimension',
+    value: 'var(--wzl-control-h)',
+    description: 'Height of a Button below the container that sets it, at every size; an icon-only one stays square. Unset, the control height of its size: `--wzl-control-h-xs`, `-sm`, or `--wzl-control-h`.',
+  },
+  {
     name: 'button-radius',
     type: 'dimension',
     value: 'calc(var(--btn-height) * 0.1)',

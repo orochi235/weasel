@@ -45,6 +45,12 @@ describe('measureButton', () => {
     expect(measureButton({ iconOnly: true, icon: 'x', size: 'xs' }, UNBOUNDED, env()).width).toBe(18);
   });
 
+  it('takes its height from --wzl-button-h at any size, square when icon-only', () => {
+    const tall = env({ '--wzl-button-h': '30px' });
+    expect(measureButton({ label: 'Go', size: 'xs' }, UNBOUNDED, tall).height).toBe(30);
+    expect(measureButton({ iconOnly: true, icon: 'x', size: 'sm' }, UNBOUNDED, tall).width).toBe(30);
+  });
+
   it('is square when icon-only', () => {
     const m = measureButton({ iconOnly: true, icon: 'x' }, UNBOUNDED, env());
     expect([m.width, m.height]).toEqual([28, 28]);

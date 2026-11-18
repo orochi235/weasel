@@ -1,3 +1,4 @@
+import { Button } from '@weasel-js/ui/components/Button';
 import { Icon } from '@weasel-js/ui/components/Icon';
 import { Popover } from '@weasel-js/ui/components/Popover';
 import {
@@ -23,7 +24,8 @@ export const FloatSidebarContext = createContext<FloatSidebarValue | null>(null)
 /** The id of the title bar's toggle for a floating sidebar. */
 export const FLOAT_TOGGLE_ID = 'panel';
 
-/** The title bar's toggle for a trial whose sidebar floats, first among the bar's trailing buttons. */
+/** The title bar's toggle for a trial whose sidebar floats, first among the bar's trailing buttons. The bar's
+ *  `TitleBarRegion` keeps a press on it from dragging the tile. */
 export const floatToggle: TrialContribution = {
   id: FLOAT_TOGGLE_ID,
   region: 'titlebar',
@@ -48,21 +50,20 @@ function FloatSidebar() {
   if (!value) return null;
   return (
     <>
-      <button
+      <Button
         ref={trigger}
-        type="button"
-        className="lk-titlebar-button"
+        size="xs"
+        variant="ghost"
+        emphasis="low"
+        iconOnly
         aria-label="Trial settings"
-        title="Trial settings"
+        tooltip="Trial settings"
         aria-haspopup="dialog"
         aria-expanded={open}
         onClick={() => setOpen((was) => !was)}
-        // The bar behind it is the tile's drag surface.
-        onPointerDown={(e) => e.stopPropagation()}
-        onMouseDown={(e) => e.stopPropagation()}
       >
         <Icon name={icon('ui:settings')} size={16} />
-      </button>
+      </Button>
       <Popover
         triggerRef={trigger}
         open={open}
