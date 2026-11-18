@@ -75,7 +75,7 @@ export const compact: EffectLook<CompactOptions> = (pipeline, options = {}) => {
   });
 
   return {
-    data: { nodes, edges: edges.map((e) => e.edge), groups: uniqueGroups(pipeline) },
+    data: { nodes, edges: edges.map((e) => e.edge), clusters: uniqueGroups(pipeline) },
     scene: {
       layout: 'layered',
       layoutOptions: { direction: 'right', nodeGap: options.nodeGap ?? 16, rankGap: options.rankGap ?? 48 },

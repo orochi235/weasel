@@ -249,7 +249,7 @@ export const lanes: EffectLook<LanesOptions> = (pipeline, options = {}) => {
   // another; a few rounds settle each corridor's tracks.
   let insets = insetsFor(rows.length + 1, new Map());
   let laid = place(plan, insets);
-  const route = (at: typeof laid) => routeWires(wires, at.nodes, { grid: at, column, router, measure: options.measure, groups });
+  const route = (at: typeof laid) => routeWires(wires, at.nodes, { grid: at, column, router, measure: options.measure, clusters: groups });
   let routed = route(laid);
   for (let round = 0; round < 4; round++) {
     const need = insetsFor(rows.length + 1, routed.tracks);
@@ -268,7 +268,7 @@ export const lanes: EffectLook<LanesOptions> = (pipeline, options = {}) => {
   const laneStyle = new Map(rows.map((t, i) => [laneId(t), bodies[i % bodies.length]!]));
 
   return {
-    data: { nodes: [...laneNodes, ...laid.nodes], edges: edges.map((e) => e.edge), groups },
+    data: { nodes: [...laneNodes, ...laid.nodes], edges: edges.map((e) => e.edge), clusters: groups },
     scene: {
       layout: 'none',
       router,

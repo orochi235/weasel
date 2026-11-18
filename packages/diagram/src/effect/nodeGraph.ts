@@ -32,7 +32,7 @@ export const nodeGraph: EffectLook<NodeGraphOptions> = (pipeline, options = {}) 
   const edges = wireEdges(pipeline, color);
 
   return {
-    data: { nodes, edges: edges.map((e) => e.edge), groups: uniqueGroups(pipeline) },
+    data: { nodes, edges: edges.map((e) => e.edge), clusters: uniqueGroups(pipeline) },
     scene: {
       layout: 'layered',
       layoutOptions: {

@@ -222,7 +222,7 @@ export const rack: EffectLook<RackOptions> = (pipeline, options = {}) => {
     data: {
       nodes,
       edges: edges.map((e) => e.edge),
-      groups: uniqueGroups(pipeline).map((g) => ({ ...g, members: g.members.filter((m) => !gone.has(m)) })),
+      clusters: uniqueGroups(pipeline).map((g) => ({ ...g, members: g.members.filter((m) => !gone.has(m)) })),
     },
     scene: {
       layout: 'chain',

@@ -146,7 +146,7 @@ describe('rack', () => {
   it('builds a scene diagramScene accepts, and an empty one for an empty pipeline', () => {
     expect(() => diagramScene(data, scene)).not.toThrow();
     const empty = rack({ stages: [], wires: [] });
-    expect(empty.data).toEqual({ nodes: [], edges: [], groups: [] });
+    expect(empty.data).toEqual({ nodes: [], edges: [], clusters: [] });
     expect(diagramScene(empty.data, empty.scene)).toEqual([]);
   });
 });

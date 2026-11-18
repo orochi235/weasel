@@ -120,7 +120,7 @@ describe('nodeGraph', () => {
 
   it('answers an empty pipeline with empty data that diagramScene accepts', () => {
     const empty = nodeGraph({ stages: [], wires: [] });
-    expect(empty.data).toEqual({ nodes: [], edges: [], groups: [] });
+    expect(empty.data).toEqual({ nodes: [], edges: [], clusters: [] });
     expect(diagramScene(empty.data, empty.scene)).toEqual([]);
   });
 
