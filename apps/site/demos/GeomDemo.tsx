@@ -119,6 +119,14 @@ function centersOf<L extends string>(scene: Scene<Dot, L, Dot>) {
   return out;
 }
 
+/** A dot drawn where its pose puts it: a move writes the pose, never the data. */
+export function drawDot(role: Role, p: { x: number; y: number }): DrawCommand[] {
+  const circle = circlePath(p.x + R, p.y + R, R - 1);
+  if (role === 'anchor') return [{ kind: 'path', path: circle, fill: { paint: INK } }];
+  if (role === 'probe') return [{ kind: 'path', path: circle, fill: { paint: PROBE } }];
+  return [{ kind: 'path', path: circle, fill: { paint: { color: '#ffffff' } }, stroke: { paint: INK, width: { px: 1.5 } } }];
+}
+
 const fmt = (n: number, w = 6, p = 1) => qty(n, decimal({ places: p, grouping: false })).text.padStart(w, '\u2007');
 
 export function GeomDemo() {
@@ -148,13 +156,7 @@ export function GeomDemo() {
           scene={scene}
           layers={{
             scene: {
-              drawOne: (n): DrawCommand[] => {
-                const d = n.data;
-                const circle = circlePath(d.x + R, d.y + R, R - 1);
-                if (d.role === 'anchor') return [{ kind: 'path', path: circle, fill: { paint: INK } }];
-                if (d.role === 'probe') return [{ kind: 'path', path: circle, fill: { paint: PROBE } }];
-                return [{ kind: 'path', path: circle, fill: { paint: { color: '#ffffff' } }, stroke: { paint: INK, width: { px: 1.5 } } }];
-              },
+              drawOne: (n, p) => drawDot(n.data.role, p),
             },
             curve: { layer: curveLayer, before: 'scene' },
           }}
