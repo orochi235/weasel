@@ -1,7 +1,7 @@
 import { lookAttrs } from '@weasel-js/ui/components/Badge';
 import { EFFECT_PARAMS } from '../effectParams';
 import { isColor, literal } from '../params';
-import { type ComposeConfig, composedBaseParams } from './composeConfig';
+import { type ComposeConfig, composedBaseParams, composedPadding } from './composeConfig';
 
 const entries = (params: Record<string, unknown>, color: (key: string) => boolean): string =>
   Object.entries(params)
@@ -10,7 +10,7 @@ const entries = (params: Record<string, unknown>, color: (key: string) => boolea
     .join(', ');
 
 /** The `<Badge>` JSX that reproduces the lab's badge. */
-export function composeSnippet({ shape, look }: Pick<ComposeConfig, 'shape' | 'look'>): string {
+export function composeSnippet({ shape, look, padding }: Pick<ComposeConfig, 'shape' | 'look' | 'padding'>): string {
   const lines: string[] = ['<Badge', `  base="${shape.base}"`];
   const baseParams = composedBaseParams(shape);
   if (Object.keys(baseParams).length > 0) lines.push(`  baseParams={{ ${entries(baseParams, () => false)} }}`);
@@ -25,6 +25,7 @@ export function composeSnippet({ shape, look }: Pick<ComposeConfig, 'shape' | 'l
   }
   const attrs = lookAttrs(look.look, look.tint);
   lines.push(`  ${attrs ? `${attrs} ` : ''}variant="${look.variant}" size="${look.size}"`);
+  lines.push(`  padding="${composedPadding(padding)}"`);
   if (look.bloat !== 0) lines.push(`  bloat={${look.bloat}}`);
   if (look.crawl) lines.push(`  crawl={${look.crawlSpeed}}`);
   lines.push(`>${look.label}</Badge>`);

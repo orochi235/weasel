@@ -48,6 +48,7 @@ describe('composeSnippet', () => {
     const config = defaults();
     const [outline] = addEffect([], 'outline');
     const text = composeSnippet({
+      ...config,
       shape: {
         ...config.shape,
         effects: [
@@ -65,6 +66,7 @@ describe('composeSnippet', () => {
       '    { type: "outline", params: { width: 1, color: cssColorLiteral("#ff0000"), dash: "" } },',
       '  ]}',
       '  emphasis="high" variant="solid" size="sm"',
+      '  padding="1px 6px 1px 6px"',
       '>HI</Badge>',
     ].join('\n'));
   });
@@ -72,6 +74,7 @@ describe('composeSnippet', () => {
   it('adds bloat and crawl only when set', () => {
     const config = defaults();
     const text = composeSnippet({
+      ...config,
       shape: { ...config.shape, base: 'polygon' },
       look: { ...config.look, look: 'info', variant: 'outline', size: 'md', bloat: 2, crawl: true, crawlSpeed: 0.5, label: 'X' },
     });
@@ -79,9 +82,16 @@ describe('composeSnippet', () => {
       '<Badge',
       '  base="polygon"',
       '  grade="info" variant="outline" size="md"',
+      '  padding="1px 6px 1px 6px"',
       '  bloat={2}',
       '  crawl={0.5}',
       '>X</Badge>',
     ].join('\n'));
+  });
+
+  it('pads the badge as the stage does', () => {
+    const config = defaults();
+    const text = composeSnippet({ ...config, padding: { ...config.padding, top: 10, linkX: false, right: 3 } });
+    expect(text).toContain('  padding="10px 3px 10px 6px"');
   });
 });
