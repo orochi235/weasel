@@ -55,6 +55,7 @@ function Harness() {
               config: {},
               setState: () => {},
               setConfig: () => {},
+              showConfig: () => {},
               reportAuto: () => {},
               trial: {
                 id: 'ws-demo',

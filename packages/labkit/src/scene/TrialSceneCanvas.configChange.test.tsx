@@ -4,6 +4,7 @@ import { asNodeId, createScene, type Scene } from '@weasel-js/core';
 import { drawPreset } from '@weasel-js/editing';
 import { renderSettled } from '@weasel-js/react/testing/renderSettled';
 import { withIcons } from '@weasel-js/ui/testing/withIcons';
+import { useLayoutEffect } from 'react';
 import { beforeAll, describe, expect, it, vi } from 'vitest';
 import { f } from '../config/builder';
 import type { ConfigOf } from '../config/types';
@@ -43,7 +44,8 @@ const create = () =>
 
 let live: { scene: Scene<Data, 'main', Pose>; ctx: RenderContext<State, Config>; heard: number };
 
-/** Writes the panel's size onto the box, as a style panel writes onto a selection. */
+/** Writes the panel's size onto the box, as a style panel writes onto a selection, and shows the box's size in
+ *  the panel as an edit on the canvas changes it. */
 function Body({ ctx }: { ctx: RenderContext<State, Config> }) {
   const scene = useTrialScene(ctx, create);
   live.scene = scene;
@@ -52,6 +54,11 @@ function Body({ ctx }: { ctx: RenderContext<State, Config> }) {
     live.heard += 1;
     if (next.size !== prev.size) scene.update(ID, { data: { size: next.size } });
   });
+  const { showConfig } = ctx;
+  useLayoutEffect(
+    () => scene.subscribe(() => showConfig('size', scene.get(ID)?.data?.size)),
+    [scene, showConfig],
+  );
   return <TrialSceneCanvas features={[drawPreset]} scene={scene} trial={ctx.trial} />;
 }
 
@@ -121,5 +128,31 @@ describe('useTrialConfigChange', () => {
     await redo();
     expect(live.heard).toBe(heard);
     expect(size()).toBe(9);
+  });
+});
+
+describe('showConfig', () => {
+  it("shows a scene edit in the panel inside the scene edit's one undo step", async () => {
+    await mount();
+    act(() => live.scene.update(ID, { data: { size: 4 } }));
+    expect(shown()).toBe(4);
+    expect(live.heard).toBe(0);
+    expect(live.scene.historyEntries().length).toBe(1);
+    await undo();
+    expect(size()).toBe(1);
+    expect(shown()).toBe(1);
+    expect(live.scene.canUndo()).toBe(false);
+    await redo();
+    expect(size()).toBe(4);
+    expect(shown()).toBe(4);
+  });
+
+  it('records nothing and runs no handler on its own', async () => {
+    await mount();
+    act(() => live.ctx.showConfig('size', 6));
+    expect(shown()).toBe(6);
+    expect(live.heard).toBe(0);
+    expect(size()).toBe(1);
+    expect(live.scene.canUndo()).toBe(false);
   });
 });

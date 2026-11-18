@@ -57,6 +57,9 @@ export interface TrialWrites {
    *  that stays open, however long the edit pauses, until a `setConfig` to the
    *  same path settles it or another edit intervenes: a slider's drag is one step. */
   draftConfig: (path: string, value: unknown) => void;
+  /** Write one config value that shows the instrument's own data: no undo entry, no `onConfigChange`, no
+   *  `useTrialConfigChange` handler, and no end to a gesture in progress. */
+  showConfig: (path: string, value: unknown) => void;
 }
 
 /** Whether writing `value` at `path` would leave `record` as it is. A write that changes nothing records nothing,
@@ -191,12 +194,43 @@ export function useTrialWrites({
     },
     [apply],
   );
+  const showConfig = useShowConfig({ store, trialId, schema, stored });
   return useMemo(
     () => ({
       snapshot,
       setConfig: (path: string, value: unknown) => write(path, value, false),
       draftConfig: (path: string, value: unknown) => write(path, value, true),
+      showConfig,
     }),
-    [snapshot, write],
+    [snapshot, write, showConfig],
+  );
+}
+
+/** `TrialWrites.showConfig` for trial `trialId`: the write `setConfig` makes, recording nothing and running nothing. */
+function useShowConfig({
+  store,
+  trialId,
+  schema,
+  stored,
+}: Pick<TrialWritesOptions, 'store' | 'trialId' | 'schema'> & {
+  stored: () => TrialRecord | undefined;
+}): TrialWrites['showConfig'] {
+  const updateTrialConfig = useStore(store, (s) => s.updateTrialConfig);
+  const over = useLatest(useContext(LabOverContext));
+  return useCallback(
+    (path: string, value: unknown): void => {
+      if (writesOver(schema, path)) {
+        const lab = over.current;
+        if (lab && (isAuto(value) || !deepEqual(configValueAt(lab.values, path), value))) {
+          lab.set(path, value);
+        }
+        return;
+      }
+      const before = stored();
+      if (!before || changesNothing(before, path, value)) return;
+      warnUnknownPath(before, schema, path);
+      updateTrialConfig(trialId, path, value);
+    },
+    [schema, over, stored, updateTrialConfig, trialId],
   );
 }

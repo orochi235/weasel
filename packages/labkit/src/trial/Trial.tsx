@@ -138,7 +138,7 @@ function TrialRuntime({
       snapshotIfNeeded('state.change');
       updateTrialState(record.id, next);
     },
-    setConfig: writes.setConfig,
+    ...writes,
     reportAuto,
     emit: snapshotIfNeeded,
     setView,
