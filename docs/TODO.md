@@ -324,6 +324,13 @@ Owner tags, after the priority (2026-10-26):
   over time in each cell. Raised as a direction, not to build yet (2026-11-08). Closes when the maintainer
   has said how a third sweep shows and `<Sequence>` takes any number of sweeps.
 
+- **(P2) [agent] A disabled item's reason is out of a sighted keyboard user's reach.** Arrow keys pass over an
+  `aria-disabled` item (`useRovingTabIndex`, ruled 2026-11-17), and its reason lives only in a tooltip that opens on
+  hover or focus, so only a mouse reveals it; a screen reader still reads it from `aria-description`. Two fixes: a
+  disabled command invoked by its key says why (the status line or a toast), and the skip becomes per widget, kept for
+  toolbars while menus, listboxes and tabs stop on a disabled item as the ARIA guide recommends for them. Closes when
+  both ship with tests.
+
 - **(P3) [maintainer] Shift+F10 / the ContextMenu key may open the menu twice in Chrome on Windows/Linux.**
   The `menu.context` key binding opens it at the selection, and those platforms also send a
   native `contextmenu` event to the focused canvas, which would reopen it at that event's point.
