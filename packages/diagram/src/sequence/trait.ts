@@ -3,23 +3,24 @@
  * whole `SequenceData`, and every part drawn from it names its root and what
  * it draws.
  */
-import type { SeqMessagePlace, SeqRect, SeqSlot } from './layout';
+import type { SeqMessagePlace, SeqSlot } from './layout';
 import type { SeqMarkRef, SeqTextTarget, SequenceData } from './types';
+import type { Rect } from '@weasel-js/geom';
 
 /** Where a root's parts stand, in its own frame: what a drag reads to place a drop without laying the data out again. */
 export interface SequenceGeometry {
   columns: readonly { id: string; x: number }[];
   slots: readonly SeqSlot[];
-  heads: readonly { id: string; box: SeqRect }[];
+  heads: readonly { id: string; box: Rect }[];
   messages: readonly SeqMessagePlace[];
-  notes: readonly { id: string; box: SeqRect }[];
+  notes: readonly { id: string; box: Rect }[];
   /** Where a fragment is taken hold of: its type tab, or a region's top edge. Absent on a root drawn before fragments could be. */
-  fragments?: readonly { id: string; grip: SeqRect }[];
+  fragments?: readonly { id: string; grip: Rect }[];
   /** Where a box is taken hold of: the strip above its heads that holds its label. Absent as for `fragments`. */
-  boxes?: readonly { id: string; grip: SeqRect }[];
+  boxes?: readonly { id: string; grip: Rect }[];
   /** Where a part drawn for lifeline marks is taken hold of, by the part's id under the root: an activation bar, a
    *  destruction's cross. Absent as for `fragments`. */
-  marks?: readonly { id: string; grip: SeqRect }[];
+  marks?: readonly { id: string; grip: Rect }[];
 }
 
 /** The trait on a sequence's root. */

@@ -9,6 +9,7 @@ import {
 } from './body';
 import type { Bounds } from './outline';
 import type { BodyDivider, BodyLayout, DiagramNode, HeaderBand } from './types';
+import type { Rect } from '@weasel-js/geom';
 
 /** The `body` record a body built from `spec` carries, or `undefined` for one that cannot be laid
  *  out again from its text: one with a `ports` or `slot` row, or with port labels drawn outside it. */
@@ -52,7 +53,6 @@ export function recordedLayout(trait: DiagramNode, box: Bounds): RowBox[] | null
   return stackRows(spec, box, layout.heights!, trait.header);
 }
 
-type Box = { x: number; y: number; width: number; height: number };
 type TextData = {
   text?: unknown; bodyRow?: unknown; bodyAside?: unknown;
   style?: { fontSize?: number; fontFamily?: string; fontWeight?: number; fontStyle?: string; letterSpacing?: number };
@@ -76,7 +76,7 @@ const rowStyle = (s: TextData['style']): RowTextStyle => ({
   ...(s?.letterSpacing ? { tracking: s.letterSpacing / (s.fontSize ?? 16) } : {}),
 });
 
-const same = (a: Box, b: Box) => a.x === b.x && a.y === b.y && a.width === b.width && a.height === b.height;
+const same = (a: Rect, b: Rect) => a.x === b.x && a.y === b.y && a.width === b.width && a.height === b.height;
 
 const sameBand = (a: HeaderBand | undefined, b: HeaderBand): boolean =>
   a !== undefined && a.height === b.height && a.text.y === b.text.y && a.text.height === b.text.height && a.aside?.width === b.aside?.width;
@@ -130,12 +130,12 @@ export function relayoutBodies(scene: RelayoutScene, ids: Iterable<string>, meas
       const data = node.data as { diagram: DiagramNode };
       scene.update(id as never, { data: { ...data, diagram: { ...trait, body: { ...layout, heights }, ...(band ? { header: band } : {}) } } } as never);
     }
-    const pose = node.pose as Box;
+    const pose = node.pose as Rect;
     const grown = growToBody(pose, measureBody(spec, measure));
     if (grown !== pose) scene.setPose(id as never, grown as never);
     // Rows are stored in the body's own frame.
-    const place = (child: string | undefined, box: Box): void => {
-      const at = child === undefined ? undefined : scene.get(child as never)?.pose as Box | undefined;
+    const place = (child: string | undefined, box: Rect): void => {
+      const at = child === undefined ? undefined : scene.get(child as never)?.pose as Rect | undefined;
       if (at === undefined) return;
       const next = { ...at, x: box.x, y: box.y, width: box.width, height: box.height };
       if (!same(at, next)) scene.setPose(child as never, next as never);

@@ -1,12 +1,11 @@
 import type { Vec2 } from '@weasel-js/core/math';
-
-type Box = { x: number; y: number; width: number; height: number };
+import type { Rect } from '@weasel-js/geom';
 
 /** Space kept between a placed box and its neighbors, and inside the view's edge. */
 export const PLACE_GAP = 24;
 const STEP = 8;
 
-const clear = (x: number, y: number, size: { width: number; height: number }, boxes: readonly Box[]) =>
+const clear = (x: number, y: number, size: { width: number; height: number }, boxes: readonly Rect[]) =>
   boxes.every((b) => x >= b.x + b.width + PLACE_GAP || x + size.width + PLACE_GAP <= b.x
     || y >= b.y + b.height + PLACE_GAP || y + size.height + PLACE_GAP <= b.y);
 
@@ -16,7 +15,7 @@ const clear = (x: number, y: number, size: { width: number; height: number }, bo
  * and from the view's edge. Where the view has no such spot, or there is no
  * view, it goes right of the rightmost box, level with that box's top.
  */
-export function freeSpot(boxes: readonly Box[], size: { width: number; height: number }, view: Box | null): Vec2 {
+export function freeSpot(boxes: readonly Rect[], size: { width: number; height: number }, view: Rect | null): Vec2 {
   if (view !== null) {
     const right = view.x + view.width - PLACE_GAP - size.width;
     const bottom = view.y + view.height - PLACE_GAP - size.height;

@@ -5,7 +5,8 @@ import type { ContainerEdit } from '../regionSync';
 import { moveStages } from './edit';
 import type { EditorScene } from './editorMapping';
 import { clusterContents, moveCluster, moveToCluster, setClusterBox } from './clusterEdit';
-import type { EffectBox, EffectDoc } from './types';
+import type { EffectDoc } from './types';
+import type { Rect } from '@weasel-js/geom';
 
 const parentCluster = (doc: EffectDoc, id: string) => doc.pipeline.clusters?.find((g) => g.members.includes(id))?.id;
 
@@ -25,7 +26,7 @@ export interface DragReports {
  * that cluster, or out to the top level. `boxOf` is where each cluster was drawn.
  */
 export function dragEdit(
-  doc: EffectDoc, built: EditorScene, reports: DragReports, boxOf: (id: string) => EffectBox | undefined,
+  doc: EffectDoc, built: EditorScene, reports: DragReports, boxOf: (id: string) => Rect | undefined,
 ): { doc: EffectDoc; label: string } | null {
   let next = doc;
   let resized = false;

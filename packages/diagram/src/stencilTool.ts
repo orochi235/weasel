@@ -12,6 +12,7 @@ import { stencilInsertOps, stencilIdOf, stencilKind, type DiagramStencil } from 
 import { roleStyle } from './theme/resolve';
 import type { DiagramTheme } from './theme/types';
 import { INSERT_DRAG_MODS, INSERT_REPOSITION_BINDING } from '@weasel-js/editing';
+import type { Rect } from '@weasel-js/geom';
 
 /** The tool that draws `stencil`, a shape's or a container's: its id is the stencil's insert kind. */
 export function stencilTool(stencil: Pick<DiagramStencil, 'id' | 'label' | 'description' | 'icon'>): Tool {
@@ -54,8 +55,6 @@ export interface StencilInsertOptions {
   theme?: DiagramTheme;
 }
 
-type Bounds = { x: number; y: number; width: number; height: number };
-
 /**
  * Registers the `insert` dep for stencil kinds. Any other kind goes to the
  * `insert` dep this one displaced, so core's rect, ellipse and text tools
@@ -76,7 +75,7 @@ export function useStencilInsert(stencils: readonly DiagramStencil[], opts: Sten
       if (id === null) return undefined;
       return stencilsRef.current.find((s) => s.id === id) ?? optsRef.current.containers?.find((s) => s.id === id);
     };
-    const builtAt = (stencil: DiagramStencil | ContainerStencil, world: Bounds): { id: string; ops: Op[] } | null => {
+    const builtAt = (stencil: DiagramStencil | ContainerStencil, world: Rect): { id: string; ops: Op[] } | null => {
       if (scene === undefined) return null;
       const center = { x: world.x + world.width / 2, y: world.y + world.height / 2 };
       const role = 'role' in stencil ? stencil.role : null;
@@ -86,7 +85,7 @@ export function useStencilInsert(stencils: readonly DiagramStencil[], opts: Sten
       // for its center in a paged scene, or the top of the tree.
       const site = into === null ? insertSite(scene as never, { at: center }) : null;
       const parent = into ?? site?.parent ?? null;
-      const bounds = (site !== null ? site.local({ ...world }) : scenePoseFrame(scene as never).localUnder(into as NodeId, { ...world })) as Bounds | null;
+      const bounds = (site !== null ? site.local({ ...world }) : scenePoseFrame(scene as never).localUnder(into as NodeId, { ...world })) as Rect | null;
       // A container in a singular frame could not hold the stencil where it was drawn.
       if (bounds === null) return null;
       const common = { layer: layer(), newId: () => scene.mintId() as string, parent };

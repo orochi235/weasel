@@ -3,7 +3,7 @@
  *  and a cluster dragged along the line by its title. */
 import type { Contribution } from '@weasel-js/core';
 import { moveItems } from '@weasel-js/ui-input';
-import { maxOf, minOf } from '@weasel-js/geom';
+import { maxOf, minOf, type Rect } from '@weasel-js/geom';
 import { createReorderContribution, slotsAlong, type ReorderMove, type ReorderSlots } from '../reorder';
 import { moveInChain, moveRunInChain } from './chainEdit';
 import type { LookOrder } from './draw';
@@ -19,15 +19,13 @@ export const REORDER_LANES_ACTION_ID = 'diagram.reorderLanes';
 /** The action that drags a cluster by its title to another place along the main line. */
 export const REORDER_CLUSTERS_ACTION_ID = 'diagram.reorderClusters';
 
-type Box = { x: number; y: number; width: number; height: number };
-
 /** What the reorders read, as of the press. */
 export interface ReorderSource {
   doc: EffectDoc;
   order: LookOrder | undefined;
   laneOrder: LookOrder | undefined;
   /** A scene node's box as drawn. */
-  boxOf: (id: string) => Box | undefined;
+  boxOf: (id: string) => Rect | undefined;
   onChange: (next: EffectDoc, label: string) => void;
 }
 

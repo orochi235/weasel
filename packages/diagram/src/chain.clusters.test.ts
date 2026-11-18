@@ -4,8 +4,9 @@ import { rack } from './effect/rack';
 import { io, w } from './effect/skipFixture';
 import type { EffectPipeline } from './effect/types';
 import { diagramScene } from './fromData';
-import { boxOf, graphOf, overlaps, placed, type Rect } from './clusterFixture';
+import { boxOf, graphOf, overlaps, placed } from './clusterFixture';
 import type { LayoutResult } from './layout';
+import type { Rect } from '@weasel-js/geom';
 
 // `graphOf` seeds node i at (i, i), 100 by 40.
 const IDS = ['src', 'a', 'b', 'c', 'out', 'sa', 'sc'] as const;

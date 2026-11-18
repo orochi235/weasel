@@ -1,6 +1,7 @@
 import type { Page } from '@weasel-js/core';
 import type { Vec2 } from '@weasel-js/core/math';
 import type { DiagramLabel } from '../labelTrait';
+import type { Rect } from '@weasel-js/geom';
 
 /** An effects pipeline as plain data. It says what is wired to what and
  *  nothing about how any of it is drawn. */
@@ -142,11 +143,8 @@ export interface EffectDoc {
   labels?: Readonly<Record<string, DiagramLabel>>;
   /** Each cluster's box under `nodeGraph`, by cluster id, beside the pipeline as
    *  `places` is. A cluster with none fits its members. */
-  clusterBoxes?: Readonly<Record<string, EffectBox>>;
+  clusterBoxes?: Readonly<Record<string, Rect>>;
 }
-
-/** A box on the page, in world units. */
-export interface EffectBox { x: number; y: number; width: number; height: number }
 
 /** A wire's route under a look that places its stages itself. */
 export interface LookRoute {

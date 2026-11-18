@@ -5,13 +5,14 @@ import { SAMPLES } from './lab/samples';
 import { slotsAlong } from '../reorder';
 import { LANE_INSET, laneId, laneTypeOf, lanes } from './lanes';
 import { paintRun } from './run';
-import { built, P, type Box } from './lanesFixture';
+import { built, P } from './lanesFixture';
 import { io, w } from './skipFixture';
 import type { EffectPipeline } from './types';
+import type { Rect } from '@weasel-js/geom';
 
 const strokeOpacity = (spec: DiagramSpec) => (spec.data as { stroke?: { paint?: { opacity?: number } } }).stroke?.paint?.opacity;
 const stageIds = (p: EffectPipeline) => p.stages.map((s) => s.id);
-const overlap = (a: Box, b: Box) => a.x < b.x + b.width && b.x < a.x + a.width && a.y < b.y + b.height && b.y < a.y + a.height;
+const overlap = (a: Rect, b: Rect) => a.x < b.x + b.width && b.x < a.x + a.width && a.y < b.y + b.height && b.y < a.y + a.height;
 
 describe('lanes', () => {
   it('draws one lane per value type, top to bottom in the order types first appear', () => {
@@ -77,7 +78,7 @@ describe('lanes', () => {
       const title = specs.find((s) => s.parent === 'src' && (s.data as { text?: string }).text === 'Source')!;
       // What the fallback measure makes of the title, in its face.
       const needs = 'Source'.length * title.data.style!.fontSize * 0.6;
-      expect((title.pose as Box).width, `${n} params`).toBeGreaterThanOrEqual(needs - 1e-9);
+      expect((title.pose as Rect).width, `${n} params`).toBeGreaterThanOrEqual(needs - 1e-9);
     }
   });
 

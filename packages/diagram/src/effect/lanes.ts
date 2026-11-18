@@ -1,4 +1,4 @@
-import { maxOf, minOf } from '@weasel-js/geom';
+import { maxOf, minOf, type Rect } from '@weasel-js/geom';
 import type { MeasureRowText } from '../body';
 import { insetOf } from '../cluster';
 import { clusterLabelIdOf } from '../dataClusters';
@@ -11,7 +11,7 @@ import {
   wireEdges, type EffectLook, type LookThemeOptions, type RunRowOptions, type TypeColor,
 } from './draw';
 import { columnLefts, laneColumns, type LaneBlock, type Span } from './laneColumns';
-import { inkOf, routeWires, TRACK_GAP, worldSpecs, type Box } from './lanesRoutes';
+import { inkOf, routeWires, TRACK_GAP, worldSpecs } from './lanesRoutes';
 import { mainChain } from './mainChain';
 import { branchNode, type BranchChoice } from './symbols';
 import type { EffectCluster, EffectPipeline, EffectPort, EffectStage } from './types';
@@ -76,7 +76,7 @@ function laneHeights(count: number, least: number, needs: readonly { span: Span;
 
 /** An ordinary stage's ports, inputs on its left edge and outputs on its
  *  right, each spread within the stretch of its own type's lane the box covers. */
-function lanePorts(stage: EffectStage, box: Box, lane: ReadonlyMap<string, number>, band: (i: number) => [number, number]): PortSpec[] {
+function lanePorts(stage: EffectStage, box: Rect, lane: ReadonlyMap<string, number>, band: (i: number) => [number, number]): PortSpec[] {
   const side = (ports: readonly EffectPort[], u: number): PortSpec[] => ports.map((p) => {
     const same = ports.filter((q) => q.type === p.type);
     const [top, bottom] = band(lane.get(p.type)!);
@@ -109,7 +109,7 @@ type Overhang = { left: number; top: number; right: number; bottom: number };
  *  of each labeled cluster's title. */
 function sizesOf(nodes: readonly DataNode[], clusters: readonly EffectCluster[], measure: MeasureRowText | undefined) {
   const specs = worldSpecs({ nodes, edges: [], clusters: clusters }, { layout: 'none', ...(measure !== undefined ? { measure } : {}) });
-  const pose = new Map(specs.map((s) => [s.id as string, s.pose as Box]));
+  const pose = new Map(specs.map((s) => [s.id as string, s.pose as Rect]));
   const spec = new Map(specs.map((s) => [s.id as string, s]));
   const nested = nestClusters(clusters, (id) => nodes.some((n) => n.id === id))
     .map((g) => ({ members: g.members, inset: insetOf(diagramNodeOf({ id: g.id, kind: 'mark', data: spec.get(g.id)?.data })?.cluster?.inset) }));
@@ -132,7 +132,7 @@ function sizesOf(nodes: readonly DataNode[], clusters: readonly EffectCluster[],
   return { size, titles };
 }
 
-function laneNode(type: string, box: Box, color: TypeColor): DataNode {
+function laneNode(type: string, box: Rect, color: TypeColor): DataNode {
   return {
     id: laneId(type),
     lines: [],
@@ -158,7 +158,7 @@ function insetsFor(edges: number, tracks: ReadonlyMap<number, number>): number[]
 interface Plan {
   stages: readonly EffectStage[];
   drawn: readonly DataNode[];
-  size: ReadonlyMap<string, { box: Box; over: Overhang }>;
+  size: ReadonlyMap<string, { box: Rect; over: Overhang }>;
   spans: ReadonlyMap<string, Span>;
   column: ReadonlyMap<string, number>;
   blocks: readonly LaneBlock[];
