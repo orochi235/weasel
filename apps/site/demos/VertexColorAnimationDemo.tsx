@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { solidStroke } from '@weasel-js/paint';
 import {
   asNodeId,
@@ -56,15 +56,21 @@ export function VertexColorAnimationDemo() {
     return () => cycle.cancel();
   }, [animator, cycling, oklch]);
 
+  // Where each wave's last tween or stagger was headed. Runs on one node add, each starting
+  // from the last one's end, so a click mid-run turns back from the colors on screen.
+  const heading = useRef<Record<string, number[]>>({});
+
   // Toggle between the rainbow and `other`. The animation's colors are an
   // override that ends with it, so `commit` writes the final colors to the node.
   const nextColors = (id: string, other: number[]) => {
     const node = scene.get(asNodeId(id))!;
-    const from = node.data.stroke.vertexColors;
+    const from = heading.current[id] ?? node.data.stroke.vertexColors;
     const to = from.every((v, i) => v === RAINBOW[i]) ? other : RAINBOW;
-    const commit = () => scene.update(node.id, {
-      data: { ...node.data, stroke: { ...node.data.stroke, vertexColors: to } },
-    });
+    heading.current[id] = to;
+    const commit = () => {
+      const at = scene.get(node.id)!;
+      scene.update(node.id, { data: { ...at.data, stroke: { ...at.data.stroke, vertexColors: heading.current[id]! } } });
+    };
     return { from, to, commit };
   };
 
