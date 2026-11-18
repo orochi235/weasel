@@ -110,7 +110,7 @@ describe('RigDemo', () => {
     expect(near(hand(), centerOf(scene.get(TARGET)!.pose))).toBeGreaterThan(5);
   });
 
-  it('plays the track figure from a pose track on its rig, and returns it to A when stopped', () => {
+  it('plays the track figure from a pose track on its rig, and returns it and its readout to A when stopped', () => {
     const scene = mount();
     const atA = turn(scene, TRACK_THIGH);
     act(() => { fireEvent.click(screen.getByRole('button', { name: 'play track' })); });
@@ -118,9 +118,11 @@ describe('RigDemo', () => {
     frame(1400);
     // The second key is pose B, whose thigh sits 0.95 from A's.
     expect(Math.abs(turn(scene, TRACK_THIGH) - atA)).toBeCloseTo(0.95, 2);
+    expect(screen.getByText(/track u/).textContent).toBe('track u 1.00');
     act(() => { fireEvent.click(screen.getByRole('button', { name: 'stop track' })); });
     frame();
     expect(turn(scene, TRACK_THIGH)).toBeCloseTo(atA, 6);
-    expect(screen.getByText(/track u/).textContent).toBe('track u 1.00');
+    expect(screen.getByText(/track u/).textContent).toBe('track u 0.00');
   });
+
 });

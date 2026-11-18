@@ -215,6 +215,7 @@ export function RigDemo() {
   useEffect(() => {
     if (!playing) {
       trackRig.pose(POSE_A);
+      trackBlend.current = 0;
       return;
     }
     const a = POSE_A.torso!.rotation!;
@@ -255,7 +256,8 @@ export function RigDemo() {
           {playing ? 'stop track' : 'play track'}
         </Button>
         <Checkbox isSelected={labels} onChange={setLabels}>joint labels</Checkbox>
-        <span className={`ckd-readout ${num.numeric}`}>track u {shownTrackBlend.toFixed(2)}</span>
+        {/* A stopped track puts its figure back at A, so its readout goes back with it. */}
+        <span className={`ckd-readout ${num.numeric}`}>track u {(playing ? shownTrackBlend : 0).toFixed(2)}</span>
       </div>
       <DemoStage width={W} height={H}>
         <SceneCanvas
