@@ -29,6 +29,7 @@
     "@weasel-js/editing": "1.19.1",
     "@weasel-js/guides": "1.19.1",
     "@weasel-js/prefs": "1.19.1",
+    "@weasel-js/prefs-schema": "1.19.1",
     "@weasel-js/text-tools": "1.19.1",
     "@weasel-js/ui": "1.19.1",
     "react": ">=18"

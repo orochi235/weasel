@@ -48,7 +48,11 @@ for (const { dir, manifest } of publishableWorkspaces(root)) {
   for (const file of read) {
     const text = readFileSync(file, 'utf8');
     for (const m of text.matchAll(SPECIFIER)) named.add(m[1]);
-    for (const m of text.matchAll(IMPORTED)) if (m[1] !== manifest.name) imported.add(m[1]);
+    for (const line of text.split('\n')) {
+      // A doc comment's usage example imports nothing.
+      if (/^\s*(?:\*|\/\/|\/\*)/.test(line)) continue;
+      for (const m of line.matchAll(IMPORTED)) if (m[1] !== manifest.name) imported.add(m[1]);
+    }
   }
   const unnamed = declared.filter((name) => !named.has(name));
   if (unnamed.length > 0) idle.push(`  ${manifest.name}   ${unnamed.join(', ')}`);
