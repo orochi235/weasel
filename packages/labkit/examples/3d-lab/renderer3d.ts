@@ -13,6 +13,7 @@ import {
 import { compose, identity, multiply, type Mat4 } from '@weasel-js/geom/3d';
 import { cubeData, gridData, sphereData } from './meshes3d';
 import { aabbOfSolid, type Pose3, type SolidKind } from './scene3d';
+import type { Rect } from '@weasel-js/geom';
 
 /** Translucency of an uncommitted pose. The 2D ghost layer uses 0.85; a lit
  *  solid needs more of the ground showing through to read as not-yet-there. */
@@ -55,13 +56,6 @@ export interface SolidDraw {
   ghost?: boolean;
 }
 
-export interface DeviceRect {
-  x: number;
-  y: number;
-  width: number;
-  height: number;
-}
-
 export interface Renderer3d {
   /** Erase the whole shared buffer, gutters included. The surface calls this
    *  through `registerClear` when the tile geometry changed. */
@@ -69,7 +63,7 @@ export interface Renderer3d {
   draw(
     solids: readonly SolidDraw[],
     camera: Camera3d,
-    rect: DeviceRect,
+    rect: Rect,
     chrome: readonly ChromeBox[],
     cssSize: { width: number; height: number },
     snap?: SnapDraw,

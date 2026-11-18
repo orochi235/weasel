@@ -48,6 +48,7 @@ import { usePublishCamera } from './cameraRegistry';
 import { clampZoomAbout, frameLocalToWorld, fromCameraView, toCameraView } from './cameraView';
 import { clientToHost, hostBox, hostToClient } from './hostBox';
 import type { ViewportSize, WorldFrame } from './worldSpec';
+import type { Rect } from '@weasel-js/geom';
 
 /** The view id the stage publishes its pointer under. */
 export const STAGE_VIEW_ID = 'stage';
@@ -64,7 +65,7 @@ export interface CameraContextValue {
   /** The element the camera's dispatcher listens on. */
   element: () => HTMLElement | null;
   /** The content's own rect, frame-local, when it has one — a `<Stage>`'s. */
-  content?: { x: number; y: number; width: number; height: number };
+  content?: Rect;
 }
 
 /** The camera around the caller, or `null` outside one. */
