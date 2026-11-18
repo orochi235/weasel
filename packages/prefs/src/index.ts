@@ -105,7 +105,6 @@ export {
   type PrefEnumOption,
   type PrefField,
   type PrefFunctionUnit,
-  type PrefGrade,
   type PrefGroup,
   type PrefGroupAs,
   type PrefKind,

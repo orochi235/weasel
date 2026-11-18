@@ -1,9 +1,6 @@
 import type { PrefCondition } from './condition';
+import type { Grade } from '@weasel-js/registry';
 import type { PrefBase } from './schema';
-
-/** How serious pressing an action is: `danger` draws it as destructive. The same values as `Grade` in
- *  `@weasel-js/theme`, which this package, a dependency of core, cannot depend on. */
-export type PrefGrade = 'info' | 'success' | 'warn' | 'danger';
 
 /** What a {@link PrefAction}'s `run` is told. */
 export interface PrefActionContext {
@@ -37,7 +34,7 @@ export interface PrefAction extends PrefBase<'action', undefined> {
    *  its tooltip. Unset: a button in a row, an icon in a bar. */
   control?: PrefActionControl;
   /** How serious pressing it is: `'danger'` for one that destroys something, as a "Clear all" does. */
-  grade?: PrefGrade;
+  grade?: Grade;
   /** The keys that fire it, as the tooltip and a menu's row show them (`⌘⌫`). Shown only: binding them is the
    *  host's. Unset: the registered action's, for a leaf naming an `action`. */
   shortcut?: string;

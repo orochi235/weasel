@@ -1,5 +1,6 @@
 // The attributes the schema editor offers, per kind, as the leaves that edit them.
 
+import { GRADES } from '@weasel-js/registry';
 import type { PrefKind, PrefLeaf } from '../index';
 
 /** One attribute of a kind, as the leaf that edits it. `required` keeps it on a leaf when it is emptied, and seeds
@@ -84,7 +85,7 @@ export const KIND_ATTRS: Record<PrefKind, KindAttrs> = {
     action: symbol('Action', 'The registered action its button fires, as id or id:variant. It fires this instead of any code the pref carries.'),
     label: text('Button', 'The text on its button. Unset: its name.'),
     control: control(['button', 'icon']),
-    grade: choice('Grade', 'How serious pressing it is. danger draws it red, for one that destroys something.', ['info', 'success', 'warn', 'danger']),
+    grade: choice('Grade', 'How serious pressing it is. danger draws it red, for one that destroys something.', GRADES),
     shortcut: text('Shortcut', 'The keys that fire it, as its tooltip shows them. Shown only: the app binds them. Unset: the registered action\'s.'),
     activeIf: condition('Pressed if', 'Drawn pressed while this condition on other prefs holds. None: as the registered action says, or never.'),
   },

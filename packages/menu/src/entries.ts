@@ -1,9 +1,6 @@
 import type { ShortcutInput } from '@weasel-js/gestures';
 import type { Display, Endless, InfinityText, UnitTable } from '@weasel-js/quantity';
-
-/** How serious a row is, as `@weasel-js/theme`'s `Grade`: `'danger'` for one that destroys something. A
- *  renderer draws a row in its grade's color. */
-export type MenuGrade = 'info' | 'success' | 'warn' | 'danger';
+import type { Grade } from '@weasel-js/registry';
 
 /** A row that runs something when chosen. */
 export interface MenuItemEntry {
@@ -20,7 +17,8 @@ export interface MenuItemEntry {
   disabledReason?: string;
   /** What the row does, in a sentence: a renderer shows it as a hint. */
   description?: string;
-  grade?: MenuGrade;
+  /** How serious the row is: `'danger'` for one that destroys something. A renderer draws it in its grade's color. */
+  grade?: Grade;
   /** `undefined` for a row with no on/off state. */
   checked?: boolean;
   /** A checked row that is one of a set held by exactly one, as an enum's options are: read as a radio row. */
@@ -53,7 +51,8 @@ export interface MenuSubmenuEntry {
   disabledReason?: string;
   /** What the row's submenu is for, in a sentence: a renderer shows it as a hint. */
   description?: string;
-  grade?: MenuGrade;
+  /** How serious the row is: `'danger'` for one that destroys something. A renderer draws it in its grade's color. */
+  grade?: Grade;
   /** Letter that opens this row from the keyboard, compared ignoring case. */
   access?: string;
   entries: readonly MenuEntry[];

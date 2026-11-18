@@ -21,7 +21,7 @@ export {
   visiblePrefSubtree,
 } from './helpers';
 export { prefClampNumber, prefBoundedNumber, type PrefBoundAt, type PrefBoundReader } from './bounds';
-export type { PrefAction, PrefActionContext, PrefActionControl, PrefActions, PrefGrade } from './action';
+export type { PrefAction, PrefActionContext, PrefActionControl, PrefActions } from './action';
 export {
   isPrefCondition,
   mapPrefConditionPaths,
