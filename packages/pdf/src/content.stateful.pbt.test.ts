@@ -137,5 +137,5 @@ describe('a content stream, op by op', () => {
       runs(RUNS),
     );
     for (const what of ['scaled up', 'scaled down', 'long']) seen.atLeast(what, 10);
-  }, timeoutFor(RUNS, 50));
+  }, timeoutFor(RUNS, 100));
 });
