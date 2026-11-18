@@ -29,7 +29,7 @@ test.afterEach(() => {
 
 test('renaming a pref updates the tree, the preview and the literal, and undoes in one step', async ({ page }) => {
   await row(page, /^Grid density/).click();
-  const name = attrs(page).getByRole('textbox', { name: 'Name' });
+  const name = attrs(page).getByRole('textbox', { name: 'Name', exact: true });
   await name.fill('Grid spacing');
   await expect(row(page, /^Grid spacing/)).toBeVisible();
   await expect(preview(page).getByText('Grid spacing', { exact: false }).first()).toBeVisible();
@@ -60,19 +60,19 @@ test('Add pref asks for a name, a key and a kind, and lands the pref after the s
 });
 
 test('Remove takes the pref out and selects the row after it', async ({ page }) => {
-  await row(page, /^Snap to grid/).click();
+  await row(page, /^Accent every/).click();
   await tool(page, 'Remove').click();
-  await expect(row(page, /^Snap to grid/)).toHaveCount(0);
-  await expect(row(page, /^Show path direction/)).toHaveAttribute('aria-selected', 'true');
+  await expect(row(page, /^Accent every/)).toHaveCount(0);
+  await expect(row(page, /^Snap to grid/)).toHaveAttribute('aria-selected', 'true');
   await tool(page, 'Undo').click();
-  await expect(row(page, /^Snap to grid/)).toBeVisible();
+  await expect(row(page, /^Accent every/)).toBeVisible();
 });
 
 test('Delete removes the pref and the selection lands where focus does', async ({ page }) => {
-  await row(page, /^Snap to grid/).click();
+  await row(page, /^Accent every/).click();
   await page.keyboard.press('Delete');
-  await expect(row(page, /^Snap to grid/)).toHaveCount(0);
-  const next = row(page, /^Show path direction/);
+  await expect(row(page, /^Accent every/)).toHaveCount(0);
+  const next = row(page, /^Snap to grid/);
   await expect(next).toHaveAttribute('aria-selected', 'true');
   await expect(next).toBeFocused();
 });
@@ -92,7 +92,7 @@ test('arrow keys walk the tree and the attributes follow', async ({ page }) => {
   await row(page, /^Show grid/).click();
   await page.keyboard.press('ArrowDown');
   await expect(row(page, /^Grid density/)).toHaveAttribute('aria-selected', 'true');
-  await expect(attrs(page).getByRole('textbox', { name: 'Name' })).toHaveValue('Grid density');
+  await expect(attrs(page).getByRole('textbox', { name: 'Name', exact: true })).toHaveValue('Grid density');
   await page.keyboard.press('Shift+ArrowDown');
   await expect(tree(page).locator('[role=treeitem][aria-selected=true]')).toHaveCount(2);
 });
@@ -109,7 +109,7 @@ for (const asset of ['rect', 'Arrange', 'Menu bar', 'Selection']) {
     await page.getByRole('listbox', { name: 'Assets' }).getByRole('option', { name: asset, exact: true }).click();
     await expect.poll(() => tree(page).getByRole('treeitem').count()).toBeGreaterThan(0);
     await tree(page).getByRole('treeitem').first().click();
-    await expect(attrs(page).getByRole('textbox', { name: 'Name' })).toBeVisible();
+    await expect(attrs(page).getByRole('textbox', { name: 'Name', exact: true })).toBeVisible();
   });
 }
 
@@ -118,9 +118,10 @@ test('in a narrower window the panes give way rather than run off the edge', asy
   const editor = page.getByRole('group', { name: 'Schema tools' }).locator('..');
   await expect.poll(() => editor.evaluate((el) => el.scrollWidth - el.clientWidth)).toBe(0);
   await expect(tool(page, 'Preferences')).toBeInViewport({ ratio: 1 });
+  await preview(page).getByRole('button', { name: 'View', exact: true }).click();
   // The preview's rows stack once two across would not fit.
-  const [a, b] = await Promise.all(['Right sidebar width', 'Left sidebar width'].map((name) =>
-    preview(page).getByRole('spinbutton', { name }).or(preview(page).getByRole('textbox', { name })).first().boundingBox()));
+  const [a, b] = await Promise.all(['Grid density', 'Accent every'].map((name) =>
+    preview(page).getByLabel(name, { exact: true }).first().boundingBox()));
   expect(a!.y + a!.height <= b!.y || b!.x >= a!.x + a!.width).toBe(true);
 });
 

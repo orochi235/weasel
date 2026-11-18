@@ -189,3 +189,8 @@ jobs:
           npm run build:draw
           npm run build:chart
           npm run build:forge
+      # draw's Playwright scenarios against a dev server of its own. CI is set for the fleet's
+      # copy of this step too, so it never reuses a server another tree left on the port.
+      - run: npm run test:e2e:draw
+        env:
+          CI: 'true'

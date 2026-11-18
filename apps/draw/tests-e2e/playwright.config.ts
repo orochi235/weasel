@@ -6,8 +6,8 @@ import ports from '../../../scripts/dev-ports.json' with { type: 'json' };
 const here = dirname(fileURLToPath(import.meta.url));
 const repoRoot = resolve(here, '../../..');
 
-// Manual-run e2e suite for WeaselDraw. Not part of `npm test` or
-// `prepublishOnly`; invoke via `npm run test:e2e:draw`. `DRAW_E2E_URL` aims it
+// WeaselDraw's e2e suite, `npm run test:e2e:draw`. Not part of `npm test`; ci.yml
+// runs it after the build, and so `test:fleet:postbuild` does. `DRAW_E2E_URL` aims it
 // at a draw server already running, such as one `npm run dev:fleet` serves.
 const remote = process.env.DRAW_E2E_URL;
 
