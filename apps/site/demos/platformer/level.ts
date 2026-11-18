@@ -90,6 +90,12 @@ export function tileAt(level: Level, cx: number, cy: number): number {
   return level.tiles[cy * level.cols + cx];
 }
 
+/** A tile no body passes through, from any side. */
+export const blocksMotion = (t: number): boolean => t === SOLID || t === QUESTION;
+
+/** A tile a body can stand on: a blocking one or a one-way platform. */
+export const standable = (t: number): boolean => blocksMotion(t) || t === ONEWAY;
+
 /** World x/y → tile column/row. */
 export const toCol = (x: number): number => Math.floor(x / TILE);
 export const toRow = (y: number): number => Math.floor(y / TILE);

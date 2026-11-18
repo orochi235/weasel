@@ -1,5 +1,5 @@
 // apps/site/demos/platformer/physics.ts
-import { ONEWAY, QUESTION, SOLID, SPIKE, TILE, tileAt, toCol, toRow, type Level, type Vec2 } from './level';
+import { blocksMotion, ONEWAY, QUESTION, SPIKE, TILE, tileAt, toCol, toRow, type Level, type Vec2 } from './level';
 
 /** Fixed simulation step, in seconds. The render loop accumulates into it. */
 export const STEP = 1 / 120;
@@ -88,8 +88,6 @@ const left = (b: Body) => b.x - b.width / 2;
 const right = (b: Body) => b.x + b.width / 2;
 const top = (b: Body) => b.y - b.height / 2;
 const bottom = (b: Body) => b.y + b.height / 2;
-
-const blocksMotion = (t: number): boolean => t === SOLID || t === QUESTION;
 
 /** Push the body out of solid tiles along x. Mutates. */
 function resolveX(b: Body, level: Level): void {

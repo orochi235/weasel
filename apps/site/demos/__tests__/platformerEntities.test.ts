@@ -51,6 +51,25 @@ describe('stepEnemy', () => {
     expect(reversed).toBe(true);
   });
 
+  it('walks along a one-way platform', () => {
+    const PLATFORM = parseLevel(['.......', '.......', '.=====.', '.......']);
+    let e = createEnemies([{ x: 3.5 * TILE, y: 1.5 * TILE }])[0];
+    const startX = e.x;
+    for (let i = 0; i < 30; i++) e = stepEnemy(e, PLATFORM, 1 / 60);
+    expect(e.x).not.toBeCloseTo(startX, 3);
+  });
+
+  it('turns around at a ? block, which stops the player too', () => {
+    const BOXED = parseLevel(['.....', '?...?', '#####']);
+    let e = createEnemies([{ x: 2.5 * TILE, y: 1.5 * TILE }])[0];
+    e = { ...e, vx: 40 };
+    for (let i = 0; i < 600; i++) {
+      e = stepEnemy(e, BOXED, 1 / 60);
+      expect(e.x + ENEMY_W / 2).toBeLessThanOrEqual(4 * TILE + 1);
+      expect(e.x - ENEMY_W / 2).toBeGreaterThanOrEqual(TILE - 1);
+    }
+  });
+
   it('advances its animation phase', () => {
     let e = createEnemies([{ x: 3.5 * TILE, y: 1.5 * TILE }])[0];
     const start = e.phase;

@@ -1,5 +1,5 @@
 // apps/site/demos/platformer/entities.ts
-import { SOLID, TILE, tileAt, toCol, toRow, type Level, type Vec2 } from './level';
+import { blocksMotion, standable, TILE, tileAt, toCol, toRow, type Level, type Vec2 } from './level';
 import type { Body } from './physics';
 
 export const ENEMY_W = 18;
@@ -50,8 +50,9 @@ export const createCoins = (at: Vec2[]): Coin[] => at.map((p) => ({ x: p.x, y: p
 export function stepEnemy(e: Enemy, level: Level, dt: number): Enemy {
   const nextX = e.x + e.vx * dt;
   const ahead = e.vx > 0 ? nextX + ENEMY_W / 2 : nextX - ENEMY_W / 2;
-  const wall = tileAt(level, toCol(ahead), toRow(e.y)) === SOLID;
-  const floorAhead = tileAt(level, toCol(ahead), toRow(e.y) + 1) === SOLID;
+  // The same tiles that stop and hold the player stop and hold a walker.
+  const wall = blocksMotion(tileAt(level, toCol(ahead), toRow(e.y)));
+  const floorAhead = standable(tileAt(level, toCol(ahead), toRow(e.y) + 1));
   if (wall || !floorAhead) {
     return { ...e, vx: -e.vx, phase: e.phase + dt };
   }
