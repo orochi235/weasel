@@ -21,7 +21,8 @@ This directory binds that model to a labkit trial and draws it.
 | `useLensReport.ts` | Tells `onLens` the shown lens, once per change in value |
 | `useLensDamage.ts` | The `onLens` a loupe reports through, dirtying the tiles a hollow lens moves across |
 | `LoupeGestures.tsx` | Registers `@weasel-js/loupe`'s actions over that input, and mounts a dispatcher on the host when no camera has one there |
-| `TrialLoupe.tsx` | Finds its host and the trial's switch, picks the painter, mounts the lens |
+| `TrialLoupe.tsx` | Finds its host and the trial's switch, mounts the gestures and the lens |
+| `LoupePainter.tsx` | Picks the one painter a resolved loupe calls for |
 | `LoupeBubble.tsx` | The circle or square clip, positioned on the lens's center |
 | `CanvasLoupe.tsx` | Painter for a `<CanvasStack>` |
 | `canvasLens.ts` | That painter's geometry and drawing, with no React in it |
