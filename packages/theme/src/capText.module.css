@@ -1,0 +1,5 @@
+/* Text whose box runs from its cap height down to its baseline. A control that centers its label centers this box,
+ * so the capitals sit on the control's middle whatever the face's ascent and descent. Compose it; don't restate it. */
+.capText {
+  text-box: trim-both cap alphabetic;
+}
