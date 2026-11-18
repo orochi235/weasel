@@ -186,15 +186,18 @@ export function buttonFaceOf(props: ButtonProps): ButtonFace<ReactNode> {
     : { size, label: children === undefined ? undefined : nodeText(children), leadingIcon, trailingIcon, loading };
 }
 
+/** The slot before a label: it hands the button the label's baseline, as `measureButton` gives it. */
+const leadSlot = (face: ButtonFace<ReactNode>) => (face.label === undefined ? s.iconSlot : `${s.iconSlot} ${s.lead}`);
+
 /** One part of a button as the DOM draws it: a slot `Button.module.css` lays out from the tokens `measureButton`
  *  reads. */
 function ButtonPartSlot(
   { part, face, label }: { part: ButtonPart; face: ButtonFace<ReactNode>; label: ReactNode },
 ): ReactNode {
   switch (part) {
-    case 'spinner': return face.iconOnly ? <Spinner /> : <span className={s.iconSlot}><Spinner /></span>;
+    case 'spinner': return face.iconOnly ? <Spinner /> : <span className={leadSlot(face)}><Spinner /></span>;
     case 'icon': return <span className={s.iconSlot}>{face.icon}</span>;
-    case 'leading': return <span className={s.iconSlot}>{face.leadingIcon}</span>;
+    case 'leading': return <span className={leadSlot(face)}>{face.leadingIcon}</span>;
     case 'trailing': return <span className={s.iconSlot}>{face.trailingIcon}</span>;
     case 'label': return <span className={s.label}>{label}</span>;
   }

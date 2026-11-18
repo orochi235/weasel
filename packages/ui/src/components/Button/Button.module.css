@@ -311,6 +311,10 @@
 .size_sm .iconSlot > svg { width: var(--wzl-button-icon-size, 12px); height: var(--wzl-button-icon-size, 12px); }
 .size_md .iconSlot > svg { width: var(--wzl-button-icon-size, 14px); height: var(--wzl-button-icon-size, 14px); }
 
+/* A row takes a button's baseline from its first slot, and a glyph has none, so a glyph before the label would hand
+   the row its bottom edge. A zero-width character set as the label is gives the slot the label's baseline. */
+.lead::before { content: '\200b' / ''; }
+
 .label { display: inline-block; }
 
 /* ---------- Spinner ---------- */
