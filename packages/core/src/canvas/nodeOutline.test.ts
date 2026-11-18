@@ -26,13 +26,15 @@ function gemKind() {
   let cut = 0;
   let built = 0;
   const seen: unknown[] = [];
+  const poses: unknown[] = [];
   const entry: NodeShapeEntry = {
     id: 'test:gem',
     matches: (n) => isGem(n.data),
     paint: () => [],
     silhouette: () => { built++; return diamond; },
-    outline: (_n, _p, ctx): NodeOutline => {
+    outline: (_n, pose, ctx): NodeOutline => {
       seen.push(ctx?.inherited);
+      poses.push(pose);
       return {
         stroked: false,
         path: () => diamond,
@@ -46,7 +48,7 @@ function gemKind() {
     geometryGeneration: () => cut,
     effectItems: () => [ITEM],
   };
-  return { entry, seen, recut: () => { cut++; }, built: () => built };
+  return { entry, seen, poses, recut: () => { cut++; }, built: () => built };
 }
 
 function sceneWith(entry: NodeShapeEntry) {
@@ -84,6 +86,15 @@ describe('NodeShapeEntry.outline', () => {
     add('g', { gem: { facets: 8 }, fill: 'inherit' }, { parent: 'box' });
     sceneNodeOutline(scene, 'g');
     expect(gem.seen.at(-1)).toMatchObject({ fill });
+  });
+
+  it('asks the kind at the node\'s world pose, under a container that defines its frame', () => {
+    const gem = gemKind();
+    const { scene, add } = sceneWith(gem.entry);
+    scene.add({ id: asNodeId('page'), kind: 'group', layer: 'default', pose: { x: 40, y: 30, width: 200, height: 200 }, data: {} });
+    add('g', { gem: { facets: 8 } }, { parent: 'page' });
+    sceneNodeOutline(scene, 'g');
+    expect(gem.poses.at(-1)).toMatchObject({ x: 40, y: 30, width: 100, height: 100 });
   });
 });
 
