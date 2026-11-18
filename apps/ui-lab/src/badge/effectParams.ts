@@ -1,8 +1,8 @@
 import { type ConfigShape, f } from '@weasel-js/labkit';
 import type { BadgeEffect } from '@weasel-js/ui/components/Badge';
-import { head, LIGHT_FROM, num } from './params';
+import { head, LIGHT_FROM, num, themeColor } from './params';
 
-/** Each effect's params, at the defaults a new effect starts from. */
+/** Each effect's params, at the defaults the effect draws with, which a new effect starts from. */
 export const EFFECT_PARAMS: Record<BadgeEffect, ConfigShape> = {
   spikes: {
     count: num(44, 4, 96, 1),
@@ -12,6 +12,7 @@ export const EFFECT_PARAMS: Record<BadgeEffect, ConfigShape> = {
     horzScale: num(1, 0, 3, 0.05),
     diagonalScale: num(0.5, 0, 3, 0.05),
     irregularity: num(0, 0, 1, 0.05),
+    cornerCompensation: num(1, 0, 1, 0.05),
   },
   puffs: {
     bumpWidth: num(18, 4, 50, 1),
@@ -24,8 +25,8 @@ export const EFFECT_PARAMS: Record<BadgeEffect, ConfigShape> = {
     irregularity: num(0, 0, 1, 0.05),
   },
   scallops: {
-    scallopRadius: num(5, 1, 12, 0.5),
-    scallopSpacing: num(12, 4, 30, 1),
+    scallopRadius: num(4, 1, 12, 0.5),
+    scallopSpacing: num(10, 4, 30, 1),
     irregularity: num(0, 0, 1, 0.05),
   },
   bevel: {
@@ -61,12 +62,13 @@ export const EFFECT_PARAMS: Record<BadgeEffect, ConfigShape> = {
   },
   outline: {
     width: num(1, 0, 8, 0.25),
-    color: f.color('#7fb069'),
+    ...themeColor('color', '#7fb069'),
     opacity: num(1, 0, 1, 0.02),
     dash: f.string(''),
     blendMode: f.enum('normal', ['normal', 'multiply', 'screen', 'overlay', 'darken', 'lighten', 'color-dodge', 'color-burn', 'difference', 'exclusion', 'hue', 'saturation', 'color', 'luminosity']),
   },
   sunbeams: {
+    color: f.color('#ffffff'),
     count: num(3, 1, 8, 1),
     width: num(18, 2, 60, 1),
     gap: num(8, 0, 40, 1),
@@ -79,6 +81,7 @@ export const EFFECT_PARAMS: Record<BadgeEffect, ConfigShape> = {
     gradientEnd: num(1, 0, 1, 0.02),
   },
   aqua: {
+    ...themeColor('accent', '#4aa3df'),
     __body__: head('Body'),
     topAlpha: num(0.45, 0, 1, 0.02),
     upperAlpha: num(0.7, 0, 1, 0.02),
@@ -97,6 +100,7 @@ export const EFFECT_PARAMS: Record<BadgeEffect, ConfigShape> = {
     rimWidth: num(1, 0, 4, 0.25),
   },
   metal: {
+    accent: f.color('#aab3bd'),
     specularity: num(0.6, 0, 1, 0.02),
     __body__: head('Body'),
     equator: num(50, 15, 85, 1),

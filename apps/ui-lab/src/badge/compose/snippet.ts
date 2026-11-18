@@ -1,6 +1,6 @@
 import { lookAttrs } from '@weasel-js/ui/components/Badge';
 import { EFFECT_PARAMS } from '../effectParams';
-import { isColor, literal } from '../params';
+import { isColor, literal, sentParams } from '../params';
 import { type ComposeConfig, composedBaseParams, composedLabelStyle, composedPadding } from './composeConfig';
 
 const entries = (params: Record<string, unknown>, color: (key: string) => boolean): string =>
@@ -21,7 +21,8 @@ export function composeSnippet({ shape, look, type, padding }: Pick<ComposeConfi
   if (effects.length > 0) {
     lines.push('  effects={[');
     for (const effect of effects) {
-      const params = entries(effect.params, (k) => isColor(EFFECT_PARAMS[effect.type], k));
+      const shape = EFFECT_PARAMS[effect.type];
+      const params = entries(sentParams(shape, effect.params), (k) => isColor(shape, k));
       lines.push(`    { type: ${JSON.stringify(effect.type)}, params: { ${params} } },`);
     }
     lines.push('  ]}');

@@ -52,7 +52,7 @@ describe('composeSnippet', () => {
       shape: {
         ...config.shape,
         effects: [
-          { ...outline!, params: { width: 1, color: '#ff0000', dash: '' } },
+          { ...outline!, params: { width: 1, colorOwn: true, color: '#ff0000', dash: '' } },
           { ...outline!, id: 2, on: false },
         ],
       },
