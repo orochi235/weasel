@@ -1,13 +1,14 @@
 import { useCallback, useMemo, useReducer, useRef, useState } from 'react';
 import { useKitSettings, useLatest } from '@weasel-js/react';
-import { commitOps, createDeleteOp, defineTool, pointSnap, resolveEditablePathOf, commitSelectionFrom, snapMods } from '@weasel-js/core';
+import { commitOps, createDeleteOp, defineTool, pointSnap, resolveEditablePathOf, commitSelectionFrom } from '@weasel-js/core';
 import type { ModifierState, Op, Tool } from '@weasel-js/core';
 import type { Action, ToolOptionShare } from '@weasel-js/routing';
 import { ActionDisabledReason, defineAction } from '@weasel-js/routing';
 import type { ActionDeps, InvocationCtx } from '@weasel-js/routing';
-import { pxExtent, withinPxRadius, nearestPathAnchor, reverseAnchors, type PathAnchorHit } from '@weasel-js/geom';
+import { withinPxRadius, reverseAnchors, type PathAnchorHit } from '@weasel-js/geom';
 import { boundsOfPath, type PolygonPath, anchorsToPath, editAnchorSetTracked, pathToAnchors, worldCoords } from '@weasel-js/geom';
 import { createPenPreviewLayer, penReachOf } from './penPreviewLayer';
+import { openEndNear, placeAt, withinCloseRadius, type PenPlacement } from './penTargets';
 import { PEN_HANDLE_ROLES, pullHandle } from './penHandle';
 import { cursorFor } from '@weasel-js/cursor';
 import { icon } from '../icons.gen';
@@ -262,20 +263,11 @@ export function usePenTool(
     return true;
   }, [optsRef]);
 
-  /** Where an anchor pressed at `(x, y)` lands: on an open subpath's end
-   *  within the close-hit radius of the press, which `hit` names, else
-   *  wherever the snap session puts it. */
-  const placeAt = useCallback((deps: ActionDeps, x: number, y: number, mods: ModifierState): { x: number; y: number; hit: PathAnchorHit | null } => {
-    const hit = openEndNear(deps, x, y, penReachOf(optsRef.current).close);
-    if (hit) return { x: hit.x, y: hit.y, hit };
-    const last = scratchRef.current!.current?.anchors.at(-1);
-    return { ...snaps.place(deps.snap, { x, y }, snapMods({ modifiers: mods }), last).point, hit: null };
-  }, [snaps, optsRef]);
+  const placeAnchorAt = useCallback((deps: ActionDeps, x: number, y: number, mods: ModifierState): PenPlacement =>
+    placeAt(deps, snaps, x, y, mods, penReachOf(optsRef.current).close, scratchRef.current!.current?.anchors.at(-1)), [snaps, optsRef]);
 
-  /** Is a world point within the close-hit radius of `(ax, ay)`? Measured as a
-   *  screen-space circle, so the zone stays round under non-uniform zoom. */
-  const withinCloseRadius = useCallback((deps: ActionDeps, ax: number, ay: number, wx: number, wy: number): boolean =>
-    withinPxRadius(ax - wx, ay - wy, penReachOf(optsRef.current).close, viewScale(deps)), [optsRef]);
+  const closesAt = useCallback((deps: ActionDeps, ax: number, ay: number, wx: number, wy: number): boolean =>
+    withinCloseRadius(deps, ax, ay, wx, wy, penReachOf(optsRef.current).close), [optsRef]);
 
   // The rubber band and the close hint trail the `pointer` dep while a path is
   // in progress. `followed` is the deps last followed through.
@@ -340,14 +332,14 @@ export function usePenTool(
               trail.update(deps);
               return;
             }
-            const { x: wx, y: wy, hit } = placeAt(deps, press.x, press.y, p.mods ?? NO_KEYS);
+            const { x: wx, y: wy, hit } = placeAnchorAt(deps, press.x, press.y, p.mods ?? NO_KEYS);
             const scratch = s();
 
             // Close-on-first-anchor (>= 3 anchors). With `autoCommitOnClose`
             // off the closed subpath stays in scratch for compound-path builds.
             if (scratch.current && scratch.current.anchors.length >= 3) {
               const first = scratch.current.anchors[0];
-              if (withinCloseRadius(deps, first.x, first.y, wx, wy)) {
+              if (closesAt(deps, first.x, first.y, wx, wy)) {
                 scratch.current.closed = true;
                 scratch.finishedSubpaths.push(scratch.current);
                 scratch.current = null;
@@ -417,7 +409,7 @@ export function usePenTool(
             // the handle is set.
             let joinHit: PathAnchorHit | null = null;
             if (!pickedUp) {
-              const { x: ax, y: ay, hit } = placeAt(ctx.deps, origin.x, origin.y, ctx.modifiers);
+              const { x: ax, y: ay, hit } = placeAnchorAt(ctx.deps, origin.x, origin.y, ctx.modifiers);
               if (joinable(scratch, ctx.deps, hit)) joinHit = hit;
               scratch.current ??= startSubpath(scratch);
               scratch.current.anchors.push({ x: ax, y: ay });
@@ -499,7 +491,7 @@ export function usePenTool(
         },
       },
     ];
-  }, [commit, placeAt, withinCloseRadius, pickUpEndpoint, joinable, commitJoin, optsRef, trail, forceRender]);
+  }, [commit, placeAnchorAt, closesAt, pickUpEndpoint, joinable, commitJoin, optsRef, trail, forceRender]);
 
   return useMemo(() => {
     return defineTool({
@@ -549,39 +541,6 @@ export function usePenTool(
 
 
 const NO_KEYS: ModifierState = { alt: false, ctrl: false, meta: false, shift: false };
-
-/** The end anchor of an open subpath within `px` screen pixels of `(wx, wy)`,
- *  nearest first; null when there is none. */
-function openEndNear(deps: ActionDeps, wx: number, wy: number, px: number): PathAnchorHit | null {
-  return nearestPathAnchor(pathsNear(deps, wx, wy, px), { x: wx, y: wy }, px, viewScale(deps), (h) => h.end !== null);
-}
-
-function viewScale(deps: ActionDeps): { x: number; y: number } {
-  return deps.view?.get().scale ?? { x: 1, y: 1 };
-}
-
-/** Existing editable paths, world coords, with ink within `px` screen
- *  pixels of `(wx, wy)` — front-to-back, as the area query returns them.
- *  Empty when the host publishes no `areaSelect` or `editAnchors` dep. */
-function pathsNear(
-  deps: ActionDeps,
-  wx: number,
-  wy: number,
-  px: number,
-): Array<{ id: string; path: PolygonPath }> {
-  const area = deps.areaSelect;
-  const edit = deps.editAnchors;
-  if (!area || !edit) return [];
-  const view = deps.view;
-  const e = pxExtent(px, viewScale(deps));
-  const ids = area.hitTestArea({ x: wx - e.x, y: wy - e.y, width: 2 * e.x, height: 2 * e.y }, view);
-  const out: Array<{ id: string; path: PolygonPath }> = [];
-  for (const id of ids) {
-    const path = edit.getEditablePath(id) as PolygonPath | null;
-    if (path?.kind === 'polygon') out.push({ id, path });
-  }
-  return out;
-}
 
 function samePath(a: PolygonPath, b: PolygonPath): boolean {
   const ac = worldCoords(a), bc = worldCoords(b);
