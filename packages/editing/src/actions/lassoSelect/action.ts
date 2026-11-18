@@ -24,11 +24,12 @@ import type { LassoSelectDep, ViewApi, LassoHitMode, LassoSelectAdapter, Gesture
 import type { Op } from '@weasel-js/core';
 import { LASSO_VERTICES } from './behaviors/selectFromLasso';
 import type {} from '@weasel-js/core';
+import type { Rect } from '@weasel-js/geom';
 
 /** Compute AABB of a polygon (for fallback hit-test when hitTestLasso is absent). */
 function polygonAabb(
   pts: Point2[],
-): { x: number; y: number; width: number; height: number } | null {
+): Rect | null {
   if (pts.length === 0) return null;
   let minX = pts[0].x, minY = pts[0].y, maxX = pts[0].x, maxY = pts[0].y;
   for (const p of pts) {

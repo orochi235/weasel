@@ -6,6 +6,7 @@ import type { InsertFrame } from './session';
 import { minSizeOf, type MinSize } from '@weasel-js/core';
 import { insertStyleOf, type InsertStyle } from './style';
 import type { InsertParams } from '@weasel-js/core';
+import type { Rect } from '@weasel-js/geom';
 
 /** The node kind a binding's resolved params ask for. */
 export function insertKind(resolved: Readonly<Partial<InsertParams>> | undefined): string {
@@ -55,7 +56,7 @@ function reachMinimum(
 const NO_MINIMUM = new Set(['line', 'pencil']);
 
 export interface InsertShape {
-  bounds: { x: number; y: number; width: number; height: number };
+  bounds: Rect;
   extras: InsertExtras;
   /** Where the drag started, after the endpoints were resolved. */
   start: InsertPoint;

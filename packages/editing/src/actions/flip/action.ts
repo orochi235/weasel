@@ -1,6 +1,6 @@
 import type { NodeId, Scene, OperandsDep, Bounds, Op, PoseDescriptor, RectPose } from '@weasel-js/core';
 import { shapeSources, uncarried, withoutPageStructure, createSetPoseOp, poseDescriptorOf, unionAabb, drawnBoxes, type DrawnBoxes, isNoInkExtents, scenePoseFrame, type PoseFrame, actionReferenceSources, resolveSpatialReference, sameValue, finiteThroughout, defaultCommitAdapter, operandMethods, createTransformCommit, requiresOperands, createGeometryDataOp, type GeometryProjection } from '@weasel-js/core';
-import { multiply, rotate, translate, type Affine } from '@weasel-js/geom';
+import { multiply, rotate, translate, type Affine, type Rect } from '@weasel-js/geom';
 import {
   flipPoseAboutBounds,
   flipPoseViaDescriptor,
@@ -27,7 +27,7 @@ function localMirror(
   axis: FlipAxis,
   frame: PoseFrame<unknown>,
   id: Parameters<PoseFrame<unknown>['local']>[0],
-  pivotWorld: { x: number; y: number; width: number; height: number },
+  pivotWorld: Rect,
 ): Affine | null {
   const at = frame.local(id, {
     x: pivotWorld.x + pivotWorld.width / 2,
