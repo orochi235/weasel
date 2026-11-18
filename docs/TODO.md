@@ -256,11 +256,6 @@ Owner tags, after the priority (2026-10-26):
 
 ## Scene, adapters & layout
 
-- **(P3) [agent] `prefConditionFlow` still hands `diagramScene` its boxes as `groups`.** `DiagramData.groups`
-  became `clusters` (2026-11-17), but `ConditionFlow` in `packages/prefs/src/edit/conditionFlow.ts` was held
-  back while another agent worked in `packages/prefs`, so `apps/site/demos/PrefConditionDiagramDemo.tsx`
-  renames the field on the way in. Closes when `ConditionFlow` names it `clusters` and the demo passes the
-  flow to `diagramScene` as it is.
 - **(P3) [maintainer] Whether the effect pipeline's `groups` become clusters too.** `EffectGroup` and
   `EffectPipeline.groups` (`packages/diagram/src/effect/types.ts`) are the same membership box the diagram's
   clusters are, but the effect editor also calls the act of making one "Group" (`groupStages`,

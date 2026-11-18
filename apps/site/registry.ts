@@ -1516,7 +1516,7 @@ const DEMO_META: DemoMeta[] = [
     id: 'pref-condition-diagram',
     title: 'Condition as a diagram',
     package: 'prefs',
-    description: 'A `PrefCondition`, the `showIf` or `enableIf` of a pref, edited in `PrefConditionEditor` and drawn as a flow by `prefConditionFlow`, whose boxes, paths, and groups are the data `diagramScene` takes. The condition holds where a path runs from start to the last box through tests that hold: the rows of an all-of stand in a line, the rows of an any-of side by side, and a `not` is a group round what it wraps.',
+    description: 'A `PrefCondition`, the `showIf` or `enableIf` of a pref, edited in `PrefConditionEditor` and drawn as a flow by `prefConditionFlow`, whose boxes, paths, and clusters are the data `diagramScene` takes. The condition holds where a path runs from start to the last box through tests that hold: the rows of an all-of stand in a line, the rows of an any-of side by side, and a `not` is a cluster round what it wraps.',
     hint: 'Change a row, or add one, and the diagram follows. Add an any-of group and its rows fork the path. Drag to pan, scroll to zoom.',
     load: () => import('./demos/PrefConditionDiagramDemo').then((m) => m.PrefConditionDiagramDemo),
     path: 'apps/site/demos/PrefConditionDiagramDemo.tsx',

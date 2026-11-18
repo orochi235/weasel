@@ -39,8 +39,8 @@ const START: PrefCondition = {
 export function PrefConditionDiagramDemo() {
   const [condition, setCondition] = useState<PrefCondition | undefined>(START);
   const specs = useMemo(() => {
-    const { groups, ...flow } = prefConditionFlow(condition, SCHEMA, { holds: 'shown' });
-    return diagramScene({ ...flow, clusters: groups }, { font: FONT, layoutOptions: { direction: 'right' } });
+    const flow = prefConditionFlow(condition, SCHEMA, { holds: 'shown' });
+    return diagramScene(flow, { font: FONT, layoutOptions: { direction: 'right' } });
   }, [condition]);
   return (
     <div className={s.demo}>

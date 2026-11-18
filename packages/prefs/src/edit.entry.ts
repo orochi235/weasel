@@ -22,7 +22,7 @@ export {
 } from './edit/bundleTree';
 export {
   CONDITION_FLOW_END, CONDITION_FLOW_START, prefConditionFlow, type ConditionFlow, type ConditionFlowEdge,
-  type ConditionFlowGroup, type ConditionFlowNode, type ConditionFlowOptions,
+  type ConditionFlowCluster, type ConditionFlowNode, type ConditionFlowOptions,
 } from './edit/conditionFlow';
 export {
   EMPTY_HOLDS, groupCondition, groupOf, nestedQuantifier, QUANTIFIER_LABEL, rootCondition, rootGroup, rowCondition,
