@@ -236,7 +236,8 @@ export function stepEnding(g: GameRefs, dt: number, hooks: WorldHooks): void {
 /**
  * Consume `frame` seconds of real time as whole fixed steps. `nextInput` is
  * called once per step rather than once per frame, so a jump press is consumed
- * by exactly one step even when a slow frame runs several.
+ * by exactly one step even when a slow frame runs several. The step that decides
+ * the run is the last: the rest of the frame belongs to `stepEnding`.
  */
 export function advanceWorld(
   g: GameRefs,
@@ -245,8 +246,9 @@ export function advanceWorld(
   hooks: WorldHooks,
 ): void {
   g.accumulator += frame;
-  while (g.accumulator >= STEP) {
+  while (g.accumulator >= STEP && g.outcome === 'playing') {
     g.accumulator -= STEP;
     stepWorld(g, nextInput(), hooks);
   }
+  if (g.outcome !== 'playing') g.accumulator = 0;
 }

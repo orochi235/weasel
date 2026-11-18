@@ -2,7 +2,8 @@
 import { describe, it, expect } from 'vitest';
 import { SOLID, TILE, tileAt, toCol, toRow } from '../platformer/level';
 import { WORLD } from '../platformer/worldLevel';
-import { freshGame, NO_HOOKS, stepWorld, type GameRefs } from '../platformer/world';
+import { advanceWorld, freshGame, NO_HOOKS, stepWorld, type GameRefs } from '../platformer/world';
+import { STEP } from '../platformer/physics';
 
 describe('WORLD', () => {
   it('is 80 by 16 tiles', () => {
@@ -50,5 +51,24 @@ describe('stepWorld — damage', () => {
     g.player = { ...g.player, body: { ...g.player.body, y: WORLD.heightPx + 200 } };
     stepWorld(g, idle, NO_HOOKS);
     expect(ows(g)).toHaveLength(1);
+  });
+});
+
+describe('advanceWorld', () => {
+  const idle = { left: false, right: false, jumpHeld: false, jumpPressed: false };
+
+  it('stops stepping at the step that decides the run', () => {
+    const g = freshGame();
+    g.lives = 1;
+    const { x, y } = g.player.body;
+    g.enemies = [{ x, y, vx: 0, alive: true, phase: 0 }];
+    // A coin the player would reach a few steps after the hit.
+    g.coins = [{ x, y: y - 20, taken: false }];
+    const elapsed = g.elapsed;
+    advanceWorld(g, 0.1, () => idle, NO_HOOKS);
+    expect(g.outcome).toBe('lost');
+    expect(g.elapsed).toBeCloseTo(elapsed + STEP, 9);
+    expect(g.score).toBe(0);
+    expect(g.lives).toBe(0);
   });
 });
