@@ -9,6 +9,7 @@
 }
 
 .label {
+  composes: capText from '@weasel-js/theme/capText.module.css';
   color: var(--wzl-fg-subtle);
 }
 
@@ -30,6 +31,8 @@
 
 .bare .label {
   color: inherit;
+  /* Set in a line of text, it keeps the line's box, so it sits on that line like the words around it. */
+  text-box: normal;
 }
 
 .bare:hover:not(:disabled) {

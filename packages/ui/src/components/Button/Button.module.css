@@ -315,7 +315,10 @@
    the row its bottom edge. A zero-width character set as the label is gives the slot the label's baseline. */
 .lead::before { content: '\200b' / ''; }
 
-.label { display: inline-block; }
+.label {
+  composes: capText from '@weasel-js/theme/capText.module.css';
+  display: inline-block;
+}
 
 /* ---------- Spinner ---------- */
 
