@@ -5,7 +5,7 @@ import { createWalk, type Walked } from './walk';
 import { createVersionClock } from './versionClock';
 import { createForks } from './forks';
 import { createRecorder } from './recording';
-import { createJournalInternal, _resumeJournalInternal, _resumedByOwnerInternal, _refuseWhileActiveInternal as refuseWhileActive, type Journal, type BeginJournalOptions } from './journal';
+import { createJournalSlot } from './journalSlot';
 import {
   snapshot,
   type Entry, type HistoryLogger, type SerializedHistory,
@@ -53,7 +53,6 @@ function gotoDepth(n: number, total: number): number {
 export function createHistory(adapter: unknown, options: CreateHistoryOptions = {}): History {
   const undoStack: Entry[] = [];
   const redoStack: Entry[] = [];
-  let activeJournal: Journal | null = null;
   const coalesceWindowMs = options.coalesceWindowMs ?? 0;
   const now = options.now ?? (() => Date.now());
   const historyLimit = Math.max(0, options.historyLimit ?? Infinity);
@@ -61,13 +60,17 @@ export function createHistory(adapter: unknown, options: CreateHistoryOptions = 
   const selection = options.selection;
   const logger = options.debug ?? SILENT;
   const clock = createVersionClock();
+  const journals = createJournalSlot(adapter, {
+    coalesceWindowMs, now, debug: logger,
+    ...(selection ? { selection } : {}),
+  });
 
   const forks = createForks({ undoStack, redoStack, branching: options.branching ?? false, onEvict: options.onEvict, logger });
 
   const applyAllOrNothing = createApplier(adapter, logger);
 
   const { walkTo, readSelection } = createWalk({
-    undoStack, redoStack, selection, applyAllOrNothing, refuse: () => refuseWhileActive(activeJournal),
+    undoStack, redoStack, selection, applyAllOrNothing, refuse: journals.refuse,
   });
 
   const recorder = createRecorder({
@@ -168,25 +171,9 @@ export function createHistory(adapter: unknown, options: CreateHistoryOptions = 
       return out;
     },
     nextEntryId: recorder.nextEntryId,
-    beginJournal(opts: BeginJournalOptions): Journal {
-      refuseWhileActive(activeJournal);
-      // `adapter` is the closure-captured adapter passed to createHistory.
-      // The returned History object's `this` doesn't carry it, so we pass
-      // it through to the factory directly.
-      const j = createJournalInternal(history, adapter, opts, () => { activeJournal = null; }, {
-        coalesceWindowMs, now, debug: logger,
-        ...(selection ? { selection } : {}),
-      });
-      activeJournal = j;
-      return j;
-    },
-    activeJournal: () => (activeJournal?.isActive() ? activeJournal : null),
-    resumeJournal(journal: Journal): void {
-      if (_resumedByOwnerInternal(journal, history)) return;
-      refuseWhileActive(activeJournal, journal);
-      _resumeJournalInternal(journal);
-      activeJournal = journal;
-    },
+    beginJournal: (opts) => journals.begin(history, opts),
+    activeJournal: journals.active,
+    resumeJournal: (journal) => journals.resume(history, journal),
     restore(serialized: SerializedHistory, restoreOptions: RestoreOptions = {}): HistoryRestoreReport {
       const { stacks: next, unresolved } = rebuilt(serialized, customRebuild, restoreOptions, logger);
       undoStack.splice(0, undoStack.length, ...next.undoStack);
