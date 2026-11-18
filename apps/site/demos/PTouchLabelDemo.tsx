@@ -70,21 +70,22 @@ export function PTouchLabelDemo() {
     return () => { live = false; };
   }, [scene, version]);
 
+  // Both buttons put what happened, or what went wrong, on the status line.
+  const report = (job: () => Promise<string | undefined>) => {
+    void job().then((done) => { if (done !== undefined) setStatus(done); }, (err: unknown) => setStatus(String(err)));
+  };
+
   const download = async () => {
     const { bytes, config } = await sceneToLbx({ scene, length: LENGTH, tape: TAPE });
     downloadBlob(new Blob([bytes.slice()], { type: 'application/octet-stream' }), 'label.lbx');
-    setStatus(`wrote ${config.objects.map((o) => o.type).join(', ')}`);
+    return `wrote ${config.objects.map((o) => o.type).join(', ')}`;
   };
 
   const print = async () => {
-    if (!printer) return;
-    try {
-      const image = await renderLabel({ scene, length: LENGTH, tape: TAPE, media: MEDIA });
-      const reply = await printLabel({ printer, image, media: MEDIA, requestDevice: true });
-      setStatus(reply.hasError ? 'the printer reported an error' : 'sent');
-    } catch (err) {
-      setStatus(String(err));
-    }
+    if (!printer) return undefined;
+    const image = await renderLabel({ scene, length: LENGTH, tape: TAPE, media: MEDIA });
+    const reply = await printLabel({ printer, image, media: MEDIA, requestDevice: true });
+    return reply.hasError ? 'the printer reported an error' : 'sent';
   };
 
   return (
@@ -94,8 +95,8 @@ export function PTouchLabelDemo() {
       </DemoStage>
       <canvas ref={preview} className={s.preview} aria-label="Print preview at the printer's dot pitch" />
       <div className="ckd-row">
-        <Button size="sm" onClick={() => void download()}>Download .lbx</Button>
-        <Button size="sm" onClick={() => void print()} disabled={!printer}>Print</Button>
+        <Button size="sm" onClick={() => report(download)}>Download .lbx</Button>
+        <Button size="sm" onClick={() => report(print)} disabled={!printer}>Print</Button>
         <span>{CAN_PRINT ? status : 'printing needs WebUSB or Web Serial'}</span>
       </div>
     </div>

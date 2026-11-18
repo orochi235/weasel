@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useMemo, useRef, useState } from 'react';
 import { solid } from '@weasel-js/paint';
 import { SceneCanvas, WeaselProvider, asNodeId, useScene, ellipsePath, polygonFromPoints, rectPath, viewPreset } from '@weasel-js/core';
 import { pathsPreset } from '@weasel-js/path-tools';
@@ -133,9 +133,14 @@ function ParallaxDemoInner() {
   const [skyPlane] = useState(() => createParallaxPlane(opts('sky', false, 0)));
   const [groundPlane] = useState(() => createParallaxPlane(opts('ground', false, 0)));
 
+  // The planes as last written, so an intro frame and the zoom toggle each
+  // change their own half and keep the other's.
+  const written = useRef({ zoom: false, anchorX: 0 });
+
   // One writer for every plane: the two render-layer planes, and the two
   // scene layers — written untracked, since a frame of an intro is not an edit.
   const apply = (zoom: boolean, anchorX: number) => {
+    written.current = { zoom, anchorX };
     skyPlane.set(opts('sky', zoom, anchorX));
     groundPlane.set(opts('ground', zoom, anchorX));
     scene.untracked(() => {
@@ -146,7 +151,7 @@ function ParallaxDemoInner() {
   const zoomTo = (z: number) => setView({ ...view, scale: { x: z, y: z } });
   const playIntro = () => animator.tween({
     from: INTRO_FROM, to: 0, ms: 1400, easing: 'easeOutCubic',
-    onTick: (x) => apply(zoomParallax, x), cancelKey: 'intro',
+    onTick: (x) => apply(written.current.zoom, x), cancelKey: 'intro',
   });
 
   const [sky, ground] = useMemo(() => [
@@ -175,7 +180,7 @@ function ParallaxDemoInner() {
           reset view
         </Button>
         <ZoomControl zoom={view.scale.x} min={0.5} max={3} onZoomInput={zoomTo} onZoomChange={zoomTo} />
-        <Checkbox isSelected={zoomParallax} onChange={(on) => { setZoomParallax(on); apply(on, 0); }}>
+        <Checkbox isSelected={zoomParallax} onChange={(on) => { setZoomParallax(on); apply(on, written.current.anchorX); }}>
           per-plane zoom
         </Checkbox>
       </div>

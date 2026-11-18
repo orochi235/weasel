@@ -38,8 +38,10 @@ export function PathMotionDemo() {
 
   const ride = () => {
     const motion = pathMotion(TRACK, { orient });
-    const to = motion.at(scene.get(RIDER)!.pose, 1);
-    tweenPose(animator, adapter, { id: RIDER, to, geometry: motion, ms: 2400, easing: easeInOutCubic });
+    // Unoriented, pathMotion keeps the rider's own rotation, which an oriented ride left at the track's end tangent.
+    const from = { ...scene.get(RIDER)!.pose, rotation: 0 };
+    const to = motion.at(from, 1);
+    tweenPose(animator, adapter, { id: RIDER, from, to, geometry: motion, ms: 2400, easing: easeInOutCubic });
   };
 
   return (
