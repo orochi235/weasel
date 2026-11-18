@@ -13,17 +13,10 @@
 import { execFileSync, spawn, spawnSync } from 'node:child_process';
 import { lookup } from 'node:dns/promises';
 import { fileURLToPath } from 'node:url';
-import ports from './dev-ports.json' with { type: 'json' };
+import { FLEET_DEV_APPS } from './lib/fleet-dev-apps.mjs';
 
 const ROOT = fileURLToPath(new URL('..', import.meta.url));
-const APPS = {
-  draw: { config: 'apps/draw/vite.config.ts', port: ports.draw, path: '/weasel/draw/' },
-  forge: { config: 'apps/forge/vite.config.ts', port: ports.forge, path: '/' },
-  site: { config: 'vite.config.ts', port: ports.site, path: '/' },
-  chart: { config: 'apps/chart/vite.config.ts', port: ports.chart, path: '/' },
-  'theme-editor': { config: 'apps/theme-editor/vite.config.ts', port: ports.themeEditor, path: '/' },
-  'ui-lab': { config: 'apps/ui-lab/vite.config.ts', port: ports.uiLab, path: '/weasel/ui-lab/' },
-};
+const APPS = FLEET_DEV_APPS;
 
 const args = process.argv.slice(2);
 const flag = (name) => {
