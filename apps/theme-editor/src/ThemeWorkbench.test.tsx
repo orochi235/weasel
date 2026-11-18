@@ -103,6 +103,14 @@ describe('<ThemeWorkbench>', () => {
       fireEvent.click(screen.getByRole('button', { name: /^Scales/ }));
       expect(screen.getAllByRole('region', { name: / scale$/ }).length).toBeGreaterThan(0);
     });
+
+    it('keeps rendering while a ramp is compared in the preview', () => {
+      renderBench();
+      fireEvent.click(screen.getByRole('button', { name: /^Ramps/ }));
+      fireEvent.click(within(screen.getByRole('region', { name: 'gray ramp' })).getByRole('button', { name: 'Compare in preview' }));
+      breakIt();
+      expect(screen.getByRole('navigation', { name: 'Layers' })).toBeInTheDocument();
+    });
   });
 
   it('reports how many own tokens a pin overrides, and each layer in the rail', () => {

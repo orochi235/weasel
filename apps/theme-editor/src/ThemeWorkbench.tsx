@@ -178,10 +178,11 @@ export function ThemeWorkbench({ api, themes, stored, start, onPick, onSaved, on
     [],
   );
 
-  const generatedTheme = useMemo(
-    () => (focusRamp === null ? null : runtimeTheme(adoptGenerated(draft, lookup, focusRamp), lookup, `draft-${draft.name}-generated`)),
-    [focusRamp, draft, lookup],
-  );
+  // A draft that does not derive has no generated variant to compare.
+  const generatedTheme = useMemo(() => {
+    if (focusRamp === null || error !== null) return null;
+    return runtimeTheme(adoptGenerated(draft, lookup, focusRamp), lookup, `draft-${draft.name}-generated`);
+  }, [focusRamp, draft, lookup, error]);
 
   const themePick = (
     <Select aria-label="Theme" width="fit" options={themes.map((t) => ({ value: t.name, label: t.name }))} selectedKey={stored.name} onSelectionChange={onPick} />
