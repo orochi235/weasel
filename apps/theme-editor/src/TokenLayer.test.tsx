@@ -53,6 +53,15 @@ describe('<TokenLayer>', () => {
     expect(nextDef(onChange).pins?.line).toEqual({ value: '{fg-muted}', type: 'color', alpha: 0.1 });
   });
 
+  it('keeps a number pin a number when it is edited', () => {
+    const def = { ...tiny, pins: { 'dim-x': { value: 0.5, type: 'number' } } } as ThemeDefinition;
+    const onChange = renderLayer('pins', def);
+    const field = screen.getByRole('textbox', { name: 'dim-x value' });
+    fireEvent.change(field, { target: { value: '0.6' } });
+    fireEvent.blur(field);
+    expect(nextDef(onChange).pins?.['dim-x']).toEqual({ value: 0.6, type: 'number' });
+  });
+
   it('writes a font stack back as a list, not as the text of one', () => {
     const def = { ...tiny, pins: { 'font-ui': { value: ['Oswald', 'system-ui'], type: 'fontFamily' } } } as ThemeDefinition;
     const onChange = renderLayer('pins', def);

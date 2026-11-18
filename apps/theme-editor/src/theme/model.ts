@@ -1,5 +1,5 @@
 import { getOwn } from '@weasel-js/registry';
-import { isByAxis, type PinValue, type Theme, type ThemeDefinition, type Varying } from '@weasel-js/theme';
+import { isByAxis, parseTokenValue, type PinValue, type Theme, type ThemeDefinition, type TokenValue, type Varying } from '@weasel-js/theme';
 import {
   bakeChain,
   declaredSteps,
@@ -92,6 +92,10 @@ export function runtimeTheme(def: ThemeDefinition, lookup: Lookup, name: string 
 /** Text typed over `previous`, kept a number when `previous` was one: `4` edited to `8` stays a number, not `'8'`. */
 export const keepNumberness = (raw: string, previous: unknown): string | number =>
   typeof previous === 'number' && raw.trim() !== '' && Number.isFinite(Number(raw)) ? Number(raw) : raw;
+
+/** Text typed over a value of DTCG `type`, in the shape a definition stores: a number stays one, a bezier four numbers. */
+export const tokenValueFromText = (type: string | undefined, raw: string, previous: unknown): TokenValue =>
+  typeof previous === 'number' || type === 'number' ? keepNumberness(raw, 0) : parseTokenValue(type ?? 'string', raw);
 
 function withEntry<T>(record: Readonly<Record<string, T>> | undefined, key: string, value: T): Record<string, T> {
   return { ...record, [key]: value };

@@ -1,11 +1,12 @@
 import { getOwn } from '@weasel-js/registry';
-import { isByAxis, type AxisDefs, type Varying } from '@weasel-js/theme';
+import { isByAxis, serializeTokenValue, type AxisDefs, type Varying } from '@weasel-js/theme';
 import type { SemanticRule } from '@weasel-js/theme/engine';
 import { Button } from '@weasel-js/ui/components/Button';
 import { PropertyField, PropertyGroup, PropertyPanel, PropertyRow } from '@weasel-js/ui/components/Properties';
 import { TokenField } from '@weasel-js/ui/components/TokenField';
 import { useState } from 'react';
 import styles from '../ThemeEditor.module.css';
+import { tokenValueFromText } from '../theme/model';
 import { RULE_KINDS, defaultRule, ruleKind, type SemanticRowView } from '../theme/semantics';
 
 type Ramps = Readonly<Record<string, readonly string[]>>;
@@ -141,7 +142,14 @@ function RuleFields({
       </>
     );
   }
-  return <PropertyField kind="string" label="Value" value={String(rule.value)} onChange={(value) => onChange({ ...rule, value }, 'value')} />;
+  return (
+    <PropertyField
+      kind="string"
+      label="Value"
+      value={serializeTokenValue(rule.type ?? '', rule.value)}
+      onChange={(text) => onChange({ ...rule, value: tokenValueFromText(rule.type, text, rule.value) }, 'value')}
+    />
+  );
 }
 
 export function SemanticDrawer({ name, rule, row, axes, ramps, semantics, issues, onRule, onRevert, onClose }: SemanticDrawerProps) {

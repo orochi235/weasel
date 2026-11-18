@@ -1,11 +1,11 @@
 import { getOwn } from '@weasel-js/registry';
-import { parseTokenValue, type ThemeDefinition } from '@weasel-js/theme';
+import type { ThemeDefinition } from '@weasel-js/theme';
 import type { DeriveResult } from '@weasel-js/theme/engine';
 import { TokenPanel } from '@weasel-js/ui/components/TokenPanel';
 import { useEffect, useRef } from 'react';
 import styles from './ThemeEditor.module.css';
 import { layerEntries } from './theme/entries';
-import { LAYERS, keepNumberness, removePin, setPin, type LayerId } from './theme/model';
+import { LAYERS, keepNumberness, tokenValueFromText, removePin, setPin, type LayerId } from './theme/model';
 
 export interface TokenLayerProps {
   readonly layer: LayerId;
@@ -47,7 +47,7 @@ export function TokenLayer({ layer, draft, result, highlight, onChange }: TokenL
     const token = getOwn(result.tokens, name);
     onChange(
       setPin(draft, name, {
-        value: parseTokenValue(token?.type ?? 'string', value),
+        value: tokenValueFromText(token?.type, value, token?.value),
         type: token?.type,
         ...(token?.alpha === undefined ? {} : { alpha: token.alpha }),
       }),
