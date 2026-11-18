@@ -1,9 +1,10 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import {
   registerFont, getAtlasFont, listAtlasFonts, listFontWeights,
-  fontRegistry, isFontPending, warmFonts,
+  fontRegistry, isFontPending,
   _resetFontRegistryForTests,
 } from './registerFont';
+import { warmFonts } from './warmFonts';
 import { resolveFontVariant } from './resolveFontVariant';
 import { resolveCanvasFallback } from './canvasFallback';
 import { setFontFallbackPolicy, _resetFallbackForTests } from './fallback';

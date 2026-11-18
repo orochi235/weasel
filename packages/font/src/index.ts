@@ -19,13 +19,14 @@ export {
   listFontWeights,
   fontRegistry,
   isFontPending,
-  warmFonts,
 } from './registerFont';
 export { resolveFontVariant, cachedFontVariant } from './resolveFontVariant';
 export { resolveCanvasFallback } from './canvasFallback';
+export { warmFonts } from './warmFonts';
 export type {
-  FontEntry, FontFamilyFaces, FontRequest, ResolveResult, RegisteredFont, RegisterFontOptions,
+  FontEntry, FontFamilyFaces, ResolveResult, RegisteredFont, RegisterFontOptions,
 } from './registerFont';
+export type { FontRequest } from './warmFonts';
 
 export {
   setFontFallbackPolicy,
