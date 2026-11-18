@@ -1,4 +1,4 @@
-import { act, cleanup, screen } from '@testing-library/react';
+import { act, cleanup, fireEvent, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { renderSettled } from '@weasel-js/react/testing/renderSettled';
 import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
@@ -30,7 +30,7 @@ afterEach(() => {
 type Node = {
   id: string; parent?: string;
   pose: { x: number; y: number; width: number; height: number };
-  data: { path?: { coords: ArrayLike<number> }; symmetry?: { glideRows?: boolean } };
+  data: { path?: { coords: ArrayLike<number> }; symmetry?: { glideRows?: boolean; kind?: string } };
 };
 const nodes = () => window.__weaselTest!.getScene().nodes as unknown as Node[];
 const node = (id: string) => nodes().find((n) => n.id === id)!;
@@ -113,6 +113,33 @@ describe('SymmetryLabDemo', () => {
     // A panel write notifies the scene, whose subscriber must not write it again.
     expect(errors).not.toHaveBeenCalledWith('weasel: a subscriber threw', expect.anything());
     errors.mockRestore();
+  });
+
+  it("takes back a drag of the group's center, panel and group together, in one Undo", async () => {
+    const canvas = await mount();
+    const centerX = () => Number((screen.getByRole('spinbutton', { name: /Center x/ }) as HTMLInputElement).value);
+    const centerY = () => Number((screen.getByRole('spinbutton', { name: /Center y/ }) as HTMLInputElement).value);
+    const start = { ...node(GROUP_ID).pose };
+    drag(canvas, [320, 240], [360, 270]);
+    expect(node(GROUP_ID).pose.x - start.x).toBeCloseTo(40, 3);
+    expect([centerX(), centerY()]).toEqual([360, 270]);
+    await userEvent.click(screen.getByRole('button', { name: 'Undo' }));
+    expect(node(GROUP_ID).pose).toEqual(start);
+    expect([centerX(), centerY()]).toEqual([320, 240]);
+    expect(screen.getByRole('button', { name: 'Undo' })).toBeDisabled();
+    await userEvent.click(screen.getByRole('button', { name: 'Redo' }));
+    expect([centerX(), centerY()]).toEqual([360, 270]);
+  });
+
+  it('picks a wallpaper group, its preset fields with it, in one Undo', async () => {
+    await mount();
+    act(() => { fireEvent.click(screen.getByRole('button', { name: /Kind$/ })); });
+    act(() => { fireEvent.click(screen.getByRole('option', { name: 'Wallpaper' })); });
+    expect(node(GROUP_ID).data.symmetry).toMatchObject({ kind: 'wallpaper' });
+    await userEvent.click(screen.getByRole('button', { name: 'Undo' }));
+    expect(node(GROUP_ID).data.symmetry).toMatchObject({ kind: 'kaleidoscope' });
+    expect(screen.getByRole('button', { name: /Kind$/ })).toHaveTextContent('Kaleidoscope');
+    expect(screen.getByRole('button', { name: 'Undo' })).toBeDisabled();
   });
 
   it('takes back a canvas edit in one Undo', async () => {

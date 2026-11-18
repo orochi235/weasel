@@ -14,6 +14,7 @@ export interface RenderContextSources {
   /** Write the trial's state, after snapshotting it. */
   setState: RenderContext['setState'];
   setConfig: RenderContext['setConfig'];
+  showConfig: RenderContext['showConfig'];
   reportAuto: RenderContext['reportAuto'];
   emit: RenderContext['emit'];
   setView: (view: unknown) => void;
@@ -34,6 +35,7 @@ export function createRenderContext(src: RenderContextSources): RenderContext<un
     config: src.config,
     setState: src.setState,
     setConfig: src.setConfig,
+    showConfig: src.showConfig,
     reportAuto: src.reportAuto,
     ...(over ? { over } : {}),
     trial: {

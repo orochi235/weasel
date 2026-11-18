@@ -442,6 +442,11 @@ defineInstrument<SceneTrialState, ConfigOf<typeof config>>({
   Undo takes back the panel and the strokes, and a slider's drag is one step.
   A history of your own gets the same by implementing
   `TrialHistorySource.batch`.
+- **Settings that show the scene.** The other way round — a panel following the
+  selected stroke, or a group's center that a drag on the canvas moves — write
+  it with `ctx.showConfig(path, value)` from a scene subscriber. It records no
+  undo step and runs no handler, so a canvas drag is the one entry the scene
+  records, and undoing it puts the scene back, which the subscriber shows again.
 - **Tools.** A `tools` capability whose ids are the canvas's tool ids makes the
   trial's palette the canvas's tool slot, in both directions: a pick there
   activates the tool, and the canvas's own hotkeys move the palette.

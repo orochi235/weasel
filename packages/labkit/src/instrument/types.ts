@@ -23,6 +23,11 @@ export interface RenderContext<TS = unknown, TC = unknown> {
   /** Write one config value, by dotted path — `'grid.size'` for a leaf under
    *  an `f.group`, `'cellSize'` for one at the root. */
   setConfig: (path: ConfigPath<TC>, value: unknown) => void;
+  /** Write one config value that shows what the instrument's own data holds, where an edit on the canvas
+   *  changes what a setting reads. It records no undo step and runs no `onConfigChange` or
+   *  `useTrialConfigChange` handler: the edit's own undo entry puts the data back, and the setting is shown
+   *  again from it. A panel following a scene's selection or a group's center writes through this. */
+  showConfig: (path: ConfigPath<TC>, value: unknown) => void;
   /** Say what value an auto path came to, where only the instrument can work it out — a count a build
    *  settles on. Its settings row then quotes that value as it would a resolver's, and a report outranks
    *  the resolver. Nothing stores it: a report for a pinned path is ignored, pinning the path drops it,

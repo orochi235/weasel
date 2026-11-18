@@ -127,17 +127,15 @@ function SymmetryTrial({ ctx }: { ctx: RenderContext<State, Config> }) {
   const sym = useMemo(() => createSymmetry(scene), [scene]);
   const ambient = useMemo(() => [sym.contribution], [sym]);
   const group = asNodeId(GROUP_ID) as NodeId;
-  const { config, setConfig } = ctx;
+  const { config, showConfig } = ctx;
   const { drawInto } = config;
 
   useLayoutEffect(() => sym.setActive(drawInto ? group : null), [sym, group, drawInto]);
 
   // The panel and the canvas both edit the group, and each shows the other's changes. A panel write lands on
   // the group inside its own undo step; picking a wallpaper group, or switching to Wallpaper, writes that
-  // group's fields too, which the panel then follows.
-  const showing = useRef(false);
+  // group's fields too, which the panel then shows without a step of its own.
   useTrialConfigChange<Config>((c, prev) => {
-    if (showing.current) return;
     const g = sym.read(group);
     if (!g) return;
     const picked = c.kind === 'wallpaper' && (prev.kind !== 'wallpaper' || prev.pattern !== c.pattern);
@@ -148,8 +146,9 @@ function SymmetryTrial({ ctx }: { ctx: RenderContext<State, Config> }) {
     sym.update(group, { spec: { ...specOf(c), ...preset }, center: { x: c.centerX, y: c.centerY } });
   });
 
-  // A config write notifies the scene before React renders again: `show` reads what it last wrote, or it
-  // writes the same field forever. What it writes is the group's already, so the panel's write-back skips it.
+  // A canvas edit, and its undo, reach the panel through `showConfig`, which records nothing: the scene's entry
+  // is the one step. A config write notifies the scene before React renders again, so `show` compares against
+  // what it last wrote.
   const shown = useRef(config);
   useLayoutEffect(() => { shown.current = config; }, [config]);
   useLayoutEffect(() => {
@@ -161,19 +160,14 @@ function SymmetryTrial({ ctx }: { ctx: RenderContext<State, Config> }) {
         const v = ROUNDED.has(k) ? Math.round(have[k] as number) : have[k];
         if (near(v, shown.current[k])) continue;
         shown.current = { ...shown.current, [k]: v };
-        showing.current = true;
-        try {
-          setConfig(k, v);
-        } finally {
-          showing.current = false;
-        }
+        showConfig(k, v);
       }
     };
     const offScene = scene.subscribe(show);
     const offSym = sym.subscribe(show);
     show();
     return () => { offScene(); offSym(); };
-  }, [scene, sym, group, setConfig]);
+  }, [scene, sym, group, showConfig]);
 
   return (
     <TrialSceneCanvas
