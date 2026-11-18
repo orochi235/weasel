@@ -34,7 +34,7 @@ export const SHAPE_PARAMS: Partial<Record<BadgeShape, ConfigShape>> = {
   ribbon: {
     left: f.enum('inward', ['inward', 'outward', 'flat']),
     right: f.enum('outward', ['inward', 'outward', 'flat']),
-    taperWidth: num(12, 4, 30, 1),
+    taperWidth: num(8, 4, 30, 1),
   },
   beavis: {
     points: num(44, 8, 96, 1),
@@ -64,8 +64,7 @@ export const SHAPE_PARAMS: Partial<Record<BadgeShape, ConfigShape>> = {
   cloud: {
     bumpWidth: num(24, 8, 50, 1),
     puffiness: num(14, 2, 30, 1),
-    padding: num(18, 0, 40, 1),
-    roundness: num(0, 0, 1, 0.05),
+    erosion: num(0.2, 0, 1, 0.02),
     irregularity: num(0, 0, 1, 0.05),
   },
   house: {
@@ -83,6 +82,7 @@ export const SHAPE_PARAMS: Partial<Record<BadgeShape, ConfigShape>> = {
     lightFrom: f.enum('tl', LIGHT_FROM),
     rivetRadius: num(2.4, 0, 6, 0.2),
     rivetInset: num(7, 3, 16, 0.5),
+    sheenIntensity: num(0.22, 0, 0.5, 0.02),
   },
   coffin: {
     headX: num(6, 0, 40, 1),
