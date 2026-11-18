@@ -2,7 +2,7 @@ import { type Action, ActionDisabledReason, ANY_MODS, defineAction, type Immedia
 import { OCTANT_SPLINE_MAX_ANCHORS, OCTANT_SPLINE_MIN_ANCHORS } from '@weasel-js/ui/components/Badge/geometry';
 import type { SplineAnchor, SplineMode } from './splineAnchors';
 import {
-  dragEnd, dragInterior, insertionAt, normalAxisAt, polarPoint, projectOntoAxis, wheelWeight, type Point,
+  dotRadius, DOT_STROKE, dragEnd, dragInterior, insertionAt, normalAxisAt, polarPoint, projectOntoAxis, wheelWeight, type Point,
 } from './splineGeometry';
 
 declare module '@weasel-js/routing' {
@@ -13,7 +13,7 @@ declare module '@weasel-js/routing' {
   }
 }
 
-/** How near a dot, in editor units, a press has to land to take it. */
+/** How near a dot's center, in editor units, a press has to land to take it, however small the dot is drawn. */
 const HIT_RADIUS = 3;
 
 /** What the editor's actions read and write, current on every event. */
@@ -36,11 +36,13 @@ export interface SplineEditorInput {
 export function anchorAt(input: Pick<SplineEditorInput, 'mode' | 'anchors'>, at: WorldPoint | undefined): number {
   if (!at) return -1;
   let best = -1;
-  let bestD = HIT_RADIUS;
+  let bestD = Infinity;
   input.anchors.forEach((anchor, idx) => {
     const p = polarPoint(input.mode, anchor.s, anchor.r);
     const d = Math.hypot(p.x - at.x, p.y - at.y);
-    if (d <= bestD) {
+    // A heavy dot is drawn wider than the hit radius, and its whole drawn ring takes the press.
+    const reach = Math.max(HIT_RADIUS, dotRadius(anchor.w) + DOT_STROKE / 2);
+    if (d <= reach && d <= bestD) {
       best = idx;
       bestD = d;
     }

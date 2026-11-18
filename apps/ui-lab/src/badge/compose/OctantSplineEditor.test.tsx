@@ -44,6 +44,18 @@ describe('the spline curve editor', () => {
     expect(settled.r).toBeGreaterThan(30);
   });
 
+  it("takes a press anywhere on a heavy dot's drawn ring", () => {
+    const { host, onAnchorChange } = mount([ANCHORS[0]!, { s: 0.5, r: 30, w: 3 }, ANCHORS[2]!]);
+    const at = polarPoint('octant', 0.5, 30);
+    act(() => {
+      fire(host, 'pointerdown', { clientX: at.x + 3.7, clientY: at.y });
+      fire(host, 'pointermove', { clientX: at.x + 8, clientY: at.y });
+      fire(host, 'pointerup', { clientX: at.x + 8, clientY: at.y, buttons: 0 });
+    });
+    expect(onAnchorChange).toHaveBeenCalledTimes(1);
+    expect(onAnchorChange.mock.calls[0]![0]).toBe(1);
+  });
+
   it('takes no press away from the empty editor', () => {
     const { host, onAnchorDraft, onAnchorChange } = mount();
     act(() => {

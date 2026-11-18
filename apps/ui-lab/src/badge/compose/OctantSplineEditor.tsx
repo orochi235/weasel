@@ -7,7 +7,7 @@ import { useLatest } from '@weasel-js/react';
 import { type RefObject, useMemo, useRef, useState } from 'react';
 import { type SplineEditorInput, splineEditorActions } from './splineActions';
 import type { SplineAnchor, SplineMode } from './splineAnchors';
-import { maxAngle, polarPoint, sampleCurve } from './splineGeometry';
+import { dotRadius, DOT_STROKE, maxAngle, polarPoint, sampleCurve } from './splineGeometry';
 import s from './OctantSplineEditor.module.css';
 
 const RINGS = [10, 20, 30, 40, 50, 60, 70];
@@ -96,8 +96,8 @@ function AnchorDot({ anchor, at, pinned, active }: { anchor: SplineAnchor; at: {
         data-active={active || undefined}
         cx={at.x}
         cy={at.y}
-        r={active ? 2.6 : 1.5 + anchor.w * 0.7}
-        strokeWidth="0.7"
+        r={dotRadius(anchor.w, active)}
+        strokeWidth={DOT_STROKE}
       />
       <text x={at.x + 2.5} y={at.y - 1.5} fontSize="2.8" className={s.anchorLabel}>
         {`(${anchor.s.toFixed(2)}, ${anchor.r.toFixed(1)}) w${anchor.w.toFixed(1)}`}
