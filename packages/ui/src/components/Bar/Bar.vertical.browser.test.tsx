@@ -31,7 +31,7 @@ it("turns a vertical bar's button with no glyph to read along the bar, and shows
   const turned = screen.getByRole('button', { name: 'Line spacing' }).getBoundingClientRect();
   expect(turned.height).toBeGreaterThan(turned.width * 2);
   const glyph = screen.getByRole('button', { name: 'Type size' }).getBoundingClientRect();
-  expect(glyph.width).toBeLessThan(turned.height / 2);
+  expect(glyph.height).toBeLessThan(turned.height / 2);
 });
 
 const fields: PrefGroup = {

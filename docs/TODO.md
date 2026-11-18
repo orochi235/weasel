@@ -282,13 +282,6 @@ Owner tags, after the priority (2026-10-26):
 
 ## Selection, actions & UI panels
 
-- **(P3) [maintainer] An unsized `<Bar>` draws its buttons at one height and its fields at another.** With no
-  `size`, a bar's buttons resolve to `md` (28px at `comfortable`), while its CSS pins fields and segmented bars to
-  `control-h-sm` (24px), so a mixed toolbar row is uneven (`packages/ui/src/components/Bar`). This predates the
-  control-size scope and was left as is on 2026-11-15. Having an unsized bar scope its own resolved size would line
-  them up, but it changes every unsized labkit toolbar. Closes when the maintainer picks which height an unsized bar
-  draws its controls at and the bar draws them all there.
-
 - **(P3) [agent] A labkit panel that shows scene data records the showing as undo steps.** `useTrialConfigChange`
   puts a panel write's scene edits in its undo step, but the other direction has no surface: when a canvas edit
   changes what the panel shows, the instrument can only `setConfig` it, which records a settings entry after the
