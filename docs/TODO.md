@@ -256,13 +256,6 @@ Owner tags, after the priority (2026-10-26):
 
 ## Scene, adapters & layout
 
-- **(P3) [maintainer] Whether the effect pipeline's `groups` become clusters too.** `EffectGroup` and
-  `EffectPipeline.groups` (`packages/diagram/src/effect/types.ts`) are the same membership box the diagram's
-  clusters are, but the effect editor also calls the act of making one "Group" (`groupStages`,
-  `diagram.renameGroup`, `groupBoxes`, the `group-loop` problem), and a saved `EffectDoc` holds the names, so a
-  rename needs its own migration. Left as `groups` on 2026-11-17. Closes when the maintainer rules, and the
-  ruling is carried out.
-
 ### Extension authoring and published consumers
 
 ---

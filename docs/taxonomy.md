@@ -976,6 +976,10 @@ There is no persistent membership-list concept. A consumer that wants named,
 saved selections holds its own `Record<string, string[]>` and calls
 `selection.set(ids)`.
 
+diagram's membership boxes, `DiagramData.clusters` and the effect pipeline's `clusters`, are clusters in code
+and data, never groups, while the effect editor's commands still read "Group" and "Ungroup" on screen
+(2026-11-17).
+
 ### Marks and groups
 
 A node's kind says whether it draws itself (decided 2026-10-22). Having children is not a kind.

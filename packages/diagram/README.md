@@ -1109,8 +1109,11 @@ A pipeline is plain data and says nothing about how it is drawn:
 | --- | --- |
 | `stages` | The stages, below. |
 | `wires` | `{ from: { stage, port }, to: { stage, port }, label? }`, from an output to an input. |
-| `groups` | `{ id, label?, members }`: a box around stages and other groups. |
+| `clusters` | `{ id, label?, members }`: a box around stages and other clusters. |
 | `types` | `{ [type]: { control?: boolean } }`. A `control` type carries a condition or a modulation rather than the signal, and its wires draw dashed. A type not listed is plain data. |
+
+`readEffectDoc(value)` checks a saved `EffectDoc` on the way in. A doc saved with the older names, the pipeline's
+`groups` and the doc's `groupBoxes`, reads under `clusters` and `clusterBoxes`.
 
 A stage:
 
@@ -1134,7 +1137,7 @@ A stage:
 | `width`, `height` | The canvas size. |
 | `minScale` | The smallest scale the chart opens at; a chart too big to fit whole at it opens at its start, the rest a pan away. Default `EFFECT_MIN_SCALE`, 0.5, which sets the shipped looks' titles at 6px. |
 | `background` | What the canvas paints behind the chart. Unset, it is transparent; the shipped looks are drawn for a dark ground. |
-| `selected`, `onSelect` | As on `DiagramView`, for stage ids. A pick of anything that is not a stage, such as a group box, is reported as `null`, and the canvas keeps its own highlight on it. |
+| `selected`, `onSelect` | As on `DiagramView`, for stage ids. A pick of anything that is not a stage, such as a cluster box, is reported as `null`, and the canvas keeps its own highlight on it. |
 | `onProblems` | Hears what `checkPipeline` found, on mount and each time the pipeline's content changes, whether or not the list differs. |
 | `className` | A class for the canvas element. |
 
@@ -1197,7 +1200,7 @@ textures is the caller's: `releaseImageSource(old)` from
 `@weasel-js/core/renderer`.
 
 `checkPipeline(pipeline)` returns the problems without drawing anything, each
-`{ kind, message, stage?, port?, wire?, group?, groups? }`, where `wire` is an index into
+`{ kind, message, stage?, port?, wire?, cluster?, clusters? }`, where `wire` is an index into
 `pipeline.wires`. The shipped looks draw a pipeline with problems as far as
 they can:
 
@@ -1208,9 +1211,9 @@ they can:
 | `type-mismatch` | A wire joins ports of different types. | The wire is drawn in the warning color. |
 | `duplicate-stage` | Two stages share an id. | The first is drawn. |
 | `duplicate-port` | Two ports on one stage share an id. | Both are listed; wires attach to the first. |
-| `duplicate-group` | A group's id repeats an earlier group's, or is a stage's. | Only the first group with the id is drawn, and a group with a stage's id is not. |
-| `missing-member` | A group names something that is neither a stage nor a group. | The name is ignored. |
-| `group-loop` | Groups hold each other in a loop, directly or through other groups, or a group holds itself. One problem per loop: `groups` lists them all and `group` is the first. | The chart still draws. |
+| `duplicate-cluster` | A cluster's id repeats an earlier cluster's, or is a stage's. | Only the first cluster with the id is drawn, and a cluster with a stage's id is not. |
+| `missing-member` | A cluster names something that is neither a stage nor a cluster. | The name is ignored. |
+| `cluster-loop` | Clusters hold each other in a loop, directly or through other clusters, or a cluster holds itself. One problem per loop: `clusters` lists them all and `cluster` is the first. | The chart still draws. |
 | `bad-split` | A `split` names an input the stage lacks, has no cuts, has cuts out of order or one that is not a finite number, or does not have one more output than cuts. | A decision that would draw as a bar draws as a diamond. |
 
 #### Looks
@@ -1254,7 +1257,7 @@ included; a source or sink stretched taller than it measured is widened by as
 much, so its round ends leave its rows the room they had. A decision keeps its symbol's own size, centered across its lanes,
 and brings its control inputs in from the bottom when their lanes are below
 the rest of its ports. The lanes are nodes too, `laneId(type)`, drawn behind
-the stages, and only stages can be picked: a click on a lane or a group box
+the stages, and only stages can be picked: a click on a lane or a cluster box
 selects nothing. A wire that would cross a stage in its lane runs along a lane
 edge clear of every stage it passes, changing height only between columns, each
 wire in a shared corridor on a track of its own; its label sits as near the
@@ -1325,7 +1328,7 @@ exported for yours:
 
 | Helper | Gives |
 | --- | --- |
-| `uniqueStages(pipeline)`, `uniqueGroups(pipeline)` | The stages and the groups with any repeated id dropped, first one kept. `diagramScene` throws on a repeated id, so build nodes and groups from these. |
+| `uniqueStages(pipeline)`, `uniqueClusters(pipeline)` | The stages and the clusters with any repeated id dropped, first one kept. `diagramScene` throws on a repeated id, so build nodes and clusters from these. |
 | `drawableWires(pipeline)` | The wires whose two stages and two ports exist, each as `{ wire, index, type, problem, fromStage, toStage }`: `type` is the value type it carries, and `problem` is true when `checkPipeline` reported it. |
 | `typeColors(pipeline, colors)` | The `color(type)` the shipped looks use. |
 | `stageStyle(stage)` | A stage's node style: dashed and dim when it is bypassed. |
@@ -1340,7 +1343,7 @@ exported for yours:
 
 ```tsx
 import {
-  drawableWires, isControl, stageStyle, typeColors, uniqueGroups, uniqueStages, wireStyle,
+  drawableWires, isControl, stageStyle, typeColors, uniqueClusters, uniqueStages, wireStyle,
   type EffectLook,
 } from '@weasel-js/diagram/effect';
 
@@ -1352,7 +1355,7 @@ const column: EffectLook = (pipeline) => {
     data: {
       nodes: [...stages.values()].map((s) => ({ id: s.id, lines: [s.title] })),
       edges: wires.map((d) => ({ from: d.wire.from.stage, to: d.wire.to.stage })),
-      groups: uniqueGroups(pipeline),
+      clusters: uniqueClusters(pipeline),
     },
     scene: {
       layout: 'layered',
@@ -1371,7 +1374,7 @@ const column: EffectLook = (pipeline) => {
 #### Editing a pipeline
 
 `EffectEditor` is `EffectChart` with the node-graph look made editable: drag a
-stage to move it, drag it into or out of a group (below), drag from an output to an input to wire them, press Delete to
+stage to move it, drag it into or out of a cluster (below), drag from an output to an input to wire them, press Delete to
 remove the selection, drag an end of a selected wire to move it, and drag the
 handles along a selected wire to route it (`EffectDoc.routes`, set with
 `setWireRoute`). It keeps no
@@ -1433,43 +1436,43 @@ the gap nearest its middle. Give it `slots`, the items and gaps that
 `{ id, from, to, order }`. `show: 'bar'` (the default) draws the insertion bar;
 `show: 'slide'` slides the other items into the places they would take instead,
 moving each item's `carries` as pose overrides, which is how `onReorder` shows a
-group's members. `createReorderContribution` packs the action and its binding to pass
+cluster's members. `createReorderContribution` packs the action and its binding to pass
 as `ambient`. Beside the `move` feature pass `createReorderPreset(…)` in `features`
 instead: a move binds the same press and would take it first, and the preset's
 drag is tried ahead of it, handing off to the move once it leaves `region`.
 
 `EffectEditor` takes a `run` too, drawn as `EffectChart` draws one.
 
-##### Groups
+##### Clusters
 
-Under `nodeGraph` each `EffectGroup` is a titled box, drawn as a `DiagramData`
+Under `nodeGraph` each `EffectCluster` is a titled box, drawn as a `DiagramData`
 container. Drag a stage into or out of it to change what it holds, drag the
-box to carry the stages and groups inside it with the routes of the wires
+box to carry the stages and clusters inside it with the routes of the wires
 between them (`'Move'`), drag a picked box's handles to resize it
 (`'Resize group'`), and double-click its title to rename it in a field held
 over the title (`'Rename group'`). A resized box is kept in
-`EffectDoc.groupBoxes`, by group id; a group with no box fits its members.
-Under `rack` and `lanes` groups draw as boxes around their members, and
+`EffectDoc.clusterBoxes`, by cluster id; a cluster with no box fits its members.
+Under `rack` and `lanes` clusters draw as boxes around their members, and
 membership does not drag. A drag's moves and box edits are reported as one
 edit, a microtask after the drag is done reporting.
 
-`selectedGroup` and `onSelectGroup` are the group pick, beside `selected` and
-`onSelect`, under every look. Cmd-click (Ctrl off macOS) adds a stage or group to the
-pick or takes it out, and `onSelect`'s second argument lists every stage and group
-picked, ready for `group(ids)`. The ref's `group(ids)` and `ungroup(id)` report
-`'Group'` and `'Ungroup'`, and `renameGroup(id)` opens the title field. The
+`selectedCluster` and `onSelectCluster` are the cluster pick, beside `selected` and
+`onSelect`, under every look. Cmd-click (Ctrl off macOS) adds a stage or cluster to the
+pick or takes it out, and `onSelect`'s second argument lists every stage and cluster
+picked, ready for `cluster(ids)`. The ref's `cluster(ids)` and `dissolveCluster(id)` report
+`'Group'` and `'Ungroup'`, and `renameCluster(id)` opens the title field. The
 edits are plain functions too:
 
 | Function | What it does |
 | --- | --- |
-| `groupStages(doc, ids, label?)` | A new group, id from `nextGroupId`, holding `ids`; nested inside the group they all share, else at the top level. |
-| `ungroup(doc, id)` | Its members go to its parent group, in its place. |
-| `renameGroup(doc, id, label)` | An empty label removes it. |
-| `moveToGroup(doc, ids, group \| null)` | Into a group, or out to the top level. A group left empty goes too unless it has a box. |
-| `setGroupBox(doc, id, box \| null)` | `null` has it fit its members again. |
-| `moveGroup(doc, id, offset)` | Its stages' places, its box and the boxes inside it, and its inner wires' routes, by one offset. |
+| `clusterStages(doc, ids, label?)` | A new cluster, id from `nextClusterId`, holding `ids`; nested inside the cluster they all share, else at the top level. |
+| `dissolveCluster(doc, id)` | Its members go to its parent cluster, in its place. |
+| `renameCluster(doc, id, label)` | An empty label removes it. |
+| `moveToCluster(doc, ids, cluster \| null)` | Into a cluster, or out to the top level. A cluster left empty goes too unless it has a box. |
+| `setClusterBox(doc, id, box \| null)` | `null` has it fit its members again. |
+| `moveCluster(doc, id, offset)` | Its stages' places, its box and the boxes inside it, and its inner wires' routes, by one offset. |
 
-`removeStages` drops a group it leaves empty, with its box.
+`removeStages` drops a cluster it leaves empty, with its box.
 
 #### Running a pipeline
 

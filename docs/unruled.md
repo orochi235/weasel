@@ -2520,7 +2520,7 @@ Calls the lanes made without a ruling:
 - Open: whether an octant-spline badge's end-anchor weights do anything now that its ends are flat, which decides whether
   ui-lab's spline editor keeps a weight control there (`Badge/bases/OctantSpline.tsx`).
 - Open: whether an interior octant-spline weight other than 1 may kink the curve, against the doc's "C² across the whole octant".
-- Ruled 2026-11-15: `checkPipeline` reports a `group-loop` problem once per loop.
+- Ruled 2026-11-15: `checkPipeline` reports a `cluster-loop` problem (then `group-loop`) once per loop.
 - Open: whether `createDeleteAction({ commit })` keeps its old gate for a page-only selection, now that it is disabled there.
 
 
