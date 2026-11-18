@@ -1,4 +1,5 @@
 import { relative, sep } from 'node:path';
+import type { ViteDevServer } from 'vite';
 import { getOwn, setOwn } from './ownKeys.ts';
 import { isGallery } from '../story/tags.ts';
 import type { ComponentNode, ComponentGraph, IndexEntry } from '../story/types.ts';
@@ -8,6 +9,12 @@ import { moduleInfo, type ModuleInfo } from './moduleInfo.ts';
 
 /** Resolves an import as the bundler would: an absolute file, or null for anything that is not one. */
 export type ResolveImport = (specifier: string, importer: string) => Promise<string | null>;
+
+/** Resolves an import as the dev server's client environment does. */
+export const clientResolver =
+  (server: ViteDevServer): ResolveImport =>
+  async (spec, importer) =>
+    (await server.environments.client.pluginContainer.resolveId(spec, importer))?.id ?? null;
 
 export interface ComponentGraphOptions {
   root: string;
