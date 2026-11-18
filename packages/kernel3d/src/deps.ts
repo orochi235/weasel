@@ -32,6 +32,7 @@ import { createSession3d } from './snap/session3d';
 import { landing3dOf, shiftedBy } from './snap/landing';
 
 import { DEFAULT_UP, measuredBoxAt, viewportOf, type Node3d, type World3d } from './world';
+import type { Rect } from '@weasel-js/geom';
 
 export type { Viewport3d, ViewportSource } from './project';
 export type { NodeBounds, Node3d, Scene3d, World3d } from './world';
@@ -67,7 +68,7 @@ function movedOnLevel(pose: Pose3, delta: Vec3, upAxis: Axis): Pose3 {
 
 /** `pose` dragged `d` on screen from the middle of `box`, its screen box, across the plane through it normal to `up`. */
 function draggedOnLevel(
-  vp: Viewport3d, box: { x: number; y: number; width: number; height: number }, pose: Pose3,
+  vp: Viewport3d, box: Rect, pose: Pose3,
   d: { x: number; y: number }, up: Vec3, upAxis: Axis,
 ): Pose3 {
   const from = { x: box.x + box.width / 2, y: box.y + box.height / 2 };

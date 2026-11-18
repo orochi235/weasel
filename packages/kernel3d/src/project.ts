@@ -6,7 +6,7 @@
 
 import { intersectRayPlane, pointOnRay, transformPoint4, type Ray, type Vec3 } from '@weasel-js/geom/3d';
 import { cameraViewProjection, type Camera3d } from './camera';
-import { ndcToScreen, rayThroughScreenPoint, type ScreenBox } from './screen';
+import { ndcToScreen, rayThroughScreenPoint, type ScreenRect } from './screen';
 import type { Point } from '@weasel-js/geom';
 
 /** The camera and the pane it draws into; `width`/`height` are the pane's
@@ -39,7 +39,7 @@ export type ViewportSource = (viewId?: string | null) => Viewport3d;
 
 /** The pane, in the coordinate space the host's points arrive in. The origin
  *  defaults to the client origin — a host that fills the window passes none. */
-export function rectOf(viewport: Viewport3d): ScreenBox {
+export function rectOf(viewport: Viewport3d): ScreenRect {
   return {
     x: viewport.originX ?? 0,
     y: viewport.originY ?? 0,

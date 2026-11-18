@@ -11,7 +11,7 @@ import { rectsOverlap } from '@weasel-js/geom';
 import { intersectRayAabb, type Aabb, type Ray } from '@weasel-js/geom/3d';
 import { createBvh, type Bvh, type HalfSpace } from '@weasel-js/geom/nd';
 import { rectOf, viewProjectionOf, type Viewport3d } from './project';
-import { projectAabbToScreen, screenToNdc, type ScreenBox } from './screen';
+import { projectAabbToScreen, screenToNdc, type ScreenRect } from './screen';
 import { padQuery } from './snap/boxIndex';
 import { boxAt, boxIndexable, inWorld, worldBoxes, worldPoseOf, type Node3d, type World3d } from './world';
 
@@ -27,7 +27,7 @@ export interface WorldPickIndex {
   ): NodeId | null;
   /** The nodes whose projected box overlaps `rect`, in render order, less any
    *  on a layer `layerIsPainted` says the asking view does not draw. */
-  inScreenRect(vp: Viewport3d, rect: ScreenBox, layerIsPainted?: LayerGate): NodeId[];
+  inScreenRect(vp: Viewport3d, rect: ScreenRect, layerIsPainted?: LayerGate): NodeId[];
 }
 
 /** The screen box a node covers, or null when it projects to nothing visible. */
@@ -35,7 +35,7 @@ export function screenBoxOf<TData, TLayer extends string>(
   world: World3d<TData, TLayer>,
   id: NodeId,
   viewport: Viewport3d,
-): ScreenBox | null {
+): ScreenRect | null {
   const node = world.scene.get(id) as Node3d<TData, TLayer> | undefined;
   const pose = node && worldPoseOf(world.scene, id);
   const box = node && pose && boxAt(world, node, pose);
@@ -54,7 +54,7 @@ const NDC_SLACK = 1e-9;
  * x span and y span each reach the rect — what the screen-box test asks —
  * and points behind the eye only ever add candidates.
  */
-function sidePlanes(vp: Viewport3d, rect: ScreenBox): HalfSpace[] {
+function sidePlanes(vp: Viewport3d, rect: ScreenRect): HalfSpace[] {
   const m = viewProjectionOf(vp);
   const pane = rectOf(vp);
   const lo = screenToNdc({ x: rect.x, y: rect.y + rect.height }, pane);
@@ -110,7 +110,7 @@ class BuiltIndex<TData, TLayer extends string> implements WorldPickIndex {
     return best < 0 ? null : order[best]!.id;
   }
 
-  inScreenRect(vp: Viewport3d, rect: ScreenBox, layerIsPainted?: LayerGate): NodeId[] {
+  inScreenRect(vp: Viewport3d, rect: ScreenRect, layerIsPainted?: LayerGate): NodeId[] {
     const candidates = [...this.always];
     this.tree.queryHalfSpaces(sidePlanes(vp, rect), (i) => {
       candidates.push(i);
