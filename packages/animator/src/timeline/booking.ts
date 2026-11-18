@@ -1,13 +1,7 @@
+import { createClockEstimate } from './clockEstimate';
 import { nestedLength } from './length';
 import type { EventBooking, EventBookingHandle, EventTrack, NestedTimeline, TimelineEvent, Track } from './types';
 
-/** A clock read further than this from the frame clock's prediction is taken
- *  as a discontinuity — a hidden tab, a suspended context — not as jitter. */
-const RESYNC_MS = 50;
-/** Share of each frame's clock residual folded into the estimate. Small enough
- *  to average out a per-frame read that lands a render quantum early or late;
- *  large enough to follow ppm-scale drift with well under a millisecond of lag. */
-const SLEW = 0.05;
 /** A pending booking a rate change or resync moves by more than this is
  *  retracted and booked again; anything less is left standing. */
 const RETIME_MS = 1;
@@ -98,10 +92,7 @@ export function createBooker(opts: EventBooking, host: BookerHost): Booker {
   const cursors: Cursors = new Map();
   let start: Cursor = { lap: 0, r: -Infinity };
   let bookings: Booking[] = [];
-  /** Clock time of the current frame, smoothed. Null until anchored. */
-  let est: number | null = null;
-  let mapVirtual = 0;
-  let lastScale = 0;
+  const clock = createClockEstimate();
 
   const playheadCursor = (): Cursor => ({ lap: host.lap(), r: host.playhead() });
 
@@ -123,9 +114,6 @@ export function createBooker(opts: EventBooking, host: BookerHost): Booker {
     pullBack(cursors, at);
     if (isAfter(start, at)) start = at;
   };
-
-  const whenFor = (u: number, playhead: number, scale: number, now: number): number =>
-    Math.max(est! + (u - playhead) / scale, now);
 
   const scanTrack = (
     track: EventTrack, at: number, end: number, horizon: number, lastLap: number, now: number, scale: number,
@@ -154,7 +142,7 @@ export function createBooker(opts: EventBooking, host: BookerHost): Booker {
         const ev = events[j];
         if (!ev.book || bookings.some((b) => b.event === ev && b.lap === c.lap && b.r === r)) continue;
         if ((playhead - u) / scale > maxLate) continue;
-        const when = whenFor(u, playhead, scale, now);
+        const when = clock.whenFor(u, playhead, scale, now);
         let handle: EventBookingHandle | undefined;
         try {
           handle = ev.book(when) ?? undefined;
@@ -183,31 +171,14 @@ export function createBooker(opts: EventBooking, host: BookerHost): Booker {
       const now = opts.clock.now();
       bookings = bookings.filter(ahead);
       if (!(scale > 0)) {
-        if (lastScale > 0) stopWhere(now, () => true);
-        lastScale = 0;
-        est = null;
+        if (clock.halt()) stopWhere(now, () => true);
         return;
       }
 
-      let moved = lastScale > 0 && scale !== lastScale;
-      if (est === null) {
-        est = now;
-      } else {
-        est += (virtualNow - mapVirtual) / scale;
-        const residual = now - est;
-        if (Math.abs(residual) > RESYNC_MS) {
-          est = now;
-          moved = true;
-        } else {
-          est += residual * SLEW;
-        }
-      }
-      mapVirtual = virtualNow;
-      lastScale = scale;
-
+      const moved = clock.follow(now, virtualNow, scale);
       const playhead = host.playhead();
       if (moved) {
-        stopWhere(now, (b) => Math.abs(whenFor(unwrapped(b), playhead, scale, now) - b.when) > RETIME_MS);
+        stopWhere(now, (b) => Math.abs(clock.whenFor(unwrapped(b), playhead, scale, now) - b.when) > RETIME_MS);
       }
 
       const duration = host.duration();
@@ -223,7 +194,7 @@ export function createBooker(opts: EventBooking, host: BookerHost): Booker {
       start = { ...playheadCursor(), open: true };
     },
     rearm() {
-      est = null;
+      clock.rearm();
     },
   };
 }
