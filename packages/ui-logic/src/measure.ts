@@ -34,6 +34,9 @@ export interface TextExtent {
   readonly width: number;
   readonly ascent: number;
   readonly descent: number;
+  /** A flat capital's height above the baseline, where the target trims a control's label to it (the DOM's
+   *  `text-box: trim-both cap alphabetic`). Absent, a label is set in its whole line box. */
+  readonly capHeight?: number;
 }
 
 /**

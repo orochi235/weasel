@@ -114,15 +114,18 @@ export function measureButton(face: ButtonFace, c: Constraints, env: MeasureEnv)
   if (over > 0 && label >= 0) widths[label] = Math.max(0, widths[label]! - over);
   const fitted = widths.reduce((a, b) => a + b, 0) + gaps;
 
+  // A label trimmed to its capitals is a box from cap height to baseline, so centering it centers the capitals.
+  const cap = (text as TextExtent | null)?.capHeight;
+  const labelHeight = cap ?? m.font.size;
   let x = (width - fitted) / 2;
   const laid = parts.map((part, i) => {
     const w = widths[i]!;
-    const h = part === 'label' ? m.font.size : part === 'spinner' ? m.spinnerSize : m.iconSize;
+    const h = part === 'label' ? labelHeight : part === 'spinner' ? m.spinnerSize : m.iconSize;
     const rect = { x, y: (height - h) / 2, width: w, height: h };
     x += w + m.gap;
     return { part, rect };
   });
-  // The label's line height is its font size: the DOM button sets `line-height: 1`.
-  const baseline = text ? centeredBaseline(height, m.font.size, text) : height;
+  // Untrimmed, the label's line height is its font size: the DOM button sets `line-height: 1`.
+  const baseline = !text ? height : cap !== undefined ? (height + cap) / 2 : centeredBaseline(height, m.font.size, text);
   return { width, height, baseline, layout: { parts: laid, metrics: m } };
 }

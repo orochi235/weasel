@@ -21,9 +21,15 @@ export function createDomMeasureEnv(element: Element): MeasureEnv {
       if (!context) return { width: 0, ascent: font.size * 0.8, descent: font.size * 0.2 };
       context.font = `${font.weight ?? 400} ${font.size}px ${cssFamilyName(font.family ?? 'sans-serif')}`;
       const m = context.measureText(text);
-      return { width: m.width, ascent: m.fontBoundingBoxAscent, descent: m.fontBoundingBoxDescent };
+      const extent = { width: m.width, ascent: m.fontBoundingBoxAscent, descent: m.fontBoundingBoxDescent };
+      return trimsToCaps(element) ? { ...extent, capHeight: context.measureText('H').actualBoundingBoxAscent } : extent;
     },
   };
+}
+
+/** Whether this browser trims a label to its capitals, as theme's `capText` asks; one that cannot sets the whole line. */
+function trimsToCaps(element: Element): boolean {
+  return element.ownerDocument.defaultView?.CSS?.supports?.('text-box', 'trim-both cap alphabetic') ?? false;
 }
 
 /** Where a DOM component on the measure/draw contract mounts: the target its `draw` takes. */
