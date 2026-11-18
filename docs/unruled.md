@@ -972,6 +972,10 @@ The snap pipeline ([snapping.md](./snapping.md)) landed on 2026-10-18 with these
   default (`refusals={false}` opts out), titled with the action's label and reading its reason, one at a time, and
   of several regions only the one mounted last. An autorepeat and a `keyHeld` binding tell nothing, and nor does a
   keystroke anything on the page `preventDefault`s within a task.
+- 2026-11-18: `Select`'s open list, `ComboBox` and `Tabs` land their arrow keys on a disabled item and never choose
+  it, through React Aria's untyped item-level `disabledBehavior: 'selection'` for the lists and a kit-held selection
+  for the tabs (`components/heldItem.ts`). A closed `Select`'s arrow keys still pass over a disabled option, since
+  they change the value.
 - 2026-11-18: `useRovingTabIndex` takes `disabled: 'skip' | 'stop'`, default `'skip'`, and no longer calls
   `onAction` for an `aria-disabled` item. `CommandPalette`'s arrows land on a disabled row.
 - 2026-10-20 (overnight pass): `useRovingTabIndex` swaps Left and Right under right-to-left, in
