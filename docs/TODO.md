@@ -367,11 +367,6 @@ Owner tags, after the priority (2026-10-26):
 
 ### WeaselDraw app follow-ups (defer)
 
-- **(P2) [agent] draw's asset editor e2e spec fails on `main`.** `npm run test:e2e:draw -- asset-editor` fails 8 of
-  15 on 450e9708: the Attributes region holds two textboxes named "Name", so every `attrs(page)…'Name'` locator
-  is a strict-mode violation, and Remove and Delete no longer land the selection on the row the spec expects.
-  Nothing runs the spec, so it rotted unseen. Closes when the spec passes and runs somewhere that reports it.
-
 - **(P3) [maintainer] draw's SVG Save drops the measurements.** A saved file keeps paper size, title, groups,
   names, locks and line height under the `wd:` namespace (`apps/draw/src/svgInterop.ts`), but no layer list and
   no layer id on a shape, and `svgExport.ts` leaves out everything on an annotation layer as it leaves out a
