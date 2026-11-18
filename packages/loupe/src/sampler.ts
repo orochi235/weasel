@@ -1,5 +1,6 @@
 import { opaqueHexOfBytes } from '@weasel-js/paint';
-import type { CanvasSource, SourceBox } from './canvasSource';
+import type { CanvasSource } from './canvasSource';
+import type { Rect } from '@weasel-js/geom';
 import type { LoupePoint } from './geometry';
 
 /** One pixel's RGBA bytes, each 0 to 255. */
@@ -125,7 +126,7 @@ export function createSampler(sources: readonly PixelSource[] | (() => readonly 
  * per axis, so a canvas stretched unevenly is read correctly too. Nothing is
  * read while `box` answers `null`.
  */
-export function canvasPixelSource(source: CanvasSource, box: () => SourceBox | null): PixelSource {
+export function canvasPixelSource(source: CanvasSource, box: () => Rect | null): PixelSource {
   return {
     pixel(p) {
       const b = box();

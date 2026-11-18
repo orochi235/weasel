@@ -13,7 +13,6 @@ export { createCanvasSource, sourceRegion } from './canvasSource';
 export type {
   CanvasSource,
   CanvasSourceOptions,
-  SourceBox,
   SourceCanvas,
   SourceContext,
 } from './canvasSource';

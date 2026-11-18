@@ -6,7 +6,6 @@ export type {
   LoupePoint,
   LoupeSize,
   PlaceBandArgs,
-  SourceBox,
   SourceCanvas,
   SourceContext,
 } from '@weasel-js/loupe';

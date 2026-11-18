@@ -5,12 +5,12 @@ import {
   type LoupePoint,
   type LoupeSize,
   loupeExtent,
-  type SourceBox,
   type SourceCanvas,
   type SourceContext,
   sourceRegion,
 } from '@weasel-js/loupe';
 import { createPart } from '@weasel-js/registry';
+import type { Rect } from '@weasel-js/geom';
 
 /** Anything a lens can be pointed at for its pixels: a `CanvasSource`, a
  *  canvas, or a context on one. */
@@ -41,7 +41,7 @@ export function resolveLoupeSource(source: LoupeSource | undefined): CanvasSourc
  * host, else — for an offscreen canvas, or one not on the page — the whole
  * host.
  */
-export function sourceBoxIn(source: CanvasSource, host: HTMLElement | null): SourceBox {
+export function sourceBoxIn(source: CanvasSource, host: HTMLElement | null): Rect {
   const own = source.box?.();
   if (own) return own;
   // Client px over the host's own scale: a zoomed stage or a scaled ancestor shows it larger than it lays out.
@@ -72,7 +72,7 @@ export function drawSourceLens(
     diameter: LoupeSize;
     dpr: number;
     source: CanvasSource;
-    box: SourceBox;
+    box: Rect;
   },
 ): void {
   const { aim, factor, diameter, dpr, source, box } = opts;
