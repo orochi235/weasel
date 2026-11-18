@@ -1,4 +1,3 @@
-import { defaultNodeProperties } from '@weasel-js/core';
 import { EDITOR_CONTEXT_MENUS } from '@weasel-js/editor';
 import type { PrefGroup, PrefGroupAs } from '@weasel-js/prefs';
 import { mergeMenuDefs } from '@weasel-js/routing';
@@ -7,7 +6,7 @@ import { DRAW_MENU_BAR } from '../menuBar';
 import { DRAW_MENUS } from '../menus';
 import { PREFS } from '../prefs';
 import { SURFACE_ASSETS } from '../surfaces/assets';
-import { DRAW_PRESETS } from './drawPresets';
+import { DRAW_NODE_PROPERTIES, DRAW_PRESETS } from './drawPresets';
 import type { SurfaceKind } from '../surfaces/types';
 import { getOwn } from '@weasel-js/registry';
 
@@ -45,7 +44,7 @@ export const DRAW_LEAF_KINDS: readonly string[] = [...new Set(SURFACE_ASSETS.fla
   ...Object.keys(a.renderers?.bar ?? {}),
 ]))];
 
-const nodes: Asset[] = defaultNodeProperties.map((e) => ({
+const nodes: Asset[] = DRAW_NODE_PROPERTIES.map((e) => ({
   id: `node:${e.name}`, label: e.name, kind: 'schema', nodeKind: e.name, root: e.schema,
 }));
 

@@ -9,7 +9,7 @@ import { DRAW_LAYERS, type WeaselDrawData, type WeaselDrawLayer, type WeaselDraw
 import { DRAW_FEATURES } from '../drawFeatures';
 import { useFileCommands } from '../fileCommands';
 import { useDebugCommands } from './devRoutes';
-import { DRAW_NODE_PROPERTIES } from './registryData';
+import { DRAW_NODE_PROPERTIES } from './drawPresets';
 import { GESTURE_CATALOG_KEYS, type DeclaredRoute, type ToolSurface, type ToolEntry, type ActionEntry, type CallbackRef, type CallbackSource } from './registryEntries';
 import s from './RegistryInspector.module.css';
 import { KIT_TOOL_IDS } from '@weasel-js/editing';

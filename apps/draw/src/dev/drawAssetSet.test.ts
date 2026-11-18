@@ -14,4 +14,8 @@ describe('DRAW_ASSET_SET', () => {
     expect(packageOf('pathTools')).toBe('@weasel-js/path-tools');
   });
 
+  it('holds every preset and node kind a WeaselDraw canvas mounts, text-tools\' included', () => {
+    expect(packageOf('text')).toBe('@weasel-js/text-tools');
+    expect(DRAW_ASSET_SET.assets.some((a) => a.id === 'node:text')).toBe(true);
+  });
 });
