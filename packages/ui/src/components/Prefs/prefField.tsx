@@ -1,7 +1,7 @@
 import { numericWeight } from '@weasel-js/text';
 import { isPaint, type Paint } from '@weasel-js/paint';
 import { clampToBounds, endlessAllows, withInfinity } from '@weasel-js/quantity';
-import { isBuiltinPref, prefDisplayBounds, prefUnitAccepts, resolvePrefUnit, type PrefEnumOption, type PrefField, type PrefLeaf, type PrefNumber, type PrefValueBase } from '@weasel-js/prefs';
+import { isBuiltinPref, prefDisplayBounds, prefUnitAccepts, resolvePrefUnit, type PrefBoolean, type PrefEnum, type PrefEnumOption, type PrefField, type PrefLeaf, type PrefNumber, type PrefPaint, type PrefValueBase } from '@weasel-js/prefs';
 import { stepDisplay } from '../Properties/NumberControls';
 import { resolveIcon } from '../Icon/resolveIcon';
 import type { PropertyControlProps } from '../Properties/PropertyField';
@@ -135,47 +135,109 @@ function enumOption({ value, label, icon, short, description, disabled, disabled
   return { value, label, glyph: resolveIcon(icon), short, description, disabled, disabledReason };
 }
 
-function enabledFieldProps(leaf: PrefLeaf, state: PrefFieldState): PropertyControlProps | null {
+/** A font weight as its field, against its family: the state's own `fontFamily`, else the sibling one. */
+function fontWeightProps(state: PrefFieldState): PropertyControlProps {
   const { value, mixed = false, unset = false, siblings, setValue } = state;
-  if (leaf.kind === 'font-weight') {
-    const family = 'fontFamily' in state ? state.fontFamily : siblings?.fontFamily;
-    return {
-      kind: 'font-weight',
-      value: typeof value === 'number' || typeof value === 'string' ? numericWeight(value) : undefined,
-      mixed,
-      unset,
-      onChange: setValue,
-      family: typeof family === 'string' ? family : undefined,
-    };
-  }
-  if (leaf.kind === 'font-family') {
-    const weight = state.fontVariant ? state.fontVariant.weight : siblings?.fontWeight;
-    const style = state.fontVariant ? state.fontVariant.style : siblings?.fontStyle;
-    return {
-      kind: 'font-family',
-      value: typeof value === 'string' ? value : undefined,
-      mixed,
-      unset,
-      onChange: setValue,
-      weight: typeof weight === 'number' ? weight : undefined,
-      fontStyle: style === 'italic' ? 'italic' : undefined,
-    };
-  }
+  const family = 'fontFamily' in state ? state.fontFamily : siblings?.fontFamily;
+  return {
+    kind: 'font-weight',
+    value: typeof value === 'number' || typeof value === 'string' ? numericWeight(value) : undefined,
+    mixed,
+    unset,
+    onChange: setValue,
+    family: typeof family === 'string' ? family : undefined,
+  };
+}
+
+/** A font family as its field, previewed in its weight and slant: the state's `fontVariant`, else the siblings'. */
+function fontFamilyProps(state: PrefFieldState): PropertyControlProps {
+  const { value, mixed = false, unset = false, siblings, setValue } = state;
+  const weight = state.fontVariant ? state.fontVariant.weight : siblings?.fontWeight;
+  const style = state.fontVariant ? state.fontVariant.style : siblings?.fontStyle;
+  return {
+    kind: 'font-family',
+    value: typeof value === 'string' ? value : undefined,
+    mixed,
+    unset,
+    onChange: setValue,
+    weight: typeof weight === 'number' ? weight : undefined,
+    fontStyle: style === 'italic' ? 'italic' : undefined,
+  };
+}
+
+/** A boolean leaf as its field, read and written through its `encoding` where it has one. */
+function booleanFieldProps(leaf: PrefBoolean, state: PrefFieldState): PropertyControlProps {
+  const { value, mixed = false, unset = false, setValue } = state;
+  const coded = leaf.encoding ? throughEncoding(leaf.encoding, state) : undefined;
+  return {
+    kind: 'boolean',
+    control: leaf.control,
+    value: coded ? coded.value : typeof value === 'boolean' ? value : undefined,
+    mixed: coded ? coded.mixed : mixed,
+    unset,
+    glyph: resolveIcon(leaf.icon),
+    short: leaf.short,
+    onChange: coded ? coded.write : setValue,
+  };
+}
+
+/** An enum leaf as its field, read and written through its `encoding` where it has one. */
+function enumFieldProps(leaf: PrefEnum, state: PrefFieldState): PropertyControlProps {
+  const { value, mixed = false, unset = false, setValue } = state;
+  // An encoding reads an absent field too (no dash is `solid`), which is
+  // why `unset` does not blank an encoded leaf.
+  const coded = leaf.encoding ? throughEncoding(leaf.encoding, state) : undefined;
+  const option = coded
+    ? coded.value
+    : mixed || unset
+      ? undefined
+      : typeof value === 'string'
+        ? value
+        : leaf.default;
+  return {
+    kind: 'enum',
+    control: leaf.control,
+    value: option,
+    mixed: coded ? coded.mixed : mixed,
+    unset,
+    options: leaf.options.map(enumOption),
+    onChange: coded ? coded.write : setValue,
+    onClear: leaf.clearable ? () => setValue(undefined) : undefined,
+  };
+}
+
+/** A paint leaf as its field. */
+function paintFieldProps(leaf: PrefPaint, state: PrefFieldState): PropertyControlProps {
+  const { value, mixed = false, unset = false, setValue } = state;
+  // `??` would read an explicit `null` — "no paint" — as absent and show
+  // the default over it.
+  const paint =
+    value === null
+      ? null
+      : isPaint(value)
+        ? value
+        : mixed
+          ? undefined
+          : isPaint(leaf.default)
+            ? leaf.default
+            : null;
+  return {
+    kind: 'paint',
+    value: paint as Paint | null | undefined,
+    mixed,
+    unset,
+    onChange: setValue,
+  };
+}
+
+function enabledFieldProps(leaf: PrefLeaf, state: PrefFieldState): PropertyControlProps | null {
+  const { value, mixed = false, unset = false, setValue } = state;
+  if (leaf.kind === 'font-weight') return fontWeightProps(state);
+  if (leaf.kind === 'font-family') return fontFamilyProps(state);
   if (!isBuiltinPref(leaf)) return null;
   switch (leaf.kind) {
-    case 'boolean': {
-      const coded = leaf.encoding ? throughEncoding(leaf.encoding, state) : undefined;
-      return {
-        kind: 'boolean',
-        control: leaf.control,
-        value: coded ? coded.value : typeof value === 'boolean' ? value : undefined,
-        mixed: coded ? coded.mixed : mixed,
-        unset,
-        glyph: resolveIcon(leaf.icon),
-        short: leaf.short,
-        onChange: coded ? coded.write : setValue,
-      };
-    }
+    case 'boolean':
+      return booleanFieldProps(leaf, state);
     case 'number':
       return numberFieldProps(leaf, state);
     case 'string':
@@ -187,28 +249,8 @@ function enabledFieldProps(leaf: PrefLeaf, state: PrefFieldState): PropertyContr
         unset,
         onChange: setValue, placeholder: leaf.placeholder, maxLength: leaf.maxLength,
       };
-    case 'enum': {
-      // An encoding reads an absent field too (no dash is `solid`), which is
-      // why `unset` does not blank an encoded leaf.
-      const coded = leaf.encoding ? throughEncoding(leaf.encoding, state) : undefined;
-      const option = coded
-        ? coded.value
-        : mixed || unset
-          ? undefined
-          : typeof value === 'string'
-            ? value
-            : leaf.default;
-      return {
-        kind: 'enum',
-        control: leaf.control,
-        value: option,
-        mixed: coded ? coded.mixed : mixed,
-        unset,
-        options: leaf.options.map(enumOption),
-        onChange: coded ? coded.write : setValue,
-        onClear: leaf.clearable ? () => setValue(undefined) : undefined,
-      };
-    }
+    case 'enum':
+      return enumFieldProps(leaf, state);
     case 'color':
       return {
         kind: 'color',
@@ -218,27 +260,8 @@ function enabledFieldProps(leaf: PrefLeaf, state: PrefFieldState): PropertyContr
         alpha: leaf.alpha ? true : undefined,
         onChange: setValue,
       };
-    case 'paint': {
-      // `??` would read an explicit `null` — "no paint" — as absent and show
-      // the default over it.
-      const paint =
-        value === null
-          ? null
-          : isPaint(value)
-            ? value
-            : mixed
-              ? undefined
-              : isPaint(leaf.default)
-                ? leaf.default
-                : null;
-      return {
-        kind: 'paint',
-        value: paint as Paint | null | undefined,
-        mixed,
-        unset,
-        onChange: setValue,
-      };
-    }
+    case 'paint':
+      return paintFieldProps(leaf, state);
     case 'object':
     case 'list':
     case 'map':

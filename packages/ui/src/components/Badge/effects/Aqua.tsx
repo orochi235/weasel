@@ -1,8 +1,8 @@
-import { trimNumber } from '@weasel-js/geom';
 import type { ColorSource } from '@weasel-js/paint';
 import { useColorCss } from '@weasel-js/theme/react';
 import { useId } from 'react';
 import type { EffectModule } from '../bases/types';
+import { GlassStrokes } from './glassStrokes';
 
 /**
  * Aqua-glass treatment — composes onto any badge silhouette: a body gradient,
@@ -59,8 +59,6 @@ const DEFAULTS: Required<BadgeAquaEffectParams> = {
   rimWidth: 1,
 };
 
-const BEZEL_SAMPLES = 240;
-
 const Aqua: EffectModule<BadgeAquaEffectParams> = {
   Component: ({ sampler, boxW, boxH, variant, params }) => {
     const bodyGradId = useId();
@@ -70,52 +68,6 @@ const Aqua: EffectModule<BadgeAquaEffectParams> = {
     if (variant !== 'solid' && variant !== 'subtle' && variant !== 'outline') return null;
     const cfg = { ...DEFAULTS, ...params };
     const accent = css(cfg.accent);
-
-    // Walk the perimeter and collect contiguous runs where the outward normal
-    // points up (ny < 0) — those segments will get the bezel highlight.
-    const total = sampler.totalCss;
-    type Pt = { x: number; y: number };
-    const runs: Pt[][] = [];
-    let cur: Pt[] | null = null;
-    for (let i = 0; i < BEZEL_SAMPLES; i++) {
-      const s = (i / BEZEL_SAMPLES) * total;
-      const pt = sampler.perimeterAt(s);
-      if (pt.ny < 0) {
-        if (!cur) {
-          cur = [];
-          runs.push(cur);
-        }
-        cur.push({ x: pt.x, y: pt.y });
-      } else {
-        cur = null;
-      }
-    }
-    // Wraparound: if first sample and last sample are both "up", merge the
-    // tail into the head so the bezel renders as one stroke across s=0.
-    if (runs.length > 1) {
-      const firstSample = sampler.perimeterAt(0);
-      const lastSample = sampler.perimeterAt(((BEZEL_SAMPLES - 1) / BEZEL_SAMPLES) * total);
-      if (firstSample.ny < 0 && lastSample.ny < 0) {
-        const head = runs.shift()!;
-        runs[runs.length - 1].push(...head);
-      }
-    }
-    const bezelPaths: string[] = [];
-    for (const run of runs) {
-      if (run.length < 2) continue;
-      let d = `M ${trimNumber(run[0].x, 3)} ${trimNumber(run[0].y, 3)}`;
-      for (let i = 1; i < run.length; i++) {
-        d += ` L ${trimNumber(run[i].x, 3)} ${trimNumber(run[i].y, 3)}`;
-      }
-      bezelPaths.push(d);
-    }
-
-    // Stroke widths in CSS px → viewBox units. The badge SVG is 100×100 with
-    // preserveAspectRatio="none", so use the larger inverse-scale to keep
-    // the stroke from getting too thin in either axis.
-    const widthScale = Math.max(100 / boxW, 100 / boxH);
-    const bezelWidthVb = cfg.bezelWidth * widthScale;
-    const rimWidthVb = cfg.rimWidth * widthScale;
 
     const equatorLo = Math.max(0, cfg.equator - cfg.equatorSpread);
     const equatorHi = Math.min(100, cfg.equator + cfg.equatorSpread * 1.6);
@@ -156,30 +108,10 @@ const Aqua: EffectModule<BadgeAquaEffectParams> = {
           style={{ pointerEvents: 'none' }}
         />
 
-        {/* 3. Bezel — stroke segments where normal points up */}
-        {bezelPaths.map((d, i) => (
-          <path
-            key={`bz-${i}`}
-            d={d}
-            fill="none"
-            stroke="white"
-            strokeOpacity={cfg.bezelAlpha}
-            strokeWidth={bezelWidthVb}
-            strokeLinecap="round"
-            vectorEffect="non-scaling-stroke"
-            style={{ pointerEvents: 'none' }}
-          />
-        ))}
-
-        {/* 4. Rim — full perimeter at low opacity */}
-        <path
-          d={sampler.bodyPath}
-          fill="none"
-          stroke="black"
-          strokeOpacity={cfg.rimAlpha}
-          strokeWidth={rimWidthVb}
-          vectorEffect="non-scaling-stroke"
-          style={{ pointerEvents: 'none' }}
+        {/* 3. Bezel and 4. rim */}
+        <GlassStrokes
+          sampler={sampler} boxW={boxW} boxH={boxH}
+          bezelAlpha={cfg.bezelAlpha} bezelWidth={cfg.bezelWidth} rimAlpha={cfg.rimAlpha} rimWidth={cfg.rimWidth}
         />
       </>
     );

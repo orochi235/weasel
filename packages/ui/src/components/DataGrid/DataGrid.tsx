@@ -3,15 +3,14 @@
  * Not: virtual scrolling, column resizing, multi-column sort, filtering,
  * inline editing.
  */
-import { Fragment, useId, useMemo, useState } from 'react';
-import type { KeyboardEvent, MouseEvent, ReactNode } from 'react';
-import { getOwn } from '@weasel-js/registry';
-import { dropSide } from '@weasel-js/ui-input';
+import { useId, useMemo, useState } from 'react';
+import type { ReactNode } from 'react';
 import { useReorderDragList } from '../../useReorderDragList';
-import { Disclosure } from '../Disclosure';
 import type { HoldProps } from '../Disabled';
 import { useControlHold } from '../Disabled/controlHold';
-import { ReorderHandle, type ReorderHandleProps } from '../ReorderHandle/ReorderHandle';
+import { nextSort, sortedRows, type SortState } from './rowSort';
+import { DataGridHead } from './DataGridHead';
+import { DataGridRow } from './DataGridRow';
 import s from './DataGrid.module.css';
 
 /**
@@ -77,26 +76,6 @@ export interface DataGridProps<Row extends { id: string }> extends HoldProps {
   onExpandedChange?: (ids: ReadonlySet<string>) => void;
 }
 
-type SortState = { columnId: string; direction: 'asc' | 'desc' } | null;
-
-const INTERACTIVE = 'a[href], button, input, select, textarea, label, summary, [role="button"], [contenteditable="true"]';
-
-type CellValue = string | number | null | undefined;
-
-/** How `col` reads a row's value: its `accessor`, else the row's property named by its id. */
-const valueOf = <Row,>(col: DataGridColumn<Row>): ((row: Row) => CellValue) =>
-  col.accessor ?? ((row: Row) => getOwn(row as unknown as Record<string, unknown>, col.id) as CellValue);
-
-/** Nullish or NaN: a value sorting cannot place, which goes last either way. */
-const unplaced = (v: CellValue): v is null | undefined => v == null || Number.isNaN(v);
-
-/** Did this event start on a control inside the row rather than on the row itself? */
-function fromControl(e: MouseEvent | KeyboardEvent): boolean {
-  const target = e.target as Element | null;
-  const hit = target?.closest?.(INTERACTIVE);
-  return !!hit && e.currentTarget.contains(hit);
-}
-
 /**
  * Sortable table for inspector-style data. Rows are keyed by `id`. Clicking a
  * sortable header cycles ascending, descending, unsorted; nullish and NaN values sort
@@ -116,36 +95,16 @@ export function DataGrid<Row extends { id: string }>(props: DataGridProps<Row>) 
   const [expanded, toggleExpanded] = useExpanded(expandedIds, defaultExpandedIds, onExpandedChange);
   const detailIdBase = useId();
 
-  const sortedRows = useMemo(() => {
-    if (!sort) return [...rows];
-    const col = columns.find((c) => c.id === sort.columnId);
-    if (!col) return [...rows];
-    const get = valueOf(col);
-    const dir = sort.direction === 'asc' ? 1 : -1;
-    return [...rows].sort((a, b) => {
-      const av = get(a);
-      const bv = get(b);
-      if (unplaced(av) && unplaced(bv)) return 0;
-      if (unplaced(av)) return 1;
-      if (unplaced(bv)) return -1;
-      if (av < bv) return -1 * dir;
-      if (av > bv) return 1 * dir;
-      return 0;
-    });
-  }, [rows, columns, sort]);
+  const shownRows = useMemo(() => sortedRows(rows, columns, sort), [rows, columns, sort]);
 
   const cycleSort = (columnId: string) => {
     if (hold.disabled) return;
-    setSort((cur) => {
-      if (!cur || cur.columnId !== columnId) return { columnId, direction: 'asc' };
-      if (cur.direction === 'asc') return { columnId, direction: 'desc' };
-      return null;
-    });
+    setSort((cur) => nextSort(cur, columnId));
   };
 
   // `label` is unused: the hook only reads id and locked.
   const drag = useReorderDragList({
-    items: sortedRows.map((r) => ({ id: r.id, label: '' })),
+    items: shownRows.map((r) => ({ id: r.id, label: '' })),
     selectedIds: [],
     onReorder: onReorder ?? (() => {}),
     rowSelector: ':not([data-detail-of])',
@@ -159,105 +118,41 @@ export function DataGrid<Row extends { id: string }>(props: DataGridProps<Row>) 
   return hold.wrap(hold.scope(
     <div className={cls} data-held={hold.held}>
       <table className={s.table}>
-        <thead>
-          <tr>
-            {dragEnabled && <th className={s.handleCol} aria-label="drag" />}
-            {detailEnabled && <th className={s.detailCol} aria-label="details" />}
-            {columns.map((col) => {
-              const sortable = col.sortable !== false;
-              const active = sort?.columnId === col.id;
-              const indicator = active ? (sort.direction === 'asc' ? ' ↑' : ' ↓') : '';
-              return (
-                <th
-                  key={col.id}
-                  className={[col.className, col.numeric && s.numeric, active && s.sortActive].filter(Boolean).join(' ') || undefined}
-                  aria-sort={sortable ? (active ? (sort.direction === 'asc' ? 'ascending' : 'descending') : 'none') : undefined}
-                >
-                  {sortable ? (
-                    <button type="button" className={s.sortButton} {...hold.button(false)} onClick={() => cycleSort(col.id)}>
-                      {col.header}{indicator}
-                    </button>
-                  ) : (
-                    <>{col.header}{indicator}</>
-                  )}
-                </th>
-              );
-            })}
-          </tr>
-        </thead>
+        <DataGridHead
+          columns={columns} sort={sort} onSort={cycleSort} dragEnabled={dragEnabled} detailEnabled={detailEnabled} hold={hold}
+        />
         <tbody ref={dragEnabled ? (drag.containerProps.ref as React.RefCallback<HTMLTableSectionElement>) : undefined}>
-          {sortedRows.length === 0 && (
+          {shownRows.length === 0 && (
             <tr>
               <td colSpan={colCount} className={s.empty}>
                 {empty}
               </td>
             </tr>
           )}
-          {sortedRows.map((row, i) => {
-            const isDragging = drag.state.draggedIds?.includes(row.id) ?? false;
-            const side = dropSide(drag.state.targetIndex, i, sortedRows.length);
+          {shownRows.map((row, i) => {
             const expandable = detailEnabled && (rowExpandable?.(row) ?? true);
-            const isExpanded = expandable && expanded.has(row.id);
-            const detail = isExpanded ? renderDetail!(row) : null;
-            const detailId = `${detailIdBase}-detail-${row.id}`;
-            const rowCls = [
-              activates && s.clickable,
-              isDragging && s.dragging,
-              side === 'before' && s.dropBefore,
-              side === 'after' && s.dropAfter,
-              rowClassName?.(row),
-            ].filter(Boolean).join(' ');
             return (
-              <Fragment key={row.id}>
-                <tr
-                  className={rowCls || undefined}
-                  data-expanded={isExpanded || undefined}
-                  tabIndex={activates ? (hold.access.reachable ? 0 : -1) : undefined}
-                  {...(activates ? hold.focus : {})}
-                  onClick={onRowClick ? (e) => { if (!fromControl(e)) onRowClick(row); } : undefined}
-                  onKeyDown={onRowClick ? (e) => {
-                    if (e.target !== e.currentTarget || (e.key !== 'Enter' && e.key !== ' ')) return;
-                    e.preventDefault();
-                    onRowClick(row);
-                  } : undefined}
-                >
-                  {dragEnabled && (
-                    <HandleCell
-                      label={rowLabel?.(row) ?? `row ${i + 1}`}
-                      onPointerDown={drag.rowProps(row.id, i).onPointerDown}
-                      onNudge={(delta) => drag.nudge(row.id, i, delta)}
-                      disabled={hold.refuses}
-                      disabledReason={hold.access.reason}
-                    />
-                  )}
-                  {detailEnabled && (
-                    <td className={s.detailCell}>
-                      {expandable && (
-                        <Disclosure
-                          open={isExpanded}
-                          disabled={hold.disabled}
-                          onOpenChange={() => { if (!hold.disabled) toggleExpanded(row.id); }}
-                          label={isExpanded ? 'Hide details' : 'Show details'}
-                          aria-controls={detail != null ? detailId : undefined}
-                        />
-                      )}
-                    </td>
-                  )}
-                  {columns.map((col) => {
-                    const content = col.render ? col.render(row) : String(valueOf(col)(row) ?? '');
-                    return (
-                      <td key={col.id} className={[col.className, col.numeric && s.numeric].filter(Boolean).join(' ') || undefined}>
-                        {content}
-                      </td>
-                    );
-                  })}
-                </tr>
-                {detail != null && (
-                  <tr id={detailId} className={s.detailRow} data-detail-of={row.id}>
-                    <td colSpan={colCount}>{detail}</td>
-                  </tr>
-                )}
-              </Fragment>
+              <DataGridRow
+                key={row.id}
+                row={row}
+                index={i}
+                rowCount={shownRows.length}
+                columns={columns}
+                colCount={colCount}
+                hold={hold}
+                drag={dragEnabled ? drag : undefined}
+                rowLabel={rowLabel}
+                rowClassName={rowClassName}
+                activates={activates}
+                onRowClick={onRowClick}
+                detail={renderDetail && {
+                  expandable,
+                  expanded: expandable && expanded.has(row.id),
+                  id: `${detailIdBase}-detail-${row.id}`,
+                  render: renderDetail,
+                  onToggle: () => toggleExpanded(row.id),
+                }}
+              />
             );
           })}
         </tbody>
@@ -282,13 +177,4 @@ function useExpanded(
     onChange?.(next);
   };
   return [expanded, toggle];
-}
-
-/** A row's leading cell, holding its drag handle. */
-function HandleCell(props: Pick<ReorderHandleProps, 'label' | 'onPointerDown' | 'onNudge' | 'disabled' | 'disabledReason'>) {
-  return (
-    <td className={s.handleCell}>
-      <ReorderHandle className={s.handle} {...props} />
-    </td>
-  );
 }
