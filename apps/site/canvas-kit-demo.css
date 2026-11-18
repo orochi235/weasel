@@ -208,8 +208,12 @@ a:hover { text-decoration: underline; }
 .ckd-nav-whatsnew a:hover {
   background: color-mix(in srgb, var(--wzl-accent-strong) 20%, transparent);
 }
+/* A tint, not the accent fill `.ckd-nav-section a.active` sets its on-accent text for. */
 .ckd-nav-whatsnew a.active {
   background: color-mix(in srgb, var(--wzl-accent-strong) 30%, transparent);
+  color: var(--wzl-fg);
+  --wzl-fg-muted: inherit;
+  --wzl-fg-subtle: inherit;
 }
 
 .ckd-canvas-wrap {
