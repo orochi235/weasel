@@ -5,14 +5,14 @@
  * (`isHidden: (n) => n.id === editingId`) so the overlay isn't drawn twice.
  */
 
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef } from 'react';
 import { useLatest, useVisibleRaf } from '@weasel-js/react';
 import type { TextStyle } from '@weasel-js/text';
 import { resolveTextStyle } from '@weasel-js/text';
 import { editEnd, imeKey, timerScheduler } from '@weasel-js/ui-input';
 import { historyKey } from '@weasel-js/gestures';
 import type { StyledRun } from '@weasel-js/text';
-import { domToRuns, type OverlayRunBase } from './domRuns';
+import { domToRuns } from './domRuns';
 import { holdForFaces, installSelectionStyle, openingRange } from './overlayOpen';
 import {
   applyStyleToRange, effectiveRangeStyle, styleHasFlag, rangeWeight, setFlagOverRange,
@@ -27,6 +27,7 @@ import { overlayTop } from './overlayFrame';
 import { mountOverlayBoxes, placeOverlay } from './overlayPlace';
 export { overlayTop };
 import { applyOverlayStyle } from './overlayStyle';
+import { useHeldNodeStyle } from './heldNodeStyle';
 import { seedOverlay, type CaretHolder } from './overlaySeed';
 import {
   readSelectionOffsets, restoreOverlayFocus, writeRunsPreservingSelection,
@@ -73,20 +74,7 @@ export function useTextEdit(
   // `TextStyle`, and is called from event handlers rather than from render.
   const editingIdRef = useLatest(editingId);
   const overlayRef = useRef<HTMLDivElement | null>(null);
-  /** The editing node's resolved style, which run spans inheriting small caps
-   *  are split by whenever the runs are rewritten. */
-  const baseRef = useRef<OverlayRunBase>(resolveTextStyle(undefined));
-  const [nodeStyle, setNodeStyle] = useState<TextStyle | null>(null);
-  /** `nodeStyle`, read synchronously by the handlers that rewrite and commit it. */
-  const nodeStyleRef = useRef<TextStyle | null>(null);
-  const holdNodeStyle = useCallback((style: TextStyle | null) => {
-    nodeStyleRef.current = style;
-    setNodeStyle(style);
-  }, []);
-  const styleOf = useCallback(
-    (id: string): TextStyle | undefined => nodeStyleRef.current ?? optsRef.current.getStyle(id),
-    [optsRef],
-  );
+  const { nodeStyle, nodeStyleRef, baseRef, holdNodeStyle, styleOf, restyleNode } = useHeldNodeStyle(optsRef);
   // The overlay-follow loop is built inside the editing effect; the gate's
   // frame callback reaches it through this ref.
   const tickRef = useRef<() => void>(() => {});
@@ -123,7 +111,7 @@ export function useTextEdit(
     holdNodeStyle(null);
     writeEdit(optsRef.current, id, overlayDraft(read, holderRef.current, priorRunsRef.current, style));
     setEditingId(null);
-  }, [editingId, optsRef, holdNodeStyle, setEditingId]);
+  }, [editingId, optsRef, holdNodeStyle, setEditingId, nodeStyleRef]);
 
   const startEdit = useCallback((id: string, opts?: StartEditOptions) => {
     initialCaretRef.current = opts?.caret ?? 'all';
@@ -136,16 +124,7 @@ export function useTextEdit(
     const id = editingIdRef.current;
     const draft = overlayDraft(domToRuns(overlay), holderRef.current, priorRunsRef.current, nodeStyleRef.current);
     if (id !== null && draftChanged(sentRef, draft)) optsRef.current.onInput?.(id, draft);
-  }, [editingIdRef, optsRef]);
-
-  /** Hold `style` as the node's, or the node's own for `null`, and dress the overlay in it. */
-  const restyleNode = useCallback((overlay: HTMLDivElement, id: string, style: TextStyle | null) => {
-    holdNodeStyle(style);
-    // The root's own decoration and slant reach every run by inheritance.
-    const base = (baseRef.current = resolveTextStyle(style ?? optsRef.current.getStyle(id), optsRef.current.getPaint?.(id)));
-    applyOverlayStyle(overlay, base);
-    return base;
-  }, [holdNodeStyle, optsRef]);
+  }, [editingIdRef, optsRef, nodeStyleRef]);
 
   const applyStyle = useCallback(function applyStyle(patch: RunStylePatch) {
     const overlay = overlayRef.current;
@@ -209,7 +188,7 @@ export function useTextEdit(
     // when the patch came from chrome the selection is in that control.
     publishRange(overlay, range);
     sendDraft(overlay);
-  }, [publishRange, armPending, editingIdRef, optsRef, styleOf, restyleNode, sendDraft, pendingRef, selectionRef]);
+  }, [publishRange, armPending, editingIdRef, optsRef, styleOf, restyleNode, sendDraft, pendingRef, selectionRef, baseRef]);
 
   /** `applyStyle`, as one step of the edit's undo. */
   const applyStyleToSelection = useCallback((patch: RunStylePatch) => {
@@ -396,7 +375,7 @@ export function useTextEdit(
     };
   }, [editingId, opts.container, optsRef, commit, cancelEdit, syncSelection, clearSelection,
       frameLoop, toggleStyle, dropPending, publishRange, holdNodeStyle, sendDraft, restyleNode, pendingRef,
-      selectionRef]);
+      selectionRef, baseRef, nodeStyleRef]);
 
   return {
     editingId, startEdit, cancelEdit, commitEdit: commit, isEditing, nodeStyle,
