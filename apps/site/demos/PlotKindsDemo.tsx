@@ -41,7 +41,7 @@ export function PlotKindsDemo() {
           />
         )}
       </DemoStage>
-      {data && <PlotDataPanel data={data} onChange={(next) => setCharts((c) => ({ ...c, [kind]: next }))} />}
+      {data && <PlotDataPanel key={kind} data={data} onChange={(next) => setCharts((c) => ({ ...c, [kind]: next }))} />}
     </div>
   );
 }
