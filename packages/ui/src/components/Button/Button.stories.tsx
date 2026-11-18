@@ -1,7 +1,6 @@
 import type { Meta, StoryObj } from '@weasel-js/forge';
 import type { ReactElement } from 'react';
-import { Button, type ButtonVariant, BUTTON_VARIANT_ICONS } from '@weasel-js/ui/components/Button';
-import type { ControlSize } from '@weasel-js/ui/components/ControlSize';
+import { Button, type ButtonSize, type ButtonVariant, BUTTON_VARIANT_ICONS } from '@weasel-js/ui/components/Button';
 import { SegmentedBar } from '@weasel-js/ui/components/Segmented';
 import { EMPHASIS_ICONS, GRADE_ICONS } from '../appearanceIcons';
 import { EMPHASES, GRADES } from '@weasel-js/theme';
@@ -205,7 +204,7 @@ export const FullWidth: Story = {
 };
 
 const VARIANTS: ButtonVariant[] = ['solid', 'ghost'];
-const SIZES: ControlSize[] = ['sm', 'md'];
+const SIZES: ButtonSize[] = ['xs', 'sm', 'md'];
 
 export const Matrix: Story = {
   tags: ['gallery'],

@@ -5,6 +5,10 @@ import {
 } from './measure';
 import type { ControlSize } from './controlSize';
 
+/** A button's size: a {@link ControlSize}, or `xs`, the dense chrome of a title bar, at `--wzl-control-h-xs`. Only
+ *  a button takes `xs`; no other control has a design at that height. */
+export type ButtonSize = ControlSize | 'xs';
+
 /**
  * What a button shows, as every target reads it. `I` is how a target names an icon (a React node, a glyph name);
  * measuring only asks whether one is there.
@@ -14,7 +18,7 @@ export interface ButtonFace<I = unknown> {
    *  button has no label part. */
   readonly label?: string;
   /** Default `'md'`. */
-  readonly size?: ControlSize;
+  readonly size?: ButtonSize;
   /** The button is its icon alone, `icon`, in a square box. */
   readonly iconOnly?: boolean;
   readonly icon?: I;
@@ -53,20 +57,27 @@ export interface ButtonMetrics {
 /** The spinner's drawn size at either button size. */
 export const BUTTON_SPINNER_SIZE = 14;
 
+/** Each size's tokens and defaults, as `Button.module.css`'s `.size_*` rules set them. */
+const SIZES: Record<ButtonSize, { height: string; padX: string; icon: number; font: string }> = {
+  xs: { height: '--wzl-control-h-xs', padX: '--wzl-space-2', icon: 12, font: '--wzl-font-size-sm' },
+  sm: { height: '--wzl-control-h-sm', padX: '--wzl-space-4', icon: 12, font: '--wzl-font-size-sm' },
+  md: { height: '--wzl-control-h', padX: '--wzl-space-6', icon: 14, font: '--wzl-font-size' },
+};
+
 /** The tokens a button of `size` is sized by: the same ones ui's `Button.module.css` lays it out with, so the DOM
  *  button and the HUD one agree in any theme. */
-export function buttonMetrics(env: MeasureEnv, size: ControlSize = 'md', iconOnly = false): ButtonMetrics {
-  const sm = size === 'sm';
-  const height = envPx(env, sm ? '--wzl-control-h-sm' : '--wzl-control-h');
+export function buttonMetrics(env: MeasureEnv, size: ButtonSize = 'md', iconOnly = false): ButtonMetrics {
+  const z = SIZES[size];
+  const height = envPx(env, z.height);
   return {
     height,
-    padX: iconOnly ? 0 : envPx(env, '--wzl-button-pad-x', sm ? '--wzl-space-4' : '--wzl-space-6'),
+    padX: iconOnly ? 0 : envPx(env, '--wzl-button-pad-x', z.padX),
     gap: envPx(env, '--wzl-space-3'),
-    iconSize: envPx(env, '--wzl-button-icon-size', sm ? 12 : 14),
+    iconSize: envPx(env, '--wzl-button-icon-size', z.icon),
     spinnerSize: BUTTON_SPINNER_SIZE,
     font: {
       family: env.token('--wzl-font-ui'),
-      size: envPx(env, '--wzl-field-font-size', sm ? '--wzl-font-size-sm' : '--wzl-font-size'),
+      size: envPx(env, '--wzl-field-font-size', z.font),
       weight: envNumber(env, '--wzl-button-font-weight', envNumber(env, '--wzl-font-weight-medium', 500)),
     },
   };

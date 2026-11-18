@@ -5,7 +5,7 @@ import type { DrawCommand } from '@weasel-js/core/renderer';
 import { roundRectPath } from '@weasel-js/geom';
 import { IDLE_PRESS, isPressKey, pressStep, type PressInput, type PressState } from '@weasel-js/ui-input';
 import {
-  envPx, exactly, measureButton, type ButtonFace, type ButtonLayout, type ControlSize, type HeadlessComponent,
+  envPx, exactly, measureButton, type ButtonFace, type ButtonLayout, type ButtonSize, type HeadlessComponent,
 } from '@weasel-js/ui-logic';
 import { hudMeasureEnv } from '../measureEnv';
 import { textCommandFromRuns } from '@weasel-js/core';
@@ -22,7 +22,7 @@ export interface ButtonOptions {
   x: number; y: number; width: number; height: number;
   label: string;
   /** The type scale the label is set at, as ui's `Button` takes it. Default `'md'`. */
-  size?: ControlSize;
+  size?: ButtonSize;
   fill?: string;
   pressedFill?: string;
   hoverFill?: string;
