@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { bindClip, toClip } from '@weasel-js/animator';
 import { useAnimator } from '@weasel-js/animator/react';
-import type { Clip, TimelineHandle } from '@weasel-js/animator';
+import type { Clip, ClipBinder, TimelineHandle } from '@weasel-js/animator';
 import { solid } from '@weasel-js/paint';
 import { asNodeId, SceneCanvas, sceneClipTargets, useScene } from '@weasel-js/core';
 import type { RectPose, Fill } from '@weasel-js/core';
@@ -31,6 +31,10 @@ const CLIP: Clip = {
   ],
 };
 
+/** The demo's event binder: `log` shows its data, and every other name is unknown. */
+const logEvents = (show: (data: string) => void): NonNullable<ClipBinder['event']> =>
+  (name, data) => (name === 'log' ? { fire: () => show(String(data)) } : undefined);
+
 export function ClipDemo() {
   const scene = useScene<{ shape: 'rect'; fill: Fill }, 'main', RectPose>({
     systemLayers: [{ id: 'main' }],
@@ -46,10 +50,7 @@ export function ClipDemo() {
   const [handle, setHandle] = useState<TimelineHandle | null>(null);
 
   useEffect(() => {
-    const live = bindClip(clip, {
-      target: sceneClipTargets(scene),
-      event: (name, data) => (name === 'log' ? { fire: () => setFired(String(data)) } : undefined),
-    });
+    const live = bindClip(clip, { target: sceneClipTargets(scene), event: logEvents(setFired) });
     const tl = animator.timeline({ ...live, loop: true });
     // The editor below needs the handle to render from.
     // eslint-disable-next-line react-hooks/set-state-in-effect
@@ -60,7 +61,8 @@ export function ClipDemo() {
   const load = () => {
     try {
       const next = JSON.parse(text) as Clip;
-      bindClip(next, { target: sceneClipTargets(scene), event: () => ({}) });
+      // The binder the effect will bind with, so a clip it would reject is refused here.
+      bindClip(next, { target: sceneClipTargets(scene), event: logEvents(setFired) });
       setClip(next);
       setError('');
     } catch (e) {
