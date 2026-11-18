@@ -73,7 +73,7 @@ describe('attachHud', () => {
     const api = makeApi();
     let seen: string | undefined;
     hud.add({
-      id: 'w', bounds: { x: 0, y: 0, w: 10, h: 10 }, hidden: false,
+      id: 'w', bounds: { x: 0, y: 0, width: 10, height: 10 }, hidden: false,
       hitTest: () => false, dispose: () => {}, onPointer: () => {},
       draw: (ctx) => {
         seen = ctx.defaultFont;
@@ -127,7 +127,7 @@ describe('attachHud', () => {
     const api = makeApi();
     attachHud(api, hud);
     const hoverFn = vi.fn();
-    const btn = hud.button({ id: 'b', x: 10, y: 10, w: 50, h: 20, label: 'x' });
+    const btn = hud.button({ id: 'b', x: 10, y: 10, width: 50, height: 20, label: 'x' });
     btn.subscribe('hover', hoverFn);
 
     // Simulate the canvas dispatching onUncapturedMove under identity view
@@ -142,7 +142,7 @@ describe('attachHud', () => {
     attachHud(api, hud);
     const seen: { x: number; y: number }[] = [];
     hud.add({
-      id: 'w', bounds: { x: 0, y: 0, w: 100, h: 100 }, hidden: false,
+      id: 'w', bounds: { x: 0, y: 0, width: 100, height: 100 }, hidden: false,
       draw: () => [], hitTest: () => true, dispose: () => {},
       onPointer: (e) => { if (e.type === 'hovermove') seen.push({ x: e.x, y: e.y }); },
     });
@@ -158,7 +158,7 @@ describe('attachHud', () => {
     const detach = attachHud(api, hud);
     const types: string[] = [];
     hud.add({
-      id: 'w', bounds: { x: 0, y: 0, w: 100, h: 100 }, hidden: false,
+      id: 'w', bounds: { x: 0, y: 0, width: 100, height: 100 }, hidden: false,
       draw: () => [], hitTest: () => true, dispose: () => {},
       onPointer: (e) => { types.push(e.type); },
     });
@@ -199,7 +199,7 @@ describe('attachHud', () => {
       };
       const theme = { ...resolveTheme(weaselTheme, { mode: 'dark' }), '--wzl-surface-raised': '#123456' };
       attachHud(api, hud, { theme });
-      hud.button({ id: 'b', x: 0, y: 0, w: 50, h: 20, label: 'x' });
+      hud.button({ id: 'b', x: 0, y: 0, width: 50, height: 20, label: 'x' });
       const registeredLayer = (api.registerLayer as ReturnType<typeof vi.fn>).mock.calls[0][0];
       const cmds = registeredLayer.draw(null, { x: 0, y: 0, scale: { x: 1, y: 1 } }, { width: 100, height: 100, dpr: 1 });
       const buttonBody = cmds.find((c: { kind: string }) => c.kind === 'path') as { fill: { paint: { color: string } } };
@@ -213,7 +213,7 @@ describe('attachHud', () => {
     const hud = createHud();
     const api = makeApi();
     attachHud(api, hud);
-    hud.button({ id: 'b', x: 0, y: 0, w: 50, h: 20, label: 'x' });
+    hud.button({ id: 'b', x: 0, y: 0, width: 50, height: 20, label: 'x' });
     const registeredLayer = (api.registerLayer as ReturnType<typeof vi.fn>).mock.calls[0][0];
     const cmds = registeredLayer.draw(null, { x: 0, y: 0, scale: { x: 1, y: 1 } }, { width: 100, height: 100, dpr: 1 });
     const buttonBody = cmds.find((c: { kind: string }) => c.kind === 'path') as { fill: { paint: { color: string } } };
@@ -227,7 +227,7 @@ describe('attachHud', () => {
     const layer = api._layer!;
 
     const win = hud.window({
-      id: 'w', x: 10, y: 10, w: 100, h: 80, title: 'T',
+      id: 'w', x: 10, y: 10, width: 100, height: 80, title: 'T',
       content: () => [{
         kind: 'path',
         path: { kind: 'rect', x: 0, y: 0, width: 5, height: 5 },
@@ -240,7 +240,7 @@ describe('attachHud', () => {
     expect((cmds[0] as { clip?: unknown }).clip).toMatchObject({
       kind: 'rect',
       x: win.contentRect.x, y: win.contentRect.y,
-      width: win.contentRect.w, height: win.contentRect.h,
+      width: win.contentRect.width, height: win.contentRect.height,
     });
     expect(cmds.length).toBeGreaterThan(1);   // frame commands follow
   });
@@ -256,8 +256,8 @@ describe('attachHud', () => {
       path: { kind: 'rect' as const, x: 0, y: 0, width: 5, height: 5 },
       fill: { paint: { kind: 'solid' as const, color: '#f00' } },
     }];
-    hud.window({ id: 'a', x: 10, y: 10, w: 100, h: 80, title: 'A', content: painter });
-    hud.window({ id: 'b', x: 200, y: 10, w: 100, h: 80, title: 'B', content: painter });
+    hud.window({ id: 'a', x: 10, y: 10, width: 100, height: 80, title: 'A', content: painter });
+    hud.window({ id: 'b', x: 200, y: 10, width: 100, height: 80, title: 'B', content: painter });
 
     const kinds = layer
       .draw(null, { x: 0, y: 0, scale: { x: 1, y: 1 } }, { width: 400, height: 300, dpr: 1 })
@@ -282,7 +282,7 @@ describe('attachHud claims', () => {
   function widgetAt(id: string, claims?: readonly ClaimableGesture[]): Widget {
     return {
       id,
-      bounds: { x: 0, y: 0, w: 50, h: 50 },
+      bounds: { x: 0, y: 0, width: 50, height: 50 },
       hidden: false,
       draw: () => [],
       hitTest: () => true,
@@ -327,7 +327,7 @@ describe('attachHud claims', () => {
     const api = makeApi();
     attachHud(api, hud);
     hud.add(widgetAt('under'));
-    const scrim = hud.rect({ id: 'scrim', x: 0, y: 0, w: 50, h: 50, fill: '#000' });
+    const scrim = hud.rect({ id: 'scrim', x: 0, y: 0, width: 50, height: 50, fill: '#000' });
     expect(hitAt(api)?.initialScratch?.widget.id).toBe('under');
     scrim.setClaims(['pointer', 'wheel']);
     expect(hitAt(api)?.initialScratch?.widget.id).toBe('scrim');

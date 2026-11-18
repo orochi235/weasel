@@ -3,7 +3,7 @@ import { pathContainsPoint } from '@weasel-js/geom';
 import { describe, expect, it } from 'vitest';
 import { boxShadowCommands } from './boxShadow';
 
-const box = { x: 0, y: 0, w: 10, h: 10 };
+const box = { x: 0, y: 0, width: 10, height: 10 };
 const shadow = (spread: number) => ({ inset: true, x: 0, y: 0, blur: 0, spread, color: 'black' });
 
 /** The inset layer's ring, the region it paints before the box clips it. */

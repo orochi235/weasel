@@ -65,6 +65,6 @@ describe('a menu widget with no measure of its own', () => {
       open, close: () => {}, toCanvas: (p) => p, canvasSize: () => ({ width: 800, height: 600 }), onChange: () => {},
     });
     w.draw(ctx);
-    expect(w.bounds.w).toBe(Math.ceil(20 * A * m.font.size / SIZE) + m.padX * 2 + m.iconSize + m.gap * 2);
+    expect(w.bounds.width).toBe(Math.ceil(20 * A * m.font.size / SIZE) + m.padX * 2 + m.iconSize + m.gap * 2);
   });
 });

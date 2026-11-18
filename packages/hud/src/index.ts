@@ -18,7 +18,7 @@ export { DEFAULT_FONT_FAMILY, registerDefaultFont } from './fonts/registerDefaul
 export type { FontAtlasUrls } from './fonts/registerDefaultFont';
 export type { RectOptions, RectWidget } from './widgets/rect';
 export type { TextOptions, TextWidget } from './widgets/text';
-export type { ImageOptions, ImageWidget, SourceRect } from './widgets/image';
+export type { ImageOptions, ImageWidget } from './widgets/image';
 export type { LabelOptions, LabelWidget } from './widgets/label';
 export type { ButtonOptions, ButtonWidget, ButtonEvent, ButtonHandler, HudButtonState, HudButtonTarget } from './widgets/button';
 export { hudButton } from './widgets/button';

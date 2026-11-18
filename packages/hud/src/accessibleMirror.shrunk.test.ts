@@ -15,7 +15,7 @@ describe('mirrorFocusedTree counterexamples', () => {
       ],
     };
     const w: Widget = {
-      id: 'w', bounds: { x: 0, y: 0, w: 1, h: 1 }, hidden: false, focusable: true,
+      id: 'w', bounds: { x: 0, y: 0, width: 1, height: 1 }, hidden: false, focusable: true,
       draw: () => [], hitTest: () => false, onPointer: () => {}, dispose: () => {},
       accessibleTree: { read: () => node, subscribe: () => () => {} },
     };

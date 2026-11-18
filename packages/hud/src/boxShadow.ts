@@ -12,22 +12,22 @@ function roundRectD(x: number, y: number, w: number, h: number, r: number): stri
 }
 
 function outer(b: WidgetBounds, radius: number, s: BoxShadow, color: string): DrawCommand {
-  return dropShadowCommand({ x: b.x, y: b.y, width: b.w, height: b.h }, radius, s, color);
+  return dropShadowCommand(b, radius, s, color);
 }
 
 /** An inset layer, hard-edged whatever its blur: the box less itself moved by the offset and shrunk by the spread. */
 function inset(b: WidgetBounds, radius: number, s: BoxShadow, color: string): DrawCommand {
   const margin = Math.abs(s.x) + Math.abs(s.y) + Math.abs(s.spread) + 1;
-  const w = b.w - s.spread * 2;
-  const h = b.h - s.spread * 2;
+  const w = b.width - s.spread * 2;
+  const h = b.height - s.spread * 2;
   // A spread past the middle leaves no inner box, and the layer covers the whole box.
   const hole = w > 0 && h > 0
     ? roundRectD(b.x + s.x + s.spread, b.y + s.y + s.spread, w, h, spreadRadius(radius, -s.spread))
     : '';
-  const ring = pathFromD(`${roundRectD(b.x - margin, b.y - margin, b.w + margin * 2, b.h + margin * 2, 0)} ${hole}`);
+  const ring = pathFromD(`${roundRectD(b.x - margin, b.y - margin, b.width + margin * 2, b.height + margin * 2, 0)} ${hole}`);
   return {
     kind: 'group',
-    clip: roundRectPath(b.x, b.y, b.w, b.h, radius),
+    clip: roundRectPath(b.x, b.y, b.width, b.height, radius),
     children: [{ kind: 'path', path: ring.kind === 'polygon' ? { ...ring, fillRule: 'evenodd' } : ring, fill: solid(color) }],
   };
 }

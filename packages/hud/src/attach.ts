@@ -122,14 +122,14 @@ function bindHud(api: CanvasExtensionApi, hud: Hud, options: AttachHudOptions): 
       for (const w of hud.widgets()) {
         if (w.hidden || !w.content || !w.contentRect) continue;
         const rect = w.contentRect;
-        if (rect.w <= 0 || rect.h <= 0) continue;
+        if (rect.width <= 0 || rect.height <= 0) continue;
         const children = w.content({
           data, view, dims, rect, defaultFont, tokens: theme, color,
         });
         if (children.length === 0) continue;
         out.push({
           kind: 'group',
-          clip: { kind: 'rect', x: rect.x, y: rect.y, width: rect.w, height: rect.h },
+          clip: { kind: 'rect', ...rect },
           children,
         });
       }
@@ -235,8 +235,8 @@ function cachedCommands(
   const b = w.bounds;
   const hit = cache.get(w);
   if (hit && hit.focus === focus && hit.tokens === ctx.tokens && hit.font === ctx.defaultFont
-    && hit.width === ctx.dims.width && hit.height === ctx.dims.height
-    && hit.x === b.x && hit.y === b.y && hit.w === b.w && hit.h === b.h
+    && hit.canvasWidth === ctx.dims.width && hit.canvasHeight === ctx.dims.height
+    && hit.x === b.x && hit.y === b.y && hit.width === b.width && hit.height === b.height
     && depsUnchanged(hit.deps, deps)) {
     return hit.cmds;
   }
@@ -244,13 +244,13 @@ function cachedCommands(
   if (!hit) {
     cache.set(w, {
       deps, cmds, focus, tokens: ctx.tokens, font: ctx.defaultFont,
-      width: ctx.dims.width, height: ctx.dims.height, x: b.x, y: b.y, w: b.w, h: b.h,
+      canvasWidth: ctx.dims.width, canvasHeight: ctx.dims.height, x: b.x, y: b.y, width: b.width, height: b.height,
     });
     return cmds;
   }
   // Refilled in place, so a widget redrawn every frame leaves no entry behind.
   hit.deps = deps; hit.cmds = cmds; hit.focus = focus; hit.tokens = ctx.tokens; hit.font = ctx.defaultFont;
-  hit.width = ctx.dims.width; hit.height = ctx.dims.height; hit.x = b.x; hit.y = b.y; hit.w = b.w; hit.h = b.h;
+  hit.canvasWidth = ctx.dims.width; hit.canvasHeight = ctx.dims.height; hit.x = b.x; hit.y = b.y; hit.width = b.width; hit.height = b.height;
   return cmds;
 }
 
@@ -262,8 +262,8 @@ interface CachedFrame {
   focus: number;
   tokens: ResolvedTheme;
   font: string;
-  width: number; height: number;
-  x: number; y: number; w: number; h: number;
+  canvasWidth: number; canvasHeight: number;
+  x: number; y: number; width: number; height: number;
 }
 
 const RING_WIDTH = 2;
@@ -272,7 +272,7 @@ const RING_GAP = 2;
 /** A stroked rect just outside `w`'s bounds, so the ring never covers the
  *  widget's own edge. */
 function focusRing(w: Widget, color: string): DrawCommand {
-  const { x, y, w: bw, h } = w.bounds;
+  const { x, y, width: bw, height: h } = w.bounds;
   const out = RING_GAP + RING_WIDTH / 2;
   return {
     kind: 'path',

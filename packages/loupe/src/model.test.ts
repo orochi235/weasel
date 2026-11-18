@@ -6,7 +6,7 @@ import { createLoupeModel, type LoupeSurface } from './model';
 function stubSurface(over: Partial<LoupeSurface> = {}) {
   const changed = vi.fn();
   const surface: LoupeSurface = {
-    lens: () => ({ x: 0, y: 0, w: 100, h: 100 }),
+    lens: () => ({ x: 0, y: 0, width: 100, height: 100 }),
     covers: () => false,
     sample: () => '#112233',
     hidden: () => false,

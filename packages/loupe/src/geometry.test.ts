@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { loupeExtent, loupeInnerView, placeBand } from './geometry';
 
 const outer = { x: 0, y: 0, scale: { x: 2, y: 2 } };
-const rect = { x: 500, y: 400, w: 200, h: 100 };
+const rect = { x: 500, y: 400, width: 200, height: 100 };
 
 describe('loupeInnerView', () => {
   it('multiplies the outer scale by the factor on both axes', () => {
@@ -12,8 +12,8 @@ describe('loupeInnerView', () => {
 
   it('centers the aimed world point in the content rect', () => {
     const v = loupeInnerView({ x: 50, y: 25 }, outer, rect, 8);
-    expect((50 - v.x) * v.scale.x).toBeCloseTo(rect.w / 2);
-    expect((25 - v.y) * v.scale.y).toBeCloseTo(rect.h / 2);
+    expect((50 - v.x) * v.scale.x).toBeCloseTo(rect.width / 2);
+    expect((25 - v.y) * v.scale.y).toBeCloseTo(rect.height / 2);
   });
 
   it('respects a non-uniform outer scale', () => {
@@ -35,7 +35,7 @@ describe('loupeExtent', () => {
 });
 
 describe('placeBand', () => {
-  const band = { x: 100, y: 200, w: 200, h: 20 };
+  const band = { x: 100, y: 200, width: 200, height: 20 };
 
   it('magnifies by the factor when the band fits, drawn over the band', () => {
     expect(placeBand({ band, factor: 2, maxWidth: 1000 })).toEqual({

@@ -24,8 +24,8 @@ export function interiorOf(rect: LoupeRect, grown: boolean): LoupeRect {
   return {
     x: rect.x + HANDLE_SLOP,
     y: rect.y + HANDLE_SLOP,
-    w: rect.w - 2 * HANDLE_SLOP,
-    h: rect.h - 2 * HANDLE_SLOP,
+    width: rect.width - 2 * HANDLE_SLOP,
+    height: rect.height - 2 * HANDLE_SLOP,
   };
 }
 
@@ -46,16 +46,15 @@ export function hitBoxesOf<C>(
     // A Glass reticle is the patch under its own body: it is not shown, and the body takes the pointer there.
     if (data.role === 'lens-reticle' && settingsOf(scene, data.lensId)?.aim === 'glass') continue;
     const p = effectivePose(scene, node);
-    const s = viewRectToScreen(view, p);
-    let rect: LoupeRect = { x: s.x, y: s.y, w: s.width, h: s.height };
+    let rect: LoupeRect = viewRectToScreen(view, p);
     const body = data.role === 'lens-body';
     const grown = body && selected.has(node.id);
     if (grown) {
       rect = {
         x: rect.x - HANDLE_SLOP,
         y: rect.y - HANDLE_SLOP,
-        w: rect.w + 2 * HANDLE_SLOP,
-        h: rect.h + 2 * HANDLE_SLOP,
+        width: rect.width + 2 * HANDLE_SLOP,
+        height: rect.height + 2 * HANDLE_SLOP,
       };
     }
     // A selected body's handles sit on its bounding box's corners, outside a
@@ -67,7 +66,12 @@ export function hitBoxesOf<C>(
     if (body && showsSeam(data)) {
       const interior = interiorOf(rect, grown);
       const { seamX } = splitRects(interior, seamOf(data, preview, data.lensId));
-      const seam = { x: seamX - SEAM_GRAB, y: interior.y, w: 2 * SEAM_GRAB, h: interior.h };
+      const seam = {
+        x: seamX - SEAM_GRAB,
+        y: interior.y,
+        width: 2 * SEAM_GRAB,
+        height: interior.height,
+      };
       out.push({ nodeId: node.id, role: 'lens-seam', rect: seam, round: false });
     }
   }

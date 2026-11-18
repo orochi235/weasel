@@ -36,7 +36,7 @@ describe('a HUD text row typed into in Hebrew', () => {
     const { row, w, type, click } = hebrewRow();
     type(['ArrowDown', 'Enter', 'ש', 'ל', 'ו', 'ם']);
     const p = w.bounds;
-    const right = p.x + p.w - m.padX - 3;
+    const right = p.x + p.width - m.padX - 3;
     const left = right - 4 * 7;
     expect(w.textInput!.read()!.rect.x).toBe(left + 1);
 

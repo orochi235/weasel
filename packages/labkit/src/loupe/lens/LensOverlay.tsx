@@ -137,7 +137,7 @@ function LensInterior<C>({
     settings: { ...settings, seam: seamOf(settings, preview, lens.lensId) },
     sources,
     reticle,
-    size: { width: rect.w, height: rect.h },
+    size: { width: rect.width, height: rect.height },
     describe,
   };
   return (

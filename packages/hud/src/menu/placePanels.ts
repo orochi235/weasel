@@ -51,7 +51,7 @@ export function createPlacer(opts: PlaceOptions): (
       (t, s) => (fontFamily === null ? estimateWidth(t, s) : opts.measure(t, s, fontFamily)));
     const m = menuPanelMetrics(env);
     const { width, height } = opts.canvasSize();
-    const bounds = { x: 0, y: 0, w: width, h: height };
+    const bounds = { x: 0, y: 0, width, height };
     const stack = c.stack();
     const next: Placed[] = [];
     let kept = true;
@@ -65,16 +65,15 @@ export function createPlacer(opts: PlaceOptions): (
       }
       kept = false;
       const box = measurePanel(entries, env);
-      const size = { w: box.width, h: box.height };
       let at: XY;
       if (level === 0) {
-        at = opts.under ? placeMenuUnder(size, opts.under, bounds) : placeMenu(size, opts.anchor, bounds);
+        at = opts.under ? placeMenuUnder(box, opts.under, bounds) : placeMenu(box, opts.anchor, bounds);
       } else {
         const parent = next[level - 1]!.rect;
         const row = menuRowSpans(c.entriesAt(level - 1), m)[parentRow!]!;
-        at = placeSubmenu(size, { x: parent.x, y: parent.y + row.y, w: parent.w, h: row.h }, bounds);
+        at = placeSubmenu(box, { x: parent.x, y: parent.y + row.y, width: parent.width, height: row.h }, bounds);
       }
-      const rect = { x: at.x, y: at.y, w: size.w, h: size.h };
+      const rect = { x: at.x, y: at.y, width: box.width, height: box.height };
       next.push({ entries, parentRow, rect, layout: box.layout });
       c.setPanel(level, rect);
     }

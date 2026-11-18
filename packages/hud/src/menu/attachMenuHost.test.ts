@@ -24,7 +24,7 @@ function makeHost(): MenuHost {
 }
 
 const focusableWidget = (id: string): Widget => ({
-  id, bounds: { x: 700, y: 0, w: 20, h: 20 }, hidden: false, focusable: true,
+  id, bounds: { x: 700, y: 0, width: 20, height: 20 }, hidden: false, focusable: true,
   draw: () => [], hitTest: () => false, onPointer: () => {}, dispose: () => {},
 });
 
@@ -249,7 +249,7 @@ describe('attachMenuHost on an attached hud', () => {
 
   it('a press on another focusable widget closes it', () => {
     const other: Widget = {
-      id: 'other', bounds: { x: 500, y: 0, w: 20, h: 20 }, hidden: false, focusable: true,
+      id: 'other', bounds: { x: 500, y: 0, width: 20, height: 20 }, hidden: false, focusable: true,
       draw: () => [], hitTest: (x, y) => x >= 500 && x < 520 && y < 20, onPointer: () => {}, dispose: () => {},
     };
     hud.add(other);
@@ -315,7 +315,7 @@ describe('attachMenuHost with a hud drawing in another font', () => {
     wide.open({ menu: 'wide', client: { x: 10, y: 10 } });
     layer!.draw(null, { x: 0, y: 0, scale: { x: 1, y: 1 } }, { width: 800, height: 600, dpr: 1 });
     const advance = FIXTURE_FONT.chars[0]!.xadvance;
-    expect(own.widgets()[0]!.bounds.w)
+    expect(own.widgets()[0]!.bounds.width)
       .toBe(Math.ceil(20 * advance * m.font.size / FIXTURE_FONT.info.size) + m.padX * 2 + m.iconSize + m.gap * 2);
     off();
     unhud();

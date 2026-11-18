@@ -2,16 +2,16 @@ import { describe, it, expect } from 'vitest';
 import { screenToWorld, viewToTransform, worldToScreen } from '@weasel-js/core';
 import { loupeInnerView, loupeSourcePoint } from './geometry';
 
-const rect = { x: 30, y: 48, w: 208, h: 170 };
+const rect = { x: 30, y: 48, width: 208, height: 170 };
 
 describe('loupeSourcePoint', () => {
   it('maps the lens center to the aim point', () => {
-    const p = { x: rect.x + rect.w / 2, y: rect.y + rect.h / 2 };
+    const p = { x: rect.x + rect.width / 2, y: rect.y + rect.height / 2 };
     expect(loupeSourcePoint(p, rect, { x: 400, y: 300 }, 8)).toEqual({ x: 400, y: 300 });
   });
 
   it('divides the offset from the center by the magnification', () => {
-    const p = { x: rect.x + rect.w / 2 + 40, y: rect.y + rect.h / 2 - 16 };
+    const p = { x: rect.x + rect.width / 2 + 40, y: rect.y + rect.height / 2 - 16 };
     expect(loupeSourcePoint(p, rect, { x: 400, y: 300 }, 8)).toEqual({ x: 405, y: 298 });
   });
 

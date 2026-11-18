@@ -119,15 +119,15 @@ describe('createLoupe', () => {
     // centered on the aim point.
     expect(seen).toHaveLength(1);
     expect(seen[0].scale).toEqual({ x: 4, y: 4 });
-    expect(seen[0].x).toBeCloseTo(400 - rect.w / 2 / 4);
-    expect(seen[0].y).toBeCloseTo(300 - rect.h / 2 / 4);
+    expect(seen[0].x).toBeCloseTo(400 - rect.width / 2 / 4);
+    expect(seen[0].y).toBeCloseTo(300 - rect.height / 2 / 4);
   });
 
   it('freezes the aim while the pointer is over the window', () => {
     const hud = createHud();
     bindHost(hud);
     const loupe = createLoupe({ hud, canvas: makeElement(), source, requestRedraw: () => {} });
-    loupe.window.setBounds({ x: 0, y: 0, w: 200, h: 150 });
+    loupe.window.setBounds({ x: 0, y: 0, width: 200, height: 150 });
     loupe.aimAt({ x: 400, y: 300 });
     const before = loupe.aim;
     loupe.aimAt({ x: 50, y: 50 });        // inside the window
@@ -194,10 +194,10 @@ describe('createLoupe', () => {
     vi.spyOn(el, 'getBoundingClientRect').mockReturnValue(
       { left: 0, top: 0, width: 820, height: 400, right: 820, bottom: 400, x: 0, y: 0, toJSON: () => ({}) } as DOMRect,
     );
-    const reads: { x: number; y: number; w: number; h: number }[] = [];
+    const reads: { x: number; y: number; width: number; height: number }[] = [];
     vi.spyOn(el, 'getContext').mockReturnValue({
       RGBA: 0x1908, UNSIGNED_BYTE: 0x1401,
-      readPixels: (x: number, y: number, w: number, h: number) => { reads.push({ x, y, w, h }); },
+      readPixels: (x: number, y: number, w: number, h: number) => { reads.push({ x, y, width: w, height: h }); },
     } as unknown as WebGL2RenderingContext);
     vi.stubGlobal('createImageBitmap', vi.fn(() => new Promise<ImageBitmap>(() => {})));
 
@@ -210,7 +210,7 @@ describe('createLoupe', () => {
     frame();
     reads.length = 0;
     loupe.pick();
-    expect(reads).toEqual([{ x: 720, y: 400 - 70 - 1, w: 1, h: 1 }]);
+    expect(reads).toEqual([{ x: 720, y: 400 - 70 - 1, width: 1, height: 1 }]);
 
     // A lens region near the pane's corner stops at the pane, not at the
     // surface's edge, which is across the neighboring pane.
@@ -218,9 +218,9 @@ describe('createLoupe', () => {
     loupe.aimAt({ x: 0, y: 0 });
     reads.length = 0;
     frame();
-    const lens = reads.find((r) => r.w > 1)!;
+    const lens = reads.find((r) => r.width > 1)!;
     expect(lens.x).toBe(420);
-    expect(lens.y).toBe(400 - 20 - lens.h);
+    expect(lens.y).toBe(400 - 20 - lens.height);
 
     loupe.dispose();
     vi.unstubAllGlobals();
@@ -293,7 +293,7 @@ describe('createLoupe', () => {
     // 40 CSS px right of the lens center at 8x is 5 px right of the aim; the
     // readback is bottom-up, so y counts from the far edge.
     const rect = loupe.window.contentRect;
-    const hex = loupe.pick({ x: rect.x + rect.w / 2 + 40, y: rect.y + rect.h / 2 });
+    const hex = loupe.pick({ x: rect.x + rect.width / 2 + 40, y: rect.y + rect.height / 2 });
     expect(hex).toBe('#112233');
     expect(onPick).toHaveBeenCalledWith('#112233');
     expect(reads).toEqual([{ x: 405, y: 600 - 300 - 1 }]);
@@ -333,11 +333,11 @@ describe('createLoupe', () => {
     // Aim just past the window's left edge, then pick from the right half of
     // the lens: at 2x that lands back inside the frame, whose pixels are
     // chrome rather than artwork.
-    loupe.window.setBounds({ x: 100, y: 100, w: 220, h: 200 });
+    loupe.window.setBounds({ x: 100, y: 100, width: 220, height: 200 });
     loupe.aimAt({ x: 96, y: 200 });
     frame();
     const rect = loupe.window.contentRect;
-    expect(loupe.pick({ x: rect.x + rect.w - 1, y: rect.y + rect.h / 2 })).toBeNull();
+    expect(loupe.pick({ x: rect.x + rect.width - 1, y: rect.y + rect.height / 2 })).toBeNull();
     expect(onPick).not.toHaveBeenCalled();
   });
 
@@ -352,7 +352,7 @@ describe('createLoupe', () => {
     const cmds = loupe.window.content!({ data: null, view, dims, rect, defaultFont: 'D', color: () => '#000000', tokens });
     expect(cmds).toEqual([{
       kind: 'path',
-      path: { kind: 'rect', x: rect.x, y: rect.y, width: rect.w, height: rect.h },
+      path: { kind: 'rect', x: rect.x, y: rect.y, width: rect.width, height: rect.height },
       fill: { paint: { kind: 'solid', color: '#123456' } },
     }]);
   });

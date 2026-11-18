@@ -24,7 +24,7 @@ type Cmd =
   | { t: 'hide'; hidden: boolean };
 
 const pt = fc.integer({ min: -40, max: 640 });
-const rectArb = fc.record({ x: pt, y: pt, w: fc.integer({ min: 1, max: 400 }), h: fc.integer({ min: 1, max: 300 }) });
+const rectArb = fc.record({ x: pt, y: pt, width: fc.integer({ min: 1, max: 400 }), height: fc.integer({ min: 1, max: 300 }) });
 /** A point inside `b`, from its left or right edge, often in its frame, where the zones are thin. */
 const near = fc.record({ right: fc.boolean(), fx: fc.oneof({ arbitrary: fc.integer({ min: -3, max: 24 }), weight: 2 }, fc.integer({ min: 0, max: 400 })), fy: fc.oneof({ arbitrary: fc.integer({ min: -3, max: 30 }), weight: 2 }, fc.integer({ min: 0, max: 300 })) });
 
@@ -74,17 +74,17 @@ function modelOf(c: Config) {
   const m = metricsOf(c);
   const minW = c.minW ?? 80;
   const minH = c.minH ?? m.titleH + m.edge + 40;
-  const sized = (b: WidgetBounds) => ({ ...b, w: Math.max(minW, b.w), h: Math.max(minH, b.h) });
+  const sized = (b: WidgetBounds) => ({ ...b, width: Math.max(minW, b.width), height: Math.max(minH, b.height) });
   const clamp = (s: Model, b: WidgetBounds) => (s.dims
-    ? { ...b, x: Math.max(0, Math.min(b.x, s.dims.width - b.w)), y: Math.max(0, Math.min(b.y, s.dims.height - b.h)) }
+    ? { ...b, x: Math.max(0, Math.min(b.x, s.dims.width - b.width)), y: Math.max(0, Math.min(b.y, s.dims.height - b.height)) }
     : b);
   const asDrag = (z: WindowZone | null): WindowZone | null => {
     if (c.titlebar) return z;
     if (z === 'close') return 'title';
     return c.interior !== 'pass' && z === 'content' ? 'title' : z;
   };
-  const same = (a: WidgetBounds, b: WidgetBounds) => a.x === b.x && a.y === b.y && a.w === b.w && a.h === b.h;
-  const report = (s: Model) => { s.heard.push(`${s.drag === 'title' ? 'move' : 'resize'} ${s.b.x},${s.b.y},${s.b.w},${s.b.h}`); };
+  const same = (a: WidgetBounds, b: WidgetBounds) => a.x === b.x && a.y === b.y && a.width === b.width && a.height === b.height;
+  const report = (s: Model) => { s.heard.push(`${s.drag === 'title' ? 'move' : 'resize'} ${s.b.x},${s.b.y},${s.b.width},${s.b.height}`); };
 
   const init = (): Model => {
     const b = sized(c.start);
@@ -140,7 +140,7 @@ type Raw =
 /** `raw` made concrete against the model: a press placed in the window's frame or anywhere, a move or release
  *  some way from the press or anywhere. */
 function concrete(s: Model, raw: Raw): Cmd {
-  if (raw.t === 'down') return raw.rel ? { t: 'down', x: raw.at.right ? s.b.x + s.b.w - 1 - raw.at.fx : s.b.x + raw.at.fx, y: s.b.y + raw.at.fy } : { t: 'down', x: raw.x, y: raw.y };
+  if (raw.t === 'down') return raw.rel ? { t: 'down', x: raw.at.right ? s.b.x + s.b.width - 1 - raw.at.fx : s.b.x + raw.at.fx, y: s.b.y + raw.at.fy } : { t: 'down', x: raw.x, y: raw.y };
   if (raw.t === 'move' || raw.t === 'up') return raw.rel ? { t: raw.t, x: s.origin.x + raw.dx, y: s.origin.y + raw.dy } : { t: raw.t, x: raw.x, y: raw.y };
   return raw;
 }
@@ -151,9 +151,9 @@ function run(c: Config, raws: readonly Raw[], seen?: ReturnType<typeof tally>) {
   const heard: string[] = [];
   const win = createWindow({
     id: 'w', ...c.start, title: 'W', titlebar: c.titlebar, interior: c.interior,
-    ...(c.minW !== undefined ? { minW: c.minW } : {}), ...(c.minH !== undefined ? { minH: c.minH } : {}),
-    onMove: (b) => heard.push(`move ${b.x},${b.y},${b.w},${b.h}`),
-    onResize: (b) => heard.push(`resize ${b.x},${b.y},${b.w},${b.h}`),
+    ...(c.minW !== undefined ? { minWidth: c.minW } : {}), ...(c.minH !== undefined ? { minHeight: c.minH } : {}),
+    onMove: (b) => heard.push(`move ${b.x},${b.y},${b.width},${b.height}`),
+    onResize: (b) => heard.push(`resize ${b.x},${b.y},${b.width},${b.height}`),
     onClose: () => heard.push('close'),
     onContentClick: (p) => heard.push(`click ${p.x},${p.y}`),
   });

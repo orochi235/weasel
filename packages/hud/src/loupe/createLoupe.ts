@@ -102,7 +102,7 @@ export type LoupeOptions = LoupeBaseOptions & (
 
 const backdropOf = (ctx: HudContentCtx, color: string): DrawCommand => ({
   kind: 'path',
-  path: { kind: 'rect', x: ctx.rect.x, y: ctx.rect.y, width: ctx.rect.w, height: ctx.rect.h },
+  path: { kind: 'rect', ...ctx.rect },
   fill: { paint: { kind: 'solid', color } },
 });
 
@@ -110,7 +110,7 @@ const backdropOf = (ctx: HudContentCtx, color: string): DrawCommand => ({
 const LENS_VIEW = 'weasel-loupe:lens';
 
 /** Where an interactive lens routes while its window is hidden: nowhere. */
-const NO_RECT = { x: 0, y: 0, w: 0, h: 0 };
+const NO_RECT = { x: 0, y: 0, width: 0, height: 0 };
 
 /** The lens camera aimed at `aim`: magnifying the view under it, or the
  *  canvas's own camera `outer` where no view is. */
@@ -179,7 +179,7 @@ export function createLoupe(opts: LoupeOptions): LoupeHandle {
   // opening it here would give every tenant one with no stencil buffer.
   let landed = false;
 
-  const b = opts.bounds ?? { x: 24, y: 24, w: 220, h: 200 };
+  const b = opts.bounds ?? { x: 24, y: 24, width: 220, height: 200 };
 
   const watch = createContentWatch(opts.contentVersion ?? host?.getPaintedVersion);
   let refreshAsked = false;
@@ -222,7 +222,7 @@ export function createLoupe(opts: LoupeOptions): LoupeHandle {
       out.push({
         kind: 'image',
         image: pixels,
-        x: ctx.rect.x, y: ctx.rect.y, w: ctx.rect.w, h: ctx.rect.h,
+        x: ctx.rect.x, y: ctx.rect.y, w: ctx.rect.width, h: ctx.rect.height,
         sampling: 'nearest',
       });
     }
@@ -249,8 +249,8 @@ export function createLoupe(opts: LoupeOptions): LoupeHandle {
     const rect = win.contentRect;
     const region = regionAt(
       model.aim,
-      (dpr) => Math.max(1, Math.round((rect.w * dpr) / model.factor)),
-      (dpr) => Math.max(1, Math.round((rect.h * dpr) / model.factor)),
+      (dpr) => Math.max(1, Math.round((rect.width * dpr) / model.factor)),
+      (dpr) => Math.max(1, Math.round((rect.height * dpr) / model.factor)),
     );
     const data = region && reader.region(region);
     if (!data) return;
@@ -276,7 +276,7 @@ export function createLoupe(opts: LoupeOptions): LoupeHandle {
 
   const win = hud.window({
     id: 'weasel-loupe',
-    x: b.x, y: b.y, w: b.w, h: b.h,
+    x: b.x, y: b.y, width: b.width, height: b.height,
     title: opts.title ?? 'Loupe',
     titlebar: opts.titlebar,
     content,

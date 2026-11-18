@@ -32,13 +32,13 @@ function editor() {
   const inserted: string[] = [];
   let editing = false;
   const textInput: HudTextInput = {
-    read: () => (editing ? { rect: { x: 30, y: 40, w: 50, h: 20 }, label: 'Name' } : null),
+    read: () => (editing ? { rect: { x: 30, y: 40, width: 50, height: 20 }, label: 'Name' } : null),
     subscribe: changes.subscribe,
     compose: (t) => { composed.push(t); },
     insert: (t) => { inserted.push(t); },
   };
   const w: Widget = {
-    id: 'editor', bounds: { x: 0, y: 0, w: 100, h: 100 }, hidden: false, focusable: true,
+    id: 'editor', bounds: { x: 0, y: 0, width: 100, height: 100 }, hidden: false, focusable: true,
     draw: () => [], hitTest: () => true, onPointer: () => {},
     onKey: (e) => { keys.push(e); return true; },
     dispose: () => {},

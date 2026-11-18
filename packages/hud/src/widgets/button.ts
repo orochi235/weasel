@@ -19,7 +19,7 @@ export type ButtonHandler = () => void;
  *  and pressed states. */
 export interface ButtonOptions {
   id: string;
-  x: number; y: number; w: number; h: number;
+  x: number; y: number; width: number; height: number;
   label: string;
   /** The type scale the label is set at, as ui's `Button` takes it. Default `'md'`. */
   size?: ControlSize;
@@ -85,14 +85,14 @@ export const hudButton: HeadlessComponent<HudButtonState, ButtonLayout, HudButto
     const { bounds: b, ctx } = target;
     const t = ctx.tokens;
     const env = hudMeasureEnv(ctx, target.fontFamily, fontOverride(target.fontSize));
-    const { layout } = measureButton(state, exactly(b.w, b.h), env);
+    const { layout } = measureButton(state, exactly(b.width, b.height), env);
     const color = state.press.held ? target.pressedFill ?? t['--wzl-surface-pressed']
       : state.press.hovered ? target.hoverFill ?? t['--wzl-surface-hover']
         : target.fill ?? t['--wzl-surface-raised'];
     // ui's Button.module.css: `--wzl-button-radius`, else a tenth of the height.
-    const radius = envPx(env, '--wzl-button-radius', b.h * 0.1);
+    const radius = envPx(env, '--wzl-button-radius', b.height * 0.1);
     const out: DrawCommand[] = [{
-      kind: 'path', path: roundRectPath(b.x, b.y, b.w, b.h, radius), fill: { paint: { kind: 'solid', color } },
+      kind: 'path', path: roundRectPath(b.x, b.y, b.width, b.height, radius), fill: { paint: { kind: 'solid', color } },
     }];
     for (const { part, rect } of layout.parts) {
       if (part !== 'label') continue;
@@ -100,7 +100,7 @@ export const hudButton: HeadlessComponent<HudButtonState, ButtonLayout, HudButto
         b.x + rect.x, b.y,
         [{ text: state.label ?? '', fill: { paint: { kind: 'solid', color: target.textColor ?? t['--wzl-fg'] } } }],
         { fontFamily: target.fontFamily ?? ctx.defaultFont, fontSize: layout.metrics.font.size },
-        undefined, b.h, 'center',
+        undefined, b.height, 'center',
       ));
     }
     return out;
@@ -120,12 +120,12 @@ function pressInput(evt: HudPointerEvent, inside: (x: number, y: number) => bool
 }
 
 export function createButton(opts: ButtonOptions): ButtonWidget {
-  if (!(opts.w > 0 && opts.h > 0)) {
-    throw new Error(`createButton: bounds must have positive w/h (got ${opts.w}x${opts.h})`);
+  if (!(opts.width > 0 && opts.height > 0)) {
+    throw new Error(`createButton: bounds must have positive w/h (got ${opts.width}x${opts.height})`);
   }
   let disposed = false;
   const rev = createRevision(opts.onChange);
-  let bounds: WidgetBounds = { x: opts.x, y: opts.y, w: opts.w, h: opts.h };
+  let bounds: WidgetBounds = { x: opts.x, y: opts.y, width: opts.width, height: opts.height };
   let hidden = false;
   let label = opts.label;
   let press: PressState = IDLE_PRESS;
@@ -135,7 +135,7 @@ export function createButton(opts: ButtonOptions): ButtonWidget {
   const emit = (e: ButtonEvent) => { reports.emit(e); };
 
   const isInside = (x: number, y: number) =>
-    x >= bounds.x && x < bounds.x + bounds.w && y >= bounds.y && y < bounds.y + bounds.h;
+    x >= bounds.x && x < bounds.x + bounds.width && y >= bounds.y && y < bounds.y + bounds.height;
 
   const assertNotDisposed = () => {
     if (disposed) throw new Error('weasel-hud: cannot mutate a disposed widget.');

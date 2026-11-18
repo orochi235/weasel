@@ -30,7 +30,7 @@ const hits = tally();
 function fakes(spec: readonly { focusable: boolean; tabOrder?: number }[]): Fake[] {
   return spec.map((s, i) => {
     const w: Fake = {
-      id: `w${i}`, bounds: { x: 0, y: 0, w: 1, h: 1 }, hidden: false, disposed: false, heard: [],
+      id: `w${i}`, bounds: { x: 0, y: 0, width: 1, height: 1 }, hidden: false, disposed: false, heard: [],
       focusable: s.focusable, ...(s.tabOrder !== undefined ? { tabOrder: s.tabOrder } : {}),
       draw: () => [], hitTest: () => false, onPointer: () => {},
       dispose: () => { w.disposed = true; },
