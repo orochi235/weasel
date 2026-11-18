@@ -1,5 +1,8 @@
-import { atAudioTime, defaultTimers, type Timers } from './audioTime';
-import { writeParam } from './param';
+import { defaultTimers, type Timers } from './audioTime';
+import { nextStep } from './insertPlan';
+import { createInsertPump } from './insertPump';
+import { createInsertRoute } from './insertRoute';
+import { retireSlot, writeBypass, type Slot } from './insertSlot';
 
 /**
  * Anything with an input and an output node can sit in an insert slot: one of
@@ -63,37 +66,6 @@ export interface OwnedInsertChain {
   dispose(): void;
 }
 
-interface Slot {
-  handle: InsertSlot;
-  effect: InsertEffect;
-  bypassed: boolean;
-  removed: boolean;
-  /** Built on first splice-in, kept across a move, torn down on removal. */
-  nodes: { in: GainNode; out: GainNode; dry: GainNode; wet: GainNode } | null;
-}
-
-/** A gain between two consecutive points of the chain — the thing that fades
- *  when a route changes. */
-interface Link { from: AudioNode; to: AudioNode; gain: GainNode }
-
-type Step =
-  | { kind: 'out'; slot: Slot }
-  | { kind: 'in'; slot: Slot; at: number };
-
-/** Unwire a slot's own nodes, leaving the effect's. */
-function destroy(s: Slot): void {
-  const n = s.nodes;
-  if (!n) return;
-  // Targeted, not bare: the effect's nodes are the consumer's, and may be
-  // wired to things besides this slot.
-  n.in.disconnect();
-  try { s.effect.output.disconnect(n.wet); } catch { /* already cut */ }
-  n.wet.disconnect();
-  n.dry.disconnect();
-  n.out.disconnect();
-  s.nodes = null;
-}
-
 /**
  * Build an insert chain from `head` to `tail`, which start wired straight
  * through.
@@ -118,144 +90,13 @@ export function createInsertChain(
   };
   const used = new WeakSet<InsertEffect>();
   const order: Slot[] = [];
-  /** The slots the audio graph routes through, in graph order. */
-  const live: Slot[] = [];
-  const links: Link[] = [];
-  let busy = false;
-  /** The slot a crossfade in flight is taking out of the graph, whose finish disposes it if removed. */
-  let leaving: Slot | null = null;
-  let cancel: (() => void) | null = null;
   let disposed = false;
-  let waiters: (() => void)[] = [];
 
   const fade = (): number => (ctx.state === 'running' ? fadeMs : 0);
-
-  const link = (from: AudioNode, to: AudioNode, gain: number): Link => {
-    const g = ctx.createGain();
-    // `.value` first, so `writeParam` anchors a ramp at it rather than at 1.
-    g.gain.value = gain;
-    writeParam(ctx, g.gain, gain);
-    from.connect(g);
-    g.connect(to);
-    const l = { from, to, gain: g };
-    links.push(l);
-    return l;
-  };
-
-  const unlink = (l: Link): void => {
-    l.from.disconnect(l.gain);
-    l.gain.disconnect();
-    links.splice(links.indexOf(l), 1);
-  };
-
-  const find = (from: AudioNode, to: AudioNode): Link =>
-    links.find((l) => l.from === from && l.to === to)!;
-
-  const inOf = (s: Slot | null): AudioNode => (s ? s.nodes!.in : tail);
-  const outOf = (s: Slot | null): AudioNode => (s ? s.nodes!.out : head);
-
-  const setBypass = (s: Slot, ms: number): void => {
-    if (!s.nodes) return;
-    writeParam(ctx, s.nodes.wet.gain, s.bypassed ? 0 : 1, ms);
-    writeParam(ctx, s.nodes.dry.gain, s.bypassed ? 1 : 0, ms);
-  };
-
-  const build = (s: Slot): void => {
-    if (s.nodes) return;
-    const n = {
-      in: ctx.createGain(), out: ctx.createGain(), dry: ctx.createGain(), wet: ctx.createGain(),
-    };
-    n.in.connect(s.effect.input);
-    s.effect.output.connect(n.wet);
-    n.wet.connect(n.out);
-    n.in.connect(n.dry);
-    n.dry.connect(n.out);
-    s.nodes = n;
-    n.wet.gain.value = s.bypassed ? 0 : 1;
-    n.dry.gain.value = s.bypassed ? 1 : 0;
-    setBypass(s, 0);
-  };
-
-  const plan = (): Step | null => {
-    const stale = live.find((s) => s.removed);
-    if (stale) return { kind: 'out', slot: stale };
-    const wanted = order.filter((s) => live.includes(s));
-    for (let i = 0; i < wanted.length; i += 1) {
-      // Out now, back in at its place on a later step.
-      if (live[i] !== wanted[i]) return { kind: 'out', slot: wanted[i] };
-    }
-    const i = order.findIndex((s) => !live.includes(s));
-    if (i < 0) return null;
-    let at = 0;
-    for (let j = i - 1; j >= 0; j -= 1) {
-      const k = live.indexOf(order[j]);
-      if (k >= 0) { at = k + 1; break; }
-    }
-    return { kind: 'in', slot: order[i], at };
-  };
-
-  /** Start `step`'s crossfade and return what finishes it. */
-  const begin = (step: Step, ms: number): (() => void) => {
-    const s = step.slot;
-    if (step.kind === 'in') {
-      build(s);
-      const prev = live[step.at - 1] ?? null;
-      const next = live[step.at] ?? null;
-      const old = find(outOf(prev), inOf(next));
-      link(outOf(prev), inOf(s), 1);
-      const incoming = link(outOf(s), inOf(next), 0);
-      live.splice(step.at, 0, s);
-      writeParam(ctx, old.gain.gain, 0, ms);
-      writeParam(ctx, incoming.gain.gain, 1, ms);
-      return () => unlink(old);
-    }
-    const i = live.indexOf(s);
-    const prev = live[i - 1] ?? null;
-    const next = live[i + 1] ?? null;
-    const into = find(outOf(prev), inOf(s));
-    const from = find(outOf(s), inOf(next));
-    const direct = link(outOf(prev), inOf(next), 0);
-    live.splice(i, 1);
-    leaving = s;
-    writeParam(ctx, from.gain.gain, 0, ms);
-    writeParam(ctx, direct.gain.gain, 1, ms);
-    return () => {
-      leaving = null;
-      unlink(into);
-      unlink(from);
-      if (s.removed) {
-        destroy(s);
-        s.effect.dispose?.();
-      }
-    };
-  };
-
-  const pump = (): void => {
-    while (!busy && !disposed) {
-      const step = plan();
-      if (!step) {
-        const done = waiters;
-        waiters = [];
-        for (const w of done) w();
-        return;
-      }
-      const ms = fade();
-      const finish = begin(step, ms);
-      if (ms === 0) {
-        finish();
-        continue;
-      }
-      busy = true;
-      cancel = atAudioTime(ctx, timers, ctx.currentTime + ms / 1000, () => {
-        cancel = null;
-        busy = false;
-        finish();
-        pump();
-      });
-    }
-  };
-
-  link(head, tail, 1);
+  const route = createInsertRoute(ctx, head, tail);
+  const { pump, settled, stop, release } = createInsertPump(
+    ctx, timers, fade, () => nextStep(order, route.live), route.begin,
+  );
 
   const slotOf = (effect: InsertEffect, bypassed: boolean): Slot => {
     const s: Slot = { effect, bypassed, removed: false, nodes: null, handle: null as never };
@@ -264,7 +105,7 @@ export function createInsertChain(
       bypass(on) {
         if (s.bypassed === on) return;
         s.bypassed = on;
-        setBypass(s, fade());
+        writeBypass(ctx, s, fade());
       },
       bypassed: () => s.bypassed,
       moveTo(index) {
@@ -279,11 +120,8 @@ export function createInsertChain(
         if (at < 0) return;
         order.splice(at, 1);
         s.removed = true;
-        // `plan` only finds a removed slot in the graph; one that is out of it has no later step to dispose it.
-        if (!live.includes(s) && leaving !== s) {
-          destroy(s);
-          s.effect.dispose?.();
-        }
+        // `nextStep` only finds a removed slot in the graph; one that is out of it has no later step to dispose it.
+        if (!route.holds(s)) retireSlot(s);
         pump();
       },
       index: () => order.indexOf(s),
@@ -307,32 +145,20 @@ export function createInsertChain(
     clear() {
       for (const s of [...order]) s.handle.remove();
     },
-    settled() {
-      if (!busy && plan() === null) return Promise.resolve();
-      return new Promise((resolve) => { waiters.push(resolve); });
-    },
+    settled,
   };
   return {
     chain,
     dispose() {
       if (disposed) return;
       disposed = true;
-      cancel?.();
-      cancel = null;
+      stop();
       // No fade: every slot, a leaving one included, goes at once.
-      const gone = new Set([...live, ...order, ...(leaving ? [leaving] : [])]);
+      const held = route.drop();
+      const gone = new Set([...held.live, ...order, ...(held.leaving ? [held.leaving] : [])]);
       order.length = 0;
-      live.length = 0;
-      leaving = null;
-      for (const l of [...links]) unlink(l);
-      link(head, tail, 1);
-      for (const s of gone) {
-        destroy(s);
-        s.effect.dispose?.();
-      }
-      const done = waiters;
-      waiters = [];
-      for (const w of done) w();
+      for (const s of gone) retireSlot(s);
+      release();
     },
   };
 }
