@@ -1,6 +1,6 @@
-import { depthAt, timestampAt } from './stackTime';
 import type { Op } from './op';
-import { appliedHalves, createApplier, entryView, stepOf } from './entryOps';
+import { appliedHalves, createApplier, stepOf } from './entryOps';
+import { createStackView } from './stackView';
 import { createWalk } from './walk';
 import { createVersionClock } from './versionClock';
 import { createForks } from './forks';
@@ -79,6 +79,7 @@ export function createHistory(adapter: unknown, options: CreateHistoryOptions = 
   const { pushOrCoalesce, record } = recorder;
 
   const history: History = {
+    ...createStackView(undoStack, redoStack),
     apply(op, label) {
       pushOrCoalesce([op], label ?? op.label ?? '', true);
     },
@@ -98,25 +99,11 @@ export function createHistory(adapter: unknown, options: CreateHistoryOptions = 
     seal() {
       clock.seal();
     },
-    canUndo: () => undoStack.length > 0,
-    canRedo: () => redoStack.length > 0,
-    undoDepth: () => undoStack.length,
-    redoDepth: () => redoStack.length,
     clear: () => {
       const had = undoStack.length > 0 || redoStack.length > 0;
       undoStack.length = 0;
       redoStack.length = 0;
       if (forks.reset() || had) clock.bump(stepOf('clear'));
-    },
-    entries() {
-      // redoStack is internally stored newest-on-top (so `pop()` redoes the
-      // next-most-recent undo). Reverse on the way out so callers see the
-      // entries in chronological order — the user's next redo is the first
-      // element, matching `entries().redo[0]` semantics.
-      return {
-        undo: undoStack.map(entryView),
-        redo: [...redoStack].reverse().map(entryView),
-      };
     },
     goto(n) {
       // Total length stays constant during this walk: entries only move between the two stacks.
@@ -124,8 +111,6 @@ export function createHistory(adapter: unknown, options: CreateHistoryOptions = 
       const walked = walkOrReturn(n, () => clock.bump());
       clock.bump(stepOf('goto', walked.walked, walked.applied));
     },
-    timestampAt: (i) => timestampAt(undoStack, redoStack, i),
-    depthAt: (t) => depthAt(undoStack, redoStack, t),
     prune(t) {
       const evicted = forks.evictBefore(t);
       if (evicted.length > 0) clock.bump(stepOf('prune', evicted));
@@ -147,13 +132,6 @@ export function createHistory(adapter: unknown, options: CreateHistoryOptions = 
     serialize: () => snapshot({ undoStack, redoStack, ...forks.state(), nextEntryId: recorder.nextEntryId() }, logger),
     recordEntry(ops: Op[], label: string, options?: RecordEntryOptions): void {
       record(ops, ops, label, options);
-    },
-    allForwardOps(): Op[] {
-      const out: Op[] = [];
-      for (const e of undoStack) {
-        for (const op of e.forwardOps) out.push(op);
-      }
-      return out;
     },
     nextEntryId: recorder.nextEntryId,
     beginJournal: (opts) => journals.begin(history, opts),
