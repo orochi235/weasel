@@ -968,6 +968,12 @@ The snap pipeline ([snapping.md](./snapping.md)) landed on 2026-10-18 with these
 - Open (2026-11-11): `holderOf` and `outermost` never return on a `parentOf` whose parents loop without reaching a
   selected id.
 - Open (2026-11-11): a range whose `between` lists an id twice selects it twice; a selection store holds it once.
+- 2026-11-18: A keystroke whose bindings' actions all refuse it says why in a toast: `ToastRegion` tells it by
+  default (`refusals={false}` opts out), titled with the action's label and reading its reason, one at a time, and
+  of several regions only the one mounted last. An autorepeat and a `keyHeld` binding tell nothing, and nor does a
+  keystroke anything on the page `preventDefault`s within a task.
+- 2026-11-18: `useRovingTabIndex` takes `disabled: 'skip' | 'stop'`, default `'skip'`, and no longer calls
+  `onAction` for an `aria-disabled` item. `CommandPalette`'s arrows land on a disabled row.
 - 2026-10-20 (overnight pass): `useRovingTabIndex` swaps Left and Right under right-to-left, in
   `horizontal`, `both` and grid layouts, reading the container's computed `direction` at each key
   unless the new `dir` option says otherwise. ui declares its own `RovingDirection` rather than
