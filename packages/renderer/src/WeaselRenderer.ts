@@ -22,6 +22,7 @@ import { CustomPrograms } from './shaders/CustomPrograms';
 import { EffectTargets } from './effects/EffectTargets';
 import { RetainedSurfaces } from './retain/RetainedSurfaces';
 import { ContextResources } from './contextResources';
+import { canvasPassFor, deviceRectFor, sizeCanvas, type DeviceRect } from './targetRect';
 import { paintDrawKindRegistry } from './paintKinds';
 import {
   DEFAULT_RETAIN_BUDGET, type IdBuffer, type RenderIdsOptions, type RenderOptions, type RenderSpanStats,
@@ -98,10 +99,7 @@ export class WeaselRenderer {
     this.textOutlineMinScreenSize = opts.textOutlineMinScreenSize ?? OUTLINE_MIN_SCREEN_PX;
 
     this.canvas = opts.gpu?.canvas ?? opts.canvas ?? null;
-    if (this.canvas) {
-      this.canvas.width = Math.round(opts.width * opts.dpr);
-      this.canvas.height = Math.round(opts.height * opts.dpr);
-    }
+    if (this.canvas) sizeCanvas(this.canvas, opts.width, opts.height, opts.dpr);
     this.gpu.beginFrame();
 
     const res = new ContextResources(this.gpu, this.imageMinification);
@@ -135,30 +133,12 @@ export class WeaselRenderer {
     this.programs.register(handle.id);
   }
 
-  /** This renderer's rect in device pixels, top-left origin. A tile rounds its
-   *  edges rather than its size, so two that share a CSS edge share a device one. */
-  private deviceRect(): { x: number; y: number; width: number; height: number } {
-    const ox = this.target?.origin.x ?? 0;
-    const oy = this.target?.origin.y ?? 0;
-    const x = Math.round(ox * this.dpr);
-    const y = Math.round(oy * this.dpr);
-    const width = Math.round((ox + this.widthCss) * this.dpr) - x;
-    return { x, y, width, height: Math.round((oy + this.heightCss) * this.dpr) - y };
+  private deviceRect(): DeviceRect {
+    return deviceRectFor(this.target, this.widthCss, this.heightCss, this.dpr);
   }
 
-  /** The canvas pass this renderer draws in: its rect, scissored to it when
-   *  it shares the drawing buffer. Begun anew each `render()`, because a
-   *  co-tenant on the same context moves viewport and scissor between frames. */
   private canvasPass(): GpuPassDesc {
-    const rect = this.glRect();
-    return { target: null, viewport: rect, scissor: this.target ? rect : null };
-  }
-
-  /** This renderer's rect as GL addresses it, from the buffer's bottom left. */
-  private glRect(): { x: number; y: number; width: number; height: number } {
-    const { x, y, width, height } = this.deviceRect();
-    if (!this.target) return { x: 0, y: 0, width, height };
-    return { x, y: this.gpu.canvasSize().height - y - height, width, height };
+    return canvasPassFor(this.deviceRect(), this.target, this.gpu);
   }
 
   /** Confine this renderer to a rect of its drawing buffer, or pass null to
@@ -411,10 +391,7 @@ export class WeaselRenderer {
     this.widthCss = dims.width;
     this.heightCss = dims.height;
     this.dpr = dims.dpr;
-    if (this.canvas) {
-      this.canvas.width = Math.round(dims.width * dims.dpr);
-      this.canvas.height = Math.round(dims.height * dims.dpr);
-    }
+    if (this.canvas) sizeCanvas(this.canvas, dims.width, dims.height, dims.dpr);
   }
 
   /** @internal */ _gpu(): GpuDevice { return this.gpu; }
