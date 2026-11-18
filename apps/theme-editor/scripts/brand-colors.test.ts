@@ -1,6 +1,6 @@
 import { existsSync } from 'node:fs';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { PALETTE_FILES, parseCopic, parseLego, renderCopic, renderLego } from './brand-colors.mjs';
+import { PALETTE_FILES, decodeEntities, parseCopic, parseLego, renderCopic, renderLego } from './brand-colors.mjs';
 
 const legoBlock = (name: string, rgb: string, type = 'Solid') =>
   `<article class='set'><a title="${name}"></a><div style="background-color:rgb(${rgb})"></div><a href='/colours/type-${type}'></a></article>`;
@@ -12,6 +12,21 @@ describe('parseLego', () => {
       { name: 'Bright Blue', hex: '#1e5aa8' },
       { name: 'Coral', hex: '#ff8066' },
     ]);
+  });
+});
+
+describe('decodeEntities', () => {
+  it('decodes the named, decimal and hex references a title attribute carries', () => {
+    expect(decodeEntities('Sand &amp; Blue &#39;Pearl&#x27; &quot;x&quot; caf&#233;')).toBe(`Sand & Blue 'Pearl' "x" café`);
+  });
+
+  it('throws on a named reference it has no table for', () => {
+    expect(() => decodeEntities('Caf&eacute;')).toThrow(/&eacute;/);
+  });
+
+  it('decodes a LEGO name before deduping and sorting it', () => {
+    const html = legoBlock('Sand &amp; Blue', '90,113,132') + legoBlock('Sand & Blue', '90,113,132');
+    expect(parseLego(html)).toEqual([{ name: 'Sand & Blue', hex: '#5a7184' }]);
   });
 });
 

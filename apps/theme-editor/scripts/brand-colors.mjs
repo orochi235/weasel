@@ -37,6 +37,21 @@ function isNeutral(hex) {
   return Math.hypot(a, b) < 0.035 || L < 0.22 || L > 0.95;
 }
 
+const NAMED = { amp: '&', lt: '<', gt: '>', quot: '"', apos: "'", nbsp: '\u00a0' };
+
+/**
+ * An HTML attribute's text with its character references decoded. A named
+ * reference outside the few HTML always uses throws, rather than reaching a
+ * swatch label as `&eacute;`.
+ */
+export function decodeEntities(text) {
+  return text.replace(/&(#x[0-9a-f]+|#\d+|[a-z][a-z0-9]*);/gi, (ref, body) => {
+    if (body[0] === '#') return String.fromCodePoint(body[1] === 'x' || body[1] === 'X' ? parseInt(body.slice(2), 16) : Number(body.slice(1)));
+    if (Object.hasOwn(NAMED, body)) return NAMED[body];
+    throw new Error(`gen-brand-colors: no decoding for ${ref} in ${JSON.stringify(text)}`);
+  });
+}
+
 /**
  * Brickset's current-colours page to its solid chromatic rows, sorted by name.
  * Every sort here names its locale, so the machine's own does not reorder the file.
@@ -44,7 +59,8 @@ function isNeutral(hex) {
 export function parseLego(html) {
   const rows = [];
   for (const block of html.split("<article class='set'>").slice(1)) {
-    const name = /title="([^"]+)"/.exec(block)?.[1];
+    const title = /title="([^"]+)"/.exec(block)?.[1];
+    const name = title && decodeEntities(title);
     const rgb = /background-color:rgb\((\d+),\s*(\d+),\s*(\d+)\)/.exec(block);
     // Solid only: a transparent, chrome, pearl or glitter piece is a surface,
     // and one flat hex says nothing useful about it.
