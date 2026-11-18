@@ -11,9 +11,9 @@ const header = (name: string) => screen.getByRole('columnheader', { name: new Re
 describe('the demo updates page', () => {
   it('lists every demo, newest change first, and says how it is sorted', () => {
     render(<WhatsNew onSelect={() => {}} />);
-    const newest = DEMOS.map((d) => d.lastModified ?? '').sort().at(-1);
+    const newest = Math.max(...DEMOS.map((d) => (d.lastModified ? Date.parse(d.lastModified) : 0)));
     expect(titles()).toHaveLength(DEMOS.length);
-    expect(DEMOS.find((d) => d.title === titles()[0])?.lastModified).toBe(newest);
+    expect(Date.parse(DEMOS.find((d) => d.title === titles()[0])!.lastModified!)).toBe(newest);
     expect(header('Last modified')).toHaveAttribute('aria-sort', 'descending');
   });
 
