@@ -83,7 +83,7 @@ export function createImage(opts: ImageOptions): ImageWidget {
     draw(_ctx: HudDrawCtx): DrawCommand[] {
       const cmd: ImageDrawCommand = {
         kind: 'image', image,
-        x: bounds.x, y: bounds.y, w: bounds.w, h: bounds.h,
+        x: bounds.x, y: bounds.y, width: bounds.w, height: bounds.h,
         opacity: opts.opacity,
         sampling: opts.sampling,
         source,

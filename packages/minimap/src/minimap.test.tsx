@@ -25,7 +25,7 @@ type P = { x: number; y: number; width: number; height: number };
 const ROOT: View = { x: 0, y: 0, scale: { x: 1, y: 1 } };
 /** Scene spans world (0,0)–(1000,800). Fit into 100×80 with 8px padding:
  *  scale 0.08, camera at (-125, -100). */
-const RECT = { x: 0, y: 0, w: 100, h: 80 };
+const RECT = { x: 0, y: 0, width: 100, height: 80 };
 const FIT: View = { x: -125, y: -100, scale: { x: 0.08, y: 0.08 } };
 
 const widthDesc = Object.getOwnPropertyDescriptor(HTMLElement.prototype, 'clientWidth');

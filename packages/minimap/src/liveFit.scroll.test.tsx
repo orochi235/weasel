@@ -30,7 +30,7 @@ describe('live fit over a scrolled container', () => {
     const { scene, box } = scrolledScene();
     const reader = { get: (name: string) => (name === 'scene' ? scene : undefined) } as unknown as ContributionDepReader;
     const api = { element: null, requestRedraw: () => {} } as unknown as CanvasExtensionApi;
-    const minimap = createMinimapContribution({ rect: { x: 0, y: 0, w: DIMS.width, h: DIMS.height }, fit: 'live' });
+    const minimap = createMinimapContribution({ rect: { x: 0, y: 0, width: DIMS.width, height: DIMS.height }, fit: 'live' });
     minimap.attach!(api, reader);
     const fit = minimap.views![0]!.view as (outer: View, dims: typeof DIMS) => View;
     const outer: View = { x: 0, y: 0, scale: { x: 1, y: 1 } };

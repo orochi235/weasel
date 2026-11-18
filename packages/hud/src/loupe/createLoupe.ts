@@ -222,7 +222,7 @@ export function createLoupe(opts: LoupeOptions): LoupeHandle {
       out.push({
         kind: 'image',
         image: pixels,
-        x: ctx.rect.x, y: ctx.rect.y, w: ctx.rect.w, h: ctx.rect.h,
+        x: ctx.rect.x, y: ctx.rect.y, width: ctx.rect.w, height: ctx.rect.h,
         sampling: 'nearest',
       });
     }
