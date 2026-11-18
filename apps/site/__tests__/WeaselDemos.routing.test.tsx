@@ -191,6 +191,15 @@ describe('leaving a page', () => {
     expect(await screen.findByRole('heading', { level: 1, name: 'weasel' })).toBeTruthy();
     expect(window.history.length).toBe(before + 1);
   });
+
+  it("drops the releases filter and version link, and keeps the site's own query", async () => {
+    window.history.replaceState(null, '', '/?backend=webgpu&pkg=core&v=1.0.0#__releases');
+    renderWithIcons(<WeaselDemos />);
+    await heading('Releases');
+    fireEvent.click(within(screen.getByRole('navigation')).getByRole('link', { name: DEMOS[0].title }));
+    await heading(DEMOS[0].title);
+    expect(window.location.search).toBe('?backend=webgpu');
+  });
 });
 
 describe('the source panel', () => {
