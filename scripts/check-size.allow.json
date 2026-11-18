@@ -1,13 +1,4 @@
 {
-  "packages/animator/src/engine/codec.ts": {
-    "longestFunction": 135
-  },
-  "packages/animator/src/timeline/booking.ts": {
-    "longestFunction": 135
-  },
-  "packages/animator/src/timeline/createTimeline.ts": {
-    "longestFunction": 160
-  },
   "packages/audio/src/inserts.ts": {
     "longestFunction": 231
   },
@@ -66,15 +57,6 @@
   },
   "packages/history/src/history.ts": {
     "longestFunction": 347
-  },
-  "packages/hud/src/attach.ts": {
-    "longestFunction": 135
-  },
-  "packages/hud/src/loupe/createLoupe.ts": {
-    "longestFunction": 212
-  },
-  "packages/hud/src/widgets/window/window.ts": {
-    "longestFunction": 224
   },
   "packages/kernel3d/src/deps.ts": {
     "longestFunction": 138
