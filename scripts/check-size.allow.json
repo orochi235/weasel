@@ -128,24 +128,9 @@
   "packages/labkit/src/trial/TrialChrome.tsx": {
     "longestFunction": 176
   },
-  "packages/path-tools/src/pen/penPreviewLayer.ts": {
-    "longestFunction": 138
-  },
   "packages/path-tools/src/pen/usePenTool.ts": {
     "lines": 591,
     "longestFunction": 432
-  },
-  "packages/path-tools/src/slice/useSliceTool.ts": {
-    "longestFunction": 171
-  },
-  "packages/prefs-editor/src/PrefSchemaEditor/AssetEditor.tsx": {
-    "longestFunction": 183
-  },
-  "packages/prefs-editor/src/PrefSchemaEditor/AttributesPane.tsx": {
-    "longestFunction": 181
-  },
-  "packages/prefs-editor/src/PrefSchemaEditor/StructurePane.tsx": {
-    "longestFunction": 188
   },
   "packages/renderer/src/WeaselRenderer.ts": {
     "lines": 518
