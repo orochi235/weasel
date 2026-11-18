@@ -1,5 +1,5 @@
 import {
-  useCallback, useEffect, useMemo, useRef, useState,
+  useCallback, useMemo, useRef,
   type CSSProperties,
   type KeyboardEvent as ReactKeyboardEvent,
   type MouseEvent as ReactMouseEvent,
@@ -7,8 +7,6 @@ import {
   type ReactNode,
 } from 'react';
 import { historyKey } from '@weasel-js/gestures';
-import { openPointerSession, type ModifierState, type PointerSession } from '@weasel-js/routing';
-import { useKitSettings, useLatest } from '@weasel-js/react';
 import {
   Plot2D,
   type Plot2DHandle,
@@ -16,19 +14,15 @@ import {
   type AxesSettings,
   type TickSettings,
 } from '../Plot2D';
-import type { ModelRange } from '../Plot2D/geometry';
 import { dlog } from '../../dlog';
 import s from './CurveEditor.module.css';
-import { dispatchContextMenu } from './contextMenuDispatch';
-import { LayerHostContext, publishLayer, settleLayer, stateOf, useLayerRegistry, type LayerEntry, type LayerHost } from './layerHost';
-import { layerCtxOver, NO_MODIFIERS, readModifiers } from './layerCtx';
+import { dispatchContextMenu, dispatchKey, dispatchPress, type LayerEdit, type LayerPoint } from './layerDispatch';
+import { LayerHostContext, settleLayer, useLayerRegistry, type LayerHost } from './layerHost';
+import { readModifiers, usePlotLayerCtx } from './layerCtx';
 import type { HoldProps } from '../Disabled';
 import { useControlHold } from '../Disabled/controlHold';
-import { deepEqual } from '@weasel-js/registry';
 import { useLayerHistory, type LayerSnapshot } from './useLayerHistory';
-import type {
-  LayerCtx, LayerGesture, ModelPoint, PlotPoint,
-} from './layerTypes';
+import { useLayerGesture } from './useLayerGesture';
 
 /** Props for {@link LayeredCurveEditor}. Disabled or read-only, no press, key, or context menu reaches a layer, and
  *  undo and redo do nothing; disabled with no reason, the plot and every mark in it leave the tab order. */
@@ -65,13 +59,6 @@ export interface LayeredCurveEditorProps extends HoldProps {
   style?: CSSProperties;
 }
 
-interface ActiveGesture {
-  entry: LayerEntry;
-  gesture: LayerGesture<unknown>;
-  startStates: LayerSnapshot;
-  startSelfState: unknown;
-}
-
 /**
  * A `Plot2D` that hosts a stack of composable curve layers, given as its
  * children. It owns the pointer gestures and the coordinate mapping; each
@@ -93,206 +80,46 @@ export function LayeredCurveEditor(props: LayeredCurveEditorProps) {
   const historyEnabled = props.history !== false;
   const hold = useControlHold(props);
 
-  const modelRange: ModelRange = useMemo(
-    () => ({ xMin: xRange[0], xMax: xRange[1], yMin: yRange[0], yMax: yRange[1] }),
-    [xRange, yRange],
-  );
-  const plotSize = useMemo(() => ({ width, height }), [width, height]);
-
-  // Refs that always hold the latest props — gesture handlers and
-  // window listeners close over these refs, never over render-time
-  // values, so mid-drag re-renders (including cross-layer state
-  // updates) are visible to the next pointermove tick.
+  const { ctxFor: makeCtx, base: renderCtxBase } = usePlotLayerCtx(xRange, yRange, width, height);
   const { register, layers } = useLayerRegistry();
-  const modelRangeRef = useLatest(modelRange);
-  const plotSizeRef = useLatest(plotSize);
-  const kitSettings = useKitSettings();
-
   const plotRef = useRef<Plot2DHandle | null>(null);
 
-  // ── Coord helpers ──────────────────────────────────────────────────
-  const makeCtx = useCallback(
-    (modifiers: ModifierState): LayerCtx => ({ ...layerCtxOver(modelRangeRef.current, plotSizeRef.current, kitSettings), modifiers }),
-    [modelRangeRef, plotSizeRef, kitSettings],
-  );
-
-  // ── Gesture routing ────────────────────────────────────────────────
-  const activeRef = useRef(null as ActiveGesture | null);
-  const [activeEntry, setActiveEntry] = useState<LayerEntry | null>(null);
-
-  // ── History (whole-state snapshots) ────────────────────────────────
   const { snapshot, record, undo, redo } = useLayerHistory(layers);
 
-  // ── Pointer routing during an active gesture ───────────────────────
-  // The session's callbacks are fixed at gesture start, so they delegate
-  // through refs holding the latest committed impl — a mid-drag re-render
-  // must reach the next pointermove tick.
-  const sessionRef = useRef<PointerSession | null>(null);
+  /** Report a finished one-shot edit, as one undo step back to `before`. */
+  const settleEdit = useCallback((before: LayerSnapshot, edit: LayerEdit) => {
+    if (historyEnabled) record(before);
+    settleLayer(edit.entry, { commit: edit.next, prev: edit.prev });
+  }, [historyEnabled, record]);
 
-  const cleanupGesture = useCallback(() => {
-    sessionRef.current = null;
-    activeRef.current = null;
-    setActiveEntry(null);
-  }, []);
-
-  const findLayerState = useCallback((entry: LayerEntry) => (layers().includes(entry) ? stateOf(entry) : undefined), [layers]);
-
-  const onGestureMoveRef = useLatest((e: PointerEvent) => {
-    const a = activeRef.current;
-    if (!a) return;
-    const h = plotRef.current;
-    if (!h) return;
-    const model = h.clientToModel(e);
-    const current = findLayerState(a.entry);
-    if (current === undefined) return;
-    const ctx = makeCtx(readModifiers(e));
-    const next = a.gesture.onMove(current, model, e, ctx);
-    if (next !== current) publishLayer(a.entry, next);
+  const { start, busy, activeEntry } = useLayerGesture({
+    toModel: (e) => plotRef.current?.clientToModel(e) ?? null,
+    ctxFor: makeCtx,
+    layers,
+    onEdit: (before) => { if (historyEnabled) record(before); },
   });
 
-  const onGestureEndRef = useLatest((e: PointerEvent) => {
-    const a = activeRef.current;
-    if (!a) return;
-    const current = findLayerState(a.entry);
-    if (current === undefined) { cleanupGesture(); return; }
-    const ctx = makeCtx(readModifiers(e));
-    const finalState = a.gesture.onCommit ? a.gesture.onCommit(current, ctx) : current;
-    if (finalState !== current) publishLayer(a.entry, finalState);
-    const changed = !deepEqual(finalState, a.startSelfState);
-    if (historyEnabled && changed) record(a.startStates);
-    settleLayer(a.entry, changed ? { commit: finalState, prev: a.startSelfState } : 'unchanged');
-    cleanupGesture();
-  });
-
-  const onGestureCancelRef = useLatest(() => {
-    const a = activeRef.current;
-    if (!a) return;
-    const current = findLayerState(a.entry);
-    if (current === undefined) { cleanupGesture(); return; }
-    const ctx = makeCtx(NO_MODIFIERS);
-    const restored = a.gesture.onCancel ? a.gesture.onCancel(current, ctx) : a.startSelfState;
-    if (restored !== current) publishLayer(a.entry, restored);
-    settleLayer(a.entry, 'cancel');
-    cleanupGesture();
-  });
-
-  // No pointer capture: consumers render their own SVG chrome into the plot
-  // through `children`, and capture would retarget pointerup away from it.
-  const installGesture = useCallback((
-    entry: LayerEntry,
-    down: ReactPointerEvent<SVGSVGElement>,
-    gesture: LayerGesture<unknown>,
-  ) => {
-    const startStates = snapshot();
-    const startSelfState = startStates.get(entry);
-    activeRef.current = {
-      entry, gesture,
-      startStates,
-      startSelfState,
-    };
-    setActiveEntry(entry);
-    sessionRef.current = openPointerSession(down.currentTarget, down, {
-      onMove: (e) => onGestureMoveRef.current(e),
-      onEnd: (e) => onGestureEndRef.current(e),
-      onCancel: () => onGestureCancelRef.current(),
-    }, { capture: false, escape: true });
-  }, [snapshot, onGestureCancelRef, onGestureEndRef, onGestureMoveRef]);
-
-  // ── pointerdown dispatch ───────────────────────────────────────────
   const onSvgPointerDown = useCallback((
     e: ReactPointerEvent<SVGSVGElement>,
-    coords: { plot: PlotPoint; model: ModelPoint },
+    coords: LayerPoint,
   ) => {
-    if (activeRef.current) return; // ignore secondary touches mid-gesture
-    const modifiers = readModifiers(e);
-    const ctx = makeCtx(modifiers);
+    if (busy()) return; // ignore secondary touches mid-gesture
     const ls = layers();
-    const nativeEvent = e.nativeEvent;
-
     dlog('layered-curve-editor', 'pointerdown', { plot: coords.plot, model: coords.model, layers: ls.length });
-
-    // Capture the pre-event snapshot once; reuse for history if any
-    // path produces a commit (gesture-start commit or one-shot).
-    const preEventSnapshot = snapshot();
-
-    // Top-to-bottom hit test.
-    for (let i = ls.length - 1; i >= 0; i--) {
-      const b = ls[i];
-      const hit = b.layer.hitTest?.(b.state, coords.plot, ctx);
-      if (!hit) continue;
-      // Found a claim. onPointerDown may start a gesture, absorb the
-      // click, or commit a one-shot edit via extra.commit.
-      const prevState = b.state;
-      let committed: unknown = undefined;
-      const gesture = b.layer.onPointerDown?.(
-        prevState, hit, nativeEvent, ctx,
-        {
-          plot: coords.plot,
-          model: coords.model,
-          commit(next) { committed = next; publishLayer(b, next); },
-        },
-      );
-      e.stopPropagation();
-      if (gesture) {
-        installGesture(b, e, gesture);
-        return;
-      }
-      if (committed !== undefined) {
-        if (historyEnabled) record(preEventSnapshot);
-        settleLayer(b, { commit: committed, prev: prevState });
-      }
+    const before = snapshot();
+    const press = dispatchPress(ls, coords, e.nativeEvent, makeCtx(readModifiers(e)));
+    if (!press) return;
+    if (press.claimed) e.stopPropagation();
+    if (press.gesture) {
+      // A press in empty space may publish an insert and then drag it: that
+      // gesture starts from before the insert, so one undo removes both.
+      start(press.entry, e, press.gesture, !press.claimed && press.edit ? before : snapshot());
       return;
     }
+    if (press.edit) settleEdit(before, press.edit);
+  }, [busy, start, makeCtx, snapshot, settleEdit, layers]);
 
-    // No hit — empty space dispatch, top-to-bottom.
-    let pendingCommit: { entry: LayerEntry; next: unknown; prev: unknown } | null = null;
-    for (let i = ls.length - 1; i >= 0; i--) {
-      const b = ls[i];
-      if (!b.layer.onEmptyPointerDown) continue;
-      const prevState = b.state;
-      let committed: unknown = undefined;
-      const gesture = b.layer.onEmptyPointerDown(
-        prevState, coords.model, nativeEvent, ctx,
-        {
-          plot: coords.plot,
-          model: coords.model,
-          commit(next) {
-            committed = next;
-            publishLayer(b, next);
-          },
-        },
-      );
-      if (gesture) {
-        // If onEmptyPointerDown also published a commit (e.g. click-curve
-        // insert publishes the new point then drags it), the gesture's
-        // startStates already capture the post-insert state; the commit
-        // for history is the *pre*-event snapshot, written when the
-        // gesture eventually finishes via the gesture-commit path. We
-        // override the gesture's startStates so undo restores correctly.
-        installGesture(b, e, gesture);
-        if (committed !== undefined && activeRef.current !== null) {
-          (activeRef.current as ActiveGesture).startStates = preEventSnapshot;
-          (activeRef.current as ActiveGesture).startSelfState = preEventSnapshot.get(b);
-        }
-        return;
-      }
-      if (committed !== undefined) {
-        pendingCommit = { entry: b, next: committed, prev: prevState };
-        break;
-      }
-    }
-    if (pendingCommit) {
-      if (historyEnabled) record(preEventSnapshot);
-      settleLayer(pendingCommit.entry, { commit: pendingCommit.next, prev: pendingCommit.prev });
-    }
-  }, [makeCtx, installGesture, historyEnabled, snapshot, record, layers]);
-
-  // ── keyboard ───────────────────────────────────────────────────────
   const onSvgKeyDown = useCallback((e: ReactKeyboardEvent<SVGSVGElement>) => {
-    const modifiers = readModifiers(e);
-    const ctx = makeCtx(modifiers);
-    const ls = layers();
-    // History first.
     const step = historyEnabled ? historyKey(e) : null;
     if (step) {
       if (step === 'redo') redo();
@@ -300,42 +127,22 @@ export function LayeredCurveEditor(props: LayeredCurveEditorProps) {
       e.preventDefault();
       return;
     }
-    // Then layers (top-to-bottom).
-    for (let i = ls.length - 1; i >= 0; i--) {
-      const b = ls[i];
-      if (!b.layer.onKeyDown) continue;
-      const preEventSnapshot = snapshot();
-      let committed: unknown = undefined;
-      const prevState = b.state;
-      b.layer.onKeyDown(prevState, e.nativeEvent, ctx, {
-        commit(next) { committed = next; publishLayer(b, next); },
-      });
-      if (committed !== undefined) {
-        if (historyEnabled) record(preEventSnapshot);
-        settleLayer(b, { commit: committed, prev: prevState });
-      }
-      // The layer prevents default on the native event, which the synthetic
-      // event's `isDefaultPrevented` does not observe.
-      if (e.nativeEvent.defaultPrevented) return;
-    }
-  }, [historyEnabled, undo, redo, makeCtx, snapshot, record, layers]);
+    // A layer prevents default on the native event, which the synthetic
+    // event's `isDefaultPrevented` does not observe.
+    dispatchKey(layers(), e.nativeEvent, makeCtx(readModifiers(e)), snapshot, settleEdit);
+  },[historyEnabled, undo, redo, makeCtx, snapshot, settleEdit, layers]);
 
   const onSvgContextMenu = useCallback((
     e: ReactMouseEvent<SVGSVGElement>,
-    coords: { plot: PlotPoint; model: ModelPoint },
+    coords: LayerPoint,
   ) => {
-    if (activeRef.current) return;
+    if (busy()) return;
     const before = snapshot();
     const edit = dispatchContextMenu(layers(), coords, e.nativeEvent, makeCtx(readModifiers(e)));
-    if (!edit) return;
-    if (historyEnabled) record(before);
-    settleLayer(edit.entry, { commit: edit.next, prev: edit.prev });
-  }, [historyEnabled, makeCtx, snapshot, record, layers]);
-
-  useEffect(() => () => { sessionRef.current?.cancel(); }, []);
+    if (edit) settleEdit(before, edit);
+  }, [busy, makeCtx, snapshot, settleEdit, layers]);
 
   // ── render ─────────────────────────────────────────────────────────
-  const renderCtxBase = useMemo(() => layerCtxOver(modelRange, plotSize, kitSettings), [modelRange, plotSize, kitSettings]);
   const host = useMemo<LayerHost>(() => ({ register, base: renderCtxBase, active: activeEntry }), [register, renderCtxBase, activeEntry]);
 
   const cls = [s.root, className].filter(Boolean).join(' ');
