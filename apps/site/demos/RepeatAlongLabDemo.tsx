@@ -37,7 +37,8 @@ const TRACK = asNodeId('track');
 /** The track opens in path edit, its anchors up for dragging. */
 const OPENING = { id: TRACK };
 
-function createLabScene() {
+/** The scene a trial opens on, its copies set as the trial's config is: a seeded trial and a Reset match the panel. */
+function createLabScene(cfg: Config) {
   const tile = pathNode('tile', 'M40 40 L76 56 L40 72 L50 56 Z', {
     fill: { paint: solid('#d1495b') },
     stroke: solidStroke('#6b1f2a', 1.5),
@@ -46,7 +47,7 @@ function createLabScene() {
     fill: null,
     stroke: solidStroke('#8a8a8a', 1),
   });
-  const copies = { ...pathEffectNode({ kind: 'repeatAlong', ...settingsOf(config.defaults()) }, [tile.id, track.id], 'default', PATH_EFFECT_DERIVATIONS), id: asNodeId('copies') };
+  const copies = { ...pathEffectNode({ kind: 'repeatAlong', ...settingsOf(cfg) }, [tile.id, track.id], 'default', PATH_EFFECT_DERIVATIONS), id: asNodeId('copies') };
   return createScene<unknown, 'default', RectPose>({
     systemLayers: [{ id: 'default' }],
     registry: withPathEffectsRegistry(),
@@ -56,7 +57,7 @@ function createLabScene() {
 
 function RepeatTrial({ ctx }: { ctx: RenderContext<State, Config> }) {
   const pen = usePenTool();
-  const scene = useTrialScene(ctx, createLabScene);
+  const scene = useTrialScene(ctx, () => createLabScene(ctx.config));
   const selection = useSelection({ scene, initial: [TRACK] });
   // A repeat made from the bar or with Alt+Shift+R takes the panel's settings.
   const tune = usePathEffectSettings(scene, 'repeatAlong', ctx.config, settingsOf);
