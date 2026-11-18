@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useElapsed } from '@weasel-js/react';
 import {
   BRANCH_SYMBOLS, EffectChart, compact, lanes, nodeGraph, rack, shownPorts,
@@ -124,10 +124,19 @@ function withPreviews(run: EffectRun, canvases: Map<string, OffscreenCanvas>, t:
   return { stages };
 }
 
+/** Close a run's preview bitmaps once the next run has replaced it, and the last one on unmount:
+ *  a bitmap's backing is memory the garbage collector does not see. */
+export function useClosePreviews(run: EffectRun): void {
+  useEffect(() => () => {
+    for (const ran of Object.values(run.stages)) for (const b of Object.values(ran.previews ?? {})) b.close();
+  }, [run]);
+}
+
 export function EffectChartPreviewDemo() {
   const [canvases] = useState(() => new Map<string, OffscreenCanvas>());
   const t = useElapsed() / 1000;
   const run = useMemo(() => withPreviews(runAt(t), canvases, t), [t, canvases]);
+  useClosePreviews(run);
   return (
     <DemoStage width={W} height={H}>
       <EffectChart

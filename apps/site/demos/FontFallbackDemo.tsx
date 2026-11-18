@@ -6,7 +6,7 @@ import type { TextStyle } from '@weasel-js/text';
 import { createTextPreset } from '@weasel-js/text-tools';
 import {
   getFontFallbackPolicy, setFontFallbackPolicy,
-  registerCanvasFont, unregisterCanvasFont, isCanvasFont,
+  registerCanvasFont,
   resolveFontVariant, subscribeGlyphReady, glyphGeneration,
   type FontFallbackPolicy, type ResolveResult,
 } from '@weasel-js/font';
@@ -65,11 +65,10 @@ export function FontFallbackDemo() {
   // resolves through them too, so put them back on the way out.
   useEffect(() => {
     const before = getFontFallbackPolicy();
-    const enrolledHere = !isCanvasFont(CANVAS_FAMILY);
-    registerCanvasFont(CANVAS_FAMILY);
+    const release = registerCanvasFont(CANVAS_FAMILY);
     return () => {
       setFontFallbackPolicy(before);
-      if (enrolledHere) unregisterCanvasFont(CANVAS_FAMILY);
+      release();
     };
   }, []);
   useEffect(() => setFontFallbackPolicy(policy), [policy]);

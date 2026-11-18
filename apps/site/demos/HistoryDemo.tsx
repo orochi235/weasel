@@ -87,7 +87,7 @@ function Stack({ label, stack, base }: { label: string; stack: History | Journal
     for (let at = undo.length; at < to; at++) stack.redo();
   };
   return (
-    <section className={s.stack}>
+    <section>
       <h3 className={s.stackTitle}>{label}</h3>
       <HistoryList aria-label={label} entries={entries} current={undo.length} onJump={jump} />
     </section>

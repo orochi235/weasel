@@ -119,6 +119,18 @@ function centersOf<L extends string>(scene: Scene<Dot, L, Dot>) {
   return out;
 }
 
+/** A dot drawn where its pose puts it: a move writes the pose, never the data. */
+export function drawDot(role: Role, p: { x: number; y: number }): DrawCommand[] {
+  const circle = circlePath(p.x + R, p.y + R, R - 1);
+  if (role === 'anchor') return [{ kind: 'path', path: circle, fill: { paint: INK } }];
+  if (role === 'probe') return [{ kind: 'path', path: circle, fill: { paint: PROBE } }];
+  return [{ kind: 'path', path: circle, fill: { paint: { color: '#ffffff' } }, stroke: { paint: INK, width: { px: 1.5 } } }];
+}
+
+/** Percent of the curve's length up to t; a curve of no length has none to share. */
+export const splitShare = (m: { length: number; beforeLength: number }) =>
+  m.length > 0 ? (100 * m.beforeLength) / m.length : 0;
+
 const fmt = (n: number, w = 6, p = 1) => qty(n, decimal({ places: p, grouping: false })).text.padStart(w, '\u2007');
 
 export function GeomDemo() {
@@ -148,13 +160,7 @@ export function GeomDemo() {
           scene={scene}
           layers={{
             scene: {
-              drawOne: (n): DrawCommand[] => {
-                const d = n.data;
-                const circle = circlePath(d.x + R, d.y + R, R - 1);
-                if (d.role === 'anchor') return [{ kind: 'path', path: circle, fill: { paint: INK } }];
-                if (d.role === 'probe') return [{ kind: 'path', path: circle, fill: { paint: PROBE } }];
-                return [{ kind: 'path', path: circle, fill: { paint: { color: '#ffffff' } }, stroke: { paint: INK, width: { px: 1.5 } } }];
-              },
+              drawOne: (n, p) => drawDot(n.data.role, p),
             },
             curve: { layer: curveLayer, before: 'scene' },
           }}
@@ -188,7 +194,7 @@ export function GeomDemo() {
           <tr>
             <td className={s.fn}><span className={s.swatchT} />splitCubicAt</td>
             <td>share of the length in the curve up to t, split off as a cubic of its own</td>
-            <td className={s.num}>{fmt((100 * m.beforeLength) / m.length)}%</td>
+            <td className={s.num}>{fmt(splitShare(m))}%</td>
           </tr>
           <tr>
             <td className={s.fn}><span className={s.swatchProbe} />nearestOnCubic</td>

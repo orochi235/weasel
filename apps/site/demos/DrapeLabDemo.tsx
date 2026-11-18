@@ -1,4 +1,5 @@
 import { useLatest } from '@weasel-js/core';
+import { clamp } from '@weasel-js/geom';
 import { pathsPreset } from '@weasel-js/path-tools';
 import { type ConfigOf, defineInstrument, f, Lab, type RenderContext, TrialSceneCanvas } from '@weasel-js/labkit';
 import { createDrapePreset } from '@weasel-js/path-tools';
@@ -9,9 +10,14 @@ import '@weasel-js/labkit/styles.css';
 import 'windease/styles.css';
 import { movePreset, pickPreset } from '@weasel-js/editing';
 
+const RADIUS_MIN = 10, RADIUS_MAX = 600;
+
+/** The radius a wheel scrub writes back: the drape reaches wider than the Radius slider runs, so hold it to the slider. */
+export const scrubbedRadius = (px: number) => clamp(Math.round(px), RADIUS_MIN, RADIUS_MAX);
+
 const config = f.schema({
   drape: f.boolean(true).label('Drape'),
-  radius: f.number(160).range(10, 600).step(5).suffix('px').label('Radius'),
+  radius: f.number(160).range(RADIUS_MIN, RADIUS_MAX).step(5).suffix('px').label('Radius'),
   falloff: f.enum('smooth', ['smooth', 'linear', 'sharp']).label('Falloff'),
 });
 type Config = ConfigOf<typeof config>;
@@ -31,7 +37,7 @@ function DrapeTrial({ ctx }: { ctx: RenderContext<PathLabState, Config> }) {
   const features = useMemo(() => [pickPreset, movePreset, pathsPreset, createDrapePreset(() => {
     const { drape, radius, falloff } = live.current.config;
     return drape
-      ? { radiusPx: radius, falloff, onRadius: (px: number) => live.current.setConfig('radius', Math.round(px)) }
+      ? { radiusPx: radius, falloff, onRadius: (px: number) => live.current.setConfig('radius', scrubbedRadius(px)) }
       : null;
   })] as const, [live]);
 

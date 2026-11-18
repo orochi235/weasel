@@ -1,7 +1,7 @@
 import { SceneCanvas, useScene, WeaselProvider } from '@weasel-js/core';
 import { ToolPalette } from '@weasel-js/ui/components/ToolPalette';
 import { DemoStage } from './DemoStage';
-import { movePreset, pickPreset, useImageTool, useSelection } from '@weasel-js/editing';
+import { insertPreset, movePreset, pickPreset, useImageTool, useSelection } from '@weasel-js/editing';
 
 const W = 600, H = 400;
 
@@ -43,7 +43,7 @@ export function ImageDemo() {
             className="ckd-canvas"
             scene={scene}
             selection={selection}
-            features={[pickPreset, movePreset]}
+            features={[pickPreset, movePreset, insertPreset]}
             tools={{ image: imageTool }}
           />
         </DemoStage>

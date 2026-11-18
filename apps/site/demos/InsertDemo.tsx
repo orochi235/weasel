@@ -1,7 +1,7 @@
 import { SceneCanvas, useScene } from '@weasel-js/core';
 import type { Fill } from '@weasel-js/core';
 import { DemoStage } from './DemoStage';
-import { useRectTool } from '@weasel-js/editing';
+import { insertPreset, useRectTool } from '@weasel-js/editing';
 
 /** What the kit's `insert` dep mints for a rect. */
 interface RectData { path: unknown; fill: Fill }
@@ -17,6 +17,7 @@ export function InsertDemo() {
       <SceneCanvas
         className="ckd-canvas"
         scene={scene}
+        features={[insertPreset]}
         tools={{ rect }}
         defaultActiveTool="rect"
       />

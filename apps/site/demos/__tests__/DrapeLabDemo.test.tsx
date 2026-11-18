@@ -2,7 +2,7 @@ import { cleanup } from '@testing-library/react';
 import { renderSettled } from '@weasel-js/react/testing/renderSettled';
 import { StrictMode } from 'react';
 import { afterEach, beforeAll, describe, expect, it } from 'vitest';
-import { DrapeLabDemo } from '../DrapeLabDemo';
+import { DrapeLabDemo, scrubbedRadius } from '../DrapeLabDemo';
 import { drag, installLabEnvironment, labAnchors, sceneCanvas } from './pathLabHarness';
 import { withIcons } from '../../testIcons';
 
@@ -26,5 +26,13 @@ describe('DrapeLabDemo', () => {
     }
     expect(after[0]).toEqual(before[0]);
     expect(after[8]).toEqual(before[8]);
+  });
+});
+
+describe('DrapeLabDemo radius scrub', () => {
+  it('writes back a radius inside the Radius slider’s range', () => {
+    expect(scrubbedRadius(4000)).toBe(600);
+    expect(scrubbedRadius(2)).toBe(10);
+    expect(scrubbedRadius(212.4)).toBe(212);
   });
 });
