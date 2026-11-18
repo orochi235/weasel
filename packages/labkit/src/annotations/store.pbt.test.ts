@@ -20,10 +20,10 @@ import type {
 const RUNS = 60;
 
 const TARGETS: AnnotationTargetInfo[] = [
-  { id: 'a', content: { w: 200, h: 100 } },
-  { id: 'x/y', content: { w: 64, h: 640 } },
-  { id: 'constructor', content: { w: 100, h: 100 } },
-  { id: '__proto__', content: { w: 50, h: 80 } },
+  { id: 'a', content: { width: 200, height: 100 } },
+  { id: 'x/y', content: { width: 64, height: 640 } },
+  { id: 'constructor', content: { width: 100, height: 100 } },
+  { id: '__proto__', content: { width: 50, height: 80 } },
 ];
 const targets = () => TARGETS;
 
@@ -50,7 +50,7 @@ interface Real {
 
 const grid = fc.integer({ min: 0, max: 16 }).map((n) => n / 16);
 const span = fc.integer({ min: 1, max: 8 }).map((n) => n / 16);
-const frac: fc.Arbitrary<FracRect> = fc.record({ x: grid, y: grid, w: span, h: span });
+const frac: fc.Arbitrary<FracRect> = fc.record({ x: grid, y: grid, width: span, height: span });
 const target = fc.constantFrom(...TARGETS.map((t) => t.id));
 const title = fc.constantFrom('ring', 'seam', '', 'toString');
 const SHAPED: AnnotationKind[] = ['line', 'arrow', 'stroke'];
@@ -112,7 +112,7 @@ function makeCommands(t: ReturnType<typeof tally>) {
           const points: FracPoint[] | undefined = SHAPED.includes(kind)
             ? [
                 { x: box.x, y: box.y },
-                { x: box.x + box.w, y: box.y + box.h },
+                { x: box.x + box.width, y: box.y + box.height },
               ]
             : undefined;
           const id = real.store.add({
@@ -167,8 +167,8 @@ function makeCommands(t: ReturnType<typeof tally>) {
             m.kind === 'point'
               ? { x: moved.x, y: moved.y }
               : {
-                  x: moved.x + ((p.x - m.frac.x) / m.frac.w) * moved.w,
-                  y: moved.y + ((p.y - m.frac.y) / m.frac.h) * moved.h,
+                  x: moved.x + ((p.x - m.frac.x) / m.frac.width) * moved.width,
+                  y: moved.y + ((p.y - m.frac.y) / m.frac.height) * moved.height,
                 },
           );
           step(model, targetOfId(m.id), (list) =>
@@ -273,7 +273,7 @@ describe('a mark set saved before vertices followed the bounds', () => {
       kind,
       box,
       // Vertices inside the bounds, in fractions of the content box, as the old format stored them.
-      points: at.map(([u, v]) => ({ x: box.x + u * box.w, y: box.y + v * box.h })),
+      points: at.map(([u, v]) => ({ x: box.x + u * box.width, y: box.y + v * box.height })),
     }));
 
   it(

@@ -37,7 +37,7 @@ const annotating = defineInstrument<Record<string, never>, Record<string, never>
   initialState: () => ({}),
   render: (ctx) => <Pane tool={ctx.trial.activeToolId} />,
   annotations: {
-    targets: () => [{ id: 'pane', ref: { current: null }, content: { w: 200, h: 100 } }],
+    targets: () => [{ id: 'pane', ref: { current: null }, content: { width: 200, height: 100 } }],
   },
 });
 
@@ -76,7 +76,9 @@ describe('an instrument that declares annotations', () => {
       ...annotating,
       name: 'Narrow',
       annotations: {
-        targets: () => [{ id: 'pane', ref: { current: null }, content: { w: 200, h: 100 } }],
+        targets: () => [
+          { id: 'pane', ref: { current: null }, content: { width: 200, height: 100 } },
+        ],
         tools: ['pointer', 'select'],
       },
     });
@@ -170,7 +172,11 @@ describe('the trial undo chrome over marks', () => {
     expect(undo.getAttribute('aria-disabled') ?? undo.getAttribute('disabled')).not.toBeNull();
 
     await act(async () => {
-      marks().add({ target: 'pane', kind: 'rect', frac: { x: 0.1, y: 0.1, w: 0.2, h: 0.2 } });
+      marks().add({
+        target: 'pane',
+        kind: 'rect',
+        frac: { x: 0.1, y: 0.1, width: 0.2, height: 0.2 },
+      });
     });
     expect(screen.getByTestId('pane').dataset.marks).toBe('1');
 
@@ -191,7 +197,7 @@ describe('the trial undo chrome over marks', () => {
     });
     expect(screen.getByText('Marks')).toBeTruthy();
     await act(async () => {
-      marks().add({ target: 'pane', kind: 'line', frac: { x: 0, y: 0, w: 0.5, h: 0 } });
+      marks().add({ target: 'pane', kind: 'line', frac: { x: 0, y: 0, width: 0.5, height: 0 } });
     });
     expect(screen.getAllByRole('listitem')).toHaveLength(1);
   });
@@ -221,7 +227,7 @@ describe('targets that follow the trial state', () => {
           Array.from({ length: state.n }, (_, i) => ({
             id: `t${i}`,
             ref: { current: null },
-            content: { w: 10, h: 10 },
+            content: { width: 10, height: 10 },
           })),
       },
     });
@@ -244,8 +250,8 @@ describe("the capability's selection mode", () => {
       name: 'Two',
       annotations: {
         targets: () => [
-          { id: 'a', ref: { current: null }, content: { w: 200, h: 100 } },
-          { id: 'b', ref: { current: null }, content: { w: 200, h: 100 } },
+          { id: 'a', ref: { current: null }, content: { width: 200, height: 100 } },
+          { id: 'b', ref: { current: null }, content: { width: 200, height: 100 } },
         ],
         ...(selection ? { selection } : {}),
       },
@@ -253,8 +259,16 @@ describe("the capability's selection mode", () => {
   const selectBoth = async (): Promise<readonly string[]> => {
     let both: [string, string] = ['', ''];
     await act(async () => {
-      const onA = marks().add({ target: 'a', kind: 'rect', frac: { x: 0, y: 0, w: 0.1, h: 0.1 } });
-      const onB = marks().add({ target: 'b', kind: 'rect', frac: { x: 0, y: 0, w: 0.1, h: 0.1 } });
+      const onA = marks().add({
+        target: 'a',
+        kind: 'rect',
+        frac: { x: 0, y: 0, width: 0.1, height: 0.1 },
+      });
+      const onB = marks().add({
+        target: 'b',
+        kind: 'rect',
+        frac: { x: 0, y: 0, width: 0.1, height: 0.1 },
+      });
       marks().setSelection([onA, onB]);
       both = [onA, onB];
     });

@@ -99,7 +99,7 @@ function contentPath(ex: Exercise): Pt[] {
   if (g.kind === 'segment') return straight(g.a, g.b);
   if (g.kind === 'curve')
     return g.points.filter((_, i) => i % 8 === 0 || i === g.points.length - 1);
-  const { x, y, w, h } = g.box;
+  const { x, y, width: w, height: h } = g.box;
   if (ex.expect === 'text') return straight({ x, y }, { x: x + 60, y: y + 20 });
   return straight({ x, y }, { x: x + w, y: y + h });
 }

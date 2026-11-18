@@ -1,4 +1,5 @@
 import { watchDevicePixelRatio } from '@weasel-js/core/engine';
+import { rectsOverlap } from '@weasel-js/geom';
 import { useLatest, useVisibleRaf } from '@weasel-js/react';
 import { createEmitter } from '@weasel-js/registry';
 import { useCallback, useEffect, useMemo, useRef } from 'react';
@@ -114,6 +115,14 @@ function onAnyScroll(doc: Document, onScroll: () => void): () => void {
   doc.addEventListener('scroll', onScroll, { capture: true, passive: true });
   return () => doc.removeEventListener('scroll', onScroll, true);
 }
+
+/** `box`, a client rect, measured from `origin`'s top-left corner. */
+const toLocalRect = (box: Box, origin: Box): Rect => ({
+  x: box.left - origin.left,
+  y: box.top - origin.top,
+  width: box.width,
+  height: box.height,
+});
 
 /**
  * Share one drawing buffer among tiles laid out by the DOM. Tiles register
@@ -234,12 +243,10 @@ export function useTiledSurface({ onFrame }: UseTiledSurfaceOptions): SurfaceHan
     (box: Box) => {
       const el = container.current;
       if (!el) return;
-      const at = el.getBoundingClientRect();
-      const x = box.left - at.left;
-      const y = box.top - at.top;
+      const local = toLocalRect(box, el.getBoundingClientRect());
       let hit = false;
       for (const [id, r] of rects.current) {
-        if (x < r.x + r.w && r.x < x + box.width && y < r.y + r.h && r.y < y + box.height) {
+        if (rectsOverlap(r, local)) {
           dirty.current.add(id);
           hit = true;
         }

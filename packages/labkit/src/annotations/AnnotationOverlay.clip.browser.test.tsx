@@ -18,7 +18,7 @@ beforeEach(async () => {
   await page.viewport(1000, 700);
 });
 
-const CONTENT = { w: 300, h: 120 };
+const CONTENT = { width: 300, height: 120 };
 const pane: { current: HTMLDivElement | null } = { current: null };
 
 function Count() {
@@ -31,7 +31,7 @@ function Count() {
 }
 
 /** Where the first mark is stored, in fractions of its target's content box. */
-const storedFrac = (): { x: number; y: number; w: number; h: number } =>
+const storedFrac = (): { x: number; y: number; width: number; height: number } =>
   JSON.parse(screen.getByTestId('count').dataset.frac ?? 'null');
 
 const Clipped = defineInstrument<Record<string, never>, Record<string, never>>({
@@ -161,8 +161,8 @@ test('a mark is cut where its target is, and takes no press past it', async () =
   input.blur();
   // Stored against the whole target, the part cut off included.
   const clipped = storedFrac();
-  expect(clipped.x).toBeCloseTo(20 / CONTENT.w, 1);
-  expect(clipped.x + clipped.w).toBeCloseTo(280 / CONTENT.w, 1);
+  expect(clipped.x).toBeCloseTo(20 / CONTENT.width, 1);
+  expect(clipped.x + clipped.width).toBeCloseTo(280 / CONTENT.width, 1);
 
   await waitFor(
     async () => {
@@ -222,14 +222,17 @@ const Scrolling = defineInstrument<Record<string, never>, Record<string, never>>
   annotations: {
     targets: () => {
       const el = scroller.current;
-      const w = el?.offsetWidth || 1;
-      const h = el?.offsetHeight || 1;
+      const width = el?.offsetWidth || 1;
+      const height = el?.offsetHeight || 1;
       return [
         {
           id: 'scroller',
           ref: scroller,
-          content: { w: Math.max(w, el?.scrollWidth ?? 0), h: Math.max(h, el?.scrollHeight ?? 0) },
-          shown: { x: el?.scrollLeft ?? 0, y: el?.scrollTop ?? 0, w, h },
+          content: {
+            width: Math.max(width, el?.scrollWidth ?? 0),
+            height: Math.max(height, el?.scrollHeight ?? 0),
+          },
+          shown: { x: el?.scrollLeft ?? 0, y: el?.scrollTop ?? 0, width, height },
         },
       ];
     },
@@ -257,7 +260,7 @@ test('a mark on scrolled content moves with it as its target scrolls', async () 
   input.blur();
   const stored = storedFrac();
   expect(stored.y * el.scrollHeight).toBeCloseTo(70, -1);
-  expect((stored.y + stored.h) * el.scrollHeight).toBeCloseTo(170, -1);
+  expect((stored.y + stored.height) * el.scrollHeight).toBeCloseTo(170, -1);
 
   const x = box.left + 120;
   const across = (line: Line, y: number) => line(x, box.top + y - 6, x, box.top + y + 6);

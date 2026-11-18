@@ -13,8 +13,8 @@ import { createMarkStore } from './store';
 import type { AnnotationMeaning, AnnotationsApi, AnnotationTargetInfo } from './types';
 
 const TARGETS: AnnotationTargetInfo[] = [
-  { id: 'flat', content: { w: 200, h: 100 }, positionDependsOn: ['angle'] },
-  { id: 'shaded', content: { w: 200, h: 100 } },
+  { id: 'flat', content: { width: 200, height: 100 }, positionDependsOn: ['angle'] },
+  { id: 'shaded', content: { width: 200, height: 100 } },
 ];
 
 const MEANING: AnnotationMeaning = {
@@ -38,13 +38,16 @@ function seeded() {
     {
       target: 'flat',
       kind: 'rect',
-      frac: { x: 0.1, y: 0.1, w: 0.2, h: 0.2 },
+      frac: { x: 0.1, y: 0.1, width: 0.2, height: 0.2 },
       title: 'spurious ring',
       status: 'open',
     },
     { angle: 0 },
   );
-  store.add({ target: 'shaded', kind: 'line', frac: { x: 0.4, y: 0.4, w: 0.2, h: 0 } }, {});
+  store.add(
+    { target: 'shaded', kind: 'line', frac: { x: 0.4, y: 0.4, width: 0.2, height: 0 } },
+    {},
+  );
   return store;
 }
 

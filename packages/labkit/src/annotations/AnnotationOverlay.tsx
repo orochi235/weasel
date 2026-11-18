@@ -78,7 +78,7 @@ interface Placement {
 }
 
 const sameRect = (a: Rect, b: Rect): boolean =>
-  a.x === b.x && a.y === b.y && a.w === b.w && a.h === b.h;
+  a.x === b.x && a.y === b.y && a.width === b.width && a.height === b.height;
 
 const samePlacement = (a: Placement | null, b: Placement): boolean =>
   a !== null && sameRect(a.rect, b.rect) && sameRect(a.visible, b.visible);
@@ -115,7 +115,7 @@ export function insertedGeometry(
   const box = boundsOf(vertices);
   if (!box) return undefined;
   return {
-    pose: { x: box.x, y: box.y, width: box.w, height: box.h },
+    pose: box,
     shape: roundPoints(toShape(vertices, box)),
   };
 }
@@ -183,7 +183,7 @@ function useMarkTools(target: AnnotationTarget, activeToolId: string | null, con
 }
 
 function cameraFor(target: AnnotationTarget, { rect, visible }: Placement): View {
-  const whole = target.view ?? fitView(target.content, { w: rect.w, h: rect.h }, target.shown);
+  const whole = target.view ?? fitView(target.content, rect, target.shown);
   return toWeaselView({
     zoom: whole.zoom,
     pan: { x: whole.pan.x - (visible.x - rect.x), y: whole.pan.y - (visible.y - rect.y) },
@@ -305,8 +305,8 @@ export function AnnotationOverlay({
   const box = {
     ['--lk-anno-x' as string]: `${visible.x}px`,
     ['--lk-anno-y' as string]: `${visible.y}px`,
-    ['--lk-anno-w' as string]: `${visible.w}px`,
-    ['--lk-anno-h' as string]: `${visible.h}px`,
+    ['--lk-anno-w' as string]: `${visible.width}px`,
+    ['--lk-anno-h' as string]: `${visible.height}px`,
   } as CSSProperties;
 
   return createPortal(
@@ -318,7 +318,7 @@ export function AnnotationOverlay({
         // Pass-through while the rail holds a tool that makes no marks, so the
         // instrument under the overlay stays clickable.
         data-idle={annotationToolInfo(activeToolId) ? undefined : ''}
-        hidden={!inScope || !(visible.w > 0 && visible.h > 0)}
+        hidden={!inScope || !(visible.width > 0 && visible.height > 0)}
         role="application"
         aria-label={`Annotations on ${id}`}
         // biome-ignore lint/a11y/noNoninteractiveTabindex: role="application" IS the interactive case — a region with its own keymap. The rule's allowed-role list stops at the native widget roles and does not include it, and the gesture dispatcher listens on this element, so without focus no tool's keyboard binding ever fires.
@@ -333,8 +333,8 @@ export function AnnotationOverlay({
             features={FEATURES}
             ref={attachSceneCanvas}
             scene={scene}
-            width={visible.w}
-            height={visible.h}
+            width={visible.width}
+            height={visible.height}
             view={view}
             paintInto={{ canvas, x: visible.x, y: visible.y }}
             inputElement={input}

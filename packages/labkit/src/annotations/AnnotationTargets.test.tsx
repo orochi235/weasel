@@ -50,7 +50,7 @@ describe('AnnotationTargets', () => {
       const capability: AnnotationsCapability = {
         targets: () => {
           asked();
-          return [{ id: 'box', ref, content: { w: 10, h: 10 } }];
+          return [{ id: 'box', ref, content: { width: 10, height: 10 } }];
         },
       };
       return (
@@ -89,7 +89,7 @@ describe('AnnotationTargets', () => {
       const capability: AnnotationsCapability = {
         targets: () => {
           asked();
-          return [{ id: 'box', ref, content: { w: 10, h: 10 } }];
+          return [{ id: 'box', ref, content: { width: 10, height: 10 } }];
         },
       };
       return (

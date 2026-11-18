@@ -39,8 +39,8 @@ const side = fc.oneof(
   },
 );
 const point: fc.Arbitrary<FracPoint> = fc.record({ x: coord, y: coord });
-const rect: fc.Arbitrary<FracRect> = fc.record({ x: coord, y: coord, w: size, h: size });
-const content = fc.record({ w: side, h: side });
+const rect: fc.Arbitrary<FracRect> = fc.record({ x: coord, y: coord, width: size, height: size });
+const content = fc.record({ width: side, height: side });
 
 const near = (a: number, b: number, scale = 1) =>
   Math.abs(a - b) <= 1e-9 * Math.max(1, Math.abs(a), Math.abs(b), scale);
@@ -54,14 +54,14 @@ describe('fractions of a content box', () => {
         fc.property(rect, content, (f, c) => {
           const back = worldToFrac(fracToWorld(f, c), c);
           for (const v of Object.values(back)) expect(Number.isFinite(v)).toBe(true);
-          if (c.w > 0) {
+          if (c.width > 0) {
             t.count('width');
-            expect(near(back.x, f.x) && near(back.w, f.w)).toBe(true);
-          } else expect(back.x === 0 && back.w === 0).toBe(true);
-          if (c.h > 0) expect(near(back.y, f.y) && near(back.h, f.h)).toBe(true);
+            expect(near(back.x, f.x) && near(back.width, f.width)).toBe(true);
+          } else expect(back.x === 0 && back.width === 0).toBe(true);
+          if (c.height > 0) expect(near(back.y, f.y) && near(back.height, f.height)).toBe(true);
           else {
             t.count('no height');
-            expect(back.y === 0 && back.h === 0).toBe(true);
+            expect(back.y === 0 && back.height === 0).toBe(true);
           }
         }),
         runs(RUNS),
@@ -79,7 +79,7 @@ describe('fractions of a content box', () => {
         fc.property(rect, (f) => {
           const r = roundFrac(f);
           expect(roundFrac(r)).toEqual(r);
-          for (const k of ['x', 'y', 'w', 'h'] as const)
+          for (const k of ['x', 'y', 'width', 'height'] as const)
             expect(Math.abs(r[k] - f[k])).toBeLessThanOrEqual(0.5e-4 + 1e-12);
         }),
         runs(RUNS),
@@ -101,19 +101,23 @@ describe("a mark's shape", () => {
           pts.forEach((p, i) => {
             const m = moved[i] as FracPoint;
             expect(Number.isFinite(m.x) && Number.isFinite(m.y)).toBe(true);
-            const fx = from.w === 0 ? 0 : (p.x - from.x) / from.w;
-            const fy = from.h === 0 ? 0 : (p.y - from.y) / from.h;
+            const fx = from.width === 0 ? 0 : (p.x - from.x) / from.width;
+            const fy = from.height === 0 ? 0 : (p.y - from.y) / from.height;
             if (!Number.isFinite(fx) || !Number.isFinite(fy)) return;
             t.count('moved');
-            expect(near(m.x, to.x + fx * to.w, Math.abs(fx) * to.w)).toBe(true);
-            expect(near(m.y, to.y + fy * to.h, Math.abs(fy) * to.h)).toBe(true);
+            expect(near(m.x, to.x + fx * to.width, Math.abs(fx) * to.width)).toBe(true);
+            expect(near(m.y, to.y + fy * to.height, Math.abs(fy) * to.height)).toBe(true);
           });
-          if (pts.length > 0 && from.w > 1e-3 && from.h > 1e-3) {
+          if (pts.length > 0 && from.width > 1e-3 && from.height > 1e-3) {
             t.count('round trip');
             fromShape(toShape(pts, from), from).forEach((m, i) => {
               const p = pts[i] as FracPoint;
-              expect(Math.abs(m.x - p.x)).toBeLessThan(1e-9 * Math.max(1, Math.abs(p.x) / from.w));
-              expect(Math.abs(m.y - p.y)).toBeLessThan(1e-9 * Math.max(1, Math.abs(p.y) / from.h));
+              expect(Math.abs(m.x - p.x)).toBeLessThan(
+                1e-9 * Math.max(1, Math.abs(p.x) / from.width),
+              );
+              expect(Math.abs(m.y - p.y)).toBeLessThan(
+                1e-9 * Math.max(1, Math.abs(p.y) / from.height),
+              );
             });
           }
         }),
@@ -136,14 +140,14 @@ describe("a mark's shape", () => {
             return;
           }
           if (!b) throw new Error('no bounds for points');
-          // `x + w` can round a hair off the largest x it was taken from, so the far edges are checked to an ulp.
+          // `x + width` can round a hair off the largest x it was taken from, so the far edges are checked to an ulp.
           const ulp = (n: number) => 4 * Number.EPSILON * Math.abs(n) + Number.MIN_VALUE;
           const maxX = Math.max(...pts.map((p) => p.x));
           const maxY = Math.max(...pts.map((p) => p.y));
           expect(Math.min(...pts.map((p) => p.x))).toBe(b.x);
           expect(Math.min(...pts.map((p) => p.y))).toBe(b.y);
-          expect(Math.abs(b.x + b.w - maxX)).toBeLessThanOrEqual(ulp(maxX) + ulp(b.x));
-          expect(Math.abs(b.y + b.h - maxY)).toBeLessThanOrEqual(ulp(maxY) + ulp(b.y));
+          expect(Math.abs(b.x + b.width - maxX)).toBeLessThanOrEqual(ulp(maxX) + ulp(b.x));
+          expect(Math.abs(b.y + b.height - maxY)).toBeLessThanOrEqual(ulp(maxY) + ulp(b.y));
           for (const p of pts)
             expect(fracContains(b, p, ulp(maxX) + ulp(maxY) + ulp(b.x) + ulp(b.y))).toBe(true);
           for (const s of toShape(pts, b)) {
@@ -168,14 +172,14 @@ describe('containment', () => {
       // A quarter grid, so edges coincide often.
       const q = fc.integer({ min: -4, max: 4 }).map((n) => n / 4);
       const qs = fc.integer({ min: 0, max: 8 }).map((n) => n / 4);
-      const qRect = fc.record({ x: q, y: q, w: qs, h: qs });
+      const qRect = fc.record({ x: q, y: q, width: qs, height: qs });
       fc.assert(
         fc.property(qRect, qRect, (outer, inner) => {
           const corners = [
             { x: inner.x, y: inner.y },
-            { x: inner.x + inner.w, y: inner.y },
-            { x: inner.x, y: inner.y + inner.h },
-            { x: inner.x + inner.w, y: inner.y + inner.h },
+            { x: inner.x + inner.width, y: inner.y },
+            { x: inner.x, y: inner.y + inner.height },
+            { x: inner.x + inner.width, y: inner.y + inner.height },
           ];
           const encloses = fracEncloses(outer, inner);
           t.count(encloses ? 'encloses' : 'does not');
@@ -197,14 +201,14 @@ describe('containment', () => {
           const widened = {
             x: box.x - tol,
             y: box.y - tol,
-            w: box.w + 2 * tol,
-            h: box.h + 2 * tol,
+            width: box.width + 2 * tol,
+            height: box.height + 2 * tol,
           };
           const inside =
             p.x >= widened.x &&
-            p.x <= box.x + box.w + tol &&
+            p.x <= box.x + box.width + tol &&
             p.y >= widened.y &&
-            p.y <= box.y + box.h + tol;
+            p.y <= box.y + box.height + tol;
           expect(fracContains(box, p, tol)).toBe(inside);
           if (fracContains(box, p)) expect(fracContains(box, p, tol)).toBe(true);
         }),
@@ -216,7 +220,7 @@ describe('containment', () => {
 });
 
 describe('the fitted camera', () => {
-  const window = fc.record({ x: coord, y: coord, w: side, h: side });
+  const window = fc.record({ x: coord, y: coord, width: side, height: side });
   it(
     'shows the window it is given inside the pane, filling it along one axis, and stays finite on an unmeasured pane',
     () => {
@@ -226,20 +230,26 @@ describe('the fitted camera', () => {
           const view = fitView(c, pane, shown);
           expect(Number.isFinite(view.zoom) && view.zoom > 0).toBe(true);
           expect(Number.isFinite(view.pan.x) && Number.isFinite(view.pan.y)).toBe(true);
-          const part = shown ?? { x: 0, y: 0, w: c.w, h: c.h };
-          if (!(part.w > 0 && part.h > 0 && pane.w > 0 && pane.h > 0)) return;
+          const part = shown ?? { x: 0, y: 0, width: c.width, height: c.height };
+          if (!(part.width > 0 && part.height > 0 && pane.width > 0 && pane.height > 0)) return;
           t.count('fits');
           const lo = worldToScreen({ x: part.x, y: part.y }, view);
-          const hi = worldToScreen({ x: part.x + part.w, y: part.y + part.h }, view);
+          const hi = worldToScreen({ x: part.x + part.width, y: part.y + part.height }, view);
           const slack =
             1e-9 *
-            Math.max(1, pane.w, pane.h, Math.abs(part.x * view.zoom), Math.abs(part.y * view.zoom));
+            Math.max(
+              1,
+              pane.width,
+              pane.height,
+              Math.abs(part.x * view.zoom),
+              Math.abs(part.y * view.zoom),
+            );
           expect(Math.abs(lo.x)).toBeLessThanOrEqual(slack);
           expect(Math.abs(lo.y)).toBeLessThanOrEqual(slack);
-          expect(hi.x).toBeLessThanOrEqual(pane.w + slack);
-          expect(hi.y).toBeLessThanOrEqual(pane.h + slack);
-          const fillsX = near(hi.x - lo.x, pane.w, pane.w);
-          const fillsY = near(hi.y - lo.y, pane.h, pane.h);
+          expect(hi.x).toBeLessThanOrEqual(pane.width + slack);
+          expect(hi.y).toBeLessThanOrEqual(pane.height + slack);
+          const fillsX = near(hi.x - lo.x, pane.width, pane.width);
+          const fillsY = near(hi.y - lo.y, pane.height, pane.height);
           expect(fillsX || fillsY).toBe(true);
         }),
         runs(RUNS),

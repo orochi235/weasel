@@ -75,8 +75,8 @@ function Harness({
 
   const capability: AnnotationsCapability = {
     targets: (): AnnotationTarget[] => [
-      { id: 'pane:a', ref: a, content: { w: 200, h: 100 } },
-      { id: 'pane:b', ref: b, content: { w: 200, h: 100 } },
+      { id: 'pane:a', ref: a, content: { width: 200, height: 100 } },
+      { id: 'pane:b', ref: b, content: { width: 200, height: 100 } },
     ],
   };
 
@@ -285,7 +285,9 @@ function OneTrial({
   const pane = useRef<HTMLDivElement | null>(null);
   const annotations = useRef(createMarkStore({ targets: () => [] })).current;
   const capability: AnnotationsCapability = {
-    targets: (): AnnotationTarget[] => [{ id: 'pane:a', ref: pane, content: { w: 200, h: 100 } }],
+    targets: (): AnnotationTarget[] => [
+      { id: 'pane:a', ref: pane, content: { width: 200, height: 100 } },
+    ],
   };
   return (
     <TrialIdProvider trialId={trialId}>

@@ -2,8 +2,8 @@ import { describe, expect, it } from 'vitest';
 import { annotationsFromJSON, createMarkStore } from './store';
 import type { AnnotationTargetInfo } from './types';
 
-const TARGETS: AnnotationTargetInfo[] = [{ id: 't', content: { w: 200, h: 100 } }];
-const BOX = { x: 0.1, y: 0.1, w: 0.5, h: 0.5 };
+const TARGETS: AnnotationTargetInfo[] = [{ id: 't', content: { width: 200, height: 100 } }];
+const BOX = { x: 0.1, y: 0.1, width: 0.5, height: 0.5 };
 
 describe("a mark's style in the store", () => {
   it('keeps width, color and size through add, update and a save', () => {

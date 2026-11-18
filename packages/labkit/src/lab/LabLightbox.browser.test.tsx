@@ -26,7 +26,7 @@ beforeEach(async () => {
   await page.viewport(1000, 700);
 });
 
-const CONTENT = { w: 200, h: 100 };
+const CONTENT = { width: 200, height: 100 };
 const panes = new Map<string, { current: HTMLDivElement | null }>();
 const paneFor = (id: string) => {
   let ref = panes.get(id);
@@ -56,7 +56,7 @@ function Solid() {
         const v = toDeviceRect(rect, frame.size.height, frame.dpr);
         const px = (n: number) => Math.round(n * frame.dpr);
         gl.enable(gl.SCISSOR_TEST);
-        gl.scissor(px(v.x), px(v.y), px(v.w), px(v.h));
+        gl.scissor(px(v.x), px(v.y), px(v.width), px(v.height));
         gl.clearColor(0, 1, 0, 1);
         gl.clear(gl.COLOR_BUFFER_BIT);
         gl.disable(gl.SCISSOR_TEST);

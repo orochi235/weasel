@@ -80,7 +80,7 @@ export interface CaptureDeps {
   config: unknown;
 }
 
-const NO_CONTENT = { w: 0, h: 0 };
+const NO_CONTENT = { width: 0, height: 0 };
 
 /**
  * A facade over one weasel scene per target: the scenes are the truth, this

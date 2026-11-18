@@ -9,11 +9,11 @@ import type { Rect } from './rect';
 export function toDeviceRect(rect: Rect, surfaceHeight: number, dpr: number): Rect {
   const snap = (v: number) => Math.round(v * dpr) / dpr;
   const x = snap(rect.x);
-  const y = snap(surfaceHeight - rect.y - rect.h);
+  const y = snap(surfaceHeight - rect.y - rect.height);
   return {
     x,
     y,
-    w: snap(rect.x + rect.w) - x,
-    h: snap(surfaceHeight - rect.y) - y,
+    width: snap(rect.x + rect.width) - x,
+    height: snap(surfaceHeight - rect.y) - y,
   };
 }

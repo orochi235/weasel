@@ -217,7 +217,7 @@ describe('useTiledSurface', () => {
     flushFrames();
 
     expect([...(frames[0]?.dirty ?? [])]).toEqual(['a']);
-    expect(frames[0]?.rects.get('b')).toEqual({ x: 400, y: 0, w: 400, h: 600 });
+    expect(frames[0]?.rects.get('b')).toEqual({ x: 400, y: 0, width: 400, height: 600 });
   });
 
   it('reports the surface size and dpr', () => {
@@ -303,7 +303,7 @@ describe('useTiledSurface', () => {
     act(() => handle?.invalidateRects());
     flushFrames();
 
-    expect(frames[0]?.rects.get('b')).toEqual({ x: 320, y: 0, w: 400, h: 600 });
+    expect(frames[0]?.rects.get('b')).toEqual({ x: 320, y: 0, width: 400, height: 600 });
   });
 
   it('marks only the tiles a viewport box overlaps, measured from the container', () => {
@@ -461,7 +461,7 @@ describe('useTiledSurface', () => {
 
     // The rect, not just the call: a painter handed the wrong origin paints
     // the right picture in the wrong place.
-    expect(paintA).toHaveBeenCalledWith({ x: 0, y: 0, w: 400, h: 600 }, expect.anything());
+    expect(paintA).toHaveBeenCalledWith({ x: 0, y: 0, width: 400, height: 600 }, expect.anything());
     expect(paintB).not.toHaveBeenCalled();
   });
 

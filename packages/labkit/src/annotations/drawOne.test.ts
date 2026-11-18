@@ -4,7 +4,7 @@ import { createMarkDrawOne } from './drawOne';
 import type { WorldRect } from './frac';
 import type { AnnotationData } from './types';
 
-const CONTENT = { w: 100, h: 60 };
+const CONTENT = { width: 100, height: 60 };
 const VIEW = { x: 0, y: 0, zoom: 1 } as unknown as View;
 
 const node = (data: Partial<AnnotationData>, pose: WorldRect) =>

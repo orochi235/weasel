@@ -368,7 +368,7 @@ import { createRef } from "react";
 import { type CaptureSource, defineInstrument, f } from "@weasel-js/labkit";
 
 const paneRef = createRef<HTMLDivElement>();
-const CONTENT = { w: 260, h: 180 };
+const CONTENT = { width: 260, height: 180 };
 
 export const Inspector = defineInstrument({
   name: "Inspector",

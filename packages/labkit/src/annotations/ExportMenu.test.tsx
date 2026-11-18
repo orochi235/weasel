@@ -11,8 +11,8 @@ import { createMarkStore } from './store';
 import type { AnnotationsApi, AnnotationTargetInfo, CaptureOptions } from './types';
 
 const TARGETS: AnnotationTargetInfo[] = [
-  { id: 'flat', content: { w: 200, h: 100 } },
-  { id: 'shaded', content: { w: 200, h: 100 } },
+  { id: 'flat', content: { width: 200, height: 100 } },
+  { id: 'shaded', content: { width: 200, height: 100 } },
 ];
 
 function mount(store: AnnotationsApi | null) {
