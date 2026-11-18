@@ -1,6 +1,6 @@
 import { defineInstrument, Lab, useClockFrame, useTrialClock } from '@weasel-js/labkit';
 import { Button } from '@weasel-js/ui/components/Button';
-import { useRef } from 'react';
+import { useRef, useState } from 'react';
 import '@weasel-js/labkit/styles.css';
 import 'windease/styles.css';
 import s from './TrialClockDemo.module.css';
@@ -12,20 +12,26 @@ const RADIUS = 160;
 function Controls() {
   const clock = useTrialClock();
   const readout = useRef<HTMLSpanElement>(null);
+  const [direction, setDirection] = useState<1 | -1>(1);
   useClockFrame((elapsed) => {
     if (readout.current) readout.current.textContent = `${(elapsed / 1000).toFixed(2)}s`;
   });
   if (!clock) return null;
-  const forward = clock.rate >= 0;
+  // `rate` is 0 while paused, so the direction to resume in is kept beside it.
+  const playing = clock.rate !== 0;
   return (
     <div className={s.controls}>
       {/* eslint-disable-next-line react-hooks/immutability -- the clock is driven by setting `rate` */}
-      <Button onClick={() => { clock.rate = clock.rate === 0 ? 1 : 0; }}>
-        {clock.rate === 0 ? 'Play' : 'Pause'}
+      <Button onClick={() => { clock.rate = playing ? 0 : direction; }}>
+        {playing ? 'Pause' : 'Play'}
       </Button>
-      {/* eslint-disable-next-line react-hooks/immutability -- the clock is driven by setting `rate` */}
-      <Button onClick={() => { clock.rate = forward ? -1 : 1; }}>
-        {forward ? 'Reverse' : 'Forward'}
+      <Button onClick={() => {
+        const next = direction === 1 ? -1 : 1;
+        setDirection(next);
+        // eslint-disable-next-line react-hooks/immutability -- the clock is driven by setting `rate`
+        if (playing) clock.rate = next;
+      }}>
+        {direction === 1 ? 'Reverse' : 'Forward'}
       </Button>
       <span ref={readout} className={s.readout}>0.00s</span>
     </div>
