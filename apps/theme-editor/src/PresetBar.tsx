@@ -29,10 +29,11 @@ export function PresetBar({ state, saved, onSavedChange, onLoad }: PresetBarProp
 
   const all = [...BUILTIN_PRESETS, ...saved];
 
+  const trimmed = name.trim();
+  const builtin = BUILTIN_PRESETS.some((p) => p.name === trimmed);
+
   const save = () => {
-    const trimmed = name.trim();
-    if (!trimmed) return;
-    if (BUILTIN_PRESETS.some((p) => p.name === trimmed)) return;
+    if (!trimmed || builtin) return;
     const next = [...saved.filter((p) => p.name !== trimmed), { name: trimmed, state }];
     onSavedChange(next);
     keep(next);
@@ -93,10 +94,11 @@ export function PresetBar({ state, saved, onSavedChange, onLoad }: PresetBarProp
           }}
           aria-label="Preset name"
         />
-        <Button size="sm" onClick={save} disabled={!name.trim()}>
+        <Button size="sm" onClick={save} disabled={!trimmed || builtin}>
           Save
         </Button>
       </div>
+      {builtin && <p role="status">{trimmed} is a built-in preset: give this one another name.</p>}
       {unkept && <p role="status">Presets are not being kept in the browser, which refused to store them: a reload loses them.</p>}
     </section>
   );

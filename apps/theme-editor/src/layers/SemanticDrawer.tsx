@@ -1,11 +1,12 @@
 import { getOwn } from '@weasel-js/registry';
-import { isByAxis, type AxisDefs, type Varying } from '@weasel-js/theme';
+import { isByAxis, serializeTokenValue, type AxisDefs, type Varying } from '@weasel-js/theme';
 import type { SemanticRule } from '@weasel-js/theme/engine';
 import { Button } from '@weasel-js/ui/components/Button';
 import { PropertyField, PropertyGroup, PropertyPanel, PropertyRow } from '@weasel-js/ui/components/Properties';
 import { TokenField } from '@weasel-js/ui/components/TokenField';
 import { useState } from 'react';
 import styles from '../ThemeEditor.module.css';
+import { tokenValueFromText } from '../theme/model';
 import { RULE_KINDS, defaultRule, ruleKind, type SemanticRowView } from '../theme/semantics';
 
 type Ramps = Readonly<Record<string, readonly string[]>>;
@@ -141,7 +142,14 @@ function RuleFields({
       </>
     );
   }
-  return <PropertyField kind="string" label="Value" value={String(rule.value)} onChange={(value) => onChange({ ...rule, value }, 'value')} />;
+  return (
+    <PropertyField
+      kind="string"
+      label="Value"
+      value={serializeTokenValue(rule.type ?? '', rule.value)}
+      onChange={(text) => onChange({ ...rule, value: tokenValueFromText(rule.type, text, rule.value) }, 'value')}
+    />
+  );
 }
 
 export function SemanticDrawer({ name, rule, row, axes, ramps, semantics, issues, onRule, onRevert, onClose }: SemanticDrawerProps) {
@@ -149,7 +157,10 @@ export function SemanticDrawer({ name, rule, row, axes, ramps, semantics, issues
   const varies = isByAxis(rule);
   const axis = varies ? rule.by : 'mode';
   const values = varies ? Object.keys(getOwn(axes, rule.by)?.values ?? rule).filter((k) => k !== 'by') : modeValues;
-  const [branch, setBranch] = useState(() => (varies ? values.find((v) => Object.hasOwn(rule, v)) : undefined) ?? values[0] ?? '');
+  // A pick the rule's axis no longer offers (Varies by turned off and on again) falls back to a branch it has.
+  const [picked, setBranch] = useState<string>();
+  const branch =
+    picked !== undefined && values.includes(picked) ? picked : ((varies ? values.find((v) => Object.hasOwn(rule, v)) : undefined) ?? values[0] ?? '');
   const current = (varies ? getOwn(rule as unknown as Record<string, unknown>, branch) : rule) as Varying<SemanticRule> | undefined;
   const others = semantics.filter((n) => n !== name);
   const present = varies ? Object.entries(rule).find(([k]) => k !== 'by')?.[1] : undefined;

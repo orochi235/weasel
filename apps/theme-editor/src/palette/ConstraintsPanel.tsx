@@ -1,5 +1,5 @@
 import type { Constraints } from '@weasel-js/theme/engine';
-import { PropertyField, PropertyGroup } from '@weasel-js/ui/components/Properties';
+import { PropertyField, PropertyGroup, PropertyRow } from '@weasel-js/ui/components/Properties';
 import type { ReactNode } from 'react';
 
 export type SetConstraint = <K extends keyof Constraints>(key: K, value: Constraints[K]) => void;
@@ -11,10 +11,20 @@ export interface ConstraintsPanelProps {
   readonly fixedCount?: boolean;
   /** Rows appended to the Set group. */
   readonly setRows?: ReactNode;
+  /** Constraints written as something no control here edits (a variation by axis, a reference), shown as written. */
+  readonly held?: Readonly<Partial<Record<keyof Constraints, unknown>>>;
 }
 
 /** The palette generator's constraints as property groups, for a `PropertyPanel`. */
-export function ConstraintsPanel({ c, onSet, fixedCount = false, setRows }: ConstraintsPanelProps) {
+export function ConstraintsPanel({ c, onSet, fixedCount = false, setRows, held = {} }: ConstraintsPanelProps) {
+  const field = (key: keyof Constraints, label: string, control: ReactNode) =>
+    Object.hasOwn(held, key) ? (
+      <PropertyRow key={key} label={label}>
+        <code>{JSON.stringify(held[key])}</code>
+      </PropertyRow>
+    ) : (
+      control
+    );
   return (
     <>
       <PropertyGroup title="Set">
@@ -31,124 +41,160 @@ export function ConstraintsPanel({ c, onSet, fixedCount = false, setRows }: Cons
             onInput={(v) => onSet('count', v)}
           />
         )}
-        <PropertyField
-          kind="enum"
-          control="toggle"
-          label="Order"
-          value={c.order}
-          options={[
-            { value: 'farthest', label: 'Farthest' },
-            { value: 'hue', label: 'By hue' },
-          ]}
-          onChange={(v) => onSet('order', v)}
-          description="Farthest keeps any prefix separated — the first three of ten stay far apart."
-        />
+        {field(
+          'order',
+          'Order',
+          <PropertyField
+            kind="enum"
+            control="toggle"
+            label="Order"
+            value={c.order}
+            options={[
+              { value: 'farthest', label: 'Farthest' },
+              { value: 'hue', label: 'By hue' },
+            ]}
+            onChange={(v) => onSet('order', v)}
+            description="Farthest keeps any prefix separated — the first three of ten stay far apart."
+          />,
+        )}
         {setRows}
       </PropertyGroup>
 
       <PropertyGroup title="Gates">
-        <PropertyField
-          kind="number"
-          control="slider"
-          label="Min hue gap"
-          value={c.hueFloor}
-          min={0}
-          max={1}
-          step={0.01}
-          onChange={(v) => onSet('hueFloor', v)}
-          onInput={(v) => onSet('hueFloor', v)}
-          format={(v) => ((v * 360) / Math.max(1, c.count)).toFixed(0)}
-          unit="°"
-          description={`A share of the even ${(360 / Math.max(1, c.count)).toFixed(1)}° this many colors would get. Held as a share so the floor means the same thing at any count. 0 turns it off.`}
-        />
-        <PropertyField
-          kind="number"
-          control="slider"
-          label="Min contrast"
-          value={c.minContrast}
-          min={0}
-          max={7}
-          step={0.1}
-          onChange={(v) => onSet('minContrast', v)}
-          onInput={(v) => onSet('minContrast', v)}
-          description="WCAG, which reads lightness only. 3:1 is its floor for graphical objects. 0 turns it off."
-        />
-        <PropertyField
-          kind="number"
-          control="slider"
-          label="From surface"
-          value={c.minSurfaceDistance}
-          min={0}
-          max={0.6}
-          step={0.01}
-          onChange={(v) => onSet('minSurfaceDistance', v)}
-          onInput={(v) => onSet('minSurfaceDistance', v)}
-          description="Perceptual distance from the surface — the gate contrast cannot express, because it counts chroma. This is what lets a yellow stay yellow on paper. 0 turns it off."
-        />
-        <PropertyField
-          kind="number"
-          control="slider"
-          label="Between colors"
-          value={c.minDistance}
-          min={0}
-          max={0.4}
-          step={0.01}
-          onChange={(v) => onSet('minDistance', v)}
-          onInput={(v) => onSet('minDistance', v)}
-          description="Perceptual distance between any two swatches. Catches the pair that shares a hue gap but still reads alike. 0 turns it off."
-        />
+        {field(
+          'hueFloor',
+          'Min hue gap',
+          <PropertyField
+            kind="number"
+            control="slider"
+            label="Min hue gap"
+            value={c.hueFloor}
+            min={0}
+            max={1}
+            step={0.01}
+            onChange={(v) => onSet('hueFloor', v)}
+            onInput={(v) => onSet('hueFloor', v)}
+            format={(v) => ((v * 360) / Math.max(1, c.count)).toFixed(0)}
+            unit="°"
+            description={`A share of the even ${(360 / Math.max(1, c.count)).toFixed(1)}° this many colors would get. Held as a share so the floor means the same thing at any count. 0 turns it off.`}
+          />,
+        )}
+        {field(
+          'minContrast',
+          'Min contrast',
+          <PropertyField
+            kind="number"
+            control="slider"
+            label="Min contrast"
+            value={c.minContrast}
+            min={0}
+            max={7}
+            step={0.1}
+            onChange={(v) => onSet('minContrast', v)}
+            onInput={(v) => onSet('minContrast', v)}
+            description="WCAG, which reads lightness only. 3:1 is its floor for graphical objects. 0 turns it off."
+          />,
+        )}
+        {field(
+          'minSurfaceDistance',
+          'From surface',
+          <PropertyField
+            kind="number"
+            control="slider"
+            label="From surface"
+            value={c.minSurfaceDistance}
+            min={0}
+            max={0.6}
+            step={0.01}
+            onChange={(v) => onSet('minSurfaceDistance', v)}
+            onInput={(v) => onSet('minSurfaceDistance', v)}
+            description="Perceptual distance from the surface — the gate contrast cannot express, because it counts chroma. This is what lets a yellow stay yellow on paper. 0 turns it off."
+          />,
+        )}
+        {field(
+          'minDistance',
+          'Between colors',
+          <PropertyField
+            kind="number"
+            control="slider"
+            label="Between colors"
+            value={c.minDistance}
+            min={0}
+            max={0.4}
+            step={0.01}
+            onChange={(v) => onSet('minDistance', v)}
+            onInput={(v) => onSet('minDistance', v)}
+            description="Perceptual distance between any two swatches. Catches the pair that shares a hue gap but still reads alike. 0 turns it off."
+          />,
+        )}
       </PropertyGroup>
 
       <PropertyGroup title="Lightness law">
-        <PropertyField
-          kind="number"
-          control="slider"
-          label="Target"
-          value={c.lightnessTarget}
-          min={0.4}
-          max={0.92}
-          step={0.01}
-          onChange={(v) => onSet('lightnessTarget', v)}
-          onInput={(v) => onSet('lightnessTarget', v)}
-        />
-        <PropertyField
-          kind="number"
-          control="slider"
-          label="Pull"
-          value={c.lightnessPull}
-          min={0}
-          max={1}
-          step={0.05}
-          onChange={(v) => onSet('lightnessPull', v)}
-          onInput={(v) => onSet('lightnessPull', v)}
-          description="0 leaves every hue at its own chroma peak; 1 flattens them all onto the target."
-        />
+        {field(
+          'lightnessTarget',
+          'Target',
+          <PropertyField
+            kind="number"
+            control="slider"
+            label="Target"
+            value={c.lightnessTarget}
+            min={0.4}
+            max={0.92}
+            step={0.01}
+            onChange={(v) => onSet('lightnessTarget', v)}
+            onInput={(v) => onSet('lightnessTarget', v)}
+          />,
+        )}
+        {field(
+          'lightnessPull',
+          'Pull',
+          <PropertyField
+            kind="number"
+            control="slider"
+            label="Pull"
+            value={c.lightnessPull}
+            min={0}
+            max={1}
+            step={0.05}
+            onChange={(v) => onSet('lightnessPull', v)}
+            onInput={(v) => onSet('lightnessPull', v)}
+            description="0 leaves every hue at its own chroma peak; 1 flattens them all onto the target."
+          />,
+        )}
       </PropertyGroup>
 
       <PropertyGroup title="Chroma">
-        <PropertyField
-          kind="number"
-          control="slider"
-          label="Fraction of cap"
-          value={c.chromaFraction}
-          min={0.4}
-          max={1}
-          step={0.01}
-          onChange={(v) => onSet('chromaFraction', v)}
-          onInput={(v) => onSet('chromaFraction', v)}
-        />
-        <PropertyField
-          kind="number"
-          control="slider"
-          label="Equalize"
-          value={c.equalize}
-          min={0}
-          max={1}
-          step={0.05}
-          onChange={(v) => onSet('equalize', v)}
-          onInput={(v) => onSet('equalize', v)}
-          description="Pulls chroma toward the set mean. The weak hues are already at the gamut ceiling, so this buys their chroma by moving lightness."
-        />
+        {field(
+          'chromaFraction',
+          'Fraction of cap',
+          <PropertyField
+            kind="number"
+            control="slider"
+            label="Fraction of cap"
+            value={c.chromaFraction}
+            min={0.4}
+            max={1}
+            step={0.01}
+            onChange={(v) => onSet('chromaFraction', v)}
+            onInput={(v) => onSet('chromaFraction', v)}
+          />,
+        )}
+        {field(
+          'equalize',
+          'Equalize',
+          <PropertyField
+            kind="number"
+            control="slider"
+            label="Equalize"
+            value={c.equalize}
+            min={0}
+            max={1}
+            step={0.05}
+            onChange={(v) => onSet('equalize', v)}
+            onInput={(v) => onSet('equalize', v)}
+            description="Pulls chroma toward the set mean. The weak hues are already at the gamut ceiling, so this buys their chroma by moving lightness."
+          />,
+        )}
       </PropertyGroup>
     </>
   );

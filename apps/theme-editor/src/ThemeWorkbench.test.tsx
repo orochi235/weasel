@@ -90,6 +90,29 @@ describe('<ThemeWorkbench>', () => {
     });
   });
 
+  describe('a draft that stops deriving mid-edit', () => {
+    const breakIt = () => {
+      fireEvent.click(screen.getByRole('button', { name: /^Pins/ }));
+      fireEvent.change(screen.getByRole('textbox', { name: 'danger-base value' }), { target: { value: '{nope}' } });
+      expect(screen.getByText(/This draft does not derive/)).toBeInTheDocument();
+    };
+
+    it('still opens the Scales layer, on the last draft that derived', () => {
+      renderBench();
+      breakIt();
+      fireEvent.click(screen.getByRole('button', { name: /^Scales/ }));
+      expect(screen.getAllByRole('region', { name: / scale$/ }).length).toBeGreaterThan(0);
+    });
+
+    it('keeps rendering while a ramp is compared in the preview', () => {
+      renderBench();
+      fireEvent.click(screen.getByRole('button', { name: /^Ramps/ }));
+      fireEvent.click(within(screen.getByRole('region', { name: 'gray ramp' })).getByRole('button', { name: 'Compare in preview' }));
+      breakIt();
+      expect(screen.getByRole('navigation', { name: 'Layers' })).toBeInTheDocument();
+    });
+  });
+
   it('reports how many own tokens a pin overrides, and each layer in the rail', () => {
     renderBench();
     expect(screen.getByText('23 of 182 overridden')).toBeInTheDocument();

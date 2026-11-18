@@ -2,6 +2,7 @@ import { cleanup, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { renderWithIcons } from '@weasel-js/ui/testing/withIcons';
+import { crayonAnchor } from './palette/crayons';
 import { SwatchPanel } from './SwatchPanel';
 
 describe('<SwatchPanel>', () => {
@@ -72,5 +73,19 @@ describe('<SwatchPanel>', () => {
     expect(onChange).toHaveBeenCalledTimes(1);
     await user.click(pinned!);
     expect(onChange.mock.calls[1]![0]).toEqual([]);
+  });
+
+  it('tells a pinned crayon from a LEGO swatch of the same name', async () => {
+    const user = userEvent.setup();
+    const onChange = vi.fn();
+    const crayon = crayonAnchor('lavender');
+    renderWithIcons(<SwatchPanel anchors={[crayon]} onChange={onChange} count={8} />);
+    await user.click(screen.getByRole('tab', { name: /^LEGO/ }));
+    const lego = within(screen.getByRole('group', { name: 'Swatches to pin' })).getByRole('button', { name: 'Lavender' });
+    expect(lego).toHaveAttribute('aria-pressed', 'false');
+    await user.click(lego);
+    const next = onChange.mock.calls[0]![0];
+    expect(next).toHaveLength(2);
+    expect(next[0]).toBe(crayon);
   });
 });

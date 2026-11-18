@@ -48,6 +48,20 @@ describe('<RampsLayer>', () => {
     expect(screen.queryByText('Colors')).toBeNull();
   });
 
+  it('shows a gate that varies by mode as it is written, with no slider to overwrite it', async () => {
+    const swatch = weasel.ramps!.swatch as { gates?: object };
+    const def = {
+      ...weasel,
+      ramps: { ...weasel.ramps!, swatch: { ...swatch, gates: { ...swatch.gates, minContrast: { by: 'mode', dark: 3, light: 4.5 } } } },
+    } as unknown as ThemeDefinition;
+    const lookup = lookupOf(def);
+    renderWithIcons(<RampsLayer draft={def} derived={deriveDraft(def, lookup, {})} lookup={lookup} highlight={[]} focused={null} onFocus={vi.fn()} onChange={vi.fn()} />);
+    await userEvent.click(within(screen.getByRole('region', { name: 'swatch ramp' })).getByRole('button', { name: 'Edit gates' }));
+    expect(screen.queryByRole('slider', { name: 'Min contrast' })).toBeNull();
+    expect(screen.getByText('{"by":"mode","dark":3,"light":4.5}')).toBeInTheDocument();
+    expect(screen.getByRole('slider', { name: 'Min hue gap' })).toBeInTheDocument();
+  });
+
   it("shows a ramp's own issues inside its section, and does not call authored values generated", () => {
     const broken = { ...weasel, ramps: { ...weasel.ramps!, accent: { ...weasel.ramps!.accent, chroma: { lightBias: 0.5 } } } } as unknown as ThemeDefinition;
     const lookup = lookupOf(broken);

@@ -35,10 +35,18 @@ function ScaleSection({
   draft,
   lookup,
   highlight,
+  derived,
   issues,
   onChange,
-}: Omit<ScalesLayerProps, 'derived'> & { name: string; entry: ScaleDef; issues: readonly string[] }) {
-  const table = useMemo(() => scaleTable(draft, lookup, name), [draft, lookup, name]);
+}: ScalesLayerProps & { name: string; entry: ScaleDef; issues: readonly string[] }) {
+  // The draft may not derive mid-edit; the table then shows the last one that did.
+  const table = useMemo(() => {
+    try {
+      return scaleTable(draft, lookup, name);
+    } catch {
+      return scaleTable(derived.definition, lookup, name);
+    }
+  }, [draft, derived, lookup, name]);
   const own = Object.hasOwn(draft.scales ?? {}, name);
   const widest = Math.max(1, ...table.columns.flatMap((c) => Object.values(c.values).flatMap((v) => pxOf(v) ?? [])));
   return (
@@ -151,7 +159,7 @@ export function ScalesLayer({ draft, derived, lookup, highlight, onChange }: Sca
   return (
     <div ref={ref} className={styles.ramps}>
       {scales.map(([name, entry]) => (
-        <ScaleSection key={name} name={name} entry={entry} draft={draft} lookup={lookup} highlight={highlight} issues={issuesOf(name)} onChange={onChange} />
+        <ScaleSection key={name} name={name} entry={entry} draft={draft} derived={derived} lookup={lookup} highlight={highlight} issues={issuesOf(name)} onChange={onChange} />
       ))}
     </div>
   );

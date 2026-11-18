@@ -90,6 +90,24 @@ describe('useLabHistory with a store', () => {
     expect(again.result.current.canUndo).toBe(false);
   });
 
+  it('opens a history saved past the state it opens on at that state, the later steps left to redo', () => {
+    const store = memoryStore<S>();
+    const first = renderHook(() => useLabHistory<S>({ n: 0 }, store));
+    act(() => first.result.current.update({ n: 1 }, 'a'));
+    act(() => first.result.current.update({ n: 2 }, 'b'));
+    first.unmount();
+
+    // As a reload opens the last draft that derived, not the one the history ended on.
+    const again = renderHook(() => useLabHistory<S>({ n: 1 }, store));
+    expect(again.result.current.state.n).toBe(1);
+    expect(again.result.current.canUndo).toBe(true);
+    act(() => again.result.current.redo());
+    expect(again.result.current.state.n).toBe(2);
+    act(() => again.result.current.undo());
+    act(() => again.result.current.undo());
+    expect(again.result.current.state.n).toBe(0);
+  });
+
   it('opens with no history, rather than failing, on a saved one it cannot rebuild', () => {
     const store = memoryStore<S>();
     const op = { name: 'some-other-app:op', args: {} };

@@ -41,6 +41,15 @@ describe('<ThemeEditor>', () => {
     expect(failing.put).not.toHaveBeenCalled();
   });
 
+  it('offers a new theme, rather than failing, when the list comes back empty', async () => {
+    const empty: ThemeApi = { list: async () => [], get: vi.fn(), put: vi.fn() };
+    renderWithIcons(<ThemeEditor api={empty} />);
+    expect(await screen.findByText(/No themes to edit/)).toBeInTheDocument();
+    await userEvent.type(screen.getByRole('textbox', { name: 'Name' }), 'harbor');
+    await userEvent.click(screen.getByRole('button', { name: 'Create' }));
+    expect(await screen.findByText(/harbor does not derive/)).toBeInTheDocument();
+  });
+
   it('starts a new theme as an unsaved draft extending weasel', async () => {
     const failing: ThemeApi = { list: () => Promise.reject(new Error('404')), get: vi.fn(), put: vi.fn() };
     renderWithIcons(<ThemeEditor api={failing} />);

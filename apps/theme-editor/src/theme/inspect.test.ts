@@ -1,10 +1,21 @@
-import { afterEach, describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { documentSheets, tokensReadAt } from './inspect';
 
 describe('tokensReadAt', () => {
   afterEach(() => {
     document.head.innerHTML = '';
     document.body.innerHTML = '';
+    vi.unstubAllGlobals();
+  });
+
+  it('skips the rules of a media query the page does not match', () => {
+    vi.stubGlobal('matchMedia', (q: string) => ({ matches: q.includes('min-width') }));
+    document.head.innerHTML = `<style>
+      @media (prefers-color-scheme: dark) { .btn { color: var(--wzl-fg-dark); } }
+      @media (min-width: 1px) { .btn { color: var(--wzl-fg-wide); } }
+    </style>`;
+    document.body.innerHTML = '<div class="pane"><button class="btn" id="t">x</button></div>';
+    expect(tokensReadAt(document.getElementById('t')!, document.querySelector('.pane')!, documentSheets())).toEqual(['fg-wide']);
   });
 
   it('collects the tokens rules matching the element and its ancestors read, up to the pane', () => {

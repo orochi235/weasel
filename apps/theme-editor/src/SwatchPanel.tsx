@@ -17,13 +17,16 @@ const FULL = 'Every slot is pinned — raise the color count to add more.';
 /** Swatches to a row of the crayon grid. */
 const CRAYON_COLUMNS = 12;
 
+/** What tells one anchor from another: two sources' swatches, or a hex pin, can share a name but not this. */
+const colorOf = (a: Anchor): string => `${a.hue}|${a.lightness}|${a.chroma}`;
+
 export type SourceId = 'named' | 'lego' | 'copic';
 
 interface Swatch {
   readonly key: string;
   readonly label: string;
   readonly hex: string;
-  /** The name the swatch's anchor takes, which is how a pinned one is found again. */
+  /** The name the swatch's anchor takes. Sources share names, so a pinned one is found by its color instead. */
   readonly name: string;
   readonly anchor: () => Anchor;
 }
@@ -94,8 +97,10 @@ export function SwatchPanel({ anchors, onChange, count }: SwatchPanelProps) {
   );
 
   const swatches = sets[source];
+  const colors = useMemo(() => new Map(swatches.map((s) => [s.key, colorOf(s.anchor())])), [swatches]);
   const full = anchors.length >= count;
-  const pinnedNames = new Set(anchors.map((a) => a.name));
+  const pinnedByColor = new Map(anchors.map((a) => [colorOf(a), a.name]));
+  const pinnedName = (s: Swatch) => pinnedByColor.get(colors.get(s.key)!);
 
   const add = (make: () => Anchor) => {
     if (full) return;
@@ -108,7 +113,7 @@ export function SwatchPanel({ anchors, onChange, count }: SwatchPanelProps) {
   const unpin = (name: string) => onChange(anchors.filter((a) => a.name !== name));
   const byKey = new Map(swatches.map((s) => [s.key, s]));
   const crayons: SwatchGridOption[] = swatches.map((s) => {
-    const pinned = pinnedNames.has(s.name);
+    const pinned = pinnedName(s) !== undefined;
     return {
       id: s.key,
       value: s.hex,
@@ -178,12 +183,13 @@ export function SwatchPanel({ anchors, onChange, count }: SwatchPanelProps) {
           className={styles.crayonGrid}
           aria-label="Swatches to pin"
           options={crayons}
-          value={swatches.filter((s) => pinnedNames.has(s.name)).map((s) => s.key)}
+          value={swatches.filter((s) => pinnedName(s) !== undefined).map((s) => s.key)}
           columns={CRAYON_COLUMNS}
           onSelect={(key) => {
             const s = key === null ? undefined : byKey.get(key);
             if (!s) return;
-            if (pinnedNames.has(s.name)) unpin(s.name);
+            const name = pinnedName(s);
+            if (name !== undefined) unpin(name);
             else add(s.anchor);
           }}
           onHoverChange={(o) => setHovered(o && `${o.label} · ${o.value}`)}
