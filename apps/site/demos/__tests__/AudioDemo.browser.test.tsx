@@ -29,3 +29,16 @@ test('the music inserts solo on Alt-click, un-solo on a second, and sweep', asyn
   fireEvent.click(boxes[1]!, { altKey: true });
   expect(on()).toEqual([true, true, true]);
 });
+
+test('the source reads as stopped once a busy bus steals its voice', async () => {
+  render(<AudioDemo />);
+  const source = screen.getByRole('button', { name: 'play source' });
+  await expect.poll(() => (source as HTMLButtonElement).disabled).toBe(false);
+  await page.getByRole('button', { name: 'enable audio' }).click();
+  fireEvent.click(source);
+  expect(source.textContent).toBe('stop source');
+  // The music bus (the second) holds eight voices, so eight bells take the loop's.
+  const music = screen.getAllByRole('button', { name: 'trigger' })[1]!;
+  for (let i = 0; i < 8; i += 1) fireEvent.click(music);
+  await expect.poll(() => source.textContent).toBe('play source');
+});
