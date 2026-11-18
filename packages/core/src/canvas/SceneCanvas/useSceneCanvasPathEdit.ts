@@ -38,9 +38,11 @@ export function useSceneCanvasPathEdit<TData, TLayer extends string, TPose>(args
     ...selectTool,
   }), [selectTool, pathEditState]);
 
+  // Writes only what differs: closing with no path open is no write, so a host's mode machine is left where it is.
   const setPathEdit = useCallback<SceneCanvasApi['setPathEdit']>((opening) => {
-    pathEditState.setEditingId(opening?.id ?? null);
-    pathEditState.setSelectedAnchors(new Set(opening?.anchors ?? []));
+    if (pathEditState.getEditingId() !== (opening?.id ?? '')) pathEditState.setEditingId(opening?.id ?? null);
+    const anchors = opening?.anchors ?? [];
+    if (opening || pathEditState.getSelectedAnchors().size > 0) pathEditState.setSelectedAnchors(new Set(anchors));
   }, [pathEditState]);
 
   return { pathEditState, selectToolWithDefaults, setPathEdit };
