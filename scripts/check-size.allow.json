@@ -94,12 +94,6 @@
   "packages/labkit/src/controls/panelRows.tsx": {
     "longestFunction": 206
   },
-  "packages/labkit/src/lab/Lab.tsx": {
-    "longestFunction": 169
-  },
-  "packages/labkit/src/lab/Workspace.tsx": {
-    "longestFunction": 159
-  },
   "packages/labkit/src/lightbox/Lightbox.tsx": {
     "longestFunction": 140
   },
@@ -113,20 +107,8 @@
     "lines": 795,
     "longestFunction": 126
   },
-  "packages/labkit/src/state/bindLabStore.ts": {
-    "longestFunction": 192
-  },
-  "packages/labkit/src/state/store.ts": {
-    "longestFunction": 139
-  },
-  "packages/labkit/src/surface/useTiledSurface.ts": {
-    "longestFunction": 235
-  },
   "packages/labkit/src/trial/Trial.tsx": {
-    "longestFunction": 297
-  },
-  "packages/labkit/src/trial/TrialChrome.tsx": {
-    "longestFunction": 176
+    "longestFunction": 160
   },
   "packages/path-tools/src/pen/penPreviewLayer.ts": {
     "longestFunction": 138
