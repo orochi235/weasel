@@ -3,15 +3,14 @@ import type { Op } from './op';
 import { anyCaused, appliedHalves, createApplier, entryView, foldEntry, sameCoalesceKeys, stepOf } from './entryOps';
 import { createWalk, type Walked } from './walk';
 import { createVersionClock } from './versionClock';
+import { createForks } from './forks';
 import { createJournalInternal, _resumeJournalInternal, _resumedByOwnerInternal, _refuseWhileActiveInternal as refuseWhileActive, type Journal, type BeginJournalOptions } from './journal';
 import {
   snapshot, touchedIdsOf,
   type Entry, type HistoryLogger, type SerializedHistory,
 } from './serialized';
 import { rebuilt, type HistoryRestoreReport, type RestoreOptions } from './restore';
-import type {
-  CreateHistoryOptions, History, HistoryBranch, HistoryStep, RecordEntryOptions,
-} from './historyTypes';
+import type { CreateHistoryOptions, History, RecordEntryOptions } from './historyTypes';
 
 export { touchedIdsOf } from './serialized';
 export type { HistoryLogger, SerializedHistory, SerializedHistoryEntry, SerializedOp } from './serialized';
@@ -57,81 +56,17 @@ export function createHistory(adapter: unknown, options: CreateHistoryOptions = 
   const coalesceWindowMs = options.coalesceWindowMs ?? 0;
   const now = options.now ?? (() => Date.now());
   const historyLimit = Math.max(0, options.historyLimit ?? Infinity);
-  const onEvict = options.onEvict;
-  const branching = options.branching ?? false;
-  /** Futures a push set aside, by the id of the entry they fork from (the
-   *  floor's for the oldest reachable state), each in time order. Only a
-   *  branching history adds to it. */
-  const forks = new Map<number, Entry[][]>();
-  /** Names the state beneath the undo stack: 0 at the start, then the id of
-   *  the last undo entry evicted. */
-  let floorId = 0;
   const customRebuild = options.rebuildOp;
   const selection = options.selection;
   const logger = options.debug ?? SILENT;
   let nextEntryId = 1;
   const clock = createVersionClock();
 
-  /** Report entries that just became permanently unreachable. A throwing
-   *  callback must not desync the stacks mid-mutation, so failures are
-   *  contained and surfaced via the debug flag. */
-  function reportEvicted(entries: Entry[]): void {
-    if (!onEvict) return;
-    for (const e of entries) {
-      try {
-        onEvict({ id: e.id, label: e.label, forwardOps: e.forwardOps, baseOps: e.baseOps });
-      } catch (err) {
-        logger.warn(`onEvict callback threw for entry id=${e.id} "${e.label}": ${String(err)}`);
-      }
-    }
-  }
-
-  /** Report `entries` evicted, and evict every branch forking from them. */
-  function evict(entries: Entry[]): void {
-    reportEvicted(entries);
-    for (const e of entries) {
-      const kept = forks.get(e.id);
-      if (!kept) continue;
-      forks.delete(e.id);
-      for (const branch of kept) evict(branch);
-    }
-  }
-
-  /** Evict `entries` off the bottom of the undo stack, oldest first. Each one
-   *  raises the floor to the state it leaves: the futures forking from the old
-   *  floor go with it, and the ones forking from the entry now fork from the
-   *  floor. */
-  function evictFloor(entries: Entry[]): void {
-    for (const e of entries) {
-      if (onEvict) reportEvicted([e]);
-      const stranded = forks.size > 0 ? forks.get(floorId) : undefined;
-      if (stranded !== undefined) forks.delete(floorId);
-      floorId = e.id;
-      if (stranded !== undefined) for (const branch of stranded) evict(branch);
-    }
-  }
-
-  /** The id of the entry the history stands on, the floor's beneath them all. */
-  function forkPoint(): number {
-    return undoStack[undoStack.length - 1]?.id ?? floorId;
-  }
-
-  /** Clear the redo stack after a push forking from `at`: kept as a branch
-   *  when branching, else dropped and reported. */
-  function retireRedo(at: number): void {
-    if (redoStack.length === 0) return;
-    const future = redoStack.splice(0);
-    if (!branching) return evict(future);
-    const kept = forks.get(at);
-    if (kept) kept.push(future.reverse());
-    else forks.set(at, [future.reverse()]);
-  }
+  const forks = createForks({ undoStack, redoStack, branching: options.branching ?? false, onEvict: options.onEvict, logger });
 
   /** Evict the oldest undo entries past `historyLimit`, reporting each. */
   function enforceLimit(): void {
-    while (undoStack.length > historyLimit) {
-      evictFloor([undoStack.shift()!]);
-    }
+    forks.evictPast(historyLimit);
   }
 
   const applyAllOrNothing = createApplier(adapter, logger);
@@ -192,13 +127,13 @@ export function createHistory(adapter: unknown, options: CreateHistoryOptions = 
       return;
     }
     logger.log(`push '${label}' (${ops.length} ops)`);
-    const at = forkPoint();
+    const at = forks.forkPoint();
     const entry: Entry = {
       id: nextEntryId++, forwardOps: ops, baseOps: ops, label, timestamp: now(), pushes: 1, touchedIds: incoming,
       ...(selectionBefore ? { selectionBefore } : {}),
     };
     undoStack.push(entry);
-    retireRedo(at);
+    forks.retireRedo(at);
     enforceLimit();
     clock.bump(clock.observed() ? stepOf('push', [entry], [ops]) : undefined);
     clock.anchor();
@@ -217,7 +152,7 @@ export function createHistory(adapter: unknown, options: CreateHistoryOptions = 
     if (key !== undefined && top?.coalesceKey === key && clock.anchored() && forwardOps === baseOps) {
       return fold(top, forwardOps);
     }
-    const at = forkPoint();
+    const at = forks.forkPoint();
     const entry: Entry = {
       id: nextEntryId++, forwardOps, baseOps, label, timestamp: now(), pushes: 1,
       touchedIds: touchedIdsOf(forwardOps),
@@ -225,7 +160,7 @@ export function createHistory(adapter: unknown, options: CreateHistoryOptions = 
       ...(key !== undefined ? { coalesceKey: key } : {}),
     };
     undoStack.push(entry);
-    retireRedo(at);
+    forks.retireRedo(at);
     enforceLimit();
     clock.bump(clock.observed() ? stepOf('push', [entry], [forwardOps]) : undefined);
     if (key !== undefined) clock.anchor();
@@ -256,12 +191,10 @@ export function createHistory(adapter: unknown, options: CreateHistoryOptions = 
     undoDepth: () => undoStack.length,
     redoDepth: () => redoStack.length,
     clear: () => {
-      const had = undoStack.length > 0 || redoStack.length > 0 || forks.size > 0;
+      const had = undoStack.length > 0 || redoStack.length > 0;
       undoStack.length = 0;
       redoStack.length = 0;
-      forks.clear();
-      floorId = 0;
-      if (had) clock.bump(stepOf('clear'));
+      if (forks.reset() || had) clock.bump(stepOf('clear'));
     },
     entries() {
       // redoStack is internally stored newest-on-top (so `pop()` redoes the
@@ -297,45 +230,24 @@ export function createHistory(adapter: unknown, options: CreateHistoryOptions = 
     timestampAt: (i) => timestampAt(undoStack, redoStack, i),
     depthAt: (t) => depthAt(undoStack, redoStack, t),
     prune(t) {
-      let k = 0;
-      while (k < undoStack.length && undoStack[k]!.timestamp < t) k++;
-      if (k === 0) return;
-      const evicted = undoStack.splice(0, k);
-      evictFloor(evicted);
-      clock.bump(stepOf('prune', evicted));
+      const evicted = forks.evictBefore(t);
+      if (evicted.length > 0) clock.bump(stepOf('prune', evicted));
     },
-    branches() {
-      const view = (entries: readonly Entry[], current: boolean): HistoryBranch => {
-        const first = entries[0]!;
-        return { id: first.id, label: first.label, timestamp: first.timestamp, length: entries.length, current };
-      };
-      const out = (forks.get(forkPoint()) ?? []).map((b) => view(b, false));
-      if (redoStack.length > 0) out.push(view([...redoStack].reverse(), true));
-      return out.sort((a, b) => a.id - b.id);
-    },
+    branches: forks.branches,
     dropRedo() {
       if (redoStack.length === 0) return;
       const dropped = [...redoStack].reverse();
-      retireRedo(forkPoint());
+      forks.retireRedo(forks.forkPoint());
       clock.bump(stepOf('drop', dropped));
     },
     switchBranch(id) {
-      if (redoStack[redoStack.length - 1]?.id === id) return;
-      const at = forkPoint();
-      const kept = forks.get(at) ?? [];
-      const i = kept.findIndex((b) => b[0]!.id === id);
-      if (i < 0) throw new Error(`No branch ${id} forks from entry ${at}`);
-      const [chosen] = kept.splice(i, 1);
-      if (redoStack.length > 0) kept.push(redoStack.splice(0).reverse());
-      if (kept.length > 0) forks.set(at, kept);
-      else forks.delete(at);
-      redoStack.push(...[...chosen!].reverse());
-      clock.bump(stepOf('branch', chosen));
+      const chosen = forks.switchTo(id);
+      if (chosen) clock.bump(stepOf('branch', chosen));
     },
     getVersion: clock.current,
     subscribe: clock.subscribe,
     observe: clock.observe,
-    serialize: () => snapshot({ undoStack, redoStack, forks, floorId, nextEntryId }, logger),
+    serialize: () => snapshot({ undoStack, redoStack, ...forks.state(), nextEntryId }, logger),
     recordEntry(ops: Op[], label: string, options?: RecordEntryOptions): void {
       record(ops, ops, label, options);
     },
@@ -370,9 +282,8 @@ export function createHistory(adapter: unknown, options: CreateHistoryOptions = 
       const { stacks: next, unresolved } = rebuilt(serialized, customRebuild, restoreOptions, logger);
       undoStack.splice(0, undoStack.length, ...next.undoStack);
       redoStack.splice(0, redoStack.length, ...next.redoStack);
-      forks.clear();
-      for (const [at, kept] of next.forks) forks.set(at, kept);
-      floorId = next.floorId; nextEntryId = next.nextEntryId;
+      forks.replace(next);
+      nextEntryId = next.nextEntryId;
       clock.bump(stepOf('restore'));
       return { restored: true, unresolved };
     },
