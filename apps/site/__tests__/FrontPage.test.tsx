@@ -2,6 +2,8 @@ import { cleanup, render, screen } from '@testing-library/react';
 import { afterEach, describe, expect, it } from 'vitest';
 import { FrontPage } from '../FrontPage/FrontPage';
 import { routeOf } from '../routes';
+import { FORGE_LAB } from '@shared/labs';
+import { SITE_PROXY } from '../../../scripts/vite-site-proxy';
 
 afterEach(cleanup);
 
@@ -15,11 +17,22 @@ describe('the front page', () => {
       '#__get_started',
       '#pkg',
       '#__demos',
-      './docs/ui/forge/',
+      FORGE_LAB.href,
       './draw/',
       './chart/',
       '#__releases',
     ]);
+  });
+
+  // A same-origin path the site's dev server neither serves nor forwards falls back to the site's own page.
+  it('links only to apps the dev server can reach', () => {
+    render(<FrontPage />);
+    const site = new URL('http://site/weasel/');
+    for (const a of screen.getAllByRole('link')) {
+      const url = new URL(a.getAttribute('href')!, site);
+      if (url.origin !== site.origin || url.pathname === site.pathname) continue;
+      expect(Object.keys(SITE_PROXY).some((path) => url.pathname.startsWith(`${path}/`)), url.pathname).toBe(true);
+    }
   });
 
   it('wears the project colors in dark mode, with no control to change them', () => {

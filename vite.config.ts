@@ -17,6 +17,7 @@ import { watchProbe } from './packages/forge/src/vite/watchProbe.ts';
 import { weaselIcons } from './packages/icons-plugin/src/index.ts';
 import ports from './scripts/dev-ports.json' with { type: 'json' };
 import { LAN_SERVER } from './scripts/vite-lan.ts';
+import { SITE_PROXY } from './scripts/vite-site-proxy.ts';
 import { assertOwnInstall } from './scripts/lib/own-install.mjs';
 
 assertOwnInstall(import.meta.dirname);
@@ -86,23 +87,12 @@ export default defineConfig({
   optimizeDeps: {
     include: ['d3-force', 'earcut', 'polygon-clipping'],
   },
-  // Proxy `/weasel/draw/*` to the WeaselDraw dev server (`npm run dev:draw`,
-  // `ports.draw`) so a single site origin mirrors the production Pages
-  // layout where WeaselDraw is copied into `dist-demo/draw/`. Both servers
-  // need to be running for this to work; WeaselDraw's `base: '/weasel/draw/'`
-  // means we forward the path through unchanged. WebSocket forwarding is enabled
-  // so HMR + Vite's dev-server live-reload also work end-to-end via the proxy.
+  // A forwarded app is reachable only while its own dev server runs (`npm run dev:draw`, `dev:chart`).
   server: {
     port: ports.site,
     strictPort: true,
     ...LAN_SERVER,
-    proxy: {
-      '/weasel/draw': {
-        target: `http://localhost:${ports.draw}`,
-        changeOrigin: true,
-        ws: true,
-      },
-    },
+    proxy: SITE_PROXY,
   },
   build: {
     outDir: '../../dist-demo',
