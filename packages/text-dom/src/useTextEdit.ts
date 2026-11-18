@@ -9,8 +9,6 @@ import { useCallback, useEffect, useRef } from 'react';
 import { useLatest, useVisibleRaf } from '@weasel-js/react';
 import type { TextStyle } from '@weasel-js/text';
 import { resolveTextStyle } from '@weasel-js/text';
-import { editEnd, imeKey } from '@weasel-js/ui-input';
-import { historyKey } from '@weasel-js/gestures';
 import { domToRuns } from './domRuns';
 import { effectiveRangeStyle, type RangeStyle, type RunStylePatch } from '@weasel-js/text';
 import { armedOver, usePendingStyle } from './armedStyle';
@@ -25,7 +23,7 @@ import {
   readSelectionOffsets, writeRunsPreservingSelection,
 } from './overlaySelection';
 import { typingHandlers } from './overlayTyping';
-import { toggleForKey } from './styleShortcuts';
+import { listenToOverlay } from './overlayListeners';
 import { useEditingId } from './editSession';
 import { useSelectionStyling } from './selectionStyling';
 import { TEXT_EDIT_FONT_HOLD } from './textEditTypes';
@@ -114,33 +112,6 @@ export function useTextEdit(
     // alongside the editor would otherwise render one frame with no selection.
     syncSelection();
 
-    const onKeyDown = (e: KeyboardEvent) => {
-      if (imeKey(e)) return;
-      const ends = editEnd({ key: e.key, shift: e.shiftKey }, { escape: optsRef.current.escape, multiline: true });
-      if (ends) {
-        e.preventDefault();
-        if (ends === 'commit') commit();
-        else cancelEdit();
-        return;
-      }
-      const step = historyKey(e);
-      if (step) {
-        e.preventDefault();
-        history[step]();
-        return;
-      }
-      const toggle = toggleForKey(e);
-      if (toggle) {
-        e.preventDefault();
-        toggleStyle(toggle);
-      }
-    };
-    const onBlur = (e: FocusEvent) => {
-      const next = e.relatedTarget;
-      if (isChrome(optsRef.current, next)) return;
-      commit();
-    };
-
     const written = (range: TextEditSelection) => {
       draft.holder.wrote(overlay, range.end);
       dropPending();
@@ -167,7 +138,7 @@ export function useTextEdit(
         edited();
       },
     }));
-    const { onBeforeInput, onInput, onCompositionStart, onCompositionEnd } = typingHandlers(overlay, {
+    const typing = typingHandlers(overlay, {
       pending: () => pendingRef.current,
       base: () => baseRef.current,
       lastRange: () => selectionRef.current,
@@ -176,26 +147,9 @@ export function useTextEdit(
       history,
     });
 
-    // Blur can't be the only way out: once focus has moved into editing
-    // chrome, nothing blurs when the user clicks away. Capture phase so this
-    // runs ahead of whatever the click was aimed at.
-    const onPointerDownOutside = (e: Event) => {
-      const target = e.target;
-      if (!(target instanceof Node) || boxes.scroll.contains(target)) return;
-      if (isChrome(optsRef.current, target)) return;
-      commit();
-    };
-
-    // Typing can change the line count; re-placing on `input` rather than on the
-    // next frame keeps a center/bottom-aligned overlay from jumping a frame late.
-    const listeners = Object.entries({
-      keydown: onKeyDown, blur: onBlur, input: onInput, beforeinput: onBeforeInput,
-      compositionstart: onCompositionStart, compositionend: onCompositionEnd,
-    }) as Array<[string, EventListener]>;
-    for (const [type, fn] of listeners) overlay.addEventListener(type, fn);
-    document.addEventListener('pointerdown', onPointerDownOutside, true);
-    // `selectionchange` only exists on the document.
-    document.addEventListener('selectionchange', syncSelection);
+    const stopListening = listenToOverlay(overlay, boxes.scroll, {
+      optsRef, commit, cancel: cancelEdit, history, toggleStyle, typing, syncSelection,
+    });
 
     // Follows the node's screen pose every frame — behind the visibility gate,
     // so an overlay left open in a background tab costs nothing.
@@ -208,9 +162,7 @@ export function useTextEdit(
     return () => {
       frameLoop.cancel();
       tickRef.current = () => {};
-      for (const [type, fn] of listeners) overlay.removeEventListener(type, fn);
-      document.removeEventListener('pointerdown', onPointerDownOutside, true);
-      document.removeEventListener('selectionchange', syncSelection);
+      stopListening();
       opened.remove();
       overlayRef.current = null;
       historyRef.current = null;
@@ -226,10 +178,6 @@ export function useTextEdit(
     selection, rangeStyle, pendingStyle, applyStyleToSelection, toggleStyle,
     effectiveStyle: shownStyle(opts, editingId, nodeStyle, rangeStyle, pendingStyle),
   };
-}
-
-function isChrome(opts: UseTextEditOptions, el: EventTarget | null): boolean {
-  return el instanceof Element && (opts.isEditorChrome?.(el) ?? false);
 }
 
 function shownStyle(
