@@ -25,14 +25,21 @@ export function splineMode(params: SplineParams): SplineMode {
   return params.mode === 'quadrant' ? 'quadrant' : 'octant';
 }
 
-/** The active anchors in slot order, with the two ends pinned to s = 0 and s = 1. */
+/**
+ * The active anchors in slot order, with the two ends pinned to s = 0 and s = 1. In quadrant mode the far end
+ * takes the first's radius and weight, whatever its own slots hold, since the base draws it so.
+ */
 export function readAnchors(params: SplineParams): SplineAnchor[] {
   const count = anchorCount(params);
-  return Array.from({ length: count }, (_, i) => ({
-    s: i === 0 ? 0 : i === count - 1 ? 1 : clamp(slot(params, 's', i), 0, 1),
-    r: Math.max(0, slot(params, 'r', i)),
-    w: clamp(slot(params, 'w', i), 0, 3),
-  }));
+  const quadrant = splineMode(params) === 'quadrant';
+  return Array.from({ length: count }, (_, i) => {
+    const from = quadrant && i === count - 1 ? 0 : i;
+    return {
+      s: i === 0 ? 0 : i === count - 1 ? 1 : clamp(slot(params, 's', i), 0, 1),
+      r: Math.max(0, slot(params, 'r', from)),
+      w: clamp(slot(params, 'w', from), 0, 3),
+    };
+  });
 }
 
 /** A new anchor count, with the active anchors spread evenly along the curve. */
