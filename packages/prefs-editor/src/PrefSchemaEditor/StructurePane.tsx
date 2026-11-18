@@ -7,7 +7,7 @@ import { AddNodeDialog } from './AddNodeDialog';
 import { PaneHeader } from './PaneHeader';
 import type { ActionCatalog } from './useActionCatalog';
 import {
-  blankGroup, childrenOf, type CustomKinds, holdsPages, keyOf, type LinkRule, looseKeys, looseTarget, mayUnplace,
+  blankGroup, childrenOf, type CustomKinds, holdsPages, keyOf, type LinkRule, looseKeys,
   nodeAt, parentPath, type PrefTypes, type SchemaNode, type SchemaRoot, schemaTarget, type SchemaTarget,
   stillUnplaced, VALUE_LINKS, withinDepth,
 } from '@weasel-js/prefs/edit';
@@ -22,6 +22,7 @@ import { treeDropRulesFor } from './treeDropRules';
 import { UnplacedTree } from './UnplacedTree';
 import { useNodeAdder } from './useNodeAdder';
 import { usePaletteDrop } from './usePaletteDrop';
+import { useTreeDragOut } from './useTreeDragOut';
 import { toTreeNodes } from './structureRows';
 import s from './PrefSchemaEditor.module.css';
 import { icon } from '../icons.gen';
@@ -123,26 +124,19 @@ export function StructurePane({ schema, onChange, selected, lead, onPick, onSele
     [nodes, sought],
   );
   const treeArea = useRef<HTMLDivElement | null>(null);
-  const unplacedArea = useRef<HTMLDivElement | null>(null);
-  const [unplacing, setUnplacing] = useState(false);
   // A selection made in the preview may sit outside the tree's scrolled view. Optional-called for jsdom.
   useEffect(() => {
     if (lead === null) return;
     const rows = treeArea.current?.querySelectorAll('[data-tree-id]') ?? [];
     [...rows].find((r) => r.getAttribute('data-tree-id') === lead)?.scrollIntoView?.({ block: 'nearest' });
   }, [lead]);
-  /** Whether a drag of the nodes at `ids`, held at `point`, is over the unplaced list and may be let go there. */
-  const overUnplaced = (ids: readonly string[], point: { x: number; y: number }): boolean => {
-    const box = unplacedArea.current?.getBoundingClientRect();
-    if (!box || point.x < box.left || point.x > box.right || point.y < box.top || point.y > box.bottom) return false;
-    return !readOnly && mayUnplace(schema, ids, pageless);
-  };
   const waiting = useMemo(() => (unplaced ? stillUnplaced(unplaced, schema) : null), [unplaced, schema]);
 
   const adder = useNodeAdder(schema, lead, pageless, { kinds, types, custom }, { onChange, onExpandedChange, onSelect });
   const { branch } = adder;
 
-  const { canLand, landing, takesDrag } = treeDropRulesFor(schema, links, maxDepth, pageless);
+  const rules = treeDropRulesFor(schema, links, maxDepth, pageless);
+  const { unplacedArea, unplacing, onDragOutside, onDropOutside } = useTreeDragOut(schema, pageless, readOnly, rules, outside, { move, copy, link: alias });
   const aliasAt = readOnly ? null : aliasTargetOf(schema, selected, lead, maxDepth, pageless, links);
   const palettes = usePaletteDrop(schema, pageless, outside, { onChange, move, onExpandedChange, onSelect });
   const { onDrag: onPaletteDrag, onDrop: onPaletteDrop } = palettes;
@@ -197,26 +191,12 @@ export function StructurePane({ schema, onChange, selected, lead, onPick, onSele
         onSelectionChange={onPick}
         externalDrag={palettes.drag}
         dropRef={palettes.treeDrop}
-        // A copy or an alias is new where it lands, so the place it is dropped is asked about it with no paths, as for a palette's node.
-        onDragOutside={(ids, point, effect) => {
-          // Let go over the unplaced list, a node comes off its page.
-          const off = point !== null && canLand(ids, effect) && overUnplaced(ids, point);
-          setUnplacing(off);
-          if (off || !outside) return off;
-          if (point) return canLand(ids, effect) && outside.over(landing(ids, effect), effect === 'move' ? ids : [], point);
-          outside.end();
-          return false;
-        }}
-        onDropOutside={(ids, point, effect) => {
-          setUnplacing(false);
-          if (!canLand(ids, effect)) return;
-          const target = overUnplaced(ids, point) && holdsPages(schema, pageless) ? looseTarget(schema) : outside?.target(landing(ids, effect), effect === 'move' ? ids : [], point);
-          if (target) ({ move, copy, link: alias })[effect](ids, target);
-        }}
+        onDragOutside={onDragOutside}
+        onDropOutside={onDropOutside}
         canDrop={(ids, t, effect) => {
           // A place among the rows shown is not that place among all of them.
           if (readOnly || sought !== '') return false;
-          return takesDrag(ids, t.parentId, effect, palettes.carrying.current);
+          return rules.takesDrag(ids, t.parentId, effect, palettes.carrying.current);
         }}
         onMove={(ids, t) => move(ids, schemaTarget(schema, t.parentId, t.index, pageless))}
         onCopy={(ids, t) => copy(ids, schemaTarget(schema, t.parentId, t.index, pageless))}
