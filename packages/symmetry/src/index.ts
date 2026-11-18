@@ -21,5 +21,5 @@ export {
   createSymmetry, type CreateSymmetryOptions, type SymmetryChange, type SymmetryController,
 } from './controller';
 export {
-  createSymmetrySchema, symmetrySpecFor, type SymmetryAxis, type SymmetrySchemaOptions, type SymmetrySettings,
+  symmetrySchema, symmetrySpecFor, type SymmetryAxis, type SymmetrySettings,
 } from './settings';

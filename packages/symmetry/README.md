@@ -76,13 +76,13 @@ symmetry.create({ center: { x: 300, y: 200 }, symmetry: { kind: 'kaleidoscope', 
   nudged, if the path is its own image under some of its group's transforms,
   every image of what moves follows, and an anchor on an axis stays on it.
 
-For live symmetry an app's user turns on, `createSymmetrySchema({ at })` is
-its settings as a prefs group to mount at `at` (whether drawing goes into a
-group, and which way it mirrors), and `symmetrySpecFor(axis)` is the kind and
+For live symmetry an app's user turns on, `symmetrySchema` is its settings as
+a prefs group to mount in the app's schema (whether drawing goes into a group,
+and which way it mirrors), and `symmetrySpecFor(axis)` is the kind and
 angle that setting draws into:
 
 ```ts
-const SCHEMA = pref.group('Preferences', { symmetry: createSymmetrySchema({ at: 'symmetry' }) });
+const SCHEMA = pref.group('Preferences', { symmetry: symmetrySchema });
 const [{ on, axis }] = usePrefGroup(store, 'symmetry');
 if (on) symmetry.update(id, { spec: symmetrySpecFor(axis) });
 ```

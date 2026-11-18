@@ -282,14 +282,6 @@ Owner tags, after the priority (2026-10-26):
 
 ## Selection, actions & UI panels
 
-- **(P3) [agent] A prefs condition cannot name a path relative to its own group.** `PrefTest.path` is read from the
-  schema root (or an entry, with `from: 'item'`), so a settings group a package exports whose leaves gate each other
-  is built for its mount point: `createSymmetrySchema({ at })` (2026-11-17). A `from: 'group'` test would read the
-  group the node sits in, and let that group be a constant like `pageGridSchema`. Every reader of conditions must
-  resolve it — `prefStatusUnder`'s callers in `prefs-schema`, `checkPrefConditions`, labkit's `fromPrefs`, and the
-  schema editor's condition tooling — which is why it was not done beside the symmetry schema. Closes when
-  `createSymmetrySchema` takes no `at`.
-
 - **(P3) [maintainer] An unsized `<Bar>` draws its buttons at one height and its fields at another.** With no
   `size`, a bar's buttons resolve to `md` (28px at `comfortable`), while its CSS pins fields and segmented bars to
   `control-h-sm` (24px), so a mixed toolbar row is uneven (`packages/ui/src/components/Bar`). This predates the

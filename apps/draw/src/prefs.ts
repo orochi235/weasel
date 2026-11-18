@@ -33,7 +33,7 @@ import {
 import { pageGridSchema } from '@weasel-js/editor';
 import { rulersSchema } from '@weasel-js/guides';
 import { pathEditAidsSchema } from '@weasel-js/path-tools';
-import { createSymmetrySchema } from '@weasel-js/symmetry';
+import { symmetrySchema } from '@weasel-js/symmetry';
 import { isPlainObject } from '@weasel-js/registry';
 import type { SurfacesValue } from './surfaces/types';
 import { ELLIPSE_TOOL_OPTIONS, LINE_TOOL_OPTIONS, POLYGON_TOOL_OPTIONS, RECT_TOOL_OPTIONS, STAR_TOOL_OPTIONS } from '@weasel-js/editing';
@@ -153,7 +153,7 @@ export const PREFS = {
           description: 'Pan no further than the drawing and its pages, plus a margin. Dragging something to the edge of the canvas scrolls the view to make room for it.',
           default: true,
         },
-        symmetry: createSymmetrySchema({ at: 'view.symmetry' }),
+        symmetry: symmetrySchema,
         spacingHints: {
           kind: 'boolean',
           name: 'Spacing hints',
