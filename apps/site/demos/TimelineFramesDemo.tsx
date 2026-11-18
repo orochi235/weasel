@@ -35,6 +35,7 @@ export function TimelineFramesDemo() {
   const [timeline, setTimeline] = useState<TimelineHandle | null>(null);
   const [status, setStatus] = useState('');
   const abort = useRef<AbortController | null>(null);
+  const [saving, setSaving] = useState(false);
 
   useEffect(() => {
     const target = scenePoseTarget(scene, BALL)!;
@@ -55,9 +56,11 @@ export function TimelineFramesDemo() {
   }, [animator, scene]);
 
   const save = async () => {
-    if (!timeline) return;
+    // A second run would seek the paused timeline under the first and restore it paused.
+    if (!timeline || abort.current) return;
     const ac = new AbortController();
     abort.current = ac;
+    setSaving(true);
     try {
       const frames = renderTimelineFrames({
         timeline, fps: FPS, includeEnd: true, signal: ac.signal,
@@ -72,14 +75,17 @@ export function TimelineFramesDemo() {
     } catch (e) {
       setStatus(ac.signal.aborted ? 'canceled' : String(e));
     } finally {
-      abort.current = null;
+      if (abort.current === ac) {
+        abort.current = null;
+        setSaving(false);
+      }
     }
   };
 
   return (
     <div>
       <div className="ckd-toolbar">
-        <Button onClick={() => { void save(); }}>save frames</Button>
+        <Button disabled={saving} onClick={() => { void save(); }}>save frames</Button>
         <Button onClick={() => abort.current?.abort()}>cancel</Button>
         <span>{status}</span>
       </div>
