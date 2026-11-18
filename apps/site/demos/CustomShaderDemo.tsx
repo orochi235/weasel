@@ -32,18 +32,30 @@ function liveRipples(ripples: Ripple[], time: number): Ripple[] {
   return ripples.filter((r) => time - r.t < RIPPLE_SECONDS).slice(-8);
 }
 
-let cachedImageTexture: TextureHandle | null = null;
+/** The weasel mark, loaded and registered once for every mount: a mount that
+ *  starts while the image is still loading waits on the same load. */
+let markTexture: TextureHandle | null = null;
+let markLoad: Promise<TextureHandle> | null = null;
+
+function loadWeaselMark(): Promise<TextureHandle> {
+  markLoad ??= new Promise((resolve) => {
+    const img = new Image();
+    img.onload = () => {
+      markTexture = registerTexture(img);
+      resolve(markTexture);
+    };
+    img.src = weaselMarkUrl;
+  });
+  return markLoad;
+}
 
 function useWeaselMarkTexture(): TextureHandle | null {
-  const [tex, setTex] = useState<TextureHandle | null>(cachedImageTexture);
+  const [tex, setTex] = useState<TextureHandle | null>(markTexture);
   useEffect(() => {
-    if (cachedImageTexture) return;
-    const img = new Image();
-    img.src = weaselMarkUrl;
-    img.onload = () => {
-      cachedImageTexture = registerTexture(img);
-      setTex(cachedImageTexture);
-    };
+    if (markTexture) return;
+    let live = true;
+    void loadWeaselMark().then((t) => { if (live) setTex(t); });
+    return () => { live = false; };
   }, []);
   return tex;
 }
