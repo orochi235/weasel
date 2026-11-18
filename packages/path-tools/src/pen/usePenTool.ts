@@ -1,19 +1,21 @@
 import { useCallback, useMemo, useReducer, useRef, useState } from 'react';
 import { useKitSettings, useLatest } from '@weasel-js/react';
-import { commitOps, createDeleteOp, defineTool, pointSnap, resolveEditablePathOf, commitSelectionFrom } from '@weasel-js/core';
-import type { ModifierState, Op, Tool } from '@weasel-js/core';
+import { defineTool, pointSnap } from '@weasel-js/core';
+import type { ModifierState, Tool } from '@weasel-js/core';
 import type { Action, ToolOptionShare } from '@weasel-js/routing';
 import { ActionDisabledReason, defineAction } from '@weasel-js/routing';
 import type { ActionDeps, InvocationCtx } from '@weasel-js/routing';
-import { withinPxRadius, reverseAnchors, type PathAnchorHit } from '@weasel-js/geom';
-import { boundsOfPath, type PolygonPath, anchorsToPath, editAnchorSetTracked, pathToAnchors, worldCoords } from '@weasel-js/geom';
+import { withinPxRadius, type PathAnchorHit, type PolygonPath } from '@weasel-js/geom';
 import { createPenPreviewLayer, penReachOf } from './penPreviewLayer';
-import { openEndNear, placeAt, withinCloseRadius, type PenPlacement } from './penTargets';
+import { commitPen } from './penCommit';
+import { pickUpEndpoint } from './penContinuation';
+import { commitJoin, joinable } from './penJoin';
+import { placeAt, withinCloseRadius, type PenPlacement } from './penTargets';
 import { PEN_HANDLE_ROLES, pullHandle } from './penHandle';
 import { cursorFor } from '@weasel-js/cursor';
 import { icon } from '../icons.gen';
 import { penOptionValues, penToolOptions } from './penOptions';
-import { anchorCount, buildPath, freshScratch, resetScratch, startSubpath } from './penScratch';
+import { anchorCount, freshScratch, resetScratch, startSubpath } from './penScratch';
 import { createPointerFollower } from '@weasel-js/editing';
 
 /**
@@ -132,136 +134,12 @@ export function usePenTool(
   const [, forceRender] = useReducer((x: number) => x + 1, 0);
   const [overlay] = useState(() => createPenPreviewLayer({ state: scratchRef.current!, kitSettings: () => optsRef.current.kitSettings }));
 
-  /** Write the pen's subpaths back into the node it picked up: the first
-   *  replaces the subpath it continued, any later ones are appended. Skips
-   *  the write when nothing changed, so an empty pick-up leaves no undo
-   *  entry. */
-  const commitContinuation = useCallback(
-    (s: PenScratch, trailing: PenSubpath | null, deps: ActionDeps): void => {
-      const edit = deps.editAnchors;
-      const cont = s.continuing!;
-      const drawn = [...s.finishedSubpaths, ...(trailing ? [trailing] : [])];
-      if (!edit || drawn.length === 0) return;
-      const { anchors: added, closed: addedClosed } = pathToAnchors(buildPath(drawn, null));
-      if (cont.reversed) added[0] = reverseAnchors(added[0]);
-      const next = editAnchorSetTracked(cont.original, (set) => {
-        set.anchors.splice(cont.sub, 1, added[0]);
-        set.closed.splice(cont.sub, 1, addedClosed[0]);
-        set.anchors.push(...added.slice(1));
-        set.closed.push(...addedClosed.slice(1));
-      })!;
-      if (samePath(next.path, cont.original)) return;
-      edit.applyEdit(cont.id, next.path, 'Continue path', next.origins, optsRef.current.autoSelect ? commitSelectionFrom(deps.operands) : undefined);
-    },
-    [optsRef],
-  );
+  const commit = useCallback((s: PenScratch, deps: ActionDeps): void => commitPen(s, deps, optsRef.current), [optsRef]);
 
-  const commit = useCallback((s: PenScratch, deps: ActionDeps): void => {
-    const trailing = s.current && s.current.anchors.length > 0 ? s.current : null;
-    if (s.continuing) {
-      commitContinuation(s, trailing, deps);
-      resetScratch(s);
-      return;
-    }
-    // One anchor draws nothing; committing it would leave an invisible node.
-    const open = trailing && trailing.anchors.length >= 2 ? trailing : null;
-    if (s.finishedSubpaths.length === 0 && !open) {
-      resetScratch(s);
-      return;
-    }
-    const allClosed =
-      s.finishedSubpaths.every((sp) => sp.closed) &&
-      (open === null || open.closed);
-    const path = buildPath(s.finishedSubpaths, open);
-    const select = optsRef.current.autoSelect ? commitSelectionFrom(deps.operands) : undefined;
-    deps.insert?.commit(boundsOfPath(path), { kind: 'path', path, closed: allClosed, style: penOptionValues(optsRef.current.toolOptions, deps).style }, undefined, select);
-    resetScratch(s);
-  }, [commitContinuation, optsRef]);
+  const commitJoinAt = useCallback((s: PenScratch, deps: ActionDeps, hit: PathAnchorHit): void => commitJoin(s, deps, hit, optsRef.current), [optsRef]);
 
-  /** Whether an anchor about to land on `hit` finishes the path by joining
-   *  onto another open subpath. Its own continued subpath never counts —
-   *  reaching that one's far end is a close. Declines when the deps can't
-   *  commit the join as one op batch. */
-  const joinable = useCallback((s: PenScratch, deps: ActionDeps, hit: PathAnchorHit | null): hit is PathAnchorHit => {
-    if (!hit || hit.end === null || !s.current || s.current.anchors.length === 0) return false;
-    const cont = s.continuing;
-    if (cont && hit.id === cont.id && hit.sub === cont.sub) return false;
-    const scene = deps.scene;
-    if (!scene && !deps.applyOps) return false;
-    if (!(cont ? deps.editAnchors?.editOps : deps.insert?.build)) return false;
-    return cont?.id === hit.id || scene?.get(hit.id as never) !== undefined;
-  }, []);
-
-  /** Finish the path onto `hit`, the endpoint its last anchor was just placed
-   *  on: the other subpath's anchors follow on from it, turned around when
-   *  `hit` is its last anchor, and its node is deleted. The path being drawn
-   *  keeps its identity — a continued node keeps its id and style, and a new
-   *  path is minted the way any pen path is. One op batch, so one undo. */
-  const commitJoin = useCallback((s: PenScratch, deps: ActionDeps, hit: PathAnchorHit): void => {
-    const edit = deps.editAnchors!;
-    const scene = deps.scene;
-    const current = s.current!;
-    const { anchors: added, closed: addedClosed } = pathToAnchors(buildPath([...s.finishedSubpaths, current], null));
-
-    const other = (resolveEditablePathOf(scene?.get(hit.id as never)) ?? edit.getEditablePath(hit.id)) as PolygonPath;
-    const otherSet = pathToAnchors(other);
-    const tail = hit.end === 'last' ? reverseAnchors(otherSet.anchors[hit.sub]) : otherSet.anchors[hit.sub];
-    const joined = added[added.length - 1];
-    const joint = joined[joined.length - 1];
-    const out = current.anchors[current.anchors.length - 1].outHandle ?? tail[0].outHandle;
-    if (out) joint.outHandle = { ...out };
-    joined.push(...tail.slice(1));
-
-    const cont = s.continuing;
-    const sameNode = cont?.id === hit.id;
-    const rest = sameNode ? { anchors: [], closed: [] } : {
-      anchors: otherSet.anchors.filter((_, i) => i !== hit.sub),
-      closed: otherSet.closed.filter((_, i) => i !== hit.sub),
-    };
-    const label = 'Join paths';
-    const ops: Op[] = [];
-    let keptId: string;
-    if (cont) {
-      if (cont.reversed) added[0] = reverseAnchors(added[0]);
-      const next = editAnchorSetTracked(cont.original, (set) => {
-        set.anchors.splice(cont.sub, 1, added[0]);
-        set.closed.splice(cont.sub, 1, addedClosed[0]);
-        set.anchors.push(...added.slice(1), ...rest.anchors);
-        set.closed.push(...addedClosed.slice(1), ...rest.closed);
-        if (!sameNode) return;
-        set.anchors.splice(hit.sub, 1);
-        set.closed.splice(hit.sub, 1);
-      })!;
-      ops.push(...edit.editOps!(cont.id, next.path, label, next.origins));
-      keptId = cont.id;
-    } else {
-      const path = anchorsToPath([...added, ...rest.anchors], [...addedClosed, ...rest.closed]);
-      const built = deps.insert!.build!(boundsOfPath(path), { kind: 'path', path, closed: false, style: penOptionValues(optsRef.current.toolOptions, deps).style });
-      if (built === null) return;
-      ops.push(...built.ops);
-      keptId = built.id;
-    }
-    if (!sameNode) ops.push(createDeleteOp({ node: scene!.get(hit.id as never) as { id: string } }));
-
-    commitOps(deps, ops, label, optsRef.current.autoSelect ? { select: [keptId] } : {});
-    resetScratch(s);
-  }, [optsRef]);
-
-  /** From idle, a press on an open subpath's end anchor picks that subpath
-   *  up: it becomes `current`, turned so the pressed end is last. Returns
-   *  whether it did. */
-  const pickUpEndpoint = useCallback((deps: ActionDeps, wx: number, wy: number): boolean => {
-    const scratch = scratchRef.current!;
-    if (scratch.current || scratch.finishedSubpaths.length > 0) return false;
-    const hit = openEndNear(deps, wx, wy, penReachOf(optsRef.current).close);
-    if (!hit) return false;
-    const original = deps.editAnchors!.getEditablePath(hit.id) as PolygonPath;
-    const picked = pathToAnchors(original).anchors[hit.sub];
-    const reversed = hit.end === 'first' && picked.length > 1;
-    scratch.current = { anchors: reversed ? reverseAnchors(picked) : picked, closed: false };
-    scratch.continuing = { id: hit.id, sub: hit.sub, reversed, original };
-    return true;
-  }, [optsRef]);
+  const pickUpEndpointAt = useCallback((deps: ActionDeps, wx: number, wy: number): boolean =>
+    pickUpEndpoint(scratchRef.current!, deps, wx, wy, penReachOf(optsRef.current).close), [optsRef]);
 
   const placeAnchorAt = useCallback((deps: ActionDeps, x: number, y: number, mods: ModifierState): PenPlacement =>
     placeAt(deps, snaps, x, y, mods, penReachOf(optsRef.current).close, scratchRef.current!.current?.anchors.at(-1)), [snaps, optsRef]);
@@ -328,7 +206,7 @@ export function usePenTool(
             if (!press) return;
             // The press point, not the release: a click may drift up to the
             // drag threshold.
-            if (pickUpEndpoint(deps, press.x, press.y)) {
+            if (pickUpEndpointAt(deps, press.x, press.y)) {
               trail.update(deps);
               return;
             }
@@ -353,7 +231,7 @@ export function usePenTool(
             const join = joinable(scratch, deps, hit);
             scratch.current ??= startSubpath(scratch);
             scratch.current.anchors.push({ x: wx, y: wy });
-            if (join) commitJoin(scratch, deps, hit);
+            if (join) commitJoinAt(scratch, deps, hit);
             trail.update(deps);
           },
         },
@@ -404,7 +282,7 @@ export function usePenTool(
             const origin = ctx.drag?.start ?? ctx.world;
             // Dragging from an open path's end picks the path up and pulls
             // that end's own handle rather than placing a new anchor on it.
-            const pickedUp = pickUpEndpoint(ctx.deps, origin.x, origin.y);
+            const pickedUp = pickUpEndpointAt(ctx.deps, origin.x, origin.y);
             // Dragging on another open path's endpoint joins onto it once
             // the handle is set.
             let joinHit: PathAnchorHit | null = null;
@@ -443,7 +321,7 @@ export function usePenTool(
                   }
                   handle.to(endCtx);
                   se.draggingHandleAt = null;
-                  if (joinHit && se.current) commitJoin(se, ctx.deps, joinHit);
+                  if (joinHit && se.current) commitJoinAt(se, ctx.deps, joinHit);
                 } finally {
                   handle.end();
                   trail.refresh();
@@ -491,7 +369,7 @@ export function usePenTool(
         },
       },
     ];
-  }, [commit, placeAnchorAt, closesAt, pickUpEndpoint, joinable, commitJoin, optsRef, trail, forceRender]);
+  }, [commit, placeAnchorAt, closesAt, pickUpEndpointAt, commitJoinAt, optsRef, trail, forceRender]);
 
   return useMemo(() => {
     return defineTool({
@@ -541,10 +419,3 @@ export function usePenTool(
 
 
 const NO_KEYS: ModifierState = { alt: false, ctrl: false, meta: false, shift: false };
-
-function samePath(a: PolygonPath, b: PolygonPath): boolean {
-  const ac = worldCoords(a), bc = worldCoords(b);
-  if (a.commands.length !== b.commands.length || ac.length !== bc.length) return false;
-  for (let i = 0; i < a.commands.length; i++) if (a.commands[i] !== b.commands[i]) return false;
-  return ac.every((v, i) => v === bc[i]);
-}
