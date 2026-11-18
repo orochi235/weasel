@@ -7,7 +7,8 @@ import s from '../RegistryInspector.module.css';
 import { SchemaTable } from '../SchemaTable';
 import type { PropertiesKindEntry, ShapeKindEntry } from '../registryEntries';
 import { findSourceMatch } from '../sourceLookup';
-import { collectOpKindsTargeting, opFactoryName } from './OpDetail';
+import { collectOpKindsTargeting } from './OpDetail';
+import { opFactoryNameFor } from '../registryData';
 import { Jsdoc, EntryLink, KindBadge, type Props } from './shared';
 import { SourceLink } from './sourceLinks';
 import { icon } from '../../icons.gen';
@@ -39,7 +40,7 @@ export function ShapeKindDetail({
         {opTargets.length > 0 && (
           <DetailRow label="op factories">
             {opTargets.map((f) => (
-              <EntryLink key={f} kind="opKind" id={f} label={opFactoryName(f)} onNavigate={onNavigate} />
+              <EntryLink key={f} kind="opKind" id={f} label={opFactoryNameFor(f)} onNavigate={onNavigate} />
             ))}
           </DetailRow>
         )}

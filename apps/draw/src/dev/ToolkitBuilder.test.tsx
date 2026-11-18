@@ -32,6 +32,12 @@ function mount(): void {
 describe('ToolkitBuilder', () => {
   beforeEach(() => window.history.replaceState(null, '', '#/dev/toolkits'));
 
+  it('drops a URL base that is not a base preset, and a tool that is not a tool preset', async () => {
+    window.history.replaceState(null, '', '#/dev/toolkits?base=tools:shape&tools=draw,tools:select');
+    mount();
+    await waitFor(() => expect(window.location.hash).toBe('#/dev/toolkits?base=draw&tools=tools:select'));
+  });
+
   it('fills each widget from the canvas it mounts', async () => {
     mount();
     await waitFor(async () => expect(await countIn('Tools')).toBeGreaterThan(0));
