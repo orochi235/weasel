@@ -1,7 +1,8 @@
-import { after, createEmitter } from '@weasel-js/registry';
+import { createEmitter } from '@weasel-js/registry';
+import { createFirstRead } from './firstRead';
 import { onLeave } from './onLeave';
 import { createRemote } from './remote';
-import type { StorageAdapter, StorageChange, SyncStorageAdapter } from './types';
+import type { StorageAdapter, SyncStorageAdapter } from './types';
 import { DELETED, createWriteQueue } from './writeQueue';
 
 /** One record changing, as a cache listener hears it. `value` is `undefined`
@@ -97,6 +98,7 @@ export function createRecordCache(options: CreateRecordCacheOptions): OwnedRecor
   return buildCache(options, false).cache;
 }
 
+
 /** `startUnread` leaves the cache waiting on a first read: `cache.read()`
  *  makes it, and `failed` reports one made elsewhere that threw. */
 function buildCache(
@@ -111,19 +113,25 @@ function buildCache(
   const overruledEmitter = createEmitter<[[string, unknown][]]>();
   // Two reasons writing is off. A read landing clears `unread`; nothing
   // clears `stopped`, which is the opener's choice.
-  let unread = startUnread;
   let stopped = !(options.writable ?? true);
-  const writable = (): boolean => !unread && !stopped;
   let closed = false;
-  let cancelRetry: (() => void) | null = null;
-  let retryWait = retryMs === false ? 0 : retryMs;
-  let reading: Promise<boolean> | null = null;
-  let warned = false;
-  let landed = (): void => {};
-  const hasRead = new Promise<void>((resolve) => {
-    if (startUnread) landed = resolve;
-    else resolve();
+  const firstRead = createFirstRead({
+    storage,
+    prefix,
+    startUnread,
+    retryMs,
+    retryMaxMs,
+    live: () => !closed && !stopped,
+    listen: () => {
+      unsubscribe = storage.subscribe?.(prefix, remote.apply);
+    },
+    take: (changes) => {
+      // Skips every name with a write queued while unread, so those win.
+      remote.apply(changes);
+      if (queue.size > 0) queue.schedule();
+    },
   });
+  const writable = (): boolean => !firstRead.unread() && !stopped;
 
   const emit = changed.emit;
 
@@ -153,67 +161,11 @@ function buildCache(
 
   let unsubscribe = writable() ? storage.subscribe?.(prefix, remote.apply) : undefined;
 
-  const stopRetrying = (): void => {
-    cancelRetry?.();
-    cancelRetry = null;
-  };
-
-  const failed = (error: unknown): void => {
-    if (!warned) {
-      warned = true;
-      console.warn(
-        `[storage] could not read "${prefix}"; opening empty and holding writes until a read lands`,
-        error,
-      );
-    }
-    if (retryMs === false || closed || stopped) return;
-    cancelRetry = after(retryWait, () => {
-      cancelRetry = null;
-      void read();
-    });
-    retryWait = Math.min(retryWait * 2, retryMaxMs);
-  };
-
-  async function attempt(): Promise<boolean> {
-    stopRetrying();
-    // Listen before listing, so a change landing between the two is not lost.
-    const early: StorageChange[] = [];
-    const stopEarly = storage.subscribe?.(prefix, (c) => early.push(...c));
-    let listed: StorageChange[];
-    try {
-      listed = await storage.list(prefix);
-    } catch (error) {
-      stopEarly?.();
-      failed(error);
-      return false;
-    }
-    if (closed || stopped) {
-      stopEarly?.();
-      return false;
-    }
-    unread = false;
-    unsubscribe = storage.subscribe?.(prefix, remote.apply);
-    stopEarly?.();
-    // Skips every name with a write queued while unread, so those win.
-    remote.apply([...listed, ...early]);
-    if (queue.size > 0) queue.schedule();
-    landed();
-    return true;
-  }
-
-  function read(): Promise<boolean> {
-    if (!unread || stopped || closed) return Promise.resolve(!unread);
-    reading ??= attempt().finally(() => {
-      reading = null;
-    });
-    return reading;
-  }
-
   const stopFlushingOnLeave = onLeave(() => void queue.flush());
 
   const remove = (name: string): void => {
     // An unread cache cannot tell what storage holds, so it queues the delete.
-    if (!unread && !values.has(name)) return;
+    if (!firstRead.unread() && !values.has(name)) return;
     values.delete(name);
     queue.add(name, DELETED);
     emit([{ name, value: undefined, origin: 'local' }]);
@@ -239,11 +191,11 @@ function buildCache(
     subscribe: changed.subscribe,
     flush: queue.flush,
     pending: (name) => queue.owns(name),
-    read,
-    whenRead: () => hasRead,
+    read: firstRead.read,
+    whenRead: firstRead.whenRead,
     close: async () => {
       if (closed) return queue.size === 0;
-      stopRetrying();
+      firstRead.stopRetrying();
       const sent = await queue.flush();
       closed = true;
       queue.stopRetrying();
@@ -258,12 +210,13 @@ function buildCache(
     stopWriting: () => {
       stopped = true;
       queue.discard();
-      stopRetrying();
+      firstRead.stopRetrying();
       unsubscribe?.();
     },
   };
-  return { cache, failed };
+  return { cache, failed: firstRead.failed };
 }
+
 
 /** Read every record under `prefix` and hold them. A failed read opens the
  *  cache empty with writing off, so it never overwrites what it could not
