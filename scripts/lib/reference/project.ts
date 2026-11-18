@@ -40,11 +40,25 @@ export function readProject(project: JSONOutput.ProjectReflection): PackageRefer
   const packages = (project.children ?? []).filter((child): child is Declaration => child.kind === Kind.Module);
   const sources = packages.map((pkg) => modulesOf(pkg));
   const links = linksOf(sources.flat());
+  for (const modules of sources) refuseUnreachable(modules);
   return packages.map((pkg, i) => ({
     package: unscoped(pkg.name),
     specifier: pkg.name,
     modules: sources[i].map((source) => readModule(source, links)),
   }));
+}
+
+/** Throws on an export whose page would have the address of one of its package's entries, which opens instead. */
+function refuseUnreachable(modules: readonly ModuleSource[]): void {
+  const entries = new Set(modules.map((module) => module.name));
+  for (const module of modules) {
+    for (const { name } of module.listed) {
+      const path = module.name ? `${module.name}/${name}` : name;
+      if (entries.has(path)) {
+        throw new Error(`${module.specifier} exports ${name}, whose reference page has the address of the entry ${modules[0].specifier}/${path}; rename one`);
+      }
+    }
+  }
 }
 
 /** A package's root entry, then its subpath entries. */

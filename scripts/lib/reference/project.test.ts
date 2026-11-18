@@ -27,6 +27,14 @@ describe('readProject', () => {
     expect(html(geom.modules[1].doc)).toBe('<p>Set operations on boxes.</p>');
   });
 
+  it('refuses an export whose page would have the address of one of its package\'s entries', () => {
+    const project = structuredClone(PROJECT);
+    const pkg = project.children!.find((child) => child.name === '@weasel-js/geom')!;
+    const unit = pkg.children!.find((child) => child.name === 'UNIT')!;
+    pkg.children!.push({ ...unit, id: 9999, name: 'booleans' });
+    expect(() => readProject(project)).toThrow(/@weasel-js\/geom exports booleans.*@weasel-js\/geom\/booleans/);
+  });
+
   it('lists exports under the headings TypeDoc grouped them by, a namespace as its members', () => {
     expect(root.groups.map((g) => ({ title: g.title, names: g.exports.map((e) => e.name) }))).toEqual([
       { title: 'Namespaces', names: ['Easing.LINEAR'] },

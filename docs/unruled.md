@@ -2630,3 +2630,7 @@ Calls the lanes made without a ruling:
 - 2026-11-17 (the fixer's call): two guide files of one package that give the same address (`1-setup.md` and
   `setup.md`) fail the site's build, naming both, rather than one shadowing the other's body. Keeping the first
   file and warning was the alternative.
+- 2026-11-17 (the fixer's call): the API reference build fails on an export whose page would have the address of one
+  of its package's entries (a root export `booleans` beside the entry `@weasel-js/geom/booleans`), since that
+  address opens the entry's index and the export's page could never be reached. Giving such a page an escaped
+  address was the alternative.
