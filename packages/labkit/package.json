@@ -162,8 +162,6 @@
     "@testing-library/jest-dom": "^7.0.1",
     "@types/three": "^0.187.0",
     "@weasel-js/guides": "1.19.1",
-    "@weasel-js/history": "1.19.1",
-    "@weasel-js/modes": "1.19.1",
     "less": "^4.2.0",
     "rollup-plugin-dts": "^6.4.1",
     "three": "^0.187.0",
