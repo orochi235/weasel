@@ -1,6 +1,7 @@
 import { type Scene, type SerializedScene, useLatest } from '@weasel-js/core';
 import { useEffect, useRef, useState } from 'react';
 import type { RenderContext } from '../instrument/types';
+import { sceneResetsOf } from './sceneResets';
 
 /** The state of an instrument whose subject is a weasel scene: the scene as
  *  `toJSON` wrote it, or `null` before anyone has edited it. */
@@ -68,6 +69,7 @@ export function useTrialScene<
     scene.loadState(fresh.toJSON());
     const selected = fresh.getSelection();
     if (selected.length > 0) scene.setSelection(selected);
+    sceneResetsOf(scene).emit();
   }, [scene, stored, latest]);
 
   return scene;
