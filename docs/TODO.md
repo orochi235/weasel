@@ -545,6 +545,13 @@ only story runner in the repo.
 
 ## Release-gate & build hygiene
 
+- **(P2) [agent] The `deps-tidy` branch fails the `check:idle-deps` it adds.** Its new check finds six packages
+  declaring a sibling their built output never names: icons-plugin → icons, labkit → animator, measure → theme,
+  rig → history and renderer, text-tools → icons and prefs-schema, ui-canvas → history (a dependency the branch
+  itself declares). It was taken out of batch 2026-11-18b for that, unmerged, in `.worktrees/deps-tidy`
+  (2026-11-18). Closes when each is dropped, moved to devDependencies, or shown the check is wrong, and the branch
+  merges through a green batch.
+
 - **(P3) [waiting] `typedoc/headerComments.test.mjs` "open no file with a doc comment on an export list" failed
   under the full suite** on studio at `c38ba3732` (2026-11-15), its retry too, taking 11.9 s against 1.3 s alone.
   It passed alone here and on studio's tree at the same commit, and passed in the next full run. It reads every
