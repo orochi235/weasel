@@ -104,13 +104,22 @@ function LightnessParams({ name, entry, draft, lookup, onChange, readOnly }: Edi
   );
 }
 
+const GATE_DEFAULTS: Readonly<Record<string, unknown>> = { ...DEFAULT_CONSTRAINTS };
+
 function GatesEditor({ name, entry, draft, lookup, onChange, readOnly, infeasible }: EditorProps<CategoricalRampDef> & { readonly infeasible: boolean }) {
-  const c = useMemo<Constraints>(() => {
-    const gates = isByAxis(entry.gates) ? {} : Object.fromEntries(Object.entries(entry.gates ?? {}).filter(([, v]) => !isByAxis(v)));
-    return { ...DEFAULT_CONSTRAINTS, ...gates, count: declaredSteps(entry).length, anchors: entry.anchors ?? [] } as Constraints;
+  // A gate written as a variation by axis or a reference is shown as written, never overwritten by a slider.
+  const { c, held } = useMemo(() => {
+    const entries = isByAxis(entry.gates) ? [] : Object.entries(entry.gates ?? {});
+    const plain = (key: string, v: unknown) => !isByAxis(v) && typeof v === typeof getOwn(GATE_DEFAULTS, key) && !/^\{.*\}$/.test(String(v));
+    const gates = Object.fromEntries(entries.filter(([k, v]) => plain(k, v)));
+    return {
+      c: { ...DEFAULT_CONSTRAINTS, ...gates, count: declaredSteps(entry).length, anchors: entry.anchors ?? [] } as Constraints,
+      held: Object.fromEntries(entries.filter(([k, v]) => !plain(k, v))),
+    };
   }, [entry]);
-  // Only to explain which gates are unmet; derive has already run the generator.
-  const palette = useMemo(() => (infeasible && !readOnly ? generate(c) : null), [c, infeasible, readOnly]);
+  // Only to explain which gates are unmet; derive has already run the generator. With a gate held, `c` is not what it ran.
+  const explain = infeasible && !readOnly && Object.keys(held).length === 0;
+  const palette = useMemo(() => (explain ? generate(c) : null), [c, explain]);
   if (isByAxis(entry.gates)) {
     return <p className={styles.paramNote}>{name}&apos;s gates vary by {entry.gates.by}; edit them in the definition file.</p>;
   }
@@ -133,7 +142,7 @@ function GatesEditor({ name, entry, draft, lookup, onChange, readOnly, infeasibl
   return (
     <div className={styles.gates}>
       <PropertyPanel title={`${name} gates`}>
-        <ConstraintsPanel c={c} onSet={setGate} fixedCount />
+        <ConstraintsPanel c={c} onSet={setGate} fixedCount held={held} />
         <AnchorList anchors={c.anchors} onChange={(anchors) => edit((e) => ({ ...e, anchors }), `ramps.${name}.anchors`)} />
       </PropertyPanel>
       {infeasible && (
