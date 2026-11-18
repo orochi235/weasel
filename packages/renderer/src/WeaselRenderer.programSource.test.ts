@@ -18,7 +18,7 @@ void main() { outColor = vec4(1.0); }
 const WGSL = '@fragment fn main() -> @location(0) vec4f { return vec4f(1.0); }';
 
 function shader(program: ShaderProgramHandle): DrawCommand {
-  return { kind: 'shader', program, uniforms: {}, bounds: { x: 0, y: 0, w: 10, h: 10 } };
+  return { kind: 'shader', program, uniforms: {}, bounds: { x: 0, y: 0, width: 10, height: 10 } };
 }
 
 describe('a program registered in GLSL, WGSL or both', () => {

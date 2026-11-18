@@ -3,14 +3,14 @@ import { bakeMesh, meshBounds, MESH_BAKE_SIZE } from './bake';
 import type { MeshPatch, MeshPoint } from './surface';
 
 function squarePatch(
-  box = { x: 0, y: 0, w: 1, h: 1 },
+  box = { x: 0, y: 0, width: 1, height: 1 },
   colors: MeshPatch['colors'] = ['#ff0000', '#00ff00', '#0000ff', '#ffff00'],
 ): MeshPatch {
   const corners: MeshPoint[] = [
     { x: box.x, y: box.y },
-    { x: box.x + box.w, y: box.y },
-    { x: box.x + box.w, y: box.y + box.h },
-    { x: box.x, y: box.y + box.h },
+    { x: box.x + box.width, y: box.y },
+    { x: box.x + box.width, y: box.y + box.height },
+    { x: box.x, y: box.y + box.height },
   ];
   const points: MeshPoint[] = [];
   for (let i = 0; i < 4; i++) {
@@ -36,8 +36,8 @@ function texel(baked: NonNullable<ReturnType<typeof bakeMesh>>, fx: number, fy: 
 describe('meshBounds', () => {
   it('unions the patches', () => {
     const box = meshBounds([
-      squarePatch({ x: 0, y: 0, w: 1, h: 1 }),
-      squarePatch({ x: 2, y: -1, w: 1, h: 1 }),
+      squarePatch({ x: 0, y: 0, width: 1, height: 1 }),
+      squarePatch({ x: 2, y: -1, width: 1, height: 1 }),
     ]);
     expect(box).toMatchObject({
       x: expect.closeTo(0, 6), y: expect.closeTo(-1, 6),
@@ -82,8 +82,8 @@ describe('bakeMesh', () => {
   it('leaves the texels no patch reaches transparent', () => {
     // Two unit squares with a gap between them: the middle belongs to neither.
     const baked = bakeMesh([
-      squarePatch({ x: 0, y: 0, w: 1, h: 1 }),
-      squarePatch({ x: 3, y: 0, w: 1, h: 1 }),
+      squarePatch({ x: 0, y: 0, width: 1, height: 1 }),
+      squarePatch({ x: 3, y: 0, width: 1, height: 1 }),
     ])!;
     expect(texel(baked, 0.5, 0.5)[3]).toBe(0);
     expect(texel(baked, 0.02, 0.5)[3]).toBe(255);
@@ -91,7 +91,7 @@ describe('bakeMesh', () => {
 
   it('blends the interior between the corners rather than banding', () => {
     const baked = bakeMesh([squarePatch(
-      { x: 0, y: 0, w: 1, h: 1 },
+      { x: 0, y: 0, width: 1, height: 1 },
       ['#000000', '#ffffff', '#ffffff', '#000000'],
     )])!;
     const mid = texel(baked, 0.5, 0.5);
@@ -102,7 +102,7 @@ describe('bakeMesh', () => {
   });
 
   it('takes the blend space, so a red-to-blue mesh can keep its chroma', () => {
-    const patch = squarePatch({ x: 0, y: 0, w: 1, h: 1 }, ['#ff0000', '#0000ff', '#0000ff', '#ff0000']);
+    const patch = squarePatch({ x: 0, y: 0, width: 1, height: 1 }, ['#ff0000', '#0000ff', '#0000ff', '#ff0000']);
     const rgb = bakeMesh([patch], 'rgb')!;
     const lch = bakeMesh([patch], 'oklch')!;
     const a = texel(rgb, 0.5, 0.5);

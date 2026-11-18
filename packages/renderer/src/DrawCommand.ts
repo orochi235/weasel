@@ -185,7 +185,7 @@ export interface TextDrawCommand {
 }
 
 /**
- * Image draw command — renders `image` at screen-space rect (x, y, w, h).
+ * Image draw command — renders `image` at screen-space rect (x, y, width, height).
  * The image is stretched to fit; no tiling. Use a pattern Paint on a path
  * for tiling.
  */
@@ -196,8 +196,8 @@ export interface ImageDrawCommand {
   image: ImageBitmap;
   x: number;
   y: number;
-  w: number;
-  h: number;
+  width: number;
+  height: number;
   opacity?: number;
   /** Magnification filter. `'linear'` (default) smooths; `'nearest'` shows
    *  device pixels as hard squares — required by anything magnifying a
@@ -210,7 +210,7 @@ export interface ImageDrawCommand {
    *  atlas frames need a gutter (see `SpriteSheet.spacing`) or `'nearest'`.
    *  A draw with `source` never samples mipmaps, so a frame drawn small aliases
    *  rather than blending in its neighbors. */
-  source?: { x: number; y: number; w: number; h: number };
+  source?: { x: number; y: number; width: number; height: number };
   /** Mirror the sampled region within the destination rect. The quad does not
    *  move — a flipped draw covers exactly the pixels an unflipped one does. */
   flipX?: boolean;
@@ -267,5 +267,5 @@ export interface ShaderDrawCommand {
   uniforms: Record<string, ShaderUniform>;
   /** Screen-space bounding rect in CSS pixels, which the kit's vertex shader
    *  covers and nothing outside it. */
-  bounds: { x: number; y: number; w: number; h: number };
+  bounds: { x: number; y: number; width: number; height: number };
 }

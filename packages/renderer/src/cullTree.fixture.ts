@@ -29,9 +29,9 @@ const leaf: fc.Arbitrary<DrawCommand> = fc.oneof(
       ? { kind: 'path', path, stroke: { ...stroke, paint: PAINT } }
       : { kind: 'path', path, fill: { paint: PAINT } })) },
   { weight: 2, arbitrary: fc.tuple(spread(-300, 300), spread(-300, 300), spread(-200, 200), spread(-200, 200))
-    .map(([x, y, w, h]): DrawCommand => ({ kind: 'image', image: IMAGE, x, y, w, h })) },
+    .map(([x, y, w, h]): DrawCommand => ({ kind: 'image', image: IMAGE, x, y, width: w, height: h })) },
   // A program with no source the renderer knows: it may draw anywhere.
-  { weight: 1, arbitrary: fc.constant({ kind: 'shader', program: { id: 'pbt-unknown' }, bounds: { x: 0, y: 0, w: 1, h: 1 } } as unknown as DrawCommand) },
+  { weight: 1, arbitrary: fc.constant({ kind: 'shader', program: { id: 'pbt-unknown' }, bounds: { x: 0, y: 0, width: 1, height: 1 } } as unknown as DrawCommand) },
 );
 
 /** A transform keeping most of what it draws near the view, so both sides of the cut come up. */
@@ -94,7 +94,7 @@ function painted(cmd: DrawCommand, m: GlMat3, rect: Rect): Pt[] {
       pts = meshPoints(getMesh(cmd.path));
     }
   } else if (cmd.kind === 'image') {
-    pts = [{ x: cmd.x, y: cmd.y }, { x: cmd.x + cmd.w, y: cmd.y }, { x: cmd.x + cmd.w, y: cmd.y + cmd.h }, { x: cmd.x, y: cmd.y + cmd.h }];
+    pts = [{ x: cmd.x, y: cmd.y }, { x: cmd.x + cmd.width, y: cmd.y }, { x: cmd.x + cmd.width, y: cmd.y + cmd.height }, { x: cmd.x, y: cmd.y + cmd.height }];
   }
   return pts.map((p) => { const [x, y] = mat3.transformPoint(m, p.x, p.y); return { x, y }; });
 }

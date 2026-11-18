@@ -147,7 +147,7 @@ describe('contentBounds', () => {
 
   it('is the whole buffer for what it cannot bound, unless a clip bounds it', () => {
     const shader: DrawCommand = {
-      kind: 'shader', program: { id: 'x' }, uniforms: {}, bounds: { x: 0, y: 0, w: 1, h: 1 },
+      kind: 'shader', program: { id: 'x' }, uniforms: {}, bounds: { x: 0, y: 0, width: 1, height: 1 },
     };
     expect(contentBounds([rect(0, 0, 1, 1), shader], I, [], 1, 100, 80)).toEqual({ x: 0, y: 0, width: 100, height: 80 });
     const clip = pathFromD('M10 10 L20 10 L20 20 L10 20 Z');

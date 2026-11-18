@@ -281,20 +281,20 @@ export class RetainedSurfaces {
    *  once this frame redrew nothing or it is larger than every surface drawn
    *  in it that is left needs. */
   endFrame(): void {
-    const need = new Map<number, { w: number; h: number }>();
+    const need = new Map<number, { width: number; height: number }>();
     for (const [id, surface] of this.surfaces) {
       if (surface.frame === this.frame) {
-        const n = need.get(surface.samples) ?? { w: 0, h: 0 };
+        const n = need.get(surface.samples) ?? { width: 0, height: 0 };
         const { width: w, height: h } = surface.rect;
-        need.set(surface.samples, { w: Math.max(n.w, Math.min(w, this.tile)), h: Math.max(n.h, Math.min(h, this.tile)) });
+        need.set(surface.samples, { width: Math.max(n.width, Math.min(w, this.tile)), height: Math.max(n.height, Math.min(h, this.tile)) });
         continue;
       }
       this.deleteSurface(surface);
       this.surfaces.delete(id);
     }
     for (const [samples, held] of this.scratches) {
-      const n = need.get(samples) ?? { w: 0, h: 0 };
-      if (this.redrawn === 0 || held.width > n.w || held.height > n.h) this.dropScratch(samples);
+      const n = need.get(samples) ?? { width: 0, height: 0 };
+      if (this.redrawn === 0 || held.width > n.width || held.height > n.height) this.dropScratch(samples);
     }
   }
 

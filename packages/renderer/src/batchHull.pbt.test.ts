@@ -13,11 +13,11 @@ const U = HULL_UNITS;
 
 /** A viewport and the projection a draw into it goes through, maybe turned. */
 const target = fc.record({
-  w: fc.noBias(fc.integer({ min: 16, max: 1600 })), h: fc.noBias(fc.integer({ min: 16, max: 1600 })),
+  width: fc.noBias(fc.integer({ min: 16, max: 1600 })), height: fc.noBias(fc.integer({ min: 16, max: 1600 })),
   dpr: fc.constantFrom(1, 2, 1.5, 3),
   ox: fc.integer({ min: 0, max: 400 }), oy: fc.integer({ min: 0, max: 400 }),
   turn: fc.oneof({ weight: 3, arbitrary: fc.constant(0) }, { weight: 1, arbitrary: spread(-3.2, 3.2) }),
-}).map(({ w, h, dpr, ox, oy, turn }) => {
+}).map(({ width: w, height: h, dpr, ox, oy, turn }) => {
   let proj = mat3.screenToClip(w, h);
   if (turn !== 0) {
     const c = Math.cos(turn), s = Math.sin(turn);

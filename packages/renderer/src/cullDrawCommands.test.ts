@@ -216,13 +216,13 @@ describe('cullDrawCommands', () => {
   it('keeps text and shader commands, which it cannot bound', () => {
     const text = { kind: 'text', x: -5000, y: -5000, runs: [], style: {} } as unknown as DrawCommand;
     const shader = {
-      kind: 'shader', program: {}, uniforms: {}, bounds: { x: -5000, y: 0, w: 1, h: 1 },
+      kind: 'shader', program: {}, uniforms: {}, bounds: { x: -5000, y: 0, width: 1, height: 1 },
     } as unknown as DrawCommand;
     expect(cullDrawCommands([text, shader], I, SCREEN, 1)).toEqual([text, shader]);
   });
 
   it('bounds images and sprite runs by their quads', () => {
-    const image = { kind: 'image', image: {}, x: 900, y: 0, w: 10, h: 10 } as unknown as DrawCommand;
+    const image = { kind: 'image', image: {}, x: 900, y: 0, width: 10, height: 10 } as unknown as DrawCommand;
     const sprites = {
       kind: 'sprites',
       image: {},

@@ -85,7 +85,7 @@ describe('WeaselRenderer.render — color matrix on text + image', () => {
       kind: 'group',
       colorMatrix: RED_FROM_GREEN,
       children: [
-        { kind: 'image', image: fakeBitmap, x: 0, y: 0, w: 16, h: 16 },
+        { kind: 'image', image: fakeBitmap, x: 0, y: 0, width: 16, height: 16 },
       ],
     };
     r.render([cmd]);
@@ -102,7 +102,7 @@ describe('WeaselRenderer.render — color matrix on text + image', () => {
     r.render([{
       kind: 'group',
       colorMatrix: NO_RED,
-      children: [{ kind: 'image', image: fakeBitmap, x: 0, y: 0, w: 16, h: 16 }],
+      children: [{ kind: 'image', image: fakeBitmap, x: 0, y: 0, width: 16, height: 16 }],
     }]);
     const upload = recorder.calls.find(
       (c) => c.name === 'bufferSubData' && c.args[0] === recorder.gl.ARRAY_BUFFER,
@@ -133,7 +133,7 @@ describe('WeaselRenderer.render — color matrix on text + image', () => {
 
   it('uploads identity u_colorMatrix on image draws with no enclosing group transform', () => {
     const fakeBitmap = { width: 16, height: 16, close: () => {} } as unknown as ImageBitmap;
-    const cmd: DrawCommand = { kind: 'image', image: fakeBitmap, x: 0, y: 0, w: 16, h: 16 };
+    const cmd: DrawCommand = { kind: 'image', image: fakeBitmap, x: 0, y: 0, width: 16, height: 16 };
     r.render([cmd]);
     const matrixCalls = recorder.calls.filter((c) => c.name === 'uniformMatrix4fv');
     const identityUploaded = matrixCalls.some((c) => {

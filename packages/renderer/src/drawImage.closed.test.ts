@@ -12,7 +12,7 @@ describe('WeaselRenderer.render — a bitmap the image cache has closed', () => 
     const r = new WeaselRenderer({ gl: recorder.gl, width: 100, height: 100, dpr: 1 });
     recorder.reset();
     r.render([
-      { kind: 'image', image: closed, x: 0, y: 0, w: 10, h: 10 },
+      { kind: 'image', image: closed, x: 0, y: 0, width: 10, height: 10 },
       { kind: 'sprites', image: closed, sprites: new Float32Array(SPRITE_STRIDE).fill(1) },
     ]);
     const names = recorder.calls.map((c) => c.name);

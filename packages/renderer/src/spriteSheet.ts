@@ -28,7 +28,7 @@ export interface SpriteSheet {
 export function frameRect(
   sheet: SpriteSheet,
   index: number,
-): { x: number; y: number; w: number; h: number } {
+): { x: number; y: number; width: number; height: number } {
   const { frameWidth, frameHeight, columns } = sheet;
   const margin = sheet.margin ?? 0;
   const spacing = sheet.spacing ?? 0;
@@ -37,7 +37,7 @@ export function frameRect(
   return {
     x: margin + col * (frameWidth + spacing),
     y: margin + row * (frameHeight + spacing),
-    w: frameWidth,
-    h: frameHeight,
+    width: frameWidth,
+    height: frameHeight,
   };
 }

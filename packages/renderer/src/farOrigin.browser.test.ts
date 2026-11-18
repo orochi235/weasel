@@ -97,7 +97,7 @@ void main() {
   outColor = vec4(x, 0.0, 0.0, 1.0);
 }
 ` } });
-    const at = (): DrawCommand[] => [{ kind: 'shader', program, uniforms: {}, bounds: { x: 0, y: 0, w: ZOOM, h: 16 } }];
+    const at = (): DrawCommand[] => [{ kind: 'shader', program, uniforms: {}, bounds: { x: 0, y: 0, width: ZOOM, height: 16 } }];
     // The ramp is the world point's fraction, so the near run starts at FAR's.
     expectSame(row(FAR - Math.floor(FAR), at), row(FAR, at));
   });

@@ -220,7 +220,7 @@ describe('a retained world layer through a pan, in a real context', () => {
       fill: { paint: { kind: 'linear-gradient', from: { x: 0, y: 0 }, to: { x: W, y: 0 }, stops: [{ offset: 0, color: '#000' }, { offset: 1, color: '#fff' }] } },
     };
     const shader: DrawCommand = {
-      kind: 'shader', bounds: { x: 4, y: 4, w: 10, h: 10 }, uniforms: {},
+      kind: 'shader', bounds: { x: 4, y: 4, width: 10, height: 10 }, uniforms: {},
       program: registerProgram('pan-test-solid', { glsl: { frag: '#version 300 es\nprecision highp float;\nin vec2 v_uv;\nout vec4 o;\nvoid main() { o = vec4(0.0, 0.0, 1.0, 1.0); }' } }),
     };
     for (const extra of [screenGradient, shader]) {

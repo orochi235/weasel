@@ -31,7 +31,7 @@ function setup(): { gl: WebGL2RenderingContext; renderer: WeaselRenderer } {
 }
 
 function draw(renderer: WeaselRenderer, gl: WebGL2RenderingContext, id: string, uniforms: Record<string, ShaderUniform>): number[][] {
-  renderer.render([{ kind: 'shader', program: { id }, uniforms, bounds: { x: 0, y: 0, w: W, h: 1 } }]);
+  renderer.render([{ kind: 'shader', program: { id }, uniforms, bounds: { x: 0, y: 0, width: W, height: 1 } }]);
   const px = new Uint8Array(W * 4);
   gl.readPixels(0, 0, W, 1, gl.RGBA, gl.UNSIGNED_BYTE, px);
   return Array.from({ length: W }, (_, i) => Array.from(px.slice(i * 4, i * 4 + 4)));

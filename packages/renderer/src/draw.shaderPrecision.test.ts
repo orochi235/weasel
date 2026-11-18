@@ -40,7 +40,7 @@ function frame(px: number, worldX = WORLD_X) {
   rec.reset();
   r.render([{
     kind: 'group', transform: view,
-    children: [{ kind: 'shader', program, uniforms: {}, bounds: { x: 0, y: 0, w: 64, h: 32 } } as DrawCommand],
+    children: [{ kind: 'shader', program, uniforms: {}, bounds: { x: 0, y: 0, width: 64, height: 32 } } as DrawCommand],
   }], view);
 }
 

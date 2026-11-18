@@ -150,7 +150,7 @@ describe('drawGroup clip integration', () => {
     const cmd: GroupDrawCommand = {
       kind: 'group',
       clip: NOTCHED_CLIP,
-      children: [{ kind: 'image' as const, image: fakeBitmap, x: 0, y: 0, w: 16, h: 16 }],
+      children: [{ kind: 'image' as const, image: fakeBitmap, x: 0, y: 0, width: 16, height: 16 }],
     };
     drawGroup(ctx, cmd);
 
