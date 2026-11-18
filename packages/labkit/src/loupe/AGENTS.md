@@ -17,6 +17,8 @@ This directory binds that model to a labkit trial and draws it.
 |---|---|
 | `types.ts` | `LoupeOptions`, and `resolveLoupe` filling in every default |
 | `useLoupe.ts` | The model over a host element, and the input its actions drive |
+| `hostLoupe.ts` | That model's surface over the host, and the input's pointer tracking, with no React in it |
+| `useLensReport.ts` | Tells `onLens` the shown lens, once per change in value |
 | `useLensDamage.ts` | The `onLens` a loupe reports through, dirtying the tiles a hollow lens moves across |
 | `LoupeGestures.tsx` | Registers `@weasel-js/loupe`'s actions over that input, and mounts a dispatcher on the host when no camera has one there |
 | `TrialLoupe.tsx` | Finds its host and the trial's switch, picks the painter, mounts the lens |
