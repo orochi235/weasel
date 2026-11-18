@@ -24,6 +24,7 @@ import type { OptionKey } from '../../optionKey';
 import { useRacField } from '../Field/racField';
 import f from '../Field/Field.module.css';
 import listbox from '../Select/listbox.module.css';
+import { heldAriaRef, heldItemProps, isHeldKey } from '../heldItem';
 import s from './ComboBox.module.css';
 
 
@@ -220,7 +221,14 @@ function ComboBoxFrame({
   // commit from a text one.
   const onKeyDownCapture = (e: KeyboardEvent<HTMLInputElement>) => {
     if (e.key !== 'Enter' || imeKey(e.nativeEvent)) return;
-    if (state?.isOpen && state.selectionManager.focusedKey != null) return;
+    const focused = state?.isOpen ? state.selectionManager.focusedKey : null;
+    // React Aria's commit would clear the selection and close the list on a held option.
+    if (focused != null && isHeldKey(state!.collection, focused)) {
+      e.preventDefault();
+      e.stopPropagation();
+      return;
+    }
+    if (focused != null) return;
     revertingRef.current = true;
     const text = e.currentTarget.value;
     if (text !== '') onCommitText?.(text);
@@ -270,7 +278,8 @@ export function ComboBoxItem({ className, disabled, icon, description, disabledR
   return (
     <RACListBoxItem
       {...rest}
-      isDisabled={disabled}
+      ref={heldAriaRef(disabled)}
+      {...heldItemProps(disabled)}
       textValue={textValue ?? (typeof children === 'string' ? children : undefined)}
       className={[listbox.option, className].filter(Boolean).join(' ')}
     >
