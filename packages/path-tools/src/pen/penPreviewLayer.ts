@@ -63,20 +63,16 @@ const radiiOf = (kit: KitSettingsStore | undefined) => ({
   closeHint: kit?.get('targets.penCloseHintRadiusPx') ?? CLOSE_HINT_RADIUS_PX,
 });
 
-// approximateCircle has moved to `./markers.ts` as `circlePath`. Re-exported
-// locally so we don't rename callers in this file.
-function approximateCircle(cx: number, cy: number, r: number): PolygonPath {
-  return circlePath(cx, cy, r);
-}
+type View = { x: number; y: number; scale: { x: number; y: number } };
+type Point = { x: number; y: number };
+type Style = Required<PenPreviewStyle>;
+type Radii = ReturnType<typeof radiiOf>;
 
 /** A pen subpath as a screen-space `PolygonPath`, segmented by the same rule
  *  the pen commits with. */
-function subpathToPath(
-  sp: PenSubpath,
-  view: { x: number; y: number; scale: { x: number; y: number } },
-): PolygonPath | null {
+function subpathToPath(sp: PenSubpath, view: View): PolygonPath | null {
   if (sp.anchors.length === 0) return null;
-  const pt = (p: { x: number; y: number }) => {
+  const pt = (p: Point) => {
     const { x: x, y: y } = viewWorldToScreen(view, p);
     return { x, y };
   };
@@ -88,6 +84,98 @@ function subpathToPath(
   return anchorsToPath([anchors], [sp.closed]);
 }
 
+function segmentPath(ax: number, ay: number, bx: number, by: number): PolygonPath {
+  return {
+    kind: 'polygon',
+    commands: new Uint8Array([PATH_M, PATH_L]),
+    coords: new Float32Array([ax, ay, bx, by]),
+    fillRule: 'nonzero',
+  };
+}
+
+function strokedPath(path: PolygonPath, color: string): DrawCommand {
+  return { kind: 'path', path, stroke: { paint: { kind: 'solid', color }, width: 1 } };
+}
+
+function subpathOutline(sp: PenSubpath, view: View, color: string): DrawCommand | null {
+  const path = subpathToPath(sp, view);
+  return path === null ? null : strokedPath(path, color);
+}
+
+/** The segment from the latest anchor to the cursor: a curve through its
+ *  out-handle when it has one, else a line. */
+function rubberBand(last: PenDraftAnchor, cursor: Point, view: View, color: string): DrawCommand {
+  const { x: sx, y: sy } = viewWorldToScreen(view, last);
+  const { x: cx, y: cy } = viewWorldToScreen(view, cursor);
+  if (!last.outHandle) return strokedPath(segmentPath(sx, sy, cx, cy), color);
+  const { x: c1x, y: c1y } = viewWorldToScreen(view, last.outHandle);
+  return strokedPath({
+    kind: 'polygon',
+    commands: new Uint8Array([PATH_M, PATH_C]),
+    coords: new Float32Array([sx, sy, c1x, c1y, cx, cy, cx, cy]),
+    fillRule: 'nonzero',
+  }, color);
+}
+
+/** A handle's line from its anchor at screen (ax, ay), and its dot. */
+function handleMarks(ax: number, ay: number, handle: Point, view: View, r: number, color: string): DrawCommand[] {
+  const { x: hx, y: hy } = viewWorldToScreen(view, handle);
+  return [
+    strokedPath(segmentPath(ax, ay, hx, hy), color),
+    { kind: 'path', path: circlePath(hx, hy, r), fill: { paint: { kind: 'solid', color } } },
+  ];
+}
+
+/** A dot on every anchor of the current subpath, and the latest anchor's handles. */
+function anchorMarks(anchors: PenDraftAnchor[], view: View, r: Radii, style: Style): DrawCommand[] {
+  const out: DrawCommand[] = [];
+  for (let i = 0; i < anchors.length; i++) {
+    const a = anchors[i];
+    const { x: ax, y: ay } = viewWorldToScreen(view, a);
+    out.push({
+      kind: 'path',
+      path: circlePath(ax, ay, r.anchor),
+      fill: { paint: { kind: 'solid', color: style.anchorFill } },
+      stroke: { paint: { kind: 'solid', color: style.anchorStroke }, width: 1 },
+    });
+    if (i === anchors.length - 1 && a.outHandle) {
+      out.push(...handleMarks(ax, ay, a.outHandle, view, r.handleDot, style.handleStroke));
+      if (a.inHandle) out.push(...handleMarks(ax, ay, a.inHandle, view, r.handleDot, style.handleStroke));
+    }
+  }
+  return out;
+}
+
+function closeHint(first: PenDraftAnchor, view: View, r: number, color: string): DrawCommand {
+  const { x: fx, y: fy } = viewWorldToScreen(view, first);
+  return {
+    kind: 'path',
+    path: circlePath(fx, fy, r),
+    stroke: { paint: { kind: 'solid', color }, width: 1.5 },
+  };
+}
+
+/** The draw commands for the pen's state `s`, finished subpaths first. */
+function penPreviewCommands(s: PenScratch, view: View, r: Radii, style: Style): DrawCommand[] {
+  const out: DrawCommand[] = [];
+  for (const sp of s.finishedSubpaths) {
+    const cmd = subpathOutline(sp, view, style.finishedSubpathStroke);
+    if (cmd) out.push(cmd);
+  }
+  const cur = s.current;
+  if (!cur) return out;
+  const outline = subpathOutline(cur, view, style.rubberBandStroke);
+  if (outline) out.push(outline);
+  if (cur.anchors.length > 0 && s.cursor && s.draggingHandleAt === null) {
+    out.push(rubberBand(cur.anchors[cur.anchors.length - 1], s.cursor, view, style.rubberBandStroke));
+  }
+  out.push(...anchorMarks(cur.anchors, view, r, style));
+  if (s.closeHintActive && cur.anchors.length >= 3) {
+    out.push(closeHint(cur.anchors[0], view, r.closeHint, style.closeHintFill));
+  }
+  return out;
+}
+
 /** Render layer that draws the pen tool's path as it is being placed —
  *  committed anchors, the rubber band to the cursor, and the close hint. Draws
  *  nothing when the pen is idle. */
@@ -95,137 +183,10 @@ export function createPenPreviewLayer(
   opts: CreatePenPreviewLayerOptions,
 ): RenderLayer<unknown> {
   const style = { ...DEFAULT_STYLE, ...(opts.style ?? {}) };
-  const s = opts.state;
-
   return {
     id: 'penPreview',
     label: 'Pen preview',
     space: 'screen',
-    draw: (_data, view) => {
-      const out: DrawCommand[] = [];
-      const r = radiiOf(opts.kitSettings?.());
-      // (1) Finished subpaths — faded outline.
-      for (const sp of s.finishedSubpaths) {
-        const path = subpathToPath(sp, view);
-        if (path === null) continue;
-        out.push({
-          kind: 'path',
-          path,
-          stroke: { paint: { kind: 'solid', color: style.finishedSubpathStroke }, width: 1 },
-        });
-      }
-
-      const cur = s.current;
-      if (!cur && s.cursor === null) return out;
-
-      // (2) Current subpath — bright outline.
-      if (cur) {
-        const path = subpathToPath(cur, view);
-        if (path !== null) {
-          out.push({
-            kind: 'path',
-            path,
-            stroke: { paint: { kind: 'solid', color: style.rubberBandStroke }, width: 1 },
-          });
-        }
-      }
-
-      // (3) Rubber-band from latest anchor to cursor.
-      if (cur && cur.anchors.length > 0 && s.cursor && s.draggingHandleAt === null) {
-        const last = cur.anchors[cur.anchors.length - 1];
-        const out2 = last.outHandle;
-        const { x: sx, y: sy } = viewWorldToScreen(view, last);
-        const { x: cx, y: cy } = viewWorldToScreen(view, s.cursor);
-        let path: PolygonPath;
-        if (out2) {
-          const { x: c1x, y: c1y } = viewWorldToScreen(view, out2);
-          path = {
-            kind: 'polygon',
-            commands: new Uint8Array([PATH_M, PATH_C]),
-            coords: new Float32Array([sx, sy, c1x, c1y, cx, cy, cx, cy]),
-            fillRule: 'nonzero',
-          };
-        } else {
-          path = {
-            kind: 'polygon',
-            commands: new Uint8Array([PATH_M, PATH_L]),
-            coords: new Float32Array([sx, sy, cx, cy]),
-            fillRule: 'nonzero',
-          };
-        }
-        out.push({
-          kind: 'path',
-          path,
-          stroke: { paint: { kind: 'solid', color: style.rubberBandStroke }, width: 1 },
-        });
-      }
-
-      // (4) Anchor dots + handles.
-      if (cur) {
-        for (let i = 0; i < cur.anchors.length; i++) {
-          const a = cur.anchors[i];
-          const { x: ax, y: ay } = viewWorldToScreen(view, a);
-          out.push({
-            kind: 'path',
-            path: approximateCircle(ax, ay, r.anchor),
-            fill: { paint: { kind: 'solid', color: style.anchorFill } },
-            stroke: { paint: { kind: 'solid', color: style.anchorStroke }, width: 1 },
-          });
-          // Handle line + dot (only the latest anchor, per spec).
-          if (i === cur.anchors.length - 1 && a.outHandle) {
-            const { x: hx, y: hy } = viewWorldToScreen(view, a.outHandle);
-            const linePath: PolygonPath = {
-              kind: 'polygon',
-              commands: new Uint8Array([PATH_M, PATH_L]),
-              coords: new Float32Array([ax, ay, hx, hy]),
-              fillRule: 'nonzero',
-            };
-            out.push({
-              kind: 'path',
-              path: linePath,
-              stroke: { paint: { kind: 'solid', color: style.handleStroke }, width: 1 },
-            });
-            out.push({
-              kind: 'path',
-              path: approximateCircle(hx, hy, r.handleDot),
-              fill: { paint: { kind: 'solid', color: style.handleStroke } },
-            });
-            const inSide = a.inHandle;
-            if (inSide) {
-              const { x: mx, y: my } = viewWorldToScreen(view, inSide);
-              const inLine: PolygonPath = {
-                kind: 'polygon',
-                commands: new Uint8Array([PATH_M, PATH_L]),
-                coords: new Float32Array([ax, ay, mx, my]),
-                fillRule: 'nonzero',
-              };
-              out.push({
-                kind: 'path',
-                path: inLine,
-                stroke: { paint: { kind: 'solid', color: style.handleStroke }, width: 1 },
-              });
-              out.push({
-                kind: 'path',
-                path: approximateCircle(mx, my, r.handleDot),
-                fill: { paint: { kind: 'solid', color: style.handleStroke } },
-              });
-            }
-          }
-        }
-
-        // (5) Close-hint ring on first anchor.
-        if (s.closeHintActive && cur.anchors.length >= 3) {
-          const first = cur.anchors[0];
-          const { x: fx, y: fy } = viewWorldToScreen(view, first);
-          out.push({
-            kind: 'path',
-            path: approximateCircle(fx, fy, r.closeHint),
-            stroke: { paint: { kind: 'solid', color: style.closeHintFill }, width: 1.5 },
-          });
-        }
-      }
-
-      return out;
-    },
+    draw: (_data, view) => penPreviewCommands(opts.state, view, radiiOf(opts.kitSettings?.()), style),
   };
 }

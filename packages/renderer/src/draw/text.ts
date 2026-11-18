@@ -35,7 +35,8 @@ import { foldColor, foldColorInto } from './foldColor';
 import { batchPaint } from './gradient';
 import { bindPattern, bindGradient } from './paintBind';
 import { drawPathFillByKind } from './pathPaint';
-import { type ScreenRect, renderPaintToScratch, bindScratchPaint } from './scratchPass';
+import { renderPaintToScratch, bindScratchPaint } from './scratchPass';
+import type { ScreenBox } from '../paintedBounds';
 
 /**
  * On-screen glyph size (CSS px) at or above which a face with registered
@@ -316,16 +317,16 @@ function drawStagedGlyphs(ctx: DrawContext, prog: ShaderProgram, stencil: GpuSte
  *  for corner as `DrawBatch.pushGlyph` places them. */
 function glyphScreenBounds(
   group: LaidOutGroup, dx: number, dy: number, tanItalic: number, m: GlMat3, grow: number,
-): ScreenRect {
-  const b = { x0: Infinity, y0: Infinity, x1: -Infinity, y1: -Infinity };
+): ScreenBox {
+  const b = { minX: Infinity, minY: Infinity, maxX: -Infinity, maxY: -Infinity };
   const q = group.quadData;
   const placed: PlacedGlyph = { xy: [], uv: [] };
   for (let at = 0; at < q.length; at += QUAD_STRIDE) {
     placeGlyph(q, at, dx, dy, tanItalic, m, grow, placed);
     const c = placed.xy;
     for (let k = 0; k < 8; k += 2) {
-      b.x0 = Math.min(b.x0, c[k]); b.x1 = Math.max(b.x1, c[k]);
-      b.y0 = Math.min(b.y0, c[k + 1]); b.y1 = Math.max(b.y1, c[k + 1]);
+      b.minX = Math.min(b.minX, c[k]); b.maxX = Math.max(b.maxX, c[k]);
+      b.minY = Math.min(b.minY, c[k + 1]); b.maxY = Math.max(b.maxY, c[k + 1]);
     }
   }
   return b;

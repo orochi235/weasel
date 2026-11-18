@@ -4,7 +4,7 @@
  * something in another container would otherwise read it in that
  * container's frame and place itself as though the two frames were one.
  */
-import { rectToRect, multiply, poseFrameInverseOf, poseFrameOf, transformPath, type Affine, type Path } from '@weasel-js/geom';
+import { rectToRect, multiply, poseFrameInverseOf, poseFrameOf, transformPath, type Affine, type Path, type Rect } from '@weasel-js/geom';
 import { composeWorldPose, composesFrames, frameAtOrAbove, type PoseAdapter, type PoseComposition } from './composeFrame';
 import { derivedPartsOf, pathFromParts } from './derivedParts';
 import type { NodeId } from './types';
@@ -41,15 +41,8 @@ export function depFrameRebase<TPose>(
   };
 }
 
-interface Box {
-  x: number;
-  y: number;
-  width: number;
-  height: number;
-}
-
-function isBox(pose: unknown): pose is Box {
-  const p = pose as Partial<Box> | null;
+function isBox(pose: unknown): pose is Rect {
+  const p = pose as Partial<Rect> | null;
   return typeof p === 'object' && p !== null
     && typeof p.x === 'number' && typeof p.y === 'number'
     && typeof p.width === 'number' && typeof p.height === 'number';

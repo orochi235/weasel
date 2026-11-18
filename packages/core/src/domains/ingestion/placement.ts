@@ -1,4 +1,5 @@
 import type { IngestCtx } from './contentHandlers';
+import type { Rect } from '@weasel-js/geom';
 
 const CASCADE_OFFSET_PX = 24;
 
@@ -11,7 +12,7 @@ export function arrivalBounds(
   ctx: Pick<IngestCtx, 'point' | 'viewportWorldRect'>,
   size: { width: number; height: number },
   index: number,
-): { x: number; y: number; width: number; height: number } {
+): Rect {
   const view = ctx.viewportWorldRect();
   const center = ctx.point ?? { x: view.x + view.width / 2, y: view.y + view.height / 2 };
   const offset = index * CASCADE_OFFSET_PX;

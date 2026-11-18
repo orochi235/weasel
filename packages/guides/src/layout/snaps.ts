@@ -1,5 +1,5 @@
 import type { DropTarget, LayoutSnap } from '@weasel-js/core';
-import { distance2, rectContainsPointHalfOpen } from '@weasel-js/geom';
+import { distance2, rectContainsPointHalfOpen, type Rect } from '@weasel-js/geom';
 
 function nearestOf<TPose>(
   targets: DropTarget<TPose>[],
@@ -67,7 +67,7 @@ export function containedThenNearest<TPose>(): LayoutSnap<TPose> {
 }
 
 interface CellMeta {
-  cellRect: { x: number; y: number; width: number; height: number };
+  cellRect: Rect;
 }
 
 function isCellMeta(m: unknown): m is CellMeta {

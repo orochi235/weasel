@@ -1,3 +1,5 @@
+import type { Rect } from '@weasel-js/geom';
+
 /**
  * Parse an SVG `viewBox="x y width height"` attribute. Returns undefined
  * on null/empty/malformed input. Numbers may be separated by whitespace
@@ -5,7 +7,7 @@
  */
 export function parseViewBoxAttr(
   raw: string | null,
-): { x: number; y: number; width: number; height: number } | undefined {
+): Rect | undefined {
   if (raw == null) return undefined;
   const parts = raw.trim().split(/[\s,]+/).filter(Boolean);
   if (parts.length !== 4) return undefined;

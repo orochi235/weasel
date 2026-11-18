@@ -1,19 +1,16 @@
-import { useCallback, useMemo, useReducer, useRef, useState } from 'react';
+import { useMemo, useReducer, useState } from 'react';
 import { useKitSettings, useLatest } from '@weasel-js/react';
-import { commitOps, createDeleteOp, defineTool, pointSnap, resolveEditablePathOf, commitSelectionFrom, snapMods } from '@weasel-js/core';
-import type { ModifierState, Op, Tool } from '@weasel-js/core';
-import type { Action, ToolOptionShare } from '@weasel-js/routing';
-import { ActionDisabledReason, defineAction } from '@weasel-js/routing';
-import type { ActionDeps, InvocationCtx } from '@weasel-js/routing';
-import { pxExtent, withinPxRadius, nearestPathAnchor, reverseAnchors, type PathAnchorHit } from '@weasel-js/geom';
-import { boundsOfPath, type PolygonPath, anchorsToPath, editAnchorSetTracked, pathToAnchors, worldCoords } from '@weasel-js/geom';
-import { createPenPreviewLayer, penReachOf } from './penPreviewLayer';
-import { PEN_HANDLE_ROLES, pullHandle } from './penHandle';
+import { defineTool, pointSnap } from '@weasel-js/core';
+import type { Tool } from '@weasel-js/core';
+import type { ToolOptionShare } from '@weasel-js/routing';
+import type { PolygonPath } from '@weasel-js/geom';
 import { cursorFor } from '@weasel-js/cursor';
 import { icon } from '../icons.gen';
-import { penOptionValues, penToolOptions } from './penOptions';
-import { anchorCount, buildPath, freshScratch, resetScratch, startSubpath } from './penScratch';
-import { createPointerFollower } from '@weasel-js/editing';
+import { createPenActions } from './penActions';
+import { penToolOptions } from './penOptions';
+import { createPenPreviewLayer, penReachOf } from './penPreviewLayer';
+import { freshScratch, resetScratch } from './penScratch';
+import { createPenTrail } from './penTrail';
 
 /**
  * In-progress pen anchor. A click places a corner, with no handles. A drag
@@ -120,8 +117,7 @@ export function usePenTool(
   const { autoSelect = true, autoCommitOnClose, closeHitRadius, share } = options;
   const toolOptions = useMemo(() => penToolOptions(share, autoCommitOnClose), [share, autoCommitOnClose]);
 
-  const scratchRef = useRef<PenScratch | null>(null);
-  if (scratchRef.current === null) scratchRef.current = freshScratch();
+  const [scratch] = useState(freshScratch);
 
   const optsRef = useLatest({ autoSelect, toolOptions, closeHitRadius, kitSettings: useKitSettings() });
   const [snaps] = useState(pointSnap);
@@ -129,377 +125,17 @@ export function usePenTool(
   // Scratch mutations alone don't trigger React re-renders, so the preview
   // layer would not repaint. Force a render after every scratch mutation.
   const [, forceRender] = useReducer((x: number) => x + 1, 0);
-  const [overlay] = useState(() => createPenPreviewLayer({ state: scratchRef.current!, kitSettings: () => optsRef.current.kitSettings }));
+  const [overlay] = useState(() => createPenPreviewLayer({ state: scratch, kitSettings: () => optsRef.current.kitSettings }));
 
-  /** Write the pen's subpaths back into the node it picked up: the first
-   *  replaces the subpath it continued, any later ones are appended. Skips
-   *  the write when nothing changed, so an empty pick-up leaves no undo
-   *  entry. */
-  const commitContinuation = useCallback(
-    (s: PenScratch, trailing: PenSubpath | null, deps: ActionDeps): void => {
-      const edit = deps.editAnchors;
-      const cont = s.continuing!;
-      const drawn = [...s.finishedSubpaths, ...(trailing ? [trailing] : [])];
-      if (!edit || drawn.length === 0) return;
-      const { anchors: added, closed: addedClosed } = pathToAnchors(buildPath(drawn, null));
-      if (cont.reversed) added[0] = reverseAnchors(added[0]);
-      const next = editAnchorSetTracked(cont.original, (set) => {
-        set.anchors.splice(cont.sub, 1, added[0]);
-        set.closed.splice(cont.sub, 1, addedClosed[0]);
-        set.anchors.push(...added.slice(1));
-        set.closed.push(...addedClosed.slice(1));
-      })!;
-      if (samePath(next.path, cont.original)) return;
-      edit.applyEdit(cont.id, next.path, 'Continue path', next.origins, optsRef.current.autoSelect ? commitSelectionFrom(deps.operands) : undefined);
-    },
-    [optsRef],
+  const trail = useMemo(
+    () => createPenTrail(scratch, snaps, () => penReachOf(optsRef.current).close, forceRender),
+    [scratch, snaps, optsRef],
   );
 
-  const commit = useCallback((s: PenScratch, deps: ActionDeps): void => {
-    const trailing = s.current && s.current.anchors.length > 0 ? s.current : null;
-    if (s.continuing) {
-      commitContinuation(s, trailing, deps);
-      resetScratch(s);
-      return;
-    }
-    // One anchor draws nothing; committing it would leave an invisible node.
-    const open = trailing && trailing.anchors.length >= 2 ? trailing : null;
-    if (s.finishedSubpaths.length === 0 && !open) {
-      resetScratch(s);
-      return;
-    }
-    const allClosed =
-      s.finishedSubpaths.every((sp) => sp.closed) &&
-      (open === null || open.closed);
-    const path = buildPath(s.finishedSubpaths, open);
-    const select = optsRef.current.autoSelect ? commitSelectionFrom(deps.operands) : undefined;
-    deps.insert?.commit(boundsOfPath(path), { kind: 'path', path, closed: allClosed, style: penOptionValues(optsRef.current.toolOptions, deps).style }, undefined, select);
-    resetScratch(s);
-  }, [commitContinuation, optsRef]);
-
-  /** Whether an anchor about to land on `hit` finishes the path by joining
-   *  onto another open subpath. Its own continued subpath never counts —
-   *  reaching that one's far end is a close. Declines when the deps can't
-   *  commit the join as one op batch. */
-  const joinable = useCallback((s: PenScratch, deps: ActionDeps, hit: PathAnchorHit | null): hit is PathAnchorHit => {
-    if (!hit || hit.end === null || !s.current || s.current.anchors.length === 0) return false;
-    const cont = s.continuing;
-    if (cont && hit.id === cont.id && hit.sub === cont.sub) return false;
-    const scene = deps.scene;
-    if (!scene && !deps.applyOps) return false;
-    if (!(cont ? deps.editAnchors?.editOps : deps.insert?.build)) return false;
-    return cont?.id === hit.id || scene?.get(hit.id as never) !== undefined;
-  }, []);
-
-  /** Finish the path onto `hit`, the endpoint its last anchor was just placed
-   *  on: the other subpath's anchors follow on from it, turned around when
-   *  `hit` is its last anchor, and its node is deleted. The path being drawn
-   *  keeps its identity — a continued node keeps its id and style, and a new
-   *  path is minted the way any pen path is. One op batch, so one undo. */
-  const commitJoin = useCallback((s: PenScratch, deps: ActionDeps, hit: PathAnchorHit): void => {
-    const edit = deps.editAnchors!;
-    const scene = deps.scene;
-    const current = s.current!;
-    const { anchors: added, closed: addedClosed } = pathToAnchors(buildPath([...s.finishedSubpaths, current], null));
-
-    const other = (resolveEditablePathOf(scene?.get(hit.id as never)) ?? edit.getEditablePath(hit.id)) as PolygonPath;
-    const otherSet = pathToAnchors(other);
-    const tail = hit.end === 'last' ? reverseAnchors(otherSet.anchors[hit.sub]) : otherSet.anchors[hit.sub];
-    const joined = added[added.length - 1];
-    const joint = joined[joined.length - 1];
-    const out = current.anchors[current.anchors.length - 1].outHandle ?? tail[0].outHandle;
-    if (out) joint.outHandle = { ...out };
-    joined.push(...tail.slice(1));
-
-    const cont = s.continuing;
-    const sameNode = cont?.id === hit.id;
-    const rest = sameNode ? { anchors: [], closed: [] } : {
-      anchors: otherSet.anchors.filter((_, i) => i !== hit.sub),
-      closed: otherSet.closed.filter((_, i) => i !== hit.sub),
-    };
-    const label = 'Join paths';
-    const ops: Op[] = [];
-    let keptId: string;
-    if (cont) {
-      if (cont.reversed) added[0] = reverseAnchors(added[0]);
-      const next = editAnchorSetTracked(cont.original, (set) => {
-        set.anchors.splice(cont.sub, 1, added[0]);
-        set.closed.splice(cont.sub, 1, addedClosed[0]);
-        set.anchors.push(...added.slice(1), ...rest.anchors);
-        set.closed.push(...addedClosed.slice(1), ...rest.closed);
-        if (!sameNode) return;
-        set.anchors.splice(hit.sub, 1);
-        set.closed.splice(hit.sub, 1);
-      })!;
-      ops.push(...edit.editOps!(cont.id, next.path, label, next.origins));
-      keptId = cont.id;
-    } else {
-      const path = anchorsToPath([...added, ...rest.anchors], [...addedClosed, ...rest.closed]);
-      const built = deps.insert!.build!(boundsOfPath(path), { kind: 'path', path, closed: false, style: penOptionValues(optsRef.current.toolOptions, deps).style });
-      if (built === null) return;
-      ops.push(...built.ops);
-      keptId = built.id;
-    }
-    if (!sameNode) ops.push(createDeleteOp({ node: scene!.get(hit.id as never) as { id: string } }));
-
-    commitOps(deps, ops, label, optsRef.current.autoSelect ? { select: [keptId] } : {});
-    resetScratch(s);
-  }, [optsRef]);
-
-  /** From idle, a press on an open subpath's end anchor picks that subpath
-   *  up: it becomes `current`, turned so the pressed end is last. Returns
-   *  whether it did. */
-  const pickUpEndpoint = useCallback((deps: ActionDeps, wx: number, wy: number): boolean => {
-    const scratch = scratchRef.current!;
-    if (scratch.current || scratch.finishedSubpaths.length > 0) return false;
-    const hit = openEndNear(deps, wx, wy, penReachOf(optsRef.current).close);
-    if (!hit) return false;
-    const original = deps.editAnchors!.getEditablePath(hit.id) as PolygonPath;
-    const picked = pathToAnchors(original).anchors[hit.sub];
-    const reversed = hit.end === 'first' && picked.length > 1;
-    scratch.current = { anchors: reversed ? reverseAnchors(picked) : picked, closed: false };
-    scratch.continuing = { id: hit.id, sub: hit.sub, reversed, original };
-    return true;
-  }, [optsRef]);
-
-  /** Where an anchor pressed at `(x, y)` lands: on an open subpath's end
-   *  within the close-hit radius of the press, which `hit` names, else
-   *  wherever the snap session puts it. */
-  const placeAt = useCallback((deps: ActionDeps, x: number, y: number, mods: ModifierState): { x: number; y: number; hit: PathAnchorHit | null } => {
-    const hit = openEndNear(deps, x, y, penReachOf(optsRef.current).close);
-    if (hit) return { x: hit.x, y: hit.y, hit };
-    const last = scratchRef.current!.current?.anchors.at(-1);
-    return { ...snaps.place(deps.snap, { x, y }, snapMods({ modifiers: mods }), last).point, hit: null };
-  }, [snaps, optsRef]);
-
-  /** Is a world point within the close-hit radius of `(ax, ay)`? Measured as a
-   *  screen-space circle, so the zone stays round under non-uniform zoom. */
-  const withinCloseRadius = useCallback((deps: ActionDeps, ax: number, ay: number, wx: number, wy: number): boolean =>
-    withinPxRadius(ax - wx, ay - wy, penReachOf(optsRef.current).close, viewScale(deps)), [optsRef]);
-
-  // The rubber band and the close hint trail the `pointer` dep while a path is
-  // in progress. `followed` is the deps last followed through.
-  const trail = useMemo(() => {
-    let followed: ActionDeps | undefined;
-    const follower = createPointerFollower(() => track());
-    const track = (): void => {
-      const s = scratchRef.current!;
-      if (!s.current && s.finishedSubpaths.length === 0) follower.unfollow();
-      const at = s.current ? follower.pointer()?.get() ?? null : null;
-      // A handle drag snaps through its own session, and hides the rubber band.
-      if (!at || s.draggingHandleAt !== null) snaps.stop();
-      s.cursor = !at ? null
-        : s.draggingHandleAt !== null ? { ...at.world }
-          : snaps.trail(followed?.snap, at.world, s.current?.anchors.at(-1));
-      const first = s.current && s.current.anchors.length >= 3 ? s.current.anchors[0] : null;
-      s.closeHintActive = first !== null && s.cursor !== null && withinPxRadius(
-        first.x - s.cursor.x, first.y - s.cursor.y,
-        penReachOf(optsRef.current).close, followed?.view?.get().scale ?? { x: 1, y: 1 },
-      );
-      forceRender();
-    };
-    return {
-      /** Repaint after a scratch change. */
-      refresh: track,
-      /** The same, following `deps`' pointer from here on. */
-      update(deps: ActionDeps): void {
-        followed = deps; // eslint-disable-line react-hooks/immutability -- the trail's own deps, read by `track`
-        follower.follow(deps.pointer);
-        track();
-      },
-      stop(): void {
-        follower.unfollow();
-        snaps.stop();
-        forceRender();
-      },
-    };
-  }, [snaps, optsRef]);
-
-  /**
-   * Actions the pen owns, registered by `useToolActions` from inside the
-   * ActionsProvider — see `ToolDef.actions`. They close over `scratchRef`,
-   * so the state never leaves the hook.
-   */
-  const actions = useMemo<Action[]>(() => {
-    const s = () => scratchRef.current!;
-
-    return [
-      defineAction({
-        id: 'pen.placeAnchor',
-        label: 'Pen — place anchor',
-        eligible: { capability: 'creates-paths' },
-        requires: ['view', 'pointer', 'areaSelect', 'editAnchors', 'scene', 'applyOps', 'insert', 'operands', 'snap', 'toolOptionValues'],
-        invoker: {
-          timing: 'immediate',
-          run: (deps, p) => {
-            const press = p?.press;
-            if (!press) return;
-            // The press point, not the release: a click may drift up to the
-            // drag threshold.
-            if (pickUpEndpoint(deps, press.x, press.y)) {
-              trail.update(deps);
-              return;
-            }
-            const { x: wx, y: wy, hit } = placeAt(deps, press.x, press.y, p.mods ?? NO_KEYS);
-            const scratch = s();
-
-            // Close-on-first-anchor (>= 3 anchors). With `autoCommitOnClose`
-            // off the closed subpath stays in scratch for compound-path builds.
-            if (scratch.current && scratch.current.anchors.length >= 3) {
-              const first = scratch.current.anchors[0];
-              if (withinCloseRadius(deps, first.x, first.y, wx, wy)) {
-                scratch.current.closed = true;
-                scratch.finishedSubpaths.push(scratch.current);
-                scratch.current = null;
-                scratch.closeHintActive = false;
-                if (penOptionValues(optsRef.current.toolOptions, deps).autoCommitOnClose) { commit(scratch, deps); scratch.justClosed = true; }
-                trail.update(deps);
-                return;
-              }
-            }
-
-            const join = joinable(scratch, deps, hit);
-            scratch.current ??= startSubpath(scratch);
-            scratch.current.anchors.push({ x: wx, y: wy });
-            if (join) commitJoin(scratch, deps, hit);
-            trail.update(deps);
-          },
-        },
-      }),
-
-      defineAction({
-        id: 'pen.finishOpen',
-        label: 'Pen — finish open path',
-        eligible: { capability: 'creates-paths' },
-        requires: ['editAnchors', 'insert', 'operands', 'toolOptionValues'],
-        // Needs a path, or a double click's own lone anchor, to take back. Declining lets a
-        // ⌘-click with fewer than two anchors reach the plain-click binding.
-        enabled: () => (anchorCount(s()) >= 2 || s().current?.followsClose ? true : ActionDisabledReason.NotApplicable),
-        invoker: {
-          timing: 'immediate',
-          run: (deps, p) => {
-            const scratch = s();
-            if (!p?.viaDoubleClick && anchorCount(scratch) < 2) return 'pass';
-
-            // A double click arrives AFTER both of its clicks, so the second one has already
-            // appended an anchor: pop it, and the subpath with it when it was the only one
-            // (the FIRST click closed a subpath and the second started a fresh one).
-            if (p?.viaDoubleClick && scratch.current) {
-              scratch.current.anchors.pop();
-              if (scratch.current.anchors.length === 0) scratch.current = null;
-            }
-
-            commit(scratch, deps);
-            trail.refresh();
-            return undefined;
-          },
-        },
-      }),
-
-      {
-        id: 'pen.dragHandle',
-        label: 'Pen — drag out a bezier handle',
-        eligible: { capability: 'creates-paths' },
-        modifierRoles: PEN_HANDLE_ROLES,
-        requires: ['view', 'pointer', 'areaSelect', 'editAnchors', 'scene', 'applyOps', 'insert', 'operands', 'snap', 'toolOptionValues'],
-        invoker: {
-          timing: 'ongoing' as const,
-          start: (ctx: InvocationCtx) => {
-            const scratch = s();
-            // `drag.start` is the pointerdown position, so the anchor lands
-            // where the user pressed rather than where the drag threshold
-            // happened to be crossed.
-            const origin = ctx.drag?.start ?? ctx.world;
-            // Dragging from an open path's end picks the path up and pulls
-            // that end's own handle rather than placing a new anchor on it.
-            const pickedUp = pickUpEndpoint(ctx.deps, origin.x, origin.y);
-            // Dragging on another open path's endpoint joins onto it once
-            // the handle is set.
-            let joinHit: PathAnchorHit | null = null;
-            if (!pickedUp) {
-              const { x: ax, y: ay, hit } = placeAt(ctx.deps, origin.x, origin.y, ctx.modifiers);
-              if (joinable(scratch, ctx.deps, hit)) joinHit = hit;
-              scratch.current ??= startSubpath(scratch);
-              scratch.current.anchors.push({ x: ax, y: ay });
-            }
-            scratch.draggingHandleAt = scratch.current!.anchors.length - 1;
-            // A picked-up endpoint's in-handle belongs to the existing
-            // segment into it, which the pen does not reshape.
-            const handle = pullHandle(scratch, ctx, !pickedUp);
-            handle.to(ctx);
-            trail.update(ctx.deps);
-
-            return {
-              onMove: (moveCtx: InvocationCtx) => {
-                handle.to(moveCtx);
-                forceRender();
-              },
-              onEnd: (endCtx: InvocationCtx, reason: 'commit' | 'cancel') => {
-                const se = s();
-                try {
-                  if (reason === 'cancel') {
-                    // `start` appended the anchor (or picked a path up); a
-                    // cancel has to take it back out.
-                    if (pickedUp) {
-                      resetScratch(se);
-                    } else if (se.current && se.draggingHandleAt === se.current.anchors.length - 1) {
-                      se.current.anchors.pop();
-                      if (se.current.anchors.length === 0) se.current = null;
-                    }
-                    se.draggingHandleAt = null;
-                    return;
-                  }
-                  handle.to(endCtx);
-                  se.draggingHandleAt = null;
-                  if (joinHit && se.current) commitJoin(se, ctx.deps, joinHit);
-                } finally {
-                  handle.end();
-                  trail.refresh();
-                }
-              },
-            };
-          },
-        },
-      },
-
-      {
-        id: 'pen.finish',
-        label: 'Pen — finish path',
-        eligible: { capability: 'creates-paths' },
-        requires: ['editAnchors', 'insert', 'operands', 'toolOptionValues'],
-        enabled: () => (anchorCount(s()) > 0 ? true : ActionDisabledReason.NotApplicable),
-        invoker: {
-          timing: 'immediate' as const,
-          run: (deps) => {
-            commit(s(), deps);
-            trail.refresh();
-          },
-        },
-      },
-
-      {
-        id: 'pen.cancel',
-        label: 'Pen — discard path',
-        eligible: { capability: 'creates-paths' },
-        // Declining with nothing drawn is what keeps Escape's first-match
-        // ladder intact: an empty pen passes the key to `escape`, which goes
-        // on to clear the selection / return to the default tool.
-        enabled: () => {
-          const scratch = s();
-          return scratch.current !== null || scratch.finishedSubpaths.length > 0
-            ? true
-            : ActionDisabledReason.NotApplicable;
-        },
-        invoker: {
-          timing: 'immediate' as const,
-          run: () => {
-            resetScratch(s());
-            trail.refresh();
-          },
-        },
-      },
-    ];
-  }, [commit, placeAt, withinCloseRadius, pickUpEndpoint, joinable, commitJoin, optsRef, trail, forceRender]);
+  const actions = useMemo(
+    () => createPenActions({ scratch, snaps, trail, settings: () => optsRef.current, repaint: forceRender }),
+    [scratch, snaps, trail, optsRef],
+  );
 
   return useMemo(() => {
     return defineTool({
@@ -509,7 +145,7 @@ export function usePenTool(
       hookName: 'usePenTool',
       options: toolOptions,
       cursor: () =>
-        scratchRef.current?.closeHintActive
+        scratch.closeHintActive
           ? 'pointer'
           : cursorFor('pen', { fallback: 'crosshair' }),
       presentation: {
@@ -524,7 +160,7 @@ export function usePenTool(
       onDeactivate: () => {
         // Anything still in scratch is incomplete. Switching tools mid-path
         // discards it, as Escape does, rather than committing a stub polyline.
-        resetScratch(scratchRef.current!);
+        resetScratch(scratch);
         trail.stop();
       },
 
@@ -544,48 +180,5 @@ export function usePenTool(
         { spec: { kind: 'key' as const, key: 'Escape' }, actionId: 'pen.cancel', opts: { id: 'pen.cancel' } },
       ],
     });
-  }, [actions, trail, overlay, toolOptions]);
-}
-
-
-const NO_KEYS: ModifierState = { alt: false, ctrl: false, meta: false, shift: false };
-
-/** The end anchor of an open subpath within `px` screen pixels of `(wx, wy)`,
- *  nearest first; null when there is none. */
-function openEndNear(deps: ActionDeps, wx: number, wy: number, px: number): PathAnchorHit | null {
-  return nearestPathAnchor(pathsNear(deps, wx, wy, px), { x: wx, y: wy }, px, viewScale(deps), (h) => h.end !== null);
-}
-
-function viewScale(deps: ActionDeps): { x: number; y: number } {
-  return deps.view?.get().scale ?? { x: 1, y: 1 };
-}
-
-/** Existing editable paths, world coords, with ink within `px` screen
- *  pixels of `(wx, wy)` — front-to-back, as the area query returns them.
- *  Empty when the host publishes no `areaSelect` or `editAnchors` dep. */
-function pathsNear(
-  deps: ActionDeps,
-  wx: number,
-  wy: number,
-  px: number,
-): Array<{ id: string; path: PolygonPath }> {
-  const area = deps.areaSelect;
-  const edit = deps.editAnchors;
-  if (!area || !edit) return [];
-  const view = deps.view;
-  const e = pxExtent(px, viewScale(deps));
-  const ids = area.hitTestArea({ x: wx - e.x, y: wy - e.y, width: 2 * e.x, height: 2 * e.y }, view);
-  const out: Array<{ id: string; path: PolygonPath }> = [];
-  for (const id of ids) {
-    const path = edit.getEditablePath(id) as PolygonPath | null;
-    if (path?.kind === 'polygon') out.push({ id, path });
-  }
-  return out;
-}
-
-function samePath(a: PolygonPath, b: PolygonPath): boolean {
-  const ac = worldCoords(a), bc = worldCoords(b);
-  if (a.commands.length !== b.commands.length || ac.length !== bc.length) return false;
-  for (let i = 0; i < a.commands.length; i++) if (a.commands[i] !== b.commands[i]) return false;
-  return ac.every((v, i) => v === bc[i]);
+  }, [scratch, actions, trail, overlay, toolOptions]);
 }

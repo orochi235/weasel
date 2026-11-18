@@ -1,4 +1,4 @@
-import type { Path, GlMat3 } from '@weasel-js/geom';
+import type { Path, GlMat3, Rect } from '@weasel-js/geom';
 import type { CommandStroke, CommandFill } from '@weasel-js/paint';
 import type { TextAlign, TextDirection, TextStyle } from '@weasel-js/text';
 import type { ResolvedRun } from '@weasel-js/text';
@@ -210,7 +210,7 @@ export interface ImageDrawCommand {
    *  atlas frames need a gutter (see `SpriteSheet.spacing`) or `'nearest'`.
    *  A draw with `source` never samples mipmaps, so a frame drawn small aliases
    *  rather than blending in its neighbors. */
-  source?: { x: number; y: number; width: number; height: number };
+  source?: Rect;
   /** Mirror the sampled region within the destination rect. The quad does not
    *  move — a flipped draw covers exactly the pixels an unflipped one does. */
   flipX?: boolean;
@@ -267,5 +267,5 @@ export interface ShaderDrawCommand {
   uniforms: Record<string, ShaderUniform>;
   /** Screen-space bounding rect in CSS pixels, which the kit's vertex shader
    *  covers and nothing outside it. */
-  bounds: { x: number; y: number; width: number; height: number };
+  bounds: Rect;
 }

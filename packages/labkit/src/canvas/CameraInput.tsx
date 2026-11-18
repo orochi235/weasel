@@ -28,6 +28,7 @@ import {
   worldToScreen,
   type Yoke,
 } from '@weasel-js/core';
+import type { Rect } from '@weasel-js/geom';
 import {
   createContext,
   type ReactNode,
@@ -64,7 +65,7 @@ export interface CameraContextValue {
   /** The element the camera's dispatcher listens on. */
   element: () => HTMLElement | null;
   /** The content's own rect, frame-local, when it has one — a `<Stage>`'s. */
-  content?: { x: number; y: number; width: number; height: number };
+  content?: Rect;
 }
 
 /** The camera around the caller, or `null` outside one. */

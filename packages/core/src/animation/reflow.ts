@@ -1,11 +1,10 @@
 import { useEffect, useMemo } from 'react';
-import { prefersReducedMotion, useLatest } from '@weasel-js/react';
+import { useLatest } from '@weasel-js/react';
 import { RECT_POSE_DESCRIPTOR, type PoseDescriptor } from '../core/geometry/poseDescriptor';
 import { documentPose, effectivePose, type PosedNode, type PoseSource } from '../core/scene/effectivePose';
-import type { NodeId, PoseOverride, PoseOverrides } from '../core/scene/types';
+import type { NodeId, PoseOverrides } from '../core/scene/types';
 import type { ReflowTransition } from '../layout/types';
-import { liveAxes } from './poseTarget';
-import { createTarget, type Target } from '@weasel-js/animator';
+import { animateGlide, createGlide, type Glide } from './reflowGlide';
 import type { Animator, EasingSpec, SpringPresetName } from '@weasel-js/animator';
 
 /** How a reflowed sibling travels: a duration and easing, or a spring. */
@@ -47,20 +46,8 @@ export interface ReflowScene<TPose> extends PoseSource<TPose> {
   readonly overrides: PoseOverrides<TPose>;
 }
 
-interface Glide<TPose> {
-  entry: PoseOverride<TPose>;
-  /** Where the layout wants the node shown: what its target commits. */
-  slot: TPose;
-  settling: boolean;
-  /** Null for a pose with no axes, which glides by `lerp`. */
-  target: Target<TPose> | null;
-}
-
 /** The animator's cancel-key for one node's glide. */
 const keyFor = (id: string): string => `reflow:${id}`;
-
-/** How long a glide takes when its options name no duration: none where the reader asked for less motion. */
-const defaultMs = (): number => (prefersReducedMotion() ? 0 : 200);
 
 function samePoseDeep(a: unknown, b: unknown): boolean {
   if (Object.is(a, b)) return true;
@@ -72,6 +59,32 @@ function samePoseDeep(a: unknown, b: unknown): boolean {
     if (!Object.hasOwn(b, k) || !samePoseDeep((a as Record<string, unknown>)[k], (b as Record<string, unknown>)[k])) return false;
   }
   return true;
+}
+
+/** One commit per animator frame for every override marked since the last.
+ *  Ticks only mark the frame dirty, so all glides publish at once. */
+function createTickCommits(
+  overrides: { commit(): void },
+  animator: Animator,
+): { mark(): void; subscribe(): void; unsubscribe(): void } {
+  let dirty = false;
+  let unsubscribe: (() => void) | null = null;
+  return {
+    mark: () => { dirty = true; },
+    subscribe() {
+      if (unsubscribe) return;
+      unsubscribe = animator.onTick(() => {
+        if (!dirty) return;
+        dirty = false;
+        overrides.commit();
+      });
+    },
+    unsubscribe() {
+      if (!unsubscribe) return;
+      unsubscribe();
+      unsubscribe = null;
+    },
+  };
 }
 
 function makeReflow<TPose>(
@@ -94,30 +107,16 @@ function makeGlides<TPose>(
   read: () => ReflowTransitionOptions<TPose>,
 ): Omit<AnimatedReflow<TPose>, 'over'> {
   const glides = new Map<string, Glide<TPose>>();
-  let dirty = false;
-  let unsubscribe: (() => void) | null = null;
-
-  // Ticks only mark the frame dirty; one commit per animator frame publishes
-  // every glide at once.
-  const subscribe = (): void => {
-    if (unsubscribe) return;
-    unsubscribe = animator.onTick(() => {
-      if (!dirty) return;
-      dirty = false;
-      scene.overrides.commit();
-    });
-  };
+  const commits = createTickCommits(scene.overrides, animator);
   const unsubscribeIfIdle = (): void => {
-    if (glides.size > 0 || !unsubscribe) return;
-    unsubscribe();
-    unsubscribe = null;
+    if (glides.size === 0) commits.unsubscribe();
   };
 
   const release = (id: string, g: Glide<TPose>): void => {
     if (glides.get(id) === g) glides.delete(id);
     const nid = id as NodeId;
     scene.overrides.clear(nid, g.entry);
-    dirty = true;
+    commits.mark();
   };
 
   const run = (id: string, g: Glide<TPose>, to: TPose, settling: boolean): void => {
@@ -134,36 +133,13 @@ function makeGlides<TPose>(
     }
     // Already on its way there: whatever is moving it finishes the job.
     if (g.target?.active && samePoseDeep(g.slot, to)) return;
-    const o = read();
-    const lerp = o.geometry?.lerp;
     const onDone = (): void => {
       if (g.target?.active || !g.settling) return;
       release(id, g);
       unsubscribeIfIdle();
     };
-    const cancelKey = keyFor(id);
-    const label = o.label ?? 'reflow';
-    subscribe();
-    if (g.target) {
-      // A spring interrupts what is moving the node and takes its velocity; a timed glide adds to it.
-      if (o.spring) animator.spring<TPose>({ target: g.target, to, ...o.spring, cancelKey, label, onDone });
-      else {
-        animator.tween<TPose>({
-          target: g.target, to, ms: o.ms ?? defaultMs(), easing: o.easing, cancelKey, interrupt: false, label, onDone,
-          interpolate: lerp && ((a, b, t) => lerp(a, b, t)),
-        });
-      }
-    } else {
-      if (!lerp) throw new Error('useAnimatedReflow: this pose has no axes; supply geometry: { ..., lerp }');
-      g.slot = to;
-      const onTick = (p: number): void => {
-        g.entry.pose = lerp(from, to, p);
-        dirty = true;
-      };
-      // The shared key is what retargets: the new animation interrupts the old.
-      if (o.spring) animator.spring<number>({ from: 0, to: 1, ...o.spring, cancelKey, label, onTick, onDone });
-      else animator.tween<number>({ from: 0, to: 1, ms: o.ms ?? defaultMs(), easing: o.easing, cancelKey, label, onTick, onDone });
-    }
+    commits.subscribe();
+    animateGlide(animator, g, from, to, read(), keyFor(id), onDone, commits.mark);
     scene.overrides.commit();
   };
 
@@ -183,20 +159,8 @@ function makeGlides<TPose>(
   };
 
   const start = (id: string, pose: TPose): Glide<TPose> => {
-    const g: Glide<TPose> = { entry: { pose }, slot: pose, settling: false, target: null };
     const descriptor = read().geometry ?? (RECT_POSE_DESCRIPTOR as unknown as PoseDescriptor<TPose>);
-    const axes = liveAxes(descriptor, () => g.slot);
-    if (axes) {
-      g.target = createTarget<TPose>({
-        axes,
-        get: () => g.slot,
-        set: (slot) => { g.slot = slot; },
-        show: (shown) => {
-          g.entry.pose = shown;
-          dirty = true;
-        },
-      });
-    }
+    const g = createGlide(pose, descriptor, commits.mark);
     glides.set(id, g);
     return g;
   };

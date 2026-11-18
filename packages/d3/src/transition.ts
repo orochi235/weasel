@@ -1,10 +1,12 @@
 import type { NodeId, PoseDescriptor, Scene } from '@weasel-js/core';
-import type { Animator, AnimationHandle, EasingFn } from '@weasel-js/animator';
-import { after, createEmitter } from '@weasel-js/registry';
+import type { Animator, EasingFn } from '@weasel-js/animator';
 import { transitionCancelKey } from './cancelKey';
-import { registerRemoval } from './pendingRemovals';
+import { createTransitionHandle, type StageSettings } from './transitionHandle';
+import { createTransitionProgress } from './transitionProgress';
+import { createStageRemoval } from './transitionRemoval';
+import { createItemRuns } from './transitionRuns';
+import { customTweenJob, poseTweenJob, type TweenJob } from './transitionTweens';
 import type { D3Transition } from './types';
-import { lerp } from '@weasel-js/geom';
 
 interface TransitionCtx<TData, TPose> {
   scene: Scene<unknown, string, TPose>;
@@ -17,42 +19,6 @@ interface TransitionCtx<TData, TPose> {
    *  this transition belongs to, as opposed to later ones reusing an id. */
   incarnations: ReadonlyMap<NodeId, number | undefined>;
   name: string;
-}
-
-interface CustomTween<TData> {
-  name: string;
-  from: (d: TData, i: number) => unknown;
-  to: (d: TData, i: number) => unknown;
-  interpolate?: (from: unknown, to: unknown) => (t: number) => unknown;
-  apply: (d: TData, id: NodeId, value: unknown) => void;
-}
-
-/** Per animator and pose-tween namespace, a stop for each node a transition is running or
- *  waiting to run, with the first transition of its chain. A tween started under a cancelKey
- *  cancels the one holding it without running its `onDone`, so a transition reaching a node
- *  stops the other chains there itself, or theirs would never end. */
-const LIVE_ITEMS = new WeakMap<object, Map<string, Map<() => void, Stage>>>();
-
-function liveIn(animator: object, ns: string): Map<() => void, Stage> {
-  const byNs = LIVE_ITEMS.get(animator) ?? new Map<string, Map<() => void, Stage>>();
-  LIVE_ITEMS.set(animator, byNs);
-  if (!byNs.has(ns)) byNs.set(ns, new Map());
-  return byNs.get(ns)!;
-}
-
-function untrackItem(animator: object, ns: string, stop: () => void): void {
-  const byNs = LIVE_ITEMS.get(animator);
-  const live = byNs?.get(ns);
-  if (!byNs || !live) return;
-  live.delete(stop);
-  if (live.size === 0) byNs.delete(ns);
-}
-
-/** @internal Interrupt every transition on the node `ns` names, except those of `except`'s chain. */
-export function interruptNode(animator: object, ns: string, except?: object): void {
-  const live = LIVE_ITEMS.get(animator)?.get(ns);
-  if (!live) return;
-  for (const [stop, root] of [...live]) if (root !== except) stop();
 }
 
 /** One transition in a chain, as the transition chained after it sees it. */
@@ -82,78 +48,95 @@ export function createTransition<TData, TPose>(
   return makeStage(ctx, null, { duration: 250, easing: undefined }).handle;
 }
 
+/**
+ * The first transition of a chain heads by default for the post-join pose: record it, then
+ * write every from-pose before any tween spawns, or non-delayed tweens flash one frame of the
+ * joined pose and delayed ones hold it for the whole delay. Costs one extra setPose per node in
+ * the undo log.
+ */
+function seedFromPoses<TPose>(
+  scene: Scene<unknown, string, TPose>,
+  ids: readonly NodeId[],
+  priorPoses: ReadonlyMap<NodeId, TPose>,
+  present: (i: number) => boolean,
+): Map<NodeId, TPose> {
+  const joinedPoses = new Map<NodeId, TPose>();
+  ids.forEach((id, i) => {
+    if (present(i)) joinedPoses.set(id, scene.get(id)!.pose);
+  });
+  ids.forEach((id, i) => {
+    const from = priorPoses.get(id);
+    if (from !== undefined && present(i)) scene.setPose(id, from);
+  });
+  return joinedPoses;
+}
+
+/**
+ * Where item `i` tweens its pose. A chained transition goes from where the node stands to its
+ * `.pose()`, if any; the first of a chain from the item's prior pose to its `.pose()`, or to the
+ * joined pose without one, and is null when the item has no prior or joined pose.
+ */
+function itemEnds<TData, TPose>(
+  ctx: TransitionCtx<TData, TPose>,
+  i: number,
+  poseFn: ((d: TData, i: number) => TPose) | null,
+  joinedPoses: ReadonlyMap<NodeId, TPose> | null,
+): { from: TPose; to: TPose | undefined } | null {
+  const id = ctx.ids[i];
+  const target = poseFn ? (): TPose => poseFn(ctx.data[i], i) : null;
+  if (!joinedPoses) return { from: ctx.scene.get(id)!.pose, to: target?.() };
+  const from = ctx.priorPoses.get(id);
+  const joined = joinedPoses.get(id);
+  if (from === undefined || joined === undefined) return null;
+  return { from, to: target ? target() : joined };
+}
+
+/** Item `i`'s tweens: its pose, when it has somewhere to go, and every custom tween; `lost`
+ *  says the node has left the scene, and stops a tween writing to it. */
+function itemJobs<TData, TPose>(
+  ctx: TransitionCtx<TData, TPose>,
+  settings: StageSettings<TData, TPose>,
+  i: number,
+  ends: { from: TPose; to: TPose | undefined },
+  lost: () => boolean,
+): TweenJob[] {
+  const { scene, animator, name } = ctx;
+  const id = ctx.ids[i];
+  const d = ctx.data[i];
+  const jobs: TweenJob[] = [];
+  if (ends.to !== undefined) {
+    jobs.push(poseTweenJob(animator, settings, transitionCancelKey(name, id), ends.from, ends.to, ctx.geometry.lerp!, (pose) => {
+      if (!lost()) scene.setPose(id, pose);
+    }));
+  }
+  for (const ct of settings.tweens) {
+    jobs.push(customTweenJob(
+      animator, settings, transitionCancelKey(name, id, ct.name), ct, ct.from(d, i), ct.to(d, i),
+      (value) => { if (!lost()) ct.apply(d, id, value); },
+    ));
+  }
+  return jobs;
+}
+
 function makeStage<TData, TPose>(
   ctx: TransitionCtx<TData, TPose>,
   parent: Stage | null,
   inherited: { duration: number; easing: EasingFn | undefined },
 ): { handle: D3Transition<TData, TPose>; stage: Stage } {
   const { scene, ids, data, priorPoses, name } = ctx;
-  let duration = inherited.duration;
-  let easing = inherited.easing;
-  let delayFn: ((d: TData, i: number) => number) | null = null;
-  let poseFn: ((d: TData, i: number) => TPose) | null = null;
-  const customTweens: Array<CustomTween<TData>> = [];
-  const onStart = createEmitter();
-  const onEnd = createEmitter();
-  const onInterrupt = createEmitter();
+  const settings: StageSettings<TData, TPose> = {
+    duration: inherited.duration, easing: inherited.easing, delay: null, pose: null, tweens: [], remove: false,
+  };
+  const progress = createTransitionProgress(ids.length);
   const children: Stage[] = [];
-  let removeOnEnd = false;
-  let removalArmed = false;
-  const removalReleases: Array<[NodeId, () => void]> = [];
-
   let scheduled = false;
-  let startFired = false;
-  let canceled = false;
-  let endResolved = false;
-  let interruptedItem = false;
-  const itemDone = ids.map(() => false);
-  const itemWaiters = new Map<number, Array<() => void>>();
-  let itemsLeft = ids.length;
   /** Where the first transition in a chain heads by default: the post-join pose. */
-  const joinedPoses = new Map<NodeId, TPose>();
-  const nsOf = (i: number): string => transitionCancelKey(name, ids[i]);
+  let joinedPoses = new Map<NodeId, TPose>();
+  const keys = ids.map((id) => transitionCancelKey(name, id));
   const stops = ids.map((_, i) => (): void => stage.root.cancelItem(i, true));
-  const track = (i: number): void => void liveIn(ctx.animator, nsOf(i)).set(stops[i], stage.root);
-  const untrack = (i: number): void => untrackItem(ctx.animator, nsOf(i), stops[i]);
-  let resolveEnd: (() => void) | null = null;
-  const endPromise = new Promise<void>((resolve) => {
-    resolveEnd = resolve;
-  });
-  const handles = new Map<number, AnimationHandle[]>();
-  const pendingDelays = new Map<number, () => void>();
+  const runs = createItemRuns(ctx.animator, keys, stops, () => stage.root);
 
-  const stopItem = (i: number): void => {
-    pendingDelays.get(i)?.();
-    pendingDelays.delete(i);
-    for (const h of handles.get(i) ?? []) h.cancel();
-    handles.delete(i);
-    untrack(i);
-  };
-
-  const pushTo = <V>(map: Map<number, V[]>, i: number, v: V): void => {
-    const list = map.get(i) ?? [];
-    list.push(v);
-    map.set(i, list);
-  };
-
-  const settleIfDone = (): void => {
-    if (itemsLeft === 0 && !endResolved) {
-      endResolved = true;
-      if (!canceled) (interruptedItem ? onInterrupt : onEnd).emit();
-      resolveEnd?.();
-    }
-  };
-
-  const finishItem = (i: number): void => {
-    if (canceled || itemDone[i]) return;
-    itemDone[i] = true;
-    itemsLeft--;
-    untrack(i);
-    const waiters = itemWaiters.get(i);
-    itemWaiters.delete(i);
-    waiters?.forEach((fn) => fn());
-    settleIfDone();
-  };
+  const finishItem = (i: number): void => progress.finish(i, () => runs.untrack(i));
 
   const present = (i: number): boolean => {
     const token = scene.incarnation(ids[i]);
@@ -170,244 +153,86 @@ function makeStage<TData, TPose>(
   };
 
   const runItem = (i: number): void => {
-    if (canceled || lost(i)) return;
-    const id = ids[i];
-    const d = data[i];
-    let from: TPose | undefined;
-    let to: TPose | undefined;
-    if (parent) {
-      from = scene.get(id)!.pose;
-      to = poseFn ? poseFn(d, i) : undefined;
-    } else {
-      from = priorPoses.get(id);
-      const joined = joinedPoses.get(id);
-      if (from === undefined || joined === undefined) return finishItem(i);
-      to = poseFn ? poseFn(d, i) : joined;
-    }
+    if (progress.canceled || lost(i)) return;
+    const ends = itemEnds(ctx, i, settings.pose, parent ? null : joinedPoses);
+    if (!ends) return finishItem(i);
 
-    const jobs: Array<(done: () => void) => void> = [];
-    const ns = nsOf(i);
-    const lerpPose = ctx.geometry.lerp!;
-    if (to !== undefined) {
-      const poseFrom = from;
-      const poseTo = to;
-      jobs.push((done) => {
-        pushTo(
-          handles,
-          i,
-          ctx.animator.tween<TPose>({
-            from: poseFrom,
-            to: poseTo,
-            ms: duration,
-            easing,
-            cancelKey: ns,
-            interpolate: (a, b, t) => (t === 1 ? b : t === 0 ? a : lerpPose(a, b, t)),
-            onTick: (pose) => {
-              if (!lost(i)) scene.setPose(id, pose);
-            },
-            onDone: done,
-          }),
-        );
-      });
-    }
-    for (const ct of customTweens) {
-      const fromVal = ct.from(d, i);
-      const toVal = ct.to(d, i);
-      const customKey = transitionCancelKey(name, id, ct.name);
-      jobs.push((done) => {
-        pushTo(
-          handles,
-          i,
-          ctx.animator.tween({
-            from: fromVal,
-            to: toVal,
-            ms: duration,
-            easing,
-            cancelKey: customKey,
-            interpolator: ct.interpolate,
-            interpolate: ct.interpolate
-              ? undefined
-              : ((a, b, t) => {
-                  // Fallback per-tick interpolator for numeric values when no factory is given.
-                  if (typeof a === 'number' && typeof b === 'number') return lerp(a, b, t);
-                  throw new Error(
-                    `d3Bind.transition.tween("${ct.name}"): non-numeric value without an interpolate factory`,
-                  );
-                }),
-            onTick: (value) => {
-              if (!lost(i)) ct.apply(d, id, value);
-            },
-            onDone: done,
-          }),
-        );
-      });
-    }
-
+    const jobs = itemJobs(ctx, settings, i, ends, () => lost(i));
     if (jobs.length === 0) return finishItem(i);
-    if (!startFired) {
-      startFired = true;
-      onStart.emit();
-    }
-    let jobsLeft = jobs.length;
-    const jobDone = (): void => {
-      if (--jobsLeft === 0) finishItem(i);
-    };
-    const spawn = (): void => {
-      if (canceled) return;
-      interruptNode(ctx.animator, ns, stage.root);
-      for (const job of jobs) job(jobDone);
-    };
-    const delayMs = delayFn ? Math.max(0, delayFn(d, i)) : 0;
-    if (delayMs > 0) {
-      pendingDelays.set(i, after(delayMs, () => {
-        pendingDelays.delete(i);
-        spawn();
-      }));
-    } else {
-      spawn();
-    }
+    progress.start();
+    const delayMs = settings.delay ? Math.max(0, settings.delay(data[i], i)) : 0;
+    runs.launch(i, jobs, delayMs, () => progress.canceled, () => finishItem(i));
   };
 
+  const removal = createStageRemoval(scene, ids, {
+    cancelItem: (i) => stage.root.cancelItem(i),
+    whenItemDone: (i, fn) => stage.whenItemDone(i, fn),
+    present,
+  });
   const armRemoval = (): void => {
-    if (removalArmed || canceled) return;
-    removalArmed = true;
-    ids.forEach((id, i) => {
-      const release = registerRemoval(scene, id, () => stage.root.cancelItem(i));
-      removalReleases.push([id, release]);
-      stage.whenItemDone(i, () => {
-        release();
-        if (present(i)) scene.remove(id);
-      });
-    });
+    if (!progress.canceled) removal.arm();
   };
 
   const stage: Stage = {
     root: undefined as unknown as Stage,
     schedule(deferReady = false) {
-      if (scheduled || canceled) return;
+      if (scheduled || progress.canceled) return;
       scheduled = true;
-      if (removeOnEnd) armRemoval();
+      if (settings.remove) armRemoval();
       if (!ctx.geometry.lerp) {
         throw new Error(
           'd3Bind.transition: its pose descriptor has no `lerp` — pass `poseDescriptor` with one in D3BindOptions',
         );
       }
-      ids.forEach((_, i) => track(i));
+      ids.forEach((_, i) => runs.track(i));
       if (parent) {
         parent.schedule();
         ids.forEach((_, i) => parent.whenItemDone(i, () => runItem(i), deferReady));
       } else {
-        ids.forEach((id, i) => {
-          if (present(i)) joinedPoses.set(id, scene.get(id)!.pose);
-        });
-        // Write every from-pose before any tween spawns, or non-delayed tweens
-        // flash one frame of the joined pose and delayed ones hold it for the
-        // whole delay. Costs one extra setPose per node in the undo log.
-        ids.forEach((id, i) => {
-          const from = priorPoses.get(id);
-          if (from !== undefined && present(i)) scene.setPose(id, from);
-        });
+        joinedPoses = seedFromPoses(scene, ids, priorPoses, present);
         ids.forEach((_, i) => runItem(i));
       }
-      settleIfDone();
+      progress.settle();
       for (const child of children) child.schedule();
     },
     whenItemDone(i, fn, defer = false) {
-      if (!itemDone[i]) {
-        const list = itemWaiters.get(i) ?? [];
-        list.push(fn);
-        itemWaiters.set(i, list);
-      } else if (defer) {
-        queueMicrotask(fn);
-      } else {
-        fn();
-      }
+      progress.whenDone(i, fn, defer);
     },
     interrupt() {
-      if (!canceled && !endResolved) {
-        canceled = true;
-        ids.forEach((_, i) => stopItem(i));
-        itemWaiters.clear();
-        for (const [, release] of removalReleases) release();
-        removalReleases.length = 0;
-        onInterrupt.emit();
-        endResolved = true;
-        resolveEnd?.();
-      }
+      progress.cancel(() => {
+        ids.forEach((_, i) => runs.stop(i));
+        removal.releaseAll();
+      });
       for (const child of children) child.interrupt();
     },
     cancelItem(i, interrupted = false) {
-      if (!canceled && !itemDone[i]) {
-        itemDone[i] = true;
-        itemsLeft--;
-        itemWaiters.delete(i);
-        stopItem(i);
-        if (interrupted) interruptedItem = true;
-      }
-      removalReleases.find(([id]) => id === ids[i])?.[1]();
+      if (progress.drop(i, interrupted)) runs.stop(i);
+      removal.release(ids[i]);
       for (const child of children) child.cancelItem(i, interrupted);
-      settleIfDone();
+      progress.settle();
     },
   };
   stage.root = parent ? parent.root : stage;
 
-  const t: D3Transition<TData, TPose> = {
-    duration(ms) {
-      if (Number.isNaN(ms)) throw new RangeError('d3Bind.transition.duration: ms is a time, not NaN');
-      duration = ms;
-      return t;
-    },
-    ease(fn) {
-      easing = fn;
-      return t;
-    },
-    delay(arg) {
-      delayFn = typeof arg === 'function' ? arg : () => arg;
-      return t;
-    },
-    pose(fn) {
-      poseFn = fn;
-      return t;
-    },
-    tween(opts) {
-      customTweens.push({
-        name: opts.name,
-        from: opts.from as (d: TData, i: number) => unknown,
-        to: opts.to as (d: TData, i: number) => unknown,
-        interpolate: opts.interpolate as
-          | ((from: unknown, to: unknown) => (t: number) => unknown)
-          | undefined,
-        apply: opts.apply as (d: TData, id: NodeId, value: unknown) => void,
-      });
-      return t;
-    },
-    on(event, fn) {
-      if (event === 'start') onStart.subscribe(fn);
-      else if (event === 'end') onEnd.subscribe(fn);
-      else if (event === 'interrupt') onInterrupt.subscribe(fn);
-      return t;
-    },
-    transition() {
-      const next = makeStage(ctx, stage, { duration, easing });
+  const handle = createTransitionHandle(settings, {
+    on: progress.on,
+    chain() {
+      const next = makeStage(ctx, stage, { duration: settings.duration, easing: settings.easing });
       children.push(next.stage);
-      if (canceled) next.stage.interrupt();
+      if (progress.canceled) next.stage.interrupt();
       // Already in flight: queue behind it now, but let the caller finish
       // configuring before an item whose turn has already come runs.
-      else if (scheduled && !endResolved) next.stage.schedule(true);
+      else if (scheduled && !progress.ended) next.stage.schedule(true);
       return next.handle;
     },
-    interrupt() {
-      stage.interrupt();
-    },
+    interrupt: () => stage.interrupt(),
     remove() {
-      removeOnEnd = true;
       if (scheduled) armRemoval();
-      return t;
     },
     end() {
       stage.schedule();
-      return endPromise;
+      return progress.end;
     },
-  };
-  return { handle: t, stage };
+  });
+  return { handle, stage };
 }

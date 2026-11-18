@@ -9,7 +9,8 @@ import { hasEmojiPresentation } from './emojiCluster';
 import type { FontStyle } from './fontStyle';
 import { glyphMetricsOf, usableGlyph, type GlyphMetrics } from './glyphMetrics';
 import { warnMissingGlyph } from './glyphWarnings';
-import { resolveCanvasFallback, type ResolveResult } from './registerFont';
+import type { ResolveResult } from './registerFont';
+import { resolveCanvasFallback } from './canvasFallback';
 
 /** A code point's glyph, and the tier that ended up serving it. */
 export interface ResolvedGlyph {

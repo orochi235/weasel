@@ -23,6 +23,7 @@ import {
   type ViewApi,
   viewScreenToWorld,
 } from '@weasel-js/core';
+import type { Rect } from '@weasel-js/geom';
 import {
   crosshairRects,
   MINIMAP_CENTER_ACTION_ID,
@@ -62,12 +63,7 @@ import { OverviewMarks } from './OverviewMarks';
 export const OVERVIEW_VIEW_ID = 'overview';
 
 /** A rect in the instrument's world. */
-export interface OverviewBounds {
-  x: number;
-  y: number;
-  width: number;
-  height: number;
-}
+export type OverviewBounds = Rect;
 
 /** What an overview's `render` is handed. */
 export interface OverviewRenderArgs {

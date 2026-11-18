@@ -3,6 +3,7 @@ import type { View } from './view';
 import { viewToTransform } from './view';
 import { worldToScreen } from './viewTransform';
 import { canvasToClient } from '@weasel-js/routing';
+import type { Rect } from '@weasel-js/geom';
 
 /** Options for {@link sceneNodeClientRect}. */
 export interface SceneNodeClientRectOptions {
@@ -22,12 +23,7 @@ export interface SceneNodeClientRectOptions {
 }
 
 /** Client-coordinate rect (viewport space) — the shape `Callout`'s `anchorRect` expects. */
-export interface NodeClientRect {
-  x: number;
-  y: number;
-  width: number;
-  height: number;
-}
+export type NodeClientRect = Rect;
 
 /**
  * Project a scene node's world AABB to client (viewport) coordinates,

@@ -23,28 +23,23 @@ import {
   type Ray,
   type Vec3,
 } from '@weasel-js/geom/3d';
-import { lerp } from '@weasel-js/geom';
+import { lerp, type Rect } from '@weasel-js/geom';
 
 /** A screen rectangle in CSS pixels, in the shape core's `Bounds` uses. Both
  *  a pane's own rect and a projected world box are this — one spelling, so the
  *  two never need converting between. */
-export interface ScreenBox {
-  x: number;
-  y: number;
-  width: number;
-  height: number;
-}
+export type ScreenRect = Rect;
 
-/** A `ScreenBox` a host is being asked to outline. `tint` says why: warm for
+/** A `ScreenRect` a host is being asked to outline. `tint` says why: warm for
  *  what is selected, cool for what the gesture in hand is proposing. */
-export interface ChromeBox extends ScreenBox {
+export interface ChromeBox extends ScreenRect {
   tint?: 'selection' | 'gesture';
 }
 
 /** Screen point (y down, rect-relative) to normalized device coordinates (y up). */
 export function screenToNdc(
   point: { x: number; y: number },
-  rect: ScreenBox,
+  rect: ScreenRect,
 ): { x: number; y: number } {
   return {
     x: ((point.x - rect.x) / rect.width) * 2 - 1,
@@ -56,7 +51,7 @@ export function screenToNdc(
  *  in `rect`'s space (y down). */
 export function ndcToScreen(
   ndc: { x: number; y: number },
-  rect: ScreenBox,
+  rect: ScreenRect,
 ): { x: number; y: number } {
   return {
     x: rect.x + (ndc.x * 0.5 + 0.5) * rect.width,
@@ -78,7 +73,7 @@ export function ndcToScreen(
  */
 export function rayThroughScreenPoint(
   point: { x: number; y: number },
-  rect: ScreenBox,
+  rect: ScreenRect,
   viewProjection: Mat4,
 ): Ray | null {
   // Inverted about the eye: a camera far from the world origin puts a translation in the matrix that makes it
@@ -147,8 +142,8 @@ const EDGE_BITS = [1, 2, 4] as const;
 export function projectAabbToScreen(
   box: Aabb,
   viewProjection: Mat4,
-  rect: ScreenBox,
-): ScreenBox | null {
+  rect: ScreenRect,
+): ScreenRect | null {
   if (!(rect.width > 0 && rect.height > 0)) return null;
   const corners: Clip[] = [];
   for (let i = 0; i < 8; i++) {

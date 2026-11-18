@@ -17,6 +17,19 @@ export function trackOf(scale: ContinuousScaleFactory, min: number, max: number)
 }
 
 /**
+ * The axis as drawn while an edge drag holds the range at `range`: an edge pulled past `[min, max]` stretches the
+ * axis to hold it, and one pulled inward leaves the axis alone, so the track it vacated shows empty. `bandScale`
+ * is `scale` laid over the stretch the bands cover.
+ */
+export function drawnAxis(scale: ContinuousScaleFactory, min: number, max: number, range: readonly [number, number] | undefined) {
+  const [lo, hi] = range ?? [min, max];
+  const axisMin = Math.min(min, lo);
+  const axisMax = Math.max(max, hi);
+  const bandScale = lo === axisMin && hi === axisMax ? scale : withinAxis(scale, axisMin, axisMax);
+  return { lo, hi, axisMin, axisMax, bandScale, ...trackOf(scale, axisMin, axisMax) };
+}
+
+/**
  * `scale` laid over a stretch `[lo, hi]` of the axis `[min, max]`, for a box
  * drawn across only that stretch: a value lands where it would on the whole
  * axis. The scale it builds still runs over `[min, max]`, with its range

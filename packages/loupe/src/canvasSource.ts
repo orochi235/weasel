@@ -1,5 +1,6 @@
 import { createEmitter } from '@weasel-js/registry';
 import { type LoupePoint, type LoupeSize, loupeExtent } from './geometry';
+import type { Rect } from '@weasel-js/geom';
 
 /** A canvas whose pixels a loupe can read. */
 export type SourceCanvas = HTMLCanvasElement | OffscreenCanvas;
@@ -13,16 +14,6 @@ export type SourceContext =
   | WebGL2RenderingContext
   | ImageBitmapRenderingContext;
 
-/** Where a source canvas's pixels sit on the surface being magnified, in that
- *  surface's CSS px. The backing store is stretched over this box, so its
- *  width against the canvas's own `width` is the device-pixel ratio. */
-export interface SourceBox {
-  x: number;
-  y: number;
-  width: number;
-  height: number;
-}
-
 /** Options for {@link createCanvasSource}. */
 export interface CanvasSourceOptions {
   /**
@@ -32,9 +23,11 @@ export interface CanvasSourceOptions {
    * such a lens stays empty until the next redraw.
    */
   requestRedraw?: () => void;
-  /** Where the canvas sits on the magnified surface. Omitted, a reader works
-   *  it out — a painter over the DOM measures the canvas's own box. */
-  box?: () => SourceBox | null;
+  /** Where the canvas sits on the magnified surface, in that surface's CSS px.
+   *  The backing store is stretched over it, so its width against the canvas's
+   *  own `width` is the device-pixel ratio. Omitted, a reader works it out — a
+   *  painter over the DOM measures the canvas's own box. */
+  box?: () => Rect | null;
 }
 
 /**
@@ -56,7 +49,7 @@ export interface CanvasSource {
    * any source once `capture()` has been called on it.
    */
   readonly captured: boolean;
-  readonly box?: () => SourceBox | null;
+  readonly box?: () => Rect | null;
   /**
    * Copy the frame just drawn. Call it in the same task as the draw — right
    * after `gl.drawArrays`, `renderer.render(...)` or whatever finished the
@@ -218,7 +211,7 @@ export function sourceRegion(
   aim: LoupePoint,
   factor: number,
   size: LoupeSize,
-  box: SourceBox,
+  box: Rect,
   backing: { width: number; height: number },
 ): { sx: number; sy: number; sw: number; sh: number } {
   const { width, height } = loupeExtent(size);

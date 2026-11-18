@@ -12,14 +12,14 @@ import type { View } from 'core/viewport/view';
 import { buildSceneTree } from './buildSceneTree';
 import { sceneToAdapter } from './sceneAdapter';
 import {
-  LAYERS, ancestorsOf, buildScene, clipBox, layerOf, modelHidden, nodeIdOf, runs, sceneSpec, timeoutFor,
-  type Box, type SceneSpec,
+  LAYERS, ancestorsOf, buildScene, clipBox, layerOf, modelHidden, nodeIdOf, runs, sceneSpec, timeoutFor, type SceneSpec,
 } from './pbt.fixture';
+import type { Rect } from '@weasel-js/geom';
 
 const RUNS = 200;
 const VIEW: View = { x: 0, y: 0, scale: { x: 1, y: 1 } };
 
-const draw = (node: { id: string }, pose: Box): DrawCommand[] =>
+const draw = (node: { id: string }, pose: Rect): DrawCommand[] =>
   [{ kind: 'path', path: { kind: 'rect', ...pose }, fill: { paint: { kind: 'solid', color: node.id } } } as DrawCommand];
 
 interface Painted { id: string; clips: unknown[]; layer: number }
@@ -104,7 +104,7 @@ describe('buildSceneTree', () => {
       const adapter = sceneToAdapter(buildScene(spec)) as never;
       const culled = (node: { id: string }) => cullOf(node.id);
       const calls: string[] = [];
-      const counted = (node: { id: string }, pose: Box) => { calls.push(node.id); return draw(node, pose); };
+      const counted = (node: { id: string }, pose: Rect) => { calls.push(node.id); return draw(node, pose); };
       const full = flatten(buildSceneTree(adapter, draw as never, VIEW));
       const kept = flatten(buildSceneTree(adapter, counted as never, VIEW, undefined, undefined, culled as never));
       expect(kept).toEqual(full.filter((p) => !culled(p)));

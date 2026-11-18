@@ -1,31 +1,19 @@
-import { asNodeId, createScene, type Scene, sceneFromJSON } from '@weasel-js/core';
+import { asNodeId } from '@weasel-js/core';
 import { createEmitter } from '@weasel-js/registry';
-import { ownAt, setOwn } from '../config/path';
+import { setOwn } from '../config/path';
 import { captureTarget } from './capture';
 import { type MarkDrawOptions, resolveMarkStyle } from './drawOne';
-import {
-  boundsOf,
-  fracContains,
-  fracEncloses,
-  fracToWorld,
-  fromShape,
-  roundFrac,
-  roundPoints,
-  type WorldRect,
-  worldToFrac,
-} from './frac';
-import { MarkHistory, markHistoryOf, markUndo, restoreSceneHistory } from './history';
-import { markDataFrom } from './markData';
-import { markIdOf, splitMarkId } from './markId';
-import { migrateLegacyPoints, type SerializedMarks, shapeFor } from './markShape';
+import { fracContains, fracEncloses } from './frac';
+import { MarkHistory, markHistoryOf, markUndo } from './history';
+import { splitMarkId } from './markId';
+import { createMarkReads } from './markReads';
+import { createMarkScenes, type MarkPose, type MarkScene } from './markScenes';
+import { createMarkWrites } from './markWrites';
 import { matchesQuery } from './query';
-import { isStale as isStaleAgainst, seenValues } from './staleness';
+import { isStale as isStaleAgainst } from './staleness';
 import type {
-  Annotation,
   AnnotationData,
-  AnnotationInit,
   AnnotationMeaning,
-  AnnotationPatch,
   AnnotationSelectionMode,
   AnnotationsApi,
   AnnotationTargetInfo,
@@ -36,16 +24,7 @@ import type {
   SerializedMarkStore,
 } from './types';
 
-/** A mark's box in its target's world. Matches weasel's default `RectPose`. */
-export type MarkPose = WorldRect;
-
-/** The scene one target's marks live in. */
-export type MarkScene = Scene<AnnotationData, 'marks', MarkPose>;
-
-/** A mark scene: one layer, because marks do not stack in tiers. */
-export function createMarkScene(): MarkScene {
-  return createScene<AnnotationData, 'marks', MarkPose>({ systemLayers: [{ id: 'marks' }] });
-}
+export { createMarkScene, type MarkPose, type MarkScene } from './markScenes';
 
 /** Inputs to `createMarkStore`. */
 export interface AnnotationStoreOptions {
@@ -93,93 +72,27 @@ const NO_CONTENT = { width: 0, height: 0 };
  * pointer.
  */
 export function createMarkStore(opts: AnnotationStoreOptions): AnnotationsApi {
-  const { targets, restore } = opts;
-  const scenes = new Map<string, MarkScene>();
+  const { targets } = opts;
   const subs = createEmitter();
   const history = new MarkHistory();
-  const notify = subs.emit;
-
-  // Scene changes made while held are told to subscribers as one, once the
-  // outermost hold ends — so a click that also clears another target, or a
-  // `setSelection` spanning several, is one event with the final answer.
-  let holding = 0;
-  let heldDirty = false;
-  const hold = (fn: () => void): void => {
-    holding += 1;
-    try {
-      fn();
-    } finally {
-      holding -= 1;
-    }
-    if (holding === 0 && heldDirty) {
-      heldDirty = false;
-      notify();
-    }
-  };
 
   const exclusive = (): boolean =>
     (typeof opts.selection === 'function' ? opts.selection() : opts.selection) !== 'per-target';
-
-  /** Each scene's selection as last seen, to tell a selection change from any
-   *  other change arriving on the same channel. */
-  const lastSelection = new Map<string, string>();
-  const selectionKey = (scene: MarkScene): string => scene.getSelection().map(String).join(' ');
-
-  const clearOthers = (keep: string): void => {
-    for (const [target, scene] of scenes) {
-      if (target !== keep && scene.getSelection().length > 0) scene.setSelection([]);
-    }
-  };
-
   const targetOf = (id: string): AnnotationTargetInfo | undefined =>
     targets().find((t) => t.id === id);
-
   const contentOf = (id: string) => targetOf(id)?.content ?? NO_CONTENT;
 
-  const openScene = (target: string): MarkScene => {
-    const known = scenes.get(target);
-    if (known) return known;
-    const raw = restore ? ownAt(restore, target) : undefined;
-    const scene = raw
-      ? sceneFromJSON<AnnotationData, 'marks', MarkPose>(
-          migrateLegacyPoints(raw as SerializedMarks, contentOf(target)),
-          {},
-        )
-      : createMarkScene();
-    if (raw) restoreSceneHistory(scene, target, opts.history);
-    scenes.set(target, scene);
-    history.track(target, scene);
-    lastSelection.set(target, selectionKey(scene));
-    scene.subscribe(() => {
-      history.observe(target, scene);
-      const selected = selectionKey(scene);
-      const newlySelected = selected !== '' && selected !== lastSelection.get(target);
-      lastSelection.set(target, selected);
-      if (holding > 0) {
-        heldDirty = true;
-        return;
-      }
-      if (newlySelected && exclusive()) {
-        hold(() => {
-          heldDirty = true;
-          clearOthers(target);
-        });
-      } else {
-        notify();
-      }
-    });
-    return scene;
-  };
-
-  /** Only for scenes that exist: asking for one would create it, and the
-   *  ordering never names a target it has not seen. */
-  const historySceneAt = (target: string) => scenes.get(target);
-
-  // Restored scenes are materialized up front: everything below reads
-  // `scenes`, and a mark that only appears once its pane asks for its scene is
-  // a mark a sidebar cannot list.
-  for (const target of Object.keys(restore ?? {})) openScene(target);
+  const { scenes, openScene, hold } = createMarkScenes({
+    restore: opts.restore,
+    historyJSON: opts.history,
+    history,
+    contentOf,
+    exclusive,
+    notify: subs.emit,
+  });
   history.fromJSON(opts.history);
+  const reads = createMarkReads({ scenes, targets, contentOf });
+  const { project, marksOn, all } = reads;
 
   /** How a target's marks are drawn right now — one answer for the pane, an
    *  export and an overview, so none can disagree on a color or a dash. */
@@ -189,48 +102,6 @@ export function createMarkStore(opts: AnnotationStoreOptions): AnnotationsApi {
     config: opts.config?.(),
     meaning: typeof opts.meaning === 'function' ? opts.meaning() : opts.meaning,
   });
-
-  const project = (target: string, node: string): Annotation | undefined => {
-    const found = scenes.get(target)?.get(asNodeId(node));
-    if (!found) return undefined;
-    const { shape, ...data } = found.data;
-    const frac = roundFrac(worldToFrac(found.pose as MarkPose, contentOf(target)));
-    const points =
-      data.kind === 'point'
-        ? [{ x: frac.x, y: frac.y }]
-        : shape && roundPoints(fromShape(shape, frac));
-    return { ...data, target, id: markIdOf(target, node), frac, ...(points ? { points } : {}) };
-  };
-
-  /** Every target with a scene, in declaration order — then any whose target
-   *  the instrument has since stopped declaring, so its marks are not lost. */
-  const liveTargets = (): string[] => {
-    const declared = targets().map((t) => t.id);
-    const rest = [...scenes.keys()].filter((id) => !declared.includes(id));
-    return [...declared, ...rest];
-  };
-
-  const marksOn = (target: string): Annotation[] => {
-    const scene = scenes.get(target);
-    if (!scene) return [];
-    const out: Annotation[] = [];
-    for (const id of scene.renderOrder()) {
-      const a = project(target, String(id));
-      if (a) out.push(a);
-    }
-    return out;
-  };
-
-  const all = (): Annotation[] => liveTargets().flatMap(marksOn);
-
-  /** The node behind a public id, or undefined. */
-  const nodeOf = (id: string) => {
-    const parts = splitMarkId(id);
-    if (!parts) return undefined;
-    const scene = scenes.get(parts.target);
-    const node = scene?.get(asNodeId(parts.node));
-    return node && scene ? { ...parts, scene, node } : undefined;
-  };
 
   return {
     openScene,
@@ -261,90 +132,23 @@ export function createMarkStore(opts: AnnotationStoreOptions): AnnotationsApi {
       return isStaleAgainst(a.seen, config, keys);
     },
 
-    ...markUndo(history, historySceneAt),
+    // Only scenes that exist: asking for one would create it, and the
+    // ordering never names a target it has not seen.
+    ...markUndo(history, (target) => scenes.get(target)),
 
-    selection() {
-      const out: string[] = [];
-      for (const target of liveTargets()) {
-        const scene = scenes.get(target);
-        if (!scene) continue;
-        for (const node of scene.getSelection()) {
-          if (scene.get(node)) out.push(markIdOf(target, node));
-        }
-      }
-      return out;
-    },
-
-    setSelection(ids) {
-      const wanted = new Map<string, string[]>();
-      const only = exclusive();
-      for (const id of ids) {
-        const found = nodeOf(id);
-        if (!found) continue;
-        if (only && wanted.size > 0 && !wanted.has(found.target)) continue;
-        const node = String(found.node.id);
-        const on = wanted.get(found.target);
-        if (!on) wanted.set(found.target, [node]);
-        else if (!on.includes(node)) on.push(node);
-      }
-      hold(() => {
-        for (const [target, scene] of scenes) {
-          const next = wanted.get(target) ?? [];
-          const now = scene.getSelection();
-          if (now.length === next.length && next.every((n, i) => String(now[i]) === n)) continue;
-          scene.setSelection(next.map(asNodeId));
-        }
-      });
-    },
+    selection: reads.selection,
 
     subscribe: subs.subscribe,
 
-    add(init: AnnotationInit, config?: unknown) {
-      const target = targetOf(init.target);
-      const frac = roundFrac(init.frac);
-      const shape = shapeFor(init.kind, init.points, frac);
-      const data = markDataFrom(init, shape, seenValues(config, target?.positionDependsOn ?? []));
-      const node = openScene(init.target).add({
-        kind: 'mark',
-        layer: 'marks',
-        pose: fracToWorld(frac, target?.content ?? NO_CONTENT),
-        data,
-      });
-      return markIdOf(init.target, node);
-    },
-
-    update(id, patch: AnnotationPatch, opts) {
-      const found = nodeOf(id);
-      if (!found) return;
-      const { frac: fracPatch, points, ...meaning } = patch;
-      const nid = asNodeId(found.node.id);
-      const content = contentOf(found.target);
-      const frac = fracPatch ?? (points ? boundsOf(points) : null);
-      const bounds = roundFrac(frac ?? worldToFrac(found.node.pose as MarkPose, content));
-      const shape = points ? shapeFor(found.node.data.kind, points, bounds) : undefined;
-      const data = { ...found.node.data, ...meaning, ...(shape ? { shape } : {}) };
-      const coalesce =
-        opts?.coalesceKey === undefined ? undefined : { coalesceKey: opts.coalesceKey };
-      found.scene.batch(
-        'update mark',
-        () => {
-          if (Object.keys(meaning).length > 0 || shape) found.scene.update(nid, { data });
-          if (frac) found.scene.setPose(nid, fracToWorld(bounds, content));
-        },
-        coalesce,
-      );
-    },
-
-    setMeta(id, meta) {
-      const found = nodeOf(id);
-      if (!found) return;
-      found.scene.update(asNodeId(found.node.id), { data: { ...found.node.data, meta } });
-    },
-
-    remove(id) {
-      const found = nodeOf(id);
-      if (found) found.scene.remove(asNodeId(found.node.id));
-    },
+    ...createMarkWrites({
+      scenes,
+      openScene,
+      hold,
+      nodeOf: reads.nodeOf,
+      targetOf,
+      contentOf,
+      exclusive,
+    }),
 
     paintedMarks(target) {
       const info = targetOf(target);

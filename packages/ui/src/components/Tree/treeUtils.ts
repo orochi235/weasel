@@ -33,6 +33,27 @@ export function useControlledSet(
   return [controlled ?? own, set];
 }
 
+/** Which branches are open, held unless `value` is, and the two ways a branch changes: folded either way, or opened. */
+export function useTreeFold(
+  value: Iterable<string> | undefined,
+  initial: Iterable<string> | undefined,
+  onChange: ((ids: Set<string>) => void) | undefined,
+  held: boolean,
+) {
+  const [expanded, setExpanded] = useControlledSet(value, initial, onChange);
+  /** Fold or unfold a branch; false where the node is a leaf, or it or the tree is disabled. */
+  const toggle = (node: TreeNode): boolean => {
+    if (!node.children || node.disabled || held) return false;
+    const next = new Set(expanded);
+    if (next.has(node.id)) next.delete(node.id);
+    else next.add(node.id);
+    setExpanded(next);
+    return true;
+  };
+  const expand = (id: string): void => { if (!expanded.has(id)) setExpanded(new Set(expanded).add(id)); };
+  return { expanded, setExpanded, toggle, expand };
+}
+
 /** A row the tree shows: a node whose every ancestor is open. */
 export interface VisibleRow {
   node: TreeNode;

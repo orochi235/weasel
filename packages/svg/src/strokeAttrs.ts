@@ -4,7 +4,8 @@ import { escapeAttr } from '@weasel-js/registry';
 import { isSolidPaint, type Stroke, type StrokeAlign } from '@weasel-js/core';
 import type { ScreenLength, SvgPaint, SvgStroke } from './types';
 import { trimNumber } from './transform';
-import { WEASEL_NS_PREFIX, type PaintServerRegistry } from './gradients';
+import { WEASEL_NS_PREFIX } from './gradients';
+import type { PaintServerRegistry } from './paintServers';
 
 export type Warn = (message: string) => void;
 

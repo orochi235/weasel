@@ -99,6 +99,29 @@ export function foldEntry(top: Entry, ops: Op[], at: number): void {
   top.touchedIds = merged;
 }
 
+/** The ops a push records out of the `applied` batch: the elidable ones that
+ *  reported idle dropped, and each op that names what it caused replaced by
+ *  those. A copy unless the caller `owned` the batch. */
+export function recordedOps(applied: Op[], idle: readonly Op[], owned: boolean): Op[] {
+  const kept = idle.length === 0 ? applied : applied.filter((op) => !(op.elideNoop && idle.includes(op)));
+  return anyCaused(kept) ? kept.flatMap((op) => op.caused?.() ?? [op]) : owned || kept !== applied ? kept : kept.slice();
+}
+
+/** Coalesce a batch of `ops` touching `incoming` into `top`, replacing its
+ *  forward half. baseOps, label and id are kept: undo returns to the
+ *  pre-edit state, the original label sticks, and lists keyed on id don't
+ *  flicker. */
+export function coalesceEntry(top: Entry, ops: Op[], incoming: ReadonlySet<string>, at: number): void {
+  top.forwardOps = ops;
+  top.timestamp = at;
+  top.pushes++;
+  if (incoming.size > 0) {
+    const merged = new Set(top.touchedIds);
+    for (const id of incoming) merged.add(id);
+    top.touchedIds = merged;
+  }
+}
+
 /** Whether any op in `ops` records the ops it caused in its place: a loop
  *  rather than `some`, since every push asks. */
 export function anyCaused(ops: readonly Op[]): boolean {

@@ -8,6 +8,7 @@ import type { Animator } from '@weasel-js/animator';
 import type { Coast, CoastArgs } from './coast';
 import { coastByWrite } from './coastByWrite';
 import { coastOnTargets } from './coastOnTargets';
+import type { Rect } from '@weasel-js/geom';
 
 /** Options for the `momentum` move behavior. */
 export interface MomentumOptions {
@@ -25,7 +26,7 @@ export interface MomentumOptions {
    * rect. Object size is ignored, so to keep an object fully inside, shrink
    * the rect by the object's width and height.
    */
-  bounds?: { x: number; y: number; width: number; height: number };
+  bounds?: Rect;
   /**
    * Boundary policy when the clamped position hits an edge. 'stop' settles at
    * the edge at once. 'continue' keeps decaying, so the object drifts along

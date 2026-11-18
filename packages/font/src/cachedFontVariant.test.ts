@@ -1,5 +1,6 @@
 import { describe, it, expect, beforeEach } from 'vitest';
-import { cachedFontVariant, getAtlasFont, resolveFontVariant, _resetFontRegistryForTests } from './registerFont';
+import { getAtlasFont, _resetFontRegistryForTests } from './registerFont';
+import { cachedFontVariant, resolveFontVariant } from './resolveFontVariant';
 import { registerTestFont } from './testing/registerTestFont';
 
 beforeEach(() => {

@@ -1,4 +1,4 @@
-import { boundsOfPath, hasOpenSubpath, type Path } from '@weasel-js/geom';
+import { boundsOfPath, hasOpenSubpath, type Path, type Rect } from '@weasel-js/geom';
 import { splitPathByPolyline, snipPathByPolyline } from '@weasel-js/geom/booleans';
 import type { Op } from 'core/ops/types';
 import { createDeleteOp } from 'core/ops/delete';
@@ -20,13 +20,6 @@ export interface SliceLeaf<TNode extends SliceableNode = SliceableNode> {
   index: number;
   /** Its path with every pose above it baked in: the space the cut is in. */
   worldPath: Path;
-}
-
-interface SliceBounds {
-  x: number;
-  y: number;
-  width: number;
-  height: number;
 }
 
 /** Arguments to {@link computeSliceOps}. */
@@ -120,7 +113,7 @@ export function computeSliceOps<TNode extends SliceableNode>(
   return { ops, nextSelection };
 }
 
-function piecePose(source: unknown, b: SliceBounds): SliceBounds {
+function piecePose(source: unknown, b: Rect): Rect {
   const rest = source && typeof source === 'object' ? { ...(source as Record<string, unknown>) } : {};
   delete rest['rotation'];
   return { ...rest, x: b.x, y: b.y, width: b.width, height: b.height };

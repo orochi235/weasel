@@ -10,7 +10,7 @@ import { useEffect, useMemo } from 'react';
 import { createEnteredGroupScope, useEnteredGroup, type EnteredGroupApi } from '@weasel-js/core/engine';
 import { useDepSource } from '@weasel-js/routing/react';
 import { type NodeId, type Tool } from '@weasel-js/routing';
-import { screenBoxOf, type ScreenBox, type Viewport3d, type World3d } from '@weasel-js/kernel3d';
+import { screenBoxOf, type ScreenRect, type Viewport3d, type World3d } from '@weasel-js/kernel3d';
 import type { SolidData, SolidLayer } from './scene3d';
 import { useGroupEntryContribution } from '@weasel-js/editing/engine';
 
@@ -24,7 +24,7 @@ export interface GroupEntry3d {
   /** Whether a press can land on `id` while the current group is entered. */
   reachable: (id: NodeId) => boolean;
   /** The client-space box `id` covers: a container's spans its solids. */
-  boxOf: (id: NodeId) => ScreenBox | null;
+  boxOf: (id: NodeId) => ScreenRect | null;
   /** The `group.entry` contribution, for `entriesById`. */
   contribution: Tool;
 }
@@ -49,11 +49,11 @@ export function useGroupEntry3d(
       for (const node of scene.renderOrderNodes()) if (!reachable(node.id)) out.add(node.id);
       return nodeAtPoint(point, out);
     };
-    const boxOf = (id: NodeId): ScreenBox | null => {
+    const boxOf = (id: NodeId): ScreenRect | null => {
       const node = scene.get(id);
       if (!node) return null;
       if (node.kind !== 'group') return screenBoxOf(world, id, viewport());
-      let box: ScreenBox | null = null;
+      let box: ScreenRect | null = null;
       for (const child of scene.childrenOf(id)) box = union(box, boxOf(child));
       return box;
     };
@@ -72,7 +72,7 @@ export function useGroupEntry3d(
   return useMemo(() => ({ entered, ...scoped, contribution }), [entered, scoped, contribution]);
 }
 
-function union(a: ScreenBox | null, b: ScreenBox | null): ScreenBox | null {
+function union(a: ScreenRect | null, b: ScreenRect | null): ScreenRect | null {
   if (!a || !b) return a ?? b;
   const x = Math.min(a.x, b.x);
   const y = Math.min(a.y, b.y);

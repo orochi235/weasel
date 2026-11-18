@@ -1,7 +1,7 @@
-import { mat3, type GlMat3 } from '@weasel-js/geom';
+import { mat3, type GlMat3, type Rect } from '@weasel-js/geom';
 import type { DrawCommand, GroupDrawCommand } from '../DrawCommand';
 import { isOwnComposite } from '../effects/compositeOp';
-import { contentBox, type DeviceBox, type DeviceRect } from './contentBounds';
+import { contentBox, type DeviceBox } from './contentBounds';
 
 /** The device boxes of a list of commands, and of the children of each group
  *  among them that a tile may draw only part of. */
@@ -42,7 +42,7 @@ export function boxTree(cmds: readonly DrawCommand[], transform: GlMat3, scale: 
 
 /** `tree`'s commands without those whose box misses `tile`, at any depth; a
  *  group left with no children goes too. `tree.cmds` itself when none goes. */
-export function cullToTile(tree: BoxTree, tile: DeviceRect): readonly DrawCommand[] {
+export function cullToTile(tree: BoxTree, tile: Rect): readonly DrawCommand[] {
   const { cmds, boxes, inner } = tree;
   let out: DrawCommand[] | null = null;
   for (let i = 0; i < cmds.length; i++) {
@@ -64,6 +64,6 @@ export function cullToTile(tree: BoxTree, tile: DeviceRect): readonly DrawComman
   return out ?? cmds;
 }
 
-function boxMeets(box: DeviceBox, rect: DeviceRect): boolean {
+function boxMeets(box: DeviceBox, rect: Rect): boolean {
   return box.x0 < rect.x + rect.width && box.x1 > rect.x && box.y0 < rect.y + rect.height && box.y1 > rect.y;
 }

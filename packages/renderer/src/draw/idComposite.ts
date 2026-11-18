@@ -4,10 +4,10 @@ import { ID_COMPOSITE_WGSL } from '../gpu/webgpu/wgsl/idComposite';
 import { NO_PICK_ID, checkPickId, idChannels } from '../shaders/idOutput';
 import type { ShaderProgram } from '../shaders/ShaderProgram';
 import type { GpuDevice, GpuStencilState, GpuTexture } from '../gpu/types';
-import type { DeviceRect } from '../retain/contentBounds';
 import type { DrawContext } from './drawContext';
 import { compositeOver } from './effects';
 import type { IdFrame } from './idFrame';
+import type { Rect } from '@weasel-js/geom';
 
 /**
  * Hand a group's ids back to its parent after its color composited: every
@@ -16,7 +16,7 @@ import type { IdFrame } from './idFrame';
  * carries none. A pixel it does not claim keeps the parent's.
  */
 export function compositeIds(
-  ctx: DrawContext, ids: IdFrame, color: GpuTexture, own: GpuTexture, rect: DeviceRect,
+  ctx: DrawContext, ids: IdFrame, color: GpuTexture, own: GpuTexture, rect: Rect,
   alpha: number, groupId: number, stencil: GpuStencilState | null,
 ): void {
   const program = ids.composite;

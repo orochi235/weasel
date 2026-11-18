@@ -7,7 +7,7 @@ import { worldToScreen } from 'core/viewport/viewTransform';
 import { isRigid, pxExtentIn, targetCorners } from 'core/geometry/targetFrame';
 import type { DebugSink } from '../debug/types';
 import type { CommandFill, CommandStroke } from '@weasel-js/paint';
-import { boundsOfPath, PATH_M, PATH_L, PATH_Z, lerp } from '@weasel-js/geom';
+import { boundsOfPath, PATH_M, PATH_L, PATH_Z, lerp, type Rect } from '@weasel-js/geom';
 import {
   angleOf,
   annulusSemiAxes,
@@ -158,7 +158,7 @@ function recordLocalRect(
   debug: DebugSink,
   affordanceId: string,
   xf: TargetTransform,
-  r: { x: number; y: number; width: number; height: number },
+  r: Rect,
 ): void {
   if (!isRigid(xf)) {
     debug.recordHitbox(affordanceId, 'handle', { kind: 'polygon', points: targetCorners(r, xf) });

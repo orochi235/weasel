@@ -1,18 +1,15 @@
 import { useMemo, useRef } from 'react';
 import { useKitSettings, useLatest } from '@weasel-js/react';
-import { defineTool, OVERLAY_ROLE_STROKES, viewToTransform, worldToScreen } from '@weasel-js/core';
-import type { RenderLayer, Tool } from '@weasel-js/core';
-import type { DrawCommand } from '@weasel-js/renderer';
-import type { Action, ActionDeps, InvocationCtx, ToolKeybinding } from '@weasel-js/routing';
-import { ActionDisabledReason, defineAction } from '@weasel-js/routing';
+import { defineTool } from '@weasel-js/core';
+import type { Tool } from '@weasel-js/core';
+import type { ToolKeybinding } from '@weasel-js/routing';
 import { sliceAction } from './slice';
-import { withinPxRadius } from '@weasel-js/geom';
-import { ellipsePath, polylineFromPoints } from '@weasel-js/geom';
-import { createEmitter } from '@weasel-js/registry';
 import { icon } from '../icons.gen';
 import type { GestureBinding } from '@weasel-js/routing';
-import type {} from '../actionParamSchema';
-import { createPointerFollower } from '@weasel-js/editing';
+import { createPendingCutActions, createSliceLive, resetPendingCut, type SliceScratch } from './slicePendingCut';
+import { createPendingCutLayer } from './slicePendingCutLayer';
+
+export type { SliceScratch } from './slicePendingCut';
 
 /** Options for `useSliceTool`. */
 export interface UseSliceToolOptions {
@@ -21,11 +18,6 @@ export interface UseSliceToolOptions {
   /** Screen-px radius around the first point within which a click closes the
    *  cut into a loop and commits it. Default the `targets.sliceCloseHitPx` kit setting, else `8`. */
   closeHitRadius?: number;
-}
-
-/** The click-by-click cut in progress, in world coords. */
-export interface SliceScratch {
-  points: { x: number; y: number }[];
 }
 
 export const VERTEX_RADIUS_PX = 3;
@@ -62,157 +54,20 @@ const SLICE_BINDINGS: GestureBinding[] = [
  * `<SceneCanvas>` publishes one that cuts every path the cut crosses.
  */
 export function useSliceTool(options: UseSliceToolOptions = {}): Tool {
-  const scratchRef = useRef<SliceScratch>({ points: [] });
+  const scratch = useRef<SliceScratch>({ points: [] }).current;
   const closeHitRef = useLatest(options.closeHitRadius);
   const kitSettings = useKitSettings();
+  const live = useMemo(() => createSliceLive(), []);
 
-  // What the overlay layer's `subscribe` hears: a change to the points, and,
-  // while any are placed, every move of the pointer the rubber band follows.
-  const live = useMemo(() => {
-    const changed = createEmitter();
-    return {
-      notify: changed.emit,
-      listen: changed.subscribe,
-      ...createPointerFollower(changed.emit),
-    };
-  }, []);
+  const actions = useMemo(() => [
+    sliceAction,
+    ...createPendingCutActions(scratch, live, () =>
+      closeHitRef.current ?? kitSettings.get('targets.sliceCloseHitPx') ?? SLICE_CLOSE_HIT_PX),
+  ], [scratch, live, closeHitRef, kitSettings]);
 
-  const actions = useMemo<Action[]>(() => {
-    const points = () => scratchRef.current.points;
-    const pending = () => (points().length > 0 ? true : ActionDisabledReason.NotApplicable);
-
-    const reset = (): void => {
-      scratchRef.current.points = [];
-      live.unfollow();
-      live.notify();
-    };
-    const commit = (deps: ActionDeps): void => {
-      const cut = points().slice();
-      reset();
-      if (cut.length >= 2) deps.slice?.commit(cut);
-    };
-    const place = (deps: ActionDeps, x: number, y: number): void => {
-      const pts = points();
-      const first = pts[0];
-      const scale = deps.view?.get().scale ?? { x: 1, y: 1 };
-      if (pts.length >= 3 && withinPxRadius(x - first.x, y - first.y, closeHitRef.current ?? kitSettings.get('targets.sliceCloseHitPx') ?? SLICE_CLOSE_HIT_PX, scale)) {
-        pts.push({ x: first.x, y: first.y });
-        commit(deps);
-        return;
-      }
-      pts.push({ x, y });
-      live.follow(deps.pointer);
-      live.notify();
-    };
-
-    const eligible = { capability: 'edits-page' } as const;
-    return [
-      sliceAction,
-      defineAction({
-        id: 'slice.addPoint',
-        label: 'Slice — place point',
-        eligible,
-        requires: ['slice', 'view', 'pointer'],
-        enabled: (deps) => (deps?.['slice'] ? true : ActionDisabledReason.NotApplicable),
-        invoker: {
-          timing: 'immediate',
-          run: (deps, params) => {
-            const press = params?.press;
-            if (!press) return;
-            place(deps, press.x, press.y);
-          },
-        },
-      }),
-      {
-        id: 'slice.dragPoint',
-        label: 'Slice — drag out a point',
-        eligible,
-        requires: ['slice', 'view', 'pointer'],
-        enabled: pending,
-        invoker: {
-          timing: 'ongoing',
-          // The dispatcher hands `onEnd` a context with empty deps.
-          start: ({ deps }: InvocationCtx) => ({
-            onMove: () => {},
-            onEnd: (endCtx: InvocationCtx, reason: 'commit' | 'cancel') => {
-              if (reason === 'cancel' || points().length === 0) return;
-              const at = endCtx.drag?.current ?? endCtx.world;
-              place(deps, at.x, at.y);
-            },
-          }),
-        },
-      },
-      defineAction({
-        id: 'slice.finish',
-        label: 'Slice — cut along the points',
-        eligible,
-        requires: ['slice'],
-        enabled: pending,
-        invoker: {
-          timing: 'immediate',
-          run: (deps, params) => {
-            // A double click arrives after both of its clicks, so the second
-            // has already placed a point on top of the first.
-            if (params?.viaDoubleClick) points().pop();
-            commit(deps);
-          },
-        },
-      }),
-      {
-        id: 'slice.dropPoint',
-        label: 'Slice — take back the last point',
-        eligible,
-        enabled: pending,
-        invoker: {
-          timing: 'immediate',
-          run: () => {
-            points().pop();
-            if (points().length === 0) reset();
-            else live.notify();
-          },
-        },
-      },
-      {
-        id: 'slice.cancel',
-        label: 'Slice — discard the points',
-        eligible,
-        // Declining with nothing placed leaves Escape to the ambient `escape`.
-        enabled: pending,
-        invoker: { timing: 'immediate', run: () => reset() },
-      },
-    ];
-  }, [live, closeHitRef, kitSettings]);
-
-  const overlay = useMemo<RenderLayer<unknown>>(() => ({
-    id: 'slice-pending-cut',
-    label: 'Slice — pending cut',
-    space: 'screen',
-    subscribe: live.listen,
-    draw: (_data, view) => {
-      const pts = scratchRef.current.points;
-      if (pts.length === 0) return [];
-      const t = viewToTransform(view);
-      const toScreen = (p: { x: number; y: number }) => {
-        const [x, y] = worldToScreen(p.x, p.y, t);
-        return { x, y };
-      };
-      const run = pts.map(toScreen);
-      const at = live.pointer()?.get();
-      if (at) run.push(toScreen(at.world));
-      const stroke = OVERLAY_ROLE_STROKES['cut'];
-      const r = kitSettings.get('targets.sliceVertexRadiusPx') ?? VERTEX_RADIUS_PX;
-      const out: DrawCommand[] = [];
-      if (run.length >= 2) out.push({ kind: 'path', path: polylineFromPoints(run), stroke });
-      for (const p of pts.map(toScreen)) {
-        out.push({
-          kind: 'path',
-          path: ellipsePath({ x: p.x - r, y: p.y - r, width: r * 2, height: r * 2 }),
-          fill: { paint: stroke.paint },
-        });
-      }
-      return out;
-    },
-  }), [live, kitSettings]);
+  const overlay = useMemo(() => createPendingCutLayer(scratch, live, () =>
+    kitSettings.get('targets.sliceVertexRadiusPx') ?? VERTEX_RADIUS_PX,
+  ), [scratch, live, kitSettings]);
 
   const { keybinding } = options;
   return useMemo(() => defineTool({
@@ -224,11 +79,7 @@ export function useSliceTool(options: UseSliceToolOptions = {}): Tool {
     ...(keybinding === null ? {} : { keybinding: keybinding ?? { key: 'K' } }),
     actions,
     overlay,
-    onDeactivate: () => {
-      scratchRef.current.points = [];
-      live.unfollow();
-      live.notify();
-    },
+    onDeactivate: () => resetPendingCut(scratch, live),
     bindings: SLICE_BINDINGS,
-  }), [actions, overlay, keybinding, live]);
+  }), [scratch, actions, overlay, keybinding, live]);
 }

@@ -1,14 +1,14 @@
 import type { OngoingOverlay } from '@weasel-js/routing';
 import { poseDescriptorForNode, composeWorldPose, sceneViewPoseAdapter } from '@weasel-js/core/engine';
 import type { NodeId } from '@weasel-js/core';
-import type { Bounds4 } from './layout/container';
 import type { MoveSession } from './session';
+import type { Rect } from '@weasel-js/geom';
 
 /** A container the dragged roots are over and may not land in, and the reason it gives. */
 export interface MoveRefusal {
   id: NodeId;
   /** Its world bounds. */
-  bounds: Bounds4;
+  bounds: Rect;
   reason: string;
 }
 
@@ -23,7 +23,7 @@ export function refusalOverlays(refusal: MoveRefusal, pointer: { x: number; y: n
 }
 
 /** `id`'s world bounds, as the move measures them. */
-export function worldBoundsOf(session: MoveSession, id: NodeId): Bounds4 {
+export function worldBoundsOf(session: MoveSession, id: NodeId): Rect {
   const node = session.scene.get(id)!;
   const pose = composeWorldPose(sceneViewPoseAdapter(session.scene), id as string, session.pc.compose);
   return poseDescriptorForNode(session.projection, node).getBounds(pose);

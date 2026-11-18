@@ -6,7 +6,7 @@
  * arbitrary `TPose` values through a `PoseDescriptor`.
  */
 import type { PoseDescriptor, SpatialReference } from '@weasel-js/core';
-import { poseLinearOf } from '@weasel-js/geom';
+import { poseLinearOf, type Rect } from '@weasel-js/geom';
 
 /** Axis for flip. `'x'` mirrors horizontally (left↔right); `'y'` mirrors vertically (top↔bottom). */
 export type FlipAxis = 'x' | 'y';
@@ -32,7 +32,7 @@ export function flipPoseAboutBounds<TPose>(
   pose: TPose,
   axis: FlipAxis,
   geometry: PoseDescriptor<TPose>,
-  pivotBounds: { x: number; y: number; width: number; height: number },
+  pivotBounds: Rect,
 ): TPose {
   const src = geometry.getBounds(pose);
   const cxPivot = pivotBounds.x + pivotBounds.width / 2;

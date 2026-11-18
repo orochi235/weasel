@@ -5,6 +5,7 @@ import fc from 'fast-check';
 import { IDENTITY_POSE_COMPOSITION } from 'core/scene/composeFrame';
 import { createScene } from 'core/scene/scene';
 import { asNodeId, type NodeId, type Scene } from 'core/scene/types';
+import type { Rect } from '@weasel-js/geom';
 
 /** `{ numRuns: n }`, or the count in `WEASEL_PBT_RUNS` when set: a deep run on the fleet raises every property's at once. */
 export function runs(n: number): { numRuns: number } {
@@ -17,8 +18,6 @@ export function timeoutFor(n: number, msPerRun: number): number {
   return Math.max(5_000, runs(n).numRuns * msPerRun);
 }
 
-export interface Box { x: number; y: number; width: number; height: number }
-
 export const LAYERS = ['a', 'b', 'c'] as const;
 export type LayerId = (typeof LAYERS)[number];
 
@@ -29,7 +28,7 @@ export interface NodeSpec {
   group: boolean;
   parent: number | null;
   layer: LayerId;
-  pose: Box;
+  pose: Rect;
   hidden: boolean;
   locked: boolean;
   unpickable: boolean;
@@ -41,7 +40,7 @@ export interface NodeSpec {
 export interface SceneSpec { layers: LayerSpec[]; nodes: NodeSpec[] }
 
 /** An integer box in `[0, 200]²`, at least 1 on a side. */
-export const intBox: fc.Arbitrary<Box> = fc.record({
+export const intBox: fc.Arbitrary<Rect> = fc.record({
   x: fc.integer({ min: 0, max: 180 }),
   y: fc.integer({ min: 0, max: 180 }),
   width: fc.integer({ min: 1, max: 120 }),
@@ -93,9 +92,9 @@ export const nodeIdOf = (i: number): NodeId => asNodeId(`n${i}`);
 
 /** A clipping group's clip: its box inset by a quarter, so no clip edge lies on an integer box's edge or a
  *  half-integer query's, and no boundary convention decides an answer. */
-export const clipBox = (b: Box): Box => ({ x: b.x + 0.25, y: b.y + 0.25, width: b.width - 0.5, height: b.height - 0.5 });
+export const clipBox = (b: Rect): Rect => ({ x: b.x + 0.25, y: b.y + 0.25, width: b.width - 0.5, height: b.height - 0.5 });
 
-export type BoxScene = Scene<null, LayerId, Box>;
+export type BoxScene = Scene<null, LayerId, Rect>;
 
 /** Names a scene can give its layers and nodes in place of {@link LAYERS} and {@link nodeIdOf}'s. */
 export interface SceneNames { layer?: (l: LayerId) => string; node?: (i: number) => NodeId }
@@ -113,7 +112,7 @@ export const protoNames: SceneNames = {
 export function buildScene(spec: SceneSpec, dx = 0, dy = 0, names: SceneNames = {}): BoxScene {
   const layerName = (names.layer ?? ((l: LayerId) => l)) as (l: LayerId) => LayerId;
   const idOf = names.node ?? nodeIdOf;
-  const scene = createScene<null, LayerId, Box>({
+  const scene = createScene<null, LayerId, Rect>({
     systemLayers: spec.layers.map((l) => ({ id: layerName(l.id) })),
     composition: IDENTITY_POSE_COMPOSITION as never,
   });
@@ -127,7 +126,7 @@ export function buildScene(spec: SceneSpec, dx = 0, dy = 0, names: SceneNames = 
       data: null,
       ...(n.parent !== null ? { parent: idOf(n.parent) } : {}),
       ...(n.unpickable ? { pickable: false } : {}),
-      ...(n.group && n.clip ? { clipFromPose: (p: Box) => ({ kind: 'rect', ...clipBox(p) }) } : {}),
+      ...(n.group && n.clip ? { clipFromPose: (p: Rect) => ({ kind: 'rect', ...clipBox(p) }) } : {}),
     } as never);
   });
   // Flags after every add: a lock refuses the edits that follow it.
@@ -167,5 +166,5 @@ export function modelLocked(spec: SceneSpec, i: number): boolean {
 }
 
 /** Strictly inside `b`: callers ask at half-integers, so no point lands on an edge of an integer box. */
-export const inside = (b: Box, x: number, y: number): boolean =>
+export const inside = (b: Rect, x: number, y: number): boolean =>
   x > b.x && x < b.x + b.width && y > b.y && y < b.y + b.height;

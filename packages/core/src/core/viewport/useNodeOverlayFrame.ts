@@ -10,7 +10,7 @@
  * in its box by definition.
  */
 import { useCallback, useInsertionEffect, useRef, type RefObject } from 'react';
-import { transformPoint, invert, multiply, poseFrameOf, type Affine } from '@weasel-js/geom';
+import { transformPoint, invert, multiply, poseFrameOf, type Affine, type Rect } from '@weasel-js/geom';
 import type { Node, RectPose, Scene } from '../scene/types';
 import { useCanvasSize } from './useCanvasSize';
 import type { View } from './view';
@@ -29,7 +29,7 @@ export interface OverlayPoint {
 export interface NodeOverlayFrame {
   /** The node's composed world box, **unrotated**: the frame `toScreen` maps
    *  from, and the box to hand `paintToLocalUnits` / `paintToBoundsUnits`. */
-  box: { x: number; y: number; width: number; height: number };
+  box: Rect;
   /** Node box frame → overlay pixels: the pose's rotation and `transform`,
    *  then the view. */
   toScreen: (p: OverlayPoint) => OverlayPoint;

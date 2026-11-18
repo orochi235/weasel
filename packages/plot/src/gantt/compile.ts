@@ -1,5 +1,5 @@
 /** A gantt compiled to its marks: a row per task under its section, each task a span on a time axis. */
-import { maxOf } from '@weasel-js/geom';
+import { maxOf, type Rect } from '@weasel-js/geom';
 import { axisMarks, axisRoom } from '../axes';
 import { CHART_PAD as PAD, chartTitle } from '../chartTitle';
 import { spanMark } from '../marks/boxes';
@@ -16,7 +16,7 @@ import type { GanttData, GanttTag } from './types';
 /** Where a gantt's parts landed: the plot area, its time scale, and every task's resolved span. */
 export interface GanttLayout {
   /** The area the rows are drawn in, right of the section names and above the axis. */
-  plot: { x: number; y: number; width: number; height: number };
+  plot: Rect;
   time: TimeScale;
   schedule: GanttSchedule;
   /** What a drag snaps to, in milliseconds: an hour when the `dateFormat` carries hours, else a day. */

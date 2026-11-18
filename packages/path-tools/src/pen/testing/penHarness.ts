@@ -4,7 +4,7 @@ import { KitSettingsProvider, type KitSettingsOverrides } from '@weasel-js/react
 import { renderHook, act } from '@testing-library/react';
 import { usePenTool } from '../usePenTool';
 import { createPenPreviewLayer } from '../penPreviewLayer';
-import { worldCoords, type PolygonPath } from '@weasel-js/geom';
+import { worldCoords, type PolygonPath, type Rect } from '@weasel-js/geom';
 import type { Action, ActionDeps, InvocationCtx, OngoingHandle } from '@weasel-js/routing';
 import type { CommitSelection, InsertExtras, ModifierState, Op, SnapSource } from '@weasel-js/core';
 import { createInsertOp } from '@weasel-js/core';
@@ -67,7 +67,7 @@ function standInScene(paths: Record<string, PolygonPath>, setSelection: (ids: st
   const scene = { ...paths };
   // The area query answers by anchor-in-rect, so a box the pen sizes wrongly
   // finds nothing.
-  const hitTestArea = vi.fn((b: { x: number; y: number; width: number; height: number }) =>
+  const hitTestArea = vi.fn((b: Rect) =>
     Object.keys(scene).filter((id) => {
       const c = worldCoords(scene[id]);
       for (let i = 0; i + 1 < c.length; i += 2) {

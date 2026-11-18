@@ -1,5 +1,6 @@
 import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest';
-import { resolveFontVariant, _resetFontRegistryForTests } from './registerFont';
+import { _resetFontRegistryForTests } from './registerFont';
+import { resolveFontVariant } from './resolveFontVariant';
 import { setFontFallbackPolicy, _resetFallbackForTests } from './fallback';
 import {
   registerCanvasFont, resetBakeBudget, _resetDynamicFontsForTests, __setGlyphRasterizerForTests,

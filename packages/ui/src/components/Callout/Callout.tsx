@@ -1,22 +1,19 @@
-import { useContext, useId, useRef, useState, type ReactNode, type RefObject } from 'react';
-import { createPortal } from 'react-dom';
+import { useContext, useId, useRef, type ReactNode, type RefObject } from 'react';
 import {
   composeRenderProps,
   DialogTrigger,
   OverlayArrow,
   Dialog as RACDialog,
-  Heading,
   OverlayTriggerStateContext,
 } from 'react-aria-components';
 import { Popover, type PopoverProps } from '../Popover';
 import { useOverlayPortal, type OverlayPortalProps, type WithoutPortalTarget } from '../../overlays/portalHost';
-import { Button, CLOSE_BUTTON_PROPS } from '../Button';
 import { type AppearanceProps, useAppearance } from '../appearance';
 import { useEscapeDismissal } from './useEscapeDismissal';
+import { RectAnchor, useAnchorNudge } from './rectAnchor';
+import { CalloutBody } from './CalloutBody';
 import s from './Callout.module.css';
-
-/** Far past the 1/64px a browser lays out in, and far short of anything seen. */
-const ANCHOR_NUDGE_PX = 1 / 16;
+import type { Rect } from '@weasel-js/geom';
 
 /**
  * Composition wrapper for press-to-open callouts:
@@ -74,7 +71,7 @@ export type CalloutProps = Omit<
    * recomputes it on pan, zoom, or scene edits keeps the arrow on its target.
    * Takes precedence over `triggerRef`.
    */
-    anchorRect?: { x: number; y: number; width: number; height: number };
+    anchorRect?: Rect;
   };
 
 /**
@@ -114,14 +111,7 @@ export function Callout(props: CalloutProps) {
   const showClose = showCloseButton ?? !modal;
   const { watched, closedByEscape, dialogRef } = useEscapeDismissal(onDismiss);
   const titleId = useId();
-  // RAC repositions when the anchor changes size, through its own ResizeObserver, and not when it only moves, as
-  // it does when a consumer tracks a scene node across a pan. Popover has no public updatePosition, so each move
-  // also flips the anchor's width by a fraction of a pixel, which that observer sees and nothing else does.
-  const [seen, setSeen] = useState({ x: anchorRect?.x, y: anchorRect?.y, flip: false });
-  if (seen.x !== anchorRect?.x || seen.y !== anchorRect?.y) {
-    setSeen({ x: anchorRect?.x, y: anchorRect?.y, flip: !seen.flip });
-  }
-  const nudge = seen.flip ? ANCHOR_NUDGE_PX : 0;
+  const nudge = useAnchorNudge(anchorRect);
   // RAC's popover role-heuristic misses alertdialog; label the outer role
   // it stamps. Upstream: react-spectrum Popover.mjs querySelector('[role=dialog]').
   const popoverAriaLabelledby =
@@ -130,23 +120,7 @@ export function Callout(props: CalloutProps) {
     <>
       {portalAnchor}
       {/* Harmless while closed — RAC reads the ref only when the popover is open. */}
-      {anchorRect !== undefined &&
-        createPortal(
-          <span
-            ref={anchorRef}
-            data-callout-anchor=""
-            className={s.anchor}
-            aria-hidden="true"
-            // Dynamic geometry — inline style is the mechanism here, not styling.
-            style={{
-              left: anchorRect.x,
-              top: anchorRect.y,
-              width: anchorRect.width + nudge,
-              height: anchorRect.height,
-            }}
-          />,
-          document.body,
-        )}
+      {anchorRect !== undefined && <RectAnchor rect={anchorRect} nudge={nudge} anchorRef={anchorRef} />}
       {ready && provide(
         <OverlayTriggerStateContext.Provider value={watched}>
           <Popover
@@ -183,34 +157,18 @@ export function Callout(props: CalloutProps) {
               dialogRef={dialogRef}
             >
               {({ close }) => (
-                <>
-                  {(title !== undefined || showClose) && (
-                    <header className={s.header}>
-                      {title !== undefined && (
-                        <Heading id={titleId} slot={modal ? 'title' : undefined} className={s.title}>
-                          {title}
-                        </Heading>
-                      )}
-                      {showClose && (
-                        <Button {...CLOSE_BUTTON_PROPS}
-                          aria-label="Close callout"
-                          onClick={() => {
-                            // `close()` resolves OverlayTriggerStateContext, only
-                            // provided by DialogTrigger (composed mode). In
-                            // triggerRef/anchorRect modes there is no such
-                            // context, so `close()` is a no-op there — the
-                            // controlled-open fallback below does the work.
-                            close();
-                            onOpenChange?.(false);
-                            onDismiss?.();
-                          }}
-                        />
-                      )}
-                    </header>
-                  )}
-                  <div className={s.body}>{children}</div>
-                  {footer !== undefined && <footer className={s.footer}>{footer}</footer>}
-                </>
+                <CalloutBody
+                  modal={modal} title={title} titleId={titleId} showClose={showClose} footer={footer}
+                  onClose={() => {
+                    // `close()` resolves OverlayTriggerStateContext, only provided by DialogTrigger (composed mode).
+                    // In triggerRef/anchorRect modes it is a no-op, and the controlled-open fallback does the work.
+                    close();
+                    onOpenChange?.(false);
+                    onDismiss?.();
+                  }}
+                >
+                  {children}
+                </CalloutBody>
               )}
             </CalloutDialog>
           </Popover>

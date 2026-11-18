@@ -14,6 +14,7 @@ import type { ReorderChange } from './clusterReorder';
 import type { DiagramEdit } from './batchedEdits';
 import type { ContainerEdit, EdgeRoute, NodeMove } from './sceneSync';
 import type { SequenceEdit } from './sequence/commit';
+import type { Rect } from '@weasel-js/geom';
 
 /** One end of a data edge moved onto node `node`, at `port` or on its body. */
 export interface ReconnectChange {
@@ -274,12 +275,12 @@ export interface DiagramViewApi {
   /** The world point under a client point: where a drop from outside the canvas lands. */
   worldAt(clientX: number, clientY: number): Vec2;
   /** The world rect the canvas shows, or `null` before it has a size. */
-  visible(): { x: number; y: number; width: number; height: number } | null;
+  visible(): Rect | null;
   /** Where a node, cluster or edge is drawn, in client coordinates — for an
    *  edge, an empty rect at the midpoint along its route. `null` for an id the
    *  diagram does not hold, or before the canvas mounts. Read it again from
    *  {@link subscribeFrame}, after every paint. */
-  rectOf(id: string): { x: number; y: number; width: number; height: number } | null;
+  rectOf(id: string): Rect | null;
   /** Run `fn` after every paint: a pan, a zoom, a layout frame, a change of
    *  specs. Returns an unsubscribe; a call before the canvas mounts returns one
    *  and never runs `fn`. */

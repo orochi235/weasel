@@ -12,10 +12,11 @@ import {
 import type { EditorLook, EditorScene } from './editorMapping';
 import { dragEdit, type DragReports } from './clusterHandlers';
 import { setLookRoute, wireEnds } from './lookRoutes';
-import type { EffectBox, EffectDoc, EffectPipeline, EffectWire } from './types';
+import type { EffectDoc, EffectPipeline, EffectWire } from './types';
+import type { Rect } from '@weasel-js/geom';
 
 type Ref = { stage: string; port: string };
-type Box = EffectBox;
+type Box = Rect;
 type Shown = readonly { id?: unknown; pose?: unknown }[];
 
 /** The wire `a`–`b` describes, output first whichever end the drag began on,

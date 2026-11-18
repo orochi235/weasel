@@ -8,6 +8,7 @@ import type { PlotMark, PlotMarkData, PlotMarkTrait } from './marks/types';
 import { textMeasure, type PlotMeasure } from './measure';
 import { compilePlot, type PlotData } from './plotData';
 import { PLOT_THEME, type PlotTheme } from './theme';
+import type { Rect } from '@weasel-js/geom';
 
 /** What a plot's root node keeps: the spec, and the theme its marks were drawn in. */
 export interface PlotRootTrait {
@@ -31,7 +32,7 @@ export interface PlotSpecsOptions<TLayer extends string = 'main'> {
   /** The root's id. Default `'plot'`. */
   id?: string;
   /** The box the plot fills. */
-  box: { x: number; y: number; width: number; height: number };
+  box: Rect;
   /** Default `'main'`. */
   layer?: TLayer;
   /** Default {@link PLOT_THEME}. */

@@ -3,7 +3,7 @@
  * applying what each move takes.
  */
 import type { Op } from './op';
-import type { Entry } from './serialized';
+import type { Entry, HistoryLogger } from './serialized';
 import type { HistorySelection } from './historyTypes';
 
 /** The entries a walk moved, in the order moved, and what it applied for each. */
@@ -19,6 +19,7 @@ export interface WalkEnv {
   applyAllOrNothing(ops: Op[], settle?: () => Op[]): boolean;
   /** Throws when a journal's edits sit over the stack's top. */
   refuse(): void;
+  logger: HistoryLogger;
 }
 
 export function createWalk(env: WalkEnv) {
@@ -80,5 +81,24 @@ export function createWalk(env: WalkEnv) {
     return { walked, applied };
   }
 
-  return { walkTo, readSelection };
+  /** Walk to `n`, or, when that throws, back to where the walk began rather
+   *  than stopping partway, and rethrow. A second throw on the way back is
+   *  logged: the stacks still match the state, at whatever depth that walk
+   *  reached. `moved` runs when the stacks end somewhere other than they began. */
+  function walkOrReturn(n: number, moved: () => void): Walked {
+    const start = undoStack.length;
+    try {
+      return walkTo(n);
+    } catch (err) {
+      try {
+        walkTo(start);
+      } catch (back) {
+        env.logger.warn(`goto: returning to depth ${start} threw: ${String(back)}`);
+      }
+      if (undoStack.length !== start) moved();
+      throw err;
+    }
+  }
+
+  return { walkTo, walkOrReturn, readSelection };
 }

@@ -1,7 +1,6 @@
 import type { ColorSource } from '@weasel-js/paint';
-import { useColorCss } from '@weasel-js/theme/react';
 import {
-  forwardRef, useCallback, useEffect, useImperativeHandle, useLayoutEffect, useMemo, useRef, useState,
+  forwardRef, useCallback, useEffect, useImperativeHandle, useMemo, useRef,
   type CSSProperties,
   type KeyboardEvent as ReactKeyboardEvent,
   type MouseEvent as ReactMouseEvent,
@@ -12,9 +11,11 @@ import {
   clientToPlotPoint, modelToPlot, plotToModel,
   type ModelRange, type Point,
 } from './geometry';
-import { formatTick, linearScale, tickDecimals, type TickFormatCtx, type TickFormatter } from '@weasel-js/scale';
+import type { TickFormatter } from '@weasel-js/scale';
 import s from './Plot2D.module.css';
 import { dlog } from '../../dlog';
+import { resolveTicks, TickLabels, TickLines, useLabelWidth } from './PlotTicks';
+import { PlotAxes, PlotGrid } from './PlotFrame';
 
 /** Background grid configuration for a {@link Plot2D}. */
 export interface GridSettings {
@@ -55,7 +56,7 @@ export interface TickSettings {
   /** Space between a label and the plot edge it sits against, in px.
    *  Default 4. */
   gap?: number;
-  /** Label text for a tick. Default {@link formatTick}. */
+  /** Label text for a tick. Default `formatTick` from `@weasel-js/scale`. */
   format?: TickFormatter;
 }
 
@@ -124,50 +125,8 @@ export interface Plot2DHandle {
   readonly height: number;
 }
 
-type Axis = 'x' | 'y';
-
 // React's SVG attributes leave out `inert`, which every element takes.
 const INERT = { inert: true };
-
-const TICK_SPACING_PX: Record<Axis, number> = { x: 64, y: 24 };
-const TICK_INSET_PX: Record<Axis, number> = { x: 16, y: 4 };
-const LABEL_GAP_PX = 4;
-
-interface ResolvedTick {
-  value: number;
-  /** Plot-space position along the axis. */
-  at: number;
-  label: string;
-}
-
-function resolveTicks(
-  settings: TickSettings,
-  axis: Axis,
-  range: readonly [number, number],
-  pixels: number,
-  toPlot: (v: number) => number,
-): ResolvedTick[] {
-  let values: number[];
-  let ctx: TickFormatCtx;
-  if (settings.values) {
-    const lo = Math.min(range[0], range[1]);
-    const hi = Math.max(range[0], range[1]);
-    const eps = (hi - lo) * 1e-9;
-    values = settings.values.filter((v) => v >= lo - eps && v <= hi + eps);
-    const gaps = values.slice(1).map((v, i) => v - values[i]);
-    const even = gaps.length > 0 && gaps.every((g) => Math.abs(g - gaps[0]) <= Math.abs(gaps[0]) * 1e-9);
-    ctx = { decimals: tickDecimals(values), step: even ? gaps[0] : 0 };
-  } else {
-    const set = linearScale({ domain: range, range: [0, pixels] }).spacedTicks({
-      minSpacing: settings.minSpacing ?? TICK_SPACING_PX[axis],
-      inset: settings.inset ?? TICK_INSET_PX[axis],
-    });
-    values = set.values;
-    ctx = { decimals: set.decimals, step: set.step };
-  }
-  const format = settings.format ?? formatTick;
-  return values.map((value) => ({ value, at: toPlot(value), label: format(value, ctx) }));
-}
 
 /**
  * An SVG plotting surface with an optional grid, axes and ticks. It draws the
@@ -175,7 +134,6 @@ function resolveTicks(
  * whatever children are passed, positioned in plot space.
  */
 export const Plot2D = forwardRef<Plot2DHandle, Plot2DProps>(function Plot2D(props, ref) {
-  const css = useColorCss();
   const {
     width, height,
     xRange = [0, 1],
@@ -230,87 +188,9 @@ export const Plot2D = forwardRef<Plot2DHandle, Plot2DProps>(function Plot2D(prop
     ? resolveTicks(yTicks, 'y', yRange, height, (v) => modelToPlot({ x: xRange[0], y: v }, modelRange, plotSize).y)
     : [];
 
-  // An inside y column is right-aligned against its widest label, which only
-  // the rendered text can say.
-  const yInside = !!yTicks && (yTicks.labels ?? 'inside') === 'inside';
   const yLabelsRef = useRef<SVGGElement | null>(null);
-  const [yLabelWidth, setYLabelWidth] = useState(0);
-  const yLabelKey = yInside ? yTickList.map((t) => t.label).join('\n') : '';
-  useLayoutEffect(() => {
-    if (!yInside) return;
-    const measure = (): void => {
-      let widest = 0;
-      for (const el of yLabelsRef.current?.querySelectorAll('text') ?? []) {
-        if (typeof el.getComputedTextLength === 'function') widest = Math.max(widest, el.getComputedTextLength());
-      }
-      setYLabelWidth((prev) => (prev === widest ? prev : widest));
-    };
-    measure();
-    let live = true;
-    // A web font landing after the first measure changes every width.
-    document.fonts?.ready.then(() => { if (live) measure(); });
-    return () => { live = false; };
-  }, [yInside, yLabelKey]);
-
+  const yLabelWidth = useLabelWidth(yLabelsRef, !!yTicks && (yTicks.labels ?? 'inside') === 'inside', yTickList);
   const cls = [s.root, className].filter(Boolean).join(' ');
-
-  const renderTickLines = (axis: Axis, list: ResolvedTick[], settings: TickSettings | false | null | undefined) => {
-    if (!settings || settings.lines === false || list.length === 0) return null;
-    return (
-      <g>
-        {list.map((t) => (
-          <line
-            key={`t${axis}-${t.value}`}
-            data-plot-element="tick"
-            data-axis={axis}
-            className={s.tick}
-            {...(axis === 'x'
-              ? { x1: t.at, x2: t.at, y1: 0, y2: height }
-              : { x1: 0, x2: width, y1: t.at, y2: t.at })}
-          />
-        ))}
-      </g>
-    );
-  };
-
-  const renderTickLabels = (axis: Axis, list: ResolvedTick[], settings: TickSettings | false | null | undefined) => {
-    if (!settings || list.length === 0) return null;
-    const placement = settings.labels ?? 'inside';
-    if (placement === false) return null;
-    const outside = placement === 'outside';
-    const gap = settings.gap ?? LABEL_GAP_PX;
-    let place: { x?: number; y?: number; textAnchor: 'start' | 'middle' | 'end'; dominantBaseline?: 'central' | 'hanging' };
-    if (axis === 'y') {
-      place = outside
-        ? { x: -gap, textAnchor: 'end', dominantBaseline: 'central' }
-        : yLabelWidth > 0
-          ? { x: gap + yLabelWidth, textAnchor: 'end', dominantBaseline: 'central' }
-          : { x: gap, textAnchor: 'start', dominantBaseline: 'central' };
-    } else {
-      place = outside
-        ? { y: height + gap, textAnchor: 'middle', dominantBaseline: 'hanging' }
-        : { y: height - gap, textAnchor: 'middle' };
-    }
-    return (
-      <g ref={axis === 'y' ? yLabelsRef : undefined} className={s.tickLabels} aria-hidden="true">
-        {list.map((t) => (
-          <text
-            key={`l${axis}-${t.value}`}
-            data-plot-element="tick-label"
-            data-axis={axis}
-            data-placement={placement}
-            className={s.tickLabel}
-            x={axis === 'x' ? t.at : place.x}
-            y={axis === 'y' ? t.at : place.y}
-            textAnchor={place.textAnchor}
-            dominantBaseline={place.dominantBaseline}
-          >
-            {t.label}
-          </text>
-        ))}
-      </g>
-    );
-  };
 
   return (
     <svg
@@ -331,59 +211,14 @@ export const Plot2D = forwardRef<Plot2DHandle, Plot2DProps>(function Plot2D(prop
       onContextMenu={onContextMenu ? (e) => onContextMenu(e, coordsOf(e)) : undefined}
       onKeyDown={onKeyDown}
     >
-      {grid && (() => {
-        const divisions = grid.divisions ?? 3;
-        // Evenly-spaced internal divisions, excluding the edges (which
-        // belong to the axes). For divisions=3, fractions are 1/4, 2/4, 3/4.
-        const fractions: number[] = [];
-        for (let i = 1; i <= divisions; i++) fractions.push(i / (divisions + 1));
-        const color = css(grid.color);
-        return (
-          <g style={color === undefined ? undefined : ({ '--plot-grid': color } as CSSProperties)}>
-            {fractions.map((f) => (
-              <line
-                key={`gx-${f}`}
-                data-plot-element="grid"
-                className={s.grid}
-                x1={f * width} x2={f * width}
-                y1={0} y2={height}
-              />
-            ))}
-            {fractions.map((f) => (
-              <line
-                key={`gy-${f}`}
-                data-plot-element="grid"
-                className={s.grid}
-                x1={0} x2={width}
-                y1={f * height} y2={f * height}
-              />
-            ))}
-          </g>
-        );
-      })()}
-      {renderTickLines('x', xTickList, xTicks)}
-      {renderTickLines('y', yTickList, yTicks)}
-      {axes !== false && axes !== null && (() => {
-        const color = css(axes?.color);
-        return (
-          <g style={color === undefined ? undefined : ({ '--plot-axis': color } as CSSProperties)}>
-            <line
-              data-plot-element="axis"
-              className={s.axis}
-              x1={0} x2={width}
-              y1={height} y2={height}
-            />
-            <line
-              data-plot-element="axis"
-              className={s.axis}
-              x1={0} x2={0}
-              y1={0} y2={height}
-            />
-          </g>
-        );
-      })()}
-      {renderTickLabels('x', xTickList, xTicks)}
-      {renderTickLabels('y', yTickList, yTicks)}
+      {grid && <PlotGrid grid={grid} width={width} height={height} />}
+      <TickLines axis="x" list={xTickList} settings={xTicks} width={width} height={height} />
+      <TickLines axis="y" list={yTickList} settings={yTicks} width={width} height={height} />
+      {axes !== false && axes !== null && <PlotAxes axes={axes} width={width} height={height} />}
+      <TickLabels axis="x" list={xTickList} settings={xTicks} width={width} height={height} yLabelWidth={yLabelWidth} />
+      <TickLabels
+        axis="y" list={yTickList} settings={yTicks} width={width} height={height} yLabelWidth={yLabelWidth} groupRef={yLabelsRef}
+      />
       {children}
     </svg>
   );

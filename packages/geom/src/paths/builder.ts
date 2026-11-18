@@ -9,7 +9,7 @@
  * the others measure a shape far from 0 from an origin, as `autoOrigin` does.
  */
 
-import { rectToContour } from '../box';
+import { rectToContour, type Rect } from '../box';
 import { forEachSegment, PATH_C, PATH_L, PATH_M, PATH_Q, PATH_Z } from '../commands';
 import type { Path, PathFillRule, PathOpenFill, PolygonPath, RectPath } from '../path';
 import type { CornerSpec } from './cornerSpec';
@@ -233,7 +233,7 @@ const ELLIPSE_KAPPA = 0.5522847498307936;
 /** Closed ellipse inscribed in `bounds`, as a 4-cubic-Bezier `PolygonPath`.
  *  Matches the geometry `useEllipseTool`'s overlay paints. */
 export function ellipsePath(
-  bounds: { x: number; y: number; width: number; height: number },
+  bounds: Rect,
 ): PolygonPath {
   const cx = bounds.x + bounds.width / 2;
   const cy = bounds.y + bounds.height / 2;

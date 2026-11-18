@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { diagramScene } from '../fromData';
-import { contains, type Rect } from '../clusterFixture';
+import { contains } from '../clusterFixture';
 import type { LookOrder } from './draw';
 import { editorScene } from './editorMapping';
 import { clusterLabelIdOf } from '../dataClusters';
@@ -9,6 +9,7 @@ import { clusterAt, clusterGripOf, clusterRuns, clusterSlotsAt } from './cluster
 import { mainChain } from './mainChain';
 import { io, SKIP, w } from './skipFixture';
 import type { EffectDoc, EffectCluster, EffectPipeline } from './types';
+import type { Rect } from '@weasel-js/geom';
 
 const CHAIN: readonly string[] = ['src', 'a', 'b', 'c', 'd', 'out'];
 const PIPELINE: EffectPipeline = {

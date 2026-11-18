@@ -1,11 +1,11 @@
 import { layoutBoxOf } from '@weasel-js/core';
+import type { Rect } from '@weasel-js/geom';
 import {
   type CanvasSource,
   createCanvasSource,
   type LoupePoint,
   type LoupeSize,
   loupeExtent,
-  type SourceBox,
   type SourceCanvas,
   type SourceContext,
   sourceRegion,
@@ -41,7 +41,7 @@ export function resolveLoupeSource(source: LoupeSource | undefined): CanvasSourc
  * host, else — for an offscreen canvas, or one not on the page — the whole
  * host.
  */
-export function sourceBoxIn(source: CanvasSource, host: HTMLElement | null): SourceBox {
+export function sourceBoxIn(source: CanvasSource, host: HTMLElement | null): Rect {
   const own = source.box?.();
   if (own) return own;
   // Client px over the host's own scale: a zoomed stage or a scaled ancestor shows it larger than it lays out.
@@ -72,7 +72,7 @@ export function drawSourceLens(
     diameter: LoupeSize;
     dpr: number;
     source: CanvasSource;
-    box: SourceBox;
+    box: Rect;
   },
 ): void {
   const { aim, factor, diameter, dpr, source, box } = opts;

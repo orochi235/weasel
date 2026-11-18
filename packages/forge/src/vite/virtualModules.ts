@@ -1,4 +1,5 @@
 import { resolve } from 'node:path';
+import type { ViteDevServer } from 'vite';
 import type { IndexEntry } from '../story/types.ts';
 import { captureEntry, captureFrameEntry } from './capture/entries.ts';
 import { frameEntry, shellEntry } from './entries.ts';
@@ -55,4 +56,14 @@ export function virtualModules(options: VirtualModuleOptions, src: VirtualModule
     'capture-entry.js': () => captureEntry(),
     'capture-frame-entry.js': () => captureFrameEntry(frameStyles()),
   };
+}
+
+/** Drops the named virtual modules from every environment's module graph, so each loads afresh. */
+export function invalidateVirtual(server: ViteDevServer, names: readonly string[]): void {
+  for (const env of Object.values(server.environments)) {
+    for (const name of names) {
+      const mod = env.moduleGraph.getModuleById(`\0${PREFIX}${name}`);
+      if (mod) env.moduleGraph.invalidateModule(mod);
+    }
+  }
 }

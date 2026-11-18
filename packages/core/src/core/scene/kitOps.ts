@@ -109,18 +109,79 @@ export function registerKitOps<TData, TLayer extends string, TPose>(
 ): {
   layoutRefs: WeakMap<object, { from: LayoutStrategy<TPose> | null; to: LayoutStrategy<TPose> | null }>;
 } {
-  const { state, fnFields } = env;
-  const {
-    dependents, childDerived, invalidateDependents, invalidateChildDerivedFrom, trackChildDerived, retarget,
-    requireNode, detach, attach, addedFns, restoreNodeFunctions,
-  } = env.store;
-
-  function registerKitOp<P>(kind: string, handler: RegisteredOp<P>): void {
-    env.register(kind, handler as RegisteredOp<unknown>);
-  }
+  const { invalidateDependents, retarget, requireNode } = env.store;
+  const registerKitOp = kitOpRegistrar(env);
   const relocate = movesNode(env);
 
+  registerAdd(env);
+  registerRemove(env);
+
+  registerKitOp<{ id: NodeId; from: TPose; to: TPose }>('kit:setPose', {
+    apply: (p) => {
+      requireNode(p.id).pose = own(p.to);
+      invalidateDependents(p.id);
+    },
+    revert: (p) => {
+      requireNode(p.id).pose = own(p.from);
+      invalidateDependents(p.id);
+    },
+  });
+
+  // A derivation is handed its dependencies' nodes, not only their poses, so a
+  // connector reading `data` or `layer` goes stale on these two exactly as it
+  // does on a move.
+  registerKitOp<{ id: NodeId; from: TData; to: TData }>('kit:setData', {
+    apply: (p) => {
+      requireNode(p.id).data = own(p.to);
+      invalidateDependents(p.id);
+    },
+    revert: (p) => {
+      requireNode(p.id).data = own(p.from);
+      invalidateDependents(p.id);
+    },
+  });
+
+  registerSetLayer(env);
+
   registerKitOp<{
+    id: NodeId;
+    from: Node<TData, TLayer, TPose>['dependsOn'];
+    to: Node<TData, TLayer, TPose>['dependsOn'];
+  }>('kit:setDependsOn', {
+    apply: (p) => { retarget(p.id, p.to); },
+    revert: (p) => { retarget(p.id, p.from); },
+  });
+
+  const layoutRefs = registerSetLayout(env);
+
+  registerKitOp<{
+    id: NodeId; fromParent: NodeId | null; fromIndex: number;
+    toParent: NodeId | null; toIndex: number;
+  }>('kit:move', {
+    apply: (p) => relocate(p.id, p.fromParent, p.toParent, p.toIndex),
+    revert: (p) => relocate(p.id, p.toParent, p.fromParent, p.fromIndex),
+  });
+
+  registerLayerOps(env);
+
+  return { layoutRefs };
+}
+
+/** `env.register`, typed by the payload each kit op carries. */
+function kitOpRegistrar(env: { register(kind: string, handler: RegisteredOp<unknown>): void }) {
+  return <P>(kind: string, handler: RegisteredOp<P>): void => {
+    env.register(kind, handler as RegisteredOp<unknown>);
+  };
+}
+
+/** `kit:add`, and its revert, which takes the node back out. */
+function registerAdd<TData, TLayer extends string, TPose>(env: KitOpsEnv<TData, TLayer, TPose>): void {
+  const { state, fnFields } = env;
+  const {
+    dependents, childDerived, invalidateDependents, invalidateChildDerivedFrom, trackChildDerived,
+    detach, attach, addedFns,
+  } = env.store;
+  kitOpRegistrar(env)<{
     id: NodeId; kind: 'mark' | 'group'; layer: TLayer; pose: TPose; data: TData;
     parent: NodeId | null; index: number;
     dependsOn?: readonly NodeId[] | 'children';
@@ -167,9 +228,16 @@ export function registerKitOps<TData, TLayer extends string, TPose>(
       invalidateDependents(p.id);
     },
   });
+}
 
-  // Neither half invalidates dependents: removal's closure takes every live one.
-  registerKitOp<RemoveSnapshot<TData, TLayer, TPose>>('kit:remove', {
+/** `kit:remove`, whose revert restores every node its snapshot took. Neither
+ *  half invalidates dependents: removal's closure takes every live one. */
+function registerRemove<TData, TLayer extends string, TPose>(env: KitOpsEnv<TData, TLayer, TPose>): void {
+  const { state } = env;
+  const {
+    dependents, childDerived, invalidateChildDerivedFrom, trackChildDerived, detach, attach, restoreNodeFunctions,
+  } = env.store;
+  kitOpRegistrar(env)<RemoveSnapshot<TData, TLayer, TPose>>('kit:remove', {
     apply: (p) => {
       for (const n of p.nodes) env.forgetViewState(n.id);
       for (const d of p.detached) detach(d.id);
@@ -200,45 +268,16 @@ export function registerKitOps<TData, TLayer extends string, TPose>(
       for (const d of p.detached) invalidateChildDerivedFrom(d.parent);
     },
   });
+}
 
-  registerKitOp<{ id: NodeId; from: TPose; to: TPose }>('kit:setPose', {
-    apply: (p) => {
-      requireNode(p.id).pose = own(p.to);
-      invalidateDependents(p.id);
-    },
-    revert: (p) => {
-      requireNode(p.id).pose = own(p.from);
-      invalidateDependents(p.id);
-    },
-  });
-
-  // A derivation is handed its dependencies' nodes, not only their poses, so a
-  // connector reading `data` or `layer` goes stale on these two exactly as it
-  // does on a move.
-  registerKitOp<{ id: NodeId; from: TData; to: TData }>('kit:setData', {
-    apply: (p) => {
-      requireNode(p.id).data = own(p.to);
-      invalidateDependents(p.id);
-    },
-    revert: (p) => {
-      requireNode(p.id).data = own(p.from);
-      invalidateDependents(p.id);
-    },
-  });
-
-  registerSetLayer(env);
-
-  registerKitOp<{
-    id: NodeId;
-    from: Node<TData, TLayer, TPose>['dependsOn'];
-    to: Node<TData, TLayer, TPose>['dependsOn'];
-  }>('kit:setDependsOn', {
-    apply: (p) => { retarget(p.id, p.to); },
-    revert: (p) => { retarget(p.id, p.from); },
-  });
-
-  /** The strategies each live `kit:setLayout` payload swaps between. A payload
-   *  replayed from a persisted history has none, and resolves its keys. */
+/** `kit:setLayout`. Answers with the strategies each live payload swaps
+ *  between; a payload replayed from a persisted history has none, and
+ *  resolves its keys. */
+function registerSetLayout<TData, TLayer extends string, TPose>(
+  env: KitOpsEnv<TData, TLayer, TPose>,
+): WeakMap<object, { from: LayoutStrategy<TPose> | null; to: LayoutStrategy<TPose> | null }> {
+  const { fnFields } = env;
+  const { requireNode } = env.store;
   const layoutRefs = new WeakMap<object, { from: LayoutStrategy<TPose> | null; to: LayoutStrategy<TPose> | null }>();
   function placeLayout(p: SetLayoutPayload, side: 'from' | 'to'): void {
     const node = requireNode(p.id) as unknown as FnBearingNode;
@@ -254,20 +293,9 @@ export function registerKitOps<TData, TLayer extends string, TPose>(
     if (layout === null) delete node.layout;
     else field.write(node, layout);
   }
-  registerKitOp<SetLayoutPayload>('kit:setLayout', {
+  kitOpRegistrar(env)<SetLayoutPayload>('kit:setLayout', {
     apply: (p) => { placeLayout(p, 'to'); },
     revert: (p) => { placeLayout(p, 'from'); },
   });
-
-  registerKitOp<{
-    id: NodeId; fromParent: NodeId | null; fromIndex: number;
-    toParent: NodeId | null; toIndex: number;
-  }>('kit:move', {
-    apply: (p) => relocate(p.id, p.fromParent, p.toParent, p.toIndex),
-    revert: (p) => relocate(p.id, p.toParent, p.fromParent, p.fromIndex),
-  });
-
-  registerLayerOps(env);
-
-  return { layoutRefs };
+  return layoutRefs;
 }

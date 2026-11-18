@@ -13,7 +13,8 @@ import type {
 } from './types';
 import { pathAsSvgDraws } from './openSubpathFill';
 import { formatMatrix, trimNumber } from './transform';
-import { PaintServerRegistry, WEASEL_NS, WEASEL_NS_PREFIX } from './gradients';
+import { WEASEL_NS, WEASEL_NS_PREFIX } from './gradients';
+import { PaintServerRegistry } from './paintServers';
 import { attrNames, fitLeafXml, groupPaintAttrs } from './groupPaintXml';
 
 const NOTHING_PAINTED: ReadonlySet<string> = new Set();

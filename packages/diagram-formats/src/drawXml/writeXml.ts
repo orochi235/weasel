@@ -1,7 +1,7 @@
 /** The XML elements draw-style cells are written as. */
 import type { Vec2 } from '@weasel-js/core/math';
 import { escapeAttr } from '@weasel-js/registry';
-import type { Box } from './pageCells';
+import type { Rect } from '@weasel-js/geom';
 
 /** A coordinate to four places, which is as fine as anything here is drawn. */
 export const num = (n: number): string => String(Math.round(n * 10000) / 10000);
@@ -15,7 +15,7 @@ export function attrs(pairs: readonly (readonly [string, string | number | undef
 }
 
 /** A vertex cell: its box, relative to `origin`, the corner of the cell holding it. */
-export function vertexXml(cell: { id: string; value: string; style: string; parent: string; group?: boolean }, box: Box, origin: Vec2): string {
+export function vertexXml(cell: { id: string; value: string; style: string; parent: string; group?: boolean }, box: Rect, origin: Vec2): string {
   const head = attrs([
     ['id', cell.id], ['value', cell.value], ['style', cell.style], ['vertex', '1'],
     ['connectable', cell.group === true ? '0' : undefined], ['parent', cell.parent],

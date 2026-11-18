@@ -1,5 +1,4 @@
-import { mat3 } from '@weasel-js/geom';
-import type { DeviceRect } from '../retain/contentBounds';
+import { mat3, type Rect } from '@weasel-js/geom';
 import type { ShaderUniform } from '../shaders/registerProgram';
 import type { ShaderProgram } from '../shaders/ShaderProgram';
 import type { GpuTexture } from '../gpu/types';
@@ -54,7 +53,7 @@ export function drawFullscreenQuad(
 /** Draw `texture` over `rect` of the drawing buffer, device pixels, into the
  *  target `ctx.renderTarget` names, then put that target's viewport back. */
 export function compositeOver(
-  ctx: DrawContext, program: ShaderProgram, texture: GpuTexture, rect: DeviceRect,
+  ctx: DrawContext, program: ShaderProgram, texture: GpuTexture, rect: Rect,
   composite: { alpha: number; colorMatrix: Float32Array }, draw?: DrawOptions,
 ): void {
   const height = ctx.deviceHeight!;
@@ -69,12 +68,12 @@ export function compositeOver(
 
 /** Screen→clip aimed at `rect`, device pixels, of a buffer `scale` device
  *  pixels to the CSS pixel. */
-export function windowProjection(rect: DeviceRect, scale: number): Float32Array {
+export function windowProjection(rect: Rect, scale: number): Float32Array {
   const toClip = mat3.screenToClip(rect.width / scale, rect.height / scale);
   return mat3.toUniform(mat3.translated(toClip, -rect.x / scale, -rect.y / scale));
 }
 
 /** Whether `rect` lies inside a `width × height` drawing buffer. */
-export function insideBuffer(rect: DeviceRect, width: number, height: number): boolean {
+export function insideBuffer(rect: Rect, width: number, height: number): boolean {
   return rect.x >= 0 && rect.y >= 0 && rect.x + rect.width <= width && rect.y + rect.height <= height;
 }

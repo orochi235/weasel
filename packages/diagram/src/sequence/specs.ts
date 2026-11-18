@@ -14,10 +14,11 @@ import { contentBox, type Outline } from '../outline';
 import { diagramThemeFrom, roleEdgeStyle, roleStyle, themeFont } from '../theme/resolve';
 import type { DiagramTheme } from '../theme/types';
 import { sequenceLayout, type SequenceLayout } from './layout';
-import { SEQ, type SeqRect } from './metrics';
+import { SEQ } from './metrics';
 import type { SeqPartKind, SeqPartTrait, SequenceGeometry } from './trait';
 import type { SeqMarkRef, SeqStep, SeqTextTarget, SequenceData } from './types';
 import { flatSteps } from './columns';
+import type { Rect } from '@weasel-js/geom';
 
 /** The theme role each kind of part is drawn in, where its data names none. */
 export const SEQUENCE_ROLES = { note: 'warning', number: 'accent' } as const;
@@ -51,18 +52,18 @@ class PartSpecs {
 
   constructor(readonly root: string, readonly at: Vec2, readonly font: Font) {}
 
-  place(r: SeqRect): RectPose {
+  place(r: Rect): RectPose {
     return { x: this.at.x + r.x, y: this.at.y + r.y, width: r.width, height: r.height };
   }
 
-  push(id: string, seq: Omit<SeqPartTrait, 'root'>, r: SeqRect, data: Omit<DiagramSceneData, 'diagram'> & { diagram?: object }): void {
+  push(id: string, seq: Omit<SeqPartTrait, 'root'>, r: Rect, data: Omit<DiagramSceneData, 'diagram'> & { diagram?: object }): void {
     this.specs.push({
       id: `${this.root}/${id}` as never, kind: 'mark', layer: 'main', parent: this.root as never, pickable: false, pose: this.place(r),
       data: { ...data, diagram: { ...data.diagram, seq: { root: this.root, ...seq } } } as DiagramSceneData,
     });
   }
 
-  body(id: string, part: SeqPartKind, of: string | undefined, r: SeqRect, outline: Outline, style: NodeStyle, dash?: number[]): void {
+  body(id: string, part: SeqPartKind, of: string | undefined, r: Rect, outline: Outline, style: NodeStyle, dash?: number[]): void {
     const lines = dash ?? style.dash;
     this.push(id, { part, ...(of !== undefined ? { id: of } : {}) }, r, {
       diagram: { outline },
@@ -71,7 +72,7 @@ class PartSpecs {
     });
   }
 
-  line(id: string, part: SeqPartKind, of: string | undefined, r: SeqRect, d: string, stroke: DiagramSceneData['stroke'], fill?: string): void {
+  line(id: string, part: SeqPartKind, of: string | undefined, r: Rect, d: string, stroke: DiagramSceneData['stroke'], fill?: string): void {
     this.push(id, { part, ...(of !== undefined ? { id: of } : {}) }, r, {
       diagram: { mark: { d } }, stroke, ...(fill !== undefined ? { fill: { paint: { color: fill } } } : {}),
     });
@@ -83,7 +84,7 @@ class PartSpecs {
     seq.marks = refs;
   }
 
-  text(id: string, r: SeqRect, text: string, color: string, target?: SeqTextTarget, face: { fontSize?: number; fontWeight?: number } = {}, centered = true): void {
+  text(id: string, r: Rect, text: string, color: string, target?: SeqTextTarget, face: { fontSize?: number; fontWeight?: number } = {}, centered = true): void {
     // A hair wider than measured, so the painter never breaks a line the layout kept whole.
     const box = { ...r, x: r.x - 1, width: r.width + 2 };
     this.push(id, { part: 'text', ...(target ? { target } : {}) }, box, {
@@ -214,7 +215,7 @@ const geometryOf = (layout: SequenceLayout): SequenceGeometry => ({
 });
 
 /** A destruction's cross, grown to a size a pointer can take. */
-const crossGrip = (x: number, y: number): SeqRect => {
+const crossGrip = (x: number, y: number): Rect => {
   const c = Math.max(SEQ.cross, 12);
   return { x: x - c / 2, y: y - c / 2, width: c, height: c };
 };

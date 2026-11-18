@@ -1,9 +1,13 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import {
-  registerFont, getAtlasFont, resolveFontVariant, resolveCanvasFallback, listAtlasFonts, listFontWeights,
-  fontRegistry, isFontPending, warmFonts,
+  registerFont, getAtlasFont,
+  fontRegistry, isFontPending,
   _resetFontRegistryForTests,
 } from './registerFont';
+import { listAtlasFonts, listFontWeights } from './fontCatalog';
+import { warmFonts } from './warmFonts';
+import { resolveFontVariant } from './resolveFontVariant';
+import { resolveCanvasFallback } from './canvasFallback';
 import { setFontFallbackPolicy, _resetFallbackForTests } from './fallback';
 import { FIXTURE_FONT } from './FontAtlas';
 import {

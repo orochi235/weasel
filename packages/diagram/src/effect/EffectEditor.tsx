@@ -21,7 +21,8 @@ import { freeSpot } from './place';
 import type { LanesOptions } from './lanes';
 import type { NodeGraphOptions } from './nodeGraph';
 import { stageFromType, type EffectStageType } from './stageTypes';
-import type { EffectBox, EffectDoc, EffectRun } from './types';
+import type { EffectDoc, EffectRun } from './types';
+import type { Rect } from '@weasel-js/geom';
 
 /** Which look `EffectEditor` draws in, and that look's options. Keep the
  *  options object's identity steady between renders. */
@@ -88,11 +89,11 @@ export interface EffectEditorApi {
    *  the same. Renaming reports 'Rename group'. */
   renameCluster(id: string): void;
   /** The world rect the editor shows, or `null` before it has a size. */
-  visible(): { x: number; y: number; width: number; height: number } | null;
+  visible(): Rect | null;
   /** Where a stage, cluster, wire or a part of one is drawn, in client
    *  coordinates, as `DiagramViewApi.rectOf` reads it: `null` for an id the
    *  editor does not draw under its look, or before it mounts. */
-  rectOf(id: string): { x: number; y: number; width: number; height: number } | null;
+  rectOf(id: string): Rect | null;
 }
 
 /** The pipeline-mode editor: a look's drawing of an effect pipeline, whose
@@ -128,7 +129,7 @@ export const EffectEditor = forwardRef<EffectEditorApi, EffectEditorProps>(funct
   const ambient = useMemo(() => {
     const source = (): ReorderSource => {
       const { doc: d, built: b, specs: shown, onChange: report } = now.current;
-      const boxes = new Map(shown.map((s) => [s.id as string, s.pose as EffectBox]));
+      const boxes = new Map(shown.map((s) => [s.id as string, s.pose as Rect]));
       return { doc: d, order: b.order, laneOrder: b.laneOrder, boxOf: (id) => boxes.get(id), onChange: report };
     };
     return [...createEditorReorderContributions(source), createRenameClusterContribution(source, setRenaming)];

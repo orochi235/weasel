@@ -19,7 +19,7 @@ const ALLOWED = new Map([
   ['packages/react/src/scheduledFrame.ts', 'the gate itself: `useVisibleRaf` schedules each loop\'s frame here'],
   ['packages/forge/src/test/runStory.tsx', 'not a loop: a story test waits for one painted frame before checking faults'],
   ['packages/forge/src/shell/storyShow.ts', 'not a loop: an in-document story waits for one painted frame after its fonts settle before announcing it rendered'],
-  ['packages/forge/src/frame/FrameController.tsx', 'not a loop: a story frame waits for one painted frame after its fonts settle before announcing it rendered'],
+  ['packages/forge/src/frame/storySession.tsx', 'not a loop: a story frame waits for one painted frame after its fonts settle before announcing it rendered'],
   ['packages/text-dom/src/testing/overlayReady.ts', 'test helper, not a loop: waits a bounded number of frames for the edit overlay to mount and settle'],
   ['packages/react/src/testing/renderSettled.tsx', ['test helper, not a loop: swaps the frame functions to hold the frames an async act would otherwise never outlast, and puts them back', 4]],
   ['packages/core/src/canvas/testing/stubCanvasContext.ts', 'test helper, not a loop: waits for one frame so a test can read what the canvas painted'],

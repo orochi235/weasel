@@ -4,7 +4,8 @@ import { FIXTURE_FONT } from './FontAtlas';
 import { __setGlyphRasterizerForTests, registerCanvasFont, _resetDynamicFontsForTests } from './dynamic/dynamicAtlas';
 import { setFontFallbackPolicy, _resetFallbackForTests, type FontFallbackPolicy } from './fallback';
 import { runs, tally, timeoutFor } from './pbt.fixture';
-import { resolveFontVariant, _resetFontRegistryForTests } from './registerFont';
+import { _resetFontRegistryForTests } from './registerFont';
+import { resolveFontVariant } from './resolveFontVariant';
 import { resolveGlyph, type ResolvedGlyph } from './resolveGlyph';
 import { registerTestFont } from './testing/registerTestFont';
 

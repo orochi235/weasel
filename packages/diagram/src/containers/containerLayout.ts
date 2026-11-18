@@ -9,6 +9,7 @@
 import { createSetPoseOp, type LayoutStrategy, type RectPose } from '@weasel-js/core';
 import { titlePose } from './titlePose';
 import { bodyBox, titleIdOf, type ContainerHeader } from './trait';
+import type { Rect } from '@weasel-js/geom';
 
 /** Options for {@link diagramContainerLayout}. */
 export interface ContainerLayoutOptions {
@@ -20,7 +21,7 @@ const center = (p: RectPose) => ({ x: p.x + p.width / 2, y: p.y + p.height / 2 }
 
 /** The title's pose when it is not already there; nothing else is placed. */
 export function titlePoses(
-  container: { id: string; bounds: { x: number; y: number; width: number; height: number } },
+  container: { id: string; bounds: Rect },
   children: readonly { id: string; pose: RectPose }[],
   header: ContainerHeader | undefined,
 ): Map<string, RectPose> {

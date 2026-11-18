@@ -9,7 +9,7 @@
  * `createPathEffectDerivations(read)`. The canvas layer makes the kit's, and
  * a scene that holds path effects registers them under {@link PATH_EFFECT}.
  */
-import { boundsOfPath, type Path } from '@weasel-js/geom';
+import { boundsOfPath, type Path, type Rect } from '@weasel-js/geom';
 import { derivedPartsOf, pathFromParts, type DerivedPart } from '../derivedParts';
 import { noteOutsideRead, outsideGeneration, withOutsideReads } from '../outsideReads';
 import { samePoseValue, snapshotPose } from '../poseSnapshot';
@@ -42,7 +42,7 @@ export interface PathEffectDerivations {
   derivePath(node: { data?: unknown }, deps: readonly (DerivedDep<unknown> | undefined)[]): Path | null;
   /** The bounds of what it paints, or `null` — its authored pose — while it
    *  paints nothing. */
-  derivePose(node: { data?: unknown }, deps: readonly (DerivedDep<unknown> | undefined)[]): { x: number; y: number; width: number; height: number } | null;
+  derivePose(node: { data?: unknown }, deps: readonly (DerivedDep<unknown> | undefined)[]): Rect | null;
 }
 
 interface Derived {
@@ -133,7 +133,7 @@ export function pathEffectNode<TLayer extends string>(
 ): {
   kind: 'mark';
   layer: TLayer;
-  pose: { x: number; y: number; width: number; height: number };
+  pose: Rect;
   data: { pathEffect: PathEffect };
   dependsOn: readonly NodeId[];
   derivePath: PathEffectDerivations['derivePath'];

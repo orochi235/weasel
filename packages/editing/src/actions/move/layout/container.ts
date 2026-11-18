@@ -1,4 +1,4 @@
-import { pathContainsPoint, rectContainsPointHalfOpen } from '@weasel-js/geom';
+import { pathContainsPoint, rectContainsPointHalfOpen, type Rect } from '@weasel-js/geom';
 import type { NodeId, Scene, StrategyView } from '@weasel-js/core';
 import { poseDescriptorForNode, toPlane, type PlaneMap, childFrameAt, composeWorldPose, sceneViewPoseAdapter, refusalOf, isPageStructure } from '@weasel-js/core/engine';
 import type { DropRegion, LayoutContainer, LayoutStrategy, LayoutDep } from '@weasel-js/core/engine';
@@ -7,17 +7,15 @@ import type { MoveSession } from '../session';
 import { carryDragged, type DraggedChild } from './dragged';
 import { boxOf, containerView, draggedInView } from './view';
 
-export interface Bounds4 { x: number; y: number; width: number; height: number }
-
 type Layout = LayoutStrategy<unknown>;
 export interface Candidate {
   id: NodeId;
   /** The container's body in world: what the pointer is tested against. */
-  bounds: Bounds4;
+  bounds: Rect;
   /** Its content's frame, `bounds` moved by its scroll offset, in `view`'s
    *  space: the `LayoutContainer.bounds` its strategy is handed, so the slots
    *  it places agree with its children as they are shown. */
-  content: Bounds4;
+  content: Rect;
   /** The container as its strategy sees it: upright, in its own frame. */
   view: StrategyView<unknown>;
   layout: LayoutStrategy<unknown>;
@@ -86,7 +84,7 @@ export function pickContainer(
   const candidates: Candidate[] = [];
   const mode = layoutDep.dropTarget ?? 'innermost';
   const testInside = (
-    id: NodeId, cPose: unknown, aabb: Bounds4, layout: Layout, at: { x: number; y: number },
+    id: NodeId, cPose: unknown, aabb: Rect, layout: Layout, at: { x: number; y: number },
   ): boolean => {
     const region = layout.dropRegion?.({ id: id as string, bounds: aabb, node: scene.get(id) }) ?? null;
     if (region) return regionContains(region, aabb, at);

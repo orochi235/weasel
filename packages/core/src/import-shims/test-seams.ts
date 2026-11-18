@@ -20,7 +20,7 @@ export { makeEditAnchorsDep as createEditAnchorsDepForTests, stubDeps as stubDep
 export {
   useEditAnchorsDepSource as useEditAnchorsDepSourceForTests, type EditAnchorsStateRef,
 } from 'canvas/deps/editAnchors';
-export type { AnchorMarquee, PathEditState } from 'domains/paths/pathEditState';
+export type { PathEditState } from 'domains/paths/pathEditState';
 export { rootsTree as rootsTreeForTests } from 'core/adapters/testing/rootsTree';
 export {
   createSnapSession2d as createSnapSession2dForTests, type SnapSession2dOptions,
@@ -29,7 +29,7 @@ export {
   gridSource as gridSnapSourceForTests, sceneOfPaths as sceneOfPathsForTests, sessionDep as snapSessionDepForTests,
 } from 'domains/snap/testing/sessionDep';
 export {
-  hitTestRect as hitTestRectForTests, type AabbBounds, type RegionQueryOptions,
+  hitTestRect as hitTestRectForTests, type RegionQueryOptions,
 } from 'canvas/deps/hitTestArea';
 export type { ScenePickSourceOptions, ViewPickGates } from 'canvas/pickWalk';
 

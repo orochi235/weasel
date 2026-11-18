@@ -19,6 +19,7 @@ import {
   pickPreset,
   transformPreset,
 } from '@weasel-js/editing';
+import type { Rect } from '@weasel-js/geom';
 import {
   type CSSProperties,
   type ReactNode,
@@ -96,7 +97,7 @@ const sameSize = (
   b: { width: number; height: number },
 ) => a !== null && a.width === b.width && a.height === b.height;
 
-function boxStyle(rect: { x: number; y: number; width: number; height: number }): CSSProperties {
+function boxStyle(rect: Rect): CSSProperties {
   // A measured rect has nowhere to live but the element's own style; set as
   // custom properties, which the stylesheet reads.
   return {

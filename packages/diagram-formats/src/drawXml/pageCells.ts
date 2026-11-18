@@ -5,12 +5,10 @@
 import type { Vec2 } from '@weasel-js/core/math';
 import { cellsOf, geometryOf, type RawCell } from './cells';
 import { hasStyleName, styleFlag, styleNumber } from './style';
+import type { Rect } from '@weasel-js/geom';
 
 /** What a cell is to a diagram. `layer` covers the root and the layers, which hold the rest. */
 export type CellKind = 'layer' | 'shape' | 'container' | 'pool' | 'lane' | 'group' | 'edge' | 'label';
-
-/** A box on the page. */
-export interface Box { x: number; y: number; width: number; height: number }
 
 /** A page's cells, sorted, and how to place them. */
 export interface PageCells {
@@ -21,7 +19,7 @@ export interface PageCells {
   /** The page point a cell's children measure from: the corner of every vertex above it. */
   originOf(id: string | null): Vec2;
   /** A vertex's box on the page. */
-  boxOf(cell: RawCell): Box;
+  boxOf(cell: RawCell): Rect;
   /** The container, pool, or lane a cell sits in, through any groups and shapes between, or `null`. */
   regionOf(cell: RawCell): RawCell | null;
   /** How many layers the page has. */
@@ -102,7 +100,7 @@ export function pageCells(model: Element): PageCells {
     }
     return origin;
   };
-  const boxOf = (cell: RawCell): Box => {
+  const boxOf = (cell: RawCell): Rect => {
     const { x, y } = originOf(cell.id);
     const g = geometryOf(cell);
     return { x, y, width: g.width, height: g.height };
