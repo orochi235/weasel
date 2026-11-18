@@ -323,11 +323,6 @@ Owner tags, after the priority (2026-10-26):
   necessarily another spatial axis: color, opacity or overlay (onion skin) within a cell, or a sweep shown
   over time in each cell. Raised as a direction, not to build yet (2026-11-08). Closes when the maintainer
   has said how a third sweep shows and `<Sequence>` takes any number of sweeps.
-- **(P3) [maintainer] Should the arrow keys land on an `aria-disabled` item?** `useRovingTabIndex` skips it,
-  and `useRovingTabIndex.test.tsx` pins that. But a segment or an `ActionButton` with a `disabledReason` swaps
-  `disabled` for `aria-disabled` (`Tooltip/buttonTooltip.tsx`) so its reason can be read: in a `SegmentedBar` or
-  `ToolPalette` the keyboard never gets there, so the reason is mouse-only. APG allows either for a toolbar
-  (2026-11-07). Closes when the maintainer has picked one and the hook, `buttonTooltip.tsx`'s doc and the test agree.
 
 - **(P3) [maintainer] Shift+F10 / the ContextMenu key may open the menu twice in Chrome on Windows/Linux.**
   The `menu.context` key binding opens it at the selection, and those platforms also send a
