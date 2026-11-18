@@ -77,13 +77,13 @@ symmetry.create({ center: { x: 300, y: 200 }, symmetry: { kind: 'kaleidoscope', 
   every image of what moves follows, and an anchor on an axis stays on it.
 
 For live symmetry an app's user turns on, `symmetrySchema` is its settings as
-a prefs group to mount in the app's schema (whether drawing goes into a group,
-and which way it mirrors), and `symmetrySpecFor(axis)` is the kind and
-angle that setting draws into:
+a prefs group to mount in the app's schema (which way the group mirrors), and
+`symmetrySpecFor(axis)` is the kind and angle that setting draws into. Whether
+symmetry is on is the app's own session state, not a setting:
 
 ```ts
 const SCHEMA = pref.group('Preferences', { symmetry: symmetrySchema });
-const [{ on, axis }] = usePrefGroup(store, 'symmetry');
+const [{ axis }] = usePrefGroup(store, 'symmetry');
 if (on) symmetry.update(id, { spec: symmetrySpecFor(axis) });
 ```
 

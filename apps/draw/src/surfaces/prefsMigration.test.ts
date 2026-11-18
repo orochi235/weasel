@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { featureSettingsToGroups, gridToGroup, pathAidsToGroup, renamePathAids, renamePathTools } from './prefsMigration';
+import { dropSymmetrySwitch, featureSettingsToGroups, gridToGroup, pathAidsToGroup, renamePathAids, renamePathTools } from './prefsMigration';
 
 describe('path aid migrations', () => {
   it('carries a version 2 balance and corners toggle through to Poise and Fillet', () => {
@@ -83,5 +83,13 @@ describe('featureSettingsToGroups', () => {
       'view.pathEditing.comb': true,
       'view.pathEditing.fillets': true,
     });
+  });
+});
+
+describe('dropSymmetrySwitch', () => {
+  it('drops the stored symmetry switch and keeps the axis', () => {
+    const records = new Map<string, unknown>([['view.symmetry.on', true], ['view.symmetry.axis', 'both']]);
+    dropSymmetrySwitch(records as never);
+    expect(Object.fromEntries(records)).toEqual({ 'view.symmetry.axis': 'both' });
   });
 });

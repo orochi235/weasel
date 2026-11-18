@@ -141,8 +141,8 @@ describe('openDrawPrefs', () => {
     setToolOption('pen', PEN_TOOL_OPTIONS, values, 'autoCommitOnClose', false);
     setToolOption('rect', RECT_TOOL_OPTIONS, values, 'fill', { kind: 'solid', color: '#123456ff' });
     await store.flush();
-    expect(backing.get(`${PREFS_PREFIX}tools.pen.autoCommitOnClose`)).toEqual({ $at: 8, value: false });
-    expect(backing.get(`${PREFS_PREFIX}tools.shared.fill`)).toEqual({ $at: 8, value: { kind: 'solid', color: '#123456ff' } });
+    expect(backing.get(`${PREFS_PREFIX}tools.pen.autoCommitOnClose`)).toEqual({ $at: 9, value: false });
+    expect(backing.get(`${PREFS_PREFIX}tools.shared.fill`)).toEqual({ $at: 9, value: { kind: 'solid', color: '#123456ff' } });
     expect(toolOptionParams('pen', PEN_TOOL_OPTIONS, values).fill).toEqual({ kind: 'solid', color: '#123456ff' });
   });
 
@@ -205,7 +205,6 @@ describe('importLegacyPrefs', () => {
     const store = openDrawPrefs(createMemoryAdapter());
     importLegacyPrefs(store, window.localStorage);
     expect(store.get('ui.surfaces')).toEqual({ layers: { collapsed: true } });
-    expect(store.get('view.symmetry.on')).toBe(true);
     expect(store.get('view.symmetry.axis')).toBe('both');
     expect(store.get('view.rulers.visible')).toBe(true);
     expect(store.get('view.pathEditing.direction')).toBe(true);
@@ -219,7 +218,7 @@ describe('importLegacyPrefs', () => {
     importLegacyPrefs(store, window.localStorage);
     expect(window.localStorage.getItem(LEGACY_PREFS_KEY)).not.toBeNull();
     await vi.waitFor(() => expect(window.localStorage.getItem(LEGACY_PREFS_KEY)).toBeNull());
-    expect(backing.get(`${PREFS_PREFIX}view.grid.spacing`)).toEqual({ $at: 8, value: 40 });
+    expect(backing.get(`${PREFS_PREFIX}view.grid.spacing`)).toEqual({ $at: 9, value: 40 });
   });
 
   it('leaves the blob in place when the store cannot persist', async () => {
@@ -254,7 +253,7 @@ describe('importLegacyPrefs', () => {
     away = false;
     await store.read();
     await vi.waitFor(() => expect(window.localStorage.getItem(LEGACY_PREFS_KEY)).toBeNull());
-    expect(backing.get(`${PREFS_PREFIX}view.grid.spacing`)).toEqual({ $at: 8, value: 40 });
+    expect(backing.get(`${PREFS_PREFIX}view.grid.spacing`)).toEqual({ $at: 9, value: 40 });
     await store.close();
     warn.mockRestore();
   });
