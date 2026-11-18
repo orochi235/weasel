@@ -1,6 +1,6 @@
 /**
- * A diagram `Graph` as an ELK graph: participants as leaf nodes, groups as
- * compound nodes nested the way the groups are, the ports an edge names as
+ * A diagram `Graph` as an ELK graph: participants as leaf nodes, clusters as
+ * compound nodes nested the way the clusters are, the ports an edge names as
  * fixed ports, and each drawn edge once.
  *
  * Every ELK id is minted here rather than reused from the graph, so nothing a
@@ -33,7 +33,7 @@ export interface DrawnEdge {
 /** ELK ids back to the graph's. */
 export interface ElkIndex {
   nodes: Map<string, GraphNode>;
-  groups: Map<string, GraphCluster>;
+  clusters: Map<string, GraphCluster>;
   edges: Map<string, DrawnEdge>;
 }
 
@@ -45,7 +45,7 @@ export function portPoints(node: GraphNode, at: Vec2): Port[] {
 }
 
 /** Each drawn edge once, in graph order, naming only the ports its node ends
- *  declare: a group has none, and a port a node does not declare is no port. */
+ *  declare: a cluster has none, and a port a node does not declare is no port. */
 export function drawnEdges(graph: Graph): DrawnEdge[] {
   const declares = (id: string, port: string | undefined) => {
     const node = graph.node(id);
@@ -72,16 +72,16 @@ export function drawnEdges(graph: Graph): DrawnEdge[] {
 
 /** The ELK graph for `graph`, its root carrying `layoutOptions`. */
 export function toElk(graph: Graph, layoutOptions: Record<string, string>): { root: ElkNode; index: ElkIndex } {
-  const index: ElkIndex = { nodes: new Map(), groups: new Map(), edges: new Map() };
-  const groups = graph.clusters ?? [];
+  const index: ElkIndex = { nodes: new Map(), clusters: new Map(), edges: new Map() };
+  const clusters = graph.clusters ?? [];
   const elkIdOf = new Map<string, string>();
   graph.nodes.forEach((n, i) => {
     elkIdOf.set(n.id, `n${i}`);
     index.nodes.set(`n${i}`, n);
   });
-  groups.forEach((g, i) => {
+  clusters.forEach((g, i) => {
     elkIdOf.set(g.id, `g${i}`);
-    index.groups.set(`g${i}`, g);
+    index.clusters.set(`g${i}`, g);
   });
 
   const edges = drawnEdges(graph).filter((e) => elkIdOf.has(e.from) && elkIdOf.has(e.to));
@@ -92,17 +92,17 @@ export function toElk(graph: Graph, layoutOptions: Record<string, string>): { ro
   }
 
   const leaves = new Map<string | undefined, ElkNode[]>();
-  // A node or group naming a group the graph does not hold sits at the top level, as it would with no group named.
-  const known = (group: string | undefined) => (group !== undefined && index.groups.has(elkIdOf.get(group) ?? '') ? group : undefined);
-  const parentOf = groupParents(groups, known);
+  // A node or cluster naming a cluster the graph does not hold sits at the top level, as it would with no cluster named.
+  const known = (cluster: string | undefined) => (cluster !== undefined && index.clusters.has(elkIdOf.get(cluster) ?? '') ? cluster : undefined);
+  const parentOf = clusterParents(clusters, known);
   for (const n of graph.nodes) {
     pushTo(leaves, known(n.cluster), leafOf(n, elkIdOf.get(n.id)!, named.get(n.id)));
   }
   const transposed = minimumTransposed(layoutOptions);
   const boxOf = (g: GraphCluster): ElkNode => {
-    const children = [...groups.filter((c) => parentOf.get(c.id) === g.id).map(boxOf), ...(leaves.get(g.id) ?? [])];
-    // A group holding nothing is a leaf to ELK, which reads a leaf's minimum the right way round.
-    return { id: elkIdOf.get(g.id)!, layoutOptions: groupOptions(g, transposed && children.length > 0), children };
+    const children = [...clusters.filter((c) => parentOf.get(c.id) === g.id).map(boxOf), ...(leaves.get(g.id) ?? [])];
+    // A cluster holding nothing is a leaf to ELK, which reads a leaf's minimum the right way round.
+    return { id: elkIdOf.get(g.id)!, layoutOptions: clusterOptions(g, transposed && children.length > 0), children };
   };
 
   const elkEdges: ElkExtendedEdge[] = edges.map((e, i) => {
@@ -122,18 +122,18 @@ export function toElk(graph: Graph, layoutOptions: Record<string, string>): { ro
   const root: ElkNode = {
     id: 'root',
     layoutOptions,
-    children: [...groups.filter((g) => parentOf.get(g.id) === undefined).map(boxOf), ...(leaves.get(undefined) ?? [])],
+    children: [...clusters.filter((g) => parentOf.get(g.id) === undefined).map(boxOf), ...(leaves.get(undefined) ?? [])],
     edges: elkEdges,
   };
   return { root, index };
 }
 
-/** Each group's parent as ELK nests it: the one it names, where the graph holds it, and none for a group whose parents
+/** Each cluster's parent as ELK nests it: the one it names, where the graph holds it, and none for a cluster whose parents
  *  lead back to itself, which would otherwise never be reached from the root. */
-function groupParents(groups: readonly GraphCluster[], known: (group: string | undefined) => string | undefined): Map<string, string | undefined> {
-  const named = new Map(groups.map((g) => [g.id, known(g.parent)]));
+function clusterParents(clusters: readonly GraphCluster[], known: (cluster: string | undefined) => string | undefined): Map<string, string | undefined> {
+  const named = new Map(clusters.map((g) => [g.id, known(g.parent)]));
   const out = new Map<string, string | undefined>();
-  for (const g of groups) {
+  for (const g of clusters) {
     const seen = new Set<string>();
     let at: string | undefined = g.id;
     while (at !== undefined && !seen.has(at)) {
@@ -154,7 +154,7 @@ function leafOf(node: GraphNode, id: string, ports: ReadonlySet<string> | undefi
   return { ...leaf, ports: elkPorts, layoutOptions: { 'elk.portConstraints': 'FIXED_POS' } };
 }
 
-function groupOptions(g: GraphCluster, transposed: boolean): Record<string, string> {
+function clusterOptions(g: GraphCluster, transposed: boolean): Record<string, string> {
   const { top, right, bottom, left } = g.inset;
   const options: Record<string, string> = { 'elk.padding': `[top=${top},left=${left},bottom=${bottom},right=${right}]` };
   if (g.minWidth !== undefined) {
