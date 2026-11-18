@@ -292,12 +292,13 @@ Owner tags, after the priority (2026-10-26):
   over time in each cell. Raised as a direction, not to build yet (2026-11-08). Closes when the maintainer
   has said how a third sweep shows and `<Sequence>` takes any number of sweeps.
 
-- **(P2) [agent] A disabled item's reason is out of a sighted keyboard user's reach.** Arrow keys pass over an
-  `aria-disabled` item (`useRovingTabIndex`, ruled 2026-11-17), and its reason lives only in a tooltip that opens on
-  hover or focus, so only a mouse reveals it; a screen reader still reads it from `aria-description`. Two fixes: a
-  disabled command invoked by its key says why (the status line or a toast), and the skip becomes per widget, kept for
-  toolbars while menus, listboxes and tabs stop on a disabled item as the ARIA guide recommends for them. Closes when
-  both ship with tests.
+- **(P3) [agent] `Select`, `ComboBox`, `MenuButton` and `Tabs` still pass over a disabled item.** The ARIA guide has
+  a listbox's and a tab list's arrows land on one, as the kit's own menus, `CommandPalette` and `useRovingTabIndex`'s
+  `disabled: 'stop'` do (2026-11-18), but these four are React Aria's, whose keyboard delegate skips a disabled key:
+  react-aria-components 1.22 offers `disabledBehavior` only on `GridList`, `Table` and `Tree`. A fix marks the option
+  or tab `aria-disabled` rather than React Aria-disabled and refuses its selection itself, keeping the popover open and
+  a selection-follows-focus tab list on its tab. `Select`'s reasons already read in the open list. Closes when each
+  of the four lands its arrows on a disabled item, with a test.
 
 - **(P3) [maintainer] Shift+F10 / the ContextMenu key may open the menu twice in Chrome on Windows/Linux.**
   The `menu.context` key binding opens it at the selection, and those platforms also send a

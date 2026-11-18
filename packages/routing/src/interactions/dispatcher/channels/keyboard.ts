@@ -2,6 +2,7 @@
 import { codeLetter } from '@weasel-js/gestures';
 import { isOneChar } from '@weasel-js/registry';
 import { focusedControlOwnsKey, isEditableTarget } from '../../keyHelpers';
+import { noteRefusal } from '../../actions/refusal';
 import type { DispatchCore } from '../dispatchCore';
 import type { KeyReach } from '../dispatcherApi';
 import type { InputEvent } from '../matcher';
@@ -127,7 +128,7 @@ export function keyboardInput(core: DispatchCore): {
     // binding matches the alternate form, so there's no double-fire risk.
 
     const { keyEv, heldEv } = keystrokeEvents(e, mods);
-    const keyResult = dispatch(keyEv, undefined, reach);
+    const keyResult = dispatch(keyEv, undefined, reach, (r) => noteRefusal(e, r));
 
     // Always dispatch key-held DOWN, even on autorepeat. The dispatcher's
     // own defense returns 'handled' (no-op) when a handle is already in

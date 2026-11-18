@@ -176,7 +176,8 @@ export function CommandPalette({ open, onOpenChange, reasonLabels }: CommandPale
   const highlight = picked ?? Math.max(0, filtered.findIndex((i) => items.enabledOf(i).enabled));
 
   const moveHighlight = (dir: 1 | -1): void => {
-    const next = stepStop(filtered, highlight, dir, { canStop: (i) => items.enabledOf(i).enabled });
+    // A listbox's arrows land on a disabled row too, so its reason reads where the highlight is.
+    const next = stepStop(filtered, highlight, dir);
     if (next !== null) setPicked(next);
   };
 

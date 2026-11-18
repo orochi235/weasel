@@ -36,8 +36,8 @@ export interface DispatchCore {
    *  camera anchors in; the canvas-local point for a view that names none. */
   toViewLocal(clientX: number, clientY: number): { x: number; y: number };
   /** Dispatch on the routed view's dispatcher, or on `on` for an event that
-   *  belongs to the one an earlier event ran on. */
-  dispatch(ev: InputEvent, on?: Dispatcher, reach?: KeyReach): 'handled' | 'unhandled';
+   *  belongs to the one an earlier event ran on. `refused` hears a key the actions it reached all refused. */
+  dispatch(ev: InputEvent, on?: Dispatcher, reach?: KeyReach, refused?: DispatcherContext['refused']): 'handled' | 'unhandled';
   /** Run `fn`'s dispatches as one raw input — the `key` and `keyHeld` forms
    *  of one keystroke — so a keymap rules on them together. */
   batch<T>(fn: () => T): T;
@@ -202,10 +202,10 @@ export function createDispatchCore(src: DispatchCoreSources): PointerDispatchCor
     },
     toCanvasLocal,
     toViewLocal: (cx, cy) => target().clientToLocal?.(cx, cy) ?? toCanvasLocal(cx, cy),
-    dispatch: (ev, on, reach) => batch(() => {
+    dispatch: (ev, on, reach, refused) => batch(() => {
       const d = on ?? dispatcherNow();
       src.uses(d);
-      return d.handleInput(ev, reach ? { ...ctxNow(), keyReach: reach } : ctxNow());
+      return d.handleInput(ev, { ...ctxNow(), ...(reach ? { keyReach: reach } : {}), ...(refused ? { refused } : {}) });
     }),
     batch,
     keymaps: () => src.context().keymaps,

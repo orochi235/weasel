@@ -35,6 +35,8 @@ import { createUiOngoing } from './uiOngoing';
 import { explain, resolveAll, resolveOnly } from './predict';
 import { rank, walk, type Attempt } from './walk';
 import { routeThroughKeymap } from './keymapRoute';
+import type { Ranking, Walked } from './ranking';
+import type { Refusal } from '../actions/refusal';
 
 import type { Dispatcher, DispatcherContext } from './dispatcherApi';
 
@@ -45,6 +47,16 @@ export { createDispatchTrace, createTraceRing } from './dispatchTrace';
 export type { DispatchTrace, ModeSwitchLogEntry, TraceLogEntry, TraceRing } from './dispatchTrace';
 export { multiTouchGestureId, pointerGestureId } from './gestureIds';
 export { filterEligible, preferContextual } from './ranking';
+
+/** The first action the walk asked whose `enabled` refused, and its answer. */
+function firstRefusal(r: Ranking, walked: Walked): Refusal | null {
+  for (const { match, step } of walked.steps) {
+    if (step.kind !== 'declined') continue;
+    const action = r.actionMap.get(match.binding.actionId);
+    if (action) return { action, reason: step.reason };
+  }
+  return null;
+}
 
 /** Build a dispatcher. `getAction` overrides how action ids are resolved;
  *  by default the `DispatcherContext`'s registry is used. */
@@ -105,6 +117,10 @@ export function createDispatcher(opts?: {
     const walked = walk(r, event, ctx, invoking(event), false);
     const outcome: 'handled' | 'unhandled' = walked.stop === 'fired' ? 'handled' : 'unhandled';
     trace?.push(buildDispatchRecord(r, walked, event, ctx, false, outcome));
+    if (outcome === 'unhandled' && ctx.refused && event.kind === 'key' && !event.repeat) {
+      const refusal = firstRefusal(r, walked);
+      if (refusal) ctx.refused(refusal);
+    }
     return outcome;
   }
 

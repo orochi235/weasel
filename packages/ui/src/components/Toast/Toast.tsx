@@ -11,6 +11,7 @@ import { useAssignedPortalContainer, useOverlayPortal, type OverlayPortalProps }
 import { useAppearance } from '../appearance';
 import { Button, CLOSE_BUTTON_PROPS } from '../Button';
 import { defaultToastQueue, racQueueOf, holdRegion, type ToastContent, type ToastQueue } from './queue';
+import { holdRefusals } from './refusals';
 import s from './Toast.module.css';
 import './toastViewTransitions.css';
 import type {} from '../../kitSettings';
@@ -24,6 +25,9 @@ export interface ToastRegionProps extends OverlayPortalProps {
   queue?: ToastQueue;
   /** Corner for the stack. Default `bottom-right`. */
   placement?: ToastPlacement;
+  /** Say why, when a keystroke reaches a command whose `enabled` refuses it: a toast titled with the command's
+   *  label, reading its reason. Of several regions telling them, the one mounted last does. Default true. */
+  refusals?: boolean;
   className?: string;
 }
 
@@ -72,11 +76,12 @@ function ToastItem({ toast: t, queue }: { toast: QueuedToast<ToastContent>; queu
  * the container must be a containing block.
  */
 export function ToastRegion(props: ToastRegionProps) {
-  const { queue = defaultToastQueue, placement = 'bottom-right', className, portalContainer } = props;
+  const { queue = defaultToastQueue, placement = 'bottom-right', refusals = true, className, portalContainer } = props;
   const assigned = useAssignedPortalContainer(portalContainer);
   const { anchor, provide, ready } = useOverlayPortal(portalContainer);
   const settings = useKitSettings();
   useLayoutEffect(() => holdRegion(queue, () => settings.get('toast.ttlMs')), [queue, settings]);
+  useLayoutEffect(() => (refusals ? holdRefusals(queue) : undefined), [queue, refusals]);
   const classes = [s.region, placementClass[placement], className];
 
   const renderToast = (t: QueuedToast<ToastContent>) => <ToastItem toast={t} queue={queue} />;

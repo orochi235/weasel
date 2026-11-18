@@ -17,6 +17,10 @@ export type RovingOrientation = 'horizontal' | 'vertical' | 'both';
 /** The inline direction the items are laid out in. Under `'rtl'` Left and Right swap. */
 export type RovingDirection = 'ltr' | 'rtl';
 
+/** What arrow keys do at an item held `aria-disabled`: pass over it, as a toolbar's do, or land on it, as a menu's,
+ *  a listbox's and a tab list's do, so focus shows its reason. A natively `disabled` item takes no focus either way. */
+export type RovingDisabled = 'skip' | 'stop';
+
 /** Options for {@link useRovingTabIndex}. */
 export type UseRovingTabIndexOptions = {
   /** Selects the items inside the container, in DOM order. Items belonging to
@@ -36,6 +40,8 @@ export type UseRovingTabIndexOptions = {
   groupSelector?: string;
   /** Overrides the direction read from the container's computed `direction` at each keypress. */
   dir?: RovingDirection;
+  /** Whether focus passes over an `aria-disabled` item or lands on it. Default `'skip'`. */
+  disabled?: RovingDisabled;
   /** The item that holds the tab stop while focus is outside the container —
    *  a radiogroup-style bar passes its selected index so Tab lands on the
    *  current value. Omitted, the stop stays on whichever item last had focus,
@@ -63,6 +69,11 @@ const ROOT_ATTR = 'data-wzl-roving';
 
 function isEnabled(el: HTMLElement): boolean {
   return !el.matches(':disabled') && el.getAttribute('aria-disabled') !== 'true';
+}
+
+/** Whether focus can land on `el` under `disabled`. */
+function canStop(el: HTMLElement, disabled: RovingDisabled): boolean {
+  return disabled === 'stop' ? !el.matches(':disabled') : isEnabled(el);
 }
 
 /** The inline direction `el` lays its children out in, from its computed `direction`. */
@@ -140,8 +151,10 @@ function listen(
 /**
  * The APG roving-tabindex contract for a container of items: exactly one item
  * is in the tab order, and the arrow keys move focus among the rest, skipping
- * disabled ones (`disabled` or `aria-disabled="true"`) and wrapping at both
- * ends. Home and End go to the first and last enabled item. Under a
+ * disabled ones (`disabled`, and `aria-disabled="true"` unless the `disabled`
+ * option is `'stop'`) and wrapping at both ends. Home and End go to the first
+ * and last of the items they can land on. Space and Enter pass over an
+ * `aria-disabled` item's `onAction`. Under a
  * right-to-left layout — the container's computed `direction`, or the `dir`
  * option — Left and Right swap. While focus is
  * inside, the focused item holds the tab stop, so Tab and Shift+Tab both leave
@@ -183,8 +196,8 @@ export function useRovingTabIndex<T extends HTMLElement = HTMLDivElement>(
   const place = useCallback(
     (focused: HTMLElement | null) => {
       const found = items();
-      const enabled = found.map(isEnabled);
-      const controlled = latest.current.tabStopIndex;
+      const { tabStopIndex: controlled, disabled = 'skip' } = latest.current;
+      const enabled = found.map((el) => canStop(el, disabled));
       let stop = focused ? found.indexOf(focused) : -1;
       if (stop < 0 && controlled !== undefined && enabled[controlled]) stop = controlled;
       if (stop < 0 && controlled === undefined && last.current) {
@@ -231,14 +244,14 @@ export function useRovingTabIndex<T extends HTMLElement = HTMLDivElement>(
       const found = items();
       const current = found.indexOf(e.target as HTMLElement);
       if (current < 0) return;
-      const { onAction, onNavigate } = latest.current;
+      const { onAction, onNavigate, disabled = 'skip' } = latest.current;
       if (e.key === ' ' || e.key === 'Enter') {
         if (!onAction) return;
         e.preventDefault();
-        onAction(current, e);
+        if (isEnabled(found[current]!)) onAction(current, e);
         return;
       }
-      const enabled = found.map(isEnabled);
+      const enabled = found.map((el) => canStop(el, disabled));
       const dir = across ?? latest.current.dir ?? inlineDirection(e.currentTarget);
       const rows = columns ? gridRows(found, columns, groupSelector) : [];
       // A row short of `columns` is the last of its group, and sits where `lastRow` puts it.

@@ -12,6 +12,7 @@ import type { ResolvedBindingOverrides } from '../actions/bindingOverrides';
 import type { KeymapStack, KeymapUnbound } from '../../keymaps/keymapStack';
 import type { DepRegistry } from '../actions/depNode';
 import type { ActionDeps, OngoingHandle } from '../actions/invoker';
+import type { Refusal } from '../actions/refusal';
 import type { DispatchRecord } from './dispatchRecord';
 import type { DispatchTrace } from './dispatchTrace';
 import type { BindingScope, InputEvent } from './matcher';
@@ -73,6 +74,9 @@ export interface DispatcherContext {
   bindingOverrides?: () => ResolvedBindingOverrides;
   /** Where the dispatcher records how it resolved each input. Absent records nothing. */
   trace?: DispatchTrace;
+  /** Hears a `key` input, not a repeat, that went unhandled because the `enabled` of every action it reached
+   *  refused it: the first of them, and its answer. */
+  refused?: (refusal: Refusal) => void;
 }
 
 /** Which of a surface's key bindings a key from the page reaches. */

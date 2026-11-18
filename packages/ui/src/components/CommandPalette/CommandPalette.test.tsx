@@ -207,17 +207,32 @@ describe('CommandPalette', () => {
     expect(run).toHaveBeenCalledOnce();
   });
 
-  it('moves the highlight with the arrows, skipping disabled rows', () => {
+  it('moves the highlight with the arrows, landing on a disabled row too', () => {
     openPalette();
     const labels = options().map((o) => o.textContent ?? '');
-    const enabled = labels.filter((l) => !l.includes('Delete'));
+    expect(labels).toHaveLength(3);
     expect(selected()!.textContent).toBe(labels[0]);
     fireEvent.keyDown(search(), { key: 'ArrowDown' });
-    expect(selected()!.textContent).toBe(enabled[1]);
+    expect(selected()!.textContent).toBe(labels[1]);
     fireEvent.keyDown(search(), { key: 'ArrowDown' });
-    expect(selected()!.textContent).toBe(enabled[0]);
+    expect(selected()!.textContent).toBe(labels[2]);
+    fireEvent.keyDown(search(), { key: 'ArrowDown' });
+    expect(selected()!.textContent).toBe(labels[0]);
     fireEvent.keyDown(search(), { key: 'ArrowUp' });
-    expect(selected()!.textContent).toBe(enabled[1]);
+    expect(selected()!.textContent).toBe(labels[2]);
+  });
+
+  it('shows the reason of a disabled row the highlight lands on, and runs nothing on Enter', async () => {
+    runs.delete.mockClear();
+    openPalette();
+    fireEvent.change(search(), { target: { value: 'delete' } });
+    fireEvent.keyDown(search(), { key: 'ArrowDown' });
+    expect(selected()!.getAttribute('aria-disabled')).toBe('true');
+    expect(selected()!.textContent).toContain('Selection required');
+    fireEvent.keyDown(search(), { key: 'Enter' });
+    await flush();
+    expect(runs.delete).not.toHaveBeenCalled();
+    expect(palette()).not.toBeNull();
   });
 
   it('runs the highlighted action on Enter and closes', async () => {
