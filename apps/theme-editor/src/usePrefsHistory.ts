@@ -20,13 +20,29 @@ function heldOf(store: PrefsStore<PrefGroup>, paths: readonly string[]): Held {
   return held;
 }
 
-/** Make `store` hold `target` and nothing else, writing only the leaves that differ. */
+/** Held for a leaf the store holds nothing of. */
+const UNSET = Symbol('unset');
+
+/** What changed between `prev` and `next`: each leaf that differs, before and after, `UNSET` where nothing is held. */
+function changes(prev: Held, next: Held, paths: readonly string[]): { before: Held; after: Held } {
+  const before = new Map<string, unknown>();
+  const after = new Map<string, unknown>();
+  for (const path of paths) {
+    const was = prev.has(path) ? prev.get(path) : UNSET;
+    const is = next.has(path) ? next.get(path) : UNSET;
+    if (deepEqual(was, is)) continue;
+    before.set(path, was);
+    after.set(path, is);
+  }
+  return { before, after };
+}
+
+/** Make `store` hold each of `target`'s leaves as it says, leaving every other leaf as it is. */
 function restoreHeld(store: PrefsStore<PrefGroup>, paths: readonly string[], target: Held): void {
   const now = heldOf(store, paths);
-  for (const path of paths) {
+  for (const [path, want] of target) {
     const key = path as PrefPath<PrefGroup>;
-    const want = target.get(path);
-    if (!target.has(path)) {
+    if (want === UNSET) {
       if (now.has(path)) store.reset(path);
     } else if (want === AUTO) {
       if (now.get(path) !== AUTO) store.setAuto(key, true);
@@ -54,11 +70,12 @@ export function usePrefsHistory(store: PrefsStore<PrefGroup>): PrefsHistory {
     const write = (key: string, label: string, run: () => void): void => {
       const prev = heldOf(store, paths);
       run();
-      const next = heldOf(store, paths);
-      if (deepEqual(Object.fromEntries(prev), Object.fromEntries(next))) return;
+      // Only the leaves this write changed, so an undo leaves a write made since by anything else alone.
+      const { before, after } = changes(prev, heldOf(store, paths), paths);
+      if (before.size === 0) return;
       // The apply finds the write already made, and writes nothing.
       history.apply(createSwapOp({
-        name: 'theme-prefs:held', label, before: prev, after: next, coalesceKey: key, emit: (held) => restoreHeld(store, paths, held),
+        name: 'theme-prefs:held', label, before, after, coalesceKey: key, emit: (held) => restoreHeld(store, paths, held),
       }), label);
     };
     return {
