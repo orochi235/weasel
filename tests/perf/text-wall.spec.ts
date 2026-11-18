@@ -16,7 +16,9 @@
  * A frame is timed as astv's are: CPU is `performance.now()` around `render`, on a
  * requestAnimationFrame loop, and GPU is `EXT_disjoint_timer_query_webgl2` over the same window.
  *
- * Knobs: `WEASEL_PERF_GLYPHS` (the ladder), `WEASEL_PERF_LAYOUTS`, `WEASEL_PERF_MOTIONS`.
+ * Knobs: `WEASEL_PERF_GLYPHS` (the ladder), `WEASEL_PERF_LAYOUTS`, `WEASEL_PERF_MOTIONS`, and
+ * `WEASEL_PERF_PROFILE=1`, which records a CPU profile of each cell's measured frames (warmup
+ * left out) beside `WEASEL_PERF_OUT` as `text-wall-<cell>.cpuprofile`.
  *
  * This reports; it does not gate. See `tests/perf/README.md`.
  */
@@ -24,7 +26,8 @@ import { test, expect } from '@playwright/test';
 import { isolate } from './lib/isolate';
 import { metric, startRun } from './lib/result';
 import { fileURLToPath } from 'node:url';
-import { dirname, resolve } from 'node:path';
+import { dirname, join, resolve } from 'node:path';
+import { mkdirSync, writeFileSync } from 'node:fs';
 
 const repoRoot = resolve(dirname(fileURLToPath(import.meta.url)), '../..');
 
@@ -41,6 +44,7 @@ const list = (raw: string | undefined): string[] | undefined =>
 const GLYPHS = list(process.env.WEASEL_PERF_GLYPHS)?.map(Number) ?? [5_000, 20_000, 80_000, 320_000, 1_280_000];
 const LAYOUTS = list(process.env.WEASEL_PERF_LAYOUTS) ?? ['line', 'block'];
 const MOTIONS = list(process.env.WEASEL_PERF_MOTIONS) ?? ['still', 'moving'];
+const PROFILE = process.env.WEASEL_PERF_PROFILE === '1';
 
 interface Cell { glyphs: number; layout: string; motion: string }
 interface Measured {
@@ -52,6 +56,9 @@ interface Measured {
   cpu: number[];
   gpu: number[];
   paints: boolean;
+  /** Per measured frame: draw calls, and bytes written to GL buffers. */
+  drawCalls: number[];
+  uploaded: number[];
 }
 
 test.setTimeout(1_800_000);
@@ -67,6 +74,17 @@ test('text wall: frame cost of static text against glyph count', async ({ page, 
   page.on('crash', () => errors.push('page crashed'));
 
   await isolate(page);
+  const cdp = PROFILE ? await page.context().newCDPSession(page) : null;
+  if (cdp) {
+    await cdp.send('Profiler.enable');
+    await cdp.send('Profiler.setSamplingInterval', { interval: 100 });
+  }
+  await page.exposeFunction('__textWallProfile', async (on: boolean) => {
+    if (!cdp) return;
+    if (on) await cdp.send('Profiler.start');
+    else profiled = (await cdp.send('Profiler.stop')).profile;
+  });
+  let profiled: unknown = null;
   await page.goto('/weasel/#animation');
   await page.waitForSelector('canvas');
 
@@ -86,6 +104,21 @@ test('text wall: frame cost of static text against glyph count', async ({ page, 
     const timer = gl.getExtension('EXT_disjoint_timer_query_webgl2') as
       { TIME_ELAPSED_EXT: number; GPU_DISJOINT_EXT: number } | null;
     const renderer = new WeaselRenderer({ gl, canvas, width: w, height: h, dpr: 1 });
+    // Bytes the frame writes into GL buffers, counted at the context.
+    let uploadedBytes = 0;
+    const g = gl as unknown as Record<string, (...a: unknown[]) => unknown>;
+    for (const name of ['bufferSubData', 'bufferData'] as const) {
+      const orig = g[name].bind(gl);
+      g[name] = (...a: unknown[]) => {
+        const src = a[name === 'bufferSubData' ? 2 : 1];
+        const len = a[4];
+        if (ArrayBuffer.isView(src)) {
+          const el = (src as unknown as { BYTES_PER_ELEMENT?: number }).BYTES_PER_ELEMENT ?? 1;
+          uploadedBytes += typeof len === 'number' && len > 0 ? len * el : src.byteLength;
+        }
+        return orig(...a);
+      };
+    }
 
     const COLS = 80;
     const INK = { paint: { kind: 'solid' as const, color: '#e8e8e8' } };
@@ -147,7 +180,7 @@ test('text wall: frame cost of static text against glyph count', async ({ page, 
 
     (globalThis as Record<string, unknown>).__textWall = async (
       cell: { glyphs: number; layout: string; motion: string },
-      opts: { warmup: number; measure: number; maxMs: number },
+      opts: { warmup: number; measure: number; maxMs: number; profile: boolean },
     ) => {
       const { commands, glyphs, fontPx } = wall(cell.glyphs, cell.layout);
       const moving = cell.motion === 'moving';
@@ -160,6 +193,9 @@ test('text wall: frame cost of static text against glyph count', async ({ page, 
       }
       const cpu: number[] = [];
       const gpu: number[] = [];
+      const drawCalls: number[] = [];
+      const uploaded: number[] = [];
+      const mark = (globalThis as unknown as { __textWallProfile: (on: boolean) => Promise<void> }).__textWallProfile;
       const pending: { q: WebGLQuery; measured: boolean }[] = [];
       const collect = () => {
         while (pending.length) {
@@ -174,18 +210,28 @@ test('text wall: frame cost of static text against glyph count', async ({ page, 
       const started = performance.now();
       let f = 0;
       await new Promise<void>((done) => {
-        const tick = () => {
+        const tick = async () => {
+          if (opts.profile && f === opts.warmup) await mark(true);
           const measured = f >= opts.warmup;
+          uploadedBytes = 0;
           const q = timer ? gl.createQuery() : null;
           if (q && timer) gl.beginQuery(timer.TIME_ELAPSED_EXT, q);
           const t0 = performance.now();
           renderer.render(commands, view(f, moving));
           const t1 = performance.now();
           if (q && timer) { gl.endQuery(timer.TIME_ELAPSED_EXT); pending.push({ q, measured }); }
-          if (measured) cpu.push(t1 - t0);
+          if (measured) {
+            cpu.push(t1 - t0);
+            drawCalls.push(renderer.lastFrameStats().drawCalls);
+            uploaded.push(uploadedBytes);
+          }
           collect();
           f += 1;
-          if (cpu.length >= opts.measure || performance.now() - started > opts.maxMs) { done(); return; }
+          if (cpu.length >= opts.measure || performance.now() - started > opts.maxMs) {
+            if (opts.profile) await mark(false);
+            done();
+            return;
+          }
           requestAnimationFrame(tick);
         };
         requestAnimationFrame(tick);
@@ -197,7 +243,7 @@ test('text wall: frame cost of static text against glyph count', async ({ page, 
       }
       return {
         glyphs, commands: commands.length, fontPx, frames: cpu.length,
-        truncated: cpu.length < opts.measure, cpu, gpu, paints: painted,
+        truncated: cpu.length < opts.measure, cpu, gpu, paints: painted, drawCalls, uploaded,
       };
     };
     return { glRenderer, gpuTimer: !!timer };
@@ -218,8 +264,15 @@ test('text wall: frame cost of static text against glyph count', async ({ page, 
     i += 1;
     const m = await page.evaluate(
       ({ cell, opts }) => (globalThis as any).__textWall(cell, opts) as Promise<Measured>,
-      { cell, opts: { warmup: WARMUP, measure: MEASURE, maxMs: MAX_MS } },
+      { cell, opts: { warmup: WARMUP, measure: MEASURE, maxMs: MAX_MS, profile: PROFILE } },
     );
+    if (PROFILE && profiled) {
+      const out = process.env.WEASEL_PERF_OUT ?? 'tests/perf/results';
+      const dir = out.endsWith('.json') ? dirname(out) : out;
+      mkdirSync(dir, { recursive: true });
+      writeFileSync(join(dir, `text-wall-${cell.layout}-${cell.motion}-${cell.glyphs}.cpuprofile`), JSON.stringify(profiled));
+      profiled = null;
+    }
     expect(m.paints, `${cell.layout} n=${cell.glyphs} painted nothing`).toBe(true);
     const cpu50 = q(m.cpu, 0.5);
     const cpu95 = q(m.cpu, 0.95);
@@ -227,6 +280,8 @@ test('text wall: frame cost of static text against glyph count', async ({ page, 
     const metrics: Record<string, ReturnType<typeof metric>> = {
       cpuP50: metric(cpu50, 'ms', `p50 of ${m.frames} frames`, m.cpu),
       cpuP95: metric(cpu95, 'ms', `p95 of ${m.frames} frames`),
+      drawCalls: metric(q(m.drawCalls, 0.5), 'count', 'p50 draw calls a frame', m.drawCalls),
+      uploadedMB: metric(q(m.uploaded, 0.5) / 1e6, 'MB', 'p50 bytes written to GL buffers a frame', m.uploaded),
     };
     if (m.gpu.length) metrics.gpuP50 = metric(gpu50, 'ms', `p50 of ${m.gpu.length} timer queries`, m.gpu);
     run.item(`${cell.layout} ${cell.motion} n=${cell.glyphs}`, metrics, {
@@ -236,7 +291,8 @@ test('text wall: frame cost of static text against glyph count', async ({ page, 
       `${String(i).padStart(2)}/${cells.length}  ${cell.layout.padEnd(5)} ${cell.motion.padEnd(6)} ` +
       `glyphs ${String(m.glyphs).padStart(9)}  cmds ${String(m.commands).padStart(6)}  ` +
       `cpu p50 ${cpu50.toFixed(2).padStart(8)}ms  p95 ${cpu95.toFixed(2).padStart(8)}ms  ` +
-      `gpu ${(m.gpu.length ? gpu50.toFixed(2) : '-').padStart(7)}ms` +
+      `gpu ${(m.gpu.length ? gpu50.toFixed(2) : '-').padStart(7)}ms  ` +
+      `draws ${String(q(m.drawCalls, 0.5)).padStart(4)}  up ${(q(m.uploaded, 0.5) / 1e6).toFixed(2).padStart(7)}MB` +
       `${m.truncated ? `  (stopped at ${m.frames} frames)` : ''}`,
     );
   }
