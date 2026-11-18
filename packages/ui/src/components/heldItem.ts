@@ -11,14 +11,14 @@ export function heldItemProps(disabled: boolean | undefined): { isDisabled?: boo
 }
 
 /** A ref that marks its element `aria-disabled` while `held`, with `reason` as its `aria-description`, and keeps it
- *  on `into`: React Aria writes neither on a row or tab it lets focus land on, and passes neither through as a prop.
+ *  on `intoRef`: React Aria writes neither on a row or tab it lets focus land on, and passes neither through as a prop.
  *  A callback, since React Aria renders a collection's element after the item component that declared it, and the
  *  same one while `held` and `reason` stay, since React Aria rebuilds its press handling on a new ref. */
 export function useHeldAriaRef(
-  held: boolean | undefined, reason?: string, into?: RefObject<HTMLElement | null>,
+  held: boolean | undefined, reason?: string, intoRef?: RefObject<HTMLElement | null>,
 ): RefCallback<HTMLElement> {
   return useCallback((el: HTMLElement | null) => {
-    if (into) into.current = el;
+    if (intoRef) intoRef.current = el;
     if (!el || !held) return;
     el.setAttribute('aria-disabled', 'true');
     if (reason) el.setAttribute('aria-description', reason);
@@ -26,7 +26,7 @@ export function useHeldAriaRef(
       el.removeAttribute('aria-disabled');
       el.removeAttribute('aria-description');
     };
-  }, [held, reason, into]);
+  }, [held, reason, intoRef]);
 }
 
 /** The items of a React Aria collection, enough of it to walk. */
@@ -61,12 +61,12 @@ export function pastHeld(collection: Walkable, from: Key | null, to: Key): Key |
   return freeKeyFrom(collection, to, dir);
 }
 
-/** Keeps `into` on the React Aria state `context` provides where this renders, for a handler above it to read. */
-export function StateProbe<S>({ context, into }: { context: Context<S | null>; into: RefObject<S | null> }): null {
+/** Keeps `intoRef` on the React Aria state `context` provides where this renders, for a handler above it to read. */
+export function StateProbe<S>({ context, intoRef }: { context: Context<S | null>; intoRef: RefObject<S | null> }): null {
   const state = useContext(context);
   // React Aria renders a collection's children twice, once with no state to build it; that copy leaves the ref be.
   useLayoutEffect(() => {
-    if (state) into.current = state;
+    if (state) intoRef.current = state;
   });
   return null;
 }
@@ -78,11 +78,11 @@ export function useHeldPick<S extends { collection: Walkable }>(context: Context
   probe: ReactElement;
   pick(from: Key | null, picked: Key | null): Key | null | undefined;
 } {
-  const state = useRef<S | null>(null);
+  const stateRef = useRef<S | null>(null);
   return {
-    probe: createElement(StateProbe<S>, { context, into: state }),
+    probe: createElement(StateProbe<S>, { context, intoRef: stateRef }),
     pick(from, picked) {
-      const coll = state.current?.collection;
+      const coll = stateRef.current?.collection;
       if (picked === null || !coll || !isHeldKey(coll, picked)) return picked;
       return pastHeld(coll, from, picked) ?? undefined;
     },

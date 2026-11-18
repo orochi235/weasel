@@ -59,7 +59,7 @@ export function Tabs({ children, className, disabled, selectedKey, defaultSelect
   return (
     <TabSlotsContext.Provider value={outer?.held ? outer : own}>
       <RACTabs {...rest} selectedKey={shown} onSelectionChange={choose} isDisabled={disabled} className={[s.tabs, className].filter(Boolean).join(' ')}>
-        <StateProbe context={TabListStateContext} into={stateRef} />
+        <StateProbe context={TabListStateContext} intoRef={stateRef} />
         {children}
       </RACTabs>
     </TabSlotsContext.Provider>
