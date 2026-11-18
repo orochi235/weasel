@@ -1,4 +1,4 @@
-import { screen } from '@testing-library/react';
+import { act, screen } from '@testing-library/react';
 import { renderSettled } from '@weasel-js/react/testing/renderSettled';
 import { describe, expect, it, vi } from 'vitest';
 import type { RegionContribution, TrialChromeContext } from '../types';
@@ -80,5 +80,25 @@ describe('<SidebarPanes>', () => {
     seam.focus();
     seam.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowDown', bubbles: true }));
     expect(onHeightsChange).toHaveBeenCalledWith({ a: 208 });
+  });
+
+  // Fails until windease stops registering a Panel during render (docs/TODO.md, "A labkit sidebar section added").
+  // When this starts passing, drop `.fails`.
+  it.fails('mounts a new section without updating the stack while it renders', async () => {
+    const error = vi.spyOn(console, 'error').mockImplementation(() => {});
+    try {
+      const { rerender } = await renderSettled(
+        <SidebarPanes contributions={contributions.slice(0, 2)} ctx={ctx} viewport={VIEWPORT} />,
+      );
+      await act(async () => {
+        rerender(<SidebarPanes contributions={contributions} ctx={ctx} viewport={VIEWPORT} />);
+      });
+      expect(screen.getByText('notes body')).toBeTruthy();
+      expect(error.mock.calls.map((c) => String(c[0]))).not.toContainEqual(
+        expect.stringContaining('while rendering a different component'),
+      );
+    } finally {
+      error.mockRestore();
+    }
   });
 });

@@ -422,6 +422,14 @@ Owner tags, after the priority (2026-10-26):
 
 ## forge
 
+- **(P3) [agent] A labkit sidebar section added under a mounted pane stack warns "Cannot update a component
+  while rendering a different component".** windease registers a new `<Panel>` during its render
+  (`useNodeBinding`), and the parent zone's layout subscription fires mid-render; it shows only under some
+  timing (seen in forge's `Workshop.test.tsx` on teitou, 2026-11-18). The fix is in windease (branch
+  `fix-render-time-registration`, worktree `~/src/windease-render-fix`); `SidebarPanes.test.tsx` pins the bug
+  as an `it.fails` test, which goes red once the fix arrives. Closes when a windease release carries the fix,
+  weasel's dependency is bumped to it, and that test drops `.fails`.
+
 `@weasel-js/forge` is the component workshop built on labkit: each story renders
 in the workshop page as a lab trial with controls. A story that sets `isolate`
 renders in an iframe ("frame") instead; that path is frozen, kept for as long
