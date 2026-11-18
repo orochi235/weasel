@@ -194,17 +194,6 @@
   "packages/ui/src/components/Callout/Callout.tsx": {
     "longestFunction": 136
   },
-  "packages/ui/src/components/CurveEditor/LayeredCurveEditor.tsx": {
-    "longestFunction": 286
-  },
-  "packages/ui/src/components/CurveEditor/createFunctionLayer.tsx": {
-    "lines": 404,
-    "longestFunction": 309
-  },
-  "packages/ui/src/components/CurveEditor/createKeyframeLayer.tsx": {
-    "lines": 431,
-    "longestFunction": 290
-  },
   "packages/ui/src/components/DataGrid/DataGrid.tsx": {
     "longestFunction": 161
   },
@@ -216,20 +205,5 @@
   },
   "packages/ui/src/components/Prefs/prefField.tsx": {
     "longestFunction": 126
-  },
-  "packages/ui/src/components/Slider/useThumbDrags.ts": {
-    "longestFunction": 132
-  },
-  "packages/ui/src/components/Timeline/Lane.tsx": {
-    "longestFunction": 122
-  },
-  "packages/ui/src/components/Timeline/Timeline.tsx": {
-    "longestFunction": 166
-  },
-  "packages/ui/src/components/Tree/Tree.tsx": {
-    "longestFunction": 196
-  },
-  "packages/ui/src/components/Tree/useTreeDrag.ts": {
-    "longestFunction": 136
   }
 }
