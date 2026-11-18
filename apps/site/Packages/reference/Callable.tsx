@@ -8,8 +8,8 @@ export function CallDetails({ params = [], returns = null }: Partial<Pick<Refere
   if (params.length === 0 && !returns) return null;
   return (
     <dl className={s.details}>
-      {params.map((param) => (
-        <div key={param.name} className={s.detail}>
+      {params.map((param, i) => (
+        <div key={i} className={s.detail}>
           <dt>
             <code>{param.name}{param.optional ? '?' : ''}</code>
             <code className={s.detailType}><CodeText code={param.type} /></code>
