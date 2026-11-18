@@ -2,6 +2,12 @@ import { type RefObject, useCallback, useEffect, useRef } from 'react';
 import type { TreeNode as StoryNode } from './buildTree';
 import type { StoryFolder } from './treeRows';
 
+/** The path of every folder down to `path`'s, its own last: `a/b` gives `a` and `a/b`. */
+export function folderPathsOf(path: string): string[] {
+  const segments = path.split('/');
+  return segments.map((_, i) => segments.slice(0, i + 1).join('/'));
+}
+
 /** The folder at `path` in `list` or below it. */
 function folderAt(list: readonly StoryNode[], path: string): StoryFolder | undefined {
   for (const node of list) {
