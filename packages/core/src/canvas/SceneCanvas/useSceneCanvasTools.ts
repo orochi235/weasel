@@ -30,7 +30,7 @@ export function useSceneCanvasTools(args: {
 }) {
   const { props, enabled } = args;
   const built = usePresetBuilds(enabled, { ...args.build, toolOptions: props.toolOptions });
-  const { tools, internal, takeover, surface } = useCanvasTools({
+  const { tools, internal, takeover, surface, painted } = useCanvasTools({
     enabled,
     tools: props.tools,
     defaultTools: props.defaultTools,
@@ -53,5 +53,5 @@ export function useSceneCanvasTools(args: {
     move: args.move as FeatureBindingOptions['move'],
     rotate: (props.selectTool?.rotate || undefined) as FeatureBindingOptions['rotate'],
   });
-  return { tools, internal, takeover, surface, contributions, standardActions, buildCtx: built.ctx };
+  return { tools, internal, takeover, surface, painted, contributions, standardActions, buildCtx: built.ctx };
 }

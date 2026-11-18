@@ -140,7 +140,7 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
     <CanvasKitProviders viewInputs={viewInputs}>
       <Canvas<TPose>
         ref={handleRef} adapter={adapter} selection={selection} poseDescriptor={descriptor}
-        tools={tools.tools} layers={layered.layers}
+        tools={tools.painted} layers={layered.layers}
         // The chrome's bounds are the picker's: a node on a parallax plane is
         // boxed where the plane draws it, and a `geometry.boundsOf` reaches both.
         boundsOf={boundsOf} boundsOfPose={picking.boundsOfPose}

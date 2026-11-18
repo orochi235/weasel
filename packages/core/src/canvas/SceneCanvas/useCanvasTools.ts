@@ -83,6 +83,8 @@ export function useCanvasTools(args: {
   /** Under a takeover, the canvas's own always-on entries whose ids the takeover holds no entry for: they apply
    *  under it as they would without it. Empty with no takeover, where `internal` holds them. */
   surface: readonly SurfaceContribution[];
+  /** What the canvas paints: `tools`, plus `surface`'s overlays under a takeover. */
+  painted: ToolsApi;
 } {
   const { enabled, tools: toolsProp, defaultTools, inertia, defaultActiveTool, modes, onToolsCreated } = args;
   const ambient = useWithProvidedAmbient(args.ambient);
@@ -122,11 +124,29 @@ export function useCanvasTools(args: {
     () => (takeover ? mergedAmbient.filter((e) => !takeover.has(e.id)).map(alwaysOn) : []),
     [takeover, mergedAmbient],
   );
+  const painted = useMemo(
+    () => (takeover ? withSurfaceOverlays(takeover, internal, surface) : internal),
+    [takeover, internal, surface],
+  );
 
   const onToolsCreatedRef = useLatest(onToolsCreated);
   useEffect(() => { onToolsCreatedRef.current?.(tools); }, [tools, onToolsCreatedRef]);
 
-  return { tools, internal, takeover, surface };
+  return { tools, internal, takeover, surface, painted };
+}
+
+/** `takeover`, drawing `surface`'s overlays after its own. `internal` holds the same entries, so its read gates
+ *  them on the active mode exactly as it gates them without a takeover. */
+function withSurfaceOverlays(takeover: ToolsApi, internal: ToolsApi, surface: readonly SurfaceContribution[]): ToolsApi {
+  const own = new Set(surface.flatMap((entry) => (entry.overlay ? [entry.overlay].flat() : [])));
+  if (own.size === 0) return takeover;
+  return {
+    ...takeover,
+    getActiveOverlays: (position) => [
+      ...takeover.getActiveOverlays(position),
+      ...internal.getActiveOverlays(position).filter((layer) => own.has(layer)),
+    ],
+  };
 }
 
 /**

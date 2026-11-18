@@ -120,28 +120,6 @@ describe('contribution roles rebind to their host', () => {
     expect(rec.live).toEqual([]);
   });
 
-  it('registers each overlay layer on the current API only', () => {
-    const layer = { id: 'ov', draw: () => [] };
-    const entry = { id: 'f', overlay: layer } as unknown as SurfaceContribution;
-    const a = fakeApi('A');
-    const b = fakeApi('B');
-    function Surface({ api }: { api: CanvasExtensionApi }) {
-      useContributionRoles(toolsOf([]), api, 'off', [entry]);
-      return null;
-    }
-    const view = render(<Surface api={a} />);
-    view.rerender(<Surface api={a} />);
-    expect(a.registerLayer).toHaveBeenCalledTimes(1);
-    const disposeA = vi.mocked(a.registerLayer).mock.results[0]!.value as ReturnType<typeof vi.fn>;
-    view.rerender(<Surface api={b} />);
-    expect(disposeA).toHaveBeenCalledTimes(1);
-    expect(b.registerLayer).toHaveBeenCalledTimes(1);
-    expect(a.registerLayer).toHaveBeenCalledTimes(1);
-    const disposeB = vi.mocked(b.registerLayer).mock.results[0]!.value as ReturnType<typeof vi.fn>;
-    view.unmount();
-    expect(disposeB).toHaveBeenCalledTimes(1);
-  });
-
   it('leaves one installation under StrictMode, and none after unmount', () => {
     const rec = recorder();
     const attach = vi.fn((api: CanvasExtensionApi) => rec.track(`attach@${rec.label(api)}`));

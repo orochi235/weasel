@@ -94,10 +94,10 @@ const NO_SURFACE: readonly SurfaceContribution[] = [];
 
 /**
  * `surface` is the canvas's own entries installed beside a takeover, which the
- * takeover's `ToolsApi` does not hold: their deps, `watch`, `attach`, menus, frame
- * hooks and overlay install here, the overlay as a registered layer since no
- * tool set lists it. Their actions are the canvas's standard actions, so they
- * are not registered again.
+ * takeover's `ToolsApi` does not hold: their deps, `watch`, `attach`, menus and
+ * frame hooks install here. Their actions are the canvas's standard actions, so
+ * they are not registered again, and their overlays draw through the canvas's
+ * mode-gated overlay read (`useCanvasTools`).
  */
 export function useContributionRoles(
   tools: ToolsApi,
@@ -158,13 +158,6 @@ export function useContributionRoles(
     }
     const attach = entry.attach;
     if (attach && api) installs.set(attach, { targets: [api, depRegistry], install: () => attach(api, reader) });
-  }
-  for (const entry of surface) {
-    const overlay = entry.overlay;
-    if (!overlay || !api) continue;
-    for (const layer of Array.isArray(overlay) ? overlay : [overlay]) {
-      installs.set(layer, { targets: [api], install: () => api.registerLayer(layer) });
-    }
   }
   useKeyedInstall(installs);
   useOrderedLayers(entries, api);
