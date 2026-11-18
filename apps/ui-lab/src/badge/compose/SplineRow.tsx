@@ -21,7 +21,8 @@ function SplineRow({ path, value, values, setValue, drafts, disabled }: RowConte
   const bag: Params = { ...curve, mode };
   const slotsOf = ({ mode: _mode, ...slots }: Params): Params => slots;
   const write = (next: Params) => setValue(slotsOf(next));
-  // A drag drafts each move where the panel keeps drafts, so its release settles them as one step.
+  // A drag, of a dot or of the count, drafts each move where the panel keeps drafts, so its release settles them
+  // as one step.
   const draft = (next: Params) => (drafts?.setValue ?? setValue)(slotsOf(next));
   const anchors = readAnchors(bag);
   return (
@@ -36,7 +37,7 @@ function SplineRow({ path, value, values, setValue, drafts, disabled }: RowConte
         step={1}
         disabled={disabled}
         onChange={(count) => write(withAnchorCount(bag, count))}
-        onInput={(count) => write(withAnchorCount(bag, count))}
+        onInput={(count) => draft(withAnchorCount(bag, count))}
       />
       <OctantSplineEditor
         anchors={anchors}
