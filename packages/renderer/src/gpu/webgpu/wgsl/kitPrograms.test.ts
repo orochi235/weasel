@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { BATCH_FILL_UNIFORMS, BATCH_HULL_UNIFORMS, BATCH_TEXTURE_SLOTS } from '../../../shaders/batchFill';
 import { GLYPH_GRAD_UNIFORMS, GLYPH_PATTERN_UNIFORMS, GLYPH_TEXTURE_UNIFORMS } from '../../../shaders/glyphPaint';
+import { GLYPH_LAYER_UNIFORMS } from '../../../shaders/glyphLayer';
 import { GRAD_FILL_UNIFORMS } from '../../../shaders/gradFill';
 import { PATH_FILL_UNIFORMS } from '../../../shaders/pathFill';
 import { PATTERN_FILL_UNIFORMS } from '../../../shaders/patternFill';
@@ -21,6 +22,7 @@ const ID_COMPOSITE = ['u_source', 'u_ids', 'u_resolution', 'u_alpha', 'u_groupId
 /** Each program's GLSL uniform names, which its WGSL must declare. */
 function glslNames(name: string): readonly string[] {
   if (name.startsWith('batchFill')) return name.includes('hulls=true') ? BATCH_HULL_UNIFORMS : BATCH_FILL_UNIFORMS;
+  if (name.startsWith('glyphLayer')) return GLYPH_LAYER_UNIFORMS;
   const table: Record<string, readonly string[]> = {
     pathFill: PATH_FILL_UNIFORMS, pathFillVColor: PATH_FILL_UNIFORMS, gradFill: GRAD_FILL_UNIFORMS,
     patternFill: PATTERN_FILL_UNIFORMS, trimmedRibbon: TRIMMED_RIBBON_UNIFORMS,
