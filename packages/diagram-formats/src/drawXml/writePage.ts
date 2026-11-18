@@ -1,7 +1,7 @@
 /** One page of a document as a draw-style `<diagram>`: its shapes, regions, and groups as nested cells, then its edges. */
 import { IDENTITY_POSE_COMPOSITION, pageName } from '@weasel-js/core';
 import type { Vec2 } from '@weasel-js/core/math';
-import { unionRects } from '@weasel-js/geom';
+import { unionRects, type Rect } from '@weasel-js/geom';
 import { freshId } from '@weasel-js/registry';
 import {
   diagramScene, type ContainerHeader, type DataContainer, type DiagramData, type DiagramTheme,
@@ -9,7 +9,6 @@ import {
 import type { GraphPage } from '../document';
 import { laidOutPage, needsLayout } from '../pageLayout';
 import { DIRECTION_ATTR } from './cells';
-import type { Box } from './pageCells';
 import type { Warn } from './readStyle';
 import { writeEdge } from './writeEdge';
 import { GROUP_STYLE, nodeLines, nodeStyle, regionStyle } from './writeStyle';
@@ -95,12 +94,12 @@ export function writePage(page: GraphPage, index: number, theme: DiagramTheme, w
   for (const v of items) children.set(parent.get(v.id), [...(children.get(parent.get(v.id)) ?? []), v]);
 
   const nodes = new Map(data.nodes.map((n) => [n.id, n]));
-  const boxes = new Map<string, Box>();
-  const boxOf = (v: Vertex): Box | undefined => {
+  const boxes = new Map<string, Rect>();
+  const boxOf = (v: Vertex): Rect | undefined => {
     if (!boxes.has(v.id)) {
       const pose = specs.get(v.id)?.pose;
       const node = nodes.get(v.id);
-      const box = v.group === true ? unionRects((children.get(v.id) ?? []).map(boxOf).filter((b): b is Box => b !== undefined)) ?? undefined
+      const box = v.group === true ? unionRects((children.get(v.id) ?? []).map(boxOf).filter((b): b is Rect => b !== undefined)) ?? undefined
         : pose === undefined ? undefined
           : { x: pose.x, y: pose.y, width: node?.width ?? pose.width, height: node?.height ?? pose.height };
       if (box !== undefined) boxes.set(v.id, box);
