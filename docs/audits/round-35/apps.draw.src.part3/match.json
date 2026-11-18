@@ -1,0 +1,12 @@
+{
+ "pairs": [],
+ "a": [
+  "Canceling a Simplify slider drag leaves Sand's saved tolerance, and the slider, at the canceled value",
+  "Canceling an Offset slider drag leaves the slider at the canceled distance"
+ ],
+ "b": [
+  "Setting a color on the active fill or stroke drops the alpha the swatch's paint editor stored in `opacity`",
+  "A picked color paints the active swatch and the selection at two different alphas",
+  "Live symmetry's first group is made even while a redo is pending, which wipes the redo stack, though `standingOf` reports that state as \"waiting\""
+ ]
+}

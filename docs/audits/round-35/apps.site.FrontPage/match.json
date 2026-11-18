@@ -1,0 +1,21 @@
+{
+ "pairs": [
+  [
+   0,
+   0
+  ],
+  [
+   2,
+   1
+  ]
+ ],
+ "a": [
+  "The front page clips its content on a short viewport, with no way to scroll to it",
+  "The version pill's offset claims to be the sidebar's overlap scaled, but the sidebar places it differently",
+  "The Components and WeaselChart links show the front page again under the site's dev server"
+ ],
+ "b": [
+  "The front page clips its section links on short viewports, and nothing on the page can scroll",
+  "On the site's dev server, the \"WeaselChart\" and \"Components\" cards load the front page again"
+ ]
+}
