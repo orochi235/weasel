@@ -1,3 +1,4 @@
+import type { Rect } from '@weasel-js/geom';
 import type { AnnotationKind } from '../types';
 
 /** A point in content units. */
@@ -7,12 +8,7 @@ export interface Pt {
 }
 
 /** A box in content units. */
-export interface Box {
-  x: number;
-  y: number;
-  w: number;
-  h: number;
-}
+export type Box = Rect;
 
 /** What a guide asks to be traced: a box (a rectangle, an ellipse's bounds, a text label's
  *  frame), a segment from `a` to `b`, or a curve sampled densely enough to measure against. */
@@ -34,23 +30,23 @@ export interface Exercise {
 }
 
 /** The calibration picture's own size. */
-export const CONTENT = { w: 480, h: 360 } as const;
+export const CONTENT = { width: 480, height: 360 } as const;
 
-const CELL = { w: 160, h: 120 };
+const CELL = { width: 160, height: 120 };
 /** The color the named-color exercise asks for: far from the default mark red. */
 export const CALIBRATION_BLUE = '#0090ff';
 const SAMPLES = 512;
 
 function cell(col: number, row: number): Box {
-  return { x: col * CELL.w, y: row * CELL.h, w: CELL.w, h: CELL.h };
+  return { x: col * CELL.width, y: row * CELL.height, ...CELL };
 }
 
 const at = (c: Box, x: number, y: number): Pt => ({ x: c.x + x, y: c.y + y });
 const boxIn = (c: Box, x: number, y: number, w: number, h: number): Box => ({
   x: c.x + x,
   y: c.y + y,
-  w,
-  h,
+  width: w,
+  height: h,
 });
 
 /** `fn` sampled at `SAMPLES + 1` evenly spaced `t` in [0, 1]. */

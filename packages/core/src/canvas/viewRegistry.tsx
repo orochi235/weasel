@@ -233,7 +233,7 @@ export function ViewRegistryProvider({ children }: { children: ReactNode }) {
           const v = r.layer.resolvable(view, dims);
           if (viewContains(v, x, y)) return { id: v.id, view: v.view, rect: v.rect };
         }
-        return { id: null, view, rect: { x: 0, y: 0, w: dims.width, h: dims.height } };
+        return { id: null, view, rect: { x: 0, y: 0, width: dims.width, height: dims.height } };
       },
       aimOf: (id) => {
         if (id !== null) return get(id)?.aim() ?? null;

@@ -81,7 +81,7 @@ function expectNear(got: number[], want: readonly number[]): void {
 }
 
 const image = (bitmap: ImageBitmap, x = 0, opacity?: number): DrawCommand =>
-  ({ kind: 'image', image: bitmap, x, y: 0, w: 16, h: 16, ...(opacity === undefined ? {} : { opacity }) });
+  ({ kind: 'image', image: bitmap, x, y: 0, width: 16, height: 16, ...(opacity === undefined ? {} : { opacity }) });
 
 const filled = (x: number, paint: unknown): DrawCommand =>
   ({ kind: 'path', path: { kind: 'rect', x, y: 0, width: 16, height: 16 }, fill: { paint } } as DrawCommand);

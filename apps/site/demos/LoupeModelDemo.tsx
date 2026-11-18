@@ -13,7 +13,7 @@ import { decimal, qty } from '@weasel-js/quantity';
 
 const CELL = 8, COLS = 48, ROWS = 32;
 const GRID_W = CELL * COLS, GRID_H = CELL * ROWS;
-const LENS: LoupeRect = { x: GRID_W + 24, y: 0, w: 192, h: 192 };
+const LENS: LoupeRect = { x: GRID_W + 24, y: 0, width: 192, height: 192 };
 const PALETTE = ['#1f2430', '#e5484d', '#f5a524', '#46a758', '#0091ff', '#8e4ec6', '#f4f4f5', '#c9ccd4'];
 
 const colorAt = (col: number, row: number) => PALETTE[((col * 7) ^ (row * 13) ^ (col * row)) & 7]!;
@@ -24,7 +24,7 @@ const CELLS = Array.from({ length: COLS * ROWS }, (_, i) => {
 });
 
 const within = (p: LoupePoint, r: LoupeRect) =>
-  p.x >= r.x && p.x < r.x + r.w && p.y >= r.y && p.y < r.y + r.h;
+  p.x >= r.x && p.x < r.x + r.width && p.y >= r.y && p.y < r.y + r.height;
 
 /** The whole painter contract, answered from plain data: the colors are known,
  *  so nothing is read back from pixels. */
@@ -105,7 +105,7 @@ function LoupeStage({ loupe, picked }: { loupe: LoupeModel; picked: string | nul
       <svg
         ref={stage}
         className={s.stage}
-        width={LENS.x + LENS.w}
+        width={LENS.x + LENS.width}
         height={GRID_H}
         shapeRendering="crispEdges"
         onPointerMove={(e) => {
@@ -130,14 +130,14 @@ function LoupeStage({ loupe, picked }: { loupe: LoupeModel; picked: string | nul
         <svg
           x={LENS.x}
           y={LENS.y}
-          width={LENS.w}
-          height={LENS.h}
-          viewBox={`${inner.x} ${inner.y} ${LENS.w / inner.scale.x} ${LENS.h / inner.scale.y}`}
+          width={LENS.width}
+          height={LENS.height}
+          viewBox={`${inner.x} ${inner.y} ${LENS.width / inner.scale.x} ${LENS.height / inner.scale.y}`}
         >
-          <rect className={s.lensGround} x={inner.x} y={inner.y} width={LENS.w / inner.scale.x} height={LENS.h / inner.scale.y} />
+          <rect className={s.lensGround} x={inner.x} y={inner.y} width={LENS.width / inner.scale.x} height={LENS.height / inner.scale.y} />
           <use href={`#${gridId}`} />
         </svg>
-        <rect className={s.lensFrame} x={LENS.x + 0.5} y={LENS.y + 0.5} width={LENS.w - 1} height={LENS.h - 1} />
+        <rect className={s.lensFrame} x={LENS.x + 0.5} y={LENS.y + 0.5} width={LENS.width - 1} height={LENS.height - 1} />
       </svg>
 
       <table className={s.readout}>

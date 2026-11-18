@@ -195,7 +195,7 @@ export function syncScene(scene: Scene<WorldData, WorldLayer, RectPose>, g: Game
 
   const locals = boneLocalPoses(
     pose,
-    { x: g.player.body.x, y: g.player.body.y + g.player.body.h / 2 },
+    { x: g.player.body.x, y: g.player.body.y + g.player.body.height / 2 },
     g.player.body.facing,
   );
   for (const [name, pose] of locals) {

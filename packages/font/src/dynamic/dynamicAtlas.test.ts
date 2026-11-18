@@ -183,7 +183,7 @@ describe('requestGlyph', () => {
     const pages = _getPagesForTests();
     expect(pages.length).toBe(1);
     expect(pages[0].version).toBe(1);
-    expect(pages[0].patches).toEqual([{ seq: 1, x: ch.x, y: ch.y, w: 20, h: 24 }]);
+    expect(pages[0].patches).toEqual([{ seq: 1, x: ch.x, y: ch.y, width: 20, height: 24 }]);
     // Solid-alpha input → interior of the glyph rect saturates high.
     const centerIdx = (ch.y + 12) * PAGE_SIZE + ch.x + 10;
     expect(pages[0].data[centerIdx]).toBeGreaterThan(200);

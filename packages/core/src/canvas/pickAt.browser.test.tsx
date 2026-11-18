@@ -53,7 +53,7 @@ function sceneOf() {
 
 /** A disc node paints the custom shader over its pose, the rest a red rect. */
 const drawOne = ((node: { data: Data }, pose: RectPose): DrawCommand[] => (node.data.disc
-  ? [{ kind: 'shader', program: DISC, uniforms: {}, bounds: { x: pose.x, y: pose.y, w: pose.width, h: pose.height } }]
+  ? [{ kind: 'shader', program: DISC, uniforms: {}, bounds: { x: pose.x, y: pose.y, width: pose.width, height: pose.height } }]
   : [{ kind: 'path', path: { kind: 'rect', ...pose }, fill: { paint: { kind: 'solid', color: '#ff0000' } } }])) as never;
 
 describe('pickAt on a real canvas', () => {

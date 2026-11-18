@@ -81,8 +81,8 @@ describe('pathBox, property', () => {
 describe('paintedBox, property', () => {
   it('holds an image quad\'s corners, and every sprite\'s, under any transform', () => {
     const quad = fc.tuple(eighth(), eighth(), eighth(100), eighth(100));
-    fc.assert(fc.property(quad, fc.array(quad, { maxLength: 5 }), affine, ([x, y, w, h], sprites, m) => {
-      const image = paintedBox({ kind: 'image', x, y, w, h } as never, m)!;
+    fc.assert(fc.property(quad, fc.array(quad, { maxLength: 5 }), affine, ([x, y, width, height], sprites, m) => {
+      const image = paintedBox({ kind: 'image', x, y, width, height } as never, m)!;
       const data = new Float32Array(sprites.length * SPRITE_STRIDE);
       sprites.forEach((q, i) => data.set(q, i * SPRITE_STRIDE));
       const sheet = paintedBox({ kind: 'sprites', sprites: data } as never, m)!;
@@ -93,7 +93,7 @@ describe('paintedBox, property', () => {
           expect(within(box, sx, sy, 1e-9 * (1 + Math.abs(sx) + Math.abs(sy)))).toBe(true);
         }
       };
-      check(image, [x, y, w, h]);
+      check(image, [x, y, width, height]);
       for (const q of sprites) check(sheet, q);
     }), runs(300));
   });

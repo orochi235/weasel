@@ -27,7 +27,7 @@ const annotating = defineInstrument<Record<string, never>, Record<string, never>
   initialState: () => ({}),
   render: () => <Pane />,
   annotations: {
-    targets: () => [{ id: 'pane', ref: { current: null }, content: { w: 200, h: 100 } }],
+    targets: () => [{ id: 'pane', ref: { current: null }, content: { width: 200, height: 100 } }],
   },
 });
 
@@ -61,7 +61,7 @@ describe('the annotation options palette', () => {
 
   it("restyles Select's selection, as one undo step", async () => {
     await mount();
-    const frac = { x: 0.1, y: 0.1, w: 0.2, h: 0.2 };
+    const frac = { x: 0.1, y: 0.1, width: 0.2, height: 0.2 };
     const a = marks().add({ target: 'pane', kind: 'rect', frac, width: 4 });
     const b = marks().add({ target: 'pane', kind: 'ellipse', frac });
     act(() => marks().setSelection([a, b]));

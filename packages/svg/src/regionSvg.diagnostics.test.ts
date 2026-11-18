@@ -14,7 +14,7 @@ function lossy() {
   const painter: NodeShapeEntry<unknown, RectPose> = {
     id: 'test:shader',
     matches: (node) => (node.data as { shaded?: boolean } | undefined)?.shaded === true,
-    paint: () => [{ kind: 'shader', program: { id: 'test:glow' }, uniforms: {}, bounds: { x: 0, y: 0, w: 5, h: 5 } }],
+    paint: () => [{ kind: 'shader', program: { id: 'test:glow' }, uniforms: {}, bounds: { x: 0, y: 0, width: 5, height: 5 } }],
   };
   drops.push(registerNodeShape(painter, { priority: 'high' }));
   drops.push(registerPaintKindLoader('test:offline', async () => { throw new Error('offline'); }));

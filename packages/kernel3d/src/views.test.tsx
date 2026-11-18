@@ -28,9 +28,9 @@ const H = 600;
 const HALF = W / 2;
 
 type ViewName = 'left' | 'right';
-const RECTS: Record<ViewName, { x: number; y: number; w: number; h: number }> = {
-  left: { x: 0, y: 0, w: HALF, h: H },
-  right: { x: HALF, y: 0, w: HALF, h: H },
+const RECTS: Record<ViewName, { x: number; y: number; width: number; height: number }> = {
+  left: { x: 0, y: 0, width: HALF, height: H },
+  right: { x: HALF, y: 0, width: HALF, height: H },
 };
 
 /** `scene` on a canvas split into two views, each camera aimed at a different

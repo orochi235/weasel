@@ -100,7 +100,7 @@ interface Live { node: HudAccessibleNode; subs: Set<() => void>; widget: Widget 
 function live(node: HudAccessibleNode, id: string): Live {
   const l: Live = { node, subs: new Set(), widget: null as never };
   l.widget = {
-    id, bounds: { x: 0, y: 0, w: 10, h: 10 }, hidden: false, focusable: true,
+    id, bounds: { x: 0, y: 0, width: 10, height: 10 }, hidden: false, focusable: true,
     draw: () => [], hitTest: () => false, onPointer: () => {}, dispose: () => {},
     accessibleTree: { read: () => l.node, subscribe: (fn) => { l.subs.add(fn); return () => l.subs.delete(fn); } },
   };

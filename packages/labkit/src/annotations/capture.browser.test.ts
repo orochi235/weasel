@@ -32,13 +32,13 @@ describe('a raster capture of a text mark', () => {
   it('draws its glyphs when the font was registered lazily and never fetched', async () => {
     void registerFont('sans-serif', {}, metricsUrl, atlasUrl, { lazy: true });
     const store = createMarkStore({
-      targets: () => [{ id: 'bare', content: { w: 120, h: 40 } }],
+      targets: () => [{ id: 'bare', content: { width: 120, height: 40 } }],
     });
     store.add({
       target: 'bare',
       kind: 'text',
       title: 'Hello',
-      frac: { x: 0.1, y: 0.2, w: 0.5, h: 0.5 },
+      frac: { x: 0.1, y: 0.2, width: 0.5, height: 0.5 },
     });
 
     const result = await store.capture('bare', { format: 'png', scale: 2 });

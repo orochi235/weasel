@@ -163,8 +163,8 @@ export function useLoupe<TData = unknown, TLayer extends string = string, TPose 
           return {
             x: center.x - width / 2,
             y: center.y - height / 2,
-            w: width,
-            h: height,
+            width,
+            height,
             shows,
             factor,
           };

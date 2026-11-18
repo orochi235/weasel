@@ -23,29 +23,29 @@ const INITIAL: Rect[] = [
 // --- Quadtree (demo-local; no scene-graph integration). Builds fresh on each
 // draw from the current rect AABBs and renders the cell boundaries. ---
 
-interface QuadNode { x: number; y: number; w: number; h: number; depth: number; children: QuadNode[] | null }
+interface QuadNode { x: number; y: number; width: number; height: number; depth: number; children: QuadNode[] | null }
 
 const MAX_DEPTH = 5;
 
 function aabbIntersects(n: QuadNode, r: { x: number; y: number; width: number; height: number }): boolean {
-  return r.x < n.x + n.w && r.x + r.width > n.x && r.y < n.y + n.h && r.y + r.height > n.y;
+  return r.x < n.x + n.width && r.x + r.width > n.x && r.y < n.y + n.height && r.y + r.height > n.y;
 }
 
 function buildTree(bounds: { x: number; y: number; width: number; height: number }, rects: Rect[]): QuadNode {
-  const root: QuadNode = { x: bounds.x, y: bounds.y, w: bounds.width, h: bounds.height, depth: 0, children: null };
+  const root: QuadNode = { ...bounds, depth: 0, children: null };
   function visit(node: QuadNode) {
     if (node.depth >= MAX_DEPTH) return;
     let count = 0;
     for (const r of rects) if (aabbIntersects(node, r)) { count++; if (count > 1) break; }
     if (count <= 1) return;
-    const hw = node.w / 2;
-    const hh = node.h / 2;
+    const hw = node.width / 2;
+    const hh = node.height / 2;
     const d = node.depth + 1;
     node.children = [
-      { x: node.x,      y: node.y,      w: hw, h: hh, depth: d, children: null },
-      { x: node.x + hw, y: node.y,      w: hw, h: hh, depth: d, children: null },
-      { x: node.x,      y: node.y + hh, w: hw, h: hh, depth: d, children: null },
-      { x: node.x + hw, y: node.y + hh, w: hw, h: hh, depth: d, children: null },
+      { x: node.x,      y: node.y,      width: hw, height: hh, depth: d, children: null },
+      { x: node.x + hw, y: node.y,      width: hw, height: hh, depth: d, children: null },
+      { x: node.x,      y: node.y + hh, width: hw, height: hh, depth: d, children: null },
+      { x: node.x + hw, y: node.y + hh, width: hw, height: hh, depth: d, children: null },
     ];
     for (const c of node.children) visit(c);
   }
@@ -76,7 +76,7 @@ function createQuadtreeLayer(
         const width = Math.max(0.5, 2.5 - n.depth * 0.4);
         cmds.push({
           kind: 'path',
-          path: { kind: 'rect', x: n.x, y: n.y, width: n.w, height: n.h },
+          path: { kind: 'rect', x: n.x, y: n.y, width: n.width, height: n.height },
           stroke: { paint: { color: 'rgba(0, 220, 240, 0.7)' }, width },
         });
         for (const c of n.children) walk(c);

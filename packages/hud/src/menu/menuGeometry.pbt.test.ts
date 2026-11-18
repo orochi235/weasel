@@ -8,7 +8,7 @@ import { createMenuController, type MenuNumberEntry, type MenuRect } from '@weas
 import { draftText, grapheme, menuLevel, openPath, runs, tally } from '../pbt.fixture';
 import { chipUnder, levelAt } from './chipRepeat';
 import { menuRowSpans } from '@weasel-js/ui-logic';
-import { panelSize, rowAt } from './panelCommands';
+import { measurePanel, rowAt } from './panelCommands';
 import { envOf, menuTheme } from './menu.fixture';
 import { clusterStops, startEdit, type HudTextEdit } from './textEdit';
 import { caretAt, caretX, chipAt, numberChips, typingCommands } from './valueRows';
@@ -18,17 +18,17 @@ const RUNS = 300;
 
 const rect = fc.record({
   x: fc.integer({ min: -100, max: 600 }), y: fc.integer({ min: -100, max: 600 }),
-  w: fc.integer({ min: 0, max: 300 }), h: fc.integer({ min: 0, max: 300 }),
+  width: fc.integer({ min: 0, max: 300 }), height: fc.integer({ min: 0, max: 300 }),
 });
 /** A fraction spread evenly over `[lo, hi]`, not crowded at its ends as fast-check's doubles are. */
 const between = (lo: number, hi: number) => fc.integer({ min: 0, max: 10_000 }).map((k) => lo + (hi - lo) * k / 10_000);
-const inside = (r: MenuRect, x: number, y: number) => x >= r.x && x < r.x + r.w && y >= r.y && y < r.y + r.h;
+const inside = (r: MenuRect, x: number, y: number) => x >= r.x && x < r.x + r.width && y >= r.y && y < r.y + r.height;
 
 describe('menu hit tests', () => {
   it('finds the row drawn under a point, and none in the padding', () => {
     const seen = tally();
     fc.assert(fc.property(menuLevel(0, 12), menuTheme, between(-0.1, 1.1), (entries, { m, tokens }, f) => {
-      const y = f * panelSize(entries, envOf(tokens, () => 0)).h;
+      const y = f * measurePanel(entries, envOf(tokens, () => 0)).height;
       const rows = menuRowSpans(entries, m);
       const i = rowAt(entries, m, y);
       if (i === null) {
@@ -40,7 +40,7 @@ describe('menu hit tests', () => {
       }
       rows.forEach((r, k) => { if (k > 0) expect(r.y).toBe(rows[k - 1]!.y + rows[k - 1]!.h); });
       const last = rows.at(-1)!;
-      expect(panelSize(entries, envOf(tokens, () => 0)).h).toBe(last.y + last.h + m.padY);
+      expect(measurePanel(entries, envOf(tokens, () => 0)).height).toBe(last.y + last.h + m.padY);
     }), runs(RUNS));
     seen.atLeast('miss', 20);
     seen.atLeast('row', 20);
@@ -58,11 +58,11 @@ describe('menu hit tests', () => {
     fc.assert(fc.property(fc.integer({ min: 0, max: 400 }), menuTheme, between(-0.2, 1.2), (w, { m }, f) => {
       const x = w - m.padX - f * 4 * m.rowHeight;
       const { minus, value, plus } = numberChips(w, m);
-      expect(minus.x + minus.w).toBe(value.x);
-      expect(value.x + value.w).toBe(plus.x);
-      expect(plus.x + plus.w).toBe(w - m.padX);
+      expect(minus.x + minus.width).toBe(value.x);
+      expect(value.x + value.width).toBe(plus.x);
+      expect(plus.x + plus.width).toBe(w - m.padX);
       const dir = chipAt(w, m, x);
-      const on = (s: { x: number; w: number }) => x >= s.x && x < s.x + s.w;
+      const on = (s: { x: number; width: number }) => x >= s.x && x < s.x + s.width;
       expect(dir).toBe(on(plus) ? 1 : on(minus) ? -1 : null);
       seen.hit(String(dir));
     }), runs(RUNS));
@@ -75,16 +75,16 @@ describe('menu hit tests', () => {
       const c = createMenuController({ entries, onClose: () => {} });
       openPath(c, path);
       const panels = c.stack().map((_, level) => {
-        const size = panelSize(c.entriesAt(level), envOf(tokens, (t) => t.length * 6));
-        return { x: level * (size.w - 20), y: level * 30, ...size };
+        const size = measurePanel(c.entriesAt(level), envOf(tokens, (t) => t.length * 6));
+        return { x: level * (size.width - 20), y: level * 30, width: size.width, height: size.height };
       });
       const top = panels.at(-1)!;
       const deepest = c.entriesAt(panels.length - 1);
       const rows = menuRowSpans(deepest, m);
       const numbers = rows.filter((_, i) => deepest[i]!.kind === 'number' && py % 4 !== 0);
       const row = numbers[py % Math.max(1, numbers.length)];
-      const x = top.x + top.w - m.padX - (px % (4 * m.rowHeight + 4));
-      const y = row ? top.y + row.y + (py % row.h) : top.y + (py % (top.h + 1));
+      const x = top.x + top.width - m.padX - (px % (4 * m.rowHeight + 4));
+      const y = row ? top.y + row.y + (py % row.h) : top.y + (py % (top.height + 1));
       const chip = chipUnder(c, panels, m, x, y);
       const level = levelAt(panels, x, y);
       if (!chip) { seen.hit('none'); return; }
@@ -94,7 +94,7 @@ describe('menu hit tests', () => {
       expect(chip.entry).toBe(entry);
       expect(entry.kind).toBe('number');
       expect(entry.disabled).toBe(false);
-      expect(chip.dir).toBe(chipAt(panels[level]!.w, m, x - panels[level]!.x));
+      expect(chip.dir).toBe(chipAt(panels[level]!.width, m, x - panels[level]!.x));
     }), runs(RUNS));
     seen.atLeast('chip', 5);
     seen.atLeast('none', 10);
@@ -131,10 +131,10 @@ describe('typed text', () => {
       const e = startEdit({ kind: 'text', key: 't', label: 'T', value: d, set: () => {} }, d);
       return { ...e, caret: a % (n + 1), anchor: b % (n + 1), ...(pre ? { preedit: pre } : {}) };
     });
-    fc.assert(fc.property(edits, fc.integer({ min: 60, max: 400 }), menuTheme, widths, (edit, w, { m }, ws) => {
+    fc.assert(fc.property(edits, fc.integer({ min: 60, max: 400 }), menuTheme, widths, (edit, width, { m }, ws) => {
       const measure = measureWith(ws);
-      const b = { x: 10, y: 20, w, h: 200 };
-      const cmds = typingCommands(b, { y: 4, h: m.rowHeight }, edit, m,
+      const b = { x: 10, y: 20, width, height: 200 };
+      const cmds = typingCommands(b, { y: 4, height: m.rowHeight }, edit, m,
         { fg: '#fff', muted: '#888', border: '#444', font: { fontFamily: 'Inter', fontSize: m.font.size } }, '#00f', measure);
       const nums: number[] = [];
       JSON.stringify(cmds, (_k, v) => { if (typeof v === 'number') nums.push(v); return v; });
@@ -144,7 +144,7 @@ describe('typed text', () => {
       const sel = cmds.find((c) => c.kind === 'path' && (c as { path: { kind: string } }).path.kind === 'rect') as
         { path: { x: number; width: number } } | undefined;
       if (sel) expect(sel.path.width).toBeGreaterThan(0);
-      expect(Number.isFinite(caretX(edit, w, m, measure))).toBe(true);
+      expect(Number.isFinite(caretX(edit, width, m, measure))).toBe(true);
     }), runs(RUNS));
   });
 });

@@ -12,7 +12,7 @@ import { ViewRegistryProvider, useOptionalViewRegistry, type ViewRegistry } from
 import { AUTO_POSE_DESCRIPTOR } from 'core/geometry/autoPoseDescriptor';
 import type { View } from 'core/viewport/view';
 
-const PANEL = { x: 100, y: 0, w: 100, h: 100 };
+const PANEL = { x: 100, y: 0, width: 100, height: 100 };
 const PANEL_VIEW: View = { x: 0, y: 0, scale: { x: 8, y: 8 } };
 
 beforeAll(() => {

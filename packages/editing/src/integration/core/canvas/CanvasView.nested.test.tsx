@@ -23,12 +23,12 @@ type D = { kind: 'rect' };
 type P = { x: number; y: number; width: number; height: number };
 
 /** The panel covers canvas (100..300, 0..200) and looks at world (1000, 0). */
-const PANEL = { x: 100, y: 0, w: 200, h: 200 };
+const PANEL = { x: 100, y: 0, width: 200, height: 200 };
 const PANEL_VIEW: View = { x: 1000, y: 0, scale: { x: 1, y: 1 } };
 
 /** The inset sits 50px into the panel — canvas (150, 50) — and looks 1000
  *  further on at twice the panel's zoom: world (2000, 0) at 2×. */
-const INSET = { x: 50, y: 50, w: 100, h: 100 };
+const INSET = { x: 50, y: 50, width: 100, height: 100 };
 const insetCamera = (outer: View): View => ({
   x: outer.x + 1000, y: outer.y, scale: { x: outer.scale.x * 2, y: outer.scale.y * 2 },
 });
@@ -129,7 +129,7 @@ describe('a click inside a nested view', () => {
 
 describe('a nested view overhanging the view around it', () => {
   /** Panel-local (150, 0): canvas (250..350), of which only (250..300) is on the panel. */
-  const OVERHANG = { x: 150, y: 0, w: 100, h: 100 };
+  const OVERHANG = { x: 150, y: 0, width: 100, height: 100 };
 
   it('takes input only where the outer view shows it', () => {
     const h = mount({ inset: OVERHANG });
@@ -159,7 +159,7 @@ describe('SceneCanvasApi.viewAt', () => {
   it('descends to the innermost view under a point', () => {
     const h = mount();
     expect(h.api().viewAt(PRESS)).toMatchObject({
-      id: 'inset', view: { x: 2000, y: 0, scale: { x: 2, y: 2 } }, rect: { x: 150, y: 50, w: 100, h: 100 },
+      id: 'inset', view: { x: 2000, y: 0, scale: { x: 2, y: 2 } }, rect: { x: 150, y: 50, width: 100, height: 100 },
     });
   });
 
@@ -171,7 +171,7 @@ describe('SceneCanvasApi.viewAt', () => {
   it('answers with the canvas itself where no view is', () => {
     const h = mount();
     expect(h.api().viewAt({ x: 20, y: 20 })).toMatchObject({
-      id: null, view: { x: 0, y: 0 }, rect: { x: 0, y: 0, w: 400, h: 300 },
+      id: null, view: { x: 0, y: 0 }, rect: { x: 0, y: 0, width: 400, height: 300 },
     });
   });
 });
@@ -180,7 +180,7 @@ describe('an aim-held view nested in another', () => {
   it("fits its aim to its own frame, measured from the outer view's camera", () => {
     const h = mount({ insetHeld: { aim: (outer) => ({ x: outer.x + 1000, y: outer.y, width: 50, height: 25 }) } });
     expect(h.api().viewAt(PRESS)).toMatchObject({
-      id: 'inset', view: { x: 2000, y: -12.5, scale: { x: 2, y: 2 } }, rect: { x: 150, y: 50, w: 100, h: 100 },
+      id: 'inset', view: { x: 2000, y: -12.5, scale: { x: 2, y: 2 } }, rect: { x: 150, y: 50, width: 100, height: 100 },
     });
     expect(h.api().aimOf('inset')!.extent).toEqual({ x: 2000, y: 0, width: 50, height: 25 });
   });

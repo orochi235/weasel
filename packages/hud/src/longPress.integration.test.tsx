@@ -10,7 +10,7 @@ import { mountHud, pointer, send, stubHudFonts, types } from './hudCanvas.fixtur
 function panel(seen: HudPointerEvent[], claims?: readonly ClaimableGesture[]): Widget {
   return {
     id: 'panel',
-    bounds: { x: 10, y: 10, w: 60, h: 24 },
+    bounds: { x: 10, y: 10, width: 60, height: 24 },
     hidden: false,
     draw: () => [],
     hitTest: (x, y) => x >= 10 && x < 70 && y >= 10 && y < 34,

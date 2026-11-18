@@ -30,7 +30,7 @@ function ListWidget({ selectionMode, rowCount, width }: ListWidgetArgs) {
   const list = useRef<HudListWidget | null>(null);
   useEffect(() => {
     const w = hud.list({
-      id: 'layers', x: 16, y: 16, w: width, rows, selectionMode: select, accessibleName: 'Layers', onActivate: setCurrent,
+      id: 'layers', x: 16, y: 16, width, rows, selectionMode: select, accessibleName: 'Layers', onActivate: setCurrent,
     });
     list.current = w;
     return () => { w.dispose(); list.current = null; };

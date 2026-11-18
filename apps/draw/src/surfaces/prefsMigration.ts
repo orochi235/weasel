@@ -137,3 +137,8 @@ export const gridToGroup: PrefsMigration = (records) => {
     records.delete(from);
   }
 };
+
+/** Version 8 to 9: Symmetry's switch became session state, so the `view.symmetry.on` it was stored at is dropped. */
+export const dropSymmetrySwitch: PrefsMigration = (records) => {
+  records.delete('view.symmetry.on');
+};

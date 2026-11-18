@@ -202,7 +202,7 @@ role:
 | `attach` | Subscribes to the pointer store and repaints while the crosshair shows |
 
 ```tsx
-const minimap = useMemo(() => createMinimapContribution({ rect: { x: 8, y: 8, w: 160, h: 110 } }), []);
+const minimap = useMemo(() => createMinimapContribution({ rect: { x: 8, y: 8, width: 160, height: 110 } }), []);
 <SceneCanvas ambient={[minimap]} … />
 ```
 

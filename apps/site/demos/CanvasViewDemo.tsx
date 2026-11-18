@@ -33,7 +33,7 @@ export function makeRandomScene() {
 }
 
 /** PiP geometry: a 240×160 screen rect at 1.6×, lensing a 150×100 world slice. */
-export const PIP = { w: 240, h: 160, scale: 1.6, margin: 8 };
+export const PIP = { width: 240, height: 160, scale: 1.6, margin: 8 };
 
 /** Inner view for the PiP, centered on the first node. Aiming it at a fixed
  *  world rect instead leaves it empty on about half of this demo's randomly
@@ -41,19 +41,19 @@ export const PIP = { w: 240, h: 160, scale: 1.6, margin: 8 };
 export function pipView(items: ReturnType<typeof makeRandomScene>): View {
   const p = items[0]!.pose;
   return {
-    x: p.x + p.width / 2 - PIP.w / PIP.scale / 2,
-    y: p.y + p.height / 2 - PIP.h / PIP.scale / 2,
+    x: p.x + p.width / 2 - PIP.width / PIP.scale / 2,
+    y: p.y + p.height / 2 - PIP.height / PIP.scale / 2,
     scale: { x: PIP.scale, y: PIP.scale },
   };
 }
 
 /** The inset nested in the PiP, at twice the PiP's zoom on the PiP's center. */
-const ZOOM = { w: 80, h: 60, margin: 6 };
+const ZOOM = { width: 80, height: 60, margin: 6 };
 function zoomInto(pip: View, pipSize: { width: number; height: number }): View {
   const scale = { x: pip.scale.x * 2, y: pip.scale.y * 2 };
   return {
-    x: pip.x + pipSize.width / 2 / pip.scale.x - ZOOM.w / 2 / scale.x,
-    y: pip.y + pipSize.height / 2 / pip.scale.y - ZOOM.h / 2 / scale.y,
+    x: pip.x + pipSize.width / 2 / pip.scale.x - ZOOM.width / 2 / scale.x,
+    y: pip.y + pipSize.height / 2 / pip.scale.y - ZOOM.height / 2 / scale.y,
     scale,
   };
 }
@@ -99,7 +99,7 @@ export function CanvasViewDemo() {
                 a node in its world units, and the wheel pans it alone. */}
             <CanvasView
               id="pip"
-              bounds={(_outer, dims) => ({ x: PIP.margin, y: dims.height - PIP.h - PIP.margin, w: PIP.w, h: PIP.h })}
+              bounds={(_outer, dims) => ({ x: PIP.margin, y: dims.height - PIP.height - PIP.margin, width: PIP.width, height: PIP.height })}
               defaultView={pipView(initial)}
               background="rgba(0,0,0,0.4)"
             />
@@ -109,7 +109,7 @@ export function CanvasViewDemo() {
             <CanvasView
               id="pip-zoom"
               parent="pip"
-              bounds={(_pip, size) => ({ x: size.width - ZOOM.w - ZOOM.margin, y: ZOOM.margin, w: ZOOM.w, h: ZOOM.h })}
+              bounds={(_pip, size) => ({ x: size.width - ZOOM.width - ZOOM.margin, y: ZOOM.margin, width: ZOOM.width, height: ZOOM.height })}
               view={zoomInto}
               background="rgba(0,0,0,0.5)"
             />
@@ -117,7 +117,7 @@ export function CanvasViewDemo() {
             <CanvasView
               id="overview"
               interactive={false}
-              bounds={(_outer, dims) => ({ x: dims.width - 188, y: 8, w: 180, h: 120 })}
+              bounds={(_outer, dims) => ({ x: dims.width - 188, y: 8, width: 180, height: 120 })}
               view={OVERVIEW}
               background="rgba(0,0,0,0.4)"
             />

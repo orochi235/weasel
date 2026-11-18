@@ -64,8 +64,8 @@ function headingIntoChild(
   const child = panels.get(level + 1);
   const parent = panels.get(level);
   if (!child || !parent || !from || stack.length <= level + 1) return false;
-  const edge = child.x >= parent.x ? child.x : child.x + child.w;
-  return inTriangle(p, from, { x: edge, y: child.y }, { x: edge, y: child.y + child.h });
+  const edge = child.x >= parent.x ? child.x : child.x + child.width;
+  return inTriangle(p, from, { x: edge, y: child.y }, { x: edge, y: child.y + child.height });
 }
 
 /** Creates the controller that runs one open menu: highlight, keys, submenus and typeahead. */

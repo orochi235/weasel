@@ -34,8 +34,8 @@ describe('diagramContainerLayout', () => {
     const layout = diagramContainerLayout({ header: { side: 'left', size: 30 } });
     const t = layout.childPoses(C, [title]).get('c/title')!;
     expect(t.rotation).toBeCloseTo(-Math.PI / 2);
-    expect({ cx: t.x + t.width / 2, cy: t.y + t.height / 2, w: t.width, h: t.height })
-      .toEqual({ cx: 115, cy: 175, w: 150, h: 30 });
+    expect({ cx: t.x + t.width / 2, cy: t.y + t.height / 2, width: t.width, height: t.height })
+      .toEqual({ cx: 115, cy: 175, width: 150, height: 30 });
   });
 
   it('drops a member where the drag put it, as one transform', () => {

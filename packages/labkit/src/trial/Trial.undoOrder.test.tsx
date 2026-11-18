@@ -32,11 +32,15 @@ const instrument = defineInstrument({
   initialState: () => ({}),
   render: () => <Pane />,
   annotations: {
-    targets: () => [{ id: 'pane', ref: { current: null }, content: { w: 200, h: 100 } }],
+    targets: () => [{ id: 'pane', ref: { current: null }, content: { width: 200, height: 100 } }],
   },
 });
 
-const MARK = { target: 'pane', kind: 'rect' as const, frac: { x: 0.2, y: 0.3, w: 0.1, h: 0.1 } };
+const MARK = {
+  target: 'pane',
+  kind: 'rect' as const,
+  frac: { x: 0.2, y: 0.3, width: 0.1, height: 0.1 },
+};
 
 const mount = () =>
   renderSettled(<Lab instruments={[instrument]} />, {
@@ -144,7 +148,7 @@ const sized = defineInstrument({
     </>
   ),
   annotations: {
-    targets: () => [{ id: 'pane', ref: { current: null }, content: { w: 200, h: 100 } }],
+    targets: () => [{ id: 'pane', ref: { current: null }, content: { width: 200, height: 100 } }],
   },
 });
 

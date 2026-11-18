@@ -12,8 +12,8 @@ import {
   toScreenPx,
 } from './score';
 
-const W = CONTENT.w;
-const H = CONTENT.h;
+const W = CONTENT.width;
+const H = CONTENT.height;
 
 function exercise(id: string): Exercise {
   const ex = EXERCISES.find((e) => e.id === id);
@@ -25,7 +25,7 @@ let n = 0;
 /** A mark as the store reports one, from a box and points in content units. */
 function mark(
   kind: AnnotationKind,
-  box: { x: number; y: number; w: number; h: number },
+  box: { x: number; y: number; width: number; height: number },
   points?: readonly Pt[],
   extra: Partial<Annotation> = {},
 ): Annotation {
@@ -34,7 +34,7 @@ function mark(
     id: `pane/${n}`,
     target: 'pane',
     kind,
-    frac: { x: box.x / W, y: box.y / H, w: box.w / W, h: box.h / H },
+    frac: { x: box.x / W, y: box.y / H, width: box.width / W, height: box.height / H },
     ...(points ? { points: points.map((p) => ({ x: p.x / W, y: p.y / H })) } : {}),
     ...extra,
   };
@@ -58,8 +58,8 @@ const lineMark = (kind: AnnotationKind, a: Pt, b: Pt, extra?: Partial<Annotation
     {
       x: Math.min(a.x, b.x),
       y: Math.min(a.y, b.y),
-      w: Math.abs(a.x - b.x),
-      h: Math.abs(a.y - b.y),
+      width: Math.abs(a.x - b.x),
+      height: Math.abs(a.y - b.y),
     },
     [a, b],
     extra,
@@ -70,31 +70,31 @@ describe('exercises', () => {
   test('every guide lies inside its own cell, and no two cells overlap', () => {
     for (const ex of EXERCISES) {
       const a = ex.area;
-      expect(a.x + a.w).toBeLessThanOrEqual(W);
-      expect(a.y + a.h).toBeLessThanOrEqual(H);
+      expect(a.x + a.width).toBeLessThanOrEqual(W);
+      expect(a.y + a.height).toBeLessThanOrEqual(H);
       const pts: Pt[] =
         ex.guide.kind === 'box'
           ? [
               ex.guide.box,
-              { x: ex.guide.box.x + ex.guide.box.w, y: ex.guide.box.y + ex.guide.box.h },
+              { x: ex.guide.box.x + ex.guide.box.width, y: ex.guide.box.y + ex.guide.box.height },
             ]
           : ex.guide.kind === 'segment'
             ? [ex.guide.a, ex.guide.b]
             : [...ex.guide.points];
       for (const p of pts) {
         expect(p.x).toBeGreaterThanOrEqual(a.x);
-        expect(p.x).toBeLessThanOrEqual(a.x + a.w);
+        expect(p.x).toBeLessThanOrEqual(a.x + a.width);
         expect(p.y).toBeGreaterThanOrEqual(a.y);
-        expect(p.y).toBeLessThanOrEqual(a.y + a.h);
+        expect(p.y).toBeLessThanOrEqual(a.y + a.height);
       }
     }
     for (const [i, a] of EXERCISES.entries()) {
       for (const b of EXERCISES.slice(i + 1)) {
         const apart =
-          a.area.x + a.area.w <= b.area.x ||
-          b.area.x + b.area.w <= a.area.x ||
-          a.area.y + a.area.h <= b.area.y ||
-          b.area.y + b.area.h <= a.area.y;
+          a.area.x + a.area.width <= b.area.x ||
+          b.area.x + b.area.width <= a.area.x ||
+          a.area.y + a.area.height <= b.area.y ||
+          b.area.y + b.area.height <= a.area.y;
         expect(apart, `${a.id} / ${b.id}`).toBe(true);
       }
     }
@@ -107,10 +107,18 @@ describe('exercises', () => {
 
 describe('measures', () => {
   test('boxError is the worst edge', () => {
-    expect(boxError({ x: 0, y: 0, w: 10, h: 10 }, { x: 0, y: 0, w: 10, h: 10 })).toBe(0);
-    expect(boxError({ x: 1, y: 0, w: 9, h: 10 }, { x: 0, y: 0, w: 10, h: 10 })).toBe(1);
-    expect(boxError({ x: 0, y: 0, w: 13, h: 10 }, { x: 0, y: 0, w: 10, h: 10 })).toBe(3);
-    expect(boxError({ x: -2, y: 0, w: 14, h: 10 }, { x: 0, y: 0, w: 10, h: 10 })).toBe(2);
+    expect(
+      boxError({ x: 0, y: 0, width: 10, height: 10 }, { x: 0, y: 0, width: 10, height: 10 }),
+    ).toBe(0);
+    expect(
+      boxError({ x: 1, y: 0, width: 9, height: 10 }, { x: 0, y: 0, width: 10, height: 10 }),
+    ).toBe(1);
+    expect(
+      boxError({ x: 0, y: 0, width: 13, height: 10 }, { x: 0, y: 0, width: 10, height: 10 }),
+    ).toBe(3);
+    expect(
+      boxError({ x: -2, y: 0, width: 14, height: 10 }, { x: 0, y: 0, width: 10, height: 10 }),
+    ).toBe(2);
   });
 
   test('segmentError pairs the ends as given', () => {
@@ -168,7 +176,7 @@ describe('rect and ellipse', () => {
   test('an edge off by 1.5 units passes at 1× and fails at 2×', () => {
     const ex = exercise('rect');
     const b = boxOf(ex);
-    const m = mark('rect', { ...b, w: b.w + 1.5 });
+    const m = mark('rect', { ...b, width: b.width + 1.5 });
     expect(scoreExercise(ex, [m], CONTENT, 1)).toMatchObject({ status: 'pass', error: 1.5 });
     const at2 = scoreExercise(ex, [m], CONTENT, 2);
     expect(at2.status).toBe('fail');
@@ -246,7 +254,11 @@ describe('freehand', () => {
     const ys = points.map((p) => p.y);
     const x = Math.min(...xs);
     const y = Math.min(...ys);
-    return mark('stroke', { x, y, w: Math.max(...xs) - x, h: Math.max(...ys) - y }, points);
+    return mark(
+      'stroke',
+      { x, y, width: Math.max(...xs) - x, height: Math.max(...ys) - y },
+      points,
+    );
   };
 
   test('a stroke on the guide passes for both curves', () => {
@@ -296,7 +308,12 @@ describe('text', () => {
   test('a label starting at the corner passes', () => {
     const ex = exercise('text');
     const b = boxOf(ex);
-    const s = scoreExercise(ex, [mark('text', { x: b.x, y: b.y, w: 60, h: 20 })], CONTENT, 1);
+    const s = scoreExercise(
+      ex,
+      [mark('text', { x: b.x, y: b.y, width: 60, height: 20 })],
+      CONTENT,
+      1,
+    );
     expect(s).toMatchObject({ status: 'pass', inside: true });
     expect(s.error).toBeCloseTo(0, 6);
   });
@@ -304,7 +321,12 @@ describe('text', () => {
   test('a label starting outside the box fails, however close', () => {
     const ex = exercise('text');
     const b = boxOf(ex);
-    const s = scoreExercise(ex, [mark('text', { x: b.x - 1, y: b.y, w: 60, h: 20 })], CONTENT, 1);
+    const s = scoreExercise(
+      ex,
+      [mark('text', { x: b.x - 1, y: b.y, width: 60, height: 20 })],
+      CONTENT,
+      1,
+    );
     expect(s.status).toBe('fail');
     expect(s.inside).toBe(false);
     expect(s.error).toBeCloseTo(1, 6);
@@ -315,7 +337,7 @@ describe('text', () => {
     const b = boxOf(ex);
     const s = scoreExercise(
       ex,
-      [mark('text', { x: b.x + 3, y: b.y + 4, w: 60, h: 20 })],
+      [mark('text', { x: b.x + 3, y: b.y + 4, width: 60, height: 20 })],
       CONTENT,
       1,
     );

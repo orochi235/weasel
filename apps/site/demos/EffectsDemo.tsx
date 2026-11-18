@@ -14,11 +14,11 @@ const H = 360;
  *  baseline as well as a demo, and a random palette would make it useless
  *  as one. */
 const TILES = [
-  { x:  40, y:  40, w: 120, h: 120, color: '#ee5a4a' },
-  { x: 180, y:  90, w: 160, h: 160, color: '#5ad07f' },
-  { x: 360, y:  40, w: 110, h: 220, color: '#4f7fff' },
-  { x: 490, y: 120, w: 180, h: 110, color: '#f2c14e' },
-  { x: 120, y: 230, w: 200, h:  90, color: '#b46ad0' },
+  { x:  40, y:  40, width: 120, height: 120, color: '#ee5a4a' },
+  { x: 180, y:  90, width: 160, height: 160, color: '#5ad07f' },
+  { x: 360, y:  40, width: 110, height: 220, color: '#4f7fff' },
+  { x: 490, y: 120, width: 180, height: 110, color: '#f2c14e' },
+  { x: 120, y: 230, width: 200, height:  90, color: '#b46ad0' },
 ];
 
 export function EffectsDemo() {
@@ -38,7 +38,7 @@ export function EffectsDemo() {
     effects,
     draw: (): DrawCommand[] => TILES.map((t) => ({
       kind: 'path',
-      path: { kind: 'rect', x: t.x, y: t.y, width: t.w, height: t.h },
+      path: { kind: 'rect', x: t.x, y: t.y, width: t.width, height: t.height },
       fill: { paint: { color: t.color } },
     })),
   }), [effects]);

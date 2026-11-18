@@ -42,7 +42,7 @@ function makeApi(element: HTMLElement): CanvasExtensionApi & { _layer?: RenderLa
 function box(id: string, x: number, handles: readonly string[] = [], extra: Partial<Widget> = {}) {
   const keys: HudKeyEvent[] = [];
   const w: Widget = {
-    id, bounds: { x, y: 0, w: 20, h: 20 }, hidden: false, focusable: true,
+    id, bounds: { x, y: 0, width: 20, height: 20 }, hidden: false, focusable: true,
     accessibleName: `${id} box`,
     draw: () => [],
     hitTest: (px, py) => px >= x && px < x + 20 && py >= 0 && py < 20,
@@ -290,7 +290,7 @@ describe('assistive tech', () => {
   });
 
   it('announces the focused widget again when its name changes', () => {
-    const play = hud.button({ id: 'play', x: 0, y: 0, w: 20, h: 20, label: 'Play' });
+    const play = hud.button({ id: 'play', x: 0, y: 0, width: 20, height: 20, label: 'Play' });
     hud.focus(play);
     expect(region()?.textContent).toBe('Play');
     play.setLabel('Pause');

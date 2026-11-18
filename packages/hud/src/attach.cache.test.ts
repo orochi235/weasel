@@ -41,7 +41,7 @@ function attached() {
 
 function plain(extra: Partial<Widget> = {}): Widget {
   return {
-    id: 'plain', bounds: { x: 0, y: 0, w: 10, h: 10 }, hidden: false,
+    id: 'plain', bounds: { x: 0, y: 0, width: 10, height: 10 }, hidden: false,
     draw: () => [{ kind: 'path', path: { kind: 'rect', x: 0, y: 0, width: 10, height: 10 } }],
     hitTest: () => false, onPointer: () => {}, dispose: () => {},
     ...extra,
@@ -97,7 +97,7 @@ describe('attachHud: widget command cache', () => {
     const { hud, paint } = attached();
     const label = hud.text({ id: 't', x: 10, y: 10, text: 'one', fontSize: 14 });
     const before = paint()[0];
-    label.setBounds({ x: 50, y: 10, w: 0, h: 14 });
+    label.setBounds({ x: 50, y: 10, width: 0, height: 14 });
     expect(before).toMatchObject({ x: 10 });
     // The text widget refills its one command, so only a redraw moves it.
     expect(paint()[0]).toMatchObject({ x: 50 });
@@ -109,7 +109,7 @@ describe('attachHud: widget command cache', () => {
     const { hud, paint } = attached();
     const label = hud.text({ id: 't', x: 10, y: 10, text: 'one', fontSize: 14 });
     const before = paint()[0] as { runs: unknown };
-    label.setBounds({ x: 50, y: 10, w: 0, h: 14 });
+    label.setBounds({ x: 50, y: 10, width: 0, height: 14 });
     const after = paint()[0] as { runs: unknown };
     expect(after.runs).toBe(before.runs);
     label.setText('two');
@@ -149,7 +149,7 @@ describe('attachHud: widget command cache', () => {
 
   it('rebuilds a button whose hover state changed', () => {
     const { hud, paint } = attached();
-    const btn = hud.button({ id: 'b', x: 0, y: 0, w: 40, h: 20, label: 'Go' });
+    const btn = hud.button({ id: 'b', x: 0, y: 0, width: 40, height: 20, label: 'Go' });
     const rest = paint()[0];
     btn.onPointer({ type: 'hovermove', x: 5, y: 5, native: null });
     expect(paint()[0]).not.toBe(rest);

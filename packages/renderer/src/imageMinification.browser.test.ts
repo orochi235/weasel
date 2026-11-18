@@ -36,7 +36,7 @@ async function redAtCenter(imageMinification: ImageMinification): Promise<number
   canvas.height = DRAWN;
   const gl = canvas.getContext('webgl2', { stencil: true })!;
   renderer = new WeaselRenderer({ gl, width: DRAWN, height: DRAWN, dpr: 1, imageMinification });
-  renderer.render([{ kind: 'image', image: await edgedBitmap(), x: 0, y: 0, w: DRAWN, h: DRAWN }]);
+  renderer.render([{ kind: 'image', image: await edgedBitmap(), x: 0, y: 0, width: DRAWN, height: DRAWN }]);
   const px = new Uint8Array(4);
   gl.readPixels(4, 4, 1, 1, gl.RGBA, gl.UNSIGNED_BYTE, px);
   return px[0];
@@ -90,8 +90,8 @@ describe('a sheet cell drawn at about an eighth of its size', () => {
     const sheet = await twoCellSheet();
     // The whole sheet first, so its mipmaps exist before the cell is drawn.
     renderer.render([
-      { kind: 'image', image: sheet, x: 0, y: 0, w: 2, h: 1 },
-      { kind: 'image', image: sheet, x: 0, y: 0, w: 4, h: 4, source: { x: 0, y: 0, w: CELL, h: CELL } },
+      { kind: 'image', image: sheet, x: 0, y: 0, width: 2, height: 1 },
+      { kind: 'image', image: sheet, x: 0, y: 0, width: 4, height: 4, source: { x: 0, y: 0, width: CELL, height: CELL } },
     ]);
     const px = new Uint8Array(4);
     gl.readPixels(3, 2, 1, 1, gl.RGBA, gl.UNSIGNED_BYTE, px);

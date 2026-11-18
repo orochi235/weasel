@@ -19,7 +19,7 @@ type Cmd =
   | { t: 'down' | 'move' | 'up' | 'hovermove'; x: number; y: number }
   | { t: 'cancel' | 'hoverleave' }
   | { t: 'key'; key: string; type: 'keydown' | 'keyup' }
-  | { t: 'bounds'; x: number; y: number; w: number; h: number }
+  | { t: 'bounds'; x: number; y: number; width: number; height: number }
   | { t: 'hide'; hidden: boolean };
 
 const pt = fc.integer({ min: -20, max: 140 });
@@ -28,12 +28,12 @@ const cmd: fc.Arbitrary<Cmd> = fc.oneof(
   fc.record({ t: fc.constantFrom('cancel' as const, 'hoverleave' as const) }),
   fc.constant({ t: 'hoverleave' as const }),
   fc.record({ t: fc.constant('key' as const), key: fc.constantFrom('Enter', ' ', 'a', 'Escape'), type: fc.constantFrom('keydown' as const, 'keyup' as const) }),
-  fc.record({ t: fc.constant('bounds' as const), x: pt, y: pt, w: fc.integer({ min: 1, max: 120 }), h: fc.integer({ min: 1, max: 60 }) }),
+  fc.record({ t: fc.constant('bounds' as const), x: pt, y: pt, width: fc.integer({ min: 1, max: 120 }), height: fc.integer({ min: 1, max: 60 }) }),
   fc.record({ t: fc.constant('hide' as const), hidden: fc.boolean() }),
 );
 
-interface Model { held: boolean; down: boolean; hovered: boolean; b: { x: number; y: number; w: number; h: number } }
-const inside = (m: Model, x: number, y: number) => x >= m.b.x && x < m.b.x + m.b.w && y >= m.b.y && y < m.b.y + m.b.h;
+interface Model { held: boolean; down: boolean; hovered: boolean; b: { x: number; y: number; width: number; height: number } }
+const inside = (m: Model, x: number, y: number) => x >= m.b.x && x < m.b.x + m.b.width && y >= m.b.y && y < m.b.y + m.b.height;
 
 /** The model's step: the events `c` reports, and whether what the button draws changed. */
 function step(m: Model, c: Cmd): { events: ButtonEvent[]; stale: boolean } {
@@ -47,7 +47,7 @@ function step(m: Model, c: Cmd): { events: ButtonEvent[]; stale: boolean } {
     case 'hovermove': m.hovered = true; break;
     case 'hoverleave': m.hovered = false; break;
     case 'key': if (c.type === 'keydown' && (c.key === 'Enter' || c.key === ' ')) events.push('press'); break;
-    case 'bounds': m.b = { x: c.x, y: c.y, w: c.w, h: c.h }; return { events, stale: true };
+    case 'bounds': m.b = { x: c.x, y: c.y, width: c.width, height: c.height }; return { events, stale: true };
     case 'hide': return { events, stale: true };
   }
   if (m.hovered !== before.hovered) events.push(m.hovered ? 'hover' : 'leave');
@@ -59,7 +59,7 @@ function apply(b: ReturnType<typeof createButton>, c: Cmd): void {
     case 'down': case 'move': case 'up': case 'hovermove': b.onPointer({ type: c.t, x: c.x, y: c.y, native: null }); break;
     case 'cancel': case 'hoverleave': b.onPointer({ type: c.t, native: null }); break;
     case 'key': b.onKey!({ type: c.type, key: c.key, code: '', altKey: false, ctrlKey: false, metaKey: false, shiftKey: false, repeat: false, native: null as never }); break;
-    case 'bounds': b.setBounds({ x: c.x, y: c.y, w: c.w, h: c.h }); break;
+    case 'bounds': b.setBounds({ x: c.x, y: c.y, width: c.width, height: c.height }); break;
     case 'hide': b.setHidden(c.hidden); break;
   }
 }
@@ -70,7 +70,7 @@ describe('createButton', () => {
   it('reports presses, hovers, and leaves, and goes stale, as a model of its press does', () => {
     const seen = tally();
     fc.assert(fc.property(fc.array(cmd, { maxLength: 60 }), (cmds) => {
-      const m: Model = { held: false, down: false, hovered: false, b: { x: 10, y: 10, w: 80, h: 24 } };
+      const m: Model = { held: false, down: false, hovered: false, b: { x: 10, y: 10, width: 80, height: 24 } };
       const onChange = vi.fn();
       const b = createButton({ id: 'b', ...m.b, label: 'Go', fill: FILL, hoverFill: HOVER, pressedFill: PRESSED, onChange });
       const heard: ButtonEvent[] = [];
@@ -97,7 +97,7 @@ describe('createButton', () => {
   it('reports translated presses alike when the button and every point move together', () => {
     fc.assert(fc.property(fc.array(cmd, { maxLength: 40 }), pt, pt, (cmds, tx, ty) => {
       const run = (dx: number, dy: number) => {
-        const b = createButton({ id: 'b', x: 10 + dx, y: 10 + dy, w: 80, h: 24, label: 'Go' });
+        const b = createButton({ id: 'b', x: 10 + dx, y: 10 + dy, width: 80, height: 24, label: 'Go' });
         const heard: ButtonEvent[] = [];
         for (const e of ['press', 'hover', 'leave'] as const) b.subscribe(e, () => heard.push(e));
         for (const c of cmds) apply(b, 'x' in c ? { ...c, x: c.x + dx, y: c.y + dy } : c);
@@ -131,7 +131,7 @@ describe('createButton', () => {
     fc.assert(fc.property(spec, ({ acts, subs, cmds }) => {
       const errors = vi.spyOn(console, 'error').mockImplementation(() => {});
       try {
-        const b = createButton({ id: 'b', x: 10, y: 10, w: 80, h: 24, label: 'Go', fill: FILL, hoverFill: HOVER, pressedFill: PRESSED });
+        const b = createButton({ id: 'b', x: 10, y: 10, width: 80, height: 24, label: 'Go', fill: FILL, hoverFill: HOVER, pressedFill: PRESSED });
         const held = EVENTS.map(() => new Set<number>());
         const calls: [number, ButtonEvent][] = [];
         let disposed = false;
@@ -154,7 +154,7 @@ describe('createButton', () => {
           if (x.a === 'dispose') { disposed = true; b.dispose(); }
         }));
         for (const [i, e] of subs) { sub(i, e); held[EVENTS.indexOf(e)]!.add(i); }
-        const m: Model = { held: false, down: false, hovered: false, b: { x: 10, y: 10, w: 80, h: 24 } };
+        const m: Model = { held: false, down: false, hovered: false, b: { x: 10, y: 10, width: 80, height: 24 } };
         for (const c of cmds) {
           if (disposed) break;
           const want = step(m, c);

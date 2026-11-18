@@ -39,7 +39,7 @@ export interface TextWidget extends Widget {
 export function createText(opts: TextOptions): TextWidget {
   let disposed = false;
   const rev = createRevision(opts.onChange);
-  let bounds: WidgetBounds = { x: opts.x, y: opts.y, w: 0, h: opts.fontSize };
+  let bounds: WidgetBounds = { x: opts.x, y: opts.y, width: 0, height: opts.fontSize };
   let text = opts.text;
   let hidden = false;
   /** The one command this widget draws, refilled in place with its runs when

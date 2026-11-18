@@ -54,7 +54,7 @@ function Body({ ctx }: { ctx: RenderContext<State, Config> }) {
   return <TrialSceneCanvas scene={live} trial={ctx.trial} />;
 }
 
-const TARGET = { id: 'pane', ref: { current: null }, content: { w: 200, h: 100 } };
+const TARGET = { id: 'pane', ref: { current: null }, content: { width: 200, height: 100 } };
 
 const drawing = defineInstrument<State, Config>({
   name: 'Drawing',
@@ -128,7 +128,11 @@ describe('a scene trial reloaded', () => {
     });
     fireEvent.click(grid());
     act(() => {
-      marks?.add({ target: 'pane', kind: 'rect', frac: { x: 0.2, y: 0.3, w: 0.1, h: 0.1 } });
+      marks?.add({
+        target: 'pane',
+        kind: 'rect',
+        frac: { x: 0.2, y: 0.3, width: 0.1, height: 0.1 },
+      });
     });
     expect(nodes()).toBe(2);
     expect(grid()).not.toBeChecked();

@@ -11,7 +11,7 @@ import { runs, tally } from './pbt.fixture';
 
 const POOL = 4;
 const plain = (i: number): Widget => ({
-  id: `p${i}`, bounds: { x: 0, y: i * 10, w: 10, h: 10 }, hidden: false, focusable: true,
+  id: `p${i}`, bounds: { x: 0, y: i * 10, width: 10, height: 10 }, hidden: false, focusable: true,
   draw: () => [], hitTest: () => false, onPointer: () => {}, dispose: () => {},
 });
 

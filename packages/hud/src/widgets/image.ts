@@ -2,21 +2,19 @@ import { createRevision } from '../widget';
 import type { ClaimableGesture } from '@weasel-js/core';
 import type { Widget, WidgetBounds, HudDrawCtx, HudPointerEvent } from '../widget';
 import type { DrawCommand, ImageDrawCommand } from '@weasel-js/core/renderer';
-
-/** Sub-rectangle of a bitmap, in its own pixels. */
-export interface SourceRect { x: number; y: number; w: number; h: number }
+import type { Rect } from '@weasel-js/geom';
 
 /** Options for an image widget. */
 export interface ImageOptions {
   id: string;
-  x: number; y: number; w: number; h: number;
+  x: number; y: number; width: number; height: number;
   image: ImageBitmap;
   opacity?: number;
   /** Magnification filter for the drawn bitmap. See `ImageDrawCommand.sampling`. */
   sampling?: 'linear' | 'nearest';
   /** Sub-rectangle of `image` to draw, in bitmap pixels. See
    *  `ImageDrawCommand.source`. */
-  source?: SourceRect;
+  source?: Rect;
   /** Mirror the sampled region within the widget's bounds. */
   flipX?: boolean;
   flipY?: boolean;
@@ -40,19 +38,19 @@ export interface ImageWidget extends Widget {
   /** Sample a sub-rectangle of the bitmap; `undefined` restores the whole
    *  bitmap. Together with `setFlip`, this is how a sprite animation advances
    *  without rebuilding the widget. */
-  setSource(source: SourceRect | undefined): void;
+  setSource(source: Rect | undefined): void;
   /** Merge a mirror state — an omitted axis keeps its current value. */
   setFlip(flip: { x?: boolean; y?: boolean }): void;
   dispose(): void;
 }
 
 export function createImage(opts: ImageOptions): ImageWidget {
-  if (!(opts.w > 0 && opts.h > 0)) {
-    throw new Error(`createImage: bounds must have positive w/h (got ${opts.w}x${opts.h})`);
+  if (!(opts.width > 0 && opts.height > 0)) {
+    throw new Error(`createImage: bounds must have positive w/h (got ${opts.width}x${opts.height})`);
   }
   let disposed = false;
   const rev = createRevision(opts.onChange);
-  let bounds: WidgetBounds = { x: opts.x, y: opts.y, w: opts.w, h: opts.h };
+  let bounds: WidgetBounds = { x: opts.x, y: opts.y, width: opts.width, height: opts.height };
   let image = opts.image;
   let hidden = false;
   let claims = opts.claims ?? [];
@@ -83,7 +81,7 @@ export function createImage(opts: ImageOptions): ImageWidget {
     draw(_ctx: HudDrawCtx): DrawCommand[] {
       const cmd: ImageDrawCommand = {
         kind: 'image', image,
-        x: bounds.x, y: bounds.y, w: bounds.w, h: bounds.h,
+        ...bounds,
         opacity: opts.opacity,
         sampling: opts.sampling,
         source,
@@ -94,7 +92,7 @@ export function createImage(opts: ImageOptions): ImageWidget {
     },
     hitTest(x, y) {
       if (hidden) return false;
-      return x >= bounds.x && x < bounds.x + bounds.w && y >= bounds.y && y < bounds.y + bounds.h;
+      return x >= bounds.x && x < bounds.x + bounds.width && y >= bounds.y && y < bounds.y + bounds.height;
     },
     get claims() { return claims; },
     setClaims(c) { assertNotDisposed(); claims = c; rev.changed(); },

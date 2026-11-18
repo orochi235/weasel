@@ -202,7 +202,7 @@ return [{
   kind: 'shader',
   program: stripes,
   uniforms: { u_time: performance.now() / 1000 },
-  bounds: { x: 0, y: 0, w: 256, h: 256 },
+  bounds: { x: 0, y: 0, width: 256, height: 256 },
 }];
 ```
 

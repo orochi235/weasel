@@ -6,7 +6,7 @@ const sample: Recording = {
   version: 1,
   startedAt: '2026-05-16T19:30:00.000Z',
   profile: 'gesture-only',
-  viewport: { w: 1200, h: 800 },
+  viewport: { width: 1200, height: 800 },
   scene: null,
   events: [
     { type: 'pointerdown', t: 0, clientX: 10, clientY: 20, target: 'canvas' },
@@ -41,6 +41,12 @@ describe('recordingIO', () => {
   it('deserializeRecording accepts a plain-JSON blob (backward compat)', async () => {
     const plain = new Blob([JSON.stringify(sample)], { type: 'application/json' });
     const back = await deserializeRecording(plain);
+    expect(back).toEqual(sample);
+  });
+
+  it('deserializeRecording reads a viewport saved as w/h', async () => {
+    const old = { ...sample, viewport: { w: 1200, h: 800 } };
+    const back = await deserializeRecording(new Blob([JSON.stringify(old)], { type: 'application/json' }));
     expect(back).toEqual(sample);
   });
 

@@ -52,7 +52,7 @@ interface Spec {
 
 const spec: fc.Arbitrary<Spec> = fc.record({
   kind: fc.constantFrom<Kind>('rect', 'image', 'button', 'window'),
-  b: fc.record({ x: fc.integer({ min: 0, max: 200 }), y: fc.integer({ min: 0, max: 150 }), w: fc.integer({ min: 80, max: 200 }), h: fc.integer({ min: 76, max: 150 }) }),
+  b: fc.record({ x: fc.integer({ min: 0, max: 200 }), y: fc.integer({ min: 0, max: 150 }), width: fc.integer({ min: 80, max: 200 }), height: fc.integer({ min: 76, max: 150 }) }),
   claims: fc.constantFrom<readonly ClaimableGesture[]>([], ['pointer'], ['wheel'], ['pointer', 'contextMenu']),
   hidden: fc.boolean(),
   titlebar: fc.boolean(),
@@ -73,7 +73,7 @@ function build(hud: Hud, s: Spec, i: number): Widget {
   return w;
 }
 
-const inRect = (b: WidgetBounds, x: number, y: number) => x >= b.x && x < b.x + b.w && y >= b.y && y < b.y + b.h;
+const inRect = (b: WidgetBounds, x: number, y: number) => x >= b.x && x < b.x + b.width && y >= b.y && y < b.y + b.height;
 
 /** What the point `(x, y)` lands on, from each widget's geometry: the topmost showing widget it is inside that
  *  takes a press, unless a passing interior above lets it through to nothing at all. */
@@ -83,7 +83,7 @@ function modelHit(specs: readonly Spec[], x: number, y: number): number | null {
     if (s.hidden || !inRect(s.b, x, y)) continue;
     if (s.kind === 'window') {
       const top = s.titlebar ? M.titleH : s.pass ? M.grip : M.edge;
-      const interior = x >= s.b.x + M.edge && x < s.b.x + s.b.w - M.edge && y >= s.b.y + top && y < s.b.y + s.b.h - M.edge;
+      const interior = x >= s.b.x + M.edge && x < s.b.x + s.b.width - M.edge && y >= s.b.y + top && y < s.b.y + s.b.height - M.edge;
       if (s.pass && interior) return null;
       return i;
     }

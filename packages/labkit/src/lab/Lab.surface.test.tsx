@@ -227,7 +227,7 @@ describe('<Lab> tile round trip', () => {
     expect(frames.length).toBeGreaterThan(0);
     expect(paneTileId).not.toBe('pane');
     const rect = frames[frames.length - 1]?.rects.get(paneTileId);
-    expect(rect).toEqual({ x: 240, y: 100, w: 320, h: 200 });
+    expect(rect).toEqual({ x: 240, y: 100, width: 320, height: 200 });
   });
 });
 

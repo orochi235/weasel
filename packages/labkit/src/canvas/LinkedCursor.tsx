@@ -34,8 +34,8 @@ export function LinkedCursor() {
             className="lk-linked-cursor__halo"
             x={r.x}
             y={r.y}
-            width={r.w}
-            height={r.h}
+            width={r.width}
+            height={r.height}
           />
         ) : null,
       )}
@@ -46,8 +46,8 @@ export function LinkedCursor() {
             className="lk-linked-cursor__bar"
             x={r.x}
             y={r.y}
-            width={r.w}
-            height={r.h}
+            width={r.width}
+            height={r.height}
           />
         ) : null,
       )}

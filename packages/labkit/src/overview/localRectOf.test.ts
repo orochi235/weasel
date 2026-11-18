@@ -22,7 +22,7 @@ it("reads a target's rect in the camera's units when an ancestor draws the camer
   expect(localRectOf(target, { element: () => host, view })).toEqual({
     x: 20,
     y: 10,
-    w: 100,
-    h: 50,
+    width: 100,
+    height: 50,
   });
 });

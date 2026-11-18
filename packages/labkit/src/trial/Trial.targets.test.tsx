@@ -29,7 +29,11 @@ function lastAsk(id: string): TrialInfo {
   return found;
 }
 
-const pane: AnnotationTarget = { id: 'pane', ref: { current: null }, content: { w: 200, h: 100 } };
+const pane: AnnotationTarget = {
+  id: 'pane',
+  ref: { current: null },
+  content: { width: 200, height: 100 },
+};
 
 const subject = defineInstrument<Record<string, never>, { subject: string }>({
   name: 'Subject',

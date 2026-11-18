@@ -34,12 +34,12 @@ export function createLayerDeps(hud: Hud): (ctx: HudDrawCtx) => readonly unknown
       const d = w.hidden ? undefined : w.deps?.(ctx);
       const k = i * 4;
       if (same && (w !== widgets[i] || w.hidden !== hidden[i]
-        || b.x !== bounds[k] || b.y !== bounds[k + 1] || b.w !== bounds[k + 2] || b.h !== bounds[k + 3]
+        || b.x !== bounds[k] || b.y !== bounds[k + 1] || b.width !== bounds[k + 2] || b.height !== bounds[k + 3]
         || (d !== deps[i] && (d === undefined || deps[i] === undefined || !depsUnchanged(deps[i]!, d))))) {
         same = false;
       }
       widgets[i] = w; hidden[i] = w.hidden; deps[i] = d;
-      bounds[k] = b.x; bounds[k + 1] = b.y; bounds[k + 2] = b.w; bounds[k + 3] = b.h;
+      bounds[k] = b.x; bounds[k + 1] = b.y; bounds[k + 2] = b.width; bounds[k + 3] = b.height;
     }
     widgets.length = hidden.length = deps.length = list.length;
     bounds.length = list.length * 4;

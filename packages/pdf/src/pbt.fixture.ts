@@ -197,7 +197,7 @@ export function commands(c: fc.Arbitrary<number> = coord, depth = 2, fills?: fc.
     .record({ path: path(c), fill: fc.option(fc.record({ paint: fill }), { nil: undefined }), stroke: fc.option(stroke(c), { nil: undefined }) })
     .map(({ path: p, fill, stroke: s }) => ({ kind: 'path', path: p, ...(fill && { fill }), ...(s && { stroke: s }) }));
   const imageCmd: fc.Arbitrary<DrawCommand> = fc
-    .record({ img: fakeImage, x: c, y: c, w: c, h: c, opacity: fc.option(unit, { nil: undefined }), sampling: fc.constantFrom('linear' as const, 'nearest' as const) })
+    .record({ img: fakeImage, x: c, y: c, width: c, height: c, opacity: fc.option(unit, { nil: undefined }), sampling: fc.constantFrom('linear' as const, 'nearest' as const) })
     .map(({ img, ...rest }): ImageDrawCommand => ({ kind: 'image', image: img as unknown as ImageBitmap, ...rest }));
   const leaf = fc.oneof({ weight: 5, arbitrary: pathCmd }, { weight: 1, arbitrary: imageCmd });
   if (depth === 0) return fc.array(leaf, { maxLength: 4 });

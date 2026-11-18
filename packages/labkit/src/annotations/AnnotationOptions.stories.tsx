@@ -3,7 +3,7 @@ import { defineInstrument, f, Lab, useAnnotations } from '@weasel-js/labkit';
 import { useLabChromeContext } from '@weasel-js/labkit/chrome';
 import { createRef, useEffect, useMemo } from 'react';
 
-const CONTENT = { w: 320, h: 200 };
+const CONTENT = { width: 320, height: 200 };
 const paneRef = createRef<HTMLDivElement>();
 
 /** Arms `tool`, and with `select` adds two marks and selects them, so each story opens in the state it shows. */
@@ -16,13 +16,13 @@ function Start({ tool, select }: { tool: string; select: boolean }) {
     const a = marks.add({
       target: 'pane',
       kind: 'rect',
-      frac: { x: 0.1, y: 0.2, w: 0.3, h: 0.4 },
+      frac: { x: 0.1, y: 0.2, width: 0.3, height: 0.4 },
       width: 4,
     });
     const b = marks.add({
       target: 'pane',
       kind: 'line',
-      frac: { x: 0.5, y: 0.2, w: 0.4, h: 0.5 },
+      frac: { x: 0.5, y: 0.2, width: 0.4, height: 0.5 },
       points: [
         { x: 0.5, y: 0.2 },
         { x: 0.9, y: 0.7 },

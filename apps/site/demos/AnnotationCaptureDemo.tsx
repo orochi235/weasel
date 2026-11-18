@@ -14,13 +14,13 @@ import { createRef, useCallback, useSyncExternalStore } from 'react';
 import 'windease/styles.css';
 import { Button } from '@weasel-js/ui/components/Button';
 
-const CONTENT = { w: 240, h: 160 };
+const CONTENT = { width: 240, height: 160 };
 const paneRef = createRef<HTMLDivElement>();
 
 /** The last export, from labkit's toolbar Export or the buttons below: `onCapture`
  *  is how a host sees an export it did not start. Module scope because the
  *  capability is declared outside React. */
-let latest: { url: string; w: number; h: number } | null = null;
+let latest: { url: string; width: number; height: number } | null = null;
 const captured = createEmitter();
 function publish(next: typeof latest): void {
   if (latest) URL.revokeObjectURL(latest.url);
@@ -35,8 +35,8 @@ function Target({ hue }: { hue: number }) {
   return (
     <svg
       viewBox="0 0 240 160"
-      width={CONTENT.w}
-      height={CONTENT.h}
+      width={CONTENT.width}
+      height={CONTENT.height}
       role="img"
       aria-label="Quadrants"
       data-testid="capture-base"
@@ -77,8 +77,8 @@ function CapturePanel() {
           src={shot.url}
           alt="The last capture"
           data-testid="capture-result"
-          data-width={shot.w}
-          data-height={shot.h}
+          data-width={shot.width}
+          data-height={shot.height}
         />
       ) : null}
     </div>
@@ -100,7 +100,7 @@ const inspector = defineInstrument<Record<string, never>, { hue: number }>({
   annotations: {
     meaning: { statuses: [{ id: 'flagged', label: 'Flagged', color: '#ffffff' }] },
     onCapture: (result) =>
-      publish({ url: URL.createObjectURL(result.blob), w: result.width, h: result.height }),
+      publish({ url: URL.createObjectURL(result.blob), width: result.width, height: result.height }),
     targets: () => [
       {
         id: 'pane',

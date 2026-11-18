@@ -11,7 +11,7 @@ function counted(): ImageBitmap & { closes: number } {
 
 const page = (image: ImageBitmap): PdfPage => ({
   width: 10, height: 10,
-  commands: [{ kind: 'image', image, x: 0, y: 0, w: 10, h: 10 } satisfies DrawCommand],
+  commands: [{ kind: 'image', image, x: 0, y: 0, width: 10, height: 10 } satisfies DrawCommand],
 });
 
 describe('writePdf and the image cache', () => {

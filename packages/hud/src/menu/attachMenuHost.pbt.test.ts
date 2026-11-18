@@ -28,7 +28,7 @@ function makeHost(): MenuHost {
 
 type Plain = Widget & { hidden: boolean };
 const plain = (i: number): Plain => ({
-  id: `p${i}`, bounds: { x: 700, y: i * 30, w: 20, h: 20 }, hidden: false, focusable: true,
+  id: `p${i}`, bounds: { x: 700, y: i * 30, width: 20, height: 20 }, hidden: false, focusable: true,
   draw: () => [], hitTest: () => false, onPointer: () => {}, dispose: () => {},
 });
 

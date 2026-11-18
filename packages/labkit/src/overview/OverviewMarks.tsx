@@ -4,6 +4,7 @@
  * with no `warmSvg`, since marks export nothing that loads on demand.
  */
 import type { View } from '@weasel-js/core';
+import type { Rect } from '@weasel-js/geom';
 import { serializeSvg } from '@weasel-js/svg';
 import { type CSSProperties, type RefObject, useEffect, useReducer } from 'react';
 import { useAnnotationsOptional } from '../annotations/AnnotationsContext';
@@ -14,12 +15,7 @@ import { hostBox } from '../canvas/hostBox';
 import { useLabCommandsOptional } from '../lab/LabContext';
 
 /** A target's box, in the camera's frame-local units. */
-interface LocalRect {
-  x: number;
-  y: number;
-  w: number;
-  h: number;
-}
+type LocalRect = Rect;
 
 /** Where `el` sits in the camera's frame-local units: its client rect, measured against the camera's element in
  *  that element's own px, through the camera. */
@@ -36,8 +32,8 @@ export function localRectOf(
   return {
     x: (r.left - h.left) / sx + v.x,
     y: (r.top - h.top) / sy + v.y,
-    w: r.width / sx,
-    h: r.height / sy,
+    width: r.width / sx,
+    height: r.height / sy,
   };
 }
 
@@ -50,15 +46,17 @@ function elementOf(target: object): HTMLElement | null {
 function markupOf(
   api: AnnotationsApi,
   target: string,
-  content: { w: number; h: number },
-  shown: { w: number; h: number },
+  content: { width: number; height: number },
+  shown: { width: number; height: number },
 ): string {
   const painted = api.paintedMarks(target);
   if (painted.length === 0) return '';
   // The document is shown at `shown` px, fitted like any SVG viewBox.
-  const k = Math.min(shown.w / content.w, shown.h / content.h) || 1;
+  const k = Math.min(shown.width / content.width, shown.height / content.height) || 1;
   const nodes = painted.flatMap(({ mark, style }) => markSvgNodes(mark, style, { x: k, y: k }));
-  return serializeSvg(nodes, { viewBox: { x: 0, y: 0, width: content.w, height: content.h } });
+  return serializeSvg(nodes, {
+    viewBox: { x: 0, y: 0, width: content.width, height: content.height },
+  });
 }
 
 /** Props for `<OverviewMarks>`. */
@@ -84,13 +82,15 @@ export function OverviewMarks({ fit, camera }: OverviewMarksProps) {
       {api.targets().map((t) => {
         const el = elementOf(t);
         const box = el ? localRectOf(el, camera) : null;
-        const markup = box ? markupOf(api, t.id, t.content, { w: box.w * s, h: box.h * s }) : '';
+        const markup = box
+          ? markupOf(api, t.id, t.content, { width: box.width * s, height: box.height * s })
+          : '';
         if (!box || !markup) return null;
         const place = {
           ['--lk-overview-mx' as string]: `${(box.x - fit.x) * s}px`,
           ['--lk-overview-my' as string]: `${(box.y - fit.y) * s}px`,
-          ['--lk-overview-mw' as string]: `${box.w * s}px`,
-          ['--lk-overview-mh' as string]: `${box.h * s}px`,
+          ['--lk-overview-mw' as string]: `${box.width * s}px`,
+          ['--lk-overview-mh' as string]: `${box.height * s}px`,
         } as CSSProperties;
         return (
           <div

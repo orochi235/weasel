@@ -8,7 +8,7 @@ import {
   rectPath,
   textCommand,
 } from '@weasel-js/core';
-import { boxOf, fromShape, type WorldRect } from './frac';
+import { fromShape, type WorldRect } from './frac';
 import type { AnnotationData } from './types';
 
 /** One loud color, not a themed one: a mark sits over the instrument's own
@@ -46,7 +46,7 @@ export interface MarkStyle {
  *  stored mark whose `shape` did not survive still has to draw somewhere. */
 function vertices(m: PaintableMark): { x: number; y: number }[] {
   const stored = m.data.shape;
-  if (stored && stored.length >= 2) return fromShape(stored, boxOf(m.pose));
+  if (stored && stored.length >= 2) return fromShape(stored, m.pose);
   const { x, y, width, height } = m.pose;
   return [
     { x, y },

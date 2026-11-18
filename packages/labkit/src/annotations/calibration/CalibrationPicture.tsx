@@ -34,7 +34,7 @@ function Endpoint({ x, y, label }: { x: number; y: number; label: string }) {
 
 function BoxGuide({ ex }: { ex: Exercise }) {
   if (ex.guide.kind !== 'box') return null;
-  const { x, y, w, h } = ex.guide.box;
+  const { x, y, width: w, height: h } = ex.guide.box;
   if (ex.expect === 'ellipse') {
     return <ellipse cx={x + w / 2} cy={y + h / 2} rx={w / 2} ry={h / 2} {...guideLine(ex)} />;
   }
@@ -72,21 +72,21 @@ export function CalibrationPicture({ config }: { config: CalibrationConfig }) {
   return (
     <svg
       className="lk-cal__svg"
-      width={size.w}
-      height={size.h}
-      viewBox={`${win.x} ${win.y} ${win.w} ${win.h}`}
+      width={size.width}
+      height={size.height}
+      viewBox={`${win.x} ${win.y} ${win.width} ${win.height}`}
       role="img"
       aria-label="Calibration exercises"
     >
       <title>Calibration exercises</title>
-      <rect x={0} y={0} width={CONTENT.w} height={CONTENT.h} fill={PAPER} />
+      <rect x={0} y={0} width={CONTENT.width} height={CONTENT.height} fill={PAPER} />
       {EXERCISES.map((ex) => (
         <g key={ex.id} data-exercise={ex.id}>
           <rect
             x={ex.area.x + 0.5}
             y={ex.area.y + 0.5}
-            width={ex.area.w - 1}
-            height={ex.area.h - 1}
+            width={ex.area.width - 1}
+            height={ex.area.height - 1}
             fill="none"
             stroke={CELL_LINE}
           />

@@ -15,7 +15,7 @@ interface Pose { x: number; y: number; width: number; height: number }
 const MAIN_W = 600, MAIN_H = 400;
 const MINI_W = 200, MINI_H = 140;
 /** The in-surface minimap: a view in the main canvas's top-right corner. */
-const INSET = (_outer: View, dims: CanvasSize) => ({ x: dims.width - 168, y: 8, w: 160, h: 112 });
+const INSET = (_outer: View, dims: CanvasSize) => ({ x: dims.width - 168, y: 8, width: 160, height: 112 });
 
 const COLORS = ['#7fb069', '#a48bd4', '#f0e0a8', '#e07a7a', '#5fb0c2'];
 

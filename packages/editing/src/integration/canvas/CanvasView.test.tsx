@@ -29,7 +29,7 @@ type L = 'main';
 type P = { x: number; y: number; width: number; height: number };
 
 /** The panel occupies x ∈ [100, 200) of a 300×200 canvas at the client origin. */
-const PANEL = { x: 100, y: 0, w: 100, h: 100 };
+const PANEL = { x: 100, y: 0, width: 100, height: 100 };
 
 beforeAll(() => {
   const proto = HTMLCanvasElement.prototype as unknown as {
@@ -299,7 +299,7 @@ describe('<CanvasView> draw contribution', () => {
     expect(drawn).toEqual([{ x: 5, y: 7, scale: { x: 2, y: 2 } }]);
     expect(cmds[0]).toMatchObject({
       kind: 'group',
-      clip: { kind: 'rect', x: 0, y: 0, width: PANEL.w, height: PANEL.h },
+      clip: { kind: 'rect', x: 0, y: 0, width: PANEL.width, height: PANEL.height },
     });
   });
 

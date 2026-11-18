@@ -44,7 +44,7 @@ describe('a run sampling every texture slot, in a real context', () => {
     const commands: DrawCommand[] = [
       { kind: 'path', path: { kind: 'rect', x: 0, y: 0, width: W, height: H }, fill: { paint: { color: '#000000' } } },
       ...bitmaps.map((image, i): DrawCommand => ({
-        kind: 'image', image, x: i * CELL + 1, y: 0, w: CELL - 1, h: H, sampling: 'nearest',
+        kind: 'image', image, x: i * CELL + 1, y: 0, width: CELL - 1, height: H, sampling: 'nearest',
       })),
     ];
     renderer.render(commands);

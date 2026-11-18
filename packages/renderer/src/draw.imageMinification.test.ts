@@ -21,7 +21,7 @@ function setup(dpr = 1) {
 }
 
 const image = (img: ImageBitmap, side: number): DrawCommand =>
-  ({ kind: 'image', image: img, x: 0, y: 0, w: side, h: side });
+  ({ kind: 'image', image: img, x: 0, y: 0, width: side, height: side });
 
 describe("imageMinification: 'auto'", () => {
   it('builds no mipmaps for an image drawn at its own size or larger', () => {
@@ -61,7 +61,7 @@ describe("imageMinification: 'auto'", () => {
   it('builds none for a source rect drawn small, which would blend in the cells around it', () => {
     const { renderer, mipmaps } = setup();
     const cmd: DrawCommand = {
-      kind: 'image', image: bitmap(64), x: 0, y: 0, w: 4, h: 4, source: { x: 0, y: 0, w: 16, h: 16 },
+      kind: 'image', image: bitmap(64), x: 0, y: 0, width: 4, height: 4, source: { x: 0, y: 0, width: 16, height: 16 },
     };
     renderer.render([cmd]);
     expect(mipmaps()).toBe(0);
@@ -70,7 +70,7 @@ describe("imageMinification: 'auto'", () => {
   it('treats a source rect covering the whole bitmap as the whole bitmap', () => {
     const { renderer, mipmaps } = setup();
     renderer.render([{
-      kind: 'image', image: bitmap(64), x: 0, y: 0, w: 8, h: 8, source: { x: 0, y: 0, w: 64, h: 64 },
+      kind: 'image', image: bitmap(64), x: 0, y: 0, width: 8, height: 8, source: { x: 0, y: 0, width: 64, height: 64 },
     }]);
     expect(mipmaps()).toBe(1);
   });
@@ -87,7 +87,7 @@ describe("imageMinification: 'auto'", () => {
     const { recorder, renderer } = setup();
     const img = bitmap(64);
     renderer.render([image(img, 8)]);
-    renderer.render([{ kind: 'image', image: img, x: 0, y: 0, w: 4, h: 4, source: { x: 0, y: 0, w: 16, h: 16 } }]);
+    renderer.render([{ kind: 'image', image: img, x: 0, y: 0, width: 4, height: 4, source: { x: 0, y: 0, width: 16, height: 16 } }]);
     const gl = recorder.gl;
     const mins = recorder.calls
       .filter((c) => c.name === 'texParameteri' && c.args[1] === gl.TEXTURE_MIN_FILTER)

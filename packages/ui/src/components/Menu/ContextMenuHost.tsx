@@ -109,7 +109,7 @@ function Panels({ controller, open, close, takeFocus, labelledBy, inside, releas
     const el = stack[level] == null ? null : document.getElementById(rowId(level));
     if (!el) return null;
     const r = el.getBoundingClientRect();
-    return { x: r.left, y: r.top, w: r.width, h: r.height };
+    return { x: r.left, y: r.top, width: r.width, height: r.height };
   };
 
   return (

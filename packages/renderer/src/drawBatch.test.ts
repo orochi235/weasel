@@ -328,7 +328,7 @@ describe('renderer — consecutive solid-fill batching', () => {
       const image = { width: 4, height: 4, close() {} } as unknown as ImageBitmap;
       r.render([
         linearRect(0),
-        { kind: 'image', image, x: 0, y: 0, w: 4, h: 4 } as DrawCommand,
+        { kind: 'image', image, x: 0, y: 0, width: 4, height: 4 } as DrawCommand,
         linearRect(20),
       ]);
       expect(draws()).toEqual([18]);
@@ -991,7 +991,7 @@ describe('renderer — text in the batch', () => {
 
   it('merges a label into a run of images', () => {
     const image = { width: 16, height: 16, close: () => {} } as unknown as ImageBitmap;
-    const img = (x: number) => ({ kind: 'image', image, x, y: 0, w: 16, h: 16 }) as DrawCommand;
+    const img = (x: number) => ({ kind: 'image', image, x, y: 0, width: 16, height: 16 }) as DrawCommand;
     r.render([img(0), label('A'), img(20)]);
     expect(draws()).toEqual([18]);
   });

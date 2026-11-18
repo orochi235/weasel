@@ -13,12 +13,12 @@ describe('frameRect, property', () => {
     fc.assert(fc.property(sheet, fc.integer({ min: 0, max: 200 }), fc.integer({ min: 0, max: 200 }), (s, i, j) => {
       const a = frameRect(s, i), b = frameRect(s, j);
       const m = s.margin ?? 0, g = s.spacing ?? 0;
-      expect([a.w, a.h]).toEqual([s.frameWidth, s.frameHeight]);
+      expect([a.width, a.height]).toEqual([s.frameWidth, s.frameHeight]);
       expect(a.x).toBeGreaterThanOrEqual(m);
       expect(a.y).toBeGreaterThanOrEqual(m);
-      expect(a.x + a.w).toBeLessThanOrEqual(m + s.columns * (s.frameWidth + g) - g);
+      expect(a.x + a.width).toBeLessThanOrEqual(m + s.columns * (s.frameWidth + g) - g);
       if (i !== j) {
-        const apart = a.x + a.w + g <= b.x || b.x + b.w + g <= a.x || a.y + a.h + g <= b.y || b.y + b.h + g <= a.y;
+        const apart = a.x + a.width + g <= b.x || b.x + b.width + g <= a.x || a.y + a.height + g <= b.y || b.y + b.height + g <= a.y;
         expect(apart).toBe(true);
       }
       const next = frameRect(s, i + 1);

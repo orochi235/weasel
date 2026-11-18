@@ -16,8 +16,8 @@ const RUNS = 150;
 const IDS = ['a', 'b', 'c', 'd', 'e'];
 
 const nodesArb = (c: fc.Arbitrary<number>) => fc.uniqueArray(fc.constantFrom(...IDS), { minLength: 1, maxLength: IDS.length })
-  .chain((ids) => fc.tuple(...ids.map((id) => fc.record({ x: c, y: c, w: fc.integer({ min: 0, max: 80 }), h: fc.integer({ min: 0, max: 40 }) })
-    .map(({ x, y, w, h }): GraphNode => ({ id, bounds: { x, y, width: w, height: h }, pinned: false })))));
+  .chain((ids) => fc.tuple(...ids.map((id) => fc.record({ x: c, y: c, width: fc.integer({ min: 0, max: 80 }), height: fc.integer({ min: 0, max: 40 }) })
+    .map((bounds): GraphNode => ({ id, bounds, pinned: false })))));
 
 const graphArb = (c: fc.Arbitrary<number>): fc.Arbitrary<Graph> => nodesArb(c).chain((nodes) => fc.tuple(
   fc.constant(nodes),

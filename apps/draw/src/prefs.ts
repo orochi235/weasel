@@ -29,7 +29,7 @@ import type { ToolbarLayout } from '@weasel-js/ui/components/ToolbarDock';
 import type { RecordingProfile } from './recorder';
 import type { RegistryEnumFilter } from './registry/types';
 import {
-  dropPathToolsChrome, fillRuleToToolOptions, gridToGroup, panelsToSurfaces, featureSettingsToGroups, pathAidsToGroup, renamePathAids, renamePathTools,
+  dropPathToolsChrome, dropSymmetrySwitch, fillRuleToToolOptions, gridToGroup, panelsToSurfaces, featureSettingsToGroups, pathAidsToGroup, renamePathAids, renamePathTools,
 } from './surfaces/prefsMigration';
 import { pageGridSchema } from '@weasel-js/editor';
 import { rulersSchema } from '@weasel-js/guides';
@@ -242,7 +242,7 @@ const VALIDATORS: Record<string, PrefValidator> = {
 };
 
 /** `MIGRATIONS[i]` takes stored records from version `i` to `i + 1`. */
-const MIGRATIONS = [panelsToSurfaces, dropPathToolsChrome, pathAidsToGroup, fillRuleToToolOptions, renamePathAids, renamePathTools, gridToGroup, featureSettingsToGroups];
+const MIGRATIONS = [panelsToSurfaces, dropPathToolsChrome, pathAidsToGroup, fillRuleToToolOptions, renamePathAids, renamePathTools, gridToGroup, featureSettingsToGroups, dropSymmetrySwitch];
 
 /** The app's prefs over `storage`. Tests pass a memory adapter. */
 export function openDrawPrefs(storage: SyncStorageAdapter): PrefsStore<typeof PREFS> {

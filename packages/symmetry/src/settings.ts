@@ -5,20 +5,16 @@ import { HORIZONTAL_AXIS, VERTICAL_AXIS, type SymmetrySpec } from './kinds';
 export type SymmetryAxis = 'vertical' | 'horizontal' | 'both';
 
 /**
- * Live symmetry's settings, as a prefs group to mount in an app's schema: whether drawing goes into a symmetry group,
- * and which way that group mirrors. The axis is disabled while symmetry is off.
+ * Live symmetry's settings, as a prefs group to mount in an app's schema: which way the symmetry group drawn into
+ * mirrors. Whether drawing goes into one is a mode the app holds for the session, not a setting.
  */
 export const symmetrySchema = pref.group('Symmetry', {
-  on: pref.boolean('Symmetry', false, {
-    description: 'Draw into a symmetry group, whose mirrored copies follow every edit to what is drawn in it, and the anchors you drag on a path that is already its own mirror image. Drag the handles on the axis to move or turn it. Turning it off stops drawing into the group; what is in it stays mirrored.',
-  }),
   axis: pref.enum<SymmetryAxis>('Symmetry axis', 'vertical', [
     { value: 'vertical', label: 'Vertical (left and right)' },
     { value: 'horizontal', label: 'Horizontal (top and bottom)' },
     { value: 'both', label: 'Both' },
   ], {
     description: 'Which way the symmetry group mirrors: left and right, top and bottom, or into all four quarters.',
-    enableIf: { from: 'group', path: 'on', is: true },
   }),
 });
 

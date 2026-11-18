@@ -14,12 +14,12 @@ function createScopeCanvas(size: { width: number; height: number }) {
     Math.max(1, Math.round(size.width * PREVIEW_DENSITY)),
     Math.max(1, Math.round(size.height * PREVIEW_DENSITY)),
   );
-  return { canvas, g: canvas.getContext('2d')!, w: canvas.width, h: canvas.height };
+  return { canvas, g: canvas.getContext('2d')!, width: canvas.width, height: canvas.height };
 }
 
 /** The waveform as a line across the bitmap, silence at mid-height. */
 export function drawScope(tap: AnalyserTap, size: { width: number; height: number }): ImageBitmap {
-  const { canvas, g, w, h } = createScopeCanvas(size);
+  const { canvas, g, width: w, height: h } = createScopeCanvas(size);
   const wave = tap.waveform();
   g.strokeStyle = INK;
   g.lineWidth = LINE * PREVIEW_DENSITY;
@@ -37,7 +37,7 @@ export function drawScope(tap: AnalyserTap, size: { width: number; height: numbe
 
 /** The spectrum as filled bars rising from the bottom, low frequencies on the left. */
 export function drawSpectrum(tap: AnalyserTap, size: { width: number; height: number }): ImageBitmap {
-  const { canvas, g, w, h } = createScopeCanvas(size);
+  const { canvas, g, width: w, height: h } = createScopeCanvas(size);
   const bands = tap.bands(BANDS);
   const slot = w / BANDS;
   g.fillStyle = INK;

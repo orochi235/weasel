@@ -4,7 +4,7 @@ import type { Widget } from './widget';
 
 function widget(id: string, extra: Partial<Widget> = {}): Widget {
   return {
-    id, bounds: { x: 0, y: 0, w: 10, h: 10 }, hidden: false,
+    id, bounds: { x: 0, y: 0, width: 10, height: 10 }, hidden: false,
     draw: () => [], hitTest: () => false, onPointer: () => {}, dispose: () => {},
     focusable: true,
     ...extra,
@@ -99,7 +99,7 @@ describe('Hud focus', () => {
     hud.remove(a);
     expect(hud.focused).toBeNull();
 
-    const btn = hud.button({ id: 'b', x: 0, y: 0, w: 10, h: 10, label: 'b' });
+    const btn = hud.button({ id: 'b', x: 0, y: 0, width: 10, height: 10, label: 'b' });
     hud.focus(btn);
     btn.dispose();
     expect(hud.focused).toBeNull();

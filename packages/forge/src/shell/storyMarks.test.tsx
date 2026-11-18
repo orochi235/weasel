@@ -49,14 +49,14 @@ describe('storyMarks', () => {
     expect(targets).toHaveLength(1);
     expect(targets[0]?.id).toBe('story');
     expect(targets[0]?.ref).toBe(hosts.ref('t1'));
-    expect(targets[0]?.content).toEqual({ w: 320, h: 200 });
+    expect(targets[0]?.content).toEqual({ width: 320, height: 200 });
   });
 
   it('keeps a positive content box before the host attaches, and the same ref after', () => {
     const hosts = createStoryHosts();
     const capability = storyMarks(hosts);
     const before = capability.targets(null, {}, { id: 't2', view: null })[0]!;
-    expect(before.content).toEqual({ w: 1, h: 1 });
+    expect(before.content).toEqual({ width: 1, height: 1 });
     const host = document.createElement('div');
     hosts.attach('t2', host);
     expect(before.ref.current).toBe(host);
@@ -67,8 +67,8 @@ describe('storyMarks', () => {
     const host = scrolled(320, 200, { width: 320, height: 900, top: 150 });
     hosts.attach('t5', host);
     const target = storyMarks(hosts).targets(null, {}, { id: 't5', view: null })[0]!;
-    expect(target.content).toEqual({ w: 320, h: 900 });
-    expect(target.shown).toEqual({ x: 0, y: 150, w: 320, h: 200 });
+    expect(target.content).toEqual({ width: 320, height: 900 });
+    expect(target.shown).toEqual({ x: 0, y: 150, width: 320, height: 200 });
   });
 
   it('exports the marks over a capture of the host', async () => {

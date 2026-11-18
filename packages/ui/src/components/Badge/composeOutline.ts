@@ -4,7 +4,7 @@ import { EFFECTS, type BadgeEffectSpec } from './effects';
 
 const SAMPLES = 600;
 
-interface Box { w: number; h: number }
+interface Box { width: number; height: number }
 
 /** A rectangle inside a box, in CSS px from the box's top left. */
 export interface Held { left: number; top: number; right: number; bottom: number }
@@ -60,8 +60,8 @@ export function inwardReach(base: BaseSampler, effects: readonly BadgeEffectSpec
     const { pt, dx, dy } = moved((i / SAMPLES) * base.totalCss);
     const far = Math.hypot(dx, dy);
     if (far <= reach) continue;
-    const x = (pt.x / 100) * box.w + dx;
-    const y = (pt.y / 100) * box.h + dy;
+    const x = (pt.x / 100) * box.width + dx;
+    const y = (pt.y / 100) * box.height + dy;
     const lands = x > held.left && x < held.right && y > held.top && y < held.bottom;
     if (lands || dx * pt.nx + dy * pt.ny < 0) reach = far;
   }
@@ -78,8 +78,8 @@ export function composeOutline(
 ): BaseSampler {
   const moved = displacer(base, effects, bloatCss, phase);
   if (!moved) return base;
-  const sx = 100 / box.w;
-  const sy = 100 / box.h;
+  const sx = 100 / box.width;
+  const sy = 100 / box.height;
   const totalCss = base.totalCss;
   const warpedXY = (sCss: number) => {
     const { pt, dx, dy } = moved(((sCss % totalCss) + totalCss) % totalCss);
@@ -106,8 +106,8 @@ export function composeOutline(
 
 /** `outline` pushed `offsetCss` px outward along its normals: the path a focus ring follows. */
 export function offsetOutline(outline: BaseSampler, offsetCss: number, box: Box): string {
-  const sx = 100 / box.w;
-  const sy = 100 / box.h;
+  const sx = 100 / box.width;
+  const sy = 100 / box.height;
   return closedPath((s) => {
     const pt = outline.perimeterAt(s);
     return { x: pt.x + pt.nx * offsetCss * sx, y: pt.y + pt.ny * offsetCss * sy };

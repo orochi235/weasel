@@ -47,14 +47,14 @@ const ctxAt = (x: number, lensId?: string) =>
 
 describe('splitRects', () => {
   it('splits the interior at the seam', () => {
-    expect(splitRects({ x: 0, y: 0, w: 100, h: 50 }, 0.3).seamX).toBe(30);
+    expect(splitRects({ x: 0, y: 0, width: 100, height: 50 }, 0.3).seamX).toBe(30);
   });
 
   it('gives the left rect everything before the seam and the right everything after', () => {
-    const { left, right, seamX } = splitRects({ x: 10, y: 5, w: 100, h: 50 }, 0.25);
+    const { left, right, seamX } = splitRects({ x: 10, y: 5, width: 100, height: 50 }, 0.25);
     expect(seamX).toBe(35);
-    expect(left).toEqual({ x: 10, y: 5, w: 25, h: 50 });
-    expect(right).toEqual({ x: 35, y: 5, w: 75, h: 50 });
+    expect(left).toEqual({ x: 10, y: 5, width: 25, height: 50 });
+    expect(right).toEqual({ x: 35, y: 5, width: 75, height: 50 });
   });
 });
 
@@ -80,7 +80,12 @@ describe('the seam', () => {
     expect(seam).toEqual({
       nodeId: 'l0:body',
       role: 'lens-seam',
-      rect: { x: LEFT + BODY_SIZE / 2 - SEAM_GRAB, y: TOP, w: 2 * SEAM_GRAB, h: BODY_SIZE },
+      rect: {
+        x: LEFT + BODY_SIZE / 2 - SEAM_GRAB,
+        y: TOP,
+        width: 2 * SEAM_GRAB,
+        height: BODY_SIZE,
+      },
       round: false,
     });
     expect(boxes.indexOf(seam!)).toBeGreaterThan(boxes.findIndex((b) => b.role === 'lens-body'));

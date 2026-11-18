@@ -55,7 +55,7 @@ function shaderBox(cmd: ShaderDrawCommand): ScreenBox | null {
   const glsl = getProgramSource(cmd.program.id)?.glsl;
   if (!glsl || glsl.vert !== undefined) return null;
   if (/\bgl_FragCoord\b/.test(glsl.frag) && !/\bu_fragOrigin\b/.test(glsl.frag)) return null;
-  const { x, y, w, h } = cmd.bounds;
+  const { x, y, width: w, height: h } = cmd.bounds;
   return { minX: Math.min(x, x + w), minY: Math.min(y, y + h), maxX: Math.max(x, x + w), maxY: Math.max(y, y + h) };
 }
 
@@ -94,7 +94,7 @@ export function paintedBox(
 ): ScreenBox | null {
   switch (cmd.kind) {
     case 'path': return pathBox(cmd.path, cmd.stroke, m);
-    case 'image': return screenBox(cmd.x, cmd.y, cmd.x + cmd.w, cmd.y + cmd.h, m);
+    case 'image': return screenBox(cmd.x, cmd.y, cmd.x + cmd.width, cmd.y + cmd.height, m);
     case 'sprites': return spritesBox(cmd.sprites, m);
   }
 }

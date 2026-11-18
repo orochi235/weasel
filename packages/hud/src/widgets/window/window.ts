@@ -16,10 +16,10 @@ import {
 /** Options for a window widget. */
 export interface WindowOptions {
   id: string;
-  x: number; y: number; w: number; h: number;
+  x: number; y: number; width: number; height: number;
   title: string;
-  minW?: number;
-  minH?: number;
+  minWidth?: number;
+  minHeight?: number;
   /** Draw a titlebar with the title and a close box. Default `true`. When
    *  `false` the window is bare — and dragging its interior moves it, since
    *  there is no bar to grab. A bare window whose interior passes grows a
@@ -108,7 +108,7 @@ function gripDots(cx: number, cy: number, color: string): PathDrawCommand {
   return { kind: 'path', path: pathFromD(d), fill: { paint: { kind: 'solid', color } } };
 }
 
-const sameBounds = (a: WidgetBounds, b: WidgetBounds) => a.x === b.x && a.y === b.y && a.w === b.w && a.h === b.h;
+const sameBounds = (a: WidgetBounds, b: WidgetBounds) => a.x === b.x && a.y === b.y && a.width === b.width && a.height === b.height;
 
 export function createWindow(opts: WindowOptions): WindowWidget {
   const chrome = opts.titlebar ?? true;
@@ -120,11 +120,11 @@ export function createWindow(opts: WindowOptions): WindowWidget {
   const gripped = !chrome && passing;
   const m: WindowMetrics = chrome ? configured
     : { ...configured, titleH: gripped ? configured.grip : configured.edge };
-  const minW = opts.minW ?? 80;
-  const minH = opts.minH ?? m.titleH + m.edge + 40;
+  const minW = opts.minWidth ?? 80;
+  const minH = opts.minHeight ?? m.titleH + m.edge + 40;
 
   const clampSize = (b: WidgetBounds): WidgetBounds => ({
-    x: b.x, y: b.y, w: Math.max(minW, b.w), h: Math.max(minH, b.h),
+    x: b.x, y: b.y, width: Math.max(minW, b.width), height: Math.max(minH, b.height),
   });
 
   // No host size until a draw supplies one, so a window never drawn is not
@@ -133,7 +133,7 @@ export function createWindow(opts: WindowOptions): WindowWidget {
   const clampOnHost = (b: WidgetBounds): WidgetBounds => {
     if (!hostDims) return b;
     const r = clampRectWithin(
-      { x: b.x, y: b.y, width: b.w, height: b.h },
+      b,
       { x: 0, y: 0, width: hostDims.width, height: hostDims.height },
     );
     return { ...b, x: r.x, y: r.y };
@@ -147,7 +147,7 @@ export function createWindow(opts: WindowOptions): WindowWidget {
   let grade = opts.grade;
   let emphasis = opts.emphasis;
   let tint = opts.tint;
-  let bounds = clampSize({ x: opts.x, y: opts.y, w: opts.w, h: opts.h });
+  let bounds = clampSize({ x: opts.x, y: opts.y, width: opts.width, height: opts.height });
   let dragZone: WindowZone | null = null;
   let dragStart: WidgetBounds = bounds;
   let dragOrigin = { x: 0, y: 0 };
@@ -168,10 +168,10 @@ export function createWindow(opts: WindowOptions): WindowWidget {
   };
 
   const closeBox = (): WidgetBounds => ({
-    x: bounds.x + bounds.w - m.edge - m.closeSize,
+    x: bounds.x + bounds.width - m.edge - m.closeSize,
     y: bounds.y + (m.titleH - m.closeSize) / 2,
-    w: m.closeSize,
-    h: m.closeSize,
+    width: m.closeSize,
+    height: m.closeSize,
   });
 
   return {
@@ -196,7 +196,7 @@ export function createWindow(opts: WindowOptions): WindowWidget {
 
     draw(ctx: HudDrawCtx): DrawCommand[] {
       hostDims = ctx.dims;
-      const { x, y, w, h } = bounds;
+      const { x, y, width: w, height: h } = bounds;
       const out: DrawCommand[] = [];
 
       // The grab bands sit outside contentRect, so nothing else paints them —
@@ -254,7 +254,7 @@ export function createWindow(opts: WindowOptions): WindowWidget {
       const c = closeBox();
       const inset = 3;
       const x0 = c.x + inset, y0 = c.y + inset;
-      const x1 = c.x + c.w - inset, y1 = c.y + c.h - inset;
+      const x1 = c.x + c.width - inset, y1 = c.y + c.height - inset;
       out.push({
         kind: 'path',
         path: pathFromD(`M ${x0} ${y0} L ${x1} ${y1} M ${x1} ${y0} L ${x0} ${y1}`),

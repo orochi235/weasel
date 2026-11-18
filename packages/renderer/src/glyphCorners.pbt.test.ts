@@ -7,11 +7,11 @@ import { affine, runs, spread, tally } from './pbt.fixture';
 /** One glyph quad as a group's `quadData` holds it: its box, atlas rect, baseline, pen, and turn. */
 const glyph = fc.record({
   x0: spread(-100, 100), y0: spread(-100, 100),
-  w: fc.oneof(spread(0.5, 60), spread(-60, -0.5)), h: fc.oneof(spread(0.5, 60), spread(-60, -0.5)),
+  width: fc.oneof(spread(0.5, 60), spread(-60, -0.5)), height: fc.oneof(spread(0.5, 60), spread(-60, -0.5)),
   u0: spread(0, 1), v0: spread(0, 1), du: spread(-0.5, 0.5).filter((d) => d !== 0), dv: spread(-0.5, 0.5).filter((d) => d !== 0),
   baseline: spread(-100, 100), pen: spread(-100, 100),
   rotate: fc.oneof(fc.constant(0), spread(-360, 360)),
-}).map((g) => [g.x0, g.y0, g.x0 + g.w, g.y0 + g.h, g.u0, g.v0, g.u0 + g.du, g.v0 + g.dv, g.baseline, g.pen, g.rotate]);
+}).map((g) => [g.x0, g.y0, g.x0 + g.width, g.y0 + g.height, g.u0, g.v0, g.u0 + g.du, g.v0 + g.dv, g.baseline, g.pen, g.rotate]);
 
 const tan = fc.oneof(fc.constant(0), spread(-0.5, 0.5));
 

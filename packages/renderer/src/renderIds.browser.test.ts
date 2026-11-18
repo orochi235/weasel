@@ -75,8 +75,8 @@ describe('renderIds, in a real context', () => {
   });
 
   it('takes what a custom shader paints, not its bounds', () => {
-    const disc: DrawCommand = { kind: 'shader', program: DISC, uniforms: {}, bounds: { x: 0, y: 0, w: 20, h: 20 } };
-    const half: DrawCommand = { kind: 'shader', program: RIGHT_HALF, uniforms: {}, bounds: { x: 20, y: 0, w: 20, h: 20 } };
+    const disc: DrawCommand = { kind: 'shader', program: DISC, uniforms: {}, bounds: { x: 0, y: 0, width: 20, height: 20 } };
+    const half: DrawCommand = { kind: 'shader', program: RIGHT_HALF, uniforms: {}, bounds: { x: 20, y: 0, width: 20, height: 20 } };
     const ids = open().renderIds([tagged(5, disc), tagged(6, half)]);
     expect(at(ids, 10, 10)).toBe(5);
     expect(at(ids, 1, 1)).toBe(0);

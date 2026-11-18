@@ -85,37 +85,37 @@ const SIDES = ['top', 'right', 'bottom', 'left'] as const;
  * The padding, no side under `floor`, that keeps a `content`-sized box `clear` px from the
  * outline `points` describe, in the smallest box that does. `floor` itself when that already does.
  */
-export function fitInsets(points: readonly Point[], content: { w: number; h: number }, floor: ShapeInsets, clear = 0): ShapeInsets {
+export function fitInsets(points: readonly Point[], content: { width: number; height: number }, floor: ShapeInsets, clear = 0): ShapeInsets {
   if (clear <= 0) return fitTouching(points, content, floor);
   // Content `clear` from the outline is content grown by `clear` on every side that touches it.
   const within = (n: number) => Math.max(0, n - clear);
   const grown = fitTouching(
     points,
-    { w: content.w + 2 * clear, h: content.h + 2 * clear },
+    { width: content.width + 2 * clear, height: content.height + 2 * clear },
     { top: within(floor.top), right: within(floor.right), bottom: within(floor.bottom), left: within(floor.left) },
   );
   const insets = { top: grown.top + clear, right: grown.right + clear, bottom: grown.bottom + clear, left: grown.left + clear };
   return SIDES.every((side) => Math.abs(insets[side] - floor[side]) < 1e-9) ? floor : insets;
 }
 
-function fitTouching(points: readonly Point[], content: { w: number; h: number }, floor: ShapeInsets): ShapeInsets {
-  const width = content.w + floor.left + floor.right;
-  const height = content.h + floor.top + floor.bottom;
+function fitTouching(points: readonly Point[], content: { width: number; height: number }, floor: ShapeInsets): ShapeInsets {
+  const width = content.width + floor.left + floor.right;
+  const height = content.height + floor.top + floor.bottom;
   const held: ViewRect = {
     left: (floor.left / width) * 100,
-    right: ((floor.left + content.w) / width) * 100,
+    right: ((floor.left + content.width) / width) * 100,
     top: (floor.top / height) * 100,
-    bottom: ((floor.top + content.h) / height) * 100,
+    bottom: ((floor.top + content.height) / height) * 100,
   };
   if (!points.some(([x, y]) => x > held.left && x < held.right && y > held.top && y < held.bottom)) return floor;
 
   let best = floor;
   let bestArea = Infinity;
   eachClearRect(points, (r) => {
-    const x = fitAxis(content.w, (r.left + MARGIN) / 100, (100 - r.right + MARGIN) / 100, [floor.left, floor.right]);
-    const y = fitAxis(content.h, (r.top + MARGIN) / 100, (100 - r.bottom + MARGIN) / 100, [floor.top, floor.bottom]);
+    const x = fitAxis(content.width, (r.left + MARGIN) / 100, (100 - r.right + MARGIN) / 100, [floor.left, floor.right]);
+    const y = fitAxis(content.height, (r.top + MARGIN) / 100, (100 - r.bottom + MARGIN) / 100, [floor.top, floor.bottom]);
     if (!x || !y) return;
-    const area = (content.w + x[0] + x[1]) * (content.h + y[0] + y[1]);
+    const area = (content.width + x[0] + x[1]) * (content.height + y[0] + y[1]);
     if (area < bestArea) [best, bestArea] = [{ left: x[0], right: x[1], top: y[0], bottom: y[1] }, area];
   });
   const up = (n: number) => Math.ceil(n * 100) / 100;

@@ -123,5 +123,12 @@ function asRecording(text: string): Recording {
   const bad = rec.events.findIndex((e) => !isRecordedEvent(e));
   if (bad >= 0) throw new Error(`This file is not a WeaselDraw recording: its event ${bad + 1} is not a pointer, wheel or key event.`);
   if (rec.scene === undefined || (rec.scene !== null && typeof rec.scene !== 'object')) throw missing('scene');
-  return json as Recording;
+  return { ...(json as Recording), viewport: viewportOf(rec.viewport) };
+}
+
+/** A recording's viewport. Files saved before 2026-11-17 name its size `w`/`h`. */
+function viewportOf(raw: unknown): Recording['viewport'] {
+  const v = (raw ?? {}) as { width?: unknown; height?: unknown; w?: unknown; h?: unknown };
+  const n = (a: unknown, b: unknown) => (typeof a === 'number' ? a : typeof b === 'number' ? b : 0);
+  return { width: n(v.width, v.w), height: n(v.height, v.h) };
 }

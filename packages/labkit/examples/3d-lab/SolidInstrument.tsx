@@ -172,15 +172,15 @@ function Viewport({ config }: { config: SolidConfig }): ReactNode {
       const draws = drawsRef.current;
       applyFeedDelta(draws, feed.read());
 
-      sizeRef.current = { width: rect.w, height: rect.h };
+      sizeRef.current = { width: rect.width, height: rect.height };
       const paneRect = paneRef.current?.getBoundingClientRect();
       if (paneRect) originRef.current = { x: paneRect.left, y: paneRect.top };
       const css = toDeviceRect(rect, frame.size.height, frame.dpr);
       const device = {
         x: Math.round(css.x * frame.dpr),
         y: Math.round(css.y * frame.dpr),
-        w: Math.round(css.w * frame.dpr),
-        h: Math.round(css.h * frame.dpr),
+        width: Math.round(css.width * frame.dpr),
+        height: Math.round(css.height * frame.dpr),
       };
       const solids = solidsToDraw(scene, draws, new Set(selectionRef.current));
 
@@ -189,8 +189,8 @@ function Viewport({ config }: { config: SolidConfig }): ReactNode {
       // be hidden behind this tile.
       const viewport = {
         camera: cameraRef.current,
-        width: rect.w,
-        height: rect.h,
+        width: rect.width,
+        height: rect.height,
         originX: originRef.current.x,
         originY: originRef.current.y,
       };
@@ -215,13 +215,13 @@ function Viewport({ config }: { config: SolidConfig }): ReactNode {
       chrome.push(...collectOverlayBoxes(dispatcher.inFlight().values(), originRef.current));
 
       // Projected without the pane's origin, so they land in the tile as drawn.
-      const snap = projectSnapMarks(snapMarks.get(), { camera: cameraRef.current, width: rect.w, height: rect.h });
+      const snap = projectSnapMarks(snapMarks.get(), { camera: cameraRef.current, width: rect.width, height: rect.height });
 
-      const handles = axisMoveRef.current?.handles({ camera: cameraRef.current, width: rect.w, height: rect.h }) ?? [];
+      const handles = axisMoveRef.current?.handles({ camera: cameraRef.current, width: rect.width, height: rect.height }) ?? [];
 
       renderer.draw(solids, cameraRef.current, device, chrome, {
-        width: rect.w,
-        height: rect.h,
+        width: rect.width,
+        height: rect.height,
       }, snap, handles);
     });
 

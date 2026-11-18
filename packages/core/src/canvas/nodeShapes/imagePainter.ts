@@ -15,9 +15,9 @@ import { paintsPose, poseBoxBounds } from './poseBox';
 export function sourceInPixels(
   s: NonNullable<ImageNodeData['image']['source']>,
   bmp: ImageBitmap,
-): { x: number; y: number; w: number; h: number } {
+): { x: number; y: number; width: number; height: number } {
   return {
-    x: s.x * bmp.width, y: s.y * bmp.height, w: s.width * bmp.width, h: s.height * bmp.height,
+    x: s.x * bmp.width, y: s.y * bmp.height, width: s.width * bmp.width, height: s.height * bmp.height,
   };
 }
 
@@ -67,7 +67,7 @@ export const IMAGE_PAINTER: NodeShapeEntry<unknown, RectPose> = {
       return [{
         kind: 'image',
         image: bmp,
-        x: p.x, y: p.y, w: p.width, h: p.height,
+        x: p.x, y: p.y, width: p.width, height: p.height,
         ...(d.image.opacity !== undefined ? { opacity: d.image.opacity } : {}),
         ...(d.image.source ? { source: sourceInPixels(d.image.source, bmp) } : {}),
         ...(d.image.flipX ? { flipX: true } : {}),
