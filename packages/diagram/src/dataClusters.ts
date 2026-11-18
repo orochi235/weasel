@@ -25,7 +25,7 @@ export interface ResolvedCluster {
 }
 
 /** The width a group's box needs to hold a title `title` wide, `pad` in from either side. */
-export const groupMinWidth = (title: number, pad: number): number => title + 2 * pad;
+export const clusterMinWidth = (title: number, pad: number): number => title + 2 * pad;
 
 /**
  * Settle what each group holds (see `nestClusters`), outer groups ahead of the
@@ -61,7 +61,7 @@ export function resolveClusters(
     const inset = { top: pad + (title ? title.height + pad / 2 : 0), right: pad, bottom: pad, left: pad };
     return {
       group, direct: g.direct, members: g.members, inset, pad, title,
-      ...(title ? { minWidth: groupMinWidth(title.width, pad) } : {}),
+      ...(title ? { minWidth: clusterMinWidth(title.width, pad) } : {}),
       ...(g.parent !== undefined ? { parent: g.parent } : {}),
     };
   });

@@ -1,32 +1,32 @@
 /**
  * Columns for the `lanes` look: which column each stage stands in, and the
- * room between columns, with each group's members holding a run of columns
+ * room between columns, with each cluster's members holding a run of columns
  * no other stage stands in, so the box drawn around them covers nothing else.
  */
 import { maxOf, minOf } from '@weasel-js/geom';
-import { widenForMinWidth } from '../chainGroups';
+import { widenForMinWidth } from '../chainClusters';
 import { DEFAULT_CLUSTER_INSET, insetOf, rankGaps } from '../cluster';
-import { groupMinWidth } from '../dataClusters';
+import { clusterMinWidth } from '../dataClusters';
 import type { GraphCluster } from '../graph';
 import { nestClusters } from '../clusterTree';
 import type { DrawableWire } from './draw';
-import type { EffectGroup, EffectStage } from './types';
+import type { EffectCluster, EffectStage } from './types';
 
 /** A stage's span: the first and last lane it touches. */
 export type Span = readonly [number, number];
 
-/** A group's run of columns. */
+/** A cluster's run of columns. */
 export interface LaneBlock {
-  group: string;
+  cluster: string;
   first: number;
   last: number;
-  /** How many groups this one sits inside. */
+  /** How many clusters this one sits inside. */
   depth: number;
   /** The narrowest its box may be: its title's width and an inset either side. */
   minWidth: number;
 }
 
-/** One thing a level places: a stage, or a group's members as one block. */
+/** One thing a level places: a stage, or a cluster's members as one block. */
 interface Item {
   stages: readonly string[];
   inner?: { width: number; column: Map<string, number>; blocks: LaneBlock[] };
@@ -35,32 +35,32 @@ interface Item {
 /**
  * Each stage's column: right of every stage feeding it, and right again past
  * any column where a stage already holds one of its lanes. On a loop the
- * first stage left in source order goes next. Each top-level group is placed
+ * first stage left in source order goes next. Each top-level cluster is placed
  * the same way as one stage spanning its members' lanes, laid out inside by
  * the same rule, but it shares none of its columns with anything else.
- * `titles` is each labeled group's title width.
+ * `titles` is each labeled cluster's title width.
  */
 export function laneColumns(
   stages: readonly EffectStage[],
   wires: readonly DrawableWire[],
   spans: ReadonlyMap<string, Span>,
-  groups: readonly EffectGroup[],
+  clusters: readonly EffectCluster[],
   titles: ReadonlyMap<string, number> = new Map(),
 ): { column: Map<string, number>; blocks: LaneBlock[] } {
   const order = new Map(stages.map((s, i) => [s.id, i]));
-  const nested = nestClusters(groups, (id) => order.has(id));
+  const nested = nestClusters(clusters, (id) => order.has(id));
   const byId = new Map(nested.map((g) => [g.id, g]));
-  const grouped = new Set(nested.flatMap((g) => g.members));
+  const clustered = new Set(nested.flatMap((g) => g.members));
   const first = (id: string) => minOf((byId.get(id)?.members ?? [id]), (m) => order.get(m)!);
   const itemsOf = (ids: readonly string[], depth: number): Item[] => [...ids].sort((a, b) => first(a) - first(b)).map((id) => {
     const g = byId.get(id);
     if (g === undefined) return { stages: [id] };
     const inside = place(itemsOf(g.direct, depth + 1), wires, spans);
-    const minWidth = titles.has(g.id) ? groupMinWidth(titles.get(g.id)!, DEFAULT_CLUSTER_INSET) : 0;
-    const own: LaneBlock = { group: g.id, first: 0, last: inside.width - 1, depth, minWidth };
+    const minWidth = titles.has(g.id) ? clusterMinWidth(titles.get(g.id)!, DEFAULT_CLUSTER_INSET) : 0;
+    const own: LaneBlock = { cluster: g.id, first: 0, last: inside.width - 1, depth, minWidth };
     return { stages: g.members, inner: { ...inside, blocks: [own, ...inside.blocks] } };
   });
-  const top = [...stages.map((s) => s.id).filter((id) => !grouped.has(id)), ...nested.filter((g) => g.parent === undefined).map((g) => g.id)];
+  const top = [...stages.map((s) => s.id).filter((id) => !clustered.has(id)), ...nested.filter((g) => g.parent === undefined).map((g) => g.id)];
   const { column, blocks } = place(itemsOf(top, 0), wires, spans);
   return { column, blocks };
 }
@@ -132,9 +132,9 @@ export function columnLefts(
       return at;
     });
   };
-  const byId = new Map(blocks.map((b) => [b.group, b]));
-  const span = (group: string, now: readonly number[]) => {
-    const b = byId.get(group)!;
+  const byId = new Map(blocks.map((b) => [b.cluster, b]));
+  const span = (cluster: string, now: readonly number[]) => {
+    const b = byId.get(cluster)!;
     const lefts = leftsNow(now);
     let [lo, hi] = [Infinity, -Infinity];
     for (const [id, c] of column) {
@@ -144,10 +144,10 @@ export function columnLefts(
   };
   const inset = { lo: DEFAULT_CLUSTER_INSET, hi: DEFAULT_CLUSTER_INSET };
   widenForMinWidth([...blocks].sort((p, q) => q.depth - p.depth).map((b) => ({
-    id: b.group,
+    id: b.cluster,
     minWidth: b.minWidth,
     inset,
-    children: blocks.filter((k) => k.depth === b.depth + 1 && k.first >= b.first && k.last <= b.last).map((k) => k.group),
+    children: blocks.filter((k) => k.depth === b.depth + 1 && k.first >= b.first && k.last <= b.last).map((k) => k.cluster),
     before: b.first,
     after: b.last + 1,
   })), room, span);
@@ -164,7 +164,7 @@ function blockRoom(count: number, column: ReadonlyMap<string, number>, blocks: r
   const inside = (b: LaneBlock) => [...column].filter(([, c]) => c >= b.first && c <= b.last).map(([id]) => id);
   const clusters = blocks.map((b): GraphCluster => {
     const parent = blocks.find((p) => p.depth === b.depth - 1 && p.first <= b.first && b.last <= p.last);
-    return { id: b.group, members: inside(b), inset: insetOf(DEFAULT_CLUSTER_INSET), ...(parent !== undefined ? { parent: parent.group } : {}) };
+    return { id: b.cluster, members: inside(b), inset: insetOf(DEFAULT_CLUSTER_INSET), ...(parent !== undefined ? { parent: parent.cluster } : {}) };
   });
   const gaps = rankGaps({ clusters }, rows, { rank: 'x', cross: 'y', sign: 1 }, gap);
   return gaps.map((g, c) => (c === 0 || c === count ? g - gap : g));

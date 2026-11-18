@@ -1,7 +1,7 @@
 import type { DataEdge, DataNode, DiagramRouter, EdgeStyle } from '../dataTypes';
 import type { PortSpec } from '../types';
 import {
-  LOOK_THEME, boxNode, drawableWires, exitLabel, isControl, kindOf, sceneStyles, stageStyle, typeColors, uniqueGroups,
+  LOOK_THEME, boxNode, drawableWires, exitLabel, isControl, kindOf, sceneStyles, stageStyle, typeColors, uniqueClusters,
   uniqueStages, wireEdge, wireStyle, type DrawableWire, type EffectLook, type LookThemeOptions,
 } from './draw';
 import { branchNode, type BranchChoice } from './symbols';
@@ -75,7 +75,7 @@ export const compact: EffectLook<CompactOptions> = (pipeline, options = {}) => {
   });
 
   return {
-    data: { nodes, edges: edges.map((e) => e.edge), clusters: uniqueGroups(pipeline) },
+    data: { nodes, edges: edges.map((e) => e.edge), clusters: uniqueClusters(pipeline) },
     scene: {
       layout: 'layered',
       layoutOptions: { direction: 'right', nodeGap: options.nodeGap ?? 16, rankGap: options.rankGap ?? 48 },

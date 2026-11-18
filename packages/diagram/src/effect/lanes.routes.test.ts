@@ -4,7 +4,7 @@ import { withDiagramRegistry } from '../edge';
 import { diagramScene, edgeIdOf, type DiagramSpec } from '../fromData';
 import { specWorldPoses } from '../specWorld';
 import { nestClusters } from '../clusterTree';
-import { portOn, uniqueGroups, uniqueStages } from './draw';
+import { portOn, uniqueClusters, uniqueStages } from './draw';
 import { SAMPLES } from './lab/samples';
 import { laneId, lanes } from './lanes';
 import { TRACK_GAP, worldSpecs } from './lanesRoutes';
@@ -79,7 +79,7 @@ const overlap = (a: Box, b: Box) => a.x < b.x + b.width && b.x < a.x + a.width &
 
 /** `PAST` with its middle two stages boxed, so `q.no` runs past the box
  *  and `cut.out` runs into it. */
-const BOXED: EffectPipeline = { ...PAST, groups: [{ id: 'g', label: 'Pair', members: ['a', 'b'] }] };
+const BOXED: EffectPipeline = { ...PAST, clusters: [{ id: 'g', label: 'Pair', members: ['a', 'b'] }] };
 
 const CASES: Record<string, EffectPipeline> = { past: PAST, loop: LOOP, boxed: BOXED, ...SAMPLES };
 
@@ -187,21 +187,21 @@ describe('lanes wires', () => {
   }
 
   for (const [name, p] of Object.entries(CASES)) {
-    it(`keep each group box inside the lanes, and cross none that holds neither of their ends: ${name}`, () => {
+    it(`keep each cluster box inside the lanes, and cross none that holds neither of their ends: ${name}`, () => {
       const { drawn, specs, pose, route } = load(p);
       const bands = drawn.data.nodes.filter((n) => n.id.startsWith('~lane:')).map((n) => pose(n.id));
       const top = Math.min(...bands.map((b) => b.y));
       const bottom = Math.max(...bands.map((b) => b.y + b.height));
       const boxOf = (id: string) => worldPosesOf(specs, RIGID_POSE_COMPOSITION).get(id) as Box | undefined;
-      const groups = nestClusters(uniqueGroups(p), (id) => p.stages.some((s) => s.id === id)).flatMap((g) => {
+      const clusters = nestClusters(uniqueClusters(p), (id) => p.stages.some((s) => s.id === id)).flatMap((g) => {
         const box = boxOf(g.id);
         return box === undefined ? [] : [{ id: g.id, members: g.members, box }];
       });
-      for (const g of groups) expect(g.box.y >= top - 1e-6 && g.box.y + g.box.height <= bottom + 1e-6, `${name}: ${g.id} ${JSON.stringify(g.box)}`).toBe(true);
+      for (const g of clusters) expect(g.box.y >= top - 1e-6 && g.box.y + g.box.height <= bottom + 1e-6, `${name}: ${g.id} ${JSON.stringify(g.box)}`).toBe(true);
       for (const edge of specs.filter((s) => (s.data as { diagram?: { from?: unknown } }).diagram?.from !== undefined)) {
         const ends = edge.dependsOn as unknown as string[];
         const points = route(edge.id as string);
-        for (const g of groups.filter((g) => !ends.some((e) => g.members.includes(e)))) {
+        for (const g of clusters.filter((g) => !ends.some((e) => g.members.includes(e)))) {
           const hit = points.slice(1).some((b, i) => crosses(points[i]!, b, g.box));
           expect(hit, `${name}: ${edge.id as string} crosses ${g.id} at ${JSON.stringify(g.box)}`).toBe(false);
         }
@@ -209,7 +209,7 @@ describe('lanes wires', () => {
     });
   }
 
-  it('runs a wire into a group to its port', () => {
+  it('runs a wire into a cluster to its port', () => {
     const { specs, pose, route } = load(BOXED);
     const edge = specs.find((s) => (s.dependsOn as unknown as string[] | undefined)?.join() === 'cut,a')!;
     const end = route(edge.id as string).at(-1)!;

@@ -1,12 +1,12 @@
 /**
- * Groups in the `chain` layout: each group's members hang in one stretch of
+ * Clusters in the `chain` layout: each cluster's members hang in one stretch of
  * columns, nothing else hangs among them, and the gaps along the line leave
  * room for its box.
  *
  * The gaps between levels of hung nodes, across the line, leave room for
  * boxes the same way.
  *
- * The line's order is the signal's order, so a group whose line members a
+ * The line's order is the signal's order, so a cluster whose line members a
  * non-member splits keeps its box over that non-member.
  */
 import { maxOf, minOf } from '@weasel-js/geom';
@@ -15,8 +15,8 @@ import { rankGaps, rankInset } from './cluster';
 import type { Graph, GraphCluster, GraphNode } from './graph';
 import { extent, type LayoutAxes, type Slot } from './layout';
 
-function depths(groups: readonly GraphCluster[]): Map<string, number> {
-  const byId = new Map(groups.map((g) => [g.id, g]));
+function depths(clusters: readonly GraphCluster[]): Map<string, number> {
+  const byId = new Map(clusters.map((g) => [g.id, g]));
   const depth = new Map<string, number>();
   const of = (g: GraphCluster): number => {
     if (!depth.has(g.id)) {
@@ -25,29 +25,29 @@ function depths(groups: readonly GraphCluster[]): Map<string, number> {
     }
     return depth.get(g.id)!;
   };
-  groups.forEach(of);
+  clusters.forEach(of);
   return depth;
 }
 
-const deepestFirst = (groups: readonly GraphCluster[]): GraphCluster[] => {
-  const depth = depths(groups);
-  return [...groups].sort((p, q) => depth.get(q.id)! - depth.get(p.id)!);
+const deepestFirst = (clusters: readonly GraphCluster[]): GraphCluster[] => {
+  const depth = depths(clusters);
+  return [...clusters].sort((p, q) => depth.get(q.id)! - depth.get(p.id)!);
 };
 
 /**
- * Re-hang `hanging` so groups stay together. A hung member moves to the line
- * member of its own group (or the nearest enclosing one that has any) nearest
- * along the line to where it first hung. A group with no line member hangs
+ * Re-hang `hanging` so clusters stay together. A hung member moves to the line
+ * member of its own cluster (or the nearest enclosing one that has any) nearest
+ * along the line to where it first hung. A cluster with no line member hangs
  * all its members on the owner most of them had, ties going to the earliest
- * on the line. A non-member hung in a column a group holds moves out past
- * that group's deepest member, keeping its order.
+ * on the line. A non-member hung in a column a cluster holds moves out past
+ * that cluster's deepest member, keeping its order.
  */
-export function groupHanging(graph: Graph, line: readonly GraphNode[], hanging: Hanging): Hanging {
-  const groups = graph.clusters ?? [];
-  if (groups.length === 0) return hanging;
+export function clusterHanging(graph: Graph, line: readonly GraphNode[], hanging: Hanging): Hanging {
+  const clusters = graph.clusters ?? [];
+  if (clusters.length === 0) return hanging;
   const index = new Map(line.map((n, i) => [n.id, i]));
-  const byId = new Map(groups.map((g) => [g.id, g]));
-  const onLine = new Map(groups.map((g) => [g.id, g.members.filter((m) => index.has(m))]));
+  const byId = new Map(clusters.map((g) => [g.id, g]));
+  const onLine = new Map(clusters.map((g) => [g.id, g.members.filter((m) => index.has(m))]));
   const owner = new Map(hanging.owner);
 
   for (const node of graph.nodes) {
@@ -61,8 +61,8 @@ export function groupHanging(graph: Graph, line: readonly GraphNode[], hanging: 
       break;
     }
   }
-  // Deepest first, so an enclosing group with no line member settles last.
-  const ordered = deepestFirst(groups);
+  // Deepest first, so an enclosing cluster with no line member settles last.
+  const ordered = deepestFirst(clusters);
   for (const g of ordered) {
     if (onLine.get(g.id)!.length > 0) continue;
     const hung = g.members.filter((m) => owner.has(m));
@@ -89,9 +89,9 @@ function nearest(members: readonly string[], from: number, index: ReadonlyMap<st
   return best;
 }
 
-/** Move the non-members of each group in a column out past its deepest
- *  member there. Groups that hold the column's line node go last, and the
- *  others leave those groups' members where they are, since a box that
+/** Move the non-members of each cluster in a column out past its deepest
+ *  member there. Clusters that hold the column's line node go last, and the
+ *  others leave those clusters' members where they are, since a box that
  *  starts at the line has to come first. */
 function clearColumns(
   graph: Graph,
@@ -127,7 +127,7 @@ function clearColumns(
   return level;
 }
 
-/** The gap after each line node but the last, widened for group boxes as
+/** The gap after each line node but the last, widened for cluster boxes as
  *  {@link bandGaps} widens them. `packed` is every node's slot with all gaps
  *  zero. */
 export function lineGaps(
@@ -148,7 +148,7 @@ export function lineGaps(
 
 /**
  * The gap after each level of hung nodes but the last, the line being level 0:
- * `base`, widened for group boxes as {@link bandGaps} widens them, so a box
+ * `base`, widened for cluster boxes as {@link bandGaps} widens them, so a box
  * holding a column's deeper members keeps its inset clear of the outsiders
  * hung past it. `levelSize` is each level's depth across the line, and
  * `before` hangs them on the low side.
@@ -177,9 +177,9 @@ export function levelGaps(
 
 /**
  * `gaps`, the gap after each band of nodes but the last, widened by the
- * insets of the groups that end at the band before it or start at the one
+ * insets of the clusters that end at the band before it or start at the one
  * after, the way `rankGaps` widens a layered layout's ranks. Then, where the
- * bands follow one another along x, each group's gaps on either side widen by
+ * bands follow one another along x, each cluster's gaps on either side widen by
  * half of what its box falls short of its `minWidth`. `axes.rank` is the axis
  * the bands follow one another along, `axes.sign` which way, and `start` is
  * where a node starts along it with every gap zero.
@@ -193,14 +193,14 @@ export function bandGaps(
 ): number[] {
   const insets = rankGaps(graph, bands, axes, 0);
   const out = gaps.map((gap, i) => gap + (insets[i] ?? 0));
-  const groups = graph.clusters ?? [];
-  if (axes.rank !== 'x' || !groups.some((g) => g.minWidth !== undefined)) return out;
+  const clusters = graph.clusters ?? [];
+  if (axes.rank !== 'x' || !clusters.some((g) => g.minWidth !== undefined)) return out;
 
   const bandOf = new Map<string, number>();
   bands.forEach((band, i) => band.forEach((n) => bandOf.set(n.id, i)));
   const children = new Map<string, string[]>();
-  for (const g of groups) if (g.parent !== undefined) children.set(g.parent, [...(children.get(g.parent) ?? []), g.id]);
-  const byId = new Map(groups.map((g) => [g.id, g]));
+  for (const g of clusters) if (g.parent !== undefined) children.set(g.parent, [...(children.get(g.parent) ?? []), g.id]);
+  const byId = new Map(clusters.map((g) => [g.id, g]));
   const span = (id: string, now: readonly number[]) => {
     let [lo, hi] = [Infinity, -Infinity];
     for (const m of byId.get(id)!.members) {
@@ -213,7 +213,7 @@ export function bandGaps(
     }
     return { lo, hi };
   };
-  widenForMinWidth(deepestFirst(groups).map((g) => {
+  widenForMinWidth(deepestFirst(clusters).map((g) => {
     const placed = g.members.flatMap((id) => (bandOf.has(id) && start(id) !== undefined ? [bandOf.get(id)!] : []));
     return {
       id: g.id,
@@ -227,13 +227,13 @@ export function bandGaps(
   return out;
 }
 
-/** A group as {@link widenForMinWidth} reads it. */
+/** A cluster as {@link widenForMinWidth} reads it. */
 export interface MinWidthCluster {
   id: string;
   minWidth?: number;
   /** Its box's inset before and after along the rank. */
   inset: { lo: number; hi: number };
-  /** The groups nested directly in it. */
+  /** The clusters nested directly in it. */
   children: readonly string[];
   /** The index in the gaps of the gap before its first member and after its
    *  last; one out of range has no gap to widen. */
@@ -242,19 +242,19 @@ export interface MinWidthCluster {
 }
 
 /**
- * Widen `gaps` in place so each group's box reaches its `minWidth`, half the
+ * Widen `gaps` in place so each cluster's box reaches its `minWidth`, half the
  * shortfall either side, with the box drawn as `boxAround` draws it: what its
  * members span, its children's boxes, grown by its inset, then widened evenly.
- * `groups` runs deepest first, so a box sees its children already widened.
- * `span` is where a group's members start and end along the rank at the gaps
- * as they stand; `lo > hi` for a group with none placed.
+ * `clusters` runs deepest first, so a box sees its children already widened.
+ * `span` is where a cluster's members start and end along the rank at the gaps
+ * as they stand; `lo > hi` for a cluster with none placed.
  */
 export function widenForMinWidth(
-  groups: readonly MinWidthCluster[],
+  clusters: readonly MinWidthCluster[],
   gaps: number[],
   span: (id: string, gaps: readonly number[]) => { lo: number; hi: number },
 ): void {
-  const byId = new Map(groups.map((g) => [g.id, g]));
+  const byId = new Map(clusters.map((g) => [g.id, g]));
   const boxOf = (g: MinWidthCluster, minWidth: number): { lo: number; hi: number } => {
     let { lo, hi } = span(g.id, gaps);
     [lo, hi] = [lo - g.inset.lo, hi + g.inset.hi];
@@ -267,7 +267,7 @@ export function widenForMinWidth(
     const grow = Math.max(0, minWidth - (hi - lo)) / 2;
     return { lo: lo - grow, hi: hi + grow };
   };
-  for (const g of groups) {
+  for (const g of clusters) {
     if (g.minWidth === undefined) continue;
     const box = boxOf(g, 0);
     if (!(box.lo <= box.hi)) continue;

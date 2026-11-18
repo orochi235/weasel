@@ -1,6 +1,6 @@
 /**
- * Pipeline groups in a real browser: a stage dragged into a group's box joins it and Undo takes it
- * back out, and Arrange's Group and Ungroup, by menu and by key, change what groups hold, Group taking
+ * Pipeline clusters in a real browser: a stage dragged into a cluster's box joins it and Undo takes it
+ * back out, and Arrange's Group and Ungroup, by menu and by key, change what clusters hold, Group taking
  * everything Shift-clicked.
  */
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
@@ -8,7 +8,7 @@ import { page, userEvent } from 'vitest/browser';
 import { fitViewToBounds as fitOrNull, viewToTransform, type RectPose } from '@weasel-js/core';
 
 import { diagramClusterOf, diagramScene, isBodyOrRegion } from '@weasel-js/diagram';
-import { EFFECT_MIN_SCALE, editorScene, type EffectDoc, type EffectGroup } from '@weasel-js/diagram/effect';
+import { EFFECT_MIN_SCALE, editorScene, type EffectDoc, type EffectCluster } from '@weasel-js/diagram/effect';
 import { registerCanvasFont } from '@weasel-js/font';
 import '@weasel-js/theme/tokens.css';
 import { makeChoose } from '../testing/choose';
@@ -24,9 +24,9 @@ const choose = makeChoose((el) => userEvent.click(el));
 
 const img = (id: string) => ({ id, title: id, inputs: [{ id: 'image', type: 'image' }], outputs: [{ id: 'out', type: 'image' }] });
 const DOC: EffectDoc = {
-  pipeline: { stages: [img('a'), img('b')], wires: [], groups: [{ id: 'g', label: 'Filters', members: ['a'] }], types: { number: { control: true } } },
+  pipeline: { stages: [img('a'), img('b')], wires: [], clusters: [{ id: 'g', label: 'Filters', members: ['a'] }], types: { number: { control: true } } },
   places: { a: { x: 40, y: 60 }, b: { x: 560, y: 60 } },
-  groupBoxes: { g: { x: 0, y: 0, width: 400, height: 300 } },
+  clusterBoxes: { g: { x: 0, y: 0, width: 400, height: 300 } },
 };
 
 beforeEach(async () => {
@@ -40,8 +40,8 @@ afterEach(() => {
   localStorage.clear();
 });
 
-/** The groups the pipeline doc last saved. */
-const groups = (): readonly EffectGroup[] => (JSON.parse(localStorage.getItem(PIPELINE_STORAGE_KEY)!) as EffectDoc).pipeline.groups ?? [];
+/** The clusters the pipeline doc last saved. */
+const clusters = (): readonly EffectCluster[] => (JSON.parse(localStorage.getItem(PIPELINE_STORAGE_KEY)!) as EffectDoc).pipeline.clusters ?? [];
 
 /** The canvas, and where a world point is on it in client pixels, in the view the editor opens on. */
 async function openCanvas() {
@@ -72,45 +72,45 @@ async function openCanvas() {
   return { canvas, at, drag };
 }
 
-describe('WeaselChart pipeline groups', () => {
-  it('moves a stage dragged into a group box into the group, and Edit › Undo takes it back out', async () => {
+describe('WeaselChart pipeline clusters', () => {
+  it('moves a stage dragged into a cluster box into the cluster, and Edit › Undo takes it back out', async () => {
     const { at, drag } = await openCanvas();
     drag(at(600, 70), at(200, 200));
-    await expect.poll(() => groups().find((g) => g.id === 'g')?.members).toEqual(['a', 'b']);
+    await expect.poll(() => clusters().find((g) => g.id === 'g')?.members).toEqual(['a', 'b']);
     await choose('Edit', /^Undo/);
-    await expect.poll(() => groups().find((g) => g.id === 'g')?.members).toEqual(['a']);
+    await expect.poll(() => clusters().find((g) => g.id === 'g')?.members).toEqual(['a']);
   });
 
-  it('groups the picked stage from Arrange › Group, shows the group in Params, and ungroups it by key', async () => {
+  it('clusters the picked stage from Arrange › Group, shows the cluster in Params, and dissolves it by key', async () => {
     const { canvas, at } = await openCanvas();
     const b = at(600, 70);
     await userEvent.click(canvas, { position: b });
     await choose('Arrange', /^Group/);
-    await expect.poll(() => groups().map((g) => g.id)).toEqual(['g', 'group']);
-    expect(groups()[1]!.members).toEqual(['b']);
+    await expect.poll(() => clusters().map((g) => g.id)).toEqual(['g', 'cluster']);
+    expect(clusters()[1]!.members).toEqual(['b']);
     await expect.element(page.getByRole('textbox', { name: 'Name' })).toBeVisible();
 
     await userEvent.keyboard('{ControlOrMeta>}{Shift>}g{/Shift}{/ControlOrMeta}');
-    await expect.poll(() => groups().map((g) => g.id)).toEqual(['g']);
+    await expect.poll(() => clusters().map((g) => g.id)).toEqual(['g']);
   });
 
-  it('groups the picked stage by Mod+G, as one step Edit › Undo takes back', async () => {
+  it('clusters the picked stage by Mod+G, as one step Edit › Undo takes back', async () => {
     const { canvas, at } = await openCanvas();
     await userEvent.click(canvas, { position: at(600, 70) });
     await userEvent.keyboard('{ControlOrMeta>}g{/ControlOrMeta}');
-    await expect.poll(() => groups().map((g) => g.id)).toEqual(['g', 'group']);
+    await expect.poll(() => clusters().map((g) => g.id)).toEqual(['g', 'cluster']);
     await choose('Edit', /^Undo/);
     await expect.poll(() => JSON.parse(localStorage.getItem(PIPELINE_STORAGE_KEY)!)).toEqual(DOC);
   });
 
-  it('groups every stage and group Shift-clicked, from Arrange › Group', async () => {
+  it('clusters every stage and cluster Shift-clicked, from Arrange › Group', async () => {
     const { canvas, at } = await openCanvas();
     await userEvent.click(canvas, { position: at(600, 70) });
     await userEvent.keyboard('{Shift>}');
     await userEvent.click(canvas, { position: at(200, 260) });
     await userEvent.keyboard('{/Shift}');
     await choose('Arrange', /^Group/);
-    await expect.poll(() => groups().map((g) => g.id)).toEqual(['g', 'group']);
-    expect([...groups()[1]!.members].sort()).toEqual(['b', 'g']);
+    await expect.poll(() => clusters().map((g) => g.id)).toEqual(['g', 'cluster']);
+    expect([...clusters()[1]!.members].sort()).toEqual(['b', 'g']);
   });
 });

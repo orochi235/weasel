@@ -41,7 +41,7 @@ afterEach(() => {
 });
 
 describe('EffectChart picking', () => {
-  const pipeline = { stages: [{ id: 'blur', title: 'Blur' }], wires: [], groups: [{ id: 'g', members: ['blur'] }] };
+  const pipeline = { stages: [{ id: 'blur', title: 'Blur' }], wires: [], clusters: [{ id: 'g', members: ['blur'] }] };
 
   it('reports a picked stage by its id, and anything else as none', () => {
     const onSelect = vi.fn();

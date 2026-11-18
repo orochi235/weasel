@@ -25,7 +25,7 @@ export {
   stageRows,
   stageStyle,
   typeColors,
-  uniqueGroups,
+  uniqueClusters,
   uniqueStages,
   valueRowId,
   wireEdges,
@@ -61,15 +61,15 @@ export {
   setWireRoute,
 } from './effect/edit';
 export {
-  groupContents,
-  groupStages,
-  moveGroup,
-  moveToGroup,
-  nextGroupId,
-  renameGroup,
-  setGroupBox,
-  ungroup,
-} from './effect/groupEdit';
+  clusterContents,
+  clusterStages,
+  dissolveCluster,
+  moveCluster,
+  moveToCluster,
+  nextClusterId,
+  renameCluster,
+  setClusterBox,
+} from './effect/clusterEdit';
 export { formatParam, stageFromType } from './effect/stageTypes';
 export type { EffectStageType } from './effect/stageTypes';
 export { imageEvaluators } from './effect/image/evaluators';
@@ -105,7 +105,7 @@ export type { BranchChoice, BranchNode, BranchOptions, BranchSymbol } from './ef
 export type {
   EffectBox,
   EffectDoc,
-  EffectGroup,
+  EffectCluster,
   EffectParam,
   EffectParamControl,
   EffectPlaces,

@@ -191,9 +191,9 @@ function packageFactories(s: Sweep, scene: never): void {
   s.value(diagram.diagramLabels({} as never), 'diagram.diagramLabels');
   s.value(diagram.createDiagramEdgeEndsContribution({} as never), 'diagram.createDiagramEdgeEndsContribution');
   s.value(diagram.createReorderContribution({} as never), 'diagram.createReorderContribution');
-  s.value(diagram.groupReorderContribution(() => {}), 'diagram.groupReorderContribution');
+  s.value(diagram.clusterReorderContribution(() => {}), 'diagram.clusterReorderContribution');
   s.value(diagram.createReorderPreset({} as never), 'diagram.createReorderPreset');
-  s.value(diagram.createGroupReorderPreset(() => {}), 'diagram.createGroupReorderPreset');
+  s.value(diagram.createClusterReorderPreset(() => {}), 'diagram.createClusterReorderPreset');
   s.value(diagram.createDiagramContainersContribution({} as never), 'diagram.createDiagramContainersContribution');
   s.value(diagram.createDiagramOffPageContribution(), 'diagram.createDiagramOffPageContribution');
   s.value(diagram.connectorTool({} as never), 'diagram.connectorTool');

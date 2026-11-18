@@ -1,6 +1,6 @@
 /** The reorders an editor installs under a look that places stages itself:
  *  a main-line stage dragged along the line, a lane dragged by its header,
- *  and a group dragged along the line by its title. */
+ *  and a cluster dragged along the line by its title. */
 import type { Contribution } from '@weasel-js/core';
 import { moveItems } from '@weasel-js/ui-input';
 import { maxOf, minOf } from '@weasel-js/geom';
@@ -8,7 +8,7 @@ import { createReorderContribution, slotsAlong, type ReorderMove, type ReorderSl
 import { moveInChain, moveRunInChain } from './chainEdit';
 import type { LookOrder } from './draw';
 import { ensureWireIds, setLaneOrder } from './edit';
-import { groupRuns, groupSlotsAt, unitStages } from './groupOrder';
+import { clusterRuns, clusterSlotsAt, unitStages } from './clusterOrder';
 import { laneTypeOf } from './lanes';
 import { mainChain } from './mainChain';
 import type { EffectDoc } from './types';
@@ -16,8 +16,8 @@ import type { EffectDoc } from './types';
 /** The action that drags a lane to another place among the lanes. */
 export const REORDER_LANES_ACTION_ID = 'diagram.reorderLanes';
 
-/** The action that drags a group by its title to another place along the main line. */
-export const REORDER_GROUPS_ACTION_ID = 'diagram.reorderGroups';
+/** The action that drags a cluster by its title to another place along the main line. */
+export const REORDER_CLUSTERS_ACTION_ID = 'diagram.reorderClusters';
 
 type Box = { x: number; y: number; width: number; height: number };
 
@@ -40,23 +40,23 @@ function slotsOf(order: LookOrder | undefined, boxOf: ReorderSource['boxOf']): R
   return items.length < 2 ? null : slotsAlong(order.axis, items);
 }
 
-/** `next`, or `null` where it splits a group whose stages sat together on the chain in `doc`. */
-function keepsGroups(doc: EffectDoc, next: EffectDoc | null): EffectDoc | null {
+/** `next`, or `null` where it splits a cluster whose stages sat together on the chain in `doc`. */
+function keepsClusters(doc: EffectDoc, next: EffectDoc | null): EffectDoc | null {
   if (next === null) return null;
-  const after = groupRuns(next.pipeline, mainChain(next.pipeline));
-  for (const [id, run] of groupRuns(doc.pipeline, mainChain(doc.pipeline))) if (run !== null && after.get(id) === null) return null;
+  const after = clusterRuns(next.pipeline, mainChain(next.pipeline));
+  for (const [id, run] of clusterRuns(doc.pipeline, mainChain(doc.pipeline))) if (run !== null && after.get(id) === null) return null;
   return next;
 }
 
 /** The first move to a chain index in the drawn gap at `to` that keeps every
- *  group whole: `to` itself, then back over the undrawn stages before it,
+ *  cluster whole: `to` itself, then back over the undrawn stages before it,
  *  then forward over those after it. */
 function dropInGap(doc: EffectDoc, chain: readonly string[], drawn: ReadonlySet<string>, to: number, at: (to: number) => EffectDoc | null): EffectDoc | null {
   const tries = [to];
   for (let k = to; k > 0 && !drawn.has(chain[k - 1]!); k--) tries.push(k - 1);
   for (let k = to; k < chain.length && !drawn.has(chain[k]!); k++) tries.push(k + 1);
   for (const t of tries) {
-    const next = keepsGroups(doc, at(t));
+    const next = keepsClusters(doc, at(t));
     if (next !== null) return next;
   }
   return null;
@@ -67,7 +67,7 @@ const drawnOf = (order: LookOrder) => new Set(order.items.map((i) => i.id));
 /** The doc with the drawn stage moved as `move` says. A look may leave stages
  *  of the main chain out of its order, as rack does a skip it draws as an arc,
  *  so the drawn gap is read as any chain index between the drawn stages either
- *  side of it. `null` where every such move would split a group whose stages
+ *  side of it. `null` where every such move would split a cluster whose stages
  *  sat together on the chain. */
 export function stageMove(doc: EffectDoc, order: LookOrder, move: ReorderMove): EffectDoc | null {
   const chain = mainChain(doc.pipeline);
@@ -78,13 +78,13 @@ export function stageMove(doc: EffectDoc, order: LookOrder, move: ReorderMove): 
 }
 
 /**
- * The doc with `move.id`, one of the drawn `units` (groups and stages), moved
+ * The doc with `move.id`, one of the drawn `units` (clusters and stages), moved
  * along the chain as one. The gap is the one before that unit's first drawn
  * stage, read as {@link stageMove} reads it, and past the end the one after
  * the last unit's last drawn stage. `null` where the unit is not whole on the
- * chain, or every move into the gap would split a group.
+ * chain, or every move into the gap would split a cluster.
  */
-export function groupMove(doc: EffectDoc, order: LookOrder, units: readonly string[], move: ReorderMove): EffectDoc | null {
+export function clusterMove(doc: EffectDoc, order: LookOrder, units: readonly string[], move: ReorderMove): EffectDoc | null {
   const chain = mainChain(doc.pipeline);
   const drawn = drawnOf(order);
   const indices = (unit: string, drawnOnly: boolean) =>
@@ -114,15 +114,15 @@ function unitsBefore(move: ReorderMove): string[] {
   return units;
 }
 
-function groupReorder(now: () => ReorderSource): Contribution {
+function clusterReorder(now: () => ReorderSource): Contribution {
   const moved = (move: ReorderMove) => {
     const { doc, order } = now();
-    return order === undefined ? null : groupMove(doc, order, unitsBefore(move), move);
+    return order === undefined ? null : clusterMove(doc, order, unitsBefore(move), move);
   };
   return createReorderContribution({
-    id: REORDER_GROUPS_ACTION_ID,
+    id: REORDER_CLUSTERS_ACTION_ID,
     label: 'Reorder group',
-    slots: (_, at) => groupSlotsAt(now(), at),
+    slots: (_, at) => clusterSlotsAt(now(), at),
     canDrop: (move) => moved(move) !== null,
     commit: (move) => {
       const next = moved(move);
@@ -156,6 +156,6 @@ export function createEditorReorderContributions(now: () => ReorderSource): Cont
         if (laneOrder !== undefined) onChange(laneMove(doc, laneOrder, move), 'Reorder lanes');
       },
     }),
-    groupReorder(now),
+    clusterReorder(now),
   ];
 }

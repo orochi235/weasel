@@ -44,7 +44,7 @@ export interface EffectChartProps<TOptions = never> {
   /** A stage id, or null for none. */
   selected?: string | null;
   /** Hears each pick: a stage's id, or `null` for anything else. Only a
-   *  stage can be picked: a click on a group box or a lane lands on the
+   *  stage can be picked: a click on a cluster box or a lane lands on the
    *  canvas behind it. The canvas keeps its own highlight on the stage picked;
    *  only a change to `selected` moves it. */
   onSelect?: (stage: string | null) => void;
@@ -99,7 +99,7 @@ export function EffectChart<TOptions = never>({
   const built = useMemo(() => {
     const drawn = ((look ?? nodeGraph) as EffectLook<TOptions>)(pipeline, options);
     // Only a stage is pickable: the canvas highlights whatever it picks, and
-    // a group box or a lane picked would stay lit while `onSelect` says none.
+    // a cluster box or a lane picked would stay lit while `onSelect` says none.
     const specs = diagramScene(drawn.data, drawn.scene)
       .map((s) => (s.pickable === false || stageIds.has(s.id as string) ? s : { ...s, pickable: false }));
     return { specs, color: drawn.color, exits: drawn.exits };

@@ -23,7 +23,7 @@ export const P: EffectPipeline = {
     w(['blur', 'out'], ['mix', 'over']), w(['mix', 'out'], ['out', 'in']), w(['osc', 'value'], ['blur', 'radius']),
     w(['cut', 'out'], ['mix', 'mask']),
   ],
-  groups: [{ id: 'g', label: 'Soften', members: ['blur'] }],
+  clusters: [{ id: 'g', label: 'Soften', members: ['blur'] }],
 };
 
 export type Box = { x: number; y: number; width: number; height: number };

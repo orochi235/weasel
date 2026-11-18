@@ -46,7 +46,7 @@ describe('lanes', () => {
       expect(b.y + b.height, id).toBeLessThan(bottom);
       // More beside an edge wires run along: the top, here, which `q.no` takes past `blur`.
       expect(b.y - top, id).toBeGreaterThanOrEqual(LANE_INSET - 1e-6);
-      // `blur` stands in group `g`, whose box keeps the inset in its place.
+      // `blur` stands in cluster `g`, whose box keeps the inset in its place.
       const outer = id === 'blur' ? box('g') : b;
       expect(bottom - (outer.y + outer.height), id).toBeCloseTo(LANE_INSET, 6);
     }
@@ -122,10 +122,10 @@ describe('lanes', () => {
     expect(at(['bool', 'image'])).toBe(0);
   });
 
-  it('draws a mismatched wire in the problem color and keeps groups', () => {
+  it('draws a mismatched wire in the problem color and keeps clusters', () => {
     const bad = lanes({ ...P, wires: [...P.wires, w(['cut', 'out'], ['blur', 'in'])] });
     expect(bad.scene.edgeStyle!(bad.data.edges[bad.data.edges.length - 1]!)!.stroke).toBe(PROBLEM_COLOR);
-    expect(bad.data.clusters).toEqual(P.groups);
+    expect(bad.data.clusters).toEqual(P.clusters);
   });
 
   it('fades a decision\'s exit a run did not take', () => {

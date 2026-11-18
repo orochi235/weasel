@@ -1,6 +1,6 @@
 /**
  * Which members a reorderable group or container holds, and what moves with
- * each. Plain reads of the scene; `groupReorder.ts` builds a reorder's slots
+ * each. Plain reads of the scene; `clusterReorder.ts` builds a reorder's slots
  * from them.
  */
 import type { Bounds } from '@weasel-js/core';

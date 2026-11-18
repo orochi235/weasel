@@ -19,14 +19,14 @@ const P: EffectPipeline = {
     { id: 'flag', title: 'Flag', outputs: [{ id: 'out', type: 'bool' }] },
   ],
   wires: [w(['src', 'out'], ['q', 'in']), w(['q', 'yes'], ['blur', 'image']), w(['flag', 'out'], ['blur', 'on'])],
-  groups: [{ id: 'g', label: 'Soften', members: ['blur'] }],
+  clusters: [{ id: 'g', label: 'Soften', members: ['blur'] }],
 };
 
 describe('nodeGraph', () => {
   const { data, scene, color } = nodeGraph(P);
   const node = (id: string) => data.nodes.find((n) => n.id === id)!;
 
-  it('makes one node per stage, by stage id, and passes groups through', () => {
+  it('makes one node per stage, by stage id, and passes clusters through', () => {
     expect(data.nodes.map((n) => n.id)).toEqual(['src', 'q', 'blur', 'flag']);
     expect(data.clusters).toEqual([{ id: 'g', label: 'Soften', members: ['blur'] }]);
   });
@@ -85,8 +85,8 @@ describe('nodeGraph', () => {
     expect(() => diagramScene(twice.data, twice.scene)).not.toThrow();
   });
 
-  it('keeps the first of two groups sharing an id, and drops a group named like a stage', () => {
-    const twice = nodeGraph({ ...P, groups: [...P.groups!, { id: 'g', members: ['src'] }, { id: 'src', members: ['flag'] }] });
+  it('keeps the first of two clusters sharing an id, and drops a cluster named like a stage', () => {
+    const twice = nodeGraph({ ...P, clusters: [...P.clusters!, { id: 'g', members: ['src'] }, { id: 'src', members: ['flag'] }] });
     expect(twice.data.clusters).toEqual([{ id: 'g', label: 'Soften', members: ['blur'] }]);
     expect(() => diagramScene(twice.data, twice.scene)).not.toThrow();
   });

@@ -10,7 +10,7 @@ import type { DiagramLabel } from './labelTrait';
 import type { LayoutFn, LayoutPlanner } from './layout';
 import type { LiveLayout, UseLiveLayoutOptions } from './live';
 import type { DiagramOverlay } from './overlays';
-import type { ReorderChange } from './groupReorder';
+import type { ReorderChange } from './clusterReorder';
 import type { DiagramEdit } from './batchedEdits';
 import type { ContainerEdit, EdgeRoute, NodeMove } from './sceneSync';
 import type { SequenceEdit } from './sequence/commit';

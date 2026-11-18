@@ -2,7 +2,7 @@ import { describe, expect, it, vi } from 'vitest';
 import { createScene, type ActionDeps, type ImmediateInvoker, type RectPose } from '@weasel-js/core';
 import { diagramScene, type DiagramData } from './fromData';
 import { withDiagramRegistry } from './edge';
-import { createStepReorderAction } from './groupReorder';
+import { createStepReorderAction } from './clusterReorder';
 
 const DATA: DiagramData = {
   nodes: [{ id: 'a', lines: ['a'] }, { id: 'b', lines: ['b'] }],

@@ -5,10 +5,10 @@
  * The signal-chain layout: a rack of effects with their side inputs under
  * them. Each chain node owns a column as long as the widest row hung on it, so
  * two neighbors' hangers never share space, and each group's members hang in
- * one stretch of columns with room left for its box (`chainGroups`).
+ * one stretch of columns with room left for its box (`chainClusters`).
  */
 import { maxOf } from '@weasel-js/geom';
-import { groupHanging, levelGaps, lineGaps } from './chainGroups';
+import { clusterHanging, levelGaps, lineGaps } from './chainClusters';
 import { inPortOrder, SIDE_TRACK_GAP, sideRoutes, tracksNeeded, type Hanging } from './chainRoutes';
 import type { Graph, GraphNode } from './graph';
 import { backEdges, longestPathRanks } from './layered';
@@ -96,7 +96,7 @@ function chainPlan(graph: Graph, opts: LayoutOptions = {}): LayoutPlan {
   const rankGap = opts.rankGap ?? DEFAULT_RANK_GAP;
   const line = lineOf(graph, opts.chain);
   if (line.length === 0) return { moves: new Map() };
-  const hanging = groupHanging(graph, line, hangFrom(graph, line));
+  const hanging = clusterHanging(graph, line, hangFrom(graph, line));
   const { owner, level } = hanging;
 
   const rows = new Map<string, GraphNode[][]>(line.map((n) => [n.id, []]));

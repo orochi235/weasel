@@ -134,8 +134,8 @@ export type { EndChange, ReconnectOptions } from './reconnect';
 export { REORDER_ACTION_ID, createReorderAction, reorderBinding, createReorderContribution, createReorderPreset, slotsAlong } from './reorder';
 export type { ReorderGap, ReorderItem, ReorderMove, ReorderOptions, ReorderSlots } from './reorder';
 export {
-  STEP_REORDER_ACTION_ID, createStepReorderAction, groupReorderContribution, createGroupReorderPreset, groupReorderSlots,
-} from './groupReorder';
+  STEP_REORDER_ACTION_ID, createStepReorderAction, clusterReorderContribution, createClusterReorderPreset, clusterReorderSlots,
+} from './clusterReorder';
 export {
   DIAGRAM_EDGE,
   EDGE_DERIVE_PATH,

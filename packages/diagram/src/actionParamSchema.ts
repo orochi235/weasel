@@ -27,7 +27,7 @@ declare module '@weasel-js/routing' {
     'diagram.addLane': PressAt;
     'diagram.editContainerTitle': ClickAt;
     'diagram.followOffPage': ClickAt;
-    'diagram.renameGroup': ClickAt;
+    'diagram.renameCluster': ClickAt;
     'diagram.sequence.select': PressWithMods;
     'diagram.sequence.drawMessage': DrawMessageParams;
     'diagram.sequence.wrapFragment': WrapFragmentParams;

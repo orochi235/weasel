@@ -1,5 +1,5 @@
 /**
- * Reordering a group or container marked `reorder`: a member dragged along that axis among
+ * Reordering a cluster or container marked `reorder`: a member dragged along that axis among
  * its siblings, which slide into the places they would take, or the selected
  * one stepped with Alt and an arrow key. A container's member dragged out of its box goes to the move instead. Nothing is written: the host hears
  * the new order, writes it to its data, and layout keeps it.
@@ -26,9 +26,9 @@ import { carriedWith, reorderTargetOf, type ReorderTarget } from './reorderModel
 /** Alt and an arrow key: the selected member one place along. */
 export const STEP_REORDER_ACTION_ID = 'diagram.stepReorder';
 
-/** A reorderable group's or container's members in their new order. */
+/** A reorderable cluster's or container's members in their new order. */
 export interface ReorderChange {
-  /** The group's or the container's id. */
+  /** The cluster's or the container's id. */
   parent: string;
   order: readonly string[];
 }
@@ -43,9 +43,9 @@ function targetAt(deps: ActionDeps | undefined, id: string | null | undefined): 
   return reorderTargetOf(scene as never, id, (m) => worldRectOf(scene, m));
 }
 
-/** The members of the reorderable group or container a press at `at` carries
+/** The members of the reorderable cluster or container a press at `at` carries
  *  one of, each with everything drawn with it, or `null` off any. */
-export function groupReorderSlots(deps: ActionDeps, at: Vec2): ReorderSlots | null {
+export function clusterReorderSlots(deps: ActionDeps, at: Vec2): ReorderSlots | null {
   const scene = sceneOf(deps);
   const target = targetAt(deps, deps.nodeAtPoint?.(at));
   if (scene === undefined || target === null) return null;
@@ -63,8 +63,8 @@ const STEPS: readonly { key: string; role: string; axis: 'x' | 'y'; step: -1 | 1
   { key: 'ArrowRight', role: 'right', axis: 'x', step: 1 },
 ];
 
-/** The order a step along `params` leaves the selected node's group in, or `null` where it moves nothing: off any
- *  reorderable group, along the other axis, or past either end. */
+/** The order a step along `params` leaves the selected node's cluster in, or `null` where it moves nothing: off any
+ *  reorderable cluster, along the other axis, or past either end. */
 function stepPlan(deps: ActionDeps | undefined, params: Readonly<Record<string, unknown>> | undefined): ReorderChange | null {
   const target = targetAt(deps, deps?.operands?.get()[0]);
   if (target === null || params?.axis !== target.axis) return null;
@@ -96,7 +96,7 @@ export function createStepReorderAction(report: (change: ReorderChange) => void)
   };
 }
 
-/** The box of the container `member` stands in, which a drag of it leaves to be moved out; `null` for a group's
+/** The box of the container `member` stands in, which a drag of it leaves to be moved out; `null` for a cluster's
  *  member, which has nowhere to go. */
 function containerRegion(deps: ActionDeps, member: string) {
   const scene = sceneOf(deps);
@@ -108,11 +108,11 @@ function containerRegion(deps: ActionDeps, member: string) {
 
 const onBody = bodyPredicate((target) => target === 'selected-body' || target === 'unselected-body');
 
-/** The reorder drag's options for a reorderable group or container: sliding, pressed on a node's body, and a
+/** The reorder drag's options for a reorderable cluster or container: sliding, pressed on a node's body, and a
  *  container's member dragged out of the container's box handed to the move. */
-function groupReorderOptions(report: (change: ReorderChange) => void): ReorderOptions & { on: typeof onBody } {
+function clusterReorderOptions(report: (change: ReorderChange) => void): ReorderOptions & { on: typeof onBody } {
   return {
-    slots: groupReorderSlots,
+    slots: clusterReorderSlots,
     requires: ['nodeAtPoint'],
     show: 'slide',
     on: onBody,
@@ -125,17 +125,17 @@ function groupReorderOptions(report: (change: ReorderChange) => void): ReorderOp
 }
 
 /** The reorder drag and the step action, as an entry to pass in `ambient`. Beside the `move` feature the move takes
- *  every press first; {@link createGroupReorderPreset} is the form that works beside it. */
-export function groupReorderContribution(report: (change: ReorderChange) => void): Contribution {
-  const drag = createReorderContribution(groupReorderOptions(report));
+ *  every press first; {@link createClusterReorderPreset} is the form that works beside it. */
+export function clusterReorderContribution(report: (change: ReorderChange) => void): Contribution {
+  const drag = createReorderContribution(clusterReorderOptions(report));
   return { ...drag, id: 'weasel-diagram-reorder', actions: [...(drag.actions ?? []), createStepReorderAction(report)] };
 }
 
 /** Everything `DiagramView` installs for `onReorder`, as a preset to pass in `features`: the reorder drag, tried
  *  ahead of the `move` feature's on the same press, and the step action. */
-export function createGroupReorderPreset(report: (change: ReorderChange) => void): FeaturePreset {
+export function createClusterReorderPreset(report: (change: ReorderChange) => void): FeaturePreset {
   const id = 'weasel-diagram-reorder';
-  const drag = createReorderPreset(groupReorderOptions(report));
+  const drag = createReorderPreset(clusterReorderOptions(report));
   const entry = { ...drag.ambient!({}), id };
   return { ...drag, id, actions: [...(drag.actions ?? []), createStepReorderAction(report)], ambient: () => entry };
 }

@@ -77,7 +77,7 @@ const stage = fields({
 const pipeline = fields({
   stages: listOf(stage),
   wires: listOf(fields({ id: optional(string), from: endpoint, to: endpoint, label: optional(string) })),
-  groups: optional(listOf(fields({ id: string, label: optional(string), members: listOf(string) }))),
+  clusters: optional(listOf(fields({ id: string, label: optional(string), members: listOf(string) }))),
   types: optional(recordOf(fields({ control: optional(boolean) }))),
 });
 
@@ -108,12 +108,31 @@ const doc = fields({
     placed: optional(fields({ at: number, offset: number })),
     dodge: optional((v, path) => { if (v !== false) fail(path, 'is not false'); }),
   }))),
-  groupBoxes: optional(recordOf(box)),
+  clusterBoxes: optional(recordOf(box)),
 });
 
 /** `value` as an {@link EffectDoc}, as `JSON.parse` reads one. Throws an {@link EffectDocShapeError} naming the first
  *  field of the wrong type. */
 export function readEffectDoc(value: unknown): EffectDoc {
-  doc(value, 'doc');
-  return value as EffectDoc;
+  const named = withClusterNames(value);
+  doc(named, 'doc');
+  return named as EffectDoc;
+}
+
+/** `raw` with `old` renamed `now`, the old name dropped; `raw` itself when it has no `old`. A value under both keeps
+ *  `now`'s. */
+function renamed(raw: Raw, old: string, now: string): Raw {
+  if (!Object.hasOwn(raw, old)) return raw;
+  const { [old]: was, ...rest } = raw;
+  return Object.hasOwn(rest, now) ? rest : { ...rest, [now]: was };
+}
+
+/** A doc saved before clusters were named so: its pipeline's `groups` and its `groupBoxes` under their names now. */
+function withClusterNames(value: unknown): unknown {
+  if (!isRaw(value)) return value;
+  const out = renamed(value, 'groupBoxes', 'clusterBoxes');
+  const pipeline = getOwn(out, 'pipeline');
+  if (!isRaw(pipeline)) return out;
+  const next = renamed(pipeline, 'groups', 'clusters');
+  return next === pipeline ? out : { ...out, pipeline: next };
 }

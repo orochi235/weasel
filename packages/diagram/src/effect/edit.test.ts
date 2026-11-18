@@ -34,22 +34,22 @@ describe('edit', () => {
     expect(addWire(d, { from: ref('a', 'out'), to: ref('c', 'image') }).laneOrder).toEqual(['number', 'image']);
   });
 
-  it('removeStages drops wires, places and group memberships without mutating', () => {
+  it('removeStages drops wires, places and cluster memberships without mutating', () => {
     const d = built();
-    const g = { ...d, pipeline: { ...d.pipeline, groups: [{ id: 'g', members: ['b', 'c'] }] } };
+    const g = { ...d, pipeline: { ...d.pipeline, clusters: [{ id: 'g', members: ['b', 'c'] }] } };
     const r = removeStages(g, ['b']);
     expect(r.pipeline.wires).toEqual([]);
     expect(r.places.b).toBeUndefined();
-    expect(r.pipeline.groups![0]!.members).toEqual(['c']);
+    expect(r.pipeline.clusters![0]!.members).toEqual(['c']);
     expect(g.pipeline.wires).toHaveLength(2);
     expect(g.places.b).toBeDefined();
   });
 
-  it('removeStages prunes a group left empty, and a group holding only that one', () => {
+  it('removeStages prunes a cluster left empty, and a cluster holding only that one', () => {
     const d = built();
-    const groups = [{ id: 'inner', members: ['b'] }, { id: 'outer', members: ['inner'] }, { id: 'keep', members: ['b', 'c'] }];
-    const r = removeStages({ ...d, pipeline: { ...d.pipeline, groups } }, ['b']);
-    expect(r.pipeline.groups).toEqual([{ id: 'keep', members: ['c'] }]);
+    const clusters = [{ id: 'inner', members: ['b'] }, { id: 'outer', members: ['inner'] }, { id: 'keep', members: ['b', 'c'] }];
+    const r = removeStages({ ...d, pipeline: { ...d.pipeline, clusters } }, ['b']);
+    expect(r.pipeline.clusters).toEqual([{ id: 'keep', members: ['c'] }]);
   });
 
   it('addWire mints w1 then w2', () => {

@@ -99,13 +99,13 @@ describe('rack', () => {
     expect(rack(SKIP, { chain: ['osc', 'blur'], collapseSkips: false }).scene.layoutOptions?.chain).toEqual(['osc', 'blur']);
   });
 
-  it('drops a collapsed decision from any group that named it', () => {
-    const grouped = rack({ ...SKIP, groups: [{ id: 'g', members: ['q', 'blur'] }] });
-    expect(grouped.data.clusters).toEqual([{ id: 'g', members: ['blur'] }]);
+  it('drops a collapsed decision from any cluster that named it', () => {
+    const clustered = rack({ ...SKIP, clusters: [{ id: 'g', members: ['q', 'blur'] }] });
+    expect(clustered.data.clusters).toEqual([{ id: 'g', members: ['blur'] }]);
   });
 
-  it('keeps the first of two groups sharing an id, and drops a group named like a stage', () => {
-    const twice = rack({ ...SKIP, groups: [{ id: 'g', members: ['q', 'blur'] }, { id: 'g', members: ['mix'] }, { id: 'mix', members: ['osc'] }] });
+  it('keeps the first of two clusters sharing an id, and drops a cluster named like a stage', () => {
+    const twice = rack({ ...SKIP, clusters: [{ id: 'g', members: ['q', 'blur'] }, { id: 'g', members: ['mix'] }, { id: 'mix', members: ['osc'] }] });
     expect(twice.data.clusters).toEqual([{ id: 'g', members: ['blur'] }]);
     expect(() => diagramScene(twice.data, twice.scene)).not.toThrow();
   });

@@ -1,5 +1,5 @@
 /** Routes for the `lanes` look: each wire kept clear of what the stages it
- *  passes draw and of the group boxes it neither leaves nor enters, each wire
+ *  passes draw and of the cluster boxes it neither leaves nor enters, each wire
  *  sharing a corridor on a track of its own, and each label set where it
  *  covers no stage. */
 import { IDENTITY_POSE_COMPOSITION, pointAlongPath, type Path } from '@weasel-js/core';
@@ -245,7 +245,7 @@ export interface Laid {
   clusters?: readonly DataCluster[];
 }
 
-/** A group's box as the scene draws it, the run of columns it stands over, and the stages it holds. */
+/** A cluster's box as the scene draws it, the run of columns it stands over, and the stages it holds. */
 interface Wall {
   box: Box;
   first: number;

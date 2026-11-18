@@ -13,9 +13,9 @@ registerCanvasFont('sans-serif');
 
 const stage = (id: string): EffectStage => ({ id, title: id, inputs: [{ id: 'in', type: 'image' }], outputs: [{ id: 'out', type: 'image' }] });
 const DOC: EffectDoc = {
-  pipeline: { stages: [stage('blur'), stage('mix')], wires: [], groups: [{ id: 'g', label: 'Filters', members: ['blur'] }] },
+  pipeline: { stages: [stage('blur'), stage('mix')], wires: [], clusters: [{ id: 'g', label: 'Filters', members: ['blur'] }] },
   places: { blur: { x: 40, y: 60 }, mix: { x: 460, y: 60 } },
-  groupBoxes: { g: { x: 0, y: 0, width: 360, height: 240 } },
+  clusterBoxes: { g: { x: 0, y: 0, width: 360, height: 240 } },
 };
 const SIZE = { width: 800, height: 400 };
 
@@ -46,10 +46,10 @@ async function mount() {
   const changes: [EffectDoc, string][] = [];
   function Host() {
     const [doc, setDoc] = useState(DOC);
-    const [group, setGroup] = useState<string | null>(null);
+    const [cluster, setCluster] = useState<string | null>(null);
     return (
       <EffectEditor
-        doc={doc} selectedGroup={group} onSelectGroup={setGroup} {...SIZE}
+        doc={doc} selectedCluster={cluster} onSelectCluster={setCluster} {...SIZE}
         onChange={(next, label) => { changes.push([next, label]); setDoc(next); }}
       />
     );
@@ -107,44 +107,44 @@ async function mount() {
   return { host, changes, drag, click, doubleClick };
 }
 
-describe('<EffectEditor> groups under nodeGraph', () => {
-  it('moves a stage dragged into a group box into the group, as one Move', async () => {
+describe('<EffectEditor> clusters under nodeGraph', () => {
+  it('moves a stage dragged into a cluster box into the cluster, as one Move', async () => {
     const { changes, drag } = await mount();
     const mix = poseOf('mix');
     await drag({ x: mix.x + mix.width / 2, y: mix.y + 10 }, { x: 200, y: 150 });
     await expect.poll(() => changes.length).toBe(1);
     const [next, label] = changes[0]!;
     expect(label).toBe('Move');
-    expect(next.pipeline.groups).toEqual([{ id: 'g', label: 'Filters', members: ['blur', 'mix'] }]);
+    expect(next.pipeline.clusters).toEqual([{ id: 'g', label: 'Filters', members: ['blur', 'mix'] }]);
   });
 
-  it('resizes a picked group by its corner handle, as one Resize group', async () => {
+  it('resizes a picked cluster by its corner handle, as one Resize group', async () => {
     const { changes, click, drag } = await mount();
     await click({ x: 180, y: 12 });
     await drag({ x: 360, y: 240 }, { x: 420, y: 300 });
     await expect.poll(() => changes.length).toBe(1);
     const [next, label] = changes[0]!;
     expect(label).toBe('Resize group');
-    const box = next.groupBoxes!.g!;
+    const box = next.clusterBoxes!.g!;
     expect([box.x, box.y]).toEqual([0, 0]);
     expect(box.width).toBeCloseTo(420, 0);
     expect(box.height).toBeCloseTo(300, 0);
   });
 
-  it('carries the stages inside a dragged group box, as one Move', async () => {
+  it('carries the stages inside a dragged cluster box, as one Move', async () => {
     const { changes, drag } = await mount();
     await drag({ x: 300, y: 220 }, { x: 340, y: 250 });
     await expect.poll(() => changes.length).toBe(1);
     const [next, label] = changes[0]!;
     expect(label).toBe('Move');
-    expect(next.groupBoxes!.g).toMatchObject({ width: 360, height: 240 });
-    const moved = { x: next.groupBoxes!.g!.x, y: next.groupBoxes!.g!.y };
+    expect(next.clusterBoxes!.g).toMatchObject({ width: 360, height: 240 });
+    const moved = { x: next.clusterBoxes!.g!.x, y: next.clusterBoxes!.g!.y };
     expect(moved.x).toBeGreaterThan(20);
     expect(next.places.blur).toEqual({ x: 40 + moved.x, y: 60 + moved.y });
     expect(next.places.mix).toEqual(DOC.places.mix);
   });
 
-  it('renames a group from a field opened by double-clicking its title', async () => {
+  it('renames a cluster from a field opened by double-clicking its title', async () => {
     const { host, changes, doubleClick } = await mount();
     await doubleClick({ x: 180, y: 12 });
     const field = await expect.poll(() => host.querySelector<HTMLInputElement>('input[aria-label="Group name"]')).not.toBeNull()
@@ -160,7 +160,7 @@ describe('<EffectEditor> groups under nodeGraph', () => {
     await expect.poll(() => changes.length).toBe(1);
     const [next, label] = changes[0]!;
     expect(label).toBe('Rename group');
-    expect(next.pipeline.groups).toEqual([{ id: 'g', label: 'Blurs', members: ['blur'] }]);
+    expect(next.pipeline.clusters).toEqual([{ id: 'g', label: 'Blurs', members: ['blur'] }]);
     expect(host.querySelector('input[aria-label="Group name"]')).toBeNull();
   });
 });

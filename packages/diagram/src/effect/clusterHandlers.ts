@@ -1,13 +1,13 @@
-/** What one drag under `nodeGraph` reports, stage moves and group box edits
+/** What one drag under `nodeGraph` reports, stage moves and cluster box edits
  *  alike, turned into one edit of the doc. */
 import type { NodeMove } from '../DiagramView';
 import type { ContainerEdit } from '../regionSync';
 import { moveStages } from './edit';
 import type { EditorScene } from './editorMapping';
-import { groupContents, moveGroup, moveToGroup, setGroupBox } from './groupEdit';
+import { clusterContents, moveCluster, moveToCluster, setClusterBox } from './clusterEdit';
 import type { EffectBox, EffectDoc } from './types';
 
-const parentGroup = (doc: EffectDoc, id: string) => doc.pipeline.groups?.find((g) => g.members.includes(id))?.id;
+const parentCluster = (doc: EffectDoc, id: string) => doc.pipeline.clusters?.find((g) => g.members.includes(id))?.id;
 
 type BoxEdit = Extract<ContainerEdit, { kind: 'box' }>;
 
@@ -19,10 +19,10 @@ export interface DragReports {
 
 /**
  * One drag's reports as one edit of `doc`, or `null` when none of them is a
- * stage's or a group's. A group whose box kept its size moved, carrying what
+ * stage's or a cluster's. A cluster whose box kept its size moved, carrying what
  * is inside it, so the moves and box edits reported for those are dropped; a
- * box that changed size was resized. A `parent` moves a stage or group into
- * that group, or out to the top level. `boxOf` is where each group was drawn.
+ * box that changed size was resized. A `parent` moves a stage or cluster into
+ * that cluster, or out to the top level. `boxOf` is where each cluster was drawn.
  */
 export function dragEdit(
   doc: EffectDoc, built: EditorScene, reports: DragReports, boxOf: (id: string) => EffectBox | undefined,
@@ -33,25 +33,25 @@ export function dragEdit(
   const carried = new Set<string>();
   const reparent = (id: string, parent: string | null | undefined) => {
     if (parent === undefined) return;
-    if (parent === null || built.groupOf(parent) !== undefined) next = moveToGroup(next, [id], parent);
+    if (parent === null || built.clusterOf(parent) !== undefined) next = moveToCluster(next, [id], parent);
   };
   const depth = (id: string) => {
     let n = 0;
-    for (let at = parentGroup(doc, id); at !== undefined; at = parentGroup(doc, at)) n++;
+    for (let at = parentCluster(doc, id); at !== undefined; at = parentCluster(doc, at)) n++;
     return n;
   };
   for (const edit of [...reports.boxes].sort((a, b) => depth(a.id) - depth(b.id))) {
-    const group = built.groupOf(edit.id);
+    const cluster = built.clusterOf(edit.id);
     const was = boxOf(edit.id);
-    if (group === undefined || was === undefined || carried.has(group)) continue;
+    if (cluster === undefined || was === undefined || carried.has(cluster)) continue;
     touched = true;
-    reparent(group, edit.parent);
+    reparent(cluster, edit.parent);
     if (edit.box.width === was.width && edit.box.height === was.height) {
-      next = moveGroup(next, group, { x: edit.box.x - was.x, y: edit.box.y - was.y });
-      const inside = groupContents(doc, group);
-      for (const id of [...inside.stages, ...inside.groups]) carried.add(id);
+      next = moveCluster(next, cluster, { x: edit.box.x - was.x, y: edit.box.y - was.y });
+      const inside = clusterContents(doc, cluster);
+      for (const id of [...inside.stages, ...inside.clusters]) carried.add(id);
     } else {
-      next = setGroupBox(next, group, edit.box);
+      next = setClusterBox(next, cluster, edit.box);
       resized = true;
     }
   }

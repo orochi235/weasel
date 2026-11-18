@@ -6,7 +6,7 @@ import {
   EDITOR_ACTIONS, downloadBlob, pickFile, menuRun, useNewCommand, useOpenCommand, useSaveCommand, type MenuContributions,
 } from '@weasel-js/editor';
 import { can } from '../menuBar';
-import { ARRANGE_MENU } from './pipelineGroups';
+import { ARRANGE_MENU } from './pipelineClusters';
 import { LOOK_MENU } from './pipelineLook';
 import { PIPELINE_PAGE_MENU } from './pipelinePages';
 import { RUN_MENU, SHOW_MENU } from './pipelineRun';

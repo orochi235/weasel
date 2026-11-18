@@ -37,7 +37,7 @@ export type {
 } from './diagramViewProps';
 export type { DiagramOverlay } from './overlays';
 export { fitDiagram, type DiagramFit } from './diagramFit';
-export type { ReorderChange } from './groupReorder';
+export type { ReorderChange } from './clusterReorder';
 
 /** The view's box holds the canvas and the overlays placed over it, and is as
  *  big as the canvas: its parent's box on an axis the canvas fills. */

@@ -28,7 +28,7 @@ const DOC: EffectDoc = {
     wires: CHAIN.slice(1).map((id, k) => ({
       id: `w${k + 1}`, from: { stage: CHAIN[k]!, port: 'out' }, to: { stage: id, port: id === 'out' ? 'in' : 'image' },
     })),
-    groups: [{ id: 'g', label: 'Pair', members: ['a', 'b'] }],
+    clusters: [{ id: 'g', label: 'Pair', members: ['a', 'b'] }],
   },
   places: {},
 };
@@ -112,13 +112,13 @@ async function mount(look: Look, initial: EffectDoc = DOC) {
   return { changes, drag, doubleClick, field, type };
 }
 
-describe('<EffectEditor> group reorder', () => {
-  it.each(['rack', 'lanes'] as const)('drags a group by its title past the next stage under %s', async (look) => {
+describe('<EffectEditor> cluster reorder', () => {
+  it.each(['rack', 'lanes'] as const)('drags a cluster by its title past the next stage under %s', async (look) => {
     const { changes, drag } = await mount(look);
     const { box, screen, center } = drawn(look);
     const from = center(clusterLabelIdOf('g'));
     const [g, c] = [box('g'), box('c')];
-    // Far enough that the group's middle, not the press, passes c's far edge.
+    // Far enough that the cluster's middle, not the press, passes c's far edge.
     const by = screen({ x: c.x + c.width + 4, y: 0 }).x - screen({ x: g.x + g.width / 2, y: 0 }).x;
     await drag(from, { x: from.x + by, y: from.y });
     await expect.poll(() => changes.length).toBe(1);
@@ -141,8 +141,8 @@ describe('<EffectEditor> group reorder', () => {
   });
 });
 
-describe('<EffectEditor> group rename under rack and lanes', () => {
-  it.each(['rack', 'lanes'] as const)('renames a group from a field opened by double-clicking its title under %s', async (look) => {
+describe('<EffectEditor> cluster rename under rack and lanes', () => {
+  it.each(['rack', 'lanes'] as const)('renames a cluster from a field opened by double-clicking its title under %s', async (look) => {
     const { changes, doubleClick, field, type } = await mount(look);
     await doubleClick(drawn(look).center(clusterLabelIdOf('g')));
     await expect.poll(field).not.toBeNull();
@@ -150,12 +150,12 @@ describe('<EffectEditor> group rename under rack and lanes', () => {
     await type('Duo');
     await expect.poll(() => changes.length).toBe(1);
     expect(changes.at(-1)![1]).toBe('Rename group');
-    expect(changes.at(-1)![0].pipeline.groups).toEqual([{ id: 'g', label: 'Duo', members: ['a', 'b'] }]);
+    expect(changes.at(-1)![0].pipeline.clusters).toEqual([{ id: 'g', label: 'Duo', members: ['a', 'b'] }]);
     expect(field()).toBeNull();
   });
 
-  it('renames an unlabeled group from its top band under rack', async () => {
-    const bare: EffectDoc = { ...DOC, pipeline: { ...DOC.pipeline, groups: [{ id: 'g', members: ['a', 'b'] }] } };
+  it('renames an unlabeled cluster from its top band under rack', async () => {
+    const bare: EffectDoc = { ...DOC, pipeline: { ...DOC.pipeline, clusters: [{ id: 'g', members: ['a', 'b'] }] } };
     const { changes, doubleClick, field, type } = await mount('rack', bare);
     const built = editorScene(bare, 'rack');
     const specs = diagramScene(built.data, built.scene);
@@ -169,7 +169,7 @@ describe('<EffectEditor> group rename under rack and lanes', () => {
     await type('New');
     await expect.poll(() => changes.length).toBe(1);
     expect(changes[0]![1]).toBe('Rename group');
-    expect(changes[0]![0].pipeline.groups).toEqual([{ id: 'g', label: 'New', members: ['a', 'b'] }]);
+    expect(changes[0]![0].pipeline.clusters).toEqual([{ id: 'g', label: 'New', members: ['a', 'b'] }]);
   });
 
   it('opens nothing on a double-click on a stage body', async () => {
