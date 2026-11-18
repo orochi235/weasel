@@ -8,13 +8,6 @@
   "packages/animator/src/timeline/createTimeline.ts": {
     "longestFunction": 160
   },
-  "packages/audio/src/inserts.ts": {
-    "longestFunction": 231
-  },
-  "packages/audio/src/testing/fakeAudioContext.ts": {
-    "lines": 419,
-    "longestFunction": 169
-  },
   "packages/core/src/animation/reflow.ts": {
     "longestFunction": 162
   },
@@ -29,13 +22,6 @@
   },
   "packages/core/src/core/scene/renderOrder.ts": {
     "longestFunction": 164
-  },
-  "packages/d3/src/bind.ts": {
-    "longestFunction": 139
-  },
-  "packages/d3/src/transition.ts": {
-    "lines": 413,
-    "longestFunction": 329
   },
   "packages/font/src/registerFont.ts": {
     "lines": 681
@@ -58,12 +44,6 @@
   "packages/forge/src/vite/plugin.ts": {
     "longestFunction": 231
   },
-  "packages/geom/src/tessellate/polyline.ts": {
-    "longestFunction": 125
-  },
-  "packages/guides/src/layout/strategies/tileGrid.ts": {
-    "longestFunction": 281
-  },
   "packages/history/src/history.ts": {
     "longestFunction": 347
   },
@@ -75,9 +55,6 @@
   },
   "packages/hud/src/widgets/window/window.ts": {
     "longestFunction": 224
-  },
-  "packages/kernel3d/src/deps.ts": {
-    "longestFunction": 138
   },
   "packages/labkit/src/annotations/AnnotationOverlay.tsx": {
     "longestFunction": 146
@@ -156,9 +133,6 @@
   "packages/renderer/src/shaders/extractUniformNames.ts": {
     "longestFunction": 144
   },
-  "packages/storage/src/records.ts": {
-    "longestFunction": 165
-  },
   "packages/svg/src/gradients.ts": {
     "lines": 495
   },
@@ -168,13 +142,6 @@
   },
   "packages/text/src/layout/lineBreak/lineBreaks.ts": {
     "longestFunction": 126
-  },
-  "packages/theme/src/engine/color/generate.ts": {
-    "lines": 532,
-    "longestFunction": 208
-  },
-  "packages/theme/src/engine/derive.ts": {
-    "longestFunction": 172
   },
   "packages/ui/src/components/Badge/Badge.tsx": {
     "longestFunction": 132
