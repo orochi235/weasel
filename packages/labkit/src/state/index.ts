@@ -41,6 +41,7 @@ export {
 } from './SingletonExperiment';
 export type { SavedTrialUndo } from './savedUndo';
 export type { SnapshotActions } from './snapshotActions';
+export type { TrialRecordActions } from './trialRecordActions';
 export type { LabStore, LabStoreActions } from './store';
 export { createLabStore } from './store';
 export type {

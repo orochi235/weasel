@@ -50,10 +50,8 @@ export const ACTION_LITERALS: Readonly<Record<string, Readonly<Record<string, st
   'packages/path-tools/src/pathCommands/cutJoin.ts': {
     6: 'count: the coordinates a cubic command carries', 4: 'count: the coordinates a quadratic command carries',
   },
-  'packages/path-tools/src/pen/usePenTool.ts': { 3: 'count: the fewest anchors a closed subpath has' },
-  'packages/path-tools/src/slice/useSliceTool.ts': {
-    3: 'count: the fewest points a closed cut has', 8: 'reach: the `targets.sliceCloseHitPx` kit setting\'s default',
-  },
+  'packages/path-tools/src/pen/penActions.ts': { 3: 'count: the fewest anchors a closed subpath has' },
+  'packages/path-tools/src/slice/slicePendingCut.ts': { 3: 'count: the fewest points a closed cut has' },
   'packages/path-tools/src/poise/poiseHandles.ts': { 10: RADIX },
   'packages/path-tools/src/constraints/anchorConstraints.ts': {
     3: 'count: the anchors a two-segment constraint takes', 4: 'count: the anchors a two-segment constraint takes, unshared',

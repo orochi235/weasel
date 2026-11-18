@@ -23,7 +23,7 @@ export const PART_CACHE_ALLOWED = new Map([
   ['packages/animator/src/targetTable.ts', 'set in createTargetTable from its options, and read without being made'],
   ['packages/audio/src/graph/createAudioGraph.ts', 'set at graph creation from its state, and read without being made'],
   ['packages/d3/src/pendingRemovals.ts', 'the emit path reads it without making it'],
-  ['packages/d3/src/transition.ts', 'two other functions read it without making it'],
+  ['packages/d3/src/liveTransitions.ts', 'two other functions read it without making it'],
   ['packages/editing/src/actions/move/delta.ts', 'replaced every call with a value from the call\'s arguments'],
   ['packages/editing/src/actions/move/dragSnap.ts', 'deleted and replaced each frame from the drag\'s output'],
   ['packages/editor/src/sessionStore.ts', 'read with a fallback, and set only under a condition on another map'],

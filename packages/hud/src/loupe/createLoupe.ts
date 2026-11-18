@@ -1,4 +1,4 @@
-import type { RenderLayer } from '@weasel-js/core';
+import type { RenderLayer, SceneCanvasApi } from '@weasel-js/core';
 import type { DrawCommand } from '@weasel-js/core/renderer';
 import { createLoupeModel, type LoupeMode, type LoupeModel, type LoupeSurface } from '@weasel-js/loupe';
 import type { Hud } from '../hud';
@@ -8,7 +8,7 @@ import { createContentWatch } from './contentWatch';
 import { createLoupeColors } from './loupeColors';
 import { lensAimInput } from './aimInput';
 import { createPixelReadback } from './pixelReadback';
-import { createVectorLens, type LensHost } from './vectorLens';
+import { createVectorLens } from './vectorLens';
 import { registerLoupe } from './loupeRoutes';
 import type { Rect } from '@weasel-js/geom';
 
@@ -84,7 +84,7 @@ export type LoupeOptions = LoupeBaseOptions & (
        * and picking only the layers the panel does. A host without `viewAt`
        * gets the canvas's camera and stack wherever it aims.
        */
-      views: LensHost;
+      views: Pick<SceneCanvasApi, 'addView' | 'getSurfaceRect'> & Partial<Pick<SceneCanvasApi, 'getPaintedVersion' | 'viewAt'>>;
       /** Narrows what vector mode paints. Defaults to the canvas's stack. */
       source?: RenderLayer<unknown>[];
       /**

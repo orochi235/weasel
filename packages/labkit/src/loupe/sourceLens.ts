@@ -1,4 +1,5 @@
 import { layoutBoxOf } from '@weasel-js/core';
+import type { Rect } from '@weasel-js/geom';
 import {
   type CanvasSource,
   createCanvasSource,
@@ -10,7 +11,6 @@ import {
   sourceRegion,
 } from '@weasel-js/loupe';
 import { createPart } from '@weasel-js/registry';
-import type { Rect } from '@weasel-js/geom';
 
 /** Anything a lens can be pointed at for its pixels: a `CanvasSource`, a
  *  canvas, or a context on one. */

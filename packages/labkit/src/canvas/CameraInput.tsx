@@ -28,6 +28,7 @@ import {
   worldToScreen,
   type Yoke,
 } from '@weasel-js/core';
+import type { Rect } from '@weasel-js/geom';
 import {
   createContext,
   type ReactNode,
@@ -48,7 +49,6 @@ import { usePublishCamera } from './cameraRegistry';
 import { clampZoomAbout, frameLocalToWorld, fromCameraView, toCameraView } from './cameraView';
 import { clientToHost, hostBox, hostToClient } from './hostBox';
 import type { ViewportSize, WorldFrame } from './worldSpec';
-import type { Rect } from '@weasel-js/geom';
 
 /** The view id the stage publishes its pointer under. */
 export const STAGE_VIEW_ID = 'stage';

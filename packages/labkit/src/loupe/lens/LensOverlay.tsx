@@ -19,6 +19,7 @@ import {
   pickPreset,
   transformPreset,
 } from '@weasel-js/editing';
+import type { Rect } from '@weasel-js/geom';
 import {
   type CSSProperties,
   type ReactNode,
@@ -45,7 +46,6 @@ import { ScopeOf } from './ScopeOf';
 import { useFocusReports } from './useFocusReports';
 import { useLensShapes } from './useLensShapes';
 import { useWheelPassThrough } from './useWheelPassThrough';
-import type { Rect } from '@weasel-js/geom';
 
 /** The camera a lens scene is drawn and picked through, in the px of the
  *  layer the lens canvas covers. */

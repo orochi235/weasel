@@ -23,6 +23,7 @@ import {
   type ViewApi,
   viewScreenToWorld,
 } from '@weasel-js/core';
+import type { Rect } from '@weasel-js/geom';
 import {
   crosshairRects,
   MINIMAP_CENTER_ACTION_ID,
@@ -57,7 +58,6 @@ import {
   type PersistedFloatingPanelProps,
 } from '../primitives/PersistedFloatingPanel';
 import { OverviewMarks } from './OverviewMarks';
-import type { Rect } from '@weasel-js/geom';
 
 /** The view id the overview publishes its pointer under. */
 export const OVERVIEW_VIEW_ID = 'overview';
