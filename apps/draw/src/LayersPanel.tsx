@@ -42,14 +42,27 @@ export function layerSwatch(data: Pick<WeaselDrawData, 'fill'>): string | undefi
 }
 
 /** One representative color for a `Paint`, for a chip too small to draw
- *  the real paint: a gradient shows its midpoint, which reads closer to the
- *  whole ramp than either end does, and a tile pattern shows the color it
- *  draws with. A `texture` paint has no color to report. */
+ *  the real paint: a gradient shows its midpoint in its own blend space, which
+ *  reads closer to the whole ramp than either end does, and a tile pattern
+ *  shows the color it draws with. Each is faded by the paint's `opacity`, as
+ *  the renderer fades it. A `texture` paint has no color to report. */
 export function paintChipColor(fill: Paint): string | undefined {
-  if (isGradientPaint(fill)) return sampleGradientStops(fill.stops, 0.5);
-  if (fill.kind === undefined || fill.kind === 'solid') return fill.color;
-  if (isTilePaint(fill)) return fill.color;
-  return undefined;
+  const color = isGradientPaint(fill)
+    ? sampleGradientStops(fill.stops, 0.5, fill.interpolate ?? 'rgb')
+    : fill.kind === undefined || fill.kind === 'solid' || isTilePaint(fill)
+      ? fill.color
+      : undefined;
+  return color === undefined ? undefined : faded(color, fill.opacity ?? 1);
+}
+
+/** `color` at `alpha`, as a `color-mix` with `transparent`, so a named or packed-alpha color needs no parsing. */
+function faded(color: string, alpha: number): string {
+  return alpha >= 1 ? color : `color-mix(in srgb, ${color} ${Number((Math.max(0, alpha) * 100).toFixed(1))}%, transparent)`;
+}
+
+/** `text` as a row's name, or undefined when it shows nothing: an empty sticky note's text, a cleared label. */
+function named(text: string | undefined): string | undefined {
+  return text === undefined || text.trim() === '' ? undefined : text;
 }
 
 /** Whether `id` is a fixed row of `items` (a page, the Background), which has no row menu. */
@@ -83,10 +96,10 @@ export function LayersContent(props: LayersContentProps): ReactElement {
     selection,
     itemFor: (node) => {
       const m = measurementOf(node);
-      if (m) return { label: node.data.label ?? `Measurement ${qty(m.distance, AT).text}` };
+      if (m) return { label: named(node.data.label) ?? `Measurement ${qty(m.distance, AT).text}` };
       const data = node.data;
       const shown = withInheritedPaint(data, inheritedPaintIn(scene, node));
-      return { label: data.label ?? data.text ?? effectNodeName(data) ?? node.id, leading: <LayerSwatch color={layerSwatch(shown)} /> };
+      return { label: named(data.label) ?? named(data.text) ?? effectNodeName(data) ?? node.id, leading: <LayerSwatch color={layerSwatch(shown)} /> };
     },
     rename: (node, label) => ({ ...node.data, label }),
     ...(showAnnotations

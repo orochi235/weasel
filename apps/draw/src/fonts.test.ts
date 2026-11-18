@@ -9,12 +9,14 @@ const listCanvasFonts = vi.fn(() => [] as { family: string; enrollment: string }
 const enableLocalFontOutlines = vi.fn(async (_opts?: { families?: readonly string[] }) =>
   ({ families: [] as string[], faces: 0 }));
 const unregisterFontOutlines = vi.fn();
+const listFontOutlines = vi.fn(() => [] as { family: string; weight: number; style: string; status: string }[]);
 vi.mock('@weasel-js/font', () => ({
   registerCanvasFont: (family: string) => registerCanvasFont(family),
   listCanvasFonts: () => listCanvasFonts(),
   enableLocalFontOutlines: (opts?: { families?: readonly string[] }) => enableLocalFontOutlines(opts),
   unregisterFontOutlines: (family: string, variant: unknown) =>
     unregisterFontOutlines(family, variant),
+  listFontOutlines: () => listFontOutlines(),
 }));
 
 const {
@@ -127,15 +129,20 @@ describe('machine-font outlines', () => {
     await expect(enableMachineFontOutlines()).rejects.toThrow('denied');
   });
 
-  it('returns the enrolled families to the SDF tier when switched off', () => {
+  it('returns the enrolled families to the SDF tier when switched off, every face they registered', () => {
+    unregisterFontOutlines.mockClear();
     listCanvasFonts.mockReturnValue([{ family: 'Impact', enrollment: 'explicit' }]);
+    // The local-font indexer files a Semilight face at 350 and an Extra Black one at 950.
+    listFontOutlines.mockReturnValue([
+      { family: 'Impact', weight: 350, style: 'normal', status: 'ready' },
+      { family: 'Impact', weight: 950, style: 'italic', status: 'ready' },
+      { family: 'Georgia', weight: 400, style: 'normal', status: 'ready' },
+    ]);
     disableMachineFontOutlines();
 
-    const families = new Set(unregisterFontOutlines.mock.calls.map((c) => c[0]));
-    expect(families).toEqual(new Set(['Impact']));
-    // Every weight and slant the local-font indexer could have filed a face
-    // under — the registry is keyed by exact variant, so missing one would
-    // leave it stranded and still painting outlines.
-    expect(unregisterFontOutlines.mock.calls).toHaveLength(18);
+    expect(unregisterFontOutlines.mock.calls).toEqual([
+      ['Impact', { weight: 350, style: 'normal' }],
+      ['Impact', { weight: 950, style: 'italic' }],
+    ]);
   });
 });

@@ -137,3 +137,49 @@ describe('drawBooleansAdapter with strokes counted', () => {
     expect(made.pose).toMatchObject({ x: -5, width: 30 });
   });
 });
+
+describe('drawBooleansAdapter across frames', () => {
+  // A page: a group whose pose defines its children's frame, as draw's pages do.
+  function paged({ outerX = 105, outerBelow = false } = {}) {
+    const scene = createScene<WeaselDrawData, WeaselDrawLayer, WeaselDrawPose>({ systemLayers: [{ id: 'default' }] });
+    const outer = () => scene.add({
+      id: asNodeId('outer'), kind: 'mark', layer: 'default',
+      pose: { x: outerX, y: 50, width: 10, height: 10 }, data: { path: rectPath(0, 0, 10, 10) },
+    });
+    if (outerBelow) outer();
+    scene.add({ id: asNodeId('page'), kind: 'group', layer: 'default', pose: { x: 100, y: 50, width: 200, height: 200 }, data: {} });
+    scene.add({
+      id: asNodeId('inner'), kind: 'mark', layer: 'default', parent: asNodeId('page'),
+      pose: { x: 0, y: 0, width: 10, height: 10 }, data: { path: rectPath(0, 0, 10, 10) },
+    });
+    if (!outerBelow) outer();
+    const adapter = drawBooleansAdapter(scene, {
+      getSelection: () => [...scene.getSelection()],
+      setSelection: (ids: NodeId[]) => scene.setSelection(ids),
+    });
+    return { scene, adapter };
+  }
+
+  it('reads a paged operand where the page puts it, and stores the result in its new parent\'s frame', () => {
+    const { scene, adapter } = paged();
+    scene.setSelection([asNodeId('inner'), asNodeId('outer')]);
+    const result = applyBooleanOp(adapter, 'union');
+    const ids = result.kind === 'applied' ? result.resultIds : [];
+    expect(ids).toHaveLength(1);
+    const made = scene.get(asNodeId(ids[0]!))!;
+    expect(made.parent ?? null).toBeNull();
+    expect(made.pose).toMatchObject({ x: 100, y: 50, width: 15, height: 10 });
+  });
+
+  it('stores a result under a page in the page\'s frame', () => {
+    const { scene, adapter } = paged({ outerX: 95, outerBelow: true });
+    scene.setSelection([asNodeId('outer'), asNodeId('inner')]);
+    const result = applyBooleanOp(adapter, 'intersect');
+    const ids = result.kind === 'applied' ? result.resultIds : [];
+    expect(ids).toHaveLength(1);
+    const made = scene.get(asNodeId(ids[0]!))!;
+    expect(made.parent).toBe('page');
+    // `inner` (world 100..110) and `outer` (world 95..105) meet over world 100..105: page-local 0..5.
+    expect(made.pose).toMatchObject({ x: 0, y: 0, width: 5, height: 10 });
+  });
+});

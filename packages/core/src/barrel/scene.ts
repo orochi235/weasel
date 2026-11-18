@@ -88,6 +88,7 @@ export {
   CLIP_NOTHING, UNION_OF_CHILDREN, clipNothing, unionOfChildren, SceneArrivalRefused, SnapshotKeyError, SnapshotShapeError, reconcileSpecs, sceneDeclaredScopes, sceneMagnification, sceneSharedUnitScopes, sceneUnitScopes,
   BOOLEAN_OF_CHILDREN, booleanOfChildren, booleanOpOf, booleanGroupFields, RestoredOpError,
 } from '../core/scene';
+export { renderOrderCompare } from '../core/scene/renderRank';
 export type { BooleanShapeOp, EditingSession, PlacedSpec, PoseSource, PosedNode, ScopedScene, ShownDataSource, ShownOverridesSource } from '../core/scene';
 export type {
   AddLayerSpec,
