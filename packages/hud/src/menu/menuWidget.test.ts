@@ -68,7 +68,7 @@ describe('createMenuWidget links', () => {
 describe('createMenuWidget', () => {
   it('places its panel at the open point and claims every gesture', () => {
     const { w } = widget();
-    expect(w.bounds).toMatchObject({ x: 100, y: 100, w: 180 });
+    expect(w.bounds).toMatchObject({ x: 100, y: 100, width: 180 });
     expect(w.claims).toEqual(['pointer', 'doubleClick', 'contextMenu', 'longPress', 'wheel']);
     expect(w.focusable).toBe(true);
     expect(w.accessibleName).toBe('Context menu');
@@ -130,7 +130,7 @@ describe('createMenuWidget', () => {
     });
     w.onPointer({ type: 'down', x: 110, y: 110, native: null });
     w.onPointer({ type: 'up', x: 110, y: 110, native: null });
-    expect(w.bounds).toMatchObject({ x: 100, y: 100, w: 360 });
+    expect(w.bounds).toMatchObject({ x: 100, y: 100, width: 360 });
     const backgrounds = w.draw(ctx).filter((c) => c.kind === 'path' && c.fill && c.stroke);
     expect(backgrounds).toHaveLength(2);
     w.onPointer({ type: 'down', x: 290, y: 110, native: null });

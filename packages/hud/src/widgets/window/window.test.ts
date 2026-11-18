@@ -9,7 +9,7 @@ const ctx = {
   tokens: resolveTheme(weaselTheme, { mode: 'dark' }),
 };
 
-const opts = { id: 'w', x: 100, y: 100, w: 200, h: 150, title: 'Loupe' };
+const opts = { id: 'w', x: 100, y: 100, width: 200, height: 150, title: 'Loupe' };
 
 describe('window widget', () => {
   it('draws a titlebar, a border ring, a title and a close glyph', () => {
@@ -27,7 +27,7 @@ describe('window widget', () => {
       (c) => c.kind === 'path' && c.path.kind === 'rect' && c.fill !== undefined,
     );
     const cr = win.contentRect;
-    const cx = cr.x + cr.w / 2, cy = cr.y + cr.h / 2;
+    const cx = cr.x + cr.width / 2, cy = cr.y + cr.height / 2;
     const covers = filledRects.some((c) => {
       const p = (c as { path: { x: number; y: number; width: number; height: number } }).path;
       return cx >= p.x && cx < p.x + p.width && cy >= p.y && cy < p.y + p.height;
@@ -143,7 +143,7 @@ describe('window widget', () => {
       const cr = createWindow(bare).contentRect;
       expect(cr).toEqual({
         x: 100 + M.edge, y: 100 + M.edge,
-        w: 200 - M.edge * 2, h: 150 - M.edge * 2,
+        width: 200 - M.edge * 2, height: 150 - M.edge * 2,
       });
     });
 
@@ -152,7 +152,7 @@ describe('window widget', () => {
       const win = createWindow({ ...bare, onMove });
       win.onPointer({ type: 'down', x: 200, y: 175, native: null });
       win.onPointer({ type: 'move', x: 230, y: 195, native: null });
-      expect(win.bounds).toMatchObject({ x: 130, y: 120, w: 200, h: 150 });
+      expect(win.bounds).toMatchObject({ x: 130, y: 120, width: 200, height: 150 });
       expect(onMove).toHaveBeenCalled();
     });
 
@@ -160,7 +160,7 @@ describe('window widget', () => {
       const win = createWindow(bare);
       win.onPointer({ type: 'down', x: 299, y: 175, native: null });
       win.onPointer({ type: 'move', x: 329, y: 175, native: null });
-      expect(win.bounds).toMatchObject({ w: 230 });
+      expect(win.bounds).toMatchObject({ width: 230 });
     });
   });
 
@@ -180,7 +180,7 @@ describe('window widget', () => {
     const win = createWindow({ ...opts, onMove });
     win.onPointer({ type: 'down', x: 150, y: 100 + M.titleH / 2, native: null });
     win.onPointer({ type: 'move', x: 170, y: 100 + M.titleH / 2 + 10, native: null });
-    expect(win.bounds).toMatchObject({ x: 120, y: 110, w: 200, h: 150 });
+    expect(win.bounds).toMatchObject({ x: 120, y: 110, width: 200, height: 150 });
     expect(onMove).toHaveBeenCalled();
   });
 
@@ -189,7 +189,7 @@ describe('window widget', () => {
     const win = createWindow({ ...opts, onResize });
     win.onPointer({ type: 'down', x: 299, y: 175, native: null });
     win.onPointer({ type: 'move', x: 329, y: 175, native: null });
-    expect(win.bounds).toMatchObject({ x: 100, y: 100, w: 230, h: 150 });
+    expect(win.bounds).toMatchObject({ x: 100, y: 100, width: 230, height: 150 });
     expect(onResize).toHaveBeenCalled();
   });
 
@@ -198,7 +198,7 @@ describe('window widget', () => {
     win.onPointer({ type: 'down', x: 150, y: 100 + M.titleH / 2, native: null });
     win.onPointer({ type: 'move', x: 250, y: 300, native: null });
     win.onPointer({ type: 'cancel', native: null });
-    expect(win.bounds).toMatchObject({ x: 100, y: 100, w: 200, h: 150 });
+    expect(win.bounds).toMatchObject({ x: 100, y: 100, width: 200, height: 150 });
   });
 
   it('reports the bounds a cancel restores through the same callback the drag used', () => {
@@ -208,7 +208,7 @@ describe('window widget', () => {
     win.onPointer({ type: 'down', x: 299, y: 175, native: null });
     win.onPointer({ type: 'move', x: 329, y: 175, native: null });
     win.onPointer({ type: 'cancel', native: null });
-    expect(onResize).toHaveBeenLastCalledWith(expect.objectContaining({ x: 100, y: 100, w: 200, h: 150 }));
+    expect(onResize).toHaveBeenLastCalledWith(expect.objectContaining({ x: 100, y: 100, width: 200, height: 150 }));
 
     win.onPointer({ type: 'down', x: 150, y: 100 + M.titleH / 2, native: null });
     win.onPointer({ type: 'move', x: 170, y: 100 + M.titleH / 2 + 10, native: null });
@@ -272,21 +272,21 @@ describe('window widget', () => {
     const win = createWindow(opts);
     win.onPointer({ type: 'down', x: 299, y: 175, native: null });
     win.onPointer({ type: 'move', x: 329, y: 175, native: null });
-    expect(win.contentRect.w).toBe(230 - M.edge * 2);
+    expect(win.contentRect.width).toBe(230 - M.edge * 2);
   });
 
   it('setBounds mid-drag ends the drag rather than rebasing from a stale origin', () => {
     const win = createWindow(opts);
     win.onPointer({ type: 'down', x: 150, y: 100 + M.titleH / 2, native: null });
-    win.setBounds({ x: 400, y: 400, w: 200, h: 150 });
+    win.setBounds({ x: 400, y: 400, width: 200, height: 150 });
     win.onPointer({ type: 'move', x: 250, y: 200, native: null });
     expect(win.bounds).toMatchObject({ x: 400, y: 400 });
   });
 
   it('setBounds clamps to the minimum size', () => {
-    const win = createWindow({ ...opts, minW: 80, minH: 60 });
-    win.setBounds({ x: 0, y: 0, w: 10, h: 10 });
-    expect(win.bounds).toMatchObject({ w: 80, h: 60 });
+    const win = createWindow({ ...opts, minWidth: 80, minHeight: 60 });
+    win.setBounds({ x: 0, y: 0, width: 10, height: 10 });
+    expect(win.bounds).toMatchObject({ width: 80, height: 60 });
   });
 });
 
@@ -317,13 +317,13 @@ describe('window widget stays on the host', () => {
 
   it('setBounds lands the window on the host', () => {
     const win = drawn();
-    win.setBounds({ x: 5000, y: 5000, w: 200, h: 150 });
-    expect(win.bounds).toEqual({ x: 600, y: 450, w: 200, h: 150 });
+    win.setBounds({ x: 5000, y: 5000, width: 200, height: 150 });
+    expect(win.bounds).toEqual({ x: 600, y: 450, width: 200, height: 150 });
   });
 
   it('leaves position alone until a draw has reported the host size', () => {
     const win = createWindow(opts);
-    win.setBounds({ x: 5000, y: 5000, w: 200, h: 150 });
+    win.setBounds({ x: 5000, y: 5000, width: 200, height: 150 });
     expect(win.bounds.x).toBe(5000);
   });
 
@@ -332,14 +332,14 @@ describe('window widget stays on the host', () => {
     win.onPointer({ type: 'down', x: 299, y: 175, native: null });
     win.onPointer({ type: 'move', x: 900, y: 175, native: null });
     expect(win.bounds.x).toBe(100);
-    expect(win.bounds.w).toBeGreaterThan(200);
+    expect(win.bounds.width).toBeGreaterThan(200);
   });
 });
 
 describe('window interior', () => {
   const at = (win: ReturnType<typeof createWindow>) => {
     const cr = win.contentRect;
-    return { x: cr.x + cr.w / 2, y: cr.y + cr.h / 2 };
+    return { x: cr.x + cr.width / 2, y: cr.y + cr.height / 2 };
   };
 
   it('claims its interior by default', () => {
@@ -373,7 +373,7 @@ describe('window interior', () => {
     it('grows a grip strip across the top, and insets the content below it', () => {
       expect(createWindow(bp).contentRect).toEqual({
         x: 100 + M.edge, y: 100 + M.grip,
-        w: 200 - M.edge * 2, h: 150 - M.grip - M.edge,
+        width: 200 - M.edge * 2, height: 150 - M.grip - M.edge,
       });
     });
 
@@ -385,7 +385,7 @@ describe('window interior', () => {
         win.onPointer({ type: 'down', x, y: gripY, native: null });
         win.onPointer({ type: 'move', x: x + 30, y: gripY + 20, native: null });
         win.onPointer({ type: 'up', x: x + 30, y: gripY + 20, native: null });
-        expect(win.bounds).toEqual({ x: 130, y: 120, w: 200, h: 150 });
+        expect(win.bounds).toEqual({ x: 130, y: 120, width: 200, height: 150 });
         expect(onMove).toHaveBeenCalled();
       }
     });
@@ -411,7 +411,7 @@ describe('window interior', () => {
       const win = createWindow(bp);
       win.onPointer({ type: 'down', x: 200, y: 101, native: null });
       win.onPointer({ type: 'move', x: 200, y: 81, native: null });
-      expect(win.bounds).toMatchObject({ y: 80, h: 170 });
+      expect(win.bounds).toMatchObject({ y: 80, height: 170 });
     });
 
     it('draws a grip, and no title', () => {

@@ -56,7 +56,7 @@ export const hudItemList: HeadlessComponent<HudListState, RowListLayout, HudList
     const fg = t['--wzl-fg'];
     const subtle = resolveCurrentColor(t['--wzl-fg-subtle'], fg);
     const env = hudMeasureEnv(ctx, target.fontFamily);
-    const { layout } = measureRowList(state, exactly(b.w, b.h), env);
+    const { layout } = measureRowList(state, exactly(b.width, b.height), env);
     const font = { fontFamily: target.fontFamily ?? ctx.defaultFont, fontSize: layout.metrics.font.size };
     const text = (s: string, x: number, y: number, h: number, color: string): DrawCommand =>
       textCommandFromRuns(x, y, [{ text: s, fill: solid(color) }], font, undefined, h, 'center');

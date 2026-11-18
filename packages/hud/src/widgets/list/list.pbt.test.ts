@@ -37,7 +37,7 @@ describe('createList', () => {
     fc.assert(fc.property(rowsArb.filter((r) => r.length > 0), fc.nat(), fc.integer({ min: -50, max: 50 }), fc.integer({ min: -50, max: 50 }),
       (rows, pick, x0, y0) => {
         const got: [string, number][] = [];
-        const l = createList({ id: 'l', x: x0, y: y0, w: 200, rows, selectionMode: 'single', onActivate: (id, i) => { got.push([id, i]); } });
+        const l = createList({ id: 'l', x: x0, y: y0, width: 200, rows, selectionMode: 'single', onActivate: (id, i) => { got.push([id, i]); } });
         const texts = l.draw(ctx).filter((c): c is TextDrawCommand => c.kind === 'text');
         expect(texts).toHaveLength(rows.length);
         const i = pick % rows.length;
@@ -70,7 +70,7 @@ describe('createList', () => {
         let rows = initial;
         const got: [string, number][] = [];
         const l = createList({
-          id: 'l', x: 0, y: 0, w: 200, rows, ...(selectionMode ? { selectionMode } : {}),
+          id: 'l', x: 0, y: 0, width: 200, rows, ...(selectionMode ? { selectionMode } : {}),
           ...(activates ? { onActivate: (id: string, i: number) => { got.push([id, i]); } } : {}),
         });
         for (const o of ops) {

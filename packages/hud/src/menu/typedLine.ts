@@ -1,7 +1,7 @@
 import { registeredBidi } from '@weasel-js/text';
 
 /** One stretch of a typed line that reads one way: code points `[lo, hi)`, starting at `x`. */
-interface Run { lo: number; hi: number; rtl: boolean; x: number; w: number }
+interface Run { lo: number; hi: number; rtl: boolean; x: number; width: number }
 
 /**
  * A line of typed text set against `right`, in the visual order the renderer
@@ -18,8 +18,8 @@ export interface TypedLine {
 }
 
 /** Stretches of `order` (visual positions) that are logically contiguous at one level. */
-function runsOf(order: readonly number[], levels: ArrayLike<number>): Array<Omit<Run, 'x' | 'w'>> {
-  const out: Array<Omit<Run, 'x' | 'w'>> = [];
+function runsOf(order: readonly number[], levels: ArrayLike<number>): Array<Omit<Run, 'x' | 'width'>> {
+  const out: Array<Omit<Run, 'x' | 'width'>> = [];
   let prev = -2;
   for (const p of order) {
     const rtl = levels[p]! % 2 === 1;
@@ -39,7 +39,7 @@ export function typedLine(text: string, right: number, measure: (text: string) =
   const chars = Array.from(text);
   const engine = registeredBidi();
   const slice = (lo: number, hi: number) => chars.slice(lo, hi).join('');
-  let visual: Array<Omit<Run, 'x' | 'w'>>;
+  let visual: Array<Omit<Run, 'x' | 'width'>>;
   if (engine === null || chars.length === 0) {
     visual = [{ lo: 0, hi: chars.length, rtl: false }];
   } else {
@@ -50,11 +50,11 @@ export function typedLine(text: string, right: number, measure: (text: string) =
   const left = right - widths.reduce((a, b) => a + b, 0);
   const runs: Run[] = [];
   let x = left;
-  visual.forEach((r, i) => { runs.push({ ...r, x, w: widths[i]! }); x += widths[i]!; });
+  visual.forEach((r, i) => { runs.push({ ...r, x, width: widths[i]! }); x += widths[i]!; });
   /** The x of the edge of `r` that `i` code points into it, logically, leave behind. */
   const edge = (r: Run, i: number) => {
     const into = measure(slice(r.lo, i));
-    return r.rtl ? r.x + r.w - into : r.x + into;
+    return r.rtl ? r.x + r.width - into : r.x + into;
   };
   const holding = (c: number) => runs.find((r) => c >= r.lo && c < r.hi);
   return {

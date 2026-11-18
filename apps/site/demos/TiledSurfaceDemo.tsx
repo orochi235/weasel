@@ -22,7 +22,7 @@ const PANES = [
 
 /** Pane-local, in pane B's empty lower-left corner. `tests/visual/tiled-surface.spec.ts`
  *  probes the lens here. */
-const LOUPE_BOUNDS = { x: 10, y: 180, w: 140, h: 170 };
+const LOUPE_BOUNDS = { x: 10, y: 180, width: 140, height: 170 };
 
 /** A pixel-mode loupe over one pane. `region` is what keeps its readback on
  *  this pane's pixels rather than the shared canvas's at the same offset. */

@@ -30,12 +30,12 @@ export function zoneAt(
   x: number,
   y: number,
 ): WindowZone | null {
-  if (!(x >= b.x && x < b.x + b.w && y >= b.y && y < b.y + b.h)) return null;
+  if (!(x >= b.x && x < b.x + b.width && y >= b.y && y < b.y + b.height)) return null;
 
   const west  = x < b.x + m.edge;
-  const east  = x >= b.x + b.w - m.edge;
+  const east  = x >= b.x + b.width - m.edge;
   const north = y < b.y + m.edge;
-  const south = y >= b.y + b.h - m.edge;
+  const south = y >= b.y + b.height - m.edge;
 
   if (north && west) return 'nw';
   if (north && east) return 'ne';
@@ -47,7 +47,7 @@ export function zoneAt(
   if (east) return 'e';
 
   if (y < b.y + m.titleH) {
-    const cx = b.x + b.w - m.edge - m.closeSize;
+    const cx = b.x + b.width - m.edge - m.closeSize;
     return x >= cx ? 'close' : 'title';
   }
   return 'content';
@@ -58,8 +58,8 @@ export function windowContentRect(b: WidgetBounds, m: WindowMetrics): WidgetBoun
   return {
     x: b.x + m.edge,
     y: b.y + m.titleH,
-    w: b.w - m.edge * 2,
-    h: b.h - m.titleH - m.edge,
+    width: b.width - m.edge * 2,
+    height: b.height - m.titleH - m.edge,
   };
 }
 
@@ -79,25 +79,25 @@ export function applyWindowDrag(
   if (zone === 'title') return { ...start, x: start.x + dx, y: start.y + dy };
   if (zone === 'content' || zone === 'close') return { ...start };
 
-  let { x, y, w, h } = start;
-  const right = start.x + start.w;
-  const bottom = start.y + start.h;
+  let { x, y, width: w, height: h } = start;
+  const right = start.x + start.width;
+  const bottom = start.y + start.height;
 
   if (zone === 'w' || zone === 'nw' || zone === 'sw') {
-    w = Math.max(minW, start.w - dx);
+    w = Math.max(minW, start.width - dx);
     x = right - w;
   } else if (zone === 'e' || zone === 'ne' || zone === 'se') {
-    w = Math.max(minW, start.w + dx);
+    w = Math.max(minW, start.width + dx);
   }
 
   if (zone === 'n' || zone === 'nw' || zone === 'ne') {
-    h = Math.max(minH, start.h - dy);
+    h = Math.max(minH, start.height - dy);
     y = bottom - h;
   } else if (zone === 's' || zone === 'sw' || zone === 'se') {
-    h = Math.max(minH, start.h + dy);
+    h = Math.max(minH, start.height + dy);
   }
 
-  return { x, y, w, h };
+  return { x, y, width: w, height: h };
 }
 
 /** CSS cursor for a zone, for the host to apply on hover. */

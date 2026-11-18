@@ -11,7 +11,7 @@ export interface MenuChip { entry: MenuNumberEntry; dir: 1 | -1 }
 export function levelAt(panels: readonly MenuRect[], x: number, y: number): number {
   for (let i = panels.length - 1; i >= 0; i--) {
     const p = panels[i]!;
-    if (x >= p.x && x < p.x + p.w && y >= p.y && y < p.y + p.h) return i;
+    if (x >= p.x && x < p.x + p.width && y >= p.y && y < p.y + p.height) return i;
   }
   return -1;
 }
@@ -26,7 +26,7 @@ export function chipUnder(
   const index = rowAt(entries, m, y - p.y);
   const entry = index === null ? undefined : entries[index];
   if (entry?.kind !== 'number' || entry.disabled) return null;
-  const dir = chipAt(p.w, m, x - p.x);
+  const dir = chipAt(p.width, m, x - p.x);
   return dir === null ? null : { entry, dir };
 }
 

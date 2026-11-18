@@ -11,7 +11,7 @@ const ctx = { dims: { width: 100, height: 100 }, defaultFont: 'D', color: () => 
 
 describe('button widget', () => {
   it('draws a body rect and a label', () => {
-    const b = createButton({ id: 'b', x: 0, y: 0, w: 80, h: 24, label: 'Save' });
+    const b = createButton({ id: 'b', x: 0, y: 0, width: 80, height: 24, label: 'Save' });
     const cmds = b.draw(ctx);
     expect(cmds.length).toBeGreaterThanOrEqual(2);   // body + text
     expect(cmds.some(c => c.kind === 'path')).toBe(true);
@@ -19,29 +19,29 @@ describe('button widget', () => {
   });
 
   it('hitTest is bounds-rectangular', () => {
-    const b = createButton({ id: 'b', x: 10, y: 10, w: 80, h: 24, label: 'x' });
+    const b = createButton({ id: 'b', x: 10, y: 10, width: 80, height: 24, label: 'x' });
     expect(b.hitTest(20, 20)).toBe(true);
     expect(b.hitTest(0, 0)).toBe(false);
   });
 
   it('answers a pointer cursor inside its bounds', () => {
-    const b = createButton({ id: 'b', x: 10, y: 10, w: 80, h: 24, label: 'x' });
+    const b = createButton({ id: 'b', x: 10, y: 10, width: 80, height: 24, label: 'x' });
     expect(b.cursorAt!(20, 20)).toBe('pointer');
   });
 
   it('takes a cursor override', () => {
-    const b = createButton({ id: 'b', x: 0, y: 0, w: 80, h: 24, label: 'x', cursor: 'help' });
+    const b = createButton({ id: 'b', x: 0, y: 0, width: 80, height: 24, label: 'x', cursor: 'help' });
     expect(b.cursorAt!(5, 5)).toBe('help');
   });
 
   it('answers the default cursor while hidden', () => {
-    const b = createButton({ id: 'b', x: 0, y: 0, w: 80, h: 24, label: 'x' });
+    const b = createButton({ id: 'b', x: 0, y: 0, width: 80, height: 24, label: 'x' });
     b.setHidden(true);
     expect(b.cursorAt!(5, 5)).toBe('default');
   });
 
   it('press event fires on down then up inside bounds', () => {
-    const b = createButton({ id: 'b', x: 0, y: 0, w: 80, h: 24, label: 'x' });
+    const b = createButton({ id: 'b', x: 0, y: 0, width: 80, height: 24, label: 'x' });
     const press = vi.fn();
     b.subscribe('press', press);
 
@@ -52,14 +52,14 @@ describe('button widget', () => {
 
   it('onChange fires when state mutates (used by Hud to trigger redraws)', () => {
     const onChange = vi.fn();
-    const b = createButton({ id: 'b', x: 0, y: 0, w: 80, h: 24, label: 'x', onChange });
+    const b = createButton({ id: 'b', x: 0, y: 0, width: 80, height: 24, label: 'x', onChange });
     onChange.mockClear();
     b.setLabel('y');
     expect(onChange).toHaveBeenCalled();
   });
 
   it('press event does NOT fire on down then up-outside', () => {
-    const b = createButton({ id: 'b', x: 0, y: 0, w: 80, h: 24, label: 'x' });
+    const b = createButton({ id: 'b', x: 0, y: 0, width: 80, height: 24, label: 'x' });
     const press = vi.fn();
     b.subscribe('press', press);
 
@@ -69,7 +69,7 @@ describe('button widget', () => {
   });
 
   it('cancel rolls back press state without firing press', () => {
-    const b = createButton({ id: 'b', x: 0, y: 0, w: 80, h: 24, label: 'x' });
+    const b = createButton({ id: 'b', x: 0, y: 0, width: 80, height: 24, label: 'x' });
     const press = vi.fn();
     b.subscribe('press', press);
 
@@ -80,7 +80,7 @@ describe('button widget', () => {
   });
 
   it('setLabel mutates the rendered text', () => {
-    const b = createButton({ id: 'b', x: 0, y: 0, w: 80, h: 24, label: 'a' });
+    const b = createButton({ id: 'b', x: 0, y: 0, width: 80, height: 24, label: 'a' });
     b.setLabel('b');
     const cmds = b.draw(ctx);
     const txt = cmds.find(c => c.kind === 'text') as { runs: Array<{ text: string }> };
@@ -88,7 +88,7 @@ describe('button widget', () => {
   });
 
   it('the unsubscribe subscribe returns removes a handler', () => {
-    const b = createButton({ id: 'b', x: 0, y: 0, w: 80, h: 24, label: 'x' });
+    const b = createButton({ id: 'b', x: 0, y: 0, width: 80, height: 24, label: 'x' });
     const press = vi.fn();
     const off = b.subscribe('press', press);
     off();
@@ -98,17 +98,17 @@ describe('button widget', () => {
   });
 
   it('throws on setter after dispose', () => {
-    const b = createButton({ id: 'b', x: 0, y: 0, w: 80, h: 24, label: 'x' });
+    const b = createButton({ id: 'b', x: 0, y: 0, width: 80, height: 24, label: 'x' });
     b.dispose();
     expect(() => b.setLabel('y')).toThrow();
-    expect(() => b.setBounds({ x: 0, y: 0, w: 10, h: 10 })).toThrow();
+    expect(() => b.setBounds({ x: 0, y: 0, width: 10, height: 10 })).toThrow();
     expect(() => b.setHidden(true)).toThrow();
     expect(() => b.subscribe('press', () => {})).toThrow();
   });
 
   it('dispose() calls removeFromHud', () => {
     const removeFromHud = vi.fn();
-    const b = createButton({ id: 'b', x: 0, y: 0, w: 80, h: 24, label: 'x', removeFromHud });
+    const b = createButton({ id: 'b', x: 0, y: 0, width: 80, height: 24, label: 'x', removeFromHud });
     b.dispose();
     expect(removeFromHud).toHaveBeenCalledTimes(1);
     // second dispose should not call it again
@@ -117,7 +117,7 @@ describe('button widget', () => {
   });
 
   it('hover event fires on hovermove transition', () => {
-    const b = createButton({ id: 'b', x: 0, y: 0, w: 80, h: 24, label: 'x' });
+    const b = createButton({ id: 'b', x: 0, y: 0, width: 80, height: 24, label: 'x' });
     const hover = vi.fn();
     const leave = vi.fn();
     b.subscribe('hover', hover);
@@ -132,7 +132,7 @@ describe('button widget', () => {
   });
 
   it('uses ctx.tokens.--wzl-surface-raised when opts.fill is omitted', () => {
-    const b = createButton({ id: 'b', x: 0, y: 0, w: 80, h: 24, label: 'x' });
+    const b = createButton({ id: 'b', x: 0, y: 0, width: 80, height: 24, label: 'x' });
     const customCtx = { ...ctx, tokens: { ...ctx.tokens, '--wzl-surface-raised': '#abcdef' } };
     const cmds = b.draw(customCtx);
     const body = cmds.find(c => c.kind === 'path') as { fill: { paint: { color: string } } };
@@ -140,7 +140,7 @@ describe('button widget', () => {
   });
 
   it('respects opts.fill when supplied (theme overridden)', () => {
-    const b = createButton({ id: 'b', x: 0, y: 0, w: 80, h: 24, label: 'x', fill: '#ff0000' });
+    const b = createButton({ id: 'b', x: 0, y: 0, width: 80, height: 24, label: 'x', fill: '#ff0000' });
     const customCtx = { ...ctx, tokens: { ...ctx.tokens, '--wzl-surface-raised': '#abcdef' } };
     const cmds = b.draw(customCtx);
     const body = cmds.find(c => c.kind === 'path') as { fill: { paint: { color: string } } };
@@ -148,7 +148,7 @@ describe('button widget', () => {
   });
 
   it('uses ctx.tokens.--wzl-surface-hover when hovering and opts.hoverFill is omitted', () => {
-    const b = createButton({ id: 'b', x: 0, y: 0, w: 80, h: 24, label: 'x' });
+    const b = createButton({ id: 'b', x: 0, y: 0, width: 80, height: 24, label: 'x' });
     b.onPointer({ type: 'hovermove', x: 5, y: 5, native: null });
     const customCtx = { ...ctx, tokens: { ...ctx.tokens, '--wzl-surface-hover': '#cafe00' } };
     const cmds = b.draw(customCtx);
@@ -157,7 +157,7 @@ describe('button widget', () => {
   });
 
   it('uses ctx.tokens.--wzl-surface-pressed when pressed and opts.pressedFill is omitted', () => {
-    const b = createButton({ id: 'b', x: 0, y: 0, w: 80, h: 24, label: 'x' });
+    const b = createButton({ id: 'b', x: 0, y: 0, width: 80, height: 24, label: 'x' });
     b.onPointer({ type: 'down', x: 5, y: 5, native: null });
     const customCtx = { ...ctx, tokens: { ...ctx.tokens, '--wzl-surface-pressed': '#beadc0' } };
     const cmds = b.draw(customCtx);
@@ -166,7 +166,7 @@ describe('button widget', () => {
   });
 
   it('uses ctx.tokens.--wzl-fg when opts.textColor is omitted', () => {
-    const b = createButton({ id: 'b', x: 0, y: 0, w: 80, h: 24, label: 'x' });
+    const b = createButton({ id: 'b', x: 0, y: 0, width: 80, height: 24, label: 'x' });
     const customCtx = { ...ctx, tokens: { ...ctx.tokens, '--wzl-fg': '#decade' } };
     const cmds = b.draw(customCtx);
     const text = cmds.find(c => c.kind === 'text') as TextDrawCommand;
@@ -207,7 +207,7 @@ describe('button label placement', () => {
     { y: 0, h: 24, fontSize: 13 },
     { y: 40, h: 32, fontSize: 18 },
   ])('centers the line box in a $h px button at $fontSize px', ({ y, h, fontSize }) => {
-    const b = createButton({ id: 'b', x: 0, y, w: 120, h, label: 'Shape', fontSize });
+    const b = createButton({ id: 'b', x: 0, y, width: 120, height: h, label: 'Shape', fontSize });
     const text = b.draw({ ...ctx, defaultFont: DEFAULT_FONT_FAMILY })
       .find((c): c is TextDrawCommand => c.kind === 'text')!;
     expect(Math.abs(lineBoxCenter(text) - (y + h / 2))).toBeLessThanOrEqual(1);
@@ -221,7 +221,7 @@ describe('button keyboard', () => {
   });
 
   it('is focusable by default, and named by its label', () => {
-    const b = createButton({ id: 'b', x: 0, y: 0, w: 80, h: 24, label: 'Save' });
+    const b = createButton({ id: 'b', x: 0, y: 0, width: 80, height: 24, label: 'Save' });
     expect(b.focusable).toBe(true);
     expect(b.accessibleName).toBe('Save');
     b.setLabel('Saved');
@@ -229,13 +229,13 @@ describe('button keyboard', () => {
   });
 
   it('opts out with focusable: false and takes a tab order', () => {
-    const b = createButton({ id: 'b', x: 0, y: 0, w: 80, h: 24, label: 'x', focusable: false, tabOrder: 3 });
+    const b = createButton({ id: 'b', x: 0, y: 0, width: 80, height: 24, label: 'x', focusable: false, tabOrder: 3 });
     expect(b.focusable).toBe(false);
     expect(b.tabOrder).toBe(3);
   });
 
   it('Enter and Space press it, and say so', () => {
-    const b = createButton({ id: 'b', x: 0, y: 0, w: 80, h: 24, label: 'x' });
+    const b = createButton({ id: 'b', x: 0, y: 0, width: 80, height: 24, label: 'x' });
     const press = vi.fn();
     b.subscribe('press', press);
     expect(b.onKey!(k('Enter'))).toBe(true);
@@ -244,7 +244,7 @@ describe('button keyboard', () => {
   });
 
   it('leaves every other key for the canvas', () => {
-    const b = createButton({ id: 'b', x: 0, y: 0, w: 80, h: 24, label: 'x' });
+    const b = createButton({ id: 'b', x: 0, y: 0, width: 80, height: 24, label: 'x' });
     const press = vi.fn();
     b.subscribe('press', press);
     expect(b.onKey!(k('Delete'))).toBe(false);

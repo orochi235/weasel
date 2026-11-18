@@ -174,7 +174,7 @@ const ctx = {
   }),
   color: () => undefined,
 } as never as HudDrawCtx;
-const b = { x: 100, y: 50, w: 240, h: 40 };
+const b = { x: 100, y: 50, width: 240, height: 40 };
 const measure = (t: string) => Array.from(t).length * 7;
 const draw = (edit: HudTextEdit) => panelCommands(ctx, b, [entry], null, undefined, { ...OPENED_VALUES, editing: edit, measure });
 /** The x of the caret: the last stroke-only path, a vertical line. */
@@ -184,7 +184,7 @@ const caretX = (cmds: readonly DrawCommand[]): number => {
 };
 
 describe('panelCommands: a text row being typed into', () => {
-  const right = b.x + b.w - m.padX - 3;
+  const right = b.x + b.width - m.padX - 3;
 
   it('puts the caret before the characters after it, and draws the selection behind the text', () => {
     const atEnd = draw(startEdit(entry, 'abcd'));

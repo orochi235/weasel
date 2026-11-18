@@ -9,8 +9,8 @@ export interface RectOptions {
   id: string;
   x: number;
   y: number;
-  w: number;
-  h: number;
+  width: number;
+  height: number;
   fill: string;
   /** Called whenever a setter mutates state. The Hud's `rect()` factory
    *  injects this so mutations trigger `requestRedraw`. Direct callers of
@@ -36,12 +36,12 @@ export interface RectWidget extends Widget {
 }
 
 export function createRect(opts: RectOptions): RectWidget {
-  if (!(opts.w > 0 && opts.h > 0)) {
-    throw new Error(`createRect: bounds must have positive w/h (got ${opts.w}x${opts.h})`);
+  if (!(opts.width > 0 && opts.height > 0)) {
+    throw new Error(`createRect: bounds must have positive w/h (got ${opts.width}x${opts.height})`);
   }
   let disposed = false;
   const rev = createRevision(opts.onChange);
-  let bounds: WidgetBounds = { x: opts.x, y: opts.y, w: opts.w, h: opts.h };
+  let bounds: WidgetBounds = { x: opts.x, y: opts.y, width: opts.width, height: opts.height };
   let hidden = false;
   let claims = opts.claims ?? [];
   let fill = opts.fill;
@@ -60,7 +60,7 @@ export function createRect(opts: RectOptions): RectWidget {
     setHidden(h) { assertNotDisposed(); hidden = h; rev.changed(); },
     setFill(c) { assertNotDisposed(); fill = c; rev.changed(); },
     draw(_ctx: HudDrawCtx): DrawCommand[] {
-      const { x, y, w, h } = bounds;
+      const { x, y, width: w, height: h } = bounds;
       const path: RectPath = { kind: 'rect', x, y, width: w, height: h };
       const cmd: PathDrawCommand = {
         kind: 'path',
@@ -71,7 +71,7 @@ export function createRect(opts: RectOptions): RectWidget {
     },
     hitTest(px: number, py: number): boolean {
       if (hidden) return false;
-      return px >= bounds.x && px < bounds.x + bounds.w && py >= bounds.y && py < bounds.y + bounds.h;
+      return px >= bounds.x && px < bounds.x + bounds.width && py >= bounds.y && py < bounds.y + bounds.height;
     },
     get claims() { return claims; },
     setClaims(c) { assertNotDisposed(); claims = c; rev.changed(); },

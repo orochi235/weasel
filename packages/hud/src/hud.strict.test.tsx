@@ -7,7 +7,7 @@ const host = { requestRedraw: () => {}, registerLayer: vi.fn(() => () => {}), su
 
 function Child({ hud }: { hud: Hud }) {
   useEffect(() => {
-    const w = hud.rect({ id: 'r', x: 0, y: 0, w: 1, h: 1, fill: '#000' });
+    const w = hud.rect({ id: 'r', x: 0, y: 0, width: 1, height: 1, fill: '#000' });
     return () => hud.remove(w);
   }, [hud]);
   return null;

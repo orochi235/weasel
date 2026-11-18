@@ -3,7 +3,7 @@ import { formatShortcut } from '@weasel-js/gestures';
 import type { DrawCommand } from '@weasel-js/core/renderer';
 import type { MenuEntry } from '@weasel-js/menu';
 import type { HudDrawCtx } from '../widget';
-import { panelCommands, panelSize } from './panelCommands';
+import { panelCommands, measurePanel } from './panelCommands';
 import { charEnv, menuTokens, THEME_METRICS as m } from './menu.fixture';
 
 const ctx = {
@@ -17,7 +17,7 @@ const ctx = {
 } as never as HudDrawCtx;
 
 const run = () => {};
-const b = { x: 100, y: 50, w: 240, h: 80 };
+const b = { x: 100, y: 50, width: 240, height: 80 };
 const env = charEnv(7);
 const shortcut = { key: 'z', mod: true, alt: false, shift: true };
 
@@ -46,7 +46,7 @@ describe('panelCommands', () => {
     expect(label!.runs.map((r) => r.text).join('')).toBe('Redo');
     expect(chip!.runs.map((r) => r.text).join('')).toBe(formatShortcut(shortcut));
     expect(chip!.align).toBe('right');
-    expect(chip!.x + chip!.width!).toBe(b.x + b.w - m.padX);
+    expect(chip!.x + chip!.width!).toBe(b.x + b.width - m.padX);
     expect(JSON.stringify(chip!.runs)).toContain('#888');
   });
 
@@ -73,8 +73,8 @@ describe('panelCommands', () => {
     const chip: MenuEntry = { kind: 'item', key: 'a', label, shortcut, run };
     const text = formatShortcut(shortcut)!;
     const columns = m.padX * 2 + m.iconSize + m.gap * 2;
-    expect(panelSize([chip], env).w).toBe(columns + label.length * 7 + text.length * 7);
-    expect(panelSize([plain], env).w).toBe(columns + label.length * 7);
+    expect(measurePanel([chip], env).width).toBe(columns + label.length * 7 + text.length * 7);
+    expect(measurePanel([plain], env).width).toBe(columns + label.length * 7);
   });
 
   it('rounds the panel by --wzl-radius-md and casts a shadow in --wzl-shadow beneath it', () => {
@@ -113,7 +113,7 @@ describe('panelCommands', () => {
     const xs = coords.filter((_, i) => i % 2 === 0);
     const ys = coords.filter((_, i) => i % 2 === 1);
     expect([Math.min(...xs), Math.min(...ys), Math.max(...xs), Math.max(...ys)])
-      .toEqual([b.x + 1, b.y + 1, b.x + b.w - 1, b.y + b.h - 1]);
+      .toEqual([b.x + 1, b.y + 1, b.x + b.width - 1, b.y + b.height - 1]);
   });
 
   it("draws a row's icon from the registry in the icon column, in the row's color, and the check in its place", () => {
@@ -136,7 +136,7 @@ describe('panelCommands', () => {
   it('sizes a panel of a million rows without overflowing the call stack', () => {
     const one: MenuEntry = { kind: 'item', key: 'a', label: 'A', run };
     const many = Array.from({ length: 1_000_000 }, (): MenuEntry => one);
-    expect(panelSize(many, env).w).toBe(panelSize([one], env).w);
+    expect(measurePanel(many, env).width).toBe(measurePanel([one], env).width);
   });
 
   it("writes a number row's value in the locale its values name, en-US without one", () => {

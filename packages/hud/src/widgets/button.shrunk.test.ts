@@ -7,7 +7,7 @@ const key = { type: 'keydown' as const, key: 'Enter', code: '', altKey: false, c
 describe('createButton, shrunk', () => {
   it('reports a press to every listener when one throws, and the press still lands', () => {
     const errors = vi.spyOn(console, 'error').mockImplementation(() => {});
-    const b = createButton({ id: 'b', x: 0, y: 0, w: 80, h: 24, label: 'Go' });
+    const b = createButton({ id: 'b', x: 0, y: 0, width: 80, height: 24, label: 'Go' });
     const after = vi.fn();
     b.subscribe('press', () => { throw new Error('listener'); });
     b.subscribe('press', after);
@@ -18,7 +18,7 @@ describe('createButton, shrunk', () => {
 
   it('marks its frame stale on a release when a press listener throws', () => {
     const errors = vi.spyOn(console, 'error').mockImplementation(() => {});
-    const b = createButton({ id: 'b', x: 0, y: 0, w: 80, h: 24, label: 'Go' });
+    const b = createButton({ id: 'b', x: 0, y: 0, width: 80, height: 24, label: 'Go' });
     b.subscribe('press', () => { throw new Error('listener'); });
     b.onPointer({ type: 'down', x: 5, y: 5, native: null });
     const deps = b.deps!({} as never);
@@ -28,7 +28,7 @@ describe('createButton, shrunk', () => {
   });
 
   it('reports once to a listener that takes itself off and puts itself back while it is heard', () => {
-    const b = createButton({ id: 'b', x: 0, y: 0, w: 80, h: 24, label: 'Go' });
+    const b = createButton({ id: 'b', x: 0, y: 0, width: 80, height: 24, label: 'Go' });
     let heard = 0;
     let off = (): void => {};
     const h = () => { heard++; if (heard > 10) return; off(); off = b.subscribe('press', h); };
@@ -38,7 +38,7 @@ describe('createButton, shrunk', () => {
   });
 
   it('does not report to a listener added while a report is under way', () => {
-    const b = createButton({ id: 'b', x: 0, y: 0, w: 80, h: 24, label: 'Go' });
+    const b = createButton({ id: 'b', x: 0, y: 0, width: 80, height: 24, label: 'Go' });
     const late = vi.fn();
     b.subscribe('press', () => { b.subscribe('press', late); });
     b.onKey!(key);

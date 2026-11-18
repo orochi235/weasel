@@ -8,7 +8,7 @@ beforeEach(stubHudFonts);
 /** A window without a titlebar over (10, 10)–(170, 130), pressed in its content and released `travel` px right. */
 async function pressAndRelease(travel: number, gestures?: GestureSettings) {
   const onContentClick = vi.fn();
-  const win = createWindow({ id: 'w', x: 10, y: 10, w: 160, h: 120, title: 'W', titlebar: false, onContentClick });
+  const win = createWindow({ id: 'w', x: 10, y: 10, width: 160, height: 120, title: 'W', titlebar: false, onContentClick });
   const canvas = await mountHud(win, gestures);
   send(canvas, pointer('pointerdown', 'mouse', 80, 70));
   send(canvas, pointer('pointermove', 'mouse', 80 + travel, 70));

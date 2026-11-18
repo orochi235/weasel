@@ -47,12 +47,6 @@ export function measurePanel(
   return measureMenuPanel(menuFace(entries, m, (t) => env.text(t, m.font).width), c, env);
 }
 
-/** A panel's size, as {@link measurePanel} gives it. */
-export function panelSize(entries: readonly MenuEntry[], env: MeasureEnv): { w: number; h: number } {
-  const box = measurePanel(entries, env);
-  return { w: box.width, h: box.height };
-}
-
 const solid = (color: string) => ({ paint: { kind: 'solid' as const, color } });
 const rect = (x: number, y: number, width: number, height: number, color: string): DrawCommand => ({
   kind: 'path', path: { kind: 'rect', x, y, width, height }, fill: solid(color),
@@ -113,14 +107,14 @@ export function panelCommands(
   const radius = tokenPx('--wzl-radius-md', t);
   const measure = values.measure ?? textWidth;
   const { rows, metrics: m } = layout ?? measurePanel(
-    entries, menuMeasureEnv(t, ctx.defaultFont, (s, size) => measure(s, size, ctx.defaultFont)), exactly(b.w, b.h),
+    entries, menuMeasureEnv(t, ctx.defaultFont, (s, size) => measure(s, size, ctx.defaultFont)), exactly(b.width, b.height),
   ).layout;
   const font = { fontFamily: ctx.defaultFont, fontSize: m.font.size };
   const shadow = boxShadowCommands(b, radius, parseBoxShadow(expandVars(PANEL_SHADOW, t)), fg,
-    { x: b.x + 1, y: b.y + 1, w: b.w - 2, h: b.h - 2 });
+    { x: b.x + 1, y: b.y + 1, width: b.width - 2, height: b.height - 2 });
   const out: DrawCommand[] = [...shadow.under, {
     kind: 'path',
-    path: roundRectPath(b.x, b.y, b.w, b.h, radius),
+    path: roundRectPath(b.x, b.y, b.width, b.height, radius),
     fill: solid(t['--wzl-surface-popover']),
     stroke: { paint: { kind: 'solid', color: t['--wzl-border'] }, width: 1 },
   }, ...shadow.over];
@@ -132,10 +126,10 @@ export function panelCommands(
       if (box.kind === 'separator') out.push(rect(b.x + box.line.x, b.y + box.line.y, box.line.width, 1, t['--wzl-border']));
       return;
     }
-    const r = { y: box.rect.y, h: box.rect.height };
+    const r = box.rect;
     if (i === highlight) {
       out.push({
-        kind: 'path', path: roundRectPath(b.x + box.rect.x, b.y + r.y, box.rect.width, r.h, rowRadius),
+        kind: 'path', path: roundRectPath(b.x + r.x, b.y + r.y, r.width, r.height, rowRadius),
         fill: solid(t['--wzl-surface-hover']),
       });
     }
@@ -144,10 +138,10 @@ export function panelCommands(
     out.push(textCommandFromRuns(
       b.x + box.label.x, b.y + r.y,
       [{ text: e.label, fill: solid(color) }],
-      font, undefined, r.h, 'center',
+      font, undefined, r.height, 'center',
     ));
     const iconX = b.x + box.icon.x + box.icon.width / 2;
-    const iconY = b.y + r.y + r.h / 2;
+    const iconY = b.y + r.y + r.height / 2;
     const spec = e.kind !== 'color' ? toIconSpec(e.icon) : undefined;
     const swatch = values.swatch?.(e);
     if (swatch !== undefined) {
@@ -159,7 +153,7 @@ export function panelCommands(
     if (chip) {
       out.push(textCommandFromRuns(
         b.x + m.padX, b.y + r.y, [{ text: chip, fill: solid(muted) }],
-        { ...font, align: 'right' }, undefined, r.h, 'center', undefined, b.w - m.padX * 2,
+        { ...font, align: 'right' }, undefined, r.height, 'center', undefined, b.width - m.padX * 2,
       ));
     }
     const ink = { fg, muted, border: t['--wzl-border'], font };
@@ -172,7 +166,7 @@ export function panelCommands(
         : textCommands(b, r, values.text(e), m, ink, e.disabled ? 'off' : 'live')));
     }
     const end = box.trailing;
-    if (e.kind === 'submenu' && end) out.push(caret(b.x + end.x + end.width / 2, b.y + r.y + r.h / 2, color));
+    if (e.kind === 'submenu' && end) out.push(caret(b.x + end.x + end.width / 2, b.y + r.y + r.height / 2, color));
   });
   return out;
 }

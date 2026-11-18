@@ -7,7 +7,7 @@ import type { HudPointerEvent, Widget } from './widget';
 function stubWidget(seen: HudPointerEvent[]): Widget {
   return {
     id: 'w',
-    bounds: { x: 0, y: 0, w: 10, h: 10 },
+    bounds: { x: 0, y: 0, width: 10, height: 10 },
     hidden: false,
     draw: () => [],
     hitTest: () => true,

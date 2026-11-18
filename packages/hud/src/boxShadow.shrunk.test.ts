@@ -7,10 +7,10 @@ const pathsOf = (cmd: unknown): Path[] => (cmd as { children: { path: Path }[] }
 
 describe('boxShadow counterexamples', () => {
   it('keeps the corners of a square box square under a spread', () => {
-    const [outer] = pathsOf(boxShadowCommands({ x: 0, y: 0, w: 1, h: 1 }, 0,
+    const [outer] = pathsOf(boxShadowCommands({ x: 0, y: 0, width: 1, height: 1 }, 0,
       [{ inset: false, x: 4, y: -8, blur: 0, spread: 11, color: '#000' }], 'black').under[0]);
     expect(pathContainsPoint(outer!, 0.5, -18.5)).toBe(true);
-    const [ring] = pathsOf(boxShadowCommands({ x: 0, y: 0, w: 1, h: 11 }, 0,
+    const [ring] = pathsOf(boxShadowCommands({ x: 0, y: 0, width: 1, height: 11 }, 0,
       [{ inset: true, x: 3, y: 9, blur: 0, spread: -5, color: '#000' }], 'black').over[0]);
     expect(pathContainsPoint(ring!, 0.5, 4.5)).toBe(false);
   });

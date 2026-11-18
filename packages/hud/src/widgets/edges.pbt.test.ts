@@ -29,7 +29,7 @@ const wild = fc.oneof(finite, notFinite);
 /** An offset from a widget's corner: inside it, near its edges, or not finite. */
 const near = fc.oneof({ weight: 3, arbitrary: fc.integer({ min: -10, max: 310 }) }, notFinite);
 
-type Make = (o: { id: string; x: number; y: number; w: number; h: number }) => Widget;
+type Make = (o: { id: string; x: number; y: number; width: number; height: number }) => Widget;
 const CHECKED: [string, Make][] = [
   ['rect', (o) => createRect({ ...o, fill: '#000' })],
   ['image', (o) => createImage({ ...o, image: IMAGE })],
@@ -47,8 +47,8 @@ describe('widget edges', () => {
     const seen = tally();
     fc.assert(fc.property(fc.constantFrom(...CHECKED), size, size, ([, make], w, h) => {
       const ok = w > 0 && h > 0;
-      if (ok) expect(() => make({ id: 'x', x: 0, y: 0, w, h })).not.toThrow();
-      else expect(() => make({ id: 'x', x: 0, y: 0, w, h })).toThrow();
+      if (ok) expect(() => make({ id: 'x', x: 0, y: 0, width: w, height: h })).not.toThrow();
+      else expect(() => make({ id: 'x', x: 0, y: 0, width: w, height: h })).toThrow();
       seen.hit(ok ? 'taken' : Number.isNaN(w) || Number.isNaN(h) ? 'NaN' : 'refused');
     }), runs(RUNS));
     for (const k of ['taken', 'refused', 'NaN']) seen.atLeast(k, 20);
@@ -60,14 +60,14 @@ describe('widget edges', () => {
       fc.constantFrom(...ALL), finite, finite, fc.integer({ min: 80, max: 300 }), fc.integer({ min: 80, max: 300 }),
       near, near, finite, finite,
       ([, make], x, y, w, h, ox, oy, dx, dy) => {
-        const a = make({ id: 'x', x, y, w, h });
+        const a = make({ id: 'x', x, y, width: w, height: h });
         const px = x + ox, py = y + oy;
         if (!Number.isFinite(px) || !Number.isFinite(py)) {
           expect(a.hitTest(px, py)).toBe(false);
           seen.hit('not finite');
           return;
         }
-        const b = make({ id: 'x', x: x + dx, y: y + dy, w, h });
+        const b = make({ id: 'x', x: x + dx, y: y + dy, width: w, height: h });
         expect(b.hitTest(px + dx, py + dy)).toBe(a.hitTest(px, py));
         seen.hit(a.hitTest(px, py) ? 'in' : 'out');
       }), runs(RUNS));
@@ -81,7 +81,7 @@ describe('widget edges', () => {
     fc.assert(fc.property(fc.boolean(), fc.array(ev, { maxLength: 12 }), fc.boolean(), (titlebar, evs, drawn) => {
       const heard: unknown[] = [];
       const win = createWindow({
-        id: 'w', x: 50, y: 40, w: 200, h: 150, title: 'w', titlebar,
+        id: 'w', x: 50, y: 40, width: 200, height: 150, title: 'w', titlebar,
         onMove: (b) => heard.push(b), onResize: (b) => heard.push(b), onContentClick: (p) => heard.push(p), onClose: () => heard.push('close'),
       });
       if (drawn) win.draw({ dims: { width: 800, height: 600 }, defaultFont: 'D', color: () => '#000', tokens: resolveTheme(weaselTheme) });
@@ -91,7 +91,7 @@ describe('widget edges', () => {
         const before = win.bounds;
         win.onPointer({ type: e.type, x: e.p.x, y: e.p.y, native: null });
         const b = win.bounds;
-        expect([b.x, b.y, b.w, b.h].every(Number.isFinite)).toBe(true);
+        expect([b.x, b.y, b.width, b.height].every(Number.isFinite)).toBe(true);
         if (!Number.isFinite(e.p.x) || !Number.isFinite(e.p.y)) {
           expect(b).toEqual(before);
           seen.hit('not finite');
@@ -106,7 +106,7 @@ describe('widget edges', () => {
     const names = fc.constantFrom('__proto__', 'constructor', 'toString', 'hasOwnProperty', 'valueOf', 'a');
     fc.assert(fc.property(fc.array(names, { minLength: 1, maxLength: 6 }), (ids) => {
       const hud = createHud();
-      const ws = ids.map((id, i) => hud.button({ id, x: i * 10, y: 0, w: 10, h: 10, label: id }));
+      const ws = ids.map((id, i) => hud.button({ id, x: i * 10, y: 0, width: 10, height: 10, label: id }));
       expect(hud.widgets()).toEqual(ws);
       expect(hud.tabOrder()).toEqual(ws);
       for (const w of ws) expect(hud.focus(w)).toBe(true);

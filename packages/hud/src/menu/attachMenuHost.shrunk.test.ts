@@ -17,7 +17,7 @@ describe('attachMenuHost, shrunk', () => {
     });
     host.define({ id: 'row', menu: pref.group('', { cut: pref.action('cut') }) });
     const p0: Widget = {
-      id: 'p0', bounds: { x: 700, y: 0, w: 20, h: 20 }, hidden: false, focusable: true,
+      id: 'p0', bounds: { x: 700, y: 0, width: 20, height: 20 }, hidden: false, focusable: true,
       draw: () => [], hitTest: () => false, onPointer: () => {}, dispose: () => {},
     };
     hud.add(p0);
@@ -43,7 +43,7 @@ describe('attachMenuHost under a focus listener that opens a menu, shrunk', () =
     });
     host.define({ id: 'row', menu: pref.group('', { cut: pref.action('cut') }) });
     const p: Widget = {
-      id: 'p', bounds: { x: 700, y: 0, w: 20, h: 20 }, hidden: false, focusable: true,
+      id: 'p', bounds: { x: 700, y: 0, width: 20, height: 20 }, hidden: false, focusable: true,
       draw: () => [], hitTest: () => false, onPointer: () => {}, dispose: () => {},
     };
     hud.add(p);

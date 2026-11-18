@@ -28,7 +28,7 @@ function ButtonWidget({ label, size, width }: ButtonWidgetArgs) {
     // The widget takes its height from the shared measure, as the DOM button takes it from CSS.
     const env = hudMeasureEnv({ tokens: tokens ?? resolveTheme(weaselTheme), defaultFont: DEFAULT_FONT_FAMILY });
     const { height } = hudButton.measure({ label, size, press: IDLE_PRESS }, fixedWidth(width), env);
-    const b = hud.button({ id: 'b', x: 16, y: 16, w: width, h: height, label, size });
+    const b = hud.button({ id: 'b', x: 16, y: 16, width, height, label, size });
     const onPress = () => setPresses((n) => n + 1);
     b.subscribe('press', onPress);
     return () => b.dispose();
