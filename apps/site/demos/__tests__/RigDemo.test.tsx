@@ -125,4 +125,11 @@ describe('RigDemo', () => {
     expect(screen.getByText(/track u/).textContent).toBe('track u 0.00');
   });
 
+  it('hides the joint labels and nothing else when its checkbox is cleared', () => {
+    const scene = mount();
+    act(() => { fireEvent.click(screen.getByRole('checkbox', { name: 'joint labels' })); });
+    expect(scene.isHidden(asNodeId('slider:label:forearm'))).toBe(true);
+    expect(scene.isHidden(asNodeId('caption:slider'))).toBe(false);
+    expect(scene.isHidden(asNodeId('caption:track'))).toBe(false);
+  });
 });

@@ -67,7 +67,7 @@ const POSE_B: SkeletonPose = {
   shin: { rotation: 0.6 },
 };
 
-type Layer = 'bones' | 'joints' | 'labels' | 'target';
+type Layer = 'bones' | 'joints' | 'labels' | 'captions' | 'target';
 type Data = { shape: 'rect'; fill: Fill } | { text: string; style: TextStyle; fill: Fill };
 interface NodeSpec { id: NodeId; kind: 'mark'; layer: Layer; pose: RectPose; data: Data }
 
@@ -123,8 +123,9 @@ function figure(prefix: string, rootX: number, color: string): Figure {
 const BY_SLIDER = figure('slider', 160, '#7fb069');
 const BY_TRACK = figure('track', 430, '#d4a574');
 
+// On a layer of their own, so the joint-labels checkbox leaves them shown.
 const caption = (id: string, x: number, text: string, color: string): NodeSpec => ({
-  id: asNodeId(id), kind: 'mark', layer: 'labels',
+  id: asNodeId(id), kind: 'mark', layer: 'captions',
   pose: { x, y: 292, width: 220, height: 14 },
   data: { text, style: CAPTION_STYLE, fill: { paint: solid(color) } },
 });
@@ -160,7 +161,8 @@ const APPLY: RigApply<RectPose> = (world, ctx) => {
 export function RigDemo() {
   const scene = useScene<Data, Layer, RectPose>({
     systemLayers: [
-      { id: 'bones', locked: true }, { id: 'joints', locked: true }, { id: 'labels', locked: true }, { id: 'target' },
+      { id: 'bones', locked: true }, { id: 'joints', locked: true }, { id: 'labels', locked: true }, { id: 'captions', locked: true },
+      { id: 'target' },
     ],
     initial: useMemo(() => INITIAL, []),
   });
