@@ -19,7 +19,7 @@ import {
   hasFontOutlines, listFontOutlines, loadFontOutlines, outlineFace, outlineStatus,
 } from './outline/outlineRegistry';
 import type { FaceMetrics } from './faceMetrics';
-import { atlasResult, sharedExactResult } from './atlasResult';
+import { familyFaceFor } from './familyFace';
 import type { ResolveResult } from './resolveResult';
 import {
   warnMissingFamilyOnce, warnSelfUnusableDefaultOnce, warnUnregisteredDefaultOnce, warnUnusableDefaultOnce,
@@ -529,10 +529,6 @@ function pendingMiss(family: string, weight: number, style: FontStyle): ResolveR
   };
 }
 
-function weightBucket(w: number): 'regular' | 'bold' {
-  return w >= 600 ? 'bold' : 'regular';
-}
-
 /**
  * Resolve a `(family, weight, style)` request to a registered font entry,
  * walking the fallback chain when an exact match isn't available. Returns
@@ -618,64 +614,6 @@ function resolveFontVariantInternal(
     return missResolveResult(family, weight, style, suppressWarn);
   }
 
-  // 1. Exact match
-  const exact = familyMap.get(exactKey);
-  if (exact) {
-    return shared
-      ? sharedExactResult(exact, family, weight, style)
-      : atlasResult(exact, family, weight, style, false, false);
-  }
-
-  // 2. Same style, nearest weight in same bucket (ties broken by higher weight)
-  const requestedBucket = weightBucket(weight);
-  let bestSameStyle: { entry: FontEntry; weight: number; distance: number } | null = null;
-  for (const [key, entry] of familyMap) {
-    const [wStr, s] = key.split('|') as [string, FontStyle];
-    const w = Number(wStr);
-    if (s !== style) continue;
-    if (weightBucket(w) !== requestedBucket) continue;
-    const distance = Math.abs(w - weight);
-    if (
-      bestSameStyle === null ||
-      distance < bestSameStyle.distance ||
-      (distance === bestSameStyle.distance && w > bestSameStyle.weight)
-    ) {
-      bestSameStyle = { entry, weight: w, distance };
-    }
-  }
-  if (bestSameStyle) return atlasResult(bestSameStyle.entry, family, bestSameStyle.weight, style, false, false);
-
-  // 3. (family, 400, style)
-  const sameStyleRegular = familyMap.get(variantKey(400, style));
-  if (sameStyleRegular) return atlasResult(sameStyleRegular, family, 400, style, weight >= 600, false);
-
-  // 4. (family, weight, 'normal') — same weight, no italic
-  const sameWeightNormal = familyMap.get(variantKey(weight, 'normal'));
-  if (sameWeightNormal) return atlasResult(sameWeightNormal, family, weight, 'normal', false, style === 'italic');
-
-  // 4b. Nearest weight, normal style, same bucket
-  let bestNormal: { entry: FontEntry; weight: number; distance: number } | null = null;
-  for (const [key, entry] of familyMap) {
-    const [wStr, s] = key.split('|') as [string, FontStyle];
-    const w = Number(wStr);
-    if (s !== 'normal') continue;
-    if (weightBucket(w) !== requestedBucket) continue;
-    const distance = Math.abs(w - weight);
-    if (
-      bestNormal === null ||
-      distance < bestNormal.distance ||
-      (distance === bestNormal.distance && w > bestNormal.weight)
-    ) {
-      bestNormal = { entry, weight: w, distance };
-    }
-  }
-  if (bestNormal) {
-    return atlasResult(bestNormal.entry, family, bestNormal.weight, 'normal', false, style === 'italic');
-  }
-
-  // 5. (family, 400, 'normal') — last resort within family
-  const regular = familyMap.get(variantKey(400, 'normal'));
-  if (regular) return atlasResult(regular, family, 400, 'normal', weight >= 600, style === 'italic');
-
-  return missResolveResult(family, weight, style, suppressWarn);
+  return familyFaceFor(familyMap, family, weight, style, shared)
+    ?? missResolveResult(family, weight, style, suppressWarn);
 }
