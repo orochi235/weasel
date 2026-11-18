@@ -10,6 +10,7 @@ import { createModeRegistry, type ModeDefinition } from '@weasel-js/modes';
 import { createGLRecorder } from '@weasel-js/renderer/testing/glRecorder';
 import { SceneCanvas } from '../SceneCanvas';
 import { createScene } from 'core/scene/scene';
+import { IDENTITY_POSE_COMPOSITION } from 'core/scene/composeFrame';
 import type { RenderLayer } from 'core/layers/render';
 import type { SurfaceContribution } from '../surfaceContribution';
 import { useTools } from '../../tools/overlayBinding';
@@ -49,7 +50,7 @@ function gatedEntry(): { entry: SurfaceContribution; paints: () => number } {
 }
 
 function Takeover({ ambient, modes }: { ambient: SurfaceContribution[]; modes: ReturnType<typeof createModeRegistry> }) {
-  const scene = createScene<unknown, 'main', unknown>({ systemLayers: [{ id: 'main' }] });
+  const scene = createScene<unknown, 'main', unknown>({ composition: IDENTITY_POSE_COMPOSITION, systemLayers: [{ id: 'main' }] });
   const tools = useTools({ active: null, registry: {} });
   return <SceneCanvas scene={scene} layers={{}} width={300} height={200} tools={tools} ambient={ambient} modes={modes} />;
 }

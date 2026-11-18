@@ -89,7 +89,7 @@ describe('stepGroups', () => {
   it('runs an install or a build alone, and the reading steps between them together', () => {
     const runs = ['npm ci --ignore-scripts', 'npm run build', 'npm run check:a', 'npm run check:b',
       'npm run build -w x', 'npm run check:c', 'npm run build:demo'];
-    expect(stepGroups(runs)).toEqual([[0], [1], [2, 3], [4], [5, 6]]);
+    expect(stepGroups(runs)).toEqual([[0], [1], [2, 3], [4], [5], [6]]);
   });
 });
 

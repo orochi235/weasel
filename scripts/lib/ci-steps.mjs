@@ -116,8 +116,9 @@ export const installStep = (steps) => {
   return step;
 };
 
-/** A step that writes what later steps read: an install, or a build of the packages' `dist`. */
-export const WRITES = /^npm (?:ci|run build)(?:\s|$)/;
+/** A step that writes what other steps read: an install, a build of the packages' `dist`, or an app build, which shares
+ *  its dev server's dep cache. */
+export const WRITES = /^npm (?:ci|run build)(?:[\s:]|$)/;
 
 /**
  * `runs` split into groups that can run at once, as lists of indices: a step matching `WRITES` runs
