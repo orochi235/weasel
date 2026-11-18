@@ -34,7 +34,9 @@ test('the source reads as stopped once a busy bus steals its voice', async () =>
   render(<AudioDemo />);
   const source = screen.getByRole('button', { name: 'play source' });
   await expect.poll(() => (source as HTMLButtonElement).disabled).toBe(false);
-  await page.getByRole('button', { name: 'enable audio' }).click();
+  // A browser that lets audio start without a gesture leaves the context running, and the button disabled.
+  const enable = screen.getByRole('button', { name: 'enable audio' }) as HTMLButtonElement;
+  if (!enable.disabled) await page.getByRole('button', { name: 'enable audio' }).click();
   fireEvent.click(source);
   expect(source.textContent).toBe('stop source');
   // The music bus (the second) holds eight voices, so eight bells take the loop's.
