@@ -18,7 +18,8 @@ function loadReference(name: string): Promise<PackageReference | Unbuilt> {
   let load = pending.get(name);
   if (!load) {
     const fetched = async (response: Response): Promise<PackageReference | Unbuilt> => {
-      if (!response.ok) return 'unbuilt';
+      if (response.status === 404) return 'unbuilt';
+      if (!response.ok) throw new Error(`The reference for ${name} answered ${response.status}`);
       // A dev server with no reference to serve answers any path with the app's own page.
       try {
         return (await response.json()) as PackageReference;
@@ -27,8 +28,9 @@ function loadReference(name: string): Promise<PackageReference | Unbuilt> {
       }
     };
     load = fetch(`${import.meta.env.BASE_URL}reference/${name}.json`).then(fetched);
-    // A failed fetch is not remembered, so reopening the page tries again.
-    load.catch(() => pending.delete(name));
+    // Only a reference is remembered: reopening the page after a failure, or after `build:api`, tries again.
+    const forget = () => pending.delete(name);
+    load.then((value) => value === 'unbuilt' && forget(), forget);
     pending.set(name, load);
   }
   return load;
