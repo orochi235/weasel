@@ -90,7 +90,10 @@ The comb, poise lines, constraint marks, and direction arrows are off until
 chrome-caps shows them; the fillet widgets show until it hides
 `path-edit.fillets`. The toggles `pathEdit.show.direction`, `.comb`,
 `.poise`, and `.fillets` (group `pathOverlays`) come with their presets and
-flip that rule through core's `chromeRules` dep. `createCurvatureCombPreset`, `createPoisePreset`,
+flip that rule through core's `chromeRules` dep. To keep them as preferences,
+mount `pathEditAidsSchema` in the app's schema and pass its values to
+`pathEditAidsVisibility(aids)`, the canvas's `chromeVisibility`;
+`PATH_EDIT_AID_CHROME_IDS` names each aid's chrome id. `createCurvatureCombPreset`, `createPoisePreset`,
 `createConstraintsPreset`, `createPathStructurePreset`, and
 `createFilletPreset` take their look. They reach path edit through core's
 `PathEditExtension`: marks drawn on the open path, parts of it to press, marks

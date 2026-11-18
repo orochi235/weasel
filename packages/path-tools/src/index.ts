@@ -223,3 +223,6 @@ export {
   createPathEditHost, type PathEditHostOptions, type PathEditModes, type PathEditStore, type PathEditModeTarget,
 } from './host/createPathEditHost';
 export { usePathEditMode, type PathEditMode, type UsePathEditModeOptions } from './host/usePathEditMode';
+export {
+  pathEditAidsSchema, pathEditAidsVisibility, PATH_EDIT_AID_CHROME_IDS, type PathEditAids,
+} from './pathEdit/aidSettings';

@@ -266,6 +266,13 @@ from a provider: an app mounts the group in its own schema and passes it with
 instances can differ and one subtree can serve every instance. Kit settings
 stay ambient because they tune every component at once.
 
+A condition names its path from the schema's root, so a group whose leaves
+have conditions on each other is built for where it is mounted:
+`createSymmetrySchema({ at: 'view.symmetry' })`. A wrong `at` is a store
+warning when it opens (a condition naming no leaf), not a silent misread.
+Groups without such conditions are plain constants (`pageGridSchema`,
+`rulersSchema`, `pathEditAidsSchema`).
+
 A numeric limit the code depends on — renderer slack, animator retiming, a
 budget, a dev tool's timeout — stays a constant: listing it as a setting
 says changing it is supported.

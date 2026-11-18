@@ -20,3 +20,6 @@ export { SYMMETRY_HANDLE_ACTION_ID, symmetryHandleChange, createSymmetryHandleAc
 export {
   createSymmetry, type CreateSymmetryOptions, type SymmetryChange, type SymmetryController,
 } from './controller';
+export {
+  createSymmetrySchema, symmetrySpecFor, type SymmetryAxis, type SymmetrySchemaOptions, type SymmetrySettings,
+} from './settings';

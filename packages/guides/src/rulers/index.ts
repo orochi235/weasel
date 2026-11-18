@@ -8,3 +8,5 @@ export { rulerTicks } from './ticks';
 export type { RulerTick, RulerTicks, RulerTicksOptions } from './ticks';
 export { guideAxisOf, rulerPartAt } from './hit';
 export type { RulerHit, RulerPart } from './hit';
+export { rulersSchema } from './settings';
+export type { RulersSettings } from './settings';
