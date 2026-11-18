@@ -3,8 +3,9 @@ import type { ShaderProgram } from './shaders/ShaderProgram';
 import type { GpuBuffer, GpuDevice, GpuTexture } from './gpu/types';
 import {
   LazyProgram, PATH_FILL_SPEC, PATH_FILL_VCOLOR_SPEC, GRAD_FILL_SPEC, PATTERN_FILL_SPEC, GLYPH_PAINT_SPECS,
-  BatchVariantPrograms, createBatchFill,
+  BatchVariantPrograms, createBatchFill, GLYPH_LAYER_SPECS,
 } from './shaders/builtinPrograms';
+import { TextLayers } from './draw/textLayer';
 import { GLMeshCache } from './cache/GLMeshCache';
 import { GLTextureCache } from './cache/GLTextureCache';
 import { GLImageCache, type ImageMinification } from './cache/GLImageCache';
@@ -32,6 +33,9 @@ export class ContextResources {
   readonly patternFill: LazyProgram;
   /** Compiled on first use: only atlas text under a texture paint needs one. */
   readonly glyphPaintPrograms: Record<GlyphPaintKind, LazyProgram>;
+  /** The text layer's point build and area build, compiled on first use. */
+  readonly glyphLayerPrograms: readonly [LazyProgram, LazyProgram];
+  textLayers: TextLayers;
   /** The program an id frame hands a group's ids back with; built by the first. */
   idComposite: ShaderProgram | null = null;
   meshCache: GLMeshCache;
@@ -57,6 +61,8 @@ export class ContextResources {
     this.batchFill = createBatchFill(gpu);
     const glyph = (kind: GlyphPaintKind) => new LazyProgram(gpu, GLYPH_PAINT_SPECS[kind]);
     this.glyphPaintPrograms = { pattern: glyph('pattern'), gradient: glyph('gradient'), texture: glyph('texture') };
+    this.glyphLayerPrograms = [new LazyProgram(gpu, GLYPH_LAYER_SPECS[0]), new LazyProgram(gpu, GLYPH_LAYER_SPECS[1])];
+    this.textLayers = new TextLayers(gpu);
 
     this.meshCache = new GLMeshCache(gpu);
     this.textureCache = new GLTextureCache(gpu, (source) => this.imageCache.noteDrawn(source));
@@ -70,6 +76,7 @@ export class ContextResources {
   private lazyPrograms(): LazyProgram[] {
     return [
       this.pathFill, this.pathFillVColor, this.gradFill, this.patternFill, ...Object.values(this.glyphPaintPrograms),
+      ...this.glyphLayerPrograms,
       ...this.batchVariants.lazy(),
     ];
   }
@@ -90,6 +97,7 @@ export class ContextResources {
     for (const lazy of this.lazyPrograms()) lazy.abandon();
     this.batchFill = createBatchFill(gpu);
     this.idComposite = null;
+    this.textLayers.abandon();
     this.meshCache = new GLMeshCache(gpu);
     this.textureCache = new GLTextureCache(gpu, (source) => this.imageCache.noteDrawn(source));
     this.imageCache.abandon();
@@ -111,6 +119,7 @@ export class ContextResources {
   dispose(): void {
     const gpu = this.gpu;
     this.meshCache.dispose();
+    this.textLayers.dispose();
     this.paintResources.release();
     for (const lazy of this.lazyPrograms()) lazy.release();
     gpu.deleteProgram(this.batchFill);

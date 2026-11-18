@@ -12,6 +12,7 @@ export type DrawCommand =
   | PathDrawCommand
   | GroupDrawCommand
   | TextDrawCommand
+  | TextLayerDrawCommand
   | ImageDrawCommand
   | SpritesDrawCommand
   | ShaderDrawCommand;
@@ -182,6 +183,30 @@ export interface TextDrawCommand {
   height?: number;
   /** Default 'top' — the legacy top-anchored behavior. */
   verticalAlign?: TextVerticalAlign;
+}
+
+/**
+ * Text kept on the GPU: every glyph of `texts`, drawn as drawing each of them
+ * in turn would, but uploaded once as one instance a glyph and drawn in a call
+ * or two a frame however the transform above it moves. Reach for it for a few
+ * thousand glyphs or more that hold still across frames, such as a code view
+ * or a log: a frame of unchanged text then costs the CPU nothing per glyph,
+ * where a `TextDrawCommand` lays its glyphs out on the CPU every frame.
+ *
+ * Kept by the identity of `texts`, so `texts` and the commands in it must not
+ * be mutated once drawn; hand over a new array for new text. It is uploaded
+ * again when a glyph it shows becomes available, and freed at the end of any
+ * frame that does not draw it.
+ *
+ * Each text is drawn as a `TextDrawCommand` instead, every frame, while the
+ * layer holds what the instances cannot carry: an underline, strikethrough or
+ * overline, a stroke, a fill that is not a solid color, a color glyph, or a
+ * glyph large enough on screen to be drawn from its outline
+ * (`textOutlineMinScreenSize`) in a face that has one.
+ */
+export interface TextLayerDrawCommand {
+  kind: 'text-layer';
+  texts: readonly TextDrawCommand[];
 }
 
 /**

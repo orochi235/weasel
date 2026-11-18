@@ -73,11 +73,12 @@ export function createGeometry(gl: WebGL2RenderingContext, cache: GlCache, desc:
   const vao = gl.createVertexArray();
   if (!vao) throw new Error('createVertexArray returned null');
   cache.bindVertexArray(vao);
-  for (const { buffer, stride, attributes } of desc.vertexBuffers) {
+  for (const { buffer, stride, attributes, step } of desc.vertexBuffers) {
     gl.bindBuffer(gl.ARRAY_BUFFER, (buffer as GlBuffer).handle);
     for (const a of attributes) {
       gl.enableVertexAttribArray(a.location);
       gl.vertexAttribPointer(a.location, a.components, gl.FLOAT, false, stride, a.offset);
+      if (step === 'instance') gl.vertexAttribDivisor(a.location, 1);
     }
   }
   const indexBuffer = desc.indexBuffer as GlBuffer;

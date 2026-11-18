@@ -220,6 +220,7 @@ export class WeaselRenderer {
     // stroke ribbons from tessellateStroke). Done after all draws complete
     // so we never delete a buffer that's still bound to a pending draw.
     this.res.meshCache.freeTransient();
+    this.res.textLayers.endFrame();
     const retained = this.retained;
     retained.endFrame();
     this.stats.retained = {
@@ -307,7 +308,7 @@ export class WeaselRenderer {
   ): DrawContext {
     const device = this.deviceRect();
     const res = this.res;
-    const { pathFill, pathFillVColor, gradFill, patternFill, glyphPaintPrograms } = res;
+    const { pathFill, pathFillVColor, gradFill, patternFill, glyphPaintPrograms, glyphLayerPrograms } = res;
     return {
       gpu: this.gpu,
       get pathFill() { return pathFill.get(); },
@@ -323,6 +324,8 @@ export class WeaselRenderer {
       programRegistry: this.programs.registry,
       ensureProgram: (id) => (this.disposed ? null : this.programs.ensure(id)),
       glyphPaintProgram: (kind) => glyphPaintPrograms[kind].get(),
+      glyphLayerProgram: (area) => glyphLayerPrograms[Number(area)].get(),
+      textLayers: res.textLayers,
       quad: res.quad,
       drawBatch: res.drawBatch,
       whiteTexture: res.whiteTexture,

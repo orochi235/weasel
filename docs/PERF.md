@@ -10,18 +10,6 @@ When work merges, retire its entry here in the same change.
 
 ## Renderer and the batch
 
-- **(P2) [maintainer] Unchanged text costs its full walk every frame.** `drawText` stages each
-  glyph's quad into the batch again on every frame, even when the text and its layout have not
-  changed. That costs about 0.1 µs a glyph: 11 ms of CPU at 114k glyphs, and 143 ms at 1.28M
-  (`tests/perf/README.md`, "A wall of static text", 2026-11-17). On the same node, astv's stage
-  draws the same 114k glyphs for 0.4 ms of CPU with the camera parked and about 2 ms while it
-  moves, because it keeps each card's glyph instances in a GPU buffer and rewrites only the cards
-  whose content changed. Adding a retained glyph layer to the renderer would make static text
-  under any camera cost a draw call instead of a walk. The design is open: what owns the buffer,
-  how a command says its text is unchanged, and how that combines with the clips and paints a text
-  group can carry. Closes when unchanged text stops being walked every frame, or when it is
-  decided that it should be.
-
 - **(P3) [waiting] Whether the batched path costs a co-tenant on the same page.** Reported, not measured
   here. A consumer benchmarking its wall against a canvas2d control found that at one rung the
   *canvas2d* side went from ~8.8 ms to 102-160 ms, and only when the page also held a build with
@@ -47,6 +35,21 @@ When work merges, retire its entry here in the same change.
   draws them only through `WeaselRenderer` (checked 2026-10-17). It is one run on their side, the
   16px / 2,700-command rung with the GL build left off the page, and it could retire the entry.
   Closes when the consumer reports that run, or on 2026-12-01 with none, delete it.
+
+---
+
+## Measuring
+
+- **(P3) [maintainer] The GPU timer query misreads some draws under ANGLE's Metal backend.** On teitou
+  (Apple M5 Max, Chromium 158), `EXT_disjoint_timer_query_webgl2` read a text layer's one instanced
+  draw of 1.28M glyphs at 187 ms a frame while frames came every 16.8 ms, and a render followed by a
+  one-pixel readback took 41 ms (`text-wall.spec.ts`, 2026-11-18). The same draw read 7.9 ms when the
+  cell ran right after a plain-text one, with nothing else changed. So a `gpuP50` from the query is
+  not evidence on its own, and the specs that read it (`text-wall`, `hud-vs-dom`, `back-to-back`,
+  `retain-redraw`) may be quoting a misread. Whether it is the query's emulation over Metal command buffers or
+  the GPU clocking down under a light load is not known. `text-wall` now also reports `frameP50` and
+  `syncedP50`, which a misread query cannot move.
+  Closes when the cause is known and the specs quoting the query say which reading to trust.
 
 ---
 

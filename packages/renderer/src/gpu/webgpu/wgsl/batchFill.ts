@@ -39,7 +39,7 @@ export const BATCH_FILL_LOCATIONS = BATCH_ATTRIBUTE_LOCATIONS;
 
 const samplerOf = (slot: number): string => `u_samplers_${slot === 0 ? 1 : slot}_sampler`;
 
-function texturesWgsl(): string {
+export function texturesWgsl(): string {
   const lines: string[] = [];
   for (let s = 0; s < BATCH_TEXTURE_SLOTS; s++) {
     lines.push(`@group(1) @binding(${s}) var u_samplers_${s}: texture_2d<f32>;`);
@@ -61,14 +61,14 @@ function sampleTree(lo: number, hi: number, fetch: (slot: number) => string, ind
   ].join('\n');
 }
 
-const SAMPLE_SLOT_WGSL = /* wgsl */ `
+export const SAMPLE_SLOT_WGSL = /* wgsl */ `
 fn sampleSlot(slot: i32, uv: vec2f, ddx: vec2f, ddy: vec2f) -> vec4f {
 ${sampleTree(0, BATCH_TEXTURE_SLOTS - 1, (s) => `textureSampleGrad(u_samplers_${s}, ${samplerOf(s)}, uv, ddx, ddy)`)}
 }
 `;
 
 /** A glyph's taps, which take no derivative; slot 0 is never an atlas. */
-function glyphTapWgsl(): string {
+export function glyphTapWgsl(): string {
   return /* wgsl */ `
 var<private> tapSlot: i32;
 fn glyphTap(uv: vec2f) -> vec4f {
@@ -78,8 +78,7 @@ ${sampleTree(1, BATCH_TEXTURE_SLOTS - 1, (s) => `textureSampleLevel(u_samplers_$
 `;
 }
 
-function varyingsWgsl({ hulls, area }: BatchBuild): string {
-  return /* wgsl */ `
+const VIN_WGSL = /* wgsl */ `
 struct VIn {
   @location(${L.a_position}) a_position: vec2f,
   @location(${L.a_vertexColor}) a_vertexColor: vec4f,
@@ -87,7 +86,11 @@ struct VIn {
   @location(${L.a_post}) a_post: f32,
   @location(${L.a_texSlot}) a_texSlot: f32,
 }
+`;
 
+/** The varyings every build's fragment stage reads, as `VOut`. */
+export function varyingsWgsl({ hulls, area }: BatchBuild): string {
+  return /* wgsl */ `
 struct VOut {
   @builtin(position) position: vec4f,
   @location(0) v_vertexColor: vec4f,
@@ -129,7 +132,7 @@ function vertexWgsl({ hulls, area }: BatchBuild): string {
 `;
 }
 
-function fragmentWgsl({ matrices, hulls, area }: BatchBuild): string {
+export function fragmentWgsl({ matrices, hulls, area }: BatchBuild): string {
   const m = matrices ? 'in.v_matrix' : '0';
   return /* wgsl */ `
 @fragment fn fs(in: VOut) -> WeaselOut {
@@ -158,15 +161,24 @@ function fragmentWgsl({ matrices, hulls, area }: BatchBuild): string {
 
 /** The module for one build, entry points `vs` and `fs`. */
 export function batchFillWgsl(build: BatchBuild): string {
+  return batchModuleWgsl(build, VIN_WGSL + vertexWgsl(build));
+}
+
+/**
+ * A module drawing with the batch's fragment stage under `build`, its vertex
+ * stage `vertex`: a `VIn` struct and a `vs` entry point writing `VOut`. Its
+ * uniforms are the batch's and `extra`.
+ */
+export function batchModuleWgsl(build: BatchBuild, vertex: string, extra: readonly string[] = []): string {
   const n = build.matrices ? BATCH_MATRIX_SLOTS : 1;
   const members = [
     'u_proj: mat3x3f', 'u_model: mat3x3f', 'u_color: vec4f',
     `u_alpha: array<F32Slot, ${n}>`, `u_fieldScale: array<Vec2Slot, ${BATCH_TEXTURE_SLOTS}>`,
     `u_colorMatrix: array<mat4x4f, ${n}>`, `u_colorBias: array<vec4f, ${n}>`,
-    ...(build.hulls ? HULL_MEMBERS : []),
+    ...(build.hulls ? HULL_MEMBERS : []), ...extra,
   ];
   return [
-    uniformsWgsl(members), ID_OUT_WGSL, texturesWgsl(), varyingsWgsl(build), vertexWgsl(build), SAMPLE_SLOT_WGSL,
+    uniformsWgsl(members), ID_OUT_WGSL, texturesWgsl(), varyingsWgsl(build), vertex, SAMPLE_SLOT_WGSL,
     build.area ? glyphTapWgsl() : '', build.area ? GLYPH_COVERAGE_WGSL : GLYPH_POINT_COVERAGE_WGSL,
     STRAIGHT_RGB_WGSL, build.hulls ? HULL_COVERAGE_WGSL : '', fragmentWgsl(build),
   ].join('');

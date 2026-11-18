@@ -106,15 +106,16 @@ const FORMATS: readonly GPUVertexFormat[] = ['float32', 'float32x2', 'float32x3'
 
 export function createGeometry(desc: GpuGeometryDesc): WgpuGeometry {
   const locations = new Set<number>();
-  const layouts = desc.vertexBuffers.map(({ stride, attributes }): GPUVertexBufferLayout => {
+  const layouts = desc.vertexBuffers.map(({ stride, attributes, step }): GPUVertexBufferLayout => {
     for (const a of attributes) locations.add(a.location);
     const packed = attributes.reduce((end, a) => Math.max(end, a.offset + 4 * a.components), 0);
     return {
       arrayStride: stride || packed,
+      stepMode: step ?? 'vertex',
       attributes: attributes.map((a) => ({ shaderLocation: a.location, offset: a.offset, format: FORMATS[a.components - 1] })),
     };
   });
-  const layoutKey = layouts.map((l) => `${l.arrayStride}:${[...l.attributes].map((a) => `${a.shaderLocation}@${a.offset}${a.format}`).join(',')}`).join(';');
+  const layoutKey = layouts.map((l) => `${l.arrayStride}${l.stepMode === 'instance' ? 'i' : ''}:${[...l.attributes].map((a) => `${a.shaderLocation}@${a.offset}${a.format}`).join(',')}`).join(';');
   return {
     kind: 'geometry', indexFormat: desc.indexFormat,
     buffers: desc.vertexBuffers.map((b) => b.buffer as WgpuBuffer),

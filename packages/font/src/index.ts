@@ -101,6 +101,7 @@ export type { GlyphTextureSink, TexSource } from './textureSink';
 export {
   GLYPH_COVERAGE_GLSL,
   GLYPH_POINT_COVERAGE_GLSL,
+  GLYPH_AREA_FROM,
   GLYPH_AREA_MARGIN,
   GLYPH_MODE_MSDF,
   GLYPH_MODE_R8,

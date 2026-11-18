@@ -246,7 +246,7 @@ ${sampleTree(1, BATCH_TEXTURE_SLOTS - 1, 'textureLod(%s, uv, 0.0)')}
  * build to index the arrays by a varying. `hulls` builds in the hull clip, for
  * runs that hold one, and `area` the glyph taps.
  */
-function batchFragSrc(matrices: number, hulls = false, area = false): string {
+export function batchFragSrc(matrices: number, hulls = false, area = false): string {
   const m = matrices === 1 ? '0' : 'v_matrix';
   return /* glsl */ `#version 300 es
 precision highp float;
