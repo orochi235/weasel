@@ -1,4 +1,4 @@
-import { screen } from '@testing-library/react';
+import { fireEvent, screen } from '@testing-library/react';
 import { renderWithIcons } from '@weasel-js/ui/testing/withIcons';
 import { describe, expect, it, vi } from 'vitest';
 import { icon } from '../../icons.gen';
@@ -112,8 +112,38 @@ describe('TitleBarRegion', () => {
     expect(close).not.toBeDisabled();
     expect(close).toHaveAttribute('aria-disabled', 'true');
     expect(close).toHaveAttribute('aria-description', 'It is the last trial');
-    expect(close).toHaveAttribute('title', 'Close trial: It is the last trial');
+    expect(close).not.toHaveAttribute('title');
     close.click();
     expect(onActivate).not.toHaveBeenCalled();
+  });
+
+  it('keeps a press on any of its buttons, a held one too, from reaching the bar behind it', () => {
+    const onBar = vi.fn();
+    renderWithIcons(
+      // biome-ignore lint/a11y/noStaticElementInteractions: stands in for the title bar's drag surface
+      <div onPointerDown={onBar} onMouseDown={onBar}>
+        <TitleBarRegion
+          contributions={[
+            item('go', { end: true }),
+            item('held', {
+              end: true,
+              item: {
+                icon: Glyph,
+                label: 'Held',
+                disabled: true,
+                disabledReason: 'Why',
+                onActivate: () => {},
+              },
+            }),
+          ]}
+          ctx={ctx}
+        />
+      </div>,
+    );
+    for (const name of ['go', 'Held']) {
+      fireEvent.pointerDown(screen.getByRole('button', { name }));
+      fireEvent.mouseDown(screen.getByRole('button', { name }));
+    }
+    expect(onBar).not.toHaveBeenCalled();
   });
 });

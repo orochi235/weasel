@@ -10,7 +10,7 @@ export type { Constraints, FontSpec, TextExtent, MeasureEnv, Measured, HeadlessC
 export { resolveControlSize } from './controlSize';
 export type { ControlSize } from './controlSize';
 export { buttonParts, buttonMetrics, measureButton, BUTTON_SPINNER_SIZE } from './button';
-export type { ButtonFace, ButtonPart, ButtonMetrics, ButtonLayout } from './button';
+export type { ButtonFace, ButtonPart, ButtonMetrics, ButtonLayout, ButtonSize } from './button';
 export { listMode, LIST_ROLES, ROW_GAP, rowListMetrics, measureRowList, rowAtY } from './rowList';
 export type {
   ListMode, ListModeInput, RowFace, RowListFace, RowListMetrics, RowBox, RowListLayout,

@@ -33,6 +33,8 @@ describe('a DOM button is the box measureButton gives', () => {
     ['a small label', { children: 'Save', size: 'sm' }],
     ['icons either side', { children: 'Export', leadingIcon: ICON, trailingIcon: ICON }],
     ['an icon alone', { iconOnly: true, 'aria-label': 'Add', children: ICON }],
+    ['an xs label after an icon', { children: 'Pin', size: 'xs', leadingIcon: ICON }],
+    ['an xs icon alone', { iconOnly: true, 'aria-label': 'Add', size: 'xs', children: ICON }],
     ['a spinner', { children: 'Saving', loading: true }],
   ])('%s', (_, props) => {
     render(<div data-testid="host"><Button {...props} /></div>);
@@ -49,6 +51,25 @@ describe('a DOM button is the box measureButton gives', () => {
       near(got.width, rect.width);
       near(got.height, rect.height);
     });
+  });
+
+  // A zero-height box in a baseline-aligned row has its bottom edge on the row's baseline.
+  test.each<[string, ButtonProps]>([
+    ['a label', { children: 'Save' }],
+    ['a label after an icon', { children: 'Add trial', leadingIcon: ICON }],
+    ['an xs label after an icon', { children: 'Pin', size: 'xs', leadingIcon: ICON }],
+    ['a label after a spinner', { children: 'Saving', loading: true }],
+  ])('%s hands its row the baseline measureButton gives', (_, props) => {
+    render(
+      <div style={{ display: 'flex', alignItems: 'baseline' }}>
+        <Button {...props} />
+        <span data-testid="probe" style={{ display: 'inline-block', width: 0, height: 0 }} />
+      </div>,
+    );
+    const button = screen.getByRole('button');
+    const m = domButton.measure(props, UNBOUNDED, createDomMeasureEnv(button));
+    const got = screen.getByTestId('probe').getBoundingClientRect().top - button.getBoundingClientRect().top;
+    expect(Math.abs(got - m.baseline)).toBeLessThanOrEqual(0.5);
   });
 
   test('a full-width button centers its parts in the width it is given', () => {

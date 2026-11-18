@@ -18,7 +18,13 @@ export const CONTROL_HOOKS: readonly TokenHook[] = [
     name: 'button-icon-size',
     type: 'dimension',
     value: '14px',
-    description: 'The glyph in a Button. Unset, 12px in a small one and 14px otherwise.',
+    description: 'The glyph in a Button. Unset, 12px at xs and sm and 14px at md.',
+  },
+  {
+    name: 'button-h',
+    type: 'dimension',
+    value: 'var(--wzl-control-h)',
+    description: 'Height of a Button below the container that sets it, at every size; an icon-only one stays square. Unset, the control height of its size: `--wzl-control-h-xs`, `-sm`, or `--wzl-control-h`.',
   },
   {
     name: 'button-radius',
@@ -183,7 +189,7 @@ export const CONTROL_HOOKS: readonly TokenHook[] = [
     name: 'button-pad-x',
     type: 'dimension',
     value: 'var(--wzl-space-6)',
-    description: 'Inline padding of a text Button below the container that sets it, at every size. Unset, `--wzl-space-4` at sm and `--wzl-space-6` at md. Icon-only buttons stay square.',
+    description: 'Inline padding of a text Button below the container that sets it, at every size. Unset, `--wzl-space-2` at xs, `--wzl-space-4` at sm and `--wzl-space-6` at md. Icon-only buttons stay square.',
   },
   {
     name: 'button-font-weight',

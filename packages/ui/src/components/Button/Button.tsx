@@ -1,6 +1,6 @@
 import { forwardRef, type ButtonHTMLAttributes, type ReactElement, type ReactNode, type Ref } from 'react';
 import {
-  buttonParts, measureButton, type ButtonFace, type ButtonLayout, type ButtonPart, type ControlSize,
+  buttonParts, measureButton, type ButtonFace, type ButtonLayout, type ButtonPart, type ButtonSize,
   type HeadlessComponent,
 } from '@weasel-js/ui-logic';
 import { nodeText } from '../../nodeText';
@@ -11,6 +11,8 @@ import type { DisableableProps } from '../Disabled';
 import { type AppearanceProps, useAppearance } from '../appearance';
 import { useControlSize } from '../ControlSize';
 import type { DataAttributes } from '../../nativeProps';
+
+export type { ButtonSize } from '@weasel-js/ui-logic';
 
 /** Visual weight of a button. Defaults to `solid`. `link` drops the
  *  control box entirely and reads as a hyperlink in running text -- for an
@@ -29,8 +31,9 @@ export type ButtonDomProps = Omit<ButtonHTMLAttributes<HTMLButtonElement>, Butto
 /** What every {@link Button} takes. */
 export type ButtonBase = ButtonDomProps & {
   variant?: ButtonVariant;
-  /** Default: the nearest `ControlSizeScope`'s, else `'md'`. */
-  size?: ControlSize;
+  /** Default: the nearest `ControlSizeScope`'s, else `'md'`. `xs` is a button's alone, for dense chrome such as a
+   *  title bar: no scope sets it, so it is given here or not at all. */
+  size?: ButtonSize;
   /** A button that stays down: renders `aria-pressed` and holds the active
    *  treatment while it is on. For a control that reports a state rather than
    *  firing an action -- a panel toggle, a mode switch. Left off, the button
@@ -130,7 +133,8 @@ export const Button = forwardRef(function Button(
     trailingIcon: _trailingIcon,
     ...native
   } = props;
-  const size = useControlSize(props.size);
+  const scoped = useControlSize(props.size === 'xs' ? undefined : props.size);
+  const size: ButtonSize = props.size === 'xs' ? 'xs' : scoped;
 
   const cls = [
     s.button,
@@ -182,15 +186,18 @@ export function buttonFaceOf(props: ButtonProps): ButtonFace<ReactNode> {
     : { size, label: children === undefined ? undefined : nodeText(children), leadingIcon, trailingIcon, loading };
 }
 
+/** The slot before a label: it hands the button the label's baseline, as `measureButton` gives it. */
+const leadSlot = (face: ButtonFace<ReactNode>) => (face.label === undefined ? s.iconSlot : `${s.iconSlot} ${s.lead}`);
+
 /** One part of a button as the DOM draws it: a slot `Button.module.css` lays out from the tokens `measureButton`
  *  reads. */
 function ButtonPartSlot(
   { part, face, label }: { part: ButtonPart; face: ButtonFace<ReactNode>; label: ReactNode },
 ): ReactNode {
   switch (part) {
-    case 'spinner': return face.iconOnly ? <Spinner /> : <span className={s.iconSlot}><Spinner /></span>;
+    case 'spinner': return face.iconOnly ? <Spinner /> : <span className={leadSlot(face)}><Spinner /></span>;
     case 'icon': return <span className={s.iconSlot}>{face.icon}</span>;
-    case 'leading': return <span className={s.iconSlot}>{face.leadingIcon}</span>;
+    case 'leading': return <span className={leadSlot(face)}>{face.leadingIcon}</span>;
     case 'trailing': return <span className={s.iconSlot}>{face.trailingIcon}</span>;
     case 'label': return <span className={s.label}>{label}</span>;
   }

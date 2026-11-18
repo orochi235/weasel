@@ -328,15 +328,6 @@ Owner tags, after the priority (2026-10-26):
   Closes when an app animates a selector's weights through `createWeightAxes`, or on 2026-12-31 with none,
   delete it.
 
-- **(P3) [maintainer] labkit and the apps hand-build what weasel-ui already draws.** Each waits on something
-  the ui component lacks, or on a look at the result in a browser:
-  `.lk-titlebar-button` is 18px square and `Button`'s smallest size is `--wzl-control-h-sm`;
-  `LabHeader`'s bare "Add trial" button, which sets its own baseline so its label lines up with the
-  title and would lose that as a `Button` with a leading icon; and the theme editor's number inputs
-  against `NumberField`.
-  Closes when those three are drawn by `Button` and `NumberField`, or the maintainer has ruled that each
-  stays hand-built.
-
 - **(P3) [maintainer] Some site demos still draw a dark look in light mode.** Every demo now sits under a
   theme in the reader's mode, and a scene reads a theme color with `useColorHex`
   (`ViewportDemo`'s background). Left after the 2026-10-21 pass through every demo in light mode:

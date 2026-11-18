@@ -495,7 +495,7 @@ Each axis has its own words, and none of them borrows another's (2026-11-14):
 | Axis | Set with | Values | What it moves |
 |---|---|---|---|
 | Theme density | `applyTheme(el, theme, { density })` | `compact` / `comfortable` / `roomy` | the pixels behind every token: the type ramp and each control-height rank |
-| Control size | a control's `size`, `<ControlSizeScope size>`, or a container's `size` | `sm` / `md` | which rank a control stands at: `sm` is `control-h-sm` and `font-size-sm`, `md` is `control-h` and `font-size` |
+| Control size | a control's `size`, `<ControlSizeScope size>`, or a container's `size` | `sm` / `md` | which rank a control stands at: `sm` is `control-h-sm` and `font-size-sm`, `md` is `control-h` and `font-size`. A `Button` also takes `xs`, `control-h-xs` and `font-size-sm`, for dense chrome such as a title bar; no other control has a design at that rank, so no scope sets it |
 | Property spacing | `spacing` on any `Properties` container | `tight` / `normal` / `loose` | a property panel's gaps and padding, and the height of the fields in its rows |
 
 Property spacing is its own axis rather than either of the others: it lays out

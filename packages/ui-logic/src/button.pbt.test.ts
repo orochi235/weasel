@@ -48,7 +48,7 @@ describe('envPx', () => {
 const icon = fc.option(fc.constant('i'), { nil: undefined });
 const face: fc.Arbitrary<ButtonFace> = fc.record({
   label: fc.option(fc.constantFrom('', 'Go', 'Save changes', 'A much longer label than fits', '😀 ok'), { nil: undefined }),
-  size: fc.option(fc.constantFrom('sm' as const, 'md' as const), { nil: undefined }),
+  size: fc.option(fc.constantFrom('xs' as const, 'sm' as const, 'md' as const), { nil: undefined }),
   iconOnly: fc.option(fc.boolean(), { nil: undefined }),
   icon, leadingIcon: icon, trailingIcon: icon,
   loading: fc.option(fc.boolean(), { nil: undefined }),
@@ -56,7 +56,7 @@ const face: fc.Arbitrary<ButtonFace> = fc.record({
 
 const px = (lo: number, hi: number) => fc.integer({ min: lo, max: hi }).map((n) => `${n}px`);
 const tokens = fc.record({
-  '--wzl-control-h': px(16, 40), '--wzl-control-h-sm': px(12, 30),
+  '--wzl-control-h': px(16, 40), '--wzl-control-h-sm': px(12, 30), '--wzl-control-h-xs': px(10, 26), '--wzl-space-2': px(0, 8),
   '--wzl-space-3': px(0, 10), '--wzl-space-4': px(0, 12), '--wzl-space-6': px(0, 16),
   '--wzl-font-size': px(8, 18), '--wzl-font-size-sm': px(8, 16),
 });
