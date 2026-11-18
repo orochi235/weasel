@@ -1,5 +1,8 @@
-import { asNodeId, defaultCommitAdapter, type Path, pathInWorld, pathNode, type PathPaint, pathPaintOf, type NodeOutline, sceneNodeOutline, type SelectionApi } from '@weasel-js/core';
-import { carriedData, type DrawScene, type WeaselDrawData, type WeaselDrawLayer } from './drawDocument';
+import {
+  asNodeId, AUTO_POSE_DESCRIPTOR, defaultCommitAdapter, drawnPose, type NodeId, type Path, pathInWorld, pathNode, type PathPaint,
+  pathPaintOf, type NodeOutline, sceneNodeOutline, scenePoseFrame, type Scene, type SelectionApi,
+} from '@weasel-js/core';
+import { carriedData, type DrawScene, type WeaselDrawData, type WeaselDrawLayer, type WeaselDrawPose } from './drawDocument';
 import { type BooleansAdapter } from '@weasel-js/editing';
 
 /** The outline of a leaf that is not a path — a text node's glyphs — as its painter gives it. */
@@ -7,11 +10,23 @@ export function outlineAt(scene: DrawScene, id: string): NodeOutline | undefined
   return scene.get(asNodeId(id))?.data.path ? undefined : sceneNodeOutline(scene, id);
 }
 
-/** A path leaf's geometry in world space. */
+/** A path leaf's geometry in world space: its stored pose folded through the
+ *  frames above it, a page's among them. */
 export function worldPathOf(scene: DrawScene, id: string): Path | undefined {
   const node = scene.get(asNodeId(id));
   if (!node || node.kind !== 'mark' || !node.data.path) return undefined;
-  return pathInWorld(node.data.path, node.pose);
+  const drawn = drawnPose(AUTO_POSE_DESCRIPTOR, scenePoseFrame(scene as unknown as Scene<unknown, string, unknown>).world(node.id));
+  return drawn ? pathInWorld(node.data.path, drawn.box) : undefined;
+}
+
+/** `spec`, posed at world bounds by `pathNode`, with its pose restated in
+ *  `parent`'s frame: what a node minted under `parent` stores. Throws where that
+ *  frame is singular, since no stored pose there shows the result. */
+export function inFrameOf<S extends { pose: WeaselDrawPose }>(scene: DrawScene, parent: string | null, spec: S): S {
+  const local = scenePoseFrame(scene as unknown as Scene<unknown, string, unknown>)
+    .localUnder(parent as NodeId | null, spec.pose);
+  if (local === null) throw new Error(`[draw] no pose under ${parent} shows ${JSON.stringify(spec.pose)}`);
+  return { ...spec, pose: local as WeaselDrawPose };
 }
 
 /** The paint a path leaf wears. */
@@ -49,7 +64,8 @@ export function drawBooleansAdapter(
           ...(template?.stroke !== undefined ? { stroke: template.stroke } : {}),
         }),
       };
-      return pathNode<WeaselDrawData, WeaselDrawLayer>(scene.mintId(), path, data, { parent: source?.parent ?? null });
+      const parent = source?.parent ?? null;
+      return inFrameOf(scene, parent, pathNode<WeaselDrawData, WeaselDrawLayer>(scene.mintId(), path, data, { parent }));
     },
     applyOps: (ops, label) => {
       scene.applyBatch(ops, label ?? 'Booleans', a);
