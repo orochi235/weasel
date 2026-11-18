@@ -13,6 +13,7 @@ import { DRAW_NODE_PROPERTIES } from './drawPresets';
 import { GESTURE_CATALOG_KEYS, type DeclaredRoute, type ToolSurface, type ToolEntry, type ActionEntry, type CallbackRef, type CallbackSource } from './registryEntries';
 import s from './RegistryInspector.module.css';
 import { KIT_TOOL_IDS } from '@weasel-js/editing';
+import { toolSlotsSignature } from './toolkit/useToolReflection';
 import { getOwn, hasOwnKey } from '@weasel-js/registry';
 
 export interface RegistrySnapshot {
@@ -53,12 +54,12 @@ export function RegistryProbe({ onSnapshot }: ProbeProps) {
   });
 
   // `onToolsCreated` fires every render because `useTools` synthesizes a new ToolsApi literal
-  // each render. Track only the structural signature (registry tool ids) to avoid a render loop.
+  // each render. Track only the structural signature (the ids in both slots) to avoid a render loop.
   const [toolsRegistrySig, setToolsRegistrySig] = useState<string>('');
   const toolsRef = useRef<ToolsApi | null>(null);
   const handleToolsCreated = (api: ToolsApi) => {
     toolsRef.current = api;
-    const sig = Object.keys(api.registry).sort().join(',');
+    const sig = toolSlotsSignature(api);
     setToolsRegistrySig((prev) => (prev === sig ? prev : sig));
   };
   const tools = toolsRef.current;
