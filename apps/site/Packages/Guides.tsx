@@ -1,5 +1,6 @@
 import type { PackageEntry } from '@shared/packageDocs';
 import { packageRoute } from '@shared/packageRoutes';
+import { getOwn } from '@weasel-js/registry';
 import { Prose } from '../Prose';
 import { Loading } from './Loading';
 import { loadDoc } from './catalog';
@@ -34,7 +35,7 @@ export function Guides({ pkg, slug }: { pkg: PackageEntry; slug: string }) {
       )}
       <h3 className={s.guideTitle}>{guide.title}</h3>
       <Loading value={doc} what="This guide">
-        {(loaded) => <Prose blocks={loaded.guides[guide.slug] ?? []} />}
+        {(loaded) => <Prose blocks={getOwn(loaded.guides, guide.slug) ?? []} />}
       </Loading>
     </div>
   );

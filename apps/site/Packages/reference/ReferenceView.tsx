@@ -23,7 +23,7 @@ export function ReferenceView({ reference, rest }: { reference: PackageReference
         ← {module.specifier}
       </a>
       {declared.length === 0 && <p className={s.note}>{module.specifier} exports nothing named <code>{symbol}</code>.</p>}
-      {declared.map((one) => <SymbolSection key={one.kind} symbol={one} />)}
+      {declared.map((one, i) => <SymbolSection key={i} symbol={one} />)}
     </div>
   );
 }

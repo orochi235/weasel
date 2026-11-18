@@ -125,10 +125,17 @@ export function packageDoc(root: string, name: string): PackageDoc {
 function guideFiles(packageDir: string): { slug: string; file: string }[] {
   const dir = join(packageDir, GUIDES_DIR);
   if (!existsSync(dir)) return [];
-  return readdirSync(dir)
+  const guides = readdirSync(dir)
     .filter((file) => file.endsWith('.md'))
     .sort((a, b) => a.localeCompare(b, 'en', { numeric: true }))
     .map((file) => ({ slug: file.slice(0, -'.md'.length).replace(/^\d+-/, ''), file: join(dir, file) }));
+  const bySlug = new Map<string, string>();
+  for (const { slug, file } of guides) {
+    const other = bySlug.get(slug);
+    if (other) throw new Error(`${relative(packageDir, other)} and ${relative(packageDir, file)} are both the guide "${slug}"; rename one`);
+    bySlug.set(slug, file);
+  }
+  return guides;
 }
 
 /**

@@ -1,5 +1,6 @@
 import { cleanup, render, screen, within } from '@testing-library/react';
 import { afterEach, describe, expect, it } from 'vitest';
+import type { PackageReference } from '@shared/reference';
 import { PROJECT } from '../../../scripts/lib/reference/fixture';
 import { readProject } from '../../../scripts/lib/reference/project';
 import { ReferenceView } from '../Packages/reference/ReferenceView';
@@ -27,6 +28,34 @@ describe('a module\'s index', () => {
     expect(screen.getByRole('heading', { level: 3, name: '@weasel-js/geom/booleans' })).toBeTruthy();
     expect(screen.getByText('Set operations on boxes.')).toBeTruthy();
     expect(hrefOf('unionBoxes')).toBe('#pkg/geom/reference/booleans/unionBoxes');
+  });
+
+  it('describes a name that is both a type and a value, under each heading, by the declaration listed there', () => {
+    const html = (text: string) => [{ kind: 'html' as const, html: `<p>${text}</p>` }];
+    const reference: PackageReference = {
+      package: 'geom',
+      specifier: '@weasel-js/geom',
+      modules: [{
+        name: '',
+        specifier: '@weasel-js/geom',
+        doc: [],
+        groups: [
+          { title: 'Variables', exports: [{ name: 'Foo', kinds: ['variable'] }] },
+          { title: 'Interfaces', exports: [{ name: 'Foo', kinds: ['interface'] }] },
+        ],
+        symbols: [
+          { name: 'Foo', kind: 'variable', summary: 'Old factory', doc: [], deprecated: html('Gone.'), code: [] },
+          { name: 'Foo', kind: 'interface', summary: 'The shape of a Foo', doc: [], code: [], members: [] },
+        ],
+      }],
+    };
+    render(<ReferenceView reference={reference} rest="" />);
+    const row = (title: string) =>
+      within(screen.getByRole('heading', { level: 4, name: title }).closest('section')!).getByRole('listitem');
+    expect(row('Variables').textContent).toBe('FooOld factory');
+    expect(within(row('Variables')).getByRole('link').className).toMatch(/struck/);
+    expect(row('Interfaces').textContent).toBe('FooThe shape of a Foo');
+    expect(within(row('Interfaces')).getByRole('link').className).not.toMatch(/struck/);
   });
 });
 

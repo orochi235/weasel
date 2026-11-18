@@ -86,8 +86,11 @@ export interface ReferenceModule {
   /** What a consumer imports it by, `@weasel-js/geom/booleans`. */
   specifier: string;
   doc: Prose;
-  /** The exports under their headings, in TypeDoc's order. */
-  groups: { title: string; names: string[] }[];
+  /**
+   * The exports under their headings, in TypeDoc's order. `kinds` are the declarations of the name the
+   * heading holds: a kind group holds one of a name that is both a type and a value, a category may hold both.
+   */
+  groups: { title: string; exports: { name: string; kinds: SymbolKind[] }[] }[];
   symbols: ReferenceSymbol[];
 }
 
