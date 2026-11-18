@@ -3,195 +3,24 @@
  *  it covers exactly the surface `createAudioEngine` touches, and throws where
  *  the specification says a real implementation throws. */
 
-export interface FakeParam {
-  value: number;
-  /** Every `linearRampToValueAtTime` target, in call order. */
-  ramps: { value: number; at: number }[];
-  /** Every `setValueAtTime`, in call order. */
-  holds: { value: number; at: number }[];
-  /** Every `exponentialRampToValueAtTime` target, in call order. */
-  expRamps: { value: number; at: number }[];
-  /** Every `cancelScheduledValues` time, in call order. */
-  cancels: number[];
-  /** Every `setTargetAtTime`, in call order. */
-  targets: { value: number; at: number; timeConstant: number }[];
-  setValueAtTime(value: number, at: number): FakeParam;
-  linearRampToValueAtTime(value: number, at: number): FakeParam;
-  exponentialRampToValueAtTime(value: number, at: number): FakeParam;
-  cancelScheduledValues(at: number): FakeParam;
-  setTargetAtTime(value: number, at: number, timeConstant: number): FakeParam;
-}
+import { createFakeAnalyser, type FakeAnalyser, type FakeAnalyserBytes } from './fakeAnalyser';
+import type { FakeMediaElement, FakeMediaSource } from './fakeMediaElement';
+import {
+  node, param,
+  type FakeBiquad, type FakeCompressor, type FakeConvolver, type FakeDelay, type FakeGain, type FakeNode,
+  type FakePanner,
+} from './fakeNode';
+import {
+  createFakeBufferSource, createFakeOscillator, dueToEnd,
+  type FakeOscillator, type FakePeriodicWave, type FakeSource,
+} from './fakeSources';
 
-// A ramp does not move `value`: the point of the double is that a test can see
-// a target scheduled ahead of the current value rather than written over it.
-const param = (initial: number): FakeParam => {
-  const p: FakeParam = {
-    value: initial,
-    ramps: [],
-    holds: [],
-    expRamps: [],
-    cancels: [],
-    targets: [],
-    setValueAtTime(value, at) { p.holds.push({ value, at }); p.value = value; return p; },
-    linearRampToValueAtTime(value, at) { p.ramps.push({ value, at }); return p; },
-    exponentialRampToValueAtTime(value, at) { p.expRamps.push({ value, at }); return p; },
-    cancelScheduledValues(at) { p.cancels.push(at); return p; },
-    setTargetAtTime(value, at, timeConstant) { p.targets.push({ value, at, timeConstant }); return p; },
-  };
-  return p;
-};
-
-export interface FakeNode {
-  kind: string;
-  connectedTo: FakeNode[];
-  connectedFrom: FakeNode[];
-  /** True once `disconnect` has been called on this node in any form. */
-  disconnected: boolean;
-  connect(target: FakeNode): FakeNode;
-  disconnect(target?: FakeNode): void;
-}
-
-function node<E extends Record<string, unknown>>(kind: string, extra?: E): FakeNode & E {
-  const n = {
-    kind,
-    connectedTo: [] as FakeNode[],
-    connectedFrom: [] as FakeNode[],
-    disconnected: false,
-    connect(target: FakeNode) {
-      n.connectedTo.push(target);
-      target.connectedFrom.push(n);
-      return target;
-    },
-    disconnect(target?: FakeNode) {
-      n.disconnected = true;
-      if (target && !n.connectedTo.includes(target)) {
-        // The bare form is a no-op when there is nothing to cut; the targeted
-        // form is not, and a real implementation throws.
-        throw new Error('InvalidAccessError: the given node is not connected');
-      }
-      for (const t of target ? [target] : [...n.connectedTo]) {
-        const out = n.connectedTo.indexOf(t);
-        if (out >= 0) n.connectedTo.splice(out, 1);
-        const back = t.connectedFrom.indexOf(n);
-        if (back >= 0) t.connectedFrom.splice(back, 1);
-      }
-    },
-    ...(extra ?? ({} as E)),
-  } as FakeNode & E;
-  return n;
-}
-
-export interface FakeGain extends FakeNode { gain: FakeParam }
-export interface FakePanner extends FakeNode { pan: FakeParam }
-
-export interface FakeAnalyser extends FakeNode {
-  fftSize: number;
-  readonly frequencyBinCount: number;
-  getByteFrequencyData(out: Uint8Array): void;
-  getByteTimeDomainData(out: Uint8Array): void;
-}
-
-export interface FakeSource extends FakeNode {
-  buffer: unknown;
-  loop: boolean;
-  playbackRate: FakeParam;
-  detune: FakeParam;
-  started: number[];
-  /** The `offset` of each `start`, 0 when none was given. */
-  offsets: number[];
-  stopped: number[];
-  ended: boolean;
-  onended: (() => void) | null;
-  start(when?: number, offset?: number): void;
-  stop(when?: number): void;
-}
-
-export interface FakePeriodicWave { real: Float32Array; imag: Float32Array }
-
-export interface FakeOscillator extends FakeNode {
-  type: string;
-  frequency: FakeParam;
-  detune: FakeParam;
-  periodicWave: FakePeriodicWave | null;
-  started: number[];
-  stopped: number[];
-  ended: boolean;
-  onended: (() => void) | null;
-  setPeriodicWave(wave: FakePeriodicWave): void;
-  start(when?: number): void;
-  stop(when?: number): void;
-}
-
-export interface FakeBiquad extends FakeNode {
-  type: string;
-  frequency: FakeParam;
-  Q: FakeParam;
-  gain: FakeParam;
-  detune: FakeParam;
-}
-
-export interface FakeConvolver extends FakeNode { buffer: unknown; normalize: boolean }
-
-export interface FakeDelay extends FakeNode { delayTime: FakeParam; maxDelayTime: number }
-
-export interface FakeCompressor extends FakeNode {
-  threshold: FakeParam;
-  knee: FakeParam;
-  ratio: FakeParam;
-  attack: FakeParam;
-  release: FakeParam;
-}
-
-export interface FakeMediaSource extends FakeNode { mediaElement: FakeMediaElement }
-
-/** Enough of an `HTMLMediaElement` for a streaming voice. `play()` resolves
- *  unless `_rejectPlay` is set; `_fire` dispatches a media event. */
-export interface FakeMediaElement {
-  src: string;
-  loop: boolean;
-  currentTime: number;
-  playbackRate: number;
-  paused: boolean;
-  crossOrigin: string | null;
-  preload: string;
-  play(): Promise<void>;
-  pause(): void;
-  addEventListener(type: string, fn: () => void): void;
-  removeEventListener(type: string, fn: () => void): void;
-  _fire(type: string): void;
-  _rejectPlay: Error | null;
-  _listenerCount(): number;
-}
-
-export function createFakeMediaElement(src = ''): FakeMediaElement {
-  const listeners = new Map<string, Set<() => void>>();
-  const el: FakeMediaElement = {
-    src, loop: false, currentTime: 0, playbackRate: 1, paused: true,
-    crossOrigin: null, preload: 'auto',
-    play() {
-      if (el._rejectPlay) return Promise.reject(el._rejectPlay);
-      el.paused = false;
-      return Promise.resolve();
-    },
-    pause() { el.paused = true; },
-    addEventListener(type, fn) {
-      if (!listeners.has(type)) listeners.set(type, new Set());
-      listeners.get(type)!.add(fn);
-    },
-    removeEventListener(type, fn) { listeners.get(type)?.delete(fn); },
-    _fire(type) {
-      if (type === 'ended') el.paused = true;
-      for (const fn of [...(listeners.get(type) ?? [])]) fn();
-    },
-    _rejectPlay: null,
-    _listenerCount: () => [...listeners.values()].reduce((n, s) => n + s.size, 0),
-  };
-  return el;
-}
-
-/** Analyser output: a constant for every bin, or a function of bin index and
- *  window length so index and window-size math is observable. */
-export type FakeAnalyserBytes = number | ((index: number, length: number) => number);
+export type { FakeAnalyser, FakeAnalyserBytes } from './fakeAnalyser';
+export { createFakeMediaElement, type FakeMediaElement, type FakeMediaSource } from './fakeMediaElement';
+export type {
+  FakeBiquad, FakeCompressor, FakeConvolver, FakeDelay, FakeGain, FakeNode, FakePanner, FakeParam,
+} from './fakeNode';
+export type { FakeOscillator, FakePeriodicWave, FakeSource } from './fakeSources';
 
 /** Enough of an `AudioBuffer` for the engine's source nodes and for a consumer
  *  filling one through `engine.context`. */
@@ -248,6 +77,20 @@ export interface FakeAudioContext {
   _listenerCount(): number;
 }
 
+function createFakeBuffer(channels: number, length: number, sampleRate: number): FakeBuffer {
+  if (channels < 1 || length < 1) {
+    throw new Error('NotSupportedError: createBuffer needs a channel and a frame');
+  }
+  const data = Array.from({ length: channels }, () => new Float32Array(length));
+  return {
+    duration: length / sampleRate,
+    length,
+    numberOfChannels: channels,
+    sampleRate,
+    getChannelData: (channel) => data[channel],
+  };
+}
+
 export function createFakeAudioContext(): FakeAudioContext {
   const sources: FakeSource[] = [];
   const oscillators: FakeOscillator[] = [];
@@ -255,28 +98,7 @@ export function createFakeAudioContext(): FakeAudioContext {
   const buffers: FakeBuffer[] = [];
   const listeners = new Set<() => void>();
   const routed = new WeakSet<FakeMediaElement>();
-
-  // Writes at most `bins` elements, as the specification requires: an oversized
-  // array keeps whatever was in the tail, it does not get more data.
-  const fill = (out: Uint8Array, bins: number, spec: FakeAnalyserBytes): void => {
-    const n = Math.min(out.length, bins);
-    for (let i = 0; i < n; i += 1) {
-      out[i] = typeof spec === 'function' ? spec(i, n) : spec;
-    }
-  };
-
-  // `onended` fires from the clock, never from inside `start`/`stop`: a real
-  // implementation queues it as a task, and firing it synchronously would
-  // re-enter whatever called `stop`.
-  // The last `stop` wins: the specification lets a later call replace an
-  // earlier one.
-  const endIfDue = (s: FakeSource | FakeOscillator): void => {
-    if (s.ended || s.started.length === 0) return;
-    const stopAt = s.stopped.length > 0 ? s.stopped[s.stopped.length - 1] : Infinity;
-    const duration = 'buffer' in s ? (s.buffer as { duration?: number } | null)?.duration : undefined;
-    const endsAt = 'buffer' in s && !s.loop && duration != null ? s.started[0] + duration : Infinity;
-    if (ctx.currentTime + 1e-9 >= Math.min(stopAt, endsAt)) ctx._end(s);
-  };
+  const now = (): number => ctx.currentTime;
 
   const ctx: FakeAudioContext = {
     state: 'suspended',
@@ -290,70 +112,14 @@ export function createFakeAudioContext(): FakeAudioContext {
     removeEventListener(_type, fn) { listeners.delete(fn); },
     createGain: () => node('gain', { gain: param(1) }),
     createStereoPanner: () => node('panner', { pan: param(0) }),
-    createAnalyser() {
-      const a = node('analyser', {
-        fftSize: 2048,
-        getByteFrequencyData(out: Uint8Array) { fill(out, a.fftSize / 2, ctx._analyserBytes); },
-        getByteTimeDomainData(out: Uint8Array) { fill(out, a.fftSize, ctx._analyserBytes); },
-      });
-      Object.defineProperty(a, 'frequencyBinCount', {
-        get: () => a.fftSize / 2,
-        enumerable: true,
-      });
-      return a as unknown as FakeAnalyser;
-    },
+    createAnalyser: () => createFakeAnalyser(() => ctx._analyserBytes),
     createBufferSource() {
-      const s: FakeSource = node('source', {
-        buffer: null as unknown,
-        loop: false,
-        playbackRate: param(1),
-        detune: param(0),
-        started: [] as number[],
-        offsets: [] as number[],
-        stopped: [] as number[],
-        ended: false,
-        onended: null as (() => void) | null,
-        start(when = ctx.currentTime, offset = 0) {
-          if (s.started.length > 0) {
-            throw new Error('InvalidStateError: start may only be called once');
-          }
-          s.started.push(when);
-          s.offsets.push(offset);
-        },
-        stop(when = ctx.currentTime) {
-          if (s.started.length === 0) {
-            throw new Error('InvalidStateError: stop called before start');
-          }
-          s.stopped.push(when);
-        },
-      });
+      const s = createFakeBufferSource(now);
       sources.push(s);
       return s;
     },
     createOscillator() {
-      const o: FakeOscillator = node('oscillator', {
-        type: 'sine',
-        frequency: param(440),
-        detune: param(0),
-        periodicWave: null as FakePeriodicWave | null,
-        started: [] as number[],
-        stopped: [] as number[],
-        ended: false,
-        onended: null as (() => void) | null,
-        setPeriodicWave(wave: FakePeriodicWave) { o.type = 'custom'; o.periodicWave = wave; },
-        start(when = ctx.currentTime) {
-          if (o.started.length > 0) {
-            throw new Error('InvalidStateError: start may only be called once');
-          }
-          o.started.push(when);
-        },
-        stop(when = ctx.currentTime) {
-          if (o.started.length === 0) {
-            throw new Error('InvalidStateError: stop called before start');
-          }
-          o.stopped.push(when);
-        },
-      });
+      const o = createFakeOscillator(now);
       oscillators.push(o);
       return o;
     },
@@ -379,24 +145,19 @@ export function createFakeAudioContext(): FakeAudioContext {
       return node('mediaSource', { mediaElement: element });
     },
     createBuffer(channels, length, sampleRate) {
-      if (channels < 1 || length < 1) {
-        throw new Error('NotSupportedError: createBuffer needs a channel and a frame');
-      }
-      const data = Array.from({ length: channels }, () => new Float32Array(length));
-      const buffer: FakeBuffer = {
-        duration: length / sampleRate,
-        length,
-        numberOfChannels: channels,
-        sampleRate,
-        getChannelData: (channel) => data[channel],
-      };
+      const buffer = createFakeBuffer(channels, length, sampleRate);
       buffers.push(buffer);
       return buffer;
     },
     async decodeAudioData() { return { duration: 1 }; },
+    // `onended` fires from the clock, never from inside `start`/`stop`: a real
+    // implementation queues it as a task, and firing it synchronously would
+    // re-enter whatever called `stop`.
     _advance(ms) {
       ctx.currentTime += ms / 1000;
-      for (const s of [...sources, ...oscillators]) endIfDue(s);
+      for (const s of [...sources, ...oscillators]) {
+        if (dueToEnd(s, ctx.currentTime)) ctx._end(s);
+      }
     },
     _end(source) {
       if (source.ended) return;
